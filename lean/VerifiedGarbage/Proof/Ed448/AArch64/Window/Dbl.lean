@@ -1,7 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
-import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
+import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-
 /-!
 # Ed448 verification on AArch64: doubling with the register-resident arithmetic
 
@@ -124,9 +123,9 @@ def dblPt (p : Point) (one : Spec.X448.Fe) : Point :=
   let pp := p.X * p.Y
   ⟨(pp + pp) * j, e * (c - dd), e * j⟩
 
-theorem dblEnv_345 (e : Env) : pt (dblEnv 3 4 5 e) 3 4 5 = dblPt (pt e 3 4 5) (e 20) := rfl
-theorem dblEnv_012 (e : Env) : pt (dblEnv 0 1 2 e) 0 1 2 = dblPt (pt e 0 1 2) (e 20) := rfl
-theorem dblEnv_678 (e : Env) : pt (dblEnv 6 7 8 e) 6 7 8 = dblPt (pt e 6 7 8) (e 20) := rfl
+theorem dblEnv_345 (e : Env) : VG.Proof.X448.AArch64.Base.pt (dblEnv 3 4 5 e) 3 4 5 = dblPt (VG.Proof.X448.AArch64.Base.pt e 3 4 5) (e 20) := rfl
+theorem dblEnv_012 (e : Env) : VG.Proof.X448.AArch64.Base.pt (dblEnv 0 1 2 e) 0 1 2 = dblPt (VG.Proof.X448.AArch64.Base.pt e 0 1 2) (e 20) := rfl
+theorem dblEnv_678 (e : Env) : VG.Proof.X448.AArch64.Base.pt (dblEnv 6 7 8 e) 6 7 8 = dblPt (VG.Proof.X448.AArch64.Base.pt e 6 7 8) (e 20) := rfl
 
 theorem dblPt_eq (p : Point) : dblPt p 1 = VG.Proof.Ed448.double p := by
   simp only [dblPt, VG.Proof.Ed448.double]

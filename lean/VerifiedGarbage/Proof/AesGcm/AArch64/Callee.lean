@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
 import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Gcm.Stream
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Gcm.Be64
 
 /-!
 # AES-GCM on AArch64: the functions called

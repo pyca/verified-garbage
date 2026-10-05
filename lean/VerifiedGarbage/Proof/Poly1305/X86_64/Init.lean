@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Poly1305.X86_64.Setup
+import VerifiedGarbage.Proof.Poly1305.X86_64.Blocks
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract

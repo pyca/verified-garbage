@@ -1,5 +1,5 @@
 import VerifiedGarbage.Spec.Argon2.Contract
-import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Blake2.Scratch
 
 /-! Serialize the final word block as the same 1024 bytes consumed by H′. -/
 

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.CT
+import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 import VerifiedGarbage.Proof.Framework.TaintBatch
 

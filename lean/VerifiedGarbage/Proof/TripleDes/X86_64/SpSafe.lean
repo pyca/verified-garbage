@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Lit
+import VerifiedGarbage.Proof.TripleDes.X86_64.BitslicedAvx512.Verified
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratchWipe
 
 /-!

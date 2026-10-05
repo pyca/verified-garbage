@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.KPke1024
 
 /-!
 # ML-KEM on 32-bit ARM: `vg_mlkem_cbd2`

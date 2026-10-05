@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 /-!
 # A candidate on x86-64: constant time, the taint of a piece

@@ -2,13 +2,13 @@ import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.Lanes
-import VerifiedGarbage.Proof.Sha512.Arm.Rounds
+import VerifiedGarbage.Proof.Sha3.Compl
+import VerifiedGarbage.Proof.Sha512.Arm.Compress
 import VerifiedGarbage.Impl.Sha3.Arm
 import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Scratch
+import VerifiedGarbage.Proof.Sha3.Seed34
 import VerifiedGarbage.Proof.Framework.Arm.Call
 import VerifiedGarbage.Impl.Sha3.Arm.Stream
 
@@ -346,7 +346,7 @@ theorem dOff_lt (x : Nat) (hx : x < 5) : dOff x + 8 ≤ 200 := by simp only [dOf
 theorem dcol_ok (x : Nat) (hx : x < 5) {dst : Reg} (hdst : Ptr dst) {Dd : BitVec 32} {K : KState}
     (s : State) (hd : s.gpr dst = Dd) (hR : Reg64 s.wr Dd 200)
     (hc : ∀ x' < 5, Pair s (cl x') (ch x') (C K x')) :
-    WP isa (.block (dcol dst x)) s fun s' => Wrote [T1, T2] s s' (write64 s.mem Dd (dOff x) (D K x)) := by
+    WP isa (.block (dcol dst x)) s fun s' => Wrote [T1, T2] s s' (write64 s.mem Dd (dOff x) (VG.Proof.Sha3.D K x)) := by
   have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
   have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega)
   obtain ⟨l1T1, l1T2, h1T1, h1T2⟩ := cl_T _ h1
@@ -356,17 +356,17 @@ theorem dcol_ok (x : Nat) (hx : x < 5) {dst : Reg} (hdst : Ptr dst) {Dd : BitVec
   refine wp_sig (by simp) (by decide) T12 l1T1 h1T1 l1T2 h1T2 (hc _ h1) fun s₁ o₁ p₁ => ?_
   simp only [List.cons_append, List.nil_append]
   refine wp_eor (op2_reg _ _) fun s₂ u₂ => wp_eor (op2_reg _ _) fun s₃ u₃ => ?_
-  rw [← List.append_nil (st T1 T2 dst (dOff x))]
+  rw [← List.append_nil (VG.Impl.Sha512.Arm.st T1 T2 dst (dOff x))]
   have hd₃ : s₃.gpr dst = Dd := by
     rw [u₃.other dst hdst.T.2.symm, u₂.other dst hdst.T.1.symm,
       o₁.gpr dst (nm2 hdst.T.1.symm hdst.T.2.symm), hd]
   have hw₃ : s₃.wr = s.wr := by rw [u₃.wr, u₂.wr, o₁.wr]
-  refine wp_st (x := D K x) (by omega) hd₃ ⟨?_, ?_⟩ (by rw [hw₃]; exact (hR _ hdo).1)
+  refine wp_st (x := VG.Proof.Sha3.D K x) (by omega) hd₃ ⟨?_, ?_⟩ (by rw [hw₃]; exact (hR _ hdo).1)
     (by rw [hw₃]; exact (hR _ hdo).2) fun s₄ u₄ => WP.block_nil ⟨fun r hr => ?_, ?_, ?_, ?_, ?_⟩
-  · rw [u₃.other T1 T12, u₂.gpr, p₁.1, o₁.gpr (cl _) (nm2 l4T1 l4T2), (hc _ h4).1, evalOps_rotr, D,
+  · rw [u₃.other T1 T12, u₂.gpr, p₁.1, o₁.gpr (cl _) (nm2 l4T1 l4T2), (hc _ h4).1, evalOps_rotr, VG.Proof.Sha3.D,
       lo_xor]
   · rw [u₃.gpr, u₂.other T2 T12.symm, u₂.other _ h4T1, p₁.2, o₁.gpr (ch _) (nm2 h4T1 h4T2),
-      (hc _ h4).2, evalOps_rotr, D, hi_xor]
+      (hc _ h4).2, evalOps_rotr, VG.Proof.Sha3.D, hi_xor]
   · have ⟨a, b⟩ : r ≠ T1 ∧ r ≠ T2 := by simpa using hr
     rw [u₄.gpr, u₃.other r b, u₂.other r a, o₁.gpr r hr]
   · rw [u₄.mem, u₃.mem, u₂.mem, o₁.mem]
@@ -381,7 +381,7 @@ structure DInv (s₀ : State) (K : KState) (Dd : BitVec 32) (k : Nat) (s : State
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame [regR Dd 200] s₀.mem s.mem
-  dl : ∀ x < k, rd64 s.mem Dd (dOff x) = D K x
+  dl : ∀ x < k, rd64 s.mem Dd (dOff x) = VG.Proof.Sha3.D K x
 
 theorem dcols_ok {dst : Reg} (hdst : Ptr dst) {Dd : BitVec 32} {K : KState} (s₀ : State)
     (hd : s₀.gpr dst = Dd) (fitD : Dd.toNat + 200 ≤ 2 ^ 32) (hR : Reg64 s₀.wr Dd 200)
@@ -411,7 +411,7 @@ theorem rhoOff_ne32 : ∀ j < 25, rhoOff j ≠ 32 := by decide
 theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {src dst : Reg} (hsrc : Ptr src)
     (hdst : Ptr dst) {S Dd : BitVec 32} {K : KState} (s : State) (h0 : s.gpr src = S)
     (hd : s.gpr dst = Dd) (hRS : Reg64 s.wr S 200) (hRD : Reg64 s.wr Dd 200)
-    (hK : Lanes32 s.mem S K) (hD : ∀ x' < 5, rd64 s.mem Dd (dOff x') = D K x') :
+    (hK : Lanes32 s.mem S K) (hD : ∀ x' < 5, rd64 s.mem Dd (dOff x') = VG.Proof.Sha3.D K x') :
     WP isa (.block (laneB src dst x y)) s fun s' =>
       Only [T1, T2, cl x, ch x] s s' ∧ Pair s' (cl x) (ch x) (B K x y) := by
   have hj : piSrc x y < 25 := by simp only [piSrc]; omega
@@ -440,7 +440,7 @@ theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {src dst : Reg} (hsrc : 
   have o₆ : Only [T1, T2, cl x, ch x] s s₆ := ((((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans
     (Only.of_upd u₃)).trans (Only.of_upd u₄)).trans (Only.of_upd u₅)).trans (Only.of_upd u₆)).mono
     (by simp)
-  have p₆ : Pair s₆ T1 T2 (K[piSrc x y]! ^^^ D K ((x + 3 * y) % 5)) := by
+  have p₆ : Pair s₆ T1 T2 (K[piSrc x y]! ^^^ VG.Proof.Sha3.D K ((x + 3 * y) % 5)) := by
     constructor
     · rw [u₆.other T1 T12, u₅.other T1 lT1.symm, u₄.other T1 T12, u₃.gpr, u₂.other T1 T12, u₂.gpr,
         u₁.gpr, u₁.mem, lo_xor, ← hK _ hj, ← hD _ hk, lo_rd64, lo_rd64]
@@ -487,7 +487,7 @@ theorem chiHalf_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {dst : Reg} (hdst : Pt
       s.mem.readW (A Sc rcPtr) 32 = P ∧ InRegions (s.rd ++ s.wr) (A P off) 4 ∧
       s.mem.readW (A P off) 32 = f rc) :
     WP isa (.block (chiHalf dst r x y off o)) s fun s' =>
-      Wrote [T1, T2] s s' (s.mem.writeW (A Dd o) (f (out K rc x y))) := by
+      Wrote [T1, T2] s s' (s.mem.writeW (A Dd o) (f (VG.Proof.Sha3.out K rc x y))) := by
   have h1' : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
   have h2' : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega)
   unfold chiHalf
@@ -499,9 +499,9 @@ theorem chiHalf_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {dst : Reg} (hdst : Pt
     rw [u₃.gpr, u₂.gpr, u₂.other (r x) (hr x hx).1, u₁.gpr, u₁.other (r ((x + 2) % 5)) (hr _ h2').1,
       u₁.other (r x) (hr x hx).1, hb _ h1', hb _ h2', hb x hx, andNot, hfx, hfx, hfa]
   have fin : ∀ s₄ : State, (∀ q, q ≠ T1 → q ≠ T2 → s₄.gpr q = s.gpr q) →
-      s₄.gpr T1 = f (out K rc x y) → s₄.mem = s.mem → s₄.rd = s.rd → s₄.wr = s.wr → s₄.sp = s.sp →
+      s₄.gpr T1 = f (VG.Proof.Sha3.out K rc x y) → s₄.mem = s.mem → s₄.rd = s.rd → s₄.wr = s.wr → s₄.sp = s.sp →
       WP isa (.block [.str T1 dst o]) s₄ fun s' =>
-        Wrote [T1, T2] s s' (s.mem.writeW (A Dd o) (f (out K rc x y))) :=
+        Wrote [T1, T2] s s' (s.mem.writeW (A Dd o) (f (VG.Proof.Sha3.out K rc x y))) :=
     fun s₄ g₄ v₄ m₄ r₄ w₄ p₄ => by
       refine wp_str ho (by rw [g₄ dst hdst.T.1.symm hdst.T.2.symm, hd]) (by rw [w₄]; exact hout)
         fun s₅ u₅ => WP.block_nil ⟨fun q hq => ?_, by rw [u₅.mem, m₄, v₄], by rw [u₅.rd, r₄],
@@ -523,13 +523,13 @@ theorem chiHalf_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) {dst : Reg} (hdst : Pt
       rw [u₆.mem, u₅.mem, u₄.mem, m₃]) (by rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd])
       (by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]) (by rw [u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, u₁.sp])
     · rw [u₆.other q a, u₅.other q b, u₄.other q b, g₃ q a]
-    · rw [u₆.gpr, u₅.other T1 T12, u₄.other T1 T12, u₅.gpr, u₄.mem, m₃, e2, hT, ← hfx, out]
+    · rw [u₆.gpr, u₅.other T1 T12, u₄.other T1 T12, u₅.gpr, u₄.mem, m₃, e2, hT, ← hfx, VG.Proof.Sha3.out]
       simp only [h0, and_self, ite_true]
   · rw [ite_eq_right_of_eq_false _ _ (eq_false h0)]
     simp only [List.nil_append]
     refine fin s₃ (fun q a _ => g₃ q a) ?_ m₃ (by rw [u₃.rd, u₂.rd, u₁.rd])
       (by rw [u₃.wr, u₂.wr, u₁.wr]) (by rw [u₃.sp, u₂.sp, u₁.sp])
-    rw [hT, out]
+    rw [hT, VG.Proof.Sha3.out]
     simp only [h0, ite_false]
 
 theorem rc_lo {m : Mem} {P : BitVec 32} {rc : Lane} (h : rd64 m P 0 = rc) :
@@ -548,7 +548,7 @@ theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) {dst : Reg} (hdst : Ptr dst
     (hd : s.gpr dst = Dd) (h1 : s.gpr .r1 = Sc) (hP : s.mem.readW (A Sc rcPtr) 32 = P)
     (hrc : rd64 s.mem P 0 = rc) (hb : ∀ x' < 5, Pair s (cl x') (ch x') (B K x' y)) :
     WP isa (.block (chi dst x y)) s fun s' =>
-      Wrote [T1, T2] s s' (write64 s.mem Dd (8 * (x + 5 * y)) (out K rc x y)) := by
+      Wrote [T1, T2] s s' (write64 s.mem Dd (8 * (x + 5 * y)) (VG.Proof.Sha3.out K rc x y)) := by
   have ho : 8 * (x + 5 * y) + 8 ≤ 200 := by omega
   unfold chi
   rw [WP.block_append_iff]
@@ -577,15 +577,15 @@ structure ChiInv (s₀ : State) (K : KState) (rc : Lane) (Dd : BitVec 32) (y k :
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame [regR Dd 200] s₀.mem s.mem
-  dl : y + 1 < 5 → ∀ x < 5, rd64 s.mem Dd (dOff x) = D K x
-  lanes : ∀ j < 5 * y + k, rd64 s.mem Dd (8 * j) = out K rc (j % 5) (j / 5)
+  dl : y + 1 < 5 → ∀ x < 5, rd64 s.mem Dd (dOff x) = VG.Proof.Sha3.D K x
+  lanes : ∀ j < 5 * y + k, rd64 s.mem Dd (8 * j) = VG.Proof.Sha3.out K rc (j % 5) (j / 5)
 
 theorem chis_ok (y : Nat) (hy : y < 5) {dst : Reg} (hdst : Ptr dst) {S Dd Sc P : BitVec 32}
     {K : KState} {rc : Lane} (s₀ : State) (E : Env s₀.wr S Dd Sc P) (hd : s₀.gpr dst = Dd)
     (h1 : s₀.gpr .r1 = Sc) (hP : s₀.mem.readW (A Sc rcPtr) 32 = P) (hrc : rd64 s₀.mem P 0 = rc)
     (hb : ∀ x < 5, Pair s₀ (cl x) (ch x) (B K x y))
-    (hdl : y + 1 < 5 → ∀ x < 5, rd64 s₀.mem Dd (dOff x) = D K x)
-    (hl : ∀ j < 5 * y, rd64 s₀.mem Dd (8 * j) = out K rc (j % 5) (j / 5)) :
+    (hdl : y + 1 < 5 → ∀ x < 5, rd64 s₀.mem Dd (dOff x) = VG.Proof.Sha3.D K x)
+    (hl : ∀ j < 5 * y, rd64 s₀.mem Dd (8 * j) = VG.Proof.Sha3.out K rc (j % 5) (j / 5)) :
     WP isa (.block ((List.range 5).flatMap fun x => chi dst x y)) s₀ (ChiInv s₀ K rc Dd y 5) := by
   have fD := E.fitD
   obtain ⟨dT1, dT2⟩ := hdst.T
@@ -617,7 +617,7 @@ def BInv (s₀ : State) (K : KState) (y k : Nat) (s : State) : Prop :=
 theorem laneBs_ok (y : Nat) (hy : y < 5) {src dst : Reg} (hsrc : Ptr src) (hdst : Ptr dst)
     {S Dd : BitVec 32} {K : KState} (s₀ : State) (h0 : s₀.gpr src = S) (hd : s₀.gpr dst = Dd)
     (hRS : Reg64 s₀.wr S 200) (hRD : Reg64 s₀.wr Dd 200) (hK : Lanes32 s₀.mem S K)
-    (hD : ∀ x < 5, rd64 s₀.mem Dd (dOff x) = D K x) :
+    (hD : ∀ x < 5, rd64 s₀.mem Dd (dOff x) = VG.Proof.Sha3.D K x) :
     WP isa (.block ((List.range 5).flatMap fun x => laneB src dst x y)) s₀ (BInv s₀ K y 5) := by
   refine wp_range_flatMap (M := isa) (BInv s₀ K y) (fun x s hx ⟨ho, hc⟩ => ?_) 5 (Nat.le_refl _) s₀
     ⟨Only.refl _ _, fun _ h => absurd h (by omega)⟩
@@ -641,8 +641,8 @@ structure PInv (s₀ : State) (K : KState) (rc : Lane) (Dd : BitVec 32) (y : Nat
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame [regR Dd 200] s₀.mem s.mem
-  dl : y < 5 → ∀ x < 5, rd64 s.mem Dd (dOff x) = D K x
-  lanes : ∀ j < 5 * y, rd64 s.mem Dd (8 * j) = out K rc (j % 5) (j / 5)
+  dl : y < 5 → ∀ x < 5, rd64 s.mem Dd (dOff x) = VG.Proof.Sha3.D K x
+  lanes : ∀ j < 5 * y, rd64 s.mem Dd (8 * j) = VG.Proof.Sha3.out K rc (j % 5) (j / 5)
 
 theorem planes_ok {src dst : Reg} (hsrc : Ptr src) (hdst : Ptr dst) {S Dd Sc P : BitVec 32}
     {K : KState} {rc : Lane} (s₀ : State) (E : Env s₀.wr S Dd Sc P) (h0 : s₀.gpr src = S)
@@ -746,14 +746,14 @@ variable (s₀ : State)
 
 abbrev stp : BitVec 32 := s₀.gpr .r0
 abbrev scp : BitVec 32 := s₀.gpr .r1
-abbrev A₀ : KState := stateAt s₀.mem (State.addr (stp s₀))
+abbrev A₀ : KState := stateAt s₀.mem (State.addr (VG.Proof.Sha3.Arm.stp s₀))
 
 /-- The state the rounds read from before round `r`, and the one they write. -/
-def cur (r : Nat) : BitVec 32 := if r % 2 = 0 then stp s₀ else scp s₀
-def oth (r : Nat) : BitVec 32 := if r % 2 = 0 then scp s₀ else stp s₀
+def cur (r : Nat) : BitVec 32 := if r % 2 = 0 then VG.Proof.Sha3.Arm.stp s₀ else VG.Proof.Sha3.Arm.scp s₀
+def oth (r : Nat) : BitVec 32 := if r % 2 = 0 then VG.Proof.Sha3.Arm.scp s₀ else VG.Proof.Sha3.Arm.stp s₀
 
 /-- The address of the constant of round `r`. -/
-abbrev rcp (r : Nat) : BitVec 32 := scp s₀ + BitVec.ofNat 32 (200 + 8 * r)
+abbrev rcp (r : Nat) : BitVec 32 := VG.Proof.Sha3.Arm.scp s₀ + BitVec.ofNat 32 (200 + 8 * r)
 
 end
 
@@ -761,17 +761,17 @@ theorem cur_succ (s₀ : State) (r : Nat) : cur s₀ (r + 1) = oth s₀ r := by
   simp only [cur, oth]; split <;> split <;> first | rfl | omega
 
 theorem cur_cases (s₀ : State) (r : Nat) :
-    (cur s₀ r = stp s₀ ∧ oth s₀ r = scp s₀) ∨ (cur s₀ r = scp s₀ ∧ oth s₀ r = stp s₀) := by
+    (cur s₀ r = VG.Proof.Sha3.Arm.stp s₀ ∧ oth s₀ r = VG.Proof.Sha3.Arm.scp s₀) ∨ (cur s₀ r = VG.Proof.Sha3.Arm.scp s₀ ∧ oth s₀ r = VG.Proof.Sha3.Arm.stp s₀) := by
   simp only [cur, oth]; split
   · exact .inl ⟨rfl, rfl⟩
   · exact .inr ⟨rfl, rfl⟩
 
-theorem cur_even (s₀ : State) (t : Nat) : cur s₀ (2 * t) = stp s₀ ∧ oth s₀ (2 * t) = scp s₀ := by
+theorem cur_even (s₀ : State) (t : Nat) : cur s₀ (2 * t) = VG.Proof.Sha3.Arm.stp s₀ ∧ oth s₀ (2 * t) = VG.Proof.Sha3.Arm.scp s₀ := by
   simp only [cur, oth]; split
   · exact ⟨rfl, rfl⟩
   · omega
 
-theorem cur_odd (s₀ : State) (t : Nat) : cur s₀ (2 * t + 1) = scp s₀ ∧ oth s₀ (2 * t + 1) = stp s₀ := by
+theorem cur_odd (s₀ : State) (t : Nat) : cur s₀ (2 * t + 1) = VG.Proof.Sha3.Arm.scp s₀ ∧ oth s₀ (2 * t + 1) = VG.Proof.Sha3.Arm.stp s₀ := by
   simp only [cur, oth]; split
   · omega
   · exact ⟨rfl, rfl⟩
@@ -783,7 +783,7 @@ theorem rcp_succ (s₀ : State) (r : Nat) : rcp s₀ r + 8 = rcp s₀ (r + 1) :=
   simp only [rcp]
   bv_omega
 
-theorem rd64_rcp (m : Mem) (s₀ : State) (r : Nat) : rd64 m (rcp s₀ r) 0 = rd64 m (scp s₀) (200 + 8 * r) := by
+theorem rd64_rcp (m : Mem) (s₀ : State) (r : Nat) : rd64 m (rcp s₀ r) 0 = rd64 m (VG.Proof.Sha3.Arm.scp s₀) (200 + 8 * r) := by
   simp only [rd64, rcp, A_add, Nat.zero_add, Nat.add_zero]
 
 theorem rd64_congr {m m' : Mem} {b : BitVec 32} {o : Nat} (h1 : m'.readW (A b o) 32 = m.readW (A b o) 32)
@@ -798,61 +798,61 @@ theorem addr_toNat (a : BitVec 32) : (State.addr a).toNat = a.toNat := by
 
 structure Pre (s₀ : State) : Prop where
   rd : s₀.rd = []
-  wr : s₀.wr = [regR (stp s₀) 200, regR (scp s₀) 512]
-  disj : (regR (stp s₀) 200).Disjoint (regR (scp s₀) 512)
-  fitS : (stp s₀).toNat + 200 ≤ 2 ^ 32
-  fitC : (scp s₀).toNat + 512 ≤ 2 ^ 32
+  wr : s₀.wr = [regR (VG.Proof.Sha3.Arm.stp s₀) 200, regR (VG.Proof.Sha3.Arm.scp s₀) 512]
+  disj : (regR (VG.Proof.Sha3.Arm.stp s₀) 200).Disjoint (regR (VG.Proof.Sha3.Arm.scp s₀) 512)
+  fitS : (VG.Proof.Sha3.Arm.stp s₀).toNat + 200 ≤ 2 ^ 32
+  fitC : (VG.Proof.Sha3.Arm.scp s₀).toNat + 512 ≤ 2 ^ 32
 
-theorem pre_of (s₀ : State) (h : Proof.Sha3.permuteArm.pre s₀) : Pre s₀ := by
+theorem pre_of (s₀ : State) (h : Proof.Sha3.permuteArm.pre s₀) : VG.Proof.Sha3.Arm.Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
 namespace Pre
-variable {s₀ : State} (h : Pre s₀)
+variable {s₀ : State} (h : VG.Proof.Sha3.Arm.Pre s₀)
 include h
 
-theorem scA {d : Nat} (hd : d < 512) : A (scp s₀) d = State.addr (scp s₀) + BitVec.ofNat 64 d :=
+theorem scA {d : Nat} (hd : d < 512) : A (VG.Proof.Sha3.Arm.scp s₀) d = State.addr (VG.Proof.Sha3.Arm.scp s₀) + BitVec.ofNat 64 d :=
   A_eq (by have := h.fitC; omega)
 
-theorem scr_in {d : Nat} (hd : d + 4 ≤ 512) : InRegions s₀.wr (A (scp s₀) d) 4 :=
+theorem scr_in {d : Nat} (hd : d + 4 ≤ 512) : InRegions s₀.wr (A (VG.Proof.Sha3.Arm.scp s₀) d) 4 :=
   ⟨_, by rw [h.wr]; simp, contains_A h.fitC hd⟩
 
 theorem scr_disj {a n b k : Nat} (ha : a + n ≤ 512) (hb : b + k ≤ 512) (hs : a + n ≤ b ∨ b + k ≤ a)
-    (hn : 0 < n) (hk : 0 < k) : Region.Disjoint ⟨A (scp s₀) a, n⟩ ⟨A (scp s₀) b, k⟩ := by
+    (hn : 0 < n) (hk : 0 < k) : Region.Disjoint ⟨A (VG.Proof.Sha3.Arm.scp s₀) a, n⟩ ⟨A (VG.Proof.Sha3.Arm.scp s₀) b, k⟩ := by
   rw [h.scA (by omega), h.scA (by omega)]
   exact off_disjoint _ (by omega) (by omega) hs
 
 theorem off_st {d n : Nat} (hd : d + n ≤ 512) (hn : 0 < n) :
-    Region.Disjoint ⟨A (scp s₀) d, n⟩ (regR (stp s₀) 200) := by
-  have hs : Region.Sub ⟨A (scp s₀) d, n⟩ (regR (scp s₀) 512) := by
+    Region.Disjoint ⟨A (VG.Proof.Sha3.Arm.scp s₀) d, n⟩ (regR (VG.Proof.Sha3.Arm.stp s₀) 200) := by
+  have hs : Region.Sub ⟨A (VG.Proof.Sha3.Arm.scp s₀) d, n⟩ (regR (VG.Proof.Sha3.Arm.scp s₀) 512) := by
     rw [h.scA (by omega)]; exact sub_offset hd (by omega)
   exact h.disj.symm.sub_left hs
 
 theorem off_scr {d n : Nat} (hd₀ : 200 ≤ d) (hd : d + n ≤ 512) (hn : 0 < n) :
-    Region.Disjoint ⟨A (scp s₀) d, n⟩ (regR (scp s₀) 200) := by
-  have := off_disjoint (State.addr (scp s₀)) (a := d) (n := n) (b := 0) (k := 200) (by omega)
+    Region.Disjoint ⟨A (VG.Proof.Sha3.Arm.scp s₀) d, n⟩ (regR (VG.Proof.Sha3.Arm.scp s₀) 200) := by
+  have := off_disjoint (State.addr (VG.Proof.Sha3.Arm.scp s₀)) (a := d) (n := n) (b := 0) (k := 200) (by omega)
     (by omega) (.inr hd₀)
   rw [add_zero'] at this
   rw [h.scA (by omega)]; exact this
 
-theorem off_dst {Dd : BitVec 32} (hD : Dd = stp s₀ ∨ Dd = scp s₀) {d n : Nat} (hd₀ : 200 ≤ d)
-    (hd : d + n ≤ 512) (hn : 0 < n) : Region.Disjoint ⟨A (scp s₀) d, n⟩ (regR Dd 200) := by
+theorem off_dst {Dd : BitVec 32} (hD : Dd = VG.Proof.Sha3.Arm.stp s₀ ∨ Dd = VG.Proof.Sha3.Arm.scp s₀) {d n : Nat} (hd₀ : 200 ≤ d)
+    (hd : d + n ≤ 512) (hn : 0 < n) : Region.Disjoint ⟨A (VG.Proof.Sha3.Arm.scp s₀) d, n⟩ (regR Dd 200) := by
   rcases hD with rfl | rfl
   · exact h.off_st hd hn
   · exact h.off_scr hd₀ hd hn
 
-theorem st_scr200 : (regR (stp s₀) 200).Disjoint (regR (scp s₀) 200) :=
+theorem st_scr200 : (regR (VG.Proof.Sha3.Arm.stp s₀) 200).Disjoint (regR (VG.Proof.Sha3.Arm.scp s₀) 200) :=
   h.disj.sub_right (Region.sub_prefix (by omega))
 
-theorem reg64_st : Reg64 s₀.wr (stp s₀) 200 :=
+theorem reg64_st : Reg64 s₀.wr (VG.Proof.Sha3.Arm.stp s₀) 200 :=
   VG.Proof.Sha512.Arm.Reg64.of_mem (by rw [h.wr]; simp) h.fitS
 
-theorem reg64_scr : Reg64 s₀.wr (scp s₀) 200 := fun o ho =>
+theorem reg64_scr : Reg64 s₀.wr (VG.Proof.Sha3.Arm.scp s₀) 200 := fun o ho =>
   ⟨h.scr_in (d := o) (by omega), h.scr_in (d := o + 4) (by omega)⟩
 
-theorem env_of {S Dd : BitVec 32} (hS : S = stp s₀ ∨ S = scp s₀) (hD : Dd = stp s₀ ∨ Dd = scp s₀)
+theorem env_of {S Dd : BitVec 32} (hS : S = VG.Proof.Sha3.Arm.stp s₀ ∨ S = VG.Proof.Sha3.Arm.scp s₀) (hD : Dd = VG.Proof.Sha3.Arm.stp s₀ ∨ Dd = VG.Proof.Sha3.Arm.scp s₀)
     (hSD : (regR S 200).Disjoint (regR Dd 200)) {r : Nat} (hr : r < 24) :
-    Env s₀.wr S Dd (scp s₀) (rcp s₀ r) := by
+    Env s₀.wr S Dd (VG.Proof.Sha3.Arm.scp s₀) (rcp s₀ r) := by
   have fS := h.fitS
   have fC := h.fitC
   refine ⟨?_, ?_, ?_, ?_, h.scr_in (d := rcPtr) (by decide), fun o ho => ?_, hSD,
@@ -868,7 +868,7 @@ theorem env_of {S Dd : BitVec 32} (hS : S = stp s₀ ∨ S = scp s₀) (hD : Dd 
   · rw [A_add]; exact h.scr_in (by rcases ho with rfl | rfl <;> omega)
   · rw [A_add]; exact h.off_dst hD (by omega) (by rcases ho with rfl | rfl <;> omega) (by decide)
 
-theorem env {r : Nat} (hr : r < 24) : Env s₀.wr (cur s₀ r) (oth s₀ r) (scp s₀) (rcp s₀ r) := by
+theorem env {r : Nat} (hr : r < 24) : Env s₀.wr (cur s₀ r) (oth s₀ r) (VG.Proof.Sha3.Arm.scp s₀) (rcp s₀ r) := by
   rcases cur_cases s₀ r with ⟨e₁, e₂⟩ | ⟨e₁, e₂⟩ <;> rw [e₁, e₂]
   · exact h.env_of (.inl rfl) (.inr rfl) h.st_scr200 hr
   · exact h.env_of (.inr rfl) (.inl rfl) h.st_scr200.symm hr
@@ -878,22 +878,22 @@ end Pre
 /-! ## What the scratch space holds -/
 
 /-- The round constants. -/
-def Aux (s₀ : State) (m : Mem) : Prop := ∀ j < 24, rd64 m (scp s₀) (200 + 8 * j) = RC j
+def Aux (s₀ : State) (m : Mem) : Prop := ∀ j < 24, rd64 m (VG.Proof.Sha3.Arm.scp s₀) (200 + 8 * j) = RC j
 
 /-- The saved registers. -/
-def Saved (s₀ : State) (m : Mem) : Prop := ∀ p ∈ saved, m.readW (A (scp s₀) p.2) 32 = s₀.gpr p.1
+def Saved (s₀ : State) (m : Mem) : Prop := ∀ p ∈ saved, m.readW (A (VG.Proof.Sha3.Arm.scp s₀) p.2) 32 = s₀.gpr p.1
 
 theorem saved_ok : ∀ p ∈ saved, p.1 ≠ .r1 ∧ p.2 < 4096 ∧ 396 ≤ p.2 ∧ p.2 + 4 ≤ 432 := by decide
 
 theorem Aux.keep {s₀ : State} {m m' : Mem} (ha : Aux s₀ m)
-    (hk : ∀ d, 200 ≤ d → d + 4 ≤ 392 → m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32) :
+    (hk : ∀ d, 200 ≤ d → d + 4 ≤ 392 → m'.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 = m.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32) :
     Aux s₀ m' := fun j hj =>
   (rd64_congr (hk (200 + 8 * j) (by omega) (by omega)) (hk (200 + 8 * j + 4) (by omega) (by omega))).trans
     (ha j hj)
 
-theorem Saved.keep {s₀ : State} {m m' : Mem} (hs : Saved s₀ m)
-    (hk : ∀ d, 396 ≤ d → d + 4 ≤ 432 → m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32) :
-    Saved s₀ m' := fun p hp => by
+theorem Saved.keep {s₀ : State} {m m' : Mem} (hs : VG.Proof.Sha3.Arm.Saved s₀ m)
+    (hk : ∀ d, 396 ≤ d → d + 4 ≤ 432 → m'.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 = m.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32) :
+    VG.Proof.Sha3.Arm.Saved s₀ m' := fun p hp => by
   obtain ⟨-, -, h1, h2⟩ := saved_ok p hp
   rw [hk _ h1 h2]; exact hs p hp
 
@@ -903,10 +903,10 @@ theorem readW_writeW_A (m : Mem) {b : BitVec 32} {N : Nat} (hfit : b.toNat + N �
   rw [A_eq (by omega), A_eq (by omega)]; exact readW_writeW_save m _ v (by omega) (by omega) hs
 
 /-- Words the rounds do not write. -/
-theorem Pre.keep_round {s₀ : State} (hp : Pre s₀) {Dd : BitVec 32} (hD : Dd = stp s₀ ∨ Dd = scp s₀)
-    {m m' : Mem} (hf : Frame [regR Dd 200, ⟨A (scp s₀) rcPtr, 4⟩] m m') {d : Nat} (hd : 200 ≤ d)
+theorem Pre.keep_round {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) {Dd : BitVec 32} (hD : Dd = VG.Proof.Sha3.Arm.stp s₀ ∨ Dd = VG.Proof.Sha3.Arm.scp s₀)
+    {m m' : Mem} (hf : Frame [regR Dd 200, ⟨A (VG.Proof.Sha3.Arm.scp s₀) rcPtr, 4⟩] m m') {d : Nat} (hd : 200 ≤ d)
     (hd' : d + 4 ≤ 512) (hne : d + 4 ≤ 392 ∨ 396 ≤ d) :
-    m'.readW (A (scp s₀) d) 32 = m.readW (A (scp s₀) d) 32 := by
+    m'.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 = m.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 := by
   refine hf.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
@@ -926,29 +926,29 @@ theorem stateAt_eq {b : BitVec 32} (hfit : b.toNat + 200 ≤ 2 ^ 32) {m : Mem} {
     (h : Lanes32 m b K) : stateAt m (State.addr b) = K := by
   apply Vector.ext
   intro i hi
-  rw [stateAt_get hfit m hi, h i hi]
+  rw [VG.Proof.Sha3.Arm.stateAt_get hfit m hi, h i hi]
   exact getElem!_pos K i hi
 
 /-! ## The rounds -/
 
 /-- The loop's invariant, before round `r`. -/
 structure LInv (s₀ : State) (r : Nat) (s : State) : Prop where
-  r0 : s.gpr .r0 = stp s₀
-  r1 : s.gpr .r1 = scp s₀
+  r0 : s.gpr .r0 = VG.Proof.Sha3.Arm.stp s₀
+  r1 : s.gpr .r1 = VG.Proof.Sha3.Arm.scp s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  ptr : s.mem.readW (A (scp s₀) rcPtr) 32 = rcp s₀ r
+  ptr : s.mem.readW (A (VG.Proof.Sha3.Arm.scp s₀) rcPtr) 32 = rcp s₀ r
   state : Lanes32 s.mem (cur s₀ r) ((List.range r).foldl rnd (A₀ s₀))
   aux : Aux s₀ s.mem
-  saved : Saved s₀ s.mem
-  frame : Frame [regR (stp s₀) 200, regR (scp s₀) 512] s₀.mem s.mem
+  saved : VG.Proof.Sha3.Arm.Saved s₀ s.mem
+  frame : Frame [regR (VG.Proof.Sha3.Arm.stp s₀) 200, regR (VG.Proof.Sha3.Arm.scp s₀) 512] s₀.mem s.mem
 
-theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src dst : Reg} (hsrc : Ptr src)
-    (hdst : Ptr dst) {s : State} (hL : LInv s₀ r s) (h0 : s.gpr src = cur s₀ r)
-    (hd : s.gpr dst = oth s₀ r) : WP isa (.block (round src dst)) s (LInv s₀ (r + 1)) := by
-  have hD : oth s₀ r = stp s₀ ∨ oth s₀ r = scp s₀ := (cur_cases s₀ r).symm.imp (·.2) (·.2)
-  have E : Env s.wr (cur s₀ r) (oth s₀ r) (scp s₀) (rcp s₀ r) := hL.wr ▸ hp.env hr
+theorem round_step {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) {r : Nat} (hr : r < 24) {src dst : Reg} (hsrc : Ptr src)
+    (hdst : Ptr dst) {s : State} (hL : VG.Proof.Sha3.Arm.LInv s₀ r s) (h0 : s.gpr src = cur s₀ r)
+    (hd : s.gpr dst = oth s₀ r) : WP isa (.block (round src dst)) s (VG.Proof.Sha3.Arm.LInv s₀ (r + 1)) := by
+  have hD : oth s₀ r = VG.Proof.Sha3.Arm.stp s₀ ∨ oth s₀ r = VG.Proof.Sha3.Arm.scp s₀ := (cur_cases s₀ r).symm.imp (·.2) (·.2)
+  have E : Env s.wr (cur s₀ r) (oth s₀ r) (VG.Proof.Sha3.Arm.scp s₀) (rcp s₀ r) := hL.wr ▸ hp.env hr
   refine WP.mono (round_ok hsrc hdst (rc := RC r) s E h0 hd hL.r1 hL.state hL.ptr
     (by rw [rd64_rcp]; exact hL.aux r hr)) fun s' ⟨hl, hf, hptr, hq, hrd, hwr, hsp⟩ => ?_
   refine ⟨by rw [hq .r0 (by simp), hL.r0], by rw [hq .r1 (by simp), hL.r1], hrd.trans hL.rd,
@@ -960,15 +960,15 @@ theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {src d
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · rcases hD with e | e <;> rw [e]
-      · exact ⟨regR (stp s₀) 200, by simp, fun _ h => h⟩
-      · exact ⟨regR (scp s₀) 512, by simp, Region.sub_prefix (by omega)⟩
-    · refine ⟨regR (scp s₀) 512, by simp, ?_⟩
+      · exact ⟨regR (VG.Proof.Sha3.Arm.stp s₀) 200, by simp, fun _ h => h⟩
+      · exact ⟨regR (VG.Proof.Sha3.Arm.scp s₀) 512, by simp, Region.sub_prefix (by omega)⟩
+    · refine ⟨regR (VG.Proof.Sha3.Arm.scp s₀) 512, by simp, ?_⟩
       rw [hp.scA (by decide)]; exact sub_offset (by decide) (by decide)
 
-theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : State} (hL : LInv s₀ (2 * t) s) :
+theorem body_ok {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) {t : Nat} (ht : t < 12) {s : State} (hL : VG.Proof.Sha3.Arm.LInv s₀ (2 * t) s) :
     WP isa (.block body) s fun s' =>
-      (eval .ne s' = some false ∧ LInv s₀ 24 s') ∨
-      (eval .ne s' = some true ∧ t + 1 < 12 ∧ LInv s₀ (2 * (t + 1)) s') := by
+      (VG.Arm.eval .ne s' = some false ∧ VG.Proof.Sha3.Arm.LInv s₀ 24 s') ∨
+      (VG.Arm.eval .ne s' = some true ∧ t + 1 < 12 ∧ VG.Proof.Sha3.Arm.LInv s₀ (2 * (t + 1)) s') := by
   unfold body
   rw [WP.block_append_iff]
   refine WP.mono (round_step hp (r := 2 * t) (by omega) (src := .r0) (dst := .r1) (by simp [Ptr])
@@ -978,17 +978,17 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {t : Nat} (ht : t < 12) {s : Stat
   refine WP.mono (round_step hp (r := 2 * t + 1) (by omega) (src := .r1) (dst := .r0) (by simp [Ptr])
     (by simp [Ptr]) h₁ (by rw [h₁.r1, (cur_odd s₀ t).1]) (by rw [h₁.r0, (cur_odd s₀ t).2]))
     fun s₂ h₂ => ?_
-  have h₂' : LInv s₀ (2 * (t + 1)) s₂ := by rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega]; exact h₂
-  refine wp_ldr (a := A (scp s₀) rcPtr) (by decide) (by rw [h₂.r1])
+  have h₂' : VG.Proof.Sha3.Arm.LInv s₀ (2 * (t + 1)) s₂ := by rw [show 2 * (t + 1) = 2 * t + 1 + 1 by omega]; exact h₂
+  refine wp_ldr (a := A (VG.Proof.Sha3.Arm.scp s₀) rcPtr) (by decide) (by rw [h₂.r1])
     (by rw [h₂.rd, h₂.wr]; exact mem_rd (hp.scr_in (by decide))) fun s₃ u₃ => ?_
   refine wp_sub (op2_reg _ _) fun s₄ u₄ => wp_cmp (op2_imm (by decide)) fun s₅ u₅ hz => WP.block_nil ?_
   have hT : s₄.gpr T1 = BitVec.ofNat 32 (216 + 16 * t) := by
     rw [u₄.gpr, u₃.gpr, u₃.other .r1 (by decide), h₂'.ptr, h₂.r1]
-    show scp s₀ + _ - scp s₀ = _
+    show VG.Proof.Sha3.Arm.scp s₀ + _ - VG.Proof.Sha3.Arm.scp s₀ = _
     rw [BitVec.add_comm, BitVec.add_sub_cancel, show 200 + 8 * (2 * (t + 1)) = 216 + 16 * t by omega]
   rw [hT, show (392 : BitVec 32) = BitVec.ofNat 32 392 from rfl,
     VG.Proof.MdStream.Arm.sub_beq (by omega) (by omega)] at hz
-  have hs₅ : LInv s₀ (2 * (t + 1)) s₅ := by
+  have hs₅ : VG.Proof.Sha3.Arm.LInv s₀ (2 * (t + 1)) s₅ := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [u₅.gpr, u₄.other .r0 (by decide), u₃.other .r0 (by decide), h₂'.r0]
     · rw [u₅.gpr, u₄.other .r1 (by decide), u₃.other .r1 (by decide), h₂'.r1]
@@ -1076,16 +1076,16 @@ theorem rcStore_ok (k : Nat) (hk : k < 24) (s : State)
 
 /-- During the stores of the round constants. -/
 structure RcInv (s₀ : State) (k : Nat) (s : State) : Prop where
-  r0 : s.gpr .r0 = stp s₀
-  r1 : s.gpr .r1 = scp s₀
+  r0 : s.gpr .r0 = VG.Proof.Sha3.Arm.stp s₀
+  r1 : s.gpr .r1 = VG.Proof.Sha3.Arm.scp s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  frame : Frame [regR (scp s₀) 512] s₀.mem s.mem
-  saved : Saved s₀ s.mem
-  rcs : ∀ j < k, rd64 s.mem (scp s₀) (200 + 8 * j) = RC j
+  frame : Frame [regR (VG.Proof.Sha3.Arm.scp s₀) 512] s₀.mem s.mem
+  saved : VG.Proof.Sha3.Arm.Saved s₀ s.mem
+  rcs : ∀ j < k, rd64 s.mem (VG.Proof.Sha3.Arm.scp s₀) (200 + 8 * j) = RC j
 
-theorem rcs_ok {s₀ : State} (hp : Pre s₀) :
+theorem rcs_ok {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) :
     ∀ s, RcInv s₀ 0 s → WP isa (.block ((List.range 24).flatMap rcStore)) s (RcInv s₀ 24) := by
   have fC := hp.fitC
   refine wp_range_flatMap (M := isa) (RcInv s₀) (fun k s hk hI => ?_) 24 (Nat.le_refl _)
@@ -1106,10 +1106,10 @@ theorem rcs_ok {s₀ : State} (hp : Pre s₀) :
     · rw [rd64_write64_ne _ _ (by omega) (by omega) (by omega)]
       exact hI.rcs j (by omega)
 
-theorem prologue_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block prologue) s₀ (LInv s₀ 0) := by
+theorem prologue_ok {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) : WP isa (.block VG.Impl.Sha3.Arm.prologue) s₀ (VG.Proof.Sha3.Arm.LInv s₀ 0) := by
   have fC := hp.fitC
   have fS := hp.fitS
-  rw [show prologue = saved.map (fun p => Instr.str p.1 .r1 p.2) ++
+  rw [show VG.Impl.Sha3.Arm.prologue = saved.map (fun p => Instr.str p.1 .r1 p.2) ++
     ((List.range 24).flatMap rcStore ++ [.dp .add T1 .r1 (.imm 200), .str T1 .r1 rcPtr]) from rfl]
   refine saveA_ok saved s₀ _ (fun p hp' => ⟨(saved_ok p hp').2.1, hp.scr_in (by have := saved_ok p hp'; omega)⟩)
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
@@ -1119,22 +1119,22 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) : WP isa (.block prologue) s�
   · rw [m₁]; exact saveMemA_frame fC _ _ _ (fun p hp' => by have := saved_ok p hp'; omega)
   · intro p hp'; rw [m₁]; exact saveMemA_saved _ fC _ p hp'
   refine wp_add (op2_imm (by decide)) fun s₃ u₃ => ?_
-  refine wp_str (a := A (scp s₀) rcPtr) (by decide) (by rw [u₃.other .r1 (by decide), h₂.r1])
+  refine wp_str (a := A (VG.Proof.Sha3.Arm.scp s₀) rcPtr) (by decide) (by rw [u₃.other .r1 (by decide), h₂.r1])
     (by rw [u₃.wr, h₂.wr]; exact hp.scr_in (by decide)) fun s₄ u₄ => WP.block_nil ?_
-  have hm : s₄.mem = s₂.mem.writeW (A (scp s₀) rcPtr) (rcp s₀ 0) := by
+  have hm : s₄.mem = s₂.mem.writeW (A (VG.Proof.Sha3.Arm.scp s₀) rcPtr) (rcp s₀ 0) := by
     rw [u₄.mem, u₃.mem, u₃.gpr, h₂.r1]; rfl
   have keep : ∀ d, 200 ≤ d → d + 4 ≤ 512 → d + 4 ≤ 392 ∨ 396 ≤ d →
-      s₄.mem.readW (A (scp s₀) d) 32 = s₂.mem.readW (A (scp s₀) d) 32 := fun d hd hd' hne => by
+      s₄.mem.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 = s₂.mem.readW (A (VG.Proof.Sha3.Arm.scp s₀) d) 32 := fun d hd hd' hne => by
     rw [hm]; exact readW_writeW_A _ fC _ hd' (by decide) (by simp only [rcPtr]; omega)
   refine ⟨by rw [u₄.gpr, u₃.other .r0 (by decide), h₂.r0], by rw [u₄.gpr, u₃.other .r1 (by decide), h₂.r1],
     by rw [u₄.rd, u₃.rd, h₂.rd], by rw [u₄.wr, u₃.wr, h₂.wr], by rw [u₄.sp, u₃.sp, h₂.sp],
     by rw [hm, Mem.readW_writeW_self32], fun i hi => ?_,
     Aux.keep h₂.rcs fun d hd hd' => keep d hd (by omega) (.inl hd'),
     h₂.saved.keep fun d hd hd' => keep d (by omega) (by omega) (.inr hd), ?_⟩
-  · have hc : cur s₀ 0 = stp s₀ := by simp [cur]
+  · have hc : cur s₀ 0 = VG.Proof.Sha3.Arm.stp s₀ := by simp [cur]
     rw [hc, hm, rd64_writeW_disj _ _ (hp.off_st (d := rcPtr) (by decide) (by decide)) fS (by omega),
       rd64_frame h₂.frame (fun r hr => by simp at hr; subst hr; exact hp.disj) fS (by omega),
-      ← stateAt_get fS _ hi]
+      ← VG.Proof.Sha3.Arm.stateAt_get fS _ hi]
     simp only [List.range_zero, List.foldl_nil]
     exact (getElem!_pos _ i hi).symm
   · rw [hm]
@@ -1167,7 +1167,7 @@ theorem restoreA_ok {bR : Reg} {rest : List Instr} (l : List (Reg × Nat)) :
 
 theorem preserved_saved : ∀ r ∈ preserved, ∃ p ∈ saved, p.1 = r := by decide
 
-theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hL : LInv s₀ 24 s) :
+theorem restore_ok {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) {s : State} (hL : VG.Proof.Sha3.Arm.LInv s₀ 24 s) :
     WP isa (.block restore) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permuteArm.post s₀ s' := by
   rw [show restore = saved.map (fun p => Instr.ldr p.1 .r1 p.2) from rfl, ← List.append_nil (saved.map _)]
@@ -1176,22 +1176,22 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (hL : LInv s₀ 24
   · rw [hL.rd, hL.wr, hL.r1]; exact mem_rd (hp.scr_in (by have := saved_ok p hp'; omega))
   · obtain ⟨p, hp', rfl⟩ := preserved_saved r hr
     rw [ho p hp', hL.r1]; exact hL.saved p hp'
-  · show stateAt s'.mem (State.addr (stp s₀)) = keccakF (A₀ s₀)
+  · show stateAt s'.mem (State.addr (VG.Proof.Sha3.Arm.stp s₀)) = keccakF (A₀ s₀)
     rw [hm]
-    have hc : cur s₀ 24 = stp s₀ := by simp [cur]
+    have hc : cur s₀ 24 = VG.Proof.Sha3.Arm.stp s₀ := by simp [cur]
     exact stateAt_eq hp.fitS (hc ▸ hL.state)
 
 /-! ## The whole function -/
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct {s₀ : State} (hp : VG.Proof.Sha3.Arm.Pre s₀) :
     WP isa permute s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha3.permuteArm.post s₀ s' := by
   unfold permute
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (Q := LInv s₀ 24) ?_ fun s₂ h₂ => restore_ok hp h₂)
-  let Inv : Nat → State → Prop := fun n s => ∃ t, n = 12 - t ∧ t < 12 ∧ LInv s₀ (2 * t) s
+  refine WP.seq (WP.mono (VG.Proof.Sha3.Arm.prologue_ok hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (Q := VG.Proof.Sha3.Arm.LInv s₀ 24) ?_ fun s₂ h₂ => VG.Proof.Sha3.Arm.restore_ok hp h₂)
+  let Inv : Nat → State → Prop := fun n s => ∃ t, n = 12 - t ∧ t < 12 ∧ VG.Proof.Sha3.Arm.LInv s₀ (2 * t) s
   refine WP.loop (M := isa) Inv (fun n s ⟨t, hn, ht, hL⟩ => ?_) 12 s₁ ⟨0, rfl, by omega, h₁⟩
-  refine WP.mono (body_ok hp ht hL) fun s' h => ?_
+  refine WP.mono (VG.Proof.Sha3.Arm.body_ok hp ht hL) fun s' h => ?_
   rcases h with ⟨he, hL'⟩ | ⟨he, ht', hL'⟩
   · exact .inl ⟨he, hL'⟩
   · exact .inr ⟨he, 12 - (t + 1), by omega, t + 1, rfl, ht', hL'⟩
@@ -1209,26 +1209,26 @@ def dropRC (τ : VG.Arm.Taint.T) : VG.Arm.Taint.T :=
 def τ₀ : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r1], flags := false, lens := [200, 512], bases := [(.r0, 0), (.r1, 1)] }
 
-theorem wf₀ {s : State} (h : Proof.Sha3.permuteArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of s h
+theorem wf₀ {s : State} (h : Proof.Sha3.permuteArm.pre s) : VG.Arm.Taint.Wf VG.Proof.Sha3.Arm.τ₀ s := by
+  have hp := VG.Proof.Sha3.Arm.pre_of s h
   have hst := hp.fitS; have hsc := hp.fitC
-  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simpa [hp.wr] using hp.disj, ?_⟩, ?_,
-    fun h => absurd h (by decide), fun _ h => by simp [τ₀] at h⟩
+  refine ⟨fun _ => ⟨by simp [hp.wr, VG.Proof.Sha3.Arm.τ₀], by simpa [hp.wr] using hp.disj, ?_⟩, ?_,
+    fun h => absurd h (by decide), fun _ h => by simp [VG.Proof.Sha3.Arm.τ₀] at h⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega
   · intro p hp'
-    simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    simp only [VG.Proof.Sha3.Arm.τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> simp [VG.Arm.Taint.region, hp.wr]
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.permuteArm.pre s₁) (h₂ : Proof.Sha3.permuteArm.pre s₂)
-    (hpub : Proof.Sha3.permuteArm.pub s₁ s₂) : VG.Arm.Taint.Agree τ₀ s₁ s₂ := by
+    (hpub : Proof.Sha3.permuteArm.pub s₁ s₂) : VG.Arm.Taint.Agree VG.Proof.Sha3.Arm.τ₀ s₁ s₂ := by
   obtain ⟨p0, p1⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ h₁, wf₀ h₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, VG.Proof.Sha3.Arm.wf₀ h₁, VG.Proof.Sha3.Arm.wf₀ h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun h => absurd h (Nat.lt_irrefl 0), fun _ hk => absurd hk (Nat.not_lt_zero _)⟩
-  · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [VG.Proof.Sha3.Arm.τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> with_reducible assumption
-  · rw [(pre_of s₁ h₁).wr, (pre_of s₂ h₂).wr, stp, scp, stp, scp, p0, p1]
+  · rw [(VG.Proof.Sha3.Arm.pre_of s₁ h₁).wr, (VG.Proof.Sha3.Arm.pre_of s₂ h₂).wr, VG.Proof.Sha3.Arm.stp, VG.Proof.Sha3.Arm.scp, VG.Proof.Sha3.Arm.stp, VG.Proof.Sha3.Arm.scp, p0, p1]
 
 /-- A state satisfying the precondition. -/
 def satState : State where
@@ -1245,11 +1245,11 @@ def satState : State where
 
 theorem permute_verified : Verified Arm.target Impl.Sha3.Arm.permute Proof.Sha3.permuteArm := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
+  · obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Sha3.Arm.correct (VG.Proof.Sha3.Arm.pre_of s hs)
     exact ⟨t, s', he, ⟨h₁, Exec.sp he⟩, h₂⟩
-  · exact VG.Taint.constantTime (A := VG.Arm.taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+  · exact VG.Taint.constantTime (A := VG.Arm.taint) VG.Proof.Sha3.Arm.τ₀ (fun _ _ h₁ h₂ hp => VG.Proof.Sha3.Arm.agree₀ h₁ h₂ hp)
       (by taint_decide_weak dropRC)
-  · refine ⟨satState, rfl, rfl, ?_, by decide, by decide⟩
+  · refine ⟨VG.Proof.Sha3.Arm.satState, rfl, rfl, ?_, by decide, by decide⟩
     exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Sha3.Arm

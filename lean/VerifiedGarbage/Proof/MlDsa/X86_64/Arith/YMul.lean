@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YBase
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YAddSub
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 
 /-!
@@ -28,10 +28,10 @@ theorem lane_mulAddCore : laneSseBlock (toY mulAddCore) = some mulAddCore := by 
 
 /-- The constants, and `2⁶⁴ mod q` in both lanes of `ymm11`. -/
 theorem ymulPro_ok (s : State) :
-    WP isa (.block ymulPro) s fun s' => YConsts s' ∧ (∀ l < 2, s'.lane .xmm11 l = r2V) ∧
+    WP isa (.block ymulPro) s fun s' => YConsts s' ∧ (∀ l < 2, s'.lane .xmm11 l = VG.Proof.MlDsa.X86_64.Arith.r2V) ∧
       (∀ l < 2, s'.lane .xmm6 l = s.lane .xmm6 l) ∧ Keep [.rax] s s' ∧ s'.mem = s.mem := by
   rw [ymulPro, WP.block_append_iff]
-  refine WP.mono (yconsts_ok s) fun s1 ⟨c1, k1, m1, _, o1⟩ =>
+  refine WP.mono (VG.Proof.MlDsa.X86_64.Arith.yconsts_ok s) fun s1 ⟨c1, k1, m1, _, o1⟩ =>
     WP.mono (yconst_ok .xmm11 _ s1) fun s2 ⟨l2, k2, m2, _, o2⟩ =>
       ⟨fun l hl => ⟨?_, ?_⟩, fun l hl => by rw [l2 l hl]; decide,
         fun l hl => by rw [o2 _ (by decide) l hl, o1 _ (by decide) (by decide) l hl],
@@ -43,14 +43,14 @@ namespace YMul
 
 /-- After `i` iterations: the first `8i` coefficients of `h` are `R`'s, the
 others as they were in `s₀`. -/
-structure Inv (h f g : Addr) (s₀ : State) (R : Poly) (i : Nat) (s : State) : Prop where
+structure Inv (h f g : Addr) (s₀ : State) (R : VG.Spec.MlDsa.Poly) (i : Nat) (s : State) : Prop where
   rdi : s.gpr .rdi = h + BitVec.ofNat 64 (32 * i)
   rsi : s.gpr .rsi = f + BitVec.ofNat 64 (32 * i)
   rdx : s.gpr .rdx = g + BitVec.ofNat 64 (32 * i)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   c : YConsts s
-  r2 : ∀ l < 2, s.lane .xmm11 l = r2V
+  r2 : ∀ l < 2, s.lane .xmm11 l = VG.Proof.MlDsa.X86_64.Arith.r2V
   x6 : ∀ l < 2, s.lane .xmm6 l = s₀.lane .xmm6 l
   frame : Frame [pR h] s₀.mem s.mem
   done : ∀ k < 8 * i, (coeffAt s.mem h k).toNat = (R[k]!).val
@@ -59,21 +59,21 @@ structure Inv (h f g : Addr) (s₀ : State) (R : Poly) (i : Nat) (s : State) : P
 section
 variable {h f g : Addr} {s₀ : State} (hwh : pR h ∈ s₀.wr) (hrf : pR f ∈ s₀.rd ++ s₀.wr)
   (hrg : pR g ∈ s₀.rd ++ s₀.wr) (hdf : (pR h).Disjoint (pR f)) (hdg : (pR h).Disjoint (pR g))
-  {F G : Poly} (hF : ∀ k < 256, (coeffAt s₀.mem f k).toNat = (F[k]!).val)
+  {F G : VG.Spec.MlDsa.Poly} (hF : ∀ k < 256, (coeffAt s₀.mem f k).toNat = (F[k]!).val)
   (hG : ∀ k < 256, (coeffAt s₀.mem g k).toNat = (G[k]!).val)
   {core : List Instr} {Fv : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128}
-  (hcore : ∀ s : State, VConsts s → s.xmm .xmm11 = r2V → WP isa (.block core) s fun s' =>
+  (hcore : ∀ s : State, VConsts s → s.xmm .xmm11 = VG.Proof.MlDsa.X86_64.Arith.r2V → WP isa (.block core) s fun s' =>
     s'.xmm .xmm3 = Fv (s.xmm .xmm3) (s.xmm .xmm13) (s.xmm .xmm5) ∧ XOnly [.xmm12, .xmm3, .xmm2, .xmm4] s s')
   (hY : laneSseBlock (toY core) = some core)
-  {R : Poly} {H : Nat → BitVec 32} (hH : ∀ k < 248, coeffAt s₀.mem h k = H k)
+  {R : VG.Spec.MlDsa.Poly} {H : Nat → BitVec 32} (hH : ∀ k < 248, coeffAt s₀.mem h k = H k)
   (hlane : ∀ i < 64, ∀ x y z : BitVec 128, (∀ e < 4, (dword x e).toNat = (F[4 * i + e]!).val) →
     (∀ e < 4, (dword y e).toNat = (G[4 * i + e]!).val) → (∀ e < 4, dword z e = H (4 * i + e)) →
     ∀ e < 4, (dword (Fv x y z) e).toNat = (R[4 * i + e]!).val)
 include hwh hrf hrg hdf hdg hF hG hcore hY hH hlane
 
-theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
+theorem step {i : Nat} (hi : i < 31) {s : State} (hI : VG.Proof.MlDsa.X86_64.Arith.YMul.Inv h f g s₀ R i s) :
     WP isa (.block (ymulLoads ++ toY core ++ ymulTail ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
-      Inv h f g s₀ R (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
+      VG.Proof.MlDsa.X86_64.Arith.YMul.Inv h f g s₀ R (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have j0 : 8 * i + 8 ≤ 256 := by omega
   have e1 : s.gpr .rsi + BitVec.ofNat 64 0 = coeffAddr f (8 * i) := by
     rw [add_ofNat_zero, hI.rsi]; congr 2; omega
@@ -143,7 +143,7 @@ theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
     rw [g4, o14.mem]; exact hI.frame.writeW (List.mem_singleton_self _) _ (pR_contains32 _ j0)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
-    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ (by omega)]
+    rw [g4, o14.mem, VG.Proof.MlDsa.X86_64.Arith.coeffAt_write256 _ _ j0 _ (by omega)]
     split
     · rename_i hk'
       rw [State.ymm, extract_ymm _ _ (by omega)]
@@ -158,13 +158,13 @@ theorem step {i : Nat} (hi : i < 31) {s : State} (hI : Inv h f g s₀ R i s) :
         exact this
     · exact hI.done k (by omega)
   · simp only [RegUpd.mem_setReg, RegUpd.mem_setFlags, State.setMem_mem]
-    rw [g4, o14.mem, coeffAt_write256 _ _ j0 _ hk, ifn (by omega)]
+    rw [g4, o14.mem, VG.Proof.MlDsa.X86_64.Arith.coeffAt_write256 _ _ j0 _ hk, ifn (by omega)]
     exact hI.rest k hk (by omega)
   · exact ⟨by rw [o14.gpr], by rw [o14.gpr]⟩
 
 theorem loop_ok (hdi : s₀.gpr .rdi = h) (hsi : s₀.gpr .rsi = f) (hdx : s₀.gpr .rdx = g) (hc : YConsts s₀)
-    (h11 : ∀ l < 2, s₀.lane .xmm11 l = r2V) :
-    WP isa (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) s₀ (Inv h f g s₀ R 31) :=
+    (h11 : ∀ l < 2, s₀.lane .xmm11 l = VG.Proof.MlDsa.X86_64.Arith.r2V) :
+    WP isa (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) s₀ (VG.Proof.MlDsa.X86_64.Arith.YMul.Inv h f g s₀ R 31) :=
   wp_rcxLoopY (N := 31) (by decide) (by decide) _ (fun u o hy _ =>
     have lu : ∀ r l, u.lane r l = s₀.lane r l := fun r l => by simp only [State.lane]; rw [o.xmm, hy]
     ⟨by rw [o.keep.gpr (by decide), hdi, Nat.mul_zero, add_ofNat_zero],
@@ -173,11 +173,11 @@ theorem loop_ok (hdi : s₀.gpr .rdi = h) (hsi : s₀.gpr .rsi = f) (hdx : s₀.
       fun l hl => ⟨by rw [State.proj_xmm, lu]; exact (hc l hl).q, by rw [State.proj_xmm, lu]; exact (hc l hl).qinv⟩,
       fun l hl => by rw [lu]; exact h11 l hl, fun l _ => lu _ l,
       by rw [o.mem]; exact Frame.refl _ _, fun k hk => absurd hk (by omega), fun k _ _ => by rw [o.mem]⟩)
-    fun i hi u hI => step hwh hrf hrg hdf hdg hF hG hcore hY hH hlane hi hI
+    fun i hi u hI => VG.Proof.MlDsa.X86_64.Arith.YMul.step hwh hrf hrg hdf hdg hF hG hcore hY hH hlane hi hI
 
 omit hwh hH in
 /-- The last eight coefficients, with those of `h` in `ymm6`. -/
-theorem last {s : State} (hI : Inv h f g s₀ R 31 s)
+theorem last {s : State} (hI : VG.Proof.MlDsa.X86_64.Arith.YMul.Inv h f g s₀ R 31 s)
     (hz : ∀ l < 2, ∀ e < 4, dword (s₀.lane .xmm6 l) e = H (248 + 4 * l + e)) :
     WP isa (.block (ymulLast core)) s fun s' =>
       (∀ l < 2, ∀ e < 4, (dword (s'.lane .xmm3 l) e).toNat = (R[248 + 4 * l + e]!).val) ∧ s'.gpr = s.gpr ∧
@@ -228,9 +228,9 @@ end
 
 /-- The whole function, from its precondition, with a `core` whose lanes are
 those of `t`. -/
-theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Prop} {σ : State} (hp : (mulK t hPre).pre σ)
+theorem fn_ok {t : VG.Spec.MlDsa.Poly → VG.Spec.MlDsa.Poly → VG.Spec.MlDsa.Poly → VG.Spec.MlDsa.Poly} {hPre : Mem → Addr → Prop} {σ : State} (hp : (VG.Proof.MlDsa.X86_64.Arith.mulK t hPre).pre σ)
     {core : List Instr} {Fv : BitVec 128 → BitVec 128 → BitVec 128 → BitVec 128}
-    (hcore : ∀ s : State, VConsts s → s.xmm .xmm11 = r2V → WP isa (.block core) s fun s' =>
+    (hcore : ∀ s : State, VConsts s → s.xmm .xmm11 = VG.Proof.MlDsa.X86_64.Arith.r2V → WP isa (.block core) s fun s' =>
       s'.xmm .xmm3 = Fv (s.xmm .xmm3) (s.xmm .xmm13) (s.xmm .xmm5) ∧ XOnly [.xmm12, .xmm3, .xmm2, .xmm4] s s')
     (hY : laneSseBlock (toY core) = some core)
     (hlane : ∀ i < 64, ∀ x y z : BitVec 128,
@@ -243,7 +243,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
       (.seq (.block ymulPro) (.seq (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) (.block (ymulLast core)))) =
         true) :
     WP isa (ymulFn core) σ fun s' => Keep [.r8, .rax, .r11, .rax, .rdi, .rsi, .rdx, .rcx] σ s' ∧
-      Frame [pR (σ.gpr .rdi)] σ.mem s'.mem ∧ (mulK t hPre).post σ s' := by
+      Frame [pR (σ.gpr .rdi)] σ.mem s'.mem ∧ (VG.Proof.MlDsa.X86_64.Arith.mulK t hPre).post σ s' := by
   obtain ⟨hrd, hwr, hdf, hdg, -, -, -, -, redf, redg⟩ := hp
   generalize eh : σ.gpr .rdi = h at *
   generalize ef : σ.gpr .rsi = f at *
@@ -287,7 +287,7 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     have fσw' : Frame [pR h] σ.mem w.mem :=
       Frame.sub fσw fun r hr => ⟨pR h, List.mem_singleton_self _, by
         simp only [List.mem_singleton] at hr; subst hr; exact mxH_sub h⟩
-    refine WP.seq (WP.mono (loop_ok (s₀ := w) (h := h) (f := f) (g := g) (R := R) (F := polyAt σ.mem f)
+    refine WP.seq (WP.mono (VG.Proof.MlDsa.X86_64.Arith.YMul.loop_ok (s₀ := w) (h := h) (f := f) (g := g) (R := R) (F := polyAt σ.mem f)
       (G := polyAt σ.mem g) (H := coeffAt σ.mem h)
       (by rw [rw'.2]; exact hwh) (by rw [rw'.1, hrd]; simp) (by rw [rw'.1, hrd]; simp) hdf hdg
       (fun k hk => by
@@ -319,18 +319,18 @@ theorem fn_ok {t : Poly → Poly → Poly → Poly} {hPre : Mem → Addr → Pro
     have wh4 : InRegions s4.wr (s4.gpr .rdi) 32 := by
       rw [hdi4, k14.2.2]; exact f_in32 hwh (by omega)
     have l4 : ∀ r l, s4.lane r l = s3.lane r l := fun r l => by simp only [State.lane]; rw [x4, y4]
-    simp only [yepi, List.singleton_append]
+    simp only [VG.Impl.MlDsa.X86_64.Arith.yepi, List.singleton_append]
     vrund [State.store256_eq, State.setMem_gpr, State.setMem_wr, State.setMem_mem, State.setMem_rd,
       State.setMem_ymm, wh4]
     have f4' : Frame [pR h] s3.mem s4.mem := Frame.sub f4 fun r hr => ⟨pR h, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact mxH_sub h⟩
     refine ⟨k14.mono (by simp), (fr.trans f4').writeW (List.mem_singleton_self _) _
       (by rw [hdi4]; exact pR_contains32 h (by omega)), ?_⟩
-    dsimp only [mulK]
+    dsimp only [VG.Proof.MlDsa.X86_64.Arith.mulK]
     rw [eh, ef, eg, show ∀ s : State, (VOp.vzeroupper.exec s).mem = s.mem from fun _ => rfl, State.setMem_mem]
     refine polyIs_of_toNat fun k hk => ?_
     rw [n_eq] at hk
-    rw [hdi4, coeffAt_write256 _ _ (j := 248) (by decide) _ hk]
+    rw [hdi4, VG.Proof.MlDsa.X86_64.Arith.coeffAt_write256 _ _ (j := 248) (by decide) _ hk]
     split
     · rw [State.ymm, extract_ymm _ _ (by omega)]
       split
@@ -373,19 +373,19 @@ theorem mulAddY_correct (s : State) (hs : mulAddK.pre s) :
     (by simpa using hs.2.2.2.2.1)), hq⟩
 
 theorem mulY_ct : ConstantTime isa mulK'.pre mulK'.pub mulAvx2 :=
-  VG.Taint.constantTime (A := taint) mulτ mul_agree (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86_64.taint) mulτ mul_agree (by taint_decide)
 
 theorem mulAddY_ct : ConstantTime isa mulAddK.pre mulAddK.pub mulAddAvx2 :=
-  VG.Taint.constantTime (A := taint) mulτ mul_agree (by taint_decide)
+  VG.Taint.constantTime (A := VG.X86_64.taint) mulτ mul_agree (by taint_decide)
 
 theorem mulY_verified : Verified X86_64.target mulAvx2 (Spec.MlDsa.mulContract X86_64.abi) :=
-  Verified.of_correct mulY_correct mulY_ct (by
-    mldsa_implies [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
-      [mulSat] using mulSat)
+  Verified.of_correct VG.Proof.MlDsa.X86_64.Arith.mulY_correct VG.Proof.MlDsa.X86_64.Arith.mulY_ct (by
+    mldsa_implies [Spec.MlDsa.mulContract, Spec.MlDsa.mulSig, VG.Proof.MlDsa.X86_64.Arith.mulK, X86_64.abi, X86_64.argRegs]
+      [mulSat] using VG.Proof.MlDsa.X86_64.Arith.mulSat)
 
 theorem mulAddY_verified : Verified X86_64.target mulAddAvx2 (Spec.MlDsa.mulAddContract X86_64.abi) :=
   Verified.of_correct mulAddY_correct mulAddY_ct (by
-    mldsa_implies [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, mulK, X86_64.abi, X86_64.argRegs]
-      [mulSat] using mulSat)
+    mldsa_implies [Spec.MlDsa.mulAddContract, Spec.MlDsa.mulSig, VG.Proof.MlDsa.X86_64.Arith.mulK, X86_64.abi, X86_64.argRegs]
+      [mulSat] using VG.Proof.MlDsa.X86_64.Arith.mulSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

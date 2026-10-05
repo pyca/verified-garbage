@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Core
 import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Sha512.AArch64.Variant
-import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
+import VerifiedGarbage.Proof.Sha256.AArch64.ScalarBackend
 
 /-!
 # Merkle–Damgård hash functions on AArch64, as variants

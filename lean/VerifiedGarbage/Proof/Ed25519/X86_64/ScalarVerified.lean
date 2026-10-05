@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Impl.Ed25519.X86_64.Scalar
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddVerified
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarLit`. -/

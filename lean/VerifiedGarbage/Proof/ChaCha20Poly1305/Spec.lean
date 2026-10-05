@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.ChaCha20.Keystream
-import VerifiedGarbage.Proof.Poly1305.Spec
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.Poly1305.Stream
 import VerifiedGarbage.Spec.ChaCha20Poly1305
 
 /-!

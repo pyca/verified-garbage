@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha3.Arm.Permute
-import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

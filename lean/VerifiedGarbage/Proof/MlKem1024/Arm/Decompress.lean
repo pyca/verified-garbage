@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlKem.Arm.Decompress
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.Encode1024
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Impl.MlKem1024.Arm.Poly
 import VerifiedGarbage.Spec.MlKem.Contract1024
 

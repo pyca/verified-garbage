@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Spec.RsaPkcs1Enc.Contract
 import VerifiedGarbage.Impl.RsaPkcs1Enc.X86_64.Encrypt
 

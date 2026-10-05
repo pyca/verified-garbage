@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 import VerifiedGarbage.Proof.Sha1.AArch64.Compress
 import VerifiedGarbage.Impl.Sha1.AArch64.Stream
-import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha1.Scratch
 
 /-!
 # Streaming SHA-1 on AArch64: `init`
@@ -55,7 +55,7 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha1.initAArch64.pre s₀) :
   apply WP.withPreservedV (hc := by decide +kernel)
   obtain ⟨-, hwr⟩ := hp
   have o : ∀ k, k < 5 → InRegions s₀.wr (s₀.gpr .x0 + BitVec.ofNat 64 (4 * k)) 4 :=
-    fun k hk => ⟨⟨s₀.gpr .x0, 84⟩, by simp [hwr], contains_offset (by omega) (by omega)⟩
+    fun k hk => ⟨⟨s₀.gpr .x0, 84⟩, by simp [hwr], VG.Proof.Sha1.StateMem.contains_offset (by omega) (by omega)⟩
   rw [init_eq, ← List.append_nil (_ ++ word H0[4] 16)]
   simp only [List.append_assoc]
   refine word_ok (by decide) (o 0 (by omega)) fun s1 g1 _ wr1 sp1 m1 => ?_
@@ -71,7 +71,7 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha1.initAArch64.pre s₀) :
   refine word_ok (by decide) (by rw [w4, k4 _ (by decide)]; exact o 4 (by omega))
     fun s5 g5 _ _ sp5 m5 => WP.block_nil ?_
   have k5 : ∀ r, r ≠ .x9 → s5.gpr r = s₀.gpr r := fun r h => by rw [g5 r h, k4 r h]
-  have hm : s5.mem = writeState s₀.mem (s₀.gpr .x0) H0 := by
+  have hm : s5.mem = VG.Proof.Sha1.StateMem.writeState s₀.mem (s₀.gpr .x0) H0 := by
     rw [m5, m4, m3, m2, m1]
     simp only [k4 _ (show Reg.x0 ≠ .x9 by decide),
       g3 _ (show Reg.x0 ≠ .x9 by decide), g2 _ (show Reg.x0 ≠ .x9 by decide),
@@ -82,7 +82,7 @@ theorem init_correct {s₀ : State} (hp : Proof.Sha1.initAArch64.pre s₀) :
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · show Spec.Sha1.Repr s5.mem (s₀.gpr .x0) []
     rw [hm]
-    exact Proof.Sha1.Stream.repr_nil (stateAt_writeState _ _ _)
+    exact Proof.Sha1.Stream.repr_nil (VG.Proof.Sha1.StateMem.stateAt_writeState _ _ _)
 
 /-- A state satisfying the precondition. -/
 def initSat : State where

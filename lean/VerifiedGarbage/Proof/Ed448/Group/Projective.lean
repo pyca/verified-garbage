@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Edwards.Group
 import VerifiedGarbage.Proof.Framework.Pratt
 import Mathlib.Tactic.NormNum.Prime
 import VerifiedGarbage.Spec.X448
-import VerifiedGarbage.Proof.Ed448.Ref
+import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Spec.Ed448
 import Mathlib.FieldTheory.Finite.Basic
 

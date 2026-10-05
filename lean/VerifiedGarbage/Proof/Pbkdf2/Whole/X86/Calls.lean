@@ -1,5 +1,5 @@
 import VerifiedGarbage.Spec.Pbkdf2.Generic
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Hash
+import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.OmegaLit
 
@@ -110,7 +110,7 @@ theorem cstk_args :
 
 end Frames
 
-theorem argVal32 (s : State) (i : Nat) : argVal s 32 i = (arg s i).setWidth 64 := rfl
+theorem argVal32 (s : State) (i : Nat) : argVal s 32 i = (VG.X86.arg s i).setWidth 64 := rfl
 
 theorem toNat_setWidth64 (a : BitVec 32) : (a.setWidth 64).toNat = a.toNat := by
   simp only [BitVec.toNat_setWidth]
@@ -189,8 +189,8 @@ abbrev HiArgs.wr (S : StreamingHash) (Wi : Nat) (sp inn out sc : BitVec 32) : Li
 arguments pushed from a state that `HiArgs` describes. -/
 theorem HiArgs.pre_of {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc : BitVec 32} {kl : Nat}
     (h : HiArgs S Wi s inn out k sc kl) {t : State} (hsp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24)
-    (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k) (a3 : arg t 3 = BitVec.ofNat 32 kl)
-    (a4 : arg t 4 = sc) (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
+    (a0 : VG.X86.arg t 0 = inn) (a1 : VG.X86.arg t 1 = out) (a2 : VG.X86.arg t 2 = k) (a3 : VG.X86.arg t 3 = BitVec.ofNat 32 kl)
+    (a4 : VG.X86.arg t 4 = sc) (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
     (hrd : t.rd = HiArgs.rd k kl) (hwr : t.wr = HiArgs.wr S Wi (s.gpr .esp) inn out sc) :
     (Spec.Hmac.initScratchContract S Wi X86.abi 48).pre t := by
   have e := h.sp
@@ -211,15 +211,15 @@ theorem HiArgs.pre_of {S : StreamingHash} {Wi : Nat} {s : State} {inn out k sc :
     h.ni, h.no, h.nk, h.nsc, h.klB⟩
 
 theorem init_pub {S : StreamingHash} {Wi : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
-    (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
-    (a4 : arg t 4 = arg t' 4) :
+    (a0 : VG.X86.arg t 0 = VG.X86.arg t' 0) (a1 : VG.X86.arg t 1 = VG.X86.arg t' 1) (a2 : VG.X86.arg t 2 = VG.X86.arg t' 2) (a3 : VG.X86.arg t 3 = VG.X86.arg t' 3)
+    (a4 : VG.X86.arg t 4 = VG.X86.arg t' 4) :
     (Spec.Hmac.initScratchContract S Wi X86.abi 48).pub t t' := by
   sig_pub [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi]
   simp only [argVal32, he, a0, a1, a2, a3, a4, and_self]
 
 theorem init_post {S : StreamingHash} {Wi : Nat} {t t' : State} {inn out k : BitVec 32} {kl : Nat}
-    (hkl : kl < 2 ^ 32) (a0 : arg t 0 = inn) (a1 : arg t 1 = out) (a2 : arg t 2 = k)
-    (a3 : arg t 3 = BitVec.ofNat 32 kl) (h : (Spec.Hmac.initScratchContract S Wi X86.abi 48).post t t') :
+    (hkl : kl < 2 ^ 32) (a0 : VG.X86.arg t 0 = inn) (a1 : VG.X86.arg t 1 = out) (a2 : VG.X86.arg t 2 = k)
+    (a3 : VG.X86.arg t 3 = BitVec.ofNat 32 kl) (h : (Spec.Hmac.initScratchContract S Wi X86.abi 48).post t t') :
     S.Repr t'.mem (inn.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) ipad) ∧
       S.Repr t'.mem (out.setWidth 64) (xorPad (blockKey S.H (bytesAt t.mem (k.setWidth 64) kl)) opad) := by
   sig_post [Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost, X86.abi] at h
@@ -236,12 +236,12 @@ theorem fit : 4 * hi5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp
 omit h in
 theorem nesp : Reg.esp ∉ hi5 := by decide
 
-theorem a0 : arg (pushed hi5 s).callEntry 0 = inn := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
-theorem a1 : arg (pushed hi5 s).callEntry 1 = out := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
-theorem a2 : arg (pushed hi5 s).callEntry 2 = k := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
-theorem a3 : arg (pushed hi5 s).callEntry 3 = BitVec.ofNat 32 kl := by
+theorem a0 : VG.X86.arg (pushed hi5 s).callEntry 0 = inn := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
+theorem a1 : VG.X86.arg (pushed hi5 s).callEntry 1 = out := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
+theorem a2 : VG.X86.arg (pushed hi5 s).callEntry 2 = k := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
+theorem a3 : VG.X86.arg (pushed hi5 s).callEntry 3 = BitVec.ofNat 32 kl := by
   rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
-theorem a4 : arg (pushed hi5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
+theorem a4 : VG.X86.arg (pushed hi5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
 theorem pre : (Spec.Hmac.initScratchContract S Wi X86.abi 48).pre
     ((pushed hi5 s).callEntry.withRegions (HiArgs.rd k kl) (HiArgs.wr S Wi (s.gpr .esp) inn out sc)) :=
@@ -372,7 +372,7 @@ abbrev HfArgs.wr (S : StreamingHash) (Wf : Nat) (sp inn o sc : BitVec 32) : List
 
 theorem HfArgs.pre_of {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o sc : BitVec 32}
     (h : HfArgs S Wf s inn ou lo hi o sc) {t : State} (hsp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 28)
-    (a0 : arg t 0 = inn) (a1 : arg t 1 = ou) (a4 : arg t 4 = o) (a5 : arg t 5 = sc)
+    (a0 : VG.X86.arg t 0 = inn) (a1 : VG.X86.arg t 1 = ou) (a4 : VG.X86.arg t 4 = o) (a5 : VG.X86.arg t 5 = sc)
     (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 24).setWidth 64)
     (hrd : t.rd = HfArgs.rd S ou) (hwr : t.wr = HfArgs.wr S Wf (s.gpr .esp) inn o sc) :
     (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pre t := by
@@ -394,14 +394,14 @@ theorem HfArgs.pre_of {S : StreamingHash} {Wf : Nat} {s : State} {inn ou lo hi o
     h.ni, h.nu, h.no, h.nsc⟩
 
 theorem fin_pub {S : StreamingHash} {Wf : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
-    (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
-    (a4 : arg t 4 = arg t' 4) (a5 : arg t 5 = arg t' 5) :
+    (a0 : VG.X86.arg t 0 = VG.X86.arg t' 0) (a1 : VG.X86.arg t 1 = VG.X86.arg t' 1) (a2 : VG.X86.arg t 2 = VG.X86.arg t' 2) (a3 : VG.X86.arg t 3 = VG.X86.arg t' 3)
+    (a4 : VG.X86.arg t 4 = VG.X86.arg t' 4) (a5 : VG.X86.arg t 5 = VG.X86.arg t' 5) :
     (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pub t t' := by
   sig_pub [Spec.Hmac.finalizeScratchContract, Spec.Hmac.finalizeScratchSig, Spec.Hmac.finalizePost, X86.abi]
   simp only [argVal, Nat.reduceEqDiff, ↓reduceIte, he, a0, a1, a2, a3, a4, a5, and_self]
 
 theorem fin_post {S : StreamingHash} {Wf : Nat} {t t' : State} {inn ou lo hi o : BitVec 32}
-    (a0 : arg t 0 = inn) (a1 : arg t 1 = ou) (a2 : arg t 2 = lo) (a3 : arg t 3 = hi) (a4 : arg t 4 = o)
+    (a0 : VG.X86.arg t 0 = inn) (a1 : VG.X86.arg t 1 = ou) (a2 : VG.X86.arg t 2 = lo) (a3 : VG.X86.arg t 3 = hi) (a4 : VG.X86.arg t 4 = o)
     (h : (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).post t t') :
     ∀ k0 text, k0.length = S.H.blockSize → k0.length + text.length < 2 ^ 64 →
       S.Repr t.mem (inn.setWidth 64) (xorPad k0 ipad ++ text) →
@@ -422,12 +422,12 @@ theorem fit : 4 * hf6.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp
 omit h in
 theorem nesp : Reg.esp ∉ hf6 := by decide
 
-theorem a0 : arg (pushed hf6 s).callEntry 0 = inn := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
-theorem a1 : arg (pushed hf6 s).callEntry 1 = ou := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
-theorem a2 : arg (pushed hf6 s).callEntry 2 = lo := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.eax
-theorem a3 : arg (pushed hf6 s).callEntry 3 = hi := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
-theorem a4 : arg (pushed hf6 s).callEntry 4 = o := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
-theorem a5 : arg (pushed hf6 s).callEntry 5 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
+theorem a0 : VG.X86.arg (pushed hf6 s).callEntry 0 = inn := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
+theorem a1 : VG.X86.arg (pushed hf6 s).callEntry 1 = ou := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
+theorem a2 : VG.X86.arg (pushed hf6 s).callEntry 2 = lo := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.eax
+theorem a3 : VG.X86.arg (pushed hf6 s).callEntry 3 = hi := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
+theorem a4 : VG.X86.arg (pushed hf6 s).callEntry 4 = o := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edi
+theorem a5 : VG.X86.arg (pushed hf6 s).callEntry 5 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
 theorem pre : (Spec.Hmac.finalizeScratchContract S Wf X86.abi 48).pre
     ((pushed hf6 s).callEntry.withRegions (HfArgs.rd S ou) (HfArgs.wr S Wf (s.gpr .esp) inn o sc)) :=
@@ -547,7 +547,7 @@ abbrev ItArgs.wr (S : StreamingHash) (Wt : Nat) (sp tt sc : BitVec 32) : List Re
 
 theorem ItArgs.pre_of {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc : BitVec 32}
     (h : ItArgs S Wt s key u n tt sc) {t : State} (hsp : t.gpr .esp = s.gpr .esp - BitVec.ofNat 32 24)
-    (a0 : arg t 0 = key) (a1 : arg t 1 = u) (a3 : arg t 3 = tt) (a4 : arg t 4 = sc)
+    (a0 : VG.X86.arg t 0 = key) (a1 : VG.X86.arg t 1 = u) (a3 : VG.X86.arg t 3 = tt) (a4 : VG.X86.arg t 4 = sc)
     (hA : argAddr t 0 = (s.gpr .esp - BitVec.ofNat 32 20).setWidth 64)
     (hrd : t.rd = ItArgs.rd S key u) (hwr : t.wr = ItArgs.wr S Wt (s.gpr .esp) tt sc) :
     (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pre t := by
@@ -569,14 +569,14 @@ theorem ItArgs.pre_of {S : StreamingHash} {Wt : Nat} {s : State} {key u n tt sc 
     h.nk, h.nu, h.nt, h.nsc⟩
 
 theorem it_pub {S : StreamingHash} {Wt : Nat} {t t' : State} (he : t.gpr .esp = t'.gpr .esp)
-    (a0 : arg t 0 = arg t' 0) (a1 : arg t 1 = arg t' 1) (a2 : arg t 2 = arg t' 2) (a3 : arg t 3 = arg t' 3)
-    (a4 : arg t 4 = arg t' 4) :
+    (a0 : VG.X86.arg t 0 = VG.X86.arg t' 0) (a1 : VG.X86.arg t 1 = VG.X86.arg t' 1) (a2 : VG.X86.arg t 2 = VG.X86.arg t' 2) (a3 : VG.X86.arg t 3 = VG.X86.arg t' 3)
+    (a4 : VG.X86.arg t 4 = VG.X86.arg t' 4) :
     (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pub t t' := by
   sig_pub [Spec.Pbkdf2.iterateContract, Spec.Pbkdf2.iterateSig, X86.abi]
   simp only [argVal32, he, a0, a1, a2, a3, a4, and_self]
 
 theorem it_post {S : StreamingHash} {Wt : Nat} {t t' : State} {key u n tt : BitVec 32}
-    (a0 : arg t 0 = key) (a1 : arg t 1 = u) (a2 : arg t 2 = n) (a3 : arg t 3 = tt)
+    (a0 : VG.X86.arg t 0 = key) (a1 : VG.X86.arg t 1 = u) (a2 : VG.X86.arg t 2 = n) (a3 : VG.X86.arg t 3 = tt)
     (h : (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).post t t') :
     ∀ k0, k0.length = S.H.blockSize → S.Repr t.mem (key.setWidth 64) (xorPad k0 ipad) →
       S.Repr t.mem (key.setWidth 64 + BitVec.ofNat 64 S.stateBytes) (xorPad k0 opad) →
@@ -597,11 +597,11 @@ theorem fit : 4 * it5.length + 4 ≤ (s.gpr .esp).toNat := by have := h.sp; simp
 omit h in
 theorem nesp : Reg.esp ∉ it5 := by decide
 
-theorem a0 : arg (pushed it5 s).callEntry 0 = key := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
-theorem a1 : arg (pushed it5 s).callEntry 1 = u := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.eax
-theorem a2 : arg (pushed it5 s).callEntry 2 = n := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
-theorem a3 : arg (pushed it5 s).callEntry 3 = tt := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
-theorem a4 : arg (pushed it5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
+theorem a0 : VG.X86.arg (pushed it5 s).callEntry 0 = key := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.esi
+theorem a1 : VG.X86.arg (pushed it5 s).callEntry 1 = u := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.eax
+theorem a2 : VG.X86.arg (pushed it5 s).callEntry 2 = n := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ecx
+theorem a3 : VG.X86.arg (pushed it5 s).callEntry 3 = tt := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.edx
+theorem a4 : VG.X86.arg (pushed it5 s).callEntry 4 = sc := by rw [callEntry_arg h.fit nesp (by simp)]; simpa using h.ebp
 
 theorem pre : (Spec.Pbkdf2.iterateContract S Wt X86.abi 48).pre
     ((pushed it5 s).callEntry.withRegions (ItArgs.rd S key u) (ItArgs.wr S Wt (s.gpr .esp) tt sc)) :=

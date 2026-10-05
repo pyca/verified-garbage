@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Sha512.Arm.Compress
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 import VerifiedGarbage.Proof.Sha512.Arm.Stream.Init
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+import VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize
 import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch

@@ -1,4 +1,88 @@
-import VerifiedGarbage.Proof.Mont.X86.Words
+import VerifiedGarbage.Impl.Mont.X86
+import VerifiedGarbage.Proof.Mont.Words32
+import VerifiedGarbage.Proof.Framework.X86.Wp
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.X86.Words`. -/
+section
+
+/-!
+# Montgomery arithmetic on x86 (32-bit): words in the working space
+
+The working space is `size` bytes at `base`, whose low 32 bits `edi` holds
+(`Scr`), below `2³²`. Its numbers are read as 32-bit words (`w32`, `val32`):
+`k` of them at an offset are the same bytes, and the same number, as
+`k / 2` 64-bit words (`wordsVal_eq_val32`), in which the other targets and
+the target-independent proofs state them. The loads and stores of the
+arithmetic, through `edi` or through `ebp`, which the multiplication moves
+by 4 bytes a row (`ea_at`), and what changes (`Keeps`).
+-/
+
+namespace VG.Proof.Mont.X86
+
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
+
+/-! ## The working space -/
+
+/-- The working space: `edi` holds its base `base`, it is writable and it
+lies below `2³²`. -/
+structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
+  edi : (s.gpr .edi).setWidth 64 = base
+  wr : (⟨base, size⟩ : Region) ∈ s.wr
+  nowrap : base.toNat + size ≤ 2 ^ 32
+
+theorem Scr.edi_toNat {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) :
+    (s.gpr .edi).toNat = base.toNat := by
+  rw [← hs.edi, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (s.gpr .edi).isLt
+    (Nat.pow_le_pow_right (by decide) (by decide)))]
+
+/-- `[edi + d]`. -/
+theorem Scr.ea {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {d : Nat}
+    (hd : d < size) : s.ea (sc d) = off base d := by
+  change addr (s.gpr .edi) d = _
+  rw [addr_eq (by have := hs.nowrap; have := hs.edi_toNat; omega), hs.edi]
+
+/-- `[ebp + d]`, with `ebp` at `4i` bytes into the working space. -/
+theorem Scr.ea_at {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {i d : Nat}
+    (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i)) (hd : 4 * i + d < size) :
+    s.ea (at_ .ebp d) = off base (4 * i + d) := by
+  change ((s.gpr .ebp + BitVec.ofNat 32 d).setWidth 64) = _
+  rw [hp, Offset.add_add]
+  exact hs.ea hd
+
+theorem Scr.contains {base : Addr} {size d n : Nat} (hn : base.toNat + size ≤ 2 ^ 32) (h : d + n ≤ size) :
+    (⟨base, size⟩ : Region).Contains (off base d) n :=
+  Offset.contains_base base h (by omega)
+
+theorem Scr.read {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {d n : Nat}
+    (hd : d + n ≤ size) : InRegions (s.rd ++ s.wr) (off base d) n :=
+  ⟨_, List.mem_append_right _ hs.wr, Scr.contains hs.nowrap hd⟩
+
+theorem Scr.write {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {d n : Nat}
+    (hd : d + n ≤ size) : InRegions s.wr (off base d) n := ⟨_, hs.wr, Scr.contains hs.nowrap hd⟩
+
+/-- The registers and permissions that a piece of code preserves. -/
+def Keeps (rs : List Reg) (s s' : State) : Prop :=
+  (∀ r, r ∉ rs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr
+
+theorem Keeps.refl (rs : List Reg) (s : State) : VG.Proof.Mont.X86.Keeps rs s s := ⟨fun _ _ => rfl, rfl, rfl⟩
+
+theorem Keeps.trans {rs : List Reg} {s₁ s₂ s₃ : State} (h₁ : VG.Proof.Mont.X86.Keeps rs s₁ s₂) (h₂ : VG.Proof.Mont.X86.Keeps rs s₂ s₃) :
+    VG.Proof.Mont.X86.Keeps rs s₁ s₃ := ⟨fun r hr => (h₂.1 r hr).trans (h₁.1 r hr), h₂.2.1.trans h₁.2.1,
+      h₂.2.2.trans h₁.2.2⟩
+
+theorem Keeps.mono {rs rs' : List Reg} {s s' : State} (h : VG.Proof.Mont.X86.Keeps rs s s') (hs : ∀ r ∈ rs, r ∈ rs') :
+    VG.Proof.Mont.X86.Keeps rs' s s' := ⟨fun r hr => h.1 r fun h' => hr (hs r h'), h.2⟩
+
+theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size)
+    (h : VG.Proof.Mont.X86.Keeps rs s s') (hr : .edi ∉ rs) : VG.Proof.Mont.X86.Scr s' base size :=
+  ⟨by rw [h.1 _ hr]; exact hs.edi, h.2.2 ▸ hs.wr, hs.nowrap⟩
+
+end VG.Proof.Mont.X86
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.X86.Instr`. -/
+section
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): instruction rules
@@ -117,7 +201,7 @@ structure MulUpd (s t : State) (r : Reg) : Prop where
   wr : t.wr = s.wr
 
 /-- `mul r`. -/
-theorem wp_mul {r : Reg} (k : ∀ t, MulUpd s t r → WP isa (.block is) t Q) :
+theorem wp_mul {r : Reg} (k : ∀ t, VG.Proof.Mont.X86.MulUpd s t r → WP isa (.block is) t Q) :
     WP isa (.block (.mul r :: is)) s Q := by
   refine cons (s' := execMul r s) rfl (k _ ⟨?_, ?_, fun q h1 h2 => ?_, rfl, rfl, rfl⟩)
   · simp only [execMul, State.setReg, reduceCtorEq, ite_false, ite_true]
@@ -134,33 +218,35 @@ theorem wp_storeS {r : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hw : InReg
 end
 
 /-- A load of the working space through `edi`. -/
-theorem readSrc_sc {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
+theorem readSrc_sc {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {d : Nat}
     (hd : d + 4 ≤ size) : readSrc s (.mem (sc d)) = some (s.mem.readW (off base d) 32) := by
   show s.load32 (s.ea (sc d)) = _
   rw [hs.ea (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
 /-- A load of the working space through `ebp`, at `4i` bytes into it. -/
-theorem readSrc_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {i d : Nat}
+theorem readSrc_at {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.X86.Scr s base size) {i d : Nat}
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i)) (hd : 4 * i + d + 4 ≤ size) :
     readSrc s (.mem (at_ .ebp d)) = some (s.mem.readW (off base (4 * i + d)) 32) := by
   show s.load32 (s.ea (at_ .ebp d)) = _
   rw [hs.ea_at hp (by omega), State.load32, ite_eq_left_iff.mpr fun h => absurd (hs.read hd) h]
 
-theorem _root_.VG.X86.Wp.Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : Keeps [d] s t :=
+theorem _root_.VG.X86.Wp.Upd.keeps {s t : State} {d : Reg} {v : BitVec 32} (h : Upd s t d v) : VG.Proof.Mont.X86.Keeps [d] s t :=
   ⟨fun r hr => h.other r (by simpa using hr), h.rd, h.wr⟩
 
-theorem MulUpd.keeps {s t : State} {r : Reg} (h : MulUpd s t r) : Keeps [.eax, .edx] s t :=
+theorem MulUpd.keeps {s t : State} {r : Reg} (h : VG.Proof.Mont.X86.MulUpd s t r) : VG.Proof.Mont.X86.Keeps [.eax, .edx] s t :=
   ⟨fun q hq => h.other q (by simp_all) (by simp_all), h.rd, h.wr⟩
 
-theorem _root_.VG.X86.Wp.Mupd.keeps {s t : State} {m : Mem} (h : Mupd s t m) (rs : List Reg) : Keeps rs s t :=
+theorem _root_.VG.X86.Wp.Mupd.keeps {s t : State} {m : Mem} (h : Mupd s t m) (rs : List Reg) : VG.Proof.Mont.X86.Keeps rs s t :=
   ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
 
-theorem _root_.VG.X86.Wp.Fupd.keeps {s t : State} (h : Fupd s t) (rs : List Reg) : Keeps rs s t :=
+theorem _root_.VG.X86.Wp.Fupd.keeps {s t : State} (h : Fupd s t) (rs : List Reg) : VG.Proof.Mont.X86.Keeps rs s t :=
   ⟨fun r _ => by rw [h.gpr], h.rd, h.wr⟩
 
 /-- `Keeps` of a list of registers, widened to a larger one and composed. -/
-theorem Keeps.widen {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : Keeps rs' s₁ s₂) (h₂ : Keeps rs s₂ s₃)
-    (hs : ∀ r ∈ rs, r ∈ rs' := by decide) : Keeps rs' s₁ s₃ :=
+theorem Keeps.widen {rs rs' : List Reg} {s₁ s₂ s₃ : State} (h₁ : VG.Proof.Mont.X86.Keeps rs' s₁ s₂) (h₂ : VG.Proof.Mont.X86.Keeps rs s₂ s₃)
+    (hs : ∀ r ∈ rs, r ∈ rs' := by decide) : VG.Proof.Mont.X86.Keeps rs' s₁ s₃ :=
   h₁.trans (h₂.mono hs)
 
 end VG.Proof.Mont.X86
+
+end

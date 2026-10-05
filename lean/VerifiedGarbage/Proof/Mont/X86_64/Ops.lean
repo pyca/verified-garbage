@@ -1,5 +1,8 @@
 import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.X86_64.Ops`. -/
+section
+
 /-!
 # Montgomery arithmetic on x86-64: the operations
 
@@ -264,3 +267,5 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
 
 end VG.Proof.Mont.X86_64
+
+end

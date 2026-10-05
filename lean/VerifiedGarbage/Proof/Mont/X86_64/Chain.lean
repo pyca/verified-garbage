@@ -1,5 +1,8 @@
 import VerifiedGarbage.Proof.Mont.X86_64.Csub
 
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.X86_64.Chain`. -/
+section
+
 /-!
 # Montgomery arithmetic on x86-64: loads, stores and carry chains
 
@@ -31,7 +34,7 @@ theorem loads_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a
       simp only [RegUpd.gpr_setReg, hr, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.2.2.2.2.2 h.symm)
-    refine WP.mono (loads_ok ts hs₁ (a := a + 8) (by omega) hf.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
+    refine WP.mono (VG.Proof.Mont.X86_64.loads_ok ts hs₁ (a := a + 8) (by omega) hf.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     rw [List.length_cons, regsVal, wordsVal, ht, e₁, e₂, k₁.2.1]
@@ -56,7 +59,7 @@ theorem stores_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {
       fun s₁ ⟨m₁, k₁, g₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by simp)
     have O₁ : Outside base o 8 s.mem s₁.mem := by rw [m₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (stores_ok ts hs₁ (o := o + 8) (by omega) (List.nodup_cons.mp hd).2)
+    refine WP.mono (VG.Proof.Mont.X86_64.stores_ok ts hs₁ (o := o + 8) (by omega) (List.nodup_cons.mp hd).2)
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
     refine ⟨?_, k₁.trans k₂, fun x hx => ?_⟩
     · rw [List.length_cons, wordsVal, O₂.word (by omega) (by omega), m₁, word_writeW_self, e₂, regsVal,
@@ -89,7 +92,7 @@ theorem chainAdc_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr}
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.2.2.2.2.2 h.symm)
-    refine WP.mono (chainAdc_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+    refine WP.mono (VG.Proof.Mont.X86_64.chainAdc_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
@@ -121,7 +124,7 @@ theorem chainAdd_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.2.2.2.2.2 h.symm)
-  refine WP.mono (chainAdc_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.X86_64.chainAdc_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
   have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
   have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
@@ -158,7 +161,7 @@ theorem chainSbb_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr}
         simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.2.2.2.2.2 h.symm)
-    refine WP.mono (chainSbb_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+    refine WP.mono (VG.Proof.Mont.X86_64.chainSbb_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
@@ -190,7 +193,7 @@ theorem chainSub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.2.2.2.2.2 h.symm)
-  refine WP.mono (chainSbb_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.X86_64.chainSbb_ok ts hs₁ c₁ (b := b + 8) (by omega) hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
   have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
   have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
@@ -201,3 +204,5 @@ theorem chainSub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   omega
 
 end VG.Proof.Mont.X86_64
+
+end

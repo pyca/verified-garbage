@@ -1,9 +1,8 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Select
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddGen
+import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Dbl
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Weave
-
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
 /-!
 # Ed448 verification on AArch64: the table of `[n](-A)`
 
@@ -65,13 +64,13 @@ theorem FV_entry (m m' : Mem) (base : Addr) {e c o : Nat} (ho : o = TAB + 192 * 
 /-- After `tabStore` from slots 0–2 of `s`, entry `e` is their point, with their bounds. -/
 theorem tabStore_pt {s t : State} {base : Addr} {e : Nat}
     (h : ∀ w < 24, word t.mem base (TAB + 192 * e + 8 * w) = word s.mem base (src w)) :
-    TPt t.mem base e = pt (EV s.mem base) 0 1 2 := by
+    TPt t.mem base e = VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2 := by
   have hs : ∀ c < 3, ∀ i < 8, tw t.mem base e (8 * c + i) = word s.mem base (slot c + 8 * i) := fun c hc i hi => by
     rw [tw, h _ (by omega), src]
     congr 2
     all_goals (try simp only [slot])
     all_goals omega
-  simp only [TPt, pt]
+  simp only [TPt, VG.Proof.X448.AArch64.Base.pt]
   refine Point.mk.injEq _ _ _ _ _ _ |>.mpr ⟨?_, ?_, ?_⟩
   · exact FV_entry _ _ _ (e := e) (c := 0) (o := TAB + 192 * e) (by omega) (hs 0 (by decide))
   · exact FV_entry _ _ _ (e := e) (c := 1) rfl (hs 1 (by decide))
@@ -135,8 +134,8 @@ structure TInv (s₀ : State) (base : Addr) (P : Point) (k : Nat) (s : State) : 
   env : BEnv s.mem base
   zero : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0
   counter : s.gpr .x19 = BitVec.ofNat 64 k
-  acc : pt (EV s.mem base) 0 1 2 = tabPts P (k - 1)
-  pnt : pt (EV s.mem base) 3 4 5 = P
+  acc : VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2 = tabPts P (k - 1)
+  pnt : VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5 = P
   one : EV s.mem base 20 = EV s₀.mem base 20
   tab : TabOk s.mem base P k
   lr : s.gpr .x30 = s₀.gpr .x30
@@ -171,13 +170,13 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
     simp only [VG.Proof.X448.AArch64.Weak.E, VG.Proof.X448.AArch64.Weak.F]
     refine congrArg _ (VG.Proof.X448.Wide.valN_congr fun w hw => ?_)
     rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
-  have hacc1 : pt (EV t1.mem base) 0 1 2 = tabPts P k := by
+  have hacc1 : VG.Proof.X448.AArch64.Base.pt (EV t1.mem base) 0 1 2 = tabPts P k := by
     rw [e1, VG.Proof.X448.AArch64.Base.genEnv_add, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq, hacc,
       hpnt]
     obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
     rw [show j + 2 - 1 = j + 1 by omega, tabPts_succ]
-  have hpnt1 : pt (EV t1.mem base) 3 4 5 = P := by
-    rw [← hpnt]; simp only [pt]
+  have hpnt1 : VG.Proof.X448.AArch64.Base.pt (EV t1.mem base) 3 4 5 = P := by
+    rw [← hpnt]; simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [Same.env s1 (i := 3) (by decide), Same.env s1 (i := 4) (by decide), Same.env s1 (i := 5) (by decide)]
   refine ⟨⟨by omega, by omega⟩, hs2.of_keeps k3 (by decide), ?_, fun w hw => ?_, c3, ?_, ?_, ?_, fun e he => ?_,
     ?_, ?_, ?_, ?_, ?_⟩
@@ -188,8 +187,8 @@ theorem tabBody_ok {s₀ s : State} {base : Addr} {P : Point} {k : Nat} (h : TIn
     exact b1 i w hw
   · rw [m3, o2.limbs (Or.inl (by simp only [slot, TAB]; omega)) (by simp only [slot]; omega) (by omega)]
     exact z1 w hw
-  · simp only [pt]; rw [e3 0, e3 1, e3 2, Nat.add_sub_cancel]; exact hacc1
-  · simp only [pt]; rw [e3 3, e3 4, e3 5]; exact hpnt1
+  · simp only [VG.Proof.X448.AArch64.Base.pt]; rw [e3 0, e3 1, e3 2, Nat.add_sub_cancel]; exact hacc1
+  · simp only [VG.Proof.X448.AArch64.Base.pt]; rw [e3 3, e3 4, e3 5]; exact hpnt1
   · rw [e3 20, ← hone]; exact Same.env s1 (i := 20) (by decide)
   · rw [m3]
     by_cases hek : e = k

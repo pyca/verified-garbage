@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Rc2.X86.Stream
 import VerifiedGarbage.Proof.Rc2.X86.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86.KeyLit
+import VerifiedGarbage.Proof.Rc2.X86.Key
 
 /-! # Streaming RC2-CBC on x86 (32-bit): the code as literals -/
 

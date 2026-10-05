@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MdStream.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Scratch
 
 /-!
 # SHA-256 as a streaming Merkle–Damgård hash function

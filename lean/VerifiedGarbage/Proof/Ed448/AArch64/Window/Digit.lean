@@ -1,9 +1,8 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.BitBody
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import VerifiedGarbage.Proof.X448.AArch64.Main
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Store
-
 /-!
 # Ed448 verification on AArch64: a digit of the challenge
 

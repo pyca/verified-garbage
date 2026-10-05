@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 import VerifiedGarbage.Proof.Gcm.X86_64.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash

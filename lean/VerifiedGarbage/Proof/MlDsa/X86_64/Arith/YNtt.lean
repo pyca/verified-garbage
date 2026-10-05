@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay21
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 
 /-!
@@ -43,12 +43,12 @@ theorem ypro_ok {sP : Addr} {s : State} (hsi : s.gpr .rsi = sP) (hw : pR sP ∈ 
       Frame [pR sP] s.mem s'.mem ∧ Keep [.r9, .rax] s s' ∧ s'.mxcsr = s.mxcsr := by
   rw [ypro, WP.block_append_iff]
   refine WP.mono (dwordTab_ok zmTab (fun k => Nat.lt_trans (zmTab_lt k) (by decide)) (by decide) hsi hw)
-    fun s1 ⟨hT, hf, k1, x1, _⟩ => WP.mono (yconsts_ok s1) fun s2 ⟨hc, k2, m2, x2, _⟩ =>
+    fun s1 ⟨hT, hf, k1, x1, _⟩ => WP.mono (VG.Proof.MlDsa.X86_64.Arith.yconsts_ok s1) fun s2 ⟨hc, k2, m2, x2, _⟩ =>
       ⟨by rw [m2]; exact hT, hc, by rw [m2]; exact hf, (k1.trans k2).mono (by simp), by rw [x2, x1]⟩
 
 /-- Between the layers: the polynomial `F` at `fP`, the table at `sP`, and
 the constants in both lanes. -/
-structure LIY (fP sP : Addr) (s₀ : State) (F : Poly) (s : State) : Prop where
+structure LIY (fP sP : Addr) (s₀ : State) (F : VG.Spec.MlDsa.Poly) (s : State) : Prop where
   P : PolyIs s.mem fP F
   T : Tab zmTab s.mem sP 256
   c : YConsts s
@@ -58,10 +58,10 @@ structure LIY (fP sP : Addr) (s₀ : State) (F : Poly) (s : State) : Prop where
 /-- A layer, then `c`. -/
 theorem LIY.seq {fP sP : Addr} {s₀ : State} (hdi : s₀.gpr .rdi = fP) (hsi : s₀.gpr .rsi = sP)
     (hwf : pR fP ∈ s₀.wr) (hw : pR sP ∈ s₀.wr) (hd : (pR sP).Disjoint (pR fP)) {l c : Prog isa}
-    {F F' : Poly} {Q : State → Prop}
+    {F F' : VG.Spec.MlDsa.Poly} {Q : State → Prop}
     (hl : ∀ s, YConsts s → s.gpr .rdi = fP → s.gpr .rsi = sP → PolyIs s.mem fP F → Tab zmTab s.mem sP 256 →
       pR fP ∈ s.wr → pR sP ∈ s.wr → WP isa l s fun s' => PolyIs s'.mem fP F' ∧ BInvY fP s s')
-    (hc : ∀ s, LIY fP sP s₀ F' s → WP isa c s Q) {s : State} (hI : LIY fP sP s₀ F s) :
+    (hc : ∀ s, VG.Proof.MlDsa.X86_64.Arith.LIY fP sP s₀ F' s → WP isa c s Q) {s : State} (hI : VG.Proof.MlDsa.X86_64.Arith.LIY fP sP s₀ F s) :
     WP isa (.seq l c) s Q :=
   WP.seq (WP.mono (hl s hI.c (by rw [hI.keep.gpr (by decide), hdi]) (by rw [hI.keep.gpr (by decide), hsi]) hI.P
       hI.T (by rw [hI.keep.2.2]; exact hwf) (by rw [hI.keep.2.2]; exact hw))
@@ -69,115 +69,115 @@ theorem LIY.seq {fP sP : Addr} {s₀ : State} (hdi : s₀.gpr .rdi = fP) (hsi : 
       (by decide), hb.consts, (hI.keep.trans hb.keep).mono (by decide), hI.frame.trans hb.frame⟩)
 
 /-- `vzeroupper` keeps the memory. -/
-theorem LIY.epi {fP sP : Addr} {s₀ : State} {F : Poly} {s : State} (hI : LIY fP sP s₀ F s) :
+theorem LIY.epi {fP sP : Addr} {s₀ : State} {F : VG.Spec.MlDsa.Poly} {s : State} (hI : VG.Proof.MlDsa.X86_64.Arith.LIY fP sP s₀ F s) :
     WP isa (.block yepi) s fun s' => PolyIs s'.mem fP F ∧ Frame [pR fP] s₀.mem s'.mem :=
   WP.mono (Q := fun (u : State) => u.mem = s.mem) (by simp only [yepi]; vrund; rfl)
     fun u hm => by rw [hm]; exact ⟨hI.P, hI.frame⟩
 
 /-- A layer of `NTT` with `len ≥ 8`, whose first zeta is `zetas k`. -/
 theorem yfwdLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat)
-    (hlen : len ∈ [8, 16, 32, 64, 128]) (hk : 128 / len = k) {F : Poly} (s : State) (hc : YConsts s)
+    (hlen : len ∈ [8, 16, 32, 64, 128]) (hk : 128 / len = k) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay vbfly len k 4) s fun s' => PolyIs s'.mem fP (nttLayer F len) ∧ BInvY fP s s' := by
-  rw [nttLayer_eq]
-  exact ylay_ok vbfly_spec lane_vbfly nttBlk_ok hlen 4 (fun c => 128 / len + c) (by rw [hk]; rfl)
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttLayer_eq]
+  exact ylay_ok vbfly_spec VG.Proof.MlDsa.X86_64.Arith.lane_vbfly nttBlk_ok hlen 4 (fun c => 128 / len + c) (by rw [hk]; rfl)
     (fun c hc => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
       rcases hlen with rfl | rfl | rfl | rfl | rfl <;> omega)
-    (fun c _ => step_fwd _ _ 1 (by decide)) hc hdi hsi hS hT hwf hw hd
+    (fun c _ => VG.Proof.MlDsa.X86_64.Arith.step_fwd _ _ 1 (by decide)) hc hdi hsi hS hT hwf hw hd
 
-theorem yfwdLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yfwdLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay4 vbfly 32 0x00 0x55 8) s fun s' => PolyIs s'.mem fP (nttLayer F 4) ∧ BInvY fP s s' := by
   have h0 : ∀ e < 4, sel 0x00 e = 0 := by decide
   have h5 : ∀ e < 4, sel 0x55 e = 1 := by decide
-  rw [nttLayer_eq, show 128 / 4 = 32 from rfl]
-  exact ylay4_ok vbfly_spec lane_vbfly nttBlk_ok 32 0x00 0x55 8 (fun c => 32 + c) (fun m => 32 + 2 * m) rfl
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttLayer_eq, show 128 / 4 = 32 from rfl]
+  exact VG.Proof.MlDsa.X86_64.Arith.ylay4_ok vbfly_spec VG.Proof.MlDsa.X86_64.Arith.lane_vbfly nttBlk_ok 32 0x00 0x55 8 (fun c => 32 + c) (fun m => 32 + 2 * m) rfl
     (fun m _ => by omega) (fun m _ e he => ⟨by rw [h0 e he]; omega, by rw [h5 e he]; omega⟩)
-    (fun m _ => (step_fwd _ _ 2 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
+    (fun m _ => (VG.Proof.MlDsa.X86_64.Arith.step_fwd _ _ 2 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
 
-theorem yfwdLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yfwdLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay2 vbfly 64 0xA0 0xF5 16) s fun s' => PolyIs s'.mem fP (nttLayer F 2) ∧ BInvY fP s s' := by
   have hA : ∀ e < 4, sel 0xA0 e = 2 * (e / 2) := by decide
   have hF : ∀ e < 4, sel 0xF5 e = 1 + 2 * (e / 2) := by decide
-  rw [nttLayer_eq, show 128 / 2 = 64 from rfl]
-  exact ylay2_ok nttBlk_ok vbfly_spec lane_core2f 64 0xA0 0xF5 16 (fun c => 64 + c) (fun i => 64 + 4 * i) rfl
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttLayer_eq, show 128 / 2 = 64 from rfl]
+  exact VG.Proof.MlDsa.X86_64.Arith.ylay2_ok nttBlk_ok vbfly_spec lane_core2f 64 0xA0 0xF5 16 (fun c => 64 + c) (fun i => 64 + 4 * i) rfl
     (fun i _ => by omega) (fun i _ e he => ⟨by rw [hA e he]; omega, by rw [hF e he]; omega⟩)
-    (fun i _ => (step_fwd _ _ 4 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
+    (fun i _ => (VG.Proof.MlDsa.X86_64.Arith.step_fwd _ _ 4 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
 
-theorem yfwdLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yfwdLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay1 vbfly 128 yzeta8 32) s fun s' => PolyIs s'.mem fP (nttLayer F 1) ∧ BInvY fP s s' := by
-  rw [nttLayer_eq, show 128 / 1 = 128 from rfl]
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttLayer_eq, show 128 / 1 = 128 from rfl]
   exact ylay1_ok nttBlk_ok vbfly_spec lane_core1f 128 yzeta8 32 (fun c => 128 + c) (fun i => 128 + 8 * i) rfl
     (fun i _ => by omega)
     (fun i hi s h8 hin hT => WP.mono (yzeta8_ok (by omega) h8 hin hT) fun _ ⟨z, o⟩ =>
       ⟨fun l hl => ⟨(z l hl).1.congr fun e he => congrArg zetas (by omega), (z l hl).2⟩, o⟩)
-    (fun i _ => (step_fwd _ _ 8 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
+    (fun i _ => (VG.Proof.MlDsa.X86_64.Arith.step_fwd _ _ 8 (by decide)).trans (congrArg _ (by omega))) hc hdi hsi hS hT hwf hw hd
 
 theorem yinvLay_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) (len k : Nat)
-    (hlen : len ∈ [8, 16, 32, 64, 128]) (hk : 256 / len - 1 = k) {F : Poly} (s : State) (hc : YConsts s)
+    (hlen : len ∈ [8, 16, 32, 64, 128]) (hk : 256 / len - 1 = k) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay vibfly len k (-4)) s fun s' => PolyIs s'.mem fP (nttInvLayer F len) ∧ BInvY fP s s' := by
   have hl : 128 / len ≥ 1 ∧ 256 / len = 2 * (128 / len) ∧ 256 / len ≤ 32 := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hlen
     rcases hlen with rfl | rfl | rfl | rfl | rfl <;> decide
-  rw [nttInvLayer_eq]
-  exact ylay_ok vibfly_spec lane_vibfly nttInvBlk_ok hlen (-4) (fun c => 256 / len - 1 - c) (by rw [hk]; rfl)
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttInvLayer_eq]
+  exact ylay_ok vibfly_spec VG.Proof.MlDsa.X86_64.Arith.lane_vibfly nttInvBlk_ok hlen (-4) (fun c => 256 / len - 1 - c) (by rw [hk]; rfl)
     (fun c _ => by omega)
     (fun c hc' => (congrArg (· + _) (congrArg (coeffAddr sP) (show 256 / len - 1 - c =
-      256 / len - 1 - (c + 1) + 1 by omega))).trans (step_bwd _ _ 1 (by decide)))
+      256 / len - 1 - (c + 1) + 1 by omega))).trans (VG.Proof.MlDsa.X86_64.Arith.step_bwd _ _ 1 (by decide)))
     hc hdi hsi hS hT hwf hw hd
 
-theorem yinvLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yinvLay4_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay4 vibfly 62 0x55 0x00 (-8)) s fun s' => PolyIs s'.mem fP (nttInvLayer F 4) ∧ BInvY fP s s' := by
   have h0 : ∀ e < 4, sel 0x00 e = 0 := by decide
   have h5 : ∀ e < 4, sel 0x55 e = 1 := by decide
-  rw [nttInvLayer_eq, show 256 / 4 - 1 = 63 from rfl, show 128 / 4 = 32 from rfl]
-  exact ylay4_ok vibfly_spec lane_vibfly nttInvBlk_ok 62 0x55 0x00 (-8) (fun c => 63 - c) (fun m => 62 - 2 * m)
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttInvLayer_eq, show 256 / 4 - 1 = 63 from rfl, show 128 / 4 = 32 from rfl]
+  exact VG.Proof.MlDsa.X86_64.Arith.ylay4_ok vibfly_spec VG.Proof.MlDsa.X86_64.Arith.lane_vibfly nttInvBlk_ok 62 0x55 0x00 (-8) (fun c => 63 - c) (fun m => 62 - 2 * m)
     rfl (fun m _ => by omega) (fun m _ e he => ⟨by rw [h5 e he]; omega, by rw [h0 e he]; omega⟩)
     (fun m _ => (congrArg (· + _) (congrArg (coeffAddr sP) (show 62 - 2 * m = 62 - 2 * (m + 1) + 2 by
-      omega))).trans (step_bwd _ _ 2 (by decide))) hc hdi hsi hS hT hwf hw hd
+      omega))).trans (VG.Proof.MlDsa.X86_64.Arith.step_bwd _ _ 2 (by decide))) hc hdi hsi hS hT hwf hw hd
 
-theorem yinvLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yinvLay2_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay2 vibfly 124 0x5F 0x0A (-16)) s fun s' => PolyIs s'.mem fP (nttInvLayer F 2) ∧
       BInvY fP s s' := by
   have hA : ∀ e < 4, sel 0x5F e = 3 - 2 * (e / 2) := by decide
   have hB : ∀ e < 4, sel 0x0A e = 2 - 2 * (e / 2) := by decide
-  rw [nttInvLayer_eq, show 256 / 2 - 1 = 127 from rfl, show 128 / 2 = 64 from rfl]
-  exact ylay2_ok nttInvBlk_ok vibfly_spec lane_core2i 124 0x5F 0x0A (-16) (fun c => 127 - c)
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttInvLayer_eq, show 256 / 2 - 1 = 127 from rfl, show 128 / 2 = 64 from rfl]
+  exact VG.Proof.MlDsa.X86_64.Arith.ylay2_ok nttInvBlk_ok vibfly_spec lane_core2i 124 0x5F 0x0A (-16) (fun c => 127 - c)
     (fun i => 124 - 4 * i) rfl (fun i _ => by omega)
     (fun i _ e he => ⟨by rw [hA e he]; omega, by rw [hB e he]; omega⟩)
     (fun i _ => (congrArg (· + _) (congrArg (coeffAddr sP) (show 124 - 4 * i = 124 - 4 * (i + 1) + 4 by
-      omega))).trans (step_bwd _ _ 4 (by decide))) hc hdi hsi hS hT hwf hw hd
+      omega))).trans (VG.Proof.MlDsa.X86_64.Arith.step_bwd _ _ 4 (by decide))) hc hdi hsi hS hT hwf hw hd
 
-theorem yinvLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : Poly} (s : State) (hc : YConsts s)
+theorem yinvLay1_ok {fP sP : Addr} (hd : (pR sP).Disjoint (pR fP)) {F : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP F) (hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) :
     WP isa (ylay1 vibfly 248 yzeta8R (-32)) s fun s' => PolyIs s'.mem fP (nttInvLayer F 1) ∧
       BInvY fP s s' := by
-  rw [nttInvLayer_eq, show 256 / 1 - 1 = 255 from rfl, show 128 / 1 = 128 from rfl]
+  rw [VG.Proof.MlDsa.X86_64.Arith.nttInvLayer_eq, show 256 / 1 - 1 = 255 from rfl, show 128 / 1 = 128 from rfl]
   exact ylay1_ok nttInvBlk_ok vibfly_spec lane_core1i 248 yzeta8R (-32) (fun c => 255 - c)
     (fun i => 248 - 8 * i) rfl (fun i _ => by omega)
     (fun i hi s h8 hin hT => WP.mono (yzeta8R_ok (by omega) h8 hin hT) fun _ ⟨z, o⟩ =>
       ⟨fun l hl => ⟨(z l hl).1.congr fun e he => congrArg zetas (by omega), (z l hl).2⟩, o⟩)
     (fun i _ => (congrArg (· + _) (congrArg (coeffAddr sP) (show 248 - 8 * i = 248 - 8 * (i + 1) + 8 by
-      omega))).trans (step_bwd _ _ 8 (by decide))) hc hdi hsi hS hT hwf hw hd
+      omega))).trans (VG.Proof.MlDsa.X86_64.Arith.step_bwd _ _ 8 (by decide))) hc hdi hsi hS hT hwf hw hd
 
 /-! ## The multiplication by `256⁻¹` -/
 
 /-- The coefficients of `G` before `8i` multiplied by `8347681`. -/
-def YScaled (m : Mem) (fP : Addr) (G : Poly) (i : Nat) : Prop :=
+def YScaled (m : Mem) (fP : Addr) (G : VG.Spec.MlDsa.Poly) (i : Nat) : Prop :=
   ∀ k < 256, (coeffAt m fP k).toNat = (if k < 8 * i then G[k]! * 8347681 else G[k]!).val
 
 /-- `8347681 · 2³² mod q` in each doubleword. -/
@@ -197,7 +197,7 @@ abbrev sbodyY : List Instr :=
   [.vmovdquLoad .l256 .xmm3 (at_ .rdx 0)] ++ toY (vmont .xmm3 .xmm13 .xmm12 .xmm2 .xmm4 ++ vcsub .xmm3 .xmm2) ++
     [.vmovdquStore .l256 (at_ .rdx 0) .xmm3, .alu .add .rdx (.imm 32)] ++ [.alu .sub .rcx (.imm 1)]
 
-theorem yscale_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State} (hc : YConsts s)
+theorem yscale_step {fP : Addr} {G : VG.Spec.MlDsa.Poly} {i : Nat} (hi : i < 32) {s : State} (hc : YConsts s)
     (hz : ∀ l < 2, ZLanes (s.lane .xmm13 l) (fun _ => 8347681))
     (ho : ∀ l < 2, ZOdd (s.lane .xmm13 l) (s.lane .xmm12 l))
     (hdx : s.gpr .rdx = coeffAddr fP (8 * i)) (hS : YScaled s.mem fP G i) (hw : pR fP ∈ s.wr) :
@@ -235,7 +235,7 @@ theorem yscale_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State} (
   have g2 : s2.gpr .rdx = coeffAddr fP (8 * i) := by rw [o12.gpr, hdx]
   rw [g2, o12.mem]
   refine ⟨fun k hk => ?_, ?_, ?_, ?_, ?_, ?_, ⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [coeffAt_write256 _ _ j0 _ hk]
+  · rw [VG.Proof.MlDsa.X86_64.Arith.coeffAt_write256 _ _ j0 _ hk]
     split
     · rename_i h
       rw [ifp (show k < 8 * (i + 1) by omega), State.ymm, extract_ymm _ _ (by omega)]
@@ -266,7 +266,7 @@ theorem yscale_step {fP : Addr} {G : Poly} {i : Nat} (hi : i < 32) {s : State} (
   · exact o12.mxcsr
 
 /-- Every coefficient times `8347681`. -/
-theorem yscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s : State) (hc : YConsts s)
+theorem yscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : VG.Spec.MlDsa.Poly} (s : State) (hc : YConsts s)
     (hdi : s.gpr .rdi = fP) (_hsi : s.gpr .rsi = sP) (hS : PolyIs s.mem fP G) (_hT : Tab zmTab s.mem sP 256)
     (hwf : pR fP ∈ s.wr) (_hw : pR sP ∈ s.wr) :
     WP isa yscale s fun s' => PolyIs s'.mem fP (G.map (· * 8347681)) ∧ BInvY fP s s' := by
@@ -317,9 +317,9 @@ theorem yscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s 
 
 /-- The code in `withMxcsr`, from its state `s1`: the prologue, then the
 layers `l`, which leave `G`. -/
-theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s) {l : Prog isa} {G : Poly}
+theorem ynttBody_ok {t : VG.Spec.MlDsa.Poly → VG.Spec.MlDsa.Poly} {s s1 : State} (hs : (VG.Proof.MlDsa.X86_64.Arith.inPlaceK t).pre s) {l : Prog isa} {G : VG.Spec.MlDsa.Poly}
     (k1 : Keep [.rax, .r11] s s1) (f1 : Frame [mxR (s.gpr .rsi)] s.mem s1.mem)
-    (hl : ∀ s2, LIY (s.gpr .rdi) (s.gpr .rsi) s2 (polyAt s.mem (s.gpr .rdi)) s2 → s2.gpr .rdi = s.gpr .rdi →
+    (hl : ∀ s2, VG.Proof.MlDsa.X86_64.Arith.LIY (s.gpr .rdi) (s.gpr .rsi) s2 (polyAt s.mem (s.gpr .rdi)) s2 → s2.gpr .rdi = s.gpr .rdi →
       s2.gpr .rsi = s.gpr .rsi → pR (s.gpr .rdi) ∈ s2.wr → pR (s.gpr .rsi) ∈ s2.wr →
       WP isa l s2 fun s3 => PolyIs s3.mem (s.gpr .rdi) G ∧ Frame [pR (s.gpr .rdi)] s2.mem s3.mem) :
     WP isa (.seq (.block ypro) l) s1 fun s' =>
@@ -332,7 +332,7 @@ theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s)
   have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
     polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
       ⟨hs.2.2.2.2.2, rfl⟩
-  refine WP.seq (WP.mono (ypro_ok hsi1 (by rw [k1.2.2]; exact hw)) fun s2 ⟨hT, hc, hf2, k2, _⟩ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.MlDsa.X86_64.Arith.ypro_ok hsi1 (by rw [k1.2.2]; exact hw)) fun s2 ⟨hT, hc, hf2, k2, _⟩ => ?_)
   have hF2 : PolyIs s2.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
     polyIs_frame hf2 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd) hF1
   refine WP.mono (hl s2 ⟨hF2, hT, hc, Keep.refl _ _, Frame.refl _ _⟩
@@ -343,7 +343,7 @@ theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s)
   exacts [.inr (mx_sub' _), .inr fun _ h => h, .inl fun _ h => h]
 
 /-- `withMxcsr` around the body, and the ABI. -/
-theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlaceK t).pre s)
+theorem ymx_correct {t : VG.Spec.MlDsa.Poly → VG.Spec.MlDsa.Poly} {l : Prog isa} (s : State) (hs : (VG.Proof.MlDsa.X86_64.Arith.inPlaceK t).pre s)
     (hk : writesOnly [.rax, .rcx, .rdx, .r8, .r9] (.seq (.block ypro) l) = true)
     (hctl : ctlOk (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) = true)
     (hk' : writesOnly [.rax, .rcx, .rdx, .r8, .r9, .r11]
@@ -352,7 +352,7 @@ theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlac
       WP isa (.seq (.block ypro) l) s1 fun s' => PolyIs s'.mem (s.gpr .rdi) (t (polyAt s.mem (s.gpr .rdi))) ∧
         Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s'.mem) :
     ∃ tr s', Exec isa (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) s tr s' ∧
-      abiPreserved s s' ∧ (inPlaceK t).post s s' := by
+      abiPreserved s s' ∧ (VG.Proof.MlDsa.X86_64.Arith.inPlaceK t).post s s' := by
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
   have hW := withMxcsr_ok (c := .seq (.block ypro) l) (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw
@@ -365,8 +365,8 @@ theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlac
   · exact polyIs_frame hf' (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _)) hP
 
-theorem nttY_correct (s : State) (hs : (inPlaceK ntt).pre s) :
-    ∃ t s', Exec isa nttAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK ntt).post s s' := by
+theorem nttY_correct (s : State) (hs : (VG.Proof.MlDsa.X86_64.Arith.inPlaceK ntt).pre s) :
+    ∃ t s', Exec isa nttAvx2 s t s' ∧ abiPreserved s s' ∧ (VG.Proof.MlDsa.X86_64.Arith.inPlaceK ntt).post s s' := by
   have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
   refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
     WP.mono (ynttBody_ok hs k1 f1 (G := nttLens.foldl nttLayer (polyAt s.mem (s.gpr .rdi)))
@@ -381,8 +381,8 @@ theorem nttY_correct (s : State) (hs : (inPlaceK ntt).pre s) :
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay2_ok hd) ?_ hI
   exact fun _ hI => LIY.seq hdi hsi hwf hw hd (yfwdLay1_ok hd) (fun _ hI => hI.epi) hI
 
-theorem nttInvY_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
-    ∃ t s', Exec isa nttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (inPlaceK nttInv).post s s' := by
+theorem nttInvY_correct (s : State) (hs : (VG.Proof.MlDsa.X86_64.Arith.inPlaceK nttInv).pre s) :
+    ∃ t s', Exec isa nttInvAvx2 s t s' ∧ abiPreserved s s' ∧ (VG.Proof.MlDsa.X86_64.Arith.inPlaceK nttInv).post s s' := by
   have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
   refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
     WP.mono (ynttBody_ok hs k1 f1
@@ -397,22 +397,22 @@ theorem nttInvY_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yinvLay_ok hd 32 7 (by decide) (by decide)) ?_ hI
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yinvLay_ok hd 64 3 (by decide) (by decide)) ?_ hI
   refine fun _ hI => LIY.seq hdi hsi hwf hw hd (yinvLay_ok hd 128 1 (by decide) (by decide)) ?_ hI
-  exact fun _ hI => LIY.seq hdi hsi hwf hw hd (yscale_ok hd) (fun _ hI => hI.epi) hI
+  exact fun _ hI => LIY.seq hdi hsi hwf hw hd (VG.Proof.MlDsa.X86_64.Arith.yscale_ok hd) (fun _ hI => hI.epi) hI
 
-theorem nttY_ct : ConstantTime isa (inPlaceK ntt).pre (inPlaceK ntt).pub nttAvx2 :=
-  VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
+theorem nttY_ct : ConstantTime isa (VG.Proof.MlDsa.X86_64.Arith.inPlaceK ntt).pre (VG.Proof.MlDsa.X86_64.Arith.inPlaceK ntt).pub nttAvx2 :=
+  VG.Taint.constantTime (A := VG.X86_64.taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
-theorem nttInvY_ct : ConstantTime isa (inPlaceK nttInv).pre (inPlaceK nttInv).pub nttInvAvx2 :=
-  VG.Taint.constantTime (A := taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
+theorem nttInvY_ct : ConstantTime isa (VG.Proof.MlDsa.X86_64.Arith.inPlaceK nttInv).pre (VG.Proof.MlDsa.X86_64.Arith.inPlaceK nttInv).pub nttInvAvx2 :=
+  VG.Taint.constantTime (A := VG.X86_64.taint) (X86_64.Taint.ofRegs [.rdi, .rsi, .rsp]) inPlace_agree (by taint_decide)
 
 theorem nttY_verified : Verified X86_64.target nttAvx2 (Spec.MlDsa.nttContract X86_64.abi) :=
-  Verified.of_correct nttY_correct nttY_ct (by
-    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
-      X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
+  Verified.of_correct VG.Proof.MlDsa.X86_64.Arith.nttY_correct VG.Proof.MlDsa.X86_64.Arith.nttY_ct (by
+    mldsa_implies [Spec.MlDsa.nttContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, VG.Proof.MlDsa.X86_64.Arith.inPlaceK,
+      X86_64.abi, X86_64.argRegs] [inPlaceSat] using VG.Proof.MlDsa.X86_64.Arith.inPlaceSat)
 
 theorem nttInvY_verified : Verified X86_64.target nttInvAvx2 (Spec.MlDsa.nttInvContract X86_64.abi) :=
-  Verified.of_correct nttInvY_correct nttInvY_ct (by
-    mldsa_implies [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, inPlaceK,
-      X86_64.abi, X86_64.argRegs] [inPlaceSat] using inPlaceSat)
+  Verified.of_correct VG.Proof.MlDsa.X86_64.Arith.nttInvY_correct VG.Proof.MlDsa.X86_64.Arith.nttInvY_ct (by
+    mldsa_implies [Spec.MlDsa.nttInvContract, Spec.MlDsa.inPlaceContract, Spec.MlDsa.inPlaceSig, VG.Proof.MlDsa.X86_64.Arith.inPlaceK,
+      X86_64.abi, X86_64.argRegs] [inPlaceSat] using VG.Proof.MlDsa.X86_64.Arith.inPlaceSat)
 
 end VG.Proof.MlDsa.X86_64.Arith

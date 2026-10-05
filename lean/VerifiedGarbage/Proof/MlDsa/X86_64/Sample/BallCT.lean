@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Ball
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 
 /-!
@@ -45,31 +45,31 @@ def Same (rs : List Reg) (s₁ s₂ : State) : Prop := ∀ r ∈ rs, s₁.gpr r 
 /-- Two runs at the start of an iteration: the same registers of the loop,
 and the same byte to read. -/
 def BRel (s₁ s₂ : State) : Prop :=
-  Same [.rbp, .rdi, .rsi, .rcx, .r9] s₁ s₂ ∧ s₁.mem (s₁.gpr .rsi) = s₂.mem (s₂.gpr .rsi) ∧
+  VG.Proof.MlDsa.X86_64.Sample.BallCT.Same [.rbp, .rdi, .rsi, .rcx, .r9] s₁ s₂ ∧ s₁.mem (s₁.gpr .rsi) = s₂.mem (s₂.gpr .rsi) ∧
     InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .rsi) 1 ∧ InRegions (s₂.rd ++ s₂.wr) (s₂.gpr .rsi) 1
 
 /-- After the comparison of `i` with 256. -/
-def R1 (s₁ s₂ : State) : Prop := BRel s₁ s₂ ∧ s₁.cf = s₂.cf
+def R1 (s₁ s₂ : State) : Prop := VG.Proof.MlDsa.X86_64.Sample.BallCT.BRel s₁ s₂ ∧ s₁.cf = s₂.cf
 
 /-- After the load of the byte. -/
-def R2 (s₁ s₂ : State) : Prop := Same [.rbp, .rdi, .rax, .r9, .rsi, .rcx] s₁ s₂ ∧ s₁.cf = s₂.cf
+def R2 (s₁ s₂ : State) : Prop := VG.Proof.MlDsa.X86_64.Sample.BallCT.Same [.rbp, .rdi, .rax, .r9, .rsi, .rcx] s₁ s₂ ∧ s₁.cf = s₂.cf
 
 /-- The end of a try. -/
-def RQ (s₁ s₂ : State) : Prop := Same [.rsi, .rcx] s₁ s₂
+def RQ (s₁ s₂ : State) : Prop := VG.Proof.MlDsa.X86_64.Sample.BallCT.Same [.rsi, .rcx] s₁ s₂
 
-theorem same_of {rs : List Reg} {s₁ s₂ : State} (h : Same rs s₁ s₂) {r : Reg} (hr : r ∈ rs) :
+theorem same_of {rs : List Reg} {s₁ s₂ : State} (h : VG.Proof.MlDsa.X86_64.Sample.BallCT.Same rs s₁ s₂) {r : Reg} (hr : r ∈ rs) :
     s₁.gpr r = s₂.gpr r := h r hr
 
-theorem cmp_ct : RelCT isa BRel (.block [.alu .cmp .rdi (.imm 256)]) R1 :=
+theorem cmp_ct : RelCT isa VG.Proof.MlDsa.X86_64.Sample.BallCT.BRel (.block [.alu .cmp .rdi (.imm 256)]) VG.Proof.MlDsa.X86_64.Sample.BallCT.R1 :=
   RelCT.postDep (F := fun (x x' : State) => x'.cf = some (decide ((x.gpr .rdi).toNat < 256)) ∧ x'.mem = x.mem ∧
       x'.gpr = x.gpr ∧ x'.rd = x.rd ∧ x'.wr = x.wr)
-    (taintRel [] nil_regs (by taint_decide)) (fun x y _ => ⟨cmpRdi_ok x, cmpRdi_ok y⟩)
+    (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)) (fun x y _ => ⟨VG.Proof.MlDsa.X86_64.Sample.cmpRdi_ok x, VG.Proof.MlDsa.X86_64.Sample.cmpRdi_ok y⟩)
     fun x y x' y' ⟨hs, hb, i₁, i₂⟩ ⟨c₁, m₁, g₁, r₁, w₁⟩ ⟨c₂, m₂, g₂, r₂, w₂⟩ =>
       ⟨⟨fun r hr => by rw [g₁, g₂]; exact hs r hr, by rw [m₁, m₂, g₁, g₂]; exact hb,
         by rw [r₁, w₁, g₁]; exact i₁, by rw [r₂, w₂, g₂]; exact i₂⟩,
         by rw [c₁, c₂, same_of hs (by decide : Reg.rdi ∈ _)]⟩
 
-theorem load_ct : RelCT isa (fun s₁ s₂ => R1 s₁ s₂ ∧ isa.eval .b s₁ = some true)
+theorem load_ct : RelCT isa (fun s₁ s₂ => VG.Proof.MlDsa.X86_64.Sample.BallCT.R1 s₁ s₂ ∧ isa.eval .b s₁ = some true)
     (.block [.movzx8 .rax (at_ .rsi 0), .alu .cmp .rdi (.reg .rax)]) R2 :=
   RelCT.postDep (F := fun (x x' : State) =>
       (x'.gpr .rax = BitVec.ofNat 64 (x.mem (x.gpr .rsi)).toNat ∧
@@ -88,7 +88,7 @@ theorem load_ct : RelCT isa (fun s₁ s₂ => R1 s₁ s₂ ∧ isa.eval .b s₁ 
       all_goals rw [k₁.gpr (by decide), k₂.gpr (by decide)]; exact same_of hs (by decide)
 
 theorem nil_ct {P : State → State → Prop} (hP : ∀ x y, P x y → RQ x y) : RelCT isa P (.block []) RQ :=
-  RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] nil_regs (by taint_decide))
+  RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))
     (fun x y _ => ⟨WP.block_nil rfl, WP.block_nil rfl⟩) fun x y x' y' h f₁ f₂ => by rw [f₁, f₂]; exact hP x y h
 
 theorem set_ct : RelCT isa (fun s₁ s₂ => R2 s₁ s₂ ∧ isa.eval .b s₁ = some false) bSet RQ :=
@@ -99,8 +99,8 @@ theorem set_ct : RelCT isa (fun s₁ s₂ => R2 s₁ s₂ ∧ isa.eval .b s₁ =
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> rw [k₁ _ (by decide), k₂ _ (by decide)] <;> exact same_of hs (by decide)
 
-theorem try_ct : RelCT isa (fun s₁ s₂ => R1 s₁ s₂ ∧ isa.eval .b s₁ = some true) bTry RQ :=
-  RelCT.seq load_ct (RelCT.ite (fun x y h => h.2)
+theorem try_ct : RelCT isa (fun s₁ s₂ => VG.Proof.MlDsa.X86_64.Sample.BallCT.R1 s₁ s₂ ∧ isa.eval .b s₁ = some true) bTry RQ :=
+  RelCT.seq VG.Proof.MlDsa.X86_64.Sample.BallCT.load_ct (RelCT.ite (fun x y h => h.2)
     (nil_ct (P := fun s₁ s₂ => R2 s₁ s₂ ∧ isa.eval .b s₁ = some true) fun x y ⟨⟨hs, _⟩, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact same_of hs (by decide))
@@ -109,15 +109,15 @@ theorem try_ct : RelCT isa (fun s₁ s₂ => R1 s₁ s₂ ∧ isa.eval .b s₁ =
 theorem step_ct : RelCT isa RQ (.block [.alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)])
     fun s₁ s₂ => s₁.zf = s₂.zf :=
   RelCT.postDep (F := fun (x x' : State) => x'.zf = some (x.gpr .rcx - 1 == 0))
-    (taintRel [] nil_regs (by taint_decide))
+    (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))
     (fun x y _ => ⟨WP.mono (step_ok x 1) fun _ h => h.1.2.2.1, WP.mono (step_ok y 1) fun _ h => h.1.2.2.1⟩)
     fun x y x' y' e f1 f2 => by rw [f1, f2, same_of e (by decide : Reg.rcx ∈ _)]
 
-theorem body_ct : RelCT isa BRel bBody fun s₁ s₂ => s₁.zf = s₂.zf :=
+theorem body_ct : RelCT isa VG.Proof.MlDsa.X86_64.Sample.BallCT.BRel bBody fun s₁ s₂ => s₁.zf = s₂.zf :=
   RelCT.seq cmp_ct (RelCT.seq (RelCT.ite (fun x y h => h.2) try_ct
-    (nil_ct (P := fun s₁ s₂ => R1 s₁ s₂ ∧ isa.eval .b s₁ = some false) fun x y ⟨⟨⟨hs, _⟩, _⟩, _⟩ r hr => by
+    (nil_ct (P := fun s₁ s₂ => VG.Proof.MlDsa.X86_64.Sample.BallCT.R1 s₁ s₂ ∧ isa.eval .b s₁ = some false) fun x y ⟨⟨⟨hs, _⟩, _⟩, _⟩ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact same_of hs (by decide))) step_ct)
+      rcases hr with rfl | rfl <;> exact same_of hs (by decide))) VG.Proof.MlDsa.X86_64.Sample.BallCT.step_ct)
 
 end BallCT
 
@@ -131,7 +131,7 @@ section
 variable {σ₁ σ₂ : State} (hq : sbK.pub σ₁ σ₂)
 include hq
 
-theorem pub_X : X σ₁ = X σ₂ := by simp only [X, B, hq.2.2.2.2.2.2]
+theorem pub_X : X σ₁ = X σ₂ := by simp only [X, VG.Proof.MlDsa.X86_64.Sample.Ball.B, hq.2.2.2.2.2.2]
 theorem pub_tau : tauOf σ₁ = tauOf σ₂ := by simp only [tauOf, hq.2.2.1]
 theorem pub_sp : spOf σ₁ = spOf σ₂ := by simp only [spOf, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1]
 theorem pub_St (t : Nat) : St σ₁ t = St σ₂ t := by simp only [St, i0, pub_X hq, pub_tau hq]
@@ -145,7 +145,7 @@ end
 def LI (n : Nat) (s₁ s₂ : State) : Prop :=
   ∃ σ₁ σ₂ t, sbK.pre σ₁ ∧ sbK.pre σ₂ ∧ sbK.pub σ₁ σ₂ ∧ n = 264 - t ∧ t < 264 ∧ BAt σ₁ t s₁ ∧ BAt σ₂ t s₂
 
-theorem li_brel {n : Nat} {s₁ s₂ : State} (h : LI n s₁ s₂) : BRel s₁ s₂ := by
+theorem li_brel {n : Nat} {s₁ s₂ : State} (h : VG.Proof.MlDsa.X86_64.Sample.Ball.LI n s₁ s₂) : VG.Proof.MlDsa.X86_64.Sample.BallCT.BRel s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, _, ht, l₁, l₂⟩ := h
   have rs : ∀ {σ s}, sbK.pre σ → BAt σ t s → InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1 := fun hp h => by
     rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega)
@@ -154,18 +154,18 @@ theorem li_brel {n : Nat} {s₁ s₂ : State} (h : LI n s₁ s₂) : BRel s₁ s
   refine ⟨fun r hr => ?_, by rw [bt l₁, bt l₂, pub_X hq], rs p₁ l₁, rs p₂ l₂⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · rw [l₁.env.rbp, l₂.env.rbp, pub_sp hq]
+  · rw [l₁.env.rbp, l₂.env.rbp, VG.Proof.MlDsa.X86_64.Sample.Ball.pub_sp hq]
   · rw [l₁.rdi, l₂.rdi, pub_St hq]
-  · rw [l₁.rsi, l₂.rsi, pub_sp hq]
+  · rw [l₁.rsi, l₂.rsi, VG.Proof.MlDsa.X86_64.Sample.Ball.pub_sp hq]
   · rw [l₁.rcx, l₂.rcx]
   · rw [l₁.r9, l₂.r9, pub_St hq]; simp only [W, i0, pub_X hq, pub_tau hq]
 
 theorem loop_ct (n : Nat) :
-    RelCT isa (LI n) (.loop bBody .ne) (Rel2 sbK.pre sbK.pub fun σ s => BAt σ 264 s) := by
-  refine RelCT.loop (M := isa) LI (fun n => ?_) n
+    RelCT isa (VG.Proof.MlDsa.X86_64.Sample.Ball.LI n) (.loop bBody .ne) (Rel2 sbK.pre sbK.pub fun σ s => BAt σ 264 s) := by
+  refine RelCT.loop (M := isa) VG.Proof.MlDsa.X86_64.Sample.Ball.LI (fun n => ?_) n
   refine RelCT.postDep (F := fun (x x' : State) => ∀ p : State × Nat, sbK.pre p.1 ∧ p.2 < 264 ∧ BAt p.1 p.2 x →
       BAt p.1 (p.2 + 1) x' ∧ x'.zf = some (BitVec.ofNat 64 (264 - p.2) - 1 == 0))
-    (RelCT.mono body_ct (fun x y h => li_brel h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
+    (RelCT.mono VG.Proof.MlDsa.X86_64.Sample.BallCT.body_ct (fun x y h => VG.Proof.MlDsa.X86_64.Sample.Ball.li_brel h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
   · obtain ⟨σ₁, σ₂, t, p₁, p₂, _, _, ht, l₁, l₂⟩ := h
     exact ⟨WP.all' (fun p hp' => bat_step hp'.1 hp'.2.1 hp'.2.2) ⟨(σ₁, t), p₁, ht, l₁⟩,
       WP.all' (fun p hp' => bat_step hp'.1 hp'.2.1 hp'.2.2) ⟨(σ₂, t), p₂, ht, l₂⟩⟩
@@ -194,24 +194,24 @@ theorem hpub : ∀ σ₁ σ₂, sbK.pre σ₁ → sbK.pre σ₂ → sbK.pub σ�
 
 /-- The zeroing, the loop and the end. -/
 theorem tail_ct : RelCT isa (Rel2 sbK.pre sbK.pub fun σ => J6 136 272 (spOf σ) σ)
-    (.seq bZero (.seq bLoop (.block (retJ ++ epi)))) fun _ _ => True := by
-  refine RelCT.seq (relInv (I' := ZDone) (fun σ s hp h => zero_ok hp h)
-    (taintSp hpub (J := J6 136 272) (fun _ _ h => h.env) [] nil_regs (by taint_decide))) ?_
+    (.seq bZero (.seq bLoop (.block (retJ ++ VG.Impl.MlDsa.X86_64.Sample.epi)))) fun _ _ => True := by
+  refine RelCT.seq (relInv (I' := ZDone) (fun σ s hp h => VG.Proof.MlDsa.X86_64.Sample.Ball.zero_ok hp h)
+    (taintSp hpub (J := J6 136 272) (fun _ _ h => h.env) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))) ?_
   refine RelCT.seq (RelCT.seq (relInv (I' := fun σ s => WP isa (.block [.mov32 .rcx (.imm 264)]) s (BAt σ 0))
-      (fun σ s hp h => setup_ok hp h)
-      (taintSp hpub (J := fun P σ s => ZDone σ s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)))
+      (fun σ s hp h => VG.Proof.MlDsa.X86_64.Sample.Ball.setup_ok hp h)
+      (taintSp hpub (J := fun P σ s => ZDone σ s) (fun _ _ h => h.env) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)))
     (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => BAt σ 0 s) (fun σ s _ h => h) (RelCT.mono
-        (taintRel [] nil_regs (by taint_decide)) (fun _ _ _ => trivial) fun _ _ _ => trivial))
+        (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)) (fun _ _ _ => trivial) fun _ _ _ => trivial))
       (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, l₁, l₂⟩ => ⟨σ₁, σ₂, 0, p₁, p₂, hq, rfl, by omega, l₁, l₂⟩)
-      (loop_ct 264))) ?_
-  exact taintSp hpub (J := fun P σ s => BAt σ 264 s) (fun _ _ h => h.env) [] nil_regs (by taint_decide)
+      (VG.Proof.MlDsa.X86_64.Sample.Ball.loop_ct 264))) ?_
+  exact taintSp hpub (J := fun P σ s => BAt σ 264 s) (fun _ _ h => h.env) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)
 
 end Ball
 
 open Ball in
 theorem sampleInBall_ct : ConstantTime isa sbK.pre sbK.pub Impl.MlDsa.X86_64.Sample.sampleInBall := by
   refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ => J0 (spOf σ) σ)
-    (fun σ s hp h => by subst h; exact pro_ok hp)
+    (fun σ s hp h => by subst h; exact VG.Proof.MlDsa.X86_64.Sample.Ball.pro_ok hp)
     (taintRel [.rdi, .rsi, .rcx, .r8, .rsp] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -267,7 +267,7 @@ theorem sampleInBall_verified :
         sig_pub [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi,
           X86_64.argRegs] at h
         obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
-        exact ⟨hdi, hsi, hdx, hcx, h8, hsp, leakBytes_inj hb⟩
+        exact ⟨hdi, hsi, hdx, hcx, h8, hsp, VG.Proof.MlDsa.X86_64.Sample.leakBytes_inj hb⟩
       sat := by sig_implies_sat [Spec.MlDsa.sampleInBallContract, Spec.MlDsa.sampleInBallSig, sbK, X86_64.abi,
         X86_64.argRegs] [sbSat] using sbSat }
 

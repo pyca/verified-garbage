@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 import VerifiedGarbage.Proof.Framework.X86_64.Depth
 
 /-!

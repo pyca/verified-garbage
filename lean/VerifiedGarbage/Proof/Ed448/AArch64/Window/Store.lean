@@ -1,7 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-
 /-!
 # Ed448 verification on AArch64: storing a table entry
 

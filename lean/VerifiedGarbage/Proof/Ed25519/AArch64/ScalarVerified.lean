@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
+import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddVerified
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 

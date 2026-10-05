@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyMain
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyEntry
-import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 
 /-!
 # `vg_rsa_check_key` on x86-64: correctness

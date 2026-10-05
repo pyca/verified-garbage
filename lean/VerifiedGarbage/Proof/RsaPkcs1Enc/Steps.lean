@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.Checked
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 
 /-!
 # RSAES-PKCS1-v1_5 decryption with implicit rejection: the steps of an implementation

@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.MdStream.AArch64.Update
-import VerifiedGarbage.Proof.MdStream.AArch64.Finalize
 import VerifiedGarbage.Proof.MdStream.AArch64.Words
-import VerifiedGarbage.Proof.Sha512.Md
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 

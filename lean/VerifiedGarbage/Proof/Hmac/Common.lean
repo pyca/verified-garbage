@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Spec.Hmac
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -46,9 +46,9 @@ theorem extractLsb'_read (m : Mem) (a : Addr) {n j : Nat} (hj : j < n) :
 
 /-- Writing a word read from memory writes its bytes. -/
 theorem writeW_readW (m m' : Mem) (d s : Addr) (n : Nat) :
-    m.writeW d (m'.readW s (8 * n)) = writeBytes m d (bytesAt m' s n) := by
+    m.writeW d (m'.readW s (8 * n)) = VG.WriteBytes.writeBytes m d (bytesAt m' s n) := by
   simp only [Mem.writeW, Mem.readW]
-  rw [show 8 * n / 8 = n by omega_nat, BitVec.setWidth_eq, BitVec.setWidth_eq, write_eq_writeBytes]
+  rw [show 8 * n / 8 = n by omega_nat, BitVec.setWidth_eq, BitVec.setWidth_eq, VG.WriteBytes.write_eq_writeBytes]
   congr 1
   simp only [bytesAt]
   exact List.map_congr_left fun j hj => extractLsb'_read _ _ (List.mem_range.mp hj)
@@ -62,11 +62,11 @@ theorem bytesAt_add (m : Mem) (p : Addr) (a b : Nat) :
 
 theorem bytesAt_writeBytes_sep (m : Mem) {p q : Addr} {n : Nat} (xs : List Byte)
     (h : Mem.Sep p n q xs.length) (hn : n < 2 ^ 64) :
-    bytesAt (writeBytes m q xs) p n = bytesAt m p n := by
+    bytesAt (VG.WriteBytes.writeBytes m q xs) p n = bytesAt m p n := by
   simp only [bytesAt]
   refine List.map_congr_left fun i hi => ?_
   have hi := List.mem_range.mp hi
-  simp only [writeBytes]
+  simp only [VG.WriteBytes.writeBytes]
   split
   · exact absurd ‹_› (h _ (by rw [Mem.sub_ofNat_toNat p (by omega_nat)]; exact hi))
   · rfl
@@ -74,12 +74,12 @@ theorem bytesAt_writeBytes_sep (m : Mem) {p q : Addr} {n : Nat} (xs : List Byte)
 /-- One more word copied from `A` to `B`. -/
 theorem copy_mem (m : Mem) (A B : Addr) (n w : Nat)
     (hsep : Mem.Sep A (w * n + w) B (w * n + w)) (hlt : w * n + w < 2 ^ 64) :
-    (writeBytes m B (bytesAt m A (w * n))).writeW (B + BitVec.ofNat 64 (w * n))
-      ((writeBytes m B (bytesAt m A (w * n))).readW (A + BitVec.ofNat 64 (w * n)) (8 * w)) =
-      writeBytes m B (bytesAt m A (w * n + w)) := by
+    (VG.WriteBytes.writeBytes m B (bytesAt m A (w * n))).writeW (B + BitVec.ofNat 64 (w * n))
+      ((VG.WriteBytes.writeBytes m B (bytesAt m A (w * n))).readW (A + BitVec.ofNat 64 (w * n)) (8 * w)) =
+      VG.WriteBytes.writeBytes m B (bytesAt m A (w * n + w)) := by
   rw [writeW_readW, bytesAt_writeBytes_sep]
   · rw [bytesAt_add]
-    have := writeBytes_append m B (bytesAt m A (w * n)) (bytesAt m (A + BitVec.ofNat 64 (w * n)) w)
+    have := VG.WriteBytes.writeBytes_append m B (bytesAt m A (w * n)) (bytesAt m (A + BitVec.ofNat 64 (w * n)) w)
       (by simp [bytesAt]; omega_nat)
     simpa [bytesAt] using this
   · intro x hx hy
@@ -120,12 +120,12 @@ theorem stateAt_eq_of_bytes {m m' : Mem} {p q : Addr}
       simp only [BitVec.ofNat_add, BitVec.add_assoc]] at this
 
 theorem writeBytes_at (m : Mem) (q : Addr) (xs : List Byte) {i : Nat} (hi : i < xs.length)
-    (hl : xs.length < 2 ^ 64) : writeBytes m q xs (q + BitVec.ofNat 64 i) = xs.getD i 0 := by
-  simp only [writeBytes, Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by omega_nat), hi, ite_true]
+    (hl : xs.length < 2 ^ 64) : VG.WriteBytes.writeBytes m q xs (q + BitVec.ofNat 64 i) = xs.getD i 0 := by
+  simp only [VG.WriteBytes.writeBytes, Mem.sub_ofNat_toNat q (show i < 2 ^ 64 by omega_nat), hi, ite_true]
 
 theorem writeBytes_other (m : Mem) (q : Addr) (xs : List Byte) {x : Addr}
-    (hx : ¬ (x - q).toNat < xs.length) : writeBytes m q xs x = m x := by
-  simp only [writeBytes, hx, ite_false]
+    (hx : ¬ (x - q).toNat < xs.length) : VG.WriteBytes.writeBytes m q xs x = m x := by
+  simp only [VG.WriteBytes.writeBytes, hx, ite_false]
 
 theorem bytesAt_getD' (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
     (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
@@ -135,7 +135,7 @@ theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length =
   simp [bytesAt]
 
 theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (hl : xs.length < 2 ^ 64) :
-    bytesAt (writeBytes m q xs) q xs.length = xs := by
+    bytesAt (VG.WriteBytes.writeBytes m q xs) q xs.length = xs := by
   apply List.ext_getElem (by simp [bytesAt])
   intro i h₁ h₂
   simp only [bytesAt, List.getElem_map, List.getElem_range]

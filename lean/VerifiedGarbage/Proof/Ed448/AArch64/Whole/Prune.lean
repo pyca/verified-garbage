@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.Ed448.AArch64.Whole
-import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Wipe
-import VerifiedGarbage.Proof.Ed448.Prune
-import VerifiedGarbage.Proof.Ed448.ScalarWords
+import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.WrapCT
+import VerifiedGarbage.Proof.Ed448.PruneBytes
+import VerifiedGarbage.Proof.Ed448.Signing
 import VerifiedGarbage.Spec.Sha3
 
 /-!
@@ -29,9 +29,9 @@ structure Step (s t : State) : Prop where
   v : t.v = s.v
   regs : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x14 → r ≠ .x15 → t.gpr r = s.gpr r
 
-theorem Step.refl (s : State) : Step s s := ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl⟩
+theorem Step.refl (s : State) : VG.Proof.Ed448.AArch64.Whole.Step s s := ⟨rfl, rfl, rfl, rfl, fun _ _ _ _ _ => rfl⟩
 
-theorem Step.trans {s t u : State} (h : Step s t) (h' : Step t u) : Step s u :=
+theorem Step.trans {s t u : State} (h : VG.Proof.Ed448.AArch64.Whole.Step s t) (h' : VG.Proof.Ed448.AArch64.Whole.Step t u) : VG.Proof.Ed448.AArch64.Whole.Step s u :=
   ⟨h'.rd.trans h.rd, h'.wr.trans h.wr, h'.sp.trans h.sp, h'.v.trans h.v,
     fun r h9 h10 h14 h15 => (h'.regs r h9 h10 h14 h15).trans (h.regs r h9 h10 h14 h15)⟩
 
@@ -39,7 +39,7 @@ theorem pruneWord_ok {s : State} {h d k : Nat} (hk : k < 7) (hh8 : h % 8 = 0) (h
     (hdl : d + 64 ≤ 256)
     (hr : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (h + 8 * k)) 8)
     (hw : InRegions s.wr (s.sp + BitVec.ofNat 64 (d + 8 * k)) 8) :
-    WP isa (.block (pruneWord h d k)) s fun t => Step s t ∧
+    WP isa (.block (pruneWord h d k)) s fun t => VG.Proof.Ed448.AArch64.Whole.Step s t ∧
       t.mem = s.mem.writeW (s.sp + BitVec.ofNat 64 (d + 8 * k))
         (pruneValue k (s.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * k)) 64)) := by
   have ho : (h + 8 * k) % 8 = 0 ∧ h + 8 * k < 32768 := by omega
@@ -88,7 +88,7 @@ theorem pruneWord_ok {s : State} {h d k : Nat} (hk : k < 7) (hh8 : h % 8 = 0) (h
       simp only [RegUpd.gpr_write, h9, h15, ite_false]
 
 structure PruneInv (h d : Nat) (s : State) (n : Nat) (t : State) : Prop where
-  step : Step s t
+  step : VG.Proof.Ed448.AArch64.Whole.Step s t
   frame : Frame [⟨s.sp + BitVec.ofNat 64 d, 64⟩] s.mem t.mem
   words : ∀ j < n, t.mem.readW (s.sp + BitVec.ofNat 64 (d + 8 * j)) 64 =
     pruneValue j (s.mem.readW (s.sp + BitVec.ofNat 64 (h + 8 * j)) 64)
@@ -151,7 +151,7 @@ theorem pruneValue_toNat6 (x : BitVec 64) : (pruneValue 6 x).toNat = x.toNat |||
 theorem prune_run {s : State} {h d : Nat} (hw : (⟨s.sp, 256⟩ : Region) ∈ s.wr) (hh8 : h % 8 = 0)
     (hd8 : d % 8 = 0) (hhl : h + 64 ≤ 256) (hdl : d + 64 ≤ 256) (hsep : d + 64 ≤ h ∨ h + 64 ≤ d)
     {hb : List Byte} (hh : Spec.Sha3.bytesAt s.mem (s.sp + BitVec.ofNat 64 h) 114 = hb) :
-    WP isa (.block (pruneAt h d)) s fun t => Step s t ∧
+    WP isa (.block (pruneAt h d)) s fun t => VG.Proof.Ed448.AArch64.Whole.Step s t ∧
       Frame [⟨s.sp + BitVec.ofNat 64 d, 64⟩] s.mem t.mem ∧
       Spec.Ed448.decodeLE (Spec.Ed448.bytesAt t.mem (s.sp + BitVec.ofNat 64 d) 57) = Spec.Ed448.prune hb := by
   rw [pruneAt, WP.block_append_iff]

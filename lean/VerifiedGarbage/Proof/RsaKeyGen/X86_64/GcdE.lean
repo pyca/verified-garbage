@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.ModE
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
-import VerifiedGarbage.Proof.Bignum.X86_64.Bytes
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 
 /-!
 # A candidate on x86-64: `gcd(c − 1, e)` for an odd `e > 1`

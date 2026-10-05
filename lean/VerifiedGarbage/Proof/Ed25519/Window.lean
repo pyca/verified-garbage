@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ed25519.Bytes
+import VerifiedGarbage.Proof.Ed25519.Signing
 import VerifiedGarbage.Proof.Ed25519.Group.Double
 import Mathlib.Tactic.Module
 

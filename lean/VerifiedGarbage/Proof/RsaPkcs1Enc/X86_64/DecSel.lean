@@ -22,13 +22,13 @@ theorem selBody_run {t : State} {p q : Addr} {i k kl : Nat} {v ok : Bool} {e a :
     (h10 : t.gpr .r10 = bmask v) (h11 : t.gpr .r11 = bmask ok) (he : t.mem (off p i) = e) (ha : t.mem (off q i) = a)
     (hie : InRegions (t.rd ++ t.wr) (off p i) 1) (hia : InRegions (t.rd ++ t.wr) (off q i) 1)
     (hw : InRegions t.wr (off p i) 1) :
-    WP isa (.block selBody) t fun t' => t'.mem = t.mem.writeW (off p i) (outByte v ok kl i e a) ∧
+    WP isa (.block VG.Impl.RsaPkcs1Enc.X86_64.Decrypt.selBody) t fun t' => t'.mem = t.mem.writeW (off p i) (outByte v ok kl i e a) ∧
       t'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧ t'.zf = some (decide (i + 1 = k)) ∧ Keep [.rax, .r8, .rcx] t t' := by
-  refine WP.keep [.rax, .r8, .rcx] (c := .block selBody) (Q := fun t' =>
+  refine WP.keep [.rax, .r8, .rcx] (c := .block VG.Impl.RsaPkcs1Enc.X86_64.Decrypt.selBody) (Q := fun t' =>
     t'.mem = t.mem.writeW (off p i) (outByte v ok kl i e a) ∧ t'.gpr .rcx = BitVec.ofNat 64 (i + 1) ∧
       t'.zf = some (decide (i + 1 = k))) ?_ rfl |>.mono fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
   have e1 : 0 + i = i := Nat.zero_add _
-  xrun [selBody, ea_bxd (p := p) (j := i), ea_bxd (p := q) (j := i), hdi, hsi, hcx, e1, hie, hia, hw, he, ha,
+  xrun [VG.Impl.RsaPkcs1Enc.X86_64.Decrypt.selBody, ea_bxd (p := p) (j := i), ea_bxd (p := q) (j := i), hdi, hsi, hcx, e1, hie, hia, hw, he, ha,
     hdx, h9, h10, h11, borrow_mask, bmask_not, bmask_and, ofNat_add_one,
     ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show k < 2 ^ 64 by omega), sel_xor]
   congr 1

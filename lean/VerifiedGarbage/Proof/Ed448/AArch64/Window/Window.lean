@@ -35,7 +35,7 @@ def dbl4 (Q : Point) : Point :=
 /-- A window: `Q` doubled four times, plus entry `n`. -/
 def wstep (P Q : Point) (n : Nat) : Point := addPt (dbl4 Q) (tabPts P n)
 
-theorem genEnv_345 (e : Env) : pt (genEnv 3 4 5 6 7 8 e) 3 4 5 = genPt (pt e 3 4 5) (pt e 6 7 8) (e 19) := rfl
+theorem genEnv_345 (e : Env) : VG.Proof.X448.AArch64.Base.pt (genEnv 3 4 5 6 7 8 e) 3 4 5 = genPt (VG.Proof.X448.AArch64.Base.pt e 3 4 5) (VG.Proof.X448.AArch64.Base.pt e 6 7 8) (e 19) := rfl
 
 theorem TabOk.of_outside2 {m m' : Mem} {base : Addr} {P : Point} {k : Nat} (h : TabOk m base P k)
     (ho : Outside2 base 64 2816 ACC 1152 m m') (hk : k ≤ 16) : TabOk m' base P k := by
@@ -86,7 +86,7 @@ theorem Kept.env {base : Addr} {m m' : Mem} (h : Kept base m m') {i : Index} (hi
 
 theorem dbl_step {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) :
     WP isa (ops (Impl.Ed448.AArch64.dblOps (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val))) s
-      fun t => WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = VG.Proof.Ed448.double (pt (EV s.mem base) 3 4 5) ∧
+      fun t => WCtx s₀ base P t ∧ VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 3 4 5 = VG.Proof.Ed448.double (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5) ∧
         Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 := by
   refine WP.mono (dblOps_ok 3 4 5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.scr
     h.env h.z5) fun t ⟨k, b, sm, _, _, mz, e⟩ => ?_
@@ -99,7 +99,7 @@ theorem dbl4_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P
     WP isa (.block (codeOf (Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++
         Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++ Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++
         Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5)))) s
-      fun t => WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = dbl4 (pt (EV s.mem base) 3 4 5) ∧
+      fun t => WCtx s₀ base P t ∧ VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 3 4 5 = dbl4 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5) ∧
         Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 := by
   refine block_codeOf (ops_append _ _ (ops_append _ _ (ops_append _ _
     (WP.mono (dbl_step h) fun t1 ⟨h1, p1, k1, c1⟩ => WP.mono (dbl_step h1) fun t2 ⟨h2, p2, k2, c2⟩ =>
@@ -115,7 +115,7 @@ theorem dst_slot {c i : Nat} (hi : i < 8) : dst (8 * c + i) = slot (6 + c) + 8 *
 theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 16)
     (hsel : ∀ w < 24, word t.mem base (dst w) = tw s.mem base n w) (ho : Outside base 832 384 s.mem t.mem)
     (hb : BEnv s.mem base) (htab : TabOk s.mem base P 16) :
-    BEnv t.mem base ∧ pt (EV t.mem base) 6 7 8 = tabPts P n ∧ Kept base s.mem t.mem ∧
+    BEnv t.mem base ∧ VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 6 7 8 = tabPts P n ∧ Kept base s.mem t.mem ∧
       (∀ i : Index, (i.val < 6 ∨ 9 ≤ i.val) → ∀ j < 8, limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j) := by
   have keep : ∀ i : Index, (i.val < 6 ∨ 9 ≤ i.val) → ∀ j < 8,
       limbs t.mem base (slot i.val) j = limbs s.mem base (slot i.val) j := fun i hi j hj => by
@@ -157,8 +157,8 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) {sh : Nat} (hsh : sh = 0 ∨ sh = 4) :
     WP isa (.block (window sh)) s fun t =>
       WCtx s₀ base P t ∧
-      pt (EV t.mem base) 3 4 5 = wstep P (pt (EV s.mem base) 3 4 5) (nibOf (s₀.mem (off base (KB + j))) sh) ∧
-      pt (EV t.mem base) 0 1 2 = pt (EV s.mem base) 0 1 2 ∧ t.gpr .x19 = s.gpr .x19 := by
+      VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 3 4 5 = wstep P (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5) (nibOf (s₀.mem (off base (KB + j))) sh) ∧
+      VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 0 1 2 = VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2 ∧ t.gpr .x19 = s.gpr .x19 := by
   rw [window_eq, WP.block_append_iff]
   refine WP.mono (dbl4_ok h) fun t1 ⟨h1, q1, k1, c1⟩ => ?_
   rw [WP.block_append_iff]
@@ -194,11 +194,11 @@ theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base
   refine ⟨h3.of_fkeep k4 b4 (fun w hw => by rw [s4 19 (by decide) w hw]; exact h3.zero w hw)
     (by rw [Same.env s4 (i := 20) (by decide)]; exact h3.one) m5, ?_, ?_, ?_⟩
   · rw [e4, genEnv_345, (zero_env h3.zero).1, VG.Proof.X448.AArch64.Base.genPt_eq, e3, wstep, ← q1]
-    simp only [pt]
+    simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [keepE 3 (by decide), keepE 4 (by decide), keepE 5 (by decide)]
   · have k14 : Kept base s.mem t4.mem := (k1.trans (by rw [m2] at kp3; exact kp3)).trans
       (Kept.of_same s4 (by decide))
-    simp only [pt]
+    simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [k14.env (i := 0) (by decide), k14.env (i := 1) (by decide), k14.env (i := 2) (by decide)]
   · rw [k4.regs.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), c1]
 

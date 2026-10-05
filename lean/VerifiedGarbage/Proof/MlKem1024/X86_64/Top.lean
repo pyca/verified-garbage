@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.MlKem.X86_64.KgTop
-import VerifiedGarbage.Proof.MlKem.X86_64.EcTop
-import VerifiedGarbage.Proof.MlKem.X86_64.DcTop
-import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+import VerifiedGarbage.Proof.MlKem.X86_64.Top768
+import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 import VerifiedGarbage.Spec.MlKem.Contract1024

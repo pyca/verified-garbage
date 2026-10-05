@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Poly1305.Arm.Steps
+import VerifiedGarbage.Proof.Poly1305.Arm.Finalize
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
@@ -38,53 +38,53 @@ abbrev sc : BitVec 32 := stackArg s₀ 2
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 12⟩
 /-- The number of bytes buffered, and the bytes. -/
 abbrev kb : Nat := (s₀.gpr .r2).toNat % 16
-abbrev Bf : List Byte := bytesAt s₀.mem (stB s₀ + 56) (kb s₀)
+abbrev Bf : List Byte := bytesAt s₀.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀)
 /-- The first `c` bytes of data, and the `n` from byte `c` on. -/
 abbrev Dt (c : Nat) : List Byte := bytesAt s₀.mem (dA s₀) c
 abbrev Dd (c n : Nat) : List Byte := bytesAt s₀.mem (dA s₀ + BitVec.ofNat 64 c) n
 /-- The number of bytes the buffer is filled with. -/
-def nf : Nat := if kb s₀ = 0 then 0 else min (16 - kb s₀) (dl s₀)
+def nf : Nat := if VG.Proof.Poly1305.Arm.Update.kb s₀ = 0 then 0 else min (16 - VG.Proof.Poly1305.Arm.Update.kb s₀) (dl s₀)
 /-- The number of whole blocks after that, and of bytes left. -/
 abbrev nw : Nat := (dl s₀ - nf s₀) / 16
 abbrev nr : Nat := (dl s₀ - nf s₀) % 16
 /-- The blocks absorbed from the buffer (if it is filled), and the bytes left in it (if not). -/
-def X1 : List Byte := if kb s₀ + nf s₀ = 16 then Bf s₀ ++ Dt s₀ (nf s₀) else []
-def Y0 : List Byte := if kb s₀ + nf s₀ = 16 then [] else Bf s₀ ++ Dt s₀ (nf s₀)
+def X1 : List Byte := if VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16 then VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀) else []
+def Y0 : List Byte := if VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16 then [] else VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
 end
 
 structure UPre (s₀ : State) : Prop where
-  rd : s₀.rd = [dR s₀, argR s₀]
-  wr : s₀.wr = [stR (s₀.gpr .r0), scrR (sc s₀)]
-  st_scr : (stR (s₀.gpr .r0)).Disjoint (scrR (sc s₀))
+  rd : s₀.rd = [dR s₀, VG.Proof.Poly1305.Arm.Update.argR s₀]
+  wr : s₀.wr = [stR (s₀.gpr .r0), scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)]
+  st_scr : (stR (s₀.gpr .r0)).Disjoint (scrR (VG.Proof.Poly1305.Arm.Update.sc s₀))
   d_st : (dR s₀).Disjoint (stR (s₀.gpr .r0))
-  d_scr : (dR s₀).Disjoint (scrR (sc s₀))
-  a_st : (argR s₀).Disjoint (stR (s₀.gpr .r0))
-  a_scr : (argR s₀).Disjoint (scrR (sc s₀))
+  d_scr : (dR s₀).Disjoint (scrR (VG.Proof.Poly1305.Arm.Update.sc s₀))
+  a_st : (VG.Proof.Poly1305.Arm.Update.argR s₀).Disjoint (stR (s₀.gpr .r0))
+  a_scr : (VG.Proof.Poly1305.Arm.Update.argR s₀).Disjoint (scrR (VG.Proof.Poly1305.Arm.Update.sc s₀))
   st_fit : (s₀.gpr .r0).toNat + 128 ≤ 2 ^ 32
   d_fit : (dp s₀).toNat + dl s₀ ≤ 2 ^ 32
-  sc_fit : (sc s₀).toNat + 128 ≤ 2 ^ 32
+  sc_fit : (VG.Proof.Poly1305.Arm.Update.sc s₀).toNat + 128 ≤ 2 ^ 32
   sp_fit : s₀.sp.toNat + 12 ≤ 2 ^ 32
 
 theorem UPre.of (s : State) (h : Proof.Poly1305.updateArm.pre s) : UPre s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11⟩
 
-theorem kb_lt (s₀ : State) : kb s₀ < 16 := Nat.mod_lt _ (by decide)
+theorem kb_lt (s₀ : State) : VG.Proof.Poly1305.Arm.Update.kb s₀ < 16 := Nat.mod_lt _ (by decide)
 
 theorem dl_lt (s₀ : State) : dl s₀ < 2 ^ 32 := (stackArg s₀ 1).isLt
 
 /-- What filling the buffer does. -/
 theorem nf_facts (s₀ : State) :
-    nf s₀ ≤ dl s₀ ∧ kb s₀ + nf s₀ ≤ 16 ∧ (kb s₀ = 0 → nf s₀ = 0) ∧
-      (0 < kb s₀ → kb s₀ + nf s₀ < 16 → nf s₀ = dl s₀) := by
-  have := kb_lt s₀
+    nf s₀ ≤ dl s₀ ∧ VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ ≤ 16 ∧ (VG.Proof.Poly1305.Arm.Update.kb s₀ = 0 → nf s₀ = 0) ∧
+      (0 < VG.Proof.Poly1305.Arm.Update.kb s₀ → VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ < 16 → nf s₀ = dl s₀) := by
+  have := VG.Proof.Poly1305.Arm.Update.kb_lt s₀
   simp only [nf]
   split <;> omega
 
 /-! ## What holds throughout -/
 
 /-- The state's working space and buffer (`wkL`) and `scratch`. -/
-abbrev uF (s₀ : State) : List Region := offR (stB s₀) wkL ++ [scrR (sc s₀)]
+abbrev uF (s₀ : State) : List Region := offR (stB s₀) wkL ++ [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)]
 
 structure UC (s₀ s : State) : Prop where
   r0 : s.gpr .r0 = s₀.gpr .r0
@@ -93,17 +93,17 @@ structure UC (s₀ s : State) : Prop where
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   frame : Frame (uF s₀) s₀.mem s.mem
-  saved : SavedS (State.addr (sc s₀)) s₀.gpr s.mem
+  saved : SavedS (State.addr (VG.Proof.Poly1305.Arm.Update.sc s₀)) s₀.gpr s.mem
 
 theorem UPre.stW {s₀ : State} (hp : UPre s₀) {s : State} (h : s.wr = s₀.wr) : stR (s₀.gpr .r0) ∈ s.wr := by
   rw [h, hp.wr]; exact List.mem_cons_self
 
-theorem UPre.scW {s₀ : State} (hp : UPre s₀) {s : State} (h : s.wr = s₀.wr) : scrR (sc s₀) ∈ s.wr := by
+theorem UPre.scW {s₀ : State} (hp : UPre s₀) {s : State} (h : s.wr = s₀.wr) : scrR (VG.Proof.Poly1305.Arm.Update.sc s₀) ∈ s.wr := by
   rw [h, hp.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
 
 /-- A range of the state is disjoint from `scratch`. -/
 theorem UPre.st_scr' {s₀ : State} (hp : UPre s₀) {a n : Nat} (h : a + n ≤ 128) :
-    (⟨stB s₀ + BitVec.ofNat 64 a, n⟩ : Region).Disjoint (scrR (sc s₀)) :=
+    (⟨stB s₀ + BitVec.ofNat 64 a, n⟩ : Region).Disjoint (scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)) :=
   hp.st_scr.sub_left (sub_base _ h (by decide))
 
 /-- Changing only ranges `l` of the state within `wkL`, and registers other
@@ -146,7 +146,7 @@ theorem argAddr {s₀ : State} (hp : UPre s₀) {i : Nat} (hi : i < 3) :
 /-- The stack arguments are unchanged. -/
 theorem UC.arg {s₀ : State} (hp : UPre s₀) {s : State} (h : UC s₀ s) {i : Nat} (hi : i < 3) :
     s.mem.readW (stackArgAddr s₀ i) 32 = stackArg s₀ i := by
-  rw [stackArg, h.frame.readW (r := argR s₀) (by rw [argAddr hp hi]; exact contains_off (by omega_using [hi]) (by omega_using [hi]))
+  rw [stackArg, h.frame.readW (r := VG.Proof.Poly1305.Arm.Update.argR s₀) (by rw [VG.Proof.Poly1305.Arm.Update.argAddr hp hi]; exact contains_off (by omega_using [hi]) (by omega_using [hi]))
     (fun r hr => ?_) (by decide)]
   rcases List.mem_append.mp hr with hr | hr
   · obtain ⟨p, hp', rfl⟩ := List.mem_map.mp hr
@@ -162,7 +162,7 @@ theorem wp_arg' {s₀ : State} (hp : UPre s₀) {s : State} (hsp : s.sp = s₀.s
     WP isa (.block (.ldrSp t (4 * i) :: is)) s Q := by
   have := hp.sp_fit
   refine wp_ldrSp (a := stackArgAddr s₀ i) (by omega_using [hi]) (by rw [hsp]; rfl)
-    (by rw [hrd, hp.rd, argAddr hp hi]
+    (by rw [hrd, hp.rd, VG.Proof.Poly1305.Arm.Update.argAddr hp hi]
         exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)),
           contains_off (by omega_using [hi]) (by omega_using [hi])⟩) fun s' u => ?_
   rw [hm] at u
@@ -196,20 +196,20 @@ theorem and15 (x : BitVec 32) : x &&& (15 : BitVec 32) = BitVec.ofNat 32 (x.toNa
 
 /-- After the prologue. -/
 structure P1 (s₀ s : State) : Prop extends UC s₀ s where
-  sfr : Frame [scrR (sc s₀)] s₀.mem s.mem
-  r4 : s.gpr .r4 = BitVec.ofNat 32 (kb s₀)
+  sfr : Frame [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)] s₀.mem s.mem
+  r4 : s.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀)
   r5 : s.gpr .r5 = dp s₀
   r6 : s.gpr .r6 = BitVec.ofNat 32 (dl s₀)
-  z : s.z = decide (kb s₀ = 0)
+  z : s.z = decide (VG.Proof.Poly1305.Arm.Update.kb s₀ = 0)
 
 theorem prologue_ok {s₀ : State} (hp : UPre s₀) :
     WP isa (.block (([.ldrSp .r12 8] : List Instr) ++ saveScr ++
-      ([.dp .and .r4 .r2 (.imm 15), .ldrSp .r5 0, .ldrSp .r6 4, .cmp .r4 (.imm 0)] : List Instr))) s₀ (P1 s₀) := by
+      ([.dp .and .r4 .r2 (.imm 15), .ldrSp .r5 0, .ldrSp .r6 4, .cmp .r4 (.imm 0)] : List Instr))) s₀ (VG.Proof.Poly1305.Arm.Update.P1 s₀) := by
   have hsc := hp.sc_fit
   refine wp_arg' (i := 2) hp rfl rfl (by decide) rfl fun s₁ u₁ => ?_
   refine WP.append (saveScr_ok hsc u₁.gpr (by rw [u₁.wr]; exact hp.scW rfl))
     fun s₂ ⟨hsv, hf₂, hg₂, hrd₂, hwr₂, hsp₂⟩ => ?_
-  have hf₂' : Frame [scrR (sc s₀)] s₀.mem s₂.mem := by
+  have hf₂' : Frame [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)] s₀.mem s₂.mem := by
     rw [← u₁.mem]; exact hf₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
@@ -219,22 +219,22 @@ theorem prologue_ok {s₀ : State} (hp : UPre s₀) :
       fun i hi => by rw [hsv i hi, u₁.other _ (by revert i; decide)]⟩
   refine wp_and (op2_imm (by decide)) fun s₃ u₃ => ?_
   have uc₃ := uc₂.upd u₃ (by decide)
-  refine wp_arg (i := 0) hp uc₃ (by decide) fun s₄ u₄ => ?_
+  refine VG.Proof.Poly1305.Arm.Update.wp_arg (i := 0) hp uc₃ (by decide) fun s₄ u₄ => ?_
   have uc₄ := uc₃.upd u₄ (by decide)
-  refine wp_arg (i := 1) hp uc₄ (by decide) fun s₅ u₅ => ?_
+  refine VG.Proof.Poly1305.Arm.Update.wp_arg (i := 1) hp uc₄ (by decide) fun s₅ u₅ => ?_
   have uc₅ := uc₄.upd u₅ (by decide)
   refine wp_cmp (op2_imm (by decide)) fun s₆ u₆ hz => WP.block_nil ?_
-  have hr4 : s₅.gpr .r4 = BitVec.ofNat 32 (kb s₀) := by
+  have hr4 : s₅.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀) := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, hg₂, u₁.other _ (by decide)]
-    exact and15 _
+    exact VG.Proof.Poly1305.Arm.Update.and15 _
   refine ⟨uc₅.flags u₆, by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem]; exact hf₂', by rw [u₆.gpr, hr4],
     by rw [u₆.gpr, u₅.other _ (by decide), u₄.gpr], by rw [u₆.gpr, u₅.gpr]; simp, ?_⟩
-  rw [hz, hr4, sub0, ofNat_beq_zero (by have := kb_lt s₀; omega_using [this])]
+  rw [hz, hr4, VG.Proof.Poly1305.Arm.Update.sub0, ofNat_beq_zero (by have := VG.Proof.Poly1305.Arm.Update.kb_lt s₀; omega_using [this])]
 
 /-! ## Filling the buffer -/
 
 theorem shr4_beq (x : BitVec 32) : (x >>> 4 - 0 == 0) = decide (x.toNat < 16) := by
-  rw [sub0]
+  rw [VG.Proof.Poly1305.Arm.Update.sub0]
   by_cases h : x.toNat < 16
   · have : x >>> 4 = 0 := BitVec.eq_of_toNat_eq (by rw [toNat_shr]; simp; omega_using [h])
     simp [this, h]
@@ -252,14 +252,14 @@ theorem CopyInv.keepsF {sI : State} {st src : BitVec 32} {j0 : Nat} {xs : List B
   ⟨h.keep, h.frame hj0, h.rd, h.wr, h.sp⟩
 
 /-- `r8 := min(16 - kb, dl)`. -/
-theorem fillCount_ok {s₀ : State} (hk : 0 < kb s₀) {s : State} (h4 : s.gpr .r4 = BitVec.ofNat 32 (kb s₀))
+theorem fillCount_ok {s₀ : State} (hk : 0 < VG.Proof.Poly1305.Arm.Update.kb s₀) {s : State} (h4 : s.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀))
     (h6 : s.gpr .r6 = BitVec.ofNat 32 (dl s₀)) :
     WP isa fillCount s fun s' => s'.gpr .r8 = BitVec.ofNat 32 (nf s₀) ∧ Keeps [.r8, .r12] s s' := by
-  have hkb := kb_lt s₀
+  have hkb := VG.Proof.Poly1305.Arm.Update.kb_lt s₀
   have hdl := dl_lt s₀
-  have hnf : nf s₀ = min (16 - kb s₀) (dl s₀) := by simp only [nf]; rw [iteF (by omega_using [hk, hkb])]
+  have hnf : nf s₀ = min (16 - VG.Proof.Poly1305.Arm.Update.kb s₀) (dl s₀) := by simp only [nf]; rw [iteF (by omega_using [hk, hkb])]
   have e16 : (16 : BitVec 32) = BitVec.ofNat 32 16 := rfl
-  refine WP.seq (WP.mono (Q := fun s' : State => s'.gpr .r8 = BitVec.ofNat 32 (16 - kb s₀) ∧
+  refine WP.seq (WP.mono (Q := fun s' : State => s'.gpr .r8 = BitVec.ofNat 32 (16 - VG.Proof.Poly1305.Arm.Update.kb s₀) ∧
     s'.z = decide (dl s₀ < 16) ∧ Keeps [.r8, .r12] s s') ?_ fun s₄ ⟨h8, hz, k₄⟩ => ?_)
   · refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => wp_sub (op2_reg _ _) fun s₂ u₂ => ?_
     refine wp_mov (op2_lsr (by decide)) fun s₃ u₃ => wp_cmp (op2_imm (by decide)) fun s₄ u₄ hz =>
@@ -272,8 +272,8 @@ theorem fillCount_ok {s₀ : State} (hk : 0 < kb s₀) {s : State} (h4 : s.gpr .
   refine WP.ite s₄.z (eval_eq _) (fun hb => ?_) (fun hb => WP.block_nil ⟨?_, k₄⟩)
   · have hd : dl s₀ < 16 := by rw [hz] at hb; simpa using hb
     have h6' : s₄.gpr .r6 = BitVec.ofNat 32 (dl s₀) := by rw [k₄.gpr _ (by decide), h6]
-    have h4' : s₄.gpr .r4 = BitVec.ofNat 32 (kb s₀) := by rw [k₄.gpr _ (by decide), h4]
-    refine WP.seq (WP.mono (Q := fun s' : State => s'.z = decide (dl s₀ + kb s₀ < 16) ∧ Keeps [.r12] s₄ s') ?_
+    have h4' : s₄.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀) := by rw [k₄.gpr _ (by decide), h4]
+    refine WP.seq (WP.mono (Q := fun s' : State => s'.z = decide (dl s₀ + VG.Proof.Poly1305.Arm.Update.kb s₀ < 16) ∧ Keeps [.r12] s₄ s') ?_
       fun s₅ ⟨hz₅, k₅⟩ => ?_)
     · refine wp_add (op2_reg _ _) fun t₁ v₁ => wp_mov (op2_lsr (by decide)) fun t₂ v₂ =>
         wp_cmp (op2_imm (by decide)) fun t₃ v₃ hz' => WP.block_nil ⟨?_, ?_⟩
@@ -281,11 +281,11 @@ theorem fillCount_ok {s₀ : State} (hk : 0 < kb s₀) {s : State} (h4 : s.gpr .
           Nat.mod_eq_of_lt (by omega_using [hk, hkb, hdl, hd])]
       · exact (v₁.keeps (by simp)).trans ((v₂.keeps (by simp)).trans (v₃.keeps _))
     refine WP.ite s₅.z (eval_eq _) (fun hb' => ?_) (fun hb' => WP.block_nil ⟨?_, ?_⟩)
-    · have hd' : dl s₀ + kb s₀ < 16 := by rw [hz₅] at hb'; simpa using hb'
+    · have hd' : dl s₀ + VG.Proof.Poly1305.Arm.Update.kb s₀ < 16 := by rw [hz₅] at hb'; simpa using hb'
       refine wp_mov (op2_reg _ _) fun t₁ v₁ => WP.block_nil ⟨?_, ?_⟩
       · rw [v₁.gpr, k₅.gpr _ (by decide), h6', hnf, Nat.min_eq_right (by omega_using [hk, hkb, hd'])]
       · exact k₄.trans ((k₅.mono (by simp)).trans (v₁.keeps (by simp)))
-    · have hd' : ¬ dl s₀ + kb s₀ < 16 := by rw [hz₅] at hb'; simpa using hb'
+    · have hd' : ¬ dl s₀ + VG.Proof.Poly1305.Arm.Update.kb s₀ < 16 := by rw [hz₅] at hb'; simpa using hb'
       rw [k₅.gpr _ (by decide), h8, hnf, Nat.min_eq_left (by omega_using [hk, hkb, hd'])]
     · exact k₄.trans (k₅.mono (by simp))
   · have hd : ¬ dl s₀ < 16 := by rw [hz] at hb; simpa using hb
@@ -298,26 +298,26 @@ theorem UC.keeps {s₀ s s' : State} (h : UC s₀ s) {ws : List Reg} (k : Keeps 
 
 /-- After filling the buffer. -/
 structure F2 (s₀ s : State) : Prop extends UC s₀ s where
-  sfr : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (sc s₀)]) s₀.mem s.mem
-  r4 : s.gpr .r4 = BitVec.ofNat 32 (kb s₀ + nf s₀)
+  sfr : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)]) s₀.mem s.mem
+  r4 : s.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀)
   r5 : s.gpr .r5 = dp s₀ + BitVec.ofNat 32 (nf s₀)
   r6 : s.gpr .r6 = BitVec.ofNat 32 (dl s₀ - nf s₀)
-  buf : bytesAt s.mem (stB s₀ + 56) (kb s₀ + nf s₀) = Bf s₀ ++ Dt s₀ (nf s₀)
+  buf : bytesAt s.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
 
-theorem fill_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : P1 s₀ s) :
-    WP isa (.ite .eq (.block []) fill) s (F2 s₀) := by
+theorem fill_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : VG.Proof.Poly1305.Arm.Update.P1 s₀ s) :
+    WP isa (.ite .eq (.block []) fill) s (VG.Proof.Poly1305.Arm.Update.F2 s₀) := by
   obtain ⟨hn1, hn2, hn3, hn4⟩ := nf_facts s₀
-  have hkb := kb_lt s₀
+  have hkb := VG.Proof.Poly1305.Arm.Update.kb_lt s₀
   have hdl := dl_lt s₀
   have hfit := hp.st_fit
   have hdf := hp.d_fit
   refine WP.ite s.z (eval_eq _) (fun hb => WP.block_nil ?_) (fun hb => ?_)
-  · have hk : kb s₀ = 0 := by rw [h.z] at hb; simpa using hb
+  · have hk : VG.Proof.Poly1305.Arm.Update.kb s₀ = 0 := by rw [h.z] at hb; simpa using hb
     have hn : nf s₀ = 0 := hn3 hk
     refine ⟨h.toUC, h.sfr.mono fun _ hr => List.mem_append_right _ hr, by rw [h.r4, hk, hn],
       by rw [h.r5, hn]; simp, by rw [h.r6, hn, Nat.sub_zero], ?_⟩
-    simp only [Bf, Dt, hk, hn, Nat.add_zero, bytesAt, List.range_zero, List.map_nil, List.append_nil]
-  have hk : 0 < kb s₀ := by
+    simp only [VG.Proof.Poly1305.Arm.Update.Bf, Dt, hk, hn, Nat.add_zero, bytesAt, List.range_zero, List.map_nil, List.append_nil]
+  have hk : 0 < VG.Proof.Poly1305.Arm.Update.kb s₀ := by
     rw [h.z] at hb; simp only [decide_eq_false_iff_not] at hb; omega_using [hkb, hb]
   refine WP.seq (WP.mono (fillCount_ok hk h.r4 h.r6) fun s₁ ⟨h8, k₁⟩ => ?_)
   refine WP.seq (wp_sub (op2_reg _ _) fun s₂ u₂ => wp_add (op2_reg _ _) fun s₃ u₃ =>
@@ -331,30 +331,30 @@ theorem fill_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : P1 s₀ s) :
   have e8 : s₅.gpr .r8 = BitVec.ofNat 32 (nf s₀) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), h8]
   have e8' : s₄.gpr .r8 = BitVec.ofNat 32 (nf s₀) := by rw [← u₅.gpr]; exact e8
-  have e4 : s₅.gpr .r4 = BitVec.ofNat 32 (kb s₀ + nf s₀) := by
+  have e4 : s₅.gpr .r4 = BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) := by
     rw [u₅.gpr, u₄.gpr, u₃.other .r4 (by decide), u₂.other .r4 (by decide), u₃.other .r8 (by decide),
       u₂.other .r8 (by decide), h8, k₁.gpr .r4 (by decide), h.r4, ← BitVec.ofNat_add]
   have e6 : s₅.gpr .r6 = BitVec.ofNat 32 (dl s₀ - nf s₀) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, k₁.gpr .r6 (by decide), h.r6, h8,
       sub_ofNat32 hn1]
-  have e1 : s₅.gpr .r1 = s₀.gpr .r0 + BitVec.ofNat 32 (kb s₀) := by
+  have e1 : s₅.gpr .r1 = s₀.gpr .r0 + BitVec.ofNat 32 (VG.Proof.Poly1305.Arm.Update.kb s₀) := by
     rw [u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other .r0 (by decide), u₂.other .r4 (by decide),
       k₁.gpr .r0 (by decide), k₁.gpr .r4 (by decide), h.r0, h.r4]
   have e5 : s₅.gpr .r5 = dp s₀ := by rw [g₅ _ (by decide), h.r5]
-  have hBf : bytesAt s₅.mem (stB s₀ + 56) (kb s₀) = Bf s₀ := by
+  have hBf : bytesAt s₅.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ := by
     rw [m₅]
     exact bytesAt_frame h.sfr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hp.st_scr' (a := 56) (n := kb s₀) (by omega_using [hkb, hk])) (by omega_using [hkb, hk])
+      exact hp.st_scr' (a := 56) (n := VG.Proof.Poly1305.Arm.Update.kb s₀) (by omega_using [hkb, hk])) (by omega_using [hkb, hk])
   refine WP.ite s₅.z (eval_eq _) (fun hb' => WP.block_nil ?_) (fun hb' => ?_)
   · have hn : nf s₀ = 0 := by
-      rw [hz, e8', sub0, ofNat_beq_zero (by omega_using [hn2, hkb, hk])] at hb'; simpa using hb'
+      rw [hz, e8', VG.Proof.Poly1305.Arm.Update.sub0, ofNat_beq_zero (by omega_using [hn2, hkb, hk])] at hb'; simpa using hb'
     refine ⟨uc₅, by rw [m₅]; exact h.sfr.mono fun _ hr => List.mem_append_right _ hr, e4,
       by rw [e5, hn]; simp, e6, ?_⟩
     rw [hn, Nat.add_zero, hBf]
     simp [Dt, bytesAt]
   · have hn : 0 < nf s₀ := by
-      rw [hz, e8', sub0, ofNat_beq_zero (by omega_using [hn2, hkb, hk])] at hb'; simp at hb'; omega_using [hb']
+      rw [hz, e8', VG.Proof.Poly1305.Arm.Update.sub0, ofNat_beq_zero (by omega_using [hn2, hkb, hk])] at hb'; simp at hb'; omega_using [hb']
     have hl : (Dt s₀ (nf s₀)).length = nf s₀ := Poly1305.length_bytesAt _ _ _
     have hS : SrcOk s₅ (stB s₀) (dp s₀) (Dt s₀ (nf s₀)) := by
       intro i hi
@@ -365,16 +365,16 @@ theorem fill_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : P1 s₀ s) :
       · exact hp.d_st _ (contains_off (by omega_using [hn1, hl, hi]) (by omega_using [hn2, hkb, hk, hn, hl, hi])) (sub_base _ (by decide) (by decide) _ hc)
       · rw [uc₅.data hp (by omega_using [hn1, hl, hi])]
         simp [Dt, bytesAt, List.getD_eq_getElem?_getD, hi]
-    refine WP.mono (copy_ok hfit (sI := s₅) (j0 := kb s₀) (by omega_using [hn2, hl]) (by rw [hl]; omega_using [hn1, hdf, hl]) (by omega_using [hn, hl])
+    refine WP.mono (copy_ok hfit (sI := s₅) (j0 := VG.Proof.Poly1305.Arm.Update.kb s₀) (by omega_using [hn2, hl]) (by rw [hl]; omega_using [hn1, hdf, hl]) (by omega_using [hn, hl])
       (hp.stW uc₅.wr) hS e5 e1 (by rw [e8, hl])) fun s₆ hc => ?_
     have k₆ := CopyInv.keepsF (by omega_using [hn2, hl]) hc
     refine ⟨uc₅.keepsF hp k₆ (by decide) (by decide) (by decide), ?_, by rw [k₆.gpr _ (by decide), e4], ?_,
       by rw [k₆.gpr _ (by decide), e6], ?_⟩
-    · have f₅ : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (sc s₀)]) s₀.mem s₅.mem := by
+    · have f₅ : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)]) s₀.mem s₅.mem := by
         rw [m₅]; exact h.sfr.mono fun _ hr => List.mem_append_right _ hr
       exact f₅.trans (k₆.frame.mono fun _ hr => List.mem_append_left _ hr)
     · rw [hc.r5, hl]
-    · rw [show kb s₀ + nf s₀ = kb s₀ + (Dt s₀ (nf s₀)).length by rw [hl], CopyInv.buf (by omega_using [hn2, hl]) hc, hBf]
+    · rw [show VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = VG.Proof.Poly1305.Arm.Update.kb s₀ + (Dt s₀ (nf s₀)).length by rw [hl], CopyInv.buf (by omega_using [hn2, hl]) hc, hBf]
 
 /-! ## The working space, the limbs of `r` and the accumulator -/
 
@@ -397,7 +397,7 @@ theorem sub_beq32 {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
 
 /-- A word of the state outside the buffer, after filling it. -/
 theorem sfr_word {s₀ : State} (hp : UPre s₀) {m : Mem}
-    (hf : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (sc s₀)]) s₀.mem m) {d : Nat}
+    (hf : Frame (offR (stB s₀) [(56, 16)] ++ [scrR (VG.Proof.Poly1305.Arm.Update.sc s₀)]) s₀.mem m) {d : Nat}
     (hd : d + 4 ≤ 56 ∨ 72 ≤ d ∧ d + 4 ≤ 128) :
     m.readW (stB s₀ + BitVec.ofNat 64 d) 32 = s₀.mem.readW (stB s₀ + BitVec.ofNat 64 d) 32 :=
   hf.readW (Region.contains_self _ _) (fun r hr => by
@@ -413,16 +413,16 @@ structure F3 (s₀ s : State) : Prop extends UC s₀ s where
   ptr : s.mem.readW (stB s₀ + BitVec.ofNat 64 124) 32 = dp s₀ + BitVec.ofNat 32 (nf s₀)
   len : s.mem.readW (stB s₀ + BitVec.ofNat 64 76) 32 = BitVec.ofNat 32 (dl s₀ - nf s₀)
   cnt : s.mem.readW (stB s₀ + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 (nw s₀)
-  buf : bytesAt s.mem (stB s₀ + 56) (kb s₀ + nf s₀) = Bf s₀ ++ Dt s₀ (nf s₀)
-  z : s.z = decide (kb s₀ + nf s₀ = 16)
+  buf : bytesAt s.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
+  z : s.z = decide (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16)
 
 /-- The stores of the working space. -/
 def wsList : List (Reg × Nat × Bool) := [(.r5, 124, false), (.r6, 76, false), (.r1, 20, false), (.r4, 72, false)]
 
-theorem mid_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F2 s₀ s) :
+theorem mid_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : VG.Proof.Poly1305.Arm.Update.F2 s₀ s) :
     WP isa (.block (([.mov .r1 (.shifted .r6 .lsr 4), .str .r5 .r0 ptrOff, .str .r6 .r0 lenOff,
       .str .r1 .r0 cntOff, .str .r4 .r0 fillOff] : List Instr) ++ setupR ++ loadAcc ++
-      ([.ldr .r1 .r0 fillOff, .cmp .r1 (.imm 16)] : List Instr))) s (F3 s₀) := by
+      ([.ldr .r1 .r0 fillOff, .cmp .r1 (.imm 16)] : List Instr))) s (VG.Proof.Poly1305.Arm.Update.F3 s₀) := by
   have hfit := hp.st_fit
   obtain ⟨hn1, hn2, -, -⟩ := nf_facts s₀
   have hdl := dl_lt s₀
@@ -467,7 +467,7 @@ theorem mid_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F2 s₀ s) :
   -- The key and the accumulator on entry.
   have hw₁ : ∀ d, (d + 4 ≤ 56 ∨ 72 ≤ d ∧ d + 4 ≤ 128) →
       s₁.mem.readW (stB s₀ + BitVec.ofNat 64 d) 32 = s₀.mem.readW (stB s₀ + BitVec.ofNat 64 d) 32 :=
-    fun d hd => by rw [m₁]; exact sfr_word hp h.sfr hd
+    fun d hd => by rw [m₁]; exact VG.Proof.Poly1305.Arm.Update.sfr_word hp h.sfr hd
   have hRl : rlimb s₂.mem (stB s₀) = Rl s₀ := by
     rw [rlimb_frame' f₂ (by decide) (by decide), rlimb_frame fun i hi => hw₁ _ (by omega_using [hi])]
   have hA : accD s₂.mem (stB s₀) = accD s₀.mem (stB s₀) := by
@@ -506,14 +506,14 @@ structure F4 (s₀ s : State) : Prop extends UC s₀ s where
   ptr : s.mem.readW (stB s₀ + BitVec.ofNat 64 124) 32 = dp s₀ + BitVec.ofNat 32 (nf s₀)
   len : s.mem.readW (stB s₀ + BitVec.ofNat 64 76) 32 = BitVec.ofNat 32 (dl s₀ - nf s₀)
   cnt : s.mem.readW (stB s₀ + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 (nw s₀)
-  buf : bytesAt s.mem (stB s₀ + 56) (kb s₀ + nf s₀) = Bf s₀ ++ Dt s₀ (nf s₀)
+  buf : bytesAt s.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
 
-theorem buf_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F3 s₀ s) :
-    WP isa (.ite .eq (.block (.dp .add .r1 .r0 (.imm 56) :: absorb true)) (.block [])) s (F4 s₀) := by
+theorem buf_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : VG.Proof.Poly1305.Arm.Update.F3 s₀ s) :
+    WP isa (.ite .eq (.block (.dp .add .r1 .r0 (.imm 56) :: absorb true)) (.block [])) s (VG.Proof.Poly1305.Arm.Update.F4 s₀) := by
   have hfit := hp.st_fit
   obtain ⟨hn1, hn2, -, -⟩ := nf_facts s₀
   refine WP.ite s.z (eval_eq _) (fun hb => ?_) (fun hb => WP.block_nil ?_)
-  · have h16 : kb s₀ + nf s₀ = 16 := by rw [h.z] at hb; simpa using hb
+  · have h16 : VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16 := by rw [h.z] at hb; simpa using hb
     refine wp_add (op2_imm (by decide)) fun s₁ u₁ => ?_
     have hA₁ : Acc (s₀.gpr .r0) (Rl s₀) (A0 s₀) [] s₁ :=
       h.acc.keep ((u₁.keeps (ws := [.r1]) (by simp)).keepsF (offR (stB s₀) [])) (by decide) (by decide)
@@ -537,7 +537,7 @@ theorem buf_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F3 s₀ s) :
     · rw [bytesAt_frame (p := stB s₀ + 56) f₂ (fun r hr => ((dj_offR _ (d := 56) (n := 16) (by decide)
         (by decide) (by decide) r hr).sub_left (Region.sub_prefix hn2))) (by omega_using [h16]), u₁.mem]
       exact h.buf
-  · have h16 : ¬ kb s₀ + nf s₀ = 16 := by rw [h.z] at hb; simpa using hb
+  · have h16 : ¬ VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16 := by rw [h.z] at hb; simpa using hb
     refine ⟨h.toUC, ?_, h.ptr, h.len, h.cnt, h.buf⟩
     rw [X1, iteF h16]; exact h.acc
 
@@ -549,9 +549,9 @@ structure LI (s₀ : State) (i : Nat) (s : State) : Prop extends UC s₀ s where
   ptr : s.mem.readW (stB s₀ + BitVec.ofNat 64 124) 32 = dp s₀ + BitVec.ofNat 32 (nf s₀ + 16 * i)
   len : s.mem.readW (stB s₀ + BitVec.ofNat 64 76) 32 = BitVec.ofNat 32 (dl s₀ - nf s₀)
   cnt : s.mem.readW (stB s₀ + BitVec.ofNat 64 20) 32 = BitVec.ofNat 32 (nw s₀ - i)
-  buf : bytesAt s.mem (stB s₀ + 56) (kb s₀ + nf s₀) = Bf s₀ ++ Dt s₀ (nf s₀)
+  buf : bytesAt s.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
 
-theorem LI.zero {s₀ s : State} (h : F4 s₀ s) : LI s₀ 0 s :=
+theorem LI.zero {s₀ s : State} (h : VG.Proof.Poly1305.Arm.Update.F4 s₀ s) : LI s₀ 0 s :=
   ⟨h.toUC, by simpa [Dd, bytesAt] using h.acc, by simpa using h.ptr, h.len, by simpa using h.cnt, h.buf⟩
 
 theorem body_ok {s₀ : State} (hp : UPre s₀) {i : Nat} (hi : i < nw s₀) {s : State} (h : LI s₀ i s) :
@@ -604,7 +604,7 @@ theorem body_ok {s₀ : State} (hp : UPre s₀) {i : Nat} (hi : i < nw s₀) {s 
   · exact .inl ⟨by rw [eval_ne, hz]; simp; omega_using [hlast], hlast ▸ hLI⟩
   · exact .inr ⟨by rw [eval_ne, hz]; simp; omega_using [hi, hlast], by omega_using [hi, hlast], hLI⟩
 
-theorem head_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F4 s₀ s) :
+theorem head_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : VG.Proof.Poly1305.Arm.Update.F4 s₀ s) :
     WP isa (.block [.ldr .r1 .r0 cntOff, .cmp .r1 (.imm 0)]) s fun s' =>
       LI s₀ 0 s' ∧ s'.z = decide (nw s₀ = 0) := by
   have hfit := hp.st_fit
@@ -619,7 +619,7 @@ theorem head_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F4 s₀ s) :
         (by decide) (by decide) (by decide),
       by rw [u₂.mem, u₁.mem]; exact h0.ptr, by rw [u₂.mem, u₁.mem]; exact h0.len,
       by rw [u₂.mem, u₁.mem]; exact h0.cnt, by rw [u₂.mem, u₁.mem]; exact h0.buf⟩
-  · rw [hz, u₁.gpr, h.cnt, sub0, ofNat_beq_zero hnw]
+  · rw [hz, u₁.gpr, h.cnt, VG.Proof.Poly1305.Arm.Update.sub0, ofNat_beq_zero hnw]
 
 theorem loop_ok {s₀ : State} (hp : UPre s₀) {s₂ : State} (hL : LI s₀ 0 s₂) (hz' : s₂.z = decide (nw s₀ = 0)) :
     WP isa (.ite .eq (.block []) (.loop body .ne)) s₂ (LI s₀ (nw s₀)) := by
@@ -652,7 +652,7 @@ abbrev Rst (s₀ : State) : List Byte := Dd s₀ (nf s₀ + 16 * nw s₀) (nr s�
 /-- After storing the accumulator. -/
 structure F6 (s₀ s : State) : Prop extends UC s₀ s where
   accv : leNum (bytesAt s.mem (stB s₀) 24) = Poly1305.absorbAll (Rn s₀) (A0 s₀) (Wb s₀) % P
-  buf : bytesAt s.mem (stB s₀ + 56) (kb s₀ + nf s₀) = Bf s₀ ++ Dt s₀ (nf s₀)
+  buf : bytesAt s.mem (stB s₀ + 56) (VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀) = VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ Dt s₀ (nf s₀)
   r8 : s.gpr .r8 = BitVec.ofNat 32 (nr s₀)
   r5 : s.gpr .r5 = dp s₀ + BitVec.ofNat 32 (nf s₀ + 16 * nw s₀)
   r1 : s.gpr .r1 = s₀.gpr .r0
@@ -679,7 +679,7 @@ theorem epi_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : LI s₀ (nw s₀
   have m₆ : s₆.mem = s₁.mem := by rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem]
   have e8 : s₅.gpr .r8 = BitVec.ofNat 32 (nr s₀) := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr, k₁.frame.word (by decide) (by decide)
-      (by decide), h.len, and15, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := dl s₀ - nf s₀) (by omega_using [hn1, hdl])]
+      (by decide), h.len, VG.Proof.Poly1305.Arm.Update.and15, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := dl s₀ - nf s₀) (by omega_using [hn1, hdl])]
   refine ⟨((((uc₁.upd u₂ (by decide)).upd u₃ (by decide)).upd u₄ (by decide)).upd u₅ (by decide)).flags u₆,
     by rw [m₆]; exact hv₁, ?_, by rw [u₆.gpr, e8], ?_, ?_, ?_⟩
   · rw [m₆, bytesAt_frame (p := stB s₀ + 56) k₁.frame (fun r hr => ((dj_offR _ (d := 56) (n := 16) (by decide)
@@ -688,7 +688,7 @@ theorem epi_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : LI s₀ (nw s₀
   · rw [u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.mem, u₂.mem, k₁.frame.word (by decide) (by decide) (by decide),
       h.ptr]
   · rw [u₆.gpr, u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), uc₁.r0]
-  · rw [hz, e8, sub0, ofNat_beq_zero (by omega_using [hnr])]
+  · rw [hz, e8, VG.Proof.Poly1305.Arm.Update.sub0, ofNat_beq_zero (by omega_using [hnr])]
 
 /-! ## The bytes left -/
 
@@ -697,7 +697,7 @@ structure F7 (s₀ s : State) : Prop extends UC s₀ s where
   accv : leNum (bytesAt s.mem (stB s₀) 24) = Poly1305.absorbAll (Rn s₀) (A0 s₀) (Wb s₀) % P
   buf : bytesAt s.mem (stB s₀ + 56) (Y0 s₀ ++ Rst s₀).length = Y0 s₀ ++ Rst s₀
 
-theorem Y0_length (s₀ : State) : (Y0 s₀).length = if kb s₀ + nf s₀ = 16 then 0 else kb s₀ + nf s₀ := by
+theorem Y0_length (s₀ : State) : (Y0 s₀).length = if VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ = 16 then 0 else VG.Proof.Poly1305.Arm.Update.kb s₀ + nf s₀ := by
   simp only [Y0]
   split
   · rfl
@@ -726,8 +726,8 @@ theorem rest_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F6 s₀ s) :
       split
       · rfl
       · rename_i h16
-        rcases Nat.eq_zero_or_pos (kb s₀) with hk | hk
-        · simp [Bf, Dt, hk, hn3 hk, bytesAt]
+        rcases Nat.eq_zero_or_pos (VG.Proof.Poly1305.Arm.Update.kb s₀) with hk | hk
+        · simp [VG.Proof.Poly1305.Arm.Update.Bf, Dt, hk, hn3 hk, bytesAt]
         · have := hn4 hk (by omega_using [hn2, h16]); simp only [nr] at hpos; omega_using [hn2, hdiv, hpos, h16, this]
     have hsA : ∀ i < nr s₀, State.addr (dp s₀ + BitVec.ofNat 32 (nf s₀ + 16 * nw s₀)) + BitVec.ofNat 64 i =
         dA s₀ + BitVec.ofNat 64 (nf s₀ + 16 * nw s₀ + i) := fun i hi => by
@@ -763,15 +763,15 @@ theorem rest_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F6 s₀ s) :
 
 /-! ## The whole function -/
 
-theorem cnt_mod (s₀ : State) : (Proof.Poly1305.countArm s₀).toNat % 16 = kb s₀ := by
-  simp only [kb, Proof.Poly1305.countArm]
+theorem cnt_mod (s₀ : State) : (Proof.Poly1305.countArm s₀).toNat % 16 = VG.Proof.Poly1305.Arm.Update.kb s₀ := by
+  simp only [VG.Proof.Poly1305.Arm.Update.kb, Proof.Poly1305.countArm]
   rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt (s₀.gpr .r2).isLt, Nat.shiftLeft_eq]
   omega_using []
 
 theorem restore_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F7 s₀ s) :
     WP isa (.block (.ldrSp .r12 8 :: restoreScr)) s fun s' =>
       abiPreserved s₀ s' ∧ Proof.Poly1305.updateArm.post s₀ s' := by
-  refine wp_arg (i := 2) hp h.toUC (by decide) fun s₁ u₁ => ?_
+  refine VG.Proof.Poly1305.Arm.Update.wp_arg (i := 2) hp h.toUC (by decide) fun s₁ u₁ => ?_
   refine WP.mono (restoreScr_ok (g := s₀.gpr) hp.sc_fit u₁.gpr (by rw [u₁.wr]; exact hp.scW h.wr)
     (by rw [u₁.mem]; exact h.saved)) fun s' ⟨hr', k'⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · rcases preserved_cases r hr with rfl | ⟨i, hi, rfl⟩
@@ -782,9 +782,9 @@ theorem restore_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F7 s₀ s) :
   obtain ⟨hn1, hn2, hn3, hn4⟩ := nf_facts s₀
   have m' : s'.mem = s.mem := by rw [k'.mem, u₁.mem]
   obtain ⟨w, b, rfl, hrep, hbl, hbb⟩ := Proof.Poly1305.Buffered.split hbuf
-  have hkb : (w ++ b).length % 16 = kb s₀ := by
-    rw [← cnt_mod, hcnt, BitVec.toNat_ofNat]; omega_using [hbl]
-  have hb : b = Bf s₀ := by rw [← hbb, hkb]
+  have hkb : (w ++ b).length % 16 = VG.Proof.Poly1305.Arm.Update.kb s₀ := by
+    rw [← VG.Proof.Poly1305.Arm.Update.cnt_mod, hcnt, BitVec.toNat_ofNat]; omega_using [hbl]
+  have hb : b = VG.Proof.Poly1305.Arm.Update.Bf s₀ := by rw [← hbb, hkb]
   subst hb
   obtain ⟨hlen, hkey, hacc⟩ := hrep
   -- The data, split.
@@ -793,13 +793,13 @@ theorem restore_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F7 s₀ s) :
       Dt s₀ (nf s₀) ++ Dd s₀ (nf s₀) (16 * nw s₀) ++ Rst s₀ := by
     rw [show (stackArg s₀ 1).toNat = nf s₀ + 16 * nw s₀ + nr s₀ from hdiv.symm, Poly1305.bytesAt_add,
       Poly1305.bytesAt_add]
-  have hsplit : Bf s₀ ++ (Dt s₀ (nf s₀) ++ Dd s₀ (nf s₀) (16 * nw s₀) ++ Rst s₀) = Wb s₀ ++ (Y0 s₀ ++ Rst s₀) := by
+  have hsplit : VG.Proof.Poly1305.Arm.Update.Bf s₀ ++ (Dt s₀ (nf s₀) ++ Dd s₀ (nf s₀) (16 * nw s₀) ++ Rst s₀) = Wb s₀ ++ (Y0 s₀ ++ Rst s₀) := by
     simp only [Wb, X1, Y0]
     split
     · simp only [List.append_assoc, List.nil_append]
     · rename_i h16
-      rcases Nat.eq_zero_or_pos (kb s₀) with hk | hk
-      · simp [Bf, Dt, hk, hn3 hk, bytesAt]
+      rcases Nat.eq_zero_or_pos (VG.Proof.Poly1305.Arm.Update.kb s₀) with hk | hk
+      · simp [VG.Proof.Poly1305.Arm.Update.Bf, Dt, hk, hn3 hk, bytesAt]
       · have hnd := hn4 hk (by omega_using [hn2, hkb, h16])
         have hw0 : nw s₀ = 0 := by simp only [nw]; omega_using [hdiv, hnd]
         have hr0 : nr s₀ = 0 := by simp only [nr]; omega_using [hdiv, hnd]
@@ -811,7 +811,7 @@ theorem restore_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F7 s₀ s) :
     split
     · simp only [nr]; omega_using []
     · rename_i h16
-      rcases Nat.eq_zero_or_pos (kb s₀) with hk | hk
+      rcases Nat.eq_zero_or_pos (VG.Proof.Poly1305.Arm.Update.kb s₀) with hk | hk
       · rw [hk, hn3 hk]; simp only [nr]; omega_using []
       · have hnd := hn4 hk (by omega_using [hn2, hkb, h16])
         have : nr s₀ = 0 := by simp only [nr]; omega_using [hdiv, hnd]
@@ -829,9 +829,9 @@ theorem restore_ok {s₀ : State} (hp : UPre s₀) {s : State} (h : F7 s₀ s) :
 
 theorem update_correct {s₀ : State} (hp : UPre s₀) :
     WP isa update s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Poly1305.updateArm.post s₀ s' := by
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ h₁ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Poly1305.Arm.Update.prologue_ok hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (fill_ok hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (mid_ok hp h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Poly1305.Arm.Update.mid_ok hp h₂) fun s₃ h₃ => ?_)
   refine WP.seq (WP.mono (buf_ok hp h₃) fun s₄ h₄ => ?_)
   refine WP.seq (WP.mono (head_ok hp h₄) fun s₄' ⟨hL, hz⟩ => ?_)
   refine WP.seq (WP.mono (loop_ok hp hL hz) fun s₅ h₅ => ?_)
@@ -861,7 +861,7 @@ theorem wfu {s : State} (h : Proof.Poly1305.updateArm.pre s) : VG.Arm.Taint.Wf �
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [addr_toNat] <;> omega_using [hst, hsc]
   · intro p hp'; simp only [τu, List.mem_singleton] at hp'; subst hp'; simp [VG.Arm.Taint.region, hp.wr]
-  · have e : (⟨State.addr s.sp, 12⟩ : Region) = argR s := by simp [stackArgAddr]
+  · have e : (⟨State.addr s.sp, 12⟩ : Region) = VG.Proof.Poly1305.Arm.Update.argR s := by simp [stackArgAddr]
     simp only [τu, e, hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact hp.a_st
@@ -879,9 +879,9 @@ theorem agreeu {s₁ s₂ : State} (h₁ : Proof.Poly1305.updateArm.pre s₁) (h
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
   · simp only [τu, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-  · rw [hp₁.wr, hp₂.wr]; simp only [stR, scrR, sc, p0, a2]
+  · rw [hp₁.wr, hp₂.wr]; simp only [stR, scrR, VG.Proof.Poly1305.Arm.Update.sc, p0, a2]
   · simp only [τu] at hk
-    rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk, Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
+    rw [VG.Proof.Poly1305.Arm.Update.argByte_eq hp₁.sp_fit hk, VG.Proof.Poly1305.Arm.Update.argByte_eq hp₂.sp_fit hk, Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by decide)),
       Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by decide))]
     have : k / 4 = 0 ∨ k / 4 = 1 ∨ k / 4 = 2 := by omega_using [hk]
     rcases this with h | h | h <;> rw [h]

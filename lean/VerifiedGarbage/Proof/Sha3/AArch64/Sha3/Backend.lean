@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
-import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Sums
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Permute
 
 namespace VG.Proof.Sha3.AArch64.Sha3

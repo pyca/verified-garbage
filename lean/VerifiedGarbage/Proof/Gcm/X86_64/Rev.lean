@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 
 /-!

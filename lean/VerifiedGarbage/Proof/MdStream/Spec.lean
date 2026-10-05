@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha256.Stream
+import VerifiedGarbage.Proof.Sha256.Scratch
 
 /-!
 # Streaming Merkle–Damgård hash functions: facts about the specification

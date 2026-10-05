@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.Curve448.AArch64.Copy
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Counters
-
+import VerifiedGarbage.Proof.Curve448.AArch64.Square
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
 /-!
 # Ed448 verification on AArch64: the table's first entries
 
@@ -285,20 +284,20 @@ theorem tabInit_ok {s : State} {base : Addr} (hs : Scr s base)
       · exact bnd_of_words s5
       · exact bnd_of_words z19
       · exact bnd_of_words o20
-  have hP : pt (EV u.mem base) 0 1 2 = slotPt s.mem base := by
+  have hP : VG.Proof.X448.AArch64.Base.pt (EV u.mem base) 0 1 2 = slotPt s.mem base := by
     show (⟨FV u.mem base (slot 0), FV u.mem base (slot 1), FV u.mem base (slot 2)⟩ : Point) =
       ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
     rw [FV_of_limbs P.s0, FV_of_limbs P.s1, F_of_words P.s2]
-  have hPt : pt (EV t.mem base) 0 1 2 = slotPt s.mem base := by
+  have hPt : VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 0 1 2 = slotPt s.mem base := by
     show (⟨FV t.mem base (slot 0), FV t.mem base (slot 1), FV t.mem base (slot 2)⟩ : Point) =
       ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
     rw [FV_of_limbs l0, FV_of_limbs l1, F_of_words s2]
-  have hP3 : pt (EV t.mem base) 3 4 5 = slotPt s.mem base := by
+  have hP3 : VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 3 4 5 = slotPt s.mem base := by
     show (⟨FV t.mem base (slot 3), FV t.mem base (slot 4), FV t.mem base (slot 5)⟩ : Point) =
       ⟨FV s.mem base (slot 6), FV s.mem base (slot 7), 1⟩
     rw [FV_of_limbs l3, FV_of_limbs l4, F_of_words s5]
   have e1 : TPt t.mem base 1 = slotPt s.mem base := by
-    rw [show t.mem = u2.mem from mt, tabStore_pt w2, show pt (EV u1.mem base) 0 1 2 = pt (EV u.mem base) 0 1 2 by rw [m1],
+    rw [show t.mem = u2.mem from mt, tabStore_pt w2, show VG.Proof.X448.AArch64.Base.pt (EV u1.mem base) 0 1 2 = VG.Proof.X448.AArch64.Base.pt (EV u.mem base) 0 1 2 by rw [m1],
       hP]
   have e0 : TPt t.mem base 0 = ⟨0, 1, 1⟩ := by
     have hw : ∀ (c : Nat) (v : Spec.X448.Fe), c < 3 → (∀ w < 8, word u.mem base (TAB + 64 * c + 8 * w) = limb v w) →

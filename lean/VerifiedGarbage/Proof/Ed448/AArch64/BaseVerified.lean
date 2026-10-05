@@ -3,6 +3,9 @@ import VerifiedGarbage.Proof.Ed448.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed448.AArch64.BaseVerified`. -/
+section
+
 /-!
 # Ed448 base-point multiplication on AArch64: `Verified`
 
@@ -44,7 +47,9 @@ theorem scalarBase_baseOk : BaseOk := ⟨scalarBase_ok, scalarBase_ct⟩
 theorem scalarBase_verified : Verified AArch64.target scalarBase (Spec.Ed448.scalarBaseContract AArch64.abi) :=
   Verified.of_correct scalarBase_ok scalarBase_ct (by
     sig_implies [Spec.Ed448.scalarBaseContract, Spec.Ed448.scalarBaseSig,
-      Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs, scalarBaseLocal]
-      [scalarBaseSat] using scalarBaseSat)
+      Spec.Ed448.scratchWords, AArch64.abi, AArch64.argRegs, VG.Proof.Ed448.AArch64.scalarBaseLocal]
+      [scalarBaseSat] using VG.Proof.Ed448.AArch64.scalarBaseSat)
 
 end VG.Proof.Ed448.AArch64
+
+end

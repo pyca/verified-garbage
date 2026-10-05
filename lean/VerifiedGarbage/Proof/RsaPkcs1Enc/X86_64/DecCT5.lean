@@ -159,7 +159,7 @@ theorem dec_spSafe (v : Compress) (pv : PrivImpl) :
     (Proof.Pbkdf2.Md.X86_64.core_finC K.cSp
       (show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.finC.allInstrs _ = true by decide +kernel))
   have hIn : (HH v).initC.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs K.iSp
-  simp only [code, body, dBuild, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, alPart, scanPart, selPart,
+  simp only [code, body, dBuild, hashD, kdkMac, clLoop, VG.Impl.RsaPkcs1Enc.X86_64.Decrypt.amLoop, prfBody, maskPart, alPart, scanPart, selPart,
     Code.all, hI, hF, hU, hFi, hIn, pv.spSafe, Bool.and_true, Bool.true_and]
   decide +kernel
 

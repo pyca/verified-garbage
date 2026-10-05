@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.MlKem.X86.Common
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Impl.MlKem.X86.Cbd
 import VerifiedGarbage.Spec.MlKem.Poly
 import VerifiedGarbage.TCB.X86.Target
@@ -85,7 +85,7 @@ variable (s₀ : State)
 abbrev bP : BitVec 32 := arg s₀ 0
 abbrev fP : BitVec 32 := arg s₀ 1
 abbrev bA : Addr := (bP s₀).setWidth 64
-abbrev fA : Addr := (fP s₀).setWidth 64
+abbrev fA : Addr := (VG.Proof.MlKem.X86.Cbd.fP s₀).setWidth 64
 abbrev bR : Region := ⟨bA s₀, 128⟩
 abbrev aR : Region := ⟨argAddr s₀ 0, 4 * 2⟩
 abbrev stkR : Region := ⟨(E0 s₀).setWidth 64 - 16#64, 16⟩
@@ -97,18 +97,18 @@ structure Pre (s₀ : State) : Prop where
   sp : 16 ≤ (E0 s₀).toNat
   sp' : (E0 s₀).toNat + 4 + 4 * 2 ≤ 2 ^ 32
   rd : s₀.rd = [bR s₀]
-  wr : s₀.wr = [polyRegion (fA s₀), aR s₀]
-  b_f : (bR s₀).Disjoint (polyRegion (fA s₀))
+  wr : s₀.wr = [polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀), aR s₀]
+  b_f : (bR s₀).Disjoint (polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀))
   b_a : (bR s₀).Disjoint (aR s₀)
-  f_a : (polyRegion (fA s₀)).Disjoint (aR s₀)
+  f_a : (polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀)).Disjoint (aR s₀)
   ret_b : (retR s₀).Disjoint (bR s₀)
-  ret_f : (retR s₀).Disjoint (polyRegion (fA s₀))
+  ret_f : (retR s₀).Disjoint (polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀))
   ret_a : (retR s₀).Disjoint (aR s₀)
-  stk_b : (stkR s₀).Disjoint (bR s₀)
-  stk_f : (stkR s₀).Disjoint (polyRegion (fA s₀))
-  stk_a : (stkR s₀).Disjoint (aR s₀)
+  stk_b : (VG.Proof.MlKem.X86.Cbd.stkR s₀).Disjoint (bR s₀)
+  stk_f : (VG.Proof.MlKem.X86.Cbd.stkR s₀).Disjoint (polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀))
+  stk_a : (VG.Proof.MlKem.X86.Cbd.stkR s₀).Disjoint (aR s₀)
   b_fit : (bP s₀).toNat + 128 ≤ 2 ^ 32
-  f_fit : (fP s₀).toNat + 1024 ≤ 2 ^ 32
+  f_fit : (VG.Proof.MlKem.X86.Cbd.fP s₀).toNat + 1024 ≤ 2 ^ 32
 
 theorem Pre.of {s₀ : State} (h : (cbd2Contract X86.abi 16).pre s₀) : Pre s₀ := by
   sig_pre [cbd2Contract, cbd2Sig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
@@ -126,19 +126,19 @@ structure Inv (s₀ : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = (P0 s₀).rd
   wr : s.wr = (P0 s₀).wr
   esi : s.gpr .esi = bP s₀ + BitVec.ofNat 32 k
-  edi : s.gpr .edi = fP s₀ + BitVec.ofNat 32 (8 * k)
+  edi : s.gpr .edi = VG.Proof.MlKem.X86.Cbd.fP s₀ + BitVec.ofNat 32 (8 * k)
   ecx : s.gpr .ecx = BitVec.ofNat 32 (128 - k)
-  frame : Frame [polyRegion (fA s₀)] (P0 s₀).mem s.mem
-  coef : ∀ i < 2 * k, coeffAt s.mem (fA s₀) i = V s₀ i
+  frame : Frame [polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀)] (P0 s₀).mem s.mem
+  coef : ∀ i < 2 * k, coeffAt s.mem (VG.Proof.MlKem.X86.Cbd.fA s₀) i = V s₀ i
 
 namespace Pre
 variable {s₀ : State} (hp : Pre s₀)
 include hp
 
-theorem stk_eq : stkR s₀ = frameR s₀ := by
-  simp only [stkR, frameR, below]; rw [Taint.sub_setWidth hp.sp]
+theorem stk_eq : VG.Proof.MlKem.X86.Cbd.stkR s₀ = frameR s₀ := by
+  simp only [VG.Proof.MlKem.X86.Cbd.stkR, frameR, below]; rw [Taint.sub_setWidth hp.sp]
 
-theorem b_keep {s : State} (hf : Frame [polyRegion (fA s₀)] (P0 s₀).mem s.mem) {j : Nat} (hj : j < 128) :
+theorem b_keep {s : State} (hf : Frame [polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀)] (P0 s₀).mem s.mem) {j : Nat} (hj : j < 128) :
     s.mem (bA s₀ + BitVec.ofNat 64 j) = (B s₀).getD j 0 := by
   have hf₁ := pushed_frame (rs := saveRegs) (s := s₀) (by decide) (by rw [saveRegs_len]; exact hp.sp)
   rw [saveRegs_len] at hf₁
@@ -186,12 +186,12 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
     rw [h.esi, ea_add (by omega), Nat.add_zero]
   have inB : InRegions (s.rd ++ s.wr) (s.ea (at_ .esi 0)) 1 :=
     ⟨bR s₀, by rw [h.rd, pushed_rd, hp.rd]; simp, by rw [eb]; exact contains_at (by omega) fb⟩
-  have outF : ∀ i < 256, InRegions s.wr (coeffAddr (fA s₀) i) 4 := fun i hi =>
-    ⟨polyRegion (fA s₀), by rw [h.wr, P0_wr, hp.wr]; simp, coeff_contains _ hi⟩
-  have o0 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 0).setWidth 64 =
-      coeffAddr (fA s₀) (2 * k) := by rw [ea_add (by omega)]; congr 2; omega
-  have o1 : (fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 4).setWidth 64 =
-      coeffAddr (fA s₀) (2 * k + 1) := by rw [ea_add (by omega)]; congr 2; omega
+  have outF : ∀ i < 256, InRegions s.wr (coeffAddr (VG.Proof.MlKem.X86.Cbd.fA s₀) i) 4 := fun i hi =>
+    ⟨polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀), by rw [h.wr, P0_wr, hp.wr]; simp, coeff_contains _ hi⟩
+  have o0 : (VG.Proof.MlKem.X86.Cbd.fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 0).setWidth 64 =
+      coeffAddr (VG.Proof.MlKem.X86.Cbd.fA s₀) (2 * k) := by rw [ea_add (by omega)]; congr 2; omega
+  have o1 : (VG.Proof.MlKem.X86.Cbd.fP s₀ + BitVec.ofNat 32 (8 * k) + BitVec.ofNat 32 4).setWidth 64 =
+      coeffAddr (VG.Proof.MlKem.X86.Cbd.fA s₀) (2 * k + 1) := by rw [ea_add (by omega)]; congr 2; omega
   have hbyte : s.mem (s.ea (at_ .esi 0)) = (B s₀).getD k 0 := by rw [eb, hp.b_keep h.frame hk]
   generalize eB : (B s₀).getD k 0 = b at hbyte
   refine wp_movzx inB (wp_movr ?_)
@@ -215,13 +215,13 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
     simp only [State.setReg, h1, ite_false]
     rw [o₂.gpr r (by simp [h1, h2]), g₁ r h1 h3]
   have esi₄ : s₄.gpr .esi = bP s₀ + BitVec.ofNat 32 k := by rw [g₄ _ (by decide) (by decide) (by decide), h.esi]
-  have edi₄ : s₄.gpr .edi = fP s₀ + BitVec.ofNat 32 (8 * k) := by
+  have edi₄ : s₄.gpr .edi = VG.Proof.MlKem.X86.Cbd.fP s₀ + BitVec.ofNat 32 (8 * k) := by
     rw [g₄ _ (by decide) (by decide) (by decide), h.edi]
   have ecx₄ : s₄.gpr .ecx = BitVec.ofNat 32 (128 - k) := by rw [g₄ _ (by decide) (by decide) (by decide), h.ecx]
   have esp₄ : s₄.gpr .esp = s.gpr .esp := g₄ _ (by decide) (by decide) (by decide)
-  have edi₂ : s₂.gpr .edi = fP s₀ + BitVec.ofNat 32 (8 * k) := by
+  have edi₂ : s₂.gpr .edi = VG.Proof.MlKem.X86.Cbd.fP s₀ + BitVec.ofNat 32 (8 * k) := by
     rw [o₂.gpr _ (by decide), g₁ _ (by decide) (by decide), h.edi]
-  have mem₄ : s₄.mem = s.mem.writeW (coeffAddr (fA s₀) (2 * k)) (s₂.gpr .eax) := by
+  have mem₄ : s₄.mem = s.mem.writeW (coeffAddr (VG.Proof.MlKem.X86.Cbd.fA s₀) (2 * k)) (s₂.gpr .eax) := by
     rw [o₄.mem, o₃.mem]
     simp only [State.ea, at_, edi₂, o0, o₂.mem]
     rfl
@@ -229,7 +229,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
   have rd₄ : s₄.rd = s.rd := by rw [o₄.rd, o₃.rd, o₂.rd]; rfl
   have ax₃ : s₃.gpr .eax = b.setWidth 32 >>> 4 := by
     rw [v₃]; simp only [State.setReg, ite_true]; rw [o₂.gpr _ (by decide), bx₁]
-  have out1 : InRegions s₄.wr (coeffAddr (fA s₀) (2 * k + 1)) 4 := by rw [wr₄]; exact outF _ (by omega)
+  have out1 : InRegions s₄.wr (coeffAddr (VG.Proof.MlKem.X86.Cbd.fA s₀) (2 * k + 1)) 4 := by rw [wr₄]; exact outF _ (by omega)
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
     readSrc, State.ea, at_, State.store32, State.setReg, arithFlags, State.setFlags, edi₄, o1, out1,
@@ -260,14 +260,14 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
 
 theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Inv s₀ 128) s₀ s')
     Impl.MlKem.X86.cbd2 :=
-  Piece.leafLoop (fun s₀ => [polyRegion (fA s₀)]) (fun k s₀ s => Inv s₀ k s)
+  Piece.leafLoop (fun s₀ => [polyRegion (VG.Proof.MlKem.X86.Cbd.fA s₀)]) (fun k s₀ s => Inv s₀ k s)
     (NoSp.of_all (by decide +kernel))
     (fun _ hp => ⟨hp.sp, by have := hp.sp'; omega⟩)
     (fun _ hp r hr => by
       simp only [List.mem_singleton] at hr
       subst hr
       exact ⟨by rw [← hp.stk_eq]; exact hp.stk_f, hp.ret_f⟩)
-    (fun _ _ _ _ hq => hq.1) init_piece
+    (fun _ _ _ _ hq => hq.1) VG.Proof.MlKem.X86.Cbd.init_piece
     (Piece.countLoop (by decide) (fun k s₀ s => Inv s₀ k s) [.esp, .esi, .edi, .ecx]
       (fun _ hk _ _ hp h => step hp hk h)
       (fun k _ s₀ s₀' s s' _ _ hq h h' r hr => by
@@ -275,7 +275,7 @@ theorem piece : Piece Pre Pub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost 
         rcases hr with rfl | rfl | rfl | rfl
         · rw [h.esp, h'.esp, P0_esp, P0_esp, hq.1]
         · rw [h.esi, h'.esi, bP, bP, hq.2.1]
-        · rw [h.edi, h'.edi, fP, fP, hq.2.2]
+        · rw [h.edi, h'.edi, VG.Proof.MlKem.X86.Cbd.fP, VG.Proof.MlKem.X86.Cbd.fP, hq.2.2]
         · rw [h.ecx, h'.ecx]) (by taint_decide))
     fun _ _ _ h => ⟨h.frame, h.esp, h.rd, h.wr⟩
 

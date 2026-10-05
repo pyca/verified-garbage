@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 import VerifiedGarbage.Proof.Sha1.AArch64.Shared
-import VerifiedGarbage.Proof.Sha1.AArch64.Variant
-import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.Sha1.AArch64.ScalarBackend
+import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.TaintBatch
@@ -132,7 +132,7 @@ def ok : HashOK (hash v) where
 
 theorem satI : ∃ s, (Spec.Hmac.sha1I.initScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.initScratchContract, Spec.Hmac.sha1I, Spec.Hmac.initScratchContract, Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
-    Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using initSat 84 56
+    Spec.Hmac.sha1S, Spec.Hmac.sha1, AArch64.abi, AArch64.argRegs] using VG.Proof.Pbkdf2.Md.AArch64.initSat 84 56
 
 theorem satF : ∃ s, (Spec.Hmac.sha1I.finalizeScratchContract AArch64.abi 16).pre s := by
   inst_sat [Spec.Hmac.Instance.finalizeScratchContract, Spec.Hmac.sha1I, Spec.Hmac.finalizeScratchContract,

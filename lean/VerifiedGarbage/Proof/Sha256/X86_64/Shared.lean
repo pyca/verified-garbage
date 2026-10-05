@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

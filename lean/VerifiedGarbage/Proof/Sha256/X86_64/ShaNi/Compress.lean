@@ -1,8 +1,119 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.Sse
+import VerifiedGarbage.Proof.Sha256.Spec
 import VerifiedGarbage.Impl.Sha256.X86_64.ShaNi
 import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Framework.Offset
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Spec`. -/
+section
+
+/-!
+# SHA-256 with the SHA extensions: the values in the SSE registers
+
+How the working variables, the message schedule and the constants are laid out
+in SSE registers, and that `sha256rnds2` and `sha256msg1`/`sha256msg2` compute
+rounds and schedule words of `Spec/Sha256.lean`.
+-/
+
+namespace VG.Proof.Sha256.X86_64.ShaNi
+
+open VG VG.X86_64
+open VG.Spec.Sha256 (HashValue Word Block K W ch maj bsig0 bsig1 ssig0 ssig1)
+
+/-- The working variables `A, B, E, F`, as `sha256rnds2` takes and returns them
+(`A` in bits 127:96). -/
+def abef (v : HashValue) : BitVec 128 := ofDwords v[5] v[4] v[1] v[0]
+
+/-- The working variables `C, D, G, H` (`C` in bits 127:96). -/
+def cdgh (v : HashValue) : BitVec 128 := ofDwords v[7] v[6] v[3] v[2]
+
+/-- After two rounds, `C, D, G, H` are the old `A, B, E, F`. -/
+theorem cdgh_two (v : HashValue) (k0 w0 k1 w1 : Word) :
+    VG.Proof.Sha256.X86_64.ShaNi.cdgh (roundKW (roundKW v k0 w0) k1 w1) = VG.Proof.Sha256.X86_64.ShaNi.abef v := rfl
+
+/-- `sha256rnds2` does two rounds, given `Wₜ + Kₜ` for them in the low doublewords of `x`. -/
+theorem rnds2_eq (v : HashValue) (x : BitVec 128) {k0 w0 k1 w1 : Word}
+    (h0 : dword x 0 = k0 + w0) (h1 : dword x 1 = k1 + w1) :
+    sha256Rnds2 (VG.Proof.Sha256.X86_64.ShaNi.cdgh v) (VG.Proof.Sha256.X86_64.ShaNi.abef v) x = VG.Proof.Sha256.X86_64.ShaNi.abef (roundKW (roundKW v k0 w0) k1 w1) := by
+  have ech : sha256Ch = ch := rfl
+  have emaj : sha256Maj = maj := rfl
+  have es0 : sha256BigSigma0 = bsig0 := rfl
+  have es1 : sha256BigSigma1 = bsig1 := rfl
+  simp only [sha256Rnds2, VG.Proof.Sha256.X86_64.ShaNi.abef, VG.Proof.Sha256.X86_64.ShaNi.cdgh, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
+    dword_ofDwords_3, h0, h1, ech, emaj, es0, es1, roundKW_0, roundKW_1, roundKW_2, roundKW_3,
+    roundKW_4, roundKW_5, roundKW_6, roundKW_7]
+  generalize v[0]'(by decide) = a
+  generalize v[1]'(by decide) = b
+  generalize v[2]'(by decide) = c
+  generalize v[3]'(by decide) = d
+  generalize v[4]'(by decide) = e
+  generalize v[5]'(by decide) = f
+  generalize v[6]'(by decide) = g
+  generalize v[7]'(by decide) = h
+  have e1 : ch e f g + bsig1 e + (k0 + w0) + h + d = d + (h + bsig1 e + ch e f g + k0 + w0) := by ac_rfl
+  have a1 : ch e f g + bsig1 e + (k0 + w0) + h + maj a b c + bsig0 a =
+      h + bsig1 e + ch e f g + k0 + w0 + (bsig0 a + maj a b c) := by ac_rfl
+  rw [e1, a1]
+  generalize d + (h + bsig1 e + ch e f g + k0 + w0) = e₁
+  generalize h + bsig1 e + ch e f g + k0 + w0 + (bsig0 a + maj a b c) = a₁
+  have e2 : ch e₁ e f + bsig1 e₁ + (k1 + w1) + g + c = c + (g + bsig1 e₁ + ch e₁ e f + k1 + w1) := by ac_rfl
+  have a2 : ch e₁ e f + bsig1 e₁ + (k1 + w1) + g + maj a₁ a b + bsig0 a₁ =
+      g + bsig1 e₁ + ch e₁ e f + k1 + w1 + (bsig0 a₁ + maj a₁ a b) := by ac_rfl
+  rw [e2, a2]
+
+/-- The message schedule words `W₄ᵢ … W₄ᵢ₊₃` (`W₄ᵢ` in bits 31:0). -/
+def quad (M : Block) (i : Nat) : BitVec 128 :=
+  ofDwords (W M (4 * i)) (W M (4 * i + 1)) (W M (4 * i + 2)) (W M (4 * i + 3))
+
+theorem W_ge' (M : Block) (t : Nat) :
+    W M (t + 16) = ssig1 (W M (t + 14)) + W M (t + 9) + ssig0 (W M (t + 1)) + W M t := by
+  rw [W_ge M (by omega)]; rfl
+
+/-- `W_ge'`, summed in the order of `sha256msg1` and `sha256msg2`. -/
+theorem W_ge_rev (M : Block) (t : Nat) :
+    W M (t + 16) = W M t + ssig0 (W M (t + 1)) + W M (t + 9) + ssig1 (W M (t + 14)) := by
+  rw [VG.Proof.Sha256.X86_64.ShaNi.W_ge' M t]; ac_rfl
+
+/-- `sha256msg1`, `palignr` and `sha256msg2` compute the next four schedule words
+from the previous sixteen. -/
+theorem schedule_eq (M : Block) (i : Nat) :
+    sha256Msg2 (XBinOp.eval .paddd (XBinOp.eval .sha256msg1 (VG.Proof.Sha256.X86_64.ShaNi.quad M i) (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 1)))
+        (alignRight (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 3)) (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 2)) 4)) (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 3)) = VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 4) := by
+  have ess0 : sha256Sigma0 = ssig0 := rfl
+  have ess1 : sha256Sigma1 = ssig1 := rfl
+  simp only [sha256Msg2, XBinOp.eval, alignRight_4, VG.Proof.Sha256.X86_64.ShaNi.quad, dword_ofDwords_0, dword_ofDwords_1,
+    dword_ofDwords_2, dword_ofDwords_3, ess0, ess1]
+  have w0 := VG.Proof.Sha256.X86_64.ShaNi.W_ge_rev M (4 * i)
+  have w1 := VG.Proof.Sha256.X86_64.ShaNi.W_ge_rev M (4 * i + 1)
+  have w2 := VG.Proof.Sha256.X86_64.ShaNi.W_ge_rev M (4 * i + 2)
+  have w3 := VG.Proof.Sha256.X86_64.ShaNi.W_ge_rev M (4 * i + 3)
+  simp only [show 4 * i + 16 = 4 * (i + 4) by omega, show 4 * i + 1 + 16 = 4 * (i + 4) + 1 by omega,
+    show 4 * i + 2 + 16 = 4 * (i + 4) + 2 by omega, show 4 * i + 3 + 16 = 4 * (i + 4) + 3 by omega,
+    show 4 * i + 14 = 4 * (i + 3) + 2 by omega, show 4 * i + 1 + 14 = 4 * (i + 3) + 3 by omega,
+    show 4 * i + 9 = 4 * (i + 2) + 1 by omega, show 4 * i + 1 + 9 = 4 * (i + 2) + 2 by omega,
+    show 4 * i + 2 + 9 = 4 * (i + 2) + 3 by omega, show 4 * i + 3 + 9 = 4 * (i + 3) by omega,
+    show 4 * i + 1 + 1 = 4 * i + 2 by omega, show 4 * i + 2 + 1 = 4 * i + 3 by omega,
+    show 4 * i + 3 + 1 = 4 * (i + 1) by omega] at w0 w1 w2 w3 ⊢
+  rw [w2, w3, w0, w1]
+
+/-- Adding the working variables into the hash value, two registers at a time. -/
+theorem paddd_abef (v H : HashValue) :
+    XBinOp.eval .paddd (VG.Proof.Sha256.X86_64.ShaNi.abef v) (VG.Proof.Sha256.X86_64.ShaNi.abef H) = VG.Proof.Sha256.X86_64.ShaNi.abef (Vector.zipWith (· + ·) v H) := by
+  simp only [XBinOp.eval, VG.Proof.Sha256.X86_64.ShaNi.abef, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
+    dword_ofDwords_3, Vector.getElem_zipWith]
+
+theorem paddd_cdgh (v H : HashValue) :
+    XBinOp.eval .paddd (VG.Proof.Sha256.X86_64.ShaNi.cdgh v) (VG.Proof.Sha256.X86_64.ShaNi.cdgh H) = VG.Proof.Sha256.X86_64.ShaNi.cdgh (Vector.zipWith (· + ·) v H) := by
+  simp only [XBinOp.eval, VG.Proof.Sha256.X86_64.ShaNi.cdgh, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2,
+    dword_ofDwords_3, Vector.getElem_zipWith]
+
+end VG.Proof.Sha256.X86_64.ShaNi
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress`. -/
+section
 
 /-!
 # SHA-256 compression function on x86-64 with the SHA extensions
@@ -36,16 +147,16 @@ theorem msg_nodup (n : Nat) :
   exact key _ (Nat.mod_lt _ (by decide))
 
 theorem rounds4_ok (n : Nat) (s : State) (v : HashValue) (q : BitVec 128)
-    (h1 : s.xmm .xmm1 = abef v) (h2 : s.xmm .xmm2 = cdgh v) (hq : s.xmm (msg n) = q) :
+    (h1 : s.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef v) (h2 : s.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh v) (hq : s.xmm (msg n) = q) :
     WP isa (.block (rounds4 n)) s fun s' =>
-      s'.xmm .xmm1 = sha256Rnds2 (abef v) (sha256Rnds2 (cdgh v) (abef v)
+      s'.xmm .xmm1 = sha256Rnds2 (VG.Proof.Sha256.X86_64.ShaNi.abef v) (sha256Rnds2 (VG.Proof.Sha256.X86_64.ShaNi.cdgh v) (VG.Proof.Sha256.X86_64.ShaNi.abef v)
         (XBinOp.eval .paddd (kQuad (4 * n)) q))
         (shufDwords (XBinOp.eval .paddd (kQuad (4 * n)) q) 0x0e) ∧
-      s'.xmm .xmm2 = sha256Rnds2 (cdgh v) (abef v) (XBinOp.eval .paddd (kQuad (4 * n)) q) ∧
+      s'.xmm .xmm2 = sha256Rnds2 (VG.Proof.Sha256.X86_64.ShaNi.cdgh v) (VG.Proof.Sha256.X86_64.ShaNi.abef v) (XBinOp.eval .paddd (kQuad (4 * n)) q) ∧
       (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm11 → s'.xmm r = s.xmm r) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hd := msg_nodup n
+  have hd := VG.Proof.Sha256.X86_64.ShaNi.msg_nodup n
   apply WP.of_runBlock
   simp only [rounds4, const, List.cons_append, List.nil_append]
   generalize msg n = x at *
@@ -68,7 +179,7 @@ theorem schedule_hi (n : Nat) (hn : 4 ≤ n) (s : State) (a b c d : BitVec 128)
       s'.xmm (msg n) = sha256Msg2 (XBinOp.eval .paddd (XBinOp.eval .sha256msg1 a b) (alignRight d c 4)) d ∧
       (∀ r, r ≠ msg n → r ≠ .xmm7 → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hd := msg_nodup n
+  have hd := VG.Proof.Sha256.X86_64.ShaNi.msg_nodup n
   have hd'' := VG.nodup_reverse hd
   apply WP.of_runBlock
   simp only [schedule, show ¬ n < 4 by omega, ite_false]
@@ -94,7 +205,7 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
         (s.mem.readW (s.gpr .rsi + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) (s.xmm .xmm8) ∧
       (∀ r, r ≠ msg n → s'.xmm r = s.xmm r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hd := msg_nodup n
+  have hd := VG.Proof.Sha256.X86_64.ShaNi.msg_nodup n
   have hd'' := VG.nodup_reverse hd
   apply WP.of_runBlock
   simp only [schedule, hn, ite_true]
@@ -104,14 +215,14 @@ theorem schedule_lo (n : Nat) (hn : n < 4) (s : State)
     List.cons_append] at hd hd''
   simp only [↓reduceIte, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     isa, RegUpd.xmm_setXmm_self, RegUpd.xmm_setXmm_of_ne, RegUpd.gpr_setXmm, RegUpd.mem_setXmm,
-    RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, State.load128, ea_at, hin,
+    RegUpd.rd_setXmm, RegUpd.wr_setXmm, not_false_eq_true, State.load128, VG.Proof.Sha256.X86_64.ShaNi.ea_at, hin,
     hd'',
     Option.map_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r h0 => by simp only [RegUpd.xmm_setXmm_of_ne, h0, not_false_eq_true], trivial⟩
 
 /-- `msg k` for the three registers other than `msg n` that hold schedule words. -/
 theorem msg_ne (n k : Nat) (h₁ : k < n) (h₂ : n ≤ k + 3) : msg k ≠ msg n := by
-  have hd := msg_nodup k
+  have hd := VG.Proof.Sha256.X86_64.ShaNi.msg_nodup k
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
   rcases (by omega : n = k + 1 ∨ n = k + 2 ∨ n = k + 3) with rfl | rfl | rfl
   · exact hd.1.1
@@ -128,9 +239,9 @@ theorem msg_other (n : Nat) (r : XReg) (h : r = .xmm0 ∨ r = .xmm1 ∨ r = .xmm
 
 /-- What holds after rounds `0 … 4n-1` of a block `M`, from the state `sB` at its start. -/
 structure RInv (H : HashValue) (M : Block) (sB : State) (n : Nat) (s : State) : Prop where
-  x1 : s.xmm .xmm1 = abef (Spec.Sha256.rounds H M (4 * n))
-  x2 : s.xmm .xmm2 = cdgh (Spec.Sha256.rounds H M (4 * n))
-  msgs : ∀ k < n, n ≤ k + 4 → s.xmm (msg k) = quad M k
+  x1 : s.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (Spec.Sha256.rounds H M (4 * n))
+  x2 : s.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (Spec.Sha256.rounds H M (4 * n))
+  msgs : ∀ k < n, n ≤ k + 4 → s.xmm (msg k) = VG.Proof.Sha256.X86_64.ShaNi.quad M k
   keep : ∀ r, r = .xmm8 ∨ r = .xmm9 ∨ r = .xmm10 → s.xmm r = sB.xmm r
   gpr : ∀ r, r ≠ .rax → s.gpr r = sB.gpr r
   mem : s.mem = sB.mem
@@ -146,31 +257,31 @@ theorem rounds_four (H : HashValue) (M : Block) (n : Nat) :
   rfl
 
 theorem kq_quad (n : Nat) (M : Block) :
-    dword (XBinOp.eval .paddd (kQuad (4 * n)) (quad M n)) 0 = K (4 * n) + W M (4 * n) ∧
-    dword (XBinOp.eval .paddd (kQuad (4 * n)) (quad M n)) 1 = K (4 * n + 1) + W M (4 * n + 1) ∧
-    dword (shufDwords (XBinOp.eval .paddd (kQuad (4 * n)) (quad M n)) 0x0e) 0 =
+    dword (XBinOp.eval .paddd (kQuad (4 * n)) (VG.Proof.Sha256.X86_64.ShaNi.quad M n)) 0 = K (4 * n) + W M (4 * n) ∧
+    dword (XBinOp.eval .paddd (kQuad (4 * n)) (VG.Proof.Sha256.X86_64.ShaNi.quad M n)) 1 = K (4 * n + 1) + W M (4 * n + 1) ∧
+    dword (shufDwords (XBinOp.eval .paddd (kQuad (4 * n)) (VG.Proof.Sha256.X86_64.ShaNi.quad M n)) 0x0e) 0 =
       K (4 * n + 2) + W M (4 * n + 2) ∧
-    dword (shufDwords (XBinOp.eval .paddd (kQuad (4 * n)) (quad M n)) 0x0e) 1 =
+    dword (shufDwords (XBinOp.eval .paddd (kQuad (4 * n)) (VG.Proof.Sha256.X86_64.ShaNi.quad M n)) 0x0e) 1 =
       K (4 * n + 3) + W M (4 * n + 3) := by
-  simp only [shufDwords_0e, XBinOp.eval, kQuad, quad, dword_ofDwords_0, dword_ofDwords_1,
+  simp only [shufDwords_0e, XBinOp.eval, kQuad, VG.Proof.Sha256.X86_64.ShaNi.quad, dword_ofDwords_0, dword_ofDwords_1,
     dword_ofDwords_2, dword_ofDwords_3]
   exact ⟨trivial, trivial, trivial, trivial⟩
 
 theorem rounds4_step (H : HashValue) (M : Block) (n : Nat) (s : State)
-    (h1 : s.xmm .xmm1 = abef (Spec.Sha256.rounds H M (4 * n)))
-    (h2 : s.xmm .xmm2 = cdgh (Spec.Sha256.rounds H M (4 * n))) (hq : s.xmm (msg n) = quad M n) :
+    (h1 : s.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (Spec.Sha256.rounds H M (4 * n)))
+    (h2 : s.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (Spec.Sha256.rounds H M (4 * n))) (hq : s.xmm (msg n) = VG.Proof.Sha256.X86_64.ShaNi.quad M n) :
     WP isa (.block (rounds4 n)) s fun s' =>
-      s'.xmm .xmm1 = abef (Spec.Sha256.rounds H M (4 * (n + 1))) ∧
-      s'.xmm .xmm2 = cdgh (Spec.Sha256.rounds H M (4 * (n + 1))) ∧
+      s'.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (Spec.Sha256.rounds H M (4 * (n + 1))) ∧
+      s'.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (Spec.Sha256.rounds H M (4 * (n + 1))) ∧
       (∀ r, r ≠ .xmm0 → r ≠ .xmm1 → r ≠ .xmm2 → r ≠ .xmm11 → s'.xmm r = s.xmm r) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine WP.mono (rounds4_ok n s _ _ h1 h2 hq) fun s' ⟨e1, e2, hx, hg, hm, hrd, hwr⟩ => ?_
-  obtain ⟨k0, k1, k2, k3⟩ := kq_quad n M
-  rw [rnds2_eq _ _ k0 k1] at e1 e2
-  rw [← cdgh_two (Spec.Sha256.rounds H M (4 * n)) (K (4 * n)) (W M (4 * n)) (K (4 * n + 1))
-    (W M (4 * n + 1)), rnds2_eq _ _ k2 k3] at e1
-  refine ⟨by rw [e1, rounds_four], by rw [e2, rounds_four, cdgh_two], hx, hg, hm, hrd, hwr⟩
+  refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.rounds4_ok n s _ _ h1 h2 hq) fun s' ⟨e1, e2, hx, hg, hm, hrd, hwr⟩ => ?_
+  obtain ⟨k0, k1, k2, k3⟩ := VG.Proof.Sha256.X86_64.ShaNi.kq_quad n M
+  rw [VG.Proof.Sha256.X86_64.ShaNi.rnds2_eq _ _ k0 k1] at e1 e2
+  rw [← VG.Proof.Sha256.X86_64.ShaNi.cdgh_two (Spec.Sha256.rounds H M (4 * n)) (K (4 * n)) (W M (4 * n)) (K (4 * n + 1))
+    (W M (4 * n + 1)), VG.Proof.Sha256.X86_64.ShaNi.rnds2_eq _ _ k2 k3] at e1
+  refine ⟨by rw [e1, VG.Proof.Sha256.X86_64.ShaNi.rounds_four], by rw [e2, VG.Proof.Sha256.X86_64.ShaNi.rounds_four, VG.Proof.Sha256.X86_64.ShaNi.cdgh_two], hx, hg, hm, hrd, hwr⟩
 
 theorem ofInt_natCast' (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n := by
   apply BitVec.eq_of_toNat_eq; simp
@@ -178,14 +289,14 @@ theorem ofInt_natCast' (n : Nat) : BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n
 /-- Four message words, loaded and made big-endian. -/
 theorem load_quad (M : Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 4)
     (hblk : ∀ t : Nat, t < 16 → bswap32 (m.readW (bp + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 32) = W M t) :
-    XBinOp.eval .pshufb (m.readW (bp + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) bswapMask = quad M n := by
+    XBinOp.eval .pshufb (m.readW (bp + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) bswapMask = VG.Proof.Sha256.X86_64.ShaNi.quad M n := by
   rw [show bswapMask = 0x0c0d0e0f08090a0b0405060700010203#128 from rfl, pshufb_bswap]
   have e : ∀ j, j < 4 → bswap32 (dword (m.readW (bp + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 128) j) =
       W M (4 * n + j) := by
     intro j hj
     rw [dword_readW _ _ hj, ← hblk (4 * n + j) (by omega)]
     refine congrArg (fun a => bswap32 (m.readW a 32)) ?_
-    simp only [ofInt_natCast']
+    simp only [VG.Proof.Sha256.X86_64.ShaNi.ofInt_natCast']
     exact Offset.add_add_eq _ (by omega)
   rw [e 0 (by omega), e 1 (by omega), e 2 (by omega), e 3 (by omega)]
   rfl
@@ -195,8 +306,8 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
     (hin : ∀ n : Nat, n < 4 → InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16)
     (hblk : ∀ t : Nat, t < 16 →
       bswap32 (sB.mem.readW (bp + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 32) = W M t)
-    (h1 : sB.xmm .xmm1 = abef H) (h2 : sB.xmm .xmm2 = cdgh H) :
-    ∀ n ≤ 16, WP isa (rounds n) sB (RInv H M sB n) := by
+    (h1 : sB.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef H) (h2 : sB.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh H) :
+    ∀ n ≤ 16, WP isa (rounds n) sB (VG.Proof.Sha256.X86_64.ShaNi.RInv H M sB n) := by
   intro n hn
   induction n with
   | zero =>
@@ -208,43 +319,43 @@ theorem rounds_ok (H : HashValue) (M : Block) (bp : Addr) (sB : State)
     have hs_rsi : s.gpr .rsi = bp := (hs.gpr .rsi (by decide)).trans hrsi
     -- The schedule: `msg n` gets `quad M n`; nothing else but `xmm7` changes.
     have hsched : WP isa (.block (schedule n)) s fun s₁ =>
-        s₁.xmm (msg n) = quad M n ∧ (∀ r, r ≠ msg n → r ≠ .xmm7 → s₁.xmm r = s.xmm r) ∧
+        s₁.xmm (msg n) = VG.Proof.Sha256.X86_64.ShaNi.quad M n ∧ (∀ r, r ≠ msg n → r ≠ .xmm7 → s₁.xmm r = s.xmm r) ∧
         s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
       by_cases hlo : n < 4
-      · refine WP.mono (schedule_lo n hlo s (by rw [hs.rd, hs.wr, hs_rsi]; exact hin n hlo))
+      · refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.schedule_lo n hlo s (by rw [hs.rd, hs.wr, hs_rsi]; exact hin n hlo))
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, fun r h _ => hx r h, hg, hm, hrd, hwr⟩
         rw [e, hs_rsi, hs.mem, hs.keep .xmm8 (.inl rfl), hmask]
-        exact load_quad M sB.mem bp hlo hblk
+        exact VG.Proof.Sha256.X86_64.ShaNi.load_quad M sB.mem bp hlo hblk
       · obtain ⟨i, rfl⟩ : ∃ i, n = i + 4 := ⟨n - 4, by omega⟩
-        refine WP.mono (schedule_hi (i + 4) (by omega) s (quad M i) (quad M (i + 1)) (quad M (i + 2))
-          (quad M (i + 3)) ?_ ?_ ?_ ?_) fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
-        · rw [msg_add4]; exact hs.msgs i (by omega) (by omega)
-        · rw [show i + 4 + 1 = i + 1 + 4 by omega, msg_add4]; exact hs.msgs (i + 1) (by omega) (by omega)
-        · rw [show i + 4 + 2 = i + 2 + 4 by omega, msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
-        · rw [show i + 4 + 3 = i + 3 + 4 by omega, msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
-        · rw [e]; exact schedule_eq M i
+        refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.schedule_hi (i + 4) (by omega) s (VG.Proof.Sha256.X86_64.ShaNi.quad M i) (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 1)) (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 2))
+          (VG.Proof.Sha256.X86_64.ShaNi.quad M (i + 3)) ?_ ?_ ?_ ?_) fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
+        · rw [VG.Proof.Sha256.X86_64.ShaNi.msg_add4]; exact hs.msgs i (by omega) (by omega)
+        · rw [show i + 4 + 1 = i + 1 + 4 by omega, VG.Proof.Sha256.X86_64.ShaNi.msg_add4]; exact hs.msgs (i + 1) (by omega) (by omega)
+        · rw [show i + 4 + 2 = i + 2 + 4 by omega, VG.Proof.Sha256.X86_64.ShaNi.msg_add4]; exact hs.msgs (i + 2) (by omega) (by omega)
+        · rw [show i + 4 + 3 = i + 3 + 4 by omega, VG.Proof.Sha256.X86_64.ShaNi.msg_add4]; exact hs.msgs (i + 3) (by omega) (by omega)
+        · rw [e]; exact VG.Proof.Sha256.X86_64.ShaNi.schedule_eq M i
     refine WP.mono hsched fun s₁ ⟨hq, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
-    have o1 := msg_other n .xmm1 (by simp)
-    have o2 := msg_other n .xmm2 (by simp)
-    refine WP.mono (rounds4_step H M n s₁ (by rw [hx₁ _ (Ne.symm o1) (by decide)]; exact hs.x1)
+    have o1 := VG.Proof.Sha256.X86_64.ShaNi.msg_other n .xmm1 (by simp)
+    have o2 := VG.Proof.Sha256.X86_64.ShaNi.msg_other n .xmm2 (by simp)
+    refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.rounds4_step H M n s₁ (by rw [hx₁ _ (Ne.symm o1) (by decide)]; exact hs.x1)
       (by rw [hx₁ _ (Ne.symm o2) (by decide)]; exact hs.x2) hq)
       fun s₂ ⟨e1, e2, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_
     refine ⟨e1, e2, fun k hk hk' => ?_, fun r hr => ?_, fun r hr => ?_, by rw [hm₂, hm₁, hs.mem],
       by rw [hrd₂, hrd₁, hs.rd], by rw [hwr₂, hwr₁, hs.wr]⟩
-    · have n0 := msg_other k .xmm0 (by simp)
-      have n1 := msg_other k .xmm1 (by simp)
-      have n2 := msg_other k .xmm2 (by simp)
-      have n11 := msg_other k .xmm11 (by simp)
+    · have n0 := VG.Proof.Sha256.X86_64.ShaNi.msg_other k .xmm0 (by simp)
+      have n1 := VG.Proof.Sha256.X86_64.ShaNi.msg_other k .xmm1 (by simp)
+      have n2 := VG.Proof.Sha256.X86_64.ShaNi.msg_other k .xmm2 (by simp)
+      have n11 := VG.Proof.Sha256.X86_64.ShaNi.msg_other k .xmm11 (by simp)
       rw [hx₂ _ n0 n1 n2 n11]
       by_cases hkn : k = n
       · subst hkn; exact hq
-      · have n7 := msg_other k .xmm7 (by simp)
-        rw [hx₁ _ (msg_ne n k (by omega) (by omega)) n7]
+      · have n7 := VG.Proof.Sha256.X86_64.ShaNi.msg_other k .xmm7 (by simp)
+        rw [hx₁ _ (VG.Proof.Sha256.X86_64.ShaNi.msg_ne n k (by omega) (by omega)) n7]
         exact hs.msgs k (by omega) (by omega)
     · have := hr
       rcases hr with rfl | rfl | rfl <;>
       · rw [hx₂ _ (by decide) (by decide) (by decide) (by decide),
-          hx₁ _ (Ne.symm (msg_other n _ (by simp))) (by decide)]
+          hx₁ _ (Ne.symm (VG.Proof.Sha256.X86_64.ShaNi.msg_other n _ (by simp))) (by decide)]
         exact hs.keep _ (by simp)
     · rw [hg₂ r hr, hg₁, hs.gpr r hr]
 
@@ -259,7 +370,7 @@ theorem stateAt_hi (m : Mem) (p : Addr) {j : Nat} (hj : j < 4) :
   rw [dword_readW _ _ hj]
   simp only [stateAt, Vector.getElem_ofFn]
   refine congrArg (fun a => m.readW a 32) ?_
-  simp only [ofInt_natCast']
+  simp only [VG.Proof.Sha256.X86_64.ShaNi.ofInt_natCast']
   exact Offset.add_add_eq _ (by omega)
 
 /-- The hash value, loaded as `ABEF` and `CDGH`. -/
@@ -267,8 +378,8 @@ theorem load_ok (s : State)
     (hlo : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 16)
     (hhi : InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 ((16 : Nat) : Int)) 16) :
     WP isa (.block (load ++ ([.alu .test .rdx (.reg .rdx)] : List Instr))) s fun s' =>
-      s'.xmm .xmm1 = abef (stateAt s.mem (s.gpr .rdi)) ∧
-      s'.xmm .xmm2 = cdgh (stateAt s.mem (s.gpr .rdi)) ∧
+      s'.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (stateAt s.mem (s.gpr .rdi)) ∧
+      s'.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (stateAt s.mem (s.gpr .rdi)) ∧
       s'.xmm .xmm8 = bswapMask ∧
       s'.zf = some (s.gpr .rdx &&& s.gpr .rdx == 0) ∧
       (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧
@@ -277,15 +388,15 @@ theorem load_ok (s : State)
   simp only [load, const, List.cons_append, List.nil_append]
   simp only [reduceCtorEq, ↓reduceIte, Nat.reduceAdd, and_self, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
     execAlu, readSrc, arithFlags, State.setFlags,
-    isa, State.setXmm, State.setReg, State.load128, ea_at, hlo, hhi, movq_const,
+    isa, State.setXmm, State.setReg, State.load128, VG.Proof.Sha256.X86_64.ShaNi.ea_at, hlo, hhi, movq_const,
     eval_movdqa, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   refine ⟨?_, ?_, trivial, trivial, fun r hr => by simp [hr], trivial⟩ <;>
   simp only [punpcklqdq_eq, punpckhqdq_eq, shufDwords_b1, dword_ofDwords_0, dword_ofDwords_1,
-    dword_ofDwords_2, dword_ofDwords_3, abef, cdgh, stateAt_lo _ _ (show 0 < 4 by decide),
-    stateAt_lo _ _ (show 1 < 4 by decide), stateAt_lo _ _ (show 2 < 4 by decide),
-    stateAt_lo _ _ (show 3 < 4 by decide), stateAt_hi _ _ (show 0 < 4 by decide),
-    stateAt_hi _ _ (show 1 < 4 by decide), stateAt_hi _ _ (show 2 < 4 by decide),
-    stateAt_hi _ _ (show 3 < 4 by decide)]
+    dword_ofDwords_2, dword_ofDwords_3, VG.Proof.Sha256.X86_64.ShaNi.abef, VG.Proof.Sha256.X86_64.ShaNi.cdgh, VG.Proof.Sha256.X86_64.ShaNi.stateAt_lo _ _ (show 0 < 4 by decide),
+    VG.Proof.Sha256.X86_64.ShaNi.stateAt_lo _ _ (show 1 < 4 by decide), VG.Proof.Sha256.X86_64.ShaNi.stateAt_lo _ _ (show 2 < 4 by decide),
+    VG.Proof.Sha256.X86_64.ShaNi.stateAt_lo _ _ (show 3 < 4 by decide), VG.Proof.Sha256.X86_64.ShaNi.stateAt_hi _ _ (show 0 < 4 by decide),
+    VG.Proof.Sha256.X86_64.ShaNi.stateAt_hi _ _ (show 1 < 4 by decide), VG.Proof.Sha256.X86_64.ShaNi.stateAt_hi _ _ (show 2 < 4 by decide),
+    VG.Proof.Sha256.X86_64.ShaNi.stateAt_hi _ _ (show 3 < 4 by decide)]
 
 /-- The hash value after storing `x` and `y` at `p` and `p + 16`. -/
 theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
@@ -294,7 +405,7 @@ theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
       #v[dword x 0, dword x 1, dword x 2, dword x 3, dword y 0, dword y 1, dword y 2, dword y 3] := by
   apply Vector.ext
   intro j hj
-  simp only [stateAt, Vector.getElem_ofFn, ofInt_natCast']
+  simp only [stateAt, Vector.getElem_ofFn, VG.Proof.Sha256.X86_64.ShaNi.ofInt_natCast']
   by_cases hlo : j < 4
   · rw [Mem.readW_writeW_sep (Offset.sep p (by omega) (by omega) (by omega)) (by decide),
       show p + BitVec.ofNat 64 (4 * j) = p + BitVec.ofNat 64 0 + BitVec.ofNat 64 (4 * j) from
@@ -306,7 +417,7 @@ theorem stateAt_store (m : Mem) (p : Addr) (x y : BitVec 128) :
     rcases (by omega : j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- `ABEF` and `CDGH`, stored back as the hash value. -/
-theorem store_ok (s : State) (v : HashValue) (h1 : s.xmm .xmm1 = abef v) (h2 : s.xmm .xmm2 = cdgh v)
+theorem store_ok (s : State) (v : HashValue) (h1 : s.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef v) (h2 : s.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh v)
     (hlo : InRegions s.wr (s.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 16)
     (hhi : InRegions s.wr (s.gpr .rdi + BitVec.ofInt 64 ((16 : Nat) : Int)) 16) :
     WP isa (.block store) s fun s' =>
@@ -316,12 +427,12 @@ theorem store_ok (s : State) (v : HashValue) (h1 : s.xmm .xmm1 = abef v) (h2 : s
   apply WP.of_runBlock
   simp only [store]
   simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
-    isa, State.setXmm, State.store128, ea_at, hlo, hhi, ite_true, ite_false, h1, h2, eval_movdqa,
+    isa, State.setXmm, State.store128, VG.Proof.Sha256.X86_64.ShaNi.ea_at, hlo, hhi, ite_true, ite_false, h1, h2, eval_movdqa,
     Option.some.injEq, exists_eq_left']
   refine ⟨⟨_, _, rfl⟩, ?_, trivial⟩
-  rw [stateAt_store]
+  rw [VG.Proof.Sha256.X86_64.ShaNi.stateAt_store]
   simp only [punpcklqdq_eq, punpckhqdq_eq, shufDwords_b1, dword_ofDwords_0, dword_ofDwords_1,
-    dword_ofDwords_2, dword_ofDwords_3, abef, cdgh]
+    dword_ofDwords_2, dword_ofDwords_3, VG.Proof.Sha256.X86_64.ShaNi.abef, VG.Proof.Sha256.X86_64.ShaNi.cdgh]
   apply Vector.ext
   intro j hj
   rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
@@ -336,30 +447,30 @@ theorem Pre.in_blk16 {s₀ : State} (hp : Pre s₀) {i n : Nat} (hi : i < nb s�
     InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((16 * n : Nat) : Int)) 16 := by
   have := hp.nb_lt
   refine ⟨blR s₀, by simp [hp.rd], ?_⟩
-  rw [ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
+  rw [VG.Proof.Sha256.X86_64.ShaNi.ofInt_natCast', show blkAddr s₀ i + BitVec.ofNat 64 (16 * n) =
     bp s₀ + BitVec.ofNat 64 (64 * i + 16 * n) from Offset.add_add _ _ _]
   exact contains_offset (by omega) (by omega)
 
 /-- What holds between blocks, after `i` of them. -/
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
-  x1 : s.xmm .xmm1 = abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i)
-  x2 : s.xmm .xmm2 = cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i)
+  x1 : s.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i)
+  x2 : s.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i)
   gpr : ∀ r, r ≠ .rax → r ≠ .rsi → r ≠ .rdx → s.gpr r = s₀.gpr r
   mem : s.mem = s₀.mem
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
 /-- The loop invariant, at the start of block `i`. -/
-structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
+structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends VG.Proof.Sha256.X86_64.ShaNi.Common s₀ i s where
   x8 : s.xmm .xmm8 = bswapMask
   rsi : s.gpr .rsi = blkAddr s₀ i
   rdx : s.gpr .rdx = BitVec.ofNat 64 (nb s₀ - i)
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
-    (hL : LInv s₀ i s) :
+    (hL : VG.Proof.Sha256.X86_64.ShaNi.LInv s₀ i s) :
     WP isa body s fun s' =>
-      (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
-      (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
+      (eval .ne s' = some false ∧ VG.Proof.Sha256.X86_64.ShaNi.Common s₀ (nb s₀) s') ∨
+      (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ VG.Proof.Sha256.X86_64.ShaNi.LInv s₀ (i + 1) s') := by
   have h₁ : WP isa (.block [.xop (.bin .movdqa .xmm9 .xmm1), .xop (.bin .movdqa .xmm10 .xmm2)]) s
       fun s₁ => s₁.xmm .xmm9 = s.xmm .xmm1 ∧ s₁.xmm .xmm10 = s.xmm .xmm2 ∧
         (∀ r, r ≠ .xmm9 → r ≠ .xmm10 → s₁.xmm r = s.xmm r) ∧
@@ -370,15 +481,15 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     exact ⟨trivial, trivial, fun r h9 h10 => by simp [h9, h10], trivial⟩
   refine WP.seq (WP.mono h₁ fun s₁ ⟨e9, e10, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_)
   have hmem₁ : s₁.mem = s₀.mem := hm₁.trans hL.mem
-  refine WP.seq (WP.mono (rounds_ok _ (blk s₀ i) (blkAddr s₀ i) s₁ (by rw [hg₁, hL.rsi])
+  refine WP.seq (WP.mono (VG.Proof.Sha256.X86_64.ShaNi.rounds_ok _ (blk s₀ i) (blkAddr s₀ i) s₁ (by rw [hg₁, hL.rsi])
     (by rw [hx₁ _ (by decide) (by decide), hL.x8])
     (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact Pre.in_blk16 hp hi hn)
     (fun t ht => by rw [hmem₁]; exact blk_word i t ht)
     (by rw [hx₁ _ (by decide) (by decide), hL.x1]) (by rw [hx₁ _ (by decide) (by decide), hL.x2])
     16 (Nat.le_refl _)) fun s₂ hR => ?_)
-  have k9 : s₂.xmm .xmm9 = abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i) := by
+  have k9 : s₂.xmm .xmm9 = VG.Proof.Sha256.X86_64.ShaNi.abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i) := by
     rw [hR.keep .xmm9 (by simp), e9, hL.x1]
-  have k10 : s₂.xmm .xmm10 = cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i) := by
+  have k10 : s₂.xmm .xmm10 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) i) := by
     rw [hR.keep .xmm10 (by simp), e10, hL.x2]
   have hx1 := hR.x1
   have hx2 := hR.x2
@@ -386,8 +497,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
   have h₃ : WP isa (.block [.xop (.bin .paddd .xmm1 .xmm9), .xop (.bin .paddd .xmm2 .xmm10),
       .alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)]) s₂ fun s₃ =>
-      s₃.xmm .xmm1 = abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) (i + 1)) ∧
-      s₃.xmm .xmm2 = cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) (i + 1)) ∧
+      s₃.xmm .xmm1 = VG.Proof.Sha256.X86_64.ShaNi.abef (compressBlocks (H₀ s₀) s₀.mem (bp s₀) (i + 1)) ∧
+      s₃.xmm .xmm2 = VG.Proof.Sha256.X86_64.ShaNi.cdgh (compressBlocks (H₀ s₀) s₀.mem (bp s₀) (i + 1)) ∧
       s₃.xmm .xmm8 = s₂.xmm .xmm8 ∧
       s₃.gpr .rsi = s₂.gpr .rsi + 64 ∧ s₃.gpr .rdx = s₂.gpr .rdx - 1 ∧
       (∀ r, r ≠ .rsi → r ≠ .rdx → s₃.gpr r = s₂.gpr r) ∧
@@ -396,7 +507,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
     apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
       execAlu, readSrc, arithFlags, State.setFlags, isa, State.setXmm, State.setReg, ite_true,
-      ite_false, hx1, hx2, k9, k10, paddd_abef, paddd_cdgh, e1, e64, Option.some.injEq,
+      ite_false, hx1, hx2, k9, k10, VG.Proof.Sha256.X86_64.ShaNi.paddd_abef, VG.Proof.Sha256.X86_64.ShaNi.paddd_cdgh, e1, e64, Option.some.injEq,
       Option.bind_some, exists_eq_left']
     exact ⟨by rw [compressBlocks_succ]; rfl, by rw [compressBlocks_succ]; rfl, trivial, trivial, trivial,
       fun r h1 h2 => by simp [h1, h2], trivial⟩
@@ -405,7 +516,7 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hrdx : s₂.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [g₂ .rdx (by decide), hL.rdx]
     rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
-  have hcommon : Common s₀ (i + 1) s₃ :=
+  have hcommon : VG.Proof.Sha256.X86_64.ShaNi.Common s₀ (i + 1) s₃ :=
     ⟨f1, f2, fun r ha hs hd => by rw [fg r hs hd, g₂ r ha, hL.gpr r ha hs hd],
       by rw [fm, hR.mem, hmem₁], by rw [frd, hR.rd, hrd₁, hL.rd], by rw [fwr, hR.wr, hwr₁, hL.wr]⟩
   have hev : eval .ne s₃ = some (!(s₂.gpr .rdx - 1 == 0)) := by
@@ -440,28 +551,28 @@ theorem st16 (s₀ : State) {d : Nat} (hd : d ≤ 16) :
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha256.compressX86_64.post s₀ s' := by
   have in0 : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 16 :=
-    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega)⟩
+    ⟨stR s₀, by simp [hp.wr], VG.Proof.Sha256.X86_64.ShaNi.st16 s₀ (by omega)⟩
   have in16 : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .rdi + BitVec.ofInt 64 ((16 : Nat) : Int)) 16 :=
-    ⟨stR s₀, by simp [hp.wr], st16 s₀ (by omega)⟩
-  refine WP.seq (WP.mono (load_ok s₀ in0 in16) fun s₁ ⟨h1, h2, h8, hzf, hg, hm, hrd, hwr⟩ => ?_)
-  refine WP.seq (WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s₂ hc => ?_)
-  · have hc₀ : Common s₀ 0 s₁ := ⟨h1, h2, fun r hr _ _ => hg r hr, hm, hrd, hwr⟩
+    ⟨stR s₀, by simp [hp.wr], VG.Proof.Sha256.X86_64.ShaNi.st16 s₀ (by omega)⟩
+  refine WP.seq (WP.mono (VG.Proof.Sha256.X86_64.ShaNi.load_ok s₀ in0 in16) fun s₁ ⟨h1, h2, h8, hzf, hg, hm, hrd, hwr⟩ => ?_)
+  refine WP.seq (WP.mono (Q := VG.Proof.Sha256.X86_64.ShaNi.Common s₀ (nb s₀)) ?_ fun s₂ hc => ?_)
+  · have hc₀ : VG.Proof.Sha256.X86_64.ShaNi.Common s₀ 0 s₁ := ⟨h1, h2, fun r hr _ _ => hg r hr, hm, hrd, hwr⟩
     refine WP.ite (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
     · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
       exact WP.block_nil (M := isa) (h0 ▸ hc₀)
     · have hpos : 0 < nb s₀ := by
         simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at h
         exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
-      let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
+      let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ VG.Proof.Sha256.X86_64.ShaNi.LInv s₀ i s
       have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
-          (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
+          (eval .ne s' = some false ∧ VG.Proof.Sha256.X86_64.ShaNi.Common s₀ (nb s₀) s') ∨
           (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
         rintro m s ⟨i, rfl, hi, hL⟩
-        refine WP.mono (body_ok hp hi hL) fun s' h => ?_
+        refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.body_ok hp hi hL) fun s' h => ?_
         rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
         · exact .inl ⟨he, hc⟩
         · exact .inr ⟨he, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
-      have hL₀ : LInv s₀ 0 s₁ :=
+      have hL₀ : VG.Proof.Sha256.X86_64.ShaNi.LInv s₀ 0 s₁ :=
         { hc₀ with
           x8 := h8
           rsi := by rw [hg .rsi (by decide)]; simp [blkAddr]
@@ -469,23 +580,23 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
       exact WP.loop (M := isa) Inv hstep (nb s₀) s₁ ⟨0, rfl, hpos, hL₀⟩
   · have hrdi : s₂.gpr .rdi = st s₀ := hc.gpr .rdi (by decide) (by decide) (by decide)
     have out : ∀ d, d ≤ 16 → InRegions s₂.wr (s₂.gpr .rdi + BitVec.ofInt 64 ((d : Nat) : Int)) 16 :=
-      fun d hd => ⟨stR s₀, by simp [hc.wr, hp.wr], by rw [hrdi]; exact st16 s₀ hd⟩
-    refine WP.mono (store_ok s₂ _ hc.x1 hc.x2 (out 0 (by omega)) (out 16 (by omega)))
+      fun d hd => ⟨stR s₀, by simp [hc.wr, hp.wr], by rw [hrdi]; exact VG.Proof.Sha256.X86_64.ShaNi.st16 s₀ hd⟩
+    refine WP.mono (VG.Proof.Sha256.X86_64.ShaNi.store_ok s₂ _ hc.x1 hc.x2 (out 0 (by omega)) (out 16 (by omega)))
       fun s' ⟨⟨x, y, hm'⟩, hst, hg', _, _⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
     · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hg', hc.gpr r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
         (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
     · have hret : (retR s₀).Contains (s₀.gpr .rsp) 8 := Region.contains_self _ _
-      rw [hm', hrdi, Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega))) (by decide),
-        Mem.readW_writeW_sep (hp.ret_st.sep hret (st16 s₀ (by omega))) (by decide), hc.mem]
+      rw [hm', hrdi, Mem.readW_writeW_sep (hp.ret_st.sep hret (VG.Proof.Sha256.X86_64.ShaNi.st16 s₀ (by omega))) (by decide),
+        Mem.readW_writeW_sep (hp.ret_st.sep hret (VG.Proof.Sha256.X86_64.ShaNi.st16 s₀ (by omega))) (by decide), hc.mem]
     · show stateAt s'.mem (st s₀) = _
       rw [← hrdi]; exact hst
 
 theorem compress_verified :
     Verified X86_64.target Impl.Sha256.X86_64.ShaNi.compress Proof.Sha256.compressX86_64 := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
+  · obtain ⟨t, s', he, h⟩ := VG.Proof.Sha256.X86_64.ShaNi.correct (pre_of s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
@@ -495,3 +606,5 @@ theorem compress_verified :
   · exact (Proof.Sha256.X86_64.compress_verified).2.2
 
 end VG.Proof.Sha256.X86_64.ShaNi
+
+end

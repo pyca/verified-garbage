@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha3.AArch64.Call
-import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Sha3.Contract

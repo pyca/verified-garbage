@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Facts
-import VerifiedGarbage.Proof.AesGcm.X86_64.OneCT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 
 /-!
 # AES-GCM on x86-64: `oneBlocks` in two runs

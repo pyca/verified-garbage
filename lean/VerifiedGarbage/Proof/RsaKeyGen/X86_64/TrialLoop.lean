@@ -41,7 +41,7 @@ theorem arrBytes_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : 
   have hn := hg.scr.nowrap
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * sW)) 8 := hg.scr.ld (by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega)
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.gpr .rax = BitVec.ofNat 64 (8 * (w + 2)) ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.hw, sx2]
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.hw, VG.Proof.Bignum.X86_64.sx2]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
     have : (2 : BitVec 64).toNat = 2 := rfl

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Bytes
 
 /-! The decoding addition chain equals the RFC 8032 exponent. -/
 

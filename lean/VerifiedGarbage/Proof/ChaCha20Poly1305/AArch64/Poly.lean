@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Poly
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Steps
-import VerifiedGarbage.Proof.Poly1305.AArch64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 
 /-!
 # Poly1305 in nine registers (AArch64): one block
@@ -298,7 +298,7 @@ theorem block_ok (s : State)
   refine WP.block_append (WP.mono (mulR1_ok s₂ (by
       rw [k₂.2.2.1, k₂.2.2.2, k₁.2.2.1, k₁.2.2.2, k₂.gpr', k0₁]; exact hk1))
     fun s₃ ⟨e₃, k₃⟩ => ?_)
-  refine WP.mono (reduce_ok s₃) fun s₄ ⟨e₄, p₄, k₄⟩ => ?_
+  refine WP.mono (VG.Proof.ChaCha20Poly1305.AArch64.Poly.reduce_ok s₃) fun s₄ ⟨e₄, p₄, k₄⟩ => ?_
   -- The block added.
   have g0 := (s.gpr .x21).isLt; have g1 := (s.gpr .x22).isLt
   have hw0 := (s.mem.readW (s.gpr .x20 + BitVec.ofNat 64 0) 64).isLt

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
+import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.TripleDes.Contract
 
@@ -18,6 +18,6 @@ def contract (d : Spec.TripleDes.Direction) : Contract isa where
     Spec.TripleDes.blocksAt s'.mem (s.gpr .x1) (s.gpr .x2).toNat =
       Spec.TripleDes.ecb (Spec.TripleDes.scheduleAt s.mem (s.gpr .x0)) d
         (Spec.TripleDes.blocksAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
-  pub := PublicRegs [.x0, .x1, .x2, .x3]
+  pub := VG.Proof.TripleDes.AArch64.PublicRegs [.x0, .x1, .x2, .x3]
 
 end VG.Proof.TripleDes.AArch64.Ecb

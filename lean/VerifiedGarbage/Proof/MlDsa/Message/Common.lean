@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.MlKem.Mem
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Spec.MlDsa
 import VerifiedGarbage.Spec.MlDsa.Poly
 

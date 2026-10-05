@@ -1,5 +1,5 @@
 import VerifiedGarbage.Spec.Ed25519
-import VerifiedGarbage.Proof.X25519.Invert
+import VerifiedGarbage.Proof.X25519.Bytes
 
 /-! Intermediate values in RFC 8032 point decoding. -/
 

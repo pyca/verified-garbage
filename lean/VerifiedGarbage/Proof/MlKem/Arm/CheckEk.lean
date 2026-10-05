@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.EkCheck
+import VerifiedGarbage.Proof.MlKem.KPke1024
 
 /-!
 # ML-KEM-768 on 32-bit ARM: `vg_mlkem768_check_ek`

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem.X86.CheckEkBody
+import VerifiedGarbage.Proof.MlKem.X86.CheckEk
 import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 import VerifiedGarbage.Spec.MlKem.Contract1024
 import VerifiedGarbage.TCB.X86.Target
@@ -19,7 +19,7 @@ open VG.Proof.MlKem.X86.CheckEk
 open VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
-theorem Pre.of {s₀ : State} (h : (Spec.MlKem1024.checkEkContract X86.abi 16).pre s₀) : Pre mlKem1024 s₀ := by
+theorem Pre.of {s₀ : State} (h : (Spec.MlKem1024.checkEkContract X86.abi 16).pre s₀) : VG.Proof.MlKem.X86.CheckEk.Pre mlKem1024 s₀ := by
   sig_pre [Spec.MlKem1024.checkEkContract, Spec.MlKem1024.checkEkSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at h
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
@@ -39,7 +39,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.checkEk (Spec.MlKem102
     by_cases e : ok (K mlKem1024 s₀) (128 * mlKem1024.k)
     · rw [ite_eq_left e]; exact (ite_eq_left (ok_iff.mpr e)).symm
     · rw [ite_eq_right e]; exact (ite_eq_right fun h => e (ok_iff.mp h)).symm
-  · let st := satState satMem [⟨0, 1568⟩, ⟨0x5004, 4⟩] []
+  · let st := VG.Proof.MlKem.X86.satState VG.Proof.MlKem1024.X86.CheckEk.satMem [⟨0, 1568⟩, ⟨0x5004, 4⟩] []
     refine ⟨st, ?_⟩
     sig_sat_check [Spec.MlKem1024.checkEkContract, Spec.MlKem1024.checkEkSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]

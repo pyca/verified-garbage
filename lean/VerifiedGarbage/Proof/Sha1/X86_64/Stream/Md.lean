@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
-import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha1.X86_64.Compress
 import VerifiedGarbage.Proof.Sha1.X86_64.ShaNi.Compress

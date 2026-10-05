@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
-import VerifiedGarbage.Proof.MlKem.X86_64.Bytes
-import VerifiedGarbage.Proof.MlKem.X86_64.Contracts
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -63,17 +63,17 @@ end
 /-- After `i` groups. -/
 structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
   rdi : s.gpr .rdi = bP s₀ + BitVec.ofNat 64 (3 * i)
-  rsi : s.gpr .rsi = fP s₀ + BitVec.ofNat 64 (8 * i)
+  rsi : s.gpr .rsi = VG.Proof.MlKem.X86_64.Dec12.fP s₀ + BitVec.ofNat 64 (8 * i)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [pR (fP s₀)] s₀.mem s.mem
-  done : ∀ k < 2 * i, (coeffAt s.mem (fP s₀) k).toNat = ((decode12 (bytesAt s₀.mem (bP s₀) 384))[k]!).val
+  frame : Frame [pR (VG.Proof.MlKem.X86_64.Dec12.fP s₀)] s₀.mem s.mem
+  done : ∀ k < 2 * i, (coeffAt s.mem (VG.Proof.MlKem.X86_64.Dec12.fP s₀) k).toNat = ((decode12 (bytesAt s₀.mem (bP s₀) 384))[k]!).val
 
 section
 variable {s₀ : State} (hp : decode12K.pre s₀)
 include hp
 
-theorem byte {m : Mem} (hf : Frame [pR (fP s₀)] s₀.mem m) {k : Nat} (hk : k < 384) :
+theorem byte {m : Mem} (hf : Frame [pR (VG.Proof.MlKem.X86_64.Dec12.fP s₀)] s₀.mem m) {k : Nat} (hk : k < 384) :
     m (bP s₀ + BitVec.ofNat 64 k) = (bytesAt s₀.mem (bP s₀) 384).getD k 0 := by
   rw [bytesAt_getD _ _ hk]
   exact bytes_frame hf (by simpa using hp.2.2.1) (by decide) k hk
@@ -84,19 +84,19 @@ theorem field_val {F X : Nat} (hF : F < 4096) (hX : X = F) {x : BitVec 32} (hx :
     (csub32 x).toNat = (ofNat X).val := by
   rw [csub32_toNat (by omega), hx, val_ofNat, hX, condSub_eq (by rw [q_eq]; omega)]
 
-theorem step {i : Nat} (hi : i < 128) {s : State} (hI : Inv s₀ i s) :
-    WP isa (.block decode12Body) s fun s' => Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
+theorem step {i : Nat} (hi : i < 128) {s : State} (hI : VG.Proof.MlKem.X86_64.Dec12.Inv s₀ i s) :
+    WP isa (.block decode12Body) s fun s' => VG.Proof.MlKem.X86_64.Dec12.Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
       s'.zf = some (s.gpr .rcx - 1 == 0) := by
-  have a2 : s.gpr .rsi + BitVec.ofNat 64 4 = coeffAddr (fP s₀) (2 * i + 1) := by
+  have a2 : s.gpr .rsi + BitVec.ofNat 64 4 = coeffAddr (VG.Proof.MlKem.X86_64.Dec12.fP s₀) (2 * i + 1) := by
     rw [hI.rsi, BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega
-  have a1 : s.gpr .rsi = coeffAddr (fP s₀) (2 * i) := by rw [hI.rsi]; congr 2; omega
-  have hrd : s.rd ++ s.wr = [⟨bP s₀, 384⟩, pR (fP s₀)] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
-  have hwr : s.wr = [pR (fP s₀)] := by rw [hI.wr, hp.2.1]
+  have a1 : s.gpr .rsi = coeffAddr (VG.Proof.MlKem.X86_64.Dec12.fP s₀) (2 * i) := by rw [hI.rsi]; congr 2; omega
+  have hrd : s.rd ++ s.wr = [⟨bP s₀, 384⟩, pR (VG.Proof.MlKem.X86_64.Dec12.fP s₀)] := by rw [hI.rd, hI.wr, hp.1, hp.2.1]; rfl
+  have hwr : s.wr = [pR (VG.Proof.MlKem.X86_64.Dec12.fP s₀)] := by rw [hI.wr, hp.2.1]
   have hb : ∀ j < 3, s.gpr .rdi + BitVec.ofNat 64 j = bP s₀ + BitVec.ofNat 64 (3 * i + j) := fun j _ => by
     rw [hI.rdi, BitVec.add_assoc, ← BitVec.ofNat_add]
   have hin : ∀ j < 3, InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [hrd, hb j hj]; exact ⟨⟨bP s₀, 384⟩, by simp, contains_offset' (by omega) (by decide)⟩
-  have hout : ∀ k < 256, InRegions s.wr (coeffAddr (fP s₀) k) 4 := fun k hk => by
+  have hout : ∀ k < 256, InRegions s.wr (coeffAddr (VG.Proof.MlKem.X86_64.Dec12.fP s₀) k) 4 := fun k hk => by
     rw [hwr]; exact ⟨_, List.mem_singleton_self _, coeff_contains _ hk⟩
   have hbody := decode12Body_ok s (by simpa using hin 0 (by omega)) (hin 1 (by omega)) (hin 2 (by omega))
     (by rw [a1]; exact hout _ (by omega)) (by rw [a2]; exact hout _ (by omega))
@@ -138,7 +138,7 @@ theorem step {i : Nat} (hi : i < 128) {s : State} (hI : Inv s₀ i s) :
       · rw [ifn h0]; exact hI.done k (by omega)
 
 omit hp in
-theorem init {s : State} (hm : s.mem = s₀.mem) (hk : Keep [.rcx] s₀ s) : Inv s₀ 0 s :=
+theorem init {s : State} (hm : s.mem = s₀.mem) (hk : Keep [.rcx] s₀ s) : VG.Proof.MlKem.X86_64.Dec12.Inv s₀ 0 s :=
   ⟨by rw [hk.gpr (by decide)]; simp, by rw [hk.gpr (by decide)]; simp, hk.2.1, hk.2.2,
     by rw [hm]; exact Frame.refl _ _, fun k hk => absurd hk (by omega)⟩
 
@@ -146,8 +146,8 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.decode12 s₀ t s' ∧ ab
     decode12K.post s₀ s' := by
   obtain ⟨t, s', he, hI, hk⟩ := WP.keep (c := Impl.MlKem.X86_64.decode12)
     [.rax, .rdx, .rdi, .rsi, .rcx, .r8]
-    (wp_counted (s₀ := s₀) (N := 128) (v := 128) rfl (by decide) (Inv s₀) (fun _ hm hk => init hm hk)
-      fun i hi s hI => step hp hi hI) (by decide)
+    (wp_counted (s₀ := s₀) (N := 128) (v := 128) rfl (by decide) (VG.Proof.MlKem.X86_64.Dec12.Inv s₀) (fun _ hm hk => init hm hk)
+      fun i hi s hI => VG.Proof.MlKem.X86_64.Dec12.step hp hi hI) (by decide)
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hI.frame
     (by simpa using hp.2.2.2.2)), ?_⟩
   exact polyIs_of_toNat fun k hk => hI.done k (by omega)

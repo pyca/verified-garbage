@@ -1,9 +1,183 @@
+import VerifiedGarbage.Proof.Rc2.X86_64.Block
+import VerifiedGarbage.Impl.Rc2.X86_64.Cbc
+import VerifiedGarbage.Proof.Rc2.Stream
+import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Rc2.Contract
-import VerifiedGarbage.Proof.Rc2.X86_64.KeyLoop
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps
-import VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Lit
-import VerifiedGarbage.Proof.Rc2.X86_64.ConstantTime
+import VerifiedGarbage.Proof.Rc2.X86_64.Key
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Lit`. -/
+section
+
+/-! # Literal CBC callers -/
+
+namespace VG
+
+materialize_code Impl.Rc2.X86_64.Cbc.encrypt
+materialize_code Impl.Rc2.X86_64.Cbc.decrypt
+
+end VG
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Steps`. -/
+section
+
+section
+
+/-! # Calling the verified block primitive from CBC -/
+
+namespace VG.Proof.Rc2.X86_64.Cbc
+
+open VG VG.X86_64 VG.Impl.Rc2.X86_64
+
+def kept : List Reg := [.rdi, .rsi, .rdx, .rbx, .rbp, .rsp]
+
+theorem block_keeps (d : Spec.Rc2.Direction) :
+    ((instrs (.block (blockCode d) : Prog isa)).all fun i => kept.all fun r => !Taint.clobbers i r) = true := by
+  cases d
+  · change ((instrs encryptBlock).all _) = true
+    rw [← Code.allInstrs_eq]; lit_decide
+  · change ((instrs decryptBlock).all _) = true
+    rw [← Code.allInstrs_eq]; lit_decide
+
+theorem block_keeps_reg (d : Spec.Rc2.Direction) {r : Reg} (hr : r ∈ VG.Proof.Rc2.X86_64.Cbc.kept) :
+    ∀ i ∈ instrs (.block (blockCode d) : Prog isa), Taint.clobbers i r = false := by
+  intro i hi
+  have h := List.all_eq_true.mp (List.all_eq_true.mp (VG.Proof.Rc2.X86_64.Cbc.block_keeps d) i hi) r hr
+  simpa using h
+
+theorem block_correct' (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract d).pre s) :
+    ∃ t s', Exec isa (.block (blockCode d)) s t s' ∧ abiPreserved s s' ∧ (blockContract d).post s s' := by
+  cases d
+  · exact VG.Proof.Rc2.X86_64.encrypt_correct s hs
+  · exact VG.Proof.Rc2.X86_64.decrypt_correct s hs
+
+theorem blockCall_eq (d : Spec.Rc2.Direction) : Impl.Rc2.X86_64.Cbc.blockCall d =
+    .call (match d with | .encrypt => "vg_rc2_encrypt_block" | .decrypt => "vg_rc2_decrypt_block")
+      (.block (blockCode d)) := by cases d <;> rfl
+
+structure CallPre (s : State) : Prop where
+  reads : Covers [⟨s.gpr .rdi, 128⟩, ⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩] (s.rd ++ s.wr)
+  writes : Covers [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩] s.wr
+  keyScratch : (Region.mk (s.gpr .rdi) 128).Disjoint ⟨s.gpr .rdx, 256⟩
+  dataScratch : (Region.mk (s.gpr .rsi) 8).Disjoint ⟨s.gpr .rdx, 256⟩
+  stackKey : (below (s.gpr .rsp) 8).Disjoint ⟨s.gpr .rdi, 128⟩
+  stackData : (below (s.gpr .rsp) 8).Disjoint ⟨s.gpr .rsi, 8⟩
+  stackScratch : (below (s.gpr .rsp) 8).Disjoint ⟨s.gpr .rdx, 256⟩
+
+structure CallPost (d : Spec.Rc2.Direction) (s s' : State) : Prop where
+  reg : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, s'.gpr r = s.gpr r
+  callee : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  mem : Frame [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩, below (s.gpr .rsp) 8] s.mem s'.mem
+  output : Spec.Rc2.blockAt s'.mem (s.gpr .rsi) =
+    cipher d (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))
+
+theorem call_ok (d : Spec.Rc2.Direction) (s : State) (hp : VG.Proof.Rc2.X86_64.Cbc.CallPre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.blockCall d) s (VG.Proof.Rc2.X86_64.Cbc.CallPost d s) := by
+  rw [VG.Proof.Rc2.X86_64.Cbc.blockCall_eq]
+  refine WP.call (k := blockContract d) (VG.Proof.Rc2.X86_64.Cbc.block_correct' d)
+    (VG.Proof.Rc2.X86_64.Cbc.block_keeps_reg d (by decide)) (by change 16 < 2 ^ 64; decide)
+    (rd := [⟨s.gpr .rdi, 128⟩]) (wr := [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩]) ?_ hp.reads hp.writes ?_
+  · simp only [blockContract, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+      State.callEntry_rsp, State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp)]
+    exact ⟨trivial, trivial, hp.keyScratch, hp.dataScratch, hp.stackData, hp.stackScratch⟩
+  · intro s' rd wr callee frame regs ⟨s₂, mem₂, _, out₂⟩
+    refine ⟨fun r hr => regs r (VG.Proof.Rc2.X86_64.Cbc.block_keeps_reg d hr), callee, rd, wr, frame, ?_⟩
+    have stackFrame : Frame [below (s.gpr .rsp) 8] s.mem s.callEntry.mem := by
+      exact (Frame.refl _ _).writeW List.mem_cons_self _ (below_call _ (by decide) (by decide))
+    have key := scheduleAt_frame stackFrame (s.gpr .rdi) (by simpa using hp.stackKey.symm)
+    have input := blockAt_frame stackFrame (s.gpr .rsi) (by simpa using hp.stackData.symm)
+    change Spec.Rc2.blockAt s₂.mem _ = cipher d _ _ at out₂
+    simp only [State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+      key, input, mem₂] at out₂
+    exact out₂
+
+end VG.Proof.Rc2.X86_64.Cbc
+
+end
+
+/-! # CBC loads, XORs, stores, and public loop counters -/
+
+namespace VG.Proof.Rc2.X86_64.Cbc
+
+open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Rc2.X86_64
+
+theorem copy64_ok (s : State) (src dst : Reg) (a b : Nat) (hne : dst ≠ .rax)
+    (readable : InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 a) 8)
+    (writable : InRegions s.wr (s.gpr dst + BitVec.ofNat 64 b) 8) :
+    ∃ s', runBlock isa [.mov .rax (.mem (memOp src a)), .store (memOp dst b) .rax] s = some s' ∧
+      Keep [.rax] {s with
+        mem := s.mem.writeW (s.gpr dst + BitVec.ofNat 64 b) (s.mem.readW (s.gpr src + BitVec.ofNat 64 a) 64)} s' := by
+  refine ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, exec, readSrc,
+      State.load64, State.store64, State.ea, offset_nat, readable, ite_true,
+      Option.map_some, gpr_setReg, hne, ite_false,
+      wr_setReg, writable]
+    rfl, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_singleton] at hr
+    exact gpr_setReg_of_ne _ _ hr
+  · rfl
+  · rfl
+  · rfl
+
+theorem xor64_ok (s : State) (dst iv : Reg) (hd : dst ≠ .rax) (hi : iv ≠ .rax)
+    (readDst : InRegions (s.rd ++ s.wr) (s.gpr dst) 8)
+    (readIv : InRegions (s.rd ++ s.wr) (s.gpr iv) 8)
+    (writable : InRegions s.wr (s.gpr dst) 8) :
+    ∃ s', runBlock isa [.mov .rax (.mem (memOp dst 0)), .alu .xor .rax (.mem (memOp iv 0)),
+      .store (memOp dst 0) .rax] s = some s' ∧
+      Keep [.rax] {s with mem := s.mem.writeW (s.gpr dst) (s.mem.readW (s.gpr dst) 64 ^^^ s.mem.readW (s.gpr iv) 64)} s' := by
+  refine ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, memOp, exec, execAlu, readSrc,
+      State.load64, State.store64, State.ea, offset_nat,
+      BitVec.add_zero, readDst, readIv, ite_true, Option.map_some, Option.bind_some,
+      gpr_setReg, gpr_arithFlags, mem_setReg, rd_setReg, wr_setReg, wr_arithFlags,
+      hd, hi, ite_false, writable]
+    rfl, ?_⟩
+  constructor
+  · intro r hr
+    simp only [List.mem_singleton] at hr
+    simp only [gpr_setReg, gpr_arithFlags, hr, ite_false]
+  · rfl
+  · rfl
+  · rfl
+
+theorem advance_ok (s : State) :
+    ∃ s', runBlock isa Impl.Rc2.X86_64.Cbc.advance s = some s' ∧
+      s'.gpr .rsi = s.gpr .rsi + 8 ∧ s'.gpr .rbp = s.gpr .rbp - 1 ∧
+      s'.zf = some ((s.gpr .rbp - 1) == 0) ∧ Keep [.rsi, .rbp] s s' := by
+  refine ⟨_, by
+    simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, BitVec.reduceSignExtend, Impl.Rc2.X86_64.Cbc.advance,
+      runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+      Option.bind_some, gpr_setReg, gpr_arithFlags]
+    rfl, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [gpr_setReg, gpr_arithFlags, reduceCtorEq, ite_false, ite_true]
+    rfl
+  · exact gpr_setReg_self _ _ _
+  · rw [zf_setReg, zf_arithFlags]
+    rfl
+  · constructor
+    · intro r hr
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [gpr_setReg, gpr_arithFlags, hr.1, hr.2, ite_false]
+    · simp only [mem_setReg, mem_arithFlags]
+    · simp only [rd_setReg, rd_arithFlags]
+    · simp only [wr_setReg, wr_arithFlags]
+
+end VG.Proof.Rc2.X86_64.Cbc
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Rc2.X86_64.Cbc.Verified`. -/
+section
 
 section
 
@@ -48,64 +222,64 @@ abbrev bufR (s : State) : Region := ⟨s.gpr .rdx, 512⟩
 abbrev stackR (s : State) : Region := below (s.gpr .rsp) 8
 
 structure StepPre (s : State) (n : Nat := 1) : Prop where
-  reads : Covers [keyR s, ivR s, dataR s n, bufR s] (s.rd ++ s.wr)
-  writes : Covers [ivR s, dataR s n, bufR s] s.wr
-  keyIv : (keyR s).Disjoint (ivR s)
-  keyData : (keyR s).Disjoint (dataR s n)
-  keyBuf : (keyR s).Disjoint (bufR s)
-  ivData : (ivR s).Disjoint (dataR s n)
-  ivBuf : (ivR s).Disjoint (bufR s)
-  dataBuf : (dataR s n).Disjoint (bufR s)
-  stackKey : (stackR s).Disjoint (keyR s)
-  stackIv : (stackR s).Disjoint (ivR s)
-  stackData : (stackR s).Disjoint (dataR s n)
-  stackBuf : (stackR s).Disjoint (bufR s)
+  reads : Covers [VG.Proof.Rc2.X86_64.Cbc.keyR s, VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s n, VG.Proof.Rc2.X86_64.Cbc.bufR s] (s.rd ++ s.wr)
+  writes : Covers [VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s n, VG.Proof.Rc2.X86_64.Cbc.bufR s] s.wr
+  keyIv : (VG.Proof.Rc2.X86_64.Cbc.keyR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.ivR s)
+  keyData : (VG.Proof.Rc2.X86_64.Cbc.keyR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.dataR s n)
+  keyBuf : (VG.Proof.Rc2.X86_64.Cbc.keyR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.bufR s)
+  ivData : (VG.Proof.Rc2.X86_64.Cbc.ivR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.dataR s n)
+  ivBuf : (VG.Proof.Rc2.X86_64.Cbc.ivR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.bufR s)
+  dataBuf : (VG.Proof.Rc2.X86_64.Cbc.dataR s n).Disjoint (VG.Proof.Rc2.X86_64.Cbc.bufR s)
+  stackKey : (VG.Proof.Rc2.X86_64.Cbc.stackR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.keyR s)
+  stackIv : (VG.Proof.Rc2.X86_64.Cbc.stackR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.ivR s)
+  stackData : (VG.Proof.Rc2.X86_64.Cbc.stackR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.dataR s n)
+  stackBuf : (VG.Proof.Rc2.X86_64.Cbc.stackR s).Disjoint (VG.Proof.Rc2.X86_64.Cbc.bufR s)
 
-theorem StepPre.transport {s s' : State} {n : Nat} (hp : StepPre s n)
-    (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ kept, s'.gpr r = s.gpr r) : StepPre s' n := by
+theorem StepPre.transport {s s' : State} {n : Nat} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n)
+    (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) (regs : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, s'.gpr r = s.gpr r) : VG.Proof.Rc2.X86_64.Cbc.StepPre s' n := by
   have a := regs .rdi (by decide)
   have b := regs .rbx (by decide)
   have c := regs .rsi (by decide)
   have d := regs .rdx (by decide)
   have e := regs .rsp (by decide)
   constructor
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.reads
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.writes
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.keyIv
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.keyData
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.keyBuf
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.ivData
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.ivBuf
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.dataBuf
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackKey
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackIv
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackData
-  · simpa only [keyR, ivR, dataR, bufR, stackR, rd, wr, a, b, c, d, e] using hp.stackBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.reads
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.writes
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.keyIv
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.keyData
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.keyBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.ivData
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.ivBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.dataBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.stackKey
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.stackIv
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.stackData
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, VG.Proof.Rc2.X86_64.Cbc.stackR, rd, wr, a, b, c, d, e] using hp.stackBuf
 
-theorem StepPre.keep {s s' : State} {m : Mem} {n : Nat} (hp : StepPre s n) (h : Keep [.rax] {s with mem := m} s') : StepPre s' n :=
+theorem StepPre.keep {s s' : State} {m : Mem} {n : Nat} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) (h : Keep [.rax] {s with mem := m} s') : VG.Proof.Rc2.X86_64.Cbc.StepPre s' n :=
   hp.transport h.rd h.wr fun r hr => h.reg r (by
-    have sep : ∀ r ∈ kept, r ∉ [.rax] := by decide
+    have sep : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, r ∉ [.rax] := by decide
     exact sep r hr)
 
-theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
+theorem StepPre.call {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) : VG.Proof.Rc2.X86_64.Cbc.CallPre s := by
   constructor
   · have hc : Covers [⟨s.gpr .rdi, 128⟩, ⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩]
-        [keyR s, ivR s, dataR s, bufR s] := by
+        [VG.Proof.Rc2.X86_64.Cbc.keyR s, VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s, VG.Proof.Rc2.X86_64.Cbc.bufR s] := by
       apply Covers.of_sub
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨keyR s, by simp, 0, by simp, by simp⟩
-      · exact ⟨dataR s, by simp, 0, by simp, by simp⟩
-      · exact ⟨bufR s, by simp, 0, by simp, by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.keyR s, by simp, 0, by simp, by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s, by simp, 0, by simp, by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, 0, by simp, by simp⟩
     exact fun a n h => hp.reads a n (hc a n h)
-  · have hc : Covers [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩] [ivR s, dataR s, bufR s] := by
+  · have hc : Covers [⟨s.gpr .rsi, 8⟩, ⟨s.gpr .rdx, 256⟩] [VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s, VG.Proof.Rc2.X86_64.Cbc.bufR s] := by
       apply Covers.of_sub
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨dataR s, by simp, 0, by simp, by simp⟩
-      · exact ⟨bufR s, by simp, 0, by simp, by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s, by simp, 0, by simp, by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, 0, by simp, by simp⟩
     exact fun a n h => hp.writes a n (hc a n h)
   · exact hp.keyBuf.sub_right (Region.sub_prefix (by decide))
   · exact hp.dataBuf.sub_right (Region.sub_prefix (by decide))
@@ -113,25 +287,25 @@ theorem StepPre.call {s : State} (hp : StepPre s) : CallPre s := by
   · exact hp.stackData
   · exact hp.stackBuf.sub_right (Region.sub_prefix (by decide))
 
-theorem StepPre.readData {s : State} (hp : StepPre s) : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8 :=
-  hp.reads _ _ ⟨dataR s, by simp, Region.contains_self _ _⟩
+theorem StepPre.readData {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8 :=
+  hp.reads _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s, by simp, Region.contains_self _ _⟩
 
-theorem StepPre.readIv {s : State} (hp : StepPre s) : InRegions (s.rd ++ s.wr) (s.gpr .rbx) 8 :=
-  hp.reads _ _ ⟨ivR s, by simp, Region.contains_self _ _⟩
+theorem StepPre.readIv {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) : InRegions (s.rd ++ s.wr) (s.gpr .rbx) 8 :=
+  hp.reads _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.ivR s, by simp, Region.contains_self _ _⟩
 
-theorem StepPre.writeData {s : State} (hp : StepPre s) : InRegions s.wr (s.gpr .rsi) 8 :=
-  hp.writes _ _ ⟨dataR s, by simp, Region.contains_self _ _⟩
+theorem StepPre.writeData {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) : InRegions s.wr (s.gpr .rsi) 8 :=
+  hp.writes _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s, by simp, Region.contains_self _ _⟩
 
-theorem StepPre.writeIv {s : State} (hp : StepPre s) : InRegions s.wr (s.gpr .rbx) 8 :=
-  hp.writes _ _ ⟨ivR s, by simp, Region.contains_self _ _⟩
+theorem StepPre.writeIv {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) : InRegions s.wr (s.gpr .rbx) 8 :=
+  hp.writes _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.ivR s, by simp, Region.contains_self _ _⟩
 
-theorem StepPre.readBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
+theorem StepPre.readBuf {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 i) 8 :=
-  hp.reads _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.reads _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
 
-theorem StepPre.writeBuf {s : State} (hp : StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
+theorem StepPre.writeBuf {s : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) (i : Nat) (hi : i + 8 ≤ 512) :
     InRegions s.wr (s.gpr .rdx + BitVec.ofNat 64 i) 8 :=
-  hp.writes _ _ ⟨bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
+  hp.writes _ _ ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, Offset.contains_base _ hi (by omega)⟩
 
 end VG.Proof.Rc2.X86_64.Cbc
 
@@ -143,59 +317,59 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-def stepWrites (s : State) : List Region := [ivR s, dataR s, ⟨s.gpr .rdx, 264⟩, stackR s]
+def stepWrites (s : State) : List Region := [VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s, ⟨s.gpr .rdx, 264⟩, VG.Proof.Rc2.X86_64.Cbc.stackR s]
 
 structure Pinned (s s' : State) : Prop where
-  reg : ∀ r ∈ kept, s'.gpr r = s.gpr r
+  reg : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, s'.gpr r = s.gpr r
   callee : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  mem : Frame (stepWrites s) s.mem s'.mem
+  mem : Frame (VG.Proof.Rc2.X86_64.Cbc.stepWrites s) s.mem s'.mem
 
 theorem Pinned.of_keep {s s' : State} {m : Mem} (h : Keep [.rax] {s with mem := m} s')
-    (frame : Frame (stepWrites s) s.mem m) : Pinned s s' := by
-  have k : ∀ r ∈ kept, r ∉ [.rax] := by decide
+    (frame : Frame (VG.Proof.Rc2.X86_64.Cbc.stepWrites s) s.mem m) : VG.Proof.Rc2.X86_64.Cbc.Pinned s s' := by
+  have k : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, r ∉ [.rax] := by decide
   have c : ∀ r ∈ calleeSaved, r ∉ [.rax] := by decide
   exact ⟨fun r hr => h.reg r (k r hr), fun r hr => h.reg r (c r hr), h.rd, h.wr, by rw [h.mem]; exact frame⟩
 
-theorem Pinned.of_call {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s') : Pinned s s' := by
+theorem Pinned.of_call {d : Spec.Rc2.Direction} {s s' : State} (h : VG.Proof.Rc2.X86_64.Cbc.CallPost d s s') : VG.Proof.Rc2.X86_64.Cbc.Pinned s s' := by
   refine ⟨h.reg, h.callee, h.rd, h.wr, h.mem.sub ?_⟩
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨dataR s, by simp [stepWrites], fun _ h => h⟩
-  · exact ⟨⟨s.gpr .rdx, 264⟩, by simp [stepWrites], Region.sub_prefix (by decide)⟩
-  · exact ⟨stackR s, by simp [stepWrites], fun _ h => h⟩
+  · exact ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s, by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites], fun _ h => h⟩
+  · exact ⟨⟨s.gpr .rdx, 264⟩, by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites], Region.sub_prefix (by decide)⟩
+  · exact ⟨VG.Proof.Rc2.X86_64.Cbc.stackR s, by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites], fun _ h => h⟩
 
-theorem Pinned.writes_eq {s s' : State} (h : Pinned s s') : stepWrites s' = stepWrites s := by
-  simp only [stepWrites, ivR, dataR, stackR, h.reg .rbx (by decide), h.reg .rsi (by decide),
+theorem Pinned.writes_eq {s s' : State} (h : VG.Proof.Rc2.X86_64.Cbc.Pinned s s') : VG.Proof.Rc2.X86_64.Cbc.stepWrites s' = VG.Proof.Rc2.X86_64.Cbc.stepWrites s := by
+  simp only [VG.Proof.Rc2.X86_64.Cbc.stepWrites, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.stackR, h.reg .rbx (by decide), h.reg .rsi (by decide),
     h.reg .rdx (by decide), h.reg .rsp (by decide)]
 
-theorem Pinned.trans {s s' s'' : State} (h : Pinned s s') (h' : Pinned s' s'') : Pinned s s'' := by
+theorem Pinned.trans {s s' s'' : State} (h : VG.Proof.Rc2.X86_64.Cbc.Pinned s s') (h' : VG.Proof.Rc2.X86_64.Cbc.Pinned s' s'') : VG.Proof.Rc2.X86_64.Cbc.Pinned s s'' := by
   refine ⟨fun r hr => (h'.reg r hr).trans (h.reg r hr), fun r hr => (h'.callee r hr).trans (h.callee r hr),
     h'.rd.trans h.rd, h'.wr.trans h.wr, ?_⟩
   have f := h'.mem
   rw [h.writes_eq] at f
   exact h.mem.trans f
 
-theorem Pinned.pre {s s' : State} {n : Nat} (h : Pinned s s') (hp : StepPre s n) : StepPre s' n :=
+theorem Pinned.pre {s s' : State} {n : Nat} (h : VG.Proof.Rc2.X86_64.Cbc.Pinned s s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) : VG.Proof.Rc2.X86_64.Cbc.StepPre s' n :=
   hp.transport h.rd h.wr h.reg
 
-theorem Pinned.schedule {s s' : State} (h : Pinned s s') (hp : StepPre s) :
+theorem Pinned.schedule {s s' : State} (h : VG.Proof.Rc2.X86_64.Cbc.Pinned s s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
     Spec.Rc2.scheduleAt s'.mem (s.gpr .rdi) = Spec.Rc2.scheduleAt s.mem (s.gpr .rdi) := by
   apply scheduleAt_frame h.mem
-  simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
+  simpa only [VG.Proof.Rc2.X86_64.Cbc.stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro hp.keyIv (And.intro hp.keyData (And.intro
       (hp.keyBuf.sub_right (Region.sub_prefix (by decide : 264 ≤ 512))) hp.stackKey.symm))
 
-theorem CallPost.iv {d : Spec.Rc2.Direction} {s s' : State} (h : CallPost d s s') (hp : StepPre s) :
+theorem CallPost.iv {d : Spec.Rc2.Direction} {s s' : State} (h : VG.Proof.Rc2.X86_64.Cbc.CallPost d s s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
     Spec.Rc2.blockAt s'.mem (s.gpr .rbx) = Spec.Rc2.blockAt s.mem (s.gpr .rbx) := by
   apply blockAt_frame h.mem
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro hp.ivData (And.intro
       (hp.ivBuf.sub_right (Region.sub_prefix (by decide : 256 ≤ 512))) hp.stackIv.symm)
 
-structure StepPost (d : Spec.Rc2.Direction) (s s' : State) : Prop extends Pinned s s' where
+structure StepPost (d : Spec.Rc2.Direction) (s s' : State) : Prop extends VG.Proof.Rc2.X86_64.Cbc.Pinned s s' where
   data : Spec.Rc2.blockAt s'.mem (s.gpr .rsi) =
     (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).1
@@ -221,45 +395,45 @@ open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
 abbrev stashR (s : State) : Region := ⟨s.gpr .rdx + BitVec.ofNat 64 256, 8⟩
 
-theorem stash_sub (s : State) : Region.Sub (stashR s) (bufR s) :=
+theorem stash_sub (s : State) : Region.Sub (VG.Proof.Rc2.X86_64.Cbc.stashR s) (VG.Proof.Rc2.X86_64.Cbc.bufR s) :=
   Offset.sub_base _ (by decide)
 
-theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : StepPre s) (h : CallPost d s s') :
-    Spec.Rc2.blockAt s'.mem (stashR s).base = Spec.Rc2.blockAt s.mem (stashR s).base := by
+theorem call_stash {d : Spec.Rc2.Direction} {s s' : State} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) (h : VG.Proof.Rc2.X86_64.Cbc.CallPost d s s') :
+    Spec.Rc2.blockAt s'.mem (VG.Proof.Rc2.X86_64.Cbc.stashR s).base = Spec.Rc2.blockAt s.mem (VG.Proof.Rc2.X86_64.Cbc.stashR s).base := by
   apply blockAt_frame h.mem
-  have sep : (stashR s).Disjoint ⟨s.gpr .rdx, 256⟩ := by
+  have sep : (VG.Proof.Rc2.X86_64.Cbc.stashR s).Disjoint ⟨s.gpr .rdx, 256⟩ := by
     have h := Offset.disjoint (s.gpr .rdx) (d := 256) (n := 8) (e := 0) (k := 256)
       (by omega) (by decide) (by decide)
     simpa using h
   simpa only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
-    And.intro ((hp.dataBuf.sub_right (stash_sub s)).symm) (And.intro sep
-      ((hp.stackBuf.sub_right (stash_sub s)).symm))
+    And.intro ((hp.dataBuf.sub_right (VG.Proof.Rc2.X86_64.Cbc.stash_sub s)).symm) (And.intro sep
+      ((hp.stackBuf.sub_right (VG.Proof.Rc2.X86_64.Cbc.stash_sub s)).symm))
 
-theorem decryptStep_ok (s : State) (hp : StepPre s) :
-    WP isa (Impl.Rc2.X86_64.Cbc.step .decrypt) s (StepPost .decrypt s) := by
+theorem decryptStep_ok (s : State) (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.step .decrypt) s (VG.Proof.Rc2.X86_64.Cbc.StepPost .decrypt s) := by
   rw [Impl.Rc2.X86_64.Cbc.step]
   apply WP.seq
-  obtain ⟨s₁, run₁, keep₁⟩ := copy64_ok s .rsi .rdx 0 256 (by decide)
+  obtain ⟨s₁, run₁, keep₁⟩ := VG.Proof.Rc2.X86_64.Cbc.copy64_ok s .rsi .rdx 0 256 (by decide)
     (by simpa using hp.readData) (hp.writeBuf 256 (by decide))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
   simp only [BitVec.add_zero] at keep₁
-  have frame₁ : Frame [stashR s] s.mem s₁.mem := by
+  have frame₁ : Frame [VG.Proof.Rc2.X86_64.Cbc.stashR s] s.mem s₁.mem := by
     rw [keep₁.mem]; exact frame_store64 _ _ _
-  have pin₁ : Pinned s s₁ := by
+  have pin₁ : VG.Proof.Rc2.X86_64.Cbc.Pinned s s₁ := by
     apply Pinned.of_keep keep₁
     apply (frame_store64 _ _ _).sub
     intro r hr
     simp only [List.mem_singleton] at hr
     subst r
-    exact ⟨⟨s.gpr .rdx, 264⟩, by simp [stepWrites], Offset.sub_base _ (by decide)⟩
+    exact ⟨⟨s.gpr .rdx, 264⟩, by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites], Offset.sub_base _ (by decide)⟩
   have hp₁ := pin₁.pre hp
   have key₁ := pin₁.schedule hp
-  have data₁ := blockAt_frame frame₁ (s.gpr .rsi) (by simpa using hp.dataBuf.sub_right (stash_sub s))
-  have iv₁ := blockAt_frame frame₁ (s.gpr .rbx) (by simpa using hp.ivBuf.sub_right (stash_sub s))
-  have stash₁ : Spec.Rc2.blockAt s₁.mem (stashR s).base = Spec.Rc2.blockAt s.mem (s.gpr .rsi) := by
+  have data₁ := blockAt_frame frame₁ (s.gpr .rsi) (by simpa using hp.dataBuf.sub_right (VG.Proof.Rc2.X86_64.Cbc.stash_sub s))
+  have iv₁ := blockAt_frame frame₁ (s.gpr .rbx) (by simpa using hp.ivBuf.sub_right (VG.Proof.Rc2.X86_64.Cbc.stash_sub s))
+  have stash₁ : Spec.Rc2.blockAt s₁.mem (VG.Proof.Rc2.X86_64.Cbc.stashR s).base = Spec.Rc2.blockAt s.mem (s.gpr .rsi) := by
     rw [keep₁.mem]; exact blockAt_copy _ _ _
   apply WP.seq
-  apply WP.mono (call_ok .decrypt s₁ hp₁.call)
+  apply WP.mono (VG.Proof.Rc2.X86_64.Cbc.call_ok .decrypt s₁ hp₁.call)
   intro s₂ h₂
   have pin₂ := pin₁.trans (Pinned.of_call h₂)
   have hp₂ := pin₂.pre hp
@@ -267,19 +441,19 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
   rw [pin₁.reg .rsi (by decide), pin₁.reg .rdi (by decide), key₁, data₁] at output₂
   have iv₂ := h₂.iv hp₁
   rw [pin₁.reg .rbx (by decide), iv₁] at iv₂
-  have stash₂ := call_stash hp₁ h₂
+  have stash₂ := VG.Proof.Rc2.X86_64.Cbc.call_stash hp₁ h₂
   simp only [pin₁.reg .rdx (by decide)] at stash₂
   have stash₂' := stash₂.trans stash₁
   change WP isa (.block (([.mov .rax (.mem (memOp .rsi 0)), .alu .xor .rax (.mem (memOp .rbx 0)),
     .store (memOp .rsi 0) .rax] : List Instr) ++
     ([.mov .rax (.mem (memOp .rdx 256)), .store (memOp .rbx 0) .rax] : List Instr))) s₂ _
   rw [WP.block_append_iff]
-  obtain ⟨s₃, run₃, keep₃⟩ := xor64_ok s₂ .rsi .rbx (by decide) (by decide)
+  obtain ⟨s₃, run₃, keep₃⟩ := VG.Proof.Rc2.X86_64.Cbc.xor64_ok s₂ .rsi .rbx (by decide) (by decide)
     hp₂.readData hp₂.readIv hp₂.writeData
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  have frame₃ : Frame [dataR s₂] s₂.mem s₃.mem := by
+  have frame₃ : Frame [VG.Proof.Rc2.X86_64.Cbc.dataR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites]))
   have pin₀₃ := pin₂.trans pin₃
   have hp₃ := pin₀₃.pre hp
   have data₃ : Spec.Rc2.blockAt s₃.mem (s.gpr .rsi) =
@@ -290,22 +464,22 @@ theorem decryptStep_ok (s : State) (hp : StepPre s) :
       rw [keep₃.mem]; exact blockAt_xor _ _ _
     rw [pin₂.reg .rsi (by decide), pin₂.reg .rbx (by decide), output₂, iv₂] at h
     exact h
-  have stash₃ := blockAt_frame frame₃ (stashR s₂).base
-    (by simpa using (hp₂.dataBuf.sub_right (stash_sub s₂)).symm)
+  have stash₃ := blockAt_frame frame₃ (VG.Proof.Rc2.X86_64.Cbc.stashR s₂).base
+    (by simpa using (hp₂.dataBuf.sub_right (VG.Proof.Rc2.X86_64.Cbc.stash_sub s₂)).symm)
   simp only [pin₂.reg .rdx (by decide)] at stash₃
   have stash₃' := stash₃.trans stash₂'
-  obtain ⟨s₄, run₄, keep₄⟩ := copy64_ok s₃ .rdx .rbx 256 0 (by decide)
+  obtain ⟨s₄, run₄, keep₄⟩ := VG.Proof.Rc2.X86_64.Cbc.copy64_ok s₃ .rdx .rbx 256 0 (by decide)
     (hp₃.readBuf 256 (by decide)) (by simpa using hp₃.writeIv)
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   simp only [BitVec.add_zero] at keep₄
-  have frame₄ : Frame [ivR s₃] s₃.mem s₄.mem := by
+  have frame₄ : Frame [VG.Proof.Rc2.X86_64.Cbc.ivR s₃] s₃.mem s₄.mem := by
     rw [keep₄.mem]; exact frame_store64 _ _ _
-  have pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  have pin₄ := Pinned.of_keep keep₄ ((frame_store64 _ _ _).mono (by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites]))
   refine ⟨pin₀₃.trans pin₄, ?_, ?_⟩
   · have same := blockAt_frame frame₄ (s₃.gpr .rsi) (by simpa using hp₃.ivData.symm)
     rw [pin₀₃.reg .rsi (by decide)] at same
     exact same.trans data₃
-  · have out : Spec.Rc2.blockAt s₄.mem (s₃.gpr .rbx) = Spec.Rc2.blockAt s₃.mem (stashR s₃).base := by
+  · have out : Spec.Rc2.blockAt s₄.mem (s₃.gpr .rbx) = Spec.Rc2.blockAt s₃.mem (VG.Proof.Rc2.X86_64.Cbc.stashR s₃).base := by
       rw [keep₄.mem]; exact blockAt_copy _ _ _
     simp only [pin₀₃.reg .rbx (by decide), pin₀₃.reg .rdx (by decide)] at out
     exact out.trans stash₃'
@@ -322,49 +496,49 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : StepPre s n) (bound : i + m ≤ n)
+theorem StepPre.slice {s s' : State} {n m i : Nat} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) (bound : i + m ≤ n)
     (rd : s'.rd = s.rd) (wr : s'.wr = s.wr)
     (key : s'.gpr .rdi = s.gpr .rdi) (iv : s'.gpr .rbx = s.gpr .rbx)
     (buf : s'.gpr .rdx = s.gpr .rdx) (sp : s'.gpr .rsp = s.gpr .rsp)
-    (ptr : s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 (8 * i)) : StepPre s' m := by
-  have sub : Region.Sub (dataR s' m) (dataR s n) := by
+    (ptr : s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 (8 * i)) : VG.Proof.Rc2.X86_64.Cbc.StepPre s' m := by
+  have sub : Region.Sub (VG.Proof.Rc2.X86_64.Cbc.dataR s' m) (VG.Proof.Rc2.X86_64.Cbc.dataR s n) := by
     change Region.Sub ⟨s'.gpr .rsi, 8 * m⟩ ⟨s.gpr .rsi, 8 * n⟩
     rw [ptr]
     exact Offset.sub_base _ (by omega)
   constructor
-  · have hc : Covers [keyR s', ivR s', dataR s' m, bufR s'] [keyR s, ivR s, dataR s n, bufR s] := by
+  · have hc : Covers [VG.Proof.Rc2.X86_64.Cbc.keyR s', VG.Proof.Rc2.X86_64.Cbc.ivR s', VG.Proof.Rc2.X86_64.Cbc.dataR s' m, VG.Proof.Rc2.X86_64.Cbc.bufR s'] [VG.Proof.Rc2.X86_64.Cbc.keyR s, VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s n, VG.Proof.Rc2.X86_64.Cbc.bufR s] := by
       apply Covers.of_sub
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨keyR s, by simp, 0, by simp [key], by simp⟩
-      · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
-      · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.keyR s, by simp, 0, by simp [key], by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.ivR s, by simp, 0, by simp [iv], by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [rd, wr]
     exact fun a k h => hp.reads a k (hc a k h)
-  · have hc : Covers [ivR s', dataR s' m, bufR s'] [ivR s, dataR s n, bufR s] := by
+  · have hc : Covers [VG.Proof.Rc2.X86_64.Cbc.ivR s', VG.Proof.Rc2.X86_64.Cbc.dataR s' m, VG.Proof.Rc2.X86_64.Cbc.bufR s'] [VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s n, VG.Proof.Rc2.X86_64.Cbc.bufR s] := by
       apply Covers.of_sub
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨ivR s, by simp, 0, by simp [iv], by simp⟩
-      · exact ⟨dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
-      · exact ⟨bufR s, by simp, 0, by simp [buf], by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.ivR s, by simp, 0, by simp [iv], by simp⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s n, by simp, 8 * i, ptr, by change 8 * i + 8 * m ≤ 8 * n; omega⟩
+      · exact ⟨VG.Proof.Rc2.X86_64.Cbc.bufR s, by simp, 0, by simp [buf], by simp⟩
     rw [wr]
     exact fun a k h => hp.writes a k (hc a k h)
-  · simpa only [keyR, ivR, key, iv] using hp.keyIv
-  · simpa only [keyR, key] using hp.keyData.sub_right sub
-  · simpa only [keyR, bufR, key, buf] using hp.keyBuf
-  · simpa only [ivR, iv] using hp.ivData.sub_right sub
-  · simpa only [ivR, bufR, iv, buf] using hp.ivBuf
-  · simpa only [bufR, buf] using hp.dataBuf.sub_left sub
-  · simpa only [stackR, keyR, sp, key] using hp.stackKey
-  · simpa only [stackR, ivR, sp, iv] using hp.stackIv
-  · simpa only [stackR, sp] using hp.stackData.sub_right sub
-  · simpa only [stackR, bufR, sp, buf] using hp.stackBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, key, iv] using hp.keyIv
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, key] using hp.keyData.sub_right sub
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.bufR, key, buf] using hp.keyBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.ivR, iv] using hp.ivData.sub_right sub
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.bufR, iv, buf] using hp.ivBuf
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.bufR, buf] using hp.dataBuf.sub_left sub
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.keyR, sp, key] using hp.stackKey
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.ivR, sp, iv] using hp.stackIv
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, sp] using hp.stackData.sub_right sub
+  · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.bufR, sp, buf] using hp.stackBuf
 
-theorem StepPre.head {s : State} {n : Nat} (hp : StepPre s n) (hn : 1 ≤ n) : StepPre s :=
+theorem StepPre.head {s : State} {n : Nat} (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) (hn : 1 ≤ n) : VG.Proof.Rc2.X86_64.Cbc.StepPre s :=
   hp.slice (i := 0) hn rfl rfl rfl rfl rfl rfl (by simp)
 
 end VG.Proof.Rc2.X86_64.Cbc
@@ -381,33 +555,33 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-theorem encryptStep_ok (s : State) (hp : StepPre s) :
-    WP isa (Impl.Rc2.X86_64.Cbc.step .encrypt) s (StepPost .encrypt s) := by
+theorem encryptStep_ok (s : State) (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.step .encrypt) s (VG.Proof.Rc2.X86_64.Cbc.StepPost .encrypt s) := by
   rw [Impl.Rc2.X86_64.Cbc.step]
   apply WP.seq
-  obtain ⟨s₁, run₁, keep₁⟩ := xor64_ok s .rsi .rbx (by decide) (by decide)
+  obtain ⟨s₁, run₁, keep₁⟩ := VG.Proof.Rc2.X86_64.Cbc.xor64_ok s .rsi .rbx (by decide) (by decide)
     hp.readData hp.readIv hp.writeData
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  have pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  have pin₁ := Pinned.of_keep keep₁ ((frame_store64 _ _ _).mono (by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites]))
   have hp₁ := pin₁.pre hp
   have key₁ := pin₁.schedule hp
   have data₁ : Spec.Rc2.blockAt s₁.mem (s.gpr .rsi) =
       Spec.Rc2.xorBlock (Spec.Rc2.blockAt s.mem (s.gpr .rsi)) (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) := by
     rw [keep₁.mem]; exact blockAt_xor _ _ _
   apply WP.seq
-  apply WP.mono (call_ok .encrypt s₁ hp₁.call)
+  apply WP.mono (VG.Proof.Rc2.X86_64.Cbc.call_ok .encrypt s₁ hp₁.call)
   intro s₂ h₂
   have pin₂ := pin₁.trans (Pinned.of_call h₂)
   have hp₂ := pin₂.pre hp
   have output₂ := h₂.output
   rw [pin₁.reg .rsi (by decide), pin₁.reg .rdi (by decide), key₁, data₁] at output₂
-  obtain ⟨s₃, run₃, keep₃⟩ := copy64_ok s₂ .rsi .rbx 0 0 (by decide)
+  obtain ⟨s₃, run₃, keep₃⟩ := VG.Proof.Rc2.X86_64.Cbc.copy64_ok s₂ .rsi .rbx 0 0 (by decide)
     (by simpa using hp₂.readData) (by simpa using hp₂.writeIv)
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
   simp only [BitVec.add_zero] at keep₃
-  have frame₃ : Frame [ivR s₂] s₂.mem s₃.mem := by
+  have frame₃ : Frame [VG.Proof.Rc2.X86_64.Cbc.ivR s₂] s₂.mem s₃.mem := by
     rw [keep₃.mem]; exact frame_store64 _ _ _
-  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [stepWrites]))
+  have pin₃ := Pinned.of_keep keep₃ ((frame_store64 _ _ _).mono (by simp [VG.Proof.Rc2.X86_64.Cbc.stepWrites]))
   refine ⟨pin₂.trans pin₃, ?_, ?_⟩
   · have same := blockAt_frame frame₃ (s₂.gpr .rsi) (by simpa using hp₂.ivData.symm)
     rw [pin₂.reg .rsi (by decide)] at same
@@ -427,21 +601,21 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-theorem step_ok (d : Spec.Rc2.Direction) (s : State) (hp : StepPre s) :
-    WP isa (Impl.Rc2.X86_64.Cbc.step d) s (StepPost d s) := by
+theorem step_ok (d : Spec.Rc2.Direction) (s : State) (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.step d) s (VG.Proof.Rc2.X86_64.Cbc.StepPost d s) := by
   cases d
-  · exact encryptStep_ok s hp
-  · exact decryptStep_ok s hp
+  · exact VG.Proof.Rc2.X86_64.Cbc.encryptStep_ok s hp
+  · exact VG.Proof.Rc2.X86_64.Cbc.decryptStep_ok s hp
 
 structure BodyPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) : Prop where
   ptr : s'.gpr .rsi = s.gpr .rsi + 8
   count : s'.gpr .rbp = BitVec.ofNat 64 (n - 1)
   flag : s'.zf = some (decide (n = 1))
-  reg : ∀ r ∈ kept, r ≠ .rsi → r ≠ .rbp → s'.gpr r = s.gpr r
+  reg : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, r ≠ .rsi → r ≠ .rbp → s'.gpr r = s.gpr r
   callee : ∀ r ∈ calleeSaved, r ≠ .rbp → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  mem : Frame (stepWrites s) s.mem s'.mem
+  mem : Frame (VG.Proof.Rc2.X86_64.Cbc.stepWrites s) s.mem s'.mem
   data : Spec.Rc2.blockAt s'.mem (s.gpr .rsi) =
     (Spec.Rc2.cbcStep (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).1
@@ -450,13 +624,13 @@ structure BodyPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blockAt s.mem (s.gpr .rsi))).2
 
 theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (bound : n < 2 ^ 64)
-    (count : s.gpr .rbp = BitVec.ofNat 64 n) (hp : StepPre s) :
-    WP isa (Impl.Rc2.X86_64.Cbc.body d) s (BodyPost d s n) := by
+    (count : s.gpr .rbp = BitVec.ofNat 64 n) (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.body d) s (VG.Proof.Rc2.X86_64.Cbc.BodyPost d s n) := by
   rw [Impl.Rc2.X86_64.Cbc.body]
   apply WP.seq
-  apply WP.mono (step_ok d s hp)
+  apply WP.mono (VG.Proof.Rc2.X86_64.Cbc.step_ok d s hp)
   intro s₁ h₁
-  obtain ⟨s₂, run₂, ptr₂, count₂, flag₂, keep₂⟩ := advance_ok s₁
+  obtain ⟨s₂, run₂, ptr₂, count₂, flag₂, keep₂⟩ := VG.Proof.Rc2.X86_64.Cbc.advance_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have count' : s₁.gpr .rbp - 1 = BitVec.ofNat 64 (n - 1) := by
     rw [h₁.reg .rbp (by decide), count]
@@ -482,7 +656,7 @@ theorem body_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (hn : 1 ≤ n) (b
   · rw [keep₂.mem]; exact h₁.iv
 
 theorem BodyPost.tail {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
-    (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) : StepPre s' n :=
+    (h : VG.Proof.Rc2.X86_64.Cbc.BodyPost d s (n + 1) s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s (n + 1)) : VG.Proof.Rc2.X86_64.Cbc.StepPre s' n :=
   hp.slice (i := 1) (by omega) h.rd h.wr
     (h.reg .rdi (by decide) (by decide) (by decide))
     (h.reg .rbx (by decide) (by decide) (by decide))
@@ -499,67 +673,67 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64
 
-def loopWrites (s : State) (n : Nat) : List Region := [ivR s, dataR s n, ⟨s.gpr .rdx, 264⟩, stackR s]
+def loopWrites (s : State) (n : Nat) : List Region := [VG.Proof.Rc2.X86_64.Cbc.ivR s, VG.Proof.Rc2.X86_64.Cbc.dataR s n, ⟨s.gpr .rdx, 264⟩, VG.Proof.Rc2.X86_64.Cbc.stackR s]
 
 theorem loopFrame_slice {s s' : State} {n m i : Nat} {a b : Mem}
-    (h : Frame (loopWrites s' m) a b) (bound : i + m ≤ n)
+    (h : Frame (VG.Proof.Rc2.X86_64.Cbc.loopWrites s' m) a b) (bound : i + m ≤ n)
     (iv : s'.gpr .rbx = s.gpr .rbx) (buf : s'.gpr .rdx = s.gpr .rdx)
     (sp : s'.gpr .rsp = s.gpr .rsp) (ptr : s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 (8 * i)) :
-    Frame (loopWrites s n) a b := by
+    Frame (VG.Proof.Rc2.X86_64.Cbc.loopWrites s n) a b := by
   apply h.sub
   intro r hr
-  simp only [loopWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [VG.Proof.Rc2.X86_64.Cbc.loopWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · refine ⟨ivR s, by simp [loopWrites], ?_⟩
+  · refine ⟨VG.Proof.Rc2.X86_64.Cbc.ivR s, by simp [VG.Proof.Rc2.X86_64.Cbc.loopWrites], ?_⟩
     change Region.Sub ⟨s'.gpr .rbx, 8⟩ ⟨s.gpr .rbx, 8⟩
     rw [iv]; exact fun _ h => h
-  · refine ⟨dataR s n, by simp [loopWrites], ?_⟩
+  · refine ⟨VG.Proof.Rc2.X86_64.Cbc.dataR s n, by simp [VG.Proof.Rc2.X86_64.Cbc.loopWrites], ?_⟩
     change Region.Sub ⟨s'.gpr .rsi, 8 * m⟩ ⟨s.gpr .rsi, 8 * n⟩
     rw [ptr]
     exact Offset.sub_base _ (by omega)
-  · refine ⟨⟨s.gpr .rdx, 264⟩, by simp [loopWrites], ?_⟩
+  · refine ⟨⟨s.gpr .rdx, 264⟩, by simp [VG.Proof.Rc2.X86_64.Cbc.loopWrites], ?_⟩
     rw [buf]; exact fun _ h => h
-  · refine ⟨stackR s, by simp [loopWrites], ?_⟩
+  · refine ⟨VG.Proof.Rc2.X86_64.Cbc.stackR s, by simp [VG.Proof.Rc2.X86_64.Cbc.loopWrites], ?_⟩
     change Region.Sub (below (s'.gpr .rsp) 8) (below (s.gpr .rsp) 8)
     rw [sp]; exact fun _ h => h
 
 theorem BodyPost.frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
-    (h : BodyPost d s n s') (hn : 1 ≤ n) : Frame (loopWrites s n) s.mem s'.mem :=
-  loopFrame_slice (m := 1) (i := 0) h.mem hn rfl rfl rfl (by simp)
+    (h : VG.Proof.Rc2.X86_64.Cbc.BodyPost d s n s') (hn : 1 ≤ n) : Frame (VG.Proof.Rc2.X86_64.Cbc.loopWrites s n) s.mem s'.mem :=
+  VG.Proof.Rc2.X86_64.Cbc.loopFrame_slice (m := 1) (i := 0) h.mem hn rfl rfl rfl (by simp)
 
 theorem BodyPost.schedule {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
-    (h : BodyPost d s n s') (hp : StepPre s) :
+    (h : VG.Proof.Rc2.X86_64.Cbc.BodyPost d s n s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s) :
     Spec.Rc2.scheduleAt s'.mem (s.gpr .rdi) = Spec.Rc2.scheduleAt s.mem (s.gpr .rdi) := by
   apply scheduleAt_frame h.mem
-  simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
+  simpa only [VG.Proof.Rc2.X86_64.Cbc.stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro hp.keyIv (And.intro hp.keyData (And.intro
       (hp.keyBuf.sub_right (Region.sub_prefix (by decide : 264 ≤ 512))) hp.stackKey.symm))
 
 theorem BodyPost.tailData {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
-    (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
+    (h : VG.Proof.Rc2.X86_64.Cbc.BodyPost d s (n + 1) s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64) :
     Spec.Rc2.blocksAt s'.mem (s.gpr .rsi + 8) n = Spec.Rc2.blocksAt s.mem (s.gpr .rsi + 8) n := by
-  have sub : Region.Sub ⟨s.gpr .rsi + 8, 8 * n⟩ (dataR s (n + 1)) :=
+  have sub : Region.Sub ⟨s.gpr .rsi + 8, 8 * n⟩ (VG.Proof.Rc2.X86_64.Cbc.dataR s (n + 1)) :=
     Offset.sub_base _ (by change 8 + 8 * n ≤ 8 * (n + 1); omega)
-  have sep : (Region.mk (s.gpr .rsi + 8) (8 * n)).Disjoint (dataR s) :=
+  have sep : (Region.mk (s.gpr .rsi + 8) (8 * n)).Disjoint (VG.Proof.Rc2.X86_64.Cbc.dataR s) :=
     Offset.disjoint_base _ (d := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
   apply blocksAt_frame h.mem
-  simpa only [stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
+  simpa only [VG.Proof.Rc2.X86_64.Cbc.stepWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right sub).symm) (And.intro sep (And.intro
       ((hp.dataBuf.sub_left sub).sub_right (Region.sub_prefix (by decide : 264 ≤ 512)))
       ((hp.stackData.sub_right sub).symm)))
 
 theorem firstBlock_frame {d : Spec.Rc2.Direction} {s s' : State} {n : Nat} {m : Mem}
-    (h : BodyPost d s (n + 1) s') (hp : StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
-    (frame : Frame (loopWrites s' n) s'.mem m) :
+    (h : VG.Proof.Rc2.X86_64.Cbc.BodyPost d s (n + 1) s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s (n + 1)) (bound : 8 * (n + 1) ≤ 2 ^ 64)
+    (frame : Frame (VG.Proof.Rc2.X86_64.Cbc.loopWrites s' n) s'.mem m) :
     Spec.Rc2.blockAt m (s.gpr .rsi) = Spec.Rc2.blockAt s'.mem (s.gpr .rsi) := by
-  have first : Region.Sub (dataR s) (dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
-  have sep : (dataR s).Disjoint ⟨s.gpr .rsi + 8, 8 * n⟩ :=
+  have first : Region.Sub (VG.Proof.Rc2.X86_64.Cbc.dataR s) (VG.Proof.Rc2.X86_64.Cbc.dataR s (n + 1)) := Region.sub_prefix (by change 8 ≤ 8 * (n + 1); omega)
+  have sep : (VG.Proof.Rc2.X86_64.Cbc.dataR s).Disjoint ⟨s.gpr .rsi + 8, 8 * n⟩ :=
     Offset.base_disjoint _ (e := 8) (n := 8 * n) (k := 8) (by decide) (by omega)
   apply blockAt_frame frame
   have iv := h.reg .rbx (by decide) (by decide) (by decide)
   have buf := h.reg .rdx (by decide) (by decide) (by decide)
   have sp := h.reg .rsp (by decide) (by decide) (by decide)
-  simpa only [loopWrites, ivR, dataR, stackR, iv, buf, sp, h.ptr,
+  simpa only [VG.Proof.Rc2.X86_64.Cbc.loopWrites, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.stackR, iv, buf, sp, h.ptr,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivData.sub_right first).symm) (And.intro sep (And.intro
       ((hp.dataBuf.sub_left first).sub_right (Region.sub_prefix (by decide : 264 ≤ 512)))
@@ -578,11 +752,11 @@ open VG VG.X86_64
 structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) : Prop where
   ptr : s'.gpr .rsi = s.gpr .rsi + BitVec.ofNat 64 (8 * n)
   count : s'.gpr .rbp = 0
-  reg : ∀ r ∈ kept, r ≠ .rsi → r ≠ .rbp → s'.gpr r = s.gpr r
+  reg : ∀ r ∈ VG.Proof.Rc2.X86_64.Cbc.kept, r ≠ .rsi → r ≠ .rbp → s'.gpr r = s.gpr r
   callee : ∀ r ∈ calleeSaved, r ≠ .rbp → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  mem : Frame (loopWrites s n) s.mem s'.mem
+  mem : Frame (VG.Proof.Rc2.X86_64.Cbc.loopWrites s n) s.mem s'.mem
   data : Spec.Rc2.blocksAt s'.mem (s.gpr .rsi) n =
     (Spec.Rc2.cbc (Spec.Rc2.scheduleAt s.mem (s.gpr .rdi)) d
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blocksAt s.mem (s.gpr .rsi) n)).1
@@ -591,13 +765,13 @@ structure LoopPost (d : Spec.Rc2.Direction) (s : State) (n : Nat) (s' : State) :
       (Spec.Rc2.blockAt s.mem (s.gpr .rbx)) (Spec.Rc2.blocksAt s.mem (s.gpr .rsi) n)).2
 
 theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
-    ∀ s : State, 1 ≤ n → 8 * n ≤ 2 ^ 64 → StepPre s n → s.gpr .rbp = BitVec.ofNat 64 n →
-      WP isa (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne) s (LoopPost d s n) := by
+    ∀ s : State, 1 ≤ n → 8 * n ≤ 2 ^ 64 → VG.Proof.Rc2.X86_64.Cbc.StepPre s n → s.gpr .rbp = BitVec.ofNat 64 n →
+      WP isa (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne) s (VG.Proof.Rc2.X86_64.Cbc.LoopPost d s n) := by
   induction n with
   | zero => intro s hn; omega
   | succ n ih =>
     intro s hn bound hp count
-    obtain ⟨t₁, s₁, exec₁, h₁⟩ := body_ok d s (n + 1) hn (by omega) count (hp.head hn)
+    obtain ⟨t₁, s₁, exec₁, h₁⟩ := VG.Proof.Rc2.X86_64.Cbc.body_ok d s (n + 1) hn (by omega) count (hp.head hn)
     by_cases hz : n = 0
     · subst n
       refine ⟨_, s₁, Exec.loopExit exec₁ ?_, ?_⟩
@@ -634,17 +808,17 @@ theorem loop_ok (d : Spec.Rc2.Direction) (n : Nat) :
           exact (h₂.reg r hr hs hb).trans (h₁.reg r hr hs hb)
         · intro r hr hb
           exact (h₂.callee r hr hb).trans (h₁.callee r hr hb)
-        · exact (h₁.frame hn).trans (loopFrame_slice (i := 1) h₂.mem (by omega) vi bi sp h₁.ptr)
-        · have first := firstBlock_frame h₁ hp bound h₂.mem
+        · exact (h₁.frame hn).trans (VG.Proof.Rc2.X86_64.Cbc.loopFrame_slice (i := 1) h₂.mem (by omega) vi bi sp h₁.ptr)
+        · have first := VG.Proof.Rc2.X86_64.Cbc.firstBlock_frame h₁ hp bound h₂.mem
           rw [blocksAt_cons, first, h₁.data, data, blocksAt_cons]
           rfl
         · rw [blocksAt_cons]
           exact iv
 
 theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 * n ≤ 2 ^ 64)
-    (hp : StepPre s n) (count : s.gpr .rbp = BitVec.ofNat 64 n)
+    (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) (count : s.gpr .rbp = BitVec.ofNat 64 n)
     (flag : s.zf = some (s.gpr .rbp == 0)) :
-    WP isa (.ite .e (.block []) (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne)) s (LoopPost d s n) := by
+    WP isa (.ite .e (.block []) (.loop (Impl.Rc2.X86_64.Cbc.body d) .ne)) s (VG.Proof.Rc2.X86_64.Cbc.LoopPost d s n) := by
   have eqZero := counter_eq n 0 (by omega) (by decide)
   simp only [BitVec.sub_zero] at eqZero
   have flag' : s.zf = some (decide (n = 0)) := by
@@ -662,17 +836,17 @@ theorem maybeLoop_ok (d : Spec.Rc2.Direction) (s : State) (n : Nat) (bound : 8 *
   · apply WP.ite false (by simp only [eval, flag', hz, decide_false])
     · simp
     · intro _
-      exact loop_ok d n s (by omega) bound hp count
+      exact VG.Proof.Rc2.X86_64.Cbc.loop_ok d n s (by omega) bound hp count
 
 theorem LoopPost.scratchRead {d : Spec.Rc2.Direction} {s s' : State} {n : Nat}
-    (h : LoopPost d s n s') (hp : StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 8 ≤ 512) :
+    (h : VG.Proof.Rc2.X86_64.Cbc.LoopPost d s n s') (hp : VG.Proof.Rc2.X86_64.Cbc.StepPre s n) (i : Nat) (lo : 264 ≤ i) (hi : i + 8 ≤ 512) :
     s'.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 = s.mem.readW (s.gpr .rdx + BitVec.ofNat 64 i) 64 := by
-  have sub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩ (bufR s) := Offset.sub_base _ hi
+  have sub : Region.Sub ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩ (VG.Proof.Rc2.X86_64.Cbc.bufR s) := Offset.sub_base _ hi
   have sep : (Region.mk (s.gpr .rdx + BitVec.ofNat 64 i) 8).Disjoint ⟨s.gpr .rdx, 264⟩ :=
     Offset.disjoint_base _ lo (by omega)
   apply h.mem.readW (r := ⟨s.gpr .rdx + BitVec.ofNat 64 i, 8⟩) (Region.contains_self _ _)
     (hn := by decide)
-  simpa only [loopWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
+  simpa only [VG.Proof.Rc2.X86_64.Cbc.loopWrites, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] using
     And.intro ((hp.ivBuf.sub_right sub).symm) (And.intro ((hp.dataBuf.sub_right sub).symm)
       (And.intro sep ((hp.stackBuf.sub_right sub).symm)))
 
@@ -695,24 +869,24 @@ def savedMem (s : State) : Mem :=
 theorem save_ok (s : State)
     (w₁ : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 264) 8)
     (w₂ : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 272) 8) :
-    ∃ s', runBlock isa Impl.Rc2.X86_64.Cbc.save s = some s' ∧ Keep [] {s with mem := savedMem s} s' := by
+    ∃ s', runBlock isa Impl.Rc2.X86_64.Cbc.save s = some s' ∧ Keep [] {s with mem := VG.Proof.Rc2.X86_64.Cbc.savedMem s} s' := by
   refine ⟨_, by
     simp only [Impl.Rc2.X86_64.Cbc.save, runBlock_cons, runStep_some, runBlock_nil,
       memOp, exec, State.store64, State.ea, offset_nat, w₁, w₂, ite_true]
     rfl, ?_⟩
   exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
 
-theorem savedMem_frame (s : State) : Frame [⟨s.gpr .r8, 512⟩] s.mem (savedMem s) := by
+theorem savedMem_frame (s : State) : Frame [⟨s.gpr .r8, 512⟩] s.mem (VG.Proof.Rc2.X86_64.Cbc.savedMem s) := by
   exact ((Frame.refl _ _).writeW List.mem_cons_self _
     (Offset.contains_base _ (by decide : 264 + 8 ≤ 512) (by decide))).writeW List.mem_cons_self _
       (Offset.contains_base _ (by decide : 272 + 8 ≤ 512) (by decide))
 
-theorem savedMem_rbx (s : State) : (savedMem s).readW (s.gpr .r8 + BitVec.ofNat 64 264) 64 = s.gpr .rbx := by
-  rw [savedMem, Mem.readW_writeW_sep (Offset.sep _ (by decide : 264 + 8 ≤ 272 ∨ 272 + 8 ≤ 264)
+theorem savedMem_rbx (s : State) : (VG.Proof.Rc2.X86_64.Cbc.savedMem s).readW (s.gpr .r8 + BitVec.ofNat 64 264) 64 = s.gpr .rbx := by
+  rw [VG.Proof.Rc2.X86_64.Cbc.savedMem, Mem.readW_writeW_sep (Offset.sep _ (by decide : 264 + 8 ≤ 272 ∨ 272 + 8 ≤ 264)
     (by decide) (by decide)) (by decide), Mem.readW_writeW_self64]
 
-theorem savedMem_rbp (s : State) : (savedMem s).readW (s.gpr .r8 + BitVec.ofNat 64 272) 64 = s.gpr .rbp := by
-  rw [savedMem, Mem.readW_writeW_self64]
+theorem savedMem_rbp (s : State) : (VG.Proof.Rc2.X86_64.Cbc.savedMem s).readW (s.gpr .r8 + BitVec.ofNat 64 272) 64 = s.gpr .rbp := by
+  rw [VG.Proof.Rc2.X86_64.Cbc.savedMem, Mem.readW_writeW_self64]
 
 theorem setup_ok (s : State) :
     ∃ s', runBlock isa Impl.Rc2.X86_64.Cbc.setup s = some s' ∧
@@ -802,8 +976,8 @@ namespace VG.Proof.Rc2.X86_64.Cbc
 
 open VG VG.X86_64 VG.Impl.Rc2.X86_64
 
-theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d).pre s) :
-    WP isa (Impl.Rc2.X86_64.Cbc.cbc d) s (fun s' => gprPreserved s s' ∧ (contract d).post s s') := by
+theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (VG.Proof.Rc2.X86_64.Cbc.contract d).pre s) :
+    WP isa (Impl.Rc2.X86_64.Cbc.cbc d) s (fun s' => gprPreserved s s' ∧ (VG.Proof.Rc2.X86_64.Cbc.contract d).post s s') := by
   obtain ⟨hrd, hwr, keyIv, keyData, keyBuf, ivData, ivBuf, dataBuf,
     retIv, retData, retBuf, stackKey, stackIv, stackData, stackBuf, fit⟩ := hs
   have writes (i : Nat) (hi : i + 8 ≤ 512) : InRegions s.wr (s.gpr .r8 + BitVec.ofNat 64 i) 8 := by
@@ -812,9 +986,9 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   rw [Impl.Rc2.X86_64.Cbc.cbc]
   apply WP.seq
   rw [WP.block_append_iff]
-  obtain ⟨s₁, run₁, keep₁⟩ := save_ok s (writes 264 (by decide)) (writes 272 (by decide))
+  obtain ⟨s₁, run₁, keep₁⟩ := VG.Proof.Rc2.X86_64.Cbc.save_ok s (writes 264 (by decide)) (writes 272 (by decide))
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩
-  obtain ⟨s₂, run₂, iv₂, count₂, data₂, buf₂, flag₂, keep₂⟩ := setup_ok s₁
+  obtain ⟨s₂, run₂, iv₂, count₂, data₂, buf₂, flag₂, keep₂⟩ := VG.Proof.Rc2.X86_64.Cbc.setup_ok s₁
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have g₁ (r : Reg) : s₁.gpr r = s.gpr r := keep₁.reg r (by simp)
   rw [g₁] at iv₂ count₂ data₂ buf₂ flag₂
@@ -822,30 +996,30 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
   have sp₂ := (keep₂.reg .rsp (by decide)).trans (g₁ .rsp)
   have rd₂ := keep₂.rd.trans keep₁.rd
   have wr₂ := keep₂.wr.trans keep₁.wr
-  have mem₂ : s₂.mem = savedMem s := keep₂.mem.trans keep₁.mem
+  have mem₂ : s₂.mem = VG.Proof.Rc2.X86_64.Cbc.savedMem s := keep₂.mem.trans keep₁.mem
   have scratchFrame : Frame [⟨s.gpr .r8, 512⟩] s.mem s₂.mem := by
-    rw [mem₂]; exact savedMem_frame s
+    rw [mem₂]; exact VG.Proof.Rc2.X86_64.Cbc.savedMem_frame s
   have initialKey := scheduleAt_frame scratchFrame (s.gpr .rdi) (by simpa using keyBuf)
   have initialIv := blockAt_frame scratchFrame (s.gpr .rsi) (by simpa using ivBuf)
   have initialData := blocksAt_frame scratchFrame (s.gpr .rdx) (s.gpr .rcx).toNat (by simpa using dataBuf)
-  have hp₂ : StepPre s₂ (s.gpr .rcx).toNat := by
+  have hp₂ : VG.Proof.Rc2.X86_64.Cbc.StepPre s₂ (s.gpr .rcx).toNat := by
     constructor
-    · simp only [keyR, ivR, dataR, bufR, key₂, iv₂, data₂, buf₂, rd₂, wr₂, hrd, hwr]
+    · simp only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, key₂, iv₂, data₂, buf₂, rd₂, wr₂, hrd, hwr]
       exact fun _ _ h => h
-    · simp only [ivR, dataR, bufR, iv₂, data₂, buf₂, wr₂, hwr]
+    · simp only [VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, iv₂, data₂, buf₂, wr₂, hwr]
       exact fun _ _ h => h
-    · simpa only [keyR, ivR, key₂, iv₂] using keyIv
-    · simpa only [keyR, dataR, key₂, data₂] using keyData
-    · simpa only [keyR, bufR, key₂, buf₂] using keyBuf
-    · simpa only [ivR, dataR, iv₂, data₂] using ivData
-    · simpa only [ivR, bufR, iv₂, buf₂] using ivBuf
-    · simpa only [dataR, bufR, data₂, buf₂] using dataBuf
-    · simpa only [stackR, keyR, sp₂, key₂] using stackKey
-    · simpa only [stackR, ivR, sp₂, iv₂] using stackIv
-    · simpa only [stackR, dataR, sp₂, data₂] using stackData
-    · simpa only [stackR, bufR, sp₂, buf₂] using stackBuf
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.ivR, key₂, iv₂] using keyIv
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.dataR, key₂, data₂] using keyData
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.keyR, VG.Proof.Rc2.X86_64.Cbc.bufR, key₂, buf₂] using keyBuf
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, iv₂, data₂] using ivData
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.bufR, iv₂, buf₂] using ivBuf
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.bufR, data₂, buf₂] using dataBuf
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.keyR, sp₂, key₂] using stackKey
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.ivR, sp₂, iv₂] using stackIv
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.dataR, sp₂, data₂] using stackData
+    · simpa only [VG.Proof.Rc2.X86_64.Cbc.stackR, VG.Proof.Rc2.X86_64.Cbc.bufR, sp₂, buf₂] using stackBuf
   apply WP.seq
-  apply WP.mono (maybeLoop_ok d s₂ (s.gpr .rcx).toNat (by omega) hp₂
+  apply WP.mono (VG.Proof.Rc2.X86_64.Cbc.maybeLoop_ok d s₂ (s.gpr .rcx).toNat (by omega) hp₂
     (by simpa using count₂) (by rw [count₂]; exact flag₂))
   intro s₃ h₃
   have rd₃ := h₃.rd.trans rd₂
@@ -858,13 +1032,13 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
     exact ⟨r, List.mem_append_right _ hr, hc⟩
   have v₁ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 264) 64 = s.gpr .rbx := by
     have h := h₃.scratchRead hp₂ 264 (by decide) (by decide)
-    rw [buf₂, mem₂, savedMem_rbx] at h
+    rw [buf₂, mem₂, VG.Proof.Rc2.X86_64.Cbc.savedMem_rbx] at h
     rw [buf₃]; exact h
   have v₂ : s₃.mem.readW (s₃.gpr .rdx + BitVec.ofNat 64 272) 64 = s.gpr .rbp := by
     have h := h₃.scratchRead hp₂ 272 (by decide) (by decide)
-    rw [buf₂, mem₂, savedMem_rbp] at h
+    rw [buf₂, mem₂, VG.Proof.Rc2.X86_64.Cbc.savedMem_rbp] at h
     rw [buf₃]; exact h
-  obtain ⟨s₄, run₄, rbx₄, rbp₄, keep₄⟩ := restore_ok s₃ (s.gpr .rbx) (s.gpr .rbp)
+  obtain ⟨s₄, run₄, rbx₄, rbp₄, keep₄⟩ := VG.Proof.Rc2.X86_64.Cbc.restore_ok s₃ (s.gpr .rbx) (s.gpr .rbp)
     (reads 264 (by decide)) (reads 272 (by decide)) v₁ v₂
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
   constructor
@@ -881,7 +1055,7 @@ theorem cbc_body_correct (d : Spec.Rc2.Direction) (s : State) (hs : (contract d)
         ⟨s.gpr .r8, 512⟩, below (s.gpr .rsp) 8]
       have loopFrame : Frame rs s₂.mem s₃.mem := by
         have h := h₃.mem
-        simp only [loopWrites, ivR, dataR, stackR, iv₂, data₂, buf₂, sp₂] at h
+        simp only [VG.Proof.Rc2.X86_64.Cbc.loopWrites, VG.Proof.Rc2.X86_64.Cbc.ivR, VG.Proof.Rc2.X86_64.Cbc.dataR, VG.Proof.Rc2.X86_64.Cbc.stackR, iv₂, data₂, buf₂, sp₂] at h
         apply h.sub
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -916,17 +1090,17 @@ def satState : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 0⟩, ⟨0x4000, 512⟩]
 
-theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
+theorem encrypt_correct (s : State) (hs : (VG.Proof.Rc2.X86_64.Cbc.contract .encrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.X86_64.Cbc.encrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .encrypt s hs
+      (VG.Proof.Rc2.X86_64.Cbc.contract .encrypt).post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := VG.Proof.Rc2.X86_64.Cbc.cbc_body_correct .encrypt s hs
   change Exec isa Impl.Rc2.X86_64.Cbc.encrypt s t s' at he
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
 
-theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
+theorem decrypt_correct (s : State) (hs : (VG.Proof.Rc2.X86_64.Cbc.contract .decrypt).pre s) :
     ∃ t s', Exec isa Impl.Rc2.X86_64.Cbc.decrypt s t s' ∧ abiPreserved s s' ∧
-      (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := cbc_body_correct .decrypt s hs
+      (VG.Proof.Rc2.X86_64.Cbc.contract .decrypt).post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := VG.Proof.Rc2.X86_64.Cbc.cbc_body_correct .decrypt s hs
   change Exec isa Impl.Rc2.X86_64.Cbc.decrypt s t s' at he
   exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ha, hp⟩
 
@@ -936,13 +1110,15 @@ theorem publicRegs_six (s₁ s₂ : State) : PublicRegs [.rdi, .rsi, .rdx, .rcx,
   simp [PublicRegs]
 
 theorem encrypt_verified : Verified target Impl.Rc2.X86_64.Cbc.encrypt (Spec.Rc2.cbcEncryptContract abi 8) := by
-  refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
+  refine Verified.of_correct VG.Proof.Rc2.X86_64.Cbc.encrypt_correct (VG.Proof.Rc2.X86_64.Cbc.encrypt_constantTime _) ?_
   sig_implies [Spec.Rc2.cbcEncryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_six] [satState] using satState
+    VG.Proof.Rc2.X86_64.Cbc.contract, VG.Proof.Rc2.X86_64.Cbc.publicRegs_six] [satState] using VG.Proof.Rc2.X86_64.Cbc.satState
 
 theorem decrypt_verified : Verified target Impl.Rc2.X86_64.Cbc.decrypt (Spec.Rc2.cbcDecryptContract abi 8) := by
-  refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
+  refine Verified.of_correct VG.Proof.Rc2.X86_64.Cbc.decrypt_correct (VG.Proof.Rc2.X86_64.Cbc.decrypt_constantTime _) ?_
   sig_implies [Spec.Rc2.cbcDecryptContract, Spec.Rc2.cbcContract, Spec.Rc2.cbcSig, abi, argRegs,
-    contract, publicRegs_six] [satState] using satState
+    VG.Proof.Rc2.X86_64.Cbc.contract, VG.Proof.Rc2.X86_64.Cbc.publicRegs_six] [satState] using VG.Proof.Rc2.X86_64.Cbc.satState
 
 end VG.Proof.Rc2.X86_64.Cbc
+
+end

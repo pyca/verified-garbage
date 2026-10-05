@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem.X86.Common
+import VerifiedGarbage.Proof.MlKem.X86.AddSub
 
 /-!
 # ML-DSA on x86 (32-bit): running blocks symbolically

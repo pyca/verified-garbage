@@ -1,8 +1,7 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Checks
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Finish
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-
 /-!
 # Ed448 verification on AArch64: the result
 

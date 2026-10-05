@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Impl.MlKem.X86_64.Common
-import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.KPke1024
 
 /-!
 # ML-KEM on x86-64: running blocks symbolically

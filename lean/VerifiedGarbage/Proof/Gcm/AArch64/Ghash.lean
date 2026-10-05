@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Impl.Gcm.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Gcm.Bits
@@ -104,7 +104,7 @@ theorem update_v (vh vl : BitVec 64) :
   · simp only [ite_true, BitVec.allOnes_and]
     rw [BitVec.xor_append, BitVec.xor_zero]
 
-theorem msb_shiftLeft (x : Block) (k : Nat) : (x <<< k).msb = x.getMsbD k := by
+theorem msb_shiftLeft (x : VG.Spec.Gcm.Block) (k : Nat) : (x <<< k).msb = x.getMsbD k := by
   rw [BitVec.msb_eq_getMsbD_zero, BitVec.getMsbD_shiftLeft, Nat.zero_add]
 
 /-! ## One step -/
@@ -113,7 +113,7 @@ theorem msb_shiftLeft (x : Block) (k : Nat) : (x <<< k).msb = x.getMsbD k := by
 def stepKeep : List Reg := [.x0, .x1, .x2, .x3, .x4, RH, CNT, ZERO]
 
 set_option simprocs false in
-theorem step_ok (x : Block) (zv : Block × Block) (k : Nat) (s : State)
+theorem step_ok (x : VG.Spec.Gcm.Block) (zv : VG.Spec.Gcm.Block × VG.Spec.Gcm.Block) (k : Nat) (s : State)
     (hx : s.gpr XH ++ s.gpr XL = x <<< k)
     (hzv : (s.gpr ZH ++ s.gpr ZL, s.gpr VH ++ s.gpr VL) = zv)
     (hr : s.gpr RH = rHigh) (hz : s.gpr ZERO = 0) :
@@ -150,7 +150,7 @@ theorem keep_sub {r : Reg} (h : r ∈ keepRegs) : r ∈ stepKeep := by
   rcases h with rfl | rfl | rfl | rfl | rfl <;> simp
 
 /-- After `k` steps of `x • h`, from the state `sB`. -/
-structure Inner (x h : Block) (sB : State) (k : Nat) (s : State) : Prop where
+structure Inner (x h : VG.Spec.Gcm.Block) (sB : State) (k : Nat) (s : State) : Prop where
   xr : s.gpr XH ++ s.gpr XL = x <<< k
   zv : (s.gpr ZH ++ s.gpr ZL, s.gpr VH ++ s.gpr VL) = mulSteps x h k
   rh : s.gpr RH = rHigh
@@ -160,7 +160,7 @@ structure Inner (x h : Block) (sB : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = sB.rd
   wr : s.wr = sB.wr
 
-theorem inner_step {x h : Block} {sB : State} {k : Nat} {s : State} (hs : Inner x h sB k s) :
+theorem inner_step {x h : VG.Spec.Gcm.Block} {sB : State} {k : Nat} {s : State} (hs : Inner x h sB k s) :
     WP isa (.block step) s fun s' => Inner x h sB (k + 1) s' ∧ s'.gpr CNT = s.gpr CNT := by
   refine WP.mono (step_ok x _ k s hs.xr hs.zv hs.rh hs.zero)
     fun s' ⟨hx, hzv, hk, hm, hrd, hwr⟩ => ?_
@@ -169,7 +169,7 @@ theorem inner_step {x h : Block} {sB : State} {k : Nat} {s : State} (hs : Inner 
     fun r hr => by rw [hk r (keep_sub hr), hs.keep r hr], by rw [hm, hs.mem], by rw [hrd, hs.rd],
     by rw [hwr, hs.wr]⟩, hk _ (by simp [stepKeep])⟩
 
-theorem Inner.of_gpr {x h : Block} {sB : State} {k : Nat} {s : State} (hs : Inner x h sB k s)
+theorem Inner.of_gpr {x h : VG.Spec.Gcm.Block} {sB : State} {k : Nat} {s : State} (hs : Inner x h sB k s)
     {s' : State} (hg : ∀ r, r ≠ CNT → s'.gpr r = s.gpr r) (hm : s'.mem = s.mem)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Inner x h sB k s' where
   xr := by rw [hg XH (by decide), hg XL (by decide)]; exact hs.xr
@@ -186,7 +186,7 @@ theorem Inner.of_gpr {x h : Block} {sB : State} {k : Nat} {s : State} (hs : Inne
   wr := hwr.trans hs.wr
 
 set_option simprocs false in
-theorem steps_ok {x h : Block} {sB : State} {j : Nat} (hj : j < 128 / unroll) {s : State}
+theorem steps_ok {x h : VG.Spec.Gcm.Block} {sB : State} {j : Nat} (hj : j < 128 / unroll) {s : State}
     (hs : Inner x h sB (unroll * j) s) (hc : s.gpr CNT = BitVec.ofNat 64 (128 / unroll - j)) :
     WP isa (.block steps) s fun s' => Inner x h sB (unroll * (j + 1)) s' ∧
       s'.gpr CNT = BitVec.ofNat 64 (128 / unroll - (j + 1)) := by
@@ -213,7 +213,7 @@ theorem steps_ok {x h : Block} {sB : State} {j : Nat} (hj : j < 128 / unroll) {s
   exact hs₁.of_gpr (fun r hr => ite_eq_right hr) rfl rfl rfl
 
 /-- The loop of `128 / unroll` iterations: all 128 steps. -/
-theorem mul_ok {x h : Block} {sB s : State} (hs : Inner x h sB 0 s)
+theorem mul_ok {x h : VG.Spec.Gcm.Block} {sB s : State} (hs : Inner x h sB 0 s)
     (hc : s.gpr CNT = BitVec.ofNat 64 (128 / unroll)) :
     WP isa (.loop (.block steps) (.nonzero .x CNT)) s (Inner x h sB 128) := by
   let Inv : Nat → State → Prop := fun m s =>
@@ -276,9 +276,9 @@ def ghashAArch64 : Contract AArch64.isa where
     h.Disjoint y ∧ h.Disjoint scratch ∧ y.Disjoint data ∧ y.Disjoint scratch ∧
     data.Disjoint scratch
   post s s' :=
-    blockAt s'.mem (s.gpr .x1) =
-      ghashFrom (blockAt s.mem (s.gpr .x0)) (blockAt s.mem (s.gpr .x1))
-        (blocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
+    VG.Spec.Gcm.blockAt s'.mem (s.gpr .x1) =
+      ghashFrom (VG.Spec.Gcm.blockAt s.mem (s.gpr .x0)) (VG.Spec.Gcm.blockAt s.mem (s.gpr .x1))
+        (VG.Spec.Gcm.blocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
@@ -307,7 +307,7 @@ theorem bytesAt_16 (m : Mem) (p : Addr) : Spec.Aes.bytesAt m p 16 =
 /-- Two 8-byte loads and `rev`s read a block. -/
 theorem blockAt_rev (m : Mem) (p : Addr) :
     rev64 (m.readW (p + BitVec.ofNat 64 0) 64) ++ rev64 (m.readW (p + BitVec.ofNat 64 8) 64) =
-      blockAt m p := by
+      VG.Spec.Gcm.blockAt m p := by
   have e : ∀ j : Nat, j < 15 → p + BitVec.ofNat 64 j + 1 = p + BitVec.ofNat 64 (j + 1) :=
     fun j _ => Offset.add_add p j 1
   rw [rev64_readW, rev64_readW, e 0 (by decide), e 1 (by decide), e 2 (by decide),
@@ -343,8 +343,8 @@ abbrev hR : Region := ⟨hA s₀, 16⟩
 abbrev yR : Region := ⟨yp s₀, 16⟩
 abbrev dR : Region := ⟨dp s₀, 16 * nb s₀⟩
 abbrev scrR : Region := ⟨scr s₀, 256⟩
-abbrev H₀ : Block := blockAt s₀.mem (hA s₀)
-abbrev Y₀ : Block := blockAt s₀.mem (yp s₀)
+abbrev H₀ : VG.Spec.Gcm.Block := VG.Spec.Gcm.blockAt s₀.mem (hA s₀)
+abbrev Y₀ : VG.Spec.Gcm.Block := VG.Spec.Gcm.blockAt s₀.mem (yp s₀)
 
 /-- Block `i`, and where it starts. -/
 abbrev blkAddr (i : Nat) : Addr := dp s₀ + BitVec.ofNat 64 (16 * i)
@@ -410,7 +410,7 @@ structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [yR s₀] s₀.mem s.mem
-  y : blockAt s.mem (yp s₀) = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) i)
+  y : VG.Spec.Gcm.blockAt s.mem (yp s₀) = ghashFrom (H₀ s₀) (Y₀ s₀) (VG.Spec.Gcm.blocksAt s₀.mem (dp s₀) i)
 
 /-- The loop invariant, at the start of block `i`. -/
 structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
@@ -425,7 +425,7 @@ theorem load_ok (s : State)
     (hy : ∀ d : Nat, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 d) 8)
     (hd : ∀ d : Nat, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 d) 8) :
     WP isa (.block load) s fun s₁ =>
-      Inner (blockAt s.mem (s.gpr .x1) ^^^ blockAt s.mem (s.gpr .x2)) (blockAt s.mem (s.gpr .x0))
+      Inner (VG.Spec.Gcm.blockAt s.mem (s.gpr .x1) ^^^ VG.Spec.Gcm.blockAt s.mem (s.gpr .x2)) (VG.Spec.Gcm.blockAt s.mem (s.gpr .x0))
         s 0 s₁ ∧ s₁.gpr CNT = BitVec.ofNat 64 (128 / unroll) := by
   have h0 := hh 0 (by decide); have h8 := hh 8 (by decide)
   have y0 := hy 0 (by decide); have y8 := hy 8 (by decide)
@@ -460,7 +460,7 @@ theorem half_sep (p : Addr) : Mem.Sep (p + BitVec.ofNat 64 0) 8 (p + BitVec.ofNa
   Offset.sep p (by decide) (by decide) (by decide)
 
 theorem blockAt_storeMem (m : Mem) (p : Addr) (zh zl : BitVec 64) :
-    blockAt (storeMem m p zh zl) p = zh ++ zl := by
+    VG.Spec.Gcm.blockAt (storeMem m p zh zl) p = zh ++ zl := by
   rw [← blockAt_rev, storeMem, Mem.readW_writeW_self64,
     Mem.readW_writeW_sep (half_sep p) (by decide), Mem.readW_writeW_self64, rev64_rev64,
     rev64_rev64]
@@ -490,7 +490,7 @@ theorem storeMem_frame {s₀ : State} {m m' : Mem} (h : Frame [yR s₀] m m') (z
 
 /-- Memory outside `y` is as on entry. -/
 theorem blockAt_frame {s₀ : State} {m : Mem} (h : Frame [yR s₀] s₀.mem m) {p : Addr}
-    (hd : Region.Disjoint ⟨p, 16⟩ (yR s₀)) : blockAt m p = blockAt s₀.mem p :=
+    (hd : Region.Disjoint ⟨p, 16⟩ (yR s₀)) : VG.Spec.Gcm.blockAt m p = VG.Spec.Gcm.blockAt s₀.mem p :=
   blockAt_congr fun _ hk =>
     h.bytes (R := ⟨p, 16⟩) (by simpa using hd) (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
 
@@ -511,8 +511,8 @@ theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s :
   have hx3 : s₂.gpr .x3 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [hk .x3 (by decide), hL.x3, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
       Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
-  have hy : blockAt s₃.mem (yp s₀) =
-      ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i + 1)) := by
+  have hy : VG.Spec.Gcm.blockAt s₃.mem (yp s₀) =
+      ghashFrom (H₀ s₀) (Y₀ s₀) (VG.Spec.Gcm.blocksAt s₀.mem (dp s₀) (i + 1)) := by
     have hz1 := congrArg Prod.fst hI₂.zv
     simp only at hz1
     rw [hm₃, hx1₂, blockAt_storeMem, ghashFrom_blocksAt_succ, ← hL.y, mul_eq, hz1, hL.x1, hL.x2,

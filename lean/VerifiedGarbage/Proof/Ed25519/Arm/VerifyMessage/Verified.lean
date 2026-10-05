@@ -1,11 +1,936 @@
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Body
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.CallCT
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.BlocksCT
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args
-import VerifiedGarbage.Proof.Ed25519.Arm.Whole.Wrap
 import VerifiedGarbage.Proof.Ed25519.Arm.Whole.WrapCT
-import VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation
+import VerifiedGarbage.Proof.Ed25519.Signing
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarVerified
+import VerifiedGarbage.Proof.Ed25519.Arm.VerifyVerified
+import VerifiedGarbage.Proof.Sha512.Scratch
+import VerifiedGarbage.Impl.Ed25519.Arm.VerifyMessage
+import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Arm.Contract
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Body`. -/
+section
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Layout`. -/
+section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+
+structure Lay where
+  pk : BitVec 32
+  msg : BitVec 32
+  len : BitVec 32
+  sig : BitVec 32
+  scr : BitVec 32
+  E : BitVec 32
+
+namespace Lay
+variable (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay)
+abbrev SIG : Region := ⟨State.addr L.sig, 64⟩
+abbrev PK : Region := ⟨State.addr L.pk, 32⟩
+abbrev MSG : Region := ⟨State.addr L.msg, L.len.toNat⟩
+abbrev SCR : Region := ⟨State.addr L.scr, 8192⟩
+abbrev ARGS : Region := ⟨State.addr L.E + BitVec.ofNat 64 248, 24⟩
+abbrev FR : Region := Whole.FR L.E
+abbrev ORIGINALARGS : Region := ⟨State.addr L.E + 280, 4⟩
+def inputs : List Region := [L.PK, L.MSG, L.SIG, L.ORIGINALARGS, L.ARGS]
+def outputs : List Region := [L.SCR]
+def value (j : Nat) : BitVec 32 :=
+  match j with | 0 => L.pk | 1 => L.msg | 2 => L.len | 3 => L.sig | _ => L.scr
+
+structure Ok : Prop where
+  top : L.E.toNat + 272 ≤ 2 ^ 32
+  sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
+  ks : ∀ r ∈ L.inputs, L.FR.Disjoint r
+  kc : L.FR.Disjoint L.SCR
+  np : L.pk.toNat + 32 ≤ 2 ^ 32
+  nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
+  ns : L.sig.toNat + 64 ≤ 2 ^ 32
+  nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+end Lay
+
+/-- The scratch allocation leaves enough address space for either hash prefix. -/
+theorem Lay.Ok.message_bound {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 32 := by
+  have hd := h.sc L.MSG (by simp [Lay.inputs])
+  have nm := h.nm
+  have nc := h.nc
+  have ap : (State.addr L.msg).toNat = L.msg.toNat := BitVec.toNat_setWidth_of_le (by decide)
+  have ac : (State.addr L.scr).toNat = L.scr.toNat := BitVec.toNat_setWidth_of_le (by decide)
+  by_cases hz : L.len.toNat = 0
+  · omega
+  by_cases hp : State.addr L.msg ≤ State.addr L.scr
+  · have hn : ¬ L.MSG.Contains (State.addr L.scr) 1 := fun hx => hd _ hx (by simp [Region.Contains])
+    simp only [Region.Contains, BitVec.toNat_sub_of_le hp] at hn
+    have hp' : (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat := hp
+    rw [ap, ac] at hn hp'
+    omega
+  · have hp' : State.addr L.scr ≤ State.addr L.msg := by
+      change (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat
+      change ¬ (State.addr L.msg).toNat ≤ (State.addr L.scr).toNat at hp
+      omega
+    have hn : ¬ L.SCR.Contains (State.addr L.msg) 1 := fun hx => hd _ (by simp [Region.Contains]; omega) hx
+    simp only [Region.Contains, BitVec.toNat_sub_of_le hp'] at hn
+    have hp'' : (State.addr L.scr).toNat ≤ (State.addr L.msg).toNat := hp'
+    rw [ap, ac] at hn hp''
+    omega
+
+
+abbrev Ctx (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
+  Whole.Ctx L.E g m₀ L.inputs L.outputs t
+
+namespace Ctx
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {t : State}
+
+theorem input_bytes (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t) (hL : L.Ok)
+    {r : Region} (hr : r ∈ L.inputs) (hn : r.len ≤ 2 ^ 64) :
+    Spec.Ed25519.bytesAt t.mem r.base r.len = Spec.Ed25519.bytesAt m₀ r.base r.len := by
+  unfold Spec.Ed25519.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  refine Frame.bytes hc.frame ?_ hn (List.mem_range.mp hi)
+  intro R hR
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false] at hR
+  rcases hR with rfl | rfl
+  · exact hL.sc r hr
+  · exact (hL.ks r hr).symm
+
+theorem arg_word (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
+    t.mem.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 =
+      m₀.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 := by
+  refine hc.frame.readW (r := L.ARGS) ?_ ?_ (by decide)
+  · exact Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)
+  · intro R hR
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hR
+    have ha : L.ARGS ∈ L.inputs := by simp [Lay.inputs]
+    rcases hR with rfl | rfl
+    · exact hL.sc _ ha
+    · exact (hL.ks _ ha).symm
+
+end Ctx
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Args`. -/
+section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.Whole
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+def Arguments (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (m : Mem) : Prop :=
+  ∀ j < 5, m.readW (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 32 = L.value j
+
+def value (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Value → BitVec 32
+  | .const n => BitVec.ofNat 32 n
+  | .frame d => L.E + BitVec.ofNat 32 d
+  | .caller j d => L.value j + BitVec.ofNat 32 d
+
+def valid : Value → Prop
+  | .const n => n < 65536
+  | .frame d => d < 256
+  | .caller j d => j < 5 ∧ d < 256
+
+theorem valid_whole {v : Value} (h : VG.Proof.Ed25519.Arm.VerifyMessage.valid v) : Whole.valid v := by
+  cases v with
+  | const n => exact h
+  | frame d => exact h
+  | caller j d => exact ⟨by have := h.1; omega,h.2⟩
+
+def OutArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (args : List (Reg × Value)) (s : State) : Prop :=
+  ∀ p ∈ args, s.gpr p.1 = VG.Proof.Ed25519.Arm.VerifyMessage.value L p.2
+
+def StackArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (vs : List Value) (s : State) : Prop :=
+  ∀ j (hj : j < vs.length), stackArg s j = VG.Proof.Ed25519.Arm.VerifyMessage.value L (vs[j]'hj)
+
+theorem Ctx.value (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) {v : Value} (hv : VG.Proof.Ed25519.Arm.VerifyMessage.valid v) :
+    Whole.value L.E s.mem v = VG.Proof.Ed25519.Arm.VerifyMessage.value L v := by
+  cases v with
+  | const n => rfl
+  | frame d => rfl
+  | caller j d =>
+    change _ + BitVec.ofNat 32 d = _ + BitVec.ofNat 32 d
+    rw [hc.arg_word hL (by have := hv.1; omega), ha j hv.1]
+
+theorem args_regs_ok (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    {args : List (Reg × Value)} (hn : (args.map Prod.fst).Nodup)
+    (hv : ∀ p ∈ args, VG.Proof.Ed25519.Arm.VerifyMessage.valid p.2) (hr : ∀ p ∈ args, p.1 ∉ preserved) :
+    WP isa (.block (VG.Impl.Ed25519.Arm.Whole.setup args [])) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧ t.mem = s.mem ∧ VG.Proof.Ed25519.Arm.VerifyMessage.OutArgs L args t := by
+  have rd : ∀ j < 6, InRegions (s.rd ++ s.wr) (State.addr L.E + BitVec.ofNat 64 (248 + 4 * j)) 4 := by
+    intro j hj
+    refine ⟨L.ARGS, ?_, Offset.contains _ (e := 248) (k := 24) (by omega) (by omega) (by decide)⟩
+    rw [hc.rd]
+    exact List.mem_append_left _ (by simp [Lay.inputs])
+  refine WP.mono (Whole.setupRegs_ok hc.sp hL.top hn (fun p hp => VG.Proof.Ed25519.Arm.VerifyMessage.valid_whole (hv p hp)) rd) fun t ⟨ht, hargs⟩ => ?_
+  refine ⟨hc.regs ht.rd ht.wr ht.sp ?_ ht.mem, ht.mem, ?_⟩
+  · intro r hpres _
+    apply ht.regs
+    intro hh
+    obtain ⟨p, hp, he⟩ := List.mem_map.mp hh
+    exact hr p hp (he ▸ hpres)
+  · intro p hp
+    exact (hargs p hp).trans (hc.value hL ha (hv p hp))
+
+theorem args_ok (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    {args : List (Reg × Value)} {stack : List Value}
+    (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, VG.Proof.Ed25519.Arm.VerifyMessage.valid p.2)
+    (hs : stack.length ≤ 6) (hvs : ∀ v ∈ stack, VG.Proof.Ed25519.Arm.VerifyMessage.valid v)
+    (hr : ∀ p ∈ args, p.1 ∉ preserved) :
+    WP isa (.block (VG.Impl.Ed25519.Arm.Whole.setup args stack)) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Frame [⟨State.addr L.E, 24⟩] s.mem t.mem ∧ VG.Proof.Ed25519.Arm.VerifyMessage.OutArgs L args t ∧ VG.Proof.Ed25519.Arm.VerifyMessage.StackArgs L stack t := by
+  refine WP.mono (Whole.Ctx.setup hc hL.top hn (fun p hp => VG.Proof.Ed25519.Arm.VerifyMessage.valid_whole (hv p hp)) hs (fun v hv => VG.Proof.Ed25519.Arm.VerifyMessage.valid_whole (hvs v hv)) (by simp [Lay.inputs]) hr)
+    fun t ⟨ht, hf, hg, hstack⟩ => ⟨ht, hf, ?_, ?_⟩
+  · intro p hp
+    exact (hg p hp).trans (hc.value hL ha (hv p hp))
+  · intro j hj
+    exact (hstack j hj).trans (hc.value hL ha (hvs _ (List.getElem_mem hj)))
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Calls`. -/
+section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay}
+
+def field (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (d : Nat) : Region := ⟨State.addr L.E + BitVec.ofNat 64 d, 32⟩
+def digest (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Region := ⟨State.addr L.E + BitVec.ofNat 64 184, 64⟩
+theorem fieldWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) {d : Nat} (hd : d + 32 ≤ 248) : Whole.Within (VG.Proof.Ed25519.Arm.VerifyMessage.field L d) L.FR :=
+  ⟨d, rfl, hd⟩
+theorem digestWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Whole.Within (VG.Proof.Ed25519.Arm.VerifyMessage.digest L) L.FR := ⟨184, rfl, by change 184 + 64 ≤ 248; decide⟩
+theorem scratchWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Whole.Within L.SCR L.SCR := ⟨0, by simp, by simp⟩
+
+theorem covers {rs : List Region}
+    (h : ∀ r ∈ rs, Whole.Within r L.FR ∨ ∃ R ∈ L.inputs ++ L.outputs, Whole.Within r R) :
+    Covers rs (L.inputs ++ L.FR :: L.outputs) := by
+  apply Covers.of_sub
+  intro r hr
+  rcases h r hr with hf | ⟨R, hR, hsub⟩
+  · exact ⟨L.FR, List.mem_append_right _ List.mem_cons_self, hf⟩
+  · refine ⟨R, ?_, hsub⟩
+    rcases List.mem_append.mp hR with hi | ho
+    · exact List.mem_append_left _ hi
+    · exact List.mem_append_right _ (List.mem_cons_of_mem _ ho)
+
+theorem scratch_covered (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : ∃ R ∈ L.inputs ++ L.outputs, Whole.Within L.SCR R :=
+  ⟨L.SCR, by simp [Lay.outputs], VG.Proof.Ed25519.Arm.VerifyMessage.scratchWithin L⟩
+
+theorem writes {rs : List Region}
+    (h : ∀ r ∈ rs, Whole.Within r L.FR ∨ Whole.Within r L.SCR) :
+    ∀ r ∈ rs, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+  intro r hr
+  rcases h r hr with hf | hs
+  · exact .inl hf
+  · exact .inr ⟨L.SCR,by simp [Lay.outputs],hs⟩
+
+theorem field_scr (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 248) :
+    (VG.Proof.Ed25519.Arm.VerifyMessage.field L d).Disjoint L.SCR := hL.kc.sub_left (VG.Proof.Ed25519.Arm.VerifyMessage.fieldWithin L hd).sub
+
+theorem field_mem {m n : Mem} (hm : n = m) (d : Nat) :
+    Spec.Ed25519.bytesAt n (State.addr L.E + BitVec.ofNat 64 d) 32 =
+      Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by rw [hm]
+
+theorem frame_addr (hL : L.Ok) {d : Nat} (hd : d < 272) :
+    State.addr (L.E + BitVec.ofNat 32 d) = State.addr L.E + BitVec.ofNat 64 d :=
+  addr_add (by have := hL.top; omega)
+
+theorem frame_fit (hL : L.Ok) {d n : Nat} (hd : d + n ≤ 248) :
+    (L.E + BitVec.ofNat 32 d).toNat + n ≤ 2 ^ 32 := by
+  have ht := hL.top
+  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 32),
+    Nat.mod_eq_of_lt (by omega : L.E.toNat + d < 2 ^ 32)]
+  omega
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Equation`. -/
+section
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+def signWord (b : Bool) : BitVec 32 := if b then 1 else 0
+
+def challenge (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Region := ⟨State.addr L.E+120,64⟩
+def equationRd (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : List Region := [L.PK,L.SIG,VG.Proof.Ed25519.Arm.VerifyMessage.challenge L]
+def equationWr (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : List Region := [L.SCR]
+def EqArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (s : State) : Prop := s.gpr .r0 = L.pk ∧
+  s.gpr .r1 = L.sig ∧ s.gpr .r2 = L.E+120 ∧ s.gpr .r3 = L.scr
+
+theorem equation_noFrames : verifyEquation.noFrames = true := by lit_decide
+
+theorem challengeWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Whole.Within (VG.Proof.Ed25519.Arm.VerifyMessage.challenge L) L.FR :=
+  ⟨120,rfl,by change 120+64≤248; decide⟩
+
+theorem equation_pre (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.EqArgs L s) :
+    verifyLocal.pre (s.callEntry.withRegions (VG.Proof.Ed25519.Arm.VerifyMessage.equationRd L) (VG.Proof.Ed25519.Arm.VerifyMessage.equationWr L)) := by
+  have ac : State.addr (L.E+120) = State.addr L.E+120 := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := 120) (by decide)
+  simp only [verifyLocal, State.withRegions_rd, State.withRegions_wr,
+    State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r3 ∉ linkRegs), ha.1,ha.2.1,ha.2.2.1,ha.2.2.2,ac]
+  exact ⟨rfl,rfl,hL.sc _ (by simp [Lay.inputs]),hL.sc _ (by simp [Lay.inputs]),
+    hL.kc.sub_left (VG.Proof.Ed25519.Arm.VerifyMessage.challengeWithin L).sub,hL.np,hL.ns,VG.Proof.Ed25519.Arm.VerifyMessage.frame_fit hL (by decide),hL.nc⟩
+
+theorem equation_covers : Covers (VG.Proof.Ed25519.Arm.VerifyMessage.equationRd L ++ VG.Proof.Ed25519.Arm.VerifyMessage.equationWr L) (L.inputs ++ L.FR :: L.outputs) := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.covers
+  simp only [VG.Proof.Ed25519.Arm.VerifyMessage.equationRd,VG.Proof.Ed25519.Arm.VerifyMessage.equationWr,List.cons_append,List.nil_append,List.mem_cons,List.not_mem_nil,or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  · exact .inr ⟨L.PK,by simp [Lay.inputs],0,by simp,by simp⟩
+  · exact .inr ⟨L.SIG,by simp [Lay.inputs],0,by simp,by simp⟩
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.challengeWithin L)
+  · exact .inr (VG.Proof.Ed25519.Arm.VerifyMessage.scratch_covered L)
+
+theorem equation_writes : ∀ r ∈ VG.Proof.Ed25519.Arm.VerifyMessage.equationWr L,
+    Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+  intro r hr
+  rw [List.mem_singleton.mp hr]
+  exact .inr ⟨L.SCR,by simp [Lay.outputs],VG.Proof.Ed25519.Arm.VerifyMessage.scratchWithin L⟩
+
+theorem equation_call (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.EqArgs L s) :
+    WP isa (.call "vg_ed25519_verify_equation" verifyEquation) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      t.gpr .r0 = VG.Proof.Ed25519.Arm.VerifyMessage.signWord (Spec.Ed25519.verifyEquation
+        (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
+        (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
+  refine Whole.call_ok hc verify_ok VG.Proof.Ed25519.Arm.VerifyMessage.equation_noFrames (VG.Proof.Ed25519.Arm.VerifyMessage.equation_pre hL ha)
+    VG.Proof.Ed25519.Arm.VerifyMessage.equation_covers VG.Proof.Ed25519.Arm.VerifyMessage.equation_writes fun t ht _ hp => ⟨ht,?_⟩
+  change (t.gpr .r0).toNat = (if Spec.Ed25519.verifyEquation
+    (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r0)) 32)
+    (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r1)) 64)
+    (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r2)) 64) then 1 else 0) at hp
+  rw [State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs),ha.1,ha.2.1,ha.2.2.1] at hp
+  have ac : State.addr (L.E+120) = State.addr L.E+120 := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := 120) (by decide)
+  rw [ac] at hp
+  apply BitVec.eq_of_toNat_eq
+  rw [hp]
+  cases Spec.Ed25519.verifyEquation (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64) (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64) <;> rfl
+
+theorem equation_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) :
+    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.equationArgs "vg_ed25519_verify_equation" verifyEquation) s
+      fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧ t.gpr .r0 = VG.Proof.Ed25519.Arm.VerifyMessage.signWord (Spec.Ed25519.verifyEquation
+        (Spec.Ed25519.bytesAt s.mem (State.addr L.pk) 32) (Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 64)
+        (Spec.Ed25519.bytesAt s.mem (State.addr L.E+120) 64)) := by
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.args_regs_ok hc hL ha
+    (args := [(.r0,.caller 0 0),(.r1,.caller 3 0),(.r2,.frame 120),(.r3,.caller 4 0)])
+    (by simp) (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) (by simp [preserved]))
+    fun u ⟨hu,hm,hav⟩ => ?_)
+  have a0 := hav (.r0,.caller 0 0) (by simp)
+  have a1 := hav (.r1,.caller 3 0) (by simp)
+  have a2 := hav (.r2,.frame 120) (by simp)
+  have a3 := hav (.r3,.caller 4 0) (by simp)
+  change u.gpr .r0 = L.pk+0#32 at a0
+  change u.gpr .r1 = L.sig+0#32 at a1
+  change u.gpr .r3 = L.scr+0#32 at a3
+  rw [BitVec.add_zero] at a0 a1 a3
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.equation_call hu hL ⟨a0,a1,a2,a3⟩) fun t ⟨ht,hp⟩ => ⟨ht,?_⟩
+  rw [hm] at hp
+  exact hp
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Body`. -/
+section
+
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashSteps`. -/
+section
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashReady`. -/
+section
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashInputs`. -/
+section
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashFrame`. -/
+section
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay}
+
+def slots (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Region := ⟨State.addr L.E, 24⟩
+def hashWrites (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : List Region := [L.SCR, VG.Proof.Ed25519.Arm.VerifyMessage.slots L, VG.Proof.Ed25519.Arm.VerifyMessage.digest L]
+
+theorem setup_frame {m n : Mem} (hf : Frame [VG.Proof.Ed25519.Arm.VerifyMessage.slots L] m n) : Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n :=
+  hf.sub fun r hr => by
+    rw [List.mem_singleton.mp hr]
+    exact ⟨VG.Proof.Ed25519.Arm.VerifyMessage.slots L, by simp [VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites], fun _ h => h⟩
+
+theorem hash_frame {m n : Mem} {rs : List Region} (hf : Frame rs m n)
+    (hw : ∀ r ∈ rs, Whole.Within r L.SCR ∨ Whole.Within r (VG.Proof.Ed25519.Arm.VerifyMessage.digest L)) : Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n := by
+  refine hf.sub fun r hr => ?_
+  rcases hw r hr with hc | hd
+  · exact ⟨L.SCR, by simp [VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites], hc.sub⟩
+  · exact ⟨VG.Proof.Ed25519.Arm.VerifyMessage.digest L, by simp [VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites], hd.sub⟩
+
+theorem frame_bytes {m n : Mem} {ws : List Region} (hf : Frame ws m n) (r : Region)
+    (hd : ∀ w ∈ ws, r.Disjoint w) (hn : r.len ≤ 2 ^ 64) :
+    Spec.Ed25519.bytesAt n r.base r.len = Spec.Ed25519.bytesAt m r.base r.len := by
+  unfold Spec.Ed25519.bytesAt
+  apply List.map_congr_left
+  intro i hi
+  exact Frame.bytes hf hd hn (List.mem_range.mp hi)
+
+theorem setup_field_bytes {m n : Mem} (hf : Frame [VG.Proof.Ed25519.Arm.VerifyMessage.slots L] m n)
+    {d : Nat} (hd : d + 32 ≤ 248) (hmin : 24 ≤ d) :
+    Spec.Ed25519.bytesAt n (State.addr L.E + BitVec.ofNat 64 d) 32 =
+      Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.frame_bytes hf (VG.Proof.Ed25519.Arm.VerifyMessage.field L d) _ (by change 32 ≤ 2 ^ 64; decide)
+  rintro r hr; rw [List.mem_singleton.mp hr]
+  exact Offset.disjoint_base _ hmin (by omega)
+
+theorem setup_repr {m n : Mem} (hL : L.Ok) (hf : Frame [VG.Proof.Ed25519.Arm.VerifyMessage.slots L] m n) {msg : List Byte}
+    (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 m (State.addr L.scr) msg) :
+    Spec.Sha512.Repr Spec.Sha512.H0_512 n (State.addr L.scr) msg := by
+  refine Proof.Sha512.Stream.repr_congr (mem := m) ?_ hr
+  intro i hi
+  exact hf.bytes (R := ⟨State.addr L.scr, 192⟩) (by
+    rintro r hm; rw [List.mem_singleton.mp hm]
+    exact (hL.kc.sub_left (Region.sub_prefix (by decide))).symm.sub_left (Region.sub_prefix (by decide)))
+    (by change 192 ≤ 2 ^ 64; decide) hi
+
+theorem hash_field_bytes {m n : Mem} (hL : L.Ok) (hf : Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n)
+    {d : Nat} (hd : d + 32 ≤ 184) (hmin : 24 ≤ d) :
+    Spec.Ed25519.bytesAt n (State.addr L.E + BitVec.ofNat 64 d) 32 =
+      Spec.Ed25519.bytesAt m (State.addr L.E + BitVec.ofNat 64 d) 32 := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.frame_bytes hf (VG.Proof.Ed25519.Arm.VerifyMessage.field L d) _ (by change 32 ≤ 2 ^ 64; decide)
+  simp only [VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact VG.Proof.Ed25519.Arm.VerifyMessage.field_scr hL (by omega)
+  · exact Offset.disjoint_base _ (by omega) (by omega)
+  · exact Offset.disjoint _ (by omega) (by omega) (by decide)
+
+theorem bytes_length (m : Mem) (p : Addr) (n : Nat) :
+    (Spec.Ed25519.bytesAt m p n).length = n := by simp [Spec.Ed25519.bytesAt]
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay}
+
+structure Input (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (p n : BitVec 32) : Prop where
+  cover : Whole.Within ⟨State.addr p, n.toNat⟩ L.FR ∨
+    ∃ R ∈ L.inputs ++ L.outputs, Whole.Within ⟨State.addr p, n.toNat⟩ R
+  scratch : Region.Disjoint ⟨State.addr p, n.toNat⟩ L.SCR
+  args : Region.Disjoint ⟨State.addr p, n.toNat⟩ (VG.Proof.Ed25519.Arm.VerifyMessage.slots L)
+  fit : p.toNat + n.toNat ≤ 2 ^ 32
+
+theorem input_self {r : Region} (hr : r ∈ L.inputs) :
+    ∃ R ∈ L.inputs ++ L.outputs, Whole.Within r R :=
+  ⟨r, List.mem_append_left _ hr, 0, by simp, by simp⟩
+
+theorem input_slots (hL : L.Ok) {r : Region} (hr : r ∈ L.inputs) : r.Disjoint (VG.Proof.Ed25519.Arm.VerifyMessage.slots L) :=
+  (hL.ks _ hr).symm.sub_right (Region.sub_prefix (by decide))
+
+theorem key_input (hL : L.Ok) : VG.Proof.Ed25519.Arm.VerifyMessage.Input L L.pk 32 :=
+  ⟨.inr (VG.Proof.Ed25519.Arm.VerifyMessage.input_self (r := L.PK) (by simp [Lay.inputs])), hL.sc _ (by simp [Lay.inputs]),
+    VG.Proof.Ed25519.Arm.VerifyMessage.input_slots hL (by simp [Lay.inputs]), hL.np⟩
+
+theorem message_input (hL : L.Ok) : VG.Proof.Ed25519.Arm.VerifyMessage.Input L L.msg L.len :=
+  ⟨.inr (VG.Proof.Ed25519.Arm.VerifyMessage.input_self (r := L.MSG) (by simp [Lay.inputs])), hL.sc _ (by simp [Lay.inputs]),
+    VG.Proof.Ed25519.Arm.VerifyMessage.input_slots hL (by simp [Lay.inputs]), hL.nm⟩
+
+theorem signature_input (hL : L.Ok) : VG.Proof.Ed25519.Arm.VerifyMessage.Input L L.sig 32 := by
+  have sub : Region.Sub ⟨State.addr L.sig,32⟩ L.SIG := Region.sub_prefix (by decide)
+  exact ⟨.inr ⟨L.SIG,by simp [Lay.inputs],0,by simp,by change 0+32≤64; decide⟩,
+    (hL.sc _ (by simp [Lay.inputs])).sub_left sub,
+    (VG.Proof.Ed25519.Arm.VerifyMessage.input_slots hL (by simp [Lay.inputs])).sub_left sub,by have := hL.ns; change L.sig.toNat+32≤2^32; omega⟩
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay}
+
+theorem shaWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Whole.Within (Whole.SHA L.scr) L.SCR :=
+  ⟨0, by simp, by change 0 + 192 ≤ 8192; decide⟩
+theorem workWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : Whole.Within (Whole.WORK L.scr) L.SCR :=
+  ⟨192, rfl, by change 192 + 272 ≤ 8192; decide⟩
+theorem argsWithin (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) {n : Nat} (hn : n ≤ 248) :
+    Whole.Within (Whole.CALLARGS L.E n) L.FR := ⟨0, by simp, by change 0 + n ≤ 248; omega⟩
+
+theorem init_frame {m n : Mem} (hf : Frame (Whole.initWr L.scr) m n) : Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.hash_frame hf
+  intro r hr; rw [List.mem_singleton.mp hr]
+  exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.shaWithin L)
+
+theorem update_frame {m n : Mem} (hf : Frame (Whole.hashWr L.scr) m n) : Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.hash_frame hf
+  simp only [Whole.hashWr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl)
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.shaWithin L)
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.workWithin L)
+
+theorem final_addr (hL : L.Ok) : State.addr (L.E + 184) = State.addr L.E + 184 :=
+  VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := 184) (by decide)
+
+theorem finalize_frame (hL : L.Ok) {m n : Mem} (hf : Frame (Whole.finalizeWr L.scr (L.E + 184)) m n) :
+    Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) m n := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.hash_frame hf
+  simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.shaWithin L)
+  · exact .inr ⟨0, by rw [VG.Proof.Ed25519.Arm.VerifyMessage.final_addr hL]; simp [VG.Proof.Ed25519.Arm.VerifyMessage.digest], by change 0 + 64 ≤ 64; decide⟩
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.workWithin L)
+
+theorem final_writes (hL : L.Ok) : ∀ r ∈ Whole.finalizeWr L.scr (L.E + 184),
+    Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.writes
+  simp only [Whole.finalizeWr, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact .inr (VG.Proof.Ed25519.Arm.VerifyMessage.shaWithin L)
+  · exact .inl ⟨184, VG.Proof.Ed25519.Arm.VerifyMessage.final_addr hL, by change 184 + 64 ≤ 248; decide⟩
+  · exact .inr (VG.Proof.Ed25519.Arm.VerifyMessage.workWithin L)
+
+theorem update_covers {p n : BitVec 32} (hi : VG.Proof.Ed25519.Arm.VerifyMessage.Input L p n) :
+    Covers (Whole.updateRd L.E p n ++ Whole.hashWr L.scr) (L.inputs ++ L.FR :: L.outputs) := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.covers
+  simp only [Whole.updateRd, Whole.hashWr, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  · exact hi.cover
+  · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.argsWithin L (by decide))
+  · exact .inr ⟨L.SCR, by simp [Lay.outputs], VG.Proof.Ed25519.Arm.VerifyMessage.shaWithin L⟩
+  · exact .inr ⟨L.SCR, by simp [Lay.outputs], VG.Proof.Ed25519.Arm.VerifyMessage.workWithin L⟩
+
+theorem finalize_covers (hL : L.Ok) :
+    Covers (Whole.finalizeRd L.E ++ Whole.finalizeWr L.scr (L.E + 184)) (L.inputs ++ L.FR :: L.outputs) := by
+  apply VG.Proof.Ed25519.Arm.VerifyMessage.covers
+  intro r hr
+  rcases List.mem_append.mp hr with hr | hr
+  · rw [List.mem_singleton.mp hr]
+    exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.argsWithin L (by decide))
+  · rcases VG.Proof.Ed25519.Arm.VerifyMessage.final_writes hL r hr with hf | ⟨R, hR, hw⟩
+    · exact .inl hf
+    · exact .inr ⟨R, List.mem_append_right _ hR, hw⟩
+
+def UpdateArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (count p n : BitVec 32) (t : State) : Prop :=
+  t.gpr .r0 = L.scr ∧ t.gpr .r2 = count ∧ t.gpr .r3 = 0 ∧
+    stackArg t 0 = p ∧ stackArg t 1 = n ∧ stackArg t 2 = L.scr + 192
+
+def FinalArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (count : BitVec 32) (t : State) : Prop :=
+  t.gpr .r0 = L.scr ∧ t.gpr .r2 = count ∧ t.gpr .r3 = 0 ∧
+    stackArg t 0 = L.E + 184 ∧ stackArg t 1 = L.scr + 192
+
+theorem update_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
+    {count p n : BitVec 32} (ha : VG.Proof.Ed25519.Arm.VerifyMessage.UpdateArgs L count p n t) (hi : VG.Proof.Ed25519.Arm.VerifyMessage.Input L p n) :
+    Proof.Sha512.updateArm.pre (t.callEntry.withRegions (Whole.updateRd L.E p n) (Whole.hashWr L.scr)) :=
+  Whole.update_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2.1 ha.2.2.2.2.2 hi.scratch
+    (hL.kc.sub_left (Region.sub_prefix (by decide))) hL.nc hi.fit (by have := hL.top; omega)
+
+theorem finalize_pre {t : State} (hL : L.Ok) (he : t.sp = L.E)
+    {count : BitVec 32} (ha : VG.Proof.Ed25519.Arm.VerifyMessage.FinalArgs L count t) :
+    Proof.Sha512.finalizeArm.pre (t.callEntry.withRegions (Whole.finalizeRd L.E) (Whole.finalizeWr L.scr (L.E + 184))) := by
+  refine Whole.finalize_pre he ha.1 ha.2.2.2.1 ha.2.2.2.2 ?_
+    (hL.kc.sub_left (Region.sub_prefix (by decide))) ?_ hL.nc
+    (VG.Proof.Ed25519.Arm.VerifyMessage.frame_fit hL (d := 184) (by decide)) (by have := hL.top; omega)
+  · rw [VG.Proof.Ed25519.Arm.VerifyMessage.final_addr hL]
+    exact hL.kc.sub_left (VG.Proof.Ed25519.Arm.VerifyMessage.digestWithin L).sub
+  · rw [VG.Proof.Ed25519.Arm.VerifyMessage.final_addr hL]
+    exact Offset.base_disjoint _ (by decide) (by decide)
+
+theorem count_zero_high (x : BitVec 32) : (0#32) ++ x = BitVec.ofNat 64 x.toNat := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt x.isLt, Nat.shiftLeft_eq]
+  have hx := x.isLt
+  simp only [BitVec.toNat_ofNat]
+  change 0 * 2 ^ 32 + x.toNat = x.toNat % 2 ^ 64
+  omega
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.Whole VG.Impl.Ed25519.Arm.VerifyMessage
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem init_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) :
+    WP isa init s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧ Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) s.mem t.mem ∧
+      Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr) [] := by
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.args_regs_ok hc hL ha (args := [(.r0, .caller 4 0)])
+    (by decide) (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+  have a0 := hs (.r0, .caller 4 0) (by simp)
+  change u.gpr .r0 = L.scr + 0#32 at a0
+  rw [BitVec.add_zero] at a0
+  have hw := Whole.init_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
+  refine WP.mono (Whole.init_call hu (Whole.init_pre a0 hL.nc) (Whole.covers_writes hw) hw a0)
+    fun t ⟨ht, hf, hp⟩ => ⟨ht, ?_, hp⟩
+  rw [hm] at hf
+  exact VG.Proof.Ed25519.Arm.VerifyMessage.init_frame hf
+
+theorem update_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    (count : Nat) (p n : Value) (hc16 : count < 65536) (hp : VG.Proof.Ed25519.Arm.VerifyMessage.valid p) (hn : VG.Proof.Ed25519.Arm.VerifyMessage.valid n)
+    (hi : VG.Proof.Ed25519.Arm.VerifyMessage.Input L (VG.Proof.Ed25519.Arm.VerifyMessage.value L p) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n)) {prev : List Byte}
+    (hcount : count = prev.length) (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (State.addr L.scr) prev) :
+    WP isa (update (setup [(.r0, .caller 4 0), (.r2, .const count), (.r3, .const 0)]
+      [p, n, .caller 4 192])) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr)
+        (prev ++ Spec.Ed25519.bytesAt s.mem (State.addr (VG.Proof.Ed25519.Arm.VerifyMessage.value L p)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat) := by
+  have hv : ∀ (x : Reg × Value), x ∈ [(.r0, .caller 4 0), (.r2, .const count), (.r3, .const 0)] →
+      VG.Proof.Ed25519.Arm.VerifyMessage.valid x.2 := by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid, hc16]
+  have hvs : ∀ v ∈ [p, n, Value.caller 4 192], VG.Proof.Ed25519.Arm.VerifyMessage.valid v := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro v (rfl | rfl | rfl)
+    · exact hp
+    · exact hn
+    · simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.args_ok hc hL ha (by simp) hv (by simp) hvs (by simp [preserved]))
+    fun u ⟨hu, hf, hs, hstack⟩ => ?_)
+  have a0 := hs (.r0, .caller 4 0) (by simp)
+  have a2 : u.gpr .r2 = BitVec.ofNat 32 count := hs (.r2, .const count) (by simp)
+  have a3 : u.gpr .r3 = 0#32 := hs (.r3, .const 0) (by simp)
+  have d0 := hstack 0 (by simp)
+  have d1 := hstack 1 (by simp)
+  have d2 := hstack 2 (by simp)
+  change u.gpr .r0 = L.scr + 0#32 at a0
+  rw [BitVec.add_zero] at a0
+  have args : VG.Proof.Ed25519.Arm.VerifyMessage.UpdateArgs L (BitVec.ofNat 32 count) (VG.Proof.Ed25519.Arm.VerifyMessage.value L p) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n) u := ⟨a0,a2,a3,d0,d1,d2⟩
+  have ce : Proof.Sha512.countArm u = BitVec.ofNat 64 prev.length := by
+    unfold Proof.Sha512.countArm
+    rw [a3,a2,VG.Proof.Ed25519.Arm.VerifyMessage.count_zero_high]
+    change BitVec.ofNat 64 (count % 2^32) = _
+    rw [Nat.mod_eq_of_lt (by omega),hcount]
+  have huRepr := VG.Proof.Ed25519.Arm.VerifyMessage.setup_repr hL hf hr
+  have heq : Spec.Ed25519.bytesAt u.mem (State.addr (VG.Proof.Ed25519.Arm.VerifyMessage.value L p)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat =
+      Spec.Ed25519.bytesAt s.mem (State.addr (VG.Proof.Ed25519.Arm.VerifyMessage.value L p)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat :=
+    VG.Proof.Ed25519.Arm.VerifyMessage.frame_bytes hf ⟨State.addr (VG.Proof.Ed25519.Arm.VerifyMessage.value L p), (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat⟩
+      (by simp only [List.mem_singleton]; intro r he; subst r; exact hi.args)
+      (by have := (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).isLt; change (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat ≤ 2^64; omega)
+  have hw := Whole.hash_writes (E := L.E) (wr := L.outputs) (by simp [Lay.outputs] : L.SCR ∈ L.outputs)
+  refine WP.mono (Whole.update_call hu (VG.Proof.Ed25519.Arm.VerifyMessage.update_pre hL hu.sp args hi) (VG.Proof.Ed25519.Arm.VerifyMessage.update_covers hi) hw
+    a0 d0 d1 ce huRepr) fun t ⟨ht, hf', hrepr⟩ => ⟨ht, (VG.Proof.Ed25519.Arm.VerifyMessage.setup_frame hf).trans (VG.Proof.Ed25519.Arm.VerifyMessage.update_frame hf'), ?_⟩
+  change Spec.Sha512.Repr _ t.mem _ (prev ++ Spec.Ed25519.bytesAt u.mem (State.addr (VG.Proof.Ed25519.Arm.VerifyMessage.value L p)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L n).toNat) at hrepr
+  rw [heq] at hrepr
+  exact hrepr
+
+theorem finalize_count (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (n : Nat) (b : Bool) :
+    VG.Proof.Ed25519.Arm.VerifyMessage.value L (if b then Value.caller 2 n else .const n) =
+      BitVec.ofNat 32 ((if b then L.len.toNat else 0) + n) := by
+  cases b <;> simp [VG.Proof.Ed25519.Arm.VerifyMessage.value, Lay.value, BitVec.ofNat_add]
+
+theorem finalize_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    (n : Nat) (hn : n < 256) (b : Bool) {msg : List Byte}
+    (hlen : msg.length < 2^32) (hcount : (if b then L.len.toNat else 0) + n = msg.length)
+    (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (State.addr L.scr) msg) :
+    WP isa (finalize n b) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧ Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E + 184) 64 = Spec.Sha512.sha512 msg := by
+  have hv : ∀ (x : Reg × Value), x ∈ [(.r0, .caller 4 0),
+      (.r2, if b then .caller 2 n else .const n), (.r3, .const 0)] → VG.Proof.Ed25519.Arm.VerifyMessage.valid x.2 := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro x (rfl | rfl | rfl)
+    · simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]
+    · cases b <;> simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid] <;> omega
+    · simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.args_ok hc hL ha (by simp) hv (by simp)
+    (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) (by simp [preserved])) fun u ⟨hu,hf,hs,hstack⟩ => ?_)
+  have a0 := hs (.r0, .caller 4 0) (by simp)
+  have a2 := hs (.r2, if b then .caller 2 n else .const n) (by simp)
+  have a3 : u.gpr .r3 = 0#32 := hs (.r3, .const 0) (by simp)
+  have d0 := hstack 0 (by simp)
+  have d1 := hstack 1 (by simp)
+  change u.gpr .r0 = L.scr + 0#32 at a0
+  rw [BitVec.add_zero] at a0
+  rw [VG.Proof.Ed25519.Arm.VerifyMessage.finalize_count,hcount] at a2
+  have args : VG.Proof.Ed25519.Arm.VerifyMessage.FinalArgs L (BitVec.ofNat 32 msg.length) u := ⟨a0,a2,a3,d0,d1⟩
+  have ce : Proof.Sha512.countArm u = BitVec.ofNat 64 msg.length := by
+    unfold Proof.Sha512.countArm
+    rw [a3,a2,VG.Proof.Ed25519.Arm.VerifyMessage.count_zero_high]
+    change BitVec.ofNat 64 (msg.length % 2^32) = _
+    rw [Nat.mod_eq_of_lt hlen]
+  refine WP.mono (Whole.finalize_call hu (VG.Proof.Ed25519.Arm.VerifyMessage.finalize_pre hL hu.sp args) (VG.Proof.Ed25519.Arm.VerifyMessage.finalize_covers hL)
+    (VG.Proof.Ed25519.Arm.VerifyMessage.final_writes hL) a0 d0 ce (VG.Proof.Ed25519.Arm.VerifyMessage.setup_repr hL hf hr) (by omega))
+    fun t ⟨ht,hf',hh⟩ => ⟨ht,(VG.Proof.Ed25519.Arm.VerifyMessage.setup_frame hf).trans (VG.Proof.Ed25519.Arm.VerifyMessage.finalize_frame hL hf'),?_⟩
+  change Spec.Ed25519.bytesAt t.mem (State.addr (L.E + 184)) 64 = _ at hh
+  rw [VG.Proof.Ed25519.Arm.VerifyMessage.final_addr hL] at hh
+  exact hh
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashPipeline`. -/
+section
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.HashUpdates`. -/
+section
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem update_input (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    (source count : Nat) (hj : source < 5) (hc16 : count < 65536) (hi : VG.Proof.Ed25519.Arm.VerifyMessage.Input L (L.value source) 32)
+    {prev : List Byte} (hcount : count = prev.length)
+    (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (State.addr L.scr) prev) :
+    WP isa (update (prefixArgs source count)) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr)
+        (prev ++ Spec.Ed25519.bytesAt s.mem (State.addr (L.value source)) 32) := by
+  have inp : VG.Proof.Ed25519.Arm.VerifyMessage.Input L (VG.Proof.Ed25519.Arm.VerifyMessage.value L (.caller source 0)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L (.const 32)) := by
+    change VG.Proof.Ed25519.Arm.VerifyMessage.Input L (L.value source + 0#32) 32#32
+    rw [BitVec.add_zero]
+    exact hi
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.update_step hc hL ha count (.caller source 0) (.const 32) hc16
+    ⟨hj, by decide⟩ (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
+  change Spec.Sha512.Repr _ t.mem _ (prev ++ Spec.Ed25519.bytesAt s.mem (State.addr (L.value source + 0#32)) 32) at hh
+  rw [BitVec.add_zero] at hh
+  exact hh
+
+theorem update_message (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀)
+    (count : Nat) (hc16 : count < 65536) {prev : List Byte} (hcount : count = prev.length)
+    (hr : Spec.Sha512.Repr Spec.Sha512.H0_512 s.mem (State.addr L.scr) prev) :
+    WP isa (update (messageArgs count)) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Frame (VG.Proof.Ed25519.Arm.VerifyMessage.hashWrites L) s.mem t.mem ∧ Spec.Sha512.Repr Spec.Sha512.H0_512 t.mem (State.addr L.scr)
+        (prev ++ Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) := by
+  have inp : VG.Proof.Ed25519.Arm.VerifyMessage.Input L (VG.Proof.Ed25519.Arm.VerifyMessage.value L (.caller 1 0)) (VG.Proof.Ed25519.Arm.VerifyMessage.value L (.caller 2 0)) := by
+    simpa only [VG.Proof.Ed25519.Arm.VerifyMessage.value, Lay.value, BitVec.add_zero] using VG.Proof.Ed25519.Arm.VerifyMessage.message_input hL
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.update_step hc hL ha count (.caller 1 0) (.caller 2 0) hc16
+    (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) inp hcount hr) fun t ⟨ht, hf, hh⟩ => ⟨ht, hf, ?_⟩
+  simp only [VG.Proof.Ed25519.Arm.VerifyMessage.value, Lay.value, BitVec.add_zero] at hh
+  rw [hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (by have := L.len.isLt; change L.len.toNat ≤ 2^64; omega)] at hh
+  exact hh
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+def hashInput (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (m : Mem) : List Byte :=
+  Spec.Ed25519.bytesAt m (State.addr L.sig) 32 ++
+    Spec.Ed25519.bytesAt m (State.addr L.pk) 32 ++
+    Spec.Ed25519.bytesAt m (State.addr L.msg) L.len.toNat
+
+theorem sig_prefix_same (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) :
+    Spec.Ed25519.bytesAt s.mem (State.addr L.sig) 32 = Spec.Ed25519.bytesAt m₀ (State.addr L.sig) 32 := by
+  unfold Spec.Ed25519.bytesAt
+  refine List.map_congr_left fun i hi => ?_
+  exact hc.frame.bytes (R := L.SIG) (by
+    intro r hr
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact hL.sc _ (by simp [Lay.inputs])
+    · exact (hL.ks _ (by simp [Lay.inputs])).symm)
+    (by change 64 ≤ 2 ^ 64; decide) (by change i < 64; have := List.mem_range.mp hi; omega)
+
+theorem hash_ok (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) :
+    WP isa VG.Impl.Ed25519.Arm.VerifyMessage.hash s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E+184) 64 = Spec.Sha512.sha512 (VG.Proof.Ed25519.Arm.VerifyMessage.hashInput L m₀) := by
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.init_step hc hL ha) fun t ⟨ht,_,hinit⟩ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.update_input ht hL ha 3 0 (by decide) (by decide)
+    (VG.Proof.Ed25519.Arm.VerifyMessage.signature_input hL) rfl hinit) fun u ⟨hu,_,hsig⟩ => ?_)
+  change Spec.Sha512.Repr _ u.mem _ ([] ++ Spec.Ed25519.bytesAt t.mem (State.addr L.sig) 32) at hsig
+  rw [List.nil_append,VG.Proof.Ed25519.Arm.VerifyMessage.sig_prefix_same ht hL] at hsig
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.update_input hu hL ha 0 32 (by decide) (by decide)
+    (VG.Proof.Ed25519.Arm.VerifyMessage.key_input hL) (VG.Proof.Ed25519.Arm.VerifyMessage.bytes_length _ _ _).symm hsig) fun w ⟨hw,_,hpk⟩ => ?_)
+  change Spec.Sha512.Repr _ w.mem _ (_ ++ Spec.Ed25519.bytesAt u.mem (State.addr L.pk) 32) at hpk
+  rw [hu.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32≤2^64; decide)] at hpk
+  have hpkl : (Spec.Ed25519.bytesAt m₀ (State.addr L.sig) 32 ++ Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32).length = 64 := by
+    rw [List.length_append,VG.Proof.Ed25519.Arm.VerifyMessage.bytes_length,VG.Proof.Ed25519.Arm.VerifyMessage.bytes_length]
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.update_message hw hL ha 64 (by decide) hpkl.symm hpk) fun z ⟨hz,_,hmsg⟩ => ?_)
+  have hlen : (VG.Proof.Ed25519.Arm.VerifyMessage.hashInput L m₀).length = 64+L.len.toNat := by
+    simp only [VG.Proof.Ed25519.Arm.VerifyMessage.hashInput,List.length_append,VG.Proof.Ed25519.Arm.VerifyMessage.bytes_length]
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.finalize_step hz hL ha 64 (by decide) true (msg := VG.Proof.Ed25519.Arm.VerifyMessage.hashInput L m₀)
+    (by rw [hlen]; exact hL.message_bound) (by simp only [ite_true]; rw [hlen]; omega) hmsg)
+    fun t ⟨ht,_,hh⟩ => ⟨ht,hh⟩
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.Challenge`. -/
+section
+/-! Merged from `Proof.Ed25519.Arm.VerifyMessage.Reduce`. -/
+section
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm
+open VG.Impl.Ed25519.Arm (scalarReduce)
+
+def reduceRd (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) : List Region := [VG.Proof.Ed25519.Arm.VerifyMessage.digest L]
+def reduceWr (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (d : Nat) : List Region := [VG.Proof.Ed25519.Arm.VerifyMessage.field L d, L.SCR]
+def ReduceArgs (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (d : Nat) (s : State) : Prop :=
+  s.gpr .r0 = L.E + BitVec.ofNat 32 d ∧ s.gpr .r1 = L.E + 184 ∧ s.gpr .r2 = L.scr
+
+theorem reduce_noFrames : scalarReduce.noFrames = true := by lit_decide
+
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem reduce_pre (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.ReduceArgs L d s) :
+    scalarReduceLocal.pre (s.callEntry.withRegions (VG.Proof.Ed25519.Arm.VerifyMessage.reduceRd L) (VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr L d)) := by
+  have ad := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := d) (by omega)
+  have a184 : State.addr (L.E + 184) = State.addr L.E + 184 := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := 184) (by decide)
+  simp only [scalarReduceLocal, State.withRegions_rd, State.withRegions_wr,
+    State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, ad, a184]
+  have sep : (VG.Proof.Ed25519.Arm.VerifyMessage.field L d).Disjoint (VG.Proof.Ed25519.Arm.VerifyMessage.digest L) := Offset.disjoint _ (by omega) (by omega) (by decide)
+  exact ⟨rfl, rfl, sep,
+    VG.Proof.Ed25519.Arm.VerifyMessage.field_scr hL (by omega), hL.kc.sub_left (VG.Proof.Ed25519.Arm.VerifyMessage.digestWithin L).sub,
+    VG.Proof.Ed25519.Arm.VerifyMessage.frame_fit hL (by omega), VG.Proof.Ed25519.Arm.VerifyMessage.frame_fit hL (by decide), hL.nc⟩
+
+theorem reduce_call (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 184)
+    (ha : VG.Proof.Ed25519.Arm.VerifyMessage.ReduceArgs L d s) :
+    WP isa (.call "vg_ed25519_scalar_reduce" scalarReduce) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Frame (VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr L d) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E + BitVec.ofNat 64 d) 32 =
+        Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (State.addr L.E + 184) 64) := by
+  have cov : Covers (VG.Proof.Ed25519.Arm.VerifyMessage.reduceRd L ++ VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr L d) (L.inputs ++ L.FR :: L.outputs) := by
+    apply VG.Proof.Ed25519.Arm.VerifyMessage.covers
+    simp only [VG.Proof.Ed25519.Arm.VerifyMessage.reduceRd, VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.digestWithin L)
+    · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.fieldWithin L (by omega))
+    · exact .inr (VG.Proof.Ed25519.Arm.VerifyMessage.scratch_covered L)
+  have ws : ∀ r ∈ VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr L d, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
+    apply VG.Proof.Ed25519.Arm.VerifyMessage.writes
+    simp only [VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact .inl (VG.Proof.Ed25519.Arm.VerifyMessage.fieldWithin L (by omega))
+    · exact .inr (VG.Proof.Ed25519.Arm.VerifyMessage.scratchWithin L)
+  refine Whole.call_ok hc scalarReduce_ok VG.Proof.Ed25519.Arm.VerifyMessage.reduce_noFrames (VG.Proof.Ed25519.Arm.VerifyMessage.reduce_pre hL hd ha) cov ws
+    fun t ht hf hp => ⟨ht, hf, ?_⟩
+  change Spec.Ed25519.bytesAt t.mem (State.addr (s.callEntry.gpr .r0)) 32 =
+    Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (State.addr (s.callEntry.gpr .r1)) 64) at hp
+  rw [State.callEntry_gpr _ (by decide : Reg.r0 ∉ linkRegs),
+    State.callEntry_gpr _ (by decide : Reg.r1 ∉ linkRegs), ha.1, ha.2.1] at hp
+  have ad := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := d) (by omega)
+  have a184 : State.addr (L.E + 184) = State.addr L.E + 184 := VG.Proof.Ed25519.Arm.VerifyMessage.frame_addr hL (d := 184) (by decide)
+  rw [ad, a184] at hp
+  exact hp
+
+theorem reduce_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) :
+    WP isa (VG.Impl.Ed25519.Arm.Whole.callWith VG.Impl.Ed25519.Arm.VerifyMessage.reduceArgs "vg_ed25519_scalar_reduce" scalarReduce) s
+      fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧ Frame (VG.Proof.Ed25519.Arm.VerifyMessage.reduceWr L 120) s.mem t.mem ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E+120) 32 =
+        Spec.Ed25519.scalarReduce (Spec.Ed25519.bytesAt s.mem (State.addr L.E+184) 64) := by
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.args_regs_ok hc hL ha
+    (args := [(.r0,.frame 120),(.r1,.frame 184),(.r2,.caller 4 0)])
+    (by simp) (by simp [VG.Proof.Ed25519.Arm.VerifyMessage.valid]) (by simp [preserved])) fun u ⟨hu,hm,hs⟩ => ?_)
+  have a0 := hs (.r0,.frame 120) (by simp)
+  have a1 := hs (.r1,.frame 184) (by simp)
+  have a2 := hs (.r2,.caller 4 0) (by simp)
+  change u.gpr .r2 = L.scr+0#32 at a2
+  rw [BitVec.add_zero] at a2
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.reduce_call hu hL (d := 120) (by decide) ⟨a0,a1,a2⟩) fun t ⟨ht,hf,hp⟩ => ⟨ht,?_,?_⟩
+  · rw [hm] at hf; exact hf
+  · rw [hm] at hp; exact hp
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem encodeLE_eq (n x : Nat) : Spec.Ed25519.encodeLE n x = Proof.X25519.leBytes n x := by
+  unfold Spec.Ed25519.encodeLE Proof.X25519.leBytes
+  apply congrArg (List.map · (List.range n))
+  funext i
+  rw [Nat.shiftRight_eq_div_pow,show 256^i=2^(8*i) by rw [Nat.pow_mul]]
+
+theorem reduced_challenge (digest : List Byte) :
+    Spec.Ed25519.encodeLE 64 (Spec.Ed25519.decodeLE digest % Spec.Ed25519.L) =
+      Spec.Ed25519.scalarReduce digest ++ Spec.Ed25519.encodeLE 32 0 := by
+  simp only [Spec.Ed25519.scalarReduce, VG.Proof.Ed25519.Arm.VerifyMessage.encodeLE_eq]
+  rw [show (64 : Nat) = 32 + 32 from rfl, Proof.X25519.leBytes_add]
+  have hL : Spec.Ed25519.L ≤ 256 ^ 32 := by decide
+  have hpos : 0 < Spec.Ed25519.L := by decide
+  rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ hpos) hL)]
+
+theorem extend_step (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok) {digest : List Byte}
+    (hd : Spec.Ed25519.bytesAt s.mem (State.addr L.E + 120) 32 = Spec.Ed25519.scalarReduce digest) :
+    WP isa (.block extendChallenge) s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 64 =
+        Spec.Ed25519.encodeLE 64 (Spec.Ed25519.decodeLE digest % Spec.Ed25519.L) := by
+  refine WP.mono (Whole.Ctx.zeroWords hc (by have := hL.top; omega) (start := 38) (count := 8) (by decide)) fun t ⟨ht, hf, hz⟩ => ⟨ht, ?_⟩
+  have low : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 32 =
+      Spec.Ed25519.bytesAt s.mem (State.addr L.E + 120) 32 := by
+    unfold Spec.Ed25519.bytesAt
+    refine List.map_congr_left fun i hi => ?_
+    exact hf.bytes (R := ⟨State.addr L.E + 120, 32⟩) (by
+      rintro r hr; rw [List.mem_singleton.mp hr]
+      exact Offset.disjoint _ (by decide) (by decide) (by decide)) (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
+  have high : Spec.Ed25519.bytesAt t.mem (State.addr L.E + 152) 32 = Spec.Ed25519.encodeLE 32 0 := by
+    rw [VG.Proof.Ed25519.Arm.VerifyMessage.encodeLE_eq]
+    have word (j : Nat) (hj : j < 8) : t.mem.readW (State.addr L.E + 152 + BitVec.ofNat 64 (4*j)) 32 = 0 := by
+      have z := hz j hj
+      have e : State.addr L.E + BitVec.ofNat 64 (4*(38+j)) = State.addr L.E + 152 + BitVec.ofNat 64 (4*j) := by
+        rw [show 4*(38+j)=152+4*j by omega, BitVec.ofNat_add, BitVec.add_assoc]
+        rfl
+      rw [e] at z
+      exact z
+    apply Proof.X25519.bytesAt_leBytes_words32
+    intro j hj
+    simpa using congrArg BitVec.toNat (word j hj)
+  change Spec.X25519.bytesAt t.mem (State.addr L.E + 120) (32 + 32) = _
+  rw [Proof.X25519.bytesAt_add]
+  change Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120) 32 ++
+    Spec.Ed25519.bytesAt t.mem (State.addr L.E + 120 + 32) 32 = _
+  rw [show State.addr L.E + 120 + 32 = State.addr L.E + 152 by rw [BitVec.add_assoc]; rfl,
+    low, hd, high, VG.Proof.Ed25519.Arm.VerifyMessage.reduced_challenge]
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+end
+
+namespace VG.Proof.Ed25519.Arm.VerifyMessage
+open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
+variable {L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay} {g : Reg → BitVec 32} {m₀ : Mem} {s : State}
+
+theorem hashInput_eq (L : VG.Proof.Ed25519.Arm.VerifyMessage.Lay) (m : Mem) : VG.Proof.Ed25519.Arm.VerifyMessage.hashInput L m =
+    (Spec.Ed25519.bytesAt m (State.addr L.sig) 64).take 32 ++
+      Spec.Ed25519.bytesAt m (State.addr L.pk) 32 ++
+      Spec.Ed25519.bytesAt m (State.addr L.msg) L.len.toNat := by
+  have e : (Spec.Ed25519.bytesAt m (State.addr L.sig) 64).take 32 =
+      Spec.Ed25519.bytesAt m (State.addr L.sig) 32 := by
+    unfold Spec.Ed25519.bytesAt
+    rw [← List.map_take, List.take_range]
+    rfl
+  rw [e]
+  rfl
+
+theorem body_ok (hc : VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ s) (hL : L.Ok)
+    (ha : VG.Proof.Ed25519.Arm.VerifyMessage.Arguments L m₀) :
+    WP isa body s fun t => VG.Proof.Ed25519.Arm.VerifyMessage.Ctx L g m₀ t ∧
+      t.gpr .r0 = VG.Proof.Ed25519.Arm.VerifyMessage.signWord (Spec.Ed25519.verify (Spec.Ed25519.bytesAt m₀ (State.addr L.pk) 32)
+        (Spec.Ed25519.bytesAt m₀ (State.addr L.msg) L.len.toNat) (Spec.Ed25519.bytesAt m₀ (State.addr L.sig) 64)) := by
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.hash_ok hc hL ha) fun t ⟨ht,hh⟩ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.reduce_step ht hL ha) fun u ⟨hu,_,hr⟩ => ?_)
+  rw [hh] at hr
+  refine WP.seq (WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.extend_step hu hL hr) fun w ⟨hw,he⟩ => ?_)
+  rw [VG.Proof.Ed25519.Arm.VerifyMessage.hashInput_eq] at he
+  refine WP.mono (VG.Proof.Ed25519.Arm.VerifyMessage.equation_step hw hL ha) fun z ⟨hz,eq⟩ => ⟨hz,?_⟩
+  rw [hw.input_bytes hL (r := L.PK) (by simp [Lay.inputs]) (by change 32≤2^64; decide),
+    hw.input_bytes hL (r := L.SIG) (by simp [Lay.inputs]) (by change 64≤2^64; decide),he] at eq
+  exact eq
+
+theorem body_noFrames : body.noFrames = true := by
+  have hu := Whole.update_noFrames
+  have hf := Whole.finalize_noFrames
+  simp only [body,Impl.Ed25519.Arm.VerifyMessage.hash,init,update,finalize,Impl.Ed25519.Arm.Whole.callWith,
+    Code.noFrames,Impl.Sha512.Arm.Stream.init,hu,hf,Bool.and_self]
+  rw [VG.Proof.Ed25519.Arm.VerifyMessage.reduce_noFrames,VG.Proof.Ed25519.Arm.VerifyMessage.equation_noFrames]
+  rfl
+
+end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.Arm.VerifyMessage.Verified`. -/
+section
 
 /-! Merged from `Proof.Ed25519.Arm.VerifyMessage.CTReady`. -/
 section
@@ -579,7 +1504,7 @@ namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
 theorem verifyMessage_ok {s : State} (h : verifyMessageLocal.pre s) :
-    WP isa code s fun u => abiPreserved s u ∧ verifyMessageLocal.post s u := by
+    WP isa VG.Impl.Ed25519.Arm.VerifyMessage.code s fun u => abiPreserved s u ∧ verifyMessageLocal.post s u := by
   have hw := Whole.wrap_ok body_noFrames (by decide : 5 ≤ 6) (entry_below h) (entry_top h) (entry_read h) (entry_writes h)
     (P := fun m _ r => r = signWord (Spec.Ed25519.verify
       (Spec.Ed25519.bytesAt m (State.addr (s.gpr .r0)) 32)
@@ -636,7 +1561,7 @@ theorem saved_inputs_eq {s t p q : State} (hs : verifyMessageLocal.pre s) (ht : 
   exact ⟨pk,msg,sig⟩
 
 theorem verifyMessage_ct :
-    ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub code := by
+    ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub VG.Impl.Ed25519.Arm.VerifyMessage.code := by
   refine Whole.wrap_ct (by decide : 5 ≤ 6) (fun _ _ hp => hp.1)
     (fun _ hs => entry_below hs) (fun _ hs => entry_top hs) (fun _ hs => entry_read hs) ?_ ?_
   · intro s hs p hp
@@ -724,9 +1649,11 @@ namespace VG.Proof.Ed25519.Arm.VerifyMessage
 open VG VG.Arm VG.Impl.Ed25519.Arm.VerifyMessage
 
 theorem verifyMessage_verified :
-    Verified Arm.target code (Spec.Ed25519.verifyContract Arm.abi 280) :=
+    Verified Arm.target VG.Impl.Ed25519.Arm.VerifyMessage.code (Spec.Ed25519.verifyContract Arm.abi 280) :=
   Verified.of_implies
     (Verified.of_correct (fun _ h => verifyMessage_ok h) verifyMessage_ct
       (.refl verifyMessage_implies.sat_left)) verifyMessage_implies
 
 end VG.Proof.Ed25519.Arm.VerifyMessage
+
+end

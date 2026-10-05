@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Sha512.X86_64.Compress
-import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha512.X86_64.Wide
+import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
 /-!
 # Streaming SHA-512 on x86-64: `init`
@@ -19,7 +19,7 @@ open VG.Spec.Sha512 (HashValue)
 
 /-! ## `init` -/
 
-theorem init_eq (iv : HashValue) : init iv = .block [
+theorem init_eq (iv : VG.Spec.Sha512.HashValue) : init iv = .block [
     .movImm64 .rax iv[0], .store (at_ .rdi (8 * 0)) .rax,
     .movImm64 .rax iv[1], .store (at_ .rdi (8 * 1)) .rax,
     .movImm64 .rax iv[2], .store (at_ .rdi (8 * 2)) .rax,
@@ -29,7 +29,7 @@ theorem init_eq (iv : HashValue) : init iv = .block [
     .movImm64 .rax iv[6], .store (at_ .rdi (8 * 6)) .rax,
     .movImm64 .rax iv[7], .store (at_ .rdi (8 * 7)) .rax] := rfl
 
-theorem init_post {s₀ : State} (iv : HashValue)
+theorem init_post {s₀ : State} (iv : VG.Spec.Sha512.HashValue)
     (hret : Region.Disjoint ⟨s₀.gpr .rsp, 8⟩ ⟨s₀.gpr .rdi, 192⟩) (g : Reg → BitVec 64)
     (hg : ∀ r, r ≠ .rax → g r = s₀.gpr r) :
     gprPreserved s₀ { s₀ with gpr := g, mem := writeState s₀.mem (s₀.gpr .rdi) iv } ∧
@@ -49,7 +49,7 @@ theorem init_post {s₀ : State} (iv : HashValue)
   · exact hf.readW (Region.contains_self _ _) (by simpa using hret) (by decide)
 
 set_option simprocs false in
-theorem init_correct {s₀ : State} (iv : HashValue) (hp : (Proof.Sha512.initX86_64 iv).pre s₀) :
+theorem init_correct {s₀ : State} (iv : VG.Spec.Sha512.HashValue) (hp : (Proof.Sha512.initX86_64 iv).pre s₀) :
     WP isa (init iv) s₀ fun s' => gprPreserved s₀ s' ∧ (Proof.Sha512.initX86_64 iv).post s₀ s' := by
   obtain ⟨hrd, hwr, hret⟩ := hp
   have o : ∀ k, k < 8 → InRegions s₀.wr (s₀.gpr .rdi + BitVec.ofInt 64 ((8 * k : Nat) : Int)) 8 :=
@@ -82,11 +82,11 @@ abbrev initHint : VG.Taint.Hint taint.T := VG.Taint.hintOf taint (Taint.ofRegs [
 
 /-- The taint check never looks at an immediate, so the kernel evaluates it on
 `init iv` for any `iv`. -/
-theorem init_check (iv : HashValue) :
+theorem init_check (iv : VG.Spec.Sha512.HashValue) :
     (taint.check (Taint.ofRegs [.rdi]) (init iv) initHint).isSome = true := by
   kernel_rfl
 
-theorem init_verified (iv : HashValue) :
+theorem init_verified (iv : VG.Spec.Sha512.HashValue) :
     Verified X86_64.target (init iv) (Proof.Sha512.initX86_64 iv) := by
   refine ⟨fun s hs => ?_, ?_, ⟨initSat, rfl, rfl, ?_⟩⟩
   · obtain ⟨t, s', he, h⟩ := init_correct iv hs

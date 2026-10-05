@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
+import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
 
 /-!

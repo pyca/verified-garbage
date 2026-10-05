@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
 import VerifiedGarbage.Proof.Md5.AArch64.Compress
 import VerifiedGarbage.Impl.Md5.AArch64.Stream
 import VerifiedGarbage.Proof.Md5.Stream

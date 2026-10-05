@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Md5.Arm.Compress
 import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Impl.Md5.Arm.Stream

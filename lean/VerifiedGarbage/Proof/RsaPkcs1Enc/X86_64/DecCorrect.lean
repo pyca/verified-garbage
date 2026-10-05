@@ -113,7 +113,7 @@ theorem rest_mx (v : Compress) : (rest (HH v)).allInstrs (fun i => !loadsMxcsr i
   have hU : (HH v).updC.allInstrs (fun i => !loadsMxcsr i) = true := core_updC K.cMx C.updMx
   have hFi : (HH v).finC.allInstrs (fun i => !loadsMxcsr i) = true := core_finC K.cMx C.finMx
   have hF : (HH v).hmacFin.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacFin K.cMx C.hfinMx
-  simp only [rest, dBuild, zeroLoop, copyLoop, hashD, kdkMac, clLoop, amLoop, prfBody, maskPart, maskLoop,
+  simp only [rest, dBuild, zeroLoop, copyLoop, hashD, kdkMac, clLoop, VG.Impl.RsaPkcs1Enc.X86_64.Decrypt.amLoop, prfBody, maskPart, maskLoop,
     alPart, alLoop, scanPart, scanLoop, selPart, selLoop, Code.allInstrs, hI, hU, hFi, hF, K.iMx, Bool.and_true,
     Bool.true_and]
   decide +kernel

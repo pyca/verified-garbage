@@ -1,8 +1,6 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.Table
-import VerifiedGarbage.Proof.X448.AArch64.Base.Loop
-import VerifiedGarbage.Proof.X448.AArch64.Base.Setup
+import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
-
 /-!
 # Ed448 verification on AArch64: `[S]B`
 
@@ -31,7 +29,7 @@ theorem sBase_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
     (hbits : Bits 57 base S s.mem) :
     WP isa sBase s fun t =>
       Scr t base ∧ BEnv t.mem base ∧ (∀ w < 8, limbs t.mem base (slot (19 : Index).val) w = 0) ∧
-      Rep (pt (EV t.mem base) 0 1 2) ((S : ℤ) • baseAff) ∧ Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
+      Rep (VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 0 1 2) ((S : ℤ) • baseAff) ∧ Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
       t.gpr .x30 = s.gpr .x30 ∧ t.gpr .x20 = s.gpr .x20 ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   unfold sBase
   refine WP.seq (WP.mono (consts_ok hs Impl.X448.baseG57) fun t ⟨tv, tOut, kt, tc⟩ => ?_)
@@ -40,11 +38,11 @@ theorem sBase_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem ba
       EV t.mem base i = v := fun i v h => F_of_words h
   have hG : Rep (VG.Proof.X448.basePt Impl.X448.baseG57) (((VG.Proof.X448.combG 57 : ℤ) + 0) • baseAff) := by
     rw [VG.Proof.X448.combG_57, add_zero, natCast_zsmul]; exact VG.Proof.X448.baseG57_ok
-  have pA : pt (EV t.mem base) 0 1 2 = VG.Proof.X448.basePt Impl.X448.baseG57 := by
-    simp only [pt, VG.Proof.X448.basePt]
+  have pA : VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 0 1 2 = VG.Proof.X448.basePt Impl.X448.baseG57 := by
+    simp only [VG.Proof.X448.AArch64.Base.pt, VG.Proof.X448.basePt]
     rw [ev 0 _ fun w hw => (tv w hw).1, ev 1 _ fun w hw => (tv w hw).2.1, ev 2 _ fun w hw => (tv w hw).2.2.1]
-  have pB : pt (EV t.mem base) 3 4 5 = VG.Proof.X448.basePt Impl.X448.baseG57 := by
-    simp only [pt, VG.Proof.X448.basePt]
+  have pB : VG.Proof.X448.AArch64.Base.pt (EV t.mem base) 3 4 5 = VG.Proof.X448.basePt Impl.X448.baseG57 := by
+    simp only [VG.Proof.X448.AArch64.Base.pt, VG.Proof.X448.basePt]
     rw [ev 3 _ fun w hw => (tv w hw).2.2.2.1, ev 4 _ fun w hw => (tv w hw).2.2.2.2.1,
       ev 5 _ fun w hw => (tv w hw).2.2.2.2.2]
   have keep : ∀ i : Index, 6 ≤ i.val → ∀ w < 8, limbs t.mem base (slot i.val) w = limbs s.mem base (slot i.val) w :=

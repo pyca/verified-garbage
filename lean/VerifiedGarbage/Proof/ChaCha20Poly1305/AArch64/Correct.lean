@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stages
-import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Parts
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Stitched.Rest
 import VerifiedGarbage.Proof.Framework.ContractPost
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract

@@ -1,7 +1,7 @@
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.Tactic.ComputeDegree
-import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Be64
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.SplitIfs

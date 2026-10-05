@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyChecks
-import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
-
+import VerifiedGarbage.Proof.Curve448.AArch64.Square
 /-!
 # Ed448 verification on AArch64: comparing slots of the register-resident arithmetic
 

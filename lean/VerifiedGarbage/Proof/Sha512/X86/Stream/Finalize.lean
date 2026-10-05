@@ -1,6 +1,55 @@
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Proof.MdStream.X86.Words
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.X86.Compress
+import VerifiedGarbage.Impl.Sha512.X86.Stream
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Sha512.Word64
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.X86.Stream.Update`. -/
+section
+
+/-!
+# Streaming SHA-512 on x86 (32-bit): `update`
+
+`update` and `finalize` are the generic streaming code
+(`Impl/MdStream/X86.lean`), so they are verified by the generic proofs
+(`Proof/MdStream/X86/`) for the SHA-512 family's instance
+(`Proof/Sha512/Md.lean`) with 272 bytes of scratch space, given that its
+compression function is verified (`callee`) and that the taint analysis
+accepts its code (which it checks together with the compression function's).
+`Finalize.lean` adds what the family's length field and digest do.
+-/
+
+namespace VG.Proof.Sha512.X86.Stream
+
+open VG VG.X86 VG.Proof.MdStream VG.Proof.MdStream.X86
+
+abbrev params := Impl.Sha512.X86.Stream.params
+
+theorem dims : Dims VG.Proof.Sha512.X86.Stream.params 272 := ⟨.inr rfl, by decide, by decide, by decide, by decide⟩
+
+theorem callee : CalleeOk (P := VG.Proof.Sha512.X86.Stream.params) md Impl.Sha512.X86.compress :=
+  ⟨Compress.compress_verified.1, NoSp.of_all (by lit_decide), by lit_decide⟩
+
+namespace Update
+
+theorem update_verified : Verified X86.target Impl.Sha512.X86.Stream.update Proof.Sha512.updateX86 :=
+  MdStream.X86.Update.verified (name := "vg_sha512_compress") VG.Proof.Sha512.X86.Stream.dims VG.Proof.Sha512.X86.Stream.callee
+    (VG.Taint.constantTime (A := sseTaint) (MdStream.X86.Update.τ₀ VG.Proof.Sha512.X86.Stream.params 272)
+      (fun _ _ h₁ h₂ hp => MdStream.X86.Update.agree₀ VG.Proof.Sha512.X86.Stream.dims h₁ h₂ hp) (by taint_decide))
+
+/-- A state satisfying `update`'s precondition. -/
+abbrev sat : State := MdStream.X86.Update.sat VG.Proof.Sha512.X86.Stream.params 272
+
+end Update
+
+end VG.Proof.Sha512.X86.Stream
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize`. -/
+section
 
 /-!
 # Streaming SHA-512 on x86 (32-bit): `finalize`
@@ -34,7 +83,7 @@ theorem lenOf_eq (hi lo : BitVec 32) :
     md.lenOf (hi ++ lo) = bytes32 true 0 ++ bytes32 true (hi >>> 29) ++
       bytes64 true (BitVec.ofNat 64 (8 * (hi ++ lo).toNat)) := by
   have e := Proof.Sha512.lenOf_split (hi ++ lo)
-  rw [shr61] at e
+  rw [VG.Proof.Sha512.X86.Stream.shr61] at e
   rw [show md.lenOf (hi ++ lo) = Spec.Sha512.wordBytes ((0 : BitVec 32) ++ hi >>> 29) ++
     Spec.Sha512.wordBytes (BitVec.ofNat 64 (8 * (hi ++ lo).toNat)) from e,
     show Spec.Sha512.wordBytes = bytes64 true from rfl, bytes64_halves]
@@ -47,14 +96,14 @@ theorem len_ok (s : State) (hfit : (s.gpr .ebx).toNat + (params.N + params.B) �
       InRegions s.wr (addr (s.gpr .ebx) d) 4) :
     WP isa (.block params.len) s fun s' =>
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.mem = writeBytes s.mem ((s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (params.N + params.B - params.L))
+      s'.mem = VG.WriteBytes.writeBytes s.mem ((s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (params.N + params.B - params.L))
         (md.lenOf (s.mem.readW (addr (s.gpr .ebp) (params.so + 20)) 32 ++
           s.mem.readW (addr (s.gpr .ebp) (params.so + 16)) 32)) := by
   have hfit' : (s.gpr .ebx).toNat + 192 ≤ 2 ^ 32 := hfit
   have ho' : ∀ d, 176 ≤ d → d + 4 ≤ 192 → InRegions s.wr (addr (s.gpr .ebx) d) 4 := ho
   show WP isa (.block (Impl.MdStream.X86.loadCount 224 ++ ([.mov .edx (.imm 0), .store (at_ .ebx 176) .edx,
     .mov .edx (.reg .ecx), .shift .shr .edx 29, .bswap .edx, .store (at_ .ebx 180) .edx] ++
-    len64Of 184 true))) s fun s' => _ ∧ _ ∧ _ ∧ s'.mem = writeBytes s.mem ((s.gpr .ebx).setWidth 64 +
+    len64Of 184 true))) s fun s' => _ ∧ _ ∧ _ ∧ s'.mem = VG.WriteBytes.writeBytes s.mem ((s.gpr .ebx).setWidth 64 +
       BitVec.ofNat 64 176) (md.lenOf (s.mem.readW (addr (s.gpr .ebp) 244) 32 ++
         s.mem.readW (addr (s.gpr .ebp) 240) 32))
   refine loadCount_ok hlo hhi fun s₂ g₂ m₂ rd₂ wr₂ ha hc => ?_
@@ -89,8 +138,8 @@ theorem len_ok (s : State) (hfit : (s.gpr .ebx).toNat + (params.N + params.B) �
       BitVec.ofNat 64 (bytes32 true 0 ++ bytes32 true (hi >>> 29)).length := by
     rw [g₈ _ (by decide), hb₂, List.length_append, bytes32_length, bytes32_length, add_ofNat]
   rw [m', e₂, u₈.mem, v₇, u₇.mem, u₆.mem, u₅.mem, u₄.mem, v₃, u₃.mem, m₂, w, w, e₀, e₁,
-    writeBytes_append _ _ _ _ (by simp [bytes32_length]),
-    writeBytes_append _ _ _ _ (by simp [bytes32_length, bytes64_length]), lenOf_eq]
+    VG.WriteBytes.writeBytes_append _ _ _ _ (by simp [bytes32_length]),
+    VG.WriteBytes.writeBytes_append _ _ _ _ (by simp [bytes32_length, bytes64_length]), VG.Proof.Sha512.X86.Stream.lenOf_eq]
 
 theorem digest_eq (mem : Mem) (p : Addr) :
     md.digest (md.stateAt mem p) = (List.range 8).flatMap fun k =>
@@ -108,23 +157,25 @@ theorem digest_eq (mem : Mem) (p : Addr) :
   rw [h]
   exact congrArg (fun f => (List.range 8).flatMap f) (funext e)
 
-theorem shape : Shape (P := params) md where
-  len s hfit hlo hhi ho := len_ok s hfit hlo hhi ho
+theorem shape : Shape (P := VG.Proof.Sha512.X86.Stream.params) md where
+  len s hfit hlo hhi ho := VG.Proof.Sha512.X86.Stream.len_ok s hfit hlo hhi ho
   out _ hbx hax hin hout hd := by
     refine (out64_ok (n := 8) (by decide) hbx hax hin hout hd).mono fun s' ⟨g, rd, wr, m⟩ =>
       ⟨g, rd, wr, ?_⟩
-    rw [m, digest_eq]
+    rw [m, VG.Proof.Sha512.X86.Stream.digest_eq]
 
 namespace Finalize
 
 theorem finalize_verified : Verified X86.target Impl.Sha512.X86.Stream.finalize Proof.Sha512.finalizeX86 :=
-  MdStream.X86.Finalize.verified_ro (name := "vg_sha512_compress") dims shape callee
-    (VG.Taint.constantTime (A := sseTaint) (MdStream.X86.Finalize.τ₀ params 272)
-      (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀ dims h₁ h₂ hp) (by taint_decide))
+  MdStream.X86.Finalize.verified_ro (name := "vg_sha512_compress") VG.Proof.Sha512.X86.Stream.dims VG.Proof.Sha512.X86.Stream.shape VG.Proof.Sha512.X86.Stream.callee
+    (VG.Taint.constantTime (A := sseTaint) (MdStream.X86.Finalize.τ₀ VG.Proof.Sha512.X86.Stream.params 272)
+      (fun _ _ h₁ h₂ hp => MdStream.X86.Finalize.agree₀ VG.Proof.Sha512.X86.Stream.dims h₁ h₂ hp) (by taint_decide))
 
 /-- A state satisfying `finalize`'s precondition. -/
-abbrev sat : State := MdStream.X86.Finalize.satR params 272
+abbrev sat : State := MdStream.X86.Finalize.satR VG.Proof.Sha512.X86.Stream.params 272
 
 end Finalize
 
 end VG.Proof.Sha512.X86.Stream
+
+end

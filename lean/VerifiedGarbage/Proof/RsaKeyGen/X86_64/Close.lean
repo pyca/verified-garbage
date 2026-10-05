@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.LoadC
 import VerifiedGarbage.Spec.RsaKeyGen.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
-import VerifiedGarbage.Proof.Bignum.X86_64.R2
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!
@@ -182,7 +182,7 @@ theorem bound_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
   have hl : InRegions (s.rd ++ s.wr) (off B (8 * sW)) 8 := hg.scr.ld (by have := hdr_lt_slot w 8 (show sW < 32 by decide); omega)
   refine WP.seq (WP.mono (WP.keep [.r12, .rcx, .rdx] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .rcx = BitVec.ofNat 64 (w - 2) ∧ (t.gpr .rdx).toNat = 2 ^ 28 ∧ t.mem = s.mem) (by
-    xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.hw, sx2]
+    xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hg.hdr.hw, VG.Proof.Bignum.X86_64.sx2]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, show (2 : BitVec 64).toNat = 2 from rfl]
     omega) rfl)

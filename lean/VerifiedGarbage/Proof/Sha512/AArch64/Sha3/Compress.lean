@@ -1,9 +1,154 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
-import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec
+import VerifiedGarbage.Proof.Framework.AArch64.Simd64
+import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit
+import VerifiedGarbage.Impl.Sha512.AArch64.Sha3
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Sha512.AArch64.Compress
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Spec`. -/
+section
+
+/-! The two-round SHA512H/H2 pair and the SHA512SU0/SU1 schedule. -/
+
+namespace VG.Proof.Sha512.AArch64.Sha3
+
+open VG.AArch64
+open VG.Spec.Sha512 (HashValue Word Block K W ch maj bsig0 bsig1 ssig0 ssig1)
+
+def ab (v : VG.Spec.Sha512.HashValue) : BitVec 128 := ofVDwords v[0] v[1]
+def cd (v : VG.Spec.Sha512.HashValue) : BitVec 128 := ofVDwords v[2] v[3]
+def ef (v : VG.Spec.Sha512.HashValue) : BitVec 128 := ofVDwords v[4] v[5]
+def gh (v : VG.Spec.Sha512.HashValue) : BitVec 128 := ofVDwords v[6] v[7]
+def pair (M : VG.Spec.Sha512.Block) (i : Nat) : BitVec 128 := ofVDwords (VG.Spec.Sha512.W M (2 * i)) (VG.Spec.Sha512.W M (2 * i + 1))
+def t1 (v : VG.Spec.Sha512.HashValue) (k w : VG.Spec.Sha512.Word) : VG.Spec.Sha512.Word := v[7] + VG.Spec.Sha512.bsig1 v[4] + VG.Spec.Sha512.ch v[4] v[5] v[6] + k + w
+
+theorem t1_eq (v : VG.Spec.Sha512.HashValue) (k w : VG.Spec.Sha512.Word) :
+    VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k + w + v[7]) = VG.Proof.Sha512.AArch64.Sha3.t1 v k w := by
+  unfold VG.Proof.Sha512.AArch64.Sha3.t1
+  ac_rfl
+
+theorem h_eq (v : VG.Spec.Sha512.HashValue) (k0 w0 k1 w1 : VG.Spec.Sha512.Word) :
+    sha512H (ofVDwords (k1 + w1 + v[6]) (k0 + w0 + v[7]))
+      (ofVDwords v[5] v[6]) (ofVDwords v[3] v[4]) =
+    ofVDwords (VG.Proof.Sha512.AArch64.Sha3.t1 (roundKW v k0 w0) k1 w1) (VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0) := by
+  simp only [sha512H, vdword_ofVDwords_0, vdword_ofVDwords_1]
+  change ofVDwords
+    (VG.Spec.Sha512.ch (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7]) + v[3]) v[4] v[5] +
+      VG.Spec.Sha512.bsig1 (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7]) + v[3]) + (k1 + w1 + v[6]))
+    (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7])) = _
+  rw [VG.Proof.Sha512.AArch64.Sha3.t1_eq]
+  have he : VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0 + v[3] = (roundKW v k0 w0)[4] := by
+    rw [roundKW_4]; unfold VG.Proof.Sha512.AArch64.Sha3.t1; ac_rfl
+  rw [he]
+  change ofVDwords
+    (VG.Spec.Sha512.ch (roundKW v k0 w0)[4] (roundKW v k0 w0)[5] (roundKW v k0 w0)[6] +
+      VG.Spec.Sha512.bsig1 (roundKW v k0 w0)[4] + (k1 + w1 + (roundKW v k0 w0)[7])) _ = _
+  rw [VG.Proof.Sha512.AArch64.Sha3.t1_eq]
+
+/-- SHA512H with `c` and `d` added to its accumulator and zero in place of `d`
+in its third operand computes the next `e` and `f` themselves. -/
+theorem hF_eq (v : VG.Spec.Sha512.HashValue) (k0 w0 k1 w1 : VG.Spec.Sha512.Word) :
+    sha512H (ofVDwords (k1 + w1 + v[6] + v[2]) (k0 + w0 + v[7] + v[3]))
+      (ofVDwords v[5] v[6]) (ofVDwords 0 v[4]) =
+    VG.Proof.Sha512.AArch64.Sha3.ef (roundKW (roundKW v k0 w0) k1 w1) := by
+  simp only [sha512H, vdword_ofVDwords_0, vdword_ofVDwords_1]
+  rw [show ∀ x : VG.Spec.Sha512.Word, x + (0 : BitVec 64) = x from BitVec.add_zero]
+  change ofVDwords
+    (VG.Spec.Sha512.ch (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7] + v[3])) v[4] v[5] +
+      VG.Spec.Sha512.bsig1 (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7] + v[3])) + (k1 + w1 + v[6] + v[2]))
+    (VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7] + v[3])) = _
+  have he : VG.Spec.Sha512.ch v[4] v[5] v[6] + VG.Spec.Sha512.bsig1 v[4] + (k0 + w0 + v[7] + v[3]) = (roundKW v k0 w0)[4] := by
+    rw [roundKW_4]; ac_rfl
+  rw [he]
+  change ofVDwords
+    (VG.Spec.Sha512.ch (roundKW v k0 w0)[4] (roundKW v k0 w0)[5] (roundKW v k0 w0)[6] +
+      VG.Spec.Sha512.bsig1 (roundKW v k0 w0)[4] + (k1 + w1 + (roundKW v k0 w0)[7] + (roundKW v k0 w0)[3]))
+    (roundKW v k0 w0)[4] = _
+  have he' : VG.Spec.Sha512.ch (roundKW v k0 w0)[4] (roundKW v k0 w0)[5] (roundKW v k0 w0)[6] +
+      VG.Spec.Sha512.bsig1 (roundKW v k0 w0)[4] + (k1 + w1 + (roundKW v k0 w0)[7] + (roundKW v k0 w0)[3]) =
+      (roundKW (roundKW v k0 w0) k1 w1)[4] := by
+    rw [roundKW_4 (v := roundKW v k0 w0)]; ac_rfl
+  rw [he']
+  rfl
+
+theorem maj_rev (a b c : VG.Spec.Sha512.Word) : (c &&& b) ^^^ (c &&& a) ^^^ (b &&& a) = VG.Spec.Sha512.maj a b c := by
+  ext i
+  simp only [VG.Spec.Sha512.maj, BitVec.getElem_xor, BitVec.getElem_and]
+  cases a[i] <;> cases b[i] <;> cases c[i] <;> rfl
+
+theorem a_eq (v : VG.Spec.Sha512.HashValue) (k w : VG.Spec.Sha512.Word) :
+    VG.Spec.Sha512.maj v[0] v[1] v[2] + VG.Spec.Sha512.bsig0 v[0] + VG.Proof.Sha512.AArch64.Sha3.t1 v k w = (roundKW v k w)[0] := by
+  rw [roundKW_0]; unfold VG.Proof.Sha512.AArch64.Sha3.t1; ac_rfl
+
+theorem h2_eq (v : VG.Spec.Sha512.HashValue) (k0 w0 k1 w1 : VG.Spec.Sha512.Word) :
+    sha512H2 (ofVDwords (VG.Proof.Sha512.AArch64.Sha3.t1 (roundKW v k0 w0) k1 w1) (VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0)) (VG.Proof.Sha512.AArch64.Sha3.cd v) (VG.Proof.Sha512.AArch64.Sha3.ab v) =
+      VG.Proof.Sha512.AArch64.Sha3.ab (roundKW (roundKW v k0 w0) k1 w1) := by
+  simp only [sha512H2, VG.Proof.Sha512.AArch64.Sha3.ab, VG.Proof.Sha512.AArch64.Sha3.cd, vdword_ofVDwords_0, vdword_ofVDwords_1, VG.Proof.Sha512.AArch64.Sha3.maj_rev]
+  change ofVDwords
+    ((((VG.Spec.Sha512.maj v[0] v[1] v[2] + VG.Spec.Sha512.bsig0 v[0] + VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0) &&& v[0]) ^^^
+      ((VG.Spec.Sha512.maj v[0] v[1] v[2] + VG.Spec.Sha512.bsig0 v[0] + VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0) &&& v[1]) ^^^ (v[1] &&& v[0])) +
+      VG.Spec.Sha512.bsig0 (VG.Spec.Sha512.maj v[0] v[1] v[2] + VG.Spec.Sha512.bsig0 v[0] + VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0) + VG.Proof.Sha512.AArch64.Sha3.t1 (roundKW v k0 w0) k1 w1)
+    (VG.Spec.Sha512.maj v[0] v[1] v[2] + VG.Spec.Sha512.bsig0 v[0] + VG.Proof.Sha512.AArch64.Sha3.t1 v k0 w0) = _
+  rw [VG.Proof.Sha512.AArch64.Sha3.a_eq]
+  have hc : v[1] &&& v[0] = v[0] &&& v[1] := BitVec.and_comm _ _
+  rw [hc]
+  change ofVDwords
+    (VG.Spec.Sha512.maj (roundKW v k0 w0)[0] (roundKW v k0 w0)[1] (roundKW v k0 w0)[2] +
+      VG.Spec.Sha512.bsig0 (roundKW v k0 w0)[0] + VG.Proof.Sha512.AArch64.Sha3.t1 (roundKW v k0 w0) k1 w1) _ = _
+  rw [VG.Proof.Sha512.AArch64.Sha3.a_eq]
+  rfl
+
+theorem cd_eq (v : VG.Spec.Sha512.HashValue) (k0 w0 k1 w1 : VG.Spec.Sha512.Word) :
+    VG.Proof.Sha512.AArch64.Sha3.cd (roundKW (roundKW v k0 w0) k1 w1) = VG.Proof.Sha512.AArch64.Sha3.ab v := rfl
+theorem gh_eq (v : VG.Spec.Sha512.HashValue) (k0 w0 k1 w1 : VG.Spec.Sha512.Word) :
+    VG.Proof.Sha512.AArch64.Sha3.gh (roundKW (roundKW v k0 w0) k1 w1) = VG.Proof.Sha512.AArch64.Sha3.ef v := rfl
+
+theorem schedule_eq (M : VG.Spec.Sha512.Block) (i : Nat) :
+    sha512Su1 (sha512Su0 (VG.Proof.Sha512.AArch64.Sha3.pair M i) (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 1))) (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 7))
+      (ofVDwords (VG.Spec.Sha512.W M (2 * (i + 4) + 1)) (VG.Spec.Sha512.W M (2 * (i + 5)))) = VG.Proof.Sha512.AArch64.Sha3.pair M (i + 8) := by
+  simp only [sha512Su0, sha512Su1, VG.Proof.Sha512.AArch64.Sha3.pair, vdword_ofVDwords_0, vdword_ofVDwords_1]
+  have h0 := W_ge M (show 16 ≤ 2 * (i + 8) by omega)
+  have h1 := W_ge M (show 16 ≤ 2 * (i + 8) + 1 by omega)
+  rw [h0, h1]
+  simp only [show 2 * (i + 8) - 2 = 2 * (i + 7) by omega,
+    show 2 * (i + 8) - 7 = 2 * (i + 4) + 1 by omega,
+    show 2 * (i + 8) - 15 = 2 * i + 1 by omega,
+    show 2 * (i + 8) - 16 = 2 * i by omega,
+    show 2 * (i + 8) + 1 - 2 = 2 * (i + 7) + 1 by omega,
+    show 2 * (i + 8) + 1 - 7 = 2 * (i + 5) by omega,
+    show 2 * (i + 8) + 1 - 15 = 2 * (i + 1) by omega,
+    show 2 * (i + 8) + 1 - 16 = 2 * i + 1 by omega, VG.Spec.Sha512.ssig0, VG.Spec.Sha512.ssig1, add_ac]
+
+theorem add_ab (v H : VG.Spec.Sha512.HashValue) :
+    VArr.d2.map2 (fun _ x y => x + y) (VG.Proof.Sha512.AArch64.Sha3.ab v) (VG.Proof.Sha512.AArch64.Sha3.ab H) = VG.Proof.Sha512.AArch64.Sha3.ab (Vector.zipWith (· + ·) v H) := by
+  simp only [VArr.map2, VG.Proof.Sha512.AArch64.Sha3.ab, vdword_ofVDwords_0, vdword_ofVDwords_1, Vector.getElem_zipWith]
+theorem add_cd (v H : VG.Spec.Sha512.HashValue) :
+    VArr.d2.map2 (fun _ x y => x + y) (VG.Proof.Sha512.AArch64.Sha3.cd v) (VG.Proof.Sha512.AArch64.Sha3.cd H) = VG.Proof.Sha512.AArch64.Sha3.cd (Vector.zipWith (· + ·) v H) := by
+  simp only [VArr.map2, VG.Proof.Sha512.AArch64.Sha3.cd, vdword_ofVDwords_0, vdword_ofVDwords_1, Vector.getElem_zipWith]
+theorem add_ef (v H : VG.Spec.Sha512.HashValue) :
+    VArr.d2.map2 (fun _ x y => x + y) (VG.Proof.Sha512.AArch64.Sha3.ef v) (VG.Proof.Sha512.AArch64.Sha3.ef H) = VG.Proof.Sha512.AArch64.Sha3.ef (Vector.zipWith (· + ·) v H) := by
+  simp only [VArr.map2, VG.Proof.Sha512.AArch64.Sha3.ef, vdword_ofVDwords_0, vdword_ofVDwords_1, Vector.getElem_zipWith]
+theorem add_gh (v H : VG.Spec.Sha512.HashValue) :
+    VArr.d2.map2 (fun _ x y => x + y) (VG.Proof.Sha512.AArch64.Sha3.gh v) (VG.Proof.Sha512.AArch64.Sha3.gh H) = VG.Proof.Sha512.AArch64.Sha3.gh (Vector.zipWith (· + ·) v H) := by
+  simp only [VArr.map2, VG.Proof.Sha512.AArch64.Sha3.gh, vdword_ofVDwords_0, vdword_ofVDwords_1, Vector.getElem_zipWith]
+
+end VG.Proof.Sha512.AArch64.Sha3
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Lit`. -/
+section
+
+namespace VG.Impl.Sha512.AArch64.Sha3
+materialize_code VG.Impl.Sha512.AArch64.Sha3.compress
+end VG.Impl.Sha512.AArch64.Sha3
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress`. -/
+section
 
 /-! Correctness of SHA-512 compression with the AArch64 SHA512 instructions. -/
 
@@ -12,7 +157,7 @@ namespace VG.Proof.Sha512.AArch64.Sha3
 open VG VG.AArch64 VG.Impl.Sha512.AArch64.Sha3
 open VG.Spec.Sha512 (HashValue Word Block K W stateAt blockAt compressBlocks)
 
-def kPair (n : Nat) : BitVec 128 := ofVDwords (K (2 * n)) (K (2 * n + 1))
+def kPair (n : Nat) : BitVec 128 := ofVDwords (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.K (2 * n + 1))
 
 theorem msg_add8 (n : Nat) : msg (n + 8) = msg n := by
   simp only [msg, Nat.add_mod_right]
@@ -53,11 +198,11 @@ theorem msg_not (n : Nat) {r : VReg}
   exact key _ (Nat.mod_lt _ (by decide)) r hr
 
 /-- The state pairs `v` are in the registers of pair of rounds `n`. -/
-structure Vars (n : Nat) (s : State) (v : HashValue) : Prop where
-  v0 : s.v (reg n 0) = ab v
-  v1 : s.v (reg n 1) = cd v
-  v2 : s.v (reg n 2) = ef v
-  v3 : s.v (reg n 3) = gh v
+structure Vars (n : Nat) (s : State) (v : VG.Spec.Sha512.HashValue) : Prop where
+  v0 : s.v (reg n 0) = VG.Proof.Sha512.AArch64.Sha3.ab v
+  v1 : s.v (reg n 1) = VG.Proof.Sha512.AArch64.Sha3.cd v
+  v2 : s.v (reg n 2) = VG.Proof.Sha512.AArch64.Sha3.ef v
+  v3 : s.v (reg n 3) = VG.Proof.Sha512.AArch64.Sha3.gh v
 
 theorem reg_succ (n : Nat) :
     reg (n + 1) 0 = reg n 4 ∧ reg (n + 1) 1 = reg n 0 ∧ reg (n + 1) 2 = reg n 5 ∧
@@ -94,21 +239,21 @@ theorem reg_ne (n k : Nat) (hk : k < 6) {r : VReg}
 
 /-- A pair of rounds, symbolically executed once for any registers (which
 `reg_nodup` and `msg_ne_reg` say are different). -/
-theorem rounds2With_ok (n : Nat) (a b c d t f : VReg) (s : State) (v : HashValue) (M : Block)
+theorem rounds2With_ok (n : Nat) (a b c d t f : VReg) (s : State) (v : VG.Spec.Sha512.HashValue) (M : VG.Spec.Sha512.Block)
     (hs : [a, b, c, d, t, f, .v6, .v7, .v28, .v31].Nodup)
     (hx : msg n ∉ [a, b, c, d, t, f, .v6, .v7, .v28, .v31])
-    (ha : s.v a = ab v) (hb : s.v b = cd v) (hc : s.v c = ef v) (hd : s.v d = gh v)
-    (hq : s.v (msg n) = pair M n) (hz : s.v .v31 = ofVDwords 0 0) (hn : n < 40)
+    (ha : s.v a = VG.Proof.Sha512.AArch64.Sha3.ab v) (hb : s.v b = VG.Proof.Sha512.AArch64.Sha3.cd v) (hc : s.v c = VG.Proof.Sha512.AArch64.Sha3.ef v) (hd : s.v d = VG.Proof.Sha512.AArch64.Sha3.gh v)
+    (hq : s.v (msg n) = VG.Proof.Sha512.AArch64.Sha3.pair M n) (hz : s.v .v31 = ofVDwords 0 0) (hn : n < 40)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16)
-    (hk : s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = kPair n) :
+    (hk : s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = VG.Proof.Sha512.AArch64.Sha3.kPair n) :
     WP isa (.block (rounds2With n a b c d t f)) s fun s' =>
-      s'.v t = ab (roundKW (roundKW v (K (2 * n)) (W M (2 * n))) (K (2 * n + 1)) (W M (2 * n + 1))) ∧
-      s'.v a = cd (roundKW (roundKW v (K (2 * n)) (W M (2 * n))) (K (2 * n + 1)) (W M (2 * n + 1))) ∧
-      s'.v f = ef (roundKW (roundKW v (K (2 * n)) (W M (2 * n))) (K (2 * n + 1)) (W M (2 * n + 1))) ∧
-      s'.v c = gh (roundKW (roundKW v (K (2 * n)) (W M (2 * n))) (K (2 * n + 1)) (W M (2 * n + 1))) ∧
+      s'.v t = VG.Proof.Sha512.AArch64.Sha3.ab (roundKW (roundKW v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n))) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))) ∧
+      s'.v a = VG.Proof.Sha512.AArch64.Sha3.cd (roundKW (roundKW v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n))) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))) ∧
+      s'.v f = VG.Proof.Sha512.AArch64.Sha3.ef (roundKW (roundKW v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n))) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))) ∧
+      s'.v c = VG.Proof.Sha512.AArch64.Sha3.gh (roundKW (roundKW v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n))) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))) ∧
       (∀ r, r ≠ t → r ≠ f → r ≠ .v6 → r ≠ .v7 → r ≠ .v28 → s'.v r = s.v r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hl := exec_ldrq (s := s) (t := t) (n := .x3) (off := 16 * n) ⟨by omega, by omega⟩ hin
+  have hl := VG.Proof.Sha512.AArch64.Sha3.exec_ldrq (s := s) (t := t) (n := .x3) (off := 16 * n) ⟨by omega, by omega⟩ hin
   have ha' : a ≠ t := fun h => by subst h; simp at hs
   have hb' : b ≠ t := fun h => by subst h; simp at hs
   have hc' : c ≠ t := fun h => by subst h; simp at hs
@@ -126,7 +271,7 @@ theorem rounds2With_ok (n : Nat) (a b c d t f : VReg) (s : State) (v : HashValue
   have h31 := hz
   apply WP.of_runBlock
   generalize msg n = x at *
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
+  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, VG.Proof.Sha512.AArch64.Sha3.exec_vop, VOp.eval,
     isa, hl, RegUpd.v_setV, ite_true, ite_false, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, Option.map_some, h0, h1, h2, h3, h31, hq', hk, hs, hs', hx,
     Option.some.injEq, exists_eq_left']
@@ -134,33 +279,33 @@ theorem rounds2With_ok (n : Nat) (a b c d t f : VReg) (s : State) (v : HashValue
   rotate_right
   · intro r h0 h1 h6 h7 h28
     simp only [h0, h1, h6, h7, h28, ite_false]
-  · have hab := h2_eq v (K (2 * n)) (W M (2 * n)) (K (2 * n + 1)) (W M (2 * n + 1))
-    simp only [kPair, pair, ab, cd, ef, gh, VArr.map2, vdword_ofVDwords_0, vdword_ofVDwords_1, ext8_pair, h_eq]
+  · have hab := VG.Proof.Sha512.AArch64.Sha3.h2_eq v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n)) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))
+    simp only [VG.Proof.Sha512.AArch64.Sha3.kPair, VG.Proof.Sha512.AArch64.Sha3.pair, VG.Proof.Sha512.AArch64.Sha3.ab, VG.Proof.Sha512.AArch64.Sha3.cd, VG.Proof.Sha512.AArch64.Sha3.ef, VG.Proof.Sha512.AArch64.Sha3.gh, VArr.map2, vdword_ofVDwords_0, vdword_ofVDwords_1, ext8_pair, VG.Proof.Sha512.AArch64.Sha3.h_eq]
     exact hab
-  · exact (cd_eq _ _ _ _ _).symm
-  · have hef := hF_eq v (K (2 * n)) (W M (2 * n)) (K (2 * n + 1)) (W M (2 * n + 1))
-    simp only [kPair, pair, cd, ef, gh, VArr.map2, vdword_ofVDwords_0, vdword_ofVDwords_1, ext8_pair]
+  · exact (VG.Proof.Sha512.AArch64.Sha3.cd_eq _ _ _ _ _).symm
+  · have hef := VG.Proof.Sha512.AArch64.Sha3.hF_eq v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n)) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))
+    simp only [VG.Proof.Sha512.AArch64.Sha3.kPair, VG.Proof.Sha512.AArch64.Sha3.pair, VG.Proof.Sha512.AArch64.Sha3.cd, VG.Proof.Sha512.AArch64.Sha3.ef, VG.Proof.Sha512.AArch64.Sha3.gh, VArr.map2, vdword_ofVDwords_0, vdword_ofVDwords_1, ext8_pair]
     exact hef
-  · exact (gh_eq _ _ _ _ _).symm
+  · exact (VG.Proof.Sha512.AArch64.Sha3.gh_eq _ _ _ _ _).symm
 
-theorem rounds2_ok (n : Nat) (s : State) (v : HashValue) (M : Block)
-    (hv : Vars n s v) (hq : s.v (msg n) = pair M n) (hz : s.v .v31 = ofVDwords 0 0) (hn : n < 40)
+theorem rounds2_ok (n : Nat) (s : State) (v : VG.Spec.Sha512.HashValue) (M : VG.Spec.Sha512.Block)
+    (hv : VG.Proof.Sha512.AArch64.Sha3.Vars n s v) (hq : s.v (msg n) = VG.Proof.Sha512.AArch64.Sha3.pair M n) (hz : s.v .v31 = ofVDwords 0 0) (hn : n < 40)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16)
-    (hk : s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = kPair n) :
+    (hk : s.mem.read (s.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = VG.Proof.Sha512.AArch64.Sha3.kPair n) :
     WP isa (.block (rounds2 n)) s fun s' =>
-      Vars (n + 1) s' (roundKW (roundKW v (K (2 * n)) (W M (2 * n))) (K (2 * n + 1)) (W M (2 * n + 1))) ∧
+      VG.Proof.Sha512.AArch64.Sha3.Vars (n + 1) s' (roundKW (roundKW v (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n))) (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1))) ∧
       (∀ r, r ≠ reg n 4 → r ≠ reg n 5 → r ≠ .v6 → r ≠ .v7 → r ≠ .v28 → s'.v r = s.v r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hs := reg_nodup n
+  have hs := VG.Proof.Sha512.AArch64.Sha3.reg_nodup n
   have hs₁ : [reg n 0, reg n 1, reg n 2, reg n 3, reg n 4, reg n 5, .v6, .v7, .v28, .v31].Nodup :=
     hs.sublist (by simp)
   have hx : msg n ∉ [reg n 0, reg n 1, reg n 2, reg n 3, reg n 4, reg n 5, .v6, .v7, .v28, .v31] := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-    exact ⟨msg_ne_reg n n 0 (by decide), msg_ne_reg n n 1 (by decide), msg_ne_reg n n 2 (by decide),
-      msg_ne_reg n n 3 (by decide), msg_ne_reg n n 4 (by decide), msg_ne_reg n n 5 (by decide),
-      msg_not n (by decide), msg_not n (by decide), msg_not n (by decide), msg_not n (by decide)⟩
-  obtain ⟨e0, e1, e2, e3⟩ := reg_succ n
-  refine (rounds2With_ok n _ _ _ _ _ _ s v M hs₁ hx hv.v0 hv.v1 hv.v2 hv.v3 hq hz hn hin hk).mono
+    exact ⟨VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 0 (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 1 (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 2 (by decide),
+      VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 3 (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 4 (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 5 (by decide),
+      VG.Proof.Sha512.AArch64.Sha3.msg_not n (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_not n (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_not n (by decide), VG.Proof.Sha512.AArch64.Sha3.msg_not n (by decide)⟩
+  obtain ⟨e0, e1, e2, e3⟩ := VG.Proof.Sha512.AArch64.Sha3.reg_succ n
+  refine (VG.Proof.Sha512.AArch64.Sha3.rounds2With_ok n _ _ _ _ _ _ s v M hs₁ hx hv.v0 hv.v1 hv.v2 hv.v3 hq hz hn hin hk).mono
     fun s' ⟨ht, ha, hf, hc, hr, hg, hm, hrd, hwr⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, hr, hg, hm, hrd, hwr⟩
   · rw [e0]; exact ht
   · rw [e1]; exact ha
@@ -170,22 +315,22 @@ theorem rounds2_ok (n : Nat) (s : State) (v : HashValue) (M : Block)
 theorem schedule_hi (n : Nat) (hn : 8 ≤ n) (s : State) (a b c d e : BitVec 128)
     (ha : s.v (msg n) = a) (hb : s.v (msg (n + 1)) = b) (hc : s.v (msg (n + 4)) = c)
     (hd' : s.v (msg (n + 5)) = d) (he : s.v (msg (n + 7)) = e) :
-    WP isa (.block (schedule n)) s fun s' =>
+    WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.schedule n)) s fun s' =>
       s'.v (msg n) = sha512Su1 (sha512Su0 a b) e (((d ++ c) >>> (8 * 8)).extractLsb' 0 128) ∧
       (∀ r, r ≠ msg n → r ≠ .v6 → s'.v r = s.v r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have h0 := msg_not n (r := .v6) (by decide)
-  have h1 := msg_not (n + 1) (r := .v6) (by decide)
-  have h7 := msg_not (n + 7) (r := .v6) (by decide)
-  have hn7 := Ne.symm (msg_ne (n + 7) n (by omega) (by omega))
+  have h0 := VG.Proof.Sha512.AArch64.Sha3.msg_not n (r := .v6) (by decide)
+  have h1 := VG.Proof.Sha512.AArch64.Sha3.msg_not (n + 1) (r := .v6) (by decide)
+  have h7 := VG.Proof.Sha512.AArch64.Sha3.msg_not (n + 7) (r := .v6) (by decide)
+  have hn7 := Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_ne (n + 7) n (by omega) (by omega))
   apply WP.of_runBlock
-  simp only [schedule, show ¬ n < 8 by omega, ite_false]
+  simp only [VG.Impl.Sha512.AArch64.Sha3.schedule, show ¬ n < 8 by omega, ite_false]
   generalize msg n = x₀ at *
   generalize msg (n + 1) = x₁ at *
   generalize msg (n + 4) = x₄ at *
   generalize msg (n + 5) = x₅ at *
   generalize msg (n + 7) = x₇ at *
-  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceAdd, Nat.reduceMul, and_self, runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
+  simp only [↓reduceIte, Nat.reduceLT, Nat.reduceAdd, Nat.reduceMul, and_self, runBlock_cons, runStep_some, runBlock_nil, VG.Proof.Sha512.AArch64.Sha3.exec_vop, VOp.eval,
     isa, RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, h0, h1, h7, hn7, ha, hb, hc, hd', he,
     Ne.symm h0, Option.map_some, Option.some.injEq, exists_eq_left']
@@ -193,14 +338,14 @@ theorem schedule_hi (n : Nat) (hn : 8 ≤ n) (s : State) (a b c d e : BitVec 128
 
 theorem schedule_lo (n : Nat) (hn : n < 8) (s : State)
     (hin : InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 (16 * n)) 16) :
-    WP isa (.block (schedule n)) s fun s' =>
+    WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.schedule n)) s fun s' =>
       s'.v (msg n) = VRevOp.rev64b.eval (s.mem.read (s.gpr .x1 + BitVec.ofNat 64 (16 * n)) 16) ∧
       (∀ r, r ≠ msg n → s'.v r = s.v r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [schedule, hn, ite_true]
-  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec_vop, VOp.eval,
-    isa, exec_ldrq, show 16 * n % 16 = 0 by omega, show 16 * n < 65536 by omega,
+  simp only [VG.Impl.Sha512.AArch64.Sha3.schedule, hn, ite_true]
+  simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, VG.Proof.Sha512.AArch64.Sha3.exec_vop, VOp.eval,
+    isa, VG.Proof.Sha512.AArch64.Sha3.exec_ldrq, show 16 * n % 16 = 0 by omega, show 16 * n < 65536 by omega,
     and_self, hin, Option.map_some,
     RegUpd.v_setV, RegUpd.gpr_setV, RegUpd.mem_setV,
     RegUpd.rd_setV, RegUpd.wr_setV, Option.some.injEq, exists_eq_left']
@@ -210,26 +355,26 @@ theorem schedule_lo (n : Nat) (hn : n < 8) (s : State)
 
 /-- `Kₜ` is at `scr + 8t` for every `t < k`. -/
 def Tab (m : Mem) (scr : Addr) (k : Nat) : Prop :=
-  ∀ t < k, m.readW (scr + BitVec.ofNat 64 (8 * t)) 64 = K t
+  ∀ t < k, m.readW (scr + BitVec.ofNat 64 (8 * t)) 64 = VG.Spec.Sha512.K t
 
 /-- How much of the table is built after `n` pairs of rounds of the first
 block (two pairs of rounds ahead), or of a later one. -/
 def tabLen (first : Bool) (n : Nat) : Nat := if first then min 80 (2 * n + 4) else 80
 
-theorem Tab.mono {m : Mem} {scr : Addr} {k k' : Nat} (h : Tab m scr k) (hk : k' ≤ k) :
-    Tab m scr k' := fun t ht => h t (by omega)
+theorem Tab.mono {m : Mem} {scr : Addr} {k k' : Nat} (h : VG.Proof.Sha512.AArch64.Sha3.Tab m scr k) (hk : k' ≤ k) :
+    VG.Proof.Sha512.AArch64.Sha3.Tab m scr k' := fun t ht => h t (by omega)
 
 /-- A pair of constants, as `ldr q` loads it. -/
-theorem Tab.pair {m : Mem} {scr : Addr} {k n : Nat} (h : Tab m scr k) (hn : 2 * n + 1 < k) :
-    m.read (scr + BitVec.ofNat 64 (16 * n)) 16 = kPair n := by
+theorem Tab.pair {m : Mem} {scr : Addr} {k n : Nat} (h : VG.Proof.Sha512.AArch64.Sha3.Tab m scr k) (hn : 2 * n + 1 < k) :
+    m.read (scr + BitVec.ofNat 64 (16 * n)) 16 = VG.Proof.Sha512.AArch64.Sha3.kPair n := by
   rw [read16_dwords, Offset.add_add, show 16 * n = 8 * (2 * n) by omega, h _ (by omega),
     show 8 * (2 * n) + 8 = 8 * (2 * n + 1) by omega, h _ (by omega)]
   rfl
 
 /-- Building pair `j` extends a table of `2j` constants. -/
-theorem Tab.build {m : Mem} {scr : Addr} {j : Nat} (h : Tab m scr (2 * j)) (hj : j < 40) :
-    Tab ((m.writeW (scr + BitVec.ofNat 64 (16 * j)) (K (2 * j))).writeW
-      (scr + BitVec.ofNat 64 (16 * j + 8)) (K (2 * j + 1))) scr (2 * j + 2) := by
+theorem Tab.build {m : Mem} {scr : Addr} {j : Nat} (h : VG.Proof.Sha512.AArch64.Sha3.Tab m scr (2 * j)) (hj : j < 40) :
+    VG.Proof.Sha512.AArch64.Sha3.Tab ((m.writeW (scr + BitVec.ofNat 64 (16 * j)) (VG.Spec.Sha512.K (2 * j))).writeW
+      (scr + BitVec.ofNat 64 (16 * j + 8)) (VG.Spec.Sha512.K (2 * j + 1))) scr (2 * j + 2) := by
   intro t ht
   by_cases h1 : t = 2 * j + 1
   · subst h1
@@ -242,9 +387,9 @@ theorem Tab.build {m : Mem} {scr : Addr} {j : Nat} (h : Tab m scr (2 * j)) (hj :
       exact h t (by omega)
 
 /-- Writing outside the table keeps it. -/
-theorem Tab.of_frame {m m' : Mem} {scr : Addr} {k : Nat} (h : Tab m scr k) (hk : k ≤ 80)
+theorem Tab.of_frame {m m' : Mem} {scr : Addr} {k : Nat} (h : VG.Proof.Sha512.AArch64.Sha3.Tab m scr k) (hk : k ≤ 80)
     {rs : List Region} (hf : Frame rs m m') (hd : ∀ r ∈ rs, (⟨scr, 640⟩ : Region).Disjoint r) :
-    Tab m' scr k :=
+    VG.Proof.Sha512.AArch64.Sha3.Tab m' scr k :=
   fun t ht => by
     rw [← h t ht]
     exact hf.readW (r := ⟨scr, 640⟩) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)
@@ -256,106 +401,106 @@ theorem writeW64 (m : Mem) (a : Addr) (v : BitVec 64) : m.writeW a v = m.write a
 theorem build_ok (j : Nat) (hj : j < 40) (s : State)
     (h1 : InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (16 * j)) 8)
     (h2 : InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (16 * j + 8)) 8) :
-    WP isa (.block (build j)) s fun s' =>
-      s'.mem = (s.mem.writeW (s.gpr .x3 + BitVec.ofNat 64 (16 * j)) (K (2 * j))).writeW
-        (s.gpr .x3 + BitVec.ofNat 64 (16 * j + 8)) (K (2 * j + 1)) ∧
+    WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.build j)) s fun s' =>
+      s'.mem = (s.mem.writeW (s.gpr .x3 + BitVec.ofNat 64 (16 * j)) (VG.Spec.Sha512.K (2 * j))).writeW
+        (s.gpr .x3 + BitVec.ofNat 64 (16 * j + 8)) (VG.Spec.Sha512.K (2 * j + 1)) ∧
       s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [build, runBlock_cons, runStep_some, runBlock_nil, exec,
+  simp (config := {decide := true}) only [VG.Impl.Sha512.AArch64.Sha3.build, runBlock_cons, runStep_some, runBlock_nil, exec,
     addr, State.store, Option.bind_some, and_self, ite_true, isa, State.read, Size.bits,
     Size.bytes, RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, RegUpd.v_write, RegUpd.sp_write, BitVec.setWidth_eq, movz_movk64',
     show (16 * j) % 8 = 0 by omega, show 16 * j < 4096 * 8 by omega,
     show (16 * j + 8) % 8 = 0 by omega, show 16 * j + 8 < 4096 * 8 by omega,
     h1, h2, Option.some.injEq, exists_eq_left']
-  refine ⟨by rw [writeW64, writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
+  refine ⟨by rw [VG.Proof.Sha512.AArch64.Sha3.writeW64, VG.Proof.Sha512.AArch64.Sha3.writeW64], trivial, fun r h4 h5 => ?_, trivial⟩
   simp only [RegUpd.gpr_write_of_ne, h4, h5, not_false_eq_true]
 
 /-- The scratch space the table occupies. -/
 abbrev tabR (scr : Addr) : Region := ⟨scr, 640⟩
 
 /-- Rounds invariant, relative to the state `sB` at the start of the rounds. -/
-structure RInv (first : Bool) (H : HashValue) (M : Block) (scr : Addr) (sB : State) (n : Nat)
+structure RInv (first : Bool) (H : VG.Spec.Sha512.HashValue) (M : VG.Spec.Sha512.Block) (scr : Addr) (sB : State) (n : Nat)
     (s : State) : Prop where
-  vars : Vars n s (Spec.Sha512.rounds H M (2 * n))
-  msgs : ∀ k < n, n ≤ k + 8 → s.v (msg k) = pair M k
+  vars : VG.Proof.Sha512.AArch64.Sha3.Vars n s (Spec.Sha512.rounds H M (2 * n))
+  msgs : ∀ k < n, n ≤ k + 8 → s.v (msg k) = VG.Proof.Sha512.AArch64.Sha3.pair M k
   keep : ∀ r ∈ [VReg.v24, .v25, .v26, .v27, .v31], s.v r = sB.v r
   gpr : ∀ r, r ≠ .x4 → r ≠ .x5 → s.gpr r = sB.gpr r
   rd : s.rd = sB.rd
   wr : s.wr = sB.wr
-  frame : Frame [tabR scr] sB.mem s.mem
-  tab : Tab s.mem scr (tabLen first n)
+  frame : Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] sB.mem s.mem
+  tab : VG.Proof.Sha512.AArch64.Sha3.Tab s.mem scr (VG.Proof.Sha512.AArch64.Sha3.tabLen first n)
 
-theorem rounds_two (H : HashValue) (M : Block) (n : Nat) :
+theorem rounds_two (H : VG.Spec.Sha512.HashValue) (M : VG.Spec.Sha512.Block) (n : Nat) :
     Spec.Sha512.rounds H M (2 * (n + 1)) =
-      roundKW (roundKW (Spec.Sha512.rounds H M (2 * n)) (K (2 * n)) (W M (2 * n)))
-        (K (2 * n + 1)) (W M (2 * n + 1)) := by
+      roundKW (roundKW (Spec.Sha512.rounds H M (2 * n)) (VG.Spec.Sha512.K (2 * n)) (VG.Spec.Sha512.W M (2 * n)))
+        (VG.Spec.Sha512.K (2 * n + 1)) (VG.Spec.Sha512.W M (2 * n + 1)) := by
   rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega, rounds_succ, rounds_succ]
   rfl
 
-theorem load_pair (M : Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 8)
-    (hblk : ∀ t : Nat, t < 16 → rev64 (m.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = W M t) :
-    VRevOp.rev64b.eval (m.read (bp + BitVec.ofNat 64 (16 * n)) 16) = pair M n := by
+theorem load_pair (M : VG.Spec.Sha512.Block) (m : Mem) (bp : Addr) {n : Nat} (hn : n < 8)
+    (hblk : ∀ t : Nat, t < 16 → rev64 (m.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = VG.Spec.Sha512.W M t) :
+    VRevOp.rev64b.eval (m.read (bp + BitVec.ofNat 64 (16 * n)) 16) = VG.Proof.Sha512.AArch64.Sha3.pair M n := by
   have hj (j : Nat) (hj : j < 2) :
-      vdword (VRevOp.rev64b.eval (m.read (bp + BitVec.ofNat 64 (16 * n)) 16)) j = W M (2 * n + j) := by
+      vdword (VRevOp.rev64b.eval (m.read (bp + BitVec.ofNat 64 (16 * n)) 16)) j = VG.Spec.Sha512.W M (2 * n + j) := by
     rw [vdword_rev64b _ hj, vdword_read16 _ _ hj,
       Offset.add_add_eq _ (show 16 * n + 8 * j = 8 * (2 * n + j) by omega), hblk _ (by omega)]
   apply vec64_ext
-  · simpa only [pair, vdword_ofVDwords_0, Nat.add_zero] using hj 0 (by decide)
-  · simpa only [pair, vdword_ofVDwords_1] using hj 1 (by decide)
+  · simpa only [VG.Proof.Sha512.AArch64.Sha3.pair, vdword_ofVDwords_0, Nat.add_zero] using hj 0 (by decide)
+  · simpa only [VG.Proof.Sha512.AArch64.Sha3.pair, vdword_ofVDwords_1] using hj 1 (by decide)
 
 /-- What building the table does: the two words of pair `j` within `tabR`. -/
 theorem build_frame {s : State} {scr : Addr} {j : Nat} (hj : j < 40) :
-    Frame [tabR scr] s.mem ((s.mem.writeW (scr + BitVec.ofNat 64 (16 * j)) (K (2 * j))).writeW
-      (scr + BitVec.ofNat 64 (16 * j + 8)) (K (2 * j + 1))) :=
+    Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] s.mem ((s.mem.writeW (scr + BitVec.ofNat 64 (16 * j)) (VG.Spec.Sha512.K (2 * j))).writeW
+      (scr + BitVec.ofNat 64 (16 * j + 8)) (VG.Spec.Sha512.K (2 * j + 1))) :=
   ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (by omega) (by omega))).writeW (List.mem_singleton_self _) _
     (Offset.contains_base _ (by omega) (by omega))
 
 /-- One pair `j` of the table, with its preconditions from the scratch space. -/
 theorem build_step {s : State} {scr : Addr} {j : Nat} (hj : j < 40) (hx3 : s.gpr .x3 = scr)
-    (hw : ∀ d, d + 8 ≤ 640 → InRegions s.wr (scr + BitVec.ofNat 64 d) 8) (ht : Tab s.mem scr (2 * j)) :
-    WP isa (.block (build j)) s fun s' =>
+    (hw : ∀ d, d + 8 ≤ 640 → InRegions s.wr (scr + BitVec.ofNat 64 d) 8) (ht : VG.Proof.Sha512.AArch64.Sha3.Tab s.mem scr (2 * j)) :
+    WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.build j)) s fun s' =>
       s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [tabR scr] s.mem s'.mem ∧ Tab s'.mem scr (2 * j + 2) := by
-  refine (build_ok j hj s (by rw [hx3]; exact hw _ (by omega)) (by rw [hx3]; exact hw _ (by omega))).mono
+      Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] s.mem s'.mem ∧ VG.Proof.Sha512.AArch64.Sha3.Tab s'.mem scr (2 * j + 2) := by
+  refine (VG.Proof.Sha512.AArch64.Sha3.build_ok j hj s (by rw [hx3]; exact hw _ (by omega)) (by rw [hx3]; exact hw _ (by omega))).mono
     fun s' ⟨hm, hv, hg, _, hrd, hwr⟩ => ⟨hv, hg, hrd, hwr, ?_, ?_⟩
-  · rw [hm, hx3]; exact build_frame hj
+  · rw [hm, hx3]; exact VG.Proof.Sha512.AArch64.Sha3.build_frame hj
   · rw [hm, hx3]; exact ht.build hj
 
 theorem tabLen_succ (first : Bool) (n : Nat) (hn : n < 40) :
-    (first && decide (n + 2 < 40)) = false → tabLen first (n + 1) ≤ tabLen first n := by
-  cases first <;> simp [tabLen] <;> omega
+    (first && decide (n + 2 < 40)) = false → VG.Proof.Sha512.AArch64.Sha3.tabLen first (n + 1) ≤ VG.Proof.Sha512.AArch64.Sha3.tabLen first n := by
+  cases first <;> simp [VG.Proof.Sha512.AArch64.Sha3.tabLen] <;> omega
 
 /-- The table-building part of pair of rounds `n` (two pairs ahead, in the first block). -/
 theorem buildPart_ok (first : Bool) {n : Nat} (hn : n < 40) {s : State} {scr : Addr}
     (hx3 : s.gpr .x3 = scr) (hw : ∀ d, d + 8 ≤ 640 → InRegions s.wr (scr + BitVec.ofNat 64 d) 8)
-    (ht : Tab s.mem scr (tabLen first n)) :
-    WP isa (.block (if first && n + 2 < 40 then build (n + 2) else [])) s fun s' =>
+    (ht : VG.Proof.Sha512.AArch64.Sha3.Tab s.mem scr (VG.Proof.Sha512.AArch64.Sha3.tabLen first n)) :
+    WP isa (.block (if first && n + 2 < 40 then VG.Impl.Sha512.AArch64.Sha3.build (n + 2) else [])) s fun s' =>
       s'.v = s.v ∧ (∀ r, r ≠ .x4 → r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [tabR scr] s.mem s'.mem ∧ Tab s'.mem scr (tabLen first (n + 1)) := by
+      Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] s.mem s'.mem ∧ VG.Proof.Sha512.AArch64.Sha3.Tab s'.mem scr (VG.Proof.Sha512.AArch64.Sha3.tabLen first (n + 1)) := by
   by_cases hb : (first && decide (n + 2 < 40)) = true
   · simp only [hb, ite_true]
     have hf : first = true := by simpa using (Bool.and_eq_true _ _).mp hb |>.1
     have hn2 : n + 2 < 40 := by simpa using (Bool.and_eq_true _ _).mp hb |>.2
     subst hf
-    refine (build_step hn2 hx3 hw (ht.mono (by simp [tabLen]; omega))).mono
-      fun s' ⟨hv, hg, hrd, hwr, hf, ht'⟩ => ⟨hv, hg, hrd, hwr, hf, ht'.mono (by simp [tabLen]; omega)⟩
+    refine (VG.Proof.Sha512.AArch64.Sha3.build_step hn2 hx3 hw (ht.mono (by simp [VG.Proof.Sha512.AArch64.Sha3.tabLen]; omega))).mono
+      fun s' ⟨hv, hg, hrd, hwr, hf, ht'⟩ => ⟨hv, hg, hrd, hwr, hf, ht'.mono (by simp [VG.Proof.Sha512.AArch64.Sha3.tabLen]; omega)⟩
   · simp only [Bool.not_eq_true] at hb
     simp only [hb]
     exact WP.block_nil (M := isa) ⟨rfl, fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _,
-      ht.mono (tabLen_succ first n hn hb)⟩
+      ht.mono (VG.Proof.Sha512.AArch64.Sha3.tabLen_succ first n hn hb)⟩
 
-theorem rounds_ok (first : Bool) (H : HashValue) (M : Block) (bp scr : Addr) (sB : State)
+theorem rounds_ok (first : Bool) (H : VG.Spec.Sha512.HashValue) (M : VG.Spec.Sha512.Block) (bp scr : Addr) (sB : State)
     (hrsi : sB.gpr .x1 = bp) (hx3 : sB.gpr .x3 = scr)
     (hin : ∀ n : Nat, n < 8 → InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofNat 64 (16 * n)) 16)
-    (hblk : ∀ m, Frame [tabR scr] sB.mem m → ∀ t : Nat, t < 16 →
-      rev64 (m.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = W M t)
+    (hblk : ∀ m, Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] sB.mem m → ∀ t : Nat, t < 16 →
+      rev64 (m.readW (bp + BitVec.ofNat 64 (8 * t)) 64) = VG.Spec.Sha512.W M t)
     (hw : ∀ d, d + 8 ≤ 640 → InRegions sB.wr (scr + BitVec.ofNat 64 d) 8)
     (hq : ∀ d, d + 16 ≤ 640 → InRegions (sB.rd ++ sB.wr) (scr + BitVec.ofNat 64 d) 16)
-    (hv : Vars 0 sB H) (hz : sB.v .v31 = ofVDwords 0 0) (htab : first = false → Tab sB.mem scr 80) :
-    ∀ n ≤ 40, WP isa (roundsWith first n) sB (RInv first H M scr sB n) := by
+    (hv : VG.Proof.Sha512.AArch64.Sha3.Vars 0 sB H) (hz : sB.v .v31 = ofVDwords 0 0) (htab : first = false → VG.Proof.Sha512.AArch64.Sha3.Tab sB.mem scr 80) :
+    ∀ n ≤ 40, WP isa (roundsWith first n) sB (VG.Proof.Sha512.AArch64.Sha3.RInv first H M scr sB n) := by
   intro n hn
   induction n with
   | zero =>
@@ -364,11 +509,11 @@ theorem rounds_ok (first : Bool) (H : HashValue) (M : Block) (bp scr : Addr) (sB
       exact WP.block_nil (M := isa) ⟨hv, fun _ h => absurd h (by omega), fun _ _ => rfl,
         fun _ _ _ => rfl, rfl, rfl, Frame.refl _ _, htab rfl⟩
     | true =>
-      show WP isa (.block (build 0 ++ build 1)) sB _
+      show WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.build 0 ++ VG.Impl.Sha512.AArch64.Sha3.build 1)) sB _
       rw [WP.block_append_iff]
-      refine (build_step (j := 0) (by decide) hx3 hw (fun t ht => absurd ht (by omega))).mono
+      refine (VG.Proof.Sha512.AArch64.Sha3.build_step (j := 0) (by decide) hx3 hw (fun t ht => absurd ht (by omega))).mono
         fun s₁ ⟨hv₁, hg₁, hrd₁, hwr₁, hf₁, ht₁⟩ => ?_
-      refine (build_step (j := 1) (by decide) (by rw [hg₁ _ (by decide) (by decide), hx3])
+      refine (VG.Proof.Sha512.AArch64.Sha3.build_step (j := 1) (by decide) (by rw [hg₁ _ (by decide) (by decide), hx3])
         (by rw [hwr₁]; exact hw) ht₁).mono fun s₂ ⟨hv₂, hg₂, hrd₂, hwr₂, hf₂, ht₂⟩ => ?_
       refine ⟨?_, fun _ h => absurd h (by omega), fun r _ => by rw [hv₂, hv₁],
         fun r h4 h5 => by rw [hg₂ r h4 h5, hg₁ r h4 h5], by rw [hrd₂, hrd₁], by rw [hwr₂, hwr₁],
@@ -379,66 +524,66 @@ theorem rounds_ok (first : Bool) (H : HashValue) (M : Block) (bp scr : Addr) (sB
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     rw [List.append_assoc, WP.block_append_iff]
     have hs3 : s.gpr .x3 = scr := (hs.gpr .x3 (by decide) (by decide)).trans hx3
-    refine (buildPart_ok first (n := n) (by omega) hs3 (by rw [hs.wr]; exact hw) hs.tab).mono
+    refine (VG.Proof.Sha512.AArch64.Sha3.buildPart_ok first (n := n) (by omega) hs3 (by rw [hs.wr]; exact hw) hs.tab).mono
       fun s' ⟨hv', hg', hrd', hwr', hf', ht'⟩ => ?_
     rw [WP.block_append_iff]
-    have hfr : Frame [tabR scr] sB.mem s'.mem := hs.frame.trans hf'
+    have hfr : Frame [VG.Proof.Sha512.AArch64.Sha3.tabR scr] sB.mem s'.mem := hs.frame.trans hf'
     have hs_rsi : s'.gpr .x1 = bp := by
       rw [hg' _ (by decide) (by decide), hs.gpr .x1 (by decide) (by decide), hrsi]
-    have hsched : WP isa (.block (schedule n)) s' fun s₁ =>
-        s₁.v (msg n) = pair M n ∧ (∀ r, r ≠ msg n → r ≠ .v6 → s₁.v r = s'.v r) ∧
+    have hsched : WP isa (.block (VG.Impl.Sha512.AArch64.Sha3.schedule n)) s' fun s₁ =>
+        s₁.v (msg n) = VG.Proof.Sha512.AArch64.Sha3.pair M n ∧ (∀ r, r ≠ msg n → r ≠ .v6 → s₁.v r = s'.v r) ∧
         s₁.gpr = s'.gpr ∧ s₁.mem = s'.mem ∧ s₁.rd = s'.rd ∧ s₁.wr = s'.wr := by
       by_cases hlo : n < 8
-      · refine WP.mono (schedule_lo n hlo s' (by rw [hrd', hwr', hs.rd, hs.wr, hs_rsi]; exact hin n hlo))
+      · refine WP.mono (VG.Proof.Sha512.AArch64.Sha3.schedule_lo n hlo s' (by rw [hrd', hwr', hs.rd, hs.wr, hs_rsi]; exact hin n hlo))
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, fun r hr _ => hx r hr, hg, hm, hrd, hwr⟩
         rw [e, hs_rsi]
-        exact load_pair M s'.mem bp hlo (hblk _ hfr)
+        exact VG.Proof.Sha512.AArch64.Sha3.load_pair M s'.mem bp hlo (hblk _ hfr)
       · obtain ⟨i, rfl⟩ : ∃ i, n = i + 8 := ⟨n - 8, by omega⟩
-        refine WP.mono (schedule_hi (i + 8) (by omega) s' (pair M i) (pair M (i + 1)) (pair M (i + 4))
-          (pair M (i + 5)) (pair M (i + 7)) ?_ ?_ ?_ ?_ ?_)
+        refine WP.mono (VG.Proof.Sha512.AArch64.Sha3.schedule_hi (i + 8) (by omega) s' (VG.Proof.Sha512.AArch64.Sha3.pair M i) (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 1)) (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 4))
+          (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 5)) (VG.Proof.Sha512.AArch64.Sha3.pair M (i + 7)) ?_ ?_ ?_ ?_ ?_)
           fun s₁ ⟨e, hx, hg, hm, hrd, hwr⟩ => ⟨?_, hx, hg, hm, hrd, hwr⟩
-        · rw [hv', msg_add8]; exact hs.msgs i (by omega) (by omega)
-        · rw [hv', show i + 8 + 1 = i + 1 + 8 by omega, msg_add8]
+        · rw [hv', VG.Proof.Sha512.AArch64.Sha3.msg_add8]; exact hs.msgs i (by omega) (by omega)
+        · rw [hv', show i + 8 + 1 = i + 1 + 8 by omega, VG.Proof.Sha512.AArch64.Sha3.msg_add8]
           exact hs.msgs (i + 1) (by omega) (by omega)
-        · rw [hv', show i + 8 + 4 = i + 4 + 8 by omega, msg_add8]
+        · rw [hv', show i + 8 + 4 = i + 4 + 8 by omega, VG.Proof.Sha512.AArch64.Sha3.msg_add8]
           exact hs.msgs (i + 4) (by omega) (by omega)
-        · rw [hv', show i + 8 + 5 = i + 5 + 8 by omega, msg_add8]
+        · rw [hv', show i + 8 + 5 = i + 5 + 8 by omega, VG.Proof.Sha512.AArch64.Sha3.msg_add8]
           exact hs.msgs (i + 5) (by omega) (by omega)
-        · rw [hv', show i + 8 + 7 = i + 7 + 8 by omega, msg_add8]
+        · rw [hv', show i + 8 + 7 = i + 7 + 8 by omega, VG.Proof.Sha512.AArch64.Sha3.msg_add8]
           exact hs.msgs (i + 7) (by omega) (by omega)
         · rw [e]
-          have h := schedule_eq M i
-          simpa only [pair, ext8_pair] using h
+          have h := VG.Proof.Sha512.AArch64.Sha3.schedule_eq M i
+          simpa only [VG.Proof.Sha512.AArch64.Sha3.pair, ext8_pair] using h
     refine WP.mono hsched fun s₁ ⟨hq₁, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_
-    have hv₁ : Vars n s₁ (Spec.Sha512.rounds H M (2 * n)) := by
+    have hv₁ : VG.Proof.Sha512.AArch64.Sha3.Vars n s₁ (Spec.Sha512.rounds H M (2 * n)) := by
       refine ⟨?_, ?_, ?_, ?_⟩
-      · rw [hx₁ _ (Ne.symm (msg_ne_reg n n 0 (by decide))) (reg_ne n 0 (by decide) (by decide)), hv']
+      · rw [hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 0 (by decide))) (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 0 (by decide) (by decide)), hv']
         exact hs.vars.v0
-      · rw [hx₁ _ (Ne.symm (msg_ne_reg n n 1 (by decide))) (reg_ne n 1 (by decide) (by decide)), hv']
+      · rw [hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 1 (by decide))) (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 1 (by decide) (by decide)), hv']
         exact hs.vars.v1
-      · rw [hx₁ _ (Ne.symm (msg_ne_reg n n 2 (by decide))) (reg_ne n 2 (by decide) (by decide)), hv']
+      · rw [hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 2 (by decide))) (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 2 (by decide) (by decide)), hv']
         exact hs.vars.v2
-      · rw [hx₁ _ (Ne.symm (msg_ne_reg n n 3 (by decide))) (reg_ne n 3 (by decide) (by decide)), hv']
+      · rw [hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg n n 3 (by decide))) (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 3 (by decide) (by decide)), hv']
         exact hs.vars.v3
     have hz₁ : s₁.v .v31 = ofVDwords 0 0 := by
-      rw [hx₁ _ (Ne.symm (msg_not n (by decide))) (by decide), hv', hs.keep .v31 (by decide), hz]
+      rw [hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_not n (by decide))) (by decide), hv', hs.keep .v31 (by decide), hz]
     have h3₁ : s₁.gpr .x3 = scr := by rw [hg₁, hg' _ (by decide) (by decide), hs3]
     have hin₁ : InRegions (s₁.rd ++ s₁.wr) (s₁.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 := by
       rw [hrd₁, hwr₁, hrd', hwr', hs.rd, hs.wr, h3₁]; exact hq _ (by omega)
-    have hk₁ : s₁.mem.read (s₁.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = kPair n := by
+    have hk₁ : s₁.mem.read (s₁.gpr .x3 + BitVec.ofNat 64 (16 * n)) 16 = VG.Proof.Sha512.AArch64.Sha3.kPair n := by
       rw [hm₁, h3₁]
-      exact ht'.pair (by cases first <;> simp [tabLen] <;> omega)
-    refine WP.mono (rounds2_ok n s₁ _ M hv₁ hq₁ hz₁ (by omega) hin₁ hk₁)
+      exact ht'.pair (by cases first <;> simp [VG.Proof.Sha512.AArch64.Sha3.tabLen] <;> omega)
+    refine WP.mono (VG.Proof.Sha512.AArch64.Sha3.rounds2_ok n s₁ _ M hv₁ hq₁ hz₁ (by omega) hin₁ hk₁)
       fun s₂ ⟨hv₂, hx₂, hg₂, hm₂, hrd₂, hwr₂⟩ => ?_
-    refine ⟨by rw [rounds_two]; exact hv₂, fun k hk hk' => ?_, fun r hr => ?_,
+    refine ⟨by rw [VG.Proof.Sha512.AArch64.Sha3.rounds_two]; exact hv₂, fun k hk hk' => ?_, fun r hr => ?_,
       fun r h4 h5 => by rw [hg₂, hg₁, hg' r h4 h5, hs.gpr r h4 h5],
       by rw [hrd₂, hrd₁, hrd', hs.rd], by rw [hwr₂, hwr₁, hwr', hs.wr],
       by rw [hm₂, hm₁]; exact hfr, by rw [hm₂, hm₁]; exact ht'⟩
-    · rw [hx₂ _ (msg_ne_reg k n 4 (by decide)) (msg_ne_reg k n 5 (by decide))
-        (msg_not k (by decide)) (msg_not k (by decide)) (msg_not k (by decide))]
+    · rw [hx₂ _ (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg k n 4 (by decide)) (VG.Proof.Sha512.AArch64.Sha3.msg_ne_reg k n 5 (by decide))
+        (VG.Proof.Sha512.AArch64.Sha3.msg_not k (by decide)) (VG.Proof.Sha512.AArch64.Sha3.msg_not k (by decide)) (VG.Proof.Sha512.AArch64.Sha3.msg_not k (by decide))]
       by_cases hkn : k = n
       · subst hkn; exact hq₁
-      · rw [hx₁ _ (msg_ne n k (by omega) (by omega)) (msg_not k (by decide)), hv']
+      · rw [hx₁ _ (VG.Proof.Sha512.AArch64.Sha3.msg_ne n k (by omega) (by omega)) (VG.Proof.Sha512.AArch64.Sha3.msg_not k (by decide)), hv']
         exact hs.msgs k (by omega) (by omega)
     · have hm : r ∈ [VReg.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v24, .v25, .v26, .v27, .v28, .v31] := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
@@ -449,42 +594,42 @@ theorem rounds_ok (first : Bool) (H : HashValue) (M : Block) (bp scr : Addr) (sB
       have h678 : r ≠ .v6 ∧ r ≠ .v7 ∧ r ≠ .v28 := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide
-      rw [hx₂ r (Ne.symm (reg_ne n 4 (by decide) hr')) (Ne.symm (reg_ne n 5 (by decide) hr'))
-        h678.1 h678.2.1 h678.2.2, hx₁ _ (Ne.symm (msg_not n hm)) h678.1, hv']
+      rw [hx₂ r (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 4 (by decide) hr')) (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.reg_ne n 5 (by decide) hr'))
+        h678.1 h678.2.1 h678.2.2, hx₁ _ (Ne.symm (VG.Proof.Sha512.AArch64.Sha3.msg_not n hm)) h678.1, hv']
       exact hs.keep r hr
 
-theorem read_ab (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 0) 16 = ab (stateAt m p) := by
+theorem read_ab (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 0) 16 = VG.Proof.Sha512.AArch64.Sha3.ab (VG.Spec.Sha512.stateAt m p) := by
   rw [read16_dwords]
-  simp only [ab, stateAt_get _ _ (by decide : 0 < 8), stateAt_get _ _ (by decide : 1 < 8),
+  simp only [VG.Proof.Sha512.AArch64.Sha3.ab, stateAt_get _ _ (by decide : 0 < 8), stateAt_get _ _ (by decide : 1 < 8),
     Nat.reduceMul, BitVec.add_zero]
 
-theorem read_cd (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 16) 16 = cd (stateAt m p) := by
+theorem read_cd (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 16) 16 = VG.Proof.Sha512.AArch64.Sha3.cd (VG.Spec.Sha512.stateAt m p) := by
   rw [read16_dwords]
-  simp only [cd, stateAt_get _ _ (by decide : 2 < 8), stateAt_get _ _ (by decide : 3 < 8),
+  simp only [VG.Proof.Sha512.AArch64.Sha3.cd, stateAt_get _ _ (by decide : 2 < 8), stateAt_get _ _ (by decide : 3 < 8),
     Offset.add_add, Nat.reduceMul, Nat.reduceAdd]
 
-theorem read_ef (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 32) 16 = ef (stateAt m p) := by
+theorem read_ef (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 32) 16 = VG.Proof.Sha512.AArch64.Sha3.ef (VG.Spec.Sha512.stateAt m p) := by
   rw [read16_dwords]
-  simp only [ef, stateAt_get _ _ (by decide : 4 < 8), stateAt_get _ _ (by decide : 5 < 8),
+  simp only [VG.Proof.Sha512.AArch64.Sha3.ef, stateAt_get _ _ (by decide : 4 < 8), stateAt_get _ _ (by decide : 5 < 8),
     Offset.add_add, Nat.reduceMul, Nat.reduceAdd]
 
-theorem read_gh (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 48) 16 = gh (stateAt m p) := by
+theorem read_gh (m : Mem) (p : Addr) : m.read (p + BitVec.ofNat 64 48) 16 = VG.Proof.Sha512.AArch64.Sha3.gh (VG.Spec.Sha512.stateAt m p) := by
   rw [read16_dwords]
-  simp only [gh, stateAt_get _ _ (by decide : 6 < 8), stateAt_get _ _ (by decide : 7 < 8),
+  simp only [VG.Proof.Sha512.AArch64.Sha3.gh, stateAt_get _ _ (by decide : 6 < 8), stateAt_get _ _ (by decide : 7 < 8),
     Offset.add_add, Nat.reduceMul, Nat.reduceAdd]
 
-theorem write_pairs (m : Mem) (p : Addr) (v : HashValue) :
-    (((m.write (p + BitVec.ofNat 64 0) 16 (ab v)).write (p + BitVec.ofNat 64 16) 16 (cd v)).write
-      (p + BitVec.ofNat 64 32) 16 (ef v)).write (p + BitVec.ofNat 64 48) 16 (gh v) = writeState m p v := by
-  simp only [ab, cd, ef, gh, write16_dwords, writeState, Offset.add_add, Nat.reduceMul, Nat.reduceAdd,
+theorem write_pairs (m : Mem) (p : Addr) (v : VG.Spec.Sha512.HashValue) :
+    (((m.write (p + BitVec.ofNat 64 0) 16 (VG.Proof.Sha512.AArch64.Sha3.ab v)).write (p + BitVec.ofNat 64 16) 16 (VG.Proof.Sha512.AArch64.Sha3.cd v)).write
+      (p + BitVec.ofNat 64 32) 16 (VG.Proof.Sha512.AArch64.Sha3.ef v)).write (p + BitVec.ofNat 64 48) 16 (VG.Proof.Sha512.AArch64.Sha3.gh v) = writeState m p v := by
+  simp only [VG.Proof.Sha512.AArch64.Sha3.ab, VG.Proof.Sha512.AArch64.Sha3.cd, VG.Proof.Sha512.AArch64.Sha3.ef, VG.Proof.Sha512.AArch64.Sha3.gh, write16_dwords, writeState, Offset.add_add, Nat.reduceMul, Nat.reduceAdd,
     BitVec.add_zero]
 
 /-- The hash value `v` is held in v24–v27, and v31 is zero. -/
-structure Held (s : State) (v : HashValue) : Prop where
-  v24 : s.v .v24 = ab v
-  v25 : s.v .v25 = cd v
-  v26 : s.v .v26 = ef v
-  v27 : s.v .v27 = gh v
+structure Held (s : State) (v : VG.Spec.Sha512.HashValue) : Prop where
+  v24 : s.v .v24 = VG.Proof.Sha512.AArch64.Sha3.ab v
+  v25 : s.v .v25 = VG.Proof.Sha512.AArch64.Sha3.cd v
+  v26 : s.v .v26 = VG.Proof.Sha512.AArch64.Sha3.ef v
+  v27 : s.v .v27 = VG.Proof.Sha512.AArch64.Sha3.gh v
   v31 : s.v .v31 = ofVDwords 0 0
 
 theorem zero_pair : (0 : BitVec 128) = ofVDwords 0 0 := rfl
@@ -492,7 +637,7 @@ theorem zero_pair : (0 : BitVec 128) = ofVDwords 0 0 := rfl
 theorem init_ok (s : State)
     (hin : ∀ d, d ≤ 48 → InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 d) 16) :
     WP isa (.block init) s fun s' =>
-      Held s' (stateAt s.mem (s.gpr .x0)) ∧
+      VG.Proof.Sha512.AArch64.Sha3.Held s' (VG.Spec.Sha512.stateAt s.mem (s.gpr .x0)) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have h0 := hin 0 (by decide)
   have h16 := hin 16 (by decide)
@@ -502,16 +647,16 @@ theorem init_ok (s : State)
   simp only [↓reduceIte, Nat.reduceLT, Nat.reduceMul, Nat.reduceMod, init, runBlock_cons, runStep_some, runBlock_nil,
     exec, addr, State.load, VOp.eval, Option.bind_some, and_self, isa,
     Option.map_some, RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
-    h0, h16, h32, h48, read_ab, read_cd, read_ef, read_gh, Option.some.injEq, exists_eq_left']
-  exact ⟨⟨rfl, rfl, rfl, rfl, zero_pair⟩, trivial⟩
+    h0, h16, h32, h48, VG.Proof.Sha512.AArch64.Sha3.read_ab, VG.Proof.Sha512.AArch64.Sha3.read_cd, VG.Proof.Sha512.AArch64.Sha3.read_ef, VG.Proof.Sha512.AArch64.Sha3.read_gh, Option.some.injEq, exists_eq_left']
+  exact ⟨⟨rfl, rfl, rfl, rfl, VG.Proof.Sha512.AArch64.Sha3.zero_pair⟩, trivial⟩
 
-theorem load_ok (s : State) (v : HashValue) (hH : Held s v) :
+theorem load_ok (s : State) (v : VG.Spec.Sha512.HashValue) (hH : VG.Proof.Sha512.AArch64.Sha3.Held s v) :
     WP isa (.block load) s fun s' =>
-      Vars 0 s' v ∧ (∀ r, r ≠ .v0 → r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → s'.v r = s.v r) ∧
+      VG.Proof.Sha512.AArch64.Sha3.Vars 0 s' v ∧ (∀ r, r ≠ .v0 → r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → s'.v r = s.v r) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, and_self, load, runBlock_cons, runStep_some, runBlock_nil,
-    exec_vop, VOp.eval, isa, Option.map_some, RegUpd.v_setV, 
+    VG.Proof.Sha512.AArch64.Sha3.exec_vop, VOp.eval, isa, Option.map_some, RegUpd.v_setV,
     RegUpd.gpr_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
     hH.v24, hH.v25, hH.v26, hH.v27, Option.some.injEq, exists_eq_left']
   exact ⟨⟨rfl, rfl, rfl, rfl⟩, fun r h0 h1 h2 h3 => by simp only [h0, h1, h2, h3, ite_false],
@@ -519,12 +664,12 @@ theorem load_ok (s : State) (v : HashValue) (hH : Held s v) :
 
 theorem reg_40 : reg 40 0 = .v4 ∧ reg 40 1 = .v0 ∧ reg 40 2 = .v5 ∧ reg 40 3 = .v2 := by decide
 
-theorem store_ok (s : State) (v H : HashValue) (hv : Vars 40 s v) (hH : Held s H)
+theorem store_ok (s : State) (v H : VG.Spec.Sha512.HashValue) (hv : VG.Proof.Sha512.AArch64.Sha3.Vars 40 s v) (hH : VG.Proof.Sha512.AArch64.Sha3.Held s H)
     (hout : ∀ d, d ≤ 48 → InRegions s.wr (s.gpr .x0 + BitVec.ofNat 64 d) 16) :
     WP isa (.block store) s fun s' =>
       s'.mem = writeState s.mem (s.gpr .x0) (Vector.zipWith (· + ·) v H) ∧
-      s'.v .v24 = ab (Vector.zipWith (· + ·) v H) ∧ s'.v .v25 = cd (Vector.zipWith (· + ·) v H) ∧
-      s'.v .v26 = ef (Vector.zipWith (· + ·) v H) ∧ s'.v .v27 = gh (Vector.zipWith (· + ·) v H) ∧
+      s'.v .v24 = VG.Proof.Sha512.AArch64.Sha3.ab (Vector.zipWith (· + ·) v H) ∧ s'.v .v25 = VG.Proof.Sha512.AArch64.Sha3.cd (Vector.zipWith (· + ·) v H) ∧
+      s'.v .v26 = VG.Proof.Sha512.AArch64.Sha3.ef (Vector.zipWith (· + ·) v H) ∧ s'.v .v27 = VG.Proof.Sha512.AArch64.Sha3.gh (Vector.zipWith (· + ·) v H) ∧
       s'.v .v31 = s.v .v31 ∧
       s'.gpr .x1 = s.gpr .x1 + 128 ∧ s'.gpr .x2 = s.gpr .x2 - 1 ∧
       (∀ r, r ≠ .x1 → r ≠ .x2 → s'.gpr r = s.gpr r) ∧
@@ -534,7 +679,7 @@ theorem store_ok (s : State) (v H : HashValue) (hv : Vars 40 s v) (hH : Held s H
   have h32 := hout 32 (by decide)
   have h48 := hout 48 (by decide)
   obtain ⟨hv0, hv1, hv2, hv3⟩ := hv
-  obtain ⟨e0, e1, e2, e3⟩ := reg_40
+  obtain ⟨e0, e1, e2, e3⟩ := VG.Proof.Sha512.AArch64.Sha3.reg_40
   rw [e0] at hv0; rw [e1] at hv1; rw [e2] at hv2; rw [e3] at hv3
   apply WP.of_runBlock
   simp (config := {decide := true}) only [store, e0, e1, e2, e3, runBlock_cons, runStep_some, runBlock_nil,
@@ -542,7 +687,7 @@ theorem store_ok (s : State) (v H : HashValue) (hv : Vars 40 s v) (hH : Held s H
     Option.map_some, RegUpd.gpr_setV, RegUpd.v_setV, RegUpd.mem_setV, RegUpd.rd_setV, RegUpd.wr_setV,
     RegUpd.gpr_write_self, RegUpd.gpr_write_of_ne, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
     RegUpd.v_write, h0, h16, h32, h48, hv0, hv1, hv2, hv3, hH.v24, hH.v25, hH.v26, hH.v27,
-    add_ab, add_cd, add_ef, add_gh, write_pairs, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
+    VG.Proof.Sha512.AArch64.Sha3.add_ab, VG.Proof.Sha512.AArch64.Sha3.add_cd, VG.Proof.Sha512.AArch64.Sha3.add_ef, VG.Proof.Sha512.AArch64.Sha3.add_gh, VG.Proof.Sha512.AArch64.Sha3.write_pairs, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, rfl, rfl, fun r h1 h2 => by
     simp only [RegUpd.gpr_write_of_ne, h1, h2, not_false_eq_true], trivial⟩
 
@@ -555,34 +700,34 @@ theorem Pre.in_blk16 {s₀ : State} (hp : AArch64.Pre s₀) {i n : Nat}
     bp s₀ + BitVec.ofNat 64 (128 * i + 16 * n) from Offset.add_add _ _ _]
   exact contains_offset (by omega) (by omega)
 
-theorem tab_in (s₀ : State) : ∀ r ∈ [tabR (scr s₀)], ∃ R ∈ [stR s₀, scrR s₀], Region.Sub r R :=
+theorem tab_in (s₀ : State) : ∀ r ∈ [VG.Proof.Sha512.AArch64.Sha3.tabR (scr s₀)], ∃ R ∈ [stR s₀, scrR s₀], Region.Sub r R :=
   fun r hr => ⟨scrR s₀, by simp, by simp at hr; subst hr; exact Region.sub_prefix (Nat.le_refl _)⟩
 
 /-- One block, building the table (`first`) or with it built. -/
 theorem block_ok (first : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat} (hi : i < nb s₀)
-    {s : State} (hL : LInv s₀ i s) (hH : Held s (stateAt s.mem (st s₀)))
-    (htab : first = false → Tab s.mem (scr s₀) 80) :
+    {s : State} (hL : LInv s₀ i s) (hH : VG.Proof.Sha512.AArch64.Sha3.Held s (VG.Spec.Sha512.stateAt s.mem (st s₀)))
+    (htab : first = false → VG.Proof.Sha512.AArch64.Sha3.Tab s.mem (scr s₀) 80) :
     WP isa (blockWith first) s fun s' =>
       (i + 1 = nb s₀ ∧ Common s₀ (nb s₀) s' ∧ s'.gpr .x2 = 0) ∨
-      (i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s' ∧ Held s' (stateAt s'.mem (st s₀)) ∧
-        Tab s'.mem (scr s₀) 80) := by
-  refine WP.seq ((load_ok s _ hH).mono fun s₁ ⟨hv, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_)
+      (i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s' ∧ VG.Proof.Sha512.AArch64.Sha3.Held s' (VG.Spec.Sha512.stateAt s'.mem (st s₀)) ∧
+        VG.Proof.Sha512.AArch64.Sha3.Tab s'.mem (scr s₀) 80) := by
+  refine WP.seq ((VG.Proof.Sha512.AArch64.Sha3.load_ok s _ hH).mono fun s₁ ⟨hv, hx₁, hg₁, hm₁, hrd₁, hwr₁⟩ => ?_)
   have hscr : ∀ d, d + 8 ≤ 640 → InRegions s₁.wr (scr s₀ + BitVec.ofNat 64 d) 8 :=
     fun d hd => ⟨scrR s₀, by simp [hwr₁, hL.wr, hp.wr], contains_offset (by omega) (by omega)⟩
   have hscr16 : ∀ d, d + 16 ≤ 640 → InRegions (s₁.rd ++ s₁.wr) (scr s₀ + BitVec.ofNat 64 d) 16 :=
     fun d hd => ⟨scrR s₀, by simp [hwr₁, hL.wr, hp.wr], contains_offset (by omega) (by omega)⟩
-  have hblk : ∀ m, Frame [tabR (scr s₀)] s₁.mem m → ∀ t : Nat, t < 16 →
-      rev64 (m.readW (blkAddr s₀ i + BitVec.ofNat 64 (8 * t)) 64) = W (blk s₀ i) t := by
+  have hblk : ∀ m, Frame [VG.Proof.Sha512.AArch64.Sha3.tabR (scr s₀)] s₁.mem m → ∀ t : Nat, t < 16 →
+      rev64 (m.readW (blkAddr s₀ i + BitVec.ofNat 64 (8 * t)) 64) = VG.Spec.Sha512.W (blk s₀ i) t := by
     intro m hf t ht
     have hf' : Frame [stR s₀, scrR s₀] s₀.mem m := by
       rw [hm₁] at hf
-      exact hL.frame.trans (hf.sub (tab_in s₀))
+      exact hL.frame.trans (hf.sub (VG.Proof.Sha512.AArch64.Sha3.tab_in s₀))
     rw [hf'.readW (hp.blk_contains hi ht) (by simpa using ⟨hp.blk_st, hp.blk_scr⟩) (by decide)]
     exact blk_word i t ht
   have hz₁ : s₁.v .v31 = ofVDwords 0 0 := by
     rw [hx₁ _ (by decide) (by decide) (by decide) (by decide)]; exact hH.v31
-  have htab₁ : first = false → Tab s₁.mem (scr s₀) 80 := fun h => by rw [hm₁]; exact htab h
-  refine WP.seq ((rounds_ok first _ (blk s₀ i) (blkAddr s₀ i) (scr s₀) s₁ (by rw [hg₁, hL.x1])
+  have htab₁ : first = false → VG.Proof.Sha512.AArch64.Sha3.Tab s₁.mem (scr s₀) 80 := fun h => by rw [hm₁]; exact htab h
+  refine WP.seq ((VG.Proof.Sha512.AArch64.Sha3.rounds_ok first _ (blk s₀ i) (blkAddr s₀ i) (scr s₀) s₁ (by rw [hg₁, hL.x1])
     (by rw [hg₁, hL.x3]) (fun n hn => by rw [hrd₁, hwr₁, hL.rd, hL.wr]; exact Pre.in_blk16 hp hi hn)
     hblk hscr hscr16 hv hz₁ htab₁ 40 (Nat.le_refl _)).mono fun s₂ hR => ?_)
   have hg₂ : ∀ r, r ≠ .x4 → r ≠ .x5 → s₂.gpr r = s.gpr r := fun r h4 h5 => by
@@ -591,11 +736,11 @@ theorem block_ok (first : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat}
     intro d hd
     refine ⟨stR s₀, by simp [hR.wr, hwr₁, hL.wr, hp.wr], ?_⟩
     rw [hg₂ .x0 (by decide) (by decide), hL.x0]; exact contains_offset (by omega) (by omega)
-  have hH₂ : Held s₂ (stateAt s.mem (st s₀)) := by
+  have hH₂ : VG.Proof.Sha512.AArch64.Sha3.Held s₂ (VG.Spec.Sha512.stateAt s.mem (st s₀)) := by
     refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
       rw [hR.keep _ (by decide), hx₁ _ (by decide) (by decide) (by decide) (by decide)]
     exacts [hH.v24, hH.v25, hH.v26, hH.v27, hH.v31]
-  refine (store_ok s₂ _ _ hR.vars hH₂ hout).mono
+  refine (VG.Proof.Sha512.AArch64.Sha3.store_ok s₂ _ _ hR.vars hH₂ hout).mono
     fun s₃ ⟨hm₃, h24₃, h25₃, h26₃, h27₃, h31₃, hx1₃, hx2₃, hg₃, hrd₃, hwr₃⟩ => ?_
   have hx2 : s₂.gpr .x2 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
     rw [hg₂ .x2 (by decide) (by decide), hL.x2]
@@ -606,11 +751,11 @@ theorem block_ok (first : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat}
   have hframe : Frame [stR s₀, scrR s₀] s₀.mem s₃.mem := by
     refine hL.frame.trans ?_
     rw [← hm₁]
-    refine Frame.trans (hR.frame.sub (tab_in s₀)) ?_
+    refine Frame.trans (hR.frame.sub (VG.Proof.Sha512.AArch64.Sha3.tab_in s₀)) ?_
     exact hst₃.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩
-  have hst : stateAt s₃.mem (st s₀) =
-      Vector.zipWith (· + ·) (Spec.Sha512.rounds (stateAt s.mem (st s₀)) (blk s₀ i) (2 * 40))
-        (stateAt s.mem (st s₀)) := by
+  have hst : VG.Spec.Sha512.stateAt s₃.mem (st s₀) =
+      Vector.zipWith (· + ·) (Spec.Sha512.rounds (VG.Spec.Sha512.stateAt s.mem (st s₀)) (blk s₀ i) (2 * 40))
+        (VG.Spec.Sha512.stateAt s.mem (st s₀)) := by
     rw [hm₃, hg₂ .x0 (by decide) (by decide), hL.x0, stateAt_writeState]
   have hcommon : Common s₀ (i + 1) s₃ := by
     refine ⟨by rw [hg₃ .x0 (by decide) (by decide), hg₂ .x0 (by decide) (by decide), hL.x0],
@@ -622,8 +767,8 @@ theorem block_ok (first : Bool) {s₀ : State} (hp : AArch64.Pre s₀) {i : Nat}
       rw [hg₃ r hn.1 hn.2.1, hg₂ r hn.2.2.1 hn.2.2.2, hL.kept r hr]
     · rw [hst, compressBlocks_succ, ← hL.state]
       rfl
-  have htab₃ : Tab s₃.mem (scr s₀) 80 :=
-    (hR.tab.mono (by cases first <;> simp [tabLen])).of_frame (by decide) hst₃
+  have htab₃ : VG.Proof.Sha512.AArch64.Sha3.Tab s₃.mem (scr s₀) 80 :=
+    (hR.tab.mono (by cases first <;> simp [VG.Proof.Sha512.AArch64.Sha3.tabLen])).of_frame (by decide) hst₃
       (by simpa using hp.st_scr.symm)
   have := hp.nb_lt
   by_cases hlast : i + 1 = nb s₀
@@ -647,12 +792,12 @@ theorem x2_ne_zero {s₀ s : State} {i : Nat} (hp : AArch64.Pre s₀) (hi : i < 
   simp at h'; omega
 
 theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
-    WP isa compress s₀ fun s' =>
+    WP isa VG.Impl.Sha512.AArch64.Sha3.compress s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Sha512.compressAArch64.post s₀ s' := by
   have hc₀ : Common s₀ 0 s₀ :=
     ⟨rfl, rfl, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, rfl⟩
   refine WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s' hc => ⟨hc.kept, hc.state⟩
-  refine WP.ite (s₀.gpr .x2 == 0) (by simp [eval, State.read]) (fun h => ?_) (fun h => ?_)
+  refine WP.ite (s₀.gpr .x2 == 0) (by simp [VG.AArch64.eval, State.read]) (fun h => ?_) (fun h => ?_)
   · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
     exact WP.block_nil (M := isa) (h0 ▸ hc₀)
   · have hpos : 0 < nb s₀ := by
@@ -660,7 +805,7 @@ theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
     have hin : ∀ d, d ≤ 48 → InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 d) 16 :=
       fun d hd => ⟨stR s₀, by simp [hp.wr], contains_offset (by omega) (by omega)⟩
-    refine WP.seq ((init_ok s₀ hin).mono fun s₁ ⟨hH, hg, hm, hrd, hwr⟩ => ?_)
+    refine WP.seq ((VG.Proof.Sha512.AArch64.Sha3.init_ok s₀ hin).mono fun s₁ ⟨hH, hg, hm, hrd, hwr⟩ => ?_)
     have hL₀ : LInv s₀ 0 s₁ :=
       { x0 := by rw [hg]
         x3 := by rw [hg]
@@ -671,34 +816,34 @@ theorem correct {s₀ : State} (hp : AArch64.Pre s₀) :
         state := by rw [hm]; rfl
         x1 := by rw [hg]; simp [blkAddr]
         x2 := by rw [hg]; simp [nb] }
-    refine WP.seq ((block_ok true hp hpos hL₀ (by rw [hm]; exact hH) (fun h => absurd h (by decide))).mono
+    refine WP.seq ((VG.Proof.Sha512.AArch64.Sha3.block_ok true hp hpos hL₀ (by rw [hm]; exact hH) (fun h => absurd h (by decide))).mono
       fun s₂ h₂ => ?_)
     let Inv : Nat → State → Prop := fun m s =>
-      ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s ∧ Held s (stateAt s.mem (st s₀)) ∧
-        Tab s.mem (scr s₀) 80
+      ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s ∧ VG.Proof.Sha512.AArch64.Sha3.Held s (VG.Spec.Sha512.stateAt s.mem (st s₀)) ∧
+        VG.Proof.Sha512.AArch64.Sha3.Tab s.mem (scr s₀) 80
     have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
-        (eval (.nonzero .x .x2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
-        (eval (.nonzero .x .x2) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
+        (VG.AArch64.eval (.nonzero .x .x2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
+        (VG.AArch64.eval (.nonzero .x .x2) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL, hH, ht⟩
-      refine WP.mono (block_ok false hp hi hL hH fun _ => ht) fun s' h => ?_
+      refine WP.mono (VG.Proof.Sha512.AArch64.Sha3.block_ok false hp hi hL hH fun _ => ht) fun s' h => ?_
       rcases h with ⟨-, hc, h0⟩ | ⟨hi', hL', hH', ht'⟩
-      · exact .inl ⟨by simp [eval, State.read, h0], hc⟩
+      · exact .inl ⟨by simp [VG.AArch64.eval, State.read, h0], hc⟩
       · refine .inr ⟨?_, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL', hH', ht'⟩
-        have := x2_ne_zero hp hi' hL'
-        simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
+        have := VG.Proof.Sha512.AArch64.Sha3.x2_ne_zero hp hi' hL'
+        simp only [VG.AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq]
         simpa using this
     rcases h₂ with ⟨-, hc, h0⟩ | ⟨hi', hL', hH', ht'⟩
-    · refine WP.ite true (by simp [eval, State.read, h0]) (fun _ => WP.block_nil (M := isa) hc)
+    · refine WP.ite true (by simp [VG.AArch64.eval, State.read, h0]) (fun _ => WP.block_nil (M := isa) hc)
         (fun h => absurd h (by decide))
-    · refine WP.ite false (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq,
-          x2_ne_zero hp hi' hL']) (fun h => absurd h (by decide)) (fun _ => ?_)
+    · refine WP.ite false (by simp only [VG.AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq,
+          VG.Proof.Sha512.AArch64.Sha3.x2_ne_zero hp hi' hL']) (fun h => absurd h (by decide)) (fun _ => ?_)
       exact WP.loop (M := isa) Inv hstep (nb s₀ - 1) s₂ ⟨1, rfl, hi', hL', hH', ht'⟩
 
 
 theorem compress_verified :
     Verified AArch64.target Impl.Sha512.AArch64.Sha3.compress Proof.Sha512.compressAArch64 := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
+  · obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Sha512.AArch64.Sha3.correct (pre_of s hs)
     exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he⟩, h₂⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
@@ -708,3 +853,5 @@ theorem compress_verified :
   · exact AArch64.compress_verified.2.2
 
 end VG.Proof.Sha512.AArch64.Sha3
+
+end

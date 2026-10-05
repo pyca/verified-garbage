@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Sha3.X86.Permute
 import VerifiedGarbage.Proof.Framework.X86.Spill
-import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!

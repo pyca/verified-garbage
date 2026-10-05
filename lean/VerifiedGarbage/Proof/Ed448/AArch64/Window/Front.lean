@@ -1,11 +1,10 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.VerifyStages
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.CopyK
 import VerifiedGarbage.Proof.Ed448.AArch64.Window.TableInit
-import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
-import VerifiedGarbage.Proof.X448.AArch64.Fast.Setup
+import VerifiedGarbage.Proof.X448.AArch64.Base.Verified
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed448.Group.Decode
-
 /-!
 # Ed448 verification on AArch64: the entry and the decodings
 

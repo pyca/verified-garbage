@@ -1,13 +1,13 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.ChaCha20.Spec
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 import VerifiedGarbage.Impl.ChaCha20.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.ChaCha20.Contract
-import VerifiedGarbage.Proof.ChaCha20.Keystream
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Impl.ChaCha20.AArch64.Xor
 import Mathlib.Tactic.Conv

@@ -1,10 +1,10 @@
-import VerifiedGarbage.Proof.Scrypt.BlockMix
+import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Scrypt.Spec
 import VerifiedGarbage.Spec.Scrypt.Contract
 import VerifiedGarbage.TCB.Arm.Target
-import VerifiedGarbage.Proof.Scrypt.Memory
+import VerifiedGarbage.Proof.Scrypt.Whole
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Hmac.Common
 import VerifiedGarbage.Impl.Scrypt.Arm.Salsa
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -136,7 +136,7 @@ structure Pre (s₀ : State) : Prop where
   b_fit : (s₀.gpr .r0).toNat + 64 ≤ 2 ^ 32
   s_fit : (s₀.gpr .r1).toNat + 64 ≤ 2 ^ 32
 
-theorem pre_of (s₀ : State) (h : Proof.Scrypt.salsaArm.pre s₀) : Pre s₀ := by
+theorem pre_of (s₀ : State) (h : Proof.Scrypt.salsaArm.pre s₀) : VG.Proof.Scrypt.Arm.Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5⟩ := h
   exact ⟨h1, h2, h3, h4, h5⟩
 
@@ -156,7 +156,7 @@ theorem addr_word {p : BitVec 32} (hp : p.toNat + 64 ≤ 2 ^ 32) {k : Nat} (hk :
   addr_add (by omega)
 
 namespace Pre
-variable {s₀ : State} (hp : Pre s₀)
+variable {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀)
 include hp
 
 theorem in_b {k : Nat} (hk : k < 16) (rs : List Region) :
@@ -212,7 +212,7 @@ theorem Keep.mupd {s₀ s s' : State} (h : Keep s₀ s) {m : Mem} (u : Mupd s s'
   ⟨fun r h2 h3 => by rw [u.gpr, h.gpr r h2 h3], u.rd.trans h.rd, u.wr.trans h.wr, u.sp.trans h.sp⟩
 
 section
-variable {s₀ : State} (hp : Pre s₀) {s : State} (h : Keep s₀ s)
+variable {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) {s : State} (h : Keep s₀ s)
 include hp h
 
 theorem ea_b {k : Nat} (hk : k < 16) :
@@ -252,7 +252,7 @@ theorem V_get! (s₀ : State) {k : Nat} (hk : k < 16) :
     (V s₀)[k]! = s₀.mem.readW (bA s₀ + BitVec.ofNat 64 (4 * k)) 32 := by
   rw [getElem!_pos (V s₀) k hk, V_get _ hk]
 
-theorem copy_step {s₀ : State} (hp : Pre s₀) {n : Nat} (hn : n < 16) {s : State} (h : CI s₀ n s) :
+theorem copy_step {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) {n : Nat} (hn : n < 16) {s : State} (h : CI s₀ n s) :
     WP isa (.block (copyWord n)) s (CI s₀ (n + 1)) := by
   refine wp_ldr (by omega) (ea_b hp h.keep hn) (ld_b hp h.keep hn) fun s₁ u₁ => ?_
   have k₁ := h.keep.upd u₁ (.inl rfl)
@@ -287,7 +287,7 @@ theorem stepN_get! (x : Vector Word 16) {i j k : Nat} (n : Nat) (hi : i < 16) (h
   rw [getElem!_pos _ m hm, getElem!_pos _ i hi, getElem!_pos _ j hj, getElem!_pos _ k hk,
     getElem!_pos _ m hm, stepN_get x n hi hj hk m hm]
 
-theorem line_ok {i j k n : Nat} (hs : LSide i j k n = true) {s₀ : State} (hp : Pre s₀)
+theorem line_ok {i j k n : Nat} (hs : LSide i j k n = true) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀)
     {v : Vector Word 16} {s : State} (h : RI s₀ v s) :
     WP isa (.block (line i j k n)) s (RI s₀ (stepN v i j k n)) := by
   simp only [LSide, decide_eq_true_eq] at hs
@@ -319,7 +319,7 @@ theorem line_ok {i j k n : Nat} (hs : LSide i j k n = true) {s₀ : State} (hp :
       exact Mem.readW_writeW_self32 _ _ _
     · rw [ite_neg' e, readW_writeW_word _ _ _ hm hi (Ne.symm e), h.holds m hm]
 
-theorem lines_ok {s₀ : State} (hp : Pre s₀) :
+theorem lines_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) :
     ∀ (l : List (Nat × Nat × Nat × Nat)), (l.all fun (i, j, k, n) => LSide i j k n) = true →
       ∀ (v : Vector Word 16) (s : State), RI s₀ v s →
       WP isa (.block (l.flatMap fun (i, j, k, n) => line i j k n)) s
@@ -333,12 +333,12 @@ theorem lines_ok {s₀ : State} (hp : Pre s₀) :
 theorem doubleRound_eq (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
     lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := rfl
 
-theorem doubleRound_ok {s₀ : State} (hp : Pre s₀) {v : Vector Word 16} {s : State} (h : RI s₀ v s) :
+theorem doubleRound_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) {v : Vector Word 16} {s : State} (h : RI s₀ v s) :
     WP isa doubleRound s (RI s₀ (Spec.Scrypt.doubleRound v)) := by
   rw [doubleRound_eq]
   exact lines_ok hp lines (by decide) v s h
 
-theorem rounds_ok {s₀ : State} (hp : Pre s₀) {v : Vector Word 16} {s : State} (h : RI s₀ v s) :
+theorem rounds_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) {v : Vector Word 16} {s : State} (h : RI s₀ v s) :
     ∀ n, WP isa (rounds n) s (RI s₀ (Nat.repeat Spec.Scrypt.doubleRound n v))
   | 0 => WP.block_nil h
   | n + 1 => WP.seq (WP.mono (rounds_ok hp h n) fun _ h' => doubleRound_ok hp h')
@@ -353,7 +353,7 @@ structure FI (s₀ : State) (R : Vector Word 16) (i : Nat) (s : State) : Prop wh
     if j < i then R[j]! + (V s₀)[j]! else (V s₀)[j]!
   scr : ∀ j < 16, s.mem.readW (sA s₀ + BitVec.ofNat 64 (4 * j)) 32 = R[j]!
 
-theorem finish_step {s₀ : State} (hp : Pre s₀) {R : Vector Word 16} {i : Nat} (hi : i < 16)
+theorem finish_step {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) {R : Vector Word 16} {i : Nat} (hi : i < 16)
     {s : State} (h : FI s₀ R i s) : WP isa (.block (finishWord i)) s (FI s₀ R (i + 1)) := by
   unfold finishWord
   refine wp_ldr (by omega) (ea_s hp h.keep hi) (ld_s hp h.keep hi) fun s₁ u₁ => ?_
@@ -396,14 +396,14 @@ theorem post_of {s₀ : State} {m : Mem}
   refine bytesAt_eq_serialize _ _ _ fun j hj => ?_
   rw [Spec.Scrypt.core, Vector.getElem_zipWith, h j hj, getElem!_pos _ j hj, getElem!_pos _ j hj]
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct {s₀ : State} (hp : VG.Proof.Scrypt.Arm.Pre s₀) :
     WP isa salsa s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Scrypt.salsaArm.post s₀ s' := by
   have k₀ : Keep s₀ s₀ := ⟨fun _ _ _ => rfl, rfl, rfl, rfl⟩
   have hc₀ : CI s₀ 0 s₀ := ⟨k₀, fun j hj => (V_get! _ hj).symm, fun _ _ h => absurd h (by omega)⟩
   have hcopy : WP isa (.block copy) s₀ (CI s₀ 16) := by
     unfold copy
-    exact wp_range_flatMap (M := isa) (CI s₀) (fun k s hk h => copy_step hp hk h) 16 (Nat.le_refl _) s₀ hc₀
+    exact wp_range_flatMap (M := isa) (CI s₀) (fun k s hk h => VG.Proof.Scrypt.Arm.copy_step hp hk h) 16 (Nat.le_refl _) s₀ hc₀
   refine WP.seq (WP.mono hcopy fun s₁ h₁ => ?_)
   have hr₁ : RI s₀ (V s₀) s₁ := ⟨h₁.keep, h₁.b, fun j hj => h₁.copied j hj hj⟩
   refine WP.seq (WP.mono (rounds_ok hp hr₁ 4) fun s₂ h₂ => ?_)
@@ -433,7 +433,7 @@ def satState : State where
 theorem salsa_correct (s : State) (hs : Proof.Scrypt.salsaArm.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.Arm.salsa s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.salsaArm.post s s' := by
-  obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
+  obtain ⟨t, s', he, h₁, h₂⟩ := VG.Proof.Scrypt.Arm.correct (VG.Proof.Scrypt.Arm.pre_of s hs)
   exact ⟨t, s', he, ⟨h₁, Exec.sp he⟩, h₂⟩
 
 theorem salsa_ct : ConstantTime isa Proof.Scrypt.salsaArm.pre Proof.Scrypt.salsaArm.pub
@@ -520,7 +520,7 @@ theorem ofNat_toNat32 (x : BitVec 32) : x = BitVec.ofNat 32 x.toNat := by
 
 theorem writeW_xor32 (m m' : Mem) (d a b : Addr) :
     m.writeW d (m'.readW a 32 ^^^ m'.readW b 32) =
-      writeBytes m d (xorBytes (bytesAt m' a 4) (bytesAt m' b 4)) := by
+      VG.WriteBytes.writeBytes m d (xorBytes (bytesAt m' a 4) (bytesAt m' b 4)) := by
   simp only [Mem.writeW, Mem.readW]
   rw [show (32 : Nat) / 8 = 4 from rfl, BitVec.setWidth_eq, BitVec.setWidth_eq, BitVec.setWidth_eq,
     Proof.Sha256.Stream.write_eq_writeBytes]
@@ -549,7 +549,7 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r2 ∧ dR ≠ .r3) (hx : xR ≠ 
     (∀ k < 16, InRegions s.wr (State.addr d + BitVec.ofNat 64 (4 * k)) 4) →
     (∀ s', (∀ r, r ≠ .r2 → r ≠ .r3 → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr →
       s'.sp = s.sp →
-      s'.mem = writeBytes s.mem (State.addr d)
+      s'.mem = VG.WriteBytes.writeBytes s.mem (State.addr d)
         (xorBytes (bytesAt s.mem (State.addr x) (4 * n)) (bytesAt s.mem (State.addr y) (4 * n))) →
       WP isa (.block rest) s' Q) →
     WP isa (.block ((List.range n).flatMap (xorW dR xR sR) ++ rest)) s Q := by
@@ -557,7 +557,7 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r2 ∧ dR ≠ .r3) (hx : xR ≠ 
   induction n with
   | zero =>
     intro _ rest s Q _ _ _ _ _ _ k
-    exact k s (fun _ _ _ => rfl) rfl rfl rfl (by simp [bytesAt, xorBytes, writeBytes_nil])
+    exact k s (fun _ _ _ => rfl) rfl rfl rfl (by simp [bytesAt, xorBytes, VG.WriteBytes.writeBytes_nil])
   | succ n ih =>
     intro hn rest s Q gd gx gy hinx hiny hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
@@ -593,7 +593,7 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r2 ∧ dR ≠ .r3) (hx : xR ≠ 
         (Region.sub_prefix (by omega))
     rw [u₅.mem, u₄.gpr, u₄.mem, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₃.mem, u₂.mem, writeW_xor32,
       m₁, bytesAt_writeBytes_sep _ _ sx (by omega), bytesAt_writeBytes_sep _ _ sy (by omega)]
-    have e := writeBytes_append s.mem (State.addr d) _
+    have e := VG.WriteBytes.writeBytes_append s.mem (State.addr d) _
       (xorBytes (bytesAt s.mem (State.addr x + BitVec.ofNat 64 (4 * n)) 4)
         (bytesAt s.mem (State.addr y + BitVec.ofNat 64 (4 * n)) 4))
       (by rw [hl, xorBytes_length _ _ (by simp [bytesAt]), bytesAt_length]; omega)
@@ -606,7 +606,7 @@ theorem xor64_ok {dR xR sR : Reg} (hd : dR ≠ .r2 ∧ dR ≠ .r3) (hx : xR ≠ 
 /-- The stores of `saveMem` stay in `R`. -/
 theorem saveMem_frame' {R : Region} {B : Addr} (g : Reg → BitVec 32) :
     ∀ (l : List (Reg × Nat)) (m : Mem), (∀ p ∈ l, R.Contains (B + BitVec.ofNat 64 p.2) 4) →
-      Frame [R] m (saveMem m B g l) := by
+      Frame [R] m (VG.Arm.Spill.saveMem m B g l) := by
   intro l
   induction l with
   | nil => intro m _; exact Frame.refl _ _
@@ -691,29 +691,29 @@ abbrev sc : BitVec 32 := stackArg s₀ 0
 abbrev bA : Addr := State.addr (bP s₀)
 abbrev yA : Addr := State.addr (yP s₀)
 abbrev scA : Addr := State.addr (sc s₀)
-abbrev bR : Region := ⟨bA s₀, rr s₀ * 128⟩
-abbrev yR : Region := ⟨yA s₀, rr s₀ * 128⟩
-abbrev scR : Region := ⟨scA s₀, 128⟩
+abbrev bR : Region := ⟨bA s₀, VG.Proof.Scrypt.Arm.BlockMix.rr s₀ * 128⟩
+abbrev yR : Region := ⟨yA s₀, VG.Proof.Scrypt.Arm.BlockMix.rr s₀ * 128⟩
+abbrev scR : Region := ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 128⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 4⟩
 /-- The input. -/
-abbrev B : List Byte := bytesAt s₀.mem (bA s₀) (128 * rr s₀)
+abbrev B : List Byte := bytesAt s₀.mem (bA s₀) (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀)
 
 /-- `Y[2i]` goes to `y + 64 i`. -/
 abbrev yE (i : Nat) : Addr := yA s₀ + BitVec.ofNat 64 (64 * i)
 /-- `Y[2i + 1]` goes to `y + 64 (r + i)`. -/
-abbrev yO (i : Nat) : Addr := yA s₀ + BitVec.ofNat 64 (64 * (rr s₀ + i))
+abbrev yO (i : Nat) : Addr := yA s₀ + BitVec.ofNat 64 (64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + i))
 /-- Where `X` is before the pair `(2k, 2k + 1)`. -/
 def xP : Nat → Addr
-  | 0 => bA s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)
+  | 0 => bA s₀ + BitVec.ofNat 64 (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 64)
   | k + 1 => yO s₀ k
 /-- `xP`, as the 32-bit pointer in `r9`. -/
 def xP32 : Nat → BitVec 32
-  | 0 => bP s₀ + BitVec.ofNat 32 (128 * rr s₀ - 64)
-  | k + 1 => yP s₀ + BitVec.ofNat 32 (64 * (rr s₀ + k))
+  | 0 => bP s₀ + BitVec.ofNat 32 (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 64)
+  | k + 1 => yP s₀ + BitVec.ofNat 32 (64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k))
 
 /-- The caller's `r4`–`r9` and our return address are saved in the scratch space. -/
 def Saved (m : Mem) : Prop :=
-  ∀ p ∈ bmSaved, m.readW (scA s₀ + BitVec.ofNat 64 p.2) 32 = s₀.gpr p.1
+  ∀ p ∈ bmSaved, m.readW (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 p.2) 32 = s₀.gpr p.1
 
 end
 
@@ -721,115 +721,115 @@ end
 def others : List Reg := [.r10, .r11]
 
 structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = [bR s₀, argR s₀]
-  wr : s₀.wr = [yR s₀, scR s₀]
-  y_s : (yR s₀).Disjoint (scR s₀)
+  rd : s₀.rd = [bR s₀, VG.Proof.Scrypt.Arm.BlockMix.argR s₀]
+  wr : s₀.wr = [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀]
+  y_s : (yR s₀).Disjoint (VG.Proof.Scrypt.Arm.BlockMix.scR s₀)
   b_y : (bR s₀).Disjoint (yR s₀)
-  b_s : (bR s₀).Disjoint (scR s₀)
-  a_y : (argR s₀).Disjoint (yR s₀)
-  a_s : (argR s₀).Disjoint (scR s₀)
-  b_nw : (bP s₀).toNat + rr s₀ * 128 ≤ 2 ^ 32
-  y_nw : (yP s₀).toNat + rr s₀ * 128 ≤ 2 ^ 32
+  b_s : (bR s₀).Disjoint (VG.Proof.Scrypt.Arm.BlockMix.scR s₀)
+  a_y : (VG.Proof.Scrypt.Arm.BlockMix.argR s₀).Disjoint (yR s₀)
+  a_s : (VG.Proof.Scrypt.Arm.BlockMix.argR s₀).Disjoint (VG.Proof.Scrypt.Arm.BlockMix.scR s₀)
+  b_nw : (bP s₀).toNat + VG.Proof.Scrypt.Arm.BlockMix.rr s₀ * 128 ≤ 2 ^ 32
+  y_nw : (yP s₀).toNat + VG.Proof.Scrypt.Arm.BlockMix.rr s₀ * 128 ≤ 2 ^ 32
   s_nw : (sc s₀).toNat + 128 ≤ 2 ^ 32
   sp_nw : s₀.sp.toNat + 4 ≤ 2 ^ 32
   r3 : s₀.gpr .r3 = s₀.gpr .r1
-  pos : 0 < rr s₀
+  pos : 0 < VG.Proof.Scrypt.Arm.BlockMix.rr s₀
 
 section
-variable {s₀ : State} (hp : Pre s₀)
+variable {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀)
 include hp
 
 /-- `y` is not the whole address space, since `scratch` is not in it. -/
-theorem r_lt : 128 * rr s₀ < 2 ^ 32 := by
+theorem r_lt : 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ < 2 ^ 32 := by
   by_contra hc
   have hy : yA s₀ = 0 := by
     apply BitVec.eq_of_toNat_eq
     rw [addr_toNat]; show _ = 0; have := hp.y_nw; omega
-  have hs : (scA s₀).toNat < 2 ^ 32 := by rw [addr_toNat]; exact (sc s₀).isLt
-  refine hp.y_s (scA s₀) ?_ ?_
-  · show (scA s₀ - yA s₀).toNat + 1 ≤ rr s₀ * 128
+  have hs : (VG.Proof.Scrypt.Arm.BlockMix.scA s₀).toNat < 2 ^ 32 := by rw [addr_toNat]; exact (sc s₀).isLt
+  refine hp.y_s (VG.Proof.Scrypt.Arm.BlockMix.scA s₀) ?_ ?_
+  · show (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ - yA s₀).toNat + 1 ≤ VG.Proof.Scrypt.Arm.BlockMix.rr s₀ * 128
     rw [hy, show (0 : Addr) = 0#64 from rfl, BitVec.sub_zero]; omega
-  · show (scA s₀ - scA s₀).toNat + 1 ≤ 128
+  · show (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ - VG.Proof.Scrypt.Arm.BlockMix.scA s₀).toNat + 1 ≤ 128
     rw [BitVec.sub_self, BitVec.toNat_zero]; omega
 
-theorem in_y {o n : Nat} (h : o + n ≤ 128 * rr s₀) :
+theorem in_y {o n : Nat} (h : o + n ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     (yR s₀).Contains (yA s₀ + BitVec.ofNat 64 o) n :=
   contains_off (by omega) (by have := r_lt hp; omega)
 
-theorem in_b {o n : Nat} (h : o + n ≤ 128 * rr s₀) :
+theorem in_b {o n : Nat} (h : o + n ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     (bR s₀).Contains (bA s₀ + BitVec.ofNat 64 o) n :=
   contains_off (by omega) (by have := r_lt hp; omega)
 
 /-- Two parts of `y`. -/
-theorem y_disj {o₁ n₁ o₂ n₂ : Nat} (h : o₁ + n₁ ≤ o₂ ∨ o₂ + n₂ ≤ o₁) (h₁ : o₁ + n₁ ≤ 128 * rr s₀)
-    (h₂ : o₂ + n₂ ≤ 128 * rr s₀) :
+theorem y_disj {o₁ n₁ o₂ n₂ : Nat} (h : o₁ + n₁ ≤ o₂ ∨ o₂ + n₂ ≤ o₁) (h₁ : o₁ + n₁ ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀)
+    (h₂ : o₂ + n₂ ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     Region.Disjoint ⟨yA s₀ + BitVec.ofNat 64 o₁, n₁⟩ ⟨yA s₀ + BitVec.ofNat 64 o₂, n₂⟩ :=
   have := r_lt hp
   disj_off _ h (by omega) (by omega) (by omega) (by omega)
 
-theorem y_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨yA s₀ + BitVec.ofNat 64 o, n⟩ (yR s₀) :=
+theorem y_sub {o n : Nat} (h : o + n ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) : Region.Sub ⟨yA s₀ + BitVec.ofNat 64 o, n⟩ (yR s₀) :=
   sub_off (by omega) (by have := r_lt hp; omega)
 
-theorem b_sub {o n : Nat} (h : o + n ≤ 128 * rr s₀) : Region.Sub ⟨bA s₀ + BitVec.ofNat 64 o, n⟩ (bR s₀) :=
+theorem b_sub {o n : Nat} (h : o + n ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) : Region.Sub ⟨bA s₀ + BitVec.ofNat 64 o, n⟩ (bR s₀) :=
   sub_off (by omega) (by have := r_lt hp; omega)
 
 /-- A part of `y` and a part of `b`. -/
-theorem yb_disj {o₁ n₁ o₂ n₂ : Nat} (h₁ : o₁ + n₁ ≤ 128 * rr s₀) (h₂ : o₂ + n₂ ≤ 128 * rr s₀) :
+theorem yb_disj {o₁ n₁ o₂ n₂ : Nat} (h₁ : o₁ + n₁ ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (h₂ : o₂ + n₂ ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     Region.Disjoint ⟨yA s₀ + BitVec.ofNat 64 o₁, n₁⟩ ⟨bA s₀ + BitVec.ofNat 64 o₂, n₂⟩ :=
   (hp.b_y.symm.sub_left (y_sub hp h₁)).sub_right (b_sub hp h₂)
 
 /-- A pointer into `y`, as an address. -/
-theorem y_addr {o : Nat} (h : o < 128 * rr s₀) :
+theorem y_addr {o : Nat} (h : o < 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     State.addr (yP s₀ + BitVec.ofNat 32 o) = yA s₀ + BitVec.ofNat 64 o :=
   addr_add (by have := hp.y_nw; omega)
 
-theorem b_addr {o : Nat} (h : o < 128 * rr s₀) :
+theorem b_addr {o : Nat} (h : o < 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     State.addr (bP s₀ + BitVec.ofNat 32 o) = bA s₀ + BitVec.ofNat 64 o :=
   addr_add (by have := hp.b_nw; omega)
 
-theorem y_fit {o : Nat} (h : o + 64 ≤ 128 * rr s₀) : (yP s₀ + BitVec.ofNat 32 o).toNat + 64 ≤ 2 ^ 32 := by
+theorem y_fit {o : Nat} (h : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) : (yP s₀ + BitVec.ofNat 32 o).toNat + 64 ≤ 2 ^ 32 := by
   have := hp.y_nw
   rw [toNat_add32 (by omega)]; omega
 
-theorem b_fit {o : Nat} (h : o + 64 ≤ 128 * rr s₀) : (bP s₀ + BitVec.ofNat 32 o).toNat + 64 ≤ 2 ^ 32 := by
+theorem b_fit {o : Nat} (h : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) : (bP s₀ + BitVec.ofNat 32 o).toNat + 64 ≤ 2 ^ 32 := by
   have := hp.b_nw
   rw [toNat_add32 (by omega)]; omega
 
 end
 
 theorem in_s (s₀ : State) {o n : Nat} (h : o + n ≤ 128) :
-    (scR s₀).Contains (scA s₀ + BitVec.ofNat 64 o) n :=
+    (VG.Proof.Scrypt.Arm.BlockMix.scR s₀).Contains (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 o) n :=
   contains_off h (by omega)
 
 theorem s_sub (s₀ : State) {o n : Nat} (h : o + n ≤ 128) :
-    Region.Sub ⟨scA s₀ + BitVec.ofNat 64 o, n⟩ (scR s₀) :=
+    Region.Sub ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 o, n⟩ (VG.Proof.Scrypt.Arm.BlockMix.scR s₀) :=
   sub_off h (by omega)
 
 /-! ## The loop invariant -/
 
 /-- After `k` pairs. -/
 structure Inv (s₀ : State) (k : Nat) (s : State) : Prop where
-  k_le : k ≤ rr s₀
+  k_le : k ≤ VG.Proof.Scrypt.Arm.BlockMix.rr s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
   r4 : s.gpr .r4 = bP s₀ + BitVec.ofNat 32 (128 * k)
   r5 : s.gpr .r5 = yP s₀ + BitVec.ofNat 32 (64 * k)
-  r6 : s.gpr .r6 = yP s₀ + BitVec.ofNat 32 (64 * (rr s₀ + k))
+  r6 : s.gpr .r6 = yP s₀ + BitVec.ofNat 32 (64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k))
   r7 : s.gpr .r7 = sc s₀
-  r8 : s.gpr .r8 = BitVec.ofNat 32 (rr s₀ - k)
+  r8 : s.gpr .r8 = BitVec.ofNat 32 (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - k)
   r9 : s.gpr .r9 = xP32 s₀ k
   keep : ∀ r ∈ others, s.gpr r = s₀.gpr r
-  frame : Frame [yR s₀, scR s₀] s₀.mem s.mem
-  saved : Saved s₀ s.mem
-  done : ∀ i < k, bytesAt s.mem (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
-    bytesAt s.mem (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1)
-  x : bytesAt s.mem (xP s₀ k) 64 = xBefore (B s₀) (rr s₀) (2 * k)
+  frame : Frame [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem s.mem
+  saved : VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ s.mem
+  done : ∀ i < k, bytesAt s.mem (yE s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i) ∧
+    bytesAt s.mem (yO s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i + 1)
+  x : bytesAt s.mem (xP s₀ k) 64 = xBefore (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * k)
 
 /-- The input is unchanged in any memory that differs from the initial one
 only in `y` and `scratch`. -/
-theorem b_frame {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [yR s₀, scR s₀] s₀.mem m)
-    {o n : Nat} (ho : o + n ≤ 128 * rr s₀) :
+theorem b_frame {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {m : Mem} (hf : Frame [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem m)
+    {o n : Nat} (ho : o + n ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     bytesAt m (bA s₀ + BitVec.ofNat 64 o) n = bytesAt s₀.mem (bA s₀ + BitVec.ofNat 64 o) n := by
   refine frame_bytesAt hf (fun r hr => ?_) (by have := r_lt hp; omega)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -838,7 +838,7 @@ theorem b_frame {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [yR s₀, s
   · exact hp.b_s.sub_left (b_sub hp ho)
 
 /-- Block `i` of the input. -/
-theorem blk_B (s₀ : State) {i : Nat} (hi : i < 2 * rr s₀) :
+theorem blk_B (s₀ : State) {i : Nat} (hi : i < 2 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     blk (B s₀) i = bytesAt s₀.mem (bA s₀ + BitVec.ofNat 64 (64 * i)) 64 :=
   blk_bytesAt _ _ (by omega)
 
@@ -849,12 +849,12 @@ theorem pres_ne : ∀ r ∈ preserved, r ≠ .r0 ∧ r ≠ .r1 ∧ r ≠ .r2 ∧
 /-- A 64-byte slot of `y` at offset `o`. -/
 abbrev slot (s₀ : State) (o : Nat) : Region := ⟨yA s₀ + BitVec.ofNat 64 o, 64⟩
 
-theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {dR : Reg}
-    {s : State} {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) (hd : s.gpr dR = yP s₀ + BitVec.ofNat 32 o)
+theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {dR : Reg}
+    {s : State} {o : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (hd : s.gpr dR = yP s₀ + BitVec.ofNat 32 o)
     (h7 : s.gpr .r7 = sc s₀) (hwr : s.wr = s₀.wr) {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
-      Frame [slot s₀ o, ⟨scA s₀, 64⟩] s.mem s'.mem →
+      Frame [slot s₀ o, ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] s.mem s'.mem →
       bytesAt s'.mem (yA s₀ + BitVec.ofNat 64 o) 64 =
         salsa (bytesAt s.mem (yA s₀ + BitVec.ofNat 64 o) 64) → Q s') :
     WP isa (salsaAt c dR) s Q := by
@@ -866,38 +866,38 @@ theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     rw [u₂.other _ (pres_ne r hr).2.1, u₁.other _ (pres_ne r hr).1]
   have ea : State.addr (yP s₀ + BitVec.ofNat 32 o) = yA s₀ + BitVec.ofNat 64 o := y_addr hp (by omega)
   have hsub : Region.Sub (slot s₀ o) (yR s₀) := y_sub hp ho
-  have hsub' : Region.Sub ⟨scA s₀, 64⟩ (scR s₀) := Region.sub_prefix (by omega)
-  have hsc : (scR s₀).Contains (scA s₀) 64 := by
+  have hsub' : Region.Sub ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩ (VG.Proof.Scrypt.Arm.BlockMix.scR s₀) := Region.sub_prefix (by omega)
+  have hsc : (VG.Proof.Scrypt.Arm.BlockMix.scR s₀).Contains (VG.Proof.Scrypt.Arm.BlockMix.scA s₀) 64 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
   refine hS s₂ _ _ e₁ e₂ (y_fit hp ho) (by have := hp.s_nw; omega)
     (by rw [ea]; exact hp.y_s.sub_left hsub |>.sub_right hsub')
     (by rw [u₂.wr, u₁.wr, hwr, hp.wr, ea]; exact InRegions.of_mem (by simp) (in_y hp ho))
-    (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (R := scR s₀) (by simp) hsc)
+    (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (R := VG.Proof.Scrypt.Arm.BlockMix.scR s₀) (by simp) hsc)
     _ fun s' hrd hwr' hsp hcs hf hb => hQ s' (by rw [hrd, u₂.rd, u₁.rd]) (by rw [hwr', u₂.wr, u₁.wr])
       (by rw [hsp, u₂.sp, u₁.sp]) (fun r hr hlr => by rw [hcs r hr hlr, e₃ r hr])
       (by rw [u₂.mem, u₁.mem, ea] at hf; exact hf) (by rw [ea] at hb; rw [hb, u₂.mem, u₁.mem])
 
 /-! ## One pair -/
 
-theorem slot_s {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) :
-    (slot s₀ o).Disjoint ⟨scA s₀, 64⟩ :=
+theorem slot_s {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
+    (slot s₀ o).Disjoint ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩ :=
   (hp.y_s.sub_left (y_sub hp ho)).sub_right (Region.sub_prefix (by omega))
 
 /-- Where `X` is, as an address. -/
-theorem xP_addr {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
+theorem xP_addr {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     State.addr (xP32 s₀ k) = xP s₀ k := by
   cases k with
   | zero => exact b_addr hp (by have := hp.pos; omega)
   | succ j => exact y_addr hp (by omega)
 
-theorem xP_fit {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
+theorem xP_fit {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     (xP32 s₀ k).toNat + 64 ≤ 2 ^ 32 := by
   cases k with
   | zero => exact b_fit hp (by have := hp.pos; omega)
   | succ j => exact y_fit hp (by omega)
 
-theorem xP_in {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State}
-    (hrd : s.rd = [bR s₀, argR s₀]) (hwr : s.wr = [yR s₀, scR s₀]) :
+theorem xP_in {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s : State}
+    (hrd : s.rd = [bR s₀, VG.Proof.Scrypt.Arm.BlockMix.argR s₀]) (hwr : s.wr = [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀]) :
     ∀ i < 16, InRegions (s.rd ++ s.wr) (xP s₀ k + BitVec.ofNat 64 (4 * i)) 4 := by
   intro i hi
   rw [hrd, hwr]
@@ -911,34 +911,34 @@ theorem xP_in {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : S
     rw [add_ofNat]
     exact InRegions.of_mem (by simp) (in_y hp (by omega))
 
-theorem xP_disj {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) :
+theorem xP_disj {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :
     Region.Disjoint (slot s₀ (64 * k)) ⟨xP s₀ k, 64⟩ := by
   cases k with
   | zero => exact yb_disj hp (by omega) (by have := hp.pos; omega)
   | succ j => exact y_disj hp (by omega) (by omega) (by omega)
 
 /-- What a call's frame keeps: our caller's saved registers. -/
-theorem saved_keep {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) {m m' : Mem}
-    (hf : Frame [slot s₀ o, ⟨scA s₀, 64⟩] m m') (h : Saved s₀ m) : Saved s₀ m' := by
+theorem saved_keep {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {m m' : Mem}
+    (hf : Frame [slot s₀ o, ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] m m') (h : VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ m) : VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ m' := by
   intro p hp'
   rw [← h p hp']
   have hp4 : p.2 + 4 ≤ 128 ∧ 64 ≤ p.2 := by
     simp only [bmSaved, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
-  have hsub : Region.Sub ⟨scA s₀ + BitVec.ofNat 64 p.2, 4⟩ (scR s₀) := s_sub s₀ (by omega)
-  refine hf.readW (r := ⟨scA s₀ + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
+  have hsub : Region.Sub ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 p.2, 4⟩ (VG.Proof.Scrypt.Arm.BlockMix.scR s₀) := s_sub s₀ (by omega)
+  refine hf.readW (r := ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 p.2, 4⟩) (Region.contains_self _ _) (fun r hr => ?_)
     (by decide)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (hp.y_s.sub_left (y_sub hp ho)).sub_right hsub |>.symm
-  · have := disj_off (scA s₀) (o₁ := p.2) (n₁ := 4) (o₂ := 0) (n₂ := 64) (by omega) (by omega)
+  · have := disj_off (VG.Proof.Scrypt.Arm.BlockMix.scA s₀) (o₁ := p.2) (n₁ := 4) (o₂ := 0) (n₂ := 64) (by omega) (by omega)
       (by omega) (by omega) (by omega)
     simpa using this
 
 /-- What a call's frame keeps: the other blocks of `y`. -/
-theorem slot_keep {s₀ : State} (hp : Pre s₀) {o o' : Nat} (ho : o + 64 ≤ 128 * rr s₀)
-    (ho' : o' + 64 ≤ 128 * rr s₀) (hd : o' + 64 ≤ o ∨ o + 64 ≤ o') {m m' : Mem}
-    (hf : Frame [slot s₀ o, ⟨scA s₀, 64⟩] m m') :
+theorem slot_keep {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {o o' : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀)
+    (ho' : o' + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (hd : o' + 64 ≤ o ∨ o + 64 ≤ o') {m m' : Mem}
+    (hf : Frame [slot s₀ o, ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] m m') :
     bytesAt m' (yA s₀ + BitVec.ofNat 64 o') 64 = bytesAt m (yA s₀ + BitVec.ofNat 64 o') 64 := by
   refine frame_bytesAt hf (fun r hr => ?_) (by omega)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -946,20 +946,20 @@ theorem slot_keep {s₀ : State} (hp : Pre s₀) {o o' : Nat} (ho : o + 64 ≤ 1
   · exact y_disj hp hd ho' ho
   · exact slot_s hp ho'
 
-theorem frame_big {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) {m m' : Mem}
-    (hf : Frame [slot s₀ o, ⟨scA s₀, 64⟩] m m') : Frame [yR s₀, scR s₀] m m' :=
+theorem frame_big {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {m m' : Mem}
+    (hf : Frame [slot s₀ o, ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] m m') : Frame [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨yR s₀, List.mem_cons_self, y_sub hp ho⟩
-    · exact ⟨scR s₀, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
+    · exact ⟨VG.Proof.Scrypt.Arm.BlockMix.scR s₀, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega)⟩
 
 /-- Half a pair: `T = X xor B[i]` into block `o` of `y`, then Salsa20/8 of it. -/
-theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {dR xR sR : Reg}
+theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {dR xR sR : Reg}
     (hd : dR ≠ .r2 ∧ dR ≠ .r3) (hx : xR ≠ .r2 ∧ xR ≠ .r3) (hs : sR ≠ .r2 ∧ sR ≠ .r3)
-    {o : Nat} (ho : o + 64 ≤ 128 * rr s₀)
-    {x : BitVec 32} (fx : x.toNat + 64 ≤ 2 ^ 32) {ob : Nat} (hob : ob + 64 ≤ 128 * rr s₀) {s : State}
-    (hrd : s.rd = [bR s₀, argR s₀]) (hwr : s.wr = [yR s₀, scR s₀])
+    {o : Nat} (ho : o + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀)
+    {x : BitVec 32} (fx : x.toNat + 64 ≤ 2 ^ 32) {ob : Nat} (hob : ob + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s : State}
+    (hrd : s.rd = [bR s₀, VG.Proof.Scrypt.Arm.BlockMix.argR s₀]) (hwr : s.wr = [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀])
     (gd : s.gpr dR = yP s₀ + BitVec.ofNat 32 o) (gx : s.gpr xR = x)
     (gs : s.gpr sR = bP s₀ + BitVec.ofNat 32 ob) (h7 : s.gpr .r7 = sc s₀)
     (hdx : Region.Disjoint (slot s₀ o) ⟨State.addr x, 64⟩)
@@ -967,7 +967,7 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
     {P : Prog isa} {Q : State → Prop}
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
-      Frame [slot s₀ o, ⟨scA s₀, 64⟩] s.mem s'.mem →
+      Frame [slot s₀ o, ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] s.mem s'.mem →
       bytesAt s'.mem (yA s₀ + BitVec.ofNat 64 o) 64 =
         salsa (xorBytes (bytesAt s.mem (State.addr x) 64)
           (bytesAt s.mem (bA s₀ + BitVec.ofNat 64 ob) 64)) →
@@ -989,7 +989,7 @@ theorem half_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
       (bytesAt s.mem (bA s₀ + BitVec.ofNat 64 ob) 64)).length = 64 := by
     rw [xorBytes_length _ _ (by simp [bytesAt_length]), bytesAt_length]
   have f₁ : Frame [slot s₀ o] s.mem s₁.mem := by
-    rw [m₁]; exact writeBytes_frame _ _ _ (by rw [l1]; exact Region.contains_self _ _)
+    rw [m₁]; exact VG.WriteBytes.writeBytes_frame _ _ _ (by rw [l1]; exact Region.contains_self _ _)
   have hw := bytesAt_writeBytes_self s.mem (yA s₀ + BitVec.ofNat 64 o) _ (by rw [l1]; omega)
   rw [l1] at hw
   refine WP.seq (salsaAt_ok hS hp ho (by rw [g₁ _ hd.1 hd.2, gd]) (by rw [g₁ _ (by decide) (by decide), h7])
@@ -1006,32 +1006,32 @@ structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
   sp : s.sp = s₀.sp
   r4 : s.gpr .r4 = bP s₀ + BitVec.ofNat 32 (64 * (2 * k + 1))
   r5 : s.gpr .r5 = yP s₀ + BitVec.ofNat 32 (64 * k)
-  r6 : s.gpr .r6 = yP s₀ + BitVec.ofNat 32 (64 * (rr s₀ + k))
+  r6 : s.gpr .r6 = yP s₀ + BitVec.ofNat 32 (64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k))
   r7 : s.gpr .r7 = sc s₀
-  r8 : s.gpr .r8 = BitVec.ofNat 32 (rr s₀ - k)
+  r8 : s.gpr .r8 = BitVec.ofNat 32 (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - k)
   keep : ∀ r ∈ others, s.gpr r = s₀.gpr r
-  frame : Frame [yR s₀, scR s₀] s₀.mem s.mem
-  saved : Saved s₀ s.mem
-  done : ∀ i < k + 1, bytesAt s.mem (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
-    bytesAt s.mem (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1)
+  frame : Frame [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem s.mem
+  saved : VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ s.mem
+  done : ∀ i < k + 1, bytesAt s.mem (yE s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i) ∧
+    bytesAt s.mem (yO s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i + 1)
 
 /-- The memory after pair `k`. -/
-theorem mem_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s s₂ s₅ : State}
-    (h : Inv s₀ k s)
-    (f₂ : Frame [slot s₀ (64 * k), ⟨scA s₀, 64⟩] s.mem s₂.mem)
+theorem mem_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s s₂ s₅ : State}
+    (h : VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ k s)
+    (f₂ : Frame [slot s₀ (64 * k), ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] s.mem s₂.mem)
     (b₂ : bytesAt s₂.mem (yE s₀ k) 64 =
       salsa (xorBytes (bytesAt s.mem (xP s₀ k) 64) (bytesAt s.mem (bA s₀ + BitVec.ofNat 64 (128 * k)) 64)))
-    (f₅ : Frame [slot s₀ (64 * (rr s₀ + k)), ⟨scA s₀, 64⟩] s₂.mem s₅.mem)
+    (f₅ : Frame [slot s₀ (64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k)), ⟨VG.Proof.Scrypt.Arm.BlockMix.scA s₀, 64⟩] s₂.mem s₅.mem)
     (b₅ : bytesAt s₅.mem (yO s₀ k) 64 = salsa (xorBytes (bytesAt s₂.mem (yE s₀ k) 64)
       (bytesAt s₂.mem (bA s₀ + BitVec.ofNat 64 (64 * (2 * k + 1))) 64))) :
-    Frame [yR s₀, scR s₀] s₀.mem s₅.mem ∧ Saved s₀ s₅.mem ∧
-    ∀ i < k + 1, bytesAt s₅.mem (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
-      bytesAt s₅.mem (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1) := by
+    Frame [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem s₅.mem ∧ VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ s₅.mem ∧
+    ∀ i < k + 1, bytesAt s₅.mem (yE s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i) ∧
+      bytesAt s₅.mem (yO s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i + 1) := by
   have lt := r_lt hp
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega
+  have oE : 64 * k + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ := by omega
+  have oO : 64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k) + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ := by omega
   have F₂ := h.frame.trans (frame_big hp oE f₂)
-  have yE_eq : bytesAt s₂.mem (yE s₀ k) 64 = yAt (B s₀) (rr s₀) (2 * k) := by
+  have yE_eq : bytesAt s₂.mem (yE s₀ k) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * k) := by
     rw [b₂, h.x, b_frame hp h.frame (by omega : 128 * k + 64 ≤ 128 * rr s₀),
       show 128 * k = 64 * (2 * k) by omega, ← blk_B s₀ (by omega), yAt_eq]
   have hb : bytesAt s₂.mem (bA s₀ + BitVec.ofNat 64 (64 * (2 * k + 1))) 64 =
@@ -1044,7 +1044,7 @@ theorem mem_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s s�
   · subst i
     refine ⟨?_, ?_⟩
     · rw [slot_keep hp oO oE (by omega) f₅, yE_eq]
-    · rw [b₅, yE_eq, hb, yAt_eq (B s₀) (rr s₀) (2 * k + 1), xBefore_succ]
+    · rw [b₅, yE_eq, hb, yAt_eq (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * k + 1), xBefore_succ]
   · have hi' : i < k := by omega
     obtain ⟨d₁, d₂⟩ := h.done i hi'
     refine ⟨?_, ?_⟩
@@ -1054,17 +1054,17 @@ theorem mem_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s s�
 theorem others_pres : ∀ r ∈ others, r ∈ preserved ∧ r ≠ .lr ∧ r ≠ .r4 := by decide
 
 /-- Both halves of pair `k`. -/
-theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {k : Nat}
-    (hk : k < rr s₀) {s : State} (h : Inv s₀ k s) {P : Prog isa} {Q : State → Prop}
+theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat}
+    (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s : State} (h : VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ k s) {P : Prog isa} {Q : State → Prop}
     (hQ : ∀ s', Mid s₀ k s' → WP isa P s' Q) :
     WP isa (.seq (.block (xor64 .r5 .r9 .r4)) <| .seq (salsaAt c .r5) <|
       .seq (.block (.dp .add .r4 .r4 (.imm 64) :: xor64 .r6 .r5 .r4)) <| .seq (salsaAt c .r6) P)
       s Q := by
   have lt := r_lt hp
-  have hrd : s.rd = [bR s₀, argR s₀] := by rw [h.rd, hp.rd]
-  have hwr : s.wr = [yR s₀, scR s₀] := by rw [h.wr, hp.wr]
-  have oE : 64 * k + 64 ≤ 128 * rr s₀ := by omega
-  have oO : 64 * (rr s₀ + k) + 64 ≤ 128 * rr s₀ := by omega
+  have hrd : s.rd = [bR s₀, VG.Proof.Scrypt.Arm.BlockMix.argR s₀] := by rw [h.rd, hp.rd]
+  have hwr : s.wr = [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] := by rw [h.wr, hp.wr]
+  have oE : 64 * k + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ := by omega
+  have oO : 64 * (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + k) + 64 ≤ 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ := by omega
   have ex := xP_addr hp hk
   refine WP.seq (half_ok hS hp (by decide) (by decide) (by decide) oE (xP_fit hp hk) (ob := 128 * k)
     (by omega) hrd hwr h.r5 h.r9 h.r4 h.r7 (by rw [ex]; exact xP_disj hp hk)
@@ -1075,8 +1075,8 @@ theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     rw [u₃.other _ h1, cs₂ r h2 h3]
   have e3 : s₃.gpr .r4 = bP s₀ + BitVec.ofNat 32 (64 * (2 * k + 1)) := by
     rw [u₃.gpr, cs₂ _ (by decide) (by decide), h.r4, add32_lit]; congr 2; omega
-  have hrd₃ : s₃.rd = [bR s₀, argR s₀] := by rw [u₃.rd, rd₂, hrd]
-  have hwr₃ : s₃.wr = [yR s₀, scR s₀] := by rw [u₃.wr, wr₂, hwr]
+  have hrd₃ : s₃.rd = [bR s₀, VG.Proof.Scrypt.Arm.BlockMix.argR s₀] := by rw [u₃.rd, rd₂, hrd]
+  have hwr₃ : s₃.wr = [yR s₀, VG.Proof.Scrypt.Arm.BlockMix.scR s₀] := by rw [u₃.wr, wr₂, hwr]
   have e5 : s₃.gpr .r5 = yP s₀ + BitVec.ofNat 32 (64 * k) := by
     rw [k3 _ (by decide) (by decide) (by decide), h.r5]
   refine half_ok hS hp (by decide) (by decide) (by decide) oO (y_fit hp oE) (ob := 64 * (2 * k + 1))
@@ -1104,11 +1104,11 @@ theorem halves_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
     F, S, D⟩
 
 /-- The pointers move on. -/
-theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s : State}
+theorem regs_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat} (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s : State}
     (h : Mid s₀ k s) :
     WP isa (.block [.mov .r9 (.reg .r6), .dp .add .r4 .r4 (.imm 64), .dp .add .r5 .r5 (.imm 64),
       .dp .add .r6 .r6 (.imm 64), .subs .r8 .r8 (.imm 1)]) s
-      fun s' => Inv s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = rr s₀) := by
+      fun s' => VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = VG.Proof.Scrypt.Arm.BlockMix.rr s₀) := by
   have lt := r_lt hp
   refine wp_mov (op2_reg _ _) fun s₆ u₆ => wp_add (op2_imm (by decide)) fun s₇ u₇ =>
     wp_add (op2_imm (by decide)) fun s₈ u₈ => wp_add (op2_imm (by decide)) fun s₉ u₉ =>
@@ -1117,7 +1117,7 @@ theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
   have g : ∀ r, r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r8 → r ≠ .r9 → s₁₀.gpr r = s.gpr r :=
     fun r h4 h5 h6 h8 h9 => by
       rw [u₁₀.other _ h8, u₉.other _ h6, u₈.other _ h5, u₇.other _ h4, u₆.other _ h9]
-  have e8 : s₁₀.gpr .r8 = BitVec.ofNat 32 (rr s₀ - (k + 1)) := by
+  have e8 : s₁₀.gpr .r8 = BitVec.ofNat 32 (VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - (k + 1)) := by
     rw [u₁₀.gpr, u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), h.r8, ofNat_pred32 (by omega), Nat.sub_sub]
   refine ⟨⟨(by omega), ?_, ?_, ?_, ?_, ?_, ?_, ?_, e8, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -1155,9 +1155,9 @@ theorem regs_ok {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < rr s₀) {s :
     simp only [decide_eq_decide]
     omega
 
-theorem body_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {k : Nat}
-    (hk : k < rr s₀) {s : State} (h : Inv s₀ k s) :
-    WP isa (bmBody c) s fun s' => Inv s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = rr s₀) :=
+theorem body_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {k : Nat}
+    (hk : k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀) {s : State} (h : VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ k s) :
+    WP isa (bmBody c) s fun s' => VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ (k + 1) s' ∧ s'.z = decide (k + 1 = VG.Proof.Scrypt.Arm.BlockMix.rr s₀) :=
   halves_ok hS hp hk h fun _ hm => regs_ok hp hk hm
 
 end VG.Proof.Scrypt.Arm.BlockMix
@@ -1192,27 +1192,27 @@ theorem prologue_eq : bmPrologue =
     .ldrSp .r12 0 :: (bmSaved.map (fun p => Instr.str p.1 .r12 p.2) ++ bmSetup) := rfl
 
 theorem saveMem_saved (m : Mem) (B : Addr) (g : Reg → BitVec 32) :
-    ∀ p ∈ bmSaved, (saveMem m B g bmSaved).readW (B + BitVec.ofNat 64 p.2) 32 = g p.1 :=
+    ∀ p ∈ bmSaved, (VG.Arm.Spill.saveMem m B g bmSaved).readW (B + BitVec.ofNat 64 p.2) 32 = g p.1 :=
   Spill.saveMem_saved (lo := 64) (hi := 92) B g m bmSaved (by decide)
 
 theorem bmSaved_bound : ∀ p ∈ bmSaved, p.2 + 4 ≤ 128 ∧ 64 ≤ p.2 ∧ p.1 ≠ .r12 := by decide
 
 theorem bmSaved_r7 : ∀ p ∈ bmSaved.take 6, p.1 ≠ .r7 := by decide
 
-theorem save_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State → Prop}
+theorem save_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {rest : List Instr} {Q : State → Prop}
     (k : ∀ s₁, (∀ r, r ≠ .r12 → s₁.gpr r = s₀.gpr r) → s₁.gpr .r12 = sc s₀ → s₁.rd = s₀.rd →
-      s₁.wr = s₀.wr → s₁.sp = s₀.sp → Frame [scR s₀] s₀.mem s₁.mem → Saved s₀ s₁.mem →
+      s₁.wr = s₀.wr → s₁.sp = s₀.sp → Frame [VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem s₁.mem → VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ s₁.mem →
       WP isa (.block rest) s₁ Q) :
     WP isa (.block (.ldrSp .r12 0 :: (bmSaved.map (fun p => Instr.str p.1 .r12 p.2) ++ rest)))
       s₀ Q := by
   have hs := hp.s_nw
   refine wp_ldrSp (a := stackArgAddr s₀ 0) (by decide) rfl ?_ fun s₁ u₁ => ?_
   · rw [hp.rd]
-    refine InRegions.of_mem (R := argR s₀) (by simp) ?_
+    refine InRegions.of_mem (R := VG.Proof.Scrypt.Arm.BlockMix.argR s₀) (by simp) ?_
     show (stackArgAddr s₀ 0 - stackArgAddr s₀ 0).toNat + 4 ≤ 4
     rw [BitVec.sub_self, BitVec.toNat_zero]
   have e12 : s₁.gpr .r12 = sc s₀ := u₁.gpr
-  refine saveList_ok bmSaved s₁ Q (fun p hp' => ?_) fun s₂ g rd wr sp m => ?_
+  refine VG.Arm.Spill.saveList_ok bmSaved s₁ Q (fun p hp' => ?_) fun s₂ g rd wr sp m => ?_
   · obtain ⟨h1, h2, -⟩ := bmSaved_bound p hp'
     rw [e12, u₁.wr, hp.wr]
     exact ⟨by omega, by omega, InRegions.of_mem (by simp) (in_s s₀ h1)⟩
@@ -1225,10 +1225,10 @@ theorem save_ok {s₀ : State} (hp : Pre s₀) {rest : List Instr} {Q : State �
     exact hp'
 
 /-- The registers the loop starts with. -/
-theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠ .r12 → s₁.gpr r = s₀.gpr r)
+theorem setup_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {s₁ : State} (g : ∀ r, r ≠ .r12 → s₁.gpr r = s₀.gpr r)
     (g12 : s₁.gpr .r12 = sc s₀) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hsp : s₁.sp = s₀.sp)
-    (hf : Frame [scR s₀] s₀.mem s₁.mem) (hsv : Saved s₀ s₁.mem) :
-    WP isa (.block bmSetup) s₁ (Inv s₀ 0) := by
+    (hf : Frame [VG.Proof.Scrypt.Arm.BlockMix.scR s₀] s₀.mem s₁.mem) (hsv : VG.Proof.Scrypt.Arm.BlockMix.Saved s₀ s₁.mem) :
+    WP isa (.block bmSetup) s₁ (VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ 0) := by
   have lt := r_lt hp
   have pos := hp.pos
   refine wp_mov (op2_reg _ _) fun a ua => wp_mov (op2_reg _ _) fun b ub =>
@@ -1241,7 +1241,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
       i.gpr r = s₀.gpr r := fun r h4 h5 h6 h7 h8 h9 h12 => by
     rw [ui.other _ h9, uf.other _ h9, ue.other _ h6, ud.other _ h7, uc.other _ h5, ub.other _ h4,
       ua.other _ h8, g _ h12]
-  have hr : rr s₀ = (s₀.gpr .r1).toNat := rfl
+  have hr : VG.Proof.Scrypt.Arm.BlockMix.rr s₀ = (s₀.gpr .r1).toNat := rfl
   have x1 : d.gpr .r1 = s₀.gpr .r1 := by
     rw [ud.other _ (by decide), uc.other _ (by decide), ub.other _ (by decide),
       ua.other _ (by decide), g _ (by decide)]
@@ -1273,7 +1273,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
       g _ (by decide), Nat.sub_zero]
     exact ofNat_toNat32 _
   · rw [ui.gpr, uf.gpr, e0, e1, shl32 (by omega),
-      show (s₀.gpr .r1).toNat * 2 ^ 7 = 128 * rr s₀ by omega, sub32 _ (by omega)]
+      show (s₀.gpr .r1).toNat * 2 ^ 7 = 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ by omega, sub32 _ (by omega)]
     rfl
   · intro r hr
     simp only [others, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1282,48 +1282,48 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) {s₁ : State} (g : ∀ r, r ≠
   · rw [hm]; exact hf.mono (by simp)
   · rw [hm]; exact hsv
   · rw [hm]
-    show bytesAt s₁.mem (bA s₀ + BitVec.ofNat 64 (128 * rr s₀ - 64)) 64 =
-      blk (B s₀) (2 * rr s₀ - 1)
-    rw [blk_B s₀ (by omega), show 64 * (2 * rr s₀ - 1) = 128 * rr s₀ - 64 by omega]
+    show bytesAt s₁.mem (bA s₀ + BitVec.ofNat 64 (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 64)) 64 =
+      blk (B s₀) (2 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 1)
+    rw [blk_B s₀ (by omega), show 64 * (2 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 1) = 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - 64 by omega]
     exact b_frame hp (hf.mono (by simp)) (by omega)
 
 /-! ## The loop -/
 
-theorem loop_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) {s : State}
-    (h : Inv s₀ 0 s) : WP isa (.loop (bmBody c) .ne) s (Inv s₀ (rr s₀)) := by
-  refine WP.loop (M := isa) (fun n s => ∃ k, n = rr s₀ - k ∧ k < rr s₀ ∧ Inv s₀ k s) ?_ (rr s₀) s
+theorem loop_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {s : State}
+    (h : VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ 0 s) : WP isa (.loop (bmBody c) .ne) s (VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ (VG.Proof.Scrypt.Arm.BlockMix.rr s₀)) := by
+  refine WP.loop (M := isa) (fun n s => ∃ k, n = VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - k ∧ k < VG.Proof.Scrypt.Arm.BlockMix.rr s₀ ∧ VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ k s) ?_ (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) s
     ⟨0, rfl, hp.pos, h⟩
   rintro n s ⟨k, rfl, hk, hi⟩
-  refine WP.mono (body_ok hS hp hk hi) fun s' ⟨hi', hz⟩ => ?_
-  have he : isa.eval .ne s' = some (!decide (k + 1 = rr s₀)) := by
+  refine WP.mono (VG.Proof.Scrypt.Arm.BlockMix.body_ok hS hp hk hi) fun s' ⟨hi', hz⟩ => ?_
+  have he : isa.eval .ne s' = some (!decide (k + 1 = VG.Proof.Scrypt.Arm.BlockMix.rr s₀)) := by
     rw [← hz]; exact eval_ne s'
-  by_cases hl : k + 1 = rr s₀
+  by_cases hl : k + 1 = VG.Proof.Scrypt.Arm.BlockMix.rr s₀
   · refine .inl ⟨by rw [he]; simp [hl], ?_⟩
     rwa [hl] at hi'
-  · exact .inr ⟨by rw [he]; simp [hl], rr s₀ - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
+  · exact .inr ⟨by rw [he]; simp [hl], VG.Proof.Scrypt.Arm.BlockMix.rr s₀ - (k + 1), by omega, k + 1, rfl, by omega, hi'⟩
 
 /-! ## The epilogue -/
 
 theorem epilogue_eq : bmEpilogue =
     (bmSaved.take 6).map (fun p => Instr.ldr p.1 .r7 p.2) ++ ([.ldr .r7 .r7 88] : List Instr) := rfl
 
-theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : Inv s₀ (rr s₀) s) :
+theorem restore_ok {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) {s : State} (h : VG.Proof.Scrypt.Arm.BlockMix.Inv s₀ (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) s) :
     WP isa (.block bmEpilogue) s fun s' => s'.mem = s.mem ∧ s'.sp = s.sp ∧
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) := by
   have hs := hp.s_nw
   have hin : ∀ d, d + 4 ≤ 128 → ∀ t : State, t.rd = s.rd → t.wr = s.wr →
-      InRegions (t.rd ++ t.wr) (scA s₀ + BitVec.ofNat 64 d) 4 := fun d hd t hr hw => by
+      InRegions (t.rd ++ t.wr) (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 d) 4 := fun d hd t hr hw => by
     rw [hr, hw, h.rd, h.wr, hp.rd, hp.wr]; exact InRegions.of_mem (by simp) (in_s s₀ hd)
   rw [epilogue_eq]
-  refine restoreList_ok _ s _ (by decide) (fun p hp' => ?_) fun s₁ hl ho hm hrd hwr hsp => ?_
+  refine VG.Proof.Scrypt.Arm.restoreList_ok _ s _ (by decide) (fun p hp' => ?_) fun s₁ hl ho hm hrd hwr hsp => ?_
   · have hb := bmSaved_bound p (List.mem_of_mem_take hp')
     rw [h.r7]
     exact ⟨bmSaved_r7 p hp', by omega, by omega, hin _ hb.1 _ rfl rfl⟩
   have e7 : s₁.gpr .r7 = sc s₀ := by rw [ho _ (by decide), h.r7]
-  refine wp_ldr (a := scA s₀ + BitVec.ofNat 64 88) (by decide) (by rw [e7, addr_add (by omega)])
+  refine wp_ldr (a := VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 88) (by decide) (by rw [e7, addr_add (by omega)])
     (hin _ (by omega) _ hrd hwr) fun s₂ u₂ => WP.block_nil ?_
   refine ⟨by rw [u₂.mem, hm], by rw [u₂.sp, hsp], fun r hr => ?_⟩
-  have sv : ∀ p ∈ bmSaved, s.mem.readW (scA s₀ + BitVec.ofNat 64 p.2) 32 = s₀.gpr p.1 := h.saved
+  have sv : ∀ p ∈ bmSaved, s.mem.readW (VG.Proof.Scrypt.Arm.BlockMix.scA s₀ + BitVec.ofNat 64 p.2) 32 = s₀.gpr p.1 := h.saved
   have lo : ∀ p ∈ bmSaved.take 6, s₂.gpr p.1 = s₀.gpr p.1 := fun p hp' => by
     rw [u₂.other _ (bmSaved_r7 p hp'), hl p hp', h.r7]
     exact sv p (List.mem_of_mem_take hp')
@@ -1343,10 +1343,10 @@ theorem restore_ok {s₀ : State} (hp : Pre s₀) {s : State} (h : Inv s₀ (rr 
 
 /-- The output, from the blocks the loop wrote. -/
 theorem post_of {s₀ : State} {m : Mem}
-    (h : ∀ i < rr s₀, bytesAt m (yE s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i) ∧
-      bytesAt m (yO s₀ i) 64 = yAt (B s₀) (rr s₀) (2 * i + 1)) :
-    bytesAt m (yA s₀) (128 * rr s₀) = blockMix (rr s₀) (B s₀) := by
-  rw [blockMix_eq, show 128 * rr s₀ = 64 * rr s₀ + 64 * rr s₀ by omega, bytesAt_add,
+    (h : ∀ i < VG.Proof.Scrypt.Arm.BlockMix.rr s₀, bytesAt m (yE s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i) ∧
+      bytesAt m (yO s₀ i) 64 = yAt (B s₀) (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (2 * i + 1)) :
+    bytesAt m (yA s₀) (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) = blockMix (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (B s₀) := by
+  rw [blockMix_eq, show 128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ = 64 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ + 64 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀ by omega, bytesAt_add,
     bytesAt_blocks, bytesAt_blocks]
   congr 1
   · refine flatMap_congr fun i hi => ?_
@@ -1357,12 +1357,12 @@ theorem post_of {s₀ : State} {m : Mem}
     rw [add_ofNat, ← Nat.mul_add]
     exact (h i hi).2
 
-theorem pre_of {s₀ : State} (h : Proof.Scrypt.blockMixArm.pre s₀) : Pre s₀ := by
+theorem pre_of {s₀ : State} (h : Proof.Scrypt.blockMixArm.pre s₀) : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
   rw [h12] at h2 h3 h4 h6 h9
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩
 
-theorem correct {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀) :
+theorem correct {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : VG.Proof.Scrypt.Arm.BlockMix.Pre s₀) :
     WP isa (blockMixWith c) s₀ fun s' =>
       abiPreserved s₀ s' ∧ Proof.Scrypt.blockMixArm.post s₀ s' := by
   unfold blockMixWith
@@ -1372,7 +1372,7 @@ theorem correct {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
   refine WP.mono (setup_ok hp g g12 hrd hwr hsp hf hsv) fun s₂ h₂ => ?_
   refine WP.seq (WP.mono (loop_ok hS hp h₂) fun s₃ h₃ => ?_)
   refine WP.mono (restore_ok hp h₃) fun s' ⟨hm', hsp', hg'⟩ => ⟨⟨hg', hsp'.trans h₃.sp⟩, ?_⟩
-  show bytesAt s'.mem (yA s₀) (128 * rr s₀) = blockMix (rr s₀) (B s₀)
+  show bytesAt s'.mem (yA s₀) (128 * VG.Proof.Scrypt.Arm.BlockMix.rr s₀) = blockMix (VG.Proof.Scrypt.Arm.BlockMix.rr s₀) (B s₀)
   rw [hm']
   exact post_of fun i hi => h₃.done i hi
 
@@ -1414,12 +1414,12 @@ theorem salsaSpec : SalsaSpec Impl.Scrypt.Arm.salsa := by
 (the scratch pointer). -/
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
 
-theorem wf₀ {s : State} (h : Proof.Scrypt.blockMixArm.pre s) : VG.Arm.Taint.Wf τ₀ s := by
-  have hp := pre_of h
+theorem wf₀ {s : State} (h : Proof.Scrypt.blockMixArm.pre s) : VG.Arm.Taint.Wf VG.Proof.Scrypt.Arm.BlockMix.τ₀ s := by
+  have hp := VG.Proof.Scrypt.Arm.BlockMix.pre_of h
   refine ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim,
     fun _ => ⟨hp.sp_nw, ?_⟩, fun _ h => (List.not_mem_nil h).elim⟩
-  have e : (⟨State.addr s.sp, 4⟩ : Region) = argR s := by simp [stackArgAddr]
-  simp only [τ₀, e, hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+  have e : (⟨State.addr s.sp, 4⟩ : Region) = VG.Proof.Scrypt.Arm.BlockMix.argR s := by simp [stackArgAddr]
+  simp only [VG.Proof.Scrypt.Arm.BlockMix.τ₀, e, hp.wr, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl)
   · exact hp.a_y
   · exact hp.a_s
@@ -1430,14 +1430,14 @@ theorem argByte_eq (s : State) (k : Nat) :
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Scrypt.blockMixArm.pre s₁)
     (h₂ : Proof.Scrypt.blockMixArm.pre s₂) (hpub : Proof.Scrypt.blockMixArm.pub s₁ s₂) :
-    VG.Arm.Taint.Agree τ₀ s₁ s₂ := by
+    VG.Arm.Taint.Agree VG.Proof.Scrypt.Arm.BlockMix.τ₀ s₁ s₂ := by
   obtain ⟨psp, p0, p1, p2, p3, a0⟩ := hpub
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, wf₀ h₁, wf₀ h₂,
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h, VG.Proof.Scrypt.Arm.BlockMix.wf₀ h₁, VG.Proof.Scrypt.Arm.BlockMix.wf₀ h₂,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp,
     fun k hk => ?_⟩
-  · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [VG.Proof.Scrypt.Arm.BlockMix.τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · simp only [τ₀] at hk
+  · simp only [VG.Proof.Scrypt.Arm.BlockMix.τ₀] at hk
     rw [argByte_eq, argByte_eq, Mem.readW_byte s₁.mem _ hk, Mem.readW_byte s₂.mem _ hk]
     exact congrArg _ a0
 
@@ -1458,12 +1458,12 @@ def bmSat : State where
 theorem blockMix_correct (s : State) (hs : Proof.Scrypt.blockMixArm.pre s) :
     ∃ t s', Exec isa Impl.Scrypt.Arm.blockMix s t s' ∧ abiPreserved s s' ∧
       Proof.Scrypt.blockMixArm.post s s' := by
-  obtain ⟨t, s', he, h⟩ := BlockMix.correct salsaSpec (pre_of hs)
+  obtain ⟨t, s', he, h⟩ := BlockMix.correct salsaSpec (VG.Proof.Scrypt.Arm.BlockMix.pre_of hs)
   exact ⟨t, s', he, h⟩
 
 theorem blockMix_ct : ConstantTime isa Proof.Scrypt.blockMixArm.pre Proof.Scrypt.blockMixArm.pub
     Impl.Scrypt.Arm.blockMix := by
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := taint) VG.Proof.Scrypt.Arm.BlockMix.τ₀ (fun _ _ h₁ h₂ hp => VG.Proof.Scrypt.Arm.BlockMix.agree₀ h₁ h₂ hp)
     (by taint_decide)
 
 theorem blockMix_verified :

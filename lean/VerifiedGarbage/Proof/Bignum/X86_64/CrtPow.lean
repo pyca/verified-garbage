@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # RSA with the CRT on x86-64: `c^d mod X`
@@ -16,8 +16,8 @@ open VG.Proof.MlKem.X86_64
 
 /-- The prime's `-X⁻¹`, `X` and 1 past a change within `crtExpRanges`. -/
 theorem XVals.of_exp {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X : Nat}
-    (h : XVals s B o wx mx X) (hf : Frm (off B o) (crtExpRanges wx) s.mem t.mem)
-    (hz : (off B o).toNat + slot wx 8 ≤ 2 ^ 64) : XVals t B o wx mx X := by
+    (h : XVals s B o wx mx X) (hf : Frm (VG.Proof.Bignum.X86_64.off B o) (crtExpRanges wx) s.mem t.mem)
+    (hz : (VG.Proof.Bignum.X86_64.off B o).toNat + VG.Proof.Bignum.X86_64.slot wx 8 ≤ 2 ^ 64) : XVals t B o wx mx X := by
   have rN := crtExpRanges_arr wx (j := Public.aN) (by decide) (by decide) (by decide) (by decide) (by decide)
   have rO := crtExpRanges_arr wx (j := Public.aOne) (by decide) (by decide) (by decide) (by decide) (by decide)
   have lN := slot_le (w := wx) (show Public.aN < 8 by decide)
@@ -32,30 +32,30 @@ bytes whose pointer and length are in the modulus' header slots `sd` and
 `slen`. Ends in the prime's workspace. -/
 theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {N X C : Nat}
     {sl o wx sd slen : Nat} {ep : Addr} {eb : List Byte}
-    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z)
-    (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : word s.mem B (8 * sl) = off B o)
+    (hg : Good s B Z w minv) (hw28 : w < 2 ^ 28) (hlo : VG.Proof.Bignum.X86_64.slot w 8 ≤ o) (hhi : o + VG.Proof.Bignum.X86_64.slot wx 8 + tabBytes wx ≤ Z)
+    (hwx2 : 2 ≤ wx) (hwx : wx ≤ w) (hsl : sl < 32) (hslv : VG.Proof.Bignum.X86_64.word s.mem B (8 * sl) = VG.Proof.Bignum.X86_64.off B o)
     (hws : WsAt s.mem B o wx mx) (hX : XVals s B o wx mx X) (hX1 : 1 < X) (hXodd : X % 2 = 1)
-    (hnY : wv s.mem B (slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
-    (hyl : wv s.mem (off B o) (slot wx Public.aY) wx < X)
-    (hyc : X ∣ N → wv s.mem (off B o) (slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
-    (hsd : sd < 32) (hsln : slen < 32) (hep : word s.mem B (8 * sd) = ep)
-    (hel : word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
+    (hnY : wv s.mem B (VG.Proof.Bignum.X86_64.slot w Public.aY) w % N = C * 2 ^ (64 * wx * (nChunks w wx + 1)) % N)
+    (hyl : wv s.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx < X)
+    (hyc : X ∣ N → wv s.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx % X = 2 ^ (64 * wx) % X)
+    (hsd : sd < 32) (hsln : slen < 32) (hep : VG.Proof.Bignum.X86_64.word s.mem B (8 * sd) = ep)
+    (hel : VG.Proof.Bignum.X86_64.word s.mem B (8 * slen) = BitVec.ofNat 64 eb.length) (hL1 : 1 ≤ eb.length) (hL2 : eb.length ≤ 1024)
     (he : Src s B Z ep eb) :
     WP isa (seqs (([.block [.mov .rdi (.mem (hdr sl))]] : List (Prog isa)) ++ redc M.mm Public.aY ++ Crt.expLoop M.mm sd slen)) s
       fun t => SubCtx t B Z o w wx mx ∧ XVals t B o wx mx X ∧
-        wv t.mem (off B o) (slot wx Public.aY) wx < X ∧
-        (X ∣ N → wv t.mem (off B o) (slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
-        word t.mem (off B o) (8 * sMaskX) = word s.mem (off B o) (8 * sMaskX) ∧
-        Frm B [xRange o wx] s.mem t.mem ∧ Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
+        wv t.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx < X ∧
+        (X ∣ N → wv t.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx % X = C ^ Spec.Rsa.os2ip eb * 2 ^ (64 * wx) % X) ∧
+        VG.Proof.Bignum.X86_64.word t.mem (VG.Proof.Bignum.X86_64.off B o) (8 * sMaskX) = VG.Proof.Bignum.X86_64.word s.mem (VG.Proof.Bignum.X86_64.off B o) (8 * sMaskX) ∧
+        Frm B [xRange o wx] s.mem t.mem ∧ VG.Proof.MlKem.X86_64.Keep (mmRegs ++ ([.rdi] : List Reg)) s t := by
   have hs := hg.scr
   have hn := hs.nowrap
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
+  have hX8 : 256 ≤ VG.Proof.Bignum.X86_64.slot wx 8 := by unfold VG.Proof.Bignum.X86_64.slot hdrBytes; omega
   have ho64 : o < 2 ^ 64 := by omega
-  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by omega
+  have hoL : o + VG.Proof.Bignum.X86_64.slot wx 8 ≤ 2 ^ 64 := by omega
   simp only [List.append_assoc]
   refine wp_seqs_append (by simp) (by simp [redc]) ?_
-  refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = off B o ∧ t.mem = s.mem)
+  refine WP.mono (WP.keep [.rdi] (Q := fun t => t.gpr .rdi = VG.Proof.Bignum.X86_64.off B o ∧ t.mem = s.mem)
     (by xrun [State.ea, hdr, hg.rdi, hdrOff, hs.ld (d := 8 * sl) (by omega), hslv]) rfl)
     fun s₁ ⟨⟨hdi₁, hm₁⟩, k₁⟩ => ?_
   have hc₁ : SubCtx s₁ B Z o w wx mx :=
@@ -65,9 +65,9 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
   refine WP.mono (redc_ok M hc₁ hX₁ hwx2 hwx (by omega) hX1 (j := Public.aY) (by decide))
     fun s₂ ⟨hc₂, hX₂, hlt₂, hv₂, f₂, k₂⟩ => ?_
   have fx₂ : Frm B [xRange o wx] s₁.mem s₂.mem := f₂.to_x (redcRanges_ok wx) hoL (List.mem_singleton_self _)
-  have hb₂ : ∀ d, d + 8 ≤ o → word s₂.mem B d = word s.mem B d := fun d hd => by
+  have hb₂ : ∀ d, d + 8 ≤ o → VG.Proof.Bignum.X86_64.word s₂.mem B d = VG.Proof.Bignum.X86_64.word s.mem B d := fun d hd => by
     rw [fx₂.x_below hd ho64, hm₁]
-  have hY₂ : wv s₂.mem (off B o) (slot wx Public.aY) wx = wv s.mem (off B o) (slot wx Public.aY) wx := by
+  have hY₂ : wv s₂.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx = wv s.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx Public.aY) wx := by
     have rY := redcRanges_arr wx (j := Public.aY) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide)
     have := slot_le (w := wx) (show Public.aY < 8 by decide)
@@ -79,7 +79,7 @@ theorem powPhase_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bit
     exact InScr.of_frm fx₂ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega)
     ((k₁.trans k₂).mono (by decide))
   -- The exponent's base and the start, in Montgomery form if `X` divides `N`.
-  have hxc : X ∣ N → wv s₂.mem (off B o) (slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
+  have hxc : X ∣ N → wv s₂.mem (VG.Proof.Bignum.X86_64.off B o) (VG.Proof.Bignum.X86_64.slot wx aXc) wx % X = C * 2 ^ (64 * wx) % X := fun hd => by
     apply VG.Proof.Bignum.redc_cancel hR
     rw [Nat.pow_mul] at hv₂
     rw [hv₂, hm₁, ← Nat.mod_mod_of_dvd _ hd, hnY, Nat.mod_mod_of_dvd _ hd, ← Nat.pow_mul]

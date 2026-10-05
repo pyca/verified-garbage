@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Mont.Words
-import VerifiedGarbage.Proof.Rc2.PairMem
+import VerifiedGarbage.Proof.Rc2.Stream
 
 /-!
 # Numbers as 32-bit words, on any target

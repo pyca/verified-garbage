@@ -1,4 +1,240 @@
-import VerifiedGarbage.Proof.Mont.AArch64.Chain
+import VerifiedGarbage.Proof.Mont.AArch64.Csub
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.AArch64.Chain`. -/
+section
+
+/-!
+# Montgomery arithmetic on AArch64: loads, stores and carry chains
+
+Numbers loaded into and stored from registers (`loads_ok`, `stores_ok`), and
+the chains of additions and subtractions of a number in the working space
+(`chainAdds_ok`, `chainSubs_ok`), word by word through `x2`, with the carry
+flag between words (for subtraction, the complement of the borrow).
+`addMasked_ok` adds the modulus under a mask.
+-/
+
+namespace VG.Proof.Mont.AArch64
+
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Proof.Mont
+open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
+open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value)
+
+theorem loads_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
+    VG.Proof.Mont.AArch64.Scr s base size → a + 8 * ts.length ≤ size → a % 8 = 0 → Fresh ts →
+    WP isa (.block (loads ts a)) s fun s' =>
+      regsVal s' ts = wordsVal s.mem base a ts.length ∧ Keeps ts s s' ∧ s'.c = s.c
+  | [], s, _, _, _, _, _, _ => WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
+  | t :: ts, s, base, a, hs, ha, ha8, hf => by
+    simp only [List.length_cons] at ha
+    rw [loads, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (VG.Proof.Mont.AArch64.ld_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
+    have hs₁ := hs.of_keeps k₁ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      exact fun h => hf.head.2 (by simp [← h]))
+    refine WP.mono (VG.Proof.Mont.AArch64.loads_ok ts hs₁ (a := a + 8) (by omega) (by omega) hf.tail)
+      fun s₂ ⟨e₂, k₂, c₂⟩ => ?_
+    have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t hf.head.1
+    refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs)), c₂.trans c₁⟩
+    rw [List.length_cons, regsVal, wordsVal, ht, e₁, e₂, k₁.mem]
+
+theorem stores_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {o : Nat},
+    VG.Proof.Mont.AArch64.Scr s base size → o + 8 * ts.length ≤ size → o % 8 = 0 → ts.Nodup →
+    WP isa (.block (stores ts o)) s fun s' =>
+      wordsVal s'.mem base o ts.length = regsVal s ts ∧ KeepRegs [] s s' ∧
+      VG.Proof.Mont.Outside base o (8 * ts.length) s.mem s'.mem
+  | [], s, _, _, _, _, _, _ => WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩,
+      Outside.refl _ _ _ _⟩
+  | t :: ts, s, base, o, hs, ho, ho8, hd => by
+    have hn := hs.nowrap
+    simp only [List.length_cons] at ho
+    rw [stores, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (st_ok hs (d := o) (by omega) ho8 t) fun s₁ e₁ => ?_
+    have hs₁ : VG.Proof.Mont.AArch64.Scr s₁ base size := by subst e₁; exact ⟨hs.x0, hs.wr, hs.nowrap, hs.enc⟩
+    have O₁ : VG.Proof.Mont.Outside base o 8 s.mem s₁.mem := by rw [e₁]; exact VG.Proof.Mont.writeW_outside _ _ _ (by omega)
+    refine WP.mono (VG.Proof.Mont.AArch64.stores_ok ts hs₁ (o := o + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2)
+      fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    have k₁ : KeepRegs [] s s₁ := by subst e₁; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+    refine ⟨?_, k₁.trans k₂, fun x hx => ?_⟩
+    · rw [List.length_cons, wordsVal, O₂.word (by omega) (by omega), e₁, VG.Proof.Mont.word_writeW_self, e₂,
+        regsVal, regsVal_congr (s := s) (s' := s₁) fun q _ => by rw [e₁]]
+    · simp only [List.length_cons] at hx
+      rw [O₂ x (by omega), O₁ x (by omega)]
+
+/-- `d = n + m + c` (`adds` with `c` false, or `adcs` with the carry flag),
+and its carry out. -/
+theorem addc_ok (s : State) (d n m : Reg) (first : Bool) {c : Bool}
+    (hc : (if first then false else s.c) = c) :
+    WP isa (.block [if first then .adds .x d n m else .adcs .x d n m]) s fun s' =>
+      s'.gpr d = Word64.addCarry (s.gpr n) (s.gpr m) c ∧
+      s'.c = Word64.carryOut (s.gpr n) (s.gpr m) c ∧ Keeps [d] s s' := by
+  subst hc
+  apply WP.of_runBlock
+  cases first <;>
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, Bool.false_eq_true,
+      ite_true, ite_false, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, BitVec.setWidth_eq,
+      Option.some.injEq, exists_eq_left']
+    refine ⟨rfl, rfl, fun r hr => ?_, rfl, rfl, rfl, rfl⟩
+    simp only [List.mem_singleton] at hr
+    simp only [RegUpd.gpr_addWithCarry, hr, ite_false]
+
+/-- `t += [b] + c`: one word of a chain. -/
+theorem addStep_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) (t : Reg)
+    (ht2 : t ≠ .x2) (first : Bool) {c : Bool} (hc : (if first then false else s.c) = c) {b : Nat}
+    (hb : b + 8 ≤ size) (hb8 : b % 8 = 0) :
+    WP isa (.block [ld .x2 b, if first then .adds .x t t .x2 else .adcs .x t t .x2]) s fun s' =>
+      (s'.gpr t).toNat + 2 ^ 64 * s'.c.toNat = (s.gpr t).toNat + (VG.Proof.Mont.word s.mem base b).toNat + c.toNat ∧
+      Keeps [.x2, t] s s' := by
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.ld_ok hs hb hb8 .x2) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.addc_ok s₁ t t .x2 first (c := c) (by rw [c₁, hc])) fun s₂ ⟨d₂, c₂, k₂⟩ => ?_
+  rw [l₁, k₁.gpr t (by simpa using ht2)] at d₂ c₂
+  refine ⟨by rw [d₂, c₂]; exact Word64.addCarry_value _ _ c, (k₁.mono (by sub_regs)).trans
+    (k₂.mono (by sub_regs))⟩
+
+/-- `ts += [b] + c`, `adcs` throughout, with the carry `c` in and out. -/
+theorem chainAdcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {b : Nat},
+    VG.Proof.Mont.AArch64.Scr s base size → b + 8 * ts.length ≤ size → b % 8 = 0 → Fresh ts →
+    WP isa (.block (chain (.adcs .x) (.adcs .x) ts b)) s fun s' =>
+      regsVal s' ts + 2 ^ (64 * ts.length) * s'.c.toNat =
+        regsVal s ts + wordsVal s.mem base b ts.length + s.c.toNat ∧ Keeps (.x2 :: ts) s s'
+  | [], s, _, _, _, _, _, _ => WP.block_nil ⟨by simp [regsVal, wordsVal],
+      fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | t :: ts, s, base, b, hs, hb, hb8, hf => by
+    simp only [List.length_cons] at hb
+    have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
+    rw [chain, WP.block_append_iff]
+    refine WP.mono (VG.Proof.Mont.AArch64.addStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega) hb8)
+      fun s₁ ⟨e₁, k₁⟩ => ?_
+    have hs₁ := hs.of_keeps k₁ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
+    refine WP.mono (VG.Proof.Mont.AArch64.chainAdcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+      fun s₂ ⟨e₂, k₂⟩ => ?_
+    have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
+      simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
+    have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
+      have := hf.tail.2 q hq
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
+      exact ⟨this.2.2.1, fun h => hf.head.1 (h ▸ hq)⟩)
+    rw [hR, k₁.mem] at e₂
+    refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+    simp only [regsVal, wordsVal, List.length_cons, pow64_succ, ht]
+    rw [Nat.mul_assoc]
+    omega
+
+/-- `ts += [b]`, with the carry out. -/
+theorem chainAdds_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {t : Reg}
+    {ts : List Reg} {b : Nat} (hb : b + 8 * (t :: ts).length ≤ size) (hb8 : b % 8 = 0)
+    (hf : Fresh (t :: ts)) :
+    WP isa (.block (chain (.adds .x) (.adcs .x) (t :: ts) b)) s fun s' =>
+      regsVal s' (t :: ts) + 2 ^ (64 * (t :: ts).length) * s'.c.toNat =
+        regsVal s (t :: ts) + wordsVal s.mem base b (t :: ts).length ∧ Keeps (.x2 :: t :: ts) s s' := by
+  simp only [List.length_cons] at hb ⊢
+  have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
+  rw [chain, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.addStep_ok hs t ht2 true (c := false) rfl (b := b) (by omega) hb8)
+    fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
+  refine WP.mono (VG.Proof.Mont.AArch64.chainAdcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+    fun s₂ ⟨e₂, k₂⟩ => ?_
+  have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
+    simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
+  have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
+    have := hf.tail.2 q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
+    exact ⟨this.2.2.1, fun h => hf.head.1 (h ▸ hq)⟩)
+  rw [hR, k₁.mem] at e₂
+  refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+  simp only [regsVal, wordsVal, pow64_succ, ht]
+  simp only [Bool.toNat_false, Nat.add_zero] at e₁
+  rw [Nat.mul_assoc]
+  omega
+
+/-- `t -= [b] + !c`: one word of a chain (`c` the carry flag in, `subs` with
+`c` true). -/
+theorem subStep_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) (t : Reg)
+    (ht2 : t ≠ .x2) (first : Bool) {c : Bool} (hc : (if first then true else s.c) = c) {b : Nat}
+    (hb : b + 8 ≤ size) (hb8 : b % 8 = 0) :
+    WP isa (.block [ld .x2 b, if first then .subs .x t t .x2 else .sbcs .x t t .x2]) s fun s' =>
+      (s'.gpr t).toNat + (VG.Proof.Mont.word s.mem base b).toNat + (!c).toNat =
+        (s.gpr t).toNat + 2 ^ 64 * (!s'.c).toNat ∧ Keeps [.x2, t] s s' := by
+  rw [← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.ld_ok hs hb hb8 .x2) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
+  refine WP.mono (subc_ok s₁ t t .x2 first (c := c) (by rw [c₁, hc])) fun s₂ ⟨d₂, c₂, k₂⟩ => ?_
+  rw [l₁, k₁.gpr t (by simpa using ht2)] at d₂ c₂
+  refine ⟨by rw [d₂, c₂]; exact sub_borrow _ _ c, (k₁.mono (by sub_regs)).trans
+    (k₂.mono (by sub_regs))⟩
+
+/-- `ts -= [b] + !c`, `sbcs` throughout, with the borrow `!c` in and out. -/
+theorem chainSbcs_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {b : Nat},
+    VG.Proof.Mont.AArch64.Scr s base size → b + 8 * ts.length ≤ size → b % 8 = 0 → Fresh ts →
+    WP isa (.block (chain (.sbcs .x) (.sbcs .x) ts b)) s fun s' =>
+      regsVal s' ts + wordsVal s.mem base b ts.length + (!s.c).toNat =
+        regsVal s ts + 2 ^ (64 * ts.length) * (!s'.c).toNat ∧ Keeps (.x2 :: ts) s s'
+  | [], s, _, _, _, _, _, _ => WP.block_nil ⟨by simp [regsVal, wordsVal],
+      fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | t :: ts, s, base, b, hs, hb, hb8, hf => by
+    simp only [List.length_cons] at hb
+    have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
+    rw [chain, WP.block_append_iff]
+    refine WP.mono (VG.Proof.Mont.AArch64.subStep_ok hs t ht2 false (c := s.c) rfl (b := b) (by omega) hb8)
+      fun s₁ ⟨e₁, k₁⟩ => ?_
+    have hs₁ := hs.of_keeps k₁ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
+    refine WP.mono (VG.Proof.Mont.AArch64.chainSbcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+      fun s₂ ⟨e₂, k₂⟩ => ?_
+    have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
+      simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
+    have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
+      have := hf.tail.2 q hq
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
+      exact ⟨this.2.2.1, fun h => hf.head.1 (h ▸ hq)⟩)
+    rw [hR, k₁.mem] at e₂
+    refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+    simp only [regsVal, wordsVal, List.length_cons, pow64_succ, ht]
+    rw [Nat.mul_assoc]
+    omega
+
+/-- `ts -= [b]`, with the borrow `!c` out. -/
+theorem chainSubs_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {t : Reg}
+    {ts : List Reg} {b : Nat} (hb : b + 8 * (t :: ts).length ≤ size) (hb8 : b % 8 = 0)
+    (hf : Fresh (t :: ts)) :
+    WP isa (.block (chain (.subs .x) (.sbcs .x) (t :: ts) b)) s fun s' =>
+      regsVal s' (t :: ts) + wordsVal s.mem base b (t :: ts).length =
+        regsVal s (t :: ts) + 2 ^ (64 * (t :: ts).length) * (!s'.c).toNat ∧
+      Keeps (.x2 :: t :: ts) s s' := by
+  simp only [List.length_cons] at hb ⊢
+  have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
+  rw [chain, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.subStep_ok hs t ht2 true (c := true) rfl (b := b) (by omega) hb8)
+    fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
+  refine WP.mono (VG.Proof.Mont.AArch64.chainSbcs_ok ts hs₁ (b := b + 8) (by omega) (by omega) hf.tail)
+    fun s₂ ⟨e₂, k₂⟩ => ?_
+  have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
+    simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
+  have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.gpr q (by
+    have := hf.tail.2 q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at this ⊢
+    exact ⟨this.2.2.1, fun h => hf.head.1 (h ▸ hq)⟩)
+  rw [hR, k₁.mem] at e₂
+  refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+  simp only [regsVal, wordsVal, pow64_succ, ht]
+  simp only [Bool.not_true, Bool.toNat_false, Nat.add_zero] at e₁
+  rw [Nat.mul_assoc]
+  omega
+
+end VG.Proof.Mont.AArch64
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Mont.AArch64.Ops`. -/
+section
 
 /-!
 # Montgomery arithmetic on AArch64: the operations
@@ -29,15 +265,15 @@ structure ModA (M : Mod) : Prop where
 regions and the stack pointer, and the memory but `[o]` and the temporary
 area. -/
 structure OpKeep (M : Mod) (base : Addr) (o : Nat) (s s' : State) : Prop where
-  gpr : ∀ r, r ∉ clob M.n → s'.gpr r = s.gpr r
+  gpr : ∀ r, r ∉ VG.Proof.Mont.AArch64.clob M.n → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   sp : s'.sp = s.sp
-  mem : ∀ x, (ofs base x < o ∨ o + 8 * M.n ≤ ofs base x) →
-    (ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ ofs base x) → s'.mem x = s.mem x
+  mem : ∀ x, (VG.Proof.Mont.ofs base x < o ∨ o + 8 * M.n ≤ VG.Proof.Mont.ofs base x) →
+    (VG.Proof.Mont.ofs base x < M.tmp ∨ M.tmp + 8 * M.n ≤ VG.Proof.Mont.ofs base x) → s'.mem x = s.mem x
 
-theorem x0_not_clob (n : Nat) (hn : n < 7) : Reg.x0 ∉ clob n := by
-  revert n; unfold clob; decide
+theorem x0_not_clob (n : Nat) (hn : n < 7) : Reg.x0 ∉ VG.Proof.Mont.AArch64.clob n := by
+  revert n; unfold VG.Proof.Mont.AArch64.clob; decide
 
 theorem acc_not_x7 (n : Nat) (hn : n < 7) : ∀ r ∈ acc n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6,
     .x7, .x16, .x17] := acc_regs_lt n hn
@@ -55,7 +291,7 @@ theorem fresh_low (n : Nat) (hn : n < 7) :
     grind
 
 theorem fresh_low' (n : Nat) (hn : n < 7) : Fresh ((List.range n).map (win n n)) :=
-  (fresh_low n hn).tail
+  (VG.Proof.Mont.AArch64.fresh_low n hn).tail
 
 /-- `x7 = 0`. -/
 theorem zero7_ok (s : State) :
@@ -63,25 +299,25 @@ theorem zero7_ok (s : State) :
 
 /-- Closes `r ∉ clob n` from `r ∉ rs` for the lists of registers the blocks
 change. -/
-theorem not_mem_of_clob {n : Nat} {r : Reg} (hr : r ∉ clob n) :
+theorem not_mem_of_clob {n : Nat} {r : Reg} (hr : r ∉ VG.Proof.Mont.AArch64.clob n) :
     r ∉ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ∧ r ∉ acc n := by
-  simp only [clob, List.mem_append, not_or] at hr
+  simp only [VG.Proof.Mont.AArch64.clob, List.mem_append, not_or] at hr
   exact hr
 
 /-- The words at `a`, loaded into the registers `ts`, each its own. -/
 theorem loadsEach_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
-    Scr s base size → a + 8 * ts.length ≤ size → a % 8 = 0 → ts.Nodup → Reg.x0 ∉ ts →
+    VG.Proof.Mont.AArch64.Scr s base size → a + 8 * ts.length ≤ size → a % 8 = 0 → ts.Nodup → Reg.x0 ∉ ts →
     WP isa (.block (loads ts a)) s fun s' =>
-      (∀ j (r : Reg), ts[j]? = some r → s'.gpr r = word s.mem base (a + 8 * j)) ∧ Keeps ts s s'
+      (∀ j (r : Reg), ts[j]? = some r → s'.gpr r = VG.Proof.Mont.word s.mem base (a + 8 * j)) ∧ Keeps ts s s'
   | [], s, _, _, _, _, _, _, _ => WP.block_nil ⟨fun _ _ h => by simp at h,
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | t :: ts, s, base, a, hs, ha, ha8, hd, h0 => by
     simp only [List.length_cons] at ha
     rw [loads, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+    refine WP.mono (VG.Proof.Mont.AArch64.ld_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, _⟩ => ?_
     have ht0 : t ≠ .x0 := fun h => h0 (h ▸ List.mem_cons_self ..)
     have hs₁ := hs.of_keeps k₁ (by simpa using Ne.symm ht0)
-    refine WP.mono (loadsEach_ok ts hs₁ (a := a + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2
+    refine WP.mono (VG.Proof.Mont.AArch64.loadsEach_ok ts hs₁ (a := a + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2
       fun h => h0 (List.mem_cons_of_mem _ h)) fun s₂ ⟨e₂, k₂⟩ => ?_
     refine ⟨fun j r hr => ?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     cases j with
@@ -105,7 +341,7 @@ theorem mulSetup_eq (M : Mod) (b : Nat) : mulSetup M b = ([zero7] : List Instr) 
 
 /-- `x7 = 0`, `[b]`'s words in `bRegs`, the reduction's constant in `x6`, and
 the accumulator cleared. -/
-theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
+theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {M : Mod}
     (hn : M.n < 7) {b : Nat} (hb : b + 8 * M.n ≤ size) (hb8 : b % 8 = 0) :
     WP isa (.block (mulSetup M b)) s fun s' =>
       s'.gpr .x7 = 0 ∧ BRegs s' base b M.n ∧ ConstOk M s' ∧ regsVal s' (wins M.n 0) = 0 ∧
@@ -117,14 +353,14 @@ theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp at this
   have htake : ∀ r ∈ bRegs.take M.n, r = .x4 ∨ r = .x5 ∨ r = .x16 ∨ r = .x17 :=
     fun r hr => bRegs_regs r (List.mem_of_mem_take hr)
-  rw [mulSetup_eq, WP.block_append_iff]
-  refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
+  rw [VG.Proof.Mont.AArch64.mulSetup_eq, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loadsEach_ok _ hs₀ (a := b) (by
-      have := List.length_take_le M.n bRegs; omega) hb8 (bRegs_take_nodup M.n)
-      (x0_not_bRegs_take M.n)) fun s₁ ⟨e₁, k₁⟩ => ?_
-  have hs₁ := hs₀.of_keeps k₁ (x0_not_bRegs_take M.n)
+  refine WP.mono (VG.Proof.Mont.AArch64.loadsEach_ok _ hs₀ (a := b) (by
+      have := List.length_take_le M.n bRegs; omega) hb8 (VG.Proof.Mont.AArch64.bRegs_take_nodup M.n)
+      (VG.Proof.Mont.AArch64.x0_not_bRegs_take M.n)) fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs₀.of_keeps k₁ (VG.Proof.Mont.AArch64.x0_not_bRegs_take M.n)
   have z₁ : s₁.gpr .x7 = 0 := by
     rw [k₁.gpr _ (fun h => by rcases htake _ h with h | h | h | h <;> exact absurd h (by decide)), z₀]
   have hBR₁ : BRegs s₁ base b M.n := fun j hj r hr => by
@@ -163,40 +399,40 @@ theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     · rcases htake q hq with rfl | rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
 
-theorem dPool_clob {n : Nat} : ∀ r ∈ dPool, r ∈ clob n := by
+theorem dPool_clob {n : Nat} : ∀ r ∈ dPool, r ∈ VG.Proof.Mont.AArch64.clob n := by
   intro r hr
   have : ∀ r ∈ dPool, r ∈ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] := by decide
   exact List.mem_append_left _ (this r hr)
 
 /-- What `csubR` changes is in `clob`. -/
 theorem csubR_keep {n : Nat} (h7 : n < 7) {ts : List Reg} (hts : ∀ r ∈ ts, r ∈ acc n) :
-    ∀ r ∈ (.x2 :: .x17 :: ts ++ dRegs n), r ∈ clob n := by
+    ∀ r ∈ (.x2 :: .x17 :: ts ++ dRegs n), r ∈ VG.Proof.Mont.AArch64.clob n := by
   intro r hr
   simp only [List.cons_append, List.mem_cons, List.mem_append] at hr
   rcases hr with rfl | rfl | h | h
-  · simp [clob]
-  · simp [clob]
+  · simp [VG.Proof.Mont.AArch64.clob]
+  · simp [VG.Proof.Mont.AArch64.clob]
   · exact List.mem_append_right _ (hts r h)
-  · exact dPool_clob r ((dRegs_ok n h7).1.2 r h)
+  · exact VG.Proof.Mont.AArch64.dPool_clob r ((dRegs_ok n h7).1.2 r h)
 
 theorem mul_eq (M : Mod) (o a b : Nat) :
-    mul M o a b = mulSetup M b ++ ((List.range M.n).flatMap (round M a b) ++
+    mul M o a b = mulSetup M b ++ ((List.range M.n).flatMap (VG.Impl.Mont.AArch64.round M a b) ++
       (csubR M ((List.range M.n).map (win M.n M.n)) (win M.n M.n M.n) ++
         stores ((List.range M.n).map (win M.n M.n)) o)) := by
   simp only [mul, List.append_assoc]
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hA : VG.Proof.Mont.AArch64.ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+    WP isa (.block (mul M o a b)) s fun s' => VG.Proof.Mont.AArch64.OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   have h7 := hM.n7
-  rw [mul_eq, WP.block_append_iff]
-  refine WP.mono (setup_ok hs h7 hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
+  rw [VG.Proof.Mont.AArch64.mul_eq, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Mont.AArch64.setup_ok hs h7 hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
   have hacc := acc_regs_lt _ h7
   have hs₁ := hs.of_keeps k₁ (fun h => by
     simp only [List.mem_cons] at h
@@ -246,16 +482,16 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [WP.block_append_iff]
   have hlow_acc : ∀ r ∈ (List.range M.n).map (win M.n M.n), r ∈ acc M.n := fun r hr =>
     wins_sub_acc h7 M.n r (by rw [hsplit]; exact List.mem_append_left _ hr)
-  refine WP.mono (csubR_ok hs₂ (M := M) (m := m) hlowlen hM.n0 h7 (fresh_low M.n h7) hM.mo
+  refine WP.mono (csubR_ok hs₂ (M := M) (m := m) hlowlen hM.n0 h7 (VG.Proof.Mont.AArch64.fresh_low M.n h7) hM.mo
     hA.mo hz₂ (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow_acc _ h))
-  refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) ho8 (fresh_low' M.n h7).1)
+  have hs₃ := hs₂.of_keeps k₃ (fun h => VG.Proof.Mont.AArch64.x0_not_clob M.n h7 (VG.Proof.Mont.AArch64.csubR_keep h7 hlow_acc _ h))
+  refine WP.mono (VG.Proof.Mont.AArch64.stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) ho8 (VG.Proof.Mont.AArch64.fresh_low' M.n h7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hlowlen] at e₄ O₄
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
-  · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
+  · obtain ⟨hr₁, hr₂⟩ := VG.Proof.Mont.AArch64.not_mem_of_clob hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁
-    rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (csubR_keep h7 hlow_acc r h)),
+    rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (VG.Proof.Mont.AArch64.csubR_keep h7 hlow_acc r h)),
       k₂.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.1, hr₁.2.1, hr₁.2.2.1, hr₂⟩),
       k₁.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.2.2.2.1, hr₁.2.2.2.2.1,
         hr₁.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.1, hr₁.2.2.2.2.2.2.2.2, hr₂⟩)]
@@ -276,7 +512,7 @@ theorem fresh_top_low_lt : ∀ n < 7, Fresh (top n :: low n) := by unfold Fresh;
 theorem low_sub_acc_lt : ∀ n < 7, ∀ t ∈ top n :: low n, t ∈ acc n := by decide
 
 theorem low_ne_nil {n : Nat} (hn : n < 7) (h0 : 0 < n) : ∃ t ts, low n = t :: ts := by
-  have := low_len_lt n hn
+  have := VG.Proof.Mont.AArch64.low_len_lt n hn
   cases h : low n with
   | nil => rw [h] at this; simp at this; omega
   | cons t ts => exact ⟨t, ts, rfl⟩
@@ -303,32 +539,32 @@ theorem sbcMask_ok (s : State) (hz : s.gpr .x7 = 0) :
   exact RegUpd.gpr_write_of_ne _ _ _ hr
 
 /-- `[o] = [a] + [b] mod m`. -/
-theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hA : VG.Proof.Mont.AArch64.ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
-    WP isa (.block (add M o a b)) s fun s' => OpKeep M base o s s' ∧
+    WP isa (.block (add M o a b)) s fun s' => VG.Proof.Mont.AArch64.OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
   have h7 := hM.n7
-  have hf := fresh_top_low_lt M.n h7
-  have hl := low_len_lt M.n h7
-  obtain ⟨t, ts, hts⟩ := low_ne_nil h7 hM.n0
+  have hf := VG.Proof.Mont.AArch64.fresh_top_low_lt M.n h7
+  have hl := VG.Proof.Mont.AArch64.low_len_lt M.n h7
+  obtain ⟨t, ts, hts⟩ := VG.Proof.Mont.AArch64.low_ne_nil h7 hM.n0
   have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] :=
     hf.2
-  have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := low_sub_acc_lt _ h7
+  have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := VG.Proof.Mont.AArch64.low_sub_acc_lt _ h7
   rw [Impl.Mont.AArch64.add, show zero7 :: loads (low M.n) a = [zero7] ++ loads (low M.n) a from rfl]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok (low M.n) hs₀ (a := a) (by omega) ha8 hf.tail) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.loads_ok (low M.n) hs₀ (a := a) (by omega) ha8 hf.tail) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs₀.of_keeps k₁ (fun h => nf _ (List.mem_cons_of_mem _ h) (by simp))
   have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (fun h => nf _ (List.mem_cons_of_mem _ h) (by simp)), z₀]
   rw [WP.block_append_iff, hts]
-  refine WP.mono (chainAdds_ok hs₁ (b := b) (by rw [← hts]; omega) hb8 (hts ▸ hf.tail))
+  refine WP.mono (VG.Proof.Mont.AArch64.chainAdds_ok hs₁ (b := b) (by rw [← hts]; omega) hb8 (hts ▸ hf.tail))
     fun s₃ ⟨e₃, k₃⟩ => ?_
   rw [← hts] at e₃ k₃ ⊢
   have nk₃ : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x2 :: low M.n := by
@@ -340,7 +576,7 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hs₃ := hs₁.of_keeps k₃ (nk₃ .x0 (by simp))
   have hz₃ : s₃.gpr .x7 = 0 := by rw [k₃.gpr _ (nk₃ .x7 (by simp)), hz₁]
   rw [WP.block_append_iff]
-  refine WP.mono (adcZero_ok s₃ (top M.n) hz₃) fun s₄ ⟨e₄, k₄⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.adcZero_ok s₃ (top M.n) hz₃) fun s₄ ⟨e₄, k₄⟩ => ?_
   have htop := nf _ (List.mem_cons_self ..)
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at htop
   have hs₄ := hs₃.of_keeps k₄ (by simp [Ne.symm htop.1])
@@ -357,14 +593,14 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hlow : ∀ r ∈ low M.n, r ∈ acc M.n := fun r h => hsub r (List.mem_cons_of_mem _ h)
   refine WP.mono (csubR_ok hs₄ (M := M) (m := m) hl hM.n0 h7 hf hM.mo hA.mo hz₄
     (by rw [hmem₄]; exact hM.val) (by rw [hV]; exact hAB)) fun s₅ ⟨e₅, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (fun h => x0_not_clob M.n h7 (csubR_keep h7 hlow _ h))
-  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  have hs₅ := hs₄.of_keeps k₅ (fun h => VG.Proof.Mont.AArch64.x0_not_clob M.n h7 (VG.Proof.Mont.AArch64.csubR_keep h7 hlow _ h))
+  refine WP.mono (VG.Proof.Mont.AArch64.stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₆ O₆
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
-  · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
+  · obtain ⟨hr₁, hr₂⟩ := VG.Proof.Mont.AArch64.not_mem_of_clob hr
     have hr' : r ∉ top M.n :: low M.n := fun h => hr₂ (hsub r h)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁ hr'
-    rw [k₆.gpr r (by simp), k₅.gpr r (fun h => hr (csubR_keep h7 hlow r h)),
+    rw [k₆.gpr r (by simp), k₅.gpr r (fun h => hr (VG.Proof.Mont.AArch64.csubR_keep h7 hlow r h)),
       k₄.gpr r (by simpa using hr'.1),
       k₃.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.2.1, hr'.2⟩),
       k₁.gpr r hr'.2, k₀.gpr r (by simpa using hr₁.2.2.2.2.2.2.1)]
@@ -375,20 +611,20 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   · rw [e₆, e₅, hV]
 
 /-- `t += ([mo] & x17) + c`: one word of the masked addition. -/
-theorem maskStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (t : Reg)
+theorem maskStep_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) (t : Reg)
     (ht2 : t ≠ .x2) (first : Bool) {c : Bool} (hc : (if first then false else s.c) = c) {k : Bool}
     (hk : s.gpr .x17 = (if k then BitVec.allOnes 64 else 0)) {mo : Nat}
     (hmo : mo + 8 ≤ size) (hmo8 : mo % 8 = 0) :
     WP isa (.block [ld .x2 mo, .logic .and .x .x2 .x2 .x17,
         if first then .adds .x t t .x2 else .adcs .x t t .x2]) s fun s' =>
       (s'.gpr t).toNat + 2 ^ 64 * s'.c.toNat =
-        (s.gpr t).toNat + (if k then (word s.mem base mo).toNat else 0) + c.toNat ∧
+        (s.gpr t).toNat + (if k then (VG.Proof.Mont.word s.mem base mo).toNat else 0) + c.toNat ∧
       Keeps [.x2, t] s s' := by
   rw [← List.singleton_append, WP.block_append_iff]
-  refine WP.mono (ld_ok hs hmo hmo8 .x2) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.ld_ok hs hmo hmo8 .x2) fun s₁ ⟨l₁, k₁, c₁⟩ => ?_
   rw [← List.singleton_append, WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.logic .and .x .x2 .x2 .x17]) s₁ (fun s₂ =>
-      s₂.gpr .x2 = (if k then word s.mem base mo else 0) ∧ Keeps [.x2] s₁ s₂ ∧ s₂.c = s₁.c) by
+      s₂.gpr .x2 = (if k then VG.Proof.Mont.word s.mem base mo else 0) ∧ Keeps [.x2] s₁ s₂ ∧ s₂.c = s₁.c) by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, read_x, RegUpd.gpr_write_self,
       BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
@@ -399,7 +635,7 @@ theorem maskStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       · simp only [↓reduceIte, BitVec.and_allOnes]
     simp only [List.mem_singleton] at hr
     exact RegUpd.gpr_write_of_ne _ _ _ hr) fun s₂ ⟨a₂, k₂, c₂⟩ => ?_
-  refine WP.mono (addc_ok s₂ t t .x2 first (c := c) (by rw [c₂, c₁, hc])) fun s₃ ⟨d₃, c₃, k₃⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.addc_ok s₂ t t .x2 first (c := c) (by rw [c₂, c₁, hc])) fun s₃ ⟨d₃, c₃, k₃⟩ => ?_
   rw [a₂, k₂.gpr t (by simpa using ht2), k₁.gpr t (by simpa using ht2)] at d₃ c₃
   refine ⟨?_, ((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))⟩
   rw [d₃, c₃, Word64.addCarry_value]
@@ -407,7 +643,7 @@ theorem maskStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
 
 /-- `ts += ([mo] & x17) + c`, `adcs` throughout. -/
 theorem addMaskedC_ok {size : Nat} (k : Bool) : ∀ (ts : List Reg) {s : State} {base : Addr} {mo : Nat},
-    Scr s base size → mo + 8 * ts.length ≤ size → mo % 8 = 0 → Fresh ts →
+    VG.Proof.Mont.AArch64.Scr s base size → mo + 8 * ts.length ≤ size → mo % 8 = 0 → Fresh ts →
     s.gpr .x17 = (if k then BitVec.allOnes 64 else 0) →
     WP isa (.block (addMasked false ts mo)) s fun s' =>
       regsVal s' ts + 2 ^ (64 * ts.length) * s'.c.toNat =
@@ -420,14 +656,14 @@ theorem addMaskedC_ok {size : Nat} (k : Bool) : ∀ (ts : List Reg) {s : State} 
     have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
     have ht17 : t ≠ .x17 := fun h => hf.head.2 (by simp [h])
     rw [addMasked, WP.block_append_iff]
-    refine WP.mono (maskStep_ok hs t ht2 false (c := s.c) rfl hk (mo := mo) (by omega) hmo8)
+    refine WP.mono (VG.Proof.Mont.AArch64.maskStep_ok hs t ht2 false (c := s.c) rfl hk (mo := mo) (by omega) hmo8)
       fun s₁ ⟨e₁, k₁⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
     have hk₁ : s₁.gpr .x17 = (if k then BitVec.allOnes 64 else 0) := by
       rw [k₁.gpr _ (by simp [Ne.symm ht17]), hk]
-    refine WP.mono (addMaskedC_ok k ts hs₁ (mo := mo + 8) (by omega) (by omega) hf.tail hk₁)
+    refine WP.mono (VG.Proof.Mont.AArch64.addMaskedC_ok k ts hs₁ (mo := mo + 8) (by omega) (by omega) hf.tail hk₁)
       fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
       simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -442,7 +678,7 @@ theorem addMaskedC_ok {size : Nat} (k : Bool) : ∀ (ts : List Reg) {s : State} 
       omega
 
 /-- `ts += [mo] & x17`, with the carry out. -/
-theorem addMasked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (k : Bool)
+theorem addMasked_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) (k : Bool)
     {t : Reg} {ts : List Reg} {mo : Nat} (hmo : mo + 8 * (t :: ts).length ≤ size) (hmo8 : mo % 8 = 0)
     (hf : Fresh (t :: ts)) (hk : s.gpr .x17 = (if k then BitVec.allOnes 64 else 0)) :
     WP isa (.block (addMasked true (t :: ts) mo)) s fun s' =>
@@ -453,14 +689,14 @@ theorem addMasked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
   have ht2 : t ≠ .x2 := fun h => hf.head.2 (by simp [h])
   have ht17 : t ≠ .x17 := fun h => hf.head.2 (by simp [h])
   rw [addMasked, WP.block_append_iff]
-  refine WP.mono (maskStep_ok hs t ht2 true (c := false) rfl hk (mo := mo) (by omega) hmo8)
+  refine WP.mono (VG.Proof.Mont.AArch64.maskStep_ok hs t ht2 true (c := false) rfl hk (mo := mo) (by omega) hmo8)
     fun s₁ ⟨e₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     exact fun h => by rcases h with h | h <;> [exact absurd h (by decide); exact hf.head.2 (by simp [← h])])
   have hk₁ : s₁.gpr .x17 = (if k then BitVec.allOnes 64 else 0) := by
     rw [k₁.gpr _ (by simp [Ne.symm ht17]), hk]
-  refine WP.mono (addMaskedC_ok k ts hs₁ (mo := mo + 8) (by omega) (by omega) hf.tail hk₁)
+  refine WP.mono (VG.Proof.Mont.AArch64.addMaskedC_ok k ts hs₁ (mo := mo + 8) (by omega) (by omega) hf.tail hk₁)
     fun s₂ ⟨e₂, k₂⟩ => ?_
   have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (by
     simp only [List.mem_cons, not_or]; exact ⟨ht2, hf.head.1⟩)
@@ -476,23 +712,23 @@ theorem addMasked_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base siz
     omega
 
 /-- `[o] = [a] - [b] mod m`. -/
-theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOk M size m s.mem base) (hMA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : VG.Proof.Mont.AArch64.Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOk M size m s.mem base) (hMA : VG.Proof.Mont.AArch64.ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
     (hb8 : b % 8 = 0)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
+    WP isa (.block (sub M o a b)) s fun s' => VG.Proof.Mont.AArch64.OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
   have h7 := hM.n7
-  have hf := fresh_top_low_lt M.n h7
-  have hl := low_len_lt M.n h7
+  have hf := VG.Proof.Mont.AArch64.fresh_top_low_lt M.n h7
+  have hl := VG.Proof.Mont.AArch64.low_len_lt M.n h7
   have hmX : m < 2 ^ (64 * M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   have hmo := hM.mo
-  obtain ⟨t, ts, hts⟩ := low_ne_nil h7 hM.n0
+  obtain ⟨t, ts, hts⟩ := VG.Proof.Mont.AArch64.low_ne_nil h7 hM.n0
   have nf : ∀ r ∈ top M.n :: low M.n, r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] :=
     hf.2
-  have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := low_sub_acc_lt _ h7
+  have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ acc M.n := VG.Proof.Mont.AArch64.low_sub_acc_lt _ h7
   have nk : ∀ r ∈ [Reg.x0, .x7, .x17], r ∉ Reg.x2 :: low M.n := by
     intro r hr h
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -502,27 +738,27 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [Impl.Mont.AArch64.sub, show zero7 :: loads (low M.n) a = [zero7] ++ loads (low M.n) a from rfl]
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
   have hs₀ := hs.of_keeps k₀ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok (low M.n) hs₀ (a := a) (by omega) ha8 hf.tail) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.loads_ok (low M.n) hs₀ (a := a) (by omega) ha8 hf.tail) fun s₁ ⟨e₁, k₁, _⟩ => ?_
   have hs₁ := hs₀.of_keeps k₁ (fun h => nf _ (List.mem_cons_of_mem _ h) (by simp))
   have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (fun h => nf _ (List.mem_cons_of_mem _ h) (by simp)), z₀]
   rw [WP.block_append_iff, hts]
-  refine WP.mono (chainSubs_ok hs₁ (b := b) (by rw [← hts]; omega) hb8 (hts ▸ hf.tail))
+  refine WP.mono (VG.Proof.Mont.AArch64.chainSubs_ok hs₁ (b := b) (by rw [← hts]; omega) hb8 (hts ▸ hf.tail))
     fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [← hts] at e₂ k₂ ⊢
   have hs₂ := hs₁.of_keeps k₂ (nk .x0 (by simp))
   have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr _ (nk .x7 (by simp)), hz₁]
   rw [WP.block_append_iff]
-  refine WP.mono (sbcMask_ok s₂ hz₂) fun s₃ ⟨x₃, k₃⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.sbcMask_ok s₂ hz₂) fun s₃ ⟨x₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
   rw [WP.block_append_iff, hts]
-  refine WP.mono (addMasked_ok hs₃ (!s₂.c) (mo := M.mo) (by rw [← hts]; omega) hMA.mo (hts ▸ hf.tail)
+  refine WP.mono (VG.Proof.Mont.AArch64.addMasked_ok hs₃ (!s₂.c) (mo := M.mo) (by rw [← hts]; omega) hMA.mo (hts ▸ hf.tail)
     x₃) fun s₅ ⟨e₅, k₅⟩ => ?_
   rw [← hts] at e₅ k₅ ⊢
   have hs₅ := hs₃.of_keeps k₅ (nk .x0 (by simp))
-  refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  refine WP.mono (VG.Proof.Mont.AArch64.stores_ok _ hs₅ (o := o) (by rw [hl]; omega) ho8 hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₁ e₂ e₅ e₆ O₆
   have hmem₃ : s₃.mem = s.mem := by rw [k₃.mem, k₂.mem, k₁.mem, k₀.mem]
   have hR₃ : regsVal s₃ (low M.n) = regsVal s₂ (low M.n) :=
@@ -531,7 +767,7 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [hR₃, hmem₃, hM.val] at e₅
   rw [e₁, k₁.mem, k₀.mem] at e₂
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_⟩
-  · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
+  · obtain ⟨hr₁, hr₂⟩ := VG.Proof.Mont.AArch64.not_mem_of_clob hr
     have hr' : r ∉ top M.n :: low M.n := fun h => hr₂ (hsub r h)
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁ hr'
     rw [k₆.gpr r (by simp), k₅.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨hr₁.2.1, hr'.2⟩),
@@ -559,3 +795,5 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · omega
 
 end VG.Proof.Mont.AArch64
+
+end

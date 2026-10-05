@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha1.X86_64.Compress
-import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Impl.Sha1.X86_64.Stream
 
 /-!

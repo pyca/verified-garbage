@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.Common
-import VerifiedGarbage.Proof.MlKem.Encode
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 
 /-!
@@ -37,46 +37,46 @@ variable (s₀ : State)
 abbrev fP : Addr := s₀.gpr .x0
 abbrev oP : Addr := s₀.gpr .x1
 abbrev oR : Region := ⟨oP s₀, 384⟩
-abbrev P : Poly := polyAt s₀.mem (fP s₀)
+abbrev P : Poly := polyAt s₀.mem (VG.Proof.MlKem.AArch64.Encode12.fP s₀)
 /-- Byte `j` of the output. -/
 def L (j : Nat) : Byte := (encode12 (P s₀))[j]!
 
 end
 
 structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = [polyRegion (fP s₀)]
+  rd : s₀.rd = [polyRegion (VG.Proof.MlKem.AArch64.Encode12.fP s₀)]
   wr : s₀.wr = [oR s₀]
-  disj : (polyRegion (fP s₀)).Disjoint (oR s₀)
-  red : Reduced s₀.mem (fP s₀)
+  disj : (polyRegion (VG.Proof.MlKem.AArch64.Encode12.fP s₀)).Disjoint (oR s₀)
+  red : Reduced s₀.mem (VG.Proof.MlKem.AArch64.Encode12.fP s₀)
 
 /-- After `k` pairs of coefficients. -/
 structure Inv (s₀ : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  x0 : s.gpr .x0 = fP s₀ + BitVec.ofNat 64 (8 * k)
+  x0 : s.gpr .x0 = VG.Proof.MlKem.AArch64.Encode12.fP s₀ + BitVec.ofNat 64 (8 * k)
   x1 : s.gpr .x1 = oP s₀ + BitVec.ofNat 64 (3 * k)
   x13 : (s.gpr .x13).toNat = 128 - k
   out : BytesUpTo s.mem (oP s₀) 384 (3 * k) (L s₀) fun j => s₀.mem (oP s₀ + BitVec.ofNat 64 j)
   frame : Frame [oR s₀] s₀.mem s.mem
 
-theorem Pre.coeff {s₀ : State} (hp : Pre s₀) {m : Mem} (hf : Frame [oR s₀] s₀.mem m) {i : Nat}
-    (hi : i < 256) : (coeffAt m (fP s₀) i).toNat = ((P s₀)[i]!).val := by
+theorem Pre.coeff {s₀ : State} (hp : VG.Proof.MlKem.AArch64.Encode12.Pre s₀) {m : Mem} (hf : Frame [oR s₀] s₀.mem m) {i : Nat}
+    (hi : i < 256) : (coeffAt m (VG.Proof.MlKem.AArch64.Encode12.fP s₀) i).toNat = ((P s₀)[i]!).val := by
   rw [coeffAt_frame hf (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj) hi,
     polyAt_val hp.red (show i < n from hi)]
 
-theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State} (h : Inv s₀ k s) :
+theorem step {s₀ : State} (hp : VG.Proof.MlKem.AArch64.Encode12.Pre s₀) {k : Nat} (hk : k < 128) {s : State} (h : VG.Proof.MlKem.AArch64.Encode12.Inv s₀ k s) :
     WP isa (.block encode12Body) s fun s' =>
-      Inv s₀ (k + 1) s' ∧ ((s'.gpr .x13).toNat ≠ 0 ↔ k + 1 ≠ 128) := by
-  have hin : ∀ i < 256, InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) i) 4 := fun i hi => by
+      VG.Proof.MlKem.AArch64.Encode12.Inv s₀ (k + 1) s' ∧ ((s'.gpr .x13).toNat ≠ 0 ↔ k + 1 ≠ 128) := by
+  have hin : ∀ i < 256, InRegions (s.rd ++ s.wr) (coeffAddr (VG.Proof.MlKem.AArch64.Encode12.fP s₀) i) 4 := fun i hi => by
     rw [h.rd, h.wr, hp.rd, hp.wr]
     exact in_rd (in_regions (List.mem_singleton_self _) (coeff_contains _ (show i < n from hi)))
   have hout : ∀ j < 384, InRegions s.wr (oP s₀ + BitVec.ofNat 64 j) 1 := fun j hj => by
     rw [h.wr, hp.wr]
     exact in_regions (List.mem_singleton_self _) (contains_off (by omega) (by decide))
-  have a0 : s.gpr .x0 + BitVec.ofNat 64 0 = coeffAddr (fP s₀) (2 * k) := by
+  have a0 : s.gpr .x0 + BitVec.ofNat 64 0 = coeffAddr (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k) := by
     rw [h.x0, ptr_zero, coeffAddr, show 4 * (2 * k) = 8 * k by omega]
-  have a1 : s.gpr .x0 + BitVec.ofNat 64 4 = coeffAddr (fP s₀) (2 * k + 1) := by
+  have a1 : s.gpr .x0 + BitVec.ofNat 64 4 = coeffAddr (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k + 1) := by
     rw [h.x0, ptr_add, coeffAddr, show 8 * k + 4 = 4 * (2 * k + 1) by omega]
   have b0 : s.gpr .x1 + BitVec.ofNat 64 0 = oP s₀ + BitVec.ofNat 64 (3 * k) := by
     rw [h.x1, ptr_zero]
@@ -84,15 +84,15 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
     rw [h.x1, ptr_add]
   have b2 : s.gpr .x1 + BitVec.ofNat 64 2 = oP s₀ + BitVec.ofNat 64 (3 * k + 2) := by
     rw [h.x1, ptr_add]
-  have va : (coeffAt s.mem (fP s₀) (2 * k)).toNat = ((P s₀)[2 * k]!).val :=
+  have va : (coeffAt s.mem (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k)).toNat = ((P s₀)[2 * k]!).val :=
     hp.coeff h.frame (by omega)
-  have vb : (coeffAt s.mem (fP s₀) (2 * k + 1)).toNat = ((P s₀)[2 * k + 1]!).val :=
+  have vb : (coeffAt s.mem (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k + 1)).toNat = ((P s₀)[2 * k + 1]!).val :=
     hp.coeff h.frame (by omega)
   have la := val_lt (P s₀)[2 * k]!
   have lb := val_lt (P s₀)[2 * k + 1]!
-  refine wp_ldrw (a := coeffAddr (fP s₀) (2 * k)) (by decide) a0 (hin _ (by omega))
+  refine wp_ldrw (a := coeffAddr (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k)) (by decide) a0 (hin _ (by omega))
     fun s₁ h₁ e₁ => ?_
-  refine wp_ldrw (a := coeffAddr (fP s₀) (2 * k + 1)) (by decide) (by rw [h₁.get .x0]; exact a1)
+  refine wp_ldrw (a := coeffAddr (VG.Proof.MlKem.AArch64.Encode12.fP s₀) (2 * k + 1)) (by decide) (by rw [h₁.get .x0]; exact a1)
     (by rw [h₁.rd, h₁.wr]; exact hin _ (by omega)) fun s₂ h₂ e₂ => ?_
   have k₂ := h₁.keep.trans h₂.keep
   have v9 : (s₂.gpr .x9).toNat = ((P s₀)[2 * k]!).val := by
@@ -159,9 +159,9 @@ theorem step {s₀ : State} (hp : Pre s₀) {k : Nat} (hk : k < 128) {s : State}
       (List.mem_singleton_self _) _ (ct _ (by omega))).writeW (List.mem_singleton_self _) _
       (ct _ (by omega))
 
-theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 128) := by
+theorem loop_ok {s₀ : State} (hp : VG.Proof.MlKem.AArch64.Encode12.Pre s₀) : WP isa encode12 s₀ (VG.Proof.MlKem.AArch64.Encode12.Inv s₀ 128) := by
   refine WP.seq (wp_movz fun s₁ h₁ e₁ => wp_nil ?_)
-  refine count_loop (by decide) (Inv s₀) (fun k hk s h => step hp hk h) ?_
+  refine count_loop (by decide) (VG.Proof.MlKem.AArch64.Encode12.Inv s₀) (fun k hk s h => VG.Proof.MlKem.AArch64.Encode12.step hp hk h) ?_
   refine ⟨h₁.rd, h₁.wr, h₁.sp, by rw [h₁.get .x0, Nat.mul_zero, ptr_zero],
     by rw [h₁.get .x1, Nat.mul_zero, ptr_zero], by rw [e₁, toNat_imm]; rfl, ?_, ?_⟩
   · rw [h₁.mem, Nat.mul_zero]; exact BytesUpTo.zero _
@@ -170,7 +170,7 @@ theorem loop_ok {s₀ : State} (hp : Pre s₀) : WP isa encode12 s₀ (Inv s₀ 
 theorem correct (s : State) (hs : encode12AArch64.pre s) :
     ∃ t s', Exec isa encode12 s t s' ∧ abiPreserved s s' ∧ encode12AArch64.post s s' := by
   obtain ⟨h1, h2, h3, h4⟩ := hs
-  obtain ⟨t, s', he, hI⟩ := loop_ok (s₀ := s) ⟨h1, h2, h3, h4⟩
+  obtain ⟨t, s', he, hI⟩ := VG.Proof.MlKem.AArch64.Encode12.loop_ok (s₀ := s) ⟨h1, h2, h3, h4⟩
   exact ⟨t, s', he, abi_of rfl (by decide +kernel) he,
     (show BytesUpTo s'.mem (oP s) 384 384 _ _ from hI.out).eq (encode12_length _) fun _ _ => rfl⟩
 
@@ -189,8 +189,8 @@ def sat : State where
 
 theorem encode12_verified :
     Verified AArch64.target encode12 (Spec.MlKem.encode12Contract AArch64.abi) :=
-  Verified.of_correct correct ct (by
+  Verified.of_correct VG.Proof.MlKem.AArch64.Encode12.correct VG.Proof.MlKem.AArch64.Encode12.ct (by
     mlkem_implies [Spec.MlKem.encode12Contract, Spec.MlKem.encode12Sig, encode12AArch64, AArch64.abi,
-      AArch64.argRegs] [sat] using sat)
+      AArch64.argRegs] [sat] using VG.Proof.MlKem.AArch64.Encode12.sat)
 
 end VG.Proof.MlKem.AArch64.Encode12

@@ -1,6 +1,6 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
@@ -58,7 +58,7 @@ theorem nl_loop {s₁ : State} (hdi : s₁.gpr .rdi = s₀.gpr .rdi) (hsi : s₁
     (h9 : s₁.gpr .r9 = BitVec.allOnes 64) (hrd : s₁.rd = s₀.rd) (hwr : s₁.wr = s₀.wr) (hm : s₁.mem = s₀.mem) :
     WP isa (mapLoop nlBody) s₁ (Inv s₁ [.rdi, .rsi] [] (fun _ _ => 0) (fun i s =>
       ((s.gpr .r9).msb = true ↔ ∀ k, 256 - i ≤ k → k < 256 →
-        Good (arg32 s₀ .rsi) (coeffAt s₀.mem (s₀.gpr .rdi) k).toNat)) 256) := by
+        Good (arg32 s₀ .rsi) (VG.Spec.MlDsa.coeffAt s₀.mem (s₀.gpr .rdi) k).toNat)) 256) := by
   have hL : Layout s₁ [.rdi] [] :=
     { rd := fun p h => by
         simp only [List.mem_singleton] at h; subst h; rw [hrd, hwr, hp.1, hdi]; simp
@@ -70,11 +70,11 @@ theorem nl_loop {s₁ : State} (hdi : s₁.gpr .rdi = s₀.gpr .rdi) (hsi : s₁
     fun i hi s hI hc => ?_
   · rw [hk.gpr (by decide), h9]
     exact iff_of_true (by decide) fun k h₁ h₂ => absurd h₂ (by omega)
-  · have ha : cfAddr (s.gpr .rdi) (s.gpr .rcx) = coeffAddr (s₁.gpr .rdi) (255 - i) :=
+  · have ha : cfAddr (s.gpr .rdi) (s.gpr .rcx) = VG.Proof.MlDsa.Round.coeffAddr (s₁.gpr .rdi) (255 - i) :=
       hI.addr hc hi (by simp)
     refine WP.mono (nlBody_ok s (by rw [ha]; exact hI.inR hL (by simp) (by omega)))
       fun s' ⟨⟨hm', h9', hc', hz'⟩, hk'⟩ => ⟨⟨hm', hc', hz', ?_⟩, hk'⟩
-    have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
+    have hr : VG.Spec.MlDsa.Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
     have hx := hr (255 - i) (by rw [n_eq]; omega)
     rw [h9', BitVec.msb_and, Bool.and_eq_true, hI.j, ha, hI.read hL (by simp) (by omega), hI.fixed .rsi (by simp),
       nlV_msb (by rw [hm, hdi]; exact hx) (by rw [hsi, setWidth64_toNat]; exact BitVec.isLt _), hB, hm, hdi,
@@ -86,7 +86,7 @@ theorem nl_loop {s₁ : State} (hdi : s₁.gpr .rdi = s₀.gpr .rdi) (hsi : s₁
     · exact h₁ k (by omega) hk₂
 
 theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s' ∧ normLtK.post s₀ s' := by
-  have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
+  have hr : VG.Spec.MlDsa.Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2
   have hpro : WP isa (.block [.mov32 .rsi (.reg .rsi), .mov .r9 (.imm 0xFFFFFFFF)]) s₀ fun s₁ =>
       (s₁.gpr .rsi = BitVec.setWidth 64 ((s₀.gpr .rsi).setWidth 32) ∧ s₁.gpr .r9 = BitVec.allOnes 64 ∧
         s₁.mem = s₀.mem) ∧ Keep [.rsi, .r9] s₀ s₁ := by
@@ -96,14 +96,14 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
       (s'.gpr .rax = s.gpr .r9 >>> 63 ∧ s'.mem = s.mem) ∧ Keep [.rax] s s' := fun s => by
     refine WP.keep _ ?_ (by decide)
     xrun
-  have hnorm : normRq [polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi ↔
-      ∀ k, 256 - 256 ≤ k → k < 256 → Good (arg32 s₀ .rsi) (coeffAt s₀.mem (s₀.gpr .rdi) k).toNat := by
+  have hnorm : normRq [VG.Spec.MlDsa.polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi ↔
+      ∀ k, 256 - 256 ≤ k → k < 256 → Good (arg32 s₀ .rsi) (VG.Spec.MlDsa.coeffAt s₀.mem (s₀.gpr .rdi) k).toNat := by
     rw [normRq_lt]
     refine ⟨fun h k _ hk => ?_, fun h k hk => ?_⟩
-    · have := h k hk; rwa [normZq_lt, polyAt_val hr hk] at this
-    · rw [normZq_lt, polyAt_val hr hk]; exact h k (by omega) hk
+    · have := h k hk; rwa [normZq_lt, VG.Proof.MlDsa.Round.polyAt_val hr hk] at this
+    · rw [normZq_lt, VG.Proof.MlDsa.Round.polyAt_val hr hk]; exact h k (by omega) hk
   have wp : WP isa normLt s₀ fun s' =>
-      ((s'.gpr .rax).setWidth 32 = if normRq [polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi then 1 else 0) ∧
+      ((s'.gpr .rax).setWidth 32 = if normRq [VG.Spec.MlDsa.polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi then 1 else 0) ∧
         Frame [] s₀.mem s'.mem := by
     refine WP.seq (WP.mono hpro fun s₁ ⟨⟨hsi, h9, hm⟩, hk⟩ => ?_)
     refine WP.seq (WP.mono (nl_loop hp (hk.gpr (by decide)) hsi h9 hk.2.1 hk.2.2 hm) fun s₂ hI => ?_)
@@ -115,7 +115,7 @@ theorem nl_correct : ∃ t s', Exec isa normLt s₀ t s' ∧ abiPreserved s₀ s
       rw [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       have hlt := (s₂.gpr .r9).isLt
       have hmsb := BitVec.msb_eq_decide (s₂.gpr .r9)
-      by_cases h : normRq [polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi
+      by_cases h : normRq [VG.Spec.MlDsa.polyAt s₀.mem (s₀.gpr .rdi)] < arg32 s₀ .rsi
       · rw [ite_eq_left_of_eq_true _ _ (eq_true h)]
         have := hj.mpr h
         rw [hmsb, decide_eq_true_iff] at this

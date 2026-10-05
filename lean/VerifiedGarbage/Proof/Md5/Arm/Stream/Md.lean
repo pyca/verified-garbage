@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Update
-import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Md5.Md
 import VerifiedGarbage.Proof.Framework.Contract

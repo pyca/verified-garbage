@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Bytes
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 
 /-!

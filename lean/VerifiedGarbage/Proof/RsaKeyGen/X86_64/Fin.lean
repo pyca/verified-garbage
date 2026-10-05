@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Entry
-import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
-import VerifiedGarbage.Proof.Bignum.X86_64.Store
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 
 /-!
 # A candidate on x86-64: zeros to `out`, and the ends

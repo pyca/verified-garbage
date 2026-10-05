@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem1024.AArch64.Stream
+import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 import VerifiedGarbage.Proof.Framework.Range
 
 /-!
@@ -46,24 +46,24 @@ variable (d : Nat) (s₀ : State)
 
 abbrev bP : Addr := s₀.gpr .x0
 abbrev fP : Addr := s₀.gpr .x3
-abbrev bR : Region := ⟨bP s₀, 32 * d⟩
-abbrev B : List Byte := bytesAt s₀.mem (bP s₀) (32 * d)
+abbrev bR : Region := ⟨VG.Proof.MlKem1024.AArch64.DD.bP s₀, 32 * d⟩
+abbrev B : List Byte := bytesAt s₀.mem (VG.Proof.MlKem1024.AArch64.DD.bP s₀) (32 * d)
 /-- Byte `j` of the input, as a number. -/
-abbrev byte (j : Nat) : Nat := ((B d s₀).getD j 0).toNat
+abbrev byte (j : Nat) : Nat := ((VG.Proof.MlKem1024.AArch64.DD.B d s₀).getD j 0).toNat
 /-- The first `j` bytes of group `g`, as a little-endian number. -/
-def num (g j : Nat) : Nat := digits 8 ((List.range j).map fun j' => byte d s₀ (d * g + j'))
+def num (g j : Nat) : Nat := digits 8 ((List.range j).map fun j' => VG.Proof.MlKem1024.AArch64.DD.byte d s₀ (d * g + j'))
 /-- Coefficient `i` of the output. -/
-def G (i : Nat) : BitVec 32 := BitVec.ofNat 32 ((decodeDecompress d (B d s₀))[i]!).val
+def G (i : Nat) : BitVec 32 := BitVec.ofNat 32 ((decodeDecompress d (VG.Proof.MlKem1024.AArch64.DD.B d s₀))[i]!).val
 /-- The output's coefficients before. -/
-def old (i : Nat) : BitVec 32 := coeffAt s₀.mem (fP s₀) i
+def old (i : Nat) : BitVec 32 := coeffAt s₀.mem (VG.Proof.MlKem1024.AArch64.DD.fP s₀) i
 
 end
 
 structure Pre (d : Nat) (s₀ : State) : Prop where
   hd : d = 5 ∨ d = 11
-  rd : s₀.rd = [bR d s₀]
-  wr : s₀.wr = [polyRegion (fP s₀)]
-  disj : (bR d s₀).Disjoint (polyRegion (fP s₀))
+  rd : s₀.rd = [VG.Proof.MlKem1024.AArch64.DD.bR d s₀]
+  wr : s₀.wr = [polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀)]
+  disj : (VG.Proof.MlKem1024.AArch64.DD.bR d s₀).Disjoint (polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀))
   x5 : (s₀.gpr .x5).toNat = q
 
 /-- After `g` groups. -/
@@ -71,17 +71,17 @@ structure Inv (d : Nat) (s₀ : State) (g : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  x0 : s.gpr .x0 = bP s₀ + BitVec.ofNat 64 (d * g)
-  x3 : s.gpr .x3 = fP s₀ + BitVec.ofNat 64 (32 * g)
+  x0 : s.gpr .x0 = VG.Proof.MlKem1024.AArch64.DD.bP s₀ + BitVec.ofNat 64 (d * g)
+  x3 : s.gpr .x3 = VG.Proof.MlKem1024.AArch64.DD.fP s₀ + BitVec.ofNat 64 (32 * g)
   x5 : (s.gpr .x5).toNat = q
   x6 : (s.gpr .x6).toNat = 2 ^ (d - 1)
   x7 : (s.gpr .x7).toNat = 2 ^ d - 1
   x11 : (s.gpr .x11).toNat = 32 - g
-  out : CoeffsUpTo s.mem (fP s₀) (8 * g) (G d s₀) (old s₀)
-  frame : Frame [polyRegion (fP s₀)] s₀.mem s.mem
+  out : CoeffsUpTo s.mem (VG.Proof.MlKem1024.AArch64.DD.fP s₀) (8 * g) (VG.Proof.MlKem1024.AArch64.DD.G d s₀) (VG.Proof.MlKem1024.AArch64.DD.old s₀)
+  frame : Frame [polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀)] s₀.mem s.mem
 
 theorem num_succ (d : Nat) (s₀ : State) (g j : Nat) :
-    num d s₀ g (j + 1) = num d s₀ g j + 2 ^ (8 * j) * byte d s₀ (d * g + j) :=
+    num d s₀ g (j + 1) = num d s₀ g j + 2 ^ (8 * j) * VG.Proof.MlKem1024.AArch64.DD.byte d s₀ (d * g + j) :=
   digits_range_succ _ _ _
 
 theorem num_lt (d : Nat) (s₀ : State) (g j : Nat) : num d s₀ g j < 2 ^ (8 * j) :=
@@ -93,47 +93,47 @@ theorem num_mod (d : Nat) (s₀ : State) (g : Nat) {j j' : Nat} (h : j ≤ j') :
 
 /-- Coefficient `e` of group `g` of the output. -/
 theorem G_eq {d : Nat} (hd : d = 5 ∨ d = 11) (s₀ : State) {g e : Nat} (hg : g < 32) (he : e < 8) :
-    G d s₀ (8 * g + e) =
+    VG.Proof.MlKem1024.AArch64.DD.G d s₀ (8 * g + e) =
       BitVec.ofNat 32 ((q * (num d s₀ g d / 2 ^ (d * e) % 2 ^ d) + 2 ^ (d - 1)) / 2 ^ d) := by
   have hi : 8 * g + e < 256 := by omega
   have hd12 : d < 12 := by omega
   have hdw : d ∈ Spec.MlKem1024.compressWidths := by rcases hd with rfl | rfl <;> decide
-  rw [G, decodeDecompress_get _ _ (show _ < n from hi),
+  rw [VG.Proof.MlKem1024.AArch64.DD.G, decodeDecompress_get _ _ (show _ < n from hi),
     byteDecode_group (c := 8) (b := d) (Nat.mul_comm d 8) _ he (show _ < n from hi),
     bytes_map_take_drop _ (by rw [bytesAt_length]; rcases hd with rfl | rfl <;> omega),
     ite_eq_left hd12, Nat.mod_mod,
     (decompress1024_val hdw (Nat.mod_lt _ (Nat.two_pow_pos _))).1]
   rfl
 
-theorem Pre.byte_eq {d : Nat} {s₀ : State} (hp : Pre d s₀) {m : Mem}
-    (hf : Frame [polyRegion (fP s₀)] s₀.mem m) {j : Nat} (hj : j < 32 * d) :
-    (m (bP s₀ + BitVec.ofNat 64 j)).toNat = byte d s₀ j := by
+theorem Pre.byte_eq {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) {m : Mem}
+    (hf : Frame [polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀)] s₀.mem m) {j : Nat} (hj : j < 32 * d) :
+    (m (VG.Proof.MlKem1024.AArch64.DD.bP s₀ + BitVec.ofNat 64 j)).toNat = VG.Proof.MlKem1024.AArch64.DD.byte d s₀ j := by
   rw [byte_frame (len := 32 * d) hf
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hp.disj)
     (by rcases hp.hd with rfl | rfl <;> omega) hj]
-  show _ = ((bytesAt s₀.mem (bP s₀) (32 * d)).getD j 0).toNat
+  show _ = ((bytesAt s₀.mem (VG.Proof.MlKem1024.AArch64.DD.bP s₀) (32 * d)).getD j 0).toNat
   rw [bytesAt_getD _ _ hj]
 
 /-- Within group `g`, before coefficient `e`. -/
 structure DInv (d : Nat) (s₀ : State) (g : Nat) (s : State) (e : Nat) (t : State) : Prop where
   keep : Keep [.x9, .x10] s t
   x9 : (t.gpr .x9).toNat = num d s₀ g (ddJ d e) / 2 ^ (d * e)
-  out : CoeffsUpTo t.mem (fP s₀) (8 * g + e) (G d s₀) (old s₀)
-  frame : Frame [polyRegion (fP s₀)] s₀.mem t.mem
+  out : CoeffsUpTo t.mem (VG.Proof.MlKem1024.AArch64.DD.fP s₀) (8 * g + e) (VG.Proof.MlKem1024.AArch64.DD.G d s₀) (VG.Proof.MlKem1024.AArch64.DD.old s₀)
+  frame : Frame [polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀)] s₀.mem t.mem
 
 /-- Within coefficient `e` of group `g`, after `k` of the bytes it needs. -/
 structure LInv (d : Nat) (s₀ : State) (g : Nat) (s : State) (e k : Nat) (t : State) : Prop where
   keep : Keep [.x9, .x10] s t
   x9 : (t.gpr .x9).toNat = num d s₀ g (ddJ d e + k) / 2 ^ (d * e)
-  out : CoeffsUpTo t.mem (fP s₀) (8 * g + e) (G d s₀) (old s₀)
-  frame : Frame [polyRegion (fP s₀)] s₀.mem t.mem
+  out : CoeffsUpTo t.mem (VG.Proof.MlKem1024.AArch64.DD.fP s₀) (8 * g + e) (VG.Proof.MlKem1024.AArch64.DD.G d s₀) (VG.Proof.MlKem1024.AArch64.DD.old s₀)
+  frame : Frame [polyRegion (VG.Proof.MlKem1024.AArch64.DD.fP s₀)] s₀.mem t.mem
 
 theorem ddJ_le (d e : Nat) : ddJ d e ≤ ddJ d (e + 1) := by
   unfold ddJ; rw [Nat.mul_succ]; omega
 
 /-- Byte `k` of those coefficient `e` of group `g` needs, into `x9` above its bits. -/
-theorem byte_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
-    (h : Inv d s₀ g s) (e : Nat) (he : e < 8) (k : Nat) (t : State)
+theorem byte_step {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
+    (h : VG.Proof.MlKem1024.AArch64.DD.Inv d s₀ g s) (e : Nat) (he : e < 8) (k : Nat) (t : State)
     (hk : k < ddJ d (e + 1) - ddJ d e) (ht : LInv d s₀ g s e k t) :
     WP isa (.block (ddByte d e (ddJ d e + k))) t (LInv d s₀ g s e (k + 1)) := by
   have hd := hp.hd
@@ -150,20 +150,20 @@ theorem byte_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g <
   have hN : d * g + (ddJ d e + k) < 32 * d := by rcases hd with rfl | rfl <;> omega
   have hj4 : ddJ d e + k < 4096 := by rcases hd with rfl | rfl <;> omega
   have hd11 : d ≤ 11 := by omega
-  refine wp_ldrb (a := bP s₀ + BitVec.ofNat 64 (d * g + (ddJ d e + k))) hj4
+  refine wp_ldrb (a := VG.Proof.MlKem1024.AArch64.DD.bP s₀ + BitVec.ofNat 64 (d * g + (ddJ d e + k))) hj4
     (by rw [ht.keep.get .x0, h.x0, ptr_add]) ?_ fun t₁ h₁ e₁ => ?_
   · rw [ht.keep.rd, ht.keep.wr, h.rd, h.wr, hp.rd, hp.wr]
     exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by omega) (by omega)))
-  have v₁ : (t₁.gpr .x10).toNat = byte d s₀ (d * g + (ddJ d e + k)) := by
+  have v₁ : (t₁.gpr .x10).toNat = VG.Proof.MlKem1024.AArch64.DD.byte d s₀ (d * g + (ddJ d e + k)) := by
     rw [e₁, toNat_byte, hp.byte_eq ht.frame hN]
-  have hb := byte_lt ((B d s₀).getD (d * g + (ddJ d e + k)) 0)
+  have hb := byte_lt ((VG.Proof.MlKem1024.AArch64.DD.B d s₀).getD (d * g + (ddJ d e + k)) 0)
   have p8 : 2 ^ (8 * (ddJ d e + k) - d * e) ≤ 1024 :=
     Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega : 8 * (ddJ d e + k) - d * e ≤ 10))
       (by decide)
-  have hlt : byte d s₀ (d * g + (ddJ d e + k)) * 2 ^ (8 * (ddJ d e + k) - d * e) ≤ 255 * 1024 :=
+  have hlt : VG.Proof.MlKem1024.AArch64.DD.byte d s₀ (d * g + (ddJ d e + k)) * 2 ^ (8 * (ddJ d e + k) - d * e) ≤ 255 * 1024 :=
     Nat.mul_le_mul (Nat.le_of_lt_succ hb) p8
   refine wp_lsl (by omega) fun t₂ h₂ e₂ => wp_add fun t₃ h₃ e₃ => wp_nil ?_
-  have v₂ : (t₂.gpr .x10).toNat = byte d s₀ (d * g + (ddJ d e + k)) * 2 ^ (8 * (ddJ d e + k) - d * e) := by
+  have v₂ : (t₂.gpr .x10).toNat = VG.Proof.MlKem1024.AArch64.DD.byte d s₀ (d * g + (ddJ d e + k)) * 2 ^ (8 * (ddJ d e + k) - d * e) := by
     rw [e₂, toNat_lsl_n (by rw [v₁]; omega), v₁]
   have hx9 : num d s₀ g (ddJ d e + k) / 2 ^ (d * e) < 1024 :=
     Nat.lt_of_lt_of_le (div_lt_sub (num_lt d s₀ g _) hde) p8
@@ -174,8 +174,8 @@ theorem byte_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g <
     add_byte_div hde, ← num_succ, Nat.add_assoc]
 
 /-- Coefficient `e` of group `g`, decompressed, and its bits shifted out. -/
-theorem coeff_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
-    (h : Inv d s₀ g s) (e : Nat) (he : e < 8) (t : State)
+theorem coeff_step {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
+    (h : VG.Proof.MlKem1024.AArch64.DD.Inv d s₀ g s) (e : Nat) (he : e < 8) (t : State)
     (ht : LInv d s₀ g s e (ddJ d (e + 1) - ddJ d e) t) :
     WP isa (.block (ddCoeff d e)) t (DInv d s₀ g s (e + 1)) := by
   have hd := hp.hd
@@ -205,12 +205,12 @@ theorem coeff_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g 
     have x6 : (t₂.gpr .x6).toNat = 2 ^ (d - 1) := by
       rw [h₂.get .x6, h₁.get .x6, ht.keep.get .x6, h.x6]
     rw [e₃, toNat_add_n (by rw [v₂, x6, hq]; omega), v₂, x6]
-  refine wp_strw (a := coeffAddr (fP s₀) (8 * g + e)) ⟨by omega, by omega⟩ ?_ ?_ fun t₅ h₅ =>
+  refine wp_strw (a := coeffAddr (VG.Proof.MlKem1024.AArch64.DD.fP s₀) (8 * g + e)) ⟨by omega, by omega⟩ ?_ ?_ fun t₅ h₅ =>
     wp_lsr (by omega) fun t₆ h₆ e₆ => wp_nil ?_
   · rw [k₄.get .x3, h.x3, ptr_add, coeffAddr, Nat.mul_add, ← Nat.mul_assoc]
   · rw [k₄.wr, h.wr, hp.wr]
     exact in_regions (List.mem_singleton_self _) (coeff_contains _ (show _ < n from hi))
-  have v₄ : (t₄.gpr .x10).setWidth 32 = G d s₀ (8 * g + e) := by
+  have v₄ : (t₄.gpr .x10).setWidth 32 = VG.Proof.MlKem1024.AArch64.DD.G d s₀ (8 * g + e) := by
     rw [setWidth32_of_toNat (by rw [e₄, toNat_lsr, v₃]), G_eq hd s₀ hg he, Nat.mul_comm q]
   have m₄ : t₄.mem = t.mem := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
   refine ⟨(k₄.trans (h₅.keep.trans h₆.keep)).mono, ?_, ?_, ?_⟩
@@ -222,30 +222,30 @@ theorem coeff_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g 
     exact ht.frame.writeW (List.mem_singleton_self _) _ (coeff_contains _ (show _ < n from hi))
 
 /-- The bytes coefficient `e` of group `g` needs, and the coefficient. -/
-theorem coeffs_step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
-    (h : Inv d s₀ g s) (e : Nat) (t : State) (he : e < 8) (ht : DInv d s₀ g s e t) :
+theorem coeffs_step {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
+    (h : VG.Proof.MlKem1024.AArch64.DD.Inv d s₀ g s) (e : Nat) (t : State) (he : e < 8) (ht : DInv d s₀ g s e t) :
     WP isa (.block (ddStep d e)) t (DInv d s₀ g s (e + 1)) := by
   rw [ddStep, WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (f := fun k => ddByte d e (ddJ d e + k)) (LInv d s₀ g s e)
-    (fun k u hk hu => byte_step hp hg h e he k u hk hu) _ (Nat.le_refl _) t
+    (fun k u hk hu => VG.Proof.MlKem1024.AArch64.DD.byte_step hp hg h e he k u hk hu) _ (Nat.le_refl _) t
     ⟨ht.keep, by rw [Nat.add_zero]; exact ht.x9, ht.out, ht.frame⟩) fun t₁ h₁ => ?_
-  exact coeff_step hp hg h e he t₁ h₁
+  exact VG.Proof.MlKem1024.AArch64.DD.coeff_step hp hg h e he t₁ h₁
 
 theorem ddBody_eq (d : Nat) : ddBody d = .movz .x .x9 0 0 :: ((List.range 8).flatMap (ddStep d) ++
     ([.addImm .x .x0 .x0 d, .addImm .x .x3 .x3 32, .subImm .x .x11 .x11 1] : List Instr)) := by
   simp only [ddBody, List.cons_append]
 
 /-- One group. -/
-theorem step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
-    (h : Inv d s₀ g s) :
+theorem step {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) {g : Nat} (hg : g < 32) {s : State}
+    (h : VG.Proof.MlKem1024.AArch64.DD.Inv d s₀ g s) :
     WP isa (.block (ddBody d)) s fun s' =>
-      Inv d s₀ (g + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ g + 1 ≠ 32) := by
+      VG.Proof.MlKem1024.AArch64.DD.Inv d s₀ (g + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ g + 1 ≠ 32) := by
   have hd := hp.hd
   rw [ddBody_eq]
   refine wp_movz fun s₁ h₁ e₁ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (wp_range_flatMap (M := isa) (DInv d s₀ g s)
-    (fun e t he ht => coeffs_step hp hg h e t he ht) 8 (Nat.le_refl _) s₁
+    (fun e t he ht => VG.Proof.MlKem1024.AArch64.DD.coeffs_step hp hg h e t he ht) 8 (Nat.le_refl _) s₁
     ⟨h₁.keep.mono, by
       rw [e₁, toNat_imm]; simp only [num, ddJ, Nat.mul_zero, Nat.zero_add, Nat.reduceDiv, List.range_zero,
         List.map_nil, digits_nil, Nat.zero_div]; rfl,
@@ -271,14 +271,14 @@ theorem step {d : Nat} {s₀ : State} (hp : Pre d s₀) {g : Nat} (hg : g < 32) 
     exact h₂.frame
 
 /-- The loop: `Decompress_d(ByteDecode_d(B))` into the output. -/
-theorem loop_ok {d : Nat} {s₀ : State} (hp : Pre d s₀) :
+theorem loop_ok {d : Nat} {s₀ : State} (hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s₀) :
     WP isa (ddLoop d) s₀ fun s' => s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧ s'.sp = s₀.sp ∧
-      PolyIs s'.mem (fP s₀) (decodeDecompress d (B d s₀)) := by
+      PolyIs s'.mem (VG.Proof.MlKem1024.AArch64.DD.fP s₀) (decodeDecompress d (VG.Proof.MlKem1024.AArch64.DD.B d s₀)) := by
   have hd := hp.hd
   refine WP.seq ?_
   rw [List.append_assoc]
   refine wp_movImm fun s₁ h₁ e₁ => wp_movImm fun s₂ h₂ e₂ => wp_movz fun s₃ h₃ e₃ => wp_nil ?_
-  refine WP.mono (count_loop (by decide) (Inv d s₀) (fun g hg s h => step hp hg h) ?_)
+  refine WP.mono (count_loop (by decide) (VG.Proof.MlKem1024.AArch64.DD.Inv d s₀) (fun g hg s h => VG.Proof.MlKem1024.AArch64.DD.step hp hg h) ?_)
     fun s' h => ⟨h.rd, h.wr, h.sp, h.out.polyIs fun _ _ => rfl⟩
   have k₃ := (h₁.keep.trans h₂.keep).trans h₃.keep
   have m₃ : s₃.mem = s₀.mem := by rw [h₃.mem, h₂.mem, h₁.mem]
@@ -299,11 +299,11 @@ theorem width_ok {d : Nat} (hd : d = 5 ∨ d = 11) {s₀ s : State} (hs : decode
       decodeDecompressAArch64.post s₀ s' := by
   obtain ⟨h1, h2, h3, -, hlen⟩ := hs
   rw [hdd] at hlen
-  have e0 : bP s = s₀.gpr .x0 := hk.get .x0
-  have e3 : fP s = s₀.gpr .x3 := hk.get .x3
-  have hp : Pre d s :=
-    ⟨hd, by rw [hk.rd, h1, bR, e0, hlen], by rw [hk.wr, h2, e3], by rw [e3, bR, e0, ← hlen]; exact h3, h5⟩
-  refine WP.mono (loop_ok hp) fun s' ⟨r, wr, sp, e⟩ => ⟨by rw [r, hk.rd], by rw [wr, hk.wr],
+  have e0 : VG.Proof.MlKem1024.AArch64.DD.bP s = s₀.gpr .x0 := hk.get .x0
+  have e3 : VG.Proof.MlKem1024.AArch64.DD.fP s = s₀.gpr .x3 := hk.get .x3
+  have hp : VG.Proof.MlKem1024.AArch64.DD.Pre d s :=
+    ⟨hd, by rw [hk.rd, h1, VG.Proof.MlKem1024.AArch64.DD.bR, e0, hlen], by rw [hk.wr, h2, e3], by rw [e3, VG.Proof.MlKem1024.AArch64.DD.bR, e0, ← hlen]; exact h3, h5⟩
+  refine WP.mono (VG.Proof.MlKem1024.AArch64.DD.loop_ok hp) fun s' ⟨r, wr, sp, e⟩ => ⟨by rw [r, hk.rd], by rw [wr, hk.wr],
     by rw [sp, hk.sp], ?_⟩
   show PolyIs s'.mem (s₀.gpr .x3) (decodeDecompress ((s₀.gpr .x2).setWidth 32).toNat
     (bytesAt s₀.mem (s₀.gpr .x0) (s₀.gpr .x1).toNat))
@@ -332,11 +332,11 @@ theorem correct (s : State) (hs : decodeDecompressAArch64.pre s) :
     rcases hd' with h | h <;> rw [h] at hlen <;> omega
   refine WP.ite _ z₂ (fun hb => ?_) (fun hb => ?_)
   · have e : ((s.gpr .x2).setWidth 32).toNat = 5 := by simp at hb; omega
-    exact WP.mono (width_ok (.inl rfl) hs e k₂ m₂ x5) fun s' ⟨_, _, sp, p⟩ => ⟨sp, p⟩
+    exact WP.mono (VG.Proof.MlKem1024.AArch64.DD.width_ok (.inl rfl) hs e k₂ m₂ x5) fun s' ⟨_, _, sp, p⟩ => ⟨sp, p⟩
   · have e : ((s.gpr .x2).setWidth 32).toNat = 11 := by
       simp at hb
       rcases hd' with h | h <;> rw [h] at hlen <;> omega
-    exact WP.mono (width_ok (.inr rfl) hs e k₂ m₂ x5) fun s' ⟨_, _, sp, p⟩ => ⟨sp, p⟩
+    exact WP.mono (VG.Proof.MlKem1024.AArch64.DD.width_ok (.inr rfl) hs e k₂ m₂ x5) fun s' ⟨_, _, sp, p⟩ => ⟨sp, p⟩
 
 theorem ct : ConstantTime isa decodeDecompressAArch64.pre decodeDecompressAArch64.pub
     decodeDecompress :=
@@ -354,8 +354,8 @@ def sat : State where
 
 theorem decodeDecompress_verified :
     Verified AArch64.target decodeDecompress (Spec.MlKem1024.decodeDecompressContract AArch64.abi) :=
-  Verified.of_correct correct ct (by
+  Verified.of_correct VG.Proof.MlKem1024.AArch64.DD.correct VG.Proof.MlKem1024.AArch64.DD.ct (by
     mlkem_implies [Spec.MlKem1024.decodeDecompressContract, Spec.MlKem1024.decodeDecompressSig,
-      decodeDecompressAArch64, AArch64.abi, AArch64.argRegs] [sat] using sat)
+      decodeDecompressAArch64, AArch64.abi, AArch64.argRegs] [sat] using VG.Proof.MlKem1024.AArch64.DD.sat)
 
 end VG.Proof.MlKem1024.AArch64.DD

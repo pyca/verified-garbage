@@ -1,6 +1,6 @@
 import VerifiedGarbage.Spec.Siv
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 
 /-!
 # AES-SIV: lemmas about the specification

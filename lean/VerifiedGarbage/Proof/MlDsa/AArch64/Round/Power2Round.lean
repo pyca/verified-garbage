@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 
 /-!
 # ML-DSA on AArch64: `vg_mldsa_power2round`
@@ -103,11 +103,11 @@ def p2rV (s₀ : State) (o : Reg) (k : Nat) : BitVec 32 :=
 
 theorem p2r_loop (sL : State) (hk : Keep [.x9] s₀ sL) (hm : sL.mem = s₀.mem) (hq : sL.gpr .x9 = Qv) :
     WP isa (mapLoop [.x0, .x1, .x2] .x10 p2rBody) sL
-      (Inv sL [.x0, .x1, .x2] [.x9] [.x1, .x2] (p2rV s₀) (fun _ _ => True) 256) := by
+      (VG.Proof.MlDsa.AArch64.Round.Inv sL [.x0, .x1, .x2] [.x9] [.x1, .x2] (p2rV s₀) (fun _ _ => True) 256) := by
   have hL : Layout sL [.x0] [.x1, .x2] := (p2r_layout hp).congr (fun r hr => hk.get r (by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with rfl | rfl | rfl <;> decide)) hk.rd hk.wr
-  refine loop_ok (clob := [.x0, .x1, .x2, .x10, .x11, .x12, .x13]) hL (by decide) (by decide) (by decide)
+  refine VG.Proof.MlDsa.AArch64.Round.loop_ok (clob := [.x0, .x1, .x2, .x10, .x11, .x12, .x13]) hL (by decide) (by decide) (by decide)
     (by decide) (fun _ _ _ => trivial) fun i hi s hI => ?_
   refine WP.mono (p2rBody_ok s (by rw [hI.fixed .x9 (by simp), hq]) (hI.inR hL (by simp) (by simp) hi)
     (hI.inW hL (by simp) (by simp) hi) (hI.inW hL (by simp) (by simp) hi))
@@ -124,7 +124,7 @@ theorem p2r_correct (s₀ : State) (hp : power2RoundK.pre s₀) :
     ∃ t s', Exec isa power2Round s₀ t s' ∧ abiPreserved s₀ s' ∧ power2RoundK.post s₀ s' := by
   have hr : Reduced s₀.mem (s₀.gpr .x0) := hp.2.2.2.2.2
   obtain ⟨t, s', he, sL, hk, hm, hI⟩ := WP.seq (M := isa) (Q := fun s' => ∃ sL, Keep [.x9] s₀ sL ∧
-      sL.mem = s₀.mem ∧ Inv sL [.x0, .x1, .x2] [.x9] [.x1, .x2] (p2rV s₀) (fun _ _ => True) 256 s')
+      sL.mem = s₀.mem ∧ VG.Proof.MlDsa.AArch64.Round.Inv sL [.x0, .x1, .x2] [.x9] [.x1, .x2] (p2rV s₀) (fun _ _ => True) 256 s')
     (WP.mono (movW_ok .x9 (BitVec.ofNat 32 Impl.MlDsa.AArch64.Arith.qNat) s₀) fun sL ⟨⟨hq, hm⟩, hk⟩ =>
       WP.mono (p2r_loop hp sL hk hm (by rw [hq]; exact q32)) fun s' hI => ⟨sL, hk, hm, hI⟩)
   have e : ∀ r ∈ [Reg.x0, .x1, .x2], sL.gpr r = s₀.gpr r := fun r hr => hk.get r (by

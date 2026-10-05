@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Poly1305.X86.Buffer
+import VerifiedGarbage.Proof.Poly1305.X86.Finalize
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.PowLit

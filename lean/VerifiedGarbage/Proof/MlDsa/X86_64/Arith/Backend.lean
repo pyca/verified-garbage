@@ -1,9 +1,9 @@
 import VerifiedGarbage.Impl.MlDsa.X86_64.Arith.Backend
-import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
-import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.MakeHint
 import VerifiedGarbage.Proof.MlDsa.X86_64.Round.NormLt

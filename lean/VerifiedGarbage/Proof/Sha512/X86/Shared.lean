@@ -2,10 +2,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
 import VerifiedGarbage.Spec.Sha512.Contract
-import VerifiedGarbage.Proof.Sha512.X86.Lit
+import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 

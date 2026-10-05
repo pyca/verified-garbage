@@ -1,6 +1,6 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Loop
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Arith
-import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Contracts
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
+import VerifiedGarbage.Proof.MlDsa.X86_64.Round.Bits
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 
 /-!
@@ -83,14 +83,14 @@ theorem p2r_layout : Layout s₀ [.rdi] [.rsi, .rdx] where
 
 /-- The values the loop writes. -/
 def p2rV (s₀ : State) (o : Reg) (k : Nat) : BitVec 32 :=
-  if o = .rsi then t1V (coeffAt s₀.mem (s₀.gpr .rdi) k) else t0V (coeffAt s₀.mem (s₀.gpr .rdi) k)
+  if o = .rsi then t1V (VG.Spec.MlDsa.coeffAt s₀.mem (s₀.gpr .rdi) k) else t0V (VG.Spec.MlDsa.coeffAt s₀.mem (s₀.gpr .rdi) k)
 
 theorem p2r_loop :
     WP isa (mapLoop p2rBody) s₀ (Inv s₀ [.rdi, .rsi, .rdx] [.rsi, .rdx] (p2rV s₀) (fun _ _ => True) 256) := by
   have hL := p2r_layout hp
   refine loop_ok (clob := [.rax, .r8, .r9, .rcx]) hL (by decide) (by decide) (fun _ _ _ _ => trivial)
     fun i hi s hI hc => ?_
-  have ha : ∀ p ∈ [Reg.rdi, .rsi, .rdx], cfAddr (s.gpr p) (s.gpr .rcx) = coeffAddr (s₀.gpr p) (255 - i) :=
+  have ha : ∀ p ∈ [Reg.rdi, .rsi, .rdx], cfAddr (s.gpr p) (s.gpr .rcx) = VG.Proof.MlDsa.Round.coeffAddr (s₀.gpr p) (255 - i) :=
     fun p hp' => hI.addr hc hi hp'
   refine WP.mono (p2rBody_ok s (by rw [ha _ (by simp)]; exact hI.inR hL (by simp) (by omega))
     (by rw [ha _ (by simp)]; exact hI.inW hL (by simp) (by omega))
@@ -102,18 +102,18 @@ theorem p2r_loop :
 theorem p2r_correct :
     ∃ t s', Exec isa power2Round s₀ t s' ∧ abiPreserved s₀ s' ∧ power2RoundK.post s₀ s' := by
   obtain ⟨t, s', he, hI, hk⟩ := WP.keep [.rax, .rcx, .r8, .r9] (p2r_loop hp) (by decide)
-  have hr : Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2.2.2.2.2.2
+  have hr : VG.Spec.MlDsa.Reduced s₀.mem (s₀.gpr .rdi) := hp.2.2.2.2.2.2.2.2
   refine ⟨t, s', he, abiPreserved_of_exec (by decide) he (gprPreserved_of hk (by decide) hI.frame ?_), ?_, ?_⟩
   · simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq]
     exact ⟨hp.2.2.2.2.2.2.1, hp.2.2.2.2.2.2.2.1⟩
   · refine natPolyIs_of_toNat fun k hk => ?_
     rw [hI.done .rsi (by simp) k (by omega) hk, map_get _ _ hk, p2rV, ite_eq_left_of_eq_true _ _ (eq_true rfl), t1V_toNat (hr k hk),
-      power2Round_eq, ← polyAt_val hr hk]
+      power2Round_eq, ← VG.Proof.MlDsa.Round.polyAt_val hr hk]
     exact (Int.toNat_natCast _).symm
-  · refine polyIs_of_toNat fun k hk => ?_
+  · refine VG.Proof.MlDsa.Round.polyIs_of_toNat fun k hk => ?_
     rw [hI.done .rdx (by simp) k (by omega) hk, map_get _ _ hk, p2rV, ite_eq_right_of_eq_false _ _ (eq_false (by decide)), t0V_toNat (hr k hk),
-      power2Round_t0, polyAt_val hr hk]
+      power2Round_t0, VG.Proof.MlDsa.Round.polyAt_val hr hk]
 
 end
 

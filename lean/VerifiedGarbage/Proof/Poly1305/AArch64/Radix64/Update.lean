@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
-import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.PowLit

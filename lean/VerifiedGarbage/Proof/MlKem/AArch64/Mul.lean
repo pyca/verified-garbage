@@ -1,6 +1,155 @@
-import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
+import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
 import VerifiedGarbage.Proof.Framework.Omega
 import Mathlib.Tactic.Set
+
+/- Proofs formerly in `VerifiedGarbage.Proof.MlKem.AArch64.NttCommon`. -/
+section
+
+/-!
+# ML-KEM on AArch64: what the NTT and its inverse share
+
+The per-target contract of both (`inPlaceAArch64`), the facts that hold
+throughout (`St`: the constants, the table of zetas in `scratch`), and a
+butterfly's effect on the polynomial in memory, from its two stores
+(`polyIs_write2`).
+-/
+
+namespace VG.Proof.MlKem
+
+open VG VG.AArch64 VG.Spec.MlKem
+
+/-- The contract the proofs are written against (and verified callers use);
+the artifacts' are the shared contracts of `Spec/`, which imply it.
+AArch64 contract for `f = x0, scratch = x1`: if the polynomial at `f` is
+reduced, it becomes `t` of it, reduced. The code may read and write `f` and
+`scratch` (1024 bytes), which do not overlap. -/
+def inPlaceAArch64 (t : Poly → Poly) : Contract AArch64.isa where
+  pre s :=
+    s.rd = [] ∧ s.wr = [⟨s.gpr .x0, 1024⟩, ⟨s.gpr .x1, 1024⟩] ∧
+    Region.Disjoint ⟨s.gpr .x0, 1024⟩ ⟨s.gpr .x1, 1024⟩ ∧ Reduced s.mem (s.gpr .x0)
+  post s s' := PolyIs s'.mem (s.gpr .x0) (t (polyAt s.mem (s.gpr .x0)))
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.sp = s₂.sp
+
+end VG.Proof.MlKem
+
+namespace VG.Proof.MlKem.AArch64.Ntt
+
+open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
+open VG.Spec.MlKem
+
+section
+variable (s₀ : State)
+
+abbrev fP : Addr := s₀.gpr .x0
+abbrev sP : Addr := s₀.gpr .x1
+abbrev P₀ : Poly := polyAt s₀.mem (VG.Proof.MlKem.AArch64.Ntt.fP s₀)
+
+end
+
+structure Pre (s₀ : State) : Prop where
+  rd : s₀.rd = []
+  wr : s₀.wr = [polyRegion (VG.Proof.MlKem.AArch64.Ntt.fP s₀), polyRegion (VG.Proof.MlKem.AArch64.Ntt.sP s₀)]
+  disj : (polyRegion (VG.Proof.MlKem.AArch64.Ntt.fP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Ntt.sP s₀))
+  red : Reduced s₀.mem (VG.Proof.MlKem.AArch64.Ntt.fP s₀)
+
+theorem pre_of {t : Poly → Poly} {s₀ : State} (h : (VG.Proof.MlKem.inPlaceAArch64 t).pre s₀) : VG.Proof.MlKem.AArch64.Ntt.Pre s₀ :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩
+
+/-- What holds throughout. -/
+structure St (s₀ : State) (s : State) : Prop where
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+  sp : s.sp = s₀.sp
+  x0 : s.gpr .x0 = VG.Proof.MlKem.AArch64.Ntt.fP s₀
+  vc : VConsts s
+  tab : ∀ k < 128, s.mem.readW (VG.Proof.MlKem.AArch64.Ntt.sP s₀ + BitVec.ofNat 64 (4 * k)) 32 =
+    BitVec.ofNat 32 (zetaTable.getD k 0)
+
+theorem St.keep {s₀ s s' : State} (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {rs : List Reg} (hk : Keep rs s s')
+    (hm : s'.mem = s.mem) (hv : s'.v = s.v) (h0 : Reg.x0 ∉ rs := by decide) : VG.Proof.MlKem.AArch64.Ntt.St s₀ s' :=
+  ⟨by rw [hk.rd, h.rd], by rw [hk.wr, h.wr], by rw [hk.sp, h.sp], by rw [hk.get .x0 h0, h.x0],
+    ⟨by rw [hv]; exact h.vc.q, by rw [hv]; exact h.vc.m⟩, fun k hk' => by rw [hm]; exact h.tab k hk'⟩
+
+theorem St.vchg {s₀ s s' : State} (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {rs : List VReg} (hc : VChg rs s s')
+    (h16 : VReg.v16 ∉ rs := by decide) (h17 : VReg.v17 ∉ rs := by decide) : VG.Proof.MlKem.AArch64.Ntt.St s₀ s' :=
+  ⟨by rw [hc.rd, h.rd], by rw [hc.wr, h.wr], by rw [hc.sp, h.sp], by rw [hc.gpr, h.x0],
+    h.vc.chg hc h16 h17, fun k hk' => by rw [hc.mem]; exact h.tab k hk'⟩
+
+theorem Pre.in_f {s₀ s : State} (hp : VG.Proof.MlKem.AArch64.Ntt.Pre s₀) (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {i : Nat} (hi : i < 256) :
+    InRegions s.wr (coeffAddr (VG.Proof.MlKem.AArch64.Ntt.fP s₀) i) 4 := by
+  rw [h.wr, hp.wr]
+  exact in_regions (List.mem_cons_self ..) (coeff_contains _ (show i < n from hi))
+
+theorem Pre.in_f' {s₀ s : State} (hp : VG.Proof.MlKem.AArch64.Ntt.Pre s₀) (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {i : Nat} (hi : i < 256) :
+    InRegions (s.rd ++ s.wr) (coeffAddr (VG.Proof.MlKem.AArch64.Ntt.fP s₀) i) 4 := by
+  rw [h.rd, hp.rd]; exact hp.in_f h hi
+
+/-- The zeta at `[x12]` for the `k`-th entry of the table. -/
+theorem Pre.in_tab {s₀ s : State} (hp : VG.Proof.MlKem.AArch64.Ntt.Pre s₀) (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {k : Nat} (hk : k < 128) :
+    InRegions (s.rd ++ s.wr) (VG.Proof.MlKem.AArch64.Ntt.sP s₀ + BitVec.ofNat 64 (4 * k)) 4 := by
+  rw [h.rd, h.wr, hp.rd, hp.wr]
+  exact in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Ntt.sP s₀)) (by simp) (contains_off (by omega) (by decide))
+
+/-- Storing coefficients `j` and `j'` keeps the table. -/
+theorem Pre.tab_write {s₀ : State} (hp : VG.Proof.MlKem.AArch64.Ntt.Pre s₀) {m m' : Mem} (hf : Frame [polyRegion (VG.Proof.MlKem.AArch64.Ntt.fP s₀)] m m')
+    (ht : ∀ k < 128, m.readW (VG.Proof.MlKem.AArch64.Ntt.sP s₀ + BitVec.ofNat 64 (4 * k)) 32 = BitVec.ofNat 32 (zetaTable.getD k 0)) :
+    ∀ k < 128, m'.readW (VG.Proof.MlKem.AArch64.Ntt.sP s₀ + BitVec.ofNat 64 (4 * k)) 32 = BitVec.ofNat 32 (zetaTable.getD k 0) :=
+  fun k hk => by
+    rw [hf.readW (r := polyRegion (VG.Proof.MlKem.AArch64.Ntt.sP s₀)) (contains_off (by omega) (by decide)) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.disj.symm) (by decide)]
+    exact ht k hk
+
+/-- Two stores into the polynomial at `p`: coefficients `j` and `j'`. -/
+theorem polyIs_write2 {m : Mem} {p : Addr} {P R : Poly} (h : PolyIs m p P) {j j' : Nat} (hj : j < 256)
+    (hj' : j' < 256) (hne : j ≠ j') {x y : Zq}
+    (hR : ∀ i < 256, R[i]! = if i = j then x else if i = j' then y else P[i]!) :
+    PolyIs ((m.writeW (coeffAddr p j) (BitVec.ofNat 32 x.val)).writeW (coeffAddr p j')
+      (BitVec.ofNat 32 y.val)) p R := by
+  refine polyIs_of_coeffAt fun i hi => ?_
+  rw [coeffAt_writeW _ _ hi (show j' < n from hj'), coeffAt_writeW _ _ hi (show j < n from hj), hR i hi]
+  by_cases e : j = i
+  · subst e; rw [ite_eq_right (Ne.symm hne), ite_eq_left rfl, ite_eq_left rfl]
+  · rw [ite_eq_right e, ite_eq_right (Ne.symm e)]
+    by_cases e' : j' = i
+    · subst e'; rw [ite_eq_left rfl, ite_eq_left rfl]
+    · rw [ite_eq_right e', ite_eq_right (Ne.symm e'), polyIs_coeffAt h hi]
+
+theorem zetaTable_zeta {k : Nat} (hk : k < 128) : zetaTable.getD k 0 = (zeta k).val := by
+  rw [zetaTable_eq, zetas_getD hk]
+
+/-- The zeta loaded from the table, as the element of `ℤ_q`. -/
+theorem zeta_load {s₀ s : State} (h : VG.Proof.MlKem.AArch64.Ntt.St s₀ s) {k : Nat} (hk : k < 128) :
+    ((s.mem.readW (VG.Proof.MlKem.AArch64.Ntt.sP s₀ + BitVec.ofNat 64 (4 * k)) 32).setWidth 64).toNat = (zeta k).val := by
+  rw [toNat_readW32, h.tab k hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt
+    (by have := zetaTable_lt k hk; have : q = 3329 := rfl; omega), VG.Proof.MlKem.AArch64.Ntt.zetaTable_zeta hk]
+
+/-- `vconsts`: `q` and `M` in `x9`, `x10` and the lanes of `v16`, `v17`. -/
+theorem vconsts_ok (s : State) :
+    WP isa (.block vconsts) s fun s' => Keep [.x9, .x10] s s' ∧ s'.mem = s.mem ∧ VConsts s' ∧
+      ∀ r, r ≠ .v16 → r ≠ .v17 → s'.v r = s.v r := by
+  show WP isa (.block ((.movz .x .x9 3329 0 :: movImm .x10 645083) ++
+    ([.vop (.dup .s4 .v16 .x9), .vop (.dup .s4 .v17 .x10)] : List Instr))) s _
+  refine wp_scalar (by decide) (P := fun s₂ => Keep [.x9, .x10] s s₂ ∧ s₂.mem = s.mem ∧
+      (s₂.gpr .x9).toNat = 3329 ∧ (s₂.gpr .x10).toNat = 645083)
+    (wp_movz fun s₁ h₁ e₁ => by
+      rw [← List.append_nil (movImm _ _)]
+      exact wp_movImm fun s₂ h₂ e₂ => wp_nil ⟨(h₁.keep.trans h₂.keep).mono, by rw [h₂.mem, h₁.mem],
+        by rw [h₂.get .x9, e₁]; rfl, by rw [e₂]; rfl⟩) fun s₂ ⟨k₂, m₂, e9, e10⟩ hv₂ => ?_
+  refine wp_vop (d := .v16) rfl fun s₃ h₃ => wp_vop (d := .v17) rfl fun s₄ h₄ => wp_nil ?_
+  refine ⟨(k₂.trans (h₃.keep.trans h₄.keep)).mono, by rw [h₄.mem, h₃.mem, m₂], ⟨?_, ?_⟩,
+    fun r h16 h17 => by rw [h₄.get r h17, h₃.get r h16, hv₂]⟩
+  · rw [h₄.get .v16, h₃.v]
+    exact lanes_dup.congr fun _ _ => by rw [BitVec.toNat_setWidth, e9]
+  · rw [h₄.v, h₃.gpr]
+    exact lanes_dup.congr fun _ _ => by rw [BitVec.toNat_setWidth, e10]
+
+end VG.Proof.MlKem.AArch64.Ntt
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.MlKem.AArch64.Mul`. -/
+section
 
 /-!
 # ML-KEM on AArch64: `vg_mlkem_multiply_ntts`
@@ -62,50 +211,50 @@ abbrev hP : Addr := s₀.gpr .x0
 abbrev fP : Addr := s₀.gpr .x1
 abbrev gP : Addr := s₀.gpr .x2
 abbrev sP : Addr := s₀.gpr .x3
-abbrev F : Poly := polyAt s₀.mem (fP s₀)
-abbrev Gp : Poly := polyAt s₀.mem (gP s₀)
+abbrev F : Poly := polyAt s₀.mem (VG.Proof.MlKem.AArch64.Mul.fP s₀)
+abbrev Gp : Poly := polyAt s₀.mem (VG.Proof.MlKem.AArch64.Mul.gP s₀)
 /-- Coefficient `j` of the output. -/
-def G (j : Nat) : BitVec 32 := BitVec.ofNat 32 ((multiplyNTTs (F s₀) (Gp s₀))[j]!).val
-def old (j : Nat) : BitVec 32 := coeffAt s₀.mem (hP s₀) j
+def G (j : Nat) : BitVec 32 := BitVec.ofNat 32 ((multiplyNTTs (VG.Proof.MlKem.AArch64.Mul.F s₀) (VG.Proof.MlKem.AArch64.Mul.Gp s₀))[j]!).val
+def old (j : Nat) : BitVec 32 := coeffAt s₀.mem (VG.Proof.MlKem.AArch64.Mul.hP s₀) j
 
 end
 
 structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = [polyRegion (fP s₀), polyRegion (gP s₀)]
-  wr : s₀.wr = [polyRegion (hP s₀), polyRegion (sP s₀)]
-  hf : (polyRegion (hP s₀)).Disjoint (polyRegion (fP s₀))
-  hg : (polyRegion (hP s₀)).Disjoint (polyRegion (gP s₀))
-  hs : (polyRegion (hP s₀)).Disjoint (polyRegion (sP s₀))
-  fs : (polyRegion (fP s₀)).Disjoint (polyRegion (sP s₀))
-  gs : (polyRegion (gP s₀)).Disjoint (polyRegion (sP s₀))
-  f : Reduced s₀.mem (fP s₀)
-  g : Reduced s₀.mem (gP s₀)
+  rd : s₀.rd = [polyRegion (VG.Proof.MlKem.AArch64.Mul.fP s₀), polyRegion (VG.Proof.MlKem.AArch64.Mul.gP s₀)]
+  wr : s₀.wr = [polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀), polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀)]
+  hf : (polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.fP s₀))
+  hg : (polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.gP s₀))
+  hs : (polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀))
+  fs : (polyRegion (VG.Proof.MlKem.AArch64.Mul.fP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀))
+  gs : (polyRegion (VG.Proof.MlKem.AArch64.Mul.gP s₀)).Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀))
+  f : Reduced s₀.mem (VG.Proof.MlKem.AArch64.Mul.fP s₀)
+  g : Reduced s₀.mem (VG.Proof.MlKem.AArch64.Mul.gP s₀)
 
 /-- After `c` times four pairs. -/
 structure Inv (s₀ : State) (c : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   sp : s.sp = s₀.sp
-  x0 : s.gpr .x0 = coeffAddr (hP s₀) (8 * c)
-  x1 : s.gpr .x1 = coeffAddr (fP s₀) (8 * c)
-  x2 : s.gpr .x2 = coeffAddr (gP s₀) (8 * c)
-  x3 : s.gpr .x3 = sP s₀ + BitVec.ofNat 64 (4 * (4 * c))
+  x0 : s.gpr .x0 = coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c)
+  x1 : s.gpr .x1 = coeffAddr (VG.Proof.MlKem.AArch64.Mul.fP s₀) (8 * c)
+  x2 : s.gpr .x2 = coeffAddr (VG.Proof.MlKem.AArch64.Mul.gP s₀) (8 * c)
+  x3 : s.gpr .x3 = VG.Proof.MlKem.AArch64.Mul.sP s₀ + BitVec.ofNat 64 (4 * (4 * c))
   x11 : (s.gpr .x11).toNat = 32 - c
   vc : VConsts s
-  out : CoeffsUpTo s.mem (hP s₀) (8 * c) (G s₀) (old s₀)
-  f : ∀ j < 256, coeffAt s.mem (fP s₀) j = coeffAt s₀.mem (fP s₀) j
-  g : ∀ j < 256, coeffAt s.mem (gP s₀) j = coeffAt s₀.mem (gP s₀) j
-  tab : ∀ j < 128, s.mem.readW (sP s₀ + BitVec.ofNat 64 (4 * j)) 32 = BitVec.ofNat 32 (gammaTable.getD j 0)
+  out : CoeffsUpTo s.mem (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c) (VG.Proof.MlKem.AArch64.Mul.G s₀) (VG.Proof.MlKem.AArch64.Mul.old s₀)
+  f : ∀ j < 256, coeffAt s.mem (VG.Proof.MlKem.AArch64.Mul.fP s₀) j = coeffAt s₀.mem (VG.Proof.MlKem.AArch64.Mul.fP s₀) j
+  g : ∀ j < 256, coeffAt s.mem (VG.Proof.MlKem.AArch64.Mul.gP s₀) j = coeffAt s₀.mem (VG.Proof.MlKem.AArch64.Mul.gP s₀) j
+  tab : ∀ j < 128, s.mem.readW (VG.Proof.MlKem.AArch64.Mul.sP s₀ + BitVec.ofNat 64 (4 * j)) 32 = BitVec.ofNat 32 (gammaTable.getD j 0)
 
 theorem G_even (s₀ : State) {i : Nat} (hi : i < 128) :
-    G s₀ (2 * i) = BitVec.ofNat 32 ((((F s₀)[2 * i + 1]!).val * ((Gp s₀)[2 * i + 1]!).val % q *
-      gammaTable.getD i 0 + ((F s₀)[2 * i]!).val * ((Gp s₀)[2 * i]!).val) % q) := by
-  rw [G, multiplyNTTs_even _ _ hi, even_val, gammaTable_eq, gammas_getD hi]
+    VG.Proof.MlKem.AArch64.Mul.G s₀ (2 * i) = BitVec.ofNat 32 ((((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * i + 1]!).val * ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * i + 1]!).val % q *
+      gammaTable.getD i 0 + ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * i]!).val * ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * i]!).val) % q) := by
+  rw [VG.Proof.MlKem.AArch64.Mul.G, multiplyNTTs_even _ _ hi, VG.Proof.MlKem.AArch64.Mul.even_val, gammaTable_eq, gammas_getD hi]
 
 theorem G_odd (s₀ : State) {i : Nat} (hi : i < 128) :
-    G s₀ (2 * i + 1) = BitVec.ofNat 32 ((((F s₀)[2 * i]!).val * ((Gp s₀)[2 * i + 1]!).val +
-      ((F s₀)[2 * i + 1]!).val * ((Gp s₀)[2 * i]!).val) % q) := by
-  rw [G, multiplyNTTs_odd _ _ hi, odd_val]
+    VG.Proof.MlKem.AArch64.Mul.G s₀ (2 * i + 1) = BitVec.ofNat 32 ((((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * i]!).val * ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * i + 1]!).val +
+      ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * i + 1]!).val * ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * i]!).val) % q) := by
+  rw [VG.Proof.MlKem.AArch64.Mul.G, multiplyNTTs_odd _ _ hi, VG.Proof.MlKem.AArch64.Mul.odd_val]
 
 /-- `(a + r γ) mod q` depends only on `r mod q`. -/
 theorem add_mul_mod {a r r' γ : Nat} (h : r % 3329 = r' % 3329) :
@@ -197,11 +346,11 @@ theorem vpair_ok {rest : List Instr} {s : State} {Q : State → Prop} (hc : VCon
     h₇.chg).trans h₈.chg |>.trans h₉ |>.trans h₁₀).mono) ?_ (l₁₀.congr fun e he => ?_)
   · rw [h₁₀.v .v23 (by decide), h₉.v .v23 (by decide), h₈.get .v23, h₇.get .v23]
     refine l₆.congr fun e he => ?_
-    rw [(r₅ e he).2, add_mul_mod (r₂ e he).2]
+    rw [(r₅ e he).2, VG.Proof.MlKem.AArch64.Mul.add_mul_mod (r₂ e he).2]
   · rw [(r₉ e he).2]
 
-theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} (h : Inv s₀ c s) :
-    WP isa (.block vmulBody) s fun s' => Inv s₀ (c + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ c + 1 ≠ 32) := by
+theorem step {s₀ : State} (hp : VG.Proof.MlKem.AArch64.Mul.Pre s₀) {c : Nat} (hc : c < 32) {s : State} (h : VG.Proof.MlKem.AArch64.Mul.Inv s₀ c s) :
+    WP isa (.block vmulBody) s fun s' => VG.Proof.MlKem.AArch64.Mul.Inv s₀ (c + 1) s' ∧ ((s'.gpr .x11).toNat ≠ 0 ↔ c + 1 ≠ 32) := by
   show WP isa (.block (.ldrq .v0 .x1 0 :: .ldrq .v1 .x1 16 :: .ldrq .v4 .x2 0 :: .ldrq .v5 .x2 16 ::
     .ldrq .v18 .x3 0 :: .vop (.perm .uzp1 .s4 .v6 .v0 .v1) :: .vop (.perm .uzp2 .s4 .v7 .v0 .v1) ::
     .vop (.perm .uzp1 .s4 .v19 .v4 .v5) :: .vop (.perm .uzp2 .s4 .v20 .v4 .v5) ::
@@ -215,50 +364,50 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
         .addImm .x .x3 .x3 16, .subImm .x .x11 .x11 1] : List Instr) ++ ([] : List Instr)))))) s _
   have hj : 8 * c + 4 ≤ 256 := by bdd_omega
   have hj' : 8 * c + 4 + 4 ≤ 256 := by bdd_omega
-  have inF : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (fP s₀) j) 16 :=
+  have inF : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (VG.Proof.MlKem.AArch64.Mul.fP s₀) j) 16 :=
     fun hj => by
       rw [h.rd, h.wr, hp.rd, hp.wr]
-      exact in_regions (R := polyRegion (fP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
-  have inG : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (gP s₀) j) 16 :=
+      exact in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Mul.fP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
+  have inG : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions (s.rd ++ s.wr) (coeffAddr (VG.Proof.MlKem.AArch64.Mul.gP s₀) j) 16 :=
     fun hj => by
       rw [h.rd, h.wr, hp.rd, hp.wr]
-      exact in_regions (R := polyRegion (gP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
+      exact in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Mul.gP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
   -- the loads
-  refine wp_ldrq (a := coeffAddr (fP s₀) (8 * c)) (by decide) (by rw [h.x1, ptr_zero]) (inF hj)
+  refine wp_ldrq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.fP s₀) (8 * c)) (by decide) (by rw [h.x1, ptr_zero]) (inF hj)
     fun s₁ h₁ => ?_
-  refine wp_ldrq (a := coeffAddr (fP s₀) (8 * c + 4)) (by decide) (by rw [h₁.gpr, h.x1, coeffAddr_step])
+  refine wp_ldrq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.fP s₀) (8 * c + 4)) (by decide) (by rw [h₁.gpr, h.x1, coeffAddr_step])
     (by rw [h₁.rd, h₁.wr]; exact inF hj') fun s₂ h₂ => ?_
-  refine wp_ldrq (a := coeffAddr (gP s₀) (8 * c)) (by decide) (by rw [h₂.gpr, h₁.gpr, h.x2, ptr_zero])
+  refine wp_ldrq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.gP s₀) (8 * c)) (by decide) (by rw [h₂.gpr, h₁.gpr, h.x2, ptr_zero])
     (by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact inG hj) fun s₃ h₃ => ?_
-  refine wp_ldrq (a := coeffAddr (gP s₀) (8 * c + 4)) (by decide)
+  refine wp_ldrq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.gP s₀) (8 * c + 4)) (by decide)
     (by rw [h₃.gpr, h₂.gpr, h₁.gpr, h.x2, coeffAddr_step])
     (by rw [h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr]; exact inG hj') fun s₄ h₄ => ?_
-  refine wp_ldrq (a := sP s₀ + BitVec.ofNat 64 (4 * (4 * c))) (by decide)
+  refine wp_ldrq (a := VG.Proof.MlKem.AArch64.Mul.sP s₀ + BitVec.ofNat 64 (4 * (4 * c))) (by decide)
     (by rw [h₄.gpr, h₃.gpr, h₂.gpr, h₁.gpr, h.x3, ptr_zero])
     (by rw [h₄.rd, h₄.wr, h₃.rd, h₃.wr, h₂.rd, h₂.wr, h₁.rd, h₁.wr, h.rd, h.wr, hp.rd, hp.wr]
-        exact in_rd_wr (in_regions (R := polyRegion (sP s₀)) (by simp)
+        exact in_rd_wr (in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀)) (by simp)
           (contains_off (by bdd_omega) (by decide)))) fun s₅ h₅ => ?_
   have m₄ : s₄.mem = s.mem := by rw [h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  have cf : ∀ j < 256, (coeffAt s.mem (fP s₀) j).toNat = ((F s₀)[j]!).val := fun j hj => by
+  have cf : ∀ j < 256, (coeffAt s.mem (VG.Proof.MlKem.AArch64.Mul.fP s₀) j).toNat = ((VG.Proof.MlKem.AArch64.Mul.F s₀)[j]!).val := fun j hj => by
     rw [h.f j hj, polyAt_val hp.f (show j < n by rw [n_eq]; exact hj)]
-  have cg : ∀ j < 256, (coeffAt s.mem (gP s₀) j).toNat = ((Gp s₀)[j]!).val := fun j hj => by
+  have cg : ∀ j < 256, (coeffAt s.mem (VG.Proof.MlKem.AArch64.Mul.gP s₀) j).toNat = ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[j]!).val := fun j hj => by
     rw [h.g j hj, polyAt_val hp.g (show j < n by rw [n_eq]; exact hj)]
-  have lf0 : Lanes (s₅.v .v0) fun e => ((F s₀)[8 * c + e]!).val := by
+  have lf0 : Lanes (s₅.v .v0) fun e => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[8 * c + e]!).val := by
     rw [h₅.get .v0, h₄.get .v0, h₃.get .v0, h₂.get .v0, h₁.v]
     exact lanes_coeffs fun e he => cf _ (by bdd_omega)
-  have lf1 : Lanes (s₅.v .v1) fun e => ((F s₀)[8 * c + 4 + e]!).val := by
+  have lf1 : Lanes (s₅.v .v1) fun e => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[8 * c + 4 + e]!).val := by
     rw [h₅.get .v1, h₄.get .v1, h₃.get .v1, h₂.v, h₁.mem]
     exact lanes_coeffs fun e he => cf _ (by bdd_omega)
-  have lg4 : Lanes (s₅.v .v4) fun e => ((Gp s₀)[8 * c + e]!).val := by
+  have lg4 : Lanes (s₅.v .v4) fun e => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[8 * c + e]!).val := by
     rw [h₅.get .v4, h₄.get .v4, h₃.v, h₂.mem, h₁.mem]
     exact lanes_coeffs fun e he => cg _ (by bdd_omega)
-  have lg5 : Lanes (s₅.v .v5) fun e => ((Gp s₀)[8 * c + 4 + e]!).val := by
+  have lg5 : Lanes (s₅.v .v5) fun e => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[8 * c + 4 + e]!).val := by
     rw [h₅.get .v5, h₄.v, h₃.mem, h₂.mem, h₁.mem]
     exact lanes_coeffs fun e he => cg _ (by bdd_omega)
   have lγ : Lanes (s₅.v .v18) fun e => gammaTable.getD (4 * c + e) 0 := by
     rw [h₅.v, m₄, read16]
     intro e he
-    have t : ∀ j, j < 4 → (s.mem.readW (sP s₀ + BitVec.ofNat 64 (4 * (4 * c)) + BitVec.ofNat 64 (4 * j))
+    have t : ∀ j, j < 4 → (s.mem.readW (VG.Proof.MlKem.AArch64.Mul.sP s₀ + BitVec.ofNat 64 (4 * (4 * c)) + BitVec.ofNat 64 (4 * j))
         32).toNat = gammaTable.getD (4 * c + j) 0 := fun j hj => by
       rw [ptr_add, show 4 * (4 * c) + 4 * j = 4 * (4 * c + j) by bdd_omega, h.tab _ (by bdd_omega),
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
@@ -288,20 +437,20 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
       split
       · rw [hx _ (by bdd_omega)]; dsimp only; rw [show 8 * c + (2 * e + 1) = 2 * (4 * c + e) + 1 by bdd_omega]
       · rw [hy _ (by bdd_omega)]; dsimp only; rw [show 8 * c + 4 + (2 * (e - 2) + 1) = 2 * (4 * c + e) + 1 by bdd_omega]⟩
-  have fe : Lanes (s₉.v .v6) fun e => ((F s₀)[2 * (4 * c + e)]!).val := by
-    rw [h₉.get .v6, h₈.get .v6, h₇.get .v6, h₆.v]; exact (ev (A := fun j => ((F s₀)[j]!).val) lf0 lf1).1
-  have fo : Lanes (s₉.v .v7) fun e => ((F s₀)[2 * (4 * c + e) + 1]!).val := by
-    rw [h₉.get .v7, h₈.get .v7, h₇.v, h₆.get .v0, h₆.get .v1]; exact (ev (A := fun j => ((F s₀)[j]!).val) lf0 lf1).2
-  have ge : Lanes (s₉.v .v19) fun e => ((Gp s₀)[2 * (4 * c + e)]!).val := by
-    rw [h₉.get .v19, h₈.v, h₇.get .v4, h₇.get .v5, h₆.get .v4, h₆.get .v5]; exact (ev (A := fun j => ((Gp s₀)[j]!).val) lg4 lg5).1
-  have go : Lanes (s₉.v .v20) fun e => ((Gp s₀)[2 * (4 * c + e) + 1]!).val := by
+  have fe : Lanes (s₉.v .v6) fun e => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e)]!).val := by
+    rw [h₉.get .v6, h₈.get .v6, h₇.get .v6, h₆.v]; exact (ev (A := fun j => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[j]!).val) lf0 lf1).1
+  have fo : Lanes (s₉.v .v7) fun e => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e) + 1]!).val := by
+    rw [h₉.get .v7, h₈.get .v7, h₇.v, h₆.get .v0, h₆.get .v1]; exact (ev (A := fun j => ((VG.Proof.MlKem.AArch64.Mul.F s₀)[j]!).val) lf0 lf1).2
+  have ge : Lanes (s₉.v .v19) fun e => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e)]!).val := by
+    rw [h₉.get .v19, h₈.v, h₇.get .v4, h₇.get .v5, h₆.get .v4, h₆.get .v5]; exact (ev (A := fun j => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[j]!).val) lg4 lg5).1
+  have go : Lanes (s₉.v .v20) fun e => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e) + 1]!).val := by
     rw [h₉.v, h₈.get .v4, h₈.get .v5, h₇.get .v4, h₇.get .v5, h₆.get .v4, h₆.get .v5]
-    exact (ev (A := fun j => ((Gp s₀)[j]!).val) lg4 lg5).2
+    exact (ev (A := fun j => ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[j]!).val) lg4 lg5).2
   have gγ : Lanes (s₉.v .v18) fun e => gammaTable.getD (4 * c + e) 0 := by
     rw [h₉.get .v18, h₈.get .v18, h₇.get .v18, h₆.get .v18]; exact lγ
   have vc₉ : VConsts s₉ := h.vc.chg (((((((((h₁.chg.trans h₂.chg).trans h₃.chg).trans h₄.chg).trans
     h₅.chg).trans h₆.chg).trans h₇.chg).trans h₈.chg).trans h₉.chg))
-  refine vpair_ok vc₉ fe fo ge go gγ (fun _ _ => val_lt _) (fun _ _ => val_lt _) (fun _ _ => val_lt _)
+  refine VG.Proof.MlKem.AArch64.Mul.vpair_ok vc₉ fe fo ge go gγ (fun _ _ => val_lt _) (fun _ _ => val_lt _) (fun _ _ => val_lt _)
     (fun _ _ => val_lt _) (fun e he => by have := gammaTable_lt (4 * c + e) (by bdd_omega); exact this)
     fun s₁₀ h₁₀ l23 l24 => ?_
   refine wp_vop (d := .v0) rfl fun s₁₁ h₁₁ => wp_vop (d := .v1) rfl fun s₁₂ h₁₂ => ?_
@@ -310,12 +459,12 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
       h₁.gpr]
   have w₁₂ : s₁₂.wr = s₀.wr := by
     rw [h₁₂.wr, h₁₁.wr, h₁₀.wr, h₉.wr, h₈.wr, h₇.wr, h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, h.wr]
-  have inH : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions s₀.wr (coeffAddr (hP s₀) j) 16 := fun hj => by
+  have inH : ∀ {j : Nat}, j + 4 ≤ 256 → InRegions s₀.wr (coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) j) 16 := fun hj => by
     rw [hp.wr]
-    exact in_regions (R := polyRegion (hP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
-  refine wp_strq (a := coeffAddr (hP s₀) (8 * c)) (by decide) (by rw [g₁₂, h.x0, ptr_zero])
+    exact in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)) (by simp) (contains_off (by bdd_omega) (by decide))
+  refine wp_strq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c)) (by decide) (by rw [g₁₂, h.x0, ptr_zero])
     (by rw [w₁₂]; exact inH hj) fun s₁₃ h₁₃ => ?_
-  refine wp_strq (a := coeffAddr (hP s₀) (8 * c + 4)) (by decide)
+  refine wp_strq (a := coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c + 4)) (by decide)
     (by rw [h₁₃.gpr, g₁₂, h.x0, coeffAddr_step]) (by rw [h₁₃.wr, w₁₂]; exact inH hj') fun s₁₄ h₁₄ => ?_
   refine WP.mono (WP.keepV (Q := fun w' => Keep [.x0, .x1, .x2, .x3, .x11] s₁₄ w' ∧ w'.mem = s₁₄.mem ∧
       w'.gpr .x0 = s₁₄.gpr .x0 + BitVec.ofNat 64 32 ∧ w'.gpr .x1 = s₁₄.gpr .x1 + BitVec.ofNat 64 32 ∧
@@ -334,10 +483,10 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
   have g₁₄ : s₁₄.gpr = s.gpr := by rw [h₁₄.gpr, h₁₃.gpr, g₁₂]
   have mem₁₂ : s₁₂.mem = s.mem := by
     rw [h₁₂.mem, h₁₁.mem, h₁₀.mem, h₉.mem, h₈.mem, h₇.mem, h₆.mem, h₅.mem, m₄]
-  have mm : s'.mem = (s.mem.write (coeffAddr (hP s₀) (8 * c)) 16 (s₁₁.v .v0)).write
-      (coeffAddr (hP s₀) (8 * c + 4)) 16 (s₁₂.v .v1) := by
+  have mm : s'.mem = (s.mem.write (coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c)) 16 (s₁₁.v .v0)).write
+      (coeffAddr (VG.Proof.MlKem.AArch64.Mul.hP s₀) (8 * c + 4)) 16 (s₁₂.v .v1) := by
     rw [m', h₁₄.mem, h₁₃.v, h₁₃.mem, mem₁₂, h₁₂.get .v0]
-  have fr : Frame [polyRegion (hP s₀)] s.mem s'.mem := by
+  have fr : Frame [polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)] s.mem s'.mem := by
     rw [mm]; exact frame16 (frame16 (Frame.refl _ _) hj _) hj' _
   have k₁₄ : Keep [] s s₁₄ := ⟨fun r _ => by rw [g₁₄], by rw [h₁₄.rd, h₁₃.rd, h₁₂.rd, h₁₁.rd,
     h₁₀.rd, h₉.rd, h₈.rd, h₇.rd, h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd], by rw [h₁₄.wr, h₁₃.wr, w₁₂, h.wr],
@@ -346,7 +495,7 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
   have c11 : (s₁₄.gpr .x11).toNat = 32 - c := by rw [g₁₄, h.x11]
   have x11' : (s'.gpr .x11).toNat = 32 - (c + 1) := by
     rw [e11, toNat_sub_n (by rw [c11]; simp; omega), c11]; simp; omega
-  have dj : ∀ {R : Region}, (polyRegion (hP s₀)).Disjoint R → ∀ r ∈ [polyRegion (hP s₀)], R.Disjoint r :=
+  have dj : ∀ {R : Region}, (polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)).Disjoint R → ∀ r ∈ [polyRegion (VG.Proof.MlKem.AArch64.Mul.hP s₀)], R.Disjoint r :=
     fun hd r hr => by rw [List.mem_singleton.mp hr]; exact hd.symm
   refine ⟨⟨by rw [k'.rd, k₁₄.rd, h.rd], by rw [k'.wr, k₁₄.wr, h.wr], by rw [k'.sp, k₁₄.sp, h.sp],
     ?_, ?_, ?_, ?_, x11', ?_, ?_, fun j hj => ?_, fun j hj => ?_, fun j hj => ?_⟩, by rw [x11']; omega⟩
@@ -361,14 +510,14 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
       BitVec.eq_of_toNat_eq (by rw [hx, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by
         have hq : q = 3329 := rfl; omega)])
     have lt : ∀ a, a % 3329 < q := fun a => Nat.mod_lt _ (by decide)
-    have ge_ : ∀ e, e < 8 → e % 2 = 0 → G s₀ (8 * c + e) = BitVec.ofNat 32 (((((F s₀)[2 * (4 * c + e / 2) + 1]!).val *
-        ((Gp s₀)[2 * (4 * c + e / 2) + 1]!).val % 3329) * gammaTable.getD (4 * c + e / 2) 0 +
-        ((F s₀)[2 * (4 * c + e / 2)]!).val * ((Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329) := fun e he h2 => by
-      rw [show 8 * c + e = 2 * (4 * c + e / 2) by bdd_omega, G_even _ (by bdd_omega)]
-    have go_ : ∀ e, e < 8 → e % 2 = 1 → G s₀ (8 * c + e) = BitVec.ofNat 32 (((((F s₀)[2 * (4 * c + e / 2)]!).val *
-        ((Gp s₀)[2 * (4 * c + e / 2) + 1]!).val + ((F s₀)[2 * (4 * c + e / 2) + 1]!).val *
-        ((Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329)) := fun e he h2 => by
-      rw [show 8 * c + e = 2 * (4 * c + e / 2) + 1 by bdd_omega, G_odd _ (by bdd_omega)]
+    have ge_ : ∀ e, e < 8 → e % 2 = 0 → VG.Proof.MlKem.AArch64.Mul.G s₀ (8 * c + e) = BitVec.ofNat 32 (((((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e / 2) + 1]!).val *
+        ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e / 2) + 1]!).val % 3329) * gammaTable.getD (4 * c + e / 2) 0 +
+        ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e / 2)]!).val * ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329) := fun e he h2 => by
+      rw [show 8 * c + e = 2 * (4 * c + e / 2) by bdd_omega, VG.Proof.MlKem.AArch64.Mul.G_even _ (by bdd_omega)]
+    have go_ : ∀ e, e < 8 → e % 2 = 1 → VG.Proof.MlKem.AArch64.Mul.G s₀ (8 * c + e) = BitVec.ofNat 32 (((((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e / 2)]!).val *
+        ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e / 2) + 1]!).val + ((VG.Proof.MlKem.AArch64.Mul.F s₀)[2 * (4 * c + e / 2) + 1]!).val *
+        ((VG.Proof.MlKem.AArch64.Mul.Gp s₀)[2 * (4 * c + e / 2)]!).val) % 3329)) := fun e he h2 => by
+      rw [show 8 * c + e = 2 * (4 * c + e / 2) + 1 by bdd_omega, VG.Proof.MlKem.AArch64.Mul.G_odd _ (by bdd_omega)]
     rw [mm, show 8 * (c + 1) = 8 * c + 4 + 4 by bdd_omega]
     refine CoeffsUpTo.write16 (CoeffsUpTo.write16 h.out hj fun e he => ?_) hj' fun e he => ?_
     · rw [h₁₁.v, vword_zip1_s4' _ _ he]
@@ -384,13 +533,13 @@ theorem step {s₀ : State} (hp : Pre s₀) {c : Nat} (hc : c < 32) {s : State} 
         exact val (l24 _ (by bdd_omega)) (lt _)
   · rw [coeffAt_frame fr (dj hp.hf) hj, h.f j hj]
   · rw [coeffAt_frame fr (dj hp.hg) hj, h.g j hj]
-  · rw [fr.readW (r := ⟨sP s₀, 1024⟩) (contains_off (by bdd_omega) (by decide)) (dj hp.hs) (by decide),
+  · rw [fr.readW (r := ⟨VG.Proof.MlKem.AArch64.Mul.sP s₀, 1024⟩) (contains_off (by bdd_omega) (by decide)) (dj hp.hs) (by decide),
       h.tab j hj]
 
 theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
     ∃ t s', Exec isa multiplyNTTs s₀ t s' ∧ abiPreserved s₀ s' ∧ mulAArch64.post s₀ s' := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hs
-  have hp : Pre s₀ := ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
+  have hp : VG.Proof.MlKem.AArch64.Mul.Pre s₀ := ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩
   suffices h : WP isa multiplyNTTs s₀ fun s' => s'.sp = s₀.sp ∧ mulAArch64.post s₀ s' by
     obtain ⟨t, s', he, hsp, hpost⟩ := h
     exact ⟨t, s', he, abi_of rfl (by decide +kernel) he, hpost⟩
@@ -399,18 +548,18 @@ theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
   refine WP.mono (table_ok gammaTable (fun k hk => Nat.lt_trans (gammaTable_lt k hk) (by decide))
     (b := .x3) (by decide) fun k hk => by
       rw [hp.wr]
-      exact in_regions (R := polyRegion (sP s₀)) (by simp) (contains_off (by bdd_omega) (by decide)))
+      exact in_regions (R := polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀)) (by simp) (contains_off (by bdd_omega) (by decide)))
     fun s₁ h₁ => WP.mono (Ntt.vconsts_ok s₁) fun s₃ ⟨k₃, m₃, vc₃, _⟩ => ?_
   refine WP.mono (WP.keepV (by decide) (wp_movz (d := .x11) (imm := 32) (is := [])
     fun s₄ h₄ e₄ => wp_nil (Q := fun s₄ => Keep [.x11] s₃ s₄ ∧ s₄.mem = s₃.mem ∧ (s₄.gpr .x11).toNat = 32)
       ⟨h₄.keep, h₄.mem, by rw [e₄]; rfl⟩)) fun s₄ ⟨⟨k₄, m₄, e₄⟩, hv₄⟩ => ?_
   have k₄' := (h₁.keep.trans k₃).trans k₄
   have m : s₄.mem = s₁.mem := by rw [m₄, m₃]
-  have dj : ∀ {R : Region}, R.Disjoint (polyRegion (sP s₀)) →
+  have dj : ∀ {R : Region}, R.Disjoint (polyRegion (VG.Proof.MlKem.AArch64.Mul.sP s₀)) →
       ∀ r ∈ [(⟨s₀.gpr .x3, 512⟩ : Region)], R.Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact hd.sub_right (Region.sub_prefix (by decide))
-  have i₀ : Inv s₀ 0 s₄ := by
+  have i₀ : VG.Proof.MlKem.AArch64.Mul.Inv s₀ 0 s₄ := by
     refine ⟨k₄'.rd, k₄'.wr, k₄'.sp, ?_, ?_, ?_, ?_, by rw [e₄], ?_, ?_, fun j hj => ?_, fun j hj => ?_,
       fun j hj => ?_⟩
     · rw [k₄'.get .x0, coeffAddr]; exact (BitVec.add_zero _).symm
@@ -420,11 +569,11 @@ theorem correct (s₀ : State) (hs : mulAArch64.pre s₀) :
     · exact ⟨by rw [hv₄]; exact vc₃.q, by rw [hv₄]; exact vc₃.m⟩
     · rw [m, Nat.mul_zero]
       intro j hj
-      rw [ite_eq_right (Nat.not_lt_zero j), old, coeffAt_frame h₁.frame (dj hp.hs) hj]
+      rw [ite_eq_right (Nat.not_lt_zero j), VG.Proof.MlKem.AArch64.Mul.old, coeffAt_frame h₁.frame (dj hp.hs) hj]
     · rw [m, coeffAt_frame h₁.frame (dj hp.fs) hj]
     · rw [m, coeffAt_frame h₁.frame (dj hp.gs) hj]
     · rw [m]; exact h₁.tab j hj
-  refine WP.mono (count_loop (by decide) (Inv s₀) (fun c hc s h => step hp hc h) i₀)
+  refine WP.mono (count_loop (by decide) (VG.Proof.MlKem.AArch64.Mul.Inv s₀) (fun c hc s h => VG.Proof.MlKem.AArch64.Mul.step hp hc h) i₀)
     fun s' h => ⟨h.sp, (show CoeffsUpTo _ _ 256 _ _ from h.out).polyIs fun _ _ => rfl⟩
 
 theorem ct : ConstantTime isa mulAArch64.pre mulAArch64.pub multiplyNTTs :=
@@ -442,8 +591,10 @@ def sat : State where
 
 theorem mul_verified :
     Verified AArch64.target multiplyNTTs (Spec.MlKem.mulContract AArch64.abi) :=
-  Verified.of_correct correct ct (by
-    mlkem_implies [Spec.MlKem.mulContract, Spec.MlKem.mulSig, mulAArch64, AArch64.abi,
-      AArch64.argRegs] [sat] using sat)
+  Verified.of_correct VG.Proof.MlKem.AArch64.Mul.correct VG.Proof.MlKem.AArch64.Mul.ct (by
+    mlkem_implies [Spec.MlKem.mulContract, Spec.MlKem.mulSig, VG.Proof.MlKem.mulAArch64, AArch64.abi,
+      AArch64.argRegs] [sat] using VG.Proof.MlKem.AArch64.Mul.sat)
 
 end VG.Proof.MlKem.AArch64.Mul
+
+end

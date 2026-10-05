@@ -1,8 +1,160 @@
 import VerifiedGarbage.Proof.Aes.X86.Ctr32
-import VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT
+import VerifiedGarbage.Impl.Aes.X86.ExpandKey
+import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Spec.Aes
 import VerifiedGarbage.Proof.Aes.KeyExp
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Aes.Contract
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Aes.X86.ExpandKeyCT`. -/
+section
+
+/-!
+# The AES key expansion on x86 (32-bit): the contract, and constant time
+
+The contract the proof is written against, and the constant-time half of
+the proof: the taint analysis (`VG.X86.Taint`) starts with `esp` public
+and knows where the arguments are and which of them are the base addresses
+of the schedule and the scratch buffer. The counters round-trip through
+public slots of the scratch buffer; the stores of the schedule's words
+through the moving pointer forget them, and the code stores them again from
+the registers.
+-/
+
+namespace VG.Proof.Aes
+
+open _root_.VG.X86 in
+/-- X86 (32-bit) contract for `vg_aes_expand_key(key: *const u8, key_len: usize,
+schedule: *mut [u8; 240], scratch: *mut [u64; 64])`, whose arguments are on the
+stack: writes the key schedule of the key at `key` to `schedule`.
+
+The code may read `key` (`key_len` bytes) and the arguments (16 bytes above
+the return address), and read and write `schedule` (240 bytes) and
+`scratch` (512 bytes, whose contents on exit are unspecified). The writable
+buffers may not overlap each other, `key`, the arguments or the return
+address; nothing may wrap around the end of the (32-bit) address space.
+`key_len` is 16, 24 or 32. `esp` and the arguments are public; the key is
+secret. -/
+def expandKeyX86 : Contract X86.isa where
+  pre s :=
+    let key : Region := ⟨(VG.X86.arg s 0).setWidth 64, (VG.X86.arg s 1).toNat⟩
+    let sched : Region := ⟨(VG.X86.arg s 2).setWidth 64, 240⟩
+    let scratch : Region := ⟨(VG.X86.arg s 3).setWidth 64, 512⟩
+    let args : Region := ⟨argAddr s 0, 16⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    s.rd = [key, args] ∧ s.wr = [sched, scratch] ∧
+    key.Disjoint sched ∧ key.Disjoint scratch ∧ sched.Disjoint scratch ∧
+    args.Disjoint sched ∧ args.Disjoint scratch ∧ ret.Disjoint sched ∧ ret.Disjoint scratch ∧
+    (VG.X86.arg s 0).toNat + (VG.X86.arg s 1).toNat ≤ 2 ^ 32 ∧ (VG.X86.arg s 2).toNat + 240 ≤ 2 ^ 32 ∧
+    (VG.X86.arg s 3).toNat + 512 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+    ((VG.X86.arg s 1).toNat = 16 ∨ (VG.X86.arg s 1).toNat = 24 ∨ (VG.X86.arg s 1).toNat = 32)
+  post s s' :=
+    Spec.Aes.bytesAt s'.mem ((VG.X86.arg s 2).setWidth 64) (16 * (Spec.Aes.rounds ((VG.X86.arg s 1).toNat / 4) + 1)) =
+      Spec.Aes.expandKey (Spec.Aes.bytesAt s.mem ((VG.X86.arg s 0).setWidth 64) (VG.X86.arg s 1).toNat)
+  pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 4, VG.X86.arg s₁ i = VG.X86.arg s₂ i
+
+end VG.Proof.Aes
+
+namespace VG.Proof.Aes.X86
+
+open VG VG.X86
+
+/-! ## The precondition -/
+
+section
+variable (s : State)
+
+abbrev keyP : BitVec 32 := VG.X86.arg s 0
+abbrev keyLen : Nat := (VG.X86.arg s 1).toNat
+abbrev ekSchP : BitVec 32 := VG.X86.arg s 2
+abbrev ekScrP : BitVec 32 := VG.X86.arg s 3
+abbrev keyR : Region := reg32 (VG.Proof.Aes.X86.keyP s) (VG.Proof.Aes.X86.keyLen s)
+abbrev ekSchR : Region := reg32 (VG.Proof.Aes.X86.ekSchP s) 240
+abbrev ekScrR : Region := reg32 (VG.Proof.Aes.X86.ekScrP s) 512
+abbrev ekArgR : Region := ⟨argAddr s 0, 16⟩
+abbrev ekRetR : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+
+end
+
+/-- `expandKeyX86.pre`, by name. -/
+structure EPre (s : State) : Prop where
+  rd : s.rd = [VG.Proof.Aes.X86.keyR s, VG.Proof.Aes.X86.ekArgR s]
+  wr : s.wr = [VG.Proof.Aes.X86.ekSchR s, VG.Proof.Aes.X86.ekScrR s]
+  dKS : (VG.Proof.Aes.X86.keyR s).Disjoint (VG.Proof.Aes.X86.ekSchR s)
+  dKB : (VG.Proof.Aes.X86.keyR s).Disjoint (VG.Proof.Aes.X86.ekScrR s)
+  dSB : (VG.Proof.Aes.X86.ekSchR s).Disjoint (VG.Proof.Aes.X86.ekScrR s)
+  aS : (VG.Proof.Aes.X86.ekArgR s).Disjoint (VG.Proof.Aes.X86.ekSchR s)
+  aB : (VG.Proof.Aes.X86.ekArgR s).Disjoint (VG.Proof.Aes.X86.ekScrR s)
+  rS : (VG.Proof.Aes.X86.ekRetR s).Disjoint (VG.Proof.Aes.X86.ekSchR s)
+  rB : (VG.Proof.Aes.X86.ekRetR s).Disjoint (VG.Proof.Aes.X86.ekScrR s)
+  fK : (VG.Proof.Aes.X86.keyP s).toNat + VG.Proof.Aes.X86.keyLen s ≤ 2 ^ 32
+  fS : (VG.Proof.Aes.X86.ekSchP s).toNat + 240 ≤ 2 ^ 32
+  fB : (VG.Proof.Aes.X86.ekScrP s).toNat + 512 ≤ 2 ^ 32
+  fSp : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+  len : VG.Proof.Aes.X86.keyLen s = 16 ∨ VG.Proof.Aes.X86.keyLen s = 24 ∨ VG.Proof.Aes.X86.keyLen s = 32
+
+theorem EPre.of {s : State} (h : Proof.Aes.expandKeyX86.pre s) : VG.Proof.Aes.X86.EPre s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+
+/-! ## Constant time -/
+
+/-- The taint analysis starts with `esp` public, and the words holding
+`schedule` and `scratch` known to be the base addresses of the writable
+regions. -/
+def ekτ₀ : VG.X86.Taint.T :=
+  { regs := .ofList [.esp], flags := false, lens := [240, 512], argLen := 20,
+    argBases := [(12, 0), (16, 1)] }
+
+theorem ek_wf₀ {s : State} (hp : VG.Proof.Aes.X86.EPre s) : VG.X86.Taint.Wf VG.Proof.Aes.X86.ekτ₀ s := by
+  have hS := hp.fS; have hB := hp.fB; have hs := hp.fSp
+  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨?_, ?_, ?_⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => ⟨by simp only [VG.Proof.Aes.X86.ekτ₀]; omega, ?_⟩, ?_⟩
+  · rw [hp.wr]
+    exact .cons (Nat.le_refl _) (.cons (Nat.le_refl _) .nil)
+  · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq, List.Pairwise.nil, and_true]
+    exact ⟨hp.dSB, fun _ h => h.elim⟩
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl) <;> simp only [VG.Proof.Aes.X86.toNat_setWidth32] <;> omega
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.rS hp.aS
+    · exact VG.X86.Taint.frame_disjoint (n := 16) (by omega) hp.rB hp.aB
+  · intro p hp'
+    simp only [VG.Proof.Aes.X86.ekτ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
+    rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
+      simp [VG.X86.Taint.region, hp.wr, addr, VG.X86.arg, argAddr]
+
+theorem ek_agree₀ {s₁ s₂ : State} (h₁ : Proof.Aes.expandKeyX86.pre s₁) (h₂ : Proof.Aes.expandKeyX86.pre s₂)
+    (hpub : Proof.Aes.expandKeyX86.pub s₁ s₂) : VG.X86.Taint.Agree VG.Proof.Aes.X86.ekτ₀ s₁ s₂ := by
+  obtain ⟨hesp, ha⟩ := hpub
+  have hp₁ := EPre.of h₁; have hp₂ := EPre.of h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, VG.Proof.Aes.X86.ek_wf₀ hp₁, VG.Proof.Aes.X86.ek_wf₀ hp₂,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => hesp,
+    fun k h4 hk => ?_⟩
+  · simp only [VG.Proof.Aes.X86.ekτ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    subst hr; exact hesp
+  · rw [hp₁.wr, hp₂.wr]
+    simp only [VG.Proof.Aes.X86.ekSchR, VG.Proof.Aes.X86.ekScrR, VG.Proof.Aes.X86.ekSchP, VG.Proof.Aes.X86.ekScrP, ha 2 (by omega), ha 3 (by omega)]
+  · simp only [VG.Proof.Aes.X86.ekτ₀] at hk
+    rw [show VG.X86.Taint.depth ekτ₀.stk = 0 from rfl, Nat.zero_add]
+    rw [VG.X86.Taint.argByte_eq (n := 20) hp₁.fSp h4 hk, VG.X86.Taint.argByte_eq (n := 20) hp₂.fSp h4 hk,
+      Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)), Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
+    exact congrArg _ (ha _ (by omega))
+
+theorem expandKey_ct :
+    ConstantTime isa Proof.Aes.expandKeyX86.pre Proof.Aes.expandKeyX86.pub Impl.Aes.X86.expandKey :=
+  VG.Taint.constantTime (A := VG.X86.taint) VG.Proof.Aes.X86.ekτ₀ (fun _ _ h₁ h₂ hp => VG.Proof.Aes.X86.ek_agree₀ h₁ h₂ hp)
+    (by taint_decide)
+
+end VG.Proof.Aes.X86
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Aes.X86.ExpandKey`. -/
+section
 
 /-!
 # The AES key expansion on x86 (32-bit)
@@ -29,9 +181,9 @@ open VG.X86.Wp (Upd Mupd Fupd wp_mov wp_movi wp_addi wp_add wp_addm wp_sub wp_su
 def stOf (Q : Nat → BitVec 32) (b : Nat) : Spec.Aes.State :=
   Vector.ofFn fun i => (Q (b + 2 * (i.1 / 4))).extractLsb' (8 * (i.1 % 4)) 8
 
-theorem inRel_stOf (Q : Nat → BitVec 32) : InRel Q (stOf Q) := by
+theorem inRel_stOf (Q : Nat → BitVec 32) : InRel Q (VG.Proof.Aes.X86.stOf Q) := by
   intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
+  rw [getD_eq _ hi, VG.Proof.Aes.X86.stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
   simp [hj]
 
 theorem subWordCode_eq : subWordCode = ((([st 0 .eax, movI .eax 0, st 1 .eax, st 2 .eax, st 3 .eax,
@@ -54,7 +206,7 @@ theorem subWord_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (fit : B.toNa
       (by show t.gpr sb = _; rw [hb']; simp) (by simp [linCfg])
       (by rw [hr', hw']; exact List.mem_append_right _ hw) rfl fit (Nat.le_refl _)
       (by show t.gpr sb = _; rw [hb']; simp) (by simp [linCfg]) (.inr (.inl rfl))
-  rw [subWordCode_eq]
+  rw [VG.Proof.Aes.X86.subWordCode_eq]
   repeat rw [WP.block_append_iff (M := isa)]
   have hm := List.mem_singleton_self (reg32 B 256)
   have c256 : ∀ k < 8, (reg32 B 256).Contains (addr B (4 * k)) (32 / 8) := fun k hk =>
@@ -111,7 +263,7 @@ theorem subWord_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (fit : B.toNa
     fromBs_ok (hok s₁₁ b₁₁ (wr₁₁.trans (wr₁₀.trans wr₉)) (rd₁₁.trans (rd₁₀.trans rd₉)))
   refine WP.of_runBlock ⟨s₁₂, hs₁₂, ?_⟩
   have b₁₂ : s₁₂.gpr sb = B := (o₁₂ sb (by decide)).trans b₁₁
-  have hin' := in_of_bs h₁₂ (bs_subBytes h₁₁ (bs_of_in h₁₀ (inRel_stOf (Q s₉))))
+  have hin' := in_of_bs h₁₂ (bs_subBytes h₁₁ (bs_of_in h₁₀ (VG.Proof.Aes.X86.inRel_stOf (Q s₉))))
   refine wp_ldm b₁₂ (in_rd (hin _ (wr₁₂.trans (wr₁₁.trans (wr₁₀.trans wr₉))) 0 (by omega)))
     fun s₁₃ u₁₃ => WP.block_nil ?_
   refine h s₁₃ (fun t ht => ?_) (by rw [u₁₃.rd, rd₁₂, rd₁₁, rd₁₀, rd₉])
@@ -121,7 +273,7 @@ theorem subWord_wp {s : State} {B : BitVec 32} (hb : s.gpr sb = B) (fit : B.toNa
     rw [show 0 + 2 * (t / 4) = 0 by omega, show t % 4 = t by omega] at this
     have e₁₃ : s₁₃.gpr .eax = Q s₁₂ 0 := by rw [u₁₃.gpr]; simp only [Q, wordAddr, b₁₂]
     rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, e₁₃, this, getD_eq _ (by omega)]
-    simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
+    simp only [subBytes, Vector.getElem_map, VG.Proof.Aes.X86.stOf, Vector.getElem_ofFn]
     rw [show 0 + 2 * (t / 4) = 0 by omega, show t % 4 = t by omega, q₉ 0 (by omega), ite_eq_left rfl]
   · have hne : r ≠ .eax := fun h => hr (h ▸ by decide)
     rw [u₁₃.other r hne, o₁₂ r hr, o₁₁ r hr, o₁₀ r hr, g₉ r hne]
@@ -140,12 +292,12 @@ def rcW (k : Nat) : BitVec 32 := (Nat.repeat xtimes k (1 : Byte)).setWidth 32
 /-- The round constant after one more round, as `rotTail` computes it. -/
 def rcNext (v : BitVec 32) : BitVec 32 := ((v + v) ^^^ ((0 - (v >>> 7)) &&& 0x1b)) &&& 0xff
 
-theorem rcNext_rcW : ∀ k < 10, rcNext (rcW k) = rcW (k + 1) := by decide
+theorem rcNext_rcW : ∀ k < 10, VG.Proof.Aes.X86.rcNext (VG.Proof.Aes.X86.rcW k) = VG.Proof.Aes.X86.rcW (k + 1) := by decide
 
 theorem rcW_byte (k : Nat) {t : Nat} (ht : t < 4) :
-    (rcW k).extractLsb' (8 * t) 8 = if t = 0 then Nat.repeat xtimes k 1 else 0 := by
+    (VG.Proof.Aes.X86.rcW k).extractLsb' (8 * t) 8 = if t = 0 then Nat.repeat xtimes k 1 else 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [rcW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
+  simp only [VG.Proof.Aes.X86.rcW, BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth]
   split
   · subst_vars; simp [hj]; intro; omega
   · rw [BitVec.getLsbD_of_ge _ _ (by omega)]; simp
@@ -177,12 +329,12 @@ theorem rotTail_eq : rotTail = ([rorI .eax 8, .alu .xor .eax (.mem ⟨.edi, rcOf
 theorem rotTail_wp {s : State} {B : BitVec 32} (hb : s.gpr .edi = B) (fit : B.toNat + 512 ≤ 2 ^ 32)
     (hw : reg32 B 512 ∈ s.wr) {P : State → Prop}
     (h : ∀ s', s'.gpr .eax = (s.gpr .eax).rotateRight 8 ^^^ s.mem.readW (addr B rcOff) 32 →
-      s'.mem = s.mem.writeW (addr B rcOff) (rcNext (s.mem.readW (addr B rcOff) 32)) →
+      s'.mem = s.mem.writeW (addr B rcOff) (VG.Proof.Aes.X86.rcNext (s.mem.readW (addr B rcOff) 32)) →
       (∀ r, r ∉ tmpRegs → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → P s') :
     WP isa (.block rotTail) s P := by
   have hin : ∀ (t : State), t.rd = s.rd → t.wr = s.wr → InRegions (t.rd ++ t.wr) (addr B rcOff) 4 :=
     fun t h1 h2 => by rw [h1, h2]; exact in_rd (in_reg hw fit (by simp only [rcOff]; omega) (by decide))
-  rw [rotTail_eq]
+  rw [VG.Proof.Aes.X86.rotTail_eq]
   refine wp_ror (by decide) fun s₁ u₁ => ?_
   refine wp_xorm (by rw [u₁.other _ (by decide)]; exact hb) (hin _ u₁.rd u₁.wr) fun s₂ u₂ => ?_
   refine wp_ldm (by rw [u₂.other _ (by decide), u₁.other _ (by decide)]; exact hb)
@@ -209,7 +361,7 @@ theorem rotTail_wp {s : State} {B : BitVec 32} (hb : s.gpr .edi = B) (fit : B.to
   have ebx₈ : s₈.gpr .ebx = s₃.gpr .ebx := by
     rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide)]
-  have ebx₁₁ : s₁₁.gpr .ebx = rcNext (s.mem.readW (addr B rcOff) 32) := by
+  have ebx₁₁ : s₁₁.gpr .ebx = VG.Proof.Aes.X86.rcNext (s.mem.readW (addr B rcOff) 32) := by
     rw [u₁₁.gpr, u₁₀.gpr, u₉.gpr, u₉.other _ (by decide), edx₈, ebx₈, ebx₃]; rfl
   refine h s₁₂ ?_ (by rw [u₁₂.mem, m₁₁, ebx₁₁]) (fun r hr => ?_) (by rw [u₁₂.rd, rd₁₁])
     (by rw [u₁₂.wr, wr₁₁])
@@ -263,10 +415,10 @@ structure WInv (s₁ : State) (S B : BitVec 32) (kl : List Byte) (nk i : Nat) (s
   jm : s.mem.readW (addr B jmOff) 32 = BitVec.ofNat 32 (4 * (i % nk))
   nk4 : s.mem.readW (addr B nkOff) 32 = BitVec.ofNat 32 (4 * nk)
   left : s.mem.readW (addr B leftOff) 32 = BitVec.ofNat 32 (4 * (nk + 7) - i)
-  rc : s.mem.readW (addr B rcOff) 32 = rcW ((i - 1) / nk)
+  rc : s.mem.readW (addr B rcOff) 32 = VG.Proof.Aes.X86.rcW ((i - 1) / nk)
   sched : ∀ j < i, ∀ t < 4,
     (s.mem.readW (addr S (4 * j)) 32).extractLsb' (8 * t) 8 = (kw kl nk j).getD t 0
-  frame : Frame (ekFrame S B) s₁.mem s.mem
+  frame : Frame (VG.Proof.Aes.X86.ekFrame S B) s₁.mem s.mem
 
 /-- After the last word. -/
 structure WDone (s₁ : State) (S B : BitVec 32) (kl : List Byte) (nk : Nat) (s : State) : Prop where
@@ -276,7 +428,7 @@ structure WDone (s₁ : State) (S B : BitVec 32) (kl : List Byte) (nk : Nat) (s 
   wr : s.wr = s₁.wr
   sched : ∀ j < 4 * (nk + 7), ∀ t < 4,
     (s.mem.readW (addr S (4 * j)) 32).extractLsb' (8 * t) 8 = (kw kl nk j).getD t 0
-  frame : Frame (ekFrame S B) s₁.mem s.mem
+  frame : Frame (VG.Proof.Aes.X86.ekFrame S B) s₁.mem s.mem
 
 /-- `temp` computed (in `eax`), from `s`. -/
 structure Mid (B : BitVec 32) (kl : List Byte) (nk i : Nat) (s s' : State) : Prop where
@@ -285,7 +437,7 @@ structure Mid (B : BitVec 32) (kl : List Byte) (nk i : Nat) (s s' : State) : Pro
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   frame : Frame [reg32 B 256, ⟨addr B rcOff, 4⟩] s.mem s'.mem
-  rc : s'.mem.readW (addr B rcOff) 32 = rcW (i / nk)
+  rc : s'.mem.readW (addr B rcOff) 32 = VG.Proof.Aes.X86.rcW (i / nk)
 
 theorem back_eq (S : BitVec 32) {i nk : Nat} (h1 : 1 ≤ nk) (h : nk ≤ i) (hi : 4 * i < 2 ^ 32) :
     S + BitVec.ofNat 32 (4 * (i - 1)) + 4 - BitVec.ofNat 32 (4 * nk) = S + BitVec.ofNat 32 (4 * (i - nk)) := by
@@ -298,7 +450,7 @@ theorem ofNat_add_four (a : Nat) : BitVec.ofNat 32 a + 4 = BitVec.ofNat 32 (a + 
   rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, ← BitVec.ofNat_add]
 
 section
-variable {s₁ : State} {S B : BitVec 32} {kl : List Byte} {nk : Nat} (hs : WSetup s₁ S B kl nk)
+variable {s₁ : State} {S B : BitVec 32} {kl : List Byte} {nk : Nat} (hs : VG.Proof.Aes.X86.WSetup s₁ S B kl nk)
 include hs
 
 theorem WSetup.rcIn {s : State} (hw : s.wr = s₁.wr) {o : Nat} (ho : o + 4 ≤ 512) :
@@ -313,14 +465,14 @@ theorem WSetup.slot_disj {o : Nat} (h1 : 256 ≤ o) (h2 : o + 4 ≤ 512) :
   rw [← addr_zero]; exact part_disj hs.fB h2 (by omega) (.inr (by omega))
 
 /-- `temp` from `w[i − 1]`. -/
-theorem temp_wp {i : Nat} {s : State} (hi : WInv s₁ S B kl nk i s) :
+theorem temp_wp {i : Nat} {s : State} (hi : VG.Proof.Aes.X86.WInv s₁ S B kl nk i s) :
     WP isa (.block [.mov .eax (.mem (at_ .esi 0)), .mov .ecx (.mem (at_ .edi jmOff)),
         .alu .test .ecx (.reg .ecx)]) s fun s' =>
       WP isa (.ite .e (.block rotWordStep)
         (.seq (.block [.alu .cmp .ecx (.imm 16)])
           (.ite .e (.seq (.block [.mov .ecx (.mem (at_ .edi nkOff)), .alu .cmp .ecx (.imm 32)])
               (.ite .e (.block subWordCode) (.block [])))
-            (.block [])))) s' (Mid B kl nk i s) := by
+            (.block [])))) s' (VG.Proof.Aes.X86.Mid B kl nk i s) := by
   have h3 := hs.nk3
   have hnk : 0 < nk := by omega
   have hi1 := hi.hi
@@ -350,31 +502,31 @@ theorem temp_wp {i : Nat} {s : State} (hi : WInv s₁ S B kl nk i s) :
   -- No transformation.
   have mid_of : ∀ s', s'.gpr .eax = s₃.gpr .eax → (∀ r, r ∉ tmpRegs → s'.gpr r = s₃.gpr r) →
       s'.mem = s.mem → s'.rd = s₃.rd → s'.wr = s₃.wr → i % nk ≠ 0 →
-      kTemp nk i (kw kl nk (i - 1)) = kw kl nk (i - 1) → Mid B kl nk i s s' := by
+      kTemp nk i (kw kl nk (i - 1)) = kw kl nk (i - 1) → VG.Proof.Aes.X86.Mid B kl nk i s s' := by
     intro s' hrax hk hm hrd hwr hne ht
     refine ⟨fun t htt => by rw [hrax, eax₃ t htt, ht], fun r hr => (hk r hr).trans (keep₃ r hr),
       hrd.trans rd₃, hwr.trans wr₃, by rw [hm]; exact Frame.refl _ _, ?_⟩
-    rw [hm, hi.rc, div_pred_ne h3 hne]
+    rw [hm, hi.rc, VG.Proof.Aes.X86.div_pred_ne h3 hne]
   refine WP.ite (decide (i % nk = 0)) (by simp only [X86.eval, z₃]; simp [Nat.mul_eq_zero]) (fun hb => ?_) (fun hb => ?_)
   · -- `SUBWORD(ROTWORD(temp)) ⊕ Rcon`.
     have h0 : i % nk = 0 := by simpa using hb
     rw [rotWordStep, WP.block_append_iff (M := isa)]
-    refine subWord_wp edi₃ fB hwB fun s₄ h₄ rd₄ wr₄ o₄ f₄ => ?_
+    refine VG.Proof.Aes.X86.subWord_wp edi₃ fB hwB fun s₄ h₄ rd₄ wr₄ o₄ f₄ => ?_
     have edi₄ : s₄.gpr .edi = B := (o₄ _ (by decide)).trans edi₃
-    refine rotTail_wp edi₄ fB (by rw [wr₄]; exact hwB) fun s₅ eax₅ m₅ o₅ rd₅ wr₅ => ?_
-    have rc₄ : s₄.mem.readW (addr B rcOff) 32 = rcW ((i - 1) / nk) := by
+    refine VG.Proof.Aes.X86.rotTail_wp edi₄ fB (by rw [wr₄]; exact hwB) fun s₅ eax₅ m₅ o₅ rd₅ wr₅ => ?_
+    have rc₄ : s₄.mem.readW (addr B rcOff) 32 = VG.Proof.Aes.X86.rcW ((i - 1) / nk) := by
       rw [f₄.readW (Region.contains_self _ _) (hs.slot_disj (by simp only [rcOff]; omega)
         (by simp only [rcOff]; omega)) (by decide), m₃, hi.rc]
     refine ⟨fun t ht => ?_, fun r hr => (o₅ r hr).trans ((o₄ r hr).trans (keep₃ r hr)),
       by rw [rd₅, rd₄, rd₃], by rw [wr₅, wr₄, wr₃], ?_, ?_⟩
-    · rw [eax₅, xor_byte, rot_byte _ ht, h₄ _ (by omega), eax₃ _ (by omega), rc₄, rcW_byte _ ht]
+    · rw [eax₅, VG.Proof.Aes.X86.xor_byte, VG.Proof.Aes.X86.rot_byte _ ht, h₄ _ (by omega), eax₃ _ (by omega), rc₄, VG.Proof.Aes.X86.rcW_byte _ ht]
       simp only [kTemp, h0, ite_true]
       rw [xorWord_getD (by simp [subWord, rotWord_length hlen]) (by rfl) ht,
         subWord_getD (by rw [rotWord_length hlen]; exact ht), rotWord_getD hlen ht, rcon_getD _ ht,
-        ← div_pred_zero h3 hi1 h0, Nat.add_sub_cancel]
+        ← VG.Proof.Aes.X86.div_pred_zero h3 hi1 h0, Nat.add_sub_cancel]
     · rw [m₅, ← m₃]
       refine Frame.writeW (r := ⟨addr B rcOff, 4⟩) (f₄.mono (by simp)) (by simp) _ (Region.contains_self _ _)
-    · rw [m₅, Mem.readW_writeW_self32, rc₄, rcNext_rcW _ (rot_lt h3 hn h0), div_pred_zero h3 hi1 h0]
+    · rw [m₅, Mem.readW_writeW_self32, rc₄, VG.Proof.Aes.X86.rcNext_rcW _ (VG.Proof.Aes.X86.rot_lt h3 hn h0), VG.Proof.Aes.X86.div_pred_zero h3 hi1 h0]
   · have h0 : i % nk ≠ 0 := by simpa using hb
     refine WP.seq ?_
     refine wp_cmpi fun s₄ u₄ _ z₄ => WP.block_nil ?_
@@ -394,7 +546,7 @@ theorem temp_wp {i : Nat} {s : State} (hi : WInv s₁ S B kl nk i s) :
       refine WP.ite (decide (4 * nk = 32)) (by simp only [X86.eval, z₆]) (fun hb₆ => ?_) (fun hb₆ => ?_)
       · -- `SUBWORD(temp)`.
         have h8 : nk = 8 := by simp at hb₆; omega
-        refine subWord_wp (by rw [g₆ _ (by decide)]; exact edi₃) fB (by rw [wr₆]; exact hwB)
+        refine VG.Proof.Aes.X86.subWord_wp (by rw [g₆ _ (by decide)]; exact edi₃) fB (by rw [wr₆]; exact hwB)
           fun s₇ h₇ rd₇ wr₇ o₇ f₇ => ?_
         refine ⟨fun t ht => ?_, fun r hr => ?_, by rw [rd₇, rd₆, rd₃], by rw [wr₇, wr₆, wr₃], ?_, ?_⟩
         · rw [h₇ _ ht, g₆ _ (by decide), eax₃ _ ht, kTemp, ite_eq_right h0,
@@ -402,7 +554,7 @@ theorem temp_wp {i : Nat} {s : State} (hi : WInv s₁ S B kl nk i s) :
         · rw [o₇ r hr, g₆ r (fun h => hr (h ▸ by decide)), keep₃ r hr]
         · rw [m₆, m₃] at f₇; exact f₇.mono (by simp)
         · rw [f₇.readW (Region.contains_self _ _) (hs.slot_disj (by simp only [rcOff]; omega)
-            (by simp only [rcOff]; omega)) (by decide), m₆, m₃, hi.rc, div_pred_ne h3 h0]
+            (by simp only [rcOff]; omega)) (by decide), m₆, m₃, hi.rc, VG.Proof.Aes.X86.div_pred_ne h3 h0]
       · have h8 : nk ≠ 8 := by simp at hb₆; omega
         refine WP.block_nil (mid_of s₆ (g₆ _ (by decide)) (fun r hr => g₆ r (fun h => hr (h ▸ by decide)))
           (by rw [m₆, m₃]) rd₆ wr₆ h0 ?_)
@@ -439,9 +591,9 @@ theorem WSetup.rdB {m : Mem} {v : BitVec 32} {o e : Nat} (ho : o + 4 ≤ 512) (h
   rd_wr_other hs.sep.symm (reg_contains hs.fB ho (by decide)) (reg_contains hs.fS he (by decide))
 
 /-- `w[i] := w[i − Nk] ⊕ temp`, and the counters. -/
-theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm : Mid B kl nk i s s₂) :
-    WP isa wordStore s₂ fun s' => (s'.zf = some false ∧ WInv s₁ S B kl nk (i + 1) s') ∨
-      (s'.zf = some true ∧ WDone s₁ S B kl nk s') := by
+theorem store_wp {i : Nat} {s s₂ : State} (hi : VG.Proof.Aes.X86.WInv s₁ S B kl nk i s) (hm : VG.Proof.Aes.X86.Mid B kl nk i s s₂) :
+    WP isa wordStore s₂ fun s' => (s'.zf = some false ∧ VG.Proof.Aes.X86.WInv s₁ S B kl nk (i + 1) s') ∨
+      (s'.zf = some true ∧ VG.Proof.Aes.X86.WDone s₁ S B kl nk s') := by
   have h3 := hs.nk3
   have hnk : 0 < nk := by omega
   have hi1 := hi.hi
@@ -467,7 +619,7 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
   refine wp_mov fun s₄ u₄ => wp_addi fun s₅ u₅ => wp_sub fun s₆ u₆ _ => ?_
   have ebx₆ : s₆.gpr .ebx = S + BitVec.ofNat 32 (4 * (i - nk)) := by
     rw [u₆.gpr, u₅.gpr, u₅.other _ (by decide), u₄.gpr, u₄.other _ (by decide), u₃.gpr,
-      u₃.other _ (by decide), esi₂, slot₂ _ (by decide) (by decide), hi.nk4, back_eq S hnk hi1 (by omega)]
+      u₃.other _ (by decide), esi₂, slot₂ _ (by decide) (by decide), hi.nk4, VG.Proof.Aes.X86.back_eq S hnk hi1 (by omega)]
   have wr₆ : s₆.wr = s₁.wr := by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂]
   refine wp_xorm ebx₆ (by rw [addr_add]; exact in_rd (inS _ wr₆ _ (by omega))) fun s₇ u₇ => ?_
   have edi₇ : s₇.gpr .edi = B := by
@@ -490,7 +642,7 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
   have m₁₀ : s₁₀.mem = s₂.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, m₇]
   have ecx₁₃ : s₁₃.gpr .ecx = BitVec.ofNat 32 (4 * (i % nk) + 4) := by
     rw [u₁₃.gpr, u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide), u₉.other _ (by decide),
-      u₈.gpr, m₇, slot₂ _ (by decide) (by decide), hi.jm, ofNat_add_four]
+      u₈.gpr, m₇, slot₂ _ (by decide) (by decide), hi.jm, VG.Proof.Aes.X86.ofNat_add_four]
   have ebp₁₃ : s₁₃.gpr .ebp = BitVec.ofNat 32 (4 * nk) := by
     rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.gpr, u₉.mem, u₈.mem, m₇,
       slot₂ _ (by decide) (by decide), hi.nk4]
@@ -498,7 +650,7 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
     rw [u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr, u₁₀.other _ (by decide), u₉.gpr,
       u₈.mem, m₇, slot₂ _ (by decide) (by decide), hi.left]
   have esi₁₃ : s₁₃.gpr .esi = S + BitVec.ofNat 32 (4 * (i + 1 - 1)) := by
-    rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.gpr, esi₁₀, add_four]
+    rw [u₁₃.other _ (by decide), u₁₂.gpr, u₁₁.gpr, esi₁₀, VG.Proof.Aes.X86.add_four]
     congr 2; omega
   rw [ecx₁₃, ebp₁₃, sub_beq (by omega) (by omega)] at z₁₄
   have edi₁₄ : s₁₄.gpr .edi = B := by
@@ -516,7 +668,7 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
       u₄.other _ (by decide), u₃.other _ (by decide)]
   have hv : ∀ t < 4, v.extractLsb' (8 * t) 8 = (kw kl nk i).getD t 0 := by
     intro t ht
-    rw [xor_byte, hm.temp t ht, sch₂ _ (by omega), hi.sched _ (by omega) t ht, kw_step kl hnk hi1,
+    rw [VG.Proof.Aes.X86.xor_byte, hm.temp t ht, sch₂ _ (by omega), hi.sched _ (by omega) t ht, kw_step kl hnk hi1,
       xorWord_getD (kw_length hs.len hnk _) (kTemp_length (kw_length hs.len hnk _)) ht, BitVec.xor_comm]
   have g₁₄ : ∀ r ∈ [Reg.esp], s₁₄.gpr r = s.gpr r := by
     intro r hr
@@ -528,8 +680,8 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
   have hq : ∀ s₁₅ : State, s₁₅.gpr .ecx = BitVec.ofNat 32 (4 * ((i + 1) % nk)) →
       (∀ r, r ≠ .ecx → s₁₅.gpr r = s₁₄.gpr r) → s₁₅.mem = s₁₄.mem → s₁₅.rd = s₁₄.rd → s₁₅.wr = s₁₄.wr →
       WP isa (.block [.store (at_ .edi jmOff) .ecx, .store (at_ .edi nkOff) .ebp, subI .edx 1,
-        .store (at_ .edi leftOff) .edx]) s₁₅ fun s' => (s'.zf = some false ∧ WInv s₁ S B kl nk (i + 1) s') ∨
-          (s'.zf = some true ∧ WDone s₁ S B kl nk s') := by
+        .store (at_ .edi leftOff) .edx]) s₁₅ fun s' => (s'.zf = some false ∧ VG.Proof.Aes.X86.WInv s₁ S B kl nk (i + 1) s') ∨
+          (s'.zf = some true ∧ VG.Proof.Aes.X86.WDone s₁ S B kl nk s') := by
     intro s₁₅ ecx₁₅ o₁₅ m₁₅ rd₁₅ wr₁₅
     have edi₁₅ : s₁₅.gpr .edi = B := (o₁₅ _ (by decide)).trans edi₁₄
     refine wp_stm edi₁₅ (inB _ (by rw [wr₁₅, wr₁₄]) _ (by simp only [jmOff]; omega)) fun s₁₆ u₁₆ => ?_
@@ -550,13 +702,13 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
       (BitVec.ofNat 32 (4 * (nk + 7) - (i + 1)))
     have m₁₉ : s₁₉.mem = M := by
       rw [u₁₉.mem, edx₁₈, u₁₈.mem, u₁₇.mem, u₁₆.gpr, ebp₁₅, u₁₆.mem, ecx₁₅, m₁₅, m₁₄]
-    have fr : Frame (ekFrame S B) s₁.mem M := by
-      have hS : reg32 S 240 ∈ ekFrame S B := List.mem_cons_self ..
-      have hC : (⟨addr B rcOff, 16⟩ : Region) ∈ ekFrame S B := by simp
+    have fr : Frame (VG.Proof.Aes.X86.ekFrame S B) s₁.mem M := by
+      have hS : reg32 S 240 ∈ VG.Proof.Aes.X86.ekFrame S B := List.mem_cons_self ..
+      have hC : (⟨addr B rcOff, 16⟩ : Region) ∈ VG.Proof.Aes.X86.ekFrame S B := by simp
       have cC : ∀ o, rcOff ≤ o → o + 4 ≤ rcOff + 16 →
           (⟨addr B rcOff, 16⟩ : Region).Contains (addr B o) (32 / 8) :=
         fun o h1 h2 => part_contains fB (by simp only [rcOff]; omega) h1 h2 (by decide)
-      have f₂ : Frame (ekFrame S B) s₁.mem s₂.mem := hi.frame.trans (hm.frame.sub fun r hr => by
+      have f₂ : Frame (VG.Proof.Aes.X86.ekFrame S B) s₁.mem s₂.mem := hi.frame.trans (hm.frame.sub fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · exact ⟨reg32 B 256, by simp, fun _ h => h⟩
@@ -607,17 +759,17 @@ theorem store_wp {i : Nat} {s s₂ : State} (hi : WInv s₁ S B kl nk i s) (hm :
     refine WP.block_nil (hq s₁₄ (by rw [u₁₄.gpr, ecx₁₃, h1, Nat.mul_succ]) (fun _ _ => rfl) rfl rfl rfl)
 
 
-theorem word_ok {i : Nat} {s : State} (hi : WInv s₁ S B kl nk i s) :
-    WP isa wordBody s fun s' => (s'.zf = some false ∧ WInv s₁ S B kl nk (i + 1) s') ∨
-      (s'.zf = some true ∧ WDone s₁ S B kl nk s') :=
-  WP.seq (WP.mono (temp_wp hs hi) fun _ h => WP.seq (WP.mono h fun _ hm => store_wp hs hi hm))
+theorem word_ok {i : Nat} {s : State} (hi : VG.Proof.Aes.X86.WInv s₁ S B kl nk i s) :
+    WP isa wordBody s fun s' => (s'.zf = some false ∧ VG.Proof.Aes.X86.WInv s₁ S B kl nk (i + 1) s') ∨
+      (s'.zf = some true ∧ VG.Proof.Aes.X86.WDone s₁ S B kl nk s') :=
+  WP.seq (WP.mono (VG.Proof.Aes.X86.temp_wp hs hi) fun _ h => WP.seq (WP.mono h fun _ hm => VG.Proof.Aes.X86.store_wp hs hi hm))
 
 /-! ## The loop over the words -/
 
-theorem words_ok {s : State} (hi : WInv s₁ S B kl nk nk s) :
-    WP isa (.loop wordBody .ne) s (WDone s₁ S B kl nk) := by
-  refine WP.loop (M := isa) (fun k s => ∃ i, k = 4 * (nk + 7) - i ∧ WInv s₁ S B kl nk i s)
-    (fun k s ⟨i, hk, hi⟩ => WP.mono (word_ok hs hi) fun s' h => ?_) _ s ⟨nk, rfl, hi⟩
+theorem words_ok {s : State} (hi : VG.Proof.Aes.X86.WInv s₁ S B kl nk nk s) :
+    WP isa (.loop wordBody .ne) s (VG.Proof.Aes.X86.WDone s₁ S B kl nk) := by
+  refine WP.loop (M := isa) (fun k s => ∃ i, k = 4 * (nk + 7) - i ∧ VG.Proof.Aes.X86.WInv s₁ S B kl nk i s)
+    (fun k s ⟨i, hk, hi⟩ => WP.mono (VG.Proof.Aes.X86.word_ok hs hi) fun s' h => ?_) _ s ⟨nk, rfl, hi⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inr ⟨by simp [X86.eval, z], _, by have := hi.hn; omega, i + 1, rfl, d⟩
   · exact .inl ⟨by simp [X86.eval, z], d⟩
@@ -658,10 +810,10 @@ structure CDone (s₁ : State) (S P : BitVec 32) (K : Nat) (s : State) : Prop wh
   copied : ∀ j < K / 4, s.mem.readW (addr S (4 * j)) 32 = s₁.mem.readW (addr P (4 * j)) 32
   frame : Frame [reg32 S 240] s₁.mem s.mem
 
-theorem copy_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : CSetup s₁ S P K) {c : Nat} {s : State}
-    (hi : CInv s₁ S P K c s) :
+theorem copy_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : VG.Proof.Aes.X86.CSetup s₁ S P K) {c : Nat} {s : State}
+    (hi : VG.Proof.Aes.X86.CInv s₁ S P K c s) :
     WP isa (.block copyBody) s fun s' =>
-      (s'.zf = some false ∧ CInv s₁ S P K (c + 1) s') ∨ (s'.zf = some true ∧ CDone s₁ S P K s') := by
+      (s'.zf = some false ∧ VG.Proof.Aes.X86.CInv s₁ S P K (c + 1) s') ∨ (s'.zf = some true ∧ VG.Proof.Aes.X86.CDone s₁ S P K s') := by
   have hK := hs.hK
   have hc := hi.hc
   have fK := hs.fK
@@ -699,21 +851,21 @@ theorem copy_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : CSetup s₁ S P
   have wr₆ : s₆.wr = s₁.wr := by rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, hi.wr]
   have ebp₆ : s₆.gpr .ebp = S + BitVec.ofNat 32 (4 * (c + 1)) := by
     rw [u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), hi.ebp,
-      add_four, Nat.mul_succ]
+      VG.Proof.Aes.X86.add_four, Nat.mul_succ]
   by_cases hl : K - 4 * c - 4 = 0
   · refine .inr ⟨by rw [z₆, hl]; rfl, ?_, edi₆, esp₆, rd₆, wr₆, fun j hj => copied j (by omega), fr⟩
     rw [ebp₆, show 4 * (c + 1) = K by omega]
   · refine .inl ⟨by rw [z₆]; simp [hl], ⟨by omega, ?_, ebp₆, ?_, edi₆, esp₆, rd₆, wr₆, copied, fr⟩⟩
     · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.gpr, u₂.other _ (by decide), hi.esi,
-        add_four, Nat.mul_succ]
+        VG.Proof.Aes.X86.add_four, Nat.mul_succ]
     · rw [u₆.gpr, ecx₅, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_ofNat (by omega)]
       congr 1
 
-theorem copyLoop_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : CSetup s₁ S P K) {s : State}
-    (hi : CInv s₁ S P K 0 s) :
-    WP isa (.loop (.block copyBody) .ne) s (CDone s₁ S P K) := by
-  refine WP.loop (M := isa) (fun k s => ∃ c, k = K - 4 * c ∧ CInv s₁ S P K c s)
-    (fun k s ⟨c, hk, hc⟩ => WP.mono (copy_ok hs hc) fun s' h => ?_) _ s ⟨0, rfl, hi⟩
+theorem copyLoop_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : VG.Proof.Aes.X86.CSetup s₁ S P K) {s : State}
+    (hi : VG.Proof.Aes.X86.CInv s₁ S P K 0 s) :
+    WP isa (.loop (.block copyBody) .ne) s (VG.Proof.Aes.X86.CDone s₁ S P K) := by
+  refine WP.loop (M := isa) (fun k s => ∃ c, k = K - 4 * c ∧ VG.Proof.Aes.X86.CInv s₁ S P K c s)
+    (fun k s ⟨c, hk, hc⟩ => WP.mono (VG.Proof.Aes.X86.copy_ok hs hc) fun s' h => ?_) _ s ⟨0, rfl, hi⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inr ⟨by simp [X86.eval, z], _, by have := hc.hc; omega, c + 1, rfl, d⟩
   · exact .inl ⟨by simp [X86.eval, z], d⟩
@@ -723,14 +875,14 @@ theorem copyLoop_ok {s₁ : State} {S P : BitVec 32} {K : Nat} (hs : CSetup s₁
 /-- After the prologue. -/
 structure EP1 (s₀ s : State) : Prop where
   esp : s.gpr .esp = s₀.gpr .esp
-  edi : s.gpr .edi = ekScrP s₀
-  esi : s.gpr .esi = keyP s₀
-  ebp : s.gpr .ebp = ekSchP s₀
+  edi : s.gpr .edi = VG.Proof.Aes.X86.ekScrP s₀
+  esi : s.gpr .esi = VG.Proof.Aes.X86.keyP s₀
+  ebp : s.gpr .ebp = VG.Proof.Aes.X86.ekSchP s₀
   ecx : s.gpr .ecx = arg s₀ 1
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [⟨addr (ekScrP s₀) 256, 16⟩] s₀.mem s.mem
-  saved : ∀ p ∈ savedRegs, s.mem.readW (addr (ekScrP s₀) p.2) 32 = s₀.gpr p.1
+  frame : Frame [⟨addr (VG.Proof.Aes.X86.ekScrP s₀) 256, 16⟩] s₀.mem s.mem
+  saved : ∀ p ∈ savedRegs, s.mem.readW (addr (VG.Proof.Aes.X86.ekScrP s₀) p.2) 32 = s₀.gpr p.1
 
 theorem ekPrologue_eq : saveRegs 3 ++ copySetup = ([
     .mov .eax (.mem (at_ .esp 16)), .store (at_ .eax 256) .ebx, .store (at_ .eax 260) .esi,
@@ -738,25 +890,25 @@ theorem ekPrologue_eq : saveRegs 3 ++ copySetup = ([
     .mov .esi (.mem (at_ .esp 4)), .mov .ebp (.mem (at_ .esp 12)), .mov .ecx (.mem (at_ .esp 8))] :
     List Instr) := rfl
 
-theorem ekPrologue_ok {s₀ : State} (hp : EPre s₀) :
-    WP isa (.block (saveRegs 3 ++ copySetup)) s₀ (EP1 s₀) := by
-  have fB : (ekScrP s₀).toNat + 512 ≤ 2 ^ 32 := hp.fB
+theorem ekPrologue_ok {s₀ : State} (hp : VG.Proof.Aes.X86.EPre s₀) :
+    WP isa (.block (saveRegs 3 ++ copySetup)) s₀ (VG.Proof.Aes.X86.EP1 s₀) := by
+  have fB : (VG.Proof.Aes.X86.ekScrP s₀).toNat + 512 ≤ 2 ^ 32 := hp.fB
   have fSp := hp.fSp
-  let B := ekScrP s₀
+  let B := VG.Proof.Aes.X86.ekScrP s₀
   let E := s₀.gpr .esp
   have hwB : reg32 B 512 ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
-  have hrA : ekArgR s₀ ∈ s₀.rd := by rw [hp.rd]; simp
-  have argC : ∀ i < 4, (ekArgR s₀).Contains (addr E (4 + 4 * i)) 4 := fun i hi => by
+  have hrA : VG.Proof.Aes.X86.ekArgR s₀ ∈ s₀.rd := by rw [hp.rd]; simp
+  have argC : ∀ i < 4, (VG.Proof.Aes.X86.ekArgR s₀).Contains (addr E (4 + 4 * i)) 4 := fun i hi => by
     show (⟨addr E 4, 16⟩ : Region).Contains _ _
     exact part_contains (N := 20) (by omega) (by omega) (by omega) (by omega) (by decide)
   have argIn : ∀ (t : State), t.rd = s₀.rd → ∀ i < 4, InRegions (t.rd ++ t.wr) (addr E (4 + 4 * i)) 4 :=
-    fun t ht i hi => ⟨ekArgR s₀, List.mem_append_left _ (ht ▸ hrA), argC i hi⟩
+    fun t ht i hi => ⟨VG.Proof.Aes.X86.ekArgR s₀, List.mem_append_left _ (ht ▸ hrA), argC i hi⟩
   have bIn : ∀ (t : State), t.wr = s₀.wr → ∀ o, o + 4 ≤ 512 → InRegions t.wr (addr B o) 4 :=
     fun t ht o ho => by rw [ht]; exact in_reg hwB fB ho (by decide)
   have hm : (⟨addr B 256, 16⟩ : Region) ∈ [(⟨addr B 256, 16⟩ : Region)] := List.mem_singleton_self _
   have cB : ∀ o, 256 ≤ o → o + 4 ≤ 272 → (⟨addr B 256, 16⟩ : Region).Contains (addr B o) (32 / 8) :=
     fun o h1 h2 => part_contains fB (by omega) h1 (by omega) (by decide)
-  rw [ekPrologue_eq]
+  rw [VG.Proof.Aes.X86.ekPrologue_eq]
   refine wp_ldm (B := E) (o := 16) rfl (argIn _ rfl 3 (by omega)) fun s₁ u₁ => ?_
   have e₁ : s₁.gpr .eax = B := by rw [u₁.gpr]; rfl
   refine wp_stm e₁ (bIn _ u₁.wr 256 (by omega)) fun s₂ u₂ => ?_
@@ -833,12 +985,12 @@ theorem kw_getD_key {m : Mem} {P : BitVec 32} {K j t : Nat} (hP : P.toNat + K �
 
 /-! ## The whole function -/
 
-theorem ek_correct {s₀ : State} (hp : EPre s₀) :
+theorem ek_correct {s₀ : State} (hp : VG.Proof.Aes.X86.EPre s₀) :
     WP isa Impl.Aes.X86.expandKey s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Aes.expandKeyX86.post s₀ s' := by
-  let B := ekScrP s₀
-  let S := ekSchP s₀
-  let P := keyP s₀
-  let K := keyLen s₀
+  let B := VG.Proof.Aes.X86.ekScrP s₀
+  let S := VG.Proof.Aes.X86.ekSchP s₀
+  let P := VG.Proof.Aes.X86.keyP s₀
+  let K := VG.Proof.Aes.X86.keyLen s₀
   let E := s₀.gpr .esp
   have fB : B.toNat + 512 ≤ 2 ^ 32 := hp.fB
   have fS : S.toNat + 240 ≤ 2 ^ 32 := hp.fS
@@ -850,35 +1002,35 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
   have hlen : kl.length = K := by simp [kl, Spec.Aes.bytesAt]
   have hwB : reg32 B 512 ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_of_mem _ (List.mem_singleton_self _)
   have hwS : reg32 S 240 ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_self ..
-  have hrA : ekArgR s₀ ∈ s₀.rd := by rw [hp.rd]; simp
+  have hrA : VG.Proof.Aes.X86.ekArgR s₀ ∈ s₀.rd := by rw [hp.rd]; simp
   -- The prologue and the copy.
   unfold Impl.Aes.X86.expandKey
-  refine WP.seq (WP.mono (ekPrologue_ok hp) fun s₁ h₁ => ?_)
-  have hsC : CSetup s₁ S P K :=
+  refine WP.seq (WP.mono (VG.Proof.Aes.X86.ekPrologue_ok hp) fun s₁ h₁ => ?_)
+  have hsC : VG.Proof.Aes.X86.CSetup s₁ S P K :=
     { hK, key := by rw [h₁.rd, hp.rd]; exact List.mem_cons_self .., sch := by rw [h₁.wr]; exact hwS, fK, fS,
       dKS := hp.dKS }
-  have ci : CInv s₁ S P K 0 s₁ :=
+  have ci : VG.Proof.Aes.X86.CInv s₁ S P K 0 s₁ :=
     ⟨by omega, by rw [h₁.esi]; simp [P], by rw [h₁.ebp]; simp [S],
       by rw [h₁.ecx, Nat.mul_zero, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq],
       rfl, rfl, rfl, rfl, fun j hj => absurd hj (by omega), Frame.refl _ _⟩
-  refine WP.seq (WP.mono (copyLoop_ok hsC ci) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Aes.X86.copyLoop_ok hsC ci) fun s₂ h₂ => ?_)
   -- The regions written so far.
   have F₂ : Frame [reg32 S 240, reg32 B 512] s₀.mem s₂.mem :=
     (h₁.frame.sub fun r hr => ⟨reg32 B 512, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact part_sub_reg fB (by omega)⟩).trans
     (h₂.frame.sub fun r hr => ⟨reg32 S 240, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩)
-  have argD : ∀ r ∈ [reg32 S 240, reg32 B 512], (ekArgR s₀).Disjoint r := fun r hr => by
+  have argD : ∀ r ∈ [reg32 S 240, reg32 B 512], (VG.Proof.Aes.X86.ekArgR s₀).Disjoint r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.aS
     · exact hp.aB
-  have argC : (ekArgR s₀).Contains (addr E 8) 4 := by
+  have argC : (VG.Proof.Aes.X86.ekArgR s₀).Contains (addr E 8) 4 := by
     show (⟨addr E 4, 16⟩ : Region).Contains _ _
     exact part_contains (N := 20) (by omega) (by omega) (by omega) (by omega) (by decide)
   -- `wordSetup`.
   refine WP.seq ?_
-  rw [wordSetup_eq]
+  rw [VG.Proof.Aes.X86.wordSetup_eq]
   have edi₂ : s₂.gpr .edi = B := h₂.edi.trans h₁.edi
   have wr₂ : s₂.wr = s₀.wr := h₂.wr.trans h₁.wr
   have inB : ∀ (t : State), t.wr = s₀.wr → ∀ o, o + 4 ≤ 512 → InRegions t.wr (addr B o) 4 :=
@@ -890,7 +1042,7 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
   refine wp_stm edi₅ (inB _ wr₅ _ (by omega)) fun s₆ u₆ => ?_
   have esp₆ : s₆.gpr .esp = E := by
     rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), h₂.esp, h₁.esp]
-  refine wp_ldm (B := E) (o := 8) esp₆ ⟨ekArgR s₀, List.mem_append_left _ (by
+  refine wp_ldm (B := E) (o := 8) esp₆ ⟨VG.Proof.Aes.X86.ekArgR s₀, List.mem_append_left _ (by
       rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, h₂.rd, h₁.rd]; exact hrA), argC⟩ fun s₇ u₇ => ?_
   have eax₇ : s₇.gpr .eax = BitVec.ofNat 32 K := by
     have F₆ : Frame [reg32 S 240, reg32 B 512] s₀.mem s₆.mem := by
@@ -910,7 +1062,7 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
   refine wp_stm edi₁₃ (inB _ wr₁₃ _ (by omega)) fun s₁₄ u₁₄ => wp_movi fun s₁₅ u₁₅ => ?_
   refine wp_stm (by rw [u₁₅.other _ (by decide), u₁₄.gpr, edi₁₃])
     (inB _ (by rw [u₁₅.wr, u₁₄.wr, wr₁₃]) _ (by omega)) fun s₁₆ u₁₆ => WP.block_nil ?_
-  have ws : WSetup s₁ S B kl (K / 4) :=
+  have ws : VG.Proof.Aes.X86.WSetup s₁ S B kl (K / 4) :=
     ⟨by omega, by rw [hlen]; exact hK4, by rw [h₁.wr]; exact hwS, by rw [h₁.wr]; exact hwB, fS, fB, hp.dSB⟩
   let L := BitVec.ofNat 32 (4 * (K / 4 + 7) - K / 4)
   let M := (((s₂.mem.writeW (addr B 276) (0 : BitVec 32)).writeW (addr B 280) (BitVec.ofNat 32 K)).writeW
@@ -918,21 +1070,21 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
   have eax₁₃ : s₁₃.gpr .eax = L := by
     rw [u₁₃.gpr, u₁₂.gpr, u₁₁.gpr, u₁₁.other _ (by decide), u₁₀.gpr, u₁₀.other _ (by decide), u₉.gpr,
       u₈.gpr, eax₇]
-    exact left_setup hK
+    exact VG.Proof.Aes.X86.left_setup hK
   have m₁₆ : s₁₆.mem = M := by
     rw [u₁₆.mem, u₁₅.gpr, u₁₅.mem, u₁₄.mem, eax₁₃, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem,
       eax₇, u₇.mem, u₆.mem, u₅.gpr, u₅.mem, u₄.mem, u₃.mem]
   have g₁₆ : ∀ r, r ≠ .eax → r ≠ .ebx → r ≠ .esi → s₁₆.gpr r = s₂.gpr r := fun r h1 h2 h3 => by
     rw [u₁₆.gpr, u₁₅.other r h1, u₁₄.gpr, u₁₃.other r h1, u₁₂.other r h1, u₁₁.other r h1, u₁₀.other r h2,
       u₉.other r h1, u₈.gpr, u₇.other r h1, u₆.gpr, u₅.other r h1, u₄.other r h3, u₃.other r h3]
-  have wi : WInv s₁ S B kl (K / 4) (K / 4) s₁₆ :=
+  have wi : VG.Proof.Aes.X86.WInv s₁ S B kl (K / 4) (K / 4) s₁₆ :=
     { hi := Nat.le_refl _
       hn := by omega
       esi := by
         rw [u₁₆.gpr, u₁₅.other _ (by decide), u₁₄.gpr, u₁₃.other _ (by decide), u₁₂.other _ (by decide),
           u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.gpr,
           u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.gpr, u₃.gpr, h₂.ebp]
-        exact esi_setup S hK
+        exact VG.Proof.Aes.X86.esi_setup S hK
       edi := by rw [g₁₆ _ (by decide) (by decide) (by decide), edi₂]
       esp := by rw [g₁₆ _ (by decide) (by decide) (by decide), h₂.esp]
       rd := by
@@ -958,9 +1110,9 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
           h₁.frame.readW (reg_contains fK (by omega) (by decide)) (fun r hr => by
             simp only [List.mem_singleton] at hr; subst hr
             exact hp.dKB.sub_right (part_sub_reg fB (by omega))) (by decide),
-          kw_getD_key fK hj ht]
+          VG.Proof.Aes.X86.kw_getD_key fK hj ht]
       frame := by
-        have hC : (⟨addr B rcOff, 16⟩ : Region) ∈ ekFrame S B := by simp
+        have hC : (⟨addr B rcOff, 16⟩ : Region) ∈ VG.Proof.Aes.X86.ekFrame S B := by simp
         have cC : ∀ o, rcOff ≤ o → o + 4 ≤ rcOff + 16 →
             (⟨addr B rcOff, 16⟩ : Region).Contains (addr B o) (32 / 8) :=
           fun o h1 h2 => part_contains fB (by simp only [rcOff]; omega) h1 h2 (by decide)
@@ -969,7 +1121,7 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
           (cC 276 (by decide) (by decide))).writeW hC _ (cC 280 (by decide) (by decide))).writeW hC _
           (cC 284 (by decide) (by decide))).writeW hC _ (cC 272 (by decide) (by decide)) }
   -- The words, and the epilogue.
-  refine WP.seq (WP.mono (words_ok ws wi) fun s₁₇ h₁₇ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Aes.X86.words_ok ws wi) fun s₁₇ h₁₇ => ?_)
   have F : Frame [reg32 S 240, reg32 B 512] s₀.mem s₁₇.mem :=
     (h₁.frame.sub fun r hr => ⟨reg32 B 512, by simp, by
       simp only [List.mem_singleton] at hr; subst hr; exact part_sub_reg fB (by omega)⟩).trans
@@ -993,7 +1145,7 @@ theorem ek_correct {s₀ : State} (hp : EPre s₀) :
   refine WP.mono (restore_ok h₁₇.edi fB (by rw [h₁₇.wr, h₁.wr]; exact hwB) saved) fun s₁₈ r₁₈ => ?_
   refine ⟨⟨r₁₈.abi (by decide) (by decide) (h₁₇.esp.trans h₁.esp), ?_⟩, ?_⟩
   · rw [r₁₈.mem]
-    exact F.readW (r := ekRetR s₀) (Region.contains_self _ _) (fun r hr => by
+    exact F.readW (r := VG.Proof.Aes.X86.ekRetR s₀) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact hp.rS
@@ -1022,25 +1174,27 @@ def ekSat : State where
   zf := none
   sf := none
   of := none
-  mem := ekSatMem
+  mem := VG.Proof.Aes.X86.ekSatMem
   rd := [⟨0x1000, 16⟩, ⟨0x8004, 16⟩]
   wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
 
 theorem expandKey_correct (s : State) (hs : Proof.Aes.expandKeyX86.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86.expandKey s t s' ∧ abiPreserved s s' ∧ Proof.Aes.expandKeyX86.post s s' :=
-  (ek_correct (EPre.of hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
+  (VG.Proof.Aes.X86.ek_correct (EPre.of hs)).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
 
 theorem expandKey_verified :
     Verified X86.target Impl.Aes.X86.expandKey (Spec.Aes.expandKeyScratchContract X86.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct
     (by
-      have a0 : arg ekSat 0 = 0x1000 := by decide
-      have a1 : arg ekSat 1 = 16 := by decide
-      have a2 : arg ekSat 2 = 0x2000 := by decide
-      have a3 : arg ekSat 3 = 0x3000 := by decide
-      have e : argAddr ekSat 0 = 0x8004 := by decide
+      have a0 : arg VG.Proof.Aes.X86.ekSat 0 = 0x1000 := by decide
+      have a1 : arg VG.Proof.Aes.X86.ekSat 1 = 16 := by decide
+      have a2 : arg VG.Proof.Aes.X86.ekSat 2 = 0x2000 := by decide
+      have a3 : arg VG.Proof.Aes.X86.ekSat 3 = 0x3000 := by decide
+      have e : argAddr VG.Proof.Aes.X86.ekSat 0 = 0x8004 := by decide
       have esp : ekSat.gpr .esp = 0x8000 := rfl
       sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, Proof.Aes.expandKeyX86] [a0, a1, a2, a3, e, esp] using ekSat)
 
 end VG.Proof.Aes.X86
+
+end

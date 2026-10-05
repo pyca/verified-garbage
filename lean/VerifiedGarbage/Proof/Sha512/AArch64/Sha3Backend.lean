@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha512.AArch64.Variant
+import VerifiedGarbage.Proof.Sha512.AArch64.ScalarBackend
 import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
 
 namespace VG.Proof.Sha512.AArch64.Sha3

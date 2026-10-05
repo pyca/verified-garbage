@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.Sample.HalfByteVal
+import VerifiedGarbage.Proof.MlDsa.Sample.Signs
 import VerifiedGarbage.Impl.MlDsa.X86.Sample.RejBounded
 
 /-!
@@ -34,7 +34,7 @@ open VG.Proof.MlDsa.X86.Sample.RejNtt (nil_piece zw_ofNat)
 
 /-- The layout: `rejBounded(seed, eta, a, scratch)`, 66 bytes of seed, 544
 bytes of SHAKE256. -/
-def L : Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 544, mlen := some 66 }
+def L : VG.Proof.MlDsa.X86.Sample.Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 544, mlen := some 66 }
 
 theorem hL : L.Ok :=
   ⟨by decide, by decide, by decide, by decide, by decide, fun k hk => by cases hk; decide,
@@ -44,11 +44,11 @@ theorem hL : L.Ok :=
 abbrev η (s₀ : State) : Nat := (arg s₀ 1).toNat
 
 /-- The precondition. -/
-def BPre (s₀ : State) : Prop := Pre L s₀ ∧ (η s₀ = 2 ∨ η s₀ = 4)
+def BPre (s₀ : State) : Prop := VG.Proof.MlDsa.X86.Sample.Pre VG.Proof.MlDsa.X86.Sample.RejBounded.L s₀ ∧ (η s₀ = 2 ∨ η s₀ = 4)
 
 /-- The pointers and `esp` agree, and so does the leak. -/
 def BPub (s₀ s₀' : State) : Prop :=
-  PubP L s₀ s₀' ∧ rejBoundedLeak (η s₀) (L.Msg s₀) = rejBoundedLeak (η s₀') (L.Msg s₀')
+  PubP VG.Proof.MlDsa.X86.Sample.RejBounded.L s₀ s₀' ∧ rejBoundedLeak (η s₀) (L.Msg s₀) = rejBoundedLeak (η s₀') (L.Msg s₀')
 
 /-! ## The XOF output and the coefficients it gives -/
 
@@ -61,9 +61,9 @@ abbrev zb (s₀ : State) (t : Nat) : Byte := (X s₀).getD t 0
 /-- The coefficients sampled after `t` iterations. -/
 abbrev LA (s₀ : State) (t : Nat) : List Zq := rbFold (η s₀) [] ((X s₀).take t)
 
-theorem X_eq (s₀ : State) : X s₀ = H (L.Msg s₀) 544 := (H_eq _ _).symm
+theorem X_eq (s₀ : State) : X s₀ = H (L.Msg s₀) 544 := (VG.Proof.MlDsa.Sample.H_eq _ _).symm
 
-theorem X_length (s₀ : State) : (X s₀).length = 544 := by rw [X_eq]; exact H_length _ _
+theorem X_length (s₀ : State) : (X s₀).length = 544 := by rw [X_eq]; exact VG.Proof.MlDsa.Sample.H_length _ _
 
 theorem LA_zero (s₀ : State) : LA s₀ 0 = [] := by simp [LA, rbFold]
 
@@ -108,7 +108,7 @@ end BPub
 /-! ## The state of the loop -/
 
 /-- After `t` iterations, with the coefficients `La` stored. -/
-structure Loop (s₀ : State) (t : Nat) (La : List Zq) (s : State) : Prop extends Base L s₀ s where
+structure Loop (s₀ : State) (t : Nat) (La : List Zq) (s : State) : Prop extends Base VG.Proof.MlDsa.X86.Sample.RejBounded.L s₀ s where
   out : ∀ p < 544, s.mem (L.sA s₀ + BitVec.ofNat 64 (840 + p)) = zb s₀ p
   esi : s.gpr .esi = L.sP s₀ + BitVec.ofNat 32 (840 + t)
   ebp : s.gpr .ebp = BitVec.ofNat 32 (544 - t)
@@ -154,7 +154,7 @@ theorem store_ok {s₀ : State} (hp : BPre s₀) {t : Nat} {La : List Zq} (x : Z
   have ha := hp.1.a_fit
   have ea : (L.aP s₀ + BitVec.ofNat 32 (4 * La.length) + BitVec.ofNat 32 0).setWidth 64 =
       coeffAddr (L.aA s₀) La.length := by
-    rw [ea_add (by simp only [L] at ha ⊢; omega)]; rfl
+    rw [ea_add (by simp only [VG.Proof.MlDsa.X86.Sample.RejBounded.L] at ha ⊢; omega)]; rfl
   have hin : InRegions s.wr (coeffAddr (L.aA s₀) La.length) 4 := hp.1.inA h.wr hl
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, at_, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
@@ -202,7 +202,7 @@ theorem try_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (La : State → Lis
   have hbnd : (rbBound e).toNat = rbB e := by rcases he with rfl | rfl <;> rfl
   refine Piece.seq (B := fun s₀ s => (((Loop s₀ t (La s₀) s ∧ s.gpr .edx = BitVec.ofNat 32 (hb s₀) ∧
       s.gpr .eax = BitVec.ofNat 32 (E s₀) ∧ (La s₀).length < 256 ∧ hb s₀ < 16) ∧ η s₀ = e) ∧ X s₀) ∧
-      eval .b s = some (decide (hb s₀ < rbB (η s₀)))) ?_
+      VG.X86.eval .b s = some (decide (hb s₀ < rbB (η s₀)))) ?_
     (Piece.ite (fun s₀ => decide (hb s₀ < rbB (η s₀))) (fun _ _ _ h => h.2)
       (fun s₀ s₀' h₀ h₀' hq => (hpub s₀ s₀' h₀ h₀' hq).2) ?_ ?_)
   · refine Piece.taint [] (fun s₀ s hp ha => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) tc
@@ -211,7 +211,7 @@ theorem try_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (La : State → Lis
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags,
       Option.bind_some, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨h.flags rfl rfl rfl rfl rfl rfl rfl rfl, hdx, hax, hl, h16⟩, hη⟩, hx⟩, ?_⟩
-    simp only [eval, hdx, hbnd, toNat_ofNat32 (show hb s₀ < 2 ^ 32 by omega), hη]
+    simp only [VG.X86.eval, hdx, hbnd, toNat_ofNat32 (show hb s₀ < 2 ^ 32 by omega), hη]
   · refine Piece.taint [.edi] (fun s₀ s hp ⟨⟨⟨⟨⟨h, hdx, hax, hl, _⟩, hη⟩, hx⟩, _⟩, hb'⟩ => ?_)
       (fun s₀ s₀' s s' h₀ h₀' hq ⟨⟨⟨⟨⟨h, _⟩, _⟩, _⟩, _⟩, _⟩ ⟨⟨⟨⟨⟨h', _⟩, _⟩, _⟩, _⟩, _⟩ r hr => ?_) ts
     · have hb2 : hb s₀ < rbB e := hη ▸ of_decide_eq_true hb'
@@ -220,7 +220,7 @@ theorem try_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (La : State → Lis
     · simp only [List.mem_singleton] at hr
       subst hr
       rw [h.edi, h'.edi, hq.1.aP hL, (hpub s₀ s₀' h₀ h₀' hq).1]
-  · exact nil_piece fun s₀ s _ ⟨⟨⟨⟨⟨h, _, hax, _⟩, hη⟩, hx⟩, _⟩, hb'⟩ => by
+  · exact VG.Proof.MlDsa.X86.Sample.RejNtt.nil_piece fun s₀ s _ ⟨⟨⟨⟨⟨h, _, hax, _⟩, hη⟩, hx⟩, _⟩, hb'⟩ => by
       refine ⟨⟨⟨?_, hax⟩, hη⟩, hx⟩
       rw [hη, hbTry_eq he, ifF (hη ▸ of_decide_eq_false hb')]; exact h
 
@@ -268,11 +268,11 @@ theorem LA_step {s₀ : State} {t : Nat} (ht : t < 544) :
 
 theorem load_ok {s₀ : State} (hp : BPre s₀) {t : Nat} (ht : t < 544) {s : State} (h : Loop s₀ t (LA s₀ t) s) :
     WP isa (.block rbLoad) s fun s' => Loop s₀ t (LA s₀ t) s' ∧ s'.gpr .edx = BitVec.ofNat 32 (lo s₀ t) ∧
-      s'.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat ∧ eval .b s' = some (decide ((LA s₀ t).length < 256)) := by
+      s'.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat ∧ VG.X86.eval .b s' = some (decide ((LA s₀ t).length < 256)) := by
   have hs := hp.1.s_fit
   have e0 : (L.sP s₀ + BitVec.ofNat 32 (840 + t) + BitVec.ofNat 32 0).setWidth 64 =
       L.sA s₀ + BitVec.ofNat 64 (840 + t) := by
-    rw [ea_add (by simp only [L] at hs ⊢; omega)]; rfl
+    rw [ea_add (by simp only [VG.Proof.MlDsa.X86.Sample.RejBounded.L] at hs ⊢; omega)]; rfl
   have i0 := hp.1.inS' h.wr (o := 840 + t) (n := 1) (by omega)
   have v0 := h.out t ht
   have hl := h.len
@@ -284,13 +284,13 @@ theorem load_ok {s₀ : State} (hp : BPre s₀) {t : Nat} (ht : t < 544) {s : St
   · refine eq_ofNat_of_toNat ?_
     rw [show (15 : BitVec 32) = BitVec.ofNat 32 (2 ^ 4 - 1) from rfl, toNat_and_mask _ _ (by decide), toNat_byte32]
   · exact eq_ofNat_of_toNat (toNat_byte32 _)
-  · simp only [eval, h.ecx, toNat_ofNat32 (show (LA s₀ t).length < 2 ^ 32 by omega)]
+  · simp only [VG.X86.eval, h.ecx, toNat_ofNat32 (show (LA s₀ t).length < 2 ^ 32 by omega)]
     rfl
 
 theorem hi_ok {s₀ : State} {t : Nat} {La : List Zq} {s : State} (h : Loop s₀ t La s)
     (hax : s.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat) :
     WP isa (.block rbHi) s fun s' => Loop s₀ t La s' ∧ s'.gpr .edx = BitVec.ofNat 32 (hi s₀ t) ∧
-      s'.gpr .eax = BitVec.ofNat 32 (hi s₀ t) ∧ eval .b s' = some (decide (La.length < 256)) := by
+      s'.gpr .eax = BitVec.ofNat 32 (hi s₀ t) ∧ VG.X86.eval .b s' = some (decide (La.length < 256)) := by
   have hl := h.len
   have hz := (zb s₀ t).isLt
   have hv : s.gpr .eax >>> 4 = BitVec.ofNat 32 (hi s₀ t) := by
@@ -300,12 +300,12 @@ theorem hi_ok {s₀ : State} {t : Nat} {La : List Zq} {s : State} (h : Loop s₀
     execShift, readSrc, State.setReg, arithFlags, State.setFlags, Option.map_some, Option.bind_some, hv,
     Option.some.injEq, exists_eq_left']
   refine ⟨h.flags (by simp) (by simp) (by simp) (by simp) (by simp) rfl rfl rfl, by simp, by simp, ?_⟩
-  simp only [eval, h.ecx, toNat_ofNat32 (show La.length < 2 ^ 32 by omega)]
+  simp only [VG.X86.eval, h.ecx, toNat_ofNat32 (show La.length < 2 ^ 32 by omega)]
   rfl
 
 theorem end_ok {s₀ : State} {t : Nat} (ht : t < 544) {La : List Zq} {s : State} (h : Loop s₀ t La s) :
     WP isa (.block [.alu .add .esi (.imm 1), .alu .sub .ebp (.imm 1)]) s
-      fun s' => Loop s₀ (t + 1) La s' ∧ eval .ne s' = some (decide (t + 1 < 544)) := by
+      fun s' => Loop s₀ (t + 1) La s' ∧ VG.X86.eval .ne s' = some (decide (t + 1 < 544)) := by
   apply WP.of_runBlock
   simp only [reduceCtorEq, ↓reduceIte, Nat.reducePow, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.setReg, arithFlags, State.setFlags, Option.bind_some, Option.some.injEq, exists_eq_left']
@@ -315,17 +315,17 @@ theorem end_ok {s₀ : State} {t : Nat} (ht : t < 544) {La : List Zq} {s : State
     rw [show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, add_ofNat_add]; congr 2
   · simp only [ite_true, h.ebp]
     exact cnt_next ht
-  · simp only [eval, h.ebp]
+  · simp only [VG.X86.eval, h.ebp]
     exact cnt_ne ht (by omega)
 
 theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
     (tc : TaintOk [] (.block [.alu .cmp .edx (.imm (rbBound e))]))
     (ts : TaintOk [.edi] (.block (rbVal e ++ stBlk))) :
     Piece BPre BPub (fun s₀ s => Loop s₀ t (LA s₀ t) s ∧ η s₀ = e)
-      (fun s₀ s => (Loop s₀ (t + 1) (LA s₀ (t + 1)) s ∧ η s₀ = e) ∧ eval .ne s = some (decide (t + 1 < 544)))
+      (fun s₀ s => (Loop s₀ (t + 1) (LA s₀ (t + 1)) s ∧ η s₀ = e) ∧ VG.X86.eval .ne s = some (decide (t + 1 < 544)))
       (rbBody e) := by
   refine Piece.seq (B := fun s₀ s => (Loop s₀ t (LA s₀ t) s ∧ s.gpr .edx = BitVec.ofNat 32 (lo s₀ t) ∧
-      s.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat ∧ eval .b s = some (decide ((LA s₀ t).length < 256))) ∧
+      s.gpr .eax = BitVec.ofNat 32 (zb s₀ t).toNat ∧ VG.X86.eval .b s = some (decide ((LA s₀ t).length < 256))) ∧
       η s₀ = e) ?_ (Piece.seq (B := fun s₀ s => Loop s₀ t (LA s₀ (t + 1)) s ∧ η s₀ = e) ?_
         (Piece.taint [] (fun s₀ s _ ⟨h, hη⟩ => (end_ok ht h).mono fun s' ⟨h', hc⟩ => ⟨⟨h', hη⟩, hc⟩)
           (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)))
@@ -343,7 +343,7 @@ theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
           ⟨⟨⟨h, hdx, hax, of_decide_eq_true hb, Nat.mod_lt _ (by decide)⟩, hη⟩, of_decide_eq_true hb⟩)
         fun _ _ _ h => h) ?_
     refine Piece.seq (B := fun s₀ s => ((Loop s₀ t (L1 s₀ t) s ∧ s.gpr .edx = BitVec.ofNat 32 (hi s₀ t) ∧
-        s.gpr .eax = BitVec.ofNat 32 (hi s₀ t) ∧ eval .b s = some (decide ((L1 s₀ t).length < 256))) ∧
+        s.gpr .eax = BitVec.ofNat 32 (hi s₀ t) ∧ VG.X86.eval .b s = some (decide ((L1 s₀ t).length < 256))) ∧
         η s₀ = e) ∧ (LA s₀ t).length < 256)
       (Piece.taint [] (fun s₀ s _ ⟨⟨⟨h, hax⟩, hη⟩, hx⟩ => (hi_ok h hax).mono fun s' h' => ⟨⟨h', hη⟩, hx⟩)
         (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp)) (by taint_decide)) ?_
@@ -358,10 +358,10 @@ theorem body_piece {e : Nat} (he : e = 2 ∨ e = 4) (t : Nat) (ht : t < 544)
       rintro s₀ s _ ⟨⟨⟨h, -⟩, hη⟩, hx, hx'⟩
       refine ⟨?_, hη⟩
       rw [LA_step ht, ifT hx, ifT hx']; exact h
-    · exact nil_piece fun s₀ s _ ⟨⟨⟨⟨h, _⟩, hη⟩, hx⟩, hb⟩ => by
+    · exact VG.Proof.MlDsa.X86.Sample.RejNtt.nil_piece fun s₀ s _ ⟨⟨⟨⟨h, _⟩, hη⟩, hx⟩, hb⟩ => by
         refine ⟨?_, hη⟩
         rw [LA_step ht, ifT hx, ifF (of_decide_eq_false hb)]; exact h
-  · exact nil_piece fun s₀ s _ ⟨⟨⟨h, _⟩, hη⟩, hb⟩ => by
+  · exact VG.Proof.MlDsa.X86.Sample.RejNtt.nil_piece fun s₀ s _ ⟨⟨⟨h, _⟩, hη⟩, hb⟩ => by
       refine ⟨?_, hη⟩
       rw [LA_step ht, ifF (of_decide_eq_false hb)]; exact h
 
@@ -370,13 +370,13 @@ theorem loop_piece {e : Nat} (he : e = 2 ∨ e = 4)
     (ts : TaintOk [.edi] (.block (rbVal e ++ stBlk))) :
     Piece BPre BPub (fun s₀ s => Loop s₀ 0 (LA s₀ 0) s ∧ η s₀ = e)
       (fun s₀ s => Loop s₀ 544 (LA s₀ 544) s ∧ η s₀ = e) (.loop (rbBody e) .ne) :=
-  Piece.loop (fun t s₀ s => Loop s₀ t (LA s₀ t) s ∧ η s₀ = e) (by decide) fun t ht => body_piece he t ht tc ts
+  Piece.loop (fun t s₀ s => Loop s₀ t (LA s₀ t) s ∧ η s₀ = e) (by decide) fun t ht => VG.Proof.MlDsa.X86.Sample.RejBounded.body_piece he t ht tc ts
 
 /-- Before the branch on `η`: `edi = a`, and whether `η = 2` in ZF. -/
 def Sel (s₀ s : State) : Prop :=
-  Out L s₀ s ∧ s.gpr .edi = L.aP s₀ ∧ eval .e s = some (decide (η s₀ = 2))
+  Out VG.Proof.MlDsa.X86.Sample.RejBounded.L s₀ s ∧ s.gpr .edi = L.aP s₀ ∧ VG.X86.eval .e s = some (decide (η s₀ = 2))
 
-theorem sel_piece : Piece BPre BPub (Out L) Sel
+theorem sel_piece : Piece BPre BPub (Out VG.Proof.MlDsa.X86.Sample.RejBounded.L) Sel
     (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 2)]) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
     (by taint_decide)
@@ -392,7 +392,7 @@ theorem sel_piece : Piece BPre BPub (Out L) Sel
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
       Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, ?_⟩
-    simp only [eval, sub_beq_zero]
+    simp only [VG.X86.eval, sub_beq_zero]
     rfl
   · simp only [List.mem_singleton] at hr
     subst hr
@@ -416,18 +416,18 @@ theorem branch_piece : Piece BPre BPub Sel (fun s₀ s => Loop s₀ 544 (LA s₀
     (.ite .e (rbLoop 2) (rbLoop 4)) := by
   refine Piece.ite (fun s₀ => decide (η s₀ = 2)) (fun _ _ _ h => h.2.2)
     (fun s₀ s₀' _ _ hq => by rw [hq.eη]) ?_ ?_
-  · exact (Piece.seq (init_piece 2 true fun s₀ _ e => of_decide_eq_true e)
-      (loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
+  · exact (Piece.seq (VG.Proof.MlDsa.X86.Sample.RejBounded.init_piece 2 true fun s₀ _ e => of_decide_eq_true e)
+      (VG.Proof.MlDsa.X86.Sample.RejBounded.loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
       fun _ _ _ h => h.1
-  · exact (Piece.seq (init_piece 4 false fun s₀ hp e => hp.2.resolve_left (of_decide_eq_false e))
-      (loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
+  · exact (Piece.seq (VG.Proof.MlDsa.X86.Sample.RejBounded.init_piece 4 false fun s₀ hp e => hp.2.resolve_left (of_decide_eq_false e))
+      (VG.Proof.MlDsa.X86.Sample.RejBounded.loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩ ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h)
       fun _ _ _ h => h.1
 
 /-- The end: 1 in `eax` if there are 256 coefficients, 0 if fewer. -/
 structure Fin (s₀ s : State) : Prop extends Loop s₀ 544 (LA s₀ 544) s where
   eax : s.gpr .eax = BitVec.ofNat 32 ((LA s₀ 544).length / 256)
 
-theorem fin_piece : Piece BPre BPub (fun s₀ s => Loop s₀ 544 (LA s₀ 544) s) Fin (.block (retJ .ecx)) := by
+theorem fin_piece : Piece BPre BPub (fun s₀ s => Loop s₀ 544 (LA s₀ 544) s) VG.Proof.MlDsa.X86.Sample.RejBounded.Fin (.block (retJ .ecx)) := by
   refine Piece.taint [] (fun s₀ s _ h => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
   have hl := h.len
@@ -455,14 +455,14 @@ open VG.Spec.MlDsa (Zq H)
 
 /-! ## The whole function -/
 
-theorem main_piece : Piece BPre BPub (fun s₀ s => s = P0 s₀) Fin
+theorem main_piece : Piece BPre BPub (fun s₀ s => s = P0 s₀) VG.Proof.MlDsa.X86.Sample.RejBounded.Fin
     (.seq (sponge 3 136 (.imm 66) 544)
       (.seq (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 2)])
         (.seq (.ite .e (rbLoop 2) (rbLoop 4)) (.block (retJ .ecx))))) :=
   Piece.seq ((sponge_piece hL).pre_mono (fun _ h => h.1) fun _ _ _ _ h => h.1) <|
-    Piece.seq sel_piece <| Piece.seq branch_piece fin_piece
+    Piece.seq sel_piece <| Piece.seq VG.Proof.MlDsa.X86.Sample.RejBounded.branch_piece fin_piece
 
-theorem piece : Piece BPre BPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
+theorem piece : Piece BPre BPub (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (VG.Proof.MlDsa.X86.Sample.RejBounded.Fin s₀) s₀ s')
     Impl.MlDsa.X86.Sample.rejBounded :=
   Piece.leaf L.W (NoSp.of_all (by decide +kernel))
     (fun _ hp => ⟨by have := hp.1.sp; omega, by have := hp.1.sp'; omega⟩)
@@ -515,7 +515,7 @@ theorem verified :
         .inr ⟨rfl, ?_⟩⟩
       show (Spec.MlDsa.rejBoundedPoly (η s₀) Spec.MlDsa.minBounds.rejBounded (L.Msg s₀)).map Spec.MlDsa.toRq = none
       rw [rejBounded_none _ (B := 544) (by decide) e]; rfl
-  · let st := satState satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
+  · let st := VG.Proof.MlKem.X86.satState VG.Proof.MlDsa.X86.Sample.RejBounded.satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
     sig_sat_check [Spec.MlDsa.rejBoundedContract, Spec.MlDsa.rejBoundedSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]

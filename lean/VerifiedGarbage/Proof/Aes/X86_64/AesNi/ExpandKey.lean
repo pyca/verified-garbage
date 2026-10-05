@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Aes.X86_64.AesNi
-import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Rounds
+import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Ctr32
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -126,17 +126,17 @@ theorem ofNat_add' (p : Addr) (a b : Nat) :
 
 /-- Word `i` of the key. -/
 theorem keyWord (m : Mem) (kp : Addr) {L i : Nat} (h : 4 * i + 4 ≤ L) :
-    ((bytesAt m kp L).drop (4 * i)).take 4 = wv (m.readW (kp + BitVec.ofNat 64 (4 * i)) 32) := by
+    ((VG.Spec.Aes.bytesAt m kp L).drop (4 * i)).take 4 = wv (m.readW (kp + BitVec.ofNat 64 (4 * i)) 32) := by
   apply List.ext_getElem
-  · simp [bytesAt, wv]; omega
+  · simp [VG.Spec.Aes.bytesAt, wv]; omega
   · intro j h₁ h₂
     have hj : j < 4 := by simpa [wv] using h₂
-    simp only [List.getElem_take, List.getElem_drop, bytesAt, List.getElem_map, List.getElem_range,
+    simp only [List.getElem_take, List.getElem_drop, VG.Spec.Aes.bytesAt, List.getElem_map, List.getElem_range,
       wv]
     rw [ofNat_add', Mem.readW_byte m (kp + BitVec.ofNat 64 (4 * i)) hj]
 
 theorem expandWords_eq (m : Mem) (kp : Addr) {nk : Nat} (h0 : 0 < nk) :
-    ∀ n, expandWords (bytesAt m kp (4 * nk)) nk n = (List.range n).map fun i => wv (W m kp nk i)
+    ∀ n, expandWords (VG.Spec.Aes.bytesAt m kp (4 * nk)) nk n = (List.range n).map fun i => wv (W m kp nk i)
   | 0 => rfl
   | i + 1 => by
     rw [expandWords, expandWords_eq m kp h0 i, List.range_succ, List.map_append, List.map_singleton]
@@ -147,24 +147,24 @@ theorem expandWords_eq (m : Mem) (kp : Addr) {nk : Nat} (h0 : 0 < nk) :
       rw [getD_mapRange _ _ (by omega), getD_mapRange _ _ (by omega), temp_wv, ← wv_xor,
         ← W_ge h0 (by omega)]
 
-theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n := by
-  simp [bytesAt]
+theorem length_bytesAt (m : Mem) (p : Addr) (n : Nat) : (VG.Spec.Aes.bytesAt m p n).length = n := by
+  simp [VG.Spec.Aes.bytesAt]
 
 /-- `KEYEXPANSION`, as words. -/
 theorem expandKey_eq (m : Mem) (kp : Addr) {nk : Nat} (h0 : 0 < nk) :
-    expandKey (bytesAt m kp (4 * nk)) =
+    VG.Spec.Aes.expandKey (VG.Spec.Aes.bytesAt m kp (4 * nk)) =
       ((List.range (4 * (rounds nk + 1))).map fun i => wv (W m kp nk i)).flatten := by
-  rw [expandKey, length_bytesAt, show 4 * nk / 4 = nk by omega, expandWords_eq m kp h0]
+  rw [VG.Spec.Aes.expandKey, length_bytesAt, show 4 * nk / 4 = nk by omega, expandWords_eq m kp h0]
 
 /-- Memory holding the words `f 0 … f (K − 1)` as little-endian doublewords. -/
 theorem bytesAt_eq (m : Mem) (p : Addr) (f : Nat → BitVec 32) :
     ∀ K, (∀ i < K, m.readW (p + BitVec.ofNat 64 (4 * i)) 32 = f i) →
-      bytesAt m p (4 * K) = ((List.range K).map fun i => wv (f i)).flatten
+      VG.Spec.Aes.bytesAt m p (4 * K) = ((List.range K).map fun i => wv (f i)).flatten
   | 0, _ => rfl
   | K + 1, h => by
     rw [List.range_succ, List.map_append, List.flatten_append, ← bytesAt_eq m p f K
       fun i hi => h i (by omega), List.map_singleton, List.flatten_singleton, ← h K (by omega),
-      show 4 * (K + 1) = 4 * K + 4 by omega, bytesAt, bytesAt, List.range_add, List.map_append,
+      show 4 * (K + 1) = 4 * K + 4 by omega, VG.Spec.Aes.bytesAt, VG.Spec.Aes.bytesAt, List.range_add, List.map_append,
       List.map_map]
     congr 1
     simp only [wv]
@@ -335,7 +335,7 @@ variable (s₀ : State)
 abbrev kp : Addr := s₀.gpr .rdi
 abbrev len : Nat := (s₀.gpr .rsi).toNat
 abbrev sp : Addr := s₀.gpr .rdx
-abbrev schR : Region := ⟨sp s₀, 240⟩
+abbrev schR : Region := ⟨VG.Proof.Aes.X86_64.AesNi.Key.sp s₀, 240⟩
 
 end
 
@@ -345,7 +345,7 @@ structure Pre (s₀ : State) : Prop where
   ret : (⟨s₀.gpr .rsp, 8⟩ : Region).Disjoint (schR s₀)
   len : len s₀ = 16 ∨ len s₀ = 24 ∨ len s₀ = 32
 
-theorem pre_of (s₀ : State) (h : expandKeyX86_64.pre s₀) : Pre s₀ := by
+theorem pre_of (s₀ : State) (h : expandKeyX86_64.pre s₀) : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀ := by
   obtain ⟨h1, h2, h3, h4⟩ := h
   exact ⟨h1, h2, h3, h4⟩
 
@@ -355,17 +355,17 @@ structure KS (s₀ : State) (nk K : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [schR s₀] s₀.mem s.mem
-  good : Good s.mem (sp s₀) (W s₀.mem (kp s₀) nk) K
+  good : Good s.mem (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀) (W s₀.mem (kp s₀) nk) K
 
 theorem KS.of_eq {s₀ : State} {nk K K' : Nat} {s : State} (h : KS s₀ nk K s) (e : K = K') :
     KS s₀ nk K' s := e ▸ h
 
-theorem sched_in {s₀ : State} (hp : Pre s₀) {s : State} (hwr : s.wr = s₀.wr) (hg : s.gpr = s₀.gpr)
+theorem sched_in {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) {s : State} (hwr : s.wr = s₀.wr) (hg : s.gpr = s₀.gpr)
     {off : Nat} (h : off + 16 ≤ 240) :
     InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 (off : Int)) 16 :=
   ⟨schR s₀, by simp [hwr, hp.wr], by rw [hg, ofInt_natCast]; exact contains_offset h (by omega)⟩
 
-theorem key_in {s₀ : State} (hp : Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hg : s.gpr = s₀.gpr)
+theorem key_in {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hg : s.gpr = s₀.gpr)
     {off : Nat} (h : off + 16 ≤ len s₀) :
     InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 (off : Int)) 16 :=
   ⟨⟨kp s₀, len s₀⟩, by simp [hrd, hp.rd], by
@@ -411,10 +411,10 @@ theorem dword_shr64 (x : BitVec 128) :
 
 /-- Storing the next `n` words. -/
 theorem store_mem {s₀ : State} {nk K n : Nat} {m : Mem} (hf : Frame [schR s₀] s₀.mem m)
-    (hg : Good m (sp s₀) (W s₀.mem (kp s₀) nk) K) (v : BitVec 128) (off : Nat) (hoff : off = 4 * K)
+    (hg : Good m (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀) (W s₀.mem (kp s₀) nk) K) (v : BitVec 128) (off : Nat) (hoff : off = 4 * K)
     (hn : n ≤ 4) (hv : ∀ j < n, dword v j = W s₀.mem (kp s₀) nk (K + j)) (hK : 4 * K + 16 ≤ 240) :
-    Frame [schR s₀] s₀.mem (m.writeW (sp s₀ + BitVec.ofInt 64 (off : Int)) v) ∧
-      Good (m.writeW (sp s₀ + BitVec.ofInt 64 (off : Int)) v) (sp s₀) (W s₀.mem (kp s₀) nk) (K + n) := by
+    Frame [schR s₀] s₀.mem (m.writeW (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀ + BitVec.ofInt 64 (off : Int)) v) ∧
+      Good (m.writeW (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀ + BitVec.ofInt 64 (off : Int)) v) (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀) (W s₀.mem (kp s₀) nk) (K + n) := by
   subst hoff
   rw [ofInt_natCast]
   exact ⟨hf.writeW (List.mem_singleton_self _) _ (contains_offset hK (by omega)), good_store hg _ hn hv hK⟩
@@ -425,7 +425,7 @@ theorem good_zero (m : Mem) (p : Addr) (f : Nat → BitVec 32) : Good m p f 0 :=
 /-! ## The steps -/
 
 /-- `kstep`: from words `a … a + 3` in `d`, words `b … b + 3` (`b = a + Nk`). -/
-theorem kstepK {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XReg) (sel r : BitVec 8)
+theorem kstepK {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XReg) (sel r : BitVec 8)
     (a b off : Nat) (hb : b = a + nk) (hoff : off = 4 * b) (hK : 4 * b + 16 ≤ 240)
     (hd3 : d ≠ .xmm3) (hd4 : d ≠ .xmm4) {st : State} (hI : KS s₀ nk b st)
     (hA : ∀ j < 4, dword (st.xmm d) j = W s₀.mem (kp s₀) nk (a + j))
@@ -469,7 +469,7 @@ theorem kstepK {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XR
 
 /-- `kstepB6`: from words `b − 6`, `b − 5` in `xmm2` and `b − 1` in `xmm1`'s
 last doubleword, words `b`, `b + 1` in `xmm2`. -/
-theorem kstepB6K {s₀ : State} (hp : Pre s₀) (c b off : Nat) (hc : c % 6 = 4) (hb : b = c + 6) (hoff : off = 4 * b)
+theorem kstepB6K {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) (c b off : Nat) (hc : c % 6 = 4) (hb : b = c + 6) (hoff : off = 4 * b)
     (hK : 4 * b + 16 ≤ 240) {st : State} (hI : KS s₀ 6 b st)
     (hB0 : dword (st.xmm .xmm2) 0 = W s₀.mem (kp s₀) 6 c)
     (hB1 : dword (st.xmm .xmm2) 1 = W s₀.mem (kp s₀) 6 (c + 1))
@@ -510,7 +510,7 @@ theorem kstepB6K {s₀ : State} (hp : Pre s₀) (c b off : Nat) (hc : c % 6 = 4)
 def Inv128 (s₀ : State) (k : Nat) (st : State) : Prop :=
   KS s₀ 4 (4 * k + 4) st ∧ ∀ j < 4, dword (st.xmm .xmm1) j = W s₀.mem (kp s₀) 4 (4 * k + j)
 
-theorem expand128_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 16) {st : State}
+theorem expand128_ok {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) (hl : len s₀ = 16) {st : State}
     (hf : XFrame [] s₀ st) : WP isa (.block expand128) st (KS s₀ 4 44) := by
   rw [expand128, WP.block_append_iff]
   have hin := key_in hp (s := s₀) rfl rfl (off := 0) (by omega)
@@ -548,7 +548,7 @@ theorem hT55 {s₀ : State} {st : State} {b k : Nat} (hb : b = 6 * k + 6)
       temp32 6 b (W s₀.mem (kp s₀) 6 (b - 1)) := fun j hj => by
   rw [shuf_55, dword_bcast _ hj, kga1, h, temp_rc (by omega), show b / 6 = k + 1 by omega]
 
-theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {st : State}
+theorem expand192_ok {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) (hl : len s₀ = 24) {st : State}
     (hf : XFrame [] s₀ st) : WP isa (.block expand192) st (KS s₀ 6 52) := by
   simp only [expand192, List.append_assoc]
   rw [WP.block_append_iff]
@@ -608,7 +608,7 @@ theorem hTff {s₀ : State} {st : State} {b k : Nat} (hb : b = 8 * k + 8)
       temp32 8 b (W s₀.mem (kp s₀) 8 (b - 1)) := fun j hj => by
   rw [shuf_ff, dword_bcast _ hj, kga3, h, temp_rc (by omega), show b / 8 = k + 1 by omega]
 
-theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {st : State}
+theorem expand256_ok {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) (hl : len s₀ = 32) {st : State}
     (hf : XFrame [] s₀ st) : WP isa (.block expand256) st (KS s₀ 8 60) := by
   simp only [expand256, List.append_assoc]
   rw [WP.block_append_iff]
@@ -654,19 +654,19 @@ theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {st : S
 
 /-! ## The whole function -/
 
-theorem fin {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (hl : len s₀ = 4 * nk) {st : State}
+theorem fin {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) {nk : Nat} (h0 : 0 < nk) (hl : len s₀ = 4 * nk) {st : State}
     (hI : KS s₀ nk (4 * (nk + 7)) st) : gprPreserved s₀ st ∧ expandKeyX86_64.post s₀ st := by
   refine ⟨⟨fun r _ => by rw [hI.gpr], hI.frame.readW (Region.contains_self _ _)
     (by simpa using hp.ret) (by decide)⟩, ?_⟩
   have hl' : (s₀.gpr .rsi).toNat = 4 * nk := hl
-  show Spec.Aes.bytesAt st.mem (sp s₀) (16 * (Spec.Aes.rounds ((s₀.gpr .rsi).toNat / 4) + 1)) =
+  show Spec.Aes.bytesAt st.mem (VG.Proof.Aes.X86_64.AesNi.Key.sp s₀) (16 * (Spec.Aes.rounds ((s₀.gpr .rsi).toNat / 4) + 1)) =
     Spec.Aes.expandKey (Spec.Aes.bytesAt s₀.mem (kp s₀) (s₀.gpr .rsi).toNat)
   rw [hl', show 4 * nk / 4 = nk by omega, expandKey_eq s₀.mem _ h0, Spec.Aes.rounds,
     show 16 * (nk + 6 + 1) = 4 * (4 * (nk + 6 + 1)) by omega]
   exact bytesAt_eq st.mem _ _ _ fun i hi => hI.good i (by omega)
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa expandKey s₀ fun s' => gprPreserved s₀ s' ∧ expandKeyX86_64.post s₀ s' := by
+theorem correct {s₀ : State} (hp : VG.Proof.Aes.X86_64.AesNi.Key.Pre s₀) :
+    WP isa VG.Impl.Aes.X86_64.AesNi.expandKey s₀ fun s' => gprPreserved s₀ s' ∧ expandKeyX86_64.post s₀ s' := by
   have hrsi : s₀.gpr .rsi = BitVec.ofNat 64 (len s₀) := by simp [len]
   refine WP.seq (WP.mono (cmpRsi_ok s₀ 24 _ hrsi) fun s₁ ⟨hz₁, hf₁⟩ => ?_)
   refine WP.ite (decide (len s₀ = 24)) (by
@@ -698,11 +698,11 @@ def satState : State where
   wr := [⟨0x2000, 240⟩, ⟨0x3000, 512⟩]
 
 theorem expandKey_correct (s : State) (hs : expandKeyX86_64.pre s) :
-    ∃ t s', Exec isa expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
-  obtain ⟨t, s', he, h⟩ := correct (pre_of s hs)
+    ∃ t s', Exec isa VG.Impl.Aes.X86_64.AesNi.expandKey s t s' ∧ abiPreserved s s' ∧ expandKeyX86_64.post s s' := by
+  obtain ⟨t, s', he, h⟩ := VG.Proof.Aes.X86_64.AesNi.Key.correct (VG.Proof.Aes.X86_64.AesNi.Key.pre_of s hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
 
-theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub expandKey := by
+theorem expandKey_ct : ConstantTime isa expandKeyX86_64.pre expandKeyX86_64.pub VG.Impl.Aes.X86_64.AesNi.expandKey := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_
     (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩

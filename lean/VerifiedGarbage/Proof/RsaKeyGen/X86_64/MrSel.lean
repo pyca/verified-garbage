@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # A candidate on x86-64: Miller–Rabin's selection and comparisons

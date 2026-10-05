@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.Arm.Sha256
-import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha224
+import VerifiedGarbage.Proof.Pbkdf2.Stream.Arm.Sha256
 
 /-!
 # HMAC-SHA-224 and PBKDF2-HMAC-SHA-224 over the compression function on ARMv7

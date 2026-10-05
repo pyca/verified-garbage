@@ -33,8 +33,8 @@ structure KInv (s₀ : State) (base : Addr) (P : Point) (S : Point) (j : Nat) (s
   bound : j ≤ 57
   ctx : WCtx s₀ base P s
   counter : s.gpr .x19 = BitVec.ofNat 64 j
-  q : pt (EV s.mem base) 3 4 5 = winQ P (fun i => s₀.mem (off base (KB + i))) (57 - j)
-  sb : pt (EV s.mem base) 0 1 2 = S
+  q : VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5 = winQ P (fun i => s₀.mem (off base (KB + i))) (57 - j)
+  sb : VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2 = S
 
 private theorem dec_fact : ∀ j < 58, 0 < j →
     BitVec.ofNat 64 j - BitVec.ofNat 64 1 = BitVec.ofNat 64 (j - 1) := by decide +kernel

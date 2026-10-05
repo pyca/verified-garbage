@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-import VerifiedGarbage.Proof.ChaCha20.Arm.Block
-import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.ChaCha20.Arm.Xor
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Impl.ChaCha20.Arm.Stream
 
@@ -333,7 +333,7 @@ theorem copy_step {s₀ : State} {t sr dr : Reg} {S D : BitVec 32} {so dof n : N
 
 theorem copy_ok {s₀ : State} {t sr dr : Reg} {S D : BitVec 32} {so dof n : Nat}
     (hp : CPre s₀ t sr dr S D so dof n) : WP isa (.block (copyWords t sr dr so dof n)) s₀ (CInv s₀ t S D so dof n n) :=
-  wp_range_flatMap (M := isa) (CInv s₀ t S D so dof n) (fun k s hk h => copy_step hp hk h) n (Nat.le_refl _) s₀
+  wp_range_flatMap (M := isa) (CInv s₀ t S D so dof n) (fun k s hk h => VG.Proof.ChaCha20.Arm.Stream.copy_step hp hk h) n (Nat.le_refl _) s₀
     ⟨fun _ _ => rfl, rfl, rfl, rfl, fun i hi => absurd hi (by omega), Frame.refl _ _⟩
 
 /-! ## `init` -/

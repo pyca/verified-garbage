@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.Gcm.Ctr
+import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!

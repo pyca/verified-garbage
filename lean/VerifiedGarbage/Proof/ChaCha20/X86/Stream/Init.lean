@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.ChaCha20.StreamBytes
-import VerifiedGarbage.Proof.ChaCha20.X86.Block
+import VerifiedGarbage.Proof.ChaCha20.X86.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86.Stream
 import VerifiedGarbage.Proof.Framework.X86.SseTaint
 
@@ -296,16 +296,16 @@ theorem arg_in (s : State) {n : Nat} (hfit : (s.gpr .esp).toNat + 4 + 4 * n ≤ 
 section
 variable (s₀ : State)
 abbrev ST : BitVec 32 := arg s₀ 0
-abbrev st : Addr := (ST s₀).setWidth 64
+abbrev st : Addr := (VG.Proof.ChaCha20.X86.Stream.ST s₀).setWidth 64
 end
 
 structure NPre (s₀ : State) : Prop where
   rd : s₀.rd = [⟨(arg s₀ 1).setWidth 64, 16⟩, ⟨argAddr s₀ 0, 8⟩]
-  wr : s₀.wr = [⟨st s₀, 768⟩]
-  st_n : (⟨st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 1).setWidth 64, 16⟩
-  a_st : (⟨argAddr s₀ 0, 8⟩ : Region).Disjoint ⟨st s₀, 768⟩
-  ret_st : (⟨(s₀.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨st s₀, 768⟩
-  st_fit : (ST s₀).toNat + 768 ≤ 2 ^ 32
+  wr : s₀.wr = [⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩]
+  st_n : (⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 1).setWidth 64, 16⟩
+  a_st : (⟨argAddr s₀ 0, 8⟩ : Region).Disjoint ⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩
+  ret_st : (⟨(s₀.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩
+  st_fit : (VG.Proof.ChaCha20.X86.Stream.ST s₀).toNat + 768 ≤ 2 ^ 32
   n_fit : (arg s₀ 1).toNat + 16 ≤ 2 ^ 32
   sp_hi : (s₀.gpr .esp).toNat + 12 ≤ 2 ^ 32
 
@@ -322,7 +322,7 @@ abbrev setNonceMem (m : Mem) (st np : Addr) : Mem :=
 set_option simprocs false in
 theorem setNonceArgs_ok {s : State} (hp : NPre s) :
     WP isa (.block [.mov .eax (.mem (at_ .esp 4)), .mov .edx (.mem (at_ .esp 8))]) s fun s' =>
-      s'.gpr .eax = ST s ∧ s'.gpr .edx = arg s 1 ∧ (∀ r, r ≠ .eax → r ≠ .edx → s'.gpr r = s.gpr r) ∧
+      s'.gpr .eax = VG.Proof.ChaCha20.X86.Stream.ST s ∧ s'.gpr .edx = arg s 1 ∧ (∀ r, r ≠ .eax → r ≠ .edx → s'.gpr r = s.gpr r) ∧
       s'.xmm = s.xmm ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have i₀ : InRegions (s.rd ++ s.wr) ((s.gpr .esp + BitVec.ofNat 32 4).setWidth 64) 4 :=
     ⟨_, by rw [hp.rd]; simp, arg_in s (n := 2) (by have := hp.sp_hi; omega) (i := 0) (by decide)⟩
@@ -340,7 +340,7 @@ theorem setNonce_eq : setNonce = .block ((([.mov .eax (.mem (at_ .esp 4)), .mov 
     nonceLoads) ++ nonceStores) := rfl
 
 theorem setNonce_exec {s : State} (hp : NPre s) :
-    WP isa setNonce s fun s' => s'.mem = setNonceMem s.mem (st s) ((arg s 1).setWidth 64) ∧
+    WP isa setNonce s fun s' => s'.mem = setNonceMem s.mem (VG.Proof.ChaCha20.X86.Stream.st s) ((arg s 1).setWidth 64) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) := by
   have hn : ∀ n, n ≤ 16 → InRegions (s.rd ++ s.wr) ((arg s 1).setWidth 64) n := fun n hn =>
     ⟨⟨(arg s 1).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega⟩
@@ -348,7 +348,7 @@ theorem setNonce_exec {s : State} (hp : NPre s) :
   refine WP.mono (setNonceArgs_ok hp) fun s₁ ⟨a₁, d₁, g₁, x₁, m₁, r₁, w₁⟩ => ?_
   refine WP.mono (nonceLoads_ok (np := (arg s 1).setWidth 64) (by rw [d₁]; simp)
     (by rw [r₁, w₁]; exact hn 16 (by decide)) (by rw [r₁, w₁]; exact hn 4 (by decide))) fun s₂ h₂ => ?_
-  have hS : SPre s₂ (ST s) := ⟨by rw [h₂.gpr _ (by decide) (by decide), a₁], hp.st_fit, fun d n hd => by
+  have hS : SPre s₂ (VG.Proof.ChaCha20.X86.Stream.ST s) := ⟨by rw [h₂.gpr _ (by decide) (by decide), a₁], hp.st_fit, fun d n hd => by
     rw [h₂.wr, w₁, hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega)⟩⟩
   refine WP.mono (nonceStores_ok hS) fun s₃ ⟨m₃, g₃, _, _, _⟩ => ⟨?_, fun r a c d => ?_⟩
   · rw [m₃, h₂.mem, h₂.xmm0, h₂.ecx, h₂.edx, m₁]
@@ -431,7 +431,7 @@ def setNonceSat : State where
   zf := none
   sf := none
   of := none
-  mem := satMem
+  mem := VG.Proof.ChaCha20.X86.Stream.satMem
   rd := [⟨0x2000, 16⟩, ⟨0x4004, 8⟩]
   wr := [⟨0x1000, 768⟩]
 
@@ -448,12 +448,12 @@ theorem setNonce_verified : Verified X86.target setNonce (Spec.ChaCha20.setNonce
 
 structure IPre (s₀ : State) : Prop where
   rd : s₀.rd = [⟨(arg s₀ 1).setWidth 64, 32⟩, ⟨(arg s₀ 2).setWidth 64, 16⟩, ⟨argAddr s₀ 0, 12⟩]
-  wr : s₀.wr = [⟨st s₀, 768⟩]
-  st_k : (⟨st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 1).setWidth 64, 32⟩
-  st_n : (⟨st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 2).setWidth 64, 16⟩
-  a_st : (⟨argAddr s₀ 0, 12⟩ : Region).Disjoint ⟨st s₀, 768⟩
-  ret_st : (⟨(s₀.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨st s₀, 768⟩
-  st_fit : (ST s₀).toNat + 768 ≤ 2 ^ 32
+  wr : s₀.wr = [⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩]
+  st_k : (⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 1).setWidth 64, 32⟩
+  st_n : (⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩ : Region).Disjoint ⟨(arg s₀ 2).setWidth 64, 16⟩
+  a_st : (⟨argAddr s₀ 0, 12⟩ : Region).Disjoint ⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩
+  ret_st : (⟨(s₀.gpr .esp).setWidth 64, 4⟩ : Region).Disjoint ⟨VG.Proof.ChaCha20.X86.Stream.st s₀, 768⟩
+  st_fit : (VG.Proof.ChaCha20.X86.Stream.ST s₀).toNat + 768 ≤ 2 ^ 32
   k_fit : (arg s₀ 1).toNat + 32 ≤ 2 ^ 32
   n_fit : (arg s₀ 2).toNat + 16 ≤ 2 ^ 32
   sp_hi : (s₀.gpr .esp).toNat + 16 ≤ 2 ^ 32
@@ -473,7 +473,7 @@ theorem init_eq : init = .block (((initLoads ++ nonceLoads) ++ keyStores) ++ non
 set_option simprocs false in
 theorem initLoads_ok {s : State} (hp : IPre s) :
     WP isa (.block initLoads) s fun s' =>
-      s'.gpr .eax = ST s ∧ s'.gpr .edx = arg s 2 ∧
+      s'.gpr .eax = VG.Proof.ChaCha20.X86.Stream.ST s ∧ s'.gpr .edx = arg s 2 ∧
       s'.xmm .xmm1 = s.mem.readW ((arg s 1).setWidth 64) 128 ∧
       s'.xmm .xmm2 = s.mem.readW ((arg s 1).setWidth 64 + BitVec.ofNat 64 16) 128 ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) ∧
@@ -546,20 +546,20 @@ abbrev initMem (m : Mem) (st kp np : Addr) : Mem :=
     (BitVec.ofNat 32 (V (m.readW np 32))) (BitVec.ofNat 32 (V (m.readW np 32) / 2 ^ 32))
 
 theorem init_exec {s : State} (hp : IPre s) :
-    WP isa init s fun s' => s'.mem = initMem s.mem (st s) ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) ∧
+    WP isa init s fun s' => s'.mem = initMem s.mem (VG.Proof.ChaCha20.X86.Stream.st s) ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) ∧
       (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) := by
   have hn : ∀ n, n ≤ 16 → InRegions (s.rd ++ s.wr) ((arg s 2).setWidth 64) n := fun n hn =>
     ⟨⟨(arg s 2).setWidth 64, 16⟩, by rw [hp.rd]; simp, by simp [Region.Contains]; omega⟩
-  have hw : ∀ d n, d + n ≤ 768 → InRegions s.wr ((ST s).setWidth 64 + BitVec.ofNat 64 d) n := fun d n hd => by
+  have hw : ∀ d n, d + n ≤ 768 → InRegions s.wr ((VG.Proof.ChaCha20.X86.Stream.ST s).setWidth 64 + BitVec.ofNat 64 d) n := fun d n hd => by
     rw [hp.wr]; exact ⟨_, List.mem_singleton_self _, contains_off hd (by omega)⟩
   rw [init_eq, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (initLoads_ok hp) fun s₁ ⟨a₁, d₁, x₁, y₁, g₁, m₁, r₁, w₁⟩ => ?_
   refine WP.mono (nonceLoads_ok (np := (arg s 2).setWidth 64) (by rw [d₁]; simp)
     (by rw [r₁, w₁]; exact hn 16 (by decide)) (by rw [r₁, w₁]; exact hn 4 (by decide))) fun s₂ h₂ => ?_
-  have hS : SPre s₂ (ST s) := ⟨by rw [h₂.gpr _ (by decide) (by decide), a₁], hp.st_fit, fun d n hd => by
+  have hS : SPre s₂ (VG.Proof.ChaCha20.X86.Stream.ST s) := ⟨by rw [h₂.gpr _ (by decide) (by decide), a₁], hp.st_fit, fun d n hd => by
     rw [h₂.wr, w₁]; exact hw d n hd⟩
   refine WP.mono (keyStores_ok hS) fun s₃ ⟨m₃, g₃, x₃, r₃, w₃⟩ => ?_
-  have hS' : SPre s₃ (ST s) := ⟨by rw [g₃]; exact hS.eax, hp.st_fit, fun d n hd => by rw [w₃]; exact hS.w d n hd⟩
+  have hS' : SPre s₃ (VG.Proof.ChaCha20.X86.Stream.ST s) := ⟨by rw [g₃]; exact hS.eax, hp.st_fit, fun d n hd => by rw [w₃]; exact hS.w d n hd⟩
   refine WP.mono (nonceStores_ok hS') fun s₄ ⟨m₄, g₄, _, _, _⟩ => ⟨?_, fun r a c d => ?_⟩
   · rw [m₄, m₃, x₃, g₃, h₂.mem, h₂.xmm0, h₂.ecx, h₂.edx, h₂.xmm _ (by decide), h₂.xmm _ (by decide), x₁, y₁, m₁]
   · rw [g₄ r c, g₃, h₂.gpr r c d, g₁ r a c d]
@@ -573,8 +573,8 @@ theorem init_ok (s : State) (hs : Proof.ChaCha20.initX86.pre s) :
   · rw [hm]
     exact ((keyMem_frame _ _ _ _).trans (nonceMem_frame _ _ _ _ _)).readW (Region.contains_self _ _)
       (by simpa using hp.ret_st) (by decide)
-  · have hN := nonceMem_post (keyMem s.mem (st s) (s.mem.readW ((arg s 1).setWidth 64) 128)
-      (s.mem.readW ((arg s 1).setWidth 64 + BitVec.ofNat 64 16) 128)) (st s)
+  · have hN := nonceMem_post (keyMem s.mem (VG.Proof.ChaCha20.X86.Stream.st s) (s.mem.readW ((arg s 1).setWidth 64) 128)
+      (s.mem.readW ((arg s 1).setWidth 64 + BitVec.ofNat 64 16) 128)) (VG.Proof.ChaCha20.X86.Stream.st s)
       (nonce_bytes s.mem ((arg s 2).setWidth 64))
     rw [wordLE_bytesAt _ _ (by decide), keyMem_key] at hN
     simp only [Proof.ChaCha20.initX86]; rw [hm]; exact hN
@@ -625,12 +625,12 @@ def initSat : State where
   zf := none
   sf := none
   of := none
-  mem := satMem
+  mem := VG.Proof.ChaCha20.X86.Stream.satMem
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 16⟩, ⟨0x4004, 12⟩]
   wr := [⟨0x1000, 768⟩]
 
 theorem init_verified : Verified X86.target init (Spec.ChaCha20.initContract X86.abi) :=
-  Verified.of_correct init_ok init_ct (by
+  Verified.of_correct VG.Proof.ChaCha20.X86.Stream.init_ok init_ct (by
     have a0 : arg initSat 0 = 0x1000 := by decide
     have a1 : arg initSat 1 = 0x2000 := by decide
     have a2 : arg initSat 2 = 0x3000 := by decide

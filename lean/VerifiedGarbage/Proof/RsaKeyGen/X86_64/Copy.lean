@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
-import VerifiedGarbage.Proof.Bignum.X86_64.Csub
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 /-!
 # A candidate on x86-64: copies and differences of arrays

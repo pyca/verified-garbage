@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.Poly
-import VerifiedGarbage.Proof.GcmSiv.Spec
-import VerifiedGarbage.Proof.GcmSiv.Words
+import VerifiedGarbage.Proof.GcmSiv.Words32
+import VerifiedGarbage.Proof.GcmSiv.Words32
 
 /-!
 # AES-GCM-SIV: POLYVAL is GHASH

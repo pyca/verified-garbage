@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Md5.X86_64.Compress
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
 import VerifiedGarbage.Spec.Md5.Contract
-import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Md5.X86_64.Compress
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 

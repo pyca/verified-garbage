@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Md5.Md
 import VerifiedGarbage.Proof.Framework.Contract

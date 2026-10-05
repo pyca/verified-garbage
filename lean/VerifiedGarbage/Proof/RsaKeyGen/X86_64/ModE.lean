@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdStep
-import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 /-!
 # A candidate on x86-64: `(c − 1) mod e`

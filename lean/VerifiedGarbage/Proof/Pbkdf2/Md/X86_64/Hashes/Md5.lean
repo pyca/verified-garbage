@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
-import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Md5.X86_64.Compress
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Spec.Md5.Contract
 import VerifiedGarbage.Proof.Framework.TaintBatch

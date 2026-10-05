@@ -1,5 +1,245 @@
-import VerifiedGarbage.Proof.Aes.Bitsliced
+import VerifiedGarbage.Spec.Aes
+import VerifiedGarbage.Proof.Framework.Bitslice.Table
+import VerifiedGarbage.Proof.Framework.Bitslice.Atoms
 import VerifiedGarbage.Proof.Aes.InvRounds
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Aes.Bitsliced`. -/
+section
+
+/-!
+# Bitsliced AES: the layout and the round transformations
+
+Four AES states in eight 64-bit words, as in BearSSL's `aes_ct64` (Thomas
+Pornin, MIT licence): bit `j` of byte `i = r + 4c` of block `b` is bit
+`pos b i = 16r + 4c + b` of word `j`. `BsRel Q S` says the words `Q`
+hold the states `S`. The lemmas here turn what each layer of the code does
+to the bits (as its proof states it) into the transformation of FIPS 197
+it computes on the states. Nothing here depends on the target.
+-/
+
+namespace VG.Proof.Aes
+
+open VG VG.Bitslice VG.Spec.Aes
+
+/-- The byte at bit position `p` of eight words: its bit `k` is bit `p` of word `k`. -/
+def bsByte (Q : Nat → BitVec 64) (p : Nat) : Byte := ofBits 8 fun k => (Q k).getLsbD p
+
+theorem getLsbD_bsByte (Q : Nat → BitVec 64) (p : Nat) {k : Nat} (hk : k < 8) :
+    (VG.Proof.Aes.bsByte Q p).getLsbD k = (Q k).getLsbD p := by
+  rw [VG.Proof.Aes.bsByte, getLsbD_ofBits]; simp [hk]
+
+/-- Byte `r + 4c` of block `b` is at position `16r + 4c + b`. -/
+def pos (b i : Nat) : Nat := 16 * (i % 4) + 4 * (i / 4) + b
+
+/-- The byte at position `p`. -/
+def idx (p : Nat) : Nat := p / 16 + 4 * (p / 4 % 4)
+
+theorem pos_lt {b i : Nat} (hb : b < 4) (hi : i < 16) : VG.Proof.Aes.pos b i < 64 := by
+  simp only [VG.Proof.Aes.pos]; omega
+
+/-- The words `Q` hold the four states `S`. -/
+def BsRel (Q : Nat → BitVec 64) (S : Nat → State) : Prop :=
+  ∀ b < 4, ∀ i < 16, VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b i) = (S b).getD i 0
+
+/-- The words `K` hold the round key `rk` in all four blocks. -/
+def KeyRel (K : Nat → BitVec 64) (rk : List Byte) : Prop :=
+  ∀ b < 4, ∀ i < 16, VG.Proof.Aes.bsByte K (VG.Proof.Aes.pos b i) = rk.getD i 0
+
+/-- The words `Q` hold the four states byte by byte, little-endian:
+bytes 0–7 of block `b` in word `b` and bytes 8–15 in word `b + 4`. -/
+def InRel (Q : Nat → BitVec 64) (S : Nat → State) : Prop :=
+  ∀ b < 4, ∀ i < 16, ∀ j < 8, (Q (b + 4 * (i / 8))).getLsbD (8 * (i % 8) + j) = ((S b).getD i 0).getLsbD j
+
+theorem getD_eq {α : Type} {n : Nat} (xs : Vector α n) {i : Nat} (h : i < n) (d : α) :
+    xs.getD i d = xs[i] := by
+  simp [Vector.getD, Array.getD, h]
+
+theorem byte_ext {x y : Byte} (h : ∀ j < 8, x.getLsbD j = y.getLsbD j) : x = y :=
+  BitVec.eq_of_getLsbD_eq fun j hj => h j hj
+
+/-! ## The layers -/
+
+theorem bs_subBytes {Q Q' : Nat → BitVec 64} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (sbox (VG.Proof.Aes.bsByte Q p)).getLsbD j) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => subBytes (S b) := by
+  intro b hb i hi
+  have : VG.Proof.Aes.bsByte Q' (VG.Proof.Aes.pos b i) = sbox (VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b i)) :=
+    VG.Proof.Aes.byte_ext fun j hj => by rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi)]
+  rw [this, hr b hb i hi, VG.Proof.Aes.getD_eq _ hi, VG.Proof.Aes.getD_eq _ hi]
+  simp only [subBytes, Vector.getElem_map]
+
+/-- ShiftRows: position `16r + 4c + b` from `16r + 4((c + r) mod 4) + b`. -/
+def srSrc (p : Nat) : Nat := 16 * (p / 16) + 4 * ((p / 4 % 4 + p / 16) % 4) + p % 4
+
+theorem srSrc_pos : ∀ b < 4, ∀ i < 16, VG.Proof.Aes.srSrc (VG.Proof.Aes.pos b i) = VG.Proof.Aes.pos b (i % 4 + 4 * ((i / 4 + i % 4) % 4)) := by
+  decide
+
+theorem bs_shiftRows {Q Q' : Nat → BitVec 64} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (Q j).getLsbD (VG.Proof.Aes.srSrc p)) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => shiftRows (S b) := by
+  intro b hb i hi
+  have : VG.Proof.Aes.bsByte Q' (VG.Proof.Aes.pos b i) = VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b (i % 4 + 4 * ((i / 4 + i % 4) % 4))) :=
+    VG.Proof.Aes.byte_ext fun j hj => by
+      rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi), VG.Proof.Aes.srSrc_pos b hb i hi]
+  rw [this, hr b hb _ (by omega), VG.Proof.Aes.getD_eq _ hi]
+  simp only [shiftRows, Vector.getElem_ofFn]
+
+theorem bs_addRoundKey {Q Q' K : Nat → BitVec 64} {S : Nat → State} {rk : List Byte}
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = ((Q j).getLsbD p ^^ (K j).getLsbD p))
+    (hr : VG.Proof.Aes.BsRel Q S) (hk : VG.Proof.Aes.KeyRel K rk) : VG.Proof.Aes.BsRel Q' fun b => addRoundKey (S b) rk := by
+  intro b hb i hi
+  have : VG.Proof.Aes.bsByte Q' (VG.Proof.Aes.pos b i) = VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b i) ^^^ VG.Proof.Aes.bsByte K (VG.Proof.Aes.pos b i) :=
+    VG.Proof.Aes.byte_ext fun j hj => by
+      rw [BitVec.getLsbD_xor, VG.Proof.Aes.getLsbD_bsByte _ _ hj, VG.Proof.Aes.getLsbD_bsByte _ _ hj, VG.Proof.Aes.getLsbD_bsByte _ _ hj,
+        h j hj _ (VG.Proof.Aes.pos_lt hb hi)]
+  rw [this, hr b hb i hi, hk b hb i hi, VG.Proof.Aes.getD_eq _ hi, VG.Proof.Aes.getD_eq _ hi]
+  simp only [addRoundKey, Vector.getElem_ofFn, VG.Proof.Aes.getD_eq _ hi]
+
+theorem idx_pos : ∀ b < 4, ∀ i < 16, VG.Proof.Aes.pos b i % 4 = b ∧ VG.Proof.Aes.idx (VG.Proof.Aes.pos b i) = i := by decide
+
+theorem bs_of_in {Q Q' : Nat → BitVec 64} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p =
+      (Q (p % 4 + 4 * (VG.Proof.Aes.idx p / 8))).getLsbD (8 * (VG.Proof.Aes.idx p % 8) + j)) (hr : VG.Proof.Aes.InRel Q S) :
+    VG.Proof.Aes.BsRel Q' S := by
+  intro b hb i hi
+  refine VG.Proof.Aes.byte_ext fun j hj => ?_
+  obtain ⟨h1, h2⟩ := VG.Proof.Aes.idx_pos b hb i hi
+  rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi), h1, h2, hr b hb i hi j hj]
+
+theorem in_of_bs {Q Q' : Nat → BitVec 64} {S : Nat → State}
+    (h : ∀ k < 8, ∀ t < 64, (Q' k).getLsbD t = (Q (t % 8)).getLsbD (VG.Proof.Aes.pos (k % 4) (t / 8 + 8 * (k / 4))))
+    (hr : VG.Proof.Aes.BsRel Q S) : VG.Proof.Aes.InRel Q' S := by
+  intro b hb i hi j hj
+  rw [h _ (by omega) _ (by omega), ← VG.Proof.Aes.getLsbD_bsByte _ _ (by omega)]
+  rw [show (8 * (i % 8) + j) % 8 = j by omega, show (b + 4 * (i / 8)) % 4 = b by omega,
+    show (8 * (i % 8) + j) / 8 + 8 * ((b + 4 * (i / 8)) / 4) = i by omega, hr b hb i hi]
+
+/-! ## MixColumns -/
+
+theorem mul2 (a : Byte) : mul 0x02 a = xtimes a := by
+  simp [mul, List.range, List.range.loop, Nat.repeat]
+
+theorem mul3 (a : Byte) : mul 0x03 a = xtimes a ^^^ a := by
+  simp [mul, List.range, List.range.loop, Nat.repeat, BitVec.xor_comm]
+
+theorem xtimes_bit (a : Byte) {j : Nat} (hj : j < 8) : (xtimes a).getLsbD j =
+    ((if j = 0 then false else a.getLsbD (j - 1)) ^^
+      (decide (j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4) && a.getLsbD 7)) := by
+  simp only [xtimes, BitVec.getLsbD_xor, BitVec.getLsbD_shiftLeft, BitVec.msb_eq_getLsbD_last]
+  cases h : a.getLsbD 7 <;> (rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j <;> first | omega | simp_all)
+
+/-- The XOR of the bits `(w, t)` (bit `t` of word `w`). -/
+def termsXor (Q : Nat → BitVec 64) (l : List (Nat × Nat)) : Bool :=
+  l.foldr (fun wt b => (Q wt.1).getLsbD wt.2 ^^ b) false
+
+/-- Position `p` moved `k` rows down (within its column). -/
+def down (p k : Nat) : Nat := (p + 16 * k) % 64
+
+/-- Bit `j` of MixColumns at position `p`, as BearSSL computes it: with
+`u = a₀ ⊕ a₁` (the byte and the next one in its column), `{02} • u`
+moves bit `j - 1` of `u` to `j` and adds bit 7 at the bits of `{1b}`;
+then add `a₁ ⊕ a₂ ⊕ a₃`. -/
+def mcWords (j : Nat) : List (Nat × Nat) :=
+  (if j = 0 then [] else [(j - 1, 0), (j - 1, 1)]) ++
+  (if j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4 then [(7, 0), (7, 1)] else []) ++ [(j, 1), (j, 2), (j, 3)]
+
+/-- The bits `(w, k)` of `mcWords`: bit `w` of the byte `k` rows down. -/
+def mcTerms (j p : Nat) : List (Nat × Nat) := (VG.Proof.Aes.mcWords j).map fun wk => (wk.1, VG.Proof.Aes.down p wk.2)
+
+theorem down_pos : ∀ b < 4, ∀ i < 16, ∀ k < 4,
+    VG.Proof.Aes.down (VG.Proof.Aes.pos b i) k = VG.Proof.Aes.pos b ((i % 4 + k) % 4 + 4 * (i / 4)) := by
+  decide
+
+theorem termsXor_mc (Q : Nat → BitVec 64) (j p : Nat) : VG.Proof.Aes.termsXor Q (VG.Proof.Aes.mcTerms j p) =
+    ((if j = 0 then false else ((Q (j - 1)).getLsbD (VG.Proof.Aes.down p 0) ^^ (Q (j - 1)).getLsbD (VG.Proof.Aes.down p 1))) ^^
+     (if j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4 then (Q 7).getLsbD (VG.Proof.Aes.down p 0) ^^ (Q 7).getLsbD (VG.Proof.Aes.down p 1)
+      else false) ^^
+     ((Q j).getLsbD (VG.Proof.Aes.down p 1) ^^ (Q j).getLsbD (VG.Proof.Aes.down p 2) ^^ (Q j).getLsbD (VG.Proof.Aes.down p 3))) := by
+  simp only [VG.Proof.Aes.mcTerms, VG.Proof.Aes.mcWords]
+  by_cases h₁ : j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4
+  · rw [ite_eq_left h₁, ite_eq_left h₁]
+    by_cases h₀ : j = 0
+    · rw [ite_eq_left h₀, ite_eq_left h₀]; simp [VG.Proof.Aes.termsXor]
+    · rw [ite_eq_right h₀, ite_eq_right h₀]; simp [VG.Proof.Aes.termsXor]
+  · rw [ite_eq_right h₁, ite_eq_right h₁]
+    by_cases h₀ : j = 0
+    · rw [ite_eq_left h₀, ite_eq_left h₀]; simp [VG.Proof.Aes.termsXor]
+    · rw [ite_eq_right h₀, ite_eq_right h₀]; simp [VG.Proof.Aes.termsXor]
+
+theorem bs_mixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = VG.Proof.Aes.termsXor Q (VG.Proof.Aes.mcTerms j p)) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => mixColumns (S b) := by
+  intro b hb i hi
+  refine VG.Proof.Aes.byte_ext fun j hj => ?_
+  have hbit : ∀ k < 4, ∀ w < 8, (Q w).getLsbD (VG.Proof.Aes.down (VG.Proof.Aes.pos b i) k) =
+      ((S b).getD ((i % 4 + k) % 4 + 4 * (i / 4)) 0).getLsbD w := fun k hk w hw => by
+    rw [VG.Proof.Aes.down_pos b hb i hi k hk, ← hr b hb _ (by omega), VG.Proof.Aes.getLsbD_bsByte _ _ hw]
+  rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi), VG.Proof.Aes.getD_eq _ hi, VG.Proof.Aes.termsXor_mc]
+  simp only [mixColumns, Vector.getElem_ofFn, VG.Proof.Aes.mul2, VG.Proof.Aes.mul3, BitVec.getLsbD_xor, VG.Proof.Aes.xtimes_bit _ hj]
+  simp only [hbit 1 (by decide) _ hj, hbit 2 (by decide) _ hj,
+    hbit 3 (by decide) _ hj, hbit 0 (by decide) 7 (by decide), hbit 1 (by decide) 7 (by decide),
+    hbit 0 (by decide) (j - 1) (by omega), hbit 1 (by decide) (j - 1) (by omega)]
+  generalize ((S b).getD ((i % 4 + 0) % 4 + 4 * (i / 4)) 0) = a0
+  generalize ((S b).getD ((i % 4 + 1) % 4 + 4 * (i / 4)) 0) = a1
+  generalize ((S b).getD ((i % 4 + 2) % 4 + 4 * (i / 4)) 0) = a2
+  generalize ((S b).getD ((i % 4 + 3) % 4 + 4 * (i / 4)) 0) = a3
+  by_cases h1 : (j = 0 ∨ j = 1 ∨ j = 3 ∨ j = 4) <;>
+    simp only [h1, ite_true, ite_false, decide_true, decide_false, Bool.true_and,
+      Bool.false_and, Bool.xor_false] <;>
+    by_cases h0 : j = 0 <;>
+    simp only [h0, ite_true, ite_false, Bool.false_xor, Bool.xor_assoc,
+      Bool.xor_comm, Bool.xor_left_comm]
+
+end VG.Proof.Aes
+
+section
+
+/-!
+# The linear layers of bitsliced AES, as atoms
+
+What each linear layer of the bitsliced AES computes, bit by bit, on input
+words given as atoms (`Framework/Bitslice/Atoms.lean`; bit `t` of input
+word `i` is atom `64 i + t`): output word `j`'s bit `p` is the XOR of the
+atoms `g j p`. The targets' proofs check their code against these by
+evaluation. Position `p = 16r + 4c + b` of a word of the bitsliced state is
+byte `r + 4c` of block `b`.
+-/
+
+namespace VG.Proof.Aes
+
+open VG.Bitslice
+
+/-- `toBs`: bit `j` of byte `i` of block `b`, from bit `8 (i mod 8) + j`
+of word `b + 4 ⌊i / 8⌋`. -/
+def toBsG (j p : Nat) : List Nat := [64 * (p % 4 + 4 * (VG.Proof.Aes.idx p / 8)) + (8 * (VG.Proof.Aes.idx p % 8) + j)]
+
+/-- `fromBs`: the inverse. -/
+def fromBsG (k t : Nat) : List Nat := [64 * (t % 8) + VG.Proof.Aes.pos (k % 4) (t / 8 + 8 * (k / 4))]
+
+def srG (j p : Nat) : List Nat := [64 * j + VG.Proof.Aes.srSrc p]
+
+/-- MixColumns: the bits `mcTerms`, as atoms. -/
+def mcG (j p : Nat) : List Nat := (VG.Proof.Aes.mcTerms j p).map fun wt => 64 * wt.1 + wt.2
+
+/-- AddRoundKey: the round key is input words `8 … 15`. -/
+def arkG (j p : Nat) : List Nat := [64 * j + p, 64 * (8 + j) + p]
+
+theorem xorBits_map (W : Nat → BitVec 64) (l : List (Nat × Nat)) (hl : ∀ wt ∈ l, wt.2 < 64) :
+    xorBits W (l.map fun wt => 64 * wt.1 + wt.2) = VG.Proof.Aes.termsXor W l := by
+  induction l with
+  | nil => rfl
+  | cons wt l ih =>
+    simp only [List.map_cons, xorBits_cons, VG.Proof.Aes.termsXor, List.foldr_cons] at ih ⊢
+    rw [bitOf_word _ _ _ (hl wt (by simp)), ih fun v hv => hl v (by simp [hv])]
+
+end VG.Proof.Aes
+
+end
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Aes.InvBitsliced`. -/
+section
 
 /-!
 # Bitsliced AES: the inverse round transformations
@@ -16,84 +256,86 @@ namespace VG.Proof.Aes
 open VG VG.Bitslice VG.Spec.Aes
 
 theorem bs_invSubBytes {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (invSbox (bsByte Q p)).getLsbD j) (hr : BsRel Q S) :
-    BsRel Q' fun b => invSubBytes (S b) := by
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (invSbox (VG.Proof.Aes.bsByte Q p)).getLsbD j) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => invSubBytes (S b) := by
   intro b hb i hi
-  have : bsByte Q' (pos b i) = invSbox (bsByte Q (pos b i)) :=
-    byte_ext fun j hj => by rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi)]
-  rw [this, hr b hb i hi, getD_eq _ hi, getD_eq _ hi]
+  have : VG.Proof.Aes.bsByte Q' (VG.Proof.Aes.pos b i) = invSbox (VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b i)) :=
+    VG.Proof.Aes.byte_ext fun j hj => by rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi)]
+  rw [this, hr b hb i hi, VG.Proof.Aes.getD_eq _ hi, VG.Proof.Aes.getD_eq _ hi]
   simp only [invSubBytes, Vector.getElem_map]
 
 /-- InvShiftRows: position `16r + 4c + b` from `16r + 4((c − r) mod 4) + b`. -/
 def invSrSrc (p : Nat) : Nat := 16 * (p / 16) + 4 * ((p / 4 % 4 + 4 - p / 16) % 4) + p % 4
 
 theorem invSrSrc_pos : ∀ b < 4, ∀ i < 16,
-    invSrSrc (pos b i) = pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)) := by
+    VG.Proof.Aes.invSrSrc (VG.Proof.Aes.pos b i) = VG.Proof.Aes.pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4)) := by
   decide
 
 theorem bs_invShiftRows {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (Q j).getLsbD (invSrSrc p)) (hr : BsRel Q S) :
-    BsRel Q' fun b => invShiftRows (S b) := by
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = (Q j).getLsbD (VG.Proof.Aes.invSrSrc p)) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => invShiftRows (S b) := by
   intro b hb i hi
-  have : bsByte Q' (pos b i) = bsByte Q (pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4))) :=
-    byte_ext fun j hj => by
-      rw [getLsbD_bsByte _ _ hj, getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi),
-        invSrSrc_pos b hb i hi]
-  rw [this, hr b hb _ (by omega), getD_eq _ hi]
+  have : VG.Proof.Aes.bsByte Q' (VG.Proof.Aes.pos b i) = VG.Proof.Aes.bsByte Q (VG.Proof.Aes.pos b (i % 4 + 4 * ((i / 4 + 4 - i % 4) % 4))) :=
+    VG.Proof.Aes.byte_ext fun j hj => by
+      rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi),
+        VG.Proof.Aes.invSrSrc_pos b hb i hi]
+  rw [this, hr b hb _ (by omega), VG.Proof.Aes.getD_eq _ hi]
   simp only [invShiftRows, Vector.getElem_ofFn]
 
 /-! ## InvMixColumns -/
 
 /-- The bits `(w, k)` of `invMcWords`: bit `w` of the byte `k` rows down. -/
-def invMcTerms (j p : Nat) : List (Nat × Nat) := (invMcWords j).map fun wk => (wk.1, down p wk.2)
+def invMcTerms (j p : Nat) : List (Nat × Nat) := (invMcWords j).map fun wk => (wk.1, VG.Proof.Aes.down p wk.2)
 
 theorem termsXor_append (Q : Nat → BitVec 64) (l₁ l₂ : List (Nat × Nat)) :
-    termsXor Q (l₁ ++ l₂) = (termsXor Q l₁ ^^ termsXor Q l₂) := by
+    VG.Proof.Aes.termsXor Q (l₁ ++ l₂) = (VG.Proof.Aes.termsXor Q l₁ ^^ VG.Proof.Aes.termsXor Q l₂) := by
   induction l₁ with
-  | nil => simp [termsXor]
+  | nil => simp [VG.Proof.Aes.termsXor]
   | cons wt l ih =>
-    simp only [termsXor, List.cons_append, List.foldr_cons] at ih ⊢
+    simp only [VG.Proof.Aes.termsXor, List.cons_append, List.foldr_cons] at ih ⊢
     rw [ih, Bool.xor_assoc]
 
 /-- The bits `ts` of the byte at `p`, read from the words when they hold it. -/
 theorem termsXor_row {Q : Nat → BitVec 64} {p : Nat} {a : Byte}
     (ha : ∀ w < 8, (Q w).getLsbD p = a.getLsbD w) {ts : List Nat} (hts : ∀ t ∈ ts, t < 8) :
-    termsXor Q (ts.map fun t => (t, p)) = bitsXor a ts := by
+    VG.Proof.Aes.termsXor Q (ts.map fun t => (t, p)) = bitsXor a ts := by
   induction ts with
   | nil => rfl
   | cons t ts ih =>
-    simp only [List.map_cons, termsXor, List.foldr_cons, bitsXor] at ih ⊢
+    simp only [List.map_cons, VG.Proof.Aes.termsXor, List.foldr_cons, bitsXor] at ih ⊢
     rw [ha t (hts t (by simp)), ih fun u hu => hts u (by simp [hu])]
 
-theorem invMcTerms_eq (j p : Nat) : invMcTerms j p =
-    (mulBits 0x0e j).map (fun t => (t, down p 0)) ++ ((mulBits 0x0b j).map (fun t => (t, down p 1)) ++
-      ((mulBits 0x0d j).map (fun t => (t, down p 2)) ++ (mulBits 0x09 j).map (fun t => (t, down p 3)))) := by
-  simp [invMcTerms, invMcWords, List.map_map, Function.comp_def]
+theorem invMcTerms_eq (j p : Nat) : VG.Proof.Aes.invMcTerms j p =
+    (mulBits 0x0e j).map (fun t => (t, VG.Proof.Aes.down p 0)) ++ ((mulBits 0x0b j).map (fun t => (t, VG.Proof.Aes.down p 1)) ++
+      ((mulBits 0x0d j).map (fun t => (t, VG.Proof.Aes.down p 2)) ++ (mulBits 0x09 j).map (fun t => (t, VG.Proof.Aes.down p 3)))) := by
+  simp [VG.Proof.Aes.invMcTerms, invMcWords, List.map_map, Function.comp_def]
 
 theorem bs_invMixColumns {Q Q' : Nat → BitVec 64} {S : Nat → State}
-    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = termsXor Q (invMcTerms j p)) (hr : BsRel Q S) :
-    BsRel Q' fun b => invMixColumns (S b) := by
+    (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = VG.Proof.Aes.termsXor Q (VG.Proof.Aes.invMcTerms j p)) (hr : VG.Proof.Aes.BsRel Q S) :
+    VG.Proof.Aes.BsRel Q' fun b => invMixColumns (S b) := by
   intro b hb i hi
-  refine byte_ext fun j hj => ?_
-  have hbit : ∀ k < 4, ∀ w < 8, (Q w).getLsbD (down (pos b i) k) =
+  refine VG.Proof.Aes.byte_ext fun j hj => ?_
+  have hbit : ∀ k < 4, ∀ w < 8, (Q w).getLsbD (VG.Proof.Aes.down (VG.Proof.Aes.pos b i) k) =
       ((S b).getD ((i % 4 + k) % 4 + 4 * (i / 4)) 0).getLsbD w := fun k hk w hw => by
-    rw [down_pos b hb i hi k hk, ← hr b hb _ (by omega), getLsbD_bsByte _ _ hw]
+    rw [VG.Proof.Aes.down_pos b hb i hi k hk, ← hr b hb _ (by omega), VG.Proof.Aes.getLsbD_bsByte _ _ hw]
   have hlt := fun c hc => mulBits_lt c hc j hj
-  rw [getLsbD_bsByte _ _ hj, h j hj _ (pos_lt hb hi), getD_eq _ hi, invMcTerms_eq,
-    termsXor_append, termsXor_append, termsXor_append,
-    termsXor_row (hbit 0 (by decide)) (hlt 0x0e (by decide)),
-    termsXor_row (hbit 1 (by decide)) (hlt 0x0b (by decide)),
-    termsXor_row (hbit 2 (by decide)) (hlt 0x0d (by decide)),
-    termsXor_row (hbit 3 (by decide)) (hlt 0x09 (by decide))]
+  rw [VG.Proof.Aes.getLsbD_bsByte _ _ hj, h j hj _ (VG.Proof.Aes.pos_lt hb hi), VG.Proof.Aes.getD_eq _ hi, VG.Proof.Aes.invMcTerms_eq,
+    VG.Proof.Aes.termsXor_append, VG.Proof.Aes.termsXor_append, VG.Proof.Aes.termsXor_append,
+    VG.Proof.Aes.termsXor_row (hbit 0 (by decide)) (hlt 0x0e (by decide)),
+    VG.Proof.Aes.termsXor_row (hbit 1 (by decide)) (hlt 0x0b (by decide)),
+    VG.Proof.Aes.termsXor_row (hbit 2 (by decide)) (hlt 0x0d (by decide)),
+    VG.Proof.Aes.termsXor_row (hbit 3 (by decide)) (hlt 0x09 (by decide))]
   simp only [invMixColumns, Vector.getElem_ofFn, BitVec.getLsbD_xor]
   rw [mul0e_bit _ hj, mul0b_bit _ hj, mul0d_bit _ hj, mul09_bit _ hj]
   simp only [Bool.xor_assoc, Nat.add_zero]
 
 /-! ## As atoms -/
 
-def invSrG (j p : Nat) : List Nat := [64 * j + invSrSrc p]
+def invSrG (j p : Nat) : List Nat := [64 * j + VG.Proof.Aes.invSrSrc p]
 
 /-- InvMixColumns: the bits `invMcTerms`, as atoms. -/
-def invMcG (j p : Nat) : List Nat := (invMcTerms j p).map fun wt => 64 * wt.1 + wt.2
+def invMcG (j p : Nat) : List Nat := (VG.Proof.Aes.invMcTerms j p).map fun wt => 64 * wt.1 + wt.2
 
 end VG.Proof.Aes
+
+end

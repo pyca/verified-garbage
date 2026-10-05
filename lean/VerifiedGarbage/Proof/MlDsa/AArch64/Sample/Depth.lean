@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha3.AArch64.Variant
+import VerifiedGarbage.Proof.Sha3.AArch64.Call
 
 namespace VG.Proof.MlDsa.AArch64.Sample
 

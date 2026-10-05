@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.Rc4.AArch64.Lit
-import VerifiedGarbage.Proof.Rc4.AArch64.Init
+import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
+import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
-import VerifiedGarbage.Proof.Rc4.AArch64.Taint
+import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Rc4.Contract
 

@@ -1,5 +1,9 @@
-import VerifiedGarbage.Proof.RsaKeyGen.Generate
 import VerifiedGarbage.Proof.Rsa.Checked
+
+import VerifiedGarbage.Proof.RsaKeyGen.Generate
+
+/- Proofs formerly in `VerifiedGarbage.Proof.RsaKeyGen.Checked`. -/
+section
 
 /-!
 # RSA key generation: generated keys and the checked private operation
@@ -23,7 +27,7 @@ theorem generate_checkKey {bits e : Nat} {rand : Rand} {k : Key}
     (h : generate bits e rand = some (.ok k)) :
     checkKey (k.octets k.n) (k.octets k.e) (k.octets k.d) (k.octets k.p) (k.octets k.q)
       (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv) = true := by
-  obtain ⟨_, _, _, _, _, _, _, ⟨_, hv, _⟩, _⟩ := generate_ok h
+  obtain ⟨_, _, _, _, _, _, _, ⟨_, hv, _⟩, _⟩ := VG.Proof.RsaKeyGen.generate_ok h
   exact hv
 
 /-- For every key `generate` returns whose primes are prime, the private
@@ -39,7 +43,9 @@ theorem generate_privateChecked {bits e : Nat} {rand : Rand} {k : Key}
             (k.octets k.dP) (k.octets k.dQ) (k.octets k.qInv) =
           .ok (i2osp (os2ip xB ^ os2ip (k.octets k.d) % os2ip (k.octets k.n))
             (k.octets k.n).length)) :=
-  ⟨VG.Proof.Rsa.privateChecked_ne_fault xB (generate_checkKey h) hp hq,
-    fun hx => VG.Proof.Rsa.privateChecked_of_checkKey (generate_checkKey h) hp hq hx⟩
+  ⟨VG.Proof.Rsa.privateChecked_ne_fault xB (VG.Proof.RsaKeyGen.generate_checkKey h) hp hq,
+    fun hx => VG.Proof.Rsa.privateChecked_of_checkKey (VG.Proof.RsaKeyGen.generate_checkKey h) hp hq hx⟩
 
 end VG.Proof.RsaKeyGen
+
+end

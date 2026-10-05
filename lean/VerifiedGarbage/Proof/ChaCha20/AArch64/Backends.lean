@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Variant
+import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 
 namespace VG.Proof.ChaCha20.AArch64
 

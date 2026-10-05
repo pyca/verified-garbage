@@ -1,10 +1,35 @@
-import VerifiedGarbage.Proof.Blake2.X86.LitB
 import VerifiedGarbage.Proof.Blake2.X86.CompressB.Verified
+import VerifiedGarbage.Impl.Blake2.X86.Stream
 import VerifiedGarbage.Proof.Blake2.X86.Stream.Verified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Blake2.Contract
 import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Blake2.X86.LitB`. -/
+section
+
+/-!
+# BLAKE2b on x86 (32-bit): the streaming functions as literals
+
+The code of BLAKE2b's streaming functions as literals (`materialize_code`,
+`Proof/Framework/Lit.lean`). Their calls refer to the compression function's
+literal (`Proof/Blake2/X86/CompressB/Lit.lean`).
+-/
+
+namespace VG.Proof.Blake2.X86.B
+
+materialize_code init := Impl.Blake2.X86.Stream.init Spec.Blake2.b
+materialize_code update := Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
+materialize_code finalize :=
+  Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress
+
+end VG.Proof.Blake2.X86.B
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Blake2.X86.Blake2b`. -/
+section
 
 /-!
 # BLAKE2b on x86 (32-bit): the instance
@@ -28,18 +53,18 @@ theorem callee : CalleeOk Spec.Blake2.b Impl.Blake2.X86.CompressB.compress :=
   CalleeOk.of_verified Proof.Blake2.X86.CompressB.compress_verified (NoSp.of_all (by lit_decide))
     (by lit_decide)
 
-theorem init_ct : ConstantTime isa (initX86 b).pre (initX86 b).pub (Impl.Blake2.X86.Stream.init b) :=
-  VG.Taint.constantTime (A := taint) (τInit 64) (fun _ _ h₁ h₂ hp => init_agree ok h₁ h₂ hp)
+theorem init_ct : ConstantTime isa (VG.Proof.Blake2.initX86 b).pre (VG.Proof.Blake2.initX86 b).pub (Impl.Blake2.X86.Stream.init b) :=
+  VG.Taint.constantTime (A := taint) (τInit 64) (fun _ _ h₁ h₂ hp => init_agree VG.Proof.Blake2.X86.B.ok h₁ h₂ hp)
     (by taint_decide)
 
-theorem update_ct : ConstantTime isa (updateX86 b).pre (updateX86 b).pub
+theorem update_ct : ConstantTime isa (VG.Proof.Blake2.updateX86 b).pre (VG.Proof.Blake2.updateX86 b).pub
     (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) :=
-  VG.Taint.constantTime (A := taint) (τUpdate 64) (fun _ _ h₁ h₂ hp => update_agree ok h₁ h₂ hp)
+  VG.Taint.constantTime (A := taint) (τUpdate 64) (fun _ _ h₁ h₂ hp => update_agree VG.Proof.Blake2.X86.B.ok h₁ h₂ hp)
     (by taint_decide)
 
-theorem finalize_ct : ConstantTime isa (finalizeX86 b).pre (finalizeX86 b).pub
+theorem finalize_ct : ConstantTime isa (VG.Proof.Blake2.finalizeX86 b).pre (VG.Proof.Blake2.finalizeX86 b).pub
     (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress) :=
-  VG.Taint.constantTime (A := taint) (τFinalize 64) (fun _ _ h₁ h₂ hp => finalize_agree ok h₁ h₂ hp)
+  VG.Taint.constantTime (A := taint) (τFinalize 64) (fun _ _ h₁ h₂ hp => finalize_agree VG.Proof.Blake2.X86.B.ok h₁ h₂ hp)
     (by taint_decide)
 
 /-! ## States satisfying the preconditions -/
@@ -58,55 +83,55 @@ def satWith (m : Mem) (rd wr : List Region) : State where
 
 /-- `init(0x1000, 1, 0x2000, 0)`. -/
 def initSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5008 then 1 else if a = 0x500D then 0x20 else 0)
+  VG.Proof.Blake2.X86.B.satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5008 then 1 else if a = 0x500D then 0x20 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 16⟩] [⟨0x1000, 192⟩]
 
 /-- `update(0x1000, 0, 0x2000, 0, 0x3000)`. -/
 def updateSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5019 then 0x30 else 0)
+  VG.Proof.Blake2.X86.B.satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5019 then 0x30 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 24⟩] [⟨0x1000, 192⟩, ⟨0x3000, 576⟩]
 
 /-- `finalize(0x1000, 0, 0x2000, 0x3000)`. -/
 def finalizeSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5015 then 0x30 else 0)
+  VG.Proof.Blake2.X86.B.satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else if a = 0x5015 then 0x30 else 0)
     [⟨0x5004, 20⟩] [⟨0x1000, 192⟩, ⟨0x2000, 64⟩, ⟨0x3000, 576⟩]
 
 /-! ## The shared contracts -/
 
-theorem init_implies : (initX86 Spec.Blake2.b).Implies (Spec.Blake2.initBContract X86.abi) := by
-  sig_implies [Spec.Blake2.initBContract, Spec.Blake2.initBSig, initX86, Proof.Blake2.bufOff,
+theorem init_implies : (VG.Proof.Blake2.initX86 Spec.Blake2.b).Implies (Spec.Blake2.initBContract X86.abi) := by
+  sig_implies [Spec.Blake2.initBContract, Spec.Blake2.initBSig, VG.Proof.Blake2.initX86, Proof.Blake2.bufOff,
     Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [initSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using initSat
+    [initSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using VG.Proof.Blake2.X86.B.initSat
 
-theorem update_implies : (updateX86 Spec.Blake2.b).Implies (Spec.Blake2.updateBScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, updateX86, Proof.Blake2.countX86,
+theorem update_implies : (VG.Proof.Blake2.updateX86 Spec.Blake2.b).Implies (Spec.Blake2.updateBScratchContract X86.abi 32) := by
+  sig_implies [Spec.Blake2.updateBScratchContract, Spec.Blake2.updateBScratchSig, VG.Proof.Blake2.updateX86, Proof.Blake2.countX86,
     Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
-    [updateSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateSat
+    [updateSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using VG.Proof.Blake2.X86.B.updateSat
 
 theorem finalize_implies :
-    (finalizeX86 Spec.Blake2.b).Implies (Spec.Blake2.finalizeBScratchContract X86.abi 32) := by
-  sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig, finalizeX86,
+    (VG.Proof.Blake2.finalizeX86 Spec.Blake2.b).Implies (Spec.Blake2.finalizeBScratchContract X86.abi 32) := by
+  sig_implies [Spec.Blake2.finalizeBScratchContract, Spec.Blake2.finalizeBScratchSig, VG.Proof.Blake2.finalizeX86,
     Proof.Blake2.countX86, Proof.Blake2.bufOff, Spec.Blake2.blockBytes, X86.abi, X86.argSlots,
     X86.argVal, X86.argBytes]
-    [finalizeSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeSat
+    [finalizeSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using VG.Proof.Blake2.X86.B.finalizeSat
 
 /-! ## Results -/
 
 theorem initB_verified :
     Verified X86.target (Impl.Blake2.X86.Stream.init b) (Spec.Blake2.initBContract X86.abi) :=
-  (init_verified ok init_ct init_implies.sat_left).of_implies init_implies
+  (init_verified VG.Proof.Blake2.X86.B.ok VG.Proof.Blake2.X86.B.init_ct init_implies.sat_left).of_implies VG.Proof.Blake2.X86.B.init_implies
 
 theorem updateB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
       (Spec.Blake2.updateBScratchContract X86.abi 32) :=
-  (update_verified ok callee update_ct update_implies.sat_left).of_implies update_implies
+  (update_verified VG.Proof.Blake2.X86.B.ok VG.Proof.Blake2.X86.B.callee VG.Proof.Blake2.X86.B.update_ct update_implies.sat_left).of_implies VG.Proof.Blake2.X86.B.update_implies
 
 theorem finalizeB_verified :
     Verified X86.target
       (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress)
       (Spec.Blake2.finalizeBScratchContract X86.abi 32) :=
-  (finalize_verified ok callee finalize_ct finalize_implies.sat_left).of_implies finalize_implies
+  (finalize_verified VG.Proof.Blake2.X86.B.ok VG.Proof.Blake2.X86.B.callee VG.Proof.Blake2.X86.B.finalize_ct finalize_implies.sat_left).of_implies VG.Proof.Blake2.X86.B.finalize_implies
 
 /-! ## `update` and `finalize` with their working space in a frame of their own
 
@@ -117,32 +142,34 @@ as an argument (`update_scratch`, `finalize_scratch`); `update` and
 
 /-- `update(0x1000, 0, 0x2000, 0)`. -/
 def updateFrameSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+  VG.Proof.Blake2.X86.B.satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
     [⟨0x2000, 0⟩, ⟨0x5004, 20⟩] [⟨0x1000, 192⟩]
 
 /-- `finalize(0x1000, 0, 0x2000)`. -/
 def finalizeFrameSat : State :=
-  satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
+  VG.Proof.Blake2.X86.B.satWith (fun a => if a = 0x5005 then 0x10 else if a = 0x5011 then 0x20 else 0)
     [⟨0x5004, 16⟩] [⟨0x1000, 192⟩, ⟨0x2000, 64⟩]
 
 theorem updateB_framed : Verified X86.target
     (Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress))
     (Spec.Blake2.updateBContract X86.abi (32 + 604)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 604)
-    updateB_verified (by decide) (by lit_decide) (by lit_decide)
+    VG.Proof.Blake2.X86.B.updateB_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.updateBPost_local _)
     (by implies_sat [Spec.Blake2.updateBContract, Spec.Blake2.updateBSig, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes]
-      [updateFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using updateFrameSat)
+      [updateFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using VG.Proof.Blake2.X86.B.updateFrameSat)
 
 theorem finalizeB_framed : Verified X86.target
     (Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 64 "vg_blake2b_compress" Impl.Blake2.X86.CompressB.compress))
     (Spec.Blake2.finalizeBContract X86.abi (32 + 600)) :=
   X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 72) (stack := 32) (bytes := 600)
-    finalizeB_verified (by decide) (by lit_decide) (by lit_decide)
+    VG.Proof.Blake2.X86.B.finalizeB_verified (by decide) (by lit_decide) (by lit_decide)
     (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Blake2.finalizeBPost_local _)
     (by implies_sat [Spec.Blake2.finalizeBContract, Spec.Blake2.finalizeBSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes]
-      [finalizeFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)
+      [finalizeFrameSat, satWith, X86.arg, X86.argAddr, Mem.readW, Mem.read] using VG.Proof.Blake2.X86.B.finalizeFrameSat)
 
 end VG.Proof.Blake2.X86.B
+
+end

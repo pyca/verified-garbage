@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86.Instances
-import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha1
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
+import VerifiedGarbage.Proof.Pbkdf2.Stream.X86.Sha224
+import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
@@ -27,7 +27,7 @@ open VG.Proof.Sha1.X86.Variants (mdHash)
 /-- SHA-1 with the compression function `cmpN`/`cmpC` and the streaming
 functions `v` calling it. -/
 abbrev sha1M (v : Sha1Stream) (cmpN : String) (cmpC : Prog isa) : Hash :=
-  mdHash v.suffix cmpN cmpC v.upd v.fin
+  VG.Proof.Sha1.X86.Variants.mdHash v.suffix cmpN cmpC v.upd v.fin
 
 /-- `MdOk` for SHA-1, for any backend: its streaming functions `v` and its
 verified compression function `cmpC`. -/
@@ -135,7 +135,7 @@ theorem sha1_initImp : (initW Spec.Hmac.sha1S 56).Implies (Spec.Hmac.sha1I.initS
     Spec.Hmac.initScratchSig, Spec.Hmac.initPre, Spec.Hmac.initPost,
     Spec.Hmac.sha1I, Spec.Hmac.sha1S, Spec.Hmac.sha1, initW, initG, X86.abi, X86.argSlots, X86.argVal,
     X86.argBytes]
-    [a0, a1, a2, a3, a4, e, esp, initSat] using initSat 84 56
+    [a0, a1, a2, a3, a4, e, esp, initSat] using VG.Proof.Pbkdf2.Md.X86.Instances.initSat 84 56
 
 /-- PBKDF2's iteration for SHA-1 with any backend. -/
 theorem sha1_iterate (v : Sha1Stream) (cmpN : String) {cmpC : Prog isa}

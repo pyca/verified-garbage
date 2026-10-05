@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrLoop
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.GcdE
-import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 
 /-!
 # A candidate on x86-64: Miller–Rabin's witness

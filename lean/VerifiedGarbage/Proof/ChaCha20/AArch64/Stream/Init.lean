@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Xor
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.ChaCha20.AArch64.XorVariant
 import VerifiedGarbage.Impl.ChaCha20.AArch64.Stream
 
 /-!
@@ -270,10 +270,10 @@ theorem keyMem_key (m : Mem) (st kp : Addr) : keyAt (keyMem m st kp) st = bytesA
       byte_of_words64 hk (Nat.zero_le _) (by omega)]
     rw [show (16 + i) / 8 - 2 = i / 8 by omega, show (16 + i) % 8 = i % 8 by omega]
 
-theorem init_eq : init = .block (keyInstrs ++ setNonceInstrs) := rfl
+theorem init_eq : VG.Impl.ChaCha20.AArch64.Stream.init = .block (keyInstrs ++ setNonceInstrs) := rfl
 
 theorem init_ok (s : State) (hs : Proof.ChaCha20.initAArch64.pre s) :
-    ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.initAArch64.post s s' := by
+    ∃ t s', Exec isa VG.Impl.ChaCha20.AArch64.Stream.init s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.initAArch64.post s s' := by
   obtain ⟨hrd, hwr, hdk, hdn⟩ := hs
   have hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (s.gpr .x0 + BitVec.ofNat 64 d) 8 :=
     fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, Offset.contains_base _ hd (by omega)⟩
@@ -298,7 +298,7 @@ theorem init_ok (s : State) (hs : Proof.ChaCha20.initAArch64.pre s) :
   rw [hm, hk, hr, keyMem_key, hn]
   exact ⟨rfl, rfl⟩
 
-theorem init_ct : ConstantTime isa Proof.ChaCha20.initAArch64.pre Proof.ChaCha20.initAArch64.pub init := by
+theorem init_ct : ConstantTime isa Proof.ChaCha20.initAArch64.pre Proof.ChaCha20.initAArch64.pub VG.Impl.ChaCha20.AArch64.Stream.init := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
@@ -314,7 +314,7 @@ def initSat : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 16⟩]
   wr := [⟨0x1000, 768⟩]
 
-theorem init_verified : Verified AArch64.target init (Spec.ChaCha20.initContract AArch64.abi) :=
+theorem init_verified : Verified AArch64.target VG.Impl.ChaCha20.AArch64.Stream.init (Spec.ChaCha20.initContract AArch64.abi) :=
   Verified.of_correct init_ok init_ct (by
     sig_implies [Spec.ChaCha20.initContract, Spec.ChaCha20.initSig, Proof.ChaCha20.initAArch64,
       AArch64.abi, AArch64.argRegs] [initSat] using initSat)

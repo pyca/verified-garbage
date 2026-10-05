@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Sha512.AArch64.Compress
-import VerifiedGarbage.Proof.MdStream.AArch64.Common
-import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.MdStream.AArch64.Words
+import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 
 /-!

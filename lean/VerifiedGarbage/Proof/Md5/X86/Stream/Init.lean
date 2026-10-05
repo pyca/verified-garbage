@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.MdStream.X86.Common
+import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Md5.Stream
 import VerifiedGarbage.Proof.Md5.StateMem
-import VerifiedGarbage.Proof.Md5.X86.Contract
+import VerifiedGarbage.Proof.Md5.X86.Compress
 import VerifiedGarbage.Impl.Md5.X86.Stream
 import Mathlib.Tactic.Set
 import VerifiedGarbage.Proof.Md5.X86.Lit
@@ -32,8 +32,8 @@ theorem word_ok {x : BitVec 32} {k : Nat} {rest : List Instr} {s : State} {Q : S
       s'.wr = s.wr → s'.mem = s.mem.writeW (addr st (4 * k)) x → WP isa (.block rest) s' Q) :
     WP isa (.block (word x k ++ rest)) s Q := by
   simp only [word, List.cons_append, List.nil_append]
-  refine wp_movi fun s₁ u₁ => wp_store (a := addr st (4 * k))
-    (by rw [ea_at, u₁.other _ (by decide), heax]) (by rw [u₁.wr]; exact hout) fun s₂ u₂ => ?_
+  refine VG.Proof.MdStream.X86.wp_movi fun s₁ u₁ => wp_store (a := addr st (4 * k))
+    (by rw [VG.Proof.Md5.X86.Stream.ea_at, u₁.other _ (by decide), heax]) (by rw [u₁.wr]; exact hout) fun s₂ u₂ => ?_
   refine kk s₂ (by rw [u₂.gpr, u₁.other _ (by decide), heax]) (fun r hr => by rw [u₂.gpr, u₁.other r hr])
     (by rw [u₂.rd, u₁.rd]) (by rw [u₂.wr, u₁.wr]) ?_
   rw [u₂.mem, u₁.gpr, u₁.mem]
@@ -41,11 +41,11 @@ theorem word_ok {x : BitVec 32} {k : Nat} {rest : List Instr} {s : State} {Q : S
 theorem init_correct {s₀ : State} (hp : Proof.Md5.initX86.pre s₀) :
     WP isa init s₀ fun s' => abiPreserved s₀ s' ∧ Proof.Md5.initX86.post s₀ s' := by
   obtain ⟨hrd, hwr, hargs, hret, hfit, hsp⟩ := hp
-  set st := arg s₀ 0 with hst
+  set st := VG.X86.arg s₀ 0 with hst
   have o : ∀ k, k < 4 → InRegions s₀.wr (addr st (4 * k)) 4 :=
     fun k hk => ⟨⟨st.setWidth 64, 80⟩, by simp [hwr], contains_addr (by omega) (by omega) hfit⟩
   rw [init_eq]
-  refine WP.seq (wp_movm (a := addr (s₀.gpr .esp) 4) (ea_at _ _ _)
+  refine WP.seq (wp_movm (a := addr (s₀.gpr .esp) 4) (VG.Proof.Md5.X86.Stream.ea_at _ _ _)
     ⟨⟨argAddr s₀ 0, 4⟩, by simp [hrd], Region.contains_self _ _⟩ fun s₁ u₁ => WP.block_nil ?_)
   have e1 : s₁.gpr .eax = st := u₁.gpr
   have w1 : s₁.wr = s₀.wr := u₁.wr
@@ -96,7 +96,7 @@ def initSat : State where
   wr := [⟨0x1000, 80⟩]
 
 theorem initSat_pre : Proof.Md5.initX86.pre initSat := by
-  have a0 : arg initSat 0 = 0x1000 := by decide
+  have a0 : VG.X86.arg initSat 0 = 0x1000 := by decide
   have e : argAddr initSat 0 = 0x4004 := by decide
   simp only [Proof.Md5.initX86, a0, e]
   refine ⟨rfl, rfl, ?_, ?_, by decide, by decide⟩ <;>

@@ -1,7 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.BitWrite
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import VerifiedGarbage.Proof.X448.AArch64.Main
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-
 /-!
 # Ed448 verification on AArch64: the challenge copied
 

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Blake2.Arm.Stream.Common
+import VerifiedGarbage.Proof.Blake2.Arm.Stream.Verified
 import VerifiedGarbage.Proof.Argon2.Divide
 import VerifiedGarbage.Impl.Argon2.Arm.Divide
 
@@ -21,7 +21,7 @@ open VG.Proof.MdStream.Arm (Upd WP.cons wp_mov wp_add wp_sub wp_and op2_reg op2_
 open VG.Proof.Blake2.Arm.Stream (wp_adds wp_adc)
 
 section
-variable {is : List Instr} {s : State} {Q : State → Prop}
+variable {is : List Instr} {s : VG.Arm.State} {Q : VG.Arm.State → Prop}
 
 /-- `subs`, and its carry: no borrow. -/
 theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
@@ -34,32 +34,32 @@ theorem wp_subsC {d n : Reg} {o : Op2} {y : BitVec 32} (ho : o.eval s = some y)
 end
 
 /-- Only `r0`, `r1`, `r3` and the flags change. -/
-structure Keep (s t : State) : Prop where
+structure Keep (s t : VG.Arm.State) : Prop where
   other : ∀ r, r ≠ .r0 → r ≠ .r1 → r ≠ .r3 → t.gpr r = s.gpr r
   mem : t.mem = s.mem
   rd : t.rd = s.rd
   wr : t.wr = s.wr
   sp : t.sp = s.sp
 
-theorem Keep.refl (s : State) : Keep s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
+theorem Keep.refl (s : VG.Arm.State) : Keep s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
-theorem Keep.trans {s t u : State} (h : Keep s t) (h' : Keep t u) : Keep s u :=
+theorem Keep.trans {s t u : VG.Arm.State} (h : Keep s t) (h' : Keep t u) : Keep s u :=
   ⟨fun r a b c => (h'.other r a b c).trans (h.other r a b c), h'.mem.trans h.mem, h'.rd.trans h.rd,
     h'.wr.trans h.wr, h'.sp.trans h.sp⟩
 
-theorem Keep.of_upd {s t : State} {d : Reg} {v : BitVec 32} (u : Upd s t d v)
+theorem Keep.of_upd {s t : VG.Arm.State} {d : Reg} {v : BitVec 32} (u : Upd s t d v)
     (hd : d = .r0 ∨ d = .r1 ∨ d = .r3) : Keep s t :=
   ⟨fun r a b c => u.other r (by rcases hd with rfl | rfl | rfl <;> with_reducible assumption), u.mem, u.rd, u.wr, u.sp⟩
 
 /-- The numbers after `k` bits of `n`. -/
-def Stage (n D k : Nat) (s : State) : Prop :=
+def Stage (n D k : Nat) (s : VG.Arm.State) : Prop :=
   (s.gpr .r1).toNat = (n % 2 ^ (32 - k)) * 2 ^ k + n / 2 ^ (32 - k) / D ∧
     (s.gpr .r0).toNat = n / 2 ^ (32 - k) % D
 
 /-- One bit. -/
-theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31)
+theorem bit_ok {s : VG.Arm.State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31)
     (hb : s.gpr .r2 = D) {n k : Nat} (hn : n < 2 ^ 32) (hk : k < 32)
-    (h : Stage n D.toNat k s) {is : List Instr} {Q : State → Prop}
+    (h : Stage n D.toNat k s) {is : List Instr} {Q : VG.Arm.State → Prop}
     (hq : ∀ t, Stage n D.toNat (k + 1) t → Keep s t → WP isa (.block is) t Q) :
     WP isa (.block (bit ++ is)) s Q := by
   obtain ⟨hc, ha⟩ := h
@@ -167,8 +167,8 @@ theorem bit_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2
         ((Keep.of_upd u₇ (by simp)).trans (Keep.of_upd u₈ (by simp))))))))
 
 theorem bits_ok {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31) {n : Nat}
-    (hn : n < 2 ^ 32) {is : List Instr} {Q : State → Prop} :
-    ∀ k ≤ 32, ∀ s : State, s.gpr .r2 = D → Stage n D.toNat 0 s →
+    (hn : n < 2 ^ 32) {is : List Instr} {Q : VG.Arm.State → Prop} :
+    ∀ k ≤ 32, ∀ s : VG.Arm.State, s.gpr .r2 = D → Stage n D.toNat 0 s →
       (∀ t, Stage n D.toNat k t → Keep s t → WP isa (.block is) t Q) →
       WP isa (.block (bits k ++ is)) s Q
   | 0, _, s, _, h, hq => hq s h (Keep.refl s)
@@ -179,13 +179,13 @@ theorem bits_ok {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31) {n :
       fun u hu ku => hq u hu (kt.trans ku)
 
 /-- The division: `r1 := n / D`, `r0 := n mod D`. -/
-theorem code_ok {s : State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31)
-    (hb : s.gpr .r2 = D) {is : List Instr} {Q : State → Prop}
+theorem code_ok {s : VG.Arm.State} {D : BitVec 32} (hD : 0 < D.toNat) (hD2 : D.toNat < 2 ^ 31)
+    (hb : s.gpr .r2 = D) {is : List Instr} {Q : VG.Arm.State → Prop}
     (hq : ∀ t, (t.gpr .r1).toNat = (s.gpr .r1).toNat / D.toNat →
       (t.gpr .r0).toNat = (s.gpr .r1).toNat % D.toNat → Keep s t → WP isa (.block is) t Q) :
-    WP isa (.block (code ++ is)) s Q := by
+    WP isa (.block (VG.Impl.Argon2.Arm.Divide.code ++ is)) s Q := by
   have hn := (s.gpr .r1).isLt
-  simp only [code, List.cons_append]
+  simp only [VG.Impl.Argon2.Arm.Divide.code, List.cons_append]
   refine wp_mov (op2_imm (by decide)) fun s₁ u₁ => ?_
   refine bits_ok hD hD2 hn 32 (Nat.le_refl _) s₁ (by rw [u₁.other _ (by decide), hb]) ⟨?_, ?_⟩
     fun t ⟨hc, ha⟩ kt => ?_

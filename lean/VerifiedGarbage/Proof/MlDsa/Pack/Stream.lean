@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.MlKem.KPke1024
 
 /-!
 # ML-DSA: streaming `d`-bit fields through an accumulator, for every target

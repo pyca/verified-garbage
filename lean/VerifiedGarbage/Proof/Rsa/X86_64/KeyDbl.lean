@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Double
+import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Impl.Rsa.X86_64.CheckKey
 
 /-!

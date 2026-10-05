@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyCode
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtImplies
-import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 

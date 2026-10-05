@@ -1,7 +1,141 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.MlKem.X86_64.YLanes
+import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.Framework.X86_64.LaneSse
+import VerifiedGarbage.Impl.MlKem.X86_64.Avx
 import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
+
+/- Proofs formerly in `VerifiedGarbage.Proof.MlKem.X86_64.YLanes`. -/
+section
+
+/-!
+# ML-KEM on x86-64: coefficients in the lanes of AVX2 registers
+
+The AVX2 code does to each 128-bit lane what the SSE2 code does to a register
+(`toY`, `Impl/MlKem/X86_64/Avx.lean`), so the proofs of the SSE2 code hold of
+each lane (`ylanes`, from `WP.lanes`): what they say of `xmm r` in `s.proj l`
+they say of lane `l` of `ymm r` in `s`. `YOnly rs` is `XOnly rs` for both
+lanes, and `YConsts` is `VConsts` for both lanes; `yld_ok` is a 256-bit load,
+`yconsts_ok` the constants.
+-/
+
+namespace VG.Proof.MlKem.X86_64
+
+open VG VG.X86_64 VG.Impl.MlKem.X86_64
+
+/-- Only the vector registers `rs` changed, in either lane. -/
+structure YOnly (rs : List XReg) (s s' : State) : Prop extends XKeep s s' where
+  lane : ∀ r ∉ rs, ∀ l < 2, s'.lane r l = s.lane r l
+
+theorem YOnly.trans {rs rs' : List XReg} {s₁ s₂ s₃ : State} (h₁ : VG.Proof.MlKem.X86_64.YOnly rs s₁ s₂) (h₂ : VG.Proof.MlKem.X86_64.YOnly rs' s₂ s₃) :
+    VG.Proof.MlKem.X86_64.YOnly (rs ++ rs') s₁ s₃ :=
+  { toXKeep := h₁.toXKeep.trans h₂.toXKeep
+    lane := fun r hr l hl => by
+      rw [List.mem_append, not_or] at hr
+      rw [h₂.lane r hr.2 l hl, h₁.lane r hr.1 l hl] }
+
+theorem YOnly.mono {rs rs' : List XReg} {s s' : State} (h : VG.Proof.MlKem.X86_64.YOnly rs s s') (hs : ∀ r ∈ rs, r ∈ rs') :
+    VG.Proof.MlKem.X86_64.YOnly rs' s s' := { toXKeep := h.toXKeep, lane := fun r hr => h.lane r fun h' => hr (hs r h') }
+
+theorem YOnly.refl (rs : List XReg) (s : State) : VG.Proof.MlKem.X86_64.YOnly rs s s :=
+  { toXKeep := XKeep.refl s, lane := fun _ _ _ _ => rfl }
+
+/-- `q` and `q⁻¹` in both lanes of `ymm15` and `ymm14`. -/
+def YConsts (s : State) : Prop := ∀ l < 2, VConsts (s.proj l)
+
+theorem YOnly.consts {rs : List XReg} {s s' : State} (h : VG.Proof.MlKem.X86_64.YOnly rs s s') (hc : VG.Proof.MlKem.X86_64.YConsts s)
+    (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) : VG.Proof.MlKem.X86_64.YConsts s' := fun l hl =>
+  ⟨by rw [State.proj_xmm, h.lane _ h15 l hl]; exact (hc l hl).q,
+    by rw [State.proj_xmm, h.lane _ h14 l hl]; exact (hc l hl).qinv⟩
+
+/-- A block of AVX2 code that does to each lane what an SSE2 block does. -/
+theorem ylanes {vs ss : List Instr} (h : laneSseBlock vs = some ss) {rs : List XReg} {s : State}
+    {P : Nat → State → Prop} (hq : ∀ l < 2, WP isa (.block ss) (s.proj l) fun t => P l t ∧ XOnly rs (s.proj l) t) :
+    WP isa (.block vs) s fun s' => (∀ l < 2, P l (s'.proj l)) ∧ VG.Proof.MlKem.X86_64.YOnly rs s s' :=
+  WP.mono (WP.lanes h hq) fun _ ⟨k, q⟩ =>
+    ⟨fun l hl => (q l hl).1, ⟨⟨k.gpr, k.mem, k.rd, k.wr, k.mxcsr⟩, fun r hr l hl => (q l hl).2.xmm r hr⟩⟩
+
+theorem lane_readW256 (m : Mem) (a : Addr) {l : Nat} (hl : l < 2) :
+    (if l = 0 then (m.readW a 256).extractLsb' 0 128 else (m.readW a 256).extractLsb' 128 128) =
+      m.readW (a + BitVec.ofNat 64 (16 * l)) 128 := by
+  rcases lane01 hl with rfl | rfl
+  · exact readW_extract m a (k := 0) (n := 16) (by decide)
+  · exact readW_extract m a (k := 16) (n := 16) (by decide)
+
+@[simp] theorem State.setMem_ymm (s : State) (m : Mem) (r : XReg) : (s.setMem m).ymm r = s.ymm r := by
+  cases s; rfl
+
+@[simp] theorem State.setMem_setMem (s : State) (m m' : Mem) : (s.setMem m).setMem m' = s.setMem m' := by
+  cases s; rfl
+
+theorem lane_setReg (s : State) (d : Reg) (v : BitVec 64) (r : XReg) (l : Nat) :
+    (s.setReg d v).lane r l = s.lane r l := rfl
+
+theorem lane_setFlags (s : State) (a b c d : Option Bool) (r : XReg) (l : Nat) :
+    (s.setFlags a b c d).lane r l = s.lane r l := rfl
+
+/-- The lanes after general-purpose instructions and stores. -/
+theorem lanes_gpr {s s' : State} (h : ∀ r l, s'.lane r l = s.lane r l) {rs : List XReg} {s₀ : State}
+    (o : VG.Proof.MlKem.X86_64.YOnly rs s₀ s) (hc : VG.Proof.MlKem.X86_64.YConsts s₀) (h14 : XReg.xmm14 ∉ rs) (h15 : XReg.xmm15 ∉ rs) : VG.Proof.MlKem.X86_64.YConsts s' :=
+  fun l hl => ⟨by rw [State.proj_xmm, h]; exact (o.consts hc h14 h15 l hl).q,
+    by rw [State.proj_xmm, h]; exact (o.consts hc h14 h15 l hl).qinv⟩
+
+/-- A 256-bit load. -/
+theorem yld_ok {s : State} {p : Reg} {off : Nat} {d : XReg}
+    (h : InRegions (s.rd ++ s.wr) (s.gpr p + BitVec.ofNat 64 off) 32) :
+    WP isa (.block [.vmovdquLoad .l256 d (VG.Impl.MlKem.X86_64.at_ p off)]) s fun s' =>
+      (∀ l < 2, s'.lane d l = s.mem.readW (s.gpr p + BitVec.ofNat 64 off + BitVec.ofNat 64 (16 * l)) 128) ∧
+        VG.Proof.MlKem.X86_64.YOnly [d] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load256, ea_at, h, ite_true,
+    Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨fun l hl => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, fun r hr l hl => ?_⟩⟩
+  · rw [State.lane_setV256, ifp rfl, VG.Proof.MlKem.X86_64.lane_readW256 _ _ hl]
+  · rw [State.lane_setV256, ifn (by simpa using hr)]
+
+/-- `yconst r v` (`v` in each doubleword of `ymm r`). -/
+theorem yconst_ok (r : XReg) (v : BitVec 32) (s : State) :
+    WP isa (.block (yconst r v)) s fun s' => (∀ l < 2, s'.lane r l = ofDwords v v v v) ∧
+      Keep [.rax] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr ∧ ∀ r' ≠ r, ∀ l < 2, s'.lane r' l = s.lane r' l := by
+  apply WP.of_runBlock
+  simp only [yconst, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, readSrc32, Option.map_some,
+    Option.some.injEq, exists_eq_left', State.setReg32]
+  refine ⟨fun l hl => ?_, ⟨fun r' hr' => ?_, rfl, rfl⟩, rfl, rfl, fun r' hr' l hl => ?_⟩
+  · rw [State.lane_setV256, ifp rfl]
+    have : dword (((s.setReg .rax (v.setWidth 64)).setV .l128 r ((0 : BitVec 64) ++
+        (s.setReg .rax (v.setWidth 64)).gpr .rax) 0).xmm r) 0 = v := by
+      rw [RegUpd.xmm_setV, ifp rfl, RegUpd.gpr_setReg_self]
+      apply BitVec.eq_of_getLsbD_eq; intro i hi
+      simp only [dword, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
+      rw [BitVec.getLsbD_append, ifp (by omega), BitVec.getLsbD_setWidth]
+      simp [show i < 64 by omega]
+    rcases lane01 hl with rfl | rfl <;> simp only [ite_true, ite_false, this, Nat.one_ne_zero]
+  · simp only [List.mem_singleton] at hr'
+    rw [RegUpd.gpr_setV, RegUpd.gpr_setV, RegUpd.gpr_setReg_of_ne _ _ hr']
+  · rw [State.lane_setV256, ifn hr', State.lane_setV128, ifn hr']
+    rfl
+
+/-- `rcxLoop N body`, with the vector registers in full: the body runs `N`
+times, from a state that the `mov` of the count changed in `rcx` only. -/
+theorem wp_rcxLoopY {body : List Instr} {N : Nat} (hN : 0 < N) (hN' : N < 2 ^ 31) (Inv : Nat → State → Prop)
+    {s₀ : State} (h0 : ∀ s, GOnly [.rcx] s₀ s → s.ymmHi = s₀.ymmHi → s.gpr .rcx = BitVec.ofNat 64 N → Inv 0 s)
+    (hbody : ∀ i < N, ∀ s, Inv i s →
+      WP isa (.block (body ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' => Inv (i + 1) s' ∧
+        s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) :
+    WP isa (rcxLoop N body) s₀ (Inv N) := by
+  refine WP.seq (WP.mono (Q := fun (s : State) => GOnly [.rcx] s₀ s ∧ s.ymmHi = s₀.ymmHi ∧
+      s.gpr .rcx = BitVec.ofNat 64 N)
+    (by vrunm [RegUpd.ymmHi_setReg]; exact ⟨by gonly, by
+      apply BitVec.eq_of_toNat_eq
+      rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]; omega⟩) fun s ⟨o, hy, hc⟩ => ?_)
+  exact wp_countdown (by omega) hN Inv (fun i hi s hI _ => hbody i hi s hI) (fun _ h => h) (h0 s o hy hc) hc
+
+end VG.Proof.MlKem.X86_64
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2`. -/
+section
 
 /-!
 # ML-KEM on x86-64: `vg_mlkem_multiply_ntts_avx2`
@@ -46,10 +180,10 @@ def interV (X1 X2 : BitVec 128) : List (BitVec 128) :=
 
 theorem vinterS_ok (s : State) :
     WP isa (.block vinterS) s fun s' =>
-      (s'.xmm .xmm1 = (interV (s.xmm .xmm1) (s.xmm .xmm2))[0]! ∧
-        s'.xmm .xmm5 = (interV (s.xmm .xmm1) (s.xmm .xmm2))[1]! ∧
-        s'.xmm .xmm3 = (interV (s.xmm .xmm1) (s.xmm .xmm2))[2]! ∧
-        s'.xmm .xmm6 = (interV (s.xmm .xmm1) (s.xmm .xmm2))[3]!) ∧
+      (s'.xmm .xmm1 = (VG.Proof.MlKem.X86_64.interV (s.xmm .xmm1) (s.xmm .xmm2))[0]! ∧
+        s'.xmm .xmm5 = (VG.Proof.MlKem.X86_64.interV (s.xmm .xmm1) (s.xmm .xmm2))[1]! ∧
+        s'.xmm .xmm3 = (VG.Proof.MlKem.X86_64.interV (s.xmm .xmm1) (s.xmm .xmm2))[2]! ∧
+        s'.xmm .xmm6 = (VG.Proof.MlKem.X86_64.interV (s.xmm .xmm1) (s.xmm .xmm2))[3]!) ∧
       XOnly [.xmm1, .xmm3, .xmm4, .xmm5, .xmm6] s s' := by
   simp only [vinterS]
   vrunm [eval_movdqa, pxor_self]
@@ -75,23 +209,23 @@ theorem yload4_ok {p : Reg} {a b c d : XReg} (hd : [a, b, c, d].Nodup) {s : Stat
         s'.lane b l = s.mem.readW (s.gpr p + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128 ∧
         s'.lane c l = s.mem.readW (s.gpr p + BitVec.ofNat 64 64 + BitVec.ofNat 64 (16 * l)) 128 ∧
         s'.lane d l = s.mem.readW (s.gpr p + BitVec.ofNat 64 96 + BitVec.ofNat 64 (16 * l)) 128) ∧
-      YOnly [a, b, c, d] s s' := by
+      VG.Proof.MlKem.X86_64.YOnly [a, b, c, d] s s' := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or, List.nodup_nil,
     and_true, not_false_eq_true] at hd
   obtain ⟨⟨ab, ac, ad⟩, ⟨bc, bd⟩, cd⟩ := hd
   simp only [yload4]
   rw [show ∀ x y z w : Instr, [x, y, z, w] = [x] ++ [y] ++ [z] ++ [w] from fun _ _ _ _ => rfl,
     WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (yld_ok h0) fun s1 ⟨l1, o1⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yld_ok h0) fun s1 ⟨l1, o1⟩ => ?_
   have r1 : InRegions (s1.rd ++ s1.wr) (s1.gpr p + BitVec.ofNat 64 32) 32 := by
     rw [o1.rd, o1.wr, o1.gpr]; exact h1
-  refine WP.mono (yld_ok r1) fun s2 ⟨l2, o2⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yld_ok r1) fun s2 ⟨l2, o2⟩ => ?_
   have r2 : InRegions (s2.rd ++ s2.wr) (s2.gpr p + BitVec.ofNat 64 64) 32 := by
     rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact h2
-  refine WP.mono (yld_ok r2) fun s3 ⟨l3, o3⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yld_ok r2) fun s3 ⟨l3, o3⟩ => ?_
   have r3 : InRegions (s3.rd ++ s3.wr) (s3.gpr p + BitVec.ofNat 64 96) 32 := by
     rw [o3.rd, o3.wr, o3.gpr, o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact h3
-  refine WP.mono (yld_ok r3) fun s4 ⟨l4, o4⟩ => ⟨fun l hl => ⟨?_, ?_, ?_, ?_⟩, ?_⟩
+  refine WP.mono (VG.Proof.MlKem.X86_64.yld_ok r3) fun s4 ⟨l4, o4⟩ => ⟨fun l hl => ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [o4.lane _ (by simpa using ad) l hl, o3.lane _ (by simpa using ac) l hl,
       o2.lane _ (by simpa using ab) l hl, l1 l hl]
   · rw [o4.lane _ (by simpa using bd) l hl, o3.lane _ (by simpa using bc) l hl, l2 l hl,
@@ -124,11 +258,11 @@ theorem ystore4 (m : Mem) (H : Addr) {j : Nat} (hj : j + 32 ≤ 256) (Y0 Y1 Y2 Y
   have a3 : coeffAddr H j + BitVec.ofNat 64 96 = coeffAddr H (j + 24) := coeffAddr_off H j 24
   simp only [m', a1, a2, a3]
   refine ⟨fun k hk ho => ?_, fun t ht q hq => ?_, ?_⟩
-  · rw [coeffAt_write256 _ _ (by bdd_omega) _ hk, coeffAt_write256 _ _ (by bdd_omega) _ hk,
-      coeffAt_write256 _ _ (by bdd_omega) _ hk, coeffAt_write256 _ _ (by bdd_omega) _ hk]
+  · rw [VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ hk, VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ hk,
+      VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ hk, VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ hk]
     simp (disch := bdd_omega) only [ite_eq_right]
-  · rw [coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega),
-      coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega)]
+  · rw [VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega),
+      VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega), VG.Proof.MlKem.X86_64.coeffAt_write256 _ _ (by bdd_omega) _ (by bdd_omega)]
     rcases (by bdd_omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl
     · simp (disch := bdd_omega) only [ite_eq_left, ite_eq_right]
       rw [show j + 8 * 0 + q - j = q by bdd_omega]; rfl
@@ -152,8 +286,8 @@ theorem gTabY_lt (p : Nat) : gTabY p < 65536 := gTab_lt _
 /-- The pair of word `e` of lane `l` in iteration `i`. -/
 abbrev pairY (i l e : Nat) : Nat := 16 * i + 4 * (e / 2) + e % 2 + 2 * l
 
-theorem gIdxY_eq {i l e : Nat} (hl : l < 2) (he : e < 8) : gIdxY (16 * i + 8 * l + e) = pairY i l e := by
-  unfold gIdxY pairY; omega
+theorem gIdxY_eq {i l e : Nat} (hl : l < 2) (he : e < 8) : gIdxY (16 * i + 8 * l + e) = VG.Proof.MlKem.X86_64.pairY i l e := by
+  unfold gIdxY VG.Proof.MlKem.X86_64.pairY; omega
 
 namespace MulY
 
@@ -161,23 +295,23 @@ open VG.Proof.MlKem.X86_64.Mul (hP fP gP sP F G)
 
 /-- After `i` groups of 32 coefficients. -/
 structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
-  rsi : s.gpr .rsi = coeffAddr (fP s₀) (32 * i)
+  rsi : s.gpr .rsi = coeffAddr (VG.Proof.MlKem.X86_64.Mul.fP s₀) (32 * i)
   rdx : s.gpr .rdx = coeffAddr (gP s₀) (32 * i)
   rdi : s.gpr .rdi = coeffAddr (hP s₀) (32 * i)
   r8 : s.gpr .r8 = wAddr (sP s₀) (16 * i)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  c : YConsts s
+  c : VG.Proof.MlKem.X86_64.YConsts s
   r2 : ∀ l < 2, s.lane .xmm12 l = r2V
   frame : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem s.mem
   tab : ∀ k < 128, (wordAt s.mem (sP s₀) k).toNat = gTabY k
-  done : ∀ k < 32 * i, (coeffAt s.mem (hP s₀) k).toNat = ((multiplyNTTs (F s₀) (G s₀))[k]!).val
+  done : ∀ k < 32 * i, (coeffAt s.mem (hP s₀) k).toNat = ((multiplyNTTs (VG.Proof.MlKem.X86_64.Mul.F s₀) (G s₀))[k]!).val
 
 section
 variable {s₀ : State} (hp : mulK.pre s₀)
 include hp
 
-theorem inRd {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀) {j : Nat} (hj : j + 32 ≤ 256) {t : Nat} (ht : t < 4) :
+theorem inRd {p : Addr} (hp' : p = VG.Proof.MlKem.X86_64.Mul.fP s₀ ∨ p = gP s₀) {j : Nat} (hj : j + 32 ≤ 256) {t : Nat} (ht : t < 4) :
     InRegions (s₀.rd ++ s₀.wr) (coeffAddr p j + BitVec.ofNat 64 (32 * t)) 32 := by
   rw [show 32 * t = 4 * (8 * t) by bdd_omega, coeffAddr_off, hp.1, hp.2.1]
   rcases hp' with rfl | rfl
@@ -185,7 +319,7 @@ theorem inRd {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀) {j : Nat} (hj : j + 
   · exact ⟨pR _, by simp, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
 
 /-- The doublewords of lane `l` of load `t` from coefficient `j` of `f` or `g`. -/
-theorem loadsY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀)
+theorem loadsY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = VG.Proof.MlKem.X86_64.Mul.fP s₀ ∨ p = gP s₀)
     {j : Nat} (hj : j + 32 ≤ 256) {t l : Nat} (ht : t < 4) (hl : l < 2) :
     ∀ e < 4, (dword (m.readW (coeffAddr p j + BitVec.ofNat 64 (32 * t + 16 * l)) 128) e).toNat =
       ((polyAt s₀.mem p)[j + 8 * t + 4 * l + e]!).val := fun e he => by
@@ -197,15 +331,15 @@ theorem loadsY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p
 
 /-- The doublewords of lane `l` of load `t` from coefficient `j` of `f` or `g`, as
 `deint_lanes` takes them. -/
-theorem loadsY' {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀)
+theorem loadsY' {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = VG.Proof.MlKem.X86_64.Mul.fP s₀ ∨ p = gP s₀)
     {j : Nat} (hj : j + 32 ≤ 256) {l : Nat} (hl : l < 2) {t : Nat} (ht : t < 4) (off : Nat) (hoff : off = 32 * t)
     (f : Nat → Nat) (hfe : ∀ e < 4, f e = j + 8 * t + 4 * l + e) :
     ∀ e < 4, (dword (m.readW (coeffAddr p j + BitVec.ofNat 64 off + BitVec.ofNat 64 (16 * l)) 128) e).toNat =
       ((polyAt s₀.mem p)[f e]!).val := fun e he => by
-  rw [BitVec.add_assoc, ← BitVec.ofNat_add, hoff, loadsY hp hf hp' hj ht hl e he, hfe e he]
+  rw [BitVec.add_assoc, ← BitVec.ofNat_add, hoff, VG.Proof.MlKem.X86_64.MulY.loadsY hp hf hp' hj ht hl e he, hfe e he]
 
 /-- The lanes `deint` leaves of the 32 coefficients from `j` of `f` or `g`, in lane `l`. -/
-theorem deintY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = fP s₀ ∨ p = gP s₀)
+theorem deintY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p : Addr} (hp' : p = VG.Proof.MlKem.X86_64.Mul.fP s₀ ∨ p = gP s₀)
     {j : Nat} (hj : j + 32 ≤ 256) {l : Nat} (hl : l < 2) (a : Addr) (ha : a = coeffAddr p j) :
     (∀ e < 8, (word (deE (m.readW (a + BitVec.ofNat 64 0 + BitVec.ofNat 64 (16 * l)) 128)
       (m.readW (a + BitVec.ofNat 64 32 + BitVec.ofNat 64 (16 * l)) 128)
@@ -219,13 +353,13 @@ theorem deintY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p
         ((polyAt s₀.mem p)[j + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4]!).val) := by
   subst ha
   exact deint_lanes (c := fun k => ((polyAt s₀.mem p)[j + 8 * (k / 4) + 4 * l + k % 4]!).val)
-    (loadsY' hp hf hp' hj hl (t := 0) (by decide) 0 rfl (fun e => j + 8 * (e / 4) + 4 * l + e % 4)
+    (VG.Proof.MlKem.X86_64.MulY.loadsY' hp hf hp' hj hl (t := 0) (by decide) 0 rfl (fun e => j + 8 * (e / 4) + 4 * l + e % 4)
       (fun e he => by bdd_omega))
-    (loadsY' hp hf hp' hj hl (t := 1) (by decide) 32 rfl (fun e => j + 8 * ((4 + e) / 4) + 4 * l + (4 + e) % 4)
+    (VG.Proof.MlKem.X86_64.MulY.loadsY' hp hf hp' hj hl (t := 1) (by decide) 32 rfl (fun e => j + 8 * ((4 + e) / 4) + 4 * l + (4 + e) % 4)
       (fun e he => by bdd_omega))
-    (loadsY' hp hf hp' hj hl (t := 2) (by decide) 64 rfl (fun e => j + 8 * ((8 + e) / 4) + 4 * l + (8 + e) % 4)
+    (VG.Proof.MlKem.X86_64.MulY.loadsY' hp hf hp' hj hl (t := 2) (by decide) 64 rfl (fun e => j + 8 * ((8 + e) / 4) + 4 * l + (8 + e) % 4)
       (fun e he => by bdd_omega))
-    (loadsY' hp hf hp' hj hl (t := 3) (by decide) 96 rfl (fun e => j + 8 * ((12 + e) / 4) + 4 * l + (12 + e) % 4)
+    (VG.Proof.MlKem.X86_64.MulY.loadsY' hp hf hp' hj hl (t := 3) (by decide) 96 rfl (fun e => j + 8 * ((12 + e) / 4) + 4 * l + (12 + e) % 4)
       (fun e he => by bdd_omega))
     (fun k _ => by have := val_lt ((polyAt s₀.mem p)[j + 8 * (k / 4) + 4 * l + k % 4]!); omega)
 
@@ -233,15 +367,15 @@ theorem deintY {m : Mem} (hf : Frame [pR (hP s₀), pR (sP s₀)] s₀.mem m) {p
 omit hp in
 /-- A value of the product, from the lanes `vbase` leaves in lane `l`. -/
 theorem prod_valY {i l : Nat} (hi : i < 8) (hl : l < 2) {X1 X2 : BitVec 128} {F G : Poly}
-    (h1 : Lanes X1 fun e => F[2 * pairY i l e]! * G[2 * pairY i l e]! +
-      F[2 * pairY i l e + 1]! * G[2 * pairY i l e + 1]! * gamma (pairY i l e))
-    (h2 : Lanes X2 fun e => F[2 * pairY i l e]! * G[2 * pairY i l e + 1]! +
-      F[2 * pairY i l e + 1]! * G[2 * pairY i l e]!)
+    (h1 : Lanes X1 fun e => F[2 * VG.Proof.MlKem.X86_64.pairY i l e]! * G[2 * VG.Proof.MlKem.X86_64.pairY i l e]! +
+      F[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * G[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * gamma (VG.Proof.MlKem.X86_64.pairY i l e))
+    (h2 : Lanes X2 fun e => F[2 * VG.Proof.MlKem.X86_64.pairY i l e]! * G[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! +
+      F[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * G[2 * VG.Proof.MlKem.X86_64.pairY i l e]!)
     {t j : Nat} (ht : t < 4) (hj : j < 4) :
     (word (if (4 * t + j) % 2 = 0 then X1 else X2) ((4 * t + j) / 2)).toNat =
       ((multiplyNTTs F G)[32 * i + 8 * t + 4 * l + j]!).val := by
   rw [multiplyNTTs_get F G (by rw [n_eq]; omega)]
-  have hP : pairY i l ((4 * t + j) / 2) = 16 * i + 4 * t + j / 2 + 2 * l := by unfold pairY; omega
+  have hP : VG.Proof.MlKem.X86_64.pairY i l ((4 * t + j) / 2) = 16 * i + 4 * t + j / 2 + 2 * l := by unfold VG.Proof.MlKem.X86_64.pairY; omega
   split
   · rename_i he
     rw [ite_eq_left_of_eq_true _ _ (eq_true (by bdd_omega)), h1 _ (by bdd_omega)]
@@ -254,54 +388,54 @@ theorem prod_valY {i l : Nat} (hi : i < 8) (hl : l < 2) {X1 X2 : BitVec 128} {F 
     rw [hP, show 2 * (16 * i + 4 * t + j / 2 + 2 * l) = 32 * i + 8 * t + 4 * l + j - 1 by bdd_omega,
       show 32 * i + 8 * t + 4 * l + j - 1 + 1 = 32 * i + 8 * t + 4 * l + j by bdd_omega]
 
-theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
+theorem step {i : Nat} (hi : i < 8) {s : State} (hI : VG.Proof.MlKem.X86_64.MulY.Inv s₀ i s) :
     WP isa (.block (mulBodyY ++ ([.alu .sub .rcx (.imm 1)] : List Instr))) s fun s' =>
-      Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
+      VG.Proof.MlKem.X86_64.MulY.Inv s₀ (i + 1) s' ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0) := by
   have hrr : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [hI.rd, hI.wr]
   have hj : 32 * i + 32 ≤ 256 := by bdd_omega
   have rF : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rsi + BitVec.ofNat 64 (32 * t)) 32 := fun t ht => by
-    rw [hrr, hI.rsi]; exact inRd hp (.inl rfl) hj ht
+    rw [hrr, hI.rsi]; exact VG.Proof.MlKem.X86_64.MulY.inRd hp (.inl rfl) hj ht
   have rG : ∀ t < 4, InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (32 * t)) 32 := fun t ht => by
-    rw [hrr, hI.rdx]; exact inRd hp (.inr rfl) hj ht
+    rw [hrr, hI.rdx]; exact VG.Proof.MlKem.X86_64.MulY.inRd hp (.inr rfl) hj ht
   simp only [mulBodyY, List.append_assoc]
   -- the loads of `f` and their lanes
   rw [WP.block_append_iff]
-  refine WP.mono (yload4_ok (p := .rsi) (a := .xmm0) (b := .xmm1) (c := .xmm2) (d := .xmm3) (by decide)
+  refine WP.mono (VG.Proof.MlKem.X86_64.yload4_ok (p := .rsi) (a := .xmm0) (b := .xmm1) (c := .xmm2) (d := .xmm3) (by decide)
     (rF 0 (by decide)) (rF 1 (by decide)) (rF 2 (by decide)) (rF 3 (by decide))) fun s1 ⟨A1, o1⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ylanes lane_deintS0 (P := fun l t =>
+  refine WP.mono (VG.Proof.MlKem.X86_64.ylanes VG.Proof.MlKem.X86_64.lane_deintS0 (P := fun l t =>
       t.xmm .xmm0 = deE (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l) ∧
       t.xmm .xmm4 = deO (s1.lane .xmm0 l) (s1.lane .xmm1 l) (s1.lane .xmm2 l) (s1.lane .xmm3 l))
-    fun l _ => deintS_ok0 (s1.proj l)) fun s2 ⟨D2, o2⟩ => ?_
+    fun l _ => VG.Proof.MlKem.X86_64.deintS_ok0 (s1.proj l)) fun s2 ⟨D2, o2⟩ => ?_
   -- the loads of `g` and their lanes
   have rG' : ∀ t < 4, InRegions (s2.rd ++ s2.wr) (s2.gpr .rdx + BitVec.ofNat 64 (32 * t)) 32 := fun t ht => by
     rw [o2.rd, o2.wr, o2.gpr, o1.rd, o1.wr, o1.gpr]; exact rG t ht
   rw [WP.block_append_iff]
-  refine WP.mono (yload4_ok (p := .rdx) (a := .xmm6) (b := .xmm7) (c := .xmm8) (d := .xmm9) (by decide)
+  refine WP.mono (VG.Proof.MlKem.X86_64.yload4_ok (p := .rdx) (a := .xmm6) (b := .xmm7) (c := .xmm8) (d := .xmm9) (by decide)
     (rG' 0 (by decide)) (rG' 1 (by decide)) (rG' 2 (by decide)) (rG' 3 (by decide))) fun s3 ⟨A3, o3⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ylanes lane_deintS6 (P := fun l t =>
+  refine WP.mono (VG.Proof.MlKem.X86_64.ylanes VG.Proof.MlKem.X86_64.lane_deintS6 (P := fun l t =>
       t.xmm .xmm6 = deE (s3.lane .xmm6 l) (s3.lane .xmm7 l) (s3.lane .xmm8 l) (s3.lane .xmm9 l) ∧
       t.xmm .xmm10 = deO (s3.lane .xmm6 l) (s3.lane .xmm7 l) (s3.lane .xmm8 l) (s3.lane .xmm9 l))
-    fun l _ => deintS_ok6 (s3.proj l)) fun s4 ⟨D4, o4⟩ => ?_
+    fun l _ => VG.Proof.MlKem.X86_64.deintS_ok6 (s3.proj l)) fun s4 ⟨D4, o4⟩ => ?_
   have o14 := ((o1.trans o2).trans o3).trans o4
   -- the `γ`s
   have hz : InRegions (s4.rd ++ s4.wr) (s4.gpr .r8 + BitVec.ofNat 64 0) 32 := by
     rw [o14.rd, o14.wr, o14.gpr, hrr, hI.r8, hp.1, hp.2.1, wAddr, BitVec.add_assoc, ← BitVec.ofNat_add]
     exact ⟨pR (sP s₀), by simp, Offset.contains_base _ (by bdd_omega) (by bdd_omega)⟩
   rw [WP.block_append_iff]
-  refine WP.mono (yld_ok hz) fun s5 ⟨Z5, o5⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yld_ok hz) fun s5 ⟨Z5, o5⟩ => ?_
   have o15 := o14.trans o5
-  have c5 : YConsts s5 := o15.consts hI.c (by decide) (by decide)
+  have c5 : VG.Proof.MlKem.X86_64.YConsts s5 := o15.consts hI.c (by decide) (by decide)
   -- the lanes `vbase` multiplies
   have m4 : s4.mem = s.mem := o14.mem
   have g4 : s4.gpr = s.gpr := o14.gpr
-  have idx : ∀ l < 2, ∀ e < 8, 32 * i + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * pairY i l e ∧
-      32 * i + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * pairY i l e + 1 := fun l _ e _ => by
-    unfold pairY; omega
-  have LF : ∀ l < 2, Lanes (s5.lane .xmm0 l) (fun e => (F s₀)[2 * pairY i l e]!) ∧
-      Lanes (s5.lane .xmm4 l) (fun e => (F s₀)[2 * pairY i l e + 1]!) := fun l hl => by
-    have d := deintY hp hI.frame (.inl rfl) hj hl _ hI.rsi
+  have idx : ∀ l < 2, ∀ e < 8, 32 * i + 8 * (2 * e / 4) + 4 * l + 2 * e % 4 = 2 * VG.Proof.MlKem.X86_64.pairY i l e ∧
+      32 * i + 8 * ((2 * e + 1) / 4) + 4 * l + (2 * e + 1) % 4 = 2 * VG.Proof.MlKem.X86_64.pairY i l e + 1 := fun l _ e _ => by
+    unfold VG.Proof.MlKem.X86_64.pairY; omega
+  have LF : ∀ l < 2, Lanes (s5.lane .xmm0 l) (fun e => (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]!) ∧
+      Lanes (s5.lane .xmm4 l) (fun e => (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]!) := fun l hl => by
+    have d := VG.Proof.MlKem.X86_64.MulY.deintY hp hI.frame (.inl rfl) hj hl _ hI.rsi
     rw [o5.lane _ (by decide) l hl, o4.lane _ (by decide) l hl, o3.lane _ (by decide) l hl,
       o5.lane _ (by decide) l hl, o4.lane _ (by decide) l hl, o3.lane _ (by decide) l hl]
     have e0 : s2.lane .xmm0 l = _ := (D2 l hl).1
@@ -310,9 +444,9 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     refine ⟨fun e he => ?_, fun e he => ?_⟩
     · rw [d.1 e he, (idx l hl e he).1]
     · rw [d.2 e he, (idx l hl e he).2]
-  have LG : ∀ l < 2, Lanes (s5.lane .xmm6 l) (fun e => (G s₀)[2 * pairY i l e]!) ∧
-      Lanes (s5.lane .xmm10 l) (fun e => (G s₀)[2 * pairY i l e + 1]!) := fun l hl => by
-    have d := deintY hp (hI.frame.trans (by rw [← o1.mem, ← o2.mem]; exact Frame.refl _ _)) (.inr rfl) hj hl
+  have LG : ∀ l < 2, Lanes (s5.lane .xmm6 l) (fun e => (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]!) ∧
+      Lanes (s5.lane .xmm10 l) (fun e => (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]!) := fun l hl => by
+    have d := VG.Proof.MlKem.X86_64.MulY.deintY hp (hI.frame.trans (by rw [← o1.mem, ← o2.mem]; exact Frame.refl _ _)) (.inr rfl) hj hl
       (s2.gpr .rdx) (by rw [o2.gpr, o1.gpr, hI.rdx])
     rw [o5.lane _ (by decide) l hl, o5.lane _ (by decide) l hl]
     have e6 : s4.lane .xmm6 l = _ := (D4 l hl).1
@@ -321,27 +455,27 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     refine ⟨fun e he => ?_, fun e he => ?_⟩
     · rw [d.1 e he, (idx l hl e he).1]
     · rw [d.2 e he, (idx l hl e he).2]
-  have LZ : ∀ l < 2, ZLanes (s5.lane .xmm13 l) (fun e => gamma (pairY i l e)) := fun l hl e he => by
+  have LZ : ∀ l < 2, ZLanes (s5.lane .xmm13 l) (fun e => gamma (VG.Proof.MlKem.X86_64.pairY i l e)) := fun l hl e he => by
     rw [Z5 l hl, m4, g4, hI.r8, word_readW _ _ he, wAddr, BitVec.add_assoc, BitVec.add_assoc, BitVec.add_assoc,
       ← BitVec.ofNat_add, ← BitVec.ofNat_add, ← BitVec.ofNat_add,
       show 2 * (16 * i) + (0 + (16 * l + 2 * e)) = 2 * (16 * i + 8 * l + e) by bdd_omega, ← wAddr, ← wordAt,
-      hI.tab _ (by bdd_omega), gTabY, gIdxY_eq hl he, gTab_eq]
+      hI.tab _ (by bdd_omega), gTabY, VG.Proof.MlKem.X86_64.gIdxY_eq hl he, gTab_eq]
   have R5 : ∀ l < 2, s5.lane .xmm12 l = r2V := fun l hl => by rw [o15.lane _ (by decide) l hl, hI.r2 l hl]
   rw [WP.block_append_iff]
-  refine WP.mono (ylanes lane_vbase (P := fun l t =>
-      Lanes (t.xmm .xmm1) (fun e => (F s₀)[2 * pairY i l e]! * (G s₀)[2 * pairY i l e]! +
-        (F s₀)[2 * pairY i l e + 1]! * (G s₀)[2 * pairY i l e + 1]! * gamma (pairY i l e)) ∧
-      Lanes (t.xmm .xmm2) (fun e => (F s₀)[2 * pairY i l e]! * (G s₀)[2 * pairY i l e + 1]! +
-        (F s₀)[2 * pairY i l e + 1]! * (G s₀)[2 * pairY i l e]!))
+  refine WP.mono (VG.Proof.MlKem.X86_64.ylanes VG.Proof.MlKem.X86_64.lane_vbase (P := fun l t =>
+      Lanes (t.xmm .xmm1) (fun e => (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]! * (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]! +
+        (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * gamma (VG.Proof.MlKem.X86_64.pairY i l e)) ∧
+      Lanes (t.xmm .xmm2) (fun e => (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]! * (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! +
+        (VG.Proof.MlKem.X86_64.Mul.F s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e + 1]! * (G s₀)[2 * VG.Proof.MlKem.X86_64.pairY i l e]!))
     fun l hl => WP.mono (vbase_ok (c5 l hl) (R5 l hl) (LF l hl).1 (LF l hl).2 (LG l hl).1 (LG l hl).2 (LZ l hl))
       fun _ ⟨a, b, c⟩ => ⟨⟨a, b⟩, c⟩) fun s6 ⟨V6, o6⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (ylanes lane_vinterS (P := fun l t =>
-      t.xmm .xmm1 = (interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[0]! ∧
-        t.xmm .xmm5 = (interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[1]! ∧
-        t.xmm .xmm3 = (interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[2]! ∧
-        t.xmm .xmm6 = (interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[3]!)
-    fun l _ => vinterS_ok (s6.proj l)) fun s7 ⟨I7, o7⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.ylanes VG.Proof.MlKem.X86_64.lane_vinterS (P := fun l t =>
+      t.xmm .xmm1 = (VG.Proof.MlKem.X86_64.interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[0]! ∧
+        t.xmm .xmm5 = (VG.Proof.MlKem.X86_64.interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[1]! ∧
+        t.xmm .xmm3 = (VG.Proof.MlKem.X86_64.interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[2]! ∧
+        t.xmm .xmm6 = (VG.Proof.MlKem.X86_64.interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[3]!)
+    fun l _ => VG.Proof.MlKem.X86_64.vinterS_ok (s6.proj l)) fun s7 ⟨I7, o7⟩ => ?_
   have o17 := (o15.trans o6).trans o7
   have hw7 : ∀ t < 4, InRegions s7.wr (s7.gpr .rdi + BitVec.ofNat 64 (32 * t)) 32 := fun t ht => by
     rw [o17.wr, o17.gpr, hI.wr, hI.rdi, hp.2.1, show 32 * t = 4 * (8 * t) by bdd_omega, coeffAddr_off]
@@ -356,9 +490,9 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
   -- the values stored
   have Y7 : ∀ t < 4, ∀ l < 2, ∀ j' < 4,
       (([s7.ymm .xmm1, s7.ymm .xmm5, s7.ymm .xmm3, s7.ymm .xmm6][t]!).extractLsb' (8 * (4 * (4 * l + j'))) (8 * 4)).toNat =
-        ((multiplyNTTs (F s₀) (G s₀))[32 * i + 8 * t + 4 * l + j']!).val := fun t ht l hl j' hj' => by
+        ((multiplyNTTs (VG.Proof.MlKem.X86_64.Mul.F s₀) (G s₀))[32 * i + 8 * t + 4 * l + j']!).val := fun t ht l hl j' hj' => by
     have e : ([s7.ymm .xmm1, s7.ymm .xmm5, s7.ymm .xmm3, s7.ymm .xmm6][t]!).extractLsb' (8 * (4 * (4 * l + j')))
-        (8 * 4) = dword ((interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[t]!) j' := by
+        (8 * 4) = dword ((VG.Proof.MlKem.X86_64.interV (s6.lane .xmm1 l) (s6.lane .xmm2 l))[t]!) j' := by
       rw [show 4 * (4 * l + j') = 16 * l + 4 * j' by bdd_omega]
       rcases (by bdd_omega : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3) with rfl | rfl | rfl | rfl <;>
         simp only [List.getElem!_cons_zero, List.getElem!_cons_succ] <;> rw [extract_ymm _ _ hl hj']
@@ -367,9 +501,9 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
     have iv := inter_val (s6.lane .xmm1 l) (s6.lane .xmm2 l) (k := 4 * t + j') (by bdd_omega)
     rw [show (4 * t + j') / 4 = t by bdd_omega, show (4 * t + j') % 4 = j' by bdd_omega] at iv
     rw [e]
-    exact iv.trans (prod_valY hi hl (V6 l hl).1 (V6 l hl).2 ht hj')
+    exact iv.trans (VG.Proof.MlKem.X86_64.MulY.prod_valY hi hl (V6 l hl).1 (V6 l hl).2 ht hj')
   have rdi7 : s7.gpr .rdi = coeffAddr (hP s₀) (32 * i) := by rw [o17.gpr, hI.rdi]
-  obtain ⟨out, inr, f8⟩ := ystore4 s7.mem (hP s₀) hj (s7.ymm .xmm1) (s7.ymm .xmm5) (s7.ymm .xmm3) (s7.ymm .xmm6)
+  obtain ⟨out, inr, f8⟩ := VG.Proof.MlKem.X86_64.ystore4 s7.mem (hP s₀) hj (s7.ymm .xmm1) (s7.ymm .xmm5) (s7.ymm .xmm3) (s7.ymm .xmm6)
   rw [← rdi7] at out inr f8
   have tS : ∀ k < 128, wordAt ((((s7.mem.writeW (s7.gpr .rdi) (s7.ymm .xmm1)).writeW (s7.gpr .rdi + 32#64)
       (s7.ymm .xmm5)).writeW (s7.gpr .rdi + 64#64) (s7.ymm .xmm3)).writeW (s7.gpr .rdi + 96#64)
@@ -388,11 +522,11 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
   case rd => rw [o17.rd, hI.rd]
   case wr => rw [o17.wr, hI.wr]
   case c =>
-    refine lanes_gpr (s := s7) ?_ o17 hI.c (by decide) (by decide)
-    intro r l; simp only [lane_setReg, lane_setFlags, State.setMem_lane]
+    refine VG.Proof.MlKem.X86_64.lanes_gpr (s := s7) ?_ o17 hI.c (by decide) (by decide)
+    intro r l; simp only [VG.Proof.MlKem.X86_64.lane_setReg, VG.Proof.MlKem.X86_64.lane_setFlags, State.setMem_lane]
   case r2 =>
     intro l hl
-    simp only [lane_setReg, lane_setFlags, State.setMem_lane]
+    simp only [VG.Proof.MlKem.X86_64.lane_setReg, VG.Proof.MlKem.X86_64.lane_setFlags, State.setMem_lane]
     rw [← hI.r2 l hl]; exact o17.lane _ (by decide) l hl
   case frame => exact hI.frame.trans (by rw [← o17.mem]; exact f8.mono (by simp))
   case tab => exact fun k hk => by rw [tS k hk]; exact hI.tab k hk
@@ -409,20 +543,20 @@ theorem step {i : Nat} (hi : i < 8) {s : State} (hI : Inv s₀ i s) :
 omit hp in
 theorem consts_ok (s : State) :
     WP isa (.block (yconsts ++ yconst .xmm12 0x05490549 ++ ([.mov .r8 (.reg .r10)] : List Instr))) s fun s' =>
-      YConsts s' ∧ (∀ l < 2, s'.lane .xmm12 l = r2V) ∧ s'.gpr .r8 = s.gpr .r10 ∧ s'.mem = s.mem ∧
+      VG.Proof.MlKem.X86_64.YConsts s' ∧ (∀ l < 2, s'.lane .xmm12 l = r2V) ∧ s'.gpr .r8 = s.gpr .r10 ∧ s'.mem = s.mem ∧
         s'.mxcsr = s.mxcsr ∧ Keep [.rax, .r8] s s' := by
   simp only [yconsts]
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (yconst_ok .xmm15 _ s) fun s1 ⟨q1, k1, m1, x1, o1⟩ => ?_
-  refine WP.mono (yconst_ok .xmm14 _ s1) fun s2 ⟨q2, k2, m2, x2, o2⟩ => ?_
-  refine WP.mono (yconst_ok .xmm12 _ s2) fun s3 ⟨q3, k3, m3, x3, o3⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yconst_ok .xmm15 _ s) fun s1 ⟨q1, k1, m1, x1, o1⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yconst_ok .xmm14 _ s1) fun s2 ⟨q2, k2, m2, x2, o2⟩ => ?_
+  refine WP.mono (VG.Proof.MlKem.X86_64.yconst_ok .xmm12 _ s2) fun s3 ⟨q3, k3, m3, x3, o3⟩ => ?_
   vrunm
   refine ⟨fun l hl => ⟨?_, ?_⟩, fun l hl => ?_, ?_, by rw [m3, m2, m1], by rw [x3, x2, x1], ?_⟩
-  · simp only [State.proj_xmm, lane_setReg]
+  · simp only [State.proj_xmm, VG.Proof.MlKem.X86_64.lane_setReg]
     rw [o3 _ (by decide) l hl, o2 _ (by decide) l hl, q1 l hl]; decide
-  · simp only [State.proj_xmm, lane_setReg]
+  · simp only [State.proj_xmm, VG.Proof.MlKem.X86_64.lane_setReg]
     rw [o3 _ (by decide) l hl, q2 l hl]; decide
-  · simp only [lane_setReg]; rw [q3 l hl]; decide
+  · simp only [VG.Proof.MlKem.X86_64.lane_setReg]; rw [q3 l hl]; decide
   · rw [k3.gpr (by decide), k2.gpr (by decide), k1.gpr (by decide)]
   · exact ⟨fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -434,7 +568,7 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.multiplyNTTsAvx2 s₀ t s
     mulK.post s₀ s' := by
   have hw : pR (sP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
   have hW : WP isa Impl.MlKem.X86_64.multiplyNTTsAvx2 s₀ fun s' => ∃ s3,
-      (PolyIs s3.mem (hP s₀) (multiplyNTTs (F s₀) (G s₀)) ∧ Frame [pR (hP s₀), pR (sP s₀)] s₀.mem s3.mem) ∧
+      (PolyIs s3.mem (hP s₀) (multiplyNTTs (VG.Proof.MlKem.X86_64.Mul.F s₀) (G s₀)) ∧ Frame [pR (hP s₀), pR (sP s₀)] s₀.mem s3.mem) ∧
       Frame [mxR (sP s₀)] s3.mem s'.mem ∧ Keep [] s3 s' := by
     unfold Impl.MlKem.X86_64.multiplyNTTsAvx2
     refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .r10 = sP s₀ ∧ s1.mem = s₀.mem ∧
@@ -451,14 +585,14 @@ theorem correct : ∃ t s', Exec isa Impl.MlKem.X86_64.multiplyNTTsAvx2 s₀ t s
     refine WP.seq ?_
     simp only [mulProY, List.append_assoc]
     rw [WP.block_append_iff]
-    refine WP.mono (wordTab_gen gTabY gTabY_lt (by decide) h10' (by rw [k12.2.2]; exact hw))
+    refine WP.mono (wordTab_gen gTabY VG.Proof.MlKem.X86_64.gTabY_lt (by decide) h10' (by rw [k12.2.2]; exact hw))
       fun s3 ⟨ht, f3, k3, _, _⟩ => ?_
     rw [← List.append_assoc]
-    refine WP.mono (consts_ok s3) fun s4 ⟨hc4, hr4, h84, hm4, _, k4⟩ => ?_
+    refine WP.mono (VG.Proof.MlKem.X86_64.MulY.consts_ok s3) fun s4 ⟨hc4, hr4, h84, hm4, _, k4⟩ => ?_
     have h84' : s4.gpr .r8 = sP s₀ := by rw [h84, k3.gpr (by decide), h10']
     have k14 := (k12.trans k3).trans k4
-    refine WP.seq (WP.mono (wp_rcxLoopY (N := 8) (by decide) (by decide) (Inv s₀) (fun s g hy _ => ?_)
-      fun i hi s hI => step hp hi hI) fun s5 hI => ?_)
+    refine WP.seq (WP.mono (VG.Proof.MlKem.X86_64.wp_rcxLoopY (N := 8) (by decide) (by decide) (VG.Proof.MlKem.X86_64.MulY.Inv s₀) (fun s g hy _ => ?_)
+      fun i hi s hI => VG.Proof.MlKem.X86_64.MulY.step hp hi hI) fun s5 hI => ?_)
     · have k := k14.trans g.keep
       have hl : ∀ r l, s.lane r l = s4.lane r l := fun r l => by
         simp only [State.lane]; rw [g.xmm, hy]
@@ -504,8 +638,10 @@ theorem mulY_ct : ConstantTime isa mulK.pre mulK.pub Impl.MlKem.X86_64.multiplyN
 
 theorem mulY_verified :
     Verified X86_64.target Impl.MlKem.X86_64.multiplyNTTsAvx2 (Spec.MlKem.mulContract X86_64.abi) :=
-  Verified.of_correct mulY_correct mulY_ct (by
+  Verified.of_correct VG.Proof.MlKem.X86_64.mulY_correct VG.Proof.MlKem.X86_64.mulY_ct (by
     mlkem_implies [Spec.MlKem.mulContract, Spec.MlKem.mulSig, mulK, X86_64.abi, X86_64.argRegs]
       [mulSat] using mulSat)
 
 end VG.Proof.MlKem.X86_64
+
+end

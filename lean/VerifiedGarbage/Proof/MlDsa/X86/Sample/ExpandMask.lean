@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.X86.Sample.RejNtt
-import VerifiedGarbage.Proof.MlDsa.Sample.Word
+import VerifiedGarbage.Proof.MlDsa.Sample.Signs
 import VerifiedGarbage.Impl.MlDsa.X86.Sample.ExpandMask
 
 /-!
@@ -29,7 +29,7 @@ open VG.Proof.MlDsa.X86.Sample.RejNtt (nil_piece)
 
 /-- The layout: `expandMask(seed, gamma1, a, scratch)`, 66 bytes of seed,
 640 bytes of SHAKE256. -/
-def L : Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 640, mlen := some 66 }
+def L : VG.Proof.MlDsa.X86.Sample.Lay := { nA := 4, iA := 2, iS := 3, rate := 136, outlen := 640, mlen := some 66 }
 
 theorem hL : L.Ok :=
   ⟨by decide, by decide, by decide, by decide, by decide, fun k hk => by cases hk; decide,
@@ -39,7 +39,7 @@ theorem hL : L.Ok :=
 abbrev γ (s₀ : State) : Nat := (arg s₀ 1).toNat
 
 /-- The precondition. -/
-def EPre (s₀ : State) : Prop := Pre L s₀ ∧ (γ s₀ = 2 ^ 17 ∨ γ s₀ = 2 ^ 19)
+def EPre (s₀ : State) : Prop := VG.Proof.MlDsa.X86.Sample.Pre VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀ ∧ (γ s₀ = 2 ^ 17 ∨ γ s₀ = 2 ^ 19)
 
 /-- The XOF output. -/
 abbrev X (s₀ : State) : List Byte := L.out s₀
@@ -54,7 +54,7 @@ def emOk (c : Nat) : Prop := c = 18 ∨ c = 20
 /-! ## The loop -/
 
 /-- Group `g`, with its first `k` coefficients stored. -/
-structure GInv (c : Nat) (s₀ : State) (g k : Nat) (s : State) : Prop extends Base L s₀ s where
+structure GInv (c : Nat) (s₀ : State) (g k : Nat) (s : State) : Prop extends Base VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀ s where
   out : ∀ p < 640, s.mem (L.sA s₀ + BitVec.ofNat 64 (840 + p)) = (X s₀).getD p 0
   esi : s.gpr .esi = L.sP s₀ + BitVec.ofNat 32 (840 + c / 2 * g)
   edi : s.gpr .edi = L.aP s₀ + BitVec.ofNat 32 (16 * g)
@@ -65,7 +65,7 @@ structure GInv (c : Nat) (s₀ : State) (g k : Nat) (s : State) : Prop extends B
 theorem emOk_le {c : Nat} (hc : emOk c) : c / 2 * 63 + c * 3 / 8 ≤ 637 := by rcases hc with rfl | rfl <;> decide
 
 /-- Coefficient `4g + k`. -/
-theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : Nat} (hg : g < 64) (hk : k < 4)
+theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : VG.Proof.MlDsa.X86.Sample.Pre VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀) {g k : Nat} (hg : g < 64) (hk : k < 4)
     {s : State} (h : GInv c s₀ g k s) : WP isa (.block (emCoef c k)) s (GInv c s₀ g (k + 1)) := by
   have hs := hp.s_fit
   have ha := hp.a_fit
@@ -77,12 +77,12 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
   -- the word read
   have eld : (L.sP s₀ + BitVec.ofNat 32 (840 + c / 2 * g) + BitVec.ofNat 32 (c * k / 8)).setWidth 64 =
       L.sA s₀ + BitVec.ofNat 64 (840 + (c / 2 * g + c * k / 8)) := by
-    rw [ea_add (by simp only [L] at hs ⊢; omega), Nat.add_assoc]
+    rw [ea_add (by simp only [VG.Proof.MlDsa.X86.Sample.ExpandMask.L] at hs ⊢; omega), Nat.add_assoc]
   have ild := hp.inS' h.wr (o := 840 + (c / 2 * g + c * k / 8)) (n := 4) (by omega)
   -- the coefficient stored
   have est : (L.aP s₀ + BitVec.ofNat 32 (16 * g) + BitVec.ofNat 32 (4 * k)).setWidth 64 =
       coeffAddr (L.aA s₀) (4 * g + k) := by
-    rw [ea_add (by simp only [L] at ha ⊢; omega)]; congr 2; omega
+    rw [ea_add (by simp only [VG.Proof.MlDsa.X86.Sample.ExpandMask.L] at ha ⊢; omega)]; congr 2; omega
   have ist : InRegions s.wr (coeffAddr (L.aA s₀) (4 * g + k)) 4 := hp.inA h.wr (by omega)
   -- its value
   generalize hw : s.mem.readW (L.sA s₀ + BitVec.ofNat 64 (840 + (c / 2 * g + c * k / 8))) 32 = w
@@ -143,9 +143,9 @@ theorem coef_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g k : 
     exact fin _ (by simp) (by simp) (by simp) (by simp) rfl rfl rfl
 
 /-- A group of 4 coefficients, and the pointers and counter advanced. -/
-theorem body_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g : Nat} (hg : g < 64)
+theorem body_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : VG.Proof.MlDsa.X86.Sample.Pre VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀) {g : Nat} (hg : g < 64)
     {s : State} (h : GInv c s₀ g 0 s) :
-    WP isa (.block (emBody c)) s fun s' => GInv c s₀ (g + 1) 0 s' ∧ eval .ne s' = some (decide (g + 1 < 64)) := by
+    WP isa (.block (emBody c)) s fun s' => GInv c s₀ (g + 1) 0 s' ∧ VG.X86.eval .ne s' = some (decide (g + 1 < 64)) := by
   rw [emBody, show (List.range 4).flatMap (emCoef c) =
       emCoef c 0 ++ (emCoef c 1 ++ (emCoef c 2 ++ (emCoef c 3 ++ []))) from rfl, List.append_nil,
     List.append_assoc, WP.block_append_iff]
@@ -167,16 +167,16 @@ theorem body_ok {c : Nat} (hc : emOk c) {s₀ : State} (hp : Pre L s₀) {g : Na
     rw [show (16 : BitVec 32) = BitVec.ofNat 32 16 from rfl, add_ofNat_add]; congr 2
   · simp (config := {decide := true}) only [↓reduceIte, h4.ecx]
     exact cnt_next hg
-  · simp only [eval, h4.ecx]
+  · simp only [VG.X86.eval, h4.ecx]
     exact cnt_ne hg (by omega)
 
 theorem loop_piece {c : Nat} (hc : emOk c)
     (ht : TaintOk [.esi, .edi] (.block (emBody c))) :
-    Piece EPre (PubP L) (fun s₀ s => GInv c s₀ 0 0 s) (fun s₀ s => GInv c s₀ 64 0 s)
+    Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) (fun s₀ s => GInv c s₀ 0 0 s) (fun s₀ s => GInv c s₀ 64 0 s)
       (.loop (.block (emBody c)) .ne) := by
   obtain ⟨_, ht⟩ := ht
   exact Piece.countLoop (by decide) (fun g s₀ s => GInv c s₀ g 0 s) [.esi, .edi]
-    (fun g hg s₀ s hp h => body_ok hc hp.1 hg h)
+    (fun g hg s₀ s hp h => VG.Proof.MlDsa.X86.Sample.ExpandMask.body_ok hc hp.1 hg h)
     (fun g _ s₀ s₀' s s' _ _ hq h h' r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -185,9 +185,9 @@ theorem loop_piece {c : Nat} (hc : emOk c)
 
 /-- Before the branch on `γ₁`: `edi = a`, and whether `γ₁ = 2¹⁷` in ZF. -/
 def Sel (s₀ s : State) : Prop :=
-  Out L s₀ s ∧ s.gpr .edi = L.aP s₀ ∧ eval .e s = some (decide (γ s₀ = 2 ^ 17))
+  Out VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀ s ∧ s.gpr .edi = L.aP s₀ ∧ VG.X86.eval .e s = some (decide (γ s₀ = 2 ^ 17))
 
-theorem sel_piece : Piece EPre (PubP L) (Out L) Sel
+theorem sel_piece : Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) (Out VG.Proof.MlDsa.X86.Sample.ExpandMask.L) Sel
     (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 0x20000)]) := by
   refine Piece.taint [.esp] (fun s₀ s hp h => ?_) (fun s₀ s₀' s s' _ _ hq h h' r hr => ?_)
     (by taint_decide)
@@ -203,14 +203,14 @@ theorem sel_piece : Piece EPre (PubP L) (Out L) Sel
       exec, execAlu, readSrc, State.ea, State.load32, State.setReg, arithFlags, State.setFlags, Option.map_some,
       Option.bind_some, a₁, i₁, v₁, a₂, i₂, v₂, Option.some.injEq, exists_eq_left']
     refine ⟨⟨⟨⟨by simp [h.esp], h.rd, h.wr, h.frame⟩, h.args, by simp [h.esi]⟩, h.out⟩, by simp; rfl, ?_⟩
-    simp only [eval, sub_beq_zero]
+    simp only [VG.X86.eval, sub_beq_zero]
     rfl
   · simp only [List.mem_singleton] at hr
     subst hr
     rw [h.esp, h'.esp, hq.e1]
 
 theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17) = b → c = emC (γ s₀)) :
-    Piece EPre (PubP L) (fun s₀ s => Sel s₀ s ∧ decide (γ s₀ = 2 ^ 17) = b) (fun s₀ s => GInv c s₀ 0 0 s)
+    Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) (fun s₀ s => Sel s₀ s ∧ decide (γ s₀ = 2 ^ 17) = b) (fun s₀ s => GInv c s₀ 0 0 s)
     (.block [.alu .add .esi (.imm (BitVec.ofNat 32 840)), .mov .ecx (.imm 64)]) := by
   refine Piece.taint [] (fun s₀ s hp ⟨⟨h, hdi, _⟩, e⟩ => ?_) (fun _ _ _ _ _ _ _ _ _ r hr => absurd hr (by simp))
     (by taint_decide)
@@ -223,25 +223,25 @@ theorem init_piece (c : Nat) (b : Bool) (hb : ∀ s₀, decide (γ s₀ = 2 ^ 17
 
 /-- The end: the polynomial of `ExpandMask` at `a`. -/
 def Fin (s₀ s : State) : Prop :=
-  Base L s₀ s ∧ Spec.MlDsa.PolyIs s.mem (L.aA s₀)
+  Base VG.Proof.MlDsa.X86.Sample.ExpandMask.L s₀ s ∧ Spec.MlDsa.PolyIs s.mem (L.aA s₀)
     (Spec.MlDsa.toRq (Spec.MlDsa.bitUnpack (H (L.Msg s₀) (32 * (1 + Spec.MlDsa.bitlen (γ s₀ - 1))))
       (γ s₀ - 1) (γ s₀)))
 
 theorem fin_of {c : Nat} {s₀ s : State} (hγ : γ s₀ = 2 ^ 17 ∨ γ s₀ = 2 ^ 19) (hc : c = emC (γ s₀))
-    (h : GInv c s₀ 64 0 s) : Fin s₀ s := by
+    (h : GInv c s₀ 64 0 s) : VG.Proof.MlDsa.X86.Sample.ExpandMask.Fin s₀ s := by
   refine ⟨h.toBase, polyIs_of_coeffAt fun i hi => ?_⟩
-  rw [expandMask_getElem _ hγ hi, h.coef i (by simp only [n] at hi; omega), emV, ← hc, (emC_eq hγ).2.2]
-  have : X s₀ = H (L.Msg s₀) 640 := (H_eq _ _).symm
+  rw [expandMask_getElem _ hγ hi, h.coef i (by simp only [VG.Spec.MlDsa.n] at hi; omega), emV, ← hc, (emC_eq hγ).2.2]
+  have : X s₀ = H (L.Msg s₀) 640 := (VG.Proof.MlDsa.Sample.H_eq _ _).symm
   rw [this, show 2 ^ (emC (γ s₀) - 1) = 2 ^ (c - 1) by rw [hc]]
 
-theorem branch_piece : Piece EPre (PubP L) Sel Fin (.ite .e (emLoop 18) (emLoop 20)) := by
+theorem branch_piece : Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) Sel VG.Proof.MlDsa.X86.Sample.ExpandMask.Fin (.ite .e (emLoop 18) (emLoop 20)) := by
   refine Piece.ite (fun s₀ => decide (γ s₀ = 2 ^ 17)) (fun _ _ _ h => h.2.2)
     (fun s₀ s₀' _ _ hq => by rw [γ, γ, hq.2 1 (by decide)]) ?_ ?_
-  · refine (Piece.seq (init_piece 18 true fun s₀ e => by rw [emC, ifT (of_decide_eq_true e)])
-      (loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
+  · refine (Piece.seq (VG.Proof.MlDsa.X86.Sample.ExpandMask.init_piece 18 true fun s₀ e => by rw [emC, ifT (of_decide_eq_true e)])
+      (VG.Proof.MlDsa.X86.Sample.ExpandMask.loop_piece (Or.inl rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
     exact fin_of hp.2 h.cγ h
-  · refine (Piece.seq (init_piece 20 false fun s₀ e => by rw [emC, ifF (of_decide_eq_false e)])
-      (loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
+  · refine (Piece.seq (VG.Proof.MlDsa.X86.Sample.ExpandMask.init_piece 20 false fun s₀ e => by rw [emC, ifF (of_decide_eq_false e)])
+      (VG.Proof.MlDsa.X86.Sample.ExpandMask.loop_piece (Or.inr rfl) ⟨_, by taint_decide⟩)).mono (fun _ _ _ h => h) fun s₀ s hp h => ?_
     exact fin_of hp.2 h.cγ h
 
 end VG.Proof.MlDsa.X86.Sample.ExpandMask
@@ -255,14 +255,14 @@ open VG.Impl.MlDsa.X86.Sample (argOp emLoop sponge)
 
 /-! ## The whole function -/
 
-theorem main_piece : Piece EPre (PubP L) (fun s₀ s => s = P0 s₀) Fin
+theorem main_piece : Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) (fun s₀ s => s = P0 s₀) VG.Proof.MlDsa.X86.Sample.ExpandMask.Fin
     (.seq (sponge 3 136 (.imm 66) 640)
       (.seq (.block [.mov .edi (.mem (argOp 2)), .mov .eax (.mem (argOp 1)), .alu .cmp .eax (.imm 0x20000)])
         (.ite .e (emLoop 18) (emLoop 20)))) :=
   Piece.seq ((sponge_piece hL).pre_mono (fun _ h => h.1) fun _ _ _ _ h => h) <|
-    Piece.seq sel_piece branch_piece
+    Piece.seq sel_piece VG.Proof.MlDsa.X86.Sample.ExpandMask.branch_piece
 
-theorem piece : Piece EPre (PubP L) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (Fin s₀) s₀ s')
+theorem piece : Piece EPre (PubP VG.Proof.MlDsa.X86.Sample.ExpandMask.L) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (VG.Proof.MlDsa.X86.Sample.ExpandMask.Fin s₀) s₀ s')
     Impl.MlDsa.X86.Sample.expandMask :=
   Piece.leaf L.W (NoSp.of_all (by decide +kernel))
     (fun _ hp => ⟨by have := hp.1.sp; omega, by have := hp.1.sp'; omega⟩)
@@ -298,7 +298,7 @@ theorem verified :
       X86.argBytes]
     rw [hm]
     exact hf
-  · let st := satState satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
+  · let st := VG.Proof.MlKem.X86.satState VG.Proof.MlDsa.X86.Sample.ExpandMask.satMem [⟨0, 66⟩] [⟨0x100, 1024⟩, ⟨0x1000, 2048⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
     sig_sat_check [Spec.MlDsa.expandMaskContract, Spec.MlDsa.expandMaskSig, X86.abi, X86.argSlots, X86.argVal,
       X86.argBytes]

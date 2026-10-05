@@ -1,6 +1,63 @@
-import VerifiedGarbage.Proof.Ed448.VerifyEq
-import VerifiedGarbage.Proof.Ed448.Recover
+import VerifiedGarbage.Proof.Ed448.Group.Decode
 import Mathlib.Tactic.Abel
+import VerifiedGarbage.Proof.Ed448.Signing
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed448.VerifyEq`. -/
+section
+
+/-!
+# Ed448: the verification equation, as code checks it
+
+`verifyEquation` (RFC 8032 §5.2.7, cofactored) in terms of what code
+computes: for decoded `A` and `R`, `[4]([S]B + [k](-A))` against `[4]R`,
+each doubled twice from representatives `Q` and `R`. Over the group
+`[4]([S]B - [k]A) = [4]R` exactly when `[4][S]B = [4]R + [4][k]A`.
+-/
+
+namespace VG.Proof.Ed448
+
+open Spec.X448 (Fe P)
+open Spec.Ed448 (Point)
+open EdwardsLaw
+
+theorem four_smul {a : EPoint dZ} : (a + a) + (a + a) = 4 • a := by
+  rw [show (4 : Nat) = 1 + 1 + 1 + 1 from rfl, add_nsmul, add_nsmul, add_nsmul, one_nsmul]
+  abel
+
+theorem verifyEquation_some {pk sig ch : List Byte} (hl : pk.length = 57) (hs : sig.length = 114)
+    (hc : ch.length = 57) {a r : Point} (ha : Spec.Ed448.decodePoint pk = some a)
+    (hr : Spec.Ed448.decodePoint (sig.take 57) = some r) {Q R : Point}
+    (hQ : Rep Q (Spec.Ed448.decodeLE (sig.drop 57) • baseAff +
+      Spec.Ed448.decodeLE ch • (-toAffine a))) (hR : Rep R (toAffine r)) :
+    Spec.Ed448.verifyEquation pk sig ch =
+      (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) &&
+        Spec.Ed448.pointEqual (double (double Q)) (double (double R))) := by
+  have hva := decodePoint_valid ha
+  have hvr := decodePoint_valid hr
+  unfold Spec.Ed448.verifyEquation
+  simp only [hl, hs, hc, bne_self_eq_false, Bool.or_false, Bool.false_eq_true, ite_false, ha, hr]
+  refine congrArg (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) && ·) ?_
+  generalize Spec.Ed448.decodeLE (sig.drop 57) = S at *
+  generalize Spec.Ed448.decodeLE ch = K at *
+  have h1 := pointMul_rep 4 (pointMul_rep S basePoint_rep)
+  have h2 := pointAdd_rep (pointMul_rep 4 (rep_toAffine hvr)) (pointMul_rep 4 (pointMul_rep K (rep_toAffine hva)))
+  have h3 := double_rep (double_rep hQ)
+  have h4 := double_rep (double_rep hR)
+  rw [Bool.eq_iff_iff, pointEqual_rep h1 h2, pointEqual_rep h3 h4, VG.Proof.Ed448.four_smul, VG.Proof.Ed448.four_smul]
+  constructor
+  · intro h
+    rw [smul_add, smul_neg, h]; abel
+  · intro h
+    have : 4 • (S • baseAff) = 4 • (S • baseAff + K • -toAffine a) + 4 • (K • toAffine a) := by
+      rw [smul_add (4 : Nat) (S • baseAff), smul_neg]; abel
+    rw [this, h]
+
+end VG.Proof.Ed448
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed448.Facts`. -/
+section
 
 /-!
 # Ed448: the reference computations agree with the specification
@@ -49,7 +106,7 @@ theorem recoverX_eq (y : Fe) (sign : Bool) :
   generalize u * u * u * v * rootPow (u * u * u * v * (u * v * (u * v))) = x
   rw [e3 v x, e4 x]
 
-theorem recover_ok : RecoverOk := fun y sign => by rw [recoverX_eq]; rfl
+theorem recover_ok : RecoverOk := fun y sign => by rw [VG.Proof.Ed448.recoverX_eq]; rfl
 
 /-! ## The ladders -/
 
@@ -70,10 +127,10 @@ theorem ladderStep_rep {r : Point} {k t : Nat} (hr : Rep r ((k >>> (t + 1)) • 
   have h2 := double_rep hr
   have e1 : (k >>> t) • baseAff = (k >>> (t + 1)) • baseAff + (k >>> (t + 1)) • baseAff +
       ((k >>> t) &&& 1) • baseAff := by
-    conv => lhs; rw [shift_step k t]
+    conv => lhs; rw [VG.Proof.Ed448.shift_step k t]
     rw [add_nsmul, two_mul, add_nsmul]
   rw [e1]
-  rcases bit_cases k t with ⟨h, hb⟩ | ⟨h, hb⟩
+  rcases VG.Proof.Ed448.bit_cases k t with ⟨h, hb⟩ | ⟨h, hb⟩
   · rw [h, zero_nsmul, add_zero, hb]; exact h2
   · rw [h, one_nsmul, hb]; exact pointAdd_rep h2 basePoint_rep
 
@@ -81,13 +138,13 @@ theorem ladder_rep {k : Nat} (hk : Below456 k) :
     ∀ m ≤ 456, Rep (ladder k m) ((k >>> (456 - m)) • baseAff)
   | 0, _ => by rw [Nat.sub_zero, shift_456 hk, zero_nsmul]; exact identity_rep
   | m + 1, hm => by
-    have h := ladderStep_rep (t := 455 - m) (show Rep (ladder k m) ((k >>> (455 - m + 1)) • baseAff) by
-      rw [show 455 - m + 1 = 456 - m by omega]; exact ladder_rep hk m (by omega))
+    have h := VG.Proof.Ed448.ladderStep_rep (t := 455 - m) (show Rep (ladder k m) ((k >>> (455 - m + 1)) • baseAff) by
+      rw [show 455 - m + 1 = 456 - m by omega]; exact VG.Proof.Ed448.ladder_rep hk m (by omega))
     rw [show 456 - (m + 1) = 455 - m by omega]
     exact h
 
 theorem baseLadder_ok : BaseLadderOk := fun k hk => by
-  have h := ladder_rep hk 456 (Nat.le_refl _)
+  have h := VG.Proof.Ed448.ladder_rep hk 456 (Nat.le_refl _)
   rw [Nat.sub_self, Nat.shiftRight_zero] at h
   rw [encodePoint_rep h, encodePoint_rep (pointMul_rep k basePoint_rep)]
 
@@ -100,12 +157,12 @@ theorem vstepRef_rep {q a' : Point} {S K t : Nat} {a : EPoint dZ}
   have e1 : (S >>> t) • baseAff + (K >>> t) • a =
       ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a) + ((S >>> (t + 1)) • baseAff + (K >>> (t + 1)) • a) +
         ((S >>> t) &&& 1) • baseAff + ((K >>> t) &&& 1) • a := by
-    conv => lhs; rw [shift_step S t, shift_step K t]
+    conv => lhs; rw [VG.Proof.Ed448.shift_step S t, VG.Proof.Ed448.shift_step K t]
     rw [add_nsmul, add_nsmul, two_mul, two_mul, add_nsmul, add_nsmul]
     abel
   rw [e1]
   unfold vstepRef
-  rcases bit_cases S t with ⟨hs, bs⟩ | ⟨hs, bs⟩ <;> rcases bit_cases K t with ⟨hk, bk⟩ | ⟨hk, bk⟩ <;>
+  rcases VG.Proof.Ed448.bit_cases S t with ⟨hs, bs⟩ | ⟨hs, bs⟩ <;> rcases VG.Proof.Ed448.bit_cases K t with ⟨hk, bk⟩ | ⟨hk, bk⟩ <;>
     simp only [hs, hk, bs, bk, zero_nsmul, add_zero, one_nsmul, Bool.false_eq_true, ite_true, ite_false]
   · exact h2
   · exact pointAdd_rep h2 ha
@@ -119,9 +176,9 @@ theorem vladder_rep {S K : Nat} (hS : Below456 S) (hK : Below456 K) {a' : Point}
     rw [Nat.sub_zero, shift_456 hS, shift_456 hK, zero_nsmul, zero_nsmul, add_zero]
     exact identity_rep
   | m + 1, hm => by
-    have h := vstepRef_rep (t := 455 - m) (show Rep (vladder S K a' m)
+    have h := VG.Proof.Ed448.vstepRef_rep (t := 455 - m) (show Rep (vladder S K a' m)
       ((S >>> (455 - m + 1)) • baseAff + (K >>> (455 - m + 1)) • a) by
-      rw [show 455 - m + 1 = 456 - m by omega]; exact vladder_rep hS hK ha m (by omega)) ha
+      rw [show 455 - m + 1 = 456 - m by omega]; exact VG.Proof.Ed448.vladder_rep hS hK ha m (by omega)) ha
     rw [show 456 - (m + 1) = 455 - m by omega]
     exact h
 
@@ -129,8 +186,10 @@ theorem verifyEq_ok : VerifyEqOk := by
   intro pk sig ch a r hl hs hc ha hr
   have hva := decodePoint_valid ha
   have hS := decodeLE_below (bs := sig.drop 57) (by rw [List.length_drop, hs])
-  have hQ := vladder_rep hS (decodeLE_below hc) (rep_toAffine (valid_negPoint hva)) 456 (Nat.le_refl _)
+  have hQ := VG.Proof.Ed448.vladder_rep hS (decodeLE_below hc) (rep_toAffine (valid_negPoint hva)) 456 (Nat.le_refl _)
   rw [Nat.sub_self, Nat.shiftRight_zero, Nat.shiftRight_zero, toAffine_negPoint hva] at hQ
-  exact verifyEquation_some hl hs hc ha hr hQ (rep_toAffine (decodePoint_valid hr))
+  exact VG.Proof.Ed448.verifyEquation_some hl hs hc ha hr hQ (rep_toAffine (decodePoint_valid hr))
 
 end VG.Proof.Ed448
+
+end

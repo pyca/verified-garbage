@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 import VerifiedGarbage.Proof.Sha256.AArch64.Shared
-import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+import VerifiedGarbage.Proof.Sha256.AArch64.ScalarBackend
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.TCB.AArch64.Target

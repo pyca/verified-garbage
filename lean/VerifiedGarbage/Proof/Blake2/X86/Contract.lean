@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Blake2.Stream
+import VerifiedGarbage.Proof.Blake2.Scratch
 import VerifiedGarbage.TCB.X86.Target
 
 /-!
@@ -18,7 +18,7 @@ namespace VG.Proof.Blake2
 open VG.X86 VG.Spec.Blake2
 
 section
-variable {w : Nat} (P : Params w)
+variable {w : Nat} (P : VG.Spec.Blake2.Params w)
 
 /-- x86 (32-bit) contract for
 `compress(state, blocks, n, t: u64, last: u32, scratch: *mut [u64; 64])`:

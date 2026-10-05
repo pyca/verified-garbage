@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.KMain
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Contract
-import VerifiedGarbage.Proof.Bignum.X86_64.PubCode
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 
 /-!
 # A candidate on x86-64: correctness

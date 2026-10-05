@@ -1,8 +1,8 @@
 import VerifiedGarbage.Spec.Hmac.Generic
 import VerifiedGarbage.Proof.Md5.Stream
-import VerifiedGarbage.Proof.Sha1.Stream
+import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Sha256.Scratch
-import VerifiedGarbage.Proof.Sha512.Stream
+import VerifiedGarbage.Proof.Sha512.Scratch
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
@@ -39,18 +39,18 @@ theorem sha512_256_local : ReprLocal sha512_256S := fun h hr => Sha512.Stream.re
 
 variable (S : StreamingHash) (pb : Nat)
 
-theorem initPre_local : ∀ vs m₁ m₂, vs.length = ((initSig S).words pb).length →
-    (∀ b ∈ Sig.bufs (initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply ((initSig S).words pb) (initPre S pb) vs m₁ →
-      Curry.apply ((initSig S).words pb) (initPre S pb) vs m₂
+theorem initPre_local : ∀ vs m₁ m₂, vs.length = ((VG.Spec.Hmac.initSig S).words pb).length →
+    (∀ b ∈ Sig.bufs (VG.Spec.Hmac.initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((VG.Spec.Hmac.initSig S).words pb) (initPre S pb) vs m₁ →
+      Curry.apply ((VG.Spec.Hmac.initSig S).words pb) (initPre S pb) vs m₂
   | [_, _, _, _], _, _, _, _, h => h
 
-theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((initSig S).words pb).length →
-    (∀ b ∈ Sig.bufs (initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply ((initSig S).words pb) (initPost S pb) vs m₁ m' r →
-      Curry.apply ((initSig S).words pb) (initPost S pb) vs m₂ m' r
+theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((VG.Spec.Hmac.initSig S).words pb).length →
+    (∀ b ∈ Sig.bufs (VG.Spec.Hmac.initSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((VG.Spec.Hmac.initSig S).words pb) (initPost S pb) vs m₁ m' r →
+      Curry.apply ((VG.Spec.Hmac.initSig S).words pb) (initPost S pb) vs m₂ m' r
   | [_, _, key, kl], m₁, m₂, m', r, _, hb, h => by
-    simp only [initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [VG.Spec.Hmac.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq] at hb
     have hk : ∀ i < (kl.setWidth pb).toNat, m₂ (key + BitVec.ofNat 64 i) = m₁ (key + BitVec.ofNat 64 i) :=
       fun i hi => by
@@ -67,12 +67,12 @@ theorem initPost_local : ∀ vs m₁ m₂ m' r, vs.length = ((initSig S).words p
     exact h
 
 theorem finalizePost_local (hR : ReprLocal S) (hS : S.stateBytes < 2 ^ 64) : ∀ vs m₁ m₂ m' r,
-    vs.length = ((finalizeSig S).words pb).length →
-    (∀ b ∈ Sig.bufs (finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-    Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m₁ m' r →
-      Curry.apply ((finalizeSig S).words pb) (finalizePost S pb) vs m₂ m' r
+    vs.length = ((VG.Spec.Hmac.finalizeSig S).words pb).length →
+    (∀ b ∈ Sig.bufs (VG.Spec.Hmac.finalizeSig S).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply ((VG.Spec.Hmac.finalizeSig S).words pb) (VG.Spec.Hmac.finalizePost S pb) vs m₁ m' r →
+      Curry.apply ((VG.Spec.Hmac.finalizeSig S).words pb) (VG.Spec.Hmac.finalizePost S pb) vs m₂ m' r
   | [inn, out, _, _], m₁, m₂, m', r, _, hb, h => by
-    simp only [finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    simp only [VG.Spec.Hmac.finalizeSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, Elem.size, Nat.mul_one] at hb
     have hs : ∀ (p : Addr), (∀ a, Region.Contains ⟨p, S.stateBytes⟩ a 1 → m₁ a = m₂ a) →
         ∀ i < S.stateBytes, m₁ (p + BitVec.ofNat 64 i) = m₂ (p + BitVec.ofNat 64 i) :=

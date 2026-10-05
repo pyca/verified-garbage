@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.MdStream.X86.Finalize
+import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Md5.Md
-import VerifiedGarbage.Proof.Md5.X86.Contract
+import VerifiedGarbage.Proof.Md5.X86.Compress
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Md5.X86.Compress
 import VerifiedGarbage.Impl.Md5.X86.Stream

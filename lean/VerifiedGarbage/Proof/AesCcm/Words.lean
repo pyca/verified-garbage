@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesCcm.Ctr
-import VerifiedGarbage.Proof.Cmac.Mem
+import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset

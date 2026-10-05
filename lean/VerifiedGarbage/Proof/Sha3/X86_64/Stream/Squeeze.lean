@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Word
-import VerifiedGarbage.Proof.Sha3.Stream
+import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Absorb
+import VerifiedGarbage.Proof.Sha3.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -77,14 +77,14 @@ theorem ret_stk (s₀ : State) : (RR s₀).Disjoint (KR s₀) := by
 /-- The saved registers lie in the scratch space, past the permutation's. -/
 theorem slot_sub (s₀ : State) {p : Reg × Nat} (hp : p ∈ Impl.Sha3.X86_64.Stream.saved) :
     Region.Sub ⟨Spill.slot (scrp s₀) p.2, 8⟩ (CR s₀) := by
-  have := saved_bound p hp; exact sub_offset (by omega) (by omega)
+  have := VG.Proof.Sha3.X86_64.Stream.Squeeze.saved_bound p hp; exact sub_offset (by omega) (by omega)
 
 theorem slot_scr (s₀ : State) {p : Reg × Nat} (hp : p ∈ Impl.Sha3.X86_64.Stream.saved) :
     Region.Disjoint ⟨Spill.slot (scrp s₀) p.2, 8⟩ ⟨scrp s₀, 512⟩ := by
-  have := saved_bound p hp; exact Offset.disjoint_base _ (by omega) (by omega)
+  have := VG.Proof.Sha3.X86_64.Stream.Squeeze.saved_bound p hp; exact Offset.disjoint_base _ (by omega) (by omega)
 
-theorem Saved.frame {s₀ : State} {m m' : Mem} (h : Saved s₀ m) {rs : List Region} (hf : Frame rs m m')
-    (hd : ∀ p ∈ Impl.Sha3.X86_64.Stream.saved, ∀ r ∈ rs, Region.Disjoint ⟨Spill.slot (scrp s₀) p.2, 8⟩ r) : Saved s₀ m' :=
+theorem Saved.frame {s₀ : State} {m m' : Mem} (h : VG.Proof.Sha3.X86_64.Stream.Squeeze.Saved s₀ m) {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ p ∈ Impl.Sha3.X86_64.Stream.saved, ∀ r ∈ rs, Region.Disjoint ⟨Spill.slot (scrp s₀) p.2, 8⟩ r) : VG.Proof.Sha3.X86_64.Stream.Squeeze.Saved s₀ m' :=
   Spill.Saved.frame h hf hd
 
 /-! ## Arithmetic -/
@@ -111,14 +111,14 @@ structure Inv (s₀ : State) (i k pos : Nat) (s : State) : Prop where
   r15 : s.gpr .r15 = scrp s₀
   rsp : s.gpr .rsp = s₀.gpr .rsp
   frame : Frame [SR s₀, OR s₀, CR s₀, KR s₀] s₀.mem s.mem
-  saved : Saved s₀ s.mem
+  saved : VG.Proof.Sha3.X86_64.Stream.Squeeze.Saved s₀ s.mem
   state : stateAt s.mem (stp s₀) = iterF k (S₀ s₀)
   out : ∀ j < i, s.mem (outp s₀ + BitVec.ofNat 64 j) =
     byteOf (iterF ((pos₀ s₀ + j) / rate s₀) (S₀ s₀)) ((pos₀ s₀ + j) % rate s₀)
 
-theorem Inv.congr {s₀ : State} {i k pos : Nat} {s s' : State} (h : Inv s₀ i k pos s)
+theorem Inv.congr {s₀ : State} {i k pos : Nat} {s s' : State} (h : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s)
     (hg : ∀ r ∈ [Reg.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r)
-    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Inv s₀ i k pos s' where
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s' where
   i_le := h.i_le
   hi := h.hi
   pos_le := h.pos_le
@@ -139,13 +139,13 @@ theorem Inv.congr {s₀ : State} {i k pos : Nat} {s s' : State} (h : Inv s₀ i 
 theorem prologue_ok {s₀ : State} (hp : SPre s₀) :
     WP isa (.block (save .r9 ++ ([.mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
       .mov .r13 (.reg .rcx), .mov .r14 (.reg .r8), .mov .r15 (.reg .r9), .alu .test .r14 (.reg .r14)] : List Instr))) s₀
-      fun s => Inv s₀ 0 0 (pos₀ s₀) s ∧ s.zf = some (decide (outn s₀ = 0)) := by
+      fun s => VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ 0 0 (pos₀ s₀) s ∧ s.zf = some (decide (outn s₀ = 0)) := by
   refine WP.block_append_iff.mpr (WP.mono (Spill.save_ok .r9 Impl.Sha3.X86_64.Stream.saved s₀ fun p hp' => ?_)
     fun s ⟨hg, hrd, hwr, hm₀⟩ => ?_)
-  · have := saved_bound p hp'
+  · have := VG.Proof.Sha3.X86_64.Stream.Squeeze.saved_bound p hp'
     rw [hp.wr]; exact ⟨CR s₀, by simp, contains_offset (by omega) (by omega)⟩
   have hf : Frame [CR s₀] s₀.mem s.mem := hm₀ ▸ Spill.saveMem_frame_base _ _ _ _
-    (fun p hp => by have := saved_bound p hp; omega) (by decide)
+    (fun p hp => by have := VG.Proof.Sha3.X86_64.Stream.Squeeze.saved_bound p hp; omega) (by decide)
   refine wp_mov fun s₁ u₁ => wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ =>
     wp_mov fun s₅ u₅ => wp_mov fun s₆ u₆ => wp_test fun s₇ g₇ m₇ rd₇ wr₇ z₇ => wp_nil ?_
   have hm : s₇.mem = s.mem := by rw [m₇, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
@@ -176,8 +176,8 @@ theorem prologue_ok {s₀ : State} (hp : SPre s₀) :
 
 /-! ## One iteration -/
 
-theorem permute_ok {s₀ : State} (hp : SPre s₀) {i k : Nat} {s : State} (hI : Inv s₀ i k (rate s₀) s) :
-    WP isa (.seq (.block [.mov32 .r12 (.imm 0)]) permuteAt) s (Inv s₀ i (k + 1) 0) := by
+theorem permute_ok {s₀ : State} (hp : SPre s₀) {i k : Nat} {s : State} (hI : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k (rate s₀) s) :
+    WP isa (.seq (.block [.mov32 .r12 (.imm 0)]) permuteAt) s (VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i (k + 1) 0) := by
   refine WP.seq (wp_mov32i fun s₁ u₁ => wp_nil ?_)
   have hsp : s₁.gpr .rsp = s₀.gpr .rsp := by rw [u₁.other _ (by decide), hI.rsp]
   have e200 : Region.Sub ⟨stp s₀, 200⟩ (SR s₀) := fun _ h => h
@@ -228,10 +228,10 @@ theorem permute_ok {s₀ : State} (hp : SPre s₀) {i k : Nat} {s : State} (hI :
   · refine Eq.trans (hf.bytes (R := OR s₀) hd (Nat.le_of_lt (outn_lt s₀)) (by have := hI.i_le; omega : j < outn s₀)) ?_
     rw [u₁.mem]; exact hI.out j hj
 
-theorem store_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : Inv s₀ i k pos s)
+theorem store_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s)
     (hlt : pos < rate s₀) (hi : i < outn s₀) :
     WP isa (.block squeezeByte) s fun s' =>
-      Inv s₀ (i + 1) k (pos + 1) s' ∧ s'.zf = some (decide (outn s₀ - (i + 1) = 0)) := by
+      VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ (i + 1) k (pos + 1) s' ∧ s'.zf = some (decide (outn s₀ - (i + 1) = 0)) := by
   have ⟨hr0, hr200⟩ := hp.rate_pos
   have hn := outn_lt s₀
   unfold squeezeByte
@@ -251,7 +251,7 @@ theorem store_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI
   have hfw : Frame [OR s₀] s.mem s₅.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_offset (by omega) (by omega))
   have h14 : s₅.gpr .r14 = BitVec.ofNat 64 (outn s₀ - (i + 1)) := by
-    rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r14, sx1,
+    rw [u₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r14, VG.Proof.Sha3.X86_64.Stream.Squeeze.sx1,
       ofNat_pred (by omega), Nat.sub_sub]
   refine ⟨⟨by omega, by have := hI.hi; omega, by omega, ?_, ?_, ?_, ?_, ?_, ?_, h14, ?_, ?_,
     hI.frame.trans (hfw.mono (by simp)), ?_, ?_, fun j hj => ?_⟩, ?_⟩
@@ -259,9 +259,9 @@ theorem store_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI
   · rw [u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr, hI.wr]
   · rw [g .rbx (by decide) (by decide) (by decide) (by decide), hI.rbx]
   · rw [g .rbp (by decide) (by decide) (by decide) (by decide), hI.rbp]
-  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r12, sx1,
+  · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r12, VG.Proof.Sha3.X86_64.Stream.Squeeze.sx1,
       ofNat_succ]
-  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂, u₁.other _ (by decide), hI.r13, sx1,
+  · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, g₂, u₁.other _ (by decide), hI.r13, VG.Proof.Sha3.X86_64.Stream.Squeeze.sx1,
       ofNat_succ, BitVec.add_assoc]
   · rw [g .r15 (by decide) (by decide) (by decide) (by decide), hI.r15]
   · rw [g .rsp (by decide) (by decide) (by decide) (by decide), hI.rsp]
@@ -278,13 +278,13 @@ theorem store_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI
       rw [writeW8_self, hI.hi, d, m]
     · rw [writeW8_other _ _ (Offset.add_ofNat_ne _ (by omega) (by omega) e)]
       exact hI.out j (by omega)
-  · rw [hz₅, u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r14, sx1,
+  · rw [hz₅, u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r14, VG.Proof.Sha3.X86_64.Stream.Squeeze.sx1,
       ofNat_pred (by omega), beq_zero, toNat_ofNat_lt (by omega), Nat.sub_sub]
 
-theorem storeW_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : Inv s₀ i k pos s)
+theorem storeW_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s)
     (hlt : pos + 8 ≤ rate s₀) (hi : i + 8 ≤ outn s₀) :
     WP isa (.block squeezeWord) s fun s' =>
-      Inv s₀ (i + 8) k (pos + 8) s' ∧ s'.zf = some (decide (outn s₀ - (i + 8) = 0)) := by
+      VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ (i + 8) k (pos + 8) s' ∧ s'.zf = some (decide (outn s₀ - (i + 8) = 0)) := by
   have ⟨hr0, hr200⟩ := hp.rate_pos
   have hn := outn_lt s₀
   unfold squeezeWord
@@ -338,9 +338,9 @@ theorem storeW_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (h
   · rw [hz₅, u₄.other _ (by decide), u₃.other _ (by decide), g₂, u₁.other _ (by decide), hI.r14, sx8,
       sub_ofNat (by omega), beq_zero, toNat_ofNat_lt (by omega), Nat.sub_sub]
 
-theorem body_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : Inv s₀ i k pos s)
+theorem body_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s)
     (hi : i < outn s₀) :
-    WP isa squeezeBody s fun s' => ∃ i' k' pos', i < i' ∧ i' ≤ outn s₀ ∧ Inv s₀ i' k' pos' s' ∧
+    WP isa squeezeBody s fun s' => ∃ i' k' pos', i < i' ∧ i' ≤ outn s₀ ∧ VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i' k' pos' s' ∧
       s'.zf = some (decide (outn s₀ - i' = 0)) := by
   have ⟨hr0, _⟩ := hp.rate_pos
   have h8 := rate_mod8 hp.rate_mem
@@ -349,7 +349,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI 
   have hI₁ := hI.congr (fun r _ => by rw [g₁]) m₁ rd₁ wr₁
   have hz : s₁.zf = some (decide (pos = rate s₀)) := by
     rw [z₁, hI.r12, hI.rbp, sub_beq_zero (by have := hI.pos_le; have := (s₀.gpr .rsi).isLt; omega)]
-  refine WP.seq (WP.mono (Q := fun s => ∃ k' pos', Inv s₀ i k' pos' s ∧ pos' < rate s₀) ?_
+  refine WP.seq (WP.mono (Q := fun s => ∃ k' pos', VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k' pos' s ∧ pos' < rate s₀) ?_
     fun s₂ ⟨k', pos', hI₂, hlt⟩ => ?_)
   · refine WP.ite (decide (pos = rate s₀)) (by rw [show isa.eval .e s₁ = s₁.zf from rfl, hz])
       (fun hb => ?_) (fun hb => ?_)
@@ -374,18 +374,18 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {i k pos : Nat} {s : State} (hI 
 
 /-! ## The epilogue -/
 
-theorem epilogue_ok {s₀ : State} (hp : SPre s₀) {k pos : Nat} {s : State} (hI : Inv s₀ (outn s₀) k pos s) :
+theorem epilogue_ok {s₀ : State} (hp : SPre s₀) {k pos : Nat} {s : State} (hI : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ (outn s₀) k pos s) :
     WP isa (.block (.mov .rax (.reg .r12) :: restore)) s fun s' =>
       gprPreserved s₀ s' ∧ Proof.Sha3.squeezeX86_64.post s₀ s' := by
   have ⟨hr0, hr200⟩ := hp.rate_pos
   refine wp_mov fun s₁ u₁ => ?_
-  have hI₁ : Inv s₀ (outn s₀) k pos s₁ := hI.congr (fun r hr => u₁.other r (by
+  have hI₁ : VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ (outn s₀) k pos s₁ := hI.congr (fun r hr => u₁.other r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)) u₁.mem u₁.rd u₁.wr
   have hax : s₁.gpr .rax = BitVec.ofNat 64 pos := by rw [u₁.gpr, hI.r12]
   refine WP.mono (Spill.restore_ok .r15 Impl.Sha3.X86_64.Stream.saved s₀.gpr s₁ (by decide) (fun p hp' => ?_)
     (by rw [hI₁.r15]; exact hI₁.saved)) fun s' ⟨h₁, h₂, m, _⟩ => ?_
-  · have := saved_bound p hp'
+  · have := VG.Proof.Sha3.X86_64.Stream.Squeeze.saved_bound p hp'
     rw [hI₁.r15]
     exact ⟨CR s₀, by simp [hI₁.rd, hI₁.wr, hp.rd, hp.wr], contains_offset (by omega) (by omega)⟩
   · have ax : s'.gpr .rax = s₁.gpr .rax := h₂ _ (by decide)
@@ -396,7 +396,7 @@ theorem epilogue_ok {s₀ : State} (hp : SPre s₀) {k pos : Nat} {s : State} (h
       fun d => ?_⟩
     · rw [m]
       exact hI₁.frame.readW (Region.contains_self _ _)
-        (by simpa using ⟨hp.ret_st, hp.ret_o, hp.ret_c, ret_stk s₀⟩) (by decide)
+        (by simpa using ⟨hp.ret_st, hp.ret_o, hp.ret_c, VG.Proof.Sha3.X86_64.Stream.Squeeze.ret_stk s₀⟩) (by decide)
     · show bytesAt s'.mem (outp s₀) (outn s₀) = Spec.Sha3.squeezeFrom (rate s₀) (S₀ s₀) (pos₀ s₀) (outn s₀)
       rw [m]
       refine List.ext_getElem (by rw [length_squeezeFrom hr0 hr200]; simp [bytesAt]) fun j h₁ _ => ?_
@@ -413,18 +413,18 @@ theorem epilogue_ok {s₀ : State} (hp : SPre s₀) {k pos : Nat} {s : State} (h
 theorem correct {s₀ : State} (hp : SPre s₀) :
     WP isa squeeze s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Sha3.squeezeX86_64.post s₀ s' := by
   unfold squeeze
-  refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hI, hz⟩ => ?_)
-  refine WP.seq (WP.mono (Q := fun s => ∃ k pos, Inv s₀ (outn s₀) k pos s) ?_
-    fun s₂ ⟨k, pos, hI₂⟩ => epilogue_ok hp hI₂)
+  refine WP.seq (WP.mono (VG.Proof.Sha3.X86_64.Stream.Squeeze.prologue_ok hp) fun s₁ ⟨hI, hz⟩ => ?_)
+  refine WP.seq (WP.mono (Q := fun s => ∃ k pos, VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ (outn s₀) k pos s) ?_
+    fun s₂ ⟨k, pos, hI₂⟩ => VG.Proof.Sha3.X86_64.Stream.Squeeze.epilogue_ok hp hI₂)
   refine WP.ite (decide (outn s₀ = 0)) (by rw [show isa.eval .e s₁ = s₁.zf from rfl, hz])
     (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
     exact wp_nil ⟨0, pos₀ s₀, by rw [hb]; exact hI⟩
   · simp only [decide_eq_false_iff_not] at hb
-    refine WP.loop (M := isa) (fun n s => ∃ i k pos, n = outn s₀ - i ∧ i < outn s₀ ∧ Inv s₀ i k pos s) ?_
+    refine WP.loop (M := isa) (fun n s => ∃ i k pos, n = outn s₀ - i ∧ i < outn s₀ ∧ VG.Proof.Sha3.X86_64.Stream.Squeeze.Inv s₀ i k pos s) ?_
       (outn s₀) s₁ ⟨0, 0, pos₀ s₀, by omega, by omega, hI⟩
     rintro n s ⟨i, k, pos, rfl, hi, hI⟩
-    refine WP.mono (body_ok hp hI hi) fun s' ⟨i', k', pos', hii, hi', hI', hz'⟩ => ?_
+    refine WP.mono (VG.Proof.Sha3.X86_64.Stream.Squeeze.body_ok hp hI hi) fun s' ⟨i', k', pos', hii, hi', hI', hz'⟩ => ?_
     by_cases hl : outn s₀ - i' = 0
     · exact .inl ⟨by simp [eval, hz', hl], k', pos', by rwa [show i' = outn s₀ by omega] at hI'⟩
     · exact .inr ⟨by simp [eval, hz', hl], _, by omega, i', k', pos', rfl, by omega, hI'⟩
@@ -439,22 +439,22 @@ def τ₀ : X86_64.Taint.T :=
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : Proof.Sha3.squeezeX86_64.pre s₁)
     (h₂ : Proof.Sha3.squeezeX86_64.pre s₂) (hpub : Proof.Sha3.squeezeX86_64.pub s₁ s₂) :
-    X86_64.Taint.Agree τ₀ s₁ s₂ := by
+    X86_64.Taint.Agree VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀ s₁ s₂ := by
   obtain ⟨p1, p2, p3, p4, p5, p6, p7⟩ := hpub
-  have wf : ∀ s, Proof.Sha3.squeezeX86_64.pre s → X86_64.Taint.Wf τ₀ s := by
+  have wf : ∀ s, Proof.Sha3.squeezeX86_64.pre s → X86_64.Taint.Wf VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀ s := by
     intro s hs
     obtain ⟨-, hw, d1, d2, d3, -⟩ := hs
-    refine ⟨fun _ => ⟨by simp [hw, τ₀], by simp [hw, d1, d2, d3],
+    refine ⟨fun _ => ⟨by simp [hw, VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀], by simp [hw, d1, d2, d3],
       by simpa [hw] using (Nat.le_of_lt (s.gpr .r8).isLt)⟩, fun p hp => ?_⟩
-    simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp
+    simp only [VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
     X86_64.Taint.noLo⟩
-  · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
   · rw [h₁.2.1, h₂.2.1, p1, p4, p5, p6]
-  · intro sl h; simp [τ₀] at h
-  · intro sl h; simp [τ₀] at h
+  · intro sl h; simp [VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀] at h
+  · intro sl h; simp [VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀] at h
 
 /-- A state satisfying the precondition. -/
 def sat : State where
@@ -470,12 +470,12 @@ def sat : State where
 
 theorem squeeze_correct (s : State) (hs : Proof.Sha3.squeezeX86_64.pre s) :
     ∃ t s', Exec isa squeeze s t s' ∧ abiPreserved s s' ∧ Proof.Sha3.squeezeX86_64.post s s' := by
-  obtain ⟨t, s', he, h⟩ := correct (pre_of hs)
+  obtain ⟨t, s', he, h⟩ := VG.Proof.Sha3.X86_64.Stream.Squeeze.correct (VG.Proof.Sha3.X86_64.Stream.Squeeze.pre_of hs)
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
 
 theorem squeeze_ct : ConstantTime isa Proof.Sha3.squeezeX86_64.pre Proof.Sha3.squeezeX86_64.pub
     squeeze := by
-  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+  exact VG.Taint.constantTime (A := taint) VG.Proof.Sha3.X86_64.Stream.Squeeze.τ₀ (fun _ _ h₁ h₂ hp => VG.Proof.Sha3.X86_64.Stream.Squeeze.agree₀ h₁ h₂ hp)
     (by taint_decide_weak VG.Proof.Sha3.X86_64.dropRC)
 
 theorem squeeze_verified :

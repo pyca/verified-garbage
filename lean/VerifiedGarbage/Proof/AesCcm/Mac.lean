@@ -1,6 +1,6 @@
 import VerifiedGarbage.Spec.Ccm
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 
 /-!
 # AES-CCM: the MAC as chaining over pieces
@@ -179,9 +179,9 @@ theorem mac_eq (ciph : Ccm.Cipher) (t : Nat) {nonce : List Byte} (hn : nonce.len
   simp only [Ccm.mac]
   rw [format_eq t hn, List.append_assoc, List.singleton_append]
   simp only [Cmac.chain, List.foldl_cons]
-  rw [xor_comm, xor_zeros h0]
+  rw [VG.Proof.AesCcm.xor_comm, xor_zeros h0]
   have hf : (fun y bi => ciph (Ccm.xor bi y)) = (fun c m => ciph (Cmac.xor c m)) := by
-    funext y b; rw [xor_eq, xor_comm]
+    funext y b; rw [xor_eq, VG.Proof.AesCcm.xor_comm]
   rw [hf]
 
 end VG.Proof.AesCcm

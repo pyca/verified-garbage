@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivCorrect
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncContract
 

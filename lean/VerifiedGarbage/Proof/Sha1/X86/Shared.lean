@@ -2,9 +2,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Sha1.X86.Compress
 import VerifiedGarbage.Proof.Sha1.X86.Stream.Init
-import VerifiedGarbage.Proof.Sha1.X86.Stream.Md
+import VerifiedGarbage.Proof.Sha1.X86.Stream.Variant
 import VerifiedGarbage.Spec.Sha1.Contract
-import VerifiedGarbage.Proof.Sha1.X86.Lit
+import VerifiedGarbage.Proof.Sha1.X86.Compress
 import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 

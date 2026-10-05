@@ -1,11 +1,11 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Update
-import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 import VerifiedGarbage.Proof.MdStream.Arm.Words
-import VerifiedGarbage.Proof.Sha1.Md
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.Sha1.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha1.Arm.Compress
 import VerifiedGarbage.Impl.Sha1.Arm.Stream
-import VerifiedGarbage.Proof.Sha1.Arm.Lit
+import VerifiedGarbage.Proof.Sha1.Arm.Compress
 
 /-!
 # Streaming SHA-1 on ARMv7: `update` and `finalize`

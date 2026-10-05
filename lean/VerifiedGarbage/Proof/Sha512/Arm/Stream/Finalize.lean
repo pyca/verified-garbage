@@ -1,6 +1,51 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Finalize
 import VerifiedGarbage.Proof.MdStream.Arm.Words
-import VerifiedGarbage.Proof.Sha512.Arm.Stream.Update
+import VerifiedGarbage.Proof.Sha512.Scratch
+import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha512.Arm.Compress
+import VerifiedGarbage.Impl.Sha512.Arm.Stream
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.Arm.Stream.Update`. -/
+section
+
+/-!
+# Streaming SHA-512 on ARMv7: `update`
+
+`update` is the generic streaming code (`Impl/MdStream/Arm.lean`), so it is
+verified by the generic proof (`Proof/MdStream/Arm/Update.lean`) for the
+SHA-512 family's instance (`Proof/Sha512/Md.lean`), given that its compression
+function is verified (`callee`) and that the taint analysis accepts its code.
+-/
+
+namespace VG.Proof.Sha512.Arm.Stream
+
+open VG VG.Arm VG.Proof.MdStream VG.Proof.MdStream.Arm
+
+abbrev params := Impl.Sha512.Arm.Stream.params
+
+theorem dims : Dims VG.Proof.Sha512.Arm.Stream.params := ⟨.inr rfl, by decide, by decide, by decide, by decide, by decide⟩
+
+theorem callee : CalleeOk (P := VG.Proof.Sha512.Arm.Stream.params) Proof.Sha512.md Impl.Sha512.Arm.compress :=
+  ⟨Compress.compress_verified.1, by lit_decide, by rw [← Code.allInstrs_eq]; lit_decide⟩
+
+namespace Update
+
+theorem update_verified : Verified Arm.target Impl.Sha512.Arm.Stream.update Proof.Sha512.updateArm :=
+  have h := MdStream.Arm.Update.verified (name := "vg_sha512_compress") VG.Proof.Sha512.Arm.Stream.dims VG.Proof.Sha512.Arm.Stream.callee
+    (VG.Taint.constantTime (A := taint) (MdStream.Arm.Update.τ₀ VG.Proof.Sha512.Arm.Stream.params)
+      (fun _ _ h₁ h₂ hp => MdStream.Arm.Update.agree₀ h₁ h₂ hp) (by taint_decide))
+  Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
+
+/-- A state satisfying `update`'s precondition. -/
+abbrev sat : State := MdStream.Arm.Update.sat VG.Proof.Sha512.Arm.Stream.params
+
+end Update
+
+end VG.Proof.Sha512.Arm.Stream
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Sha512.Arm.Stream.Finalize`. -/
+section
 
 /-!
 # Streaming SHA-512 on ARMv7: `finalize`
@@ -32,9 +77,9 @@ theorem wordBytes_split (x : BitVec 64) :
   Word64.wordBytes_split x
 
 theorem writeW_rev (m : Mem) (a : Addr) (w : BitVec 32) :
-    m.writeW a (rev w) = writeBytes m a (Spec.Sha256.wordBytes w) := by
-  rw [Mem.writeW, write_eq_writeBytes]
-  exact congrArg (writeBytes m a) (byteRev32_extract w)
+    m.writeW a (rev w) = VG.WriteBytes.writeBytes m a (Spec.Sha256.wordBytes w) := by
+  rw [Mem.writeW, VG.WriteBytes.write_eq_writeBytes]
+  exact congrArg (VG.WriteBytes.writeBytes m a) (byteRev32_extract w)
 
 theorem flat_length (H : HashValue) (k : Nat) (hk : k ≤ 8) :
     ((H.toList.take k).flatMap wordBytes).length = 8 * k := by
@@ -54,7 +99,7 @@ is zero, then `8 count`. -/
 theorem lenOf_halves (h l : BitVec 32) :
     Proof.Sha512.md.lenOf (h ++ l) = Spec.Sha256.wordBytes 0 ++ Spec.Sha256.wordBytes (h >>> 29) ++
       bytes64 true (BitVec.ofNat 64 (8 * (h ++ l).toNat)) := by
-  rw [Proof.Sha512.lenOf_split, wordBytes_split, hi_shr61, lo_shr61, Proof.Sha512.Arm.hi_append]
+  rw [Proof.Sha512.lenOf_split, VG.Proof.Sha512.Arm.Stream.Finalize.wordBytes_split, VG.Proof.Sha512.Arm.Stream.Finalize.hi_shr61, VG.Proof.Sha512.Arm.Stream.Finalize.lo_shr61, Proof.Sha512.Arm.hi_append]
   rfl
 
 /-- The length field, at `r0 + 176`: zero, `count >> 61` (from its high half
@@ -63,7 +108,7 @@ theorem len_ok (s : State) (hfit : (s.gpr .r0).toNat + (64 + 128) ≤ 2 ^ 32)
     (hout : InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16))) 16) :
     WP isa (.block params.len) s fun s' => (∀ r, r ≠ .r9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      s'.mem = writeBytes s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16)))
+      s'.mem = VG.WriteBytes.writeBytes s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16)))
         (Proof.Sha512.md.lenOf (s.gpr .r5 ++ s.gpr .r4)) := by
   have a176 : State.addr (s.gpr .r0 + BitVec.ofNat 32 176) = State.addr (s.gpr .r0) + BitVec.ofNat 64 176 :=
     addr_off (by omega)
@@ -99,9 +144,9 @@ theorem len_ok (s : State) (hfit : (s.gpr .r0).toNat + (64 + 128) ≤ 2 ^ 32)
   have e176 : State.addr (s.gpr .r0) + BitVec.ofNat 64 (64 + (128 - 16)) =
       State.addr (s.gpr .r0) + BitVec.ofNat 64 176 := rfl
   rw [m, k₅ _ (by decide), k₅ _ (by decide), k₅ _ (by decide), g₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.mem, v₄,
-    v₁, writeW_rev, writeW_rev, show (4 : Nat) = (Spec.Sha256.wordBytes 0).length from rfl,
-    writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes]), e184,
-    writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes, bytes64_length]), lenOf_halves, e176]
+    v₁, VG.Proof.Sha512.Arm.Stream.Finalize.writeW_rev, VG.Proof.Sha512.Arm.Stream.Finalize.writeW_rev, show (4 : Nat) = (Spec.Sha256.wordBytes 0).length from rfl,
+    VG.WriteBytes.writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes]), e184,
+    VG.WriteBytes.writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes, bytes64_length]), VG.Proof.Sha512.Arm.Stream.Finalize.lenOf_halves, e176]
 
 /-! ## The digest -/
 
@@ -111,19 +156,19 @@ theorem out_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.toNa
     ∀ n ≤ 8, ∀ (rest : List Instr) (s : State) (Q : State → Prop), s.gpr .r0 = p0 → s.gpr .r6 = p6 →
     InRegions (s.rd ++ s.wr) (State.addr p0) 64 → InRegions s.wr (State.addr p6) 64 →
     (∀ s', (∀ r, r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
-      s'.mem = writeBytes s.mem (State.addr p6) (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes) →
+      s'.mem = VG.WriteBytes.writeBytes s.mem (State.addr p6) (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes) →
       WP isa (.block rest) s' Q) →
     WP isa (.block ((List.range n).flatMap outW ++ rest)) s Q := by
   intro n
   induction n with
   | zero =>
     intro _ rest s Q _ _ _ _ k
-    exact k s (fun _ _ _ => rfl) rfl rfl rfl (by simp [writeBytes_nil])
+    exact k s (fun _ _ _ => rfl) rfl rfl rfl (by simp [VG.WriteBytes.writeBytes_nil])
   | succ n ih =>
     intro hn rest s Q h0 h6 hin hout k
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, List.append_assoc]
     refine ih (by omega) _ s Q h0 h6 hin hout fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_
-    have hP := flat_length (stateAt s.mem (State.addr p0)) n (by omega)
+    have hP := VG.Proof.Sha512.Arm.Stream.Finalize.flat_length (stateAt s.mem (State.addr p0)) n (by omega)
     simp only [outW, List.cons_append, List.nil_append]
     have i₀ : ∀ o, o + 4 ≤ 8 → InRegions (s₁.rd ++ s₁.wr) (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 4 :=
       fun o ho => by
@@ -153,7 +198,7 @@ theorem out_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.toNa
         s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 32 := by
       intro o ho
       rw [m₁]
-      refine (writeBytes_frame s.mem (State.addr p6) _ (R := ⟨State.addr p6, 64⟩) ?_).readW
+      refine (VG.WriteBytes.writeBytes_frame s.mem (State.addr p6) _ (R := ⟨State.addr p6, 64⟩) ?_).readW
         (r := ⟨State.addr p0 + BitVec.ofNat 64 (8 * n + o), 4⟩) (Region.contains_self _ _) ?_ (by decide)
       · rw [hP]; simpa using Offset.contains_base (State.addr p6) (d := 0) (n := 8 * n) (k := 64) (by omega)
           (by decide)
@@ -180,28 +225,30 @@ theorem out_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.toNa
     have a8 : State.addr p6 + BitVec.ofNat 64 (8 * n + 0) = State.addr p6 +
         BitVec.ofNat 64 (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes).length := by
       rw [hP]; rfl
-    rw [g₇.mem, v9, g₆.mem, v10, u₅.mem, u₄.mem, u₃.mem, u₂.mem, writeW_rev, writeW_rev, a4,
-      writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes]), ← wordBytes_split, m₁, a8,
-      writeBytes_append _ _ _ _ (by rw [hP]; simp [wordBytes]; omega), List.take_add_one,
+    rw [g₇.mem, v9, g₆.mem, v10, u₅.mem, u₄.mem, u₃.mem, u₂.mem, VG.Proof.Sha512.Arm.Stream.Finalize.writeW_rev, VG.Proof.Sha512.Arm.Stream.Finalize.writeW_rev, a4,
+      VG.WriteBytes.writeBytes_append _ _ _ _ (by simp [Spec.Sha256.wordBytes]), ← VG.Proof.Sha512.Arm.Stream.Finalize.wordBytes_split, m₁, a8,
+      VG.WriteBytes.writeBytes_append _ _ _ _ (by rw [hP]; simp [wordBytes]; omega), List.take_add_one,
       List.getElem?_eq_getElem (by simp; omega), Option.toList_some, List.flatMap_append,
       List.flatMap_singleton, Vector.getElem_toList]
 
-theorem shape : Shape (P := params) Proof.Sha512.md where
-  len s hfit hout := len_ok s hfit hout
+theorem shape : Shape (P := VG.Proof.Sha512.Arm.Stream.params) Proof.Sha512.md where
+  len s hfit hout := VG.Proof.Sha512.Arm.Stream.Finalize.len_ok s hfit hout
   out s f₀ f₆ hin hout hd := by
     rw [← List.append_nil params.out]
-    refine out_ok f₀ f₆ hd 8 (Nat.le_refl _) [] s _ rfl rfl hin hout fun s' g rd wr sp m => WP.block_nil
+    refine VG.Proof.Sha512.Arm.Stream.Finalize.out_ok f₀ f₆ hd 8 (Nat.le_refl _) [] s _ rfl rfl hin hout fun s' g rd wr sp m => WP.block_nil
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, List.take_of_length_le (by simp)]
     rfl
 
 theorem finalize_verified : Verified Arm.target Impl.Sha512.Arm.Stream.finalize Proof.Sha512.finalizeArm :=
-  have h := MdStream.Arm.Finalize.verified (name := "vg_sha512_compress") dims shape callee
-    (VG.Taint.constantTime (A := taint) (MdStream.Arm.Finalize.τ₀ params)
+  have h := MdStream.Arm.Finalize.verified (name := "vg_sha512_compress") VG.Proof.Sha512.Arm.Stream.dims VG.Proof.Sha512.Arm.Stream.Finalize.shape VG.Proof.Sha512.Arm.Stream.callee
+    (VG.Taint.constantTime (A := taint) (MdStream.Arm.Finalize.τ₀ VG.Proof.Sha512.Arm.Stream.params)
       (fun _ _ h₁ h₂ hp => MdStream.Arm.Finalize.agree₀ h₁ h₂ hp) (by taint_decide))
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h iv m hr hl hc => h iv m hr hl hc, fun _ _ _ _ h => h, h.2.2⟩
 
 /-- A state satisfying `finalize`'s precondition. -/
-abbrev sat : State := MdStream.Arm.Finalize.sat params
+abbrev sat : State := MdStream.Arm.Finalize.sat VG.Proof.Sha512.Arm.Stream.params
 
 end VG.Proof.Sha512.Arm.Stream.Finalize
+
+end

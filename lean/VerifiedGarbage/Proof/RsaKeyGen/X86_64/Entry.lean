@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PubEntry
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # A candidate on x86-64: the entry

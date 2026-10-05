@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyPhases
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRows
-import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
 /-!

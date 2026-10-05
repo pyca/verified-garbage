@@ -10,8 +10,29 @@ import Mathlib.Tactic.SplitIfs
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Md5
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Md5.X86_64.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Impl.Md5.X86_64.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Md5.X86_64.Lit`. -/
+section
+
+/-!
+# MD5 on x86-64: the code as literals
+-/
+
+namespace VG
+
+materialize_code Impl.Md5.X86_64.compress
+materialize_code Impl.Md5.X86_64.Stream.update
+materialize_code Impl.Md5.X86_64.Stream.finalize
+
+end VG
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Md5.X86_64.Compress`. -/
+section
 
 /-!
 # MD5 compression function on x86-64: the 64 operations
@@ -47,21 +68,21 @@ theorem var_mem (t k : Nat) : var t k ∈ work := by
   · simp [work]
   · exact List.mem_of_getElem? h
 
-theorem work_ne {r : Reg} (h : r ∈ work) : r ≠ T0 ∧ ∀ p ∈ pubRegs, r ≠ p := by
+theorem work_ne {r : Reg} (h : r ∈ work) : r ≠ T0 ∧ ∀ p ∈ VG.Proof.Md5.X86_64.pubRegs, r ≠ p := by
   simp only [work, List.mem_cons, List.not_mem_nil, or_false] at h
   rcases h with rfl | rfl | rfl | rfl <;> decide
 
-theorem var_ne_T0 (t k : Nat) : var t k ≠ T0 := (work_ne (var_mem t k)).1
+theorem var_ne_T0 (t k : Nat) : var t k ≠ T0 := (VG.Proof.Md5.X86_64.work_ne (VG.Proof.Md5.X86_64.var_mem t k)).1
 
-theorem var_ne_pub (t k : Nat) {p : Reg} (hp : p ∈ pubRegs) : var t k ≠ p :=
-  (work_ne (var_mem t k)).2 p hp
+theorem var_ne_pub (t k : Nat) {p : Reg} (hp : p ∈ VG.Proof.Md5.X86_64.pubRegs) : var t k ≠ p :=
+  (VG.Proof.Md5.X86_64.work_ne (VG.Proof.Md5.X86_64.var_mem t k)).2 p hp
 
 theorem var_ne_aux : ∀ c < 4, ∀ i < 4, ∀ j < 4, i ≠ j →
     work.getD ((i + 4 - c) % 4) .rax ≠ work.getD ((j + 4 - c) % 4) .rax := by decide
 
 /-- The registers of an operation are all different. -/
 theorem var_ne (t : Nat) {i j : Nat} (hi : i < 4) (hj : j < 4) (h : i ≠ j) : var t i ≠ var t j :=
-  var_ne_aux (t % 4) (Nat.mod_lt _ (by omega)) i hi j hj h
+  VG.Proof.Md5.X86_64.var_ne_aux (t % 4) (Nat.mod_lt _ (by omega)) i hi j hj h
 
 /-! ## The auxiliary functions -/
 
@@ -103,34 +124,34 @@ def tailI (a b : Reg) (n : Nat) : List Instr := [
   .alu32 .add a (.reg b)]
 
 theorem step_split (t : Nat) :
-    step t = headI (var t 0) (ks.getD t 0) (Ts.getD t 0) ++
+    step t = VG.Proof.Md5.X86_64.headI (var t 0) (ks.getD t 0) (Ts.getD t 0) ++
       (fn (t / 16) (var t 0) (var t 1) (var t 2) (var t 3) ++
-      tailI (var t 0) (var t 1) (32 - Proof.Md5.rot t)) := by
-  simp only [step, headI, tailI, List.append_assoc]; rfl
+      VG.Proof.Md5.X86_64.tailI (var t 0) (var t 1) (32 - Proof.Md5.rot t)) := by
+  simp only [step, VG.Proof.Md5.X86_64.headI, VG.Proof.Md5.X86_64.tailI, List.append_assoc]; rfl
 
 theorem head_ok (a : Reg) (k : Nat) (T : Word)
     (s : State) (va x : Word) (bp : Addr) (h₁ : s.gpr a = va.setWidth 64)
     (hrsi : s.gpr .rsi = bp) (hin : InRegions (s.rd ++ s.wr) (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4)
     (hx : s.mem.readW (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = x) :
-    WP isa (.block (headI a k T)) s fun s' =>
+    WP isa (.block (VG.Proof.Md5.X86_64.headI a k T)) s fun s' =>
       s'.gpr a = (va + x + T).setWidth 64 ∧
       (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
-  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, and_self, headI, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, and_self, VG.Proof.Md5.X86_64.headI, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, readSrc32, State.ea, State.load32, at_,
-    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, 
+    isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     h₁, hrsi, hin, hx, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
 theorem tail_ok (a b : Reg) (n : Nat) (hn₁ : 1 ≤ n) (hn₂ : n ≤ 31) (hab : a ≠ b)
     (s : State) (va vb : Word) (h₁ : s.gpr a = va.setWidth 64) (h₂ : s.gpr b = vb.setWidth 64) :
-    WP isa (.block (tailI a b n)) s fun s' =>
+    WP isa (.block (VG.Proof.Md5.X86_64.tailI a b n)) s fun s' =>
       s'.gpr a = (va.rotateRight n + vb).setWidth 64 ∧
       (∀ r, r ≠ a → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hba : b ≠ a := fun h => hab h.symm
   apply WP.of_runBlock
-  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, tailI, runBlock_cons, runStep_some,
+  simp only [↓reduceIte, Nat.reduceLeDiff, Nat.reducePow, VG.Proof.Md5.X86_64.tailI, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execShift32, readSrc32,
     isa, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.gpr_setFlags, RegUpd.mem_setFlags, RegUpd.rd_setFlags, RegUpd.wr_setFlags, hba,
     hn₁, hn₂, and_self, h₁, h₂, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
@@ -142,50 +163,50 @@ theorem tail_ok (a b : Reg) (n : Nat) (hn₁ : 1 ≤ n) (hn₂ : n ≤ 31) (hab 
 /-- The operation is symbolically executed once per round for the auxiliary
 function and once for the rest, for any registers `a … d`. -/
 theorem step_ok (t : Nat) (ht : t < 64) (s : State) (v : HashValue) (X : Block) (bp : Addr)
-    (hv : Vars t s v) (hrsi : s.gpr .rsi = bp)
+    (hv : VG.Proof.Md5.X86_64.Vars t s v) (hrsi : s.gpr .rsi = bp)
     (hin : ∀ k < 16, InRegions (s.rd ++ s.wr) (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4)
     (hX : ∀ k (hk : k < 16), s.mem.readW (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = X ⟨k, hk⟩) :
     WP isa (.block (step t)) s fun s' =>
-      Vars (t + 1) s' (Spec.Md5.step X v t) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ pubRegs, s'.gpr r = s.gpr r := by
+      VG.Proof.Md5.X86_64.Vars (t + 1) s' (Spec.Md5.step X v t) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ∀ r ∈ VG.Proof.Md5.X86_64.pubRegs, s'.gpr r = s.gpr r := by
   obtain ⟨h0, h1, h2, h3⟩ := hv
   have hk := ks_lt t ht
   have hr := rot_range t ht
-  have n01 := var_ne t (i := 0) (j := 1) (by omega) (by omega) (by omega)
-  have n02 := var_ne t (i := 0) (j := 2) (by omega) (by omega) (by omega)
-  have n03 := var_ne t (i := 0) (j := 3) (by omega) (by omega) (by omega)
-  rw [step_split, WP.block_append_iff]
-  refine WP.mono (head_ok (var t 0) (ks.getD t 0) (Ts.getD t 0) s v[0] (X ⟨ks.getD t 0, hk⟩) bp h0
+  have n01 := VG.Proof.Md5.X86_64.var_ne t (i := 0) (j := 1) (by omega) (by omega) (by omega)
+  have n02 := VG.Proof.Md5.X86_64.var_ne t (i := 0) (j := 2) (by omega) (by omega) (by omega)
+  have n03 := VG.Proof.Md5.X86_64.var_ne t (i := 0) (j := 3) (by omega) (by omega) (by omega)
+  rw [VG.Proof.Md5.X86_64.step_split, WP.block_append_iff]
+  refine WP.mono (VG.Proof.Md5.X86_64.head_ok (var t 0) (ks.getD t 0) (Ts.getD t 0) s v[0] (X ⟨ks.getD t 0, hk⟩) bp h0
     hrsi (hin _ hk) (hX _ hk))
     fun s₁ ⟨a₁, e₁, m₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (fn_ok (t / 16) (by omega) _ _ _ _ (var_ne_T0 t 0) (var_ne_T0 t 1) (var_ne_T0 t 2)
-    (var_ne_T0 t 3) n01 n02 n03 s₁ _ v[1] v[2] v[3] a₁ (by rw [e₁ _ n01.symm]; exact h1)
+  refine WP.mono (VG.Proof.Md5.X86_64.fn_ok (t / 16) (by omega) _ _ _ _ (VG.Proof.Md5.X86_64.var_ne_T0 t 0) (VG.Proof.Md5.X86_64.var_ne_T0 t 1) (VG.Proof.Md5.X86_64.var_ne_T0 t 2)
+    (VG.Proof.Md5.X86_64.var_ne_T0 t 3) n01 n02 n03 s₁ _ v[1] v[2] v[3] a₁ (by rw [e₁ _ n01.symm]; exact h1)
     (by rw [e₁ _ n02.symm]; exact h2) (by rw [e₁ _ n03.symm]; exact h3))
     fun s₂ ⟨a₂, e₂, m₂, rd₂, wr₂⟩ => ?_
-  refine WP.mono (tail_ok (var t 0) (var t 1) (32 - rot t) (by omega) (by omega) n01 s₂ _ v[1] a₂
-    (by rw [e₂ _ n01.symm (var_ne_T0 t 1), e₁ _ n01.symm]; exact h1))
+  refine WP.mono (VG.Proof.Md5.X86_64.tail_ok (var t 0) (var t 1) (32 - rot t) (by omega) (by omega) n01 s₂ _ v[1] a₂
+    (by rw [e₂ _ n01.symm (VG.Proof.Md5.X86_64.var_ne_T0 t 1), e₁ _ n01.symm]; exact h1))
     fun s₃ ⟨a₃, e₃, m₃, rd₃, wr₃⟩ => ?_
   have g : ∀ r, r ≠ var t 0 → r ≠ T0 → s₃.gpr r = s.gpr r := fun r h h' => by
     rw [e₃ r h, e₂ r h h', e₁ r h]
   refine ⟨?_, by rw [m₃, m₂, m₁], by rw [rd₃, rd₂, rd₁], by rw [wr₃, wr₂, wr₁], fun r hr =>
-    g r (fun h => var_ne_pub t 0 hr h.symm) (fun h => by subst h; simp [pubRegs, T0] at hr)⟩
+    g r (fun h => VG.Proof.Md5.X86_64.var_ne_pub t 0 hr h.symm) (fun h => by subst h; simp [VG.Proof.Md5.X86_64.pubRegs, T0] at hr)⟩
   rw [step_eq X v ht]
-  simp only [Vars, var_succ_zero, var_succ t _ (show 0 < 3 by omega),
-    var_succ t _ (show 1 < 3 by omega), var_succ t _ (show 2 < 3 by omega), stepKX,
+  simp only [VG.Proof.Md5.X86_64.Vars, VG.Proof.Md5.X86_64.var_succ_zero, VG.Proof.Md5.X86_64.var_succ t _ (show 0 < 3 by omega),
+    VG.Proof.Md5.X86_64.var_succ t _ (show 1 < 3 by omega), VG.Proof.Md5.X86_64.var_succ t _ (show 2 < 3 by omega), stepKX,
     Vector.getElem_mk, List.getElem_toArray, List.getElem_cons_zero, List.getElem_cons_succ]
   refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [g _ n03.symm (var_ne_T0 t 3), h3]
+  · rw [g _ n03.symm (VG.Proof.Md5.X86_64.var_ne_T0 t 3), h3]
   · rw [a₃, rotateLeft_eq _ hr.1 hr.2, BitVec.add_comm (v[1]), add_fn]
-  · rw [g _ n01.symm (var_ne_T0 t 1), h1]
-  · rw [g _ n02.symm (var_ne_T0 t 2), h2]
+  · rw [g _ n01.symm (VG.Proof.Md5.X86_64.var_ne_T0 t 1), h1]
+  · rw [g _ n02.symm (VG.Proof.Md5.X86_64.var_ne_T0 t 2), h2]
 
 /-! ## The 64 operations -/
 
 /-- Invariant, relative to the state `sB` at the start of the operations. -/
 structure RInv (H : HashValue) (X : Block) (sB : State) (t : Nat) (s : State) : Prop where
-  vars : Vars t s (Spec.Md5.steps H X t)
-  pub : ∀ r ∈ pubRegs, s.gpr r = sB.gpr r
+  vars : VG.Proof.Md5.X86_64.Vars t s (Spec.Md5.steps H X t)
+  pub : ∀ r ∈ VG.Proof.Md5.X86_64.pubRegs, s.gpr r = sB.gpr r
   rd : s.rd = sB.rd
   wr : s.wr = sB.wr
   mem : s.mem = sB.mem
@@ -193,15 +214,15 @@ structure RInv (H : HashValue) (X : Block) (sB : State) (t : Nat) (s : State) : 
 theorem steps_ok (H : HashValue) (X : Block) (bp : Addr) (sB : State) (hrsi : sB.gpr .rsi = bp)
     (hin : ∀ k < 16, InRegions (sB.rd ++ sB.wr) (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4)
     (hX : ∀ k (hk : k < 16), sB.mem.readW (bp + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = X ⟨k, hk⟩)
-    (h0 : Vars 0 sB H) :
-    ∀ t ≤ 64, WP isa (steps t) sB (RInv H X sB t) := by
+    (h0 : VG.Proof.Md5.X86_64.Vars 0 sB H) :
+    ∀ t ≤ 64, WP isa (steps t) sB (VG.Proof.Md5.X86_64.RInv H X sB t) := by
   intro t ht
   induction t with
   | zero => exact WP.block_nil (M := isa) ⟨h0, fun _ _ => rfl, rfl, rfl, rfl⟩
   | succ t ih =>
     refine WP.seq (WP.mono (ih (by omega)) fun s hs => ?_)
     have hs_rsi : s.gpr .rsi = bp := (hs.pub .rsi (by decide)).trans hrsi
-    refine WP.mono (step_ok t (by omega) s _ X bp hs.vars hs_rsi (by rw [hs.rd, hs.wr]; exact hin)
+    refine WP.mono (VG.Proof.Md5.X86_64.step_ok t (by omega) s _ X bp hs.vars hs_rsi (by rw [hs.rd, hs.wr]; exact hin)
       (by rw [hs.mem]; exact hX)) fun s' ⟨hv, hm, hrd, hwr, hp⟩ => ?_
     refine ⟨?_, fun r hr => by rw [hp r hr, hs.pub r hr], by rw [hrd, hs.rd], by rw [hwr, hs.wr],
       by rw [hm, hs.mem]⟩
@@ -346,14 +367,14 @@ theorem contains_offset {base : Addr} {len off n : Nat} (h : off + n ≤ len) (h
 
 theorem contains_offset' {base : Addr} {len off n : Nat} (h : off + n ≤ len) (ho : off < 2 ^ 64) :
     (⟨base, len⟩ : Region).Contains (base + BitVec.ofInt 64 (off : Int)) n := by
-  rw [ofInt_natCast]; exact contains_offset h ho
+  rw [VG.Proof.Md5.X86_64.ofInt_natCast]; exact VG.Proof.Md5.X86_64.contains_offset h ho
 
 theorem sub_offset {base : Addr} {off len len' : Nat} (h : off + len ≤ len') (_ho : off < 2 ^ 64) :
     Region.Sub ⟨base + BitVec.ofNat 64 off, len⟩ ⟨base, len'⟩ := Offset.sub_base base h
 
 theorem word_sep (p : Addr) {j k : Nat} (hj : j < 4) (hk : k < 4) (h : j ≠ k) :
     Mem.Sep (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 4 (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
-  rw [ofInt_natCast, ofInt_natCast]
+  rw [VG.Proof.Md5.X86_64.ofInt_natCast, VG.Proof.Md5.X86_64.ofInt_natCast]
   exact Offset.sep p (by omega) (by omega) (by omega)
 
 theorem readW_writeW_word (m : Mem) (p : Addr) (v : Word) {j k : Nat} (hj : j < 4) (hk : k < 4)
@@ -361,12 +382,12 @@ theorem readW_writeW_word (m : Mem) (p : Addr) (v : Word) {j k : Nat} (hj : j < 
     (m.writeW (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) v).readW
       (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 32 =
     m.readW (p + BitVec.ofInt 64 ((4 * j : Nat) : Int)) 32 :=
-  Mem.readW_writeW_sep (word_sep p hj hk h) (by decide)
+  Mem.readW_writeW_sep (VG.Proof.Md5.X86_64.word_sep p hj hk h) (by decide)
 
 theorem save_sep (p : Addr) {d e : Nat} (hd : d < 2 ^ 32) (he : e < 2 ^ 32)
     (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     Mem.Sep (p + BitVec.ofInt 64 (d : Int)) 8 (p + BitVec.ofInt 64 (e : Int)) 8 := by
-  rw [ofInt_natCast, ofInt_natCast]
+  rw [VG.Proof.Md5.X86_64.ofInt_natCast, VG.Proof.Md5.X86_64.ofInt_natCast]
   exact Offset.sep p h (by omega) (by omega)
 
 /-- Distinct 8-byte slots (where the streaming functions save registers). -/
@@ -374,7 +395,7 @@ theorem readW_writeW_save (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd :
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
     (m.writeW (p + BitVec.ofInt 64 (e : Int)) v).readW (p + BitVec.ofInt 64 (d : Int)) 64 =
     m.readW (p + BitVec.ofInt 64 (d : Int)) 64 :=
-  Mem.readW_writeW_sep (save_sep p hd he h) (by decide)
+  Mem.readW_writeW_sep (VG.Proof.Md5.X86_64.save_sep p hd he h) (by decide)
 
 theorem stateAt_eq {m : Mem} {p : Addr} {v : HashValue}
     (h : ∀ k : Nat, (hk : k < 4) → m.readW (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = v[k]) :
@@ -382,11 +403,11 @@ theorem stateAt_eq {m : Mem} {p : Addr} {v : HashValue}
   apply Vector.ext
   intro k hk
   simp only [stateAt, Vector.getElem_ofFn]
-  rw [← ofInt_natCast]; exact h k hk
+  rw [← VG.Proof.Md5.X86_64.ofInt_natCast]; exact h k hk
 
 theorem stateAt_get (m : Mem) (p : Addr) {k : Nat} (hk : k < 4) :
     (stateAt m p)[k] = m.readW (p + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 := by
-  simp only [stateAt, Vector.getElem_ofFn, ofInt_natCast]
+  simp only [stateAt, Vector.getElem_ofFn, VG.Proof.Md5.X86_64.ofInt_natCast]
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) :
     s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
@@ -400,61 +421,61 @@ abbrev st : Addr := s₀.gpr .rdi
 abbrev bp : Addr := s₀.gpr .rsi
 abbrev nb : Nat := (s₀.gpr .rdx).toNat
 abbrev scr : Addr := s₀.gpr .rcx
-abbrev stR : Region := ⟨st s₀, 16⟩
-abbrev blR : Region := ⟨bp s₀, 64 * nb s₀⟩
-abbrev scrR : Region := ⟨scr s₀, 64⟩
+abbrev stR : Region := ⟨VG.Proof.Md5.X86_64.st s₀, 16⟩
+abbrev blR : Region := ⟨VG.Proof.Md5.X86_64.bp s₀, 64 * VG.Proof.Md5.X86_64.nb s₀⟩
+abbrev scrR : Region := ⟨VG.Proof.Md5.X86_64.scr s₀, 64⟩
 abbrev retR : Region := ⟨s₀.gpr .rsp, 8⟩
-abbrev H₀ : HashValue := stateAt s₀.mem (st s₀)
+abbrev H₀ : HashValue := stateAt s₀.mem (VG.Proof.Md5.X86_64.st s₀)
 
 /-- Block `i`, and where it starts. -/
-abbrev blkAddr (i : Nat) : Addr := bp s₀ + BitVec.ofNat 64 (64 * i)
-abbrev blk (i : Nat) : Block := blockAt s₀.mem (blkAddr s₀ i)
+abbrev blkAddr (i : Nat) : Addr := VG.Proof.Md5.X86_64.bp s₀ + BitVec.ofNat 64 (64 * i)
+abbrev blk (i : Nat) : Block := blockAt s₀.mem (VG.Proof.Md5.X86_64.blkAddr s₀ i)
 
 end
 
 structure Pre (s₀ : State) : Prop where
-  rd : s₀.rd = [blR s₀]
-  wr : s₀.wr = [stR s₀, scrR s₀]
-  st_scr : (stR s₀).Disjoint (scrR s₀)
-  blk_st : (blR s₀).Disjoint (stR s₀)
-  blk_scr : (blR s₀).Disjoint (scrR s₀)
-  ret_st : (retR s₀).Disjoint (stR s₀)
-  ret_scr : (retR s₀).Disjoint (scrR s₀)
+  rd : s₀.rd = [VG.Proof.Md5.X86_64.blR s₀]
+  wr : s₀.wr = [VG.Proof.Md5.X86_64.stR s₀, VG.Proof.Md5.X86_64.scrR s₀]
+  st_scr : (VG.Proof.Md5.X86_64.stR s₀).Disjoint (VG.Proof.Md5.X86_64.scrR s₀)
+  blk_st : (VG.Proof.Md5.X86_64.blR s₀).Disjoint (VG.Proof.Md5.X86_64.stR s₀)
+  blk_scr : (VG.Proof.Md5.X86_64.blR s₀).Disjoint (VG.Proof.Md5.X86_64.scrR s₀)
+  ret_st : (VG.Proof.Md5.X86_64.retR s₀).Disjoint (VG.Proof.Md5.X86_64.stR s₀)
+  ret_scr : (VG.Proof.Md5.X86_64.retR s₀).Disjoint (VG.Proof.Md5.X86_64.scrR s₀)
 
-theorem pre_of (s₀ : State) (h : Proof.Md5.compressX86_64.pre s₀) : Pre s₀ := by
+theorem pre_of (s₀ : State) (h : Proof.Md5.compressX86_64.pre s₀) : VG.Proof.Md5.X86_64.Pre s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7⟩
 
 namespace Pre
-variable {s₀ : State} (h : Pre s₀)
+variable {s₀ : State} (h : VG.Proof.Md5.X86_64.Pre s₀)
 include h
 
 /-- The blocks fit in the address space (or they could not be disjoint from the state). -/
-theorem nb_lt : 64 * nb s₀ < 2 ^ 64 := by
+theorem nb_lt : 64 * VG.Proof.Md5.X86_64.nb s₀ < 2 ^ 64 := by
   by_contra hn
-  refine h.blk_st (st s₀) ?_ (by simp [Region.Contains])
+  refine h.blk_st (VG.Proof.Md5.X86_64.st s₀) ?_ (by simp [Region.Contains])
   simp only [Region.Contains]
-  have := (st s₀ - bp s₀).isLt
+  have := (VG.Proof.Md5.X86_64.st s₀ - VG.Proof.Md5.X86_64.bp s₀).isLt
   omega
 
 theorem in_state {k : Nat} (hk : k < 4) :
-    InRegions (s₀.rd ++ s₀.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
-  ⟨stR s₀, by simp [h.wr], contains_offset' (by omega) (by omega)⟩
+    InRegions (s₀.rd ++ s₀.wr) (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
+  ⟨VG.Proof.Md5.X86_64.stR s₀, by simp [h.wr], VG.Proof.Md5.X86_64.contains_offset' (by omega) (by omega)⟩
 
 theorem out_state {k : Nat} (hk : k < 4) :
-    InRegions s₀.wr (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
-  ⟨stR s₀, by simp [h.wr], contains_offset' (by omega) (by omega)⟩
+    InRegions s₀.wr (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 :=
+  ⟨VG.Proof.Md5.X86_64.stR s₀, by simp [h.wr], VG.Proof.Md5.X86_64.contains_offset' (by omega) (by omega)⟩
 
-theorem blk_contains {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
-    (blR s₀).Contains (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 := by
+theorem blk_contains {i t : Nat} (hi : i < VG.Proof.Md5.X86_64.nb s₀) (ht : t < 16) :
+    (VG.Proof.Md5.X86_64.blR s₀).Contains (VG.Proof.Md5.X86_64.blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 := by
   have := h.nb_lt
-  rw [ofInt_natCast, show blkAddr s₀ i + BitVec.ofNat 64 (4 * t) =
-    bp s₀ + BitVec.ofNat 64 (64 * i + 4 * t) from Offset.add_ofNat_add_ofNat _ _ _]
-  exact contains_offset (by omega) (by omega)
+  rw [VG.Proof.Md5.X86_64.ofInt_natCast, show VG.Proof.Md5.X86_64.blkAddr s₀ i + BitVec.ofNat 64 (4 * t) =
+    VG.Proof.Md5.X86_64.bp s₀ + BitVec.ofNat 64 (64 * i + 4 * t) from Offset.add_ofNat_add_ofNat _ _ _]
+  exact VG.Proof.Md5.X86_64.contains_offset (by omega) (by omega)
 
-theorem in_blk {i t : Nat} (hi : i < nb s₀) (ht : t < 16) :
-    InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 :=
-  ⟨blR s₀, by simp [h.rd], h.blk_contains hi ht⟩
+theorem in_blk {i t : Nat} (hi : i < VG.Proof.Md5.X86_64.nb s₀) (ht : t < 16) :
+    InRegions (s₀.rd ++ s₀.wr) (VG.Proof.Md5.X86_64.blkAddr s₀ i + BitVec.ofInt 64 ((4 * t : Nat) : Int)) 4 :=
+  ⟨VG.Proof.Md5.X86_64.blR s₀, by simp [h.rd], h.blk_contains hi ht⟩
 
 end Pre
 
@@ -462,17 +483,17 @@ end Pre
 
 /-- What holds between blocks, after `i` of them. -/
 structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
-  rdi : s.gpr .rdi = st s₀
+  rdi : s.gpr .rdi = VG.Proof.Md5.X86_64.st s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [stR s₀] s₀.mem s.mem
-  state : stateAt s.mem (st s₀) = compressBlocks (H₀ s₀) s₀.mem (bp s₀) i
+  frame : Frame [VG.Proof.Md5.X86_64.stR s₀] s₀.mem s.mem
+  state : stateAt s.mem (VG.Proof.Md5.X86_64.st s₀) = compressBlocks (VG.Proof.Md5.X86_64.H₀ s₀) s₀.mem (VG.Proof.Md5.X86_64.bp s₀) i
 
 /-- The loop invariant, at the start of block `i`. -/
-structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
-  rsi : s.gpr .rsi = blkAddr s₀ i
-  rdx : s.gpr .rdx = BitVec.ofNat 64 (nb s₀ - i)
-  vars : Vars 0 s (stateAt s.mem (st s₀))
+structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends VG.Proof.Md5.X86_64.Common s₀ i s where
+  rsi : s.gpr .rsi = VG.Proof.Md5.X86_64.blkAddr s₀ i
+  rdx : s.gpr .rdx = BitVec.ofNat 64 (VG.Proof.Md5.X86_64.nb s₀ - i)
+  vars : VG.Proof.Md5.X86_64.Vars 0 s (stateAt s.mem (VG.Proof.Md5.X86_64.st s₀))
 
 /-! ## One block -/
 
@@ -489,30 +510,30 @@ theorem update_eq : update ++ advance = [
     .alu .add .rsi (.imm 64), .alu .sub .rdx (.imm 1)] := by
   decide
 
-theorem vars0 (s : State) (v : HashValue) : Vars 0 s v ↔
+theorem vars0 (s : State) (v : HashValue) : VG.Proof.Md5.X86_64.Vars 0 s v ↔
     s.gpr .rax = v[0].setWidth 64 ∧ s.gpr .r8 = v[1].setWidth 64 ∧
     s.gpr .r9 = v[2].setWidth 64 ∧ s.gpr .r10 = v[3].setWidth 64 := Iff.rfl
 
 set_option simprocs false in
-theorem load_ok {s₀ : State} (hp : Pre s₀) {s : State} (hrdi : s.gpr .rdi = st s₀)
+theorem load_ok {s₀ : State} (hp : VG.Proof.Md5.X86_64.Pre s₀) {s : State} (hrdi : s.gpr .rdi = VG.Proof.Md5.X86_64.st s₀)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
     WP isa (.block load) s fun s₁ =>
-      Vars 0 s₁ (stateAt s.mem (st s₀)) ∧ (∀ r ∈ pubRegs, s₁.gpr r = s.gpr r) ∧
+      VG.Proof.Md5.X86_64.Vars 0 s₁ (stateAt s.mem (VG.Proof.Md5.X86_64.st s₀)) ∧ (∀ r ∈ VG.Proof.Md5.X86_64.pubRegs, s₁.gpr r = s.gpr r) ∧
       s₁.rd = s.rd ∧ s₁.wr = s.wr ∧ s₁.mem = s.mem := by
   have hin : ∀ k : Nat, k < 4 →
-      InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
+      InRegions (s.rd ++ s.wr) (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hrd, hwr]; exact fun k hk => hp.in_state hk
   apply WP.of_runBlock
-  rw [load_eq]
+  rw [VG.Proof.Md5.X86_64.load_eq]
   have h0 := hin 0 (by decide); have h1 := hin 1 (by decide); have h2 := hin 2 (by decide)
   have h3 := hin 3 (by decide)
-  simp (config := {decide := true}) only [vars0, runBlock_cons, runStep_some,
-    runBlock_nil, exec, readSrc32, isa, ea_at,
+  simp (config := {decide := true}) only [VG.Proof.Md5.X86_64.vars0, runBlock_cons, runStep_some,
+    runBlock_nil, exec, readSrc32, isa, VG.Proof.Md5.X86_64.ea_at,
     State.load32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hrdi, h0, h1, h2, h3, ite_true, ite_false,
     Option.map_some, Option.some.injEq, exists_eq_left']
-  simp only [stateAt_get _ _ (show 0 < 4 by decide), stateAt_get _ _ (show 1 < 4 by decide),
-    stateAt_get _ _ (show 2 < 4 by decide), stateAt_get _ _ (show 3 < 4 by decide)]
-  simp (config := {decide := true}) [pubRegs]
+  simp only [VG.Proof.Md5.X86_64.stateAt_get _ _ (show 0 < 4 by decide), VG.Proof.Md5.X86_64.stateAt_get _ _ (show 1 < 4 by decide),
+    VG.Proof.Md5.X86_64.stateAt_get _ _ (show 2 < 4 by decide), VG.Proof.Md5.X86_64.stateAt_get _ _ (show 3 < 4 by decide)]
+  simp (config := {decide := true}) [VG.Proof.Md5.X86_64.pubRegs]
 
 /-- Four 32-bit words written to consecutive addresses. -/
 def writeState (m : Mem) (p : Addr) (v : HashValue) : Mem :=
@@ -522,37 +543,37 @@ def writeState (m : Mem) (p : Addr) (v : HashValue) : Mem :=
     (p + BitVec.ofInt 64 ((4 * 3 : Nat) : Int)) v[3])
 
 set_option simprocs false in
-theorem stateAt_writeState (m : Mem) (p : Addr) (v : HashValue) : stateAt (writeState m p v) p = v := by
-  apply stateAt_eq
+theorem stateAt_writeState (m : Mem) (p : Addr) (v : HashValue) : stateAt (VG.Proof.Md5.X86_64.writeState m p v) p = v := by
+  apply VG.Proof.Md5.X86_64.stateAt_eq
   intro k hk
-  simp only [writeState]
+  simp only [VG.Proof.Md5.X86_64.writeState]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-  simp (config := {decide := true}) only [Mem.readW_writeW_self32, readW_writeW_word]
+  simp (config := {decide := true}) only [Mem.readW_writeW_self32, VG.Proof.Md5.X86_64.readW_writeW_word]
 
-theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [stR s₀] m m') (v : HashValue) :
-    Frame [stR s₀] m (writeState m' (st s₀) v) := by
-  have c : ∀ k, k < 4 → (stR s₀).Contains (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) (32 / 8) :=
-    fun k hk => contains_offset' (by omega) (by omega)
-  simp only [writeState]
+theorem frame_writeState {s₀ : State} {m m' : Mem} (h : Frame [VG.Proof.Md5.X86_64.stR s₀] m m') (v : HashValue) :
+    Frame [VG.Proof.Md5.X86_64.stR s₀] m (VG.Proof.Md5.X86_64.writeState m' (VG.Proof.Md5.X86_64.st s₀) v) := by
+  have c : ∀ k, k < 4 → (VG.Proof.Md5.X86_64.stR s₀).Contains (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) (32 / 8) :=
+    fun k hk => VG.Proof.Md5.X86_64.contains_offset' (by omega) (by omega)
+  simp only [VG.Proof.Md5.X86_64.writeState]
   refine (((h.writeW ?_ _ (c 0 ?_)).writeW ?_ _ (c 1 ?_)).writeW ?_ _ (c 2 ?_)).writeW ?_ _ (c 3 ?_) <;>
   simp
 
 set_option simprocs false in
-theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (hv : Vars 0 s V)
-    (hrdi : s.gpr .rdi = st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
+theorem update_ok {s₀ : State} (hp : VG.Proof.Md5.X86_64.Pre s₀) {s : State} (V H : HashValue) (hv : VG.Proof.Md5.X86_64.Vars 0 s V)
+    (hrdi : s.gpr .rdi = VG.Proof.Md5.X86_64.st s₀) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
     (hH : ∀ k : Nat, (hk : k < 4) →
-      s.mem.readW (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = H[k]) :
+      s.mem.readW (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = H[k]) :
     WP isa (.block (update ++ advance)) s fun s' =>
-      s'.mem = writeState s.mem (st s₀) (Vector.zipWith (· + ·) V H) ∧
-      Vars 0 s' (Vector.zipWith (· + ·) V H) ∧
+      s'.mem = VG.Proof.Md5.X86_64.writeState s.mem (VG.Proof.Md5.X86_64.st s₀) (Vector.zipWith (· + ·) V H) ∧
+      VG.Proof.Md5.X86_64.Vars 0 s' (Vector.zipWith (· + ·) V H) ∧
       s'.gpr .rsi = s.gpr .rsi + 64 ∧ s'.gpr .rdx = s.gpr .rdx - 1 ∧
       s'.zf = some (s.gpr .rdx - 1 == 0) ∧
       s'.gpr .rdi = s.gpr .rdi ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hin : ∀ k : Nat, k < 4 →
-      InRegions (s.rd ++ s.wr) (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
+      InRegions (s.rd ++ s.wr) (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hrd, hwr]; exact fun k hk => hp.in_state hk
   have hout : ∀ k : Nat, k < 4 →
-      InRegions s.wr (st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
+      InRegions s.wr (VG.Proof.Md5.X86_64.st s₀ + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 4 := by
     rw [hwr]; exact fun k hk => hp.out_state hk
   have i0 := hin 0 (by decide); have i1 := hin 1 (by decide); have i2 := hin 2 (by decide)
   have i3 := hin 3 (by decide)
@@ -560,13 +581,13 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   have o3 := hout 3 (by decide)
   have m0 := hH 0 (by decide); have m1 := hH 1 (by decide); have m2 := hH 2 (by decide)
   have m3 := hH 3 (by decide)
-  rw [vars0] at hv
+  rw [VG.Proof.Md5.X86_64.vars0] at hv
   obtain ⟨v0, v1, v2, v3⟩ := hv
   apply WP.of_runBlock
-  rw [update_eq]
-  simp (config := {decide := true}) only [vars0, Vector.getElem_zipWith, runBlock_cons, runStep_some,
+  rw [VG.Proof.Md5.X86_64.update_eq]
+  simp (config := {decide := true}) only [VG.Proof.Md5.X86_64.vars0, Vector.getElem_zipWith, runBlock_cons, runStep_some,
     runBlock_nil, exec, execAlu32, execAlu, readSrc32, readSrc,
-    isa, ea_at, State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.cf_setReg, RegUpd.xmm_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.cf_arithFlags, RegUpd.xmm_arithFlags,
+    isa, VG.Proof.Md5.X86_64.ea_at, State.load32, State.store32, State.setReg32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.zf_setReg, RegUpd.cf_setReg, RegUpd.xmm_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.zf_arithFlags, RegUpd.cf_arithFlags, RegUpd.xmm_arithFlags,
     hrdi, i0, i1, i2, i3, o0, o1, o2, o3,
     m0, m1, m2, m3, v0, v1, v2, v3, ite_true, ite_false,
     BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
@@ -574,7 +595,7 @@ theorem update_ok {s₀ : State} (hp : Pre s₀) {s : State} (V H : HashValue) (
   have e64 : BitVec.signExtend 64 (64 : BitVec 32) = 64 := by decide
   have e1 : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
   refine ⟨?_, trivial, by rw [e64], by rw [e1], by rw [e1], trivial⟩
-  simp only [writeState, Vector.getElem_zipWith]
+  simp only [VG.Proof.Md5.X86_64.writeState, Vector.getElem_zipWith]
 
 theorem compressBlocks_succ (H : HashValue) (m : Mem) (p : Addr) (i : Nat) :
     compressBlocks H m p (i + 1) =
@@ -582,65 +603,65 @@ theorem compressBlocks_succ (H : HashValue) (m : Mem) (p : Addr) (i : Nat) :
   simp [compressBlocks, List.range_succ, List.foldl_append]
 
 theorem blk_word {s₀ : State} (i k : Nat) (hk : k < 16) :
-    s₀.mem.readW (blkAddr s₀ i + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = blk s₀ i ⟨k, hk⟩ := by
-  rw [readW_bytes, ofInt_natCast]
-  simp only [blk, blockAt, parseBlock, Offset.add_ofNat_add_one, Nat.add_assoc, Nat.reduceAdd]
+    s₀.mem.readW (VG.Proof.Md5.X86_64.blkAddr s₀ i + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = VG.Proof.Md5.X86_64.blk s₀ i ⟨k, hk⟩ := by
+  rw [readW_bytes, VG.Proof.Md5.X86_64.ofInt_natCast]
+  simp only [VG.Proof.Md5.X86_64.blk, blockAt, parseBlock, Offset.add_ofNat_add_one, Nat.add_assoc, Nat.reduceAdd]
 
-theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
-    (hL : LInv s₀ i s) :
+theorem body_ok {s₀ : State} (hp : VG.Proof.Md5.X86_64.Pre s₀) {i : Nat} (hi : i < VG.Proof.Md5.X86_64.nb s₀) {s : State}
+    (hL : VG.Proof.Md5.X86_64.LInv s₀ i s) :
     WP isa body s fun s' =>
-      (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
-      (eval .ne s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
+      (eval .ne s' = some false ∧ VG.Proof.Md5.X86_64.Common s₀ (VG.Proof.Md5.X86_64.nb s₀) s') ∨
+      (eval .ne s' = some true ∧ i + 1 < VG.Proof.Md5.X86_64.nb s₀ ∧ VG.Proof.Md5.X86_64.LInv s₀ (i + 1) s') := by
   have hX : ∀ k (hk : k < 16),
-      s.mem.readW (blkAddr s₀ i + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = blk s₀ i ⟨k, hk⟩ := by
+      s.mem.readW (VG.Proof.Md5.X86_64.blkAddr s₀ i + BitVec.ofInt 64 ((4 * k : Nat) : Int)) 32 = VG.Proof.Md5.X86_64.blk s₀ i ⟨k, hk⟩ := by
     intro k hk
     rw [hL.frame.readW (hp.blk_contains hi hk) (by simpa using hp.blk_st) (by decide)]
-    exact blk_word i k hk
-  refine WP.seq (WP.mono (steps_ok _ (blk s₀ i) _ s hL.rsi
+    exact VG.Proof.Md5.X86_64.blk_word i k hk
+  refine WP.seq (WP.mono (VG.Proof.Md5.X86_64.steps_ok _ (VG.Proof.Md5.X86_64.blk s₀ i) _ s hL.rsi
     (fun k hk => by rw [hL.rd, hL.wr]; exact hp.in_blk hi hk) hX hL.vars 64 (Nat.le_refl _))
     fun s₂ hR => ?_)
-  have hrdi₂ : s₂.gpr .rdi = st s₀ := by
+  have hrdi₂ : s₂.gpr .rdi = VG.Proof.Md5.X86_64.st s₀ := by
     rw [hR.pub .rdi (by decide), hL.rdi]
-  refine WP.mono (update_ok hp _ (stateAt s.mem (st s₀)) hR.vars hrdi₂
+  refine WP.mono (VG.Proof.Md5.X86_64.update_ok hp _ (stateAt s.mem (VG.Proof.Md5.X86_64.st s₀)) hR.vars hrdi₂
     (by rw [hR.rd, hL.rd]) (by rw [hR.wr, hL.wr]) fun k hk => ?_) fun s₃ h₃ => ?_
-  · rw [hR.mem, stateAt_get _ _ hk]
+  · rw [hR.mem, VG.Proof.Md5.X86_64.stateAt_get _ _ hk]
   obtain ⟨hm₃, hv₃, hrsi₃, hrdx₃, hzf₃, hrdi₃, hrd₃, hwr₃⟩ := h₃
-  have pub₂ : ∀ r ∈ pubRegs, s₂.gpr r = s.gpr r := hR.pub
-  have hrdx : s₂.gpr .rdx - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
+  have pub₂ : ∀ r ∈ VG.Proof.Md5.X86_64.pubRegs, s₂.gpr r = s.gpr r := hR.pub
+  have hrdx : s₂.gpr .rdx - 1 = BitVec.ofNat 64 (VG.Proof.Md5.X86_64.nb s₀ - (i + 1)) := by
     rw [pub₂ .rdx (by decide), hL.rdx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
       Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
-  have hframe : Frame [stR s₀] s₀.mem s₃.mem := by
+  have hframe : Frame [VG.Proof.Md5.X86_64.stR s₀] s₀.mem s₃.mem := by
     rw [hm₃, hR.mem]
-    exact frame_writeState hL.frame _
-  have hcommon : ∀ j, j = i + 1 → Common s₀ j s₃ := by
+    exact VG.Proof.Md5.X86_64.frame_writeState hL.frame _
+  have hcommon : ∀ j, j = i + 1 → VG.Proof.Md5.X86_64.Common s₀ j s₃ := by
     rintro j rfl
     refine ⟨by rw [hrdi₃, hrdi₂], by rw [hrd₃, hR.rd, hL.rd],
       by rw [hwr₃, hR.wr, hL.wr], hframe, ?_⟩
-    rw [hm₃, stateAt_writeState, compressBlocks_succ, ← hL.state]
+    rw [hm₃, VG.Proof.Md5.X86_64.stateAt_writeState, VG.Proof.Md5.X86_64.compressBlocks_succ, ← hL.state]
     rfl
   have hev : eval .ne s₃ = some (!(s₂.gpr .rdx - 1 == 0)) := by
     simp [eval, hzf₃]
   rw [hrdx] at hev
-  by_cases hlast : i + 1 = nb s₀
+  by_cases hlast : i + 1 = VG.Proof.Md5.X86_64.nb s₀
   · left
     refine ⟨by rw [hev, hlast]; simp, hlast ▸ hcommon _ rfl⟩
   · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega
+    have hne : VG.Proof.Md5.X86_64.nb s₀ - (i + 1) ≠ 0 := by omega
     refine ⟨?_, by omega, { hcommon _ rfl with rsi := ?_, rdx := ?_, vars := ?_ }⟩
     · rw [hev]
       have := hp.nb_lt
-      have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
+      have h0 : BitVec.ofNat 64 (VG.Proof.Md5.X86_64.nb s₀ - (i + 1)) ≠ 0 := by
         intro h
         have h' := congrArg BitVec.toNat h
         rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h'
         exact hne h'
       simpa using h0
     · rw [hrsi₃, pub₂ .rsi (by decide), hL.rsi]
-      simp only [blkAddr]
+      simp only [VG.Proof.Md5.X86_64.blkAddr]
       rw [BitVec.add_assoc, show (64 : BitVec _) = BitVec.ofNat _ 64 from rfl, BitVec.ofNat_add_ofNat]
       rfl
     · rw [hrdx₃, hrdx]
-    · rw [hm₃, hR.mem, stateAt_writeState]; exact hv₃
+    · rw [hm₃, hR.mem, VG.Proof.Md5.X86_64.stateAt_writeState]; exact hv₃
 
 /-! ## The whole function -/
 
@@ -654,37 +675,37 @@ theorem test_ok {s₀ : State} :
     Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa compress s₀ fun s' => Common s₀ (nb s₀) s' := by
-  refine WP.seq (WP.mono test_ok fun s₁ ⟨hg, hrd, hwr, hm, hzf⟩ => ?_)
-  have hc₀ : Common s₀ 0 s₁ :=
+theorem correct {s₀ : State} (hp : VG.Proof.Md5.X86_64.Pre s₀) :
+    WP isa compress s₀ fun s' => VG.Proof.Md5.X86_64.Common s₀ (VG.Proof.Md5.X86_64.nb s₀) s' := by
+  refine WP.seq (WP.mono VG.Proof.Md5.X86_64.test_ok fun s₁ ⟨hg, hrd, hwr, hm, hzf⟩ => ?_)
+  have hc₀ : VG.Proof.Md5.X86_64.Common s₀ 0 s₁ :=
     ⟨by rw [hg], hrd, hwr, by rw [hm]; exact Frame.refl _ _, by rw [hm]; rfl⟩
   refine WP.ite (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) (by simp [eval, hzf]) (fun h => ?_) (fun h => ?_)
-  · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
+  · have h0 : VG.Proof.Md5.X86_64.nb s₀ = 0 := by simp at h; simp [VG.Proof.Md5.X86_64.nb, h]
     exact WP.block_nil (M := isa) (h0 ▸ hc₀)
-  · have hpos : 0 < nb s₀ := by
+  · have hpos : 0 < VG.Proof.Md5.X86_64.nb s₀ := by
       simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
-    let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
+    let Inv : Nat → State → Prop := fun m s => ∃ i, m = VG.Proof.Md5.X86_64.nb s₀ - i ∧ i < VG.Proof.Md5.X86_64.nb s₀ ∧ VG.Proof.Md5.X86_64.LInv s₀ i s
     have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
-        (eval .ne s' = some false ∧ Common s₀ (nb s₀) s') ∨
+        (eval .ne s' = some false ∧ VG.Proof.Md5.X86_64.Common s₀ (VG.Proof.Md5.X86_64.nb s₀) s') ∨
         (eval .ne s' = some true ∧ ∃ m' < m, Inv m' s')) := by
       rintro m s ⟨i, rfl, hi, hL⟩
-      refine WP.mono (body_ok hp hi hL) fun s' h => ?_
+      refine WP.mono (VG.Proof.Md5.X86_64.body_ok hp hi hL) fun s' h => ?_
       rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
       · exact .inl ⟨he, hc⟩
-      · exact .inr ⟨he, nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
-    refine WP.seq (WP.mono (load_ok hp (by rw [hg]) hrd hwr) fun s₂ ⟨hv₂, hpub₂, hrd₂, hwr₂, hm₂⟩ => ?_)
-    have hL₀ : LInv s₀ 0 s₂ :=
+      · exact .inr ⟨he, VG.Proof.Md5.X86_64.nb s₀ - (i + 1), by omega, i + 1, rfl, hi', hL'⟩
+    refine WP.seq (WP.mono (VG.Proof.Md5.X86_64.load_ok hp (by rw [hg]) hrd hwr) fun s₂ ⟨hv₂, hpub₂, hrd₂, hwr₂, hm₂⟩ => ?_)
+    have hL₀ : VG.Proof.Md5.X86_64.LInv s₀ 0 s₂ :=
       { rdi := by rw [hpub₂ .rdi (by decide), hg]
         rd := by rw [hrd₂, hrd]
         wr := by rw [hwr₂, hwr]
         frame := by rw [hm₂]; exact hc₀.frame
         state := by rw [hm₂]; exact hc₀.state
-        rsi := by rw [hpub₂ .rsi (by decide), hg]; simp [blkAddr]
-        rdx := by rw [hpub₂ .rdx (by decide), hg]; simp [nb]
+        rsi := by rw [hpub₂ .rsi (by decide), hg]; simp [VG.Proof.Md5.X86_64.blkAddr]
+        rdx := by rw [hpub₂ .rdx (by decide), hg]; simp [VG.Proof.Md5.X86_64.nb]
         vars := by rw [hm₂]; exact hv₂ }
-    exact WP.loop (M := isa) Inv hstep (nb s₀) s₂ ⟨0, rfl, hpos, hL₀⟩
+    exact WP.loop (M := isa) Inv hstep (VG.Proof.Md5.X86_64.nb s₀) s₂ ⟨0, rfl, hpos, hL₀⟩
 
 /-- The registers no instruction writes: the callee-saved ones, `rdi` and `rcx`. -/
 def kept : List Reg := [.rbx, .rbp, .rsp, .r12, .r13, .r14, .r15, .rdi, .rcx]
@@ -692,16 +713,16 @@ def kept : List Reg := [.rbx, .rbp, .rsp, .r12, .r13, .r14, .r15, .rdi, .rcx]
 theorem compress_keeps : ((instrs compress).all fun i => kept.all fun r => !Taint.clobbers i r) = true := by
   rw [← Code.allInstrs_eq]; lit_decide
 
-theorem compress_keeps_reg {r : Reg} (hr : r ∈ kept) : ∀ i ∈ instrs compress, Taint.clobbers i r = false := by
+theorem compress_keeps_reg {r : Reg} (hr : r ∈ VG.Proof.Md5.X86_64.kept) : ∀ i ∈ instrs compress, Taint.clobbers i r = false := by
   intro i hi
-  have := List.all_eq_true.mp (List.all_eq_true.mp compress_keeps i hi) r hr
+  have := List.all_eq_true.mp (List.all_eq_true.mp VG.Proof.Md5.X86_64.compress_keeps i hi) r hr
   simpa using this
 
 /-- `compress` meets the calling convention and its postcondition. -/
-theorem correct' {s₀ : State} (hp : Pre s₀) :
+theorem correct' {s₀ : State} (hp : VG.Proof.Md5.X86_64.Pre s₀) :
     WP isa compress s₀ fun s' => gprPreserved s₀ s' ∧ Proof.Md5.compressX86_64.post s₀ s' := by
-  obtain ⟨t, s', he, hc⟩ := correct hp
-  refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (compress_keeps_reg ?_) he, ?_⟩, hc.state⟩
+  obtain ⟨t, s', he, hc⟩ := VG.Proof.Md5.X86_64.correct hp
+  refine ⟨t, s', he, ⟨fun r hr => Exec.gpr (VG.Proof.Md5.X86_64.compress_keeps_reg ?_) he, ?_⟩, hc.state⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
   · exact hc.frame.readW (Region.contains_self _ _) (by simpa using hp.ret_st) (by decide)
@@ -721,14 +742,16 @@ def satState : State where
 theorem compress_verified :
     Verified X86_64.target Impl.Md5.X86_64.compress Proof.Md5.compressX86_64 := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct' (pre_of s hs)
+  · obtain ⟨t, s', he, h⟩ := VG.Proof.Md5.X86_64.correct' (VG.Proof.Md5.X86_64.pre_of s hs)
     exact ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he h.1, h.2⟩
   · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4⟩
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
-  · refine ⟨satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · refine ⟨VG.Proof.Md5.X86_64.satState, rfl, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)
 
 end VG.Proof.Md5.X86_64
+
+end

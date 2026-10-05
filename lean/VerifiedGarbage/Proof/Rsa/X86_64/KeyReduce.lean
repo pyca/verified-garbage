@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyDbl
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # `vg_rsa_check_key` on x86-64: reduction by restoring division

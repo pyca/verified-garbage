@@ -1,12 +1,12 @@
-import VerifiedGarbage.Proof.MdStream.Arm.Update
-import VerifiedGarbage.Proof.MdStream.Arm.Finalize
+import VerifiedGarbage.Proof.MdStream.Arm.Words
+import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.MdStream.Arm.Words
 import VerifiedGarbage.Proof.Sha256.Md
-import VerifiedGarbage.Proof.Sha256.Arm.Contract
+import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Impl.Sha256.Arm.Stream
-import VerifiedGarbage.Proof.Sha256.Arm.Lit
+import VerifiedGarbage.Proof.Sha256.Arm.Compress
 
 /-!
 # Streaming SHA-256 on ARMv7: `update` and `finalize`

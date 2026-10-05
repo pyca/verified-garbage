@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.X448.AArch64.Base
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.X448.AArch64.Weak.Env
-import VerifiedGarbage.Proof.X448.Wide.Limbs
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import VerifiedGarbage.Proof.X448.AArch64.Weak.Main
+import VerifiedGarbage.Proof.X448.Wide.TailMul
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 
 /-!

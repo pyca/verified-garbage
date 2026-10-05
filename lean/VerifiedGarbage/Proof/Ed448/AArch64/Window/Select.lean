@@ -1,8 +1,7 @@
-import VerifiedGarbage.Proof.X448.AArch64.Init
-import VerifiedGarbage.Proof.Curve448.AArch64.Fast.MOp
-import VerifiedGarbage.Proof.Curve448.AArch64.Swap
+import VerifiedGarbage.Proof.X448.AArch64.PointwiseSmall
+import VerifiedGarbage.Proof.Curve448.AArch64.Fast.Field
+import VerifiedGarbage.Proof.Curve448.AArch64.Square
 import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
-
 /-!
 # Ed448 verification on AArch64: the constant-time selection of a table entry
 

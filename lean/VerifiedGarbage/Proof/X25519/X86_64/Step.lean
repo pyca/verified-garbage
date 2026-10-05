@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.X25519.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.X25519.Field
+import VerifiedGarbage.Proof.X25519.Bytes
 
 /-!
 # X25519 on x86-64: the steps of the field arithmetic

@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
-import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # A candidate on x86-64: Montgomery arithmetic modulo `c`

@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.MlKem.Arm.Add
-import VerifiedGarbage.Proof.MlKem.Encode
-import VerifiedGarbage.Proof.MlKem.Compress
+import VerifiedGarbage.Proof.MlKem.KPke1024
+import VerifiedGarbage.Proof.MlKem.KPke1024
 import VerifiedGarbage.Proof.Framework.Range
 
 /-!

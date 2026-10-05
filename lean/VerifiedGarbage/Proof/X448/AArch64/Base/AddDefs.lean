@@ -1,7 +1,6 @@
-import VerifiedGarbage.Proof.X448.AArch64.Fast.StepOps
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Verified
 import VerifiedGarbage.Proof.X448.BaseAdd
 import VerifiedGarbage.Proof.X448.AArch64.Base.Const
-
 /-!
 # X448 of the base point on AArch64: what the additions' proofs share
 

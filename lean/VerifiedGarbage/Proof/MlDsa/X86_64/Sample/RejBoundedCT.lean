@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejBounded
+import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.ExpandMask
 import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.RejNttCT
 
 /-!
@@ -28,16 +28,16 @@ open VG.Spec.Sha3 (bytesAt)
 namespace RejBoundedCT
 
 theorem halfByteOk_eq {η : Nat} (hη : η = 2 ∨ η = 4) (b : Nat) :
-    halfByteOk η b = if b < rbB η then 1 else 0 := by
+    halfByteOk η b = if b < VG.Proof.MlDsa.X86_64.Sample.rbB η then 1 else 0 := by
   unfold halfByteOk
-  rw [coeffFromHalfByte_eq hη]
-  by_cases h : b < rbB η <;> simp [h]
+  rw [VG.Proof.MlDsa.X86_64.Sample.coeffFromHalfByte_eq hη]
+  by_cases h : b < VG.Proof.MlDsa.X86_64.Sample.rbB η <;> simp [h]
 
 /-- Half-bytes accepted alike. -/
 theorem lt_rbB_congr {η : Nat} (hη : η = 2 ∨ η = 4) {b₁ b₂ : Nat} (h : halfByteOk η b₁ = halfByteOk η b₂) :
-    decide (b₁ < rbB η) = decide (b₂ < rbB η) := by
-  rw [halfByteOk_eq hη, halfByteOk_eq hη] at h
-  by_cases h₁ : b₁ < rbB η <;> by_cases h₂ : b₂ < rbB η <;> simp [h₁, h₂] at h ⊢
+    decide (b₁ < VG.Proof.MlDsa.X86_64.Sample.rbB η) = decide (b₂ < VG.Proof.MlDsa.X86_64.Sample.rbB η) := by
+  rw [VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.halfByteOk_eq hη, VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.halfByteOk_eq hη] at h
+  by_cases h₁ : b₁ < VG.Proof.MlDsa.X86_64.Sample.rbB η <;> by_cases h₂ : b₂ < VG.Proof.MlDsa.X86_64.Sample.rbB η <;> simp [h₁, h₂] at h ⊢
 
 /-! ## A try -/
 
@@ -50,12 +50,12 @@ theorem tryTrace {η : Nat} (hη : η = 2 ∨ η = 4) {h1 : VG.Taint.Hint X86_64
       (.block (rbVal η ++ ([.store32 aJ .r8, .alu .add .rdi (.imm 1)] : List Instr))) h2).isSome = true)
     {h3 : VG.Taint.Hint X86_64.Taint.T} (c3 : (taint.check (X86_64.Taint.ofRegs []) (.block []) h3).isSome = true) :
     RelCT isa (fun s₁ s₂ => s₁.gpr .rbp = s₂.gpr .rbp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
-      decide (((s₁.gpr .rdx).setWidth 32).toNat < rbB η) = decide (((s₂.gpr .rdx).setWidth 32).toNat < rbB η))
+      decide (((s₁.gpr .rdx).setWidth 32).toNat < VG.Proof.MlDsa.X86_64.Sample.rbB η) = decide (((s₂.gpr .rdx).setWidth 32).toNat < VG.Proof.MlDsa.X86_64.Sample.rbB η))
       (rbTry η) fun _ _ => True := by
   refine RelCT.seq (R := fun (s₁ s₂ : State) => s₁.cf = s₂.cf ∧ s₁.gpr .rbp = s₂.gpr .rbp ∧ s₁.gpr .rdi = s₂.gpr .rdi)
-    (RelCT.postDep (F := fun (x x' : State) => x'.cf = some (decide (((x.gpr .rdx).setWidth 32).toNat < rbB η)) ∧
+    (RelCT.postDep (F := fun (x x' : State) => x'.cf = some (decide (((x.gpr .rdx).setWidth 32).toNat < VG.Proof.MlDsa.X86_64.Sample.rbB η)) ∧
         x'.gpr = x.gpr)
-      (taintRel [] nil_regs c1)
+      (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs c1)
       (fun x y _ => ⟨WP.mono (rbCmp_ok hη x) fun _ h => ⟨h.1, h.2.2.1⟩,
         WP.mono (rbCmp_ok hη y) fun _ h => ⟨h.1, h.2.2.1⟩⟩)
       fun x y x' y' ⟨e1, e2, e3⟩ ⟨f1, g1⟩ ⟨f2, g2⟩ => ⟨by rw [f1, f2, e3], by rw [g1, g2, e1], by rw [g1, g2, e2]⟩) ?_
@@ -64,28 +64,28 @@ theorem tryTrace {η : Nat} (hη : η = 2 ∨ η = 4) {h1 : VG.Taint.Hint X86_64
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       exacts [h.1.2.1, h.1.2.2]) c2)
-    (taintRel [] nil_regs c3)
+    (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs c3)
 
 /-- What a try does, from `s`, for any of its hypotheses. -/
 def TryPost (η : Nat) (s s' : State) : Prop :=
-  ∀ aP L b, TryPre s aP L → b < 16 → (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b →
-    s'.gpr .rdi = BitVec.ofNat 64 (hbTry η L b).length ∧ Stored s'.mem aP (hbTry η L b) ∧
+  ∀ aP L b, VG.Proof.MlDsa.X86_64.Sample.TryPre s aP L → b < 16 → (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b →
+    s'.gpr .rdi = BitVec.ofNat 64 (hbTry η L b).length ∧ VG.Proof.MlDsa.Sample.Stored s'.mem aP (hbTry η L b) ∧
       Frame [pR aP] s.mem s'.mem ∧ Keep [.rdx, .r8, .rdi] s s'
 
 theorem rbTry_all {η : Nat} (hη : η = 2 ∨ η = 4) (s : State)
-    (hne : ∃ aP L b, TryPre s aP L ∧ b < 16 ∧ (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b) :
+    (hne : ∃ aP L b, VG.Proof.MlDsa.X86_64.Sample.TryPre s aP L ∧ b < 16 ∧ (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b) :
     WP isa (rbTry η) s (TryPost η s) := by
   have := WP.all' (Pre := fun p : Addr × List Zq × Nat =>
-      TryPre s p.1 p.2.1 ∧ p.2.2 < 16 ∧ (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 p.2.2)
+      VG.Proof.MlDsa.X86_64.Sample.TryPre s p.1 p.2.1 ∧ p.2.2 < 16 ∧ (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 p.2.2)
     (Q := fun p s' => s'.gpr .rdi = BitVec.ofNat 64 (hbTry η p.2.1 p.2.2).length ∧
-      Stored s'.mem p.1 (hbTry η p.2.1 p.2.2) ∧ Frame [pR p.1] s.mem s'.mem ∧ Keep [.rdx, .r8, .rdi] s s')
+      VG.Proof.MlDsa.Sample.Stored s'.mem p.1 (hbTry η p.2.1 p.2.2) ∧ Frame [pR p.1] s.mem s'.mem ∧ Keep [.rdx, .r8, .rdi] s s')
     (fun p h => rbTry_ok hη s h.1 h.2.1 h.2.2) (by obtain ⟨aP, L, b, h⟩ := hne; exact ⟨(aP, L, b), h⟩)
   exact WP.mono this fun s' h aP L b hp hb hd => h (aP, L, b) ⟨hp, hb, hd⟩
 
 /-- Two runs before a try: as many coefficients sampled, and the half-bytes
 in `rdx` accepted alike. -/
 def TRel (η : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ aP L₁ L₂ b₁ b₂, L₁.length = L₂.length ∧ TryPre s₁ aP L₁ ∧ TryPre s₂ aP L₂ ∧ b₁ < 16 ∧ b₂ < 16 ∧
+  ∃ aP L₁ L₂ b₁ b₂, L₁.length = L₂.length ∧ VG.Proof.MlDsa.X86_64.Sample.TryPre s₁ aP L₁ ∧ VG.Proof.MlDsa.X86_64.Sample.TryPre s₂ aP L₂ ∧ b₁ < 16 ∧ b₂ < 16 ∧
     (s₁.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b₁ ∧ (s₂.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b₂ ∧
     halfByteOk η b₁ = halfByteOk η b₂
 
@@ -117,13 +117,13 @@ structure BPre (s : State) (aP : Addr) (L : List Zq) : Prop where
   rdi : s.gpr .rdi = BitVec.ofNat 64 L.length
   len : L.length ≤ 256
   wr : CoeffsWr s.wr aP
-  st : Stored s.mem aP L
+  st : VG.Proof.MlDsa.Sample.Stored s.mem aP L
   r0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1
 
 /-- Two runs at the start of an iteration, with as many coefficients sampled
 and bytes to read whose half-bytes are accepted alike. -/
 def BRel (η : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ aP L₁ L₂, L₁.length = L₂.length ∧ BPre s₁ aP L₁ ∧ BPre s₂ aP L₂ ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+  ∃ aP L₁ L₂, L₁.length = L₂.length ∧ VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BPre s₁ aP L₁ ∧ VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BPre s₂ aP L₂ ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ hbOks η (s₁.mem (s₁.gpr .rsi)) = hbOks η (s₂.mem (s₂.gpr .rsi))
 
 /-- The facts of a run after the loads. -/
@@ -132,17 +132,17 @@ structure MPre (s : State) (aP : Addr) (L : List Zq) (z : Byte) : Prop where
   rdi : s.gpr .rdi = BitVec.ofNat 64 L.length
   len : L.length ≤ 256
   wr : CoeffsWr s.wr aP
-  st : Stored s.mem aP L
+  st : VG.Proof.MlDsa.Sample.Stored s.mem aP L
   cf : s.cf = some (decide (L.length < 256))
   rax : s.gpr .rax = BitVec.setWidth 64 z
   rdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 (z.toNat % 16)
 
 /-- After the loads. -/
 def R1 (η : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ (aP : Addr) (L₁ L₂ : List Zq) (z₁ z₂ : Byte), L₁.length = L₂.length ∧ MPre s₁ aP L₁ z₁ ∧ MPre s₂ aP L₂ z₂ ∧
+  ∃ (aP : Addr) (L₁ L₂ : List Zq) (z₁ z₂ : Byte), L₁.length = L₂.length ∧ VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.MPre s₁ aP L₁ z₁ ∧ VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.MPre s₂ aP L₂ z₂ ∧
     hbOks η z₁ = hbOks η z₂ ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi
 
-theorem load_ct (η : Nat) : RelCT isa (BRel η) (.block rbLoad) (R1 η) := by
+theorem load_ct (η : Nat) : RelCT isa (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BRel η) (.block rbLoad) (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R1 η) := by
   refine RelCT.postDep (F := fun (x x' : State) =>
       (x'.gpr .rax = BitVec.setWidth 64 (x.mem (x.gpr .rsi)) ∧
         (x'.gpr .rdx).setWidth 32 = BitVec.ofNat 32 ((x.mem (x.gpr .rsi)).toNat % 16) ∧
@@ -152,12 +152,12 @@ theorem load_ct (η : Nat) : RelCT isa (BRel η) (.block rbLoad) (R1 η) := by
       (by taint_decide))
     (fun x y ⟨_, _, _, _, p1, p2, _⟩ => ⟨rbLoad_ok x p1.r0, rbLoad_ok y p2.r0⟩) ?_
   intro x y x' y' ⟨aP, L₁, L₂, hl, p1, p2, esi, ecx, hok⟩ ⟨⟨ha, hd, hc, hm, hdi⟩, k⟩ ⟨⟨ha', hd', hc', hm', hdi'⟩, k'⟩
-  have mp : ∀ {s s' : State} {L : List Zq}, BPre s aP L → s'.gpr .rax = BitVec.setWidth 64 (s.mem (s.gpr .rsi)) →
+  have mp : ∀ {s s' : State} {L : List Zq}, VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BPre s aP L → s'.gpr .rax = BitVec.setWidth 64 (s.mem (s.gpr .rsi)) →
       (s'.gpr .rdx).setWidth 32 = BitVec.ofNat 32 ((s.mem (s.gpr .rsi)).toNat % 16) →
       s'.cf = some (decide ((s.gpr .rdi).toNat < 256)) → s'.mem = s.mem → s'.gpr .rdi = s.gpr .rdi →
-      Keep [.rax, .rdx, .rdi] s s' → MPre s' aP L (s.mem (s.gpr .rsi)) :=
+      Keep [.rax, .rdx, .rdi] s s' → VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.MPre s' aP L (s.mem (s.gpr .rsi)) :=
     fun {s s' L} p a d c m di kk => ⟨by rw [kk.gpr (by decide), p.rbp], by rw [di, p.rdi], p.len,
-      by rw [kk.2.2]; exact p.wr, by rw [m]; exact p.st, by rw [c, p.rdi, ofNat64_toNat (by have := p.len; omega)],
+      by rw [kk.2.2]; exact p.wr, by rw [m]; exact p.st, by rw [c, p.rdi, VG.Proof.MlDsa.X86_64.Sample.ofNat64_toNat (by have := p.len; omega)],
       a, d⟩
   exact ⟨aP, L₁, L₂, _, _, hl, mp p1 ha hd hc hm hdi k, mp p2 ha' hd' hc' hm' hdi' k', hok,
     by rw [k.gpr (by decide), k'.gpr (by decide), ecx], by rw [k.gpr (by decide), k'.gpr (by decide), esi]⟩
@@ -166,8 +166,8 @@ theorem load_ct (η : Nat) : RelCT isa (BRel η) (.block rbLoad) (R1 η) := by
 def R2 (η : Nat) (s₁ s₂ : State) : Prop :=
   ∃ (aP : Addr) (L₁ L₂ : List Zq) (z₁ z₂ : Byte), L₁.length = L₂.length ∧ L₁.length ≤ 256 ∧ L₂.length ≤ 256 ∧
     s₁.gpr .rbp = aP ∧ s₂.gpr .rbp = aP ∧ s₁.gpr .rdi = BitVec.ofNat 64 L₁.length ∧
-    s₂.gpr .rdi = BitVec.ofNat 64 L₂.length ∧ CoeffsWr s₁.wr aP ∧ CoeffsWr s₂.wr aP ∧ Stored s₁.mem aP L₁ ∧
-    Stored s₂.mem aP L₂ ∧ s₁.gpr .rax = BitVec.setWidth 64 z₁ ∧ s₂.gpr .rax = BitVec.setWidth 64 z₂ ∧
+    s₂.gpr .rdi = BitVec.ofNat 64 L₂.length ∧ CoeffsWr s₁.wr aP ∧ CoeffsWr s₂.wr aP ∧ VG.Proof.MlDsa.Sample.Stored s₁.mem aP L₁ ∧
+    VG.Proof.MlDsa.Sample.Stored s₂.mem aP L₂ ∧ s₁.gpr .rax = BitVec.setWidth 64 z₁ ∧ s₂.gpr .rax = BitVec.setWidth 64 z₂ ∧
     halfByteOk η (z₁.toNat / 16) = halfByteOk η (z₂.toNat / 16) ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
     s₁.gpr .rsi = s₂.gpr .rsi
 
@@ -175,8 +175,8 @@ def R2 (η : Nat) (s₁ s₂ : State) : Prop :=
 def R3 (η : Nat) (s₁ s₂ : State) : Prop :=
   ∃ aP L₁ L₂ b₁ b₂, L₁.length = L₂.length ∧ L₁.length ≤ 256 ∧
     s₁.gpr .rbp = aP ∧ s₂.gpr .rbp = aP ∧ s₁.gpr .rdi = BitVec.ofNat 64 L₁.length ∧
-    s₂.gpr .rdi = BitVec.ofNat 64 L₂.length ∧ CoeffsWr s₁.wr aP ∧ CoeffsWr s₂.wr aP ∧ Stored s₁.mem aP L₁ ∧
-    Stored s₂.mem aP L₂ ∧ b₁ < 16 ∧ b₂ < 16 ∧ (s₁.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b₁ ∧
+    s₂.gpr .rdi = BitVec.ofNat 64 L₂.length ∧ CoeffsWr s₁.wr aP ∧ CoeffsWr s₂.wr aP ∧ VG.Proof.MlDsa.Sample.Stored s₁.mem aP L₁ ∧
+    VG.Proof.MlDsa.Sample.Stored s₂.mem aP L₂ ∧ b₁ < 16 ∧ b₂ < 16 ∧ (s₁.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b₁ ∧
     (s₂.gpr .rdx).setWidth 32 = BitVec.ofNat 32 b₂ ∧ halfByteOk η b₁ = halfByteOk η b₂ ∧
     s₁.cf = some (decide (L₁.length < 256)) ∧ s₂.cf = some (decide (L₂.length < 256)) ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi
@@ -193,9 +193,9 @@ variable {η : Nat} (hη : η = 2 ∨ η = 4) {h1 h2 h3 : VG.Taint.Hint X86_64.T
   (c3 : (taint.check (X86_64.Taint.ofRegs []) (.block []) h3).isSome = true)
 include hη c1 c2 c3
 
-theorem try1_ct : RelCT isa (fun s₁ s₂ => R1 η s₁ s₂ ∧ isa.eval .b s₁ = some true) (rbTry η) (R2 η) := by
-  have hlt : ∀ {s₁ s₂}, (R1 η s₁ s₂ ∧ isa.eval .b s₁ = some true) → ∃ aP L₁ L₂ z₁ z₂, L₁.length = L₂.length ∧
-      MPre s₁ aP L₁ z₁ ∧ MPre s₂ aP L₂ z₂ ∧ hbOks η z₁ = hbOks η z₂ ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
+theorem try1_ct : RelCT isa (fun s₁ s₂ => VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R1 η s₁ s₂ ∧ isa.eval .b s₁ = some true) (rbTry η) (R2 η) := by
+  have hlt : ∀ {s₁ s₂}, (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R1 η s₁ s₂ ∧ isa.eval .b s₁ = some true) → ∃ aP L₁ L₂ z₁ z₂, L₁.length = L₂.length ∧
+      VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.MPre s₁ aP L₁ z₁ ∧ VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.MPre s₂ aP L₂ z₂ ∧ hbOks η z₁ = hbOks η z₂ ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
       s₁.gpr .rsi = s₂.gpr .rsi ∧ L₁.length < 256 := fun {s₁ s₂} ⟨⟨aP, L₁, L₂, z₁, z₂, hl, m₁, m₂, hok, e⟩, hb⟩ => by
     have : s₁.cf = some true := hb
     rw [m₁.cf] at this
@@ -217,12 +217,12 @@ theorem try1_ct : RelCT isa (fun s₁ s₂ => R1 η s₁ s₂ ∧ isa.eval .b s�
       by rw [k₁.gpr (by decide), k₂.gpr (by decide), ecx], by rw [k₁.gpr (by decide), k₂.gpr (by decide), esi]⟩
 
 omit hη c1 c2 c3 in
-theorem hi_ct : RelCT isa (R2 η) (.block rbHi) (R3 η) := by
+theorem hi_ct : RelCT isa (R2 η) (.block rbHi) (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R3 η) := by
   refine RelCT.postDep (F := fun (x x' : State) => ∀ z : Byte, x.gpr .rax = BitVec.setWidth 64 z →
       ((x'.gpr .rdx).setWidth 32 = BitVec.ofNat 32 (z.toNat / 16) ∧
         x'.cf = some (decide ((x.gpr .rdi).toNat < 256)) ∧ x'.mem = x.mem ∧ x'.gpr .rdi = x.gpr .rdi) ∧
       Keep [.rax, .rdx, .rdi] x x')
-    (taintRel [] nil_regs (by taint_decide)) (fun x y h => ?_) ?_
+    (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)) (fun x y h => ?_) ?_
   · obtain ⟨_, _, _, z₁, z₂, _, _, _, _, _, _, _, _, _, _, _, a₁, a₂, _⟩ := h
     exact ⟨WP.all' (fun z hz => rbHi_ok x hz) ⟨z₁, a₁⟩, WP.all' (fun z hz => rbHi_ok y hz) ⟨z₂, a₂⟩⟩
   · intro x y x' y' ⟨aP, L₁, L₂, z₁, z₂, hl, l₁, l₂, b₁, b₂, d₁, d₂, w₁, w₂, st₁, st₂, a₁, a₂, hok, ecx, esi⟩ f₁ f₂
@@ -231,10 +231,10 @@ theorem hi_ct : RelCT isa (R2 η) (.block rbHi) (R3 η) := by
     exact ⟨aP, L₁, L₂, _, _, hl, l₁, by rw [k₁.gpr (by decide), b₁], by rw [k₂.gpr (by decide), b₂],
       by rw [hdi₁, d₁], by rw [hdi₂, d₂], by rw [k₁.2.2]; exact w₁, by rw [k₂.2.2]; exact w₂,
       by rw [hm₁]; exact st₁, by rw [hm₂]; exact st₂, by have := z₁.isLt; omega, by have := z₂.isLt; omega,
-      hd₁, hd₂, hok, by rw [hc₁, d₁, ofNat64_toNat (by omega)], by rw [hc₂, d₂, ofNat64_toNat (by omega)],
+      hd₁, hd₂, hok, by rw [hc₁, d₁, VG.Proof.MlDsa.X86_64.Sample.ofNat64_toNat (by omega)], by rw [hc₂, d₂, VG.Proof.MlDsa.X86_64.Sample.ofNat64_toNat (by omega)],
       by rw [k₁.gpr (by decide), k₂.gpr (by decide), ecx], by rw [k₁.gpr (by decide), k₂.gpr (by decide), esi]⟩
 
-theorem ite2_ct : RelCT isa (R3 η) (.ite .b (rbTry η) (.block []))
+theorem ite2_ct : RelCT isa (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R3 η) (.ite .b (rbTry η) (.block []))
     fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi := by
   refine RelCT.ite (fun x y h => ?_) ?_ ?_
   · obtain ⟨_, _, _, _, _, hl, _, _, _, _, _, _, _, _, _, _, _, _, _, _, c₁, c₂, _⟩ := h
@@ -253,17 +253,17 @@ theorem ite2_ct : RelCT isa (R3 η) (.ite .b (rbTry η) (.block []))
       obtain ⟨_, _, _, k₁⟩ := f₁ aP L₁ b₁ ⟨p₁, d₁, hl1, w₁, st₁⟩ hb₁ x₁
       obtain ⟨_, _, _, k₂⟩ := f₂ aP L₂ b₂ ⟨p₂, d₂, by omega, w₂, st₂⟩ hb₂ x₂
       exact ⟨by rw [k₁.gpr (by decide), k₂.gpr (by decide), ecx], by rw [k₁.gpr (by decide), k₂.gpr (by decide), esi]⟩
-  · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] nil_regs (by taint_decide))
+  · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))
       (fun x y _ => ⟨WP.block_nil rfl, WP.block_nil rfl⟩) ?_
     intro x y x' y' ⟨⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ecx, esi⟩, _⟩ f1 f2
     rw [f1, f2]; exact ⟨ecx, esi⟩
 
-theorem mid_ct : RelCT isa (R1 η)
+theorem mid_ct : RelCT isa (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.R1 η)
     (.ite .b (.seq (rbTry η) (.seq (.block rbHi) (.ite .b (rbTry η) (.block [])))) (.block []))
     fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi := by
   refine RelCT.ite (fun x y ⟨_, _, _, _, _, hl, m₁, m₂, _⟩ => by show x.cf = y.cf; rw [m₁.cf, m₂.cf, hl]) ?_ ?_
   · exact RelCT.seq (try1_ct hη c1 c2 c3) (RelCT.seq hi_ct (ite2_ct hη c1 c2 c3))
-  · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] nil_regs (by taint_decide))
+  · refine RelCT.postDep (F := fun (x x' : State) => x' = x) (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))
       (fun x y _ => ⟨WP.block_nil rfl, WP.block_nil rfl⟩) ?_
     intro x y x' y' ⟨⟨_, _, _, _, _, _, _, _, _, ecx, esi⟩, _⟩ f1 f2
     rw [f1, f2]; exact ⟨ecx, esi⟩
@@ -272,12 +272,12 @@ omit hη c1 c2 c3 in
 theorem step_ct : RelCT isa (fun s₁ s₂ => s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsi = s₂.gpr .rsi)
     (.block [.alu .add .rsi (.imm 1), .alu .sub .rcx (.imm 1)]) fun s₁ s₂ => s₁.zf = s₂.zf :=
   RelCT.postDep (F := fun (x x' : State) => x'.zf = some (x.gpr .rcx - 1 == 0))
-    (taintRel [] nil_regs (by taint_decide))
+    (taintRel [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))
     (fun x y _ => ⟨WP.mono (step_ok x 1) fun _ h => h.1.2.2.1, WP.mono (step_ok y 1) fun _ h => h.1.2.2.1⟩)
     fun x y x' y' e f1 f2 => by rw [f1, f2, e.1]
 
-theorem body_ct : RelCT isa (BRel η) (rbBody η) fun s₁ s₂ => s₁.zf = s₂.zf :=
-  RelCT.seq (load_ct η) (RelCT.seq (mid_ct hη c1 c2 c3) step_ct)
+theorem body_ct : RelCT isa (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BRel η) (rbBody η) fun s₁ s₂ => s₁.zf = s₂.zf :=
+  RelCT.seq (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.load_ct η) (RelCT.seq (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.mid_ct hη c1 c2 c3) VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.step_ct)
 
 end
 
@@ -294,32 +294,32 @@ variable {σ₁ σ₂ : State} (hq : rbK.pub σ₁ σ₂)
 include hq
 
 theorem pub_eta : etaOf σ₁ = etaOf σ₂ := by simp only [etaOf, hq.2.1]
-theorem pub_sp : spOf σ₁ = spOf σ₂ := by simp only [spOf, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1]
+theorem pub_sp : VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₁ = VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₂ := by simp only [VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf, hq.1, hq.2.1, hq.2.2.1, hq.2.2.2.1]
 theorem pub_aP : σ₁.gpr .rdx = σ₂.gpr .rdx := hq.2.2.1
 
-theorem spPub : SpPub (spOf σ₁) (spOf σ₂) σ₁ σ₂ :=
+theorem spPub : SpPub (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₁) (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₂) σ₁ σ₂ :=
   ⟨hq.1, rfl, hq.2.2.2.1, hq.2.2.1, by simp only [hq.2.1], hq.2.2.2.2.1⟩
 
 /-- The half-bytes of the output are accepted alike in both runs. -/
-theorem pub_oks : (X σ₁).map (hbOks (etaOf σ₁)) = (X σ₂).map (hbOks (etaOf σ₁)) := by
+theorem pub_oks : (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₁).map (hbOks (etaOf σ₁)) = (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₂).map (hbOks (etaOf σ₁)) := by
   have h := hq.2.2.2.2.2
   rw [← pub_eta hq] at h
   exact leak_hbOks h (B := 544) (by decide)
 
-theorem pub_len (t : Nat) : (Lt σ₁ t).length = (Lt σ₂ t).length := by
-  simp only [Lt]
+theorem pub_len (t : Nat) : (VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt σ₁ t).length = (VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt σ₂ t).length := by
+  simp only [VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt]
   rw [← pub_eta hq]
   exact rbFold_length_congr rfl (by rw [List.map_take, List.map_take, pub_oks hq])
 
 theorem pub_ok {t : Nat} (ht : t < 544) :
-    hbOks (etaOf σ₁) ((X σ₁).getD t 0) = hbOks (etaOf σ₁) ((X σ₂).getD t 0) := by
+    hbOks (etaOf σ₁) ((VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₁).getD t 0) = hbOks (etaOf σ₁) ((VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₂).getD t 0) := by
   have h := congrArg (fun L => L[t]?) (pub_oks hq)
-  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < (X σ₁).length by rw [X_length]; exact ht),
-    List.getElem?_eq_getElem (show t < (X σ₂).length by rw [X_length]; exact ht), Option.map_some,
+  simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₁).length by rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.X_length]; exact ht),
+    List.getElem?_eq_getElem (show t < (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₂).length by rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.X_length]; exact ht), Option.map_some,
     Option.some.injEq] at h
   rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD,
-    List.getElem?_eq_getElem (show t < (X σ₁).length by rw [X_length]; exact ht),
-    List.getElem?_eq_getElem (show t < (X σ₂).length by rw [X_length]; exact ht)]
+    List.getElem?_eq_getElem (show t < (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₁).length by rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.X_length]; exact ht),
+    List.getElem?_eq_getElem (show t < (VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ₂).length by rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.X_length]; exact ht)]
   exact h
 
 end
@@ -328,25 +328,25 @@ end
 from the end. -/
 def LI (η n : Nat) (s₁ s₂ : State) : Prop :=
   ∃ σ₁ σ₂ t, rbK.pre σ₁ ∧ rbK.pre σ₂ ∧ rbK.pub σ₁ σ₂ ∧ etaOf σ₁ = η ∧ n = 544 - t ∧ t < 544 ∧
-    LAt σ₁ t s₁ ∧ LAt σ₂ t s₂
+    VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ₁ t s₁ ∧ VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ₂ t s₂
 
-theorem bpre {σ : State} (hp : rbK.pre σ) {t : Nat} (ht : t < 544) {s : State} (h : LAt σ t s) :
-    BPre s (σ.gpr .rdx) (Lt σ t) :=
-  ⟨h.env.rbp, h.rdi, Lt_length_le t, .of_mem (by rw [h.env.wr, hp.2.1]; simp), h.stored,
-    by rw [h.rsi, at_add]; exact inScrRd (spOk hp) h.env (by omega)⟩
+theorem bpre {σ : State} (hp : rbK.pre σ) {t : Nat} (ht : t < 544) {s : State} (h : VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ t s) :
+    VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BPre s (σ.gpr .rdx) (VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt σ t) :=
+  ⟨h.env.rbp, h.rdi, VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt_length_le t, .of_mem (by rw [h.env.wr, hp.2.1]; simp), h.stored,
+    by rw [h.rsi, at_add]; exact inScrRd (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOk hp) h.env (by omega)⟩
 
-theorem li_brel {η n : Nat} {s₁ s₂ : State} (h : LI η n s₁ s₂) : BRel η s₁ s₂ := by
+theorem li_brel {η n : Nat} {s₁ s₂ : State} (h : VG.Proof.MlDsa.X86_64.Sample.RejBounded.LI η n s₁ s₂) : VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.BRel η s₁ s₂ := by
   obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, he, _, ht, l₁, l₂⟩ := h
   subst he
-  refine ⟨σ₁.gpr .rdx, Lt σ₁ t, Lt σ₂ t, pub_len hq t, bpre p₁ ht l₁, by rw [pub_aP hq]; exact bpre p₂ ht l₂,
-    by rw [l₁.rsi, l₂.rsi, pub_sp hq], by rw [l₁.rcx, l₂.rcx], ?_⟩
-  rw [out_byte l₁ ht, out_byte l₂ ht]
+  refine ⟨σ₁.gpr .rdx, VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt σ₁ t, VG.Proof.MlDsa.X86_64.Sample.RejBounded.Lt σ₂ t, pub_len hq t, VG.Proof.MlDsa.X86_64.Sample.RejBounded.bpre p₁ ht l₁, by rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.pub_aP hq]; exact VG.Proof.MlDsa.X86_64.Sample.RejBounded.bpre p₂ ht l₂,
+    by rw [l₁.rsi, l₂.rsi, VG.Proof.MlDsa.X86_64.Sample.RejBounded.pub_sp hq], by rw [l₁.rcx, l₂.rcx], ?_⟩
+  rw [VG.Proof.MlDsa.X86_64.Sample.RejBounded.out_byte l₁ ht, VG.Proof.MlDsa.X86_64.Sample.RejBounded.out_byte l₂ ht]
   exact pub_ok hq ht
 
 theorem lat_step' {σ : State} (hp : rbK.pre σ) {η t : Nat} (he : etaOf σ = η) {s : State} (ht : t < 544)
-    (h : LAt σ t s) :
-    WP isa (rbBody η) s fun s' => LAt σ (t + 1) s' ∧ s'.zf = some (BitVec.ofNat 64 (544 - t) - 1 == 0) := by
-  subst he; exact lat_step hp ht h
+    (h : VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ t s) :
+    WP isa (rbBody η) s fun s' => VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ (t + 1) s' ∧ s'.zf = some (BitVec.ofNat 64 (544 - t) - 1 == 0) := by
+  subst he; exact VG.Proof.MlDsa.X86_64.Sample.RejBounded.lat_step hp ht h
 
 section
 variable {η : Nat} (hη : η = 2 ∨ η = 4) {h1 h2 h3 : VG.Taint.Hint X86_64.Taint.T}
@@ -357,11 +357,11 @@ variable {η : Nat} (hη : η = 2 ∨ η = 4) {h1 h2 h3 : VG.Taint.Hint X86_64.T
 include hη c1 c2 c3
 
 theorem loop_ct (n : Nat) :
-    RelCT isa (LI η n) (.loop (rbBody η) .ne) (Rel2 rbK.pre rbK.pub fun σ s => LAt σ 544 s) := by
-  refine RelCT.loop (M := isa) (LI η) (fun n => ?_) n
+    RelCT isa (VG.Proof.MlDsa.X86_64.Sample.RejBounded.LI η n) (.loop (rbBody η) .ne) (Rel2 rbK.pre rbK.pub fun σ s => VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 544 s) := by
+  refine RelCT.loop (M := isa) (VG.Proof.MlDsa.X86_64.Sample.RejBounded.LI η) (fun n => ?_) n
   refine RelCT.postDep (F := fun (x x' : State) => ∀ p : State × Nat, rbK.pre p.1 ∧ etaOf p.1 = η ∧ p.2 < 544 ∧
-      LAt p.1 p.2 x → LAt p.1 (p.2 + 1) x' ∧ x'.zf = some (BitVec.ofNat 64 (544 - p.2) - 1 == 0))
-    (RelCT.mono (body_ct hη c1 c2 c3) (fun x y h => li_brel h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
+      VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt p.1 p.2 x → VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt p.1 (p.2 + 1) x' ∧ x'.zf = some (BitVec.ofNat 64 (544 - p.2) - 1 == 0))
+    (RelCT.mono (VG.Proof.MlDsa.X86_64.Sample.RejBoundedCT.body_ct hη c1 c2 c3) (fun x y h => VG.Proof.MlDsa.X86_64.Sample.RejBounded.li_brel h) fun _ _ _ => trivial) (fun x y h => ?_) ?_
   · obtain ⟨σ₁, σ₂, t, p₁, p₂, hq, he, _, ht, l₁, l₂⟩ := h
     exact ⟨WP.all' (fun p hp' => lat_step' hp'.1 hp'.2.1 hp'.2.2.1 hp'.2.2.2) ⟨(σ₁, t), p₁, he, ht, l₁⟩,
       WP.all' (fun p hp' => lat_step' hp'.1 hp'.2.1 hp'.2.2.1 hp'.2.2.2)
@@ -386,47 +386,47 @@ theorem loop_ct (n : Nat) :
 
 /-- After the first block of the loop's setup. -/
 def IA (σ s : State) : Prop :=
-  Env (spOf σ) σ s ∧ bytesAt s.mem ((spOf σ).at' 840) 544 = X σ ∧ s.gpr .rsi = (spOf σ).at' 840 ∧
+  VG.Proof.MlDsa.X86_64.Sample.Env (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ s ∧ bytesAt s.mem ((VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ).at' 840) 544 = VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ ∧ s.gpr .rsi = (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ).at' 840 ∧
     s.gpr .rdi = 0
 
 omit hη c1 c2 c3 in
-theorem latB {σ s : State} (h : IA σ s) : WP isa (.block [.mov32 .rcx (.imm 544)]) s (LAt σ 0) := by
+theorem latB {σ s : State} (h : VG.Proof.MlDsa.X86_64.Sample.RejBounded.IA σ s) : WP isa (.block [.mov32 .rcx (.imm 544)]) s (VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 0) := by
   refine WP.mono (WP.keep [.rcx] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .rcx = BitVec.ofNat 64 544)
     (by xrun) (by decide)) fun s2 ⟨⟨hm2, hcx⟩, k2⟩ => ?_
   exact ⟨h.1.keep hm2 (k2.mono (by decide)), by rw [hm2]; exact h.2.1, by rw [k2.gpr (by decide), h.2.2.1]; simp,
     by rw [k2.gpr (by decide), h.2.2.2]; rfl, hcx, by rw [hm2]; exact stored_nil _ _⟩
 
 omit hη c1 c2 c3 in
-theorem hok : ∀ σ, rbK.pre σ → SpOk (spOf σ) σ := fun _ hp => spOk hp
+theorem hok : ∀ σ, rbK.pre σ → SpOk (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ := fun _ hp => VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOk hp
 
 omit hη c1 c2 c3 in
-theorem hpub : ∀ σ₁ σ₂, rbK.pre σ₁ → rbK.pre σ₂ → rbK.pub σ₁ σ₂ → SpPub (spOf σ₁) (spOf σ₂) σ₁ σ₂ :=
+theorem hpub : ∀ σ₁ σ₂, rbK.pre σ₁ → rbK.pre σ₂ → rbK.pub σ₁ σ₂ → SpPub (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₁) (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ₂) σ₁ σ₂ :=
   fun _ _ _ _ hq => spPub hq
 
 /-- The loop for `η`, in runs of a call with that `η`. -/
-theorem rbLoop_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ J6 136 544 (spOf σ) σ s)
-    (rbLoop η) (Rel2 rbK.pre rbK.pub fun σ s => LAt σ 544 s) := by
-  refine RelCT.seq (relInv (I' := fun σ s => etaOf σ = η ∧ IA σ s) (fun σ s _ h => WP.mono (lat0 h.2) fun _ h' =>
+theorem rbLoop_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ s => etaOf σ = η ∧ J6 136 544 (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ s)
+    (rbLoop η) (Rel2 rbK.pre rbK.pub fun σ s => VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 544 s) := by
+  refine RelCT.seq (relInv (I' := fun σ s => etaOf σ = η ∧ VG.Proof.MlDsa.X86_64.Sample.RejBounded.IA σ s) (fun σ s _ h => WP.mono (lat0 h.2) fun _ h' =>
       ⟨h.1, h'⟩)
-    (taintSp (f := spOf) hpub (J := fun P σ s => etaOf σ = η ∧ J6 136 544 P σ s) (fun _ _ h => h.2.env) []
-      nil_regs (by taint_decide)))
-    (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => etaOf σ = η ∧ LAt σ 0 s)
-        (fun σ s _ h => WP.mono (latB h.2) fun _ h' => ⟨h.1, h'⟩)
-        (taintSp (f := spOf) hpub (J := fun P σ s => etaOf σ = η ∧ Env P σ s ∧
-          bytesAt s.mem (P.at' 840) 544 = X σ ∧ s.gpr .rsi = P.at' 840 ∧ s.gpr .rdi = 0)
-          (fun _ _ h => h.2.1) [] nil_regs (by taint_decide)))
+    (taintSp (f := VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf) VG.Proof.MlDsa.X86_64.Sample.RejBounded.hpub (J := fun P σ s => etaOf σ = η ∧ J6 136 544 P σ s) (fun _ _ h => h.2.env) []
+      VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)))
+    (RelCT.seq (RelCT.mono (relInv (I' := fun σ s => etaOf σ = η ∧ VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 0 s)
+        (fun σ s _ h => WP.mono (VG.Proof.MlDsa.X86_64.Sample.RejBounded.latB h.2) fun _ h' => ⟨h.1, h'⟩)
+        (taintSp (f := VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf) VG.Proof.MlDsa.X86_64.Sample.RejBounded.hpub (J := fun P σ s => etaOf σ = η ∧ VG.Proof.MlDsa.X86_64.Sample.Env P σ s ∧
+          bytesAt s.mem (P.at' 840) 544 = VG.Proof.MlDsa.X86_64.Sample.RejBounded.X σ ∧ s.gpr .rsi = P.at' 840 ∧ s.gpr .rdi = 0)
+          (fun _ _ h => h.2.1) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide)))
       (fun _ _ h => h) fun _ _ ⟨σ₁, σ₂, p₁, p₂, hq, ⟨he, l₁⟩, ⟨_, l₂⟩⟩ =>
         ⟨σ₁, σ₂, 0, p₁, p₂, hq, he, rfl, by omega, l₁, l₂⟩)
-      (loop_ct hη c1 c2 c3 544))
+      (VG.Proof.MlDsa.X86_64.Sample.RejBounded.loop_ct hη c1 c2 c3 544))
 
 end
 
 /-- The branch on `η`, and the loops. -/
-theorem sel_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ => J6 136 544 (spOf σ) σ)
+theorem sel_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ => J6 136 544 (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ)
     (.seq (.block [.alu32 .cmp .r12 (.imm 2)]) (.ite .e (rbLoop 2) (rbLoop 4)))
-    (Rel2 rbK.pre rbK.pub fun σ s => LAt σ 544 s) := by
-  refine RelCT.seq (relInv (I' := fun σ s => J6 136 544 (spOf σ) σ s ∧ s.zf = some (decide (etaOf σ = 2)))
-    (fun σ s hp h => ?_) (taintSp hpub (fun _ _ h => h.env) [] nil_regs (by taint_decide))) ?_
+    (Rel2 rbK.pre rbK.pub fun σ s => VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 544 s) := by
+  refine RelCT.seq (relInv (I' := fun σ s => J6 136 544 (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ s ∧ s.zf = some (decide (etaOf σ = 2)))
+    (fun σ s hp h => ?_) (taintSp VG.Proof.MlDsa.X86_64.Sample.RejBounded.hpub (fun _ _ h => h.env) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs (by taint_decide))) ?_
   · refine WP.mono (WP.keep [.r12] (Q := fun s' => s'.mem = s.mem ∧ s'.gpr .r12 = s.gpr .r12 ∧
         s'.zf = some (BitVec.setWidth 32 (s.gpr .r12) - 2 == 0)) (by xrun) (by rfl))
       fun s1 ⟨⟨hm1, h12, hz1⟩, k1⟩ => ⟨⟨h.env.keep hm1 ⟨fun r hr => by
@@ -434,7 +434,7 @@ theorem sel_ct : RelCT isa (Rel2 rbK.pre rbK.pub fun σ => J6 136 544 (spOf σ) 
         · subst e; exact h12
         · exact k1.gpr (by simp [e]), k1.2⟩, by rw [hm1]; exact h.out⟩, ?_⟩
     have hr12 : BitVec.setWidth 32 (s.gpr .r12) = BitVec.ofNat 32 (etaOf σ) := by
-      rw [h.env.r12]; rw [sw32_64, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+      rw [h.env.r12]; rw [VG.Proof.MlDsa.X86_64.Sample.sw32_64, BitVec.ofNat_toNat, BitVec.setWidth_eq]
     rw [hz1, hr12]
     rcases eta hp with he | he <;> rw [he] <;> rfl
   refine RelCT.ite (fun x y ⟨σ₁, σ₂, _, _, hq, ⟨_, z₁⟩, ⟨_, z₂⟩⟩ => by
@@ -464,15 +464,15 @@ end RejBounded
 
 open RejBounded in
 theorem rejBounded_ct : ConstantTime isa rbK.pre rbK.pub Impl.MlDsa.X86_64.Sample.rejBounded := by
-  refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ => J0 (spOf σ) σ)
-    (fun σ s hp h => by subst h; exact pro_ok hp)
+  refine relStart (Q := fun _ _ => True) (RelCT.seq (relInv (I' := fun σ => J0 (VG.Proof.MlDsa.X86_64.Sample.RejBounded.spOf σ) σ)
+    (fun σ s hp h => by subst h; exact VG.Proof.MlDsa.X86_64.Sample.RejBounded.pro_ok hp)
     (taintRel [.rdi, .rdx, .rcx, .rsp] (fun x y ⟨σ₁, σ₂, _, _, hq, h₁, h₂⟩ r hr => by
       subst h₁ h₂
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       exacts [hq.1, hq.2.2.1, hq.2.2.2.1, hq.2.2.2.2.1]) (by taint_decide))) ?_)
-  refine RelCT.seq (sponge_ct hok hpub (.inl rfl) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
-  exact RelCT.seq sel_ct (taintSp (J := fun P σ s => LAt σ 544 s) hpub (fun _ _ h => h.env) [] nil_regs
+  refine RelCT.seq (sponge_ct VG.Proof.MlDsa.X86_64.Sample.RejBounded.hok VG.Proof.MlDsa.X86_64.Sample.RejBounded.hpub (.inl rfl) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)) ?_
+  exact RelCT.seq sel_ct (taintSp (J := fun P σ s => VG.Proof.MlDsa.X86_64.Sample.RejBounded.LAt σ 544 s) VG.Proof.MlDsa.X86_64.Sample.RejBounded.hpub (fun _ _ h => h.env) [] VG.Proof.MlDsa.X86_64.Sample.nil_regs
     (by taint_decide))
 
 end VG.Proof.MlDsa.X86_64.Sample

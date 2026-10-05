@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Calls
+import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Common
 
 /-!
 # PBKDF2-HMAC on 32-bit ARM, the whole derivation: `update`, in its frame, of any length
@@ -86,20 +86,20 @@ theorem sa (T : State) (ht : T.sp = s.sp - 16) (i : Nat) (hi : i < 4) :
 theorem sa0 (T : State) (ht : T.sp = s.sp - 16) : stackArgAddr T 0 = State.addr s.sp - 16 := by
   rw [h.sa T ht 0 (by decide)]; exact BitVec.add_zero _
 
-theorem arg0 (T : State) (ht : T.sp = s.sp - 16) (hm : T.mem = (pushed upd4 s).mem) : stackArg T 0 = d := by
-  rw [stackArg, h.sa T ht 0 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
+theorem arg0 (T : State) (ht : T.sp = s.sp - 16) (hm : T.mem = (pushed upd4 s).mem) : VG.Arm.stackArg T 0 = d := by
+  rw [VG.Arm.stackArg, h.sa T ht 0 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
     Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
     Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide), show 4 * 0 = 0 from rfl, BitVec.add_zero,
     Mem.readW_writeW_self32]
 
 theorem arg1 (T : State) (ht : T.sp = s.sp - 16) (hm : T.mem = (pushed upd4 s).mem) :
-    stackArg T 1 = BitVec.ofNat 32 len := by
-  rw [stackArg, h.sa T ht 1 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
+    VG.Arm.stackArg T 1 = BitVec.ofNat 32 len := by
+  rw [VG.Arm.stackArg, h.sa T ht 1 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
     Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide), show 4 * 1 = 4 from rfl,
     Mem.readW_writeW_self32]
 
-theorem arg2 (T : State) (ht : T.sp = s.sp - 16) (hm : T.mem = (pushed upd4 s).mem) : stackArg T 2 = sc := by
-  rw [stackArg, h.sa T ht 2 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
+theorem arg2 (T : State) (ht : T.sp = s.sp - 16) (hm : T.mem = (pushed upd4 s).mem) : VG.Arm.stackArg T 2 = sc := by
+  rw [VG.Arm.stackArg, h.sa T ht 2 (by decide), hm, h.pmem, Mem.readW_writeW_sep (sep_off _ (by decide) (by decide) (by decide)) (by decide),
     show 4 * 2 = 8 from rfl, Mem.readW_writeW_self32]
 
 /-- The push writes only below the stack pointer. -/

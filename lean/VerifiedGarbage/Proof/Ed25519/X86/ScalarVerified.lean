@@ -1,9 +1,20 @@
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarContract
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarEngine
-import VerifiedGarbage.Proof.Ed25519.X86.ScalarLit
-import VerifiedGarbage.Proof.Ed25519.X86.CommonCT
+import VerifiedGarbage.Proof.Framework.X86.Lit
+import VerifiedGarbage.Impl.Ed25519.X86.Scalar
+import VerifiedGarbage.Proof.Ed25519.X86.MulAddVerified
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.X86.ScalarLit`. -/
+section
+
+namespace VG.Impl.Ed25519.X86
+materialize_code scalarReduce
+end VG.Impl.Ed25519.X86
+
+end
+
+/- Proofs formerly in `VerifiedGarbage.Proof.Ed25519.X86.ScalarVerified`. -/
+section
 
 /-! Merged from `Proof.Ed25519.X86.ScalarMain`. -/
 section
@@ -110,8 +121,9 @@ theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.s
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [scalarReduceRd, scalarReduceWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [scalarReduceRd, scalarReduceWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    rcases hr with (rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
@@ -123,3 +135,5 @@ theorem scalarReduce_verified : Verified X86.target scalarReduce (Spec.Ed25519.s
     simpa only [scalarReduceWide, scalarReduceLocal, arg_withRegions, State.withRegions_gpr] using h
 
 end VG.Proof.Ed25519.X86
+
+end

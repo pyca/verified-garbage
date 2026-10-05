@@ -1,6 +1,6 @@
-import VerifiedGarbage.Proof.MlDsa.Arm.Round.Loop
+import VerifiedGarbage.Proof.MlDsa.Arm.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.Arm.Arith.AddSub
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.Round.Decompose
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -89,7 +89,7 @@ structure PreE (s : State) : Prop where
   f2 : (s.gpr .r2).toNat + 1024 ≤ 2 ^ 32
   red : Reduced s.mem (P s .r0)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.power2RoundContract Arm.abi 4).pre s) : PreE s := by
+theorem pre_of {s : State} (h : (Spec.MlDsa.power2RoundContract Arm.abi 4).pre s) : VG.Proof.MlDsa.Arm.Round.P2R.PreE s := by
   sig_pre [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
@@ -102,7 +102,7 @@ abbrev fixedR : List Reg := [.r5, .r6, .r7, .r8, .r9, .r10, .r11, .lr]
 def val (s₁ : State) (o : Reg) (i : Nat) : BitVec 32 :=
   if o = .r1 then bt1 (coeffAt s₁.mem (P s₁ .r0) i) else bt0 (coeffAt s₁.mem (P s₁ .r0) i)
 
-theorem layout {s s₁ : State} (hp : PreE s) (hE : Entry 4 s s₁) : Layout s₁ [.r0] [.r1, .r2] := by
+theorem layout {s s₁ : State} (hp : VG.Proof.MlDsa.Arm.Round.P2R.PreE s) (hE : Entry 4 s s₁) : Layout s₁ [.r0] [.r1, .r2] := by
   have g := hE.gpr
   have e : ∀ r, P s₁ r = P s r := fun r => by simp only [P, g]
   refine ⟨fun p hp' => ?_, fun o ho => ?_, fun p hp' o ho => ?_, ?_, fun p hp' => ?_⟩
@@ -119,12 +119,12 @@ theorem layout {s s₁ : State} (hp : PreE s) (hE : Entry 4 s s₁) : Layout s�
     rcases hp' with rfl | rfl | rfl <;> rw [g]
     exacts [hp.f0, hp.f1, hp.f2]
 
-theorem loop_body {s s₁ : State} (hp : PreE s) (hE : Entry 4 s s₁) :
-    ∀ i < 256, ∀ s', Inv s₁ [.r0, .r1, .r2] fixedR [.r1, .r2] .r3 (val s₁) (fun _ _ => True) i s' →
-      WP isa (.block p2rBody) s' (Step s₁ [.r0, .r1, .r2] fixedR [.r1, .r2] .r3 (val s₁) (fun _ _ => True) i s') := by
+theorem loop_body {s s₁ : State} (hp : VG.Proof.MlDsa.Arm.Round.P2R.PreE s) (hE : Entry 4 s s₁) :
+    ∀ i < 256, ∀ s', VG.Proof.MlDsa.Arm.Round.Inv s₁ [.r0, .r1, .r2] VG.Proof.MlDsa.Arm.Round.P2R.fixedR [.r1, .r2] .r3 (val s₁) (fun _ _ => True) i s' →
+      WP isa (.block p2rBody) s' (VG.Proof.MlDsa.Arm.Round.Step s₁ [.r0, .r1, .r2] VG.Proof.MlDsa.Arm.Round.P2R.fixedR [.r1, .r2] .r3 (val s₁) (fun _ _ => True) i s') := by
   intro i hi s' hI
   have hL := layout hp hE
-  refine WP.mono (body_ok rfl rfl rfl rfl (hI.inR hL hi (by simp) (by simp))
+  refine WP.mono (VG.Proof.MlDsa.Arm.Round.P2R.body_ok rfl rfl rfl rfl (hI.inR hL hi (by simp) (by simp))
     (hI.inW hL hi (by simp) (by simp)) (hI.inW hL hi (by simp) (by simp)))
     fun s'' ⟨hm, r0, r1, r2, r3, hz, hf, rd, wr, sp⟩ => ⟨?_, ?_, r3, hz, hf, rd, wr, sp, trivial⟩
   · rw [hm, hI.read hL hi (by simp) (by simp), hI.addr hL hi (p := .r1) (by simp) (by simp),
@@ -135,12 +135,12 @@ theorem loop_body {s s₁ : State} (hp : PreE s) (hE : Entry 4 s s₁) :
     rcases hp' with rfl | rfl | rfl
     exacts [r0, r1, r2]
 
-theorem correct {s : State} (hp : PreE s) :
+theorem correct {s : State} (hp : VG.Proof.MlDsa.Arm.Round.P2R.PreE s) :
     WP isa Impl.MlDsa.Arm.Round.power2Round s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧
       s'.sp = s.sp ∧ NatPolyIs s'.mem (P s .r1) ((polyAt s.mem (P s .r0)).map fun c => (power2Round c).1.toNat) ∧
       PolyIs s'.mem (P s .r2) ((polyAt s.mem (P s .r0)).map fun c => ofInt (power2Round c).2) := by
   refine WP.mono (wp_saving [.r4] _ (W := [pR (P s .r1), pR (P s .r2)])
-    (fun s₂ => (∀ r ∈ fixedR, s₂.gpr r = s.gpr r) ∧
+    (fun s₂ => (∀ r ∈ VG.Proof.MlDsa.Arm.Round.P2R.fixedR, s₂.gpr r = s.gpr r) ∧
       NatPolyIs s₂.mem (P s .r1) ((polyAt s.mem (P s .r0)).map fun c => (power2Round c).1.toNat) ∧
       PolyIs s₂.mem (P s .r2) ((polyAt s.mem (P s .r0)).map fun c => ofInt (power2Round c).2))
     s hp.sp (fun R hR => by
@@ -156,7 +156,7 @@ theorem correct {s : State} (hp : PreE s) :
     rw [e]
     exact coeffAt_frame hE.frame (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.s0.symm) (by rw [n_eq]; exact hk)
-  refine WP.mono (loop_ok hL (by decide) (by decide) (fun _ _ _ => trivial) (loop_body hp hE))
+  refine WP.mono (VG.Proof.MlDsa.Arm.Round.loop_ok hL (by decide) (by decide) (fun _ _ _ => trivial) (loop_body hp hE))
     fun s₂ hI => ⟨?_, fun r hr => (hI.fixed r hr).trans (congrFun g r), ?_, ?_⟩
   · have := hI.frame; simp only [List.map_cons, List.map_nil] at this; rwa [e, e] at this
   · refine natPolyIs_of_toNat fun k hk => ?_
@@ -184,7 +184,7 @@ def satState : State where
 theorem verified :
     Verified Arm.target Impl.MlDsa.Arm.Round.power2Round (Spec.MlDsa.power2RoundContract Arm.abi 4) := by
   refine ⟨fun s hs => ?_, ct_of_saving [.r4] _ [.r0, .r1, .r2] (fun s₁ s₂ h => ?_) (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, h1, h0⟩ := correct (pre_of hs)
+  · obtain ⟨t, s', he, hpres, hsp, h1, h0⟩ := VG.Proof.MlDsa.Arm.Round.P2R.correct (VG.Proof.MlDsa.Arm.Round.P2R.pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val]
@@ -195,7 +195,7 @@ theorem verified :
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-  · refine ⟨satState, ?_⟩
+  · refine ⟨VG.Proof.MlDsa.Arm.Round.P2R.satState, ?_⟩
     sig_apply_check
     · decide +kernel
     · sig_reduce [Spec.MlDsa.power2RoundContract, Spec.MlDsa.power2RoundSig, Arm.abi, Arm.argRegs,
@@ -203,6 +203,6 @@ theorem verified :
       sig_and_intros
       all_goals first
         | trivial
-        | exact reduced_zero _
+        | exact VG.Proof.MlDsa.Round.reduced_zero _
 
 end VG.Proof.MlDsa.Arm.Round.P2R

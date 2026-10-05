@@ -1,13 +1,13 @@
-import VerifiedGarbage.Proof.Sha512.Md
-import VerifiedGarbage.Proof.MdStream.X86_64.UpdateCT
-import VerifiedGarbage.Proof.MdStream.X86_64.FinalizeCT
+import VerifiedGarbage.Proof.Sha512.Scratch
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
+import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.MdStream.X86_64.Words
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Compress
 import VerifiedGarbage.Impl.Sha512.X86_64.Stream
-import VerifiedGarbage.Proof.Sha512.X86_64.Lit
+import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 
 /-!
 # Streaming SHA-512 on x86-64: `update` and `finalize`
@@ -49,7 +49,7 @@ theorem lenOf_split (x : BitVec 64) :
 /-- The length field: `count >> 61`, then `8 count`, big-endian. -/
 theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 176) 16) :
     WP isa (.block params.len) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
-      s'.wr = s.wr ∧ s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (md.lenOf (s.gpr .r12)) := by
+      s'.wr = s.wr ∧ s'.mem = VG.WriteBytes.writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (md.lenOf (s.gpr .r12)) := by
   have h176 : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 176) 8 := by
     obtain ⟨R, hR, hc⟩ := hout
     exact ⟨R, hR, by unfold Region.Contains at *; omega⟩
@@ -65,7 +65,7 @@ theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 
       (by rw [u₃.wr, u₂.wr, u₁.wr]; exact h176) fun s₄ g₄ m₄ rd₄ wr₄ => ?_
   have k₄ : ∀ r, r ≠ .rax → s₄.gpr r = s.gpr r := fun r h => by
     rw [g₄, u₃.other r h, u₂.other r h, u₁.other r h]
-  have e₄ : s₄.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (bytes64 true (s.gpr .r12 >>> 61)) := by
+  have e₄ : s₄.mem = VG.WriteBytes.writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 176) (bytes64 true (s.gpr .r12 >>> 61)) := by
     rw [m₄, u₃.mem, u₂.mem, u₁.mem, u₃.gpr, u₂.gpr, u₁.gpr, ← writeW64 _ _ true]; rfl
   refine len64_ok (by rw [wr₄, u₃.wr, u₂.wr, u₁.wr, k₄ _ (by decide)]; exact h184)
     fun s' g rd wr m => WP.block_nil ⟨fun r h => by rw [g r h, k₄ r h], by rw [rd, rd₄, u₃.rd, u₂.rd, u₁.rd],
@@ -73,7 +73,7 @@ theorem len_ok (s : State) (hout : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 
   have e' : s.gpr .rbx + BitVec.ofNat 64 176 + BitVec.ofNat 64 (bytes64 true (s.gpr .r12 >>> 61)).length =
       s.gpr .rbx + BitVec.ofNat 64 184 := by rw [bytes64_length]; exact e184
   rw [m, e₄, k₄ _ (by decide), k₄ _ (by decide), ← e',
-    writeBytes_append _ _ _ _ (by rw [bytes64_length, bytes64_length]; decide), lenOf_split]
+    VG.WriteBytes.writeBytes_append _ _ _ _ (by rw [bytes64_length, bytes64_length]; decide), lenOf_split]
 
 theorem digest_eq (mem : Mem) (p : Addr) :
     md.digest (md.stateAt mem p) = (List.range 8).flatMap fun k =>

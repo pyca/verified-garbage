@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Row
-import VerifiedGarbage.Proof.Bignum.X86_64.Loop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
@@ -16,16 +16,16 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-private theorem off_step8 (B : Addr) (q : Nat) : off B q + 8 = off B (q + 8) := by
-  simp only [off, BitVec.add_assoc, BitVec.ofNat_add]; rfl
+private theorem off_step8 (B : Addr) (q : Nat) : VG.Proof.Bignum.X86_64.off B q + 8 = VG.Proof.Bignum.X86_64.off B (q + 8) := by
+  simp only [VG.Proof.Bignum.X86_64.off, BitVec.add_assoc, BitVec.ofNat_add]; rfl
 
 /-- After rows `0, …, i - 1`: `acc = A₀ + b (a mod 2^(64 i))`. -/
 structure MRInv (s₀ : State) (B : Addr) (Z ea eb eA wa wb : Nat) (i : Nat) (t : State) : Prop where
-  scr : Scr t B Z
-  keep : Keep [.rax, .rcx, .rdx, .rbp, .r14, .r13, .r8] s₀ t
+  scr : VG.Proof.Bignum.X86_64.Scr t B Z
+  keep : VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .rbp, .r14, .r13, .r8] s₀ t
   r13 : t.gpr .r13 = BitVec.ofNat 64 i
-  r8 : t.gpr .r8 = off B (eA + 8 * i)
-  out : Outside B eA (8 * (wa + wb + 2)) s₀.mem t.mem
+  r8 : t.gpr .r8 = VG.Proof.Bignum.X86_64.off B (eA + 8 * i)
+  out : VG.Proof.Bignum.X86_64.Outside B eA (8 * (wa + wb + 2)) s₀.mem t.mem
   val : wv t.mem B eA (wa + wb + 2) = wv s₀.mem B eA (wa + wb + 2) + wv s₀.mem B eb wb * wv s₀.mem B ea i
 
 /-- The accumulator's words as the words below `i`, the window of `k` words
@@ -36,8 +36,8 @@ theorem wv_split3 (m : Mem) (B : Addr) (d i k L : Nat) (h : i + k ≤ L) :
   obtain ⟨r, rfl⟩ : ∃ r, L = i + (k + r) := ⟨L - i - k, by omega⟩
   rw [wv_add, wv_add, show i + (k + r) - i - k = r by omega, Nat.add_assoc d]
 
-theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s₀ B Z)
-    (h11 : s₀.gpr .r11 = off B ea) (h9 : s₀.gpr .r9 = off B eb) (h10 : s₀.gpr .r10 = BitVec.ofNat 64 wa)
+theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : VG.Proof.Bignum.X86_64.Scr s₀ B Z)
+    (h11 : s₀.gpr .r11 = VG.Proof.Bignum.X86_64.off B ea) (h9 : s₀.gpr .r9 = VG.Proof.Bignum.X86_64.off B eb) (h10 : s₀.gpr .r10 = BitVec.ofNat 64 wa)
     (h12 : s₀.gpr .r12 = BitVec.ofNat 64 wb) (hwb : 1 ≤ wb) (hw : wa + wb < 2 ^ 30)
     (hA : eA + 8 * (wa + wb + 2) ≤ Z) (ha : ea + 8 * wa ≤ Z) (hb : eb + 8 * wb ≤ Z)
     (sa : ea + 8 * wa ≤ eA ∨ eA + 8 * (wa + wb + 2) ≤ ea) (sb : eb + 8 * wb ≤ eA ∨ eA + 8 * (wa + wb + 2) ≤ eb)
@@ -48,24 +48,24 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
       fun t' => t'.zf = some (decide (i + 1 = wa)) ∧ MRInv s₀ B Z ea eb eA wa wb (i + 1) t' := by
   have hn := hs.nowrap
   have hk := hI.keep
-  have t11 : t.gpr .r11 = off B ea := (hk.gpr (by decide)).trans h11
-  have t9 : t.gpr .r9 = off B eb := (hk.gpr (by decide)).trans h9
+  have t11 : t.gpr .r11 = VG.Proof.Bignum.X86_64.off B ea := (hk.gpr (by decide)).trans h11
+  have t9 : t.gpr .r9 = VG.Proof.Bignum.X86_64.off B eb := (hk.gpr (by decide)).trans h9
   have t10 : t.gpr .r10 = BitVec.ofNat 64 wa := (hk.gpr (by decide)).trans h10
   have t12 : t.gpr .r12 = BitVec.ofNat 64 wb := (hk.gpr (by decide)).trans h12
   -- `rcx := a_i`.
-  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t₁ => t₁.gpr .rcx = word t.mem B (ea + 8 * i) ∧
+  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t₁ => t₁.gpr .rcx = VG.Proof.Bignum.X86_64.word t.mem B (ea + 8 * i) ∧
       t₁.mem = t.mem) (by xrun [State.ea, ix, addr0 t11 hI.r13, hI.scr.ld (show ea + 8 * i + 8 ≤ Z by omega)]) rfl)
     fun t₁ ⟨⟨hcx, hm₁⟩, k₁⟩ => ?_)
-  have hai : word t.mem B (ea + 8 * i) = word s₀.mem B (ea + 8 * i) := hI.out.word (by omega) (by omega)
+  have hai : VG.Proof.Bignum.X86_64.word t.mem B (ea + 8 * i) = VG.Proof.Bignum.X86_64.word s₀.mem B (ea + 8 * i) := hI.out.word (by omega) (by omega)
   have fb : wv t.mem B eb wb = wv s₀.mem B eb wb := hI.out.wv (by omega) (by omega)
   -- The window and the rest of the accumulator.
   have sp := wv_split3 t.mem B eA i (wb + 2) (wa + wb + 2) (by omega)
   have hval := hI.val
-  have hW : wv t.mem B (eA + 8 * i) (wb + 2) + (word s₀.mem B (ea + 8 * i)).toNat * wv s₀.mem B eb wb <
+  have hW : wv t.mem B (eA + 8 * i) (wb + 2) + (VG.Proof.Bignum.X86_64.word s₀.mem B (ea + 8 * i)).toNat * wv s₀.mem B eb wb <
       2 ^ (64 * (wb + 2)) := by
     have hbw := wv_lt s₀.mem B eb wb
-    have hai' := (word s₀.mem B (ea + 8 * i)).isLt
-    have hab : (word s₀.mem B (ea + 8 * i)).toNat * wv s₀.mem B eb wb ≤ (2 ^ 64 - 1) * 2 ^ (64 * wb) :=
+    have hai' := (VG.Proof.Bignum.X86_64.word s₀.mem B (ea + 8 * i)).isLt
+    have hab : (VG.Proof.Bignum.X86_64.word s₀.mem B (ea + 8 * i)).toNat * wv s₀.mem B eb wb ≤ (2 ^ 64 - 1) * 2 ^ (64 * wb) :=
       Nat.mul_le_mul (by omega) (by omega)
     have hai2 := wv_lt s₀.mem B ea i
     have hprod : wv s₀.mem B eb wb * wv s₀.mem B ea i ≤ 2 ^ (64 * wb) * 2 ^ (64 * i) :=
@@ -99,7 +99,7 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
         rw [Nat.mul_comm (2 ^ 64 - 1), Nat.mul_comm 2, ← Nat.mul_add]; exact Nat.mul_le_mul_left _ (by decide)
       omega
   have hs₁ := hI.scr.congr k₁.2.2
-  have t₁8 : t₁.gpr .r8 = off B (eA + 8 * i) := (k₁.gpr (by decide)).trans hI.r8
+  have t₁8 : t₁.gpr .r8 = VG.Proof.Bignum.X86_64.off B (eA + 8 * i) := (k₁.gpr (by decide)).trans hI.r8
   refine WP.seq (WP.mono (mulAddRow_ok hs₁ t₁8 ((k₁.gpr (by decide)).trans t9) ((k₁.gpr (by decide)).trans t12)
     hwb (by omega) (by omega) (by omega) (by omega)
     (by rw [hm₁, hcx, hai, fb]; exact hW)) fun t₂ ⟨hv₂, ho₂, k₂⟩ => ?_)
@@ -107,11 +107,11 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
   rw [hm₁] at ho₂
   have k12 := k₁.trans k₂
   have t₂13 : t₂.gpr .r13 = BitVec.ofNat 64 i := (k12.gpr (by decide)).trans hI.r13
-  have t₂8 : t₂.gpr .r8 = off B (eA + 8 * i) := (k₂.gpr (by decide)).trans t₁8
+  have t₂8 : t₂.gpr .r8 = VG.Proof.Bignum.X86_64.off B (eA + 8 * i) := (k₂.gpr (by decide)).trans t₁8
   have t₂10 : t₂.gpr .r10 = BitVec.ofNat 64 wa := (k12.gpr (by decide)).trans t10
-  have a8 : off B (eA + 8 * i) + 8 = off B (eA + 8 * (i + 1)) := by
+  have a8 : VG.Proof.Bignum.X86_64.off B (eA + 8 * i) + 8 = VG.Proof.Bignum.X86_64.off B (eA + 8 * (i + 1)) := by
     rw [show eA + 8 * (i + 1) = eA + 8 * i + 8 by omega, off_step8]
-  refine WP.mono (WP.keep [.r8, .r13] (Q := fun t' => t'.gpr .r8 = off B (eA + 8 * (i + 1)) ∧
+  refine WP.mono (WP.keep [.r8, .r13] (Q := fun t' => t'.gpr .r8 = VG.Proof.Bignum.X86_64.off B (eA + 8 * (i + 1)) ∧
       t'.gpr .r13 = BitVec.ofNat 64 (i + 1) ∧ t'.zf = some (decide (i + 1 = wa)) ∧ t'.mem = t₂.mem)
     (by xrun [t₂8, t₂13, t₂10, ofNat_add_one, ofNat_sub_beq (show i + 1 < 2 ^ 64 by omega) (show wa < 2 ^ 64 by omega), a8]) rfl)
     fun t' ⟨⟨h8', h13', hz, hm'⟩, k'⟩ => ⟨hz, ?_⟩
@@ -125,24 +125,24 @@ theorem mrStep_ok {s₀ : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s
         wv t.mem B (eA + 8 * i + 8 * (wb + 2)) (wa + wb + 2 - i - (wb + 2)) :=
       ho₂.wv (Or.inr (by omega)) (by omega)
     rw [hm', sp', lo, hi', hv₂]
-    have e : wv s₀.mem B ea (i + 1) = wv s₀.mem B ea i + 2 ^ (64 * i) * (word s₀.mem B (ea + 8 * i)).toNat := rfl
+    have e : wv s₀.mem B ea (i + 1) = wv s₀.mem B ea i + 2 ^ (64 * i) * (VG.Proof.Bignum.X86_64.word s₀.mem B (ea + 8 * i)).toNat := rfl
     rw [e]
     rw [sp] at hval
     grind
 
 /-- `acc += a b`, for an accumulator of `w_a + w_b + 2` words below
 `2^(64 (w_b + 1))`. -/
-theorem mulRows_ok {s : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : Scr s B Z)
-    (h11 : s.gpr .r11 = off B ea) (h9 : s.gpr .r9 = off B eb) (h10 : s.gpr .r10 = BitVec.ofNat 64 wa)
-    (h12 : s.gpr .r12 = BitVec.ofNat 64 wb) (h8 : s.gpr .r8 = off B eA) (hwa : 1 ≤ wa) (hwb : 1 ≤ wb)
+theorem mulRows_ok {s : State} {B : Addr} {Z ea eb eA wa wb : Nat} (hs : VG.Proof.Bignum.X86_64.Scr s B Z)
+    (h11 : s.gpr .r11 = VG.Proof.Bignum.X86_64.off B ea) (h9 : s.gpr .r9 = VG.Proof.Bignum.X86_64.off B eb) (h10 : s.gpr .r10 = BitVec.ofNat 64 wa)
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 wb) (h8 : s.gpr .r8 = VG.Proof.Bignum.X86_64.off B eA) (hwa : 1 ≤ wa) (hwb : 1 ≤ wb)
     (hw : wa + wb < 2 ^ 30)
     (hA : eA + 8 * (wa + wb + 2) ≤ Z) (ha : ea + 8 * wa ≤ Z) (hb : eb + 8 * wb ≤ Z)
     (sa : ea + 8 * wa ≤ eA ∨ eA + 8 * (wa + wb + 2) ≤ ea) (sb : eb + 8 * wb ≤ eA ∨ eA + 8 * (wa + wb + 2) ≤ eb)
     (h0 : wv s.mem B eA (wa + wb + 2) < 2 ^ (64 * (wb + 1))) :
     WP isa mulRows s fun t =>
       wv t.mem B eA (wa + wb + 2) = wv s.mem B eA (wa + wb + 2) + wv s.mem B ea wa * wv s.mem B eb wb ∧
-      Outside B eA (8 * (wa + wb + 2)) s.mem t.mem ∧
-      Keep [.rax, .rcx, .rdx, .rbp, .r14, .r13, .r8] s t := by
+      VG.Proof.Bignum.X86_64.Outside B eA (8 * (wa + wb + 2)) s.mem t.mem ∧
+      VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .rbp, .r14, .r13, .r8] s t := by
   have hn := hs.nowrap
   unfold mulRows
   refine WP.seq (WP.mono (WP.keep [.r13] (Q := fun t => t.gpr .r13 = BitVec.ofNat 64 0 ∧ t.mem = s.mem)

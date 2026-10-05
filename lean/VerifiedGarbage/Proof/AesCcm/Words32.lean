@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.AesCcm.Words
 import VerifiedGarbage.Proof.AesCcm.Bytes
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Frame
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 
 /-!
 # AES-CCM: blocks built of 32-bit words

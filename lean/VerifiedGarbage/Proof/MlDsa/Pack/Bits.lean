@@ -1,5 +1,5 @@
 import VerifiedGarbage.Spec.MlDsa
-import VerifiedGarbage.Proof.MlKem.Bits
+import VerifiedGarbage.Proof.MlKem.KPke1024
 
 /-!
 # ML-DSA: bit packing as numbers, for every target

@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.AesCcm.Ctr
 import VerifiedGarbage.Proof.AesCcm.Mac
-import VerifiedGarbage.Proof.Cmac.Mem32
-import VerifiedGarbage.Proof.Cmac.Stream
+import VerifiedGarbage.Proof.Cmac.Dbl32
+import VerifiedGarbage.Proof.Cmac.Dbl32
 import VerifiedGarbage.Proof.Framework.WriteBytes
 
 /-!

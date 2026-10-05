@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.Gcm.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Bswap
 import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Gcm.Spec
+import VerifiedGarbage.Proof.Gcm.Be64
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.Omega
 

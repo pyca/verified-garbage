@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
+import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 import VerifiedGarbage.Proof.Rsa.Checked
 
 /-!

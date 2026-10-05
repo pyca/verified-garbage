@@ -2,15 +2,15 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
 import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Spec.Sha256.Contract
-import VerifiedGarbage.Proof.Sha256.X86.Stream.Common
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Finalize
 import VerifiedGarbage.Proof.Sha256.StateMem
-import VerifiedGarbage.Proof.Sha256.X86.Contract
+import VerifiedGarbage.Proof.Sha256.X86.Compress
 import Mathlib.Tactic.Set
-import VerifiedGarbage.Proof.MdStream.X86.Finalize
+import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.MdStream.X86.Words
 import VerifiedGarbage.Proof.Sha256.Md
 import VerifiedGarbage.Impl.Sha256.X86.Stream
-import VerifiedGarbage.Proof.Sha256.X86.Lit
+import VerifiedGarbage.Proof.Sha256.X86.Compress
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Framework.X86.StackScratch
 

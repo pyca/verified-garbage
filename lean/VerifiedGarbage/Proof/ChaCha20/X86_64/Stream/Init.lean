@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.ChaCha20.Stream
-import VerifiedGarbage.Proof.ChaCha20.X86_64.Block
+import VerifiedGarbage.Proof.ChaCha20.StreamBytes
+import VerifiedGarbage.Proof.ChaCha20.X86_64.Xor
 import VerifiedGarbage.Impl.ChaCha20.X86_64.Stream
 
 /-!
@@ -51,12 +51,12 @@ open VG.Spec.ChaCha20 (keyAt restAt keystreamOf bytesAt leftAt wordLE)
 /-- `p + d`, as the code computes it. -/
 abbrev off (p : Addr) (d : Nat) : Addr := p + BitVec.ofInt 64 (d : Int)
 
-theorem off_eq (p : Addr) (d : Nat) : off p d = p + BitVec.ofNat 64 d := by rw [off, ofInt_natCast]
+theorem off_eq (p : Addr) (d : Nat) : VG.Proof.ChaCha20.X86_64.Stream.off p d = p + BitVec.ofNat 64 d := by rw [VG.Proof.ChaCha20.X86_64.Stream.off, ofInt_natCast]
 
 /-- Reading a 64-bit word after writing a 64-bit word elsewhere. -/
 theorem readW64_writeW_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
-    (m.writeW (off p e) v).readW (off p d) 64 = m.readW (off p d) 64 :=
+    (m.writeW (VG.Proof.ChaCha20.X86_64.Stream.off p e) v).readW (VG.Proof.ChaCha20.X86_64.Stream.off p d) 64 = m.readW (VG.Proof.ChaCha20.X86_64.Stream.off p d) 64 :=
   Mem.readW_writeW_sep (off_sep p hd he (by decide) (by decide) h) (by decide)
 
 /-- Reading after writing a 64-bit word in another region. -/
@@ -97,17 +97,17 @@ theorem c1_bytes : ∀ j < 8, c1.extractLsb' (8 * j) 8 = sigma.getD (8 + j) 0 :=
 /-- The memory `set_nonce` leaves, from `m`, for the state at `st` and the
 nonce at `np`. -/
 def nonceMem (m : Mem) (st np : Addr) : Mem :=
-  let v : BitVec 64 := 0x100000000 - (m.readW (off np 0) 32).setWidth 64
+  let v : BitVec 64 := 0x100000000 - (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 32).setWidth 64
   let v := v + v; let v := v + v; let v := v + v; let v := v + v; let v := v + v; let v := v + v
-  ((((m.writeW (off st 48) (m.readW (off np 0) 64)).writeW (off st 56) (m.readW (off np 8) 64)).writeW
-    (off st 0) c0).writeW (off st 8) c1).writeW (off st 128) v
+  ((((m.writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 48) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 64)).writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 56) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 8) 64)).writeW
+    (VG.Proof.ChaCha20.X86_64.Stream.off st 0) c0).writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 8) c1).writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 128) v
 
 /-- What `set_nonce` needs of the state it runs from. -/
 structure NPre (s : State) (st np : Addr) : Prop where
   rdi : s.gpr .rdi = st
   rsi : s.gpr .rsi = np
-  w_st : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off st d) 8
-  r_n : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (off np d) 8
+  w_st : ∀ d, d + 8 ≤ 768 → InRegions s.wr (VG.Proof.ChaCha20.X86_64.Stream.off st d) 8
+  r_n : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (VG.Proof.ChaCha20.X86_64.Stream.off np d) 8
 
 set_option simprocs false in
 theorem setNonce_exec {s : State} {st np : Addr} (hp : NPre s st np) :
@@ -117,9 +117,9 @@ theorem setNonce_exec {s : State} {st np : Addr} (hp : NPre s st np) :
   have o48 := hp.w_st 48 (by decide); have o56 := hp.w_st 56 (by decide)
   have o128 := hp.w_st 128 (by decide)
   have i0 := hp.r_n 0 (by decide); have i8 := hp.r_n 8 (by decide)
-  have i0' : InRegions (s.rd ++ s.wr) (off np 0) 4 := by
+  have i0' : InRegions (s.rd ++ s.wr) (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 4 := by
     obtain ⟨r, hr, hc⟩ := i0; exact ⟨r, hr, by simp only [Region.Contains] at hc ⊢; omega⟩
-  simp only [off] at o0 o8 o48 o56 o128 i0 i8 i0'
+  simp only [VG.Proof.ChaCha20.X86_64.Stream.off] at o0 o8 o48 o56 o128 i0 i8 i0'
   apply WP.of_runBlock
   simp (config := {decide := true}) only [setNonceInstrs, runBlock_cons, runStep_some,
     runBlock_nil, exec, ea_at, readSrc, readSrc32, execAlu, arithFlags, State.store64, State.load64,
@@ -131,9 +131,9 @@ theorem setNonce_exec {s : State} {st np : Addr} (hp : NPre s st np) :
 
 /-- The words `set_nonce` leaves. -/
 theorem nonceMem_word (m : Mem) (st np : Addr) {k : Nat} (hk : k < 8) :
-    (nonceMem m st np).readW (off st (8 * k)) 64 =
-      if k = 0 then c0 else if k = 1 then c1 else if k = 6 then m.readW (off np 0) 64
-      else if k = 7 then m.readW (off np 8) 64 else m.readW (off st (8 * k)) 64 := by
+    (nonceMem m st np).readW (VG.Proof.ChaCha20.X86_64.Stream.off st (8 * k)) 64 =
+      if k = 0 then c0 else if k = 1 then c1 else if k = 6 then m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 64
+      else if k = 7 then m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 8) 64 else m.readW (VG.Proof.ChaCha20.X86_64.Stream.off st (8 * k)) 64 := by
   simp only [nonceMem]
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
     k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
@@ -141,16 +141,16 @@ theorem nonceMem_word (m : Mem) (st np : Addr) {k : Nat} (hk : k < 8) :
     readW64_writeW_off, ite_true, ite_false]
 
 theorem nonceMem_left (m : Mem) (st np : Addr) :
-    leftAt (nonceMem m st np) st = 64 * (2 ^ 32 - (m.readW (off np 0) 32).toNat) := by
-  have hc := (m.readW (off np 0) 32).isLt
+    leftAt (nonceMem m st np) st = 64 * (2 ^ 32 - (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 32).toNat) := by
+  have hc := (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 32).isLt
   simp only [leftAt, nonceMem]
-  rw [show (st + 128 : Addr) = off st 128 by rw [off_eq]; rfl, Mem.readW_writeW_self64, left_eq,
+  rw [show (st + 128 : Addr) = VG.Proof.ChaCha20.X86_64.Stream.off st 128 by rw [off_eq]; rfl, Mem.readW_writeW_self64, left_eq,
     toNat_ofNat_lt (by omega)]
 
 
 /-- A word of the state from the bytes of memory. -/
 theorem word_off (m : Mem) (p : Addr) (k : Nat) :
-    m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = m.readW (off p (8 * k)) 64 := by rw [off_eq]
+    m.readW (p + BitVec.ofNat 64 (8 * k)) 64 = m.readW (VG.Proof.ChaCha20.X86_64.Stream.off p (8 * k)) 64 := by rw [off_eq]
 
 /-- What `set_nonce` leaves: the key kept, and the whole keystream of the
 nonce. -/
@@ -158,12 +158,12 @@ theorem nonceMem_post (m : Mem) (st np : Addr) :
     keyAt (nonceMem m st np) st = keyAt m st ∧
       restAt (nonceMem m st np) st = keystreamOf (keyAt m st) (bytesAt m np 16) := by
   have hw : ∀ k, 0 ≤ k → k < 8 → (nonceMem m st np).readW (st + BitVec.ofNat 64 (8 * k)) 64 =
-      (if k = 0 then c0 else if k = 1 then c1 else if k = 6 then m.readW (off np 0) 64
-      else if k = 7 then m.readW (off np 8) 64 else m.readW (off st (8 * k)) 64) :=
+      (if k = 0 then c0 else if k = 1 then c1 else if k = 6 then m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 0) 64
+      else if k = 7 then m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np 8) 64 else m.readW (VG.Proof.ChaCha20.X86_64.Stream.off st (8 * k)) 64) :=
     fun k _ hk => by rw [word_off, nonceMem_word _ _ _ hk]
-  have hm : ∀ k, 0 ≤ k → k < 8 → m.readW (st + BitVec.ofNat 64 (8 * k)) 64 = m.readW (off st (8 * k)) 64 :=
+  have hm : ∀ k, 0 ≤ k → k < 8 → m.readW (st + BitVec.ofNat 64 (8 * k)) 64 = m.readW (VG.Proof.ChaCha20.X86_64.Stream.off st (8 * k)) 64 :=
     fun k _ _ => word_off _ _ _
-  have hn : ∀ k, 0 ≤ k → k < 2 → m.readW (np + BitVec.ofNat 64 (8 * k)) 64 = m.readW (off np (8 * k)) 64 :=
+  have hn : ∀ k, 0 ≤ k → k < 2 → m.readW (np + BitVec.ofNat 64 (8 * k)) 64 = m.readW (VG.Proof.ChaCha20.X86_64.Stream.off np (8 * k)) 64 :=
     fun k _ _ => word_off _ _ _
   refine stream_of_parts (by simp [keyAt, length_bytesAt]) (fun i hi => ?_) (fun i hi => ?_) (fun i hi => ?_) ?_
   · rw [byte_of_words64 hw (Nat.zero_le _) (by omega)]
@@ -186,7 +186,7 @@ theorem nonceMem_post (m : Mem) (st np : Addr) :
 
 
 theorem nonceMem_frame (m : Mem) (st np : Addr) : Frame [⟨st, 768⟩] m (nonceMem m st np) := by
-  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
+  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (VG.Proof.ChaCha20.X86_64.Stream.off st d) (64 / 8) :=
     fun d hd => contains_off hd (by omega)
   simp only [nonceMem]
   exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 48 (by decide))).writeW
@@ -242,13 +242,13 @@ theorem setNonce_verified :
 
 /-- The memory after the key is copied. -/
 def keyMem (m : Mem) (st kp : Addr) : Mem :=
-  (((m.writeW (off st 16) (m.readW (off kp 0) 64)).writeW (off st 24) (m.readW (off kp 8) 64)).writeW
-    (off st 32) (m.readW (off kp 16) 64)).writeW (off st 40) (m.readW (off kp 24) 64)
+  (((m.writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 16) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off kp 0) 64)).writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 24) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off kp 8) 64)).writeW
+    (VG.Proof.ChaCha20.X86_64.Stream.off st 32) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off kp 16) 64)).writeW (VG.Proof.ChaCha20.X86_64.Stream.off st 40) (m.readW (VG.Proof.ChaCha20.X86_64.Stream.off kp 24) 64)
 
 set_option simprocs false in
 theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.gpr .rsi = kp)
-    (hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off st d) 8)
-    (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off kp d) 8) :
+    (hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (VG.Proof.ChaCha20.X86_64.Stream.off st d) 8)
+    (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (VG.Proof.ChaCha20.X86_64.Stream.off kp d) 8) :
     WP isa (.block keyInstrs) s fun s' => s'.mem = keyMem s.mem st kp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.gpr .rdi = st ∧ s'.gpr .rsi = s.gpr .rdx ∧
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → s'.gpr r = s.gpr r) := by
@@ -256,7 +256,7 @@ theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.g
   have o32 := hw 32 (by decide); have o40 := hw 40 (by decide)
   have i0 := hr 0 (by decide); have i8 := hr 8 (by decide)
   have i16 := hr 16 (by decide); have i24 := hr 24 (by decide)
-  simp only [off] at o16 o24 o32 o40 i0 i8 i16 i24
+  simp only [VG.Proof.ChaCha20.X86_64.Stream.off] at o16 o24 o32 o40 i0 i8 i16 i24
   apply WP.of_runBlock
   simp (config := {decide := true}) only [keyInstrs, runBlock_cons, runStep_some,
     runBlock_nil, exec, ea_at, readSrc, State.store64, State.load64, State.setReg, hrdi, hrsi,
@@ -266,7 +266,7 @@ theorem key_exec {s : State} {st kp : Addr} (hrdi : s.gpr .rdi = st) (hrsi : s.g
   simp [h₁, h₂, h₃, h₄, h₅]
 
 theorem keyMem_frame (m : Mem) (st kp : Addr) : Frame [⟨st, 768⟩] m (keyMem m st kp) := by
-  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (off st d) (64 / 8) :=
+  have c : ∀ d, d + 8 ≤ 768 → (⟨st, 768⟩ : Region).Contains (VG.Proof.ChaCha20.X86_64.Stream.off st d) (64 / 8) :=
     fun d hd => contains_off hd (by omega)
   simp only [keyMem]
   exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (c 16 (by decide))).writeW
@@ -297,7 +297,7 @@ theorem init_eq : init = .block (keyInstrs ++ setNonceInstrs) := rfl
 theorem init_ok (s : State) (hs : Proof.ChaCha20.initX86_64.pre s) :
     ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ Proof.ChaCha20.initX86_64.post s s' := by
   obtain ⟨hrd, hwr, hdk, hdn, hret⟩ := hs
-  have hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (off (s.gpr .rdi) d) 8 :=
+  have hw : ∀ d, d + 8 ≤ 768 → InRegions s.wr (VG.Proof.ChaCha20.X86_64.Stream.off (s.gpr .rdi) d) 8 :=
     fun d hd => ⟨_, by rw [hwr]; exact List.mem_singleton_self _, contains_off hd (by omega)⟩
   have h₁ := key_exec (s := s) rfl rfl hw fun d hd => ⟨_, by rw [hrd]; simp,
     contains_off (base := s.gpr .rsi) (len := 32) hd (by omega)⟩

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.MlKem.X86.KeyGenBody
+import VerifiedGarbage.Proof.MlKem.X86.KeyGen
 import VerifiedGarbage.Impl.MlKem1024.X86.Kem
 import VerifiedGarbage.Spec.MlKem.Contract1024
 
@@ -70,7 +70,7 @@ theorem pre_of {s₀ : State} (h : (Spec.MlKem1024.keyGenContract X86.abi 88).pr
     rw [h4]
     rcases c4 i hi with rfl | rfl | rfl | rfl
     · exact absurd hw (by decide)
-    all_goals simp [argR, Lay.alen, Y, L1024, Params.ekLen, Params.dkLen, mlKem1024]
+    all_goals simp [VG.Proof.MlKem.X86.Top.argR, Lay.alen, Y, L1024, Params.ekLen, Params.dkLen, mlKem1024]
   · rw [h4]; simp [gR, Lay.n, Y]
   · intro i hi j hj hne _
     rcases c4 i hi with rfl | rfl | rfl | rfl <;> rcases c4 j hj with rfl | rfl | rfl | rfl
@@ -115,9 +115,9 @@ theorem pub_of {s₀ s₀' : State} (h : (Spec.MlKem1024.keyGenContract X86.abi 
 def satMem : Mem := fun a => if a = 0x5009 then 1 else if a = 0x500d then 0x10 else if a = 0x5012 then 1 else 0
 
 theorem verified : Verified X86.target Impl.MlKem1024.X86.keyGen (Spec.MlKem1024.keyGenContract X86.abi 88) := by
-  refine Piece.verified (((piece (L := L1024) (NoSp.of_all (by decide +kernel))).pre_mono (fun _ h => pre_of h) fun _ _ _ _ h => pub_of h).mono
+  refine Piece.verified (((VG.Proof.MlKem.X86.KeyGen.piece (L := L1024) (NoSp.of_all (by decide +kernel))).pre_mono (fun _ h => VG.Proof.MlKem1024.X86.KeyGen.pre_of h) fun _ _ _ _ h => VG.Proof.MlKem1024.X86.KeyGen.pub_of h).mono
     (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
-  · have hp := pre_of h₀
+  · have hp := VG.Proof.MlKem1024.X86.KeyGen.pre_of h₀
     obtain ⟨habi, -, -, s, hfin, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
     sig_post [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -127,7 +127,7 @@ theorem verified : Verified X86.target Impl.MlKem1024.X86.keyGen (Spec.MlKem1024
     simp only [d, z, addr0, ez, show Buf.addr s₀ ⟨1, 0, L1024.p.ekLen⟩ = (arg s₀ 1).setWidth 64 from addr0 s₀ 1,
       show Buf.addr s₀ ⟨2, 0, L1024.p.dkLen⟩ = (arg s₀ 2).setWidth 64 from addr0 s₀ 2] at r
     exact r
-  · let st := satState satMem [⟨0, 64⟩]
+  · let st := VG.Proof.MlKem.X86.satState VG.Proof.MlKem1024.X86.KeyGen.satMem [⟨0, 64⟩]
       [⟨0x100, 1568⟩, ⟨0x1000, 3168⟩, ⟨0x10000, 49152⟩, ⟨0x5004, 16⟩]
     refine ⟨st, ?_⟩
     sig_sat_check [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, X86.abi, X86.argSlots, X86.argVal,

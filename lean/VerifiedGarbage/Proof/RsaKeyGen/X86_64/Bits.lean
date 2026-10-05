@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.Words
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Spec.RsaKeyGen
 
 /-!

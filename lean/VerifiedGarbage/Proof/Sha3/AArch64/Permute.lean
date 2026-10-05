@@ -2,15 +2,15 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Sha3.Lanes
+import VerifiedGarbage.Proof.Sha3.Compl
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Sha3.AArch64
 import VerifiedGarbage.Spec.Sha3.Contract
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Sha3.Stream
-import VerifiedGarbage.Proof.Sha3.Arith
+import VerifiedGarbage.Proof.Sha3.Scratch
+import VerifiedGarbage.Proof.Sha3.Seed34
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Impl.Sha3.AArch64.Stream
 import VerifiedGarbage.Proof.Framework.Offset
@@ -181,11 +181,11 @@ end
 theorem wp_nil {s : State} {Q : State → Prop} (h : Q s) : WP isa (.block []) s Q := WP.block_nil h
 
 /-- `eval` of the branch conditions. -/
-theorem eval_zero (s : State) (r : Reg) : eval (.zero .x r) s = some (s.gpr r == 0) := by
-  simp [eval, State.read]
+theorem eval_zero (s : State) (r : Reg) : VG.AArch64.eval (.zero .x r) s = some (s.gpr r == 0) := by
+  simp [VG.AArch64.eval, State.read]
 
-theorem eval_nonzero (s : State) (r : Reg) : eval (.nonzero .x r) s = some (s.gpr r != 0) := by
-  simp [eval, State.read]
+theorem eval_nonzero (s : State) (r : Reg) : VG.AArch64.eval (.nonzero .x r) s = some (s.gpr r != 0) := by
+  simp [VG.AArch64.eval, State.read]
 
 end VG.Proof.Sha3.AArch64
 
@@ -902,7 +902,7 @@ theorem off_ne0 (s₀ : State) {a b : Nat} (ha : a < 2 ^ 32) (hb : b < 2 ^ 32) :
 
 theorem round_step {s₀ : State} (hp : Pre s₀) {r : Nat} (hr : r < 24) {s : State} (hL : LInv s₀ r s) :
     WP isa (.block round) s fun s' =>
-      eval (.nonzero .x T) s' = some (!decide (r + 1 = 24)) ∧ LInv s₀ (r + 1) s' := by
+      VG.AArch64.eval (.nonzero .x T) s' = some (!decide (r + 1 = 24)) ∧ LInv s₀ (r + 1) s' := by
   have he := hp.env r hr
   have hc := cur_cases s₀ r
   have hoth : oth s₀ r = st s₀ ∨ oth s₀ r = scr s₀ := hc.symm.imp (·.2) (·.2)

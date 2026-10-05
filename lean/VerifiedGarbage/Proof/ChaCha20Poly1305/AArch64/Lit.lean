@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 import VerifiedGarbage.Proof.ChaCha20.AArch64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
-import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Lit
+import VerifiedGarbage.Proof.ChaCha20.AArch64.Mixed8.Xor
 import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64.Stitched
 
 /-!

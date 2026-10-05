@@ -30,7 +30,7 @@ theorem kInit_eq : kInit = constSlot (slot 3) 0 ++ (constSlot (slot 4) 1 ++ (con
 
 theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb : BEnv s.mem base)
     (hz : ∀ w < 8, limbs s.mem base (slot (19 : Index).val) w = 0) (ht : TabOk s.mem base P 16)
-    (hS : pt (EV s.mem base) 0 1 2 = S) :
+    (hS : VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2 = S) :
     WP isa (.block kInit) s fun t => KInv t base P S 57 t ∧ Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
       t.gpr .x30 = s.gpr .x30 ∧ t.gpr .x20 = s.gpr .x20 ∧ t.rd = s.rd ∧ t.wr = s.wr := by
   rw [kInit_eq, WP.block_append_iff]
@@ -96,7 +96,7 @@ theorem kInit_ok {s : State} {base : Addr} {P S : Point} (hs : Scr s base) (hb :
     rw [w5 w hw]; exact Nat.lt_of_lt_of_le (limb_lt _ _) (by decide)
   · show (⟨FV t.mem base (slot 3), FV t.mem base (slot 4), FV t.mem base (slot 5)⟩ : Point) = ⟨0, 1, 1⟩
     rw [F_of_words w3, F_of_words w4, F_of_words w5]
-  · rw [← hS]; simp only [pt]
+  · rw [← hS]; simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [eO 0 (by decide) (by decide) (by decide) (by decide), eO 1 (by decide) (by decide) (by decide) (by decide),
       eO 2 (by decide) (by decide) (by decide) (by decide)]
   · rw [gt _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]

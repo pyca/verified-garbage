@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.MlDsa.Arm.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Saving
+import VerifiedGarbage.Proof.MlDsa.Arm.Arith.Mul
 import VerifiedGarbage.Proof.Framework.Arm.Taint
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -158,7 +158,7 @@ structure PreE (s : State) : Prop where
   g : (s.gpr .r2).toNat ∈ gamma2s
   redR : Reduced s.mem (P s .r1)
 
-theorem pre_of {s : State} (h : (Spec.MlDsa.useHintContract Arm.abi 12).pre s) : PreE s := by
+theorem pre_of {s : State} (h : (Spec.MlDsa.useHintContract Arm.abi 12).pre s) : VG.Proof.MlDsa.Arm.Round.UseHint.PreE s := by
   sig_pre [Spec.MlDsa.useHintContract, Spec.MlDsa.useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
     Arm.Loc.val] at h
   obtain ⟨h1, -, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := h
@@ -172,16 +172,16 @@ abbrev result (s : State) (g : Nat) : Vector Nat n :=
   Vector.zipWith (fun hj rj => (useHint g hj rj).toNat) ((hintAt s.mem (P s .r0) 1).headD (Vector.replicate n false))
     (polyAt s.mem (P s .r1))
 
-theorem result_word {s : State} (hp : PreE s) {g : Nat} (hg : G2 g) {k : Nat} (hk : k < 256) :
+theorem result_word {s : State} (hp : VG.Proof.MlDsa.Arm.Round.UseHint.PreE s) {g : Nat} (hg : G2 g) {k : Nat} (hk : k < 256) :
     (buh g (coeffAt s.mem (P s .r0) k) (coeffAt s.mem (P s .r1) k)).toNat = (result s g)[k]! := by
   have hk' : k < n := by rw [n_eq]; exact hk
   rw [zipWith_get _ _ _ hk', hintAt_get _ _ hk', polyAt_get _ _ hk', ← buh_val hg,
     word_of_reduced (hp.redR k hk')]
 
-theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat} (hg : G2 g)
+theorem loop {s s₁ s₂ : State} (hp : VG.Proof.MlDsa.Arm.Round.UseHint.PreE s) (hE : Entry 12 s s₁) {g : Nat} (hg : G2 g)
     (hg₂ : s₂.gpr = s.gpr) (hm : s₂.mem = s₁.mem) (hrd : s₂.rd = s₁.rd) (hwr : s₂.wr = s₁.wr)
     (hsp : s₂.sp = s₁.sp) :
-    WP isa (mapLoop .r2 (uhBody g)) s₂ fun s' => (∀ r ∈ fixedR, s'.gpr r = s.gpr r) ∧ s'.sp = s₁.sp ∧
+    WP isa (mapLoop .r2 (uhBody g)) s₂ fun s' => (∀ r ∈ VG.Proof.MlDsa.Arm.Round.UseHint.fixedR, s'.gpr r = s.gpr r) ∧ s'.sp = s₁.sp ∧
       Frame [pR (P s .r3)] s₁.mem s'.mem ∧ ∀ k < 256, (coeffAt s'.mem (P s .r3) k).toNat = (result s g)[k]! := by
   have e : ∀ r, P s₂ r = P s r := fun r => by simp only [P, hg₂]
   have hL : Layout s₂ [.r0, .r1] [.r3] := by
@@ -203,11 +203,11 @@ theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat
     rw [e p, hm]
     exact coeffAt_frame hE.frame (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hd.symm) (by rw [n_eq]; exact hk)
-  refine WP.mono (loop_ok (ptrs := [.r0, .r1, .r3]) (fixed := fixedR)
+  refine WP.mono (VG.Proof.MlDsa.Arm.Round.loop_ok (ptrs := [.r0, .r1, .r3]) (fixed := VG.Proof.MlDsa.Arm.Round.UseHint.fixedR)
     (V := fun _ i => buh g (coeffAt s₂.mem (P s₂ .r0) i) (coeffAt s₂.mem (P s₂ .r1) i))
     (J := fun _ _ => True) hL (by decide) (by decide) (fun _ _ _ => trivial) fun i hi s' hI => ?_)
     fun s' hI => ⟨fun r hr => by rw [hI.fixed r hr, hg₂], by rw [hI.sp, hsp], ?_, fun k hk => ?_⟩
-  · refine WP.mono (body_ok rfl rfl rfl rfl (hI.inR hL hi (by simp) (by simp)) (hI.inR hL hi (by simp) (by simp))
+  · refine WP.mono (VG.Proof.MlDsa.Arm.Round.UseHint.body_ok rfl rfl rfl rfl (hI.inR hL hi (by simp) (by simp)) (hI.inR hL hi (by simp) (by simp))
       (hI.inW hL hi (by simp) (by simp)) hg)
       fun s'' ⟨hm', r0, r1, r3, r2, hz, hf, rd, wr, sp⟩ => ⟨?_, ?_, r2, hz, hf, rd, wr, sp, trivial⟩
     · rw [hm', hI.read hL hi (by simp) (by simp), hI.read hL hi (p := .r1) (by simp) (by simp),
@@ -220,11 +220,11 @@ theorem loop {s s₁ s₂ : State} (hp : PreE s) (hE : Entry 12 s s₁) {g : Nat
     rw [e .r3, hm] at this; exact this
   · rw [← e, hI.done .r3 (by simp) k hk, eIn _ (.inl rfl) k hk, eIn _ (.inr rfl) k hk, result_word hp hg hk]
 
-theorem correct {s : State} (hp : PreE s) :
+theorem correct {s : State} (hp : VG.Proof.MlDsa.Arm.Round.UseHint.PreE s) :
     WP isa Impl.MlDsa.Arm.Round.useHint s fun s' => (∀ r ∈ preserved, s'.gpr r = s.gpr r) ∧ s'.sp = s.sp ∧
       NatPolyIs s'.mem (P s .r3) (result s (s.gpr .r2).toNat) := by
   refine WP.mono (wp_saving [.r4, .r5, .r6] _ (W := [pR (P s .r3)])
-    (fun s₂ => (∀ r ∈ fixedR, s₂.gpr r = s.gpr r) ∧ NatPolyIs s₂.mem (P s .r3) (result s (s.gpr .r2).toNat))
+    (fun s₂ => (∀ r ∈ VG.Proof.MlDsa.Arm.Round.UseHint.fixedR, s₂.gpr r = s.gpr r) ∧ NatPolyIs s₂.mem (P s .r3) (result s (s.gpr .r2).toNat))
     s hp.sp (fun R hR => by rw [List.mem_singleton] at hR; subst hR; exact hp.s3) fun s₁ hE => ?_)
     fun s' ⟨s₂, ⟨hk, hh⟩, hm, _, hsp, _, hg⟩ =>
       ⟨preserved_of_saving hg fun r hr hn => hk r (by revert r; decide), hsp, hm ▸ hh⟩
@@ -235,10 +235,10 @@ theorem correct {s : State} (hp : PreE s) :
   have hz := VG.Proof.MlKem.Arm.cmp_z (s₁.gpr .r2) g88 (by decide)
   have hloop : ∀ g, G2 g → g = (s.gpr .r2).toNat → WP isa (mapLoop .r2 (uhBody g))
       (subFlags s₁ (s₁.gpr .r2) (BitVec.ofNat 32 g88)) fun s' =>
-        (∀ r ∈ fixedR, s'.gpr r = s.gpr r) ∧ s'.sp = s₁.sp ∧ Frame [pR (P s .r3)] s₁.mem s'.mem ∧
+        (∀ r ∈ VG.Proof.MlDsa.Arm.Round.UseHint.fixedR, s'.gpr r = s.gpr r) ∧ s'.sp = s₁.sp ∧ Frame [pR (P s .r3)] s₁.mem s'.mem ∧
         ∀ k < 256, (coeffAt s'.mem (P s .r3) k).toNat = (result s (s.gpr .r2).toNat)[k]! := fun g hg eg => by
     subst eg
-    exact loop hp hE hg hE.gpr rfl rfl rfl rfl
+    exact VG.Proof.MlDsa.Arm.Round.UseHint.loop hp hE hg hE.gpr rfl rfl rfl rfl
   refine WP.mono
     (WP.ite (decide ((s₁.gpr .r2).toNat = g88)) (by simp only [eval, subFlags, hz])
       (fun h => hloop g88 (.inr rfl) (by rw [← of_decide_eq_true h, hE.gpr]))
@@ -266,7 +266,7 @@ def satState : State where
 theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.useHint (Spec.MlDsa.useHintContract Arm.abi 12) := by
   refine ⟨fun s hs => ?_, ct_of_saving [.r4, .r5, .r6] _ [.r0, .r1, .r2, .r3] (fun s₁ s₂ h => ?_)
     (by taint_decide), ?_⟩
-  · obtain ⟨t, s', he, hpres, hsp, hh⟩ := correct (pre_of hs)
+  · obtain ⟨t, s', he, hpres, hsp, hh⟩ := VG.Proof.MlDsa.Arm.Round.UseHint.correct (VG.Proof.MlDsa.Arm.Round.UseHint.pre_of hs)
     refine ⟨t, s', he, ⟨hpres, hsp⟩, ?_⟩
     sig_post [Spec.MlDsa.useHintContract, Spec.MlDsa.useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
       Arm.Loc.val]
@@ -277,7 +277,7 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.useHint (Spec.MlDsa.
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · refine ⟨satState, ?_⟩
+  · refine ⟨VG.Proof.MlDsa.Arm.Round.UseHint.satState, ?_⟩
     sig_apply_check
     · decide +kernel
     · sig_reduce [Spec.MlDsa.useHintContract, Spec.MlDsa.useHintSig, Arm.abi, Arm.argRegs, Arm.reduceClassify,
@@ -285,6 +285,6 @@ theorem verified : Verified Arm.target Impl.MlDsa.Arm.Round.useHint (Spec.MlDsa.
       sig_and_intros
       all_goals first
         | trivial
-        | exact reduced_zero _
+        | exact VG.Proof.MlDsa.Round.reduced_zero _
 
 end VG.Proof.MlDsa.Arm.Round.UseHint

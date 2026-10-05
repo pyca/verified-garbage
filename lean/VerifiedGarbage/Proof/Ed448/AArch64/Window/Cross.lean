@@ -45,7 +45,7 @@ theorem crossOps_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem
       dblOps (slot 6) (slot 7) (slot 8) ++ dblOps (slot 6) (slot 7) (slot 8) ++
       ([.mul (slot 12) (slot 0) (slot 8), .mul (slot 13) (slot 6) (slot 2),
         .mul (slot 14) (slot 1) (slot 8), .mul (slot 15) (slot 7) (slot 2)] : List Impl.X448.AArch64.Fast.Op)))) s
-      fun t => FKeep base s t ∧ Cross (pt (EV s.mem base) 0 1 2) (pt (EV s.mem base) 6 7 8) (EV t.mem base) ∧
+      fun t => FKeep base s t ∧ Cross (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2) (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8) (EV t.mem base) ∧
         (∀ i : Index, 12 ≤ i.val → i.val < 16 → Bnd Mb t.mem base (slot i.val)) := by
   refine block_codeOf (ops_append _ _ (ops_append _ _ (ops_append _ _ (ops_append _ _ ?_))))
   refine WP.mono (dblOps_ok 0 1 2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hs hb h2)
@@ -72,24 +72,24 @@ theorem crossOps_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem
   have one1 : EV t1.mem base 20 = 1 := by rw [Same.env s1 (i := 20) (by decide)]; exact h20
   have one2 : EV t2.mem base 20 = 1 := by rw [Same.env s2 (i := 20) (by decide)]; exact one1
   have one3 : EV t3.mem base 20 = 1 := by rw [Same.env s3 (i := 20) (by decide)]; exact one2
-  have q2 : pt (EV t2.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 0 1 2) := by
+  have q2 : VG.Proof.X448.AArch64.Base.pt (EV t2.mem base) 0 1 2 = dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2) := by
     rw [e2, dblEnv_012, one1, dblPt_eq, e1, dblEnv_012, h20, dblPt_eq]; rfl
-  have r2 : pt (EV t2.mem base) 6 7 8 = pt (EV s.mem base) 6 7 8 := by
-    simp only [pt]
+  have r2 : VG.Proof.X448.AArch64.Base.pt (EV t2.mem base) 6 7 8 = VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8 := by
+    simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [Same.env s2 (i := 6) (by decide), Same.env s2 (i := 7) (by decide), Same.env s2 (i := 8) (by decide),
       Same.env s1 (i := 6) (by decide), Same.env s1 (i := 7) (by decide), Same.env s1 (i := 8) (by decide)]
-  have r4 : pt (EV t4.mem base) 6 7 8 = dbl2 (pt (EV s.mem base) 6 7 8) := by
+  have r4 : VG.Proof.X448.AArch64.Base.pt (EV t4.mem base) 6 7 8 = dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8) := by
     rw [e4, dblEnv_678, one3, dblPt_eq, e3, dblEnv_678, one2, dblPt_eq, r2]; rfl
-  have q4 : pt (EV t4.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 0 1 2) := by
-    rw [← q2]; simp only [pt]
+  have q4 : VG.Proof.X448.AArch64.Base.pt (EV t4.mem base) 0 1 2 = dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2) := by
+    rw [← q2]; simp only [VG.Proof.X448.AArch64.Base.pt]
     rw [Same.env s4 (i := 0) (by decide), Same.env s4 (i := 1) (by decide), Same.env s4 (i := 2) (by decide),
       Same.env s3 (i := 0) (by decide), Same.env s3 (i := 1) (by decide), Same.env s3 (i := 2) (by decide)]
-  have qx : EV t4.mem base 0 = (dbl2 (pt (EV s.mem base) 0 1 2)).X := congrArg Point.X q4
-  have qy : EV t4.mem base 1 = (dbl2 (pt (EV s.mem base) 0 1 2)).Y := congrArg Point.Y q4
-  have qz : EV t4.mem base 2 = (dbl2 (pt (EV s.mem base) 0 1 2)).Z := congrArg Point.Z q4
-  have rx : EV t4.mem base 6 = (dbl2 (pt (EV s.mem base) 6 7 8)).X := congrArg Point.X r4
-  have ry : EV t4.mem base 7 = (dbl2 (pt (EV s.mem base) 6 7 8)).Y := congrArg Point.Y r4
-  have rz : EV t4.mem base 8 = (dbl2 (pt (EV s.mem base) 6 7 8)).Z := congrArg Point.Z r4
+  have qx : EV t4.mem base 0 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2)).X := congrArg Point.X q4
+  have qy : EV t4.mem base 1 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2)).Y := congrArg Point.Y q4
+  have qz : EV t4.mem base 2 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2)).Z := congrArg Point.Z q4
+  have rx : EV t4.mem base 6 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8)).X := congrArg Point.X r4
+  have ry : EV t4.mem base 7 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8)).Y := congrArg Point.Y r4
+  have rz : EV t4.mem base 8 = (dbl2 (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 6 7 8)).Z := congrArg Point.Z r4
   refine ⟨k1.trans (k2.trans (k3.trans (k4.trans (k5.trans (k6.trans (k7.trans k8)))))), ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [Same.env s8 (i := 12) (by decide), Same.env s7 (i := 12) (by decide), Same.env s6 (i := 12) (by decide),
       e5, Function.update_self, qx, rz]
@@ -129,7 +129,7 @@ theorem wcross_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     (hrx : ∀ i < 8, limbs s.mem base RX i < Ib) (hry : ∀ i < 8, limbs s.mem base RY i < Ib) :
     WP isa (.block wcross) s fun t =>
       Scr t base ∧ Keeps crossClob s t ∧ Outside2 base 64 2816 ACC 1152 s.mem t.mem ∧
-      Cross (addPt (pt (EV s.mem base) 0 1 2) (pt (EV s.mem base) 3 4 5)) ⟨FV s.mem base RX, FV s.mem base RY, 1⟩
+      Cross (addPt (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2) (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5)) ⟨FV s.mem base RX, FV s.mem base RY, 1⟩
         (EV t.mem base) ∧
       (∀ i : Index, 12 ≤ i.val → i.val < 16 → Bnd Mb t.mem base (slot i.val)) := by
   rw [wcross_eq, WP.block_append_iff]
@@ -180,13 +180,13 @@ theorem wcross_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
     · exact fun j hj => by rw [keep i h6 h7 h8 j hj]; exact b1 i j hj
   have e4 : ∀ i : Index, i ≠ 6 → i ≠ 7 → i ≠ 8 → EV t4.mem base i = EV t1.mem base i := fun i h6 h7 h8 =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (keep i h6 h7 h8))
-  have p8 : pt (EV t4.mem base) 6 7 8 = ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
+  have p8 : VG.Proof.X448.AArch64.Base.pt (EV t4.mem base) 6 7 8 = ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
     show (⟨FV t4.mem base (slot 6), FV t4.mem base (slot 7), FV t4.mem base (slot 8)⟩ : Point) = _
     rw [FV_of_limbs l6, FV_of_limbs l7, F_of_words v4]
-  have q1 : pt (EV t1.mem base) 0 1 2 = addPt (pt (EV s.mem base) 0 1 2) (pt (EV s.mem base) 3 4 5) := by
+  have q1 : VG.Proof.X448.AArch64.Base.pt (EV t1.mem base) 0 1 2 = addPt (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 0 1 2) (VG.Proof.X448.AArch64.Base.pt (EV s.mem base) 3 4 5) := by
     rw [e1, VG.Proof.X448.AArch64.Base.genEnv_add, (zero_env hz).1, VG.Proof.X448.AArch64.Base.genPt_eq]
-  have q4 : pt (EV t4.mem base) 0 1 2 = pt (EV t1.mem base) 0 1 2 := by
-    simp only [pt]; rw [e4 0 (by decide) (by decide) (by decide), e4 1 (by decide) (by decide) (by decide),
+  have q4 : VG.Proof.X448.AArch64.Base.pt (EV t4.mem base) 0 1 2 = VG.Proof.X448.AArch64.Base.pt (EV t1.mem base) 0 1 2 := by
+    simp only [VG.Proof.X448.AArch64.Base.pt]; rw [e4 0 (by decide) (by decide) (by decide), e4 1 (by decide) (by decide) (by decide),
       e4 2 (by decide) (by decide) (by decide)]
   have one4 : EV t4.mem base 20 = 1 := by
     rw [e4 20 (by decide) (by decide) (by decide), Same.env s1 (i := 20) (by decide)]; exact h20

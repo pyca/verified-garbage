@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyReduce
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtRows
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
-import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtEntry
 
 /-!
 # `vg_rsa_check_key` on x86-64: the pieces of the checks

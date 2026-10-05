@@ -1,8 +1,8 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Lit
 import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Update
-import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.AddS
-import VerifiedGarbage.Proof.Poly1305.AArch64.Buffer
+import VerifiedGarbage.Proof.Poly1305.AArch64.Radix64.Blocks
+import VerifiedGarbage.Proof.Poly1305.AArch64.Init
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Spec.Poly1305.Contract
 import VerifiedGarbage.Proof.Framework.PowLit
@@ -150,7 +150,7 @@ theorem zero_step {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} {j
   · rw [u₄.other r h2, u₃.other r h1, m₂.gpr, h.keep r h1 h2 h3]
   · rw [u₄.mem, u₃.mem, m₂.mem]
     exact h.frame.writeW (List.mem_singleton_self _) _ (by rw [bufB_eq]; exact bfR_contains _ (by omega_using [hj]))
-  · rw [u₄.mem, u₃.mem, m₂.mem, writeW8_apply]
+  · rw [u₄.mem, u₃.mem, m₂.mem, VG.WriteBytes.writeW8_apply]
     by_cases hkj : k = j
     · subst hkj
       simp only [ite_true, h.x11, show ¬ k < kf s₀ by have := h.j_le.1; omega_using [this],
@@ -205,7 +205,7 @@ theorem pad1_ok {s₀ : State} (hp : FPre s₀) {m₁ : Mem} {s₁ : State} (h�
   · rw [m₄.gpr, u₃.other r h1, u₂.other r h3, h.keep r h1 h2 h3]
   · rw [m₄.mem, u₃.mem, u₂.mem]
     exact h.frame.writeW (List.mem_singleton_self _) _ (by rw [bufB_eq]; exact bfR_contains _ (by omega_using [hk]))
-  · rw [m₄.mem, u₃.mem, u₂.mem, writeW8_apply, u₃.other _ (by decide), u₂.gpr, one_byte]
+  · rw [m₄.mem, u₃.mem, u₂.mem, VG.WriteBytes.writeW8_apply, u₃.other _ (by decide), u₂.gpr, one_byte]
     by_cases hkj : k = kf s₀
     · subst hkj
       simp only [ite_true, padded, Nat.lt_irrefl, ite_false]

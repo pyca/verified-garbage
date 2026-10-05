@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.EncCorrect
 import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Alloc
-import VerifiedGarbage.Proof.Bignum.X86_64.Mont
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 
 /-!
