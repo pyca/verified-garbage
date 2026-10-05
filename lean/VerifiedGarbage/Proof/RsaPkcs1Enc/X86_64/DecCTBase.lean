@@ -216,4 +216,29 @@ theorem hfin_two {J : State → State → Prop} {dOff : State → Nat} {cnt : St
     ce_eq (by decide) (by rw [k₁, k₂, hdO _ _ S₁, hdO _ _ S₂, S₁.scr', S₂.scr']) _ _ _ _,
     ce_eq (by decide) (by rw [r₁, r₂, S₁.scr' sWork, S₂.scr' sWork]) _ _ _ _, ce_rsp sp _ _ _ _⟩
 
+
+/-! ## Pieces -/
+
+/-- A piece the taint analysis checks from registers `J` fixes, with what
+correctness gives after it. -/
+theorem two_blk {J J' : State → State → Prop} {c : Prog isa} (rs : List Reg) (hpin : Pins (At J) rs)
+    {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs rs) c hc).isSome = true)
+    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At J)) c (Two (At J')) :=
+  two_piece rs hpin h fun _ _ ⟨s, S, j⟩ => WP.mono (hw _ _ S.p j) fun _ j' => ⟨s, S, j'⟩
+
+/-- A piece related in two runs, with what correctness gives after it. -/
+theorem two_then {J J' : State → State → Prop} {c : Prog isa} (hct : RelCT isa (Two (At J)) c fun _ _ => True)
+    (hw : ∀ s t, DPre s → J s t → WP isa c t (J' s)) : RelCT isa (Two (At J)) c (Two (At J')) :=
+  two_post hct fun _ _ ⟨s, S, j⟩ => WP.mono (hw _ _ S.p j) fun _ j' => ⟨s, S, j'⟩
+
+/-- Weakening what is known. -/
+theorem two_weak {J J' : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
+    (h : ∀ s t, J s t → J' s t) (hct : RelCT isa (Two (At J')) c Q) : RelCT isa (Two (At J)) c Q :=
+  hct.mono (fun _ _ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ⟨a, ⟨s₁, S₁, h _ _ j₁⟩, ⟨s₂, S₂, h _ _ j₂⟩⟩) fun _ _ q => q
+
+/-- Relations that are unions. -/
+theorem relCT_union {β : Type} {P : β → State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
+    (h : ∀ b, RelCT isa (P b) c Q) : RelCT isa (fun s₁ s₂ => ∃ b, P b s₁ s₂) c Q :=
+  fun _ _ _ _ _ _ ⟨b, hp⟩ e₁ e₂ => h b _ _ _ _ _ _ hp e₁ e₂
+
 end VG.Proof.RsaPkcs1Enc.X86_64.Dec
