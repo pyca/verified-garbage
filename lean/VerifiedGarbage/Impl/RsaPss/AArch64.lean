@@ -382,8 +382,8 @@ three on the stack (and `pre`, `pre_len` after them for
 /-- The registers saved, and the arguments into their places; `sAny` is
 `any_salt_len`'s 32 bits, and `sSaltLen` is `salt_len`. -/
 def verifyPrologue : List Instr :=
-  save ++ [.str .x .x0 .x16 sN, mov .x23 .x1, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl,
-    .str .x .x4 .x16 sDig, .str .x .x5 .x16 sOut, .str .x .x7 .x16 sSaltLen, arg .x9 0,
+  save ++ [.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
+    .str .x .x5 .x16 sOut, .str .x .x7 .x16 sSaltLen, mov .x23 .x1, arg .x9 0,
     .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 1, arg .x9 2, .str .x .x9 .x16 sScrLen] ++ regsUp
 
 /-- `x12 :=` the expected salt length for the check, 0 if any. -/
