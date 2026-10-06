@@ -41,6 +41,10 @@ def oEM2 : Nat := 1104
 /-- `d ← n`. -/
 def mov (d n : Reg) : Instr := .addImm .x d n 0
 
+/-- `d ← n`'s low 32 bits (`mov wd, wn`): the hash function's number, a
+`u32` whose upper bits are unspecified. -/
+def movw (d n : Reg) : Instr := .addImm .w d n 0
+
 /-- Our caller's registers that we use, and our return address, and where
 they are kept. -/
 def saved : List (Reg × Nat) := [(.x19, 16), (.x20, 24), (.x21, 32), (.x22, 40), (.x30, 48)]
@@ -65,7 +69,7 @@ def copyArg (j i : Nat) : List Instr := [.ldrSp .x8 (frameBytes + 8 * j), .str .
 `x19`–`x22`; and the arguments of `vg_rsa_public_checked`: `EM₁`, `n`, `e`,
 `sig` and the working space, `n_len` as every length of the modulus. -/
 def pubArgs : List Instr :=
-  save ++ [mov .x19 .x1, mov .x20 .x4, mov .x21 .x5, mov .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
+  save ++ [mov .x19 .x1, movw .x20 .x4, mov .x21 .x5, mov .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
     [mov .x4 .x2, mov .x5 .x3, mov .x2 .x0, mov .x3 .x1, mov .x6 .x7, mov .x7 .x1, .addSp .x0 oEM1]
 
 /-- The arguments of `encode`: `EM₂`, `k`, `hash`, `digest` and `digest_len`. -/

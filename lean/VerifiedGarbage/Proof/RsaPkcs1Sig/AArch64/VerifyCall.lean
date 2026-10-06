@@ -29,7 +29,7 @@ structure Mid (K : Nat) (s t : State) : Prop where
   rd : t.rd = s.rd
   wr : t.wr = ⟨fb s, frameBytes⟩ :: s.wr
   x19 : t.gpr .x19 = s.gpr .x1
-  x20 : t.gpr .x20 = s.gpr .x4
+  x20 : t.gpr .x20 = ((s.gpr .x4).setWidth 32).setWidth 64
   x21 : t.gpr .x21 = s.gpr .x5
   x22 : t.gpr .x22 = s.gpr .x6
   hi : ∀ r ∈ [Reg.x23, .x24, .x25, .x26, .x27, .x28], t.gpr r = s.gpr r
@@ -58,9 +58,8 @@ theorem bytes_of_frame {K : Nat} {s : State} {m : Mem} (hf : Frame [kR K s, sR s
   · exact hk.symm
   · exact hs.symm
 
-theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCall s t)
-    (hsig : stackArg s 0 = s.gpr .x1) :
-    WP isa (.call c.name c.code) t (AfterCall c.stack s) := by
+theorem pubOk_of (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCall s t)
+    (hsig : stackArg s 0 = s.gpr .x1) : PubOk c.stack t := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hfb := fb_toNat hp
   have hkb := kb_toNat hp
@@ -79,7 +78,7 @@ theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCal
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEM1 frameBytes at *; omega
   have hkK : Region.Sub ⟨kb c.stack s, c.stack⟩ (kR c.stack s) := Region.sub_prefix (by unfold stk; omega)
   have ha16 : (⟨fb s, 16⟩ : Region) = ⟨kb c.stack s + BitVec.ofNat 64 c.stack, 16⟩ := by rw [fb_eq c.stack]
-  refine pubCall c ?hl ?hrd ?hwr ?hk ?h1 ?h7 ?he1 ?he2 ?hs ?hQ
+  refine ⟨?hl, ?hrd, ?hwr, ?hk, ?h1, ?h7, ?he1, ?he2, ?hs⟩
   case hl =>
     rw [ha.x0, ha.x2, ha.x4, ha.x6, ha.x1, ha.x3, ha.x5, ha.x7, ha.a0, ha.a1, ha.sp]
     exact {
@@ -108,13 +107,15 @@ theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCal
       wi := by have := hp.wg; rwa [hsig] at this
       ws := hp.ws }
   case hrd =>
-    rw [ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, hsp0, ha.rd, ha.wr]
+    simp only [pubRd]
+    rw [ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, ha.sp, ha.rd, ha.wr]
     have hm : ∀ r ∈ [nR s, eR s, dR s, gR s, aR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
       fun r hr => Covers.left (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx, hp.hrd]; exact hr)
     refine Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.cons ?_
       (Covers.right (Covers.one (in_frame0 _ _ (by decide))))))
     have := hm (gR s) (by simp); rwa [gR, hsig] at this
   case hwr =>
+    simp only [pubWr]
     rw [ha.x0, ha.x1, ha.a0, ha.a1, ha.wr]
     exact Covers.cons (Covers.one (in_frame _ _ (by unfold oEM1 frameBytes; omega)))
       (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx, hp.hwr]; simp)
@@ -124,8 +125,32 @@ theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCal
   case he1 => rw [ha.x5]; exact hp.e1
   case he2 => rw [ha.x5, ha.x3]; exact hp.e2
   case hs => rw [ha.x3, ha.a1]; unfold Spec.Rsa.scratchWords; exact hp.hs
+
+theorem call_ok (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCall s t)
+    (hsig : stackArg s 0 = s.gpr .x1) :
+    WP isa (.call c.name c.code) t (AfterCall c.stack s) := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  have hfb := fb_toNat hp
+  have hkb := kb_toNat hp
+  have hcl := c.le
+  have hfr : ∀ {d n : Nat}, d + n ≤ frameBytes → Region.Sub ⟨fb s + BitVec.ofNat 64 d, n⟩ (kR c.stack s) :=
+    fun h => frame_sub c.stack s h
+  have hbl : below (fb s) c.stack = ⟨kb c.stack s, c.stack⟩ := below_fb c.stack s
+  have hargs : (⟨fb s, 16⟩ : Region) = ⟨fb s + BitVec.ofNat 64 0, 16⟩ := by rw [BitVec.add_zero]
+  have hem : em1R s = ⟨kb c.stack s + BitVec.ofNat 64 (c.stack + oEM1), (s.gpr .x1).toNat⟩ := by
+    rw [em1R, off_fb c.stack]
+  have hsp0 : stackArgAddr t 0 = fb s := by rw [sa0, ha.sp]
+  have hfK : fb s - BitVec.ofNat 64 c.stack = kb c.stack s := by rw [fb_eq c.stack, BitVec.add_sub_cancel]
+  have hgK : (kR c.stack s).Disjoint ⟨s.gpr .x7, (s.gpr .x1).toNat⟩ := by have := hp.kg; rwa [gR, hsig] at this
+  have hgS : (⟨s.gpr .x7, (s.gpr .x1).toNat⟩ : Region).Disjoint (sR s) := by have := hp.gs; rwa [gR, hsig] at this
+  have hfb80 : (fb s + BitVec.ofNat 64 oEM1).toNat = (fb s).toNat + oEM1 := by
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEM1 frameBytes at *; omega
+  have hkK : Region.Sub ⟨kb c.stack s, c.stack⟩ (kR c.stack s) := Region.sub_prefix (by unfold stk; omega)
+  have ha16 : (⟨fb s, 16⟩ : Region) = ⟨kb c.stack s + BitVec.ofNat 64 c.stack, 16⟩ := by rw [fb_eq c.stack]
+  refine pubCall c (pubOk_of c hp ha hsig) ?hQ
   case hQ =>
     intro s' hrd' hwr' hsp' hf hpres hvs hpost
+    simp only [pubWr] at hf
     rw [ha.x0, ha.x1, ha.a0, ha.a1, ha.sp] at hf
     have hd := c.depth
     have hbs : Region.Sub (below (fb s) (16 * c.code.aarch64Depth)) (kR c.stack s) := fun a h =>

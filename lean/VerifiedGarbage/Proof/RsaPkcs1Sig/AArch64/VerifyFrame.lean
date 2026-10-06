@@ -14,7 +14,7 @@ namespace VG.Proof.RsaPkcs1Sig.AArch64.Ver
 
 open VG VG.AArch64 VG.Impl.RsaPkcs1Sig.AArch64.Verify
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_strx wp_nil)
-open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp wp_ldrSp wp_mov)
+open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp wp_ldrSp wp_mov wp_movw)
 
 /-! ## Addresses -/
 
@@ -88,7 +88,7 @@ structure AtCall (s t : State) : Prop where
   x6 : t.gpr .x6 = s.gpr .x7
   x7 : t.gpr .x7 = s.gpr .x1
   x19 : t.gpr .x19 = s.gpr .x1
-  x20 : t.gpr .x20 = s.gpr .x4
+  x20 : t.gpr .x20 = ((s.gpr .x4).setWidth 32).setWidth 64
   x21 : t.gpr .x21 = s.gpr .x5
   x22 : t.gpr .x22 = s.gpr .x6
   hi : ∀ r ∈ [Reg.x23, .x24, .x25, .x26, .x27, .x28], t.gpr r = s.gpr r
@@ -172,7 +172,7 @@ theorem pubArgs_ok {K : Nat} {s u : State} (hp : PreV K s) (hsp : u.sp = fb s) (
     have : p.1 ≠ .x16 ∧ p.1 ≠ .x8 := by revert p; decide
     rw [o₁.get p.1 (by simpa using this.1), hg _ this.2]
   simp only [List.nil_append, copyArg, List.cons_append]
-  refine wp_mov fun u₃ o₃ e₃ => wp_mov fun u₄ o₄ e₄ => wp_mov fun u₅ o₅ e₅ => wp_mov fun u₆ o₆ e₆ => ?_
+  refine wp_mov fun u₃ o₃ e₃ => wp_movw fun u₄ o₄ e₄ => wp_mov fun u₅ o₅ e₅ => wp_mov fun u₆ o₆ e₆ => ?_
   have O₆ : Only [.x19, .x20, .x21, .x22] u₂ u₆ := (o₃.trans (o₄.trans (o₅.trans o₆))).mono
   have sp₆ : u₆.sp = fb s := by rw [O₆.sp, hu₂]; show u₁.sp = _; rw [o₁.sp, hsp]
   have rd₆ : u₆.rd = s.rd := by rw [O₆.rd, hu₂]; show u₁.rd = _; rw [o₁.rd, hrd]

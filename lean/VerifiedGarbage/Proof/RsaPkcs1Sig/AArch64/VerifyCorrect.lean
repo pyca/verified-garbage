@@ -141,7 +141,7 @@ theorem afterPub_ok {K : Nat} {s t : State} (hp : PreV K s) (hsig : stackArg s 0
       rw [o₅.get .x8, o₄.get .x8, o₃.get .x8, o₂.get .x8, e₁, ha.sp]
     have x9 : u₅.gpr .x9 = s.gpr .x1 := by
       rw [o₅.get .x9, o₄.get .x9, o₃.get .x9, e₂, o₁.get .x19, ha.x19]
-    have x10 : u₅.gpr .x10 = s.gpr .x4 := by
+    have x10 : u₅.gpr .x10 = ((s.gpr .x4).setWidth 32).setWidth 64 := by
       rw [o₅.get .x10, o₄.get .x10, e₃, o₂.get .x20, o₁.get .x20, ha.x20]
     have x11 : u₅.gpr .x11 = s.gpr .x5 := by
       rw [o₅.get .x11, e₄, o₃.get .x21, o₂.get .x21, o₁.get .x21, ha.x21]
@@ -151,7 +151,7 @@ theorem afterPub_ok {K : Nat} {s t : State} (hp : PreV K s) (hsig : stackArg s 0
     have hdk : (dR s).Disjoint ⟨fb s + BitVec.ofNat 64 oEM2, (s.gpr .x1).toNat⟩ :=
       (hp.kd.sub_left (frame_sub K s (by unfold oEM2 frameBytes; omega))).symm
     have hpre : EPre u₅ ((s.gpr .x4).setWidth 32) (s.gpr .x1).toNat := {
-      x10 := by rw [x10]
+      x10 := by rw [x10]; simp
       hk := by rw [x9]
       kle := hk2
       buf := fun i hi => by
@@ -270,23 +270,27 @@ theorem verOut_len {s : State} (h : stackArg s 0 ≠ s.gpr .x1) : verOut s = fal
   rw [verOut, verifyId_true_iff, bytesAt_length, bytesAt_length] at hv
   exact h (BitVec.eq_of_toNat_eq hv.1)
 
+theorem lenCheck_ok {K : Nat} {s : State} (hp : PreV K s) :
+    WP isa (.block lenCheck) s fun t₁ => Only [.x8] s t₁ ∧ t₁.gpr .x8 = stackArg s 0 - s.gpr .x1 := by
+  refine VG.Proof.RsaPkcs1Sig.AArch64.wp_ldrSp (by decide) ?_ fun t₀ o₀ e₀ =>
+    VG.Proof.MlKem.AArch64.wp_sub fun t₁ o₁ e₁ => wp_nil ⟨(o₀.trans o₁).mono, ?_⟩
+  · have h := arg_in (s := s) (j := 0) (rs := s.rd ++ s.wr) hp (Covers.left (Covers.refl _)) (by decide)
+    simpa [stackArgAddr] using h
+  · rw [e₁, e₀, o₀.get .x1, BitVec.add_zero, ← sa0 s]; rfl
+
+theorem eval_len {s t : State} (e : t.gpr .x8 = stackArg s 0 - s.gpr .x1) :
+    isa.eval (.nonzero .x .x8) t = some (decide (stackArg s 0 ≠ s.gpr .x1)) := by
+  rw [eval_nonzero, e, ne_zero_iff, BitVec.toNat_sub]
+  have := (stackArg s 0).isLt; have := (s.gpr .x1).isLt
+  refine congrArg some (decide_eq_decide.mpr ⟨fun h e => ?_, fun h e => h ?_⟩)
+  · rw [e] at h; omega
+  · apply BitVec.eq_of_toNat_eq; omega
+
 theorem code_ok (c : PubChecked) {s : State} (hp : PreV c.stack s) :
     WP isa (code c.name c.code) s (Post s) := by
-  unfold code lenCheck
-  have blk : WP isa (.block [.ldrSp .x8 0, .sub .x .x8 .x8 .x1]) s fun t₁ => Only [.x8] s t₁ ∧
-      t₁.gpr .x8 = stackArg s 0 - s.gpr .x1 := by
-    refine VG.Proof.RsaPkcs1Sig.AArch64.wp_ldrSp (by decide) ?_ fun t₀ o₀ e₀ =>
-      VG.Proof.MlKem.AArch64.wp_sub fun t₁ o₁ e₁ => wp_nil ⟨(o₀.trans o₁).mono, ?_⟩
-    · have h := arg_in (s := s) (j := 0) (rs := s.rd ++ s.wr) hp (Covers.left (Covers.refl _)) (by decide)
-      simpa [stackArgAddr] using h
-    · rw [e₁, e₀, o₀.get .x1, BitVec.add_zero, ← sa0 s]; rfl
-  refine WP.seq (WP.mono blk fun t₁ ⟨o₁, e₁⟩ => ?_)
-  have hne : isa.eval (.nonzero .x .x8) t₁ = some (decide (stackArg s 0 ≠ s.gpr .x1)) := by
-    rw [eval_nonzero, e₁, ne_zero_iff, BitVec.toNat_sub]
-    have := (stackArg s 0).isLt; have := (s.gpr .x1).isLt
-    refine congrArg some (decide_eq_decide.mpr ⟨fun h e => ?_, fun h e => h ?_⟩)
-    · rw [e] at h; omega
-    · apply BitVec.eq_of_toNat_eq; omega
+  unfold code
+  refine WP.seq (WP.mono (lenCheck_ok hp) fun t₁ ⟨o₁, e₁⟩ => ?_)
+  have hne := eval_len e₁
   by_cases hsig : stackArg s 0 = s.gpr .x1
   · refine WP.ite false (by rw [hne]; simp [hsig]) (by simp) fun _ => ?_
     refine WP.alloc (by decide) (by rw [o₁.sp]; have := hp.sp1; unfold stk at this; omega) ?_

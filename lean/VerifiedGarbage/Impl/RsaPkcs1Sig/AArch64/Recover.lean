@@ -27,7 +27,7 @@ are kept in `x19`–`x22`.
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Recover
 
 open VG VG.AArch64
-open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov save restore copyArg cmpArgs)
+open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov movw save restore copyArg cmpArgs)
 
 /-- `sig_len` against `n_len`. -/
 def lenCheck : List Instr := [.ldrSp .x8 0, .sub .x .x8 .x8 .x3]
@@ -46,7 +46,7 @@ def zeroKept : Prog isa := .seq (.block [mov .x14 .x19, mov .x13 .x20]) zeroOut
 `x19`–`x22`; and the arguments of `vg_rsa_public_checked`: `EM₁`, `n`, `e`,
 `sig` and the working space, `n_len` as every length of the modulus. -/
 def pubArgs : List Instr :=
-  save ++ [mov .x19 .x0, mov .x20 .x1, mov .x21 .x3, mov .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
+  save ++ [mov .x19 .x0, mov .x20 .x1, mov .x21 .x3, movw .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
     [mov .x1 .x3, mov .x6 .x7, mov .x7 .x3, .addSp .x0 oEM1]
 
 /-- `x11 := EM₁ + k - out_len`, the hash value's place in `EM₁`. -/

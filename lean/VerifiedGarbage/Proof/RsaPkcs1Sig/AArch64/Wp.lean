@@ -37,6 +37,12 @@ theorem wp_mov {d n : Reg}
     WP isa (.block (.addImm .x d n 0 :: is)) s Q :=
   VG.Proof.MlKem.AArch64.wp_addImm (by decide) fun s' h e => k s' h (by rw [e]; exact BitVec.add_zero _)
 
+theorem wp_movw {d n : Reg}
+    (k : ∀ s', Only [d] s s' → s'.gpr d = ((s.gpr n).setWidth 32).setWidth 64 → WP isa (.block is) s' Q) :
+    WP isa (.block (.addImm .w d n 0 :: is)) s Q :=
+  VG.Proof.MlKem.AArch64.WP.cons (s' := s.write .w d ((s.gpr n).setWidth 32)) (by simp [exec, State.read])
+    (k _ (only_write _ _ _ _) (by simp [State.write]))
+
 end
 
 end VG.Proof.RsaPkcs1Sig.AArch64

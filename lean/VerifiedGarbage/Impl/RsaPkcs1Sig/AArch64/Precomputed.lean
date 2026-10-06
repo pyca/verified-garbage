@@ -16,7 +16,7 @@ is kept in `x23`, saved as `x19`–`x22` are.
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Precomputed
 
 open VG VG.AArch64
-open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov copyArg lenCheck ret0 encArgs tail)
+open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov movw copyArg lenCheck ret0 encArgs tail)
 
 /-- `vg_rsa_pkcs1_verify`'s registers, and `x23`. -/
 def saved : List (Reg × Nat) :=
@@ -29,7 +29,7 @@ def restore : List Instr := .addSp .x16 0 :: saved.map fun (r, d) => .ldr .x r .
 /-- `vg_rsa_pkcs1_verify`'s arguments of the call, with `pre` and
 `pre_len` for the modulus. -/
 def pubArgs : List Instr :=
-  save ++ [mov .x19 .x1, mov .x20 .x4, mov .x21 .x5, mov .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
+  save ++ [mov .x19 .x1, movw .x20 .x4, mov .x21 .x5, mov .x22 .x6] ++ copyArg 1 0 ++ copyArg 2 1 ++
     [mov .x4 .x2, mov .x5 .x3, .ldrSp .x2 (frameBytes + 24), .ldrSp .x3 (frameBytes + 32), mov .x6 .x7,
       mov .x7 .x1, .addSp .x0 oEM1]
 

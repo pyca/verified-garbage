@@ -28,7 +28,7 @@ the call; at `96`, our caller's `x19` and our return address (`saved`); at
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Sign
 
 open VG VG.AArch64
-open VG.Impl.RsaPkcs1Sig.AArch64.Verify (mov)
+open VG.Impl.RsaPkcs1Sig.AArch64.Verify (mov movw)
 open VG.Impl.RsaPkcs1Sig.AArch64.Recover (zeroOut)
 
 /-- The size of the frame. -/
@@ -46,7 +46,7 @@ def restore : List Instr := .addSp .x16 0 :: saved.map fun (r, d) => .ldr .x r .
 /-- The registers saved, `k` kept in `x19` and `out` in `x17`, and the
 arguments of `encode`: `EM`, `k`, `hash`, `digest` and `digest_len`. -/
 def encArgs : List Instr :=
-  save ++ [mov .x19 .x3, mov .x17 .x0, .addSp .x8 oEM, mov .x9 .x3, mov .x10 .x6, mov .x11 .x7,
+  save ++ [mov .x19 .x3, mov .x17 .x0, .addSp .x8 oEM, mov .x9 .x3, movw .x10 .x6, mov .x11 .x7,
     .ldrSp .x12 frameBytes]
 
 /-- Stack argument `j + 1` of the function (`p` … `scratch_len`) to the
