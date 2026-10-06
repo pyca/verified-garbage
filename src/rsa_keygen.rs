@@ -48,18 +48,26 @@
 //! memory the candidates and the key are computed in, counts the candidates
 //! and the generations, and compares the pairwise test's result with its
 //! message.
+//!
+//! On AArch64, so far, the module has the primes alone (`generate_prime`
+//! and `generate_prime_from`).
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa_keygen::{
-    vg_rsa_keygen_candidate, vg_rsa_keygen_candidate_adx, vg_rsa_keygen_key,
-};
+use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate_adx, vg_rsa_keygen_key};
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey, PublicKey};
+use crate::rsa::Backend;
+#[cfg(target_arch = "x86_64")]
+use crate::rsa::{PrivateKey, PublicKey};
 
 /// The shortest prime, in bits.
 pub const MIN_PRIME_BITS: usize = 256;
@@ -211,6 +219,7 @@ fn prime_from(
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_keygen_candidate,
         // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_keygen_candidate_adx,
     };
     let mut read = 0;
@@ -269,6 +278,7 @@ fn prime_from(
 /// more than half the modulus' bits, that `n = p q` has twice the primes'
 /// bits, and the key as BoringSSL's `RSA_check_key` does. It does not check
 /// that `p` and `q` are prime.
+#[cfg(target_arch = "x86_64")]
 pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<PrivateKey, Error> {
     let len = p.len();
     if !(MIN_PRIME_BITS / 8..=MAX_PRIME_BITS / 8).contains(&len) || !len.is_multiple_of(8) {
@@ -338,13 +348,16 @@ pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<Pri
 }
 
 /// The smallest modulus [`generate`] makes, in bits.
+#[cfg(target_arch = "x86_64")]
 pub const MIN_MODULUS_BITS: usize = 512;
 /// The largest modulus [`generate`] makes, in bits.
+#[cfg(target_arch = "x86_64")]
 pub const MAX_MODULUS_BITS: usize = 8192;
 
 /// The modulus' size in bits for the requested `bits`
 /// (`VG.Spec.RsaKeyGen.modulusBits`), and the public exponent without its
 /// leading zero bytes, if it is valid (`VG.Spec.RsaKeyGen.exponentValid`).
+#[cfg(target_arch = "x86_64")]
 fn params(bits: usize, public_exponent: &[u8]) -> Result<(usize, &[u8]), Error> {
     let e = crate::rsa::trim(public_exponent);
     let v = e.iter().fold(0u64, |v, &b| v << 8 | u64::from(b));
@@ -361,6 +374,7 @@ fn params(bits: usize, public_exponent: &[u8]) -> Result<(usize, &[u8]), Error> 
 /// The message representative of BoringSSL's pairwise consistency test
 /// (`VG.Spec.RsaKeyGen.pairwiseMessage`) for a `k`-byte modulus:
 /// EMSA-PKCS1-v1_5 of SHA-256 with a digest of 32 zero bytes.
+#[cfg(target_arch = "x86_64")]
 fn pairwise_message(k: usize) -> Vec<u8> {
     const PREFIX: [u8; 19] = [
         0x30, 0x31, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01,
@@ -380,6 +394,7 @@ fn pairwise_message(k: usize) -> Vec<u8> {
 /// (`VG.Spec.RsaKeyGen.pairwiseOk`): the message representative signed with
 /// the private key, by the private-key operation checked against `e`,
 /// verifies with the public key.
+#[cfg(target_arch = "x86_64")]
 fn pairwise_ok(key: &PrivateKey) -> bool {
     let em = pairwise_message(key.modulus_len());
     let mut s = vec![0u8; em.len()];
@@ -395,6 +410,7 @@ fn pairwise_ok(key: &PrivateKey) -> bool {
 /// valid exponent `e`, from `rand`, and the number of octets read: `p`, then
 /// `q`, each of `nlen / 2` bits, and the key from them, both primes again
 /// while `d` is too small.
+#[cfg(target_arch = "x86_64")]
 fn generate_once(nlen: usize, e: &[u8], rand: &[u8]) -> (Result<PrivateKey, Error>, usize) {
     let bits = nlen / 2;
     // The arguments are valid: `nlen / 2` is a multiple of 64 from 256 to
@@ -430,6 +446,7 @@ fn generate_once(nlen: usize, e: &[u8], rand: &[u8]) -> (Result<PrivateKey, Erro
 /// zero bytes), from the operating system's random number generator, as
 /// BoringSSL's `RSA_generate_key_ex` and then its pairwise consistency test
 /// make it (`VG.Spec.RsaKeyGen.generate`).
+#[cfg(target_arch = "x86_64")]
 pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error> {
     let (nlen, _) = params(bits, public_exponent)?;
     // Too few octets for a key, whose two primes of `nlen / 16` bytes take at
@@ -466,6 +483,7 @@ pub fn generate(bits: usize, public_exponent: &[u8]) -> Result<PrivateKey, Error
 /// [`Error::NotEnoughRandomness`] if they run out first. A generation that
 /// fails with too many rejected candidates starts again from where it
 /// stopped reading, up to four times in all.
+#[cfg(target_arch = "x86_64")]
 pub fn generate_from(
     bits: usize,
     public_exponent: &[u8],
@@ -588,6 +606,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn key_invalid() {
         let p = [0xffu8; 32];
@@ -614,6 +633,7 @@ mod tests {
     /// With `p = q`, `lcm(p - 1, q - 1) = p - 1`, so that `d < p`: too small,
     /// if `e` has an inverse (`p - 1` not a multiple of 3, for `e = 3`); or
     /// no key, if it has none (`p - 1` a multiple of 3).
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn key_refused() {
         let mut p = [0u8; 32];
@@ -631,6 +651,7 @@ mod tests {
     }
 
     /// Keys from primes the operating system's random octets make.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn keys() {
         for bits in [256, 512, 1024] {
@@ -645,6 +666,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn generate_invalid() {
         for bits in [0, 384, 511, 8192 + 1, 8192 + 128] {
@@ -668,6 +690,7 @@ mod tests {
 
     /// Keys from the operating system's random octets, of sizes rounded
     /// down to a multiple of 128 bits.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn generate_keys() {
         for (bits, e) in [(512, &[3][..]), (639, &[0, 0, 3]), (1024, &[1, 0, 1])] {
@@ -682,6 +705,7 @@ mod tests {
     /// Candidates from zeros are rejected for `e = 3` (see
     /// `too_many_iterations`): each generation fails after `8 · 256`
     /// candidates for `p`, and the next one reads on from there, four in all.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn generate_too_many_iterations() {
         let zeros = vec![0u8; 4 * 8 * 256 * 32];
@@ -711,26 +735,31 @@ mod tests {
     // liar for the composite, which therefore passes Miller–Rabin with it as
     // every witness. `p₁ = 0x7801a5f25ad69ed2e17d8e6adf6363`, and
     // `p₂ = 0x1999c5034690190f6755b17bcd41e2d9d55`.
+    #[cfg(target_arch = "x86_64")]
     const COMPOSITE: [u8; 32] = [
         0xc0, 0x03, 0xe8, 0xba, 0x68, 0x3b, 0x19, 0x2b, 0xbb, 0x22, 0xca, 0xde, 0x1e, 0x23, 0x63,
         0xa7, 0x7a, 0x7b, 0x22, 0x91, 0x73, 0x6d, 0x49, 0x7b, 0xbe, 0x4e, 0x00, 0xba, 0x8e, 0x86,
         0xb6, 0xdf,
     ];
+    #[cfg(target_arch = "x86_64")]
     const LIAR: [u8; 32] = [
         0xb3, 0xf9, 0xee, 0xa9, 0x5d, 0x1a, 0xc5, 0x0d, 0xf5, 0xdc, 0x94, 0x59, 0x6e, 0xad, 0x6d,
         0x84, 0x7c, 0x5a, 0x00, 0x11, 0xef, 0x55, 0x98, 0x40, 0x6a, 0x38, 0x6f, 0x97, 0x1a, 0x94,
         0x37, 0xda,
     ];
+    #[cfg(target_arch = "x86_64")]
     const SMALL_D_P: [u8; 32] = [
         0xc4, 0x0e, 0x4b, 0xd4, 0xaf, 0x21, 0x84, 0xf0, 0x07, 0x8b, 0x20, 0x1f, 0xd1, 0xc9, 0x38,
         0x03, 0x46, 0x9d, 0x7b, 0xbe, 0xdb, 0xa1, 0x62, 0x50, 0x52, 0x1a, 0x89, 0x7e, 0x85, 0x9d,
         0x6f, 0x21,
     ];
+    #[cfg(target_arch = "x86_64")]
     const SMALL_D_Q: [u8; 32] = [
         0xf5, 0x11, 0xde, 0xc9, 0xda, 0xe9, 0xe6, 0x2c, 0x09, 0x6d, 0xe8, 0x27, 0xc6, 0x3b, 0x86,
         0x04, 0x18, 0x44, 0xda, 0xae, 0x92, 0x89, 0xba, 0xe4, 0x66, 0xa1, 0x2b, 0xde, 0x27, 0x04,
         0xca, 0xe9,
     ];
+    #[cfg(target_arch = "x86_64")]
     const PRIME: [u8; 32] = [
         0xc1, 0x1b, 0x69, 0x5a, 0x2d, 0x55, 0x9f, 0x49, 0x3e, 0xc4, 0x37, 0x6f, 0xbd, 0x44, 0xcf,
         0x67, 0x9c, 0xb0, 0x64, 0x2f, 0xba, 0xc4, 0x04, 0x2d, 0x74, 0x28, 0x11, 0x24, 0x50, 0x82,
@@ -738,6 +767,7 @@ mod tests {
     ];
 
     /// The octets of a 256-bit candidate `c` and its 27 witnesses `w`.
+    #[cfg(target_arch = "x86_64")]
     fn candidate(c: &[u8; 32], w: &[u8; 32]) -> Vec<u8> {
         let mut v = c.to_vec();
         for _ in 0..27 {
@@ -747,9 +777,11 @@ mod tests {
     }
 
     /// A witness in the range for every candidate here.
+    #[cfg(target_arch = "x86_64")]
     const W: [u8; 32] = [2; 32];
 
     /// The primes with the small `d` are generated, refused, and replaced.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn generate_small_d() {
         let mut rand = candidate(&SMALL_D_P, &W);
@@ -774,6 +806,7 @@ mod tests {
     /// A composite `p` that passes Miller–Rabin gives a key that passes
     /// BoringSSL's `RSA_check_key`, which does not test primality, but
     /// fails the pairwise consistency test.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn generate_composite() {
         let mut rand = candidate(&COMPOSITE, &LIAR);
