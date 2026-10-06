@@ -49,7 +49,7 @@ theorem accA_pin {H : Hash} (hD : H.D < 1024) :
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = off S oLh ∧
       u'.gpr .x12 = off S (oEm + 1 + H.D) ∧ u'.gpr .x13 = off S oEm) ?_
     fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, off S oLh), (.x12, off S (oEm + 1 + H.D)), (.x13, off S oEm)]
-      hs (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> assumption)
+      hs (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, lay, sScr, h96, L.sp, hs, show oLh < 4096 by decide,
     show oEm + 1 + H.D < 4096 by unfold oEm; omega, show oEm < 4096 by decide]
 
@@ -75,7 +75,7 @@ theorem clearA_pin :
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = off S oBuf ∧
       u'.gpr .x12 = BitVec.ofNat 64 256) ?_
     fun u' ⟨hs, x11, x12⟩ => pin_list [(Reg.x11, off S oBuf), (.x12, BitVec.ofNat 64 256)] hs (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> assumption)
+      simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, lay, sScr, oBuf, h96, L.sp, hs]
   oaep_fin
 
@@ -93,7 +93,7 @@ theorem copyA_pin {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 *
       u'.gpr .x12 = off S oBuf ∧ u'.gpr .x13 = BitVec.ofNat 64 (k - (2 * H.D + 1))) ?_
     fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, off S (1 + 2 * H.D)), (.x12, off S oBuf),
       (.x13, BitVec.ofNat 64 (k - (2 * H.D + 1)))] hs (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> assumption)
+        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [tArgs, mov, scr, Mgf1.scr, lay, sScr, sK, oBuf, oEm, h96, h168, L.sp, hs, rk, Nat.zero_add,
     show 1 + 2 * H.D < 4096 by omega, show 2 * H.D + 1 < 4096 by omega,
     Offset.ofNat_sub_ofNat (show 2 * H.D + 1 ≤ k by omega), BitVec.or_self]
@@ -110,7 +110,7 @@ theorem shiftA_pin :
       u'.gpr .x14 = BitVec.ofNat 64 1 ∧ u'.gpr .x8 = BitVec.ofNat 64 10) ?_
     fun u' ⟨hs, x17, x14, x8⟩ => pin_list [(Reg.x17, off S oBuf), (.x14, BitVec.ofNat 64 1),
       (.x8, BitVec.ofNat 64 10)] hs (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> assumption)
+        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, lay, sScr, sIdx, oBuf, h96, h240, L.sp, hs]
   oaep_fin
 
@@ -129,7 +129,7 @@ theorem outA_pin {o : Addr} {k : Nat} (ho : W 19 = o) (hk : W 21 = BitVec.ofNat 
   refine WP.mono (Q := fun (u' : State) => u'.sp = u.sp ∧ u'.gpr .x11 = o ∧ u'.gpr .x12 = off S oBuf ∧
       u'.gpr .x13 = BitVec.ofNat 64 k) ?_
     fun u' ⟨hs, x11, x12, x13⟩ => pin_list [(Reg.x11, o), (.x12, off S oBuf), (.x13, BitVec.ofNat 64 k)] hs (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> assumption)
+        simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl | rfl) <;> with_reducible assumption)
   oaep_run [scr, Mgf1.scr, lay, sScr, sOut, sK, sOk, oBuf, h96, h152, h168, h248, L.sp, hs, ro, rk]
 
 include R in
