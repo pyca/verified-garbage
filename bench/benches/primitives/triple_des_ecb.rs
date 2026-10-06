@@ -1,4 +1,8 @@
 //! Triple DES ECB, including key expansion and in-place encryption/decryption.
+//!
+//! aws-lc-rs has Triple DES only behind its `legacy-des` feature, which needs
+//! bindgen (and libclang) on ARMv7, so there is nothing of its to compare
+//! with.
 
 use criterion::Criterion;
 

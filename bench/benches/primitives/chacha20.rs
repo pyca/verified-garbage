@@ -1,4 +1,8 @@
 //! ChaCha20.
+//!
+//! aws-lc-rs exposes ChaCha20 only inside its AEADs and QUIC header
+//! protection (one 5-byte mask), not as a stream cipher, so there is nothing
+//! of its to compare with.
 
 use std::hint::black_box;
 
