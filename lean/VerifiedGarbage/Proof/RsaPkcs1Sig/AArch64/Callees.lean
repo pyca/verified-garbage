@@ -1,13 +1,16 @@
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callee
 import VerifiedGarbage.Proof.Rsa.AArch64.PublicImpl
 import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
+import VerifiedGarbage.Proof.Rsa.AArch64.PrivVerified
 
 /-!
-# The RSA public operations as the signatures' callees, on AArch64
+# The RSA operations as the signatures' callees, on AArch64
 
-`vg_rsa_public_checked` (`pubChecked`) and each implementation of
+`vg_rsa_public_checked` (`pubChecked`), each implementation of
 `vg_rsa_public_precomputed_checked` (a variant of `RsaPublicPrecomputed`,
-`pdOf`) as `Callee`s. Their code makes no calls and has no frame, so they are
+`pdOf`) and `vg_rsa_private_checked` calling each implementation of
+`vg_rsa_private_crt` (a variant of `RsaPrivateCrt`, `privOf`) as `Callee`s.
+The public operations make no calls and have no frame, so they are
 `Verified` with no stack; the signatures reserve 16 bytes below their stack
 pointer at the call (`Callee.pos`), and a contract with more stack implies one
 with less (`pub_stack`, `pd_stack`).
@@ -77,6 +80,19 @@ def pdOf (v : PublicImpl) : PdChecked where
   stack := 16
   verified := (Verified.of_correct (k := pdChkContract) v.ok v.ct precomputedChecked_implies).of_implies pd_stack
   depth := by rw [v.depth]; decide
+  pos := by decide
+  le := by decide
+  suffix := v.suffix
+  features := v.features
+
+/-- `vg_rsa_private_checked` calling the implementation `v` of
+`vg_rsa_private_crt`, as `Generic/RsaPrivateCrt/AArch64/Rsa.lean` emits it. -/
+def privOf (v : CrtImpl) : PrivChecked where
+  name := privName v
+  code := privCode v
+  stack := stackBytes
+  verified := code_verified v
+  depth := by rw [privCode_depth]; decide
   pos := by decide
   le := by decide
   suffix := v.suffix

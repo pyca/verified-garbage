@@ -10,7 +10,7 @@ pub const USES: &[&str] = &["rsa_pkcs1_sig", "rsa"];
 /// measurements, and is given the hash value (OpenSSL through `EVP_PKEY_sign`,
 /// `EVP_PKEY_verify` and `EVP_PKEY_verify_recover` with PKCS #1 v1.5 padding
 /// and SHA-256 set, with its default blinding when signing).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -102,5 +102,5 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
