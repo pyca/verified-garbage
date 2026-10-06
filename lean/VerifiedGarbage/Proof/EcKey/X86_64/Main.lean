@@ -445,7 +445,7 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : Sta
       · exact f2 _ (by rw [hp.wr]; simp)
   have hb : sN.gpr .r8 = s₀.gpr .rdx := by rw [g, r8₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (hs := none) (Or.inl rfl) hpN.setup
-    (rest := .seq c.gMul (.seq c.pPow (.block [])))
+    (rest := .seq c.gMulK (.seq c.pPow (.block [])))
     (Q := St₂ c none sN (sN.gpr .r8)) fun _ S₁ => stage₂ hc hC hT hpN rfl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.

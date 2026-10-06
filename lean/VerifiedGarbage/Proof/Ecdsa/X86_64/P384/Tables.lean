@@ -18,7 +18,7 @@ open VG VG.X86_64
 open VG.Impl.Ecdsa.X86_64 (p384 CombData)
 
 /-- P-384's comb. -/
-abbrev p384d : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB"⟩
+abbrev p384d : CombData := ⟨7, Impl.P384.p384Comb7, Impl.P384.p384Comb7Start, "VG_P384_COMB", false⟩
 
 theorem p384_comb : p384.comb = some p384d := rfl
 

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -123,6 +124,9 @@ structure CombData where
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
   tsym : String
+  /-- Whether the comb adds Booth's digits by Jacobian mixed additions
+  (`TCombCfg.combJ`), else by the complete ones (`TCombCfg.comb`). -/
+  jac : Bool := false
 
 /-- A curve as the code has it: `n` words, its parameters, and the comb for
 `G`, if it has one (else `[k]G` is by the ladder). -/
@@ -215,6 +219,15 @@ def gMul (publicLookup : Bool := false) : Prog isa :=
   match c.comb with
   | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d) publicLookup)
   | none => ladder c.ladderCfg
+
+/-- `R = [k]G` for a secret `k`: as `gMul`, but by the comb with Booth's digits
+and Jacobian mixed additions (`TCombCfg.combJ`) for a curve whose comb has
+them (`jac`). -/
+def gMulK : Prog isa :=
+  match c.comb with
+  | some d => if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.combJ (c.combCfg d))
+      else c.gMul
+  | none => c.gMul
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 /-- The power mod `n` from the top bit of `n - 2` (its `bitLen` bits), not of its
@@ -345,7 +358,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gMul <|
+  .seq c.gMulK <|
   .seq c.pPow <|
   .seq c.middle <|
   .seq c.nPow c.scalar
