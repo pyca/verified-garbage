@@ -60,12 +60,13 @@ theorem Step.blk {F S : Addr} (ws : List Region) {t t' : State} (hrd : t'.rd = t
 macro "cs_rfl" : term => `(preserved_cases (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
   (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl))
 
-/-- Closes what remains of a block's run: facts reduced to `True`, closed
-equalities, and the callee-saved registers. -/
-macro "oaep_fin" : tactic => `(tactic| (and_intros <;> first | trivial | exact cs_rfl | decide))
-
 /-- `Step` of a block that keeps memory and writes no callee-saved register. -/
 macro "blk_step" : term => `(Step.blk _ rfl rfl rfl rfl cs_rfl rfl)
+
+/-- Closes what remains of a block's run: facts reduced to `True`, `Step`,
+closed equalities, and the callee-saved registers. -/
+macro "oaep_fin" : tactic =>
+  `(tactic| (and_intros <;> first | trivial | exact blk_step | exact cs_rfl | decide))
 
 /-- A byte store in our working space keeps `Step`'s frame. -/
 theorem frame_wb {F S : Addr} {ws : List Region} {m m' : Mem}
