@@ -12,23 +12,25 @@ Table `j` holds `[k]([256^j]B)` for `k ≤ 8`, so, from `[G]B`, the odd digits
 `d_{2j+1}` are added first, one from each table, as the entry `|d|` or its
 negation; four doublings multiply their sum by 16, and `[G]B` is added again;
 then the even digits `d_{2j}` are added from the same tables. That is 65
-additions of cached points and four doublings.
+additions of affine cached points and four doublings.
 
-The digit is secret: each table entry is selected in constant time, every
-candidate's words masked by a word that is all ones exactly for the digit's
-magnitude (`combMask`, at byte 1024), and the entry negated, or not, with
-the mask of the digit's sign (at byte 1152) by exchanging `Y - X` and `Y + X`
-and choosing between `2dT` and its negation. The loop's counter `rbx` and the
-table index `rdx` are public.
+The digit is secret: the tables are in the static `combSym` (`combWords`),
+and the entry of table `j` for the digit's magnitude is selected in constant
+time, every entry of the table loaded, 16 bytes at a time, at an address that
+depends only on `j`, and kept (`pand`, `por`) under a mask that is all ones
+exactly for the magnitude (in both quadwords of `xmm15`); a zero magnitude
+selects zeros, which become the identity's `[1, 1, 0]`. The entry is negated,
+or not, with the mask of the digit's sign (at byte 1152) by exchanging `Y - X`
+and `Y + X` and choosing between `2dT` and its negation. The entries are
+affine (`Z = 1`), so an addition multiplies by `2Z = 2` with an addition
+(`pointAddAffine`). The loop's counter `rbx` and the table index `rdx` are
+public.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
 open VG.Impl.X25519.X86_64 (sc zero4 store4)
-
-/-- Byte of the scratch holding the nine candidates' masks. -/
-def combMasks : Nat := 1024
 
 /-- Byte of the scratch holding the mask of the digit's sign. -/
 def combSignMask : Nat := 1152
@@ -43,54 +45,62 @@ def combDigit : List Instr :=
     .alu .add .rax (.reg .rax), combBit .rdx 1, .alu .add .rax (.reg .rdx),
     .alu .add .rax (.reg .rax), combBit .rdx 0, .alu .add .rax (.reg .rdx)]
 
-/-- The mask of candidate `k`: all ones if `rax = k`, else zero (`rax ⊕ k - 1` borrows
-exactly when `rax = k`). -/
-def combMask (k : Nat) : List Instr :=
-  [.mov .rdx (.reg .rax), .alu .xor .rdx (.imm (BitVec.ofNat 32 k)), .alu .sub .rdx (.imm 1),
-    .alu .sbb .rdx (.reg .rdx), .store (sc (combMasks + 8 * k)) .rdx]
-
-def combMaskAll : List Instr := (List.range 9).flatMap combMask
-
 /-- From the nibble `n` in `rax`: the sign's mask (all ones if `n < 8`, from the borrow of
 `n - 8`) to byte `combSignMask`, and `|n - 8|` into `rax`. -/
 def combSign : List Instr :=
   [.alu .sub .rax (.imm 8), .alu .sbb .rdx (.reg .rdx), .store (sc combSignMask) .rdx,
     .alu .xor .rax (.reg .rdx), .alu .sub .rax (.reg .rdx)]
 
-/-- Word `w` of a field element. -/
-def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
+/-! ## The selection, from the tables in the static `combSym` -/
 
-/-- The register accumulating word `w`. -/
-def wordReg (w : Nat) : Reg := [Reg.r8, .r9, .r10, .r11].getD w .r8
+/-- The accumulators of the selection: `xmm0`–`xmm5`, sixteen bytes of the entry each. -/
+def combAcc (c : Nat) : XReg := [XReg.xmm0, .xmm1, .xmm2, .xmm3, .xmm4, .xmm5].getD c .xmm0
 
-/-- Word `w` of candidate `k`'s value `v`, masked, into its register. -/
-def selectWord (v : Spec.X25519.Fe) (k w : Nat) : List Instr :=
-  [.movImm64 .rcx (feWord v w), .alu .and .rcx (.mem (sc (combMasks + 8 * k))),
-    .alu .or (wordReg w) (.reg .rcx)]
+/-- `[rdx + d]`: byte `d` of the table at `rdx`. -/
+def combTblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
 
-/-- The field element `vs[k]` for the digit `k` to byte `dst`. -/
-def selectField (vs : List Spec.X25519.Fe) (dst : Nat) : List Instr :=
-  zero4 ++ (List.range 9).flatMap (fun k => (List.range 4).flatMap fun w =>
-    selectWord (vs.getD k 0) k w) ++ store4 dst
+/-- `rcx` all ones if `r8 = v`, else zero (`v < 2^31`). -/
+def combEqMask (v : Nat) : List Instr :=
+  [.mov32 .rcx (.imm (BitVec.ofNat 32 v)), .alu .xor .rcx (.reg .r8), .alu .cmp .rcx (.imm 1),
+    .alu .sbb .rcx (.reg .rcx)]
 
-/-- Entry `rax` of table `j` to slots 4–7. -/
-def combSelect (j : Nat) : List Instr :=
-  let entries := (List.range 9).map (combCached j)
-  selectField (entries.map (·.X)) (offset 4) ++ selectField (entries.map (·.Y)) (offset 5) ++
-    selectField (entries.map (·.Z)) (offset 6) ++ selectField (entries.map (·.T)) (offset 7)
+/-- Entry `m` (from 1) of the table at `rdx`, its six 16-byte pieces kept in the
+accumulators under the mask of `r8 = m`. -/
+def combSelEntry (m : Nat) : List Instr :=
+  combEqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
+  (List.range 6).flatMap fun c =>
+    [.movdquLoad .xmm14 (combTblAt (combEntryBytes * (m - 1) + 16 * c)),
+      .xop (.bin .pand .xmm14 .xmm15), .xop (.bin .por (combAcc c) .xmm14)]
 
-/-- The cached point in slots 4–7 negated if the sign's mask is all ones:
-`[Y - X, Y + X, 2dT, 2Z]` becomes `[Y + X, Y - X, -2dT, 2Z]`, by exchanging slots 4
+/-- `rdx` = the address of table `rdx = j`, the static's plus `j` tables, through `rax` and
+`rcx`. -/
+def combSelSetup : List Instr :=
+  [.mov .rax (.reg .rdx), .mov32 .rcx (.imm (BitVec.ofNat 32 combTblBytes)), .mul .rcx,
+    .leaSym .rdx combSym, .alu .add .rdx (.reg .rax)]
+
+/-- The entry of the table at `rdx` for the magnitude `r8` to slots 4–6: the accumulators
+cleared, every entry kept under its mask, and stored (zero for a zero magnitude). -/
+def combSelPass : List Instr :=
+  (List.range 6).map (fun c => .xop (.bin .pxor (combAcc c) (combAcc c))) ++
+  (List.range 8).flatMap (fun m => combSelEntry (m + 1)) ++
+  (List.range 6).map fun c => .movdquStore (sc (offset 4 + 16 * c)) (combAcc c)
+
+/-- For a zero magnitude `r8`, the identity's `Y - X = Y + X = 1` (the low words of slots 4
+and 5 or'd with 1), through `rax` and `rcx`. -/
+def combSelOne : List Instr :=
+  [.mov .rcx (.reg .r8), .alu .cmp .rcx (.imm 1), .alu .sbb .rcx (.reg .rcx), .alu .and .rcx (.imm 1),
+    .mov .rax (.mem (sc (offset 4))), .alu .or .rax (.reg .rcx), .store (sc (offset 4)) .rax,
+    .mov .rax (.mem (sc (offset 5))), .alu .or .rax (.reg .rcx), .store (sc (offset 5)) .rax]
+
+/-- Entry `r8` of table `rdx` (`combCached`, without its `2Z`) to slots 4–6. -/
+def combSelect : List Instr := combSelSetup ++ combSelPass ++ combSelOne
+
+/-- The cached point in slots 4–6 negated if the sign's mask is all ones:
+`[Y - X, Y + X, 2dT]` becomes `[Y + X, Y - X, -2dT]`, by exchanging slots 4
 and 5, and slots 6 and 8 (`-2dT`), under the mask in `rcx`. -/
 def combNeg (fld : Arith) : List Instr :=
   fieldCode fld [.const 9 0, .sub 8 9 6] ++ [.mov .rcx (.mem (sc combSignMask))] ++
     swapFields [(4, 5), (6, 8)]
-
-/-- The selection from table `rdx`, for the table indices listed. -/
-def combSelectFrom : List Nat → Prog isa
-  | [] => .block []
-  | j :: js => .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 j))])
-      (.ite .e (.block (combSelect j)) (combSelectFrom js))
 
 /-- `rcx` = the bit index of digit `2 rbx + 1` (odd digits, `rbx < 32`) or `2 (rbx - 32)`. -/
 def combIndex : Prog isa :=
@@ -100,8 +110,8 @@ def combIndex : Prog isa :=
 
 /-- `[G]B` added to slots 0–3. -/
 def combAddG (fld : Arith) : List Instr :=
-  fieldCode fld [.const 4 combGCached.X, .const 5 combGCached.Y, .const 6 combGCached.Z,
-    .const 7 combGCached.T] ++ pointAddCached fld
+  fieldCode fld [.const 4 combGCached.X, .const 5 combGCached.Y, .const 6 combGCached.Z] ++
+    pointAddAffine fld
 
 /-- Step `rbx`: before the even digits, the four doublings and `[G]B`; then the digit's entry
 of table `rbx mod 32`, negated for a negative digit, added. -/
@@ -109,9 +119,9 @@ def combStep (fld : Arith) : Prog isa :=
   .seq (.block [.alu .cmp .rbx (.imm 32)]) <|
   .seq (.ite .e (.seq (double4 fld) (.block (combAddG fld))) (.block [])) <|
   .seq combIndex <|
-  .seq (.block (combDigit ++ combSign ++ combMaskAll ++ [.mov .rdx (.reg .rbx), .alu .and .rdx (.imm 31)])) <|
-  .seq (combSelectFrom (List.range 32)) <|
-  .block (combNeg fld ++ pointAddCached fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)])
+  .seq (.block (combDigit ++ combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx),
+    .alu .and .rdx (.imm 31)] ++ combSelect)) <|
+  .block (combNeg fld ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)])
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward. -/
 def combMultiply (fld : Arith) : Prog isa :=
