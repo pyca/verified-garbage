@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.RsaOaep.X86_64
+import VerifiedGarbage.Proof.RsaOaep.Scan
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -152,9 +153,6 @@ theorem cmp_sbb (x : BitVec 64) :
       show x.toNat = 0; omega
     simp only [this, decide_false, h, ite_false]
     decide
-
-theorem xor_eq_zero (a b : BitVec 64) : (a ^^^ b = 0) ↔ a = b := by
-  rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.xor_eq_zero_iff]
 
 theorem eqM_of (a b : BitVec 64) : (if a ^^^ b = 0 then BitVec.allOnes 64 else 0) = eqM a b := by
   unfold eqM
