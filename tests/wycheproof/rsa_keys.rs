@@ -14,23 +14,17 @@
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
 ))]
-// Loading a key from `(n, e, d)` or `(n, e, d, p, q)` and checking it are on
-// x86-64 only for now.
+// Loading a key from `(n, e, d)` is on x86-64 only for now: on AArch64 the
+// keys without their primes are skipped.
 
-#[cfg(target_arch = "x86_64")]
 use std::collections::BTreeMap;
 
-#[cfg(target_arch = "x86_64")]
 use serde::Deserialize;
-#[cfg(target_arch = "x86_64")]
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-#[cfg(target_arch = "x86_64")]
 use super::harness::{self, Count, Hex, TestFile};
-#[cfg(target_arch = "x86_64")]
 use crate::require_vectors;
 
-#[cfg(target_arch = "x86_64")]
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Key {
@@ -45,25 +39,21 @@ struct Key {
     other_prime_infos: Option<serde::de::IgnoredAny>,
 }
 
-#[cfg(target_arch = "x86_64")]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Group {
     private_key: Option<Key>,
 }
 
-#[cfg(target_arch = "x86_64")]
 #[derive(Deserialize)]
 struct Case {}
 
-#[cfg(target_arch = "x86_64")]
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
 /// form, with a zero byte before a top bit that is set).
 fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
-#[cfg(target_arch = "x86_64")]
 /// `key`'s operation on `x`, which must succeed.
 fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
     let mut out = vec![0; x.len()];
@@ -71,7 +61,6 @@ fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
     out
 }
 
-#[cfg(target_arch = "x86_64")]
 /// Checks the key `k` of the file `name`. Returns whether it had its primes.
 fn check_key(name: &str, k: &Key) -> bool {
     let n = trim(&k.modulus.0);
@@ -83,9 +72,30 @@ fn check_key(name: &str, k: &Key) -> bool {
     x[len - 1] = 2;
     let mut y = n.to_vec();
     y[0] >>= 1;
-    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
+    let (p, q, dp, dq, qi) = (
+        &k.prime1,
+        &k.prime2,
+        &k.exponent1,
+        &k.exponent2,
+        &k.coefficient,
+    );
+    // The key from `(n, e, d)` where there is one, otherwise from its CRT
+    // values.
+    #[cfg(target_arch = "x86_64")]
+    let key = {
+        let key =
+            PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
+        assert!(key.check_key(), "{name}: from_components");
+        key
+    };
+    #[cfg(not(target_arch = "x86_64"))]
+    let key = {
+        let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
+            return false;
+        };
+        PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap()
+    };
     assert_eq!(key.modulus_len(), len, "{name}");
-    assert!(key.check_key(), "{name}: from_components");
     // RSAEP of each result gives back the input.
     let expect: Vec<Vec<u8>> = [&x, &y]
         .iter()
@@ -102,13 +112,7 @@ fn check_key(name: &str, k: &Key) -> bool {
         assert_eq!(private(key, &y), expect[1], "{name}: {how}");
         assert!(key.check_key(), "{name}: {how}");
     };
-    let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (
-        &k.prime1,
-        &k.prime2,
-        &k.exponent1,
-        &k.exponent2,
-        &k.coefficient,
-    ) else {
+    let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
         return false;
     };
     let key =
@@ -133,7 +137,6 @@ fn check_key(name: &str, k: &Key) -> bool {
     true
 }
 
-#[cfg(target_arch = "x86_64")]
 #[test]
 fn rsa_keys_from_components() {
     require_vectors!();
