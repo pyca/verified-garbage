@@ -43,7 +43,7 @@ pub const USES: &[&str] = &[
 /// `EVP_PKEY_sign` and `EVP_PKEY_verify` with PSS padding, the hash function
 /// as the hash and MGF1's hash, and a salt as long as the hash value, with
 /// its default blinding when signing).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -160,5 +160,5 @@ pub fn bench(c: &mut Criterion) {
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
