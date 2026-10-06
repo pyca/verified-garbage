@@ -189,16 +189,27 @@ def baseAddr : List Instr :=
   [.mov .rax (.reg .rbx), .movImm64 .rcx 128, .mul .rcx, .mov .rcx (.mem (sc 7960)),
     .alu .add .rax (.reg .rcx)]
 
-/-- Add the cached `-[d]B`, entry `rbx - 1` of the static, unless `rbx` is zero. -/
+/-- `pointAddCachedOps`, computing `T` only if `t`: the last addition at a position need not,
+as a doubling or the final comparison follows it, and neither reads `T`. -/
+def addCachedOps (t : Bool) : List FieldOp :=
+  [.sub 8 1 0, .mul 8 8 4, .add 9 1 0, .mul 9 9 5, .mul 10 3 6, .mul 11 2 7,
+    .sub 12 9 8, .sub 13 11 10, .add 14 11 10, .add 15 9 8,
+    .mul 0 12 13, .mul 1 14 15, .mul 2 13 14] ++
+    if t then [.mul 3 12 15] else []
+
+/-- Add the cached `[dec d](-B)`, entry `rbx - 1` of the static, unless `rbx` is zero, without
+`T`: it is a position's last addition. -/
 def addBase (fld : Arith) : Prog isa :=
   .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
-    pointAddCached fld)) (.block [])
+    fieldCode fld (addCachedOps false))) (.block [])
 
-/-- The digits at the counter's position added: `k`'s from the table at byte 5376, `S`'s from the
-static. -/
+/-- The digits at the counter's position added: `k`'s from the table at byte 5376, with `T` only
+if `S`'s is nonzero, then `S`'s from the static. -/
 def addsAt (fld : Arith) : Prog isa :=
-  .seq (.block (digitAt 0)) (.seq (addDigit 5376 (pointAddCached fld))
-    (.seq (.block (digitAt 1)) (addBase fld)))
+  .seq (.block (digitAt 1)) (.ite .ne
+    (.seq (.block (digitAt 0)) (.seq (addDigit 5376 (fieldCode fld (addCachedOps true)))
+      (.seq (.block (digitAt 1)) (addBase fld))))
+    (.seq (.block (digitAt 0)) (addDigit 5376 (fieldCode fld (addCachedOps false)))))
 
 /-- One doubling, computing `T` only if a digit at the counter's position will read it. -/
 def dblAt (fld : Arith) : Prog isa :=
