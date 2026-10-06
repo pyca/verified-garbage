@@ -29,7 +29,7 @@ the stack. `call_ok` runs a call of verified code in such a state.
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (combSym combWords)
+open VG.Impl.Ed25519.X86_64 (combSym combWords combWordCount)
 open VG.Proof.Ed25519.X86_64 (combRegion CombHeld)
 
 /-- The buffers, the lowest byte of the stack used (`rsp - 72` on entry), and the comb's
@@ -75,7 +75,7 @@ structure Ok : Prop where
   tbc : L.TBL.Disjoint L.SCR
   tbk : L.TBL.Disjoint L.STK
   tbr : L.TBL.Disjoint L.RET
-  nt : L.T.toNat + 8 * 3072 ≤ 2 ^ 64
+  nt : L.T.toNat + 8 * combWordCount ≤ 2 ^ 64
 
 end Lay
 
@@ -167,7 +167,7 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 64) 64 = L.out
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
   sym : t.syms combSym = L.T
-  held : ∀ i < 3072, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
+  held : ∀ i < combWordCount, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 /-- A call of verified code (see `WP.call`), which nests calls at most once
 more and is given regions within `seed`, the frame, `out` and `scratch` to

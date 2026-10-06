@@ -235,21 +235,21 @@ theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
     (gpr_ce _ _ _ (by decide)).trans ha.2.2⟩
 
 /-- The tables, as on entry, on entry to a call from the frame. -/
-theorem ce_tbl (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < 3072) :
+theorem ce_tbl (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < Impl.Ed25519.X86_64.combWordCount) :
     t.callEntry.mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   rw [← hc.held i hi]
   refine Mem.readW_congr fun b hb => ?_
   have e : L.T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b = L.TBL.base + BitVec.ofNat 64 (8 * i + b) := by
     rw [Offset.add_add]
   rw [e, ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tbk.sub_right (Offset.sub_base _ (by omega))).symm)
-    (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)]
+    (by show 8 * Impl.Ed25519.X86_64.combWordCount ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * Impl.Ed25519.X86_64.combWordCount; simp only [Impl.Ed25519.X86_64.combWordCount] at hi ⊢; omega)]
   exact Frame.bytes (R := L.TBL) hc.frame (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact hL.tbo
     · exact hL.tbc
-    · exact hL.tbk) (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)
+    · exact hL.tbk) (by show 8 * Impl.Ed25519.X86_64.combWordCount ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * Impl.Ed25519.X86_64.combWordCount; simp only [Impl.Ed25519.X86_64.combWordCount] at hi ⊢; omega)
 
 theorem base_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     Proof.Ed25519.X86_64.scalarBaseLocal.pre (t.callEntry.withRegions (baseRd L) (baseWr L)) := by

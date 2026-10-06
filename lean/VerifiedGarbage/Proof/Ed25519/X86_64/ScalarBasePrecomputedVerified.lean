@@ -22,11 +22,12 @@ theorem combConsts_eq : combConsts = [(combSym, combWords)] := rfl
 in a definitional check would evaluate the tables). -/
 @[irreducible] def combSatMem : Mem := constMem 0x100000 combWords
 
-theorem combSatMem_held : ∀ i < 3072,
+theorem combSatMem_held : ∀ i < combWordCount,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
   unfold combSatMem
   intro i hi
-  exact constMem_held _ _ (by rw [combWords_length]; omega) i (by rw [combWords_length]; exact hi)
+  exact constMem_held _ _ (by rw [combWords_length]; simp only [combWordCount]; omega) i
+    (by rw [combWords_length]; exact hi)
 
 /-- A state satisfying the precondition. -/
 def baseSatStateT : State where
@@ -37,13 +38,13 @@ def baseSatStateT : State where
   sf := none
   of := none
   mem := combSatMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 39936⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
   syms _ := 0x100000
 
 /-- The shared contract's precondition, from its facts. -/
 theorem scalarBase_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 24576⟩])
+    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 39936⟩])
     (hw : s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩])
     (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩)
     (h2 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩)

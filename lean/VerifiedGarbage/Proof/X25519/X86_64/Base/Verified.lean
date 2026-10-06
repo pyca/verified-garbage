@@ -28,7 +28,7 @@ theorem x25519Base_ok [DivstepInv] (s : State) (hs : baseLocal.pre s) :
 
 /-- The shared contract's precondition, from its facts. -/
 theorem base_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 24576⟩])
+    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 39936⟩])
     (hw : s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩])
     (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩)
     (h2 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩)

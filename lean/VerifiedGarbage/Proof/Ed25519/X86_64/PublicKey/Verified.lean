@@ -301,7 +301,7 @@ theorem publicKey_ct (v : Compress) :
 
 /-- The shared contract's precondition, from its facts. -/
 theorem pk_spec_pre {s : State} (h72 : 72 ≤ (s.gpr .rsp).toNat)
-    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 24576⟩])
+    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 39936⟩])
     (hw : s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩])
     (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩)
     (h2 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩)
