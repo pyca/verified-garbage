@@ -12,7 +12,7 @@ frame its slots and `EM`.
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## The arguments -/
 
@@ -77,7 +77,7 @@ theorem pub_pre {s t : State} (hp : EPre s) (h : PreCall s t) (hdi : t.gpr .rdi 
     pubChkK.pre (t.callEntry.withRegions (pubRd s) (pubWr s)) := by
   have e0 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = off (fb s) oEM := by
     rw [stackArg_entry h.rsp _ _ (by decide)]
-    have := h.slots.a0; simp only [Bignum.X86_64.word, off_zero, Nat.mul_zero]; exact this
+    have := h.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
   have e1 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 1 = s.gpr .rcx := by
     rw [stackArg_entry h.rsp _ _ (by decide)]; exact h.slots.a1
   have e2 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 2 = stackArg s 4 := by
@@ -230,7 +230,7 @@ theorem pub_call (v : PubImpl) {s t : State} (hp : EPre s) (h : PreCall s t) (hd
       rw [List.mem_singleton.mp hr]; exact .inl (ret_sub s)
   have hE0 : stackArg (t.callEntry.withRegions (pubRd s) (pubWr s)) 0 = off (fb s) oEM := by
     rw [stackArg_entry h.rsp _ _ (by decide)]
-    have := h.slots.a0; simp only [Bignum.X86_64.word, off_zero, Nat.mul_zero]; exact this
+    have := h.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
   have hem : Spec.Rsa.bytesAt t.callEntry.mem (off (fb s) oEM) (s.gpr .rcx).toNat =
       Spec.RsaPkcs1Enc.encode (msgB s) (psB s) := by
     rw [← h.em]
@@ -251,7 +251,7 @@ theorem pub_call (v : PubImpl) {s t : State} (hp : EPre s) (h : PreCall s t) (hd
   have hkeep : ∀ {d : Nat}, d + 8 ≤ oEM → word s'.mem (fb s) d = word t.mem (fb s) d := fun hd =>
     hf.readW (Region.contains_self _ _) (slot_apart hp (by omega)) (by decide)
   have hkeep0 : s'.mem.readW (fb s) 64 = t.mem.readW (fb s) 64 := by
-    have := hkeep (d := 0) (by decide); simp only [Bignum.X86_64.word, off_zero] at this; exact this
+    have := hkeep (d := 0) (by decide); simp only [Bignum.word, off_zero] at this; exact this
   refine ⟨⟨(hcs .rsp (by decide)).trans h.rsp, hrd.trans h.rd, hwr.trans h.wr,
     frame_call (frame_of_outside h.out) hf fun r hr => ?_,
     ⟨(hkeep (by decide)).trans h.slots.sOut, (hkeep (by decide)).trans h.slots.sN,

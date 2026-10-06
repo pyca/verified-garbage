@@ -59,11 +59,6 @@ theorem cmpStep_ok {s₀ : State} {B : Addr} {Z w eX eN : Nat}
     rw [pow64_succ]
     grind
 
-theorem lt_of_borrow {X N d P : Nat} {c : Bool} (hd : d < P)
-    (h : d + N = X + P * c.toNat) : c = decide (X < N) := by
-  cases c <;> simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero] at h <;>
-    (symm; simp only [decide_eq_true_eq, decide_eq_false_iff_not]) <;> omega
-
 /-- `rbp := 0`, then the loop: `rbp` the mask of `X < m` for the `w`-word
 numbers at `rbx` and `r10`. -/
 theorem cmpLoop_ok {s : State} {B : Addr} {Z w eX eN : Nat} (hs : Scr s B Z)

@@ -19,33 +19,6 @@ open VG.Proof.MlKem.X86_64
 
 variable {M : Mont}
 
-/-- What a bit of the exponentiation changes: also whether it started. -/
-def pBitRanges (w : Nat) : List (Nat × Nat) := (8 * sStarted, 8) :: bitRanges w
-
-/-- What `start` changes. -/
-def startRanges (w : Nat) : List (Nat × Nat) := [(slot w aY, 8 * (w + 2)), (8 * sStarted, 8)]
-
-theorem startRanges_sub (w : Nat) : ∀ r ∈ startRanges w, r ∈ pBitRanges w := by
-  simp [startRanges, pBitRanges, bitRanges]
-
-/-- `Y` after the prefix `E` of `e`: unused, and not started, while `E = 0`;
-started, and `x^E R` modulo `N`, after. -/
-def YSt (m : Mem) (B : Addr) (w N x E : Nat) : Prop :=
-  (E = 0 ∧ word m B (8 * sStarted) = 0) ∨
-    (E ≠ 0 ∧ word m B (8 * sStarted) = 1 ∧
-      ∃ Y, wv m B (slot w aY) w = Y ∧ Y < N ∧ Y % N = x ^ E * 2 ^ (64 * w) % N)
-
-theorem YSt.started {m : Mem} {B : Addr} {w N x E : Nat} (h : YSt m B w N x E) :
-    word m B (8 * sStarted) = if E = 0 then 0 else 1 := by
-  rcases h with ⟨h0, hs⟩ | ⟨h0, hs, -⟩
-  · rw [hs]; simp [h0]
-  · rw [hs]; simp [h0]
-
-theorem started_test (E : Nat) :
-    ((if E = 0 then (0 : BitVec 64) else 1) &&& (if E = 0 then (0 : BitVec 64) else 1) == 0) =
-      decide (E = 0) := by
-  by_cases h : E = 0 <;> simp [h]
-
 /-- Whether the exponentiation started, into ZF. -/
 theorem startedTest_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N x E : Nat}
     (hg : Good t B Z w minv) (hZ : slot w 8 ≤ Z) (hy : YSt t.mem B w N x E) :
@@ -105,25 +78,10 @@ theorem start_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X : Na
       (by simp [startRanges])).trans
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * sStarted) (by omega)) (by simp [startRanges]))
 
-/-- `YSt` in memory with the same `Y` and the same flag. -/
-theorem YSt.congr {m m' : Mem} {B : Addr} {w N x E : Nat} (h : YSt m B w N x E)
-    (hs : word m' B (8 * sStarted) = word m B (8 * sStarted)) (hy : wv m' B (slot w aY) w = wv m B (slot w aY) w) :
-    YSt m' B w N x E := by
-  rcases h with ⟨h0, h1⟩ | ⟨h0, h1, Y, h2, h3, h4⟩
-  · exact .inl ⟨h0, hs.trans h1⟩
-  · exact .inr ⟨h0, hs.trans h1, Y, hy.trans h2, h3, h4⟩
-
 theorem ExpCtx.mem {t t' : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X : Nat}
     (hc : ExpCtx t B Z w minv N X) (hm : t'.mem = t.mem) {regs : List Reg} (k : Keep regs t t')
     (hr : .rdi ∉ regs) : ExpCtx t' B Z w minv N X :=
   ⟨⟨hc.good.scr.congr k.2.2, (k.gpr hr).trans hc.good.rdi, hm ▸ hc.good.hdr⟩, hm ▸ hc.n, hm ▸ hc.inv, hm ▸ hc.x⟩
-
-theorem pBitRanges_hdr (w : Nat) {k : Nat} (hk : k < 32) (h1 : k ≠ sV) (h2 : k ≠ sBit) (h3 : k ≠ sStarted) :
-    ∀ r ∈ pBitRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · simp only [sStarted, sFn] at *; omega
-  · exact bitRanges_hdr w hk h1 h2 r hr
 
 /-- `Y := Y²` once started. -/
 theorem pSq_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x E : Nat}
@@ -312,9 +270,6 @@ theorem pBits_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x E 
 
 /-! ## The bytes -/
 
-/-- What the exponentiation changes: also the byte index. -/
-def pExpRanges (w : Nat) : List (Nat × Nat) := (8 * sI, 8) :: pBitRanges w
-
 /-- After `i` bytes of `e` (`L` bytes `eb` at `ep`) from `t₀`. -/
 structure PByteInv (t₀ : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N X x : Nat) (ep : Addr)
     (L : Nat) (eb : List Byte) (i : Nat) (t : State) : Prop where
@@ -325,25 +280,6 @@ structure PByteInv (t₀ : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N X
   len : word t.mem B (8 * sElen) = BitVec.ofNat 64 L
   frm : Frm B (pExpRanges w) t₀.mem t.mem
   keep : Keep mmRegs t₀ t
-
-theorem pExpRanges_le (w : Nat) : ∀ r ∈ pExpRanges w, r.1 + r.2 ≤ slot w 8 := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · have := hdr_lt_slot w 0 (i := sI) (by decide); have := slot_le (w := w) (show 0 < 8 by decide); omega
-  rcases List.mem_cons.mp hr with rfl | hr
-  · have := hdr_lt_slot w 0 (i := sStarted) (by decide); have := slot_le (w := w) (show 0 < 8 by decide)
-    omega
-  · exact expRanges_le w r (List.mem_cons_of_mem _ hr)
-
-theorem pExpRanges_hdr (w : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ sI) (h1 : k ≠ sV) (h2 : k ≠ sBit)
-    (h3 : k ≠ sStarted) : ∀ r ∈ pExpRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · simp only [sI, sFn] at *; omega
-  · exact pBitRanges_hdr w hk h1 h2 h3 r hr
-
-theorem pBitRanges_sub (w : Nat) : ∀ r ∈ pBitRanges w, r ∈ pExpRanges w :=
-  fun _ hr => List.mem_cons_of_mem _ hr
 
 /-- `byteHead`'s loads: `e` and the byte index. -/
 theorem pByteHead1_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x : Nat} {ep : Addr}
@@ -526,10 +462,6 @@ theorem pExpLoop_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x
   exact ⟨hI.ctx, by rw [← pre_len, hL]; exact hI.y, hI.frm, hI.keep⟩
 
 /-! ## The result -/
-
-/-- What `finish` changes. -/
-def finRanges (w : Nat) : List (Nat × Nat) :=
-  [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2))]
 
 /-- `finish`: `Y R⁻¹`, which is `x^E mod N`, or 1 if `E = 0`. -/
 theorem pFinish_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x E : Nat}

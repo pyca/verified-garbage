@@ -11,7 +11,7 @@ whatever `M` holds.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
@@ -23,7 +23,7 @@ theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
     (m.writeW base v).readW (off base d') 64 = m.readW (off base d') 64 := by
   have := word_wo m base v (d := 0) (d' := d') (.inl (by omega)) (by decide) hd'
-  simpa only [Bignum.X86_64.word, off, BitVec.add_zero] using this
+  simpa only [Bignum.word, off, BitVec.add_zero] using this
 
 theorem arg_wo0 {s : State} (m : Mem) (v : BitVec 64) {j : Nat} (hj : j < 14) :
     (m.writeW (fb s) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
@@ -73,7 +73,7 @@ theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
     · rw [List.mem_singleton.mp hr]
       have := frame_sub s (d := 0) (n := frameBytes) (by decide)
       exact .inl (by simpa only [off, BitVec.add_zero] using this)
-  all_goals rw [hm]; simp (disch := decide) only [Bignum.X86_64.word, word_wo, word_wo0]
+  all_goals rw [hm]; simp (disch := decide) only [Bignum.word, word_wo, word_wo0]
   · exact he.sOut
   · exact he.sN
   · exact he.sK

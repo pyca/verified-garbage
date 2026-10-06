@@ -21,7 +21,8 @@ starts from what the correctness proof says of both runs.
 namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
-open VG.Proof.Bignum.X86_64 (off Two)
+open VG.Proof.Bignum (off)
+open VG.Proof.Bignum.X86_64 (Two)
 
 /-- The taint at the start of a piece. -/
 def pT (n : Nat) (ks : List Nat) (rs : List Reg) : X86_64.Taint.T :=
@@ -130,7 +131,7 @@ theorem pub_agree {F S : Addr} {rest : List Region} {ws : List (Nat × BitVec 64
     refine word_byte ?_ (by omega)
     have e₁ := R₁.fr p.1 hk
     have e₂ := R₂.fr p.1 hk
-    simp only [Bignum.X86_64.word] at e₁ e₂
+    simp only [Bignum.word] at e₁ e₂
     rw [e₁, e₂, hw₁ p hp, hw₂ p hp]
 
 /-- A piece the analysis checks from `pT`, between states that show the same

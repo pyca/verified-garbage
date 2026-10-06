@@ -59,9 +59,6 @@ theorem cmp1_eq (n : Nat) (hn : n < 2 ^ 64) : (BitVec.ofNat 64 n - 1 == 0) = dec
   rw [show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl]
   exact ofNat_sub_beq hn (by decide)
 
-theorem div_pow_succ (T j : Nat) : T / 2 ^ j / 2 = T / 2 ^ (j + 1) := by
-  rw [Nat.div_div_eq_div_mul, Nat.pow_succ]
-
 /-- `topBit`: `rdx := 2^j`, `rcx := 64 - j` for `j` the top bit of `rax ≠ 0`. -/
 theorem topBit_ok {s : State} {T : Nat} (hT : s.gpr .rax = BitVec.ofNat 64 T) (hT0 : 0 < T)
     (hT1 : T < 2 ^ 64) :

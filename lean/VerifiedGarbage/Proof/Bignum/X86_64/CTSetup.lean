@@ -13,17 +13,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64
 
-/-- `-n⁻¹ mod 2⁶⁴` is unique. -/
-theorem minv_unique {n : Nat} {a b : BitVec 64} (hn : n % 2 = 1) (ha : (n * a.toNat + 1) % 2 ^ 64 = 0)
-    (hb : (n * b.toNat + 1) % 2 ^ 64 = 0) : a = b := by
-  have hc : Nat.Coprime (2 ^ 64) n := VG.Proof.Bignum.coprime_pow2 hn 64
-  have h : a.toNat * n % 2 ^ 64 = b.toNat * n % 2 ^ 64 := by
-    rw [Nat.mul_comm a.toNat, Nat.mul_comm b.toNat]
-    omega
-  have he := VG.Proof.Bignum.mont_cancel hc.symm h
-  apply BitVec.eq_of_toNat_eq
-  simpa only [Nat.mod_eq_of_lt a.isLt, Nat.mod_eq_of_lt b.isLt] using he
-
 /-! ## The loads -/
 
 /-- The public data of the setup: the working space, the length `k` of `m`,

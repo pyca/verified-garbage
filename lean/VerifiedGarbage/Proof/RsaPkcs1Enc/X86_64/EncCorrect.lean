@@ -12,7 +12,7 @@ of `vg_rsa_public_checked`.
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The state after the frame's pop, from the state `s₂` its body ends in. -/
 def freed (bytes : Nat) (s₂ : State) : State :=

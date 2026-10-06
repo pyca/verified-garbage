@@ -12,7 +12,7 @@ call use, `verStack`) on the registers and the stack (`verify_implies`).
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer `vg_rsa_pkcs1_verify` uses: its
 frame, and the return address of its call (whose callee uses none). -/

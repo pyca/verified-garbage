@@ -15,7 +15,7 @@ quotient (`divIter_done`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem slot_lt {w j K : Nat} (h : j < K) : slot w j + 8 * (w + 2) ≤ slot w K := by
   unfold slot
@@ -180,14 +180,14 @@ theorem divSub_ok {s : State} {B : Addr} {Z w : Nat} {iR iD iT : Nat} (hs : Scr 
         addr0 (b := off B (slot w iT)) rfl rfl, hb₁, cf_mask, hs₂.ld (show slot w iR + 8 * w + 8 ≤ Z by omega),
         hs₂.st (show slot w iT + 8 * w + 8 ≤ Z by omega), hR₂, ofNat_add_one, e12, sx0]
       refine ⟨_, rfl, _, rfl, ?_⟩
-      have := sbb_toNat (Bignum.X86_64.word s.mem B (slot w iR + 8 * w)) 0 b₁
+      have := sbb_toNat (Bignum.word s.mem B (slot w iR + 8 * w)) 0 b₁
       simpa using this) rfl) fun s₃ ⟨⟨b₂, hb₂, h12₃, r, m₃, hr⟩, k₃⟩ => ?_)
   have k03 := k02.trans k₃
   -- The value of `T` over `w + 1` words.
   have hT : wv s₃.mem B (slot w iT) (w + 1) + wv s.mem B (slot w iD) w =
       wv s.mem B (slot w iR) (w + 1) + 2 ^ (64 * (w + 1)) * b₂.toNat := by
     rw [m₃, wv_writeW_top _ _ _ _ _ (by omega), wv, pow64_succ]
-    simp only [Bignum.X86_64.word] at hr ⊢
+    simp only [Bignum.word] at hr ⊢
     grind
   have hb : b₂ = decide (wv s.mem B (slot w iR) (w + 1) < wv s.mem B (slot w iD) w) :=
     lt_of_borrow (wv_lt _ _ _ _) hT

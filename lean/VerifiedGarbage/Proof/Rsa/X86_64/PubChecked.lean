@@ -15,7 +15,7 @@ those functions with the checked postcondition (`pubChkContract`,
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Checked
-open VG.Proof.Bignum.X86_64
+open VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## The contracts on the registers -/
 

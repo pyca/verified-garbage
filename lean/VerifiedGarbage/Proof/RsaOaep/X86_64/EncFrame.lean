@@ -11,7 +11,7 @@ below `rsp` (`fb`), within the stack the function uses (`stkR`).
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 

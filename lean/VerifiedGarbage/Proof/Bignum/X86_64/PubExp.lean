@@ -55,20 +55,20 @@ theorem mmN_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
   exact ⟨hg', by rw [hA.wv_of_not_mem (by decide) hnm hn']; exact hn,
     by rw [hA.word0_of_not_mem (by decide) hnm hn' (by omega)]; exact hinv, hlt', hm, hA, k⟩
 
-theorem Frm.ep_wv {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m')
+theorem _root_.VG.Proof.Bignum.Frm.ep_wv {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m')
     (hn : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aY)
     (h4 : j ≠ aXm) : wv m' B (slot w j) w = wv m B (slot w j) w :=
   h.wv_eq (fun r hr => by have := expPhaseRanges_arr w hj h1 h2 h3 h4 r hr; omega)
     (by have := slot_le (w := w) hj; omega)
 
-theorem Frm.ep_hdr {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m') {i : Nat}
+theorem _root_.VG.Proof.Bignum.Frm.ep_hdr {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (expPhaseRanges w) m m') {i : Nat}
     (hi : i < 32) (h0 : i ≠ sI) (h1 : i ≠ sV) (h2 : i ≠ sBit) : word m' B (8 * i) = word m B (8 * i) :=
   h.word_eq (fun r hr => by
     rcases List.mem_cons.mp hr with rfl | hr
     · have := hdr_lt_slot w aXm hi; omega
     · exact expRanges_hdr w hi h0 h1 h2 r hr) (by omega)
 
-theorem Frm.ep_of_arrays {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
+theorem _root_.VG.Proof.Bignum.Frm.ep_of_arrays {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
     (hjs : ∀ j ∈ js, j = aAcc ∨ j = aTmp ∨ j = aY ∨ j = aXm) : Frm B (expPhaseRanges w) m m' :=
   Frm.of_arrays h fun j hj => by
     rcases hjs j hj with rfl | rfl | rfl | rfl <;> simp [expPhaseRanges, expRanges, bitRanges]

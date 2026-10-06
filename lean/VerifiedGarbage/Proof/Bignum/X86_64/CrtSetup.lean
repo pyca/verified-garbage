@@ -26,7 +26,7 @@ theorem SubCtx.mk' {t : State} {B : Addr} {Z o w wx : Nat} {minvN minv : BitVec 
 
 /-- What a load into an array of the workspace at `off B o` changes, at `B`:
 within its arrays. -/
-theorem Frm.of_load {B : Addr} {o wx j : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
+theorem _root_.VG.Proof.Bignum.Frm.of_load {B : Addr} {o wx j : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
     (h : Outside (off B o) (slot wx j) (8 * (wx + 2)) m m') (hj : j < 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
     (hr : (o + 256, slot wx 8 - 256) ∈ rs) : Frm B rs m m' := by
   have h1 := slot_le (w := wx) hj

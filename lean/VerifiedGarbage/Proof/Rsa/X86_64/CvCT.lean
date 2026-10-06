@@ -14,7 +14,7 @@ block that loads the pointer and the length (`loadTail_ct`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 open VG.Impl.Rsa.X86_64 (copyWords)
 
@@ -229,7 +229,7 @@ theorem decA_ct {j : Nat} (hj : j < 16) {hc : VG.Taint.Hint VG.X86_64.Taint.T}
 
 /-- `GA` with `inverse`'s start. -/
 def GI (p : CvP) (s : State) : Prop :=
-  GA p s ∧ Bignum.X86_64.word s.mem p.B (slot (wk p.k) aU + 8 * wk p.k) = 0 ∧
+  GA p s ∧ Bignum.word s.mem p.B (slot (wk p.k) aU + 8 * wk p.k) = 0 ∧
     wv s.mem p.B (slot (wk p.k) aV) (wk p.k) = wv s.mem p.B (slot (wk p.k) aP) (wk p.k) ∧
     wv s.mem p.B (slot (wk p.k) aX₁) (wk p.k) = 1 ∧ wv s.mem p.B (slot (wk p.k) aX₂) (wk p.k) = 0
 
@@ -264,8 +264,8 @@ theorem inverse_ct {hc : VG.Taint.Hint VG.X86_64.Taint.T}
 
 /-- The block before `loadBE`: the base of `[j]`, the pointer and the length. -/
 theorem loadBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j sPtr sLen len : Nat} {ptr : Addr}
-    (hP : sPtr < 32) (hL : sLen < 32) (hp : Bignum.X86_64.word s.mem B (8 * sPtr) = ptr)
-    (hl : Bignum.X86_64.word s.mem B (8 * sLen) = BitVec.ofNat 64 len) :
+    (hP : sPtr < 32) (hL : sLen < 32) (hp : Bignum.word s.mem B (8 * sPtr) = ptr)
+    (hl : Bignum.word s.mem B (8 * sLen) = BitVec.ofNat 64 len) :
     WP isa (.block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)), .mov .rcx (.mem (hdr sLen))] : List Instr)))
       s fun t => t.gpr .rbx = off B (slot w j) ∧ t.gpr .rsi = ptr ∧ t.gpr .rcx = BitVec.ofNat 64 len ∧
         t.gpr .rdi = B ∧ t.mem = s.mem ∧ Keep [.r12, .r9, .rbx, .rsi, .rcx] s t := by
@@ -294,8 +294,8 @@ def ioVal (B base ptr : Addr) (len : Nat) : Reg → BitVec 64
 length in the header slots `sPtr` and `sLen`. -/
 theorem loadTail_ct {j sPtr sLen : Nat} (hj : j < 16) (hP : sPtr < 32) (hL : sLen < 32) (ptr : CvP → Addr)
     (len : CvP → Nat)
-    (hA : ∀ p s, GA p s → Bignum.X86_64.word s.mem p.B (8 * sPtr) = ptr p ∧
-      Bignum.X86_64.word s.mem p.B (8 * sLen) = BitVec.ofNat 64 (len p) ∧
+    (hA : ∀ p s, GA p s → Bignum.word s.mem p.B (8 * sPtr) = ptr p ∧
+      Bignum.word s.mem p.B (8 * sLen) = BitVec.ofNat 64 (len p) ∧
       (∃ bs, Src s p.B p.Z (ptr p) bs ∧ bs.length = len p) ∧ 1 ≤ len p ∧ len p ≤ 8 * wk p.k)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.rdi]) (.block (ws ++ base j .rbx ++ ([.mov .rsi (.mem (hdr sPtr)),

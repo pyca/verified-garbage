@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The arguments in the header: the outputs' pointers, `n`'s pointer and
 length, `p`'s, `q`'s and `d`'s pointers and lengths, and the saved

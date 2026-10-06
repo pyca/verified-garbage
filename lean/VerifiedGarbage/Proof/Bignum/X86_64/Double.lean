@@ -13,17 +13,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- `adc`, as numbers. -/
-theorem adc_toNat (a b : BitVec 64) (c : Bool) :
-    (a + b + (BitVec.ofBool c).setWidth 64).toNat + 2 ^ 64 *
-      (decide (2 ^ 64 ≤ a.toNat + b.toNat + c.toNat)).toNat = a.toNat + b.toNat + c.toNat := by
-  have ha := a.isLt; have hb := b.isLt
-  have hc : ((BitVec.ofBool c).setWidth 64).toNat = c.toNat := by cases c <;> rfl
-  have hc1 := Bool.toNat_le c
-  rw [BitVec.toNat_add, BitVec.toNat_add, hc]
-  by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;> simp only [h, decide_true, decide_false,
-    Bool.toNat_true, Bool.toNat_false] <;> omega
-
 /-- After `j` words of `double`'s loop: `A_j + 2^(64 j) c = 2 O_j`. -/
 structure DblInv (s₀ : State) (B : Addr) (Z eA eo : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z

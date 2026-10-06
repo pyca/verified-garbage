@@ -237,7 +237,7 @@ theorem wv_low (m : Mem) (B : Addr) (d n : Nat) :
   rw [Nat.add_comm n 1, wv_add]; simp [wv]
 
 /-- The header, after changes above it. -/
-theorem Hdr.of_outside {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B w minv) {o n : Nat}
+theorem _root_.VG.Proof.Bignum.Hdr.of_outside {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B w minv) {o n : Nat}
     (h : Outside B o n m m') (ho : hdrBytes ≤ o) : Hdr m' B w minv := by
   have hh : ∀ i < 32, word m' B (8 * i) = word m B (8 * i) := fun i hi =>
     h.word (Or.inl (by have := hdr_lt_slot w 0 hi; unfold slot at this; omega)) (by omega)

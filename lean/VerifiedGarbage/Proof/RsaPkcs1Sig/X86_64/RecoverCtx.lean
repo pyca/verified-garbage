@@ -10,7 +10,7 @@ stack (`recover_implies`).
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- `vg_rsa_pkcs1_recover(out = rdi, out_len = rsi, n = rdx, n_len = rcx,
 e = r8, e_len = r9, hash = [rsp + 8] (32 bits), sig = [rsp + 16],

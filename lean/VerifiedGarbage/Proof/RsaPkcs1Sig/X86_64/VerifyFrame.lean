@@ -16,7 +16,7 @@ of `vg_rsa_public_checked` (`pubArgs_ok`).
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Ver
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Verify
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
 
 /-! ## Addresses in the frame -/
 

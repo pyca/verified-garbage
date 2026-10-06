@@ -161,9 +161,9 @@ theorem headI_ok {s : State} {B : Addr} {Z w op oq a : Nat} {minv mp mq mk : Bit
       rcases hr with rfl | rfl <;> simp only [sIfma, sFn] <;> omega) hlo hpq
       (by omega), ?_, ?_⟩, f, di, k⟩
   · rw [word_off, me, o2.word (.inl (by unfold sIfma sFn; omega)) (by unfold sIfma sFn; omega), ← hia]
-    exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+    exact VG.Proof.Bignum.word_writeW_self _ _ _ _
   · rw [word_off, me, ← hia]
-    exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+    exact VG.Proof.Bignum.word_writeW_self _ _ _ _
 
 /-- From one workspace (`rdi = off B o`, linked to `B`) to the one in `n`'s slot `sl`. -/
 theorem swapWs_ok {u : State} {B : Addr} {Z o o' sl : Nat} (hs : Scr u B Z) (hdi : u.gpr .rdi = off B o)
@@ -323,8 +323,8 @@ theorem vecI_ok {t : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : B
     have hl : InRegions (t.rd ++ t.wr) (off (off B oq) (8 * sIfma)) 8 := by
       rw [off_off]; exact hs.ld (by unfold sIfma sFn; omega)
     xrun [State.ea, hdr, hdi, hdrOff, hl, hm.qia]; and_intros; all_goals rfl) rfl) fun u ⟨⟨bx, me, mx⟩, k⟩ => ?_)
-  have hmP := VG.Proof.Bignum.X86_64.wv_lt t.mem (off B op) (slot 16 Public.aN) 16
-  have hmQ := VG.Proof.Bignum.X86_64.wv_lt t.mem (off B oq) (slot 16 Public.aN) 16
+  have hmP := VG.Proof.Bignum.wv_lt t.mem (off B op) (slot 16 Public.aN) 16
+  have hmQ := VG.Proof.Bignum.wv_lt t.mem (off B oq) (slot 16 Public.aN) 16
   rw [hm.pn, ← hwp] at hmP
   rw [hm.qn, ← hwp] at hmQ
   refine WP.mono (AmmSym.vecR_ok (M := two P Q) (K1 := two (2 ^ 32 * Yp % P) (2 ^ 32 * Yq % Q))
@@ -339,9 +339,9 @@ theorem vecI_ok {t : State} {B : Addr} {Z w op oq a wp : Nat} {minv mp mq mk : B
     (fun p hp => by
       rcases h01 p hp with rfl | rfl
       · show (P % 2 ^ 64 * mp.toNat + 1) % 2 ^ 64 = 0
-        rw [← hm.pn, VG.Proof.Bignum.X86_64.wv_mod64 _ _ _ (by decide)]; exact hm.pinv
+        rw [← hm.pn, VG.Proof.Bignum.wv_mod64 _ _ _ (by decide)]; exact hm.pinv
       · show (Q % 2 ^ 64 * mq.toNat + 1) % 2 ^ 64 = 0
-        rw [← hm.qn, VG.Proof.Bignum.X86_64.wv_mod64 _ _ _ (by decide)]; exact hm.qinv)
+        rw [← hm.qn, VG.Proof.Bignum.wv_mod64 _ _ _ (by decide)]; exact hm.qinv)
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hmP; exact hmQ])
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact hPo; exact hQo])
     (fun p hp => by rcases h01 p hp with rfl | rfl <;> [exact Nat.mod_lt _ (by omega); exact Nat.mod_lt _ (by omega)])

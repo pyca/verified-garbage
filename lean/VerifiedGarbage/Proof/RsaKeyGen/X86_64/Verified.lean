@@ -11,7 +11,7 @@ any Montgomery multiplication (`candidate_verified`).
 
 namespace VG.Proof.RsaKeyGen.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- `vg_rsa_keygen_candidate` with Montgomery multiplication `M`, given that
 its code never loads MXCSR (which the registration file evaluates). -/

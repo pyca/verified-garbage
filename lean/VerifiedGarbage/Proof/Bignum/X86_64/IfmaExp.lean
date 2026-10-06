@@ -13,7 +13,8 @@ becomes `x^(256 E + b) R`. After all of them `Y ≡ x^e R`, `e` the exponent
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off writeW_outside)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oTab oS oV oX oY oE mask52)
 
 /-- The first `i` bytes of prime `p`'s exponent, big-endian. -/
@@ -282,8 +283,8 @@ theorem byteIter_ok {t₀ t : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop}
       show _ = BitVec.ofNat 64 (bs p * 2 ^ 56)
       rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
       · rw [o₂.word (by simp only [oV, D]; omega) (by simp only [oV]; omega), m₁,
-          VG.Proof.Bignum.X86_64.word_writeW_self]
-      · rw [m₂, VG.Proof.Bignum.X86_64.word_writeW_self]
+          VG.Proof.Bignum.word_writeW_self]
+      · rw [m₂, VG.Proof.Bignum.word_writeW_self]
   refine WP.seq (WP.mono (winLoop_ok hbs hBu hsu hR i₀) fun t₃ w₃ => ?_)
   have r13₃ : t₃.gpr .r13 = BitVec.ofNat 64 i := by
     rw [w₃.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)

@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 
 namespace VG.Proof.RsaKeyGen.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 theorem xor_cancel_l (a b : BitVec 64) : a ^^^ (b ^^^ a) = b := by

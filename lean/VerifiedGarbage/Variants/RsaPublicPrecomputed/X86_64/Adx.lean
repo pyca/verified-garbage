@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 
 namespace VG.Variants.RsaPublicPrecomputed.X86_64.Adx
 
-open VG.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 def variant : PublicImpl where
   name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_adx"

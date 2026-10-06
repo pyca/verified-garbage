@@ -10,7 +10,7 @@ whether there is one as a mask (`rdx`) and where (`r10`) (`scanPart_step`).
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 
 /-- A mask: all ones or zero. -/
 def bmask (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0

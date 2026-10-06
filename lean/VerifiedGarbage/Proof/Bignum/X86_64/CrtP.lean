@@ -348,7 +348,7 @@ theorem pxR_bound {w o wx : Nat} (hlo : slot w 8 ≤ o) :
     or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega_arith
 
-theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
+theorem _root_.VG.Proof.Bignum.Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
     word m' B (8 * i) = word m B (8 * i) := hf.word_eq (fun r hr => by
   have hb := pxR_bound hlo r hr
@@ -370,12 +370,12 @@ theorem Frm.px_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w
   · exact Or.inl (by omega_arith)
   · exact Or.inl (by simp only at hb ⊢; omega_arith)) (by omega_arith)
 
-theorem Frm.px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
+theorem _root_.VG.Proof.Bignum.Frm.px_above {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) {d : Nat} (hd : o + slot wx 8 + tabBytes wx ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
     word m' B d = word m B d :=
   hf.word_eq (fun r hr => Or.inr (by have := pxR_bound hlo r hr; omega_arith)) hd'
 
-theorem Frm.px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
+theorem _root_.VG.Proof.Bignum.Frm.px_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (pRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)
     (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) (h4 : j ≠ Public.aX) : wv m' B (slot w j) w = wv m B (slot w j) w := by
   have := slot_le (w := w) hj

@@ -14,7 +14,8 @@ both kept by writes elsewhere (`Out2.word_at`, `Ar.of_out2`,
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oTab oS oV mask52)
 
 /-- The facts of both regions about their moduli. -/

@@ -11,7 +11,7 @@ A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Base
 
-open VG.X86_64 VG.Proof.Bignum.X86_64
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 def variant : Proof.Rsa.X86_64.CrtImpl where
   name := Spec.Rsa.privateCrtApi.name

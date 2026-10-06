@@ -11,7 +11,7 @@ address `scratch` and `d` from pointers and lengths that are public.
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 
 /-- Callee-saved registers but `rsp` as on entry. -/
 def CS (s t : State) : Prop := ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = s.gpr r

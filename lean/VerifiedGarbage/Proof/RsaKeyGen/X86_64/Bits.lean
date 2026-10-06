@@ -11,7 +11,7 @@ top word makes the number `RsaKeyGen.candidate` (`wv_candidate`).
 
 namespace VG.Proof.RsaKeyGen.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem testBit_wv (m : Mem) (p : Addr) (d : Nat) : ∀ n i, i < 64 * n →
     (wv m p d n).testBit i = (word m p (d + 8 * (i / 64))).toNat.testBit (i % 64)

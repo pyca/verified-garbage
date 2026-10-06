@@ -15,14 +15,15 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
 theorem clearEm_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) :
     WP isa clearEm u fun u' => Lay u' F S ∧ Keep [.rcx, .rax, .r8] u u' ∧ Rep u'.mem F S (clrV V oEm 1024) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax, .r8] (Q := fun v => v.gpr .rcx = off S oEm ∧ v.gpr .rax = 0 ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, h₃, hm⟩, hk⟩ => ?_)
   · xrun [clearEm, scr, Impl.Mgf1.X86_64.scr, lay, List.cons_append, List.nil_append, ea_sp, L.rsp,
@@ -57,7 +58,7 @@ theorem copySeed_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : N
     WP isa (copySeed H) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .rax, .r8] u u' ∧
       Rep u'.mem F S (cpV V (fun i => u.mem (p + BitVec.ofNat 64 i)) (oEm + (oEm + 1)) H.D) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine copyFrom_ok L R ?_ hD (by omega) (by unfold oEm oRsa; omega) hsrc hdis
   refine WP.mono (WP.keep [.rsi, .rcx, .r8] (Q := fun v => v.gpr .rsi = p ∧ v.gpr .rcx = off S oEm ∧
     v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
@@ -70,7 +71,7 @@ theorem copyLh_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
     WP isa (copyLh H) u fun u' => Lay u' F S ∧ Keep [.rsi, .rcx, .rax, .r8] u u' ∧
       Rep u'.mem F S (cpV V (fun i => V (oDig + i)) (oEm + (oEm + 1 + H.D)) H.D) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c1 : oDig = 3328 := rfl
   have c2 : oEm = 0 := rfl
   refine WP.mono (copyFrom_ok L R (p := off S oDig) (o := oEm) ?_ hD (by omega) (by unfold oRsa; omega)
@@ -100,7 +101,7 @@ theorem putMsg_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
       Rep u'.mem F S (cpV (upd V (k - mLen - 1) 1) (fun i => u.mem (p + BitVec.ofNat 64 i)) (k - mLen - 1 + 1) mLen)
         W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c2 : oEm = 0 := rfl
   have hst := L.sst8 (d := oEm + k - mLen - 1) (by unfold oEm oRsa; omega)
   have e0 : oEm + k - mLen - 1 = k - mLen - 1 := by unfold oEm; omega
@@ -176,7 +177,7 @@ theorem dbArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
     WP isa (.block (dbArgs H)) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
       Rep u'.mem F S V (mW W S (oEm + 1) H.D (oEm + 1 + H.D) (k - (H.D + 1))) := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have G' := L.geo
   have R1 := (((R.wf G' (k := 17) (by decide) (off S (oEm + 1 + H.D))).wf G' (k := 18) (by decide)
     (BitVec.ofNat 64 (k - (H.D + 1)))).wf G' (k := 15) (by decide) (off S (oEm + 1))).wf G' (k := 16) (by decide)
@@ -201,7 +202,7 @@ theorem seedArgs_ok {H : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : N
     WP isa (.block (seedArgs H)) u fun u' => Lay u' F S ∧ Keep [.rax, .rdx, .rcx, .r9] u u' ∧
       Rep u'.mem F S V (mW W S (oEm + 1 + H.D) (k - (H.D + 1)) (oEm + 1) H.D) := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have G' := L.geo
   have R1 := (((R.wf G' (k := 17) (by decide) (off S (oEm + 1))).wf G' (k := 18) (by decide)
     (BitVec.ofNat 64 H.D)).wf G' (k := 15) (by decide) (off S (oEm + 1 + H.D))).wf G' (k := 16) (by decide)

@@ -10,7 +10,7 @@ of `[rbx] < [r10]` in `rbp` (`lt_ok`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 structure LtInv (s₀ : State) (B : Addr) (Z eX eY : Nat) (j : Nat) (t : State) : Prop where
   scr : Scr t B Z
