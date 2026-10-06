@@ -1,4 +1,5 @@
 import Batteries.Tactic.Init
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
