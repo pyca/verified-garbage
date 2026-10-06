@@ -1,0 +1,5 @@
+name = "ECDSA secp256k1"
+family = "Signatures"
+specs = ["Weierstrass", "Secp256k1", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
+modules = ["src/ecdsa/secp256k1.rs"]
+asm = ["ec_secp256k1", "ecdsa_secp256k1", "ecdsa_secp256k1_sha256"]
