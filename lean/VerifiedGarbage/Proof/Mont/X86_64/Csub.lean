@@ -4,9 +4,11 @@ import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 # Montgomery arithmetic on x86-64: the conditional subtraction
 
 `csub M ts top` reduces `V = ts + 2^(64 n) top < 2m` below `m`
-(`csub_ok`): the difference `V - m` is computed word by word into the
-temporary area (`diffs`), its borrow becomes a mask (`rax`, all ones if
-`V ≥ m`), and the mask selects the difference (`selects`).
+(`csub_ok`). Up to four words use the register-only `csubC`; larger
+register accumulators use `csubM`, computing the difference in the
+temporary area (`diffs`) and selecting it with conditional moves
+(`selects`). Both use the final borrow directly. The mask lemmas also
+serve the memory-backed reduction for wider moduli.
 -/
 
 namespace VG.Proof.Mont.X86_64
@@ -176,11 +178,28 @@ theorem select_val (t d : BitVec 64) (k : Bool) :
       BitVec.zero_xor]
   · simp
 
-/-- Each word of `ts` replaced by the word at `tmp` if the mask `rax` is all
-ones (`k` false), and kept if it is zero (`k` true). -/
+/-- Select the temporary word when CF is clear, without changing flags. -/
+theorem cmovWord_ok {s : State} {base : Addr} {size tmp : Nat}
+    (hs : Scr s base size) (htmp : tmp + 8 ≤ size) (t : Reg) (k : Bool)
+    (hk : s.cf = some k) :
+    WP isa (.block [.cmov .ae t (.mem (sc tmp))]) s fun s' =>
+      s'.gpr t = (if k then s.gpr t else word s.mem base tmp) ∧
+      s'.cf = some k ∧ Keeps [t] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execCmov, readSrc,
+    load_sc hs htmp, eval, hk, Option.bind_some, Option.map_some]
+  cases k <;> simp only [Bool.not_false, Bool.not_true, Bool.false_eq_true,
+    ite_false, ite_true, Option.some.injEq, exists_eq_left']
+  · refine ⟨?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+    · simp only [RegUpd.gpr_setReg_self]
+    · simpa only [RegUpd.cf_setReg] using hk
+    · simp only [List.mem_singleton] at hr
+      simp only [RegUpd.gpr_setReg, hr, ite_false]
+  · exact ⟨trivial, hk, fun _ _ => rfl, rfl, rfl, rfl⟩
+
+/-- Select the reduced words if the full subtraction did not borrow. -/
 theorem selects_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {tmp : Nat} (k : Bool),
-    Scr s base size → tmp + 8 * ts.length ≤ size → Fresh ts →
-    s.gpr .rax = (if k then 0 else BitVec.allOnes 64) →
+    Scr s base size → tmp + 8 * ts.length ≤ size → Fresh ts → s.cf = some k →
     WP isa (.block (selects ts tmp)) s fun s' =>
       regsVal s' ts = (if k then regsVal s ts else wordsVal s.mem base tmp ts.length) ∧
       Keeps (.rdx :: ts) s s'
@@ -189,25 +208,12 @@ theorem selects_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} 
     obtain ⟨htn, hta, -, htd, -, -⟩ := hf.head
     simp only [List.length_cons] at htmp
     rw [selects, WP.block_append_iff]
-    refine WP.mono (show WP isa (.block [.mov .rdx (.mem (sc tmp)), .alu .xor .rdx (.reg t),
-        .alu .and .rdx (.reg .rax), .alu .xor t (.reg .rdx)]) s (fun s₁ =>
-        s₁.gpr t = (if k then s.gpr t else word s.mem base tmp) ∧ Keeps [.rdx, t] s s₁) by
-      apply WP.of_runBlock
-      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-        Option.map_some, Option.bind_some, load_sc hs (d := tmp) (by omega), RegUpd.gpr_setReg,
-        RegUpd.gpr_arithFlags, ite_true, Option.some.injEq, exists_eq_left', htd, ite_false, hk,
-        reduceCtorEq]
-      refine ⟨select_val _ _ k, fun r hr => ?_, rfl, rfl, rfl⟩
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (cmovWord_ok hs (tmp := tmp) (by omega) t k hk) fun s₁ ⟨e₁, c₁, k₁'⟩ => ?_
+    have k₁ : Keeps [.rdx, t] s s₁ := k₁'.mono (by sub_regs)
     have hs₁ := hs.of_keeps k₁ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨by decide, fun h => hf.head.2.2.2.2.2 h.symm⟩)
-    have hk₁ : s₁.gpr .rax = (if k then 0 else BitVec.allOnes 64) := by
-      rw [k₁.1 _ (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-        exact ⟨by decide, Ne.symm hta⟩), hk]
-    refine WP.mono (selects_ok ts k hs₁ (tmp := tmp + 8) (by omega) hf.tail hk₁) fun s₂ ⟨e₂, k₂⟩ => ?_
+    refine WP.mono (selects_ok ts k hs₁ (tmp := tmp + 8) (by omega) hf.tail c₁) fun s₂ ⟨e₂, k₂⟩ => ?_
     have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨(hf.tail.2 q hq).2.2.1, fun h => htn (h ▸ hq)⟩)
@@ -215,6 +221,20 @@ theorem selects_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} 
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
     rw [regsVal, ht₂, e₁, e₂, hR, k₁.2.1]
     cases k <;> rfl
+
+/-- The top word less the incoming borrow sets the full subtraction's borrow. -/
+theorem topBorrow_ok (s : State) (top : Reg) {b : Bool} (hb : s.cf = some b) :
+    WP isa (.block [.mov .rax (.reg top), .alu .sbb .rax (.imm 0)]) s fun s' =>
+      s'.cf = some (decide ((s.gpr top).toNat < b.toNat)) ∧ Keeps [.rax] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, Option.map_some,
+    Option.bind_some, RegUpd.gpr_setReg, RegUpd.cf_setReg,
+    RegUpd.cf_arithFlags, ite_true, hb, Option.some.injEq, exists_eq_left', se0]
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have h0 : (0 : BitVec 64).toNat = 0 := rfl
+    simp only [h0, Nat.zero_add]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
 /-! ## The conditional subtraction -/
 
@@ -240,12 +260,12 @@ theorem csubM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (by rw [hlen]; omega) hft) fun s₁ ⟨b, c₁, e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mask_ok s₁ top c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
+  refine WP.mono (topBorrow_ok s₁ top c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by decide)
   have htop₁ : s₁.gpr top = s.gpr top := k₁.gpr top (by simp [htop.2.1])
   rw [htop₁] at x₂
   refine WP.mono (selects_ok _ (decide ((s.gpr top).toNat < b.toNat)) hs₂ (tmp := M.tmp)
-    (by rw [hlen]; omega) hft (by rw [x₂]; simp only [decide_eq_true_eq]))
+    (by rw [hlen]; omega) hft x₂)
     fun s₃ ⟨e₃, k₃⟩ => ?_
   have hR₂ : regsVal s₂ (t :: ts') = regsVal s (t :: ts') := by
     rw [regsVal_congr fun q hq => k₂.1 q (by simp [(hft.2 q hq).1])]
