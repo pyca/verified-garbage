@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64
 
 `sign R H core (out = rdi, d = rsi, digest = rdx, scratch = rcx) -> eax`, for
 a curve of `Q`-byte scalars in `w` words and a Merkle–Damgård hash function
-`H` whose output is `D` bytes, a multiple of 8, at most 64: RFC 6979 §3.2,
+`H` whose output is `D` bytes, a multiple of 4 from 28 to 64: RFC 6979 §3.2,
 with HMAC computed by calling `H`'s HMAC `init`, streaming `update` and HMAC
 `finalize`, and each candidate tried by calling `core`, the signature with a
 given `k` (`vg_ecdsa_<curve>_sign`), which reads `Q` bytes of the digest and
@@ -15,10 +15,11 @@ shift by `sh = 8 Q - qlen` bits).
 
 Two kinds of curve and hash function:
 
-* `Q = 8 w ≤ D` and `qlen = 8 Q` (P-256 and P-384, `wide = false`): one `V`
-  makes a candidate, its leftmost `Q` bytes; `bits2octets` is a conditional
-  subtraction of `n` from the digest's leftmost `Q` bytes; and `core` reads
-  the digest and `V` in place.
+* `Q ≤ D` and `qlen = 8 Q`, the scalars' words full or the top one of four
+  bytes (P-224, P-256 and P-384, `wide = false`): one `V` makes a candidate,
+  its leftmost `Q` bytes; `bits2octets` is a conditional subtraction of `n`
+  from the digest's leftmost `Q` bytes; and `core` reads the digest and `V`
+  in place.
 * `8 D < qlen ≤ 16 D` and `Q ≤ D + 8` (P-521 with SHA-512, `wide`): two `V`s
   make a candidate, the leftmost `Q` bytes of the second's concatenation with
   the first, shifted right by `sh` bits; the digest's integer is below `n`,
@@ -44,7 +45,9 @@ d, f and h.3.
    `n` if they are at least `n` (a conditional subtraction, as
    `2^(8 Q) < 2n`), a word at a time through memory: the words of the digest
    to `V`'s place, those of the difference to `K`'s (before steps b and c set
-   them), and the one the borrow selects, big-endian, to `h`. If `wide`, the
+   them), and the one the borrow selects, big-endian, to `h` (a top word of
+   four bytes by 32-bit loads, and stored ending at `h`'s fourth byte, its
+   zero bytes in `V`'s place, which step b then sets). If `wide`, the
    digest for `core` instead: the digest then `Q - D` zero bytes, shifted
    right by `8 (Q - D) - sh` bits.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,
@@ -187,14 +190,14 @@ def msgPtrs (wide : Bool) : List Instr :=
 and `h` from the frame, or, if `wide`, `Q - D` zero bytes (a zero word,
 which the digest's words then overwrite but for them) and the digest. -/
 def msg (Q D b : Nat) (full wide : Bool) : List Instr :=
-  copyN (D / 8) .rsp fV .rdi sMsg ++
+  copyBytes D .rsp fV .rdi sMsg ++
     [.mov32 .rax (.imm (BitVec.ofNat 32 b)), .store8 (at_ .rdi (sMsg + D)) .rax] ++
     (if full then
       (if wide then
         copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++
           [.alu32 .xor .rax (.reg .rax), .store (at_ .rdi (sMsg + D + 1 + Q)) .rax] ++
           copyN (D / 8) .rdx 0 .rdi (sMsg + 1 + 2 * Q)
-      else copyN (Q / 8) .rsi 0 .rdi (sMsg + D + 1) ++ copyN (Q / 8) .rsp fH .rdi (sMsg + D + 1 + Q))
+      else copyBytes Q .rsi 0 .rdi (sMsg + D + 1) ++ copyBytes Q .rsp fH .rdi (sMsg + D + 1 + Q))
     else [])
 
 /-- `K = HMAC_K(V ‖ b ‖ d ‖ h)`, then `V = HMAC_K(V)` (steps d–e, f–g). -/
@@ -232,24 +235,36 @@ def coreDigest : List Instr :=
   [.alu32 .xor .rax (.reg .rax), .store (stk (fX + c.len - 8)) .rax] ++
     copyN (c.H.D / 8) .rsi 0 .rsp fX ++ c.conv fX (8 * (c.len - c.H.D) - c.sh)
 
+/-- Word `j` of the `Q`-byte number at `digest` (in `rsi`), least
+significant first, in `rax`: the byte reversal of the word at
+`digest + Q - 8 (j + 1)`, or, for a top word of four bytes (`Q % 8 = 4`),
+of the first four, zero-extended. Neither changes the flags, which carry
+the borrow from one word to the next. -/
+def loadWord (j : Nat) : List Instr :=
+  if 8 * (j + 1) ≤ c.len then [.mov .rax (.mem (at_ .rsi (c.len - 8 * (j + 1)))), .bswap .rax]
+  else [.mov32 .rax (.mem (at_ .rsi 0)), .bswap32 .rax]
+
 /-- Word `j` of the number at `digest` (in `rsi`), least significant first,
 to `V`'s place, and word `j` of it minus `n` (with the borrow of the words
 before) to `K`'s: `rax` and `rdx` change, and the borrow is the carry flag. -/
 def subWord (j : Nat) : List Instr :=
-  [.mov .rax (.mem (at_ .rsi (8 * (c.w - 1 - j)))), .bswap .rax, .store (stk (fV + 8 * j)) .rax,
+  c.loadWord j ++ [.store (stk (fV + 8 * j)) .rax,
     .movImm64 .rdx (c.nWord j), .alu (if j = 0 then .sub else .sbb) .rax (.reg .rdx),
     .store (stk (fK + 8 * j)) .rax]
 
 /-- Word `j` of the result, by the mask `rdx` (all ones if subtracting `n`
 borrowed): the number's word if so, the difference's if not, big-endian to
-`h`. -/
+`h + Q - 8 (j + 1)`. A top word of fewer bytes is stored below `h`, in `V`'s
+place (which `initKV` then sets), its zero bytes there and the rest `h`'s
+first bytes. -/
 def selWord (j : Nat) : List Instr :=
   [.mov .rax (.mem (stk (fV + 8 * j))), .mov .rcx (.mem (stk (fK + 8 * j))), .alu .xor .rax (.reg .rcx),
     .alu .and .rax (.reg .rdx), .alu .xor .rax (.reg .rcx), .bswap .rax,
-    .store (stk (fH + 8 * (c.w - 1 - j))) .rax]
+    .store (stk (fH + c.len - 8 * (j + 1))) .rax]
 
 /-- `h`: the `Q` bytes at `digest` (in `rsi`), as a big-endian number,
-minus `n` if that does not borrow, big-endian into the frame. -/
+minus `n` if that does not borrow, big-endian into the frame's `Q` bytes at
+`h`. -/
 def reduce : List Instr :=
   (List.range c.w).flatMap c.subWord ++ [.alu .sbb .rdx (.reg .rdx)] ++ (List.range c.w).flatMap c.selWord
 
