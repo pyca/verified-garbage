@@ -145,11 +145,19 @@ def verify : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) <| .seq (Impl.Ecdh.X86.Cfg.validate c) (back c)
 
+/-- Key validation before scalar arithmetic. -/
+def combFront : Prog isa :=
+  .seq (prefix' c) <| .seq (.block (loadS c)) <|
+  .seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) <|
+  .seq (Impl.Ecdh.X86.Cfg.validate c) (.block [])
+
+/-- Scalar arithmetic before multiplying the two points. -/
+def combMid : Prog isa :=
+  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) (.block [])
+
 /-- Verification body using the comb for its fixed-base multiplication. -/
 def verifyCombBody : Prog isa :=
-  .seq (prefix' c) <| .seq (.block (loadS c)) <|
-  .seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) <| .seq (Impl.Ecdh.X86.Cfg.validate c) <|
-  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (pointsComb c) <|
+  .seq (combFront c) <| .seq (combMid c) <| .seq (pointsComb c) <|
   .seq (pow c.powP c.wk) (final c)
 
 /-- Acquire the static table before loading the cdecl arguments. -/

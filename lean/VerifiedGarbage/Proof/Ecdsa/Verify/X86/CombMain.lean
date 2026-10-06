@@ -20,7 +20,8 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         size ≤ ofs (ptr s₀ 3) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine front_ok hc hp fun s₁ hF => mid_ok hc hF fun s₂ hM => ?_
+  refine WP.seq (WP.mono (front_ok hc hp (rest := .block []) (fun _ h => WP.block_nil h)) fun s₁ hF => ?_)
+  refine WP.seq (WP.mono (mid_ok hc hF (rest := .block []) (fun _ h => WP.block_nil h)) fun s₂ hM => ?_)
   have F₂ := hM.fixed
   obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
   -- The point the second ladder multiplies.
