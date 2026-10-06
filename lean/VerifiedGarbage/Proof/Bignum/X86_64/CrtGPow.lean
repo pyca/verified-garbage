@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.PubExp
+import VerifiedGarbage.Proof.Bignum.CrtGPow
 import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 
 /-!
@@ -15,14 +16,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64
 open VG.Impl.Rsa.X86_64 (Crt.ws Crt.sD Crt.gPow)
-
-/-- `K = ⌈w / w_X⌉`: `w ≤ K w_X < w + w_X`. -/
-theorem kBounds {w wx : Nat} (hwx : 1 ≤ wx) :
-    w ≤ (w + wx - 1) / wx * wx ∧ (w + wx - 1) / wx * wx < w + wx := by
-  have h1 := Nat.div_add_mod (w + wx - 1) wx
-  have h2 := Nat.mod_lt (w + wx - 1) (show 0 < wx by omega)
-  rw [Nat.mul_comm] at h1
-  omega
 
 /-- The loop `rcx += w_X` while `rcx < w`, from `rcx = 0`: `rcx = K w_X`. -/
 theorem kLoop_ok {s : State} {w wx : Nat} (hwx : 1 ≤ wx) (hw : 1 ≤ w) (hw' : w + wx < 2 ^ 32)
@@ -60,9 +53,6 @@ theorem kLoop_ok {s : State} {w wx : Nat} (hwx : 1 ≤ wx) (hw : 1 ≤ w) (hw' :
         rw [Nat.succ_mul (k + 1)] at this; omega
       · omega
     exact .inl ⟨by simp [eval, hcf, hc], by rw [hcx'', hkK], hm'.trans hm, (k₀.trans k').mono (by decide)⟩
-
-/-- `D = 64 ((K + 1) w_X - w)`. -/
-def gD (w wx : Nat) : Nat := 64 * ((w + wx - 1) / wx * wx + wx - w)
 
 /-- `gPow`'s first steps: `D` into slot `sD` and `rax`. -/
 def gHead (slotWs : Nat) : List (Prog isa) := [
@@ -110,24 +100,6 @@ theorem gHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Goo
 
 /-! ## The bits of `D` -/
 
-theorem and_pow_beq (D k : Nat) (hk : k < 64) :
-    (BitVec.ofNat 64 D &&& BitVec.ofNat 64 (2 ^ k) == 0) = decide (D / 2 ^ k % 2 = 0) := by
-  have e : BitVec.ofNat 64 (2 ^ k) = BitVec.twoPow 64 k := by
-    apply BitVec.eq_of_toNat_eq; rw [BitVec.toNat_ofNat, BitVec.toNat_twoPow]
-  rw [e, BitVec.and_twoPow, BitVec.getLsbD_ofNat, Nat.testBit_eq_decide_div_mod_eq]
-  by_cases h : D / 2 ^ k % 2 = 0
-  · simp [h]
-  · have h1 : D / 2 ^ k % 2 = 1 := by omega
-    have h2 : BitVec.twoPow 64 k ≠ 0#64 := by
-      intro h0
-      have := congrArg BitVec.toNat h0
-      rw [BitVec.toNat_twoPow_of_lt hk] at this
-      exact absurd this (Nat.pos_iff_ne_zero.mp (Nat.two_pow_pos k))
-    simp [h1, hk, h2]
-
-theorem div_bit (D k : Nat) : 2 * (D / 2 ^ (k + 1)) + D / 2 ^ k % 2 = D / 2 ^ k := by
-  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
-
 /-- The loop's body: `Y := Y² R⁻¹`, doubled if the bit is set, and the
 next bit. -/
 def gBody (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
@@ -139,11 +111,6 @@ def gBody (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
 theorem gPow_eq (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : Crt.gPow mul slotWs =
     gHead slotWs ++ [topBit, .block [.store (hdr sCnt) .rdx], mul aY aR2 aOne, .loop (seqs (gBody mul)) .ne] :=
   rfl
-
-/-- What `gPow` changes. -/
-def gRanges (w : Nat) : List (Nat × Nat) :=
-  [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (8 * Crt.sD, 8),
-    (8 * sCnt, 8)]
 
 /-- After the top `j` of the `L + 1` bits of `D`, from `s₀`: `Y ≡ 2^⌊D / 2^(L + 1 - j)⌋ R`. -/
 structure GInv (s₀ : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N D L : Nat) (j : Nat) (t : State) :
@@ -256,14 +223,6 @@ theorem gBits_ok (M : Mont) {s₀ t : State} {B : Addr} {Z w : Nat} {minv : BitV
     (fun _ _ hj _ hI => gBit_ok M hZ hw hw' hR hN0 hL hj hI) (fun _ h => h) h0
 
 /-! ## `G` -/
-
-theorem gD_bounds {w wx : Nat} (hwx : 1 ≤ wx) (hwx' : wx ≤ w) (hw30 : w < 2 ^ 30) :
-    0 < gD w wx ∧ gD w wx < 2 ^ 62 ∧
-      gD w wx + 64 * w = 64 * wx * ((w + wx - 1) / wx + 1) := by
-  obtain ⟨hK1, hK2⟩ := kBounds (w := w) hwx
-  unfold gD
-  rw [Nat.mul_succ, Nat.mul_assoc 64 wx, Nat.mul_comm wx]
-  omega
 
 /-- `gPow`: `[aY] ≡ 2^(64 w_X (K + 1)) (mod N)` for `K = ⌈w / w_X⌉`, with `w_X` in
 the header of the workspace whose base is in slot `sl`. -/

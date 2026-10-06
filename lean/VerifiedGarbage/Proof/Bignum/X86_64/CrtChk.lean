@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+import VerifiedGarbage.Proof.Bignum.CrtKey
 
 /-!
 # RSA with the CRT on x86-64: the checks
@@ -12,17 +13,6 @@ namespace VG.Proof.Bignum.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
-
-theorem mask_and (a b : Bool) : mask a &&& mask b = mask (a && b) := by
-  cases a <;> cases b <;> rfl
-
-theorem odd_of_mul_odd {P Q N : Nat} (h : P * Q = N) (hN : N % 2 = 1) : P % 2 = 1 := by
-  rcases Nat.mod_two_eq_zero_or_one P with hP | hP
-  · rw [← h, Nat.mul_mod, hP, Nat.zero_mul] at hN; exact absurd hN (by decide)
-  · exact hP
-
-/-- The mask of the private key's checks. -/
-def keyMask (m0 : Bool) (N P Q QI : Nat) : Bool := m0 && decide (P * Q = N) && decide (QI < P)
 
 /-- The checks: the mask `M` of `c < n` (`m0`), `p q = n` and `qInv < p`;
 `p := M ? p : 3`, `q := M ? q : 3`, their `-X⁻¹` and 1. -/

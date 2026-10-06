@@ -139,14 +139,6 @@ theorem _root_.VG.Proof.Bignum.Frm.rg_of_arrays {B : Addr} {w : Nat} {js' : List
     (js hs : List Nat) (hj : ∀ j ∈ js', j ∈ js) : Frm B (rg w js hs) m m' :=
   Frm.of_arrays h fun j hj' => rg_mem_arr hs (hj j hj')
 
-/-- A frame of ranges each within one of `rs'`. -/
-theorem _root_.VG.Proof.Bignum.Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem}
-    (h : Frm B rs m m') (hc : ∀ r ∈ rs, ∃ r' ∈ rs', r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2) : Frm B rs' m m' :=
-  fun x hx => h x fun r hr => by
-    obtain ⟨r', hr', a, b⟩ := hc r hr
-    have := hx r' hr'
-    omega
-
 theorem rg_cover_arr {w j n d : Nat} {js : List Nat} (hs : List Nat) (hj : j ∈ js) (hd : slot w j ≤ d)
     (hn : d + n ≤ slot w j + 8 * (w + 2)) : ∃ r' ∈ rg w js hs, r'.1 ≤ d ∧ d + n ≤ r'.1 + r'.2 :=
   ⟨_, rg_mem_arr hs hj, hd, hn⟩

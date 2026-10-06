@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtHdr
+import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
+import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import VerifiedGarbage.Proof.Bignum.CrtHdr
 
 /-!
 # RSA with the CRT on x86-64: up to the checks
