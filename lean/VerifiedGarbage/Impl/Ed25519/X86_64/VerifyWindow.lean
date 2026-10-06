@@ -11,7 +11,8 @@ from a table of `[1]A … [15]A` built at run time (byte 5376), and `[-b]B`
 for `S`'s digit `b` from constants (`negBaseCached`, byte 2048). A zero
 digit adds nothing. The digits are read from the inputs, byte by byte (the
 scratch counter at byte 56), high nibble first: `k`'s 64 bytes, of which
-only the low 32 have a byte of `S` beside them. The equation
+only the low 32 have a byte of `S` beside them, after its leading zero bytes
+above those (`skipZero`), which would only double the identity. The equation
 `[S]B = R + [k]A` holds exactly when the result equals `-R`, which the
 projective comparison `pointEqual` checks.
 -/
@@ -95,6 +96,29 @@ def byteStepA (fld : Arith) (dbl : Prog isa) : Prog isa :=
 def byteStepAB (fld : Arith) (dbl : Prog isa) : Prog isa :=
   .seq (.block batchBegin) (.seq (windowAB fld dbl (digitHigh 7952 0) (digitHigh 7944 32))
     (.seq (windowAB fld dbl (digitLow 7952 0) (digitLow 7944 32)) (.block batchTest)))
+
+/-- The counter moved back up by one, and ZF set: the skipping stops. -/
+def skipStop : List Instr :=
+  [.mov .rax (.mem (sc 56)), .alu .add .rax (.imm 1), .store (sc 56) .rax, .alu .cmp .rax (.reg .rax)]
+
+/-- The counter `c` moved down to `c - 1`, and byte `c - 1` of `k`, ZF set if it is zero. -/
+def skipLoad : List Instr := batchBegin ++ digitByte 7952 0 ++ [.alu .test .rbx (.reg .rbx)]
+
+/-- ZF set when the counter is 32. -/
+def counterCmp : List Instr := [.mov .rbx (.mem (sc 56)), .alu .cmp .rbx (.imm 32)]
+
+/-- Below a zero byte, the counter stays down; ZF is clear while another byte of `k` alone
+may be skipped. -/
+def skipBody : Prog isa :=
+  .seq (.block skipLoad) (.ite .ne (.block skipStop) (.block counterCmp))
+
+/-- Skip the leading zero bytes of `k` above its low 32: they would only double the
+identity. A challenge reduced modulo L has 32 of them. -/
+def skipZero : Prog isa := .loop skipBody .ne
+
+/-- The bytes of `k` alone that are left after `skipZero`. -/
+def windowsA (fld : Arith) (dbl : Prog isa) : Prog isa :=
+  .seq (.block counterCmp) (.ite .ne (.loop (byteStepA fld dbl) .ne) (.block []))
 
 /-- `-R` from byte 7552 into slots 4–7. -/
 def negR (fld : Arith) : List Instr :=

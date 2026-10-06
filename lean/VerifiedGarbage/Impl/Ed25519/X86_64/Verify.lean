@@ -32,7 +32,8 @@ def pointEqual (fld : Arith) : Prog isa :=
 with the doublings `dbl`. -/
 def verifyEquationPoints (fld : Arith) (dbl : Prog isa) : Prog isa :=
   .seq (.block windowSetup) (.seq (aTable fld) (.seq (.block bTable) (.seq (.block (windowInit fld))
-    (.seq (.loop (byteStepA fld dbl) .ne) (.seq (.loop (byteStepAB fld dbl) .ne) (.seq (.block (negR fld)) (pointEqual fld)))))))
+    (.seq skipZero (.seq (windowsA fld dbl) (.seq (.loop (byteStepAB fld dbl) .ne)
+      (.seq (.block (negR fld)) (pointEqual fld))))))))
 
 /-- Continue only when a point decoder returned success. -/
 def decodedThen (next : Prog isa) : Prog isa :=

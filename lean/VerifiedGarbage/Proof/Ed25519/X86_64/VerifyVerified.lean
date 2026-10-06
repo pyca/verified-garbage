@@ -82,7 +82,13 @@ theorem verifyEquationPoints_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs
   rw [verifyEquationPoints]
   apply RelCT.assoc; apply RelCT.assoc; apply RelCT.assoc
   refine seq_same (c₁ := windowPrep fld) (rdi_ct (fun x h => h.1.context.scratch.rdi) prepCT) w ?_
-  refine VG.RelCT.seq loopA_ct (VG.RelCT.seq loopB_ct ?_)
+  have toSkip (x : State) (h : LoopRun R₀ base challenge sig Aa K S 64 x) :
+      SkipRun R₀ base challenge sig Aa K S 32 x := by
+    obtain ⟨s₀, r₀, h⟩ := h
+    exact ⟨s₀, r₀, h, Nat.div_eq_of_lt (h.kVal ▸ decodeLE_lt64 _ _), by decide, by decide⟩
+  refine VG.RelCT.seq (skipZero_ct.mono (fun x y h => ⟨toSkip x h.1, toSkip y h.2⟩) (fun _ _ h => h)) ?_
+  refine VG.RelCT.seq (fun x y tx ty x' y' ⟨c, hc32, hc64, hx, hy⟩ ex ey =>
+    windowsA_ct hc32 hc64 x y tx ty x' y' ⟨hx, hy⟩ ex ey) (VG.RelCT.seq loopB_ct ?_)
   exact seq_same (rdi_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.rdi) negRCT) wn
     (pointEqualRep_ct base _ _)
 
