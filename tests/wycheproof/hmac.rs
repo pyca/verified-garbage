@@ -11,7 +11,7 @@
 use serde::Deserialize;
 use verified_garbage::hmac::{Hmac, HmacHash};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Expectation, Hex};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

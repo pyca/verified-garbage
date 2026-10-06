@@ -15,7 +15,7 @@ use std::sync::Mutex;
 use serde::Deserialize;
 use verified_garbage::rsa::{Error, PrivateKey, PublicKey};
 
-use crate::harness::{self, Expectation, Hex, TestFile, TestGroup};
+use super::harness::{self, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

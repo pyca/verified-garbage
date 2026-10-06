@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use crate::harness::{self, Count, Hex, TestFile};
+use super::harness::{self, Count, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Clone, Deserialize)]

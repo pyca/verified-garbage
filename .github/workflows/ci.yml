@@ -285,6 +285,7 @@ jobs:
       # `rust-cpu-features` sets it per line of a CPU's `runs`, inline.
       - name: Only rust-cpu-features sets VG_CPU_FEATURES
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
+      - run: python3 ci/cpu_tests.py lint .github/workflows/ci.yml
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
       - run: python3 ci/check_vectors.py
@@ -475,8 +476,9 @@ jobs:
   # SHA extensions' code tens of times slower than hardware (#274), so the
   # chips that have them (arl, icx, dmr) run only the tests they are there
   # for. A job is one CPU (and userspace); its `runs` are lines of
-  # `<VG_CPU_FEATURES> | <tests>` (`all` for every test), each a `cargo
-  # test` of the one build, since `VG_CPU_FEATURES` is read at run time.
+  # `<VG_CPU_FEATURES> | <groups>` (`all` for every test), each running the
+  # one build's tests of those groups (ci/cpu_tests.py, which names each
+  # group's tests by path), since `VG_CPU_FEATURES` is read at run time.
   # `VG_CPU_FEATURES` restricts the CPU's features (`-` for no restriction,
   # `none` for the baseline ISA), so that each implementation, and each of
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
@@ -670,22 +672,46 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs` (of this shard's, ci/cpu_shards.py). The lines run at the same
-      # time, slowest first, as many as the runner has cores: each `cargo
-      # test` starts every test binary, under SDE a second or more each on one
-      # core, whether or not its filter selects any test, so that one line at
-      # a time left the other cores idle. (Cargo holds the build directory's
-      # lock only while building, which the first command does for all of
-      # them; the coverage files are named by process.) Each line's output is
-      # printed afterwards in a log group of its own; every line runs, and the
-      # step fails at the end, naming the lines that failed. Each line's CPU
-      # time (user and system, of its `cargo test` and everything it ran) is
-      # kept, for `main` to save for the next runs' shards.
+      # `runs` (of this shard's, ci/cpu_shards.py): each of the line's
+      # groups' tests by its exact name (ci/cpu_tests.py, from the lists of
+      # the library's unit tests and of the test binary's tests), in the one
+      # binary or both that hold them. The lines run at the same time, slowest
+      # first, as many as the runner has cores: each binary takes a second or
+      # more to start under SDE, on one core, so that one line at a time left
+      # the other cores idle. (Cargo holds the build directory's lock only
+      # while building, which the first command does for all of them; the
+      # coverage files are named by process.) Each line's output is printed
+      # afterwards in a log group of its own; every line runs, and the step
+      # fails at the end, naming the lines that failed. Each line's CPU time
+      # (user and system, of its `cargo test`s and everything they ran) is
+      # kept, for `main` to save for the next runs' shards, and the CPU's
+      # tests and groups, for `coverage` to check every group's paths with.
       - name: Test the implementations
         shell: bash
         run: |
           lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
+          lists=$RUNNER_TEMP/lists
+          mkdir -p "$lists"
+          cargo test --locked --features cpu-features-env --lib -- --list --format terse > "$lists/lib"
+          cargo test --locked --features cpu-features-env --test tests -- --list --format terse > "$lists/tests"
+          python3 ci/cpu_tests.py record "$CPU" "$RUNS" "$lists/lib" "$lists/tests" > "cpu-tests-$JOB.json"
+          # A line's tests: every test for `all`, otherwise those its groups
+          # select, by exact name, in each binary that has any.
+          run_line() {
+            local tests=$1 status=0 selected
+            if [ "$tests" = all ]; then
+              cargo test --locked --features cpu-features-env
+              return
+            fi
+            for binary in lib tests; do
+              selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
+              [ -n "$selected" ] || continue
+              if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
+              cargo test --locked --features cpu-features-env "${target[@]}" -- --exact $selected || status=$?
+            done
+            return "$status"
+          }
           logs=$RUNNER_TEMP/runs
           mkdir -p "$logs"
           names=()
@@ -693,15 +719,13 @@ jobs:
           while IFS='|' read -r -u 3 features tests; do
             keys+=("$features")
             [ "$features" = - ] && features=
-            filter=$tests
-            [ "$tests" = all ] && filter=
             while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
             log=$logs/${#names[@]}
             (
               status=0
               TIMEFORMAT='%U %S'
-              { time VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-                > "$log" 2>&1 || status=$?; } 2> "$log.time"
+              export VG_CPU_FEATURES=$features
+              { time run_line "$tests" > "$log" 2>&1 || status=$?; } 2> "$log.time"
               echo "$status" > "$log.status"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
@@ -734,6 +758,13 @@ jobs:
         with:
           name: cpu-features-times-${{ strategy.job-index }}
           path: cpu-features-times-${{ strategy.job-index }}.json
+          retention-days: 1
+          if-no-files-found: error
+      # For `coverage`'s check of ci/cpu_tests.py's groups.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-tests-${{ strategy.job-index }}
+          path: cpu-tests-${{ strategy.job-index }}.json
           retention-days: 1
           if-no-files-found: error
       - name: Export coverage
@@ -794,6 +825,16 @@ jobs:
           pattern: coverage-data-*
           merge-multiple: true
           path: coverage-data/
+      # Every path of ci/cpu_tests.py's groups selects a test on some CPU of
+      # `rust-cpu-features`, from the tests each one listed: a test renamed
+      # or moved out of its group fails here, not by running less.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cpu-tests-*
+          merge-multiple: true
+          path: cpu-tests/
+      - name: Check the CPU feature runs' groups
+        run: python3 ci/cpu_tests.py check cpu-tests/*.json
       - name: Combine coverage and fail if it's <100%
         id: combinecoverage
         run: |

@@ -47,10 +47,10 @@ pub fn all_files() -> Option<Vec<String>> {
 #[macro_export]
 macro_rules! require_vectors {
     () => {
-        if $crate::harness::vectors_dir().is_none() {
+        if $crate::wycheproof::harness::vectors_dir().is_none() {
             eprintln!(
                 "skipping: set {} to a checkout of https://github.com/C2SP/wycheproof",
-                $crate::harness::ROOT_VAR
+                $crate::wycheproof::harness::ROOT_VAR
             );
             return;
         }

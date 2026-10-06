@@ -21,7 +21,7 @@ use verified_garbage::hashes::{
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_sig::{Hash, recover, sign, verify};
 
-use crate::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

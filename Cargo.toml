@@ -11,6 +11,8 @@ publish = false
 # All assembly is inline, in naked functions generated from Lean: no build script.
 build = false
 include = ["/src", "/LICENSE*", "/README.md"]
+# Every integration test is a module of the one test binary, `tests/main.rs`.
+autotests = false
 
 [features]
 default = ["alloc"]
@@ -24,6 +26,10 @@ cpu-features-env = []
 [dependencies]
 # The randomness of ML-KEM encapsulation, from the operating system.
 getrandom = "0.4"
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
 
 [dev-dependencies]
 serde = { version = "1", features = ["derive"] }

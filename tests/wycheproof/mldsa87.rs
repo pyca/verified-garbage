@@ -7,4 +7,4 @@
     target_arch = "arm"
 ))]
 
-crate::mldsa::mldsa_tests!("87", mldsa87, SigningKey87, VerifyingKey87);
+super::mldsa::mldsa_tests!("87", mldsa87, SigningKey87, VerifyingKey87);

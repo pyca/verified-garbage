@@ -10,7 +10,7 @@
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hmac::Hmac;
 
-use crate::hmac::check;
+use super::hmac::check;
 use crate::require_vectors;
 
 #[test]

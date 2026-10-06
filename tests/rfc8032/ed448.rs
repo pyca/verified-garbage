@@ -9,7 +9,7 @@
 
 use verified_garbage::ed448::{Error, MAX_CONTEXT_LEN, SigningKey, VerifyingKey};
 
-use crate::{TEXT, hex_lines};
+use super::{TEXT, hex_lines};
 
 /// A case of section 7.4.
 struct Vector {

@@ -141,9 +141,16 @@ class SplitTests(unittest.TestCase):
         self.assertEqual([len(r) for r in rsa], [1, 1, 1])
 
 
+# What the stand-in `cargo` lists, for the library and the test binary.
+LIB_TESTS = ["aes_gcm::tests::round_trip", "aes_gcm_siv::tests::errors", "cpu::tests::of_names",
+             "rsa_pkcs1_enc::tests::padding", "rsa_pss::tests::sign", "x25519::tests::agreement"]
+TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
+
+
 class StepTests(unittest.TestCase):
     """The workflow's `Test the implementations` step, with a `cargo` that
-    records what it ran and fails for one line."""
+    lists the tests above, records what else it ran, and fails for one
+    line."""
 
     @classmethod
     def setUpClass(cls):
@@ -151,27 +158,34 @@ class StepTests(unittest.TestCase):
         script = step.split("        run: |\n", 1)[1].split("\n        env:\n", 1)[0]
         cls.script = textwrap.dedent(script)
 
-    def run_step(self, shard, times="{}"):
+    def run_step(self, shard, times="{}", runs=RUNS):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "ci").symlink_to(CI)
             bin_ = root / "bin"
             bin_.mkdir()
             cargo = bin_ / "cargo"
+            lib = "".join(f"{t}: test\\n" for t in LIB_TESTS)
+            tests = "".join(f"{t}: test\\n" for t in TESTS_TESTS)
             cargo.write_text(
                 "#!/bin/sh\n"
+                "case \"$*\" in\n"
+                f"  *--list*--lib*|*--lib*--list*) printf '{lib}'; exit;;\n"
+                f"  *--list*) printf '{tests}'; exit;;\n"
+                "esac\n"
                 "echo \"VG_CPU_FEATURES=${VG_CPU_FEATURES-unset} $*\" >> \"$CALLS\"\n"
                 "[ \"$VG_CPU_FEATURES\" != pclmulqdq ]\n")
             cargo.chmod(0o755)
             (root / "temp").mkdir()
             env = dict(os.environ, PATH=f"{bin_}:{os.environ['PATH']}", RUNNER_TEMP=str(root / "temp"),
-                       CALLS=str(root / "calls"), RUNS=RUNS, CPU="icx  ", SHARD=shard, TIMES=times,
+                       CALLS=str(root / "calls"), RUNS=runs, CPU="icx  ", SHARD=shard, TIMES=times,
                        JOB="4")
             result = subprocess.run(["bash", "-eo", "pipefail", "-c", self.script], cwd=root, env=env,
                                     capture_output=True, text=True)
             calls = (root / "calls").read_text().splitlines()
             out = root / "cpu-features-times-4.json"
             recorded = json.loads(out.read_text()) if out.exists() else None
+            self.tests_record = json.loads((root / "cpu-tests-4.json").read_text())
             return result, calls, recorded
 
     def test_runs_its_lines_and_records_their_times(self):
@@ -181,9 +195,19 @@ class StepTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(calls[0], "VG_CPU_FEATURES=unset test --locked --features cpu-features-env --no-run")
         # The slowest line alone: the others fill the other two shards first.
+        # Its groups' tests by exact name, in each binary that has any.
         self.assertEqual(calls[1:], [
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env -- x25519 rsa cpu",
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- --exact "
+            "cpu::tests::of_names rsa_pkcs1_enc::tests::padding rsa_pss::tests::sign "
+            "x25519::tests::agreement",
+            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- --exact "
+            "wycheproof::rsa::rsa_oaep_test wycheproof::x25519::x25519_test",
         ])
+        # Every line's groups, not only this shard's, and the CPU's tests.
+        self.assertEqual(self.tests_record["cpu"], "icx")
+        self.assertEqual(self.tests_record["groups"],
+                         ["aes_gcm", "cpu", "rsa", "rsa_pkcs1", "rsa_pss", "x25519"])
+        self.assertEqual(self.tests_record["tests"], {"lib": LIB_TESTS, "tests": TESTS_TESTS})
         (host,) = recorded["icx"]
         self.assertIn(host, cpu_shards.HOSTS)
         self.assertEqual(sorted(recorded["icx"][host]), ["-"])
@@ -193,9 +217,23 @@ class StepTests(unittest.TestCase):
         result, calls, recorded = self.run_step("")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("::error::Failed with VG_CPU_FEATURES=pclmulqdq: aes_gcm cpu", result.stdout)
-        self.assertEqual(len(calls), 1 + 6)
+        # The first line in both binaries, the others in the library only.
+        self.assertEqual(len(calls), 1 + 2 + 5)
         (lines,) = recorded["icx"].values()
         self.assertEqual(len(lines), 6)
+
+    def test_all_runs_every_test(self):
+        result, calls, _ = self.run_step("", runs="none | all\n")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(calls[1:], ["VG_CPU_FEATURES=none test --locked --features cpu-features-env"])
+
+    def test_a_group_that_selects_nothing_fails_its_line(self):
+        # No test of `sha3` is listed on this CPU.
+        result, calls, _ = self.run_step("", runs="- | x25519 cpu\nsha3 | sha3\n")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("group sha3 selects no test on this CPU", result.stdout)
+        self.assertIn("::error::Failed with VG_CPU_FEATURES=sha3: sha3", result.stdout)
+        self.assertEqual(len(calls), 1 + 2)
 
 
 if __name__ == "__main__":
