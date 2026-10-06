@@ -31,7 +31,7 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   reduced below `m`: the difference with `m` is computed, and taken if it
   did not borrow. For at most four words it is computed in `rax`, `rcx`,
   `rdx` and `rbp` and taken by `cmovae` (`csubC`); for more, into the
-  temporary area `[M.tmp]`, and selected with a mask (`csubM`).
+  temporary area `[M.tmp]`, and selected by `cmovae` (`csubM`).
 
 For `n ≤ 6` the accumulator is in registers (`mulR`, `addR`, `subR`). For
 more words (P-521's 9) it does not fit, and `mulW`, `addW` and `subW` keep
@@ -50,7 +50,7 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   `[o]`).
 
 `mul`, `add` and `sub` choose by `n`. Every multiplication is `mul` or `mulx`, every
-selection a mask, and every address `rdi` plus a constant: nothing but `rdi`
+selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
 `rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
 write only `[o]` and `[M.tmp]`.
@@ -192,20 +192,17 @@ def diffs (op : AluOp) : List Reg → Nat → Nat → List Instr
   | t :: ts, mo, tmp => [.mov .rax (.reg t), .alu op .rax (.mem (sc mo)), .store (sc tmp) .rax] ++
     diffs .sbb ts (mo + 8) (tmp + 8)
 
-/-- `ts = [tmp]` where the mask `rax` is all ones, word by word. -/
+/-- Replace `ts` by `[tmp]` when the subtraction did not borrow, preserving
+its carry flag across all words. -/
 def selects : List Reg → Nat → List Instr
   | [], _ => []
-  | t :: ts, tmp => [.mov .rdx (.mem (sc tmp)), .alu .xor .rdx (.reg t), .alu .and .rdx (.reg .rax),
-      .alu .xor t (.reg .rdx)] ++ selects ts (tmp + 8)
+  | t :: ts, tmp => [.cmov .ae t (.mem (sc tmp))] ++ selects ts (tmp + 8)
 
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: the
-difference with `m` is computed into `[tmp]`; `rax` is all ones if it did not
-borrow, and selects it. -/
+difference with `m` is computed into `[tmp]`; its final borrow selects it. -/
 def csubM (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   diffs .sub ts M.mo M.tmp ++
-  [.mov .rax (.reg top), .alu .sbb .rax (.imm 0), .alu .sbb .rax (.reg .rax),
-    .alu .xor .rax (.imm (-1))] ++
-  selects ts M.tmp
+  [.mov .rax (.reg top), .alu .sbb .rax (.imm 0)] ++ selects ts M.tmp
 
 /-- The registers `csubC` computes the difference in. -/
 def cregs : List Reg := [.rax, .rcx, .rdx, .rbp]
