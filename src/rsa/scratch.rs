@@ -66,6 +66,8 @@ impl Drop for VerifyScratch {
 
 pub(crate) struct ScratchLease<'a> {
     pool: &'a VerifyScratch,
+    // The atomic cache transfers the Vec descriptor through one stable pointer.
+    #[allow(clippy::box_collection)]
     buffer: Option<Box<Vec<u64>>>,
 }
 impl Deref for ScratchLease<'_> {
@@ -160,6 +162,16 @@ mod tests {
             }
         });
         assert!(pool.take(32).iter().all(|&x| x == 0));
+    }
+
+    #[test]
+    fn cached_storage_does_not_affect_key_traits() {
+        let pool = VerifyScratch::new();
+        drop(pool.take(32));
+        let cloned = pool.clone();
+        assert!(cloned.0.load(Ordering::Relaxed).is_null());
+        assert_eq!(pool, cloned);
+        assert_eq!(std::format!("{pool:?}"), "VerifyScratch");
     }
 
     #[test]
