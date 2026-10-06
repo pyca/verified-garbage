@@ -61,10 +61,10 @@ theorem shrM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d
   exact Divstep.shr_nat (c := 2 ^ 59) (B := 2 ^ 64) rfl rfl (Nat.mul_pos (Nat.two_pow_pos _) (Nat.two_pow_pos _))
     (by have := wordsVal_lt s.mem base src (j + 1); rw [hQ] at this; exact this) hy hy1 hy2 hz e
 
-theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : ModOk M size p mem base)
+theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : ModOkW M size p mem base)
     {W : List (Nat × Nat)} (hU : Unch base W mem mem') (hsep : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo)
-    (hn : base.toNat + size ≤ 2 ^ 64) : ModOk M size p mem' base :=
-  ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by rw [hU.wordsVal hsep (by have := hM.mo; omega)]; exact hM.val,
+    (hn : base.toNat + size ≤ 2 ^ 64) : ModOkW M size p mem' base :=
+  ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by rw [hU.wordsVal hsep (by have := hM.mo; omega)]; exact hM.val,
     hM.inv, hM.red⟩
 
 /-- Apart from each range of a list written out. -/
@@ -102,7 +102,7 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 
 /-- Half a batch's update of `a`, `b`: `[dst] = mred (u a + v b)` (`n` words). -/
 theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOk M size p s.mem base) {w w' : Reg}
+    (hM : ModOkW M size p s.mem base) {w w' : Reg}
     (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
     {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u) (hv : s.gpr w' = BitVec.ofInt 64 v) (huv : |u| + |v| ≤ 2 ^ 59)
     {T x y U dst : Nat} (hx : x + 8 * M.n ≤ size) (hy : y + 8 * M.n ≤ size) (hT : T + 8 * (M.n + 2) ≤ size)
@@ -339,7 +339,7 @@ abbrev abCode (P : InvCfg) : List Instr := abHalves P ++ copy P.M.n P.sA P.sNF
 
 /-- `a' = mred (u a + v b)`, `b = mred (q a + r b)`, by the matrix in `r9`–`r12`. -/
 theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State}
-    (hs : Scr s base size) (hM : ModOk P.M size p s.mem base) {u v q r a b : Int}
+    (hs : Scr s base size) (hM : ModOkW P.M size p s.mem base) {u v q r a b : Int}
     (h9 : s.gpr .r9 = BitVec.ofInt 64 u) (h10 : s.gpr .r10 = BitVec.ofInt 64 v)
     (h11 : s.gpr .r11 = BitVec.ofInt 64 q) (h12 : s.gpr .r12 = BitVec.ofInt 64 r)
     (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
@@ -379,7 +379,7 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
 
 /-- A batch's update of `a`, `b`, by the matrix in `r9`–`r12`. -/
 theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size p s.mem base) {u v q r a b : Int}
+    (hM : ModOkW P.M size p s.mem base) {u v q r a b : Int}
     (h9 : s.gpr .r9 = BitVec.ofInt 64 u) (h10 : s.gpr .r10 = BitVec.ofInt 64 v)
     (h11 : s.gpr .r11 = BitVec.ofInt 64 q) (h12 : s.gpr .r12 = BitVec.ofInt 64 r)
     (huv : |u| + |v| ≤ 2 ^ 59) (hqr : |q| + |r| ≤ 2 ^ 59)
@@ -435,7 +435,7 @@ theorem update_eq (P : InvCfg) :
 /-- A batch: `59` divsteps on the low words, then `f`, `g`, `a`, `b` by their matrix,
 and the count less one. -/
 theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size p s.mem base) {I : Divstep.IState} (hI : IInv P base I s)
+    (hM : ModOkW P.M size p s.mem base) {I : Divstep.IState} (hI : IInv P base I s)
     (hd : |I.d| ≤ 2 ^ 30) (hf1 : I.f % 2 = 1) (hf : |I.f| ≤ p) (hg : |I.g| ≤ p)
     (ha : |I.a| ≤ p) (hb : |I.b| ≤ p) {j : Nat} (hj : 1 ≤ j) (hj' : j < 2 ^ 64)
     (hc : s.gpr .r14 = BitVec.ofNat 64 j) :
@@ -458,7 +458,7 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
     ⟨_, mf.symm⟩ ⟨_, mg.symm⟩) fun s₃ ⟨eF₃, eG₃, k₃, U₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have g₃ : ∀ r ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r13], s₃.gpr r = s₂.gpr r := k₃.gpr
-  have M₃ : ModOk P.M size p s₃.mem base := modOk_out hM (by rw [← m₂]; exact U₃) (by
+  have M₃ : ModOkW P.M size p s₃.mem base := modOk_out hM (by rw [← m₂]; exact U₃) (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; slotm_omega) hn
   rw [WP.block_append_iff]
   refine WP.mono (abUpd_ok hL hs₃ M₃ (by rw [g₃ _ (by decide)]; exact hU) (by rw [g₃ _ (by decide)]; exact hV)

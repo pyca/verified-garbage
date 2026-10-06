@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Stages
 /-!
 # ECDSA on x86-64: `Z^(p-2)` and `k^(n-2)`
 
-`Cfg.pPow` and `Cfg.nPow` are inverses by divsteps for a curve of up to six
+`Cfg.pPow` and `Cfg.nPow` are inverses by divsteps for a curve of up to nine
 words (`InvSound`; `nPow` if `fastN`), else powers (`pow_ok`); either leaves `[ACC]` reading as
 `[base]^(m - 2)` in Montgomery form, and writes only the slots and the
 working area of `pwW` (`pPow_ok`, `nPow_ok`).
@@ -89,8 +89,8 @@ theorem flag_unch_pwW {base : Addr} {m m' : Mem} (hu : Unch base (pwW c) m m')
   · exact Or.inl (by omega)
   · exact Or.inr h
 
-/-- The inversions' slots and working area, for up to six words. -/
-theorem invLay_of (hc : CfgOk c) (h6 : c.n ≤ 6) (h4 : 4 ≤ c.n) {M : Mod} (hMn : M.n = c.n) {jm : Nat}
+/-- The inversions' slots and working area, for up to nine words. -/
+theorem invLay_of (hc : CfgOk c) (h6 : c.n ≤ 9) (h4 : 4 ≤ c.n) {M : Mod} (hMn : M.n = c.n) {jm : Nat}
     (hmo : M.mo = c.sl jm) (hjm : jm = MP ∨ jm = MN) (htmp : M.tmp = c.sl TMP) {base : Nat}
     (hb : base = RZ ∨ base = KM) (m : Nat) :
     InvLay (InvCfg.ofMod M (c.sl ACC) (c.sl base) (bitsAt c.n 3) m) size := by
@@ -103,7 +103,7 @@ theorem invLay_of (hc : CfgOk c) (h6 : c.n ≤ 6) (h4 : 4 ≤ c.n) {M : Mod} (hM
   have hb45 : base < 45 := by rcases hb with rfl | rfl <;> decide
   have hT : bitsAt c.n 3 + invTbl c.n ≤ size := by
     simp only [bitsAt_eq, invTbl]; show _ ≤ 8192
-    have : 8 * c.n * 45 ≤ 8 * 6 * 45 := Nat.mul_le_mul_right _ (by omega)
+    have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
     omega
   have below : ∀ {i}, i < 45 → c.sl i + 8 * c.n ≤ bitsAt c.n 3 := fun hi => by
     have := sl_below_bits c hi 3 0; omega
@@ -111,7 +111,7 @@ theorem invLay_of (hc : CfgOk c) (h6 : c.n ≤ 6) (h4 : 4 ≤ c.n) {M : Mod} (hM
   have hjA : jm ≠ ACC := by rcases hjm with rfl | rfl <;> decide
   have hjT : jm ≠ TMP := by rcases hjm with rfl | rfl <;> decide
   have hjb : base ≠ jm := by rcases hb with rfl | rfl <;> rcases hjm with rfl | rfl <;> decide
-  exact ⟨h4, show c.n < 7 by omega, sl_le c h7 (by decide), sl_le c h7 hb45, hT, sl_le c h7 hjm45,
+  exact ⟨h4, show c.n < 10 by omega, sl_le c h7 (by decide), sl_le c h7 hb45, hT, sl_le c h7 hjm45,
     sl_le c h7 (by decide), sl_apart c (Ne.symm hbA), Or.inl (below (by decide)), Or.inl (below hb45),
     sl_apart c (by decide), Or.inr (below (i := TMP) (by decide)), sl_apart c hjA, Or.inl (below hjm45),
     sl_apart c hjT⟩
@@ -135,7 +135,7 @@ theorem powW_pwW {P : PowCfg} (h : powW P = slW c [ACC, PT, TMP]) :
     ∀ w ∈ powW P, ∃ w' ∈ pwW c, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := fun w hw =>
   ⟨w, List.mem_append_left _ (h ▸ hw), Nat.le_refl _, Nat.le_refl _⟩
 
-/-- `[ACC] = [RZ]^(p-2)` in Montgomery form: by divsteps for up to six words, else by the power
+/-- `[ACC] = [RZ]^(p-2)` in Montgomery form: by divsteps for up to nine words, else by the power
 from the table of the bits of `p - 2`. -/
 theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
@@ -151,13 +151,13 @@ theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   · rename_i h6
     obtain ⟨h4, sp, ip⟩ := hc.inv h6
     exact WP.mono (sp (invLay_of hc h6 h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
-      (by have := hc.p_ge; omega) hpR hs (hM.toModOk (by show c.n < 7; omega)) hB ip)
+      (by have := hc.p_ge; omega) hpR hs hM hB ip)
       fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwW rfl rfl), lt, v⟩
   · exact WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) hpR hs hM hB hO hbits
       (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega))
       fun s' ⟨K, U, lt, v⟩ => ⟨K.mono fun r h => List.mem_cons_of_mem _ h, Unch.cover U (powW_pwW (powWP_eq c)), lt, v⟩
 
-/-- `[ACC] = [KM]^(n-2)` in Montgomery form: by divsteps for up to six words, else by the power
+/-- `[ACC] = [KM]^(n-2)` in Montgomery form: by divsteps for up to nine words, else by the power
 from the table of the bits of `n - 2`. -/
 theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
@@ -175,7 +175,7 @@ theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     obtain ⟨h4, -, -⟩ := hc.inv h6
     obtain ⟨sn, iN⟩ := hc.inv_n hf h6
     exact WP.mono (sn (invLay_of hc h6 h4 (M := c.MN') rfl (jm := MN) rfl (Or.inr rfl) rfl (base := KM) (Or.inr rfl) c.C.n)
-      (by have := hc.n_ge; omega) hnR hs (hM.toModOk (by show c.n < 7; omega)) hB iN)
+      (by have := hc.n_ge; omega) hnR hs hM hB iN)
       fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwW rfl rfl), lt, v⟩
   · exact WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs hM hB hO hbits
       (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega))

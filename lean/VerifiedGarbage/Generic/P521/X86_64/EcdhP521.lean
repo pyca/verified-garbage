@@ -7,13 +7,14 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 /-!
 # ECDH over P-521 (SP 800-56A) on x86-64
 
-A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
+A generic file (see `TCB/Emit.lean`) over P-521's group law and
+inversions `h`, the variant
 `Variants/P521/X86_64/Law.lean`.
 -/
 
 namespace VG.Generic.P521.X86_64.EcdhP521
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
   { Spec.Ecdh.P521.exchangeApi with
     target := X86_64.target
     doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
@@ -24,12 +25,12 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a \
       double-and-add ladder over all 576 bits of `d`, with the complete addition formulas of \
-      Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is Fermat's, by \
-      square-and-always-multiply. The result (or zeros) is selected by a mask of the checks, `d` \
+      Renes, Costello and Batina and a masked selection for each bit; `Z⁻¹` is the signature's \
+      divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
     code := Impl.Ecdh.X86_64.exchangeP521
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi
-    verified := Proof.Ecdh.X86_64.P521.ecdh_verified h.law
+    verified := Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P521.X86_64.EcdhP521

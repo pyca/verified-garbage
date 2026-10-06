@@ -223,7 +223,7 @@ theorem winMul_ok (hc : CfgOk c) (h6 : c.n ≤ 6) (hC : Law c.C) {base : Addr} {
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
   have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
-  have h4 := (hc.inv h6).1
+  have h4 := (hc.inv (by omega)).1
   have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega
   have hBs : c.sl WB + 80 * c.n ≤ size := by
     have := sl_le_win c h6 (i := WB + 9) (by decide)
