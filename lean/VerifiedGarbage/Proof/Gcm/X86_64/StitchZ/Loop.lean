@@ -33,26 +33,6 @@ open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom inc32)
 
 /-! ## Helpers -/
 
-/-- `Prod.zero` in the products of the four lanes (`VEX.256` clears the
-upper lanes). -/
-theorem zeroZ_ok (s : State) :
-    WP isa (.block Impl.Gcm.X86_64.Vpclmul.zero) s fun s' =>
-      (∀ l < 4, prod (s'.zproj l) = Prod.zero) ∧ ZFrame [.xmm8, .xmm9, .xmm10] s s' := by
-  refine WP.mono (WP.zframe (is := Impl.Gcm.X86_64.Vpclmul.zero) (rs := [.xmm8, .xmm9, .xmm10]) (by decide)
-    (Q := fun s' => ∀ l < 4, prod (s'.zproj l) = Prod.zero) ?_) fun _ h => h
-  have z : ∀ (t : State) (r : XReg) (l : Nat), l < 4 →
-      ((VOp.vbin .vpxor .l256 r r r).exec t).zlane r l = 0 := fun t r l hl => by
-    simp only [VOp.exec, State.zlane, State.lane, State.setV, ite_true, VBinOp.sse,
-      VG.Proof.Aes.X86_64.AesNi.eval_pxor, BitVec.xor_self]
-    rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl <;> simp
-  rw [Impl.Gcm.X86_64.Vpclmul.zero, WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil fun l hl => ?_⟩
-  have n : ∀ (t : State) (r d : XReg), r ≠ d → ∀ l,
-      ((VOp.vbin .vpxor .l256 d d d).exec t).zlane r l = t.zlane r l :=
-    fun t r d h l => by simp only [VOp.exec]; exact State.zlane_setV_ne _ _ h _ _ _
-  simp (disch := decide) only [prod, State.zproj_xmm, Prod.zero, n, z _ _ _ hl]
-
 /-- `vpshufb x, x', ymm0` (`VEX.128`) and a 16-byte store of `x` to `[b]`. -/
 theorem store16Z_ok (x x' : XReg) (b : Reg) (s : State) (h0 : s.lane .xmm0 0 = revMask)
     (hin : InRegions s.wr (s.gpr b) 16) :
@@ -86,9 +66,7 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
   refine ⟨⟨by rw [hgpr]; exact hE.rdx, by rw [hgpr]; exact hE.r11, fun i hi hi' => ?_, fun k hk l hl => ?_,
     fun k hk => by rw [hrd, hwr]; exact hE.ina k hk, fun k hk => by rw [hrd, hwr]; exact hE.inp k hk,
     fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact hE.m0 l hl⟩,
-    fun l hl => by
-      rw [← State.zlane_lt2 _ _ hl, hlane _ (by decide) (by decide) l (by omega), State.zlane_lt2 _ _ hl]
-      exact h1 l hl, ?_⟩
+    fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact h1 l hl, ?_⟩
   · have e : a + BitVec.ofNat 64 (16 * i) = bAddr s₀ (16 * g + i) := addr_eq (by omega)
     rw [e, blockAt_frame hf fun r hr => by
       simp only [List.mem_singleton] at hr
@@ -107,7 +85,7 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
       exact ⟨by rw [hlane _ (by decide) (by decide) 0 (by decide)]; exact h2.1,
         fun l h1 h4 => by rw [hlane _ (by decide) (by decide) l h4]; exact h2.2 l h1 h4⟩
     · rw [ite_f (by assumption)] at h2
-      exact ⟨fun l hl => by rw [kp l hl]; exact h2.1 l hl,
+      exact ⟨fun hj l hl => by rw [kp l hl]; exact h2.1 hj l hl,
         fun l hl => by rw [hlane _ (by decide) (by decide) l hl]; exact h2.2 l hl⟩
 
 /-! ## The encryption loop -/
@@ -120,7 +98,7 @@ structure EInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) 
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l
-  m1 : ∀ l < 2, s.lane .xmm1 l = poly
+  m1 : ∀ l < 4, s.zlane .xmm1 l = poly
   y : s.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * (e - 1))).map (ctb s₀))
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
 
@@ -176,8 +154,8 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
   let yl : Nat → Block := fun l => s.zlane .xmm2 l
   have ha : a.toNat = (dp s₀).toNat + 256 * (e - 1) := hI.rdx
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (zeroZ_ok s) fun s₁ ⟨z₁, f₁⟩ => ?_)
-  have hE₁ : GEnv s₀ 0 a X P s₁ :=
+  have f₁ : ZFrame [.xmm8, .xmm9, .xmm10] s s := ZFrame.refl _ _
+  have hE₁ : GEnv s₀ 0 a X P s :=
     { rdx := by rw [f₁.gpr]
       r11 := by rw [f₁.gpr, hr11]
       xs := fun i _ hi => by
@@ -196,7 +174,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
         exact in_rdwr (in_sub_int hp.p_in (by omega))
       m0 := fun l hl => by rw [f₁.zlane _ (by decide) l hl]; exact hI.a.msk l hl }
   have hA₁ := hI.a.zframe f₁ (by decide) (by decide) (by decide)
-  have hrdx₁ : (s₁.gpr .rdx).toNat + 64 * 4 = (dp s₀).toNat + 16 * (16 * e) := by
+  have hrdx₁ : (s.gpr .rdx).toNat + 64 * 4 = (dp s₀).toNat + 16 * (16 * e) := by
     rw [f₁.gpr]; show a.toNat + _ = _; omega
   -- The group, with the loads of the previous group after rounds 1–4 and the reduction after round 5.
   refine WP.seq (WP.mono (batch_ok hp gq gRegs gRegs_ok (QG s₀ (fun _ => 0) a X P yl)
@@ -205,9 +183,9 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
     (fun t t' h hg hrd hwr hl hf => QG.data hp (by omega) (by omega) ha (fun i _ hi => by omega) h hg hrd hwr hl hf)
     (c := 16 * e) (j := 4) (by omega) hA₁ hrdx₁
     ⟨hE₁, fun l hl => by
-      rw [← State.zlane_lt2 _ _ hl, f₁.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact hI.m1 l hl,
+      rw [f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
       by rw [ite_f (by decide)]
-         exact ⟨fun l hl => z₁ l hl, fun l hl => by rw [f₁.zlane _ (by decide) l hl]⟩⟩)
+         exact ⟨fun h => absurd h (by decide), fun l hl => by rw [f₁.zlane _ (by decide) l hl]⟩⟩)
     fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂⟩ => ?_)
   refine WP.mono (nextE_ok s₂) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨_, h1', h2⟩ := hQ₂
@@ -227,7 +205,7 @@ theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf 
   refine ⟨⟨hA', by omega, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 => by rw [gk r h2 h3]; exact hI.gpr r h1 h2 h3 h4,
     fun k hk l hl => by rw [fm, keepP hp (by omega) hm₂ hk hl, f₁.mem]; exact hI.pw k hk l hl,
-    fun l hl => by rw [← State.zlane_lt2 _ _ hl, fl, State.zlane_lt2 _ _ hl]; exact h1' l hl, ?_,
+    fun l hl => by rw [fl]; exact h1' l hl, ?_,
     fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
   · rw [frdx, hg₂, f₁.gpr, BitVec.toNat_add, show (256 : BitVec 64).toNat = 256 from rfl,
       Nat.mod_eq_of_lt (by show a.toNat + 256 < 2 ^ 64; omega)]
@@ -268,7 +246,7 @@ structure Ready (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop wh
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l
-  m1 : ∀ l < 2, s.lane .xmm1 l = poly
+  m1 : ∀ l < 4, s.zlane .xmm1 l = poly
   y : s.zlane .xmm2 0 = y₀ s₀
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
 
@@ -276,10 +254,10 @@ structure Ready (s₀ : State) (P : Nat → Nat → Block) (s : State) : Prop wh
 load are the `2k`-th and `2k + 1`-th of `Stitch`'s. -/
 theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : Stitch.Ready s₀ P s) :
     WP isa (.block setupZ) s (Ready s₀ fun k l => P (2 * k + l / 2) (l % 2)) := by
-  refine WP.mono (WP.zframe (is := setupZ) (rs := [.xmm13, .xmm14, .xmm15, .xmm15, .xmm0, .xmm2]) (by decide)
+  refine WP.mono (WP.zframe (is := setupZ) (rs := [.xmm13, .xmm14, .xmm15, .xmm15, .xmm0, .xmm1, .xmm2]) (by decide)
     (Q := fun s' => (∀ l < 4, s'.zlane .xmm14 l = Nat.repeat inc32 l (cb s₀)) ∧ (∀ l < 4, s'.zlane .xmm0 l = revMask) ∧
-      (∀ l < 4, s'.zlane .xmm15 l = four) ∧ s'.zlane .xmm2 0 = s.lane .xmm2 0 ∧
-      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) ?_) fun s' ⟨⟨c14, m0, i15, y0, y1⟩, f⟩ => ?_
+      (∀ l < 4, s'.zlane .xmm15 l = four) ∧ (∀ l < 4, s'.zlane .xmm1 l = poly) ∧ s'.zlane .xmm2 0 = s.lane .xmm2 0 ∧
+      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) ?_) fun s' ⟨⟨c14, m0, i15, p1, y0, y1⟩, f⟩ => ?_
   · have c0 : s.xmm .xmm14 = Nat.repeat inc32 0 (cb s₀) := by
       have h := hR.a.ctr 0 (by decide); simp only [State.lane, ite_true] at h; exact h
     have c1 : s.ymmHi .xmm14 = Nat.repeat inc32 1 (cb s₀) := by
@@ -292,14 +270,19 @@ theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : S
       have h := hR.a.msk 0 (by decide); simp only [State.lane, ite_true] at h; exact h
     have m1 : s.ymmHi .xmm0 = revMask := by
       have h := hR.a.msk 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
+    have p0 : s.xmm .xmm1 = poly := by
+      have h := hR.m1 0 (by decide); simp only [State.lane, ite_true] at h; exact h
+    have p1 : s.ymmHi .xmm1 = poly := by
+      have h := hR.m1 1 (by decide); simp only [State.lane, Nat.one_ne_zero, ite_false] at h; exact h
     rw [setupZ]
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
     rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
-    rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_, ?_,
-      fun l hl1 hl4 => ?_⟩⟩
+    rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+    rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨fun l hl => ?_, fun l hl => ?_, fun l hl => ?_,
+      fun l hl => ?_, ?_, fun l hl1 hl4 => ?_⟩⟩
     all_goals simp only [VOp.exec]
     all_goals try rcases (by omega : l = 0 ∨ l = 1 ∨ l = 2 ∨ l = 3) with rfl | rfl | rfl | rfl
     all_goals try omega
@@ -309,7 +292,7 @@ theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : S
     all_goals simp only [State.zlane, State.lane, ite_true, ite_false, Nat.one_ne_zero,
       show (0 : Nat) < 2 by decide, show (1 : Nat) < 2 by decide]
     all_goals first
-      | exact c0 | exact c1 | exact m0 | exact m1
+      | exact c0 | exact c1 | exact m0 | exact m1 | exact p0 | exact p1
       | (rw [c0, i0, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
       | (rw [c1, i1, VG.Proof.Aes.X86_64.Vaes.paddd_two]; rfl)
       | (rw [i0]; exact paddd_two_two) | (rw [i1]; exact paddd_two_two)
@@ -321,7 +304,7 @@ theorem setupZ_ok {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : S
       fun k hk l hl => ?_, fun l hl => ?_, by rw [y0]; exact hR.y, y1⟩
     · rw [f.mem, show 64 * k + 16 * l = 32 * (2 * k + l / 2) + 16 * (l % 2) by omega]
       exact hR.pw _ (by omega) _ (by omega)
-    · rw [← State.zlane_lt2 _ _ hl, f.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact hR.m1 l hl
+    · exact p1 l hl
 
 /-- The first group, with nothing between its rounds. -/
 theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s : State} (hR : Ready s₀ P s) :
@@ -341,9 +324,7 @@ theorem first_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {s 
   refine ⟨by simpa using hA₁, Nat.le_refl _, by rw [hg₁, hR.rdx]; simp, ?_, by rw [hg₁]; exact hR.rax,
     fun r h1 h2 _ h4 => by rw [hg₁]; exact hR.gpr r h1 h2 h4,
     fun k hk l hl => by rw [keepP hp (by omega) hm₁ hk hl]; exact hR.pw k hk l hl,
-    fun l hl => by
-      rw [← State.zlane_lt2 _ _ hl, lk _ (by decide) (by decide) (by decide) l (by omega), State.zlane_lt2 _ _ hl]
-      exact hR.m1 l hl,
+    fun l hl => by rw [lk _ (by decide) (by decide) (by decide) l hl]; exact hR.m1 l hl,
     by rw [lk _ (by decide) (by decide) (by decide) 0 (by decide), hR.y]; simp [ghashFrom],
     fun l h1 h4 => by rw [lk _ (by decide) (by decide) (by decide) l h4]; exact hR.y1 l h1 h4⟩
   rw [hg₁, hR.gpr _ (by decide) (by decide) (by decide)]; simp
@@ -386,19 +367,19 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
 
 /-- The loads `0 … n − 1` of a group. -/
 theorem ghRun_ok {s₀ : State} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block} {yl : Nat → Block} :
-    ∀ n, n ≤ 4 → ∀ s, GEnv s₀ 0 a X P s → (∀ l < 4, prod (s.zproj l) = Prod.zero) →
-      (∀ l < 4, s.zlane .xmm2 l = yl l) →
+    ∀ n, n ≤ 4 → ∀ s, GEnv s₀ 0 a X P s → (∀ l < 4, s.zlane .xmm2 l = yl l) →
       WP isa (.block ((List.range n).flatMap fun i => ghLoad (ord i))) s fun s' => GEnv s₀ 0 a X P s' ∧
-        (∀ l < 4, prod (s'.zproj l) = accN X P yl l n) ∧ (∀ l < 4, s'.zlane .xmm2 l = yl l) ∧
+        (0 < n → ∀ l < 4, prod (s'.zproj l) = accN X P yl l n) ∧ (∀ l < 4, s'.zlane .xmm2 l = yl l) ∧
         ZFrame [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] s s'
-  | 0, _, s, hE, hz, hy => by
+  | 0, _, s, hE, hy => by
     rw [List.range_zero, List.flatMap_nil]
-    exact WP.block_nil ⟨hE, fun l hl => by rw [hz l hl]; rfl, hy, ZFrame.refl _ _⟩
-  | n + 1, hn, s, hE, hz, hy => by
+    exact WP.block_nil ⟨hE, fun h => absurd h (by decide), hy, ZFrame.refl _ _⟩
+  | n + 1, hn, s, hE, hy => by
     rw [List.range_succ, List.flatMap_append, WP.block_append_iff]
-    refine WP.mono (ghRun_ok n (by omega) s hE hz hy) fun s₁ ⟨hE₁, p₁, y₁, f₁⟩ => ?_
+    refine WP.mono (ghRun_ok n (by omega) s hE hy) fun s₁ ⟨hE₁, p₁, y₁, f₁⟩ => ?_
     simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    exact WP.mono (ghStep (Nat.zero_le _) hE₁ p₁ y₁) fun s' ⟨hE', p', y', f'⟩ => ⟨hE', p', y', f₁.trans f'⟩
+    exact WP.mono (ghStep (by omega) (Nat.zero_le _) hE₁ p₁ y₁) fun s' ⟨hE', p', y', f'⟩ =>
+      ⟨hE', fun _ => p', y', f₁.trans f'⟩
 
 theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {e : Nat}
     (he : nb s₀ = 16 * e) {s : State} (hI : EInv s₀ P e s) :
@@ -422,8 +403,8 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   simp only [lastG, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (zeroZ_ok s₁) fun s₂ ⟨z₂, f₂⟩ => ?_
-  have hE₂ : GEnv s₀ 0 a X P s₂ :=
+  have f₂ : ZFrame [.xmm8, .xmm9, .xmm10] s₁ s₁ := ZFrame.refl _ _
+  have hE₂ : GEnv s₀ 0 a X P s₁ :=
     { rdx := by rw [f₂.gpr, g₁]
       r11 := by rw [f₂.gpr, g₁, hr11]
       xs := fun i _ hi => by
@@ -444,15 +425,14 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
         rw [f₂.rd, f₂.wr, rd₁, wr₁, hI.a.rd, hI.a.wr]
         exact in_rdwr (in_sub_int hp.p_in (by omega))
       m0 := fun l hl => by rw [f₂.zlane _ (by decide) l hl, l₁ _ (by decide) l hl]; exact hI.a.msk l hl }
-  rw [WP.block_append_iff]
-  refine WP.mono (ghRun_ok (yl := yl) 4 (Nat.le_refl _) s₂ hE₂ z₂
+  refine WP.mono (ghRun_ok (yl := yl) 4 (Nat.le_refl _) s₁ hE₂
     (fun l hl => by rw [f₂.zlane _ (by decide) l hl, l₁ _ (by decide) l hl])) fun s₃ ⟨hE₃, p₃, _, f₃⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (ghFin hE₃ (fun l hl => by
-      rw [← State.zlane_lt2 _ _ hl, f₃.zlane _ (by decide) l (by omega), f₂.zlane _ (by decide) l (by omega),
-        l₁ _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact hI.m1 l hl))
+      rw [f₃.zlane _ (by decide) l hl, f₂.zlane _ (by decide) l hl, l₁ _ (by decide) l hl]; exact hI.m1 l hl))
     fun s₄ ⟨_, y4, _, f₄⟩ => ?_
-  rw [p₃ 0 (by decide), p₃ 1 (by decide), p₃ 2 (by decide), p₃ 3 (by decide)] at y4
+  rw [p₃ (by decide) 0 (by decide), p₃ (by decide) 1 (by decide), p₃ (by decide) 2 (by decide),
+    p₃ (by decide) 3 (by decide)] at y4
   have hm0₄ : s₄.lane .xmm0 0 = revMask := by
     rw [← State.zlane_lt2 _ _ (by decide), f₄.zlane _ (by decide) 0 (by decide), f₃.zlane _ (by decide) 0 (by decide),
       f₂.zlane _ (by decide) 0 (by decide), l₁ _ (by decide) 0 (by decide)]; exact hI.a.msk 0 (by decide)
@@ -515,7 +495,7 @@ structure DInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) 
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
   pw : ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (64 * k + 16 * l)) 128 = P k l
-  m1 : ∀ l < 2, s.lane .xmm1 l = poly
+  m1 : ∀ l < 4, s.zlane .xmm1 l = poly
   y : s.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * e)).map (blk s₀))
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
 
@@ -535,8 +515,8 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     show (s.gpr .rdx).toNat = _
     rw [hI.rdx, BitVec.toNat_add, toNat_ofNat_lt (by omega), Nat.mod_eq_of_lt (by omega)]
   have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (zeroZ_ok s) fun s₁ ⟨z₁, f₁⟩ => ?_)
-  have hE₁ : GEnv s₀ 0 a X P s₁ :=
+  have f₁ : ZFrame [.xmm8, .xmm9, .xmm10] s s := ZFrame.refl _ _
+  have hE₁ : GEnv s₀ 0 a X P s :=
     { rdx := by rw [f₁.gpr]
       r11 := by rw [f₁.gpr, hr11]
       xs := fun i _ hi => by
@@ -563,9 +543,9 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
       (fun i hi _ => by have : 16 ≤ i := hi; omega) h hg hrd hwr hl hf)
     (c := 16 * e) (j := 0) (by omega) hA₁ (by rw [f₁.gpr]; show a.toNat + _ = _; omega)
     ⟨hE₁, fun l hl => by
-      rw [← State.zlane_lt2 _ _ hl, f₁.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact hI.m1 l hl,
+      rw [f₁.zlane _ (by decide) l hl]; exact hI.m1 l hl,
       by rw [ite_f (by decide)]
-         exact ⟨fun l hl => z₁ l hl, fun l hl => by rw [f₁.zlane _ (by decide) l hl]⟩⟩)
+         exact ⟨fun h => absurd h (by decide), fun l hl => by rw [f₁.zlane _ (by decide) l hl]⟩⟩)
     fun s₂ ⟨hA₂, hQ₂, hg₂, hl₂, hm₂⟩ => ?_)
   refine WP.mono (nextD_ok s₂) fun s' ⟨frdx, fr9, fcf, fg, fl, fm, frd, fwr⟩ => ?_
   obtain ⟨_, h1', h2⟩ := hQ₂
@@ -585,7 +565,7 @@ theorem dbody_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   refine ⟨⟨hA', ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun r h1 h2 h3 h4 => by rw [gk r h2 h3]; exact hI.gpr r h1 h2 h3 h4,
     fun k hk l hl => by rw [fm, keepP hp (by omega) hm₂ hk hl, f₁.mem]; exact hI.pw k hk l hl,
-    fun l hl => by rw [← State.zlane_lt2 _ _ hl, fl, State.zlane_lt2 _ _ hl]; exact h1' l hl, ?_,
+    fun l hl => by rw [fl]; exact h1' l hl, ?_,
     fun l h1 h4 => by rw [fl]; exact h2.2 l h1 h4⟩, ?_⟩
   · rw [frdx, hg₂, f₁.gpr, hI.rdx, BitVec.add_assoc, show (256 : BitVec 64) = BitVec.ofNat 64 256 from rfl,
       ← BitVec.ofNat_add, Nat.mul_succ]
