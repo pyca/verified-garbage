@@ -58,6 +58,7 @@ mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
+mod rsa_public;
 mod x25519;
 mod x448;
 
