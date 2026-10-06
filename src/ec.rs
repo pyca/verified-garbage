@@ -8,6 +8,8 @@
     target_arch = "arm"
 ))]
 
+pub(crate) mod p256;
+
 mod sealed {
     pub trait Sealed {}
 }

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.Adx
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of the multiplication

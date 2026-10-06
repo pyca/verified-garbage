@@ -16,7 +16,7 @@ theorem initArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
   refine WP.of_runBlock ⟨t.setReg .rdi L.scr, ?_, ?_⟩
   · simp only [initArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.load64, hc.ea_fr, hin, ite_true, Option.map_some, hc.pScr]
-  exact ⟨hc.regs rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
     RegUpd.gpr_setReg_self _ _ _⟩
 
 def UpdArgs (L : Lay) (count : BitVec 64) (p : Addr) (n : BitVec 64) (t : State) : Prop :=
@@ -37,7 +37,7 @@ theorem inputArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (source count : Nat)
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h216, hsrc, Option.some.injEq, exists_eq_left', hc.pScr, hp, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
     trivial, rfl, by rw [sx32 (by omega)]⟩
 
 theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (count : Nat)
@@ -55,7 +55,7 @@ theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (count : Nat)
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, Option.map_some, Option.bind_some,
     reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h216, h224, h232,
     Option.some.injEq, exists_eq_left', hc.pScr, hc.pMsg, hc.pLen, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
     trivial, trivial, by rw [sx32 (by omega)]⟩
 
 
@@ -70,7 +70,7 @@ theorem prefixArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, hin, Option.some.injEq, exists_eq_left', hc.pScr, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
     by rw [sx32 (by decide : 32 < 2 ^ 31), add_add],
     rfl, by rw [sx32 (by omega)]⟩
 
@@ -93,10 +93,10 @@ theorem finalizeArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (prefixLen : Nat)
       RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
       Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
       Nat.reduceAdd, hs, hl, Option.some.injEq, exists_eq_left', hc.pScr, hc.pLen, FinArgs]
-  · exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 (by omega),
+  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 (by omega),
       by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
       by rw [sx32 (by omega)]⟩
-  · exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, by rw [sx32 hp],
+  · exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, by rw [sx32 hp],
       by rw [sx32 (by decide : 128 < 2 ^ 31), add_add],
       by rw [sx32 (by omega)]⟩
 

@@ -2,7 +2,6 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 
 /-!
 # ECDH over P-521 on x86-64: `Verified`
@@ -66,9 +65,7 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : ecdhX8
       · exact hrs) (by decide)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.ladderGSum, Proof.P521.X86_64.powPSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

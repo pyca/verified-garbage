@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Sha512.X86_64.Variant
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! Merged from `Proof.Ed25519.X86_64.PublicKey.Layout`. -/
 section
@@ -27,13 +29,17 @@ the stack. `call_ok` runs a call of verified code in such a state.
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
 open VG VG.X86_64
+open VG.Impl.Ed25519.X86_64 (combSym combWords)
+open VG.Proof.Ed25519.X86_64 (combRegion CombHeld)
 
-/-- The buffers and the lowest byte of the stack used (`rsp - 72` on entry). -/
+/-- The buffers, the lowest byte of the stack used (`rsp - 72` on entry), and the comb's
+tables (the static `combSym`). -/
 structure Lay where
   out : Addr
   seed : Addr
   scr : Addr
   B : Addr
+  T : Addr
 
 namespace Lay
 
@@ -48,6 +54,8 @@ abbrev STK : Region := ⟨L.B, 72⟩
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 56⟩
 /-- The return address. -/
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 72, 8⟩
+/-- The comb's tables. -/
+abbrev TBL : Region := combRegion L.T
 
 /-- What the contract says of where the buffers and the stack are. -/
 structure Ok : Prop where
@@ -63,6 +71,11 @@ structure Ok : Prop where
   no : L.out.toNat + 32 ≤ 2 ^ 64
   ns : L.seed.toNat + 32 ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
+  tbo : L.TBL.Disjoint L.OUT
+  tbc : L.TBL.Disjoint L.SCR
+  tbk : L.TBL.Disjoint L.STK
+  tbr : L.TBL.Disjoint L.RET
+  nt : L.T.toNat + 8 * 3072 ≤ 2 ^ 64
 
 end Lay
 
@@ -144,7 +157,7 @@ theorem below_call_sub (B : Addr) {m : Nat} (hm : m ≤ 16) :
 /-- The state between the frame's push and pop: `g` and `mx` are the
 registers and MXCSR on entry, `m₀` the memory. -/
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.SEED]
+  rd : t.rd = [L.SEED, L.TBL]
   wr : t.wr = [L.FR, L.OUT, L.SCR]
   rsp : t.gpr .rsp = L.B + BitVec.ofNat 64 16
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = g r
@@ -153,6 +166,8 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pSeed : t.mem.readW (L.B + BitVec.ofNat 64 56) 64 = L.seed
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 64) 64 = L.out
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  sym : t.syms combSym = L.T
+  held : ∀ i < 3072, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 /-- A call of verified code (see `WP.call`), which nests calls at most once
 more and is given regions within `seed`, the frame, `out` and `scratch` to
@@ -164,7 +179,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hsp : NoSp c) (hd : c.depth ≤ 1) {t : State} (hc : Ctx L g mx m₀ t)
     {rd wr : List Region} (hpre : k.pre (t.callEntry.withRegions rd wr))
-    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R)
+    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R)
     (hwsub : ∀ r ∈ wr, Within r L.OUT ∨ Within r L.SCR) {Q : State → Prop}
     (hQ : ∀ s', Ctx L g mx m₀ s' → Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem →
       (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = t.gpr r) →
@@ -183,7 +198,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     rcases hwsub r hr with h | h
     · exact ⟨_, by simp, h⟩
     · exact ⟨_, by simp, h⟩
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.of_syms (WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -208,7 +223,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
   refine hQ s' ⟨hrd.trans hc.rd, hwr.trans hc.wr, ?_, fun r hr hr' => (hcs r hr).trans (hc.cs r hr hr'),
     hmx.trans hc.mx, (keep 48 (by omega) (by omega)).trans hc.pScr,
     (keep 56 (by omega) (by omega)).trans hc.pSeed, (keep 64 (by omega) (by omega)).trans hc.pOut,
-    hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
+    hc.frame.trans (Frame.sub hf' fun r hr => ?_), hsy.symm ▸ hc.sym, hc.held⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hwsub r hr with h | h
@@ -224,7 +239,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
 /-- The x86-64 contract of `vg_ed25519_public_key`: `Spec.Ed25519.publicKeyContract`
 for 72 bytes of stack, spelled out (`out = rdi`, `seed = rsi`, `scratch = rdx`). -/
 def pkLocal : Contract isa where
-  pre s := 72 ≤ (s.gpr .rsp).toNat ∧ s.rd = [⟨s.gpr .rsi, 32⟩] ∧
+  pre s := 72 ≤ (s.gpr .rsp).toNat ∧ s.rd = [⟨s.gpr .rsi, 32⟩, combRegion (s.syms combSym)] ∧
     s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩] ∧
     Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩ ∧
     Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩ ∧
@@ -236,21 +251,29 @@ def pkLocal : Contract isa where
     Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rsi, 32⟩ ∧
     Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ ⟨s.gpr .rdx, 8192⟩ ∧
     (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 32 ≤ 2 ^ 64 ∧
-    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64 ∧
+    CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩,
+      ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩]
   post s s' := Spec.Ed25519.bytesAt s'.mem (s.gpr .rdi) 32 =
     Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) 32)
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
-    s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx
+    s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.syms combSym = s₂.syms combSym
 
 /-- The layout of a call from `s`. -/
-def lay (s : State) : Lay := ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rsp - BitVec.ofNat 64 72⟩
+def lay (s : State) : Lay :=
+  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rsp - BitVec.ofNat 64 72, s.syms combSym⟩
 
 theorem lay_ret (s : State) : (lay s).B + BitVec.ofNat 64 72 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
 theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
-  obtain ⟨-, -, -, os, oc, sc, ro, rs, rc, ko, ks, kc, no, ns, nc⟩ := h
+  obtain ⟨-, -, -, os, oc, sc, ro, rs, rc, ko, ks, kc, no, ns, nc, hh⟩ := h
+  obtain ⟨-, nt, hd⟩ := hh
   have e : (lay s).RET = ⟨s.gpr .rsp, 8⟩ := by simp only [Lay.RET, lay_ret]
-  exact ⟨os, oc, sc, ko, ks, kc, e ▸ ro, e ▸ rs, e ▸ rc, no, ns, nc⟩
+  have h1 := hd ⟨s.gpr .rdi, 32⟩ (by simp)
+  have h2 := hd ⟨s.gpr .rdx, 8192⟩ (by simp)
+  have h3 := hd ⟨s.gpr .rsp, 8⟩ (by simp)
+  have h4 := hd ⟨s.gpr .rsp - BitVec.ofNat 64 72, 72⟩ (by simp)
+  exact ⟨os, oc, sc, ko, ks, kc, e ▸ ro, e ▸ rs, e ▸ rc, no, ns, nc, h1, h2, h4, e ▸ h3, nt⟩
 
 end VG.Proof.Ed25519.X86_64.PublicKey
 end
@@ -313,11 +336,12 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' :
 
 /-- Code that writes only caller-saved registers. -/
 theorem regs (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : Ctx L g mx m₀ t' :=
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) :
+    Ctx L g mx m₀ t' :=
   ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
     by rw [hm]; exact hc.pScr, by rw [hm]; exact hc.pSeed, by rw [hm]; exact hc.pOut,
-    by rw [hm]; exact hc.frame⟩
+    by rw [hm]; exact hc.frame, by rw [hsy]; exact hc.sym, hc.held⟩
 
 /-- The return address of a call from the frame. -/
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
@@ -378,6 +402,8 @@ theorem push_slot (sp : Addr) (j : Nat) (hj : j < 3) :
   have : 8 * (j + 1) < 2 ^ 64 := by omega
   bv_omega
 
+theorem pushed_syms_eq (s : State) (rs : List Reg) : (pushed rs s).syms = s.syms := pushRegs_syms s rs
+
 theorem push_ctx {s : State} (h : pkLocal.pre s) :
     Ctx (lay s) s.gpr s.mxcsr s.mem (pushed pushRs s) := by
   have hn : 8 * pushRs.length ≤ (s.gpr .rsp).toNat := by show 8 * 7 ≤ _; have := h.1; omega
@@ -386,7 +412,8 @@ theorem push_ctx {s : State} (h : pkLocal.pre s) :
       ((lay s).B + BitVec.ofNat 64 (64 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 7; omega)) := fun j hj => by
     rw [← hw j (by show j < 7; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
-    hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_⟩
+    hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_, congrFun (pushed_syms_eq s pushRs) combSym,
+    h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1⟩
   · rw [pushed_wr, h.2.2.1]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [List.length_cons, List.length_nil, lay]; rw [push_base]
   · refine Frame.sub hf fun r hr => ?_
@@ -437,7 +464,7 @@ theorem initArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
   refine WP.of_runBlock ⟨t.setReg .rdi L.scr, ?_, ?_⟩
   · simp only [pkInitArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.load64, hc.ea_fr, hin, ite_true, Option.map_some, hc.pScr]
-  exact ⟨hc.regs rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
     RegUpd.gpr_setReg_self _ _ _⟩
 
 theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs L t) :
@@ -447,7 +474,7 @@ theorem init_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : InitArgs
   rw [rsp_ce, hrdi, hc.rsp, sub8]
   simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega)
 
-theorem init_sub : ∀ r ∈ initRd ++ initWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
+theorem init_sub : ∀ r ∈ initRd ++ initWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.nil_append, List.mem_singleton]
   rintro r rfl
   exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
@@ -533,7 +560,7 @@ theorem updArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h48, h56, Option.some.injEq, exists_eq_left', hc.pScr, hc.pSeed, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl, trivial, rfl, by rw [sx32 (by omega)]⟩
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl, trivial, rfl, by rw [sx32 (by omega)]⟩
 
 theorem sub88 (B : Addr) : B + BitVec.ofNat 64 8 - 8 = B := by bv_omega
 
@@ -561,7 +588,7 @@ theorem upd_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : UpdArgs L
   obtain ⟨hdi, -, hdx, hcx, h8⟩ := upd_regs ha (updRd L) (updWr L)
   simp only [Proof.Sha512.updateX86_64, rsp_ce, hdi, hdx, hcx, h8, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
-  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega) (by omega),
+  exact ⟨by trivial, by trivial, Offset.base_disjoint _ (by omega) (by omega),
     by simpa using hL.seed_scr (e := 0) (k := 192) (by omega), hL.seed_scr (by omega),
     by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
     hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
@@ -569,7 +596,7 @@ theorem upd_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : UpdArgs L
     by simpa using hL.stk_SEED (d := 0) (n := 8) (by omega),
     by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega) (by omega)⟩
 
-theorem upd_sub : ∀ r ∈ updRd L ++ updWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
+theorem upd_sub : ∀ r ∈ updRd L ++ updWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact ⟨L.SEED, by simp, within_base _ (by omega)⟩
@@ -620,7 +647,7 @@ theorem finArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h48, Option.some.injEq, exists_eq_left', hc.pScr, FinArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl, by rw [sx32 (by omega)],
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl, by rw [sx32 (by omega)],
     by rw [sx32 (by omega)]⟩
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Ed25519.bytesAt m p n).length = n := by
@@ -643,7 +670,7 @@ theorem fin_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : FinArgs L
   obtain ⟨hdi, -, hdx, hcx⟩ := fin_regs ha finRd (finWr L)
   simp only [Proof.Sha512.finalizeX86_64, rsp_ce, hdi, hdx, hcx, hc.rsp, sub8, sub88,
     State.withRegions_rd, State.withRegions_wr]
-  exact ⟨by first | trivial | rfl, by first | trivial | rfl, Offset.base_disjoint _ (by omega) (by omega),
+  exact ⟨by trivial, by trivial, Offset.base_disjoint _ (by omega) (by omega),
     Offset.base_disjoint _ (by omega) (by omega), Offset.disjoint _ (by omega) (by omega) (by omega),
     by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 192) (by omega) (by omega),
     hL.stk_scr (d := 8) (n := 8) (by omega) (by omega),
@@ -652,7 +679,7 @@ theorem fin_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : FinArgs L
     by simpa using hL.stk_scr (d := 0) (n := 8) (e := 1568) (k := 64) (by omega) (by omega),
     by simpa using hL.stk_scr (d := 0) (n := 8) (e := 192) (k := 1376) (by omega) (by omega)⟩
 
-theorem fin_sub : ∀ r ∈ finRd ++ finWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
+theorem fin_sub : ∀ r ∈ finRd ++ finWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩

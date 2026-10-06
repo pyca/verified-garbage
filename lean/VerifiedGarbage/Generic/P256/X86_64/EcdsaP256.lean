@@ -7,24 +7,34 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on x86-64
 
 A generic file (see `TCB/Emit.lean`) over P-256's group law and
-inversions `h`, the variant `Variants/P256/X86_64/Law.lean`.
+inversions `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
+multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
 -/
 
 namespace VG.Generic.P256.X86_64.EcdsaP256
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Artifact := [
+/-- The function of `Spec.Ecdsa.P256.signApi`, multiplying with BMI2 and ADX
+(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
+`rsp` (`hsp`). -/
+def sign (adx : Bool) (code : Prog X86_64.isa)
+    (hv : Verified X86_64.target code
+      (Spec.Ecdsa.P256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P256.signApi with
+    name := Spec.Ecdsa.P256.signApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
-      multiplied by word-by-word Montgomery multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` \
-      to the words above the low word `t₀`, two products) with a final conditional \
-      subtraction. `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
+      " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
       `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
       2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
       static `VG_P256_COMB` (148 KB), with no doublings: each entry is selected in constant time \
@@ -42,24 +52,32 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
       `Z` or `k`. The signature (or zeros) is selected by a mask, so the time depends only on the \
       pointers."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts
-    code := Impl.Ecdsa.X86_64.signP256
+    code
     contract := Spec.Ecdsa.P256.inst.signContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
-    verified := Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    verified := hv
+    spSafe := hsp
+    features := if adx then ["bmi2", "adx"] else [] }
+
+/-- The function of `Spec.Ecdsa.P256.verifyApi`, multiplying with BMI2 and ADX
+(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
+`rsp` (`hsp`). -/
+def verify (adx : Bool) (code : Prog X86_64.isa)
+    (hv : Verified X86_64.target code
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)))
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P256.verifyApi with
+    name := Spec.Ecdsa.P256.verifyApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
-    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p256`'s checks of the public \
+    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
+      field arithmetic, comb and inversions, with `vg_ecdh_p256" ++ (if adx then "_adx" else "") ++ "`'s checks of the public \
       key and its window method: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
-      are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS; as `p ≡ -1 (mod 2⁶⁴)`, each reduction step modulo `p` adds `t₀ (p + 1) / 2⁶⁴` \
-      to the words above the low word `t₀`, two products) with a final conditional subtraction. The key is checked without \
+      are four 64-bit words in Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The key is checked without \
       branches (its first byte, both coordinates below `p`, and the curve's equation), and \
       `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on a \
       point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is \
       the signature's comb over the 7-bit windows of `u` (from the static `VG_P256_COMB`), and \
-      `[v]Q` by `vg_ecdh_p256`'s signed 4-bit windows (`v` recoded as `v + 8 Σ_{j<65} 16^j`, \
+      `[v]Q` by `vg_ecdh_p256" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows (`v` recoded as `v + 8 Σ_{j<65} 16^j`, \
       a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a complete addition of \
       the entry selected in constant time per digit); the two are added by the complete \
       addition formulas of Renes, Costello and Batina. The result is the conjunction of the \
@@ -67,10 +85,21 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Ar
       modulo `n`) as a mask, so the time depends only on the pointers, although the contract would \
       let every input affect it."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts
-    code := Impl.Ecdsa.Verify.X86_64.verifyP256
+    code
     contract := Spec.Ecdsa.P256.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
-    verified := Proof.Ecdsa.Verify.X86_64.verify_verified h.law (Proof.P256.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := hv
+    spSafe := hsp
+    features := if adx then ["bmi2", "adx"] else [] }
+
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Artifact := [
+  sign false Impl.Ecdsa.X86_64.signP256
+    (Proof.Ecdsa.X86_64.sign_verified h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify false Impl.Ecdsa.Verify.X86_64.verifyP256
+    (Proof.Ecdsa.Verify.X86_64.verify_verified h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  sign true Impl.Ecdsa.X86_64.signP256Adx
+    (Proof.Ecdsa.X86_64.sign_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify true Impl.Ecdsa.Verify.X86_64.verifyP256Adx
+    (Proof.Ecdsa.Verify.X86_64.verify_verified_adx h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P256.X86_64.EcdsaP256
