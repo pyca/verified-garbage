@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
 
 /-! ADX squaring and Montgomery reduction. -/
 namespace VG.Impl.Bignum.X86_64.AdxSquare
@@ -85,9 +86,16 @@ def redcFinish : List Instr :=
 def redc : Prog isa :=
   .seq (.block redcSetup) (.seq (.loop redcRow .ne) (.block redcFinish))
 
+def redcTest : List Instr :=
+  [.mov .rax (.mem (hdr sW)), .alu .and .rax (.imm 7), .alu .cmp .rax (.imm 0)]
+
+/-- Eight-word tiles for aligned sizes, with the general-size reduction retained. -/
+def redcChoice : Prog isa :=
+  .seq (.block redcTest) (.ite .e AdxRotate8.redc redc)
+
 /-- Montgomery square using one copy of each off-diagonal product. -/
 def montSquare (o a : Nat) : Prog isa :=
-  .seq (rawSquare a) (.seq redc (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish o)))
+  .seq (rawSquare a) (.seq redcChoice (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish o)))
 
 /-- Equal input arrays use the square kernel; other products retain the
 fused ADX multiplication. The size guard preserves its small-size fallback. -/

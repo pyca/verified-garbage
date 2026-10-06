@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRaw
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/
@@ -44,15 +44,15 @@ theorem montSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   refine WP.seq (WP.mono (rawSquare_ok hs hdi hH hZ hw1 hw ha ha1 ha2) fun s₁ ⟨_, hv₁, ho₁, k₁⟩ => ?_)
   have hH₁ := hH.of_outside ho₁ hg
   have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
-  refine WP.seq (WP.mono (redc_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hw1 hw
+  refine WP.seq (WP.mono (redcChoice_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hw1 hw
     (by rw [hn₁]; exact hinv)) fun s₂ ⟨⟨q, hq, heq⟩, ho₂, k₂⟩ => ?_)
   have hN₁ : wv s₁.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho₁.wv (by omega) (by omega)
   rw [hv₁, hN₁] at heq
-  have ho12 := ho₁.trans ho₂
+  have ho12 := (ho₁.mono (o' := slot w aAcc) (n' := 16 * w + 32) (by omega) (by omega)).trans ho₂
   have hN₂ : wv s₂.mem B (slot w aN) w = wv s.mem B (slot w aN) w := ho12.wv (by omega) (by omega)
   have k12 := k₁.trans k₂
   have hs₂ := hs.congr k12.2.2
-  have hH₂ := hH.of_outside ho12 hg
+  have hH₂ := hH.of_outside ho12 (by unfold slot; omega)
   have hTlt : wv s₂.mem B (slot w aTmp) (w + 2) < 2 * wv s.mem B (slot w aN) w :=
     redc_lt hmpos hq (Nat.mul_lt_mul'' hA (wv_lt _ _ _ _)) heq
   have hsrc : readSrc s₂ (.mem (hdr (sArr aN))) = some (off B (slot w aN)) := by

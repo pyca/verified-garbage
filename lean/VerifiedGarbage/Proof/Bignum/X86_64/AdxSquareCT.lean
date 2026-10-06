@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCtRedc
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCtChoice
 
 /-! Constant time of the complete Montgomery square. -/
 namespace VG.Proof.Bignum.X86_64.AdxSquare
@@ -13,7 +13,7 @@ theorem montSquare_ct {o a : Nat} (ho : o < 8) (ha : a < 8)
     RelCT isa (Two GW) (AdxSquare.montSquare o a) (fun _ _ => True) := by
   unfold AdxSquare.montSquare
   refine RelCT.seq (two_post (raw_ct ha ha1 ha2 hS) (raw_gw ha ha1 ha2)) ?_
-  refine RelCT.seq redc_ct ?_
+  refine RelCT.seq redcChoice_ct ?_
   refine RelCT.seq (two_piece (Ψ := fun L s => GW L s ∧ s.gpr .r10 = off L.B (slot L.w aN))
     [.rdi] pins_gw (by taint_decide) ?_) ?_
   · intro L s h
