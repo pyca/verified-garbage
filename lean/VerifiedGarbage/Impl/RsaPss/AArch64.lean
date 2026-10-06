@@ -271,9 +271,12 @@ def emLen : Prog isa :=
       [.sub .x .x9 .x23 .x12, .subImm .x .x10 .x9 (H.D + 2), .lsr .x .x10 .x10 63]))
 
 /-- `x9 := emLen - hLen - 2`, the longest salt, and `x10` nonzero if it is
-less than the salt's length in `x12`. -/
+less than the salt's length in `x12` (any 64-bit value: its top bit is
+ORed in, since the borrow of `x9 - x12` is the comparison only below
+`2^63`). -/
 def saltFits : List Instr :=
-  [.subImm .x .x9 .x9 (H.D + 2), .sub .x .x10 .x9 .x12, .lsr .x .x10 .x10 63]
+  [.subImm .x .x9 .x9 (H.D + 2), .sub .x .x10 .x9 .x12, .lsr .x .x10 .x10 63, .lsr .x .x13 .x12 63,
+    .logic .orr .x .x10 .x10 .x13]
 
 /-- `dbLen = emLen - hLen - 1` (from `x9 = emLen - hLen - 2`) and
 `DB = scratch + oEm + lo`. -/
