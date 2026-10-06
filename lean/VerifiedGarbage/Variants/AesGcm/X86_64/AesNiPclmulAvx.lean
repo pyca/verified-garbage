@@ -10,21 +10,13 @@ namespace VG.Variants.AesGcm.X86_64.AesNiPclmulAvx
 
 open VG VG.X86_64
 
-theorem encPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.enc :=
-  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
-
-theorem decPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.dec :=
-  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
-
 /-- The interleaved loops of `Impl.Gcm.X86_64.StitchAvx` (their proof is `StitchName.ok`). -/
 def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .aesniAvx
   suffix := "_avx"
   features := ["avx"]
-  encP := encPiece
-  decP := decPiece
-  encPP := encPiece
-  decPP := decPiece
+  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.enc)
+  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchAvx.dec)
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.aesni, .aesni, .pclmul, some stitch⟩
 

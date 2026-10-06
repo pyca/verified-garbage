@@ -59,6 +59,12 @@ def decP : StitchName → Prog isa
 
 end StitchName
 
+/-- The facts `Piece` states of the loops named `n` for a key context of
+`vg_aes_gcm_init_precomputed`. -/
+structure PieceP (n : StitchName) : Type where
+  enc : Piece n.encP
+  dec : Piece n.decP
+
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/
 structure StitchPart where
@@ -71,9 +77,10 @@ structure StitchPart where
   encP : Piece name.enc
   decP : Piece name.dec
   /-- The same, of the loops for a key context of
-  `vg_aes_gcm_init_precomputed`. -/
-  encPP : Piece name.encP
-  decPP : Piece name.decP
+  `vg_aes_gcm_init_precomputed`, for the loops that read the powers of the
+  hash subkey from it (`none`: the `_precomputed` functions are not built
+  for this variant). -/
+  pieceP : Option (PieceP name) := none
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` (`GhashName`) and its interleaved loops

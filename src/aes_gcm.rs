@@ -54,6 +54,14 @@
 //! AES-NI needs no SSSE3 (and the 256-bit instances are not built); on AArch64, CPUs with the AES and PMULL extensions (which Rust's
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
+//!
+//! On x86-64, the `_vaes_vpclmul_avx512` instances also have `_precomputed`
+//! ones (`VG.Spec.Gcm.PowersRepr`), whose interleaved loops read the powers
+//! `H¹ … H⁴⁸` of the hash subkey from a larger key context, which
+//! `vg_aes_gcm_init_precomputed` writes, instead of computing them on every
+//! call. A key computes it once, after it has encrypted or decrypted
+//! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
+//! it, so that one used for a few messages never pays for it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -68,138 +76,85 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_encrypt_aes,
     vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_verify_aes,
 };
-#[cfg(target_arch = "x86")]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AESNI_FEATURES, VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
     VG_AES_GCM_SEAL_PCLMUL_FEATURES, vg_aes_gcm_init_aesni, vg_aes_gcm_init_aesni_pclmul,
     vg_aes_gcm_init_pclmul, vg_aes_gcm_open_aesni, vg_aes_gcm_open_aesni_pclmul,
     vg_aes_gcm_open_pclmul, vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_aesni_pclmul,
-    vg_aes_gcm_seal_pclmul, vg_aes_gcm_stream_decrypt_aesni,
+    vg_aes_gcm_seal_pclmul, vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_aesni_pclmul,
+    vg_aes_gcm_stream_aad_pclmul, vg_aes_gcm_stream_decrypt_aesni,
     vg_aes_gcm_stream_decrypt_aesni_pclmul, vg_aes_gcm_stream_decrypt_pclmul,
     vg_aes_gcm_stream_encrypt_aesni, vg_aes_gcm_stream_encrypt_aesni_pclmul,
-    vg_aes_gcm_stream_encrypt_pclmul,
-};
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::gcm::{
-    vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_aesni_pclmul, vg_aes_gcm_stream_aad_pclmul,
-    vg_aes_gcm_stream_finish_aesni, vg_aes_gcm_stream_finish_aesni_pclmul,
-    vg_aes_gcm_stream_finish_pclmul, vg_aes_gcm_stream_init_aesni,
-    vg_aes_gcm_stream_init_aesni_pclmul, vg_aes_gcm_stream_init_pclmul,
-    vg_aes_gcm_stream_verify_aesni, vg_aes_gcm_stream_verify_aesni_pclmul,
-    vg_aes_gcm_stream_verify_pclmul,
+    vg_aes_gcm_stream_encrypt_pclmul, vg_aes_gcm_stream_finish_aesni,
+    vg_aes_gcm_stream_finish_aesni_pclmul, vg_aes_gcm_stream_finish_pclmul,
+    vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_aesni_pclmul,
+    vg_aes_gcm_stream_init_pclmul, vg_aes_gcm_stream_verify_aesni,
+    vg_aes_gcm_stream_verify_aesni_pclmul, vg_aes_gcm_stream_verify_pclmul,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_aad_aesni_vpclmul,
-    vg_aes_gcm_stream_aad_vaes, vg_aes_gcm_stream_aad_vaes_pclmul,
-    vg_aes_gcm_stream_aad_vaes_vpclmul, vg_aes_gcm_stream_aad_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_aad_vpclmul, vg_aes_gcm_stream_finish_aesni_pclmul_avx,
-    vg_aes_gcm_stream_finish_aesni_vpclmul, vg_aes_gcm_stream_finish_vaes,
-    vg_aes_gcm_stream_finish_vaes_pclmul, vg_aes_gcm_stream_finish_vaes_vpclmul,
-    vg_aes_gcm_stream_finish_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vpclmul,
-    vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_init_aesni_vpclmul,
-    vg_aes_gcm_stream_init_vaes, vg_aes_gcm_stream_init_vaes_pclmul,
-    vg_aes_gcm_stream_init_vaes_vpclmul, vg_aes_gcm_stream_init_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_init_vpclmul, vg_aes_gcm_stream_verify_aesni_pclmul_avx,
-    vg_aes_gcm_stream_verify_aesni_vpclmul, vg_aes_gcm_stream_verify_vaes,
-    vg_aes_gcm_stream_verify_vaes_pclmul, vg_aes_gcm_stream_verify_vaes_vpclmul,
-    vg_aes_gcm_stream_verify_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vpclmul,
+    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES, vg_aes_gcm_init_aesni_pclmul_avx,
+    vg_aes_gcm_open_aesni_pclmul_avx, vg_aes_gcm_seal_aesni_pclmul_avx,
+    vg_aes_gcm_stream_aad_aesni_pclmul_avx, vg_aes_gcm_stream_decrypt_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_aesni_pclmul_avx, vg_aes_gcm_stream_finish_aesni_pclmul_avx,
+    vg_aes_gcm_stream_init_aesni_pclmul_avx, vg_aes_gcm_stream_verify_aesni_pclmul_avx,
 };
-// On x86-64 the key context is `vg_aes_gcm_init_precomputed`'s
-// (`VG.Spec.Gcm.PowersRepr`: `vg_aes_gcm_init`'s, with the powers of the hash
-// subkey after it), and the functions taking it are the `_precomputed` ones,
-// imported under the names of the others, whose instances the rest of this
-// module chooses among.
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_FEATURES as VG_AES_GCM_SEAL_AESNI_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES as VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_PCLMUL_FEATURES as VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_VPCLMUL_FEATURES as VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_PCLMUL_FEATURES as VG_AES_GCM_SEAL_PCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_FEATURES as VG_AES_GCM_SEAL_VAES_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_PCLMUL_FEATURES as VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES as VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_FEATURES as VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
-    VG_AES_GCM_SEAL_PRECOMPUTED_VPCLMUL_FEATURES as VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
-    vg_aes_gcm_init_precomputed as vg_aes_gcm_init,
-    vg_aes_gcm_init_precomputed_aesni as vg_aes_gcm_init_aesni,
-    vg_aes_gcm_init_precomputed_aesni_pclmul as vg_aes_gcm_init_aesni_pclmul,
-    vg_aes_gcm_init_precomputed_aesni_pclmul_avx as vg_aes_gcm_init_aesni_pclmul_avx,
-    vg_aes_gcm_init_precomputed_aesni_vpclmul as vg_aes_gcm_init_aesni_vpclmul,
-    vg_aes_gcm_init_precomputed_pclmul as vg_aes_gcm_init_pclmul,
-    vg_aes_gcm_init_precomputed_vaes as vg_aes_gcm_init_vaes,
-    vg_aes_gcm_init_precomputed_vaes_pclmul as vg_aes_gcm_init_vaes_pclmul,
-    vg_aes_gcm_init_precomputed_vaes_vpclmul as vg_aes_gcm_init_vaes_vpclmul,
-    vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512 as vg_aes_gcm_init_vaes_vpclmul_avx512,
-    vg_aes_gcm_init_precomputed_vpclmul as vg_aes_gcm_init_vpclmul,
-    vg_aes_gcm_open_precomputed as vg_aes_gcm_open,
-    vg_aes_gcm_open_precomputed_aesni as vg_aes_gcm_open_aesni,
-    vg_aes_gcm_open_precomputed_aesni_pclmul as vg_aes_gcm_open_aesni_pclmul,
-    vg_aes_gcm_open_precomputed_aesni_pclmul_avx as vg_aes_gcm_open_aesni_pclmul_avx,
-    vg_aes_gcm_open_precomputed_aesni_vpclmul as vg_aes_gcm_open_aesni_vpclmul,
-    vg_aes_gcm_open_precomputed_pclmul as vg_aes_gcm_open_pclmul,
-    vg_aes_gcm_open_precomputed_vaes as vg_aes_gcm_open_vaes,
-    vg_aes_gcm_open_precomputed_vaes_pclmul as vg_aes_gcm_open_vaes_pclmul,
-    vg_aes_gcm_open_precomputed_vaes_vpclmul as vg_aes_gcm_open_vaes_vpclmul,
-    vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512 as vg_aes_gcm_open_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_precomputed_vpclmul as vg_aes_gcm_open_vpclmul,
-    vg_aes_gcm_seal_precomputed as vg_aes_gcm_seal,
-    vg_aes_gcm_seal_precomputed_aesni as vg_aes_gcm_seal_aesni,
-    vg_aes_gcm_seal_precomputed_aesni_pclmul as vg_aes_gcm_seal_aesni_pclmul,
-    vg_aes_gcm_seal_precomputed_aesni_pclmul_avx as vg_aes_gcm_seal_aesni_pclmul_avx,
-    vg_aes_gcm_seal_precomputed_aesni_vpclmul as vg_aes_gcm_seal_aesni_vpclmul,
-    vg_aes_gcm_seal_precomputed_pclmul as vg_aes_gcm_seal_pclmul,
-    vg_aes_gcm_seal_precomputed_vaes as vg_aes_gcm_seal_vaes,
-    vg_aes_gcm_seal_precomputed_vaes_pclmul as vg_aes_gcm_seal_vaes_pclmul,
-    vg_aes_gcm_seal_precomputed_vaes_vpclmul as vg_aes_gcm_seal_vaes_vpclmul,
-    vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512 as vg_aes_gcm_seal_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_precomputed_vpclmul as vg_aes_gcm_seal_vpclmul,
-    vg_aes_gcm_stream_decrypt_precomputed as vg_aes_gcm_stream_decrypt,
-    vg_aes_gcm_stream_decrypt_precomputed_aesni as vg_aes_gcm_stream_decrypt_aesni,
-    vg_aes_gcm_stream_decrypt_precomputed_aesni_pclmul as vg_aes_gcm_stream_decrypt_aesni_pclmul,
-    vg_aes_gcm_stream_decrypt_precomputed_aesni_pclmul_avx as vg_aes_gcm_stream_decrypt_aesni_pclmul_avx,
-    vg_aes_gcm_stream_decrypt_precomputed_aesni_vpclmul as vg_aes_gcm_stream_decrypt_aesni_vpclmul,
-    vg_aes_gcm_stream_decrypt_precomputed_pclmul as vg_aes_gcm_stream_decrypt_pclmul,
-    vg_aes_gcm_stream_decrypt_precomputed_vaes as vg_aes_gcm_stream_decrypt_vaes,
-    vg_aes_gcm_stream_decrypt_precomputed_vaes_pclmul as vg_aes_gcm_stream_decrypt_vaes_pclmul,
-    vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul as vg_aes_gcm_stream_decrypt_vaes_vpclmul,
-    vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512 as vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_decrypt_precomputed_vpclmul as vg_aes_gcm_stream_decrypt_vpclmul,
-    vg_aes_gcm_stream_encrypt_precomputed as vg_aes_gcm_stream_encrypt,
-    vg_aes_gcm_stream_encrypt_precomputed_aesni as vg_aes_gcm_stream_encrypt_aesni,
-    vg_aes_gcm_stream_encrypt_precomputed_aesni_pclmul as vg_aes_gcm_stream_encrypt_aesni_pclmul,
-    vg_aes_gcm_stream_encrypt_precomputed_aesni_pclmul_avx as vg_aes_gcm_stream_encrypt_aesni_pclmul_avx,
-    vg_aes_gcm_stream_encrypt_precomputed_aesni_vpclmul as vg_aes_gcm_stream_encrypt_aesni_vpclmul,
-    vg_aes_gcm_stream_encrypt_precomputed_pclmul as vg_aes_gcm_stream_encrypt_pclmul,
-    vg_aes_gcm_stream_encrypt_precomputed_vaes as vg_aes_gcm_stream_encrypt_vaes,
-    vg_aes_gcm_stream_encrypt_precomputed_vaes_pclmul as vg_aes_gcm_stream_encrypt_vaes_pclmul,
-    vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul as vg_aes_gcm_stream_encrypt_vaes_vpclmul,
-    vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512 as vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_encrypt_precomputed_vpclmul as vg_aes_gcm_stream_encrypt_vpclmul,
+    VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_FEATURES,
+    VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
+    VG_AES_GCM_SEAL_VPCLMUL_FEATURES, vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes,
+    vg_aes_gcm_init_vaes_pclmul, vg_aes_gcm_init_vaes_vpclmul, vg_aes_gcm_init_vpclmul,
+    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes, vg_aes_gcm_open_vaes_pclmul,
+    vg_aes_gcm_open_vaes_vpclmul, vg_aes_gcm_open_vpclmul, vg_aes_gcm_seal_aesni_vpclmul,
+    vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vaes_pclmul, vg_aes_gcm_seal_vaes_vpclmul,
+    vg_aes_gcm_seal_vpclmul, vg_aes_gcm_stream_aad_aesni_vpclmul, vg_aes_gcm_stream_aad_vaes,
+    vg_aes_gcm_stream_aad_vaes_pclmul, vg_aes_gcm_stream_aad_vaes_vpclmul,
+    vg_aes_gcm_stream_aad_vpclmul, vg_aes_gcm_stream_decrypt_aesni_vpclmul,
+    vg_aes_gcm_stream_decrypt_vaes, vg_aes_gcm_stream_decrypt_vaes_pclmul,
+    vg_aes_gcm_stream_decrypt_vaes_vpclmul, vg_aes_gcm_stream_decrypt_vpclmul,
+    vg_aes_gcm_stream_encrypt_aesni_vpclmul, vg_aes_gcm_stream_encrypt_vaes,
+    vg_aes_gcm_stream_encrypt_vaes_pclmul, vg_aes_gcm_stream_encrypt_vaes_vpclmul,
+    vg_aes_gcm_stream_encrypt_vpclmul, vg_aes_gcm_stream_finish_aesni_vpclmul,
+    vg_aes_gcm_stream_finish_vaes, vg_aes_gcm_stream_finish_vaes_pclmul,
+    vg_aes_gcm_stream_finish_vaes_vpclmul, vg_aes_gcm_stream_finish_vpclmul,
+    vg_aes_gcm_stream_init_aesni_vpclmul, vg_aes_gcm_stream_init_vaes,
+    vg_aes_gcm_stream_init_vaes_pclmul, vg_aes_gcm_stream_init_vaes_vpclmul,
+    vg_aes_gcm_stream_init_vpclmul, vg_aes_gcm_stream_verify_aesni_vpclmul,
+    vg_aes_gcm_stream_verify_vaes, vg_aes_gcm_stream_verify_vaes_pclmul,
+    vg_aes_gcm_stream_verify_vaes_vpclmul, vg_aes_gcm_stream_verify_vpclmul,
 };
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_decrypt,
-    vg_aes_gcm_stream_encrypt,
+    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES, vg_aes_gcm_init_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_vaes_vpclmul_avx512, vg_aes_gcm_seal_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_aad_vaes_vpclmul_avx512, vg_aes_gcm_stream_decrypt_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_vaes_vpclmul_avx512, vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_init_vaes_vpclmul_avx512, vg_aes_gcm_stream_verify_vaes_vpclmul_avx512,
 };
 use crate::arch::gcm::{
-    vg_aes_gcm_stream_aad, vg_aes_gcm_stream_finish, vg_aes_gcm_stream_init,
-    vg_aes_gcm_stream_verify,
+    vg_aes_gcm_init, vg_aes_gcm_open, vg_aes_gcm_seal, vg_aes_gcm_stream_aad,
+    vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
+    vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
+#[cfg(target_arch = "x86_64")]
+use core::cell::UnsafeCell;
+#[cfg(target_arch = "x86_64")]
+use core::sync::atomic::{AtomicU8, AtomicU32, Ordering};
 
 /// A 16-byte block.
 type Block = [u8; 16];
-
-/// The words of a key context: `vg_aes_gcm_init_precomputed`'s on x86-64
-/// (1024 bytes, with the powers of the hash subkey), `vg_aes_gcm_init`'s
-/// elsewhere (256 bytes).
-#[cfg(target_arch = "x86_64")]
-const CTX_WORDS: usize = 128;
-#[cfg(not(target_arch = "x86_64"))]
-const CTX_WORDS: usize = 32;
 
 /// The largest plaintext (and ciphertext), in bytes: `2^39 − 256` bits
 /// (SP 800-38D §5.2.1.1).
@@ -359,6 +314,154 @@ pub(crate) fn select(f: Features) -> Backend {
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
 
+#[cfg(target_arch = "x86_64")]
+impl Backend {
+    /// Whether its instances include the `_precomputed` ones
+    /// (`VG.Spec.Gcm.PowersRepr`), whose interleaved loops read the powers
+    /// of the hash subkey from the key context instead of computing them on
+    /// every call.
+    const fn precomputed(self) -> bool {
+        match self {
+            Backend::VaesVpclmulAvx512 => true,
+            Backend::Scalar
+            | Backend::AesNi
+            | Backend::Pclmul
+            | Backend::AesNiPclmul
+            | Backend::Vaes
+            | Backend::Vpclmul
+            | Backend::VaesPclmul
+            | Backend::AesNiVpclmul
+            | Backend::VaesVpclmul
+            | Backend::AesNiPclmulAvx => false,
+        }
+    }
+}
+
+/// The shortest text, in bytes, that reaches the interleaved loops (16
+/// blocks at a time), and so gains from the powers of the hash subkey.
+#[cfg(target_arch = "x86_64")]
+const POWERS_MIN_LEN: usize = 256;
+
+/// How many calls of at least `POWERS_MIN_LEN` bytes a key makes with the
+/// key context of `vg_aes_gcm_init` before it computes the powers of its
+/// hash subkey (`Powers::get`): `vg_aes_gcm_init_precomputed` costs about as
+/// much as reading the powers saves over this many calls, so a key used for
+/// a few messages never pays for them.
+#[cfg(target_arch = "x86_64")]
+const POWERS_AFTER: u32 = 32;
+
+/// `Powers::state`: no powers yet, one thread computing them, or ready.
+#[cfg(target_arch = "x86_64")]
+const EMPTY: u8 = 0;
+#[cfg(target_arch = "x86_64")]
+const FILLING: u8 = 1;
+#[cfg(target_arch = "x86_64")]
+const READY: u8 = 2;
+
+/// The key context `vg_aes_gcm_init_precomputed` writes for a key (that of
+/// `vg_aes_gcm_init`, then the powers `H¹ … H⁴⁸` of the hash subkey:
+/// `VG.Spec.Gcm.PowersRepr`), which the `_precomputed` instances read,
+/// computed once the key has been used enough ([`Powers::get`]).
+#[cfg(target_arch = "x86_64")]
+struct Powers {
+    /// `EMPTY`, then `FILLING` while one thread writes `ctx`, then `READY`.
+    state: AtomicU8,
+    /// The calls that could have read the powers, before they were ready.
+    calls: AtomicU32,
+    /// The key (its first `key_len` bytes), which
+    /// `vg_aes_gcm_init_precomputed` takes.
+    key: [u8; 32],
+    /// The key context, written only by the thread that moved `state` from
+    /// `EMPTY` to `FILLING`, and read only after an acquire load of `state`
+    /// has seen `READY`, which that thread stores (with release ordering)
+    /// once it has written it.
+    ctx: UnsafeCell<[u64; 128]>,
+}
+
+// SAFETY: `ctx`, the only field not `Sync`, is written once, by the one
+// thread whose compare-exchange moved `state` from `EMPTY` to `FILLING`
+// (no other can), before it stores `READY` with release ordering; it is read
+// (through a shared reference) only after an acquire load of `state` sees
+// `READY`, so the write happens before every read, and is never written
+// again but through `&mut Powers` (in `drop`).
+#[cfg(target_arch = "x86_64")]
+unsafe impl Sync for Powers {}
+
+#[cfg(target_arch = "x86_64")]
+impl Powers {
+    /// No powers yet, for `key`.
+    fn new(key: &[u8]) -> Self {
+        let mut k = [0; 32];
+        k[..key.len()].copy_from_slice(key);
+        Powers {
+            state: AtomicU8::new(EMPTY),
+            calls: AtomicU32::new(0),
+            key: k,
+            ctx: UnsafeCell::new([0; 128]),
+        }
+    }
+
+    /// The key context with the powers, for a call of `len` bytes with
+    /// `backend`'s instances for `rounds` rounds: none if `backend` has no
+    /// `_precomputed` instances or the call is too short to gain from them;
+    /// otherwise the powers, computed by this call if the key has made
+    /// `POWERS_AFTER` such calls and no other thread is computing them.
+    fn get(&self, backend: Backend, rounds: usize, len: usize) -> Option<&[u64; 128]> {
+        if !backend.precomputed() || len < POWERS_MIN_LEN {
+            return None;
+        }
+        if self.state.load(Ordering::Acquire) != READY {
+            if self.calls.fetch_add(1, Ordering::Relaxed) < POWERS_AFTER - 1
+                || self
+                    .state
+                    .compare_exchange(EMPTY, FILLING, Ordering::Acquire, Ordering::Relaxed)
+                    .is_err()
+            {
+                return None;
+            }
+            let key_len = (rounds - 6) * 4;
+            // SAFETY: `self.key` is valid for reads of `key_len` bytes (16,
+            // 24 or 32); `self.ctx` for reads and writes of 1024, and no
+            // other thread reads or writes it (see `Sync`): this one moved
+            // `state` to `FILLING`. They are fields of one object, so they do
+            // not overlap each other or anything on the stack, or wrap
+            // around. The CPU has the features of `backend`, the only one
+            // with `_precomputed` instances.
+            unsafe {
+                vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512(
+                    self.key.as_ptr(),
+                    key_len,
+                    self.ctx.get(),
+                )
+            };
+            self.state.store(READY, Ordering::Release);
+        }
+        // SAFETY: `state` is `READY` (an acquire load saw it, or this thread
+        // stored it), so `ctx` is written and is never written again while
+        // `self` is shared (see `Sync`).
+        Some(unsafe { &*self.ctx.get() })
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl Clone for Powers {
+    /// The same key, with the powers if they are ready.
+    fn clone(&self) -> Self {
+        let ready = self.state.load(Ordering::Acquire) == READY;
+        Powers {
+            state: AtomicU8::new(if ready { READY } else { EMPTY }),
+            calls: AtomicU32::new(self.calls.load(Ordering::Relaxed)),
+            key: self.key,
+            // SAFETY: as in `get`, when `state` is `READY`.
+            ctx: UnsafeCell::new(if ready {
+                unsafe { *self.ctx.get() }
+            } else {
+                [0; 128]
+            }),
+        }
+    }
+}
+
 /// Why an AES-GCM operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
@@ -417,18 +520,26 @@ macro_rules! assert_tag_length {
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
 pub struct AesGcm {
-    /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`), or
-    /// on x86-64 `vg_aes_gcm_init_precomputed` (with `VG.Spec.Gcm.PowersRepr`).
-    ctx: [u64; CTX_WORDS],
+    /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`).
+    ctx: [u64; 32],
     rounds: usize,
     /// The implementations of AES and GHASH the functions called call.
     backend: Backend,
+    /// The key context with the powers of the hash subkey, for the
+    /// backends whose loops read them.
+    #[cfg(target_arch = "x86_64")]
+    powers: Powers,
 }
 
 impl Drop for AesGcm {
-    /// Wipes the key context.
+    /// Wipes the key context (and the key and the powers).
     fn drop(&mut self) {
         zeroize(&mut self.ctx);
+        #[cfg(target_arch = "x86_64")]
+        {
+            zeroize(&mut self.powers.key);
+            zeroize(self.powers.ctx.get_mut());
+        }
     }
 }
 
@@ -443,9 +554,11 @@ impl AesGcm {
             return Err(Error::InvalidKeyLength);
         }
         let mut k = AesGcm {
-            ctx: [0; CTX_WORDS],
+            ctx: [0; 32],
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
+            #[cfg(target_arch = "x86_64")]
+            powers: Powers::new(key),
         };
         let init = instance!(k.backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
@@ -455,22 +568,12 @@ impl AesGcm {
             avx: [vg_aes_gcm_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_init_aes]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` is valid for reads and writes of the key context's
-        // `8 * CTX_WORDS` bytes. They
+        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space. The CPU
         // has the features of the implementation selected.
         unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
-    }
-
-    /// `vg_aes_gcm_init`'s key context: the first 256 bytes of `ctx` (all of
-    /// it but on x86-64), which the streaming functions but `encrypt` and
-    /// `decrypt` take.
-    fn ctx256(&self) -> &[u64; 32] {
-        self.ctx
-            .first_chunk()
-            .expect("a key context has at least 256 bytes")
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -490,6 +593,28 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        let mut tag: Block = [0; 16];
+        #[cfg(target_arch = "x86_64")]
+        if let Some(ctx) = self.powers.get(self.backend, self.rounds, data.len()) {
+            // SAFETY: as below, with `ctx` the key context
+            // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+            // reads of 1024 bytes, and the CPU has the features of
+            // `self.backend`, whose `_precomputed` instance this is.
+            unsafe {
+                vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512(
+                    ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    &mut tag,
+                )
+            };
+            return Ok(tag);
+        }
         let seal = instance!(self.backend, vg_aes_gcm_seal,
             x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_seal_vaes, vg_aes_gcm_seal_vpclmul, vg_aes_gcm_seal_vaes_pclmul,
@@ -497,11 +622,9 @@ impl AesGcm {
                 vg_aes_gcm_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_seal_aes]);
-        let mut tag: Block = [0; 16];
-        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` (on x86-64
-        // `vg_aes_gcm_init_precomputed`, with the powers of its hash subkey)
-        // wrote for `self.rounds` (10, 12 or 14) rounds (every implementation
-        // writes the same one), valid for reads of its `8 * CTX_WORDS` bytes; `nonce` and `aad` are
+        // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
+        // `self.rounds` (10, 12 or 14) rounds (every implementation writes
+        // the same one), valid for reads of 256 bytes; `nonce` and `aad` are
         // valid for reads and `data` for reads and writes of their lengths,
         // and `tag` (a local) for reads and writes of 16 bytes. They are
         // distinct objects (`data` a unique borrow), so the writable ones
@@ -568,28 +691,50 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let open = instance!(self.backend, vg_aes_gcm_open,
-            x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
-            vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
-                vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
-                vg_aes_gcm_open_vaes_vpclmul_avx512],
-            avx: [vg_aes_gcm_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_open_aes]);
-        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
-        // valid for reads of its length.
-        let ok = unsafe {
-            open(
-                &self.ctx,
-                self.rounds,
-                nonce.as_ptr(),
-                nonce.len(),
-                aad.as_ptr(),
-                aad.len(),
-                data.as_mut_ptr(),
-                data.len(),
-                tag.as_ptr(),
-                tag.len(),
-            )
+        let ok = 'ok: {
+            #[cfg(target_arch = "x86_64")]
+            if let Some(ctx) = self.powers.get(self.backend, self.rounds, data.len()) {
+                // SAFETY: as in `encrypt_in_place`'s call of the
+                // `_precomputed` instance, with the received tag `tag` valid
+                // for reads of its length.
+                break 'ok unsafe {
+                    vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512(
+                        ctx,
+                        self.rounds,
+                        nonce.as_ptr(),
+                        nonce.len(),
+                        aad.as_ptr(),
+                        aad.len(),
+                        data.as_mut_ptr(),
+                        data.len(),
+                        tag.as_ptr(),
+                        tag.len(),
+                    )
+                };
+            }
+            let open = instance!(self.backend, vg_aes_gcm_open,
+                x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
+                vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
+                    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
+                    vg_aes_gcm_open_vaes_vpclmul_avx512],
+                avx: [vg_aes_gcm_open_aesni_pclmul_avx],
+                aarch64: [vg_aes_gcm_open_aes]);
+            // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+            // valid for reads of its length.
+            unsafe {
+                open(
+                    &self.ctx,
+                    self.rounds,
+                    nonce.as_ptr(),
+                    nonce.len(),
+                    aad.as_ptr(),
+                    aad.len(),
+                    data.as_mut_ptr(),
+                    data.len(),
+                    tag.as_ptr(),
+                    tag.len(),
+                )
+            }
         };
         // `open`'s contract leaves `data` as it was unless it returns 1.
         if ok == 1 {
@@ -661,13 +806,13 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 vg_aes_gcm_stream_init_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_stream_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_init_aes]);
-        // SAFETY: `key.ctx256()` is `vg_aes_gcm_init`'s key context (as in
+        // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
         // for reads of `nonce.len()`, and `s.state` for reads and writes of
         // 80. They are distinct objects, so the writable one overlaps nothing
         // else, nor anything on the stack, and none wraps around. The CPU has
         // the features of the implementation selected.
-        unsafe { init(key.ctx256(), nonce.as_ptr(), nonce.len(), &mut s.state) };
+        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
         Ok(s)
     }
 
@@ -691,7 +836,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
             f(
-                self.key.ctx256(),
+                &self.key.ctx,
                 &mut self.state,
                 self.aad_len,
                 aad.as_ptr(),
@@ -708,6 +853,37 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
+        #[cfg(target_arch = "x86_64")]
+        if let Some(ctx) = self
+            .key
+            .powers
+            .get(self.key.backend, self.key.rounds, data.len())
+        {
+            let f = if DECRYPT {
+                vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512
+            } else {
+                vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512
+            };
+            // SAFETY: as below, with `ctx` the key context
+            // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+            // reads of 1024 bytes (the other streaming functions read its
+            // first 256, which are `self.key.ctx`), and the CPU has the
+            // features of `self.key.backend`, whose `_precomputed` instances
+            // these are.
+            unsafe {
+                f(
+                    ctx,
+                    self.key.rounds,
+                    &mut self.state,
+                    self.aad_len,
+                    self.text_len,
+                    data.as_mut_ptr(),
+                    data.len(),
+                )
+            };
+            self.text_len = text_len;
+            return Ok(());
+        }
         let f = if DECRYPT {
             instance!(self.key.backend, vg_aes_gcm_stream_decrypt,
                 x86_64: [vg_aes_gcm_stream_decrypt_aesni, vg_aes_gcm_stream_decrypt_pclmul,
@@ -729,8 +905,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
                 avx: [vg_aes_gcm_stream_encrypt_aesni_pclmul_avx],
                 aarch64: [vg_aes_gcm_stream_encrypt_aes])
         };
-        // SAFETY: as in `new`, with the whole key context `self.key.ctx` (as in
-        // `AesGcm::encrypt_in_place`) and `data` valid for reads and writes of
+        // SAFETY: as in `new`, with `data` valid for reads and writes of
         // `data.len()` bytes (a unique borrow, so it overlaps nothing else);
         // `self.state` represents a message with `self.aad_len` bytes of
         // additional data and `self.text_len` of text.
@@ -763,13 +938,12 @@ impl Stream<'_, false> {
             avx: [vg_aes_gcm_stream_finish_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_finish_aes]);
         let mut tag: Block = [0; 16];
-        // SAFETY: as in `update`, with `vg_aes_gcm_init`'s key context
-        // `self.key.ctx256()` (as in `new`) and `tag` (a local) valid for
-        // reads and writes of 16 bytes. `update_aad` and `update` checked the lengths
+        // SAFETY: as in `update`, with `tag` (a local) valid for reads and
+        // writes of 16 bytes. `update_aad` and `update` checked the lengths
         // (§5.2.1.1).
         unsafe {
             f(
-                self.key.ctx256(),
+                &self.key.ctx,
                 self.key.rounds,
                 &mut self.state,
                 self.aad_len,
@@ -800,7 +974,7 @@ impl Stream<'_, true> {
         // reads of its length.
         let ok = unsafe {
             f(
-                self.key.ctx256(),
+                &self.key.ctx,
                 self.key.rounds,
                 &mut self.state,
                 self.aad_len,
@@ -983,9 +1157,8 @@ mod tests {
     }
 
     /// Every function's instances need at most the features `seal`'s do,
-    /// which `select` checks (`init` needs only AES's, but on x86-64, where
-    /// it is `init_precomputed`, GHASH's too; `stream_init` and `stream_aad`
-    /// only GHASH's).
+    /// which `select` checks (`init` needs only AES's, `stream_init` and
+    /// `stream_aad` only GHASH's).
     #[test]
     fn features() {
         #[cfg(target_arch = "x86")]
@@ -1040,38 +1213,37 @@ mod tests {
             use crate::arch::gcm::*;
             let groups: [(Features, &[Features]); 3] = [
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_FEATURES,
+                    VG_AES_GCM_SEAL_AESNI_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_AESNI_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_AESNI_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_AESNI_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_AESNI_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_FEATURES,
+                        VG_AES_GCM_OPEN_AESNI_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_PCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_PCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_PCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_PCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_AESNI_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_AESNI_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
                     ][..],
@@ -1084,92 +1256,96 @@ mod tests {
             }
             let groups: [(Features, &[Features]); 7] = [
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES,
+                    VG_AES_GCM_SEAL_AESNI_PCLMUL_AVX_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_OPEN_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_FEATURES,
+                    VG_AES_GCM_SEAL_VAES_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_FEATURES,
+                        VG_AES_GCM_INIT_VAES_FEATURES,
+                        VG_AES_GCM_OPEN_VAES_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_VPCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_VPCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_VPCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_PCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_VAES_PCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_PCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_PCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_AESNI_VPCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_AESNI_VPCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_AESNI_VPCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_AESNI_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_FEATURES,
+                    VG_AES_GCM_SEAL_VAES_VPCLMUL_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_INIT_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_OPEN_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_VPCLMUL_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
                     ][..],
                 ),
                 (
-                    VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                    VG_AES_GCM_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
                     &[
-                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
                     ][..],
                 ),
             ];
@@ -1266,6 +1442,15 @@ mod tests {
         }
     }
 
+    impl AesGcm {
+        /// The same key, with `backend`'s instances.
+        fn with_backend(&self, backend: Backend) -> AesGcm {
+            let mut k = self.clone();
+            k.backend = backend;
+            k
+        }
+    }
+
     /// Every implementation the CPU can run encrypts and decrypts long
     /// messages (whole groups of 16 blocks, which some implementations
     /// interleave, and the blocks left) as the baseline one does, one-shot
@@ -1277,18 +1462,12 @@ mod tests {
         let nonce = [2u8; 12];
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x5a; 32][..key_len]).unwrap();
-            let base = AesGcm {
-                backend: Backend::Scalar,
-                ..k.clone()
-            };
+            let base = k.with_backend(Backend::Scalar);
             for &(b, need) in Backend::ALL {
                 if !detected().contains(need) {
                     continue;
                 }
-                let k = AesGcm {
-                    backend: b,
-                    ..k.clone()
-                };
+                let k = k.with_backend(b);
                 for len in [256, 300, 512, 1024, 1300] {
                     let mut want = msg;
                     let want_tag = base
@@ -1307,6 +1486,94 @@ mod tests {
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
                 }
             }
+        }
+    }
+
+    /// A key whose backend has `_precomputed` instances computes the powers
+    /// of its hash subkey after `POWERS_AFTER` calls long enough to use
+    /// them, and then encrypts and decrypts, one-shot and streaming, as the
+    /// baseline does; shorter calls never count. A thread that finds another
+    /// computing them, and a key whose backend has no such instances, use
+    /// the key context of `vg_aes_gcm_init`.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn powers() {
+        use super::{EMPTY, FILLING, POWERS_AFTER, POWERS_MIN_LEN, READY};
+        use core::sync::atomic::Ordering;
+        let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
+        let aad = [3u8; 5];
+        let nonce = [7u8; 12];
+        for key_len in [16, 24, 32] {
+            let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
+            let k = k.with_backend(Backend::VaesVpclmulAvx512);
+            let base = k.with_backend(Backend::Scalar);
+            // Without the backend's features, only what needs none of them.
+            let run = detected().contains(Backend::VaesVpclmulAvx512.features());
+            let none = |k: &AesGcm, len| k.powers.get(Backend::Scalar, k.rounds, len).is_none();
+            assert!(none(&k, msg.len()));
+            if !run {
+                continue;
+            }
+            // Short calls neither use nor count toward the powers.
+            assert!(
+                k.powers
+                    .get(k.backend, k.rounds, POWERS_MIN_LEN - 1)
+                    .is_none()
+            );
+            assert_eq!(k.powers.calls.load(Ordering::Relaxed), 0);
+            let fresh = k.clone();
+            // Each round makes five calls: `encrypt_in_place`, two
+            // streaming updates and two `decrypt_in_place`.
+            for i in 0..POWERS_AFTER / 5 + 2 {
+                let state = k.powers.state.load(Ordering::Relaxed);
+                assert_eq!(state, if 5 * i < POWERS_AFTER { EMPTY } else { READY });
+                let len = [256, 300, 512, 700][i as usize % 4];
+                let mut want = msg;
+                let want_tag = base
+                    .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                    .unwrap();
+                let mut ct = msg;
+                let tag = k.encrypt_in_place(&nonce, &aad, &mut ct[..len]).unwrap();
+                assert_eq!((&ct[..len], tag), (&want[..len], want_tag));
+                let mut e = k.encryptor(&nonce).unwrap();
+                e.update_aad(&aad).unwrap();
+                let mut st = msg;
+                e.update(&mut st[..len]).unwrap();
+                assert_eq!((&st[..len], e.finalize()), (&want[..len], want_tag));
+                let mut d = k.decryptor(&nonce).unwrap();
+                d.update_aad(&aad).unwrap();
+                d.update(&mut st[..len]).unwrap();
+                d.finalize(&tag).unwrap();
+                assert_eq!(&st[..len], &msg[..len]);
+                let mut bad = tag;
+                bad[0] ^= 1;
+                assert_eq!(
+                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad),
+                    Err(Error::TagMismatch)
+                );
+                k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
+                    .unwrap();
+                assert_eq!(&ct[..len], &msg[..len]);
+            }
+            // A clone keeps the powers if they are ready, and not otherwise.
+            let ready = k.clone();
+            assert_eq!(ready.powers.state.load(Ordering::Relaxed), READY);
+            assert_eq!(
+                ready
+                    .powers
+                    .get(ready.backend, ready.rounds, POWERS_MIN_LEN),
+                k.powers.get(k.backend, k.rounds, POWERS_MIN_LEN)
+            );
+            assert_eq!(fresh.clone().powers.state.load(Ordering::Relaxed), EMPTY);
+            // Another thread computing them: this one does not wait.
+            fresh.powers.calls.store(POWERS_AFTER, Ordering::Relaxed);
+            fresh.powers.state.store(FILLING, Ordering::Relaxed);
+            assert!(
+                fresh
+                    .powers
+                    .get(fresh.backend, fresh.rounds, POWERS_MIN_LEN)
+                    .is_none()
+            );
         }
     }
 
