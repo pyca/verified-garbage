@@ -38,8 +38,7 @@
 //! on a CPU with BMI2 and ADX). The timing of the first may depend on `n`
 //! but not on the private key; that of the second on `n`, `e` and the number
 //! of candidates the recovery tried (1 or 2 for most keys), but not
-//! otherwise on `d`. On AArch64, a key is not yet loaded from `(n, e, d)`
-//! (`PrivateKey::from_components`).
+//! otherwise on `d`.
 //!
 //! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract

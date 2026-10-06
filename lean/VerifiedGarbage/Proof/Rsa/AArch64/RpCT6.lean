@@ -1,8 +1,9 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.RpCT5
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCT5
+import VerifiedGarbage.Proof.Rsa.AArch64.RpCands
 import VerifiedGarbage.Proof.Rsa.RecoverTries
 
 /-!
-# `vg_rsa_recover_primes` on x86-64: constant time, the candidates
+# `vg_rsa_recover_primes` on AArch64: constant time, the candidates
 
 A candidate leaks the same in runs whose working spaces agree
 (`candBody_ct`); the candidates tried are the public number of tries
@@ -10,12 +11,14 @@ A candidate leaks the same in runs whose working spaces agree
 number (`cand_cond`, `RecoverTries.lean`).
 -/
 
-namespace VG.Proof.Rsa.X86_64
+namespace VG.Proof.Rsa.AArch64
 
-open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
-open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
+open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.Rsa.AArch64.Recover
+open VG.Proof.Bignum VG.Proof.Bignum.AArch64
+open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Impl.Bignum.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 open VG.Spec.Rsa (splitTwos recoverStep recoverPrimes recoverTries)
+open VG.Proof.Rsa (pqOf go_le cand_cond)
 
 namespace Rp
 
@@ -37,7 +40,7 @@ theorem CK.ws {p : RpP} {s : State} (h : CK p s) : Ws s p.B p.Z (wk p.k) := by
 /-- After `gBlk`. -/
 def CG (p : RpP) (s : State) : Prop :=
   ∃ (minv : BitVec 64) (N r t : Nat), Cst s p.B p.Z (wk p.k) minv N p.el r t ∧
-    s.gpr .r12 = BitVec.ofNat 64 (wk p.k) ∧ s.gpr .rcx = BitVec.ofNat 64 0
+    s.gpr .x12 = BitVec.ofNat 64 (wk p.k) ∧ s.gpr .x13 = BitVec.ofNat 64 0
 
 /-- After `g R mod n` in `Xm` (`hg`), then copied to `G`. -/
 def CX (j : Nat) (p : RpP) (s : State) : Prop :=
@@ -47,47 +50,47 @@ def CX (j : Nat) (p : RpP) (s : State) : Prop :=
 
 /-- `setWord`'s registers after its load. -/
 def swXVal (p : RpP) : Reg → BitVec 64
-  | .r8 => off p.B (slot (wk p.k) aX)
-  | .r12 => BitVec.ofNat 64 (wk p.k)
-  | .rcx => BitVec.ofNat 64 0
+  | .x8 => off p.B (slot (wk p.k) aX)
+  | .x12 => BitVec.ofNat 64 (wk p.k)
+  | .x13 => BitVec.ofNat 64 0
   | _ => 0
 
-theorem setX_ct : RelCT isa (Two CG) (setWord aX .rcx) (Two CK) := by
-  rw [setWord_eq]
-  refine pin_ct [.rdi, .r12, .rcx] [.r8, .r12, .rcx] swXVal (fun _ _ _ h₁ h₂ r hr => ?_) (by taint_decide)
+theorem setX_ct : RelCT isa (Two CG) (setWord aX) (Two CK) := by
+  unfold setWord
+  refine pin_ct [.x0, .x12, .x13] [.x8, .x12, .x13] swXVal (fun _ _ _ h₁ h₂ r hr => ?_) (by taint_decide)
     (fun p s h => ?_) (by taint_decide) fun p s h => ?_
   · obtain ⟨_, _, _, _, hc₁, a₁, b₁⟩ := h₁
     obtain ⟨_, _, _, _, hc₂, a₂, b₂⟩ := h₂
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · rw [hc₁.ws.rdi, hc₂.ws.rdi]
+    · rw [hc₁.ws.x0, hc₂.ws.x0]
     · rw [a₁, a₂]
     · rw [b₁, b₂]
-  · obtain ⟨_, _, _, _, hc, h12, hcx⟩ := h
+  · obtain ⟨_, _, _, _, hc, h12, h13⟩ := h
     have hw := hc.ws
     have := hw.h256
     have hl : InRegions (s.rd ++ s.wr) (off p.B (8 * sArr aX)) 8 :=
       hw.scr.ld (by have := hw.hZ; have := hdr_lt_slot (wk p.k) 16 (show sArr aX < 32 by decide); omega)
-    refine WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = off p.B (slot (wk p.k) aX)) (by
-      xrun [State.ea, hdr, hw.rdi, hdrOff, hl, hw.harr aX (by decide)]) rfl) fun t ⟨h8, k⟩ r hr => ?_
+    refine WP.mono (WP.keep [.x7, .x8] (Q := fun t => t.gpr .x8 = off p.B (slot (wk p.k) aX)) (by
+      brun [hw.x0, hdr_enc (show sArr aX < 32 by decide), hl, hw.harr aX (by decide)])
+      (by decide) (by decide) (by decide +kernel)) fun t ⟨h8, k⟩ r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact h8
-    · exact (k.gpr (by decide)).trans h12
-    · exact (k.gpr (by decide)).trans hcx
-  · rw [← setWord_eq]
-    obtain ⟨minv, N, r, t, hc, h12, hcx⟩ := h
+    · exact (k.gpr .x12 (by decide)).trans h12
+    · exact (k.gpr .x13 (by decide)).trans h13
+  · obtain ⟨minv, N, r, t, hc, h12, h13⟩ := h
     have hw1 := hc.ws.w1
     have hw2 := hc.ws.w2
     have hg := hc.good
-    refine WP.mono (setWord_ok hc.ws.scr hc.ws.rdi hg.1.hdr hg.2 h12 (by omega) (by omega) (o := aX) (by decide)
-      (ri := .rcx) (by decide) (i := 0) (by omega) hcx) fun u ⟨_, o, k⟩ => ?_
+    refine WP.mono (setWord_ok hc.ws.scr hc.ws.x0 hg.1.hdr hg.2 h12 (by omega) (o := aX) (by decide)
+      (i := 0) (by omega) h13) fun u ⟨_, o, k⟩ => ?_
     exact ⟨minv, N, r, t, hc.congr (Frm.rg_of_out o (Nat.le_refl _) [aX] [] (by decide)) (by decide) (by simp) k
       (by decide)⟩
 
 /-- `g`, `g R mod n`, its copy and `Y = R mod n`, and the exponentiation. -/
 theorem candA_ct (M : Mont) : RelCT isa (Two CA)
-    (seqs [.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm])
+    (seqs [.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO, expLoop M.mm])
     fun _ _ => True := by
   have hK : ∀ p s, CK p s → Ws s p.B p.Z (wk p.k) := fun _ _ h => h.ws
   have hX : ∀ j p s, CX j p s → Ws s p.B p.Z (wk p.k) := fun _ _ _ ⟨_, _, _, _, _, hc, _⟩ => hc.ws
@@ -95,9 +98,9 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
   refine RelCT.seq (R := Two CG) (blk_gct RpP.B RpP.Z (fun p => wk p.k)
     (fun _ _ ⟨_, _, _, _, _, hc, _⟩ => hc.ws) (by taint_decide) fun p s h => ?_) ?_
   · obtain ⟨minv, N, r, t, c, hc, hcand, -⟩ := h
-    exact WP.mono (gBlk_ok hc.ws hcand) fun u ⟨_, hcx, h12, m, k⟩ =>
+    exact WP.mono (gBlk_ok hc.ws hcand) fun u ⟨⟨_, h13, h12, m⟩, k⟩ =>
       ⟨minv, N, r, t, hc.congr (js := []) (hs := []) (by rw [m]; exact Frm.refl _ _ _) (by simp) (by simp) k
-        (by decide), h12, hcx⟩
+        (by decide), h12, h13⟩
   refine RelCT.seq setX_ct (RelCT.seq (R := Two (CX aXm)) (mm_gct RpP.B RpP.Z (fun p => wk p.k) hK M
     (o := aXm) (a := aX) (b := aR2) (by unfold MmUse; decide) fun p s h => ?_) ?_)
   · obtain ⟨minv, N, r, t, hc⟩ := h
@@ -108,19 +111,21 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
       (by rw [hc.hn]; exact hc.hr2lt)) fun u ⟨_, hlt, hm, ha, k⟩ => ?_
     rw [hc.hn] at hlt hm
     exact ⟨minv, N, r, t, _, hc.congr (Frm.rg_of_arrays ha [aXm, aAcc, aTmp] [] (by decide)) (by decide) (by simp)
-      k (by decide), hlt, g_mont hc.coprime hc.hr2 hm⟩
+      k (by decide), hlt, VG.Proof.Rsa.g_mont hc.coprime hc.hr2 hm⟩
   refine RelCT.seq (R := Two (CX aG)) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aXm) (by taint_decide)
     fun p s h => ?_) (RelCT.seq (R := Two EX) (copyA_gct RpP.B RpP.Z (fun p => wk p.k) (hX aG) (by taint_decide)
       fun p s h => ?_) ((expLoop_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial))
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
-    refine WP.mono (copyA_ok hc.ws (o := aG) (a := aXm) (by decide) (by decide) (by decide)) fun u ⟨hv, o, k⟩ => ?_
+    refine WP.mono (copyA_ok hc.ws (o := aG) (a := aXm) (by decide) (by decide) (by decide))
+      fun u ⟨hv, o, _, _, k⟩ => ?_
     have hf : Frm p.B (rg (wk p.k) [aG] []) s.mem u.mem := Frm.rg_of_out o (by omega) _ _ (by decide)
     exact ⟨minv, N, r, t, g, hc.congr hf (by decide) (by simp) k (by decide), by rw [hv]; exact hlt,
       by rw [hv]; exact hm⟩
   · obtain ⟨minv, N, r, t, g, hc, hlt, hm⟩ := h
     have hZ16 := hc.hZ16
-    refine WP.mono (copyA_ok hc.ws (o := aY) (a := aO) (by decide) (by decide) (by decide)) fun u ⟨hv, o, k⟩ => ?_
+    refine WP.mono (copyA_ok hc.ws (o := aY) (a := aO) (by decide) (by decide) (by decide))
+      fun u ⟨hv, o, _, _, k⟩ => ?_
     have hf : Frm p.B (rg (wk p.k) [aY] []) s.mem u.mem := Frm.rg_of_out o (by omega) _ _ (by decide)
     have hG : wv u.mem p.B (slot (wk p.k) aG) (wk p.k) = wv s.mem p.B (slot (wk p.k) aG) (wk p.k) :=
       hf.rg_wv hZ16 (by simp) (by decide) (by decide) (by omega)
@@ -128,35 +133,35 @@ theorem candA_ct (M : Mont) : RelCT isa (Two CA)
       by rw [hG]; exact hm, by rw [hv, hc.ho]⟩
 
 /-- The checks of `y = ±1` and the start of the squarings. -/
-theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (eqStore sC2)] : List (Prog isa)) ++ (eqA aY aNg ++
-    ([.block chkBlk] : List (Prog isa)))))) fun _ _ => True := by
+theorem candB_ct : RelCT isa (Two CK) (seqs (eqA aY aO ++ (([.block (zeroMask ++ [sth .x15 sC2])] :
+    List (Prog isa)) ++ (eqA aY aNg ++ ([.block chkBlk] : List (Prog isa)))))) fun _ _ => True := by
   have hK : ∀ p s, CK p s → Ws s p.B p.Z (wk p.k) := fun _ _ h => h.ws
-  have same : ∀ p s u, CK p s → u.mem = s.mem → ∀ {regs : List Reg}, Keep regs s u → .rdi ∉ regs → CK p u :=
+  have same : ∀ p s u, CK p s → u.mem = s.mem → ∀ {regs : List Reg}, Keep regs s u → .x0 ∉ regs → CK p u :=
     fun p s u ⟨minv, N, r, t, hc⟩ m _ k hr => ⟨minv, N, r, t, hc.congr (js := []) (hs := [])
       (by rw [m]; exact Frm.refl _ _ _) (by simp) (by simp) k hr⟩
   refine RelCT.seqs_append (by simp [eqA]) (by simp) (RelCT.seq (R := Two CK) (eqA_gct RpP.B RpP.Z
     (fun p => wk p.k) hK (by taint_decide) fun p s h => WP.mono (eqA_ok h.ws (a := aY) (b := aO) (by decide)
-      (by decide)) fun u ⟨_, m, k⟩ => same p s u h m k (by decide)) ?_)
+      (by decide)) fun u ⟨_, m, _, _, k⟩ => same p s u h m k (by decide)) ?_)
   refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two CK) ?_ ?_)
   · simp only [seqs]
     refine blk_gct RpP.B RpP.Z (fun p => wk p.k) hK (by taint_decide) fun p s h => ?_
     obtain ⟨minv, N, r, t, hc⟩ := h
     have h256 := hc.ws.h256
-    exact WP.mono (eqStore_ok hc.ws (i := sC2) (by decide) (by decide)) fun u ⟨m, k⟩ =>
+    have hn := hc.ws.scr.nowrap
+    exact WP.mono (zstore_ok hc.ws (i := sC2) (by decide) (by decide)) fun u ⟨⟨_, m⟩, k⟩ =>
       ⟨minv, N, r, t, hc.congr (js := []) (Frm.rg_of_hdr (m ▸ writeW_outside _ _ _ (by simp only [sC2, sFn]; omega))
         [] [sC2] (List.mem_singleton_self _)) (by decide) (by decide) k (by decide)⟩
   refine RelCT.seqs_append (by simp [eqA]) (by simp) (RelCT.seq (R := Two CK) (eqA_gct RpP.B RpP.Z
     (fun p => wk p.k) hK (by taint_decide) fun p s h => WP.mono (eqA_ok h.ws (a := aY) (b := aNg) (by decide)
-      (by decide)) fun u ⟨_, m, k⟩ => same p s u h m k (by decide)) ?_)
+      (by decide)) fun u ⟨_, m, _, _, k⟩ => same p s u h m k (by decide)) ?_)
   simp only [seqs]
-  exact two_taint [.rdi] (fun _ _ _ h₁ h₂ r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; rw [h₁.ws.rdi, h₂.ws.rdi]) (by taint_decide)
+  exact two_taint [.x0] (pins_ws RpP.B RpP.Z (fun p => wk p.k) hK) (by taint_decide)
 
-/-- After the start of the squarings. -/
+/-- A candidate leaks the same in runs that agree on the public data. -/
 theorem candBody_ct (M : Mont) : RelCT isa (Two CA) (candBody M.mm) fun _ _ => True := by
-  rw [show candBody M.mm = seqs ([.block gBlk, setWord aX .rcx, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
-      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (eqStore sC2)] ++ (eqA aY aNg ++ [.block chkBlk]))) ++
-        [.loop (sqBody M.mm) .ne, .block candNext])) by
+  rw [show candBody M.mm = seqs ([.block gBlk, setWord aX, M.mm aXm aX aR2, copyA aG aXm, copyA aY aO,
+      expLoop M.mm] ++ ((eqA aY aO ++ ([.block (zeroMask ++ [sth .x15 sC2])] ++ (eqA aY aNg ++
+        [.block chkBlk]))) ++ [.loop (sqBody M.mm) (.nonzero .x .x3), .block candNext])) by
     simp only [candBody, List.append_assoc, List.cons_append, List.nil_append]]
   refine RelCT.seqs_append (by simp) (by simp [eqA]) (RelCT.seq (R := Two fun p s => ∃ (minv : BitVec 64)
       (N r t y : Nat), Cst s p.B p.Z (wk p.k) minv N p.el r t ∧
@@ -177,12 +182,12 @@ theorem candBody_ct (M : Mont) : RelCT isa (Two CA) (candBody M.mm) fun _ _ => T
     have hc₂ := hc.congr hf (by decide) (by decide) k (by decide)
     refine ⟨u, minv, N, r, t, VG.Proof.Rsa.sqStart N y, hc₂, Frm.refl _ _ _, Keep.refl _ _, ?_, hy, hc1, hc2, hc3⟩
     rw [hf.rg_wv hZ16 (by decide) (by decide) (by decide) (by omega)]; exact hY
-  show RelCT isa _ (.seq (.loop (sqBody M.mm) .ne) (.block candNext)) _
-  exact RelCT.seq (sqLoop_ct M) (two_taint [.rdi] (fun _ _ _ ⟨_, _, _, _, _, _, hc₁, hI₁⟩ ⟨_, _, _, _, _, _, hc₂, hI₂⟩
-    r hr => by
+  show RelCT isa _ (.seq (.loop (sqBody M.mm) (.nonzero .x .x3)) (.block candNext)) _
+  exact RelCT.seq (sqLoop_ct M) (two_taint [.x0] (fun _ _ _ ⟨_, _, _, _, _, _, hc₁, hI₁⟩
+    ⟨_, _, _, _, _, _, hc₂, hI₂⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      rw [(hc₁.congr hI₁.frm (by decide) sq_hs hI₁.keep (by decide)).ws.rdi,
-        (hc₂.congr hI₂.frm (by decide) sq_hs hI₂.keep (by decide)).ws.rdi]) (by taint_decide))
+      rw [(hc₁.congr hI₁.frm (by decide) sq_hs hI₁.keep (by decide)).ws.x0,
+        (hc₂.congr hI₂.frm (by decide) sq_hs hI₂.keep (by decide)).ws.x0]) (by taint_decide))
 
 /-! ## The candidates -/
 
@@ -191,8 +196,8 @@ def CL (p : RpP) (j : Nat) (u : State) : Prop :=
   ∃ (s₀ : State) (minv : BitVec 64) (N r t : Nat), Cst s₀ p.B p.Z (wk p.k) minv N p.el r t ∧
     p.cnt = (recoverPrimes.go N t r recoverTries).2 ∧ CandI s₀ p.B (wk p.k) N t r j u
 
-theorem candLoopL_ct (M : Mont) : RelCT isa (Two fun p s => 0 < p.cnt ∧ CL p 0 s) (.loop (candBody M.mm) .ne)
-    (Two fun (_ : RpP) (_ : State) => True) :=
+theorem candLoopL_ct (M : Mont) : RelCT isa (Two fun p s => 0 < p.cnt ∧ CL p 0 s)
+    (.loop (candBody M.mm) (.nonzero .x .x15)) (Two fun (_ : RpP) (_ : State) => True) :=
   two_loop RpP.cnt (two_map (fun q => q.1) (fun q s hq => by
       obtain ⟨hj, s₀, minv, N, r, t, hc, hcnt, hI⟩ := hq
       have := go_le N t r recoverTries (Nat.le_refl _)
@@ -202,11 +207,13 @@ theorem candLoopL_ct (M : Mont) : RelCT isa (Two fun p s => 0 < p.cnt ∧ CL p 0
       have hle := go_le N t r recoverTries (Nat.le_refl _)
       have hj100 : j < 100 := by have : recoverTries = 100 := rfl; omega
       have hcu := hc.congr hI.frm (by decide) cand_hs hI.keep (by decide)
-      refine WP.mono (candBody_ok M hcu hI.cand hj100) fun u' ⟨hz, hf, k, hcand, _, _⟩ => ⟨?_, fun hlt => ?_,
+      refine WP.mono (candBody_ok M hcu hI.cand hj100) fun u' ⟨h15, hf, k, hcand, _, _⟩ => ⟨?_, fun hlt => ?_,
         fun _ => trivial⟩
       · rw [hcnt] at hj ⊢
-        simp only [eval, hz, Option.map_some]
-        exact congrArg some (cand_cond N t r hj hI.go)
+        rw [eval_mask u' h15]
+        have := cand_cond N t r hj hI.go
+        simp only [Bool.not_not] at this
+        rw [this]
       · refine ⟨s₀, minv, N, r, t, hc, hcnt, (hI.frm.rg_trans hf).rg_mono (by decide) (by decide),
           (hI.keep.trans k).mono (by decide), hcand, ?_⟩
         rw [hI.go, VG.Proof.Rsa.go_eq N t r hj100]
@@ -239,20 +246,21 @@ def GR3 (p : RpP) (s : State) : Prop :=
 
 theorem candLoop_ct (M : Mont) : RelCT isa (Two GR2) (candLoop M.mm) (Two GR3) := by
   refine two_post (RelCT.seq (blk_gct RpP.B RpP.Z (fun p => wk p.k)
-    (fun _ _ ⟨_, _, e, S, _⟩ => e ▸ S.ws) (by taint_decide) fun p s h => ?_) ((candLoopL_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)) fun p s h => ?_
+    (fun _ _ ⟨_, _, e, S, _⟩ => e ▸ S.ws) (by taint_decide) fun p s h => ?_)
+      ((candLoopL_ct M).mono (fun _ _ h => h) fun _ _ _ => trivial)) fun p s h => ?_
   · obtain ⟨I, m₀, rfl, S, L, O, hv, hc, hm0, heven⟩ := h
     dsimp only [RpIn.pub]
     have h256 := hc.ws.h256
-    refine WP.mono (WP.keep [.rax] (Q := fun u => u.mem = s.mem.writeW (off I.B (8 * sCand))
+    have hn := hc.ws.scr.nowrap
+    refine WP.mono (WP.keep [.x3] (Q := fun u => u.mem = s.mem.writeW (off I.B (8 * sCand))
         (BitVec.ofNat 64 0)) (by
-      xrun [State.ea, hdr, hc.ws.rdi, hdrOff,
-        hc.ws.scr.st (d := 8 * sCand) (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega)]
-      rfl) rfl) fun u ⟨m₁, k₁⟩ => ⟨?_, s, _, I.N, _, _, hc, cnt_eq hv L hm0 heven, ?_, k₁.mono (by decide),
-        by rw [m₁, word_writeW_self], rfl⟩
+      brun [hc.ws.x0, hdr_enc (show sCand < 32 by decide),
+        hc.ws.scr.st (d := 8 * sCand) (by simp only [sCand, sFn]; omega)]
+      rfl) (by decide) (by decide) (by decide +kernel)) fun u ⟨m₁, k₁⟩ =>
+        ⟨?_, s, _, I.N, _, _, hc, cnt_eq hv L hm0 heven, ?_, k₁.mono (by decide), by rw [m₁, word_writeW_self], rfl⟩
     · rw [show (Spec.Rsa.primesKey I.nb I.eb I.db).2 = I.pub.cnt from rfl, cnt_eq hv L hm0 heven]
       exact VG.Proof.Rsa.go_pos _ _ _ _ (Nat.le_refl _)
-    · rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega))
-        _ _ (by decide)
+    · rw [m₁]; exact Frm.rg_of_hdr (writeW_outside _ _ _ (by simp only [sCand, sFn]; omega)) _ _ (by decide)
   · obtain ⟨I, m₀, rfl, S, L, O, hv, hc, hm0, heven⟩ := h
     exact WP.mono (candLoop_ok M hc) fun u ⟨res, cnt, hgo, _, hc3, hy, hf, k⟩ =>
       ⟨I, m₀, _, res, cnt, rfl, S.step hf (by decide) (by decide) k (by decide), L, O, hv,
@@ -260,4 +268,4 @@ theorem candLoop_ct (M : Mont) : RelCT isa (Two GR2) (candLoop M.mm) (Two GR3) :
 
 end Rp
 
-end VG.Proof.Rsa.X86_64
+end VG.Proof.Rsa.AArch64

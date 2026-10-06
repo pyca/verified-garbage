@@ -56,9 +56,6 @@ theorem argSlot_frm {m m' : Mem} {B : Addr} {rs : List (Nat × Nat)} (hf : Frm B
     · omega
     · simp only [Public.sMask, sFn]; omega) (by omega)
 
-/-- The words of `w = ⌈k / 8⌉` for `64 ≤ k ≤ 1024`. -/
-abbrev wk (k : Nat) : Nat := (k + 7) / 8
-
 /-- `head`: `w`, the arrays' bases, the stride, and the mask all ones. -/
 theorem cvHead_ok {s : State} {B : Addr} {Z k : Nat} (hs : Scr s B Z) (h0 : s.gpr .x0 = B) (hk1 : 64 ≤ k)
     (hk2 : k ≤ 1024) (hZ : 128 * k ≤ Z) (hK : word s.mem B (8 * Public.sK) = BitVec.ofNat 64 k) :

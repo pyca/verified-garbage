@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.Loops
 import VerifiedGarbage.Proof.Rsa.KeyMath
+import VerifiedGarbage.Proof.Rsa.Ranges
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 
 /-!
@@ -16,15 +17,6 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
-
-theorem slot_lt {w j K : Nat} (h : j < K) : slot w j + 8 * (w + 2) ≤ slot w K := by
-  unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ K by omega)
-  rw [Nat.add_mul, Nat.one_mul] at this
-  omega
-
-/-- The byte range of array `j`. -/
-abbrev ar (w j : Nat) : Nat × Nat := (slot w j, 8 * (w + 2))
 
 theorem mask_add_one (c : Bool) : (mask c + 1).toNat = if c then 0 else 1 := by cases c <;> decide
 

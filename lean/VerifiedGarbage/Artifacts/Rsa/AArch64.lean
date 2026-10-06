@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
 import VerifiedGarbage.Proof.Rsa.AArch64.CvVerified
 import VerifiedGarbage.Proof.Rsa.AArch64.CkVerified
+import VerifiedGarbage.Proof.Rsa.AArch64.RpVerified
 
 /-! # RSA (RFC 8017) on AArch64 -/
 
@@ -70,6 +71,21 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.AArch64.Keys.CrtValues.code
     contract := Spec.Rsa.crtValuesContract AArch64.abi
     verified := Proof.Rsa.AArch64.cv_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.recoverPrimesApi with
+    target := AArch64.target
+    doc := Spec.Rsa.recoverPrimesApi.doc
+      (notes := ["Baseline AArch64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
+        the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
+        of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by `vg_rsa_public_checked`'s \
+        Montgomery multiplication over all the bits of `r`, a square and a multiplication by `g` or \
+        1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
+        candidates stop at the first that finds the factors, which is the only branch on the key. \
+        `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
+        `64 w` steps of bit-serial division."])
+    code := Impl.Rsa.AArch64.Recover.code Proof.Bignum.AArch64.Mont.base.mm
+    contract := Spec.Rsa.recoverPrimesContract AArch64.abi
+    verified := Proof.Rsa.AArch64.rp_verified _
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Rsa.checkKeyApi with
     target := AArch64.target

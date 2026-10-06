@@ -21,6 +21,7 @@ relation to the specification (`Spec.Rsa.recoverPrimes`):
 namespace VG.Proof.Rsa
 
 open VG.Spec.Rsa (splitTwos recoverStep recoverPrimes recoverTries powMod)
+open VG.Proof.Bignum (mont_cancel)
 
 /-! ## Halvings -/
 
@@ -260,5 +261,142 @@ theorem go_pos (n t r : Nat) : ∀ k, k ≤ recoverTries → 1 ≤ (recoverPrime
     · show 1 ≤ recoverTries - k
       unfold recoverTries at *; omega
     · exact go_pos n t r k (by omega)
+
+/-! ## Arithmetic of the code
+
+What the implementations' proofs use about the numbers they compute: the
+product `d e` by rows, the halvings, Montgomery forms, and the bits of
+`r`. -/
+
+/-- A number below `P R` of the form `A + P (W + Q H)` with `R ≤ Q`: `H = 0`
+and `W < R`. -/
+theorem window_split {T A W H P Q R : Nat} (hT : T = A + P * (W + Q * H)) (hlt : T < P * R) (hRQ : R ≤ Q) :
+    H = 0 ∧ W < R := by
+  have h1 : P * (W + Q * H) < P * R := Nat.lt_of_le_of_lt (by rw [hT]; exact Nat.le_add_left _ _) hlt
+  have h2 : W + Q * H < R := Nat.lt_of_mul_lt_mul_left h1
+  refine ⟨?_, by omega⟩
+  rcases Nat.eq_zero_or_pos H with h | h
+  · exact h
+  · have : Q ≤ Q * H := Nat.le_mul_of_pos_right _ h
+    omega
+
+theorem row_alg {A P W c D Ej Q : Nat} (hT : D * Ej = A + P * (W + Q * 0)) :
+    A + P * (W + c * D + Q * 0) = D * (Ej + P * c) := by
+  grind
+
+/-- Halving never grows `m`. -/
+theorem halve_le (m : Nat) : ∀ j, (halveStep^[j] (m, 0)).1 ≤ m
+  | 0 => Nat.le_refl _
+  | j + 1 => by
+    rw [Function.iterate_succ_apply']
+    have := halve_le m j
+    generalize halveStep^[j] (m, 0) = st at this ⊢
+    unfold halveStep
+    split <;> (try simp only) <;> omega
+
+theorem dbl6 (x : Nat) : 2 * (2 * (2 * (2 * (2 * (2 * x))))) = 64 * x := by omega
+
+/-- `R` is invertible modulo `n`, and `R mod n`'s value. -/
+theorem r_one {Y N R R2 : Nat} (hR : Nat.Coprime R N) (hY : Y < N) (hr2 : R2 % N = R * R % N)
+    (h : Y * R % N = R2 * 1 % N) : Y = R % N := by
+  rw [← Nat.mod_eq_of_lt hY]
+  exact mont_cancel hR (by rw [h, Nat.mul_one, hr2])
+
+/-- The top bit of a word shifted left by `j`. -/
+theorem top_bit {W j : Nat} (hj : j < 64) : W * 2 ^ j % 2 ^ 64 / 2 ^ 63 = W / 2 ^ (63 - j) % 2 := by
+  have e1 : 2 ^ 64 = 2 ^ (64 - j) * 2 ^ j := by rw [← Nat.pow_add]; congr 1; omega
+  have e2 : 2 ^ 63 = 2 ^ (63 - j) * 2 ^ j := by rw [← Nat.pow_add]; congr 1; omega
+  have e3 : 2 ^ (64 - j) = 2 ^ (63 - j) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
+  rw [e1, Nat.mul_mod_mul_right, e2, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos j), e3,
+    Nat.mod_mul_right_div_self]
+
+/-- Bit `63 - j` of word `i` of `r`. -/
+theorem word_bit (r i : Nat) {j : Nat} (hj : j < 64) :
+    r / 2 ^ (64 * i) % 2 ^ 64 / 2 ^ (63 - j) % 2 = r / 2 ^ (64 * i + (63 - j)) % 2 := by
+  have e : 2 ^ 64 = 2 ^ (63 - j) * 2 ^ (j + 1) := by rw [← Nat.pow_add]; congr 1; omega
+  rw [e, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (show 1 ≤ j + 1 by omega)),
+    Nat.pow_one, Nat.div_div_eq_div_mul, ← Nat.pow_add]
+
+/-- One more bit of `r`. -/
+theorem prefix_step (r a : Nat) : r / 2 ^ a = 2 * (r / 2 ^ (a + 1)) + r / 2 ^ a % 2 := by
+  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
+
+/-- One more bit of a word's prefix. -/
+theorem prefix_step' (e : Nat) {j : Nat} (hj : j < 64) :
+    e / 2 ^ (64 - (j + 1)) = 2 * (e / 2 ^ (64 - j)) + e / 2 ^ (63 - j) % 2 := by
+  have := prefix_step e (63 - j)
+  rw [show 63 - j + 1 = 64 - j by omega, show 63 - j = 64 - (j + 1) by omega] at this
+  rw [show 63 - j = 64 - (j + 1) by omega]
+  exact this
+
+/-- A Montgomery multiplication of `Y ≡ x^E R` by `X ≡ x^b R`. -/
+theorem mont_mulp {Y Y' X x E b R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E * R % m)
+    (hX : X % m = x ^ b * R % m) (h : Y' * R % m = Y * X % m) : Y' % m = x ^ (E + b) * R % m := by
+  apply mont_cancel hR
+  rw [h, Nat.mul_mod, hY, hX, ← Nat.mul_mod, Nat.pow_add, Nat.mul_mul_mul_comm, Nat.mul_assoc (x ^ E * x ^ b)]
+
+/-- Bit `63 - j` of a number's low word. -/
+theorem low_bit (e : Nat) {j : Nat} (hj : j < 64) : e % 2 ^ 64 / 2 ^ (63 - j) % 2 = e / 2 ^ (63 - j) % 2 := by
+  have := word_bit e 0 hj
+  simpa using this
+
+theorem mont_inj {x y R N : Nat} (hR : Nat.Coprime R N) (hx : x < N) (hy : y < N)
+    (h : x * R % N = y * R % N) : x = y := by
+  have := mont_cancel hR h
+  rwa [Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hy] at this
+
+theorem mod_ne_zero_of_coprime {R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) : R % N ≠ 0 := by
+  intro h
+  have := Nat.Coprime.eq_one_of_dvd hR.symm (Nat.dvd_of_mod_eq_zero h)
+  omega
+
+/-- `-1` in Montgomery form. -/
+theorem neg_one_mont {R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) : (N - 1) * R % N = N - R % N := by
+  have ha := mod_ne_zero_of_coprime hR hN
+  have hlt := Nat.mod_lt R (show 0 < N by omega)
+  obtain ⟨M, rfl⟩ : ∃ M, N = M + 1 := ⟨N - 1, by omega⟩
+  obtain ⟨b, hb⟩ : ∃ b, R % (M + 1) = b + 1 := ⟨R % (M + 1) - 1, by omega⟩
+  have hR' := Nat.div_add_mod R (M + 1)
+  rw [hb] at hR' hlt ⊢
+  have e : M * R = (M + 1) * (M * (R / (M + 1)) + b) + (M - b) := by
+    conv => lhs; rw [← hR']
+    rw [Nat.mul_add, Nat.mul_succ, Nat.mul_left_comm M (M + 1), Nat.mul_add (M + 1), Nat.succ_mul M b]
+    omega
+  rw [Nat.add_sub_cancel, e, Nat.mul_add_mod, Nat.mod_eq_of_lt (by omega)]
+  omega
+
+/-- `x = 1` and `x = -1` from Montgomery forms. -/
+theorem eq_one_mont {X x R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) (hx : x < N) (hX : X = x * R % N) :
+    X = R % N ↔ x = 1 := by
+  subst hX
+  constructor
+  · intro h; exact mont_inj hR hx hN (by rw [h, Nat.one_mul])
+  · intro h; rw [h, Nat.one_mul]
+
+theorem eq_neg_mont {X x R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) (hx : x < N) (hX : X = x * R % N) :
+    X = N - R % N ↔ x = N - 1 := by
+  subst hX
+  rw [← neg_one_mont hR hN]
+  constructor
+  · intro h; exact mont_inj hR hx (by omega) h
+  · intro h; rw [h]
+
+/-- The square in Montgomery form. -/
+theorem sq_mont {X Y y R N : Nat} (hR : Nat.Coprime R N) (hY : Y = y * R % N) (hX : X < N)
+    (h : X * R % N = Y * Y % N) : X = y * y % N * R % N := by
+  have e : X % N = y * y % N * R % N := by
+    apply mont_cancel hR
+    rw [h, hY, ← Nat.mul_mod, Nat.mul_assoc (y * y % N), Nat.mod_mul_mod, Nat.mul_mul_mul_comm]
+  rwa [Nat.mod_eq_of_lt hX] at e
+
+/-- `g R` from `R² mod n`. -/
+theorem g_mont {X g R R2 N : Nat} (hR : Nat.Coprime R N) (hr2 : R2 % N = R * R % N)
+    (h : X * R % N = g * R2 % N) : X % N = g * R % N := by
+  apply mont_cancel hR
+  rw [h, Nat.mul_mod, hr2, ← Nat.mul_mod, Nat.mul_assoc]
+
+/-- Step 5's factors from `y`, the larger first. -/
+def pqOf (N y : Nat) : Nat × Nat :=
+  (max (Nat.gcd (y - 1) N) (N / Nat.gcd (y - 1) N), min (Nat.gcd (y - 1) N) (N / Nat.gcd (y - 1) N))
 
 end VG.Proof.Rsa
