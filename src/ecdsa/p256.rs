@@ -227,14 +227,9 @@ mod tests {
         for bits in 0..1u32 << NAMES.len() {
             let f = Features(bits);
             let m = Mul::select(f);
-            assert!(
-                f.contains(sha256_required(Sha256Backend::select(f), m)),
-                "{bits:#b}"
-            );
-            assert!(
-                f.contains(sha384_required(Sha384Backend::select(f), m)),
-                "{bits:#b}"
-            );
+            let sha256 = sha256_required(Sha256Backend::select(f), m);
+            let sha384 = sha384_required(Sha384Backend::select(f), m);
+            assert!(f.contains(Features::all(&[sha256, sha384])), "{bits:#b}");
         }
     }
 }

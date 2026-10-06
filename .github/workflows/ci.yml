@@ -559,11 +559,12 @@ jobs:
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
-          # it).
+          # it, and P-256's signatures with SHA-384 using it, with and
+          # without ADX).
           - chip: arl
             runs: |
               - | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,sha512 | ed25519 rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,sha512 | ed25519 rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
           # Ed25519's IFMA variants and vg_rsa_private_checked_ifma; VAES,
           # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
