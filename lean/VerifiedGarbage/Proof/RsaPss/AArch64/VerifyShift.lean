@@ -117,4 +117,42 @@ theorem shiftPass_ok (H : Hash) {t : State} {F S : Addr} (L : Lay t F S) {V : Na
       simp only [hc]
   · rw [g₉, q₈.get .x12, q₇.get .x12, m₆.gpr, Q₅.get .x12]
 
+/-- `DB`, then zeros. -/
+def zf (W : Nat → Byte) (db m : Nat) : Byte := if m < db then W m else 0
+
+/-- `Y` after `p` passes, from `V`: `DB`'s place holds `zf` from
+`A mod 2^p` on. -/
+def shW (V : Nat → Byte) (o db : Nat) (W : Nat → Byte) (r : Nat) (x : Nat) : Byte :=
+  if o ≤ x ∧ x < o + db then zf W db (x - o + r) else V x
+
+theorem shW_step {V W : Nat → Byte} {o db A p : Nat} (hz : ∀ m < db + 512, V (o + m) = zf W db m)
+    (hp : p < 10) :
+    ∀ x, shV (shW V o db W (A % 2 ^ p)) o db (2 ^ p) (A / 2 ^ p % 2 = 1) x =
+      shW V o db W (A % 2 ^ (p + 1)) x := by
+  intro x
+  have hpw : 2 ^ p ≤ 512 := Nat.pow_le_pow_right (by decide) (show p ≤ 9 by omega)
+  rw [Nat.mod_pow_succ]
+  generalize 2 ^ p = P at hpw ⊢
+  by_cases hx : o ≤ x ∧ x < o + db
+  · obtain ⟨hx1, hx2⟩ := hx
+    have e1 : shW V o db W (A % P + P * (A / P % 2)) x =
+        zf W db (x - o + (A % P + P * (A / P % 2))) := by
+      simp only [shW]; rw [ite_eq_left ⟨hx1, hx2⟩]
+    rw [e1]
+    by_cases hb : A / P % 2 = 1
+    · simp only [shV]
+      rw [ite_eq_left ⟨hb, hx1, hx2⟩, hb, Nat.mul_one]
+      simp only [shW]
+      by_cases hy : x + P < o + db
+      · rw [ite_eq_left ⟨by omega, hy⟩, show x + P - o + A % P = x - o + (A % P + P) by omega]
+      · rw [ite_eq_right (by omega), show x + P = o + (x + P - o) by omega, hz _ (by omega)]
+        simp only [zf]
+        rw [ite_eq_right (by omega), ite_eq_right (by omega)]
+    · have hb0 : A / P % 2 = 0 := by omega
+      simp only [shV]
+      rw [ite_eq_right (fun h => hb h.1), hb0, Nat.mul_zero, Nat.add_zero]
+      simp only [shW]; rw [ite_eq_left ⟨hx1, hx2⟩]
+  · simp only [shV, shW]
+    rw [ite_eq_right (fun h => hx h.2), ite_eq_right hx, ite_eq_right hx]
+
 end VG.Proof.RsaPss.AArch64
