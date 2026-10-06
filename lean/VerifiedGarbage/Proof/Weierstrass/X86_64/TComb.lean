@@ -40,13 +40,6 @@ structure TCombVals (K : TCombCfg) (C : Curve) (tbl : List (List (Nat × Nat))) 
   start : Rep C (toM C.p (2 ^ (64 * K.M.n)) K.start.1) (toM C.p (2 ^ (64 * K.M.n)) K.start.2) 1
     (mul (K.H * geomW K.w K.J) (G C))
 
-/-- The modulus survives a change of memory apart from it. -/
-theorem _root_.VG.Proof.Mont.ModOkW.unch {M : Mod} {size m : Nat} {mem mem' : Mem} {base : Addr} {W : List (Nat × Nat)}
-    (h : ModOkW M size m mem base) (hU : Unch base W mem mem')
-    (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
-    ModOkW M size m mem' base :=
-  ⟨h.n0, h.mo, h.tmp, h.sep, by rw [hU.wordsVal hW (by have := h.mo; omega)]; exact h.val, h.inv, h.red⟩
-
 /-- `x ∈ l` for the comb's lists, through `toComb`. -/
 macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_append,
   List.mem_singleton, true_or, or_true, combSlots, combWs, combRo, rcbW, rcbR, List.cons_append,
