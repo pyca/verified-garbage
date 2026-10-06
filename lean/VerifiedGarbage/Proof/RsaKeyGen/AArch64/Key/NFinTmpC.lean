@@ -102,6 +102,53 @@ theorem finalMask_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {n P Q e : Nat}
       hs₁.ld (d := slot I.W aQt + 8 * (I.W - 1)) (by omega), hdr_enc (show kOk < 32 by decide),
       hs₁.ld (d := 8 * kOk) (by unfold kOk sFn; omega), shr63_mask_k, hok', mask_and', decide_eq_decide.mpr htop])
     (by decide) (by decide) (by decide +kernel)) fun s₂ ⟨⟨h10₂, m₂⟩, k₂⟩ => WP.block_append_iff.mpr ?_
+  have h₂ := h.regs m₂ (k₁.trans k₂)
+  -- `p` odd.
+  refine WP.mono (oddMaskOf_k h₂ (j := aPa) (by decide)) fun s₃ ⟨h₃, m₃, h15₃, _, _, _, k₃⟩ =>
+    WP.block_append_iff.mpr ?_
+  rw [m₂, hP] at h15₃
+  have h10₃ : s₃.gpr .x10 = mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok) := by rw [k₃.gpr .x10 (by decide), h10₂]
+  refine WP.mono (WP.keep [.x10] (Q := fun t => t.gpr .x10 = mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok &&
+    decide (P % 2 = 1)) ∧ t.mem = s₃.mem) (by brun [finAnd, h15₃, h10₃, mask_and']) (by decide) (by decide)
+      (by decide +kernel)) fun s₄ ⟨⟨h10₄, m₄⟩, k₄⟩ => WP.block_append_iff.mpr ?_
+  have h₄ := h₃.regs m₄ k₄
+  -- `q` odd.
+  refine WP.mono (oddMaskOf_k h₄ (j := aQa) (by decide)) fun s₅ ⟨h₅, m₅, h15₅, h7₅, _, _, k₅⟩ => ?_
+  rw [m₄, m₃, m₂, hQ] at h15₅
+  have h10₅ : s₅.gpr .x10 = mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok && decide (P % 2 = 1)) := by
+    rw [k₅.gpr .x10 (by decide), h10₄]
+  have hm₅ : s₅.mem = s.mem := by rw [m₅, m₄, m₃, m₂]
+  have hs₅ := h₅.ws.scr
+  have h0₅ : s₅.gpr .x0 = I.B := h₅.x0
+  have hev₅ : s₅.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := by rw [hm₅]; exact hev
+  have hte : (BitVec.ofNat 64 e).toNat = e := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt he64]
+  -- `q` odd.
+  refine WP.block_append_iff.mpr (WP.mono (WP.keep [.x10] (Q := fun t => t.gpr .x10 =
+      mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok && decide (P % 2 = 1) && decide (Q % 2 = 1)) ∧ t.mem = s₅.mem) (by
+    brun [finAnd, h15₅, h10₅, mask_and']) (by decide) (by decide) (by decide +kernel))
+    fun s₆ ⟨⟨h10₆, m₆⟩, k₆⟩ => WP.block_append_iff.mpr ?_)
+  have hev₆ : s₆.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := by rw [m₆]; exact hev₅
+  have h0₆ : s₆.gpr .x0 = I.B := (k₆.gpr .x0 (by decide)).trans h0₅
+  have h7₆ : s₆.gpr .x7 = 0 := (k₆.gpr .x7 (by decide)).trans h7₅
+  have hs₆ := hs₅.congr k₆.wr
+  -- `e` odd.
+  refine WP.mono (WP.keep [.x3, .x4, .x10, .x15] (Q := fun t => t.gpr .x10 =
+      mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok && decide (P % 2 = 1) && decide (Q % 2 = 1) &&
+        decide (e % 2 = 1)) ∧ t.mem = s₆.mem ∧ t.gpr .x7 = 0) (by
+    brun [finE1, oddMask, finAnd, h0₆, h7₆, hdr_enc (show kEv < 32 by decide),
+      hs₆.ld (d := 8 * kEv) (by unfold kEv sFn; omega), hev₆, h10₆, mask_low, mask_low', hte, mask_and'])
+    (by decide) (by decide) (by decide +kernel)) fun s₇ ⟨⟨h10₇, m₇, h7₇⟩, k₇⟩ => WP.block_append_iff.mpr ?_
+  have hev₇ : s₇.mem.readW (off I.B (8 * kEv)) 64 = BitVec.ofNat 64 e := by rw [m₇]; exact hev₆
+  have h0₇ : s₇.gpr .x0 = I.B := (k₇.gpr .x0 (by decide)).trans h0₆
+  have hs₇ := hs₆.congr k₇.wr
+  -- `e ≥ 3`.
+  generalize hE : BitVec.ofNat 64 e = E at hev₇
+  refine WP.mono (WP.keep [.x3, .x4, .x10, .x15] (Q := fun t => t.gpr .x10 =
+      mask (decide (2 ^ (64 * I.W - 1) ≤ n) && ok && decide (P % 2 = 1) && decide (Q % 2 = 1) &&
+        decide (e % 2 = 1) && decide (3 ≤ e)) ∧ t.mem = s₇.mem ∧ t.gpr .x7 = 0) (by
+    brun [finE2, carryMask, finAnd, h0₇, h7₇, hdr_enc (show kEv < 32 by decide),
+      hs₇.ld (d := 8 * kEv) (by unfold kEv sFn; omega), hev₇, h10₇, mask_and'])
+    (by decide) (by decide) (by decide +kernel)) fun s₈ ⟨⟨h10₈, m₈, h7₈⟩, k₈⟩ => ?_
   sorry
 
 end VG.Proof.RsaKeyGen.AArch64.Key
