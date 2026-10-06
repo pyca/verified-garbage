@@ -73,6 +73,8 @@ structure TEntryPost (K : TCombCfg) (C : Curve) (base : Addr) (size k i : Nat) (
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n),
     (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem
   lt : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s'.mem base x K.M.n < C.p
+  z : wordsVal s'.mem base K.E.z K.M.n =
+    if 1 ≤ magH K.H (combWin K.w k i) then K.one else 0
   rep : Rep C (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
     (signedPtW C K.w k i)
 
@@ -86,10 +88,11 @@ theorem tbl_addr (T : Addr) (n H j e i : Nat) :
 
 /-- The entry of digit `i`, selected (from `x19 = i`) and negated for a
 negative digit. -/
-theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T : Addr}
+theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T : Addr}
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb) (hC : Law C)
     (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hm : s.gpr .x2 = BitVec.ofNat 64 (magH K.H (combWin K.w k i)))
     (hbits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : s.syms K.tsym = T)
     (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
@@ -97,7 +100,7 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
       size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', TEntryPost K C base size k i s s' → WP isa rest s' Q) :
-    WP isa (.block (K.digit ++ (if publicLookup then K.selectPublic else K.select))) s fun s₂ =>
+    WP isa (.block (if publicLookup then K.selectPublic else K.select)) s fun s₂ =>
       WP isa (.seq (.block (negYW K.M K.w K.neg K.zero K.E.y K.bits)) rest) s₂ Q := by
   have hn := hs.nowrap
   have hJ := hL.comb.J
@@ -120,9 +123,10 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
   have hwi : K.w * i + K.w ≤ K.w * K.J := by
     have := Nat.mul_le_mul_left K.w (show i + 1 ≤ K.J from hi); rwa [Nat.mul_succ] at this
   have hwJ : K.w ≤ K.w * K.J := by have := Nat.mul_le_mul_left K.w (show 1 ≤ K.J by omega); omega
-  rw [WP.block_append_iff]
-  refine WP.mono_syms (digitW_ok K hs (k := k) (j := i) (N := K.w * K.J) (by omega) (by omega) hwi
-    (by omega) (by omega) hx hbits) fun s₁ ⟨m₁, k₁⟩ sy₁ => ?_
+  let s₁ := s
+  have m₁ : s₁.gpr .x2 = BitVec.ofNat 64 (magH K.H (combWin K.w k i)) := hm
+  have k₁ : Keeps [.x2,.x3,.x4,.x9,.x16] s s₁ := ⟨fun _ _ => rfl,rfl,rfl,rfl,rfl⟩
+  have sy₁ : s₁.syms = s.syms := rfl
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hx₁ : s₁.gpr .x19 = BitVec.ofNat 64 i := by rw [k₁.gpr _ (by decide), hx]
   have hwlt := combWin_lt K.w k i
@@ -285,7 +289,7 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
       simp only [show ¬ 1 ≤ 0 by omega, ↓reduceIte, toM_zero, hV.one]
       rw [show combPtW C K.w i 0 = .infinity by simp [combPtW, Spec.Weierstrass.mul]]
       exact rep_infinity' hC
-  refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, hk, ?_, ?_, ?_⟩
+  refine ⟨hs₄.of_keepRegs k₅ (by decide), ?_, hk, ?_, ?_, ?_, ?_⟩
   · rw [k₅.gpr _ (by decide), k₄.gpr _ (by decide), k₃.gpr _ (x19_not_clob _),
       k₂.gpr _ (sel_regs hn4 (Or.inr rfl)), k₁.gpr _ (by decide)]
   · refine ((U₂.trans (U₃.trans (m₄ ▸ O₅.unch))).mono ?_)
@@ -304,6 +308,7 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
     · rw [vz, ez₂]; split
       · exact hV.one_lt
       · exact hp0
+  · rw [vz,ez₂,ha]
   · have ex : tmv C K.M.n base s₅ K.E.x = tmv C K.M.n base s₂ K.E.x := by
       show toM _ _ _ = toM _ _ _; rw [vx]
     have ez : tmv C K.M.n base s₅ K.E.z = tmv C K.M.n base s₂ K.E.z := by
@@ -331,6 +336,50 @@ theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr}
       have : a = 2 ^ (K.w - 1) - combWin K.w k i := by rw [← ha, hHd, magH]; simp [h8]
       rw [this] at hR
       exact Rep.negY hR
+
+
+theorem tentry_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hA : CombA K.toComb) (hC : Law C)
+    (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
+    (hM : ModOkA K.M size C.p s.mem base) (hi : i < K.J) (hx : s.gpr .x19 = BitVec.ofNat 64 i)
+    (hbits : ∀ t < K.w * K.J, s.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0)
+    (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : s.syms K.tsym = T)
+    (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hout : ∀ i < (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl).length, ∀ b < 8,
+      size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
+    {rest : Prog isa} {Q : State → Prop}
+    (h : ∀ s', TEntryPost K C base size k i s s' → WP isa rest s' Q) :
+    WP isa (.block (K.digit ++ (if publicLookup then K.selectPublic else K.select))) s fun s₂ =>
+      WP isa (.seq (.block (negYW K.M K.w K.neg K.zero K.E.y K.bits)) rest) s₂ Q := by
+  rw [WP.block_append_iff]
+  have hw := hL.w
+  have hwi : K.w * i + K.w ≤ K.w * K.J := by
+    have := Nat.mul_le_mul_left K.w (show i + 1 ≤ K.J from hi)
+    rwa [Nat.mul_succ] at this
+  have hb : K.bits + K.w * K.J ≤ size := by
+    have := hL.bits
+    have := hL.kbytes
+    unfold TCombCfg.zw at *
+    omega
+  have hwb : K.bits + K.w ≤ 4096 := by
+    have := hL.bitsw
+    omega
+  refine WP.mono_syms (digitW_ok K hs (k := k) (j := i) (N := K.w * K.J)
+    (by omega) (by omega) hwi hb hwb hx hbits) fun t ⟨hm,hk⟩ hsy => ?_
+  have hs' := hs.of_keeps hk (by decide)
+  have hM' : ModOkA K.M size C.p t.mem base := hk.mem ▸ hM
+  refine tentry_after_digit_ok hL hA hC hV hpn hs' hM' hi
+    (by rw [hk.gpr _ (by decide)]; exact hx) hm
+    (fun q hq => by rw [hk.mem]; exact hbits q hq)
+    (by rw [hk.mem]; exact hz) (by rw [hsy]; exact hT)
+    (hTM.unch (by rw [hk.rd,hk.wr]) (fun _ _ _ _ => by rw [hk.mem])) hout
+    fun u hu => h u ?_
+  refine ⟨hu.scr,?_,?_,?_,hu.lt,hu.z,hu.rep⟩
+  · rw [hu.x19,hk.gpr _ (by decide)]
+  · exact ((Keeps.regs hk).mono (fun r hr => tcombClob_sub _ hL.n8 r (by
+      simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
+      grind))).trans hu.keep
+  · rw [← hk.mem]; exact hu.unch
 
 /-! ## The loop -/
 

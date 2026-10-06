@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Impl.Mont.AArch64.P256Square
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
@@ -29,7 +30,8 @@ open VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
 
 /-- The code of a field operation. -/
 def opCode (M : Mod) : FOp → List Instr
-  | .mul o a b => Mont.AArch64.mul M o a b
+  | .mul o a b => if a == b && P256Square.supported M then
+      P256Square.square M o a else Mont.AArch64.mul M o a b
   | .add o a b => Mont.AArch64.add M o a b
   | .sub o a b => Mont.AArch64.sub M o a b
 
