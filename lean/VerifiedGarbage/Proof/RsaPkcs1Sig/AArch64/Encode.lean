@@ -534,4 +534,72 @@ theorem compare_ok {s : State} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64) (hc : s
     · intro h; bv_omega
     · intro h; rw [h]; rfl
 
+/-! ## The loops, at any address -/
+
+/-- `psLoop` writes `n` bytes `b` (the low byte of `x15`) from `x14 = p`,
+counted down in `x13`, at any writable address. -/
+theorem fill_ok {s : State} {p : Addr} {n : Nat} {b : Byte} (hn : 0 < n) (hn' : n < 2 ^ 64)
+    (h14 : s.gpr .x14 = p) (h13 : s.gpr .x13 = BitVec.ofNat 64 n) (h15 : (s.gpr .x15).setWidth 8 = b)
+    (hw : ∀ i < n, InRegions s.wr (p + BitVec.ofNat 64 i) 1) :
+    WP isa psLoop s fun t => Keep [.x13, .x14] s t ∧ t.mem = writeBytes s.mem p (List.replicate n b) := by
+  refine WP.mono (wp_countdown (cnt := .x13) hn' hn
+    (fun i t => Keep [.x13, .x14] s t ∧ t.mem = writeBytes s.mem p (List.replicate i b) ∧
+      t.gpr .x14 = p + BitVec.ofNat 64 i) ?_ ⟨Keep.refl _ _, by simp [writeBytes_nil], by simp [h14]⟩ h13)
+    fun t h => ⟨h.1, h.2.1⟩
+  intro i hi t ⟨hK, hm, h14'⟩ _
+  have hA : InRegions t.wr (t.gpr .x14 + BitVec.ofNat 64 0) 1 := by
+    rw [h14', hK.wr, BitVec.add_zero]; exact hw _ hi
+  refine wp_strb (by decide) rfl hA fun s₁ m₁ => ?_
+  refine wp_addImm (by decide) fun s₂ o₂ e₂ => ?_
+  refine wp_subImm (by decide) fun s₃ o₃ e₃ => wp_nil ?_
+  have hK' : Keep [.x14, .x13] t s₃ := (m₁.keep.trans (o₂.keep.trans o₃.keep)).mono
+  refine ⟨⟨(hK.trans hK').mono, ?_, ?_⟩, ?_⟩
+  · rw [o₃.mem, o₂.mem, m₁.mem, hK.get .x15, h15, h14', BitVec.add_zero, hm, List.replicate_succ',
+      writeBytes_snoc _ _ _ _ (by simp; omega)]
+    simp
+  · rw [o₃.get .x14, e₂, m₁.gpr, h14', ofNat_succ']
+  · rw [e₃, o₂.get .x13, m₁.gpr]
+
+/-- `copyLoop` copies `n` bytes from `x11 = q` to `x14 = p`, counted down in
+`x12`, the source readable, the destination writable and apart from it. -/
+theorem copy_ok {s : State} {p q : Addr} {n : Nat} (hn : 0 < n) (hn' : n < 2 ^ 64)
+    (h14 : s.gpr .x14 = p) (h11 : s.gpr .x11 = q) (h12 : s.gpr .x12 = BitVec.ofNat 64 n)
+    (hr : ∀ j < n, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1)
+    (hw : ∀ i < n, InRegions s.wr (p + BitVec.ofNat 64 i) 1)
+    (hd : ∀ j < n, ∀ i < n, q + BitVec.ofNat 64 j ≠ p + BitVec.ofNat 64 i) :
+    WP isa copyLoop s fun t => Keep [.x15, .x11, .x14, .x12] s t ∧
+      t.mem = writeBytes s.mem p (Spec.Rsa.bytesAt s.mem q n) := by
+  refine WP.mono (wp_countdown (cnt := .x12) hn' hn
+    (fun i t => Keep [.x15, .x11, .x14, .x12] s t ∧
+      t.mem = writeBytes s.mem p ((Spec.Rsa.bytesAt s.mem q n).take i) ∧
+      t.gpr .x14 = p + BitVec.ofNat 64 i ∧ t.gpr .x11 = q + BitVec.ofNat 64 i) ?_
+    ⟨Keep.refl _ _, by simp [writeBytes_nil], by simp [h14], by simp [h11]⟩ h12) fun t h => ⟨h.1, ?_⟩
+  · intro i hi t ⟨hK, hm, h14', h11'⟩ _
+    have hR : InRegions (t.rd ++ t.wr) (t.gpr .x11 + BitVec.ofNat 64 0) 1 := by
+      rw [h11', hK.rd, hK.wr, BitVec.add_zero]; exact hr _ hi
+    have hv : t.mem (q + BitVec.ofNat 64 i) = s.mem (q + BitVec.ofNat 64 i) := by
+      rw [hm, writeBytes_out _ _ _ _ n (fun i' hi' => hd i hi i' hi')
+        (by simp only [List.length_take, bytesAt_length]; omega)]
+    refine wp_ldrb (by decide) rfl hR fun s₁ o₁ e₁ => ?_
+    have hA : InRegions s₁.wr (s₁.gpr .x14 + BitVec.ofNat 64 0) 1 := by
+      rw [o₁.wr, o₁.get .x14, h14', hK.wr, BitVec.add_zero]; exact hw _ hi
+    refine wp_strb (by decide) rfl hA fun s₂ m₂ => ?_
+    refine wp_addImm (by decide) fun s₃ o₃ e₃ => ?_
+    refine wp_addImm (by decide) fun s₄ o₄ e₄ => ?_
+    refine wp_subImm (by decide) fun s₅ o₅ e₅ => wp_nil ?_
+    have hK' : Keep [.x15, .x11, .x14, .x12] t s₅ :=
+      (o₁.keep.trans (m₂.keep.trans (o₃.keep.trans (o₄.keep.trans o₅.keep)))).mono
+    have hlt : ((Spec.Rsa.bytesAt s.mem q n).take i).length = i := by
+      simp [bytesAt_length]; omega
+    refine ⟨⟨(hK.trans hK').mono, ?_, ?_, ?_⟩, ?_⟩
+    · rw [o₅.mem, o₄.mem, o₃.mem, m₂.mem, e₁, o₁.mem, h11']
+      simp only [BitVec.add_zero]
+      rw [hv, byte_setWidth64, o₁.get .x14, h14', hm, bytesAt_take_succ _ _ hi,
+        writeBytes_snoc _ _ _ _ (by omega), hlt]
+    · rw [o₅.get .x14, e₄, o₃.get .x14, m₂.gpr, o₁.get .x14, h14', ofNat_succ']
+    · rw [o₅.get .x11, o₄.get .x11, e₃, m₂.gpr, o₁.get .x11, h11', ofNat_succ']
+    · rw [e₅, o₄.get .x12, o₃.get .x12, m₂.gpr, o₁.get .x12]
+  · rw [List.take_of_length_le (by simp [bytesAt_length])] at h
+    exact h.2.1
+
 end VG.Proof.RsaPkcs1Sig.AArch64

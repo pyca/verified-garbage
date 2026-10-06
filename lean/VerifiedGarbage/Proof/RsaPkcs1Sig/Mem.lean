@@ -63,6 +63,14 @@ theorem ne_of_disjoint {p q : Addr} {n k : Nat} (hd : (⟨p, n⟩ : Region).Disj
   · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
   · rw [h]; simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
 
+/-- The last bytes of a string of bytes. -/
+theorem bytesAt_drop (m : Mem) (p : Addr) (d n : Nat) :
+    (Spec.Rsa.bytesAt m p (d + n)).drop d = Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 d) n := by
+  apply List.ext_getElem (by simp [Spec.Rsa.bytesAt])
+  intro i h₁ h₂
+  simp only [List.getElem_drop, Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range, BitVec.add_assoc,
+    ← BitVec.ofNat_add]
+
 theorem prefix_length_le (h : Hash) : h.prefix.length + h.len ≤ 83 := by cases h <;> decide
 
 theorem len_pos (h : Hash) : 0 < h.len := by cases h <;> decide

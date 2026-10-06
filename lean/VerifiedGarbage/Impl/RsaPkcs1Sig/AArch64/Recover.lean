@@ -27,7 +27,7 @@ are kept in `x19`–`x22`.
 namespace VG.Impl.RsaPkcs1Sig.AArch64.Recover
 
 open VG VG.AArch64
-open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov movw save restore copyArg cmpArgs)
+open VG.Impl.RsaPkcs1Sig.AArch64.Verify (frameBytes oEM1 oEM2 mov movw save restore copyArg)
 
 /-- `sig_len` against `n_len`. -/
 def lenCheck : List Instr := [.ldrSp .x8 0, .sub .x .x8 .x8 .x3]
@@ -60,6 +60,9 @@ def encArgs : List Instr := [.addSp .x8 oEM2, mov .x9 .x21, mov .x10 .x22, mov .
 value's place in `EM₁` (`encode`'s loop for the hash value). -/
 def copyOut : Prog isa :=
   .seq (.block ([mov .x14 .x19, mov .x12 .x20] ++ valPtr)) (.seq copyLoop (.block [.movz .x .x0 1 0]))
+
+/-- The arguments of `compare`: `EM₁`, `EM₂` and `k`. -/
+def cmpArgs : List Instr := [.addSp .x14 oEM1, .addSp .x15 oEM2, mov .x13 .x21]
 
 /-- After the comparison, its result in `x12`. -/
 def release : Prog isa := .ite (.nonzero .x .x12) zeroKept copyOut
