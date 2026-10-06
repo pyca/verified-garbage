@@ -9,6 +9,7 @@
 ))]
 
 pub(crate) mod p256;
+pub(crate) mod p521;
 
 mod sealed {
     pub trait Sealed {}

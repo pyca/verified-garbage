@@ -156,6 +156,15 @@ GROUPS = {
         "lib": [],
         "tests": ["rfc6979::p256::p256_sha256", "rfc6979::p256::p256_sha384"],
     },
+    "p521": {
+        "lib": ["ec::p521", "ecdsa::p521"],
+        "tests": [
+            "cavp::ecdh_p521",
+            "rfc6979::p521",
+            "wycheproof::ecdh_p521",
+            "wycheproof::ecdsa_p521::ecdsa_secp521r1_sha512_p1363_test",
+        ],
+    },
     "p384_sha": {
         "lib": [],
         "tests": ["rfc6979::p384::p384_sha384"],

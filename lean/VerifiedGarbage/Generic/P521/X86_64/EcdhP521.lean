@@ -3,28 +3,34 @@ import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdh.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdh.X86_64.P521.LitAdx
 
 /-!
 # ECDH over P-521 (SP 800-56A) on x86-64
 
 A generic file (see `TCB/Emit.lean`) over P-521's group law and
 inversions `h`, the variant
-`Variants/P521/X86_64/Law.lean`.
+`Variants/P521/X86_64/Law.lean`, for each multiplication modulo `p`: the
+baseline's, and BMI2's and ADX's (`_adx`).
 -/
 
 namespace VG.Generic.P521.X86_64.EcdhP521
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
+/-- The function of `Spec.Ecdh.P521.exchangeApi`, multiplying modulo `p` with
+BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
+instruction writing `rsp` (`hsp`). -/
+def exchange (adx : Bool) (code : Prog X86_64.isa)
+    (hv : Verified X86_64.target code
+      (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi))
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdh.P521.exchangeApi with
+    name := Spec.Ecdh.P521.exchangeApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
-    doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
+    doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves its \
       caller's callee-saved registers in `scratch`; field elements are nine 64-bit words in \
-      Montgomery form, multiplied by Montgomery multiplication by columns (product \
-      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up; \
-      a square computes each product of two different words once and adds it twice) with a final \
-      conditional subtraction. The peer's key is checked without branches (its first byte, both \
+      Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
       signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<145} 16^j`, whose 145 nibbles less 8 \
@@ -37,9 +43,16 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       addition formulas of Renes, Costello and Batina for `a = -3` (Algorithm 4); `Z⁻¹` is by \
       the signature's divsteps. The result (or zeros) is selected by a mask of the checks, `d` \
       in `[1, n-1]` and `Z ≠ 0`, so the time depends only on the pointers."])
-    code := Impl.Ecdh.X86_64.exchangeP521
+    code
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi
-    verified := Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := hv
+    spSafe := hsp
+    features := if adx then ["bmi2", "adx"] else [] }
+
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
+  exchange false Impl.Ecdh.X86_64.exchangeP521
+    (Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  exchange true Impl.Ecdh.X86_64.exchangeP521Adx
+    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx h.law h.inv) (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P521.X86_64.EcdhP521
