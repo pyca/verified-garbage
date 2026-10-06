@@ -57,14 +57,14 @@ def privName (c : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ c.suff
 /-- Its code, as `Generic/RsaPrivateCrt/X86_64/Rsa.lean` emits it. -/
 def privCode (c : CrtImpl) : Prog isa :=
   Impl.Rsa.X86_64.PrivChecked.code c.name c.code (Spec.Rsa.publicPrecomputeApi.name ++ c.montSuffix)
-    (Impl.Rsa.X86_64.Precompute.code c.mont.mm) (Spec.Rsa.publicPrecomputedCheckedApi.name ++ c.montSuffix)
-    (Impl.Rsa.X86_64.Checked.precomputedChecked c.mont.mm)
+    (Impl.Rsa.X86_64.Precompute.code c.mont.mm) c.pubOp.name
+    c.pubOp.code
 
 theorem privCode_depth (c : CrtImpl) : (privCode c).x86_64Depth ≤ privStack := by
   simp only [privCode, Impl.Rsa.X86_64.PrivChecked.code, Impl.Rsa.X86_64.PrivChecked.body,
     Impl.Rsa.X86_64.PrivChecked.check, Impl.Rsa.X86_64.PrivChecked.tail, List.cons_append, List.nil_append,
     Impl.Bignum.X86_64.seqs, Code.x86_64Depth, x86_64Depth_zero c.nosp c.depth,
-    x86_64Depth_zero c.pcNosp c.pcDepth, x86_64Depth_zero c.pdNosp c.pdDepth]
+    x86_64Depth_zero c.pcNosp c.pcDepth, x86_64Depth_zero c.pubOp.nosp c.pubOp.depth]
   decide
 
 /-- `vg_rsa_private_checked` calling `c`, as decryption's callee. -/

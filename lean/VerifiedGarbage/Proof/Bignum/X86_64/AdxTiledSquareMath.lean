@@ -26,17 +26,18 @@ theorem remaining_step (m : Mem) (B : Addr) (e n k : Nat) (hk : k+1<n) :
     funext j
     rw [show k+(j+1)=(k+1)+j by omega]
   have p1 : (2 : Nat)^(512*(2*k+1))=2^(1024*k)*2^512 := by
-    rw [← Nat.pow_add]
+    rw [← Nat.pow_add 2 (1024*k) 512]
     apply congrArg (fun n : Nat => (2 : Nat)^n)
     omega
   have p2 : (2 : Nat)^(1024*(k+1))=2^(1024*k)*(2^512*2^512) := by
-    rw [← Nat.pow_add 2 512 512,← Nat.pow_add]
+    rw [← Nat.pow_add 2 512 512,← Nat.pow_add 2 (1024*k) (512+512)]
     apply congrArg (fun n : Nat => (2 : Nat)^n)
     omega
   unfold remaining
   rw [show n-k=(n-k-1)+1 by omega,Triangular.cross_head,shift,chunks_tail_value]
   simp only [Nat.add_zero]
   rw [show n-(k+1)=n-k-1 by omega,p1,p2]
+  generalize (2 : Nat)^(1024*k)=P, (2 : Nat)^512=R
   exact distribute
 
 theorem remaining_end (m : Mem) (B : Addr) (e n : Nat) (hn : 0<n) : remaining m B e n (n-1)=0 := by

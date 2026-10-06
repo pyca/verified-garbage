@@ -23,7 +23,7 @@ theorem chunks_value (m : Mem) (B : Addr) (e n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [Square.value,ih,show 8*(n+1)=8*n+8 by omega,wv_add,← Nat.pow_mul]
+    rw [Square.value,ih,show 8*(n+1)=8*n+8 by omega,wv_add,← Nat.pow_mul 2 512 n]
     simp only [chunks,show 8*(8*n)=64*n by omega,show 64*(8*n)=512*n by omega]
     rw [Nat.mul_comm (wv m B (e+64*n) 8)]
 
@@ -35,7 +35,7 @@ theorem chunks_cross (m : Mem) (B : Addr) (e n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih =>
-    rw [show 8*(n+1)=8*n+8 by omega,crossValue_add,ih,blockCross,Square.cross,chunks_value,← Nat.pow_mul]
+    rw [show 8*(n+1)=8*n+8 by omega,crossValue_add,ih,blockCross,Square.cross,chunks_value,← Nat.pow_mul 2 512 n]
     simp only [chunks,show 8*(8*n)=64*n by omega,show 128*(8*n)=1024*n by omega,
       show 64*(8*n)=512*n by omega]
     exact sum_chunks
