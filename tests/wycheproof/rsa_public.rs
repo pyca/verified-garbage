@@ -51,22 +51,39 @@ fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
+/// A hash function, to its value as bytes.
+type Digest = fn(&[u8]) -> Vec<u8>;
+
+/// The hash functions by the names the vectors give them.
+const HASHES: [(&str, Digest); 11] = [
+    ("SHA-1", |m| Sha1::digest(m).as_ref().to_vec()),
+    ("SHA-224", |m| Sha224::digest(m).as_ref().to_vec()),
+    ("SHA-256", |m| Sha256::digest(m).as_ref().to_vec()),
+    ("SHA-384", |m| Sha384::digest(m).as_ref().to_vec()),
+    ("SHA-512", |m| Sha512::digest(m).as_ref().to_vec()),
+    ("SHA-512/224", |m| Sha512_224::digest(m).as_ref().to_vec()),
+    ("SHA-512/256", |m| Sha512_256::digest(m).as_ref().to_vec()),
+    ("SHA3-224", |m| {
+        <Sha3_224 as HashFunction>::digest(m).as_ref().to_vec()
+    }),
+    ("SHA3-256", |m| {
+        <Sha3_256 as HashFunction>::digest(m).as_ref().to_vec()
+    }),
+    ("SHA3-384", |m| {
+        <Sha3_384 as HashFunction>::digest(m).as_ref().to_vec()
+    }),
+    ("SHA3-512", |m| {
+        <Sha3_512 as HashFunction>::digest(m).as_ref().to_vec()
+    }),
+];
+
 /// The hash value of `msg` with the hash function the vectors call `sha`.
 fn digest(sha: &str, msg: &[u8]) -> Vec<u8> {
-    match sha {
-        "SHA-1" => Sha1::digest(msg).as_ref().to_vec(),
-        "SHA-224" => Sha224::digest(msg).as_ref().to_vec(),
-        "SHA-256" => Sha256::digest(msg).as_ref().to_vec(),
-        "SHA-384" => Sha384::digest(msg).as_ref().to_vec(),
-        "SHA-512" => Sha512::digest(msg).as_ref().to_vec(),
-        "SHA-512/224" => Sha512_224::digest(msg).as_ref().to_vec(),
-        "SHA-512/256" => Sha512_256::digest(msg).as_ref().to_vec(),
-        "SHA3-224" => <Sha3_224 as HashFunction>::digest(msg).as_ref().to_vec(),
-        "SHA3-256" => <Sha3_256 as HashFunction>::digest(msg).as_ref().to_vec(),
-        "SHA3-384" => <Sha3_384 as HashFunction>::digest(msg).as_ref().to_vec(),
-        "SHA3-512" => <Sha3_512 as HashFunction>::digest(msg).as_ref().to_vec(),
-        _ => panic!("unknown hash function {sha}"),
-    }
+    let (_, f) = HASHES
+        .iter()
+        .find(|(n, _)| *n == sha)
+        .expect("a known hash function");
+    f(msg)
 }
 
 /// RSAVP1 of `sig`, or `None` if the operation refuses it (leaving zeros).
