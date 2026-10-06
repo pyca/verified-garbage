@@ -225,7 +225,7 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64)
   unch : Unch base [(0, size)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg)
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg (c.C.len == 32))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq (c.winPrep (c.sl V))
       (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
 
@@ -285,7 +285,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     · intro t ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
-  have WC := tcomb_ok (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
+  have WC := tcomb_ok (publicLookup := c.C.len == 32) (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
     (modP_of hc F₁.mp) hF
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂

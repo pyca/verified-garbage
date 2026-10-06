@@ -114,9 +114,10 @@ def final : Prog isa :=
     c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c]
 
 /-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
-`u`, `[v]Q` by ECDH's window method. -/
+`u`, `[v]Q` by ECDH's window method. P-256 verification selects its public
+comb digits directly; the other curves retain the table scan. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg (c.C.len == 32)) <|
   .seq (.block (save c)) <|
   .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
