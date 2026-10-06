@@ -18,7 +18,8 @@ def artifacts : List Artifact := [
       addition as [Y - X, Y + X, 2dT, 2Z], skipping the \
       leading zero bytes of k above its low 32, and compares it with -R projectively."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
-      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline)
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline
+        (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline))
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.baseline_mx
     spSafe := Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe },
@@ -32,7 +33,8 @@ def artifacts : List Artifact := [
       equation using all 512 challenge bits, with one chain of doublings and 4-bit windows of \
       the public scalars, skipping the leading zero bytes of k above its low 32."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx
+        (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx))
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.adx_mx
     features := ["bmi2", "adx"]
@@ -47,7 +49,8 @@ def artifacts : List Artifact := [
       `vpmadd52luq` and `vpmadd52huq` on `ymm` registers, with AVX512VL), as `vg_x25519_ifma`'s \
       ladder multiplies, between Intel's MXCSR prologue and epilogue, which save MXCSR \
       through bytes 1600 to 1608 of `scratch`."])
-    code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4
+    code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4)
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.ifma_mx
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]

@@ -10,10 +10,12 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 namespace VG
 
 materialize_code verifyEquationLit := (Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
-  (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline))
+  (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline
+      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline)))
 materialize_code verifyEquationAdxLit := (Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-  (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx))
+  (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx
+      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)))
 materialize_code verifyEquationIfmaLit := (Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-  Impl.Ed25519.X86_64.Ifma.double4)
+  (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4))
 
 end VG

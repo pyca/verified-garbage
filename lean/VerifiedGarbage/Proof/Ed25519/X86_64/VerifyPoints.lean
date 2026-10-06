@@ -477,7 +477,22 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
 variable {fld : Arith} [EdArith fld]
-variable {dbl : Prog isa} [EdDouble dbl]
+
+/-- A run of the loops: from a state satisfying `R₀`, with `c` bytes left. -/
+def LoopRun (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
+  ∃ s₀, R₀ s₀ ∧ WinLoop s₀ base kp sp A K S c x
+
+/-- The windows after `skipZero`, from `c` bytes left (`32 ≤ c ≤ 64`) to none, as
+`windows` runs them (`Ifma.windows` too): the loops' invariant, and a trace that depends
+on the run's start alone. -/
+class EdWindows (win : Prog isa) : Prop where
+  ok : ∀ {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}, 32 ≤ c → c ≤ 64 →
+    WinLoop s₀ base kp sp A K S c s → WP isa win s (WinLoop s₀ base kp sp A K S 0)
+  ct : ∀ {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}, 32 ≤ c → c ≤ 64 →
+    RelCT isa (fun x y => LoopRun R₀ base kp sp A K S c x ∧ LoopRun R₀ base kp sp A K S c y) win
+      (fun x y => LoopRun R₀ base kp sp A K S 0 x ∧ LoopRun R₀ base kp sp A K S 0 y)
+
+variable {win : Prog isa} [EdWindows win]
 
 theorem PowersKeep.of_byte {base : Addr} {s t : State} (h : ByteKeep base s t) :
     PowersKeep base 56 7752 s t :=
@@ -600,7 +615,7 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
     (hcr : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1)
     (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
     (hA : Rep (tablePoint s.mem base 7424) Aa) (hR : Rep (tablePoint s.mem base 7552) Ra) :
-    WP isa (verifyEquationPoints fld dbl) s fun t => PowersKeep base 56 7752 s t ∧
+    WP isa (verifyEquationPoints fld win) s fun t => PowersKeep base 56 7752 s t ∧
       t.gpr .rax = signWord (Spec.Ed25519.pointEqual
         (Spec.Ed25519.pointMul
           (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) Spec.Ed25519.basePoint)
@@ -612,8 +627,7 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
   refine WP.seq (WP.mono (windowPrep_ok hs hp hc hr hf hcr hcf hA) fun e ⟨w0, kse, eR⟩ => ?_)
   -- The windows.
   refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc32, hc64, hf⟩ => ?_)
-  refine WP.seq (WP.mono (windowsA_ok hc32 hc64 hf) fun f' hf' => ?_)
-  refine WP.seq (WP.mono (loopB_ok hf') fun g hg => ?_)
+  refine WP.seq (WP.mono (EdWindows.ok hc32 hc64 hf) fun g hg => ?_)
   have ksg := kse.trans (PowersKeep.of_byte hg.keep)
   -- The comparison with `-R`.
   refine WP.seq (WP.mono (negR_ok (ksg.scratch hs)) fun u ⟨ku, u0, u4⟩ => ?_)

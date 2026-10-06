@@ -28,24 +28,28 @@ def pointEqual (fld : Arith) : Prog isa :=
     (.seq (.block (fieldEqual fld 10 11)) (.ite .e (.block [.mov32 .rax (.imm 1)]) recoverInvalid))
     recoverInvalid)
 
+/-- The windows after `skipZero`, with the doublings `dbl`: those of `k` alone, then those of
+both scalars. -/
+def windows (fld : Arith) (dbl : Prog isa) : Prog isa :=
+  .seq (windowsA fld dbl) (.loop (byteStepAB fld dbl) .ne)
+
 /-- Returns 1 in `rax` if `[S]B = R + [k]A`, for `A` at byte 7424 and `R` at byte 7552,
-with the doublings `dbl`. -/
-def verifyEquationPoints (fld : Arith) (dbl : Prog isa) : Prog isa :=
+with the windows `win` (`windows`). -/
+def verifyEquationPoints (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block windowSetup) (.seq (aTable fld) (.seq (.block bTable) (.seq (.block (windowInit fld))
-    (.seq skipZero (.seq (windowsA fld dbl) (.seq (.loop (byteStepAB fld dbl) .ne)
-      (.seq (.block (negR fld)) (pointEqual fld))))))))
+    (.seq skipZero (.seq win (.seq (.block (negR fld)) (pointEqual fld)))))))
 
 /-- Continue only when a point decoder returned success. -/
 def decodedThen (next : Prog isa) : Prog isa :=
   .seq (.block [.alu .test .rax (.reg .rax)]) (.ite .ne next recoverInvalid)
 
-def verifyDecodeR (fld : Arith) (dbl : Prog isa) : Prog isa :=
+def verifyDecodeR (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (sc 7944))]) (.seq (pointDecode fld)
-    (decodedThen (.seq (.block (pointTableWrite 7552)) (verifyEquationPoints fld dbl))))
+    (decodedThen (.seq (.block (pointTableWrite 7552)) (verifyEquationPoints fld win))))
 
-def verifyDecodeA (fld : Arith) (dbl : Prog isa) : Prog isa :=
+def verifyDecodeA (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (sc 7936))]) (.seq (pointDecode fld)
-    (decodedThen (.seq (.block (pointTableWrite 7424)) (verifyDecodeR fld dbl))))
+    (decodedThen (.seq (.block (pointTableWrite 7424)) (verifyDecodeR fld win))))
 
 def verifyHeaders : List Instr :=
   [.store (at_ .rdx 7936) .rdi, .store (at_ .rdx 7944) .rsi,
@@ -54,10 +58,10 @@ def verifyHeaders : List Instr :=
 def verifySetup : List Instr :=
   ([.mov .rax (.reg .rdx), .mov .rdx (.reg .rcx)] : List Instr) ++ scalarSave ++ verifyHeaders
 
-/-- Verification, with the field arithmetic `fld` and the doublings `dbl`. -/
-def verifyEquation (fld : Arith) (dbl : Prog isa) : Prog isa :=
+/-- Verification, with the field arithmetic `fld` and the windows `win`. -/
+def verifyEquation (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block verifySetup) (.seq
-    (.seq (.block verifyScalar) (.ite .b (verifyDecodeA fld dbl) recoverInvalid))
+    (.seq (.block verifyScalar) (.ite .b (verifyDecodeA fld win) recoverInvalid))
     (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ scalarRestore)))
 
 end VG.Impl.Ed25519.X86_64
