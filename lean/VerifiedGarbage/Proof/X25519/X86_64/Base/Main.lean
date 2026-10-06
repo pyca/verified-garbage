@@ -28,13 +28,13 @@ def baseLocal : Contract isa where
 /-- `baseLocal` is `scalarBaseLocal`'s precondition. -/
 theorem baseLocal_pre {s : State} (hs : baseLocal.pre s) : scalarBaseLocal.pre s := hs
 
-theorem x25519Base_correct
+theorem x25519BaseWith_correct (eng : Prog isa) (heng : UEngineOk eng)
     {s : State} (hs : baseLocal.pre s) :
-    WP isa (x25519Base fld) s fun t => gprPreserved s t ∧ baseLocal.post s t := by
+    WP isa (scalarBaseWith eng) s fun t => gprPreserved s t ∧ baseLocal.post s t := by
   have ⟨tbl, far⟩ := scalarBaseLocal_tbl (baseLocal_pre hs)
   obtain ⟨hr, hw, hd, hro, hrs, hn, hh⟩ := hs
   have hws : (⟨s.gpr .rdx, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
-  rw [x25519Base, scalarBaseWith]
+  rw [scalarBaseWith]
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono_syms (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, ma, sva⟩ asy => ?_
@@ -50,7 +50,7 @@ theorem x25519Base_correct
       simp only [List.mem_singleton] at hr; subst hr; exact hh.2.2 _ (by simp))
     (by rw [rb, wb, ra, wa]) (by rw [bsy, asy])
   apply WP.seq
-  refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
+  refine WP.mono (heng hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .rsi, 32⟩, by rw [rb, ra, hr]; simp,
       Offset.contains_base _ (by omega) (by omega)⟩)
     (fun q hq => farScratch hd hq (by decide)) tblb far) fun c ⟨kc, w, vc, xc⟩ => ?_
@@ -105,5 +105,9 @@ theorem x25519Base_correct
     rw [val4, ge .r8 (by decide), ge .r9 (by decide), ge .r10 (by decide), ge .r11 (by decide),
       kd.1 .r8 (by decide), kd.1 .r9 (by decide), kd.1 .r10 (by decide), kd.1 .r11 (by decide)]
     exact vc
+
+theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
+    WP isa (x25519Base fld) s fun t => gprPreserved s t ∧ baseLocal.post s t :=
+  x25519BaseWith_correct _ engine_ok hs
 
 end VG.Proof.X25519.X86_64.Base

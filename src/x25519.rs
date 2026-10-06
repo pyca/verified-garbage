@@ -13,7 +13,9 @@
 //! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
 //! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
 //! on edwards25519, with Ed25519's precomputed tables, rather than with the
-//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available.
+//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available,
+//! and `vg_x25519_base_ifma` also AVX512_IFMA and AVX512VL, whose comb adds
+//! each table entry with four-lane field multiplications.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.1), in
@@ -31,8 +33,8 @@ use crate::arch::x25519::vg_x25519;
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
-    VG_X25519_ADX_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_base_adx,
-    vg_x25519_ifma,
+    VG_X25519_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx,
+    vg_x25519_base_adx, vg_x25519_base_ifma, vg_x25519_ifma,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -46,8 +48,8 @@ enum Backend {
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm` registers,
-    /// with AVX512VL) for the ladder, and `Adx`'s multiplications for the
-    /// inversion.
+    /// with AVX512VL) for the ladder and the fixed-base comb, and `Adx`'s
+    /// multiplications for the inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -56,7 +58,9 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(VG_X25519_IFMA_FEATURES) {
+        if f.contains(
+            const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
+        ) {
             Backend::Ifma
         } else if f.contains(VG_X25519_ADX_FEATURES) {
             Backend::Adx
@@ -120,7 +124,8 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     #[cfg(target_arch = "x86_64")]
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_x25519_base,
-        Backend::Adx | Backend::Ifma => vg_x25519_base_adx,
+        Backend::Adx => vg_x25519_base_adx,
+        Backend::Ifma => vg_x25519_base_ifma,
     };
     #[cfg(not(target_arch = "x86_64"))]
     let f = vg_x25519_base;

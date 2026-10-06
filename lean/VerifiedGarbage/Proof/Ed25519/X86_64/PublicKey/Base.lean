@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 
 /-!
@@ -13,7 +13,7 @@ cleared (`wipe_ok`).
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -160,7 +160,7 @@ end VG.Proof.Ed25519.X86_64.PublicKey
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -197,7 +197,7 @@ end VG.Proof.Ed25519.X86_64.PublicKey
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -205,9 +205,9 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
 /-- Both facts about every instruction of the base-point multiplication that
 the calls need, in one evaluation of its code. -/
-theorem base_instrs : (scalarBase_precomputed fld).allInstrs
-    (fun i => !VG.X86_64.Taint.clobbers i .rsp && !isa.writesSp i) = true := by
-  fld_lit_decide
+theorem base_instrs : bs.allInstrs
+    (fun i => !VG.X86_64.Taint.clobbers i .rsp && !isa.writesSp i) = true :=
+  VG.Proof.Ed25519.X86_64.EdBase.instrs
 
 theorem allInstrs_and {p q : Instr → Bool} {c : Prog isa}
     (h : c.allInstrs (fun i => p i && q i) = true) :
@@ -215,13 +215,13 @@ theorem allInstrs_and {p q : Instr → Bool} {c : Prog isa}
   simp only [Code.allInstrs_eq, List.all_eq_true, Bool.and_eq_true] at h ⊢
   exact ⟨fun i hi => (h i hi).1, fun i hi => (h i hi).2⟩
 
-theorem base_nosp : NoSp (scalarBase_precomputed fld) :=
+theorem base_nosp : NoSp bs :=
   Proof.Pbkdf2.Md.X86_64.nosp_of (allInstrs_and base_instrs).1
 
-theorem base_depth : (scalarBase_precomputed fld).depth ≤ 1 := by fld_lit_decide
+theorem base_depth : bs.depth ≤ 1 := VG.Proof.Ed25519.X86_64.EdBase.depth
 
 /-- No instruction of the base-point multiplication writes `rsp`. -/
-theorem base_spSafe : (scalarBase_precomputed fld).all (fun i => !isa.writesSp i) = true :=
+theorem base_spSafe : bs.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (allInstrs_and base_instrs).2
 
 abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 16, 32⟩, L.TBL]
@@ -281,10 +281,10 @@ theorem base_wsub : ∀ r ∈ baseWr L, Within r L.OUT ∨ Within r L.SCR := by
 
 theorem base_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) {s : Nat}
     (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 32) = s) :
-    WP isa (.call (scalarBaseName fs) (scalarBase_precomputed fld)) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call (scalarBaseName fs) bs) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed25519.bytesAt t'.mem L.out 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul s Spec.Ed25519.basePoint) := by
-  refine call_ok hL Proof.Ed25519.X86_64.scalarBase_precomputed_ok base_nosp base_depth hc
+  refine call_ok hL (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) base_nosp base_depth hc
     (base_pre hL hc ha) base_sub base_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
   obtain ⟨g1, g2, -⟩ := base_regs ha (baseRd L) (baseWr L)
   have h := hpost

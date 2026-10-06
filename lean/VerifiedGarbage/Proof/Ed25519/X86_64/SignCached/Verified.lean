@@ -68,9 +68,9 @@ section
 /-! Argument blocks composed with the signer's scalar and group calls. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName scalarBase_precomputed scalarMulAdd)
+open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName scalarMulAdd)
 open VG.Impl.Ed25519.X86_64.SignCached
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
@@ -85,7 +85,7 @@ theorem reduce_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (out : Nat)
 
 theorem base_step (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {scalar : List Byte}
     (hs : Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 80) 32 = scalar) :
-    WP isa (callWith baseArgs (scalarBaseName fs) (scalarBase_precomputed fld)) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (callWith baseArgs (scalarBaseName fs) bs) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed25519.bytesAt t'.mem L.out 32 = Spec.Ed25519.scalarBase scalar ∧
       Frame (baseWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
   refine WP.seq (WP.mono (baseArgs_ok hc) fun u ⟨hu, hm, ha⟩ => ?_)
@@ -107,9 +107,9 @@ end
 /-! Hash and reduce the deterministic nonce, then encode its base-point multiple. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName scalarBase_precomputed)
+open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName)
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
@@ -119,13 +119,13 @@ structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
   nonce : Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 80) 32 = nonce L m
   point : Spec.Ed25519.bytesAt t.mem L.out 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
 
-def nonceCode (fld : VG.Impl.Ed25519.X86_64.Arith) (fs : String) (v : Compress) : Prog isa :=
+def nonceCode (bs : Prog isa) (fs : String) (v : Compress) : Prog isa :=
   .seq (hashNonce v.callee v.suffix) (.seq (reduce 64)
-    (callWith baseArgs (scalarBaseName fs) (scalarBase_precomputed fld)))
+    (callWith baseArgs (scalarBaseName fs) bs))
 
 theorem nonce_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hs : SecretReady L m₀ t) (hlen : 64 + L.len.toNat < 2 ^ 64) :
-    WP isa (nonceCode fld fs v) t fun t' => Ctx L g mx m₀ t' ∧ NonceReady L m₀ t' := by
+    WP isa (nonceCode bs fs v) t fun t' => Ctx L g mx m₀ t' ∧ NonceReady L m₀ t' := by
   have hm : Spec.Ed25519.bytesAt t.mem L.msg L.len.toNat = Spec.Ed25519.bytesAt m₀ L.msg L.len.toNat :=
     hc.input_bytes hL (r := L.MSG) (by simp [Lay.inputs]) (Nat.le_of_lt L.len.isLt)
   refine WP.seq (WP.mono (hashNonce_ok v hL hc (by omega)) fun u ⟨hu, hd, hf⟩ => ?_)
@@ -217,7 +217,7 @@ end
 /-! Complete RFC 8032 signing, including all three SHA-512 computations. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
@@ -226,7 +226,7 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 theorem body_ok (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     (hlen : 64 + L.len.toNat < 2 ^ 64)
     (hpk : Spec.Ed25519.bytesAt m₀ L.pk 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32)) :
-    WP isa (body fld fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧ Spec.Ed25519.bytesAt t'.mem L.out 64 =
+    WP isa (body bs fs v.callee v.suffix) t fun t' => Ctx L g mx m₀ t' ∧ Spec.Ed25519.bytesAt t'.mem L.out 64 =
       Spec.Ed25519.sign (Spec.Ed25519.bytesAt m₀ L.seed 32) (Spec.Ed25519.bytesAt m₀ L.msg L.len.toNat) := by
   apply WP.assoc
   refine WP.seq (WP.mono (secret_ok v hL hc) fun u ⟨hu, hs⟩ => ?_)
@@ -693,9 +693,9 @@ section
 /-! The signer's scalar and point operations keep all operand bytes secret. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName scalarBase_precomputed scalarReduce scalarMulAdd)
+open VG.Impl.Ed25519.X86_64 (callWith scalarBaseName scalarReduce scalarMulAdd)
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Ed25519.X86_64.PublicKey (rsp_ce)
 
@@ -717,12 +717,12 @@ theorem reduce_ct (out : Nat) (ho : out + 32 ≤ 128)
   exact b.seq c
 
 theorem base_ct : RelCT isa (Two fun _ _ _ => True)
-    (callWith baseArgs (scalarBaseName fs) (scalarBase_precomputed fld)) (Two fun _ _ _ => True) := by
+    (callWith baseArgs (scalarBaseName fs) bs) (Two fun _ _ _ => True) := by
   have b : RelCT isa (Two fun _ _ _ => True) (.block baseArgs) (Two fun L _ => BaseArgs L) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ => WP.mono (baseArgs_ok hc)
       fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
   have c := two_callP (n := (scalarBaseName fs)) (Φ := fun L _ => BaseArgs L)
-    (scalarBase_precomputed_ok (fld := fld)) (scalarBase_precomputed_ct (fld := fld)) base_nosp base_depth
+    (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) (VG.Proof.Ed25519.X86_64.EdBase.ct (bs := bs)) base_nosp base_depth
     baseRd baseWr
     (fun _ _ _ _ _ hL hc ha => base_pre hL hc ha)
     (fun L t₁ t₂ _ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => by
@@ -756,14 +756,14 @@ section
 /-! Complete signing meets its functional contract and preserves the ABI. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
 open VG.Proof.Ed25519.X86_64.PublicKey (add_add ne_cs)
 
 theorem sign_ok (v : Compress) {s : State} (h : signLocal.pre s) :
-    WP isa (code fld fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ signLocal.post s s' := by
+    WP isa (code bs fs v.callee v.suffix) s fun s' => abiPreserved s s' ∧ signLocal.post s s' := by
   have hL := lay_ok h
   have hc := push_ctx h
   refine WP.frame (rs := pushRs) (by decide) (by decide) (by decide) (by show 8 * 31 ≤ _; have := h.1; omega)
@@ -794,13 +794,13 @@ end
 /-! Complete signing is constant-time with respect to seed, key and message bytes. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
 
 theorem body_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
-    (body fld fs v.callee v.suffix) (Two fun _ _ _ => True) := by
+    (body bs fs v.callee v.suffix) (Two fun _ _ _ => True) := by
   have s : RelCT isa (Two fun _ _ _ => True) (.block saveSecret) (Two fun _ _ _ => True) :=
     two_blk (by taint_decide) fun _ _ _ _ _ _ hc _ =>
       WP.mono (saveSecret_ok hc rfl) fun _ ⟨hc', _, _⟩ => ⟨hc', trivial⟩
@@ -810,7 +810,7 @@ theorem body_ct (v : Compress) : RelCT isa (Two fun _ _ _ => True)
   exact (hashSeed_ct v).seq (s.seq ((hashNonce_ct v).seq ((reduce_ct 64 (by decide) (by taint_decide)).seq
     (base_ct.seq ((hashChallenge_ct v).seq ((reduce_ct 96 (by decide) (by taint_decide)).seq (mul_ct.seq w)))))))
 
-theorem sign_ct (v : Compress) : ConstantTime isa signLocal.pre signLocal.pub (code fld fs v.callee v.suffix) := by
+theorem sign_ct (v : Compress) : ConstantTime isa signLocal.pre signLocal.pub (code bs fs v.callee v.suffix) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1)
     (RelCT.mono (body_ct v) ?_ fun _ _ _ => trivial))
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hsp, hdi, hsi, hdx, hcx, h8, h9, hsy⟩, rfl, rfl⟩
@@ -867,9 +867,9 @@ end
 /-! Complete signing satisfies the reviewed cached-key signing contract. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (scalarReduce scalarBase_precomputed scalarMulAdd callWith)
+open VG.Impl.Ed25519.X86_64 (scalarReduce scalarMulAdd callWith)
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Sha512.X86_64 (Compress)
 
@@ -973,15 +973,15 @@ theorem implies :
     exact ⟨h0, h1, h2, h3, h4, h5, h6, hs⟩
   sat := ⟨satStateT, sign_spec_pre sat_local⟩
 
-theorem verified (v : Compress) : Verified X86_64.target (code fld fs v.callee v.suffix)
+theorem verified (v : Compress) : Verified X86_64.target (code bs fs v.callee v.suffix)
     (Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264) :=
   Verified.of_correct (fun _ h => sign_ok v h) (sign_ct v) implies
 
-theorem spSafe (v : Compress) : (code fld fs v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
+theorem spSafe (v : Compress) : (code bs fs v.callee v.suffix).all (fun i => !isa.writesSp i) = true := by
   have hu := Proof.Sha512.X86_64.Shared.update_spSafe v.spSafe
   have hf := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe
   have hr : scalarReduce.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
-  have hb : (scalarBase_precomputed fld).all (fun i => !isa.writesSp i) = true :=
+  have hb : bs.all (fun i => !isa.writesSp i) = true :=
     PublicKey.base_spSafe
   have hm : scalarMulAdd.all (fun i => !isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
   have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by
