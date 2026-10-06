@@ -65,6 +65,12 @@ def carryUp (acc N : Nat) : List Instr :=
 def mulRow (acc b N : Nat) : List Instr :=
   .mov .ebx (.imm 0) :: (List.range N).flatMap (mulStep acc b) ++ carryUp acc N
 
+/-- The reduction digit `q = t₀ m' mod 2³²`. A unit inverse, as in
+P-256's field, needs only the load: its multiplication is the identity. -/
+def redDigit (M : Mod) (acc : Nat) : List Instr :=
+  if minv32 M = 1 then [.mov .ecx (.mem (at_ .ebp acc))]
+  else [.mov .eax (.mem (at_ .ebp acc)), .mov .ecx (.imm (minv32 M)), .mul .ecx, .mov .ecx (.reg .eax)]
+
 /-- An iteration of `mul`: the window `+= a_i [b]`, then `+= u m` with
 `u = t₀ m' mod 2³²`, after which its low word is zero; then the window
 moves up a word, and `ebp` is compared with `edi + 4N` (the end of the
@@ -72,7 +78,7 @@ loop). -/
 def row (M : Mod) (acc a b : Nat) : List Instr :=
   let N := words M
   [.mov .ecx (.mem (at_ .ebp a))] ++ mulRow acc b N ++
-  [.mov .eax (.mem (at_ .ebp acc)), .mov .ecx (.imm (minv32 M)), .mul .ecx, .mov .ecx (.reg .eax)] ++
+  redDigit M acc ++
     mulRow acc M.mo N ++
   [.alu .add .ebp (.imm 4), .mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))),
     .alu .cmp .ebp (.reg .edx)]
