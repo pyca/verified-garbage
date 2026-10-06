@@ -1,5 +1,5 @@
 //! Deterministic ECDSA known-answer tests from the vendored RFC 6979:
-//! §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
+//! §A.2.4 (P-224), §A.2.5 (P-256), §A.2.6 (P-384) and §A.2.7 (P-521), each the private
 //! key, its public key, and its signatures of "sample" and "test" with the
 //! hash functions the curve signs with here.
 
@@ -10,6 +10,7 @@
     target_arch = "arm"
 ))]
 
+mod p224;
 mod p256;
 mod p384;
 mod p521;

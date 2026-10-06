@@ -118,7 +118,6 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     rw [bytesAt_frame hf₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega)) (by omega)]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf, ← bytesAt_take m₀ L.dg hQD]
-    rw [show P.Q = 8 * P.w by omega]
     exact hh₁
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
     have hl := P.R.nBits_len

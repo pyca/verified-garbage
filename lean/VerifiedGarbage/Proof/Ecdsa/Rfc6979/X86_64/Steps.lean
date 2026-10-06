@@ -94,9 +94,9 @@ theorem rekey_gen (hL : L.Ok) (hq : HOk P L) {t : State} (hc : Ctx L g m₀ t) {
   rw [← hmp]
   have hmsg := msg_ok hL hcp hdip hsip b full wd hdxp (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
     (by nums) hq.1 (fun hf hw => by
-      have := P.sizesA (hw ▸ hwd hf).symm; exact ⟨by rw [this.1]; omega, by omega⟩)
+      have := P.sizesA (hw ▸ hwd hf).symm; omega)
     (fun hf hw => by
-      have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, hq.2 (hw ▸ hwd hf).symm⟩)
+      have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, hq.2 (hw ▸ hwd hf).symm, by omega⟩)
   have hh : (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hPart wd P.Q P.H.D L p.mem else []) =
       (if full then Spec.Sha256.bytesAt p.mem L.d P.Q ++ hOf P L p.mem else []) := by
     cases full

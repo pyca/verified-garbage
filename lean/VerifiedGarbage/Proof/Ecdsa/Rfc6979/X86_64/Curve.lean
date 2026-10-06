@@ -14,9 +14,10 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
 
 What the proof needs of the curve (`RfcCurve`): the code of
 `vg_ecdsa_<curve>_sign` for curves of `n` words (`Impl.Ecdsa.X86_64.Cfg`),
-the instance of ECDSA it is, its sizes: scalars of 4 or 6 words whose order
-`n` has exactly `64 n` bits and `2^(64 n) < 2 n` (so that one `V` makes a
-candidate and `bits2octets` is one conditional subtraction), or, if `wide`,
+the instance of ECDSA it is, its sizes: scalars of `Q` bytes in 4 or 6 words
+(32 or 48 bytes, or P-224's 28 in 4) whose order `n` has exactly `8 Q` bits
+and `2^(8 Q) < 2 n` (so that one `V` makes a candidate and `bits2octets` is
+one conditional subtraction), or, if `wide`,
 P-521's (9 words, 66 bytes, 521 bits: two `V`s make a candidate); the bits
 `sh` the signature drops from its digest; and what is proven of the code:
 that it meets the contract the proof of each curve is written against
@@ -67,6 +68,7 @@ compression function, for scalars of `E`. -/
 def cfgC (E : Impl.Ecdsa.X86_64.Cfg) : Impl.Ecdsa.Rfc6979.X86_64.Cfg where
   H := ⟨Impl.Sha256.X86_64.Stream.params, 32, 104, "", .block [], "", .block [], "", "", "", "", ""⟩
   w := E.n
+  len := E.C.len
   n := E.C.n
   tries := 8
   coreN := ""
@@ -82,11 +84,12 @@ structure RfcCurve where
   /-- Whether the scalars are longer than any hash function's output, so
   that two `V`s make a candidate (`Impl.Ecdsa.Rfc6979.X86_64.Cfg.wide`). -/
   wide : Bool
-  /-- Scalars of 4 or 6 words, `8 n` bytes, and `n` of exactly `64 n` bits,
-  with `2^(64 n) < 2 n`; or, if `wide`, of 9 words and 66 bytes, and `n` of
-  521 bits. -/
+  /-- Scalars of 4 or 6 words, `8 n` bytes (or 28 in 4 words), and `n` of
+  exactly `8 len` bits, with `2^(8 len) < 2 n`; or, if `wide`, of 9 words and
+  66 bytes, and `n` of 521 bits. -/
   sizes : if wide then E.n = 9 ∧ E.C.len = 66 ∧ nBits E.C = 521
-    else (E.n = 4 ∨ E.n = 6) ∧ E.C.len = 8 * E.n ∧ nBits E.C = 64 * E.n ∧ 2 ^ (64 * E.n) < 2 * E.C.n
+    else (E.n = 4 ∨ E.n = 6) ∧ (E.C.len = 8 * E.n ∨ E.n = 4 ∧ E.C.len = 28) ∧ nBits E.C = 8 * E.C.len ∧
+      2 ^ (8 * E.C.len) < 2 * E.C.n
   n_lt : E.C.n < 2 ^ (64 * E.n)
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
@@ -119,8 +122,8 @@ namespace RfcCurve
 variable (R : RfcCurve)
 
 theorem sizesA (h : R.wide = false) :
-    (R.E.n = 4 ∨ R.E.n = 6) ∧ R.E.C.len = 8 * R.E.n ∧ nBits R.E.C = 64 * R.E.n ∧
-      2 ^ (64 * R.E.n) < 2 * R.E.C.n := by
+    (R.E.n = 4 ∨ R.E.n = 6) ∧ (R.E.C.len = 8 * R.E.n ∨ R.E.n = 4 ∧ R.E.C.len = 28) ∧
+      nBits R.E.C = 8 * R.E.C.len ∧ 2 ^ (8 * R.E.C.len) < 2 * R.E.C.n := by
   have := R.sizes; rw [h] at this; exact this
 
 theorem sizesW (h : R.wide = true) : R.E.n = 9 ∧ R.E.C.len = 66 ∧ nBits R.E.C = 521 := by

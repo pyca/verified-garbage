@@ -177,9 +177,10 @@ theorem pss_sha224 : Proof.RsaPss.X86_64.PssChecks Impl.Sha256.X86_64.Stream.par
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
-with `v` carries. -/
+with `v` carries; `v` itself, for the functions built on SHA-224 alone
+(`MdHash.sha224`). -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
+  { MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -187,6 +188,7 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features []
+    v.suffix v.features [] with
+    sha224 := some v }
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224
