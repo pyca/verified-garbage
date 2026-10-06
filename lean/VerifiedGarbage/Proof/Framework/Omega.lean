@@ -261,3 +261,17 @@ elab "bdd_omega" n:(ppSpace num)? : tactic => do
   unless ← bddDecide (n.map (·.getNat) |>.getD 64) do evalTactic (← `(tactic| omega))
 
 end VG
+
+
+open Lean Elab Tactic in
+/-- Try arithmetic facts first; preserve the original solver as a fallback. -/
+elab "omega_filtered" : tactic => do
+  let saved ← saveState
+  try VG.Omega.omegaArith
+  catch _ =>
+    saved.restore
+    Lean.Elab.Tactic.Omega.evalOmega (← `(tactic| omega))
+
+/-- Bare `omega` first selects arithmetic facts, avoiding irrelevant state
+hypotheses. Configured calls retain Lean's original elaborator. -/
+macro_rules | `(tactic| omega) => `(tactic| omega_filtered)
