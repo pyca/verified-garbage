@@ -84,7 +84,7 @@ def XBinOp.name : XBinOp → String
   | .pmulhw => "pmulhw" | .packssdw => "packssdw" | .punpcklwd => "punpcklwd"
   | .punpckhwd => "punpckhwd"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
-  | .aesdeclast => "aesdeclast" | .aesimc => "aesimc"
+  | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -110,7 +110,7 @@ def VBinOp.name : VBinOp → String
   | .vpaddw => "vpaddw" | .vpsubw => "vpsubw" | .vpsubd => "vpsubd" | .vpmullw => "vpmullw"
   | .vpmulhw => "vpmulhw" | .vpackssdw => "vpackssdw" | .vpunpcklwd => "vpunpcklwd"
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
-  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast"
+  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vpcmpeqd => "vpcmpeqd"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
@@ -187,7 +187,10 @@ def AluOp.name : AluOp → String
   | .or => "or" | .xor => "xor" | .cmp => "cmp" | .test => "test"
 
 def ShiftOp.name : ShiftOp → String
-  | .ror => "ror" | .shr => "shr"
+  | .ror => "ror" | .shr => "shr" | .shl => "shl"
+
+def Cond.name : Cond → String
+  | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
 def Instr.asm : Instr → List String
   | .mov d s => [s!"mov {d.name}, {s.str}"]
@@ -231,13 +234,11 @@ def Instr.asm : Instr → List String
   | .mulx hi lo s => [s!"mulx {hi.name}, {lo.name}, {s.str}"]
   | .adcx d s => [s!"adcx {d.name}, {s.str}"]
   | .adox d s => [s!"adox {d.name}, {s.str}"]
+  | .cmov c d s => [s!"cmov{c.name} {d.name}, {s.str}"]
   | .push rs => rs.map fun r => s!"push {r.name}"
   | .pop r k => List.replicate k s!"pop {r.name}"
   | .alloc bytes => [s!"lea rsp, [rsp-{bytes}]"]
   | .free bytes => [s!"lea rsp, [rsp+{bytes}]"]
-
-def Cond.name : Cond → String
-  | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
 /-- Whether the displacement of `m` fits in the 32-bit field it is encoded
 in, which the processor sign-extends: `-2^31 ≤ disp < 2^31`. SDM Vol. 2
@@ -257,8 +258,8 @@ def Src.memOps : Src → List MemOp
 
 /-- The memory operands of an instruction. -/
 def Instr.memOps : Instr → List MemOp
-  | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s =>
-    s.memOps
+  | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
+  | .cmov _ _ s => s.memOps
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vmovdqu32Load _ m
   | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m

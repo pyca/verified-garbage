@@ -75,6 +75,24 @@ def bin (op : VBinOp) (len : VLen := .l256) : BitVec 256 := run (.vbin op len .x
 #guard bin .vpsubq == 0x0dfae7d4c1ae9b89a8e8e6c4f8d4273289abcdef812345677edcba99641fdb98#256
 #guard bin .vpsubq .l128 == 0x0000000000000000000000000000000089abcdef812345677edcba99641fdb98#256
 
+/-! `vpcmpeqd` (in inline assembly, on an Intel Xeon, into `ymm5` holding all ones before) -/
+
+/-- `A` with doublewords 0, 2, 5 and 7 changed (in their lowest or highest bit). -/
+def E : BitVec 256 := 0x8f1e2d3c4b5a69788796a5b5c3d2e1f089abcdef81234567fedcba9876543211#256
+
+/-- `ymm5` after `vpcmpeqd ymm5, ymm0, ymm1` (or its `VEX.128` form) with `x` in `ymm1`. -/
+def vpcmpeqd (x : BitVec 256) (len : VLen := .l256) : BitVec 256 :=
+  ((VOp.vbin .vpcmpeqd len .xmm5 .xmm0 .xmm1).exec
+    { s with xmm := fun r => if r = .xmm1 then x.extractLsb' 0 128 else s.xmm r
+             ymmHi := fun r => if r = .xmm1 then x.extractLsb' 128 128 else s.ymmHi r }).ymm .xmm5
+
+#guard bin .vpcmpeqd == 0x0000000000000000000000000000000000000000000000000000000000000000#256
+#guard bin .vpcmpeqd .l128 == 0x0000000000000000000000000000000000000000000000000000000000000000#256
+#guard vpcmpeqd A == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff#256
+#guard vpcmpeqd A .l128 == 0x00000000000000000000000000000000ffffffffffffffffffffffffffffffff#256
+#guard vpcmpeqd E == 0x00000000ffffffff00000000ffffffffffffffff00000000ffffffff00000000#256
+#guard vpcmpeqd E .l128 == 0x00000000000000000000000000000000ffffffff00000000ffffffff00000000#256
+
 /-! `vpmadd52luq` and `vpmadd52huq` (`_mm256_madd52lo_epu64`,
 `_mm256_madd52hi_epu64`, and `_mm_…` for `.l128`, on an Emerald Rapids Xeon), into the all-ones `ymm5`
 (so the sums wrap), into a source, and with sources of 52 ones (whose
@@ -275,6 +293,8 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard printer.instr (.vop (.vshift .psrad .l128 .xmm6 .xmm7 31)) == ["vpsrad xmm6, xmm7, 31"]
 #guard printer.instr (.vop (.vbin .vpmulhw .l256 .xmm1 .xmm2 .xmm3)) == ["vpmulhw ymm1, ymm2, ymm3"]
 #guard printer.instr (.vop (.vbin .vpsubq .l256 .xmm1 .xmm2 .xmm3)) == ["vpsubq ymm1, ymm2, ymm3"]
+#guard printer.instr (.vop (.vbin .vpcmpeqd .l256 .xmm1 .xmm2 .xmm3)) == ["vpcmpeqd ymm1, ymm2, ymm3"]
+#guard printer.instr (.vop (.vbin .vpcmpeqd .l128 .xmm4 .xmm5 .xmm15)) == ["vpcmpeqd xmm4, xmm5, xmm15"]
 #guard printer.instr (.vop (.vpmadd52luq .l256 .xmm1 .xmm2 .xmm15)) == ["vpmadd52luq ymm1, ymm2, ymm15"]
 #guard printer.instr (.vop (.vpmadd52huq .l128 .xmm1 .xmm2 .xmm3)) == ["vpmadd52huq xmm1, xmm2, xmm3"]
 #guard printer.instr (.vop (.vprold .l128 .xmm1 .xmm15 25)) == ["vprold xmm1, xmm15, 25"]
@@ -326,6 +346,8 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard isa.requires (.vop (.vshift .pslld .l128 .xmm0 .xmm1 1)) == ["avx"]
 #guard isa.requires (.vop (.vbin .vpmullw .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vop (.vbin .vpmullw .l128 .xmm0 .xmm1 .xmm2)) == ["avx"]
+#guard isa.requires (.vop (.vbin .vpcmpeqd .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
+#guard isa.requires (.vop (.vbin .vpcmpeqd .l128 .xmm0 .xmm1 .xmm2)) == ["avx"]
 #guard isa.requires (.vop (.vbin .vpsubq .l256 .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vop (.vpmadd52luq .l256 .xmm0 .xmm1 .xmm2)) == ["avx512ifma", "avx512vl"]
 #guard isa.requires (.vop (.vpmadd52huq .l128 .xmm0 .xmm1 .xmm2)) == ["avx512ifma", "avx512vl"]

@@ -18,6 +18,7 @@ inductive XBinOp
   | pand | pandn | paddq | psubq | pmuludq
   | paddw | psubw | psubd | pmullw | pmulhw | packssdw | punpcklwd | punpckhwd
   | aesenc | aesenclast | aesdec | aesdeclast | aesimc
+  | pcmpeqd
   deriving DecidableEq, Repr
 
 /-- SSE2 shifts by an immediate count: of each word (`psllw`, `psrlw`,
@@ -310,6 +311,8 @@ bits above 127 unmodified; no flags are affected):
   STATE XOR RoundKey`.
 * AESDECLAST: as AESDEC, without `InvMixColumns`.
 * AESIMC: `DEST[127:0] := InvMixColumns(SRC)`.
+* PCMPEQD: `IF DEST[31:0] = SRC[31:0] THEN DEST[31:0] := FFFFFFFFH; ELSE
+  DEST[31:0] := 0; FI;`, and likewise for doublewords 1–3.
 
 (`SRC1` is the destination, `SRC2` the source.) -/
 def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
@@ -360,6 +363,9 @@ def XBinOp.eval : XBinOp → BitVec 128 → BitVec 128 → BitVec 128
   | .aesdec, a, b => aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows a)) ^^^ b
   | .aesdeclast, a, b => aesMapBytes aesInvSbox (aesInvShiftRows a) ^^^ b
   | .aesimc, _, b => aesInvMixColumns b
+  | .pcmpeqd, a, b =>
+    let eq (i : Nat) : BitVec 32 := if dword a i = dword b i then 0xFFFFFFFF else 0
+    ofDwords (eq 0) (eq 1) (eq 2) (eq 3)
 
 /-- SDM Vol. 2, the forms with an immediate count (no flags are affected):
 

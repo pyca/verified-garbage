@@ -95,7 +95,7 @@ def step (e : Env α) : Instr → Option (Env α)
   | .shift op d n =>
     if d = c.base ∨ d = c.ext ∨ ¬(1 ≤ n ∧ n ≤ 63) then none else
     match e.reg d with
-    | some a => (match op with | .ror => D.ror n a | .shr => D.shr n a).map (e.setReg d)
+    | some a => (match op with | .ror => D.ror n a | .shr => D.shr n a | .shl => none).map (e.setReg d)
     | none => none
   | .movImm64 d v => if d = c.base ∨ d = c.ext then none else (D.const v).map (e.setReg d)
   | _ => none
@@ -358,6 +358,7 @@ theorem step_ok (hD : D.Sound R) {e e' : Env α} {s : State} (hok : Ok c s)
             (s.setFlags _ _ _ _) ⟨rfl, rfl, rfl, rfl⟩) fun r h => by simp [Instr.dst, h]
         · exact Post.writes (post_setReg hok hrel (hD.shr hRa hr) hdb hde
             (s.setFlags _ _ _ _) ⟨rfl, rfl, rfl, rfl⟩) fun r h => by simp [Instr.dst, h]
+        · cases hr
       · cases h
   | movImm64 d v =>
     simp only [step] at h
