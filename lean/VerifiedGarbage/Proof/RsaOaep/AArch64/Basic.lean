@@ -35,6 +35,9 @@ abbrev word (m : Mem) (p : Addr) (d : Nat) : BitVec 64 := m.readW (off p d) 64
 theorem off_off (p : Addr) (a b : Nat) : off (off p a) b = off p (a + b) := by
   simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
 
+theorem off_add_one (p : Addr) (n : Nat) : off p n + 1 = off p (n + 1) := by
+  simp only [off, BitVec.ofNat_add, BitVec.add_assoc]; rfl
+
 /-- The 16 bytes below `F` that a call of a streaming hash function uses. -/
 abbrev retR (F : Addr) : Region := below F 16
 
@@ -216,6 +219,34 @@ theorem inR_nil (o : Nat) : ¬ inR [] o := by simp [inR]
 theorem inR_cons (a n : Nat) (rgs : List (Nat × Nat)) (o : Nat) :
     inR ((a, n) :: rgs) o ↔ (a ≤ o ∧ o < a + n) ∨ inR rgs o := by
   simp [inR]
+
+/-! ## Bytes in registers -/
+
+theorem read_one (m : Mem) (a : Addr) : m.read a 1 = m a := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [Mem.read, BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
+
+/-- A byte, zero-extended to 32 bits and then to 64. -/
+theorem byte64 (b : Byte) : BitVec.setWidth 64 (BitVec.setWidth 32 b) = b.setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega
+
+theorem byte_rt64 (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (b.setWidth 64)) = b := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega
+
+theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (x.setWidth 64 ^^^ y.setWidth 64)) = x ^^^ y := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_xor]
+  have := x.isLt
+  have := y.isLt
+  rw [Nat.mod_eq_of_lt (a := x.toNat) (by omega), Nat.mod_eq_of_lt (a := y.toNat) (by omega)]
+  have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega) (by omega)
+  omega
 
 /-! ## Running blocks -/
 

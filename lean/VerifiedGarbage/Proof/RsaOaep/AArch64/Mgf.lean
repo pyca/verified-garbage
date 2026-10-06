@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Hash
+import VerifiedGarbage.Proof.RsaOaep.AArch64.Loops
 import VerifiedGarbage.Proof.Mgf1.Bytes
 
 /-!
@@ -94,12 +94,6 @@ theorem shr8 {x : Nat} (hx : x < 2 ^ 64) : BitVec.ofNat 64 x >>> 8 = BitVec.ofNa
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hx,
     Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hx)]
-
-/-- A byte store in our working space keeps `Step`'s frame. -/
-theorem frame_wb {F S : Addr} {ws : List Region} {m m' : Mem}
-    (h : Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m m') {o : Nat} (ho : o < oRsa) (v : BitVec (8 * 1)) :
-    Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m (m'.write (off S o) 1 v) :=
-  h.write (List.mem_cons_of_mem _ (List.mem_cons_self ..)) v (cS S (by omega))
 
 theorem updCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {srcLen c : Nat} (hl : W 14 = BitVec.ofNat 64 srcLen) (hc : W 17 = BitVec.ofNat 64 c)

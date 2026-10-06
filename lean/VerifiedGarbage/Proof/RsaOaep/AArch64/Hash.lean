@@ -60,8 +60,18 @@ theorem Step.blk {F S : Addr} (ws : List Region) {t t' : State} (hrd : t'.rd = t
 macro "cs_rfl" : term => `(preserved_cases (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
   (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl))
 
+/-- Closes what remains of a block's run: facts reduced to `True`, closed
+equalities, and the callee-saved registers. -/
+macro "oaep_fin" : tactic => `(tactic| (and_intros <;> first | trivial | exact cs_rfl | decide))
+
 /-- `Step` of a block that keeps memory and writes no callee-saved register. -/
 macro "blk_step" : term => `(Step.blk _ rfl rfl rfl rfl cs_rfl rfl)
+
+/-- A byte store in our working space keeps `Step`'s frame. -/
+theorem frame_wb {F S : Addr} {ws : List Region} {m m' : Mem}
+    (h : Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m m') {o : Nat} (ho : o < oRsa) (v : BitVec (8 * 1)) :
+    Frame (⟨F, frameBytes⟩ :: ⟨S, oRsa⟩ :: retR F :: ws) m (m'.write (off S o) 1 v) :=
+  h.write (List.mem_cons_of_mem _ (List.mem_cons_self ..)) v (cS S (by omega))
 
 /-- A step in fewer regions. -/
 theorem Step.mono {F S : Addr} {ws ws' : List Region} {t u : State} (h : Step F S ws t u)
