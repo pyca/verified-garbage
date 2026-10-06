@@ -274,21 +274,21 @@ theorem EGen.einv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : Stat
 /-- `e + 2` groups encrypted, the first `e - 1` hashed, the powers of 48
 blocks and the reduction constant in the working space; `rdx` points to
 group `e - 1`, the first of the three to hash. -/
-structure EInv3 (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
+structure EInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) : Prop where
   a : AInv s₀ (16 * (e + 2)) s
   one : 1 ≤ e
   rdx : (s.gpr .rdx).toNat = (dp s₀).toNat + 256 * (e - 1)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * (e - 1))
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
-  pv : ∀ g < 3, ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T48 P g k l
+  pv : ∀ g < 3, ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l
   pm : ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly
   y : s.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * (e - 1))).map (ctb s₀))
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
 
-theorem body48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P)) {e : Nat}
-    (he : 16 * (e + 5) ≤ nb s₀) {s : State} (hI : EInv3 s₀ P e s) :
-    WP isa body48 s fun s' => EInv3 s₀ P (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 2) < 96)) := by
+theorem body48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {e : Nat}
+    (he : 16 * (e + 5) ≤ nb s₀) {s : State} (hI : EInv3 s₀ T e s) :
+    WP isa body48 s fun s' => EInv3 s₀ T (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 2) < 96)) := by
   have hw := hp.wrap_d
   have h1e := hI.one
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
@@ -296,7 +296,7 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
   let X : Nat → Block := fun i => ctb s₀ (16 * (e - 1) + i)
   let yl : Nat → Block := fun l => s.zlane .xmm2 l
   have ha : a.toNat = (dp s₀).toNat + 256 * (e - 1) := hI.rdx
-  have hE : GEnv48 s₀ 0 a X (T48 P) s :=
+  have hE : GEnv48 s₀ 0 a X T s :=
     { rdx := rfl
       r11 := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
       xs := fun i _ hi => by
@@ -314,7 +314,7 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
         rw [hI.a.rd, hI.a.wr]
         exact in_rdwr (in_sub_int hp.p_in (by omega))
       m0 := hI.a.msk }
-  let Q : Nat → Nat → State → Prop := QG48 s₀ (fun _ => 0) a X (T48 P) yl
+  let Q : Nat → Nat → State → Prop := QG48 s₀ (fun _ => 0) a X T yl
   have hgq : ∀ b < 3, ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → Q b j t →
       WP isa (.block (gq48 b j)) t fun t' => Q b (j + 1) t' ∧ ZFrame gRegs48 t t' := fun b hb =>
     gq48_ok hb (fun _ => Nat.le_refl _) (Nat.zero_le _) (Nat.zero_le _)
@@ -360,13 +360,13 @@ theorem body48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (h
   · rw [fcf, hr9, toNat_ofNat_lt (by omega), show e + 3 - 1 = e + 2 by omega]
     rfl
 
-theorem loop48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P)) {s : State}
-    (hI : EInv3 s₀ P 1 s) (h96 : 96 ≤ nb s₀) :
-    WP isa (.loop body48 .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ P e s' := by
+theorem loop48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {s : State}
+    (hI : EInv3 s₀ T 1 s) (h96 : 96 ≤ nb s₀) :
+    WP isa (.loop body48 .ae) s fun s' => ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ T e s' := by
   have hm := hp.nbm
-  let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 5) ≤ nb s₀ ∧ EInv3 s₀ P e s
+  let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 5) ≤ nb s₀ ∧ EInv3 s₀ T e s
   have hstep : ∀ m s, I m s → WP isa body48 s (fun s' =>
-      (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ P e s') ∨
+      (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * (e - 1) < 96 ∧ EInv3 s₀ T e s') ∨
       (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨e, rfl, he, hI⟩
     refine WP.mono (body48_ok hp hT he hI) fun s' ⟨hI', hcf'⟩ => ?_
@@ -406,11 +406,11 @@ theorem powSetup_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} 
     simp only [T48, ↓reduceIte]
 
 /-- The tables kept by the data written. -/
-theorem keepT {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {c : Nat} (hc : c + 16 ≤ nb s₀) {m m' : Mem}
+theorem keepT {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} {c : Nat} (hc : c + 16 ≤ nb s₀) {m m' : Mem}
     (hf : Frame [⟨bAddr s₀ c, 256⟩] m m')
-    (hv : ∀ g < 3, ∀ k < 4, ∀ l < 4, m.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T48 P g k l)
+    (hv : ∀ g < 3, ∀ k < 4, ∀ l < 4, m.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
     (hm : ∀ l < 4, m.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) :
-    (∀ g < 3, ∀ k < 4, ∀ l < 4, m'.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T48 P g k l) ∧
+    (∀ g < 3, ∀ k < 4, ∀ l < 4, m'.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l) ∧
     (∀ l < 4, m'.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) :=
   ⟨fun g hg k hk l hl => by rw [keepW hp hc hf (by simp only [tab]; omega)]; exact hv g hg k hk l hl,
     fun l hl => by rw [keepW hp hc hf (by omega)]; exact hm l hl⟩
@@ -430,18 +430,21 @@ theorem reload_ok {s₀ : State} (hp : SPre s₀) (s : State) (hr11 : s.gpr .r11
 
 /-! ## From 256 blocks on -/
 
-/-- `big`: from the first group encrypted to all but up to two groups, all
-but the last encrypted group hashed. -/
-theorem big_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    (hT : FinOk48 (hk s₀) (T48 P)) (h256 : 256 ≤ nb s₀) {s : State} (hI : EInv s₀ P 1 s) :
-    WP isa big s fun s' => ∃ e, EInv s₀ P e s' := by
+/-- What `big` does after the tables: the next two groups, the loop, and two
+of the three groups left to hash, for any tables `T` whose last is `P`. -/
+theorem bigRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l)
+    (h256 : 256 ≤ nb s₀) {s s₁ : State} (hI : EInv s₀ P 1 s) (hA₁ : AInv s₀ (16 * 1) s₁)
+    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
+    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
+    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l) :
+    WP isa (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
+      (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+      s₁ fun s' => ∃ e, EInv s₀ P e s' := by
   have hw := hp.wrap_d
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   have none : ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → (fun _ _ => True) j t →
       WP isa (.block ((fun _ => []) j)) t fun t' => (fun (_ : Nat) (_ : State) => True) (j + 1) t' ∧ ZFrame [] t t' :=
     fun _ _ _ _ _ _ => WP.block_nil ⟨trivial, ZFrame.refl _ _⟩
-  refine WP.seq (WP.mono (powSetup_ok hp (c := 16 * 1) hI.a hr11 hI.pw hI.m1)
-    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => ?_)
   refine WP.seq (WP.mono (batch_ok hp (fun _ => []) [] (by simp) (fun _ _ => True) none
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ _ _ _ => trivial) (c := 16 * 1) (j := 4) (by omega) hA₁
     (by have := hI.rdx; rw [hg₁]; omega) trivial) fun s₂ ⟨hA₂, _, hg₂, hl₂, hf₂⟩ => ?_)
@@ -453,8 +456,8 @@ theorem big_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
   have g₃ : s₃.gpr = s.gpr := by rw [hg₃, hg₂, hg₁]
   have l₃ : ∀ l < 4, s₃.zlane .xmm2 l = s.zlane .xmm2 l := fun l hl => by
     rw [hl₃ _ (by decide) (by decide) (by decide) (by simp) l hl, hl₂ _ (by decide) (by decide) (by decide) (by simp) l hl,
-      hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl]
-  have hI₃ : EInv3 s₀ P 1 s₃ :=
+      hl₁ l hl]
+  have hI₃ : EInv3 s₀ T 1 s₃ :=
     ⟨hA₃, Nat.le_refl _, by rw [g₃]; exact hI.rdx, by rw [g₃]; exact hI.r9, by rw [g₃]; exact hI.rax,
       fun r h1 h2 h3 h4 => by rw [g₃]; exact hI.gpr r h1 h2 h3 h4, hv₃, hm₃,
       by rw [l₃ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [l₃ l h4]; exact hI.y1 l h1 h4⟩
@@ -471,13 +474,23 @@ theorem big_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
       fun k hk l hl => by
         have h := hI₄.pv 2 (by decide) k hk l hl
         rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega] at h
-        rw [f₅.mem, h]; simp only [T48, ↓reduceIte],
+        rw [f₅.mem, h, hT2],
       p₅, by rw [f₅.zlane _ (by decide) 0 (by decide)]; exact hI₄.y,
       fun l h1 h4 => by rw [f₅.zlane _ (by decide) l h4]; exact hI₄.y1 l h1 h4⟩
   rw [List.append_assoc (lastG ++ adv) lastG adv, WP.block_append_iff]
   refine WP.mono (drainStep_ok hp hf (by omega) hG) fun s₆ hG₆ => ?_
   refine WP.mono (drainStep_ok hp hf (by omega) hG₆) fun s₇ hG₇ => ⟨e + 1 + 1, ?_⟩
   exact EGen.einv (by rw [show 16 * (e + 1 + 1) = 16 * (e + 2) by omega]; exact hG₇)
+
+/-- `big`: from the first group encrypted to all but up to two groups, all
+but the last encrypted group hashed. -/
+theorem big_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hT : FinOk48 (hk s₀) (T48 P)) (h256 : 256 ≤ nb s₀) {s : State} (hI : EInv s₀ P 1 s) :
+    WP isa big s fun s' => ∃ e, EInv s₀ P e s' := by
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
+  exact WP.seq (WP.mono (powSetup_ok hp (c := 16 * 1) hI.a hr11 hI.pw hI.m1)
+    fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => bigRest_ok hp hf hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁
+      hv₁ hm₁ hg₁ fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
 theorem EInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : EInv s₀ P e s)
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
@@ -512,9 +525,10 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI⟩
 
 /-- The encryption after the setup. -/
-theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
-    WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) big)
+theorem encTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → EInv s₀ P 1 s → WP isa bigC s fun s' => ∃ e, EInv s₀ P e s')
+    {s : State} (hR : Ready s₀ P s) :
+    WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPost s₀) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
@@ -524,21 +538,29 @@ theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
   rw [hI₂.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInv s₀ P e s') (decide (nb s₀ - 16 * (1 - 1) < 256))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃⟩)
-    (fun h => big_ok hp hf hT (by simp at h; omega) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
+    (fun h => hbig _ (by simp at h; omega) hI₃)) fun s₄ ⟨e, hI₄⟩ => ?_)
   refine WP.seq (WP.mono (cmpE_ok hI₄) fun s₅ ⟨hI₅, hcf₅⟩ => ?_)
   exact WP.seq (WP.mono (loopE_ok hp hf hI₅ hcf₅) fun s₆ ⟨e, he, hI₆⟩ => final_ok hp hf he hI₆)
+
+/-- The encryption after the setup. -/
+theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
+    WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) big)
+      (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))))) s (EPost s₀) :=
+  encTailG_ok hp hf (fun _ h256 hI => big_ok hp hf hT h256 hI) hR
 
 /-! ## Decryption -/
 
 /-- `e` groups hashed and decrypted, the powers of 48 blocks and the
 reduction constant in the working space; `rdx` points to group `e`. -/
-structure DInv3 (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
+structure DInv3 (s₀ : State) (T : Nat → Nat → Nat → Block) (e : Nat) (s : State) : Prop where
   a : AInv s₀ (16 * e) s
   rdx : s.gpr .rdx = dp s₀ + BitVec.ofNat 64 (256 * e)
   r9 : s.gpr .r9 = BitVec.ofNat 64 (nb s₀ - 16 * e)
   rax : s.gpr .rax = cp s₀
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r9 → r ≠ .r10 → s.gpr r = s₀.gpr r
-  pv : ∀ g < 3, ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T48 P g k l
+  pv : ∀ g < 3, ∀ k < 4, ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l
   pm : ∀ l < 4, s.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly
   y : s.zlane .xmm2 0 = ghashFrom (hk s₀) (y₀ s₀) ((List.range (16 * e)).map (blk s₀))
   y1 : ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
@@ -547,9 +569,9 @@ structure DInv3 (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State)
 `b`: from group `b` on until its loads are done, after round 3. -/
 abbrev loD48 (b j : Nat) : Nat := if j < 4 then 16 * b else 16 * (b + 1)
 
-theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P)) {e : Nat}
-    (he : 16 * (e + 3) ≤ nb s₀) {s : State} (hI : DInv3 s₀ P e s) :
-    WP isa dbody48 s fun s' => DInv3 s₀ P (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 3) < 48)) := by
+theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {e : Nat}
+    (he : 16 * (e + 3) ≤ nb s₀) {s : State} (hI : DInv3 s₀ T e s) :
+    WP isa dbody48 s fun s' => DInv3 s₀ T (e + 3) s' ∧ s'.cf = some (decide (nb s₀ - 16 * (e + 3) < 48)) := by
   have hw := hp.wrap_d
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
   let a := s.gpr .rdx
@@ -558,7 +580,7 @@ theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
   have ha : a.toNat = (dp s₀).toNat + 256 * e := by
     show (s.gpr .rdx).toNat = _
     rw [hI.rdx, BitVec.toNat_add, toNat_ofNat_lt (by omega), Nat.mod_eq_of_lt (by omega)]
-  have hE : GEnv48 s₀ 0 a X (T48 P) s :=
+  have hE : GEnv48 s₀ 0 a X T s :=
     { rdx := rfl
       r11 := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
       xs := fun i _ hi => by
@@ -576,7 +598,7 @@ theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
         rw [hI.a.rd, hI.a.wr]
         exact in_rdwr (in_sub_int hp.p_in (by omega))
       m0 := hI.a.msk }
-  let Q : Nat → Nat → State → Prop := fun b => QG48 s₀ (loD48 b) a X (T48 P) yl b
+  let Q : Nat → Nat → State → Prop := fun b => QG48 s₀ (loD48 b) a X T yl b
   have hgq : ∀ b < 3, ∀ j, 1 ≤ j → j ≤ 9 → ∀ t, Keys (nr s₀) (sch s₀) t → Q b j t →
       WP isa (.block (gq48 b j)) t fun t' => Q b (j + 1) t' ∧ ZFrame gRegs48 t t' := fun b hb =>
     gq48_ok hb (fun j => by simp only [loD48]; split <;> split <;> omega)
@@ -627,12 +649,12 @@ theorem dbody48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
   · rw [fcf, hr9, toNat_ofNat_lt (by omega)]
     rfl
 
-theorem loopD48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P)) {s : State}
-    (hI : DInv3 s₀ P 0 s) (h48 : 48 ≤ nb s₀) :
-    WP isa (.loop dbody48 .ae) s fun s' => ∃ e, nb s₀ - 16 * e < 48 ∧ DInv3 s₀ P e s' := by
-  let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 3) ≤ nb s₀ ∧ DInv3 s₀ P e s
+theorem loopD48_ok {s₀ : State} (hp : SPre s₀) {T : Nat → Nat → Nat → Block} (hT : FinOk48 (hk s₀) T) {s : State}
+    (hI : DInv3 s₀ T 0 s) (h48 : 48 ≤ nb s₀) :
+    WP isa (.loop dbody48 .ae) s fun s' => ∃ e, nb s₀ - 16 * e < 48 ∧ DInv3 s₀ T e s' := by
+  let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 3) ≤ nb s₀ ∧ DInv3 s₀ T e s
   have hstep : ∀ m s, I m s → WP isa dbody48 s (fun s' =>
-      (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 48 ∧ DInv3 s₀ P e s') ∨
+      (eval .ae s' = some false ∧ ∃ e, nb s₀ - 16 * e < 48 ∧ DInv3 s₀ T e s') ∨
       (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
     rintro m s ⟨e, rfl, he, hI⟩
     refine WP.mono (dbody48_ok hp hT he hI) fun s' ⟨hI', hcf'⟩ => ?_
@@ -643,18 +665,19 @@ theorem loopD48_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
         nb s₀ - 16 * (e + 3), by omega, e + 3, rfl, by omega, hI'⟩
   exact WP.loop (M := isa) I hstep (nb s₀) s ⟨0, by simp, by omega, hI⟩
 
-/-- `bigD`: from nothing decrypted to all but up to two groups. -/
-theorem bigD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P))
-    (h256 : 256 ≤ nb s₀) {s : State} (hI : DInv s₀ P 0 s) :
-    WP isa bigD s fun s' => ∃ e, DInv s₀ P e s' := by
-  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
-  refine WP.seq (WP.mono (powSetup_ok hp hI.a hr11 hI.pw hI.m1) fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ => ?_)
-  have l₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l := fun l hl =>
-    hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl
-  have hI₁ : DInv3 s₀ P 0 s₁ :=
+/-- What `bigD` does after the tables, for any tables `T` whose last is `P`. -/
+theorem bigDRest_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {T : Nat → Nat → Nat → Block}
+    (hT : FinOk48 (hk s₀) T) (hT2 : ∀ k l, T 2 k l = P k l) (h256 : 256 ≤ nb s₀) {s s₁ : State}
+    (hI : DInv s₀ P 0 s) (hA₁ : AInv s₀ (16 * 0) s₁)
+    (hv₁ : ∀ g < 3, ∀ k < 4, ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (tab g + 64 * k + 16 * l)) 128 = T g k l)
+    (hm₁ : ∀ l < 4, s₁.mem.readW (pp s₀ + BitVec.ofNat 64 (832 + 16 * l)) 128 = poly) (hg₁ : s₁.gpr = s.gpr)
+    (hl₁ : ∀ l < 4, s₁.zlane .xmm2 l = s.zlane .xmm2 l) :
+    WP isa (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)])) s₁
+      fun s' => ∃ e, DInv s₀ P e s' := by
+  have hI₁ : DInv3 s₀ T 0 s₁ :=
     ⟨hA₁, by rw [hg₁]; exact hI.rdx, by rw [hg₁]; exact hI.r9, by rw [hg₁]; exact hI.rax,
       fun r h1 h2 h3 h4 => by rw [hg₁]; exact hI.gpr r h1 h2 h3 h4, hv₁, hm₁,
-      by rw [l₁ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [l₁ l h4]; exact hI.y1 l h1 h4⟩
+      by rw [hl₁ 0 (by decide)]; exact hI.y, fun l h1 h4 => by rw [hl₁ l h4]; exact hI.y1 l h1 h4⟩
   refine WP.seq (WP.mono (loopD48_ok hp hT hI₁ (by omega)) fun s₂ ⟨e, _, hI₂⟩ => ?_)
   have hr11₂ : s₂.gpr .r11 = pp s₀ := hI₂.gpr .r11 (by decide) (by decide) (by decide) (by decide)
   refine WP.mono (reload_ok hp s₂ hr11₂ hI₂.a.wr hI₂.pm) fun s₃ ⟨p₃, f₃⟩ => ⟨e, ?_⟩
@@ -664,9 +687,18 @@ theorem bigD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT 
     fun k hk l hl => by
       have h := hI₂.pv 2 (by decide) k hk l hl
       rw [show tab 2 + 64 * k + 16 * l = 64 * k + 16 * l by simp only [tab]; omega] at h
-      rw [f₃.mem, h]; simp only [T48, ↓reduceIte],
+      rw [f₃.mem, h, hT2],
     p₃, by rw [f₃.zlane _ (by decide) 0 (by decide)]; exact hI₂.y,
     fun l h1 h4 => by rw [f₃.zlane _ (by decide) l h4]; exact hI₂.y1 l h1 h4⟩
+
+/-- `bigD`: from nothing decrypted to all but up to two groups. -/
+theorem bigD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hT : FinOk48 (hk s₀) (T48 P))
+    (h256 : 256 ≤ nb s₀) {s : State} (hI : DInv s₀ P 0 s) :
+    WP isa bigD s fun s' => ∃ e, DInv s₀ P e s' := by
+  have hr11 : s.gpr .r11 = pp s₀ := hI.gpr .r11 (by decide) (by decide) (by decide) (by decide)
+  exact WP.seq (WP.mono (powSetup_ok hp hI.a hr11 hI.pw hI.m1) fun s₁ ⟨hA₁, hv₁, hm₁, hg₁, hl₁⟩ =>
+    bigDRest_ok hp hT (fun k l => by simp only [T48, ↓reduceIte]) h256 hI hA₁ hv₁ hm₁ hg₁
+      fun l hl => hl₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) l hl)
 
 theorem DInv.of_eq {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s s' : State} (h : DInv s₀ P e s)
     (hg : s'.gpr = s.gpr) (hl : ∀ r l, s'.zlane r l = s.zlane r l) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
@@ -698,9 +730,10 @@ theorem loopD_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
     exact WP.loop (M := isa) I hstep (nb s₀ - 16 * e) s ⟨e, rfl, by simp at h; omega, hI⟩
 
 /-- The decryption after the setup. -/
-theorem decTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
-    (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
-    WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigD)
+theorem decTailG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → DInv s₀ P 0 s → WP isa bigC s fun s' => ∃ e, DInv s₀ P e s')
+    {s : State} (hR : Ready s₀ P s) :
+    WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigC)
       (.seq (.block [.alu .cmp .r9 (.imm 16)])
         (.seq (.ite .b (.block []) (.loop dbody .ae)) (.block (storeCtr ++ storeY)))))) s (DPost s₀) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
@@ -712,10 +745,18 @@ theorem decTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (
   rw [hI₁.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf
   refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, DInv s₀ P e s') (decide (nb s₀ - 16 * 0 < 256))
     (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨0, hI₂⟩)
-    (fun h => bigD_ok hp hT (by simp at h; omega) hI₂)) fun s₃ ⟨e, hI₃⟩ => ?_)
+    (fun h => hbig _ (by simp at h; omega) hI₂)) fun s₃ ⟨e, hI₃⟩ => ?_)
   refine WP.seq (WP.mono (cmp_ok s₃ 16 16 (by decide)) fun s₄ ⟨hcf₄, g₄, l₄, m₄, rd₄, wr₄⟩ => ?_)
   have hI₄ := hI₃.of_eq g₄ l₄ m₄ rd₄ wr₄
   rw [hI₃.r9, toNat_ofNat_lt (by omega), toNat_ofNat_lt (by decide)] at hcf₄
   exact WP.seq (WP.mono (loopD_ok hp hf hI₄ hcf₄) fun s₅ ⟨e, he, hI₅⟩ => dfinal_ok hp he hI₅)
+
+/-- The decryption after the setup. -/
+theorem decTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hT : FinOk48 (hk s₀) (T48 P)) {s : State} (hR : Ready s₀ P s) :
+    WP isa (.seq (.block [.alu .cmp .r9 (.imm 256)]) (.seq (.ite .b (.block []) bigD)
+      (.seq (.block [.alu .cmp .r9 (.imm 16)])
+        (.seq (.ite .b (.block []) (.loop dbody .ae)) (.block (storeCtr ++ storeY)))))) s (DPost s₀) :=
+  decTailG_ok hp hf (fun _ h256 hI => bigD_ok hp hT h256 hI) hR
 
 end VG.Proof.Gcm.X86_64.StitchZ
