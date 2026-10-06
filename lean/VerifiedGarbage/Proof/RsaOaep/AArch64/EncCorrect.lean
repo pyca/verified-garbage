@@ -19,6 +19,8 @@ open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.Pbkdf2.Md.AArch64.Calls (StreamOK)
 open VG.Proof.RsaPkcs1Enc.AArch64 (PubImpl)
 open VG.Proof.RsaOaep.AArch64.Dec (entered)
+open VG.Proof.RsaPkcs1Enc.AArch64.Enc (popped_mem popped_sp popped_v popped_gpr_self popped_gpr_ne freed_mem freed_sp
+  freed_v freed_gpr add_add)
 
 variable {Hl Gm : Hash} (hH : StreamOK Hl.stream) (hG : StreamOK Gm.stream)
 
@@ -263,5 +265,60 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
         fun u ⟨hcu, hw⟩ => ⟨hcu, ?_⟩
       rw [encrypt_some hsB (by rw [hnB, hmB]; omega), hnB, hmB, hHl]
       exact hw
+
+/-! ## The whole function -/
+
+/-- The stack the contract gives. -/
+theorem spec_sp {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec Hs Gs P).pre s) :
+    P + 288 ≤ s.sp.toNat := by
+  sig_pre [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
+    _root_.List.range, _root_.List.range.loop, List.append_eq] at h
+  exact h.1
+
+/-- The postcondition, from what the body wrote. -/
+theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {P : Nat} {s : State} {t : State}
+    (hw : Spec.Rsa.written t.mem (lay Hs.len P s).out (lay Hs.len P s).k.toNat ((t.gpr .x0).setWidth 32)
+      (Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).n (lay Hs.len P s).k.toNat)
+        (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).e (lay Hs.len P s).el.toNat)
+        (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).lab (lay Hs.len P s).labl.toNat)
+        (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).msg (lay Hs.len P s).ml.toNat)
+        (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).sd Hs.len))) :
+    (encSpec Hs Gs P).post s t := by
+  sig_post [Spec.RsaOaep.encryptContract, Spec.RsaOaep.encryptSig, AArch64.abi, AArch64.argRegs,
+    _root_.List.range, _root_.List.range.loop, List.append_eq]
+  exact hw
+
+include hH hG in
+/-- `vg_rsa_oaep_<H>_mgf1_<G>_encrypt` meets the shared contract and the calling convention. -/
+theorem enc_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash x) (hHl : Hs.len = Hl.D)
+    (hHv : Proof.Mgf1.Valid Hs) (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
+    (hGv : Proof.Mgf1.Valid Gs) (pv : PubImpl) {P : Nat} (hP : pv.S + 1 ≤ P) (hP16 : 16 ≤ P) {s : State}
+    (h : (encSpec Hs Gs P).pre s) :
+    WP isa (encrypt Hl Gm pv.name pv.code) s fun s' =>
+      abiPreserved s s' ∧ (encSpec Hs Gs P).post s s' := by
+  have hsp := spec_sp h
+  refine WP.frame (by omega) (WP.alloc (by decide) ?_ ?_)
+  · show 272 ≤ (s.sp - 16).toNat
+    rw [BitVec.toNat_sub_of_le (by show 16 ≤ s.sp.toNat; omega)]
+    show 272 ≤ s.sp.toNat - 16
+    omega
+  · show WP isa (encBody Hl Gm pv.name pv.code) (entered s) _
+    refine WP.mono (body_ok hH hG hHh hHl hHv hGh hGl hGv pv hP hP16 h) fun u' ⟨hc', hw'⟩ => ?_
+    have hsp' : (freed frameBytes u').sp = (lay Hs.len P s).Q + BitVec.ofNat 64 272 := by
+      rw [freed_sp, hc'.sp]; rfl
+    refine ⟨⟨fun r hr => ?_, ?_, fun r hr => ?_⟩, ?_⟩
+    · by_cases h30 : r = .x30
+      · subst r
+        rw [popped_gpr_self, freed_mem, hsp']; exact hc'.lr
+      · rw [popped_gpr_ne _ h30, freed_gpr]
+        exact hc'.cs r hr h30
+    · rw [popped_sp, hsp']
+      show (lay Hs.len P s).Q + BitVec.ofNat 64 272 + BitVec.ofNat 64 16 = s.sp
+      rw [add_add]; exact lay_Q _ _ s
+    · rw [popped_v, freed_v]
+      exact hc'.vs r hr
+    · refine result_ok ?_
+      rw [popped_mem, freed_mem, popped_gpr_ne _ (by decide), freed_gpr]
+      exact hw'
 
 end VG.Proof.RsaOaep.AArch64.Enc
