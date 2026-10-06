@@ -553,8 +553,9 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
   have cR : tablePoint c.mem base 7552 = tablePoint s.mem base 7552 := by
     rw [(TableFrame.table hc'.mem).point (by decide) (Or.inr (by decide)) (by decide), bR]
   have cd : env c.mem base 16 = Spec.Ed25519.d := by rw [table_env hc'.mem (by decide)]; exact hb.d
-  have cA : TableOf id c.mem base 5376 Aa := fun j hj =>
-    ⟨_, ((TableFrame.table hc'.mem).point (by omega) (Or.inr (by omega)) (by omega)), hb.table j hj⟩
+  have cA : TableOf cache c.mem base 5376 Aa := fun j hj => by
+    obtain ⟨q, hq, hr⟩ := hb.table j hj
+    exact ⟨q, ((TableFrame.table hc'.mem).point (by omega) (Or.inr (by omega)) (by omega)).trans hq, hr⟩
   have cB : TableOf cache c.mem base 2048 (-baseAff) := fun j hj => by
     obtain ⟨q, hq, hr⟩ := negBaseCached_ok j hj
     exact ⟨q, by rw [hc'.table j hj, hq], hr⟩
