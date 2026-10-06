@@ -16,8 +16,7 @@
 //!   `key_from_primes` takes, from its primes and public exponent: the key
 //!   it returns has the key's `n`, `p`, `q`, `dP`, `dQ` and `qInv`, passes
 //!   `check_key` (`d e ≡ 1` modulo `p - 1` and `q - 1`), and has the key's
-//!   `d` but where the key's `d` is not the least (all keys but one) (on
-//!   x86-64; AArch64 has no `key_from_primes` yet).
+//!   `d` but where the key's `d` is not the least (all keys but one).
 
 #![cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
@@ -27,17 +26,13 @@
 use std::collections::BTreeMap;
 
 use serde::Deserialize;
-use verified_garbage::rsa_keygen::generate_prime_from;
-#[cfg(target_arch = "x86_64")]
-use verified_garbage::rsa_keygen::key_from_primes;
+use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
 use super::harness::{self, Count, Expectation, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
-// The CRT components are read only by the keys' test, x86-64's so far.
-#[cfg_attr(not(target_arch = "x86_64"), allow(dead_code))]
 struct Key {
     public_exponent: Hex,
     prime1: Option<Hex>,
@@ -187,7 +182,6 @@ fn rsa_keygen_composites() {
     assert!(checked.get() > 0);
 }
 
-#[cfg(target_arch = "x86_64")]
 /// `x` in `len` bytes (big-endian).
 fn widen(x: &[u8], len: usize) -> Vec<u8> {
     let x = trim(x);
@@ -196,7 +190,6 @@ fn widen(x: &[u8], len: usize) -> Vec<u8> {
     v
 }
 
-#[cfg(target_arch = "x86_64")]
 /// Checks that `key_from_primes` makes the key `k` (of the file `name`)
 /// from its primes, in either order; returns how many of the two keys have
 /// its `d`.
@@ -233,7 +226,6 @@ fn check_key(name: &str, k: &Key) -> usize {
     same_d
 }
 
-#[cfg(target_arch = "x86_64")]
 #[test]
 fn rsa_keygen_keys() {
     require_vectors!();

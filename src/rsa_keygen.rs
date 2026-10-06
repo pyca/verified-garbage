@@ -49,8 +49,8 @@
 //! and the generations, and compares the pairwise test's result with its
 //! message.
 //!
-//! On AArch64, so far, the module has the primes alone (`generate_prime`
-//! and `generate_prime_from`).
+//! On AArch64, so far, the module has the primes and the key from them
+//! (`generate_prime`, `generate_prime_from` and `key_from_primes`).
 
 #![cfg(all(
     any(target_arch = "x86_64", target_arch = "aarch64"),
@@ -61,13 +61,13 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa_keygen::vg_rsa_keygen_candidate;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate_adx, vg_rsa_keygen_key};
+use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_adx;
+use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate, vg_rsa_keygen_key};
 use crate::cpu::detected;
-use crate::rsa::Backend;
 #[cfg(target_arch = "x86_64")]
-use crate::rsa::{PrivateKey, PublicKey};
+use crate::rsa::PublicKey;
+use crate::rsa::{Backend, PrivateKey};
 
 /// The shortest prime, in bits.
 pub const MIN_PRIME_BITS: usize = 256;
@@ -278,7 +278,6 @@ fn prime_from(
 /// more than half the modulus' bits, that `n = p q` has twice the primes'
 /// bits, and the key as BoringSSL's `RSA_check_key` does. It does not check
 /// that `p` and `q` are prime.
-#[cfg(target_arch = "x86_64")]
 pub fn key_from_primes(public_exponent: &[u8], p: &[u8], q: &[u8]) -> Result<PrivateKey, Error> {
     let len = p.len();
     if !(MIN_PRIME_BITS / 8..=MAX_PRIME_BITS / 8).contains(&len) || !len.is_multiple_of(8) {
@@ -606,7 +605,6 @@ mod tests {
         }
     }
 
-    #[cfg(target_arch = "x86_64")]
     #[test]
     fn key_invalid() {
         let p = [0xffu8; 32];
@@ -633,7 +631,6 @@ mod tests {
     /// With `p = q`, `lcm(p - 1, q - 1) = p - 1`, so that `d < p`: too small,
     /// if `e` has an inverse (`p - 1` not a multiple of 3, for `e = 3`); or
     /// no key, if it has none (`p - 1` a multiple of 3).
-    #[cfg(target_arch = "x86_64")]
     #[test]
     fn key_refused() {
         let mut p = [0u8; 32];
@@ -651,7 +648,6 @@ mod tests {
     }
 
     /// Keys from primes the operating system's random octets make.
-    #[cfg(target_arch = "x86_64")]
     #[test]
     fn keys() {
         for bits in [256, 512, 1024] {

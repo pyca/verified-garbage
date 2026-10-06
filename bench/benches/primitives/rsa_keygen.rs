@@ -11,7 +11,8 @@ pub fn bench(c: &mut Criterion) {
 
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
-    use verified_garbage::rsa_keygen::generate_prime_from;
+    use openssl::rsa::Rsa;
+    use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
     use crate::{OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
@@ -88,50 +89,6 @@ pub fn bench(c: &mut Criterion) {
     }
     g.finish();
 
-    #[cfg(target_arch = "x86_64")]
-    keys(c);
-}
-
-/// The key's benchmarks: x86-64's so far.
-#[cfg(target_arch = "x86_64")]
-fn keys(c: &mut Criterion) {
-    use std::hint::black_box;
-
-    use criterion::BenchmarkId;
-    use openssl::bn::{BigNum, BigNumContext};
-    use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::{generate_from, key_from_primes};
-
-    use crate::{OPENSSL, VG};
-    // Keys of 2048, 3072 and 4096 bits with `e = 65537`; the ids' size is the
-    // modulus' bytes. Like the primes, verified-garbage's key is from fixed
-    // octets (`generate(bits, e)` but for `getrandom`): two primes, the key
-    // from them, its check, and the pairwise consistency test. So that the
-    // draw is a typical one, they are the stream, of the streams of nine
-    // fixed seeds, whose key reads the median number of octets. OpenSSL's
-    // `RSA_generate_key_ex` draws from its own generator.
-    let mut g = c.benchmark_group("rsa_keygen_generate");
-    g.sample_size(10);
-    for bits in [2048, 3072, 4096] {
-        let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
-            .map(|i| {
-                let rand = fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
-                (generate_from(bits, &[1, 0, 1], &rand).unwrap().1, rand)
-            })
-            .collect();
-        draws.sort_by_key(|d| d.0);
-        let rand = draws.swap_remove(4).1;
-        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
-            b.iter(|| {
-                generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(&rand)).unwrap()
-            })
-        });
-        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
-            b.iter(|| Rsa::generate(black_box(bits as u32)).unwrap())
-        });
-    }
-    g.finish();
-
     // The same sizes: the key from two primes OpenSSL generated and
     // `e = 65537`: `n`, `d = e⁻¹ mod lcm(p - 1, q - 1)` and the CRT values
     // (verified-garbage's with the checks of `RSA_check_key`; OpenSSL's
@@ -194,6 +151,49 @@ fn keys(c: &mut Criterion) {
                 )
                 .unwrap()
             })
+        });
+    }
+    g.finish();
+
+    #[cfg(target_arch = "x86_64")]
+    generation(c);
+}
+
+/// The generation's benchmarks: x86-64's so far.
+#[cfg(target_arch = "x86_64")]
+fn generation(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::BenchmarkId;
+    use openssl::rsa::Rsa;
+    use verified_garbage::rsa_keygen::generate_from;
+
+    use crate::{OPENSSL, VG};
+    // Keys of 2048, 3072 and 4096 bits with `e = 65537`; the ids' size is the
+    // modulus' bytes. Like the primes, verified-garbage's key is from fixed
+    // octets (`generate(bits, e)` but for `getrandom`): two primes, the key
+    // from them, its check, and the pairwise consistency test. So that the
+    // draw is a typical one, they are the stream, of the streams of nine
+    // fixed seeds, whose key reads the median number of octets. OpenSSL's
+    // `RSA_generate_key_ex` draws from its own generator.
+    let mut g = c.benchmark_group("rsa_keygen_generate");
+    g.sample_size(10);
+    for bits in [2048, 3072, 4096] {
+        let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
+            .map(|i| {
+                let rand = fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
+                (generate_from(bits, &[1, 0, 1], &rand).unwrap().1, rand)
+            })
+            .collect();
+        draws.sort_by_key(|d| d.0);
+        let rand = draws.swap_remove(4).1;
+        g.bench_function(BenchmarkId::new(VG, bits / 8), |b| {
+            b.iter(|| {
+                generate_from(black_box(bits), black_box(&[1, 0, 1]), black_box(&rand)).unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
+            b.iter(|| Rsa::generate(black_box(bits as u32)).unwrap())
         });
     }
     g.finish();
