@@ -212,11 +212,14 @@ fn keys(c: &mut Criterion) {
             let k = n.len();
             g.bench_function(BenchmarkId::new(VG, k), |b| {
                 b.iter(|| {
-                    PrivateKey::from_components(black_box(&n), black_box(&e), black_box(&d)).unwrap()
+                    PrivateKey::from_components(black_box(&n), black_box(&e), black_box(&d))
+                        .unwrap()
                 })
             });
             g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
-                b.iter(|| openssl_recover(black_box(key.n()), black_box(key.e()), black_box(key.d())))
+                b.iter(|| {
+                    openssl_recover(black_box(key.n()), black_box(key.e()), black_box(key.d()))
+                })
             });
         }
         g.finish();
