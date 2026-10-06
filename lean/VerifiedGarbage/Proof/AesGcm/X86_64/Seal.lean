@@ -172,10 +172,12 @@ theorem WP.reassoc_seal {a b c d e f : Prog isa} {s : State} {Q : State → Prop
 
 /-- After the entry, `seal` up to the tag at `W`: `oneAad`, `oneBlocks`,
 `oneCrypt` and `oneTag 0`. -/
-theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {nl al n : Nat}
-    (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (E : OneEntry s₀ Ctx W SP A D n s₁)
+theorem sealRun_ok (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s₀ s₁ : State}
+    {Ctx W SP Np A D : Addr} {nl al n : Nat}
+    (C : OneCtx s₀ 4 Ctx W SP Np A D nl al n) (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s₀)
+    (E : OneEntry s₀ Ctx W SP A D n s₁)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = nl) (hal : (s₀.gpr .r9).toNat = al) :
-    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks v.callees.enc) (.seq (oneCrypt v.callees) (oneTag v.callees 0))))
+    WP isa (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (.seq (oneCrypt v.callees) (oneTag v.callees 0))))
       s₁ fun s₄ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ ∧ s₄.rd = s₀.rd ∧ s₄.wr = s₀.wr ∧
         SavedAt s₄.mem W s₀ ∧ Frame [⟨W, 2560⟩, ⟨D, n⟩, below SP 24] s₀.mem s₄.mem ∧
         bytesAt s₄.mem D n = gctr (ctxCiph s₀.mem Ctx (s₀.gpr .rsi).toNat)
@@ -194,8 +196,13 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
   have hd₂ : DataW Ctx (W + BitVec.ofNat 64 16) W SP s₂ D n := C.data.of_eq M.rd M.wr
   have hal₂ : s₂.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [M.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq_assoc (WP.mono (WP.with_rdwr (sealBody_ok v L (icb := inc32 (Spec.Gcm.j0 H iv)) (a := a)
-    ⟨M.env, hRo, M.dat, M.len, hd₂, C.t_c, C.t_w, C.t_d, C.sp24⟩ M.hH M.cb hal₂ M.abs))
+  have X₂ := X.keep M.rd M.wr M.frame fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact X.cw
+    · exact (X.ct.sub_left (below_sub (by decide) (by decide))).symm
+  refine WP.seq_assoc (WP.mono (WP.with_rdwr (sealBody_ok v L B (icb := inc32 (Spec.Gcm.j0 H iv)) (a := a)
+    ⟨M.env, hRo, M.dat, M.len, hd₂, C.t_c, C.t_w, C.t_d, C.sp24, X₂⟩ M.hH M.cb hal₂ M.abs))
     fun s₄ ⟨⟨he₄, _, _, f₄, hC, hT₄⟩, hrd₄, hwr₄⟩ => ?_)
   have dM : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → (below SP 8).Disjoint ⟨p, k⟩ →
       ∀ r ∈ [(⟨W, 2560⟩ : Region), below SP 8], (⟨p, k⟩ : Region).Disjoint r := by
@@ -224,10 +231,12 @@ theorem sealRun_ok (v : GcmImpl) {s₀ s₁ : State} {Ctx W SP Np A D : Addr} {n
     · exact ⟨⟨D, n⟩, by simp, fun _ h => h⟩
     · exact ⟨below SP 24, by simp, fun _ h => h⟩
 
-/-- `vg_aes_gcm_seal`. -/
-theorem seal_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.sealX86_64.pre s) :
-    WP isa («seal» v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' := by
-  obtain ⟨C, hTw, d_td, d_tw, r_t⟩ := OneCtx.ofSeal hp
+/-- `vg_aes_gcm_seal`, for a key context of kind `M`. -/
+theorem sealM_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
+    (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
+    WP isa («seal» (v.withBlk B)) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' := by
+  have X := CtxExt.ofSeal hp.1 hp.2
+  obtain ⟨C, hTw, d_td, d_tw, r_t⟩ := OneCtx.ofSeal hp.1 M.ge
   have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 32) 64 = stackArg s 3 := rfl
   have hT' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := rfl
   have hwa := C.args 3 (by decide)
@@ -244,7 +253,7 @@ theorem seal_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.sealX86_64.pre s) :
   generalize hW : stackArg s 3 = W at *
   have L := C.lay
   refine WP.seq (WP.mono (oneEntry_ok (by decide) C hCtx hSP hA hD hn hW' hwa) fun s₁ E => ?_)
-  refine WP.reassoc_seal (WP.seq (WP.seq (WP.mono (sealRun_ok v C E hNp hnl hal)
+  refine WP.reassoc_seal (WP.seq (WP.seq (WP.mono (sealRun_ok v B C X E hNp hnl hal)
     fun s₄ ⟨he₄, hrd₄, hwr₄, hsv₄, f₄, hC, hT₄⟩ => ?_)))
   -- The tag copied to `tag`.
   have dA := C.arg24 (by decide)
@@ -281,5 +290,10 @@ theorem seal_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.sealX86_64.pre s) :
     Proof.Gcm.fullTag_eq, Proof.Gcm.length_gctr, length_bytesAt, length_bytesAt]
   simp only [Prod.mk.injEq, true_and]
   rw [List.take_of_length_le (by rw [Cmac.toBytes_length])]
+
+/-- `vg_aes_gcm_seal`. -/
+theorem seal_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.sealX86_64.pre s) :
+    WP isa («seal» v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s' :=
+  sealM_wp v v.blkB ⟨hp, trivial⟩
 
 end VG.Proof.AesGcm.X86_64

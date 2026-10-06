@@ -55,7 +55,8 @@ theorem bytesAt_split_eq {m m' : Mem} {p : Addr} {a b : Nat} (h : bytesAt m p (a
 
 /-- What stays the same through `streamText`: the layout and what the call
 of the whole blocks needs, the rounds and the hash subkey. -/
-structure SCtx (Ctx St W SP : Addr) (R : Nat) (H : Block) (D : Addr) (n : Nat) (m₀ : Mem) : Prop where
+structure SCtx (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R : Nat) (H : Block) (D : Addr) (n : Nat)
+    (m₀ : Mem) : Prop where
   lay : Lay Ctx St W SP
   rounds : RoundsAt m₀ W R
   hH : blockAt m₀ (Ctx + BitVec.ofNat 64 240) = H
@@ -64,12 +65,19 @@ structure SCtx (Ctx St W SP : Addr) (R : Nat) (H : Block) (D : Addr) (n : Nat) (
   t_w : (below SP 24).Disjoint ⟨W, 2560⟩
   t_d : (below SP 24).Disjoint ⟨D, n⟩
   sp24 : 24 ≤ SP.toNat
+  /-- The key context, of kind `M`. -/
+  xw : Ctx.toNat + M.len ≤ 2 ^ 64
+  xs : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨St, 80⟩
+  xw' : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨W, 2560⟩
+  xd : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨D, n⟩
+  xt : (below SP 24).Disjoint ⟨Ctx, M.len⟩
+  xok : M.ok m₀ Ctx
 
 /-- Between the pieces of `streamText`: the first `j` of the `n` bytes at
 `D` done, from `m₀`. Given `Hyp` (the streaming state at the start, with
 `x₀` absorbed and `P₀` bytes of text so far), GHASH has absorbed their
 ciphertext and the counter is past them. -/
-structure SInv (Hyp : Prop) (Ctx St W SP : Addr) (R : Nat) (H icb : Block) (x₀ : List Byte) (P₀ : Nat)
+structure SInv (M : Gcm.X86_64.Stitch.CtxMode) (Hyp : Prop) (Ctx St W SP : Addr) (R : Nat) (H icb : Block) (x₀ : List Byte) (P₀ : Nat)
     (enc : Bool) (D : Addr) (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   data : DataW Ctx St W SP s D n
@@ -80,6 +88,7 @@ structure SInv (Hyp : Prop) (Ctx St W SP : Addr) (R : Nat) (H icb : Block) (x₀
     (x₀ ++ ctext enc (ciphOf m₀ Ctx R) icb P₀ (bytesAt m₀ D j))
   ctr : Hyp → Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (P₀ + j)
   out : Hyp → bytesAt s.mem D j = xorKs (ciphOf m₀ Ctx R) icb P₀ (bytesAt m₀ D j)
+  cov : Covers [⟨Ctx, M.len⟩] (s.rd ++ s.wr)
 
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
@@ -235,35 +244,52 @@ theorem rest_head {D : Addr} {n j k : Nat} (hk : j + k ≤ n) {m₀ m : Mem}
 end
 
 section
-variable {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {enc : Bool}
+variable {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {enc : Bool}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
-theorem SInv.rounds {j : Nat} {s : State} (K : SCtx Ctx St W SP R H D n m₀)
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : RoundsAt s.mem W R :=
+theorem SInv.rounds {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : RoundsAt s.mem W R :=
   rounds_frame h.frame (fun r hr => w_stFrame K.lay h.data.ok.w K.t_w (by decide) (by decide) r hr) K.rounds
 
-theorem SInv.hH {j : Nat} {s : State} (K : SCtx Ctx St W SP R H D n m₀)
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H := by
+theorem SInv.hH {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H := by
   rw [blockAt_frame h.frame fun r hr => (ctx_stFrame K.lay h.data.ctx K.t_c r hr).sub_left (Lay.ctxSub (by decide)),
     K.hH]
 
-theorem SInv.ciph {j : Nat} {s : State} (K : SCtx Ctx St W SP R H D n m₀)
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
+theorem SInv.ciph {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
   ciph_frame h.frame (ctx_stFrame K.lay h.data.ctx K.t_c) K.rounds.2
 
+/-- The key context, for the data left from byte `j`. -/
+theorem SInv.ext {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) :
+    CtxExt M Ctx St W SP (D + BitVec.ofNat 64 j) (n - j) s := by
+  have hlt := h.data.ok.lt
+  have hj := h.le
+  refine ⟨K.xw, K.xs, K.xw', K.xd.sub_right (Offset.sub_base D (by omega)), K.xt, h.cov,
+    M.frame h.frame (fun r hr => ?_) K.xw K.xok⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact K.xs.sub_right (Lay.stSub (by decide))
+  · exact K.xd
+  · exact K.xw'.sub_right (Lay.wSub (by decide))
+  · exact K.xw'.sub_right (Lay.wSub (by decide))
+  · exact K.xw'.sub_right (Lay.wSub (by decide))
+  · exact K.xt.symm
+
 /-- After code changing registers other than those `Env` holds. -/
-theorem SInv.regs {j : Nat} {s s' : State} (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+theorem SInv.regs {j : Nat} {s s' : State} (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' :=
+    (hwr : s'.wr = s.wr) : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' :=
   ⟨h.env.keep hg hrd hwr, h.data.of_eq hrd hwr, h.le, hm ▸ h.frame, hm ▸ h.rest, fun hy => hm ▸ h.abs hy,
-    fun hy => hm ▸ h.ctr hy, fun hy => hm ▸ h.out hy⟩
+    fun hy => hm ▸ h.ctr hy, fun hy => hm ▸ h.out hy, by rw [hrd, hwr]; exact h.cov⟩
 
 /-- After code writing only the slots of `W` from `192`. -/
-theorem SInv.slots {j : Nat} {s s' : State} (K : SCtx Ctx St W SP R H D n m₀)
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+theorem SInv.slots {j : Nat} {s s' : State} (K : SCtx M Ctx St W SP R H D n m₀)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     {d k : Nat} (h₁ : 192 ≤ d) (h₂ : d + k ≤ 224) (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] s.mem s'.mem) :
-    SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' := by
+    SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' := by
   have L := K.lay
   have hD := h.data.ok
   have one : ∀ {r : Region}, r.Disjoint ⟨W, 2560⟩ → ∀ r' ∈ [(⟨W + BitVec.ofNat 64 d, k⟩ : Region)], r.Disjoint r' :=
@@ -272,7 +298,8 @@ theorem SInv.slots {j : Nat} {s s' : State} (K : SCtx Ctx St W SP R H D n m₀)
   have hj := h.le
   refine ⟨h.env.keep hg hrd hwr, h.data.of_eq hrd hwr, h.le, h.frame.trans (slots_st h₁ h₂ hf), ?_,
     fun hy => abs_frame hf (fun r hr => ?_) (h.abs hy), fun hy => ctr_frame hf (fun r hr => ?_) (h.ctr hy),
-    fun hy => by rw [bytesAt_frame hf (one (hD.w.sub_left (Region.sub_prefix h.le))) (by omega)]; exact h.out hy⟩
+    fun hy => by rw [bytesAt_frame hf (one (hD.w.sub_left (Region.sub_prefix h.le))) (by omega)]; exact h.out hy,
+    by rw [hrd, hwr]; exact h.cov⟩
   · rw [bytesAt_frame hf (one (hD.w.sub_left (Offset.sub_base D (by omega)))) (by omega)]; exact h.rest
   · simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by decide) (.inr ⟨by omega, by omega⟩)
   · simp only [List.mem_singleton] at hr; subst hr; exact L.st_w (by decide) (.inr ⟨by omega, by omega⟩)
@@ -518,13 +545,13 @@ theorem dprefix (D : Addr) (j : Nat) : (⟨D, j⟩ : Region) = ⟨D + BitVec.ofN
 /-! ## A part of the data: `crypt` and `absorb` -/
 
 section
-variable (v : GcmImpl) {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `k` more bytes, from byte `j`: encrypted and absorbed, or absorbed and
 decrypted. -/
-theorem part_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s : State}
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s : State}
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
     (hx : x₀.length % 16 = P₀ % 16) (hk : j + k ≤ n)
     (h12 : s.gpr .r12 = D + BitVec.ofNat 64 j) (hbp : s.gpr .rbp = BitVec.ofNat 64 k)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16))
@@ -533,7 +560,7 @@ theorem part_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s 
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)) :
     WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
       else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s fun s' =>
-      SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   have L := K.lay
   have hD := h.data
@@ -574,7 +601,7 @@ theorem part_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s 
     refine WP.mono (WP.with_rdwr (crypt_ok v L (icb := icb) ⟨he₃, h12₃, hbp₃, hbx₃, hdj₃, hR₃⟩))
       fun s₄ ⟨co, rd₄, wr₄⟩ => ⟨⟨co.env, hD.of_eq (by rw [rd₄, hrd₃, rd₂]) (by rw [wr₄, hwr₃, wr₂]), hk,
         h.frame.trans ((absFrame_st ao.frame).trans (hm₃ ▸ crFrame_st hk co.frame)), ?_, fun hy => ?_, fun hy => ?_,
-        fun hy => ?_⟩, fun d h₁ h₂ => ?_⟩
+        fun hy => ?_, by rw [rd₄, hrd₃, rd₂, wr₄, hwr₃, wr₂]; exact h.cov⟩, fun d h₁ h₂ => ?_⟩
     · rw [bytesAt_frame co.frame hrestC (by omega), hm₃, bytesAt_frame ao.frame hrestA (by omega)]
       exact rest_step hk hlt (Frame.refl (rs := []) _) (fun _ h => by cases h) h.rest
     · have A := abs_frame co.frame (abs_crFrame L hdj₃.ok) (hm₃ ▸ ao.abs (h.abs hy))
@@ -617,7 +644,7 @@ theorem part_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s 
     refine WP.mono (WP.with_rdwr (absorb_ok v L (yo := 16) (.inr rfl) hai))
       fun s₄ ⟨ao, rd₄, wr₄⟩ => ⟨⟨ao.env, hD.of_eq (by rw [rd₄, hrd₃, rd₂]) (by rw [wr₄, hwr₃, wr₂]), hk,
         h.frame.trans ((crFrame_st hk co.frame).trans (hm₃ ▸ absFrame_st ao.frame)), ?_, fun hy => ?_, fun hy => ?_,
-        fun hy => ?_⟩, fun d h₁ h₂ => ?_⟩
+        fun hy => ?_, by rw [rd₄, hrd₃, rd₂, wr₄, hwr₃, wr₂]; exact h.cov⟩, fun d h₁ h₂ => ?_⟩
     · rw [bytesAt_frame ao.frame hrestA (by omega), hm₃]
       exact rest_step hk hlt co.frame hrestC h.rest
     · have C := co.out
@@ -725,14 +752,14 @@ theorem sb3_ok {Dj : Addr} {L T : Nat} (hL : L < 2 ^ 64) {s : State} (he : Env C
 end
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
 /-- The call of `vg_aes_gcm_encrypt_blocks` (`enc`) or `_decrypt_blocks`:
 GHASH absorbs the ciphertext, which it writes or reads. -/
-theorem callBlocks_ok (enc : Bool) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St W SP R D n q s) :
-    WP isa (.frame (.push [.rax]) (.call (if enc then v.callees.enc else v.callees.dec).name
-      (if enc then v.callees.enc else v.callees.dec).code) (.pop .rax 1)) s fun s₄ =>
+theorem callBlocks_ok (enc : Bool) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+    WP isa (.frame (.push [.rax]) (.call (if enc then B.enc else B.dec).name
+      (if enc then B.enc else B.dec).code) (.pop .rax 1)) s fun s₄ =>
       (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
       Frame (obFrame St W SP D q) s.mem s₄.mem ∧
       blocksAt s₄.mem D q = Spec.Gcm.ctr32 (ciphOf s.mem Ctx R) (blockAt s.mem (St + BitVec.ofNat 64 48))
@@ -742,8 +769,8 @@ theorem callBlocks_ok (enc : Bool) {R : Nat} {D : Addr} {n q : Nat} {s : State} 
       blockAt s₄.mem (St + BitVec.ofNat 64 16) = Spec.Gcm.ghashFrom (blockAt s.mem (Ctx + BitVec.ofNat 64 240))
         (blockAt s.mem (St + BitVec.ofNat 64 16)) (blocksAt (if enc then s₄.mem else s.mem) D q) := by
   cases enc
-  · exact obFrameD_ok L v h
-  · exact obFrameE_ok L v h
+  · exact obFrameD_ok L B h
+  · exact obFrameE_ok L B h
 
 /-- The slots of `W` are outside what the call writes. -/
 theorem slot_obFrame {Dj : Addr} {k q : Nat} (hD : (⟨Dj, k⟩ : Region).Disjoint ⟨W, 2560⟩) (hq : q * 16 ≤ k)
@@ -801,19 +828,19 @@ theorem ks_obFrame {Dj : Addr} {k q : Nat} (hD : (⟨Dj, k⟩ : Region).Disjoint
 end
 
 section
-variable (v : GcmImpl) {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `streamBlocks`: the whole blocks of the data left, from byte `j`, in one
 call, when the text so far is a whole number of blocks. -/
-theorem blocks_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s : State}
-    (h : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) (hx : x₀.length % 16 = P₀ % 16)
+theorem blocks_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s : State}
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) (hx : x₀.length % 16 = P₀ % 16)
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j)
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n - j))
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j))
     (hal : (n - j) / 16 ≠ 0 → (P₀ + j) % 16 = 0) :
-    WP isa (streamBlocks (if enc then v.callees.enc else v.callees.dec)) s fun s' =>
-      SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + 16 * ((n - j) / 16)) s' ∧
+    WP isa (streamBlocks (if enc then B.enc else B.dec)) s fun s' =>
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + 16 * ((n - j) / 16)) s' ∧
       s'.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (j + 16 * ((n - j) / 16)) ∧
       s'.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 ((n - j) % 16) ∧
       s'.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + (j + 16 * ((n - j) / 16))) := by
@@ -829,7 +856,7 @@ theorem blocks_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s 
   have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
-  have h₁ : SInv Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s₁ := h.regs (fun r hr => by
+  have h₁ : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s₁ := h.regs (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) m₁ rd₁ wr₁
   refine WP.ite (decide (q = 0)) (by simp only [eval, z₁]) (fun hz => ?_) (fun hz => ?_)
@@ -849,9 +876,10 @@ theorem blocks_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s 
         (by decide) (by decide) (by decide)) rd₂ wr₂
     have m₂' : s₂.mem = s.mem := m₂.trans m₁
     have hdq : DataW Ctx St W SP s₂ (D + BitVec.ofNat 64 j) (n - j) := (hD.drop hj).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁)
-    have obi : ObIn Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) q s₂ := ⟨he₂, hdq, by omega, K.t_c, K.t_w,
-      K.t_d.sub_right (Offset.sub_base D (by omega)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s⟩
-    refine WP.seq (WP.mono (callBlocks_ok v L enc obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₁, o₂, o₃⟩ => ?_)
+    have obi : ObIn M Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) q s₂ := ⟨he₂, hdq, by omega, K.t_c, K.t_w,
+      K.t_d.sub_right (Offset.sub_base D (by omega)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s,
+      (h.ext K).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁) m₂'⟩
+    refine WP.seq (WP.mono (callBlocks_ok B L enc obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₁, o₂, o₃⟩ => ?_)
     have he₄ : Env Ctx St W SP s₄ := he₂.of_saved cs₄ rd₄ wr₄
     have kp : ∀ d, 176 ≤ d → d + 8 ≤ 240 →
         s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
@@ -877,7 +905,7 @@ theorem blocks_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s 
     have hkd := Offset.sub_base D (d := j) (n := 16 * q) (k := n) (by omega)
     refine ⟨⟨he₅, hD.of_eq (by rw [rd₅, rd₄, rd₂, rd₁]) (by rw [wr₅, wr₄, wr₂, wr₁]), by omega,
       h.frame.trans ((m₂' ▸ obFrame_st hqk fr₄).trans (slots_st (Nat.le_refl _) (by decide) f₅)), ?_, fun hy => ?_,
-      fun hy => ?_, fun hy => ?_⟩, by rw [d₅, add_ofNat_assoc], l₅,
+      fun hy => ?_, fun hy => ?_, by rw [rd₅, rd₄, rd₂, rd₁, wr₅, wr₄, wr₂, wr₁]; exact h.cov⟩, by rw [d₅, add_ofNat_assoc], l₅,
       by rw [t₅, Nat.add_assoc]⟩
     · rw [bytesAt_frame f₅ (one (hD.ok.w.sub_left (Offset.sub_base D (by omega)))) (by omega)]
       exact rest_step (k := 16 * q) (by omega) hlt fr₄
@@ -917,19 +945,19 @@ end
 /-! ## The start, and all of `streamText` -/
 
 section
-variable (v : GcmImpl) {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {D : Addr} {n : Nat} {m₀ : Mem}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- The additional data padded, if there is no text yet: then `SInv` holds,
 with nothing done. -/
-theorem start_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : State} (he : Env Ctx St W SP s)
-    (hm : s.mem = m₀) (hd : DataW Ctx St W SP s D n) {a c₀ : List Byte} (hP : c₀.length < 2 ^ 64)
+theorem start_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State} (he : Env Ctx St W SP s)
+    (hm : s.mem = m₀) (hd : DataW Ctx St W SP s D n) (hcov : Covers [⟨Ctx, M.len⟩] (s.rd ++ s.wr)) {a c₀ : List Byte} (hP : c₀.length < 2 ^ 64)
     (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 a.length)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length)
     (hyA : Hyp → Absorbed m₀ (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c₀))
     (hyC : Hyp → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb c₀.length) :
     WP isa (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.ite .e (firstFlush v.callees) (.block []))) s fun s' =>
-      SInv Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s' ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s' ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   have L := K.lay
   have hlt := hd.ok.lt
@@ -974,12 +1002,12 @@ theorem start_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : State} (h
   -- From a state with the padded additional data absorbed.
   have fin : ∀ s₄ : State, Env Ctx St W SP s₄ → s₄.rd = s.rd → s₄.wr = s.wr → Frame (tFrame St W SP 16) m₀ s₄.mem →
       (Hyp → Absorbed s₄.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length) ++ c₀)) →
-      SInv Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s₄ ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s₄ ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun s₄ he₄ rd₄ wr₄ f₄ ha => ⟨⟨he₄, hd.of_eq rd₄ wr₄, Nat.zero_le _, tFrame_st f₄,
       by simpa using bytesAt_frame f₄ dD (by omega),
       fun hy => by simpa [bytesAt_zero, ctext_nil] using ha hy,
-      fun hy => by simpa using ctr_frame f₄ cT (hyC hy), fun _ => rfl⟩,
+      fun hy => by simpa using ctr_frame f₄ cT (hyC hy), fun _ => rfl, by rw [rd₄, wr₄]; exact hcov⟩,
       fun d h₁ h₂ => by
         rw [f₄.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (sT d h₁ (by omega)) (by decide), hm]⟩
   refine WP.ite (decide (c₀.length = 0)) (eval_e hz₂) (fun ht => ?_) (fun hf => ?_)
@@ -1014,12 +1042,13 @@ theorem start_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : State} (h
 end
 
 section
-variable (v : GcmImpl) {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {D : Addr} {n : Nat} {m₀ : Mem}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `streamText enc`: the `n` bytes at `D` encrypted (`enc`) or decrypted,
 and their ciphertext absorbed, after additional data `a` and text `c₀`. -/
-theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : State} (he : Env Ctx St W SP s)
-    (hm : s.mem = m₀) (hd : DataW Ctx St W SP s D n) (hbp : s.gpr .rbp = BitVec.ofNat 64 n)
+theorem streamText_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State}
+    (he : Env Ctx St W SP s) (hm : s.mem = m₀) (hd : DataW Ctx St W SP s D n)
+    (hcov : Covers [⟨Ctx, M.len⟩] (s.rd ++ s.wr)) (hbp : s.gpr .rbp = BitVec.ofNat 64 n)
     {a c₀ : List Byte} (hP : c₀.length < 2 ^ 64)
     (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 a.length)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length)
@@ -1027,13 +1056,13 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n)
     (hyA : Hyp → Absorbed m₀ (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c₀))
     (hyC : Hyp → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb c₀.length) :
-    WP isa (streamText v.callees enc) s fun s' => Env Ctx St W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+    WP isa (streamText (v.withBlk B) enc) s fun s' => Env Ctx St W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (stFrame St W SP D n) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
         bytesAt s'.mem D n = xorKs (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n)) := by
-  suffices WP isa (streamText v.callees enc) s fun s' => Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
+  suffices WP isa (streamText (v.withBlk B) enc) s fun s' => Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
@@ -1056,7 +1085,7 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
   have h0 : n ≠ 0 := by simpa using hf
   have sl₁ : ∀ d, s₁.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d => by
     rw [hm₁]
-  refine WP.assoc (WP.seq (WP.mono (start_ok v K enc he₁ (hm₁.trans hm) (hd.of_eq hrd₁ hwr₁) (c₀ := c₀) hP
+  refine WP.assoc (WP.seq (WP.mono (start_ok v K enc he₁ (hm₁.trans hm) (hd.of_eq hrd₁ hwr₁) (by rw [hrd₁, hwr₁]; exact hcov) (c₀ := c₀) hP
     (by rw [sl₁]; exact hal) (by rw [sl₁]; exact htl) hyA hyC) fun s₂ ⟨I₂, sl₂⟩ => ?_))
   -- The head.
   obtain ⟨s₃, run₃, h12₃, hbp₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ := load_ok I₂.env
@@ -1070,7 +1099,7 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [hm₃, sl₂ d h₁ h₂, sl₁]
   -- The end, from `SInv` over all the data.
-  have fin : ∀ s', SInv Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ n s' →
+  have fin : ∀ s', SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ n s' →
       Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
@@ -1128,7 +1157,7 @@ theorem streamText_ok (K : SCtx Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₆ _ (by decide) (by decide)) hrd₆ hwr₆ (Nat.le_refl _) (by decide) f₆
   rw [Nat.zero_add] at I₆
   -- The whole blocks.
-  refine WP.seq (WP.mono (blocks_ok v K enc I₆ hx d₆ l₆ t₆ (fun hq => hkw.resolve_left (by omega)))
+  refine WP.seq (WP.mono (blocks_ok B K enc I₆ hx d₆ l₆ t₆ (fun hq => hkw.resolve_left (by omega)))
     fun s₇ ⟨I₇, d₇, l₇, t₇⟩ => ?_)
   generalize hj₂ : k + 16 * ((n - k) / 16) = j₂ at I₇ d₇ t₇
   -- The rest.

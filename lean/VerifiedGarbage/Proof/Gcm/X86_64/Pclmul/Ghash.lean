@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 import Mathlib.Tactic.LinearCombination
@@ -198,63 +199,7 @@ theorem φ_reduceB (p : Prod) : φ (reduceB p) = p.val := by
   simp only [reduceB, φ_xor, φ_fold, Prod.val]
   ring
 
-/-! ## `H · x⁻¹` -/
-
-theorem shl1 (h : BitVec 128) :
-    XShiftOp.eval .psllq h 1 ||| XShiftOp.eval .pslldq (XShiftOp.eval .psrlq h 63) 8 = h <<< 1 := by
-  have e1 : XShiftOp.eval .psllq h 1 = (qword h 1 <<< 1) ++ (qword h 0 <<< 1) := rfl
-  have e2 : XShiftOp.eval .psrlq h 63 = (qword h 1 >>> 63) ++ (qword h 0 >>> 63) := rfl
-  have e3 : ∀ y, XShiftOp.eval .pslldq y 8 = y <<< 64 := fun _ => rfl
-  rw [e1, e2, e3]
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_or, BitVec.getLsbD_append, BitVec.getLsbD_shiftLeft,
-    BitVec.getLsbD_ushiftRight, qword, BitVec.getLsbD_extractLsb']
-  rcases (by omega : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
-  · subst h; simp only [Nat.ofNat_pos, ↓reduceIte, decide_true, Order.lt_one_iff, Bool.not_true, Bool.and_false, zero_tsub, mul_zero, add_zero, BitVec.getLsbD_eq_getElem, Bool.true_and, Bool.false_and, Nat.lt_add_one, zero_add, Nat.reduceLT, Bool.or_self]
-  · simp (disch := omega) only [ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
-      Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true, Bool.not_true]
-    exact congrArg _ (by omega)
-  · subst h; simp
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false,
-      Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true,
-      Bool.not_true]
-    exact congrArg _ (by omega)
-
-theorem shr31 (y : BitVec 32) : y >>> 31 = if y.msb then 1#32 else 0#32 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.msb_eq_decide]
-  have := y.isLt
-  split_ifs with h
-  · simp only [Nat.add_one_sub_one, Nat.reducePow, decide_eq_true_eq] at h; simp only [Nat.shiftRight_eq_div_pow, Nat.reducePow, BitVec.toNat_ofNat, Nat.one_mod]; omega
-  · simp only [Nat.add_one_sub_one, Nat.reducePow, decide_eq_true_eq, not_le] at h; simp only [Nat.shiftRight_eq_div_pow, Nat.reducePow, BitVec.toNat_ofNat, Nat.zero_mod, Nat.div_eq_zero_iff, OfNat.ofNat_ne_zero, false_or, gt_iff_lt]; omega
-
-theorem msb_dword3 (h : BitVec 128) : dword h 3 >>> 31 = if h.getMsbD 0 then 1#32 else 0#32 := by
-  have e : (dword h 3).msb = h.getMsbD 0 := by
-    simp only [BitVec.msb_eq_getLsbD_last, getLsbD_dword, BitVec.getMsbD]; rfl
-  rw [shr31, e]
-
-/-- The mask of `hInv`: `x⁻¹` if the bit shifted out of `h` is 1, else 0. -/
-theorem mask_eq (h : BitVec 128) :
-    XBinOp.eval .pandn (XBinOp.eval .paddd (XShiftOp.eval .psrld (shufDwords h 0xff) 31)
-      (XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64))
-        ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64)))) xInv =
-      if h.getMsbD 0 then xInv else 0 := by
-  have e0 : shufDwords h 0xff = ofDwords (dword h 3) (dword h 3) (dword h 3) (dword h 3) := rfl
-  have e1 : ∀ a, XShiftOp.eval .psrld a 31 =
-      ofDwords (dword a 0 >>> 31) (dword a 1 >>> 31) (dword a 2 >>> 31) (dword a 3 >>> 31) :=
-    fun _ => rfl
-  have e2 : XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64))
-      ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64)) = ofDwords (-1) (-1) (-1) (-1) := by rfl
-  rw [e0, e1, e2]
-  simp only [dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3, msb_dword3]
-  split_ifs
-  · simp only [XBinOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
-      show (1#32 : BitVec 32) + -1 = 0 by rfl, show ofDwords 0 0 0 0 = 0 by rfl]
-    rfl
-  · simp only [XBinOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
-      show (0#32 : BitVec 32) + -1 = -1 by rfl,
-      show ~~~ofDwords (-1) (-1) (-1) (-1) = 0 by rfl]
-    rfl
+/-! ## `H · x⁻¹` (its bits: `Pclmul/HInvBits.lean`) -/
 
 theorem gp_xInv : gp xInv = 1 + X + X ^ 6 + X ^ 127 := by
   have hb : ∀ d < 128, xInv.getMsbD d = (d = 0 || d = 1 || d = 6 || d = 127) := by decide +kernel

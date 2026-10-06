@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 
 /-!
@@ -44,7 +44,26 @@ def dec : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZ.dec
   | .aesniAvx => Impl.Gcm.X86_64.StitchAvx.dec
 
+/-- The encryption loop named `n`, for a key context of
+`vg_aes_gcm_init_precomputed`: those that read the powers of the hash subkey
+from it, or the others. -/
+def encP : StitchName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZP.enc
+  | n => n.enc
+
+/-- The decryption loop named `n`, for a key context of
+`vg_aes_gcm_init_precomputed`. -/
+def decP : StitchName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZP.dec
+  | n => n.dec
+
 end StitchName
+
+/-- The facts `Piece` states of the loops named `n` for a key context of
+`vg_aes_gcm_init_precomputed`. -/
+structure PieceP (n : StitchName) : Type where
+  enc : Piece n.encP
+  dec : Piece n.decP
 
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/
@@ -57,6 +76,11 @@ structure StitchPart where
   features : List String
   encP : Piece name.enc
   decP : Piece name.dec
+  /-- The same, of the loops for a key context of
+  `vg_aes_gcm_init_precomputed`, for the loops that read the powers of the
+  hash subkey from it (`none`: the `_precomputed` functions are not built
+  for this variant). -/
+  pieceP : Option (PieceP name) := none
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` (`GhashName`) and its interleaved loops

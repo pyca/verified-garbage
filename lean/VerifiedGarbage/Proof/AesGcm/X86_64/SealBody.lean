@@ -53,14 +53,15 @@ end
 
 section
 variable (v : GcmImpl) {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
+  {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
 include L
 
 /-- The body of `seal`: the data encrypted from `icb`, and its tag. -/
 theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List Byte} {s : State}
-    (h : ObPre Ctx W SP R D n s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
+    (h : ObPre M Ctx W SP R D n s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
     (hcb : blockAt s.mem (cbA W) = icb) (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length))) :
-    WP isa (.seq (.seq (oneBlocks v.callees.enc) (oneCrypt v.callees)) (oneTag v.callees 0)) s fun s' =>
+    WP isa (.seq (.seq (oneBlocks B.enc) (oneCrypt v.callees)) (oneTag v.callees 0)) s fun s' =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame (oneFrameB W D SP n) s.mem s'.mem ∧
       bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb 0 (bytesAt s.mem D n) ∧
@@ -71,7 +72,7 @@ theorem sealBody_ok {R : Nat} {D : Addr} {n al : Nat} {H icb : Block} {a : List 
   have hR := h.rounds.2
   have hxa : (a ++ zeros (padLen a.length)).length % 16 = 0 := by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _
-  refine WP.seq (WP.seq (WP.mono (oneBlocksE_ok L v h) fun s₃ ⟨P, o₁, o₂, o₃⟩ => ?_))
+  refine WP.seq (WP.seq (WP.mono (oneBlocksE_ok L B h) fun s₃ ⟨P, o₁, o₂, o₃⟩ => ?_))
   obtain ⟨f₃, hR₃, hH₃, hc₃, hJ₃, hw₃, ct₃, ab₃, ht₃⟩ := ob_facts L h P hH hcb habs hxa o₁ o₂
     (Z := bytesAt s₃.mem D (16 * (n / 16))) (by rw [length_bytesAt]; omega)
     (by rw [o₃, show (Ctx + 240 : Addr) = Ctx + BitVec.ofNat 64 240 from rfl, hH, Proof.Gcm.blocksAt_eq])

@@ -22,18 +22,42 @@ theorem covers_prefix {p : Addr} {k n : Nat} {rs : List Region} (h : Covers [⟨
   simp only [List.mem_singleton] at hr; subst hr
   exact h a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
 
-/-- `vg_aes_gcm_init`. -/
-theorem init_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initX86_64.pre s) :
-    WP isa (init v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.initX86_64.post s s' := by
-  simp only [Proof.AesGcm.initX86_64, Proof.AesGcm.ret, Proof.AesGcm.stk] at hp
+/-- What `vg_aes_gcm_init`'s code leaves before its exit, from `s`: the key
+context for the key `L` bytes at `K` at `Ctx`, with `W` in `r15` and the
+caller's registers saved. -/
+structure InitDone (s : State) (K Ctx W : Addr) (L : Nat) (s₅ : State) : Prop where
+  r15 : s₅.gpr .r15 = W
+  r13 : s₅.gpr .r13 = Ctx
+  rsp : s₅.gpr .rsp = s.gpr .rsp
+  rd : s₅.rd = s.rd
+  wr : s₅.wr = s.wr
+  saved : SavedAt s₅.mem W s
+  ret : s₅.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
+  key : KeyRepr s₅.mem Ctx (bytesAt s.mem K L)
+
+/-- `vg_aes_gcm_init`'s code, for a key context of `cl` bytes, then `t` from
+what it leaves (`InitDone`). -/
+theorem initWith_wp (v : GcmImpl) {cl : Nat} (hcl : 256 ≤ cl) {s : State} (hp : Proof.AesGcm.initPreL cl s)
+    {t : Prog isa} {Q : State → Prop}
+    (ht : ∀ s₅, InitDone s (s.gpr .rdi) (s.gpr .rdx) (s.gpr .rcx) (s.gpr .rsi).toNat s₅ →
+      WP isa t s₅ Q) :
+    WP isa (initWith v.callees t) s Q := by
+  simp only [Proof.AesGcm.initPreL, Proof.AesGcm.ret, Proof.AesGcm.stk] at hp
   obtain ⟨hrd, hwr, d_kc, d_ks, d_cs, r_c, r_s, k_k, k_c, k_s, wc, ws, hL⟩ := hp
+  have c256 : Region.Sub ⟨s.gpr .rdx, 256⟩ ⟨s.gpr .rdx, cl⟩ := Region.sub_prefix hcl
+  have pC₀ : Covers [⟨s.gpr .rdx, cl⟩] s.wr := by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
+  replace d_kc := d_kc.sub_right c256
+  replace d_cs := d_cs.sub_left c256
+  replace r_c := r_c.sub_right c256
+  replace k_c := k_c.sub_right c256
+  replace wc : (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 := by omega
   generalize hK : s.gpr .rdi = K at *
   generalize hLn : (s.gpr .rsi).toNat = L at *
   generalize hCtx : s.gpr .rdx = Ctx at *
   generalize hW : s.gpr .rcx = W at *
   generalize hSP : s.gpr .rsp = SP at *
   have pW : Covers [⟨W, 2560⟩] s.wr := by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_singleton_self _))
-  have pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
+  have pC : Covers [⟨Ctx, 256⟩] s.wr := covers_prefix pC₀ hcl
   obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s .rcx hW pW
   have hsi : s.gpr .rsi = BitVec.ofNat 64 L := by rw [← hLn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   have hR : BitVec.ofNat 64 L >>> 2 + 6#64 = BitVec.ofNat 64 (Spec.Aes.rounds (L / 4)) := by
@@ -203,10 +227,8 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initX86_64.pre s) :
       · exact r_c.sub_right (Offset.sub_base _ (by decide))
       · exact r_s.sub_right (Lay.wSub (by decide))
       · exact ret_below SP
-  refine WP.mono (exit_ok c15 (by rw [c5sp, hSP]) (by rw [c.rd, c.wr, wr₄]; exact covers_left pW) hsv₅
-    (by rw [hSP, hret])) fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
-  simp only [Proof.AesGcm.initX86_64]
-  rw [hK, hLn, hCtx, hm]
+  have c13 : s₅.gpr .r13 = Ctx := by rw [c.saved .r13 (by decide), hg₄ .r13 (by decide), g13]
+  refine ht s₅ ⟨c15, c13, by rw [c5sp, hSP], by rw [c.rd, rd₄], by rw [c.wr, wr₄], hsv₅, by rw [hSP, hret], ?_⟩
   refine ⟨?_, ?_⟩
   · rw [length_bytesAt, hRd, bytesAt_frame cfr (fun r hr => ?_) (by omega), hk₄]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -217,3 +239,16 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initX86_64.pre s) :
     · exact (k_c.sub_right (Region.sub_prefix (by omega))).symm
   · rw [ctxH_eq, gout.1, Spec.Gcm.aes, length_bytesAt, hRd]
     simp
+
+/-- `vg_aes_gcm_init`. -/
+theorem init_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.initX86_64.pre s) :
+    WP isa (init v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.initX86_64.post s s' := by
+  have hw : s.wr = [⟨s.gpr .rdx, 256⟩, ⟨s.gpr .rcx, 2560⟩] := hp.2.1
+  refine initWith_wp v (Nat.le_refl _) hp fun s₅ D => WP.mono (exit_ok D.r15 D.rsp (covers_left (by
+    rw [D.wr, hw]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) D.saved D.ret)
+    fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_⟩
+  simp only [Proof.AesGcm.initX86_64]
+  rw [hm]
+  exact D.key
+
+end VG.Proof.AesGcm.X86_64

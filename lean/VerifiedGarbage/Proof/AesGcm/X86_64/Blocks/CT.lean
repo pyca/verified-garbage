@@ -18,6 +18,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctr32)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
@@ -61,7 +62,7 @@ theorem rel_r11 {P : State → State → Prop} {l₀ l : List Instr}
     · rw [b₁ r hx, b₂ r hx]; exact hag _ _ hσ r hr
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 /-- `Ready` after `ctrCall`. -/
@@ -129,7 +130,7 @@ theorem ghArgs_check : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rsp]) (.block
     (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true := ⟨_, by taint_decide⟩
 
 section
-variable {s₀ s₀' : State} (hp : BP s₀) (hp' : BP s₀') (pb : Pub s₀ s₀')
+variable {M : CtxMode} {s₀ s₀' : State} (hp : BP M s₀) (hp' : BP M s₀') (pb : Pub s₀ s₀')
 include hp hp' pb
 
 /-- Loading `scratch` from the stack, in two runs that are `Ready`. -/
@@ -230,7 +231,7 @@ theorem part_rel (piece : Option (Prog isa)) {ys : State → Nat → List Block}
     (hys : ∀ s, ys s 0 = [])
     (hc : ∀ p, piece = some p → ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p) hc).map
       fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
-    (hw : ∀ p, piece = some p → ∀ {s : State}, BP s → ∀ {s₁ : State}, EntryPost s s₁ →
+    (hw : ∀ p, piece = some p → ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
       WP isa (stitchPart p) s₁ (Mid s (n s - n s % 16) 0 (ys s (n s - n s % 16)))) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
       (head piece)
@@ -258,12 +259,12 @@ theorem part_rel (piece : Option (Prog isa)) {ys : State → Nat → List Block}
 
 end
 
-theorem encrypt_ct (v : GcmImpl) (st : Option StitchImpl) :
-    ConstantTime isa Proof.AesGcm.encryptBlocksX86_64.pre Proof.AesGcm.encryptBlocksX86_64.pub
+theorem encrypt_ct (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) :
+    ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
       (encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
-  have hp := BP.of h
-  have hp' := BP.of h'
+  have hp := BP.ofM h
+  have hp' := BP.ofM h'
   have pb := Pub.of hq
   refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb (st.map (·.enc))
     (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) (fun _ => rfl)
@@ -275,12 +276,12 @@ theorem encrypt_ct (v : GcmImpl) (st : Option StitchImpl) :
   exact tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
     _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
 
-theorem decrypt_ct (v : GcmImpl) (st : Option StitchImpl) :
-    ConstantTime isa Proof.AesGcm.decryptBlocksX86_64.pre Proof.AesGcm.decryptBlocksX86_64.pub
+theorem decrypt_ct (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) :
+    ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
       (decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
-  have hp := BP.of h
-  have hp' := BP.of h'
+  have hp := BP.ofM h
+  have hp' := BP.ofM h'
   have pb := Pub.of hq
   refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb (st.map (·.dec))
     (ys := fun s q => blocksAt s.mem (D s) q) (fun _ => rfl)

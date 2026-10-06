@@ -113,12 +113,71 @@ theorem ob2_ok {Ctx St W SP : Addr} {R : Nat} {D : Addr} {s : State} (he : Env C
   · intro r a b c d e f g; simp [gpr_setReg, gpr_arithFlags, a, b, c, d, e, f, g]
   all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
+open Gcm.X86_64.Stitch (CtxMode)
+
+/-- The key context of kind `M` (`len` bytes at `Ctx`): apart from the
+state, `W`, the data and the stack, readable, and holding what its kind says. -/
+structure CtxExt (M : CtxMode) (Ctx St W SP D : Addr) (n : Nat) (s : State) : Prop where
+  w : Ctx.toNat + M.len ≤ 2 ^ 64
+  cs : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨St, 80⟩
+  cw : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨W, 2560⟩
+  cd : (⟨Ctx, M.len⟩ : Region).Disjoint ⟨D, n⟩
+  ct : (below SP 24).Disjoint ⟨Ctx, M.len⟩
+  cov : Covers [⟨Ctx, M.len⟩] (s.rd ++ s.wr)
+  ok : M.ok s.mem Ctx
+
+namespace CtxExt
+
+variable {M : CtxMode} {Ctx St W SP D : Addr} {n : Nat} {s : State}
+
+/-- The key context of `vg_aes_gcm_init`, from the layout. -/
+theorem base (L : Lay Ctx St W SP) (P : Perm Ctx St W s) (hd : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
+    (ht : (below SP 24).Disjoint ⟨Ctx, 256⟩) : CtxExt CtxMode.base Ctx St W SP D n s :=
+  ⟨L.cw, L.cs, L.cw', hd, ht, P.ctx, trivial⟩
+
+/-- After code that keeps the permissions and the context. -/
+theorem keep (h : CtxExt M Ctx St W SP D n s) {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    {rs : List Region} (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (⟨Ctx, M.len⟩ : Region).Disjoint r) :
+    CtxExt M Ctx St W SP D n s' :=
+  ⟨h.w, h.cs, h.cw, h.cd, h.ct, by rw [hrd, hwr]; exact h.cov, M.frame hf hd h.w h.ok⟩
+
+theorem of_eq (h : CtxExt M Ctx St W SP D n s) {s' : State} (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
+    (hm : s'.mem = s.mem) : CtxExt M Ctx St W SP D n s' :=
+  h.keep hrd hwr (rs := []) (by rw [hm]; exact Frame.refl _ _) (by simp)
+
+/-- For a part of the data. -/
+theorem sub (h : CtxExt M Ctx St W SP D n s) {D' : Addr} {n' : Nat}
+    (hs : Region.Sub ⟨D', n'⟩ ⟨D, n⟩) : CtxExt M Ctx St W SP D' n' s :=
+  ⟨h.w, h.cs, h.cw, h.cd.sub_right hs, h.ct, h.cov, h.ok⟩
+
+/-- From `seal`'s precondition, for a key context of kind `M`. -/
+theorem ofSeal {s : State} (hp : Proof.AesGcm.sealPre M.len s) (hok : M.ok s.mem (s.gpr .rdi)) :
+    CtxExt M (s.gpr .rdi) (stackArg s 3 + BitVec.ofNat 64 16) (stackArg s 3) (s.gpr .rsp) (stackArg s 0)
+      (stackArg s 1).toNat s := by
+  simp only [Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
+    Proof.AesGcm.arg] at hp
+  obtain ⟨hrd, -, ⟨d_cd, d_cw, -, -, -, -, -, -, -, -, -, t_c, -, -, -, -, wc, -⟩, -⟩ := hp
+  exact ⟨wc, d_cw.sub_right (Lay.wSub (by decide)), d_cw, d_cd, t_c,
+    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩
+
+/-- From `open`'s precondition, for a key context of kind `M`. -/
+theorem ofOpen {s : State} (hp : Proof.AesGcm.openPre M.len s) (hok : M.ok s.mem (s.gpr .rdi)) :
+    CtxExt M (s.gpr .rdi) (stackArg s 4 + BitVec.ofNat 64 16) (stackArg s 4) (s.gpr .rsp) (stackArg s 0)
+      (stackArg s 1).toNat s := by
+  simp only [Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
+    Proof.AesGcm.arg] at hp
+  obtain ⟨hrd, -, ⟨d_cd, d_cw, -, -, -, -, -, -, -, -, -, t_c, -, -, -, -, wc, -⟩, -⟩ := hp
+  exact ⟨wc, d_cw.sub_right (Lay.wSub (by decide)), d_cw, d_cd, t_c,
+    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩
+
+end CtxExt
+
 section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
 /-- What the frame of the call needs. -/
-structure ObIn (Ctx St W SP : Addr) (R : Nat) (D : Addr) (n q : Nat) (s : State) : Prop where
+structure ObIn (M : CtxMode) (Ctx St W SP : Addr) (R : Nat) (D : Addr) (n q : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   data : DataW Ctx St W SP s D n
   q_le : 16 * q ≤ n
@@ -135,6 +194,7 @@ structure ObIn (Ctx St W SP : Addr) (R : Nat) (D : Addr) (n q : Nat) (s : State)
   rax : s.gpr .rax = W + BitVec.ofNat 64 448
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   t_s : (below SP 24).Disjoint ⟨St, 80⟩
+  ext : CtxExt M Ctx St W SP D n s
 
 /-- The regions the call writes. -/
 abbrev obFrame (St W SP D : Addr) (q : Nat) : List Region :=
@@ -142,8 +202,8 @@ abbrev obFrame (St W SP D : Addr) (q : Nat) : List Region :=
     ⟨D, q * 16⟩, ⟨W + BitVec.ofNat 64 448, 2112⟩, below SP 24]
 
 /-- The call, from the frame's push. -/
-theorem ObIn.call {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St W SP R D n q s) :
-    BlkCall (pushed [.rax] s) Ctx (St + BitVec.ofNat 64 48)
+theorem ObIn.call {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+    BlkCall M (pushed [.rax] s) Ctx (St + BitVec.ofNat 64 48)
       (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) R q := by
   have hsp := h.env.rsp
   have psp : (pushed [.rax] s).gpr .rsp = SP - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
@@ -169,16 +229,14 @@ theorem ObIn.call {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St 
   refine ⟨by rw [pushed_gpr _ _ (by decide)]; exact h.rdi, by rw [pushed_gpr _ _ (by decide)]; exact h.rsi,
     by rw [pushed_gpr _ _ (by decide)]; exact h.rdx, by rw [pushed_gpr _ _ (by decide)]; exact h.rcx,
     by rw [pushed_gpr _ _ (by decide)]; exact h.r8, by rw [pushed_gpr _ _ (by decide)]; exact h.r9,
-    by rw [psp]; exact harg, h.rounds, L.cw, ?_, ?_, by omega, by rw [toN 448 (by decide)]; omega, ?_,
-    L.ctx_st (a := 0) (n := 256) (d := 48) (k := 16) (by decide) (by decide) |> fun h => by simpa using h,
-    L.ctx_st (a := 0) (n := 256) (d := 16) (k := 16) (by decide) (by decide) |> fun h => by simpa using h,
-    h.data.ctx.sub_right qd, (L.cw'.sub_right sS),
+    by rw [psp]; exact harg, h.rounds, h.ext.w, ?_, ?_, by omega, by rw [toN 448 (by decide)]; omega, ?_,
+    h.ext.cs.sub_right sC, h.ext.cs.sub_right sY, h.ext.cd.sub_right qd, h.ext.cw.sub_right sS,
     L.st_st (.inr (by decide)) (by decide) (by decide), (h.data.ok.st.sub_right (Lay.stSub (by decide))).symm.sub_right qd,
     L.st_w (by decide) (.inr ⟨by decide, by decide⟩),
     (h.data.ok.st.sub_right (Lay.stSub (by decide))).symm.sub_right qd,
     L.st_w (by decide) (.inr ⟨by decide, by decide⟩), (h.data.ok.w.sub_left qd).sub_right sS,
-    h.t_c.sub_left tS, (h.t_s.sub_left tS).sub_right sC, (h.t_s.sub_left tS).sub_right sY,
-    (h.t_d.sub_left tS).sub_right qd, (h.t_w.sub_left tS).sub_right sS, ?_, ?_⟩
+    h.ext.ct.sub_left tS, (h.t_s.sub_left tS).sub_right sC, (h.t_s.sub_left tS).sub_right sY,
+    (h.t_d.sub_left tS).sub_right qd, (h.t_w.sub_left tS).sub_right sS, ?_, ?_, ?_⟩
   · rw [toS 48 (by decide)]; omega
   · rw [toS 16 (by decide)]; omega
   · have e16 : SP - BitVec.ofNat 64 8 - 8 = SP - BitVec.ofNat 64 16 := by rw [← Offset.sub_add_eq]; rfl
@@ -187,7 +245,7 @@ theorem ObIn.call {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St 
   · simp only [pushed_rd, pushed_wr, psp, hsp]
     refine covers_cons ?_ (covers_cons ?_ (covers_cons ?_ (covers_cons ?_ (covers_cons ?_ ?_))))
     · exact fun a m hi => by
-        obtain ⟨x, hx, hc⟩ := h.env.perm.ctx a m hi
+        obtain ⟨x, hx, hc⟩ := h.ext.cov a m hi
         rcases List.mem_append.mp hx with hx | hx
         · exact ⟨x, List.mem_append_left _ hx, hc⟩
         · exact ⟨x, List.mem_append_right _ (List.mem_cons_of_mem _ hx), hc⟩
@@ -205,9 +263,15 @@ theorem ObIn.call {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St 
     · exact h.env.perm.stC (by decide)
     · exact Blocks.covers_prefix h.data.wr (by omega)
     · exact h.env.perm.wC (by decide)
+  · have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
+    obtain ⟨hf, -⟩ := pushRegs_mem s [.rax] (by decide) hn8
+    rw [hsp] at hf
+    exact M.frame hf (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (h.ext.ct.sub_left (below_sub (by decide) (by decide))).symm) h.ext.w h.ext.ok
 
 /-- What the frame's push writes is apart from what the call reads. -/
-theorem ObIn.push_eqs {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St W SP R D n q s) :
+theorem ObIn.push_eqs {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
     Frame (obFrame St W SP D q) s.mem (pushed [.rax] s).mem ∧
     bytesAt (pushed [.rax] s).mem Ctx (16 * (R + 1)) = bytesAt s.mem Ctx (16 * (R + 1)) ∧
     blockAt (pushed [.rax] s).mem (St + BitVec.ofNat 64 48) =
@@ -235,7 +299,7 @@ theorem ObIn.push_eqs {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx
     blockAt_frame hf' (one (h.t_c.sub_right (Offset.sub_base (d := 240) _ (by decide))))⟩
 
 /-- The registers, permissions and memory after the frame of a call. -/
-theorem ObIn.popped {R : Nat} {D : Addr} {n q : Nat} {s s₃ : State} (h : ObIn Ctx St W SP R D n q s)
+theorem ObIn.popped {M : CtxMode} {R : Nat} {D : Addr} {n q : Nat} {s s₃ : State} (h : ObIn M Ctx St W SP R D n q s)
     (bp : BlkPost (pushed [.rax] s) (St + BitVec.ofNat 64 48)
       (St + BitVec.ofNat 64 16) D (W + BitVec.ofNat 64 448) q s₃) :
     s₃.gpr .rsp = (pushed [.rax] s).gpr .rsp ∧ s₃.wr = (pushed [.rax] s).wr ∧
@@ -263,8 +327,8 @@ theorem ObIn.popped {R : Nat} {D : Addr} {n q : Nat} {s s₃ : State} (h : ObIn 
       rw [psp, e]; exact Region.sub_prefix (by decide)
 
 /-- The frame of the call of `vg_aes_gcm_encrypt_blocks`. -/
-theorem obFrameE_ok (v : GcmImpl) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St W SP R D n q s) :
-    WP isa (.frame (.push [.rax]) (.call v.callees.enc.name v.callees.enc.code) (.pop .rax 1)) s fun s₄ =>
+theorem obFrameE_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+    WP isa (.frame (.push [.rax]) (.call B.enc.name B.enc.code) (.pop .rax 1)) s fun s₄ =>
       (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
       Frame (obFrame St W SP D q) s.mem s₄.mem ∧
       blocksAt s₄.mem D q = ctr32 (aesWith R (bytesAt s.mem Ctx (16 * (R + 1))))
@@ -276,7 +340,7 @@ theorem obFrameE_ok (v : GcmImpl) {R : Nat} {D : Addr} {n q : Nat} {s : State} (
   have hsp := h.env.rsp
   have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call v (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkE_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
@@ -285,8 +349,8 @@ theorem obFrameE_ok (v : GcmImpl) {R : Nat} {D : Addr} {n q : Nat} {s : State} (
     by rw [popped_mem]; exact o₃⟩
 
 /-- The frame of the call of `vg_aes_gcm_decrypt_blocks`. -/
-theorem obFrameD_ok (v : GcmImpl) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn Ctx St W SP R D n q s) :
-    WP isa (.frame (.push [.rax]) (.call v.callees.dec.name v.callees.dec.code) (.pop .rax 1)) s fun s₄ =>
+theorem obFrameD_ok {M : CtxMode} (B : BlkFn M) {R : Nat} {D : Addr} {n q : Nat} {s : State} (h : ObIn M Ctx St W SP R D n q s) :
+    WP isa (.frame (.push [.rax]) (.call B.dec.name B.dec.code) (.pop .rax 1)) s fun s₄ =>
       (∀ r ∈ calleeSaved, s₄.gpr r = s.gpr r) ∧ s₄.rd = s.rd ∧ s₄.wr = s.wr ∧
       Frame (obFrame St W SP D q) s.mem s₄.mem ∧
       blocksAt s₄.mem D q = ctr32 (aesWith R (bytesAt s.mem Ctx (16 * (R + 1))))
@@ -298,7 +362,7 @@ theorem obFrameD_ok (v : GcmImpl) {R : Nat} {D : Addr} {n q : Nat} {s : State} (
   have hsp := h.env.rsp
   have hn8 : 8 * [Reg.rax].length ≤ (s.gpr .rsp).toNat := by rw [hsp]; have := h.sp24; simp; omega
   obtain ⟨-, eK, eC, eY, eD, eH⟩ := ObIn.push_eqs L h
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call v (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.mono (blkD_call B (ObIn.call L h)) fun s₃ ⟨bp, o₁, o₂, o₃⟩ => ?_)
   obtain ⟨r₃, w₃, cs, rd, wr, fr⟩ := ObIn.popped L h bp
   rw [eK, eC, eD] at o₁
   rw [eC] at o₂
@@ -313,7 +377,7 @@ variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
 include L
 
 /-- What `oneBlocks` needs: the state of `seal` or `open` after `oneAad`. -/
-structure ObPre (Ctx W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
+structure ObPre (M : CtxMode) (Ctx W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
   env : Env Ctx (W + BitVec.ofNat 64 16) W SP s
   rounds : RoundsAt s.mem W R
   dat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D
@@ -323,6 +387,7 @@ structure ObPre (Ctx W SP : Addr) (R : Nat) (D : Addr) (n : Nat) (s : State) : P
   t_w : (below SP 24).Disjoint ⟨W, 2560⟩
   t_d : (below SP 24).Disjoint ⟨D, n⟩
   sp24 : 24 ≤ SP.toNat
+  ext : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s
 
 /-- What `oneBlocks` leaves, but its result: the data left kept, and the
 regions written. -/
