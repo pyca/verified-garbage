@@ -37,8 +37,10 @@ fn time(mut f: impl FnMut()) -> f64 {
     samples[4]
 }
 
+/// A row: both times, and verified-garbage's speed relative to aws-lc-rs's
+/// (below 1 is slower).
 fn row(name: &str, aws: f64, vg: f64) {
-    println!("{name:<52} {aws:>11.0} {vg:>11.0} {:>7.2}x", vg / aws);
+    println!("{name:<52} {aws:>11.0} {vg:>11.0} {:>7.2}", aws / vg);
 }
 
 #[derive(asn1::Asn1Read)]
@@ -68,7 +70,7 @@ fn main() {
     let only_aead = args.iter().any(|a| a == "aead" || a == "sweep");
     println!(
         "{:<52} {:>11} {:>11} {:>8}",
-        "ns per operation", "aws-lc", "vg", "ratio"
+        "ns per operation", "aws-lc", "vg", "speed"
     );
     // --- AEAD at several sizes: in place, separate tag.
     for (name, klen) in [
