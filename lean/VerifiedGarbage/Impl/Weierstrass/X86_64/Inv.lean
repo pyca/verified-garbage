@@ -19,9 +19,8 @@ depends on the numbers but through masks.
 * the end: `f = ±1`, `res = ±a ≡ x⁻¹ 2^(-5 B)`, and `acc = res C / R` for
   `C = 2^(5 B) R³ mod p`.
 
-The model has no left shift and no arithmetic right shift: a word doubles
-by adding it to itself (`x << 5` is five doublings), and the mask of a
-word's sign is `0 - (x >> 63)`. The signed
+The shift by five in the multi-word division uses `shl`. The model has no
+arithmetic right shift, so the mask of a word's sign is `0 - (x >> 63)`. The signed
 products of the matrix and the numbers are unsigned products by `mul`, less
 the number shifted by a word for a negative entry (`lin`), and since `and`
 clears the carry flag, the masked operands of a carry chain are copied out
@@ -90,8 +89,8 @@ def lin (w w' : Reg) (t x y U k K : Nat) : List Instr :=
   maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U ++
   maskOf .r13 w' ++ maskCopy .r13 U y (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U
 
-/-- `r8 *= 32`, by five doublings. -/
-def shl5 : List Instr := List.replicate 5 (.alu .add .r8 (.reg .r8))
+/-- `r8 *= 32`, by a left shift. -/
+def shl5 : List Instr := [.shift .shl .r8 5]
 
 /-- `[d] = (rax >> 59) + 32 r8`: a word of a shift right by 59, from the
 low word in `rax` and the high word in `r8`. -/
