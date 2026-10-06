@@ -12,10 +12,9 @@ hash. `body_ok`: a body encrypts group `e` (`batch_ok`) while it hashes group
 `DInv` and `dbody_ok` are the same for decryption, which hashes each group
 during its own rounds, before its blocks are overwritten. The setup is
 `Stitch`'s, and then the four lanes (`setupZ_ok`); the stores at the end are
-`Stitch`'s. `encTail_ok` and `decTail_ok` are the loops after the setup, for
-any powers whose products add up to `GHASH` (`FinOk`), without the field:
-`StitchZ/Ok.lean` proves `StitchOk` of `StitchZ.enc` and `StitchZ.dec`
-(`stitch_ok`) from them.
+`Stitch`'s. `final_ok` and `dfinal_ok` are the stores after the loops, for
+any powers whose products add up to `GHASH` (`FinOk`), without the field;
+`StitchZ/Loop48.lean` puts the loops of three groups in front of these.
 -/
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
@@ -342,27 +341,6 @@ theorem cmpE_ok {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : State}
   refine ⟨{ hI with a := { hI.a with } }, ?_⟩
   rw [toNat_ofNat_lt (by omega)]; rfl
 
-theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {s : State}
-    (hI : EInv s₀ P 1 s) (hcf : s.cf = some (decide (nb s₀ - 16 * (1 - 1) < 32))) :
-    WP isa (.ite .b (.block []) (.loop body .ae)) s fun s' => ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s' := by
-  have hm := hp.nbm
-  have fin : ∀ e, nb s₀ - 16 * (e - 1) < 32 → ∀ t, EInv s₀ P e t → ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e t :=
-    fun e he t hI => ⟨e, by have := hI.a.le; have := hI.one; omega, hI⟩
-  refine WP.ite (decide (nb s₀ - 16 * (1 - 1) < 32)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil (fin 1 (by simpa using h) s hI)
-  · let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ EInv s₀ P e s
-    have hstep : ∀ m s, I m s → WP isa body s (fun s' =>
-        (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ EInv s₀ P e s') ∨
-        (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
-      rintro m s ⟨e, rfl, he, hI⟩
-      refine WP.mono (body_ok hp hf he hI) fun s' ⟨hI', hcf'⟩ => ?_
-      by_cases hlt : nb s₀ - 16 * e < 32
-      · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
-          fin (e + 1) (by simpa using hlt) s' hI'⟩
-      · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-          nb s₀ - 16 * (e + 1), by have := hI.one; omega, e + 1, rfl, by omega, hI'⟩
-    exact WP.loop (M := isa) I hstep (nb s₀ - 16 * 1) s ⟨1, rfl, by simp at h; omega, hI⟩
-
 /-! ## The last group, and the stores -/
 
 /-- The loads `0 … n − 1` of a group. -/
@@ -476,15 +454,6 @@ theorem final_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf
   · intro r h1 h2 h3 h4
     show s₅.gpr r = _
     rw [g₅, g₄]; exact hI.gpr r h1 h2 h3 h4
-
-/-- The encryption after the setup. -/
-theorem encTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {s : State}
-    (hR : Ready s₀ P s) :
-    WP isa (.seq first (.seq (.block [.alu .cmp .r9 (.imm 32)])
-      (.seq (.ite .b (.block []) (.loop body .ae)) (.block (storeCtr ++ lastG ++ storeY))))) s (EPost s₀) := by
-  refine WP.seq (WP.mono (first_ok hp hR) fun s₂ hI₂ => ?_)
-  refine WP.seq (WP.mono (cmpE_ok hI₂) fun s₃ ⟨hI₃, hcf⟩ => ?_)
-  exact WP.seq (WP.mono (loopE_ok hp hf hI₃ hcf) fun s₄ ⟨e, he, hI₄⟩ => final_ok hp hf he hI₄)
 
 /-! ## Decryption -/
 
@@ -619,27 +588,5 @@ theorem dfinal_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} {e
   · intro r h1 h2 h3 h4
     show s₂.gpr r = _
     rw [g₂, g₁]; exact hI.gpr r h1 h2 h3 h4
-
-/-- The decryption after the setup. -/
-theorem decTail_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P) {s₁ : State}
-    (hR : Ready s₀ P s₁) : WP isa (.seq (.loop dbody .ae) (.block (storeCtr ++ storeY))) s₁ (DPost s₀) := by
-  have hm := hp.nbm
-  have h16 := hp.nb16
-  have hI₁ : DInv s₀ P 0 s₁ :=
-    ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
-      fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩
-  let I : Nat → State → Prop := fun m s => ∃ e, m = nb s₀ - 16 * e ∧ 16 * (e + 1) ≤ nb s₀ ∧ DInv s₀ P e s
-  have hstep : ∀ m s, I m s → WP isa dbody s (fun s' =>
-      (eval .ae s' = some false ∧ ∃ e, nb s₀ = 16 * e ∧ DInv s₀ P e s') ∨
-      (eval .ae s' = some true ∧ ∃ m' < m, I m' s')) := by
-    rintro m s ⟨e, rfl, he, hI⟩
-    refine WP.mono (dbody_ok hp hf he hI) fun s' ⟨hI', hcf'⟩ => ?_
-    by_cases hlt : nb s₀ - 16 * (e + 1) < 16
-    · exact .inl ⟨by simp only [eval, hcf', hlt, decide_true, Option.map_some, Bool.not_true],
-        e + 1, by omega, hI'⟩
-    · exact .inr ⟨by simp only [eval, hcf', hlt, decide_false, Option.map_some, Bool.not_false],
-        nb s₀ - 16 * (e + 1), by omega, e + 1, rfl, by omega, hI'⟩
-  exact WP.seq (WP.mono (WP.loop (M := isa) I hstep (nb s₀) s₁ ⟨0, by simp, by omega, hI₁⟩)
-    fun s₂ ⟨e, he, hI₂⟩ => dfinal_ok hp he hI₂)
 
 end VG.Proof.Gcm.X86_64.StitchZ

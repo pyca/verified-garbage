@@ -57,7 +57,7 @@ theorem spre_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.of
   have hq : (s₃.gpr .r9).toNat = n s - n s % 16 := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * (n s - n s % 16) ≤ n s * 16 := by omega
   have pd : Region.Sub ⟨D s, 16 * (n s - n s % 16)⟩ (dR s) := Region.sub_prefix hqn
-  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 256⟩ (sR s) := Offset.sub_base _ (by decide)
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 1024⟩ (sR s) := Offset.sub_base _ (by decide)
   have hws := hp.w_s
   have ts : (S s + BitVec.ofNat 64 64).toNat = (S s).toNat + 64 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [Nat.reducePow, Nat.reduceMod]; omega
@@ -87,7 +87,7 @@ theorem kR'_disj' : (⟨K s + 240, 16⟩ : Region).Disjoint (kR' s) :=
 /-- The data from block `q` on, apart from the first `q` blocks and from the
 other regions written. -/
 theorem rest_disj {q : Nat} (hq : q ≤ n s) :
-    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 256⟩ : Region)],
+    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 1024⟩ : Region)],
       (⟨dq s q, 16 * (n s - q)⟩ : Region).Disjoint r := by
   have hsub : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := Offset.sub_base _ (by omega)
   intro r hr
@@ -144,9 +144,9 @@ theorem mid_of_post {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n 
   rw [eK, eC, eD] at data
   rw [eC] at ctr
   have y' := y (block_kR' hf₃ (kR'_disj' hp)) (block_kR' hf₃ (kR'_disj hp _ (by simp)).symm) eD data
-  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 64, 256⟩ :=
+  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 64, 1024⟩ :=
     Offset.base_disjoint _ (by decide) (by have := hp.w_s; omega)
-  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 256⟩ : Region)],
+  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 1024⟩ : Region)],
       (kR' s).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

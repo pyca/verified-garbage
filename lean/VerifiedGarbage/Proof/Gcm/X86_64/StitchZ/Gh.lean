@@ -318,10 +318,9 @@ theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat
   · rw [f'.zlane _ (by decide) l hl, hy l hl]
 
 /-- Each lane's product reduced, the four added into `xmm2`. -/
-theorem ghFin {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block} {s : State}
-    (hE : GEnv s₀ lo a X P s) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
+theorem fin_ok (s : State) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
     WP isa (.block fin) s fun s' =>
-      GEnv s₀ lo a X P s' ∧ s'.zlane .xmm2 0 =
+      s'.zlane .xmm2 0 =
         (reduceB (prod (s.zproj 0)) ^^^ reduceB (prod (s.zproj 2))) ^^^
           (reduceB (prod (s.zproj 1)) ^^^ reduceB (prod (s.zproj 3))) ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
@@ -330,10 +329,19 @@ theorem ghFin {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat 
   refine WP.mono (reduceZ_ok s h1) fun s₁ ⟨r₁, f₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (fold1_ok .xmm10 (by decide) s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
-  refine WP.mono (combine10_ok s₂) fun s' ⟨c', y', f'⟩ =>
-    ⟨(hE.zframe f₁ (by decide)).zframe (f₂.comp f') (by decide), ?_, y', f₁.comp (f₂.comp f')⟩
+  refine WP.mono (combine10_ok s₂) fun s' ⟨c', y', f'⟩ => ⟨?_, y', f₁.comp (f₂.comp f')⟩
   rw [c', e₂ 0 (by decide), e₂ 1 (by decide), r₁ 0 (by decide), r₁ 1 (by decide), r₁ 2 (by decide),
     r₁ 3 (by decide)]
+
+theorem ghFin {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block} {s : State}
+    (hE : GEnv s₀ lo a X P s) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
+    WP isa (.block fin) s fun s' =>
+      GEnv s₀ lo a X P s' ∧ s'.zlane .xmm2 0 =
+        (reduceB (prod (s.zproj 0)) ^^^ reduceB (prod (s.zproj 2))) ^^^
+          (reduceB (prod (s.zproj 1)) ^^^ reduceB (prod (s.zproj 3))) ∧
+      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
+      ZFrame [.xmm8, .xmm9, .xmm10, .xmm11, .xmm11, .xmm10, .xmm11, .xmm2] s s' :=
+  WP.mono (fin_ok s h1) fun _ ⟨y0, y1, f⟩ => ⟨hE.zframe f (by decide), y0, y1, f⟩
 
 /-! ## The GHASH work of a group -/
 
@@ -348,7 +356,7 @@ def QG (s₀ : State) (lo : Nat → Nat) (a : Addr) (X : Nat → Block) (P : Nat
 /-- The registers the GHASH work writes. -/
 abbrev gRegs : List XReg := [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2]
 
-theorem gRegs_ok : ∀ r ∈ gRegs, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
+theorem gRegs_ok : ∀ r ∈ gRegs, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
 
 theorem QG.zframe {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
     {yl : Nat → Block} {j : Nat} {s s' : State} {rs : List XReg}

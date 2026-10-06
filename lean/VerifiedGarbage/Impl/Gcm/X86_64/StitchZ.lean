@@ -126,22 +126,120 @@ def body : Prog isa :=
 /-- The last group hashed, at `rdx`. -/
 def lastG : List Instr := (List.range 4).flatMap (fun i => ghLoad (ord i)) ++ fin
 
+/-! ## Forty-eight blocks at a time
+
+From 256 blocks on, the loops do three groups at a time: the GHASH of each
+group is added (not reduced) to the products of the two before, with the
+powers `H'⁴⁸`–`H'³³`, `H'³²`–`H'¹⁷` and `H'¹⁶`–`H'` (at `scratch + 512`,
+`+ 256` and `+ 0`, `pow48` computes the first two from the third), and the
+sum is reduced once, after the third group's round 6 (`gq48`). The loads go
+in pairs (`pair`), whose products are added with one `vpternlogd` each:
+`zmm1` and `zmm13` (which the next round reloads) hold the second load and
+its powers, and `zmm2` a product, so `Y` is added to the first pair of the
+first group, and the reduction constant is reloaded from `scratch + 832`
+before the reduction. When encrypting, the groups hashed are
+the three encrypted in the iteration before (`body48`), so that their
+ciphertext is not read back right after it is written: the two groups after
+the first are encrypted first (`big`), and the two still to be hashed after
+the loop are hashed one at a time (`lastG`), leaving one, as the 16-block
+loop does. -/
+
+/-- The offset in `scratch` of the powers of group `g` of three. -/
+def tab (g : Nat) : Nat := 512 - 256 * g
+
+/-- The products of a pair into `lo` (`zmm8`), `mid` (`zmm9`) and `hi`
+(`zmm10`): `sel` picks the halves, through `zmm11` and `zmm2`; the first
+pair (`first`) writes them, the others add both with one `vpternlogd`. -/
+def prodPair (first : Bool) (d : XReg) (selA selB : BitVec 8) (a pa b pb : XReg) : List Instr :=
+  [.zop (.vpclmulqdq .xmm11 a pa selA), .zop (.vpclmulqdq .xmm2 b pb selB),
+   if first then .zop (.zbin .vpxord d .xmm11 .xmm2) else .zop (.vpternlogd d .xmm11 .xmm2 0x96)]
+
+/-- The lane-wise instructions of a pair: both loads byte-reversed (with `Y`
+added to the first, for the first pair), and the products of `zmm7` with
+`zmm12` and of `zmm1` with `zmm13`. -/
+def pairZ (first : Bool) : List Instr :=
+  [.zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] ++ (if first then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
+  [.zop (.zbin .vpshufb .xmm1 .xmm1 .xmm0)] ++
+  prodPair first .xmm8 0x00 0x00 .xmm7 .xmm12 .xmm1 .xmm13 ++
+  prodPair first .xmm10 0x11 0x11 .xmm7 .xmm12 .xmm1 .xmm13 ++
+  prodPair first .xmm9 0x01 0x10 .xmm7 .xmm12 .xmm7 .xmm12 ++
+  prodPair false .xmm9 0x01 0x10 .xmm1 .xmm13 .xmm1 .xmm13
+
+/-- Loads `ka` and `kb` of group `g` (at `rdx + 256 g`) into `zmm7` and
+`zmm1`, their powers into `zmm12` and `zmm13`, and their products. -/
+def pair (ka kb g : Nat) (first : Bool) : List Instr :=
+  [.vmovdqu32Load .xmm12 (at_ .r11 (tab g + 64 * ka)), .vmovdqu32Load .xmm7 (at_ .rdx (256 * g + 64 * ka)),
+   .vmovdqu32Load .xmm13 (at_ .r11 (tab g + 64 * kb)), .vmovdqu32Load .xmm1 (at_ .rdx (256 * g + 64 * kb))] ++
+  pairZ first
+
+/-- The reduction constant reloaded, and the reduction into `Y`. -/
+def fin48 : List Instr := .vmovdqu32Load .xmm1 (at_ .r11 832) :: fin
+
+/-- The GHASH work after round `j` of group `b` of three. -/
+def gq48 (b j : Nat) : List Instr :=
+  if j = 1 then pair 0 1 b (decide (b = 0)) else if j = 3 then pair 2 3 b false
+  else if b = 2 ∧ j = 6 then fin48 else []
+
+/-- The powers of `zmm7` (four, from `scratch + 64 k`) times `zmm12`, in
+each lane, stored to `scratch + d + 64 k`. -/
+def powLoad (d k : Nat) : List Instr :=
+  .vmovdqu32Load .xmm7 (at_ .r11 (64 * k)) :: (accInit .xmm7 .xmm12 ++ reduceZ ++
+    [.vmovdqu32Store (at_ .r11 (d + 64 * k)) .xmm10])
+
+/-- `H'³²`–`H'¹⁷` and `H'⁴⁸`–`H'³³`: the powers at `scratch` times `H'¹⁶`
+(lane 0 of the first load), then times `H'³²`; and the reduction
+constant, saved. -/
+def pow48 : List Instr :=
+  [.vbroadcasti32x4 .xmm12 (at_ .r11 0)] ++ (List.range 4).flatMap (powLoad 256) ++
+  [.vbroadcasti32x4 .xmm12 (at_ .r11 256)] ++ (List.range 4).flatMap (powLoad 512) ++
+  [.vmovdqu32Store (at_ .r11 832) .xmm1]
+
+/-- Three groups encrypted (at `rdx + 768`) and the three before hashed (at
+`rdx`). -/
+def body48 : Prog isa :=
+  .seq (batch 12 (gq48 0)) (.seq (batch 16 (gq48 1)) (.seq (batch 20 (gq48 2))
+    (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 96)])))
+
+/-- The next group. -/
+def adv : List Instr := [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16)]
+
+/-- At least 256 blocks, the first group encrypted: the powers, the next two
+groups, the loop, and two of the three groups left to hash. -/
+def big : Prog isa :=
+  .seq (.block pow48) (.seq (batch 4 fun _ => []) (.seq (batch 8 fun _ => [])
+    (.seq (.loop body48 .ae) (.block (.vmovdqu32Load .xmm1 (at_ .r11 832) :: (lastG ++ adv ++ lastG ++ adv))))))
+
 /-- `n` (a multiple of 16, at least 16) blocks. -/
 def enc : Prog isa :=
   .seq (.block setup)
     (.seq first
-      (.seq (.block [.alu .cmp .r9 (.imm 32)])
-        (.seq (.ite .b (.block []) (.loop body .ae))
-          (.block (storeCtr ++ lastG ++ storeY)))))
+      (.seq (.block [.alu .cmp .r9 (.imm 256)])
+        (.seq (.ite .b (.block []) big)
+          (.seq (.block [.alu .cmp .r9 (.imm 32)])
+            (.seq (.ite .b (.block []) (.loop body .ae))
+              (.block (storeCtr ++ lastG ++ storeY)))))))
 
 /-- A group hashed and decrypted, at `rdx`. -/
 def dbody : Prog isa :=
   .seq (batch 0 gq) (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])
 
+/-- Three groups hashed and decrypted, at `rdx`. -/
+def dbody48 : Prog isa :=
+  .seq (batch 0 (gq48 0)) (.seq (batch 4 (gq48 1)) (.seq (batch 8 (gq48 2))
+    (.block [.alu .add .rdx (.imm 768), .alu .sub .r9 (.imm 48), .alu .cmp .r9 (.imm 48)])))
+
+/-- At least 256 blocks: the powers, the loop, and the reduction constant
+reloaded. -/
+def bigD : Prog isa :=
+  .seq (.block pow48) (.seq (.loop dbody48 .ae) (.block [.vmovdqu32Load .xmm1 (at_ .r11 832)]))
+
 /-- `n` (a multiple of 16, at least 16) blocks. -/
 def dec : Prog isa :=
   .seq (.block setup)
-    (.seq (.loop dbody .ae)
-      (.block (storeCtr ++ storeY)))
+    (.seq (.block [.alu .cmp .r9 (.imm 256)])
+      (.seq (.ite .b (.block []) bigD)
+        (.seq (.block [.alu .cmp .r9 (.imm 16)])
+          (.seq (.ite .b (.block []) (.loop dbody .ae))
+            (.block (storeCtr ++ storeY))))))
 
 end VG.Impl.Gcm.X86_64.StitchZ

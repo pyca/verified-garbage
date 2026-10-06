@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the field
@@ -11,7 +11,9 @@ The only module of `Proof/Gcm/X86_64/StitchZ/` that computes in the field
   powers in the field), and then the four lanes (`setupZ_ok`): the powers of
   the `k`-th load in lane `l` are `x · Pₖₗ = H¹⁶⁻⁴ᵏ⁻ˡ`.
 * `finZ`: with those powers, the four lanes' products of a group, added and
-  reduced, are `GHASH` over its sixteen blocks (`FinOk`).
+  reduced, are `GHASH` over its sixteen blocks (`FinOk`); `powers48`: the
+  powers `pow48` computes from them are those of 48 blocks, which
+  `Field48.finZ48` turns into `FinOk48`.
 * `stitch_ok`: both loops meet their contracts (`StitchOk`).
 -/
 
@@ -73,6 +75,23 @@ theorem finZ {H : Block} {P : Nat → Nat → Block} (hP : ∀ k < 4, ∀ l < 4,
     FinOk H P := fun X yl hy => by
   rw [ghash16]; exact finZ_mul H X P yl hy hP
 
+/-- The powers of 48 blocks (`T48`), from those of sixteen. -/
+theorem powers48 {H : Block} {P : Nat → Nat → Block}
+    (hP : ∀ k < 4, ∀ l < 4, x * φ (P k l) = φ H ^ (16 - 4 * k - l)) :
+    ∀ g < 3, ∀ k < 4, ∀ l < 4, x * φ (T48 P g k l) = φ H ^ (48 - 16 * g - 4 * k - l) := by
+  intro g hg k hk l hl
+  have h00 : x * φ (P 0 0) = φ H ^ 16 := hP 0 (by decide) 0 (by decide)
+  rcases (by omega : g = 0 ∨ g = 1 ∨ g = 2) with rfl | rfl | rfl
+  · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
+    rw [show 48 - 16 * 0 - 4 * k - l = (16 - 4 * k - l) + (16 + 16) by omega]
+    exact φ_lanemul (hP k hk l hl) (φ_lanemul h00 h00)
+  · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
+    rw [show 48 - 16 * 1 - 4 * k - l = (16 - 4 * k - l) + 16 by omega]
+    exact φ_lanemul (hP k hk l hl) h00
+  · simp only [T48, ↓reduceIte]
+    rw [show 48 - 16 * 2 - 4 * k - l = 16 - 4 * k - l by omega]
+    exact hP k hk l hl
+
 /-! ## Both loops -/
 
 theorem setup_ok {s₀ : State} (hp : SPre s₀) :
@@ -86,11 +105,11 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finZ hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem dec_ok {s₀ : State} (hp : SPre s₀) : WP isa dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finZ hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- Both loops meet their contracts. -/
 theorem stitch_ok : StitchOk Impl.Gcm.X86_64.StitchZ.enc Impl.Gcm.X86_64.StitchZ.dec :=
