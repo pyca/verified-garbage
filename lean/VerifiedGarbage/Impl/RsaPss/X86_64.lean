@@ -41,7 +41,7 @@ never on `ℓ`, which verification computes from the signature:
 
 With `DB` at `scratch + oEm + lo` (`sEb`), `dbLen` bytes (`sDb`), and `H`
 after it: for each counter `c`, `Y` is cleared (`mgfNb` blocks: one for every
-hash function here), `H ‖ I2OSP(c, 4)` written to it and hashed (`ctHash`),
+hash function here), `H ‖ I2OSP(c, 4)` written to it and hashed (`mgfHash`),
 and the first
 `min(hLen, dbLen - c hLen)` bytes of the digest XORed into `DB` at
 `c hLen`.
@@ -240,10 +240,21 @@ def compLoop : Prog isa :=
 /-- The digest of the selected hash value to `scratch + oDig`. -/
 def digestOut : List Instr := scr .rbx oSel ++ scr .rbp oDig ++ H.P.out
 
+/-- The shared hash computation, with its padding step supplied by the caller. -/
+def ctHashWith (padding : Prog isa) : Prog isa :=
+  seqs [ctInit H, padding, .block (lenField H), lenLoop H, compLoop H, .block (digestOut H)]
+
 /-- The digest of the first `ℓ` bytes of `Y` (`sL`), padded in `nbm`
-blocks (`sNb`), to `scratch + oDig`. -/
-def ctHash : Prog isa :=
-  seqs [ctInit H, pad80 H, .block (lenField H), lenLoop H, compLoop H, .block (digestOut H)]
+blocks (`sNb`), to `scratch + oDig`, without revealing `ℓ`. -/
+def ctHash : Prog isa := ctHashWith H (pad80 H)
+
+/-- A fixed-length message needs one padding write, at a public offset. -/
+def fixedPad80 (ℓ : Nat) : Prog isa :=
+  .seq (.block (scr .rcx oY))
+    (.block [.movzx8 .rax (at_ .rcx ℓ), .alu .or .rax (.imm 0x80), .store8 (at_ .rcx ℓ) .rax])
+
+/-- MGF1's message length is fixed by the hash function. -/
+def mgfHash : Prog isa := ctHashWith H (fixedPad80 (H.D + 4))
 
 /-! ## MGF1 -/
 
@@ -263,7 +274,7 @@ def copyH : Prog isa :=
     (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
 
 /-- The counter, big-endian, after `H` in `Y` (in `rcx`); the message's
-length, `hLen + 4`, and its `mgfNb` blocks, for `ctHash`. -/
+length, `hLen + 4`, and its `mgfNb` blocks, for `mgfHash`. -/
 def counter : List Instr :=
   [.mov .rax (.mem (sp sCtr)), .store8 (at_ .rcx (H.D + 3)) .rax, .shift .shr .rax 8,
     .store8 (at_ .rcx (H.D + 2)) .rax, .shift .shr .rax 8, .store8 (at_ .rcx (H.D + 1)) .rax,
@@ -291,7 +302,7 @@ def nextCtr : List Instr :=
 /-- `DB ⊕= MGF1(H, dbLen)`. -/
 def mgfXor : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (sp sCtr) .rax, .store (sp sDone) .rax])
-    (.loop (seqs [clearBlock H, copyH H, .block (counter H), ctHash H, xorOut H, .block (nextCtr H)]) .b)
+    (.loop (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) .b)
 
 /-- `DB`'s first byte ANDed with the mask `0xFF >> z` (`sC`). -/
 def clearTop : List Instr :=
