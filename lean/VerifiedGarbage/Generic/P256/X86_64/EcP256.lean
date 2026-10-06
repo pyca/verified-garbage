@@ -12,7 +12,8 @@ import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 
 A generic file (see `TCB/Emit.lean`) over P-256's group law and
 inversions `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
-multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
+multiplication: the baseline's, and BMI2's and ADX's, with the comb's
+selection by AVX2 (`_adx`).
 -/
 
 namespace VG.Generic.P256.X86_64.EcP256
@@ -39,7 +40,7 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
     verified := hv
     spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Artifact := [
   publicKey false Impl.EcKey.X86_64.publicKeyP256

@@ -16,7 +16,7 @@ def p256 : Cfg where
   fastN := true
 
 /-- P-256, multiplying with BMI2 and ADX. -/
-def p256x : Cfg := { p256 with adx := true }
+def p256x : Cfg := { p256 with adx := true, avx2 := true }
 
 /-- `vg_ecdsa_p256_sign`. -/
 def signP256 : Prog isa := p256.sign

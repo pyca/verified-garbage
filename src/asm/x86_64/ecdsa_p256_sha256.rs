@@ -475,7 +475,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign(out: *mut [u8; 64
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx"]);
+pub(crate) const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["bmi2", "adx", "avx", "avx2"]);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -492,7 +492,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_ADX_FEATURES: crate::cpu::Features = 
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2` and `adx` target features.
+/// * The CPU must support the `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
@@ -2379,7 +2379,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_shani(out: *mut [
 }
 
 /// The CPU features `vg_ecdsa_p256_sha256_sign_shani_adx` requires (`Artifact.features`).
-pub(crate) const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "bmi2", "adx"]);
+pub(crate) const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sha", "ssse3", "bmi2", "adx", "avx", "avx2"]);
 
 /// Deterministic ECDSA signature generation over P-256 with HMAC-SHA-256 (RFC 6979 §3.2; FIPS 186-5 §6.4.1): with the private key `d` (32 bytes, most significant first), signs the SHA-256 hash at `digest` (32 bytes), deriving the per-message secret number `k` from the key and the hash. Returns 1 and writes `r` then `s` (32 bytes each, most significant first) to `*out`; or returns 0 and writes zeros to `*out` if `d` is not in `[1, n-1]`, or if none of the first 8 candidates for `k` is suitable (which does not happen in practice).
 ///
@@ -2396,7 +2396,7 @@ pub(crate) const VG_ECDSA_P256_SHA256_SIGN_SHANI_ADX_FEATURES: crate::cpu::Featu
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `d` or `digest` (distinct Rust objects never do).
 /// * None of `out`, `d`, `digest` and `scratch` may overlap the return address on the stack or the 240 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
+/// * The CPU must support the `sha`, `ssse3`, `bmi2`, `adx`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ecdsa_p256_sha256_sign_shani_adx(out: *mut [u8; 64], d: *const [u8; 32], digest: *const [u8; 32], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(

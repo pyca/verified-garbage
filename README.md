@@ -1014,7 +1014,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ BMI2, ADX</td>
+<td>✅ AVX2, BMI2, ADX</td>
 
 <td>✅</td>
 

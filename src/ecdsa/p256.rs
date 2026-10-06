@@ -1,8 +1,8 @@
 //! ECDSA over P-256: deterministic signatures with HMAC-SHA-256 or
 //! HMAC-SHA-384 (`vg_ecdsa_p256_<hash>_sign`, which calls
 //! `vg_ecdsa_p256_sign`), public keys (`vg_ec_p256_public_key`), and
-//! verification (`vg_ecdsa_p256_verify`), each with BMI2 and ADX where the
-//! CPU has them (`_adx`).
+//! verification (`vg_ecdsa_p256_verify`), each with BMI2 and ADX (and the
+//! comb's selection by AVX2) where the CPU has them (`_adx`).
 
 #![cfg(any(
     target_arch = "x86_64",
