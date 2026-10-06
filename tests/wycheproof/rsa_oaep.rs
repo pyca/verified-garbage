@@ -67,11 +67,14 @@ fn hash(name: &str) -> Hash {
     HASHES.iter().find(|(n, _)| *n == name).expect(name).1
 }
 
-/// Checks every vector of the file `name`; returns the numbers of
-/// decrypted, refused and unsupported vectors.
+/// Checks every vector of the file `name` with a key that
+/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted,
+/// refused and unsupported vectors.
 fn check(name: &str) -> (usize, usize, usize) {
     let (valid, refused, unsupported) = (Count::default(), Count::default(), Count::default());
-    let file: TestFile<Group, Case> = harness::load(name);
+    let mut file: TestFile<Group, Case> = harness::load(name);
+    file.test_groups
+        .retain(|g| harness::rsa_key_tested(&g.params.private_key.modulus.0));
     let keys = |group: &TestGroup<Group, Case>| {
         let k = &group.params.private_key;
         let n = trim(&k.modulus.0);
@@ -124,6 +127,7 @@ fn rsa_oaep_test() {
         .unwrap()
         .into_iter()
         .filter(|n| n.starts_with("rsa_oaep_") && n.ends_with("_test.json"))
+        .filter(|n| harness::rsa_file_tested(n))
         .collect();
     assert!(!names.is_empty());
     let mut unsupported = 0;

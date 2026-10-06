@@ -156,7 +156,8 @@ fn rsa_pss_test() {
 /// their messages with every hash function, with salts of no bytes and of
 /// the hash value's length: the signature verifies with its salt length and
 /// with any, and not with another; and two signatures with random salts
-/// differ.
+/// differ. Every size of key, even where the other RSA tests leave out
+/// those of 3072 and 4096 bits (`harness::rsa_bits_tested`).
 #[test]
 fn rsa_pss_sign_test() {
     require_vectors!();

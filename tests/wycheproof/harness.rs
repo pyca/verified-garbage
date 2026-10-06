@@ -43,6 +43,38 @@ pub fn all_files() -> Option<Vec<String>> {
     Some(names)
 }
 
+/// Set (by CI) when the tests run under an emulator on a host without
+/// AVX512_IFMA. The emulator then runs the private-key operation's IFMA code
+/// for 3072- and 4096-bit keys some thirty times slower than the ADX code,
+/// and the RSA tests take tens of minutes.
+pub const HOST_WITHOUT_IFMA_VAR: &str = "VG_TEST_HOST_WITHOUT_IFMA";
+
+/// Whether to test RSA keys of `bits` bits: every size, but on a CPU with
+/// AVX512_IFMA emulated on a host without it ([`HOST_WITHOUT_IFMA_VAR`]),
+/// where only `rsa_pss::rsa_pss_sign_test` tests the 3072- and 4096-bit keys
+/// (each of the other tests calls the same IFMA code with them). A CPU with
+/// AVX512_IFMA tests them all.
+pub fn rsa_bits_tested(bits: usize) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    let ifma = std::arch::is_x86_feature_detected!("avx512ifma");
+    #[cfg(not(target_arch = "x86_64"))]
+    let ifma = false;
+    !(bits == 3072 || bits == 4096) || !ifma || std::env::var_os(HOST_WITHOUT_IFMA_VAR).is_none()
+}
+
+/// Whether to test the RSA key with the modulus `n` (as [`rsa_bits_tested`]).
+pub fn rsa_key_tested(n: &[u8]) -> bool {
+    let n = &n[n.iter().take_while(|&&b| b == 0).count()..];
+    rsa_bits_tested(n.len() * 8 - n.first().map_or(0, |b| b.leading_zeros() as usize))
+}
+
+/// Whether to test the RSA vector file `name`, whose name gives its keys'
+/// size, if it has one size (`rsa_oaep_3072_…`; as [`rsa_bits_tested`]).
+pub fn rsa_file_tested(name: &str) -> bool {
+    name.split('_')
+        .all(|part| part.parse().map_or(true, rsa_bits_tested))
+}
+
 /// Skip the calling test (by returning early) if the vectors are not available.
 #[macro_export]
 macro_rules! require_vectors {
