@@ -8,8 +8,9 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 # P-521 public keys on x86-64: `Verified`
 
 P-521 is a curve the proof supports (`p521_ok`, and `Law` for its group law,
-and its comb's tables, which the registration file supplies:
-`Proof.P521.law` and `Proof.P521.combOk7`), so `publicKey_ok` gives the
+its comb's tables and `InvSounds` for its inversions, which the registration
+file supplies: `Proof.P521.law`, `Proof.P521.combOk7` and the variant's
+`inv`), so `publicKey_ok` gives the
 contract's postcondition; the callee-saved registers are restored, `rsp` is
 never written, and every store is to `out` or `scratch`, which the return
 address is apart from (`abiPreserved`). Constant time by taint tracking with
@@ -50,9 +51,9 @@ theorem post_of {s s' : State} (h : PkPost p521 s s') : pkX86_64.post s s' := by
 
 theorem pk_x86 (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (s : State) (hs : pkX86_64.pre s) :
+    (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok p521_ok hL (p521_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p521_ok hI) hL (p521_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs publicKeyP521, Taint.clobbers i .rsp = false := by
     have h : publicKeyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -79,7 +80,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P521.curve)
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP521 := by
   obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx]) publicKeyP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.powPSum]
+    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum]
   refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx]) ?_ hc
   exact fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -89,9 +90,10 @@ theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP521 := by
       · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
 theorem pk_verified (hL : Weierstrass.Law Spec.P521.curve)
-    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP521
       (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (pk_x86 hL hT) pk_ct implies
+  Verified.of_correct (pk_x86 hL hT hI) pk_ct implies
 
 end VG.Proof.EcKey.X86_64.P521

@@ -27,18 +27,31 @@ theorem encodedValue_rep {p : Spec.Ed25519.Point} {a : EPoint dZ} (h : Rep p a) 
   simp only [encodedValue, hx, hy]
   rfl
 
-theorem scalarBasePrecomputedEngine_ok {s : State} {base k T : Addr} (hs : Scratch s base) (hp : s.gpr .rsi = k)
+/-- A comb: `[S]B` into slots 0–3 from the scalar's bits at byte 768, keeping what the engine
+needs, in constant time where the scratch and the static are public. -/
+structure CombOk (comb : Prog isa) : Prop where
+  ok : ∀ {s : State} {base T : Addr} {S : Nat}, Scratch s base → S < 2 ^ (16 * 16) →
+    env s.mem base 16 = Spec.Ed25519.d →
+    (∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) → CombTbl s T →
+    TblFar base T →
+    WP isa comb s fun t => Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t
+  ct : ∀ P : State → State → Prop,
+    (∀ s₁ s₂, P s₁ s₂ → VG.X86_64.Taint.AgreeS [combSym] (Taint.ofRegs [.rdi]) s₁ s₂) →
+    RelCT isa P comb fun _ _ => True
+
+theorem scalarBaseEngineOf_ok {comb : Prog isa} (hc : CombOk comb) {s : State} {base k T : Addr}
+    (hs : Scratch s base) (hp : s.gpr .rsi = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (scalarBasePrecomputedEngine fld) s fun t => PowersKeep base 56 7368 s t ∧
+    WP isa (scalarBaseEngineOf fld comb) s fun t => PowersKeep base 56 7368 s t ∧
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
         encodedValue (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32))
           Spec.Ed25519.basePoint) := by
-  rw [scalarBasePrecomputedEngine]
+  rw [scalarBaseEngineOf]
   refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd)
     fun b ⟨kab, _, bd, bbits, hscalar⟩ bsy => ?_)
-  refine WP.seq (WP.mono (combMultiply_ok (fld := fld) (kab.scratch hs) hscalar bd bbits
-    (ht.keep hfar kab bsy) hfar) fun c ⟨cp, kc⟩ => ?_)
+  refine WP.seq (WP.mono (hc.ok (kab.scratch hs) hscalar bd bbits (ht.keep hfar kab bsy) hfar)
+    fun c ⟨cp, kc⟩ => ?_)
   refine WP.mono (pointEncode_ok (kc.scratch (kab.scratch hs))) fun t ⟨kt, tv⟩ => ?_
   refine ⟨(kab.trans kc).trans (PowersKeep.of_rbx kt), ?_⟩
   change val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = encodedValue (point (env c.mem base) 0 1 2 3) at tv
@@ -73,9 +86,9 @@ theorem taintSymFld {P : State → State → Prop} {c : Prog isa} (τ : VG.X86_6
     RelCT isa P c fun _ _ => True :=
   let ⟨_, h⟩ := h; VG.RelCT.taint (A := taintSym [combSym]) τ hp h
 
-theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
+theorem scalarBaseEngineOf_ct {comb : Prog isa} (hcomb : CombOk comb) (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (scalarBasePrecomputedEngine fld) (fun _ _ => True) := by
+      (scalarBaseEngineOf fld comb) (fun _ _ => True) := by
   have hc : RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
       (scalarBasePrepare fld) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi, .rsi]) _ (by fld_taint_decide)
@@ -89,7 +102,7 @@ theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
   have hp := withRuns hc (fun x y h =>
     ⟨scalarBasePrepareT_ok (fld := fld) h.1.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
      scalarBasePrepareT_ok (fld := fld) h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
-  rw [scalarBasePrecomputedEngine]
+  rw [scalarBaseEngineOf]
   refine VG.RelCT.seq hp ?_
   intro x y tx ty x' y' ⟨_, a, b, hab, hx, hy⟩ ex ey
   have hct : RelCT isa (fun u v =>
@@ -103,13 +116,13 @@ theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
           BitVec.ofNat 8 ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt b.mem k 32) / 2 ^ q) % 2)) ∧
         Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt b.mem k 32) < 2 ^ (16 * 16) ∧ CombTbl v T ∧
         TblFar base T))
-      (combMultiply fld) (fun _ _ => True) :=
-    taintSymFld (Taint.ofRegs [.rdi]) (fun _ _ h => ⟨rdi_agree h.1.1.rdi h.2.1.rdi, fun n hn => by
+      comb (fun _ _ => True) :=
+    hcomb.ct _ (fun _ _ h => ⟨rdi_agree h.1.1.rdi h.2.1.rdi, fun n hn => by
       simp only [List.mem_singleton] at hn; subst hn
-      exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm⟩) (by fld_taint_decide)
+      exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm⟩)
   have hm' := withRuns hct (fun u v h =>
-    ⟨combMultiply_ok (fld := fld) h.1.1 h.1.2.2.2.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
-     combMultiply_ok (fld := fld) h.2.1 h.2.2.2.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
+    ⟨hcomb.ok h.1.1 h.1.2.2.2.1 h.1.2.1 h.1.2.2.1 h.1.2.2.2.2.1 h.1.2.2.2.2.2,
+     hcomb.ok h.2.1 h.2.2.2.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2.2.1 h.2.2.2.2.2.2⟩)
   have he : RelCT isa (fun u v => u.gpr .rdi = base ∧ v.gpr .rdi = base)
       (pointEncode fld) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
@@ -123,6 +136,19 @@ theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
   exact (VG.RelCT.seq hm'' he) _ _ _ _ _ _
     ⟨⟨hx.1.1.scratch hab.1.1, hx.1.2.2.1, hx.1.2.2.2.1, hx.1.2.2.2.2, hx.2, hab.1.2.2.2.2.2⟩,
      ⟨hy.1.1.scratch hab.2.1, hy.1.2.2.1, hy.1.2.2.2.1, hy.1.2.2.2.2, hy.2, hab.2.2.2.2.2.2⟩⟩ ex ey
+
+/-- The comb of `combMultiply`. -/
+theorem combOk : CombOk (combMultiply fld) :=
+  ⟨fun hs hS hd hb ht hfar => combMultiply_ok hs hS hd hb ht hfar,
+    fun _ hp => taintSymFld (Taint.ofRegs [.rdi]) hp (by fld_taint_decide)⟩
+
+theorem scalarBasePrecomputedEngine_ok : BaseEngineCorrect (scalarBasePrecomputedEngine fld) :=
+  fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok combOk hs hp hr hd ht hfar
+
+theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
+    RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
+      (scalarBasePrecomputedEngine fld) (fun _ _ => True) :=
+  scalarBaseEngineOf_ct combOk base k T
 
 theorem scalarBase_precomputed_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
     (scalarBase_precomputed fld) :=

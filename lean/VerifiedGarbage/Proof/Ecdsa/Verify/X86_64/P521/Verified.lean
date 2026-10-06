@@ -8,8 +8,9 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 # ECDSA verification over P-521 on x86-64: `Verified`
 
 P-521 is a curve the proof supports (`p521_ok`, and `Law` for its group law,
-and its comb's tables, which the registration file supplies:
-`Proof.P521.law` and `Proof.P521.combOk7`), so `verify_ok` gives the
+its comb's tables and `InvSounds` for its inversions, which the registration
+file supplies: `Proof.P521.law`, `Proof.P521.combOk7` and the variant's
+`inv`), so `verify_ok` gives the
 contract's postcondition; the callee-saved registers are restored, `rsp` is never
 written, and every store is to `scratch`, which the return address is apart
 from (`abiPreserved`). Constant time by taint tracking with the address of
@@ -39,9 +40,9 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p521 s := by
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (s : State) (hs : verifyX86_64.pre s) :
+    (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP521 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok p521_ok hL (p521_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p521_ok hI) hL (p521_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs verifyP521, Taint.clobbers i .rsp = false := by
     have h : verifyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -67,7 +68,7 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P521.curve)
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP521 := by
   obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) verifyP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.powPSum]
+    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum]
   refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   exact fun _ _ _ _ ⟨_, h1, h2, h3, h4, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -78,9 +79,10 @@ theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP52
       · exact h4, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve)
-    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP521
       (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (verify_x86 hL hT) verify_ct implies
+  Verified.of_correct (verify_x86 hL hT hI) verify_ct implies
 
 end VG.Proof.Ecdsa.Verify.X86_64.P521

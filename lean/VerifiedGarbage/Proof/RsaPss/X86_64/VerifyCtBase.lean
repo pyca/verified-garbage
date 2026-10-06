@@ -25,21 +25,24 @@ open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 variable (G : Spec.Mgf1.Hash)
 
 /-- The entry state `s` of a run, and the first's, `a`: both meet the
-precondition, and their public data agree. -/
-def VSib (a s : State) : Prop := (verifyK G).pre a ∧ (verifyK G).pub a s ∧ (verifyK G).pre s
+precondition, and their public data agree. `extra` carries additional entry
+facts through the shared proof, such as a precomputed public-key cache. -/
+def VSib (a s : State) (extra : State → State → Prop := fun _ _ => True) : Prop :=
+  VPre G a ∧ (verifyK G).pub a s ∧ VPre G s ∧ extra a s
 
 /-- A predicate of the state of a run, given its entry state, for every run
 whose entry state agrees with `a`. -/
-def VAt (J : State → State → Prop) (a t : State) : Prop := ∃ s, VSib G a s ∧ J s t
+def VAt (J : State → State → Prop) (a t : State)
+    (extra : State → State → Prop := fun _ _ => True) : Prop := ∃ s, VSib (extra := extra) G a s ∧ J s t
 
 theorem vpub_refl (s : State) : (verifyK G).pub s s :=
   ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
-variable {G}
+variable {G} {extra : State → State → Prop}
 
 namespace VSib
 
-variable {a s : State} (h : VSib G a s)
+variable {a s : State} (h : VSib (extra := extra) G a s)
 include h
 
 theorem gpr {r : Reg} (hr : r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp]) : s.gpr r = a.gpr r :=
@@ -57,8 +60,8 @@ theorem nB : Spec.Rsa.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat =
 theorem eB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat =
     Spec.Rsa.bytesAt a.mem (a.gpr .rdx) (a.gpr .rcx).toNat := h.2.1.2.2.2.2.2.2.2.symm
 
-theorem pa : VPre G a := VPre.of G h.1
-theorem ps : VPre G s := VPre.of G h.2.2
+theorem pa : VPre G a := h.1
+theorem ps : VPre G s := h.2.2.1
 
 theorem fb : fb s = fb a := by
   simp only [VG.Proof.RsaPss.X86_64.fb, h.gpr (r := .rsp) (by decide)]
@@ -122,7 +125,7 @@ def pw (H : Hash) (s : State) (ks : List Nat) : List (Nat × BitVec 64) := ks.ma
 
 namespace VSib
 
-variable {a s : State} (h : VSib G a s)
+variable {a s : State} (h : VSib (extra := extra) G a s)
 include h
 
 theorem n0v : n0v s = n0v a := by simp only [VG.Proof.RsaPss.X86_64.n0v, h.n0]
@@ -169,7 +172,7 @@ structure VS (H : Hash) (s t : State) (ks : List Nat) (rs : List (Reg × BitVec 
 
 variable {H : Hash}
 
-theorem vs_pub {a s t : State} (S : VSib G a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
+theorem vs_pub {a s t : State} (S : VSib (extra := extra) G a s) {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (h : VS H s t ks rs X) :
     Pub (fb a) (stackArg a 3) a.wr (pw H a ks) rs X t := by
   obtain ⟨V, W, R, hw, hx⟩ := h.W
@@ -184,7 +187,7 @@ theorem vs_pub {a s t : State} (S : VSib G a s) {ks : List Nat} {rs : List (Reg 
 /-- A piece the analysis checks from `pT 1 ks rgs`. -/
 theorem vtwo {Φ : State → State → Prop} {c : Prog isa} (ks : List Nat) (rgs : List Reg)
     (rs : State → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s X, VSib G a s ∧ VS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
+    (hΦ : ∀ a t, Φ a t → ∃ s X, VSib (extra := extra) G a s ∧ VS H s t ks (rs a) X) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 1 ks rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
   two_pub 1 ks rgs fb (fun a => stackArg a 3) State.wr (fun a => pw H a ks) rs
@@ -217,7 +220,7 @@ theorem VS.sub {s t : State} {ks ks' : List Nat} {rs : List (Reg × BitVec 64)}
 words `ks` of `vw`, and `ex`, of the anchor. -/
 theorem vtwoX {α : Type} {Φ : α → State → Prop} {c : Prog isa} (π : α → State) (ks : List Nat)
     (ex : α → List (Nat × BitVec 64)) (eks : List Nat) (rgs : List Reg) (rs : α → List (Reg × BitVec 64))
-    (hΦ : ∀ a t, Φ a t → ∃ s, VSib G (π a) s ∧ VS H s t ks (rs a) fun _ W => ∀ p ∈ ex a, W p.1 = p.2)
+    (hΦ : ∀ a t, Φ a t → ∃ s, VSib (extra := extra) G (π a) s ∧ VS H s t ks (rs a) fun _ W => ∀ p ∈ ex a, W p.1 = p.2)
     (he : ∀ a, (ex a).map Prod.fst = eks) (hr : ∀ a, (rs a).map Prod.fst = rgs)
     (hks : ∀ k ∈ ks ++ eks, k < nW) {hc : VG.Taint.Hint X86_64.Taint.T}
     (h : (taint.check (pT 1 (ks ++ eks) rgs) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=

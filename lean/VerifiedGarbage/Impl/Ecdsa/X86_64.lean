@@ -27,7 +27,7 @@ scratch = r8) -> eax`, for a curve whose field elements and scalars are `n`
    `r = x mod n` (a conditional subtraction, as `x < p < 2n`);
 4. `s = k^(n-2) (e + r d) mod n`, in Montgomery form modulo `n`, then left;
    the powers `Z^(p-2)` and `k^(n-2)` are inverses by divsteps
-   (`Impl/Weierstrass/X86_64/Inv.lean`) for a curve of up to six words
+   (`Impl/Weierstrass/X86_64/Inv.lean`) for a curve of up to nine words
    (`k^(n-2)` if `fastN`), their working area past the tables of bits, else
    powers from the tables of the exponents' bits (`pPow`, `nPow`);
 5. the flag: `d` and `k` in `[1, n-1]`, `r ≠ 0` and `s ≠ 0`, as a mask, which
@@ -243,10 +243,10 @@ def winPrep (k : Nat) : Prog isa :=
   .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
-/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to six words
+/-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to nine words
 (`k^(n-2)` only if `fastN`), else by the powers. -/
-def pPow : Prog isa := if c.n ≤ 6 then InvCfg.inv c.invP else pow c.powP
-def nPow : Prog isa := if c.fastN ∧ c.n ≤ 6 then InvCfg.inv c.invN else pow c.powN
+def pPow : Prog isa := if c.n ≤ 9 then InvCfg.inv c.invP else pow c.powP
+def nPow : Prog isa := if c.fastN ∧ c.n ≤ 9 then InvCfg.inv c.invN else pow c.powN
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.rbx, 0), (.rbp, 8), (.r12, 16), (.r13, 24), (.r14, 32), (.r15, 40)]

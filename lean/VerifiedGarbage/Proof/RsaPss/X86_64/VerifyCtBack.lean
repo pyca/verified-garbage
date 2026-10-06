@@ -16,7 +16,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 
-variable {G : Spec.Mgf1.Hash} {H : Hash}
+variable {G : Spec.Mgf1.Hash} {H : Hash} {extra : State → State → Prop}
 
 variable (H) in
 /-- After `mHash`: `rcx` is `Y`. -/
@@ -40,7 +40,7 @@ variable (hH : HashOK H) (K : Callees H) (lk : MgfLink H hH)
 
 include hH in
 theorem cyd_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt lk.G (JM H (X7 H)))) (.seq clearY (copyDigest H)) (Two (VAt lk.G (JC8 H))) := by
+    RelCT isa (Two (VAt (extra := extra) lk.G (JM H (X7 H)))) (.seq clearY (copyDigest H)) (Two (VAt (extra := extra) lk.G (JC8 H))) := by
   obtain ⟨_, hc⟩ := hc.copyDigest
   refine two_post (vtwo (G := lk.G) (H := H) [21, 37] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -53,7 +53,9 @@ theorem cyd_ct (hc : VerifyChecks H.P H.D) :
   have hN := hH.N_le
   refine WP.seq (WP.mono (clearY_ok v.L R) fun u1 ⟨L1, k1, hcx1, R1⟩ => ?_)
   refine WP.mono (copyDigest_ok hH L1 R1 (p := s.gpr .r8) (hw 37 (by decide)) hcx1
-    (fun i hi => ⟨⟨s.gpr .r8, lk.G.len⟩, List.mem_append_left _ (by rw [k1.2.1, hrd, hp.hrd]; simp),
+    (fun i hi => by
+      rw [k1.2.1, hrd]
+      exact hp.hrd.left _ _ ⟨⟨s.gpr .r8, lk.G.len⟩, by simp,
       Offset.contains_base _ (by omega) (by omega)⟩)
     (fun i hi j hj => Outside.ne L1 (by
       have := hp.outside lk.G hp.ddgs hp.dKdg (a := s.gpr .r8 + BitVec.ofNat 64 i)
@@ -64,7 +66,7 @@ theorem cyd_ct (hc : VerifyChecks H.P H.D) :
 
 include hH in
 theorem copyDb_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt G (JC8 H))) (copyDb H) (Two (VAt G (JM H (X7 H)))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JC8 H))) (copyDb H) (Two (VAt (extra := extra) G (JM H (X7 H)))) := by
   obtain ⟨_, hc⟩ := hc.copyDb
   refine two_post (vtwo (G := G) (H := H) [23, 24] [.rcx] (fun a => [(.rcx, off (stackArg a 3) oY)])
     (fun a t ⟨s, S, ⟨v, _⟩, hcx⟩ => ⟨s, _, S, v.sub (by decide) _ (fun p hp => by
@@ -100,7 +102,7 @@ theorem shiftPro_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
     L.st (d := sA) (by decide), L.st (d := sD) (by decide), L.st (d := sJ) (by decide), ofNat_add_lit]
   rfl
 
-theorem shiftPro_ct : RelCT isa (Two (VAt G (JM H (X7 H)))) (.block shiftPro) (Two (VAt G (JS H 0))) := by
+theorem shiftPro_ct : RelCT isa (Two (VAt (extra := extra) G (JM H (X7 H)))) (.block shiftPro) (Two (VAt (extra := extra) G (JS H 0))) := by
   obtain ⟨_, hc⟩ := vFixed.shiftPro
   refine two_post (vtwo (G := G) (H := H) [] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -116,11 +118,11 @@ theorem shiftPro_ct : RelCT isa (Two (VAt G (JM H (X7 H)))) (.block shiftPro) (T
 
 include hH in
 theorem pass_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two fun (p : State × Nat) t => p.2 < 10 ∧ VAt G (JS H p.2) p.1 t)
+    RelCT isa (Two fun (p : State × Nat) t => p.2 < 10 ∧ VAt (extra := extra) G (JS H p.2) p.1 t)
       (.seq (shiftPass H) (.block nextPass)) fun _ _ => True := by
   obtain ⟨_, hs⟩ := hc.shiftPass
   obtain ⟨_, hn⟩ := vFixed.nextPass
-  refine RelCT.seq (two_post (Ψ := fun p t => VAt G (JS H p.2) p.1 t)
+  refine RelCT.seq (two_post (Ψ := fun p t => VAt (extra := extra) G (JS H p.2) p.1 t)
     (vtwoX (G := G) (H := H) Prod.fst [21, 24] (fun p => [(46, BitVec.ofNat 64 (2 ^ p.2))]) [46] [] (fun _ => [])
       (fun p t ⟨_, s, S, v, _⟩ => ⟨s, S, v.sub (by decide) [] (fun _ hp => by cases hp)
         fun _ _ ⟨_, h46, _⟩ q hq => by rw [List.mem_singleton.mp hq]; exact h46⟩)
@@ -141,10 +143,10 @@ theorem pass_ct (hc : VerifyChecks H.P H.D) :
     ⟨s, S, v.next L' k'.2.2 R' hw ⟨hx, h46, h44, x, h45, hxl⟩, k'.2.1.trans hrd, hok⟩
 
 include hH in
-theorem pass_wp {a : State} {j : Nat} {t : State} (hj : j < 10) (h : VAt G (JS H j) a t) :
+theorem pass_wp {a : State} {j : Nat} {t : State} (hj : j < 10) (h : VAt (extra := extra) G (JS H j) a t) :
     WP isa (.seq (shiftPass H) (.block nextPass)) t fun t' =>
-      isa.eval .ne t' = some (decide (j + 1 < 10)) ∧ (j + 1 < 10 → VAt G (JS H (j + 1)) a t') ∧
-      (j + 1 = 10 → VAt G (JM H (X7 H)) a t') := by
+      isa.eval .ne t' = some (decide (j + 1 < 10)) ∧ (j + 1 < 10 → VAt (extra := extra) G (JS H (j + 1)) a t') ∧
+      (j + 1 = 10 → VAt (extra := extra) G (JM H (X7 H)) a t') := by
   obtain ⟨s, S, v, hrd, hok⟩ := h
   obtain ⟨V, W, R, hw, hx, h46, h44, x, h45, hxl⟩ := v.W
   have hk2 := S.ps.k2
@@ -172,15 +174,15 @@ theorem pass_wp {a : State} {j : Nat} {t : State} (hj : j < 10) (h : VAt G (JS H
 
 include hH in
 theorem shift_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt G (JM H (X7 H)))) (shift H) (Two (VAt G (JM H (X7 H)))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JM H (X7 H)))) (shift H) (Two (VAt (extra := extra) G (JM H (X7 H)))) := by
   rw [shift_eq]
-  exact RelCT.seq shiftPro_ct ((two_loop (Φ := fun a j t => VAt G (JS H j) a t) (fun _ => 10) (pass_ct hH hc)
+  exact RelCT.seq shiftPro_ct ((two_loop (Φ := fun a j t => VAt (extra := extra) G (JS H j) a t) (fun _ => 10) (pass_ct hH hc)
     fun a j t hj h => pass_wp hH hj h).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨by decide, h₁⟩, by decide, h₂⟩)
     fun _ _ h => h)
 
 include hH in
 theorem verifyNb_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt G (JM H (X7 H)))) (.block (verifyNb H)) (Two (VAt G (JN H))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JM H (X7 H)))) (.block (verifyNb H)) (Two (VAt (extra := extra) G (JN H))) := by
   obtain ⟨_, hc⟩ := hc.verifyNb
   refine two_post (vtwo (G := G) (H := H) [24] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -199,7 +201,7 @@ theorem verifyNb_ct (hc : VerifyChecks H.P H.D) :
 def hashA (H : Hash) (a : State) : HA := ⟨fb a, stackArg a 3, a.wr, vnb H a⟩
 
 include hH in
-theorem jn_he {a t : State} (h : VAt G (JN H) a t) : HE H 1 (hashA H a) t := by
+theorem jn_he {a t : State} (h : VAt (extra := extra) G (JN H) a t) : HE H 1 (hashA H a) t := by
   obtain ⟨s, S, v, -, hok⟩ := h
   have hB0 := hH.B_pos
   have hBl := hH.B_le
@@ -219,7 +221,7 @@ theorem jn_he {a t : State} (h : VAt G (JN H) a t) : HE H 1 (hashA H a) t := by
 
 include hH K in
 theorem mhash_ct (hc : HashChecks H.P H.D 1) :
-    RelCT isa (Two (VAt G (JN H))) (ctHash H) (Two (VAt G (JT H))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JN H))) (ctHash H) (Two (VAt (extra := extra) G (JT H))) := by
   refine two_post (two_map (hashA H) (fun a t h => jn_he hH h) (ctHash_ct hH K 1 hc (fixedChecks (.inl rfl))))
     fun a t ⟨s, S, h⟩ => ?_
   obtain ⟨v, hrd, hok⟩ := h
@@ -241,7 +243,7 @@ theorem mhash_ct (hc : HashChecks H.P H.D 1) :
 
 include hH in
 theorem cmpH_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt G (JT H))) (cmpH H) (Two (VAt G (JR H))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JT H))) (cmpH H) (Two (VAt (extra := extra) G (JR H))) := by
   obtain ⟨_, hc⟩ := hc.cmpH
   refine two_post (vtwo (G := G) (H := H) [21, 23, 24] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_

@@ -61,6 +61,8 @@ theorem exec_syms {i : Instr} {s s' : State} (h : exec i s = some s') : s'.syms 
     simp only [exec, execAdcx, execAdox] at h; split at h
     · cases h
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h; obtain ⟨_, _, _, _, rfl⟩ := h; rfl
+  | cmov =>
+    obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
   | push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
   | _ => simp only [exec, Option.some.injEq] at h; subst h; rfl
 

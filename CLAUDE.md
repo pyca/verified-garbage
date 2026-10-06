@@ -5,6 +5,8 @@ trustworthy. Read `lean/README.md` first.
 
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
+Docker is not required: the README shows how to stream it straight from the
+registry API with `curl`.
 
 After rebasing a long-running session onto `main`, consider pulling and
 restoring the latest cache again to avoid rebuilding upstream Lean changes.
@@ -200,6 +202,21 @@ should add files, not edit lists that every other PR edits too.
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
+
+## Stacking PRs
+
+PRs are squash-merged, so once the PR below a stacked branch merges, never
+`git rebase origin/main`: it replays the merged PR's commits onto their own
+squash. Restack only the branch's own commits:
+
+```sh
+git fetch origin main +pull/<N>/head:stack-base   # <N>: the merged PR
+git rebase --onto origin/main stack-base          # --update-refs for taller stacks
+```
+
+Keep stacks linear (never merge `main` into them) and their branches in this
+repository, as GitHub's stacked PRs require. When a generated file conflicts,
+take `main`'s side (`git checkout --ours`) and regenerate it after the rebase.
 
 ## Keeping proofs fast
 

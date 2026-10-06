@@ -16,7 +16,7 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 
-variable {G : Spec.Mgf1.Hash} {H : Hash}
+variable {G : Spec.Mgf1.Hash} {H : Hash} {extra : State → State → Prop}
 
 theorem km_ne {k j : Nat} (h : k ∈ KM) (hj : j ∉ KM) : k ≠ j := fun e => hj (e ▸ h)
 
@@ -31,14 +31,14 @@ variable (H) in
 abbrev JT : State → State → Prop := JM H fun _ _ _ => True
 
 /-- `JM` as a public piece's start. -/
-theorem jm_vs {X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop} {a t : State} (h : VAt G (JM H X) a t)
+theorem jm_vs {X : State → (Nat → Byte) → (Nat → BitVec 64) → Prop} {a t : State} (h : VAt (extra := extra) G (JM H X) a t)
     (ks : List Nat) (hks : ∀ k ∈ ks, k ∈ KM := by decide) :
-    ∃ s X', VSib G a s ∧ VS H s t ks [] X' :=
+    ∃ s X', VSib (extra := extra) G a s ∧ VS H s t ks [] X' :=
   let ⟨s, S, h⟩ := h; ⟨s, _, S, h.1.sub hks [] (fun _ hp => by cases hp) fun _ _ x => x⟩
 
 theorem vlo_le (s : State) : vlo s ≤ 1 := by unfold vlo loV; split <;> omega
 
-theorem acc0_ct : RelCT isa (Two (VAt G (JT H))) (.block acc0) (Two (VAt G (JT H))) := by
+theorem acc0_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block acc0) (Two (VAt (extra := extra) G (JT H))) := by
   obtain ⟨_, hc⟩ := vFixed.acc0
   refine two_post (vtwo (G := G) (H := H) [17, 21, 23, 25, 26] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -56,7 +56,7 @@ theorem acc0_ct : RelCT isa (Two (VAt G (JT H))) (.block acc0) (Two (VAt G (JT H
 /-- `MGF1`'s anchor: `DB`'s place and length. -/
 def mgfA (H : Hash) (a : State) : MA := ⟨fb a, stackArg a 3, a.wr, oEm + vlo a, vdb H.D a⟩
 
-theorem jt_me {a t : State} (h : VAt G (JT H) a t) : ME H 1 (mgfA H a) t := by
+theorem jt_me {a t : State} (h : VAt (extra := extra) G (JT H) a t) : ME H 1 (mgfA H a) t := by
   obtain ⟨s, S, v, -, hok⟩ := h
   have hp := S.pa
   have hk1 := hp.k1; have hk2 := hp.k2
@@ -72,7 +72,7 @@ variable (hH : HashOK H) (K : Callees H) (lk : MgfLink H hH)
 
 include hH K in
 theorem mgf_ct (hc : HashChecks H.P H.D 1) :
-    RelCT isa (Two (VAt lk.G (JT H))) (mgfXor H) (Two (VAt lk.G (JT H))) := by
+    RelCT isa (Two (VAt (extra := extra) lk.G (JT H))) (mgfXor H) (Two (VAt (extra := extra) lk.G (JT H))) := by
   have hG := validG hH lk.hash lk.len
   refine two_post (two_map (mgfA H) (fun a t h => jt_me h)
     (mgfXor_ct hH K 1 lk.hash lk.len hG hc (fixedChecks (.inl rfl)))) fun a t ⟨s, S, h⟩ => ?_
@@ -88,7 +88,7 @@ theorem mgf_ct (hc : HashChecks H.P H.D 1) :
       simp only [KM, List.mem_cons, List.not_mem_nil, or_false] at hk; omega)).trans (hw k hk), trivial⟩,
       fun _ hp => by cases hp⟩, rd'.trans hrd, hok⟩
 
-theorem clearTop_ct : RelCT isa (Two (VAt G (JT H))) (.block clearTop) (Two (VAt G (JT H))) := by
+theorem clearTop_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) (.block clearTop) (Two (VAt (extra := extra) G (JT H))) := by
   obtain ⟨_, hc⟩ := vFixed.clearTop
   refine two_post (vtwo (G := G) (H := H) [23] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -106,7 +106,7 @@ def JC6 (s t : State) : Prop :=
     t.gpr .rdx = (if fd then BitVec.allOnes 64 else 0) ∧ t.gpr .rsi = BitVec.ofNat 64 pos ∧
     t.gpr .r11 = BitVec.setWidth 64 val
 
-theorem posScan_ct : RelCT isa (Two (VAt G (JT H))) posScan (Two (VAt G (JC6 H))) := by
+theorem posScan_ct : RelCT isa (Two (VAt (extra := extra) G (JT H))) posScan (Two (VAt (extra := extra) G (JC6 H))) := by
   obtain ⟨_, hc⟩ := vFixed.posScan
   refine two_post (vtwo (G := G) (H := H) [23, 24] [] (fun _ => []) (fun a t h => jm_vs h _)
     (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, h⟩ => ?_
@@ -129,7 +129,7 @@ def X7 (s : State) (_ : Nat → Byte) (W : Nat → BitVec 64) : Prop :=
 
 include hH in
 theorem posCheck_ct (hc : VerifyChecks H.P H.D) :
-    RelCT isa (Two (VAt G (JC6 H))) (posCheck H) (Two (VAt G (JM H (X7 H)))) := by
+    RelCT isa (Two (VAt (extra := extra) G (JC6 H))) (posCheck H) (Two (VAt (extra := extra) G (JM H (X7 H)))) := by
   obtain ⟨_, hc⟩ := hc.posCheck
   refine two_post (vtwo (G := G) (H := H) [24, 35, 36] [] (fun _ => []) (fun a t h => jm_vs (let ⟨s, S, h⟩ := h;
     ⟨s, S, h.1⟩) _) (fun _ => rfl) (by decide) hc) fun a t ⟨s, S, ⟨v, hrd, hok⟩, fd, pos, val, hpos, hdx, hsi, h11⟩ => ?_

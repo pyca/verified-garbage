@@ -39,14 +39,16 @@ theorem sign_mx : (cfgOf P).sign.allInstrs (fun i => !loadsMxcsr i) = true := by
   have hF : P.H.hmacFin.allInstrs (fun i => !loadsMxcsr i) = true := core_hmacFin P.K.cMx P.C.hfinMx
   cases hw : P.R.wide
   · have hR := P.R.reduceMx hw
-    obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
+    obtain ⟨-, -, hQD⟩ := P.sizesA hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
-      Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx, hQ8] at hR ⊢
+      Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreMx] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      simp only [RfcHash.w, h, h', hn] <;> decide +kernel
+    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      first
+      | (exfalso; rw [hq, h] at hQD; omega)
+      | (simp only [hq, h, h']; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
@@ -63,14 +65,16 @@ theorem sign_spSafe : (cfgOf P).sign.all (fun i => !isa.writesSp i) = true := by
   refine Code.all_of_allInstrs ?_
   cases hw : P.R.wide
   · have hR := P.R.reduceSp hw
-    obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
+    obtain ⟨-, -, hQD⟩ := P.sizesA hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,
       Code.allInstrs, cfgOf_wide, cfgOf_len, cfgOf_w, cfgOf_sh, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq,
-      Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp, hQ8] at hR ⊢
+      Bool.false_eq_true, ite_false, Bool.and_true, Bool.true_and, hw, hI, hU, hF, P.R.coreSp] at hR ⊢
     simp only [hR, Bool.true_and]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      simp only [RfcHash.w, h, h', hn] <;> decide +kernel
+    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      first
+      | (exfalso; rw [hq, h] at hQD; omega)
+      | (simp only [hq, h, h']; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac,
       Cfg.coreArgs, Cfg.wipe, Cfg.extra, Cfg.digestPtr, Cfg.keepV, Cfg.candTop, Cfg.coreDigest, Cfg.conv,

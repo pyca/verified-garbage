@@ -54,7 +54,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   refine WP.mono (addPre_ok hs ha hb) fun s₁ ⟨c, hc, e1, x1, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (carry38_ok s₁ (by omega)) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (carry38_ok s₁ (by omega_arith)) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by decide)
   refine WP.mono (store4_ok hs₂ ho) fun s₃ ⟨m3, g3, rd3, wr3⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
@@ -132,9 +132,9 @@ theorem subLow_ok (s : State) (h : (s.gpr .rax).toNat ≤ (s.gpr .r8).toNat) :
   · rw [BitVec.toNat_sub]
     have := (s.gpr .r8).isLt
     rw [show 2 ^ 64 - (s.gpr .rax).toNat + (s.gpr .r8).toNat =
-      (s.gpr .r8).toNat - (s.gpr .rax).toNat + 2 ^ 64 by omega, Nat.add_mod_right,
-      Nat.mod_eq_of_lt (by omega)]
-    omega
+      (s.gpr .r8).toNat - (s.gpr .rax).toNat + 2 ^ 64 by omega_arith, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega_arith)]
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
@@ -159,12 +159,12 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   have hlow : (s₂.gpr .rax).toNat ≤ (s₂.gpr .r8).toNat := by
     rw [x2]
     rcases Nat.lt_or_ge c' 1 with h | h
-    · omega
+    · omega_arith
     · simp only [val4] at e2
       have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt; have := (s₂.gpr .r11).isLt
       have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
       have := (s₁.gpr .r11).isLt
-      omega
+      omega_arith
   rw [WP.block_append_iff]
   refine WP.mono (subLow_ok s₂ hlow) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by decide)
@@ -187,6 +187,6 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     rw [x1] at e2
     rw [x2] at e3
     simp only [VG.Spec.X25519.P]
-    omega
+    omega_arith
 
 end VG.Proof.X25519.X86_64

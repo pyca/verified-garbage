@@ -106,9 +106,9 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p521.combConsts Spec.Ecdsa.Rfc697
 /-- SHA-512, with the implementation `v` of SHA-512's compression function. -/
 def pack (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (v : Compress) :
+    (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
     RfcHash where
-  R := p521 hL hT
+  R := p521 hL hT hI
   I := Spec.Ecdsa.Rfc6979.P521Sha512.inst
   H := Proof.Pbkdf2.Md.X86_64.Sha512.sha512H v
   ok := Proof.Pbkdf2.Md.X86_64.Sha512.sha512OK v
@@ -120,7 +120,7 @@ def pack (hL : Weierstrass.Law Spec.P521.curve)
   hash := rfl
   len := rfl
   tries := rfl
-  hDB := .inr (.inr ⟨rfl, rfl⟩)
+  hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
@@ -129,9 +129,9 @@ def pack (hL : Weierstrass.Law Spec.P521.curve)
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
-    (v : Compress) :
-    Verified X86_64.target (cfgOf (pack hL hT v)).sign
+    (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
+    Verified X86_64.target (cfgOf (pack hL hT hI v)).sign
       (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384) :=
-  X86_64.sign_verified (pack hL hT v) implies
+  X86_64.sign_verified (pack hL hT hI v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512

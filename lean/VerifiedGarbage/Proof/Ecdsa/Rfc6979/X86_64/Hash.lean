@@ -14,7 +14,7 @@ curve's, the hash function's HMAC, its output length, 8 candidates), its
 code (`Hash`), what PBKDF2's proofs know of it (`HashOK`, `CoreOK`,
 `Callees`, so that HMAC's `init`, `update` and `finalize` are verified), and
 the sizes the frame and `scratch` are laid out for: the output and block
-sizes of SHA-256, SHA-384 or SHA-512, no shorter than the curve's scalars
+sizes of SHA-224, SHA-256, SHA-384 or SHA-512, no shorter than the curve's scalars
 (so that one `V` makes a candidate) or, for a `wide` curve, SHA-512's (so
 that two do, and `bits2octets` is the digest after two zero bytes), and
 states and working space no larger than SHA-512's. Each hash function's file
@@ -48,13 +48,14 @@ structure RfcHash where
   len : I.hashLen = H.D
   tries : I.tries = 8
   /-- The sizes the frame and `scratch` hold: the output and block sizes of
-  SHA-256, SHA-384 or SHA-512. -/
-  hDB : (H.D = 32 ∧ H.P.B = 64) ∨ (H.D = 48 ∧ H.P.B = 128) ∨ (H.D = 64 ∧ H.P.B = 128)
+  SHA-256, SHA-384, SHA-512 or SHA-224. -/
+  hDB : (H.D = 32 ∧ H.P.B = 64) ∨ (H.D = 48 ∧ H.P.B = 128) ∨ (H.D = 64 ∧ H.P.B = 128) ∨
+    (H.D = 28 ∧ H.P.B = 64)
   hS : H.S ≤ 192
   hW : 8 * H.W ≤ 1872
   hWb : ok.stream.Wb ≤ 1872
   /-- The hash is no shorter than the scalars, or, for a `wide` curve, SHA-512's. -/
-  hQ : if R.wide then H.D = 64 ∧ H.P.B = 128 else 8 * R.E.n ≤ H.D
+  hQ : if R.wide then H.D = 64 ∧ H.P.B = 128 else R.E.C.len ≤ H.D
   /-- The streaming `update`'s own code writes `rsp` only by its calls' pushes and pops. -/
   updSp : (core H).updC.allInstrs (fun i => !isa.writesSp i) = true
 
@@ -89,7 +90,7 @@ abbrev e : Nat := if P.R.wide then 18 else 0
 
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
-    P.H.stream.S ≤ 192 ∧ P.H.stream.D = P.H.D ∧ 32 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 8 = 0 ∧
+    P.H.stream.S ≤ 192 ∧ P.H.stream.D = P.H.D ∧ 28 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 4 = 0 ∧
     P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 ∧ 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧
     P.Q ≤ 8 * P.w ∧ 8 * P.w < P.Q + 8 ∧ P.e ≤ 18 := by
   have hDL := P.ok.hDL
@@ -103,15 +104,21 @@ theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 18
       show P.R.E.C.len ≤ _; omega
   refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, by omega, ?_, P.R.n4, P.R.n9, hw.1, hQD, hw.2.2, hw.2.1,
     by simp only [e]; split <;> omega⟩ <;>
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
+    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
 
-/-- Unless `wide`, the scalars are `8 w` bytes, at most 6 words, and no longer than the digest. -/
-theorem sizesA (h : P.R.wide = false) : P.Q = 8 * P.w ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
+/-- Unless `wide`, the scalars are `8 w` bytes (or 28 in 4 words), at most 6
+words, and no longer than the digest. -/
+theorem sizesA (h : P.R.wide = false) : (P.Q = 8 * P.w ∨ P.w = 4 ∧ P.Q = 28) ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
   have hQ := P.hQ
   have := P.R.sizesA h
   rw [h] at hQ
   simp only [Bool.false_eq_true, ite_false] at hQ
   rcases this.1 with h' | h' <;> simp only [Q, w] <;> omega
+
+/-- Unless `wide`, the scalars are 32, 48 or 28 bytes. -/
+theorem sizesQ (h : P.R.wide = false) : P.Q = 32 ∨ P.Q = 48 ∨ P.Q = 28 := by
+  have := P.R.sizesA h
+  rcases this.1 with hn | hn <;> simp only [Q] <;> omega
 
 /-- If `wide`, P-521's sizes and SHA-512's. -/
 theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D = 64 ∧ P.H.P.B = 128 := by
@@ -121,9 +128,9 @@ theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D = 64 ∧ P
   simp only [ite_true] at hQ
   exact ⟨this.1, this.2.1, hQ⟩
 
-/-- The digest is at least 32 bytes. -/
-theorem len32 : 32 ≤ P.I.hashLen := by
-  rw [P.len]; rcases P.hDB with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
+/-- The digest is at least 28 bytes. -/
+theorem len28 : 28 ≤ P.I.hashLen := by
+  rw [P.len]; rcases P.hDB with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
 
 /-- The curve's scalars are `Q` bytes. -/
 theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]

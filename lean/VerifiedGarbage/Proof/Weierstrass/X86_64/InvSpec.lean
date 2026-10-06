@@ -29,7 +29,7 @@ def invTbl (n : Nat) : Nat := 8 * (8 * n + 8)
 working space, apart, and the modulus and its temporary area apart from them. -/
 structure InvLay (P : InvCfg) (size : Nat) : Prop where
   n4 : 4 ≤ P.M.n
-  n7 : P.M.n < 7
+  n10 : P.M.n < 10
   acc : P.acc + 8 * P.M.n ≤ size
   base : P.base + 8 * P.M.n ≤ size
   tbl : P.tbl + invTbl P.M.n ≤ size
@@ -52,7 +52,7 @@ def invW (P : InvCfg) : List (Nat × Nat) :=
   [(P.acc, 8 * P.M.n), (P.tbl, invTbl P.M.n), (P.M.tmp, 8 * P.M.n)]
 
 /-- The inversion is the modulus's: batches enough for its divsteps to end
-(`590` for up to 4 words, `885` for up to 6), counts the loop can take, and
+(`590` for up to 4 words, `885` for up to 6, `1328` for up to 9), counts the loop can take, and
 the constants `C = 2^(5 B) R³ mod m` and `Cn = m - C`. -/
 structure InvOk (P : InvCfg) (m : Nat) : Prop where
   B1 : 1 ≤ P.B
@@ -60,12 +60,12 @@ structure InvOk (P : InvCfg) (m : Nat) : Prop where
   C : P.C = 2 ^ (5 * P.B) * (2 ^ (64 * P.M.n)) ^ 3 % m
   Cpos : 0 < P.C
   Cn : P.Cn = m - P.C
-  bound : (P.M.n ≤ 4 ∧ 590 ≤ 59 * P.B) ∨ (P.M.n ≤ 6 ∧ 885 ≤ 59 * P.B)
+  bound : (P.M.n ≤ 4 ∧ 590 ≤ 59 * P.B) ∨ (P.M.n ≤ 6 ∧ 885 ≤ 59 * P.B) ∨ (P.M.n ≤ 9 ∧ 1328 ≤ 59 * P.B)
 
 /-- The inversion modulo `m` leaves `[acc] = [base]^(m - 2)` (in Montgomery form). -/
 def InvSound (m : Nat) [NeZero m] : Prop :=
   ∀ {P : InvCfg} {base : Addr} {size : Nat}, InvLay P size → 2 < m → UnitMod m (2 ^ (64 * P.M.n)) →
-    ∀ {s : State}, Scr s base size → ModOk P.M size m s.mem base → wordsVal s.mem base P.base P.M.n < m →
+    ∀ {s : State}, Scr s base size → ModOkW P.M size m s.mem base → wordsVal s.mem base P.base P.M.n < m →
       InvOk P m → WP isa (InvCfg.inv P) s fun s' =>
         KeepRegs (invClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
         wordsVal s'.mem base P.acc P.M.n < m ∧
@@ -92,8 +92,8 @@ theorem ofMod_Cn (M : Mod) (acc base tbl m : Nat) :
 
 /-- `InvOk` for `InvCfg.ofMod`: its constant nonzero, and its batches for the modulus's words. -/
 theorem InvOk.ofMod {M : Mod} {acc base tbl m : Nat} (hC : 0 < (InvCfg.ofMod M acc base tbl m).C)
-    (hn : M.n ≤ 6) : InvOk (InvCfg.ofMod M acc base tbl m) m := by
+    (hn : M.n ≤ 9) : InvOk (InvCfg.ofMod M acc base tbl m) m := by
   refine ⟨?_, ?_, ofMod_C _ _ _ _ _, hC, ofMod_Cn _ _ _ _ _, ?_⟩ <;>
-    simp only [InvCfg.ofMod] <;> split <;> omega
+    simp only [InvCfg.ofMod] <;> split <;> (try split) <;> omega
 
 end VG.Proof.Weierstrass.X86_64

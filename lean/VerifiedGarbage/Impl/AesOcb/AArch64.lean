@@ -286,17 +286,72 @@ def nextBlock : List Instr := [ptr .x23 .x23 16, ptr .x25 .x25 1, .subImm .x .x2
 
 /-- A pass over the `x24` whole blocks of the data at `x23` (`x24 > 0`),
 with `i` from 1 in `x25`: each block through `body` after its offset. -/
-def pass (body : List Instr) : Prog isa :=
+def passScalar (body : List Instr) : Prog isa :=
   .loop (.seq nextOffset (.block (body ++ nextBlock))) (.nonzero .x .x24)
+
+/-- Cache the three most frequent offset increments for an eight-block batch. -/
+def passCacheInit : Prog isa :=
+  .seq (.block [.ldrq .v0 .x19 l0O])
+    (.seq (.block (dbl .x19 l0O lO ++ [.ldrq .v1 .x19 lO]))
+      (.block (dbl .x19 lO lO ++ [.ldrq .v2 .x19 lO])))
+
+/-- Transfer a cached increment through scalar registers so the following
+scalar loads can forward from stores of the same width. -/
+def cachedIncrement (v : VReg) : List Instr :=
+  [.umov .x .x9 v 0, .umov .x .x10 v 1, st .x19 lO .x9, st .x19 (lO + 8) .x10]
+
+/-- The eighth index is divisible by eight: start from cached L2 and skip
+its two already computed doublings. -/
+def batchLastIncrement : Prog isa :=
+  .seq (.block (cachedIncrement .v2))
+    (.seq (.block [.lsr .x .x14 .x25 2])
+      (.loop (.block (dbl .x19 lO lO ++ [.lsr .x .x14 .x14 1] ++ low1)) (.zero .x .x12)))
+
+/-- Where a pass accumulates the checksum relative to XORing the offset. -/
+inductive CkMode where
+  | none | before | after
+  deriving DecidableEq
+
+/-- v3 retains the offset and v5 the checksum across the whole pass. -/
+def residentBody (mode : CkMode) : List Instr :=
+  [.ldrq .v4 .x23 0] ++
+  (if mode = .before then [.vop (.logic .eor .v5 .v5 .v4)] else []) ++
+  [.vop (.logic .eor .v4 .v4 .v3)] ++
+  (if mode = .after then [.vop (.logic .eor .v5 .v5 .v4)] else []) ++
+  [.strq .v4 .x23 0]
+
+def residentStep (v : VReg) (mode : CkMode) : Prog isa :=
+  .block ([.vop (.logic .eor .v3 .v3 v)] ++ residentBody mode ++ nextBlock)
+
+def residentLast (mode : CkMode) : Prog isa :=
+  .seq batchLastIncrement (.seq (.block [.ldrq .v6 .x19 lO]) (residentStep .v6 mode))
+
+def residentBatch (mode : CkMode) : Prog isa :=
+  .seq (residentStep .v0 mode)
+    (.seq (residentStep .v1 mode)
+      (.seq (residentStep .v0 mode)
+        (.seq (residentStep .v2 mode)
+          (.seq (residentStep .v0 mode)
+            (.seq (residentStep .v1 mode)
+              (.seq (residentStep .v0 mode) (residentLast mode)))))))
+
+def passFast (mode : CkMode) (body : List Instr) : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x24 3])
+    (.ite (.zero .x .x9) (passScalar body)
+      (.seq passCacheInit
+        (.seq (.block [.ldrq .v3 .x19 ofsO, .ldrq .v5 .x19 ckO])
+          (.seq (.loop (.seq (residentBatch mode) (.block [.lsr .x .x9 .x24 3])) (.nonzero .x .x9))
+            (.seq (.block [.strq .v3 .x19 ofsO, .strq .v5 .x19 ckO])
+              (.ite (.zero .x .x24) (.block []) (passScalar body)))))))
 
 /-- The whole blocks: `pre` (the first pass), `f` on all of them, `post` (the
 third pass, the offsets recomputed from `Offset_0`); `x26` their number. -/
-def whole (f : Impl.Aes.AArch64.Blocks) (pre post : List Instr) : Prog isa :=
+def whole (f : Impl.Aes.AArch64.Blocks) (pre post : List Instr) (pm qm : CkMode) : Prog isa :=
   .seq (.block [mov .x23 .x21, mov .x24 .x26, imm .x25 1])
-    (.seq (pass pre)
+    (.seq (passFast pm pre)
       (.seq (callBlocks f [mov .x2 .x21, mov .x3 .x26])
         (.seq (.block (copy16 o0O ofsO ++ [mov .x23 .x21, mov .x24 .x26, imm .x25 1]))
-          (pass post))))
+          (passFast qm post))))
 
 /-! ## The rest of the data and the tag -/
 
@@ -339,7 +394,7 @@ def entry : List Instr :=
 def body (enc : Bool) : Prog isa :=
   .seq (.block [.lsr .x .x26 .x28 4])
     (.seq (.ite (.zero .x .x26) (.block [])
-        (if enc then whole c.enc (addCk ++ xorOfs) xorOfs else whole c.dec xorOfs (xorOfs ++ addCk)))
+        (if enc then whole c.enc (addCk ++ xorOfs) xorOfs .before .none else whole c.dec xorOfs (xorOfs ++ addCk) .none .after))
       (.seq (.block [imm .x10 15, .logic .and .x .x24 .x28 .x10, .sub .x .x9 .x28 .x24,
           .add .x .x23 .x21 .x9])
         (.ite (.zero .x .x24) (.block []) (rest c enc))))
@@ -368,13 +423,33 @@ def cmp : Prog isa :=
         (.nonzero .x .x24))
       (.block [.subImm .x .x13 .x13 1, .lsr .x .x13 .x13 63, st .x19 tagO .x13]))
 
-/-- The data (`len` bytes) masked with `0 − ok`, `ok` at `W + tagO`. -/
+def maskSmall : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x24 4])
+    (.ite (.zero .x .x9)
+      (.block [.ldrb .x9 .x23 0, .logic .and .w .x9 .x9 .x10, .strb .x9 .x23 0,
+        ptr .x23 .x23 1, .subImm .x .x24 .x24 1])
+      (.block [.vop (.dup .d2 .v0 .x10), .ldrq .v1 .x23 0, .vop (.logic .and .v1 .v1 .v0),
+        .strq .v1 .x23 0, ptr .x23 .x23 16, .subImm .x .x24 .x24 16]))
+
+/-- Mask one vector and advance the payload pointer and remaining count. -/
+def maskVector : List Instr :=
+  [.vop (.dup .d2 .v0 .x10), .ldrq .v1 .x23 0, .vop (.logic .and .v1 .v1 .v0),
+    .strq .v1 .x23 0, ptr .x23 .x23 16, .subImm .x .x24 .x24 16]
+
+def maskVectors : Nat → Prog isa
+  | 0 => .block []
+  | k+1 => .seq (.block maskVector) (maskVectors k)
+
+def maskChunk : Prog isa :=
+  .seq (.block [.lsr .x .x9 .x24 6])
+    (.ite (.zero .x .x9) maskSmall (maskVectors 4))
+
+/-- Mask complete vectors, then the remaining bytes, with `0 − ok`. -/
 def mask : Prog isa :=
   .seq (.block [mov .x23 .x21, mov .x24 .x28, ld .x9 .x19 tagO, imm .x10 0,
       .sub .x .x10 .x10 .x9])
     (.ite (.zero .x .x24) (.block [])
-      (.loop (.block [.ldrb .x9 .x23 0, .logic .and .w .x9 .x9 .x10, .strb .x9 .x23 0,
-        ptr .x23 .x23 1, .subImm .x .x24 .x24 1]) (.nonzero .x .x24)))
+      (.loop maskChunk (.nonzero .x .x24)))
 
 def «open» : Prog isa :=
   .seq (front c false t2O) (.seq recv (.seq cmp (.seq mask (.block ([ld .x0 .x19 tagO] ++ restore)))))

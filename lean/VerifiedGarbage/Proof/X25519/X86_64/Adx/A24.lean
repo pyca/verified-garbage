@@ -79,19 +79,19 @@ theorem a24X_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Sl
       k7.1 .r9 (by decide), k6.1 .r9 (by decide), k5.1 .r9 (by decide), k7.1 .r10 (by decide),
       k6.1 .r10 (by decide), k7.1 .r11 (by decide)]
     have := Bool.toNat_le c7
-    omega
+    omega_arith
   have h12 : (s7.gpr .r12).toNat < 121665 := by
     have hA := fe_lt s.mem base a
     simp only [val4] at hv
-    omega
+    omega_arith
   rw [k8.1 .r12 (by decide)] at e9
   have hax : (s9.gpr .rax).toNat = 38 * (s7.gpr .r12).toNat := by
     have := (s9.gpr .rax).isLt
-    omega
+    omega_arith
   have hs9 := ((((hs5.of_keeps k6 (by decide)).of_keeps k7 (by decide)).of_keeps k8
     (by decide)).of_keeps k9 (by decide))
   rw [WP.block_append_iff]
-  refine WP.mono (carry38_ok s9 (by omega)) fun s10 ⟨e10, k10⟩ => ?_
+  refine WP.mono (carry38_ok s9 (by omega_arith)) fun s10 ⟨e10, k10⟩ => ?_
   have hs10 := hs9.of_keeps k10 (by decide)
   refine WP.mono (store4_ok hs10 ho) fun s11 ⟨m11, g11, rd11, wr11⟩ => ?_
   have K : Keeps [.r8, .r9, .r10, .r11, .r12, .rax, .rcx, .rdx, .rbp] s s10 :=

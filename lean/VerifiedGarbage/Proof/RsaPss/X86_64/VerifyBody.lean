@@ -45,8 +45,10 @@ theorem vn0_ok {s t : State} (hp : VPre G s) (L : Lay t (fb s) (stackArg s 3)) {
     have := hf.bytes (R := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩) (vin_apart hp.dKn hp.dns)
       (by dsimp only; have := hp.wN; omega) (i := 0) (by dsimp only; omega)
     simpa using this
-  have hin : InRegions (t.rd ++ t.wr) (s.gpr .rdi) 1 :=
-    ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), by
+  have hin : InRegions (t.rd ++ t.wr) (s.gpr .rdi) 1 := by
+    rw [hrd]
+    apply hp.hrd.left
+    exact ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by simp, by
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩
   refine WP.mono (WP.keep [.rsi, .rax] (Q := fun t' => t'.mem = t.mem ∧
       t'.gpr .rax = BitVec.ofNat 64 (s.mem (s.gpr .rdi)).toNat ∧

@@ -96,13 +96,10 @@ structure Blks (Q D B : Nat) (wide : Bool) : Prop where
 
 theorem blks (P : RfcHash) : Blks P.Q P.H.D P.H.P.B P.R.wide := by
   cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    have hQ : P.Q = 8 * P.w := hQ8
-    rw [hQ]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      rw [show P.w = P.R.E.n from rfl, hn, h, h'] <;>
+  · obtain ⟨-, -, hQD⟩ := P.sizesA hw
+    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [hq, h, h'] <;>
     first
-    | (exfalso; rw [hQ, show P.w = P.R.E.n from rfl, hn, h] at hQD; omega)
+    | (exfalso; rw [hq, h] at hQD; omega)
     | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
         ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
         ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
@@ -336,9 +333,9 @@ theorem rekey_gen_ct {Φ : Lay P.I.hashLen → Mem → State → Prop} {b : Nat}
     WP.mono (msg_ok hL hc hp.1 hp.2.1 b full wd hp.2.2 (D := P.H.D) (Q := P.Q) (by nums) (by nums) (by nums)
       (by nums) (by rw [hk.1])
       (fun hf hw => by
-        have := P.sizesA (hw ▸ hwd hf).symm; exact ⟨by rw [this.1]; omega, by omega⟩)
+        have := P.sizesA (hw ▸ hwd hf).symm; omega)
       (fun hf hw => by
-        have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, by rw [P.len]⟩))
+        have := P.sizesW (hw ▸ hwd hf).symm; exact ⟨by omega, by omega, by rw [P.len], by omega⟩))
       fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact (two_wp (Ψ := fun _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL hq hc _ =>
     WP.mono (hmacK_ok (P := P) hL hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct

@@ -352,7 +352,7 @@ include hH K in
 /-- `ctHash` is constant time. -/
 theorem ctHash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     RelCT isa (Two (HE H n)) (ctHash H) fun _ _ => True := by
-  unfold ctHash seqs seqs seqs seqs seqs
+  unfold ctHash ctHashWith seqs seqs seqs seqs seqs
   exact (ctInit_ct hH K n hfx).seq ((pad80_ct hH n hc).seq ((lenField_ct hH n hc).seq ((lenLoop_ct hH n hc).seq
     ((compLoop_ct hH n hc hfx).seq (digestOut_ct n hc)))))
 

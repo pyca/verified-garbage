@@ -28,13 +28,13 @@ open VG.Proof.Aes.AArch64 (BlocksImpl)
 
 theorem seal_keepsV (v : BlocksImpl) : («seal» (callees v)).allInstrs keepsV = true := by
   simp only [«seal», front, tagOut, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
-    whole, pass, nextOffset, rest, padCk, xorPad, tag, callBlocks, callees, Code.allInstrs, v.encKeepsV,
+    whole, passFast, nextOffset, rest, padCk, xorPad, tag, callBlocks, callees, Code.allInstrs, v.encKeepsV,
     v.decKeepsV, Bool.true_and, Bool.and_true, ↓reduceIte]
   decide +kernel
 
 theorem open_keepsV (v : BlocksImpl) : («open» (callees v)).allInstrs keepsV = true := by
   simp only [«open», front, recv, nonce, Impl.AesOcb.AArch64.hash, hashChunk, hashFill, hashSum, hashRest, padTo, lNtz, body,
-    whole, pass, nextOffset, rest, padCk, xorPad, tag, cmp, mask, callBlocks, callees, Code.allInstrs, v.encKeepsV,
+    whole, passFast, nextOffset, rest, padCk, xorPad, tag, cmp, mask, callBlocks, callees, Code.allInstrs, v.encKeepsV,
     v.decKeepsV, Bool.true_and, Bool.and_true, Bool.false_eq_true, ↓reduceIte]
   decide +kernel
 

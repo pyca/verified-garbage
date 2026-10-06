@@ -201,6 +201,15 @@ def adxStep (τ : T) (d : Reg) (src : Src) : Option T :=
     some { τ with regs := set τ d p, flags := p, bases := kill τ d, lo := .empty }
   else none
 
+/-- `cmovcc d, src`: `d` is a function of its old value, of `src` (read
+whether or not the condition holds, from a public slot or not) and of the
+flag the condition reads; the flags are unchanged. -/
+def cmovStep (τ : T) (d : Reg) (src : Src) : Option T :=
+  if srcOk τ src then
+    let p := pub τ d && (srcPub τ src || loadPub τ 8 src) && τ.flags
+    some { τ with regs := set τ d p, bases := kill τ d, lo := .empty }
+  else none
+
 def step (τ : T) : Instr → Option T
   | .mov d src =>
     if srcOk τ src then
@@ -253,6 +262,7 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   | .mulx hi lo src => if srcOk τ src then some (mulxStep τ hi lo src) else none
   | .adcx d src | .adox d src => adxStep τ d src
+  | .cmov _ d src => cmovStep τ d src
   -- Frames are not analysed.
   | .push _ | .pop .. | .alloc _ | .free _ => none
 
@@ -710,7 +720,7 @@ write two). -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .vpmovmskb _ d _ => some d
+  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
@@ -759,6 +769,28 @@ theorem Agree.withVec {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (x�
 theorem Agree.withMxcsr {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (m₁ m₂ : BitVec 32) :
     Agree τ { s₁ with mxcsr := m₁ } { s₂ with mxcsr := m₂ } :=
   ha.keep ha.rf rfl rfl rfl rfl rfl rfl ha.wf₁.2 ha.wf₂.2 ha.lo
+
+/-- What `cmovcc d, src` computes: the source and the condition, and `d`
+written if the condition holds. -/
+theorem execCmov_some {cc : Cond} {d : Reg} {src : Src} {s s' : State}
+    (h : execCmov cc d src s = some s') :
+    ∃ v c, readSrc s src = some v ∧ eval cc s = some c ∧ s' = if c then s.setReg d v else s := by
+  simp only [execCmov] at h
+  split at h
+  · cases h
+  · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, c, hc, rfl⟩ := h
+    exact ⟨v, c, hv, hc, rfl⟩
+
+theorem cmov_gpr (s : State) (d : Reg) (c : Bool) (v : BitVec 64) (r : Reg) :
+    (if c then s.setReg d v else s).gpr r = if r = d then (if c then v else s.gpr d) else s.gpr r := by
+  cases c <;> by_cases h : r = d <;>
+    simp only [h, State.setReg, Bool.false_eq_true, ↓reduceIte]
+
+theorem cmov_flags (s : State) (d : Reg) (c : Bool) (v : BitVec 64) :
+    (if c then s.setReg d v else s).cf = s.cf ∧ (if c then s.setReg d v else s).zf = s.zf ∧
+      (if c then s.setReg d v else s).sf = s.sf ∧ (if c then s.setReg d v else s).of = s.of := by
+  cases c <;> exact ⟨rfl, rfl, rfl, rfl⟩
 
 theorem exec_nonstore {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : State}
     (h : exec i s = some s') :
@@ -840,6 +872,11 @@ theorem exec_nonstore {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : Stat
     · cases h
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨_, _, _, _, rfl⟩ := h; exact ⟨rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case cmov cc src =>
+    obtain ⟨_, c, -, -, rfl⟩ := execCmov_some h
+    cases c
+    · exact ⟨rfl, rfl, rfl, fun _ _ => rfl⟩
+    · exact ⟨rfl, rfl, rfl, fun r h => setReg_ne h⟩
 
 theorem aluBases_narrow (τ : T) (op : AluOp) (d : Reg) (src : Src) :
     aluBases τ op d src false = kill τ d := by
@@ -987,6 +1024,47 @@ theorem Agree.mulx {τ : T} {hi lo : Reg} {src : Src} {s₁ s₂ s₁' s₂' : S
     · simp only [hp, Bool.false_eq_true, ite_false, RegSet.mem_erase] at hq
       rw [mulx_gpr s₁ _ _ hq.1 hq.2.1, mulx_gpr s₂ _ _ hq.1 hq.2.1]; exact ha.rf.1 q hq.2.2
   · simpa only [mulxStep, setReg_cf, setReg_zf, setReg_sf, setReg_of] using ha.rf.2 hf
+
+theorem Agree.cmov {τ : T} {cc : Cond} {d : Reg} {src : Src} {s₁ s₂ s₁' s₂' : State}
+    (ha : Agree τ s₁ s₂) (hok : srcOk τ src = true) (e₁ : execCmov cc d src s₁ = some s₁')
+    (e₂ : execCmov cc d src s₂ = some s₂') :
+    AgreeRF (set τ d (pub τ d && (srcPub τ src || loadPub τ 8 src) && τ.flags)) τ.flags s₁' s₂' := by
+  obtain ⟨v₁, c₁, hv₁, hc₁, rfl⟩ := execCmov_some e₁
+  obtain ⟨v₂, c₂, hv₂, hc₂, rfl⟩ := execCmov_some e₂
+  refine ⟨fun r hr => ?_, fun hf => ?_⟩
+  · rw [cmov_gpr, cmov_gpr]
+    by_cases hrd : r = d
+    · simp only [hrd, ↓reduceIte] at hr ⊢
+      by_cases hp : (pub τ d && (srcPub τ src || loadPub τ 8 src) && τ.flags) = true
+      · simp only [Bool.and_eq_true] at hp
+        obtain ⟨⟨hd, hsl⟩, hf⟩ := hp
+        have hv : v₁ = v₂ := by
+          rcases Bool.or_eq_true_iff.mp hsl with hsp | hlp
+          · rw [ha.readSrc hsp, hv₂] at hv₁; cases hv₁; rfl
+          · cases src with
+            | mem m =>
+              simp only [X86_64.readSrc, State.load64] at hv₁ hv₂
+              split at hv₁ <;> [skip; cases hv₁]
+              split at hv₂ <;> [skip; cases hv₂]
+              cases hv₁; cases hv₂
+              exact ha.readW (w := 64) hok hlp
+            | _ => simp only [loadPub, Bool.false_eq_true] at hlp
+        have hc : c₁ = c₂ := by
+          obtain ⟨hcf, hzf, -, -⟩ := ha.rf.2 hf
+          have he : eval cc s₁ = eval cc s₂ := by cases cc <;> simp only [eval, hzf, hcf]
+          rw [he, hc₂] at hc₁; cases hc₁; rfl
+        rw [hv, hc, ha.reg hd]
+      · simp only [set, hp, Bool.false_eq_true, ↓reduceIte, RegSet.mem_erase, ne_eq,
+          not_true_eq_false, false_and] at hr
+    · have hr' : r ∈ τ.regs := by
+        unfold set at hr
+        split at hr
+        · exact (RegSet.mem_insert.mp hr).resolve_left hrd
+        · exact (RegSet.mem_erase.mp hr).2
+      simp only [hrd, ↓reduceIte]; exact ha.rf.1 r hr'
+  · obtain ⟨a₁, b₁, c₁', d₁⟩ := cmov_flags s₁ d c₁ v₁
+    obtain ⟨a₂, b₂, c₂', d₂⟩ := cmov_flags s₂ d c₂ v₂
+    rw [a₁, b₁, c₁', d₁, a₂, b₂, c₂', d₂]; exact ha.rf.2 hf
 
 theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
@@ -1440,6 +1518,11 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     · obtain ⟨h1, h2, h3, h4, h5, h6⟩ := hv hp
       simp only [setReg_cf, setReg_zf, setReg_sf, setReg_of, State.setFlags, h1, h2, h3, h4, h5, h6,
         and_self]
+  | cmov cc d src =>
+    simp only [step, cmovStep] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    exact ⟨ha.srcAddrs hok, ha.write rfl e₁ e₂ (ha.cmov hok e₁ e₂) rfl rfl (fun _ h => h) rfl⟩
 
 theorem cond_sound {τ : T} {c : Cond} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
     (hc : τ.flags = true) : eval c s₁ = eval c s₂ := by
@@ -1577,6 +1660,12 @@ def adxStepK (τ : T) (d : Reg) (src : Src) : Option T :=
     some { τ with regs := setK τ d p, flags := p, bases := killK τ d, lo := .empty }
   else none
 
+def cmovStepK (τ : T) (d : Reg) (src : Src) : Option T :=
+  bif srcOkK τ src then
+    let p := pub τ d && (srcPub τ src || loadPubK τ 8 src) && τ.flags
+    some { τ with regs := setK τ d p, bases := killK τ d, lo := .empty }
+  else none
+
 def aluBasesK (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : List (Reg × Nat × Nat) :=
   match op, src with
   | .add, .imm v =>
@@ -1643,6 +1732,7 @@ def stepK (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   | .mulx hi lo src => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none
   | .adcx d src | .adox d src => adxStepK τ d src
+  | .cmov _ d src => cmovStepK τ d src
   | .push _ | .pop .. | .alloc _ | .free _ => none
 
 /-- `l.contains a`, for a known base address. -/
@@ -1710,12 +1800,16 @@ theorem mulxStepK_eq : mulxStepK = mulxStep := by
 theorem adxStepK_eq : adxStepK = adxStep := by
   funext τ d src; simp only [adxStepK, adxStep, srcOkK_eq, setK_eq, killK_eq, Bool.cond_eq_ite]
 
+theorem cmovStepK_eq : cmovStepK = cmovStep := by
+  funext τ d src
+  simp only [cmovStepK, cmovStep, srcOkK_eq, setK_eq, killK_eq, loadPubK_eq, Bool.cond_eq_ite]
+
 theorem stepK_eq : stepK = step := by
   funext τ i
   cases i
   case vmovdquStore l _ _ => cases l <;> simp only [stepK, step, storeStepK_eq]
   all_goals simp only [stepK, step, srcOkK_eq, setK_eq, loadPubK_eq, movBasesK_eq, killK_eq,
-    storeStepK_eq, aluStepK_eq, mulxStepK_eq, adxStepK_eq, Bool.cond_eq_ite]
+    storeStepK_eq, aluStepK_eq, mulxStepK_eq, adxStepK_eq, cmovStepK_eq, Bool.cond_eq_ite]
 
 theorem memB_eq (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : memB a l = l.contains a := by
   simp only [memB, any_eq, beq_eq, regEq_eq, List.contains_eq_any_beq]
@@ -1858,6 +1952,7 @@ def stepKDFn : Instr → Step
   | .mul r => ⟨fun τ => some (mulStep τ r)⟩
   | .mulx hi lo src => ⟨fun τ => bif srcOkK τ src then some (mulxStepK τ hi lo src) else none⟩
   | .adcx d src | .adox d src => ⟨fun τ => adxStepK τ d src⟩
+  | .cmov _ d src => ⟨fun τ => cmovStepK τ d src⟩
   | .push _ | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
 
 /-- Apply the preclassified instruction to the incoming taint. -/

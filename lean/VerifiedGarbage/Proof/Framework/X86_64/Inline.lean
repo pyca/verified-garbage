@@ -272,6 +272,13 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
       obtain ⟨b, hb, c, hc', rfl⟩ := h
       exact ⟨b, readSrc_widen hc hb, c, hc', rfl⟩
+  | cmov cc d src =>
+    simp only [exec, execCmov] at h ⊢
+    split at h
+    · cases h
+    · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h ⊢
+      obtain ⟨b, hb, c, hc', rfl⟩ := h
+      exact ⟨b, readSrc_widen hc hb, c, by cases cc <;> exact hc', by cases c <;> rfl⟩
   | push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :

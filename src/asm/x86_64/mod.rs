@@ -71,6 +71,9 @@ pub(crate) mod ecdh_p521;
 pub(crate) mod ecdsa_p224;
 
 #[rustfmt::skip]
+pub(crate) mod ecdsa_p224_sha224;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
 
 #[rustfmt::skip]

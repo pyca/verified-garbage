@@ -19,7 +19,7 @@ open VG.Proof.Rsa.X86_64 (pubChkContract)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 
-variable {G : Spec.Mgf1.Hash} {H : Hash}
+variable {G : Spec.Mgf1.Hash} {H : Hash} {extra : State → State → Prop}
 
 /-- After the frame's push. -/
 def J0 (s t : State) : Prop := t = allocState frameBytes s
@@ -45,7 +45,7 @@ def J5 (s t : State) : Prop :=
   VS H s t K5 [] (fun _ _ => True) ∧ t.rd = s.rd ∧ Frame (vwrR s) s.mem t.mem ∧ t.gpr .rdx = vrdx s ∧
     H.D + 2 ≤ veml s
 
-theorem pro_ct : RelCT isa (Two (VAt G J0)) (.block (verifyPrologue ++ n0)) (Two (VAt G (J1 H))) := by
+theorem pro_ct : RelCT isa (Two (VAt (extra := extra) G J0)) (.block (verifyPrologue ++ n0)) (Two (VAt (extra := extra) G (J1 H))) := by
   obtain ⟨_, hc⟩ := vFixed.pro
   have ar : ∀ (s : State) {r : Reg}, r ≠ .rsp → (allocState frameBytes s).gpr r = s.gpr r := fun s r hr => by
     rw [allocState_gpr']; exact ifn hr _ _
@@ -72,10 +72,10 @@ theorem pro_ct : RelCT isa (Two (VAt G J0)) (.block (verifyPrologue ++ n0)) (Two
 
 /-- A refusal. -/
 theorem fail_ct {Φ : State → State → Prop}
-    (hΦ : ∀ a t, Φ a t → ∃ s ks X, VSib G a s ∧ VS H s t ks [] X) :
-    RelCT isa (Two Φ) verifyFail (Two (VAt G (JR H))) := by
+    (hΦ : ∀ a t, Φ a t → ∃ s ks X, VSib (extra := extra) G a s ∧ VS H s t ks [] X) :
+    RelCT isa (Two Φ) verifyFail (Two (VAt (extra := extra) G (JR H))) := by
   obtain ⟨_, hc⟩ := vFixed.fail
-  have hv : ∀ a t, Φ a t → ∃ s, VSib G a s ∧ VS H s t [] [] fun _ _ => True := fun a t h => by
+  have hv : ∀ a t, Φ a t → ∃ s, VSib (extra := extra) G a s ∧ VS H s t [] [] fun _ _ => True := fun a t h => by
     obtain ⟨s, ks, X, S, v⟩ := hΦ a t h
     exact ⟨s, S, v.sub (fun _ h => by cases h) [] (fun _ hp => by cases hp) fun _ _ _ => trivial⟩
   refine two_post (vtwo (G := G) (H := H) [] [] (fun _ => []) (fun a t h => let ⟨s, S, v⟩ := hv a t h; ⟨s, _, S, v⟩)
@@ -86,8 +86,8 @@ theorem fail_ct {Φ : State → State → Prop}
   xrun [verifyFail]
 
 theorem emLen_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
-    RelCT isa (Two fun a t => VAt G (J1 H) a t ∧ isa.eval .e t = some false) (.seq (.block smear) (emLen H))
-      (Two (VAt G (J4 H))) := by
+    RelCT isa (Two fun a t => VAt (extra := extra) G (J1 H) a t ∧ isa.eval .e t = some false) (.seq (.block smear) (emLen H))
+      (Two (VAt (extra := extra) G (J4 H))) := by
   obtain ⟨_, hc⟩ := hc.emLen
   refine two_post (vtwo (G := G) (H := H) [17] [.rax] (fun a => [(.rax, BitVec.ofNat 64 (n0v a))])
     (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (by decide) _ (fun p hp => by
@@ -143,13 +143,13 @@ variable (H) in
 def JZ (s t : State) : Prop := VS H s t [] [] (fun _ _ => True) ∧ t.zf = some (decide ((stackArg s 2).setWidth 32 = 0))
 
 theorem anyArgs_ct :
-    RelCT isa (Two fun a t => VAt G (J4 H) a t ∧ isa.eval .b t = some false) anyArgs (Two (VAt G (J5 H))) := by
+    RelCT isa (Two fun a t => VAt (extra := extra) G (J4 H) a t ∧ isa.eval .b t = some false) anyArgs (Two (VAt (extra := extra) G (J5 H))) := by
   obtain ⟨_, h1⟩ := vFixed.any1
   obtain ⟨_, hT⟩ := vFixed.anyT
   obtain ⟨_, hE⟩ := vFixed.anyE
   refine two_post ?_ fun a t ⟨⟨s, S, ⟨v, hrd, hM, _, hcf⟩⟩, hb⟩ => ?_
   · rw [anyArgs_eq]
-    refine RelCT.seq (two_post (Ψ := VAt G (JZ H)) (vtwo (G := G) (H := H) [] [] (fun _ => [])
+    refine RelCT.seq (two_post (Ψ := VAt (extra := extra) G (JZ H)) (vtwo (G := G) (H := H) [] [] (fun _ => [])
       (fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, S, h.1.sub (fun _ h => by cases h) _ (fun _ hp => by cases hp) fun _ _ x => x⟩)
       (fun _ => rfl) (by decide) h1) fun a t ⟨⟨s, S, ⟨v, hrd, hM, _⟩⟩, _⟩ => ?_)
       (two_ite (fun a t₁ t₂ ⟨s₁, S₁, _, z₁⟩ ⟨s₂, S₂, _, z₂⟩ => by
@@ -179,8 +179,8 @@ theorem anyArgs_ct :
   exact hw k (by simp only [K5, K1, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hk ⊢; omega)
 
 theorem salt_ct (hc : VerifyChecks H.P H.D) (hH : HashOK H) :
-    RelCT isa (Two (VAt G (J5 H))) (.block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
-      .alu .sub .rax (.reg .r8)] : List Instr) ++ saltFits H)) (Two (VAt G (J7 H))) := by
+    RelCT isa (Two (VAt (extra := extra) G (J5 H))) (.block (([.mov .rax (.mem (sp sK)), .mov .r8 (.mem (sp sLo)),
+      .alu .sub .rax (.reg .r8)] : List Instr) ++ saltFits H)) (Two (VAt (extra := extra) G (J7 H))) := by
   obtain ⟨_, hc⟩ := hc.salt
   refine two_post (vtwo (G := G) (H := H) [17, 26] [.rdx] (fun a => [(.rdx, vrdx a)])
     (fun a t ⟨s, S, h⟩ => ⟨s, _, S, h.1.sub (by decide) _ (fun p hp => by
@@ -216,8 +216,8 @@ variable {pubN : String} {pubC : Prog isa}
 
 include hv hct hspC hdC K hc in
 theorem main_ct :
-    RelCT isa (Two fun a t => VAt lk.G (J7 H) a t ∧ isa.eval .b t = some false) (verifyMain H pubN pubC)
-      (Two (VAt lk.G (JR H))) := by
+    RelCT isa (Two fun a t => VAt (extra := extra) lk.G (J7 H) a t ∧ isa.eval .b t = some false) (verifyMain H pubN pubC)
+      (Two (VAt (extra := extra) lk.G (JR H))) := by
   unfold verifyMain
   simp only [seqs]
   exact RelCT.assoc (dbPub_ct.seq ((call_ct hv hct hspC hdC).seq (acc0_ct.seq ((mgf_ct hH K lk hc.hash1).seq
@@ -226,28 +226,28 @@ theorem main_ct :
         ((mhash_ct hH K hc.hash1).seq (cmpH_ct hH hc.verify))))))))))))))
 
 
-theorem restore_ct : RelCT isa (Two (VAt G (JR H))) (.block restoreRegs) fun _ _ => True := by
+theorem restore_ct : RelCT isa (Two (VAt (extra := extra) G (JR H))) (.block restoreRegs) fun _ _ => True := by
   obtain ⟨_, hc⟩ := vFixed.restore
   exact vtwo (G := G) (H := H) [] [] (fun _ => []) (fun a t ⟨s, S, v⟩ => ⟨s, _, S, v⟩) (fun _ => rfl) (by decide) hc
 
 include hv hct hspC hdC K hc in
-theorem body_ct : RelCT isa (Two (VAt lk.G J0)) (verifyBody H pubN pubC) fun _ _ => True := by
+theorem body_ct : RelCT isa (Two (VAt (extra := extra) lk.G J0)) (verifyBody H pubN pubC) fun _ _ => True := by
   unfold verifyBody
   simp only [seqs]
   refine pro_ct.seq ((two_ite (fun a t₁ t₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ => by
       rw [show isa.eval .e t₁ = t₁.zf from rfl, show isa.eval .e t₂ = t₂.zf from rfl, h₁.2.2.2.2, h₂.2.2.2.2,
         S₁.n0v, S₂.n0v])
-    (fail_ct (Φ := fun a t => VAt lk.G (J1 H) a t ∧ isa.eval .e t = some true)
+    (fail_ct (Φ := fun a t => VAt (extra := extra) lk.G (J1 H) a t ∧ isa.eval .e t = some true)
       fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, _, S, h.1⟩) (RelCT.assoc ((emLen_ct hc.verify hH).seq
       (two_ite (fun a t₁ t₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ => by
           rw [show isa.eval .b t₁ = t₁.cf from rfl, show isa.eval .b t₂ = t₂.cf from rfl, h₁.2.2.2.2, h₂.2.2.2.2,
             S₁.veml, S₂.veml])
-        (fail_ct (Φ := fun a t => VAt lk.G (J4 H) a t ∧ isa.eval .b t = some true)
+        (fail_ct (Φ := fun a t => VAt (extra := extra) lk.G (J4 H) a t ∧ isa.eval .b t = some true)
           fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, _, S, h.1⟩)
         (anyArgs_ct.seq ((salt_ct hc.verify hH).seq (two_ite (fun a t₁ t₂ ⟨s₁, S₁, h₁⟩ ⟨s₂, S₂, h₂⟩ => by
             rw [show isa.eval .b t₁ = t₁.cf from rfl, show isa.eval .b t₂ = t₂.cf from rfl, h₁.2.2.2.2.1,
               h₂.2.2.2.2.1, S₁.veml, S₂.veml, S₁.vrdx, S₂.vrdx])
-          (fail_ct (Φ := fun a t => VAt lk.G (J7 H) a t ∧ isa.eval .b t = some true)
+          (fail_ct (Φ := fun a t => VAt (extra := extra) lk.G (J7 H) a t ∧ isa.eval .b t = some true)
             fun a t ⟨⟨s, S, h⟩, _⟩ => ⟨s, _, _, S, h.1⟩)
           (main_ct hv hct hspC hdC hH K lk hc)))))))).seq restore_ct)
 
@@ -274,9 +274,9 @@ theorem valloc {body : Prog isa} {P R : State → State → Prop}
 include hv hct hspC hdC K hc in
 /-- `verify` is constant time. -/
 theorem verify_ct : ConstantTime isa (verifyK lk.G).pre (verifyK lk.G).pub (verify H pubN pubC) :=
-  RelCT.constantTime (valloc ((body_ct hv hct hspC hdC hH K lk hc).mono
-    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, vpub_refl lk.G s₁, h₁⟩, e₁⟩,
-      ⟨s₂, ⟨h₁, hpub, h₂⟩, e₂⟩⟩) fun _ _ h => h))
+  RelCT.constantTime (valloc ((body_ct (extra := fun _ _ => True) hv hct hspC hdC hH K lk hc).mono
+    (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨VPre.of lk.G h₁, vpub_refl lk.G s₁, VPre.of lk.G h₁, trivial⟩, e₁⟩,
+      ⟨s₂, ⟨VPre.of lk.G h₁, hpub, VPre.of lk.G h₂, trivial⟩, e₂⟩⟩) fun _ _ h => h))
 
 include hct K hc in
 /-- `verify` meets `Spec.RsaPss.verifyContract`. -/

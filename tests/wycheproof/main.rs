@@ -20,6 +20,7 @@ mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
+mod ecdsa_p224;
 mod ecdsa_p256;
 mod ecdsa_p384;
 mod ecdsa_p521;

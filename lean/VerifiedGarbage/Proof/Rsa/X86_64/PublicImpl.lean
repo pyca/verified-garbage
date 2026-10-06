@@ -17,6 +17,7 @@ structure PublicImpl where
   nosp : NoSp code
   depth : code.depth = 0
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  mxSafe : code.allInstrs (fun i => !loadsMxcsr i) = true
   suffix : String
   features : List String
 

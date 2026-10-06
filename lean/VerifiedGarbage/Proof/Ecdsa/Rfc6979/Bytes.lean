@@ -227,6 +227,22 @@ theorem mod_mathK (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat
     have hlt : X < N := by omega
     rw [Nat.mod_eq_of_lt hlt]
 
+/-- A number below `2N` modulo `N`, as `mod_mathK`, from a subtraction of
+`K` bits. -/
+theorem mod_math2 (X N D K : Nat) (c : Bool) (hsum : D + N = X + 2 ^ K * c.toNat) (hD : D < 2 ^ K)
+    (hX : X < 2 * N) : (if c then X else D) = X % N := by
+  cases c
+  · simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at hsum
+    simp only [Bool.false_eq_true, ite_false]
+    have hge : N ≤ X := by omega
+    have hlt : X - N < N := by omega
+    rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
+    omega
+  · simp only [Bool.toNat_true, Nat.mul_one] at hsum
+    simp only [ite_true]
+    have hlt : X < N := by omega
+    rw [Nat.mod_eq_of_lt hlt]
+
 /-! ## At P-256 -/
 
 theorem nBits_p256 : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by

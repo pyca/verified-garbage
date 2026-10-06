@@ -70,6 +70,8 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
     · cases h
     · simp only [Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
       obtain ⟨_, _, _, _, rfl⟩ := h; rfl
+  | cmov =>
+    obtain ⟨_, c, -, -, rfl⟩ := Taint.execCmov_some h; cases c <;> rfl
   | push | pop | alloc | free => simp only [exec, reduceCtorEq] at h
 
 theorem pushRegs_mxcsr (s : State) (rs : List Reg) : (pushRegs s rs).mxcsr = s.mxcsr := by

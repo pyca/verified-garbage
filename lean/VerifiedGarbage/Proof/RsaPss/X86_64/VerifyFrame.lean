@@ -22,8 +22,8 @@ variable (G : Spec.Mgf1.Hash)
 structure VPre (s : State) : Prop where
   sp1 : verifyStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 48 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, G.len⟩,
-    ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArgAddr s 0, 40⟩]
+  hrd : Covers [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, G.len⟩,
+    ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArgAddr s 0, 40⟩] s.rd
   hwr : s.wr = [⟨stackArg s 3, (stackArg s 4).toNat * 8⟩]
   dns : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
   des : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
@@ -59,7 +59,7 @@ theorem VPre.of {s : State} (h : (verifyK G).pre s) : VPre G s := by
   simp only [verifyK] at h
   obtain ⟨sp1, sp2, hrd, hwr, dns, des, ddgs, dsgs, dsa, dRn, dRe, dRdg, dRsg, dRs, dRa, dKn, dKe, dKdg, dKsg, dKs,
     dKa, wN, wE, wDg, wSg, wS, ⟨k1, k2⟩, L1, L2, hsg, hsl⟩ := h
-  exact ⟨sp1, sp2, hrd, hwr, dns, des, ddgs, dsgs, dsa, dRn, dRe, dRdg, dRsg, dRs, dRa, dKn, dKe, dKdg, dKsg, dKs,
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, hwr, dns, des, ddgs, dsgs, dsa, dRn, dRe, dRdg, dRsg, dRs, dRa, dKn, dKe, dKdg, dKsg, dKs,
     dKa, wN, wE, wDg, wSg, wS, k1, k2, L1, L2, hsg,
     by unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords at hsl; omega⟩
 
@@ -135,7 +135,9 @@ theorem varg_in {s : State} (hp : VPre G s) {u : State} (hrd : u.rd = s.rd) {j :
     (n : Nat := 8) (hn : n ≤ 8 := by decide) :
     InRegions (u.rd ++ u.wr) (off (fb s) (frameBytes + 8 + 8 * j)) n := by
   have := hp.sp2
-  refine ⟨⟨stackArgAddr s 0, 40⟩, List.mem_append_left _ (by rw [hrd, hp.hrd]; simp), ?_⟩
+  rw [hrd]
+  apply hp.hrd.left
+  refine ⟨⟨stackArgAddr s 0, 40⟩, by simp, ?_⟩
   rw [argAddr, show stackArgAddr s j = stackArgAddr s 0 + BitVec.ofNat 64 (8 * j) by
     simp only [stackArgAddr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega]
   exact Offset.contains_base _ (by omega) (by omega)

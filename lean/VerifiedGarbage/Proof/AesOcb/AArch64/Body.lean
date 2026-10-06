@@ -28,8 +28,9 @@ theorem wholeIte_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
     (hcall : ∀ {s s' : State} {K D S : Addr} {R n : Nat}, BPost f s K D S R n s' → ∀ i < n,
       blockAtMem s'.mem (D + BitVec.ofNat 64 (16 * i)) = G (bytesAt s.mem K (16 * (R + 1)))
         (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))))
-    {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block} {ckF1 ckF2 : Nat → Block}
+    {pre post : List Instr} {pm qm : CkMode} {fC1 fC2 : Block → Block → Block → Block} {ckF1 ckF2 : Nat → Block}
     (hB1 : ∀ {W}, BodyOk W pre (fun b o => b ^^^ o) fC1) (hB2 : ∀ {W}, BodyOk W post (fun b o => b ^^^ o) fC2)
+    (hM1 : fC1 = ckOp pm) (hM2 : fC2 = ckOp qm)
     {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {s : State} (E : Env K W D R n SP s)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hD : DBuf K W s D n) {O0 l : Block}
     (hofs : blockAtMem s.mem (W + BitVec.ofNat 64 ofsO) = O0) (ho0 : blockAtMem s.mem (W + BitVec.ofNat 64 o0O) = O0)
@@ -40,7 +41,7 @@ theorem wholeIte_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
     (hckF2 : ∀ i, ckF2 (i + 1) = fC2 (ckF2 i)
       (G (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O0 l (i + 1)))
       (offAt O0 l (i + 1))) :
-    WP isa (.seq (.block [.lsr .x .x26 .x28 4]) (.ite (.zero .x .x26) (.block []) (whole b pre post))) s
+    WP isa (.seq (.block [.lsr .x .x26 .x28 4]) (.ite (.zero .x .x26) (.block []) (whole b pre post pm qm))) s
       (WholePost K W D R n SP (n / 16) O0 l
         (fun k => G (bytesAt s.mem K (16 * (R + 1))) (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * k)) ^^^ offAt O0 l (k + 1)))
         (ckF2 (n / 16)) s) := by
@@ -58,7 +59,7 @@ theorem wholeIte_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State
     exact ⟨E₁, Frame.refl _ _, rfl, rfl, fun k hk => absurd hk (by omega),
       by rw [mem_write, hofs, hm]; rfl, by rw [mem_write, hck, hm, hckF2₀, hm]⟩
   · have hm : n / 16 ≠ 0 := of_decide_eq_false h0
-    refine WP.mono (whole_ok (O0 := O0) (l := l) ok nf hcall hB1 hB2 L E₁ hR (hD.of_eq rfl rfl)
+    refine WP.mono (whole_ok (O0 := O0) (l := l) ok nf hcall hB1 hB2 hM1 hM2 L E₁ hR (hD.of_eq rfl rfl)
       (Nat.mul_div_le n 16) (by omega) (by omega) x26₁ hofs ho0 hck hl0 hckF1 hckF2₀ hckF2) fun t P => ?_
     exact ⟨P.env, P.frame, P.rd, P.wr, P.blk, P.ofs, P.ck⟩
 
@@ -266,7 +267,7 @@ theorem bodySeal_ok (v : BlocksImpl) {K W D : Addr} {R n : Nat} {SP : Addr} (L :
   refine WP.assoc (WP.seq (WP.mono (wholeIte_ok (O0 := O0) (l := ctxLstar s.mem K)
     (ckF1 := ckOf fun i => blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)))
     (ckF2 := fun _ => ckOf (fun i => blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-    v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok L E hR hD hofs ho0 hck hl0
+    v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E hR hD hofs ho0 hck hl0
     (fun _ => rfl) rfl (fun _ => rfl)) fun t Pw => ?_))
   have fW : Frame (mutR W D (16 * (n / 16))) s.mem t.mem := wholeR_mut Pw.frame
   refine WP.mono (restIte_ok v true L Pw.env hR (hD.of_eq Pw.rd Pw.wr)) fun t' Pt => ?_
@@ -338,7 +339,7 @@ theorem bodyOpen_ok (v : BlocksImpl) {K W D : Addr} {R n : Nat} {SP : Addr} (L :
     (ckF2 := ckOf fun i => decG (bytesAt s.mem K (16 * (R + 1)))
       (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O0 (ctxLstar s.mem K) (i + 1)) ^^^
         offAt O0 (ctxLstar s.mem K) (i + 1))
-    v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok L E hR hD hofs ho0 hck hl0
+    v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E hR hD hofs ho0 hck hl0
     (fun _ => rfl) rfl (fun _ => rfl)) fun t Pw => ?_))
   have fW : Frame (mutR W D (16 * (n / 16))) s.mem t.mem := wholeR_mut Pw.frame
   refine WP.mono (restIte_ok v false L Pw.env hR (hD.of_eq Pw.rd Pw.wr)) fun t' Pt => ?_
