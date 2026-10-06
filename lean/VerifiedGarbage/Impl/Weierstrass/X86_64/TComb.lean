@@ -15,9 +15,12 @@ bits of `k` and the digits `d_j = k_j - H ∈ [-H, H)`,
 `k = c + Σ d_j 2^(wj)` for `c = H Σ_{j<J} 2^(wj)`: the accumulator `A`
 starts at `[c]G` (a constant), and iteration `j` adds the entry of table `j`
 for `|d_j|` (or the point at infinity for `d_j = 0`), negated if `d_j < 0`,
-by the complete addition for `a = -3` (`rcb3`, with `b` in `S.b3`), for
-`j = J - 1` down to `0`: `J` additions, and no doublings. This is the comb of `Impl/Weierstrass/AArch64/TComb.lean`, with
-the same tables.
+for `j = J - 1` down to `0`: `J` additions, and no doublings. This is the comb
+of `Impl/Weierstrass/AArch64/TComb.lean`, with the same tables. An entry's `Z`
+is 1, so the addition is the mixed one for `a = -3` (`rcb3m`, with `b` in
+`S.b3`), into `D`; it is wrong for the point at infinity, so `A` takes `D`
+under the mask of a nonzero digit (`eqMask 0`, from the digit computed
+again).
 
 The digits are secret, so their entries are selected in constant time: every
 entry of the table is loaded, 16 bytes at a time, at an address that depends
@@ -159,8 +162,8 @@ negated for a negative digit, added to `A`. -/
 def step : Prog isa :=
   .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ K.select)) <|
   .seq (.block K.negY) <|
-  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
-  .block (copyPt K.M.n K.A K.D ++ [.alu .test .rbx (.reg .rbx)])
+  .seq (fprogB K.M (rcb3m K.S K.A K.E K.D)) <|
+  .block (K.digit ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ [.alu .test .rbx (.reg .rbx)])
 
 /-- The words of the table of bits the comb clears, past the scalar's
 `kbytes`, up to `w J`. -/
