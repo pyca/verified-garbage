@@ -81,7 +81,7 @@ theorem YKeep.mono {rs rs' : List Reg} {xs xs' : XReg → Prop} {s t : State} (h
 under the mask `ymm15` in accumulator `c`. -/
 theorem selStepY_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc : c < 11)
     (hr : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 d) 32) :
-    WP isa (.block [.vmovdquLoad .l256 .xmm11 (tblAt d), .vop (.vbin .vpand .l256 .xmm11 .xmm11 .xmm15),
+    WP isa (.block [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt d),
         .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)]) s fun t =>
       (∀ l < 2, t.lane (selAcc c) l = s.lane (selAcc c) l |||
         (s.mem.readW (X + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * l)) 128 &&& s.lane .xmm15 l)) ∧
@@ -91,9 +91,16 @@ theorem selStepY_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_tblAt, hx, State.load256, hr,
     ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun l hl => ?_, ⟨fun _ _ => rfl, rfl, rfl, rfl, fun r hr l => ?_⟩⟩
-  · simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, h11,
-      show XReg.xmm15 ≠ XReg.xmm11 from by decide, VBinOp.sse, XBinOp.eval]
-    rw [lane_load256 _ _ hl]
+  · simp only [lane_vbin256, State.lane_setV256, ↓reduceIte, h11, VBinOp.sse, XBinOp.eval]
+    rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
+    · simp only [↓reduceIte]
+      rw [show (s.mem.readW (X + BitVec.ofNat 64 d) 256).extractLsb' 0 128 =
+        s.mem.readW (X + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * 0)) 128 from lane_load256 _ _ (l := 0) hl,
+        BitVec.and_comm]
+    · simp only [Nat.one_ne_zero, ↓reduceIte]
+      rw [show (s.mem.readW (X + BitVec.ofNat 64 d) 256).extractLsb' 128 128 =
+        s.mem.readW (X + BitVec.ofNat 64 d + BitVec.ofNat 64 (16 * 1)) 128 from lane_load256 _ _ (l := 1) hl,
+        BitVec.and_comm]
   · simp only [not_or] at hr
     simp only [lane_vbin256, State.lane_setV256, hr.1, hr.2, ↓reduceIte]
 
@@ -104,7 +111,7 @@ theorem selStepsY_ok {np st m : Nat} (hn : np ≤ 11) {X : Addr} :
     ∀ k ≤ np, ∀ (s : State), s.gpr .rdx = X →
     (∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + 32 * c)) 32) →
     WP isa (.block ((List.range k).flatMap fun c =>
-        [.vmovdquLoad .l256 .xmm11 (tblAt (st * (m - 1) + 32 * c)), .vop (.vbin .vpand .l256 .xmm11 .xmm11 .xmm15),
+        [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 32 * c)),
           .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)])) s fun t =>
       (∀ c < 11, ∀ l < 2, t.lane (selAcc c) l = if c < k then s.lane (selAcc c) l |||
           (s.mem.readW (X + BitVec.ofNat 64 (st * (m - 1) + 16 * (2 * c + l))) 128 &&& s.lane .xmm15 l)

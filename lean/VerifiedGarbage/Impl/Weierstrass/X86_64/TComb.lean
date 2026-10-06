@@ -130,7 +130,7 @@ in the 256-bit accumulators under the mask, through `ymm11`. -/
 def selEntryY (st np m : Nat) : List Instr :=
   [.vop (.vbin .vpcmpeqd .l256 .xmm15 .xmm14 .xmm13), .vop (.vbin .vpaddd .l256 .xmm14 .xmm14 .xmm12)] ++
   (List.range np).flatMap fun c =>
-    [.vmovdquLoad .l256 .xmm11 (tblAt (st * (m - 1) + 32 * c)), .vop (.vbin .vpand .l256 .xmm11 .xmm11 .xmm15),
+    [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 32 * c)),
       .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)]
 
 /-- `selPassAt` with AVX2, for entries of `np` 32-byte pieces: the magnitude
