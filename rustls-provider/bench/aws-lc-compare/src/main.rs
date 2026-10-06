@@ -229,12 +229,12 @@ fn main() {
             pk.public_op(&sig, &mut out).unwrap();
         });
         row(
-            &format!("  vg RSA-{bits} PublicKey::new (precompute, unused by PSS)"),
+            &format!("  vg RSA-{bits} PublicKey::new (precomputes for verify)"),
             a,
             v1,
         );
         row(
-            &format!("  vg RSA-{bits} rsa_pss::verify (no precompute)"),
+            &format!("  vg RSA-{bits} rsa_pss::verify (precomputed)"),
             a,
             v2,
         );
