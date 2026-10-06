@@ -19,8 +19,8 @@ for a curve of `n` 64-bit words, from the code of ECDSA's signature
 4. the peer's point, or `G` if the flag is clear (so the scalar
    multiplication always runs on a point of the curve), to the slots it takes
    its point from;
-5. `[d]P` by signed 4-bit windows for up to six words (`WinCfg.window`, its
-   table of `[1 … 8]P` past the inversion's working area, with `b R mod p`
+5. `[d]P` by signed 4-bit windows for up to nine words (`WinCfg.window`, its
+   table of `[1 … 8]P` past the tables of bits, with `b R mod p`
    for the complete addition for `a = -3`), else by the signature's ladder,
    and `Z^(p-2)` by its inversion (or power);
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
@@ -131,9 +131,9 @@ def validate : Prog isa :=
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to six words, else by the ladder. -/
+up to nine words, else by the ladder. -/
 def mulQ : Prog isa :=
-  if c.n ≤ 6 then .seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)) else ladder (ladderQ c)
+  if c.n ≤ 9 then .seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)) else ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/

@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
+import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 
 /-!
 # ECDH over P-521 on x86-64: `Verified`
@@ -38,17 +39,27 @@ theorem post_of {s s' : State} (h : EPost p521 s s') : ecdhX86_64.post s s' := b
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p521.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+/-! The facts about every instruction, each its own declaration: the code is
+large enough that the three in one would leave `ecdh_x86` little of its
+budget. -/
+
+theorem ecdh_rsp : exchangeP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+
+theorem ecdh_noCalls : exchangeP521.noCalls = true := by lit_decide
+
+theorem ecdh_mxcsr : exchangeP521.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521_ok hI) hL (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
-    have h : exchangeP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+    have h := ecdh_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he ecdh_noCalls).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec ecdh_mxcsr he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -66,7 +77,9 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64
       · exact hrs) (by decide)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 := by
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521 h).isSome = true := by
+    taint_decide_sum [Proof.P521.X86_64.winBuildSum, Proof.P521.X86_64.winLoopSum]
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

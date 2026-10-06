@@ -105,13 +105,14 @@ bytes each, and a word of zeros past them that the comb's last digit may
 read. -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 
-/-- The window method's slots, past the inversion's working area (for up to
-six words): `k + offset J` (`n + 1` words, two slots), the table of its bits
-(`64 (n + 1)` bytes, ten slots) and the table of points `[1 … 8]P` (24
-slots). -/
-def WK : Nat := 80
-def WB : Nat := 82
-def WT : Nat := 92
+/-- The window method's slots, past the tables of bits (over the inversion's
+working area, which each inversion initializes): `k + offset J`
+(`n + 1` words, two slots), the table of its bits (`64 (n + 1)` bytes, ten
+slots) and the table of points `[1 … 8]P` (24 slots), below `8192` bytes
+for up to nine words. -/
+def WK : Nat := 71
+def WB : Nat := 73
+def WT : Nat := 83
 
 /-- A fixed-base comb for `G`: its digits' width `w`, its tables
 (`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and

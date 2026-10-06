@@ -194,6 +194,10 @@ theorem φ_reduce (p : Prod) : φ (reduce p) = p.val := by
   simp only [reduce, φ_xor, φ_fold, φ_shr64, φ_shl64, Prod.val, φ_q p.mid]
   ring
 
+theorem φ_reduceB (p : Prod) : φ (reduceB p) = p.val := by
+  simp only [reduceB, φ_xor, φ_fold, Prod.val]
+  ring
+
 /-! ## `H · x⁻¹` -/
 
 theorem shl1 (h : BitVec 128) :

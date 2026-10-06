@@ -408,14 +408,18 @@ mod tests {
     }
 
     /// Bulk vector stores handle unaligned slices, preserve their surrounding
-    /// bytes, and agree with scalar code at the four-block/tail boundary.
+    /// bytes, and agree with scalar code at the four-block/tail boundary and
+    /// around the last pass of sixteen blocks (513 to 1023 bytes).
     #[test]
     fn bulk_boundaries() {
-        for len in [191, 192, 193, 255, 256, 257, 319, 320, 321, 511, 512, 513] {
+        for len in [
+            191, 192, 193, 255, 256, 257, 319, 320, 321, 511, 512, 513, 575, 576, 577, 767, 768,
+            769, 1023, 1024,
+        ] {
             for offset in [0, 1, 7, 15] {
                 for counter in [7, u32::MAX - (len as u32).div_ceil(64) + 1] {
                     let n = nonce(counter, &[6; 12]);
-                    let msg: [u8; 544] = core::array::from_fn(|i| (i * 29) as u8);
+                    let msg: [u8; 1040] = core::array::from_fn(|i| (i * 29) as u8);
                     let mut expected = msg;
                     let mut scalar = ChaCha20::new(&key(), &n);
                     scalar.backend = Backend::Scalar;

@@ -28,9 +28,10 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
   subtraction (`csub`) or addition of `m`.
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
-  reduced below `m`: the difference with `m` is computed into the
-  temporary area `[M.tmp]`, and then selected with a mask if it did not
-  borrow.
+  reduced below `m`: the difference with `m` is computed, and taken if it
+  did not borrow. For at most four words it is computed in `rax`, `rcx`,
+  `rdx` and `rbp` and taken by `cmovae` (`csubC`); for more, into the
+  temporary area `[M.tmp]`, and selected with a mask (`csubM`).
 
 For `n ≤ 6` the accumulator is in registers (`mulR`, `addR`, `subR`). For
 more words (P-521's 9) it does not fit, and `mulW`, `addW` and `subW` keep
@@ -200,11 +201,36 @@ def selects : List Reg → Nat → List Instr
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: the
 difference with `m` is computed into `[tmp]`; `rax` is all ones if it did not
 borrow, and selects it. -/
-def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+def csubM (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   diffs .sub ts M.mo M.tmp ++
   [.mov .rax (.reg top), .alu .sbb .rax (.imm 0), .alu .sbb .rax (.reg .rax),
     .alu .xor .rax (.imm (-1))] ++
   selects ts M.tmp
+
+/-- The registers `csubC` computes the difference in. -/
+def cregs : List Reg := [.rax, .rcx, .rdx, .rbp]
+
+/-- `ds = ts - [mo]`, word by word, with `op` (`sub`, then `sbb`) on the
+first word: its borrow is in CF. -/
+def diffsC (op : AluOp) : List Reg → List Reg → Nat → List Instr
+  | t :: ts, d :: ds, mo => [.mov d (.reg t), .alu op d (.mem (sc mo))] ++ diffsC .sbb ts ds (mo + 8)
+  | _, _, _ => []
+
+/-- `ts = ds` if CF is clear (`cmovae`). -/
+def cmovs : List Reg → List Reg → List Instr
+  | t :: ts, d :: ds => .cmov .ae t (.reg d) :: cmovs ts ds
+  | _, _ => []
+
+/-- `csubM` in registers, for at most four words: the difference with `m` in
+`cregs`, the top word's borrow, and the difference moved to `ts` if it did not
+borrow. -/
+def csubC (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  diffsC .sub ts cregs M.mo ++ [.alu .sbb top (.imm 0)] ++ cmovs ts cregs
+
+/-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: by `csubC`
+for at most four words, else by `csubM`. -/
+def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  if ts.length ≤ 4 then csubC M ts top else csubM M ts top
 
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr
