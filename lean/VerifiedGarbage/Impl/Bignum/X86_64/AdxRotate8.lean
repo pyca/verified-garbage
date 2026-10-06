@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxDualAdd
 
 /-! Eight register-resident columns of a multiply-add, shifted by one word. -/
 namespace VG.Impl.Bignum.X86_64.AdxRotate8
@@ -72,8 +72,10 @@ def nextBlock : List Instr :=
     .mov .rax (.mem (hdr sW)), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.mem (hdr (sArr Public.aN))), .alu .cmp .rbp (.reg .rax)]
 
+def addInputCarry : List Instr := [.mov .rdx (.mem blockCarry)] ++ AdxDualAdd.addInput
+
 def accumulate : Prog isa :=
-  .seq (.block addMem) (.seq (.block (addWord blockCarry)) (.block [.store blockCarry .rax]))
+  .seq (.block addInputCarry) (.block [.store blockCarry .rax])
 
 def middleBody : Prog isa := .seq accumulate (productN 8)
 
@@ -85,8 +87,7 @@ def tileBegin : Prog isa :=
 def clearCarry : List Instr := [.mov32 .rax (.imm 0), .store blockCarry .rax]
 
 def tailCore : Prog isa :=
-  .seq (.block addMem) (.seq (.block (addWord blockCarry))
-    (.seq (.block (addWord tileCarry)) (.block storeCols)))
+  .seq (.block addInputCarry) (.seq (.block (addWord tileCarry)) (.block storeCols))
 
 def tileEnd : List Instr :=
   [.store (at_ .rcx 48) .rax, .alu .add .rcx (.imm 64),

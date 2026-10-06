@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareWide
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxRotate8
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquareGrouped
 
 /-! ADX squaring and Montgomery reduction. -/
 namespace VG.Impl.Bignum.X86_64.AdxSquare
@@ -50,11 +51,16 @@ def diagonal : Prog isa :=
   .seq (.block [.mov32 .r15 (.imm 0), .mov32 .rbp (.imm 0), .mov32 .r14 (.imm 0)])
     (.loop diagonalStep .ne)
 
+/-- Groups of four keep both carries live; all other sizes retain the general loop. -/
+def diagonalChoice : Prog isa :=
+  .seq (.block [.mov .rax (.reg .r10), .alu .and .rax (.imm 3), .alu .cmp .rax (.imm 0)])
+    (.ite .e AdxSquareGrouped.diagonal diagonal)
+
 /-- The unreduced square, at `aAcc + 16`, using the adjacent `aAcc` and
 `aTmp` storage. Each off-diagonal product is computed only once. -/
 def rawSquare (a : Nat) : Prog isa :=
   .seq (.block (Adx.setup a)) (.seq cross
-    (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) diagonal)))
+    (.seq (.block (Adx.setup a)) (.seq (.block [.mov .r10 (.reg .rbx)]) diagonalChoice)))
 
 /-- Montgomery cancellation multiplier for the window's low word. -/
 def redcHead : List Instr :=

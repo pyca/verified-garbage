@@ -22,23 +22,19 @@ theorem tailCore_ok {s : State} {B : Addr} {Z eU eO : Nat}
       (t.gpr .rax).toNat ≤ 3 ∧ Outside B eO 64 s.mem t.mem ∧
       Keep [.rdx, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   unfold AdxRotate8.tailCore
-  refine WP.seq (WP.mono (addMem_ok hs ho hoZ) fun a ⟨ea, ba, ca, ka⟩ => ?_)
-  have sa := hs.congr ka.2.2.2
-  have hm := readSrc_word sa (ea_carry ((ka.gpr (by decide)).trans hc) (by omega)) (show eU - 8 + 8 ≤ Z by omega)
-  refine WP.seq (WP.mono (addWord_ok a (-8) hm ca (by omega)) fun b ⟨eb, bb, cb, kb⟩ => ?_)
-  have kab := ka.trans kb
+  refine WP.seq (WP.mono (addInputCarry_ok hs hc ho (by omega) huZ hoZ)
+    fun b ⟨eb,bb,cb,kab⟩ => ?_)
   have sb := hs.congr kab.2.2.2
   have hm' := readSrc_word sb (ea_tileCarry ((kab.gpr (by decide)).trans hc) he) (show eU - 16 + 8 ≤ Z by omega)
   refine WP.seq (WP.mono (addWord_ok b (-16) hm' cb (by omega)) fun c ⟨ec, bc, _, kc⟩ => ?_)
   have kabc := kab.trans kc
   refine WP.mono (storeCols_ok (hs.congr kabc.2.2.2) ((kabc.gpr (by decide)).trans ho) hoZ)
     fun t ⟨vt, ot, kt⟩ => ?_
-  rw [ka.2.1] at eb
   rw [kab.2.1] at ec
   refine ⟨?_, ?_, ?_, (kabc.keep.trans kt).mono (by simp)⟩
   · rw [vt, kt.gpr (r := .rax) (by simp)]
-    omega_using [ea, eb, ec]
+    omega_using [eb, ec]
   · rw [kt.gpr (r := .rax) (by simp)]
-    omega_using [ba, bb, bc]
+    omega_using [bb, bc]
   · rw [kabc.2.1] at ot; exact ot
 end VG.Proof.Bignum.X86_64.AdxRotate8

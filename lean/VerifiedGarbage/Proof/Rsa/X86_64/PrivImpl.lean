@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
+import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 
 /-!
@@ -10,9 +10,9 @@ each is a variant of the interface `RsaPrivateCrt` on x86-64
 (`Variants/RsaPrivateCrt/X86_64/`), and `vg_rsa_private_checked`
 (`Generic/RsaPrivateCrt/X86_64/Rsa.lean`) is emitted once for each. Every
 implementation is proven against `crtContract`, and makes no calls. It
-comes with the Montgomery multiplication of the implementations of
-`vg_rsa_public_precompute` and `vg_rsa_public_precomputed_checked` that
-check its result, which need no more CPU features.
+comes with the Montgomery multiplication used by `vg_rsa_public_precompute`
+and an independently verified `vg_rsa_public_precomputed_checked` operation
+that checks its result. Both need no more CPU features.
 -/
 
 namespace VG.Proof.Rsa.X86_64
@@ -32,17 +32,15 @@ structure CrtImpl where
   nosp : NoSp code
   spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- The Montgomery multiplication of `vg_rsa_public_precompute` and
-  `vg_rsa_public_precomputed_checked`, and the suffix of their names. -/
+  the suffix of its name. -/
   mont : Mont
   montSuffix : String
   pcMx : (Precompute.code mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
-  pdMx : (Precomputed.code mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
+  /-- The independently verified public operation used to check the result. -/
+  pubOp : PublicImpl
   pcNosp : NoSp (Precompute.code mont.mm)
-  pdNosp : NoSp (Checked.precomputedChecked mont.mm)
   pcDepth : (Precompute.code mont.mm).depth = 0
-  pdDepth : (Checked.precomputedChecked mont.mm).depth = 0
   pcSpSafe : (Precompute.code mont.mm).all (fun i => !isa.writesSp i) = true
-  pdSpSafe : (Checked.precomputedChecked mont.mm).all (fun i => !isa.writesSp i) = true
   /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
   `_adx`; nothing for the baseline implementation). -/
   suffix : String
@@ -50,9 +48,5 @@ structure CrtImpl where
   which `vg_rsa_private_checked` requires too. -/
   features : List String
 
-/-- `NoSp` by evaluating the code. -/
-theorem noSp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) : NoSp c := by
-  rw [Code.allInstrs_eq] at h
-  exact fun i hi => by simpa using List.all_eq_true.mp h i hi
 
 end VG.Proof.Rsa.X86_64
