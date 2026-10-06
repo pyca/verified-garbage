@@ -1,8 +1,10 @@
-//! ML-DSA-87: key generation from a seed, signing and verification.
+//! ML-DSA-87: key generation from a seed, signing and verification, beside
+//! aws-lc-rs and OpenSSL.
 //!
 //! OpenSSL implements ML-DSA from version 3.5; the runners use 3.0.
 //! Enable `openssl-mldsa` on a supported host for the comparison. The ids'
 //! sizes are the output bytes for keygen/sign and message bytes for verify.
+//! Signing is hedged (randomized) in every library, with an empty context.
 
 use criterion::Criterion;
 
@@ -17,15 +19,29 @@ pub const USES: &[&str] = &["mldsa87", "mldsa_common", "mldsa", "sha3"];
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::signature::{
+        KeyPair, ML_DSA_87, ML_DSA_87_SIGNING, ParsedPublicKey, PqdsaKeyPair,
+    };
     use criterion::BenchmarkId;
     use verified_garbage::mldsa87::SigningKey87;
 
-    use crate::VG;
+    use crate::{AWS_LC, VG};
+
     let seed = [0x42; 32];
     let key = SigningKey87::from_seed(&seed).unwrap();
     let msg = [0x5a; 64];
     // Keep verification inputs identical across benchmark processes and revisions.
     let sig = key.sign_deterministic(&msg, b"").unwrap();
+    let aws_lc_key = PqdsaKeyPair::from_seed(&ML_DSA_87_SIGNING, &seed).unwrap();
+    assert_eq!(
+        aws_lc_key.public_key().as_ref(),
+        key.verifying_key().as_bytes()
+    );
+    let aws_lc_public = ParsedPublicKey::new(&ML_DSA_87, key.verifying_key().as_bytes()).unwrap();
+    aws_lc_public.verify_sig(&msg, &sig).unwrap();
+    let mut aws_lc_sig = [0u8; 4627];
+    aws_lc_key.sign(&msg, &mut aws_lc_sig).unwrap();
+    key.verifying_key().verify(&msg, b"", &aws_lc_sig).unwrap();
     #[cfg(feature = "openssl-mldsa")]
     let (openssl_key, openssl_public) = {
         use openssl::pkey::{KeyType, PKey};
@@ -70,6 +86,10 @@ pub fn bench(c: &mut Criterion) {
             .unwrap()
         })
     });
+    // aws-lc-rs encodes the public key when it constructs the key pair.
+    g.bench_function(BenchmarkId::new(AWS_LC, 2624), |b| {
+        b.iter(|| PqdsaKeyPair::from_seed(&ML_DSA_87_SIGNING, black_box(&seed)).unwrap())
+    });
     g.finish();
     let mut g = c.benchmark_group("mldsa87_sign");
     g.bench_function(BenchmarkId::new(VG, 4627), |b| {
@@ -83,6 +103,9 @@ pub fn bench(c: &mut Criterion) {
                 .sign_oneshot_to_vec(black_box(&msg))
                 .unwrap()
         })
+    });
+    g.bench_function(BenchmarkId::new(AWS_LC, 4627), |b| {
+        b.iter(|| aws_lc_key.sign(black_box(&msg), &mut aws_lc_sig).unwrap())
     });
     g.finish();
     let mut g = c.benchmark_group("mldsa87_verify");
@@ -102,6 +125,13 @@ pub fn bench(c: &mut Criterion) {
                     .verify_oneshot(black_box(&sig), black_box(&msg))
                     .unwrap()
             )
+        })
+    });
+    g.bench_function(BenchmarkId::new(AWS_LC, 64), |b| {
+        b.iter(|| {
+            aws_lc_public
+                .verify_sig(black_box(&msg), black_box(&sig))
+                .unwrap()
         })
     });
     g.finish();
