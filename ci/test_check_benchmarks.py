@@ -233,6 +233,15 @@ class Selection(unittest.TestCase):
                          {'x86_64': 'rsa rsa_pss', 'aarch64': 'rsa rsa_pss'})
         # New: on the architectures compiling its declaration, as its parent.
         self.assertEqual(self.modules(self.rows(['src/rsa/scratch.rs'])), {'x86_64': 'rsa rsa_pss'})
+        # A private helper it uses selects its parent's modules, and a
+        # feature it names chooses among its parent's implementations.
+        self.files.update({'src/lib.rs': 'mod ct;\npub mod rsa;\n', 'src/ct.rs': 'pub(crate) fn eq() {}',
+                           'src/rsa/scratch.rs': 'crate::ct::eq(); Features::of(&["adx"])'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/ct.rs'])}, {'rsa rsa_pss'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertIn('src/rsa/scratch.rs', planner.sources('rsa'))
+            self.assertEqual(planner.requirements('x86_64', {'rsa'}, [None]), {frozenset({'adx'})})
         # Declared nowhere, it is no module's: every benchmark runs.
         self.files['src/rsa/mod.rs'] = self.files['src/rsa/mod.rs'].replace('mod scratch;', '')
         self.base_files.pop('src/rsa/mod.rs')

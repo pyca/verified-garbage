@@ -38,7 +38,8 @@ files changed:
     compile its `mod <name>;`;
   * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
     `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
-    whose code names `crate::<helper>`;
+    whose code names `crate::<helper>` (a private submodule's: its
+    parent's);
   * a module only tests compile (`#[cfg(test)] mod <name>;`), or its
     declaration: none, also when it is new or removed;
   * `bench/benches/primitives/<name>.rs`, or its differential test
@@ -499,13 +500,13 @@ def members(family, known):
     return {m for m in known if m.startswith(f"{family}_")}
 
 
-def submodule_arches(parent, name, base):
+def submodule_arches(parent, name, base, root="."):
     """The benchmarked architectures that compile a `mod <name>;` of
     `src/<parent>/mod.rs` (or `src/<parent>.rs`), at `base` or now: those its
     file's and the declaration's `cfg`s allow; empty if neither revision
     declares it."""
     declaration = re.compile(rf"^(?:pub(?:\([a-z]+\))? )?mod {name};$")
-    texts = [read(f"src/{parent}{suffix}", revision) for suffix in ("/mod.rs", ".rs")
+    texts = [read(f"src/{parent}{suffix}", revision, root) for suffix in ("/mod.rs", ".rs")
              for revision in ([base, None] if base else [None])]
     arches = []
     for a in PLATFORMS:
@@ -544,11 +545,23 @@ def test_only(module, base=None):
     return any(declared) and all(d is None or d[0] for d in declared)
 
 
-def users(family, known, root="."):
+def parent_code(family, known, root=".", seen=frozenset()):
+    """The modules whose code `src/<family>/mod.rs` (or a private submodule
+    of it) is: its `<family>_<hash>` modules, those using it, and `<family>`
+    itself if it is a module; `<family>`, which no benchmark uses, if none.
+    `seen` are the families whose users are already being found."""
+    found = members(family, known) | ({family} & known)
+    if family not in seen:
+        found |= users(family, known, root, seen)
+    return found or {family}
+
+
+def users(family, known, root=".", seen=frozenset()):
     """The modules whose Rust code (outside the family's) uses the family's
     shared code, or a private module of the crate; a file that is no
     module's names itself, which no benchmark uses. Modules only tests
-    compile are left out."""
+    compile are left out, and a private submodule counts as its parent."""
+    seen = seen | {family}
     names = set()
     tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
     for path in rust_files(root):
@@ -563,6 +576,8 @@ def users(family, known, root="."):
                 names.add(api[1])
         elif other and other[2] == "mod":
             names |= members(other[1], known) or {path}
+        elif other and f"{other[1]}_{other[2]}" not in known and submodule_arches(other[1], other[2], None, root):
+            names |= parent_code(other[1], known, root, seen)
         else:
             names.add(f"{other[1]}_{other[2]}" if other else path)
     return names
@@ -600,12 +615,14 @@ def helper_uses(name, catalog):
 
 
 def sources(module):
-    """The Rust files that can choose among `module`'s implementations."""
+    """The Rust files that can choose among `module`'s implementations: with
+    its private submodules (those its file declares now)."""
     paths = [f"src/{module}.rs", f"src/{module}/mod.rs", f"src/hashes/{module}.rs", "src/hashes/mod.rs"]
     family, _, hash_ = module.partition("_")
     if hash_:
         paths += [f"src/{family}/{hash_}.rs", f"src/{family}/mod.rs"]
-    return paths
+    return paths + [path for path in rust_files() if (m := FAMILY.match(path)) and m[1] == module
+                    and m[2] != "mod" and path not in paths and submodule_arches(module, m[2], None)]
 
 
 def detectable(arch, cpu):
@@ -745,8 +762,8 @@ def arches(changed, base=None):
                 sub_arches := submodule_arches(family[1], family[2], base))
             if submodule:
                 targets = [a for a in targets if a in sub_arches]
-            names = ((members(family[1], known) | users(family[1], known) | ({family[1]} & known))
-                     or {family[1]} if family[2] == "mod" or submodule else {f"{family[1]}_{family[2]}"})
+            names = (parent_code(family[1], known) if family[2] == "mod" or submodule
+                     else {f"{family[1]}_{family[2]}"})
             for a in targets:
                 for name in names:
                     need(a, name)
