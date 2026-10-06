@@ -413,4 +413,84 @@ theorem pass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
     hm3 ▸ R2, by rw [x17', e17, x17], by rw [x14', e14, x14, BitVec.ofNat_add_ofNat, Nat.two_mul],
     by rw [x9', e9, x9, shr1_ofNat ha], by rw [x8', e8, x8, Offset.ofNat_sub_ofNat hj]⟩
 
+/-! ## The shift -/
+
+/-- The buffer before the shift, as a function of the index: its first 1024
+bytes, and zeros after them. -/
+def bufB (V : Nat → Byte) (x : Nat) : Byte := if x < 1024 then V (oBuf + x) else 0
+
+/-- Before pass `p` of the shift by `A`. -/
+structure ShiftI (u₀ : State) (F S : Addr) (V₀ : Nat → Byte) (W : Nat → BitVec 64) (A p : Nat) (w : State) :
+    Prop where
+  L : Lay w F S
+  st : Step F S [] u₀ w
+  x17 : w.gpr .x17 = off S oBuf
+  x14 : w.gpr .x14 = BitVec.ofNat 64 (2 ^ p)
+  x9 : w.gpr .x9 = BitVec.ofNat 64 (A / 2 ^ p)
+  x8 : w.gpr .x8 = BitVec.ofNat 64 (10 - p)
+  rep : ∃ V, Rep w.mem F S V W ∧ (∀ i < 2048, V (oBuf + i) = bufB V₀ (i + A % 2 ^ p)) ∧
+    (∀ o, ¬ (oBuf ≤ o ∧ o < oBuf + 2048) → V o = V₀ o)
+
+/-- The buffer shifted left by `idx + 1` bytes, in 10 passes. -/
+theorem shift_ok {u : State} {F S : Addr} (L : Lay u F S) {V₀ : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V₀ W) {idx : Nat} (hi : W 30 = BitVec.ofNat 64 idx) (hA : idx + 1 < 1024)
+    (hz : ∀ x, 1024 ≤ x → x < 2048 → V₀ (oBuf + x) = 0) :
+    WP isa shift u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
+      ∃ V, Rep u'.mem F S V W ∧ (∀ i < 2048, V (oBuf + i) = bufB V₀ (i + (idx + 1))) ∧
+        (∀ o, ¬ (oBuf ≤ o ∧ o < oBuf + 2048) → V o = V₀ o) := by
+  have c3 : oBuf = 1024 := rfl
+  have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
+  have h240 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 240) 8 := L.ld (d := 240) (by decide)
+  have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
+  have ri := R.rd8 (d := 240) (k := 30) rfl (by decide) hi
+  unfold shift
+  refine WP.seq (WP.mono (Q := fun (u' : State) => u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧
+      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x17 = off S oBuf ∧
+      u'.gpr .x9 = BitVec.ofNat 64 (idx + 1) ∧ u'.gpr .x14 = BitVec.ofNat 64 1 ∧
+      u'.gpr .x8 = BitVec.ofNat 64 10) ?_ fun v ⟨hm, hrd, hwr, hsp, hv, hcs, x17, x9, x14, x8⟩ => ?_)
+  · oaep_run [scr, Mgf1.scr, lay, sScr, sIdx, oBuf, h96, h240, L.sp, hs, ri, BitVec.ofNat_add_ofNat,
+      show BitVec.setWidth 64 (1 : BitVec 16) <<< 0 = BitVec.ofNat 64 1 by decide,
+      show BitVec.setWidth 64 (10 : BitVec 16) <<< 0 = BitVec.ofNat 64 10 by decide]
+    oaep_fin
+  have Lv : Lay v F S := L.congr hsp hwr (by rw [hm])
+  have I0 : ShiftI u F S V₀ W (idx + 1) 0 v := ⟨Lv, Step.blk _ hrd hwr hsp hv hcs hm, x17, x14,
+    by rw [x9, Nat.pow_zero, Nat.div_one], x8, V₀, hm ▸ R,
+    fun i hi => by
+      simp only [Nat.pow_zero, Nat.mod_one, Nat.add_zero, bufB]
+      by_cases h : i < 1024
+      · rw [ifp h]
+      · rw [ifn h, hz i (by omega) hi], fun _ _ => rfl⟩
+  refine WP.mono (count_loop (n := 10) (by decide) (ShiftI u F S V₀ W (idx + 1)) (fun p hp w I => ?_) I0)
+    fun w I => ⟨I.L, I.st, ?_⟩
+  · obtain ⟨V, Rw, hB, hO⟩ := I.rep
+    have hp9 : 2 ^ p ≤ 512 := Nat.le_trans (Nat.pow_le_pow_right (by decide) (show p ≤ 9 by omega))
+      (by decide : 2 ^ 9 ≤ 512)
+    have hp0 : 1 ≤ 2 ^ p := Nat.one_le_two_pow
+    refine WP.mono (pass_ok I.L Rw (a := (idx + 1) / 2 ^ p) (d := 2 ^ p) (j := 10 - p)
+      (by have := Nat.div_le_self (idx + 1) (2 ^ p); omega) hp0 (by omega) (by omega) I.x17 I.x14 I.x9 I.x8)
+      fun w2 ⟨L2, S2, R2, x17, x14, x9, x8⟩ => ⟨⟨L2, I.st.trans S2, x17,
+        by rw [x14, Nat.pow_succ, Nat.mul_comm], by rw [x9, Nat.pow_succ, Nat.div_div_eq_div_mul],
+        by rw [x8]; congr 1, _, R2, fun i hi => ?_, fun o ho => ?_⟩, ?_⟩
+    · simp only [selV]
+      rw [Nat.mod_pow_succ]
+      by_cases hi' : i < 1024
+      · rw [ifp (show oBuf ≤ oBuf + i ∧ oBuf + i < oBuf + 1024 by omega)]
+        rcases Nat.mod_two_eq_zero_or_one ((idx + 1) / 2 ^ p) with h0 | h1
+        · rw [h0, show decide (0 = 1) = false from rfl]
+          simp only [Bool.false_eq_true, ite_false, Nat.mul_zero, Nat.add_zero]
+          exact hB i hi
+        · rw [h1, show decide (1 = 1) = true from rfl]
+          simp only [ite_true, Nat.mul_one]
+          rw [show oBuf + i + 2 ^ p = oBuf + (i + 2 ^ p) by omega, hB (i + 2 ^ p) (by omega)]
+          congr 1; omega
+      · rw [ifn (show ¬ (oBuf ≤ oBuf + i ∧ oBuf + i < oBuf + 1024) by omega), hB i hi, bufB, bufB,
+          ifn (show ¬ (i + (idx + 1) % 2 ^ p < 1024) by omega),
+          ifn (show ¬ (i + ((idx + 1) % 2 ^ p + 2 ^ p * ((idx + 1) / 2 ^ p % 2)) < 1024) by omega)]
+    · have ho' : ¬ (oBuf ≤ o ∧ o < oBuf + 1024) := fun h => ho ⟨h.1, by omega⟩
+      unfold selV; rw [ifn ho']; exact hO o ho
+    · rw [x8, show 10 - p - 1 = 10 - (p + 1) by omega]; exact counter_ne hp (by omega)
+  · obtain ⟨V, Rw, hB, hO⟩ := I.rep
+    refine ⟨V, Rw, fun i hi => ?_, hO⟩
+    rw [hB i hi, Nat.mod_eq_of_lt (show idx + 1 < 2 ^ 10 by omega)]
+
 end VG.Proof.RsaOaep.AArch64
