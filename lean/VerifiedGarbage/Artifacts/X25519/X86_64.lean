@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
+import VerifiedGarbage.Proof.X25519.X86_64.Base.Adx
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 
 /-! # X25519 (RFC 7748) on x86-64 -/
@@ -71,12 +72,13 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := "vg_x25519_base_adx"
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["The same fixed-base comb as \
-      `vg_x25519_base`, with BMI2 and ADX field arithmetic."])
+      `vg_x25519_base`, with BMI2 and ADX field arithmetic, its table entries selected 32 bytes \
+      at a time with AVX2."])
     consts := Impl.Ed25519.X86_64.combConsts
-    code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.adx
+    code := Impl.X25519.X86_64.Base.x25519BaseAdx
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
-    verified := Proof.X25519.X86_64.Base.x25519Base_verified
-    features := ["bmi2", "adx"]
+    verified := Proof.X25519.X86_64.Base.x25519BaseAdx_verified
+    features := ["avx", "avx2", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X25519.x25519BaseApi with
     target := X86_64.target

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
 
 /-!
 # The base-point multiplications the Ed25519 functions call
@@ -7,7 +8,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
 `EdBase bs`: `bs` is a body of `vg_ed25519_scalar_base`, correct and constant
 time for its contract, and its every instruction keeps `rsp` (the calls need
 both) in one level of calls: those of `scalarBase_precomputed` (each field
-multiplication) and `scalarBase_ifma`. Public-key derivation and signing are
+multiplication), `scalarBase_adx` and `scalarBase_ifma`. Public-key derivation and signing are
 proven once for any of them.
 -/
 
@@ -24,6 +25,9 @@ class EdBase (bs : Prog isa) : Prop where
 
 instance {fld : Arith} [EdArith fld] [X25519.X86_64.DivstepInv] : EdBase (scalarBase_precomputed fld) :=
   ⟨scalarBase_precomputed_ok, scalarBase_precomputed_ct, by fld_lit_decide, by fld_lit_decide⟩
+
+instance [X25519.X86_64.DivstepInv] : EdBase scalarBase_adx :=
+  ⟨scalarBase_adx_ok, scalarBase_adx_ct, by lit_decide, by lit_decide⟩
 
 instance [X25519.X86_64.DivstepInv] : EdBase scalarBase_ifma :=
   ⟨Ifma.scalarBase_ifma_ok, Ifma.scalarBase_ifma_ct, by lit_decide, by lit_decide⟩
