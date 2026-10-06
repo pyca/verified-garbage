@@ -35,21 +35,6 @@ theorem wp_alloc {body : Prog isa} {s : State} {Q : State → Prop} (hsp : frame
     exact ite_eq_left ⟨by decide, by decide, by decide, hsp₂, hw, rfl⟩
   exact ⟨_, _, Exec.frame ha he hf, hq⟩
 
-/-! ## The specification -/
-
-theorem encrypt_none {H G : Spec.Mgf1.Hash} {nB eB label m seed : List Byte}
-    (h : nB.length < 2 * H.len + 2 + m.length) : Spec.RsaOaep.encrypt H G nB eB label m seed = none := by
-  simp only [Spec.RsaOaep.encrypt, Spec.RsaOaep.encode]
-  rw [ifp (.inr h)]; rfl
-
-theorem encrypt_some {H G : Spec.Mgf1.Hash} {nB eB label m seed : List Byte} (hs : seed.length = H.len)
-    (h : 2 * H.len + 2 + m.length ≤ nB.length) :
-    Spec.RsaOaep.encrypt H G nB eB label m seed =
-      Spec.Rsa.publicOpChecked nB eB (emOf G H.len nB.length m.length seed (H.hash label) m) := by
-  simp only [Spec.RsaOaep.encrypt, Spec.RsaOaep.encode]
-  rw [ifn (by omega)]
-  simp only [Option.bind_some, emOf]
-
 /-! ## The end -/
 
 /-- What the function's caller sees: from a state in the frame with `out`
