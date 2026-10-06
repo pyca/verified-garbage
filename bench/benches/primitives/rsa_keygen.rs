@@ -9,12 +9,13 @@ pub const USES: &[&str] = &["rsa_keygen"];
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::rsa::Rsa;
     use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
 
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
     // prime's bytes. Each library draws candidates until one is a probable
     // prime (with the public exponent 65537 for verified-garbage, which also
@@ -58,10 +59,16 @@ pub fn bench(c: &mut Criterion) {
     // from them, its check, and the pairwise consistency test. So that the
     // draw is a typical one, they are the stream, of the streams of nine
     // fixed seeds, whose key reads the median number of octets. OpenSSL's
-    // `RSA_generate_key_ex` draws from its own generator.
+    // `RSA_generate_key_ex` draws from its own generator, and so does
+    // aws-lc-rs's `KeyPair::generate` (AWS-LC's, which also checks the key
+    // with `RSA_check_key`).
     let mut g = c.benchmark_group("rsa_keygen_generate");
     g.sample_size(10);
-    for bits in [2048, 3072, 4096] {
+    for (bits, size) in [
+        (2048, KeySize::Rsa2048),
+        (3072, KeySize::Rsa3072),
+        (4096, KeySize::Rsa4096),
+    ] {
         let mut draws: Vec<(usize, Vec<u8>)> = (0..9)
             .map(|i| {
                 let rand = fixed_octets(bits + i, |r| generate_from(bits, &[1, 0, 1], r).is_ok());
@@ -77,6 +84,9 @@ pub fn bench(c: &mut Criterion) {
         });
         g.bench_function(BenchmarkId::new(OPENSSL, bits / 8), |b| {
             b.iter(|| Rsa::generate(black_box(bits as u32)).unwrap())
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, bits / 8), |b| {
+            b.iter(|| KeyPair::generate(black_box(size)).unwrap())
         });
     }
     g.finish();
