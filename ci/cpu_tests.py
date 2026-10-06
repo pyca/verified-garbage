@@ -188,6 +188,7 @@ GROUPS = {
             "wycheproof::rsa_pkcs1_enc",
             "wycheproof::rsa_pkcs1_sig",
             "wycheproof::rsa_pss",
+            "wycheproof::rsa_public",
         ],
     },
     "rsa_oaep": {
