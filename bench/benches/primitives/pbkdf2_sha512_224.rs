@@ -27,6 +27,7 @@ pub fn bench(c: &mut Criterion) {
         "pbkdf2-hmac-sha512-224",
         pbkdf2_hmac::<Sha512_224>,
         MessageDigest::from_name("SHA512-224").unwrap(),
+        None,
         28,
     );
 }

@@ -22,6 +22,7 @@ pub fn bench(c: &mut Criterion) {
         "pbkdf2-hmac-sha512",
         pbkdf2_hmac::<Sha512>,
         MessageDigest::sha512(),
+        Some(aws_lc_rs::pbkdf2::PBKDF2_HMAC_SHA512),
         64,
     );
 }

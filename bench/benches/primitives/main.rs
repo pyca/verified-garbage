@@ -222,9 +222,9 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     g.finish();
 }
 
-/// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's, of a
-/// 32-byte password, deriving `len` bytes (a digest), with the sizes as the
-/// iteration counts.
+/// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's and,
+/// if it has the hash, aws-lc-rs's `aws_lc`, of a 32-byte password, deriving
+/// `len` bytes (a digest), with the sizes as the iteration counts.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -236,6 +236,7 @@ pub(crate) fn pbkdf2_group(
     name: &str,
     vg: fn(&[u8], &[u8], std::num::NonZeroU32, &mut [u8]),
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::pbkdf2::Algorithm>,
     len: usize,
 ) {
     let password = [0x0b; 32];
@@ -260,6 +261,23 @@ pub(crate) fn pbkdf2_group(
                 .unwrap()
             })
         });
+        if let Some(alg) = aws_lc {
+            let mut expected = vec![0u8; len];
+            vg(&password, &salt, n, &mut expected);
+            aws_lc_rs::pbkdf2::derive(alg, n, &salt, &password, &mut out);
+            assert_eq!(out, expected);
+            g.bench_function(BenchmarkId::new(AWS_LC, iterations), |b| {
+                b.iter(|| {
+                    aws_lc_rs::pbkdf2::derive(
+                        alg,
+                        n,
+                        black_box(&salt),
+                        black_box(&password),
+                        &mut out,
+                    )
+                })
+            });
+        }
     }
     g.finish();
 }
