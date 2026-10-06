@@ -14,8 +14,8 @@ def artifacts : List Artifact := [
       Checks canonical point encodings and S < L, then evaluates the uncofactored equation \
       using all 512 challenge bits. No additional subgroup or small-order policy is imposed. \
       Computes [k]A - [S]B with one chain of doublings and 4-bit windows of the public \
-      scalars, from a table of [1]A to [15]A and constant -[1]B to -[15]B, and compares it \
-      with -R projectively."])
+      scalars, from a table of [1]A to [15]A and constant -[1]B to -[15]B, skipping the \
+      leading zero bytes of k above its low 32, and compares it with -R projectively."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
       (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline)
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
@@ -29,7 +29,7 @@ def artifacts : List Artifact := [
       BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as `vg_x25519_adx` \
       does. Checks canonical point encodings and S < L, then evaluates the uncofactored \
       equation using all 512 challenge bits, with one chain of doublings and 4-bit windows of \
-      the public scalars."])
+      the public scalars, skipping the leading zero bytes of k above its low 32."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
       (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi

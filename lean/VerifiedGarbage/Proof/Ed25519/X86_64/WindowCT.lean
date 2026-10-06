@@ -427,13 +427,14 @@ theorem byteStepAB_ct {base kp sp : Addr} {A : EPoint dZ} {K S i : Nat} (hi : i 
 def LoopRun (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
   ∃ s₀, R₀ s₀ ∧ WinLoop s₀ base kp sp A K S c x
 
-theorem loopA_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} :
-    RelCT isa (fun x y => LoopRun R₀ base kp sp A K S 64 x ∧ LoopRun R₀ base kp sp A K S 64 y)
+theorem loopA_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
+    (hn0 : 0 < n) (hn : n ≤ 32) :
+    RelCT isa (fun x y => LoopRun R₀ base kp sp A K S (32 + n) x ∧ LoopRun R₀ base kp sp A K S (32 + n) y)
       (.loop (byteStepA fld dbl) .ne)
       (fun x y => LoopRun R₀ base kp sp A K S 32 x ∧ LoopRun R₀ base kp sp A K S 32 y) := by
   refine (VG.RelCT.loop (M := isa) (fun n x y => (LoopRun R₀ base kp sp A K S (32 + n) x ∧
-    LoopRun R₀ base kp sp A K S (32 + n) y) ∧ 0 < n ∧ n ≤ 32) ?_ 32).mono
-      (fun _ _ h => ⟨h, by decide, by decide⟩) (fun _ _ h => h)
+    LoopRun R₀ base kp sp A K S (32 + n) y) ∧ 0 < n ∧ n ≤ 32) ?_ n).mono
+      (fun _ _ h => ⟨h, hn0, hn⟩) (fun _ _ h => h)
   intro n
   rcases n with _ | j
   · exact VG.RelCT.of_false fun _ _ h => Nat.lt_irrefl 0 h.2.1
@@ -499,6 +500,126 @@ theorem loopB_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K 
         cases he
       exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
   · exact VG.RelCT.of_false fun _ _ h => hj (by omega)
+
+theorem windowsA_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}
+    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) :
+    RelCT isa (fun x y => LoopRun R₀ base kp sp A K S c x ∧ LoopRun R₀ base kp sp A K S c y)
+      (windowsA fld dbl)
+      (fun x y => LoopRun R₀ base kp sp A K S 32 x ∧ LoopRun R₀ base kp sp A K S 32 y) := by
+  have hw (x : State) (h : LoopRun R₀ base kp sp A K S c x) : WP isa (.block counterCmp) x fun u =>
+      u.zf = some (decide (c = 32)) ∧ LoopRun R₀ base kp sp A K S c u := by
+    obtain ⟨s₀, r₀, h⟩ := h
+    rw [counterCmp]
+    exact WP.mono (counterCmp_ok h.ctx.scratch c hc64 h.counter) fun u ⟨uz, ku⟩ =>
+      ⟨uz, s₀, r₀, h.of_counter (CounterKeep.of_keeps ku (by decide)) (by rw [ku.2.1]; exact h.counter)
+        rfl rfl⟩
+  have hcmp : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block counterCmp) (fun _ _ => True) := by
+    rw [counterCmp]; exact counterCmp_ct
+  rw [windowsA]
+  refine VG.RelCT.seq ((VG.RelCT.wp (rdi_ct (fun x h => by obtain ⟨_, _, h⟩ := h; exact h.ctx.scratch.rdi)
+    hcmp) fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_
+  refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.1, h.2.1]) ?_ ?_
+  · obtain ⟨n, rfl⟩ : ∃ n, c = 32 + n := ⟨c - 32, by omega⟩
+    by_cases hn : n = 0
+    · subst hn
+      exact VG.RelCT.of_false fun x y h => by
+        have := h.2; simp only [eval, h.1.1.1, Option.map_some] at this; simp at this
+    · exact (loopA_ct n (by omega) (by omega)).mono (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩)
+        (fun _ _ h => h)
+  · refine VG.RelCT.block_nil fun x y h => ?_
+    have hc : c = 32 := by
+      have := h.2; simp only [eval, h.1.1.1, Option.map_some] at this; simpa using this
+    subst hc
+    exact ⟨h.1.1.2, h.1.2.2⟩
+
+/-! ## Skipping the leading zero bytes of `k` -/
+
+/-- A run of the skipping: from a state satisfying `R₀`, with `32 + n` bytes left. -/
+def SkipRun (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S n : Nat) (x : State) : Prop :=
+  ∃ s₀, R₀ s₀ ∧ SkipInv s₀ base kp sp A K S n x
+
+theorem skipPrefix_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi)
+    (.block (batchBegin ++ digitPrefix 7952 0)) (fun _ _ => True) :=
+  taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => agree_rdi h) (by fld_taint_decide)
+
+theorem skipRest_ct : RelCT isa (fun x y => x.gpr .rsi = y.gpr .rsi ∧ x.gpr .rax = y.gpr .rax)
+    (.block [.movzx8 .rbx { base := .rsi, index := some .rax }, .alu .test .rbx (.reg .rbx)])
+    (fun _ _ => True) :=
+  taintFld (Taint.ofRegs [.rsi, .rax]) (fun _ _ h => agree_rsi_rax h) (by fld_taint_decide)
+
+theorem skipStop_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block skipStop)
+    (fun _ _ => True) :=
+  taintFld (Taint.ofRegs [.rdi]) (fun _ _ h => agree_rdi h) (by fld_taint_decide)
+
+theorem skipPrefix_ok {s : State} {base kp : Addr} (hs : Scratch s base)
+    (hp : s.mem.readW (off base 7952) 64 = kp) (j : Nat)
+    (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (j + 1)) :
+    WP isa (.block (batchBegin ++ digitPrefix 7952 0)) s fun t =>
+      t.gpr .rsi = off kp 0 ∧ t.gpr .rax = BitVec.ofNat 64 j := by
+  rw [WP.block_append_iff]
+  refine WP.mono (batchBegin_ok hs j hc) fun a ⟨_, ac, ag, _, aw, am⟩ => ?_
+  have ha : Scratch a base := ⟨(ag _ (by decide)).trans hs.rdi, aw ▸ hs.wr, hs.nowrap⟩
+  exact WP.mono (digitPrefix_ok ha (by decide) (by decide)
+    ((am.word (Or.inr (by decide)) (by decide)).trans hp) ac) fun _ ⟨_, ts, ta⟩ => ⟨ts, ta⟩
+
+theorem skipBody_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S j : Nat} :
+    RelCT isa (fun x y => SkipRun R₀ base kp sp A K S (j + 1) x ∧ SkipRun R₀ base kp sp A K S (j + 1) y)
+      skipBody (fun _ _ => True) := by
+  let P := SkipRun R₀ base kp sp A K S (j + 1)
+  have hrdi (x : State) (h : P x) : x.gpr .rdi = base := by
+    obtain ⟨_, _, h, _⟩ := h; exact h.ctx.scratch.rdi
+  have hpre (x : State) (h : P x) : WP isa (.block (batchBegin ++ digitPrefix 7952 0)) x fun t =>
+      t.gpr .rsi = off kp 0 ∧ t.gpr .rax = BitVec.ofNat 64 (32 + j) := by
+    obtain ⟨_, _, h, _⟩ := h
+    exact skipPrefix_ok h.ctx.scratch h.ctx.kHeader (32 + j) (by rw [h.counter]; rfl)
+  have hload : RelCT isa (fun x y => P x ∧ P y) (.block skipLoad) (fun _ _ => True) := by
+    rw [show skipLoad = (batchBegin ++ digitPrefix 7952 0) ++
+      [.movzx8 .rbx { base := .rsi, index := some .rax }, .alu .test .rbx (.reg .rbx)] from rfl]
+    refine blockAppend_ct ((VG.RelCT.wp (rdi_ct hrdi skipPrefix_ct) fun x y h =>
+      ⟨hpre x h.1, hpre y h.2⟩).mono (fun _ _ h => h) ?_) skipRest_ct
+    intro x y ⟨_, hx, hy⟩
+    exact ⟨hx.1.trans hy.1.symm, hx.2.trans hy.2.symm⟩
+  have hw (x : State) (h : P x) : WP isa (.block skipLoad) x fun u => u.gpr .rdi = base ∧
+      u.zf = some (decide (K / 256 ^ (32 + j) % 256 = 0)) := by
+    obtain ⟨_, _, hl, _, _, hn⟩ := h
+    refine WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega) (by rw [hl.counter]; rfl))
+      fun u ⟨uz, _, ku⟩ => ⟨(ku.byte.scratch hl.ctx.scratch).rdi, ?_⟩
+    rw [uz, scalar_byte (n := 64) (by omega), hl.kVal]
+  have hcmp : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block counterCmp) (fun _ _ => True) := by
+    rw [counterCmp]; exact counterCmp_ct
+  rw [skipBody]
+  refine VG.RelCT.seq ((VG.RelCT.wp hload fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h)
+    (fun _ _ h => h.2)) ?_
+  refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.2, h.2.2]) ?_ ?_
+  · exact skipStop_ct.mono (fun _ _ h => h.1.1.1.trans h.1.2.1.symm) (fun _ _ h => h)
+  · exact hcmp.mono (fun _ _ h => h.1.1.1.trans h.1.2.1.symm) (fun _ _ h => h)
+
+theorem skipZero_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} :
+    RelCT isa (fun x y => SkipRun R₀ base kp sp A K S 32 x ∧ SkipRun R₀ base kp sp A K S 32 y) skipZero
+      (fun x y => ∃ c, 32 ≤ c ∧ c ≤ 64 ∧ LoopRun R₀ base kp sp A K S c x ∧
+        LoopRun R₀ base kp sp A K S c y) := by
+  rw [skipZero]
+  refine VG.RelCT.loop (M := isa)
+    (fun n x y => SkipRun R₀ base kp sp A K S n x ∧ SkipRun R₀ base kp sp A K S n y) ?_ 32
+  intro n
+  rcases n with _ | j
+  · exact VG.RelCT.of_false fun _ _ h => by obtain ⟨_, _, _, _, h, _⟩ := h.1; exact Nat.lt_irrefl 0 h
+  by_cases hj : j < 32
+  · have hw (x : State) (h : SkipRun R₀ base kp sp A K S (j + 1) x) : WP isa skipBody x fun u =>
+        isa.eval .ne u = some (skipOn K j) ∧
+        (skipOn K j = false → LoopRun R₀ base kp sp A K S (skipEnd K j) u) ∧
+        (skipOn K j = true → SkipRun R₀ base kp sp A K S j u) := by
+      obtain ⟨s₀, r₀, h⟩ := h
+      exact WP.mono (skipBody_ok h) fun u ⟨uz, uf, ut⟩ =>
+        ⟨uz, fun hf => ⟨s₀, r₀, uf hf⟩, fun ht => ⟨s₀, r₀, ut ht⟩⟩
+    refine (VG.RelCT.wp skipBody_ct fun x y h => ⟨hw x h.1, hw y h.2⟩).mono (fun _ _ h => h) ?_
+    intro x y ⟨_, ⟨xz, xf, xt⟩, ⟨yz, yf, yt⟩⟩
+    refine ⟨xz.trans yz.symm, fun he => ?_, fun he => ?_⟩
+    · have hs : skipOn K j = false := Option.some.inj (xz.symm.trans he)
+      exact ⟨skipEnd K j, (skipEnd_range K j hj).1, (skipEnd_range K j hj).2, xf hs, yf hs⟩
+    · have hs : skipOn K j = true := Option.some.inj (xz.symm.trans he)
+      exact ⟨j, by omega, xt hs, yt hs⟩
+  · exact VG.RelCT.of_false fun _ _ h => by obtain ⟨_, _, _, _, _, h⟩ := h.1; exact hj (by omega)
 
 /-! ## The comparison -/
 

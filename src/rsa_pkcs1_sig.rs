@@ -24,15 +24,21 @@
 //! This module only checks the lengths and allocates the memory the
 //! functions work in.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
 use crate::arch::rsa_pkcs1_sig::{
-    vg_rsa_pkcs1_recover, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma,
-    vg_rsa_pkcs1_verify_precomputed, vg_rsa_pkcs1_verify_precomputed_adx,
+    vg_rsa_pkcs1_recover, vg_rsa_pkcs1_sign, vg_rsa_pkcs1_verify_precomputed,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_pkcs1_sig::{
+    vg_rsa_pkcs1_sign_adx, vg_rsa_pkcs1_sign_ifma, vg_rsa_pkcs1_verify_precomputed_adx,
 };
 use crate::cpu::detected;
 use crate::rsa::{Backend, PrivateKey, PublicKey, scratch_words};
@@ -124,7 +130,9 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_sign,
         // `select` chose them because the CPU has the features they need.
+        #[cfg(target_arch = "x86_64")]
         Backend::Adx => vg_rsa_pkcs1_sign_adx,
+        #[cfg(target_arch = "x86_64")]
         Backend::Ifma => vg_rsa_pkcs1_sign_ifma,
     };
     // SAFETY: each pointer is valid for its length (`out` for writes,
@@ -177,6 +185,7 @@ pub fn verify(key: &PublicKey, signature: &[u8], digest: &[u8], hash: Hash) -> b
     let mut scratch = vec![0u64; scratch_words(k)];
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_verify_precomputed,
+        #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_pkcs1_verify_precomputed_adx,
     };
     // SAFETY: each pointer is valid for its length (`scratch` for writes),
