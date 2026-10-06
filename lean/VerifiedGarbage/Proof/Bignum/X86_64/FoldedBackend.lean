@@ -8,7 +8,7 @@ open VG.Proof.Bignum.X86_64
 theorem adx_final_ct : RelCT isa (Two GoodL) (Mont.adxSquare.mm aY aX aY) (fun _ _ => True) :=
   RelCT.ofW (tiledDispatch_ct (o := aY) (a := aX) (b := aY) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)
-    (by taint_decide) (by taint_decide) (by taint_decide))
+    (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide))
 
 theorem adx_verified : Verified target (Impl.Rsa.X86_64.Folded.checked Mont.adxSquare.mm)
     (Spec.Rsa.publicPrecomputedCheckedContract abi) :=
