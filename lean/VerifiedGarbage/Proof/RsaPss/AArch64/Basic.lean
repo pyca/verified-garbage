@@ -107,10 +107,12 @@ structure Lay (t : State) (F S : Addr) : Prop where
   Fw : F.toNat + frameBytes ≤ 2 ^ 64
   Sw : S.toNat + oRsa ≤ 2 ^ 64
   dFS : Region.Disjoint ⟨F, frameBytes⟩ ⟨S, oRsa⟩
+  /-- The stack the hash functions use is not the working space. -/
+  dB : Region.Disjoint (below F 16) ⟨S, oRsa⟩
 
 theorem Lay.congr {t t' : State} {F S : Addr} (L : Lay t F S) (hsp : t'.sp = t.sp) (hwr : t'.wr = t.wr)
     (h20 : t'.gpr .x20 = t.gpr .x20) : Lay t' F S :=
-  ⟨hsp.trans L.sp, h20.trans L.x20, hwr ▸ L.fw, hwr ▸ L.sw, L.Fw, L.Sw, L.dFS⟩
+  ⟨hsp.trans L.sp, h20.trans L.x20, hwr ▸ L.fw, hwr ▸ L.sw, L.Fw, L.Sw, L.dFS, L.dB⟩
 
 /-- Bytes of the working space are writable. -/
 theorem Lay.st {t : State} {F S : Addr} (L : Lay t F S) {o n : Nat} (h : o + n ≤ oRsa) :
