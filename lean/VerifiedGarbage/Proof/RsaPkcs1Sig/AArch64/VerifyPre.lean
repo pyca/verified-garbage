@@ -31,12 +31,15 @@ abbrev sR (s : State) : Region := ⟨stackArg s 1, (stackArg s 2).toNat * 8⟩
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 24⟩
 abbrev kR (K : Nat) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 (stk K), stk K⟩
 
-/-- `verifyContract.pre`, by name. -/
+/-- What the code needs of `verifyContract.pre` (and of
+`verifyPrecomputedContract.pre`), by name: the buffers are readable or
+writable, apart from each other and from the stack the function uses, and
+do not wrap around; the lengths are within bounds. -/
 structure PreV (K : Nat) (s : State) : Prop where
   sp1 : stk K ≤ s.sp.toNat
   sp2 : s.sp.toNat + 24 ≤ 2 ^ 64
-  hrd : s.rd = [nR s, eR s, dR s, gR s, aR s]
-  hwr : s.wr = [sR s]
+  hrd : Covers [nR s, eR s, dR s, gR s, aR s] s.rd
+  hwr : sR s ∈ s.wr
   ns : (nR s).Disjoint (sR s)
   es : (eR s).Disjoint (sR s)
   ds : (dR s).Disjoint (sR s)
@@ -70,7 +73,7 @@ theorem preV_of {K : Nat} {s : State}
   obtain ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sa, kn, ke, kd, kg, ks, ka, wn, we, wd, wg, ws, ⟨k1, k2⟩,
     e1, e2, hs⟩ := h
   rw [← e] at sp1 kn ke kd kg ks ka
-  exact ⟨sp1, sp2, hrd, hwr, ns, es, ds, gs, sa, kn, ke, kd, kg, ks, ka, wn, we, wd, wg, ws, k1, k2, e1, e2,
-    by unfold Spec.Rsa.scratchWords at hs; omega⟩
+  exact ⟨sp1, sp2, by rw [hrd]; exact Covers.refl _, by rw [hwr]; simp, ns, es, ds, gs, sa, kn, ke, kd, kg,
+    ks, ka, wn, we, wd, wg, ws, k1, k2, e1, e2, by unfold Spec.Rsa.scratchWords at hs; omega⟩
 
 end VG.Proof.RsaPkcs1Sig.AArch64.Ver

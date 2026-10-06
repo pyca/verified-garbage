@@ -110,7 +110,7 @@ theorem pubOk_of (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCa
     simp only [pubRd]
     rw [ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, ha.sp, ha.rd, ha.wr]
     have hm : ∀ r ∈ [nR s, eR s, dR s, gR s, aR s], Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
-      fun r hr => Covers.left (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx, hp.hrd]; exact hr)
+      fun r hr => Covers.left (Covers.trans (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact hr) hp.hrd)
     refine Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.cons ?_
       (Covers.right (Covers.one (in_frame0 _ _ (by decide))))))
     have := hm (gR s) (by simp); rwa [gR, hsig] at this
@@ -118,7 +118,7 @@ theorem pubOk_of (c : PubChecked) {s t : State} (hp : PreV c.stack s) (ha : AtCa
     simp only [pubWr]
     rw [ha.x0, ha.x1, ha.a0, ha.a1, ha.wr]
     exact Covers.cons (Covers.one (in_frame _ _ (by unfold oEM1 frameBytes; omega)))
-      (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx, hp.hwr]; simp)
+      (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact List.mem_cons_of_mem _ hp.hwr)
   case hk => rw [ha.x3]; exact ⟨hk1, hk2⟩
   case h1 => rw [ha.x1, ha.x3]
   case h7 => rw [ha.x7, ha.x3]

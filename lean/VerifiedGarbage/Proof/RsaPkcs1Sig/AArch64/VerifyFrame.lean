@@ -139,7 +139,7 @@ theorem stackArgAddr_eq (s : State) (j : Nat) :
 /-- The stack arguments are readable. -/
 theorem arg_in {K : Nat} {s : State} (hp : PreV K s) {rs : List Region} (hrd : Covers s.rd rs) {j : Nat}
     (hj : j < 3) : InRegions rs (stackArgAddr s j) 8 :=
-  hrd _ _ ⟨aR s, by rw [hp.hrd]; simp, by
+  hrd _ _ <| hp.hrd _ _ ⟨aR s, by simp, by
     rw [stackArgAddr_eq s j]; exact Offset.contains_base _ (by omega) (by omega)⟩
 
 /-- A stack argument, in memory changed only in the frame. -/
