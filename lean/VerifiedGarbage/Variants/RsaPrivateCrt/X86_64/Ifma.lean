@@ -1,6 +1,6 @@
 import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.Bignum.X86_64.G.Verified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 
 /-!
@@ -18,10 +18,10 @@ open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 def variant : Proof.Rsa.X86_64.CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_ifma"
-  code := Impl.Rsa.X86_64.CrtIfmaG.code Mont.adxSquare.mm
+  code := Impl.Rsa.X86_64.CrtIfma.code Mont.adxSquare.mm
   depth := by decide +kernel
-  ok := G.code_correct _ (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
-  ct := G.code_constantTime _ (by decide +kernel)
+  ok := Ifma.code_correct _ (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+  ct := Ifma.code_constantTime _ (by decide +kernel)
   nosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
   mont := Mont.adxSquare

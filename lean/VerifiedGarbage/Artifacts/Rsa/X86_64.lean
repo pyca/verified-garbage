@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.G.Verified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
@@ -109,9 +109,9 @@ def artifacts : List Artifact := [
         the table read by a masked selection from every entry. MXCSR is set to `0x1FBF` around the \
         vector code, as Intel's guidance for data-operand-independent timing asks, and restored after \
         it."])
-    code := Impl.Rsa.X86_64.CrtIfmaG.code Proof.Bignum.X86_64.Mont.adxSquare.mm
+    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.privateCrtContract X86_64.abi
-    verified := Proof.Bignum.X86_64.G.verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    verified := Proof.Bignum.X86_64.Ifma.verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (by decide +kernel)
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
