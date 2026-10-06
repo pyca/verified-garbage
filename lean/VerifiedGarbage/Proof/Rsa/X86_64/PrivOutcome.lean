@@ -19,14 +19,13 @@ returned: they release `M` (returning 1) only if `M` is below `n` and
 `M^e mod n` is the input, and write zeros otherwise; `M` is zeroed either
 way. A fault in the CRT's computation (of the result, of its return value,
 or of both) is never released. -/
-theorem check_faultTolerant (M : Mont) (pcName pdName : String)
+theorem check_faultTolerant (M : Mont) (P : PublicImpl) (pcName pdName : String)
     (pcMx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pdMx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pcNosp : NoSp (Precompute.code M.mm)) (pdNosp : NoSp (Checked.precomputedChecked M.mm))
-    (pcDepth : (Precompute.code M.mm).depth = 0) (pdDepth : (Checked.precomputedChecked M.mm).depth = 0)
+    (pcNosp : NoSp (Precompute.code M.mm))
+    (pcDepth : (Precompute.code M.mm).depth = 0)
     {s t : State} (hp : PreF s) (he : Env s t) :
     WP isa (seqs (PrivChecked.check pcName (Precompute.code M.mm) pdName
-        (Checked.precomputedChecked M.mm))) t fun t' =>
+        (P.code))) t fun t' =>
       (t'.gpr .rax = 1 →
         Spec.Rsa.bytesAt t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
             Spec.Rsa.bytesAt t.mem (off (fb s) PrivChecked.oM) (s.gpr .rcx).toNat ∧
@@ -40,7 +39,7 @@ theorem check_faultTolerant (M : Mont) (pcName pdName : String)
         List.replicate (s.gpr .rcx).toNat 0) ∧
       Spec.Rsa.bytesAt t'.mem (off (fb s) PrivChecked.oM) (s.gpr .rcx).toNat =
         List.replicate (s.gpr .rcx).toNat 0 :=
-  WP.mono (check_ok M pcName pdName pcMx pdMx pcNosp pdNosp pcDepth pdDepth hp he)
+  WP.mono (check_ok M P pcName pdName pcMx pcNosp pcDepth hp he)
     fun t' ⟨_, hax, hout, hM, _⟩ => by
       have hx : (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat).length =
           (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length := by

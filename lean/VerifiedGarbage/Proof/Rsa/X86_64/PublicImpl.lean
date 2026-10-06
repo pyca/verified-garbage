@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
-import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
+import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 
 /-! # A precomputed public operation for verified RSA callers -/
 
@@ -20,5 +20,10 @@ structure PublicImpl where
   mxSafe : code.allInstrs (fun i => !loadsMxcsr i) = true
   suffix : String
   features : List String
+
+/-- `NoSp` by evaluating the code. -/
+theorem noSp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) : NoSp c := by
+  rw [Code.allInstrs_eq] at h
+  exact fun i hi => by simpa using List.all_eq_true.mp h i hi
 
 end VG.Proof.Rsa.X86_64

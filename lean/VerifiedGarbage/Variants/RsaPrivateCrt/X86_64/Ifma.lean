@@ -1,3 +1,4 @@
+import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
@@ -26,13 +27,10 @@ def variant : Proof.Rsa.X86_64.CrtImpl where
   mont := Mont.adxSquare
   montSuffix := "_adx"
   pcMx := by decide +kernel
-  pdMx := by decide +kernel
+  pubOp := VG.Variants.RsaPublicPrecomputed.X86_64.Adx.variant
   pcNosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
-  pdNosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
-  pdDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  pdSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := "_ifma"
   features := ["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]
 
