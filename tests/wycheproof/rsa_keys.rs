@@ -135,6 +135,7 @@ fn rsa_keys_from_components() {
         for group in file.test_groups {
             if let Some(k) = group.params.private_key
                 && k.other_prime_infos.is_none()
+                && harness::rsa_key_tested(&k.modulus.0)
             {
                 keys.entry(k.modulus.0.clone()).or_insert((name.clone(), k));
             }

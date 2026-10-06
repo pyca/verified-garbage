@@ -111,7 +111,10 @@ fn rsa_pkcs1_test() {
         "rsa_pkcs1_2048_test.json",
         "rsa_pkcs1_3072_test.json",
         "rsa_pkcs1_4096_test.json",
-    ] {
+    ]
+    .into_iter()
+    .filter(|n| harness::rsa_file_tested(n))
+    {
         let (valid, padding, refused) = check(name);
         assert!(valid > 0 && padding > 0 && refused > 0, "{name}");
     }

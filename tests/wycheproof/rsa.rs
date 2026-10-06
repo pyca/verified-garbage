@@ -106,7 +106,8 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
     (done, refused)
 }
 
-/// Checks every vector of each of `names`, as `check_group`, and returns
+/// Checks every vector of each of `names` with a key that
+/// [`harness::rsa_key_tested`] tests, as `check_group`, and returns
 /// the numbers of ciphertexts each file had decrypted and refused. The
 /// groups, each with its own key, are shared among threads (`par_each`):
 /// one file (`rsa_oaep_misc_test.json`) has 128 keys.
@@ -116,6 +117,7 @@ fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
         .iter()
         .enumerate()
         .flat_map(|(i, f)| f.test_groups.iter().map(move |g| (i, g)))
+        .filter(|(_, g)| harness::rsa_key_tested(&g.params.private_key.modulus.0))
         .collect();
     let results = Mutex::new(vec![(0, 0); names.len()]);
     harness::par_each(&groups, |&(i, group)| {
@@ -130,11 +132,14 @@ fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
 #[test]
 fn rsa_pkcs1_test() {
     require_vectors!();
-    let names = [
+    let names: Vec<&str> = [
         "rsa_pkcs1_2048_test.json",
         "rsa_pkcs1_3072_test.json",
         "rsa_pkcs1_4096_test.json",
-    ];
+    ]
+    .into_iter()
+    .filter(|n| harness::rsa_file_tested(n))
+    .collect();
     for (name, (done, refused)) in names.iter().zip(check_all(&names, true)) {
         assert!(done > 0 && refused > 0, "{name}");
     }
@@ -147,6 +152,7 @@ fn rsa_oaep_test() {
         .unwrap()
         .into_iter()
         .filter(|n| n.starts_with("rsa_oaep_") && n.ends_with("_test.json"))
+        .filter(|n| harness::rsa_file_tested(n))
         .collect();
     assert!(!names.is_empty());
     let names: Vec<&str> = names.iter().map(String::as_str).collect();

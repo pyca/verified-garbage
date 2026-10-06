@@ -232,7 +232,10 @@ fn rsa_pkcs1_sig_gen_test() {
 #[test]
 fn rsa_pkcs1_sign_test() {
     require_vectors!();
-    for bits in [2048, 3072, 4096] {
+    for bits in [2048, 3072, 4096]
+        .into_iter()
+        .filter(|&b| harness::rsa_bits_tested(b))
+    {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<CrtGroup, MsgCase>(&name);
         harness::par_each(&file.test_groups, |group| {
