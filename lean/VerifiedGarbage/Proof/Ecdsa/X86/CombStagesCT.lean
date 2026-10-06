@@ -96,7 +96,7 @@ theorem keepCombWf {s₀ s : State} {extra : List Region} (hp : Pre p256Comb s�
   refine VG.X86.Taint.Wf.entry rfl rfl ⟨?_, ?_, ?_, ?_, ?_⟩
   · intro _
     rw [ks.wr, hp.wr]
-    refine ⟨by simp [combτ, outR, scR, size], ?_, ?_⟩
+    refine ⟨by simp [combτ, combτAt, outR, scR, size], ?_, ?_⟩
     · simpa using hp.out_sc
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
@@ -104,6 +104,7 @@ theorem keepCombWf {s₀ s : State} {extra : List Region} (hp : Pre p256Comb s�
       · simp only [ptr, BitVec.toNat_setWidth]; omega_using [hp.sc_fit]
   · intro p h
     rw [List.mem_singleton.mp h]
+    change addr (s.gpr .edi) 0 = (VG.X86.Taint.region s 1).base
     simp only [VG.X86.Taint.region, ks.wr, hp.wr, List.getD_cons_succ, List.getD_cons_zero,
       addr, BitVec.add_zero]
     exact ks.scr.edi
