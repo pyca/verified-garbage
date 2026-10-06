@@ -38,19 +38,28 @@ theorem pre_of {s : State} (h : verifyX86_64.pre s) : VPre p521 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     simp [hr]
 
+/-! The facts about every instruction, each its own declaration: the code is
+large enough that the three in one would exceed `verify_x86`'s budget. -/
+
+theorem verify_rsp : verifyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+
+theorem verify_noCalls : verifyP521.noCalls = true := by lit_decide
+
+theorem verify_mxcsr : verifyP521.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+
 theorem verify_x86 (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa verifyP521 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p521_ok hI) hL (p521_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs verifyP521, Taint.clobbers i .rsp = false := by
-    have h : verifyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+    have h := verify_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he verify_noCalls).2.2
   obtain ⟨-, hwr, -, -, -, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec verify_mxcsr he ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -68,7 +77,8 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P521.curve)
 
 theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP521 := by
   obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) verifyP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum]
+    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum,
+      Proof.P521.X86_64.winBuildSymSum, Proof.P521.X86_64.winLoopSymSum]
   refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   exact fun _ _ _ _ ⟨_, h1, h2, h3, h4, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

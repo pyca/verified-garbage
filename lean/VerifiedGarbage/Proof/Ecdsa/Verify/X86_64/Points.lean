@@ -216,10 +216,10 @@ theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k :
 /-- The slots `mulV` may write, in either case. -/
 abbrev vI : List Nat := BP :: (otherI ++ tblI ++ [TMP])
 
-/-- What `mulV` writes: for up to six words, `BP` and the window method's
+/-- What `mulV` writes: for up to nine words, `BP` and the window method's
 areas and slots; for more, the table of bits and the ladder's slots. -/
 def vW (c : Cfg) : List (Nat × Nat) :=
-  if c.n ≤ 6 then winX c ++ slW c vI
+  if c.n ≤ 9 then winX c ++ slW c vI
   else [(bitsAt c.n 0, 64 * c.n)] ++ slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2,
     T3, T4, T5, TX, TY, TZ, TMP]
 
@@ -249,20 +249,20 @@ theorem tbl₁_apart_vW {t : Nat} (ht : t < 64 * c.n) :
 /-- What `mulV` writes is in the working space. -/
 theorem vW_le (h7 : c.n < 10) : ∀ w ∈ vW c, w.1 + w.2 ≤ size := by
   unfold vW; split
-  · rename_i h6
+  · rename_i h9
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · show c.sl WK + 16 * c.n ≤ size
-        have := sl_le_win c h6 (i := WK + 1) (by decide)
+        have := sl_le_win c h9 (i := WK + 1) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
       · show c.sl WB + 80 * c.n ≤ size
-        have := sl_le_win c h6 (i := WB + 9) (by decide)
+        have := sl_le_win c h9 (i := WB + 9) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have lt : ∀ i ∈ vI, i < 116 := by decide
-      exact sl_le_win c h6 (lt i hi)
+      have lt : ∀ i ∈ vI, i < 107 := by decide
+      exact sl_le_win c h9 (lt i hi)
   · intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]; have := bitsAt_le c h7 (j := 0) (by decide); exact this
@@ -279,7 +279,7 @@ structure VMulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Sta
     (tmv c.C c.n base s' (c.sl RZ)) (mul k P)
 
 /-- `[v]P`, for `v` at `V`, `P` at `PX`, `PY` and `R = O`: by windows for up
-to six words, else by the ladder. -/
+to nine words, else by the ladder. -/
 theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
@@ -297,7 +297,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   unfold Impl.Ecdsa.Verify.X86_64.Cfg.mulV
   split
-  · rename_i h6
+  · rename_i h9
     have hb : c.mont c.C.b < 2 ^ (64 * c.n) := by have := hc.p_lt; have := hmont c.C.b; omega
     refine WP.seq (WP.seq (WP.mono (setSl_ok hc hs (o := BP) (by decide) hb) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_))
     have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -308,19 +308,19 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       show Rep _ (toM _ _ (sv c base s₁ PX)) (toM _ _ (sv c base s₁ PY)) (toM _ _ (sv c base s₁ ONEP)) P
       rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide)]
       exact hrep
-    refine WP.seq_iff.mp (winMul_ok hc h6 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
+    refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
       (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide) fun s₂ W => h s₂ ?_)
     rw [v₁ (by decide) (by decide)] at W
     refine ⟨W.scr, (k₁.mono fun r hr => ?_).trans W.keep, ?_, W.mod, W.lt, W.q⟩
     · rw [List.mem_singleton.mp hr]; simp [powClob, clob]
-    · simp only [vW, h6, ↓reduceIte]
+    · simp only [vW, h9, ↓reduceIte]
       refine (O₁.unch.trans W.unch).mono fun w hw => ?_
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]; exact List.mem_append_right _ (List.mem_cons_self ..)
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_left _ hw
         · exact List.mem_append_right _ (List.mem_cons_of_mem _ hw)
-  · rename_i h6
+  · rename_i h9
     refine WP.seq (WP.seq (WP.mono (bits_ok hs h0 (by omega) (sl_le c h7 (i := V) (by decide))
       (bitsAt_le c h7 (j := 0) (by decide)) (Or.inl (by have := sl_below_bits c (i := V) (by decide) 0 0; omega)))
       fun s₁ ⟨b₁, k₁, O₁⟩ => ?_))
@@ -366,7 +366,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
         (k₁.mono fun r hr => ?_).trans K₂, ?_, M₂, L₂, by rwa [Nat.shiftRight_zero] at q₂⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
-    · simp only [vW, h6, ↓reduceIte]
+    · simp only [vW, h9, ↓reduceIte]
       rw [← ladWQ_eq]
       exact U₁.trans U₂
 

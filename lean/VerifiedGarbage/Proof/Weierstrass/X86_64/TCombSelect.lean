@@ -34,8 +34,8 @@ theorem selAcc_ne : ∀ c < 14, selAcc c ≠ .xmm14 ∧ selAcc c ≠ .xmm15 := b
 
 theorem selAcc_inj : ∀ c < 14, ∀ d < 14, selAcc c = selAcc d → c = d := by decide
 
-theorem ea_tblAt (s : State) (d : Nat) : s.ea (TCombCfg.tblAt d) = s.gpr .rdx + BitVec.ofNat 64 d := by
-  simp only [State.ea, TCombCfg.tblAt, BitVec.ofInt_natCast]
+theorem ea_tblAt (s : State) (d : Nat) : s.ea (tblAt d) = s.gpr .rdx + BitVec.ofNat 64 d := by
+  simp only [State.ea, tblAt, BitVec.ofInt_natCast]
 
 /-- What the selection leaves of the other registers: the general-purpose
 registers but `rs`, the memory and the regions, and the `xmm` registers but
@@ -63,7 +63,7 @@ theorem XKeep.mono {rs rs' : List Reg} {xs xs' : XReg → Prop} {s t : State} (h
 `xmm15` in accumulator `c`. -/
 theorem selStep_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc : c < 14)
     (hr : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 d) 16) :
-    WP isa (.block [.movdquLoad .xmm14 (TCombCfg.tblAt d), .xop (.bin .pand .xmm14 .xmm15),
+    WP isa (.block [.movdquLoad .xmm14 (tblAt d), .xop (.bin .pand .xmm14 .xmm15),
         .xop (.bin .por (selAcc c) .xmm14)]) s fun t =>
       t.xmm (selAcc c) = s.xmm (selAcc c) ||| (s.mem.readW (X + BitVec.ofNat 64 d) 128 &&& s.xmm .xmm15) ∧
       XKeep [] (fun r => r = selAcc c ∨ r = .xmm14) s t := by
@@ -77,17 +77,19 @@ theorem selStep_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc 
   simp only [not_or] at hr
   rw [RegUpd.xmm_setXmm_of_ne _ _ hr.1, RegUpd.xmm_setXmm_of_ne _ _ hr.2, RegUpd.xmm_setXmm_of_ne _ _ hr.2]
 
-/-- The pieces `c < k` of entry `m` of the table at `rdx = X` kept under the
-mask `xmm15` in their accumulators. -/
-theorem selSteps_ok {n m : Nat} (hn : n ≤ 14) {X : Addr} : ∀ k ≤ n, ∀ (s : State), s.gpr .rdx = X →
-    (∀ c < n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * n * (m - 1) + 16 * c)) 16) →
+/-- The pieces `c < k` of entry `m` of the table at `rdx = X` (entries `st`
+bytes apart, piece `c` at `po c` bytes into its entry) kept under the mask
+`xmm15` in their accumulators. -/
+theorem selSteps_ok {np st m : Nat} {po : Nat → Nat} (hn : np ≤ 14) {X : Addr} :
+    ∀ k ≤ np, ∀ (s : State), s.gpr .rdx = X →
+    (∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + po c)) 16) →
     WP isa (.block ((List.range k).flatMap fun c =>
-        [.movdquLoad .xmm14 (TCombCfg.tblAt (16 * n * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
+        [.movdquLoad .xmm14 (tblAt (st * (m - 1) + po c)), .xop (.bin .pand .xmm14 .xmm15),
           .xop (.bin .por (selAcc c) .xmm14)])) s fun t =>
       (∀ c < 14, t.xmm (selAcc c) = if c < k then s.xmm (selAcc c) |||
-          (s.mem.readW (X + BitVec.ofNat 64 (16 * n * (m - 1) + 16 * c)) 128 &&& s.xmm .xmm15)
+          (s.mem.readW (X + BitVec.ofNat 64 (st * (m - 1) + po c)) 128 &&& s.xmm .xmm15)
         else s.xmm (selAcc c)) ∧
-      XKeep [] (fun r => (∃ c < n, r = selAcc c) ∨ r = .xmm14) s t
+      XKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm14) s t
   | 0, _, s, _, _ => WP.block_nil ⟨fun c _ => by simp, XKeep.refl _ _ _⟩
   | k + 1, hk, s, hx, hr => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
@@ -126,13 +128,13 @@ theorem dupMask_ok (s : State) {b : Bool} (hc : s.gpr .rcx = bmask b) :
 
 /-- Accumulator `c` after the entries `1 … m` for the magnitude `a`: piece
 `c` of entry `a` of the table at `X` if `1 ≤ a ≤ m`, else zero. -/
-def accVal (mem : Mem) (X : Addr) (n a m c : Nat) : BitVec 128 :=
-  if 1 ≤ a ∧ a ≤ m then mem.readW (X + BitVec.ofNat 64 (16 * n * (a - 1) + 16 * c)) 128 else 0
+def accVal (mem : Mem) (X : Addr) (st : Nat) (po : Nat → Nat) (a m c : Nat) : BitVec 128 :=
+  if 1 ≤ a ∧ a ≤ m then mem.readW (X + BitVec.ofNat 64 (st * (a - 1) + po c)) 128 else 0
 
-theorem accVal_step (mem : Mem) (X : Addr) (n a m c : Nat) (hm : 1 ≤ m) :
-    accVal mem X n a (m - 1) c |||
-      (mem.readW (X + BitVec.ofNat 64 (16 * n * (m - 1) + 16 * c)) 128 &&& bmask128 (decide (a = m))) =
-      accVal mem X n a m c := by
+theorem accVal_step (mem : Mem) (X : Addr) (st : Nat) (po : Nat → Nat) (a m c : Nat) (hm : 1 ≤ m) :
+    accVal mem X st po a (m - 1) c |||
+      (mem.readW (X + BitVec.ofNat 64 (st * (m - 1) + po c)) 128 &&& bmask128 (decide (a = m))) =
+      accVal mem X st po a m c := by
   unfold accVal
   by_cases h : a = m
   · subst h
@@ -149,23 +151,24 @@ theorem accVal_step (mem : Mem) (X : Addr) (n a m c : Nat) (hm : 1 ≤ m) :
 
 /-- Entry `m` of the table at `rdx = X` kept in the accumulators under the
 mask of `r8 = a`. -/
-theorem selEntry_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat} (hn : K.M.n ≤ 14) (hm1 : 1 ≤ m)
-    (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
-    (hr : ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * (m - 1) + 16 * c)) 16)
-    (hacc : ∀ c < K.M.n, s.xmm (selAcc c) = accVal s.mem X K.M.n a (m - 1) c) :
-    WP isa (.block (K.selEntry m)) s fun t =>
-      (∀ c < K.M.n, t.xmm (selAcc c) = accVal s.mem X K.M.n a m c) ∧
-      XKeep [.rcx] (fun r => (∃ c < K.M.n, r = selAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t := by
-  rw [TCombCfg.selEntry, WP.block_append_iff, WP.block_append_iff]
+theorem selEntry_ok {st np : Nat} {po : Nat → Nat} {s : State} {X : Addr} {a m : Nat} (hn : np ≤ 14)
+    (hm1 : 1 ≤ m) (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a)
+    (hx : s.gpr .rdx = X)
+    (hr : ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + po c)) 16)
+    (hacc : ∀ c < np, s.xmm (selAcc c) = accVal s.mem X st po a (m - 1) c) :
+    WP isa (.block (selEntryAt st np po m)) s fun t =>
+      (∀ c < np, t.xmm (selAcc c) = accVal s.mem X st po a m c) ∧
+      XKeep [.rcx] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t := by
+  rw [selEntryAt, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (eqMask_ok s hm ha h8) fun s₁ ⟨c₁, k₁, x₁⟩ => ?_
   refine WP.mono (dupMask_ok s₁ c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
   have hx₂ : s₂.gpr .rdx = X := by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), hx]
   have hm₂ : s₂.mem = s.mem := k₂.mem.trans k₁.2.1
-  refine WP.mono (selSteps_ok hn K.M.n (Nat.le_refl _) s₂ hx₂ (by
+  refine WP.mono (selSteps_ok hn np (Nat.le_refl _) s₂ hx₂ (by
       rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun c hc => ?_, ?_⟩
   · rw [a₃ c (by omega), ite_eq_left_of_eq_true _ _ (eq_true hc), x₂, hm₂,
       k₂.xmm _ (fun h => (selAcc_ne c (by omega)).2 h), x₁, hacc c hc]
-    exact accVal_step _ _ _ _ _ _ hm1
+    exact accVal_step _ _ _ _ _ _ _ hm1
   · refine ⟨fun r hr => ?_, k₃.mem.trans hm₂, by rw [k₃.rd, k₂.rd, k₁.2.2.1],
       by rw [k₃.wr, k₂.wr, k₁.2.2.2], fun r hr => ?_⟩
     · rw [k₃.gpr r List.not_mem_nil, k₂.gpr r List.not_mem_nil, k₁.1 r hr]
@@ -174,25 +177,24 @@ theorem selEntry_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat} (hn : K.M.
 
 /-- The entries `1 … h` of the table at `rdx = X` kept in the cleared
 accumulators under the masks of `r8 = a`. -/
-theorem selEntries_ok (K : TCombCfg) {X : Addr} {a : Nat} (hn : K.M.n ≤ 14) (ha : a < 2 ^ 31) :
+theorem selEntries_ok {st np : Nat} {po : Nat → Nat} {X : Addr} {a : Nat} (hn : np ≤ 14) (ha : a < 2 ^ 31) :
     ∀ h, h < 2 ^ 31 → ∀ (s : State), s.gpr .r8 = BitVec.ofNat 64 a → s.gpr .rdx = X →
-    (∀ e < h, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16) →
-    (∀ c < K.M.n, s.xmm (selAcc c) = 0) →
-    WP isa (.block ((List.range h).flatMap fun m => K.selEntry (m + 1))) s fun t =>
-      (∀ c < K.M.n, t.xmm (selAcc c) = accVal s.mem X K.M.n a h c) ∧
-      XKeep [.rcx] (fun r => (∃ c < K.M.n, r = selAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t
+    (∀ e < h, ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * e + po c)) 16) →
+    (∀ c < np, s.xmm (selAcc c) = 0) →
+    WP isa (.block ((List.range h).flatMap fun m => selEntryAt st np po (m + 1))) s fun t =>
+      (∀ c < np, t.xmm (selAcc c) = accVal s.mem X st po a h c) ∧
+      XKeep [.rcx] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t
   | 0, _, s, _, _, _, h0 => WP.block_nil ⟨fun c hc => by
       rw [h0 c hc, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], XKeep.refl _ _ _⟩
   | h + 1, hh, s, h8, hx, hr, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (selEntries_ok K hn ha h (by omega) s h8 hx (fun e he => hr e (by omega)) h0)
+    refine WP.mono (selEntries_ok hn ha h (by omega) s h8 hx (fun e he => hr e (by omega)) h0)
       fun s₁ ⟨a₁, k₁⟩ => ?_
-    refine WP.mono (selEntry_ok K (X := X) (m := h + 1) hn (by omega) hh ha
+    refine WP.mono (selEntry_ok (X := X) (m := h + 1) hn (by omega) hh ha
       (by rw [k₁.gpr _ (by decide), h8]) (by rw [k₁.gpr _ (by decide), hx])
       (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
       (fun c hc => by rw [a₁ c hc, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
       ⟨fun c hc => by rw [a₂ c hc, k₁.mem], k₁.trans k₂⟩
-
 /-- The accumulators `c < k` cleared. -/
 theorem clearAcc_ok : ∀ k ≤ 14, ∀ (s : State),
     WP isa (.block ((List.range k).map fun c => .xop (.bin .pxor (selAcc c) (selAcc c)))) s fun t =>
@@ -250,6 +252,20 @@ theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s
       rw [x₁]; exact Mem.readW_writeW_self (n := 16) _ _ _ (by decide)
     · rw [O₂.read128 (by omega) (by omega), a₁ c (by omega)]
 
+/-- An accumulator stored to the 16 bytes at `d`. -/
+theorem store128_ok {base : Addr} {size d : Nat} (s : State) (hs : Scr s base size) (hd : d + 16 ≤ size)
+    (r : XReg) :
+    WP isa (.block [.movdquStore (sc d) r]) s fun t =>
+      t.mem.readW (off base d) 128 = s.xmm r ∧ Outside base d 16 s.mem t.mem ∧ t.gpr = s.gpr ∧
+        t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm = s.xmm := by
+  have hn := hs.nowrap
+  have hw : InRegions s.wr (off base d) 16 := ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hs.rdi, State.store128, hw,
+    ite_true, Option.some.injEq, exists_eq_left']
+  exact ⟨Mem.readW_writeW_self (n := 16) _ _ _ (by decide),
+    writeW128_out s.mem base (s.xmm r) (by omega), trivial, trivial, trivial, trivial⟩
+
 /-- `rdx` = the address of table `rbx = j`, `T + j · tblBytes`, through `rax`
 and `rcx`. -/
 theorem selSetup_ok (K : TCombCfg) (s : State) {j : Nat} {T : Addr} (hb : s.gpr .rbx = BitVec.ofNat 64 j)
@@ -271,6 +287,21 @@ theorem selSetup_ok (K : TCombCfg) (s : State) {j : Nat} {T : Addr} (hb : s.gpr 
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
       ite_false]
 
+/-- The accumulators `c < np` cleared, then entries `1 … H` of the table at
+`rdx = X` kept under the masks of `r8 = a`. -/
+theorem selLoad_ok {st np H : Nat} {po : Nat → Nat} {s : State} {X : Addr} {a : Nat} (hn : np ≤ 14)
+    (hH : H < 2 ^ 31) (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
+    (hr : ∀ e < H, ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * e + po c)) 16) :
+    WP isa (.block ((List.range np).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
+      (List.range H).flatMap (fun m => selEntryAt st np po (m + 1)))) s fun t =>
+      (∀ c < np, t.xmm (selAcc c) = accVal s.mem X st po a H c) ∧ KeepRegs [.rcx] s t ∧ t.mem = s.mem := by
+  rw [WP.block_append_iff]
+  refine WP.mono (clearAcc_ok np hn s) fun s₁ ⟨a₁, k₁⟩ => ?_
+  refine WP.mono (selEntries_ok (X := X) hn ha H hH s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
+    (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) a₁) fun s₂ ⟨a₂, k₂⟩ =>
+    ⟨fun c hc => by rw [a₂ c hc, k₁.mem], ⟨fun r hr => by rw [k₂.gpr r hr, k₁.gpr r List.not_mem_nil],
+      by rw [k₂.rd, k₁.rd], by rw [k₂.wr, k₁.wr]⟩, by rw [k₂.mem, k₁.mem]⟩
+
 /-- The accumulators cleared, entries `1 … H` of the table at `rdx = X` kept
 under the masks of `r8 = a`, and stored to the `16 n` bytes at `E.x`. -/
 theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
@@ -279,25 +310,20 @@ theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
     (hr : ∀ e < K.H, ∀ c < K.M.n, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.M.n * e + 16 * c)) 16)
     (hE : K.E.x + 16 * K.M.n ≤ size) :
     WP isa (.block K.selPass) s fun t =>
-      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X K.M.n a K.H c) ∧
+      (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X (16 * K.M.n) (16 * ·) a K.H c) ∧
       Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
-  unfold TCombCfg.selPass
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (clearAcc_ok K.M.n hn s) fun s₁ ⟨a₁, k₁⟩ => ?_
-  refine WP.mono (selEntries_ok K (X := X) hn ha K.H hH s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
-    (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) a₁) fun s₂ ⟨a₂, k₂⟩ => ?_
-  have hs₂ : Scr s₂ base size :=
-    ⟨by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil, hs.rdi], by rw [k₂.wr, k₁.wr]; exact hs.wr,
-      hs.nowrap⟩
+  unfold TCombCfg.selPass selPassAt
+  rw [WP.block_append_iff]
+  refine WP.mono (selLoad_ok (st := 16 * K.M.n) (po := (16 * ·)) hn hH ha h8 hx hr) fun s₂ ⟨a₂, k₂, m₂⟩ => ?_
+  have hs₂ : Scr s₂ base size := hs.of_keepRegs k₂ (by decide)
   refine WP.mono (storeAcc_ok (o := K.E.x) K.M.n s₂ hs₂ hE) fun t ⟨a₃, O₃, g₃, r₃, w₃, _⟩ =>
-    ⟨fun c hc => by rw [a₃ c hc, a₂ c hc, k₁.mem], by rw [k₂.mem, k₁.mem] at O₃; exact O₃,
-      ⟨fun r hr => by rw [g₃, k₂.gpr r hr, k₁.gpr r List.not_mem_nil], by rw [r₃, k₂.rd, k₁.rd],
-        by rw [w₃, k₂.wr, k₁.wr]⟩⟩
+    ⟨fun c hc => by rw [a₃ c hc, a₂ c hc], by rw [m₂] at O₃; exact O₃,
+      ⟨fun r hr => by rw [g₃, k₂.gpr r hr], by rw [r₃, k₂.rd], by rw [w₃, k₂.wr]⟩⟩
 
 /-- The words the selection stores: those of entry `a` of the table at `X`
 if `1 ≤ a ≤ H`, else zero. -/
 theorem accVal_word {mem mem' : Mem} {base X : Addr} {n a H o : Nat}
-    (h : ∀ c < n, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X n a H c) :
+    (h : ∀ c < n, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X (16 * n) (16 * ·) a H c) :
     ∀ i < 2 * n, word mem' base (o + 8 * i) =
       if 1 ≤ a ∧ a ≤ H then word mem X (16 * n * (a - 1) + 8 * i) else 0 := by
   intro i hi
@@ -311,6 +337,21 @@ theorem accVal_word {mem mem' : Mem} {base X : Addr} {n a H o : Nat}
     rw [show 8 * 8 = 64 from rfl, Offset.add_add] at e2
     rw [e2, Mont.word, off]
     rw [show 16 * n * (a - 1) + 16 * c + 8 * q = 16 * n * (a - 1) + 8 * (2 * c + q) by omega]
+  · simp
+
+/-- Word `q < 2` of a stored accumulator: that of its piece of entry `a` of
+the table at `X` if `1 ≤ a ≤ H`, else zero. -/
+theorem accVal_word1 {mem mem' : Mem} {base X : Addr} {st : Nat} {po : Nat → Nat} {a H c o q : Nat}
+    (h : mem'.readW (off base o) 128 = accVal mem X st po a H c) (hq : q < 2) :
+    word mem' base (o + 8 * q) = if 1 ≤ a ∧ a ≤ H then word mem X (st * (a - 1) + po c + 8 * q) else 0 := by
+  have e := readW_extract mem' (off base o) (w := 128) (k := 8 * q) (n := 8) (by omega)
+  rw [show 8 * 8 = 64 from rfl, off, Offset.add_add] at e
+  rw [Mont.word, off, ← e, h, accVal]
+  split
+  · have e2 := readW_extract mem (X + BitVec.ofNat 64 (st * (a - 1) + po c)) (w := 128)
+      (k := 8 * q) (n := 8) (by omega)
+    rw [show 8 * 8 = 64 from rfl, Offset.add_add] at e2
+    rw [e2, Mont.word, off]
   · simp
 
 /-- `rcx` all ones if `r8 = a` is zero, else zero. -/

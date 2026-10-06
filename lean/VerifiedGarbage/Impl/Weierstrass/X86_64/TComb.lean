@@ -94,6 +94,26 @@ def eqMask (v : Nat) : List Instr :=
 /-- `[o] = [a]` for a point. -/
 def copyPt (n : Nat) (o a : Pt) : List Instr := copy n o.x a.x ++ copy n o.y a.y ++ copy n o.z a.z
 
+/-- `[rdx + d]`: byte `d` of the table at `rdx`. -/
+def tblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
+
+/-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
+apart: its `np` 16-byte pieces, piece `c` at `po c` bytes into the entry,
+kept in the accumulators under the mask of `r8 = m`. -/
+def selEntryAt (st np : Nat) (po : Nat → Nat) (m : Nat) : List Instr :=
+  eqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
+  (List.range np).flatMap fun c =>
+    [.movdquLoad .xmm14 (tblAt (st * (m - 1) + po c)), .xop (.bin .pand .xmm14 .xmm15),
+      .xop (.bin .por (selAcc c) .xmm14)]
+
+/-- The entry for the magnitude in `r8` of the `H` entries of the table at
+`rdx` (`selEntryAt st np po`) to `o`, piece `c` at `o + po c`: the
+accumulators cleared, every entry kept under its mask, and stored. -/
+def selPassAt (o H st np : Nat) (po : Nat → Nat) : List Instr :=
+  (List.range np).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
+  (List.range H).flatMap (fun m => selEntryAt st np po (m + 1)) ++
+  (List.range np).map fun c => .movdquStore (sc (o + po c)) (selAcc c)
+
 namespace TCombCfg
 
 variable (K : TCombCfg)
@@ -104,16 +124,9 @@ def H : Nat := 2 ^ (K.w - 1)
 /-- The bytes of a table. -/
 def tblBytes : Nat := 16 * K.M.n * K.H
 
-/-- `[rdx + d]`: byte `d` of the table at `rdx`. -/
-def tblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
-
 /-- Entry `m` (from 1) of the table at `rdx`, its `n` pairs of words kept in
 the accumulators under the mask of `r8 = m`. -/
-def selEntry (m : Nat) : List Instr :=
-  eqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
-  (List.range K.M.n).flatMap fun c =>
-    [.movdquLoad .xmm14 (tblAt (16 * K.M.n * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
-      .xop (.bin .por (selAcc c) .xmm14)]
+def selEntry (m : Nat) : List Instr := selEntryAt (16 * K.M.n) K.M.n (16 * ·) m
 
 /-- `rdx` = table `rbx`'s address, from the static `tsym`'s, through `rax` and
 `rcx`. -/
@@ -123,10 +136,7 @@ def selSetup : List Instr :=
 
 /-- The entry of table `rbx` for the magnitude in `r8` into `E`'s `x` and
 `y`: the accumulators cleared, every entry kept under its mask, and stored. -/
-def selPass : List Instr :=
-  (List.range K.M.n).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
-  (List.range K.H).flatMap (fun m => K.selEntry (m + 1)) ++
-  (List.range K.M.n).map fun c => .movdquStore (sc (K.E.x + 16 * c)) (selAcc c)
+def selPass : List Instr := selPassAt K.E.x K.H (16 * K.M.n) K.M.n (16 * ·)
 
 /-- `y = R` if the magnitude in `r8` is zero (when the selected `y` is zero),
 and `Z = R` unless it is, through `rax`, `rcx` and `rdx`. -/
