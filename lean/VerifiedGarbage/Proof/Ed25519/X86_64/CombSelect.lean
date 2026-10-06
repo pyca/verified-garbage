@@ -8,13 +8,13 @@ import VerifiedGarbage.Proof.Framework.CallLay
 /-! Merged from `Proof.Ed25519.X86_64.CombConstants`. -/
 section
 /-!
-# The comb's tables represent `[k 256^j]B`, and `combG` represents `[G]B`
+# The comb's tables represent `[k 1024^j]B`, and `combG` represents `[G]B`
 
 Each entry is turned back into affine `(x, y)` (`uncache`, which the kernel
 checks inverts the caching) and `checkTables` walks the tables once: within
 table `j`, each entry is the previous one plus the first, with the
 specification's addition, compared projectively; the first entry of table `j +
-1` is `[256]` of table `j`'s, with the specification's `pointMul`.
+1` is `[1024]` of table `j`'s, with the specification's `pointMul`.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -60,12 +60,12 @@ private theorem checkRow_ok (b p : Point) (c a : EPoint dZ) (hb : Rep b c) (h : 
 /-- Each table checked from the representative `b` of its first entry. -/
 private def checkTables (b : Point) : List (List (Fe × Fe)) → Bool
   | [] => true
-  | row :: rows => checkRow b b row && checkTables (pointMul 256 b) rows
+  | row :: rows => checkRow b b row && checkTables (pointMul 1024 b) rows
 
 private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
     (rows : List (List (Fe × Fe))) (hc : checkTables b rows = true) (j : Nat) (hj : j < rows.length)
     (k : Nat) (hk : k < (rows.getD j []).length) :
-    Rep (affPt ((rows.getD j []).getD k (0, 1))) ((k + 1) • ((256 ^ j) • c)) := by
+    Rep (affPt ((rows.getD j []).getD k (0, 1))) ((k + 1) • ((1024 ^ j) • c)) := by
   induction rows generalizing b c j with
   | nil => exact absurd hj (Nat.not_lt_zero _)
   | cons row rows ih =>
@@ -78,7 +78,7 @@ private theorem checkTables_ok (b : Point) (c : EPoint dZ) (hb : Rep b c)
       exact this
     | succ j =>
       rw [List.getD_cons_succ] at hk ⊢
-      have := ih (pointMul 256 b) ((256 : Nat) • c) (pointMul_rep 256 hb) hc.2 j
+      have := ih (pointMul 1024 b) ((1024 : Nat) • c) (pointMul_rep 1024 hb) hc.2 j
         (by simp only [List.length_cons] at hj; omega) hk
       rw [smul_smul, smul_smul] at this
       rw [smul_smul, pow_succ, ← Nat.mul_assoc]
@@ -96,7 +96,7 @@ private theorem tables_cached :
     combTable.all (fun row => row.all fun e => decide (recache e = e)) = true := by decide +kernel
 
 theorem tables_length :
-    combTable.length = 32 ∧ combTable.all (fun row => row.length == 8) = true := by decide +kernel
+    combTable.length = 26 ∧ combTable.all (fun row => row.length == 16) = true := by decide +kernel
 
 private theorem getD_map' {α β : Type} (l : List α) (f : α → β) (n : Nat) (d : α) :
     (l.map f).getD n (f d) = f (l.getD n d) := by
@@ -104,8 +104,8 @@ private theorem getD_map' {α β : Type} (l : List α) (f : α → β) (n : Nat)
 
 private theorem uncache_default : uncache (1, 1, 0) = (0, 1) := by decide
 
-theorem combCached_ok (j k : Nat) (hj : j < 32) (hk : k < 9) :
-    ∃ q, combCached j k = cache q ∧ Rep q ((k * 256 ^ j) • baseAff) := by
+theorem combCached_ok (j k : Nat) (hj : j < 26) (hk : k < 17) :
+    ∃ q, combCached j k = cache q ∧ Rep q ((k * 1024 ^ j) • baseAff) := by
   cases k with
   | zero =>
     refine ⟨identity, ?_, ?_⟩
@@ -115,7 +115,7 @@ theorem combCached_ok (j k : Nat) (hj : j < 32) (hk : k < 9) :
     have hrow : (combTable.getD j []) ∈ combTable := by
       rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [tables_length.1]; exact hj)]
       exact List.getElem_mem _
-    have hlen : (combTable.getD j []).length = 8 :=
+    have hlen : (combTable.getD j []).length = 16 :=
       beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ hrow)
     have hmem : (combTable.getD j []).getD k (1, 1, 0) ∈ combTable.getD j [] := by
       have hk' : k < (combTable.getD j []).length := by rw [hlen]; omega
@@ -137,8 +137,8 @@ theorem combCached_ok (j k : Nat) (hj : j < 32) (hk : k < 9) :
       rw [hgj, ← uncache_default, getD_map', smul_smul] at hr
       exact hr
 
-/-- The constant the comb's digits are offset by: `8 Σ_{j < 32} 256^j`. -/
-def combGVal : Nat := 8 * ((256 ^ 32 - 1) / 255)
+/-- The constant the comb's digits are offset by: `16 Σ_{j < 26} 1024^j`. -/
+def combGVal : Nat := 16 * ((1024 ^ 26 - 1) / 1023)
 
 private def combGCheck (p : Point) : Bool := combG.X * p.Z == p.X && combG.Y * p.Z == p.Y && p.Z != 0
 
@@ -165,8 +165,8 @@ end
 /-!
 # The comb's constant-time selection, from the tables in the static
 
-`combWords` holds entry `k = 1 … 8` of table `j` (`combCached j k`, without
-its `2Z`) at word `96 j + 12 (k - 1)`, at `T + 768 j + 96 (k - 1)` in a memory
+`combWords` holds entry `k = 1 … 16` of table `j` (`combCached j k`, without
+its `2Z`) at word `192 j + 12 (k - 1)`, at `T + 1536 j + 96 (k - 1)` in a memory
 holding the tables at `T` (`CombTbl`). The selection (`combSelect_ok`) sets
 `rdx` to table `j`'s address (`combSelSetup_ok`), clears the accumulators,
 keeps, for every entry `m`, its six 16-byte pieces under the mask of the
@@ -217,22 +217,23 @@ theorem getD_flatMap_const {α β : Type} (f : α → List β) (k : Nat) (d : β
       exact getD_flatMap_const f k d l da (fun y hy => h y (List.mem_cons_of_mem _ hy)) q (by omega) r hr
 
 theorem combRow_length {row : List (Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25519.Fe)}
-    (h : row ∈ combTable) : row.length = 8 :=
+    (h : row ∈ combTable) : row.length = 16 :=
   beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ h)
 
-theorem combWords_length : combWords.length = 3072 := by
-  rw [combWords, length_flatMap_const _ 96 _ (fun row hrow => by
+theorem combWords_length : combWords.length = combWordCount := by
+  rw [combWords, length_flatMap_const _ 192 _ (fun row hrow => by
     rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow]),
     tables_length.1]
+  rfl
 
-/-- Word `i < 12` of entry `k < 8` of table `j < 32`. -/
-theorem combWords_getD {j k i : Nat} (hj : j < 32) (hk : k < 8) (hi : i < 12) :
-    combWords.getD (j * 96 + (k * 12 + i)) 0 =
+/-- Word `i < 12` of entry `k < 16` of table `j < 26`. -/
+theorem combWords_getD {j k i : Nat} (hj : j < 26) (hk : k < 16) (hi : i < 12) :
+    combWords.getD (j * 192 + (k * 12 + i)) 0 =
       (entryWords ((combTable.getD j []).getD k (1, 1, 0))).getD i 0 := by
   have hrow : (combTable.getD j []) ∈ combTable := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [tables_length.1]; exact hj)]
     exact List.getElem_mem _
-  rw [combWords, getD_flatMap_const _ 96 0 combTable [] (fun row hrow => by
+  rw [combWords, getD_flatMap_const _ 192 0 combTable [] (fun row hrow => by
       rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow])
       j (by rw [tables_length.1]; exact hj) _ (by omega),
     getD_flatMap_const _ 12 0 _ (1, 1, 0) (fun e _ => entryWords_length e) k
@@ -269,8 +270,8 @@ theorem feWord_val (v : Spec.X25519.Fe) :
 `combWords` at `T + 8 i`. -/
 structure CombTbl (s : State) (T : Addr) : Prop where
   sym : s.syms combSym = T
-  rd : InRegions (s.rd ++ s.wr) T (8 * 3072)
-  val : ∀ i < 3072, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
+  rd : InRegions (s.rd ++ s.wr) T (8 * combWordCount)
+  val : ∀ i < combWordCount, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 /-! ## Masks and pieces -/
 
@@ -584,19 +585,19 @@ theorem combSelSetup_ok (s : State) {j : Nat} {T : Addr} (hd : s.gpr .rdx = BitV
       Keeps [.rax, .rcx, .rdx] s t ∧ t.xmm = s.xmm ∧ t.syms = s.syms :=
   tblSetup_ok s combSym (by decide) hd hT
 
-/-- The accumulators cleared, entries `1 … 8` of the table at `rdx = X` kept
+/-- The accumulators cleared, entries `1 … 16` of the table at `rdx = X` kept
 under the masks of `r8 = a`, and stored to slots 4–6. -/
 theorem combSelPass_ok {s : State} {base : Addr} (hs : Scratch s base) {X : Addr} {a : Nat}
     (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
-    (hr : ∀ e < 8, ∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16) :
+    (hr : ∀ e < 16, ∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16) :
     WP isa (.block combSelPass) s fun t =>
-      (∀ c < 6, t.mem.readW (off base (offset 4 + 16 * c)) 128 = accVal s.mem X a 8 c) ∧
+      (∀ c < 6, t.mem.readW (off base (offset 4 + 16 * c)) 128 = accVal s.mem X a 16 c) ∧
       Outside base (offset 4) 96 s.mem t.mem ∧ (∀ r, r ≠ .rcx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.syms = s.syms := by
   unfold combSelPass
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (combClearAcc_ok 6 (Nat.le_refl _) s) fun s₁ ⟨a₁, k₁⟩ => ?_
-  refine WP.mono (combSelEntries_ok (X := X) ha 8 (by decide) s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
+  refine WP.mono (combSelEntries_ok (X := X) ha 16 (by decide) s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
     (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) a₁) fun s₂ ⟨a₂, k₂⟩ => ?_
   have hs₂ : Scratch s₂ base :=
     ⟨by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil, hs.rdi], by rw [k₂.wr, k₁.wr]; exact hs.wr,
@@ -607,11 +608,11 @@ theorem combSelPass_ok {s : State} {base : Addr} (hs : Scratch s base) {X : Addr
       by rw [r₃, k₂.rd, k₁.rd], by rw [w₃, k₂.wr, k₁.wr], by rw [y₃, k₂.syms, k₁.syms]⟩
 
 /-- The words the selection stores: those of entry `a` of the table at `X`
-if `1 ≤ a ≤ 8`, else zero. -/
+if `1 ≤ a ≤ 16`, else zero. -/
 theorem accVal_word {mem mem' : Mem} {base X : Addr} {a o : Nat}
-    (h : ∀ c < 6, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X a 8 c) :
+    (h : ∀ c < 6, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X a 16 c) :
     ∀ i < 12, Proof.X25519.X86_64.word mem' base (o + 8 * i) =
-      if 1 ≤ a ∧ a ≤ 8 then Proof.X25519.X86_64.word mem X (combEntryBytes * (a - 1) + 8 * i) else 0 := by
+      if 1 ≤ a ∧ a ≤ 16 then Proof.X25519.X86_64.word mem X (combEntryBytes * (a - 1) + 8 * i) else 0 := by
   intro i hi
   obtain ⟨c, q, hq, rfl⟩ : ∃ c q, q < 2 ∧ i = 2 * c + q :=
     ⟨i / 2, i % 2, Nat.mod_lt _ (by decide), by omega⟩
@@ -627,11 +628,12 @@ theorem accVal_word {mem mem' : Mem} {base X : Addr} {a o : Nat}
   · simp
 
 /-- Word `i < 12` of entry `a` (from 1) of table `j`, in the memory holding the tables at `T`. -/
-theorem combTbl_word {s : State} {T : Addr} (ht : CombTbl s T) {j a i : Nat} (hj : j < 32) (ha1 : 1 ≤ a)
-    (ha : a ≤ 8) (hi : i < 12) :
+theorem combTbl_word {s : State} {T : Addr} (ht : CombTbl s T) {j a i : Nat} (hj : j < 26) (ha1 : 1 ≤ a)
+    (ha : a ≤ 16) (hi : i < 12) :
     Proof.X25519.X86_64.word s.mem (T + BitVec.ofNat 64 (j * combTblBytes)) (combEntryBytes * (a - 1) + 8 * i) =
       (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 := by
-  rw [← combWords_getD hj (by omega) hi, ← ht.val _ (by omega), Proof.X25519.X86_64.word, off,
+  rw [← combWords_getD hj (by omega) hi, ← ht.val _ (by simp only [combWordCount]; omega),
+    Proof.X25519.X86_64.word, off,
     BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   congr 2
   simp only [combTblBytes, combEntryBytes]
@@ -687,10 +689,10 @@ theorem combCached_succ (j a : Nat) (ha : 1 ≤ a) :
       ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.1, ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.2, 2⟩ := by
   simp only [combCached, show a ≠ 0 by omega, ↓reduceIte]
 
-/-- The selection: entry `a ≤ 8` (`combCached`, but its `2Z`) of table `j < 32`, from the tables
+/-- The selection: entry `a ≤ 16` (`combCached`, but its `2Z`) of table `j < 26`, from the tables
 at `T`, to slots 4–6. -/
 theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombTbl s T)
-    {j a : Nat} (hj : j < 32) (ha : a ≤ 8) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
+    {j a : Nat} (hj : j < 26) (ha : a ≤ 16) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
     (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
     WP isa (.block combSelect) s fun t =>
       (∀ f < 3, F t.mem base (offset 4 + 32 * f) = combField j a f) ∧
@@ -703,12 +705,12 @@ theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : Co
   rw [WP.block_append_iff]
   have hs₁ := hs.of_keeps k₁ (by decide)
   have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
-  have hr : ∀ e < 8, ∀ c < 6, InRegions (s₁.rd ++ s₁.wr)
+  have hr : ∀ e < 16, ∀ c < 6, InRegions (s₁.rd ++ s₁.wr)
       (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16 := by
     intro e he c hc
     rw [k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
-    simp only [combTblBytes, combEntryBytes]; omega
+    simp only [combTblBytes, combEntryBytes, combWordCount]; omega
   refine WP.mono (combSelPass_ok hs₁ (by omega) h8₁ x₁ hr) fun s₂ ⟨a₂, O₂, g₂, r₂, w₂, y₂⟩ => ?_
   have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [w₂]; exact hs₁.wr, hnw⟩
   have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [g₂ _ (by decide), h8₁]
@@ -778,7 +780,7 @@ theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : Co
 /-! ## The tables -/
 
 /-- The tables' bytes lie past the scratch. -/
-def TblFar (base T : Addr) : Prop := ∀ i < 8 * 3072, 8192 ≤ ofs base (T + BitVec.ofNat 64 i)
+def TblFar (base T : Addr) : Prop := ∀ i < 8 * combWordCount, 8192 ≤ ofs base (T + BitVec.ofNat 64 i)
 
 /-- The tables survive what changes only the scratch, the registers and nothing else. -/
 theorem CombTbl.keep {s t : State} {base T : Addr} (h : CombTbl s T) (hf : TblFar base T)
@@ -791,13 +793,13 @@ theorem CombTbl.keep {s t : State} {base T : Addr} (h : CombTbl s T) (hf : TblFa
       omega⟩
 
 /-- The tables' region at `T`. -/
-abbrev combRegion (T : Addr) : Region := ⟨T, 8 * 3072⟩
+abbrev combRegion (T : Addr) : Region := ⟨T, 8 * combWordCount⟩
 
 /-- What a contract with the comb's static (`Abi.withConsts combConsts`) says of its tables:
 held at the static's address, not wrapping around, and apart from the regions `wr`. -/
 def CombHeld (s : State) (wr : List Region) : Prop :=
-  (∀ i < 3072, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0) ∧
-  (s.syms combSym).toNat + 8 * 3072 ≤ 2 ^ 64 ∧ ∀ r ∈ wr, Region.Disjoint (combRegion (s.syms combSym)) r
+  (∀ i < combWordCount, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0) ∧
+  (s.syms combSym).toNat + 8 * combWordCount ≤ 2 ^ 64 ∧ ∀ r ∈ wr, Region.Disjoint (combRegion (s.syms combSym)) r
 
 theorem CombTbl.of_held {s : State} {wr : List Region} (hrd : combRegion (s.syms combSym) ∈ s.rd)
     (h : CombHeld s wr) : CombTbl s (s.syms combSym) :=
@@ -808,7 +810,8 @@ theorem CombTbl.frame {s t : State} {T : Addr} {rs : List Region} (h : CombTbl s
     (hf : Frame rs s.mem t.mem) (hd : ∀ r ∈ rs, (combRegion T).Disjoint r)
     (hrd : t.rd ++ t.wr = s.rd ++ s.wr) (hsy : t.syms = s.syms) : CombTbl t T :=
   ⟨by rw [hsy]; exact h.sym, by rw [hrd]; exact h.rd, fun i hi => by
-    rw [hf.readW (r := combRegion T) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+    rw [hf.readW (r := combRegion T) (Offset.contains_base _ (by simp only [combWordCount] at *; omega)
+      (by simp only [combWordCount] at *; omega)) hd (by decide)]
     exact h.val i hi⟩
 
 end VG.Proof.Ed25519.X86_64

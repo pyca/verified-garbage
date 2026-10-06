@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Sym
 /-!
 # Ed25519's comb with AVX512_IFMA: the selection
 
-`vselect` keeps each of the eight entries of a table in `ymm11–ymm13`, 32
+`vselect` keeps each of the sixteen entries of a table in `ymm11–ymm13`, 32
 bytes at a time, under the mask of its magnitude (`vpand`, `vpor`), as
 `combSelect` does in `xmm` registers: the accumulators then hold the words
 of the entry for the magnitude, or zero.
@@ -232,9 +232,9 @@ theorem vselClear_ok (s : State) :
     simp only [qw_vbin, show y 11 = xr 11 from rfl, show y 12 = xr 12 from rfl,
       show y 13 = xr 13 from rfl, h1, h2, h3, ite_false]
 
-/-- The selection: the words of entry `a ≤ 8` of table `j < 32` (`combCached`, but its `2Z`) in
+/-- The selection: the words of entry `a ≤ 16` of table `j < 26` (`combCached`, but its `2Z`) in
 `ymm11–ymm13` if `a ≠ 0`, else zero. -/
-theorem vselect_ok {s : State} {T : Addr} (ht : CombTbl s T) {j a : Nat} (hj : j < 32) (ha : a ≤ 8)
+theorem vselect_ok {s : State} {T : Addr} (ht : CombTbl s T) {j a : Nat} (hj : j < 26) (ha : a ≤ 16)
     (hd : s.gpr .rdx = BitVec.ofNat 64 j) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
     WP isa (.block vselect) s fun t =>
       (∀ c < 3, ∀ k < 4, qw t (xr (11 + c)) k = if 1 ≤ a then feWord (combField j a c) k else 0) ∧
@@ -246,13 +246,13 @@ theorem vselect_ok {s : State} {T : Addr} (ht : CombTbl s T) {j a : Nat} (hj : j
   refine WP.mono (wp_and (combSelSetup_ok s hd ht.sym) hsetup) fun s₁ ⟨⟨x₁, k₁, _, y₁⟩, xx, yy⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (vselClear_ok s₁) fun s₂ ⟨a₂, k₂⟩ => ?_
-  have hr : ∀ e < 8, ∀ c < 3, InRegions (s₂.rd ++ s₂.wr)
+  have hr : ∀ e < 16, ∀ c < 3, InRegions (s₂.rd ++ s₂.wr)
       (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 32 * c)) 32 := by
     intro e he c hc
     rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
-    simp only [combTblBytes, combEntryBytes]; omega
-  refine WP.mono (vselEntries_ok (X := T + BitVec.ofNat 64 (j * combTblBytes)) (a := a) (by omega) 8 (by decide) s₂
+    simp only [combTblBytes, combEntryBytes, combWordCount]; omega
+  refine WP.mono (vselEntries_ok (X := T + BitVec.ofNat 64 (j * combTblBytes)) (a := a) (by omega) 16 (by decide) s₂
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), h8])
     (by rw [k₂.gpr _ List.not_mem_nil, x₁]) hr a₂) fun t ⟨a₃, k₃⟩ => ⟨fun c hc k hk => ?_, ?_⟩
   · rw [a₃ c hc k hk, accQ, k₂.mem, k₁.2.1]

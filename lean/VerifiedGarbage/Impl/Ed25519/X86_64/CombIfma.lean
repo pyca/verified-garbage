@@ -20,7 +20,7 @@ The entry is selected as `combSelect` does but 32 bytes at a time
 `1`s or'd in for a zero magnitude, and its words split into the limbs of the
 lanes `(y - x, y + x, 2dt, 2)` (`eload`, with the slot `K2` holding `2`);
 for a negative digit (the mask in `rcx`) the lanes `y - x` and
-`y + x` are exchanged and `2dt` becomes `2¹¹ p - 2dt` (`vneg`). The four
+`y + x` are exchanged and `2dt` becomes `2¹¹ p - 2dt` (`vneg`). The five
 doublings are `vdbl`'s, and `[G]B`'s entry is in slots 9–11, stored before the loop.
 
 The loop runs between Intel's MXCSR prologue and epilogue (`withMx`, which
@@ -36,7 +36,7 @@ open VG.Impl.X25519.X86_64 (sc)
 open VG.Impl.X25519.X86_64.Ifma (y ld st v srl sll perm blend zero lanes ord carry mul4 kb
   KM K19 KB0 KB1 OPL OPV)
 open VG.Impl.Ed25519.X86_64 (offset combSym combEntryBytes combTblAt combEqMask combSelSetup combSignMask
-  combIndex combDigit combSign constPointOps combG combGCached FieldOp fieldCode)
+  combIndex combChunk combSign constPointOps combG combGCached FieldOp fieldCode)
 
 /-- The slot holding `2`, the entries' `2Z`. -/
 def K2 : Nat := offset 7
@@ -119,7 +119,7 @@ def vselEntry (m : Nat) : List Instr :=
 /-- The entry of table `rdx = j` for the magnitude `r8` into `ymm11–ymm13` (zero for a zero
 magnitude). -/
 def vselect : List Instr :=
-  combSelSetup ++ [zero 11, zero 12, zero 13] ++ (List.range 8).flatMap fun m => vselEntry (m + 1)
+  combSelSetup ++ [zero 11, zero 12, zero 13] ++ (List.range 16).flatMap fun m => vselEntry (m + 1)
 
 /-- `rax = 1` if the magnitude `r8` is zero (else `0`), and the sign's mask into `rcx`. -/
 def combFlags : List Instr :=
@@ -132,22 +132,22 @@ def gEntry : List Instr :=
 
 /-! ## The comb -/
 
-/-- Four doublings of the lanes, counted by `rsi`. -/
-def vdbl4 : Prog isa :=
-  .seq (.block [.mov32 .rsi (.imm 4)]) (.loop (.block (vdbl ++ [.alu .sub .rsi (.imm 1)])) .ne)
+/-- Five doublings of the lanes, counted by `rsi`. -/
+def vdbl5 : Prog isa :=
+  .seq (.block [.mov32 .rsi (.imm 5)]) (.loop (.block (vdbl ++ [.alu .sub .rsi (.imm 1)])) .ne)
 
-/-- Step `rbx`: before the even digits, the four doublings and `[G]B`; then the digit's entry
-of table `rbx mod 32`, negated for a negative digit, added. -/
+/-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
+of table `r9`, negated for a negative digit, added. -/
 def combStep : Prog isa :=
-  .seq (.block [.alu .cmp .rbx (.imm 32)]) <|
-  .seq (.ite .e (.seq vdbl4 (.block (gEntry ++ ventry))) (.block [])) <|
+  .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
+  .seq (.ite .e (.seq vdbl5 (.block (gEntry ++ ventry))) (.block [])) <|
   .seq combIndex <|
-  .block (combDigit ++ combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx),
-    .alu .and .rdx (.imm 31)] ++ vselect ++ combFlags ++ ventry ++
-    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)])
+  .seq combChunk <|
+  .block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ vselect ++ combFlags ++
+    ventry ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward: `[G]B` into
-the lanes (through slots 0–3), the constants (`combConstOps`, `vload`'s), and the 64 steps with
+the lanes (through slots 0–3), the constants (`combConstOps`, `vload`'s), and the 52 steps with
 MXCSR `0x1FBF`. -/
 def combMultiply (fld : Arith) : Prog isa :=
   .seq (.block (fieldCode fld combConstOps ++ VG.Impl.X25519.X86_64.Ifma.consts ++ vload))

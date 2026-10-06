@@ -888,16 +888,18 @@ theorem satMemT_bytes {p : Addr} (hp : p.toNat + 32 ≤ 0x100000) :
   rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega)]
   omega
 
-theorem satMemT_held : ∀ i < 3072,
+theorem satMemT_held : ∀ i < Impl.Ed25519.X86_64.combWordCount,
     satMemT.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.combWords.getD i 0 := by
   intro i hi
   rw [← constMem_held (0x100000 : Addr) Impl.Ed25519.X86_64.combWords
-    (by rw [Proof.Ed25519.X86_64.combWords_length]; omega) i (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; simp only [Impl.Ed25519.X86_64.combWordCount]; omega) i
+    (by rw [Proof.Ed25519.X86_64.combWords_length]; exact hi)]
   refine Mem.readW_congr fun b hb => ?_
   unfold satMemT
   rw [ite_eq_left_of_eq_true _ _ (eq_true ?_)]
   rw [show (0x100000 : Addr) = BitVec.ofNat 64 0x100000 from rfl, Offset.add_add, ← BitVec.ofNat_add,
     BitVec.toNat_ofNat]
+  simp only [Impl.Ed25519.X86_64.combWordCount] at hi
   omega
 
 /-- A state satisfying the precondition. -/
@@ -910,7 +912,7 @@ def satStateT : State where
   sf := none
   of := none
   mem := satMemT
-  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x100000, 24576⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩, ⟨0x4000, 0⟩, ⟨0x100000, 39936⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x5000, 8192⟩]
   syms _ := 0x100000
 
