@@ -201,6 +201,21 @@ should add files, not edit lists that every other PR edits too.
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
 
+## Stacking PRs
+
+PRs are squash-merged, so once the PR below a stacked branch merges, never
+`git rebase origin/main`: it replays the merged PR's commits onto their own
+squash. Restack only the branch's own commits:
+
+```sh
+git fetch origin main +pull/<N>/head:stack-base   # <N>: the merged PR
+git rebase --onto origin/main stack-base          # --update-refs for taller stacks
+```
+
+Keep stacks linear (never merge `main` into them) and their branches in this
+repository, as GitHub's stacked PRs require. When a generated file conflicts,
+take `main`'s side (`git checkout --ours`) and regenerate it after the rebase.
+
 ## Keeping proofs fast
 
 Lean's kernel re-checks every proof term, and it is a slow evaluator: most
