@@ -231,15 +231,37 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
     · exact hm 1
     · exact Nat.lt_trans Nat.one_pos hR
 
+/-- Saving the table pointer changes only its header word and EDX. -/
+theorem prepTable_ok {c : Cfg} {A : Args} {s : State} (hp : SetupPre c A s) :
+    WP isa (.block (c.prepTable A)) s fun t =>
+      Keeps [.edx] s t ∧ Outside (ptr s A.sc) Cfg.combPtr 4 s.mem t.mem ∧
+      (c.comb.isSome = true → t.mem.readW (off (ptr s A.sc) Cfg.combPtr) 32 = s.gpr .eax) := by
+  unfold Cfg.prepTable
+  split
+  next h => exact WP.block_nil ⟨Keeps.refl _ _, Outside.refl _ _ _ _, by simp [h]⟩
+  next _d _h =>
+    have hfit : (arg s A.sc).toNat + 8192 ≤ 2^32 := hp.sc_fit
+    refine wp_movS (hp.argLoad rfl rfl (Outside.refl _ _ _ _) (i := A.sc)
+      (by simp [Args.idx])) fun t u _ => ?_
+    have ha : t.ea (at_ .edx Cfg.combPtr) = off (ptr s A.sc) Cfg.combPtr := by
+      change addr (t.gpr .edx) 60 = _
+      rw [u.gpr, addr_eq (by omega)]
+      rfl
+    refine wp_storeS ha ⟨⟨ptr s A.sc, size⟩, by rw [u.wr]; exact hp.wr,
+      Offset.contains_base _ (by decide) (by decide)⟩ fun _t' m => WP.block_nil ⟨u.keeps.trans (m.keeps _), ?_, ?_⟩
+    · rw [m.mem, u.mem]; exact writeW32_outside _ _ _ (by decide)
+    · intro _
+      rw [m.mem, Mem.readW_writeW_self32, u.other _ (by decide)]
+
 /-! ## The whole setup -/
 
 theorem setup_eq (c : Cfg) (A : Args) : c.setupWith A =
-    .mov .eax (.mem (Cfg.argOp A.sc)) :: (Cfg.saveCode ++
+    c.prepTable A ++ (.mov .eax (.mem (Cfg.argOp A.sc)) :: (Cfg.saveCode ++
     (.mov .edi (.reg .eax) :: .mov .ebx (.mem (Cfg.argOp A.k)) :: (loadBytes c.C.len c.n (c.sl K) .ebx ++
     (.mov .ebx (.mem (Cfg.argOp A.d)) :: (loadBytes c.C.len c.n (c.sl D) .ebx ++
     (.mov .ebx (.mem (Cfg.argOp A.e)) :: (loadBytes c.C.len c.n (c.sl E) .ebx ++ (c.shiftCode A.hs ++
     (c.consts.flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-    ([.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax] : List Instr)))))))))) := by
+    ([.mov .eax (.imm (BitVec.allOnes 32)), .store (sc (c.sl FLAG)) .eax] : List Instr))))))))))) := by
   simp only [Cfg.setupWith, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre c A s) :
@@ -253,20 +275,23 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   have hw := hp.wr
   have mem : ∀ {i}, i = A.sc ∨ i = A.k ∨ i = A.d ∨ i = A.e → i ∈ A.idx := fun h => by
     simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false]; exact h
-  rw [setup_eq]
+  rw [setup_eq, WP.block_append_iff]
+  refine WP.mono (prepTable_ok hp) fun sP ⟨kP, OP, ptrP⟩ => ?_
+  have OPfull : Outside (ptr s A.sc) 0 size s.mem sP.mem := OP.mono (by decide) (by decide)
   -- The working space's base, and the saves.
-  refine wp_movS (hp.argLoad rfl rfl (VG.Proof.Mont.Outside.refl _ _ _ _) (i := A.sc) (mem (.inl rfl)))
+  refine wp_movS (hp.argLoad (kP.1 _ (by decide)) (by rw [kP.2.1, kP.2.2]) OPfull (i := A.sc) (mem (.inl rfl)))
     fun s₁ u₁ _ => ?_
   refine WP.block_append (WP.mono (setupSaves_ok (base := ptr s A.sc) (by rw [u₁.gpr]) (by rw [u₁.gpr]; omega)
-    (by rw [u₁.wr]; exact hw)) fun s₂ ⟨g₂, rd₂, wr₂, O₂, sv₂⟩ => ?_)
+    (by rw [u₁.wr, kP.2.2]; exact hw)) fun s₂ ⟨g₂, rd₂, wr₂, O₂, sv₂⟩ => ?_)
   refine wp_movS rfl fun s₃ u₃ _ => ?_
-  have hs₃ : Scr s₃ (ptr s A.sc) size := ⟨by rw [u₃.gpr, g₂, u₁.gpr], by rw [u₃.wr, wr₂, u₁.wr]; exact hw,
+  have hs₃ : Scr s₃ (ptr s A.sc) size := ⟨by rw [u₃.gpr, g₂, u₁.gpr], by rw [u₃.wr, wr₂, u₁.wr, kP.2.2]; exact hw,
     by rw [hbn]; exact hfit⟩
-  have RW₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, rd₂, wr₂, u₁.rd, u₁.wr]
+  have RW₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, rd₂, wr₂, u₁.rd, u₁.wr, kP.2.1, kP.2.2]
   have esp₃ : s₃.gpr .esp = s.gpr .esp := by
-    rw [u₃.other _ (by decide), g₂, u₁.other _ (by decide)]
+    rw [u₃.other _ (by decide), g₂, u₁.other _ (by decide), kP.1 _ (by decide)]
   have O₃ : Outside (ptr s A.sc) 0 size s.mem s₃.mem := by
-    rw [u₃.mem, ← u₁.mem]; exact O₂.mono (Nat.le_refl _) (by omega)
+    rw [u₃.mem]
+    exact OPfull.trans (by rw [← u₁.mem]; exact O₂.mono (Nat.le_refl _) (by omega))
   -- `k`
   refine wp_movS (hp.argLoad esp₃ RW₃ O₃ (i := A.k) (mem (.inr (.inl rfl)))) fun s₄ u₄ _ => ?_
   have hs₄ := hs₃.of_keeps u₄.keeps (by decide)
@@ -335,16 +360,16 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
       (O₉.mono (by omega) (by omega))).trans (OS.mono (by omega) (by omega))).trans
       (O₁₀.mono (by omega) (by omega))).trans (O'.mono (by omega) (by omega))
   have K' : Keeps [.eax, .ebx, .edx, .edi] s s' :=
-    (((((((((((u₁.keeps.mono (rs' := [.eax, .ebx, .edx, .edi]) (by decide)).widen
+    (((((((((((kP.mono (rs' := [.eax, .ebx, .edx, .edi]) (by decide) |>.widen u₁.keeps).widen
       (⟨fun r _ => by rw [g₂], rd₂, wr₂⟩ : Keeps [] s₁ s₂)).widen u₃.keeps).widen
       u₄.keeps).widen k₅).widen u₆.keeps).widen k₇).widen u₈.keeps).widen k₉).widen kS).widen k₁₀).widen
       (u₁₁.keeps.trans (m'.keeps _))
-  refine ⟨hs₁₁.of_keeps (m'.keeps []) (by decide), K', ?_, fun rd hrd => ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_⟩
+  refine ⟨hs₁₁.of_keeps (m'.keeps []) (by decide), K', ?_, fun rd hrd => ?_, ?_, ?_, ?_, fun ix hix => ?_, ?_, ?_⟩
   · exact (O₃.trans (Ol.mono (Nat.zero_le _) (by omega))).unch
   · have hlt : rd.2 + 4 ≤ 16 := by revert rd; decide
     have hne : rd.1 ≠ .eax := by revert rd; decide
     have hw32 := Ol.w32 (d := rd.2) (by omega) (by omega)
-    rw [BitVec.eq_of_toNat_eq hw32, u₃.mem, sv₂ rd hrd, u₁.other _ hne]
+    rw [BitVec.eq_of_toNat_eq hw32, u₃.mem, sv₂ rd hrd, u₁.other _ hne, kP.1 _ ((show ∀ rd ∈ Cfg.saved, rd.1 ∉ [Reg.edx] from by decide) rd hrd)]
   · show wordsVal s'.mem _ _ _ = _
     rw [(O'.unch).wordsVal (fun w hw => by simp at hw; rw [hw]; simp; omega) (by omega),
       O₁₀.wordsVal (by omega) (by omega), fK, O₉.wordsVal (by omega) (by omega),
@@ -361,5 +386,10 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
     show wordsVal s'.mem _ _ _ = _
     rw [(O'.unch).wordsVal (fun w hw => by simp at hw; rw [hw]; simp; omega) (by omega), e₁₀ ix hix]
   · rw [flagW, m'.mem, Mem.readW_writeW_self32, u₁₁.gpr]
+  · intro ht
+    have e₁ := Ol.w32 (d := Cfg.combPtr) (by decide) (by decide)
+    have e₂ := O₂.w32 (d := Cfg.combPtr) (by decide) (by decide)
+    rw [BitVec.eq_of_toNat_eq e₁, u₃.mem, BitVec.eq_of_toNat_eq e₂, u₁.mem]
+    exact ptrP ht
 
 end VG.Proof.Ecdsa.X86

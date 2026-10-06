@@ -181,8 +181,8 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
 /-- The arguments: `out` (`1 + 2 len` bytes), `d` (`len` bytes) and `scratch`,
 readable and writable as the contract says and apart from each other as it
 says. -/
-structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s 1, c.C.len⟩, ⟨argAddr s 0, 12⟩]
+structure PkPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨ptr s 1, c.C.len⟩, ⟨argAddr s 0, 12⟩] ++ extra
   wr : s.wr = [⟨ptr s 0, 1 + 2 * c.C.len⟩, ⟨ptr s 2, size⟩]
   out_sc : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 2, size⟩
   out_d : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 1, c.C.len⟩
@@ -200,7 +200,7 @@ theorem idx_publicKey {i : Nat} (hi : i ∈ Args.publicKey.idx) : i < 3 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem PkPre.setup {s : State} (hp : PkPre c s) : SetupPre c Args.publicKey s where
+theorem PkPre.setup {s : State} {extra : List Region} (hp : PkPre c s extra) : SetupPre c Args.publicKey s where
   shift := .inl rfl
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 3) (by have := hp.sp_fit; omega)
