@@ -7,7 +7,7 @@ namespace VG.Proof.Ed25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Ifma
 
-materialize_code vdbl4Lit := (vdbl4 : Prog isa)
+materialize_code vdblLit := (.block vdbl : Prog isa)
 materialize_code vaddBodyA := (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ vrows ++
   esplit ++ vadd) : Prog isa)
 materialize_code vbaseAdd := (.block (vrows ++ esplit ++ vadd) : Prog isa)

@@ -1,26 +1,26 @@
-import VerifiedGarbage.Impl.Ed25519.X86_64.BaseBytes
+import VerifiedGarbage.Impl.Ed25519.X86_64.BaseOdd
 import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 
 /-!
-# Verification's equation with 4-bit windows
+# Verification's equation with signed sliding windows
 
-Verification may leak its inputs, so its scalars `S` and `k` are public. It
-computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
-of `k`, from the top: each window adds `[a]A` for `k`'s digit `a` from a table of
-`[1]A … [15]A` built at run time (byte 5376), and each byte of `k` beside a byte `b` of `S`
-then adds `[-b]B` from the static `baseBytesSym` (`-[1]B … -[255]B`), both cached for
-addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). A zero digit adds nothing. The
-digits are read from the inputs, byte by byte (the scratch counter at byte 56), high nibble
-first: `k`'s 64 bytes, of which only the low 32 have a byte of `S` beside them, after its
-leading zero bytes above those (`skipZero`), which would only double the identity. The equation
-`[S]B = R + [k]A` holds exactly when the result equals `-R`, which the
-projective comparison `pointEqual` checks.
+Verification may leak its inputs, so its scalars `S` and `k` are public. It computes
+`[k]A - [S]B` with one chain of doublings (`dblOps`), one per bit, from the top. Both scalars
+are first recoded into signed odd digits (`recodeAll`): `k`'s below 16 in absolute value, at
+least five bits apart, from a table of `±[1]A … ±[15]A` built at run time (byte 5376); `S`'s
+below 128, at least eight bits apart, from the static `baseOddSym` of `∓[1]B … ∓[127]B`;
+both cached for addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). Each position with a
+nonzero digit adds its entry; a doubling computes `T`, which only an addition reads, only
+before one. `k`'s bytes above its low 32 that are zero (`skipZero`), and the leading zero
+digits, are skipped: they would only double the identity. The equation `[S]B = R + [k]A`
+holds exactly when the result equals `-R`, which the projective comparison `pointEqual`
+checks.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
-open VG.Impl.X25519.X86_64 (sc stores loads)
+open VG.Impl.X25519.X86_64 (at_ sc stores loads)
 
 /-- A table entry addressed by `rax` to slots 4–7. -/
 def pointFromTableQ : List Instr :=
@@ -51,17 +51,28 @@ def cacheOps : List FieldOp := [.sub 8 1 0, .add 9 1 0, .mul 10 3 16, .add 10 10
 def cachedToTable : List Instr :=
   (List.range 4).flatMap fun j => loads (320 + 32 * j) .r8 .r9 .r10 .r11 ++ tableWords (32 * j)
 
-/-- `[1]A` from byte 7424 into slots 0–3, and cached into the table's entry 0. -/
+/-- Slots 0–3 negated in place, `(-X, Y, Z, -T)` (slot 8 holds `0`). -/
+def negOps : List FieldOp := [.const 8 0, .sub 0 8 0, .sub 3 8 3]
+
+/-- The point in slots 0–3 to entries `rbx` (cached) and `rbx + 1` (its negation, cached) of
+the table at byte 5376, keeping it in slots 0–3. -/
+def aTableStore (fld : Arith) : List Instr :=
+  fieldCode fld cacheOps ++ tableAddr 5376 ++ cachedToTable ++ fieldCode fld (negOps ++ cacheOps) ++
+    tableAddr 5504 ++ cachedToTable ++ fieldCode fld negOps
+
+/-- `[2]A` cached at byte 3216, then `[1]A` (from byte 7424) into slots 0–3 and entries 0 and 1. -/
 def aTableInit (fld : Arith) : List Instr :=
-  tableStart 7424 ++ pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++ fieldCode fld cacheOps ++
-    tableAddr 5376 ++ cachedToTable ++ [.mov32 .rbx (.imm 1)]
+  tableStart 7424 ++ pointFromTable ++ fieldCode fld (dblOps true ++ cacheOps) ++ tableStart 3216 ++
+    cachedToTable ++ tableStart 7424 ++ pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++
+    aTableStore fld ++ [.mov32 .rbx (.imm 2)]
 
-/-- Entry `rbx` = entry `rbx - 1` (in slots 0–3) + A (entry 0), cached. -/
+/-- Slots 0–3 plus `[2]A`, to entries `rbx` and `rbx + 1`. -/
 def aTableBody (fld : Arith) : List Instr :=
-  tableStart 5376 ++ pointFromTableQ ++ pointAddCached fld ++ fieldCode fld cacheOps ++ tableAddr 5376 ++
-    cachedToTable ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 15)]
+  tableStart 3216 ++ pointFromTableQ ++ pointAddCached fld ++ aTableStore fld ++
+    [.alu .add .rbx (.imm 2), .alu .cmp .rbx (.imm 16)]
 
-/-- Entries `j < 15` of the table at byte 5376 are cached `[j + 1]A`. -/
+/-- Entries `2m` and `2m + 1` (`m < 8`) of the table at byte 5376 are `[2m + 1]A` and
+`-[2m + 1]A`, cached. -/
 def aTable (fld : Arith) : Prog isa := .seq (.block (aTableInit fld)) (.loop (.block (aTableBody fld)) .ne)
 
 /-- `rbx` = byte `counter` of the scalar at the pointer stored at byte `ptr` of the scratch,
@@ -70,45 +81,146 @@ def digitByte (ptr add : Nat) : List Instr :=
   [.mov .rsi (.mem (sc ptr)), .alu .add .rsi (.imm (BitVec.ofNat 32 add)), .mov .rax (.mem (sc 56)),
     .movzx8 .rbx { base := .rsi, index := some .rax }]
 
-/-- The byte's high nibble, ZF set if it is zero. -/
-def digitHigh (ptr add : Nat) : List Instr :=
-  digitByte ptr add ++ [.shift .shr .rbx 4, .alu .test .rbx (.reg .rbx)]
+/-! ## The scalars' digits
 
-/-- The byte's low nibble, ZF set if it is zero. -/
-def digitLow (ptr add : Nat) : List Instr := digitByte ptr add ++ [.alu .and .rbx (.imm 15)]
+Each scalar is recoded into signed digits, odd and below `2 ^ (w - 1)` in absolute value, at
+least `w` positions apart (`k` with `w = 5`, `S` with `w = 8`), from its lowest bit: at bit
+`i`, with the carry `c` from below, a bit equal to `c` gives a zero digit (and keeps `c`);
+otherwise the `w` bits from `i` plus `c` make an odd `W`, the digit `W` (carry 0) or
+`W - 2 ^ w` (carry 1), and the next `w - 1` digits are zero. A digit `d` is stored as the
+byte `u = d` if positive and `u = 1 - d` if negative, the table entry `u - 1`: entries `2m`
+and `2m + 1` are `[2m + 1]` and `-[2m + 1]` of the point. Position `p`'s digit of `k` is at byte
+`2048 + 2p`, `S`'s at byte `2049 + 2p`. -/
+
+/-- The digits' array, 1056 bytes from byte 2048, zeroed (`rax` = 0). -/
+def zeroDigits : List Instr :=
+  ([.mov32 .rax (.imm 0)] : List Instr) ++ (List.range 132).map fun j => .store (sc (2048 + 8 * j)) .rax
+
+/-- `k`'s 64 bytes to byte 3104 of the scratch, followed by eight zero bytes; `S`'s 32 to byte
+3176, followed by eight zero bytes. -/
+def copyScalars : List Instr :=
+  [.mov .rsi (.mem (sc 7952))] ++
+    ((List.range 8).flatMap fun j => [.mov .rax (.mem (at_ .rsi (8 * j))), .store (sc (3104 + 8 * j)) .rax]) ++
+    [.mov .rsi (.mem (sc 7944))] ++
+    ((List.range 4).flatMap fun j =>
+      [.mov .rax (.mem (at_ .rsi (32 + 8 * j))), .store (sc (3176 + 8 * j)) .rax]) ++
+    [.mov32 .rax (.imm 0), .store (sc 3168) .rax, .store (sc 3208) .rax]
+
+/-- `rbx` = the scalar copied at byte `src` from bit `rsi` on (at least 57 bits): the word at its
+byte `rsi / 8`, shifted right by `rsi % 8` with conditional moves. -/
+def recodeBits (src : Nat) : List Instr :=
+  [.mov .rax (.reg .rsi), .shift .shr .rax 3,
+    .mov .rbx (.mem { base := .rdi, index := some .rax, disp := (src : Int) }),
+    .mov .rcx (.reg .rsi), .alu .and .rcx (.imm 7)] ++
+  ([4, 2, 1].flatMap fun k =>
+    [.mov .rdx (.reg .rbx), .shift .shr .rdx k, .alu .test .rcx (.imm (BitVec.ofNat 32 k)),
+      .cmov .ne .rbx (.reg .rdx)])
+
+/-- ZF set if bit `rsi` (in `rbx`) equals the carry `r8`. -/
+def recodeTest : List Instr := [.mov .rax (.reg .rbx), .alu .and .rax (.imm 1), .alu .cmp .rax (.reg .r8)]
+
+/-- The digit at bit `rsi`: `W` = the `w` bits plus the carry, its byte to the array (`dst` 0
+for `k`, 1 for `S`), and `rsi` moved `w` bits on. -/
+def recodeWindow (w dst : Nat) : Prog isa :=
+  .seq (.block [.alu .and .rbx (.imm (BitVec.ofNat 32 (2 ^ w - 1))), .alu .add .rbx (.reg .r8),
+      .alu .cmp .rbx (.imm (BitVec.ofNat 32 (2 ^ (w - 1))))])
+    (.seq (.ite .b (.block [.mov32 .r8 (.imm 0)])
+      (.block [.mov32 .rax (.imm (BitVec.ofNat 32 (2 ^ w + 1))), .alu .sub .rax (.reg .rbx),
+        .mov .rbx (.reg .rax), .mov32 .r8 (.imm 1)]))
+    (.block [.mov .rax (.reg .rsi), .alu .add .rax (.reg .rax),
+      .store8 { base := .rdi, index := some .rax, disp := ((2048 + dst : Nat) : Int) } .rbx,
+      .alu .add .rsi (.imm (BitVec.ofNat 32 w))]))
+
+/-- One step of the recoding, from bit `rsi` with the carry `r8`. -/
+def recodeStep (src w dst : Nat) : Prog isa :=
+  .seq (.block (recodeBits src ++ recodeTest))
+    (.ite .e (.block [.alu .add .rsi (.imm 1)]) (recodeWindow w dst))
+
+/-- The last carry, if any, as the digit 1 at bit `rsi`. -/
+def recodeEnd (dst : Nat) : Prog isa :=
+  .seq (.block [.alu .test .r8 (.reg .r8)]) (.ite .ne
+    (.block [.mov .rax (.reg .rsi), .alu .add .rax (.reg .rax), .mov32 .rbx (.imm 1),
+      .store8 { base := .rdi, index := some .rax, disp := ((2048 + dst : Nat) : Int) } .rbx])
+    (.block []))
+
+/-- The recoding of the scalar copied at byte `src`, while `rsi` is below the bound that `bound`
+compares it with (CF set while it is). -/
+def recode (src w dst : Nat) (bound : List Instr) : Prog isa :=
+  .seq (.block [.mov32 .rsi (.imm 0), .mov32 .r8 (.imm 0)])
+    (.seq (.loop (.seq (recodeStep src w dst) (.block bound)) .b) (recodeEnd dst))
+
+/-- `k`'s bound: the bits of the `c` bytes left by `skipZero` (the counter). -/
+def boundK : List Instr := [.mov .rax (.mem (sc 56)), .shift .shl .rax 3, .alu .cmp .rsi (.reg .rax)]
+
+/-- `S`'s bound: its 256 bits. -/
+def boundS : List Instr := [.alu .cmp .rsi (.imm 256)]
+
+/-- The counter from `c` bytes to `8c + 9` positions, one above the highest digit's. -/
+def setTop : List Instr :=
+  [.mov .rax (.mem (sc 56)), .shift .shl .rax 3, .alu .add .rax (.imm 9), .store (sc 56) .rax]
+
+/-- Both scalars' digits. -/
+def recodeAll : Prog isa :=
+  .seq (.block (zeroDigits ++ copyScalars)) (.seq (recode 3104 5 0 boundK)
+    (.seq (recode 3176 8 1 boundS) (.block setTop)))
+
+/-! ## The windows -/
+
+/-- ZF set if both digits at the counter's position are zero. -/
+def digitsAt : List Instr :=
+  [.mov .rax (.mem (sc 56)), .alu .add .rax (.reg .rax),
+    .movzx8 .rbx { base := .rdi, index := some .rax, disp := 2048 },
+    .movzx8 .rcx { base := .rdi, index := some .rax, disp := 2049 }, .alu .or .rbx (.reg .rcx)]
+
+/-- `rbx` = the digit's byte at the counter's position (`dst` 0 for `k`, 1 for `S`), ZF set if
+it is zero. -/
+def digitAt (dst : Nat) : List Instr :=
+  [.mov .rax (.mem (sc 56)), .alu .add .rax (.reg .rax),
+    .movzx8 .rbx { base := .rdi, index := some .rax, disp := ((2048 + dst : Nat) : Int) }, .alu .test .rbx (.reg .rbx)]
 
 /-- Add entry `rbx - 1` of the table at byte `o`, unless `rbx` is zero. -/
 def addDigit (o : Nat) (add : List Instr) : Prog isa :=
   .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr o ++ pointFromTableQ ++ add))
     (.block [])
 
-/-- A window of `k` alone, with the doublings `dbl` (`double4`). -/
-def windowA (fld : Arith) (dbl : Prog isa) (digit : List Instr) : Prog isa :=
-  .seq dbl (.seq (.block digit) (addDigit 5376 (pointAddCached fld)))
-
-/-- `rax` = entry `rbx` of the static `baseBytesSym`, 128 bytes an entry, from the static's
+/-- `rax` = entry `rbx` of the static `baseOddSym`, 128 bytes an entry, from the static's
 address at byte 7960 of the scratch. -/
 def baseAddr : List Instr :=
   [.mov .rax (.reg .rbx), .movImm64 .rcx 128, .mul .rcx, .mov .rcx (.mem (sc 7960)),
     .alu .add .rax (.reg .rcx)]
 
-/-- `S`'s byte, ZF set if it is zero. -/
-def digitS : List Instr := digitByte 7944 32 ++ [.alu .test .rbx (.reg .rbx)]
-
-/-- Add `-[rbx]B`, entry `rbx - 1` of the static, unless `rbx` is zero. -/
+/-- Add the cached `-[d]B`, entry `rbx - 1` of the static, unless `rbx` is zero. -/
 def addBase (fld : Arith) : Prog isa :=
   .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
     pointAddCached fld)) (.block [])
 
-/-- A byte of `k` alone (bytes 63 down to 32). -/
-def byteStepA (fld : Arith) (dbl : Prog isa) : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowA fld dbl (digitHigh 7952 0))
-    (.seq (windowA fld dbl (digitLow 7952 0)) (.block [.mov .rbx (.mem (sc 56)), .alu .cmp .rbx (.imm 32)])))
+/-- The digits at the counter's position added: `k`'s from the table at byte 5376, `S`'s from the
+static. -/
+def addsAt (fld : Arith) : Prog isa :=
+  .seq (.block (digitAt 0)) (.seq (addDigit 5376 (pointAddCached fld))
+    (.seq (.block (digitAt 1)) (addBase fld)))
 
-/-- A byte of `k` and of `S` (bytes 31 down to 0). -/
-def byteStepAB (fld : Arith) (dbl : Prog isa) : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowA fld dbl (digitHigh 7952 0))
-    (.seq (windowA fld dbl (digitLow 7952 0)) (.seq (.block digitS) (.seq (addBase fld) (.block batchTest)))))
+/-- One doubling, computing `T` only if a digit at the counter's position will read it. -/
+def dblAt (fld : Arith) : Prog isa :=
+  .seq (.block digitsAt) (.ite .ne (.block (fieldCode fld (dblOps true)))
+    (.block (fieldCode fld (dblOps false))))
+
+/-- The position below: the counter moved down, a doubling and its digits. -/
+def stepAt (fld : Arith) : Prog isa :=
+  .seq (.block batchBegin) (.seq (dblAt fld) (.seq (addsAt fld) (.block batchTest)))
+
+/-- Below the highest position, while both digits are zero and the accumulator is the identity:
+the counter moved down, and ZF clear while the skipping goes on. -/
+def skipTop : Prog isa :=
+  .seq (.block (batchBegin ++ digitsAt)) (.ite .ne (.block [.alu .cmp .rax (.reg .rax)]) (.block batchTest))
+
+/-- The windows, from the counter one above the highest digit's position, the accumulator the
+identity: the leading zero digits skipped, then a doubling and the digits at each position. -/
+def windows (fld : Arith) : Prog isa :=
+  .seq (.loop skipTop .ne) (.seq (addsAt fld) (.seq (.block batchTest)
+    (.ite .ne (.loop (stepAt fld) .ne) (.block []))))
+
+/-! ## Skipping the leading zero bytes of `k` -/
 
 /-- The counter moved back up by one, and ZF set: the skipping stops. -/
 def skipStop : List Instr :=
@@ -128,10 +240,6 @@ def skipBody : Prog isa :=
 /-- Skip the leading zero bytes of `k` above its low 32: they would only double the
 identity. A challenge reduced modulo L has 32 of them. -/
 def skipZero : Prog isa := .loop skipBody .ne
-
-/-- The bytes of `k` alone that are left after `skipZero`. -/
-def windowsA (fld : Arith) (dbl : Prog isa) : Prog isa :=
-  .seq (.block counterCmp) (.ite .ne (.loop (byteStepA fld dbl) .ne) (.block []))
 
 /-- `-R` from byte 7552 into slots 4–7. -/
 def negR (fld : Arith) : List Instr :=

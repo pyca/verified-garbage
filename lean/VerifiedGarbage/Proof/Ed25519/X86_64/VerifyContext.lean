@@ -65,6 +65,7 @@ structure VerifyContext (s : State) (base pk sig challenge : Addr) : Prop where
   scalarRead : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off (off sig 32) d) 8
   scalarBytes : ∀ i < 32, InRegions (s.rd ++ s.wr) (off (off sig 32) i) 1
   challengeRead : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1
+  challengeRead8 : ∀ d, d + 8 ≤ 64 → InRegions (s.rd ++ s.wr) (off challenge d) 8
   pkFar : ∀ i < 32, 8192 ≤ ofs base (off pk i)
   rFar : ∀ i < 32, 8192 ≤ ofs base (off sig i)
   scalarFar : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i)
@@ -78,7 +79,7 @@ theorem VerifyContext.of_keep {s t : State} {base pk sig challenge : Addr}
     (k.header (by decide) (by decide) (by decide)).trans h.pkHeader,
     (k.header (by decide) (by decide) (by decide)).trans h.sigHeader,
     (k.header (by decide) (by decide) (by decide)).trans h.challengeHeader,
-    ?_, ?_, ?_, ?_, ?_, h.pkFar, h.rFar, h.scalarFar, h.challengeFar, by
+    ?_, ?_, ?_, ?_, ?_, ?_, h.pkFar, h.rFar, h.scalarFar, h.challengeFar, by
       rw [k.header (d := 7960) (by decide) (by decide) (by decide)]
       exact h.bTab.of_powers k (by decide)⟩
   all_goals intros; rw [k.rd, k.wr]
@@ -87,6 +88,19 @@ theorem VerifyContext.of_keep {s t : State} {base pk sig challenge : Addr}
   · exact h.scalarRead _ ‹_›
   · exact h.scalarBytes _ ‹_›
   · exact h.challengeRead _ ‹_›
+  · exact h.challengeRead8 _ ‹_›
+
+theorem VerifyContext.kRead8 {s : State} {base pk sig challenge : Addr}
+    (h : VerifyContext s base pk sig challenge) :
+    ∀ j < 8, InRegions (s.rd ++ s.wr) (off challenge (8 * j)) 8 :=
+  fun j _ => h.challengeRead8 _ (by omega)
+
+theorem VerifyContext.sRead8 {s : State} {base pk sig challenge : Addr}
+    (h : VerifyContext s base pk sig challenge) :
+    ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8 :=
+  fun j _ => by
+    rw [show off sig (32 + 8 * j) = off (off sig 32) (8 * j) from (Offset.add_add _ _ _).symm]
+    exact h.scalarRead _ (by omega)
 
 theorem verifyKeep_bytes {base p : Addr} {len : Nat} {s t : State}
     (h : VerifyKeep base s t) (hf : ∀ i < len, 8192 ≤ ofs base (off p i)) :

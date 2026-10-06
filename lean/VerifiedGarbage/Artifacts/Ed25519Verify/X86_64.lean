@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
@@ -13,16 +14,17 @@ def artifacts : List Artifact := [
     doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["Uses baseline integer instructions. \
       Checks canonical point encodings and S < L, then evaluates the uncofactored equation \
       using all 512 challenge bits. No additional subgroup or small-order policy is imposed. \
-      Computes [k]A - [S]B with one chain of doublings, 4-bit windows of k from a table of [1]A \
-      to [15]A, and a byte of S at a time from the static VG_ED25519_VERIFY_BASE of -[1]B to \
-      -[255]B, both cached for addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero \
-      bytes of k above its low 32, and compares it with -R projectively."])
+      Computes [k]A - [S]B with one chain of doublings, recoding both scalars into signed odd \
+      digits at least w positions apart (w = 5 for k, from a table of ±[1]A to ±[15]A; w = 8 \
+      for S, from the static VG_ED25519_VERIFY_BASE of ∓[1]B to ∓[127]B), both cached for \
+      addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero bytes of k above its low \
+      32 and the leading zero digits, computing T only for a doubling that an addition \
+      follows, and compares it with -R projectively."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
-      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline
-        (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline))
-    consts := Impl.Ed25519.X86_64.baseBytesConsts
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline)
+    consts := Impl.Ed25519.X86_64.baseOddConsts
     contract :=
-      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts)
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.baseline_mx
     spSafe := Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe },
   { Spec.Ed25519.verifyEquationApi with
@@ -32,14 +34,14 @@ def artifacts : List Artifact := [
       `vg_ed25519_verify_equation` but for the field multiplications and squarings, which use \
       BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as `vg_x25519_adx` \
       does. Checks canonical point encodings and S < L, then evaluates the uncofactored \
-      equation using all 512 challenge bits, with one chain of doublings, 4-bit windows of k \
-      and a byte of S at a time, skipping the leading zero bytes of k above its low 32."])
+      equation using all 512 challenge bits, with one chain of doublings and signed odd digits \
+      of k (w = 5) and of S (w = 8), skipping the leading zero bytes of k above its low 32 \
+      and the leading zero digits."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx
-        (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx))
-    consts := Impl.Ed25519.X86_64.baseBytesConsts
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx)
+    consts := Impl.Ed25519.X86_64.baseOddConsts
     contract :=
-      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts)
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.adx_mx
     features := ["bmi2", "adx"]
     spSafe := Proof.Ed25519.X86_64.VerifyCode.adx_spSafe },
@@ -56,9 +58,9 @@ def artifacts : List Artifact := [
       through bytes 1600 to 1608 of `scratch`."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
       Impl.Ed25519.X86_64.Ifma.windows
-    consts := Impl.Ed25519.X86_64.baseBytesConsts
+    consts := Impl.Ed25519.X86_64.baseOddConsts
     contract :=
-      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts)
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.ifma_mx
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
     spSafe := Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe }]

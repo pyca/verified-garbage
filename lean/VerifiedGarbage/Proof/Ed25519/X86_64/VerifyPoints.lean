@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlide
+import VerifiedGarbage.Proof.Ed25519.X86_64.RecodeAll
 import VerifiedGarbage.Proof.Ed25519.X86_64.Bits
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCounter
 import VerifiedGarbage.Proof.Ed25519.Window
@@ -6,13 +7,13 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PointEqual
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
-/-! Merged from `Proof.Ed25519.X86_64.WindowByte`. -/
-section
 /-!
-# Verification's bytes: two windows per byte of the scalars
+# Verification's equation, from the windows
 
-Byte `i` of `k` (and of `S`) gives two digits, high nibble first; after it,
-the accumulator represents `[k / 256^i]A - [S / 256^i]B`.
+`k`'s zero bytes above its low 32 are skipped (`skipZero`, `SkipLoop`), both scalars recoded
+(`recodeAll`), and the windows (`EdWindows`) leave a representative of `[k]A - [S]B`, compared
+with `-R`: they are equal exactly when `[S]B = R + [k]A`, which, as `A` and `R` represent points
+of the group, is the specification's comparison.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -21,43 +22,6 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
 variable {fld : Arith} [EdArith fld]
-variable {dbl : Prog isa} [EdDouble dbl]
-
-/-- What a byte of the scalars may change. -/
-structure ByteKeep (base : Addr) (s t : State) : Prop where
-  gpr : ∀ r, r ∉ clob → r ≠ .rbx → r ≠ .rsi → t.gpr r = s.gpr r
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-  mem : Outside base 56 1832 s.mem t.mem
-
-theorem ByteKeep.trans {base : Addr} {s t u : State} (h : ByteKeep base s t) (k : ByteKeep base t u) :
-    ByteKeep base s u :=
-  ⟨fun r a b c => (k.gpr r a b c).trans (h.gpr r a b c), k.rd.trans h.rd, k.wr.trans h.wr,
-    h.mem.trans k.mem⟩
-
-theorem ByteKeep.of_win {base : Addr} {s t : State} (h : WinKeep base s t) : ByteKeep base s t :=
-  ⟨h.gpr, h.rd, h.wr, Outside.widen h.mem⟩
-
-theorem ByteKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps rs s t)
-    (hrs : ∀ r ∈ rs, r = .rbx ∨ r = .rsi ∨ r ∈ clob) : ByteKeep base s t :=
-  ByteKeep.of_win (WinKeep.of_keeps h hrs)
-
-theorem ByteKeep.scratch {base : Addr} {s t : State} (h : ByteKeep base s t) (hs : Scratch s base) :
-    Scratch t base := ⟨(h.gpr _ (by decide) (by decide) (by decide)).trans hs.rdi, h.wr ▸ hs.wr, hs.nowrap⟩
-
-theorem WinCtx.of_byte {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
-    (k : ByteKeep base s t) : WinCtx base kp sp T A t := by
-  refine ⟨k.scratch h.scratch, (k.mem.word (Or.inr (by decide)) (by decide)).trans h.kHeader,
-    (k.mem.word (Or.inr (by decide)) (by decide)).trans h.sHeader, ?_, ?_, h.kFar, h.sFar,
-    h.aTab.of_win k.mem (by decide) (by decide),
-    (k.mem.word (Or.inr (by decide)) (by decide)).trans h.bHeader,
-    h.bTab.of_outside k.rd k.wr k.mem (by decide)⟩
-  · intro i hi; rw [k.rd, k.wr]; exact h.kRead i hi
-  · intro i hi; rw [k.rd, k.wr]; exact h.sRead i hi
-
-theorem BaseTbl.of_powers {s t : State} {base T : Addr} {o n : Nat} (h : BaseTbl s base T)
-    (k : PowersKeep base o n s t) (hn : o + n ≤ 8192) : BaseTbl t base T :=
-  h.of_mem k.rd k.wr fun p hp => k.mem p (by omega) (Or.inr (by omega))
 
 theorem ByteKeep.bytesK {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
     (k : ByteKeep base s t) : Spec.Ed25519.bytesAt t.mem kp 64 = Spec.Ed25519.bytesAt s.mem kp 64 :=
@@ -68,49 +32,9 @@ theorem ByteKeep.bytesS {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h :
     Spec.Ed25519.bytesAt t.mem (off sp 32) 32 = Spec.Ed25519.bytesAt s.mem (off sp 32) 32 :=
   outside_bytes k.mem (by decide) h.sFar
 
-/-! ## Digits from the inputs -/
-
-theorem digitKHigh {base kp sp T : Addr} {A : EPoint dZ} {s : State} (h : WinCtx base kp sp T A s)
-    {i : Nat} (hi : i < 64) (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
-    DigitSpec base s (digitHigh 7952 0) ((s.mem (off kp i)).toNat / 16) := by
-  intro t kt
-  have ht := h.of_keep kt
-  refine WP.mono (digitHigh_ok ht.scratch 7952 0 (by decide) (by decide) ht.kHeader i
-    (kt.counter.trans hc) (by rw [off_zero]; exact ht.kRead i hi)) fun u ⟨uv, uz, ku⟩ => ?_
-  rw [off_zero, h.byteK kt hi] at uv uz
-  exact ⟨uv, uz, ku⟩
-
-theorem digitKLow {base kp sp T : Addr} {A : EPoint dZ} {s : State} (h : WinCtx base kp sp T A s)
-    {i : Nat} (hi : i < 64) (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
-    DigitSpec base s (digitLow 7952 0) ((s.mem (off kp i)).toNat % 16) := by
-  intro t kt
-  have ht := h.of_keep kt
-  refine WP.mono (digitLow_ok ht.scratch 7952 0 (by decide) (by decide) ht.kHeader i
-    (kt.counter.trans hc) (by rw [off_zero]; exact ht.kRead i hi)) fun u ⟨uv, uz, ku⟩ => ?_
-  rw [off_zero, h.byteK kt hi] at uv uz
-  exact ⟨uv, uz, ku⟩
-
-theorem digitSHigh {base kp sp T : Addr} {A : EPoint dZ} {s : State} (h : WinCtx base kp sp T A s)
-    {i : Nat} (hi : i < 32) (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
-    DigitSpec base s (digitHigh 7944 32) ((s.mem (off (off sp 32) i)).toNat / 16) := by
-  intro t kt
-  have ht := h.of_keep kt
-  refine WP.mono (digitHigh_ok ht.scratch 7944 32 (by decide) (by decide) ht.sHeader i
-    (kt.counter.trans hc) (ht.sRead i hi)) fun u ⟨uv, uz, ku⟩ => ?_
-  rw [h.byteS kt hi] at uv uz
-  exact ⟨uv, uz, ku⟩
-
-theorem digitSLow {base kp sp T : Addr} {A : EPoint dZ} {s : State} (h : WinCtx base kp sp T A s)
-    {i : Nat} (hi : i < 32) (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
-    DigitSpec base s (digitLow 7944 32) ((s.mem (off (off sp 32) i)).toNat % 16) := by
-  intro t kt
-  have ht := h.of_keep kt
-  refine WP.mono (digitLow_ok ht.scratch 7944 32 (by decide) (by decide) ht.sHeader i
-    (kt.counter.trans hc) (ht.sRead i hi)) fun u ⟨uv, uz, ku⟩ => ?_
-  rw [h.byteS kt hi] at uv uz
-  exact ⟨uv, uz, ku⟩
-
-/-! ## A byte -/
+theorem BaseTbl.of_powers {s t : State} {base T : Addr} {o n : Nat} (h : BaseTbl s base T)
+    (k : PowersKeep base o n s t) (hn : o + n ≤ 8192) : BaseTbl t base T :=
+  h.of_mem k.rd k.wr fun p hp => k.mem p (by omega) (Or.inr (by omega))
 
 theorem counterCmp_ok {s : State} {base : Addr} (hs : Scratch s base) (i : Nat) (hi : i ≤ 64)
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
@@ -135,122 +59,8 @@ theorem scalar_byte {m : Mem} {p : Addr} {n i : Nat} (hi : i < n) :
     (m (off p i)).toNat = Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt m p n) / 256 ^ i % 256 := by
   rw [decodeLE_byte, input_byte m p n i hi]
 
-theorem byteStepA_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCtx base kp sp T A s)
-    (hd : env s.mem base 16 = Spec.Ed25519.d) {i : Nat} (hi32 : 32 ≤ i) (hi : i < 64)
-    (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (i + 1)) {S : Nat} (hS : S < 256 ^ 32)
-    (ha : Rep (point (env s.mem base) 0 1 2 3)
-      ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) / 256 ^ (i + 1)) • A +
-        (S / 256 ^ (i + 1)) • (-baseAff))) :
-    WP isa (byteStepA fld dbl) s fun t => t.zf = some (decide (i = 32)) ∧
-      t.mem.readW (off base 56) 64 = BitVec.ofNat 64 i ∧ env t.mem base 16 = Spec.Ed25519.d ∧
-      Rep (point (env t.mem base) 0 1 2 3)
-        ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) / 256 ^ i) • A +
-          (S / 256 ^ i) • (-baseAff)) ∧ ByteKeep base s t := by
-  rw [byteStepA]
-  refine WP.seq (WP.mono (batchBegin_ok h.scratch i hc) fun a ⟨_, av, ag, ar, aw, am⟩ => ?_)
-  have ka : ByteKeep base s a := ⟨fun r _ hb _ => ag r hb, ar, aw, am.mono (by decide) (by decide)⟩
-  have ae := header_env am
-  have ha' := h.of_byte ka
-  set K := Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) with hK
-  have hb : (a.mem (off kp i)).toNat = K / 256 ^ i % 256 := by
-    rw [scalar_byte (n := 64) hi, ka.bytesK h]
-  refine WP.seq (WP.mono (windowA_ok (a := (K / 256 ^ (i + 1)) • A + (S / 256 ^ (i + 1)) • (-baseAff))
-    ha' (by rw [ae]; exact hd) (by rw [ae]; exact ha) (Nat.div_lt_of_lt_mul (by have := (a.mem (off kp i)).isLt; omega)) (digitKHigh ha' hi av))
-    fun b ⟨br, bd, kb⟩ => ?_)
-  have hb' := ha'.of_keep kb
-  refine WP.seq (WP.mono (windowA_ok hb' bd br (Nat.mod_lt _ (by decide))
-    (digitKLow hb' hi (kb.counter.trans av))) fun c ⟨cr, cd, kc⟩ => ?_)
-  have hc' := hb'.of_keep kc
-  refine WP.mono (counterCmp_ok hc'.scratch i hi.le (kc.counter.trans (kb.counter.trans av)))
-    fun t ⟨tz, kt⟩ => ?_
-  refine ⟨tz, ?_, by rw [kt.2.1]; exact cd, ?_, ((ka.trans (ByteKeep.of_win kb)).trans
-    (ByteKeep.of_win kc)).trans (ByteKeep.of_keeps kt (by decide))⟩
-  · rw [kt.2.1]; exact kc.counter.trans (kb.counter.trans av)
-  · rw [ha'.byteK kb hi] at cr
-    rw [kt.2.1]
-    convert cr using 1
-    rw [byte_split K i _ hb, high_zero hS hi32, high_zero hS (by omega : 32 ≤ i + 1)]
-    module
-
-theorem byteStepAB_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCtx base kp sp T A s)
-    (hd : env s.mem base 16 = Spec.Ed25519.d) {i : Nat} (hi : i < 32)
-    (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (i + 1))
-    (ha : Rep (point (env s.mem base) 0 1 2 3)
-      ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) / 256 ^ (i + 1)) • A +
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sp 32) 32) / 256 ^ (i + 1)) •
-          (-baseAff))) :
-    WP isa (byteStepAB fld dbl) s fun t => t.zf = some (decide (i = 0)) ∧
-      t.mem.readW (off base 56) 64 = BitVec.ofNat 64 i ∧ env t.mem base 16 = Spec.Ed25519.d ∧
-      Rep (point (env t.mem base) 0 1 2 3)
-        ((Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) / 256 ^ i) • A +
-          (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sp 32) 32) / 256 ^ i) •
-            (-baseAff)) ∧ ByteKeep base s t := by
-  rw [byteStepAB]
-  refine WP.seq (WP.mono (batchBegin_ok h.scratch i hc) fun a ⟨_, av, ag, ar, aw, am⟩ => ?_)
-  have ka : ByteKeep base s a := ⟨fun r _ hb _ => ag r hb, ar, aw, am.mono (by decide) (by decide)⟩
-  have ae := header_env am
-  have ha' := h.of_byte ka
-  set K := Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) with hK
-  set S := Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sp 32) 32) with hSdef
-  have hbK : (a.mem (off kp i)).toNat = K / 256 ^ i % 256 := by
-    rw [scalar_byte (n := 64) (by omega), ka.bytesK h]
-  have hbS : (a.mem (off (off sp 32) i)).toNat = S / 256 ^ i % 256 := by
-    rw [scalar_byte (n := 32) hi, ka.bytesS h]
-  have lt16 (b : Byte) : b.toNat / 16 < 16 := Nat.div_lt_of_lt_mul (by have := b.isLt; omega)
-  refine WP.seq (WP.mono (windowA_ok (a := (K / 256 ^ (i + 1)) • A + (S / 256 ^ (i + 1)) • (-baseAff))
-    ha' (by rw [ae]; exact hd) (by rw [ae]; exact ha) (lt16 _) (digitKHigh ha' (by omega) av))
-    fun b ⟨br, bd, kb⟩ => ?_)
-  have hb' := ha'.of_keep kb
-  refine WP.seq (WP.mono (windowA_ok hb' bd br (Nat.mod_lt _ (by decide))
-    (digitKLow hb' (by omega) (kb.counter.trans av))) fun c ⟨cr, cd, kc⟩ => ?_)
-  have hc' := hb'.of_keep kc
-  have cav := kc.counter.trans (kb.counter.trans av)
-  refine WP.seq (WP.mono (digitS_ok hc'.scratch hc'.sHeader i cav (hc'.sRead i hi))
-    fun d ⟨dv, dz, kd⟩ => ?_)
-  have kd' : WinKeep base c d := WinKeep.of_keeps kd (by decide)
-  have hd' := hc'.of_keep kd'
-  have dr := cr
-  rw [← kd.2.1] at dr
-  have dd := cd
-  rw [← kd.2.1] at dd
-  refine WP.seq (WP.mono (addBase_ok hd'.scratch hd'.bHeader hd'.bTab _
-    (by have := (c.mem (off (off sp 32) i)).isLt; omega) dv dz dd dr) fun e ⟨er, ed, ke⟩ => ?_)
-  have he' := hd'.of_keep ke
-  refine WP.mono (batchTest_ok he'.scratch i (by omega) (ke.counter.trans (kd'.counter.trans cav)))
-    fun t ⟨tz, kt⟩ => ?_
-  refine ⟨tz, ?_, by rw [kt.2.1, ed, kd.2.1]; exact cd, ?_,
-    ((((ka.trans (ByteKeep.of_win kb)).trans (ByteKeep.of_win kc)).trans (ByteKeep.of_win kd')).trans
-      (ByteKeep.of_win ke)).trans (ByteKeep.of_keeps kt (by decide))⟩
-  · rw [kt.2.1]; exact ke.counter.trans (kd'.counter.trans cav)
-  · rw [ha'.byteK kb (by omega), ha'.byteS (kb.trans kc) hi] at er
-    rw [kt.2.1]
-    convert er using 1
-    rw [byte_split K i _ hbK, show S / 256 ^ i = 256 * (S / 256 ^ (i + 1)) +
-      (a.mem (off (off sp 32) i)).toNat by have := byte_split S i _ hbS; omega]
-    module
-
-end VG.Proof.Ed25519.X86_64
-end
-
-/-! Merged from `Proof.Ed25519.X86_64.WindowLoop`. -/
-section
-/-!
-# Verification's loops over the bytes of the scalars
-
-Bytes 63 down to 32 hold digits of `k` alone, bytes 31 down to 0 of both
-scalars; after the loops the accumulator represents `[k]A - [S]B`.
--/
-
-namespace VG.Proof.Ed25519.X86_64
-
-open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
-open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
-
-variable {fld : Arith} [EdArith fld]
-variable {dbl : Prog isa} [EdDouble dbl]
-
-/-- The loops' invariant, with `c` bytes left. -/
-structure WinLoop (s₀ : State) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (s : State) : Prop where
+/-- Skipping `k`'s zero bytes, with `c` bytes left. -/
+structure SkipLoop (s₀ : State) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (s : State) : Prop where
   ctx : WinCtx base kp sp T A s
   d : env s.mem base 16 = Spec.Ed25519.d
   counter : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 c
@@ -284,77 +94,14 @@ theorem CounterKeep.byte {base : Addr} {s t : State} (h : CounterKeep base s t) 
 
 /-- The loops' invariant, with the counter moved from `c` to `c'` where the scalars'
 quotients agree. -/
-theorem WinLoop.of_counter {s₀ s t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c c' : Nat}
-    (h : WinLoop s₀ base kp sp T A K S c s) (k : CounterKeep base s t)
+theorem SkipLoop.of_counter {s₀ s t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c c' : Nat}
+    (h : SkipLoop s₀ base kp sp T A K S c s) (k : CounterKeep base s t)
     (hc : t.mem.readW (off base 56) 64 = BitVec.ofNat 64 c')
     (hK : K / 256 ^ c' = K / 256 ^ c) (hS : S / 256 ^ c' = S / 256 ^ c) :
-    WinLoop s₀ base kp sp T A K S c' t :=
+    SkipLoop s₀ base kp sp T A K S c' t :=
   ⟨h.ctx.of_byte k.byte, by rw [header_env k.mem]; exact h.d, hc,
     by rw [k.byte.bytesK h.ctx, h.kVal], by rw [k.byte.bytesS h.ctx, h.sVal],
     by rw [header_env k.mem, hK, hS]; exact h.value, h.keep.trans k.byte⟩
-
-/-- A byte of `k` alone, from `32 + j + 1` bytes left to `32 + j`. -/
-theorem stepA_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
-    (ht : WinLoop s₀ base kp sp T A K S (32 + (j + 1)) t) :
-    WP isa (byteStepA fld dbl) t fun u => u.zf = some (decide (j = 0)) ∧ WinLoop s₀ base kp sp T A K S (32 + j) u := by
-  have hS : S < 256 ^ 32 := ht.sVal ▸ decodeLE_lt32 _ _
-  refine WP.mono (byteStepA_ok (i := 32 + j) ht.ctx ht.d (by omega) (by omega)
-    (by rw [ht.counter]; rfl) hS (by rw [ht.kVal]; exact ht.value)) fun u ⟨uz, uc, ud, uv, uk⟩ => ?_
-  refine ⟨by rw [uz]; simp, ht.ctx.of_byte uk, ud, uc, by rw [uk.bytesK ht.ctx, ht.kVal],
-    by rw [uk.bytesS ht.ctx, ht.sVal], by rw [ht.kVal] at uv; exact uv, ht.keep.trans uk⟩
-
-/-- A byte of both scalars, from `j + 1` bytes left to `j`. -/
-theorem stepB_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
-    (ht : WinLoop s₀ base kp sp T A K S (j + 1) t) :
-    WP isa (byteStepAB fld dbl) t fun u => u.zf = some (decide (j = 0)) ∧ WinLoop s₀ base kp sp T A K S j u := by
-  refine WP.mono (byteStepAB_ok (i := j) ht.ctx ht.d hj ht.counter
-    (by rw [ht.kVal, ht.sVal]; exact ht.value)) fun u ⟨uz, uc, ud, uv, uk⟩ => ?_
-  exact ⟨uz, ht.ctx.of_byte uk, ud, uc, by rw [uk.bytesK ht.ctx, ht.kVal],
-    by rw [uk.bytesS ht.ctx, ht.sVal], by rw [ht.kVal, ht.sVal] at uv; exact uv, ht.keep.trans uk⟩
-
-theorem loopA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
-    (hn0 : 0 < n) (hn : n ≤ 32) (h : WinLoop s₀ base kp sp T A K S (32 + n) s) :
-    WP isa (.loop (byteStepA fld dbl) .ne) s (WinLoop s₀ base kp sp T A K S 32) := by
-  apply WP.loop (fun (n : Nat) (t : State) => WinLoop s₀ base kp sp T A K S (32 + n) t ∧ 0 < n ∧ n ≤ 32)
-    (n := n)
-  · intro n t ⟨ht, hn0, hn⟩
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-    refine WP.mono (stepA_ok (by omega) ht) fun u ⟨uz, hu⟩ => ?_
-    by_cases hj : j = 0
-    · subst hj
-      exact Or.inl ⟨by simp only [eval, uz, decide_true, Option.map_some, Bool.not_true], hu⟩
-    · exact Or.inr ⟨by simp only [eval, uz, decide_eq_false hj, Option.map_some, Bool.not_false],
-        j, by omega, hu, by omega, by omega⟩
-  · exact ⟨h, hn0, hn⟩
-
-theorem windowsA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}
-    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : WinLoop s₀ base kp sp T A K S c s) :
-    WP isa (windowsA fld dbl) s (WinLoop s₀ base kp sp T A K S 32) := by
-  rw [windowsA, counterCmp]
-  refine WP.seq (WP.mono (counterCmp_ok h.ctx.scratch c hc64 h.counter) fun a ⟨az, ka⟩ => ?_)
-  have ha := h.of_counter (CounterKeep.of_keeps ka (by decide)) (by rw [ka.2.1]; exact h.counter) rfl rfl
-  refine WP.ite (!decide (c = 32)) (by simp only [eval, az, Option.map_some]) (fun hy => ?_) (fun hy => ?_)
-  · obtain ⟨n, rfl⟩ : ∃ n, c = 32 + n := ⟨c - 32, by omega⟩
-    have hn : n ≠ 0 := fun h0 => by subst h0; simp at hy
-    exact loopA_ok n (by omega) (by omega) ha
-  · have : c = 32 := by simpa using hy
-    subst this
-    exact WP.block_nil ha
-
-theorem loopB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat}
-    (h : WinLoop s₀ base kp sp T A K S 32 s) :
-    WP isa (.loop (byteStepAB fld dbl) .ne) s (WinLoop s₀ base kp sp T A K S 0) := by
-  apply WP.loop (fun (n : Nat) (t : State) => WinLoop s₀ base kp sp T A K S n t ∧ 0 < n ∧ n ≤ 32)
-    (n := 32)
-  · intro n t ⟨ht, hn0, hn⟩
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
-    refine WP.mono (stepB_ok (by omega) ht) fun u ⟨uz, hu⟩ => ?_
-    by_cases hj : j = 0
-    · subst hj
-      exact Or.inl ⟨by simp only [eval, uz, decide_true, Option.map_some, Bool.not_true], hu⟩
-    · exact Or.inr ⟨by simp only [eval, uz, decide_eq_false hj, Option.map_some, Bool.not_false],
-        j, by omega, hu, by omega, by omega⟩
-  · exact ⟨h, by decide, by decide⟩
 
 /-! ## Skipping the leading zero bytes of `k` -/
 
@@ -411,7 +158,7 @@ theorem skipLoad_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCt
 
 /-- Skipping: `c = 32 + n` bytes are left, and the bytes of `k` from `c` on are zero. -/
 def SkipInv (s₀ : State) (base kp sp T : Addr) (A : EPoint dZ) (K S : Nat) (n : Nat) (s : State) : Prop :=
-  WinLoop s₀ base kp sp T A K S (32 + n) s ∧ K / 256 ^ (32 + n) = 0 ∧ 0 < n ∧ n ≤ 32
+  SkipLoop s₀ base kp sp T A K S (32 + n) s ∧ K / 256 ^ (32 + n) = 0 ∧ 0 < n ∧ n ≤ 32
 
 /-- Whether the skipping goes on below `32 + j + 1` bytes left: byte `32 + j` of `k` is zero,
 and more than 32 bytes are left after it. -/
@@ -426,7 +173,7 @@ theorem skipEnd_range (K j : Nat) (hj : j < 32) : 32 ≤ skipEnd K j ∧ skipEnd
 theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat}
     (h : SkipInv s₀ base kp sp T A K S (j + 1) t) :
     WP isa skipBody t fun u => u.zf.map (!·) = some (skipOn K j) ∧
-      (skipOn K j = false → WinLoop s₀ base kp sp T A K S (skipEnd K j) u) ∧
+      (skipOn K j = false → SkipLoop s₀ base kp sp T A K S (skipEnd K j) u ∧ K / 256 ^ skipEnd K j = 0) ∧
       (skipOn K j = true → SkipInv s₀ base kp sp T A K S j u) := by
   obtain ⟨hl, hz, _, hn⟩ := h
   have hS : S < 256 ^ 32 := hl.sVal ▸ decodeLE_lt32 _ _
@@ -444,7 +191,7 @@ theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
     have e : skipEnd K j = 32 + (j + 1) := by simp only [skipEnd, h0, ↓reduceIte]
     refine ⟨by rw [uz, hoff]; rfl, fun _ => ?_, fun ht => absurd ht (by rw [hoff]; decide)⟩
     rw [e]
-    exact hl.of_counter (ka.trans ku) uc rfl rfl
+    exact ⟨hl.of_counter (ka.trans ku) uc rfl rfl, hz⟩
   · have h0 : K / 256 ^ (32 + j) % 256 = 0 := by simpa using hy
     have hK : K / 256 ^ (32 + j) = 0 := by
       have := div_split K (32 + j)
@@ -461,11 +208,12 @@ theorem skipBody_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
     subst hj
     have e : skipEnd K 0 = 32 := by simp only [skipEnd, h0, ↓reduceIte]
     rw [e]
-    exact hu
+    exact ⟨hu, hK⟩
 
 theorem skipZero_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat}
-    (h : WinLoop s₀ base kp sp T A K S 64 s) :
-    WP isa skipZero s fun t => ∃ c, 32 ≤ c ∧ c ≤ 64 ∧ WinLoop s₀ base kp sp T A K S c t := by
+    (h : SkipLoop s₀ base kp sp T A K S 64 s) :
+    WP isa skipZero s fun t => ∃ c, 32 ≤ c ∧ c ≤ 64 ∧ SkipLoop s₀ base kp sp T A K S c t ∧
+      K / 256 ^ c = 0 := by
   have hK : K / 256 ^ 64 = 0 := Nat.div_eq_of_lt (h.kVal ▸ decodeLE_lt64 _ _)
   rw [skipZero]
   apply WP.loop (SkipInv s₀ base kp sp T A K S) (n := 32)
@@ -475,47 +223,65 @@ theorem skipZero_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S 
     refine WP.mono (skipBody_ok ht) fun u ⟨uz, uf, ut⟩ => ?_
     cases hs : skipOn K j
     · exact Or.inl ⟨by show u.zf.map (!·) = _; rw [uz, hs], skipEnd K j, (skipEnd_range K j hj).1,
-        (skipEnd_range K j hj).2, uf hs⟩
+        (skipEnd_range K j hj).2, (uf hs).1, (uf hs).2⟩
     · exact Or.inr ⟨by show u.zf.map (!·) = _; rw [uz, hs], j, by omega, ut hs⟩
   · exact ⟨h, hK, by decide, by decide⟩
 
-end VG.Proof.Ed25519.X86_64
-end
 
-/-!
-# Verification's equation, from the windows
+/-! ## The windows -/
 
-The windows leave a representative of `[k]A - [S]B`, compared with `-R`: they
-are equal exactly when `[S]B = R + [k]A`, which, as `A` and `R` represent
-points of the group, is the specification's comparison.
--/
+/-- A run of the windows: from a state satisfying `R₀`, after position `p`. -/
+def LoopRun (R₀ : State → Prop) (base kp sp T : Addr) (A : EPoint dZ) (fA fB : Nat → Nat) (top p : Nat)
+    (x : State) : Prop :=
+  ∃ s₀, R₀ s₀ ∧ WinLoop s₀ base kp sp T A fA fB top p x
 
-namespace VG.Proof.Ed25519.X86_64
+/-- A run of the windows at their start, one above `top`. -/
+def StartRun (R₀ : State → Prop) (base kp sp T : Addr) (A : EPoint dZ) (fA fB : Nat → Nat) (top : Nat)
+    (x : State) : Prop :=
+  ∃ s₀, R₀ s₀ ∧ SkipAt s₀ base kp sp T A fA fB top (top + 1) x
 
-open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
-open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
-
-variable {fld : Arith} [EdArith fld]
-
-/-- A run of the loops: from a state satisfying `R₀`, with `c` bytes left. -/
-def LoopRun (R₀ : State → Prop) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
-  ∃ s₀, R₀ s₀ ∧ WinLoop s₀ base kp sp T A K S c x
-
-/-- The windows after `skipZero`, from `c` bytes left (`32 ≤ c ≤ 64`) to none, as
-`windows` runs them (`Ifma.windows` too): the loops' invariant, and a trace that depends
-on the run's start alone. -/
+/-- The windows after the recoding, from one above the top position (the identity accumulated)
+to after position 0, as `windows` runs them (`Ifma.windows` too): the loops' invariant, and a
+trace that depends on the run's start alone. -/
 class EdWindows (win : Prog isa) : Prop where
-  ok : ∀ {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}, 32 ≤ c → c ≤ 64 →
-    WinLoop s₀ base kp sp T A K S c s → WP isa win s (WinLoop s₀ base kp sp T A K S 0)
-  ct : ∀ {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}, 32 ≤ c → c ≤ 64 →
-    RelCT isa (fun x y => LoopRun R₀ base kp sp T A K S c x ∧ LoopRun R₀ base kp sp T A K S c y) win
-      (fun x y => LoopRun R₀ base kp sp T A K S 0 x ∧ LoopRun R₀ base kp sp T A K S 0 y)
+  ok : ∀ {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top : Nat},
+    Digits fA fB top → SkipAt s₀ base kp sp T A fA fB top (top + 1) s →
+      WP isa win s (WinLoop s₀ base kp sp T A fA fB top 0)
+  ct : ∀ {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top : Nat},
+    Digits fA fB top →
+    RelCT isa (fun x y => StartRun R₀ base kp sp T A fA fB top x ∧ StartRun R₀ base kp sp T A fA fB top y) win
+      (fun x y => LoopRun R₀ base kp sp T A fA fB top 0 x ∧ LoopRun R₀ base kp sp T A fA fB top 0 y)
 
 variable {win : Prog isa} [EdWindows win]
 
 theorem PowersKeep.of_byte {base : Addr} {s t : State} (h : ByteKeep base s t) :
     PowersKeep base 56 7752 s t :=
   ⟨fun r hb hs hc => h.gpr r hc hb hs, h.rd, h.wr, TableFrame.table (h.mem.mono (by decide) (by decide))⟩
+
+theorem PowersKeep.of_all {base : Addr} {s t : State} (h : AllKeep base s t) :
+    PowersKeep base 56 7752 s t := by
+  refine ⟨fun r hb hs hc => h.gpr r ?_, h.rd, h.wr, fun p _ hp => h.mem p ?_⟩
+  · simp only [recRegs, List.mem_cons, List.not_mem_nil, or_false]
+    rintro (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp_all [clob]
+  · omega
+
+theorem WinCtx.of_all {base kp sp T : Addr} {A : EPoint dZ} {s t : State} (h : WinCtx base kp sp T A s)
+    (k : AllKeep base s t) : WinCtx base kp sp T A t := by
+  have hb := h.scratch.nowrap
+  have word (d : Nat) (hd : 3216 ≤ d) (hd' : d + 8 ≤ 8192) :
+      t.mem.readW (off base d) 64 = s.mem.readW (off base d) 64 :=
+    Mem.readW_congr fun i hi => k.mem _ (Or.inr (Or.inr (by
+      rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega)))
+  refine ⟨⟨(k.gpr _ (by decide)).trans h.scratch.rdi, k.wr ▸ h.scratch.wr, hb⟩,
+    (word 7952 (by decide) (by decide)).trans h.kHeader, (word 7944 (by decide) (by decide)).trans h.sHeader,
+    fun i hi => by rw [k.rd, k.wr]; exact h.kRead i hi, fun i hi => by rw [k.rd, k.wr]; exact h.sRead i hi,
+    h.kFar, h.sFar, fun i hi => by rw [k.rd, k.wr]; exact h.kRead8 i hi,
+    fun i hi => by rw [k.rd, k.wr]; exact h.sRead8 i hi, fun e he => ?_,
+    (word 7960 (by decide) (by decide)).trans h.bHeader,
+    h.bTab.of_mem k.rd k.wr fun p hp => k.mem p (Or.inr (Or.inr (by omega)))⟩
+  obtain ⟨q, hq, hr⟩ := h.aTab e he
+  have tf : TableFrame base 56 3160 s.mem t.mem := fun p _ hp => k.mem p (by omega)
+  exact ⟨q, by rw [tf.point (by omega) (Or.inr (by omega)) (by omega)]; exact hq, hr⟩
 
 theorem negR_eval (e : Env) :
     point (evalOps [.const 8 0, .sub 4 8 4, .sub 7 8 7] e) 0 1 2 3 = point e 0 1 2 3 ∧
@@ -557,9 +323,11 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
     (hf : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i))
     (hcr : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1)
     (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
+    (hcr8 : ∀ j < 8, InRegions (s.rd ++ s.wr) (off challenge (8 * j)) 8)
+    (hsr8 : ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8)
     (hA : Rep (tablePoint s.mem base 7424) Aa) {T : Addr} (hT : s.mem.readW (off base 7960) 64 = T)
     (hbt : BaseTbl s base T) :
-    WP isa (windowPrep fld) s fun e => WinLoop e base challenge sig T Aa
+    WP isa (windowPrep fld) s fun e => SkipLoop e base challenge sig T Aa
       (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))
       (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32)) 64 e ∧
       PowersKeep base 56 7752 s e ∧ tablePoint e.mem base 7552 = tablePoint s.mem base 7552 := by
@@ -577,28 +345,27 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
   have ksb := ksa.trans (hb.keep.mono (by decide) (by decide))
   have bR : tablePoint b.mem base 7552 = tablePoint s.mem base 7552 := by
     rw [hb.keep.mem.point (by decide) (Or.inr (by decide)) (by decide), aR]
-  have ksc := ksb
-  have cR := bR
-  have cd : env b.mem base 16 = Spec.Ed25519.d := hb.d
-  have cA : TableOf cache b.mem base 5376 Aa := hb.table
+  have cA : TableOf cache b.mem base 5376 Aa := fun e he => hb.table e he
   -- The accumulator and the byte counter.
   rw [windowInit, WP.block_append_iff]
-  refine WP.mono (fieldCodeWide_ok (ksc.scratch hs) (constPointOps Spec.Ed25519.identity))
+  refine WP.mono (fieldCodeWide_ok (ksb.scratch hs) (constPointOps Spec.Ed25519.identity))
     fun d ⟨kd, vd⟩ => ?_
   have kcd : PowersKeep base 56 7752 b d := PowersKeep.of_keep kd
-  refine WP.mono (mulCounterInit_ok ((ksc.trans kcd).scratch hs) 64) fun e ⟨ec, eg, er, ew, em⟩ => ?_
+  refine WP.mono (mulCounterInit_ok ((ksb.trans kcd).scratch hs) 64) fun e ⟨ec, eg, er, ew, em⟩ => ?_
   have kde : ByteKeep base d e :=
     ⟨fun r _ _ _ => eg r (by rintro rfl; contradiction), er, ew, em.mono (by decide) (by decide)⟩
   have kce : ByteKeep base b e := (ByteKeep.of_win (WinKeep.of_keep kd)).trans kde
-  have kse := ksc.trans (PowersKeep.of_byte kce)
+  have kse := ksb.trans (PowersKeep.of_byte kce)
   have eR : tablePoint e.mem base 7552 = tablePoint s.mem base 7552 := by
-    rw [win_tablePoint kce.mem (by decide) (by decide), cR]
-  have ed : env e.mem base 16 = Spec.Ed25519.d := by rw [header_env em, vd]; exact cd
+    rw [win_tablePoint kce.mem (by decide) (by decide), bR]
+  have ed : env e.mem base 16 = Spec.Ed25519.d := by rw [header_env em, vd]; exact hb.d
   have ctx : WinCtx base challenge sig T Aa e :=
     ⟨kse.scratch hs, (kse.header (by decide) (by decide) (by decide)).trans hc,
       (kse.header (by decide) (by decide) (by decide)).trans hp,
       fun i hi => by rw [kse.rd, kse.wr]; exact hcr i hi,
       fun i hi => by rw [kse.rd, kse.wr]; exact hr i hi, hcf, hf,
+      fun i hi => by rw [kse.rd, kse.wr]; exact hcr8 i hi,
+      fun i hi => by rw [kse.rd, kse.wr]; exact hsr8 i hi,
       cA.of_win kce.mem (by decide) (by decide),
       (kse.header (by decide) (by decide) (by decide)).trans hT, hbt.of_powers kse (by decide)⟩
   have hK : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt e.mem challenge 64) < 256 ^ 64 := by
@@ -614,6 +381,37 @@ theorem windowPrep_ok {s : State} {base sig challenge : Addr} {Aa : EPoint dZ}
     zero_smul, add_zero, header_env em, vd, constPoint_eval]
   exact identity_rep
 
+/-- The windows' start, from the recoded digits. -/
+theorem skipAt_of_recode {s₀ f g : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}
+    (hf : SkipLoop s₀ base kp sp T A K S c f) (hK : K / 256 ^ c = 0) (hc32 : 32 ≤ c) (hc64 : c ≤ 64)
+    (k : AllKeep base f g) (hdig : DigitsAre g.mem base (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)))
+    (hcount : g.mem.readW (off base 56) 64 = BitVec.ofNat 64 (8 * c + 9)) :
+    SkipAt g base kp sp T A (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) (8 * c + 8)
+      (8 * c + 8 + 1) g := by
+  have hb := hf.ctx.scratch.nowrap
+  have hS : S < 256 ^ 32 := hf.sVal ▸ decodeLE_lt32 _ _
+  have henv : env g.mem base = env f.mem base := by
+    funext i
+    simp only [env, Proof.X25519.X86_64.F, Proof.X25519.X86_64.fe]
+    have w (d : Nat) (hd : 64 ≤ d) (hd' : d + 8 ≤ 2048) :
+        Proof.X25519.X86_64.word g.mem base d = Proof.X25519.X86_64.word f.mem base d :=
+      Mem.readW_congr fun j hj => k.mem _ (Or.inr (Or.inl ⟨by
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega, by
+        rw [VG.Proof.X25519.X86_64.ofs_off base (by omega)]; omega⟩))
+    have hi := i.isLt
+    simp only [offset]
+    rw [w _ (by omega) (by omega), w _ (by omega) (by omega), w _ (by omega) (by omega),
+      w _ (by omega) (by omega)]
+  have h0 : Rep (point (env g.mem base) 0 1 2 3) 0 := by
+    have v := hf.value
+    rw [hK, Nat.div_eq_of_lt (Nat.lt_of_lt_of_le hS (Nat.pow_le_pow_right (by decide) hc32)), zero_smul,
+      zero_smul, add_zero] at v
+    rw [henv]; exact v
+  have htop : winVal A (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) (8 * c + 8) (8 * c + 8 + 1) = 0 := by
+    simp only [winVal, hiVal, Nat.sub_self, Recode.hsum_zero, zero_smul, add_zero]
+  refine ⟨⟨hf.ctx.of_all k, by rw [henv]; exact hf.d, by rw [hcount], hdig, by rw [htop]; exact h0.proj,
+    ByteKeep.refl _ _⟩, fun j h1 h2 => by omega, h0, by omega, le_refl _⟩
+
 theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra : EPoint dZ}
     (hs : Scratch s base)
     (hp : s.mem.readW (off base 7944) 64 = sig)
@@ -622,6 +420,8 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
     (hf : ∀ i < 32, 8192 ≤ ofs base (off (off sig 32) i))
     (hcr : ∀ i < 64, InRegions (s.rd ++ s.wr) (off challenge i) 1)
     (hcf : ∀ i < 64, 8192 ≤ ofs base (off challenge i))
+    (hcr8 : ∀ j < 8, InRegions (s.rd ++ s.wr) (off challenge (8 * j)) 8)
+    (hsr8 : ∀ j < 4, InRegions (s.rd ++ s.wr) (off sig (32 + 8 * j)) 8)
     (hA : Rep (tablePoint s.mem base 7424) Aa) (hR : Rep (tablePoint s.mem base 7552) Ra)
     {T : Addr} (hT : s.mem.readW (off base 7960) 64 = T) (hbt : BaseTbl s base T) :
     WP isa (verifyEquationPoints fld win) s fun t => PowersKeep base 56 7752 s t ∧
@@ -633,19 +433,47 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
             (tablePoint s.mem base 7424)))) := by
   rw [verifyEquationPoints]
   apply WP.assoc; apply WP.assoc
-  refine WP.seq (WP.mono (windowPrep_ok hs hp hc hr hf hcr hcf hA hT hbt) fun e ⟨w0, kse, eR⟩ => ?_)
+  refine WP.seq (WP.mono (windowPrep_ok hs hp hc hr hf hcr hcf hcr8 hsr8 hA hT hbt) fun e ⟨w0, kse, eR⟩ => ?_)
+  generalize hKd : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64) = K at w0 ⊢
+  generalize hSd : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32) = S at w0 ⊢
+  -- `k`'s zero bytes.
+  refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc32, hc64, hf', hK⟩ => ?_)
+  -- The digits.
+  have fctx := hf'.ctx
+  refine WP.seq (WP.mono (recodeAll_ok fctx.scratch hf'.counter hc32 hc64 fctx.kHeader fctx.sHeader
+    fctx.kRead8 fctx.sRead8 fctx.kFar (fun j hj => by
+      rw [show off sig (32 + j) = off (off sig 32) j from (Offset.add_add _ _ _).symm]; exact fctx.sFar j hj))
+    fun g ⟨gA, gB, gc, kg⟩ => ?_)
+  rw [hf'.kVal] at gA
+  rw [hf'.sVal] at gB
+  have gdig : DigitsAre g.mem base (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) :=
+    fun p hp => ⟨gA p hp, gB p hp⟩
+  have hg := skipAt_of_recode hf' hK hc32 hc64 kg gdig gc
+  have hdg : Digits (Recode.digits 5 K (8 * c)) (Recode.digits 8 S (8 * 32)) (8 * c + 8) :=
+    ⟨by omega, fun p => Recode.digits_le (by decide) p, fun p => Recode.digits_le (by decide) p⟩
   -- The windows.
-  refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc32, hc64, hf⟩ => ?_)
-  refine WP.seq (WP.mono (EdWindows.ok hc32 hc64 hf) fun g hg => ?_)
-  have ksg := kse.trans (PowersKeep.of_byte hg.keep)
+  refine WP.seq (WP.mono (EdWindows.ok hdg hg) fun h hh => ?_)
+  have ksh := ((kse.trans (PowersKeep.of_byte hf'.keep)).trans (PowersKeep.of_all kg)).trans
+    (PowersKeep.of_byte hh.keep)
   -- The comparison with `-R`.
-  refine WP.seq (WP.mono (negR_ok (ksg.scratch hs)) fun u ⟨ku, u0, u4⟩ => ?_)
-  have ksu := ksg.trans (PowersKeep.of_keep ku)
+  refine WP.seq (WP.mono (negR_ok (ksh.scratch hs)) fun u ⟨ku, u0, u4⟩ => ?_)
+  have ksu := ksh.trans (PowersKeep.of_keep ku)
   refine WP.mono (pointEqual_ok (ksu.scratch hs)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨ksu.trans (PowersKeep.of_keep kt), ?_⟩
-  have gv := hg.value
-  simp only [pow_zero, Nat.div_one] at gv
-  rw [tv, u0, u4, win_tablePoint hg.keep.mem (by decide) (by decide), eR,
-    window_equation hA hR gv.proj hR.neg.proj]
+  have hKlt : K < 2 ^ (8 * c) := by
+    have := Nat.lt_of_div_eq_zero (by positivity) hK
+    rwa [show (256 : Nat) ^ c = 2 ^ (8 * c) by rw [Nat.pow_mul]] at this
+  have hSlt : S < 2 ^ (8 * 32) := hSd ▸ decodeLE_lt32 _ _
+  have gv := hh.value
+  simp only [winVal, hiVal, Nat.sub_zero] at gv
+  rw [Recode.digits_sum (by decide) hKlt (by omega), Recode.digits_sum (by decide) hSlt (by omega),
+    natCast_zsmul, natCast_zsmul] at gv
+  have tf : TableFrame base 56 3160 f.mem g.mem := fun p _ hp => kg.mem p (by omega)
+  have hR' : tablePoint h.mem base 7552 = tablePoint s.mem base 7552 := by
+    rw [win_tablePoint hh.keep.mem (by decide) (by decide), tf.point (by decide) (Or.inr (by decide)) (by decide),
+      win_tablePoint hf'.keep.mem (by decide) (by decide), eR]
+  rw [tv, u0, u4, hR', ← hKd, ← hSd]
+  rw [← hKd, ← hSd] at gv
+  exact congrArg signWord (window_equation hA hR gv hR.neg.proj)
 
 end VG.Proof.Ed25519.X86_64
