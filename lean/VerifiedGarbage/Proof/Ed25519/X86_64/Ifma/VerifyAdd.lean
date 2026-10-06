@@ -219,12 +219,12 @@ theorem lanePt_vec {s t : State} (hx : t.xmm = s.xmm) (hy : t.ymmHi = s.ymmHi) :
     lanePt t = lanePt s ∧ (Small s → Small t) :=
   lanes0_eq (lanes0_vec hx hy)
 
-/-- A digit `v`'s entry of the cached table at byte `o`, added to the point in the lanes. -/
+/-- A digit `v`'s entry `v - 1` of the cached table at byte `o`, added to the point in the lanes. -/
 theorem vaddDigit_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base)
-    (hx : Small s) {o : Nat} (hlo : 1888 ≤ o) (hhi : o + 1920 ≤ 8192) {X a : EPoint dZ}
-    (htab : TableOf cache s.mem base o X) (v : Nat) (hv : v < 16) (hc : s.gpr .rbx = BitVec.ofNat 64 v)
+    (hx : Small s) {o : Nat} (hlo : 1888 ≤ o) (hhi : o + 2048 ≤ 8192) {X a : EPoint dZ}
+    (htab : TableOf cache s.mem base o X) (v : Nat) (hv : v ≤ 16) (hc : s.gpr .rbx = BitVec.ofNat 64 v)
     (hz : s.zf = some (decide (v = 0))) (ha : Rep (lanePt s) a) :
-    WP isa (vaddDigit o) s fun t => Rep (lanePt t) (a + v • X) ∧ Small t ∧ LKeep base s t := by
+    WP isa (vaddDigit o) s fun t => Rep (lanePt t) (a + (Recode.dec v) • X) ∧ Small t ∧ LKeep base s t := by
   rw [vaddDigit]
   refine WP.ite (!decide (v = 0)) (by simp only [eval, hz, Option.map_some]) (fun h => ?_) (fun h => ?_)
   · have hv0 : v ≠ 0 := by simpa using h
@@ -250,16 +250,17 @@ theorem vaddDigit_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : ECons
         ⟨fun r _ _ _ => by rw [tg], by rw [tg], trd, twr, tou⟩)
   · have hv0 : v = 0 := by simpa using h
     subst hv0
-    exact WP.block_nil ⟨by rw [zero_smul, add_zero]; exact ha, hx, LKeep.refl _ _⟩
+    exact WP.block_nil ⟨by simpa [Recode.dec] using ha, hx, LKeep.refl _ _⟩
 
 theorem baseAddr_scal : scalCode (.block baseAddr : Prog isa) = true := rfl
 
-/-- `S`'s byte `v`'s entry of the static at `T`, `-[v]B`, added to the point in the lanes. -/
+/-- `S`'s digit `v`'s entry `v - 1` of the static at `T`, added to the point in the lanes. -/
 theorem vaddBase_ok {s : State} {base T : Addr} (hs : Scratch s base) (hk : EConsts s.mem base)
     (hx : Small s) (hT : s.mem.readW (off base 7960) 64 = T) (ht : BaseTbl s base T) {a : EPoint dZ}
-    (v : Nat) (hv : v < 256) (hc : s.gpr .rbx = BitVec.ofNat 64 v)
+    (v : Nat) (hv : v ≤ 128) (hc : s.gpr .rbx = BitVec.ofNat 64 v)
     (hz : s.zf = some (decide (v = 0))) (ha : Rep (lanePt s) a) :
-    WP isa vaddBase s fun t => Rep (lanePt t) (a + v • (-baseAff)) ∧ Small t ∧ LKeep base s t := by
+    WP isa vaddBase s fun t => Rep (lanePt t) (a + (Recode.dec v) • (-baseAff)) ∧ Small t ∧
+      LKeep base s t := by
   rw [vaddBase]
   refine WP.ite (!decide (v = 0)) (by simp only [eval, hz, Option.map_some]) (fun h => ?_) (fun h => ?_)
   · have hv0 : v ≠ 0 := by simpa using h
@@ -273,7 +274,7 @@ theorem vaddBase_ok {s : State} {base T : Addr} (hs : Scratch s base) (hk : ECon
       fun c ⟨⟨cp, kc⟩, cx, chy⟩ => ?_
     have hsc : Scratch c base := hsb.of_keeps kc (by decide)
     have hm : c.mem = s.mem := kc.2.1.trans kb.2.1
-    obtain ⟨q, hq, hr⟩ := baseByteCached_ok n (by omega)
+    obtain ⟨q, hq, hr⟩ := baseOddCached_ok n (by omega)
     obtain ⟨pc, sc⟩ := lanePt_vec (cx.trans bx) (chy.trans bhy)
     refine WP.mono (ventryAt_ok (q := q) hsc (by rw [hm]; exact hk) (sc hx) cp
       (fun d hd => by
@@ -288,6 +289,6 @@ theorem vaddBase_ok {s : State} {base T : Addr} (hs : Scratch s base) (hk : ECon
         ⟨fun r _ _ _ => by rw [tg], by rw [tg], trd, twr, tou⟩)
   · have hv0 : v = 0 := by simpa using h
     subst hv0
-    exact WP.block_nil ⟨by rw [zero_smul, add_zero]; exact ha, hx, LKeep.refl _ _⟩
+    exact WP.block_nil ⟨by simpa [Recode.dec] using ha, hx, LKeep.refl _ _⟩
 
 end VG.Proof.Ed25519.X86_64.Ifma

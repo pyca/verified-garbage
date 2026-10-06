@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
@@ -35,10 +36,10 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
       the selected SHA-512 backend, reduces the challenge modulo L, and calls \
       `vg_ed25519_verify_equation" ++ fs ++ "`. The digest and zero-extended reduced challenge \
       occupy separate buffers in a 168-byte stack frame; calls use another 16 bytes below it."])
-    consts := Impl.Ed25519.X86_64.baseBytesConsts
+    consts := Impl.Ed25519.X86_64.baseOddConsts
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
     contract :=
-      Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184
+      Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts) 184
     stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c
@@ -94,10 +95,10 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
     [Proof.Ed25519.X86_64.EdArith fld] (fs : String) (ff : List String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode
       (Impl.Ed25519.X86_64.verifyEquation fld
-        (Impl.Ed25519.X86_64.windows fld (Impl.Ed25519.X86_64.double4 fld)))) :
+        (Impl.Ed25519.X86_64.windows fld))) :
     List Artifact :=
   [publicKeyWith c (Impl.Ed25519.X86_64.scalarBase_precomputed fld) fs ff,
-    verifyWith c fld (Impl.Ed25519.X86_64.windows fld (Impl.Ed25519.X86_64.double4 fld)) fs ff hq,
+    verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
     signCachedWith c (Impl.Ed25519.X86_64.scalarBase_precomputed fld) fs ff]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and

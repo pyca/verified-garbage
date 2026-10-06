@@ -426,8 +426,8 @@ theorem eq_regs {t : State} (ha : EqArgs L t) (rd wr : List Region) :
 
 /-- The static's words, as the equation checker is entered. -/
 theorem Ctx.ce_held (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (rd wr : List Region) :
-    ∀ i < 4080, (t.callEntry.withRegions rd wr).mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
-      Impl.Ed25519.X86_64.baseBytesWords.getD i 0 := by
+    ∀ i < 2048, (t.callEntry.withRegions rd wr).mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.Ed25519.X86_64.baseOddWords.getD i 0 := by
   intro i hi
   rw [State.withRegions_mem, ← hc.held i hi]
   apply Mem.readW_congr
@@ -435,18 +435,18 @@ theorem Ctx.ce_held (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (rd wr : Li
   simp only [Nat.reduceDiv] at hj
   rw [Offset.add_add]
   rw [PublicKey.ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tk.sub_right (Offset.sub_base _
-    (by decide : 8 + 8 ≤ 184))).symm) (show 32640 ≤ 2 ^ 64 by decide) (show 8 * i + j < 32640 by omega)]
+    (by decide : 8 + 8 ≤ 184))).symm) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega)]
   exact Frame.bytes hc.frame (R := L.TBL) (by
     intro R hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl
     · exact hL.ts
-    · exact hL.tk) (show 32640 ≤ 2 ^ 64 by decide) (show 8 * i + j < 32640 by omega)
+    · exact hL.tk) (show 16384 ≤ 2 ^ 64 by decide) (show 8 * i + j < 16384 by omega)
 
 theorem eq_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t) :
     verifyLocal.pre (t.callEntry.withRegions (eqRd L) (eqWr L)) := by
   obtain ⟨hdi, hsi, hdx, hcx⟩ := eq_regs ha (eqRd L) (eqWr L)
-  have hsy : (t.callEntry.withRegions (eqRd L) (eqWr L)).syms Impl.Ed25519.X86_64.baseBytesSym = L.T :=
+  have hsy : (t.callEntry.withRegions (eqRd L) (eqWr L)).syms Impl.Ed25519.X86_64.baseOddSym = L.T :=
     hc.sym
   have hh := hc.ce_held hL (eqRd L) (eqWr L)
   simp only [verifyLocal, rsp_ce, hdi, hsi, hdx, hcx, hc.rsp, sub8, hsy,
@@ -606,7 +606,7 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 64 :=
 def verifyMessageLocal : Contract isa where
   pre s := 184 ≤ (s.gpr .rsp).toNat ∧
     s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 64⟩,
-      ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩] ∧
+      ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩] ∧
     s.wr = [⟨s.gpr .r8, 8192⟩] ∧
     Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .r8, 8192⟩ ∧
     Region.Disjoint ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩ ⟨s.gpr .r8, 8192⟩ ∧
@@ -622,11 +622,11 @@ def verifyMessageLocal : Contract isa where
     (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧
     (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .rcx).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧
-    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩ ⟨s.gpr .r8, 8192⟩ ∧
-    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩
+    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩ ⟨s.gpr .r8, 8192⟩ ∧
+    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseOddSym, 16384⟩
       ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ∧
-    ∀ i < 4080, s.mem.readW (s.syms Impl.Ed25519.X86_64.baseBytesSym + BitVec.ofNat 64 (8 * i)) 64 =
-      Impl.Ed25519.X86_64.baseBytesWords.getD i 0
+    ∀ i < 2048, s.mem.readW (s.syms Impl.Ed25519.X86_64.baseOddSym + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.Ed25519.X86_64.baseOddWords.getD i 0
   post s t := t.gpr .rax = if Spec.Ed25519.verify
     (Spec.Ed25519.bytesAt s.mem (s.gpr .rdi) 32)
     (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat)
@@ -638,11 +638,11 @@ def verifyMessageLocal : Contract isa where
     Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat =
       Spec.Ed25519.bytesAt t.mem (t.gpr .rsi) (t.gpr .rdx).toNat ∧
     Spec.Ed25519.bytesAt s.mem (s.gpr .rcx) 64 = Spec.Ed25519.bytesAt t.mem (t.gpr .rcx) 64 ∧
-    s.syms Impl.Ed25519.X86_64.baseBytesSym = t.syms Impl.Ed25519.X86_64.baseBytesSym
+    s.syms Impl.Ed25519.X86_64.baseOddSym = t.syms Impl.Ed25519.X86_64.baseOddSym
 
 def lay (s : State) : Lay :=
   ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .rsp - BitVec.ofNat 64 184,
-    s.syms Impl.Ed25519.X86_64.baseBytesSym⟩
+    s.syms Impl.Ed25519.X86_64.baseOddSym⟩
 
 theorem lay_ret (s : State) : (lay s).B + BitVec.ofNat 64 184 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 

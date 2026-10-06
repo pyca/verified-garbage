@@ -1,11 +1,11 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddMemory
-import VerifiedGarbage.Proof.Ed25519.X86_64.BaseBytes
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseOdd
 
 /-!
-# Verification's static multiples of `-B`
+# Verification's static odd multiples of `B`
 
-`BaseTbl s base T`: the static at `T` holds the entries `baseByteCached` (`-[j + 1]B`,
+`BaseTbl s base T`: the static at `T` holds the entries `baseOddCached` (`[dec (j + 1)](-B)`,
 cached) at `T + 128 j`, readable, and apart from the scratch at `base`, so that anything that
 writes only the scratch keeps it (`BaseTbl.of_mem`). `baseAddr` computes an entry's address
 from the static's address, which verification keeps at byte 7960 of the scratch, and
@@ -20,10 +20,10 @@ open VG.Impl.X25519.X86_64 (stores)
 
 /-- The static's entries at `T`, readable and apart from the scratch at `base`. -/
 structure BaseTbl (s : State) (base T : Addr) : Prop where
-  entry : ∀ j < 255, tablePoint s.mem (off T (128 * j)) 0 =
-    baseByteCached (baseBytesAffine.getD j (0, 1))
-  read : ∀ d n, d + n ≤ 32640 → InRegions (s.rd ++ s.wr) (off T d) n
-  far : ∀ i < 32640, 8192 ≤ ofs base (off T i)
+  entry : ∀ j < 128, tablePoint s.mem (off T (128 * j)) 0 =
+    baseOddCached (baseOddAffine.getD j (0, 1))
+  read : ∀ d n, d + n ≤ 16384 → InRegions (s.rd ++ s.wr) (off T d) n
+  far : ∀ i < 16384, 8192 ≤ ofs base (off T i)
 
 theorem tablePoint_congr {m m' : Mem} {E : Addr}
     (h : ∀ i < 128, m' (off E i) = m (off E i)) : tablePoint m' E 0 = tablePoint m E 0 := by
@@ -54,7 +54,7 @@ theorem BaseTbl.of_outside {s t : State} {base T : Addr} {o n : Nat} (h : BaseTb
 
 /-- `rax` = entry `j` of the static, whose address is at byte 7960 of the scratch. -/
 theorem baseAddr_ok {s : State} {base T : Addr} (hs : Scratch s base)
-    (hT : s.mem.readW (off base 7960) 64 = T) (j : Nat) (hj : j < 255)
+    (hT : s.mem.readW (off base 7960) 64 = T) (j : Nat) (hj : j < 128)
     (hc : s.gpr .rbx = BitVec.ofNat 64 j) :
     WP isa (.block baseAddr) s fun t => t.gpr .rax = off T (128 * j) ∧ Keeps [.rax, .rcx, .rdx] s t := by
   have hval : (BitVec.ofNat 64 j).toNat = j := by

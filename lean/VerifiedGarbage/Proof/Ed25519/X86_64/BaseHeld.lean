@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
 /-!
 # The static's words are its entries
 
-Word `16 j + 4 f + w` of `baseBytesWords` is word `w` of field `f` of entry `j`, so a memory
+Word `16 j + 4 f + w` of `baseOddWords` is word `w` of field `f` of entry `j`, so a memory
 holding the words at `T` holds entry `j` at `T + 128 j` (`baseTbl_entry`).
 -/
 
@@ -28,43 +28,43 @@ theorem entry4Words_getD (p : Spec.Ed25519.Point) {f w : Nat} (hf : f < 4) (hw :
   rw [entry4Words, getD_flatMap_const _ 4 0 [p.X, p.Y, p.Z, p.T] 0 (fun v _ => feWords_length v) f hf w hw,
     feWords_getD _ hw]
 
-theorem baseBytesWords_eq :
-    baseBytesWords = baseBytesAffine.flatMap fun q => entry4Words (baseByteCached q) := by
-  unfold baseBytesWords
+theorem baseOddWords_eq :
+    baseOddWords = baseOddAffine.flatMap fun q => entry4Words (baseOddCached q) := by
+  unfold baseOddWords
   congr 1
 
-theorem baseBytesWords_length : baseBytesWords.length = 4080 := by
-  rw [baseBytesWords_eq, length_flatMap_const _ 16 _ (fun q _ => entry4Words_length _),
-    baseBytesAffine_length]
+theorem baseOddWords_length : baseOddWords.length = 2048 := by
+  rw [baseOddWords_eq, length_flatMap_const _ 16 _ (fun q _ => entry4Words_length _),
+    baseOddAffine_length]
 
-theorem baseBytesWords_getD {j f w : Nat} (hj : j < 255) (hf : f < 4) (hw : w < 4) :
-    baseBytesWords.getD (j * 16 + (f * 4 + w)) 0 =
-      feWord ([(baseByteCached (baseBytesAffine.getD j (0, 1))).X,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Y,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Z,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).T].getD f 0) w := by
-  rw [baseBytesWords_eq, getD_flatMap_const _ 16 0 baseBytesAffine (0, 1)
-      (fun q _ => entry4Words_length _) j (by rw [baseBytesAffine_length]; exact hj) _ (by omega),
+theorem baseOddWords_getD {j f w : Nat} (hj : j < 128) (hf : f < 4) (hw : w < 4) :
+    baseOddWords.getD (j * 16 + (f * 4 + w)) 0 =
+      feWord ([(baseOddCached (baseOddAffine.getD j (0, 1))).X,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Y,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Z,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).T].getD f 0) w := by
+  rw [baseOddWords_eq, getD_flatMap_const _ 16 0 baseOddAffine (0, 1)
+      (fun q _ => entry4Words_length _) j (by rw [baseOddAffine_length]; exact hj) _ (by omega),
     entry4Words_getD _ hf hw]
 
 /-- Field `f` of entry `j`, from the words at `T`. -/
 theorem baseField {m : Mem} {T : Addr}
-    (hheld : ∀ i < 4080, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = baseBytesWords.getD i 0)
-    {j f : Nat} (hj : j < 255) (hf : f < 4) :
+    (hheld : ∀ i < 2048, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0)
+    {j f : Nat} (hj : j < 128) (hf : f < 4) :
     F m (off T (128 * j)) (32 * f) =
-      [(baseByteCached (baseBytesAffine.getD j (0, 1))).X,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Y,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Z,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).T].getD f 0 := by
+      [(baseOddCached (baseOddAffine.getD j (0, 1))).X,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Y,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Z,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).T].getD f 0 := by
   have hword : ∀ w < 4, Proof.X25519.X86_64.word m (off T (128 * j)) (32 * f + 8 * w) =
-      feWord ([(baseByteCached (baseBytesAffine.getD j (0, 1))).X,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Y,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).Z,
-        (baseByteCached (baseBytesAffine.getD j (0, 1))).T].getD f 0) w := by
+      feWord ([(baseOddCached (baseOddAffine.getD j (0, 1))).X,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Y,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).Z,
+        (baseOddCached (baseOddAffine.getD j (0, 1))).T].getD f 0) w := by
     intro w hw
     simp only [Proof.X25519.X86_64.word, off, Offset.add_add]
     rw [show 128 * j + (32 * f + 8 * w) = 8 * (j * 16 + (f * 4 + w)) by omega,
-      hheld _ (by omega), baseBytesWords_getD hj hf hw]
+      hheld _ (by omega), baseOddWords_getD hj hf hw]
   simp only [F, fe]
   have h0 := hword 0 (by decide)
   have h1 := hword 1 (by decide)
@@ -73,11 +73,11 @@ theorem baseField {m : Mem} {T : Addr}
   simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceMul] at h0 h1 h2 h3
   rw [h0, h1, h2, h3, feWord_val, Proof.X25519.toFe_self]
 
-/-- The words of `baseBytesWords` at `T` are the entries. -/
+/-- The words of `baseOddWords` at `T` are the entries. -/
 theorem baseTbl_entry {m : Mem} {T : Addr}
-    (hheld : ∀ i < 4080, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = baseBytesWords.getD i 0)
-    (j : Nat) (hj : j < 255) :
-    tablePoint m (off T (128 * j)) 0 = baseByteCached (baseBytesAffine.getD j (0, 1)) := by
+    (hheld : ∀ i < 2048, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = baseOddWords.getD i 0)
+    (j : Nat) (hj : j < 128) :
+    tablePoint m (off T (128 * j)) 0 = baseOddCached (baseOddAffine.getD j (0, 1)) := by
   have h0 := baseField hheld hj (f := 0) (by decide)
   have h1 := baseField hheld hj (f := 1) (by decide)
   have h2 := baseField hheld hj (f := 2) (by decide)

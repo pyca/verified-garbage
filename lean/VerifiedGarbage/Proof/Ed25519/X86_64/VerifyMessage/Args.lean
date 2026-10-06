@@ -16,7 +16,7 @@ structure Lay where
   sig : Addr
   scr : Addr
   B : Addr
-  /-- The static of `-B`'s multiples (`baseBytesSym`). -/
+  /-- The static of `-B`'s multiples (`baseOddSym`). -/
   T : Addr
 
 namespace Lay
@@ -29,7 +29,7 @@ abbrev STK : Region := ⟨L.B, 184⟩
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 168⟩
 abbrev DATA : Region := ⟨L.B + BitVec.ofNat 64 16, 128⟩
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 184, 8⟩
-abbrev TBL : Region := ⟨L.T, 32640⟩
+abbrev TBL : Region := ⟨L.T, 16384⟩
 def inputs : List Region := [L.PK, L.MSG, L.SIG]
 structure Ok : Prop where
   sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
@@ -70,9 +70,9 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pMsg : t.mem.readW (L.B + BitVec.ofNat 64 168) 64 = L.msg
   pPk : t.mem.readW (L.B + BitVec.ofNat 64 176) 64 = L.pk
   frame : Frame [L.SCR, L.STK] m₀ t.mem
-  sym : t.syms Impl.Ed25519.X86_64.baseBytesSym = L.T
-  held : ∀ i < 4080, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
-    Impl.Ed25519.X86_64.baseBytesWords.getD i 0
+  sym : t.syms Impl.Ed25519.X86_64.baseOddSym = L.T
+  held : ∀ i < 2048, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
+    Impl.Ed25519.X86_64.baseOddWords.getD i 0
 
 namespace Ctx
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}
