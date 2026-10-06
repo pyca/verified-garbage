@@ -76,15 +76,16 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       are four 64-bit words in Montgomery form, " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". The key is checked without \
       branches (its first byte, both coordinates below `p`, and the curve's equation), and \
       `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on a \
-      point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is \
-      the signature's comb over the 7-bit windows of `u` (from the static `VG_P256_COMB`), and \
+      point of the curve. `s⁻¹` modulo `n` uses divsteps; `[u]G` uses the signature's comb \
+      over 7-bit windows, directly indexing the static `VG_P256_COMB` with the public scalar `u`, and \
       `[v]Q` by `vg_ecdh_p256" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows (`v` recoded as `v + 8 Σ_{j<65} 16^j`, \
       a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a complete addition of \
       the entry selected in constant time per digit); the two are added by the complete \
       addition formulas of Renes, Costello and Batina. The result is the conjunction of the \
       checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` \
-      modulo `n`) as a mask, so the time depends only on the pointers, although the contract would \
-      let every input affect it."])
+      modulo `n`) as a mask. The final comparison avoids a field inversion: in homogeneous \
+      coordinates it checks `X = rZ`, or `X = (r+n)Z` when `r+n < p`, and rejects `Z = 0`. \
+      Timing may depend on the public verification inputs, as permitted by the contract."])
     consts := Impl.Ecdsa.X86_64.p256.combConsts
     code
     contract := Spec.Ecdsa.P256.inst.verifyContract

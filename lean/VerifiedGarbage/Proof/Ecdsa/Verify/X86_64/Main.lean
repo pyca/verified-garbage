@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Final
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 
@@ -38,8 +38,8 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
       (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c) (.seq c.pPow
-        (Impl.Ecdsa.Verify.X86_64.Cfg.final c)))))))))) := rfl
+      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c)
+        (Impl.Ecdsa.Verify.X86_64.Cfg.tail c))))))))) := rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
 theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
@@ -75,7 +75,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     exact peerPt_rep hC _ _ _ hM.px hM.py
   refine points_ok hc hC hT hM hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hp.rd]; simp [hr]) hPc hQ
     fun s₃ hP => ?_
-  refine WP.mono (tail_ok hc hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
+  refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, xo, hxo, hx, rax⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1 q2 hsum.symm

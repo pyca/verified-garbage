@@ -209,10 +209,11 @@ def combConsts : List (String × List (BitVec 64)) :=
   | none => []
 
 /-- `R = [k]G`, from the table of the bits of `k`: by the comb (with `b R mod p`
-in `EM` for its complete addition for `a = -3`), or the ladder. -/
-def gMul : Prog isa :=
+in `EM` for its complete addition for `a = -3`), or the ladder.
+`publicLookup` permits direct table lookup only for public scalars. -/
+def gMul (publicLookup : Bool := false) : Prog isa :=
   match c.comb with
-  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d))
+  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d) publicLookup)
   | none => ladder c.ladderCfg
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
