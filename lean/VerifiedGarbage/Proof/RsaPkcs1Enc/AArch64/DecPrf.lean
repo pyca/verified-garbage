@@ -19,7 +19,7 @@ theorem imm16 {n : Nat} (hn : n < 65536) : BitVec.setWidth 64 (BitVec.ofNat 16 n
   omega
 
 theorem prfHead_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
-    WP isa (.block (scr .x9 sMsg ++ [.ldrSp .x11 oI, .ldrSp .x12 oK])) t fun u => Same t u ∧
+    WP isa (.block (scr .x9 sMsg ++ ([.ldrSp .x11 oI, .ldrSp .x12 oK] : List Instr))) t fun u => Same t u ∧
       u.gpr .x9 = slot t Q oScr + BitVec.ofNat 64 sMsg ∧ u.gpr .x11 = slot t Q oI ∧ u.gpr .x12 = slot t Q oK := by
   have h168 := h 168 (by decide)
   have h184 := h 184 (by decide)

@@ -67,7 +67,7 @@ theorem preserved_cases {P : Reg → Prop} (h19 : P .x19) (h20 : P .x20) (h21 : 
     ∀ r ∈ preserved, P r := by
   intro r hr
   simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 /-- The frame's slots are readable. -/
 abbrev Slots (t : State) (Q : Addr) : Prop := ∀ d, d + 8 ≤ 208 → InRegions (t.rd ++ t.wr) (Q + BitVec.ofNat 64 d) 8

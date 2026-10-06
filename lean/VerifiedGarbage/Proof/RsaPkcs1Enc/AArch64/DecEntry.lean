@@ -42,7 +42,7 @@ theorem forall_ro {L : Lay} {F : Region → Prop}
   intro R hR
   simp only [Lay.ro, List.mem_cons, List.not_mem_nil, or_false] at hR
   obtain ⟨a, b, c, d, e, f, g, i, j⟩ := h
-  rcases hR with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases hR with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem lay_ok {P : Nat} {s : State} (h : (decSpec P).pre s) : (lay P s).Ok := by
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, AArch64.abi, AArch64.argRegs,
@@ -224,7 +224,7 @@ theorem ourArg_lay (P : Nat) (s : State) : ∀ j, j < 15 → ourArg (lay P s) j 
   | 7, _ => rfl | 8, _ => rfl | 9, _ => rfl | 10, _ => rfl | 11, _ => rfl | 12, _ => rfl | 13, _ => rfl
   | 14, _ => rfl
 
-theorem saves_eq : saves = [.addSp .x9 0] ++ Spill.saveCode .x9
+theorem saves_eq : saves = ([.addSp .x9 0] : List Instr) ++ Spill.saveCode .x9
     [(.x0, oOut), (.x2, oML), (.x3, oN), (.x4, oK), (.x5, oE), (.x6, oEl), (.x7, oD)] := rfl
 
 /-- The call's registers once the slots are written. -/

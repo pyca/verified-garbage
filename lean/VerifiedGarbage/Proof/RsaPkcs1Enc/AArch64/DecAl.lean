@@ -98,9 +98,9 @@ theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (
     WP isa maskLoop t₀ fun u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (bitMask x) ∧
       u.gpr .x9 = BitVec.ofNat 64 x :=
   Bytes.count_loop (bitLength_pos hx1) (fun j u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (2 ^ j - 1) ∧
-    u.gpr .x9 = BitVec.ofNat 64 x) (fun j hj u ⟨hs, hu8, hu9⟩ => WP.mono (maskStep_ok hx1 hx hj hu8 hu9)
-      fun _ ⟨hw, w8, w9, w10⟩ => ⟨⟨hs.trans hw, w8, w9⟩, w10⟩) ⟨Same.refl _, by rw [h8]; rfl, h9⟩ |>.mono
-    fun u ⟨hs, hu8, hu9⟩ => ⟨hs, by rw [hu8]; rfl, hu9⟩
+    u.gpr .x9 = BitVec.ofNat 64 x) (fun _ hj _ ⟨hs, hu8, hu9⟩ => WP.mono (maskStep_ok hx1 hx hj hu8 hu9)
+      fun _ ⟨hw, w8, w9, w10⟩ => ⟨⟨hs.trans hw, w8, w9⟩, w10⟩) ⟨Same.refl _, h8, h9⟩ |>.mono
+    fun _ ⟨hs, hu8, hu9⟩ => ⟨hs, hu8, hu9⟩
 
 /-- The carry of `subs a, c`: no borrow. -/
 theorem carry_sub (a c : BitVec 64) :
