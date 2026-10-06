@@ -120,8 +120,8 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_mx, by lit_decide, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe⟩,
         publicKeyWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
-          ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"],
+          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"],
         signCachedWith c Impl.Ed25519.X86_64.scalarBase_ifma "_ifma"
-          ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]]
+          ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]]
 
 end VG.Generic.MdHash.X86_64.Ed25519

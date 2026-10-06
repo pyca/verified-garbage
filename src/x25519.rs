@@ -14,8 +14,9 @@
 //! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
 //! on edwards25519, with Ed25519's precomputed tables, rather than with the
 //! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available,
-//! and `vg_x25519_base_ifma` also AVX512_IFMA and AVX512VL, whose comb adds
-//! each table entry with four-lane field multiplications.
+//! and `vg_x25519_base_ifma` also AVX512F, AVX512_IFMA and AVX512VL, whose
+//! comb adds two tables' entries at once with eight-lane field
+//! multiplications.
 //!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.1), in
@@ -47,9 +48,10 @@ enum Backend {
     /// BMI2's `mulx` and ADX's `adcx` and `adox`.
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm` registers,
-    /// with AVX512VL) for the ladder and the fixed-base comb, and `Adx`'s
-    /// multiplications for the inversion.
+    /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for the ladder (on
+    /// `ymm` registers, with AVX512VL) and the fixed-base comb (on `zmm`
+    /// registers, with AVX512F), and `Adx`'s multiplications for the
+    /// inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -268,12 +270,14 @@ mod tests {
             let adx = VG_X25519_ADX_FEATURES;
             assert_eq!(Backend::select(adx), Backend::Adx);
             assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
-            let ifma = VG_X25519_IFMA_FEATURES;
+            let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
             assert_eq!(
                 Backend::select(Features(adx.0 | Features::of(&["avx512ifma"]).0)),
                 Backend::Adx
             );
+            // The ladder's features alone, without the comb's AVX512F.
+            assert_eq!(Backend::select(VG_X25519_IFMA_FEATURES), Backend::Adx);
         }
     }
 
