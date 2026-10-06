@@ -1,4 +1,4 @@
-//! ECDH over P-384 beside OpenSSL.
+//! ECDH over P-384 beside OpenSSL and aws-lc-rs.
 
 use criterion::Criterion;
 
@@ -13,6 +13,8 @@ pub const USES: &[&str] = &["ecdh_p384", "ec_p384"];
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::agreement::{self, UnparsedPublicKey};
+    use aws_lc_rs::error::Unspecified;
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::derive::Deriver;
@@ -21,7 +23,7 @@ pub fn bench(c: &mut Criterion) {
     use openssl::pkey::PKey;
     use verified_garbage::ecdh::{P384, PrivateKey};
 
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
 
     let d = [0x42; 48];
     let peer = PrivateKey::<P384>::from_bytes(&[0x24; 48])
@@ -38,6 +40,22 @@ pub fn bench(c: &mut Criterion) {
     let vg_private = PrivateKey::<P384>::from_bytes(&d);
     let openssl_private =
         PKey::from_ec_key(EcKey::from_private_components(&group, &d_bn, &public).unwrap()).unwrap();
+    let aws_lc_private =
+        agreement::PrivateKey::from_private_key(&agreement::ECDH_P384, &d).unwrap();
+    // aws-lc-rs decodes and validates the peer's public key in `agree`.
+    let aws_lc_agree = |private: &agreement::PrivateKey, peer: &[u8]| {
+        agreement::agree(
+            private,
+            UnparsedPublicKey::new(&agreement::ECDH_P384, peer),
+            Unspecified,
+            |s| Ok(s.to_vec()),
+        )
+        .unwrap()
+    };
+    assert_eq!(
+        aws_lc_agree(&aws_lc_private, &peer),
+        vg_private.diffie_hellman(&peer).unwrap()
+    );
     let mut g = c.benchmark_group("ecdh_p384");
     // The ids' size is the bytes of the shared secret.
     g.bench_function(BenchmarkId::new(VG, 48), |b| {
@@ -55,6 +73,9 @@ pub fn bench(c: &mut Criterion) {
             d.set_peer(&peer).unwrap();
             d.derive_to_vec().unwrap()
         })
+    });
+    g.bench_function(BenchmarkId::new(AWS_LC, 48), |b| {
+        b.iter(|| aws_lc_agree(black_box(&aws_lc_private), black_box(&peer)))
     });
     g.finish();
 }

@@ -33,6 +33,10 @@ openssl-mlkem = ["dep:openssl-sys", "dep:foreign-types"]
 # AWS-LC, built from source by aws-lc-sys (with only a C compiler, on every
 # architecture benchmarked).
 aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sys"] }
+# The same AWS-LC, for ML-KEM key generation from a seed, which aws-lc-rs does
+# not wrap. Without `all-bindings` (its default), whose ARMv7 bindings need
+# bindgen.
+aws-lc-sys = { version = "0.45", default-features = false }
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 openssl = "0.10"
 

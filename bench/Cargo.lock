@@ -524,6 +524,7 @@ name = "verified-garbage-bench"
 version = "0.0.0"
 dependencies = [
  "aws-lc-rs",
+ "aws-lc-sys",
  "criterion",
  "foreign-types",
  "openssl",
