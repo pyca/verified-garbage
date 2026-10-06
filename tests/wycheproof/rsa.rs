@@ -8,7 +8,10 @@
 //! PKCS #1 v1.5 vector it is an encryption block of type 2 holding the
 //! message. Other ciphertexts are refused.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use std::sync::Mutex;
 
