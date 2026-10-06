@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
 
 /-!
@@ -60,13 +61,26 @@ theorem StitchName.ok : (n : StitchName) → Proof.Gcm.X86_64.Stitch.StitchOk n.
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZ.stitch_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx.stitch_ok
 
+/-- The loops named `n` for a key context of `vg_aes_gcm_init_precomputed`
+interleave counter mode and GHASH correctly. -/
+theorem StitchName.okP : (n : StitchName) →
+    Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP n.decP
+  | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZP.stitchP_ok.toM
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx.stitch_ok.toM _
+
 /-- The loops `p` names, with their proof. -/
 def StitchPart.impl (p : StitchPart) : StitchImpl :=
   ⟨p.suffix, p.features, p.name.enc, p.name.dec, p.name.ok, p.encP, p.decP⟩
 
+/-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
+with their proof. -/
+def StitchPart.implP (p : StitchPart) : StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  ⟨p.name.encP, p.name.decP, p.name.okP, p.encPP, p.decPP⟩
+
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
-  ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl⟩
+  ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.map StitchPart.implP⟩
 
 end VG.Proof.AesGcm.X86_64
 

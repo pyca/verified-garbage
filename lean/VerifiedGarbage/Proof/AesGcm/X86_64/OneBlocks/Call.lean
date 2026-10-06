@@ -260,6 +260,14 @@ def GcmImpl.blkB (v : GcmImpl) : BlkFn CtxMode.base where
   decXd := decryptBlocks_xdepthB v v.stitch
 
 open Gcm.X86_64.Stitch (CtxMode) in
+/-- `vg_aes_gcm_encrypt_blocks_precomputed` and `_decrypt_blocks_precomputed`,
+calling `v`'s implementations and interleaving with its loops for that key
+context (`GcmImpl.stitchP`). -/
+def GcmImpl.blkP (v : GcmImpl) : BlkFn CtxMode.powers :=
+  v.blkM v.stitchP (Spec.Gcm.encryptBlocksPrecomputedApi.name ++ v.suffix)
+    (Spec.Gcm.decryptBlocksPrecomputedApi.name ++ v.suffix)
+
+open Gcm.X86_64.Stitch (CtxMode) in
 /-- `v`'s functions, with `B`'s `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`. -/
 def GcmImpl.withBlk (v : GcmImpl) {M : CtxMode} (B : BlkFn M) : Callees :=
   { v.callees with enc := B.enc, dec := B.dec }

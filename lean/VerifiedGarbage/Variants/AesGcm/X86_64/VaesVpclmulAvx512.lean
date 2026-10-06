@@ -10,13 +10,21 @@ namespace VG.Variants.AesGcm.X86_64.VaesVpclmulAvx512
 
 open VG VG.X86_64
 
+theorem encPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
+
+theorem decPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
+
 /-- The interleaved loops of `Impl.Gcm.X86_64.StitchZ` (their proof is `StitchName.ok`). -/
 def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaesAvx512
   suffix := "_avx512"
   features := ["avx512f", "avx512bw"]
-  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc)
-  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec)
+  encP := encPiece
+  decP := decPiece
+  encPP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.enc)
+  decPP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
 

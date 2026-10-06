@@ -430,6 +430,8 @@ structure GcmImpl where
   /-- The loops with which `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`
   interleave counter mode and GHASH, if any. -/
   stitch : Option StitchImpl := none
+  /-- The loops for a key context of `vg_aes_gcm_init_precomputed`, if any. -/
+  stitchP : Option (StitchCode Gcm.X86_64.Stitch.CtxMode.powers) := none
 
 namespace GcmImpl
 

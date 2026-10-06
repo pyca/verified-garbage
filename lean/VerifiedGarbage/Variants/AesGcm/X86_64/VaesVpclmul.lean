@@ -10,13 +10,21 @@ namespace VG.Variants.AesGcm.X86_64.VaesVpclmul
 
 open VG VG.X86_64
 
+theorem encPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
+
+theorem decPiece : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec :=
+  ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩
+
 /-- The interleaved loops of `Impl.Gcm.X86_64.Stitch` (their proof is `StitchName.ok`). -/
 def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaes
   suffix := ""
   features := []
-  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.enc)
-  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.Stitch.dec)
+  encP := encPiece
+  decP := decPiece
+  encPP := encPiece
+  decPP := decPiece
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
 
