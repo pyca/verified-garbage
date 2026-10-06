@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ecdsa_p256_verify`. -/
 def verifyP256 : Prog isa := Cfg.verify Impl.Ecdsa.X86_64.p256
 
+/-- `vg_ecdsa_p256_verify_adx`. -/
+def verifyP256Adx : Prog isa := Cfg.verify Impl.Ecdsa.X86_64.p256x
+
 end VG.Impl.Ecdsa.Verify.X86_64

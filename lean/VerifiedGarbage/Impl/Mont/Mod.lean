@@ -65,8 +65,9 @@ def tightOk (n m : Nat) : Bool := (2 ^ 64 + 1) * m ≤ 2 ^ (64 * (n + 1))
 
 /-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,
-its reduction (`red`), and whether it is `tightOk` (`tight`), which only
-some targets use. -/
+its reduction (`red`), whether it is `tightOk` (`tight`), which only
+some targets use, and whether to multiply with BMI2 and ADX (`adx`, x86-64
+only). -/
 structure Mod where
   n : Nat
   mo : Nat
@@ -74,5 +75,6 @@ structure Mod where
   minv : BitVec 64
   red : Red := .general
   tight : Bool := false
+  adx : Bool := false
 
 end VG.Impl.Mont
