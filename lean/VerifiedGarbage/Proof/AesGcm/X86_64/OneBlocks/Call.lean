@@ -271,7 +271,7 @@ theorem blkE_rel (v : GcmImpl) {P : State → State → Prop}
       BlkCall s₁ K C Y D S R q ∧ BlkCall s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call v.callees.enc.name v.callees.enc.code) fun _ _ => True := by
   refine RelCT.callEx (k := Proof.AesGcm.encryptBlocksX86_64) (encryptBlocks_correct v v.stitch)
-    (Blocks.encrypt_ct v v.stitch) fun s₁ s₂ hp => ?_
+    (Blocks.encrypt_ctB v v.stitch) fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 
@@ -280,7 +280,7 @@ theorem blkD_rel (v : GcmImpl) {P : State → State → Prop}
       BlkCall s₁ K C Y D S R q ∧ BlkCall s₂ K C Y D S R q ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call v.callees.dec.name v.callees.dec.code) fun _ _ => True := by
   refine RelCT.callEx (k := Proof.AesGcm.decryptBlocksX86_64) (decryptBlocks_correct v v.stitch)
-    (Blocks.decrypt_ct v v.stitch) fun s₁ s₂ hp => ?_
+    (Blocks.decrypt_ctB v v.stitch) fun s₁ s₂ hp => ?_
   obtain ⟨K, C, Y, D, S, R, q, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨_, _, _, _, h₁.pre, h₂.pre, blk_pub h₁ h₂ hsp, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
 

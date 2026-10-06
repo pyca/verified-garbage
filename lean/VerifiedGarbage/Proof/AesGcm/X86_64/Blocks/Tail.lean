@@ -15,6 +15,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 /-- A prefix of a region that `rs` covers. -/
@@ -49,10 +50,10 @@ structure Ready (s : State) (q : Nat) (st : State) : Prop where
 abbrev S5 (s : State) : Addr := S s + BitVec.ofNat 64 64
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
-theorem cov_k : Covers [kR s] (s.rd ++ s.wr) := covers_of_mem (by rw [hp.rd]; simp)
+theorem cov_k : Covers [kR M s] (s.rd ++ s.wr) := covers_of_mem (by rw [hp.rd]; simp)
 theorem cov_c : Covers [cR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_y : Covers [yR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
 theorem cov_d : Covers [dR s] s.wr := covers_of_mem (by rw [hp.wr]; simp)
@@ -99,7 +100,7 @@ theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   have r₅ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 32) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have hdq : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := dq_sub (by omega)
-  have p240 : Region.Sub ⟨K s, 240⟩ (kR s) := Region.sub_prefix (by decide)
+  have p240 : Region.Sub ⟨K s, 240⟩ (kR M s) := Region.sub_prefix (by have := M.ge; have := M.le; omega)
   have s48 : Region.Sub ⟨S5 s, 2048⟩ (sR s) := s5_sub (by decide)
   apply WP.of_runBlock
   refine ⟨_, by
@@ -119,7 +120,7 @@ theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   · exact hp.t_d.sub_right hdq
   · exact hp.t_s.sub_right s48
   · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, h.rd, h.wr]
-    refine covers_cons (covers_prefix (cov_k hp) (by decide)) (covers_cons (covers_left (cov_c hp))
+    refine covers_cons (covers_prefix (cov_k hp) (by have := M.ge; have := M.le; omega)) (covers_cons (covers_left (cov_c hp))
       (covers_cons (covers_left (covers_off' (cov_d hp) (by omega) (by omega)))
         (covers_left (covers_off (cov_s hp) (by decide) (by decide)))))
   · simp only [wr_setReg, wr_arithFlags, h.wr]
@@ -132,7 +133,7 @@ theorem ctrArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
 theorem n16_lt : n s * 16 < 2 ^ 64 := by
   have hw := hp.w_d
   refine Nat.lt_of_not_le fun hge => hp.k_d (K s) ?_ ?_
-  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
+  · simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; have := M.ge; omega
   · simp only [Region.Contains]
     have := (K s - D s).isLt
     omega
@@ -153,7 +154,7 @@ theorem ghArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   have r₅ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 32) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have r₆ : InRegions (st.rd ++ st.wr) (S s + BitVec.ofNat 64 40) 8 := by rw [h.rd, h.wr]; exact s_in' hp (by decide)
   have hdq : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := dq_sub (by omega)
-  have pH : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR s) := Offset.sub_base _ (by decide)
+  have pH : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; have := M.le; omega)
   have s16 : Region.Sub ⟨S5 s, 256⟩ (sR s) := s5_sub (by decide)
   apply WP.of_runBlock
   refine ⟨_, by
@@ -170,7 +171,7 @@ theorem ghArgs_ok {q : Nat} {st : State} (h : Ready s q st) (hq : q < n s) :
   · exact hp.t_d.sub_right hdq
   · exact hp.t_s.sub_right s16
   · simp only [rd_setReg, wr_setReg, rd_arithFlags, wr_arithFlags, h.rd, h.wr]
-    refine covers_cons (covers_off (cov_k hp) (by decide) (by decide))
+    refine covers_cons (covers_off (cov_k hp) (by have := M.ge; have := M.le; omega) (by have := M.ge; have := M.le; omega))
       (covers_cons (covers_left (covers_off' (cov_d hp) (by omega) (by omega)))
       (covers_cons (covers_left (cov_y hp)) (covers_left (covers_off (cov_s hp) (by decide) (by decide)))))
   · simp only [wr_setReg, wr_arithFlags, h.wr]

@@ -14,6 +14,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
@@ -39,7 +40,7 @@ structure Calls (s : State) (q : Nat) (st st₂ st₃ st₄ st₅ : State) : Pro
   saved : ∀ r ∈ calleeSaved, st₅.gpr r = st.gpr r
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 omit hp in
@@ -79,7 +80,7 @@ theorem apart_ret {q : Nat} (hq : q ≤ n s) : Apart s q ⟨SP s, 8⟩ where
   s5 := hp.r_s.sub_right (s5_sub (by decide))
   t := ret_below _
 
-theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s q (kR s) where
+theorem apart_k {q : Nat} (hq : q ≤ n s) : Apart s q (kR M s) where
   c := hp.k_c
   y := hp.k_y
   d := hp.k_d.sub_right (dq_sub hq)
@@ -107,12 +108,12 @@ theorem Ready.frame {q : Nat} {st st' : State} (h : Ready s q st) {rs : List Reg
     by rw [hf.readW (Region.contains_self _ _) ha (by decide)]; exact h.arg⟩
 
 /-- The key schedule, through a frame apart from the key context. -/
-theorem keep_sch {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hd : ∀ r' ∈ rs, (kR s).Disjoint r') :
+theorem keep_sch {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hd : ∀ r' ∈ rs, (kR M s).Disjoint r') :
     Spec.Aes.bytesAt m' (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt m (K s) (16 * (R s + 1)) := by
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
-  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by have := hp.w_k; omega)
+  exact bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge))) (by have := hp.w_k; omega)
 
-theorem wR_k : ∀ r ∈ wR s, (kR s).Disjoint r := by
+theorem wR_k : ∀ r ∈ wR s, (kR M s).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -184,7 +185,7 @@ theorem c_gh : ∀ r ∈ [yR s, (⟨S5 s, 256⟩ : Region), below (SP s) 8], (cR
 
 omit hp in
 /-- The hash subkey is in the key context. -/
-theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR s) := Offset.sub_base _ (by decide)
+theorem h_sub : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega)
 
 /-- The encryption of the blocks left, from `Mid`. -/
 theorem encCalls_ok (v : GcmImpl) {q : Nat} {st₁ : State}

@@ -99,7 +99,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     contract := Spec.Gcm.encryptBlocksContract X86_64.abi 8
     stack := 8
     verified := encryptBlocks_verified v v.stitch
-    spSafe := encryptBlocks_spSafe v v.stitch
+    spSafe := encryptBlocks_spSafeB v v.stitch
     features := v.features },
   { Spec.Gcm.decryptBlocksApi with
     name := Spec.Gcm.decryptBlocksApi.name ++ v.suffix
@@ -109,7 +109,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     contract := Spec.Gcm.decryptBlocksContract X86_64.abi 8
     stack := 8
     verified := decryptBlocks_verified v v.stitch
-    spSafe := decryptBlocks_spSafe v v.stitch
+    spSafe := decryptBlocks_spSafeB v v.stitch
     features := v.features },
   { Spec.Gcm.initApi with
     name := Spec.Gcm.initApi.name ++ v.suffix

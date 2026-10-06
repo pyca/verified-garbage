@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 
 /-!
 # AES-GCM on whole blocks, x86-64: the contracts the proofs are written against
@@ -6,7 +7,10 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 Untrusted: everything here is checked by Lean. `vg_aes_gcm_encrypt_blocks`
 and `vg_aes_gcm_decrypt_blocks` `(ctx = rdi, rounds = rsi, counter = rdx,
 y = rcx, data = r8, n = r9, scratch = [rsp + 8])`; the shared contracts of
-`Spec/Gcm/Contract.lean` imply these (`BlocksVerified.lean`).
+`Spec/Gcm/Contract.lean` imply these (`BlocksVerified.lean`). `blocksPreM M`
+is `blocksPre` for a key context of kind `M` (`Stitch.CtxMode`): its length,
+and what it holds beyond the key schedule and the hash subkey, as the
+`_precomputed` functions' (`Spec/Gcm/Precomputed.lean`).
 -/
 
 namespace VG.Proof.AesGcm
@@ -32,6 +36,32 @@ def blocksPre (s : State) : Prop :=
     (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 16 ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat * 16 ≤ 2 ^ 64 ∧ (arg s 0).toNat + 2112 ≤ 2 ^ 64 ∧
     (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧ rounds s
+
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
+/-- What both need, for a key context of kind `M`. -/
+def blocksPreM (M : CtxMode) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .rdi, M.len⟩
+  let ctr : Region := ⟨s.gpr .rdx, 16⟩
+  let y : Region := ⟨s.gpr .rcx, 16⟩
+  let data : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat * 16⟩
+  let scr : Region := ⟨arg s 0, 2112⟩
+  s.rd = [ctx, args s 1] ∧ s.wr = [ctr, y, data, scr] ∧
+    ctx.Disjoint ctr ∧ ctx.Disjoint y ∧ ctx.Disjoint data ∧ ctx.Disjoint scr ∧
+    ctr.Disjoint y ∧ ctr.Disjoint data ∧ ctr.Disjoint scr ∧ ctr.Disjoint (args s 1) ∧
+    y.Disjoint data ∧ y.Disjoint scr ∧ y.Disjoint (args s 1) ∧
+    data.Disjoint scr ∧ data.Disjoint (args s 1) ∧ scr.Disjoint (args s 1) ∧
+    (ret s).Disjoint ctr ∧ (ret s).Disjoint y ∧ (ret s).Disjoint data ∧ (ret s).Disjoint scr ∧
+    (stk s).Disjoint ctx ∧ (stk s).Disjoint ctr ∧ (stk s).Disjoint y ∧ (stk s).Disjoint data ∧
+    (stk s).Disjoint scr ∧
+    (s.gpr .rdi).toNat + M.len ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 16 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 16 ≤ 2 ^ 64 ∧
+    (s.gpr .r8).toNat + (s.gpr .r9).toNat * 16 ≤ 2 ^ 64 ∧ (arg s 0).toNat + 2112 ≤ 2 ^ 64 ∧
+    (s.gpr .rsp).toNat + 16 ≤ 2 ^ 64 ∧ rounds s ∧ M.ok s.mem (s.gpr .rdi)
+
+theorem blocksPreM_base {s : State} (h : blocksPre s) : blocksPreM Gcm.X86_64.Stitch.CtxMode.base s := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
+    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+  exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
+    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, trivial⟩
 
 def blocksPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
@@ -59,6 +89,20 @@ def decryptBlocksX86_64 : Contract isa where
         ctr32 (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (blockAt s.mem (s.gpr .rdx)) c ∧
       blockAt s'.mem (s.gpr .rdx) = Nat.repeat inc32 n (blockAt s.mem (s.gpr .rdx)) ∧
       blockAt s'.mem (s.gpr .rcx) = ghashFrom (ctxH s.mem (s.gpr .rdi)) (blockAt s.mem (s.gpr .rcx)) c
+  pub := blocksPub
+
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
+/-- `vg_aes_gcm_encrypt_blocks`, for a key context of kind `M`. -/
+def encryptBlocksX86_64M (M : CtxMode) : Contract isa where
+  pre := blocksPreM M
+  post := encryptBlocksX86_64.post
+  pub := blocksPub
+
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode) in
+/-- `vg_aes_gcm_decrypt_blocks`, for a key context of kind `M`. -/
+def decryptBlocksX86_64M (M : CtxMode) : Contract isa where
+  pre := blocksPreM M
+  post := decryptBlocksX86_64.post
   pub := blocksPub
 
 end VG.Proof.AesGcm

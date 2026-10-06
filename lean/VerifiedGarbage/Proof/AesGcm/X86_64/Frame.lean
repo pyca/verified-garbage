@@ -98,16 +98,16 @@ theorem streamAad_framed :
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat_pre
 
 theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
 theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
@@ -164,16 +164,16 @@ theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ 8 := by
   decide +kernel
 
 theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
 theorem open_xdepth : («open» v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
