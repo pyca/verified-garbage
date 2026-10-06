@@ -28,6 +28,9 @@ open VG.X86_64
 structure XorImpl where
   /-- Its symbol and code. -/
   callee : Impl.ChaCha20.X86_64.Callee
+  /-- ChaCha20-Poly1305 keeps the keystream for `64 + fold` bytes in its
+  working space. -/
+  fold_le : callee.fold ≤ 448
   /-- The stack its calls use below its return address. -/
   stack : Nat
   stack_le : stack ≤ 16
@@ -53,6 +56,11 @@ structure XorImpl where
   which also call `vg_poly1305_blocks` (ChaCha20-Poly1305) call: the one
   for the same CPUs. -/
   poly : Impl.Poly1305.X86_64.Blocks
+  /-- Its `fold` with the implementation of `vg_poly1305_blocks` it comes
+  with: one of the pairs whose ChaCha20-Poly1305 the constant-time analysis
+  checks (it runs on code with the comparison against `fold` in it). -/
+  fold_poly : (callee.fold = 0 ∧ poly = .scalar) ∨ (callee.fold = 192 ∧ poly = .avx2) ∨
+    (callee.fold = 448 ∧ poly = .avx512)
 
 namespace XorImpl
 
@@ -66,6 +74,7 @@ theorem scalar_ct : ConstantTime isa (xorStack 8).pre (xorStack 8).pub Impl.ChaC
 /-- The scalar implementation, `vg_chacha20_xor`, in the baseline ISA. -/
 def scalar : XorImpl where
   callee := .scalar
+  fold_le := by decide
   stack := 8
   stack_le := by decide
   depth_le := by decide +kernel
@@ -78,6 +87,7 @@ def scalar : XorImpl where
   suffix := ""
   features := []
   poly := .scalar
+  fold_poly := Or.inl ⟨rfl, rfl⟩
 
 theorem avx2_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx2.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -94,6 +104,7 @@ theorem avx2_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx2.code := by
 /-- The AVX2 implementation, `vg_chacha20_xor_avx2`. -/
 def avx2 : XorImpl where
   callee := .avx2
+  fold_le := by decide
   stack := 16
   stack_le := by decide
   depth_le := by decide +kernel
@@ -106,6 +117,7 @@ def avx2 : XorImpl where
   suffix := "_avx2"
   features := ["avx", "avx2"]
   poly := .avx2
+  fold_poly := Or.inr (Or.inl ⟨rfl, rfl⟩)
 
 theorem avx512_ok : ∀ s, (xorStack 16).pre s → ∃ t s', Exec isa Impl.ChaCha20.X86_64.Callee.avx512.code s t s' ∧
     abiPreserved s s' ∧ (xorStack 16).post s s' :=
@@ -122,6 +134,7 @@ theorem avx512_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512.code := by
 /-- The AVX-512 implementation, `vg_chacha20_xor_avx512`. -/
 def avx512 : XorImpl where
   callee := .avx512
+  fold_le := by decide
   stack := 16
   stack_le := by decide
   depth_le := by decide +kernel
@@ -134,6 +147,7 @@ def avx512 : XorImpl where
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
+  fold_poly := Or.inr (Or.inr ⟨rfl, rfl⟩)
 
 end XorImpl
 

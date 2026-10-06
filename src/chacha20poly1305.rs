@@ -24,9 +24,11 @@
 //! while the eight-block ChaCha20 kernel computes the keystream, and XOR the
 //! rest with `vg_chacha20_xor_neon`; CPUs with SVE2 run
 //! `vg_chacha20_poly1305_seal_sve2` and `vg_chacha20_poly1305_open_sve2`, the
-//! same with that kernel's SVE2 form (`vg_chacha20_xor_sve2`). Like every
-//! variant, they compute the one-time Poly1305 key with the scalar
-//! `vg_chacha20_block`.
+//! same with that kernel's SVE2 form (`vg_chacha20_xor_sve2`). On x86-64
+//! the one-time Poly1305 key comes from the same call of `vg_chacha20_xor` as
+//! the keystream of short data (up to 448 bytes with AVX-512, 192 with AVX2),
+//! which then takes no second call; every other variant computes it with the
+//! scalar `vg_chacha20_block`.
 
 #![cfg(any(
     target_arch = "x86_64",
