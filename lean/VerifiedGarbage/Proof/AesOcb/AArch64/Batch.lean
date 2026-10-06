@@ -165,18 +165,6 @@ theorem passCacheInit_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 
   · rw [keep₃ _ (by decide), v₁, P₁.l0]; rfl
   · rw [v₂, B₂.val, P₁.l0]; rfl
 
-theorem cachedStep_keeps (v : VReg) {body : List Instr} (hV : body.all keepsCache = true) :
-    (passCachedStep v body).allInstrs keepsCache = true := by
-  rw [Code.allInstrs_eq]
-  simp [passCachedStep, cachedIncrement, instrs, List.all_append, hV, xor16, nextBlock, keepsCache, vdstOf,
-    ld, st, Impl.AesGcm.AArch64.ptr]
-
-theorem lastStep_keeps {body : List Instr} (hV : body.all keepsCache = true) :
-    (passLastStep body).allInstrs keepsCache = true := by
-  rw [Code.allInstrs_eq]
-  simp [passLastStep, batchLastIncrement, cachedIncrement, low1, instrs, List.all_append, hV,
-    dbl, xor16, nextBlock, keepsCache, vdstOf, ld, st, Impl.AesGcm.AArch64.ptr, Impl.AesGcm.AArch64.imm]
-
 theorem batchLastIncrement_ok {K W D : Addr} {R n : Nat} {SP : Addr} {s : State}
     (E : Env K W D R n SP s) {l : Block} (C : LCache l s) {k : Nat}
     (hi : 8*k+8 < 2^64) (h25 : s.gpr .x25 = BitVec.ofNat 64 (8*k+8)) :
@@ -220,99 +208,15 @@ theorem passCount_ok {K W D : Addr} {R n : Nat} {SP : Addr} {m i : Nat} {O0 l : 
     simp [gpr_write, h]
   · simp [gpr_write, P.x24, lsr_ofNat _ _ (show m-i < 2^64 by omega)]
 
-section
-variable {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat} {O0 l : Block}
-  {X : Nat → Block} {fB : Block → Block → Block} {fC : Block → Block → Block → Block}
-  {ckF : Nat → Block} {body : List Instr}
-  (hB : BodyOk W body fB fC) (hV : body.all keepsCache = true)
-  (hckF : ∀ i < m, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
-  {t₀ : State} (hD : DBuf K W t₀ D (16 * m)) (hm : m < 2 ^ 60)
-include L hB hV hckF hD hm
-
-theorem cachedStep_ok {t : State} {i : Nat} (hi : i < m)
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t i) (C : LCache l t)
-    (v : VReg) (hv : vBlock (t.v v) = lAt l (ntz (i+1))) :
-    WP isa (passCachedStep v body) t fun u =>
-      PassInv K W D R n SP m O0 l X fB ckF t₀ u (i+1) ∧ LCache l u :=
-  keepCache (pass_step_with L hB hckF hD hm hi P (cachedIncrement_ok P.env hv)) (cachedStep_keeps v hV) C
-
-theorem lastStep_cached_ok {t : State} {k : Nat} (hi : 8*k+7 < m)
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t (8*k+7)) (C : LCache l t) :
-    WP isa (passLastStep body) t fun u =>
-      PassInv K W D R n SP m O0 l X fB ckF t₀ u (8*k+7+1) ∧ LCache l u := by
-  have ho := batchLastIncrement_ok (k := k) P.env C (by omega)
-    (by simpa only [show 8*k+7+1 = 8*k+8 by omega] using P.x25)
-  exact keepCache (pass_step_with L hB hckF hD hm hi P ho) (lastStep_keeps hV) C
-
-omit L hB hV hckF hD hm in
- theorem ntz_eight_two (k : Nat) : ntz (8*k+2) = 1 := by
+theorem ntz_eight_two (k : Nat) : ntz (8*k+2) = 1 := by
   rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+2)/2 = 4*k+1 by omega,
     Proof.Ocb.ntz_odd (by omega)]
-omit L hB hV hckF hD hm in
- theorem ntz_eight_four (k : Nat) : ntz (8*k+4) = 2 := by
+theorem ntz_eight_four (k : Nat) : ntz (8*k+4) = 2 := by
   rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+4)/2 = 4*k+2 by omega,
     Proof.Ocb.ntz_even (by omega) (by omega), show (4*k+2)/2 = 2*k+1 by omega,
     Proof.Ocb.ntz_odd (by omega)]
-omit L hB hV hckF hD hm in
- theorem ntz_eight_six (k : Nat) : ntz (8*k+6) = 1 := by
+theorem ntz_eight_six (k : Nat) : ntz (8*k+6) = 1 := by
   rw [Proof.Ocb.ntz_even (by omega) (by omega), show (8*k+6)/2 = 4*k+3 by omega,
     Proof.Ocb.ntz_odd (by omega)]
-
-theorem passBatch_ok {t : State} {k : Nat} (hk : 8*k+8 ≤ m)
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t (8*k)) (C : LCache l t) :
-    WP isa (passBatch body) t fun u =>
-      PassInv K W D R n SP m O0 l X fB ckF t₀ u (8*(k+1)) ∧ LCache l u := by
-  unfold passBatch
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P C .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C.1)) fun t₁ ⟨P₁,C₁⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₁ C₁ .v1
-    (by rw [show 8*k+1+1 = 8*k+2 by omega, ntz_eight_two]; exact C₁.2.1)) fun t₂ ⟨P₂,C₂⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₂ C₂ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₂.1)) fun t₃ ⟨P₃,C₃⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₃ C₃ .v2
-    (by rw [show 8*k+1+1+1+1 = 8*k+4 by omega, ntz_eight_four]; exact C₃.2.2)) fun t₄ ⟨P₄,C₄⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₄ C₄ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₄.1)) fun t₅ ⟨P₅,C₅⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₅ C₅ .v1
-    (by rw [show 8*k+1+1+1+1+1+1 = 8*k+6 by omega, ntz_eight_six]; exact C₅.2.1)) fun t₆ ⟨P₆,C₆⟩ => ?_)
-  refine WP.seq (WP.mono (cachedStep_ok L hB hV hckF hD hm (by omega) P₆ C₆ .v0
-    (by rw [Proof.Ocb.ntz_odd (by omega)]; exact C₆.1)) fun t₇ ⟨P₇,C₇⟩ => ?_)
-  refine WP.mono (lastStep_cached_ok (R := R) (n := n) (SP := SP) (k := k) L hB hV hckF hD hm (by omega)
-    (by simpa only [show 8*k+1+1+1+1+1+1+1 = 8*k+7 by omega] using P₇) C₇) fun u ⟨P₈,C₈⟩ => ?_
-  exact ⟨by simpa only [show 8*k+7+1 = 8*(k+1) by omega] using P₈, C₈⟩
-
-theorem pass_ok {t : State} (hm0 : 0 < m)
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t 0) :
-    WP isa (pass body) t fun u => PassInv K W D R n SP m O0 l X fB ckF t₀ u m := by
-  unfold pass
-  refine WP.seq (WP.mono (passCount_ok P hD hm) fun t₁ ⟨P₁,h9,_⟩ => ?_)
-  refine WP.ite _ (eval_zero h9 (by omega)) (fun hz => ?_) (fun hn => ?_)
-  · exact passScalar_ok L hB hckF hD hm0 hm P₁
-  · have hn : m / 8 ≠ 0 := of_decide_eq_false hn
-    refine WP.seq (WP.mono (passCacheInit_ok P₁ hD) fun t₂ ⟨P₂,C₂⟩ => ?_)
-    have loop : WP isa (.loop (.seq (passBatch body) (.block [.lsr .x .x9 .x24 3])) (.nonzero .x .x9)) t₂
-        (fun u => PassInv K W D R n SP m O0 l X fB ckF t₀ u (8*(m/8))) := by
-      refine WP.loop (M := isa)
-        (fun (j : Nat) (u : State) => ∃ k, j = m/8-k ∧ 8*k+8 ≤ m ∧
-          PassInv K W D R n SP m O0 l X fB ckF t₀ u (8*k) ∧ LCache l u) ?_
-        (m/8) _ ⟨0, by omega, by omega, P₂, C₂⟩
-      rintro j u ⟨k,rfl,hk,P,C⟩
-      refine WP.seq (WP.mono (passBatch_ok L hB hV hckF hD hm hk P C) fun u₁ ⟨P',C'⟩ => ?_)
-      refine WP.mono (passCount_ok P' hD hm) fun u₂ ⟨P'',h9,hv⟩ => ?_
-      have ev := eval_nonzero h9 (by omega)
-      by_cases he : (m-8*(k+1))/8 = 0
-      · left
-        exact ⟨ev.trans (by simp [he]), (show k+1 = m/8 by omega) ▸ P''⟩
-      · right
-        refine ⟨ev.trans (by simp [he]), m/8-(k+1), by omega, k+1, rfl, by omega, P'', ?_⟩
-        simpa only [LCache, hv] using C'
-    refine WP.seq (WP.mono loop fun u P' => ?_)
-    refine WP.ite _ (eval_zero P'.x24 (by omega)) (fun hz => ?_) (fun hn => ?_)
-    · have hz : m-8*(m/8) = 0 := of_decide_eq_true hz
-      exact WP.block_nil (by simpa only [show 8*(m/8) = m by omega] using P')
-    · have hn : m-8*(m/8) ≠ 0 := of_decide_eq_false hn
-      exact passScalar_ok L hB hckF hD (by omega) hm P'
-
-end
 
 end VG.Proof.AesOcb.AArch64

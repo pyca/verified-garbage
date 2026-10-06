@@ -96,25 +96,25 @@ theorem whole_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} 
     (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
     (ct : ConstantTime isa (Proof.Aes.blocksAArch64 f).pre (Proof.Aes.blocksAArch64 f).pub b.code)
-    (nf : b.code.noFrames = true) {pre post : List Instr}
+    (nf : b.code.noFrames = true) {pre post : List Instr} {pm qm : CkMode}
     (hc₁ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre)) h).isSome = true)
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre)) h).isSome = true)
     (hk₁ : (Code.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre) : Prog isa).allInstrs
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre) : Prog isa).allInstrs
         (keeps (RegSet.ofList [.x19, .x20, .x21, .x22, .x28, .x26])) = true)
     (hn₁ : (Code.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre) : Prog isa).noCalls = true)
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre) : Prog isa).noCalls = true)
     (hc₂ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block (copy16 o0O ofsO ++ ([Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (pass post)) h).isSome = true)
+        Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (passFast qm post)) h).isSome = true)
     {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) {m : Nat}
     (h26₁ : σ₁.gpr .x26 = BitVec.ofNat 64 m) (h26₂ : σ₂.gpr .x26 = BitVec.ofNat 64 m)
     (hD₁ : DBuf K W σ₁ D (16 * m)) (hD₂ : DBuf K W σ₂ D (16 * m)) :
-    RelCT isa (Eq2 σ₁ σ₂) (whole b pre post) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (whole b pre post pm qm) TT := by
   have keep : ∀ {σ : State}, Env K W D R n SP σ → σ.gpr .x26 = BitVec.ofNat 64 m → DBuf K W σ D (16 * m) →
       ∀ t s', Exec isa (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre)) σ t s' →
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre)) σ t s' →
         Env K W D R n SP s' ∧ s'.gpr .x26 = BitVec.ofNat 64 m ∧ DBuf K W s' D (16 * m) := fun E h26 hD _ _ h => by
     obtain ⟨g, sp, rd, wr⟩ := exec_keep _ hk₁ hn₁ h
     exact ⟨E.keep (fun q hq => g q (List.mem_append_left _ hq)) sp rd wr,
@@ -136,22 +136,22 @@ theorem wholeIte_rel {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Stat
     (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
     (ct : ConstantTime isa (Proof.Aes.blocksAArch64 f).pre (Proof.Aes.blocksAArch64 f).pub b.code)
-    (nf : b.code.noFrames = true) {pre post : List Instr}
+    (nf : b.code.noFrames = true) {pre post : List Instr} {pm qm : CkMode}
     (hc₁ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre)) h).isSome = true)
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre)) h).isSome = true)
     (hk₁ : (Code.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre) : Prog isa).allInstrs
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre) : Prog isa).allInstrs
         (keeps (RegSet.ofList [.x19, .x20, .x21, .x22, .x28, .x26])) = true)
     (hn₁ : (Code.seq (.block [Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1]) (pass pre) : Prog isa).noCalls = true)
+        Impl.AesGcm.AArch64.imm .x25 1]) (passFast pm pre) : Prog isa).noCalls = true)
     (hc₂ : ∃ h, (taint.check (Taint.ofRegs (([.x26] : List Reg) ++ ([.x19, .x20, .x21, .x22, .x28] : List Reg)))
       (.seq (.block (copy16 o0O ofsO ++ ([Impl.AesGcm.AArch64.mov .x23 .x21, Impl.AesGcm.AArch64.mov .x24 .x26,
-        Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (pass post)) h).isSome = true)
+        Impl.AesGcm.AArch64.imm .x25 1] : List Instr))) (passFast qm post)) h).isSome = true)
     {σ₁ σ₂ : State} (E₁ : Env K W D R n SP σ₁) (E₂ : Env K W D R n SP σ₂) (hD₁ : DBuf K W σ₁ D n)
     (hD₂ : DBuf K W σ₂ D n) :
     RelCT isa (Eq2 σ₁ σ₂) (.seq (.block [.lsr .x .x26 .x28 4]) (.ite (.zero .x .x26) (.block [])
-      (whole b pre post))) TT := by
+      (whole b pre post pm qm))) TT := by
   have hn := hD₁.lt
   have lsr : ∀ {σ : State}, Env K W D R n SP σ →
       WP isa (.block [.lsr .x .x26 .x28 4]) σ fun t => Env K W D R n SP t ∧ t.gpr .x26 = BitVec.ofNat 64 (n / 16) ∧
@@ -180,12 +180,12 @@ theorem bodySeal_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R 
     (wholeIte_ok (O0 := O₁) (l := ctxLstar σ₁.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok (by decide) (by decide) L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok (by decide) (by decide) L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v true P₁.env P₂.env hD₁.lt
 
@@ -206,13 +206,13 @@ theorem bodyOpen_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R 
       (ckF2 := ckOf fun i => decG (bytesAt σ₁.mem K (16 * (R + 1)))
         (blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₁ (ctxLstar σ₁.mem K) (i + 1)) ^^^
           offAt O₁ (ctxLstar σ₁.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok (by decide) (by decide) L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K) (ckF1 := fun _ => 0)
       (ckF2 := ckOf fun i => decG (bytesAt σ₂.mem K (16 * (R + 1)))
         (blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₂ (ctxLstar σ₂.mem K) (i + 1)) ^^^
           offAt O₂ (ctxLstar σ₂.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok (by decide) (by decide) L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok rfl rfl L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v false P₁.env P₂.env hD₁.lt
 

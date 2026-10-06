@@ -1,13 +1,13 @@
 import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
 
 /-!
-# AES-OCB on AArch64: a pass over the whole blocks (`pass`)
+# AES-OCB on AArch64: a scalar pass over whole blocks (`passScalar`)
 
-Untrusted: everything here is checked by Lean. `pass body` goes over the
+Untrusted: everything here is checked by Lean. `passScalar body` goes over the
 `m` whole blocks of the data at `D`: for block `i` it computes
 `Offset_{i+1}` (`lNtz_ok`, `xor16_ok`), then runs `body` on the block, which
 replaces it with `fB` of it and the offset, and the checksum with `fC` of
-them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `pass_ok`
+them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `passScalar_ok`
 gives the blocks and the checksum after all `m`.
 -/
 
