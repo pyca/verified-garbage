@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 `mgfXor` XORs `MGF1(H, dbLen)` into `DB`, the `dbLen` bytes at
 `scratch + e`, where `H` is the `hLen` bytes after them (`mgfXor_ok`): for
 each counter `c`, `H ‖ I2OSP(c, 4)` is written to `Y` (`clearBlock`,
-`copyH`, `counter`), hashed (`ctHash`), and the first
+`copyH`, `counter`), hashed (`mgfHash`), and the first
 `min(hLen, dbLen - c hLen)` bytes of its digest XORed into `DB` at `c hLen`
 (`xorOut`).
 -/
@@ -298,7 +298,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     {e db c : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e) (hdb : W 24 = BitVec.ofNat 64 db)
     {v : State} (I : MgfI u₀ F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db)
       e db H.D c v) (hc : c * H.D < db) :
-    WP isa (seqs [clearBlock H, copyH H, .block (counter H), ctHash H, xorOut H, .block (nextCtr H)]) v
+    WP isa (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) v
       fun v' => v'.cf = some (decide ((c + 1) * H.D < db)) ∧
         MgfI u₀ F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db)
           e db H.D (c + 1) v' := by
@@ -335,7 +335,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- The digest of `H ‖ C`.
   have hml : (hB ++ Spec.Rsa.i2osp c 4).length = H.D + 4 := by
     rw [List.length_append, hBl, i2osp_len]
-  refine WP.seq (WP.mono (ctHash_ok hH K L3 R3 (msg := hB ++ Spec.Rsa.i2osp c 4) (nbm := mgfNb H)
+  refine WP.seq (WP.mono (mgfHash_ok hH K L3 R3 (msg := hB ++ Spec.Rsa.i2osp c 4) (nbm := mgfNb H) hml
     (by simp [upd, hml]) (by simp [upd]) (by omega) (by omega) (fun i hi => ?_))
     fun u4 ⟨L4, rd4, wr4, cs4, V5, W3, R4, hout4, hW4, hdig⟩ => ?_)
   · simp only [ctrV, cpV, clrV, getD_app, hBl]

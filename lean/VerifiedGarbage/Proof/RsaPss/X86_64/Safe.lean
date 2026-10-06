@@ -58,27 +58,41 @@ theorem rec_all (p : Instr → Bool) (l : List Instr) :
   | cons i is ih => simp only [List.all_cons, ← ih]
 
 include hH K in
-theorem ctHash_safe : (ctHash H).allInstrs safeI = true := by
+theorem ctHashWith_safe {padding : Prog isa} (hp : padding.allInstrs safeI = true) :
+    (ctHashWith H padding).allInstrs safeI = true := by
   have hl : H.P.len.all safeI = true := hH.taints.lenSafe
   have ho : H.P.out.all safeI = true := hH.taints.outSafe
-  simp only [ctHash, seqs, ctInit, pad80, lenLoop, compLoop, select, Code.allInstrs, comp_safe K, init_safe K,
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, Code.allInstrs, comp_safe K, init_safe K,
     rec_all, lenField, digestOut, List.all_append, hl, ho, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include hH K in
+theorem ctHash_safe : (ctHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
+
+include hH K in
+theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
+
+include hH K in
 theorem mgfXor_safe : (mgfXor H).allInstrs safeI = true := by
-  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, Code.allInstrs, ctHash_safe hH K, rec_all, List.all_append,
+  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, Code.allInstrs, mgfHash_safe hH K, rec_all, List.all_append,
     byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include K in
-theorem ctHash_xd : (ctHash H).x86_64Depth = 8 := by
-  simp only [ctHash, seqs, ctInit, pad80, lenLoop, compLoop, select, byteLoop, Code.x86_64Depth, K.cXD, K.iXD]
+theorem ctHashWith_xd {padding : Prog isa} (hp : padding.x86_64Depth = 0) :
+    (ctHashWith H padding).x86_64Depth = 8 := by
+  simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, byteLoop, Code.x86_64Depth, K.cXD, K.iXD]
   rfl
 
 include K in
+theorem ctHash_xd : (ctHash H).x86_64Depth = 8 := ctHashWith_xd K rfl
+
+include K in
+theorem mgfHash_xd : (mgfHash H).x86_64Depth = 8 := ctHashWith_xd K rfl
+
+include K in
 theorem mgfXor_xd : (mgfXor H).x86_64Depth = 8 := by
-  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, byteLoop, Code.x86_64Depth, ctHash_xd K]
+  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, byteLoop, Code.x86_64Depth, mgfHash_xd K]
   rfl
 
 include hH K in

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtComp
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedPad
 
 /-!
 # RSASSA-PSS on x86-64: `ctHash`, verified
@@ -52,10 +53,13 @@ def ctOut (o : Nat) : Prop := oLen + 16 ≤ o ∧ ¬ (oY ≤ o ∧ o < oY + 2048
 include K in
 /-- `ctHash` on the first `ℓ` bytes of `Y` (`sL`), in `nbm` blocks (`sNb`):
 what it changes, and its digest if those bytes are followed by zeros. -/
-theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem ctHashWith_gen (padding : Prog isa) {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) :
-    WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
+    (hp : ∀ {u : State} {F' S' : Addr} {V' : Nat → Byte} {W' : Nat → BitVec 64},
+      Lay u F' S' → Rep u.mem F' S' V' W' → W' 27 = BitVec.ofNat 64 ℓ →
+      W' 28 = BitVec.ofNat 64 nbm → WP isa padding u (PadResult u F' S' V' W' ℓ (nbm * H.P.B))) :
+    WP isa (ctHashWith H padding) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
@@ -71,11 +75,11 @@ theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
   have hfb : lastBlk H.P.B H.P.L ℓ < nbm := (Nat.div_lt_iff_lt_mul hB0).mpr (by omega)
   have hfbB : H.P.B * (lastBlk H.P.B H.P.L ℓ + 1) ≤ nbm * H.P.B := by
     rw [Nat.mul_comm]; exact Nat.mul_le_mul_right _ hfb
-  unfold ctHash seqs seqs seqs seqs seqs
+  unfold ctHashWith seqs seqs seqs seqs seqs
   -- `init`.
   refine WP.seq (WP.mono (ctInit_ok hH K L R) fun u1 ⟨L1, rd1, wr1, cs1, R1, iv1⟩ => ?_)
   -- `0x80`.
-  refine WP.seq (WP.mono (pad80_ok hH L1 R1 hl hn (by omega) hnb (by omega)) fun u2 P => ?_)
+  refine WP.seq (WP.mono (hp L1 R1 hl hn) fun u2 P => ?_)
   -- The length field.
   refine WP.seq (WP.mono (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ => ?_)
   -- Into the last block.
@@ -136,6 +140,21 @@ theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
     simp only [lenV, v80, inR_cons, inR_nil, or_false, hH.md.lenBytes_length]
     rw [ifn (by omega), ifp (by omega), ifn (by omega), Nat.add_sub_cancel_left, hY j' (by omega)]
 
+include K in
+theorem ctHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048) :
+    WP isa (ctHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
+      ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
+        (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
+        ∀ msg : List Byte, msg.length = ℓ → (∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) →
+          (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
+  have hfb : lastBlk H.P.B H.P.L ℓ < nbm :=
+    (Nat.div_lt_iff_lt_mul hH.B_pos).mpr (by omega)
+  exact ctHashWith_gen hH K (pad80 H) L R hl hn hfit hnb fun L' R' hl' hn' =>
+    WP.mono (pad80_ok hH L' R' hl' hn' (by omega) hnb (by omega)) fun _ P => ⟨P.L, P.keep, P.R⟩
+
 
 include K in
 theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -149,5 +168,22 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
         (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg :=
   WP.mono (ctHash_gen hH K L R hl hn hfit hnb) fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
     ⟨L', rd, wr, cs, V', W', R', hV, hW, hd msg rfl hY⟩
+
+
+include K in
+theorem mgfHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hml : msg.length = H.D + 4) (hl : W 27 = BitVec.ofNat 64 msg.length)
+    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
+    (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
+    WP isa (mgfHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
+      ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
+        (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧
+        (List.range H.D).map (fun i => V' (oDig + i)) = hH.SH.H.hash msg := by
+  refine WP.mono (ctHashWith_gen hH K (fixedPad80 (H.D + 4)) L R hl hn hfit hnb ?_)
+    fun _ ⟨L', rd, wr, cs, V', W', R', hV, hW, hd⟩ =>
+      ⟨L', rd, wr, cs, V', W', R', hV, hW, hd msg rfl hY⟩
+  intro u F' S' V' W' L' R' _ _
+  simpa only [hml] using fixedPad80_ok L' R' (ℓ := H.D + 4) (N := nbm * H.P.B) (by omega) hnb
 
 end VG.Proof.RsaPss.X86_64
