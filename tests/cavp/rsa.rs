@@ -3,7 +3,10 @@
 //! beyond BoringSSL's limits (odd, from 3 to `2^33 - 1`), which the public
 //! key enforces, so each key is refused.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use verified_garbage::rsa::{Error, PublicKey};
 
