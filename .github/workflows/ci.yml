@@ -159,7 +159,10 @@ jobs:
       contents: read
     if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
     strategy:
-      fail-fast: false
+      # One failed shard cancels the others: without its outputs nothing
+      # assembles the build, so theirs would go unused (their times reach
+      # later plans only through an assembled build's manifest).
+      fail-fast: true
       matrix:
         shard: ${{ fromJSON(needs.lean.outputs.shards) }}
     # No expressions: GitHub does not evaluate them in the name of a skipped
