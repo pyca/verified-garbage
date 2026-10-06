@@ -157,4 +157,122 @@ theorem selLoop_ok (hL : L.Ok) {R MLV : BitVec 64} {EM AM : List Byte} {v ok : B
 
 end
 
+theorem retR_ok {t : State} {Q : Addr} (hsp : t.sp = Q) (h : Slots t Q) :
+    WP isa (.block [.ldrSp .x0 oR]) t fun u => SameR t u ∧ u.mem = t.mem ∧ u.gpr .x0 = slot t Q oR := by
+  have h176 := h 176 (by decide)
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load, Nat.reduceMod, Nat.reduceLT, and_self,
+    ite_true, hsp, oR, Option.map_some, Option.some.injEq, exists_eq_left', RegUpd.gpr_write, BitVec.setWidth_eq,
+    h176]
+  exact ⟨⟨rfl, rfl, rfl, rfl, preserved_cases rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl⟩, rfl, rfl⟩
+
+section
+variable {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {R : BitVec 64} {EM : List Byte}
+  {kd : List Byte}
+
+/-- At the end of the body: the output and `*msg_len` written, the result in `x0`. -/
+structure Fin (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ : Mem) (R : BitVec 64)
+    (EM AM : List Byte) (v ok : Bool) (len : Nat) (t : State) : Prop where
+  ctx : Ctx L g vv m₀ t
+  x0 : t.gpr .x0 = R
+  out : ∀ i < L.k.toNat, t.mem (L.out + BitVec.ofNat 64 i) =
+    outByte v ok (L.k.toNat - len) i (EM.getD i 1) (AM.getD i 0)
+  ml : t.mem.readW L.ml 64 = BitVec.ofNat 64 len &&& bm ok
+
+/-- `AM`. -/
+abbrev amOf (L : Lay) (kd : List Byte) : List Byte :=
+  Spec.RsaPkcs1Enc.irprf kd (Spec.RsaPkcs1Enc.ascii "message") L.k.toNat
+
+/-- The validity of `EM`, as the scan found it. -/
+abbrev vOfEM (L : Lay) (EM : List Byte) : Bool := Proof.RsaPkcs1Enc.vEM EM L.k.toNat
+
+/-- The selected length. -/
+abbrev lenOf (L : Lay) (EM : List Byte) (kd : List Byte) : Nat :=
+  Proof.RsaPkcs1Enc.lselOf (vOfEM L EM) ((firstZero EM L.k.toNat).getD 0)
+    (Spec.RsaPkcs1Enc.altLength L.k.toNat (clOf kd)) L.k.toNat
+
+theorem sep_lt (EM : List Byte) {k : Nat} (hk : 0 < k) : (firstZero EM k).getD 0 < k := by
+  cases h : firstZero EM k with
+  | none => simp; omega
+  | some i => exact (Proof.RsaPkcs1Enc.firstZero_some h).2.1
+
+theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
+    WP isa selPart t (Fin L g vv m₀ R EM (amOf L kd) (vOfEM L EM) (decide (R = 1)) (lenOf L EM kd)) := by
+  have hk := hL.k1024
+  have hk64 := hL.k64
+  have hnQ := hL.nQ
+  have hc := h.amr.post
+  have hsep := sep_lt EM (k := L.k.toNat) (by omega)
+  have hal := Proof.RsaPkcs1Enc.altLength_le L.k.toNat (clOf kd)
+  have hK : slot t L.Q oK = BitVec.ofNat 64 L.k.toNat := by
+    rw [slot, hc.ctx.kept.k, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hO : slot t L.Q oOut = L.out := hc.ctx.kept.out
+  refine WP.seq (WP.mono (validBlock_ok hc.ctx.sp hc.slots (by rw [hO]; exact hc.ctx.outR (by omega))
+    (by rw [hO]; exact hc.ctx.outR (by omega)) h.x17 h.x15 h.x16 h.al hK (by omega))
+    fun t₁ ⟨S₁, x11, x12, x17, x15, x14, x13, x16⟩ => ?_)
+  have hc₁ := hc.same S₁
+  -- The values the block computed.
+  have e0 : t.mem (slot t L.Q oOut) = EM.getD 0 1 := by rw [hO, ← hc.em, bytes_getD' _ _ (by omega), BitVec.add_zero]
+  have e1 : t.mem (slot t L.Q oOut + BitVec.ofNat 64 1) = EM.getD 1 1 := by
+    rw [hO, ← hc.em, bytes_getD' _ _ (by omega)]
+  have eR : slot t L.Q oR = R := hc.r
+  have eL : (if Proof.RsaPkcs1Enc.vOf (EM.getD 0 1) (EM.getD 1 1) (firstZero EM L.k.toNat).isSome
+      ((firstZero EM L.k.toNat).getD 0) then BitVec.ofNat 64 L.k.toNat - BitVec.ofNat 64 ((firstZero EM L.k.toNat).getD 0) - 1
+      else BitVec.ofNat 64 (Spec.RsaPkcs1Enc.altLength L.k.toNat (clOf kd))) = BitVec.ofNat 64 (lenOf L EM kd) := by
+    simp only [lenOf, vOfEM, Proof.RsaPkcs1Enc.vEM, Proof.RsaPkcs1Enc.lselOf]
+    split
+    · rw [Offset.ofNat_sub_ofNat (by omega), show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
+        Offset.ofNat_sub_ofNat (by omega)]
+    · rfl
+  have hlen : lenOf L EM kd ≤ L.k.toNat := by
+    simp only [lenOf, Proof.RsaPkcs1Enc.lselOf]; split <;> omega
+  simp only [e0, e1, eR] at x15 x14 x13 x16
+  rw [eL] at x13
+  rw [eL, Offset.ofNat_sub_ofNat hlen] at x16
+  rw [hO] at x11
+  -- `*msg_len`.
+  have hml : slot t₁ L.Q oML = L.ml := by rw [slot, S₁.mem]; exact hc.ctx.kept.ml
+  refine WP.seq (WP.mono (outInit_ok hc₁.ctx.sp hc₁.slots (by
+    rw [hml, BitVec.add_zero]
+    exact ⟨L.ML, by rw [hc₁.ctx.wr]; simp, Region.contains_self _ _⟩)) fun t₂ ⟨S₂, m₂, x10, x9, o₂⟩ => ?_)
+  rw [hml, x13] at m₂ x10
+  have F₂ : Frame [L.ML] t₁.mem t₂.mem := by
+    rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have frm : ∀ d, d + 8 ≤ 224 → t₂.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t₁.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
+    fun d hd => F₂.readW (Region.contains_self _ _) (fun X hX => by
+      rw [List.mem_singleton.mp hX]; exact hL.stk_buf hd (.inr (.inl fun _ h => h))) (by decide)
+  rw [show (t₁.mem.writeW L.ml (BitVec.ofNat 64 (lenOf L EM kd) &&& bm (decide (R = 1)))).readW
+      (L.Q + BitVec.ofNat 64 oScr) 64 = L.scr by rw [← m₂, frm _ (by decide), S₁.mem]; exact hc.ctx.kept.scr] at x10
+  have hc₂ : Ctx L g vv m₀ t₂ := hc₁.ctx.store hL S₂.rd S₂.wr S₂.sp S₂.v (fun r hr _ => S₂.cs r hr) F₂ fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact .inl (.inr (.inl fun _ h => h))
+  have bk : ∀ (X : Region), X.Disjoint L.ML → X.len ≤ 2 ^ 64 → ∀ i < X.len,
+      t₂.mem (X.base + BitVec.ofNat 64 i) = t.mem (X.base + BitVec.ofNat 64 i) := fun X hX hl i hi => by
+    rw [F₂.bytes (fun Y hY => by rw [List.mem_singleton.mp hY]; exact hX) hl hi, S₁.mem]
+  have hOi : OInv L g vv m₀ R (BitVec.ofNat 64 (lenOf L EM kd) &&& bm (decide (R = 1))) EM (amOf L kd)
+      (vOfEM L EM) (decide (R = 1)) (L.k.toNat - lenOf L EM kd) 0 t₂ :=
+    { ctx := hc₂
+      r := by rw [frm _ (by decide), S₁.mem]; exact hc.r
+      ml := by rw [m₂, Mem.readW_writeW_self64]
+      x9 := by rw [x9]; rfl
+      x11 := by rw [o₂ .x11 (by decide) (by decide), x11, BitVec.add_zero]
+      x10 := by rw [x10, BitVec.add_zero]
+      x12 := by rw [o₂ .x12 (by decide) (by decide), x12, Nat.sub_zero]
+      x14 := by rw [o₂ .x14 (by decide) (by decide), x14]
+      x15 := by rw [o₂ .x15 (by decide) (by decide), x15]
+      x16 := by rw [o₂ .x16 (by decide) (by decide), x16]
+      done := fun j hj => absurd hj (Nat.not_lt_zero _)
+      todo := fun j _ hj => by
+        rw [bk L.OUT hL.oM (by show L.k.toNat ≤ 2 ^ 64; omega) j hj, ← hc.em, bytes_getD' _ _ hj]
+      am := fun j hj => by
+        rw [bk ⟨scA L sAM, L.k.toNat⟩ ((hL.mS.symm.sub_left (sub_trans (scSub (by unfold sAM scrBytes; omega))
+          hL.sc_sub)).symm |>.symm) (by show L.k.toNat ≤ 2 ^ 64; omega) j hj]
+        have ham : Spec.Rsa.bytesAt t.mem (scA L sAM) L.k.toNat = amOf L kd := h.amr.am
+        rw [← ham, bytes_getD' _ _ hj] }
+  refine WP.seq (WP.mono (selLoop_ok hL (by omega) hOi) fun t₃ h₃ => ?_)
+  refine WP.mono (retR_ok h₃.ctx.sp (fun d hd => h₃.ctx.inFrR (by unfold frameBytes; omega))) fun t₄ ⟨S₄, m₄, x0⟩ => ?_
+  refine ⟨h₃.ctx.regs S₄.rd S₄.wr S₄.sp m₄ S₄.v fun r hr _ => S₄.cs r hr, by rw [x0]; exact h₃.r,
+    fun i hi => by rw [m₄]; exact h₃.done i hi, by rw [m₄]; exact h₃.ml⟩
+
+end
+
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec
