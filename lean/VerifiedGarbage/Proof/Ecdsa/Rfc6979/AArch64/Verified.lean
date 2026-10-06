@@ -28,21 +28,37 @@ theorem coreC_eq : (cfgOf P).coreC = P.R.coreC := rfl
 
 /-- No instruction writes a callee-saved SIMD register: not those of the
 functions it calls, by what `P` and the proofs of HMAC's functions know of
-them, nor its own, which the kernel evaluates for each size of hash function. -/
+them, nor its own, which the kernel evaluates for each size of hash function
+and of scalars. -/
 theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
   have hI : P.H.hmacInit.allInstrs keepsV = true := P.ok.hmacInit_keepsV
   have hU : P.H.updC.allInstrs keepsV = true := P.ok.updKeepsV
   have hF : P.H.hmacFin.allInstrs keepsV = true := P.ok.hmacFin_keepsV
-  have hR := P.R.reduceKeepsV
-  simp only [Cfg.sign, Cfg.body, Cfg.tryOne, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, Code.allInstrs,
-    reduce_eq, initCnt_eq, cfgOf_H, coreC_eq, hI, hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
-  have hw : (cfgOf P).w = P.R.E.n := rfl
-  simp only [hR, hw, Bool.true_and]
-  rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases P.R.n46 with h'' | h'' <;>
-    simp only [h, h', h''] <;> decide +kernel
+  have hw' : (cfgOf P).w = P.R.E.n := rfl
+  have hl' : (cfgOf P).len = P.R.E.C.len := rfl
+  cases hw : P.R.wide
+  · have hR := P.R.reduceKeepsV hw
+    have e : (cfgOf P).wide = false := hw
+    simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV,
+      Cfg.hmac, e, Bool.false_eq_true, ite_false, Code.allInstrs, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq, hI,
+      hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
+    have hl : P.R.E.C.len = 8 * P.R.E.n := (P.R.sizesA hw).2.1
+    simp only [hR, hw', hl', hl, Bool.true_and]
+    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases (P.R.sizesA hw).1 with h'' | h'' <;>
+      simp only [h, h', h''] <;> decide +kernel
+  · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
+    have e : (cfgOf P).wide = true := hw
+    have hs : (cfgOf P).sh = 7 := sh7 hw
+    simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.coreDigest, Cfg.keepV, Cfg.candTop, Cfg.conv,
+      Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV, Cfg.hmac, e, ite_true, Code.allInstrs, initCnt_eq, cfgOf_H, coreC_eq,
+      hI, hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and]
+    have hw9' : P.R.E.n = 9 := hw9
+    have hQ66' : P.R.E.C.len = 66 := hQ66
+    simp only [hw', hl', hs, hw9', hQ66', hD64, hB]
+    decide +kernel
 
-theorem sign_a64 (s : State) (h : (rfcAArch64 P.R.E P.I).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcAArch64 P.R.E P.I).post s s' := by
+theorem sign_a64 (s : State) (h : (rfcAArch64 P.R.E P.I (256 + P.e)).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcAArch64 P.R.E P.I (256 + P.e)).post s s' := by
   obtain ⟨t, s', he, ⟨hg, hsp⟩, hp⟩ := sign_ok (P := P) h
   exact ⟨t, s', he, ⟨hg, hsp, Exec.preservedV he (sign_keepsV P)⟩, hp⟩
 
@@ -58,9 +74,24 @@ def signNotes (H : Impl.Pbkdf2.Md.AArch64.Hash) (q : Nat) (core : String) : Stri
   frame, below the 16 bytes saving `x30`, and the secrets are cleared before it is freed; the calls use \
   the 16 bytes below it."
 
+/-- The notes of an instance whose scalars are longer than the hash
+(`wide`): `q` bytes of `nb` bits, from a `D`-byte hash. -/
+def signNotesWide (H : Impl.Pbkdf2.Md.AArch64.Hash) (q nb D : Nat) (core : String) : String :=
+  "Computes `h = bits2octets(digest)` as " ++ toString (q - D) ++ " zero bytes and the digest (whose integer \
+  is below `n`), and each HMAC with `" ++ H.hmacInitN ++ "`, `" ++ H.updN ++ "` and `" ++ H.hmacFinN ++ "`, \
+  using the start of `scratch` for HMAC's states and working space and the message. Each candidate `k`, the \
+  leftmost " ++ toString nb ++ " bits of two successive `V`s, is shifted into " ++ toString q ++ " bytes, as is \
+  the digest for the signature (its integer shifted left by " ++ toString (8 * q - nb) ++ " bits), with word \
+  loads, shifts and stores through `scratch`, and tried with `" ++ core ++ "`, which uses all of `scratch`; \
+  whether to try another is computed without branches from its result and the count of candidates left, so \
+  the code branches only on that. `K`, `V`, `h`, the count, the pointers, the candidate and the shifted \
+  digest are kept in a 368-byte stack frame, below the 16 bytes saving `x30`, and the secrets are cleared \
+  before it is freed; the calls use the 16 bytes below it."
+
 theorem sign_verified
-    (himp : (rfcAArch64 P.R.E P.I).Implies (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) 256)) :
-    Verified AArch64.target (cfgOf P).sign (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) 256) :=
+    (himp : (rfcAArch64 P.R.E P.I (256 + P.e)).Implies
+      (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) (256 + P.e))) :
+    Verified AArch64.target (cfgOf P).sign (P.I.signContract (AArch64.abi.withConsts P.R.E.combConsts) (256 + P.e)) :=
   Verified.of_correct (sign_a64 P) sign_ct himp
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

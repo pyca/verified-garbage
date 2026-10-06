@@ -26,7 +26,7 @@ abbrev Env (P : RfcHash) := Lay P.I.hashLen P.R.E × (Reg → BitVec 64) × (Reg
 /-- Two runs with the same layout that stop at the same candidate, each
 satisfying `Ctx` and `Φ`. -/
 def Two (P : RfcHash) (Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop) (a b : State) : Prop :=
-  ∃ e : Env P, e.1.Ok ∧ e.1.q = 8 * P.w ∧ exitAt P e.1 e.2.2.2.1 = exitAt P e.1 e.2.2.2.2 ∧ Ctx e.1 e.2.1 e.2.2.2.1 a ∧
+  ∃ e : Env P, e.1.Ok ∧ CoreOk P e.1 ∧ exitAt P e.1 e.2.2.2.1 = exitAt P e.1 e.2.2.2.2 ∧ Ctx e.1 e.2.1 e.2.2.2.1 a ∧
     Ctx e.1 e.2.2.1 e.2.2.2.2 b ∧ Φ e.1 e.2.2.2.1 a ∧ Φ e.1 e.2.2.2.2 b
 
 variable {P : RfcHash}
@@ -39,7 +39,7 @@ theorem Two.mono {Φ Ψ : Lay P.I.hashLen P.R.E → Mem → State → Prop} (h :
 /-- Code whose runs leak the same, and which keeps `Ctx` and establishes `Ψ`. -/
 theorem two_wp {c : Prog isa} {Φ Ψ : Lay P.I.hashLen P.R.E → Mem → State → Prop}
     (hct : RelCT isa (Two P Φ) c fun _ _ => True)
-    (hw : ∀ (L : Lay P.I.hashLen P.R.E) g m₀ (t : State), L.Ok → L.q = 8 * P.w → Ctx L g m₀ t → Φ L m₀ t →
+    (hw : ∀ (L : Lay P.I.hashLen P.R.E) g m₀ (t : State), L.Ok → CoreOk P L → Ctx L g m₀ t → Φ L m₀ t →
       WP isa c t fun t' => Ctx L g m₀ t' ∧ Ψ L m₀ t') :
     RelCT isa (Two P Φ) c (Two P Ψ) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
@@ -76,30 +76,88 @@ theorem spOnly {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} : ∀ (L 
 abbrev TaintOk (rs : List Reg) (is : List Instr) : Prop :=
   ∃ hc, (taint.check (Taint.ofRegs rs) (.block is) hc).isSome = true
 
+/-- The pointers the message of steps d and f is addressed from: `scratch`,
+`d`, the frame, and, if two `V`s make a candidate, `digest`. -/
+abbrev msgRegs (wide : Bool) : List Reg := if wide then [.x8, .x9, .x10, .x15] else [.x9, .x10, .x15]
+
 /-- The blocks that depend on the hash function's output size `D` and block
-size `B`, each of which addresses memory only from `sp` (and the message's
-from the pointers it is given). -/
-structure Blks (w D B : Nat) : Prop where
+size `B`, and on the scalars' `w` words and `Q` bytes, each of which
+addresses memory only from `sp` (and the message's from the pointers it is
+given). -/
+structure Blks (w Q D B : Nat) (wide : Bool) : Prop where
   init : TaintOk [] (Cfg.hmacArgs₁ D)
   vUpd : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.fr .x2 fV) D)
   vFin : TaintOk [] (Cfg.hmacArgs₃ B D fV)
   kUpd₁ : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.scr .x2 sMsg) (D + 1))
   kFin₁ : TaintOk [] (Cfg.hmacArgs₃ B (D + 1) fK)
-  kUpdF : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.scr .x2 sMsg) (D + 16 * w + 1))
-  kFinF : TaintOk [] (Cfg.hmacArgs₃ B (D + 16 * w + 1) fK)
-  msg₀ : TaintOk [.x9, .x10, .x15] (Cfg.msg w D 0 false)
-  msg₀f : TaintOk [.x9, .x10, .x15] (Cfg.msg w D 0 true)
-  msg₁f : TaintOk [.x9, .x10, .x15] (Cfg.msg w D 1 true)
+  kUpdF : TaintOk [] (Cfg.hmacArgs₂ B (Cfg.scr .x2 sMsg) (D + 2 * Q + 1))
+  kFinF : TaintOk [] (Cfg.hmacArgs₃ B (D + 2 * Q + 1) fK)
+  msg₀ : TaintOk (msgRegs false) (Cfg.msg w Q D 0 false false)
+  msg₀f : TaintOk (msgRegs wide) (Cfg.msg w Q D 0 true wide)
+  msg₁f : TaintOk (msgRegs wide) (Cfg.msg w Q D 1 true wide)
 
-theorem blks (P : RfcHash) : Blks P.w P.H.D P.H.P.B := by
-  have hQ := P.hQ
-  have hw : P.w = P.R.E.n := rfl
-  rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases P.R.n46 with h'' | h'' <;> rw [h, h', hw, h''] <;>
-    first
-    | (rw [h, hw, h''] at hQ; exact absurd hQ (by decide))
-    | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-        ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
+  have hw' : P.w = P.R.E.n := rfl
+  cases hw : P.R.wide
+  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
+    rw [hQ8, hw']
+    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      rw [hn, h, h'] <;>
+      first
+      | (exfalso; rw [hQ8, hw', hn, h] at hQD; omega)
+      | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
+    rw [hQ66, hD64, hB, hw9]
+    exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+
+/-! The blocks that depend on whether two `V`s make a candidate. -/
+
+theorem msgPtrs_blk (wide : Bool) : TaintOk [] (Cfg.msgPtrs wide) := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
+
+theorem coreArgs_blk (wide : Bool) : TaintOk [] (Cfg.coreArgs wide) := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
+
+theorem wipe_blk (wide : Bool) : TaintOk [] (Cfg.wipe wide) := by
+  cases wide
+  · exact ⟨_, by taint_decide⟩
+  · exact ⟨_, by taint_decide⟩
+
+/-- A conversion's block, after `scratch`'s load into `x0`. -/
+abbrev convBody (c : Cfg) (o s : Nat) : List Instr :=
+  .addSp .x6 o :: Impl.Weierstrass.AArch64.loadBytes c.len c.w sSlot .x6 ++
+    Impl.Weierstrass.AArch64.shrWords c.w sSlot s ++
+    [.movz .x .x3 0 0, .subImm .x .x3 .x3 1] ++ Impl.Weierstrass.AArch64.storeBytes c.len c.w .x6 0 sSlot
+
+theorem conv_eq (c : Cfg) (o s : Nat) : c.conv o s = .seq (.block [.ldrSp .x0 fScratch]) (.block (convBody c o s)) :=
+  rfl
+
+/-- If two `V`s make a candidate: the digest for `core`, `V` kept, and the
+candidate's next eight bytes; and the conversions, from `scratch` in `x0`. -/
+structure WideBlks (P : RfcHash) : Prop where
+  dig : TaintOk [.x1] ([.addSp .x15 0, .movz .x .x11 0 0, .str .x .x11 .x15 (fX + (cfgOf P).H.D)] ++
+    Cfg.copyN ((cfgOf P).H.D / 8) .x1 0 .x15 fX)
+  conv₁ : TaintOk [.x0] (convBody (cfgOf P) fX (8 * ((cfgOf P).len - (cfgOf P).H.D) - (cfgOf P).sh))
+  keep : TaintOk [] (cfgOf P).keepV
+  top : TaintOk [] [.addSp .x15 0, .ldr .x .x11 .x15 fV, .str .x .x11 .x15 (fKb + (cfgOf P).H.D)]
+  conv₂ : TaintOk [.x0] (convBody (cfgOf P) fKb (cfgOf P).sh)
+
+theorem wideBlks (hw : P.R.wide = true) : WideBlks P := by
+  obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
+  have e₁ : (cfgOf P).len = 66 := hQ66
+  have e₂ : (cfgOf P).w = 9 := hw9
+  have e₃ : (cfgOf P).H.D = 64 := hD64
+  have e₄ : (cfgOf P).sh = 7 := sh7 hw
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp only [Cfg.keepV, convBody, e₁, e₂, e₃, e₄] <;>
+    exact ⟨_, by taint_decide⟩
 
 /-! ## The calls of HMAC's functions -/
 
@@ -142,7 +200,7 @@ theorem hinit_ct : RelCT isa (Two P (IA P)) (.call P.H.hmacInitN P.H.hmacInit) f
       Pbkdf2.Md.AArch64.Pbk.covers_app A₁.cr A₁.cw, A₁.cw, Pbkdf2.Md.AArch64.Pbk.covers_app A₂.cr A₂.cw, A₂.cw⟩
 
 theorem hupd_ct {dA : Lay P.I.hashLen P.R.E → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len)
-    (hlen : len ≤ 192) :
+    (hlen : len ≤ 256) :
     RelCT isa (Two P (UA P dA len)) (.call P.H.updN P.H.updC) fun _ _ => True :=
   AArch64.RelCT.callEx P.ok.stream.upd.1 P.ok.stream.upd.2.1 fun _ _ ⟨⟨L, _, _, _, _⟩, hL, _, _, c₁, c₂, a₁, a₂⟩ => by
     obtain ⟨d₁, s₁, x₁, k₁, r₁⟩ := a₁
@@ -184,7 +242,7 @@ theorem init_ctx (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : IA P L m₀
   rcases hr with rfl | rfl | rfl <;> exact scr_work (by anums)
 
 theorem upd_ctx {dA : Lay P.I.hashLen P.R.E → Addr} {len : Nat} (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len)
-    (hlen : len ≤ 192) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P dA len L m₀ u) :
+    (hlen : len ≤ 256) (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (ha : UA P dA len L m₀ u) :
     WP isa (.call P.H.updN P.H.updC) u fun u' => Ctx L g m₀ u' ∧ True := by
   obtain ⟨d, _, x, k, r⟩ := ha
   refine Pbkdf2.Md.AArch64.Calls.upd_call P.ok.stream (updA (P := P) hL hc (hd L hL) hlen d x k r)
@@ -212,7 +270,7 @@ its calls are constant time with arguments that agree. -/
 theorem hmac_ct {dataA : List Instr} {dA : Lay P.I.hashLen P.R.E → Addr} {len dst : Nat}
     {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop}
     (hdA : ∀ (L : Lay P.I.hashLen P.R.E) g m₀ u, L.Ok → Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .x2 (dA L)))
-    (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len) (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168)
+    (hd : ∀ L : Lay P.I.hashLen P.R.E, L.Ok → DataOk L (dA L) len) (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168)
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B dataA len)) (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len dst)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac dataA len dst) fun _ _ => True := by
   refine (two_wp (Ψ := IA P) (two_blk [] spOnly (blks P).init) fun L _ _ _ hL hq hc _ =>
@@ -233,7 +291,7 @@ theorem hmacV_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} : RelCT
     (fun _ _ => .inl ⟨80, rfl, by omega, by anums⟩) (by anums) (by anums) (blks P).vUpd (blks P).vFin
 
 /-- `K = HMAC_K(m)`, for the message of `len` bytes at `scratch + 2256`. -/
-theorem hmacK_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {len : Nat} (hlen : len ≤ 192)
+theorem hmacK_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {len : Nat} (hlen : len ≤ 256)
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) len))
     (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len fK)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac (Cfg.scr .x2 sMsg) len fK) fun _ _ => True :=
@@ -241,40 +299,93 @@ theorem hmacK_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {len : 
     (fun _ _ _ _ hL hu => scr_ok hL hu (d := .x2) (by decide) (a := 2256) (by decide))
     (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) hlen (by anums) t₂ t₃
 
-/-- `scratch` in `x9`, `d` in `x10`, the frame in `x15`. -/
-def PtrsIn {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (_ : Mem) (u : State) : Prop :=
-  u.gpr .x9 = L.scr ∧ u.gpr .x10 = L.d ∧ u.gpr .x15 = L.B + BitVec.ofNat 64 16
+/-- `scratch` in `x9`, `d` in `x10`, the frame in `x15`, and, if `wide`, `digest` in `x8`. -/
+def PtrsIn (wide : Bool) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (_ : Mem) (u : State) : Prop :=
+  u.gpr .x9 = L.scr ∧ u.gpr .x10 = L.d ∧ u.gpr .x15 = L.B + BitVec.ofNat 64 16 ∧ (wide = true → u.gpr .x8 = L.dg)
 
-/-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ d ‖ h)`. -/
-theorem rekey_gen_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {b : Nat} {full : Bool} {len : Nat}
-    (hlen : len = if full then P.H.D + 16 * P.w + 1 else P.H.D + 1)
-    (t₁ : TaintOk [.x9, .x10, .x15] (Cfg.msg P.w P.H.D b full))
+/-- `K = HMAC_K(m)`, then `V = HMAC_K(V)`, for the message `m = V ‖ b (‖ tail)`. -/
+theorem rekey_gen_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {b : Nat} {full wide : Bool}
+    (hW : wide = true → full = true ∧ P.R.wide = true) (hA : full = true → wide = false → P.R.wide = false)
+    {len : Nat} (hlen : len = if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1)
+    (t₁ : TaintOk (msgRegs wide) (Cfg.msg P.w P.Q P.H.D b full wide))
     (t₂ : TaintOk [] (Cfg.hmacArgs₂ P.H.P.B (Cfg.scr .x2 sMsg) len))
     (t₃ : TaintOk [] (Cfg.hmacArgs₃ P.H.P.B len fK)) :
-    RelCT isa (Two P Φ) (.seq (.block Cfg.msgPtrs) (.seq (.block (Cfg.msg P.w P.H.D b full))
+    RelCT isa (Two P Φ) (.seq (.block (Cfg.msgPtrs wide)) (.seq (.block (Cfg.msg P.w P.Q P.H.D b full wide))
       (.seq ((cfgOf P).hmac (Cfg.scr .x2 sMsg) len fK) (cfgOf P).hmacV))) fun _ _ => True := by
-  have hlen' : len ≤ 192 := by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> anums
-  refine (two_wp (Ψ := PtrsIn) (two_blk [] spOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hq hc _ =>
-    WP.mono (ptrs_ok hL hc) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq ?_
-  refine (two_wp (Ψ := fun _ _ _ => True) (two_blk [.x9, .x10, .x15] (fun L t₁ t₂ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact f₁.1.trans f₂.1.symm
-      · exact f₁.2.1.trans f₂.2.1.symm
-      · exact f₁.2.2.trans f₂.2.2.symm) t₁) fun _ _ _ _ hL hq hc hp =>
-    WP.mono (msg_ok hL hc hp.1 hp.2.1 hp.2.2 b full (D := P.H.D) (w := P.w) (by anums) (by anums)
-      (by anums) (by omega)) fun _ h => ⟨h.1, trivial⟩).seq ?_
-  exact (two_wp (Ψ := fun _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL hq hc _ =>
+  have hlen' : len ≤ 256 := by
+    have := P.wsizes
+    subst hlen
+    cases full
+    · simp only [Bool.false_eq_true, ↓reduceIte]; anums
+    · simp only [ite_true]
+      cases hRW : P.R.wide
+      · have := P.sizesA hRW; anums
+      · have := P.sizesW hRW; omega
+  refine (two_wp (Ψ := PtrsIn wide) (two_blk [] spOnly (msgPtrs_blk wide)) fun _ _ _ _ hL _ hc _ =>
+    WP.mono (ptrs_ok hL hc wide) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq ?_
+  refine (two_wp (Ψ := fun _ _ _ => True) (two_blk (msgRegs wide) (fun L t₁ t₂ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
+      cases wide
+      · simp only [msgRegs, Bool.false_eq_true, ite_false, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact f₁.1.trans f₂.1.symm
+        · exact f₁.2.1.trans f₂.2.1.symm
+        · exact f₁.2.2.1.trans f₂.2.2.1.symm
+      · simp only [msgRegs, ite_true, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl
+        · exact (f₁.2.2.2 rfl).trans (f₂.2.2.2 rfl).symm
+        · exact f₁.1.trans f₂.1.symm
+        · exact f₁.2.1.trans f₂.2.1.symm
+        · exact f₁.2.2.1.trans f₂.2.2.1.symm) t₁) fun _ _ _ _ hL hk hc hp =>
+    WP.mono (msgAny_ok hL hk.1 P.len hc hp.1 hp.2.1 hp.2.2.1 b full wide hp.2.2.2 hW hA)
+      fun _ h => ⟨h.1, trivial⟩).seq ?_
+  exact (two_wp (Ψ := fun _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL _ hc _ =>
     WP.mono (hmacK_ok (P := P) hL hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct
 
 theorem rekeyFull_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} (b : Nat) (hb : b < 2) :
     RelCT isa (Two P Φ) ((cfgOf P).rekeyFull b) fun _ _ => True := by
   obtain rfl | rfl : b = 0 ∨ b = 1 := by omega
-  · exact rekey_gen_ct (len := P.H.D + 16 * P.w + 1) rfl (blks P).msg₀f (blks P).kUpdF (blks P).kFinF
-  · exact rekey_gen_ct (len := P.H.D + 16 * P.w + 1) rfl (blks P).msg₁f (blks P).kUpdF (blks P).kFinF
+  · exact rekey_gen_ct (full := true) (wide := P.R.wide) (fun h => ⟨rfl, h⟩) (fun _ h => h)
+      (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₀f (blks P).kUpdF (blks P).kFinF
+  · exact rekey_gen_ct (full := true) (wide := P.R.wide) (fun h => ⟨rfl, h⟩) (fun _ h => h)
+      (len := P.H.D + 2 * P.Q + 1) rfl (blks P).msg₁f (blks P).kUpdF (blks P).kFinF
 
 theorem rekey_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} : RelCT isa (Two P Φ) (cfgOf P).rekey fun _ _ => True :=
-  rekey_gen_ct (b := 0) (full := false) (len := P.H.D + 1) rfl (blks P).msg₀ (blks P).kUpd₁ (blks P).kFin₁
+  rekey_gen_ct (b := 0) (full := false) (wide := false) (fun h => nomatch h) (fun h => nomatch h)
+    (len := P.H.D + 1) rfl (blks P).msg₀ (blks P).kUpd₁ (blks P).kFin₁
+
+/-! ## The conversions and the candidate -/
+
+/-- `scratch` in `x0`. -/
+def ScrIn {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (_ : Mem) (u : State) : Prop := u.gpr .x0 = L.scr
+
+theorem ldScr_blk : TaintOk [] [.ldrSp .x0 fScratch] := ⟨_, by taint_decide⟩
+
+/-- A conversion: its block addresses memory from `scratch`, loaded first, and `sp`. -/
+theorem conv_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} {o s : Nat} (h : TaintOk [.x0] (convBody (cfgOf P) o s)) :
+    RelCT isa (Two P Φ) ((cfgOf P).conv o s) fun _ _ => True := by
+  rw [conv_eq]
+  exact (two_wp (Ψ := ScrIn) (two_blk [] spOnly ldScr_blk) fun _ _ _ _ hL _ hc _ =>
+    WP.mono (ldScr_ok hL hc) fun _ h => ⟨h.ctx, h.val⟩).seq (two_blk [.x0] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact f₁.trans f₂.symm) h)
+
+/-- The candidate: its calls and blocks leak the same in both runs. -/
+theorem cand_ct {Φ : Lay P.I.hashLen P.R.E → Mem → State → Prop} :
+    RelCT isa (Two P Φ) (cfgOf P).cand fun _ _ => True := by
+  cases hw : P.R.wide
+  · have e : (cfgOf P).wide = false := hw
+    rw [show (cfgOf P).cand = (cfgOf P).hmacV by simp only [Cfg.cand, e, Bool.false_eq_true, ite_false]]
+    exact hmacV_ct
+  · have e : (cfgOf P).wide = true := hw
+    have W := wideBlks hw
+    simp only [Cfg.cand, Cfg.candTop, e, ite_true]
+    refine (two_wp (Ψ := fun _ _ _ => True) hmacV_ct fun _ _ _ _ hL _ hc _ =>
+      WP.mono (hmacV_ok hL hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
+    refine (two_wp (Ψ := fun _ _ _ => True) (two_blk [] spOnly W.keep) fun _ _ _ _ hL hk hc _ =>
+      WP.mono (keepV_ok hL hk.2.2 hw hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
+    refine (two_wp (Ψ := fun _ _ _ => True) hmacV_ct fun _ _ _ _ hL _ hc _ =>
+      WP.mono (hmacV_ok hL hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
+    exact (two_wp (Ψ := fun _ _ _ => True) (two_blk [] spOnly W.top) fun _ _ _ _ hL hk hc _ =>
+      WP.mono (top_ok hL hk.2.2 hw hc) fun _ h => ⟨h.1, trivial⟩).seq (conv_ct W.conv₂)
 
 /-! ## One candidate -/
 
@@ -284,12 +395,12 @@ theorem core_ct {i : Nat} :
       fun _ _ => True :=
   AArch64.RelCT.callEx P.R.coreX P.R.coreCT
     fun _ _ ⟨⟨L, _, _, _, _⟩, hL, hq, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ =>
-    ⟨coreRd P L, coreWr P L, coreRd P L, coreWr P L, core_pre hL hq P.lenQ c₁ a₁.x0 a₁.x1 a₁.x2 a₁.x3 a₁.x4,
-      core_pre hL hq P.lenQ c₂ a₂.x0 a₂.x1 a₂.x2 a₂.x3 a₂.x4,
+    ⟨coreRd P L, coreWr P L, coreRd P L, coreWr P L, core_pre hL hq c₁ a₁.x0 a₁.x1 a₁.x2 a₁.x3 a₁.x4,
+      core_pre hL hq c₂ a₂.x0 a₂.x1 a₂.x2 a₂.x3 a₂.x4,
       ⟨ce_two (by decide) a₁.x0 a₂.x0 _ _ _ _, ce_two (by decide) a₁.x1 a₂.x1 _ _ _ _,
         ce_two (by decide) a₁.x2 a₂.x2 _ _ _ _, ce_two (by decide) a₁.x3 a₂.x3 _ _ _ _,
         ce_two (by decide) a₁.x4 a₂.x4 _ _ _ _, ce_sp_two c₁ c₂ _ _ _ _, c₁.sy.trans c₂.sy.symm⟩,
-      core_covers hq P.lenQ c₁, core_coversW hq c₁, core_covers hq P.lenQ c₂, core_coversW hq c₂⟩
+      core_covers hL hq c₁, core_coversW hq.1 c₁, core_covers hL hq c₂, core_coversW hq.1 c₂⟩
 
 /-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
 theorem dec_two {L : Lay P.I.hashLen P.R.E} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P L m₁ = exitAt P L m₂) {u₁ u₂ : State}
@@ -304,17 +415,17 @@ def After (P : RfcHash) (i : Nat) (L : Lay P.I.hashLen P.R.E) (m₀ : Mem) (t : 
 
 theorem tryOne_trace {i : Nat} :
     RelCT isa (Two P fun L m₀ t => LoopInv P L m₀ i t) (cfgOf P).tryOne fun _ _ => True := by
-  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u) hmacV_ct fun _ _ _ _ hL hq hc hi =>
-    try₁_ok hL hc hi).seq ?_
-  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u ∧ Args L u) (two_blk [] spOnly ⟨_, by taint_decide⟩)
-    fun _ _ _ _ hL hq hc hi => try₂_ok hL hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u) cand_ct fun _ _ _ _ hL hk hc hi =>
+    try₁_ok hL hk hc hi).seq ?_
+  refine (two_wp (Ψ := fun L m₀ u => P₁ P L m₀ i u ∧ Args L u) (two_blk [] spOnly (coreArgs_blk _))
+    fun _ _ _ _ hL hk hc hi => try₂_ok hL hk hc hi).seq ?_
   refine (two_wp (Ψ := fun L m₀ u => P₃ P L m₀ i u) core_ct fun _ _ _ _ hL hq hc hi =>
     try₃_ok hL hq hc hi.1 hi.2).seq ?_
   refine (two_wp (Ψ := fun L m₀ u => Mid P L m₀ i u) (two_blk [] spOnly ⟨_, by taint_decide⟩)
     fun _ _ _ _ hL hq hc hi => try₄_ok hL hq hc hi).seq ?_
   refine VG.RelCT.ite (fun _ _ ⟨_, _, _, hx, _, _, f₁, f₂⟩ => dec_two hx f₁ f₂) ?_ ?_
   · exact ((two_wp (Ψ := fun _ _ _ => True) rekey_ct fun _ _ _ _ hL hq hc _ =>
-      WP.mono (rekey_ok hL (by rw [hq]) hc) fun _ h => ⟨h.1, trivial⟩).seq
+      WP.mono (rekey_ok hL hq.1 P.len hc) fun _ h => ⟨h.1, trivial⟩).seq
       (two_blk [] spOnly ⟨_, by taint_decide⟩)).mono (fun _ _ h => h.1) fun _ _ h => h
   · exact (two_blk [] spOnly ⟨_, by taint_decide⟩).mono (fun _ _ h => h.1) fun _ _ h => h
 
@@ -361,35 +472,51 @@ theorem initCnt_blk : TaintOk [] (cfgC ⟨4, Spec.P256.curve, [], (0, 0), "", tr
 /-- `digest` in `x1`. -/
 def DgIn {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (_ : Mem) (u : State) : Prop := u.gpr .x1 = L.dg
 
+/-- `h`, or, if two `V`s make a candidate, the digest for `core`; and the initial `K` and `V`. -/
+theorem start_ct : RelCT isa (Two P DgIn) (cfgOf P).start fun _ _ => True := by
+  have hx1 : ∀ (L : Lay P.I.hashLen P.R.E) (t₁ t₂ : State) g₁ g₂ m₁ m₂, Ctx L g₁ m₁ t₁ → Ctx L g₂ m₂ t₂ →
+      DgIn L m₁ t₁ → DgIn L m₂ t₂ → ∀ r ∈ [Reg.x1], t₁.gpr r = t₂.gpr r := fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact f₁.trans f₂.symm
+  cases hw : P.R.wide
+  · have e : (cfgOf P).wide = false := hw
+    simp only [Cfg.start, e, Bool.false_eq_true, ite_false]
+    exact two_blk [.x1] hx1 (P.R.reduceT hw)
+  · have e : (cfgOf P).wide = true := hw
+    have W := wideBlks hw
+    simp only [Cfg.start, e, ite_true]
+    have dig := (two_wp (Ψ := fun _ _ _ => True) (two_blk [.x1] hx1 W.dig) fun _ _ _ _ hL hk hc h =>
+      WP.mono (dig_ok hL hk.2.2 hw (by rw [P.len]) hc h) fun _ h => ⟨h.1, trivial⟩).seq (conv_ct W.conv₁)
+    exact (two_wp (Ψ := fun _ _ _ => True) dig fun _ _ _ _ hL hk hc h =>
+      WP.mono (coreDigest_ok hL hk.2.2 hw (by rw [P.len]) hc h) fun _ h => ⟨h.1, trivial⟩).seq
+      (two_blk [] spOnly ⟨_, by taint_decide⟩)
+
 /-- The frame's body, once the arguments are saved. -/
 theorem rest_ct :
     RelCT isa (Two P fun _ _ _ => True) (.seq (.block Cfg.digestPtr)
-      (.seq (.block ((cfgOf P).reduce ++ Cfg.initKV))
+      (.seq (cfgOf P).start
       (.seq ((cfgOf P).rekeyFull 0)
       (.seq ((cfgOf P).rekeyFull 1)
       (.seq (.block (cfgOf P).initCnt)
       (.seq (.loop (cfgOf P).tryOne (.nonzero .x .x12))
-        (.block Cfg.wipe)))))))
+        (.block (Cfg.wipe (cfgOf P).wide))))))))
       (Two P fun L m₀ t => ∃ i, Exit P L m₀ i t) := by
-  refine (two_wp (Ψ := DgIn) (two_blk [] spOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hq hc _ =>
+  refine (two_wp (Ψ := DgIn) (two_blk [] spOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL _ hc _ =>
     WP.mono (digestPtr_ok hL hc) fun _ h => ⟨h.ctx, h.val⟩).seq ?_
-  refine (two_wp (Ψ := QB P) (two_blk [.x1] (fun _ _ _ _ _ _ _ _ _ f₁ f₂ r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact f₁.trans f₂.symm) P.R.reduceT) fun _ _ _ _ hL hq hc h => stageB_ok (P := P) hL hc h).seq ?_
-  refine (two_wp (Ψ := QC P) (rekeyFull_ct 0 (by omega)) fun _ _ _ _ hL hq hc h => stageC_ok (P := P) hL hq hc h).seq ?_
-  refine (two_wp (Ψ := QD P) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hq hc h => stageD_ok (P := P) hL hq hc h).seq ?_
+  refine (two_wp (Ψ := QB P) start_ct fun _ _ _ _ hL hk hc h => stageB_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := QC P) (rekeyFull_ct 0 (by omega)) fun _ _ _ _ hL hk hc h => stageC_ok (P := P) hL hk hc h).seq ?_
+  refine (two_wp (Ψ := QD P) (rekeyFull_ct 1 (by omega)) fun _ _ _ _ hL hk hc h => stageD_ok (P := P) hL hk hc h).seq ?_
   refine (two_wp (Ψ := fun L m₀ t => LoopInv P L m₀ 0 t) (two_blk [] spOnly initCnt_blk)
-    fun _ _ _ _ hL hq hc h => stageE_ok (P := P) hL hc h).seq ?_
+    fun _ _ _ _ hL hk hc h => stageE_ok (P := P) hL hk hc h).seq ?_
   refine loop_ct.seq ?_
-  exact two_wp (two_blk [] spOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hq hc ⟨i, h⟩ =>
-    WP.mono (stageG_ok hL hq hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
+  exact two_wp (two_blk [] spOnly (wipe_blk _)) fun _ _ _ _ hL hk hc ⟨i, h⟩ =>
+    WP.mono (stageG_ok hL hk hc h) fun _ ⟨c, x⟩ => ⟨c, i, x⟩
 
 /-! ## The whole function -/
 
 /-- Two calls whose public data agree, in the inner frame. -/
 def Entered (P : RfcHash) (a b : State) : Prop :=
-  ∃ s₁ s₂, (rfcAArch64 P.R.E P.I).pre s₁ ∧ (rfcAArch64 P.R.E P.I).pre s₂ ∧ (rfcAArch64 P.R.E P.I).pub s₁ s₂ ∧
-    a = entered s₁ ∧ b = entered s₂
+  ∃ s₁ s₂, (rfcAArch64 P.R.E P.I (256 + P.e)).pre s₁ ∧ (rfcAArch64 P.R.E P.I (256 + P.e)).pre s₂ ∧
+    (rfcAArch64 P.R.E P.I (256 + P.e)).pub s₁ s₂ ∧ a = entered P.R.wide s₁ ∧ b = entered P.R.wide s₂
 
 theorem save_blk : TaintOk [] Cfg.saveArgs := ⟨_, by taint_decide⟩
 
@@ -400,21 +527,24 @@ theorem save_ct : RelCT isa (Entered P) (.block Cfg.saveArgs) (Two P fun _ _ _ =
   obtain ⟨_, hc⟩ := save_blk
   obtain ⟨ht, -⟩ := RelCT.taint (A := taint) (P := fun x y => x.sp = y.sp) (Taint.ofRegs [])
     (fun _ _ h => ⟨h, fun r hr => absurd (Taint.mem_ofRegs.mp hr) List.not_mem_nil⟩) hc _ _ _ _ _ _
-    (show (entered s₁).sp = (entered s₂).sp by
-      show s₁.sp - 16 - BitVec.ofNat 64 frameBytes = s₂.sp - 16 - BitVec.ofNat 64 frameBytes
+    (show (entered P.R.wide s₁).sp = (entered P.R.wide s₂).sp by
+      show s₁.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide) = s₂.sp - 16 - BitVec.ofNat 64 (frameBytes P.R.wide)
       rw [hsp]) e₁ e₂
   obtain ⟨_, u₁, x₁, c₁⟩ := entry_ok h₁
   obtain ⟨_, u₂, x₂, c₂⟩ := entry_ok h₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s₁ = lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s₂ := by simp only [lay, hsp, h0, h1, h2, h3, hsy]
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₁ = lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₂ := by
+    simp only [lay, hsp, h0, h1, h2, h3, hsy]
   have hr : (result P.I s₁.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 = (result P.I s₂.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 := by
     rw [hres, h1, h2]
-  refine ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.E s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok h₁, P.curveLen,
+  refine ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.E P.R.wide s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok h₁,
+    coreOk_lay P s₁,
     congrArg (fun x => if x = 0 then 7 else x - 1) hr, c₁, by rw [hl]; exact c₂, trivial, trivial⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
-theorem sign_ct : ConstantTime isa (rfcAArch64 P.R.E P.I).pre (rfcAArch64 P.R.E P.I).pub (cfgOf P).sign := by
+theorem sign_ct : ConstantTime isa (rfcAArch64 P.R.E P.I (256 + P.e)).pre (rfcAArch64 P.R.E P.I (256 + P.e)).pub
+    (cfgOf P).sign := by
   refine VG.RelCT.constantTime (Q := fun _ _ => True) (RelCT.pushFrame (R := fun _ _ => True)
     (fun _ _ h => h.2.2.1) (RelCT.alloc (R := fun _ _ => True) ?_))
   refine (save_ct.seq rest_ct).mono ?_ fun _ _ _ => trivial
