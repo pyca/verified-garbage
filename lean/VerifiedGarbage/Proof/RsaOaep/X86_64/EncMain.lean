@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.Decode
 
 /-!
 # RSAES-OAEP encryption on x86-64: after the checks
@@ -192,9 +193,6 @@ theorem EmAt.db {V : Nat → Byte} {k D : Nat} {sd lh m : List Byte} {mLen : Nat
       rw [show D + (k - mLen - 2 * D - 2) + 1 + j - (D + (k - mLen - 2 * D - 2)) = j + 1 by omega,
         show 1 + D + (D + (k - mLen - 2 * D - 2) + 1 + j) = k - mLen + j by omega, h.msg j (by omega)]
       simp [List.getD_eq_getElem?_getD]
-
-theorem mixV_congr {V V' : Nat → Byte} (mk : List Byte) (e n : Nat) {o : Nat} (h : V o = V' o) :
-    mixV V mk e n o = mixV V' mk e n o := by simp only [mixV, h]
 
 /-- `EM`: `0x00 ‖ maskedSeed ‖ maskedDB`. -/
 def emOf (G : Spec.Mgf1.Hash) (D k mLen : Nat) (sd lh m : List Byte) : List Byte :=

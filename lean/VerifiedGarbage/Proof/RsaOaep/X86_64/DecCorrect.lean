@@ -54,17 +54,6 @@ theorem decrypt_eq {H G : Spec.Mgf1.Hash} {nB eB pB qB dPB dQB qInvB label cB : 
   simp only [Spec.RsaOaep.decrypt, h, ne_eq, not_true_eq_false, ↓reduceIte]
   cases Spec.Rsa.privateChecked nB eB cB pB qB dPB dQB qInvB <;> rfl
 
-/-- `EM` too short for the hash: the decoding fails. -/
-theorem decOut_short {H G : Spec.Mgf1.Hash} {label : List Byte} {o : Spec.Rsa.Outcome} {k : Nat}
-    (hl : ∀ em, o = .ok em → em.length = k) (hk : k < 2 * H.len + 2) :
-    decOut H G label o = match o with | .fault => .fault | _ => .invalid := by
-  cases o with
-  | ok em =>
-    simp only [decOut, Spec.RsaOaep.decode]
-    rw [ifp (by rw [hl em rfl]; exact hk)]
-  | invalid => rfl
-  | fault => rfl
-
 /-! ## The end -/
 
 /-- What the function's caller sees: from a state in the frame with `out`
