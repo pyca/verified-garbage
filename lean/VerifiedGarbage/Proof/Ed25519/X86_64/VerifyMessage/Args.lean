@@ -16,6 +16,8 @@ structure Lay where
   sig : Addr
   scr : Addr
   B : Addr
+  /-- The static of `-B`'s multiples (`baseBytesSym`). -/
+  T : Addr
 
 namespace Lay
 variable (L : Lay)
@@ -27,6 +29,7 @@ abbrev STK : Region := ⟨L.B, 184⟩
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 168⟩
 abbrev DATA : Region := ⟨L.B + BitVec.ofNat 64 16, 128⟩
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 184, 8⟩
+abbrev TBL : Region := ⟨L.T, 32640⟩
 def inputs : List Region := [L.PK, L.MSG, L.SIG]
 structure Ok : Prop where
   sc : ∀ r ∈ L.inputs, r.Disjoint L.SCR
@@ -38,6 +41,8 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
   ns : L.sig.toNat + 64 ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
+  ts : L.TBL.Disjoint L.SCR
+  tk : L.TBL.Disjoint L.STK
 end Lay
 
 namespace Lay.Ok
@@ -54,7 +59,7 @@ theorem input_scr (h : L.Ok) {r : Region} (hr : r ∈ L.inputs) {e k : Nat} (he 
 end Lay.Ok
 
 structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = L.inputs
+  rd : t.rd = L.inputs ++ [L.TBL]
   wr : t.wr = [L.FR, L.SCR]
   rsp : t.gpr .rsp = L.B + BitVec.ofNat 64 16
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → t.gpr r = g r
@@ -65,15 +70,20 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pMsg : t.mem.readW (L.B + BitVec.ofNat 64 168) 64 = L.msg
   pPk : t.mem.readW (L.B + BitVec.ofNat 64 176) 64 = L.pk
   frame : Frame [L.SCR, L.STK] m₀ t.mem
+  sym : t.syms Impl.Ed25519.X86_64.baseBytesSym = L.T
+  held : ∀ i < 4080, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
+    Impl.Ed25519.X86_64.baseBytesWords.getD i 0
 
 namespace Ctx
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}
 theorem regs (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : Ctx L g mx m₀ t' :=
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) :
+    Ctx L g mx m₀ t' :=
   ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
     by rw [hm]; exact hc.pScr, by rw [hm]; exact hc.pSig, by rw [hm]; exact hc.pLen,
-    by rw [hm]; exact hc.pMsg, by rw [hm]; exact hc.pPk, by rw [hm]; exact hc.frame⟩
+    by rw [hm]; exact hc.pMsg, by rw [hm]; exact hc.pPk, by rw [hm]; exact hc.frame,
+    by rw [hsy]; exact hc.sym, hc.held⟩
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
   rw [hc.rsp]
   show (⟨L.B + BitVec.ofNat 64 16 - BitVec.ofNat 64 8, 8⟩ : Region) = _
@@ -104,7 +114,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hsp : NoSp c) (hd : c.depth ≤ 1) {t : State} (hc : Ctx L g mx m₀ t)
     {rd wr : List Region} (hpre : k.pre (t.callEntry.withRegions rd wr))
-    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.inputs ++ [L.FR, L.SCR], Within r R)
+    (hsub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.inputs ++ [L.TBL] ++ [L.FR, L.SCR], Within r R)
     (hwsub : ∀ r ∈ wr, Within r L.DATA ∨ Within r L.SCR) {Q : State → Prop}
     (hQ : ∀ s', Ctx L g mx m₀ s' → Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem →
       (∀ r, (∀ i ∈ instrs c, Taint.clobbers i r = false) → s'.gpr r = t.gpr r) →
@@ -122,7 +132,8 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     · obtain ⟨off, hb, hn⟩ := h
       exact ⟨L.FR, by simp, off, hb, by exact Nat.le_trans hn (by show 128 ≤ 168; decide)⟩
     · exact ⟨L.SCR, by simp, h⟩
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.of_syms (WP.call_mx hv hsp (by omega) hpre hcov hcovw
+    fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -148,7 +159,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     hmx.trans hc.mx, (keep 144 (by omega) (by omega)).trans hc.pScr,
     (keep 152 (by omega) (by omega)).trans hc.pSig, (keep 160 (by omega) (by omega)).trans hc.pLen,
     (keep 168 (by omega) (by omega)).trans hc.pMsg, (keep 176 (by omega) (by omega)).trans hc.pPk,
-    hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
+    hc.frame.trans (Frame.sub hf' fun r hr => ?_), by rw [hsy]; exact hc.sym, hc.held⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hwsub r hr with h | h
@@ -178,7 +189,7 @@ theorem initArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
   refine WP.of_runBlock ⟨t.setReg .rdi L.scr, ?_, ?_⟩
   · simp only [initArgs, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
       State.load64, hc.ea_fr, hin, ite_true, Option.map_some, hc.pScr]
-  exact ⟨hc.regs rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ (ne_cs hr (by decide)), rfl,
     RegUpd.gpr_setReg_self _ _ _⟩
 
 def UpdArgs (L : Lay) (count : BitVec 64) (p : Addr) (n : BitVec 64) (t : State) : Prop :=
@@ -199,7 +210,7 @@ theorem prefixArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (source count : Nat)
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h144, hsrc, Option.some.injEq, exists_eq_left', hc.pScr, hp, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, zx32 hcount,
     trivial, rfl, by rw [sx32 (by omega)]⟩
 
 theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
@@ -216,7 +227,7 @@ theorem messageArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, Option.map_some, Option.bind_some,
     reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h144, h160, h168,
     Option.some.injEq, exists_eq_left', hc.pScr, hc.pMsg, hc.pLen, UpdArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
     trivial, trivial, by rw [sx32 (by omega)]⟩
 
 def FinArgs (L : Lay) (t : State) : Prop :=
@@ -235,7 +246,7 @@ theorem finalizeArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h144, h160, Option.some.injEq, exists_eq_left', hc.pScr, hc.pLen, FinArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, rfl,
     by rw [show (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 from rfl, add_add],
     by rw [sx32 (by omega)]⟩
 

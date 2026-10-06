@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Ed25519.BaseMultiples
+import VerifiedGarbage.Impl.Ed25519.X86_64.BaseBytes
 import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 
 /-!
@@ -6,14 +6,13 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.Cached
 
 Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
-of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
-from a table of `[1]A … [15]A` built at run time (byte 5376), and `[-b]B`
-for `S`'s digit `b` from constants (`negBaseCached`, byte 2048), both
-cached for addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). A zero
-digit adds nothing. The digits are read from the inputs, byte by byte (the
-scratch counter at byte 56), high nibble first: `k`'s 64 bytes, of which
-only the low 32 have a byte of `S` beside them, after its leading zero bytes
-above those (`skipZero`), which would only double the identity. The equation
+of `k`, from the top: each window adds `[a]A` for `k`'s digit `a` from a table of
+`[1]A … [15]A` built at run time (byte 5376), and each byte of `k` beside a byte `b` of `S`
+then adds `[-b]B` from the static `baseBytesSym` (`-[1]B … -[255]B`), both cached for
+addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). A zero digit adds nothing. The
+digits are read from the inputs, byte by byte (the scratch counter at byte 56), high nibble
+first: `k`'s 64 bytes, of which only the low 32 have a byte of `S` beside them, after its
+leading zero bytes above those (`skipZero`), which would only double the identity. The equation
 `[S]B = R + [k]A` holds exactly when the result equals `-R`, which the
 projective comparison `pointEqual` checks.
 -/
@@ -65,10 +64,6 @@ def aTableBody (fld : Arith) : List Instr :=
 /-- Entries `j < 15` of the table at byte 5376 are cached `[j + 1]A`. -/
 def aTable (fld : Arith) : Prog isa := .seq (.block (aTableInit fld)) (.loop (.block (aTableBody fld)) .ne)
 
-/-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`. -/
-def bTable : List Instr :=
-  tableStart 2048 ++ (List.range 15).flatMap fun i => cachedPointStore (negBaseCached i) (128 * i)
-
 /-- `rbx` = byte `counter` of the scalar at the pointer stored at byte `ptr` of the scratch,
 plus `add`. -/
 def digitByte (ptr add : Nat) : List Instr :=
@@ -91,9 +86,19 @@ def addDigit (o : Nat) (add : List Instr) : Prog isa :=
 def windowA (fld : Arith) (dbl : Prog isa) (digit : List Instr) : Prog isa :=
   .seq dbl (.seq (.block digit) (addDigit 5376 (pointAddCached fld)))
 
-/-- A window of `k` and of `S`. -/
-def windowAB (fld : Arith) (dbl : Prog isa) (digitA digitB : List Instr) : Prog isa :=
-  .seq (windowA fld dbl digitA) (.seq (.block digitB) (addDigit 2048 (pointAddCached fld)))
+/-- `rax` = entry `rbx` of the static `baseBytesSym`, 128 bytes an entry, from the static's
+address at byte 7960 of the scratch. -/
+def baseAddr : List Instr :=
+  [.mov .rax (.reg .rbx), .movImm64 .rcx 128, .mul .rcx, .mov .rcx (.mem (sc 7960)),
+    .alu .add .rax (.reg .rcx)]
+
+/-- `S`'s byte, ZF set if it is zero. -/
+def digitS : List Instr := digitByte 7944 32 ++ [.alu .test .rbx (.reg .rbx)]
+
+/-- Add `-[rbx]B`, entry `rbx - 1` of the static, unless `rbx` is zero. -/
+def addBase (fld : Arith) : Prog isa :=
+  .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
+    pointAddCached fld)) (.block [])
 
 /-- A byte of `k` alone (bytes 63 down to 32). -/
 def byteStepA (fld : Arith) (dbl : Prog isa) : Prog isa :=
@@ -102,8 +107,8 @@ def byteStepA (fld : Arith) (dbl : Prog isa) : Prog isa :=
 
 /-- A byte of `k` and of `S` (bytes 31 down to 0). -/
 def byteStepAB (fld : Arith) (dbl : Prog isa) : Prog isa :=
-  .seq (.block batchBegin) (.seq (windowAB fld dbl (digitHigh 7952 0) (digitHigh 7944 32))
-    (.seq (windowAB fld dbl (digitLow 7952 0) (digitLow 7944 32)) (.block batchTest)))
+  .seq (.block batchBegin) (.seq (windowA fld dbl (digitHigh 7952 0))
+    (.seq (windowA fld dbl (digitLow 7952 0)) (.seq (.block digitS) (.seq (addBase fld) (.block batchTest)))))
 
 /-- The counter moved back up by one, and ZF set: the skipping stops. -/
 def skipStop : List Instr :=

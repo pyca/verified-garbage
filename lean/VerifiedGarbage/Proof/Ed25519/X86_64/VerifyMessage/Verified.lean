@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.CT
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.ConstMem
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseHeld
 import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 
 /-! The complete verifier satisfies the reviewed message-level contract. -/
@@ -12,6 +14,15 @@ open VG.Impl.Ed25519.X86_64 (scalarReduce verifyEquation callWith)
 open VG.Impl.Ed25519.X86_64.VerifyMessage
 open VG.Proof.Sha512.X86_64 (Compress)
 
+/-- The memory of the contract's witness: the static at `0x100000`. -/
+@[irreducible] def satMem : Mem := constMem 0x100000 Impl.Ed25519.X86_64.baseBytesWords
+
+theorem satMem_held : ∀ i < 4080,
+    satMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.baseBytesWords.getD i 0 := by
+  unfold satMem
+  intro i hi
+  exact constMem_held _ _ (by rw [baseBytesWords_length]; omega) i (by rw [baseBytesWords_length]; exact hi)
+
 def satState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0 | .rcx => 0x3000
@@ -20,9 +31,10 @@ def satState : State where
   zf := none
   sf := none
   of := none
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩, ⟨0x2000, 0⟩, ⟨0x3000, 64⟩]
+  mem := satMem
+  rd := [⟨0x1000, 32⟩, ⟨0x2000, 0⟩, ⟨0x3000, 64⟩, ⟨0x100000, 32640⟩]
   wr := [⟨0x4000, 8192⟩]
+  syms _ := 0x100000
 
 private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.map (·.toNat) → xs = ys
   | [], [], _ => rfl
@@ -30,13 +42,68 @@ private theorem byteMap_inj : ∀ {xs ys : List Byte}, xs.map (·.toNat) = ys.ma
     simp only [List.map_cons, List.cons.injEq] at h
     rw [BitVec.eq_of_toNat_eq h.1, byteMap_inj h.2]
 
-theorem implies : verifyMessageLocal.Implies (Spec.Ed25519.verifyContract X86_64.abi 184) where
-  pre := by
-    sig_implies_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, verifyMessageLocal]
+theorem baseBytesConsts_eq' :
+    Impl.Ed25519.X86_64.baseBytesConsts =
+      [(Impl.Ed25519.X86_64.baseBytesSym, Impl.Ed25519.X86_64.baseBytesWords)] := rfl
+
+/-- The shared contract's precondition, from its facts. -/
+theorem spec_pre {s : State} (h184 : 184 ≤ (s.gpr .rsp).toNat)
+    (hrd : s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 64⟩,
+      ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩])
+    (hw : s.wr = [⟨s.gpr .r8, 8192⟩])
+    (pc : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .r8, 8192⟩)
+    (mc : Region.Disjoint ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩ ⟨s.gpr .r8, 8192⟩)
+    (sc : Region.Disjoint ⟨s.gpr .rcx, 64⟩ ⟨s.gpr .r8, 8192⟩)
+    (rp : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rdi, 32⟩)
+    (rm : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩)
+    (rs : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .rcx, 64⟩)
+    (rc : Region.Disjoint ⟨s.gpr .rsp, 8⟩ ⟨s.gpr .r8, 8192⟩)
+    (kp : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ⟨s.gpr .rdi, 32⟩)
+    (km : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩)
+    (ks : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ⟨s.gpr .rcx, 64⟩)
+    (kc : Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ⟨s.gpr .r8, 8192⟩)
+    (np : (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64) (nm : (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64)
+    (ns : (s.gpr .rcx).toNat + 64 ≤ 2 ^ 64) (nc : (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64)
+    (held : ∀ i < 4080, s.mem.readW (s.syms Impl.Ed25519.X86_64.baseBytesSym + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.Ed25519.X86_64.baseBytesWords.getD i 0)
+    (fit : (s.syms Impl.Ed25519.X86_64.baseBytesSym).toNat + 32640 ≤ 2 ^ 64)
+    (td : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩ ⟨s.gpr .r8, 8192⟩)
+    (tr : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩ ⟨s.gpr .rsp, 8⟩)
+    (tk : Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩
+      ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩) :
+    (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184).pre s := by
+  sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
+    Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseBytesConsts_eq', Abi.withConsts,
+    Abi.constRegions, Abi.constsHeld, stackBelow, baseBytesWords_length]
+  exact ⟨h184, by rw [hrd]; rfl, held, fit, by rw [hw]; simp only [List.mem_singleton, forall_eq]; exact td,
+    tr, tk, by rw [hrd]; rfl, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc⟩
+
+theorem sat_spec :
+    (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184).pre
+      satState :=
+  spec_pre (by decide) rfl rfl (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide)) (by decide) (by decide) (by decide) (by decide)
+    satMem_held (by decide) (Region.disjoint_of_sep (by decide)) (Region.disjoint_of_sep (by decide))
+    (Region.disjoint_of_sep (by decide))
+
+theorem implies : verifyMessageLocal.Implies
+    (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184) where
+  pre s h := by
+    sig_pre [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
+      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseBytesConsts_eq', Abi.withConsts,
+      Abi.constRegions, Abi.constsHeld, stackBelow, baseBytesWords_length] at h
+    obtain ⟨h184, hd, hheld, -, hdw, -, hstk, ht, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns,
+      nc⟩ := h
+    refine ⟨h184, ?_, hw, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc,
+      hdw _ (by rw [hw]; simp), hstk, hheld⟩
+    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post s t _ h := by
     sig_post [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs]
+      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseBytesConsts_eq', Abi.withConsts]
     change t.gpr .rax = if _ then 1 else 0 at h
     rw [h]
     generalize Spec.Ed25519.verify (Spec.Ed25519.bytesAt s.mem (s.gpr .rdi) 32)
@@ -45,19 +112,18 @@ theorem implies : verifyMessageLocal.Implies (Spec.Ed25519.verifyContract X86_64
     cases b <;> rfl
   pub s t _ _ h := by
     sig_pub [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs] at h
-    obtain ⟨sp, bytes, pk, msg, len, sig, scr⟩ := h
+      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs, baseBytesConsts_eq', Abi.withConsts] at h
+    obtain ⟨sp, sy, bytes, pk, msg, len, sig, scr⟩ := h
     have hb := byteMap_inj bytes
     obtain ⟨first, last⟩ := List.append_inj' hb
       (by simp only [PublicKey.bytesAt_length])
     obtain ⟨first, middle⟩ := List.append_inj' first (by simp only [PublicKey.bytesAt_length, len])
-    exact ⟨sp, pk, msg, len, sig, scr, first, middle, last⟩
-  sat := by
-    sig_implies_sat [Spec.Ed25519.verifyContract, Spec.Ed25519.verifySig,
-      Spec.Ed25519.scratchWords, X86_64.abi, X86_64.argRegs] [satState] using satState
+    exact ⟨sp, pk, msg, len, sig, scr, first, middle, last, sy⟩
+  sat := ⟨satState, sat_spec⟩
 
 theorem verified (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) :
-    Verified X86_64.target (code fld win fs v.callee v.suffix) (Spec.Ed25519.verifyContract X86_64.abi 184) :=
+    Verified X86_64.target (code fld win fs v.callee v.suffix)
+      (Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184) :=
   Verified.of_correct (fun _ h => verifyMessage_ok hq v h) (verifyMessage_ct hq v) implies
 
 omit [VG.Proof.Ed25519.X86_64.EdArith fld] [VG.Proof.Ed25519.X86_64.EdWindows win] in

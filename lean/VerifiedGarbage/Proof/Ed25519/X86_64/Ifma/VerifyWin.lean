@@ -45,7 +45,7 @@ theorem EConsts.below {m m' : Mem} {base : Addr} (hk : EConsts m base) {o n : Na
 
 /-! ## Windows -/
 
-theorem vwindowA_ok {s : State} {base kp sp : Addr} {A a : EPoint dZ} (h : WinCtx base kp sp A s)
+theorem vwindowA_ok {s : State} {base kp sp T : Addr} {A a : EPoint dZ} (h : WinCtx base kp sp T A s)
     (hk : EConsts s.mem base) (hx : Small s) (ha : Rep (lanePt s) a) {digit : List Instr}
     (hsc : digit.all scalarI = true) {v : Nat} (hv : v < 16) (hdig : DigitSpec base s digit v) :
     WP isa (vwindowA digit) s fun t => Rep (lanePt t) ((16 : Nat) • a + v • A) ∧ Small t ∧
@@ -58,21 +58,6 @@ theorem vwindowA_ok {s : State} {base kp sp : Addr} {A a : EPoint dZ} (h : WinCt
   obtain ⟨pc, sc⟩ := lanePt_vec cx cy
   have hc := h.of_keep kbc.win
   refine WP.mono (vaddDigit_ok hc.scratch (kbc.consts hk) (sc bsm) (by decide) (by decide) hc.aTab v hv cv cz
-    (by rw [pc]; exact br)) fun t ⟨tr, tsm, kt⟩ => ⟨tr, tsm, kbc.trans kt⟩
-
-theorem vwindowAB_ok {s : State} {base kp sp : Addr} {A a : EPoint dZ} (h : WinCtx base kp sp A s)
-    (hk : EConsts s.mem base) (hx : Small s) (ha : Rep (lanePt s) a) {digitA digitB : List Instr}
-    (hscA : digitA.all scalarI = true) (hscB : digitB.all scalarI = true) {vA vB : Nat}
-    (hvA : vA < 16) (hvB : vB < 16) (hdA : DigitSpec base s digitA vA) (hdB : DigitSpec base s digitB vB) :
-    WP isa (vwindowAB digitA digitB) s fun t =>
-      Rep (lanePt t) ((16 : Nat) • a + vA • A + vB • (-baseAff)) ∧ Small t ∧ LKeep base s t := by
-  rw [vwindowAB]
-  refine WP.seq (WP.mono (vwindowA_ok h hk hx ha hscA hvA hdA) fun b ⟨br, bsm, kb⟩ => ?_)
-  refine WP.seq (WP.mono (WP.vk (hdB b kb.win) hscB) fun c ⟨⟨cv, cz, kc⟩, cx, cy⟩ => ?_)
-  have kbc := kb.trans (LKeep.of_keeps kc (by decide))
-  obtain ⟨pc, sc⟩ := lanePt_vec cx cy
-  have hc := h.of_keep kbc.win
-  refine WP.mono (vaddDigit_ok hc.scratch (kbc.consts hk) (sc bsm) (by decide) (by decide) hc.bTab vB hvB cv cz
     (by rw [pc]; exact br)) fun t ⟨tr, tsm, kt⟩ => ⟨tr, tsm, kbc.trans kt⟩
 
 /-! ## Bytes -/
@@ -116,7 +101,7 @@ theorem vbatchBegin_ok {s : State} {base : Addr} (hs : Scratch s base) (j : Nat)
     ⟨av, ⟨fun r _ hb _ => ag r hb, ag _ (by decide), ar, aw, am.mono (by decide) (by decide),
       by rw [header_env am]⟩, ax, ay⟩
 
-theorem vbyteStepA_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinCtx base kp sp A s)
+theorem vbyteStepA_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCtx base kp sp T A s)
     (hk : EConsts s.mem base) (hx : Small s) {i : Nat} (hi32 : 32 ≤ i) (hi : i < 64)
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (i + 1)) {S : Nat} (hS : S < 256 ^ 32)
     (ha : Rep (lanePt s)
@@ -154,7 +139,7 @@ theorem vbyteStepA_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinCt
     rw [byte_split K i _ hb, high_zero hS hi32, high_zero hS (by omega : 32 ≤ i + 1)]
     module
 
-theorem vbyteStepAB_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinCtx base kp sp A s)
+theorem vbyteStepAB_ok {s : State} {base kp sp T : Addr} {A : EPoint dZ} (h : WinCtx base kp sp T A s)
     (hk : EConsts s.mem base) (hx : Small s) {i : Nat} (hi : i < 32)
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (i + 1))
     (ha : Rep (lanePt s)
@@ -178,33 +163,45 @@ theorem vbyteStepAB_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinC
   have hbS : (a.mem (off (off sp 32) i)).toNat = S / 256 ^ i % 256 := by
     rw [scalar_byte (n := 32) hi, ka.byte.bytesS h]
   have lt16 (b : Byte) : b.toNat / 16 < 16 := Nat.div_lt_of_lt_mul (by have := b.isLt; omega)
-  refine WP.seq (WP.mono (vwindowAB_ok (a := (K / 256 ^ (i + 1)) • A + (S / 256 ^ (i + 1)) • (-baseAff))
-    ha' (ka.consts hk) (sa hx) (by rw [pa]; exact ha) (by decide) (by decide) (lt16 _) (lt16 _)
-    (digitKHigh ha' (by omega) av) (digitSHigh ha' hi av)) fun b ⟨br, bsm, kb⟩ => ?_)
+  refine WP.seq (WP.mono (vwindowA_ok (a := (K / 256 ^ (i + 1)) • A + (S / 256 ^ (i + 1)) • (-baseAff))
+    ha' (ka.consts hk) (sa hx) (by rw [pa]; exact ha) (by decide) (lt16 _)
+    (digitKHigh ha' (by omega) av)) fun b ⟨br, bsm, kb⟩ => ?_)
   have hb' := ha'.of_keep kb.win
-  refine WP.seq (WP.mono (vwindowAB_ok hb' (kb.consts (ka.consts hk)) bsm br (by decide) (by decide)
-    (Nat.mod_lt _ (by decide)) (Nat.mod_lt _ (by decide))
-    (digitKLow hb' (by omega) (kb.win.counter.trans av)) (digitSLow hb' hi (kb.win.counter.trans av)))
+  refine WP.seq (WP.mono (vwindowA_ok hb' (kb.consts (ka.consts hk)) bsm br (by decide)
+    (Nat.mod_lt _ (by decide)) (digitKLow hb' (by omega) (kb.win.counter.trans av)))
     fun c ⟨cr, csm, kc⟩ => ?_)
   have hc' := hb'.of_keep kc.win
-  refine WP.mono (WP.vk (batchTest_ok hc'.scratch i (by omega) (kc.win.counter.trans (kb.win.counter.trans av))))
+  have cav := kc.win.counter.trans (kb.win.counter.trans av)
+  refine WP.seq (WP.mono (WP.vk (digitS_ok hc'.scratch hc'.sHeader i cav (hc'.sRead i hi)))
+    fun d ⟨⟨dv, dz, kd⟩, dx, dy⟩ => ?_)
+  have kd' : LKeep base c d := LKeep.of_keeps kd (by decide)
+  have hd' := hc'.of_keep kd'.win
+  obtain ⟨pd, sd⟩ := lanePt_vec dx dy
+  have dr := cr
+  rw [← pd] at dr
+  refine WP.seq (WP.mono (vaddBase_ok hd'.scratch (kd'.consts ((kc.consts (kb.consts (ka.consts hk)))))
+    (sd csm) hd'.bHeader hd'.bTab _ (by have := (c.mem (off (off sp 32) i)).isLt; omega) dv dz
+    dr) fun e ⟨er, esm, ke⟩ => ?_)
+  have he' := hd'.of_keep ke.win
+  refine WP.mono (WP.vk (batchTest_ok he'.scratch i (by omega) (ke.win.counter.trans (kd'.win.counter.trans cav))))
     fun t ⟨⟨tz, kt⟩, tx, ty⟩ => ?_
   obtain ⟨pt, st⟩ := lanePt_vec tx ty
-  refine ⟨tz, ?_, ?_, st csm, ka.trans ((BKeep.of_lkeep kb).trans ((BKeep.of_lkeep kc).trans
-    (BKeep.of_keeps kt (by decide))))⟩
-  · rw [kt.2.1]; exact kc.win.counter.trans (kb.win.counter.trans av)
-  · rw [ha'.byteK kb.win (by omega), ha'.byteS kb.win hi] at cr
+  refine ⟨tz, ?_, ?_, st esm, ka.trans ((BKeep.of_lkeep kb).trans ((BKeep.of_lkeep kc).trans
+    ((BKeep.of_lkeep kd').trans ((BKeep.of_lkeep ke).trans (BKeep.of_keeps kt (by decide))))))⟩
+  · rw [kt.2.1]; exact ke.win.counter.trans (kd'.win.counter.trans cav)
+  · rw [ha'.byteK kb.win (by omega), ha'.byteS (kb.win.trans kc.win) hi] at er
     rw [pt]
-    convert cr using 1
-    rw [byte_split K i _ hbK, byte_split S i _ hbS]
+    convert er using 1
+    rw [byte_split K i _ hbK, show S / 256 ^ i = 256 * (S / 256 ^ (i + 1)) +
+      (a.mem (off (off sp 32) i)).toNat by have := byte_split S i _ hbS; omega]
     module
 
 /-! ## Loops -/
 
 /-- The loops' invariant with the point in the lanes, with `c` bytes left: `WinLoop`'s, with
 the lanes' limbs small, the constants, and what a byte keeps from `s₀`. -/
-structure VLoop (s₀ : State) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (s : State) : Prop where
-  ctx : WinCtx base kp sp A s
+structure VLoop (s₀ : State) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (s : State) : Prop where
+  ctx : WinCtx base kp sp T A s
   d : env s.mem base 16 = Spec.Ed25519.d
   counter : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 c
   kVal : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem kp 64) = K
@@ -215,9 +212,9 @@ structure VLoop (s₀ : State) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat)
   keep : BKeep base s₀ s
 
 /-- A byte of `k` alone, from `32 + j + 1` bytes left to `32 + j`. -/
-theorem vstepA_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
-    (ht : VLoop s₀ base kp sp A K S (32 + (j + 1)) t) :
-    WP isa vbyteStepA t fun u => u.zf = some (decide (j = 0)) ∧ VLoop s₀ base kp sp A K S (32 + j) u := by
+theorem vstepA_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
+    (ht : VLoop s₀ base kp sp T A K S (32 + (j + 1)) t) :
+    WP isa vbyteStepA t fun u => u.zf = some (decide (j = 0)) ∧ VLoop s₀ base kp sp T A K S (32 + j) u := by
   have hS : S < 256 ^ 32 := ht.sVal ▸ decodeLE_lt32 _ _
   refine WP.mono (vbyteStepA_ok (i := 32 + j) ht.ctx ht.consts ht.small (by omega) (by omega)
     (by rw [ht.counter]; rfl) hS (by rw [ht.kVal]; exact ht.value)) fun u ⟨uz, uc, uv, usm, uk⟩ => ?_
@@ -226,19 +223,19 @@ theorem vstepA_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : 
     by rw [ht.kVal] at uv; exact uv, usm, uk.consts ht.consts, ht.keep.trans uk⟩
 
 /-- A byte of both scalars, from `j + 1` bytes left to `j`. -/
-theorem vstepB_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
-    (ht : VLoop s₀ base kp sp A K S (j + 1) t) :
-    WP isa vbyteStepAB t fun u => u.zf = some (decide (j = 0)) ∧ VLoop s₀ base kp sp A K S j u := by
+theorem vstepB_ok {s₀ t : State} {base kp sp T : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
+    (ht : VLoop s₀ base kp sp T A K S (j + 1) t) :
+    WP isa vbyteStepAB t fun u => u.zf = some (decide (j = 0)) ∧ VLoop s₀ base kp sp T A K S j u := by
   refine WP.mono (vbyteStepAB_ok (i := j) ht.ctx ht.consts ht.small hj ht.counter
     (by rw [ht.kVal, ht.sVal]; exact ht.value)) fun u ⟨uz, uc, uv, usm, uk⟩ => ?_
   exact ⟨uz, ht.ctx.of_byte uk.byte, by rw [uk.d]; exact ht.d, uc, by rw [uk.byte.bytesK ht.ctx, ht.kVal],
     by rw [uk.byte.bytesS ht.ctx, ht.sVal], by rw [ht.kVal, ht.sVal] at uv; exact uv, usm,
     uk.consts ht.consts, ht.keep.trans uk⟩
 
-theorem vloopA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
-    (hn0 : 0 < n) (hn : n ≤ 32) (h : VLoop s₀ base kp sp A K S (32 + n) s) :
-    WP isa (.loop vbyteStepA .ne) s (VLoop s₀ base kp sp A K S 32) := by
-  apply WP.loop (fun (n : Nat) (t : State) => VLoop s₀ base kp sp A K S (32 + n) t ∧ 0 < n ∧ n ≤ 32)
+theorem vloopA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
+    (hn0 : 0 < n) (hn : n ≤ 32) (h : VLoop s₀ base kp sp T A K S (32 + n) s) :
+    WP isa (.loop vbyteStepA .ne) s (VLoop s₀ base kp sp T A K S 32) := by
+  apply WP.loop (fun (n : Nat) (t : State) => VLoop s₀ base kp sp T A K S (32 + n) t ∧ 0 < n ∧ n ≤ 32)
     (n := n)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
@@ -250,10 +247,10 @@ theorem vloopA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Na
         j, by omega, hu, by omega, by omega⟩
   · exact ⟨h, hn0, hn⟩
 
-theorem vloopB_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat}
-    (h : VLoop s₀ base kp sp A K S 32 s) :
-    WP isa (.loop vbyteStepAB .ne) s (VLoop s₀ base kp sp A K S 0) := by
-  apply WP.loop (fun (n : Nat) (t : State) => VLoop s₀ base kp sp A K S n t ∧ 0 < n ∧ n ≤ 32)
+theorem vloopB_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat}
+    (h : VLoop s₀ base kp sp T A K S 32 s) :
+    WP isa (.loop vbyteStepAB .ne) s (VLoop s₀ base kp sp T A K S 0) := by
+  apply WP.loop (fun (n : Nat) (t : State) => VLoop s₀ base kp sp T A K S n t ∧ 0 < n ∧ n ≤ 32)
     (n := 32)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
@@ -265,14 +262,14 @@ theorem vloopB_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Na
         j, by omega, hu, by omega, by omega⟩
   · exact ⟨h, by decide, by decide⟩
 
-theorem vwindowsA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}
-    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : VLoop s₀ base kp sp A K S c s) :
-    WP isa vwindowsA s (VLoop s₀ base kp sp A K S 32) := by
+theorem vwindowsA_ok {s₀ s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}
+    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : VLoop s₀ base kp sp T A K S c s) :
+    WP isa vwindowsA s (VLoop s₀ base kp sp T A K S 32) := by
   rw [vwindowsA, counterCmp]
   refine WP.seq (WP.mono (WP.vk (counterCmp_ok h.ctx.scratch c hc64 h.counter)) fun a ⟨⟨az, ka⟩, ax, ay⟩ => ?_)
   obtain ⟨pa, sa⟩ := lanePt_vec ax ay
   have kb : BKeep base s a := BKeep.of_keeps ka (by decide)
-  have ha : VLoop s₀ base kp sp A K S c a :=
+  have ha : VLoop s₀ base kp sp T A K S c a :=
     ⟨h.ctx.of_byte kb.byte, by rw [kb.d]; exact h.d, by rw [ka.2.1]; exact h.counter,
       by rw [kb.byte.bytesK h.ctx, h.kVal], by rw [kb.byte.bytesS h.ctx, h.sVal], by rw [pa]; exact h.value,
       sa h.small, kb.consts h.consts, h.keep.trans kb⟩
@@ -320,25 +317,25 @@ theorem withMx_eq (c : Prog isa) : withMx c =
 /-- At the windows' start in the lanes, from a run of the loops started in `s₀` satisfying `R₀`:
 the loops' invariant in the lanes, what has been kept since `s₀`, and `r11` the saved MXCSR,
 whose reserved bits are clear. -/
-def VStart (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
+def VStart (R₀ : State → Prop) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
   ∃ s₀, R₀ s₀ ∧ ByteKeep base s₀ x ∧ ((x.gpr .r11).setWidth 32).extractLsb' 16 16 = 0 ∧
-    VLoop x base kp sp A K S c x
+    VLoop x base kp sp T A K S c x
 
 /-- A run of the loops in the lanes, from `VStart` in `s₃`. -/
-def VRun (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
+def VRun (R₀ : State → Prop) (base kp sp T : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
   ∃ s₀ s₃, R₀ s₀ ∧ ByteKeep base s₀ s₃ ∧ ((s₃.gpr .r11).setWidth 32).extractLsb' 16 16 = 0 ∧
-    VLoop s₃ base kp sp A K S c x
+    VLoop s₃ base kp sp T A K S c x
 
-theorem VStart.run {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat} {x : State}
-    (h : VStart R₀ base kp sp A K S c x) : VRun R₀ base kp sp A K S c x :=
+theorem VStart.run {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat} {x : State}
+    (h : VStart R₀ base kp sp T A K S c x) : VRun R₀ base kp sp T A K S c x :=
   let ⟨s₀, r₀, k, m, v⟩ := h; ⟨s₀, x, r₀, k, m, v⟩
 
 /-- Into the lanes, and the MXCSR prologue. -/
-theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}
-    (h : LoopRun R₀ base kp sp A K S c s) :
+theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}
+    (h : LoopRun R₀ base kp sp T A K S c s) :
     WP isa (.block (VG.Impl.X25519.X86_64.Ifma.consts ++ vload)) s fun s₁ => s₁.gpr .rdi = base ∧
       WP isa (.block mxSave) s₁ fun s₂ => s₂.gpr .rdi = base ∧
-        WP isa (.block mxLoad) s₂ (VStart R₀ base kp sp A K S c) := by
+        WP isa (.block mxLoad) s₂ (VStart R₀ base kp sp T A K S c) := by
   obtain ⟨s₀, r₀, h⟩ := h
   have hs := h.ctx.scratch
   refine WP.mono (wprep_ok hs) fun s₁ ⟨g₁, rd₁, wr₁, o₁, k₁, sm₁, p₁⟩ => ?_
@@ -367,11 +364,11 @@ theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp : Addr} {A : EP
   · rw [lanePt_qw q₃, p₁]; exact h.value
 
 /-- Back into slots 0–3, and the MXCSR epilogue. -/
-theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat}
-    (h : VRun R₀ base kp sp A K S 0 w) :
+theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp T : Addr} {A : EPoint dZ} {K S : Nat}
+    (h : VRun R₀ base kp sp T A K S 0 w) :
     WP isa (.block vstore) w fun t₀ => t₀.gpr .rdi = base ∧
       WP isa (.block [.lfence]) t₀ fun t₁ => t₁.gpr .rdi = base ∧
-        WP isa (.block mxRestore) t₁ (LoopRun R₀ base kp sp A K S 0) := by
+        WP isa (.block mxRestore) t₁ (LoopRun R₀ base kp sp T A K S 0) := by
   obtain ⟨s₀, s₃, r₀, k₀₃, m₃, hw⟩ := h
   have hsw : Scratch w base := hw.ctx.scratch
   refine WP.mono (vstore_wp hsw.rdi (ctx_of hsw) hw.consts hw.small) fun t₀ ⟨tg, trd, twr, tou, tf⟩ => ?_
@@ -401,9 +398,9 @@ theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp : Addr} {A : EPo
   · exact (mwt.word (Or.inl (by decide)) (by decide)).trans hw.counter
 
 /-- `Ifma.windows` keeps the loops' invariant, from `c` bytes left to none. -/
-theorem windows_ok {R₀ : State → Prop} {s : State} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}
-    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : LoopRun R₀ base kp sp A K S c s) :
-    WP isa Impl.Ed25519.X86_64.Ifma.windows s (LoopRun R₀ base kp sp A K S 0) := by
+theorem windows_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : EPoint dZ} {K S c : Nat}
+    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : LoopRun R₀ base kp sp T A K S c s) :
+    WP isa Impl.Ed25519.X86_64.Ifma.windows s (LoopRun R₀ base kp sp T A K S 0) := by
   rw [Impl.Ed25519.X86_64.Ifma.windows, withMx_eq]
   refine WP.seq (WP.mono (enter_ok h) fun s₁ ⟨_, h₁⟩ => WP.seq (WP.mono h₁ fun s₂ ⟨_, h₂⟩ => ?_))
   refine WP.seq (WP.seq (WP.mono h₂ fun s₃ h₃ => ?_))
