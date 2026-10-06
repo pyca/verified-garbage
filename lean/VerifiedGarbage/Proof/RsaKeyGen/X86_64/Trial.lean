@@ -146,7 +146,7 @@ theorem entryLoad_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg :
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hT, sxFFFF]
     rw [← he, Nat.mul_zero, BitVec.ushiftRight_zero]
   all_goals
-    simp only [Nat.succ_ne_zero, OfNat.ofNat_ne_zero, ↓reduceIte, List.cons_append, List.nil_append]
+    simp only [Nat.succ_ne_zero, Nat.reduceMul, ↓reduceIte, List.cons_append, List.nil_append]
     refine WP.mono (WP.keep [.rbx] (Q := fun t' => (t'.gpr .rbx).toNat = tabEntry _ ∧ t'.mem = t.mem) ?_ rfl)
       fun t' ⟨⟨h1, h2⟩, k⟩ => ⟨h1, h2, k⟩
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl, hT, sxFFFF]
