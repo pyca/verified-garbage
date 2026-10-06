@@ -194,7 +194,11 @@ should add files, not edit lists that every other PR edits too.
   architecture, not with a `use` per architecture; only functions a target
   alone has (e.g. an x86-64 `_shani` variant) take a `#[cfg(target_arch)]`.
 * Tests of one algorithm go in a file of their own (`tests/cavp/<alg>.rs`,
-  `tests/wycheproof/<alg>.rs`), declared with one `mod` line.
+  `tests/wycheproof/<alg>.rs`), declared with one `mod` line. Every test
+  directory is a module of the one test binary, `tests/main.rs`: a new one
+  adds its `#[path = "<dir>/main.rs"] mod <dir>;` line there
+  (`ci/check_arch_gates.py` fails a directory without it, which would
+  never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
   `src/asm/<target>/hmac_sha256.rs`), its registration files are
@@ -480,6 +484,7 @@ python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
+python3 ci/cpu_tests.py lint .github/workflows/ci.yml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 ```
@@ -494,9 +499,15 @@ extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
 `VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
 to test is a line of a CPU's `runs` in `rust-cpu-features`
-(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+(`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
-a run never repeats another: add tests to a CPU's line for those features.
+a run never repeats another: add groups to a CPU's line for those features.
+A group (`GROUPS` in `ci/cpu_tests.py`) names its tests explicitly, by the
+path of each test or of the module around it, in the library's unit tests
+and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
+primitive that varies by CPU feature goes into its group (or a new group),
+never into a line by matching part of its name. CI fails a path that
+selects no test on any CPU, and a group that selects none on a line's CPU.
 A CPU whose lines take long runs as shards (matrix entries with a `shard`
 of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
 lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed

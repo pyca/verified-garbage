@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8Add
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxDualAddInput
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRotate8ProductStep
 
 /-! Add the input block and saved overflow before its register product. -/
@@ -13,6 +13,23 @@ theorem ea_carry {s : State} {B : Addr} {e : Nat} (hc : s.gpr .rcx = off B e) (h
   rw [hc, show BitVec.ofInt 64 (-8) = 0 - BitVec.ofNat 64 8 from rfl]
   exact Offset.add_ofNat_add_neg B he
 
+theorem addInputCarry_ok {s : State} {B : Addr} {Z eU eO : Nat}
+    (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (ho : s.gpr .rsi = off B eO)
+    (he : 8 ≤ eU) (huZ : eU ≤ Z) (hoZ : eO + 64 ≤ Z) :
+    WP isa (.block AdxRotate8.addInputCarry) s fun t =>
+      cols t + 2^512 * (t.gpr .rax).toNat =
+        cols s + (word s.mem B (eU - 8)).toNat + wv s.mem B eO 8 ∧
+      (t.gpr .rax).toNat ≤ 2 ∧ t.cf = some false ∧
+      Keeps [.rdx,.rax,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
+  unfold AdxRotate8.addInputCarry
+  rw [WP.block_append_iff]
+  have hm := readSrc_word hs (ea_carry hc he) (show eU - 8 + 8 ≤ Z by omega)
+  refine WP.mono (movMem_ok s (dst := .rdx) hm) fun a ⟨da,_,_,ka⟩ => ?_
+  refine WP.mono (AdxDualAdd.addInput_ok (hs.congr ka.2.2.2)
+    ((ka.gpr (by decide)).trans ho) hoZ) fun t ⟨et,bt,ct,_,kt⟩ => ?_
+  rw [cols_keep ka.keep (by decide), ka.2.1, da] at et
+  exact ⟨by omega_using [et],bt,ct,(ka.trans kt).mono (by simp)⟩
+
 theorem accumulate_ok {s : State} {B : Addr} {Z eU eO : Nat}
     (hs : Scr s B Z) (hc : s.gpr .rcx = off B eU) (ho : s.gpr .rsi = off B eO)
     (he : 8 ≤ eU) (huZ : eU ≤ Z) (hoZ : eO + 64 ≤ Z) :
@@ -22,24 +39,12 @@ theorem accumulate_ok {s : State} {B : Addr} {Z eU eO : Nat}
       (word t.mem B (eU - 8)).toNat ≤ 2 ∧ Outside B (eU - 8) 8 s.mem t.mem ∧
       Keep [.rdx, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s t := by
   unfold AdxRotate8.accumulate
-  refine WP.seq (WP.mono (addMem_ok hs ho hoZ) fun a ⟨ea, ba, ca, ka⟩ => ?_)
-  have sa := hs.congr ka.2.2.2
-  have hca := (ka.gpr (by decide)).trans hc
-  have hm := readSrc_word sa (ea_carry hca he) (show eU - 8 + 8 ≤ Z by omega)
-  refine WP.seq (WP.mono (addWord_ok a (-8) hm ca (by omega)) fun b ⟨eb, _, _, kb⟩ => ?_)
-  have kab := ka.trans kb
-  have hcb := (kab.gpr (by decide)).trans hc
-  refine WP.mono (storeMem_ok (hs.congr kab.2.2.2) (ea_carry hcb he) (show eU - 8 + 8 ≤ Z by omega))
-    fun t ⟨wt, ot, kt⟩ => ?_
-  rw [ka.2.1] at eb
-  refine ⟨?_, ?_, ?_, (kab.keep.trans kt).mono (by simp)⟩
-  · rw [wt, cols_keep kt (by simp)]
-    omega_using [ea, eb]
-  · rw [wt]
-    have bc := cols_lt b
-    have ac := cols_lt s
-    have tw := wv_lt s.mem B eO 8
-    have cw := (word s.mem B (eU - 8)).isLt
-    omega_using [ea, eb, ac, tw, cw]
-  · rw [kab.2.1] at ot; exact ot
+  refine WP.seq (WP.mono (addInputCarry_ok hs hc ho he huZ hoZ) fun b ⟨eb,bb,_,kb⟩ => ?_)
+  refine WP.mono (storeMem_ok (hs.congr kb.2.2.2)
+    (ea_carry ((kb.gpr (by decide)).trans hc) he) (show eU - 8 + 8 ≤ Z by omega))
+    fun t ⟨wt,ot,kt⟩ => ?_
+  refine ⟨?_,?_,?_,(kb.keep.trans kt).mono (by simp)⟩
+  · rw [wt, cols_keep kt (by simp)]; exact eb
+  · rw [wt]; exact bb
+  · rw [kb.2.1] at ot; exact ot
 end VG.Proof.Bignum.X86_64.AdxRotate8

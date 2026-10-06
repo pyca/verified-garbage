@@ -307,7 +307,7 @@ theorem wp_store8' {r : Reg8} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hw : InR
     (k : ∀ t, Mupd s t (s.mem.writeW a ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) t Q) :
     WP isa (.block (.store8 m r :: is)) s Q :=
   cons (s' := { s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8) })
-    (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
 end
 

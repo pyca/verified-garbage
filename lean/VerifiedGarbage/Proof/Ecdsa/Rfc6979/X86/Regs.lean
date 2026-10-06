@@ -81,19 +81,19 @@ structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 32) (m₀ : Mem) (u : 
   keep : ∀ r, r ≠ d → u'.gpr r = u.gpr r
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ≠ .esp)
-    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) :
+    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) (hsy : u'.syms = u.syms) :
     Ctx L g m₀ u' :=
-  hc.regs hL hrd hwr hm (hk .esp (Ne.symm hd))
+  hc.regs hL hrd hwr hm (hk .esp (Ne.symm hd)) hsy
 
 theorem Upd.of_wp {u u' : State} {d : Reg} {v : BitVec 32} (hL : L.Ok) (hc : Ctx L g m₀ u) (hd : d ≠ .esp)
     (h : VG.X86.Wp.Upd u u' d v) : Upd L g m₀ u d v u' :=
-  ⟨hc.set hL hd h.rd h.wr h.mem h.other, h.mem, h.gpr, h.other⟩
+  ⟨hc.set hL hd h.rd h.wr h.mem h.other h.syms, h.mem, h.gpr, h.other⟩
 
 theorem Upd.trans {u u' u'' : State} {d : Reg} {v w : BitVec 32} (hL : L.Ok) (hd : d ≠ .esp)
     (h₁ : VG.X86.Wp.Upd u u' d v) (h₂ : VG.X86.Wp.Upd u' u'' d w) (hc : Ctx L g m₀ u) :
     Upd L g m₀ u d w u'' :=
   ⟨hc.set hL hd (h₂.rd.trans h₁.rd) (h₂.wr.trans h₁.wr) (h₂.mem.trans h₁.mem)
-      fun r hr => (h₂.other r hr).trans (h₁.other r hr),
+      (fun r hr => (h₂.other r hr).trans (h₁.other r hr)) (h₂.syms.trans h₁.syms),
     h₂.mem.trans h₁.mem, h₂.gpr, fun r hr => (h₂.other r hr).trans (h₁.other r hr)⟩
 
 /-- `d ← scratch + a`. -/

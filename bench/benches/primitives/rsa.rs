@@ -7,13 +7,11 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa"];
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
     use criterion::BenchmarkId;
-    use openssl::bn::{BigNum, BigNumContext, BigNumRef};
-    use openssl::pkey::Private;
     use openssl::rsa::{Padding, Rsa};
     use verified_garbage::rsa::PrivateKey;
 
@@ -56,6 +54,26 @@ pub fn bench(c: &mut Criterion) {
         });
     }
     g.finish();
+
+    // Loading a key from `(n, e, d, p, q)` or `(n, e, d)` and checking it are
+    // on x86-64 only.
+    #[cfg(target_arch = "x86_64")]
+    keys(c);
+}
+
+/// The loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`,
+/// and the check of a private key.
+#[cfg(target_arch = "x86_64")]
+fn keys(c: &mut Criterion) {
+    use std::hint::black_box;
+
+    use criterion::BenchmarkId;
+    use openssl::bn::{BigNum, BigNumContext, BigNumRef};
+    use openssl::pkey::Private;
+    use openssl::rsa::Rsa;
+    use verified_garbage::rsa::PrivateKey;
+
+    use crate::{OPENSSL, VG};
 
     // OpenSSL has no function that brings `(n, e, d, p, q)` to the CRT form,
     // or that recovers `p` and `q` from `(n, e, d)`: its nearest is the same
@@ -230,5 +248,5 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}

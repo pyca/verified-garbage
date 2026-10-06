@@ -24,7 +24,7 @@ macro_rules! mldsa_tests {
         use serde::Deserialize;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        use crate::harness::{self, Expectation, Hex};
+        use super::harness::{self, Expectation, Hex};
         use crate::require_vectors;
 
         type Sig = [u8; $VerifyingKey::SIGNATURE_SIZE];

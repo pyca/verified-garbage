@@ -20,7 +20,7 @@
 
 use serde::Deserialize;
 
-use crate::harness::Hex;
+use super::harness::Hex;
 
 #[derive(Deserialize)]
 pub struct KeyGen {
@@ -55,8 +55,8 @@ macro_rules! mlkem_tests {
         use verified_garbage::hashes::sha3::Sha3_256;
         use verified_garbage::$module::{Error, $DecapsulationKey, $EncapsulationKey};
 
-        use crate::harness::{self, Expectation, Fields};
-        use crate::mlkem::{Decaps, Encaps, KeyGen};
+        use super::harness::{self, Expectation, Fields};
+        use super::mlkem::{Decaps, Encaps, KeyGen};
         use crate::require_vectors;
 
         const EK: usize = $EncapsulationKey::SIZE;

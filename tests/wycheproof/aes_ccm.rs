@@ -16,7 +16,7 @@
 use serde::Deserialize;
 use verified_garbage::aes_ccm::{AesCcm, Error};
 
-use crate::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

@@ -68,8 +68,8 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (hTb : ∀ d, c.comb = some d → TblMem s (s.syms d.tsym) (c.combWords d) ∧
       ∀ i < (c.combWords d).length, ∀ b < 8,
-        size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
-    WP isa c.gMul s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
+        size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) (publicLookup : Bool := false) :
+    WP isa (c.gMul publicLookup) s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -153,7 +153,7 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {
         · exact lt_of_eq_of_lt e₁ (hmont _)
         · exact lt_of_eq_of_lt F₁.zero (by omega)
     refine WP.mono (tcomb_ok (tcombLay hc hd) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd)) hc.p_lt hs₁
-      (modP_of hc F₁.mp) hF) fun s' ⟨K', U', M', L', R'⟩ =>
+      (modP_of hc F₁.mp) hF publicLookup) fun s' ⟨K', U', M', L', R'⟩ =>
         ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M', L', R'⟩
     rw [tcombW_eq] at U'
     have hz := zw_le hd

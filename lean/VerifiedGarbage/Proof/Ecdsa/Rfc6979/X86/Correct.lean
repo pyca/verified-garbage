@@ -96,7 +96,7 @@ theorem dgOk_narrow (hL : L.Ok) (hk : CoreOk P L) (hw : P.R.wide = false) {u : S
   have hB : Spec.Ecdsa.nBits P.R.E.C = 8 * P.Q := by
     have h₁ := (P.R.sizesA hw).2.1; have h₂ := (P.R.sizesA hw).2.2.1; show _ = 8 * P.R.E.C.len; omega
   have hD : P.Q ≤ P.I.hashLen := by rw [P.len]; exact hQD
-  have hLw : L.wide = false := hk.2.2.trans hw
+  have hLw : L.wide = false := hk.2.2.1.trans hw
   unfold DgOk
   simp only [dgAddr, hLw, Bool.false_eq_true, ite_false, eOf, hBOf]
   rw [hc.dgBytes hL hD, hashToInt_takeQ hB (by rw [length_bytesAt]),
@@ -134,10 +134,10 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     have hN := (P.R.sizesW hw).2.2
     have hsh := sh7 hw
     have hwc : (cfgOf P).wide = true := hw
-    have hLw : L.wide = true := hk.2.2.trans hw
-    have he : L.e = 36 := e36 hk.2.2 hw
+    have hLw : L.wide = true := hk.2.2.1.trans hw
+    have he : L.e = 36 := e36 hk.2.2.1 hw
     simp only [hwc, ite_true]
-    refine WP.mono (coreDigest_ok hL hk.2.2 hw (by rw [← hD]) hc hsi (hdi hw)) fun u₁ ⟨hc₁, hf₁, hx₁⟩ => ?_
+    refine WP.mono (coreDigest_ok hL hk.2.2.1 hw (by rw [← hD]) hc hsi (hdi hw)) fun u₁ ⟨hc₁, hf₁, hx₁⟩ => ?_
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by nums), hv₂ _ (by nums), ?_⟩
     · simp only [hOf, hPart, hw, ite_true]
@@ -248,9 +248,9 @@ theorem rest_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) 
         (.seq ((cfgOf P).rekeyFull 0) (.seq ((cfgOf P).rekeyFull 1) (.seq (.block (cfgOf P).initCnt)
         (.seq (.loop (cfgOf P).tryOne .ne) (.block (Cfg.wipe P.R.wide))))))) u
       fun t' => Ctx L g m₀ t' ∧ (∃ i, Exit P L m₀ i t') ∧ ∀ p ∈ saved, t'.gpr p.1 = g p.1 := by
-  rw [← hk.2.2]
+  rw [← hk.2.2.1]
   exact WP.mono (digestPtr_ok hL hc) fun _ ⟨h₀, hsi, hdi⟩ =>
-    WP.seq (WP.mono (stageB_ok hL hk h₀ hsi fun hw => hdi (hk.2.2.trans hw)) fun _ ⟨h₁, q₁⟩ =>
+    WP.seq (WP.mono (stageB_ok hL hk h₀ hsi fun hw => hdi (hk.2.2.1.trans hw)) fun _ ⟨h₁, q₁⟩ =>
       WP.seq (WP.mono (stageC_ok hL hk h₁ q₁) fun _ ⟨h₂, q₂⟩ =>
         WP.seq (WP.mono (stageD_ok hL hk h₂ q₂) fun _ ⟨h₃, q₃⟩ =>
           WP.seq (WP.mono (stageE_ok hL hk h₃ q₃) fun _ ⟨h₄, q₄⟩ =>
@@ -413,13 +413,13 @@ theorem released_esp (e : Nat) (s₂ : State) :
     (released e s₂).gpr .esp = s₂.gpr .esp + BitVec.ofNat 32 (196 + 4 * e) :=
   (Wp.Upd.setReg s₂ .esp _).gpr
 
-theorem coreOk_lay (P : RfcHash) (s : State) : CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) :=
-  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl⟩
+theorem coreOk_lay (P : RfcHash) (s : State) : CoreOk P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) :=
+  ⟨P.curveLen, fun hw => by show P.Q ≤ P.I.hashLen; rw [P.len]; exact (P.sizesA hw).2.2, rfl, rfl⟩
 
 /-- `vg_ecdsa_<curve>_<hash>_sign` meets `rfcX86 P.I` and keeps the
 callee-saved registers and its return address. -/
-theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
-    WP isa (cfgOf P).sign s fun s' => abiPreserved s s' ∧ (rfcX86 P.I (272 + 4 * P.e)).post s s' := by
+theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s) :
+    WP isa (cfgOf P).sign s fun s' => abiPreserved s s' ∧ (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).post s s' := by
   have hL := lay_ok h
   have nB := hL.nB
   have he : P.e ≤ 36 := by nums
@@ -435,12 +435,12 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
     · rw [released_gpr (by decide)]; exact hs' (.ebp, 192) (by decide)
     · rw [released_esp, hc'.esp]; exact BitVec.sub_add_cancel _ _
   · have hret : (s.gpr .esp).setWidth 64 =
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).B + BitVec.ofNat 64 (272 + 4 * P.e) := by
-      have le : (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).e = P.e := rfl
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).B + BitVec.ofNat 64 (272 + 4 * P.e) := by
+      have le : (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).e = P.e := rfl
       rw [hL.B_eq, le, BitVec.sub_add_cancel]; rfl
     show u'.mem.readW _ 32 = _
     rw [hret]
-    refine hc'.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).RET) (Region.contains_self _ _) ?_
+    refine hc'.frame.readW (r := (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).RET) (Region.contains_self _ _) ?_
       (by decide)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -448,8 +448,8 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
     · exact hL.ro
     · exact hL.rc
     · exact Offset.disjoint_base _ (by omega) (by omega)
-  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).d
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s).dg).1 with
+  · show match (result P.I s.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).d
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts).dg).1 with
       | some rs => _ | none => _
     rw [result_eq hx]
     have e₁ : 2 * P.I.ecdsa.curve.len = 2 * P.Q := by rw [P.curveLen]
@@ -458,7 +458,7 @@ theorem sign_ok {s : State} (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
     have hr := hx.res
     have ha : (released P.e u').gpr .eax = u'.gpr .eax := released_gpr (by decide)
     revert hr
-    cases sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.mem i with
+    cases sigI P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) s.mem i with
     | some rs => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, by rw [e₂]; exact h₂⟩
     | none => exact fun ⟨h₁, h₂⟩ => ⟨by rw [BitVec.setWidth_append_eq_right, ha]; exact h₁, h₂⟩
 

@@ -7,7 +7,7 @@
     target_arch = "arm"
 ))]
 
-crate::mlkem::mlkem_tests!(
+super::mlkem::mlkem_tests!(
     "1024",
     verified_garbage::mlkem1024,
     DecapsulationKey1024,

@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCross
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalLoop
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareDiagonalChoice
 
 /-! The full, unreduced ADX square in the Montgomery working space. -/
 
@@ -73,7 +73,7 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       (by xrun [hbx₃]) rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   refine WP.seq (WP.mono mov fun s₄ ⟨h10₄, hm₄, k₄⟩ => ?_)
   have k14 := (k12.trans k₃).trans k₄
-  refine WP.mono (diagonal_ok (hs.congr k14.2.2) ((k₄.gpr (by decide)).trans h8₃)
+  refine WP.mono (diagonalChoice_ok (hs.congr k14.2.2) ((k₄.gpr (by decide)).trans h8₃)
     ((k₄.gpr (by decide)).trans h9₃) h10₄ (by omega) (by omega) (by omega) hb (by omega))
     fun t ⟨hv, ho, kt⟩ => ?_
   rw [hm₄, hm₃] at hv ho

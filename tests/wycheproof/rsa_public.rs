@@ -22,7 +22,7 @@ use verified_garbage::hashes::{
 };
 use verified_garbage::rsa::{Error, PublicKey};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

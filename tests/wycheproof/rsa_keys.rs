@@ -10,16 +10,27 @@
 //! `dQ` or `qInv` changed by one. (Every key's public exponent, 3 or 65537,
 //! is within BoringSSL's limits.)
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
+// Loading a key from `(n, e, d)` or `(n, e, d, p, q)` and checking it are on
+// x86-64 only for now.
 
+#[cfg(target_arch = "x86_64")]
 use std::collections::BTreeMap;
 
+#[cfg(target_arch = "x86_64")]
 use serde::Deserialize;
+#[cfg(target_arch = "x86_64")]
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use crate::harness::{self, Count, Hex, TestFile};
+#[cfg(target_arch = "x86_64")]
+use super::harness::{self, Count, Hex, TestFile};
+#[cfg(target_arch = "x86_64")]
 use crate::require_vectors;
 
+#[cfg(target_arch = "x86_64")]
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Key {
@@ -34,21 +45,25 @@ struct Key {
     other_prime_infos: Option<serde::de::IgnoredAny>,
 }
 
+#[cfg(target_arch = "x86_64")]
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Group {
     private_key: Option<Key>,
 }
 
+#[cfg(target_arch = "x86_64")]
 #[derive(Deserialize)]
 struct Case {}
 
+#[cfg(target_arch = "x86_64")]
 /// `x` without its leading zero bytes (the vectors write numbers in DER's
 /// form, with a zero byte before a top bit that is set).
 fn trim(x: &[u8]) -> &[u8] {
     &x[x.iter().take_while(|&&b| b == 0).count()..]
 }
 
+#[cfg(target_arch = "x86_64")]
 /// `key`'s operation on `x`, which must succeed.
 fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
     let mut out = vec![0; x.len()];
@@ -56,6 +71,7 @@ fn private(key: &PrivateKey, x: &[u8]) -> Vec<u8> {
     out
 }
 
+#[cfg(target_arch = "x86_64")]
 /// Checks the key `k` of the file `name`. Returns whether it had its primes.
 fn check_key(name: &str, k: &Key) -> bool {
     let n = trim(&k.modulus.0);
@@ -117,6 +133,7 @@ fn check_key(name: &str, k: &Key) -> bool {
     true
 }
 
+#[cfg(target_arch = "x86_64")]
 #[test]
 fn rsa_keys_from_components() {
     require_vectors!();

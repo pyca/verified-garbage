@@ -38,9 +38,10 @@
 //! on a CPU with BMI2 and ADX). The timing of the first may depend on `n`
 //! but not on the private key; that of the second on `n`, `e` and the number
 //! of candidates the recovery tried (1 or 2 for most keys), but not
-//! otherwise on `d`.
+//! otherwise on `d`. On AArch64, a key is loaded from its CRT values only
+//! (`PrivateKey::from_crt`) for now.
 //!
-//! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
+//! `PrivateKey::check_key` (on x86-64 only for now) checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
 //! `VG.Spec.Rsa.checkKeyContract`): `d < n`, `p q = n`, `d` and the CRT
 //! exponents inverse to `e` modulo `p - 1` and `q - 1`, `qInv < p` and
@@ -59,6 +60,11 @@
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
 ))]
+
+#[cfg(target_arch = "x86_64")]
+mod scratch;
+#[cfg(target_arch = "x86_64")]
+use scratch::VerifyScratch;
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -206,11 +212,17 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 
 /// An RSA public key `(n, e)`, with the values of `n` that the operation
 /// needs (`VG.Spec.Rsa.publicPrecompute`).
+///
+/// On x86-64, after PSS verification, retains one wiped working buffer for reuse.
+/// Concurrent verifications use independent buffers; cloning a key starts with an
+/// empty cache.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
     pub(crate) pre: Vec<u64>,
+    #[cfg(target_arch = "x86_64")]
+    pub(crate) verify_scratch: VerifyScratch,
 }
 
 impl PublicKey {
@@ -258,6 +270,8 @@ impl PublicKey {
             n: n.to_vec(),
             e: e.to_vec(),
             pre,
+            #[cfg(target_arch = "x86_64")]
+            verify_scratch: VerifyScratch::new(),
         })
     }
 
@@ -318,7 +332,6 @@ impl PublicKey {
 }
 
 mod privatekey;
-#[cfg(target_arch = "x86_64")]
 pub use privatekey::PrivateKey;
 
 #[cfg(test)]

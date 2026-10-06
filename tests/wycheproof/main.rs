@@ -62,6 +62,7 @@ mod rsa_public;
 mod x25519;
 mod x448;
 
+use crate::require_vectors;
 use harness::Fields;
 
 /// Every test vector file parses, and is internally consistent. This keeps

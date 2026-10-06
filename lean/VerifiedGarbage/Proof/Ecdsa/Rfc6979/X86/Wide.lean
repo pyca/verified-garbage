@@ -63,6 +63,7 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
   have e272 := hL.e272
   have e20 := hL.e20
   have hw2 : (cfgOf P).w / 2 = P.w := by simp only [cfgOf, RfcHash.w]; omega
+  refine WP.of_syms ?_
   rw [Cfg.conv, hw2, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (fr_ok hL hc (d := .esi) (by decide) o) fun u₁ h₁ => ?_
   have hS₁ : Scr u₁ L.scr 8192 := scr_keep (scr_of hL hc hdi) (h₁.keep _ (by decide)) (by rw [h₁.ctx.wr, hc.wr])
@@ -86,6 +87,7 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
     (by decide) true (by rw [v₄.gpr]; rfl) (by omega) (by omega) (by omega) (by rw [hsp₄, hFN]; omega)
     (fun e m hem => by rw [hdst, Offset.add_add, hwr₄]; exact hc.inFrW (by omega) (by omega) hL)
     (by rw [hdst]; exact (hL.stk_scr (by omega) (by omega)).symm)) fun u₅ ⟨hb₅, k₅, O₅⟩ => ?_
+  intro hsy
   rw [hdst] at hb₅ O₅
   -- What changed: the words at `scratch + 2560`, and the bytes converted.
   have hf : Frame [⟨L.scr + BitVec.ofNat 64 2560, 72⟩, ⟨L.B + BitVec.ofNat 64 (76 + o), P.Q⟩] t.mem u₅.mem := by
@@ -97,7 +99,7 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
   have hg : ∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → r ≠ .esi → u₅.gpr r = t.gpr r := fun r h₁' h₂ h₃ h₄ => by
     rw [k₅.1 _ (by simp [h₁', h₃]), v₄.other _ h₂, k₃.1 _ (by simp [h₁', h₃]), k₂.1 _ (by simp [h₁']),
       h₁.keep _ h₄]
-  refine ⟨hc.keep hL (by rw [k₅.2.1, v₄.rd, k₃.2.1, k₂.2.1, h₁.ctx.rd, hc.rd]) (by rw [k₅.2.2, hwr₄])
+  refine ⟨hc.keep (hsy := hsy) hL (by rw [k₅.2.1, v₄.rd, k₃.2.1, k₂.2.1, h₁.ctx.rd, hc.rd]) (by rw [k₅.2.2, hwr₄])
       (hg _ (by decide) (by decide) (by decide) (by decide)) hf fun r hr => ?_, hg, hf, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -120,10 +122,10 @@ theorem copyF_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : 
       Spec.Sha256.bytesAt u'.mem (L.B + BitVec.ofNat 64 (76 + d)) (4 * K) = Spec.Sha256.bytesAt u.mem SA (4 * K) :=
   have nB := hL.nB
   have he := L.he
-  WP.mono (copyN_ok (K := K) (by decide) hsr hSA (fun j hj => fr_addr hL (by omega)) hsep (by omega) K
+  WP.mono_syms (copyN_ok (K := K) (by decide) hsr hSA (fun j hj => fr_addr hL (by omega)) hsep (by omega) K
     (Nat.le_refl _) u hs hc.esp hr fun j hj => by rw [Offset.add_add]; exact hc.inFrW (by omega) (by omega) hL)
-    fun u' ⟨hrd, hwr, hg, hf, hb⟩ =>
-    ⟨hc.keep hL hrd hwr (hg _ (by decide)) hf (fun r hr => by
+    fun u' ⟨hrd, hwr, hg, hf, hb⟩ hsy =>
+    ⟨hc.keep (hsy := hsy) hL hrd hwr (hg _ (by decide)) hf (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact safe_high L (by omega) (by omega)), hg, hf, hb⟩
 
 /-- A zero word at `esp + o`, in the frame's top words. -/
@@ -140,7 +142,7 @@ theorem zeroF_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {o : Nat} (ho₁ 
     rw [v₂.mem, v₁.gpr, v₁.mem, ea]
   have hf : Frame [⟨L.B + BitVec.ofNat 64 (76 + o), 4⟩] u.mem u₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨hc.keep hL (by rw [v₂.rd, v₁.rd]) (by rw [v₂.wr, v₁.wr]) (by rw [v₂.gpr, v₁.other _ (by decide)]) hf
+  refine ⟨hc.keep (hsy := by rw [v₂.syms, v₁.syms]) hL (by rw [v₂.rd, v₁.rd]) (by rw [v₂.wr, v₁.wr]) (by rw [v₂.gpr, v₁.other _ (by decide)]) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_high L (by omega) (by omega)),
     fun r hr => by rw [v₂.gpr, v₁.other _ hr], hf, fun k hk => by rw [hm]; exact bytesAt_writeW_zero _ _ hk⟩
 
@@ -264,13 +266,13 @@ theorem candW_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t 
     rw [hL.addrF (by omega)]; exact h₄.ctx.inFr (by omega) (by omega) hL
   have hw₄ : InRegions u₄.wr (addr L.F 332) 4 := by
     rw [hL.addrF (by omega)]; exact h₄.ctx.inFrW (by omega) (by omega) hL
-  refine WP.mono (copyW_ok (u := u₄) (src := .esp) (dst := .esp) (so := 64) (d := 332) h₄.ctx.esp h₄.ctx.esp hr₄
-    hw₄ (by decide)) fun u₅ ⟨hrd₅, hwr₅, hg₅, hm₅⟩ => ?_
+  refine WP.mono_syms (copyW_ok (u := u₄) (src := .esp) (dst := .esp) (so := 64) (d := 332) h₄.ctx.esp h₄.ctx.esp hr₄
+    hw₄ (by decide)) fun u₅ ⟨hrd₅, hwr₅, hg₅, hm₅⟩ hsy₅ => ?_
   rw [hL.addrF (by omega), hL.addrF (by omega)] at hm₅
   simp only [Nat.reduceAdd] at hm₅
   have hf₅ : Frame [⟨L.B + BitVec.ofNat 64 408, 4⟩] u₄.mem u₅.mem := by
     rw [hm₅]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have hc₅ : Ctx L g m₀ u₅ := h₄.ctx.keep hL hrd₅ hwr₅ (hg₅ _ (by decide)) hf₅ fun r hr => by
+  have hc₅ : Ctx L g m₀ u₅ := h₄.ctx.keep (hsy := hsy₅) hL hrd₅ hwr₅ (hg₅ _ (by decide)) hf₅ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact safe_high L (by omega) (by omega)
   refine WP.mono (conv_ok hL hw hW hc₅ (by rw [hg₅ _ (by decide), h₄.val]; rfl) (o := 268) (s := P.R.sh)
     (by omega) (by omega) (by omega) (by omega)) fun u₆ ⟨hc₆, _, hf₆, hb₆⟩ => ?_

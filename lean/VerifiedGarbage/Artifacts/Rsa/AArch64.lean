@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Rsa.AArch64.PubChecked
 import VerifiedGarbage.Proof.Bignum.AArch64.PcVerified
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtVerified
 
 /-! # RSA (RFC 8017) on AArch64 -/
 
@@ -38,6 +39,22 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.AArch64.Checked.precomputedChecked Proof.Bignum.AArch64.Mont.base.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract AArch64.abi
     verified := Proof.Rsa.AArch64.precomputedChecked_verified _
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Rsa.privateCrtApi with
+    target := AArch64.target
+    doc := Spec.Rsa.privateCrtApi.doc
+      (notes := ["Baseline AArch64: the checks (`n` as `vg_rsa_public_precompute` checks it, the input \
+        below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
+        replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and \
+        the result is stored masked. Each prime has its own working space, with its own \
+        Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
+        Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
+        over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
+        window's power of the input, from a table of all 16 after the prime's working space, read \
+        by a masked selection from every entry."])
+    code := Impl.Rsa.AArch64.Crt.code Proof.Bignum.AArch64.Mont.base.mm
+    contract := Spec.Rsa.privateCrtContract AArch64.abi
+    verified := Proof.Bignum.AArch64.crt_verified _
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.Rsa.AArch64

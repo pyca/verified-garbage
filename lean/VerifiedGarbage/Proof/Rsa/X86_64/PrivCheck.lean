@@ -51,13 +51,12 @@ theorem check_eq (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog 
 
 /-- Everything after the CRT, from any state the frame allows: whatever `M`
 holds and the CRT returned. -/
-theorem check_ok (M : Mont) (pcName pdName : String)
+theorem check_ok (M : Mont) (P : PublicImpl) (pcName pdName : String)
     (pcMx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pdMx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pcNosp : NoSp (Precompute.code M.mm)) (pdNosp : NoSp (Checked.precomputedChecked M.mm))
-    (pcDepth : (Precompute.code M.mm).depth = 0) (pdDepth : (Checked.precomputedChecked M.mm).depth = 0)
+    (pcNosp : NoSp (Precompute.code M.mm))
+    (pcDepth : (Precompute.code M.mm).depth = 0)
     {s t : State} (hp : PreF s) (he : Env s t) :
-    WP isa (seqs (check pcName (Precompute.code M.mm) pdName (Checked.precomputedChecked M.mm))) t fun t' =>
+    WP isa (seqs (check pcName (Precompute.code M.mm) pdName (P.code))) t fun t' =>
       Env s t' ∧
       t'.gpr .rax = checkResult (t.gpr .rax) (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
@@ -93,7 +92,7 @@ theorem check_ok (M : Mont) (pcName pdName : String)
     · simp (disch := decide) only [word_wo, word_writeW_self, Nat.mul_one]; rfl
     · simp (disch := decide) only [word_wo, word_writeW_self]; rfl
     · simp (disch := decide) only [word_writeW_self]; rfl
-  refine WP.seq (WP.mono (pd_call M pdName pdMx pdNosp pdDepth hp he₃ (hw (d := 0) (by decide))
+  refine WP.seq (WP.mono (pd_call P pdName hp he₃ (hw (d := 0) (by decide))
     (hw (d := 1) (by decide)) (hw (d := 2) (by decide)) (hw (d := 3) (by decide)) hdi₃ hsi₃ hdx₃ hcx₃ h8₃ h9₃)
     fun t₄ ⟨he₄, hpd, hM₄, hR1₄, hR3₄, hcs₄, hmx₄⟩ => ?_)
   refine WP.mono_mx (by decide +kernel)

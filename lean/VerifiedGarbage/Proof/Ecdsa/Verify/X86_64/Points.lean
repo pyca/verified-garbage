@@ -120,7 +120,8 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
-      ModOkW c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧
+      sv c base s' RX < c.C.p ∧ sv c base s' RZ < c.C.p ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl B3P))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
@@ -182,7 +183,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
       rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [MP'_n]
     all_goals (subst hw; simp [MP'_n, MP'_tmp])
   refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
-    by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
+    by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
@@ -190,6 +191,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have ne : ∀ i ∈ sumW, MP ≠ i := by decide
       exact sl_apart c (ne i hi)
+  · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
   · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
   · have vx := I₁.val _ (hD DX (by simp))
     have vy := I₁.val _ (hD DY (by simp))
@@ -378,11 +380,13 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   wr : s.wr = s₀.wr
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
+  k : sv c base s K = sigR c s₀
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) =
     mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
   rm_lt : sv c base s RM' < c.C.n
   rm : toM c.C.n (2 ^ (64 * c.n)) (sv c base s RM') = Fin.ofNat c.C.n (sigR c s₀)
+  rx_lt : sv c base s RX < c.C.p
   rz_lt : sv c base s RZ < c.C.p
   pt : ∃ X1 Y1 Z1 X2 Y2 Z2 : Fe c.C, Rep c.C X1 Y1 Z1 (mul u (G c.C)) ∧ Rep c.C X2 Y2 Z2 (mul v P) ∧
     (tmv c.C c.n base s (c.sl RX), tmv c.C c.n base s (c.sl RY), tmv c.C c.n base s (c.sl RZ)) =
@@ -390,7 +394,7 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   unch : Unch base [(0, size)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq c.gMul
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (c.gMul (c.C.len == 32))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c)) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)))) := rfl
 
@@ -439,7 +443,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
       rcases hw with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_singleton_self _, Nat.zero_le _, by dsimp only; omega⟩
-  refine WP.seq (WP.mono (gMul_ok' hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
+  refine WP.seq (WP.mono (gMul_ok' (publicLookup := c.C.len == 32) hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry]) (by rw [v₁ (by decide), hM.rz])
     (fun t ht => b₁ t ht) hTb)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
@@ -472,7 +476,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> exact v₅ (by decide) (by decide)
-  refine WP.mono (sum_ok hc hs₅ V₅.mod (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ V₅.mod (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rx₆, rz₆, t₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -524,9 +528,10 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
     rw [F.b3p]; exact toM_cmont hc _
   refine ⟨hs₆, by rw [wr₆, V₅.keep.wr, k₃.wr, K₂.wr, k₁.wr, hM.wr],
-    by rw [rd₆, V₅.keep.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆, fun t ht => ?_, ?_,
+    by rw [rd₆, V₅.keep.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆,
+    by rw [v₆ (i := K) (by decide) (by decide) (by decide), hM.k], fun t ht => ?_, ?_,
     by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm_lt,
-    by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm, rz₆,
+    by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm, rx₆, rz₆,
     ⟨_, _, _, _, _, _, q₂, V₅.q, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]⟩, ?_⟩

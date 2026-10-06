@@ -17,6 +17,9 @@ namespace VG.X86
 /-- `s`, permitted to read `rd` and write `wr` instead. -/
 def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd := rd, wr := wr }
 
+theorem State.withRegions_syms (s : State) (rd wr : List Region) :
+    (s.withRegions rd wr).syms = s.syms := rfl
+
 @[simp] theorem State.withRegions_gpr (s : State) (rd wr) : (s.withRegions rd wr).gpr = s.gpr := rfl
 @[simp] theorem State.withRegions_mem (s : State) (rd wr) : (s.withRegions rd wr).mem = s.mem := rfl
 @[simp] theorem State.withRegions_rd (s : State) (rd wr) : (s.withRegions rd wr).rd = rd := rfl
