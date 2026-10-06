@@ -15,7 +15,7 @@ use serde::Deserialize;
 use verified_garbage::ecdsa::{Error, P521, VerifyingKey};
 use verified_garbage::hashes::sha512::Sha512;
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -41,8 +41,8 @@ struct Case {
 fn ecdsa_secp521r1_sha512_p1363_test() {
     require_vectors!();
     let file = harness::load::<Group, Case>("ecdsa_secp521r1_sha512_p1363_test.json");
-    let (mut verified, mut refused) = (0, 0);
-    for (group, test) in file.tests() {
+    let (verified, refused) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "secp521r1");
         assert_eq!(group.params.sha, "SHA-512");
         let q: [u8; 133] = group.params.public_key.uncompressed.0[..]
@@ -51,19 +51,19 @@ fn ecdsa_secp521r1_sha512_p1363_test() {
         let key = VerifyingKey::<P521>::from_bytes(&q);
         let Ok(sig) = <[u8; 132]>::try_from(&test.case.sig.0[..]) else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
-            continue;
+            return;
         };
         let result = key.verify::<Sha512>(&test.case.msg.0, &sig);
         match test.result {
             Expectation::Valid => {
                 assert_eq!(result, Ok(()), "tcId {}", test.tc_id);
-                verified += 1;
+                verified.add();
             }
             Expectation::Invalid | Expectation::Acceptable => {
                 assert_eq!(result, Err(Error::InvalidSignature), "tcId {}", test.tc_id);
-                refused += 1;
+                refused.add();
             }
         }
-    }
-    assert!(verified > 0 && refused > 0);
+    });
+    assert!(verified.get() > 0 && refused.get() > 0);
 }

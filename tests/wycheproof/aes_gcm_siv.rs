@@ -14,7 +14,7 @@
 use serde::Deserialize;
 use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -38,8 +38,8 @@ struct Case {
 fn aes_gcm_siv() {
     require_vectors!();
     let file = harness::load::<Group, Case>("aes_gcm_siv_test.json");
-    let (mut valid, mut invalid) = (0, 0);
-    for (group, test) in file.tests() {
+    let (valid, invalid) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
         let sizes = (group.params.iv_size, group.params.tag_size);
@@ -57,16 +57,16 @@ fn aes_gcm_siv() {
                 let t = key.encrypt_in_place(nonce, &c.aad.0, &mut e).unwrap();
                 assert_eq!(e, c.ct.0, "tcId {id}");
                 assert_eq!(t[..], c.tag.0, "tcId {id}");
-                valid += 1;
+                valid.add();
             }
             // The file has no acceptable vectors.
             _ => {
                 assert!(matches!(test.result, Expectation::Invalid), "tcId {id}");
                 assert_eq!(decrypted, Err(Error::TagMismatch), "tcId {id}");
                 assert!(buf.iter().all(|&b| b == 0), "tcId {id}");
-                invalid += 1;
+                invalid.add();
             }
         }
-    }
-    assert!(valid > 0 && invalid > 0);
+    });
+    assert!(valid.get() > 0 && invalid.get() > 0);
 }

@@ -16,7 +16,7 @@
 use serde::Deserialize;
 use verified_garbage::aes_ccm::{AesCcm, Error};
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -56,8 +56,8 @@ fn check<const T: usize>(key: &AesCcm, c: &Case, buf: &mut [u8], valid: bool) ->
 fn aes_ccm() {
     require_vectors!();
     let file = harness::load::<Group, Case>("aes_ccm_test.json");
-    let (mut valid, mut invalid) = (0, 0);
-    for (group, test) in file.tests() {
+    let (valid, invalid) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
         assert_eq!(group.params.tag_size, 8 * c.tag.0.len(), "tcId {id}");
@@ -75,15 +75,15 @@ fn aes_ccm() {
             // No tag of this length can be passed.
             _ => {
                 assert!(matches!(test.result, Expectation::Invalid), "tcId {id}");
-                invalid += 1;
-                continue;
+                invalid.add();
+                return;
             }
         };
         match test.result {
             Expectation::Valid => {
                 decrypted.unwrap_or_else(|e| panic!("tcId {id}: {e:?}"));
                 assert_eq!(buf, c.msg.0, "tcId {id}");
-                valid += 1;
+                valid.add();
             }
             // The file has no acceptable vectors.
             _ => {
@@ -94,9 +94,9 @@ fn aes_ccm() {
                     assert_eq!(decrypted, Err(Error::InvalidNonceLength), "tcId {id}");
                     assert_eq!(buf, c.ct.0, "tcId {id}");
                 }
-                invalid += 1;
+                invalid.add();
             }
         }
-    }
-    assert!(valid > 0 && invalid > 0);
+    });
+    assert!(valid.get() > 0 && invalid.get() > 0);
 }

@@ -4,7 +4,10 @@
 //! is not set, the tests are skipped (CI always sets it).
 //!
 //! Every algorithm gets a module here that loads its test vector files with
-//! [`harness::load`] and checks each vector against the crate's public API.
+//! [`harness::load`] and checks each vector against the crate's public API,
+//! on every core: with [`harness::TestFile::par_tests`] (or `par_tests_with`,
+//! for what a group's tests share, or [`harness::par_each`]), counting what
+//! it checked with [`harness::Count`]s.
 //! A `valid` vector must produce exactly the expected result, an `invalid`
 //! one must be rejected, and for an `acceptable` one either outcome is fine
 //! (but a result, if produced, must be the expected one).
@@ -67,8 +70,8 @@ fn all_vector_files_are_well_formed() {
     require_vectors!();
     let files = harness::all_files().unwrap();
     assert!(!files.is_empty());
-    for name in &files {
+    harness::par_each(&files, |name| {
         let file = harness::load::<Fields, Fields>(name);
         assert!(!file.schema.is_empty(), "{name}: missing schema");
-    }
+    });
 }
