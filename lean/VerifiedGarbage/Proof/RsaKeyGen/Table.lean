@@ -1,11 +1,10 @@
 import VerifiedGarbage.Proof.RsaKeyGen.Primes
-import VerifiedGarbage.Impl.RsaKeyGen.X86_64.Candidate
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
 # The table of small primes
 
-`Impl.RsaKeyGen.X86_64.Candidate.slots` is the candidates' table: the primes
+`Impl.RsaKeyGen.slots` is the candidates' table, on every target: the primes
 3 to 3671, 3, then the primes 3673 to 8161. Its entries are odd, from 3 to
 8161 (`tabEntry_facts`), and trial division by its first 512 (or all 1024)
 entries is `obviouslyComposite` for primes of up to 1024 (or more) bits
@@ -21,7 +20,7 @@ end VG.Impl.RsaKeyGen
 
 namespace VG.Proof.RsaKeyGen
 
-open VG.Spec.RsaKeyGen VG.Impl.RsaKeyGen VG.Impl.RsaKeyGen.X86_64.Candidate
+open VG.Spec.RsaKeyGen VG.Impl.RsaKeyGen
 
 theorem primes_length : primes.length = 1024 := by rw [primes.lit_eq]; decide +kernel
 
