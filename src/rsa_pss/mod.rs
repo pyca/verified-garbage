@@ -285,7 +285,7 @@ pub fn verify(
         SaltLength::Len(l) => (l, 0),
         SaltLength::Any => (0, 1),
     };
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = key.verify_scratch.take(scratch_words(k));
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
         key,
@@ -295,9 +295,7 @@ pub fn verify(
         any,
         &mut scratch
     ));
-    // The working space holds the encoding, which is as secret as the
-    // signature's validity.
-    zeroize(&mut scratch);
+    // ScratchLease wipes the encoding before returning its buffer to the key.
     r == 1
 }
 
