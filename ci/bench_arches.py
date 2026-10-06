@@ -150,10 +150,12 @@ CPU_FEATURES = {
 }
 
 # The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
-# job runs at most, or None for one job per configuration. Every runner takes
-# about 1 s per benchmark id per pass; with 2 rounds (bench_compare.py), all
-# 51 fit in one job on every runner, and each shard would add a job per
-# configuration (with its own builds), so none is split for now.
+# job runs at most, or None for one job per configuration. A pass took about
+# 1 s per benchmark id (Criterion's analysis included) with a 0.2 s warm-up
+# and 0.5 s of measurement; with one round of 0.1 s and 0.3 s
+# (bench_compare.py), they should fit in one job on every runner, and each
+# shard would add a job per configuration (with its own builds), so none is
+# split for now.
 BENCHMARKS_PER_JOB = None
 
 # Changes to this script choose benchmarks but are not measured by any:

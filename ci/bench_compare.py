@@ -1,24 +1,28 @@
 """Compares the performance of two checkouts of this repository.
 
-    python3 ci/bench_compare.py BASE HEAD [--summary FILE]
+    python3 ci/bench_compare.py BASE HEAD [--summary FILE] [--openssl]
 
 Both are built with HEAD's `bench/` crate (copied into BASE, so the two run
 the same benchmark code against different library code); if that doesn't
 build against BASE (it benchmarks an API BASE doesn't have yet), BASE uses
 its own `bench/` crate, and HEAD's other benchmarks show as new. Their benchmark
-binaries are run alternately on this machine, a few rounds each, keeping the
-fastest time of each benchmark on each side: interleaving cancels out slow
-drift in the machine's speed, and the minimum discards runs slowed by
-interference, both of which are common on shared CI runners.
+binaries are run on this machine one after the other, `--rounds` times each
+(alternately, keeping the fastest time of each benchmark on each side, if
+more than one): one round, with a short warm-up and measurement, is the
+default, since the check fails only on a slowdown of more than
+`--threshold`, far beyond the noise between two runs of the same code (in
+an A/A run on CI, with two rounds of 0.2 s and 0.5 s: 99% of benchmarks
+within 3%, the largest 12%).
 
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
 verified-garbage benchmark got slower by more than `--threshold`. If BASE
 does not exist, HEAD runs alone, next to OpenSSL.
 
-OpenSSL's code is the same on both sides, so its benchmarks run just once,
-with HEAD's binary, as a reference point for HEAD's times; and only without
-`VG_CPU_FEATURES`, which does not change OpenSSL's code either.
+OpenSSL's code is the same on both sides, so its benchmarks are only a
+reference point for HEAD's times, not part of the comparison: they run once,
+with HEAD's binary, with `--openssl` or when BASE does not exist; and only
+without `VG_CPU_FEATURES`, which does not change OpenSSL's code either.
 
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
 features both sides use, and is named in the report. Each side is passed
@@ -220,10 +224,11 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=2)
+    p.add_argument("--rounds", type=int, default=1)
     p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.2)
-    p.add_argument("--measurement-time", type=float, default=0.5)
+    p.add_argument("--warm-up-time", type=float, default=0.1)
+    p.add_argument("--measurement-time", type=float, default=0.3)
+    p.add_argument("--openssl", action="store_true", help="also run OpenSSL's benchmarks, for reference")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
@@ -265,20 +270,23 @@ def main():
                 best[side][bench_id] = min(t, best[side].get(bench_id, t))
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     openssl = {}
-    if not cpu_features:
+    with_openssl = (args.openssl or binaries["base"] is None) and not cpu_features
+    if with_openssl:
         print("OpenSSL", file=sys.stderr)
         openssl = run(binaries["head"], args.work_dir.resolve() / "openssl", OPENSSL, args, head, modules["head"],
                       groups)
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
+    runs = (f"Fastest of {args.rounds} interleaved runs of each side" if args.rounds > 1
+            else "One run of each side")
     lines = [
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
-        f"Fastest of {args.rounds} interleaved runs of each side on this runner;"
-        f" a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) ran once, for reference." if not cpu_features
-           else " OpenSSL ran only in the configuration without VG_CPU_FEATURES."),
+        f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
+        + (" OpenSSL (through rust-openssl) ran once, for reference." if with_openssl
+           else " OpenSSL ran only in the configuration without VG_CPU_FEATURES." if cpu_features
+           else " OpenSSL did not run (it does with `--openssl`, as in the workflow's manual runs)."),
         *(
             [
                 f"Changed modules: {args.modules}. Only the benchmarks that use them ran"
@@ -289,8 +297,8 @@ def main():
         ),
         *([f"{note}"] if note else []),
         "",
-        "| Benchmark | Base | Head | Change | OpenSSL | Head vs OpenSSL |",
-        "|---|--:|--:|--:|--:|--:|",
+        "| Benchmark | Base | Head | Change |" + (" OpenSSL | Head vs OpenSSL |" if with_openssl else ""),
+        "|---|--:|--:|--:|" + ("--:|--:|" if with_openssl else ""),
     ]
     regressions = []
     for primitive, size in sorted(best["head"]):
@@ -303,11 +311,12 @@ def main():
             if h / b - 1 > args.threshold:
                 regressions.append(bench_id)
                 change += " 🚨"
-        o = openssl.get((primitive, size))
-        vs = vs_openssl(h, o) if o else "–"
-        o = fmt_time(o) if o else "–"
         b = fmt_time(b) if b else "–"
-        lines.append(f"| `{bench_id}` | {b} | {fmt_time(h)} | {change} | {o} | {vs} |")
+        row = f"| `{bench_id}` | {b} | {fmt_time(h)} | {change} |"
+        if with_openssl:
+            o = openssl.get((primitive, size))
+            row += f" {fmt_time(o) if o else '–'} | {vs_openssl(h, o) if o else '–'} |"
+        lines.append(row)
     lines.append("")
     if regressions:
         lines.append(f"🚨 {len(regressions)} benchmark(s) slowed down by more than {args.threshold:.0%}.")

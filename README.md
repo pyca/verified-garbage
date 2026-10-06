@@ -1605,7 +1605,7 @@ request that changes the library:
 
 ```sh
 (cd bench && cargo bench)
-python3 ci/bench_compare.py path/to/main-checkout .
+python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's times
 ```
 
 ## Credits
