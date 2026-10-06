@@ -1,0 +1,79 @@
+name: SDE probe
+
+# TEMPORARY: measures why the icx lines that run RSA's tests became slow
+# after #1096, on the runners' different CPUs. To be removed before merging.
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/sde-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        probe: [1, 2, 3, 4, 5, 6, 7, 8]
+    name: probe ${{ matrix.probe }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      RUSTFLAGS: -D warnings -Cinstrument-coverage
+      LLVM_PROFILE_FILE: /dev/null
+      WYCHEPROOF_ROOT: wycheproof
+      SDE_URL: https://downloadmirror.intel.com/924984/sde-external-10.13.1-2026-07-28-lin.tar.xz
+      SDE_SHA256: 94e97d623fec54385686e1e7ba65ebc9941748c05ee451423948334892bf2b50
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: C2SP/wycheproof
+          path: wycheproof
+          persist-credentials: false
+      - name: CPU
+        run: |
+          grep -m1 'model name' /proc/cpuinfo
+          grep -m1 flags /proc/cpuinfo | tr ' ' '\n' \
+            | grep -xE 'sha_ni|avx2|bmi1|avx512f|avx512ifma|avx512vl|vaes' | tr '\n' ' '
+      - name: Download Intel SDE
+        run: |
+          curl -sSfLo sde.tar.xz "$SDE_URL"
+          echo "$SDE_SHA256  sde.tar.xz" | sha256sum -c
+          mkdir "$RUNNER_TEMP/sde"
+          tar -xJf sde.tar.xz -C "$RUNNER_TEMP/sde" --strip-components 1
+      - run: rustup toolchain install stable --profile minimal
+      - name: Build
+        run: cargo test --locked --features cpu-features-env --no-run
+      - name: Experiments
+        shell: bash
+        run: |
+          bin=$(ls target/debug/deps/tests-* | grep -v '\.d$' | head -1)
+          sde=$RUNNER_TEMP/sde/sde64
+          test=wycheproof::rsa_pss::rsa_pss_sign_test
+          A=avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl
+          B=avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl
+          C=$B,sha,ssse3
+          D=avx,avx2,bmi1,bmi2,adx
+          model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | xargs)
+          TIMEFORMAT='%R %U'
+          run() {
+            local label=$1 features=$2; shift 2
+            local t
+            t=$( { time (VG_CPU_FEATURES=$features timeout 300 "$sde" -icx "$@" -- "$bin" --exact $test > out.txt 2>&1; echo $? > status); } 2>&1 )
+            echo "RESULT | $model | $label | wall,user=$t | exit=$(cat status) | $(grep -o 'finished in [0-9.]*s' out.txt)"
+          }
+          run "A scalar-hash+ifma" "$A"
+          run "B avx2-hash+ifma" "$B"
+          run "C shani-hash+ifma" "$C"
+          run "D avx2-hash+adx (no ifma)" "$D"
+          run "unrestricted" ""
+          run "A, -sync_avx512_state 0" "$A" -sync_avx512_state 0
+          run "A, -emu_xinuse 0" "$A" -emu_xinuse 0
+          run "A, -emu_fast 0" "$A" -emu_fast 0
+          run "B, -sync_avx512_state 0" "$B" -sync_avx512_state 0
