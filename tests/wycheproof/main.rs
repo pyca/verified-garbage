@@ -16,6 +16,7 @@ mod aes_siv;
 mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
+mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
