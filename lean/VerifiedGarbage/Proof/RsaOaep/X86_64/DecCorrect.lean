@@ -45,15 +45,6 @@ theorem ArgsD_privW (s : State) : ArgsD s (privW s) := fun j hj => by
     show j ≠ 9 by omega, show j ≠ 10 by omega, show j ≠ 11 by omega, show j ≠ 12 by omega,
     show j ≠ 13 by omega, ↓reduceIte]
 
-/-! ## The specification -/
-
-theorem decrypt_eq {H G : Spec.Mgf1.Hash} {nB eB pB qB dPB dQB qInvB label cB : List Byte}
-    (h : cB.length = nB.length) :
-    Spec.RsaOaep.decrypt H G nB eB pB qB dPB dQB qInvB label cB =
-      decOut H G label (Spec.Rsa.privateChecked nB eB cB pB qB dPB dQB qInvB) := by
-  simp only [Spec.RsaOaep.decrypt, h, ne_eq, not_true_eq_false, ↓reduceIte]
-  cases Spec.Rsa.privateChecked nB eB cB pB qB dPB dQB qInvB <;> rfl
-
 /-! ## The end -/
 
 /-- What the function's caller sees: from a state in the frame with `out`
