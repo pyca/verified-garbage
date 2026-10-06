@@ -286,6 +286,7 @@ theorem step_upd (hr : τ.regs.subset r = true) (hf : τ.flags = true → f = tr
         (RegSet.subset_insert _ _) (RegSet.subset_insert _ _))))
     · exact absurd (hp e) (by rw [e']; exact Bool.false_ne_true)
     · exact RegSet.insert_mono (RegSet.insert_mono hr _) _
+  | symPush _ _ => simp only [step, reduceCtorEq] at hs
   | push _ => simp only [step, reduceCtorEq] at hs
   | pop _ _ => simp only [step, reduceCtorEq] at hs
   | alloc _ => simp only [step, reduceCtorEq] at hs
@@ -511,7 +512,7 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     (hr : σ.regs.bits.testBit j = true) : σ'.regs.bits.testBit j = true := by
   cases i
   case store | store8 => rw [storeStep_regs hs]; exact hr
-  case push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms => simp only [step, reduceCtorEq] at hs
+  case symPush | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms => simp only [step, reduceCtorEq] at hs
   case mul q =>
     simp only [step, Option.some.injEq, mulStep] at hs
     subst hs

@@ -21,6 +21,7 @@ namespace VG.X86
 def frameBytes : Instr → Nat
   | .push rs => 4 * rs.length
   | .alloc bytes => bytes
+  | .symPush .. => 4
   | _ => 0
 
 /-- The bytes below `esp` that the calls and frames of `c`, and of the
@@ -184,6 +185,13 @@ theorem push_frame {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
   case mmxEnter =>
     split at h <;> cases h
     exact ⟨by simp [frameBytes], by simp [below, frameBytes], by simp [frameBytes], Frame.refl _ _⟩
+  case symPush dst name =>
+    split at h <;> cases h
+    rename_i hc
+    refine ⟨?_, rfl, hc.2, ?_⟩
+    · simp [frameBytes, State.setReg, arithFlags, Ne.symm hc.1]
+    · exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _
+        (below_top (Nat.le_refl 4) hc.2 (by decide))
 
 /-- Code that never writes `esp` changes memory only within the regions it
 may write, and within the `stackUse` bytes below `esp` (its calls' return
