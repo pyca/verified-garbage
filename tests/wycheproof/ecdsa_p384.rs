@@ -15,7 +15,7 @@ use serde::Deserialize;
 use verified_garbage::ecdsa::{Error, P384, VerifyingKey};
 use verified_garbage::hashes::sha384::Sha384;
 
-use crate::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

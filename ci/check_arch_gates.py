@@ -14,6 +14,11 @@ a curve's file) needs that file's.
 
 Only `target_arch` is compared; other conditions (`feature = "alloc"`) are
 allowed alongside.
+
+Every test directory (`tests/<dir>/main.rs`) must be a module of the one
+test binary, declared in `tests/main.rs` as `#[path = "<dir>/main.rs"] mod
+<dir>;`: Cargo builds no other test (`autotests = false`), so a directory
+missing there would never run.
 """
 
 import pathlib
@@ -30,6 +35,7 @@ ARCH = re.compile(r'target_arch\s*=\s*"(\w+)"')
 MOD_DECL = re.compile(r"^(?:pub(?:\(crate\))?\s+)?mod\s+(\w+);", re.MULTILINE)
 USES = re.compile(r"verified_garbage::((?:\w+::)*\w+)")
 USE_GROUP = re.compile(r"verified_garbage::(\w+)::\{([^}]*)\}", re.DOTALL)
+TEST_DIR = re.compile(r'^#\[path = "(\w+)/main\.rs"\]\nmod (\w+);$', re.MULTILINE)
 
 
 def arch_set(cfg):
@@ -97,8 +103,8 @@ def required(text, mods):
 
 
 def declared_in(path):
-    """The files that declare `path` as a module, from its crate root down
-    (tests/<crate>/main.rs, then any mod.rs in between)."""
+    """The files that declare `path` as a module, from its test directory
+    down (tests/<dir>/main.rs, then any mod.rs in between)."""
     chain = []
     parent = path.parent
     while parent != ROOT / "tests" and parent != ROOT / "bench" / "benches":
@@ -114,9 +120,20 @@ def show(archs):
     return ", ".join(sorted(archs))
 
 
+def test_dirs():
+    """The errors of `tests/main.rs`'s list of the test directories."""
+    declared = TEST_DIR.findall((ROOT / "tests" / "main.rs").read_text())
+    dirs = sorted(p.parent.name for p in (ROOT / "tests").glob("*/main.rs"))
+    errors = [f"tests/main.rs: mod {m} is declared from {d}/main.rs" for d, m in declared if d != m]
+    errors += [f"tests/{d}/main.rs: not declared in tests/main.rs, so it never runs"
+               for d in dirs if d not in {d for d, _ in declared}]
+    errors += [f"tests/main.rs: {d}/main.rs does not exist" for d, _ in declared if d not in dirs]
+    return errors
+
+
 def main() -> int:
     mods = library()
-    errors = []
+    errors = test_dirs()
     for path in sorted((ROOT / "tests").rglob("*.rs")):
         text = path.read_text()
         archs, used = required(text, mods)

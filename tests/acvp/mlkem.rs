@@ -97,7 +97,7 @@ macro_rules! mlkem_tests {
         use verified_garbage::hashes::sha3::{Sha3_256, Shake256};
         use verified_garbage::$module::{Error, $DecapsulationKey, $EncapsulationKey};
 
-        use crate::mlkem::{KeyGen, array, encap_decap, keygen_vectors, unhex};
+        use super::mlkem::{KeyGen, array, encap_decap, keygen_vectors, unhex};
 
         const EK: usize = $EncapsulationKey::SIZE;
         const CT: usize = $EncapsulationKey::CIPHERTEXT_SIZE;

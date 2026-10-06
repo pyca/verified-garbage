@@ -18,7 +18,7 @@ use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-use crate::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
+use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

@@ -12,7 +12,7 @@ use core::num::NonZeroU32;
 
 use serde::Deserialize;
 
-use crate::harness::{self, Expectation, Fields, Hex};
+use super::harness::{self, Expectation, Fields, Hex};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]

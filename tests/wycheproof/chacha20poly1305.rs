@@ -14,7 +14,7 @@
 use serde::Deserialize;
 use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 
-use crate::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

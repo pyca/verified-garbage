@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
-use crate::harness::{self, Count, Expectation, Hex, TestFile};
+use super::harness::{self, Count, Expectation, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

@@ -18,7 +18,7 @@
 use serde::Deserialize;
 use verified_garbage::x448::{Error, PrivateKey, x448};
 
-use crate::harness::{self, Count, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]

@@ -17,7 +17,7 @@
 use serde::Deserialize;
 use verified_garbage::chacha20::ChaCha20;
 
-use crate::harness::{self, Count, Expectation};
+use super::harness::{self, Count, Expectation};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
