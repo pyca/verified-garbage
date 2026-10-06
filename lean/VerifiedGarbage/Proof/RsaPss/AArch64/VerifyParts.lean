@@ -172,6 +172,73 @@ theorem verifyNb_ok {t : State} {F S : Addr} (L : Lay t F S) {db : Nat} (hdb : d
   rw [m₄, O₃.mem, e₃, e₂, e₁, h25, BitVec.ofNat_add_ofNat, LenLoop.lsr_val (by omega), hlg.1,
     BitVec.ofNat_add_ofNat, show db + (7 + H.D + H.P.L) = db + 7 + H.D + H.P.L by omega]
 
+/-- The OR of the first `j` values of `g`. -/
+def orF (g : Nat → BitVec 64) : Nat → BitVec 64
+  | 0 => 0
+  | j + 1 => orF g j ||| g j
+
+include hH in
+/-- `acc` ORed with the digest `⊕ H` (at `DB + dbLen`), and `x0` the top bit
+of `acc - 1`. -/
+theorem cmpH_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {e db : Nat}
+    {acc : BitVec 64} (hfit : e + db + H.D ≤ oY) (h21 : t.gpr .x21 = off S oDig) (h24 : t.gpr .x24 = off S e)
+    (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (h26 : t.gpr .x26 = acc) :
+    WP isa (cmpH H) t fun t' => Only [.x11, .x10, .x12, .x9, .x15, .x26, .x0] t t' ∧
+      t'.gpr .x0 = ((acc ||| orF (fun i => (V (oDig + i)).setWidth 64 ^^^ (V (e + db + i)).setWidth 64) H.D) -
+        1#64) >>> 63 := by
+  have hD := hH.sizes.D0
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have c2 : oY = 3584 := rfl
+  have c3 : oDig = 2304 := rfl
+  have c6 : oRsa = 8192 := rfl
+  have oz : ∀ x : BitVec 64, x ||| 0 = x := fun x => by ext i; simp
+  unfold cmpH
+  refine WP.seq (WP.mono (Q := fun (u : State) => Only [.x11, .x10, .x12] t u ∧ u.gpr .x11 = off S oDig ∧
+      u.gpr .x10 = off S (e + db) ∧ u.gpr .x12 = BitVec.ofNat 64 H.D) ?_ fun u ⟨O, h11, h10, h12⟩ => ?_)
+  · exact wp_mov fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_movz fun u₃ o₃ e₃ => wp_nil
+      ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x11, o₂.get .x11, e₁, h21],
+        by rw [o₃.get .x10, e₂, o₁.get .x24, o₁.get .x25, h24, h25, off_add],
+        by rw [e₃, setWidth_ofNat16 (by omega)]⟩
+  have Lu : Lay u F S := L.congr O.sp O.wr (O.get .x20)
+  have Ru : Rep u.mem S V := O.mem ▸ R
+  refine WP.seq (WP.mono (wp_countdown (cnt := .x12) (N := H.D) (by omega) hD
+    (fun j v => Only [.x9, .x15, .x26, .x11, .x10, .x12] u v ∧ v.gpr .x11 = off S (oDig + j) ∧
+      v.gpr .x10 = off S (e + db + j) ∧
+      v.gpr .x26 = acc ||| orF (fun i => (V (oDig + i)).setWidth 64 ^^^ (V (e + db + i)).setWidth 64) j)
+    (fun j hj v ⟨hO, h11', h10', h26'⟩ _ => ?_)
+    ⟨Only.refl _ _, by rw [Nat.add_zero, h11], by rw [Nat.add_zero, h10], by rw [O.get .x26, h26]; exact (oz _).symm⟩
+    h12) fun v ⟨hO, _, _, h26'⟩ => ?_)
+  · refine wp_ldrb (by decide) (by rw [h11', BitVec.add_zero]) (by rw [hO.rd, hO.wr]; exact Lu.ld (by omega))
+      fun w₁ q₁ g₁ => ?_
+    refine wp_ldrb (by decide) (by rw [q₁.get .x10, h10', BitVec.add_zero])
+      (by rw [q₁.rd, q₁.wr, hO.rd, hO.wr]; exact Lu.ld (by omega)) fun w₂ q₂ g₂ => wp_eor fun w₃ q₃ g₃ =>
+      wp_orr fun w₄ q₄ g₄ => wp_addImm (by decide) fun w₅ q₅ g₅ => wp_addImm (by decide) fun w₆ q₆ g₆ =>
+      wp_subImm (by decide) fun w₇ q₇ g₇ => wp_nil ⟨⟨(hO.trans (q₁.trans (q₂.trans (q₃.trans (q₄.trans (q₅.trans
+        (q₆.trans q₇))))))).mono, ?_, ?_, ?_⟩, ?_⟩
+    · rw [q₇.get .x11, q₆.get .x11, g₅, q₄.get .x11, q₃.get .x11, q₂.get .x11, q₁.get .x11, h11', off_add,
+        Nat.add_assoc]
+    · rw [q₇.get .x10, g₆, q₅.get .x10, q₄.get .x10, q₃.get .x10, q₂.get .x10, q₁.get .x10, h10', off_add,
+        Nat.add_assoc]
+    · rw [q₇.get .x26, q₆.get .x26, q₅.get .x26, g₄, g₃, q₃.get .x26, q₂.get .x26, q₁.get .x26, h26', g₂,
+        q₂.get .x9, g₁, q₁.mem, hO.mem, Ru _ (by omega), Ru _ (by omega), orF, BitVec.or_assoc]
+    · rw [g₇, q₆.get .x12, q₅.get .x12, q₄.get .x12, q₃.get .x12, q₂.get .x12, q₁.get .x12]
+  · exact wp_subImm (by decide) fun w₁ q₁ g₁ => wp_lsr (by decide) fun w₂ q₂ g₂ => wp_nil
+      ⟨(O.trans (hO.trans (q₁.trans q₂))).mono, by rw [g₂, g₁, h26']⟩
+
+theorem expLen_ok {t : State} {F S : Addr} (L : Lay t F S) {any sv : BitVec 64}
+    (hA : t.mem.readW (off F sAny) 64 = any) (hS : t.mem.readW (off F sSaltLen) 64 = sv) :
+    WP isa expLen t fun t' => Only [.x13, .x12] t t' ∧ t'.gpr .x12 = if any = 0 then sv else 0 := by
+  unfold expLen ld
+  refine WP.seq (wp_ldrSp (by decide) (by rw [L.sp]; exact L.fld (by decide)) fun u₁ o₁ e₁ => wp_nil ?_)
+  rw [L.sp, hA] at e₁
+  refine WP.ite _ (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [e₁, beq_iff_eq] at hb
+    exact wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr, L.sp]; exact L.fld (by decide)) fun u₂ o₂ e₂ => wp_nil
+      ⟨(o₁.trans o₂).mono, by rw [e₂, o₁.sp, o₁.mem, L.sp, hS, ite_eq_left hb]⟩
+  · rw [e₁, beq_eq_false_iff_ne] at hb
+    exact wp_movz fun u₂ o₂ e₂ => wp_nil ⟨(o₁.trans o₂).mono, by rw [e₂, ite_eq_right hb]; rfl⟩
+
 end
 
 end VG.Proof.RsaPss.AArch64
