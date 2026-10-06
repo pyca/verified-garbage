@@ -103,16 +103,16 @@ def sOk : Nat := 248
 def oEm : Nat := 0
 /-- The buffer in which decryption shifts `T`: 2048 bytes. -/
 def oBuf : Nat := 1024
-/-- The streaming state (at most 192 bytes). -/
+/-- The streaming state (at most 256 bytes). -/
 def oSt : Nat := 3072
 /-- The digest `finalize` writes (at most 64 bytes). -/
-def oDig : Nat := 3264
-/-- `lHash`, when decrypting. -/
-def oLh : Nat := 3328
+def oDig : Nat := 3328
+/-- `lHash`, when decrypting (at most 64 bytes). -/
+def oLh : Nat := 3392
 /-- MGF1's counter. -/
-def oCtr : Nat := 3392
-/-- The working space of `update` and `finalize` (at most 2048 bytes). -/
-def oW : Nat := 3456
+def oCtr : Nat := 3456
+/-- The working space of `update` and `finalize` (at most 1072 bytes). -/
+def oW : Nat := 3520
 /-- Where the RSA operation's working space starts. -/
 def oRsa : Nat := 8192
 
