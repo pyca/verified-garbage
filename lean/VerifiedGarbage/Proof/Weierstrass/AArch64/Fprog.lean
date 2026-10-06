@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Impl.Weierstrass.AArch64
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
+import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
 
 /-!
 # Field programs on AArch64
@@ -119,6 +120,27 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       rw [heq x (hI.sl x hx') hxo, Function.update_of_ne hxo]
       exact hI.val x hx'
 
+/-- Multiplication dispatches squaring only for validated P-256 coefficients. -/
+theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (opCode M (.mul o a b))) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  rw [opCode]
+  split
+  · rename_i h
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨rfl,hsup⟩ := h
+    obtain ⟨hn,rfl⟩ := Mont.AArch64.P256Square.supported_mod hsup hM.red
+    refine WP.mono (Mont.AArch64.P256Square.square_ok hs hn hM hA
+      (by simpa only [hn] using ho) (by simpa only [hn] using hb) ho8 hb8
+      (by simpa only [hn] using hB)) fun s' ⟨hk,hlt,he⟩ => ?_
+    exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by simpa only [hn] using he⟩
+  · exact mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
+
 /-- One operation. -/
 theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
@@ -130,7 +152,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
   | mul o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
-    refine WP.mono (mul_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (mulOp_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>

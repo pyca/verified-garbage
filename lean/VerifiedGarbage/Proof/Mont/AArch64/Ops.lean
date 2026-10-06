@@ -18,7 +18,7 @@ open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value Wor
 
 /-- The registers the operations change: for `n > 7`, `dRegs n`'s
 callee-saved registers too. -/
-def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n ++ (dRegs n).drop 7
+def clob (n : Nat) : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ++ acc n ++ (dRegs n).drop 7 ++ (if n = 4 then [.x14,.x15] else [])
 
 /-- Every register the operations may change, for any number of words. -/
 abbrev clobAll : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x8, .x9, .x10, .x11,
@@ -27,12 +27,15 @@ abbrev clobAll : List Reg := [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x8
 theorem mem_clobAll {n : Nat} {r : Reg} (h : r ∈ clob n) : r ∈ clobAll := by
   unfold clob acc dRegs at h
   simp only [List.mem_append] at h
-  rcases h with (h | h) | h
+  rcases h with ((h | h) | h) | h
   · revert r; decide
   · exact (by decide : ∀ r ∈ [Reg.x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x21, .x22, .x23],
       r ∈ clobAll) r (List.mem_of_mem_take h)
   · exact (by decide : ∀ r ∈ [Reg.x1, .x3, .x4, .x5, .x6, .x16, .x17, .x24, .x25], r ∈ clobAll) r
       (List.mem_of_mem_take (List.mem_of_mem_drop h))
+  · split at h
+    · exact (by decide : ∀ r ∈ [Reg.x14,.x15], r ∈ clobAll) r h
+    · simp only [List.not_mem_nil] at h
 
 /-- The modulus and the temporary area at offsets that loads and stores can
 encode. -/
@@ -80,7 +83,7 @@ change. -/
 theorem not_mem_of_clob {n : Nat} {r : Reg} (hr : r ∉ clob n) :
     r ∉ [Reg.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17] ∧ r ∉ acc n := by
   simp only [clob, List.mem_append, not_or] at hr
-  exact hr.1
+  exact hr.1.1
 
 /-- The words at `a`, loaded into the registers `ts`, each its own. -/
 theorem loadsEach_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
@@ -188,7 +191,7 @@ theorem csubR_keep {n : Nat} (h7 : n < 10) {ts : List Reg} (hts : ∀ r ∈ ts, 
   rcases hr with rfl | rfl | h | h
   · simp [clob]
   · simp [clob]
-  · exact List.mem_append_left _ (List.mem_append_right _ (hts r h))
+  · exact List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ (hts r h)))
   · exact dRegs_clob n h7 r h
 
 theorem mul_eq (M : Mod) (o a b : Nat) :

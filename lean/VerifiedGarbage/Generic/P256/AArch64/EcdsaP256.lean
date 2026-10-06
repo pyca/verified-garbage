@@ -54,14 +54,16 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P256.curve) : List A
       and one product) with a final conditional subtraction. The key is checked without branches \
       (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
       computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is the \
-      signature's comb over the 7-bit windows of `u` (from the static `VG_P256_COMB`), and `[v]Q` `vg_ecdh_p256`'s signed 4-bit windows \
-      (65 digits of `v + 8 Σ_{j<65} 16^j`, four doublings in Jacobian coordinates and a \
-      constant-time selection from a \
-      table of `[1 … 8]Q` each), with the complete formulas of Renes, Costello and Batina for \
-      `a = -3`, which also add the two. The result is the conjunction of the checks (the key, \
-      `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time \
-      depends only on the pointers, although the contract would let every input affect it."])
+      `s⁻¹` modulo `n` and the final `Z⁻¹` use divsteps. `[u]G` uses the 7-bit comb \
+      from `VG_P256_COMB` with Jacobian accumulators and mixed affine additions. `[v]Q` \
+      uses 52 signed 5-bit windows and a Jacobian table of `[1 … 16]Q`; even table entries \
+      double an earlier entry, and odd entries add `Q`. Both multiplications retain \
+      Jacobian coordinates until their final conversion to homogeneous coordinates, where \
+      the complete formulas of Renes, Costello and Batina add the two results. Field squares \
+      use a specialized 102-instruction P-256 Montgomery square. Table lookups, skipped zero \
+      digits and exceptional-point branches depend on the public key, digest and signature \
+      already declared public by the contract. The result combines the key and scalar checks, \
+      rejection of infinity, and `x ≡ r` modulo `n` into a mask."])
     consts := Impl.Ecdsa.AArch64.p256.combConsts
     code := Impl.Ecdsa.Verify.AArch64.verifyP256
     contract := Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)

@@ -19,9 +19,11 @@ theorem dblJChoice_eq (direct : Bool) (S : RcbSlots) (p o : Pt) :
 theorem dblJMulN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
     (runOps dblJMulN e 6, runOps dblJMulN e 7, runOps dblJMulN e 8) =
       dblJF (e 11) (e 12) (e 13) := by
-  change (_, _, e 12 * e 13 + e 12 * e 13) = dblJF (e 11) (e 12) (e 13)
+  dsimp only [dblJMulN, dblJMul, runOps, List.foldl, FOp.run, Function.update]
   simp only [dblJF, Prod.mk.injEq]
-  exact ⟨rfl, rfl, by grind⟩
+  constructor
+  · grind
+  constructor <;> grind
 
 theorem dblJChoiceN_run {F : Type _} [Lean.Grind.CommRing F] (direct : Bool) (e : Nat → F) :
     (runOps (dblJChoiceN direct) e 6, runOps (dblJChoiceN direct) e 7,
