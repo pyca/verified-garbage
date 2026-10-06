@@ -44,6 +44,8 @@ mod p256;
 mod p384;
 mod p521;
 
+#[cfg(target_arch = "x86_64")]
+pub use crate::ec::P224;
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "x86",
@@ -51,8 +53,6 @@ mod p521;
     target_arch = "aarch64"
 ))]
 pub use crate::ec::P521;
-#[cfg(target_arch = "x86_64")]
-pub use crate::ec::P224;
 pub use crate::ec::{Curve, P256, P384};
 
 use crate::zeroize::zeroize;
