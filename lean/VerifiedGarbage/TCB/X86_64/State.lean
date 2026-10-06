@@ -21,6 +21,15 @@ inductive XReg
   | xmm8 | xmm9 | xmm10 | xmm11 | xmm12 | xmm13 | xmm14 | xmm15
   deriving DecidableEq, Repr, Inhabited
 
+/-- The vector registers `xmm16`–`xmm31` (and the `ymm` and `zmm` registers
+that contain them), which only EVEX-encoded instructions can name (SDM Vol. 1
+§15.5: "the AVX-512 programming environment ... 32 vector registers"; Vol. 2
+§2.7.1, the EVEX prefix's `R'` and `V'` bits). -/
+inductive HReg
+  | xmm16 | xmm17 | xmm18 | xmm19 | xmm20 | xmm21 | xmm22 | xmm23
+  | xmm24 | xmm25 | xmm26 | xmm27 | xmm28 | xmm29 | xmm30 | xmm31
+  deriving DecidableEq, Repr, Inhabited
+
 structure State where
   gpr : Reg → BitVec 64
   cf : Option Bool
@@ -33,6 +42,9 @@ structure State where
   ymmHi : XReg → BitVec 128 := fun _ => 0
   /-- Bits 511:256 of each AVX-512 register `zmm0`–`zmm15`. -/
   zmmHi : XReg → BitVec 256 := fun _ => 0
+  /-- Bits 255:0 of each AVX-512 register `zmm16`–`zmm31` (the `ymm`
+  registers `ymm16`–`ymm31`). -/
+  ymmH : HReg → BitVec 256 := fun _ => 0
   /-- The SSE control and status register (SDM Vol. 1 §10.2.3). -/
   mxcsr : BitVec 32 := 0x1F80
   mem : Mem

@@ -171,6 +171,38 @@ def ZOp.asm : ZOp → String
   | .vprorq d r n => s!"vprorq {d.zname}, {r.zname}, {n.toNat}"
   | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
 
+def HReg.name : HReg → String
+  | .xmm16 => "xmm16" | .xmm17 => "xmm17" | .xmm18 => "xmm18" | .xmm19 => "xmm19"
+  | .xmm20 => "xmm20" | .xmm21 => "xmm21" | .xmm22 => "xmm22" | .xmm23 => "xmm23"
+  | .xmm24 => "xmm24" | .xmm25 => "xmm25" | .xmm26 => "xmm26" | .xmm27 => "xmm27"
+  | .xmm28 => "xmm28" | .xmm29 => "xmm29" | .xmm30 => "xmm30" | .xmm31 => "xmm31"
+
+/-- The name of the `xmm` register of a `VReg`. -/
+def VReg.name : VReg → String
+  | .lo r => r.name
+  | .hi r => r.name
+
+/-- The name of the `ymm` register of a `VReg`. -/
+def VReg.yname (r : VReg) : String := "y" ++ (r.name.drop 1).toString
+
+def EBinOp.name : EBinOp → String
+  | .vpaddq => "vpaddq" | .vpxorq => "vpxorq" | .vpandq => "vpandq" | .vporq => "vporq"
+
+/-- The mnemonics of `Evex.lean`, which the assembler encodes with EVEX for
+`ymm16`–`ymm31` and may encode with VEX for the others where a VEX form with
+the same operation exists (`vpaddq`, `vpermq`, `vpbroadcastq`, `vmovq`, the
+shifts): the VEX.256 forms compute the same 256 bits and zero bits
+`MAXVL-1:256` too (see `State.setV`). -/
+def EOp.asm : EOp → String
+  | .bin op d a b => s!"{op.name} {d.yname}, {a.yname}, {b.yname}"
+  | .shift op d r n => s!"{op.name} {d.yname}, {r.yname}, {n.toNat}"
+  | .vpermq d r o => s!"vpermq {d.yname}, {r.yname}, {o.toNat}"
+  | .valignq d a b n => s!"valignq {d.yname}, {a.yname}, {b.yname}, {n.toNat}"
+  | .vpbroadcastq d r => s!"vpbroadcastq {d.yname}, {r.name}"
+  | .vmovq d r => s!"vmovq {d.name}, {r.name}"
+  | .vmovqx d r => s!"vmovq {d.name}, {r.name}"
+  | .vpmadd52 hi d a b => s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {b.yname}"
+
 def Src.str : Src → String
   | .reg r => r.name
   | .imm v => toString v.toInt
@@ -227,6 +259,11 @@ def Instr.asm : Instr → List String
   | .zbcst op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str}" ++ "{1to8}"]
   | .vpmadd52Load hi d a m =>
     [s!"vpmadd52{if hi then "h" else "l"}uq {d.vname .l256}, {a.vname .l256}, {m.strV .l256}"]
+  | .eop op => [op.asm]
+  | .evLoad d m => [s!"vmovdqu64 {d.yname}, {m.strV .l256}"]
+  | .evStore m r => [s!"vmovdqu64 {m.strV .l256}, {r.yname}"]
+  | .evMadd52Load hi d a m =>
+    [s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {m.strV .l256}"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -263,9 +300,11 @@ def Instr.memOps : Instr → List MemOp
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vmovdqu32Load _ m
   | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
+  | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
-  | .shift .. | .movImm64 .. | .leaSym .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
+  | .shift .. | .movImm64 .. | .leaSym .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
+  | .lfence | .mul _
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where
