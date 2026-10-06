@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinEntry
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Flags
+import VerifiedGarbage.Proof.Weierstrass.X86_64.QuadCounter
 
 /-!
 # The window method on x86-64: the loop's frame and 
@@ -188,12 +189,28 @@ local macro "rcb_sub" : tactic => `(tactic| (
     List.not_mem_nil, or_false] at hx ⊢
   rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
 
+/-- Changing only the public loop counter preserves the field environment. -/
+theorem Inv.rbxKeeps {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+    {V : List Nat} {E : Nat → Fin m} {s s' : State} (h : Inv M base size m Sl V E s)
+    (hk : Keeps [.rbx] s s') : Inv M base size m Sl V E s' :=
+  ⟨h.scr.of_keeps hk (by decide), by rw [hk.2.1]; exact h.mod, h.sl,
+    by rw [hk.2.1]; exact h.lt, by rw [hk.2.1]; exact h.val⟩
+
+/-- The public counter is among the registers the window loop may change. -/
+theorem WinSt.rbxKeeps {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
+    {P : Point C} {s₀ s s' : State} (h : WinSt K C base size P s₀ s)
+    (hk : Keeps [.rbx] s s') : WinSt K C base size P s₀ s' :=
+  h.next hL (h.scr.of_keeps hk (by decide)) ((Keeps.regs hk).mono (by
+    intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [powClob]))
+    (by rw [hk.2.1]; exact Unch.refl _ _ _)
+
 /-- `R = 16 R` in Jacobian coordinates, but `Y`: the triple `(X : Y : Z)` stands for
 `[16 e]P` (or `Z = 0`), `R` is `(XZ : Y : Z³)` and `E.z` is `Z`. -/
 theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
-    (hS : WinSt K C base size P s₀ s) {e : Nat}
+    (hS : WinSt K C base size P s₀ s) {i : Nat} (hi : i < 4096)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 i) {e : Nat}
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
@@ -237,7 +254,7 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
       (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
   have hQ := fun (a : Nat) => hC.onCurve_mul hP a
-  simp only [WinCfg.jac, toJ_eq, dblJ_eq, fromJ_eq]
+  simp only [WinCfg.jac, toJ_eq, fromJ_eq]
   -- Into Jacobian coordinates, in `E`.
   refine WP.seq (WP.mono (winN_ok hL hp toJN_ok a1 w1.1 w1.2 I₀ (by rcb_sub))
     fun s₁ ⟨k₁, U₁, E₁, I₁, _, v₁⟩ => ?_)
@@ -245,48 +262,69 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
   have J₁ : InvJ C (E₁ K.E.x) (E₁ K.E.y) (E₁ K.E.z) (mul e P) :=
     InvJ.of_toJ (z := tmv C K.M.n base s K.zero) hC hR (show toM _ _ _ = 0 by rw [hz]; exact toM_zero _ _)
       (v₁.trans (toJN_run _))
-  -- Four doublings.
-  refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a2 w2.1 w2.2 I₁ (by rcb_sub))
-    fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
-  have S₂ := S₁.next hL I₂.scr (k₂.mono clob_powClob) U₂
-  have J₂ := InvJ.dbl' hC hM3 (hQ e) J₁ (v₂.trans (dblJN_run _))
-  rw [hC.double hP] at J₂
-  refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a3 w3.1 w3.2 I₂ (by rcb_sub))
-    fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
-  have S₃ := S₂.next hL I₃.scr (k₃.mono clob_powClob) U₃
-  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJN_run _))
-  rw [hC.double hP] at J₃
-  refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a2 w2.1 w2.2 I₃ (by rcb_sub))
-    fun s₄ ⟨k₄, U₄, E₄, I₄, _, v₄⟩ => ?_)
-  have S₄ := S₃.next hL I₄.scr (k₄.mono clob_powClob) U₄
-  have J₄ := InvJ.dbl' hC hM3 (hQ _) J₃ (v₄.trans (dblJN_run _))
-  rw [hC.double hP] at J₄
-  refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a3 w3.1 w3.2 I₄ (by rcb_sub))
-    fun s₅ ⟨k₅, U₅, E₅, I₅, _, v₅⟩ => ?_)
-  have S₅ := S₄.next hL I₅.scr (k₅.mono clob_powClob) U₅
-  have J₅ := InvJ.dbl' hC hM3 (hQ _) J₄ (v₅.trans (dblJN_run _))
-  rw [hC.double hP, show 2 * (2 * (2 * (2 * e))) = 16 * e by omega] at J₅
+  -- Two iterations of the same pair of doublings.
+  let V := [K.E.x, K.E.y, K.E.z, K.S.a, K.S.b3, K.zero]
+  have I₁' : Inv K.M base size C.p (· ∈ winSlots K) V E₁ s₁ :=
+    I₁.sub (by intro x hx; simp only [V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+               rcases hx with h | h | h | h | h | h <;> simp [h])
+  refine WP.seq (WP.mono (quadStart_ok s₁ ((k₁.gpr _ (rbx_not_clob _)).trans hb))
+    fun s₂ ⟨b₂, kc₂⟩ => ?_)
+  let LI := fun j st => WinSt K C base size P s₀ st ∧
+    st.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) ∧ ∃ E : Nat → Fe C,
+    Inv K.M base size C.p (· ∈ winSlots K) V E st ∧
+    InvJ C (E K.E.x) (E K.E.y) (E K.E.z) (mul (4 ^ (2 - j) * e) P)
+  have start : LI 2 s₂ := ⟨S₁.rbxKeeps hL kc₂, b₂, E₁, I₁'.rbxKeeps kc₂, by simpa using J₁⟩
+  have body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
+      WP isa (WinCfg.jacPair K) st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
+    intro j st hj hj' ⟨S, b, E, I, J⟩
+    simp only [WinCfg.jacPair, dblJ_eq]
+    refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a2 w2.1 w2.2 I (by
+      dsimp [V]; rcb_sub)) fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
+    have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
+    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJN_run _))
+    rw [hC.double hP] at J₁'
+    refine WP.seq (WP.mono (winN_ok hL hp dblJN_ok a3 w3.1 w3.2 I₁' (by
+      dsimp [V]; rcb_sub)) fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
+    have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
+    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJN_run _))
+    rw [hC.double hP] at J₂'
+    have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
+      have hj12 : j = 1 ∨ j = 2 := by omega
+      rcases hj12 with rfl | rfl <;> simp <;> omega
+    rw [ar] at J₂'
+    have b' : st₂.gpr .rbx = BitVec.ofNat 64 (i + 4096 * j) := by
+      rw [k₂'.gpr _ (rbx_not_clob _), k₁'.gpr _ (rbx_not_clob _), b]
+    refine WP.mono (quadCount_ok st₂ hi hj hj' b') fun st₃ ⟨b₃, c₃, kc₃⟩ => ?_
+    have I₂'' : Inv K.M base size C.p (· ∈ winSlots K) V E₂' st₂ :=
+      I₂'.sub (by
+        intro x hx
+        simp only [V, List.mem_cons, List.mem_append, List.not_mem_nil, or_false] at hx ⊢
+        rcases hx with h | h | h | h | h | h <;> simp [h])
+    exact ⟨⟨S₂'.rbxKeeps hL kc₃, b₃, E₂', I₂''.rbxKeeps kc₃, J₂'⟩, c₃⟩
+  refine WP.seq (WP.mono (quadLoop_ok body (fun _ h => h) start)
+    fun s₅ ⟨S₅, b₅, E₅, I₅, J₅⟩ => ?_)
+  have rb₅ : s₅.gpr .rbx = s.gpr .rbx := by simpa only [Nat.mul_zero, Nat.add_zero, hb] using b₅
+  have J₅ : InvJ C (E₅ K.E.x) (E₅ K.E.y) (E₅ K.E.z) (mul (16 * e) P) := by simpa using J₅
   -- Back to projective coordinates, in `R`.
-  refine WP.mono (winN_ok hL hp fromJN_ok a4 w4.1 w4.2 I₅ (by rcb_sub))
+  refine WP.mono (winN_ok hL hp fromJN_ok a4 w4.1 w4.2 I₅ (by dsimp [V]; rcb_sub))
     fun s₆ ⟨k₆, U₆, E₆, I₆, o₆, v₆⟩ => ?_
   have S₆ := S₅.next hL I₆.scr (k₆.mono clob_powClob) U₆
   obtain ⟨-, -, -, hz₅⟩ := S₅.ro_tmv hL hF
   have z₅ : E₅ K.zero = 0 := by
-    rw [← I₅.val _ (by simp), hz₅]; exact toM_zero _ _
+    rw [← I₅.val _ (by simp [V]), hz₅]; exact toM_zero _ _
   have r₆ : (E₆ K.R.x, E₆ K.R.y, E₆ K.R.z) = (E₅ K.E.x * E₅ K.E.z, E₅ K.E.y + E₅ K.zero,
       E₅ K.E.z * E₅ K.E.z * E₅ K.E.z) := v₆.trans (fromJN_run _)
   simp only [z₅, Prod.mk.injEq] at r₆
   have ez : E₆ K.E.z = E₅ K.E.z := o₆ _ (a4.apart _ (by simp [rcbR]))
   refine ⟨S₆, by
-      rw [k₆.gpr _ (rbx_not_clob _), k₅.gpr _ (rbx_not_clob _), k₄.gpr _ (rbx_not_clob _),
-        k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _), k₁.gpr _ (rbx_not_clob _)],
+      rw [k₆.gpr _ (rbx_not_clob _), rb₅],
     fun x hx => I₆.lt x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with
-      h | h | h | h <;> simp [h]),
+      h | h | h | h <;> simp [V, h]),
     E₅ K.E.x, E₅ K.E.y, E₅ K.E.z, J₅, ?_, ?_, ?_, ?_⟩
   · exact (I₆.val _ (by simp)).trans r₆.1
   · exact (I₆.val _ (by simp)).trans (r₆.2.1.trans (by grind))
   · exact (I₆.val _ (by simp)).trans r₆.2.2
-  · exact (I₆.val _ (by simp)).trans ez
+  · exact (I₆.val _ (by simp [V])).trans ez
 
 /-! ## `Y = 1` where `Z = 0` -/
 
@@ -432,7 +470,8 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
-    (hS : WinSt K C base size P s₀ s) {e : Nat}
+    (hS : WinSt K C base size P s₀ s) {i : Nat} (hi : i < 4096)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 i) {e : Nat}
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
@@ -442,7 +481,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
         (mul (16 * e) P) := by
   rw [WinCfg.quad]
-  refine WP.seq (WP.mono (jac_ok hL hp hC hM3 hP hF hS hlt hR)
+  refine WP.seq (WP.mono (jac_ok hL hp hC hM3 hP hF hS hi hb hlt hR)
     fun s₁ ⟨S₁, x₁, l₁, X, Y, Z, hJ, ex, ey, ez, eE⟩ => ?_)
   have hn := S₁.scr.nowrap
   refine WP.mono (ySel_ok hL S₁.scr (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨v₂, k₂, U₂⟩ => ?_
