@@ -15,7 +15,7 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_addImm wp_subImm wp_lsr wp_lsl wp_ldrb wp_strb
   wp_and wp_eor wp_sub wp_add)
-open VG.Proof.RsaPkcs1Sig.AArch64 (wp_mov wp_countdown)
+open VG.Proof.RsaPkcs1Sig.AArch64 (wp_mov wp_countdown wp_ldrSp)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 
 /-- `V` with the `n` bytes from `o` replaced by those `d` bytes after them,
@@ -154,5 +154,69 @@ theorem shW_step {V W : Nat → Byte} {o db A p : Nat} (hz : ∀ m < db + 512, V
       simp only [shW]; rw [ite_eq_left ⟨hx1, hx2⟩]
   · simp only [shV, shW]
     rw [ite_eq_right (fun h => hx h.2), ite_eq_right hx, ite_eq_right hx]
+
+theorem shift_ok (H : Hash) (hD : H.D ≤ 64) {t : State} {F S : Addr} (L : Lay t F S) {V W : Nat → Byte}
+    (R : Rep t.mem S V) {db pos : Nat} (hpos : pos < db) (hdb : db < 1024)
+    (hfit : oY + 8 + H.D + db + 512 ≤ oRsa)
+    (hz : ∀ m < db + 512, V (oY + 8 + H.D + m) = zf W db m) (h25 : t.gpr .x25 = BitVec.ofNat 64 db)
+    (hP : t.mem.readW (off F sPos) 64 = BitVec.ofNat 64 pos) :
+    WP isa (shift H) t fun t' => Keep [.x27, .x28, .x22, .x9, .x10, .x11, .x12, .x14, .x15] t t' ∧
+      Frame [⟨S, oRsa⟩] t.mem t'.mem ∧ Rep t'.mem S (shW V (oY + 8 + H.D) db W (pos + 1)) ∧
+      t'.gpr .x22 = BitVec.ofNat 64 (8 + H.D + (db - pos - 1)) := by
+  have c6 : oRsa = 8192 := rfl
+  have hrP : ∀ {u : State}, u.sp = F → u.rd = t.rd → u.wr = t.wr →
+      InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 sPos) 8 := fun hsp hrd hwr => by
+    rw [hsp, hrd, hwr]; exact L.fld (by decide)
+  unfold shift
+  refine WP.seq (WP.mono (Q := fun (u : State) => Only [.x27, .x28, .x22] t u ∧
+      u.gpr .x27 = BitVec.ofNat 64 (pos + 1) ∧ u.gpr .x28 = 1#64 ∧ u.gpr .x22 = BitVec.ofNat 64 10) ?_
+    fun u ⟨O, h27, h28, h22⟩ => ?_)
+  · refine wp_ldrSp (by decide) (hrP L.sp rfl rfl) fun u₁ o₁ e₁ => wp_addImm (by decide) fun u₂ o₂ e₂ =>
+      wp_movz fun u₃ o₃ e₃ => wp_movz fun u₄ o₄ e₄ => wp_nil ⟨(o₁.trans (o₂.trans (o₃.trans o₄))).mono, ?_, ?_, ?_⟩
+    · rw [o₄.get .x27, o₃.get .x27, e₂, e₁, L.sp, hP, BitVec.ofNat_add_ofNat]
+    · rw [o₄.get .x28, e₃]; rfl
+    · rw [e₄]; rfl
+  refine WP.seq (WP.mono (wp_countdown (cnt := .x22) (N := 10) (by decide) (by decide)
+    (fun p v => Keep [.x27, .x28, .x22, .x9, .x10, .x11, .x12, .x14, .x15] u v ∧
+      v.gpr .x27 = BitVec.ofNat 64 ((pos + 1) / 2 ^ p) ∧ v.gpr .x28 = BitVec.ofNat 64 (2 ^ p) ∧
+      Frame [⟨S, oRsa⟩] u.mem v.mem ∧ Rep v.mem S (shW V (oY + 8 + H.D) db W ((pos + 1) % 2 ^ p)))
+    (fun p hp v ⟨hK, h27', h28', hF, hR⟩ _ => ?_)
+    ⟨Keep.refl _ _, by rw [h27, Nat.pow_zero, Nat.div_one], by rw [h28], Frame.refl _ _, ?_⟩ h22)
+    fun v ⟨hK, _, _, hF, hR⟩ => ?_)
+  · -- One pass.
+    have hp9 : 2 ^ p ≤ 512 := Nat.pow_le_pow_right (by decide) (show p ≤ 9 by omega)
+    have Lv : Lay v F S := L.congr (by rw [hK.sp, O.sp]) (by rw [hK.wr, O.wr]) (by rw [hK.get .x20, O.get .x20])
+    have h25v : v.gpr .x25 = BitVec.ofNat 64 db := by rw [hK.get .x25, O.get .x25, h25]
+    refine WP.seq (WP.mono (shiftPass_ok H Lv hR (db := db) (d := 2 ^ p) (a := (pos + 1) / 2 ^ p) (by omega) hD
+      (by omega) (by have := Nat.div_le_self (pos + 1) (2 ^ p); omega) h28' h27' h25v) fun w ⟨kw, fw, rw'⟩ => ?_)
+    refine wp_lsr (by decide) fun w₁ o₁ e₁ => wp_add fun w₂ o₂ e₂ => wp_subImm (by decide) fun w₃ o₃ e₃ =>
+      wp_nil ⟨⟨(hK.trans (kw.trans (o₁.keep.trans (o₂.keep.trans o₃.keep)))).mono, ?_, ?_, ?_, ?_⟩, ?_⟩
+    · rw [o₃.get .x27, o₂.get .x27, e₁, kw.get .x27, h27', LenLoop.lsr_val (by have := Nat.div_le_self (pos + 1) (2 ^ p); omega),
+        Nat.pow_one, Nat.div_div_eq_div_mul, Nat.pow_succ]
+    · rw [o₃.get .x28, e₂, o₁.get .x28, kw.get .x28, h28', BitVec.ofNat_add_ofNat, Nat.pow_succ, Nat.mul_two]
+    · rw [o₃.mem, o₂.mem, o₁.mem]; exact hF.trans fw
+    · rw [o₃.mem, o₂.mem, o₁.mem]
+      exact rw'.congr fun x _ => shW_step hz (by omega) x
+    · rw [e₃, o₂.get .x22, o₁.get .x22, kw.get .x22]
+  · -- No pass yet.
+    refine (O.mem ▸ R).congr fun x _ => ?_
+    simp only [shW, Nat.pow_zero, Nat.mod_one, Nat.add_zero]
+    by_cases hx : oY + 8 + H.D ≤ x ∧ x < oY + 8 + H.D + db
+    · rw [ite_eq_left hx, show x = oY + 8 + H.D + (x - (oY + 8 + H.D)) by omega, hz _ (by omega),
+        Nat.add_sub_cancel_left]
+    · rw [ite_eq_right hx]
+  · -- `ℓ`.
+    have hmod : (pos + 1) % 2 ^ 10 = pos + 1 := Nat.mod_eq_of_lt (by omega)
+    rw [hmod] at hR
+    have hsp : v.sp = F := by rw [hK.sp, O.sp, L.sp]
+    refine wp_ldrSp (by decide) (hrP hsp (by rw [hK.rd, O.rd]) (by rw [hK.wr, O.wr])) fun w₁ o₁ e₁ =>
+      wp_sub fun w₂ o₂ e₂ => wp_subImm (by decide) fun w₃ o₃ e₃ => wp_addImm (by omega) fun w₄ o₄ e₄ =>
+      wp_nil ⟨(O.keep.trans (hK.trans (o₁.keep.trans (o₂.keep.trans (o₃.keep.trans o₄.keep))))).mono,
+        by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem, ← O.mem]; exact hF, by rw [o₄.mem, o₃.mem, o₂.mem, o₁.mem]; exact hR, ?_⟩
+    have hPv : v.mem.readW (off F sPos) 64 = BitVec.ofNat 64 pos := by
+      rw [← hP, slot_keep hF (L.slotSd (by decide)), O.mem]
+    rw [e₄, e₃, e₂, o₁.get .x25, hK.get .x25, O.get .x25, h25, e₁, hsp, hPv, Offset.ofNat_sub_ofNat (by omega),
+      Offset.ofNat_sub_ofNat (by omega), BitVec.ofNat_add_ofNat]
+    congr 1; omega
 
 end VG.Proof.RsaPss.AArch64
