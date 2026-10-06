@@ -7,6 +7,8 @@ import VerifiedGarbage.TCB.X86_64.State
 the x86-64 model in `TCB/X86_64/Isa.lean`: source operands, the ALU
 operations and their flags, shifts, rotates (including BMI2's `rorx`), BMI1's
 `andn`, byte swaps, `mul`, BMI2's `mulx` and ADX's `adcx` and `adox`.
+(`cmovcc`, which reads the flags through a branch condition, is in
+`Isa.lean`, with the conditions.)
 -/
 
 namespace VG.X86_64
@@ -22,7 +24,7 @@ inductive AluOp | add | adc | sub | sbb | and | or | xor | cmp | test
   deriving DecidableEq, Repr
 
 /-- Shifts and rotates by an immediate count. -/
-inductive ShiftOp | ror | shr
+inductive ShiftOp | ror | shr | shl
   deriving DecidableEq, Repr
 
 /-- Read a source operand. Immediates are sign-extended from 32 bits. -/
@@ -109,6 +111,11 @@ is `n`; other counts fault):
 * SHR: the operand is shifted right (logically) by `n`; CF := the last bit
   shifted out (bit `n − 1` of the operand); OF := MSB of the original operand
   if `n = 1`, otherwise undefined; SF and ZF are set according to the result.
+* SHL: the operand is shifted left by `n` (`DEST := DEST ∗ 2`, `n` times,
+  each time after `CF := MSB(DEST)`); CF := the last bit shifted out (bit
+  `32 − n` of the operand); OF := `MSB(DEST) XOR CF` (the MSB of the result
+  XOR CF) if `n = 1`, otherwise undefined; SF and ZF are set according to
+  the result.
 
 (AF and PF are not modelled.) -/
 def execShift32 (op : ShiftOp) (dst : Reg) (n : Nat) (s : State) : Option State :=
@@ -120,6 +127,10 @@ def execShift32 (op : ShiftOp) (dst : Reg) (n : Nat) (s : State) : Option State 
         s.zf s.sf).setReg32 dst r)
     | .shr => let r := a >>> n
       some ((s.setFlags (some (a.getLsbD (n - 1))) (if n = 1 then some a.msb else none)
+        (some (r == 0)) (some r.msb)).setReg32 dst r)
+    | .shl => let r := a <<< n
+      let c := a.getLsbD (32 - n)
+      some ((s.setFlags (some c) (if n = 1 then some (r.msb ^^ c) else none)
         (some (r == 0)) (some r.msb)).setReg32 dst r)
   else none
 
@@ -171,6 +182,11 @@ fault):
 * SHR: the operand is shifted right (logically) by `n`; CF := the last bit
   shifted out (bit `n − 1` of the operand); OF := MSB of the original operand
   if `n = 1`, otherwise undefined; SF and ZF are set according to the result.
+* SHL: the operand is shifted left by `n` (`DEST := DEST ∗ 2`, `n` times,
+  each time after `CF := MSB(DEST)`); CF := the last bit shifted out (bit
+  `64 − n` of the operand); OF := `MSB(DEST) XOR CF` (the MSB of the result
+  XOR CF) if `n = 1`, otherwise undefined; SF and ZF are set according to
+  the result.
 
 (AF and PF are not modelled.) -/
 def execShift (op : ShiftOp) (dst : Reg) (n : Nat) (s : State) : Option State :=
@@ -182,6 +198,10 @@ def execShift (op : ShiftOp) (dst : Reg) (n : Nat) (s : State) : Option State :=
         s.zf s.sf).setReg dst r)
     | .shr => let r := a >>> n
       some ((s.setFlags (some (a.getLsbD (n - 1))) (if n = 1 then some a.msb else none)
+        (some (r == 0)) (some r.msb)).setReg dst r)
+    | .shl => let r := a <<< n
+      let c := a.getLsbD (64 - n)
+      some ((s.setFlags (some c) (if n = 1 then some (r.msb ^^ c) else none)
         (some (r == 0)) (some r.msb)).setReg dst r)
   else none
 

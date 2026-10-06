@@ -26,7 +26,7 @@ deriving instance Lean.ToExpr for ZBinOp
 deriving instance Lean.ToExpr for ZShiftOp
 deriving instance Lean.ToExpr for ZOp
 deriving instance Lean.ToExpr for ZBcstOp
-deriving instance Lean.ToExpr for Instr
 deriving instance Lean.ToExpr for Cond
+deriving instance Lean.ToExpr for Instr
 
 end VG.X86_64
