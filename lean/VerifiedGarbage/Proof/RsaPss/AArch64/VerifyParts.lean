@@ -74,4 +74,54 @@ theorem acc0_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R :
     o₁₃.get .x26, v12, v6, o₁₆.get .x11, o₁₅.get .x11, o₁₄.get .x11, e₁₃, o₁₃.sp, O₁₂.sp, L.sp, o₁₃.mem, m₁₂, hC,
     hm24, cff]
 
+/-- `posCheck`: the byte after the padding `⊕ 1` and the mask's top bit
+(set if there is none) into `acc`, `pos` to its slot, and the salt's length
+`⊕` the expected one, if one is expected. -/
+theorem posCheck_ok {t : State} {F S : Addr} (L : Lay t F S) {acc m v any sv : BitVec 64} {pos db : Nat}
+    (h13 : t.gpr .x13 = m) (h14 : t.gpr .x14 = BitVec.ofNat 64 pos) (h15 : t.gpr .x15 = v)
+    (h26 : t.gpr .x26 = acc) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (hpos : pos < db)
+    (hA : t.mem.readW (off F sAny) 64 = any) (hS : t.mem.readW (off F sSaltLen) 64 = sv) :
+    WP isa posCheck t fun t' => Keep [.x9, .x15, .x13, .x26, .x16, .x11, .x12] t t' ∧
+      t'.mem = t.mem.writeW (off F sPos) (BitVec.ofNat 64 pos) ∧
+      t'.gpr .x26 = (acc ||| ((v ^^^ 1#64) ||| m >>> 63)) |||
+        (if any = 0 then sv ^^^ BitVec.ofNat 64 (db - pos - 1) else 0) := by
+  have hrs : ∀ {u : State}, u.sp = F → u.rd = t.rd → u.wr = t.wr → ∀ {d : Nat}, d + 8 ≤ frameBytes →
+      InRegions (u.rd ++ u.wr) (u.sp + BitVec.ofNat 64 d) 8 := fun hsp hrd hwr _ hd => by
+    rw [hsp, hrd, hwr]; exact L.fld hd
+  have oz : ∀ x : BitVec 64, x ||| 0 = x := fun x => by ext i; simp
+  unfold posCheck
+  rw [List.append_assoc]
+  refine WP.seq (WP.mono (Q := fun (u : State) => Keep [.x9, .x15, .x13, .x26, .x16, .x11] t u ∧
+      u.mem = t.mem.writeW (off F sPos) (BitVec.ofNat 64 pos) ∧
+      u.gpr .x26 = acc ||| ((v ^^^ 1#64) ||| m >>> 63) ∧ u.gpr .x11 = BitVec.ofNat 64 (db - pos - 1) ∧
+      u.gpr .x9 = any) ?_ fun u ⟨K, hm, h26', h11, h9⟩ => ?_)
+  · refine wp_movz fun u₁ o₁ e₁ => wp_eor fun u₂ o₂ e₂ => wp_lsr (by decide) fun u₃ o₃ e₃ =>
+      wp_orr fun u₄ o₄ e₄ => wp_orr fun u₅ o₅ e₅ => ?_
+    have O₅ : Only [.x9, .x15, .x13, .x26] t u₅ := (o₁.trans (o₂.trans (o₃.trans (o₄.trans o₅)))).mono
+    refine st_slot (by rw [O₅.sp, L.sp]) (by decide) (by rw [O₅.wr]; exact L.fst (by decide))
+      (fun u₆ k₆ m₆ x₆ => ?_) (by decide)
+    refine wp_sub fun u₇ o₇ e₇ => wp_subImm (by decide) fun u₈ o₈ e₈ =>
+      wp_ldrSp (by decide) (hrs (by rw [o₈.sp, o₇.sp, k₆.sp, O₅.sp, L.sp]) (by rw [o₈.rd, o₇.rd, k₆.rd, O₅.rd])
+        (by rw [o₈.wr, o₇.wr, k₆.wr, O₅.wr]) (by decide)) fun u₉ o₉ e₉ => wp_nil
+      ⟨(O₅.keep.trans (k₆.trans (o₇.keep.trans (o₈.keep.trans o₉.keep)))).mono, ?_, ?_, ?_, ?_⟩
+    · rw [o₉.mem, o₈.mem, o₇.mem, m₆, O₅.get .x14, h14, O₅.mem]
+    · have a15 : u₄.gpr .x15 = (v ^^^ 1#64) ||| m >>> 63 := by
+        rw [e₄, e₃, o₃.get .x15, e₂, e₁, o₁.get .x15, h15, o₂.get .x13, o₁.get .x13, h13]; rfl
+      rw [o₉.get .x26, o₈.get .x26, o₇.get .x26, k₆.get .x26, e₅, a15, o₄.get .x26, o₃.get .x26, o₂.get .x26,
+        o₁.get .x26, h26]
+    · rw [o₉.get .x11, e₈, e₇, k₆.get .x25, O₅.get .x25, h25, k₆.get .x14, O₅.get .x14, h14,
+        Offset.ofNat_sub_ofNat (by omega), Offset.ofNat_sub_ofNat (by omega)]
+    · rw [e₉, o₈.sp, o₇.sp, k₆.sp, O₅.sp, L.sp, o₈.mem, o₇.mem, m₆, O₅.mem,
+        Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide)]
+      exact hA
+  refine WP.ite _ (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
+  · rw [h9, beq_iff_eq] at hb
+    refine wp_ldrSp (by decide) (hrs (by rw [K.sp, L.sp]) K.rd K.wr (by decide)) fun u₁ o₁ e₁ =>
+      wp_eor fun u₂ o₂ e₂ => wp_orr fun u₃ o₃ e₃ => wp_nil
+        ⟨(K.trans (o₁.keep.trans (o₂.keep.trans o₃.keep))).mono, by rw [o₃.mem, o₂.mem, o₁.mem, hm], ?_⟩
+    rw [e₃, e₂, o₂.get .x26, o₁.get .x26, h26', o₁.get .x11, h11, e₁, K.sp, L.sp, hm,
+      Mem.readW_writeW_sep (Offset.sep _ (by decide) (by decide) (by decide)) (by decide), hS, ite_eq_left hb]
+  · rw [h9, beq_eq_false_iff_ne] at hb
+    exact wp_nil ⟨K.mono, hm, by rw [h26', ite_eq_right hb, oz]⟩
+
 end VG.Proof.RsaPss.AArch64
