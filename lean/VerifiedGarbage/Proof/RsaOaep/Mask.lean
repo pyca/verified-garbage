@@ -126,4 +126,12 @@ theorem unmask {G : Hash} (hG : Valid G) (V : Nat → Byte) {D k : Nat} (hk : 2 
     drop_getD', map_range_getD' V (by omega), Nat.add_sub_cancel_left]
   congr 2; omega
 
+theorem range_map_getD {xs : List Byte} {n : Nat} (h : n ≤ xs.length) :
+    (List.range n).map (fun i => xs.getD i 0) = xs.take n := by
+  apply List.ext_getElem (by simp; omega)
+  intro i h₁ h₂
+  simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getD_eq_getElem?_getD]
+  rw [List.getElem?_eq_getElem (by simp at h₁; omega)]
+  rfl
+
 end VG.Proof.RsaOaep
