@@ -23,7 +23,7 @@ theorem jacWinMul_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} {
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) 
+      (tmv c.C c.n base s (c.sl ONEP)) P)
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', JacWinMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.jacWinPrep c) (.seq (Jacobian.jacWindow (jacWinCfg c) 5) rest)) s R := by

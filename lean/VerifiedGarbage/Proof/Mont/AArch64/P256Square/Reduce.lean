@@ -40,7 +40,7 @@ private theorem reduce_true_ok (s : State) (hz : s.gpr .x7 = 0)
       Keeps reduceClob s t := by
   dsimp only [lowValue, reduceClob]
   apply WP.of_runBlock
-  simp only [reduceCode, ite_false, ite_true, 
+  simp only [reduceCode, ite_false, ite_true,
       List.cons_append, List.nil_append,
       runBlock_cons, runStep_some, runBlock_nil, exec, read_x,
       RegUpd.gpr_write, RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.c_write,

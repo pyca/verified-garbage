@@ -14,7 +14,7 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) {P : Point c.C}
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) 
+      (tmv c.C c.n base s (c.sl ONEP)) P)
  :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.jacWinPrep c) s fun t =>
       Inv (jacWinCfg c).M base size c.C.p (·∈jacWinSlots (jacWinCfg c))

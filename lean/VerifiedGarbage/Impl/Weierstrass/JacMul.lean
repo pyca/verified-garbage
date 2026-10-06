@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Weierstrass.Slots
 
 namespace VG.Impl.Weierstrass
 
-/-- Jacobian doubling when squaring uses the same implementation as multiplication.
+/-- Jacobian doubling with direct `2YZ` and a rescaled `Y²` intermediate.
 Computing `Z' = 2YZ` directly saves two field subtractions. Scaling `Y²` by two before its product
 and square also saves two field additions. -/
 def dblJMul (S : RcbSlots) (p o : Pt) : List FOp :=

@@ -376,7 +376,7 @@ theorem jacComb_step_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} 
       exact hI.bits t ht
     · exact TblMem.of_unch hI.tbl (by rw [S₄.keep.rd, S₄.keep.wr, E₃.keep.rd, E₃.keep.wr, k₁.rd, k₁.wr])
         U₄ (fun w hw => tcombW_size hL hI.mod w (List.mem_append_left _ hw)) hF.out
-  
+
   · have hm0 : magH K.H (combWin K.w k (j-1)) = 0 := by
       simpa only [decide_eq_false_iff_not, not_not] using hzero
     have hw0 : combWin K.w k (j-1) = K.H := by
