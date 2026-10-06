@@ -43,21 +43,6 @@ theorem mmY_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
     rcases hj with rfl | rfl | rfl <;> simp [gRanges]
 
-/-- The modulus' arrays but `Y`, the accumulator and the temporary are kept
-by a change within `gRanges` and a prime's workspace. -/
-theorem _root_.VG.Proof.Bignum.Frm.gx_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
-    (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)
-    (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) : wv m' B (slot w j) w = wv m B (slot w j) w := by
-  have := slot_le (w := w) hj
-  have := hdr_lt_slot w j (show 31 < 32 by decide)
-  have s1 := slot_sep (w := w) h1
-  have s2 := slot_sep (w := w) h2
-  have s3 := slot_sep (w := w) h3
-  refine hf.wv_eq (fun r hr => ?_) (by omega)
-  simp only [gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
-
 theorem NVals.of_frm {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N o wx : Nat}
     (h : NVals s B w minv N) (hf : Frm B (gRanges w ++ [xRange o wx]) s.mem t.mem) (hlo : slot w 8 ≤ o)
     (hz : B.toNat + slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) : NVals t B w minv N := by

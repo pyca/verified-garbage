@@ -253,7 +253,7 @@ theorem XVals.of_disj {s t : State} {B : Addr} {o wx : Nat} {mx : BitVec 64} {X 
       (by omega), ← word_off]; exact h.inv,
     by rw [wv_off, hf.wv_eq (hd _ _ (by omega)) (by omega), ← wv_off]; exact h.one⟩
 
-theorem WsAt.of_disj {m m' : Mem} {B : Addr} {o wx : Nat} {mx : BitVec 64} {rs : List (Nat × Nat)}
+theorem _root_.VG.Proof.Bignum.WsAt.of_disj {m m' : Mem} {B : Addr} {o wx : Nat} {mx : BitVec 64} {rs : List (Nat × Nat)}
     (h : WsAt m B o wx mx) (hf : Frm B rs m m') (hr : ∀ r ∈ rs, r.1 + r.2 ≤ o ∨ o + 8 * 17 ≤ r.1)
     (ho : o + 8 * 17 ≤ 2 ^ 64) : WsAt m' B o wx mx :=
   h.of_words fun i hi => by
