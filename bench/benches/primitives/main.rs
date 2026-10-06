@@ -28,6 +28,7 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
@@ -313,6 +314,7 @@ const BENCHES: &[Bench] = &[
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),
+    (ecdh_p224::USES, ecdh_p224::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
     (ecdh_p521::USES, ecdh_p521::bench),
