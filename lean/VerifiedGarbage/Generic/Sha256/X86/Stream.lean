@@ -12,6 +12,7 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := v.funct
     doc := f.api.doc
     code := f.code
     contract := f.contract
+    consts := []
     stack := f.stack
     verified := f.verified
     ofSig := f.ofSig
