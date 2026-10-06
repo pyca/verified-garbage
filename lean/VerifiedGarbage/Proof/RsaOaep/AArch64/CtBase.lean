@@ -112,6 +112,44 @@ theorem count_ct {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (P : Nat �
     have : k + 1 ≠ n := by simpa using h
     exact ⟨n - (k + 1), by omega, k + 1, by omega, rfl, hq⟩
 
+/-- A block followed by code, as the block's two parts and the code: it runs
+the same and leaks the same trace. -/
+theorem RelCT.seq_block_append {P Q : State → State → Prop} {A B : List Instr} {c : Prog isa}
+    (h : RelCT isa P (.seq (.block A) (.seq (.block B) c)) Q) : RelCT isa P (.seq (.block (A ++ B)) c) Q := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
+  cases e₁ with
+  | seq a₁ c₁ =>
+    cases e₂ with
+    | seq a₂ c₂ =>
+      rw [Exec.block_iff, execBlock_append] at a₁ a₂
+      obtain ⟨⟨x₁, u₁⟩, hx₁, hy₁⟩ := Option.bind_eq_some_iff.mp a₁
+      obtain ⟨⟨y₁, w₁⟩, hz₁, he₁⟩ := Option.map_eq_some_iff.mp hy₁
+      obtain ⟨⟨x₂, u₂⟩, hx₂, hy₂⟩ := Option.bind_eq_some_iff.mp a₂
+      obtain ⟨⟨y₂, w₂⟩, hz₂, he₂⟩ := Option.map_eq_some_iff.mp hy₂
+      simp only [Prod.mk.injEq] at he₁ he₂
+      obtain ⟨rfl, rfl⟩ := he₁
+      obtain ⟨rfl, rfl⟩ := he₂
+      obtain ⟨ht, hq⟩ := h _ _ _ _ _ _ hp (.seq (.block hx₁) (.seq (.block hz₁) c₁))
+        (.seq (.block hx₂) (.seq (.block hz₂) c₂))
+      simp only [List.append_assoc] at ht ⊢
+      exact ⟨ht, hq⟩
+
+/-- Registers set to the values `l` gives them, as `lr_seq_tr` fixes them. -/
+theorem pin_list {u t : State} (l : List (Reg × BitVec 64)) (hs : u.sp = t.sp) (h : ∀ p ∈ l, u.gpr p.1 = p.2) :
+    u.sp = t.sp ∧ ∀ r ∈ l.map Prod.fst, u.gpr r = (l.lookup r).getD 0 := by
+  refine ⟨hs, ?_⟩
+  induction l with
+  | nil => exact fun _ h => absurd h List.not_mem_nil
+  | cons p l ih =>
+    intro r hr
+    obtain ⟨a, v⟩ := p
+    by_cases hra : r = a
+    · subst hra; simp only [List.lookup, beq_self_eq_true]; exact h _ List.mem_cons_self
+    · have hr' : r ∈ l.map Prod.fst := by simpa [hra] using hr
+      have hb : (r == a) = false := by simpa using hra
+      simp only [List.lookup, hb]
+      exact ih (fun q hq => h q (List.mem_cons_of_mem _ hq)) r hr'
+
 /-! ## The calls -/
 
 variable {G : Stream} (hG : StreamOK G)
