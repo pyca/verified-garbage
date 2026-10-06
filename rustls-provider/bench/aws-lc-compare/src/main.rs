@@ -227,12 +227,12 @@ fn main() {
             pk.public_op(&sig, &mut out).unwrap();
         });
         row(
-            &format!("  vg RSA-{bits} PublicKey::new (unused precompute)"),
+            &format!("  vg RSA-{bits} PublicKey::new (precompute, unused by PSS)"),
             a,
             v1,
         );
         row(
-            &format!("  vg RSA-{bits} rsa_pss::verify (baseline modexp)"),
+            &format!("  vg RSA-{bits} rsa_pss::verify (no precompute)"),
             a,
             v2,
         );
