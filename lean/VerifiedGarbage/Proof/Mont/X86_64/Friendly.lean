@@ -8,13 +8,18 @@ For `m ≡ -1 (mod 2⁶⁴)` (`Red.friendly ws`, `ws` the words of
 the window above `t₀` and clears `t₀`: `2⁶⁴ T' = T + t₀ m` (`redF_ok`), the
 reduction by `u = t₀`. A word of `m'` is multiplied by `t₀` into `rdx:rax`
 and added at its place, its carry up the window (`addProd_ok`, `adcZeros_ok`);
-words of zero are skipped (`redWords_ok`).
+words of zero are skipped (`redWords_ok`). For P-256's `p`,
+`m' = 2³² + 2¹²⁸ (2⁶⁴ − 2³² + 1)`, and `shiftRed` multiplies by it without
+`mul`: `t₀ 2ᵏ` from two shifts (`shl_shr_split`), and `t₀ (2⁶⁴ − 2ᵏ + 1)` from
+it by subtraction (`shiftProd_ok`), added in one carry chain (`add4_ok`,
+`shiftRed_ok`); `redFriendly_ok` covers either.
 -/
 
 namespace VG.Proof.Mont.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
-open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 add_carry adc_carry toNat_ofBool)
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono se0 add_carry adc_carry sub_borrow sbb_borrow
+  toNat_ofBool)
 
 theorem mov32zero_ok (s : State) (t : Reg) :
     WP isa (.block [.mov32 t (.imm 0)]) s fun s' => s'.gpr t = 0 ∧ s'.cf = s.cf ∧ Keeps [t] s s' := by
@@ -216,13 +221,208 @@ theorem redWords_ok (t0 : Reg) : ∀ (ws : List MWord) {s : State} {ts : List Re
         omega
       · exact (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))
 
+/-! ### Without `mul`: `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)` (`shiftRed`) -/
+
+/-- `t 2ᵏ = (t << k) + 2⁶⁴ (t >> (64 − k))`. -/
+theorem shl_shr_split (t : BitVec 64) {k : Nat} (hk : 0 < k ∧ k < 64) :
+    (t <<< k).toNat + 2 ^ 64 * (t >>> (64 - k)).toNat = t.toNat * 2 ^ k := by
+  rw [BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
+  have h64 : (2 : Nat) ^ 64 = 2 ^ k * 2 ^ (64 - k) := by rw [← Nat.pow_add]; congr 1; omega
+  have hd : t.toNat * 2 ^ k / 2 ^ 64 = t.toNat / 2 ^ (64 - k) := by
+    rw [h64, Nat.mul_comm t.toNat, Nat.mul_div_mul_left _ _ (Nat.two_pow_pos k)]
+  have := Nat.div_add_mod (t.toNat * 2 ^ k) (2 ^ 64)
+  rw [hd] at this
+  omega
+
+/-- `rdx:rax = t₀ 2ᵏ` and `rbp:rcx = t₀ (2⁶⁴ + 1) − t₀ 2ᵏ`, without `mul`. -/
+theorem shiftProd_ok (s : State) {t0 : Reg} {k : Nat} (hk : 0 < k ∧ k < 64)
+    (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx ∧ t0 ≠ .rdx ∧ t0 ≠ .rbp) :
+    WP isa (.block [.mov .rax (.reg t0), .shift .shl .rax k, .mov .rdx (.reg t0),
+      .shift .shr .rdx (64 - k), .mov .rcx (.reg t0), .alu .sub .rcx (.reg .rax), .mov .rbp (.reg t0),
+      .alu .sbb .rbp (.reg .rdx)]) s fun s' =>
+      (s'.gpr .rax).toNat + 2 ^ 64 * (s'.gpr .rdx).toNat = (s.gpr t0).toNat * 2 ^ k ∧
+      (s'.gpr .rcx).toNat + 2 ^ 64 * (s'.gpr .rbp).toNat + (s.gpr t0).toNat * 2 ^ k =
+        (s.gpr t0).toNat * (2 ^ 64 + 1) ∧
+      Keeps [.rax, .rdx, .rcx, .rbp] s s' := by
+  obtain ⟨ha, hc, hd, -⟩ := h0
+  have hs1 : 1 ≤ k ∧ k ≤ 63 := ⟨hk.1, by omega⟩
+  have hs2 : 1 ≤ 64 - k ∧ 64 - k ≤ 63 := ⟨by omega, by omega⟩
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execShift, execAlu, readSrc, hs1, hs2,
+    and_self, ↓reduceIte, Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
+    RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ha, hc, hd, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  generalize s.gpr t0 = t
+  refine ⟨shl_shr_split t hk, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have e1 := sub_borrow t (t <<< k)
+    have e2 := sbb_borrow t (t >>> (64 - k)) (decide (t.toNat < (t <<< k).toNat))
+    have e3 := shl_shr_split t hk
+    have hP : t.toNat * 2 ^ k ≤ 2 ^ 64 * t.toNat := by
+      rw [Nat.mul_comm (2 ^ 64)]
+      exact Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by decide) (by omega))
+    have h1 := (t - (t <<< k)).isLt
+    have h2 := (t - t >>> (64 - k) - (BitVec.ofBool (decide (t.toNat < (t <<< k).toNat))).setWidth 64).isLt
+    generalize t.toNat * 2 ^ k = P at e3 hP ⊢
+    revert e1 e2
+    generalize decide (t.toNat < (t <<< k).toNat) = c
+    generalize decide (t.toNat < (t >>> (64 - k)).toNat + c.toNat) = c'
+    intro e1 e2
+    cases c <;> cases c' <;> simp only [Bool.toNat_true, Bool.toNat_false] at e1 e2 ⊢ <;> omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1,
+      hr.2.2.2, ite_false]
+
+/-- `w₁ w₂ w₃ w₄ += rax rdx rcx rbp`, the carry out in `CF`. -/
+theorem add4_ok (s : State) {w1 w2 w3 w4 : Reg} (hf : Fresh [w1, w2, w3, w4]) :
+    WP isa (.block [.alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rdx), .alu .adc w3 (.reg .rcx),
+      .alu .adc w4 (.reg .rbp)]) s fun s' => ∃ c, s'.cf = some c ∧
+      regsVal s' [w1, w2, w3, w4] + 2 ^ 256 * c.toNat = regsVal s [w1, w2, w3, w4] +
+        ((s.gpr .rax).toNat + 2 ^ 64 * (s.gpr .rdx).toNat + 2 ^ 128 * (s.gpr .rcx).toNat +
+          2 ^ 192 * (s.gpr .rbp).toNat) ∧ Keeps [w1, w2, w3, w4] s s' := by
+  obtain ⟨h1, -, c1, d1, b1, -⟩ := hf.head
+  obtain ⟨h2, -, c2, -, b2, -⟩ := hf.tail.head
+  obtain ⟨h3, -, -, -, b3, -⟩ := hf.tail.tail.head
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h1 h2 h3
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    Option.map_some, regsVal, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
+    RegUpd.cf_setReg, ↓reduceIte, Ne.symm d1, Ne.symm c1, Ne.symm c2, Ne.symm b1, Ne.symm b2, Ne.symm b3, h1.1, h1.2.1,
+    h1.2.2, h2.1, h2.2, h3, Ne.symm h1.1, Ne.symm h1.2.1, Ne.symm h1.2.2, Ne.symm h2.1, Ne.symm h2.2,
+    Ne.symm h3, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have e1 := add_carry (s.gpr w1) (s.gpr .rax)
+    have e2 := adc_carry (s.gpr w2) (s.gpr .rdx) (decide (2 ^ 64 ≤ (s.gpr w1).toNat + (s.gpr .rax).toNat))
+    generalize decide (2 ^ 64 ≤ (s.gpr w1).toNat + (s.gpr .rax).toNat) = c₁ at e1 e2 ⊢
+    have e3 := adc_carry (s.gpr w3) (s.gpr .rcx) (decide (2 ^ 64 ≤ (s.gpr w2).toNat + (s.gpr .rdx).toNat + c₁.toNat))
+    generalize decide (2 ^ 64 ≤ (s.gpr w2).toNat + (s.gpr .rdx).toNat + c₁.toNat) = c₂ at e2 e3 ⊢
+    have e4 := adc_carry (s.gpr w4) (s.gpr .rbp) (decide (2 ^ 64 ≤ (s.gpr w3).toNat + (s.gpr .rcx).toNat + c₂.toNat))
+    generalize decide (2 ^ 64 ≤ (s.gpr w3).toNat + (s.gpr .rcx).toNat + c₂.toNat) = c₃ at e3 e4 ⊢
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- `ts += t₀ (2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1))`, if it does not overflow. -/
+theorem shiftRed_ok (s : State) {t0 : Reg} {k : Nat} (hk : 0 < k ∧ k < 64) {ts : List Reg}
+    (hl : 4 ≤ ts.length) (hf : Fresh ts) (ht0 : t0 ∉ ts)
+    (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx ∧ t0 ≠ .rdx ∧ t0 ≠ .rbp)
+    (hb : regsVal s ts + (s.gpr t0).toNat * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) <
+      2 ^ (64 * ts.length)) :
+    WP isa (.block (shiftRed t0 k ts)) s fun s' =>
+      regsVal s' ts = regsVal s ts + (s.gpr t0).toNat * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) ∧
+        Keeps (.rax :: .rcx :: .rdx :: .rbp :: ts) s s' := by
+  obtain ⟨w1, w2, w3, w4, rest, rfl⟩ : ∃ w1 w2 w3 w4 rest, ts = w1 :: w2 :: w3 :: w4 :: rest := by
+    match ts, hl with
+    | w1 :: w2 :: w3 :: w4 :: rest, _ => exact ⟨w1, w2, w3, w4, rest, rfl⟩
+    | [], h | [_], h | [_, _], h | [_, _, _], h => simp at h
+  have hf4 : Fresh [w1, w2, w3, w4] := ⟨(List.sublist_append_left [w1, w2, w3, w4] rest).nodup hf.1,
+    fun q hq => hf.2 q (List.mem_append_left rest hq)⟩
+  have hnd : rest.Nodup := (List.sublist_append_right [w1, w2, w3, w4] rest).nodup hf.1
+  have hout : ∀ q ∈ rest, q ≠ w1 ∧ q ≠ w2 ∧ q ≠ w3 ∧ q ≠ w4 := fun q hq => by
+    have n1 := hf.head.1
+    have n2 := hf.tail.head.1
+    have n3 := hf.tail.tail.head.1
+    have n4 := hf.tail.tail.tail.head.1
+    simp only [List.mem_cons, not_or] at n1 n2 n3
+    exact ⟨fun h => n1.2.2.2 (h ▸ hq), fun h => n2.2.2 (h ▸ hq), fun h => n3.2 (h ▸ hq),
+      fun h => n4 (h ▸ hq)⟩
+  rw [shiftRed, WP.block_append_iff, show ([.mov .rax (.reg t0), .shift .shl .rax k, .mov .rdx (.reg t0),
+      .shift .shr .rdx (64 - k), .mov .rcx (.reg t0), .alu .sub .rcx (.reg .rax), .mov .rbp (.reg t0),
+      .alu .sbb .rbp (.reg .rdx), .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rdx),
+      .alu .adc w3 (.reg .rcx), .alu .adc w4 (.reg .rbp)] : List Instr) =
+      ([.mov .rax (.reg t0), .shift .shl .rax k, .mov .rdx (.reg t0), .shift .shr .rdx (64 - k),
+        .mov .rcx (.reg t0), .alu .sub .rcx (.reg .rax), .mov .rbp (.reg t0),
+        .alu .sbb .rbp (.reg .rdx)] : List Instr) ++
+      ([.alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rdx), .alu .adc w3 (.reg .rcx),
+        .alu .adc w4 (.reg .rbp)] : List Instr) from rfl, WP.block_append_iff]
+  refine WP.mono (shiftProd_ok s hk h0) fun s₁ ⟨e₁, f₁, k₁⟩ => ?_
+  refine WP.mono (add4_ok s₁ hf4) fun s₂ ⟨c, cf₂, e₂, k₂⟩ => ?_
+  have g₁ : ∀ q, q ≠ .rax → q ≠ .rdx → q ≠ .rcx → q ≠ .rbp → s₁.gpr q = s.gpr q :=
+    fun q h1 h2 h3 h4 => k₁.1 q (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2, h3, h4⟩)
+  have hW : regsVal s₁ [w1, w2, w3, w4] = regsVal s [w1, w2, w3, w4] := regsVal_congr fun q hq => by
+    have := hf4.2 q hq; exact g₁ q this.1 this.2.2.1 this.2.1 this.2.2.2.1
+  have hR : regsVal s₂ rest = regsVal s rest := regsVal_congr fun q hq => by
+    have hq' := hf.2 q (by
+      simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr hq))))
+    rw [k₂.1 q (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hout q hq),
+      g₁ q hq'.1 hq'.2.2.1 hq'.2.1 hq'.2.2.2.1]
+  have hsplit : ∀ (t : State), regsVal t (w1 :: w2 :: w3 :: w4 :: rest) =
+      regsVal t [w1, w2, w3, w4] + 2 ^ 256 * regsVal t rest := fun t => by
+    simp only [regsVal]; omega
+  generalize hx : (s.gpr t0).toNat = x at hb e₁ f₁ ⊢
+  rw [hsplit] at hb
+  simp only [List.length_cons] at hb
+  rw [show 64 * (rest.length + 1 + 1 + 1 + 1) = 256 + 64 * rest.length by omega, Nat.pow_add] at hb
+  have hK : 2 ^ k ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+  have hm : x * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) =
+      x * 2 ^ k + 2 ^ 128 * (x * (2 ^ 64 + 1) - x * 2 ^ k) := by
+    rw [show 2 ^ 64 - 2 ^ k + 1 = (2 ^ 64 + 1) - 2 ^ k by omega, Nat.mul_add,
+      Nat.mul_left_comm x (2 ^ 128), Nat.mul_sub]
+  rw [hm] at hb ⊢
+  generalize x * 2 ^ k = P at hb e₁ f₁ ⊢
+  generalize x * (2 ^ 64 + 1) = Q at hb f₁ ⊢
+  generalize hA : 2 ^ (64 * rest.length) = A at hb
+  have hb' : regsVal s₂ rest + c.toNat < 2 ^ (64 * rest.length) := by
+    rw [hR, hA]
+    have hlt := regsVal_lt s [w1, w2, w3, w4]
+    simp only [List.length_cons, List.length_nil] at hlt
+    have : 2 ^ 256 * (regsVal s rest + c.toNat) < 2 ^ 256 * A := by
+      rw [hW] at e₂; omega
+    exact Nat.lt_of_mul_lt_mul_left this
+  refine WP.mono (adcZeros_ok rest cf₂ hnd hb') fun s₃ ⟨e₃, k₃⟩ => ⟨?_, ?_⟩
+  · have hW₃ : regsVal s₃ [w1, w2, w3, w4] = regsVal s₂ [w1, w2, w3, w4] := regsVal_congr fun q hq =>
+      k₃.1 q fun h => by
+        obtain ⟨n1, n2, n3, n4⟩ := hout q h
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl | rfl
+        exacts [n1 rfl, n2 rfl, n3 rfl, n4 rfl]
+    rw [hsplit, hsplit, hW₃, e₃, hR]
+    rw [hW] at e₂
+    omega
+  · exact ((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))
+
+/-- What `shiftK?` finds: `m'`'s words are `2ᵏ, 0, 2⁶⁴ − 2ᵏ + 1, 0`. -/
+theorem shiftK?_some {ws : List MWord} {k : Nat} (h : shiftK? ws = some k) :
+    0 < k ∧ k < 64 ∧ ws = [.pow2 k, .zero, .gen (2 ^ 64 - 2 ^ k + 1), .zero] := by
+  unfold shiftK? at h
+  split at h
+  · split at h
+    · rename_i hc
+      cases h
+      obtain ⟨h1, h2, rfl⟩ := hc
+      exact ⟨h1, h2, rfl⟩
+    · cases h
+  · cases h
+
+/-- `ts += t₀ m'` for the words `ws` of `m'`, by `shiftRed` or `redWords`
+(`redFriendly`), if it does not overflow. -/
+theorem redFriendly_ok (t0 : Reg) (ws : List MWord) {s : State} {ts : List Reg}
+    (hl : ws.length + 1 ≤ ts.length) (hf : Fresh ts) (ht0 : t0 ∉ ts)
+    (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx ∧ t0 ≠ .rdx ∧ t0 ≠ .rbp) (hok : ws.all MWord.ok = true)
+    (hb : regsVal s ts + (s.gpr t0).toNat * mwVal ws < 2 ^ (64 * ts.length)) :
+    WP isa (.block (redFriendly t0 ws ts)) s fun s' =>
+      regsVal s' ts = regsVal s ts + (s.gpr t0).toNat * mwVal ws ∧
+        Keeps (.rax :: .rcx :: .rdx :: .rbp :: ts) s s' := by
+  unfold redFriendly
+  split
+  · rename_i k hk
+    obtain ⟨h1, h2, rfl⟩ := shiftK?_some hk
+    have hmw : mwVal [.pow2 k, .zero, .gen (2 ^ 64 - 2 ^ k + 1), .zero] =
+        2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1) := by
+      simp only [mwVal, MWord.val]; omega
+    rw [hmw] at hb ⊢
+    simp only [List.length_cons, List.length_nil] at hl
+    exact shiftRed_ok s ⟨h1, h2⟩ (by omega) hf ht0 h0 hb
+  · exact WP.mono (redWords_ok t0 ws hl hf ht0 ⟨h0.1, h0.2.2.1⟩ hok hb) fun s' ⟨e, k⟩ =>
+      ⟨e, k.mono (by sub_regs)⟩
+
 /-- The reduction of a round for a friendly modulus: `2⁶⁴ T' = T + t₀ m`. -/
 theorem redF_ok {s : State} {n i m : Nat} (hn : n < 7) {ws : List MWord}
     (hr : (Red.friendly ws).ok n m = true) (hm : m < 2 ^ (64 * n))
     (hb : regsVal s (wins n i) + (s.gpr (win n i 0)).toNat * m < 2 ^ 64 * (2 * m)) :
-    WP isa (.block (redWords (win n i 0) ws (wins n i).tail ++ ([.mov32 (win n i 0) (.imm 0)] : List Instr))) s
+    WP isa (.block (redFriendly (win n i 0) ws (wins n i).tail ++
+      ([.mov32 (win n i 0) (.imm 0)] : List Instr))) s
       fun s' => 2 ^ 64 * regsVal s' (wins n (i + 1)) = regsVal s (wins n i) + (s.gpr (win n i 0)).toNat * m ∧
-        Keeps (.rax :: .rdx :: wins n i) s s' := by
+        Keeps (.rax :: .rcx :: .rdx :: .rbp :: wins n i) s s' := by
   simp only [Red.ok, Bool.and_eq_true, beq_iff_eq] at hr
   obtain ⟨⟨⟨hlen, hm1⟩, hmv⟩, hok⟩ := hr
   have hf := fresh_wins hn i
@@ -240,15 +440,15 @@ theorem redF_ok {s : State} {n i m : Nat} (hn : n < 7) {ws : List MWord}
   generalize hx : (s.gpr (win n i 0)).toNat = x at hb
   have hT : regsVal s (win n i 0 :: tail) = x + 2 ^ 64 * regsVal s tail := by rw [regsVal, hx]
   rw [hcons, hT] at hb
-  refine WP.mono (redWords_ok (win n i 0) ws (s := s) (ts := tail) (by omega) hf'.tail h0.1
-    ⟨h0.2.1, h0.2.2.2.1⟩ hok (by
+  refine WP.mono (redFriendly_ok (win n i 0) ws (s := s) (ts := tail) (by omega) hf'.tail h0.1
+    ⟨h0.2.1, h0.2.2.1, h0.2.2.2.1, h0.2.2.2.2.1⟩ hok (by
       rw [hx, htl, pow64_succ]
       have : 2 ^ 64 * (regsVal s tail + x * mwVal ws) < 2 ^ 64 * (2 ^ 64 * 2 ^ (64 * n)) := by
         rw [Nat.mul_add, Nat.mul_left_comm, hm', Nat.mul_add, Nat.mul_one]
         omega
       exact Nat.lt_of_mul_lt_mul_left this)) fun s₁ ⟨e₁, k₁⟩ => ?_
   have g0 : s₁.gpr (win n i 0) = s.gpr (win n i 0) := k₁.1 _ (by
-    simp only [List.mem_cons, not_or]; exact ⟨h0.2.1, h0.2.2.2.1, h0.1⟩)
+    simp only [List.mem_cons, not_or]; exact ⟨h0.2.1, h0.2.2.1, h0.2.2.2.1, h0.2.2.2.2.1, h0.1⟩)
   refine WP.mono (mov32zero_ok s₁ (win n i 0)) fun s₂ ⟨z₂, _, k₂⟩ => ⟨?_, ?_⟩
   · rw [wins_succ, ht, regsVal_append, htl]
     have : regsVal s₂ tail = regsVal s₁ tail := regsVal_congr fun q hq => k₂.1 q (by
