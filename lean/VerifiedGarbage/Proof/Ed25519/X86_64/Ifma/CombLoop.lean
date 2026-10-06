@@ -30,12 +30,12 @@ theorem vAddPt_cache (P q : Spec.Ed25519.Point) :
   simp only [vAddPt, cache, Spec.Ed25519.pointAdd]
   congr 1 <;> grind
 
-/-! ## Five doublings -/
+/-! ## Four doublings -/
 
 /-- The doublings' invariant, with `n` left. -/
 structure DInv (s : State) (base : Addr) (a : EPoint dZ) (n : Nat) (t : State) : Prop where
   pos : 0 < n
-  le : n ≤ 5
+  le : n ≤ 4
   rdi : t.gpr .rdi = base
   rsi : t.gpr .rsi = BitVec.ofNat 64 n
   gpr : ∀ r, r ≠ .rsi → t.gpr r = s.gpr r
@@ -44,19 +44,19 @@ structure DInv (s : State) (base : Addr) (a : EPoint dZ) (n : Nat) (t : State) :
   mem : Outside base 1024 320 s.mem t.mem
   consts : EConsts t.mem base
   small : Small t
-  rep : Rep (lanePt t) ((2 ^ (5 - n) : Nat) • a)
+  rep : Rep (lanePt t) ((2 ^ (4 - n) : Nat) • a)
 
-theorem vdbl5_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base) (hx : Small s)
+theorem vdbl4_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base) (hx : Small s)
     {a : EPoint dZ} (ha : Rep (lanePt s) a) :
-    WP isa vdbl5 s fun t => (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base 1024 320 s.mem t.mem ∧ Small t ∧ Rep (lanePt t) ((32 : Nat) • a) := by
-  rw [vdbl5]
-  refine WP.seq (WP.mono (mov32_wp s .rsi 5) fun s₁ ⟨r₁, g₁, m₁, rd₁, wr₁, q₁⟩ => ?_)
-  have h₁ : DInv s base a 5 s₁ :=
+    WP isa vdbl4 s fun t => (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 1024 320 s.mem t.mem ∧ Small t ∧ Rep (lanePt t) ((16 : Nat) • a) := by
+  rw [vdbl4]
+  refine WP.seq (WP.mono (mov32_wp s .rsi 4) fun s₁ ⟨r₁, g₁, m₁, rd₁, wr₁, q₁⟩ => ?_)
+  have h₁ : DInv s base a 4 s₁ :=
     ⟨by decide, by decide, by rw [g₁ _ (by decide)]; exact hs.rdi, r₁, g₁, rd₁, wr₁,
       by rw [m₁]; exact Outside.refl _ _ _ _, by rw [m₁]; exact hk,
       fun l hl i hi => by rw [lanes_qw q₁]; exact hx l hl i hi, by rw [lanePt_qw q₁]; simpa using ha⟩
-  refine WP.loop (DInv s base a) (fun n t h => ?_) 5 s₁ h₁
+  refine WP.loop (DInv s base a) (fun n t h => ?_) 4 s₁ h₁
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := h.pos; omega : n ≠ 0)
   have hst : Scratch t base := ⟨h.rdi, by rw [h.wr]; exact hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
@@ -70,8 +70,8 @@ theorem vdbl5_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s
   have wm : Outside base 1024 320 s.mem w.mem := by rw [kw.2.1]; exact h.mem.trans uo
   have wk : EConsts w.mem base := by rw [kw.2.1]; exact h.consts.outside uo
   have wsm : Small w := by intro l hl i hi; rw [lanes_qw wq]; exact usm l hl i hi
-  have wp : Rep (lanePt w) ((2 ^ (5 - k) : Nat) • a) := by
-    rw [lanePt_qw wq, up, show 5 - k = (5 - (k + 1)) + 1 by have := h.le; omega, pow_succ, mul_nsmul,
+  have wp : Rep (lanePt w) ((2 ^ (4 - k) : Nat) • a) := by
+    rw [lanePt_qw wq, up, show 4 - k = (4 - (k + 1)) + 1 by have := h.le; omega, pow_succ, mul_nsmul,
       two_nsmul]
     exact dblPoint_rep h.rep.proj
   by_cases hk0 : k = 0
@@ -80,6 +80,19 @@ theorem vdbl5_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s
       by simpa using wp⟩
   · exact Or.inr ⟨by simp only [eval, wz, decide_eq_false hk0, Option.map_some, Bool.not_false],
       k, by omega, ⟨by omega, by have := h.le; omega, wr', wc, wg, wrd, wwr, wm, wk, wsm, wp⟩⟩
+
+/-- Five doublings: `vdbl4`'s, and one more. -/
+theorem vdbl5_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base) (hx : Small s)
+    {a : EPoint dZ} (ha : Rep (lanePt s) a) :
+    WP isa vdbl5 s fun t => (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 1024 320 s.mem t.mem ∧ Small t ∧ Rep (lanePt t) ((32 : Nat) • a) := by
+  rw [vdbl5]
+  refine WP.seq (WP.mono (vdbl4_ok hs hk hx ha) fun u ⟨ug, urd, uwr, uo, usm, up⟩ => ?_)
+  have hsu : Scratch u base := ⟨by rw [ug _ (by decide)]; exact hs.rdi, by rw [uwr]; exact hs.wr, hs.nowrap⟩
+  refine WP.mono (vdbl_wp hsu.rdi (ctx_of hsu) (hk.outside uo) usm) fun t ⟨tg, trd, twr, tou, tsm, tp⟩ =>
+    ⟨fun r hr => by rw [tg]; exact ug r hr, trd.trans urd, twr.trans uwr, uo.trans tou, tsm, ?_⟩
+  rw [tp, show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
+  exact dblPoint_rep up.proj
 
 /-! ## `[G]B`'s entry -/
 

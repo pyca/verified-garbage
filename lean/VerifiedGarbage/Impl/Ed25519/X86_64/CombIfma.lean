@@ -132,9 +132,12 @@ def gEntry : List Instr :=
 
 /-! ## The comb -/
 
-/-- Five doublings of the lanes, counted by `rsi`. -/
-def vdbl5 : Prog isa :=
-  .seq (.block [.mov32 .rsi (.imm 5)]) (.loop (.block (vdbl ++ [.alu .sub .rsi (.imm 1)])) .ne)
+/-- Four doublings of the lanes, counted by `rsi`. -/
+def vdbl4 : Prog isa :=
+  .seq (.block [.mov32 .rsi (.imm 4)]) (.loop (.block (vdbl ++ [.alu .sub .rsi (.imm 1)])) .ne)
+
+/-- Five doublings of the lanes: `vdbl4`'s, and one more. -/
+def vdbl5 : Prog isa := .seq vdbl4 (.block vdbl)
 
 /-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
 of table `r9`, negated for a negative digit, added. -/
