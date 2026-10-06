@@ -80,23 +80,6 @@ theorem accLh_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
 
 /-! ## The scan of `T` -/
 
-/-- All ones if `x` is zero, as `cmp x, 1; sbb x, x` computes it. -/
-abbrev zM (x : BitVec 64) : BitVec 64 := if x = 0 then BitVec.allOnes 64 else 0
-
-/-- The scan's registers after `j` bytes of `f`, from the accumulator `c₀`:
-`rdx` all ones while no `0x01` has been seen, `rsi` the index of the first,
-`rcx` the accumulator, ORed with a mask for each byte before it that is
-neither `0x00` nor `0x01`. -/
-def scanS (f : Nat → Byte) (c₀ : BitVec 64) : Nat → BitVec 64 × BitVec 64 × BitVec 64
-  | 0 => (BitVec.allOnes 64, 0, c₀)
-  | j + 1 =>
-    let p := scanS f c₀ j
-    let b := (f j).setWidth 64
-    let z := zM b
-    let o := zM (b ^^^ 1)
-    (p.1 &&& (o ^^^ BitVec.allOnes 64), p.2.1 ||| (BitVec.ofNat 64 j &&& p.1 &&& o),
-      p.2.2 ||| (((z ||| o) ^^^ BitVec.allOnes 64) &&& p.1))
-
 /-- `T`, the bytes of `DB` after `lHash'`. -/
 def tF (V : Nat → Byte) (D : Nat) (i : Nat) : Byte := V (oEm + 1 + 2 * D + i)
 

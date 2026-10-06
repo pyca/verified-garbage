@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.RsaOaep.X86_64
+import VerifiedGarbage.Proof.RsaOaep.Scan
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Bignum.X86_64.Loop
 import VerifiedGarbage.Proof.Framework.WriteBytes
@@ -152,9 +153,6 @@ theorem cmp_sbb (x : BitVec 64) :
       show x.toNat = 0; omega
     simp only [this, decide_false, h, ite_false]
     decide
-
-theorem xor_eq_zero (a b : BitVec 64) : (a ^^^ b = 0) ↔ a = b := by
-  rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.xor_eq_zero_iff]
 
 theorem eqM_of (a b : BitVec 64) : (if a ^^^ b = 0 then BitVec.allOnes 64 else 0) = eqM a b := by
   unfold eqM
@@ -379,14 +377,6 @@ theorem inR_nil (o : Nat) : ¬ inR [] o := by simp [inR]
 theorem inR_cons (a n : Nat) (rgs : List (Nat × Nat)) (o : Nat) :
     inR ((a, n) :: rgs) o ↔ (a ≤ o ∧ o < a + n) ∨ inR rgs o := by
   simp [inR]
-
-theorem range_map_getD {xs : List Byte} {n : Nat} (h : n ≤ xs.length) :
-    (List.range n).map (fun i => xs.getD i 0) = xs.take n := by
-  apply List.ext_getElem (by simp; omega)
-  intro i h₁ h₂
-  simp only [List.getElem_map, List.getElem_range, List.getElem_take, List.getD_eq_getElem?_getD]
-  rw [List.getElem?_eq_getElem (by simp at h₁; omega)]
-  rfl
 
 theorem slot_eq (d : Nat) (k : Nat) (h : d = 8 * k) (m : Mem) (F : Addr) : word m F d = word m F (8 * k) := by
   rw [h]

@@ -9,7 +9,10 @@
 //! does not support (some of `rsa_oaep_misc_test.json`'s) are refused as
 //! such. The files of three-prime keys are not this module's.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
