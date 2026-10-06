@@ -4,7 +4,10 @@
 //! invalid ones, and the message each decrypts to), and encryption with
 //! their keys.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};

@@ -5,7 +5,7 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa_pkcs1_enc", "rsa", "sha256", "hmac_sha256"];
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -81,5 +81,5 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
