@@ -4,8 +4,10 @@ import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Blocks
 # Deterministic ECDSA on AArch64: the messages of steps d, f and h.3
 
 `V ‖ b`, and `‖ d ‖ h` if `full`, at `scratch + 2256`, for `V` of `D` bytes
-(`msg_ok`): `V` copied from the frame (`head_ok`), the byte `b`, then the
-private key and `h` copied (`tail_ok`), through `x12`, which points after `b`.
+(`msg_ok`): `V` copied from the frame (`copyV_ok`, `head_ok`), the byte `b`,
+then the private key and `h`, `Q` bytes each, copied (`tail_ok`), through
+`x12`, which points after `b`; by `copyBytes` (`copyB_ok`) where a length is
+not a multiple of 8 (SHA-224's `V`, P-224's scalars).
 If two `V`s make a candidate (`msgW_ok`, P-521 with SHA-512): `‖ d ‖ 0 0 ‖
 digest` instead, `d`'s 66 bytes through `x12` and its last eight through
 `x13` and `x14` (`copyBytes`), a zero word, then the digest over all but its

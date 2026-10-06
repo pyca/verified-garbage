@@ -8,7 +8,7 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64
 `sign R H core (out = x0, d = x1, digest = x2, scratch = x3) -> w0`, as on
 x86-64 (`Impl/Ecdsa/Rfc6979/X86_64.lean`): RFC 6979 §3.2 for a curve of
 `Q`-byte scalars in `w` 64-bit words and a Merkle–Damgård hash function `H`
-whose output is `D` bytes, a multiple of 8, at most 64, with HMAC computed by
+whose output is `D` bytes, a multiple of 4 from 28 to 64, with HMAC computed by
 calling `H`'s HMAC `init`, streaming `update` and HMAC `finalize`, and each
 candidate tried by calling `core`, the signature with a given `k`
 (`vg_ecdsa_<curve>_sign`), which reads `Q` bytes of the digest and of `k`,
@@ -17,10 +17,11 @@ and takes the digest's leftmost `qlen` bits (`bits2int`, a right shift by
 
 Two kinds of curve and hash function, as on x86-64:
 
-* `Q = 8 w ≤ D` and `qlen = 8 Q` (P-256 and P-384, `wide = false`): one `V`
-  makes a candidate, its leftmost `Q` bytes; `bits2octets` is a conditional
-  subtraction of `n` from the digest's leftmost `Q` bytes; and `core` reads
-  the digest and `V` in place.
+* `Q ≤ D` and `qlen = 8 Q`, the scalars' words full or the top one of four
+  bytes (P-224, P-256 and P-384, `wide = false`): one `V` makes a candidate,
+  its leftmost `Q` bytes; `bits2octets` is a conditional subtraction of `n`
+  from the digest's leftmost `Q` bytes; and `core` reads the digest and `V`
+  in place.
 * `8 D < qlen ≤ 16 D` and `Q ≤ D + 8` (P-521 with SHA-512, `wide`): two `V`s
   make a candidate, the leftmost `Q` bytes of the second's concatenation with
   the first, shifted right by `sh` bits; the digest's integer is below `n`,
@@ -46,7 +47,9 @@ the words of the conversions.
    `n` if they are at least `n` (a conditional subtraction, as
    `2^(8 Q) < 2n`), a word at a time through memory: the words of the digest
    to `V`'s place, those of the difference to `K`'s (before steps b and c set
-   them), and the one the borrow selects, big-endian, to `h`. If `wide`, the
+   them), and the one the borrow selects, big-endian, to `h` (a top word of
+   four bytes by 32-bit loads, and stored ending at `h`'s fourth byte, its
+   zero bytes in `V`'s place, which step b then sets). If `wide`, the
    digest for `core` instead: the digest then `Q - D` zero bytes, shifted
    right by `8 (Q - D) - sh` bits.
 2. Steps b to g: `V = 0x01…`, `K = 0x00…`, `K = HMAC_K(V ‖ 0x00 ‖ d ‖ h)`,

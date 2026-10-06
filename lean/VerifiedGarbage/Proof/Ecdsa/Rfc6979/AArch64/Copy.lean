@@ -7,7 +7,9 @@ import VerifiedGarbage.Proof.Hmac.Common
 `copyN k src so dst d` copies the `8 k` bytes at `src + so` to `dst + d`, a
 word at a time through `x11`, when the two ranges are apart: each word
 written is the word read (`copyW_ok`), so the bytes written are the bytes
-read (`copyN_ok`, by induction on the words).
+read (`copyN_ok`, by induction on the words). `copyBytes` copies `Q` bytes,
+`Q` at least 8: its words, then the last eight bytes again through `x13` and
+`x14` (`copyAt_ok`) if `Q` is not a multiple of 8 (`copyBytes_ok`).
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.AArch64
