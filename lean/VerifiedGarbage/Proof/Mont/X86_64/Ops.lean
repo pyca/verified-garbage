@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Mont.X86_64.MulF
 import VerifiedGarbage.Proof.Mont.X86_64.SqrP
 import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -16,7 +17,8 @@ those with the accumulator in the temporary area (`mulW_ok`, …, here), but
 the multiplications by columns: for P-521's `p` (`mulP_ok`, `MulP.lean`, and
 its squares, `sqrP_ok`, `SqrP.lean`; with BMI2 and ADX by rows, `mulPX_ok`,
 `MulPX.lean`) and
-for any other modulus of nine words (`mulF_ok`, `MulF.lean`).
+for any other modulus of nine words (`mulF_ok`, `MulF.lean`), and the sums and
+differences for P-521's `p` in registers (`addMer_ok`, `subMer_ok`, `AddSubP.lean`).
 -/
 
 namespace VG.Proof.Mont.X86_64
@@ -245,7 +247,9 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
   rw [add]; split
   · exact addR_ok hs (hM.toModOk ‹_›) ho ha hb hAB
-  · exact addW_ok hs hM ho ha hb hoT haT hbT hoM hAB
+  · split
+    · exact addMer_ok hs hM ‹_› ho ha hb hAB
+    · exact addW_ok hs hM ho ha hb hoT haT hbT hoM hAB
 
 /-- `[o] = [a] - [b] mod m`. -/
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -258,6 +262,8 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   rw [sub]; split
   · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
-  · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
+  · split
+    · exact subMer_ok hs hM ‹_› ho ha hb hA hB
+    · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
 
 end VG.Proof.Mont.X86_64

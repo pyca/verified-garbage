@@ -498,6 +498,32 @@ the registers; then `xCanon`, which reduces it below `p` into `[o]`. -/
 def mulPX (M : Mod) (o a b : Nat) : List Instr :=
   zeros xRegs ++ (List.range 9).flatMap (xRow M a b) ++ xRed M ++ xCanon o
 
+/-! ## P-521's modulus: the sum and the difference in registers
+
+As `p = 2⁵²¹ - 1`, the sum or difference below `2p` is reduced in place by
+`xCanon` (no load of `p`, no temporary area), and `p - [b]` is the complement
+of `[b]`'s words but the top one. -/
+
+/-- `[o] = [a] + [b] mod p` for P-521's `p = 2⁵²¹ - 1` and `[a] + [b] < 2p`:
+the sum in `xWin 9` (`[a]` loaded, `[b]` added), reduced by `xCanon`. -/
+def addMer (o a b : Nat) : List Instr :=
+  loads (xWin 9) a ++ chain .add .adc (xWin 9) b ++ xCanon o
+
+/-- The words `9 … 16` of the accumulator (`xWin 9` but its last). -/
+def xLo8 : List Reg := (List.range 8).map fun k => xAcc (9 + k)
+
+/-- `p - [b]` in `xWin 9` for `[b] < p`: as `p`'s words are all ones but the
+top one, 511, its low words are the complements of `[b]`'s (`xor` with `-1`)
+and its top word `511 - b₈`. -/
+def negMer (b : Nat) : List Instr :=
+  loads xLo8 b ++ (xLo8.map fun t => .alu .xor t (.imm (-1))) ++
+    [.mov32 (xAcc 17) (.imm 511), .alu .sub (xAcc 17) (.mem (sc (b + 64)))]
+
+/-- `[o] = [a] - [b] mod p` for P-521's `p` and `[a]`, `[b]` below `p`:
+`[a] + (p - [b]) < 2p`, reduced by `xCanon`. -/
+def subMer (o a b : Nat) : List Instr :=
+  negMer b ++ chain .add .adc (xWin 9) a ++ xCanon o
+
 /-! ## Nine words: the product by columns for any modulus -/
 
 /-- The terms of column `c` of `mulF o a b`: the products `[a + 8i] [b + 8j]`
@@ -546,9 +572,11 @@ def mul (M : Mod) (o a b : Nat) : List Instr :=
   else if M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
-def add (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then addR M o a b else addW M o a b
+def add (M : Mod) (o a b : Nat) : List Instr :=
+  if M.n < 7 then addR M o a b else if M.red = .friendly p521Ws then addMer o a b else addW M o a b
 
 /-- `[o] = [a] - [b] mod m`. -/
-def sub (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then subR M o a b else subW M o a b
+def sub (M : Mod) (o a b : Nat) : List Instr :=
+  if M.n < 7 then subR M o a b else if M.red = .friendly p521Ws then subMer o a b else subW M o a b
 
 end VG.Impl.Mont.X86_64
