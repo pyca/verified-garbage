@@ -20,7 +20,7 @@ namespace VG.Proof.Bignum.X86_64.G
 
 open VG VG.X86_64
 open VG.Proof.Bignum.X86_64.AmmSym (G G.eval baseOff baseOff_ok Ctx)
-open VG.Proof.Poly1305.X86_64.Avx2 (qword_paddq qword_psrlq cases4 mod2_lt qword256_eq qword256_cat)
+open VG.Proof.Poly1305.X86_64.Avx2 (qword_paddq qword_psrlq cases4 mod2_lt qword256_eq qword256_cat qword_and qword_or)
 open VG.Proof.X25519.X86_64.Ifma (mad52 qword_madd52)
 open VG.Impl.Rsa.X86_64.CrtIfmaG (vreg)
 
@@ -163,6 +163,8 @@ inductive T
   | low (a : T)
   /-- `valignq` of `a` (high) and `b` (low) by `n` quadwords. -/
   | align (a b : T) (n : Nat)
+  | and (a b : T)
+  | or (a b : T)
   deriving DecidableEq, Repr
 
 def T.eval (s₀ : State) : T → Nat → BitVec 64
@@ -176,6 +178,8 @@ def T.eval (s₀ : State) : T → Nat → BitVec 64
   | .shr a n, k => a.eval s₀ k >>> n
   | .low a, k => if k = 0 then a.eval s₀ 0 else 0
   | .align a b n, k => if k + n < 4 then b.eval s₀ (k + n) else a.eval s₀ (k + n - 4)
+  | .and a b, k => a.eval s₀ k &&& b.eval s₀ k
+  | .or a b, k => a.eval s₀ k ||| b.eval s₀ k
 
 /-! ## The machine -/
 
@@ -191,6 +195,8 @@ def ESym.set (σ : ESym) (d : VReg) (t : T) : ESym := { σ with reg := fun r => 
 def ESym.eop (σ : ESym) : EOp → Option ESym
   | .bin .vpxorq d a b => if a = b then some (σ.set d .zero) else none
   | .bin .vpaddq d a b => some (σ.set d (.add (σ.reg (vi a)) (σ.reg (vi b))))
+  | .bin .vpandq d a b => some (σ.set d (.and (σ.reg (vi a)) (σ.reg (vi b))))
+  | .bin .vporq d a b => some (σ.set d (.or (σ.reg (vi a)) (σ.reg (vi b))))
   | .shift .vpsrlq d a n => if n.toNat < 64 then some (σ.set d (.shr (σ.reg (vi a)) n.toNat)) else none
   | .vpbroadcastq d a => some (σ.set d (.bc (σ.reg (vi a))))
   | .vmovq d r => if r = .rax then some (σ.set d (.lane0 σ.rax)) else none
@@ -204,6 +210,8 @@ def ESym.step (lim : Reg → Nat) (σ : ESym) : Instr → Option ESym
   | .eop o => σ.eop o
   | .mov .rax (.mem m) => (baseOff m).bind fun bo =>
     if bo.1 ≠ .rax ∧ bo.2 + 8 ≤ lim bo.1 then some { σ with rax := .ld bo.1 bo.2 } else none
+  | .evLoad d m => (baseOff m).bind fun bo =>
+    if bo.1 ≠ .rax ∧ bo.2 + 32 ≤ lim bo.1 then some (σ.set d (.ld bo.1 bo.2)) else none
   | .evMadd52Load h d a m => (baseOff m).bind fun bo =>
     if bo.1 ≠ .rax ∧ bo.2 + 32 ≤ lim bo.1 then
       some (σ.set d (.mad h (σ.reg (vi d)) (σ.reg (vi a)) (.ld bo.1 bo.2)))
@@ -292,6 +300,18 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
       rw [qword256_lanes _ _ _ hk]
       simp only [EBinOp.sse, T.eval]
       rw [qword_paddq _ _ (mod2_lt k), qword_lane256, qword_lane256, hR a k hk, hR b k hk]; rfl
+    · rename_i d a b
+      cases e
+      refine h.set fun k hk => ?_
+      rw [qword256_lanes _ _ _ hk]
+      simp only [EBinOp.sse, XBinOp.eval, T.eval]
+      rw [qword_and, qword_lane256, qword_lane256, hR a k hk, hR b k hk]; rfl
+    · rename_i d a b
+      cases e
+      refine h.set fun k hk => ?_
+      rw [qword256_lanes _ _ _ hk]
+      simp only [EBinOp.sse, XBinOp.eval, T.eval]
+      rw [qword_or, qword_lane256, qword_lane256, hR a k hk, hR b k hk]; rfl
     · rename_i d a n
       split at e
       · rename_i hn
@@ -346,6 +366,22 @@ theorem sstep_ok {lim : Reg → Nat} {s₀ : State} (hc : Ctx lim s₀) {σ σ' 
     · refine ⟨fun r k hk => h.reg r k hk, ?_, ?_⟩
       · simp only [State.setReg, ite_true, G.eval, h.mem]
       · rw [← h.eq]; simp only [vr, State.setReg]; congr 1; funext r; split <;> simp_all
+  · rename_i d m
+    obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
+    split at e
+    case isFalse => cases e
+    rename_i hlt
+    cases e
+    have ea : s.ea m = s₀.gpr b + BitVec.ofNat 64 o := by rw [baseOff_ok hbo, h.gpr hlt.1]
+    have hin : InRegions (s.rd ++ s.wr) (s₀.gpr b + BitVec.ofNat 64 o) 32 := by
+      rw [h.rd, h.wr]; exact hc b o 32 (by decide) hlt.2
+    refine ⟨s.setVy d (s.mem.readW (s₀.gpr b + BitVec.ofNat 64 o) 256),
+      by simp only [exec, ea, State.load256, hin, ite_true, Option.map_some], ?_⟩
+    refine h.set fun k hk => ?_
+    simp only [T.eval]
+    have r1 := readW_extract s.mem (s₀.gpr b + BitVec.ofNat 64 o) (w := 256) (k := 8 * k)
+      (n := 8) (by omega)
+    rw [qword256, show 64 * k = 8 * (8 * k) by omega, r1, h.mem, BitVec.add_assoc, ← BitVec.ofNat_add]
   · rename_i hh d a m
     obtain ⟨⟨b, o⟩, hbo, e⟩ := Option.bind_eq_some_iff.1 e
     split at e
