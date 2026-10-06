@@ -127,6 +127,27 @@ theorem init_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W :
 /-! ## `update` -/
 
 include hG in
+/-- `update`'s arguments for the `len` bytes at `scratch + a`. -/
+theorem updArgs_of {t : State} {F S : Addr} (L : Lay t F S) {a len : Nat} (ha : a + len ≤ oRsa)
+    (hda : a + len ≤ oSt ∨ oSt + G.S ≤ a) (hwa : a + len ≤ oW ∨ oW + hG.Wb ≤ a)
+    (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = off S a) (h3 : t.gpr .x3 = BitVec.ofNat 64 len)
+    (h4 : t.gpr .x4 = off S oW) : UpdArgs hG t (off S oSt) (off S a) (off S oW) len := by
+  have hz := sizes hG
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  exact { x0 := h0, x2 := h2
+          x3 := by rw [h3, BitVec.toNat_ofNat]; unfold oRsa at ha; omega
+          x4 := h4
+          cd := Covers.right (L.cov ha)
+          cw := Covers.pair (L.cov h1) (L.cov h2')
+          st_sc := sdis S (Or.inl hsw) h1 h2'
+          d_st := sdis S hda ha h1
+          d_sc := sdis S hwa ha h2'
+          sp16 := L.sp16
+          stk_st := L.stk h1, stk_d := L.stk ha, stk_sc := L.stk h2' }
+
+include hG in
 /-- `update` of the state with the `len` bytes at `scratch + a`, from the
 arguments in `x0`, `x2`, `x3`, `x4`. -/
 theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -141,21 +162,9 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   have hz := sizes hG
   have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
   have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
-  have args : UpdArgs hG t (off S oSt) (off S a) (off S oW) len :=
-    { x0 := h0, x2 := h2
-      x3 := by rw [h3, BitVec.toNat_ofNat]; unfold oRsa at ha; omega
-      x4 := h4
-      cd := Covers.right (L.cov ha)
-      cw := Covers.pair (L.cov h1) (L.cov h2')
-      st_sc := sdis S (Or.inl hsw) h1 h2'
-      d_st := sdis S hda ha h1
-      d_sc := sdis S hwa ha h2'
-      sp16 := L.sp16
-      stk_st := L.stk h1, stk_d := L.stk ha, stk_sc := L.stk h2' }
   have hr : ∀ p ∈ [(oSt, G.S), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption
-  refine upd_call hG args fun t' A hrep => ?_
+  refine upd_call hG (updArgs_of hG L ha hda hwa h0 h2 h3 h4) fun t' A hrep => ?_
   obtain ⟨L', R'⟩ := L.after_call R hr A
   refine ⟨L', Step.of_after L hr A ws, R', fun m hm hc => ?_⟩
   have e : Spec.Sha256.bytesAt t.mem (off S a) len = (List.range len).map fun i => V (a + i) := by
@@ -166,6 +175,24 @@ theorem upd_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   rw [← e]; exact hrep m hm hc
 
 /-! ## `finalize` -/
+
+include hG in
+/-- `finalize`'s arguments for the digest to `scratch + o`. -/
+theorem finArgs_of {t : State} {F S : Addr} (L : Lay t F S) {o : Nat} (ho : o + 64 ≤ oSt ∨ (oSt + 256 ≤ o ∧ o + 64 ≤ oW))
+    (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = off S o) (h3 : t.gpr .x3 = off S oW) :
+    FinArgs hG t (off S oSt) (off S o) (off S oW) := by
+  have hz := sizes hG
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  exact { x0 := h0, x2 := h2, x3 := h3
+          cw := Covers.cons (L.cov h1) (Covers.pair (L.cov h3') (L.cov h2'))
+          st_o := sdis S (by unfold oSt oW at *; omega) h1 h3'
+          st_sc := sdis S (Or.inl hsw) h1 h2'
+          o_sc := sdis S (by unfold oSt oW at *; omega) h3' h2'
+          sp16 := L.sp16
+          stk_st := L.stk h1, stk_o := L.stk h3', stk_sc := L.stk h2' }
 
 include hG in
 /-- `finalize` of the state to `scratch + o`, from the arguments in `x0`,
@@ -181,25 +208,39 @@ theorem fin_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : 
   have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
   have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
   have h3' : o + G.F ≤ oRsa := by unfold oSt oW oRsa at *; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
-  have args : FinArgs hG t (off S oSt) (off S o) (off S oW) :=
-    { x0 := h0, x2 := h2, x3 := h3
-      cw := Covers.cons (L.cov h1) (Covers.pair (L.cov h3') (L.cov h2'))
-      st_o := sdis S (by unfold oSt oW at *; omega) h1 h3'
-      st_sc := sdis S (Or.inl hsw) h1 h2'
-      o_sc := sdis S (by unfold oSt oW at *; omega) h3' h2'
-      sp16 := L.sp16
-      stk_st := L.stk h1, stk_o := L.stk h3', stk_sc := L.stk h2' }
   have hr : ∀ p ∈ [(oSt, G.S), (o, G.F), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro p (rfl | rfl | rfl) <;> with_reducible assumption
-  refine fin_call hG args fun t' A hrep => ?_
+  refine fin_call hG (finArgs_of hG L ho h0 h2 h3) fun t' A hrep => ?_
   obtain ⟨L', R'⟩ := L.after_call R hr A
   refine ⟨L', Step.of_after L hr A ws, R', fun m hm hl hc i hi => ?_⟩
   have e := hrep m hm hl hc
   rw [← e, List.getD_eq_getElem?_getD, List.getElem?_take_of_lt hi]
   simp only [Spec.Sha256.bytesAt, List.getElem?_map, List.getElem?_range (show i < G.F by omega),
     Option.map_some, Option.getD_some, off_off]
+
+include hG in
+/-- `update`'s arguments for the `len` bytes at `d`, outside our working
+space, the frame and the stack the call uses. -/
+theorem updExtArgs_of {t : State} {F S : Addr} (L : Lay t F S) {d : Addr} {len : Nat} (hlen : len < 2 ^ 64)
+    (hcd : Covers [⟨d, len⟩] (t.rd ++ t.wr)) (hds : Region.Disjoint ⟨d, len⟩ ⟨S, oRsa⟩)
+    (hdk : (below F 16).Disjoint ⟨d, len⟩)
+    (h0 : t.gpr .x0 = off S oSt) (h2 : t.gpr .x2 = d) (h3 : t.gpr .x3 = BitVec.ofNat 64 len)
+    (h4 : t.gpr .x4 = off S oW) : UpdArgs hG t (off S oSt) d (off S oW) len := by
+  have hz := sizes hG
+  have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
+  have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
+  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
+  exact { x0 := h0, x2 := h2
+          x3 := by rw [h3, BitVec.toNat_ofNat]; omega
+          x4 := h4
+          cd := hcd
+          cw := Covers.pair (L.cov h1) (L.cov h2')
+          st_sc := sdis S (Or.inl hsw) h1 h2'
+          d_st := hds.sub_right (Offset.sub_base S h1)
+          d_sc := hds.sub_right (Offset.sub_base S h2')
+          sp16 := L.sp16
+          stk_st := L.stk h1, stk_d := by rw [L.sp]; exact hdk, stk_sc := L.stk h2' }
 
 include hG in
 /-- `update` of the state with the `len` bytes at `d`, outside our working
@@ -217,21 +258,9 @@ theorem updExt_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
   have hz := sizes hG
   have h1 : oSt + G.S ≤ oRsa := by unfold oSt oRsa; omega
   have h2' : oW + hG.Wb ≤ oRsa := by unfold oW oRsa; omega
-  have hsw : oSt + G.S ≤ oW := by unfold oSt oW; omega
-  have args : UpdArgs hG t (off S oSt) d (off S oW) len :=
-    { x0 := h0, x2 := h2
-      x3 := by rw [h3, BitVec.toNat_ofNat]; omega
-      x4 := h4
-      cd := hcd
-      cw := Covers.pair (L.cov h1) (L.cov h2')
-      st_sc := sdis S (Or.inl hsw) h1 h2'
-      d_st := hds.sub_right (Offset.sub_base S h1)
-      d_sc := hds.sub_right (Offset.sub_base S h2')
-      sp16 := L.sp16
-      stk_st := L.stk h1, stk_d := by rw [L.sp]; exact hdk, stk_sc := L.stk h2' }
   have hr : ∀ p ∈ [(oSt, G.S), (oW, hG.Wb)], p.1 + p.2 ≤ oRsa := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro p (rfl | rfl) <;> with_reducible assumption
-  refine upd_call hG args fun t' A hrep => ?_
+  refine upd_call hG (updExtArgs_of hG L hlen hcd hds hdk h0 h2 h3 h4) fun t' A hrep => ?_
   obtain ⟨L', R'⟩ := L.after_call R hr A
   exact ⟨L', Step.of_after L hr A ws, R', fun m hm hc => hrep m hm hc⟩
 
