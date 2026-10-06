@@ -15,8 +15,8 @@ return-address slot are unchanged on exit.
 The SSE registers `xmm0`–`xmm15` are all caller-saved (System V AMD64
 psABI §3.2.1, Figure 3.4: "No" under "callee-saved"; also on Windows, whose
 own convention the functions do not use), and so are the upper halves of
-the `ymm` registers that contain them (the psABI makes no vector register
-callee-saved), so `abiPreserved` says nothing about them.
+the `ymm` registers that contain them and `zmm16`–`zmm31` (the psABI makes
+no vector register callee-saved), so `abiPreserved` says nothing about them.
 
 The control bits of MXCSR (15:6; bits 5:0 are the status flags, SDM Vol. 1
 §10.2.3) are callee-saved: "The control bits of the MXCSR register are

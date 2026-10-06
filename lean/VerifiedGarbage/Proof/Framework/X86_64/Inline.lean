@@ -107,6 +107,11 @@ theorem load256_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) {a : Addr} {v : Bi
     ite_true]
   exact h
 
+
+theorem setVy_withRegions (s : State) (rd wr : List Region) (r : VReg) (v : BitVec 256) :
+    (s.withRegions rd wr).setVy r v = (s.setVy r v).withRegions rd wr := by
+  cases r <;> rfl
+
 theorem store256_widen (hc : Covers s.wr wr) {a : Addr} {v : BitVec 256} (h : s.store256 a v = some s') :
     (s.withRegions rd wr).store256 a v = some (s'.withRegions rd wr) := by
   simp only [State.store256] at h
@@ -220,6 +225,23 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     · exact store256_widen hw h
   | zop op =>
     simp only [exec, Option.some.injEq] at h ⊢; subst h; cases op <;> rfl
+  | eop op =>
+    simp only [exec, Option.some.injEq] at h ⊢; subst h
+    cases op <;> exact setVy_withRegions _ _ _ _ _
+  | evLoad d m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [exec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load256_widen hc hv, Option.map_some,
+      setVy_withRegions]
+  | evMadd52Load hi d a m =>
+    simp only [exec, Option.map_eq_some_iff] at h
+    obtain ⟨v, hv, rfl⟩ := h
+    simp only [exec]
+    rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load256_widen hc hv, Option.map_some,
+      setVy_withRegions]
+    rfl
+  | evStore m r => exact store256_widen hw h
   | vmovdqu32Load d m =>
     simp only [exec, Option.map_eq_some_iff] at h
     obtain ⟨v, hv, rfl⟩ := h
@@ -311,6 +333,12 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
     · simp only [exec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | zop op =>
     simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact ⟨rfl, rfl⟩
+  | eop op =>
+    simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact ⟨rfl, rfl⟩
+  | evLoad d m | evMadd52Load _ d _ m =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact ⟨rfl, rfl⟩
+  | evStore m r =>
+    simp only [exec, State.store256] at h; split at h <;> cases h; exact ⟨rfl, rfl⟩
   | vmovdqu32Load d m | vbroadcasti32x4 d m | zbcst _ d _ m | vpmadd52Load _ d _ m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact ⟨rfl, rfl⟩
   | vmovdqu32Store m r =>
@@ -362,6 +390,13 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
       rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | zop op =>
     simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]; exact Frame.refl _ _
+  | eop op =>
+    simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]; exact Frame.refl _ _
+  | evLoad d m | evMadd52Load _ d _ m =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> exact Frame.refl _ _
+  | evStore m r =>
+    simp only [exec, State.store256] at h; split at h <;> cases h
+    rename_i hi; obtain ⟨r, hr, hc⟩ := hi; exact (Frame.refl _ _).writeW hr _ hc
   | vmovdqu32Load d m | vbroadcasti32x4 d m | zbcst _ d _ m | vpmadd52Load _ d _ m =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; exact Frame.refl _ _
   | vmovdqu32Store m r =>
@@ -556,6 +591,13 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+    · simp only [exec, Option.some.injEq] at h; subst h; rename_i op
+      rw [Taint.EOp.exec_eq op s]
+    · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
+      rw [Taint.setVy_eq]
+    · simp only [exec, State.store256] at h; split at h <;> cases h; rfl
+    · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h
+      rw [Taint.setVy_eq]
     · simp only [exec, State.store32] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.bind_eq_some_iff] at h; obtain ⟨_, _, h⟩ := h
       split at h <;> cases h; rfl
