@@ -112,14 +112,13 @@ theorem putMsg_ok {k mLen : Nat} {msg : Addr} (hk : W 21 = BitVec.ofNat 64 k) (h
   have R1 : Rep (u.mem.write (off S (k - mLen - 1)) 1
       (BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.ofNat 64 1)))) F S (upd V (k - mLen - 1) 1) W :=
     R.wb G' (by omega) _
-  have rmsg1 := R1.rd8 (d := 216) (k := 27) rfl (by decide) hmsg
   refine WP.seq (WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off S (k - mLen - 1)) 1
       (BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.ofNat 64 1))) ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = msg ∧
       u'.gpr .x12 = off (off S (k - mLen - 1)) 1 ∧ u'.gpr .x13 = BitVec.ofNat 64 mLen) ?_
     fun u1 ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x13⟩ => ?_)
   · oaep_run [putMsg, scr, Mgf1.scr, lay, sScr, sK, sMsgLen, sMsg, h96, h168, h216, h224, L.sp, hs, rk, rml,
-      rmsg1, e1, w1, BitVec.add_zero, show oEm < 4096 by decide,
+      rmsg, e1, w1, BitVec.add_zero, show oEm < 4096 by decide,
       show BitVec.setWidth 64 (1 : BitVec 16) <<< 0 = BitVec.ofNat 64 1 by decide]
     oaep_fin
   have R1' : Rep u1.mem F S (upd V (k - mLen - 1) 1) W := by rw [hm]; exact R1

@@ -210,9 +210,9 @@ def copyLh : Prog isa :=
 /-- `0x01` at `EM + k - mLen - 1`, and the message after it, if it is not
 empty. -/
 def putMsg : Prog isa :=
-  .seq (.block (scr .x12 oEm ++ [.ldrSp .x10 sK, .add .x .x12 .x12 .x10, .ldrSp .x13 sMsgLen,
-      .sub .x .x12 .x12 .x13, .subImm .x .x12 .x12 1, .movz .x .x10 1 0, .strb .x10 .x12 0,
-      .addImm .x .x12 .x12 1, .ldrSp .x11 sMsg]))
+  .seq (.block ([.ldrSp .x11 sMsg] ++ scr .x12 oEm ++ [.ldrSp .x10 sK, .add .x .x12 .x12 .x10,
+      .ldrSp .x13 sMsgLen, .sub .x .x12 .x12 .x13, .subImm .x .x12 .x12 1, .movz .x .x10 1 0,
+      .strb .x10 .x12 0, .addImm .x .x12 .x12 1]))
     (.ite (.nonzero .x .x13) copyLoop (.block []))
 
 /-- `d ← scratch + oRsa`. -/
