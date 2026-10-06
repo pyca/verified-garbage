@@ -20,18 +20,19 @@ structure Upd (s s' : State) (d : Reg) (v : BitVec 32) : Prop where
   mem : s'.mem = s.mem
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
+  syms : s'.syms = s.syms
 
 theorem Upd.setReg (s : State) (d : Reg) (v : BitVec 32) : Upd s (s.setReg d v) d v :=
-  ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h], rfl, rfl, rfl⟩
+  ⟨by simp [State.setReg], fun r h => by simp [State.setReg, h], rfl, rfl, rfl, rfl⟩
 
 theorem Upd.flags (s : State) (d : Reg) (x : BitVec 32) (c o : Bool) (v : BitVec 32) :
     Upd s ((arithFlags s x c o).setReg d v) d v :=
   ⟨by simp [State.setReg], fun r h => by simp [State.setReg, arithFlags, State.setFlags, h], rfl, rfl,
-    rfl⟩
+    rfl, rfl⟩
 
 theorem Upd.setFlags (s : State) (d : Reg) (c o z n : Option Bool) (v : BitVec 32) :
     Upd s ((s.setFlags c o z n).setReg d v) d v :=
-  ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl⟩
+  ⟨by simp [State.setReg], fun r h => by simp [State.setReg, State.setFlags, h], rfl, rfl, rfl, rfl⟩
 
 /-- `s'` is `s` with memory `m`. -/
 structure Mupd (s s' : State) (m : Mem) : Prop where
@@ -41,6 +42,7 @@ structure Mupd (s s' : State) (m : Mem) : Prop where
   wr : s'.wr = s.wr
   zf : s'.zf = s.zf
   cf : s'.cf = s.cf
+  syms : s'.syms = s.syms
 
 /-- `s'` is `s` with other flags. -/
 structure Fupd (s s' : State) : Prop where
@@ -48,6 +50,7 @@ structure Fupd (s s' : State) : Prop where
   mem : s'.mem = s.mem
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
+  syms : s'.syms = s.syms
 
 theorem cons {i : Instr} {is : List Instr} {s s' : State} {Q : State → Prop}
     (h : exec i s = some s') (k : WP isa (.block is) s' Q) : WP isa (.block (i :: is)) s Q :=
@@ -83,7 +86,7 @@ theorem wp_stm {b r : Reg} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (hout : InRegions s.wr (addr B o) 4)
     (k : ∀ s', Mupd s s' (s.mem.writeW (addr B o) (s.gpr r)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store ⟨b, o⟩ r :: is)) s Q := by
-  refine cons (s' := { s with mem := s.mem.writeW (addr B o) (s.gpr r) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+  refine cons (s' := { s with mem := s.mem.writeW (addr B o) (s.gpr r) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   simp [exec, State.store32, ea_mk, hb, hout]
 
 /-- `xor d, [b + o]` -/
@@ -160,18 +163,18 @@ theorem wp_cmp {d r : Reg}
     (k : ∀ s', Fupd s s' → s'.cf = some (decide ((s.gpr d).toNat < (s.gpr r).toNat)) →
       s'.zf = some (s.gpr d - s.gpr r == 0) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .cmp d (.reg r) :: is)) s Q :=
-  cons rfl (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl rfl)
+  cons rfl (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl rfl)
 
 theorem wp_cmpi {d : Reg} {v : BitVec 32}
     (k : ∀ s', Fupd s s' → s'.cf = some (decide ((s.gpr d).toNat < v.toNat)) →
       s'.zf = some (s.gpr d - v == 0) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .cmp d (.imm v) :: is)) s Q :=
-  cons rfl (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl rfl)
+  cons rfl (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl rfl)
 
 theorem wp_test {d : Reg}
     (k : ∀ s', Fupd s s' → s'.zf = some (s.gpr d &&& s.gpr d == 0) → WP isa (.block is) s' Q) :
     WP isa (.block (.alu .test d (.reg d) :: is)) s Q :=
-  cons rfl (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+  cons rfl (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 theorem wp_shr {d : Reg} {n : Nat} (hn : 1 ≤ n ∧ n ≤ 31)
     (k : ∀ s', Upd s s' d (s.gpr d >>> n) → s'.cf = some ((s.gpr d).getLsbD (n - 1)) →

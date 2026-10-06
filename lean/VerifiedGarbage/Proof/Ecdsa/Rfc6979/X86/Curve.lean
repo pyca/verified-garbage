@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Call
 import VerifiedGarbage.Proof.Framework.X86.RelCT
 import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Contract
 
 /-!
 # Deterministic ECDSA on x86 (32-bit): the curve
@@ -16,8 +17,8 @@ What the proof needs of the curve (`RfcCurve`), as on x86-64
 order `n` of its base point has exactly `64 n` bits and `2^(64 n) < 2 n` (so
 that `bits2octets` is one conditional subtraction), and what is proven of the
 code: that it meets the contract the proof of each curve is written against
-(`coreK`: P-256's `signX86` and P-384's at the curve's sizes), in constant
-time, that it never writes `esp` and uses no stack, and the taint check of
+(`coreK`, including any comb tables), in constant time, that it never
+writes `esp` and uses at most four stack bytes, and the taint check of
 the block computing `bits2octets`, which holds `n`'s words as immediates.
 Each curve's file builds one, so that the heavy algebra of its proof stays
 out of the modules generic over the curve and the hash function.
@@ -34,7 +35,8 @@ abbrev coreSigOf (E : Impl.Ecdsa.X86.Cfg) (m : Mem) (d digest k : Addr) : Option
     (ofBytes (bytesAt m k E.C.len))
 
 /-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, as each
-curve's proof states it (`Proof.Ecdsa.X86.signX86` for P-256). -/
+curve's proof states it, including immutable comb tables and the four
+bytes reserved for their position-independent address setup. -/
 def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 2 * E.C.len⟩
@@ -44,13 +46,16 @@ def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    s.rd = [d, digest, k, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
+    s.rd = [d, digest, k, args] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) E.combConsts ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 2 * E.C.len ≤ 2 ^ 32 ∧ (arg s 1).toNat + E.C.len ≤ 2 ^ 32 ∧
       (arg s 2).toNat + E.C.len ≤ 2 ^ 32 ∧ (arg s 3).toNat + E.C.len ≤ 2 ^ 32 ∧
-      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+      (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
+      4 ≤ (s.gpr .esp).toNat ∧ d.Disjoint (below (s.gpr .esp) 4) ∧
+      digest.Disjoint (below (s.gpr .esp) 4) ∧ k.Disjoint (below (s.gpr .esp) 4) ∧
+      TblsOk E.combConsts s (below (s.gpr .esp) 4 :: s.wr)
   post s s' :=
     match coreSigOf E s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) with
     | some rs => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
@@ -58,7 +63,7 @@ def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
     | none => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 0 ∧
       bytesAt s'.mem ((arg s 0).setWidth 64) (2 * E.C.len) = List.replicate (2 * E.C.len) 0
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
-    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4
+    arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4 ∧ ∀ c ∈ E.combConsts, s₁.syms c.1 = s₂.syms c.1
 
 /-- The code's blocks that depend on neither the hash function nor the
 functions it calls, for scalars of `E`. -/
@@ -95,9 +100,9 @@ structure RfcCurve where
   coreC : Prog isa
   coreX : ∀ s, (coreK E).pre s → ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
-  /-- It never writes `esp`, and uses no stack. -/
+  /-- It never writes `esp`, and uses at most four stack bytes. -/
   coreNs : NoSp coreC
-  coreStack : stackUse coreC = 0
+  coreStack : stackUse coreC ≤ 4
   /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
   memory only from `esp` and `esi` (the taint analysis, of the block for
   `n`'s words). -/

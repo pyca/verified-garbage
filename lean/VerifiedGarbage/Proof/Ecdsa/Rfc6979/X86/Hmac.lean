@@ -215,7 +215,8 @@ theorem init_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t : State} (hc : C
   refine WP.seq (WP.mono hA fun u ⟨hcu, hmu, hdi, hsi, hdx, hcx, hbp⟩ => ?_)
   have a := initA (P := P) hL hcu hdi hsi hdx hcx hbp
   have hS := P.ok.hH.hS
-  refine hi_frame P.ok.hi P.ok.hiSp P.ok.hiSU a fun u' af hi ho => ?_
+  refine WP.of_syms ?_
+  refine hi_frame P.ok.hi P.ok.hiSp P.ok.hiSU a fun u' af hi ho hsy => ?_
   have hsafe : ∀ r ∈ [(⟨(L.a3 + BitVec.ofNat 32 0).setWidth 64, P.ok.hH.SH.stateBytes⟩ : Region),
       ⟨(L.a3 + BitVec.ofNat 32 192).setWidth 64, P.ok.hH.SH.stateBytes⟩,
       ⟨(L.a3 + BitVec.ofNat 32 384).setWidth 64, P.ok.Wi * 8⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
@@ -223,7 +224,7 @@ theorem init_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t : State} (hc : C
     rintro r (rfl | rfl | rfl) <;> exact scr_work' hL (by omega) (by first | nums | (rw [hS]; nums))
   have hk : Spec.Sha256.bytesAt u.mem ((L.F + BitVec.ofNat 32 0).setWidth 64) P.F.H.D = keyOf P L t.mem := by
     rw [hmu, hL.frv (by omega)]
-  refine ⟨hcu.keep hL af.rd af.wr af.esp af.frame
+  refine ⟨hcu.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame
       (safe_call hL hcu (fun r hr => .inr (.inl (sub_trans (hsafe r hr) (Region.sub_prefix (by omega)))))
         (Nat.le_refl _)),
     hmu ▸ af.frame.sub fun r hr => ?_, ?_, ?_⟩
@@ -332,7 +333,8 @@ theorem upd_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} (hu : 
     show Region.Sub (below (w.gpr .esp) 48) _; rw [hcw.esp]; exact hL.below48
   have a := updA (P := P) hL hcw hd hlen hdi hsi hax hdx hcx hbp
   have hS := P.ok.hH.hS
-  refine upd_frame P.ok.hH a fun w' af hr => ?_
+  refine WP.of_syms ?_
+  refine upd_frame P.ok.hH a fun w' af hr hsy => ?_
   have hws : ∀ r ∈ [(⟨(L.a3 + BitVec.ofNat 32 0).setWidth 64, P.F.H.S⟩ : Region),
       ⟨(L.a3 + BitVec.ofNat 32 384).setWidth 64, P.ok.hH.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -351,7 +353,7 @@ theorem upd_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} (hu : 
     · have := hd.work hL (e := 0) (k := 2256) (by omega)
       rwa [hL.scrv (by omega), BitVec.add_zero] at this
     · rw [← hL.below_F]; exact (hd.low hL).symm
-  refine ⟨hcw.keep hL af.rd af.wr af.esp af.frame fun r hr => ?_, hu.frame.trans (hmw ▸ hf'), ?_, ?_⟩
+  refine ⟨hcw.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame fun r hr => ?_, hu.frame.trans (hmw ▸ hf'), ?_, ?_⟩
   · rcases List.mem_append.mp hr with hr | hr
     · exact .inr (.inl (sub_trans (hws r hr) (Region.sub_prefix (by omega))))
     · simp only [List.mem_singleton] at hr; subst hr
@@ -450,7 +452,8 @@ theorem fin_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} {dv : 
   have hS := P.ok.hH.hS
   have hD := P.ok.hH.hD
   have hB := P.ok.hH.hB
-  refine hf_frame P.reprOK (by rw [hS]; nums) P.ok.hf P.ok.hfSp P.ok.hfSU a fun w' af hpost => ?_
+  refine WP.of_syms ?_
+  refine hf_frame P.reprOK (by rw [hS]; nums) P.ok.hf P.ok.hfSp P.ok.hfSU a fun w' af hpost hsy => ?_
   have hO : (L.F + BitVec.ofNat 32 dst).setWidth 64 = L.B + BitVec.ofNat 64 (76 + dst) := hL.frv (by nums)
   have hws : ∀ r ∈ [(⟨(L.a3 + BitVec.ofNat 32 0).setWidth 64, P.ok.hH.SH.stateBytes⟩ : Region),
       ⟨(L.F + BitVec.ofNat 32 dst).setWidth 64, P.ok.hH.SH.digestBytes⟩,
@@ -464,7 +467,7 @@ theorem fin_step (hL : L.Ok) (hw : L.wide = (cfgOf P).wide) {t u : State} {dv : 
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work' hL (by omega) (by nums)⟩
     · exact ⟨⟨L.B, 76⟩, by simp, sub_refl _⟩
   have hl : (Spec.Sha256.bytesAt t.mem (dv.setWidth 64) len).length = len := by simp [Spec.Sha256.bytesAt]
-  refine ⟨hcw.keep hL af.rd af.wr af.esp af.frame fun r hr => ?_,
+  refine ⟨hcw.keep (hsy := hsy) hL af.rd af.wr af.esp af.frame fun r hr => ?_,
     hu.frame.sub (fun r hr => ⟨r, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h],
       sub_refl _⟩) |>.trans (hmw ▸ af.frame.sub hws), ?_⟩

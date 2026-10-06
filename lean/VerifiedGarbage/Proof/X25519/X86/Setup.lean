@@ -150,7 +150,7 @@ theorem wp_store8 {is : List Instr} {s : State} {Q : State → Prop} {b : Reg} {
     (k : ∀ s', Wp.Mupd s s' (s.mem.writeW a ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 ⟨b, o⟩ r :: is)) s Q := by
   refine Wp.cons (s' := { s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8) }) ?_
-    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   simp only [exec, State.store8, ea_mk, ha, hout, ↓reduceIte]
 
 theorem byte_write_self (m : Mem) (a : Addr) (v : BitVec 8) : (m.writeW a v) a = v := by

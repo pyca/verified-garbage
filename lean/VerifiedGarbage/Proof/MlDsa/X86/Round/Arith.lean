@@ -62,7 +62,7 @@ theorem wp_cmpm {is : List Instr} {s : State} {Q : State → Prop} {d b : Reg} {
   cons (s' := arithFlags s (s.gpr d - s.mem.readW (addr B o) 32)
       ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat)
       (subOverflow (s.gpr d) (s.mem.readW (addr B o) 32) (s.gpr d - s.mem.readW (addr B o) 32)))
-    (by simp [exec, execAlu, readSrc_mem hb hin]) (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+    (by simp [exec, execAlu, readSrc_mem hb hin]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 /-- `mul r` of values whose product is less than `2³²`: `eax` is the product. -/
 theorem wp_mulSmall {is : List Instr} {s : State} {Q : State → Prop} {r : Reg}

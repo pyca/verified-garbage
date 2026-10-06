@@ -36,7 +36,7 @@ theorem wp_cmpS {s : State} {d : Reg} {src : Src} {v : BitVec 32} (hv : readSrc 
     WP isa (.block (.alu .cmp d src :: is)) s Q :=
   VG.X86.Wp.cons (s' := arithFlags s (s.gpr d - v) (decide ((s.gpr d).toNat < v.toNat))
       (subOverflow (s.gpr d) v (s.gpr d - v)))
-    (by simp only [exec, execAlu, hv, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+    (by simp only [exec, execAlu, hv, Option.bind_some]) (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 section
 variable {s₀ : State} (hp : DPre s₀)

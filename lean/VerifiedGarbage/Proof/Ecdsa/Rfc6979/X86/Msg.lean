@@ -28,7 +28,7 @@ theorem wp_store8 {r : Reg8} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hw : InRe
     (k : ∀ t, Mupd s t (s.mem.writeW a ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) t Q) :
     WP isa (.block (.store8 m r :: is)) s Q :=
   cons (s' := { s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8) })
-    (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (by simp only [exec, ha, State.store8, hw, ite_true]) (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
 end
 
@@ -51,10 +51,10 @@ theorem copy_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : B
     WP isa (.block (Cfg.copyN K src so .edi d)) u fun u' => Ctx L g m₀ u' ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧
       (∀ r, r ≠ .eax → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 d, 4 * K⟩] u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 d) (4 * K) = Spec.Sha256.bytesAt u.mem SA (4 * K) :=
-  WP.mono (copyN_ok (K := K) (by decide) hsr hSA (fun j hj => scr_addr hL (by omega)) hsep (by omega) K
+  WP.mono_syms (copyN_ok (K := K) (by decide) hsr hSA (fun j hj => scr_addr hL (by omega)) hsep (by omega) K
     (Nat.le_refl _) u hs hdi hr fun j hj => by
-      rw [Offset.add_add]; exact hc.inScrW (by omega)) fun u' ⟨hrd, hwr, hg, hf, hb⟩ =>
-    ⟨hc.keep hL hrd hwr (hg _ (by decide)) hf
+      rw [Offset.add_add]; exact hc.inScrW (by omega)) fun u' ⟨hrd, hwr, hg, hf, hb⟩ hsy =>
+    ⟨hc.keep (hsy := hsy) hL hrd hwr (hg _ (by decide)) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd),
       hrd, hwr, hg, hf, hb⟩
 
@@ -109,7 +109,7 @@ theorem head_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .edi 
     rw [v₄.mem, v₃.mem]
   have hf₃ : Frame [⟨L.scr + BitVec.ofNat 64 (2256 + D), 1⟩] u₂.mem u₄.mem := by
     rw [hm₄]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨hc₂.keep hL (by rw [v₄.rd, v₃.rd]) (by rw [v₄.wr, v₃.wr])
+  refine ⟨hc₂.keep (hsy := by rw [v₄.syms, v₃.syms]) hL (by rw [v₄.rd, v₃.rd]) (by rw [v₄.wr, v₃.wr])
       (by rw [v₄.gpr, v₃.other _ (by decide)]) hf₃
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L (by omega)),
     fun r hr => by rw [v₄.gpr, v₃.other _ hr, hg₂ r hr], ?_, ?_⟩
@@ -181,10 +181,10 @@ theorem copyB_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {src : Reg} {S : 
       (∀ r, r ≠ .eax → u'.gpr r = u.gpr r) ∧ Frame [⟨L.scr + BitVec.ofNat 64 d, Q⟩] u.mem u'.mem ∧
       Spec.Sha256.bytesAt u'.mem (L.scr + BitVec.ofNat 64 d) Q = Spec.Sha256.bytesAt u.mem SA Q :=
   have nc := hL.nc
-  WP.mono (copyBytes_ok (by decide) hsr hSA (fun j hj => by rw [addr_eq (by omega), Offset.add_add]) hsep h4
+  WP.mono_syms (copyBytes_ok (by decide) hsr hSA (fun j hj => by rw [addr_eq (by omega), Offset.add_add]) hsep h4
       (by omega) hs hdi hr fun j hj => by rw [Offset.add_add]; exact hc.inScrW (by omega))
-    fun u' ⟨hrd, hwr, hg, hf, hb⟩ =>
-    ⟨hc.keep hL hrd hwr (hg _ (by decide)) hf
+    fun u' ⟨hrd, hwr, hg, hf, hb⟩ hsy =>
+    ⟨hc.keep (hsy := hsy) hL hrd hwr (hg _ (by decide)) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L hd), hg, hf, hb⟩
 
 /-- The bytes of a zero word. -/
@@ -213,7 +213,7 @@ theorem zeroW_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) (hdi : u.gpr .edi
     rw [v₂.mem, v₁.gpr, v₁.mem, ea]
   have hf : Frame [⟨L.scr + BitVec.ofNat 64 o, 4⟩] u.mem u₂.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  refine ⟨hc.keep hL (by rw [v₂.rd, v₁.rd]) (by rw [v₂.wr, v₁.wr]) (by rw [v₂.gpr, v₁.other _ (by decide)]) hf
+  refine ⟨hc.keep (hsy := by rw [v₂.syms, v₁.syms]) hL (by rw [v₂.rd, v₁.rd]) (by rw [v₂.wr, v₁.wr]) (by rw [v₂.gpr, v₁.other _ (by decide)]) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_scr L ho),
     fun r hr => by rw [v₂.gpr, v₁.other _ hr], hf, fun k hk => by rw [hm]; exact bytesAt_writeW_zero _ _ hk⟩
 
