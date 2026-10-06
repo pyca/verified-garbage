@@ -7,7 +7,7 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
-open VG.Impl.X25519.X86_64 (at_ sc)
+open VG.Impl.X25519.X86_64 (at_ sc loadU loads store4)
 
 /-- Tail storage survives scalar multiplication's checkpoint and local tables. -/
 def pointTableWrite (o : Nat) : List Instr :=
@@ -39,17 +39,45 @@ def verifyEquationPoints (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block windowSetup) (.seq (aTable fld) (.seq (.block bTable) (.seq (.block (windowInit fld))
     (.seq skipZero (.seq win (.seq (.block (negR fld)) (pointEqual fld)))))))
 
+/-- The 32 bytes at `rdx`, their top bit masked, into slot 1, and the power's input of that
+y-coordinate into slot `o`. -/
+def decodeInput (fld : Arith) (o : Slot) : List Instr :=
+  loadU ++ store4 (offset 1) ++ fieldCode fld (rootInputOps o)
+
+/-- Slot 19 to byte 7680 of the scratch, which decoding A keeps. -/
+def powerSave : List Instr := [.mov .rax (.reg .rdi)] ++ loads (offset 19) .r8 .r9 .r10 .r11 ++ tableWords 7680
+
+/-- Byte 7680 of the scratch back to slot 15. -/
+def powerRestore : List Instr := [.mov .rax (.reg .rdi)] ++ fromTableWords 7680 ++ store4 (offset 15)
+
+/-- The powers of A (at byte 7936's pointer) into slot 15, and of R (at byte 7944's) into byte
+7680. -/
+def decodePowers (fld : Arith) : Prog isa :=
+  .seq (.block [.mov .rdx (.mem (sc 7944))]) <| .seq (.block (decodeInput fld 3)) <|
+  .seq (.block [.mov .rdx (.mem (sc 7936))]) <| .seq (.block (decodeInput fld 2)) <|
+  .seq (rootPower2 fld) (.block powerSave)
+
 /-- Continue only when a point decoder returned success. -/
 def decodedThen (next : Prog isa) : Prog isa :=
   .seq (.block [.alu .test .rax (.reg .rax)]) (.ite .ne next recoverInvalid)
 
-def verifyDecodeR (fld : Arith) (win : Prog isa) : Prog isa :=
+/-- R decoded, with its power in slot 15, then the equation. -/
+def decodeRThen (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (sc 7944))]) (.seq (pointDecode fld)
     (decodedThen (.seq (.block (pointTableWrite 7552)) (verifyEquationPoints fld win))))
 
-def verifyDecodeA (fld : Arith) (win : Prog isa) : Prog isa :=
+/-- R's power back into slot 15, then R decoded. -/
+def verifyDecodeR (fld : Arith) (win : Prog isa) : Prog isa :=
+  .seq (.block powerRestore) (decodeRThen fld win)
+
+/-- A decoded, with its power in slot 15, then R. -/
+def decodeAThen (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (.block [.mov .rdx (.mem (sc 7936))]) (.seq (pointDecode fld)
     (decodedThen (.seq (.block (pointTableWrite 7424)) (verifyDecodeR fld win))))
+
+/-- Both powers (`decodePowers`), then A decoded. -/
+def verifyDecodeA (fld : Arith) (win : Prog isa) : Prog isa :=
+  .seq (decodePowers fld) (decodeAThen fld win)
 
 def verifyHeaders : List Instr :=
   [.store (at_ .rdx 7936) .rdi, .store (at_ .rdx 7944) .rsi,

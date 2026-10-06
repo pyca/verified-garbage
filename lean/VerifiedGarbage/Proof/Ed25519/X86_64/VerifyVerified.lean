@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyContext
-import VerifiedGarbage.Proof.Ed25519.X86_64.RecoverCTBlocks
+import VerifiedGarbage.Proof.Ed25519.X86_64.DecodePowers
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointDecode
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
@@ -307,7 +307,7 @@ theorem recoverChecks_ct (base : Addr) (b : Bool) (y : Spec.X25519.Fe) :
       (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ _ h => h)
 
 def RecoverCTPre (base : Addr) (b : Bool) (y : Spec.X25519.Fe) (s : State) : Prop :=
-  Scratch s base ∧ s.gpr .rsi = signWord b ∧ env s.mem base 1 = y
+  Scratch s base ∧ s.gpr .rsi = signWord b ∧ env s.mem base 1 = y ∧ env s.mem base 15 = rootPow y
 
 theorem recoverPoint_ct (base : Addr) (b : Bool) (y : Spec.X25519.Fe) :
     RelCT isa (fun s t => RecoverCTPre base b y s ∧ RecoverCTPre base b y t)
@@ -317,12 +317,13 @@ theorem recoverPoint_ct (base : Addr) (b : Bool) (y : Spec.X25519.Fe) :
     (fun _ _ h => h)
   have hw (s : State) (h : RecoverCTPre base b y s) :
       WP isa (recoverCandidate fld) s (RootCTState base b y) := by
-    refine WP.mono (recoverCandidate_ok h.1) fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
+    refine WP.mono (recoverCandidate_ok h.1 (by rw [h.2.2.1]; exact h.2.2.2))
+      fun t ⟨kt, tx, _, _, tu, _, tv, tn⟩ => ?_
     refine ⟨⟨kt.scratch h.1, (kt.gpr _ (by decide) (by decide)).trans h.2.1, ?_⟩, ?_, ?_, ?_⟩
-    · rw [tx, h.2.2]
-    · rw [tv, h.2.2]
-    · rw [tu, h.2.2]
-    · rw [tn, h.2.2]
+    · rw [tx, h.2.2.1]
+    · rw [tv, h.2.2.1]
+    · rw [tu, h.2.2.1]
+    · rw [tn, h.2.2.1]
   have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   rw [recoverPoint]
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2)) (recoverChecks_ct base b y)
@@ -349,7 +350,8 @@ variable {fld : Arith} [EdArith fld]
 
 def DecodeCTPre (base p : Addr) (bs : List Byte) (s : State) : Prop :=
   Scratch s base ∧ s.gpr .rdx = p ∧
-    (∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) ∧ Spec.Ed25519.bytesAt s.mem p 32 = bs
+    (∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) ∧ Spec.Ed25519.bytesAt s.mem p 32 = bs ∧
+    env s.mem base 15 = rootPow (decodedY bs)
 
 theorem pointDecode_ct (base p : Addr) (bs : List Byte) :
     RelCT isa (fun s t => DecodeCTPre base p bs s ∧ DecodeCTPre base p bs t)
@@ -369,11 +371,12 @@ theorem pointDecode_ct (base p : Addr) (bs : List Byte) :
   have hw (s : State) (h : DecodeCTPre base p bs s) :
       WP isa (.block pointDecodeLoad) s fun t => RecoverCTPre base b y t ∧
         t.zf = some (decide (Spec.Ed25519.decodeLE bs % 2 ^ 255 < Spec.X25519.P)) := by
-    refine WP.mono (pointDecodeLoad_ok h.1 h.2.1 h.2.2.1) fun t ⟨kt, tb, ty, tz⟩ => ?_
-    refine ⟨⟨kt.scratch h.1, ?_, ?_⟩, ?_⟩
-    · rw [tb, h.2.2.2]
-    · rw [ty, h.2.2.2]
-    · rw [tz, h.2.2.2]
+    refine WP.mono (pointDecodeLoad_ok h.1 h.2.1 h.2.2.1) fun t ⟨kt, tb, ty, tz, t15⟩ => ?_
+    refine ⟨⟨kt.scratch h.1, ?_, ?_, ?_⟩, ?_⟩
+    · rw [tb, h.2.2.2.1]
+    · rw [ty, h.2.2.2.1]
+    · exact t15.trans h.2.2.2.2
+    · rw [tz, h.2.2.2.1]
   have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   rw [pointDecode]
   refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
@@ -475,23 +478,27 @@ theorem verifyStoreR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List 
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
     (verifyEquationPoints_ct base pk sig challenge pkbs rbs sbs kbs a r hA hR)
 
-theorem verifyDecodeR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
+/-- R's decoding, with its power in slot 15. -/
+theorem decodeRThen_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
     (a : Spec.Ed25519.Point) {Aa : EPoint dZ} (hA : Rep a Aa) :
-    RelCT isa (fun s t => DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a s ∧
-      DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t) (verifyDecodeR fld win) (fun _ _ => True) := by
+    RelCT isa (fun s t => (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a s ∧
+      env s.mem base 15 = rootPow (decodedY rbs)) ∧ (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t ∧
+      env t.mem base 15 = rootPow (decodedY rbs))) (decodeRThen fld win) (fun _ _ => True) := by
   let P := DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a
-  have loadCT : RelCT isa (fun s t => P s ∧ P t)
+  have loadCT : RelCT isa (fun s t => (P s ∧ env s.mem base 15 = rootPow (decodedY rbs)) ∧
+      (P t ∧ env t.mem base 15 = rootPow (decodedY rbs)))
       (.block [.mov .rdx (.mem (Impl.X25519.X86_64.sc 7944))]) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
-    exact fun _ _ h => rdi_agree h.1.1.context.scratch.rdi h.2.1.context.scratch.rdi
-  have loadWP (s : State) (h : P s) :
+    exact fun _ _ h => rdi_agree h.1.1.1.context.scratch.rdi h.2.1.1.context.scratch.rdi
+  have loadWP (s : State) (h : P s ∧ env s.mem base 15 = rootPow (decodedY rbs)) :
       WP isa (.block [.mov .rdx (.mem (Impl.X25519.X86_64.sc 7944))]) s fun t =>
         P t ∧ DecodeCTPre base sig rbs t := by
-    refine WP.mono (loadPointer_ok h.1.context.scratch .rdx 7944 (by decide)) fun t ⟨tp, kt⟩ => ?_
+    refine WP.mono (loadPointer_ok h.1.1.context.scratch .rdx 7944 (by decide)) fun t ⟨tp, kt⟩ => ?_
     have kp : VerifyKeep base s t := PowersKeep.of_keeps kt (by decide)
-    have hp := h.1.of_keep kp
-    exact ⟨⟨hp, by rw [kt.2.1]; exact h.2⟩,
-      hp.context.scratch, tp.trans h.1.context.sigHeader, hp.context.rRead, hp.rBytes⟩
+    have hp := h.1.1.of_keep kp
+    exact ⟨⟨hp, by rw [kt.2.1]; exact h.1.2⟩,
+      hp.context.scratch, tp.trans h.1.1.context.sigHeader, hp.context.rRead, hp.rBytes,
+      by rw [kt.2.1]; exact h.2⟩
   have hl := VG.RelCT.wp loadCT (fun s t h => ⟨loadWP s h.1, loadWP t h.2⟩)
   have decodeCT := (pointDecode_ct (fld := fld) base sig rbs).mono
     (fun s t (h : (P s ∧ DecodeCTPre base sig rbs s) ∧ (P t ∧ DecodeCTPre base sig rbs t)) =>
@@ -499,14 +506,15 @@ theorem verifyDecodeR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List
   have decodeWP (s : State) (h : P s ∧ DecodeCTPre base sig rbs s) :
       WP isa (pointDecode fld) s fun t => P t ∧ DecodeResult base (Spec.Ed25519.decodePoint rbs) t := by
     have hd := pointDecode_ok (fld := fld) (base := base) (p := sig) h.2.1 h.2.2.1 h.2.2.2.1
-    rw [h.2.2.2.2] at hd
+      (by rw [h.2.2.2.2.1]; exact h.2.2.2.2.2)
+    rw [h.2.2.2.2.1] at hd
     with_reducible apply WP.mono hd
     intro t ht
     have kt := ht.1
     exact ⟨⟨h.1.1.of_keep (PowersKeep.of_decode kt),
       (workspace_tablePoint kt.mem (by decide) (by decide)).trans h.1.2⟩, ht.2⟩
   have hd := VG.RelCT.wp decodeCT (fun s t h => ⟨decodeWP s h.1, decodeWP t h.2⟩)
-  rw [verifyDecodeR]
+  rw [decodeRThen]
   refine VG.RelCT.seq (hl.mono (fun _ _ h => h) (fun _ _ h => h.2))
     (VG.RelCT.seq (hd.mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_)
   apply decodedThen_ct base (Spec.Ed25519.decodePoint rbs) P _
@@ -515,6 +523,32 @@ theorem verifyDecodeR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List
   · intro r hr
     obtain ⟨Ra, hR⟩ := decodePoint_rep hr
     exact verifyStoreR_ct base pk sig challenge pkbs rbs sbs kbs a r hA hR
+
+/-- R's power, at byte 7680. -/
+abbrev PowR (base : Addr) (rbs : List Byte) (s : State) : Prop :=
+  Proof.X25519.X86_64.F s.mem base 7680 = rootPow (decodedY rbs)
+
+theorem verifyDecodeR_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
+    (a : Spec.Ed25519.Point) {Aa : EPoint dZ} (hA : Rep a Aa) :
+    RelCT isa (fun s t => (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a s ∧ PowR base rbs s) ∧
+      (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t ∧ PowR base rbs t))
+      (verifyDecodeR fld win) (fun _ _ => True) := by
+  have ht := (powerRestore_ct base).mono
+    (fun s t (h : (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a s ∧ PowR base rbs s) ∧
+      (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t ∧ PowR base rbs t)) =>
+      ⟨h.1.1.1.context.scratch.rdi, h.2.1.1.context.scratch.rdi⟩) (fun _ _ h => h)
+  have hw (s : State) (h : DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a s ∧ PowR base rbs s) :
+      WP isa (.block powerRestore) s fun t => DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t ∧
+        env t.mem base 15 = rootPow (decodedY rbs) := by
+    refine WP.mono (powerRestore_ok h.1.1.context.scratch) fun t ⟨kt, vt⟩ => ?_
+    refine ⟨⟨h.1.1.of_keep (PowersKeep.of_keep kt),
+      (workspace_tablePoint kt.mem (by decide) (by decide)).trans h.1.2⟩, ?_⟩
+    rw [vt, Function.update_self]
+    exact h.2
+  have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
+  rw [verifyDecodeR]
+  exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
+    (decodeRThen_ct base pk sig challenge pkbs rbs sbs kbs a hA)
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -530,20 +564,25 @@ variable {win : Prog isa} [EdWindows win]
 
 theorem verifyStoreA_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List Byte)
     (a : Spec.Ed25519.Point) {Aa : EPoint dZ} (hA : Rep a Aa) :
-    RelCT isa (fun s t => (VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
-      point (env s.mem base) 0 1 2 3 = a) ∧ (VerifyPublic base pk sig challenge pkbs rbs sbs kbs t ∧
-      point (env t.mem base) 0 1 2 3 = a))
+    RelCT isa (fun s t => ((VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧ PowR base rbs s) ∧
+      point (env s.mem base) 0 1 2 3 = a) ∧ ((VerifyPublic base pk sig challenge pkbs rbs sbs kbs t ∧
+      PowR base rbs t) ∧ point (env t.mem base) 0 1 2 3 = a))
       (.seq (.block (pointTableWrite 7424)) (verifyDecodeR fld win)) (fun _ _ => True) := by
   have ht := (pointTableWrite_ct base 7424 (by decide)).mono
-    (fun s t (h : (VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
-      point (env s.mem base) 0 1 2 3 = a) ∧ (VerifyPublic base pk sig challenge pkbs rbs sbs kbs t ∧
-      point (env t.mem base) 0 1 2 3 = a)) => ⟨h.1.1.context.scratch.rdi, h.2.1.context.scratch.rdi⟩)
+    (fun s t (h : ((VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧ PowR base rbs s) ∧
+      point (env s.mem base) 0 1 2 3 = a) ∧ ((VerifyPublic base pk sig challenge pkbs rbs sbs kbs t ∧
+      PowR base rbs t) ∧ point (env t.mem base) 0 1 2 3 = a)) =>
+      ⟨h.1.1.1.context.scratch.rdi, h.2.1.1.context.scratch.rdi⟩)
     (fun _ _ h => h)
-  have hw (s : State) (h : VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
+  have hw (s : State) (h : (VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧ PowR base rbs s) ∧
       point (env s.mem base) 0 1 2 3 = a) :
-      WP isa (.block (pointTableWrite 7424)) s (DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a) := by
-    refine WP.mono (pointTableWrite_ok h.1.context.scratch 7424 (by decide) (by decide)) fun t ⟨kt, tv, _⟩ => ?_
-    exact ⟨h.1.of_keep (kt.mono (by decide) (by decide)), tv.trans h.2⟩
+      WP isa (.block (pointTableWrite 7424)) s fun t =>
+        DecodeRCTPre base pk sig challenge pkbs rbs sbs kbs a t ∧ PowR base rbs t := by
+    refine WP.mono (pointTableWrite_ok h.1.1.context.scratch 7424 (by decide) (by decide))
+      fun t ⟨kt, tv, _⟩ => ?_
+    refine ⟨⟨h.1.1.of_keep (kt.mono (by decide) (by decide)), tv.trans h.2⟩, ?_⟩
+    rw [PowR, kt.mem.field (d := 7680) (by decide) (Or.inr (by decide)) (by decide)]
+    exact h.1.2
   have hp := VG.RelCT.wp ht (fun s t h => ⟨hw s h.1, hw t h.2⟩)
   exact VG.RelCT.seq (hp.mono (fun _ _ h => h) (fun _ _ h => h.2))
     (verifyDecodeR_ct base pk sig challenge pkbs rbs sbs kbs a hA)
@@ -552,35 +591,49 @@ theorem verifyDecodeA_ct (base pk sig challenge : Addr) (pkbs rbs sbs kbs : List
     RelCT isa (fun s t => VerifyPublic base pk sig challenge pkbs rbs sbs kbs s ∧
       VerifyPublic base pk sig challenge pkbs rbs sbs kbs t) (verifyDecodeA fld win) (fun _ _ => True) := by
   let P := VerifyPublic base pk sig challenge pkbs rbs sbs kbs
-  have loadCT : RelCT isa (fun s t => P s ∧ P t)
+  let Q := fun s => (P s ∧ PowR base rbs s) ∧ env s.mem base 15 = rootPow (decodedY pkbs)
+  have powCT := decodePowers_ct (fld := fld) base pk sig challenge P (fun _ h => h.context)
+    (fun _ _ h k => h.of_keep k)
+  have powWP (s : State) (h : P s) : WP isa (decodePowers fld) s Q := by
+    refine WP.mono (decodePowers_ok h.context) fun t ⟨kt, t15, tf⟩ => ?_
+    exact ⟨⟨h.of_keep kt, by rw [PowR, tf, h.rBytes]⟩, by rw [t15, h.pkBytes]⟩
+  have hpw := VG.RelCT.wp powCT (fun s t h => ⟨powWP s h.1, powWP t h.2⟩)
+  have loadCT : RelCT isa (fun s t => Q s ∧ Q t)
       (.block [.mov .rdx (.mem (Impl.X25519.X86_64.sc 7936))]) (fun _ _ => True) := by
     apply taintFld (Taint.ofRegs [.rdi]) _ (by fld_taint_decide)
-    exact fun _ _ h => rdi_agree h.1.context.scratch.rdi h.2.context.scratch.rdi
-  have loadWP (s : State) (h : P s) :
+    exact fun _ _ h => rdi_agree h.1.1.1.context.scratch.rdi h.2.1.1.context.scratch.rdi
+  have loadWP (s : State) (h : Q s) :
       WP isa (.block [.mov .rdx (.mem (Impl.X25519.X86_64.sc 7936))]) s fun t =>
-        P t ∧ DecodeCTPre base pk pkbs t := by
-    refine WP.mono (loadPointer_ok h.context.scratch .rdx 7936 (by decide)) fun t ⟨tp, kt⟩ => ?_
+        (P t ∧ PowR base rbs t) ∧ DecodeCTPre base pk pkbs t := by
+    refine WP.mono (loadPointer_ok h.1.1.context.scratch .rdx 7936 (by decide)) fun t ⟨tp, kt⟩ => ?_
     have kp : VerifyKeep base s t := PowersKeep.of_keeps kt (by decide)
-    have hp := h.of_keep kp
-    exact ⟨hp, hp.context.scratch, tp.trans h.context.pkHeader, hp.context.pkRead, hp.pkBytes⟩
+    have hp := h.1.1.of_keep kp
+    exact ⟨⟨hp, by rw [PowR, kt.2.1]; exact h.1.2⟩, hp.context.scratch,
+      tp.trans h.1.1.context.pkHeader, hp.context.pkRead, hp.pkBytes, by rw [kt.2.1]; exact h.2⟩
   have hl := VG.RelCT.wp loadCT (fun s t h => ⟨loadWP s h.1, loadWP t h.2⟩)
   have decodeCT := (pointDecode_ct (fld := fld) base pk pkbs).mono
-    (fun s t (h : (P s ∧ DecodeCTPre base pk pkbs s) ∧ (P t ∧ DecodeCTPre base pk pkbs t)) =>
-      ⟨h.1.2, h.2.2⟩) (fun _ _ h => h)
-  have decodeWP (s : State) (h : P s ∧ DecodeCTPre base pk pkbs s) :
-      WP isa (pointDecode fld) s fun t => P t ∧ DecodeResult base (Spec.Ed25519.decodePoint pkbs) t := by
+    (fun s t (h : ((P s ∧ PowR base rbs s) ∧ DecodeCTPre base pk pkbs s) ∧
+      ((P t ∧ PowR base rbs t) ∧ DecodeCTPre base pk pkbs t)) => ⟨h.1.2, h.2.2⟩) (fun _ _ h => h)
+  have decodeWP (s : State) (h : (P s ∧ PowR base rbs s) ∧ DecodeCTPre base pk pkbs s) :
+      WP isa (pointDecode fld) s fun t =>
+        (P t ∧ PowR base rbs t) ∧ DecodeResult base (Spec.Ed25519.decodePoint pkbs) t := by
     have hd := pointDecode_ok (fld := fld) (base := base) (p := pk) h.2.1 h.2.2.1 h.2.2.2.1
-    rw [h.2.2.2.2] at hd
+      (by rw [h.2.2.2.2.1]; exact h.2.2.2.2.2)
+    rw [h.2.2.2.2.1] at hd
     with_reducible apply WP.mono hd
     intro t ht
-    exact ⟨h.1.of_keep (PowersKeep.of_decode ht.1), ht.2⟩
+    refine ⟨⟨h.1.1.of_keep (PowersKeep.of_decode ht.1), ?_⟩, ht.2⟩
+    rw [PowR, Outside_F ht.1.mem (d := 7680) (by decide) (Or.inr (by decide))]
+    exact h.1.2
   have hd := VG.RelCT.wp decodeCT (fun s t h => ⟨decodeWP s h.1, decodeWP t h.2⟩)
   rw [verifyDecodeA]
+  refine VG.RelCT.seq (hpw.mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_
+  rw [decodeAThen]
   refine VG.RelCT.seq (hl.mono (fun _ _ h => h) (fun _ _ h => h.2))
     (VG.RelCT.seq (hd.mono (fun _ _ h => h) (fun _ _ h => h.2)) ?_)
-  apply decodedThen_ct base (Spec.Ed25519.decodePoint pkbs) P _
+  apply decodedThen_ct base (Spec.Ed25519.decodePoint pkbs) (fun s => P s ∧ PowR base rbs s) _
   · intro s t kt h
-    exact h.of_keep (PowersKeep.of_keeps kt (by simp))
+    exact ⟨h.1.of_keep (PowersKeep.of_keeps kt (by simp)), by rw [PowR, kt.2.1]; exact h.2⟩
   · intro a ha
     obtain ⟨Aa, hA⟩ := decodePoint_rep ha
     exact verifyStoreA_ct base pk sig challenge pkbs rbs sbs kbs a hA
@@ -674,21 +727,24 @@ def equationWithR (r : Option Spec.Ed25519.Point) (a : Spec.Ed25519.Point) (scal
   | some r => Spec.Ed25519.pointEqual (Spec.Ed25519.pointMul scalar Spec.Ed25519.basePoint)
       (Spec.Ed25519.pointAdd r (Spec.Ed25519.pointMul challenge a))
 
-theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
+/-- R's decoding, with its power in slot 15 (`hpow`). -/
+theorem decodeRThen_ok {s : State} {base pk sig challenge : Addr}
     {Aa : EPoint dZ} (h : VerifyContext s base pk sig challenge)
-    (hA : Rep (tablePoint s.mem base 7424) Aa) :
-    WP isa (verifyDecodeR fld win) s fun t => VerifyKeep base s t ∧
+    (hA : Rep (tablePoint s.mem base 7424) Aa)
+    (hpow : env s.mem base 15 = rootPow (decodedY (Spec.Ed25519.bytesAt s.mem sig 32))) :
+    WP isa (decodeRThen fld win) s fun t => VerifyKeep base s t ∧
       t.gpr .rax = signWord (equationWithR
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
         (tablePoint s.mem base 7424)
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
-  rw [verifyDecodeR]
+  rw [decodeRThen]
   refine WP.seq (WP.mono (loadPointer_ok h.scratch .rdx 7944 (by decide)) fun a ⟨ap, ka⟩ => ?_)
   have kap : VerifyKeep base s a := PowersKeep.of_keeps ka (by decide)
   have ha := h.of_keep kap
   apply WP.seq
   have hd := pointDecode_ok (fld := fld) (base := base) (p := sig) ha.scratch (ap.trans h.sigHeader) ha.rRead
+    (by rw [ka.2.1]; exact hpow)
   generalize hp : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt a.mem sig 32) = decoded at hd
   rw [ka.2.1] at hp
   with_reducible apply WP.mono hd
@@ -718,6 +774,28 @@ theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
     rw [tv, dp, cp, da, verifyKeep_bytes kabcd h.scalarFar, verifyKeep_bytes kabcd h.challengeFar,
       hp, hy, equationWithR]
 
+/-- R's decoding, with its power at byte 7680 (`hR`). -/
+theorem verifyDecodeR_ok {s : State} {base pk sig challenge : Addr}
+    {Aa : EPoint dZ} (h : VerifyContext s base pk sig challenge)
+    (hA : Rep (tablePoint s.mem base 7424) Aa)
+    (hR : Proof.X25519.X86_64.F s.mem base 7680 = rootPow (decodedY (Spec.Ed25519.bytesAt s.mem sig 32))) :
+    WP isa (verifyDecodeR fld win) s fun t => VerifyKeep base s t ∧
+      t.gpr .rax = signWord (equationWithR
+        (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
+        (tablePoint s.mem base 7424)
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
+  rw [verifyDecodeR]
+  refine WP.seq (WP.mono (powerRestore_ok h.scratch) fun r ⟨kr, vr⟩ => ?_)
+  have krp : VerifyKeep base s r := PowersKeep.of_keep kr
+  have ra : tablePoint r.mem base 7424 = tablePoint s.mem base 7424 :=
+    workspace_tablePoint kr.mem (by decide) (by decide)
+  refine WP.mono (decodeRThen_ok (h.of_keep krp) (by rw [ra]; exact hA)
+    (by rw [vr, Function.update_self, verifyKeep_bytes krp h.rFar]; exact hR)) fun t ⟨kt, tv⟩ => ?_
+  refine ⟨krp.trans kt, ?_⟩
+  rw [tv, ra, verifyKeep_bytes krp h.rFar, verifyKeep_bytes krp h.scalarFar,
+    verifyKeep_bytes krp h.challengeFar]
+
 end VG.Proof.Ed25519.X86_64
 end
 
@@ -736,20 +814,24 @@ def decodedEquation (a r : Option Spec.Ed25519.Point) (scalar challenge : Nat) :
   | none => false
   | some a => equationWithR r a scalar challenge
 
-theorem verifyDecodeA_ok {s : State} {base pk sig challenge : Addr}
-    (h : VerifyContext s base pk sig challenge) :
-    WP isa (verifyDecodeA fld win) s fun t => VerifyKeep base s t ∧
+/-- A's decoding, with its power in slot 15 (`hpow`) and R's at byte 7680 (`hR`). -/
+theorem decodeAThen_ok {s : State} {base pk sig challenge : Addr}
+    (h : VerifyContext s base pk sig challenge)
+    (hpow : env s.mem base 15 = rootPow (decodedY (Spec.Ed25519.bytesAt s.mem pk 32)))
+    (hR : Proof.X25519.X86_64.F s.mem base 7680 = rootPow (decodedY (Spec.Ed25519.bytesAt s.mem sig 32))) :
+    WP isa (decodeAThen fld win) s fun t => VerifyKeep base s t ∧
       t.gpr .rax = signWord (decodedEquation
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem pk 32))
         (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
-  rw [verifyDecodeA]
+  rw [decodeAThen]
   refine WP.seq (WP.mono (loadPointer_ok h.scratch .rdx 7936 (by decide)) fun a ⟨ap, ka⟩ => ?_)
   have kap : VerifyKeep base s a := PowersKeep.of_keeps ka (by decide)
   have ha := h.of_keep kap
   apply WP.seq
   have hd := pointDecode_ok (fld := fld) (base := base) (p := pk) ha.scratch (ap.trans h.pkHeader) ha.pkRead
+    (by rw [ka.2.1]; exact hpow)
   generalize hp : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt a.mem pk 32) = decoded at hd
   rw [ka.2.1] at hp
   with_reducible apply WP.mono hd
@@ -768,11 +850,30 @@ theorem verifyDecodeA_ok {s : State} {base pk sig challenge : Addr}
       fun d ⟨kd, dp, _⟩ => ?_)
     have kabcd := kabc.trans (kd.mono (by decide) (by decide))
     obtain ⟨Aa, hAa⟩ := decodePoint_rep (hp.trans hy)
-    refine WP.mono (verifyDecodeR_ok (h.of_keep kabcd) (by rw [dp, cp]; exact hAa))
+    refine WP.mono (verifyDecodeR_ok (h.of_keep kabcd) (by rw [dp, cp]; exact hAa)
+      (by rw [kd.mem.field (d := 7680) (by decide) (Or.inr (by decide)) (by decide), kc.2.1,
+        Outside_F kb.mem (d := 7680) (by decide) (Or.inr (by decide)), ka.2.1, verifyKeep_bytes kabcd h.rFar]
+          exact hR))
       fun t ⟨kt, tv⟩ => ?_
     refine ⟨kabcd.trans kt, ?_⟩
     rw [tv, dp, cp, verifyKeep_bytes kabcd h.rFar, verifyKeep_bytes kabcd h.scalarFar,
       verifyKeep_bytes kabcd h.challengeFar, hp, hy, decodedEquation]
+
+theorem verifyDecodeA_ok {s : State} {base pk sig challenge : Addr}
+    (h : VerifyContext s base pk sig challenge) :
+    WP isa (verifyDecodeA fld win) s fun t => VerifyKeep base s t ∧
+      t.gpr .rax = signWord (decodedEquation
+        (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem pk 32))
+        (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem sig 32))
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (off sig 32) 32))
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem challenge 64))) := by
+  rw [verifyDecodeA]
+  refine WP.seq (WP.mono (decodePowers_ok h) fun p ⟨kp, p15, pf⟩ => ?_)
+  refine WP.mono (decodeAThen_ok (h.of_keep kp) (by rw [verifyKeep_bytes kp h.pkFar]; exact p15)
+    (by rw [verifyKeep_bytes kp h.rFar]; exact pf)) fun t ⟨kt, tv⟩ => ?_
+  refine ⟨kp.trans kt, ?_⟩
+  rw [tv, verifyKeep_bytes kp h.pkFar, verifyKeep_bytes kp h.rFar, verifyKeep_bytes kp h.scalarFar,
+    verifyKeep_bytes kp h.challengeFar]
 
 end VG.Proof.Ed25519.X86_64
 end

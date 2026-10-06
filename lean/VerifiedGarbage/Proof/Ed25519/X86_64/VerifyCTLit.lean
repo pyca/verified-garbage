@@ -12,6 +12,12 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 materialize_code recoverCandidateLit := (recoverCandidate Impl.X25519.X86_64.baseline : Prog isa)
 materialize_code recoverCandidateAdxLit := (recoverCandidate Impl.X25519.X86_64.adx : Prog isa)
 materialize_code decodeLoadBlock := (.block pointDecodeLoad : Prog isa)
+materialize_code decodeInput3Lit := (.block (decodeInput Impl.X25519.X86_64.baseline 3) : Prog isa)
+materialize_code decodeInput3AdxLit := (.block (decodeInput Impl.X25519.X86_64.adx 3) : Prog isa)
+materialize_code decodeInput2Lit := (.block (decodeInput Impl.X25519.X86_64.baseline 2) : Prog isa)
+materialize_code decodeInput2AdxLit := (.block (decodeInput Impl.X25519.X86_64.adx 2) : Prog isa)
+materialize_code powerSaveLit := (.block powerSave : Prog isa)
+materialize_code powerRestoreLit := (.block powerRestore : Prog isa)
 materialize_code parityBlock :=
   (.block (Impl.X25519.X86_64.freeze (offset 0) ++ recoverParity) : Prog isa)
 materialize_code zeroBlock := (.block (fieldZero 0) : Prog isa)
