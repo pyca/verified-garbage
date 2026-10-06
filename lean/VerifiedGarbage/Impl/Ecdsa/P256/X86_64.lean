@@ -12,7 +12,7 @@ open VG.X86_64
 def p256 : Cfg where
   n := 4
   C := Spec.P256.curve
-  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩
+  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
   fastN := true
 
 /-- P-256, multiplying with BMI2 and ADX. -/

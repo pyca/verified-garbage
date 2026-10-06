@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 import VerifiedGarbage.Proof.Weierstrass.Law3
+import VerifiedGarbage.Proof.Weierstrass.Booth
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -42,9 +43,11 @@ structure CombOk (c : Cfg) (d : CombData) : Prop where
   cover : 64 * c.n ≤ d.w * c.combJ d.w ∧ d.w * c.combJ d.w ≤ 64 * c.n + 8
 
 /-- The comb's tables, if the curve has one, are right (`CombOkW`, which a
-curve's own facts prove, with its group law). -/
+curve's own facts prove, with its group law), and for the comb with Booth's
+digits (`jac`) the curve's order is what it needs (`BoothOk`). -/
 def CombTbls (c : Cfg) : Prop :=
-  ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start
+  ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start ∧
+    (d.jac = true → BoothOk c.C d.w (c.combJ d.w) (2 ^ (64 * c.n)))
 
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`, so that the slots and tables fit in the

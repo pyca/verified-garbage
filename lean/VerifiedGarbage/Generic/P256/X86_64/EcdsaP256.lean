@@ -35,14 +35,19 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
       " ++ Proof.Ecdsa.X86_64.mulNote adx ++ ". `[k]G` is a fixed-base comb of 7-bit signed digits: the 37 windows `k_j` of \
-      `k`'s bits as digits `k_j - 64` from `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) \
-      2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the \
-      static `VG_P256_COMB` (148 KB), with no doublings: each entry is selected in constant time \
-      by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one \
-      of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
-      its sign, and added by the mixed complete addition formulas of Renes, Costello and Batina \
-      for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
-      unless the digit is zero; the \
+      `k`'s bits as Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the \
+      bit below window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` \
+      (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P256_COMB` (148 KB), with no \
+      doublings: each entry is selected in constant time by loading every entry of its table, 16 \
+      bytes at a time, and keeping (`pand`, `por`) the one of the digit's magnitude (or the point \
+      at infinity for a zero digit), negated by a mask of its sign, and added, from `j = 0` up, to \
+      a Jacobian accumulator by the mixed addition formulas madd-2004-hmv (8 multiplications and \
+      3 squarings), which fail only for equal points: the accumulator, the sum of the digits' \
+      terms below `j`, is never the entry, since `n` is prime, `[n]G` is the point at infinity \
+      (which the proof's kernel computes) and the sums are smaller than any nonzero digit's term \
+      modulo `n`. The entry replaces the sum where the accumulator is the point at infinity \
+      (`Z = 0`), and the sum replaces the accumulator unless the digit is zero; the result is \
+      `(XZ : Y : Z³)` in projective coordinates (with `Y = 1` for the point at infinity); the \
       inversions modulo `p` and `n` are by divsteps (Bernstein and Yang's safegcd, half-delta \
       form): 10 batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, \
       `g = Z`, or `n` and `k`), each giving a matrix of 64-bit entries that updates `f`, `g` \

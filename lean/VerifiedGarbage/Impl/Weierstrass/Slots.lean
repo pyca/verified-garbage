@@ -109,6 +109,17 @@ def dblJ (S : RcbSlots) (p o : Pt) : List FOp :=
     .sub o.x o.x S.t2, .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .mul S.t1 S.t1 S.t1,
     .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .sub o.y o.y S.t1]
 
+/-- `o = p + q` for a Jacobian `p` and an affine `q` (`q.z` is not read), by
+the mixed Jacobian addition madd-2004-hmv (8 products, 3 squares), which
+fails for equal points: `H = x₂Z₁² - X₁`, `r = y₂Z₁³ - Y₁`,
+`X₃ = r² - H³ - 2X₁H²`, `Y₃ = r(X₁H² - X₃) - Y₁H³`, `Z₃ = Z₁H`. -/
+def maddJ (S : RcbSlots) (p q o : Pt) : List FOp :=
+  [.mul S.t0 p.z p.z, .mul S.t1 q.x S.t0, .mul S.t2 p.z S.t0, .mul S.t2 q.y S.t2,
+    .sub S.t1 S.t1 p.x, .sub S.t2 S.t2 p.y, .mul S.t3 S.t1 S.t1, .mul S.t4 S.t1 S.t3,
+    .mul S.t3 p.x S.t3, .mul o.x S.t2 S.t2, .sub o.x o.x S.t4, .add S.t5 S.t3 S.t3,
+    .sub o.x o.x S.t5, .sub S.t3 S.t3 o.x, .mul S.t3 S.t2 S.t3, .mul S.t4 p.y S.t4,
+    .sub o.y S.t3 S.t4, .mul o.z p.z S.t1]
+
 /-- `o` = the projective `p` in Jacobian coordinates: `(XZ : YZ² : Z)` (`z.x`
 holding zero; temporary `t0`). -/
 def toJ (S : RcbSlots) (p z o : Pt) : List FOp :=

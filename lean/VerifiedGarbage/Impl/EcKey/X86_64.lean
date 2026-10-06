@@ -11,7 +11,7 @@ curve of `n` 64-bit words, from the code of ECDSA's signature
    signature's arguments `k` and `digest`; then the signature's code up to
    `Z^(p-2)`, unchanged: its setup (which reads `d` into the slots of `k`,
    `d` and the hash), its tables of bits, `Q = [d]G` by its comb (or its
-   ladder, for a curve without one: `Cfg.gMul`), and its power;
+   ladder, for a curve without one: `Cfg.gMulK`), and its power;
 2. `x = X Z^(p-2)` and `y = Y Z^(p-2)`, each left Montgomery's form by a
    multiplication by 1;
 3. the flag, `d` in `[1, n-1]` and `Z ≠ 0`, as a mask, selects `04 ‖ x ‖ y`
@@ -48,7 +48,7 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gMul <|
+  .seq c.gMulK <|
   .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, the flag's low bit to `rax`, and the

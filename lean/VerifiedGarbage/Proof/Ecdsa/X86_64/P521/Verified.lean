@@ -73,7 +73,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   even h := absurd h (by decide)
 
 theorem p521_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
-    CombTbls p521 := fun d h => by cases h; exact hT
+    CombTbls p521 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h

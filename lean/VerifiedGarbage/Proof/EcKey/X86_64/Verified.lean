@@ -94,7 +94,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
-  pk_x86_of (p256_ok hI) hL (p256_tbls hT) (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
+  pk_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP256 :=

@@ -34,7 +34,7 @@ namespace VG.Proof.P521.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
 /-- P-521's comb. -/
-abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB"⟩
+abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
 
 /-- The comb's loop. -/
 def combG : Prog isa := .loop (p521.combCfg p521d).step .ne
