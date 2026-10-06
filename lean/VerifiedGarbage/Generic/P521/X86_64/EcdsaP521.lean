@@ -25,7 +25,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
       form, multiplied modulo `p` by Montgomery multiplication by columns (product \
       scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up) and \
+      reduction's multiplier is its column's low word, added 512 times eight columns up; \
+      a square computes each product of two different words once and adds it twice) and \
       modulo `n` by columns too (finely integrated product scanning: each column also adds the \
       reduction's products by `n`'s words, and each of the first nine computes its multiplier \
       `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction; the 66-byte encodings are read and \
@@ -63,7 +64,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       saves its caller's callee-saved registers in `scratch`; field elements and scalars are nine \
       64-bit words in Montgomery form, multiplied modulo `p` by Montgomery multiplication by columns (product \
       scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up) and \
+      reduction's multiplier is its column's low word, added 512 times eight columns up; \
+      a square computes each product of two different words once and adds it twice) and \
       modulo `n` by columns too (finely integrated product scanning: each column also adds the \
       reduction's products by `n`'s words, and each of the first nine computes its multiplier \
       `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction, and the hash's \

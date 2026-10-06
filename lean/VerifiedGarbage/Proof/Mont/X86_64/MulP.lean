@@ -77,7 +77,8 @@ theorem pMulAcc_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     WP isa (.block [.mov .rax (.mem (sc dx)), .mul .rcx, .alu .add r0 (.reg .rax),
       .alu .adc r1 (.reg .rdx), .alu .adc r2 (.imm 0)]) s fun s' =>
       regsVal s' [r0, r1, r2] = regsVal s [r0, r1, r2] + (word s.mem base dx).toNat * (s.gpr .rcx).toNat ∧
-      Keeps [.rax, .rdx, r0, r1, r2] s s' := by
+      Keeps [.rax, .rdx, r0, r1, r2] s s' ∧
+      (s'.gpr .rax).toNat + 2 ^ 64 * (s'.gpr .rdx).toNat = (word s.mem base dx).toNat * (s.gpr .rcx).toNat := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hd
   obtain ⟨⟨h01, h02, h0a, h0c, h0d, h0i⟩, ⟨h12, h1a, h1c, h1d, h1i⟩, ⟨h2a, h2c, h2d, h2i⟩, -⟩ := hd
   apply WP.of_runBlock
@@ -86,7 +87,7 @@ theorem pMulAcc_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true, ite_false,
     reduceCtorEq, Ne.symm h01, Ne.symm h02, Ne.symm h12, h0a, h1a, h2a, h0d, h1d, h2d,
     Ne.symm h0d, Option.some.injEq, exists_eq_left', se0]
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, ?_⟩
   · simp only [regsVal, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, ite_true, ite_false,
       h01, h02, h12, Ne.symm h01, Ne.symm h02, Ne.symm h12, Nat.mul_zero, Nat.add_zero]
     have em := mulx_arith (word s.mem base dx) (s.gpr .rcx)
@@ -108,6 +109,8 @@ theorem pMulAcc_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2.1,
       hr.2.2.2.1, hr.2.2.2.2, ite_false]
+  · simp only [Ne.symm h0a, Ne.symm h1a, Ne.symm h2a, Ne.symm h1d, Ne.symm h2d, ite_false]
+    exact mulx_arith (word s.mem base dx) (s.gpr .rcx)
 
 /-- A term: `acc += [dx] · y`. -/
 theorem pTerm_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (c : Nat) {dx : Nat}
@@ -115,7 +118,8 @@ theorem pTerm_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
     (hb : regsVal s (pAccs c) + (word s.mem base dx).toNat * pY s.mem base dy < 2 ^ 192) :
     WP isa (.block (pTerm c dx dy)) s fun s' =>
       regsVal s' (pAccs c) = regsVal s (pAccs c) + (word s.mem base dx).toNat * pY s.mem base dy ∧
-      Keeps (.rax :: .rcx :: .rdx :: pAccs c) s s' := by
+      Keeps (.rax :: .rcx :: .rdx :: pAccs c) s s' ∧
+      (s'.gpr .rax).toNat + 2 ^ 64 * (s'.gpr .rdx).toNat = (word s.mem base dx).toNat * pY s.mem base dy := by
   have hok := pAccs_ok c
   rw [pTerm, ← List.singleton_append, WP.block_append_iff]
   refine WP.mono (pLoadY_ok hs hdy) fun s₁ ⟨e₁, k₁⟩ => ?_
@@ -127,10 +131,11 @@ theorem pTerm_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   refine WP.mono (pMulAcc_ok hs₁ hok.1 hdx (by
     rw [show [pAcc c 0, pAcc c 1, pAcc c 2] = pAccs c from rfl, hacc, hm₁, e₁]; exact hb))
-    fun s₂ ⟨e₂, k₂⟩ => ⟨?_, ?_⟩
+    fun s₂ ⟨e₂, k₂, x₂⟩ => ⟨?_, ?_, ?_⟩
   · rw [show [pAcc c 0, pAcc c 1, pAcc c 2] = pAccs c from rfl, hacc, hm₁, e₁] at e₂
     exact e₂
   · exact (k₁.mono (by simp)).trans (k₂.mono (by simp [pAccs]))
+  · rw [x₂, hm₁, e₁]
 
 /-- The sum of terms. -/
 def pSum (m : Mem) (base : Addr) (ts : List (Nat × Option Nat)) : Nat :=
@@ -150,7 +155,7 @@ theorem pTerms_ok (c : Nat) {size : Nat} : ∀ (ts : List (Nat × Option Nat)) {
     rw [List.flatMap_cons, WP.block_append_iff]
     have ht := hin t List.mem_cons_self
     simp only [pSum, List.map_cons, List.sum_cons] at hb
-    refine WP.mono (pTerm_ok hs c ht.1 ht.2 (by omega)) fun s₁ ⟨e₁, k₁⟩ => ?_
+    refine WP.mono (pTerm_ok hs c ht.1 ht.2 (by omega)) fun s₁ ⟨e₁, k₁, _⟩ => ?_
     have hs₁ := hs.of_keeps k₁ (by have := (pAccs_ok c).2; simp only [List.mem_cons, not_or]; grind)
     have hm₁ : s₁.mem = s.mem := k₁.2.1
     refine WP.mono (pTerms_ok c ts hs₁ (fun t' ht' => hin t' (List.mem_cons_of_mem _ ht'))
@@ -284,7 +289,7 @@ theorem sum_le_mul {L : List Nat} {K : Nat} (h : ∀ x ∈ L, x ≤ K) : L.sum �
 
 /-- A column's sum is below `10 · 2¹²⁸`, for words. -/
 theorem pColSum_lt {A B l : Nat → Nat} (c : Nat) (hA : ∀ i, A i < 2 ^ 64) (hB : ∀ j, B j < 2 ^ 64)
-    (hl : 8 ≤ c → l (c - 8) < 2 ^ 64) : pColSum A B l c < 10 * 2 ^ 128 := by
+    (hl : 8 ≤ c → c ≤ 16 → l (c - 8) < 2 ^ 64) : pColSum A B l c < 10 * 2 ^ 128 := by
   unfold pColSum
   have h1 := sum_le_mul (L := ((List.range 9).filter fun i => i ≤ c ∧ c - i < 9).map
       fun i => A i * B (c - i)) (K := 2 ^ 128) fun x hx => by
@@ -297,7 +302,7 @@ theorem pColSum_lt {A B l : Nat → Nat} (c : Nat) (hA : ∀ i, A i < 2 ^ 64) (h
     exact Nat.le_trans (List.length_filter_le _ _) (by simp)
   have h3 := Nat.mul_le_mul_right (2 ^ 128) h2
   split
-  · have := hl (by omega); omega
+  · have := hl (by omega) (by omega); omega
   · omega
 
 /-- A column's terms' sum, from the words they read. -/
@@ -321,56 +326,57 @@ theorem pSum_pTerms {m : Mem} {base : Addr} {M : Mod} {a b c : Nat} {A B l : Nat
       hl h.1 h.2]
   · simp
 
+/-- A family of column sums `S l c` (given the reduction's `u`s, `l`): column
+`c`'s depends on `l` only at `c - 8` (for `8 ≤ c ≤ 16`), and is below
+`2¹³³` if that is a word. -/
+structure ColSum (S : (Nat → Nat) → Nat → Nat) : Prop where
+  congr : ∀ l l' c, (8 ≤ c → c ≤ 16 → l (c - 8) = l' (c - 8)) → S l c = S l' c
+  lt : ∀ l c, (8 ≤ c → c ≤ 16 → l (c - 8) < 2 ^ 64) → S l c < 2 ^ 133
+
+/-- What column `c < 18` of a product by columns `col` does, from a state
+whose memory differs from `m₀` only in the temporary area, which holds the
+reduction's `u_{c-8}` (`l`): it adds its sum `S l c` to the accumulator
+(below `2¹²⁸`) and stores its low word at `[tmp + 8 (c mod 9)]`. -/
+def ColOk (M : Mod) (base : Addr) (size : Nat) (m₀ : Mem) (col : Nat → List Instr)
+    (S : (Nat → Nat) → Nat → Nat) : Prop :=
+  ∀ c < 18, ∀ (s : State) (l : Nat → Nat), Scr s base size → Outside base M.tmp 72 m₀ s.mem →
+    regsVal s (pAccs c) < 2 ^ 128 →
+    (8 ≤ c → c ≤ 16 → (word s.mem base (M.tmp + 8 * (c - 8))).toNat = l (c - 8)) →
+    WP isa (.block (col c)) s fun s' =>
+      (word s'.mem base (M.tmp + 8 * (c % 9))).toNat + 2 ^ 64 * regsVal s' (pAccs (c + 1)) =
+        regsVal s (pAccs c) + S l c ∧
+      KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s s' ∧
+      Outside base (M.tmp + 8 * (c % 9)) 8 s.mem s'.mem
+
 /-- The first `n` columns: the low words (`l`) of those not yet overwritten in
-the temporary area, and the accumulator, `hval (pColSum A B l) 0 n =
+the temporary area, and the accumulator, `hval (S l) 0 n =
 hval l 0 n + 2^(64 n) acc`. -/
-theorem pCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base size) {M : Mod} {a b : Nat}
-    (htmp : M.tmp + 72 ≤ size) (ha : a + 72 ≤ size) (hb : b + 72 ≤ size)
-    (haT : a + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ a) (hbT : b + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ b)
-    (h0 : regsVal s₀ (pAccs 0) = 0) :
-    ∀ n ≤ 18, WP isa (.block ((List.range n).flatMap (pCol M a b))) s₀ fun s =>
+theorem cols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base size) {M : Mod}
+    {col : Nat → List Instr} {S : (Nat → Nat) → Nat → Nat} (htmp : M.tmp + 72 ≤ size) (hS : ColSum S)
+    (hcol : ColOk M base size s₀.mem col S) (h0 : regsVal s₀ (pAccs 0) = 0) :
+    ∀ n ≤ 18, WP isa (.block ((List.range n).flatMap col)) s₀ fun s =>
       KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s₀ s ∧ Outside base M.tmp 72 s₀.mem s.mem ∧
       regsVal s (pAccs n) < 2 ^ 128 ∧
       ∃ l : Nat → Nat, (∀ c < n, l c < 2 ^ 64) ∧
         (∀ c < n, n ≤ c + 9 → (word s.mem base (M.tmp + 8 * (c % 9))).toNat = l c) ∧
-        hval (pColSum (fun i => (word s₀.mem base (a + 8 * i)).toNat)
-          (fun j => (word s₀.mem base (b + 8 * j)).toNat) l) 0 n =
-          hval l 0 n + (2 ^ 64) ^ n * regsVal s (pAccs n)
+        hval (S l) 0 n = hval l 0 n + (2 ^ 64) ^ n * regsVal s (pAccs n)
   | 0, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl⟩, Outside.refl _ _ _ _, by rw [h0]; decide,
       fun _ => 0, fun _ h => absurd h (Nat.not_lt_zero _), fun _ h => absurd h (Nat.not_lt_zero _),
       by simp [hval, h0]⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (pCols_ok hs htmp ha hb haT hbT h0 n (by omega))
+    refine WP.mono (cols_ok hs htmp hS hcol h0 n (by omega))
       fun s ⟨k, O, hacc, l, hl64, hlm, e⟩ => ?_
     have hnw := hs.nowrap
     have hsS : Scr s base size := hs.of_keepRegs k (by decide)
-    have hA : ∀ i < 9, (word s.mem base (a + 8 * i)).toNat = (word s₀.mem base (a + 8 * i)).toNat :=
-      fun i hi => by rw [O.word (by omega) (by omega)]
-    have hB : ∀ j < 9, (word s.mem base (b + 8 * j)).toNat = (word s₀.mem base (b + 8 * j)).toNat :=
-      fun j hj => by rw [O.word (by omega) (by omega)]
     have hL : 8 ≤ n → n ≤ 16 → (word s.mem base (M.tmp + 8 * (n - 8))).toNat = l (n - 8) :=
       fun h1 h2 => by
         have := hlm (n - 8) (by omega) (by omega)
         rwa [Nat.mod_eq_of_lt (show n - 8 < 9 by omega)] at this
-    have hsum := pSum_pTerms (M := M) (c := n) hA hB hL
-    have hcol := pColSum_lt (A := fun i => (word s₀.mem base (a + 8 * i)).toNat)
-      (B := fun j => (word s₀.mem base (b + 8 * j)).toNat) (l := l) n (fun i => (word _ _ _).isLt)
-      (fun j => (word _ _ _).isLt) (fun h => hl64 _ (by omega))
-    have hin : ∀ t ∈ pTerms M a b n, PIn size t := by
-      intro t ht
-      simp only [pTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
-        decide_eq_true_eq] at ht
-      rcases ht with ⟨i, ⟨hi, -, hj⟩, rfl⟩ | ht
-      · exact ⟨by omega, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
-      · split at ht
-        · simp only [List.mem_singleton] at ht
-          subst ht
-          exact ⟨by omega, fun d hd => by simp at hd⟩
-        · simp at ht
+    have hcl := hS.lt l n fun h1 h2 => hl64 _ (by omega)
     have hn9 := Nat.mod_lt n (show 0 < 9 by decide)
-    refine WP.mono (pCol_ok hsS htmp hin (by rw [hsum]; omega)) fun s' ⟨e', k', O'⟩ => ?_
-    refine ⟨k.trans k', O.trans (O'.mono (by omega) (by omega)), by rw [hsum] at e'; omega,
+    refine WP.mono (hcol n (by omega) s l hsS O hacc hL) fun s' ⟨e', k', O'⟩ => ?_
+    refine ⟨k.trans k', O.trans (O'.mono (by omega) (by omega)), by omega,
       fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c, ?_, ?_, ?_⟩
     · intro c hc
       by_cases h : c = n
@@ -387,27 +393,55 @@ theorem pCols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base s
     · rw [hval_succ_last, hval_succ_last, Nat.zero_add]
       simp only [↓reduceIte]
       have hcs : ∀ c, 0 ≤ c → c < 0 + n →
-          pColSum (fun i => (word s₀.mem base (a + 8 * i)).toNat) (fun j => (word s₀.mem base (b + 8 * j)).toNat)
-            (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c) c =
-          pColSum (fun i => (word s₀.mem base (a + 8 * i)).toNat) (fun j => (word s₀.mem base (b + 8 * j)).toNat)
-            l c := fun c _ hc => by
-        unfold pColSum
-        split
-        · simp only [show c - 8 ≠ n by omega, ite_false]
-        · rfl
-      have hcn : pColSum (fun i => (word s₀.mem base (a + 8 * i)).toNat) (fun j => (word s₀.mem base (b + 8 * j)).toNat)
-            (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c) n =
-          pColSum (fun i => (word s₀.mem base (a + 8 * i)).toNat) (fun j => (word s₀.mem base (b + 8 * j)).toNat)
-            l n := by
-        unfold pColSum
-        split
-        · simp only [show n - 8 ≠ n by omega, ite_false]
-        · rfl
-      rw [hval_congr hcs, hcn, e, hval_congr (g := l) (fun c _ hc => ite_eq_right_iff.mpr (fun h => absurd h (by omega))), ← hsum, pow64_succ']
+          S (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c) c = S l c :=
+        fun c _ hc => hS.congr _ _ c fun _ _ => by simp only [show c - 8 ≠ n by omega, ite_false]
+      have hcn : S (fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c) n =
+          S l n := hS.congr _ _ n fun _ _ => by simp only [show n - 8 ≠ n by omega, ite_false]
+      rw [hval_congr hcs, hcn, e, hval_congr (g := l) (fun c _ hc => ite_eq_right_iff.mpr (fun h => absurd h (by omega))), pow64_succ']
       rw [Nat.mul_comm (2 ^ 64) ((2 ^ 64) ^ n), Nat.mul_assoc]
       generalize (2 ^ 64) ^ n = Q
       rw [Nat.add_assoc, ← Nat.mul_add, ← e', Nat.mul_add]
       omega
+
+/-- `mulP`'s column sums. -/
+theorem colSum_p (A B : Nat → Nat) (hA : ∀ i, A i < 2 ^ 64) (hB : ∀ j, B j < 2 ^ 64) :
+    ColSum (pColSum A B) where
+  congr l l' c h := by
+    unfold pColSum
+    split
+    · rename_i hc; rw [h hc.1 hc.2]
+    · rfl
+  lt l c h := Nat.lt_of_lt_of_le (pColSum_lt c hA hB h) (by decide)
+
+/-- `mulP`'s columns. -/
+theorem pCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a b : Nat}
+    (htmp : M.tmp + 72 ≤ size) (ha : a + 72 ≤ size) (hb : b + 72 ≤ size)
+    (haT : a + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ a) (hbT : b + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ b) :
+    ColOk M base size m₀ (pCol M a b)
+      (pColSum (fun i => (word m₀ base (a + 8 * i)).toNat) (fun j => (word m₀ base (b + 8 * j)).toNat)) :=
+  fun c hc s l hsS O hacc hL => by
+    have hnw := hsS.nowrap
+    have hA : ∀ i < 9, (word s.mem base (a + 8 * i)).toNat = (word m₀ base (a + 8 * i)).toNat :=
+      fun i hi => by rw [O.word (by omega) (by omega)]
+    have hB : ∀ j < 9, (word s.mem base (b + 8 * j)).toNat = (word m₀ base (b + 8 * j)).toNat :=
+      fun j hj => by rw [O.word (by omega) (by omega)]
+    have hsum := pSum_pTerms (M := M) (c := c) hA hB hL
+    have hcol := pColSum_lt (A := fun i => (word m₀ base (a + 8 * i)).toNat)
+      (B := fun j => (word m₀ base (b + 8 * j)).toNat) (l := l) c (fun i => (word _ _ _).isLt)
+      (fun j => (word _ _ _).isLt) (fun h1 h2 => by rw [← hL h1 h2]; exact (word _ _ _).isLt)
+    have hin : ∀ t ∈ pTerms M a b c, PIn size t := by
+      intro t ht
+      simp only [pTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
+        decide_eq_true_eq] at ht
+      rcases ht with ⟨i, ⟨hi, -, hj⟩, rfl⟩ | ht
+      · exact ⟨by omega, fun d hd => by simp only [Option.some.injEq] at hd; omega⟩
+      · split at ht
+        · simp only [List.mem_singleton] at ht
+          subst ht
+          exact ⟨by omega, fun d hd => by simp at hd⟩
+        · simp at ht
+    refine WP.mono (pCol_ok hsS htmp hin (by rw [hsum]; omega)) fun s' ⟨e', k', O'⟩ =>
+      ⟨by rw [e', hsum], k', O'⟩
 
 theorem hval_shift (f : Nat → Nat) (d : Nat) : ∀ k n, hval f (k + d) n = hval (fun j => f (j + d)) k n
   | _, 0 => rfl
@@ -460,25 +494,26 @@ theorem mulP_arith {X A B U W m acc : Nat} (hX : 1024 ≤ X) (hm : m + 1 = 512 *
   rw [hacc, Nat.mul_zero, Nat.add_zero] at eT hT
   exact ⟨hacc, hT, eT⟩
 
-/-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p`, `R = 2⁵⁷⁶`. -/
-theorem mulP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkW M size m s.mem base) (hred : M.red = .friendly p521Ws) {o a b : Nat}
-    (ho : o + 8 * M.n ≤ size) (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size)
-    (hoT : o + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ o) (haT : a + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ a)
-    (hbT : b + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ b) (hoM : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o)
-    (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (mulP M o a b)) s fun s' => OpKeep M base o s s' ∧
-      wordsVal s'.mem base o M.n < m ∧
-      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
-        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+/-- `[o] = A B R⁻¹ mod p` for P-521's `p`, `R = 2⁵⁷⁶`, by columns whose sums
+add up to `A B` and the reduction's `2⁵²¹ U`. -/
+theorem prodCols_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (hred : M.red = .friendly p521Ws) {o : Nat}
+    (ho : o + 8 * M.n ≤ size) (hoT : o + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ o)
+    (hoM : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o) {col : Nat → List Instr}
+    {S : (Nat → Nat) → Nat → Nat} (hS : ColSum S) (hcol : ColOk M base size s.mem col S) {A B : Nat}
+    (hA : A < 2 ^ (64 * M.n)) (hB : B < m)
+    (htot : ∀ l, hval (S l) 0 18 = A * B + 512 * (2 ^ 64) ^ 8 * hval l 0 9) :
+    WP isa (.block (prodCols M o col)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧ wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m = A * B % m := by
   obtain ⟨hn9, hm⟩ := p521_of_red hred hM.red
   rw [Nat.pow_mul]
   have hnw := hs.nowrap
   have hmo := hM.mo
   have htmp := hM.tmp
   have hsep := hM.sep
-  rw [hn9] at ho ha hb hoT haT hbT hoM hB hmo htmp hsep ⊢
-  rw [mulP, List.append_assoc, WP.block_append_iff,
+  rw [Nat.pow_mul, hn9] at hA
+  rw [hn9] at ho hoT hoM hmo htmp hsep ⊢
+  rw [prodCols, List.append_assoc, WP.block_append_iff,
     show ([.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] : List Instr) =
       zeros [.r9, .r10, .r11] from rfl]
   refine WP.mono (zeros_ok s [.r9, .r10, .r11]) fun s₁ ⟨z₁, k₁⟩ => ?_
@@ -489,16 +524,12 @@ theorem mulP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rfl
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   rw [WP.block_append_iff]
-  refine WP.mono (pCols_ok hs₁ (by omega) (by omega) (by omega) (by omega) (by omega) h0 18 (Nat.le_refl _))
+  refine WP.mono (cols_ok hs₁ (M := M) (by omega) hS (by rw [hm₁]; exact hcol) h0 18 (Nat.le_refl _))
     fun s₂ ⟨k₂, O₂, _, l, hl64, hlm, e₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   -- The value of the columns.
-  rw [pColSum_total, hval_add l 0 9 9, Nat.zero_add,
+  rw [htot, hval_add l 0 9 9, Nat.zero_add,
     show (2 ^ 64) ^ 18 = (2 ^ 64) ^ 9 * (2 ^ 64) ^ 9 by rw [← Nat.pow_add]] at e₂
-  have hA : wordsVal s.mem base a 9 = hval (fun i => (word s₁.mem base (a + 8 * i)).toNat) 0 9 := by
-    rw [← wordsVal_hval s₁.mem base a 0 9, hm₁, Nat.mul_zero, Nat.add_zero]
-  have hBv : wordsVal s.mem base b 9 = hval (fun j => (word s₁.mem base (b + 8 * j)).toNat) 0 9 := by
-    rw [← wordsVal_hval s₁.mem base b 0 9, hm₁, Nat.mul_zero, Nat.add_zero]
   have hW : wordsVal s₂.mem base M.tmp 9 = hval l 9 9 := by
     rw [show M.tmp = M.tmp + 8 * 0 from rfl, wordsVal_hval s₂.mem base M.tmp 0 9,
       show (9 : Nat) = 0 + 9 from rfl, hval_shift l 9 0 9]
@@ -506,9 +537,8 @@ theorem mulP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       have := hlm (c + 9) (by omega) (by omega)
       rwa [show (c + 9) % 9 = c by omega] at this
   have hU : hval l 0 9 < (2 ^ 64) ^ 9 := hval_lt fun c _ hc => hl64 c (by omega)
-  have hAlt : wordsVal s.mem base a 9 < (2 ^ 64) ^ 9 := by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9
-  rw [← hA, ← hBv, ← hW, show pAccs 18 = [.r9, .r10, .r11] from rfl] at e₂
-  obtain ⟨hacc0, hT2, eT⟩ := mulP_arith (by decide) hm hAlt hB hU e₂
+  rw [← hW, show pAccs 18 = [.r9, .r10, .r11] from rfl] at e₂
+  obtain ⟨hacc0, hT2, eT⟩ := mulP_arith (by decide) hm hA hB hU e₂
   have hr9 : (s₂.gpr .r9).toNat = 0 := by simp only [regsVal] at hacc0; omega
   have hmo₂ : wordsVal s₂.mem base M.mo 9 = m := by
     rw [O₂.wordsVal (by omega) (by omega), hm₁, ← hn9, hM.val]
@@ -528,5 +558,26 @@ theorem mulP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   · rw [e₃]; exact Nat.mod_lt _ (m_pos hB)
   · rw [e₃, Nat.mod_mul_mod, Nat.mul_comm, eT]
     simp only [Nat.add_mul_mod_self_right]
+
+/-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p`, `R = 2⁵⁷⁶`. -/
+theorem mulP_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (hred : M.red = .friendly p521Ws) {o a b : Nat}
+    (ho : o + 8 * M.n ≤ size) (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size)
+    (hoT : o + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ o) (haT : a + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ a)
+    (hbT : b + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ b) (hoM : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o)
+    (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (mulP M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  have hn9 := (p521_of_red hred hM.red).1
+  have htmp := hM.tmp
+  rw [hn9] at ha hb haT hbT htmp
+  have hv : ∀ x, wordsVal s.mem base x M.n = hval (fun i => (word s.mem base (x + 8 * i)).toNat) 0 9 := fun x => by
+    rw [hn9, ← wordsVal_hval s.mem base x 0 9, Nat.mul_zero, Nat.add_zero]
+  rw [mulP, hv a, hv b]
+  exact prodCols_ok hs hM hred ho hoT hoM (colSum_p _ _ (fun _ => (word _ _ _).isLt) (fun _ => (word _ _ _).isLt))
+    (pCol_colOk (by omega) (by omega) (by omega) (by omega) (by omega)) (by rw [← hv a]; exact wordsVal_lt _ _ _ _)
+    (by rw [← hv b]; exact hB) fun l => pColSum_total _ _ l
 
 end VG.Proof.Mont.X86_64

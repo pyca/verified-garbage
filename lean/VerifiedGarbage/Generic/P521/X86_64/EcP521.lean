@@ -23,7 +23,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       saves its caller's callee-saved registers in `scratch`; field elements are nine 64-bit \
       words in Montgomery form, multiplied by Montgomery multiplication by columns (product \
       scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up) \
+      reduction's multiplier is its column's low word, added 512 times eight columns up; \
+      a square computes each product of two different words once and adds it twice) \
       with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit \
       windows of `d`, from the static `VG_P521_COMB`; and `Z⁻¹` is \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
