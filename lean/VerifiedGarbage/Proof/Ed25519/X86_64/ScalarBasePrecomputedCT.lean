@@ -39,7 +39,7 @@ structure CombOk (comb : Prog isa) : Prop where
     (∀ s₁ s₂, P s₁ s₂ → VG.X86_64.Taint.AgreeS [combSym] (Taint.ofRegs [.rdi]) s₁ s₂) →
     RelCT isa P comb fun _ _ => True
 
-theorem scalarBaseEngineOf_ok {comb : Prog isa} (hc : CombOk comb) {s : State} {base k T : Addr}
+theorem scalarBaseEngineOf_ok [X25519.X86_64.DivstepInv] {comb : Prog isa} (hc : CombOk comb) {s : State} {base k T : Addr}
     (hs : Scratch s base) (hp : s.gpr .rsi = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (ht : CombTbl s T) (hfar : TblFar base T) :
@@ -142,7 +142,7 @@ theorem combOk : CombOk (combMultiply fld) :=
   ⟨fun hs hS hd hb ht hfar => combMultiply_ok hs hS hd hb ht hfar,
     fun _ hp => taintSymFld (Taint.ofRegs [.rdi]) hp (by fld_taint_decide)⟩
 
-theorem scalarBasePrecomputedEngine_ok : BaseEngineCorrect (scalarBasePrecomputedEngine fld) :=
+theorem scalarBasePrecomputedEngine_ok [X25519.X86_64.DivstepInv] : BaseEngineCorrect (scalarBasePrecomputedEngine fld) :=
   fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok combOk hs hp hr hd ht hfar
 
 theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
@@ -150,7 +150,7 @@ theorem scalarBasePrecomputedEngine_ct (base k T : Addr) :
       (scalarBasePrecomputedEngine fld) (fun _ _ => True) :=
   scalarBaseEngineOf_ct combOk base k T
 
-theorem scalarBase_precomputed_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
+theorem scalarBase_precomputed_ct [X25519.X86_64.DivstepInv] : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub
     (scalarBase_precomputed fld) :=
   scalarBase_ct_of_engine (scalarBasePrecomputedEngine fld) scalarBasePrecomputedEngine_ok
     scalarBasePrecomputedEngine_ct

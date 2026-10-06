@@ -56,7 +56,7 @@ theorem uOps_eval (e : Ed25519.X86_64.Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
   simp [uOps, evalOps, evalOp, Function.update]
 
-theorem uEncode_ok {s : State} {base : Addr} (hs : Scratch s base) :
+theorem uEncode_ok [DivstepInv] {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (uEncode fld) s fun t => RbxKeep base s t ∧
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
         ((env s.mem base 2 + env s.mem base 1) *
@@ -79,7 +79,7 @@ def UEngineOk (eng : Prog isa) : Prop :=
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
         Spec.X25519.encodeUCoordinate w
 
-theorem engineOf_ok {comb : Prog isa} (hcomb : CombOk comb) : UEngineOk (engineOf fld comb) := by
+theorem engineOf_ok [DivstepInv] {comb : Prog isa} (hcomb : CombOk comb) : UEngineOk (engineOf fld comb) := by
   intro s base k T hs hp hr hd ht hfar
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   set kb := Spec.Ed25519.bytesAt s.mem k 32
@@ -106,6 +106,6 @@ theorem engineOf_ok {comb : Prog isa} (hcomb : CombOk comb) : UEngineOk (engineO
   refine ⟨((kab.trans kbc).trans kd).trans (PowersKeep.of_rbx kt), _, tv, ?_⟩
   exact VG.Proof.X25519.Edwards.x25519_basePoint hk _ (u_rep dp)
 
-theorem engine_ok : UEngineOk (engine fld) := engineOf_ok combOk
+theorem engine_ok [DivstepInv] : UEngineOk (engine fld) := engineOf_ok combOk
 
 end VG.Proof.X25519.X86_64.Base

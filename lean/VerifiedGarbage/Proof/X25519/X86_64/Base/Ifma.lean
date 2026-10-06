@@ -17,7 +17,7 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.X25519.X86_64.Base VG.Proof.Ed2
 abbrev engineIfma : Prog isa :=
   engineOf Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.Ifma.combMultiply Impl.X25519.X86_64.adx)
 
-theorem engineIfma_ok : UEngineOk engineIfma := engineOf_ok Ifma.combOk
+theorem engineIfma_ok [DivstepInv] : UEngineOk engineIfma := engineOf_ok Ifma.combOk
 
 theorem engineIfma_public (base k T : Addr) :
     RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y) engineIfma
@@ -32,12 +32,12 @@ theorem engineIfma_public (base k T : Addr) :
   · simp only [List.mem_singleton] at hn; subst hn
     exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm
 
-theorem x25519BaseIfma_ok (s : State) (hs : baseLocal.pre s) :
+theorem x25519BaseIfma_ok [DivstepInv] (s : State) (hs : baseLocal.pre s) :
     ∃ tr t, Exec isa x25519BaseIfma s tr t ∧ abiPreserved s t ∧ baseLocal.post s t := by
   obtain ⟨tr, t, he, h⟩ := x25519BaseWith_correct _ engineIfma_ok hs
   exact ⟨tr, t, he, abiPreserved_of_ctl (by lit_decide) he h.1, h.2⟩
 
-theorem x25519BaseIfma_verified : Verified X86_64.target x25519BaseIfma
+theorem x25519BaseIfma_verified [DivstepInv] : Verified X86_64.target x25519BaseIfma
     (Spec.X25519.x25519BaseContract (X86_64.abi.withConsts combConsts)) :=
   Verified.of_correct x25519BaseIfma_ok (x25519BaseWith_ct _ engineIfma_ok engineIfma_public) base_implies
 

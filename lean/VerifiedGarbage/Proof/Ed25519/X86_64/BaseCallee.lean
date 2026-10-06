@@ -22,10 +22,10 @@ class EdBase (bs : Prog isa) : Prop where
   instrs : bs.allInstrs (fun i => !VG.X86_64.Taint.clobbers i .rsp && !isa.writesSp i) = true
   depth : bs.depth ≤ 1
 
-instance {fld : Arith} [EdArith fld] : EdBase (scalarBase_precomputed fld) :=
+instance {fld : Arith} [EdArith fld] [X25519.X86_64.DivstepInv] : EdBase (scalarBase_precomputed fld) :=
   ⟨scalarBase_precomputed_ok, scalarBase_precomputed_ct, by fld_lit_decide, by fld_lit_decide⟩
 
-instance : EdBase scalarBase_ifma :=
+instance [X25519.X86_64.DivstepInv] : EdBase scalarBase_ifma :=
   ⟨Ifma.scalarBase_ifma_ok, Ifma.scalarBase_ifma_ct, by lit_decide, by lit_decide⟩
 
 end VG.Proof.Ed25519.X86_64

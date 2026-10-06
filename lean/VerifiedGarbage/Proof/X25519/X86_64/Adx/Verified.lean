@@ -16,7 +16,7 @@ namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64
 
-theorem x25519Adx_ok (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
+theorem x25519Adx_ok [DivstepInv] (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
     ∃ t s', Exec isa Impl.X25519.X86_64.x25519Adx s t s' ∧ abiPreserved s s' ∧
       Proof.X25519.x25519X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct adx_ok (Pre.of s hs)
@@ -31,7 +31,7 @@ theorem x25519Adx_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem x25519Adx_verified :
+theorem x25519Adx_verified [DivstepInv] :
     Verified X86_64.target Impl.X25519.X86_64.x25519Adx (Spec.X25519.x25519Contract X86_64.abi) :=
   Verified.of_correct x25519Adx_ok x25519Adx_ct (by
     sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,

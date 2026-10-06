@@ -9,7 +9,7 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
 variable {fld : Arith} [EdArith fld]
 
-theorem scalarBase_precomputed_ok (s : State) (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_precomputed_ok [X25519.X86_64.DivstepInv] (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa (scalarBase_precomputed fld) s t s' ∧
       abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_correct_of_engine (scalarBasePrecomputedEngine fld)
@@ -97,7 +97,7 @@ theorem scalarBase_implies :
     exact ⟨h0, h1, h2, h3, hs⟩
   sat := ⟨baseSatStateT, scalarBase_sat⟩
 
-theorem scalarBase_precomputed_verified : Verified X86_64.target (scalarBase_precomputed fld)
+theorem scalarBase_precomputed_verified [X25519.X86_64.DivstepInv] : Verified X86_64.target (scalarBase_precomputed fld)
     (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)) :=
   Verified.of_correct scalarBase_precomputed_ok scalarBase_precomputed_ct scalarBase_implies
 

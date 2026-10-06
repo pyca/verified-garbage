@@ -106,7 +106,7 @@ theorem x25519BaseWith_correct (eng : Prog isa) (heng : UEngineOk eng)
       kd.1 .r8 (by decide), kd.1 .r9 (by decide), kd.1 .r10 (by decide), kd.1 .r11 (by decide)]
     exact vc
 
-theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
+theorem x25519Base_correct [DivstepInv] {s : State} (hs : baseLocal.pre s) :
     WP isa (x25519Base fld) s fun t => gprPreserved s t ∧ baseLocal.post s t :=
   x25519BaseWith_correct _ engine_ok hs
 
