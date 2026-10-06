@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.RsaKeyGen.Table
-import Mathlib.Data.Nat.ModEq
 import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
@@ -57,23 +56,17 @@ theorem redc_math {X s sv : Nat} (hinv : (s * sv + 1) % 2 ^ 64 = 0) (hX : X < s 
 theorem trial_word_math {s acc r1 r2 x V j : Nat} (h1 : r1 * 2 ^ 32 % s = (x % 2 ^ 32 + acc) % s)
     (h2 : r2 * 2 ^ 32 % s = (x / 2 ^ 32 + r1) % s) (hV : acc * 2 ^ (64 * j) % s = V % s) :
     r2 * 2 ^ (64 * (j + 1)) % s = (V + 2 ^ (64 * j) * x) % s := by
-  have e1 : r1 * 2 ^ 32 ≡ x % 2 ^ 32 + acc [MOD s] := h1
-  have e2 : r2 * 2 ^ 32 ≡ x / 2 ^ 32 + r1 [MOD s] := h2
-  have eV : acc * 2 ^ (64 * j) ≡ V [MOD s] := hV
-  have e3 : r2 * 2 ^ 64 ≡ x + acc [MOD s] := by
+  have mr : ∀ {a b : Nat} (c : Nat), a % s = b % s → a * c % s = b * c % s := fun c h => by
+    rw [Nat.mul_mod, h, ← Nat.mul_mod]
+  have ml : ∀ {a b : Nat} (c : Nat), a % s = b % s → (c + a) % s = (c + b) % s := fun c h => by
+    rw [Nat.add_mod, h, ← Nat.add_mod]
+  have e3 : r2 * 2 ^ 64 % s = (x + acc) % s := by
     have : r2 * 2 ^ 64 = r2 * 2 ^ 32 * 2 ^ 32 := by rw [Nat.mul_assoc, ← Nat.pow_add]
-    rw [this]
-    refine (e2.mul_right (2 ^ 32)).trans ?_
-    rw [Nat.add_mul]
-    refine (Nat.ModEq.add_left _ e1).trans ?_
-    rw [← Nat.add_assoc, Nat.mul_comm (x / 2 ^ 32), Nat.add_comm (2 ^ 32 * (x / 2 ^ 32)), Nat.mod_add_div]
+    rw [this, ← Nat.mod_mul_mod, h2, Nat.mod_mul_mod, Nat.add_mul, ml _ h1, ← Nat.add_assoc,
+      Nat.mul_comm (x / 2 ^ 32), Nat.add_comm (2 ^ 32 * (x / 2 ^ 32)), Nat.mod_add_div]
   have : r2 * 2 ^ (64 * (j + 1)) = r2 * 2 ^ 64 * 2 ^ (64 * j) := by
     rw [Nat.mul_assoc, ← Nat.pow_add]; congr 2; omega
-  rw [this]
-  show r2 * 2 ^ 64 * 2 ^ (64 * j) ≡ V + 2 ^ (64 * j) * x [MOD s]
-  refine (e3.mul_right _).trans ?_
-  rw [Nat.add_mul, Nat.add_comm]
-  exact (eV.add_right _).trans (by rw [Nat.mul_comm x])
+  rw [this, mr _ e3, Nat.add_mul, ml _ hV, Nat.add_comm, Nat.mul_comm x]
 
 /-- `s` divides `c` iff `acc ∈ {0, s}`, for `acc < 2 s` with
 `acc 2^(64 w) ≡ c (mod s)` and `s` odd. -/
