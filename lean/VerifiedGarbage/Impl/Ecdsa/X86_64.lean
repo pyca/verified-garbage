@@ -138,6 +138,9 @@ structure Cfg where
   fastN : Bool := false
   /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/
   adx : Bool := false
+  /-- Whether the comb selects its entries 32 bytes at a time, with AVX2
+  (`TCombCfg.avx2`). -/
+  avx2 : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat
@@ -201,6 +204,7 @@ def combCfg (d : CombData) : TCombCfg where
   J := c.combJ d.w
   start := (c.mont d.start.1, c.mont d.start.2)
   one := c.mont 1
+  avx2 := c.avx2
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl

@@ -17,7 +17,8 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 
 A generic file (see `TCB/Emit.lean`) over P-256's group law and
 inversions `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
-multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
+multiplication: the baseline's, and BMI2's and ADX's, with the comb's
+selection by AVX2 (`_adx`).
 -/
 
 namespace VG.Generic.P256.X86_64.EcdsaP256
@@ -38,8 +39,10 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       `k`'s bits as Booth's digits `d_j = k_j + c_j - 128 c_(j+1)` from `-64` to `64` (`c_j` the \
       bit below window `j`, `c_0 = 0`), `[k]G = Σ [d_j 2^(7j)]G`, from 37 tables of `[m 2^(7j)]G` \
       (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P256_COMB` (148 KB), with no \
-      doublings: each entry is selected in constant time by loading every entry of its table, 16 \
-      bytes at a time, and keeping (`pand`, `por`) the one of the digit's magnitude (or the point \
+      doublings: each entry is selected in constant time by loading every entry of its table, " ++
+      (if adx then "32 bytes at a time with AVX2, and keeping (`vpand`, `vpor`, under the mask of \
+      `vpcmpeqd` of a counter and the magnitude, broadcast)" else "16 bytes at a time, and keeping \
+      (`pand`, `por`)") ++ " the one of the digit's magnitude (or the point \
       at infinity for a zero digit), negated by a mask of its sign, and added, from `j = 0` up, to \
       a Jacobian accumulator by the mixed addition formulas madd-2004-hmv (8 multiplications and \
       3 squarings), which fail only for equal points: the accumulator, the sum of the digits' \
@@ -63,7 +66,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts)
     verified := hv
     spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 /-- The function of `Spec.Ecdsa.P256.verifyApi`, multiplying with BMI2 and ADX
 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing

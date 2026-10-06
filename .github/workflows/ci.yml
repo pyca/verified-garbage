@@ -534,7 +534,9 @@ jobs:
               pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
           # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
           # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
-          # RSA's and P-256's ADX functions); BMI2 and ADX without AVX-512F; AVX-512F
+          # RSA's ADX functions), and with AVX2 too (P-256's `_adx` functions,
+          # which select the comb's entries with AVX2); BMI2 and ADX without
+          # AVX-512F; AVX-512F
           # without AVX2, for Argon2 with G's AVX-512 code and BLAKE2b's
           # baseline code; and AVX-512F without AVX512VL, for Argon2 with G's
           # AVX-512 code and BLAKE2b's AVX2 code.
@@ -542,7 +544,8 @@ jobs:
             arch: x86_64
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              bmi2,adx | ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              bmi2,adx | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi2,adx | p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
               avx,avx2,avx512f | argon2 rfc9106 mlkem cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but

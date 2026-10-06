@@ -65,6 +65,8 @@ structure TCombCfg where
   J : Nat
   start : Nat × Nat
   one : Nat
+  /-- Whether the selection loads 32 bytes at a time, with AVX2 (`selPassV`). -/
+  avx2 : Bool := false
 
 /-- The accumulators of the selection: `xmm0`, `xmm1`, …, sixteen bytes of the
 entry each. -/
@@ -120,6 +122,29 @@ def selPassAt (o H st np : Nat) (po : Nat → Nat) : List Instr :=
   (List.range H).flatMap (fun m => selEntryAt st np po (m + 1)) ++
   (List.range np).map fun c => .movdquStore (sc (o + po c)) (selAcc c)
 
+/-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
+apart, with AVX2: the mask of `ymm14 = ymm13` (both broadcasts of a
+doubleword: `m` and the magnitude) in `ymm15`, `ymm14` incremented by
+`ymm12` (one in every doubleword), and the entry's `np` 32-byte pieces kept
+in the 256-bit accumulators under the mask, through `ymm11`. -/
+def selEntryY (st np m : Nat) : List Instr :=
+  [.vop (.vbin .vpcmpeqd .l256 .xmm15 .xmm14 .xmm13), .vop (.vbin .vpaddd .l256 .xmm14 .xmm14 .xmm12)] ++
+  (List.range np).flatMap fun c =>
+    [.vmovdquLoad .l256 .xmm11 (tblAt (st * (m - 1) + 32 * c)), .vop (.vbin .vpand .l256 .xmm11 .xmm11 .xmm15),
+      .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)]
+
+/-- `selPassAt` with AVX2, for entries of `np` 32-byte pieces: the magnitude
+in `r8` and the counter (from 1) broadcast, the 256-bit accumulators cleared,
+every entry kept under its mask (`selEntryY`), the accumulators stored to `o`,
+and the upper halves of the `ymm` registers cleared (`vzeroupper`), through
+`rcx`. -/
+def selPassY (o H st np : Nat) : List Instr :=
+  [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
+    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
+  (List.range np).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) ++
+  (List.range H).flatMap (fun m => selEntryY st np (m + 1)) ++
+  (List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 32 * c)) (selAcc c)) ++ [.vop .vzeroupper]
+
 namespace TCombCfg
 
 variable (K : TCombCfg)
@@ -144,6 +169,11 @@ def selSetup : List Instr :=
 `y`: the accumulators cleared, every entry kept under its mask, and stored. -/
 def selPass : List Instr := selPassAt K.E.x K.H (16 * K.M.n) K.M.n (16 * ·)
 
+/-- `selPass`, with AVX2 (`selPassY`, 32 bytes at a time) if the comb uses it
+and an entry is a whole number of 32-byte pieces. -/
+def selPassV : List Instr :=
+  if K.avx2 && K.M.n % 2 == 0 then selPassY K.E.x K.H (16 * K.M.n) (K.M.n / 2) else K.selPass
+
 /-- `y = R` if the magnitude in `r8` is zero (when the selected `y` is zero),
 and `Z = R` unless it is, through `rax`, `rcx` and `rdx`. -/
 def selOne : List Instr :=
@@ -155,7 +185,7 @@ def selOne : List Instr :=
     [.movImm64 .rax (wordOf K.one i), .alu .and .rax (.reg .rcx), .store (sc (K.E.z + 8 * i)) .rax]
 
 /-- The entry of table `rbx` for the magnitude in `r8` into `E`. -/
-def select : List Instr := K.selSetup ++ K.selPass ++ K.selOne
+def select : List Instr := K.selSetup ++ K.selPassV ++ K.selOne
 
 /-- Address of the public digit's entry. A zero magnitude safely reads the
 first entry, which the mask subsequently clears. -/

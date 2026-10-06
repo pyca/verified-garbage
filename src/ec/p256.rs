@@ -1,7 +1,8 @@
 //! P-256's multiplications, which [`ecdsa`](crate::ecdsa) and
 //! [`ecdh`](crate::ecdh) choose between, and its public keys, which both
-//! compute. On x86-64 CPUs with BMI2 and ADX, the `_adx` variants multiply
-//! field elements and scalars with `mulx`, `adcx` and `adox`.
+//! compute. On x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants
+//! multiply field elements and scalars with `mulx`, `adcx` and `adox`, and
+//! the signatures' and public keys' comb selects its entries with AVX2.
 
 use crate::arch::ec_p256::vg_ec_p256_public_key;
 #[cfg(target_arch = "x86_64")]
@@ -18,7 +19,8 @@ use crate::zeroize::zeroize;
 pub(crate) enum Mul {
     /// The target's baseline ISA.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox` (the `_adx` variants).
+    /// BMI2's `mulx` and ADX's `adcx` and `adox`, with the comb's selection
+    /// by AVX2 (the `_adx` variants).
     #[cfg(target_arch = "x86_64")]
     Adx,
 }
@@ -73,14 +75,18 @@ pub(crate) fn public_key(d: &[u8; 32]) -> Option<[u8; 65]> {
 mod tests {
     use super::*;
 
-    /// The multiplications chosen with neither, one or both of BMI2 and ADX.
+    /// The multiplications chosen with BMI2, ADX and AVX2 (and AVX, which
+    /// AVX2 implies), or without one of them.
     #[test]
     fn select() {
         let cases = [
             (Features::of(&[]), Mul::Baseline),
             (Features::of(&["bmi2"]), Mul::Baseline),
             (Features::of(&["adx"]), Mul::Baseline),
-            (Features::of(&["bmi2", "adx"]), Mul::Adx),
+            (Features::of(&["bmi2", "adx"]), Mul::Baseline),
+            (Features::of(&["avx", "avx2", "bmi2"]), Mul::Baseline),
+            (Features::of(&["avx", "avx2", "adx"]), Mul::Baseline),
+            (Features::of(&["avx", "avx2", "bmi2", "adx"]), Mul::Adx),
         ];
         for (f, m) in cases {
             assert_eq!(Mul::select(f), m, "{f:?}");

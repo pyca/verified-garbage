@@ -47,7 +47,7 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) (c : Proof.
     stack := 240
     verified := sign_verified adx h.law (Proof.P256.combOk7 h.law) h.inv c
     spSafe := sign_spSafe (pack adx h.law (Proof.P256.combOk7 h.law) h.inv c)
-    features := c.features ++ (if adx then ["bmi2", "adx"] else []).filter (!c.features.contains ·) }
+    features := c.features ++ (if adx then ["bmi2", "adx", "avx", "avx2"] else []).filter (!c.features.contains ·) }
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) :
     List Artifact :=
