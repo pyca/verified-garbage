@@ -22,6 +22,7 @@ structure RowInv (s₀ : State) (B : Addr) (Z w a b i j₀ k : Nat) (mi : BitVec
   carry : (word s.mem B carryOffset).toNat ≤ 1
   keep : Keep mmRegs s₀ s
   frame : Frm B (rowRanges w) s₀.mem s.mem
+  endPtr : k=0 ∨ s.gpr .rsi = off B (rawBase w+8*(i+j₀+8*k))
   val : wv s.mem B (rawBase w) (2*w) +
       (2 : Nat)^(64*(i+j₀+8*(k+1))) * (word s.mem B carryOffset).toNat =
     wv s₀.mem B (rawBase w) (2*w) +
@@ -55,7 +56,7 @@ theorem rowStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {mi :
   have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega
   refine WP.mono (rowStep_ok h.scr h.rdi h.hdr hZ hw hi (by omega)
     ha hb ha1 ha2 hb1 hb2 h.indexI h.indexJ)
-    fun t ⟨zt,jt,eq,_,carry,ht,ft,kt⟩ => ?_
+    fun t ⟨zt,jt,eq,_,carry,ht,ft,ptr,kt⟩ => ?_
   have localFrame : Frm B ((rawBase w+8*(i+(j₀+8*k)),128)::[(carryOffset,8),(8*sFn 13,8)]) s.mem t.mem := ft
   have wider : Frm B (rowRanges w) s.mem t.mem := by
     intro x hx
@@ -90,9 +91,14 @@ theorem rowStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {mi :
           simp only [rawBase,carryOffset,sFn,slot,hdrBytes,aAcc] <;> omega) localFrame eq)
   rw [← hp,← hq,va,vb] at full
   refine ⟨?_,⟨h.scr.congr kt.2.2,ht,(kt.gpr (by decide)).trans h.rdi,it,?_,carry h.carry,
-    (h.keep.trans kt).mono (by decide),h.frame.trans wider,?_⟩⟩
+    (h.keep.trans kt).mono (by decide),h.frame.trans wider,?_,?_⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
   · simpa only [show j₀+8*(k+1)=(j₀+8*k)+8 by omega] using jt
+  · apply Or.inr
+    rw [ptr]
+    apply congrArg (off B)
+    unfold rawBase
+    omega
   · have prev := h.val
     rw [show 8*(k+1)=8*k+8 by omega,wv_add]
     rw [show slot w b+8*j₀+8*(8*k)=slot w b+8*(j₀+8*k) by omega]

@@ -23,7 +23,7 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
           2^512 * (word s.mem B carryOffset).toNat ∧
       (word t.mem B carryOffset).toNat ≤ 2 ∧
       ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
-      Hdr t.mem B w mi ∧ Frm B [(e,128),(carryOffset,8),(8*sFn 13,8)] s.mem t.mem ∧ Keep mmRegs s t := by
+      Hdr t.mem B w mi ∧ Frm B [(e,128),(carryOffset,8),(8*sFn 13,8)] s.mem t.mem ∧ t.gpr .rsi = off B (e+64) ∧ Keep mmRegs s t := by
   dsimp only
   unfold AdxRect8.rowStep
   have hn := hs.nowrap
@@ -36,7 +36,7 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega
   have eH : hdrBytes ≤ e := by unfold e slot; omega
   refine WP.seq (WP.mono (tileAt_ok hs hd hh hZ hi hj ha hb ha1 ha2 hb1 hb2 hidx hjdx)
-    fun u ⟨eq,bd,one,hu,fr,ku⟩ => ?_)
+    fun u ⟨eq,bd,one,hu,fr,ptr,ku⟩ => ?_)
   have ju : word u.mem B (8*sFn 13) = BitVec.ofNat 64 j := by
     rw [fr.word_eq (by
       intro r hr
@@ -54,7 +54,7 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     ot.word (by unfold carryOffset sFn; omega) (by omega)
   have fr' : Frm B [(e,128),(carryOffset,8),(8*sFn 13,8)] s.mem t.mem :=
     (fr.mono (by simp [e])).trans (Frm.of_outside ot (by simp))
-  refine ⟨zt,?_,?_,?_,?_,frame_hdr hh eH fr',fr',(ku.trans kt).mono (by decide)⟩
+  refine ⟨zt,?_,?_,?_,?_,frame_hdr hh eH fr',fr',(kt.gpr (by decide)).trans ptr,(ku.trans kt).mono (by decide)⟩
   · rw [mt,word_writeW_self]
   · dsimp only [e] at vt
     rw [vt,ct]; exact eq

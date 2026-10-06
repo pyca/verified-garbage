@@ -18,7 +18,7 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i j₀ n : Nat} {mi : BitVec 64}
     WP isa (AdxRect8.row a b) s (RowInv s B Z w a b i j₀ n mi) := by
   have h0 : RowInv s B Z w a b i j₀ 0 mi s :=
     ⟨hs,hh,hd,hidx,by simpa only [Nat.mul_zero,Nat.add_zero] using hjdx,
-      by omega,Keep.refl _ _,Frm.refl _ _ _,by
+      by omega,Keep.refl _ _,Frm.refl _ _ _,Or.inl rfl,by
         simp only [hc,Nat.mul_zero,Nat.add_zero,wv]⟩
   unfold AdxRect8.row
   exact wp_upto (a := 0) (N := n) hn (RowInv s B Z w a b i j₀ · mi)

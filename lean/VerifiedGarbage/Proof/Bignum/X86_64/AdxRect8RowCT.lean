@@ -54,7 +54,7 @@ theorem tile_fw {a b : Nat} (ha : a < 8) (hb : b < 8)
   have br := tile_ranges hj hi hb hb1 hb2
   refine WP.mono (tile_ok hg.scr hg.rdi ca cb co (by omega) (by omega) (by omega)
     ar.2.2 (by omega) (by unfold carryOffset sFn slot hdrBytes aAcc; omega))
-    fun t ⟨_,_,_,_,kt⟩ => (kt.gpr (by decide)).trans hg.rdi
+    fun t ⟨_,_,_,_,_,kt⟩ => (kt.gpr (by decide)).trans hg.rdi
 
 theorem row_body_ct {a b : Nat} (ha : a < 8) (hb : b < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
@@ -88,7 +88,7 @@ theorem row_fw {a b : Nat} (ha : a < 8) (hb : b < 8)
   obtain ⟨mi,hg,hI,hJ⟩ := h
   have hwN := L.hwN
   refine WP.mono (rowStep_ok hg.scr hg.rdi hg.hdr L.hZ L.hw L.hi (by omega)
-    ha hb ha1 ha2 hb1 hb2 hI hJ) fun t ⟨zt,jt,_,_,_,ht,ft,kt⟩ => ?_
+    ha hb ha1 ha2 hb1 hb2 hI hJ) fun t ⟨zt,jt,_,_,_,ht,ft,_,kt⟩ => ?_
   have it : word t.mem L.B (8*sFn 12) = BitVec.ofNat 64 L.i := by
     rw [ft.word_eq (by
       intro r hr

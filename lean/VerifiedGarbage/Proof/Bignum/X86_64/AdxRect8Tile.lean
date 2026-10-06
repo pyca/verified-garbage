@@ -38,7 +38,7 @@ theorem tile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
           2^512 * (word s.mem B carryOffset).toNat ∧
       (word t.mem B carryOffset).toNat ≤ 2 ∧
       ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
-      Frm B [(eO,128),(carryOffset,8)] s.mem t.mem ∧
+      Frm B [(eO,128),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (eO+64) ∧
       Keep [.rdx,.rax,.rbx,.rsi,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15] s t := by
   unfold AdxRect8.tile
   refine WP.seq (WP.mono (product_ok hs ha hb ho hA hB (by omega) (by omega) (by omega))
@@ -63,7 +63,7 @@ theorem tile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
   have allT : wv t.mem B eO 16 = wv c.mem B eO 16 :=
     ot.wv (by omega) (by have := hs.nowrap; omega)
   rw [cols_keep kb (by decide),mb,db,carryA,upperA] at ec
-  refine ⟨?_,?_,?_,?_,(kabc.trans kt).mono (by simp)⟩
+  refine ⟨?_,?_,?_,?_,?_,(kabc.trans kt).mono (by simp)⟩
   · rw [allT,wt,show 16 = 8+8 from rfl,wv_add,wv_add]
     simp only [Nat.reduceMul] at *
     rw [lowC]
@@ -80,5 +80,7 @@ theorem tile_ok {s : State} {B : Addr} {Z eA eB eO : Nat}
         rw [mb] at oc
         exact oc.mono (o' := eO) (n' := 128) (by omega) (by omega))
     exact (Frm.of_outside ab (by simp)).trans (Frm.of_outside ot (by simp))
+
+  · exact (kt.gpr (by simp)).trans ((kc.gpr (by decide)).trans pb)
 
 end VG.Proof.Bignum.X86_64.AdxRect8

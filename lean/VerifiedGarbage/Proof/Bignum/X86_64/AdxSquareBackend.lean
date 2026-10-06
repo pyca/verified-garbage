@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareCT
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledChoiceCT
 
 /-! The ADX Montgomery backend with specialized squaring. -/
 namespace VG.Proof.Bignum.X86_64
@@ -65,11 +66,46 @@ theorem squareDispatch_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
     exact he
   · exact two_map id (fun L s h => h.1.1) old
 
+theorem tiledDispatch_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
+    (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
+    (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) :
+    WP isa (AdxTiledProduct.dispatch o a b) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
+      Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold AdxTiledProduct.dispatch
+  by_cases hab : a=b
+  · rw [ite_eq_left hab]
+    exact squareDispatch_ok hs hdi hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB
+  · rw [ite_eq_right hab]
+    exact AdxTiledProduct.choice_ok hs hdi hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB
+
+theorem tiledDispatch_ct {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b < 8)
+    (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
+    {hc₀ hc₁ hc₂ hc₃ hc₄ hc₅ : VG.Taint.Hint VG.X86_64.Taint.T}
+    (hM : (taint.check (Taint.ofRegs [.rdi]) (.block (bases o a b aN aAcc aTmp)) hc₀).isSome = true)
+    (hS : (taint.check (Taint.ofRegs [.rdi]) (.block (setup b)) hc₁).isSome = true)
+    (hR : (taint.check (Taint.ofRegs [.rdi]) (.block (rowBase a)) hc₂).isSome = true)
+    (hF : (taint.check (Taint.ofRegs [.rdi]) (.block (finishBases o)) hc₃).isSome = true)
+    (hA : (taint.check (Taint.ofRegs [.rdi]) (.block (setup a)) hc₄).isSome = true)
+    (hT : (taint.check (Taint.ofRegs [.rdi]) (.block (AdxRect8.setup a b)) hc₅).isSome = true) :
+    RelCT isa (Two GoodW) (AdxTiledProduct.dispatch o a b) (fun _ _ => True) := by
+  unfold AdxTiledProduct.dispatch
+  by_cases hab : a=b
+  · rw [ite_eq_left hab]
+    exact squareDispatch_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF hA
+  · rw [ite_eq_right hab]
+    exact AdxTiledProduct.choice_ct ho ha hb ha1 ha2 hb1 hb2 hM hS hR hF hT
+
 /-- Montgomery multiplication with a specialized ADX square. -/
 def Mont.adxSquare : Mont where
-  mm := AdxSquare.montMul
+  mm := AdxTiledProduct.dispatch
   ok hg hZ hw hw' _ _ _ ho ha hb d1 d2 d3 d4 d5 d6 hinv hB :=
-    WP.mono (squareDispatch_ok hg.scr hg.rdi hg.hdr hZ hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hinv hB)
+    WP.mono (tiledDispatch_ok hg.scr hg.rdi hg.hdr hZ hw hw' ho ha hb d1 d2 d3 d4 d5 d6 hinv hB)
       fun t' ⟨h1, h2, h3, k⟩ => ⟨⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, h3.hdr hg.hdr⟩,
         h1, h2, h3, k⟩
   ct := by
@@ -77,7 +113,7 @@ def Mont.adxSquare : Mont where
     rcases h with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
-    exact squareDispatch_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
+    exact tiledDispatch_ct (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide)
 
 end VG.Proof.Bignum.X86_64

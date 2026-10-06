@@ -21,7 +21,7 @@ theorem tileAt_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
           2^512 * (word s.mem B carryOffset).toNat ∧
       (word t.mem B carryOffset).toNat ≤ 2 ∧
       ((word s.mem B carryOffset).toNat ≤ 1 → (word t.mem B carryOffset).toNat ≤ 1) ∧
-      Hdr t.mem B w mi ∧ Frm B [(e,128),(carryOffset,8)] s.mem t.mem ∧ Keep mmRegs s t := by
+      Hdr t.mem B w mi ∧ Frm B [(e,128),(carryOffset,8)] s.mem t.mem ∧ t.gpr .rsi = off B (e+64) ∧ Keep mmRegs s t := by
   dsimp only
   unfold AdxRect8.tileAt
   have ar := tile_ranges hi hj ha ha1 ha2
@@ -32,11 +32,11 @@ theorem tileAt_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     fun u ⟨ua,ub,uo,um,ku⟩ => ?_)
   refine WP.mono (tile_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) ua ub uo
     (by omega) (by omega) (by omega) ar.2.2 (by omega) cb)
-    fun t ⟨eq,bd,one,fr,kt⟩ => ?_
+    fun t ⟨eq,bd,one,fr,ptr,kt⟩ => ?_
   rw [um] at eq one fr
   have fr' : Frm B [(slot w aAcc+16+8*(i+j),128),(carryOffset,8),(8*sFn 13,8)] s.mem t.mem :=
     fr.mono (by simp)
-  exact ⟨eq,bd,one,frame_hdr hh (by unfold slot; omega) fr',fr,
+  exact ⟨eq,bd,one,frame_hdr hh (by unfold slot; omega) fr',fr,ptr,
     (ku.trans kt).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64.AdxRect8
