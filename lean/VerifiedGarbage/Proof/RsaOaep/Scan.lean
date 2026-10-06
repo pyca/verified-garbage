@@ -227,4 +227,23 @@ theorem scan_idx (f : Nat → Byte) (c₀ : BitVec 64) (n : Nat) :
   · obtain ⟨j₀, hj₀, -, -, h3⟩ := hs1 hl
     exact ⟨j₀, h3, .inl hj₀⟩
 
+/-! ## Comparing two strings -/
+
+/-- `b₀ ∨ ⋁_{i < j} (f i ⊕ g i)`, as an accumulator ORs it together. -/
+def accG (b₀ : Byte) (f g : Nat → Byte) : Nat → BitVec 64
+  | 0 => b₀.setWidth 64
+  | j + 1 => accG b₀ f g j ||| ((f j).setWidth 64 ^^^ (g j).setWidth 64)
+
+/-- It is zero iff `b₀` is zero and the strings agree. -/
+theorem accG_eq_zero (b₀ : Byte) (f g : Nat → Byte) :
+    ∀ j, accG b₀ f g j = 0 ↔ b₀ = 0 ∧ ∀ i < j, f i = g i
+  | 0 => by simp only [accG, zx_eq_zero]; exact ⟨fun h => ⟨h, fun _ h => absurd h (Nat.not_lt_zero _)⟩, fun h => h.1⟩
+  | j + 1 => by
+    rw [accG, or_eq_zero, accG_eq_zero b₀ f g j, xor_eq_zero, zx_inj]
+    constructor
+    · rintro ⟨⟨h0, h⟩, h'⟩
+      exact ⟨h0, fun i hi => if hij : i < j then h i hij else by rw [show i = j by omega]; exact h'⟩
+    · rintro ⟨h0, h⟩
+      exact ⟨⟨h0, fun i hi => h i (by omega)⟩, h j (by omega)⟩
+
 end VG.Proof.RsaOaep
