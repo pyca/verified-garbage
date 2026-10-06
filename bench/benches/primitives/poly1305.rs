@@ -4,6 +4,9 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["poly1305"];
 
+// aws-lc-rs has no public Poly1305 (only ChaCha20-Poly1305), so there is no
+// aws-lc-rs entry.
+
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",

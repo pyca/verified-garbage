@@ -13,6 +13,12 @@ pub fn bench(c: &mut Criterion) {
         "hmac-sha256",
         Hmac::<Sha256>::mac,
         MessageDigest::sha256(),
+        Some(aws_lc_rs::hmac::HMAC_SHA256),
     );
-    crate::hmac_verify_group::<Sha256>(c, "hmac-sha256-verify", MessageDigest::sha256());
+    crate::hmac_verify_group::<Sha256>(
+        c,
+        "hmac-sha256-verify",
+        MessageDigest::sha256(),
+        Some(aws_lc_rs::hmac::HMAC_SHA256),
+    );
 }
