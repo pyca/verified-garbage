@@ -13,7 +13,7 @@ namespace VG.Proof.RsaPss.AArch64.Vfy
 
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
-open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp PubChecked)
+open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp PdChecked)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64.Sgn (stk fb preserved_saved saved_ho saved_offs)
 
@@ -44,20 +44,21 @@ theorem restore_ok {s w : State} (hm : Mid s w) :
   · simp only [freed]
     rw [hr.mem, o₁.mem]
 
-/-- Verifying's result, and the calling convention. -/
+/-- Verifying's result, if `pre` holds the modulus' values, and the calling
+convention. -/
 def Post (G : Spec.Mgf1.Hash) (s s' : State) : Prop :=
-  abiPreserved s s' ∧ (s'.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0
+  abiPreserved s s' ∧ (Cons s → (s'.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0)
 
 theorem code_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PubChecked) {K : Nat} (hK : 16 ≤ K) (hcK : c.stack ≤ K)
+    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PdChecked) {K : Nat} (hK : 16 ≤ K) (hcK : c.stack ≤ K)
     {s : State} (hp : PreV H.D K s) :
-    WP isa (verify H c.name c.code) s (Post G s) := by
-  unfold verify
+    WP isa (verifyPrecomputed H c.name c.code) s (Post G s) := by
+  unfold verifyPrecomputed
   refine WP.alloc (by decide) (by have := hp.sp1; unfold stk at this; omega) ?_
-  unfold verifyBodyWith seqs seqs seqs
+  unfold verifyBody seqs seqs seqs
   refine WP.seq (WP.mono (prologue_ok hp (by simp [allocated]) (by simp [allocated]) (by simp [allocated])
     (by simp [allocated]) (fun r => by simp [allocated]) (fun r _ => by simp [allocated])) fun u hu => ?_)
   refine WP.seq (WP.mono (body_ok hH hGh hGl hG c hp hK hcK hu) fun t ⟨m, r⟩ => ?_)
-  exact WP.mono (restore_ok m) fun w ⟨habi, hx0, _⟩ => ⟨habi, by rw [hx0]; exact r⟩
+  exact WP.mono (restore_ok m) fun w ⟨habi, hx0, _⟩ => ⟨habi, fun hc => by rw [hx0]; exact r hc⟩
 
 end VG.Proof.RsaPss.AArch64.Vfy

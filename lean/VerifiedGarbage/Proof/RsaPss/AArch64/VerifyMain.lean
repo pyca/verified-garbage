@@ -13,7 +13,7 @@ namespace VG.Proof.RsaPss.AArch64.Vfy
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo)
-open VG.Proof.RsaPkcs1Sig.AArch64 (PubChecked)
+open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off off_add Lay Rep mgfWr slotR slot_keep dbRegs_ok b1_ok b2_ok B1 wct mkB nz nz_lt
   resV msgV acc0V acc1V vlogic byte_of_bytesAt)
@@ -97,7 +97,7 @@ theorem mgfWr_sub (s : State) {K : Nat} (hK : 16 ≤ K) :
 /-- What `EM`'s checks write keeps `Fr`. -/
 theorem fr_mgf {D K : Nat} {s : State} (hp : PreV D K s) {m m' : Mem} (h : Fr s m)
     (hf : Frame (mgfWr (fb s) (scr s) ++ [slotR (fb s) sPos]) m m') : Fr s m' := by
-  refine h.frame hf (fun r hr => ?_) (fun r hr => ?_) <;>
+  refine h.frame hf (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) <;>
   · simp only [mgfWr, slotR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact (hp.ks.sub_left (frame_sub K s (by decide))).sub_right (rsa_sub hp)
@@ -135,10 +135,10 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     {z : Nat} (ha : AfterCall H.D K s lo cb t) (hlo : lo ≤ 1) (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo)
     (hc : cb = (0xFF : Byte) >>> z) (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
     WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck, clearY, copyDigest H, copyDb H,
-      shift H, .block (verifyNb H), ctHash H, cmpH H]) t fun u => Mid s u ∧
+      shift H, .block (verifyNb H), ctHash H, cmpH H]) t fun u => Mid s u ∧ (Cons s →
       ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
         EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
-        u.gpr .x0 = if b then 1#64 else 0#64 := by
+        u.gpr .x0 = if b then 1#64 else 0#64) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have L := rsa_lay hp hK ha.sp ha.wr ha.x20
   have h25 := ha.x25
@@ -169,12 +169,12 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     B.em (by omega) (by unfold oEm oY; omega)
     (nz_lt (by omega)) (by omega) (by rw [gu .x19 (by decide), ha.x19]) (by rw [gu .x21 (by decide), ha.x21])
     (by rw [gu .x24 (by decide), ha.x24]) (by rw [gu .x25 (by decide), h25]) B.acc B.pos hdg hrd
-    (hp.dgs.sub_right (rsa_sub hp))) fun u' ⟨sp', rd', wr', cs', v', fr', x0'⟩ => ⟨?_, fun b hb => ?_⟩
+    (hp.dgs.sub_right (rsa_sub hp))) fun u' ⟨sp', rd', wr', cs', v', fr', x0'⟩ => ⟨?_, fun hcons b hb => ?_⟩
   · exact ⟨by rw [sp', B.sp, ha.sp], by rw [rd', B.rd, ha.rd], by rw [wr', B.wr, ha.wr],
       fun r hr => by rw [v' r hr, B.v r hr, ha.v r hr],
       fr_mgf hp (fr_mgf hp ha.fr B.fr) (fr'.mono fun r hr => List.mem_append_left _ hr)⟩
   rw [x0', dig_keep (D := H.D) hp hK ha.mem B.fr (Frame.refl _ _), ← funext hGh]
-  have hx := pubX_bytes ha.res
+  have hx := pubX_bytes (ha.res hcons)
   rw [hk] at hx
   refine vlogic hG hGl (x := pubX s) (by rw [pubX_length, hk]) (fun i hi => ?_) hkd (by omega) hlo hk2
     (VG.Proof.RsaPkcs1Sig.bytesAt_length _ _ _) hc (fun h => hs h) hb
@@ -184,16 +184,16 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
 
 include hH in
 theorem main_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (c : PubChecked) {K : Nat} {s w : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
+    (hG : Proof.Mgf1.Valid G) (c : PdChecked) {K : Nat} {s w : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
     (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte} {z : Nat} (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
     (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo) (hc : cb = (0xFF : Byte) >>> z)
     (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
-    WP isa (verifyMainWith H c.name c.code pubArgs) w fun u => Mid s u ∧
+    WP isa (verifyMain H c.name c.code) w fun u => Mid s u ∧ (Cons s →
       ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
         EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
-        u.gpr .x0 = if b then 1#64 else 0#64 := by
+        u.gpr .x0 = if b then 1#64 else 0#64) := by
   have L := rsa_lay hp hK hm.sp hm.wr hm.x20
-  unfold verifyMainWith seqs seqs seqs
+  unfold verifyMain seqs seqs seqs
   refine WP.seq (WP.mono (dbRegs_ok L hm.x9 hm.lo) fun u₁ ⟨O₁, x25₁, x24₁⟩ => ?_)
   rw [show (s.gpr .x1).toNat - lo - (H.D + 2) + 1 = (s.gpr .x1).toNat - lo - H.D - 1 by omega] at x25₁
   have hP : PreCall H.D s lo cb u₁ := {

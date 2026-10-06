@@ -14,7 +14,7 @@ open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_subImm wp_sub wp_lsr wp_orr eval_zero
   eval_nonzero)
-open VG.Proof.RsaPkcs1Sig.AArch64 (PubChecked)
+open VG.Proof.RsaPkcs1Sig.AArch64 (PdChecked)
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV smear_ok emLen_ok borrow_or expLen_ok)
 open VG.Proof.RsaPss.AArch64.Sgn (stk kR fb kb frame_sub setWidth_byte maskV_lt maskV_setWidth in_frame)
@@ -50,17 +50,17 @@ theorem mid_frame {s t t' : State} (hm : Mid s t) {rs : List Reg} (k : Keep rs t
   have f : Frame [⟨fb s + BitVec.ofNat 64 d₁, 8⟩, ⟨fb s + BitVec.ofNat 64 d₂, 8⟩] t.mem
       ((t.mem.writeW (fb s + BitVec.ofNat 64 d₁) v₁).writeW (fb s + BitVec.ofNat 64 d₂) v₂) :=
     ((Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)).writeW (by simp) _ (Region.contains_self _ _)
-  refine hm.fr.frame f (fun r hr => ?_) (fun r hr => ?_) <;>
+  refine hm.fr.frame f (fun r hr => ?_) (fun r hr => ?_) (fun r hr => ?_) <;>
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega) (by decide) (by omega)
 
 theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PubChecked) {K : Nat} {s u : State}
+    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PdChecked) {K : Nat} {s u : State}
     (hp : PreV H.D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K) (hu : AtChk s u) :
     WP isa (.ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen H,
       .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block (saltFits H),
-        .ite (.nonzero .x .x10) verifyFail (verifyMainWith H c.name c.code pubArgs)])])) u fun t => Mid s t ∧
-      (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0 := by
+        .ite (.nonzero .x .x10) verifyFail (verifyMain H c.name c.code)])])) u fun t => Mid s t ∧
+      (Cons s → (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD := hH.sizes.DN
   have hN := hH.N_le
@@ -69,7 +69,8 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
   have hx10 : u.gpr .x10 = BitVec.ofNat 64 (s.mem (s.gpr .x0)).toNat := by rw [hu.x10, setWidth_byte]
   have hn₀ := (s.mem (s.gpr .x0)).isLt
   have f0 : ∀ {t : State}, Mid s t ∧ (t.gpr .x0).setWidth 32 = 0 → verifyOut G s = false →
-      Mid s t ∧ (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0 := fun ⟨m, r⟩ h => ⟨m, by rw [h]; exact r⟩
+      Mid s t ∧ (Cons s → (t.gpr .x0).setWidth 32 = if verifyOut G s then 1 else 0) :=
+    fun ⟨m, r⟩ h => ⟨m, fun _ => by rw [h]; exact r⟩
   refine WP.ite _ (eval_zero _ _) (fun hb => ?_) (fun hb => ?_)
   · -- `n₀ = 0`.
     have h0 : s.mem (s.gpr .x0) = 0 := by
@@ -159,8 +160,9 @@ theorem body_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
     ⟨m, ?_⟩
   · have : (sLenV s).getD 0 = (s.gpr .x7).toNat := by unfold sLenV; rw [ite_eq_left ha]; rfl
     omega
+  intro hcons
   rw [hGl] at hiff hfit
-  rw [r (verifyOut G s) (hiff hfit)]
+  rw [r hcons (verifyOut G s) (hiff hfit)]
   split <;> rfl
 
 end VG.Proof.RsaPss.AArch64.Vfy

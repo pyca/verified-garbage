@@ -4,12 +4,12 @@ import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Encode
 /-!
 # RSASSA-PSS (RFC 8017 §8.1, EMSA-PSS §9.1) on AArch64
 
-`sign` and `verify` (and `verifyPrecomputed`), for a Merkle–Damgård hash
-function `H` (an `Impl.Pbkdf2.Md.AArch64.Hash`) as both the hash function
-and MGF1's, as on x86-64 (`Impl/RsaPss/X86_64.lean`), whose design this
-follows: `H`'s compression function and streaming `init`, and the RSA
-operation (`vg_rsa_private_checked` when signing, `vg_rsa_public_checked` or
-a precomputed public operation when verifying).
+`sign` and `verifyPrecomputed`, for a Merkle–Damgård hash function `H` (an
+`Impl.Pbkdf2.Md.AArch64.Hash`) as both the hash function and MGF1's, as on
+x86-64 (`Impl/RsaPss/X86_64.lean`), whose design this follows: `H`'s
+compression function and streaming `init`, and the RSA operation
+(`vg_rsa_private_checked` when signing, a precomputed public operation when
+verifying).
 
 The first 8192 bytes of `scratch` are ours (`oCW`, …); the RSA operation
 gets the rest. The callees preserve `x19`–`x28`, which hold our variables:
@@ -374,17 +374,17 @@ def sign : Prog isa := .frame (.alloc frameBytes) (signBody H privN privC) (.fre
 
 /-! ## Verifying
 
-`verify(n = x0, n_len = x1, e = x2, e_len = x3, digest = x4, sig = x5,
-sig_len = x6, salt_len = x7, any_salt_len, scratch, scratch_len)`, the last
-three on the stack (and `pre`, `pre_len` after them for
-`verifyPrecomputed`). -/
+`verifyPrecomputed(n = x0, n_len = x1, e = x2, e_len = x3, digest = x4,
+sig = x5, sig_len = x6, salt_len = x7, any_salt_len, scratch, scratch_len,
+pre, pre_len)`, the last five on the stack. -/
 
 /-- The registers saved, and the arguments into their places; `sAny` is
 `any_salt_len`'s 32 bits, and `sSaltLen` is `salt_len`. -/
 def verifyPrologue : List Instr :=
   save ++ [.str .x .x0 .x16 sN, .str .x .x2 .x16 sE, .str .x .x3 .x16 sEl, .str .x .x4 .x16 sDig,
     .str .x .x5 .x16 sOut, .str .x .x7 .x16 sSaltLen, mov .x23 .x1, arg .x9 0,
-    .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 1, arg .x9 2, .str .x .x9 .x16 sScrLen] ++ regsUp
+    .addImm .w .x9 .x9 0, .str .x .x9 .x16 sAny, arg .x20 1, arg .x9 2, .str .x .x9 .x16 sScrLen,
+    arg .x9 3, .str .x .x9 .x16 sPre, arg .x9 4, .str .x .x9 .x16 sPreLen] ++ regsUp
 
 /-- `x12 :=` the expected salt length for the check, 0 if any. -/
 def expLen : Prog isa :=
@@ -393,16 +393,13 @@ def expLen : Prog isa :=
 /-- 0 returned. -/
 def verifyFail : Prog isa := .block [movi .x0 0]
 
-/-- The arguments of `vg_rsa_public_checked`: `EM`'s place (`k` bytes),
-`n`, `e`, the signature (`k` bytes), and the rest of `scratch`. -/
+/-- The arguments of the precomputed public operation: `EM`'s place (`k`
+bytes), `pre` (`pre_len` words), `e`, the signature (`k` bytes), and the rest
+of `scratch`. -/
 def pubArgs : List Instr :=
   [.addSp .x16 0, movi .x9 oRsa, .add .x .x9 .x20 .x9, .str .x .x9 .x16 0, ld .x9 sScrLen,
-    .subImm .x .x9 .x9 1024, .str .x .x9 .x16 8, .addImm .x .x0 .x20 oEm, mov .x1 .x23, ld .x2 sN,
-    mov .x3 .x23, ld .x4 sE, ld .x5 sEl, ld .x6 sOut, mov .x7 .x23]
-
-/-- The same for a precomputed public operation: the precomputed values for
-the modulus. -/
-def pdArgs : List Instr := pubArgs ++ [ld .x2 sPre, ld .x3 sPreLen]
+    .subImm .x .x9 .x9 1024, .str .x .x9 .x16 8, .addImm .x .x0 .x20 oEm, mov .x1 .x23, ld .x2 sPre,
+    ld .x3 sPreLen, ld .x4 sE, ld .x5 sEl, ld .x6 sOut, mov .x7 .x23]
 
 /-- `acc :=` the leading byte if `lo = 1`, `EM`'s last byte `⊕ 0xbc`, and the
 top bits of `maskedDB`'s first byte. -/
@@ -474,32 +471,22 @@ def cmpH : Prog isa :=
 
 variable (pubN : String) (pubC : Prog isa)
 
-/-- After the public checks, with the call's arguments set by `args`. -/
-def verifyMainWith (args : List Instr) : Prog isa :=
-  seqs [.block dbRegs, .block args, .call pubN pubC, .block acc0, mgfXor H, .block clearTop, posScan, posCheck,
-    clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]
+/-- After the public checks. -/
+def verifyMain : Prog isa :=
+  seqs [.block dbRegs, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop, posScan,
+    posCheck, clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]
 
-/-- The checks, then `main`. -/
-def verifyBodyWith (prologue : List Instr) (main : Prog isa) : Prog isa :=
-  seqs [.block (prologue ++ n0),
+/-- The checks, then `verifyMain`. -/
+def verifyBody : Prog isa :=
+  seqs [.block (verifyPrologue ++ n0),
     .ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen H,
       .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block (saltFits H),
-        .ite (.nonzero .x .x10) verifyFail main])]),
+        .ite (.nonzero .x .x10) verifyFail (verifyMain H pubN pubC)])]),
     .block restore]
-
-/-- `vg_rsa_pss_<H>_mgf1_<H>_verify`. -/
-def verify : Prog isa :=
-  .frame (.alloc frameBytes) (verifyBodyWith H verifyPrologue (verifyMainWith H pubN pubC pubArgs))
-    (.free frameBytes)
-
-/-- The prologue of `verifyPrecomputed`: `pre` and `pre_len` into their
-slots too. -/
-def pdPrologue : List Instr := verifyPrologue ++ [arg .x9 3, .str .x .x9 .x16 sPre, arg .x9 4, .str .x .x9 .x16 sPreLen]
 
 /-- `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`, calling a precomputed
 public operation (`pubN`, `pubC`). -/
 def verifyPrecomputed : Prog isa :=
-  .frame (.alloc frameBytes) (verifyBodyWith H pdPrologue (verifyMainWith H pubN pubC pdArgs))
-    (.free frameBytes)
+  .frame (.alloc frameBytes) (verifyBody H pubN pubC) (.free frameBytes)
 
 end VG.Impl.RsaPss.AArch64
