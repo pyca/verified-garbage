@@ -234,13 +234,9 @@ structure DB (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀ 
   D : Spec.Rsa.bytesAt t.mem (scA L sD) L.k.toNat =
     Spec.Rsa.i2osp (Spec.Rsa.os2ip (Spec.Rsa.bytesAt m₀ L.d L.dl.toNat)) L.k.toNat
 
-theorem dBuild_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
-    (h : Called L g vv m₀ t) :
-    WP isa dBuild t (DB L g vv m₀ (rOf (t.gpr .x0)) (Spec.Rsa.bytesAt t.mem L.out L.k.toNat)) := by
-  refine WP.seq (WP.mono (dPtrs₁_inv hL h) fun _ h₁ => ?_)
-  refine WP.seq (WP.mono (zeroLoop_ok hL h₁) fun _ h₂ => ?_)
-  refine WP.seq (WP.mono (dPtrs₂_inv hL h₂) fun _ h₃ => ?_)
-  refine WP.mono (copyLoop_ok hL h₃) fun u hu => ⟨hu.post, ?_⟩
+theorem cinv_db {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {R : BitVec 64}
+    {EM : List Byte} {u : State} (hu : CInv L g vv m₀ R EM L.dl.toNat u) : DB L g vv m₀ R EM u := by
+  refine ⟨hu.post, ?_⟩
   have hdk := hL.dlk
   rw [VG.Proof.RsaPkcs1Enc.i2osp_os2ip_pad _ (by simp [Spec.Rsa.bytesAt]; exact hdk)]
   simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range]
@@ -252,5 +248,13 @@ theorem dBuild_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → B
     simp only [List.length_replicate, List.getElem_map, List.getElem_range]
     have := hu.c (i - (L.k.toNat - L.dl.toNat)) (by simp at h₁; omega)
     rw [add_add, show sD + i = sD + (L.k.toNat - L.dl.toNat) + (i - (L.k.toNat - L.dl.toNat)) by omega, this]
+
+theorem dBuild_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State}
+    (h : Called L g vv m₀ t) :
+    WP isa dBuild t (DB L g vv m₀ (rOf (t.gpr .x0)) (Spec.Rsa.bytesAt t.mem L.out L.k.toNat)) := by
+  refine WP.seq (WP.mono (dPtrs₁_inv hL h) fun _ h₁ => ?_)
+  refine WP.seq (WP.mono (zeroLoop_ok hL h₁) fun _ h₂ => ?_)
+  refine WP.seq (WP.mono (dPtrs₂_inv hL h₂) fun _ h₃ => ?_)
+  exact WP.mono (copyLoop_ok hL h₃) fun u hu => cinv_db hL hu
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec
