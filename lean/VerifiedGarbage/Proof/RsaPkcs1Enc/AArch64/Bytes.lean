@@ -181,4 +181,10 @@ theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi
   simp [hi]
 
+/-- `ldr xt, [sp, #off]`. -/
+theorem exec_ldrSp {s : State} {t : Reg} {off : Nat} (ho : off % 8 = 0 ∧ off < 32768)
+    (h : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 off) 8) :
+    exec (.ldrSp t off) s = some (s.write .x t (s.mem.readW (s.sp + BitVec.ofNat 64 off) 64)) := by
+  simp only [exec, ho, and_self, ite_true, State.load, h, Option.map_some, Mem.readW, Nat.reduceDiv]
+
 end VG.AArch64.Bytes
