@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Main
 import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
@@ -95,12 +96,12 @@ theorem finish_eq : finish fld = fld.mul X2 X2 T1 ++ (freeze X2 ++ (restore ++
 
 theorem x25519_eq' (lad : Prog isa) : x25519Of fld lad = .seq (.block setup) (.seq bits (.seq
     (.block ([.mov .rsi (.reg .r12)] : List Instr)) (.seq lad (.seq (.block lastSwap)
-    (.seq (Impl.X25519.X86_64.invert fld) (.block (finish fld))))))) := rfl
+    (.seq (invertDS fld) (.block (finish fld))))))) := rfl
 
 include hf in
 /-- X25519 with any ladder `lad` that leaves the ladder's final state as
 `ladder` does (`LPost`). -/
-theorem correct_of {lad : Prog isa}
+theorem correct_of [DivstepInv] {lad : Prog isa}
     (hlad : ∀ {s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}, LPre base k u s →
       WP isa lad s (LPost base k u s))
     {s₀ : State} (hp : Pre s₀) :
@@ -142,7 +143,7 @@ theorem correct_of {lad : Prog isa}
           (n := 0) (by omega)
         omega) L.swap L.x2 L.z2 L.x3 L.z3) fun s₅ ⟨K₅, e3₅, e4₅⟩ => ?_)
   have hs₅ := K₅.scr L.scr
-  refine WP.seq (WP.mono (invert_ok hf hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
+  refine WP.seq (WP.mono (invertDS_pow hf hs₅) fun s₆ ⟨g₆, rd₆, wr₆, o₆, e₆⟩ => ?_)
   have hs₆ : Scr s₆ base := ⟨(g₆ _ (by decide) (by decide)).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hn⟩
   rw [finish_eq, WP.block_append_iff]
   refine WP.mono (mulE hf hs₆ 3 3 17 (by decide)) fun s₇ ⟨K₇, e₇⟩ => ?_
@@ -205,10 +206,10 @@ theorem correct_of {lad : Prog isa}
     change (E s₇.mem base 3).val = _
     rw [e₇]
     simp only [opMul, Function.update_self]
-    rw [E_outside o₆ 3 (by decide), e3₅, e₆, e4₅]
+    rw [E_outside o₆ 3 (by decide), e3₅, e₆, e4₅, invert_eq]
 
 include hf in
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct [DivstepInv] {s₀ : State} (hp : Pre s₀) :
     WP isa (x25519With fld) s₀ fun s' => gprPreserved s₀ s' ∧ Proof.X25519.x25519X86_64.post s₀ s' :=
   correct_of hf (fun h => ladder_post hf h) hp
 

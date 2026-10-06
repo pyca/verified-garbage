@@ -27,7 +27,7 @@ def satState : State where
   rd := [⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 4096⟩]
 
-theorem x25519_ok (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
+theorem x25519_ok [DivstepInv] (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
     ∃ t s', Exec isa Impl.X25519.X86_64.x25519 s t s' ∧ abiPreserved s s' ∧
       Proof.X25519.x25519X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct baseline_ok (Pre.of s hs)
@@ -42,7 +42,7 @@ theorem x25519_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre Proof.X25519.
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem x25519_verified :
+theorem x25519_verified [DivstepInv] :
     Verified X86_64.target Impl.X25519.X86_64.x25519 (Spec.X25519.x25519Contract X86_64.abi) :=
   Verified.of_correct x25519_ok x25519_ct (by
     sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,

@@ -22,17 +22,17 @@ theorem combOk : CombOk (Impl.Ed25519.X86_64.Ifma.combMultiply Impl.X25519.X86_6
   ⟨fun hs hS _ hb ht hfar => vcomb_ok hs hS hb ht hfar,
     fun _ hp => taintSymFld (Taint.ofRegs [.rdi]) hp (by exact ⟨_, by taint_decide⟩)⟩
 
-theorem scalarBase_ifma_ok (s : State) (hs : scalarBaseLocal.pre s) :
+theorem scalarBase_ifma_ok [X25519.X86_64.DivstepInv] (s : State) (hs : scalarBaseLocal.pre s) :
     ∃ t s', Exec isa scalarBase_ifma s t s' ∧ abiPreserved s s' ∧ scalarBaseLocal.post s s' := by
   obtain ⟨t, s', he, h⟩ := scalarBase_correct_of_engine _
     (fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok (fld := Impl.X25519.X86_64.adx) combOk hs hp hr hd ht hfar) hs
   exact ⟨t, s', he, abiPreserved_of_ctl (by lit_decide) he h.1, h.2⟩
 
-theorem scalarBase_ifma_ct : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase_ifma :=
+theorem scalarBase_ifma_ct [X25519.X86_64.DivstepInv] : ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase_ifma :=
   scalarBase_ct_of_engine _ (fun hs hp hr hd ht hfar => scalarBaseEngineOf_ok (fld := Impl.X25519.X86_64.adx) combOk hs hp hr hd ht hfar)
     (scalarBaseEngineOf_ct (fld := Impl.X25519.X86_64.adx) combOk)
 
-theorem scalarBase_ifma_verified : Verified X86_64.target scalarBase_ifma
+theorem scalarBase_ifma_verified [X25519.X86_64.DivstepInv] : Verified X86_64.target scalarBase_ifma
     (Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts combConsts)) :=
   Verified.of_correct scalarBase_ifma_ok scalarBase_ifma_ct scalarBase_implies
 

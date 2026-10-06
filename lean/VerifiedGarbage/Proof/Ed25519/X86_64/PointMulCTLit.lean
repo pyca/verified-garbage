@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.ScalarBase
 import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyWindow
 import VerifiedGarbage.Impl.Ed25519.X86_64.RootPower
 
-/-! The point arithmetic and the inversion chains, for each field arithmetic, as literals
+/-! The point arithmetic and the inversions, for each field arithmetic, as literals
 (`materialize_value`, `materialize_code`), which the literals of the code
 that contains them read rather than build each field multiplication again. -/
 namespace VG.Proof.Ed25519.X86_64
@@ -17,8 +17,8 @@ materialize_value pointDoubleLit := pointDouble Impl.X25519.X86_64.baseline
 materialize_value pointDoubleAdxLit := pointDouble Impl.X25519.X86_64.adx
 materialize_value pointAddCachedLit := pointAddCached Impl.X25519.X86_64.baseline
 materialize_value pointAddCachedAdxLit := pointAddCached Impl.X25519.X86_64.adx
-materialize_code invertLit := Impl.X25519.X86_64.invert Impl.X25519.X86_64.baseline
-materialize_code invertAdxLit := Impl.X25519.X86_64.invert Impl.X25519.X86_64.adx
+materialize_code invertLit := Impl.X25519.X86_64.invertDS Impl.X25519.X86_64.baseline
+materialize_code invertAdxLit := Impl.X25519.X86_64.invertDS Impl.X25519.X86_64.adx
 materialize_code rootPowerLit := rootPower Impl.X25519.X86_64.baseline
 materialize_code rootPowerAdxLit := rootPower Impl.X25519.X86_64.adx
 materialize_code double4Lit := double4 Impl.X25519.X86_64.baseline

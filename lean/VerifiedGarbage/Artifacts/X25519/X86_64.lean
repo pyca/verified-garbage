@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lit
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Ifma
+import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 
 /-! # X25519 (RFC 7748) on x86-64 -/
 
@@ -21,7 +22,8 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are four 64-bit words, multiplied with `mul` \
       (squares computing each cross product once) and reduced with `2^256 = 38` (mod p); the \
-      inversion is ref10's addition chain."])
+      inversion is by Bernstein–Yang divsteps, in ten batches of 59 on 64-bit words, and one \
+      multiplication by `2^-590`."])
     code := Impl.X25519.X86_64.x25519
     contract := Spec.X25519.x25519Contract X86_64.abi
     verified := Proof.X25519.X86_64.x25519_verified
@@ -32,7 +34,7 @@ def artifacts : List Artifact := [
     doc := Spec.X25519.x25519Api.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements are four 64-bit words, multiplied and squared with \
       BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once) and reduced with \
-      `2^256 = 38` (mod p); the inversion is ref10's addition chain. The same code as \
+      `2^256 = 38` (mod p); the inversion is `vg_x25519`'s divsteps. The same code as \
       `vg_x25519` but for the field multiplications."])
     code := Impl.X25519.X86_64.x25519Adx
     contract := Spec.X25519.x25519Contract X86_64.abi
@@ -48,7 +50,7 @@ def artifacts : List Artifact := [
       `vpmadd52luq` and `vpmadd52huq`: field elements are five 51-bit limbs, reduced with \
       `2^255 = 19` (mod p). It sets MXCSR to `0x1FBF` for the ladder (Intel's mitigation of \
       MXCSR-configuration-dependent timing) and restores the caller's. The inversion is \
-      ref10's addition chain, with `vg_x25519_adx`'s field multiplications."])
+      `vg_x25519`'s divsteps, with `vg_x25519_adx`'s field multiplication."])
     code := Impl.X25519.X86_64.x25519Ifma
     contract := Spec.X25519.x25519Contract X86_64.abi
     verified := Proof.X25519.X86_64.x25519Ifma_verified

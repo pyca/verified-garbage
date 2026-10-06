@@ -23,7 +23,7 @@ theorem vladder_post {s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe} (h
     WP isa Impl.X25519.X86_64.Ifma.vladder s (LPost base k u s) :=
   Ifma.vladder_ok h.scr h.bits h.x1 h.swap
 
-theorem x25519Ifma_ok (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
+theorem x25519Ifma_ok [DivstepInv] (s : State) (hs : Proof.X25519.x25519X86_64.pre s) :
     ∃ t s', Exec isa Impl.X25519.X86_64.x25519Ifma s t s' ∧ abiPreserved s s' ∧
       Proof.X25519.x25519X86_64.post s s' := by
   obtain ⟨t, s', he, h⟩ := correct_of adx_ok vladder_post (Pre.of s hs)
@@ -38,7 +38,7 @@ theorem x25519Ifma_ct : ConstantTime isa Proof.X25519.x25519X86_64.pre
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem x25519Ifma_verified :
+theorem x25519Ifma_verified [DivstepInv] :
     Verified X86_64.target Impl.X25519.X86_64.x25519Ifma (Spec.X25519.x25519Contract X86_64.abi) :=
   Verified.of_correct x25519Ifma_ok x25519Ifma_ct (by
     sig_implies [Spec.X25519.x25519Contract, Spec.X25519.x25519Sig, X86_64.abi, X86_64.argRegs,

@@ -36,8 +36,7 @@ other multiplications:
 
 The ladder follows RFC 7748 §5 (in another order, `step`), over the bits of `k`
 from 254 down to 0 (the counter `rbx`, which indexes `BITS`), and the
-inversion `z2^(p-2)` is the addition chain of ref10 (254 squarings and 11
-multiplications).
+inversion `z2^(p-2)` is by Bernstein–Yang divsteps (`invertDS`).
 
 The only branches are on the loop counters, and every address is a pointer
 plus a constant or a counter, so only the pointers can affect timing.
@@ -276,24 +275,6 @@ def bits : Prog isa :=
     (.block [.mov32 .rax (.imm 0), .store8 (sc BITS) .rax, .store8 (sc (BITS + 1)) .rax,
       .store8 (sc (BITS + 2)) .rax, .mov32 .rax (.imm 1), .store8 (sc (BITS + 254)) .rax]))
 
-/-! ## Inversion
-
-`[T1] = [Z2]^(p-2)`, `p - 2 = 2²⁵⁵ - 21`, as ref10's `fe_invert`. -/
-
-def invert (F : Field) : Prog isa :=
-  .seq (.block (F.sqr T0 Z2)) <|                                  -- z^2
-  .seq (.block (F.sqr T1 T0 ++ F.sqr T1 T1)) <|                   -- z^8
-  .seq (.block (F.mul T1 Z2 T1 ++ F.mul T0 T0 T1 ++                -- z^9, z^11
-    F.sqr T2 T0 ++ F.mul T1 T1 T2)) <|                            -- z^22, z^(2^5 - 1)
-  .seq (sqn F T2 T1 5) <| .seq (.block (F.mul T1 T2 T1)) <|        -- z^(2^10 - 1)
-  .seq (sqn F T2 T1 10) <| .seq (.block (F.mul T2 T2 T1)) <|       -- z^(2^20 - 1)
-  .seq (sqn F T3 T2 20) <| .seq (.block (F.mul T2 T3 T2)) <|       -- z^(2^40 - 1)
-  .seq (sqn F T2 T2 10) <| .seq (.block (F.mul T1 T2 T1)) <|       -- z^(2^50 - 1)
-  .seq (sqn F T2 T1 50) <| .seq (.block (F.mul T2 T2 T1)) <|       -- z^(2^100 - 1)
-  .seq (sqn F T3 T2 100) <| .seq (.block (F.mul T2 T3 T2)) <|      -- z^(2^200 - 1)
-  .seq (sqn F T2 T2 50) <| .seq (.block (F.mul T1 T2 T1)) <|       -- z^(2^250 - 1)
-  .seq (sqn F T1 T1 5) (.block (F.mul T1 T1 T0))                  -- z^(2^255 - 21)
-
 /-! ## Encoding and decoding -/
 
 /-- `2⁶³ - 1`. -/
@@ -315,6 +296,182 @@ def freeze (a : Nat) : List Instr :=
     .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rax)] ++
   ([(Reg.r8, Reg.r12), (.r9, .r13), (.r10, .r14), (.r11, .r15)].flatMap fun (x, y) =>
     [.alu .xor y (.reg x), .alu .and y (.reg .rcx), .alu .xor x (.reg y)])
+
+/-! ## Inversion by divsteps
+
+`[T1] = [Z2]^(p-2)`, the inverse of `[Z2]` (zero for zero), by Bernstein–Yang
+divsteps (`Proof/Divstep/`) in ten batches of 59: from `(d, f, g) = (1, p, x)`
+for the fully reduced `x` and coefficients `(a, b) = (0, 1)`, a batch runs 59
+divsteps on the low words of `f` and `g` (`dstep`), giving the matrix
+`(u, v, q, r)`, then `(f, g) := (u f + v g, q f + r g) / 2⁵⁹` exactly (`fRow`)
+and `(a, b) := (u a + v b, q a + r b)` modulo `p` (`aRow`). Then `f = ±1` and
+`± a ≡ x⁻¹ 2⁵⁹⁰`, so the result is `a` times `2⁻⁵⁹⁰` or `p - 2⁻⁵⁹⁰` by the
+sign of `f`, one multiplication of `F`.
+
+`f` and `g` are four words in two's complement, `a` and `b` four words below
+`2²⁵⁶`. The working area is `[512, 768)`: `b`, `a` (the result's slot),
+`f`, `g`, then `f'` (the constant at the end), `a'`, and the words `d` and the matrix.
+The count of batches is in `rbp` (times 256) but during the divsteps, when it is
+above the count of steps in `r8`: both are public, as the branches on them are.
+
+A divstep keeps `d`, `f`, `g`, `u`, `v`, `q`, `r` in `rbx`, `rcx`, `rbp`,
+`r9`–`r12` and `d > 0` (0 or 1) in `r13`: with `rax` and `rdx`, the
+candidates `g + f` and `g - f` are selected by `cmov` on the flags of
+`g & (d > 0)` (the swap) and `g & 1` (`g` odd), and so on for the matrix
+with `g` and the old `d > 0` kept in `r14` and `r15`; the steps are counted
+in `r8`.
+
+A product `m · X` of a signed word by four words is the unsigned product
+`|m| · (X ^ s)` for the mask `s` of `m`'s sign: for `f` and `g`, plus
+`|m|` if `m < 0` (as `-X = ~X + 1`) less `2²⁵⁶ |m|` if `X ^ s` is negative;
+for `a` and `b`, less `37 |m|` if `m < 0` (as `~X = 2²⁵⁶ - 1 - X ≡ 37 - X`).
+`a'` is the five-word sum `Q` less `37 c`, folded as `lo + 38 Q₄ - 37 c`
+with the carry of that folded in as `±38`. -/
+
+def dsB : Nat := 512
+def dsA : Nat := 544
+def dsF : Nat := 576
+def dsG : Nat := 608
+def dsNF : Nat := 640
+def dsNA : Nat := 672
+def dsK : Nat := 640
+def dsD : Nat := 704
+def dsU : Nat := 712
+def dsV : Nat := 720
+def dsQ : Nat := 728
+def dsR : Nat := 736
+
+/-- One divstep on words. -/
+def dstep : List Instr :=
+  [.mov32 .rax (.imm 2), .alu .sub .rax (.reg .rbx), .alu .add .rbx (.imm 2),
+    .alu .test .rbp (.reg .r13), .cmov .ne .rbx (.reg .rax),
+    .mov .rax (.reg .rbp), .alu .add .rax (.reg .rcx), .mov .rdx (.reg .rbp), .alu .sub .rdx (.reg .rcx),
+    .alu .test .rbp (.reg .r13), .cmov .ne .rax (.reg .rdx), .cmov .ne .rcx (.reg .rbp),
+    .alu .test .rbp (.imm 1), .mov .r14 (.reg .rbp), .cmov .ne .rbp (.reg .rax), .shift .shr .rbp 1,
+    .mov .r15 (.reg .r13), .mov .r13 (.reg .rbx), .shift .shr .r13 63, .alu .xor .r13 (.imm 1),
+    .mov .rax (.reg .r11), .alu .add .rax (.reg .r9), .mov .rdx (.reg .r11), .alu .sub .rdx (.reg .r9),
+    .alu .test .r14 (.reg .r15), .cmov .ne .rax (.reg .rdx), .cmov .ne .r9 (.reg .r11),
+    .alu .test .r14 (.imm 1), .cmov .ne .r11 (.reg .rax),
+    .mov .rax (.reg .r12), .alu .add .rax (.reg .r10), .mov .rdx (.reg .r12), .alu .sub .rdx (.reg .r10),
+    .alu .test .r14 (.reg .r15), .cmov .ne .rax (.reg .rdx), .cmov .ne .r10 (.reg .r12),
+    .alu .test .r14 (.imm 1), .cmov .ne .r12 (.reg .rax),
+    .alu .add .r9 (.reg .r9), .alu .add .r10 (.reg .r10)]
+
+/-- A batch's start: the count of steps `59` in the low byte of `r8`, above it the
+count of batches from `rbp`; `d`, the low words of `f` and `g`, the identity,
+and `d ≥ 0`. -/
+def dstart : List Instr :=
+  [.mov .r8 (.reg .rbp), .alu .add .r8 (.imm 59), .mov .rbx (.mem (sc dsD)), .mov .rcx (.mem (sc dsF)),
+    .mov .rbp (.mem (sc dsG)), .mov32 .r9 (.imm 1), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0),
+    .mov32 .r12 (.imm 1), .mov .r13 (.reg .rbx), .shift .shr .r13 63, .alu .xor .r13 (.imm 1)]
+
+/-- 59 divsteps, counted down in the low byte of `r8`; then `d` and the matrix
+stored, and the count of batches back in `rbp`. -/
+def dsteps : Prog isa :=
+  .seq (.block dstart) <|
+    .seq (.loop (.block (dstep ++ [.alu .sub .r8 (.imm 1), .alu .test .r8 (.imm 255)])) .ne)
+    (.block [.store (sc dsD) .rbx, .store (sc dsU) .r9, .store (sc dsV) .r10, .store (sc dsQ) .r11,
+      .store (sc dsR) .r12, .mov .rbp (.reg .r8)])
+
+/-- `r15` = the mask of `[m]`'s sign, `r14 = |[m]|`, through `rax` and `rcx`. -/
+def absM (m : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc m)), .mov .r15 (.reg .rcx), .shift .shr .r15 63, .mov32 .rax (.imm 0),
+    .alu .sub .rax (.reg .r15), .mov .r15 (.reg .rax), .mov .r14 (.reg .rcx), .alu .xor .r14 (.reg .r15),
+    .alu .sub .r14 (.reg .r15)]
+
+/-- `t:c = t + c + ai · (src ^ k)`. -/
+def mulStepX (t c ai k : Reg) (src : Src) : List Instr :=
+  [.mov .rax src, .alu .xor .rax (.reg k)] ++ (mulStep t c ai (.reg .rax)).tail
+
+/-- `r8–r12 += r14 · ([x] ^ r15)` (modulo `2³²⁰`), the carries in `r13`. -/
+def dsRow (x : Nat) : List Instr :=
+  [.mov32 .r13 (.imm 0)] ++ mulStepX .r8 .r13 .r14 .r15 (.mem (sc x)) ++
+    mulStepX .r9 .r13 .r14 .r15 (.mem (sc (x + 8))) ++ mulStepX .r10 .r13 .r14 .r15 (.mem (sc (x + 16))) ++
+    mulStepX .r11 .r13 .r14 .r15 (.mem (sc (x + 24))) ++ [.alu .add .r12 (.reg .r13)]
+
+/-- `r12 -= r14` if `[x + 24] ^ r15` is negative. -/
+def topCorr (x : Nat) : List Instr :=
+  [.mov .rax (.mem (sc (x + 24))), .alu .xor .rax (.reg .r15), .shift .shr .rax 63, .mov32 .rdx (.imm 0),
+    .alu .sub .rdx (.reg .rax), .alu .and .rdx (.reg .r14), .alu .sub .r12 (.reg .rdx)]
+
+/-- `rbx += r14 & r15`: `|m|` if `m < 0`. -/
+def cAcc : List Instr := [.mov .rax (.reg .r14), .alu .and .rax (.reg .r15), .alu .add .rbx (.reg .rax)]
+
+/-- `r8–r12 = 0`, `rbx = 0`. -/
+def zeroP : List Instr :=
+  [.mov32 .r8 (.imm 0), .mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0),
+    .mov32 .r12 (.imm 0), .mov32 .rbx (.imm 0)]
+
+/-- `r8–r12 += |m| · ([x] ^ s)`, `rbx += |m|` if `m < 0`, and for a signed `[x]` the
+correction of its top word. -/
+def prod (m x : Nat) (signed : Bool) : List Instr :=
+  absM m ++ dsRow x ++ (if signed then topCorr x else []) ++ cAcc
+
+/-- `[dst] = ([m₁] [f] + [m₂] [g]) / 2⁵⁹`: the five words plus `rbx`, then
+shifted. -/
+def fRow (m₁ m₂ dst : Nat) : List Instr :=
+  zeroP ++ prod m₁ dsF true ++ prod m₂ dsG true ++
+  [.alu .add .r8 (.reg .rbx), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0),
+    .alu .adc .r12 (.imm 0)] ++
+  ([(Reg.r8, Reg.r9, 0), (.r9, .r10, 8), (.r10, .r11, 16), (.r11, .r12, 24)].flatMap fun (lo, hi, d) =>
+    [.mov .rax (.reg lo), .shift .shr .rax 59, .mov .rdx (.reg hi), .shift .shl .rdx 5,
+      .alu .add .rax (.reg .rdx), .store (sc (dst + d)) .rax])
+
+/-- `r8–r11 = r8–r12 - 37 rbx` modulo `p`, below `2²⁵⁶`: `lo + w` for
+`w = 38 r12 - 37 rbx` (two words, signed), then its carry as `±38`. -/
+def foldP : List Instr :=
+  [.mov32 .rax (.imm 38), .mul .r12, .mov .r13 (.reg .rax), .mov .r14 (.reg .rdx),
+    .mov32 .rax (.imm 37), .mul .rbx, .alu .sub .r13 (.reg .rax), .alu .sbb .r14 (.reg .rdx),
+    .mov .r15 (.reg .r14), .shift .shr .r15 63, .mov32 .rax (.imm 0), .alu .sub .rax (.reg .r15),
+    .alu .add .r8 (.reg .r13), .alu .adc .r9 (.reg .r14), .alu .adc .r10 (.reg .rax), .alu .adc .r11 (.reg .rax),
+    .alu .sbb .rdx (.reg .rdx), .alu .and .rdx (.imm 38), .alu .and .rax (.imm 38), .alu .sub .rdx (.reg .rax),
+    .mov .r15 (.reg .rdx), .shift .shr .r15 63, .mov32 .rax (.imm 0), .alu .sub .rax (.reg .r15),
+    .alu .add .r8 (.reg .rdx), .alu .adc .r9 (.reg .rax), .alu .adc .r10 (.reg .rax), .alu .adc .r11 (.reg .rax)]
+
+/-- `[dst] = [m₁] [a] + [m₂] [b]` modulo `p`, below `2²⁵⁶`. -/
+def aRow (m₁ m₂ dst : Nat) : List Instr :=
+  zeroP ++ prod m₁ dsA false ++ prod m₂ dsB false ++ foldP ++ store4 dst
+
+/-- `[dst] = [src]` (four words), through `r8–r11`. -/
+def copy4 (dst src : Nat) : List Instr := loads src .r8 .r9 .r10 .r11 ++ store4 dst
+
+/-- The count of batches (times 256, in `rbp`) less one, its zero flag for the loop. -/
+def batchEnd : List Instr := [.alu .sub .rbp (.imm 256)]
+
+/-- A batch. -/
+def dbatch : Prog isa :=
+  .seq dsteps (.block (fRow dsU dsV dsNF ++ fRow dsQ dsR dsG ++ copy4 dsF dsNF ++
+    aRow dsU dsV dsNA ++ aRow dsQ dsR dsB ++ copy4 dsA dsNA ++ batchEnd))
+
+/-- `2⁻⁵⁹⁰ mod p`. -/
+def kInv : Nat := 0x276508b2417706156c6c893805ac5242a8c68f3f1d132595a0f99e2375022099
+
+/-- `p - 2⁻⁵⁹⁰ mod p`. -/
+def kInvNeg : Nat := 0x589af74dbe88f9ea939376c7fa53adbd573970c0e2ecda6a5f0661dc8afddf54
+
+/-- `p`. -/
+def pNat : Nat := 2 ^ 255 - 19
+
+/-- The start: `g = x` fully reduced, `f = p`, `a = 0`, `b = 1`, `d = 1`, and
+ten batches. -/
+def dinit : List Instr :=
+  freeze Z2 ++ store4 dsG ++
+  ((List.range 4).flatMap fun i =>
+    [.movImm64 .rax (BitVec.ofNat 64 (pNat >>> (64 * i))), .store (sc (dsF + 8 * i)) .rax]) ++
+  [.mov32 .rax (.imm 0)] ++ stores dsA .rax .rax .rax .rax ++ stores dsB .rax .rax .rax .rax ++
+  [.mov32 .rax (.imm 1), .store (sc dsB) .rax, .store (sc dsD) .rax, .mov32 .rbp (.imm 2560)]
+
+/-- `[dsK] = 2⁻⁵⁹⁰` if `f ≥ 0`, else `p - 2⁻⁵⁹⁰`. -/
+def dsel : List Instr :=
+  [.mov .rdx (.mem (sc (dsF + 24))), .shift .shr .rdx 63, .mov32 .rcx (.imm 0), .alu .sub .rcx (.reg .rdx)] ++
+  ((List.range 4).flatMap fun i =>
+    [.movImm64 .rax (BitVec.ofNat 64 (kInv >>> (64 * i))), .movImm64 .rdx (BitVec.ofNat 64 (kInvNeg >>> (64 * i))),
+      .alu .xor .rdx (.reg .rax), .alu .and .rdx (.reg .rcx), .alu .xor .rax (.reg .rdx),
+      .store (sc (dsK + 8 * i)) .rax])
+
+/-- `[T1] = [Z2]^(p-2)`, by divsteps. -/
+def invertDS (F : Field) : Prog isa :=
+  .seq (.block dinit) (.seq (.loop dbatch .ne) (.block (dsel ++ F.mul T1 T1 dsK)))
 
 /-- The callee-saved registers we use, and where they are saved. -/
 def saved : List (Reg × Nat) :=
@@ -356,7 +513,7 @@ working space as `ladder` does) and the field multiplications `F` for the
 inversion. -/
 def x25519Of (F : Field) (lad : Prog isa) : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq (.block [.mov .rsi (.reg .r12)]) <| .seq lad <|
-    .seq (.block lastSwap) <| .seq (invert F) (.block (finish F))
+    .seq (.block lastSwap) <| .seq (invertDS F) (.block (finish F))
 
 /-- X25519 with the field multiplications `F`. -/
 def x25519With (F : Field) : Prog isa := x25519Of F (ladder F)
