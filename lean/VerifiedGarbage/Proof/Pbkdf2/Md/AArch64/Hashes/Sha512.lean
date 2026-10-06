@@ -207,13 +207,18 @@ theorem sha384_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha384S, Spec.Hmac.sha384, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
+theorem pss_sha384 : Proof.RsaPss.AArch64.PssChecks (coreH 48).P 48 := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
 /-- SHA-384 with its compression function, which it carries for the
 functions built on SHA-384 alone (`MdHash.sha384`). -/
 def sha384 (v : Compress) : MdHash :=
   { MdHash.of (H := hash v Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384)
-    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl (Or.inl rfl)) sha384_coreOK rfl rfl
+    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl (Or.inl rfl)) sha384_coreOK ⟨Spec.Mgf1.sha384, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha384 rfl rfl
     sha384_satI sha384_satF sha384_satT sha384_satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
@@ -251,12 +256,17 @@ theorem sha512_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512S, Spec.Hmac.sha512, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
+theorem pss_sha512 : Proof.RsaPss.AArch64.PssChecks (coreH 64).P 64 := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
 theorem sha512_coreOK : CoreOK (coreH 64) := coreOK 64 (Or.inr (Or.inr (Or.inr rfl)))
 
 /-- SHA-512 with its compression function. -/
 def sha512 (v : Compress) : MdHash :=
   { MdHash.of (H := hash v Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512)
-    (ok v rfl (fun m => (List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl))) rfl (Or.inr (Or.inl rfl))) sha512_coreOK rfl rfl
+    (ok v rfl (fun m => (List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl))) rfl (Or.inr (Or.inl rfl))) sha512_coreOK ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha512 rfl rfl
     sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
@@ -294,12 +304,17 @@ theorem sha512_224_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_224S, Spec.Hmac.sha512_224, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
+theorem pss_sha512_224 : Proof.RsaPss.AArch64.PssChecks (coreH 28).P 28 := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
 theorem sha512_224_coreOK : CoreOK (coreH 28) := coreOK 28 (Or.inl rfl)
 
 /-- SHA-512/224 with its compression function. -/
 def sha512_224 (v : Compress) : MdHash :=
   MdHash.of (H := hash v Spec.Hmac.sha512_224I 28 Spec.Sha512.init512_224Api.name H0_512_224)
-    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl (Or.inr (Or.inr (Or.inl rfl)))) sha512_224_coreOK rfl rfl
+    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inl rfl) rfl (Or.inr (Or.inr (Or.inl rfl)))) sha512_224_coreOK ⟨Spec.Mgf1.sha512_224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha512_224 rfl rfl
     sha512_224_satI sha512_224_satF sha512_224_satT sha512_224_satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
@@ -336,12 +351,17 @@ theorem sha512_256_satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha512_256S, Spec.Hmac.sha512_256, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
+theorem pss_sha512_256 : Proof.RsaPss.AArch64.PssChecks (coreH 32).P 32 := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
 theorem sha512_256_coreOK : CoreOK (coreH 32) := coreOK 32 (Or.inr (Or.inl rfl))
 
 /-- SHA-512/256 with its compression function. -/
 def sha512_256 (v : Compress) : MdHash :=
   MdHash.of (H := hash v Spec.Hmac.sha512_256I 32 Spec.Sha512.init512_256Api.name H0_512_256)
-    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl (Or.inr (Or.inr (Or.inr rfl)))) sha512_256_coreOK rfl rfl
+    (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inl rfl)) rfl (Or.inr (Or.inr (Or.inr rfl)))) sha512_256_coreOK ⟨Spec.Mgf1.sha512_256, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha512_256 rfl rfl
     sha512_256_satI sha512_256_satF sha512_256_satT sha512_256_satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract

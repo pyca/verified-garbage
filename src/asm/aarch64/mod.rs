@@ -191,6 +191,30 @@ pub(crate) mod rsa;
 pub(crate) mod rsa_pkcs1_sig;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_pss_md5_mgf1_md5;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha1_mgf1_sha1;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha224_mgf1_sha224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha256_mgf1_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha384_mgf1_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_224_mgf1_sha512_224;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_256_mgf1_sha512_256;
+
+#[rustfmt::skip]
+pub(crate) mod rsa_pss_sha512_mgf1_sha512;
+
+#[rustfmt::skip]
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]

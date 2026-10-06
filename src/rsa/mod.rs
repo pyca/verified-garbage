@@ -61,9 +61,7 @@
     feature = "alloc"
 ))]
 
-#[cfg(target_arch = "x86_64")]
 mod scratch;
-#[cfg(target_arch = "x86_64")]
 use scratch::VerifyScratch;
 
 use alloc::vec;
@@ -213,7 +211,7 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 /// An RSA public key `(n, e)`, with the values of `n` that the operation
 /// needs (`VG.Spec.Rsa.publicPrecompute`).
 ///
-/// On x86-64, after PSS verification, retains one wiped working buffer for reuse.
+/// After PSS verification, retains one wiped working buffer for reuse.
 /// Concurrent verifications use independent buffers; cloning a key starts with an
 /// empty cache.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -221,7 +219,6 @@ pub struct PublicKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
     pub(crate) pre: Vec<u64>,
-    #[cfg(target_arch = "x86_64")]
     pub(crate) verify_scratch: VerifyScratch,
 }
 
@@ -270,7 +267,6 @@ impl PublicKey {
             n: n.to_vec(),
             e: e.to_vec(),
             pre,
-            #[cfg(target_arch = "x86_64")]
             verify_scratch: VerifyScratch::new(),
         })
     }
