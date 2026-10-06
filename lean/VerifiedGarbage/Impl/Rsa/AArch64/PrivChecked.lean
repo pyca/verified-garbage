@@ -117,15 +117,14 @@ def cmpLoop : Prog isa :=
     .subImm .x .x13 .x13 1]) (.nonzero .x .x13)
 
 /-- With `g = r₁ & r₂ & r₃ & 1` in `x9` and the comparison in `x14`: the
-equality `eq = [x14 = 0]` (the top bit of `-x14 | x14` is `1 - eq`); the
-result, `-g & (2 - eq)`, into `x13`; the mask of the release,
+equality `eq = [x14 = 0]` (from the Z flag of `x14 + 0`, without a
+branch); the result, `-g & (2 - eq)`, into `x13`; the mask of the release,
 `-(g & eq)`, into `x12`; `out` into `x11`, `M` into `x14` and `n_len` into
 `x15` for the release, and `x10 := 0`. -/
 def masks : List Instr :=
-  [.movz .x .x10 0 0, .sub .x .x8 .x10 .x14, .logic .orr .x .x8 .x8 .x14, .lsr .x .x8 .x8 63,
-    .movz .x .x13 1 0, .sub .x .x8 .x13 .x8, .movz .x .x13 2 0, .sub .x .x13 .x13 .x8,
-    .sub .x .x12 .x10 .x9, .logic .and .x .x13 .x13 .x12, .logic .and .x .x8 .x8 .x9,
-    .sub .x .x12 .x10 .x8, .ldrSp .x11 oOut, .addSp .x14 oM, .ldrSp .x15 oK]
+  [.movz .x .x10 0 0, .movz .x .x13 1 0, .adds .x .x8 .x14 .x10, .cselc .x .x8 .x13 .x10 .eq,
+    .movz .x .x13 2 0, .sub .x .x13 .x13 .x8, .sub .x .x12 .x10 .x9, .logic .and .x .x13 .x13 .x12,
+    .logic .and .x .x8 .x8 .x9, .sub .x .x12 .x10 .x8, .ldrSp .x11 oOut, .addSp .x14 oM, .ldrSp .x15 oK]
 
 /-- `out[i] := M[i] & x12` and `M[i] := 0` for each byte. -/
 def releaseLoop : Prog isa :=
