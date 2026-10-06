@@ -40,7 +40,7 @@ theorem redc32_ok {t : State} {s : Nat} (h4 : (t.gpr .x4).toNat < 2 ^ 32) (h2 : 
     rw [BitVec.toNat_add]; exact Nat.mod_eq_of_lt (by omega)
   have hXs : (t.gpr .x4).toNat + (t.gpr .x2).toNat < s * 2 ^ 32 := by
     have : 2 * s ≤ s * 2 ^ 31 := by rw [Nat.mul_comm 2]; exact Nat.mul_le_mul_left _ (by decide)
-    have : s * 2 ^ 31 + s * 2 ^ 31 = s * 2 ^ 32 := by rw [← Nat.mul_add]; rfl
+    have : s * 2 ^ 31 + s * 2 ^ 31 = s * 2 ^ 32 := by rw [← Nat.mul_add]
     omega
   obtain ⟨_, hlt, hmod⟩ := redc_math (X := (t.gpr .x4).toNat + (t.gpr .x2).toNat) (sv := (t.gpr .x15).toNat) h15 hXs
   refine WP.mono (WP.keep [.x2, .x4, .x6] (Q := fun t' =>
