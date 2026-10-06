@@ -219,6 +219,16 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     obtain ⟨v, hv, rfl⟩ := h
     simp only [exec]
     rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load128_widen hc hv]; rfl
+  | vbinLoad op len d a m =>
+    cases len
+    · simp only [exec, Option.map_eq_some_iff] at h
+      obtain ⟨v, hv, rfl⟩ := h
+      simp only [exec]
+      rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load128_widen hc hv]; rfl
+    · simp only [exec, Option.map_eq_some_iff] at h
+      obtain ⟨v, hv, rfl⟩ := h
+      simp only [exec]
+      rw [show (s.withRegions rd wr).ea m = s.ea m from rfl, load256_widen hc hv]; rfl
   | vmovdquStore len m r =>
     cases len
     · exact store128_widen hw h
@@ -322,7 +332,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') : s'.rd = s.rd ∧ s'.
   | xop op => simp only [exec, Option.some.injEq] at h; subst h; cases op <;> exact ⟨rfl, rfl⟩
   | vop op =>
     simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]; exact ⟨rfl, rfl⟩
-  | vmovdquLoad len d m =>
+  | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;>
       exact ⟨rfl, rfl⟩
   | vbroadcasti128 d m =>
@@ -377,7 +387,7 @@ theorem exec_frame {i : Instr} (h : exec i s = some s') : Frame s.wr s.mem s'.me
     simp only [exec, Option.some.injEq] at h; subst h; cases op <;> exact Frame.refl _ _
   | vop op =>
     simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]; exact Frame.refl _ _
-  | vmovdquLoad len d m =>
+  | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;>
       exact Frame.refl _ _
   | vbroadcasti128 d m =>
@@ -584,6 +594,8 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) {s s' :
       · simp only [exec, State.store128] at h; split at h <;> cases h; rfl
       · simp only [exec, State.store256] at h; split at h <;> cases h; rfl
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
+    · rename_i len _ _ _; cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;>
+        obtain ⟨_, _, rfl⟩ := h <;> rfl
     · simp only [exec, Option.some.injEq] at h; subst h; rename_i op
       rw [Taint.ZOp.exec_eq op s]
     · simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl
