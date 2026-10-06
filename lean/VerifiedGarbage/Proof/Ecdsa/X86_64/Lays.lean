@@ -95,14 +95,14 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red} {adx : Bool}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
-    (ho45 : one < 45) :
+    (ho45 : one < 45) {nb : Nat} (hnb : 1 ≤ nb ∧ nb ≤ 64 * c.n) :
     PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
-      64 * c.n⟩ size := by
+      nb⟩ size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
       ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
-        bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+        bitsAt c.n j, nb⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hi
@@ -111,7 +111,7 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     · exact sl_apart c hi.2.1
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
-    bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
+    Nat.le_trans (Nat.add_le_add_left hnb.2 _) (bitsAt_le c h7 hj), ⟨hnb.1, show nb < 2 ^ 16 by omega⟩,
     sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho),
     hw base hb, ?_,
     hw jm hjm⟩
@@ -121,10 +121,29 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
 
 theorem powLayP (hc : CfgOk c) : PowLay c.powP size :=
   powLay_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide) (by decide)
-    (one := ONEP) (by decide) (by decide)
+    (one := ONEP) (by decide) (by decide) ⟨by have := hc.n0; omega, Nat.le_refl _⟩
+
+/-- `e < 2^(bitLen e k)`, `bitLen e k ≤ k`, and `1 ≤ bitLen e k` for `1 ≤ e < 2^k`. -/
+theorem bitLen_ok (e : Nat) : ∀ k, e < 2 ^ k → e < 2 ^ bitLen e k ∧ bitLen e k ≤ k ∧ (1 ≤ e → 1 ≤ bitLen e k)
+  | 0, h => ⟨h, Nat.le_refl _, fun h1 => by simp at h; omega⟩
+  | k + 1, h => by
+    rw [bitLen]
+    split
+    · rename_i hk
+      obtain ⟨a, b, c⟩ := bitLen_ok e k hk
+      exact ⟨a, by omega, c⟩
+    · exact ⟨h, Nat.le_refl _, fun _ => by omega⟩
+
+/-- The power mod `n`'s bits: `n - 2 < 2^nbits`, `1 ≤ nbits ≤ 64 n`. -/
+theorem nbitsN_ok (hc : CfgOk c) :
+    1 ≤ bitLen (c.C.n - 2) (64 * c.n) ∧ bitLen (c.C.n - 2) (64 * c.n) ≤ 64 * c.n ∧
+      c.C.n - 2 < 2 ^ bitLen (c.C.n - 2) (64 * c.n) := by
+  have hlt : c.C.n - 2 < 2 ^ (64 * c.n) := by have := hc.n_lt; omega
+  obtain ⟨a, b, d⟩ := bitLen_ok (c.C.n - 2) (64 * c.n) hlt
+  exact ⟨d (by have := hc.n_ge; omega), b, a⟩
 
 theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
-    (one := ONEN) (by decide) (by decide)
+    (one := ONEN) (by decide) (by decide) ⟨(nbitsN_ok hc).1, (nbitsN_ok hc).2.1⟩
 
 end VG.Proof.Ecdsa.X86_64
