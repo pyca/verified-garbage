@@ -26,18 +26,18 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSou
   E := Impl.Ecdsa.AArch64.p256
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
-  n46 := .inl rfl
-  len := rfl
-  nBits := p256_nBits
+  wide := false
+  sizes := ⟨.inl rfl, rfl, p256_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
-  lt_2n := by decide +kernel
+  sh := 0
+  sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
   coreN := Spec.Ecdsa.P256.signApi.name
   coreC := Impl.Ecdsa.AArch64.signP256
   coreX := Proof.Ecdsa.AArch64.sign_a64 hL hI hT
   coreCT := Proof.Ecdsa.AArch64.sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
-  reduceT := ⟨_, by taint_decide⟩
-  reduceKeepsV := by decide +kernel
+  reduceT := Function.const _ ⟨_, by taint_decide⟩
+  reduceKeepsV := Function.const _ (by decide +kernel)
 
 end VG.Proof.Ecdsa.Rfc6979.AArch64

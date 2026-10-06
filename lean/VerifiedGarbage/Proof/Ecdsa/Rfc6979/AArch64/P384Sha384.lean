@@ -64,7 +64,7 @@ theorem sat_spec :
     rintro r (rfl | rfl | rfl) <;> exact Region.disjoint_of_sep (by decide)
 
 theorem implies :
-    (rfcAArch64 Impl.Ecdsa.AArch64.p384 Spec.Ecdsa.Rfc6979.P384Sha384.inst).Implies
+    (rfcAArch64 Impl.Ecdsa.AArch64.p384 Spec.Ecdsa.Rfc6979.P384Sha384.inst 256).Implies
       (Spec.Ecdsa.Rfc6979.P384Sha384.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p384.combConsts) 256) where
   pre s h := by
     sig_pre [Spec.Ecdsa.Rfc6979.P384Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,

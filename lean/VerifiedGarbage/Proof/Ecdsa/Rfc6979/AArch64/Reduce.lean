@@ -108,14 +108,14 @@ theorem const64k_ok (s : State) (r : Reg) (v : BitVec 64) :
 
 /-- Word `j`: of the number to `V`'s place, of the difference to `K`'s,
 with the carry `!b` in (the complement of the borrow `b`). -/
-theorem subWord_ok {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn)
+theorem subWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn)
     {u : State} (hk : RK t u) (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16) {j : Nat} (hj : j < P.w)
     {b : Bool} (hb : (if j = 0 then true else u.c) = !b) :
     WP isa (.block ((cfgOf P).subWord j)) u fun u' => RK u u' ∧
       u'.mem = (u.mem.writeW (off L.B (80 + 8 * j)) (xw P L u.mem j)).writeW (off L.B (16 + 8 * j))
         (Word64.addCarry (xw P L u.mem j) (~~~(cfgOf P).nWord j) (!b)) ∧
       u'.c = Word64.carryOut (xw P L u.mem j) (~~~(cfgOf P).nWord j) (!b) := by
-  have h6 : P.w ≤ 6 := P.R.n6
+  have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
   have hw : (cfgOf P).w = P.w := rfl
   have hx1 : u.gpr .x1 = L.dg := hk.x1.trans h1
   have hr : InRegions (u.rd ++ u.wr) (L.dg + BitVec.ofNat 64 (8 * (P.w - 1 - j))) 8 := by
@@ -180,15 +180,15 @@ theorem subWord_ok {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hd
 
 /-- The digest is apart from the stack, so code that writes only in the
 frame keeps its words. -/
-theorem dg_kept (hL : L.Ok) {m m' : Mem} {n : Nat} (h : Outside L.B 16 n m m') (hn : 16 + n ≤ 256) {d : Nat}
+theorem dg_kept (hL : L.Ok) {m m' : Mem} {n : Nat} (h : Outside L.B 16 n m m') (hn : 16 + n ≤ 256 + L.e) {d : Nat}
     (hd : d + 8 ≤ dn) : m'.readW (L.dg + BitVec.ofNat 64 d) 64 = m.readW (L.dg + BitVec.ofNat 64 d) 64 :=
   Proof.Weierstrass.readW_keep fun i hi =>
-    Proof.Weierstrass.keep_of_disjoint (k := dn) h ((hL.kg.symm).sub_right (Offset.sub_base _ hn)) (by omega)
-      (by omega) (by have := hL.ng; omega)
+    Proof.Weierstrass.keep_of_disjoint (k := dn) h ((hL.kg.symm).sub_right (Offset.sub_base _ hn))
+      (by have := L.he; omega) (by omega) (by have := hL.ng; omega)
 
 /-- After `k` words: the number's in `V`'s place, and the difference in
 `K`'s, with the borrow `b`. -/
-theorem subs_ok {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn)
+theorem subs_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn)
     (h15 : t.gpr .x15 = L.B + BitVec.ofNat 64 16) :
     ∀ k ≤ P.w, WP isa (.block ((List.range k).flatMap (cfgOf P).subWord)) t fun u =>
       RK t u ∧ Outside L.B 16 128 t.mem u.mem ∧ (∀ j < k, word u.mem L.B (80 + 8 * j) = xw P L t.mem j) ∧
@@ -197,16 +197,16 @@ theorem subs_ok {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = 
   | 0, _ => WP.block_nil ⟨RK.refl _, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       false, fun _ => rfl, fun h => absurd h (Nat.lt_irrefl _), by simp [wordsVal, Nat.mod_one]⟩
   | k + 1, hk => by
-    have h6 : P.w ≤ 6 := P.R.n6
+    have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (subs_ok hc hL h1 hdn h15 k (by omega)) fun u₁ ⟨k₁, O₁, e₁, b, hb0, hcf, hs⟩ => ?_
+    refine WP.mono (subs_ok hA hc hL h1 hdn h15 k (by omega)) fun u₁ ⟨k₁, O₁, e₁, b, hb0, hcf, hs⟩ => ?_
     have hb : (if k = 0 then true else u₁.c) = !b := by
       rcases Nat.eq_zero_or_pos k with h | h
       · subst h; rw [hb0 rfl]; rfl
       · split
         · omega
         · exact hcf h
-    refine WP.mono (subWord_ok (P := P) hc h1 hdn k₁ (k₁.x15.trans h15) (j := k) (by omega) hb)
+    refine WP.mono (subWord_ok (P := P) hA hc h1 hdn k₁ (k₁.x15.trans h15) (j := k) (by omega) hb)
       fun u₂ ⟨k₂, m₂, cf₂⟩ => ?_
     have hx : xw P L u₁.mem k = xw P L t.mem k := by
       simp only [xw]; rw [dg_kept hL O₁ (by omega) (by omega)]
@@ -250,13 +250,13 @@ theorem subs_ok {t : State} (hc : Ctx L g m₀ t) (hL : L.Ok) (h1 : t.gpr .x1 = 
 /-! ## The selection -/
 
 /-- Word `j` of the result, by the mask `x6`, to `h`. -/
-theorem selWord_ok {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
+theorem selWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
     (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16) {j : Nat} (hj : j < P.w) :
     WP isa (.block ((cfgOf P).selWord j)) u fun u' => RK u u' ∧ u'.gpr .x6 = u.gpr .x6 ∧
       u'.mem = u.mem.writeW (off L.B (144 + 8 * (P.w - 1 - j)))
         (rev64 (((word u.mem L.B (80 + 8 * j) ^^^ word u.mem L.B (16 + 8 * j)) &&& u.gpr .x6) ^^^
           word u.mem L.B (16 + 8 * j))) := by
-  have h6 : P.w ≤ 6 := P.R.n6
+  have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
   have hw : (cfgOf P).w = P.w := rfl
   have hV : InRegions (u.rd ++ u.wr) (L.B + BitVec.ofNat 64 (80 + 8 * j)) 8 := by
     rw [hk.rd, hk.wr]; exact hc.inFr (by omega) (by omega)
@@ -284,7 +284,7 @@ theorem selWord_ok {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
   simp only [RegUpd.gpr_write, a, c, ite_false]
 
 /-- After `k` words of the result, with the mask of the borrow `b` in `x6`. -/
-theorem sels_ok {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
+theorem sels_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
     (h15 : u.gpr .x15 = L.B + BitVec.ofNat 64 16) {b : Bool}
     (hm : u.gpr .x6 = if b then BitVec.allOnes 64 else 0) :
     ∀ k ≤ P.w, WP isa (.block ((List.range k).flatMap (cfgOf P).selWord)) u fun u' =>
@@ -292,10 +292,10 @@ theorem sels_ok {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u)
       ∀ j < k, word u'.mem L.B (144 + 8 * (P.w - 1 - j)) = rev64 (word u.mem L.B ((if b then 80 else 16) + 8 * j))
   | 0, _ => WP.block_nil ⟨RK.refl _, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | k + 1, hk' => by
-    have h6 : P.w ≤ 6 := P.R.n6
+    have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (sels_ok hc hk h15 hm k (by omega)) fun u₁ ⟨k₁, d₁, O₁, e₁⟩ => ?_
-    refine WP.mono (selWord_ok (P := P) hc (hk.trans k₁) (k₁.x15.trans h15) (j := k) (by omega))
+    refine WP.mono (sels_ok hA hc hk h15 hm k (by omega)) fun u₁ ⟨k₁, d₁, O₁, e₁⟩ => ?_
+    refine WP.mono (selWord_ok (P := P) hA hc (hk.trans k₁) (k₁.x15.trans h15) (j := k) (by omega))
       fun u₂ ⟨k₂, d₂, m₂⟩ => ?_
     have oH : Outside L.B (144 + 8 * (P.w - 1 - k)) 8 u₁.mem u₂.mem := by
       rw [m₂]; exact writeW_outside _ _ _ (by omega)
@@ -348,19 +348,19 @@ theorem setup_ok {t : State} (hc : Ctx L g m₀ t) :
 
 /-- `h`: the digest's leftmost `8 w` bytes (at `x1`) modulo `n`, big-endian
 in the frame. -/
-theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn) :
+theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 = L.dg) (hdn : 8 * P.w ≤ dn) :
     WP isa (.block (cfgOf P).reduce) t fun t' => Ctx L g m₀ t' ∧
       Frame [⟨L.B + BitVec.ofNat 64 16, 176⟩] t.mem t'.mem ∧
       Spec.Sha256.bytesAt t'.mem (L.B + BitVec.ofNat 64 144) (8 * P.w) =
         Spec.Weierstrass.toBytes (8 * P.w)
           (Spec.Weierstrass.ofBytes (Spec.Sha256.bytesAt m₀ L.dg (8 * P.w)) % P.R.E.C.n) := by
-  have h6 : P.w ≤ 6 := P.R.n6
+  have h6 : P.w ≤ 6 := (P.sizesA hA).2.1
   rw [Cfg.reduce, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono_syms (setup_ok hc) fun u₀ ⟨z₀, f₀, m₀', rd₀, wr₀, sp₀, g₀⟩ sy₀ => ?_
   have hc₀ : Ctx L g m₀ u₀ := hc.regs hL rd₀ wr₀ m₀' sp₀ (fun r hr _ =>
     g₀ r (fun h => by subst h; exact absurd hr (by decide)) (fun h => by subst h; exact absurd hr (by decide)))
     sy₀
-  refine WP.mono_syms (subs_ok hc₀ hL ((g₀ _ (by decide) (by decide)).trans h1) hdn f₀ P.w (Nat.le_refl _))
+  refine WP.mono_syms (subs_ok hA hc₀ hL ((g₀ _ (by decide) (by decide)).trans h1) hdn f₀ P.w (Nat.le_refl _))
     fun u₁ ⟨k₁, O₁, e₁, b, _, hcf, hs⟩ sy₁ => ?_
   have h4 : 4 ≤ P.w := P.R.n4
   have hcf₁ : u₁.c = !b := hcf (by omega)
@@ -374,7 +374,7 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
     refine ⟨⟨by atriv, by atriv, by atriv, fun r _ h₂ _ _ => ?_⟩, by atriv, ?_⟩
     · simp only [RegUpd.gpr_write, h₂, ite_false]
     · cases b <;> decide) fun u₂ ⟨k₂, m₂, d₂⟩ sy₂ => ?_
-  refine WP.mono_syms (sels_ok (P := P) hc₀ (k₁.trans k₂) ((k₂.x15.trans k₁.x15).trans f₀) d₂ P.w (Nat.le_refl _))
+  refine WP.mono_syms (sels_ok (P := P) hA hc₀ (k₁.trans k₂) ((k₂.x15.trans k₁.x15).trans f₀) d₂ P.w (Nat.le_refl _))
     fun t' ⟨k₃, _, O₃, e₃⟩ sy₃ => ?_
   have k' : RK u₀ t' := (k₁.trans k₂).trans k₃
   have O' : Outside L.B 16 176 t.mem t'.mem := by
@@ -406,7 +406,7 @@ theorem reduce_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (h1 : t.gpr .x1 
   have hu : ∀ d, wordsVal u₂.mem L.B d P.w = wordsVal u₁.mem L.B d P.w := fun d => by rw [m₂]
   have hn : P.R.E.C.n % 2 ^ (64 * P.w) = P.R.E.C.n := Nat.mod_eq_of_lt P.R.n_lt
   rw [hn] at hs
-  have key := Rfc6979.mod_mathK _ _ _ _ b hs (wordsVal_lt _ _ _ _) (wordsVal_lt _ _ _ _) P.R.lt_2n
+  have key := Rfc6979.mod_mathK _ _ _ _ b hs (wordsVal_lt _ _ _ _) (wordsVal_lt _ _ _ _) (P.R.sizesA hA).2.2.2
   congr 1
   rw [← key, hu]
   cases b <;> rfl

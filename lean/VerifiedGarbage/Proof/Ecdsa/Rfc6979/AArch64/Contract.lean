@@ -8,7 +8,7 @@ import VerifiedGarbage.Impl.Ecdsa.AArch64
 # Deterministic ECDSA on AArch64: the contract the proof is written against
 
 The facts of `I.signContract` for an instance `I` of a curve of `len`-byte
-scalars with a hash of `I.hashLen` bytes, for AArch64 and 256 bytes of stack,
+scalars with a hash of `I.hashLen` bytes, for AArch64 and `N` bytes of stack,
 by name: `vg_ecdsa_<curve>_<hash>_sign(out = x0, d = x1, digest = x2, scratch = x3)`,
 the result in `w0`, and the comb's tables of the curve `E` at the static
 `E.tsym`, which `vg_ecdsa_<curve>_sign` reads (`Abi.withConsts E.combConsts`;
@@ -32,20 +32,20 @@ def TblOk (E : Impl.Ecdsa.AArch64.Cfg) (s : State) (wr : List Region) : Prop :=
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Spec.Ecdsa.Rfc6979.Instance) : Contract AArch64.isa where
+def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract AArch64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .x0, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨s.gpr .x1, I.ecdsa.curve.len⟩
     let digest : Region := ⟨s.gpr .x2, I.hashLen⟩
     let scratch : Region := ⟨s.gpr .x3, 8192⟩
-    let stk : Region := below s.sp 256
+    let stk : Region := below s.sp N
     s.rd = [d, digest, ⟨s.syms E.tsym, 8 * E.combWords.length⟩] ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
       (s.gpr .x0).toNat + 2 * I.ecdsa.curve.len ≤ 2 ^ 64 ∧
       (s.gpr .x1).toNat + I.ecdsa.curve.len ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + I.hashLen ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64 ∧ 256 ≤ s.sp.toNat ∧
+      (s.gpr .x2).toNat + I.hashLen ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64 ∧ N ≤ s.sp.toNat ∧
       TblOk E s [out, scratch, stk]
   post s s' :=
     match (result I s.mem (s.gpr .x1) (s.gpr .x2)).1 with
