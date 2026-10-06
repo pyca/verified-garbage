@@ -106,7 +106,7 @@ theorem digitSLow {base kp sp : Addr} {A : EPoint dZ} {s : State} (h : WinCtx ba
 
 /-! ## A byte -/
 
-theorem counterCmp_ok {s : State} {base : Addr} (hs : Scratch s base) (i : Nat) (hi : i < 64)
+theorem counterCmp_ok {s : State} {base : Addr} (hs : Scratch s base) (i : Nat) (hi : i ≤ 64)
     (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 i) :
     WP isa (.block [.mov .rbx (.mem (Impl.X25519.X86_64.sc 56)), .alu .cmp .rbx (.imm 32)]) s
       fun t => t.zf = some (decide (i = 32)) ∧ Keeps [.rbx] s t := by
@@ -155,7 +155,7 @@ theorem byteStepA_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinCtx
   refine WP.seq (WP.mono (windowA_ok hb' bd br (Nat.mod_lt _ (by decide))
     (digitKLow hb' hi (kb.counter.trans av))) fun c ⟨cr, cd, kc⟩ => ?_)
   have hc' := hb'.of_keep kc
-  refine WP.mono (counterCmp_ok hc'.scratch i hi (kc.counter.trans (kb.counter.trans av)))
+  refine WP.mono (counterCmp_ok hc'.scratch i hi.le (kc.counter.trans (kb.counter.trans av)))
     fun t ⟨tz, kt⟩ => ?_
   refine ⟨tz, ?_, by rw [kt.2.1]; exact cd, ?_, ((ka.trans (ByteKeep.of_win kb)).trans
     (ByteKeep.of_win kc)).trans (ByteKeep.of_keeps kt (by decide))⟩
@@ -240,6 +240,40 @@ structure WinLoop (s₀ : State) (base kp sp : Addr) (A : EPoint dZ) (K S c : Na
   value : Rep (point (env s.mem base) 0 1 2 3) ((K / 256 ^ c) • A + (S / 256 ^ c) • (-baseAff))
   keep : ByteKeep base s₀ s
 
+/-- What moving the counter may change: the counter, and the registers a byte may. -/
+structure CounterKeep (base : Addr) (s t : State) : Prop where
+  gpr : ∀ r, r ∉ clob → r ≠ .rbx → r ≠ .rsi → t.gpr r = s.gpr r
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  mem : Outside base 56 8 s.mem t.mem
+
+theorem CounterKeep.trans {base : Addr} {s t u : State} (h : CounterKeep base s t)
+    (k : CounterKeep base t u) : CounterKeep base s u :=
+  ⟨fun r a b c => (k.gpr r a b c).trans (h.gpr r a b c), k.rd.trans h.rd, k.wr.trans h.wr,
+    h.mem.trans k.mem⟩
+
+theorem CounterKeep.of_keeps {base : Addr} {s t : State} {rs : List Reg} (h : Keeps rs s t)
+    (hrs : ∀ r ∈ rs, r = .rbx ∨ r = .rsi ∨ r ∈ clob) : CounterKeep base s t :=
+  ⟨fun r hc hb hs => h.1 r fun hm => by
+    rcases hrs r hm with rfl | rfl | hm'
+    · exact hb rfl
+    · exact hs rfl
+    · exact hc hm', h.2.2.1, h.2.2.2, fun x _ => by rw [h.2.1]⟩
+
+theorem CounterKeep.byte {base : Addr} {s t : State} (h : CounterKeep base s t) : ByteKeep base s t :=
+  ⟨h.gpr, h.rd, h.wr, h.mem.mono (by decide) (by decide)⟩
+
+/-- The loops' invariant, with the counter moved from `c` to `c'` where the scalars'
+quotients agree. -/
+theorem WinLoop.of_counter {s₀ s t : State} {base kp sp : Addr} {A : EPoint dZ} {K S c c' : Nat}
+    (h : WinLoop s₀ base kp sp A K S c s) (k : CounterKeep base s t)
+    (hc : t.mem.readW (off base 56) 64 = BitVec.ofNat 64 c')
+    (hK : K / 256 ^ c' = K / 256 ^ c) (hS : S / 256 ^ c' = S / 256 ^ c) :
+    WinLoop s₀ base kp sp A K S c' t :=
+  ⟨h.ctx.of_byte k.byte, by rw [header_env k.mem]; exact h.d, hc,
+    by rw [k.byte.bytesK h.ctx, h.kVal], by rw [k.byte.bytesS h.ctx, h.sVal],
+    by rw [header_env k.mem, hK, hS]; exact h.value, h.keep.trans k.byte⟩
+
 /-- A byte of `k` alone, from `32 + j + 1` bytes left to `32 + j`. -/
 theorem stepA_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : Nat} (hj : j < 32)
     (ht : WinLoop s₀ base kp sp A K S (32 + (j + 1)) t) :
@@ -259,11 +293,11 @@ theorem stepB_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : N
   exact ⟨uz, ht.ctx.of_byte uk, ud, uc, by rw [uk.bytesK ht.ctx, ht.kVal],
     by rw [uk.bytesS ht.ctx, ht.sVal], by rw [ht.kVal, ht.sVal] at uv; exact uv, ht.keep.trans uk⟩
 
-theorem loopA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat}
-    (h : WinLoop s₀ base kp sp A K S 64 s) :
+theorem loopA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
+    (hn0 : 0 < n) (hn : n ≤ 32) (h : WinLoop s₀ base kp sp A K S (32 + n) s) :
     WP isa (.loop (byteStepA fld dbl) .ne) s (WinLoop s₀ base kp sp A K S 32) := by
   apply WP.loop (fun (n : Nat) (t : State) => WinLoop s₀ base kp sp A K S (32 + n) t ∧ 0 < n ∧ n ≤ 32)
-    (n := 32)
+    (n := n)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
     refine WP.mono (stepA_ok (by omega) ht) fun u ⟨uz, hu⟩ => ?_
@@ -272,7 +306,21 @@ theorem loopA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat
       exact Or.inl ⟨by simp only [eval, uz, decide_true, Option.map_some, Bool.not_true], hu⟩
     · exact Or.inr ⟨by simp only [eval, uz, decide_eq_false hj, Option.map_some, Bool.not_false],
         j, by omega, hu, by omega, by omega⟩
-  · exact ⟨h, by decide, by decide⟩
+  · exact ⟨h, hn0, hn⟩
+
+theorem windowsA_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S c : Nat}
+    (hc32 : 32 ≤ c) (hc64 : c ≤ 64) (h : WinLoop s₀ base kp sp A K S c s) :
+    WP isa (windowsA fld dbl) s (WinLoop s₀ base kp sp A K S 32) := by
+  rw [windowsA, counterCmp]
+  refine WP.seq (WP.mono (counterCmp_ok h.ctx.scratch c hc64 h.counter) fun a ⟨az, ka⟩ => ?_)
+  have ha := h.of_counter (CounterKeep.of_keeps ka (by decide)) (by rw [ka.2.1]; exact h.counter) rfl rfl
+  refine WP.ite (!decide (c = 32)) (by simp only [eval, az, Option.map_some]) (fun hy => ?_) (fun hy => ?_)
+  · obtain ⟨n, rfl⟩ : ∃ n, c = 32 + n := ⟨c - 32, by omega⟩
+    have hn : n ≠ 0 := fun h0 => by subst h0; simp at hy
+    exact loopA_ok n (by omega) (by omega) ha
+  · have : c = 32 := by simpa using hy
+    subst this
+    exact WP.block_nil ha
 
 theorem loopB_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat}
     (h : WinLoop s₀ base kp sp A K S 32 s) :
@@ -288,6 +336,129 @@ theorem loopB_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat
     · exact Or.inr ⟨by simp only [eval, uz, decide_eq_false hj, Option.map_some, Bool.not_false],
         j, by omega, hu, by omega, by omega⟩
   · exact ⟨h, by decide, by decide⟩
+
+/-! ## Skipping the leading zero bytes of `k` -/
+
+theorem skipStop_ok {s : State} {base : Addr} (hs : Scratch s base) (j : Nat)
+    (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 j) :
+    WP isa (.block skipStop) s fun t => t.zf = some true ∧
+      t.mem.readW (off base 56) 64 = BitVec.ofNat 64 (j + 1) ∧ CounterKeep base s t := by
+  have hw : InRegions s.wr (off base 56) 8 :=
+    ⟨_, hs.wr, Offset.contains_base _ (by decide) (by decide)⟩
+  have hr : InRegions (s.rd ++ s.wr) (off base 56) 8 :=
+    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by decide) (by decide)⟩
+  have he : BitVec.ofNat 64 j + (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (j + 1) := by
+    rw [show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
+  apply WP.of_runBlock
+  simp only [skipStop, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    State.load64, State.store64, Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
+    RegUpd.zf_arithFlags, RegUpd.rd_setReg, RegUpd.rd_arithFlags, RegUpd.wr_setReg,
+    RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags, hs.rdi, hr, hw, hc, he,
+    BitVec.sub_self, ite_true, ite_false, reduceCtorEq, Option.map_some,
+    Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, Mem.readW_writeW_self64 _ _ _, ⟨fun r hr _ _ => ?_, rfl, rfl,
+    VG.Proof.X25519.X86_64.writeW_outside _ _ _ (by decide)⟩⟩
+  simp only [RegUpd.gpr_arithFlags, RegUpd.gpr_setReg, show r ≠ .rax from fun h => hr (h ▸ by decide),
+    ite_false]
+
+private theorem byte_zero : ∀ b : BitVec 8,
+    (b.setWidth 64 &&& b.setWidth 64 == 0) = decide (b.toNat = 0) := by decide
+
+theorem testByte_ok (s : State) (b : BitVec 8) (hc : s.gpr .rbx = b.setWidth 64) :
+    WP isa (.block [.alu .test .rbx (.reg .rbx)]) s fun t =>
+      t.zf = some (decide (b.toNat = 0)) ∧ Keeps [] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.zf_arithFlags, hc, byte_zero, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl⟩
+
+/-- The counter moved down from `j + 1` to `j`, and byte `j` of `k` tested. -/
+theorem skipLoad_ok {s : State} {base kp sp : Addr} {A : EPoint dZ} (h : WinCtx base kp sp A s)
+    (j : Nat) (hj : j < 64) (hc : s.mem.readW (off base 56) 64 = BitVec.ofNat 64 (j + 1)) :
+    WP isa (.block skipLoad) s fun t => t.zf = some (decide ((s.mem (off kp j)).toNat = 0)) ∧
+      t.mem.readW (off base 56) 64 = BitVec.ofNat 64 j ∧ CounterKeep base s t := by
+  rw [skipLoad, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (batchBegin_ok h.scratch j hc) fun a ⟨_, ac, ag, ar, aw, am⟩ => ?_
+  have ka : CounterKeep base s a := ⟨fun r _ hb _ => ag r hb, ar, aw, am⟩
+  have ha := h.of_byte ka.byte
+  rw [WP.block_append_iff]
+  refine WP.mono (digitByte_ok ha.scratch 7952 0 (by decide) (by decide) ha.kHeader j ac
+    (by rw [off_zero]; exact ha.kRead j hj)) fun b ⟨bv, kb⟩ => ?_
+  have hm : a.mem (off kp j) = s.mem (off kp j) := am _ (by have := h.kFar j hj; omega)
+  rw [off_zero, hm] at bv
+  refine WP.mono (testByte_ok b _ bv) fun t ⟨tz, kt⟩ => ?_
+  refine ⟨tz, by rw [kt.2.1, kb.2.1]; exact ac, ka.trans ((CounterKeep.of_keeps kb (by decide)).trans
+    (CounterKeep.of_keeps kt (by decide)))⟩
+
+/-- Skipping: `c = 32 + n` bytes are left, and the bytes of `k` from `c` on are zero. -/
+def SkipInv (s₀ : State) (base kp sp : Addr) (A : EPoint dZ) (K S : Nat) (n : Nat) (s : State) : Prop :=
+  WinLoop s₀ base kp sp A K S (32 + n) s ∧ K / 256 ^ (32 + n) = 0 ∧ 0 < n ∧ n ≤ 32
+
+/-- Whether the skipping goes on below `32 + j + 1` bytes left: byte `32 + j` of `k` is zero,
+and more than 32 bytes are left after it. -/
+def skipOn (K j : Nat) : Bool := decide (K / 256 ^ (32 + j) % 256 = 0 ∧ j ≠ 0)
+
+/-- Where the skipping stops below `32 + j + 1` bytes left, if it does. -/
+def skipEnd (K j : Nat) : Nat := if K / 256 ^ (32 + j) % 256 = 0 then 32 else 32 + (j + 1)
+
+theorem skipEnd_range (K j : Nat) (hj : j < 32) : 32 ≤ skipEnd K j ∧ skipEnd K j ≤ 64 := by
+  unfold skipEnd; split <;> omega
+
+theorem skipBody_ok {s₀ t : State} {base kp sp : Addr} {A : EPoint dZ} {K S j : Nat}
+    (h : SkipInv s₀ base kp sp A K S (j + 1) t) :
+    WP isa skipBody t fun u => u.zf.map (!·) = some (skipOn K j) ∧
+      (skipOn K j = false → WinLoop s₀ base kp sp A K S (skipEnd K j) u) ∧
+      (skipOn K j = true → SkipInv s₀ base kp sp A K S j u) := by
+  obtain ⟨hl, hz, _, hn⟩ := h
+  have hS : S < 256 ^ 32 := hl.sVal ▸ decodeLE_lt32 _ _
+  have hb : (t.mem (off kp (32 + j))).toNat = K / 256 ^ (32 + j) % 256 := by
+    rw [scalar_byte (n := 64) (by omega), hl.kVal]
+  rw [skipBody]
+  refine WP.seq (WP.mono (skipLoad_ok hl.ctx (32 + j) (by omega) (by rw [hl.counter]; rfl))
+    fun a ⟨az, ac, ka⟩ => ?_)
+  rw [hb] at az
+  refine WP.ite (!decide (K / 256 ^ (32 + j) % 256 = 0)) (by simp only [eval, az, Option.map_some])
+    (fun hy => ?_) (fun hy => ?_)
+  · have h0 : K / 256 ^ (32 + j) % 256 ≠ 0 := by simpa using hy
+    have hoff : skipOn K j = false := by simp only [skipOn, h0, false_and, decide_false]
+    refine WP.mono (skipStop_ok (ka.byte.scratch hl.ctx.scratch) (32 + j) ac) fun u ⟨uz, uc, ku⟩ => ?_
+    have e : skipEnd K j = 32 + (j + 1) := by simp only [skipEnd, h0, ↓reduceIte]
+    refine ⟨by rw [uz, hoff]; rfl, fun _ => ?_, fun ht => absurd ht (by rw [hoff]; decide)⟩
+    rw [e]
+    exact hl.of_counter (ka.trans ku) uc rfl rfl
+  · have h0 : K / 256 ^ (32 + j) % 256 = 0 := by simpa using hy
+    have hK : K / 256 ^ (32 + j) = 0 := by
+      have := div_split K (32 + j)
+      rw [show 32 + j + 1 = 32 + (j + 1) by omega, hz] at this
+      omega
+    have hw := hl.of_counter ka ac (by rw [hK, hz]) (by rw [high_zero hS (by omega), high_zero hS (by omega)])
+    have he : skipOn K j = decide (j ≠ 0) := by simp only [skipOn, h0, true_and]
+    rw [counterCmp]
+    refine WP.mono (counterCmp_ok hw.ctx.scratch (32 + j) (by omega) hw.counter) fun u ⟨uz, ku⟩ => ?_
+    have hu := hw.of_counter (CounterKeep.of_keeps ku (by decide)) (by rw [ku.2.1]; exact hw.counter) rfl rfl
+    refine ⟨by rw [uz, he]; simp, fun hf => ?_, fun ht => ⟨hu, hK, by rw [he] at ht; have := of_decide_eq_true ht; omega,
+      by omega⟩⟩
+    have hj : j = 0 := by rw [he] at hf; simpa using hf
+    subst hj
+    have e : skipEnd K 0 = 32 := by simp only [skipEnd, h0, ↓reduceIte]
+    rw [e]
+    exact hu
+
+theorem skipZero_ok {s₀ s : State} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat}
+    (h : WinLoop s₀ base kp sp A K S 64 s) :
+    WP isa skipZero s fun t => ∃ c, 32 ≤ c ∧ c ≤ 64 ∧ WinLoop s₀ base kp sp A K S c t := by
+  have hK : K / 256 ^ 64 = 0 := Nat.div_eq_of_lt (h.kVal ▸ decodeLE_lt64 _ _)
+  rw [skipZero]
+  apply WP.loop (SkipInv s₀ base kp sp A K S) (n := 32)
+  · intro n t ht
+    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by have := ht.2.2.1; omega : n ≠ 0)
+    have hj : j < 32 := by have := ht.2.2.2; omega
+    refine WP.mono (skipBody_ok ht) fun u ⟨uz, uf, ut⟩ => ?_
+    cases hs : skipOn K j
+    · exact Or.inl ⟨by show u.zf.map (!·) = _; rw [uz, hs], skipEnd K j, (skipEnd_range K j hj).1,
+        (skipEnd_range K j hj).2, uf hs⟩
+    · exact Or.inr ⟨by show u.zf.map (!·) = _; rw [uz, hs], j, by omega, ut hs⟩
+  · exact ⟨h, hK, by decide, by decide⟩
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -439,7 +610,8 @@ theorem verifyEquationPoints_ok {s : State} {base sig challenge : Addr} {Aa Ra :
   apply WP.assoc; apply WP.assoc; apply WP.assoc
   refine WP.seq (WP.mono (windowPrep_ok hs hp hc hr hf hcr hcf hA) fun e ⟨w0, kse, eR⟩ => ?_)
   -- The windows.
-  refine WP.seq (WP.mono (loopA_ok w0) fun f hf' => ?_)
+  refine WP.seq (WP.mono (skipZero_ok w0) fun f ⟨c, hc32, hc64, hf⟩ => ?_)
+  refine WP.seq (WP.mono (windowsA_ok hc32 hc64 hf) fun f' hf' => ?_)
   refine WP.seq (WP.mono (loopB_ok hf') fun g hg => ?_)
   have ksg := kse.trans (PowersKeep.of_byte hg.keep)
   -- The comparison with `-R`.
