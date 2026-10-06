@@ -140,7 +140,7 @@ theorem fCol_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       rw [show [pAcc (c + 9) 0, pAcc (c + 9) 1, pAcc (c + 9) 2] = pAccs (c + 9) from rfl, hacc₂, e₁, hmo₂]
       have := Nat.mul_le_mul (Nat.le_of_lt (word s.mem base M.mo).isLt) (Nat.le_of_lt hu₂)
       have : (2 ^ 64 - 1) * (2 ^ 64 - 1) < 2 ^ 128 := by decide
-      omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
+      omega)) fun s₃ ⟨e₃, k₃, _⟩ => ?_
     rw [show [pAcc (c + 9) 0, pAcc (c + 9) 1, pAcc (c + 9) 2] = pAccs (c + 9) from rfl, hacc₂, hmo₂] at e₃
     have hm₃ : s₃.mem = s₂.mem := k₃.2.1
     -- The low word is now zero.

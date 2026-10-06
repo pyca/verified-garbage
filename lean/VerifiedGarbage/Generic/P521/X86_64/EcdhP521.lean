@@ -22,7 +22,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       caller's callee-saved registers in `scratch`; field elements are nine 64-bit words in \
       Montgomery form, multiplied by Montgomery multiplication by columns (product \
       scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up) with a final \
+      reduction's multiplier is its column's low word, added 512 times eight columns up; \
+      a square computes each product of two different words once and adds it twice) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \

@@ -54,14 +54,16 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   three-word accumulator in registers, each column's products loaded from
   `[a]` and `[b]`; the reduction's `u_k`, the low words of the first nine
   columns, need no multiplication by `-p⁻¹` and add `512 u_k` to column
-  `k + 8`; then `csubW`.
+  `k + 8`; then `csubW`. `sqrP o a`, `mulP o a a` with each product of two
+  different words computed once and added twice.
 
 * `mulF o a b`: for any other modulus of nine words (P-521's order),
   Montgomery multiplication by columns too, each column also adding the
   reduction's `u_k m_j` and the first nine computing their `u` (Koç, Acar and
   Kaliski's FIPS).
 
-`mul`, `add` and `sub` choose by `n` (and `mul` by the reduction). Every multiplication is `mul` or `mulx`, every
+`mul`, `add` and `sub` choose by `n` (and `mul` by the reduction, and whether
+it squares). Every multiplication is `mul` or `mulx`, every
 selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
 `rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
@@ -399,6 +401,11 @@ def pCol (M : Mod) (a b c : Nat) : List Instr :=
   (pTerms M a b c).flatMap (fun t => pTerm c t.1 t.2) ++
     [.store (sc (M.tmp + 8 * (c % 9))) (pAcc c 0), .mov32 (pAcc c 0) (.imm 0)]
 
+/-- A Montgomery multiplication by columns into `[o]`: the accumulator
+`r9`–`r11` cleared, the eighteen columns `col c`, then `csubW`. -/
+def prodCols (M : Mod) (o : Nat) (col : Nat → List Instr) : List Instr :=
+  [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] ++ (List.range 18).flatMap col ++ csubW M o
+
 /-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p = 2⁵²¹ - 1` (`o` may be `a` or
 `b`), by Montgomery multiplication in product scanning: column `c` sums the
 products `a_i b_j` with `i + j = c` in three registers (`pAcc`). As
@@ -408,9 +415,32 @@ clears it and adds `2⁹ u_k = 512 u_k` to column `k + 8`. Columns 9 to 17 are
 the result, `(a b + U p) / 2⁵⁷⁶ < 2p`, stored over the `u`s no longer needed
 (column `c` at `[tmp + 8 (c - 9)]`), with its top word in `r9`; `csubW`
 reduces it into `[o]`. -/
-def mulP (M : Mod) (o a b : Nat) : List Instr :=
-  [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] ++
-    (List.range 18).flatMap (pCol M a b) ++ csubW M o
+def mulP (M : Mod) (o a b : Nat) : List Instr := prodCols M o (pCol M a b)
+
+/-- A squaring's term `[dx] · y`, added twice if `two`: the product's
+`rdx:rax` added again. -/
+def sTerm (c dx : Nat) (dy : Option Nat) (two : Bool) : List Instr :=
+  pTerm c dx dy ++ if two then [.alu .add (pAcc c 0) (.reg .rax), .alu .adc (pAcc c 1) (.reg .rdx),
+    .alu .adc (pAcc c 2) (.imm 0)] else []
+
+/-- The terms of column `c` of `sqrP o a`: the products `[a + 8i] [a + 8j]`
+with `i < j`, `i + j = c`, twice, the square `[a + 4c]²` for even `c`, and
+for `8 ≤ c ≤ 16` the reduction's `512 u_{c-8}`. -/
+def sTerms (M : Mod) (a c : Nat) : List (Nat × Option Nat × Bool) :=
+  ((List.range 9).filter fun i => 2 * i < c ∧ c - i < 9).map (fun i => (a + 8 * i, some (a + 8 * (c - i)), true)) ++
+    (if c % 2 = 0 ∧ c / 2 < 9 then [(a + 8 * (c / 2), some (a + 8 * (c / 2)), false)] else []) ++
+    if 8 ≤ c ∧ c ≤ 16 then [(M.tmp + 8 * (c - 8), none, false)] else []
+
+/-- Column `c` of `sqrP o a`: its terms, then its low word stored at
+`[tmp + 8 (c mod 9)]` and cleared. -/
+def sCol (M : Mod) (a c : Nat) : List Instr :=
+  (sTerms M a c).flatMap (fun t => sTerm c t.1 t.2.1 t.2.2) ++
+    [.store (sc (M.tmp + 8 * (c % 9))) (pAcc c 0), .mov32 (pAcc c 0) (.imm 0)]
+
+/-- `[o] = [a]² R⁻¹ mod p` for P-521's `p`: `mulP o a a`, but each product
+of two different words computed once and added twice (`sTerm`), 45
+products in place of 81. -/
+def sqrP (M : Mod) (o a : Nat) : List Instr := prodCols M o (sCol M a)
 
 /-! ## Nine words: the product by columns for any modulus -/
 
@@ -454,7 +484,8 @@ def mulF (M : Mod) (o a b : Nat) : List Instr :=
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
 def mul (M : Mod) (o a b : Nat) : List Instr :=
-  if M.n < 7 then mulR M o a b else if M.red = .friendly p521Ws then mulP M o a b
+  if M.n < 7 then mulR M o a b
+  else if M.red = .friendly p521Ws then (if a = b then sqrP M o a else mulP M o a b)
   else if M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
