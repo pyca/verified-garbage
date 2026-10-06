@@ -12,7 +12,12 @@ more than one): one round, with a short warm-up and measurement, is the
 default, since the check fails only on a slowdown of more than
 `--threshold`, far beyond the noise between two runs of the same code (in
 an A/A run on CI, with two rounds of 0.2 s and 0.5 s: 99% of benchmarks
-within 3%, the largest 12%).
+within 3%, the largest 12%). A single run is exposed to a few slow seconds
+of the runner, though (an A/A run of one round found three neighbouring
+benchmarks 35% slower), so the benchmarks over the threshold after the
+rounds run again, base and head alternately, `--confirm` more times each:
+a slowdown fails only if it is still there in the fastest time of every
+run.
 
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
@@ -225,6 +230,8 @@ def main():
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
     p.add_argument("--rounds", type=int, default=1)
+    p.add_argument("--confirm", type=int, default=2,
+                   help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
     p.add_argument("--warm-up-time", type=float, default=0.1)
     p.add_argument("--measurement-time", type=float, default=0.3)
@@ -268,6 +275,23 @@ def main():
                         groups)
             for bench_id, t in times.items():
                 best[side][bench_id] = min(t, best[side].get(bench_id, t))
+
+    def suspects():
+        """The groups (`<primitive>`s) of the benchmarks over the threshold."""
+        return sorted({p for (p, size), h in best["head"].items()
+                       if (p, size) in best["base"] and h / best["base"][p, size] - 1 > args.threshold})
+
+    # A slowdown over the threshold is confirmed: its groups run again on
+    # both sides, alternately, and keep their fastest times.
+    confirmed = suspects() if binaries["base"] is not None else []
+    for r in range(args.confirm if confirmed else 0):
+        for side in ("head", "base") if r % 2 == 0 else ("base", "head"):
+            print(f"confirming {len(confirmed)} group(s), {r + 1}/{args.confirm}: {side}", file=sys.stderr)
+            checkout = base if side == "base" else head
+            times = run(binaries[side], args.work_dir.resolve() / f"{side}-confirm-{r}", VG, args, checkout,
+                        modules[side], confirmed)
+            for bench_id, t in times.items():
+                best[side][bench_id] = min(t, best[side].get(bench_id, t))
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
     openssl = {}
     with_openssl = (args.openssl or binaries["base"] is None) and not cpu_features
@@ -296,6 +320,14 @@ def main():
             else []
         ),
         *([f"{note}"] if note else []),
+        *(
+            [
+                f"Over the threshold after the first run, so run {args.confirm} more time(s) on each side,"
+                f" alternately, keeping the fastest: {', '.join(f'`{g}`' for g in confirmed)}."
+            ]
+            if confirmed and args.confirm
+            else []
+        ),
         "",
         "| Benchmark | Base | Head | Change |" + (" OpenSSL | Head vs OpenSSL |" if with_openssl else ""),
         "|---|--:|--:|--:|" + ("--:|--:|" if with_openssl else ""),
