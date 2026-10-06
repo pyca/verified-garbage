@@ -30,7 +30,12 @@ files changed:
     module in `src/hashes/` (benchmarks of code built on a hash, such as
     HMAC, list that hash in their `USES`);
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
-    `src/<family>/mod.rs`: every `<family>_<hash>`;
+    `src/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself
+    if it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …);
+  * a private submodule of a module, `src/<module>/<name>.rs` with no
+    `<module>_<name>` (e.g. `src/rsa/scratch.rs`, declared in
+    `src/rsa/mod.rs`): as its parent's `mod.rs`, on the architectures that
+    compile its `mod <name>;`;
   * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
     `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
     whose code names `crate::<helper>`;
@@ -494,6 +499,27 @@ def members(family, known):
     return {m for m in known if m.startswith(f"{family}_")}
 
 
+def submodule_arches(parent, name, base):
+    """The benchmarked architectures that compile a `mod <name>;` of
+    `src/<parent>/mod.rs` (or `src/<parent>.rs`), at `base` or now: those its
+    file's and the declaration's `cfg`s allow; empty if neither revision
+    declares it."""
+    declaration = re.compile(rf"^(?:pub(?:\([a-z]+\))? )?mod {name};$")
+    texts = [read(f"src/{parent}{suffix}", revision) for suffix in ("/mod.rs", ".rs")
+             for revision in ([base, None] if base else [None])]
+    arches = []
+    for a in PLATFORMS:
+        for text in texts:
+            try:
+                lines = for_arch(text, a)
+            except Unreadable:
+                lines = (text or "").splitlines()
+            if any(declaration.match(line.strip()) for line in lines):
+                arches.append(a)
+                break
+    return arches
+
+
 def rust_files(root="."):
     return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
 
@@ -711,10 +737,16 @@ def arches(changed, base=None):
                 need(a, api[1])
         elif family:
             # A family's `mod.rs` is the code its `<family>_<hash>` modules
-            # share, which others may use too; with no module, every
-            # benchmark runs.
-            names = ((members(family[1], known) | users(family[1], known)) or {family[1]}
-                     if family[2] == "mod" else {f"{family[1]}_{family[2]}"})
+            # share, which others may use too, and the code of `<family>`
+            # itself if it is a module; with no module, every benchmark runs.
+            # A private submodule (no `<family>_<name>`, but declared by
+            # the parent) is part of the parent's code, where it is compiled.
+            submodule = family[2] != "mod" and f"{family[1]}_{family[2]}" not in known and (
+                sub_arches := submodule_arches(family[1], family[2], base))
+            if submodule:
+                targets = [a for a in targets if a in sub_arches]
+            names = ((members(family[1], known) | users(family[1], known) | ({family[1]} & known))
+                     or {family[1]} if family[2] == "mod" or submodule else {f"{family[1]}_{family[2]}"})
             for a in targets:
                 for name in names:
                     need(a, name)
