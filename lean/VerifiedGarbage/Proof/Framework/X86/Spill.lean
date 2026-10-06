@@ -62,12 +62,12 @@ theorem save_ok {b : Reg} {rest : List Instr} (l : Slots) :
     (∀ s', Mupd s s' (saveMem s.mem (addr (s.gpr b)) s.gpr l) → WP isa (.block rest) s' Q) →
     WP isa (.block (saveCode b l ++ rest)) s Q := by
   induction l with
-  | nil => intro s Q _ k; exact k s ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+  | nil => intro s Q _ k; exact k s ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
   | cons p l ih =>
     intro s Q hout k
     refine wp_stm rfl (hout p List.mem_cons_self) fun s₁ u₁ => ?_
     refine ih (fun q hq => ?_) fun s' u => k s' ⟨u.gpr.trans u₁.gpr, ?_, u.rd.trans u₁.rd,
-      u.wr.trans u₁.wr, u.zf.trans u₁.zf, u.cf.trans u₁.cf⟩
+      u.wr.trans u₁.wr, u.zf.trans u₁.zf, u.cf.trans u₁.cf, u.syms.trans u₁.syms⟩
     · rw [u₁.gpr, u₁.wr]; exact hout q (List.mem_cons_of_mem _ hq)
     · rw [u.mem, u₁.mem, u₁.gpr]; rfl
 

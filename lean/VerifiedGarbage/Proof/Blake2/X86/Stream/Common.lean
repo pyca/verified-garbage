@@ -100,7 +100,7 @@ theorem wp_adc0 {d : Reg} {c : Bool} (hc : s.cf = some c)
       (addOverflow (s.gpr d) 0 (s.gpr d + 0 + (BitVec.ofBool c).setWidth 32))).setReg d
       (s.gpr d + 0 + (BitVec.ofBool c).setWidth 32)) := by
     simp only [exec, execAlu, readSrc, Option.bind_some, hc, Option.map_some]
-  refine cons hx (k _ ⟨?_, fun r h => ?_, rfl, rfl, rfl⟩)
+  refine cons hx (k _ ⟨?_, fun r h => ?_, rfl, rfl, rfl, rfl⟩)
   · simp [State.setReg]
   · simp [State.setReg, arithFlags, State.setFlags, h]
 

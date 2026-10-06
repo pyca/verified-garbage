@@ -18,6 +18,11 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86
 
 open VG VG.X86
 
+private theorem core_pre_521 {s : State} (h : (coreK Impl.Ecdsa.X86.p521).pre s) :
+    Proof.Ecdsa.X86.P521.signX86.pre s := by
+  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, _⟩ := h
+  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp⟩
+
 /-- P-521, with the group law `hL`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p521
@@ -30,8 +35,12 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
   sh_eq := Proof.Ecdsa.X86.P521.p521_sh
   coreN := Spec.Ecdsa.P521.signApi.name
   coreC := Impl.Ecdsa.X86.signP521
-  coreX := Proof.Ecdsa.X86.P521.sign_x86 hL
-  coreCT := Proof.Ecdsa.X86.P521.sign_ct
+  coreX := fun s h => Proof.Ecdsa.X86.P521.sign_x86 hL s (core_pre_521 h)
+  coreCT := by
+    intro s t tr₁ tr₂ s' t' hs ht hp
+    obtain ⟨he, a0, a1, a2, a3, a4, _⟩ := hp
+    exact Proof.Ecdsa.X86.P521.sign_ct s t tr₁ tr₂ s' t' (core_pre_521 hs) (core_pre_521 ht)
+      ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := nofun

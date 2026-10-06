@@ -105,7 +105,7 @@ theorem wp_cmpS {d : Reg} {src : Src} {v : BitVec 32} (h : readSrc s src = some 
     WP isa (.block (.alu .cmp d src :: is)) s Q :=
   cons (s' := arithFlags s (s.gpr d - v) (decide ((s.gpr d).toNat < v.toNat)) (subOverflow (s.gpr d) v (s.gpr d - v)))
     (by simp only [exec, execAlu, h, Option.bind_some])
-    (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
 
 /-- What `mul r` leaves: `edx:eax = eax · r`, and the rest. -/
 structure MulUpd (s t : State) (r : Reg) : Prop where
@@ -129,7 +129,7 @@ theorem wp_storeS {r : Reg} {m : MemOp} {a : Addr} (ha : s.ea m = a) (hw : InReg
     (k : ∀ t, Mupd s t (s.mem.writeW a (s.gpr r)) → WP isa (.block is) t Q) :
     WP isa (.block (.store m r :: is)) s Q :=
   cons (s' := { s with mem := s.mem.writeW a (s.gpr r) }) (by simp only [exec, ha, State.store32, hw, ite_true])
-    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
 
 end
 

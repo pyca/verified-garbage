@@ -29,22 +29,22 @@ theorem implies :
     { pre := by
         sig_implies_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86]
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86, TblsOk, Abi.constRegions, Abi.constsHeld, List.not_mem_nil, false_implies, implies_true]
       post := by
         sig_implies_post [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86]
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86, TblsOk, Abi.constRegions, Abi.constsHeld, List.not_mem_nil, false_implies, implies_true]
       pub := by
         rintro s₁ s₂ - - h
         sig_pub [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86] at h
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86, TblsOk, Abi.constRegions, Abi.constsHeld, List.not_mem_nil, false_implies, implies_true] at h
         obtain ⟨h0, hl, h1, h2, h3, h4⟩ := h
-        exact ⟨h0, h1, h2, h3, h4, (List.cons.inj hl).1⟩
+        exact ⟨h0, h1, h2, h3, h4, (List.cons.inj hl).1, by simp⟩
       sat := by
         sig_implies_sat [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
           Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86] [a0, a1, a2, a3, e, esp]
+          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86, TblsOk, Abi.constRegions, Abi.constsHeld, List.not_mem_nil, false_implies, implies_true] [a0, a1, a2, a3, e, esp]
           using satState 66 64 }
 
 /-- SHA-512, for P-521's group law `hL`. -/

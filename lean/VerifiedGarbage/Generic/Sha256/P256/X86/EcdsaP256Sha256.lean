@@ -32,7 +32,8 @@ def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.Has
     doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
       Spec.Ecdsa.P256.signApi.name])
     code := (cfgOf (pack h.law v)).sign
-    contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract X86.abi 272
+    contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272
+    consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 272
     verified := sign_verified h.law v
     spSafe := sign_spSafe (pack h.law v)

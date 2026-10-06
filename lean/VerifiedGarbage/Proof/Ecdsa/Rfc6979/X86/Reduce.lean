@@ -145,7 +145,7 @@ theorem subWord_ok (hL : L.Ok) (hn : 4 * P.k ≤ dn) (hk : P.k ≤ 12) {t u : St
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega))
-  refine ⟨hc.keep hL (by rw [v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd]) (by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr])
+  refine ⟨hc.keep (hsy := by rw [v₅.syms, v₄.syms, v₃.syms, v₂.syms, v₁.syms]) hL (by rw [v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd]) (by rw [v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr])
       (by rw [v₅.gpr, v₄.other _ (by decide), v₃.gpr, esp₂, hc.esp]) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)),
     by rw [v₅.gpr, v₄.other _ (by decide), v₃.gpr, v₂.other _ (by decide), v₁.other _ (by decide), h.esi],
@@ -211,7 +211,7 @@ theorem selWord_ok (hL : L.Ok) (hk : P.k ≤ 12) {t u : State} {j : Nat} (hj : j
   have hf : Frame [⟨L.B + BitVec.ofNat 64 76, 176⟩] u.mem u₇.mem := by
     rw [hm₇]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
-  refine ⟨hc.keep hL (by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd])
+  refine ⟨hc.keep (hsy := by rw [v₇.syms, v₆.syms, v₅.syms, v₄.syms, v₃.syms, v₂.syms, v₁.syms]) hL (by rw [v₇.rd, v₆.rd, v₅.rd, v₄.rd, v₃.rd, v₂.rd, v₁.rd])
       (by rw [v₇.wr, v₆.wr, v₅.wr, v₄.wr, v₃.wr, v₂.wr, v₁.wr]) (by rw [v₇.gpr, esp₆, hc.esp]) hf
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact safe_low L (by omega)),
     by rw [v₇.gpr, v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -254,7 +254,7 @@ theorem reduce_ok (hA : P.R.wide = false) (hL : L.Ok) {t : State} (hc : Ctx L g 
     ⟨hc, hsi, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _), fun i hi => absurd hi (Nat.not_lt_zero _),
       fun h => absurd h (Nat.lt_irrefl _)⟩) fun u hu => ?_
   refine wp_sbb_self (hu.cf (by omega)) fun u₁ v₁ => WP.block_nil ?_
-  have hc₁ : Ctx L g m₀ u₁ := hu.ctx.regs hL v₁.rd v₁.wr v₁.mem (v₁.other _ (by decide))
+  have hc₁ : Ctx L g m₀ u₁ := hu.ctx.regs (hsy := v₁.syms) hL v₁.rd v₁.wr v₁.mem (v₁.other _ (by decide))
   refine WP.mono (sels_ok hL hk P.k (Nat.le_refl _) u₁
     ⟨hc₁, v₁.gpr, by rw [v₁.mem]; exact hu.frame, fun i hi => absurd hi (Nat.not_lt_zero _),
       fun i _ hi => by rw [v₁.mem]; exact hu.x i hi, fun i hi => by rw [v₁.mem]; exact hu.d i hi⟩)
