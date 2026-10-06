@@ -30,14 +30,29 @@ pub trait Curve: sealed::Sealed {
 }
 
 /// The curve P-224 (FIPS 186-5's secp224r1; SP 800-186 §3.2.1.2).
-#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum P224 {}
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 impl sealed::Sealed for P224 {}
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 impl Curve for P224 {
     type PrivateKey = [u8; 28];
     type PublicKey = [u8; 57];

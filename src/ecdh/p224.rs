@@ -1,7 +1,12 @@
 //! ECDH over P-224 (`vg_ecdh_p224`), and public keys
 //! (`vg_ec_p224_public_key`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 
 use super::{Error, P224, PrivateKey};
 use crate::arch::ec_p224::vg_ec_p224_public_key;
