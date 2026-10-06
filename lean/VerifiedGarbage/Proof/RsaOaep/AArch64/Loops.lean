@@ -134,4 +134,132 @@ theorem xorLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → B
   · rw [x14, u14, counter_step hj (by omega)]
   · rw [x14, u14, counter_step hj (by omega)]; exact counter_ne hj (by omega)
 
+/-! ## Clearing words -/
+
+/-- `n` bytes from `o` cleared. -/
+def zV (V : Nat → Byte) (o n : Nat) (x : Nat) : Byte := if o ≤ x ∧ x < o + n then 0 else V x
+
+/-- A word of zeros stored in our working space. -/
+theorem Rep.wz {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (G : Geo F S)
+    (R : Rep m F S V W) {o : Nat} (ho : o + 8 ≤ oRsa) :
+    Rep (m.write (off S o) 8 (0 : BitVec 64)) F S (zV V o 8) W where
+  scr x hx := by
+    simp only [Mem.write, zV]
+    have e := Offset.lt_iff (off S x) S (d := o) (n := 8) (by have := G.Sw; unfold oRsa at *; omega)
+    rw [off, Mem.sub_ofNat_toNat S (by unfold oRsa at *; omega)] at e
+    by_cases h : o ≤ x ∧ x < o + 8
+    · rw [ifp (e.mpr h), ifp h]; simp
+    · rw [ifn (fun h' => h (e.mp h')), ifn h]; exact R.scr x hx
+  fr k hk := by
+    rw [word, Mem.readW, Mem.read_write_sep (Region.Disjoint.sep G.dFS (G.cFw hk) (cS S ho)) (by decide)]
+    exact R.fr k hk
+
+theorem zV_succ (V : Nat → Byte) (o j : Nat) : zV (zV V o (8 * j)) (o + 8 * j) 8 = zV V o (8 * (j + 1)) := by
+  funext x; simp only [zV]
+  by_cases h1 : o + 8 * j ≤ x ∧ x < o + 8 * j + 8
+  · rw [ifp h1, ifp (by omega)]
+  · rw [ifn h1]; by_cases h2 : o ≤ x ∧ x < o + 8 * j
+    · rw [ifp h2, ifp (by omega)]
+    · rw [ifn h2, ifn (by omega)]
+
+theorem clearBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {o : Nat} (ho : o + 8 ≤ oRsa) (h11 : u.gpr .x11 = off S o) (h13 : u.gpr .x13 = 0)
+    (ws : List Region) :
+    WP isa (.block [.str .x .x13 .x11 0, .addImm .x .x11 .x11 8, .subImm .x .x12 .x12 1]) u fun u' =>
+      Lay u' F S ∧ Step F S ws u u' ∧ Rep u'.mem F S (zV V o 8) W ∧ u'.gpr .x11 = off S (o + 8) ∧
+      u'.gpr .x12 = u.gpr .x12 - BitVec.ofNat 64 1 ∧ u'.gpr .x13 = 0 := by
+  have w : InRegions u.wr (off S o) 8 := L.sst ho
+  have R' := R.wz L.geo ho
+  refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off S o) 8 (0 : BitVec 64) ∧ u'.rd = u.rd ∧
+      u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
+      u'.gpr .x11 = off S o + BitVec.ofNat 64 8 ∧ u'.gpr .x12 = u.gpr .x12 - BitVec.ofNat 64 1 ∧
+      u'.gpr .x13 = 0) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x13⟩ => ?_
+  · oaep_run [h11, h13, BitVec.add_zero, w]
+    oaep_fin
+  have R'' : Rep u'.mem F S (zV V o 8) W := by rw [hm]; exact R'
+  refine ⟨L.congr hsp hwr ?_, ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], ?_⟩, R'', x11.trans (off_off S o 8),
+    x12, x13⟩
+  · rw [show sScr = 8 * 12 from rfl, R''.fr 12 (by decide), R.fr 12 (by decide)]
+  · rw [hm]; exact Frame.write (Frame.refl _ _) (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _ (cS S ho)
+
+/-- The loop clearing `n` words from `o` (`x11`, the count in `x12`, the zero in `x13`). -/
+theorem clearLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u₀.mem F S V W) {o n : Nat} (hn : 0 < n) (ho : o + 8 * n ≤ oRsa) (h11 : u₀.gpr .x11 = off S o)
+    (h12 : u₀.gpr .x12 = BitVec.ofNat 64 n) (h13 : u₀.gpr .x13 = 0) (ws : List Region) :
+    WP isa (.loop (.block [.str .x .x13 .x11 0, .addImm .x .x11 .x11 8, .subImm .x .x12 .x12 1]) (.nonzero .x .x12))
+      u₀ fun u => Lay u F S ∧ Step F S ws u₀ u ∧ Rep u.mem F S (zV V o (8 * n)) W := by
+  have : oRsa = 8192 := rfl
+  refine WP.mono (count_loop hn (fun j u => Lay u F S ∧ Step F S ws u₀ u ∧ Rep u.mem F S (zV V o (8 * j)) W ∧
+      u.gpr .x11 = off S (o + 8 * j) ∧ u.gpr .x12 = BitVec.ofNat 64 (n - j) ∧ u.gpr .x13 = 0)
+    (fun j hj u ⟨Lu, Su, Ru, u11, u12, u13⟩ => ?_)
+    ⟨L, Step.refl _ _ _ _, by
+      refine (congrArg (fun V' => Rep _ F S V' _) (funext fun x => ?_)).mp R
+      simp only [zV]; rw [ifn (by omega)], by rw [h11]; rfl, h12, h13⟩)
+    fun u ⟨Lu, Su, Ru, _⟩ => ⟨Lu, Su, Ru⟩
+  refine WP.mono (clearBody_ok Lu Ru (o := o + 8 * j) (by omega) u11 u13 ws)
+    fun u' ⟨L', S', R', x11, x12, x13⟩ => ⟨⟨L', Su.trans S', zV_succ V o j ▸ R', by rw [x11]; congr 1,
+      ?_, x13⟩, ?_⟩
+  · rw [x12, u12, counter_step hj (by omega)]
+  · rw [x12, u12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+
+/-! ## Copying bytes -/
+
+/-- `n` bytes `f 0, …` written at `b`. -/
+def cpV (V : Nat → Byte) (b n : Nat) (f : Nat → Byte) (x : Nat) : Byte := if b ≤ x ∧ x < b + n then f (x - b) else V x
+
+theorem cpV_succ (V : Nat → Byte) (b j : Nat) (f : Nat → Byte) : upd (cpV V b j f) (b + j) (f j) = cpV V b (j + 1) f := by
+  funext x; simp only [upd, cpV]
+  by_cases hx : x = b + j
+  · subst hx; rw [ifp rfl, ifp (by omega), Nat.add_sub_cancel_left]
+  · rw [ifn hx]; by_cases h : b ≤ x ∧ x < b + j
+    · rw [ifp h, ifp (by omega)]
+    · rw [ifn h, ifn (by omega)]
+
+theorem copyBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {A : Addr} {b j : Nat} (hb : b + j < oRsa) (hA : InRegions (u.rd ++ u.wr) (off A j) 1)
+    (h11 : u.gpr .x11 = off A j) (h12 : u.gpr .x12 = off S (b + j)) (ws : List Region) :
+    WP isa (.block [.ldrb .x10 .x11 0, .strb .x10 .x12 0, .addImm .x .x11 .x11 1, .addImm .x .x12 .x12 1,
+      .subImm .x .x13 .x13 1]) u fun u' => Lay u' F S ∧ Step F S ws u u' ∧
+      u'.mem = u.mem.write (off S (b + j)) 1 (u.mem (off A j)) ∧
+      Rep u'.mem F S (upd V (b + j) (u.mem (off A j))) W ∧ u'.gpr .x11 = off A (j + 1) ∧
+      u'.gpr .x12 = off S (b + j + 1) ∧ u'.gpr .x13 = u.gpr .x13 - BitVec.ofNat 64 1 := by
+  have w : InRegions u.wr (off S (b + j)) 1 := L.sst (by omega)
+  refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem.write (off S (b + j)) 1 (u.mem (off A j)) ∧
+      u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧
+      u'.gpr .x11 = off A j + BitVec.ofNat 64 1 ∧ u'.gpr .x12 = off S (b + j) + BitVec.ofNat 64 1 ∧
+      u'.gpr .x13 = u.gpr .x13 - BitVec.ofNat 64 1) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x13⟩ => ?_
+  · oaep_run [h11, h12, BitVec.add_zero, hA, w, read_one, byte64, byte_rt64]
+    oaep_fin
+  have R' : Rep u'.mem F S (upd V (b + j) (u.mem (off A j))) W := by rw [hm]; exact R.wb L.geo (by omega) _
+  refine ⟨L.congr hsp hwr ?_, ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], ?_⟩, hm, R', x11.trans (off_off A j 1),
+    x12.trans (off_off S _ 1), x13⟩
+  · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]
+  · rw [hm]; exact frame_wb (Frame.refl _ _) (by omega) _
+
+/-- The loop copying the `n` bytes at `A` (`x11`) to `b` (`x12`), the count
+in `x13`: the source's bytes are not among those it writes. -/
+theorem copyLoop_ok {u₀ : State} {F S : Addr} (L : Lay u₀ F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u₀.mem F S V W) {A : Addr} {b n : Nat} (hn : 0 < n) (hb : b + n ≤ oRsa)
+    (hA : ∀ i < n, InRegions (u₀.rd ++ u₀.wr) (off A i) 1) (hsd : ∀ i < n, ∀ j < n, off A i ≠ off S (b + j))
+    (h11 : u₀.gpr .x11 = A) (h12 : u₀.gpr .x12 = off S b) (h13 : u₀.gpr .x13 = BitVec.ofNat 64 n)
+    (ws : List Region) :
+    WP isa Impl.RsaOaep.AArch64.copyLoop u₀ fun u => Lay u F S ∧ Step F S ws u₀ u ∧
+      Rep u.mem F S (cpV V b n fun i => u₀.mem (off A i)) W := by
+  have : oRsa = 8192 := rfl
+  refine WP.mono (count_loop hn (fun j u => Lay u F S ∧ Step F S ws u₀ u ∧
+      Rep u.mem F S (cpV V b j fun i => u₀.mem (off A i)) W ∧ (∀ i < n, u.mem (off A i) = u₀.mem (off A i)) ∧
+      u.gpr .x11 = off A j ∧ u.gpr .x12 = off S (b + j) ∧ u.gpr .x13 = BitVec.ofNat 64 (n - j))
+    (fun j hj u ⟨Lu, Su, Ru, Ku, u11, u12, u13⟩ => ?_)
+    ⟨L, Step.refl _ _ _ _, by
+      refine (congrArg (fun V' => Rep _ F S V' _) (funext fun x => ?_)).mp R
+      simp only [cpV]; rw [ifn (by omega)], fun _ _ => rfl, by rw [h11]; exact (BitVec.add_zero _).symm,
+      by rw [h12]; rfl, h13⟩)
+    fun u ⟨Lu, Su, Ru, _⟩ => ⟨Lu, Su, Ru⟩
+  refine WP.mono (copyBody_ok Lu Ru (A := A) (b := b) (j := j) (by omega)
+    (by rw [Su.rd, Su.wr]; exact hA j hj) u11 u12 ws)
+    fun u' ⟨L', S', hm, R', x11, x12, x13⟩ => ⟨⟨L', Su.trans S', by rw [Ku j hj] at R'; exact cpV_succ V b j _ ▸ R',
+      fun i hi => by rw [hm, write1_apply, ifn (hsd i hi j hj), Ku i hi], x11, x12, ?_⟩, ?_⟩
+  · rw [x13, u13, counter_step hj (by omega)]
+  · rw [x13, u13, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+
 end VG.Proof.RsaOaep.AArch64
