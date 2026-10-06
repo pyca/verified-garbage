@@ -14,7 +14,7 @@
 use serde::Deserialize;
 use verified_garbage::chacha20poly1305::{ChaCha20Poly1305, Error};
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -37,13 +37,13 @@ struct Case {
 fn chacha20_poly1305() {
     require_vectors!();
     let file = harness::load::<Group, Case>("chacha20_poly1305_test.json");
-    let mut checked = 0;
-    for (group, test) in file.tests() {
+    let checked = Count::default();
+    file.par_tests(|group, test| {
         let c = &test.case;
         if group.params.iv_size != 96 {
             assert_ne!(c.iv.0.len(), 12);
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
-            continue;
+            return;
         }
         let aead = ChaCha20Poly1305::new(&c.key.0[..].try_into().unwrap());
         let nonce: [u8; 12] = c.iv.0[..].try_into().unwrap();
@@ -63,7 +63,7 @@ fn chacha20_poly1305() {
             assert_eq!(opened, Err(Error::TagMismatch), "tcId {}", test.tc_id);
             assert!(data.iter().all(|&b| b == 0), "tcId {}", test.tc_id);
         }
-        checked += 1;
-    }
-    assert!(checked > 0);
+        checked.add();
+    });
+    assert!(checked.get() > 0);
 }

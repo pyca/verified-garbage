@@ -21,12 +21,11 @@
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
 use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
-use crate::harness::{self, Expectation, Hex, TestFile};
+use crate::harness::{self, Count, Expectation, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -152,33 +151,21 @@ fn rsa_keygen_primes() {
         .map(|(p, (name, q, e))| Prime { p, name, q, e })
         .collect();
     assert!(!primes.is_empty());
-    // Miller–Rabin's exponentiations are this test's time: shared among as
-    // many threads as the machine runs at once.
-    let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let next = AtomicUsize::new(0);
-    std::thread::scope(|s| {
-        for _ in 0..workers.min(primes.len()) {
-            s.spawn(|| {
-                while let Some(x) = primes.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    check_prime(&x.name, &x.p, &x.q, &x.e);
-                }
-            });
-        }
-    });
+    harness::par_each(&primes, |x| check_prime(&x.name, &x.p, &x.q, &x.e));
 }
 
 #[test]
 fn rsa_keygen_composites() {
     require_vectors!();
     let file: TestFile<PrimalityGroup, PrimalityCase> = harness::load("primality_test.json");
-    let mut checked = 0;
-    for (_, t) in file.tests() {
+    let checked = Count::default();
+    file.par_tests(|_, t| {
         let v = &t.case.value.0;
         // A negative number has its top bit set; a positive one with its
         // top bit set has a zero byte before it.
         let x = trim(v);
         if v.first() != Some(&0) || !candidate(x) {
-            continue;
+            return;
         }
         let r = generate_prime_from(8 * x.len(), &[1], None, &then_random(x));
         // A valid number (a prime) is the first candidate, accepted; an
@@ -187,9 +174,9 @@ fn rsa_keygen_composites() {
         let expected = t.result == Expectation::Valid;
         let ok = t.result == Expectation::Acceptable || accepted == expected;
         assert!(ok, "tcId {}", t.tc_id);
-        checked += 1;
-    }
-    assert!(checked > 0);
+        checked.add();
+    });
+    assert!(checked.get() > 0);
 }
 
 /// `x` in `len` bytes (big-endian).
@@ -200,60 +187,88 @@ fn widen(x: &[u8], len: usize) -> Vec<u8> {
     v
 }
 
+/// Checks that `key_from_primes` makes the key `k` (of the file `name`)
+/// from its primes, in either order; returns how many of the two keys have
+/// its `d`.
+fn check_key(name: &str, k: &Key) -> usize {
+    let [p, q, n, d, dp, dq, qinv] = [
+        &k.prime1,
+        &k.prime2,
+        &k.modulus,
+        &k.private_exponent,
+        &k.exponent1,
+        &k.exponent2,
+        &k.coefficient,
+    ]
+    .map(|x| &x.as_ref().unwrap().0);
+    let (p, q) = (trim(p), trim(q));
+    let len = p.len();
+    let e = trim(&k.public_exponent.0);
+    // The key's `p` is the larger, as `key_from_primes` makes it.
+    assert!(p > q, "{name}");
+    let mut same_d = 0;
+    for (a, b) in [(p, q), (q, p)] {
+        let key = key_from_primes(e, a, b).unwrap();
+        let [kn, ke, kd, kp, kq, kdp, kdq, kqinv] = key.components();
+        assert_eq!((kn, ke), (trim(n), e), "{name}");
+        assert_eq!((kp, kq), (p, q), "{name}");
+        assert_eq!(kdp, widen(dp, len), "{name}");
+        assert_eq!(kdq, widen(dq, len), "{name}");
+        assert_eq!(kqinv, widen(qinv, len), "{name}");
+        assert!(key.check_key(), "{name}");
+        if kd == widen(d, 2 * len) {
+            same_d += 1;
+        }
+    }
+    same_d
+}
+
 #[test]
 fn rsa_keygen_keys() {
     require_vectors!();
-    let mut seen = std::collections::BTreeSet::new();
-    let (mut checked, mut same_d) = (0, 0);
+    // Each two-prime key with every CRT component whose primes
+    // `key_from_primes` takes, once (by its `p`), with the first file that
+    // has it.
+    let mut keys: BTreeMap<Vec<u8>, (String, Key)> = BTreeMap::new();
     for name in harness::all_files().unwrap() {
         if !(name.starts_with("rsa_") && name.ends_with("_test.json")) {
             continue;
         }
         let file: TestFile<Group, Case> = harness::load(&name);
         for group in file.test_groups {
-            let Some(Key {
+            let Some(k) = group.params.private_key else {
+                continue;
+            };
+            let Key {
                 public_exponent: e,
                 prime1: Some(p),
                 prime2: Some(q),
-                modulus: Some(n),
-                private_exponent: Some(d),
-                exponent1: Some(dp),
-                exponent2: Some(dq),
-                coefficient: Some(qinv),
+                modulus: Some(_),
+                private_exponent: Some(_),
+                exponent1: Some(_),
+                exponent2: Some(_),
+                coefficient: Some(_),
                 other_prime_infos: None,
-            }) = group.params.private_key
+            } = &k
             else {
                 continue;
             };
             let (p, q) = (trim(&p.0), trim(&q.0));
             let len = p.len();
-            let e = trim(&e.0);
-            if q.len() != len || !len.is_multiple_of(8) || !(32..=512).contains(&len) || e.len() > 8
+            if q.len() != len
+                || !len.is_multiple_of(8)
+                || !(32..=512).contains(&len)
+                || trim(&e.0).len() > 8
             {
                 continue;
             }
-            if !seen.insert(p.to_vec()) {
-                continue;
-            }
-            // The key's `p` is the larger, as `key_from_primes` makes it.
-            assert!(p > q, "{name}");
-            for (a, b) in [(p, q), (q, p)] {
-                let key = key_from_primes(e, a, b).unwrap();
-                let [kn, ke, kd, kp, kq, kdp, kdq, kqinv] = key.components();
-                assert_eq!((kn, ke), (trim(&n.0), e), "{name}");
-                assert_eq!((kp, kq), (p, q), "{name}");
-                assert_eq!(kdp, widen(&dp.0, len), "{name}");
-                assert_eq!(kdq, widen(&dq.0, len), "{name}");
-                assert_eq!(kqinv, widen(&qinv.0, len), "{name}");
-                assert!(key.check_key(), "{name}");
-                if kd == widen(&d.0, 2 * len) {
-                    same_d += 1;
-                }
-            }
-            checked += 1;
+            keys.entry(p.to_vec()).or_insert((name.clone(), k));
         }
     }
-    assert!(checked > 0);
+    let keys: Vec<(String, Key)> = keys.into_values().collect();
+    let same_d = Count::default();
+    harness::par_each(&keys, |(name, k)| same_d.add_n(check_key(name, k)));
+    assert!(!keys.is_empty());
     // One key's `d` is the least plus 12 `lcm(p - 1, q - 1)`.
-    assert_eq!(same_d, 2 * (checked - 1));
+    assert_eq!(same_d.get(), 2 * (keys.len() - 1));
 }

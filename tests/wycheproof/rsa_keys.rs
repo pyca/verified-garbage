@@ -13,12 +13,11 @@
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use crate::harness::{self, Hex, TestFile};
+use crate::harness::{self, Count, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Clone, Deserialize)]
@@ -137,24 +136,13 @@ fn rsa_keys_from_components() {
         }
     }
     let keys: Vec<(String, Key)> = keys.into_values().collect();
-    // The recoveries are most of this test's time: shared among as many
-    // threads as the machine runs at once.
-    let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let next = AtomicUsize::new(0);
-    let with_primes = AtomicUsize::new(0);
-    let without_primes = AtomicUsize::new(0);
-    std::thread::scope(|s| {
-        for _ in 0..workers.min(keys.len()) {
-            s.spawn(|| {
-                while let Some((name, k)) = keys.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    if check_key(name, k) {
-                        with_primes.fetch_add(1, Ordering::Relaxed);
-                    } else {
-                        without_primes.fetch_add(1, Ordering::Relaxed);
-                    }
-                }
-            });
+    let (with_primes, without_primes) = (Count::default(), Count::default());
+    harness::par_each(&keys, |(name, k)| {
+        if check_key(name, k) {
+            with_primes.add();
+        } else {
+            without_primes.add();
         }
     });
-    assert!(with_primes.into_inner() > 0 && without_primes.into_inner() > 0);
+    assert!(with_primes.get() > 0 && without_primes.get() > 0);
 }
