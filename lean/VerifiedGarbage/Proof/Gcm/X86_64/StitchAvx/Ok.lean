@@ -302,7 +302,9 @@ theorem setupS_ok {s₀ : State} (hp : SPre s₀) (t : State) (hg : t.gpr = s₀
     · rw [k₃ k hk (.inr h8), show k = 15 - (15 - k) by omega, v₂ _ (by omega)]
       rw [pw₁ _ (by omega), show 15 - k + 1 = 16 - (15 - (15 - k)) by omega]
     · rw [show k = 7 - (7 - k) by omega, v₃ _ (by omega), show 9 + (7 - k) = 16 - (7 - (7 - k)) by omega]
-  · rw [← hm, ← mm₁]; exact f₂.trans f₃
+  · rw [← hm, ← mm₁]
+    exact (f₂.trans f₃).sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
 
 theorem setup_ok {s₀ : State} (hp : SPre s₀) :
     WP isa (.block setup) s₀ fun s => Ready s₀ (fun k => s.mem.readW (pp s₀ + BitVec.ofNat 64 (16 * k)) 128) s ∧

@@ -31,13 +31,13 @@ abbrev cp : Addr := s₀.gpr .rdx
 abbrev yp : Addr := s₀.gpr .rcx
 abbrev dp : Addr := s₀.gpr .r8
 abbrev nb : Nat := (s₀.gpr .r9).toNat
-/-- The working space: the powers. -/
+/-- The working space: the powers (1024 bytes). -/
 abbrev pp : Addr := s₀.gpr .r11
 abbrev kR : Region := ⟨kp s₀, 256⟩
 abbrev cR : Region := ⟨cp s₀, 16⟩
 abbrev yR : Region := ⟨yp s₀, 16⟩
 abbrev dR : Region := ⟨dp s₀, 16 * nb s₀⟩
-abbrev pR : Region := ⟨pp s₀, 256⟩
+abbrev pR : Region := ⟨pp s₀, 1024⟩
 /-- The key schedule, and `CIPH_K`. -/
 abbrev sch : List Byte := Spec.Aes.bytesAt s₀.mem (kp s₀) (16 * (nr s₀ + 1))
 abbrev ciph : Block → Block := aesWith (nr s₀) (sch s₀)
@@ -60,7 +60,7 @@ structure SPre (s₀ : State) : Prop where
   c_in : InRegions s₀.wr (cp s₀) 16
   y_in : InRegions s₀.wr (yp s₀) 16
   d_in : InRegions s₀.wr (dp s₀) (16 * nb s₀)
-  p_in : InRegions s₀.wr (pp s₀) 256
+  p_in : InRegions s₀.wr (pp s₀) 1024
   d_k : (dR s₀).Disjoint (kR s₀)
   d_c : (dR s₀).Disjoint (cR s₀)
   d_y : (dR s₀).Disjoint (yR s₀)
@@ -73,7 +73,7 @@ structure SPre (s₀ : State) : Prop where
   y_k : (yR s₀).Disjoint (kR s₀)
   wrap_d : (dp s₀).toNat + 16 * nb s₀ ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + 256 ≤ 2 ^ 64
-  wrap_p : (pp s₀).toNat + 256 ≤ 2 ^ 64
+  wrap_p : (pp s₀).toNat + 1024 ≤ 2 ^ 64
 
 /-- What the encryption leaves: the data encrypted, the counter advanced, `Y`
 continued over the ciphertext, nothing else written but the working space. -/

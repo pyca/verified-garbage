@@ -1,5 +1,5 @@
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Loop48
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Field48
 
 /-!
 # Interleaved counter mode and GHASH with AVX-512: the field
@@ -11,7 +11,9 @@ The only module of `Proof/Gcm/X86_64/StitchZ/` that computes in the field
   powers in the field), and then the four lanes (`setupZ_ok`): the powers of
   the `k`-th load in lane `l` are `x · Pₖₗ = H¹⁶⁻⁴ᵏ⁻ˡ`.
 * `finZ`: with those powers, the four lanes' products of a group, added and
-  reduced, are `GHASH` over its sixteen blocks (`FinOk`).
+  reduced, are `GHASH` over its sixteen blocks (`FinOk`); `powers48`: the
+  powers `pow48` computes from them are those of 48 blocks, which
+  `Field48.finZ48` turns into `FinOk48`.
 * `stitch_ok`: both loops meet their contracts (`StitchOk`).
 -/
 
@@ -19,25 +21,22 @@ namespace VG.Proof.Gcm.X86_64.StitchZ
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
 open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk hk zero_xor_b ghash16)
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce φ_reduce)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB φ_reduceB)
 open VG.Impl.Gcm.X86_64.StitchZ (ord setup enc dec)
 open VG.Spec.Gcm (Block mul)
 
 /-! ## The products of a group, in the field -/
 
-theorem val_xor (p q : Prod) : (p.xor q).val = p.val + q.val := by
-  simp only [Prod.val, Prod.xor, φ_xor]; ring
-
 /-- Sixteen blocks, in `Q`, the products in the lanes and order of a group. -/
 theorem step16Z (H Y X₀ X₁ X₂ X₃ X₄ X₅ X₆ X₇ X₈ X₉ X₁₀ X₁₁ X₁₂ X₁₃ X₁₄ X₁₅ T₁ T₂ T₃ T₄ T₅ T₆ T₇ T₈ T₉ T₁₀ T₁₁ T₁₂ T₁₃ T₁₄ T₁₅ T₁₆ : Block)
     (h₁ : x * φ T₁ = φ H) (h₂ : x * φ T₂ = φ H ^ 2) (h₃ : x * φ T₃ = φ H ^ 3) (h₄ : x * φ T₄ = φ H ^ 4) (h₅ : x * φ T₅ = φ H ^ 5) (h₆ : x * φ T₆ = φ H ^ 6) (h₇ : x * φ T₇ = φ H ^ 7) (h₈ : x * φ T₈ = φ H ^ 8) (h₉ : x * φ T₉ = φ H ^ 9) (h₁₀ : x * φ T₁₀ = φ H ^ 10) (h₁₁ : x * φ T₁₁ = φ H ^ 11) (h₁₂ : x * φ T₁₂ = φ H ^ 12) (h₁₃ : x * φ T₁₃ = φ H ^ 13) (h₁₄ : x * φ T₁₄ = φ H ^ 14) (h₁₅ : x * φ T₁₅ = φ H ^ 15) (h₁₆ : x * φ T₁₆ = φ H ^ 16) :
-    reduce (((((Prod.zero.acc X₄ T₁₂).acc X₈ T₈).acc X₁₂ T₄).acc (Y ^^^ X₀) T₁₆).xor
-        ((((Prod.zero.acc X₆ T₁₀).acc X₁₀ T₆).acc X₁₄ T₂).acc X₂ T₁₄)) ^^^
-      reduce (((((Prod.zero.acc X₅ T₁₁).acc X₉ T₇).acc X₁₃ T₃).acc X₁ T₁₅).xor
-        ((((Prod.zero.acc X₇ T₉).acc X₁₁ T₅).acc X₁₅ T₁).acc X₃ T₁₃)) =
+    (reduceB ((((Prod.zero.acc X₄ T₁₂).acc X₈ T₈).acc X₁₂ T₄).acc (Y ^^^ X₀) T₁₆) ^^^
+        reduceB ((((Prod.zero.acc X₆ T₁₀).acc X₁₀ T₆).acc X₁₄ T₂).acc X₂ T₁₄)) ^^^
+      (reduceB ((((Prod.zero.acc X₅ T₁₁).acc X₉ T₇).acc X₁₃ T₃).acc X₁ T₁₅) ^^^
+        reduceB ((((Prod.zero.acc X₇ T₉).acc X₁₁ T₅).acc X₁₅ T₁).acc X₃ T₁₃)) =
       mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul (mul ((Y ^^^ X₀)) H ^^^ X₁) H ^^^ X₂) H ^^^ X₃) H ^^^ X₄) H ^^^ X₅) H ^^^ X₆) H ^^^ X₇) H ^^^ X₈) H ^^^ X₉) H ^^^ X₁₀) H ^^^ X₁₁) H ^^^ X₁₂) H ^^^ X₁₃) H ^^^ X₁₄) H ^^^ X₁₅) H := by
   apply φ_inj
-  simp only [φ_xor, φ_reduce, val_xor, Prod.val_acc, Prod.val_zero, φ_mul]
+  simp only [φ_xor, φ_reduceB, Prod.val_acc, Prod.val_zero, φ_mul]
   linear_combination (φ Y + φ X₀) * h₁₆ + φ X₁ * h₁₅ + φ X₂ * h₁₄ + φ X₃ * h₁₃ + φ X₄ * h₁₂ + φ X₅ * h₁₁ + φ X₆ * h₁₀ + φ X₇ * h₉ + φ X₈ * h₈ + φ X₉ * h₇ + φ X₁₀ * h₆ + φ X₁₁ * h₅ + φ X₁₂ * h₄ + φ X₁₃ * h₃ + φ X₁₄ * h₂ + φ X₁₅ * h₁
 
 /-- The four lanes' products of a group, added and reduced: `GHASH` over the
@@ -76,6 +75,23 @@ theorem finZ {H : Block} {P : Nat → Nat → Block} (hP : ∀ k < 4, ∀ l < 4,
     FinOk H P := fun X yl hy => by
   rw [ghash16]; exact finZ_mul H X P yl hy hP
 
+/-- The powers of 48 blocks (`T48`), from those of sixteen. -/
+theorem powers48 {H : Block} {P : Nat → Nat → Block}
+    (hP : ∀ k < 4, ∀ l < 4, x * φ (P k l) = φ H ^ (16 - 4 * k - l)) :
+    ∀ g < 3, ∀ k < 4, ∀ l < 4, x * φ (T48 P g k l) = φ H ^ (48 - 16 * g - 4 * k - l) := by
+  intro g hg k hk l hl
+  have h00 : x * φ (P 0 0) = φ H ^ 16 := hP 0 (by decide) 0 (by decide)
+  rcases (by omega : g = 0 ∨ g = 1 ∨ g = 2) with rfl | rfl | rfl
+  · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
+    rw [show 48 - 16 * 0 - 4 * k - l = (16 - 4 * k - l) + (16 + 16) by omega]
+    exact φ_lanemul (hP k hk l hl) (φ_lanemul h00 h00)
+  · simp only [T48, Nat.reduceEqDiff, ↓reduceIte]
+    rw [show 48 - 16 * 1 - 4 * k - l = (16 - 4 * k - l) + 16 by omega]
+    exact φ_lanemul (hP k hk l hl) h00
+  · simp only [T48, ↓reduceIte]
+    rw [show 48 - 16 * 2 - 4 * k - l = 16 - 4 * k - l by omega]
+    exact hP k hk l hl
+
 /-! ## Both loops -/
 
 theorem setup_ok {s₀ : State} (hp : SPre s₀) :
@@ -89,11 +105,11 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
 
 /-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem enc_ok {s₀ : State} (hp : SPre s₀) : WP isa enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finZ hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
 theorem dec_ok {s₀ : State} (hp : SPre s₀) : WP isa dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finZ hpw) hR)
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp (finZ hpw) (finZ48 (powers48 hpw)) hR)
 
 /-- Both loops meet their contracts. -/
 theorem stitch_ok : StitchOk Impl.Gcm.X86_64.StitchZ.enc Impl.Gcm.X86_64.StitchZ.dec :=
