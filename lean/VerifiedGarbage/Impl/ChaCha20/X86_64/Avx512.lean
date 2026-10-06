@@ -9,8 +9,11 @@ with the contract of `vg_chacha20_xor`, for CPUs with AVX-512F.
 While at least 1024 bytes of data remain, sixteen blocks of keystream (the
 counters `c, c + 1, …, c + 15` modulo 2³², `c` being word 12 of the state)
 are computed at once and XORed into the next 1024 bytes of the data, and
-word 12 of the state is advanced by 16. The rest of the data (less than 1024
-bytes) is then XORed by `Avx512Tail.tail`, eight or four blocks at a time.
+word 12 of the state is advanced by 16. If 513 to 1023 bytes remain, they
+are XORed by one more computation of sixteen blocks (`last16`), whose first
+eight blocks are XORed into the data, the next ones as far as they fit, and
+the block the data ends in, if it ends within one, through `buf`. Fewer
+bytes are XORed by `Avx512Tail.tail`, eight or four blocks at a time.
 
 * Word `k` of the sixteen states is kept in `zmmk`, doubleword `j` holding it
   for block `j` (doubleword `j % 4` of 128-bit lane `j / 4`). With `vprold`
@@ -96,12 +99,15 @@ def spread (row : Nat) (xs : List XReg) : List Instr :=
     .zop (.vpshufd (xs.getD i .xmm0) (xs.getD 3 .xmm0) (BitVec.ofNat 8 (0x55 * i)))
 
 /-- The sixteen states, word `k` in `zreg k`, with the counter increments
-added to word 12. -/
-def setup : List Instr :=
+(in the `buf` at `b`) added to word 12. -/
+def setupB (b : Reg) : List Instr :=
   spread 3 [.xmm12, .xmm13, .xmm14, .xmm15] ++
-  [.vmovdqu32Load .xmm0 (at_ .rcx incOff), z .vpaddd .xmm12 .xmm12 .xmm0] ++
+  [.vmovdqu32Load .xmm0 (at_ b incOff), z .vpaddd .xmm12 .xmm12 .xmm0] ++
   spread 0 [.xmm0, .xmm1, .xmm2, .xmm3] ++ spread 1 [.xmm4, .xmm5, .xmm6, .xmm7] ++
   spread 2 [.xmm8, .xmm9, .xmm10, .xmm11]
+
+/-- `setupB` with `buf` at `rcx`, as the loop has it. -/
+def setup : List Instr := setupB .rcx
 
 /-- Add row `row` of the input state (broadcast into `t`, each word spread
 into `u`) to the registers `xs`. -/
@@ -166,8 +172,77 @@ def next : List Instr :=
 /-- Sixteen blocks. -/
 def body : Prog isa := .seq (.block setup) (.seq (rounds 10) (.block (finish ++ next)))
 
+/-! ## The last pass, of 513 to 1023 bytes -/
+
+/-- As `gather`, but only blocks `i` and `i + 4` are XORed into the data;
+blocks `i + 8` and `i + 12` are left in `t0` and `t1`. -/
+def gatherH (i : Nat) (a b c d t0 t1 : XReg) : List Instr :=
+  [.zop (.vshufi32x4 t0 a b 0x44), .zop (.vshufi32x4 a a b 0xee),
+   .zop (.vshufi32x4 t1 c d 0x44), .zop (.vshufi32x4 c c d 0xee),
+   .zop (.vshufi32x4 b t0 t1 0x88), .zop (.vshufi32x4 d t0 t1 0xdd),
+   .zop (.vshufi32x4 t0 a c 0x88), .zop (.vshufi32x4 t1 a c 0xdd)] ++
+  xor64 b a (64 * i) ++ xor64 d a (64 * (i + 4))
+
+/-- As `finish`, with `buf` at `r9`, but only blocks 0–7 are XORed into the
+data (the first 512 bytes, all of which exist); block `j` of blocks 8–15 is
+left in `blkReg j`. Each `gatherH` takes as `t0, t1` two registers freed by
+the ones before. -/
+def finishP : List Instr :=
+  [.vmovdqu32Store (at_ .r9 save0Off) .xmm14, .vmovdqu32Store (at_ .r9 save1Off) .xmm15] ++
+  addRow 0 [.xmm0, .xmm1, .xmm2, .xmm3] .xmm14 .xmm15 ++
+    transpose .xmm0 .xmm1 .xmm2 .xmm3 .xmm14 .xmm15 ++
+  addRow 1 [.xmm4, .xmm5, .xmm6, .xmm7] .xmm1 .xmm15 ++
+    transpose .xmm4 .xmm5 .xmm6 .xmm7 .xmm1 .xmm15 ++
+  addRow 2 [.xmm8, .xmm9, .xmm10, .xmm11] .xmm5 .xmm15 ++
+    transpose .xmm8 .xmm9 .xmm10 .xmm11 .xmm5 .xmm15 ++
+  [.vmovdqu32Load .xmm9 (at_ .r9 save0Off), .vmovdqu32Load .xmm15 (at_ .r9 save1Off),
+   .vmovdqu32Store (at_ .r9 save0Off) .xmm2, .vmovdqu32Store (at_ .r9 save1Off) .xmm3] ++
+  addRow 3 [.xmm12, .xmm13, .xmm9, .xmm15] .xmm2 .xmm3 ++
+    [.vmovdqu32Load .xmm3 (at_ .r9 incOff), z .vpaddd .xmm12 .xmm12 .xmm3] ++
+    transpose .xmm12 .xmm13 .xmm9 .xmm15 .xmm2 .xmm3 ++
+  gatherH 0 .xmm0 .xmm4 .xmm8 .xmm12 .xmm13 .xmm3 ++
+  gatherH 1 .xmm14 .xmm1 .xmm5 .xmm2 .xmm0 .xmm8 ++
+  [.vmovdqu32Load .xmm4 (at_ .r9 save0Off)] ++ gatherH 2 .xmm4 .xmm6 .xmm10 .xmm9 .xmm12 .xmm14 ++
+  [.vmovdqu32Load .xmm4 (at_ .r9 save1Off)] ++ gatherH 3 .xmm4 .xmm7 .xmm11 .xmm15 .xmm5 .xmm1
+
+/-- Where `finishP` leaves block `j` (8–15). -/
+def blkReg : Nat → XReg
+  | 8 => .xmm13 | 9 => .xmm0 | 10 => .xmm12 | 11 => .xmm5
+  | 12 => .xmm3 | 13 => .xmm8 | 14 => .xmm14 | _ => .xmm1
+
+/-- Past the first eight blocks: the data on by 512 bytes. -/
+def adv512 : List Instr := [.alu .add .rsi (.imm 512), .alu .sub .rdx (.imm 512)]
+
+/-- Block `8 + j` XORed into the data (now from block 8 on) if all of it is
+there, else stored to `buf[0, 64)`. -/
+def cond (j : Nat) : Prog isa :=
+  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 (64 * j + 64)))])
+    (.ite .b (.block [.vmovdqu32Store (at_ .r9 0) (blkReg (8 + j))])
+      (.block (xor64 (blkReg (8 + j)) .xmm2 (64 * j))))
+
+/-- `cond` for blocks `8 + n - 1` down to 8: the last block stored to `buf`
+is the one the data ends in, if it ends within a block. -/
+def conds : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (cond n) (conds n)
+
+/-- Advance the data to the block it ends in, `64 ⌊rdx / 64⌋` bytes on. -/
+def adv : List Instr :=
+  [.mov .rax (.reg .rdx), .shift .shr .rax 6, .shift .shl .rax 6,
+   .alu .add .rsi (.reg .rax), .alu .sub .rdx (.reg .rax)]
+
+/-- The last 513 to 1023 bytes: sixteen blocks, of which the first eight
+are XORed into the data, then those of the next eight that fit, and the
+rest of the data from `buf` (`Avx512Tail.fromBuf`); then `rsi` points at
+`buf`, as after `Avx512Tail.tail`. -/
+def last16 : Prog isa :=
+  .seq (.block (.mov .r9 (.reg .rcx) :: setupB .r9)) (.seq (rounds 10) (.seq (.block (finishP ++ adv512))
+    (.seq (conds 8) (.seq (.block adv) (.seq Avx512Tail.fromBuf
+      (.block [.vop .vzeroupper, .mov .rsi (.reg .r9)]))))))
+
 def xor : Prog isa :=
   .seq (.block (Avx512Tail.consts ++ consts ++ [.alu .cmp .rdx (.imm 1024)]))
-  (.seq (.ite .b (.block []) (.loop body .ae)) Avx512Tail.tail)
+  (.seq (.ite .b (.block []) (.loop body .ae))
+  (.seq (.block [.alu .cmp .rdx (.imm 513)]) (.ite .b Avx512Tail.tail last16)))
 
 end VG.Impl.ChaCha20.X86_64.Avx512
