@@ -8,7 +8,8 @@ Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`), four per 4-bit window
 of the scalars, from the top: each window adds `[a]A` for `k`'s digit `a`
 from a table of `[1]A … [15]A` built at run time (byte 5376), and `[-b]B`
-for `S`'s digit `b` from constants (`negBaseCached`, byte 2048). A zero
+for `S`'s digit `b` from constants (`negBaseCached`, byte 2048), both
+cached for addition (`[Y - X, Y + X, 2dT, 2Z]`, `pointAddCached`). A zero
 digit adds nothing. The digits are read from the inputs, byte by byte (the
 scratch counter at byte 56), high nibble first: `k`'s 64 bytes, of which
 only the low 32 have a byte of `S` beside them, after its leading zero bytes
@@ -20,7 +21,7 @@ projective comparison `pointEqual` checks.
 namespace VG.Impl.Ed25519.X86_64
 
 open VG.X86_64
-open VG.Impl.X25519.X86_64 (sc stores)
+open VG.Impl.X25519.X86_64 (sc stores loads)
 
 /-- A table entry addressed by `rax` to slots 4–7. -/
 def pointFromTableQ : List Instr :=
@@ -43,18 +44,26 @@ def double4 (fld : Arith) : Prog isa :=
     (.loop (.block (fieldCode fld (dblOps false) ++ [.alu .sub .rsi (.imm 1)])) .ne)
     (.block (fieldCode fld (dblOps true))))
 
-/-- `[1]A` from byte 7424 into slots 0–3 and into the table's entry 0. -/
-def aTableInit : List Instr :=
-  tableStart 7424 ++ pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++ tableAddr 5376 ++
-    pointToTable ++ [.mov32 .rbx (.imm 1)]
+/-- Slots 8–11 = the point in slots 0–3 cached for addition, `[Y - X, Y + X, 2dT, 2Z]`
+(`d` in slot 16). -/
+def cacheOps : List FieldOp := [.sub 8 1 0, .add 9 1 0, .mul 10 3 16, .add 10 10 10, .add 11 2 2]
 
-/-- Entry `rbx` = entry `rbx - 1` (in slots 0–3) + A. -/
+/-- Slots 8–11 to the table entry addressed by `rax`. -/
+def cachedToTable : List Instr :=
+  (List.range 4).flatMap fun j => loads (320 + 32 * j) .r8 .r9 .r10 .r11 ++ tableWords (32 * j)
+
+/-- `[1]A` from byte 7424 into slots 0–3, and cached into the table's entry 0. -/
+def aTableInit (fld : Arith) : List Instr :=
+  tableStart 7424 ++ pointFromTable ++ ([.mov32 .rbx (.imm 0)] : List Instr) ++ fieldCode fld cacheOps ++
+    tableAddr 5376 ++ cachedToTable ++ [.mov32 .rbx (.imm 1)]
+
+/-- Entry `rbx` = entry `rbx - 1` (in slots 0–3) + A (entry 0), cached. -/
 def aTableBody (fld : Arith) : List Instr :=
-  tableStart 7424 ++ pointFromTableQ ++ pointAdd fld ++ tableAddr 5376 ++ pointToTable ++
-    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 15)]
+  tableStart 5376 ++ pointFromTableQ ++ pointAddCached fld ++ fieldCode fld cacheOps ++ tableAddr 5376 ++
+    cachedToTable ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 15)]
 
-/-- Entries `j < 15` of the table at byte 5376 are `[j + 1]A`. -/
-def aTable (fld : Arith) : Prog isa := .seq (.block aTableInit) (.loop (.block (aTableBody fld)) .ne)
+/-- Entries `j < 15` of the table at byte 5376 are cached `[j + 1]A`. -/
+def aTable (fld : Arith) : Prog isa := .seq (.block (aTableInit fld)) (.loop (.block (aTableBody fld)) .ne)
 
 /-- Entries `j < 15` of the table at byte 2048 are cached `-[j + 1]B`. -/
 def bTable : List Instr :=
@@ -81,7 +90,7 @@ def addDigit (o : Nat) (add : List Instr) : Prog isa :=
 /-- A window of `k` alone, with the doublings `dbl` (`double4`, or
 `Ifma.double4`). -/
 def windowA (fld : Arith) (dbl : Prog isa) (digit : List Instr) : Prog isa :=
-  .seq dbl (.seq (.block digit) (addDigit 5376 (pointAdd fld)))
+  .seq dbl (.seq (.block digit) (addDigit 5376 (pointAddCached fld)))
 
 /-- A window of `k` and of `S`. -/
 def windowAB (fld : Arith) (dbl : Prog isa) (digitA digitB : List Instr) : Prog isa :=

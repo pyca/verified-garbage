@@ -235,7 +235,7 @@ structure WinPre (base kp sp : Addr) (A : EPoint dZ) (C : Addr) (digit : List In
   bound : v < 16
 
 theorem addDigitA_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rbx = y.gpr .rbx)
-    (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAdd fld)))
+    (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAddCached fld)))
     (fun _ _ => True) := by
   apply taintFld (Taint.ofRegs [.rdi, .rbx]) _ (by fld_taint_decide)
   intro x y h

@@ -42,11 +42,11 @@ materialize_code windowPrepLit :=
 materialize_code windowPrepLitAdx :=
   (.seq (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx)) (.block bTable)) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
 materialize_code addDigitA :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAdd Impl.X25519.X86_64.baseline)) :
-    Prog isa)
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    (pointAddCached Impl.X25519.X86_64.baseline)) : Prog isa)
 materialize_code addDigitAAdx :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAdd Impl.X25519.X86_64.adx)) :
-    Prog isa)
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    (pointAddCached Impl.X25519.X86_64.adx)) : Prog isa)
 materialize_code addDigitB :=
   (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 2048 ++ pointFromTableQ ++
     (pointAddCached Impl.X25519.X86_64.baseline)) : Prog isa)
