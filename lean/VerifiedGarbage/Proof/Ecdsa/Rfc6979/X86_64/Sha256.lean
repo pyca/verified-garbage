@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P256Adx
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha256
 
@@ -105,12 +105,13 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p256.combConsts Spec.Ecdsa.Rfc697
     simp only [p256_combConsts, List.mem_singleton] at hc; subst hc; exact hsy
   sat := ⟨_, sat_spec⟩
 
-/-- SHA-256, with the implementation `v` of its compression function. -/
-def pack (hL : Weierstrass.Law Spec.P256.curve)
+/-- SHA-256, with the implementation `v` of its compression function, and
+P-256's multiplication with BMI2 and ADX (`adx`) or without. -/
+def pack (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
     RfcHash where
-  R := p256 hL hT hI
+  R := p256Of adx hL hT hI
   I := Spec.Ecdsa.Rfc6979.P256Sha256.inst
   H := Proof.Pbkdf2.Md.X86_64.Sha256.hash v
   ok := Proof.Pbkdf2.Md.X86_64.Sha256.ok v
@@ -118,7 +119,7 @@ def pack (hL : Weierstrass.Law Spec.P256.curve)
   K := Proof.Pbkdf2.Md.X86_64.Sha256.callees v
   satI := Proof.Pbkdf2.Md.X86_64.Sha256.satI
   satF := Proof.Pbkdf2.Md.X86_64.Sha256.satF
-  ecdsa := rfl
+  ecdsa := by cases adx <;> rfl
   hash := rfl
   len := rfl
   tries := rfl
@@ -126,14 +127,14 @@ def pack (hL : Weierstrass.Law Spec.P256.curve)
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  hQ := Nat.le_of_ble_eq_true rfl
+  hQ := by cases adx <;> exact Nat.le_of_ble_eq_true rfl
   updSp := show Proof.Pbkdf2.Md.X86_64.Sha256.coreH.updC.allInstrs _ = true by decide +kernel
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve)
+theorem sign_verified (adx : Bool) (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
-    Verified X86_64.target (cfgOf (pack hL hT hI v)).sign
+    Verified X86_64.target (cfgOf (pack adx hL hT hI v)).sign
       (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p256.combConsts) 240) :=
-  X86_64.sign_verified (pack hL hT hI v) implies
+  by cases adx <;> exact X86_64.sign_verified (pack _ hL hT hI v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.Sha256

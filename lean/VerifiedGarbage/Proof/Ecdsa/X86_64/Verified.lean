@@ -79,20 +79,24 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
-theorem sign_x86 (hL : Law Spec.P256.curve)
-    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (hI : InvSounds) (s : State)
+/-- The signature `code` of a curve `c` (P-256, with either multiplication) that
+the proof supports, whose precondition the contract's gives (`hpre`), never
+writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (hT : CombTbls c)
+    (hpre : ∀ s, signX86_64.pre s → Pre c s) (hpost : ∀ s s', SignPost c s s' → signX86_64.post s s')
+    (hcode : c.sign = code) (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p256_ok hI) hL (p256_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs signP256, Taint.clobbers i .rsp = false := by
-    have h : signP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+  subst hcode
+  obtain ⟨t, s', he, hsv, hpost'⟩ := sign_ok hc hL hT (hpre s hs)
+  have hsp : ∀ i ∈ instrs c.sign, Taint.clobbers i .rsp = false := by
+    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+    simpa using hsp i hi
+  have F := (Exec.regions he hnc).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -108,6 +112,14 @@ theorem sign_x86 (hL : Law Spec.P256.curve)
       rintro r (rfl | rfl)
       · exact hro
       · exact hrs) (by decide)
+
+theorem sign_x86 (hL : Law Spec.P256.curve)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : InvSounds) (s : State)
+    (hs : signX86_64.pre s) :
+    ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  sign_x86_of (p256_ok hI) hL (p256_tbls hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+    (by lit_decide) (by lit_decide) s hs
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP256 :=
   VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])

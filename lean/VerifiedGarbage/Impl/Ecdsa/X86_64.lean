@@ -131,6 +131,8 @@ structure Cfg where
   comb : Option CombData := none
   /-- Whether `k^(n-2)` is by divsteps (the proofs need `n` prime), else by the power. -/
   fastN : Bool := false
+  /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/
+  adx : Bool := false
 
 namespace Cfg
 
@@ -149,8 +151,10 @@ def mont (x : Nat) : Nat := x * c.R % c.C.p
 def sl (i : Nat) : Nat := slot c.n i
 
 def MP' : Mod :=
-  { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p }
-def MN' : Mod := { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n) }
+  { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
+    adx := c.adx }
+def MN' : Mod :=
+  { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩
 
