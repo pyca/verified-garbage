@@ -182,6 +182,39 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   rw [← off_add]
   exact byte_of_bytesAt hx hi
 
+include hH in
+theorem main_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
+    (hG : Proof.Mgf1.Valid G) (c : PubChecked) {K : Nat} {s w : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
+    (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte} {z : Nat} (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
+    (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo) (hc : cb = (0xFF : Byte) >>> z)
+    (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
+    WP isa (verifyMainWith H c.name c.code pubArgs) w fun u => Mid s u ∧
+      ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
+        EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
+        u.gpr .x0 = if b then 1#64 else 0#64 := by
+  have L := rsa_lay hp hK hm.sp hm.wr hm.x20
+  unfold verifyMainWith seqs seqs seqs
+  refine WP.seq (WP.mono (dbRegs_ok L hm.x9 hm.lo) fun u₁ ⟨O₁, x25₁, x24₁⟩ => ?_)
+  rw [show (s.gpr .x1).toNat - lo - (H.D + 2) + 1 = (s.gpr .x1).toNat - lo - H.D - 1 by omega] at x25₁
+  have hP : PreCall H.D s lo cb u₁ := {
+    sp := O₁.sp.trans hm.sp
+    rd := O₁.rd.trans hm.rd
+    wr := O₁.wr.trans hm.wr
+    x19 := (O₁.get .x19).trans hm.x19
+    x20 := (O₁.get .x20).trans hm.x20
+    x21 := (O₁.get .x21).trans hm.x21
+    x23 := (O₁.get .x23).trans hm.x23
+    x24 := x24₁
+    x25 := x25₁
+    v := fun r hr => (O₁.vcs r hr).trans (hm.v r hr)
+    mem := O₁.mem ▸ hm.mem
+    fr := O₁.mem ▸ hm.fr
+    lo := O₁.mem ▸ hm.lo
+    c := O₁.mem ▸ hm.c }
+  refine WP.seq (WP.mono (pubArgs_ok hP) fun u₂ h₂ => ?_)
+  refine WP.seq (WP.mono (call_ok c hp hcK h₂) fun u₃ h₃ => ?_)
+  exact check_ok hH hGh hGl hG hp hK h₃ hlo hfit hc hs
+
 end
 
 end VG.Proof.RsaPss.AArch64.Vfy
