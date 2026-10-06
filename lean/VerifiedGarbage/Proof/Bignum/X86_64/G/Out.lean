@@ -20,7 +20,7 @@ open VG.Proof.Bignum.X86_64.AmmSym (wrList writeW256_outside word_wrList_unique 
 
 variable {l : Lay}
 
-theorem LayOk.D_bounds (hl : LayOk l) : l.NB ≤ l.D ∧ l.D + l.NB ≤ 2 ^ 62 := by
+theorem LayOk.D_bounds (hl : LayOk l) : l.NB ≤ l.D ∧ l.D + l.NB ≤ 2 ^ 30 := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem off_lt (hl : LayOk l) {j : Nat} (hj : j < l.L) : l.off j + 8 ≤ l.NB := by
