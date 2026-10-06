@@ -92,7 +92,7 @@ def verifyPrefix (c : Cfg) : Prog isa :=
 def verifySuffix (c : Cfg) : Prog isa :=
   .seq (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c))
     (.seq (c.winPrep (c.sl V)) (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))
-    (.seq c.pPow (Impl.Ecdsa.Verify.AArch64.Cfg.final c))
+    (Impl.Ecdsa.Verify.AArch64.Cfg.tail c)
 
 theorem verifyPrefix_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) :
     WP isa (verifyPrefix c) s₀ (CombReady c s₀) := by

@@ -24,12 +24,13 @@ on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
    to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
    `[u]G + [v]Q` by the complete addition, into `R`;
-6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
-   form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
-   flag, which is returned as 0 or 1.
+6. for P-256, compare `X` with `rZ` and, when `r+n < p`, `(r+n)Z`, without
+   inversion; for the other curves, compute `x = X Z^(p-2)` and compare it
+   with `r` modulo `n`. Reject `Z = 0` and return the accumulated flag.
 
-Everything is computed whatever the flag, and only the pointers affect
-timing, although the contract would let every input affect it.
+All validity checks run regardless of earlier failures. P-256's comb
+addresses depend on its public scalar; the remaining memory accesses and
+branches depend only on pointers and fixed loop counters.
 -/
 
 namespace VG.Impl.Ecdsa.Verify.AArch64
@@ -121,9 +122,46 @@ def points : Prog isa :=
   .seq (.block (save c)) <|
   .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
+/-- The conversion factor, the order in field Montgomery form, and the
+upper bound on the signature scalar for its second possible lift. -/
+def projectivePrepare : List Instr :=
+  setConst c.n (c.sl XM) (c.R * c.R % c.C.p) ++
+  setConst c.n (c.sl ACC) (c.mont c.C.n) ++
+  setConst c.n (c.sl MN) (c.C.p - c.C.n)
+
+/-- The two differences, `X - rZ` and `X - (r+n)Z`, in field Montgomery form. -/
+def projectiveOps (sl : Nat → Nat) : List FOp :=
+  [.mul (sl X) (sl XM) (sl RZ), .sub (sl W) (sl RX) (sl X),
+    .add (sl XM) (sl XM) (sl ACC), .mul (sl X) (sl XM) (sl RZ),
+    .sub (sl XN) (sl RX) (sl X)]
+
+/-- Accept the first equality, or the second when `r+n < p`, together with
+all earlier validity checks and `Z ≠ 0`. -/
+def projectiveMatch : List Instr :=
+  VG.Impl.Ecdh.AArch64.Cfg.zero c (c.sl W) ++ [.addImm .x .x4 .x2 0] ++
+  c.ltN (c.sl K) ++ [.addImm .x .x6 .x2 0] ++
+  VG.Impl.Ecdh.AArch64.Cfg.zero c (c.sl XN) ++
+  [.logic .and .x .x2 .x2 .x6, .logic .orr .x .x2 .x2 .x4]
+
+def projectiveChecks : List Instr :=
+  projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
+
+/-- ECDSA's final check using projective coordinates. The caller establishes
+`n < p ≤ 2n`, so `r` and `r+n` exhaust the possible affine coordinates. -/
+def projectiveFinal : Prog isa :=
+  .seq (.seq (.block (projectivePrepare c))
+    (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+      (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
+
+/-- P-256 compares projective coordinates directly; the other curves retain
+an affine conversion until the direct path has been benchmarked for them. -/
+def tail : Prog isa :=
+  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  else .seq c.pPow (final c)
+
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <| .seq c.pPow (final c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) (tail c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
