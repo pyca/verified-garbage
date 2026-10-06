@@ -41,6 +41,9 @@ pub(crate) mod cmac_triple_des;
 pub(crate) mod ct;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p192;
+
+#[rustfmt::skip]
 pub(crate) mod ec_p224;
 
 #[rustfmt::skip]
@@ -53,6 +56,9 @@ pub(crate) mod ec_p384;
 pub(crate) mod ec_p521;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_p192;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p224;
 
 #[rustfmt::skip]
@@ -63,6 +69,9 @@ pub(crate) mod ecdh_p384;
 
 #[rustfmt::skip]
 pub(crate) mod ecdh_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p192;
 
 #[rustfmt::skip]
 pub(crate) mod ecdsa_p224;

@@ -17,6 +17,7 @@ mod aes_ccm;
 mod aes_gcm;
 mod cmac_aes;
 mod cmac_triple_des;
+mod ecdh_p192;
 mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;

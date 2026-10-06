@@ -15,18 +15,33 @@ mod sealed {
 /// A curve that ECDSA signs over and ECDH exchanges keys on.
 pub trait Curve: sealed::Sealed {
     /// The encoding of a private key: the integer `d` in `[1, n − 1]`, most
-    /// significant byte first (`[u8; 28]` for P-224, `[u8; 32]` for P-256,
-    /// `[u8; 48]` for P-384, `[u8; 66]` for P-521).
+    /// significant byte first (`[u8; 24]` for P-192, `[u8; 28]` for P-224,
+    /// `[u8; 32]` for P-256, `[u8; 48]` for P-384, `[u8; 66]` for P-521).
     type PrivateKey: AsMut<[u8]> + Clone;
     /// The encoding of a public key: the uncompressed form of SEC 1 §2.3.3,
     /// `04 ‖ x ‖ y`, each coordinate most significant byte first
-    /// (`[u8; 57]` for P-224, `[u8; 65]` for P-256, `[u8; 97]` for P-384,
-    /// `[u8; 133]` for P-521).
+    /// (`[u8; 49]` for P-192, `[u8; 57]` for P-224, `[u8; 65]` for P-256,
+    /// `[u8; 97]` for P-384, `[u8; 133]` for P-521).
     type PublicKey: Clone + core::fmt::Debug + PartialEq + Eq;
     /// The encoding of a signature: `r ‖ s`, each most significant byte
-    /// first (`[u8; 56]` for P-224, `[u8; 64]` for P-256, `[u8; 96]` for
-    /// P-384, `[u8; 132]` for P-521).
+    /// first (`[u8; 48]` for P-192, `[u8; 56]` for P-224, `[u8; 64]` for
+    /// P-256, `[u8; 96]` for P-384, `[u8; 132]` for P-521).
     type Signature;
+}
+
+/// The curve P-192 (secp192r1; SP 800-186 §3.2.1.1).
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum P192 {}
+
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+impl sealed::Sealed for P192 {}
+
+#[cfg(any(target_arch = "x86", target_arch = "arm"))]
+impl Curve for P192 {
+    type PrivateKey = [u8; 24];
+    type PublicKey = [u8; 49];
+    type Signature = [u8; 48];
 }
 
 /// The curve P-224 (FIPS 186-5's secp224r1; SP 800-186 §3.2.1.2).
