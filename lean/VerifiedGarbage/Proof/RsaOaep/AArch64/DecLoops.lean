@@ -109,4 +109,114 @@ theorem accLh_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
   refine WP.mono (stSlot_ok I.L (I.mem ▸ R1) .x14 (by decide) (d := sAcc) (k := 29) rfl (by decide) [])
     fun u3 ⟨L3, S3, R3, _⟩ => ⟨L3, S1.trans (I.st.trans S3), by rw [I.x14] at R3; exact R3⟩
 
+/-! ## The scan of `T` -/
+
+/-- `T`, the bytes of `DB` after `lHash'`. -/
+def tF (V : Nat → Byte) (D : Nat) (i : Nat) : Byte := V (1 + 2 * D + i)
+
+theorem scanBody_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {D j : Nat} (hj : 1 + 2 * D + j < oRsa)
+    (h11 : u.gpr .x11 = off S (1 + 2 * D + j)) (h17 : u.gpr .x17 = 1) (ws : List Region) :
+    WP isa (.block scanBody) u fun u' => Step F S ws u u' ∧ u'.mem = u.mem ∧
+      u'.gpr .x11 = off S (1 + 2 * D + j) + BitVec.ofNat 64 1 ∧ u'.gpr .x12 = u.gpr .x12 - BitVec.ofNat 64 1 ∧
+      u'.gpr .x9 = u.gpr .x9 + BitVec.ofNat 64 1 ∧ u'.gpr .x17 = 1 ∧
+      u'.gpr .x13 = u.gpr .x13 &&& ~~~(zM ((tF V D j).setWidth 64 ^^^ 1)) ∧
+      u'.gpr .x8 = u.gpr .x8 ||| (u.gpr .x9 &&& u.gpr .x13 &&& zM ((tF V D j).setWidth 64 ^^^ 1)) ∧
+      u'.gpr .x14 = u.gpr .x14 ||| (u.gpr .x13 &&&
+        ~~~(zM ((tF V D j).setWidth 64) ||| zM ((tF V D j).setWidth 64 ^^^ 1))) := by
+  have r1 : InRegions (u.rd ++ u.wr) (off S (1 + 2 * D + j)) 1 := L.sld (by omega)
+  have v1 : u.mem (off S (1 + 2 * D + j)) = tF V D j := R.scr _ hj
+  oaep_run [scanBody, isZero, h11, h17, BitVec.add_zero, r1, read_one, v1, byte64, sbc_one,
+    rotateRight_zero]
+  oaep_fin
+
+/-- The scan after the first `j` bytes of `T` (`t` bytes), from the accumulator `c₀`. -/
+structure ScanI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (D t : Nat) (c₀ : BitVec 64)
+    (j : Nat) (v : State) : Prop where
+  L : Lay v F S
+  st : Step F S [] u₀ v
+  mem : v.mem = u₀.mem
+  x11 : v.gpr .x11 = off S (1 + 2 * D + j)
+  x12 : v.gpr .x12 = BitVec.ofNat 64 (t - j)
+  x9 : v.gpr .x9 = BitVec.ofNat 64 j
+  x17 : v.gpr .x17 = 1
+  x13 : v.gpr .x13 = (scanS (tF V D) c₀ j).1
+  x8 : v.gpr .x8 = (scanS (tF V D) c₀ j).2.1
+  x14 : v.gpr .x14 = (scanS (tF V D) c₀ j).2.2
+
+theorem scanLoop_ok {u₀ : State} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep u₀.mem F S V W)
+    {D t : Nat} {c₀ : BitVec 64} (ht : 1 + 2 * D + t ≤ oRsa) (ht0 : 0 < t) {v₀ : State}
+    (h : ScanI u₀ F S V W D t c₀ 0 v₀) :
+    WP isa (.loop (.block scanBody) (.nonzero .x .x12)) v₀ (ScanI u₀ F S V W D t c₀ t) := by
+  have : oRsa = 8192 := rfl
+  refine count_loop ht0 (ScanI u₀ F S V W D t c₀) (fun j hj u I => ?_) h
+  refine WP.mono (scanBody_ok I.L (I.mem ▸ R) (j := j) (by omega) I.x11 I.x17 [])
+    fun u' ⟨S', hm, x11, x12, x9, x17, x13, x8, x14⟩ => ⟨⟨I.L.congr S'.sp S'.wr (by rw [hm]), I.st.trans S',
+      hm.trans I.mem, x11.trans (off_off S _ 1), by rw [x12, I.x12, counter_step hj (by omega)],
+      by rw [x9, I.x9, BitVec.ofNat_add_ofNat], x17, ?_, ?_, ?_⟩, ?_⟩
+  · rw [x13, I.x13, scanS, ← BitVec.xor_allOnes]
+  · rw [x8, I.x8, I.x9, I.x13, scanS]
+  · rw [x14, I.x14, I.x13, scanS, ← BitVec.xor_allOnes, BitVec.and_comm (scanS (tF V D) c₀ j).1]
+  · rw [x12, I.x12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
+
+theorem scanHead_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)
+    (hk' : k ≤ 1024) :
+    WP isa (.block (tArgs H ++ ([.movz .x .x13 0 0, .subImm .x .x13 .x13 1, .movz .x .x8 0 0, .ldrSp .x14 sAcc,
+      .movz .x .x9 0 0, .movz .x .x17 1 0] : List Instr))) u
+      (ScanI u F S V W H.D (k - 2 * H.D - 1) (W 29) 0) := by
+  have h96 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
+  have h168 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 168) 8 := L.ld (d := 168) (by decide)
+  have h232 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 232) 8 := L.ld (d := 232) (by decide)
+  have hs : u.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
+  have rk := R.rdK hk
+  have ra := R.rd8 (d := 232) (k := 29) rfl (by decide) rfl
+  refine WP.mono (Q := fun (u' : State) => u'.mem = u.mem ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧
+      u'.v = u.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r) ∧ u'.gpr .x11 = off S (1 + 2 * H.D) ∧
+      u'.gpr .x12 = BitVec.ofNat 64 (k - (2 * H.D + 1)) ∧ u'.gpr .x9 = BitVec.ofNat 64 0 ∧ u'.gpr .x17 = 1 ∧
+      u'.gpr .x13 = BitVec.allOnes 64 ∧ u'.gpr .x8 = 0 ∧ u'.gpr .x14 = W 29) ?_
+    fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x11, x12, x9, x17, x13, x8, x14⟩ =>
+      ⟨L.congr hsp hwr (by rw [hm]), Step.blk _ hrd hwr hsp hv hcs hm, hm, x11, by rw [x12]; congr 1, x9, x17, x13,
+        x8, x14⟩
+  oaep_run [tArgs, scr, Mgf1.scr, lay, sScr, sK, sAcc, oEm, h96, h168, h232, L.sp, hs, rk, ra,
+    Nat.zero_add, show 1 + 2 * H.D < 4096 by omega, show 2 * H.D + 1 < 4096 by omega,
+    Offset.ofNat_sub_ofNat (show 2 * H.D + 1 ≤ k by omega)]
+  oaep_fin
+
+theorem scanTail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) (ws : List Region) :
+    WP isa (.block [.logic .orr .x .x14 .x14 .x13, .addSp .x9 0, .str .x .x14 .x9 sAcc, .str .x .x8 .x9 sIdx]) u
+      fun u' => Lay u' F S ∧ Step F S ws u u' ∧
+        Rep u'.mem F S V (upd (upd W 29 (u.gpr .x14 ||| u.gpr .x13)) 30 (u.gpr .x8)) := by
+  have G' := L.geo
+  have R2 : Rep ((u.mem.write (off F 232) 8 (u.gpr .x14 ||| u.gpr .x13)).write (off F 240) 8 (u.gpr .x8)) F S V
+      (upd (upd W 29 (u.gpr .x14 ||| u.gpr .x13)) 30 (u.gpr .x8)) :=
+    (R.wq G' (k := 29) (by decide) _).wq G' (k := 30) (by decide) _
+  have w232 : InRegions u.wr (F + BitVec.ofNat 64 232) 8 := L.st (d := 232) (by decide)
+  have w240 : InRegions u.wr (F + BitVec.ofNat 64 240) 8 := L.st (d := 240) (by decide)
+  refine WP.mono (Q := fun (u' : State) => u'.mem = (u.mem.write (off F 232) 8 (u.gpr .x14 ||| u.gpr .x13)).write
+      (off F 240) 8 (u.gpr .x8) ∧ u'.rd = u.rd ∧ u'.wr = u.wr ∧ u'.sp = u.sp ∧ u'.v = u.v ∧
+      (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = u.gpr r)) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs⟩ => ?_
+  · oaep_run [sAcc, sIdx, w232, w240, L.sp, BitVec.add_zero]
+    oaep_fin
+  have R' : Rep u'.mem F S V (upd (upd W 29 (u.gpr .x14 ||| u.gpr .x13)) 30 (u.gpr .x8)) := by rw [hm]; exact R2
+  refine ⟨L.congr hsp hwr ?_, ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], ?_⟩, R'⟩
+  · rw [show sScr = 8 * 12 from rfl, R'.fr 12 (by decide), R.fr 12 (by decide)]; rfl
+  · rw [hm]
+    exact Frame.write (Frame.write (Frame.refl _ _) (List.mem_cons_self ..) _ (cF F (by decide)))
+      (List.mem_cons_self ..) _ (cF F (by decide))
+
+/-- The scan of `T` (`t = k - 2 hLen - 1` bytes): `acc` ORed with the scan's
+mask and whether no `0x01` was found, and `idx`, in their slots. -/
+theorem scan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {H : Hash} {k : Nat} (hk : W 21 = BitVec.ofNat 64 k) (hD : 2 * H.D + 2 ≤ k)
+    (hk' : k ≤ 1024) :
+    WP isa (scan H) u fun u' => Lay u' F S ∧ Step F S [] u u' ∧
+      Rep u'.mem F S V (upd (upd W 29 ((scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).2.2 |||
+        (scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).1)) 30 (scanS (tF V H.D) (W 29) (k - 2 * H.D - 1)).2.1) := by
+  refine WP.seq (WP.mono (scanHead_ok L R hk hD hk') fun u1 I => ?_)
+  refine WP.seq (WP.mono (scanLoop_ok R (by unfold oRsa; omega) (by omega) I) fun u2 I2 => ?_)
+  refine WP.mono (scanTail_ok I2.L (I2.mem ▸ R) []) fun u3 ⟨L3, S3, R3⟩ => ⟨L3, I2.st.trans S3, ?_⟩
+  rw [I2.x14, I2.x13, I2.x8] at R3; exact R3
+
 end VG.Proof.RsaOaep.AArch64

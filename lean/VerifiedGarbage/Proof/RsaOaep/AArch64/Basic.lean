@@ -255,6 +255,10 @@ theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (x.setWidt
   have : x.toNat ^^^ y.toNat < 2 ^ 8 := Nat.xor_lt_two_pow (by omega) (by omega)
   omega
 
+theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi]
+
 /-! ## Running blocks -/
 
 theorem v_addWithCarry (s : State) (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool) :
