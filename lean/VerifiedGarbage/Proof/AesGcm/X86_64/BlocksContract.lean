@@ -105,4 +105,39 @@ def decryptBlocksX86_64M (M : CtxMode) : Contract isa where
   post := decryptBlocksX86_64.post
   pub := blocksPub
 
+/-! ### For a key context of kind `M`
+
+The contracts of the `_precomputed` functions (`Spec/Gcm/Precomputed.lean`):
+those above, with the key context `M.len` bytes long and holding what `M`
+says. -/
+
+section
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
+
+/-- `vg_aes_gcm_seal`, for a key context of kind `M`. -/
+def sealX86_64M (M : CtxMode) : Contract isa where
+  pre s := sealPre M.len s ∧ M.ok s.mem (s.gpr .rdi)
+  post := sealX86_64.post
+  pub := sealX86_64.pub
+
+/-- `vg_aes_gcm_open`, for a key context of kind `M`. -/
+def openX86_64M (M : CtxMode) : Contract isa where
+  pre s := openPre M.len s ∧ M.ok s.mem (s.gpr .rdi)
+  post := openX86_64.post
+  pub := openX86_64.pub
+
+/-- `vg_aes_gcm_stream_encrypt`, for a key context of kind `M`. -/
+def streamEncryptX86_64M (M : CtxMode) : Contract isa where
+  pre s := streamCryptPre M.len s ∧ M.ok s.mem (s.gpr .rdi)
+  post := streamEncryptX86_64.post
+  pub := streamCryptPub
+
+/-- `vg_aes_gcm_stream_decrypt`, for a key context of kind `M`. -/
+def streamDecryptX86_64M (M : CtxMode) : Contract isa where
+  pre s := streamCryptPre M.len s ∧ M.ok s.mem (s.gpr .rdi)
+  post := streamDecryptX86_64.post
+  pub := streamCryptPub
+
+end
+
 end VG.Proof.AesGcm

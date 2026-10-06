@@ -20,9 +20,10 @@ open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
 /-- One run of `stream_encrypt` (`enc`) or `stream_decrypt`, for the message
 the state represents, with ciphertext `c₀` so far. -/
-theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.AesGcm.streamCryptPre s)
+theorem streamText_run (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (enc : Bool) {s : State}
+    (hp : Proof.AesGcm.streamCryptPre M.len s) (hok : M.ok s.mem (s.gpr .rdi))
     {iv a c₀ : List Byte} (hA : s.gpr .rcx = BitVec.ofNat 64 a.length) (hT : (s.gpr .r8).toNat = c₀.length) :
-    WP isa (.seq (.block cryptEntry) (.seq (streamText v.callees enc) (.block restore))) s fun s' =>
+    WP isa (.seq (.block cryptEntry) (.seq (streamText (v.withBlk B) enc) (.block restore))) s fun s' =>
       gprPreserved s s' ∧
       let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
       let h := ctxH s.mem (s.gpr .rdi)
@@ -31,7 +32,8 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.AesGcm
           (c₀ ++ ctext enc ciph (inc32 (Spec.Gcm.j0 h iv)) c₀.length (bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)) ∧
         bytesAt s'.mem (s.gpr .r9) (stackArg s 0).toNat =
           xorKs ciph (inc32 (Spec.Gcm.j0 h iv)) c₀.length (bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)) := by
-  have C := CryptCtx.of hp
+  have C := CryptCtx.of hp M.ge
+  have X := CtxExt.ofCrypt hp hok
   have hR := C.rounds
   have hP : c₀.length < 2 ^ 64 := hT ▸ (s.gpr .r8).isLt
   generalize hCtx : s.gpr .rdi = Ctx at *
@@ -53,7 +55,9 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.AesGcm
   have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = H := by
     rw [blockAt_frame E.frame (fun r hr => (dCE r hr).sub_left (Lay.ctxSub (by decide))), ← hH, ctxH_eq]
   have hc₁ : ciphOf s₁.mem Ctx R = ciph := by rw [ciph_frame E.frame dCE hR, ← hciph]; rfl
-  have K : SCtx Ctx St W SP R H D n s₁.mem := ⟨L, hRo, hH₁, C.t_c, C.t_s, C.t_w, C.t_d, C.sp24⟩
+  have K : SCtx M Ctx St W SP R H D n s₁.mem := ⟨L, hRo, hH₁, C.t_c, C.t_s, C.t_w, C.t_d, C.sp24, X.w, X.cs, X.cw,
+    X.cd, X.ct, M.frame E.frame (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact X.cw.sub_right (Lay.wSub (by decide))) X.w X.ok⟩
   have eS : ∀ {d k : Nat}, d + k ≤ 80 → ∀ r ∈ [entryR W], (⟨St + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r :=
     fun hk r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.st_w hk (.inr ⟨by decide, by decide⟩)
@@ -68,7 +72,7 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.AesGcm
     exact ctr_frame E.frame (eS (by decide)) hy.2.2
   have htl : s₁.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 c₀.length := by
     rw [E.tlen, ← hT, BitVec.ofNat_toNat, BitVec.setWidth_eq]
-  refine WP.seq (WP.mono (streamText_ok v K enc E.env rfl (C.data.of_eq E.rd E.wr) E.rbp hP (E.alen.trans hA) htl
+  refine WP.seq (WP.mono (streamText_ok v B K enc E.env rfl (C.data.of_eq E.rd E.wr) (by rw [E.rd, E.wr]; exact X.cov) E.rbp hP (E.alen.trans hA) htl
     E.dat E.len hyA hyC) fun s₂ ⟨he₂, rd₂, wr₂, f₂, hq⟩ => ?_)
   have hsv₂ : SavedAt s₂.mem W s := E.saved.frame f₂ (w_stFrame L C.data.ok.w C.t_w (by decide) (by decide))
   have hret : s₂.mem.readW SP 64 = s.mem.readW SP 64 := by
@@ -92,18 +96,19 @@ theorem streamText_run (v : GcmImpl) (enc : Bool) {s : State} (hp : Proof.AesGcm
   rw [blockAt_frame f₂ (j0_stFrame L C.data.ok.st C.t_s), e]
   exact blockAt_frame E.frame (eS (by decide))
 
-/-- `vg_aes_gcm_stream_encrypt`. -/
-theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamEncryptX86_64.pre s) :
-    WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamEncryptX86_64.post s s' := by
+/-- `vg_aes_gcm_stream_encrypt`, for a key context of kind `M`. -/
+theorem streamEncryptM_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
+    (hp : (Proof.AesGcm.streamEncryptX86_64M M).pre s) :
+    WP isa (streamEncrypt (v.withBlk B)) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamEncryptX86_64.post s s' := by
   have run : ∀ {iv a p : List Byte}, s.gpr .rcx = BitVec.ofNat 64 a.length → (s.gpr .r8).toNat = p.length →
-      WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧
+      WP isa (streamEncrypt (v.withBlk B)) s fun s' => gprPreserved s s' ∧
         let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
         let h := ctxH s.mem (s.gpr .rdi)
         (StreamRepr s.mem (s.gpr .rdx) ciph h iv a (gctr ciph (inc32 (Spec.Gcm.j0 h iv)) p) →
           let c := gctr ciph (inc32 (Spec.Gcm.j0 h iv)) (p ++ bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
           StreamRepr s'.mem (s.gpr .rdx) ciph h iv a c ∧
             bytesAt s'.mem (s.gpr .r9) (stackArg s 0).toNat = c.drop p.length) := fun {iv a p} hA hT =>
-    WP.mono (streamText_run v true hp (iv := iv) (c₀ := gctr (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (inc32 (Spec.Gcm.j0 (ctxH s.mem (s.gpr .rdi)) iv)) p) hA (by rw [hT, Proof.Gcm.length_gctr]))
+    WP.mono (streamText_run v B true hp.1 hp.2 (iv := iv) (c₀ := gctr (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (inc32 (Spec.Gcm.j0 (ctxH s.mem (s.gpr .rdi)) iv)) p) hA (by rw [hT, Proof.Gcm.length_gctr]))
       fun s' ⟨hg, hq⟩ => ⟨hg, fun hr => by
         obtain ⟨h₁, h₂⟩ := hq hr
         simp only [ctext, ↓reduceIte, Proof.Gcm.length_gctr] at h₁ h₂
@@ -119,11 +124,12 @@ theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamEncr
     fun i hi => WP.mono (run (iv := i.1) hi.1 hi.2) fun _ h => h.2
   exact WP.mono h fun s' ⟨hg, hq⟩ => ⟨hg, fun iv a p hr hA hT => hq (iv, a, p) ⟨hA, hT⟩ hr⟩
 
-/-- `vg_aes_gcm_stream_decrypt`. -/
-theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamDecryptX86_64.pre s) :
-    WP isa (streamDecrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamDecryptX86_64.post s s' := by
+/-- `vg_aes_gcm_stream_decrypt`, for a key context of kind `M`. -/
+theorem streamDecryptM_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
+    (hp : (Proof.AesGcm.streamDecryptX86_64M M).pre s) :
+    WP isa (streamDecrypt (v.withBlk B)) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamDecryptX86_64.post s s' := by
   have run : ∀ {iv a c : List Byte}, s.gpr .rcx = BitVec.ofNat 64 a.length → (s.gpr .r8).toNat = c.length →
-      WP isa (streamDecrypt v.callees) s fun s' => gprPreserved s s' ∧
+      WP isa (streamDecrypt (v.withBlk B)) s fun s' => gprPreserved s s' ∧
         let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
         let h := ctxH s.mem (s.gpr .rdi)
         (StreamRepr s.mem (s.gpr .rdx) ciph h iv a c →
@@ -131,7 +137,7 @@ theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamDecr
           StreamRepr s'.mem (s.gpr .rdx) ciph h iv a c' ∧
             bytesAt s'.mem (s.gpr .r9) (stackArg s 0).toNat =
               (gctr ciph (inc32 (Spec.Gcm.j0 h iv)) c').drop c.length) := fun {iv a c} hA hT =>
-    WP.mono (streamText_run v false hp (iv := iv) (c₀ := c) hA hT)
+    WP.mono (streamText_run v B false hp.1 hp.2 (iv := iv) (c₀ := c) hA hT)
       fun s' ⟨hg, hq⟩ => ⟨hg, fun hr => by
         obtain ⟨h₁, h₂⟩ := hq hr
         simp only [ctext, Bool.false_eq_true, ↓reduceIte] at h₁
@@ -146,5 +152,15 @@ theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamDecr
       (c := List.replicate (s.gpr .r8).toNat 0) (by simp) (by simp)) fun _ h => h.1)
     fun i hi => WP.mono (run (iv := i.1) hi.1 hi.2) fun _ h => h.2
   exact WP.mono h fun s' ⟨hg, hq⟩ => ⟨hg, fun iv a c hr hA hT => hq (iv, a, c) ⟨hA, hT⟩ hr⟩
+
+/-- `vg_aes_gcm_stream_encrypt`. -/
+theorem streamEncrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamEncryptX86_64.pre s) :
+    WP isa (streamEncrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamEncryptX86_64.post s s' :=
+  streamEncryptM_wp v v.blkB ⟨hp, trivial⟩
+
+/-- `vg_aes_gcm_stream_decrypt`. -/
+theorem streamDecrypt_wp (v : GcmImpl) {s : State} (hp : Proof.AesGcm.streamDecryptX86_64.pre s) :
+    WP isa (streamDecrypt v.callees) s fun s' => gprPreserved s s' ∧ Proof.AesGcm.streamDecryptX86_64.post s s' :=
+  streamDecryptM_wp v v.blkB ⟨hp, trivial⟩
 
 end VG.Proof.AesGcm.X86_64

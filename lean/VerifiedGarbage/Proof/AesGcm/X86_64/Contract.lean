@@ -91,9 +91,9 @@ def streamAadX86_64 : Contract isa where
 
 /-- What `vg_aes_gcm_stream_encrypt` and `vg_aes_gcm_stream_decrypt` need:
 `(ctx = rdi, rounds = rsi, state = rdx, aad_len = rcx, text_len = r8, data = r9, len = [rsp + 8],
-scratch = [rsp + 16])`. -/
-def streamCryptPre (s : State) : Prop :=
-  let ctx : Region := ⟨s.gpr .rdi, 256⟩
+scratch = [rsp + 16])`, for a key context of `cl` bytes. -/
+def streamCryptPre (cl : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .rdi, cl⟩
   let st : Region := ⟨s.gpr .rdx, 80⟩
   let data : Region := ⟨s.gpr .r9, (arg s 0).toNat⟩
   let scr : Region := ⟨arg s 1, 2560⟩
@@ -103,7 +103,7 @@ def streamCryptPre (s : State) : Prop :=
     data.Disjoint (args s 2) ∧ scr.Disjoint (args s 2) ∧
     (ret s).Disjoint st ∧ (ret s).Disjoint data ∧ (ret s).Disjoint scr ∧
     (stk24 s).Disjoint ctx ∧ (stk24 s).Disjoint st ∧ (stk24 s).Disjoint data ∧ (stk24 s).Disjoint scr ∧
-    (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 80 ≤ 2 ^ 64 ∧
+    (s.gpr .rdi).toNat + cl ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 80 ≤ 2 ^ 64 ∧
     (s.gpr .r9).toNat + (arg s 0).toNat ≤ 2 ^ 64 ∧ (arg s 1).toNat + 2560 ≤ 2 ^ 64 ∧
     24 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 24 ≤ 2 ^ 64 ∧ rounds s
 
@@ -114,7 +114,7 @@ def streamCryptPub (s₁ s₂ : State) : Prop :=
 
 /-- `vg_aes_gcm_stream_encrypt`. -/
 def streamEncryptX86_64 : Contract isa where
-  pre := streamCryptPre
+  pre := streamCryptPre 256
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
     let h := ctxH s.mem (s.gpr .rdi)
@@ -126,7 +126,7 @@ def streamEncryptX86_64 : Contract isa where
 
 /-- `vg_aes_gcm_stream_decrypt`. -/
 def streamDecryptX86_64 : Contract isa where
-  pre := streamCryptPre
+  pre := streamCryptPre 256
   post s s' :=
     let ciph := ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat
     let h := ctxH s.mem (s.gpr .rdi)
@@ -198,9 +198,10 @@ def streamVerifyX86_64 : Contract isa where
 /-- What `vg_aes_gcm_seal` and `vg_aes_gcm_open` both need, but for `tag` and
 the permissions: `(ctx = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx,
 aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16], tag = [rsp + 24])`,
-`work` the `w`-th argument on the stack, and `n` arguments there. -/
-def oneLay (w n : Nat) (s : State) : Prop :=
-  let ctx : Region := ⟨s.gpr .rdi, 256⟩
+`work` the `w`-th argument on the stack, and `n` arguments there, for a key
+context of `cl` bytes. -/
+def oneLay (cl w n : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .rdi, cl⟩
   let nonce : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   let aad : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let data : Region := ⟨arg s 0, (arg s 1).toNat⟩
@@ -211,33 +212,34 @@ def oneLay (w n : Nat) (s : State) : Prop :=
     (ret s).Disjoint data ∧ (ret s).Disjoint work ∧
     (stk24 s).Disjoint ctx ∧ (stk24 s).Disjoint nonce ∧ (stk24 s).Disjoint aad ∧ (stk24 s).Disjoint data ∧
     (stk24 s).Disjoint work ∧
-    (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
+    (s.gpr .rdi).toNat + cl ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
     (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (arg s 0).toNat + (arg s 1).toNat ≤ 2 ^ 64 ∧
     (arg s w).toNat + 2560 ≤ 2 ^ 64 ∧ 24 ≤ (s.gpr .rsp).toNat ∧ (s.gpr .rsp).toNat + 8 * (n + 1) ≤ 2 ^ 64 ∧
     rounds s
 
 /-- What `vg_aes_gcm_seal` needs: `oneLay`, with `tag` a 16-byte buffer to
-write and `work = [rsp + 32]`. -/
-def sealPre (s : State) : Prop :=
-  let ctx : Region := ⟨s.gpr .rdi, 256⟩
+write and `work = [rsp + 32]`, for a key context of `cl` bytes. -/
+def sealPre (cl : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .rdi, cl⟩
   let nonce : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   let aad : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let data : Region := ⟨arg s 0, (arg s 1).toNat⟩
   let tag : Region := ⟨arg s 2, 16⟩
   let work : Region := ⟨arg s 3, 2560⟩
-  s.rd = [ctx, nonce, aad, args s 4] ∧ s.wr = [data, tag, work] ∧ oneLay 3 4 s ∧
+  s.rd = [ctx, nonce, aad, args s 4] ∧ s.wr = [data, tag, work] ∧ oneLay cl 3 4 s ∧
     tag.Disjoint data ∧ tag.Disjoint work ∧ (ret s).Disjoint tag ∧ (arg s 2).toNat + 16 ≤ 2 ^ 64
 
 /-- What `vg_aes_gcm_open` needs: `oneLay`, with the received tag the
-`tag_len = [rsp + 32]` bytes at `tag`, to read, and `work = [rsp + 40]`. -/
-def openPre (s : State) : Prop :=
-  let ctx : Region := ⟨s.gpr .rdi, 256⟩
+`tag_len = [rsp + 32]` bytes at `tag`, to read, and `work = [rsp + 40]`, for
+a key context of `cl` bytes. -/
+def openPre (cl : Nat) (s : State) : Prop :=
+  let ctx : Region := ⟨s.gpr .rdi, cl⟩
   let nonce : Region := ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   let aad : Region := ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
   let data : Region := ⟨arg s 0, (arg s 1).toNat⟩
   let tag : Region := ⟨arg s 2, (arg s 3).toNat⟩
   let work : Region := ⟨arg s 4, 2560⟩
-  s.rd = [ctx, nonce, aad, tag, args s 5] ∧ s.wr = [data, work] ∧ oneLay 4 5 s ∧
+  s.rd = [ctx, nonce, aad, tag, args s 5] ∧ s.wr = [data, work] ∧ oneLay cl 4 5 s ∧
     tag.Disjoint data ∧ tag.Disjoint work ∧ (stk24 s).Disjoint tag ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 64
 
 def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
@@ -247,7 +249,7 @@ def onePub (n : Nat) (s₁ s₂ : State) : Prop :=
 
 /-- `vg_aes_gcm_seal`. -/
 def sealX86_64 : Contract isa where
-  pre := sealPre
+  pre := sealPre 256
   post s s' :=
     encryptWith (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (ctxH s.mem (s.gpr .rdi)) 16
         (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (arg s 0) (arg s 1).toNat)
@@ -265,7 +267,7 @@ def openLeak (s : State) : List Nat :=
 
 /-- `vg_aes_gcm_open`. -/
 def openX86_64 : Contract isa where
-  pre := openPre
+  pre := openPre 256
   post s s' :=
     match openResult (ctxCiph s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) (ctxH s.mem (s.gpr .rdi)) (arg s 3).toNat
         (bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) (bytesAt s.mem (arg s 0) (arg s 1).toNat)

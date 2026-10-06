@@ -22,11 +22,11 @@ abbrev cbA (W : Addr) : Addr := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48
 abbrev yA (W : Addr) : Addr := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16
 
 section
-variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP)
+variable {Ctx W SP : Addr} (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {M : Gcm.X86_64.Stitch.CtxMode}
 include L
 
 /-- The length kept, apart from what the call reads. -/
-theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s) (v : BitVec 64) :
+theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) (v : BitVec 64) :
     let m := s.mem.writeW (W + BitVec.ofNat 64 192) v
     m.readW (W + BitVec.ofNat 64 176) 64 = s.mem.readW (W + BitVec.ofNat 64 176) 64 ∧
     m.readW (W + BitVec.ofNat 64 200) 64 = s.mem.readW (W + BitVec.ofNat 64 200) 64 ∧
@@ -62,9 +62,9 @@ theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP 
 
 /-- The bookkeeping of `oneBlocks` around its call: from the state `s₁` after
 the length is kept to the end, given the call's frame (`hframe`). -/
-theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s)
+theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
     {Out : State → State → Prop}
-    (hframe : ∀ s₂, ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
+    (hframe : ∀ s₂, ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
         (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
         Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
@@ -95,8 +95,10 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide)) rd₂ wr₂
-    have obi : ObIn Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ := ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
-      by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide))⟩
+    have obi : ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ := ⟨he₂, h.data.of_eq (rd₂.trans rd₁) (wr₂.trans wr₁),
+      by omega, h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
+      h.ext.keep (rd₂.trans rd₁) (wr₂.trans wr₁) (by rw [m₂, m₁]; exact f192) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact h.ext.cw.sub_right (Lay.wSub (by decide)))⟩
     refine WP.seq (WP.mono (hframe s₂ obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
     have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₂.keep (fun r hr => cs₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -142,7 +144,7 @@ def OutD (Ctx W : Addr) (R : Nat) (D : Addr) (q : Nat) (s s' : State) : Prop :=
 
 /-- The kept slots written after the call are apart from the blocks, the
 counter block and the accumulator. -/
-theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s) {m m' : Mem}
+theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) {m m' : Mem}
     (hf : Frame [⟨W + BitVec.ofNat 64 200, 16⟩] m m') :
     blocksAt m' D (n / 16) = blocksAt m D (n / 16) ∧ blockAt m' (cbA W) = blockAt m (cbA W) ∧
     blockAt m' (yA W) = blockAt m (yA W) := by
@@ -155,10 +157,10 @@ theorem ob_after {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP 
     blockAt_frame hf (one (by simp only [cbA, yA]; rw [add_ofNat_assoc]; exact L.w_w (.inl (by decide)) (by decide) (by decide)))⟩
 
 /-- `oneBlocks` of the encrypting function. -/
-theorem oneBlocksE_ok (v : GcmImpl) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s) :
-    WP isa (oneBlocks v.callees.enc) s fun s' => ObPost Ctx W SP D n s s' ∧ OutE Ctx W R D (n / 16) s s' := by
+theorem oneBlocksE_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
+    WP isa (oneBlocks B.enc) s fun s' => ObPost Ctx W SP D n s s' ∧ OutE Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameE_ok L v hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi => obFrameE_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
   · rw [OutE, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o
@@ -166,10 +168,10 @@ theorem oneBlocksE_ok (v : GcmImpl) {R : Nat} {D : Addr} {n : Nat} {s : State} (
     exact ⟨a₁.trans o₁, a₂.trans o₂, by rw [a₃, a₁]; exact o₃⟩
 
 /-- `oneBlocks` of the decrypting function. -/
-theorem oneBlocksD_ok (v : GcmImpl) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre Ctx W SP R D n s) :
-    WP isa (oneBlocks v.callees.dec) s fun s' => ObPost Ctx W SP D n s s' ∧ OutD Ctx W R D (n / 16) s s' := by
+theorem oneBlocksD_ok (B : BlkFn M) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s) :
+    WP isa (oneBlocks B.dec) s fun s' => ObPost Ctx W SP D n s s' ∧ OutD Ctx W R D (n / 16) s s' := by
   obtain ⟨-, -, -, eK, eC, eY, eB, eH, -⟩ := w192_eqs L h (BitVec.ofNat 64 n)
-  refine oneBlocks_core L _ h (fun s₂ hi => obFrameD_ok L v hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
+  refine oneBlocks_core L _ h (fun s₂ hi => obFrameD_ok L B hi) (fun hz s₁ m₁ => ?_) (fun s₂ s₄ s₅ m₂ o f => ?_)
   · rw [OutD, hz, m₁, eC, eY]; exact ⟨rfl, rfl, rfl⟩
   · obtain ⟨a₁, a₂, a₃⟩ := ob_after L h f
     obtain ⟨o₁, o₂, o₃⟩ := o
