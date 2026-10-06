@@ -56,6 +56,11 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   columns, need no multiplication by `-p⁻¹` and add `512 u_k` to column
   `k + 8`; then `csubW`.
 
+* `mulF o a b`: for any other modulus of nine words (P-521's order),
+  Montgomery multiplication by columns too, each column also adding the
+  reduction's `u_k m_j` and the first nine computing their `u` (Koç, Acar and
+  Kaliski's FIPS).
+
 `mul`, `add` and `sub` choose by `n` (and `mul` by the reduction). Every multiplication is `mul` or `mulx`, every
 selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
@@ -407,11 +412,50 @@ def mulP (M : Mod) (o a b : Nat) : List Instr :=
   [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] ++
     (List.range 18).flatMap (pCol M a b) ++ csubW M o
 
+/-! ## Nine words: the product by columns for any modulus -/
+
+/-- The terms of column `c` of `mulF o a b`: the products `[a + 8i] [b + 8j]`
+with `i + j = c`, and the reduction's `u_k [mo + 8j]` with `k + j = c` and
+`k < c`, `u_k` in the temporary area. -/
+def fTerms (M : Mod) (a b c : Nat) : List (Nat × Option Nat) :=
+  ((List.range M.n).filter fun i => i ≤ c ∧ c - i < M.n).map (fun i => (a + 8 * i, some (b + 8 * (c - i)))) ++
+    ((List.range M.n).filter fun k => k < c ∧ c - k < M.n).map
+      (fun k => (M.tmp + 8 * k, some (M.mo + 8 * (c - k))))
+
+/-- The end of column `c < n` of `mulF`: `u_c = t₀ m' mod 2⁶⁴` into `rcx` and
+`[tmp + 8c]`, and `u_c [mo]` added, which clears the low word. -/
+def fRed (M : Mod) (c : Nat) : List Instr :=
+  [.mov .rax (.reg (pAcc (c + M.n) 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax),
+    .store (sc (M.tmp + 8 * c)) .rcx, .mov .rax (.mem (sc M.mo)), .mul .rcx,
+    .alu .add (pAcc (c + M.n) 0) (.reg .rax), .alu .adc (pAcc (c + M.n) 1) (.reg .rdx),
+    .alu .adc (pAcc (c + M.n) 2) (.imm 0)]
+
+/-- Column `c` of `mulF o a b`, its accumulator `pAcc (c + n)`: its terms,
+then for `c < n` the reduction's `u_c` (`fRed`), and for `c ≥ n` its low word
+stored at `[tmp + 8 (c - n)]` and cleared. -/
+def fCol (M : Mod) (a b c : Nat) : List Instr :=
+  (fTerms M a b c).flatMap (fun t => pTerm (c + M.n) t.1 t.2) ++
+    if c < M.n then fRed M c
+    else [.store (sc (M.tmp + 8 * (c - M.n))) (pAcc (c + M.n) 0), .mov32 (pAcc (c + M.n) 0) (.imm 0)]
+
+/-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`) for a modulus of nine
+words, by Montgomery multiplication in product scanning (Koç, Acar and
+Kaliski's FIPS): column `c` sums the products `a_i b_j` and the reduction's
+`u_k m_j` with `i + j = k + j = c` in three registers (`pAcc`); at the end of
+column `c < n`, `u_c = t₀ m' mod 2⁶⁴` is stored at `[tmp + 8c]` and `u_c m_0`
+clears the low word. Columns `n` to `2n - 1` are `(a b + U m) / R < 2m`,
+stored over the `u`s no longer needed (column `c` at `[tmp + 8 (c - n)]`),
+with its top word in `r9`; `csubW` reduces it into `[o]`. -/
+def mulF (M : Mod) (o a b : Nat) : List Instr :=
+  [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] ++
+    (List.range (2 * M.n)).flatMap (fCol M a b) ++ csubW M o
+
 /-! ## The operations -/
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
 def mul (M : Mod) (o a b : Nat) : List Instr :=
-  if M.n < 7 then mulR M o a b else if M.red = .friendly p521Ws then mulP M o a b else mulW M o a b
+  if M.n < 7 then mulR M o a b else if M.red = .friendly p521Ws then mulP M o a b
+  else if M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then addR M o a b else addW M o a b
