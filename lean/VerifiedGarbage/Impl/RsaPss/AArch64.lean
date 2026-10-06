@@ -255,8 +255,8 @@ def clearTop : List Instr :=
 
 /-! ## The encoding's parameters -/
 
-/-- `n₀` into `x10`. -/
-def n0 : List Instr := [ld .x9 sN, .ldrb .x10 .x9 0]
+/-- `n₀` into `x10`, from `n` in `r`. -/
+def n0 (r : Reg) : List Instr := [.ldrb .x10 r 0]
 
 /-- `x11 := smear(n₀ >> 1)`. -/
 def smear : List Instr :=
@@ -363,7 +363,7 @@ def signMain : Prog isa := seqs [signEnc H, .block privArgs, .call privN privC]
 
 /-- The checks, then `signMain`. -/
 def signBody : Prog isa :=
-  seqs [.block (signPrologue ++ n0),
+  seqs [.block (signPrologue ++ n0 .x2),
     .ite (.zero .x .x10) signFail (seqs [.block smear, emLen H,
       .ite (.nonzero .x .x10) signFail (seqs [.block ([ld .x12 sSaltLen] ++ saltFits H),
         .ite (.nonzero .x .x10) signFail (signMain H privN privC)])]),
@@ -478,7 +478,7 @@ def verifyMain : Prog isa :=
 
 /-- The checks, then `verifyMain`. -/
 def verifyBody : Prog isa :=
-  seqs [.block (verifyPrologue ++ n0),
+  seqs [.block (verifyPrologue ++ n0 .x0),
     .ite (.zero .x .x10) verifyFail (seqs [.block smear, emLen H,
       .ite (.nonzero .x .x10) verifyFail (seqs [expLen, .block (saltFits H),
         .ite (.nonzero .x .x10) verifyFail (verifyMain H pubN pubC)])]),

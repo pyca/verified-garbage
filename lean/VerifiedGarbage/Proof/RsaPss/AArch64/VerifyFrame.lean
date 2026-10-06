@@ -76,8 +76,8 @@ structure AtChk (s u : State) : Prop where
 theorem prologue_ok {D K : Nat} {s u : State} (hp : PreV D K s) (hsp : u.sp = fb s) (hrd : u.rd = s.rd)
     (hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) (hm : u.mem = s.mem) (hg : ∀ r, u.gpr r = s.gpr r)
     (hv : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) :
-    WP isa (.block (verifyPrologue ++ n0)) u (AtChk s) := by
-  unfold verifyPrologue save regsUp n0 arg ld
+    WP isa (.block (verifyPrologue ++ n0 .x0)) u (AtChk s) := by
+  unfold verifyPrologue save regsUp n0 arg
   simp only [List.cons_append, List.append_assoc, List.nil_append]
   refine wp_addSp (by decide) fun u₁ o₁ e₁ => ?_
   rw [hsp, BitVec.add_zero] at e₁
@@ -173,46 +173,44 @@ theorem prologue_ok {D K : Nat} {s u : State} (hp : PreV D K s) (hsp : u.sp = fb
   have wr₁₄ : u₁₄.wr = ⟨fb s, frameBytes⟩ :: s.wr := by
     rw [o₁₄.wr, o₁₃.wr, m₁₂.wr, p₄.wr, n₃.wr, p₂.wr, wr₁, wr₃]
   have mem₁₄ : u₁₄.mem = u₁₂.mem := by rw [o₁₄.mem, o₁₃.mem]
-  have rN : InRegions (u₁₄.rd ++ u₁₄.wr) (u₁₄.sp + BitVec.ofNat 64 sN) 8 := by
-    rw [sp₁₄, rd₁₄, wr₁₄]
-    exact InRegions_append_cons.mpr (.inl (Offset.contains_base _ (by decide) (by decide)))
-  refine wp_ldrSp (by decide) rN fun u₁₅ o₁₅ e₁₅ => ?_
-  rw [sp₁₄, mem₁₄, sv₁₂ (.x0, sN) (by simp [regSlots])] at e₁₅
+  have K₁₄ : Keep [.x9, .x10, .x16, .x19, .x20, .x21, .x23] { u₁ with mem := m₂ } u₁₄ :=
+    (o₃.keep.trans (o₄.keep.trans (o₄'.keep.trans (m₅.keep.trans
+      (o₁₀.keep.trans (o₁₁.keep.trans (n₁.keep.trans (p₂.keep.trans (n₃.keep.trans (p₄.keep.trans
+      (m₁₂.keep.trans (o₁₃.keep.trans o₁₄.keep)))))))))))).mono
+  have x0₁₄ : u₁₄.gpr .x0 = s.gpr .x0 := by
+    rw [K₁₄.gpr .x0 (by decide)]; exact gs .x0 (by decide)
   have hk1 := hp.k1
-  have rn : InRegions (u₁₅.rd ++ u₁₅.wr) (s.gpr .x0) 1 := by
-    rw [o₁₅.rd, o₁₅.wr, rd₁₄, wr₁₄]
+  have rn : InRegions (u₁₄.rd ++ u₁₄.wr) (s.gpr .x0) 1 := by
+    rw [rd₁₄, wr₁₄]
     refine Covers.left (Covers.trans (Covers.of_mem fun x hx => by
       rw [List.mem_singleton.mp hx]; simp) hp.hrd) _ _ ⟨nR s, List.mem_singleton_self _, ?_⟩
     have := Offset.contains_base (s.gpr .x0) (d := 0) (n := 1) (k := (s.gpr .x1).toNat) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
-  refine wp_ldrb (by decide) (by rw [e₁₅, BitVec.add_zero]) rn fun u₁₆ o₁₆ e₁₆ => wp_nil ?_
-  have hn₀ : u₁₅.mem (s.gpr .x0) = s.mem (s.gpr .x0) := by
-    rw [o₁₅.mem, mem₁₄]
+  refine wp_ldrb (by decide) (by rw [x0₁₄, BitVec.add_zero]) rn fun u₁₆ o₁₆ e₁₆ => wp_nil ?_
+  have hn₀ : u₁₄.mem (s.gpr .x0) = s.mem (s.gpr .x0) := by
+    rw [mem₁₄]
     refine fr₁₂ _ fun r hr hc => ?_
     rw [List.mem_singleton.mp hr] at hc
     have := Offset.contains_base (s.gpr .x0) (d := 0) (n := 1) (k := (s.gpr .x1).toNat) (by omega) (by omega)
     rw [BitVec.add_zero] at this
     exact hp.kn _ (frame_sub0 K s _ hc) this
-  have K : Keep [.x9, .x10, .x16, .x19, .x20, .x21, .x23] { u₁ with mem := m₂ } u₁₆ :=
-    (o₃.keep.trans (o₄.keep.trans (o₄'.keep.trans (m₅.keep.trans
-      (o₁₀.keep.trans (o₁₁.keep.trans (n₁.keep.trans (p₂.keep.trans (n₃.keep.trans (p₄.keep.trans
-      (m₁₂.keep.trans (o₁₃.keep.trans (o₁₄.keep.trans (o₁₅.keep.trans o₁₆.keep)))))))))))))).mono
-  have mem₁₆ : u₁₆.mem = u₁₂.mem := by rw [o₁₆.mem, o₁₅.mem, mem₁₄]
+  have K : Keep [.x9, .x10, .x16, .x19, .x20, .x21, .x23] { u₁ with mem := m₂ } u₁₆ := (K₁₄.trans o₁₆.keep).mono
+  have mem₁₆ : u₁₆.mem = u₁₂.mem := by rw [o₁₆.mem, mem₁₄]
   have x20 : u₁₂.gpr .x20 = stackArg s 1 := by rw [m₁₂.gpr, p₄.get .x20, n₃.gpr, p₂.get .x20, n₁.gpr, o₁₁.get .x20, e₁₀]
   refine ⟨?sp, ?rd, ?wr, ?g, ?x10, ?x19, ?x20, ?x21, ?x23, ?v, ?mem, ?fr⟩
-  case sp => rw [o₁₆.sp, o₁₅.sp, sp₁₄]
-  case rd => rw [o₁₆.rd, o₁₅.rd, rd₁₄]
-  case wr => rw [o₁₆.wr, o₁₅.wr, wr₁₄]
+  case sp => rw [o₁₆.sp, sp₁₄]
+  case rd => rw [o₁₆.rd, rd₁₄]
+  case wr => rw [o₁₆.wr, wr₁₄]
   case g =>
     intro r hr
     rw [K.gpr r hr]
     exact gs r fun h => hr (by rw [h]; decide)
   case x10 => rw [e₁₆, hn₀]
-  case x19 => rw [o₁₆.get .x19, o₁₅.get .x19, o₁₄.get .x19, e₁₃, x20]
-  case x20 => rw [o₁₆.get .x20, o₁₅.get .x20, o₁₄.get .x20, o₁₃.get .x20, x20]
-  case x21 => rw [o₁₆.get .x21, o₁₅.get .x21, e₁₄, o₁₃.get .x20, x20]
+  case x19 => rw [o₁₆.get .x19, o₁₄.get .x19, e₁₃, x20]
+  case x20 => rw [o₁₆.get .x20, o₁₄.get .x20, o₁₃.get .x20, x20]
+  case x21 => rw [o₁₆.get .x21, e₁₄, o₁₃.get .x20, x20]
   case x23 =>
-    rw [o₁₆.get .x23, o₁₅.get .x23, o₁₄.get .x23, o₁₃.get .x23, m₁₂.gpr, p₄.get .x23, n₃.gpr, p₂.get .x23,
+    rw [o₁₆.get .x23, o₁₄.get .x23, o₁₃.get .x23, m₁₂.gpr, p₄.get .x23, n₃.gpr, p₂.get .x23,
       n₁.gpr, o₁₁.get .x23, o₁₀.get .x23, m₅.gpr, o₄'.get .x23, o₄.get .x23, e₃]
     exact gs .x1 (by decide)
   case v =>
