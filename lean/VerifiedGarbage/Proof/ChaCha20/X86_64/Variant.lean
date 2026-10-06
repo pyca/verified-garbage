@@ -30,7 +30,7 @@ structure XorImpl where
   callee : Impl.ChaCha20.X86_64.Callee
   /-- ChaCha20-Poly1305 keeps the keystream for `64 + fold` bytes in its
   working space. -/
-  fold_le : callee.fold ≤ 448
+  fold_le : callee.fold ≤ 960
   /-- The stack its calls use below its return address. -/
   stack : Nat
   stack_le : stack ≤ 16
@@ -60,7 +60,7 @@ structure XorImpl where
   with: one of the pairs whose ChaCha20-Poly1305 the constant-time analysis
   checks (it runs on code with the comparison against `fold` in it). -/
   fold_poly : (callee.fold = 0 ∧ poly = .scalar) ∨ (callee.fold = 192 ∧ poly = .avx2) ∨
-    (callee.fold = 448 ∧ poly = .avx512)
+    (callee.fold = 960 ∧ poly = .avx512)
 
 namespace XorImpl
 
