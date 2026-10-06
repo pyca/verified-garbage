@@ -88,6 +88,30 @@ theorem lr_seq_tr {F S : Addr} {c₁ c₂ : Prog isa} {X : (Nat → BitVec 64) �
       ⟨hs, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) t₂
   exact h1.seq h2
 
+/-- `d ← scratch + o`, in both runs the same. -/
+theorem scr_pin {t : State} {F S : Addr} (L : Lay t F S) (d : Reg) {o : Nat} (ho : o < 4096) :
+    WP isa (.block (scr d o)) t fun u => u.sp = t.sp ∧ u.gpr d = off S o := by
+  have h96 : InRegions (t.rd ++ t.wr) (F + BitVec.ofNat 64 96) 8 := L.ld (d := 96) (by decide)
+  have hs : t.mem.read (F + BitVec.ofNat 64 96) 8 = S := L.slot
+  oaep_run [scr, Mgf1.scr, lay, sScr, h96, L.sp, hs, ho]
+
+/-- A loop counting down in `cr` from `n`, whose runs agree on `P k` after `k` iterations. -/
+theorem count_ct {body : Prog isa} {cr : Reg} {n : Nat} (hn : 0 < n) (P : Nat → State → State → Prop)
+    (hstep : ∀ k < n, RelCT isa (P k) body fun a b =>
+      P (k + 1) a b ∧ (a.gpr cr != 0) = decide (k + 1 ≠ n) ∧ (b.gpr cr != 0) = decide (k + 1 ≠ n)) :
+    RelCT isa (P 0) (.loop body (.nonzero .x cr)) (P n) := by
+  refine (RelCT.loop (fun m a b => ∃ k, k < n ∧ m = n - k ∧ P k a b) (fun m => RelCT.exists_ fun k => ?_) n).mono
+    (fun a b h => ⟨0, hn, rfl, h⟩) fun _ _ h => h
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨hk, hm, hp⟩ e₁ e₂
+  obtain ⟨ht, hq, c₁, c₂⟩ := hstep k hk _ _ _ _ _ _ hp e₁ e₂
+  refine ⟨ht, by rw [eval_nonzero, eval_nonzero, c₁, c₂], fun h => ?_, fun h => ?_⟩
+  · rw [eval_nonzero, c₁] at h
+    have : k + 1 = n := by simpa using h
+    exact this ▸ hq
+  · rw [eval_nonzero, c₁] at h
+    have : k + 1 ≠ n := by simpa using h
+    exact ⟨n - (k + 1), by omega, k + 1, by omega, rfl, hq⟩
+
 /-! ## The calls -/
 
 variable {G : Stream} (hG : StreamOK G)
