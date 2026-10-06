@@ -129,6 +129,12 @@ def points : Prog isa :=
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (sum c)
 
+/-- Fixed-base comb for `[u]G`, followed by the existing variable-base ladder. -/
+def pointsComb : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
+  .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (sum c)
+
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
   .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (points c) <|
@@ -138,6 +144,16 @@ def back : Prog isa :=
 def verify : Prog isa :=
   .seq (prefix' c) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) <| .seq (Impl.Ecdh.X86.Cfg.validate c) (back c)
+
+/-- Verification body using the comb for its fixed-base multiplication. -/
+def verifyCombBody : Prog isa :=
+  .seq (prefix' c) <| .seq (.block (loadS c)) <|
+  .seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) <| .seq (Impl.Ecdh.X86.Cfg.validate c) <|
+  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (pointsComb c) <|
+  .seq (pow c.powP c.wk) (final c)
+
+/-- Acquire the static table before loading the cdecl arguments. -/
+def verifyComb : Prog isa := .seq c.tableAddr (verifyCombBody c)
 
 end Cfg
 
