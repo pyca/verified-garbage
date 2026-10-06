@@ -36,8 +36,8 @@ def windows (fld : Arith) (dbl : Prog isa) : Prog isa :=
 /-- Returns 1 in `rax` if `[S]B = R + [k]A`, for `A` at byte 7424 and `R` at byte 7552,
 with the windows `win` (`windows`). -/
 def verifyEquationPoints (fld : Arith) (win : Prog isa) : Prog isa :=
-  .seq (.block windowSetup) (.seq (aTable fld) (.seq (.block bTable) (.seq (.block (windowInit fld))
-    (.seq skipZero (.seq win (.seq (.block (negR fld)) (pointEqual fld)))))))
+  .seq (.block windowSetup) (.seq (aTable fld) (.seq (.block (windowInit fld))
+    (.seq skipZero (.seq win (.seq (.block (negR fld)) (pointEqual fld))))))
 
 /-- The 32 bytes at `rdx`, their top bit masked, into slot 1, and the power's input of that
 y-coordinate into slot `o`. -/
@@ -79,9 +79,11 @@ def decodeAThen (fld : Arith) (win : Prog isa) : Prog isa :=
 def verifyDecodeA (fld : Arith) (win : Prog isa) : Prog isa :=
   .seq (decodePowers fld) (decodeAThen fld win)
 
+/-- The inputs' addresses, and the static's (`baseBytesSym`), to bytes 7936–7967 of the scratch. -/
 def verifyHeaders : List Instr :=
   [.store (at_ .rdx 7936) .rdi, .store (at_ .rdx 7944) .rsi,
-    .store (at_ .rdx 7952) .rax, .mov .rdi (.reg .rdx)]
+    .store (at_ .rdx 7952) .rax, .mov .rdi (.reg .rdx), .leaSym .rax baseBytesSym,
+    .store (sc 7960) .rax]
 
 def verifySetup : List Instr :=
   ([.mov .rax (.reg .rdx), .mov .rdx (.reg .rcx)] : List Instr) ++ scalarSave ++ verifyHeaders

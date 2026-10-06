@@ -61,41 +61,39 @@ theorem esplit_wp {s : State} {base : Addr} (hs : s.gpr .rdi = base) (hc : Ctx s
 
 /-! ## The rows -/
 
-/-- Row `j` of the entry at `rax = base + o` into `ymm (11 + j)`. -/
-theorem vrow_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
-    (hp : s.gpr .rax = off base o) (ho : o + 128 ≤ 8192) (j : Nat) (hj : j < 4) :
+/-- Row `j` of the entry at `rax = E` into `ymm (11 + j)`. -/
+theorem vrow_ok {s : State} {E : Addr} (hp : s.gpr .rax = E) (j : Nat) (hj : j < 4)
+    (hr : InRegions (s.rd ++ s.wr) (off E (32 * j)) 32) :
     WP isa (.block [.vmovdquLoad .l256 (y (11 + j)) (VG.Impl.X25519.X86_64.at_ .rax (32 * j))]) s fun t =>
-      (∀ k < 4, qw t (xr (11 + j)) k = mq s.mem base (o + 32 * j + 8 * k)) ∧
+      (∀ k < 4, qw t (xr (11 + j)) k = mq s.mem E (32 * j + 8 * k)) ∧
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r, r ≠ xr (11 + j) → ∀ k < 4, qw t r k = qw s r k) := by
-  have hea : off (s.gpr .rax) (32 * j) = base + BitVec.ofNat 64 (o + 32 * j) := by
-    rw [hp, off, off, Offset.add_add]
-  have hr : InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (o + 32 * j)) 32 :=
-    ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+  have hea : off (s.gpr .rax) (32 * j) = off E (32 * j) := by rw [hp]
   have hy : y (11 + j) = xr (11 + j) := y_xr _ (by omega)
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, VG.Proof.X25519.X86_64.ea_at, hea,
     State.load256, hr, ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
   refine ⟨fun k hk => ?_, rfl, rfl, rfl, rfl, fun r hr k hk => ?_⟩
-  · rw [qw_load _ _ _ _ hk, hy, ite_eq_left_iff.mpr (fun h => absurd rfl h), mq, Offset.add_add]
+  · rw [qw_load _ _ _ _ hk, hy, ite_eq_left_iff.mpr (fun h => absurd rfl h), mq, off, Offset.add_add]
   · rw [qw_load _ _ _ _ hk, hy]; exact ite_eq_right_iff.mpr fun h => absurd h hr
 
 theorem xr_ne : ∀ a < 16, ∀ b < 16, a ≠ b → xr a ≠ xr b := by decide
 
-theorem vrowsPrefix_ok {base : Addr} {o : Nat} (ho : o + 128 ≤ 8192) :
-    ∀ n ≤ 4, ∀ s : State, Scratch s base → s.gpr .rax = off base o →
+theorem vrowsPrefix_ok {E : Addr} :
+    ∀ n ≤ 4, ∀ s : State, s.gpr .rax = E →
+    (∀ d, d + 32 ≤ 128 → InRegions (s.rd ++ s.wr) (off E d) 32) →
     WP isa (.block ((List.range n).map fun j =>
         .vmovdquLoad .l256 (y (11 + j)) (VG.Impl.X25519.X86_64.at_ .rax (32 * j)))) s fun t =>
-      (∀ l < n, ∀ k < 4, qw t (xr (11 + l)) k = mq s.mem base (o + 32 * l + 8 * k)) ∧
+      (∀ l < n, ∀ k < 4, qw t (xr (11 + l)) k = mq s.mem E (32 * l + 8 * k)) ∧
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r < 16, (∀ l < n, r ≠ 11 + l) → ∀ k < 4, qw t (xr r) k = qw s (xr r) k)
   | 0, _, s, _, _ => WP.block_nil ⟨fun l hl => absurd hl (Nat.not_lt_zero _), rfl, rfl, rfl, rfl,
       fun _ _ _ _ _ => rfl⟩
-  | n + 1, hn, s, hs, hp => by
+  | n + 1, hn, s, hp, hr => by
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (vrowsPrefix_ok ho n (by omega) s hs hp) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
-    have ha : Scratch a base := ⟨by rw [ag]; exact hs.rdi, by rw [awr]; exact hs.wr, hs.nowrap⟩
-    refine WP.mono (vrow_ok ha (by rw [ag]; exact hp) ho n (by omega))
+    refine WP.mono (vrowsPrefix_ok n (by omega) s hp hr) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
+    refine WP.mono (vrow_ok (E := E) (by rw [ag]; exact hp) n (by omega)
+      (by rw [ard, awr]; exact hr (32 * n) (by omega)))
       fun t ⟨tl, tg, tm, trd, twr, tk⟩ => ⟨fun l hl k hk => ?_, tg.trans ag, tm.trans am, trd.trans ard,
         twr.trans awr, fun r hr hrl k hk => ?_⟩
     · by_cases h : l = n
@@ -104,15 +102,24 @@ theorem vrowsPrefix_ok {base : Addr} {o : Nat} (ho : o + 128 ≤ 8192) :
     · rw [tk _ (xr_ne _ hr _ (by omega) (hrl n (by omega))) k hk,
         ak r hr (fun l hl => hrl l (by omega)) k hk]
 
-/-- `vrows`: the four rows of the entry at `rax = base + o` into `ymm11–ymm14`. -/
-theorem vrows_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
-    (hp : s.gpr .rax = off base o) (ho : o + 128 ≤ 8192) :
+/-- `vrows`: the four rows of the entry at `rax = E` into `ymm11–ymm14`. -/
+theorem vrows_ok {s : State} {E : Addr} (hp : s.gpr .rax = E)
+    (hr : ∀ d, d + 32 ≤ 128 → InRegions (s.rd ++ s.wr) (off E d) 32) :
     WP isa (.block vrows) s fun t =>
-      (∀ l < 4, ∀ k < 4, qw t (xr (11 + l)) k = mq s.mem base (o + 32 * l + 8 * k)) ∧
+      (∀ l < 4, ∀ k < 4, qw t (xr (11 + l)) k = mq s.mem E (32 * l + 8 * k)) ∧
       t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r < 11, ∀ k < 4, qw t (xr r) k = qw s (xr r) k) :=
-  WP.mono (vrowsPrefix_ok ho 4 (by decide) s hs hp) fun _ ⟨tl, tg, tm, trd, twr, tk⟩ =>
+  WP.mono (vrowsPrefix_ok 4 (by decide) s hp hr) fun _ ⟨tl, tg, tm, trd, twr, tk⟩ =>
     ⟨tl, tg, tm, trd, twr, fun r hr => tk r (by omega) (fun l hl => by omega)⟩
+
+theorem F_off (m : Mem) (base : Addr) (o d : Nat) : F m (off base o) d = F m base (o + d) := by
+  simp only [F, VG.Proof.X25519.X86_64.fe, VG.Proof.X25519.X86_64.word, off, Offset.add_add,
+    Nat.add_assoc]
+
+/-- A table entry in the scratch, as an entry at its address. -/
+theorem tablePoint_off (m : Mem) (base : Addr) (o : Nat) :
+    tablePoint m (off base o) 0 = tablePoint m base o := by
+  simp only [tablePoint, F_off, Nat.zero_add, Nat.add_zero]
 
 theorem limbNat_congr {w w' : Nat → Nat} {m : Nat} (h : ∀ k < 4, w k = w' k) (i : Nat) :
     limbNat w m i = limbNat w' m i := by
@@ -126,15 +133,16 @@ theorem fe5_words (m : Mem) (base : Addr) (d : Nat) :
   rw [limbNat_lv _ (fun k _ => BitVec.isLt _)]
   rfl
 
-/-- The entry at byte `o` of the scratch, `[Y - X, Y + X, 2dT, 2Z]` of `q`, added to the point in
-the lanes. -/
-theorem ventryAt_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base)
-    (hx : Small s) {o : Nat} (hp : s.gpr .rax = off base o) (ho : o + 128 ≤ 8192)
-    {q : Spec.Ed25519.Point} (hq : tablePoint s.mem base o = cache q) :
+/-- The entry at `E`, readable, `[Y - X, Y + X, 2dT, 2Z]` of `q`, added to the point in the
+lanes. -/
+theorem ventryAt_ok {s : State} {base E : Addr} (hs : Scratch s base) (hk : EConsts s.mem base)
+    (hx : Small s) (hp : s.gpr .rax = E)
+    (hr : ∀ d, d + 32 ≤ 128 → InRegions (s.rd ++ s.wr) (off E d) 32)
+    {q : Spec.Ed25519.Point} (hq : tablePoint s.mem E 0 = cache q) :
     WP isa (.block (vrows ++ (esplit ++ vadd))) s fun t => t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       Outside base 1024 320 s.mem t.mem ∧ Small t ∧ lanePt t = Spec.Ed25519.pointAdd (lanePt s) q := by
   rw [WP.block_append_iff]
-  refine WP.mono (vrows_ok hs hp ho) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
+  refine WP.mono (vrows_ok hp hr) fun a ⟨al, ag, am, ard, awr, ak⟩ => ?_
   have ha : Scratch a base := ⟨by rw [ag]; exact hs.rdi, by rw [awr]; exact hs.wr, hs.nowrap⟩
   have hka : EConsts a.mem base := by rw [am]; exact hk
   rw [WP.block_append_iff]
@@ -148,13 +156,12 @@ theorem ventryAt_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConst
     rw [fe5_congr (l0 0 (by decide)), fe5_congr (l0 1 (by decide)), fe5_congr (l0 2 (by decide)),
       fe5_congr (l0 3 (by decide))]
   have p5 : lanePt5 b = cache q := by
-    have e : ∀ l < 4, fe5 (lanes b 5 l) = F s.mem base (o + 32 * l) := fun l hl => by
-      rw [fe5_congr (fun i hi => (ub l hl i hi).1), ← fe5_words s.mem base (o + 32 * l)]
+    have e : ∀ l < 4, fe5 (lanes b 5 l) = F s.mem E (32 * l) := fun l hl => by
+      rw [fe5_congr (fun i hi => (ub l hl i hi).1), ← fe5_words s.mem E (32 * l)]
       exact fe5_congr fun i _ => limbNat_congr (fun k hk => by rw [al l hl k hk]) i
     rw [← hq]
     simp only [lanePt5, tablePoint]
     rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide)]
-    rfl
   refine WP.mono (vadd_wp hb.rdi (ctx_of hb) hkb (fun l hl i hi => by rw [l0 l hl i hi]; exact hx l hl i hi)
     (fun l hl i hi => (ub l hl i hi).2)) fun t ⟨tg, trd, twr, tou, tsm, tp⟩ => ?_
   refine ⟨by rw [tg, vm_gpr vb, ag], by rw [trd, vm_rd vb, ard], by rw [twr, vm_wr vb, awr], ?_, tsm, ?_⟩
@@ -233,7 +240,48 @@ theorem vaddDigit_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : ECons
     have hm : c.mem = s.mem := kc.2.1.trans kb.2.1
     obtain ⟨q, hq, hr⟩ := htab n (by omega)
     obtain ⟨pc, sc⟩ := lanePt_vec (cx.trans bx) (chy.trans bhy)
-    refine WP.mono (ventryAt_ok (q := q) hsc (by rw [hm]; exact hk) (sc hx) cp (by omega) (by rw [hm]; exact hq))
+    refine WP.mono (ventryAt_ok (q := q) hsc (by rw [hm]; exact hk) (sc hx) cp
+      (fun d hd => ⟨_, List.mem_append_right _ hsc.wr, by
+        simp only [off, Offset.add_add]; exact Offset.contains_base _ (by omega) (by have := hsc.nowrap; omega)⟩)
+      (by rw [hm, tablePoint_off]; exact hq))
+      fun t ⟨tg, trd, twr, tou, tsm, tp⟩ => ⟨?_, tsm, ?_⟩
+    · rw [tp, pc]; exact pointAdd_rep ha hr
+    · refine (LKeep.of_keeps kb (by decide)).trans ((LKeep.of_keeps kc (by decide)).trans
+        ⟨fun r _ _ _ => by rw [tg], by rw [tg], trd, twr, tou⟩)
+  · have hv0 : v = 0 := by simpa using h
+    subst hv0
+    exact WP.block_nil ⟨by rw [zero_smul, add_zero]; exact ha, hx, LKeep.refl _ _⟩
+
+theorem baseAddr_scal : scalCode (.block baseAddr : Prog isa) = true := rfl
+
+/-- `S`'s byte `v`'s entry of the static at `T`, `-[v]B`, added to the point in the lanes. -/
+theorem vaddBase_ok {s : State} {base T : Addr} (hs : Scratch s base) (hk : EConsts s.mem base)
+    (hx : Small s) (hT : s.mem.readW (off base 7960) 64 = T) (ht : BaseTbl s base T) {a : EPoint dZ}
+    (v : Nat) (hv : v < 256) (hc : s.gpr .rbx = BitVec.ofNat 64 v)
+    (hz : s.zf = some (decide (v = 0))) (ha : Rep (lanePt s) a) :
+    WP isa vaddBase s fun t => Rep (lanePt t) (a + v • (-baseAff)) ∧ Small t ∧ LKeep base s t := by
+  rw [vaddBase]
+  refine WP.ite (!decide (v = 0)) (by simp only [eval, hz, Option.map_some]) (fun h => ?_) (fun h => ?_)
+  · have hv0 : v ≠ 0 := by simpa using h
+    obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hv0
+    simp only [List.append_assoc]
+    rw [WP.block_append_iff]
+    refine WP.mono (WP.vecKeep (by decide) (accumulateDec_ok s n hc)) fun b ⟨⟨bc, kb⟩, bx, bhy⟩ => ?_
+    have hsb : Scratch b base := hs.of_keeps kb (by decide)
+    rw [WP.block_append_iff]
+    refine WP.mono (WP.vecKeep baseAddr_scal (baseAddr_ok (T := T) hsb (by rw [kb.2.1]; exact hT) n (by omega) bc))
+      fun c ⟨⟨cp, kc⟩, cx, chy⟩ => ?_
+    have hsc : Scratch c base := hsb.of_keeps kc (by decide)
+    have hm : c.mem = s.mem := kc.2.1.trans kb.2.1
+    obtain ⟨q, hq, hr⟩ := baseByteCached_ok n (by omega)
+    obtain ⟨pc, sc⟩ := lanePt_vec (cx.trans bx) (chy.trans bhy)
+    refine WP.mono (ventryAt_ok (q := q) hsc (by rw [hm]; exact hk) (sc hx) cp
+      (fun d hd => by
+        rw [kc.2.2.1, kc.2.2.2, kb.2.2.1, kb.2.2.2]
+        have := ht.read (128 * n + d) 32 (by omega)
+        simp only [off, Offset.add_add] at this ⊢
+        exact this)
+      (by rw [hm, ht.entry n (by omega), hq]))
       fun t ⟨tg, trd, twr, tou, tsm, tp⟩ => ⟨?_, tsm, ?_⟩
     · rw [tp, pc]; exact pointAdd_rep ha hr
     · refine (LKeep.of_keeps kb (by decide)).trans ((LKeep.of_keeps kc (by decide)).trans

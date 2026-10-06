@@ -128,7 +128,7 @@ theorem upd_call (v : Compress) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
     simp only [updWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · obtain ⟨R, hR, hsub⟩ := hi
-      exact ⟨R, List.mem_append_left _ hR, hsub⟩
+      exact ⟨R, List.mem_append_left _ (List.mem_append_left _ hR), hsub⟩
     · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
     · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
   · intro r hr
@@ -257,7 +257,7 @@ theorem reduceArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some,
     reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h144,
     Option.some.injEq, exists_eq_left', hc.pScr, ReduceArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial,
     by rw [show (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 from rfl, add_add], trivial⟩
 
 abbrev reduceRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 80, 64⟩]
@@ -311,7 +311,7 @@ theorem reduce_call (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : Reduc
 
 /-- Stores in the upper half of the challenge preserve the saved arguments. -/
 theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t)
-    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hmx : t'.mxcsr = t.mxcsr)
+    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms)
     (hg : t'.gpr = t.gpr) (hf : Frame [⟨L.B + BitVec.ofNat 64 48, 32⟩] t.mem t'.mem) :
     Ctx L g mx m₀ t' := by
   have keep : ∀ d, 144 ≤ d → d + 8 ≤ 184 →
@@ -328,7 +328,7 @@ theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t)
     (keep 160 (by omega) (by omega)).trans hc.pLen,
     (keep 168 (by omega) (by omega)).trans hc.pMsg,
     (keep 176 (by omega) (by omega)).trans hc.pPk,
-    hc.frame.trans (Frame.sub hf ?_)⟩
+    hc.frame.trans (Frame.sub hf ?_), by rw [hsy]; exact hc.sym, hc.held⟩
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨L.STK, by simp, Offset.sub_base _ (by decide)⟩
@@ -352,8 +352,8 @@ theorem extend_ok {t : State} (hc : Ctx L g mx m₀ t) :
     w0, w1, w2, w3, Option.bind_some, Option.some.injEq, exists_eq_left']
   obtain ⟨hf, h0, h1, h2, h3⟩ := PublicKey.four_ok (L.B + BitVec.ofNat 64 32) t.mem 0 0 0 0
   simp only [add_add, Nat.reduceAdd] at hf h0 h1 h2 h3
-  have hz := hc.regs (t' := (arithFlags t (0 : BitVec 32) false false).setReg .rax 0) rfl rfl rfl rfl (by cs_tac)
-  exact ⟨hz.store rfl rfl rfl rfl hf, hf, h0, h1, h2, h3⟩
+  have hz := hc.regs (t' := (arithFlags t (0 : BitVec 32) false false).setReg .rax 0) rfl rfl rfl rfl rfl (by cs_tac)
+  exact ⟨hz.store rfl rfl rfl rfl rfl hf, hf, h0, h1, h2, h3⟩
 
 end VG.Proof.Ed25519.X86_64.VerifyMessage
 end
@@ -414,9 +414,9 @@ theorem equationArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
     Option.map_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, h144, h152, h176, Option.some.injEq, exists_eq_left', hc.pScr, hc.pSig, hc.pPk, EqArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial, trivial⟩
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial, trivial⟩
 
-abbrev eqRd (L : Lay) : List Region := [L.PK, L.SIG, ⟨L.B + BitVec.ofNat 64 16, 64⟩]
+abbrev eqRd (L : Lay) : List Region := [L.PK, L.SIG, ⟨L.B + BitVec.ofNat 64 16, 64⟩, L.TBL]
 abbrev eqWr (L : Lay) : List Region := [L.SCR]
 
 theorem eq_regs {t : State} (ha : EqArgs L t) (rd wr : List Region) :
@@ -424,14 +424,37 @@ theorem eq_regs {t : State} (ha : EqArgs L t) (rd wr : List Region) :
   ⟨(gpr_ce _ _ _ (by decide)).trans ha.1, (gpr_ce _ _ _ (by decide)).trans ha.2.1,
     (gpr_ce _ _ _ (by decide)).trans ha.2.2.1, (gpr_ce _ _ _ (by decide)).trans ha.2.2.2⟩
 
+/-- The static's words, as the equation checker is entered. -/
+theorem Ctx.ce_held (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (rd wr : List Region) :
+    ∀ i < 4080, (t.callEntry.withRegions rd wr).mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.Ed25519.X86_64.baseBytesWords.getD i 0 := by
+  intro i hi
+  rw [State.withRegions_mem, ← hc.held i hi]
+  apply Mem.readW_congr
+  intro j hj
+  simp only [Nat.reduceDiv] at hj
+  rw [Offset.add_add]
+  rw [PublicKey.ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tk.sub_right (Offset.sub_base _
+    (by decide : 8 + 8 ≤ 184))).symm) (show 32640 ≤ 2 ^ 64 by decide) (show 8 * i + j < 32640 by omega)]
+  exact Frame.bytes hc.frame (R := L.TBL) (by
+    intro R hR
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl
+    · exact hL.ts
+    · exact hL.tk) (show 32640 ≤ 2 ^ 64 by decide) (show 8 * i + j < 32640 by omega)
+
 theorem eq_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : EqArgs L t) :
     verifyLocal.pre (t.callEntry.withRegions (eqRd L) (eqWr L)) := by
   obtain ⟨hdi, hsi, hdx, hcx⟩ := eq_regs ha (eqRd L) (eqWr L)
-  simp only [verifyLocal, rsp_ce, hdi, hsi, hdx, hcx, hc.rsp, sub8,
+  have hsy : (t.callEntry.withRegions (eqRd L) (eqWr L)).syms Impl.Ed25519.X86_64.baseBytesSym = L.T :=
+    hc.sym
+  have hh := hc.ce_held hL (eqRd L) (eqWr L)
+  simp only [verifyLocal, rsp_ce, hdi, hsi, hdx, hcx, hc.rsp, sub8, hsy,
     State.withRegions_rd, State.withRegions_wr]
   exact ⟨trivial, trivial, hL.sc L.PK (by simp [Lay.inputs]), hL.sc L.SIG (by simp [Lay.inputs]),
     by simpa using hL.stk_scr (d := 16) (n := 64) (e := 0) (k := 8192) (by omega) (by omega),
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc⟩
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc,
+    hL.ts, hh⟩
 
 /-- What the call of the equation checker `c` needs of its code, beyond its
 correctness: it restores MXCSR (`ctlOk`), writes `rsp` only as calls and
@@ -453,10 +476,11 @@ theorem eq_call (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (h
     fun s' hc' _ _ ⟨s₂, _, hg, hpost⟩ => ⟨hc', ?_⟩
   · intro r hr
     simp only [eqRd, eqWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩
     · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩
     · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
     · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
   · intro r hr
     simp only [eqWr, List.mem_singleton] at hr
@@ -581,7 +605,8 @@ theorem Lay.Ok.message_bound {L : Lay} (h : L.Ok) : 64 + L.len.toNat < 2 ^ 64 :=
 
 def verifyMessageLocal : Contract isa where
   pre s := 184 ≤ (s.gpr .rsp).toNat ∧
-    s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 64⟩] ∧
+    s.rd = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨s.gpr .rcx, 64⟩,
+      ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩] ∧
     s.wr = [⟨s.gpr .r8, 8192⟩] ∧
     Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .r8, 8192⟩ ∧
     Region.Disjoint ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩ ⟨s.gpr .r8, 8192⟩ ∧
@@ -596,7 +621,12 @@ def verifyMessageLocal : Contract isa where
     Region.Disjoint ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ⟨s.gpr .r8, 8192⟩ ∧
     (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧
     (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
-    (s.gpr .rcx).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .rcx).toNat + 64 ≤ 2 ^ 64 ∧ (s.gpr .r8).toNat + 8192 ≤ 2 ^ 64 ∧
+    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩ ⟨s.gpr .r8, 8192⟩ ∧
+    Region.Disjoint ⟨s.syms Impl.Ed25519.X86_64.baseBytesSym, 32640⟩
+      ⟨s.gpr .rsp - BitVec.ofNat 64 184, 184⟩ ∧
+    ∀ i < 4080, s.mem.readW (s.syms Impl.Ed25519.X86_64.baseBytesSym + BitVec.ofNat 64 (8 * i)) 64 =
+      Impl.Ed25519.X86_64.baseBytesWords.getD i 0
   post s t := t.gpr .rax = if Spec.Ed25519.verify
     (Spec.Ed25519.bytesAt s.mem (s.gpr .rdi) 32)
     (Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat)
@@ -607,17 +637,19 @@ def verifyMessageLocal : Contract isa where
     Spec.Ed25519.bytesAt s.mem (s.gpr .rdi) 32 = Spec.Ed25519.bytesAt t.mem (t.gpr .rdi) 32 ∧
     Spec.Ed25519.bytesAt s.mem (s.gpr .rsi) (s.gpr .rdx).toNat =
       Spec.Ed25519.bytesAt t.mem (t.gpr .rsi) (t.gpr .rdx).toNat ∧
-    Spec.Ed25519.bytesAt s.mem (s.gpr .rcx) 64 = Spec.Ed25519.bytesAt t.mem (t.gpr .rcx) 64
+    Spec.Ed25519.bytesAt s.mem (s.gpr .rcx) 64 = Spec.Ed25519.bytesAt t.mem (t.gpr .rcx) 64 ∧
+    s.syms Impl.Ed25519.X86_64.baseBytesSym = t.syms Impl.Ed25519.X86_64.baseBytesSym
 
 def lay (s : State) : Lay :=
-  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .rsp - BitVec.ofNat 64 184⟩
+  ⟨s.gpr .rdi, s.gpr .rsi, s.gpr .rdx, s.gpr .rcx, s.gpr .r8, s.gpr .rsp - BitVec.ofNat 64 184,
+    s.syms Impl.Ed25519.X86_64.baseBytesSym⟩
 
 theorem lay_ret (s : State) : (lay s).B + BitVec.ofNat 64 184 = s.gpr .rsp := BitVec.sub_add_cancel _ _
 
 theorem lay_ok {s : State} (h : verifyMessageLocal.pre s) : (lay s).Ok := by
-  obtain ⟨-, -, -, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc⟩ := h
+  obtain ⟨-, -, -, pc, mc, sc, rp, rm, rs, rc, kp, km, ks, kc, np, nm, ns, nc, ts, tk, -⟩ := h
   have e : (lay s).RET = ⟨s.gpr .rsp, 8⟩ := by simp only [Lay.RET, lay_ret]
-  refine ⟨?_, ?_, ?_, kc, e ▸ rc, np, nm, ns, nc⟩
+  refine ⟨?_, ?_, ?_, kc, e ▸ rc, np, nm, ns, nc, ts, tk⟩
   · intro r hr
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -658,7 +690,8 @@ theorem push_ctx {s : State} (h : verifyMessageLocal.pre s) :
       ((lay s).B + BitVec.ofNat 64 (176 - 8 * j)) 64 = s.gpr (pushRs[j]'(by show j < 21; omega)) := fun j hj => by
     rw [← hw j (by show j < 21; omega)]; simp only [lay]; rw [push_slot _ j hj]; rfl
   refine ⟨by rw [pushed_rd, h.2.1]; rfl, ?_, ?_, fun r _ hr => pushed_gpr _ _ hr, by rw [pushed_mxcsr],
-    hw' 4 (by omega), hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_⟩
+    hw' 4 (by omega), hw' 3 (by omega), hw' 2 (by omega), hw' 1 (by omega), hw' 0 (by omega), ?_,
+    by rw [PublicKey.pushed_syms_eq]; rfl, h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2⟩
   · rw [pushed_wr, h.2.2.1]; simp only [show pushRs.length = 21 from rfl, lay]; rw [push_base]
   · rw [pushed_rsp]; simp only [show pushRs.length = 21 from rfl, lay]; rw [push_base]
   · refine Frame.sub hf fun r hr => ?_
@@ -766,7 +799,7 @@ theorem two_blk {is : List Instr} {Φ Ψ : Lay → Mem → State → Prop}
     RelCT isa (Two Φ) (.block is) (Two Ψ) := two_wp (two_block h) hw
 
 structure Access (L : Lay) (rd wr : List Region) : Prop where
-  sub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.inputs ++ [L.FR, L.SCR], Within r R
+  sub : ∀ r ∈ rd ++ wr, ∃ R ∈ L.inputs ++ [L.TBL] ++ [L.FR, L.SCR], Within r R
   wsub : ∀ r ∈ wr, Within r L.DATA ∨ Within r L.SCR
 
 theorem covers {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t : State}
@@ -838,7 +871,7 @@ theorem upd_access (L : Lay) (p : Addr) (n : BitVec 64) (hi : Input L ⟨p, n.to
     simp only [updWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · obtain ⟨R, hR, hs⟩ := hi
-      exact ⟨R, List.mem_append_left _ hR, hs⟩
+      exact ⟨R, List.mem_append_left _ (List.mem_append_left _ hR), hs⟩
     · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
     · exact ⟨L.SCR, by simp, within_off _ (by omega)⟩
   wsub := by
@@ -883,10 +916,11 @@ theorem eq_access (L : Lay) : Access L (eqRd L) (eqWr L) where
   sub := by
     intro r hr
     simp only [eqRd, eqWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩
     · exact ⟨L.SIG, by simp [Lay.inputs], within_base _ (by omega)⟩
     · exact ⟨L.FR, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
     · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
   wsub := by
     intro r hr
@@ -1056,7 +1090,7 @@ theorem equation_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)
   obtain ⟨d₁, s₁, x₁, r₁⟩ := eq_regs a₁.1 (eqRd L) (eqWr L)
   obtain ⟨d₂, s₂, x₂, r₂⟩ := eq_regs a₂.1 (eqRd L) (eqWr L)
   refine ⟨by rw [rsp_ce, rsp_ce, c₁.rsp, c₂.rsp], d₁.trans d₂.symm,
-    s₁.trans s₂.symm, x₁.trans x₂.symm, r₁.trans r₂.symm, ?_, ?_, ?_⟩
+    s₁.trans s₂.symm, x₁.trans x₂.symm, r₁.trans r₂.symm, ?_, ?_, ?_, ?_⟩
   · rw [d₁, d₂, State.withRegions_mem, State.withRegions_mem]
     have h₁ := c₁.ce_bytes hL (r := L.PK)
       ⟨L.PK, by simp [Lay.inputs], within_base _ (by omega)⟩ (by decide : 32 ≤ 2 ^ 64)
@@ -1071,6 +1105,7 @@ theorem equation_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)
     exact h₁.trans (hi.2.2.trans h₂.symm)
   · rw [x₁, x₂, State.withRegions_mem, State.withRegions_mem, ce_challenge c₁ a₁.2,
       ce_challenge c₂ a₂.2, hi.challenge]
+  · exact c₁.sym.trans c₂.sym.symm
 
 theorem body_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld win)) (v : Compress) : RelCT isa (Two fun _ _ _ => True)
     (body fld win fs v.callee v.suffix) fun _ _ => True := by
@@ -1092,8 +1127,8 @@ theorem verifyMessage_ct (hq : EqCode (VG.Impl.Ed25519.X86_64.verifyEquation fld
     ConstantTime isa verifyMessageLocal.pre verifyMessageLocal.pub (code fld win fs v.callee v.suffix) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.1)
     (RelCT.mono (body_ct hq v) ?_ fun _ _ _ => trivial))
-  rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hsp, hdi, hsi, hdx, hcx, h8, hp, hm, hs⟩, rfl, rfl⟩
-  have e : lay s₂ = lay s₁ := by simp only [lay, hsp, hdi, hsi, hdx, hcx, h8]
+  rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hsp, hdi, hsi, hdx, hcx, h8, hp, hm, hs, hsy⟩, rfl, rfl⟩
+  have e : lay s₂ = lay s₁ := by simp only [lay, hsp, hdi, hsi, hdx, hcx, h8, hsy]
   have hi : InputsEq (lay s₁) s₁.mem s₂.mem := by
     refine ⟨?_, ?_, ?_⟩
     · simpa only [lay, hdi] using hp

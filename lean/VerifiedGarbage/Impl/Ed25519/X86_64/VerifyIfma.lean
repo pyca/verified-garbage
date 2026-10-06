@@ -12,7 +12,7 @@ throughout, as five limbs of 51 bits, rather than in slots 0–3:
 * the four doublings of a window are `vdbl4`'s, as the comb's
   (`Ifma.combMultiply`);
 * a nonzero digit's table entry, cached as `[Y - X, Y + X, 2dT, 2Z]` (the
-  tables of `[j]A` and `-[j]B`, at bytes 5376 and 2048, are already in that
+  table of `[j]A` at byte 5376 and the static of `-[j]B` are already in that
   form), is loaded a row of words at a time into `ymm11–ymm14` (`vrows`),
   split into the limbs of the lanes of `ymm5–ymm9` (`esplit`) and added with
   the comb's two four-lane products (`vadd`);
@@ -29,7 +29,7 @@ namespace VG.Impl.Ed25519.X86_64.Ifma
 open VG.X86_64
 open VG.Impl.X25519.X86_64 (at_)
 open VG.Impl.X25519.X86_64.Ifma (y)
-open VG.Impl.Ed25519.X86_64 (tableAddr batchBegin batchTest digitHigh digitLow counterCmp)
+open VG.Impl.Ed25519.X86_64 (tableAddr baseAddr batchBegin batchTest digitHigh digitLow digitS counterCmp)
 
 /-- The four rows of the table entry at `rax` into `ymm11–ymm14`. -/
 def vrows : List Instr :=
@@ -44,9 +44,11 @@ def vaddDigit (o : Nat) : Prog isa :=
 /-- A window of `k` alone. -/
 def vwindowA (digit : List Instr) : Prog isa := .seq vdbl4 (.seq (.block digit) (vaddDigit 5376))
 
-/-- A window of `k` and of `S`. -/
-def vwindowAB (digitA digitB : List Instr) : Prog isa :=
-  .seq (vwindowA digitA) (.seq (.block digitB) (vaddDigit 2048))
+/-- `-[rbx]B`, entry `rbx - 1` of the static, added to the point in the lanes, unless `rbx` is
+zero. -/
+def vaddBase : Prog isa :=
+  .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ vrows ++ esplit ++ vadd))
+    (.block [])
 
 /-- A byte of `k` alone (bytes 63 down to 32). -/
 def vbyteStepA : Prog isa :=
@@ -55,8 +57,8 @@ def vbyteStepA : Prog isa :=
 
 /-- A byte of `k` and of `S` (bytes 31 down to 0). -/
 def vbyteStepAB : Prog isa :=
-  .seq (.block batchBegin) (.seq (vwindowAB (digitHigh 7952 0) (digitHigh 7944 32))
-    (.seq (vwindowAB (digitLow 7952 0) (digitLow 7944 32)) (.block batchTest)))
+  .seq (.block batchBegin) (.seq (vwindowA (digitHigh 7952 0))
+    (.seq (vwindowA (digitLow 7952 0)) (.seq (.block digitS) (.seq vaddBase (.block batchTest)))))
 
 /-- The bytes of `k` alone that are left after `skipZero`. -/
 def vwindowsA : Prog isa :=

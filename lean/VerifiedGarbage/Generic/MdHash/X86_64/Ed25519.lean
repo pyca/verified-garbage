@@ -35,8 +35,10 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
       the selected SHA-512 backend, reduces the challenge modulo L, and calls \
       `vg_ed25519_verify_equation" ++ fs ++ "`. The digest and zero-extended reduced challenge \
       occupy separate buffers in a 168-byte stack frame; calls use another 16 bytes below it."])
+    consts := Impl.Ed25519.X86_64.baseBytesConsts
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
-    contract := Spec.Ed25519.verifyContract X86_64.abi 184
+    contract :=
+      Spec.Ed25519.verifyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseBytesConsts) 184
     stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c
