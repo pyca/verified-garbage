@@ -17,10 +17,34 @@ pub fn bench(c: &mut Criterion) {
     };
 
     use crate::hash_group;
-    hash_group(c, "sha3-224", Sha3_224::digest, MessageDigest::sha3_224());
-    hash_group(c, "sha3-256", Sha3_256::digest, MessageDigest::sha3_256());
-    hash_group(c, "sha3-384", Sha3_384::digest, MessageDigest::sha3_384());
-    hash_group(c, "sha3-512", Sha3_512::digest, MessageDigest::sha3_512());
+    hash_group(
+        c,
+        "sha3-224",
+        Sha3_224::digest,
+        MessageDigest::sha3_224(),
+        None,
+    );
+    hash_group(
+        c,
+        "sha3-256",
+        Sha3_256::digest,
+        MessageDigest::sha3_256(),
+        Some(&aws_lc_rs::digest::SHA3_256),
+    );
+    hash_group(
+        c,
+        "sha3-384",
+        Sha3_384::digest,
+        MessageDigest::sha3_384(),
+        Some(&aws_lc_rs::digest::SHA3_384),
+    );
+    hash_group(
+        c,
+        "sha3-512",
+        Sha3_512::digest,
+        MessageDigest::sha3_512(),
+        Some(&aws_lc_rs::digest::SHA3_512),
+    );
     xof_group(c, "shake128", Shake128::digest, MessageDigest::shake_128());
     xof_group(c, "shake256", Shake256::digest, MessageDigest::shake_256());
 }

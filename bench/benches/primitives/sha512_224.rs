@@ -10,5 +10,5 @@ pub const USES: &[&str] = &["sha512_224", "sha512"];
 
 pub fn bench(c: &mut Criterion) {
     let md = MessageDigest::from_name("SHA512-224").unwrap();
-    hash_group(c, "sha512-224", Sha512_224::digest, md);
+    hash_group(c, "sha512-224", Sha512_224::digest, md, None);
 }

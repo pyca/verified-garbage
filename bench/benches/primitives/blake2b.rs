@@ -16,7 +16,7 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::{hash_group, hash_verify_group};
     let md = MessageDigest::from_name("BLAKE2B512").unwrap();
-    hash_group(c, "blake2b-512", Blake2b512::digest, md);
+    hash_group(c, "blake2b-512", Blake2b512::digest, md, None);
     // Unkeyed, as rust-openssl has no keyed BLAKE2 (`EVP_MAC`): `verify`
     // takes the same time keyed, after one more block.
     hash_verify_group(
