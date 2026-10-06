@@ -87,8 +87,7 @@ def addDigit (o : Nat) (add : List Instr) : Prog isa :=
   .ite .ne (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr o ++ pointFromTableQ ++ add))
     (.block [])
 
-/-- A window of `k` alone, with the doublings `dbl` (`double4`, or
-`Ifma.double4`). -/
+/-- A window of `k` alone, with the doublings `dbl` (`double4`). -/
 def windowA (fld : Arith) (dbl : Prog isa) (digit : List Instr) : Prog isa :=
   .seq dbl (.seq (.block digit) (addDigit 5376 (pointAddCached fld)))
 

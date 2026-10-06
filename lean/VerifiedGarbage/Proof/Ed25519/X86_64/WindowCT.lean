@@ -423,10 +423,6 @@ theorem byteStepAB_ct {base kp sp : Addr} {A : EPoint dZ} {K S i : Nat} (hi : i 
 
 /-! ## Loops -/
 
-/-- A run of the loops: from a state satisfying `R₀`, with `c` bytes left. -/
-def LoopRun (R₀ : State → Prop) (base kp sp : Addr) (A : EPoint dZ) (K S c : Nat) (x : State) : Prop :=
-  ∃ s₀, R₀ s₀ ∧ WinLoop s₀ base kp sp A K S c x
-
 theorem loopA_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} {K S : Nat} (n : Nat)
     (hn0 : 0 < n) (hn : n ≤ 32) :
     RelCT isa (fun x y => LoopRun R₀ base kp sp A K S (32 + n) x ∧ LoopRun R₀ base kp sp A K S (32 + n) y)
@@ -531,6 +527,15 @@ theorem windowsA_ct {R₀ : State → Prop} {base kp sp : Addr} {A : EPoint dZ} 
       have := h.2; simp only [eval, h.1.1.1, Option.map_some] at this; simpa using this
     subst hc
     exact ⟨h.1.1.2, h.1.2.2⟩
+
+/-- `windows`, with doublings `dbl`. -/
+instance : EdWindows (windows fld dbl) where
+  ok hc32 hc64 h := by
+    rw [windows]
+    exact WP.seq (WP.mono (windowsA_ok hc32 hc64 h) fun _ h' => loopB_ok h')
+  ct hc32 hc64 := by
+    rw [windows]
+    exact VG.RelCT.seq (windowsA_ct hc32 hc64) loopB_ct
 
 /-! ## Skipping the leading zero bytes of `k` -/
 

@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
 
 `Ifma.combMultiply` is `combMultiply`'s comb (the same digits, tables and
 order of additions and doublings) with the accumulated point `(X, Y, Z, T)`
-in the four lanes of `ymm0–ymm4`, as `Ifma.double4` keeps it, and each
+in the four lanes of `ymm0–ymm4`, as `Ifma.windows` keeps it, and each
 addition of a table's entry done in two products of X25519's four-lane field
 arithmetic (`mul4`):
 
