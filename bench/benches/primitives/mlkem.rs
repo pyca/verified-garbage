@@ -1,11 +1,14 @@
 //! The benchmarks of ML-KEM, for each parameter set: key generation from a
-//! seed, encapsulation and decapsulation.
+//! seed, encapsulation and decapsulation, beside OpenSSL and aws-lc-rs.
 //!
 //! OpenSSL implements ML-KEM from version 3.5, which the runners' OpenSSL
 //! (3.0) predates. Enable `openssl-mlkem` on a supported host for the comparison.
-//! Keys are expanded before timing encapsulation/decapsulation; OpenSSL
-//! creates a fresh operation context each iteration. Both encapsulators use
-//! fresh randomness. Key generation includes expansion from the same seed.
+//! Keys are expanded before timing encapsulation/decapsulation; OpenSSL and
+//! aws-lc-rs create a fresh operation context each iteration. All
+//! encapsulators use fresh randomness. Key generation includes expansion from
+//! the same seed, except aws-lc-rs's, which has no key generation from a seed
+//! (nor import of one): it generates a key from fresh randomness, and
+//! decapsulates with that key instead of ours.
 //! The ids' sizes are the bytes of the output (the keys, the ciphertext and
 //! the shared secret key).
 
@@ -19,13 +22,13 @@
 /// Runs, in `$c`, the benchmarks of the module `verified_garbage::$module`
 /// and its key types, in groups named after the module.
 macro_rules! mlkem_bench {
-    ($c:expr, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident, $key_type:ident) => {{
+    ($c:expr, verified_garbage::$module:ident, $DecapsulationKey:ident, $EncapsulationKey:ident, $key_type:ident, $aws_lc:ident) => {{
         use std::hint::black_box;
 
         use criterion::BenchmarkId;
         use verified_garbage::$module::{$DecapsulationKey, $EncapsulationKey};
 
-        use crate::VG;
+        use crate::{AWS_LC, VG};
         let c: &mut criterion::Criterion = $c;
         let seed = [0x42; 64];
         let dk = $DecapsulationKey::from_seed(&seed).unwrap();
@@ -55,6 +58,39 @@ macro_rules! mlkem_bench {
             );
             (key, public)
         };
+        let aws_lc_alg = &aws_lc_rs::kem::$aws_lc;
+        let aws_lc_public =
+            aws_lc_rs::kem::EncapsulationKey::new(aws_lc_alg, ek.as_bytes()).unwrap();
+        let (ciphertext, ss) = aws_lc_public.encapsulate().unwrap();
+        assert_eq!(
+            &dk.decapsulate(ciphertext.as_ref().try_into().unwrap())
+                .unwrap(),
+            ss.as_ref()
+        );
+        // aws-lc-rs imports expanded decapsulation keys but not seeds, which
+        // is all of ours there is: it decapsulates a ciphertext of ours for a
+        // key it generated.
+        let aws_lc_key = aws_lc_rs::kem::DecapsulationKey::generate(aws_lc_alg).unwrap();
+        let (aws_lc_ss, aws_lc_ct) = $EncapsulationKey::from_bytes(
+            aws_lc_key
+                .encapsulation_key()
+                .unwrap()
+                .key_bytes()
+                .unwrap()
+                .as_ref()
+                .try_into()
+                .unwrap(),
+        )
+        .unwrap()
+        .encapsulate_internal(&[0x42; 32])
+        .unwrap();
+        assert_eq!(
+            aws_lc_key
+                .decapsulate((&aws_lc_ct[..]).into())
+                .unwrap()
+                .as_ref(),
+            aws_lc_ss
+        );
         let mut g = c.benchmark_group(concat!(stringify!($module), "_keygen"));
         g.bench_function(BenchmarkId::new(VG, $EncapsulationKey::SIZE + 64), |b| {
             b.iter(|| $DecapsulationKey::from_seed(black_box(&seed)).unwrap())
@@ -76,6 +112,19 @@ macro_rules! mlkem_bench {
                 })
             },
         );
+        g.bench_function(
+            BenchmarkId::new(AWS_LC, $EncapsulationKey::SIZE + 64),
+            |b| {
+                b.iter(|| {
+                    aws_lc_rs::kem::DecapsulationKey::generate(black_box(aws_lc_alg))
+                        .unwrap()
+                        .encapsulation_key()
+                        .unwrap()
+                        .key_bytes()
+                        .unwrap()
+                })
+            },
+        );
         g.finish();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_encaps"));
         g.bench_function(
@@ -93,6 +142,10 @@ macro_rules! mlkem_bench {
                 })
             },
         );
+        g.bench_function(
+            BenchmarkId::new(AWS_LC, $EncapsulationKey::CIPHERTEXT_SIZE + 32),
+            |b| b.iter(|| black_box(&aws_lc_public).encapsulate().unwrap()),
+        );
         g.finish();
         let mut g = c.benchmark_group(concat!(stringify!($module), "_decaps"));
         g.bench_function(BenchmarkId::new(VG, 32), |b| {
@@ -101,6 +154,13 @@ macro_rules! mlkem_bench {
         #[cfg(feature = "openssl-mlkem")]
         g.bench_function(BenchmarkId::new(crate::OPENSSL, 32), |b| {
             b.iter(|| crate::mlkem::openssl_decapsulate(black_box(&openssl_key), black_box(&ct)))
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, 32), |b| {
+            b.iter(|| {
+                black_box(&aws_lc_key)
+                    .decapsulate(black_box(&aws_lc_ct[..]).into())
+                    .unwrap()
+            })
         });
         g.finish();
     }};
