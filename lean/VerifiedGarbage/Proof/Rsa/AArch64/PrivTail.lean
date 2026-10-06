@@ -272,4 +272,28 @@ theorem rel_step {t₀ t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k
   · rw [ite_neg' (hx' j (by omega)), ite_neg' (hx j (by omega))]
     exact hI.frame x (fun i hi => hx i (by omega)) fun i hi => hx' i (by omega)
 
+/-- The release of the `k` bytes at `Mb` to `op`. -/
+theorem releaseLoop_ok {t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k : Nat} (hk1 : 1 ≤ k)
+    (hk : k < 2 ^ 63) (h10 : t.gpr .x10 = 0) (h12 : t.gpr .x12 = Proof.Rsa.relMask gv eq)
+    (h11 : t.gpr .x11 = op) (h14 : t.gpr .x14 = Mb) (h15 : t.gpr .x15 = BitVec.ofNat 64 k)
+    (hsep : ∀ i < k, ∀ i' < k, op + BitVec.ofNat 64 i ≠ Mb + BitVec.ofNat 64 i')
+    (hinj : ∀ i < k, ∀ i' < k, op + BitVec.ofNat 64 i = op + BitVec.ofNat 64 i' → i = i')
+    (hinjM : ∀ i < k, ∀ i' < k, Mb + BitVec.ofNat 64 i = Mb + BitVec.ofNat 64 i' → i = i')
+    (ho : ∀ i < k, InRegions t.wr (op + BitVec.ofNat 64 i) 1)
+    (hm : ∀ i < k, InRegions t.wr (Mb + BitVec.ofNat 64 i) 1) :
+    WP isa releaseLoop t (RelInv t op Mb gv eq k k) := by
+  refine wp_down (r := .x15) hk1 (by omega) (RelInv t op Mb gv eq k) (fun j hj u hI => ?_) (fun _ h => h)
+    ⟨Keep.refl _ _, by rw [h11, BitVec.add_zero], by rw [h14, BitVec.add_zero], by rw [h15, Nat.sub_zero],
+      fun _ h => absurd h (by omega), fun _ h => absurd h (by omega), fun _ _ _ => rfl⟩
+  have hw : u.wr = t.wr := hI.keep.wr
+  exact rel_step hj hk h10 h12 hsep hinj hinjM (hw ▸ ho j hj) (hw ▸ hm j hj) hI
+
+/-- Distinct offsets below `k ≤ 2 ^ 64` of an address are distinct addresses. -/
+theorem add_ofNat_inj (p : Addr) {k : Nat} (hk : k ≤ 2 ^ 64) :
+    ∀ i < k, ∀ i' < k, p + BitVec.ofNat 64 i = p + BitVec.ofNat 64 i' → i = i' := by
+  intro i hi i' hi' h
+  have := congrArg BitVec.toNat ((BitVec.add_right_inj p).mp h)
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+  exact this
+
 end VG.Proof.Rsa.AArch64
