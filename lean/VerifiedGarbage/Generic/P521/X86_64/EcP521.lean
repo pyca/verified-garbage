@@ -21,7 +21,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
     doc := Spec.EcKey.P521.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves its caller's callee-saved registers in `scratch`; field elements are nine 64-bit \
-      words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, its accumulator in `scratch`) \
+      words in Montgomery form, multiplied by Montgomery multiplication by columns (product \
+      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
+      reduction's multiplier is its column's low word, added 512 times eight columns up) \
       with a final conditional subtraction; `[d]G` is the signature's comb over the 7-bit \
       windows of `d`, from the static `VG_P521_COMB`; and `Z⁻¹` is \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \

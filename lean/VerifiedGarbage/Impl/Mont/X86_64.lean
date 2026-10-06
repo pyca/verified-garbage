@@ -49,7 +49,14 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   `[M.tmp]`, then `csubW`, or `m` added under the mask of the borrow (through
   `[o]`).
 
-`mul`, `add` and `sub` choose by `n`. Every multiplication is `mul` or `mulx`, every
+* `mulP o a b`: for P-521's `p = 2⁵²¹ - 1` (its friendly reduction's words,
+  `p521Ws`), Montgomery multiplication by columns (product scanning), the
+  three-word accumulator in registers, each column's products loaded from
+  `[a]` and `[b]`; the reduction's `u_k`, the low words of the first nine
+  columns, need no multiplication by `-p⁻¹` and add `512 u_k` to column
+  `k + 8`; then `csubW`.
+
+`mul`, `add` and `sub` choose by `n` (and `mul` by the reduction). Every multiplication is `mul` or `mulx`, every
 selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
 `rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
@@ -352,10 +359,59 @@ def subW (M : Mod) (o a b : Nat) : List Instr :=
   chainW .sub .sbb M.n M.tmp a b ++ [.alu .sbb .rax (.reg .rax)] ++ masked M.n M.mo o ++
     chainW .add .adc M.n o M.tmp o
 
+/-! ## P-521's modulus: the product by columns -/
+
+/-- The words of `(p + 1) / 2⁶⁴ = 2⁴⁵⁷` for P-521's `p = 2⁵²¹ - 1`, its friendly
+reduction (`Red.ofModulus 9 p`). -/
+def p521Ws : List MWord := [.zero, .zero, .zero, .zero, .zero, .zero, .zero, .pow2 9, .zero]
+
+/-- The accumulator's registers in column `c` of `mulP`: they rotate, the low
+word of one column becoming the top word of the next once stored. -/
+def pAcc (c k : Nat) : Reg := [Reg.r9, .r10, .r11].getD ((c + k) % 3) .r9
+
+/-- A term's second factor: the word at `d` (`some d`), or 512. -/
+def pSrc : Option Nat → Src
+  | some d => .mem (sc d)
+  | none => .imm 512
+
+/-- `[dx] · y` added to the accumulator of column `c`, `y` (`pSrc dy`) into
+`rcx` and `[dx]` into `rax`. -/
+def pTerm (c dx : Nat) (dy : Option Nat) : List Instr :=
+  [.mov .rcx (pSrc dy), .mov .rax (.mem (sc dx)),
+    .mul .rcx, .alu .add (pAcc c 0) (.reg .rax), .alu .adc (pAcc c 1) (.reg .rdx),
+    .alu .adc (pAcc c 2) (.imm 0)]
+
+/-- The terms of column `c` of `mulP o a b`: the products `[a + 8i] [b + 8j]`
+with `i + j = c`, and for `8 ≤ c ≤ 16` the reduction's `512 u_{c-8}`, with
+`u_{c-8}` in the temporary area. -/
+def pTerms (M : Mod) (a b c : Nat) : List (Nat × Option Nat) :=
+  ((List.range 9).filter fun i => i ≤ c ∧ c - i < 9).map (fun i => (a + 8 * i, some (b + 8 * (c - i)))) ++
+    if 8 ≤ c ∧ c ≤ 16 then [(M.tmp + 8 * (c - 8), none)] else []
+
+/-- Column `c` of `mulP o a b`: its terms, then its low word stored at
+`[tmp + 8 (c mod 9)]` and cleared. -/
+def pCol (M : Mod) (a b c : Nat) : List Instr :=
+  (pTerms M a b c).flatMap (fun t => pTerm c t.1 t.2) ++
+    [.store (sc (M.tmp + 8 * (c % 9))) (pAcc c 0), .mov32 (pAcc c 0) (.imm 0)]
+
+/-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p = 2⁵²¹ - 1` (`o` may be `a` or
+`b`), by Montgomery multiplication in product scanning: column `c` sums the
+products `a_i b_j` with `i + j = c` in three registers (`pAcc`). As
+`p ≡ -1 (mod 2⁶⁴)`, the reduction's `u_k` is the low word of column `k`
+(`k ≤ 8`), stored at `[tmp + 8k]`, and adding `u_k p = 2^(521 + 64k) u_k - u_k`
+clears it and adds `2⁹ u_k = 512 u_k` to column `k + 8`. Columns 9 to 17 are
+the result, `(a b + U p) / 2⁵⁷⁶ < 2p`, stored over the `u`s no longer needed
+(column `c` at `[tmp + 8 (c - 9)]`), with its top word in `r9`; `csubW`
+reduces it into `[o]`. -/
+def mulP (M : Mod) (o a b : Nat) : List Instr :=
+  [.mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0)] ++
+    (List.range 18).flatMap (pCol M a b) ++ csubW M o
+
 /-! ## The operations -/
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then mulR M o a b else mulW M o a b
+def mul (M : Mod) (o a b : Nat) : List Instr :=
+  if M.n < 7 then mulR M o a b else if M.red = .friendly p521Ws then mulP M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr := if M.n < 7 then addR M o a b else addW M o a b

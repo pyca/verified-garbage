@@ -23,8 +23,11 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
     target := X86_64.target
     doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
-      form, multiplied by word-by-word Montgomery multiplication (CIOS, its accumulator in \
-      `scratch`) with a final conditional subtraction; the 66-byte encodings are read and \
+      form, multiplied modulo `p` by Montgomery multiplication by columns (product \
+      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
+      reduction's multiplier is its column's low word, added 512 times eight columns up) and \
+      modulo `n` by word-by-word Montgomery multiplication (CIOS, its accumulator in `scratch`), \
+      each with a final conditional subtraction; the 66-byte encodings are read and \
       written a word at a time, the top word's two bytes from the first eight or a byte at a \
       time, and the hash's integer is shifted right by its last 7 bits. `[k]G` is a fixed-base \
       comb of 7-bit signed digits: the 83 windows `k_j` of `k`'s bits as digits `k_j - 64` from \
@@ -57,8 +60,11 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       field arithmetic and inversions, with `vg_ecdh_p521`'s checks of the public key and window \
       method: it \
       saves its caller's callee-saved registers in `scratch`; field elements and scalars are nine \
-      64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
-      (CIOS, its accumulator in `scratch`) with a final conditional subtraction, and the hash's \
+      64-bit words in Montgomery form, multiplied modulo `p` by Montgomery multiplication by columns (product \
+      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
+      reduction's multiplier is its column's low word, added 512 times eight columns up) and \
+      modulo `n` by word-by-word Montgomery multiplication (CIOS, its accumulator in `scratch`), \
+      each with a final conditional subtraction, and the hash's \
       integer is shifted right by its last 7 bits. The key is checked without branches (its \
       first byte, both coordinates below `p`, and the curve's equation), and the window method \
       multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
