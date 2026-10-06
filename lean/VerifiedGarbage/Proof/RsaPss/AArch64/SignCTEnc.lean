@@ -21,7 +21,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (Two Pins two_taint two_post two_map two_ite w
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV two_taintE zH Lay slot_keep slotR mgfWr PssChecks HA HE MA MS
   dbRegs_ok clearY_ok copyDigest_ok copySaltY_ok signLen_ok clearEm_ok putSalt_ok putH_ok clearTop_ok
-  ctHash_ct mgfXor_ct mgfXor_ok ctHashWith_out pad80_ok nb_keep slot_not_below wS_frame off_sub off_add ld_slot
+  ctHash_ct mgfXor_ct mgfXor_ok ctHashWith_out two_step pins_nil pad80_ok nb_keep slot_not_below wS_frame off_sub off_add ld_slot
   DbAt)
 
 /-! ## The public values -/
@@ -110,12 +110,6 @@ theorem SR.congr {D K : Nat} {rs rs' : List (Reg × (State → BitVec 64))} {sl 
   sl := hs
   ok := h.ok
 
-/-- A block related by the taint analysis and by correctness, then the rest. -/
-theorem two_step {α : Type} {Φ Ψ : α → State → Prop} {l : List Instr} {c : Prog isa} {Q : State → State → Prop}
-    (ht : RelCT isa (Two Φ) (.block l) fun _ _ => True) (hw : ∀ a s, Φ a s → WP isa (.block l) s (Ψ a))
-    (h : RelCT isa (Two Ψ) c Q) : RelCT isa (Two Φ) (.seq (.block l) c) Q :=
-  RelCT.seq (two_post ht hw) h
-
 namespace SR
 variable {D K : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))}
   {a u : State} (h : SR D K rs sl a u)
@@ -149,9 +143,6 @@ theorem x23 (h23 : (Reg.x23, fun a : State => a.gpr .x3) ∈ rs) : u.gpr .x23 = 
   rw [h.r _ h23, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 end SR
-
-theorem pins_nil {α : Type} {Φ : α → State → Prop} (h : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → s₁.sp = s₂.sp) : Pins Φ [] :=
-  fun a s₁ s₂ h₁ h₂ => ⟨h a s₁ s₂ h₁ h₂, fun _ h => absurd h List.not_mem_nil⟩
 
 theorem SR.sp {D K : Nat} {rs : List (Reg × (State → BitVec 64))} {sl : List (Nat × (State → BitVec 64))} :
     ∀ a s₁ s₂, SR D K rs sl a s₁ → SR D K rs sl a s₂ → s₁.sp = s₂.sp :=

@@ -182,21 +182,14 @@ theorem check_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   rw [← off_add]
   exact byte_of_bytesAt hx hi
 
-include hH in
-theorem main_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (c : PdChecked) {K : Nat} {s w : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
-    (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte} {z : Nat} (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
-    (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo) (hc : cb = (0xFF : Byte) >>> z)
-    (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
-    WP isa (verifyMain H c.name c.code) w fun u => Mid s u ∧ (Cons s →
-      ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
-        EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
-        u.gpr .x0 = if b then 1#64 else 0#64) := by
+/-- `DB`'s registers, before the call. -/
+theorem pre_ok {D K : Nat} {s w : State} (hp : PreV D K s) (hK : 16 ≤ K) {lo : Nat} {cb : Byte}
+    (hm : AtMain D s lo cb w) (hfit : D + 2 ≤ (s.gpr .x1).toNat - lo) :
+    WP isa (.block dbRegs) w (PreCall D s lo cb) := by
   have L := rsa_lay hp hK hm.sp hm.wr hm.x20
-  unfold verifyMain seqs seqs seqs
-  refine WP.seq (WP.mono (dbRegs_ok L hm.x9 hm.lo) fun u₁ ⟨O₁, x25₁, x24₁⟩ => ?_)
-  rw [show (s.gpr .x1).toNat - lo - (H.D + 2) + 1 = (s.gpr .x1).toNat - lo - H.D - 1 by omega] at x25₁
-  have hP : PreCall H.D s lo cb u₁ := {
+  refine WP.mono (dbRegs_ok L hm.x9 hm.lo) fun u₁ ⟨O₁, x25₁, x24₁⟩ => ?_
+  rw [show (s.gpr .x1).toNat - lo - (D + 2) + 1 = (s.gpr .x1).toNat - lo - D - 1 by omega] at x25₁
+  exact {
     sp := O₁.sp.trans hm.sp
     rd := O₁.rd.trans hm.rd
     wr := O₁.wr.trans hm.wr
@@ -211,6 +204,19 @@ theorem main_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (h
     fr := O₁.mem ▸ hm.fr
     lo := O₁.mem ▸ hm.lo
     c := O₁.mem ▸ hm.c }
+
+include hH in
+theorem main_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
+    (hG : Proof.Mgf1.Valid G) (c : PdChecked) {K : Nat} {s w : State} (hp : PreV H.D K s) (hK : 16 ≤ K)
+    (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte} {z : Nat} (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
+    (hfit : H.D + 2 ≤ (s.gpr .x1).toNat - lo) (hc : cb = (0xFF : Byte) >>> z)
+    (hs : anyV s = 0 → (s.gpr .x7).toNat < (s.gpr .x1).toNat - lo - H.D - 1) :
+    WP isa (verifyMain H c.name c.code) w fun u => Mid s u ∧ (Cons s →
+      ∀ b : Bool, (b = true ↔ (lo = 1 → (pubX s).getD 0 0 = 0) ∧
+        EncOk G (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.D) ((pubX s).drop lo) ((s.gpr .x1).toNat - lo) z (sLenV s)) →
+        u.gpr .x0 = if b then 1#64 else 0#64) := by
+  unfold verifyMain seqs seqs seqs
+  refine WP.seq (WP.mono (pre_ok hp hK hm hfit) fun u₁ hP => ?_)
   refine WP.seq (WP.mono (pubArgs_ok hP) fun u₂ h₂ => ?_)
   refine WP.seq (WP.mono (call_ok c hp hcK h₂) fun u₃ h₃ => ?_)
   exact check_ok hH hGh hGl hG hp hK h₃ hlo hfit hc hs

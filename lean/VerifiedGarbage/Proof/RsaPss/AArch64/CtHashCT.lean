@@ -32,6 +32,15 @@ theorem two_taintE {α : Type} {Φ : α → State → Prop} {c c' : Prog isa} (r
     RelCT isa (Two Φ) c fun _ _ => True :=
   two_taint rs hpin (Taint.isSome_check_of_eraseOff he h)
 
+/-- A block related by the taint analysis and by correctness, then the rest. -/
+theorem two_step {α : Type} {Φ Ψ : α → State → Prop} {l : List Instr} {c : Prog isa} {Q : State → State → Prop}
+    (ht : RelCT isa (Two Φ) (.block l) fun _ _ => True) (hw : ∀ a s, Φ a s → WP isa (.block l) s (Ψ a))
+    (h : RelCT isa (Two Ψ) c Q) : RelCT isa (Two Φ) (.seq (.block l) c) Q :=
+  RelCT.seq (two_post ht hw) h
+
+theorem pins_nil {α : Type} {Φ : α → State → Prop} (h : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → s₁.sp = s₂.sp) : Pins Φ [] :=
+  fun a s₁ s₂ h₁ h₂ => ⟨h a s₁ s₂ h₁ h₂, fun _ h => absurd h List.not_mem_nil⟩
+
 /-- The taint checks of the hash function's code in `ctHashWith`, once for
 each hash function: its length field from `ℓ` (secret) and its digest. -/
 structure PssChecks (H : Hash) : Prop where
