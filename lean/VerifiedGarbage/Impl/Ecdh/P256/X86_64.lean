@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ecdh_p256`. -/
 def exchangeP256 : Prog isa := Cfg.exchange Impl.Ecdsa.X86_64.p256
 
+/-- `vg_ecdh_p256_adx`. -/
+def exchangeP256Adx : Prog isa := Cfg.exchange Impl.Ecdsa.X86_64.p256x
+
 end VG.Impl.Ecdh.X86_64

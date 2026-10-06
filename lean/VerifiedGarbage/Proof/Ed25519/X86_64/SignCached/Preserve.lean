@@ -19,7 +19,7 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 /-- Frame stores cannot overwrite the saved arguments. -/
 theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) {d n : Nat}
     (_hd : 16 ≤ d) (hn : d + n ≤ 208)
-    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hmx : t'.mxcsr = t.mxcsr)
+    (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms)
     (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
     (hf : Frame [⟨L.B + BitVec.ofNat 64 d, n⟩] t.mem t'.mem) : Ctx L g mx m₀ t' := by
   have keep : ∀ e, 216 ≤ e → e + 8 ≤ 264 →
@@ -37,7 +37,7 @@ theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) {d n : Nat}
     (keep 240 (by omega) (by omega)).trans hc.pPk,
     (keep 248 (by omega) (by omega)).trans hc.pSeed,
     (keep 256 (by omega) (by omega)).trans hc.pOut,
-    hc.frame.trans (Frame.sub hf ?_)⟩
+    hc.frame.trans (Frame.sub hf ?_), by rw [hsy]; exact hc.sym, hc.held⟩
   intro r hr
   simp only [List.mem_singleton] at hr; subst hr
   exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩
@@ -60,7 +60,7 @@ theorem pruneRegs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, 
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true,
     Nat.reduceAdd, s0, s1, s2, s3, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial,
     congrArg (_ &&& ·) (by decide : BitVec.signExtend 64 (BitVec.ofInt 32 (-8)) = BitVec.ofNat 64 (2 ^ 64 - 8)),
     trivial, trivial, trivial⟩
 
@@ -80,7 +80,7 @@ theorem stores_ok {u : State} (hc : Ctx L g mx m₀ u) :
     ea_stk, hc.rsp, add_add, Nat.reduceAdd, w0, w1, w2, w3, ite_true, Option.some.injEq,
     exists_eq_left']
   obtain ⟨hf, h0, h1, h2, h3⟩ := PublicKey.four_ok L.B u.mem (u.gpr .r8) (u.gpr .r9) (u.gpr .r10) (u.gpr .r11)
-  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
+  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
 
 theorem prune_ok {t : State} (hc : Ctx L g mx m₀ t) {h : List Byte}
     (hh : Spec.Sha512.bytesAt t.mem (L.B + BitVec.ofNat 64 144) 64 = h) :
@@ -300,7 +300,7 @@ theorem mulArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, hs, ho, Option.some.injEq, exists_eq_left', hc.pScr, hc.pOut, MulArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, rfl,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, rfl,
     by rw [sx32 (by decide : 64 < 2 ^ 31), add_add],
     by rw [sx32 (by decide : 96 < 2 ^ 31), add_add],
     by rw [sx32 (by decide : 0 < 2 ^ 31), BitVec.add_zero], trivial⟩
@@ -391,7 +391,7 @@ theorem prefixRegs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     ea_stk, hc.rsp, add_add, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     RegUpd.mem_setReg, Option.map_some, reduceCtorEq, ite_false, ite_true, Nat.reduceAdd,
     h0, h1, h2, h3, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial, trivial⟩
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial, trivial⟩
 
 theorem prefixStores_ok {u : State} (hc : Ctx L g mx m₀ u) :
     WP isa (.block prefixStores) u fun u' => Ctx L g mx m₀ u' ∧
@@ -410,7 +410,7 @@ theorem prefixStores_ok {u : State} (hc : Ctx L g mx m₀ u) :
     exists_eq_left']
   obtain ⟨hf, h0, h1, h2, h3⟩ := PublicKey.four_ok (L.B + BitVec.ofNat 64 32) u.mem (u.gpr .r8) (u.gpr .r9) (u.gpr .r10) (u.gpr .r11)
   simp only [add_add, Nat.reduceAdd] at hf h0 h1 h2 h3
-  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
+  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
 
 theorem prefix_ok {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block (prefixRegs ++ prefixStores)) t fun t' => Ctx L g mx m₀ t' ∧
@@ -449,7 +449,7 @@ theorem wipe_word {t : State} (hc : Ctx L g mx m₀ t) (i : Nat) (hi : i < 24) :
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store64, ea_stk, hc.rsp,
     add_add, hw, ite_true, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl (fun _ _ => rfl) hf, hf⟩
+  exact ⟨hc.store (by decide) (by decide) rfl rfl rfl rfl (fun _ _ => rfl) hf, hf⟩
 
 theorem wipe_words (is : List Nat) (hi : ∀ i ∈ is, i < 24) {t : State} (hc : Ctx L g mx m₀ t) :
     WP isa (.block (is.map fun i => .store (stk (8 * i)) .rax)) t fun t' => Ctx L g mx m₀ t' ∧
@@ -473,7 +473,7 @@ theorem wipe_ok {t : State} (hc : Ctx L g mx m₀ t) :
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu32, readSrc32,
       State.setReg32,
       Option.bind_some, Option.some.injEq, exists_eq_left']
-    exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), rfl⟩
+    exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), rfl⟩
   refine WP.mono hz fun u ⟨hu, hm⟩ => ?_
   exact WP.mono (wipe_words (List.range 24) (fun _ h => List.mem_range.mp h) hu)
     fun w ⟨hw, hf⟩ => ⟨hw, hm ▸ hf⟩
@@ -506,7 +506,7 @@ theorem reduceArgs_ok {t : State} (hc : Ctx L g mx m₀ t) (ho : out + 32 ≤ 12
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, Option.map_some, Option.bind_some,
     reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, h216,
     Option.some.injEq, exists_eq_left', hc.pScr, ReduceArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, by rw [sx32 (by omega), add_add],
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, by rw [sx32 (by omega), add_add],
     by rw [sx32 (by decide : 128 < 2 ^ 31), add_add], trivial⟩
 
 abbrev reduceRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 144, 64⟩]
@@ -589,14 +589,14 @@ theorem baseArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add,
     Nat.reduceAdd, hs, ho, Option.some.injEq, exists_eq_left', hc.pScr, hc.pOut, BaseArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial,
     by rw [sx32 (by decide : 64 < 2 ^ 31), add_add], trivial⟩
 
 theorem base_nosp : NoSp (scalarBase_precomputed fld) := PublicKey.base_nosp
 
 theorem base_depth : (scalarBase_precomputed fld).depth ≤ 1 := PublicKey.base_depth
 
-abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 80, 32⟩]
+abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 80, 32⟩, L.TBL]
 abbrev baseWr (L : Lay) : List Region := [⟨L.out, 32⟩, L.SCR]
 
 theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
@@ -606,21 +606,43 @@ theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
   ⟨(gpr_ce _ _ _ (by decide)).trans ha.1, (gpr_ce _ _ _ (by decide)).trans ha.2.1,
     (gpr_ce _ _ _ (by decide)).trans ha.2.2⟩
 
+theorem tbl_input : L.TBL ∈ L.inputs := by simp [Lay.inputs]
+
+/-- The tables, as on entry, on entry to a call from the frame. -/
+theorem ce_tbl (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < 3072) :
+    t.callEntry.mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = Impl.Ed25519.X86_64.combWords.getD i 0 := by
+  rw [← hc.held i hi]
+  refine Mem.readW_congr fun b hb => ?_
+  have e : L.T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b = L.TBL.base + BitVec.ofNat 64 (8 * i + b) := by
+    rw [Offset.add_add]
+  rw [e, ce_byte t (R := L.TBL) (by rw [hc.ret]; exact hL.stk_input tbl_input (by omega))
+    (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)]
+  exact hc.input_byte hL tbl_input (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)
+
 theorem base_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     Proof.Ed25519.X86_64.scalarBaseLocal.pre (t.callEntry.withRegions (baseRd L) (baseWr L)) := by
   obtain ⟨g1, g2, g3⟩ := base_regs ha (baseRd L) (baseWr L)
-  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, g1, g2, g3, rsp_ce, hc.rsp, sub8,
-    State.withRegions_rd, State.withRegions_wr]
-  exact ⟨trivial, trivial,
+  have hsy : (t.callEntry.withRegions (baseRd L) (baseWr L)).syms Impl.Ed25519.X86_64.combSym = L.T :=
+    hc.sym
+  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, Proof.Ed25519.X86_64.CombHeld, g1, g2, g3, rsp_ce,
+    hc.rsp, sub8, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, hsy]
+  refine ⟨trivial, trivial,
     by simpa using hL.stk_scr (d := 80) (n := 32) (e := 0) (k := 8192) (by omega) (by omega),
     (hL.ko.sub_left (Offset.sub_base L.B (d := 8) (n := 8) (by decide))).sub_right
       (within_base L.out (by decide : 32 ≤ 64)).sub,
-    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc⟩
+    by simpa using hL.stk_scr (d := 8) (n := 8) (e := 0) (k := 8192) (by omega) (by omega), hL.nc,
+    fun i hi => ce_tbl hL hc hi, hL.nt, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl)
+  · exact (hL.os _ tbl_input).symm.sub_right (within_base L.out (by decide : 32 ≤ 64)).sub
+  · exact hL.sc _ tbl_input
+  · exact (hL.stk_input tbl_input (d := 8) (n := 8) (by omega)).symm
 
 theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ L.inputs ++ [L.FR, L.OUT, L.SCR], Within r R := by
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl | rfl)
+  rintro r (rfl | rfl | rfl | rfl)
   · exact ⟨L.FR, by simp, ⟨64, by rw [add_add], by show 64 + 32 ≤ 248; decide⟩⟩
+  · exact ⟨L.TBL, List.mem_append_left _ tbl_input, within_base _ (by omega)⟩
   · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
 

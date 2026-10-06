@@ -37,7 +37,11 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p256 s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 
-theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86_64.post s s' := by
+/-- The postcondition, for any configuration of P-256 (either multiplication). -/
+theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPost c s s') :
+    pkX86_64.post s s' := by
+  obtain ⟨n, C, comb, fastN, adx⟩ := c
+  subst hC
   unfold PkPost at h
   show match pk s.mem (s.gpr .rsi) with
     | some (.affine x y) => (s'.gpr .rax).setWidth 32 = 1 ∧
@@ -46,23 +50,29 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86_64.post s s' := by
         Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
-  rw [show Spec.EcKey.publicKey p256.C (dk p256 s) = pk s.mem (s.gpr .rsi) from rfl, hq]
+  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, fastN, adx⟩ s) =
+    pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
-    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
-    (hI : Weierstrass.X86_64.InvSounds)
-    (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p256_ok hI) hL (p256_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs publicKeyP256, Taint.clobbers i .rsp = false := by
-    have h : publicKeyP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+/-- The public key `code` of a curve `c` (P-256, with either multiplication)
+that the proof supports, whose precondition the contract's gives (`hpre`),
+never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+theorem pk_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C) (hT : CombTbls c)
+    (hpre : ∀ s, pkX86_64.pre s → PkPre c s) (hpost : ∀ s s', PkPost c s s' → pkX86_64.post s s')
+    (hcode : Impl.EcKey.X86_64.Cfg.publicKey c = code)
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hs : pkX86_64.pre s) :
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
+  subst hcode
+  obtain ⟨t, s', he, hsv, hpost'⟩ := publicKey_ok hc hL hT (hpre s hs)
+  have hsp : ∀ i ∈ instrs (Impl.EcKey.X86_64.Cfg.publicKey c), Taint.clobbers i .rsp = false := by
+    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+    simpa using hsp i hi
+  have F := (Exec.regions he hnc).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -78,6 +88,14 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
       rintro r (rfl | rfl)
       · exact hro
       · exact hrs) (by decide)
+
+theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds)
+    (s : State) (hs : pkX86_64.pre s) :
+    ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' :=
+  pk_x86_of (p256_ok hI) hL (p256_tbls hT) (fun _ => pre_of) (fun _ _ => post_of rfl) rfl (by lit_decide)
+    (by lit_decide) (by lit_decide) s hs
 
 theorem pk_ct : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP256 :=
   VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx])

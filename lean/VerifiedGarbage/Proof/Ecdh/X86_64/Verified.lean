@@ -39,18 +39,25 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p256.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p256_ok hI) hL (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP256, Taint.clobbers i .rsp = false := by
-    have h : exchangeP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+/-- The exchange `code` of a curve `c` (P-256, with either multiplication)
+that the proof supports, whose precondition the contract's gives (`hpre`),
+never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+theorem ecdh_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C)
+    (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
+    (hcode : Impl.Ecdh.X86_64.Cfg.exchange c = code)
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  subst hcode
+  obtain ⟨t, s', he, hsv, hpost'⟩ := exchange_ok hc hL (hpre s hs)
+  have hsp : ∀ i ∈ instrs (Impl.Ecdh.X86_64.Cfg.exchange c), Taint.clobbers i .rsp = false := by
+    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+    simpa using hsp i hi
+  have F := (Exec.regions he hnc).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -66,6 +73,12 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64
       rintro r (rfl | rfl)
       · exact hro
       · exact hrs) (by decide)
+
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (s : State) (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
+  ecdh_x86_of (p256_ok hI) hL (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide)
+    (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP256 h).isSome = true := by

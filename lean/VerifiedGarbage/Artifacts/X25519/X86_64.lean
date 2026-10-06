@@ -55,11 +55,13 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X25519.x25519BaseApi with
     target := X86_64.target
-    doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, with the \
-      scalar clamped as RFC 7748 specifies and the point mapped to `(Z + Y) / (Z - Y)`. \
-      The table selection is constant time; the callee-saved registers are saved in `scratch`."])
+    doc := Spec.X25519.x25519BaseApi.doc (notes := ["Ed25519's fixed-base comb, from its \
+      tables in the static `VG_ED25519_COMB`, with the scalar clamped as RFC 7748 specifies and \
+      the point mapped to `(Z + Y) / (Z - Y)`. The table selection is constant time; the \
+      callee-saved registers are saved in `scratch`."])
+    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
-    contract := Spec.X25519.x25519BaseContract X86_64.abi
+    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
     verified := Proof.X25519.X86_64.Base.x25519Base_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.X25519.x25519BaseApi with
@@ -67,8 +69,9 @@ def artifacts : List Artifact := [
     name := "vg_x25519_base_adx"
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["The same fixed-base comb as \
       `vg_x25519_base`, with BMI2 and ADX field arithmetic."])
+    consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.adx
-    contract := Spec.X25519.x25519BaseContract X86_64.abi
+    contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
     verified := Proof.X25519.X86_64.Base.x25519Base_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by lit_decide) }]

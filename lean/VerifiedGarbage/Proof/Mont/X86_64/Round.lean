@@ -148,15 +148,6 @@ theorem prod_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {n
     · exact absurd h (by decide)
     · exact (fresh_wins hn i).2 _ h |>.2.2.2.2 rfl), (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
 
-theorem round_eq_gen {M : Mod} (hg : M.red = .general) (a b i : Nat) :
-    round M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
-      (mulRow ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
-        (([.mov .rax (.reg (win M.n i 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] :
-          List Instr) ++
-          (mulRow ((List.range M.n).map (win M.n i)) M.mo ++
-            carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) := by
-  simp only [round, redRound, hg, List.append_assoc]
-
 /-- The general reduction of round `i`: `2⁶⁴ T' = T + u m`, if
 `T < 2m + (2⁶⁴ - 1) m`. -/
 theorem redGen_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}

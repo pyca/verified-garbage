@@ -8,6 +8,9 @@ reads it: `[Y - X, Y + X, 2dT, 2Z]`, with `Z = 1` (entry `0` is the identity's);
 the comb adds them or their negations, for digits from `-8` to `7`. `combG`
 is `[G]B` for the constant `G` those digits are offset by.
 The proof checks every entry against the specification's addition.
+
+The code reads the entries `k ≥ 1`, without their `2Z`, from the static
+`combSym`, whose words are `combWords`: 32 tables of eight entries of 96 bytes.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -285,6 +288,30 @@ def combCached (j k : Nat) : Spec.Ed25519.Point :=
 
 /-- `[G]B`, with `Z = 1`. -/
 def combG : Spec.Ed25519.Point := ⟨combGAff.1, combGAff.2, 1, combGAff.1 * combGAff.2⟩
+
+/-- Word `w` of a field element. -/
+def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
+
+/-- The four words of a field element, little-endian. -/
+def feWords (v : Spec.X25519.Fe) : List (BitVec 64) := (List.range 4).map (feWord v)
+
+/-- The static holding the tables. -/
+def combSym : String := "VG_ED25519_COMB"
+
+/-- The bytes of an entry, `[Y - X, Y + X, 2dT]`. -/
+def combEntryBytes : Nat := 96
+
+/-- The bytes of a table, eight entries. -/
+def combTblBytes : Nat := 768
+
+/-- The words of the tables, as the static `combSym` holds them: table after table, entry
+`k = 1 … 8` after entry, `Y - X`, `Y + X` and `2dT` of `[k 256^j]B` (`Z = 1`), four words
+each, little-endian. -/
+def combWords : List (BitVec 64) :=
+  combTable.flatMap fun row => row.flatMap fun e => feWords e.1 ++ feWords e.2.1 ++ feWords e.2.2
+
+/-- The static the comb reads. -/
+def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
 
 /-- `[G]B`, cached. -/
 def combGCached : Spec.Ed25519.Point :=

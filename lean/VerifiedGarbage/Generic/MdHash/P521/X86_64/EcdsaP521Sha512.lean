@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512
 
 /-!
@@ -16,6 +17,7 @@ The stack is 384 bytes: a 360-byte frame (P-384's 216 bytes, and 144 for
 the candidate and the digest shifted into 66 bytes), and the 24 bytes below
 it that the calls use (`vg_ecdsa_p521_sign` only its return address).
 
+It reads the comb's tables of `vg_ecdsa_p521_sign`, the static `VG_P521_COMB`.
 It is generic over P-521's group law `h` too, the variant
 `Variants/P521/X86_64/Law.lean`.
 -/
@@ -34,13 +36,15 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.HasLaw 
       name := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.name ++ c.suffix
       target := X86_64.target
       doc := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.doc
-        (notes := [signNotesWide (cfgOf (pack h.law c)).H 66 521 64
+        (notes := [signNotesWide (cfgOf (pack h.law (Proof.P521.combOk7 h.law) c)).H 66 521 64
           Spec.Ecdsa.P521.signApi.name])
-      code := (cfgOf (pack h.law c)).sign
-      contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract X86_64.abi 384
+      code := (cfgOf (pack h.law (Proof.P521.combOk7 h.law) c)).sign
+      consts := Impl.Ecdsa.X86_64.p521.combConsts
+      contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract
+        (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384
       stack := 384
-      verified := sign_verified h.law c
-      spSafe := sign_spSafe (pack h.law c)
+      verified := sign_verified h.law (Proof.P521.combOk7 h.law) c
+      spSafe := sign_spSafe (pack h.law (Proof.P521.combOk7 h.law) c)
       features := c.features }]
 
 end VG.Generic.MdHash.P521.X86_64.EcdsaP521Sha512

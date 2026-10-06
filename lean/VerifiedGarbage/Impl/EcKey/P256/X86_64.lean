@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ec_p256_public_key`. -/
 def publicKeyP256 : Prog isa := Cfg.publicKey Impl.Ecdsa.X86_64.p256
 
+/-- `vg_ec_p256_public_key_adx`. -/
+def publicKeyP256Adx : Prog isa := Cfg.publicKey Impl.Ecdsa.X86_64.p256x
+
 end VG.Impl.EcKey.X86_64
