@@ -38,20 +38,20 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   have hb' : b + 56 ≤ 1536 := hb
   have ho' : o + 56 ≤ 1536 := ho
   rw [add, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (loads_ok hs a W W_nodup (by decide) (by rw [W_len]; omega))
+  refine WP.mono (loads_ok hs a W W_nodup (by decide) (by rw [W_len]; omega_arith))
     fun s1 ⟨_, v1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff, words_eq]
   refine WP.mono (add_chain_ok W s1 .r8 [.r9, .r10, .r11, .r12, .r13, .r14] _ _
-    (word s1.mem base b) _ (fun _ h => h) W_nodup rfl (stable_sc hs1 (by decide) (by omega))
-    (stable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega)))
+    (word s1.mem base b) _ (fun _ h => h) W_nodup rfl (stable_sc hs1 (by decide) (by omega_arith))
+    (stable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith)))
     fun s2 ⟨c2, hc2, e2, k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (carryOut_ok s2 hc2) fun s3 ⟨e3, k3⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (fold2_ok s3 (by rw [e3]; cases c2 <;> decide)) fun s4 ⟨e4, k4⟩ => ?_
   have hs4 := ((hs1.of_keeps k2 (by decide)).of_keeps k3 (by decide)).of_keeps k4 (by decide)
-  refine WP.mono (stores_ok hs4 o W (by rw [W_len]; omega)) fun s5 ⟨e5, o5, g5, rd5, wr5⟩ => ?_
+  refine WP.mono (stores_ok hs4 o W (by rw [W_len]; omega_arith)) fun s5 ⟨e5, o5, g5, rd5, wr5⟩ => ?_
   rw [W_len] at e5 o5
   have K : Keeps clob s s4 := (k1.mono W_clob).trans <| (k2.mono (by decide)).trans <|
     (k3.mono (by decide)).trans (k4.mono (by decide))
@@ -73,13 +73,13 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   have ho' : o + 56 ≤ 1536 := ho
   simp only [sub, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok hs a W W_nodup (by decide) (by rw [W_len]; omega))
+  refine WP.mono (loads_ok hs a W W_nodup (by decide) (by rw [W_len]; omega_arith))
     fun s1 ⟨_, v1, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff, words_eq]
   refine WP.mono (sub_chain_ok W s1 .r8 [.r9, .r10, .r11, .r12, .r13, .r14] _ _
-    (word s1.mem base b) _ (fun _ h => h) W_nodup rfl (stable_sc hs1 (by decide) (by omega))
-    (stable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega)))
+    (word s1.mem base b) _ (fun _ h => h) W_nodup rfl (stable_sc hs1 (by decide) (by omega_arith))
+    (stable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith)))
     fun s2 ⟨c0, hc0, e2, k2⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (carryOut_ok s2 hc0) fun s3 ⟨e3, k3⟩ => ?_
@@ -91,7 +91,7 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   refine WP.mono (unfold_ok s5 (by rw [e5]; cases c1 <;> decide)) fun s6 ⟨c2, _, e6, k6⟩ => ?_
   have hs6 := ((((hs1.of_keeps k2 (by decide)).of_keeps k3 (by decide)).of_keeps k4
     (by decide)).of_keeps k5 (by decide)).of_keeps k6 (by decide)
-  refine WP.mono (stores_ok hs6 o W (by rw [W_len]; omega)) fun s7 ⟨e7, o7, g7, rd7, wr7⟩ => ?_
+  refine WP.mono (stores_ok hs6 o W (by rw [W_len]; omega_arith)) fun s7 ⟨e7, o7, g7, rd7, wr7⟩ => ?_
   rw [W_len] at e7 o7
   have K : Keeps clob s s6 := (k1.mono W_clob).trans <| (k2.mono (by decide)).trans <|
     (k3.mono (by decide)).trans <| (k4.mono (by decide)).trans <| (k5.mono (by decide)).trans
@@ -108,10 +108,10 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
   have b0 := Bool.toNat_le c0; have b1 := Bool.toNat_le c1; have b2 := Bool.toNat_le c2
   have hc2 : c2.toNat = 0 := by
     rcases Nat.lt_or_ge c1.toNat 1 with h | h
-    · omega
+    · omega_arith
     · rcases Nat.lt_or_ge c2.toNat 1 with h' | h'
-      · omega
-      · exfalso; omega
+      · omega_arith
+      · exfalso; omega_arith
   have hP := P_eq
   have p0 : 2 ^ 448 * c0.toNat = P * c0.toNat + (2 ^ 224 + 1) * c0.toNat := by
     rw [hP, Nat.add_mul]
@@ -123,7 +123,7 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     generalize P * c1.toNat = q1 at p1 ⊢
     clear hP
     simp only [fe] at e2 ⊢
-    omega
+    omega_arith
   change (mv s7.mem base o 7 + fe s.mem base b) % P = _
   rw [e7, key, Nat.add_mul_mod_self_left]
 
@@ -166,7 +166,7 @@ theorem mulSmall_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho 
     [a, a + 8, a + 16, a + 24, a + 32, a + 40, a + 48].map fun d => .mov .rax (.mem (sc d)) from rfl]
   refine WP.mono (mulSteps_ok [.rax, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s1 W _
     _ s1 (Keeps.refl _ _) (by decide) (by decide) (by decide) rfl
-    (ldStable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega)))
+    (ldStable_scs hs1 (by decide) _ (by simp only [List.mem_cons, List.not_mem_nil, or_false]; omega_arith)))
     fun s2 ⟨e2, k2⟩ => ?_
   rw [len_W, z1, b1, c1, wv_words', k1.2.1] at e2
   have hk' : (k.setWidth 64).toNat = k.toNat := toNat_setWidth_32_64 k
@@ -186,12 +186,12 @@ theorem mulSmall_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho 
     have h2 := Nat.mul_lt_mul'' hk hlt
     generalize k.toNat * fe s.mem base a = X at e2 h2
     generalize (2 : Nat) ^ 448 = Q at e2 h2
-    have h1 : Q * (s2.gpr .rbp).toNat ≤ X := by omega
+    have h1 : Q * (s2.gpr .rbp).toNat ≤ X := by omega_arith
     exact Nat.lt_of_mul_lt_mul_left (Nat.lt_of_le_of_lt h1 (Nat.mul_comm (2 ^ 16) Q ▸ h2))
   rw [WP.block_append_iff]
-  refine WP.mono (fold2_ok s3 (by rw [e3]; omega)) fun s4 ⟨e4, k4⟩ => ?_
+  refine WP.mono (fold2_ok s3 (by rw [e3]; omega_arith)) fun s4 ⟨e4, k4⟩ => ?_
   have hs4 := (hs2.of_keeps k3 (by decide)).of_keeps k4 (by decide)
-  refine WP.mono (stores_ok hs4 o W (by rw [W_len]; omega)) fun s5 ⟨e5, o5, g5, rd5, wr5⟩ => ?_
+  refine WP.mono (stores_ok hs4 o W (by rw [W_len]; omega_arith)) fun s5 ⟨e5, o5, g5, rd5, wr5⟩ => ?_
   rw [W_len] at e5 o5
   have K : Keeps clob s s4 := (k1.mono (by decide)).trans <| (k2.mono (by decide)).trans <|
     (k3.mono (by decide)).trans (k4.mono (by decide))

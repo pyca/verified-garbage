@@ -81,13 +81,13 @@ theorem sqrA_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot
         (2 ^ 64 - 1) * (2 ^ 192 - 1) := by
     have := (word s.mem base a).isLt; have := (word s.mem base (a + 8)).isLt
     have := (word s.mem base (a + 16)).isLt; have := (word s.mem base (a + 24)).isLt
-    exact Nat.mul_le_mul (by omega) (by omega)
+    exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   simp only [Nat.mul_add, Nat.mul_left_comm (word s.mem base a).toNat] at b1
   rw [k6.1 .r9 (by nd), k5.1 .r9 (by nd), k4.1 .r9 (by nd), k6.1 .r10 (by nd),
     k5.1 .r10 (by nd), k6.1 .r11 (by nd)]
   simp only [Bool.toNat_false, Nat.add_zero] at e4
   have := Bool.toNat_le c6
-  omega
+  omega_arith
 
 /-- `r11–r13 += a₁ · (a₂, a₃)`. -/
 theorem sqrB_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot a) :
@@ -123,12 +123,12 @@ theorem sqrB_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot
       2 ^ 64 * (word s.mem base (a + 24)).toNat) ≤ (2 ^ 64 - 1) * (2 ^ 128 - 1) := by
     have := (word s.mem base (a + 8)).isLt; have := (word s.mem base (a + 16)).isLt
     have := (word s.mem base (a + 24)).isLt
-    exact Nat.mul_le_mul (by omega) (by omega)
+    exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   simp only [Nat.mul_add, Nat.mul_left_comm (word s.mem base (a + 8)).toNat] at b1
   rw [k4.1 .r11 (by nd)]
   have := (s.gpr .r11).isLt; have := (s.gpr .r12).isLt
   have := Bool.toNat_le c4; have := Bool.toNat_le o4
-  omega
+  omega_arith
 
 /-- `r13–r14 += a₂ a₃`. -/
 theorem sqrC_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot a) :
@@ -156,10 +156,10 @@ theorem sqrC_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot
   have b1 : (word s.mem base (a + 16)).toNat * (word s.mem base (a + 24)).toNat ≤
       (2 ^ 64 - 1) * (2 ^ 64 - 1) := by
     have := (word s.mem base (a + 16)).isLt; have := (word s.mem base (a + 24)).isLt
-    exact Nat.mul_le_mul (by omega) (by omega)
+    exact Nat.mul_le_mul (by omega_arith) (by omega_arith)
   rw [k4.1 .r13 (by nd)]
   have := (s.gpr .r13).isLt; have := Bool.toNat_le c4
-  omega
+  omega_arith
 
 /-- `hi:lo = [d]²`. -/
 theorem sqWord_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 4096)
@@ -266,7 +266,7 @@ theorem sqrD_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : Slot
     k12.1 .r12 (by nd), k11.1 .r12 (by nd), k10.1 .r12 (by nd), k9.1 .r12 (by nd),
     k12.1 .r13 (by nd), k11.1 .r13 (by nd), k10.1 .r13 (by nd),
     k12.1 .r14 (by nd)]
-  omega
+  omega_arith
 
 /-- `[o] = [a]²`. -/
 theorem sqrX_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
@@ -313,6 +313,6 @@ theorem sqrX_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Sl
       Nat.mul_lt_mul'' (fe_lt _ _ _) (fe_lt _ _ _)
     simp only [X86_64.fe, val4, sq_words] at hb ⊢
     simp only [val4] at e4
-    omega
+    omega_arith
 
 end VG.Proof.X25519.X86_64

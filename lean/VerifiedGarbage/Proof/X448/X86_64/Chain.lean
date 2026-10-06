@@ -28,7 +28,7 @@ theorem add_carry (a b : BitVec 64) :
   have := a.isLt; have := b.isLt
   rw [BitVec.toNat_add]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem adc_carry (a b : BitVec 64) (c : Bool) :
     (a + b + (BitVec.ofBool c).setWidth 64).toNat +
@@ -37,14 +37,14 @@ theorem adc_carry (a b : BitVec 64) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   rw [BitVec.toNat_add, BitVec.toNat_add, toNat_ofBool]
   by_cases h : 2 ^ 64 ≤ a.toNat + b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem sub_borrow (a b : BitVec 64) :
     (a - b).toNat + b.toNat = a.toNat + 2 ^ 64 * (decide (a.toNat < b.toNat)).toNat := by
   have := a.isLt; have := b.isLt
   rw [BitVec.toNat_sub]
   by_cases h : a.toNat < b.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem sbb_borrow (a b : BitVec 64) (c : Bool) :
     (a - b - (BitVec.ofBool c).setWidth 64).toNat + b.toNat + c.toNat =
@@ -52,7 +52,7 @@ theorem sbb_borrow (a b : BitVec 64) (c : Bool) :
   have := a.isLt; have := b.isLt; have := Bool.toNat_le c
   rw [BitVec.toNat_sub, BitVec.toNat_sub, toNat_ofBool]
   by_cases h : a.toNat < b.toNat + c.toNat <;>
-    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+    simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 theorem Keeps.setFlagsReg {X : List Reg} {s₀ s : State} (h : Keeps X s₀ s) {r : Reg} (hr : r ∈ X)
     (v : BitVec 64) {w : Nat} (x : BitVec w) (c o : Bool) :
@@ -112,7 +112,7 @@ theorem adcs_ok (X : List Reg) (s₀ : State) :
       rw [rv, g1, rv, List.length_cons, pow64_succ, wv, Nat.mul_assoc]
       rw [g2] at he'
       generalize 2 ^ (64 * rs.length) * c'.toNat = Y at he' ⊢
-      omega
+      omega_arith
     · refine ⟨fun r' hr' => ?_, hk'.2.1.trans k1.2.1, hk'.2.2.1.trans k1.2.2.1,
         hk'.2.2.2.trans k1.2.2.2⟩
       simp only [List.mem_cons, not_or] at hr'
@@ -150,7 +150,7 @@ theorem add_chain_ok (X : List Reg) (s : State) (r : Reg) (rs : List Reg) (src :
     rw [rv, g1, rv, List.length_cons, pow64_succ, wv, Nat.mul_assoc]
     rw [g2] at he'
     generalize 2 ^ (64 * rs.length) * c'.toNat = Y at he' ⊢
-    omega
+    omega_arith
   · refine ⟨fun r' hr' => ?_, hk'.2.1.trans k1.2.1, hk'.2.2.1.trans k1.2.2.1,
       hk'.2.2.2.trans k1.2.2.2⟩
     simp only [List.mem_cons, not_or] at hr'
@@ -201,7 +201,7 @@ theorem sbbs_ok (X : List Reg) (s₀ : State) :
       rw [rv, g1, rv, List.length_cons, pow64_succ, wv, Nat.mul_assoc]
       rw [g2] at he'
       generalize 2 ^ (64 * rs.length) * c'.toNat = Y at he' ⊢
-      omega
+      omega_arith
     · refine ⟨fun r' hr' => ?_, hk'.2.1.trans k1.2.1, hk'.2.2.1.trans k1.2.2.1,
         hk'.2.2.2.trans k1.2.2.2⟩
       simp only [List.mem_cons, not_or] at hr'
@@ -239,7 +239,7 @@ theorem sub_chain_ok (X : List Reg) (s : State) (r : Reg) (rs : List Reg) (src :
     rw [rv, g1, rv, List.length_cons, pow64_succ, wv, Nat.mul_assoc]
     rw [g2] at he'
     generalize 2 ^ (64 * rs.length) * c'.toNat = Y at he' ⊢
-    omega
+    omega_arith
   · refine ⟨fun r' hr' => ?_, hk'.2.1.trans k1.2.1, hk'.2.2.1.trans k1.2.2.1,
       hk'.2.2.2.trans k1.2.2.2⟩
     simp only [List.mem_cons, not_or] at hr'
@@ -260,11 +260,11 @@ theorem loads_ok {s : State} {base : Addr} (hs : Scr s base) :
     have hl : (r :: rs).length = rs.length + 1 := rfl
     rw [loads, WP.block_cons_iff]
     refine ⟨s.setReg r (word s.mem base o), by
-      simp only [exec, readSrc_sc hs (d := o) (by omega), Option.map_some], ?_⟩
+      simp only [exec, readSrc_sc hs (d := o) (by omega_arith), Option.map_some], ?_⟩
     have hs1 : Scr (s.setReg r (word s.mem base o)) base :=
       ⟨by rw [RegUpd.gpr_setReg_of_ne _ _ (Ne.symm hrd)]; exact hs.rdi, hs.wr, hs.nowrap⟩
     refine WP.mono (loads_ok hs1 (o + 8) rs (List.nodup_cons.mp hnd).2
-      (fun h => hr (List.mem_cons_of_mem _ h)) (by omega)) fun s' ⟨hw, hv, hk⟩ => ?_
+      (fun h => hr (List.mem_cons_of_mem _ h)) (by omega_arith)) fun s' ⟨hw, hv, hk⟩ => ?_
     have g : s'.gpr r = word s.mem base o := by
       rw [hk.1 r hrs]; exact RegUpd.gpr_setReg_self _ _ _
     refine ⟨fun i hi d => ?_, ?_, ?_⟩
@@ -272,7 +272,7 @@ theorem loads_ok {s : State} {base : Addr} (hs : Scr s base) :
       | zero => simpa using g
       | succ i =>
         rw [List.getD_cons_succ, hw i (by simpa using hi) d, RegUpd.mem_setReg,
-          show o + 8 + 8 * i = o + 8 * (i + 1) by omega]
+          show o + 8 + 8 * i = o + 8 * (i + 1) by omega_arith]
     · rw [rv, g, hv, List.length_cons, mv]; rfl
     · refine ⟨fun r' hr' => ?_, hk.2.1, hk.2.2.1, hk.2.2.2⟩
       simp only [List.mem_cons, not_or] at hr'
@@ -291,16 +291,16 @@ theorem stores_ok {s : State} {base : Addr} (hs : Scr s base) :
     have hl : (r :: rs).length = rs.length + 1 := rfl
     let s1 : State := { s with mem := s.mem.writeW (off base o) (s.gpr r) }
     refine ⟨s1, by
-      have hw := hs.write (d := o) (n := 8) (by omega)
+      have hw := hs.write (d := o) (n := 8) (by omega_arith)
       simp only [exec, ea_sc, hs.rdi, State.store64, hw, ite_true]; rfl, ?_⟩
     have hs1 : Scr s1 base := ⟨hs.rdi, hs.wr, hs.nowrap⟩
-    refine WP.mono (stores_ok hs1 (o + 8) rs (by omega)) fun s' ⟨hv, ho', hg, hrd, hwr⟩ => ?_
-    have o1 : Outside base o 8 s.mem s1.mem := writeW_outside _ _ _ (by omega)
+    refine WP.mono (stores_ok hs1 (o + 8) rs (by omega_arith)) fun s' ⟨hv, ho', hg, hrd, hwr⟩ => ?_
+    have o1 : Outside base o 8 s.mem s1.mem := writeW_outside _ _ _ (by omega_arith)
     refine ⟨?_, ?_, fun r' => hg r', hrd, hwr⟩
-    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega) (by omega)]
+    · rw [List.length_cons, mv, hv, rv, ho'.word (by omega_arith) (by omega_arith)]
       simp only [s1, word_writeW_self]
       rw [rv_congr (s := s) (s' := s1) fun _ _ => rfl]
-    · exact (o1.mono (by omega) (by omega)).trans (ho'.mono (by omega) (by omega))
+    · exact (o1.mono (by omega_arith) (by omega_arith)).trans (ho'.mono (by omega_arith) (by omega_arith))
 
 theorem stable_scs {X : List Reg} {s : State} {base : Addr} (hs : Scr s base) (hX : .rdi ∉ X) :
     ∀ ds : List Nat, (∀ d ∈ ds, d + 8 ≤ 8192) →
@@ -335,7 +335,7 @@ theorem rotr32 (x : BitVec 64) (h : x.toNat < 2 ^ 32) :
     (x.rotateRight 32).toNat = x.toNat * 2 ^ 32 := by
   rw [BitVec.toNat_rotateRight]
   simp only [Nat.reduceMod, Nat.reduceSub, Nat.shiftRight_eq_div_pow, Nat.shiftLeft_eq]
-  rw [Nat.div_eq_of_lt h, Nat.zero_or, Nat.mod_eq_of_lt (by omega)]
+  rw [Nat.div_eq_of_lt h, Nat.zero_or, Nat.mod_eq_of_lt (by omega_arith)]
 
 /-- `rax = r15 << 32`, for `r15 < 2³²`. -/
 theorem shl32_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
@@ -374,7 +374,7 @@ theorem fold_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
   have e1 : rv s1 W = rv s W := k1.rv_eq (by decide)
   rw [W_lit, len_W, e1] at he
   simp only [wv, r15, toNat_zero64] at he
-  omega
+  omega_arith
 
 /-- `unfold`: `r8–r14 - r15 (1 + 2²²⁴)`, with the borrow out. -/
 theorem unfold_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
@@ -390,7 +390,7 @@ theorem unfold_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
   have e1 : rv s1 W = rv s W := k1.rv_eq (by decide)
   rw [W_lit, len_W, e1] at he
   simp only [wv, r15, toNat_zero64] at he
-  omega
+  omega_arith
 
 open VG.Spec.X448 (P) in
 /-- `fold2`: `r8–r14 + 2⁴⁴⁸ r15` modulo `p`, in seven words. -/
@@ -411,13 +411,13 @@ theorem fold2_ok (s : State) (h : (s.gpr .r15).toNat < 2 ^ 32) :
   have hc := Bool.toNat_le c1
   have hc3 : c3.toNat = 0 := by
     rcases Nat.lt_or_ge c3.toNat 1 with h3 | h3
-    · omega
-    · rcases Nat.lt_or_ge c1.toNat 1 with h1 | h1 <;> omega
+    · omega_arith
+    · rcases Nat.lt_or_ge c1.toNat 1 with h1 | h1 <;> omega_arith
   rw [fold448 (rv s W) (s.gpr .r15).toNat]
   have h1 : rv s W + (2 ^ 224 + 1) * (s.gpr .r15).toNat = rv s1 W + 2 ^ 448 * c1.toNat := by
-    omega
+    omega_arith
   rw [h1, fold448 (rv s1 W) c1.toNat]
-  exact congrArg (· % P) (by omega)
+  exact congrArg (· % P) (by omega_arith)
 
 /-- The arithmetic of a multiply-accumulate step: the product's halves, the
 carry word `c` added to the low half, and the sum added to `t`, each carry
@@ -433,19 +433,19 @@ theorem step_arith (a v c t : BitVec 64) :
       t.toNat + c.toNat + a.toNat * v.toNat := by
   intro p lo hi r d
   have ha := a.isLt; have hv := v.isLt; have hc := c.isLt; have ht := t.isLt
-  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
+  have hp : p ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega_arith) (by omega_arith)
   have hlo : lo.toNat = p % 2 ^ 64 := BitVec.toNat_ofNat _ _
   have hhi : hi.toNat = p / 2 ^ 64 := by
     simp only [hi, BitVec.toNat_ofNat]
-    exact Nat.mod_eq_of_lt (by omega)
-  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega
+    exact Nat.mod_eq_of_lt (by omega_arith)
+  have hdiv : p / 2 ^ 64 ≤ 2 ^ 64 - 2 := by omega_arith
   have hz : (0 : BitVec 64).toNat = 0 := rfl
   simp only [r, d, BitVec.toNat_add, toNat_ofBool, hz, Nat.add_zero, hlo, hhi] at *
   by_cases h1 : 2 ^ 64 ≤ p % 2 ^ 64 + c.toNat <;>
   simp only [h1, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;>
   [by_cases h2 : 2 ^ 64 ≤ t.toNat + (p % 2 ^ 64 + c.toNat) % 2 ^ 64;
     by_cases h2 : 2 ^ 64 ≤ t.toNat + (p % 2 ^ 64 + c.toNat) % 2 ^ 64] <;>
-  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+  simp only [h2, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega_arith
 
 /-- A multiply-accumulate step: `t:c = t + c + ai · v`, where `ld` loads `v`
 into `rax`. -/
@@ -488,7 +488,7 @@ theorem ldStable_sc32 {X : List Reg} {s : State} {base : Addr} (hs : Scr s base)
     LdStable X s (.mov32 .rax (.mem (sc d))) ((s.mem.readW (off base d) 32).setWidth 64) :=
   fun t hg hm _ hwr => by
     have ht : Scr t base := ⟨(hg _ hX).trans hs.rdi, hwr ▸ hs.wr, hs.nowrap⟩
-    simp only [exec, readSrc32, State.load32, ea_sc, ht.rdi, ht.read (d := d) (n := 4) (by omega),
+    simp only [exec, readSrc32, State.load32, ea_sc, ht.rdi, ht.read (d := d) (n := 4) (by omega_arith),
       ite_true, hm, Option.map_some, State.setReg32]
 
 /-- Multiply-accumulate steps along `ts`: `ts + 2^(64n) rbp = ts + rbp + rcx · vs`. -/
@@ -539,7 +539,7 @@ theorem mulSteps_ok (X : List Reg) (s₀ : State) :
       generalize 2 ^ (64 * ts.length) * (s'.gpr .rbp).toNat = Y at e' ⊢
       rw [Nat.mul_add, Nat.mul_left_comm]
       generalize (s.gpr .rcx).toNat * wv vs = Z at e' ⊢
-      omega
+      omega_arith
     · refine ⟨fun r hr => ?_, k'.2.1.trans k1.2.1, k'.2.2.1.trans k1.2.2.1, k'.2.2.2.trans k1.2.2.2⟩
       simp only [List.mem_cons, not_or] at hr
       rw [k'.1 r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.2]),

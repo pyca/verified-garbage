@@ -25,7 +25,7 @@ theorem mont_low16 (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 16 = 0) :
     (t0 + t0 * minv % 2 ^ 16 * m) % 2 ^ 16 = 0 := by
   rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 16), Nat.mod_mod, ← Nat.mul_mod,
     ← Nat.add_mod, show t0 + t0 * minv * m = t0 * (m * minv + 1) by
-      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega,
+      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m]; omega_arith,
     Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
 
 /-- `-m⁻¹ mod 2⁶⁴` gives `-m⁻¹ mod 2¹⁶`. -/
@@ -37,16 +37,16 @@ theorem minv16_inv {M : Mod} {m : Nat} (h : (m * M.minv.toNat + 1) % 2 ^ 64 = 0)
 /-- A row's sum stays below `2m` once divided. -/
 theorem row_lt {T u B q m : Nat} (hT : T < 2 * m) (hu : u < 2 ^ 16) (hB : B < m) (hq : q < 2 ^ 16) :
     T + u * B + q * m < 2 ^ 16 * (2 * m) := by
-  have h1 : u * B ≤ (2 ^ 16 - 1) * B := Nat.mul_le_mul_right _ (by omega)
-  have h2 : q * m ≤ (2 ^ 16 - 1) * m := Nat.mul_le_mul_right _ (by omega)
-  omega
+  have h1 : u * B ≤ (2 ^ 16 - 1) * B := Nat.mul_le_mul_right _ (by omega_arith)
+  have h2 : q * m ≤ (2 ^ 16 - 1) * m := Nat.mul_le_mul_right _ (by omega_arith)
+  omega_arith
 
 /-- The low digit of a window of digits. -/
 theorem dval_low {m : Mem} {base : Addr} {d k : Nat} (h : Digs m base d (k + 1)) :
     dval m base d (k + 1) % 2 ^ 16 = w32 m base d := by
-  rw [show k + 1 = 1 + k by omega, dval_append, show dval m base d 1 = w32 m base d by
+  rw [show k + 1 = 1 + k by omega_arith, dval_append, show dval m base d 1 = w32 m base d by
     simp [dval], Nat.mul_comm, show 16 * 1 = 16 by rfl, Nat.add_mul_mod_self_right]
-  have := h 0 (by omega)
+  have := h 0 (by omega_arith)
   simp only [Nat.mul_zero, Nat.add_zero] at this
   exact Nat.mod_eq_of_lt this
 
@@ -54,8 +54,8 @@ theorem dval_low {m : Mem} {base : Addr} {d k : Nat} (h : Digs m base d (k + 1))
 the window is zero. -/
 theorem dval_shift {m : Mem} {base : Addr} {d k : Nat} (h0 : w32 m base d = 0) (htop : w32 m base (d + 4 * (k + 1)) = 0) :
     2 ^ 16 * dval m base (d + 4) (k + 1) = dval m base d (k + 1) := by
-  rw [show k + 1 = 1 + k by omega, dval_append m base d 1 k, show dval m base d 1 = w32 m base d by simp [dval], h0,
-    Nat.zero_add, show 1 + k = k + 1 by omega, dval, show d + 4 + 4 * k = d + 4 * (k + 1) by omega, htop,
+  rw [show k + 1 = 1 + k by omega_arith, dval_append m base d 1 k, show dval m base d 1 = w32 m base d by simp [dval], h0,
+    Nat.zero_add, show 1 + k = k + 1 by omega_arith, dval, show d + 4 + 4 * k = d + 4 * (k + 1) by omega_arith, htop,
     show 16 * 1 = 16 by rfl]
   simp
 
@@ -67,7 +67,7 @@ theorem ptr_succ (e : BitVec 32) (i : Nat) :
   apply BitVec.eq_of_toNat_eq
   have : (4 : BitVec 32).toNat = 4 := rfl
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, this]
-  omega
+  omega_arith
 
 /-- What a digit's row needs of the layout: `[b]` and the modulus (`W`
 words, `D = 2W` digits) apart from the window and the digit above it. -/
@@ -97,7 +97,7 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   obtain ⟨hb_le, hmo_le, hw_le, hsb, hsmo⟩ := hL
   subst hDW
   have hm0 : m < 2 ^ (16 * (2 * W)) := by
-    rw [← hm, show 16 * (2 * W) = 32 * W by omega]; exact val32_lt _ _ _ _
+    rw [← hm, show 16 * (2 * W) = 32 * W by omega_arith]; exact val32_lt _ _ _ _
   simp only [digitRow, hD, List.cons_append, List.nil_append, List.append_assoc]
   refine wp_half hh h6 fun s₁ u₁ => ?_
   have K₁ : Rest [.r2, .r3, .r5, .r7] s s₁ := u₁.rest (by simp)
@@ -107,20 +107,20 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     rw [u₁.other _ (by decide), u₁.other _ (by decide)]; exact hp
   have hU := hdig_lt (s.gpr .r8).toNat h
   have hu₁ : (s₁.gpr .r2).toNat = hdig (s.gpr .r8).toNat h := by
-    rw [u₁.gpr, BitVec.toNat_ofNat]; omega
+    rw [u₁.gpr, BitVec.toNat_ofNat]; omega_arith
   rw [← u₁.mem] at hm hB hd hT htop
   have hBp : pval s₁.mem base b (2 * W) = val32 s₁.mem base b W := pval_words _ _ _ _
   have hlt₁ : dval s₁.mem base w (2 * W + 2) + (s₁.gpr .r2).toNat * pval s₁.mem base b (2 * W) <
       2 ^ (16 * (2 * W + 2)) := by
-    rw [hBp, hu₁, show 16 * (2 * W + 2) = 16 * (2 * W) + 32 by omega, Nat.pow_add]
+    rw [hBp, hu₁, show 16 * (2 * W + 2) = 16 * (2 * W) + 32 by omega_arith, Nat.pow_add]
     have : hdig (s.gpr .r8).toNat h * val32 s₁.mem base b W ≤ (2 ^ 16 - 1) * m :=
-      Nat.mul_le_mul (by omega) (by omega)
+      Nat.mul_le_mul (by omega_arith) (by omega_arith)
     have : (2 ^ 16 - 1) * m + 2 * m < 2 ^ (16 * (2 * W)) * 2 ^ 32 := by
-      have : (2 ^ 16 + 1) * m < (2 ^ 16 + 1) * 2 ^ (16 * (2 * W)) := Nat.mul_lt_mul_of_pos_left hm0 (by omega)
-      omega
-    omega
-  refine VG.Proof.X25519.Arm.WP.append (mulRow_ok hs₁ h6₁ hp₁ hw hb_le (D := 2 * W) (Nat.le_refl _) (by omega)
-    (by omega) (by rw [hu₁]; exact hU) hd hlt₁) fun s₂ ⟨O₂, V₂, D₂, K₂⟩ => ?_
+      have : (2 ^ 16 + 1) * m < (2 ^ 16 + 1) * 2 ^ (16 * (2 * W)) := Nat.mul_lt_mul_of_pos_left hm0 (by omega_arith)
+      omega_arith
+    omega_arith
+  refine VG.Proof.X25519.Arm.WP.append (mulRow_ok hs₁ h6₁ hp₁ hw hb_le (D := 2 * W) (Nat.le_refl _) (by omega_arith)
+    (by omega_arith) (by rw [hu₁]; exact hU) hd hlt₁) fun s₂ ⟨O₂, V₂, D₂, K₂⟩ => ?_
   have K₁₂ := K₁.trans (K₂.mono (by simp))
   have hs₂ := hs.of_rest K₁₂ (by decide)
   have h6₂ : s₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by rw [K₁₂.gpr _ (by decide)]; exact h6
@@ -128,7 +128,7 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     rw [K₁₂.gpr _ (by decide), K₁₂.gpr _ (by decide)]; exact hp
   rw [hBp, hu₁] at V₂
   -- q
-  refine wp_ldr (hs.off_lt (by omega)) (hs₂.ea_at hp₂ (d := acc) (by omega)) (hs₂.read (by omega))
+  refine wp_ldr (hs.off_lt (by omega_arith)) (hs₂.ea_at hp₂ (d := acc) (by omega_arith)) (hs₂.read (by omega_arith))
     fun s₃ u₃ => ?_
   refine wp_movw fun s₄ u₄ => ?_
   refine wp_mul fun s₅ u₅ => ?_
@@ -154,19 +154,19 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   have hq16 : (s₆.gpr .r2).toNat < 2 ^ 16 := by rw [hq]; exact Nat.mod_lt _ (by decide)
   rw [← m₆] at D₂ V₂ O₂
   have hmo₆ : val32 s₆.mem base M.mo W = m := by
-    rw [O₂.val32 (by omega) (by omega)]; exact hm
+    rw [O₂.val32 (by omega_arith) (by omega_arith)]; exact hm
   have hMp : pval s₆.mem base M.mo (2 * W) = m := by rw [pval_words, hmo₆]
   have hlt₂ : dval s₆.mem base w (2 * W + 2) + (s₆.gpr .r2).toNat * pval s₆.mem base M.mo (2 * W) <
       2 ^ (16 * (2 * W + 2)) := by
-    rw [hMp, V₂, show 16 * (2 * W + 2) = 16 * (2 * W) + 32 by omega, Nat.pow_add]
+    rw [hMp, V₂, show 16 * (2 * W + 2) = 16 * (2 * W) + 32 by omega_arith, Nat.pow_add]
     have hb1 : val32 s₁.mem base b W < m := hB
     have := row_lt hT hU hb1 hq16
     have : 2 ^ 16 * (2 * m) < 2 ^ (16 * (2 * W)) * 2 ^ 32 := by
-      have : 2 * 2 ^ 16 * m < 2 * 2 ^ 16 * 2 ^ (16 * (2 * W)) := Nat.mul_lt_mul_of_pos_left hm0 (by omega)
-      omega
-    omega
-  refine VG.Proof.X25519.Arm.WP.append (mulRow_ok hs₆ h6₆ hp₆ hw hmo_le (D := 2 * W) (Nat.le_refl _) (by omega)
-    (by omega) hq16 D₂ hlt₂) fun s₇ ⟨O₇, V₇, D₇, K₇⟩ => ?_
+      have : 2 * 2 ^ 16 * m < 2 * 2 ^ 16 * 2 ^ (16 * (2 * W)) := Nat.mul_lt_mul_of_pos_left hm0 (by omega_arith)
+      omega_arith
+    omega_arith
+  refine VG.Proof.X25519.Arm.WP.append (mulRow_ok hs₆ h6₆ hp₆ hw hmo_le (D := 2 * W) (Nat.le_refl _) (by omega_arith)
+    (by omega_arith) hq16 D₂ hlt₂) fun s₇ ⟨O₇, V₇, D₇, K₇⟩ => ?_
   have K₁₇ := K₁₆.trans (K₇.mono (by simp))
   refine wp_dp (op2_imm (by decide)) fun s₈ u₈ => WP.block_nil ?_
   rw [hMp, V₂] at V₇
@@ -175,21 +175,21 @@ theorem digitRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
   generalize hT1 : dval s₁.mem base w (2 * W + 2) + hdig (s.gpr .r8).toNat h * val32 s₁.mem base b W = T1 at *
   generalize hqv : (s₆.gpr .r2).toNat = q at *
   have hz : w32 s₇.mem base w = 0 := by
-    rw [← dval_low D₇, V₇, show (T1 + q * m) % 2 ^ 16 = (T1 % 2 ^ 16 + q * m) % 2 ^ 16 by omega, hq, ← ht0]
+    rw [← dval_low D₇, V₇, show (T1 + q * m) % 2 ^ 16 = (T1 % 2 ^ 16 + q * m) % 2 ^ 16 by omega_arith, hq, ← ht0]
     exact mont_low16 _ _ _ hinv
   have htop' : w32 s₇.mem base (w + 4 * (2 * W + 2)) = 0 := by
-    rw [O₇.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)]; exact htop
+    rw [O₇.w32 (by omega_arith) (by omega_arith), O₂.w32 (by omega_arith) (by omega_arith)]; exact htop
   have hsh := dval_shift hz htop'
   refine ⟨?_, ?_, ?_, ⟨q, hq16, ?_⟩, ?_⟩
   · rw [u₈.gpr, dpVal, u₈.other _ (by decide), K₇.gpr _ (by decide), K₇.gpr _ (by decide), hp₆]
     exact ptr_succ _ _
   · rw [m₈, ← u₁.mem]
-    exact (O₂.mono (Nat.le_refl _) (by omega)).trans (O₇.mono (Nat.le_refl _) (by omega))
+    exact (O₂.mono (Nat.le_refl _) (by omega_arith)).trans (O₇.mono (Nat.le_refl _) (by omega_arith))
   · intro j hj
     rw [m₈]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [show w + 4 + 4 * j = w + 4 * (j + 1) by omega]; exact D₇ (j + 1) (by omega)
-    · rw [show w + 4 + 4 * (2 * W + 1) = w + 4 * (2 * W + 2) by omega, htop']; decide
+    · rw [show w + 4 + 4 * j = w + 4 * (j + 1) by omega_arith]; exact D₇ (j + 1) (by omega_arith)
+    · rw [show w + 4 + 4 * (2 * W + 1) = w + 4 * (2 * W + 2) by omega_arith, htop']; decide
   · rw [m₈, hsh, V₇, ← hT1, ← u₁.mem]
   · exact ((((K₁.trans (K₂.mono (by simp))).trans K₆).trans (K₇.mono (by simp))).mono
       (ws' := [.r0, .r2, .r3, .r5, .r7]) (by simp)).trans (u₈.rest (by simp))
@@ -231,9 +231,9 @@ theorem cnt_dec {W k : Nat} (hk : k < W) (hW : W < 2 ^ 32) :
     BitVec.ofNat 32 (W - k) - 1 = BitVec.ofNat 32 (W - (k + 1)) := by
   have h1 : (1 : BitVec 32).toNat = 1 := rfl
   apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h1, BitVec.toNat_ofNat]; omega), h1, BitVec.toNat_ofNat,
+  rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, h1, BitVec.toNat_ofNat]; omega_arith), h1, BitVec.toNat_ofNat,
     BitVec.toNat_ofNat]
-  omega
+  omega_arith
 
 /-- The congruence of the loop, two digits on. -/
 theorem cong_step {P T T' T'' A B m U u0 u1 q0 q1 : Nat} (h0 : P * T = A * B + U * m)
@@ -256,39 +256,39 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hn := hs.nowrap
   obtain ⟨acc_le, a_le, b_le, mo_le, sa, sb, smo⟩ := hL
   have ht := hs.of_rest I.rest (by decide)
-  have hmt : val32 t.mem base M.mo W = m := by rw [I.out.val32 (by omega) (by omega), hm]
-  have hbt : val32 t.mem base b W = val32 s.mem base b W := I.out.val32 (by omega) (by omega)
-  have hat : w32 t.mem base (a + 4 * k) = w32 s.mem base (a + 4 * k) := I.out.w32 (by omega) (by omega)
+  have hmt : val32 t.mem base M.mo W = m := by rw [I.out.val32 (by omega_arith) (by omega_arith), hm]
+  have hbt : val32 t.mem base b W = val32 s.mem base b W := I.out.val32 (by omega_arith) (by omega_arith)
+  have hat : w32 t.mem base (a + 4 * k) = w32 s.mem base (a + 4 * k) := I.out.w32 (by omega_arith) (by omega_arith)
   simp only [row, List.cons_append, List.nil_append, List.append_assoc]
-  refine wp_ldr (hs.off_lt (by omega)) (ht.ea_at I.r1 (d := a) (by omega)) (ht.read (by omega)) fun t₁ u₁ => ?_
+  refine wp_ldr (hs.off_lt (by omega_arith)) (ht.ea_at I.r1 (d := a) (by omega_arith)) (ht.read (by omega_arith)) fun t₁ u₁ => ?_
   have K₁ : Rest clob t t₁ := u₁.rest (by simp [clob])
   have ht₁ := ht.of_rest K₁ (by decide)
   have r8₁ : (t₁.gpr .r8).toNat = w32 s.mem base (a + 4 * k) := by
-    rw [u₁.gpr, ← hat, show 4 * k + a = a + 4 * k by omega]
+    rw [u₁.gpr, ← hat, show 4 * k + a = a + 4 * k by omega_arith]
   have m₁ : t₁.mem = t.mem := u₁.mem
-  have L₀ : RowLay W size (acc + 4 * (2 * k)) b M.mo := ⟨b_le, mo_le, by omega, by omega, by omega⟩
+  have L₀ : RowLay W size (acc + 4 * (2 * k)) b M.mo := ⟨b_le, mo_le, by omega_arith, by omega_arith, by omega_arith⟩
   refine VG.Proof.X25519.Arm.WP.append (digitRow_ok ht₁ hW hD rfl L₀ (h := 0) (i := 2 * k) (by decide)
     (by rw [u₁.other _ (by decide)]; exact I.r6) (by rw [u₁.other _ (by decide), u₁.other _ (by decide)]; exact I.r0)
-    (by omega) (by rw [m₁, hmt]) hinv (by rw [m₁, hbt]; exact hB) (by rw [m₁]; exact I.digs) (by rw [m₁]; exact I.lt)
-    (by rw [m₁, show acc + 4 * (2 * k) + 4 * (2 * W + 2) = acc + 4 * (2 * k + 2 * W + 2) by omega];
-        exact I.zeros _ (Nat.le_refl _) (by omega))) fun t₂ ⟨p₂, O₂, D₂, ⟨q₀, hq₀, V₂⟩, K₂⟩ => ?_
+    (by omega_arith) (by rw [m₁, hmt]) hinv (by rw [m₁, hbt]; exact hB) (by rw [m₁]; exact I.digs) (by rw [m₁]; exact I.lt)
+    (by rw [m₁, show acc + 4 * (2 * k) + 4 * (2 * W + 2) = acc + 4 * (2 * k + 2 * W + 2) by omega_arith];
+        exact I.zeros _ (Nat.le_refl _) (by omega_arith))) fun t₂ ⟨p₂, O₂, D₂, ⟨q₀, hq₀, V₂⟩, K₂⟩ => ?_
   have K₁₂ : Rest clob t t₂ := K₁.trans (K₂.mono (by simp [clob]))
   have ht₂ := ht.of_rest K₁₂ (by decide)
   rw [m₁] at O₂ V₂
-  have hmt₂ : val32 t₂.mem base M.mo W = m := by rw [O₂.val32 (by omega) (by omega), hmt]
-  have hbt₂ : val32 t₂.mem base b W = val32 s.mem base b W := by rw [O₂.val32 (by omega) (by omega), hbt]
+  have hmt₂ : val32 t₂.mem base M.mo W = m := by rw [O₂.val32 (by omega_arith) (by omega_arith), hmt]
+  have hbt₂ : val32 t₂.mem base b W = val32 s.mem base b W := by rw [O₂.val32 (by omega_arith) (by omega_arith), hbt]
   rw [r8₁, hbt] at V₂
   have hU0 := hdig_lt (w32 s.mem base (a + 4 * k)) 0
   have hT' : dval t₂.mem base (acc + 4 * (2 * k) + 4) (2 * W + 2) < 2 * m := by
     have := row_lt I.lt hU0 hB hq₀
-    omega
-  have L₁ : RowLay W size (acc + 4 * (2 * k) + 4) b M.mo := ⟨b_le, mo_le, by omega, by omega, by omega⟩
+    omega_arith
+  have L₁ : RowLay W size (acc + 4 * (2 * k) + 4) b M.mo := ⟨b_le, mo_le, by omega_arith, by omega_arith, by omega_arith⟩
   have r8₂ : t₂.gpr .r8 = t₁.gpr .r8 := K₂.gpr _ (by decide)
   refine VG.Proof.X25519.Arm.WP.append (digitRow_ok ht₂ hW hD rfl L₁ (h := 1) (i := 2 * k + 1) (by decide)
-    (by rw [K₂.gpr _ (by decide), u₁.other _ (by decide)]; exact I.r6) p₂ (by omega) hmt₂ hinv
+    (by rw [K₂.gpr _ (by decide), u₁.other _ (by decide)]; exact I.r6) p₂ (by omega_arith) hmt₂ hinv
     (by rw [hbt₂]; exact hB) D₂ hT'
-    (by rw [O₂.w32 (by omega) (by omega), show acc + 4 * (2 * k) + 4 + 4 * (2 * W + 2) =
-        acc + 4 * (2 * k + 2 * W + 3) by omega]; exact I.zeros _ (by omega) (by omega)))
+    (by rw [O₂.w32 (by omega_arith) (by omega_arith), show acc + 4 * (2 * k) + 4 + 4 * (2 * W + 2) =
+        acc + 4 * (2 * k + 2 * W + 3) by omega_arith]; exact I.zeros _ (by omega_arith) (by omega_arith)))
     fun t₃ ⟨p₃, O₃, D₃, ⟨q₁, hq₁, V₃⟩, K₃⟩ => ?_
   rw [r8₂, r8₁, hbt₂] at V₃
   refine wp_dp (op2_imm (by decide)) fun t₄ u₄ => ?_
@@ -299,8 +299,8 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hU1 := hdig_lt (w32 s.mem base (a + 4 * k)) 1
   have hT'' : dval t₃.mem base (acc + 4 * (2 * k) + 4 + 4) (2 * W + 2) < 2 * m := by
     have := row_lt hT' hU1 hB hq₁
-    omega
-  have e8 : acc + 4 * (2 * (k + 1)) = acc + 4 * (2 * k) + 4 + 4 := by omega
+    omega_arith
+  have e8 : acc + 4 * (2 * (k + 1)) = acc + 4 * (2 * k) + 4 + 4 := by omega_arith
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), p₃]
     congr 2
@@ -308,29 +308,29 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       K₃.gpr _ (by decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide), K₂.gpr _ (by decide), u₁.other _ (by decide),
       u₁.other _ (by decide), I.r1]
     exact ptr_succ _ _
-  · rw [u₅.gpr, r9₄]; exact cnt_dec hk (by omega)
+  · rw [u₅.gpr, r9₄]; exact cnt_dec hk (by omega_arith)
   · rw [u₅.other _ (by decide), u₄.other _ (by decide), K₃.gpr _ (by decide), K₂.gpr _ (by decide),
       u₁.other _ (by decide)]; exact I.r6
   · rw [m₅]
-    exact I.out.trans ((O₂.mono (by omega) (by omega)).trans (O₃.mono (by omega) (by omega)))
+    exact I.out.trans ((O₂.mono (by omega_arith) (by omega_arith)).trans (O₃.mono (by omega_arith) (by omega_arith)))
   · exact (I.rest.trans K₁₂).trans ((K₃.mono (by simp [clob])).trans
       ((u₄.rest (by simp [clob])).trans (u₅.rest (by simp [clob]))))
   · rw [m₅, e8]; exact D₃
   · intro l hl1 hl2
-    rw [m₅, O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)]
-    exact I.zeros l (by omega) hl2
+    rw [m₅, O₃.w32 (by omega_arith) (by omega_arith), O₂.w32 (by omega_arith) (by omega_arith)]
+    exact I.zeros l (by omega_arith) hl2
   · rw [m₅, e8]; exact hT''
   · obtain ⟨U, hU⟩ := I.cong
     refine ⟨U + q₀ * 2 ^ (32 * k) + q₁ * (2 ^ (32 * k) * 2 ^ 16), ?_⟩
     have hc := cong_step hU V₂ V₃
-    rw [m₅, e8, show 32 * (k + 1) = 32 * k + 32 by omega, Nat.pow_add,
-      show 2 * (k + 1) = 2 * k + 1 + 1 by omega, pval, pval, hc]
-    simp only [pdig, show (2 * k + 1) / 2 = k by omega, show (2 * k) / 2 = k by omega,
-      show (2 * k + 1) % 2 = 1 by omega, show (2 * k) % 2 = 0 by omega,
-      show 16 * (2 * k + 1) = 32 * k + 16 by omega, show 16 * (2 * k) = 32 * k by omega, Nat.pow_add]
-  · rw [z₅, r9₄, cnt_dec hk (by omega), VG.Proof.X25519.Arm.ofNat_beq_zero (by omega)]
+    rw [m₅, e8, show 32 * (k + 1) = 32 * k + 32 by omega_arith, Nat.pow_add,
+      show 2 * (k + 1) = 2 * k + 1 + 1 by omega_arith, pval, pval, hc]
+    simp only [pdig, show (2 * k + 1) / 2 = k by omega_arith, show (2 * k) / 2 = k by omega_arith,
+      show (2 * k + 1) % 2 = 1 by omega_arith, show (2 * k) % 2 = 0 by omega_arith,
+      show 16 * (2 * k + 1) = 32 * k + 16 by omega_arith, show 16 * (2 * k) = 32 * k by omega_arith, Nat.pow_add]
+  · rw [z₅, r9₄, cnt_dec hk (by omega_arith), VG.Proof.X25519.Arm.ofNat_beq_zero (by omega_arith)]
     simp only [decide_eq_decide]
-    omega
+    omega_arith
 
 /-- The loop of `mul`: from the invariant at word 0 to the invariant at `W`. -/
 theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {W acc a b m : Nat}
@@ -344,7 +344,7 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   refine WP.mono (row_ok hs hW hD hL hk hW32 hm hinv hB I) fun u ⟨I', hz⟩ => ?_
   by_cases hk1 : k + 1 = W
   · exact .inl ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_true hk1]; rfl, hk1 ▸ I'⟩
-  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hk1]; rfl, W - (k + 1), by omega,
-      k + 1, rfl, by omega, I'⟩
+  · exact .inr ⟨by rw [VG.Proof.X25519.Arm.eval_ne, hz, decide_eq_false hk1]; rfl, W - (k + 1), by omega_arith,
+      k + 1, rfl, by omega_arith, I'⟩
 
 end VG.Proof.Mont.Arm
