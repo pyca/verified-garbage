@@ -26,7 +26,7 @@
 //! `vg_chacha20_poly1305_seal_sve2` and `vg_chacha20_poly1305_open_sve2`, the
 //! same with that kernel's SVE2 form (`vg_chacha20_xor_sve2`). On x86-64
 //! the one-time Poly1305 key comes from the same call of `vg_chacha20_xor` as
-//! the keystream of short data (up to 448 bytes with AVX-512, 192 with AVX2),
+//! the keystream of short data (up to 960 bytes with AVX-512, 192 with AVX2),
 //! which then takes no second call; every other variant computes it with the
 //! scalar `vg_chacha20_block`.
 

@@ -18,7 +18,7 @@ calls `vg_chacha20_xor` and `vg_poly1305_blocks`, and
 `vg_chacha20_poly1305_seal_avx2` calls `vg_chacha20_xor_avx2` and
 `vg_poly1305_blocks_avx2`).
 
-The working space (`workLen` = 1184 bytes, called the context below):
+The working space (`workLen` = 1696 bytes, called the context below):
 
 * `[0, 48)`: our caller's `rbx, rbp, r13, r14, r15, r12`;
 * `[48, 64)`: the tag computed by `open`;
@@ -29,13 +29,13 @@ The working space (`workLen` = 1184 bytes, called the context below):
 * `[592, 608)`: the lengths block;
 * `[608, 672)`: a copy of the ChaCha20 state, for the first call of
   `vg_chacha20_xor`, which may change it;
-* `[672, 1184)`: the keystream from block counter 0: its first 32 bytes are
+* `[672, 1696)`: the keystream from block counter 0: its first 32 bytes are
   the one-time Poly1305 key, and the next `m` bytes the keystream for the
   first `m` bytes of the data.
 
 `m` is the length of the data if it is at most the implementation's `fold`
 (`Callee.fold`), and 0 otherwise. The prologue zeros the first `64 + m`
-bytes of `ctx[672, 1184)` and XORs the keystream from counter 0 into them
+bytes of `ctx[672, 1696)` and XORs the keystream from counter 0 into them
 (one call of `vg_chacha20_xor`, which computes them in one pass): the block
 with counter 0, whose first 32 bytes are the one-time key, and the keystream
 of the first `m` bytes of the data. `crypt` XORs those into the data
@@ -76,7 +76,7 @@ def ptr (d' r : Reg) (k : Nat) : List Instr := [.mov d' (.reg r), .alu .add d' (
 def anchor (r : Reg) (k : Nat) : List Instr := [.mov .r15 (.reg r), .alu .sub .r15 (.imm (BitVec.ofNat 32 k))]
 
 /-- The size of the working space, in bytes. -/
-def workLen : Nat := 1184
+def workLen : Nat := 1696
 
 def saved : List (Reg × Nat) :=
   [(.rbx, 0), (.rbp, 8), (.r13, 16), (.r14, 24), (.r15, 32), (.r12, 40)]
@@ -124,7 +124,7 @@ def foldM (fold : Nat) : Prog isa :=
 /-- `[r15 + rcx + 672]`. -/
 def zeroQ : MemOp := { base := .r15, index := some .rcx, disp := 672 }
 
-/-- Zeros the quadwords of `ctx[672, 1184)` from the first, while fewer
+/-- Zeros the quadwords of `ctx[672, 1696)` from the first, while fewer
 than `rdx` bytes are zeroed (at least one). -/
 def zeroKs : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .mov32 .rcx (.imm 0)])
@@ -132,7 +132,7 @@ def zeroKs : Prog isa :=
 
 /-- The prologue up to the call of `vg_chacha20_xor`: saves the registers,
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first
-`64 + m` bytes of `ctx[672, 1184)` (rounded up to quadwords) and sets up the
+`64 + m` bytes of `ctx[672, 1696)` (rounded up to quadwords) and sets up the
 call's arguments, the copy of the state and those bytes. -/
 def prologueA (fold : Nat) : Prog isa :=
   .seq (.block (save ++ moves ++ initState 64 ++ initState 608))
@@ -142,7 +142,7 @@ def prologueA (fold : Nat) : Prog isa :=
     (.block (ptr .rdi .r15 608 ++ ptr .rsi .r15 672 ++ ptr .rcx .r15 128)))))
 
 /-- After the call of `vg_chacha20_xor`: the Poly1305 state for the one-time
-key, the first 32 bytes of `ctx[672, 1184)`. -/
+key, the first 32 bytes of `ctx[672, 1696)`. -/
 def prologueB : Prog isa :=
   .seq (.block (anchor .rsi 128 ++ ptr .rdi .r15 448 ++ ptr .rsi .r15 672))
   (.seq (.call "vg_poly1305_init" Impl.Poly1305.X86_64.init)
