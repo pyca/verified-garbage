@@ -689,43 +689,19 @@ theorem combCached_succ (j a : Nat) (ha : 1 ≤ a) :
       ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.1, ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.2, 2⟩ := by
   simp only [combCached, show a ≠ 0 by omega, ↓reduceIte]
 
-/-- The selection: entry `a ≤ 16` (`combCached`, but its `2Z`) of table `j < 26`, from the tables
-at `T`, to slots 4–6. -/
-theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombTbl s T)
-    {j a : Nat} (hj : j < 26) (ha : a ≤ 16) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
-    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
-    WP isa (.block combSelect) s fun t =>
+/-- After a pass leaving entry `a`'s words (or zero) in slots 4–6: the identity's ones for a zero
+magnitude (`combSelOne`), and the slots are `combField j a`. -/
+theorem combSelOne_slots {s₂ : State} {base : Addr} (hs₂ : Scratch s₂ base) {j a : Nat} (ha : a ≤ 16)
+    (h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a)
+    (hw₂ : ∀ i < 12, Proof.X25519.X86_64.word s₂.mem base (offset 4 + 8 * i) =
+      if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else 0) :
+    WP isa (.block combSelOne) s₂ fun t =>
       (∀ f < 3, F t.mem base (offset 4 + 32 * f) = combField j a f) ∧
-      Outside base (offset 4) 96 s.mem t.mem ∧
-      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      t.syms = s.syms := by
-  have hnw := hs.nowrap
-  rw [combSelect, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (combSelSetup_ok s hd ht.sym) fun s₁ ⟨x₁, k₁, _, y₁⟩ => ?_
-  rw [WP.block_append_iff]
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
-  have hr : ∀ e < 16, ∀ c < 6, InRegions (s₁.rd ++ s₁.wr)
-      (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16 := by
-    intro e he c hc
-    rw [k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-    refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
-    simp only [combTblBytes, combEntryBytes, combWordCount]; omega
-  refine WP.mono (combSelPass_ok hs₁ (by omega) h8₁ x₁ hr) fun s₂ ⟨a₂, O₂, g₂, r₂, w₂, y₂⟩ => ?_
-  have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [w₂]; exact hs₁.wr, hnw⟩
-  have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [g₂ _ (by decide), h8₁]
+      Outside base (offset 4) 96 s₂.mem t.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → t.gpr r = s₂.gpr r) ∧ t.rd = s₂.rd ∧ t.wr = s₂.wr ∧
+      t.syms = s₂.syms := by
+  have hnw := hs₂.nowrap
   refine WP.mono (combSelOne_ok hs₂ (by omega) h8₂) fun t ⟨mt, gt, rt, wt, yt⟩ => ?_
-  have W := accVal_word a₂
-  rw [k₁.2.1] at W
-  -- The words of slots 4–6 after the pass: entry `a`'s, or zero.
-  have hw₂ : ∀ i < 12, Proof.X25519.X86_64.word s₂.mem base (offset 4 + 8 * i) =
-      if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else 0 := by
-    intro i hi
-    rw [W i hi]
-    by_cases h1 : 1 ≤ a
-    · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), ite_eq_left_of_eq_true _ _ (eq_true h1)]
-      exact combTbl_word ht hj h1 ha hi
-    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h1)]
   -- After the identity's ones.
   have hwt : ∀ i < 12, Proof.X25519.X86_64.word t.mem base (offset 4 + 8 * i) =
       if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else
@@ -760,22 +736,73 @@ theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : Co
         · simp only [h1, ↓reduceIte]
         · simp only [h1, ↓reduceIte, h0, h4, or_self]
           done
-  refine ⟨fun f hf => F_of_words fun w hw => ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
+  refine ⟨fun f hf => F_of_words fun w hw => ?_, ?_, gt, rt, wt, yt⟩
   · rw [show offset 4 + 32 * f + 8 * w = offset 4 + 8 * (4 * f + w) by omega, hwt _ (by omega)]
     by_cases h1 : 1 ≤ a
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), entryWords_getD _ f w hf hw, combField, combCached_succ j a h1]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h1), combField,
         show combCached j a = ⟨1, 1, 0, 2⟩ by simp only [combCached, show a = 0 by omega, ↓reduceIte]]
       exact ones_words f hf w hw
-  · rw [mt, ← k₁.2.1]
-    exact (O₂.trans ((Proof.X25519.X86_64.writeW_outside _ base _ (d := offset 4) (by decide)).mono
-      (by decide) (by decide))).trans
+  · rw [mt]
+    exact ((Proof.X25519.X86_64.writeW_outside _ base _ (d := offset 4) (by decide)).mono
+      (by decide) (by decide)).trans
       ((Proof.X25519.X86_64.writeW_outside _ base _ (d := offset 5) (by decide)).mono (by decide) (by decide))
-  · rw [gt r h1 h2, g₂ r h2, k₁.1 r (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2, h3⟩)]
-  · rw [rt, r₂, k₁.2.2.1]
-  · rw [wt, w₂, k₁.2.2.2]
-  · rw [yt, y₂, y₁]
+
+/-- The selection: entry `a ≤ 16` (`combCached`, but its `2Z`) of table `j < 26`, from the tables
+at `T`, to slots 4–6. -/
+theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombTbl s T)
+    {j a : Nat} (hj : j < 26) (ha : a ≤ 16) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
+    WP isa (.block combSelect) s fun t =>
+      (∀ f < 3, F t.mem base (offset 4 + 32 * f) = combField j a f) ∧
+      Outside base (offset 4) 96 s.mem t.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.syms = s.syms := by
+  have hnw := hs.nowrap
+  rw [combSelect, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (combSelSetup_ok s hd ht.sym) fun s₁ ⟨x₁, k₁, _, y₁⟩ => ?_
+  rw [WP.block_append_iff]
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
+  have hr : ∀ e < 16, ∀ c < 6, InRegions (s₁.rd ++ s₁.wr)
+      (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16 := by
+    intro e he c hc
+    rw [k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
+    simp only [combTblBytes, combEntryBytes, combWordCount]; omega
+  refine WP.mono (combSelPass_ok hs₁ (by omega) h8₁ x₁ hr) fun s₂ ⟨a₂, O₂, g₂, r₂, w₂, y₂⟩ => ?_
+  have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [w₂]; exact hs₁.wr, hnw⟩
+  have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [g₂ _ (by decide), h8₁]
+  have W := accVal_word a₂
+  rw [k₁.2.1] at W
+  -- The words of slots 4–6 after the pass: entry `a`'s, or zero.
+  have hw₂ : ∀ i < 12, Proof.X25519.X86_64.word s₂.mem base (offset 4 + 8 * i) =
+      if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else 0 := by
+    intro i hi
+    rw [W i hi]
+    by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact combTbl_word ht hj h1 ha hi
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h1)]
+  refine WP.mono (combSelOne_slots hs₂ ha h8₂ hw₂) fun t ⟨ft, ot, gt, rt, wt, yt⟩ =>
+    ⟨ft, by rw [← k₁.2.1]; exact O₂.trans ot, fun r h1 h2 h3 => ?_, by rw [rt, r₂, k₁.2.2.1], by rw [wt, w₂, k₁.2.2.2], by rw [yt, y₂, y₁]⟩
+  rw [gt r h1 h2, g₂ r h2, k₁.1 r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2, h3⟩)]
+
+/-- What the comb needs of its selection `sel` (`combSelect_ok`'s statement): entry `a ≤ 16` of
+table `j < 26` to slots 4–6, keeping the rest of the scratch and the registers but `rax`, `rcx`
+and `rdx`. -/
+def SelOk (sel : List Instr) : Prop :=
+  ∀ {s : State} {base T : Addr}, Scratch s base → CombTbl s T → ∀ {j a : Nat}, j < 26 → a ≤ 16 →
+    s.gpr .rdx = BitVec.ofNat 64 j → s.gpr .r8 = BitVec.ofNat 64 a →
+    WP isa (.block sel) s fun t =>
+      (∀ f < 3, F t.mem base (offset 4 + 32 * f) = combField j a f) ∧
+      Outside base (offset 4) 96 s.mem t.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.syms = s.syms
+
+theorem combSelect_sel : SelOk combSelect := by
+  intro _ _ _ hs ht _ _ hj ha hd h8; exact combSelect_ok hs ht hj ha hd h8
 
 /-! ## The tables -/
 

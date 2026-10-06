@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.Sound
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
 import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.ScalarBase
+import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseAdx
 
 /-! Complete unsigned scalar multiplication by the Ed25519 base point. -/
 
@@ -34,13 +35,14 @@ def artifacts : List Artifact := [
       `vg_ed25519_scalar_base` but for the field multiplications and squarings, \
       which use BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as \
       `vg_x25519_adx` does. Its comb selects each of the scalar's 52 signed digits' table entry \
-      in constant time from the static `VG_ED25519_COMB`; the working values, masks and saved \
-      registers reside in `scratch`."])
+      in constant time from the static `VG_ED25519_COMB`, 32 bytes at a time with AVX2 (as \
+      `vg_ed25519_scalar_base_ifma`'s did); the working values, masks and saved registers \
+      reside in `scratch`."])
     consts := Impl.Ed25519.X86_64.combConsts
-    code := Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.adx
+    code := Impl.Ed25519.X86_64.scalarBase_adx
     contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
-    verified := Proof.Ed25519.X86_64.scalarBase_precomputed_verified (fld := Impl.X25519.X86_64.adx)
-    features := ["bmi2", "adx"]
+    verified := Proof.Ed25519.X86_64.scalarBase_adx_verified
+    features := ["avx", "avx2", "bmi2", "adx"]
     stack := 0
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ed25519.scalarBaseApi with

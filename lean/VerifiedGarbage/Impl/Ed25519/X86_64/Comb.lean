@@ -132,18 +132,20 @@ def combAddG (fld : Arith) : List Instr :=
     pointAddAffine fld
 
 /-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
-of table `r9`, negated for a negative digit, added. -/
-def combStep (fld : Arith) : Prog isa :=
+of table `r9` (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit,
+added. -/
+def combStep (fld : Arith) (sel : List Instr := combSelect) : Prog isa :=
   .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
   .seq (.ite .e (.seq (combDouble fld) (.block (combAddG fld))) (.block [])) <|
   .seq combIndex <|
   .seq combChunk <|
-  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ combSelect)) <|
+  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
   .block (combNeg fld ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
 
-/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward. -/
-def combMultiply (fld : Arith) : Prog isa :=
+/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, the entries
+selected by `sel`. -/
+def combMultiply (fld : Arith) (sel : List Instr := combSelect) : Prog isa :=
   .seq (.block (constPoint fld combG ++ [.mov32 .rbx (.imm 0)]))
-    (.loop (combStep fld) .ne)
+    (.loop (combStep fld sel) .ne)
 
 end VG.Impl.Ed25519.X86_64

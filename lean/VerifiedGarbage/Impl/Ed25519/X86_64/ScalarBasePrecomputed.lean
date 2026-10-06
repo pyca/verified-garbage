@@ -16,6 +16,12 @@ def scalarBasePrecomputedEngine (fld : Arith) : Prog isa := scalarBaseEngineOf f
 def scalarBase_precomputed (fld : Arith) : Prog isa :=
   scalarBaseWith (scalarBasePrecomputedEngine fld)
 
+/-- With BMI2's and ADX's field multiplications, and the comb's entries selected with AVX2
+(`combSelectY`). -/
+def scalarBase_adx : Prog isa :=
+  scalarBaseWith (scalarBaseEngineOf VG.Impl.X25519.X86_64.adx
+    (combMultiply VG.Impl.X25519.X86_64.adx combSelectY))
+
 /-- With the comb of AVX512_IFMA in `zmm` registers (`Zmm.combMultiply`), and BMI2's and ADX's
 field multiplications for the rest. -/
 def scalarBase_ifma : Prog isa :=

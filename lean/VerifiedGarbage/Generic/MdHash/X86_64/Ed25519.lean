@@ -90,28 +90,32 @@ def signCachedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
 
 /-- The three operations with the SHA-512 implementation `c` and the field
 multiplications `fld` (verification's doublings too), those of the Ed25519
-functions with the suffix `fs`, which need the CPU features `ff`. -/
+functions with the suffix `fs`, which need the CPU features `ff`; key derivation and signing
+call the base-point multiplication `bs`, which needs `bf`. -/
 def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arith)
     [Proof.Ed25519.X86_64.EdArith fld] (fs : String) (ff : List String)
+    (bs : Prog X86_64.isa) [Proof.Ed25519.X86_64.EdBase bs] (bf : List String)
     (hq : Proof.Ed25519.X86_64.VerifyMessage.EqCode
       (Impl.Ed25519.X86_64.verifyEquation fld
         (Impl.Ed25519.X86_64.windows fld))) :
     List Artifact :=
-  [publicKeyWith c (Impl.Ed25519.X86_64.scalarBase_precomputed fld) fs ff,
+  [publicKeyWith c bs fs bf,
     verifyWith c fld (Impl.Ed25519.X86_64.windows fld) fs ff hq,
-    signCachedWith c (Impl.Ed25519.X86_64.scalarBase_precomputed fld) fs ff]
+    signCachedWith c bs fs bf]
 
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
 each field multiplication of the Ed25519 functions: the baseline's, and
-BMI2's and ADX's (`_adx`); and with AVX512_IFMA (`_ifma`), verification with its
-windows, and key derivation and signing with its comb. -/
+BMI2's and ADX's (`_adx`, whose comb also selects its entries with AVX2); and with AVX512_IFMA
+(`_ifma`), verification with its windows, and key derivation and signing with its comb. -/
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha512 with
   | none => []
   | some c => withField c Impl.X25519.X86_64.baseline "" []
+        (Impl.Ed25519.X86_64.scalarBase_precomputed Impl.X25519.X86_64.baseline) []
         ⟨Proof.Ed25519.X86_64.VerifyCode.baseline_mx, by lit_decide, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe⟩ ++
-      withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"]
+      withField c Impl.X25519.X86_64.adx "_adx" ["bmi2", "adx"] Impl.Ed25519.X86_64.scalarBase_adx
+        ["avx", "avx2", "bmi2", "adx"]
         ⟨Proof.Ed25519.X86_64.VerifyCode.adx_mx, by lit_decide, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.adx_spSafe⟩ ++
       [verifyWith c Impl.X25519.X86_64.adx

@@ -160,3 +160,15 @@ def combMultiply (fld : Arith) : Prog isa :=
     (withMx (.seq (.block [.mov32 .rbx (.imm 0)]) (.seq (.loop combStep .ne) (.block vstore))))
 
 end VG.Impl.Ed25519.X86_64.Ifma
+
+namespace VG.Impl.Ed25519.X86_64
+
+open VG.X86_64
+open VG.Impl.X25519.X86_64.Ifma (st)
+
+/-- `combSelect` with AVX2: the entry `r8` of table `rdx` in `ymm11–ymm13` (`Ifma.vselect`, 32
+bytes at a time), to slots 4–6, and the identity's ones for a zero magnitude. -/
+def combSelectY : List Instr :=
+  Ifma.vselect ++ [st (offset 4) 11, st (offset 5) 12, st (offset 6) 13, .vop .vzeroupper] ++ combSelOne
+
+end VG.Impl.Ed25519.X86_64

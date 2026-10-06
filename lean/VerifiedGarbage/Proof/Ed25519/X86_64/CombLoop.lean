@@ -581,9 +581,9 @@ theorem combMagIdx_ok (s : State) {m j : Nat} (ha : s.gpr .rax = BitVec.ofNat 64
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
   simp only [RegUpd.gpr_setReg, hr.1, hr.2, ite_false]
 
-theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s₀ base T S c s)
-    (hfar : TblFar base T) (hS : S < 2 ^ 256) (hc : c < 52) :
-    WP isa (combStep fld) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
+theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base T : Addr} {S c : Nat}
+    (h : CombInv s₀ base T S c s) (hfar : TblFar base T) (hS : S < 2 ^ 256) (hc : c < 52) :
+    WP isa (combStep fld sel) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
       CombInv s₀ base T S (c + 1) t := by
   rw [combStep]
   refine WP.seq (WP.mono_syms (rbxCmp_ok s c 26 (by omega) (by decide) h.counter)
@@ -654,7 +654,7 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
           (by simp only [combSignMask]; omega))⟩ : PowersKeep base 56 7368 f f').trans
       (PowersKeep.of_keeps kg (by decide))
   have tg : CombTbl g T := te.keep hfar ksg (by rw [gsy, f'sy])
-  refine WP.mono_syms (combSelect_ok hsg tg (combTblIdx_lt hc) (by omega) gx g8)
+  refine WP.mono_syms (hsel hsg tg (combTblIdx_lt hc) (by omega) gx g8)
     fun u ⟨uq, uo, ug, ur, uw, usy⟩ _ => ?_
   have hsu : Scratch u base := ⟨by rw [ug _ (by decide) (by decide) (by decide)]; exact hsg.rdi,
     by rw [uw]; exact hsg.wr, hsg.nowrap⟩
@@ -743,11 +743,13 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
 
 /-! ## The loop -/
 
-theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
+/-- `combMultiply` with the selection `sel`. -/
+theorem combMultiplyWith_ok {sel : List Instr} (hsel : SelOk sel) {s : State} {base T : Addr}
+    (hs : Scratch s base) {S : Nat}
     (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (combMultiply fld) s fun t =>
+    WP isa (combMultiply fld sel) s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
   have hS' : S < 2 ^ 256 := hS
   rw [combMultiply]
@@ -768,7 +770,7 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : N
   apply WP.loop (fun n t => CombInv s base T S (52 - n) t ∧ 0 < n ∧ n ≤ 52) (n := 52)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono (combStep_ok (fld := fld) ht hfar hS' (by omega)) fun u ⟨uz, hu⟩ => ?_
+    refine WP.mono (combStep_ok (fld := fld) hsel ht hfar hS' (by omega)) fun u ⟨uz, hu⟩ => ?_
     by_cases hk : k = 0
     · subst hk
       refine Or.inl ⟨by simp only [eval, uz, show 52 - (0 + 1) + 1 = 52 from rfl, decide_true,
@@ -780,5 +782,13 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : N
         Option.map_some, Bool.not_false], k, by omega, ?_, by omega, by omega⟩
       rw [show 52 - k = 52 - (k + 1) + 1 by omega]; exact hu
   · exact ⟨init, by decide, by decide⟩
+
+theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
+    (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
+    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (ht : CombTbl s T) (hfar : TblFar base T) :
+    WP isa (combMultiply fld) s fun t =>
+      Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t :=
+  combMultiplyWith_ok combSelect_sel hs hS hd hb ht hfar
 
 end VG.Proof.Ed25519.X86_64

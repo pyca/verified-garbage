@@ -13,8 +13,9 @@
 //! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
 //! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
 //! on edwards25519, with Ed25519's precomputed tables, rather than with the
-//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available,
-//! and `vg_x25519_base_ifma` also AVX512F, AVX512_IFMA and AVX512VL, whose
+//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available
+//! (and AVX2 to select its comb's entries), and `vg_x25519_base_ifma` also
+//! AVX512F, AVX512_IFMA and AVX512VL, whose
 //! comb adds two tables' entries at once with eight-lane field
 //! multiplications.
 //!
@@ -34,8 +35,9 @@ use crate::arch::x25519::vg_x25519;
 use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
-    VG_X25519_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx,
-    vg_x25519_base_adx, vg_x25519_base_ifma, vg_x25519_ifma,
+    VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES,
+    VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_base_adx, vg_x25519_base_ifma,
+    vg_x25519_ifma,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -45,7 +47,8 @@ use crate::zeroize::zeroize;
 enum Backend {
     /// The target's baseline ISA.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox`.
+    /// BMI2's `mulx` and ADX's `adcx` and `adox`, and AVX2 for the
+    /// fixed-base comb's selection.
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for the ladder (on
@@ -64,7 +67,9 @@ impl Backend {
             const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
         ) {
             Backend::Ifma
-        } else if f.contains(VG_X25519_ADX_FEATURES) {
+        } else if f.contains(
+            const { Features::all(&[VG_X25519_ADX_FEATURES, VG_X25519_BASE_ADX_FEATURES]) },
+        ) {
             Backend::Adx
         } else {
             Backend::Baseline
@@ -267,8 +272,10 @@ mod tests {
         assert_eq!(Backend::select(Features(0)), Backend::Baseline);
         #[cfg(target_arch = "x86_64")]
         {
-            let adx = VG_X25519_ADX_FEATURES;
+            let adx = Features(VG_X25519_ADX_FEATURES.0 | VG_X25519_BASE_ADX_FEATURES.0);
             assert_eq!(Backend::select(adx), Backend::Adx);
+            // The ladder's features alone, without the comb's AVX2.
+            assert_eq!(Backend::select(VG_X25519_ADX_FEATURES), Backend::Baseline);
             assert_eq!(Backend::select(Features::of(&["bmi2"])), Backend::Baseline);
             let ifma = Features(VG_X25519_IFMA_FEATURES.0 | VG_X25519_BASE_IFMA_FEATURES.0);
             assert_eq!(Backend::select(ifma), Backend::Ifma);
