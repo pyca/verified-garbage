@@ -138,7 +138,7 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt, vg_aes_gcm_stream_encrypt, vg_aes_gcm_stream_finish,
     vg_aes_gcm_stream_init, vg_aes_gcm_stream_verify,
 };
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
     vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512,
     vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512,
@@ -148,10 +148,10 @@ use crate::arch::gcm::{
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-#[cfg(target_arch = "x86_64")]
-use core::cell::UnsafeCell;
-#[cfg(target_arch = "x86_64")]
-use core::sync::atomic::{AtomicU8, AtomicU32, Ordering};
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use alloc::boxed::Box;
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
 
 /// A 16-byte block.
 type Block = [u8; 16];
@@ -314,7 +314,7 @@ pub(crate) fn select(f: Features) -> Backend {
     best.map_or(Backend::Scalar, |(b, _)| *b)
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Backend {
     /// Whether its instances include the `_precomputed` ones
     /// (`VG.Spec.Gcm.PowersRepr`), whose interleaved loops read the powers
@@ -339,7 +339,7 @@ impl Backend {
 
 /// The shortest text, in bytes, that reaches the interleaved loops (16
 /// blocks at a time), and so gains from the powers of the hash subkey.
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_MIN_LEN: usize = 256;
 
 /// How many calls of at least `POWERS_MIN_LEN` bytes a key makes with the
@@ -347,117 +347,132 @@ const POWERS_MIN_LEN: usize = 256;
 /// hash subkey (`Powers::get`): `vg_aes_gcm_init_precomputed` costs about as
 /// much as reading the powers saves over this many calls, so a key used for
 /// a few messages never pays for them.
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
-
-/// `Powers::state`: no powers yet, one thread computing them, or ready.
-#[cfg(target_arch = "x86_64")]
-const EMPTY: u8 = 0;
-#[cfg(target_arch = "x86_64")]
-const FILLING: u8 = 1;
-#[cfg(target_arch = "x86_64")]
-const READY: u8 = 2;
 
 /// The key context `vg_aes_gcm_init_precomputed` writes for a key (that of
 /// `vg_aes_gcm_init`, then the powers `H¹ … H⁴⁸` of the hash subkey:
 /// `VG.Spec.Gcm.PowersRepr`), which the `_precomputed` instances read,
 /// computed once the key has been used enough ([`Powers::get`]).
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 struct Powers {
-    /// `EMPTY`, then `FILLING` while one thread writes `ctx`, then `READY`.
-    state: AtomicU8,
     /// The calls that could have read the powers, before they were ready.
     calls: AtomicU32,
-    /// The key (its first `key_len` bytes), which
-    /// `vg_aes_gcm_init_precomputed` takes.
-    key: [u8; 32],
-    /// The key context, written only by the thread that moved `state` from
-    /// `EMPTY` to `FILLING`, and read only after an acquire load of `state`
-    /// has seen `READY`, which that thread stores (with release ordering)
-    /// once it has written it.
-    ctx: UnsafeCell<[u64; 128]>,
+    /// Null, or the key context, from `Box::into_raw`: written before it is
+    /// published here (with release ordering), never written again while it
+    /// is shared, and freed only by `drop`.
+    ctx: AtomicPtr<[u64; 128]>,
 }
 
-// SAFETY: `ctx`, the only field not `Sync`, is written once, by the one
-// thread whose compare-exchange moved `state` from `EMPTY` to `FILLING`
-// (no other can), before it stores `READY` with release ordering; it is read
-// (through a shared reference) only after an acquire load of `state` sees
-// `READY`, so the write happens before every read, and is never written
-// again but through `&mut Powers` (in `drop`).
-#[cfg(target_arch = "x86_64")]
-unsafe impl Sync for Powers {}
-
-#[cfg(target_arch = "x86_64")]
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Powers {
-    /// No powers yet, for `key`.
-    fn new(key: &[u8]) -> Self {
-        let mut k = [0; 32];
-        k[..key.len()].copy_from_slice(key);
+    /// No powers yet.
+    fn new() -> Self {
         Powers {
-            state: AtomicU8::new(EMPTY),
             calls: AtomicU32::new(0),
-            key: k,
-            ctx: UnsafeCell::new([0; 128]),
+            ctx: AtomicPtr::new(core::ptr::null_mut()),
         }
     }
 
-    /// The key context with the powers, for a call of `len` bytes with
-    /// `backend`'s instances for `rounds` rounds: none if `backend` has no
-    /// `_precomputed` instances or the call is too short to gain from them;
-    /// otherwise the powers, computed by this call if the key has made
-    /// `POWERS_AFTER` such calls and no other thread is computing them.
-    fn get(&self, backend: Backend, rounds: usize, len: usize) -> Option<&[u64; 128]> {
-        if !backend.precomputed() || len < POWERS_MIN_LEN {
+    /// The key context with the powers, for a call (long enough to gain from
+    /// them) with `backend`'s instances for `rounds` rounds and the key
+    /// context `key` of `vg_aes_gcm_init`: none if `backend` has no
+    /// `_precomputed` instances; otherwise the powers, computed by this call
+    /// if the key has made `POWERS_AFTER` such calls and they are not ready
+    /// yet.
+    fn get(&self, backend: Backend, rounds: usize, key: &[u64; 32]) -> Option<&[u64; 128]> {
+        if !backend.precomputed() {
             return None;
         }
-        if self.state.load(Ordering::Acquire) != READY {
-            if self.calls.fetch_add(1, Ordering::Relaxed) < POWERS_AFTER - 1
-                || self
-                    .state
-                    .compare_exchange(EMPTY, FILLING, Ordering::Acquire, Ordering::Relaxed)
-                    .is_err()
-            {
-                return None;
-            }
-            let key_len = (rounds - 6) * 4;
-            // SAFETY: `self.key` is valid for reads of `key_len` bytes (16,
-            // 24 or 32); `self.ctx` for reads and writes of 1024, and no
-            // other thread reads or writes it (see `Sync`): this one moved
-            // `state` to `FILLING`. They are fields of one object, so they do
-            // not overlap each other or anything on the stack, or wrap
-            // around. The CPU has the features of `backend`, the only one
-            // with `_precomputed` instances.
-            unsafe {
-                vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512(
-                    self.key.as_ptr(),
-                    key_len,
-                    self.ctx.get(),
-                )
-            };
-            self.state.store(READY, Ordering::Release);
+        let p = self.ctx.load(Ordering::Acquire);
+        if !p.is_null() {
+            // SAFETY: a published key context (see `ctx`), which the acquire
+            // load orders after its writes; it lives as long as `self`.
+            return Some(unsafe { &*p });
         }
-        // SAFETY: `state` is `READY` (an acquire load saw it, or this thread
-        // stored it), so `ctx` is written and is never written again while
-        // `self` is shared (see `Sync`).
-        Some(unsafe { &*self.ctx.get() })
+        if self.calls.fetch_add(1, Ordering::Relaxed) < POWERS_AFTER - 1 {
+            return None;
+        }
+        let mut ctx = Box::new([0; 128]);
+        // SAFETY: the key is the first `key_len` bytes (16, 24 or 32, from
+        // `rounds`) of its key context `key` (`VG.Spec.Gcm.KeyRepr`: the key
+        // schedule, whose first `Nk` words are the key, FIPS 197 §5.2,
+        // `VG.Spec.Aes.expandWords`), valid for reads of 256; `ctx` (a new
+        // allocation) is valid for reads and writes of 1024. They do not
+        // overlap each other or anything on the stack, or wrap around. The
+        // CPU has the features of `backend`, the only one with
+        // `_precomputed` instances.
+        unsafe {
+            vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512(
+                key.as_ptr().cast(),
+                (rounds - 6) * 4,
+                &mut *ctx,
+            )
+        };
+        Some(self.publish(ctx))
+    }
+
+    /// Publishes `ctx`, unless another thread has published a key context
+    /// first: the one published.
+    fn publish(&self, ctx: Box<[u64; 128]>) -> &[u64; 128] {
+        let p = Box::into_raw(ctx);
+        let q = match self.ctx.compare_exchange(
+            core::ptr::null_mut(),
+            p,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => p,
+            Err(q) => {
+                // SAFETY: `p`, from `Box::into_raw`, was not published.
+                unsafe { free(p) };
+                q
+            }
+        };
+        // SAFETY: as in `get`.
+        unsafe { &*q }
     }
 }
 
-#[cfg(target_arch = "x86_64")]
+/// Wipes and frees the key context `p`.
+///
+/// # Safety
+///
+/// `p` must come from `Box::into_raw`, and nothing may use it afterwards.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+unsafe fn free(p: *mut [u64; 128]) {
+    // SAFETY: the caller's.
+    let mut ctx = unsafe { Box::from_raw(p) };
+    zeroize(&mut *ctx);
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Clone for Powers {
-    /// The same key, with the powers if they are ready.
+    /// The same key, with a copy of the powers if they are ready.
     fn clone(&self) -> Self {
-        let ready = self.state.load(Ordering::Acquire) == READY;
+        let p = self.ctx.load(Ordering::Acquire);
+        let ctx = if p.is_null() {
+            p
+        } else {
+            // SAFETY: as in `get`.
+            Box::into_raw(Box::new(unsafe { *p }))
+        };
         Powers {
-            state: AtomicU8::new(if ready { READY } else { EMPTY }),
             calls: AtomicU32::new(self.calls.load(Ordering::Relaxed)),
-            key: self.key,
-            // SAFETY: as in `get`, when `state` is `READY`.
-            ctx: UnsafeCell::new(if ready {
-                unsafe { *self.ctx.get() }
-            } else {
-                [0; 128]
-            }),
+            ctx: AtomicPtr::new(ctx),
+        }
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+impl Drop for Powers {
+    /// Wipes and frees the powers.
+    fn drop(&mut self) {
+        let p = *self.ctx.get_mut();
+        if !p.is_null() {
+            // SAFETY: `p` was published (see `ctx`), and `self` is no longer
+            // shared.
+            unsafe { free(p) };
         }
     }
 }
@@ -527,19 +542,14 @@ pub struct AesGcm {
     backend: Backend,
     /// The key context with the powers of the hash subkey, for the
     /// backends whose loops read them.
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     powers: Powers,
 }
 
 impl Drop for AesGcm {
-    /// Wipes the key context (and the key and the powers).
+    /// Wipes the key context (`Powers` wipes itself).
     fn drop(&mut self) {
         zeroize(&mut self.ctx);
-        #[cfg(target_arch = "x86_64")]
-        {
-            zeroize(&mut self.powers.key);
-            zeroize(self.powers.ctx.get_mut());
-        }
     }
 }
 
@@ -557,8 +567,8 @@ impl AesGcm {
             ctx: [0; 32],
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
-            #[cfg(target_arch = "x86_64")]
-            powers: Powers::new(key),
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            powers: Powers::new(),
         };
         let init = instance!(k.backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
@@ -593,26 +603,10 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let mut tag: Block = [0; 16];
-        #[cfg(target_arch = "x86_64")]
-        if let Some(ctx) = self.powers.get(self.backend, self.rounds, data.len()) {
-            // SAFETY: as below, with `ctx` the key context
-            // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
-            // reads of 1024 bytes, and the CPU has the features of
-            // `self.backend`, whose `_precomputed` instance this is.
-            unsafe {
-                vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512(
-                    ctx,
-                    self.rounds,
-                    nonce.as_ptr(),
-                    nonce.len(),
-                    aad.as_ptr(),
-                    aad.len(),
-                    data.as_mut_ptr(),
-                    data.len(),
-                    &mut tag,
-                )
-            };
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN
+            && let Some(tag) = self.seal_precomputed(nonce, aad, data)
+        {
             return Ok(tag);
         }
         let seal = instance!(self.backend, vg_aes_gcm_seal,
@@ -622,6 +616,7 @@ impl AesGcm {
                 vg_aes_gcm_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_seal_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_seal_aes]);
+        let mut tag: Block = [0; 16];
         // SAFETY: `self.ctx` is the key context `vg_aes_gcm_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
         // the same one), valid for reads of 256 bytes; `nonce` and `aad` are
@@ -691,50 +686,34 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        let ok = 'ok: {
-            #[cfg(target_arch = "x86_64")]
-            if let Some(ctx) = self.powers.get(self.backend, self.rounds, data.len()) {
-                // SAFETY: as in `encrypt_in_place`'s call of the
-                // `_precomputed` instance, with the received tag `tag` valid
-                // for reads of its length.
-                break 'ok unsafe {
-                    vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512(
-                        ctx,
-                        self.rounds,
-                        nonce.as_ptr(),
-                        nonce.len(),
-                        aad.as_ptr(),
-                        aad.len(),
-                        data.as_mut_ptr(),
-                        data.len(),
-                        tag.as_ptr(),
-                        tag.len(),
-                    )
-                };
-            }
-            let open = instance!(self.backend, vg_aes_gcm_open,
-                x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
-                vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
-                    vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
-                    vg_aes_gcm_open_vaes_vpclmul_avx512],
-                avx: [vg_aes_gcm_open_aesni_pclmul_avx],
-                aarch64: [vg_aes_gcm_open_aes]);
-            // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
-            // valid for reads of its length.
-            unsafe {
-                open(
-                    &self.ctx,
-                    self.rounds,
-                    nonce.as_ptr(),
-                    nonce.len(),
-                    aad.as_ptr(),
-                    aad.len(),
-                    data.as_mut_ptr(),
-                    data.len(),
-                    tag.as_ptr(),
-                    tag.len(),
-                )
-            }
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN
+            && let Some(r) = self.open_precomputed(nonce, aad, data, tag)
+        {
+            return r;
+        }
+        let open = instance!(self.backend, vg_aes_gcm_open,
+            x86_64: [vg_aes_gcm_open_aesni, vg_aes_gcm_open_pclmul, vg_aes_gcm_open_aesni_pclmul],
+            vaes: [vg_aes_gcm_open_vaes, vg_aes_gcm_open_vpclmul, vg_aes_gcm_open_vaes_pclmul,
+                vg_aes_gcm_open_aesni_vpclmul, vg_aes_gcm_open_vaes_vpclmul,
+                vg_aes_gcm_open_vaes_vpclmul_avx512],
+            avx: [vg_aes_gcm_open_aesni_pclmul_avx],
+            aarch64: [vg_aes_gcm_open_aes]);
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of its length.
+        let ok = unsafe {
+            open(
+                &self.ctx,
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                tag.len(),
+            )
         };
         // `open`'s contract leaves `data` as it was unless it returns 1.
         if ok == 1 {
@@ -760,6 +739,72 @@ impl AesGcm {
     pub fn decryptor(&self, nonce: &[u8]) -> Result<AesGcmDecryptor<'_>, Error> {
         Ok(AesGcmDecryptor {
             stream: Stream::new(self, nonce)?,
+        })
+    }
+}
+
+/// The calls of the `_precomputed` instances, out of line so that the
+/// shorter calls, which never make them, stay as fast as before.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+impl AesGcm {
+    /// `encrypt_in_place` with the key context with the powers, if
+    /// `Powers::get` gives it.
+    #[inline(never)]
+    fn seal_precomputed(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
+        let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        let mut tag: Block = [0; 16];
+        // SAFETY: as in `encrypt_in_place`, with `ctx` the key context
+        // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+        // reads of 1024 bytes, and the CPU has the features of
+        // `self.backend`, whose `_precomputed` instance this is.
+        unsafe {
+            vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512(
+                ctx,
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                &mut tag,
+            )
+        };
+        Some(tag)
+    }
+
+    /// `open` with the key context with the powers, if `Powers::get` gives
+    /// it.
+    #[inline(never)]
+    fn open_precomputed(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        data: &mut [u8],
+        tag: &[u8],
+    ) -> Option<Result<(), Error>> {
+        let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        // SAFETY: as in `seal_precomputed`, with the received tag `tag`
+        // valid for reads of its length.
+        let ok = unsafe {
+            vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512(
+                ctx,
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                data.as_mut_ptr(),
+                data.len(),
+                tag.as_ptr(),
+                tag.len(),
+            )
+        };
+        // As in `open`.
+        Some(if ok == 1 {
+            Ok(())
+        } else {
+            Err(Error::TagMismatch)
         })
     }
 }
@@ -853,34 +898,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         let text_len =
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
-        #[cfg(target_arch = "x86_64")]
-        if let Some(ctx) = self
-            .key
-            .powers
-            .get(self.key.backend, self.key.rounds, data.len())
-        {
-            let f = if DECRYPT {
-                vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512
-            } else {
-                vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512
-            };
-            // SAFETY: as below, with `ctx` the key context
-            // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
-            // reads of 1024 bytes (the other streaming functions read its
-            // first 256, which are `self.key.ctx`), and the CPU has the
-            // features of `self.key.backend`, whose `_precomputed` instances
-            // these are.
-            unsafe {
-                f(
-                    ctx,
-                    self.key.rounds,
-                    &mut self.state,
-                    self.aad_len,
-                    self.text_len,
-                    data.as_mut_ptr(),
-                    data.len(),
-                )
-            };
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if data.len() >= POWERS_MIN_LEN && self.update_precomputed(data) {
             self.text_len = text_len;
             return Ok(());
         }
@@ -922,6 +941,46 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         };
         self.text_len = text_len;
         Ok(())
+    }
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
+    /// `update` with the key context with the powers, if `Powers::get`
+    /// gives it: whether it did (leaving `self.text_len` to the caller).
+    #[inline(never)]
+    fn update_precomputed(&mut self, data: &mut [u8]) -> bool {
+        let Some(ctx) = self
+            .key
+            .powers
+            .get(self.key.backend, self.key.rounds, &self.key.ctx)
+        else {
+            return false;
+        };
+        let f = if DECRYPT {
+            vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512
+        } else {
+            vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512
+        };
+        // SAFETY: as in `update`, with `ctx` the key context
+        // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+        // reads of 1024 bytes (the other streaming functions read the key
+        // context of `vg_aes_gcm_init` for it, whose hash subkey and key
+        // schedule are the same: `VG.Spec.Gcm.StreamRepr` depends on those
+        // alone), and the CPU has the features of `self.key.backend`, whose
+        // `_precomputed` instances these are.
+        unsafe {
+            f(
+                ctx,
+                self.key.rounds,
+                &mut self.state,
+                self.aad_len,
+                self.text_len,
+                data.as_mut_ptr(),
+                data.len(),
+            )
+        };
+        true
     }
 }
 
@@ -1492,41 +1551,47 @@ mod tests {
     /// A key whose backend has `_precomputed` instances computes the powers
     /// of its hash subkey after `POWERS_AFTER` calls long enough to use
     /// them, and then encrypts and decrypts, one-shot and streaming, as the
-    /// baseline does; shorter calls never count. A thread that finds another
-    /// computing them, and a key whose backend has no such instances, use
-    /// the key context of `vg_aes_gcm_init`.
-    #[cfg(target_arch = "x86_64")]
+    /// baseline does; shorter calls never count, and a key whose backend has
+    /// no such instances never computes them. Of two threads computing them
+    /// at once, the second to publish them uses the first's.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     #[test]
     fn powers() {
-        use super::{EMPTY, FILLING, POWERS_AFTER, POWERS_MIN_LEN, READY};
+        use super::{POWERS_AFTER, POWERS_MIN_LEN};
+        use alloc::boxed::Box;
         use core::sync::atomic::Ordering;
         let msg: [u8; 700] = core::array::from_fn(|i| (i * 11 + 5) as u8);
         let aad = [3u8; 5];
         let nonce = [7u8; 12];
         for key_len in [16, 24, 32] {
             let k = AesGcm::new(&[0x3c; 32][..key_len]).unwrap();
-            let k = k.with_backend(Backend::VaesVpclmulAvx512);
             let base = k.with_backend(Backend::Scalar);
-            // Without the backend's features, only what needs none of them.
-            let run = detected().contains(Backend::VaesVpclmulAvx512.features());
-            let none = |k: &AesGcm, len| k.powers.get(Backend::Scalar, k.rounds, len).is_none();
-            assert!(none(&k, msg.len()));
-            if !run {
-                continue;
-            }
-            // Short calls neither use nor count toward the powers.
             assert!(
-                k.powers
-                    .get(k.backend, k.rounds, POWERS_MIN_LEN - 1)
+                base.powers
+                    .get(base.backend, base.rounds, &base.ctx)
                     .is_none()
             );
+            // Without the backend's features, only what needs none of them.
+            if !detected().contains(Backend::VaesVpclmulAvx512.features()) {
+                continue;
+            }
+            let k = k.with_backend(Backend::VaesVpclmulAvx512);
+            let ready = |k: &AesGcm| !k.powers.ctx.load(Ordering::Acquire).is_null();
+            // Short calls neither use nor count toward the powers.
+            let mut short = msg;
+            let tag = k
+                .encrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1])
+                .unwrap();
+            k.decrypt_in_place(&nonce, &aad, &mut short[..POWERS_MIN_LEN - 1], &tag)
+                .unwrap();
+            let mut e = k.encryptor(&nonce).unwrap();
+            e.update(&mut short[..POWERS_MIN_LEN - 1]).unwrap();
             assert_eq!(k.powers.calls.load(Ordering::Relaxed), 0);
             let fresh = k.clone();
             // Each round makes five calls: `encrypt_in_place`, two
             // streaming updates and two `decrypt_in_place`.
             for i in 0..POWERS_AFTER / 5 + 2 {
-                let state = k.powers.state.load(Ordering::Relaxed);
-                assert_eq!(state, if 5 * i < POWERS_AFTER { EMPTY } else { READY });
+                assert_eq!(ready(&k), 5 * i >= POWERS_AFTER);
                 let len = [256, 300, 512, 700][i as usize % 4];
                 let mut want = msg;
                 let want_tag = base
@@ -1555,25 +1620,18 @@ mod tests {
                     .unwrap();
                 assert_eq!(&ct[..len], &msg[..len]);
             }
-            // A clone keeps the powers if they are ready, and not otherwise.
-            let ready = k.clone();
-            assert_eq!(ready.powers.state.load(Ordering::Relaxed), READY);
-            assert_eq!(
-                ready
-                    .powers
-                    .get(ready.backend, ready.rounds, POWERS_MIN_LEN),
-                k.powers.get(k.backend, k.rounds, POWERS_MIN_LEN)
-            );
-            assert_eq!(fresh.clone().powers.state.load(Ordering::Relaxed), EMPTY);
-            // Another thread computing them: this one does not wait.
-            fresh.powers.calls.store(POWERS_AFTER, Ordering::Relaxed);
-            fresh.powers.state.store(FILLING, Ordering::Relaxed);
-            assert!(
-                fresh
-                    .powers
-                    .get(fresh.backend, fresh.rounds, POWERS_MIN_LEN)
-                    .is_none()
-            );
+            // A clone copies the powers if they are ready, and not otherwise.
+            let copy = k.clone();
+            let powers = k.powers.get(k.backend, k.rounds, &k.ctx).unwrap();
+            let copied = copy.powers.get(copy.backend, copy.rounds, &copy.ctx);
+            assert_eq!(copied, Some(powers));
+            assert!(!core::ptr::eq(copied.unwrap(), powers));
+            assert!(!ready(&fresh.clone()));
+            // A key context published second is dropped for the first.
+            let first = fresh.powers.publish(Box::new(*powers));
+            let second = fresh.powers.publish(Box::new([0; 128]));
+            assert!(core::ptr::eq(first, second));
+            assert_eq!(second, powers);
         }
     }
 
