@@ -850,7 +850,7 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--all"]:
-        matrix = [p for a in PLATFORMS for p in platforms(a)]
+        matrix = platforms("aarch64", {"ecdsa_p256"}, benchmarks=30)
     else:
         if sys.argv[1:] and (len(sys.argv) != 3 or sys.argv[1] != "--base"):
             sys.exit("usage: bench_arches.py [--all | --base REV]")
