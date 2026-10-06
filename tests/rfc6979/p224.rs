@@ -1,6 +1,6 @@
 //! RFC 6979 §A.2.4: P-224, with SHA-224.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::ecdsa::{Error, P224, SigningKey, VerifyingKey};
 use verified_garbage::hashes::sha224::Sha224;
