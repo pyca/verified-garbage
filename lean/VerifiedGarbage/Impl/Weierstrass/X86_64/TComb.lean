@@ -157,10 +157,10 @@ def negY : List Instr := Mont.X86_64.sub K.M K.neg K.zero K.E.y ++ K.signMask ++
 /-- Iteration `j = rbx - 1` (with `rbx` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
 def step : Prog isa :=
-  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ K.select)) <|
+  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ K.selSetup ++ K.selPass)) <|
   .seq (.block K.negY) <|
-  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
-  .block (copyPt K.M.n K.A K.D ++ [.alu .test .rbx (.reg .rbx)])
+  .seq (fprogB K.M (rcb3m K.S K.A K.E K.D)) <|
+  .block (K.digit ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ [.alu .test .rbx (.reg .rbx)])
 
 /-- The words of the table of bits the comb clears, past the scalar's
 `kbytes`, up to `w J`. -/

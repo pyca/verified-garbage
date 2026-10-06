@@ -83,6 +83,21 @@ def rcb3 (S : RcbSlots) (p q o : Pt) : List FOp :=
     .sub o.x o.x S.t1, .mul o.z S.t4 o.z, .mul S.t1 S.t3 S.t0,
     .add o.z o.z S.t1]
 
+/-- `o = p + q` for an affine `q` (`(q.x : q.y : 1)`; `q.z` is not read) on a
+curve with `a = -3`: Algorithm 5 of Renes, Costello and Batina (the mixed
+addition: 11 products and 2 by `b`, with `b` in `S.b3`), which is
+Algorithm 4 with `Z₂ = 1`. -/
+def rcb3m (S : RcbSlots) (p q o : Pt) : List FOp :=
+  [.mul S.t0 p.x q.x, .mul S.t1 p.y q.y, .add S.t3 q.x q.y, .add S.t4 p.x p.y,
+    .mul S.t3 S.t3 S.t4, .add S.t4 S.t0 S.t1, .sub S.t3 S.t3 S.t4, .mul S.t4 q.y p.z,
+    .add S.t4 S.t4 p.y, .mul o.y q.x p.z, .add o.y o.y p.x, .mul o.z S.b3 p.z,
+    .sub o.x o.y o.z, .add o.z o.x o.x, .add o.x o.x o.z, .sub o.z S.t1 o.x,
+    .add o.x S.t1 o.x, .mul o.y S.b3 o.y, .add S.t1 p.z p.z, .add S.t2 S.t1 p.z,
+    .sub o.y o.y S.t2, .sub o.y o.y S.t0, .add S.t1 o.y o.y, .add o.y S.t1 o.y,
+    .add S.t1 S.t0 S.t0, .add S.t0 S.t1 S.t0, .sub S.t0 S.t0 S.t2, .mul S.t1 S.t4 o.y,
+    .mul S.t2 S.t0 o.y, .mul o.y o.x o.z, .add o.y o.y S.t2, .mul o.x S.t3 o.x,
+    .sub o.x o.x S.t1, .mul o.z S.t4 o.z, .mul S.t1 S.t3 S.t0, .add o.z o.z S.t1]
+
 /-- `o = 2p` in Jacobian coordinates (`(X : Y : Z)` for `(X / Z², Y / Z³)`) for
 a curve with `a = -3` (dbl-2001-b: 3 products and 5 squares; temporaries `t0 … t3`;
 `o` apart from `p`). -/
