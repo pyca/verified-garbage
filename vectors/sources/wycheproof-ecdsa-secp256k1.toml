@@ -1,0 +1,5 @@
+name = "Wycheproof ECDSA secp256k1 SHA-256 IEEE P1363 signature verification test vectors (testvectors_v1/ecdsa_secp256k1_sha256_p1363_test.json of github.com/C2SP/wycheproof at 3fa63dd0344abb611f1fb1d77e119938603ea230)"
+directories = ["wycheproof-ecdsa-secp256k1"]
+url = "https://raw.githubusercontent.com/C2SP/wycheproof/3fa63dd0344abb611f1fb1d77e119938603ea230/testvectors_v1/ecdsa_secp256k1_sha256_p1363_test.json"
+sha256 = "7a339efc7134fb2495cd32afdbd692e0f86427d3c24e9073f6a7d858bb8788d2"
+retrieved = "2026-10-06"
