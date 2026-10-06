@@ -117,17 +117,16 @@ theorem stageB_ok (hL : L.Ok) (hk : CoreOk P L) {u : State} (hc : Ctx L g m₀ u
     have he : L.e = 0 := by rw [L.ew, hLw]; rfl
     simp only [Cfg.start, hwc, Bool.false_eq_true, ite_false]
     rw [WP.block_append_iff]
-    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [← hQ8, ← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
+    refine WP.mono (reduce_ok (P := P) hw hL hc hsi (by rw [← hD]; exact hQD)) fun u₁ ⟨hc₁, _, hh₁⟩ => ?_
     refine WP.mono (initKV_ok hL hc₁) fun u₂ ⟨hc₂, hf₂, hv₂, hk₂⟩ =>
       ⟨hc₂, ?_, hk₂ _ (by anums), hv₂ _ (by anums), dgOk_narrow hL hk hw hc₂⟩
-    have e₁ : hOf P L u₂.mem = hOf P L u₁.mem := bytesAt_frame (p := L.B + BitVec.ofNat 64 144) (n := 8 * P.w) hf₂
+    have e₁ : hOf P L u₂.mem = hOf P L u₁.mem := bytesAt_frame (p := L.B + BitVec.ofNat 64 144) (n := P.Q) hf₂
       (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint _ (by omega) (by omega) (by omega))
       (by omega)
-    have e₂ : Spec.Sha256.bytesAt u₂.mem L.d (8 * P.w) = dB P L m₀ := by
-      rw [← hQ8]; exact hc₂.dBytes hL (by rw [hk.1])
+    have e₂ : Spec.Sha256.bytesAt u₂.mem L.d P.Q = dB P L m₀ := hc₂.dBytes hL (by rw [hk.1])
     simp only [tailOf, hw, Bool.false_eq_true, ite_false]
-    rw [e₁, e₂, hOf, hh₁, ← hQ8]
+    rw [e₁, e₂, hOf, hh₁]
     rw [hSpec, bits2octets_eqQ hB (by rw [hBOf, length_bytesAt]; exact hQD), hBOf,
       ← bytesAt_take m₀ L.dg hQD]
   · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
@@ -194,7 +193,7 @@ theorem tailOf_kvw (hL : L.Ok) (hk : CoreOk P L) {m m' : Mem} (hf : Frame (KVW L
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
     simp only [tailOf, Bool.false_eq_true, ite_false]
-    refine congrArg₂ (· ++ ·) (bytesAt_frame hf (hdk (by rw [hk.1, hQ8])) (by omega)) ?_
+    refine congrArg₂ (· ++ ·) (bytesAt_frame hf (hdk (by rw [hk.1])) (by omega)) ?_
     exact bytesAt_frame hf (kvw_h hL (by omega)) (by omega)
   · simp only [tailOf, ite_true]
     have hDG : Region.Sub ⟨L.dg, P.H.D⟩ L.DG := Region.sub_prefix (by rw [P.len])

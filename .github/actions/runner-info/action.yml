@@ -1,0 +1,27 @@
+name: Describe the runner
+description: >
+  Prints the runner's OS, CPU and memory, so that a job's log says what it
+  ran on (a slow build or a CPU-dependent failure may be the host's). Works
+  on Linux (and in the x86 and ARMv7 containers), macOS and Windows.
+
+runs:
+  using: composite
+  steps:
+    - name: Describe the runner
+      shell: bash
+      run: |
+        uname -a
+        case "$RUNNER_OS" in
+          Linux)
+            # The first processor's entry: model, features, cache size, …
+            sed '/^$/q' /proc/cpuinfo
+            echo "$(nproc) CPUs available"
+            grep -E '^(MemTotal|MemAvailable):' /proc/meminfo ;;
+          macOS)
+            sysctl machdep.cpu.brand_string hw.ncpu hw.memsize
+            sysctl machdep.cpu.features machdep.cpu.leaf7_features 2> /dev/null || true ;;
+          Windows)
+            powershell -NoProfile -Command \
+              'Get-CimInstance Win32_Processor | Format-List Name, Manufacturer, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed;
+               Get-CimInstance Win32_ComputerSystem | Format-List TotalPhysicalMemory' ;;
+        esac

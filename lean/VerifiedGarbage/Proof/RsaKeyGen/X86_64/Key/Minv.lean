@@ -10,7 +10,7 @@ in `r15` (`minv_ok`).
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.Bignum (emod_pow_weaken odd_sq)
 
 theorem inv_of_emod {a x : Nat} (h : ((a : Int) * x - 1) % (2 ^ 64 : Int) = 0) : a * x % 2 ^ 64 = 1 := by

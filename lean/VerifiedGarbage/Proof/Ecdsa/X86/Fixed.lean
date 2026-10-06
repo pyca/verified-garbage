@@ -40,6 +40,7 @@ structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 32) (m : Mem) : Prop
   r2n : wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n
   onen : wordsVal m base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n
   saved : ∀ rd ∈ Cfg.saved, m.readW (off base rd.2) 32 = g rd.1
+  table : c.comb.isSome = true → m.readW (off base Cfg.combPtr) 32 = g .eax
 
 /-- What a phase writes misses the constants and the saved registers. -/
 def FixedOk (c : Cfg) (W : List (Nat × Nat)) : Prop :=
@@ -102,12 +103,18 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Fixed
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
     (e B3P (by decide) (by decide)).trans h.b3p, (e GX (by decide) (by decide)).trans h.gx,
     (e GY (by decide) (by decide)).trans h.gy, (e R2N (by decide) (by decide)).trans h.r2n,
-    (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_⟩
-  have : p.2 + 4 ≤ 16 := by revert p; decide
-  refine (Unch.readW32 hu (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
-  rcases hW w hw with ⟨h1, -⟩ | h
-  · rw [h1, sl_eq]; omega
-  · rw [sl_eq] at h; omega
+    (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_, ?_⟩
+  · have : p.2 + 4 ≤ 16 := by revert p; decide
+    refine (Unch.readW32 hu (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
+    rcases hW w hw with ⟨h1, -⟩ | h
+    · rw [h1, sl_eq]; omega
+    · rw [sl_eq] at h; omega
+  · intro ht
+    refine (Unch.readW32 hu (d := Cfg.combPtr) (fun w hw => Or.inl ?_) (by decide)).trans (h.table ht)
+    rcases hW w hw with ⟨h1, -⟩ | h
+    · rw [h1, sl_eq]; exact Nat.le_add_right _ _
+    · rw [sl_eq] at h; exact Nat.le_trans (Nat.le_add_right _ _) h
+
 
 /-- A slot apart from the ranges of other numbered slots. -/
 theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
@@ -182,10 +189,10 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
   rw [List.mem_singleton.mp hw]
   simp only [bitsAt_eq]
   rcases Nat.lt_or_gt_of_ne hjj with h | h
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 4) h
     rw [Nat.mul_succ] at this
     omega
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 4) h
     rw [Nat.mul_succ] at this
     omega
 

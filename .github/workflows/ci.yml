@@ -49,6 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       # The keys of the caches of the build and of its manifest.
       - uses: ./.github/actions/lean-keys
         id: keys
@@ -159,7 +160,10 @@ jobs:
       contents: read
     if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
     strategy:
-      fail-fast: false
+      # One failed shard cancels the others: without its outputs nothing
+      # assembles the build, so theirs would go unused (their times reach
+      # later plans only through an assembled build's manifest).
+      fail-fast: true
       matrix:
         shard: ${{ fromJSON(needs.lean.outputs.shards) }}
     # No expressions: GitHub does not evaluate them in the name of a skipped
@@ -174,6 +178,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       # The build the plan is for (or, if it has none, the last build main
       # saved).
       - uses: ./.github/actions/lean-prepare
@@ -282,14 +287,6 @@ jobs:
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
-
-  vectors:
-    name: Test vector provenance
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - run: python3 ci/check_vectors.py
 
   rust:
@@ -346,6 +343,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -424,6 +422,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -616,7 +615,7 @@ jobs:
               - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448
-              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
@@ -823,7 +822,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-latest
     # To list the run's artifacts.
     permissions:
@@ -836,7 +835,7 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
             ${{ needs.coverage.result }}
           # Skipped when `lean` built the proofs itself.

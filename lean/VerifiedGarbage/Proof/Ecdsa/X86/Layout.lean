@@ -68,8 +68,8 @@ end
 
 /-- The arguments, readable and writable as the contract says and apart from
 each other as it says. -/
-structure Pre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [dR c s, digestR c s, kR c s, argsR s]
+structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [dR c s, digestR c s, kR c s, argsR s] ++ extra
   wr : s.wr = [outR c s, scR s]
   out_sc : (outR c s).Disjoint (scR s)
   out_d : (outR c s).Disjoint (dR c s)
@@ -168,7 +168,7 @@ theorem idx_sign {i : Nat} (hi : i ∈ Args.sign.idx) : i < 5 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s where
+theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extra) : SetupPre c .sign s where
   shift := .inr (.inr rfl)
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨argsR s, by rw [hp.rd]; simp, arg_contains hp.sp_fit (idx_sign hi)⟩
@@ -214,14 +214,15 @@ structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State
   e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c A.hs E
   consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
   flag : flagW c base s = BitVec.allOnes 32
+  table : c.comb.isSome = true → s.mem.readW (off base Cfg.combPtr) 32 = s₀.gpr .eax
 
 /-! ## Slots -/
 
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
-theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + 64 * c.n * j := rfl
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (64 * c.n + 4) * j := rfl
 
-theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 + 64 * c.n * 3 := rfl
+theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 + (64 * c.n + 4) * 3 := rfl
 
 theorem accLen_eq (M : Mod) : accLen M = 16 * M.n + 4 := by
   simp only [accLen, words]; omega
@@ -260,7 +261,7 @@ theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.w
 /-- The tables are below the accumulator. -/
 theorem bitsAt_below_wk (c : Cfg) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ c.wk := by
   rw [bitsAt_eq, wk_eq]
-  have := Nat.mul_le_mul_left (64 * c.n) hj
+  have := Nat.mul_le_mul_left (64 * c.n + 4) hj
   rw [Nat.mul_succ] at this
   omega
 

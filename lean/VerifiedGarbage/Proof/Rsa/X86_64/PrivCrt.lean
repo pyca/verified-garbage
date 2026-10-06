@@ -11,7 +11,7 @@ slots kept (`crt_call`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The base of the stack the function uses. -/
 abbrev kb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 stackBytes

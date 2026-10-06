@@ -81,16 +81,16 @@ theorem streamAad_correct (s : State) (hs : Proof.AesGcm.streamAadX86_64.pre s) 
   exact ⟨t, s', he, abiPreserved_of_exec (streamAad_mx v) he hg, hp⟩
 
 theorem streamEncrypt_mx : (streamEncrypt v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have e := encryptBlocks_mx v v.stitch
-  have d := decryptBlocks_mx v v.stitch
+  have e := encryptBlocks_mxB v v.stitch
+  have d := decryptBlocks_mxB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamEncrypt_spSafe : (streamEncrypt v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have e := encryptBlocks_spSafe v v.stitch
-  have d := decryptBlocks_spSafe v v.stitch
+  have e := encryptBlocks_spSafeB v v.stitch
+  have d := decryptBlocks_spSafeB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.all, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
@@ -102,16 +102,16 @@ theorem streamEncrypt_correct (s : State) (hs : Proof.AesGcm.streamEncryptX86_64
   exact ⟨t, s', he, abiPreserved_of_exec (streamEncrypt_mx v) he hg, hp⟩
 
 theorem streamDecrypt_mx : (streamDecrypt v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have e := encryptBlocks_mx v v.stitch
-  have d := decryptBlocks_mx v v.stitch
+  have e := encryptBlocks_mxB v v.stitch
+  have d := decryptBlocks_mxB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem streamDecrypt_spSafe : (streamDecrypt v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have e := encryptBlocks_spSafe v v.stitch
-  have d := decryptBlocks_spSafe v v.stitch
+  have e := encryptBlocks_spSafeB v v.stitch
+  have d := decryptBlocks_spSafeB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, ↓reduceIte, Bool.false_eq_true, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneTag, oneCrypt, Code.all, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
@@ -153,16 +153,16 @@ theorem streamVerify_correct (s : State) (hs : Proof.AesGcm.streamVerifyX86_64.p
   exact ⟨t, s', he, abiPreserved_of_exec (streamVerify_mx v) he hg, hp⟩
 
 theorem seal_mx : («seal» v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have e := encryptBlocks_mx v v.stitch
-  have d := decryptBlocks_mx v v.stitch
+  have e := encryptBlocks_mxB v v.stitch
+  have d := decryptBlocks_mxB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem seal_spSafe : («seal» v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have e := encryptBlocks_spSafe v v.stitch
-  have d := decryptBlocks_spSafe v v.stitch
+  have e := encryptBlocks_spSafeB v v.stitch
+  have d := decryptBlocks_spSafeB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
@@ -174,16 +174,16 @@ theorem seal_correct (s : State) (hs : Proof.AesGcm.sealX86_64.pre s) :
   exact ⟨t, s', he, abiPreserved_of_exec (seal_mx v) he hg, hp⟩
 
 theorem open_mx : («open» v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
-  have e := encryptBlocks_mx v v.stitch
-  have d := decryptBlocks_mx v v.stitch
+  have e := encryptBlocks_mxB v v.stitch
+  have d := decryptBlocks_mxB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and,
     Bool.and_true]
   decide +kernel
 
 theorem open_spSafe : («open» v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
-  have e := encryptBlocks_spSafe v v.stitch
-  have d := decryptBlocks_spSafe v v.stitch
+  have e := encryptBlocks_spSafeB v v.stitch
+  have d := decryptBlocks_spSafeB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [e, d, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and,
     Bool.and_true]
@@ -211,7 +211,7 @@ def initSat : State where
 theorem init_verified (v : GcmImpl) :
     Verified X86_64.target (init v.callees) (Proof.AesGcm.initScratchContract X86_64.abi 8) :=
   Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, Proof.AesGcm.initX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, Proof.AesGcm.initX86_64, Proof.AesGcm.initPreL, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [initSat] using initSat)

@@ -17,7 +17,7 @@ the proof of encryption is written for.
 
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## `vg_rsa_public_checked` -/
 

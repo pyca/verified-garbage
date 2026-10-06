@@ -4,7 +4,7 @@ import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Precomputed
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 Ver
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 Ver
 
 /-- The precomputed values, in bytes. -/
 def preR (s : State) : Region := ⟨stackArg s 5, (stackArg s 6).toNat * 8⟩

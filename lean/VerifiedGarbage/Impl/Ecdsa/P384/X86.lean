@@ -8,7 +8,7 @@ namespace VG.Impl.Ecdsa.X86
 open VG.X86
 
 /-- P-384 as the code has it. -/
-def p384 : Cfg := ⟨6, Spec.P384.curve⟩
+def p384 : Cfg := { n := 6, C := Spec.P384.curve }
 
 /-- `vg_ecdsa_p384_sign`. -/
 def signP384 : Prog isa := p384.sign

@@ -12,7 +12,7 @@ The routines the code is made of, from `KS`: what each leaves in the arrays
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 /-- Array `j`'s value: its low `W` words. -/
 abbrev av (I : KIn) (m : Mem) (j : Nat) : Nat := wv m I.B (slot I.W j) I.W

@@ -72,6 +72,12 @@ def middle : Prog isa :=
 /-- `vg_ec_<curve>_public_key`. -/
 def publicKey : Prog isa := .seq (upToPow c) (middle c)
 
+/-- Fixed-base comb with the same public-key result and scratch layout. -/
+def publicKeyComb : Prog isa := .seq c.tableAddr <|
+  .seq (c.prepareWith Args.publicKey) <|
+  .seq c.gMul <|
+  .seq (pow c.powP c.wk) (middle c)
+
 end Cfg
 
 end VG.Impl.EcKey.X86

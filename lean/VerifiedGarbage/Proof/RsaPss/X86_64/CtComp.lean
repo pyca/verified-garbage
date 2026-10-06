@@ -14,7 +14,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn load64_eq store64_eq)
-open VG.Proof.Bignum.X86_64 (off Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Proof.MdStream.X86_64 (compressK)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
@@ -51,7 +52,7 @@ theorem compArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} 
   obtain ⟨hpow, hlg1, hlg2⟩ := lgB_spec hH
   have hB := hH.B_le
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have e29 : u.mem.readW (off F sB) 64 = BitVec.ofNat 64 b := by rw [← hW, ← R.fr 29 (by decide)]; rfl
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx] (Q := fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = off S (oY + H.P.B * b) ∧ u'.gpr .rdx = 1 ∧ u'.gpr .rcx = S ∧ u'.mem = u.mem) ?_ rfl)
@@ -152,7 +153,7 @@ theorem select_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     WP isa (select H) u fun u' => SI u F S V W (decide (b = fb)) H.P.N u' := by
   have hN := hH.dims.N
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have e29 : u.mem.readW (off F sB) 64 = BitVec.ofNat 64 b := by rw [← hb, ← R.fr 29 (by decide)]; rfl
   have e30 : u.mem.readW (off F sFb) 64 = BitVec.ofNat 64 fb := by rw [← hf, ← R.fr 30 (by decide)]; rfl
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax, .r11, .r8, .rdx] (Q := fun v => v.gpr .rcx = S ∧
@@ -331,7 +332,7 @@ theorem digestOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
   refine WP.mono (WP.keep [.rbx, .rbp] (Q := fun v => v.gpr .rbx = off S oSel ∧ v.gpr .rbp = off S oDig ∧
       v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, hm⟩, hk⟩ => ?_
   · have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oSel < 2 ^ 31 by decide),
       VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide)]

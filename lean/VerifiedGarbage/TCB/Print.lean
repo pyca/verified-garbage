@@ -16,12 +16,14 @@ conditional branches:
   `VG.Rust.files` writes in the syntax of the object format
 * `frame push body pop` ⟶  `push; body; pop`
 
-Labels are numeric local labels (`N:`, referenced as `Nf` forward or `Nb`
-backward), the only kind Rust allows in inline assembly (the
-`named_asm_labels` lint). Every label of a function has a distinct number, so
-each reference has exactly one target. The numbers are `20`, `21`, `22`, …
+Structured-control-flow labels are numeric local labels (`N:`, referenced
+as `Nf` forward or `Nb` backward), the only kind Rust allows in inline
+assembly (the `named_asm_labels` lint). Each has a distinct number, so each
+reference has exactly one target. The numbers are `20`, `21`, `22`, …
 (`2` followed by a counter): a number of only `0`s and `1`s could be read as a
 binary literal in Intel syntax.
+IA-32's `symPush` reserves label `2` for its adjacent call/address pair;
+its references use the nearest `2f`/`2b`, even with several such pairs.
 
 A printer's `funcAlign` is an assembler alignment directive (e.g.
 `.p2align 6`) that `VG.Rust.function` emits after everything else in the
@@ -49,6 +51,8 @@ inductive SymPart
   | page
   | pageOff
   | ripRel
+  /-- IA-32 displacement from the local instruction-pointer label `2`. -/
+  | x86PcRel
   deriving DecidableEq, Repr
 
 /-- A line of assembly: text, a call instruction of the function it names,
@@ -118,7 +122,8 @@ def Printer.lower : Code M.Instr M.Cond → Nat → List Line × Nat
   | .call name _, n => ([.call name], n)
   | .frame i body j, n =>
     let (lb, n) := lower body n
-    ((P.instr i).map .text ++ lb ++ (P.instr j).map .text, n)
+    ((P.symLines i).getD ((P.instr i).map .text) ++ lb ++
+      (P.symLines j).getD ((P.instr j).map .text), n)
 
 /-- The complete body of a function: the lowered code followed by the return. -/
 def Printer.function (body : Code M.Instr M.Cond) : List Line :=

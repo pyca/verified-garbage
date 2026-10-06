@@ -15,7 +15,7 @@ calls use, `stackBytes`) on the registers and the stack
 
 namespace VG.Proof.Rsa.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer the function uses: its frame, and the
 return address of its calls (which use none). -/

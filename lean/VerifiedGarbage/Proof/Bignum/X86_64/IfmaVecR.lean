@@ -16,7 +16,8 @@ variable, which unfolds to the same term without evaluating it.
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oK1 oX oY oFin mask52)
 
 /-- The limbs of `v` at offset `c` of region `p`. -/

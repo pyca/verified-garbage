@@ -556,18 +556,6 @@ theorem pdCode_ct : RelCT isa (Two CR) (Precomputed.code M.mm) fun _ _ => True :
   · -- `rest`.
     exact two_map (fun p => p.d) (fun _ _ h => cl_rest h.1 h.2) pdRest_ct
 
-/-- `wordsAt`'s words determine the numbers they make. -/
-theorem wv_of_wordsAt {m m' : Mem} {p : Addr} {n c w : Nat}
-    (h : Spec.Rsa.wordsAt m p n = Spec.Rsa.wordsAt m' p n) (hc : c + w ≤ n) :
-    wv m p (8 * c) w = wv m' p (8 * c) w :=
-  wv_congr fun i hi => by
-    have := congrArg (fun l => l[c + i]?) h
-    simp only [Spec.Rsa.wordsAt, List.getElem?_map, List.getElem?_range (show c + i < n by omega),
-      Option.map_some, Option.some.injEq] at this
-    show m.readW (p + BitVec.ofNat 64 (8 * c + 8 * i)) 64 = m'.readW (p + BitVec.ofNat 64 (8 * c + 8 * i)) 64
-    rw [show 8 * c + 8 * i = 8 * (c + i) by omega]
-    exact this
-
 /-- The public data of a state. -/
 def cpubOfD (s : State) : CPubD :=
   ⟨⟨stackArg s 2, (stackArg s 3).toNat * 8, (s.gpr .rsi).toNat, s.gpr .rdi, s.gpr .r8, stackArg s 0,

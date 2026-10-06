@@ -18,7 +18,7 @@ use verified_garbage::hashes::{
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pss::{Hash, SaltLength, sign, verify};
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -113,36 +113,35 @@ fn rsa_pss_test() {
     assert_eq!(names.len(), 13);
     for name in &names {
         let file = harness::load::<VerifyGroup, SigCase>(name);
-        let (mut accepted, mut rejected) = (0, 0);
-        for group in &file.test_groups {
+        let (accepted, rejected) = (Count::default(), Count::default());
+        let keys = |group: &harness::TestGroup<VerifyGroup, SigCase>| {
+            let p = &group.params.public_key;
+            PublicKey::new(trim(&p.modulus.0), &p.public_exponent.0)
+                .unwrap_or_else(|e| panic!("{name}: {e}"))
+        };
+        file.par_tests_with(keys, |group, key, test| {
             let p = &group.params;
-            let key = PublicKey::new(
-                trim(&p.public_key.modulus.0),
-                &p.public_key.public_exponent.0,
-            )
-            .unwrap_or_else(|e| panic!("{name}: {e}"));
             let h = hash(&p.sha).expect("a supported hash function");
             let mgf = hash(&p.mgf_sha).expect("a supported hash function");
-            for test in &group.tests {
-                let id = test.tc_id;
-                let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
-                let ok = verify(&key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
-                let any = verify(&key, sig, &d, h, mgf, SaltLength::Any);
-                if mgf != h {
-                    assert!(!ok && !any, "{name} tcId {id}");
-                    continue;
-                }
-                assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
-                assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
-                // A signature with the expected salt length has some salt length.
-                assert!(!ok || any, "{name} tcId {id}");
-                if ok {
-                    accepted += 1;
-                } else {
-                    rejected += 1;
-                }
+            let id = test.tc_id;
+            let (d, sig) = (digest(h, &test.case.msg.0), &test.case.sig.0);
+            let ok = verify(key, sig, &d, h, mgf, SaltLength::Len(p.s_len));
+            let any = verify(key, sig, &d, h, mgf, SaltLength::Any);
+            if mgf != h {
+                assert!(!ok && !any, "{name} tcId {id}");
+                return;
             }
-        }
+            assert_ne!(test.result, Expectation::Acceptable, "{name} tcId {id}");
+            assert_eq!(ok, test.result == Expectation::Valid, "{name} tcId {id}");
+            // A signature with the expected salt length has some salt length.
+            assert!(!ok || any, "{name} tcId {id}");
+            if ok {
+                accepted.add();
+            } else {
+                rejected.add();
+            }
+        });
+        let (accepted, rejected) = (accepted.get(), rejected.get());
         if name.contains("mgf1sha1") {
             assert_eq!(accepted + rejected, 0, "{name}");
         } else {
@@ -164,7 +163,7 @@ fn rsa_pss_sign_test() {
     for bits in [2048, 3072, 4096] {
         let name = format!("rsa_pkcs1_{bits}_test.json");
         let file = harness::load::<CrtGroup, MsgCase>(&name);
-        for group in &file.test_groups {
+        harness::par_each(&file.test_groups, |group| {
             let k = &group.params.private_key;
             let n = trim(&k.modulus.0);
             let private = PrivateKey::from_crt(
@@ -201,6 +200,6 @@ fn rsa_pss_sign_test() {
                 let b = sign(&private, &d, *h, *h, 16).unwrap();
                 assert_ne!(a, b, "{name} tcId {id}");
             }
-        }
+        });
     }
 }

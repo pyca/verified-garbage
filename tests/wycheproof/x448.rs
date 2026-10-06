@@ -18,7 +18,7 @@
 use serde::Deserialize;
 use verified_garbage::x448::{Error, PrivateKey, x448};
 
-use crate::harness::{self, Expectation, Hex};
+use crate::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -37,16 +37,16 @@ struct Case {
 fn x448_test() {
     require_vectors!();
     let file = harness::load::<Group, Case>("x448_test.json");
-    let mut checked = 0;
-    for (group, test) in file.tests() {
+    let checked = Count::default();
+    file.par_tests(|group, test| {
         assert_eq!(group.params.curve, "curve448");
-        checked += 1;
+        checked.add();
         let public: Result<[u8; 56], _> = test.case.public.0.clone().try_into();
         let public = match public {
             Ok(public) => public,
             Err(_) => {
                 assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
-                continue;
+                return;
             }
         };
         assert_ne!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);
@@ -60,6 +60,6 @@ fn x448_test() {
         };
         let key = PrivateKey::from_bytes(&private);
         assert_eq!(key.diffie_hellman(&public), expected, "tcId {}", test.tc_id);
-    }
-    assert!(checked > 0);
+    });
+    assert!(checked.get() > 0);
 }

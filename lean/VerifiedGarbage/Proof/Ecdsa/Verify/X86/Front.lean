@@ -28,8 +28,8 @@ variable {c : Cfg}
 /-- The arguments: `public` (`1 + 2 len` bytes), `digest` (`len` bytes),
 `sig` (`2 len` bytes) and `scratch`, readable and writable as the contract
 says and apart from `scratch`. -/
-structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s 0, 1 + 2 * c.C.len⟩, ⟨ptr s 1, c.C.len⟩, ⟨ptr s 2, 2 * c.C.len⟩, ⟨argAddr s 0, 16⟩]
+structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
+  rd : s.rd = [⟨ptr s 0, 1 + 2 * c.C.len⟩, ⟨ptr s 1, c.C.len⟩, ⟨ptr s 2, 2 * c.C.len⟩, ⟨argAddr s 0, 16⟩] ++ extra
   wr : s.wr = [⟨ptr s 3, size⟩]
   pk_sc : Region.Disjoint ⟨ptr s 0, 1 + 2 * c.C.len⟩ ⟨ptr s 3, size⟩
   dg_sc : Region.Disjoint ⟨ptr s 1, c.C.len⟩ ⟨ptr s 3, size⟩
@@ -87,7 +87,7 @@ theorem idx_verify {i : Nat} (hi : i ∈ Args.verify.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
   omega
 
-theorem VPre.setup {s : State} (hp : VPre c s) : SetupPre c Args.verify s where
+theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : SetupPre c Args.verify s where
   shift := .inr (.inl rfl)
   wr := by rw [hp.wr]; simp
   arg_in := fun i hi => ⟨_, by rw [hp.rd]; simp, arg_containsN (k := 4) (by have := hp.sp_fit; omega)
@@ -122,7 +122,7 @@ theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
   simp only [Impl.Ecdsa.Verify.X86.Cfg.loadS, List.cons_append, List.nil_append]
 
 /-- The setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ (ptr s₀ 3) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) (.seq (Impl.Ecdh.X86.Cfg.validate c) rest)))) s₀ Q := by

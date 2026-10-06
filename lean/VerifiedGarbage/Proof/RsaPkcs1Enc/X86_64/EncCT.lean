@@ -20,7 +20,7 @@ public data it fixes too.
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## Entry states and the anchor -/
 
@@ -190,7 +190,7 @@ theorem pub_view {a s t : State} (S : Sib a s) (h : J5 s t) :
   · rw [entry_regs, hdi, hsi, hdx, hcx, h8, h9, hpc.rsp, S.fb, rcx, S.gpr (r := .rdi) (by decide),
       S.gpr (r := .rdx) (by decide), S.gpr (r := .r8) (by decide), S.gpr (r := .r9) (by decide)]
   · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.fb]
-    have := hpc.slots.a0; simp only [Bignum.X86_64.word, off_zero, Nat.mul_zero]; exact this
+    have := hpc.slots.a0; simp only [Bignum.word, off_zero, Nat.mul_zero]; exact this
   · rw [stackArg_entry hpc.rsp _ _ (by decide), ← rcx]; exact hpc.slots.a1
   · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.arg (by decide)]; exact hpc.slots.a2
   · rw [stackArg_entry hpc.rsp _ _ (by decide), ← S.arg (by decide)]; exact hpc.slots.a3

@@ -49,6 +49,10 @@ def fold (v : BitVec 128) : BitVec 128 := shufDwords v 0x4e ^^^ pclmul v poly 0x
 def reduce (p : Prod) : BitVec 128 :=
   (p.hi ^^^ p.mid >>> 64) ^^^ fold (fold (p.lo ^^^ p.mid <<< 64))
 
+/-- The same block, reduced the other way round: `lo` folded into `mid`, then
+`mid` into `hi` (`Pclmul/Ghash.lean` proves it is `reduce`, `φ_reduceB`). -/
+def reduceB (p : Prod) : BitVec 128 := p.hi ^^^ fold (p.mid ^^^ fold p.lo)
+
 theorem ea_at (s : State) (b : Reg) (d : Nat) :
     s.ea (at_ b d) = s.gpr b + BitVec.ofInt 64 (d : Int) := rfl
 

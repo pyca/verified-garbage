@@ -42,10 +42,13 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
     simp only [Cfg.sign, Cfg.body, Cfg.start, Cfg.tryOne, Cfg.cand, Cfg.rekeyFull, Cfg.rekey, Cfg.hmacV,
       Cfg.hmac, e, Bool.false_eq_true, ite_false, Code.allInstrs, reduce_eq, initCnt_eq, cfgOf_H, coreC_eq, hI,
       hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
-    have hl : P.R.E.C.len = 8 * P.R.E.n := (P.R.sizesA hw).2.1
-    simp only [hR, hw', hl', hl, Bool.true_and]
-    rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rcases (P.R.sizesA hw).1 with h'' | h'' <;>
-      simp only [h, h', h''] <;> decide +kernel
+    have hQD : P.R.E.C.len ≤ P.H.D := (P.sizesA hw).2.2
+    simp only [hR, hw', hl', Bool.true_and]
+    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases (P.R.sizesA hw).2.1 with hl | ⟨hn', hl⟩ <;>
+      rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
+      first
+      | (exfalso; omega)
+      | (simp only [h, h', hn, hl]; decide +kernel)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     have e : (cfgOf P).wide = true := hw
     have hs : (cfgOf P).sh = 7 := sh7 hw

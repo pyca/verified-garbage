@@ -29,8 +29,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) : List Ar
       static `VG_P384_COMB` (330 KB), with no doublings: each entry is selected in constant time \
       by loading every entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one \
       of the digit's magnitude (or the point at infinity for a zero digit), negated by a mask of \
-      its sign, and added by the complete addition formulas of Renes, Costello and Batina for \
-      `a = -3` (Algorithm 4); the \
+      its sign, and added by the mixed complete addition formulas of Renes, Costello and Batina \
+      for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
+      unless the digit is zero; the \
       inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 15 \
       batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
       giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \

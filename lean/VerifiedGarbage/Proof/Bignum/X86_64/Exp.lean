@@ -26,41 +26,6 @@ theorem bit7 (V : Nat) (hV : V < 2 ^ 64) :
   · simp only [h0, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro he; apply h0; rw [← h, he]; rfl
 
-/-- What a bit of the exponentiation changes: arrays and header slots. -/
-def bitRanges (w : Nat) : List (Nat × Nat) :=
-  [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aY, 8 * (w + 2)), (8 * sV, 8),
-    (8 * sBit, 8)]
-
-/-- What the exponentiation changes: also the byte index. -/
-def expRanges (w : Nat) : List (Nat × Nat) := (8 * sI, 8) :: bitRanges w
-
-/-- An array that `Arrays` does not list keeps its value. -/
-theorem Arrays.wv_of_not_mem {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    {j : Nat} (hj : j < 8) (hn : j ∉ js) (hZ : B.toNat + slot w 8 ≤ 2 ^ 64) :
-    wv m' B (slot w j) w = wv m B (slot w j) w :=
-  h.wv_eq (fun k hk => by
-    have := slot_sep (w := w) (show j ≠ k from fun e => hn (e ▸ hk)); omega)
-    (by have := slot_le (w := w) hj; omega)
-
-theorem Arrays.word0_of_not_mem {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    {j : Nat} (hj : j < 8) (hn : j ∉ js) (hZ : B.toNat + slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) :
-    word m' B (slot w j) = word m B (slot w j) :=
-  h.word_eq (fun k hk => by
-    have := slot_sep (w := w) (show j ≠ k from fun e => hn (e ▸ hk)); omega)
-    (by have := slot_le (w := w) hj; omega)
-
-theorem Arrays.hslot {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m') {i : Nat}
-    (hi : i < 32) : word m' B (8 * i) = word m B (8 * i) :=
-  h.word_eq (fun j _ => Or.inl (hdr_lt_slot w j hi)) (by omega)
-
-theorem bit_step {v tb : Nat} (htb : tb < 8) :
-    2 * (v / 2 ^ (8 - tb)) + v * 2 ^ tb / 128 % 2 = v / 2 ^ (7 - tb) := by
-  have h1 : v * 2 ^ tb / 128 = v / 2 ^ (7 - tb) := by
-    rw [show (128 : Nat) = 2 ^ tb * 2 ^ (7 - tb) by rw [← Nat.pow_add, show tb + (7 - tb) = 7 by omega],
-      Nat.mul_comm v, Nat.mul_div_mul_left _ _ (Nat.two_pow_pos _)]
-  rw [h1, show 8 - tb = (7 - tb) + 1 by omega, Nat.pow_succ, ← Nat.div_div_eq_div_mul]
-  omega
-
 /-- What the exponentiation keeps: the working space, the modulus `N` (and
 its low word, for `-m⁻¹`), and `X ≡ x R`. -/
 structure ExpCtx (t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N X : Nat) : Prop where
@@ -227,24 +192,6 @@ theorem bits_ok {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X x E v
   wp_upto (a := 0) (N := 8) (by decide) (BitInv t B Z w minv N X x E v)
     (fun _ _ hj _ hI => bitStep_ok hZ hw hw' hR hXN hXc hv hj hI) (fun _ h => h) h0
 
-/-- A store to a header slot keeps the arrays. -/
-theorem hdrStore_wv (m : Mem) (B : Addr) {w i j : Nat} (v : BitVec 64) (hi : i < 32) (hj : j < 8)
-    (hn : B.toNat + slot w 8 ≤ 2 ^ 64) :
-    wv (m.writeW (off B (8 * i)) v) B (slot w j) w = wv m B (slot w j) w :=
-  (writeW_outside m B v (by omega)).wv (by have := hdr_lt_slot w j hi; omega)
-    (by have := slot_le (w := w) hj; omega)
-
-theorem hdrStore_word (m : Mem) (B : Addr) {w i j : Nat} (v : BitVec 64) (hi : i < 32) (hj : j < 8)
-    (hn : B.toNat + slot w 8 ≤ 2 ^ 64) :
-    word (m.writeW (off B (8 * i)) v) B (slot w j) = word m B (slot w j) :=
-  (writeW_outside m B v (by omega)).word (by have := hdr_lt_slot w j hi; omega)
-    (by have := slot_le (w := w) hj; omega)
-
-/-- Another header slot. -/
-theorem hdrStore_hdr (m : Mem) (B : Addr) {i k : Nat} (v : BitVec 64) (hi : i < 32) (hk : k < 32)
-    (hik : i ≠ k) : word (m.writeW (off B (8 * i)) v) B (8 * k) = word m B (8 * k) :=
-  (writeW_outside m B v (by omega)).word (by omega) (by omega)
-
 /-- `ExpCtx` after a store to a slot of the functions' own. -/
 theorem ExpCtx.store {t t' : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X : Nat}
     (hc : ExpCtx t B Z w minv N X) (hZ : slot w 8 ≤ Z) {i : Nat} (hi : 16 ≤ i) (hi' : i < 32)
@@ -266,34 +213,6 @@ structure ByteInv (t₀ : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N X 
   len : word t.mem B (8 * sElen) = BitVec.ofNat 64 L
   frm : Frm B (expRanges w) t₀.mem t.mem
   keep : Keep mmRegs t₀ t
-
-theorem expRanges_le (w : Nat) : ∀ r ∈ expRanges w, r.1 + r.2 ≤ slot w 8 := by
-  have h := hdr_lt_slot w 0 (i := sBit) (by decide)
-  have h1 := slot_le (w := w) (show aAcc < 8 by decide)
-  have h2 := slot_le (w := w) (show aTmp < 8 by decide)
-  have h3 := slot_le (w := w) (show aY < 8 by decide)
-  have h4 : slot w 0 ≤ slot w aAcc := by unfold slot; omega
-  simp only [expRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega
-
-theorem bitRanges_sub (w : Nat) : ∀ r ∈ bitRanges w, r ∈ expRanges w :=
-  fun _ hr => List.mem_cons_of_mem _ hr
-
-/-- A header slot that a bit of the exponentiation does not change. -/
-theorem bitRanges_hdr (w : Nat) {k : Nat} (hk : k < 32) (h1 : k ≠ sV) (h2 : k ≠ sBit) :
-    ∀ r ∈ bitRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  have h := hdr_lt_slot w aAcc hk
-  have h' := hdr_lt_slot w aTmp hk
-  have h'' := hdr_lt_slot w aY hk
-  simp only [bitRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [sV, sBit, sFn] at * <;> omega
-
-theorem expRanges_hdr (w : Nat) {k : Nat} (hk : k < 32) (h0 : k ≠ sI) (h1 : k ≠ sV) (h2 : k ≠ sBit) :
-    ∀ r ∈ expRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
-  intro r hr
-  rcases List.mem_cons.mp hr with rfl | hr
-  · simp only [sI, sFn] at *; omega
-  · exact bitRanges_hdr w hk h1 h2 r hr
 
 theorem byteRead (ep : Addr) (i : Nat) :
     ep + BitVec.ofNat 64 i * BitVec.ofNat 64 1 + BitVec.ofInt 64 0 = ep + BitVec.ofNat 64 i := by

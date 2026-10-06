@@ -242,4 +242,18 @@ theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
   exact WP.mono (ofN_ok hL hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
     ⟨k, I, v.trans (rcb3N_run _)⟩
 
+/-- `o = p + q` by Algorithm 5 (`a = -3`, `q` affine: `q.z` is not read, with
+`b` in `S.b3`). -/
+theorem rcb3m_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
+    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (.block (fprog M (rcb3m S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3m S p q o) E) s' ∧
+      (runOps (rcb3m S p q o) E o.x, runOps (rcb3m S p q o) E o.y, runOps (rcb3m S p q o) E o.z) =
+        VG.Proof.Weierstrass.rcbAdd3m (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) := by
+  rw [rcb3m_eq]
+  exact WP.mono (ofN_ok hL hm rcb3mN_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
+    ⟨k, I, v.trans (rcb3mN_run _)⟩
+
 end VG.Proof.Weierstrass.X86_64

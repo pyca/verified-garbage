@@ -1,6 +1,6 @@
 import VerifiedGarbage.TCB.Code
 import VerifiedGarbage.TCB.X86_64.Gpr
-import VerifiedGarbage.TCB.X86_64.Avx512
+import VerifiedGarbage.TCB.X86_64.Evex
 
 /-!
 # x86-64 machine model
@@ -84,14 +84,19 @@ Modelling choices:
   the VEX-encoded ones zero every bit above their vector length (SDM Vol. 1
   §14.1.3: "VEX.128 encoded … the upper bits (MAXVL-1:128) of the
   destination are zeroed", and each VEX.256 form's pseudocode ends with
-  `DEST[MAXVL-1:256] := 0`); the EVEX-encoded ones here all have 512-bit
-  operands. `zmm16`–`zmm31` and the opmask registers `k0`–`k7` are not
-  modelled: no modelled instruction names them, and none here is masked.
+  `DEST[MAXVL-1:256] := 0`), and so do the EVEX-encoded ones, of 256 or 512
+  bits, unmasked (each EVEX form's pseudocode ends with `DEST[MAXVL-1:VL] :=
+  0`). Of `zmm16`–`zmm31`, which only EVEX-encoded instructions name, bits
+  255:0 (`ymm16`–`ymm31`) are modelled, and only `Evex.lean`'s instructions,
+  all of 256 bits, name them; bits 511:256 are not, as those instructions
+  zero them and no modelled instruction reads them. The opmask registers `k0`–`k7` are not
+  modelled: none here is masked.
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
-  `vbroadcasti128`/`vbroadcasti32x4`, the quadword source of the
+  `vbroadcasti128`/`vbroadcasti32x4`, the `vmovdqu64` loads and stores
+  (`evLoad`, `evStore`), the quadword source of the
   embedded-broadcast forms `zbcst` (`m64bcst`), and the 256-bit second
-  source of `vpmadd52Load` (`m256`), which (like every VEX or
+  source of `vpmadd52Load` and `evMadd52Load` (`m256`), which (like every VEX or
   EVEX memory operand but those of the aligned moves) need no alignment, so
   no alignment fault needs modelling.
 * MXCSR (SDM Vol. 1 §10.2.3) is modelled as a 32-bit value that only
@@ -248,6 +253,17 @@ inductive Instr
   `VOp.vpmadd52luq` and `VOp.vpmadd52huq` whose second source is the 32
   bytes at `src2` (`ymm3/m256`), unmasked and without embedded broadcast. -/
   | vpmadd52Load (hi : Bool) (dst src1 : XReg) (src2 : MemOp)
+  /-- An `EVEX.256` instruction, of any of `ymm0`–`ymm31`, that writes only
+  a vector register (`Evex.lean`). -/
+  | eop (op : EOp)
+  /-- `vmovdqu64 ymm1, YMMWORD PTR [src]` (`EVEX.256.F3.0F.W1 6F /r`) -/
+  | evLoad (dst : VReg) (src : MemOp)
+  /-- `vmovdqu64 YMMWORD PTR [dst], ymm1` (`EVEX.256.F3.0F.W1 7F /r`) -/
+  | evStore (dst : MemOp) (src : VReg)
+  /-- `vpmadd52luq ymm1, ymm2, YMMWORD PTR [src2]` (`EVEX.256.66.0F38.W1 B4
+  /r`), or with `hi` `vpmadd52huq` (`EVEX.256.66.0F38.W1 B5 /r`): as
+  `vpmadd52Load`, of any of `ymm0`–`ymm31`. -/
+  | evMadd52Load (hi : Bool) (dst src1 : VReg) (src2 : MemOp)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -340,7 +356,16 @@ below 512 bits). AVX512VL and AVX512F for the EVEX.128 and EVEX.256 forms
 of VPROLD (`EVEX.128.66.0F.W0 72 /1 ib`, `EVEX.256.66.0F.W0 72 /1 ib`),
 VPTERNLOGD (`EVEX.128.66.0F3A.W0 25 /r ib`, `EVEX.256.66.0F3A.W0 25 /r ib`)
 and VPRORQ (`EVEX.128.66.0F.W1 72 /0 ib`, `EVEX.256.66.0F.W1 72 /0 ib`),
-likewise.
+likewise. AVX512F and AVX512VL for the EVEX.128 and EVEX.256 forms of
+`Evex.lean` (the SDM's "CPUID Feature Flag" column lists both for each:
+VPADDQ `EVEX.256.66.0F.W1 D4 /r`, VPXORQ `EVEX.256.66.0F.W1 EF /r`, VPANDQ
+`EVEX.256.66.0F.W1 DB /r`, VPORQ `EVEX.256.66.0F.W1 EB /r`, VPSLLQ and
+VPSRLQ `EVEX.256.66.0F.W1 73 /6 ib` and `/2 ib`, VPERMQ
+`EVEX.256.66.0F3A.W1 00 /r ib`, VALIGNQ `EVEX.256.66.0F3A.W1 03 /r ib`,
+VPBROADCASTQ `EVEX.256.66.0F38.W1 59 /r`, VMOVDQU64 `EVEX.256.F3.0F.W1 6F
+/r` and `7F /r`), but AVX512F alone for VMOVQ xmm1, r64
+(`EVEX.128.66.0F.W1 6E /r`) and VMOVQ xmm1, xmm2 (`EVEX.128.F3.0F.W1 7E /r`), and AVX512_IFMA and AVX512VL for the EVEX.256
+VPMADD52LUQ and VPMADD52HUQ of any register.
 
 Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "PCLMULQDQ",
 "PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables' "CPUID Feature Flag":
@@ -388,6 +413,9 @@ def Instr.requires : Instr → List String
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
     ["avx512ifma", "avx512vl"]
   | .vop (.vprold ..) | .vop (.vpternlogd ..) | .vop (.vprorq ..) => ["avx512f", "avx512vl"]
+  | .eop (.vpmadd52 ..) | .evMadd52Load .. => ["avx512ifma", "avx512vl"]
+  | .eop (.vmovq ..) | .eop (.vmovqx ..) => ["avx512f"]
+  | .eop _ | .evLoad .. | .evStore .. => ["avx512f", "avx512vl"]
   | _ => []
 
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
@@ -476,6 +504,19 @@ def exec : Instr → State → Option State
   | .vpmadd52Load hi d a m, s => (s.load256 (s.ea m)).map fun v =>
     s.setV .l256 d (madd52 hi (s.lane d 0) (s.lane a 0) (v.extractLsb' 0 128))
       (madd52 hi (s.lane d 1) (s.lane a 1) (v.extractLsb' 128 128))
+  | .eop op, s => some (op.exec s)
+  -- SDM Vol. 2, "MOVDQA,VMOVDQA32/64" and "MOVDQU,VMOVDQU8/16/32/64"
+  -- (EVEX.256 encoded VMOVDQU64, without a write mask): `DEST[255:0] :=
+  -- SRC[255:0]; DEST[MAXVL-1:256] := 0`, and for a store the 32 bytes of the
+  -- source, in little-endian byte order; no alignment is required.
+  | .evLoad d m, s => (s.load256 (s.ea m)).map fun v => s.setVy d v
+  | .evStore m r, s => s.store256 (s.ea m) (s.vy r)
+  -- As `vpmadd52Load`, with `SRC3` the 32 bytes at the address.
+  | .evMadd52Load hi d a m, s => (s.load256 (s.ea m)).map fun v =>
+    let dv := s.vy d
+    let av := s.vy a
+    s.setVy d (madd52 hi (lane256 dv 1) (lane256 av 1) (lane256 v 1) ++
+      madd52 hi (lane256 dv 0) (lane256 av 0) (lane256 v 0))
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -528,6 +569,10 @@ def addrs : Instr → State → List Addr
   | .vbroadcasti32x4 _ m, s => [s.ea m]
   | .zbcst _ _ _ m, s => [s.ea m]
   | .vpmadd52Load _ _ _ m, s => [s.ea m]
+  | .eop _, _ => []
+  | .evLoad _ m, s => [s.ea m]
+  | .evStore m _, s => [s.ea m]
+  | .evMadd52Load _ _ _ m, s => [s.ea m]
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -638,6 +683,7 @@ def Instr.dst : Instr → Option Reg
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load ..
+  | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
 abbrev isa : ISA where

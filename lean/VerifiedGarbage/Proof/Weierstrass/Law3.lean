@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.Env
 
 For a curve whose `a` is `-3` (`AM3`), Algorithm 4 of Renes, Costello and
 Batina is Algorithm 1 (`rcbAdd3_eq`), so it maps representatives of two points
-to one of their sum (`Law.add3`); Algorithm 6 is Algorithm 1's sum of a point
+to one of their sum (`Law.add3`), and so does Algorithm 5, which is Algorithm 4
+for an affine second point (`rcbAdd3m_eq`, `Law.add3m`); Algorithm 6 is Algorithm 1's sum of a point
 and itself on the curve (`rcbDbl3_eq`), and a representative of a point of
 the curve satisfies the projective equation (`Rep.proj`), so it maps a
 representative of a point to one of its double (`Law.dbl3`).
@@ -48,6 +49,14 @@ theorem Law.add3 (hC : Law C) (ha : AM3 C) {P Q : Point C} (hP : onCurve C P = t
   refine hC.add hP hQ h1 h2 ?_
   show rcbAdd (Fin.ofNat C.p C.a) (Fin.ofNat C.p (3 * C.b)) X1 Y1 Z1 X2 Y2 Z2 = _
   rw [ha, ofNat_three_mul, ← rcbAdd3_eq, h]
+
+/-- Algorithm 5 adds an affine point: a representative `(X₂ : Y₂ : 1)` of a
+point of the curve other than the point at infinity. -/
+theorem Law.add3m (hC : Law C) (ha : AM3 C) {P Q : Point C} (hP : onCurve C P = true)
+    (hQ : onCurve C Q = true) {X1 Y1 Z1 X2 Y2 X3 Y3 Z3 : Fe C} (h1 : Rep C X1 Y1 Z1 P)
+    (h2 : Rep C X2 Y2 1 Q) (h : rcbAdd3m (Fin.ofNat C.p C.b) X1 Y1 Z1 X2 Y2 = (X3, Y3, Z3)) :
+    Rep C X3 Y3 Z3 (Spec.Weierstrass.add P Q) :=
+  hC.add3 ha hP hQ h1 h2 (by rw [← rcbAdd3m_eq, h])
 
 /-- Algorithm 6 doubles. -/
 theorem Law.dbl3 (hC : Law C) (ha : AM3 C) {P : Point C} (hP : onCurve C P = true)

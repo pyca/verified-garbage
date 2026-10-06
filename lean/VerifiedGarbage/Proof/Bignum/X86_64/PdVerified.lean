@@ -28,12 +28,4 @@ def pdSatState : State where
   rd := [⟨0x2000, 128⟩, ⟨0x3000, 1⟩, ⟨0x4000, 64⟩, ⟨0x6008, 32⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x8000, 8192⟩]
 
-/-- The leak of `pre` and `e`, as numbers, determines each when `pre`'s
-length is the same. -/
-theorem leak_eq2 {a c : List (BitVec 64)} {b d : List Byte} (hl : a.length = c.length)
-    (h : a.map (·.toNat) ++ b.map (·.toNat) = c.map (·.toNat) ++ d.map (·.toNat)) : a = c ∧ b = d := by
-  obtain ⟨h1, h2⟩ := List.append_inj h (by simp [hl])
-  exact ⟨(List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h1,
-    (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h2⟩
-
 end VG.Proof.Bignum.X86_64

@@ -18,6 +18,7 @@ namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
 open VG.Spec.Gcm (Block blockAt blocksAt)
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 section
 variable (s : State)
@@ -29,7 +30,6 @@ abbrev D : Addr := s.gpr .r8
 abbrev n : Nat := (s.gpr .r9).toNat
 abbrev S : Addr := stackArg s 0
 abbrev SP : Addr := s.gpr .rsp
-abbrev kR : Region := ⟨K s, 256⟩
 abbrev cR : Region := ⟨C s, 16⟩
 abbrev yR : Region := ⟨Y s, 16⟩
 abbrev dR : Region := ⟨D s, n s * 16⟩
@@ -41,14 +41,17 @@ abbrev wR : List Region := [cR s, yR s, dR s, sR s]
 
 end
 
-/-- `blocksPre`, by name. -/
-structure BP (s : State) : Prop where
-  rd : s.rd = [kR s, aR s]
+/-- The key context, of kind `M`. -/
+abbrev kR (M : CtxMode) (s : State) : Region := ⟨K s, M.len⟩
+
+/-- `blocksPreM M`, by name. -/
+structure BP (M : CtxMode) (s : State) : Prop where
+  rd : s.rd = [kR M s, aR s]
   wr : s.wr = wR s
-  k_c : (kR s).Disjoint (cR s)
-  k_y : (kR s).Disjoint (yR s)
-  k_d : (kR s).Disjoint (dR s)
-  k_s : (kR s).Disjoint (sR s)
+  k_c : (kR M s).Disjoint (cR s)
+  k_y : (kR M s).Disjoint (yR s)
+  k_d : (kR M s).Disjoint (dR s)
+  k_s : (kR M s).Disjoint (sR s)
   c_y : (cR s).Disjoint (yR s)
   c_d : (cR s).Disjoint (dR s)
   c_s : (cR s).Disjoint (sR s)
@@ -63,28 +66,31 @@ structure BP (s : State) : Prop where
   r_y : (⟨SP s, 8⟩ : Region).Disjoint (yR s)
   r_d : (⟨SP s, 8⟩ : Region).Disjoint (dR s)
   r_s : (⟨SP s, 8⟩ : Region).Disjoint (sR s)
-  t_k : (below (SP s) 8).Disjoint (kR s)
+  t_k : (below (SP s) 8).Disjoint (kR M s)
   t_c : (below (SP s) 8).Disjoint (cR s)
   t_y : (below (SP s) 8).Disjoint (yR s)
   t_d : (below (SP s) 8).Disjoint (dR s)
   t_s : (below (SP s) 8).Disjoint (sR s)
-  w_k : (K s).toNat + 256 ≤ 2 ^ 64
+  w_k : (K s).toNat + M.len ≤ 2 ^ 64
   w_c : (C s).toNat + 16 ≤ 2 ^ 64
   w_y : (Y s).toNat + 16 ≤ 2 ^ 64
   w_d : (D s).toNat + n s * 16 ≤ 2 ^ 64
   w_s : (S s).toNat + 2112 ≤ 2 ^ 64
   w_sp : (SP s).toNat + 16 ≤ 2 ^ 64
   rounds : (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
+  ok : M.ok s.mem (K s)
 
-theorem BP.of {s : State} (h : Proof.AesGcm.blocksPre s) : BP s := by
-  simp only [Proof.AesGcm.blocksPre, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
+theorem BP.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksPreM M s) : BP M s := by
+  simp only [Proof.AesGcm.blocksPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret, Proof.AesGcm.stk,
     Proof.AesGcm.rounds] at h
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at h
   obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
-    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩ := h
+    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩ := h
   exact ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃, a₁₄, a₁₅, a₁₆, a₁₇, a₁₈, a₁₉, a₂₀, a₂₁, a₂₂, a₂₃,
-    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂⟩
+    a₂₄, a₂₅, a₂₆, a₂₇, a₂₈, a₂₉, a₃₀, a₃₁, a₃₂, a₃₃⟩
+
+theorem BP.of {s : State} (h : Proof.AesGcm.blocksPre s) : BP CtxMode.base s := BP.ofM (Proof.AesGcm.blocksPreM_base h)
 
 /-! ## The arguments kept -/
 
@@ -102,7 +108,7 @@ structure Kept (s : State) (q : Nat) (m : Mem) : Prop where
 abbrev kR' (s : State) : Region := ⟨S s, 48⟩
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 theorem s_in {d k : Nat} (h : d + k ≤ 2112) : InRegions s.wr (S s + BitVec.ofNat 64 d) k :=
@@ -143,7 +149,7 @@ theorem keep_r {m m' : Mem} (hf : Frame (wR s) m m') : m'.readW (SP s) 64 = m.re
 theorem keep_k {m m' : Mem} (hf : Frame (wR s) m m') {d k : Nat} (h : d + k ≤ 256) :
     Spec.Aes.bytesAt m' (K s + BitVec.ofNat 64 d) k = Spec.Aes.bytesAt m (K s + BitVec.ofNat 64 d) k :=
   bytesAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s + BitVec.ofNat 64 d, k⟩ (kR s) := Offset.sub_base _ h
+    have hs : Region.Sub ⟨K s + BitVec.ofNat 64 d, k⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.k_c.sub_left hs

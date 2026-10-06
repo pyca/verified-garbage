@@ -8,7 +8,7 @@ namespace VG.Impl.Ecdsa.X86
 open VG.X86
 
 /-- P-224 as the code has it. -/
-def p224 : Cfg := ⟨4, Spec.P224.curve⟩
+def p224 : Cfg := { n := 4, C := Spec.P224.curve }
 
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign

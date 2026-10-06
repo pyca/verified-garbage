@@ -11,7 +11,8 @@ into seventeen words. A left shift is a rotation and a mask (`shl_eq'`).
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off writeW_outside wv)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside wv)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D mask52)
 
 theorem testBit_hiMask {t i : Nat} (ht : t ≤ 64) (hi : i < 64) : (2 ^ 64 - 2 ^ t).testBit i = decide (t ≤ i) := by
@@ -66,21 +67,21 @@ theorem mod52_of_mod64 (X Y : Nat) : (X + Y % 2 ^ 64) % 2 ^ 52 = (X + Y) % 2 ^ 5
 /-- The words from word `w` on, a number. -/
 theorem wv_div {m : Mem} {A : Addr} {w : Nat} (hw : w < 16) :
     wv m A 0 16 / 2 ^ (64 * w) = (word m A (8 * w)).toNat + 2 ^ 64 * wv m A (8 * w + 8) (15 - w) := by
-  have e := VG.Proof.Bignum.X86_64.wv_add m A 0 w (16 - w)
+  have e := VG.Proof.Bignum.wv_add m A 0 w (16 - w)
   rw [show w + (16 - w) = 16 by omega] at e
-  have e1 := VG.Proof.Bignum.X86_64.wv_add m A (0 + 8 * w) 1 (15 - w)
+  have e1 := VG.Proof.Bignum.wv_add m A (0 + 8 * w) 1 (15 - w)
   rw [show 1 + (15 - w) = 16 - w by omega] at e1
   rw [e, e1, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
-    Nat.div_eq_of_lt (VG.Proof.Bignum.X86_64.wv_lt m A 0 w), Nat.zero_add]
-  simp only [VG.Proof.Bignum.X86_64.wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
+    Nat.div_eq_of_lt (VG.Proof.Bignum.wv_lt m A 0 w), Nat.zero_add]
+  simp only [VG.Proof.Bignum.wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
     Nat.add_zero]
 
 theorem wv_one {m : Mem} {A : Addr} {d k : Nat} (hk : 1 ≤ k) :
     wv m A d k = (word m A d).toNat + 2 ^ 64 * wv m A (d + 8) (k - 1) := by
-  have e := VG.Proof.Bignum.X86_64.wv_add m A d 1 (k - 1)
+  have e := VG.Proof.Bignum.wv_add m A d 1 (k - 1)
   rw [show 1 + (k - 1) = k by omega] at e
   rw [e]
-  simp only [VG.Proof.Bignum.X86_64.wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
+  simp only [VG.Proof.Bignum.wv, Nat.zero_add, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.mul_one,
     Nat.add_zero]
 
 
@@ -113,7 +114,7 @@ theorem limbN_one {m : Mem} {A : Addr} {j : Nat} (hj : j < 20) (h : 52 * j % 64 
     show (64 * (52 * j / 64) + 52 * j % 64) % 64 = 52 * j % 64 by omega, wv_div hw, div_split _ _ _ (by omega)]
   rcases h with h | h
   · exact drop_hi _ _ _ (by omega)
-  · rw [h, show 15 - 15 = 0 from rfl]; simp [VG.Proof.Bignum.X86_64.wv]
+  · rw [h, show 15 - 15 = 0 from rfl]; simp [VG.Proof.Bignum.wv]
 
 /-- The value of a limb across two words. -/
 theorem limbN_two {m : Mem} {A : Addr} {j : Nat} (h : 12 < 52 * j % 64) (h' : 52 * j / 64 + 1 < 16) :
@@ -187,7 +188,7 @@ theorem to52_ok {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 
     intro hn
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
     refine WP.mono (ih (by omega)) fun t ⟨v, o, k, x⟩ => ?_
-    have hwv : wv t.mem A 0 16 = wv s.mem A 0 16 := VG.Proof.Bignum.X86_64.wv_congr fun i hi => by
+    have hwv : wv t.mem A 0 16 = wv s.mem A 0 16 := VG.Proof.Bignum.wv_congr fun i hi => by
       rw [Nat.zero_add]; exact hsep _ _ o i hi
     refine WP.mono (l52_ok (j := n) (A := A) (C := C) (by omega) ((k.gpr (by decide)).trans hA)
       ((k.gpr (by decide)).trans hC) ((k.gpr (by decide)).trans h12)
@@ -200,7 +201,7 @@ theorem to52_ok {s : State} {A C : Addr} (hA : s.gpr .rsi = A) (hC : s.gpr .r11 
         have hs := off_sep (j := n) (l := j) (by omega) (by omega) (by omega)
         rw [(writeW_outside _ C _ (by omega)).word (by omega) (by omega)]
         exact v j hj
-      · exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+      · exact VG.Proof.Bignum.word_writeW_self _ _ _ _
     · rw [m']
       exact o.trans ((writeW_outside _ C _ (by have := off_lt n (by omega); omega)).mono (by omega)
         (by have := off_lt n (by omega); omega))
@@ -350,9 +351,9 @@ theorem orList_ok {C : Addr} {lo : Nat} :
 
 theorem wv_digits {m : Mem} {D' : Addr} {V : Nat} :
     ∀ n, (∀ w < n, word m D' (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) → wv m D' 0 n = V % 2 ^ (64 * n)
-  | 0, _ => by simp [VG.Proof.Bignum.X86_64.wv, Nat.mod_one]
+  | 0, _ => by simp [VG.Proof.Bignum.wv, Nat.mod_one]
   | n + 1, h => by
-    rw [VG.Proof.Bignum.X86_64.wv, wv_digits n fun w hw => h w (by omega), Nat.zero_add, h n (by omega),
+    rw [VG.Proof.Bignum.wv, wv_digits n fun w hw => h w (by omega), Nat.zero_add, h n (by omega),
       BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide), Nat.mul_succ, Nat.pow_add, Nat.mod_mul]
 
 
@@ -453,7 +454,7 @@ theorem to64_ok {s : State} {C D' : Addr} (hC : s.gpr .r11 = C) (h8 : s.gpr .r8 
       rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hw) with hw | rfl
       · rw [(writeW_outside _ D' _ (by omega)).word (by omega) (by omega)]
         exact v w hw
-      · exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+      · exact VG.Proof.Bignum.word_writeW_self _ _ _ _
     · rw [m']
       exact o.trans ((writeW_outside _ D' _ (by omega)).mono (by omega) (by omega))
 
@@ -471,7 +472,7 @@ theorem pow2_le {a b : Nat} (h : a ≤ b) : 2 ^ a ≤ 2 ^ b := Nat.pow_le_pow_ri
 
 /-- The value of the limbs `to52` writes: the number, below `2¹⁰²⁴`. -/
 theorem val_to52 {m : Mem} {A : Addr} : lval (limbN (wv m A 0 16)) 20 = wv m A 0 16 := by
-  have h1 := VG.Proof.Bignum.X86_64.wv_lt m A 0 16
+  have h1 := VG.Proof.Bignum.wv_lt m A 0 16
   have h2 := pow2_le (a := 64 * 16) (b := 52 * 20) (by decide)
   rw [lval_limbN]
   generalize 2 ^ (64 * 16) = a at h1 h2
@@ -491,7 +492,7 @@ theorem wv_to64 {m : Mem} {D' : Addr} {V : Nat} (hV : V < 2 ^ (52 * 20))
 theorem wv_to64_lt {m m₀ : Mem} {D' A : Addr} {d V : Nat} (hV : V < 2 * wv m₀ A d 16)
     (h : ∀ w < 17, word m D' (8 * w) = BitVec.ofNat 64 (V / 2 ^ (64 * w) % 2 ^ 64)) : wv m D' 0 17 = V := by
   have h3 : ∀ k a, a < 2 ^ k → 2 * a ≤ 2 ^ (k + 1) := fun k a h => by rw [Nat.pow_succ]; omega
-  have h4 := h3 _ _ (VG.Proof.Bignum.X86_64.wv_lt m₀ A d 16)
+  have h4 := h3 _ _ (VG.Proof.Bignum.wv_lt m₀ A d 16)
   have h2 := pow2_le (a := 64 * 16 + 1) (b := 52 * 20) (by decide)
   refine wv_to64 ?_ h
   generalize 2 ^ (64 * 16 + 1) = c at h4 h2

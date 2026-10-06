@@ -1,18 +1,16 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
-import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import VerifiedGarbage.Proof.Bignum.CrtGPow
 
 /-!
-# RSA with the CRT on x86-64: the header's arguments
+# RSA with the CRT: the header's arguments
 
 The modulus' header slots that `entry` fills and nothing else writes: the
 saved registers, `out`, `n`, `k`, the input and the private key's pointers
 and lengths (`hFixed`). Each part's changes keep them (`HFix`).
 -/
 
-namespace VG.Proof.Bignum.X86_64
+namespace VG.Proof.Bignum
 
-open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
-open VG.Proof.MlKem.X86_64
+open VG VG.Impl.Bignum
 
 /-- The header slots of the arguments. -/
 def hFixed (i : Nat) : Bool :=
@@ -78,4 +76,4 @@ theorem keepsHdr_r2Ranges (w : Nat) : ∀ r ∈ r2Ranges w, KeepsHdr r := by
   · exact keepsHdr_ge (by simp only; omega)
   · exact keepsHdr_slot (by decide) (by decide)
 
-end VG.Proof.Bignum.X86_64
+end VG.Proof.Bignum

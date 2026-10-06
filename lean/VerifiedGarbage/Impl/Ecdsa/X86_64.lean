@@ -105,13 +105,14 @@ bytes each, and a word of zeros past them that the comb's last digit may
 read. -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 
-/-- The window method's slots, past the inversion's working area (for up to
-six words): `k + offset J` (`n + 1` words, two slots), the table of its bits
-(`64 (n + 1)` bytes, ten slots) and the table of points `[1 … 8]P` (24
-slots). -/
-def WK : Nat := 80
-def WB : Nat := 82
-def WT : Nat := 92
+/-- The window method's slots, past the tables of bits (over the inversion's
+working area, which each inversion initializes): `k + offset J`
+(`n + 1` words, two slots), the table of its bits (`64 (n + 1)` bytes, ten
+slots) and the table of points `[1 … 8]P` (24 slots), below `8192` bytes
+for up to nine words. -/
+def WK : Nat := 71
+def WB : Nat := 73
+def WT : Nat := 83
 
 /-- A fixed-base comb for `G`: its digits' width `w`, its tables
 (`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and
@@ -133,6 +134,11 @@ structure Cfg where
   fastN : Bool := false
   /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/
   adx : Bool := false
+
+/-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
+def bitLen (e : Nat) : Nat → Nat
+  | 0 => 0
+  | k + 1 => if e < 2 ^ k then bitLen e k else k + 1
 
 namespace Cfg
 
@@ -210,7 +216,9 @@ def gMul : Prog isa :=
   | none => ladder c.ladderCfg
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
-def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+/-- The power mod `n` from the top bit of `n - 2` (its `bitLen` bits), not of its
+`64 n` bits' table. -/
+def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, bitLen (c.C.n - 2) (64 * c.n)⟩
 
 /-- The inversions by divsteps, their working area past the tables of bits. -/
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p

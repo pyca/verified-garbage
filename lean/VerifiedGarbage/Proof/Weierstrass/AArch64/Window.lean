@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.JacMul
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinSelect
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Comb
 import VerifiedGarbage.Proof.Weierstrass.WinLay
@@ -26,10 +27,11 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
 /-- The window method's slots and modulus at offsets that loads and stores
-can encode. -/
+can encode, and the table of bits at offsets `ldrb` can encode. -/
 structure WinA (K : WinCfg) : Prop where
   sl : ∀ x ∈ winSlots K, x % 8 = 0
   mod : ModA K.M
+  bits4 : K.bits + 3 < 4096
 
 /-! ## The complete addition into `R` -/
 
@@ -554,7 +556,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       hsep o (sub3 o ho) c hc i' hi'⟩
   -- The digit's masks.
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hL.bits4 hx
+  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hA.bits4 hx
     hbits) fun s₁ ⟨m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : MasksOf s₁ (mag (nib k i)) := m₁
@@ -649,7 +651,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       have := hL.bits
       rw [U₄₅.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega)]; exact hbits t ht
   rw [WP.block_append_iff]
-  have W6 := signMask_ok hs₅ K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hL.bits4 hx₅
+  have W6 := signMask_ok hs₅ K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hA.bits4 hx₅
     hbits₅
   refine WP.mono W6 fun s₆ h₆ => ?_
   obtain ⟨x₆, k₆⟩ := h₆
@@ -985,7 +987,7 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
       (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
   have hQ := fun (a : Nat) => hC.onCurve_mul hP a
-  simp only [WinCfg.jac, toJ_eq, dblJ_eq, fromJ_eq]
+  simp only [WinCfg.jac, toJ_eq, WinCfg.double, dblJChoice_eq, fromJ_eq]
   -- Into Jacobian coordinates, in `E`.
   refine WP.seq (WP.mono (winN_ok hL hA hp toJN_ok a1 w1.1 w1.2 I₀ (by rcb_sub))
     fun s₁ ⟨k₁, U₁, E₁, I₁, _, v₁⟩ => ?_)
@@ -994,25 +996,25 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     InvJ.of_toJ (z := tmv C K.M.n base s K.zero) hC hR (show toM _ _ _ = 0 by rw [hz]; exact toM_zero _ _)
       (v₁.trans (toJN_run _))
   -- Four doublings.
-  refine WP.seq (WP.mono (winN_ok hL hA hp dblJN_ok a2 w2.1 w2.2 I₁ (by rcb_sub))
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2 I₁ (by rcb_sub))
     fun s₂ ⟨k₂, U₂, E₂, I₂, _, v₂⟩ => ?_)
   have S₂ := S₁.next hL I₂.scr (k₂.mono clob_combClob) U₂
-  have J₂ := InvJ.dbl' hC hM3 (hQ e) J₁ (v₂.trans (dblJN_run _))
+  have J₂ := InvJ.dbl' hC hM3 (hQ e) J₁ (v₂.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP] at J₂
-  refine WP.seq (WP.mono (winN_ok hL hA hp dblJN_ok a3 w3.1 w3.2 I₂ (by rcb_sub))
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2 I₂ (by rcb_sub))
     fun s₃ ⟨k₃, U₃, E₃, I₃, _, v₃⟩ => ?_)
   have S₃ := S₂.next hL I₃.scr (k₃.mono clob_combClob) U₃
-  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJN_run _))
+  have J₃ := InvJ.dbl' hC hM3 (hQ _) J₂ (v₃.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP] at J₃
-  refine WP.seq (WP.mono (winN_ok hL hA hp dblJN_ok a2 w2.1 w2.2 I₃ (by rcb_sub))
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2 I₃ (by rcb_sub))
     fun s₄ ⟨k₄, U₄, E₄, I₄, _, v₄⟩ => ?_)
   have S₄ := S₃.next hL I₄.scr (k₄.mono clob_combClob) U₄
-  have J₄ := InvJ.dbl' hC hM3 (hQ _) J₃ (v₄.trans (dblJN_run _))
+  have J₄ := InvJ.dbl' hC hM3 (hQ _) J₃ (v₄.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP] at J₄
-  refine WP.seq (WP.mono (winN_ok hL hA hp dblJN_ok a3 w3.1 w3.2 I₄ (by rcb_sub))
+  refine WP.seq (WP.mono (winN_ok hL hA hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2 I₄ (by rcb_sub))
     fun s₅ ⟨k₅, U₅, E₅, I₅, _, v₅⟩ => ?_)
   have S₅ := S₄.next hL I₅.scr (k₅.mono clob_combClob) U₅
-  have J₅ := InvJ.dbl' hC hM3 (hQ _) J₄ (v₅.trans (dblJN_run _))
+  have J₅ := InvJ.dbl' hC hM3 (hQ _) J₄ (v₅.trans (dblJChoiceN_run (K.M.n == 4) _))
   rw [hC.double hP, show 2 * (2 * (2 * (2 * e))) = 16 * e by omega] at J₅
   -- Back to projective coordinates, in `R`.
   refine WP.mono (winN_ok hL hA hp fromJN_ok a4 w4.1 w4.2 I₅ (by rcb_sub))

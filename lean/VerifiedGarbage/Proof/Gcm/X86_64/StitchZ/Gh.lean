@@ -7,14 +7,15 @@ import VerifiedGarbage.Proof.Framework.X86_64.ZFrameBlock
 # Interleaved counter mode and GHASH with AVX-512: the GHASH of a group
 
 `ghLoad_ok`: `StitchZ.ghLoad k` loads four powers from the working space
-into `zmm12` and blocks `4k`–`4k + 3` into the lanes of `zmm7`, and adds
-their products to each lane's (`WP.zlanes` of `Vpclmul.ldacc_ok`, the SSE
-code of each lane). `fin_ok`: `StitchZ.fin` adds lanes 2 and 3 of the
-products to lanes 0 and 1 (`fold_ok`), reduces both and adds them into `Y`
-(`Vpclmul.reduce_lanes`, `combine_ok`). The four lanes' products, so added
-and reduced, are `GHASH` over the sixteen blocks for the powers the setup
-stores (`FinOk`), which needs the field: `StitchZ/Ok.lean` proves it
-(`finZ`).
+into `zmm12` and blocks `4k`–`4k + 3` into the lanes of `zmm7`, and writes
+their products to each lane's (the first load, `ord 0`) or adds them
+(`WP.zlanes` of `ldInit_ok` and `ldAcc_ok`, the SSE code of each lane).
+`ghFin`: `StitchZ.fin` reduces each lane's product (`reduceZ_ok`, the SSE
+code `redSse` of each lane, which computes `Pclmul.reduceB`), adds lanes 2
+and 3 to lanes 0 and 1 (`fold1_ok`) and those two into `Y` (`combine10_ok`).
+The four lanes' products, so reduced and added, are `GHASH` over the sixteen
+blocks for the powers the setup stores (`FinOk`), which needs the field:
+`StitchZ/Ok.lean` proves it (`finZ`).
 
 `GEnv`, `ghStep`, `QG` and `gq_ok` are `Stitch`'s, with four lanes, one
 batch per group and the reduction after round 5.
@@ -23,12 +24,11 @@ batch per group and the reduction after round 5.
 namespace VG.Proof.Gcm.X86_64.StitchZ
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr blk ctb ciph sch hk y₀ ite_t ite_f)
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod)
+open VG.Proof.Gcm.X86_64.Stitch (SPre nb nr kp pp cb dp dR pR bAddr blk ctb ciph sch hk y₀ ite_t ite_f zero_xor_b)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce reduceB prod Only)
 open VG.Impl.Gcm.X86_64.Pclmul (poly at_)
-open VG.Proof.Gcm.X86_64.Vpclmul (ldacc ldacc_ok reduce_lanes)
 open VG.Impl.Gcm.X86_64.Stitch (aregs)
-open VG.Impl.Gcm.X86_64.StitchZ (ghLoad acc ord foldLanes fin gq)
+open VG.Impl.Gcm.X86_64.StitchZ (ghLoad acc accInit ord foldLanes reduceZ combine10 fin gq)
 open VG.Proof.Aes.X86_64.AesNi (Keys)
 open VG.Proof.Gcm.X86_64.Pclmul (ea_at)
 open VG.Proof.Aes.X86_64.VaesZ (load512_lane)
@@ -36,18 +36,79 @@ open VG.Spec.Gcm (Block blockAt ghashFrom)
 
 /-! ## A load -/
 
+/-- The SSE block of the first load's lane-wise instructions (`accInit`). -/
+def ldInit : List Instr :=
+  [.xop (.bin .pshufb .xmm7 .xmm0), .xop (.bin .movdqa .xmm8 .xmm7), .xop (.pclmulqdq .xmm8 .xmm12 0x00),
+   .xop (.bin .movdqa .xmm10 .xmm7), .xop (.pclmulqdq .xmm10 .xmm12 0x11),
+   .xop (.bin .movdqa .xmm9 .xmm7), .xop (.pclmulqdq .xmm9 .xmm12 0x01),
+   .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x10), .xop (.bin .pxor .xmm9 .xmm11)]
+
+/-- The SSE block of the other loads' lane-wise instructions (`acc`), with
+`Y` added to the block if `y`. -/
+def ldAcc (y : Bool) : List Instr :=
+  [.xop (.bin .pshufb .xmm7 .xmm0)] ++ (if y then [.xop (.bin .pxor .xmm7 .xmm2)] else []) ++
+  [.xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x00), .xop (.bin .pxor .xmm8 .xmm11),
+   .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x11), .xop (.bin .pxor .xmm10 .xmm11),
+   .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x01), .xop (.pclmulqdq .xmm7 .xmm12 0x10),
+   .xop (.bin .pxor .xmm9 .xmm11), .xop (.bin .pxor .xmm9 .xmm7)]
+
+theorem ldInit_ok (t : State) :
+    WP isa (.block ldInit) t fun t' =>
+      prod t' = Prod.zero.acc (XBinOp.eval .pshufb (t.xmm .xmm7) (t.xmm .xmm0)) (t.xmm .xmm12) ∧
+      Only [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11] t t' := by
+  apply WP.of_runBlock
+  simp only [ldInit, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, Pclmul.eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  · simp only [prod, Prod.acc, Prod.zero, reduceCtorEq, ↓reduceIte, zero_xor_b]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+theorem ldAcc_ok (y : Bool) (t : State) :
+    WP isa (.block (ldAcc y)) t fun t' =>
+      prod t' = (prod t).acc
+        ((if y then t.xmm .xmm2 else 0) ^^^ XBinOp.eval .pshufb (t.xmm .xmm7) (t.xmm .xmm0)) (t.xmm .xmm12) ∧
+      Only [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11] t t' := by
+  apply WP.of_runBlock
+  cases y <;>
+  simp only [ldAcc, Bool.false_eq_true, ↓reduceIte, List.nil_append, List.cons_append,
+    reduceCtorEq, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, Pclmul.eval_pxor, eval_movdqa, Option.some.injEq, exists_eq_left'] <;>
+  refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  · simp only [prod, Prod.acc, reduceCtorEq, ↓reduceIte, zero_xor_b]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+  · simp only [prod, Prod.acc, reduceCtorEq, ↓reduceIte, BitVec.xor_comm (t.xmm .xmm2)]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
 /-- The lane-wise instructions of a load. -/
 abbrev restZ (k : Nat) : List Instr :=
   [.zop (.zbin .vpshufb .xmm7 .xmm7 .xmm0)] ++
-    (if k = 0 then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++ acc .xmm7 .xmm12
+    (if k = 0 then [.zop (.zbin .vpxord .xmm7 .xmm7 .xmm2)] else []) ++
+    (if k = ord 0 then accInit .xmm7 .xmm12 else acc .xmm7 .xmm12)
 
 theorem ghLoad_eq (k : Nat) :
     ghLoad k = .vmovdqu32Load .xmm12 (at_ .r11 (64 * k)) :: .vmovdqu32Load .xmm7 (at_ .rdx (64 * k)) :: restZ k := by
   simp only [ghLoad, restZ, List.cons_append]
 
 theorem lane_ld {k : Nat} (hk : k < 4) :
-    zlaneSseBlock (restZ k) = some (ldacc (decide (k = 0)) .xmm12) := by
+    zlaneSseBlock (restZ k) = some (if k = ord 0 then ldInit else ldAcc (decide (k = 0))) := by
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;> rfl
+
+/-- The products of a load in a lane, written (for the first load) or added. -/
+theorem lane_ld_ok {k : Nat} (t : State) :
+    WP isa (.block (if k = ord 0 then ldInit else ldAcc (decide (k = 0)))) t fun t' =>
+      prod t' = (if k = ord 0 then Prod.zero else prod t).acc
+        ((if k = 0 then t.xmm .xmm2 else 0) ^^^ XBinOp.eval .pshufb (t.xmm .xmm7) (t.xmm .xmm0)) (t.xmm .xmm12) ∧
+      Only [.xmm7, .xmm8, .xmm9, .xmm10, .xmm11] t t' := by
+  by_cases h : k = ord 0
+  · have h0 : k ≠ 0 := by rw [h]; decide
+    simp only [h, ite_true, show ord 0 ≠ 0 by decide, ite_false, zero_xor_b]
+    exact ldInit_ok t
+  · simp only [h, ite_false]
+    refine WP.mono (ldAcc_ok _ t) fun t' ⟨p', o'⟩ => ⟨?_, o'⟩
+    rw [p']; simp only [decide_eq_true_eq]
 
 /-- Lane `l` of a 64-byte load into `d`. -/
 theorem zlane_load (s : State) (d : XReg) (a : Addr) {l : Nat} (hl : l < 4) :
@@ -60,12 +121,13 @@ theorem zlane_load (s : State) (d : XReg) (a : Addr) {l : Nat} (hl : l < 4) :
   exact load512_lane _ _ hl
 
 /-- Four powers from `scratch + 64 k` into `zmm12`, and blocks `4k`–`4k + 3`
-at `rdx + 64 k` added to the lanes' products with them. -/
+at `rdx + 64 k` with their products written to the lanes' (for the first
+load, `ord 0`) or added. -/
 theorem ghLoad_ok {k : Nat} (hk : k < 4) (t : State) (h0 : ∀ l < 4, t.zlane .xmm0 l = revMask)
     (hin : InRegions (t.rd ++ t.wr) (t.gpr .rdx + BitVec.ofInt 64 ((64 * k : Nat) : Int)) 64)
     (hpin : InRegions (t.rd ++ t.wr) (t.gpr .r11 + BitVec.ofInt 64 ((64 * k : Nat) : Int)) 64) :
     WP isa (.block (ghLoad k)) t fun t' =>
-      (∀ l < 4, prod (t'.zproj l) = (prod (t.zproj l)).acc
+      (∀ l < 4, prod (t'.zproj l) = (if k = ord 0 then Prod.zero else prod (t.zproj l)).acc
         ((if k = 0 then t.zlane .xmm2 l else 0) ^^^
           blockAt t.mem (t.gpr .rdx + BitVec.ofInt 64 ((64 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l)))
         (t.mem.readW (t.gpr .r11 + BitVec.ofInt 64 ((64 * k : Nat) : Int) + BitVec.ofNat 64 (16 * l)) 128)) ∧
@@ -92,8 +154,7 @@ theorem ghLoad_ok {k : Nat} (hk : k < 4) (t : State) (h0 : ∀ l < 4, t.zlane .x
     exact zlane_load t .xmm12 ap hl
   have l7 : ∀ l < 4, t₂.zlane .xmm7 l = t.mem.readW (ad + BitVec.ofNat 64 (16 * l)) 128 := fun l hl =>
     zlane_load t₁ .xmm7 ad hl
-  refine WP.mono (WP.zlanes (lane_ld hk) fun l _ => ldacc_ok _ .xmm12 (t₂.zproj l) (by decide) (by decide)
-    (by decide) (by decide) (by decide))
+  refine WP.mono (WP.zlanes (lane_ld hk) fun l _ => lane_ld_ok (k := k) (t₂.zproj l))
     fun t' ⟨hk', hq⟩ => ⟨fun l hl => ?_, ?_⟩
   · rw [(hq l hl).1]
     have hp : prod (t₂.zproj l) = prod (t.zproj l) := by
@@ -102,7 +163,6 @@ theorem ghLoad_ok {k : Nat} (hk : k < 4) (t : State) (h0 : ∀ l < 4, t.zlane .x
     simp only [hp, State.zproj_xmm, l7 l hl, l12 l hl, keep .xmm0 (by decide) (by decide) l hl, h0 l hl,
       keep .xmm2 (by decide) (by decide) l hl]
     rw [← blockAt_eq]
-    by_cases h : k = 0 <;> simp only [ad, ap, h, decide_true, decide_false, ↓reduceIte, Bool.false_eq_true]
   · refine ⟨hk'.gpr, hk'.mem, hk'.rd, hk'.wr, fun r hr l hl => ?_⟩
     have := (hq l hl).2.xmm r (fun h => hr (List.mem_cons_of_mem _ h))
     simp only [State.zproj_xmm] at this
@@ -125,39 +185,44 @@ theorem fold1_ok (r : XReg) (h11 : r ≠ .xmm11) (s : State) :
   simp only [h11, ite_false, ite_true, shuf4Lanes]
   rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl <;> rfl
 
-theorem fold_ok (s : State) :
-    WP isa (.block foldLanes) s fun s' =>
-      (∀ l < 2, prod (s'.proj l) = (prod (s.zproj l)).xor (prod (s.zproj (l + 2)))) ∧
-      ZFrame [.xmm11, .xmm8, .xmm11, .xmm9, .xmm11, .xmm10] s s' := by
-  rw [show foldLanes = [.zop (.vshufi32x4 .xmm11 .xmm8 .xmm8 0x0e), .vop (.vbin .vpxor .l256 .xmm8 .xmm8 .xmm11)] ++
-    ([.zop (.vshufi32x4 .xmm11 .xmm9 .xmm9 0x0e), .vop (.vbin .vpxor .l256 .xmm9 .xmm9 .xmm11)] ++
-    [.zop (.vshufi32x4 .xmm11 .xmm10 .xmm10 0x0e), .vop (.vbin .vpxor .l256 .xmm10 .xmm10 .xmm11)]) from rfl,
-    WP.block_append_iff]
-  refine WP.mono (fold1_ok .xmm8 (by decide) s) fun s₁ ⟨e₁, f₁⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (fold1_ok .xmm9 (by decide) s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
-  refine WP.mono (fold1_ok .xmm10 (by decide) s₂) fun s' ⟨e', f'⟩ => ⟨fun l hl => ?_, f₁.comp (f₂.comp f')⟩
-  have k8 : s'.lane .xmm8 l = s₁.lane .xmm8 l := by
-    rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl, f'.zlane _ (by decide) l (by omega),
-      f₂.zlane _ (by decide) l (by omega)]
-  have k9 : s'.lane .xmm9 l = s₂.lane .xmm9 l := by
-    rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl, f'.zlane _ (by decide) l (by omega)]
-  have z9 : ∀ i < 4, s₁.zlane .xmm9 i = s.zlane .xmm9 i := fun i hi => f₁.zlane _ (by decide) i hi
-  have z10 : ∀ i < 4, s₂.zlane .xmm10 i = s.zlane .xmm10 i := fun i hi => by
-    rw [f₂.zlane _ (by decide) i hi, f₁.zlane _ (by decide) i hi]
-  simp only [prod, State.proj_xmm, State.zproj_xmm, Prod.xor, k8, k9, e₁ l hl, e₂ l hl, e' l hl,
-    z9 l (by omega), z9 (l + 2) (by omega), z10 l (by omega), z10 (l + 2) (by omega)]
+/-- The SSE block of `reduceZ` in each lane. -/
+def redSse : List Instr :=
+  [.xop (.bin .movdqa .xmm11 .xmm8), .xop (.pclmulqdq .xmm11 .xmm1 0x10), .xop (.pshufd .xmm8 .xmm8 0x4e),
+   .xop (.bin .pxor .xmm9 .xmm8), .xop (.bin .pxor .xmm9 .xmm11),
+   .xop (.bin .movdqa .xmm11 .xmm9), .xop (.pclmulqdq .xmm11 .xmm1 0x10), .xop (.pshufd .xmm9 .xmm9 0x4e),
+   .xop (.bin .pxor .xmm10 .xmm9), .xop (.bin .pxor .xmm10 .xmm11)]
 
-/-- The two lanes' blocks added into `xmm2` (`VEX.128`, so lanes 1–3 are
+theorem lane_red : zlaneSseBlock reduceZ = some redSse := rfl
+
+theorem redSse_ok (t : State) (h1 : t.xmm .xmm1 = poly) :
+    WP isa (.block redSse) t fun t' =>
+      t'.xmm .xmm10 = reduceB (prod t) ∧ Only [.xmm8, .xmm9, .xmm10, .xmm11] t t' := by
+  apply WP.of_runBlock
+  simp only [redSse, reduceCtorEq, ↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec,
+    isa, State.setXmm, Pclmul.eval_pxor, eval_movdqa, h1, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r _ => rfl, rfl, rfl, rfl, fun r hr => ?_⟩
+  · simp only [reduceB, Pclmul.fold, prod, BitVec.xor_assoc]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2, ite_false]
+
+/-- Each lane's product, reduced, into that lane of `zmm10`. -/
+theorem reduceZ_ok (s : State) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
+    WP isa (.block reduceZ) s fun s' =>
+      (∀ l < 4, s'.zlane .xmm10 l = reduceB (prod (s.zproj l))) ∧ ZFrame [.xmm8, .xmm9, .xmm10, .xmm11] s s' := by
+  refine WP.mono (WP.zlanes lane_red fun l hl => redSse_ok (s.zproj l) (by simpa using h1 l hl))
+    fun s' ⟨hk, hq⟩ => ⟨fun l hl => by simpa using (hq l hl).1,
+      ⟨hk.gpr, hk.mem, hk.rd, hk.wr, fun r hr l hl => by simpa using (hq l hl).2.xmm r hr⟩⟩
+
+/-- The two lanes of `ymm10` added into `xmm2` (`VEX.128`, so lanes 1–3 are
 cleared). -/
-theorem combineZ_ok (s : State) :
-    WP isa (.block Impl.Gcm.X86_64.Vpclmul.combine) s fun s' =>
-      s'.zlane .xmm2 0 = s.lane .xmm7 0 ^^^ s.lane .xmm7 1 ∧ (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
+theorem combine10_ok (s : State) :
+    WP isa (.block combine10) s fun s' =>
+      s'.zlane .xmm2 0 = s.lane .xmm10 0 ^^^ s.lane .xmm10 1 ∧ (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
       ZFrame [.xmm11, .xmm2] s s' := by
-  refine WP.mono (WP.zframe (is := Impl.Gcm.X86_64.Vpclmul.combine) (rs := [.xmm11, .xmm2]) (by decide)
-    (Q := fun s' => s'.zlane .xmm2 0 = s.lane .xmm7 0 ^^^ s.lane .xmm7 1 ∧
+  refine WP.mono (WP.zframe (is := combine10) (rs := [.xmm11, .xmm2]) (by decide)
+    (Q := fun s' => s'.zlane .xmm2 0 = s.lane .xmm10 0 ^^^ s.lane .xmm10 1 ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0)) ?_) fun _ ⟨⟨a, b⟩, c⟩ => ⟨a, b, c⟩
-  rw [Impl.Gcm.X86_64.Vpclmul.combine, WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
+  rw [combine10, WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩
   rw [WP.block_cons_iff]; refine ⟨_, rfl, WP.block_nil ⟨?_, fun l hl1 hl4 => ?_⟩⟩
   · simp [VBinOp.sse, VG.Proof.Gcm.X86_64.Pclmul.eval_pxor, VOp.exec, State.setV, State.zlane, State.lane]
   · simp only [VOp.exec]
@@ -178,10 +243,11 @@ theorem accN_succ (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → 
     accN X P yl l (n + 1) = (accN X P yl l n).acc (inp X yl (ord n) l) (P (ord n) l) := by
   simp only [accN, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
 
-/-- `Y` after a group: the four lanes' products, lanes 2 and 3 added to 0
-and 1, reduced and added. -/
+/-- `Y` after a group: the four lanes' products, each reduced, lanes 2 and 3
+added to 0 and 1, and those two added. -/
 abbrev yNew (X : Nat → Block) (P : Nat → Nat → Block) (yl : Nat → Block) : Block :=
-  reduce ((accN X P yl 0 4).xor (accN X P yl 2 4)) ^^^ reduce ((accN X P yl 1 4).xor (accN X P yl 3 4))
+  (reduceB (accN X P yl 0 4) ^^^ reduceB (accN X P yl 2 4)) ^^^
+    (reduceB (accN X P yl 1 4) ^^^ reduceB (accN X P yl 3 4))
 
 /-- What the four lanes' products of a group add up to, for the powers `P`
 (`P k l` in lane `l` of the `k`-th load): `GHASH` over its sixteen blocks, from
@@ -226,10 +292,14 @@ theorem offp4 (a : Addr) (k l : Nat) :
 theorem ord_lt (n : Nat) : ord n < 4 := by
   unfold ord; split <;> decide
 
-/-- One GHASH load, the `n`-th. -/
+theorem ord_eq_zero {n : Nat} (hn : n < 4) : (ord n = ord 0) ↔ n = 0 := by
+  rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3) with rfl | rfl | rfl | rfl <;> decide
+
+/-- One GHASH load, the `n`-th: the first writes the products, which the
+others add to. -/
 theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
-    {yl : Nat → Block} {n : Nat} (hlo : lo ≤ 4 * ord n) {s : State}
-    (hE : GEnv s₀ lo a X P s) (hp : ∀ l < 4, prod (s.zproj l) = accN X P yl l n)
+    {yl : Nat → Block} {n : Nat} (hn : n < 4) (hlo : lo ≤ 4 * ord n) {s : State}
+    (hE : GEnv s₀ lo a X P s) (hp : 0 < n → ∀ l < 4, prod (s.zproj l) = accN X P yl l n)
     (hy : ∀ l < 4, s.zlane .xmm2 l = yl l) :
     WP isa (.block (ghLoad (ord n))) s fun s' => GEnv s₀ lo a X P s' ∧
       (∀ l < 4, prod (s'.zproj l) = accN X P yl l (n + 1)) ∧ (∀ l < 4, s'.zlane .xmm2 l = yl l) ∧
@@ -237,45 +307,56 @@ theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat
   have hk := ord_lt n
   refine WP.mono (ghLoad_ok hk s hE.m0 (by rw [hE.rdx]; exact hE.ina _ hk) (by rw [hE.r11]; exact hE.inp _ hk))
     fun s' ⟨p', f'⟩ => ⟨hE.zframe f' (by decide), fun l hl => ?_, fun l hl => ?_, f'⟩
-  · rw [p' l hl, hp l hl, accN_succ, hE.rdx, hE.r11, off4, offp4, hE.xs _ (by omega) (by omega),
+  · have hz : (if ord n = ord 0 then Prod.zero else prod (s.zproj l)) = accN X P yl l n := by
+      by_cases h0 : n = 0
+      · subst h0; rfl
+      · have hne : ¬ (ord n = ord 0) := fun h => h0 ((ord_eq_zero hn).1 h)
+        simp only [hne, ↓reduceIte]; exact hp (by omega) l hl
+    rw [p' l hl, hz, accN_succ, hE.rdx, hE.r11, off4, offp4, hE.xs _ (by omega) (by omega),
       hE.pv _ hk l hl, hy l hl]
     rfl
   · rw [f'.zlane _ (by decide) l hl, hy l hl]
 
-/-- The four lanes added into two, reduced, and added into `xmm2`. -/
+/-- Each lane's product reduced, the four added into `xmm2`. -/
+theorem fin_ok (s : State) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
+    WP isa (.block fin) s fun s' =>
+      s'.zlane .xmm2 0 =
+        (reduceB (prod (s.zproj 0)) ^^^ reduceB (prod (s.zproj 2))) ^^^
+          (reduceB (prod (s.zproj 1)) ^^^ reduceB (prod (s.zproj 3))) ∧
+      (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
+      ZFrame [.xmm8, .xmm9, .xmm10, .xmm11, .xmm11, .xmm10, .xmm11, .xmm2] s s' := by
+  rw [fin, foldLanes, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (reduceZ_ok s h1) fun s₁ ⟨r₁, f₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (fold1_ok .xmm10 (by decide) s₁) fun s₂ ⟨e₂, f₂⟩ => ?_
+  refine WP.mono (combine10_ok s₂) fun s' ⟨c', y', f'⟩ => ⟨?_, y', f₁.comp (f₂.comp f')⟩
+  rw [c', e₂ 0 (by decide), e₂ 1 (by decide), r₁ 0 (by decide), r₁ 1 (by decide), r₁ 2 (by decide),
+    r₁ 3 (by decide)]
+
 theorem ghFin {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block} {s : State}
-    (hE : GEnv s₀ lo a X P s) (h1 : ∀ l < 2, s.lane .xmm1 l = poly) :
+    (hE : GEnv s₀ lo a X P s) (h1 : ∀ l < 4, s.zlane .xmm1 l = poly) :
     WP isa (.block fin) s fun s' =>
       GEnv s₀ lo a X P s' ∧ s'.zlane .xmm2 0 =
-        reduce ((prod (s.zproj 0)).xor (prod (s.zproj 2))) ^^^ reduce ((prod (s.zproj 1)).xor (prod (s.zproj 3))) ∧
+        (reduceB (prod (s.zproj 0)) ^^^ reduceB (prod (s.zproj 2))) ^^^
+          (reduceB (prod (s.zproj 1)) ^^^ reduceB (prod (s.zproj 3))) ∧
       (∀ l, 1 ≤ l → l < 4 → s'.zlane .xmm2 l = 0) ∧
-      ZFrame [.xmm11, .xmm8, .xmm11, .xmm9, .xmm11, .xmm10, .xmm8, .xmm9, .xmm10, .xmm11, .xmm7, .xmm11, .xmm2]
-        s s' := by
-  rw [fin, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (fold_ok s) fun s₁ ⟨p₁, f₁⟩ => ?_
-  have h1' : ∀ l < 2, s₁.lane .xmm1 l = poly := fun l hl => by
-    rw [← State.zlane_lt2 _ _ hl, f₁.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact h1 l hl
-  rw [WP.block_append_iff]
-  refine WP.mono (WP.zframe (rs := [.xmm8, .xmm9, .xmm10, .xmm11, .xmm7]) (by decide) (reduce_lanes s₁ h1'))
-    fun s₂ ⟨⟨r₂, _⟩, f₂⟩ => ?_
-  refine WP.mono (combineZ_ok s₂) fun s' ⟨c', y', f'⟩ =>
-    ⟨(hE.zframe f₁ (by decide)).zframe (f₂.comp f') (by decide), ?_, y', f₁.comp (f₂.comp f')⟩
-  rw [c', r₂ 0 (by decide), r₂ 1 (by decide), p₁ 0 (by decide), p₁ 1 (by decide)]
+      ZFrame [.xmm8, .xmm9, .xmm10, .xmm11, .xmm11, .xmm10, .xmm11, .xmm2] s s' :=
+  WP.mono (fin_ok s h1) fun _ ⟨y0, y1, f⟩ => ⟨hE.zframe f (by decide), y0, y1, f⟩
 
 /-! ## The GHASH work of a group -/
 
 /-- What holds before the blocks after round `j` of a group's rounds. -/
 def QG (s₀ : State) (lo : Nat → Nat) (a : Addr) (X : Nat → Block) (P : Nat → Nat → Block)
     (yl : Nat → Block) (j : Nat) (s : State) : Prop :=
-  GEnv s₀ (lo j) a X P s ∧ (∀ l < 2, s.lane .xmm1 l = poly) ∧
+  GEnv s₀ (lo j) a X P s ∧ (∀ l < 4, s.zlane .xmm1 l = poly) ∧
   (if 5 < j then s.zlane .xmm2 0 = yNew X P yl ∧ ∀ l, 1 ≤ l → l < 4 → s.zlane .xmm2 l = 0
-   else (∀ l < 4, prod (s.zproj l) = accN X P yl l (min (j - 1) 4)) ∧
+   else (1 < j → ∀ l < 4, prod (s.zproj l) = accN X P yl l (min (j - 1) 4)) ∧
      ∀ l < 4, s.zlane .xmm2 l = yl l)
 
 /-- The registers the GHASH work writes. -/
 abbrev gRegs : List XReg := [.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2]
 
-theorem gRegs_ok : ∀ r ∈ gRegs, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
+theorem gRegs_ok : ∀ r ∈ gRegs, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
 
 theorem QG.zframe {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
     {yl : Nat → Block} {j : Nat} {s s' : State} {rs : List XReg}
@@ -289,13 +370,13 @@ theorem QG.zframe {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Bloc
     simp only [prod, State.zproj_xmm, k .xmm8 (by decide) l hl, k .xmm9 (by decide) l hl,
       k .xmm10 (by decide) l hl]
   refine ⟨hE.zframe f (fun h => hrs _ h (by decide)), fun l hl => by
-    rw [← State.zlane_lt2 _ _ hl, k .xmm1 (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact h1 l hl, ?_⟩
+    rw [k .xmm1 (by decide) l hl]; exact h1 l hl, ?_⟩
   split
   · rw [ite_t (by assumption)] at h2
     exact ⟨by rw [k .xmm2 (by decide) 0 (by decide)]; exact h2.1,
       fun l h1 h4 => by rw [k .xmm2 (by decide) l h4]; exact h2.2 l h1 h4⟩
   · rw [ite_f (by assumption)] at h2
-    exact ⟨fun l hl => by rw [kp l hl]; exact h2.1 l hl, fun l hl => by rw [k .xmm2 (by decide) l hl]; exact h2.2 l hl⟩
+    exact ⟨fun hj l hl => by rw [kp l hl]; exact h2.1 hj l hl, fun l hl => by rw [k .xmm2 (by decide) l hl]; exact h2.2 l hl⟩
 
 /-- `batch_ok`'s obligation for the GHASH work between the rounds. -/
 theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {P : Nat → Nat → Block}
@@ -310,12 +391,12 @@ theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {
     rw [ite_f (by omega)] at h2
     simp only [gq, show 1 ≤ j ∧ j ≤ 4 from ⟨hj1, hl4⟩, and_self, ite_true]
     rw [show min (j - 1) 4 = j - 1 by omega] at h2
-    refine WP.mono (ghStep hlo hE h2.1 h2.2) fun s' ⟨hE', p', y', f'⟩ =>
+    refine WP.mono (ghStep (by omega) hlo hE (fun hn => h2.1 (by omega)) h2.2) fun s' ⟨hE', p', y', f'⟩ =>
       ⟨⟨hE'.mono (hmono j), fun l hl => by
-        rw [← State.zlane_lt2 _ _ hl, f'.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact h1 l hl,
+        rw [f'.zlane _ (by decide) l hl]; exact h1 l hl,
         ?_⟩, f'.mono (by decide)⟩
     rw [ite_f (by omega), show min (j + 1 - 1) 4 = j - 1 + 1 by omega]
-    exact ⟨p', y'⟩
+    exact ⟨fun _ => p', y'⟩
   · by_cases h5 : j = 5
     · -- The reduction.
       subst h5
@@ -323,10 +404,11 @@ theorem gq_ok {s₀ : State} {lo : Nat → Nat} {a : Addr} {X : Nat → Block} {
       simp only [gq, show ¬ (1 ≤ 5 ∧ 5 ≤ 4) by omega, ite_false, ite_true]
       refine WP.mono (ghFin hE h1) fun s' ⟨hE', y0, y1, f'⟩ =>
         ⟨⟨hE'.mono (hmono 5), fun l hl => by
-          rw [← State.zlane_lt2 _ _ hl, f'.zlane _ (by decide) l (by omega), State.zlane_lt2 _ _ hl]; exact h1 l hl,
+          rw [f'.zlane _ (by decide) l hl]; exact h1 l hl,
           ?_⟩, f'.mono (by decide)⟩
       rw [ite_t (by omega)]
-      refine ⟨by rw [y0, h2.1 0 (by decide), h2.1 1 (by decide), h2.1 2 (by decide), h2.1 3 (by decide)]; rfl, y1⟩
+      refine ⟨by rw [y0, h2.1 (by decide) 0 (by decide), h2.1 (by decide) 1 (by decide),
+        h2.1 (by decide) 2 (by decide), h2.1 (by decide) 3 (by decide)]; rfl, y1⟩
     · -- Nothing.
       have hg : gq j = [] := by
         simp only [gq, show ¬ (1 ≤ j ∧ j ≤ 4) by omega, ite_false, h5]

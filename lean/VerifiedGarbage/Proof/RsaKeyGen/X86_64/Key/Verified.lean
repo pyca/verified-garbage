@@ -11,7 +11,7 @@ the shared contract's implication (`key_implies`), `code` is verified
 
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem keyCode_correct (hmx : VG.Impl.RsaKeyGen.X86_64.Key.code.allInstrs (fun i => !loadsMxcsr i) = true)
     (s : State) (h : keyCtr.pre s) :

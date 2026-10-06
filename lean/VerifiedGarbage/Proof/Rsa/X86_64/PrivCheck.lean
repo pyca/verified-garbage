@@ -14,7 +14,7 @@ of the check: a faulted exponentiation releases nothing that fails it.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem bytes_wo (m : Mem) (base : Addr) {d a n : Nat} (v : BitVec 64) (h : d + 8 ≤ a ∨ a + n ≤ d)
     (ha : a + n ≤ 4096) (hd : d + 8 ≤ 4096) :
@@ -44,106 +44,10 @@ theorem words_wo0 (m : Mem) (base : Addr) {a n : Nat} (v : BitVec 64) (h : 8 ≤
   have := words_wo m base (d := 0) v (.inl h) ha (by decide)
   simpa only [off, BitVec.add_zero] using this
 
-/-! ## Bits -/
-
-theorem and1_toNat (x : BitVec 64) : (x &&& 1).toNat = x.toNat % 2 := by
-  rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-
-theorem and1_eq_one (x : BitVec 64) : x &&& 1 = 1 ↔ x.toNat % 2 = 1 := by
-  rw [← BitVec.toNat_inj, and1_toNat]; rfl
-
-theorem gOf_eq_one (a b c : BitVec 64) : gOf a b c = 1 ↔ a &&& 1 = 1 ∧ b &&& 1 = 1 ∧ c &&& 1 = 1 := by
-  have key : ∀ x : Nat, x % 2 = 1 ↔ x.testBit 0 = true := fun x => by
-    rw [Nat.testBit_zero]; simp
-  simp only [gOf, and1_eq_one, BitVec.toNat_and, key, Nat.testBit_and, Bool.and_eq_true, and_assoc]
-
-theorem and1_of_setWidth_one {x : BitVec 64} (h : x.setWidth 32 = 1) : x &&& 1 = 1 := by
-  rw [and1_eq_one]
-  have := congrArg BitVec.toNat h
-  rw [BitVec.toNat_setWidth] at this
-  have h2 : x.toNat % 2 = x.toNat % 2 ^ 32 % 2 := (Nat.mod_mod_of_dvd _ (by decide)).symm
-  rw [h2, this]; rfl
-
-theorem and1_of_setWidth_zero {x : BitVec 64} (h : x.setWidth 32 = 0) : x &&& 1 ≠ 1 := by
-  rw [Ne, and1_eq_one]
-  have := congrArg BitVec.toNat h
-  rw [BitVec.toNat_setWidth] at this
-  have h2 : x.toNat % 2 = x.toNat % 2 ^ 32 % 2 := (Nat.mod_mod_of_dvd _ (by decide)).symm
-  rw [h2, this]; decide
-
-/-! ## The check -/
-
-/-- Whether `M` is released: `r₁` odd, `n` a valid modulus, and the public
-operation of `M` (within BoringSSL's limits on `e`) the input. -/
-def released (r₁ : BitVec 64) (nB eB xB mB : List Byte) : Prop :=
-  r₁ &&& 1 = 1 ∧ Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) nB.length ∧ Spec.Rsa.publicOpChecked nB eB mB = some xB
-
-instance (r₁ : BitVec 64) (nB eB xB mB : List Byte) : Decidable (released r₁ nB eB xB mB) := by
-  unfold released; infer_instance
-
-/-- What the check returns: 1 if it releases `M`, 2 if `r₁` is odd, `n`
-valid and the public operation of `M` succeeds but is not the input, 0
-otherwise. -/
-def checkResult (r₁ : BitVec 64) (nB eB xB mB : List Byte) : BitVec 64 :=
-  if r₁ &&& 1 = 1 ∧ Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) nB.length = true ∧
-      (Spec.Rsa.publicOpChecked nB eB mB).isSome = true then
-    (if Spec.Rsa.publicOpChecked nB eB mB = some xB then 1 else 2)
-  else 0
-
 theorem check_eq (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog isa) :
     seqs (check pcName pc pdName pd) =
       .seq (.block pcArgs) (.seq (.call pcName pc) (.seq (.block pdArgs) (.seq (.call pdName pd)
         (seqs PrivChecked.tail)))) := rfl
-
-theorem bytesAt_length' (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
-  simp [Spec.Rsa.bytesAt]
-
-theorem precompute_isSome (nB : List Byte) :
-    (Spec.Rsa.publicPrecompute nB).isSome = Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) nB.length := by
-  simp only [Spec.Rsa.publicPrecompute]
-  split <;> simp_all
-
-/-- The check's logic: what it returns and whether it releases `M`, from
-what the calls returned (`r₂` and `r₃`) and wrote (`outB`). -/
-theorem check_logic {r₁ r₂ r₃ : BitVec 64} {nB eB xB mB outB : List Byte}
-    (h3 : match Spec.Rsa.publicPrecompute nB with
-      | some _ => r₃.setWidth 32 = 1
-      | none => r₃.setWidth 32 = 0)
-    (h2 : (Spec.Rsa.publicPrecompute nB).isSome = true →
-      match Spec.Rsa.publicOpChecked nB eB mB with
-      | some y => r₂.setWidth 32 = 1 ∧ outB = y
-      | none => r₂.setWidth 32 = 0) :
-    result (gOf r₂ r₁ r₃) (decide (outB = xB)) = checkResult r₁ nB eB xB mB ∧
-      ((gOf r₂ r₁ r₃ = 1 ∧ outB = xB) ↔ released r₁ nB eB xB mB) := by
-  unfold checkResult released result
-  rw [← precompute_isSome]
-  cases hpc : Spec.Rsa.publicPrecompute nB with
-  | none =>
-    simp only [hpc] at h3
-    have hg : gOf r₂ r₁ r₃ ≠ 1 := fun h => and1_of_setWidth_zero h3 ((gOf_eq_one _ _ _).mp h).2.2
-    have hg' : ¬ gOf r₂ r₁ r₃ = 1#64 := hg
-    simp [hg']
-  | some ws =>
-    simp only [hpc] at h3
-    have h2 := h2 (by simp [hpc])
-    cases hpo : Spec.Rsa.publicOpChecked nB eB mB with
-    | none =>
-      simp only [hpo] at h2
-      have hg : gOf r₂ r₁ r₃ ≠ 1 := fun h => and1_of_setWidth_zero h2 ((gOf_eq_one _ _ _).mp h).1
-      have hg' : ¬ gOf r₂ r₁ r₃ = 1#64 := hg
-      simp [hg']
-    | some y =>
-      simp only [hpo] at h2
-      obtain ⟨h2, rfl⟩ := h2
-      have hg : gOf r₂ r₁ r₃ = 1 ↔ r₁ &&& 1 = 1 := by
-        rw [gOf_eq_one]; exact ⟨fun h => h.2.1, fun h => ⟨and1_of_setWidth_one h2, h, and1_of_setWidth_one h3⟩⟩
-      by_cases h1 : r₁ &&& 1 = 1
-      · have hg1 : gOf r₂ r₁ r₃ = 1#64 := hg.mpr h1
-        have h1' : r₁ &&& 1#64 = 1#64 := h1
-        simp [hg1, h1']
-      · have hg1 : ¬ gOf r₂ r₁ r₃ = 1#64 := fun h => h1 (hg.mp h)
-        have h1' : ¬ r₁ &&& 1#64 = 1#64 := h1
-        simp [hg1, h1']
 
 /-- Everything after the CRT, from any state the frame allows: whatever `M`
 holds and the CRT returned. -/

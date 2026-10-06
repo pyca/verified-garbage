@@ -53,34 +53,6 @@ structure MainPost (s t : State) (B : Addr) (Z k : Nat) (op : Addr) (r : Nat) (c
   frame : ∀ x, Z ≤ ofs B x → (∀ j < k, x ≠ op + BitVec.ofNat 64 j) → t.mem x = s.mem x
   keep : Keep mmRegs s t
 
-theorem setupRanges_le (w : Nat) : ∀ r ∈ setupRanges w, r.1 + r.2 ≤ slot w 8 := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show 0 < 8 by decide)
-  have := slot_le (w := w) (show aN < 8 by decide)
-  have := slot_le (w := w) (show aX < 8 by decide)
-  have := slot_le (w := w) (show aOne < 8 by decide)
-  simp only [setupRanges, loadRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sW, sArr, sMinv, sMask, sFn] at * <;> omega
-
-theorem setupRanges_fixed (w : Nat) :
-    ∀ r ∈ setupRanges w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show 0 < 8 by decide)
-  have h1 : slot w 0 ≤ slot w aN := by unfold slot; omega
-  have h2 : slot w 0 ≤ slot w aX := by unfold slot; omega
-  have h3 : slot w 0 ≤ slot w aOne := by unfold slot; omega
-  simp only [setupRanges, loadRanges, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sW, sArr, sMinv, sMask, sFn] at * <;> omega
-
-theorem r2Ranges_fixed (w : Nat) : ∀ r ∈ r2Ranges w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
-  have := hdr_lt_slot w aAcc (show 31 < 32 by decide)
-  have := hdr_lt_slot w aTmp (show 31 < 32 by decide)
-  have := hdr_lt_slot w aR2 (show 31 < 32 by decide)
-  simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sCnt, sFn] at * <;> omega
-
 theorem expPhaseRanges_fixed (w : Nat) :
     ∀ r ∈ expPhaseRanges w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
   have := hdr_lt_slot w aXm (show 31 < 32 by decide)
@@ -89,18 +61,6 @@ theorem expPhaseRanges_fixed (w : Nat) :
   have := hdr_lt_slot w aY (show 31 < 32 by decide)
   simp only [expPhaseRanges, expRanges, bitRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sI, sV, sBit, sFn] at * <;> omega
-
-/-- What a valid modulus gives: odd, above 1, its top word not zero. -/
-theorem valid_facts {N k : Nat} (hv : Spec.Rsa.modulusValid N k = true) (hk : 64 ≤ k) :
-    N % 2 = 1 ∧ 1 < N ∧ 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ N := by
-  rw [Spec.Rsa.modulusValid, Bool.and_eq_true, Bool.and_eq_true, Bool.and_eq_true] at hv
-  obtain ⟨⟨⟨h1, -⟩, -⟩, h4⟩ := hv
-  have h4 := of_decide_eq_true h4
-  have hp : 2 ^ (64 * ((k + 7) / 8 - 1)) ≤ 256 ^ (k - 1) := by
-    rw [pow256_eq]; exact Nat.pow_le_pow_right (by decide) (by omega)
-  have h256 : 256 ≤ 256 ^ (k - 1) := by
-    have := Nat.pow_le_pow_right (n := 256) (by decide) (show 1 ≤ k - 1 by omega); simpa using this
-  exact ⟨beq_iff_eq.mp h1, by omega, Nat.le_trans hp h4⟩
 
 /-- `main`, for a valid modulus `m`: `i2osp (x^e mod m)` if `x < m` and
 zeros otherwise, and `x < m` returned. -/

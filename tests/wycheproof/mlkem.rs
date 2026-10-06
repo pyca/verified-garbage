@@ -67,7 +67,7 @@ macro_rules! mlkem_tests {
             require_vectors!();
             let file =
                 harness::load::<Fields, KeyGen>(concat!("mlkem_", $n, "_keygen_seed_test.json"));
-            for (_, test) in file.tests() {
+            file.par_tests(|_, test| {
                 let c = &test.case;
                 assert_eq!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
                 let dk = $DecapsulationKey::from_seed(&c.seed.0[..].try_into().unwrap()).unwrap();
@@ -81,14 +81,14 @@ macro_rules! mlkem_tests {
                 assert_eq!(c.dk.0[pke..h], ek[..], "tcId {}", test.tc_id);
                 assert_eq!(c.dk.0[h..z], Sha3_256::digest(ek), "tcId {}", test.tc_id);
                 assert_eq!(c.dk.0[z..], dk.seed()[32..], "tcId {}", test.tc_id);
-            }
+            });
         }
 
         #[test]
         fn encaps() {
             require_vectors!();
             let file = harness::load::<Fields, Encaps>(concat!("mlkem_", $n, "_encaps_test.json"));
-            for (_, test) in file.tests() {
+            file.par_tests(|_, test| {
                 let c = &test.case;
                 let m: [u8; 32] = c.m.0[..].try_into().unwrap();
                 let key =
@@ -106,14 +106,14 @@ macro_rules! mlkem_tests {
                         }
                     }
                 }
-            }
+            });
         }
 
         #[test]
         fn decaps() {
             require_vectors!();
             let file = harness::load::<Fields, Decaps>(concat!("mlkem_", $n, "_test.json"));
-            for (_, test) in file.tests() {
+            file.par_tests(|_, test| {
                 let c = &test.case;
                 let seed = <[u8; 64]>::try_from(&c.seed.0[..]);
                 let ct = <[u8; CT]>::try_from(&c.c.0[..]);
@@ -130,7 +130,7 @@ macro_rules! mlkem_tests {
                     }
                     _ => assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id),
                 }
-            }
+            });
         }
     };
 }

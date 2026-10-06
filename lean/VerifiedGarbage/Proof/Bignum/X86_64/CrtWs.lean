@@ -15,9 +15,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- The words of a prime's workspace for a length of `len` bytes. -/
-def wsWords (len : Nat) : Nat := max 2 ((len + 7) / 8)
-
 theorem sx2 : BitVec.signExtend 64 (2 : BitVec 32) = 2 := by decide
 
 /-- `rax := ` the end of the workspace at `rdx = X`. -/
@@ -55,14 +52,6 @@ theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.
   simp only [BitVec.ofNat_add_ofNat, off, BitVec.add_assoc]
   congr 2
   unfold slot tabBytes Public.aOne; omega
-
-/-- A change within ranges, each within one of `rs'`, is within `rs'`. -/
-theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
-    (hr : ∀ r ∈ rs, ∃ r' ∈ rs', r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2) : Frm B rs' m m' := fun x hx =>
-  h x fun r hr' => by
-    obtain ⟨r', hr'', h1, h2⟩ := hr r hr'
-    have := hx r' hr''
-    omega
 
 theorem cf_lt2 {a : Nat} (ha : a < 2 ^ 64) :
     decide ((BitVec.ofNat 64 a).toNat < (2 : BitVec 64).toNat) = decide (a < 2) := by

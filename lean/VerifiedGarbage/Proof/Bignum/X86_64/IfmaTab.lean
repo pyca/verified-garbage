@@ -14,7 +14,8 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oTab oS oV oX oY mask52)
 
 /-- A word of 32 bytes outside a write of 32 bytes. -/

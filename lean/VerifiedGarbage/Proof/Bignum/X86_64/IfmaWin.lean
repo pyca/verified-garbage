@@ -14,7 +14,8 @@ writes only `Y`, `S` and `V` of each region (`OutW`).
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off writeW_outside)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oTab oS oV oX oY oE mask52)
 
 /-- The state of the exponentiations: `Y ≡ x^E R`. -/
@@ -206,7 +207,7 @@ theorem wp_seqs_app {a b : List (Prog isa)} (ha : a ≠ []) (hb : b ≠ []) {s :
       simp only [VG.Impl.Bignum.X86_64.seqs, List.cons_append] at h ⊢
       exact WP.seq (WP.mono (WP.seq_iff.mp h) fun t ht => ih (by simp) ht)
 
-theorem Outside.limb' {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m') {c : Nat}
+theorem _root_.VG.Proof.Bignum.Outside.limb' {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m') {c : Nat}
     (hc : c + 160 ≤ o ∨ o + n ≤ c) (hc' : c + 160 ≤ 2 ^ 64) {j : Nat} (hj : j < 20) :
     limb m' B c j = limb m B c j := by
   have := off_lt j hj
@@ -322,9 +323,9 @@ theorem window_ok {s : State} {B : Addr} {M k x : Nat → Nat} {Q : Prop} {E : N
     rw [st₅.yv hq p hp, nib₁ p hp]
   · rw [f₅.word_at hp (.inr (by decide)) (by decide) (by decide)]
     rcases (by omega : p = 0 ∨ p = 1) with rfl | rfl
-    · rw [o₄.word (by simp only [oV, D]; omega) (by simp only [oV]; omega), m₃, VG.Proof.Bignum.X86_64.word_writeW_self,
+    · rw [o₄.word (by simp only [oV, D]; omega) (by simp only [oV]; omega), m₃, VG.Proof.Bignum.word_writeW_self,
         w₂ 0 (by decide), w₁ 0 (by decide)]
-    · rw [m₄, VG.Proof.Bignum.X86_64.word_writeW_self, o₃.word (by simp only [oV, D]; omega) (by simp only [oV]; omega),
+    · rw [m₄, VG.Proof.Bignum.word_writeW_self, o₃.word (by simp only [oV, D]; omega) (by simp only [oV]; omega),
         w₂ 1 (by decide), w₁ 1 (by decide)]
   · exact ((OutW.ofY i₁.frame).trans (OutW.ofS f₂)).trans ((OutW.ofV f₄).trans (OutW.ofY f₅))
   · rw [g₅ r r1 r2 r3 r4 r5 r6 r7 r8 r9, k₄.gpr (by simp [r1]), k₃.gpr (by simp [r1]), g₂ r r1 r2 r3 r5]

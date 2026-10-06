@@ -78,6 +78,25 @@ theorem rcbAdd3_eq (b X1 Y1 Z1 X2 Y2 Z2 : F) :
   simp only [rcbAdd3, rcbAdd, Prod.mk.injEq]
   refine ⟨?_, ?_, ?_⟩ <;> grind
 
+/-- Algorithm 5 (mixed addition, `a = -3`: the second point is `(X₂ : Y₂ : 1)`),
+in its stated order, with `b`. -/
+def rcbAdd3m (b X1 Y1 Z1 X2 Y2 : F) : F × F × F :=
+  let t0 := X1 * X2; let t1 := Y1 * Y2; let t3 := X2 + Y2; let t4 := X1 + Y1; let t3 := t3 * t4
+  let t4 := t0 + t1; let t3 := t3 - t4; let t4 := Y2 * Z1; let t4 := t4 + Y1; let Y3 := X2 * Z1
+  let Y3 := Y3 + X1; let Z3 := b * Z1; let X3 := Y3 - Z3; let Z3 := X3 + X3; let X3 := X3 + Z3
+  let Z3 := t1 - X3; let X3 := t1 + X3; let Y3 := b * Y3; let t1 := Z1 + Z1; let t2 := t1 + Z1
+  let Y3 := Y3 - t2; let Y3 := Y3 - t0; let t1 := Y3 + Y3; let Y3 := t1 + Y3; let t1 := t0 + t0
+  let t0 := t1 + t0; let t0 := t0 - t2; let t1 := t4 * Y3; let t2 := t0 * Y3; let Y3 := X3 * Z3
+  let Y3 := Y3 + t2; let X3 := t3 * X3; let X3 := X3 - t1; let Z3 := t4 * Z3; let t1 := t3 * t0
+  let Z3 := Z3 + t1
+  (X3, Y3, Z3)
+
+/-- Algorithm 5 is Algorithm 4 with `Z₂ = 1`. -/
+theorem rcbAdd3m_eq (b X1 Y1 Z1 X2 Y2 : F) :
+    rcbAdd3m b X1 Y1 Z1 X2 Y2 = rcbAdd3 b X1 Y1 Z1 X2 Y2 1 := by
+  simp only [rcbAdd3m, rcbAdd3, Prod.mk.injEq]
+  refine ⟨?_, ?_, ?_⟩ <;> grind
+
 /-- Algorithm 6 (doubling, `a = -3`), in its stated order, with `b`. -/
 def rcbDbl3 (b X Y Z : F) : F × F × F :=
   let t0 := X * X; let t1 := Y * Y; let t2 := Z * Z; let t3 := X * Y; let t3 := t3 + t3

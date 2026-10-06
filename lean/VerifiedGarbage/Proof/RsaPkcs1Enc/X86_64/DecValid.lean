@@ -10,7 +10,7 @@ operation's success, from the scan, without branches (`validBlock_run`).
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 
 theorem zero_test (b : Byte) : decide ((BitVec.setWidth 64 b).toNat < BitVec.toNat (1 : BitVec 64)) =
     decide (b = 0) := by

@@ -13,7 +13,7 @@ multiplication (`rp_verified`).
 
 namespace VG.Proof.Rsa.X86_64
 
-open VG VG.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem stackArgs_six (s : State) :
     List.map (stackArg s) (List.range 6) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,

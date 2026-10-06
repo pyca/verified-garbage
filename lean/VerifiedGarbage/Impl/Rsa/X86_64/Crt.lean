@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Rsa.X86_64
 import VerifiedGarbage.Impl.Bignum.X86_64.Adx
+import VerifiedGarbage.Impl.Bignum.CrtLayout
 
 /-!
 # RSA with the CRT private key on x86-64
@@ -36,49 +37,14 @@ namespace VG.Impl.Rsa.X86_64.Crt
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
 
-/-! ## Header slots
+/-! ## Header slots and arrays
 
-`n`'s workspace keeps `vg_rsa_public`'s `sOut`, `sN`, `sK`, `sIn`, `sMask`
+The layout of `Impl/Bignum/CrtLayout.lean`, the same on every target; `n`'s
+workspace also keeps `vg_rsa_public`'s `sOut`, `sN`, `sK`, `sIn`, `sMask`
 and `sCnt`. -/
 
-def sP : Nat := sFn 3
-def sPlen : Nat := sFn 4
-def sQ : Nat := sFn 7
-def sQlen : Nat := sFn 8
-def sDp : Nat := sFn 9
-def sDq : Nat := sFn 11
-def sQinv : Nat := sFn 12
-/-- The bases of `p`'s and `q`'s workspaces. -/
-def sWsP : Nat := sFn 13
-def sWsQ : Nat := sFn 14
-/-- The exponent `E - 64 w` of `G`. -/
-def sD : Nat := sFn 15
-
-/-- In `p`'s and `q`'s workspaces: the base of `n`'s, the exponent's pointer
-and length, its byte index, its bits left, its byte, the words left and the
-source of `redc`, and the mask. -/
-def sLink : Nat := sFn 0
-def sExp : Nat := sFn 1
-def sExpLen : Nat := sFn 2
-def sI : Nat := sFn 3
-def sBit : Nat := sFn 4
-def sV : Nat := sFn 5
-def sRem : Nat := sFn 6
-def sSrc : Nat := sFn 7
-def sMaskX : Nat := sFn 8
-/-- The window's table: its first entry, the entry being written or read,
-the window's value and the entry's index. -/
-def sTab : Nat := sFn 9
-def sEnt : Nat := sFn 10
-def sNib : Nat := sFn 11
-def sJ : Nat := sFn 12
-
-/-- The arrays of `p`'s and `q`'s workspaces, besides `X` (`aN`), the
-accumulator and the temporary: `redc`'s chunk and `qInv` (1), `x R_X`
-(4), the product `Y X` (5), `Y` (6) and the number 1 (7). -/
-def aChunk : Nat := 1
-def aXc : Nat := 4
-def aT : Nat := 5
+export VG.Impl.Bignum.Crt (sP sPlen sQ sQlen sDp sDq sQinv sWsP sWsQ sD sLink sExp sExpLen sI sBit sV sRem sSrc
+  sMaskX sTab sEnt sNib sJ aChunk aXc aT)
 
 /-- `[b + 8 i]`, header slot `i` of the workspace at `b`. -/
 def ws (b : Reg) (i : Nat) : MemOp := { base := b, disp := 8 * i }

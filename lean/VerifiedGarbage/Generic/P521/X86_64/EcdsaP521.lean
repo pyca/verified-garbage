@@ -33,8 +33,9 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       (747 KB), with no doublings: each entry is selected in constant time by loading every \
       entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's \
       magnitude (or the point at infinity for a zero digit), negated by a mask of its sign, and \
-      added by the complete addition formulas of Renes, Costello and Batina for `a = -3` \
-      (Algorithm 4); the \
+      added by the mixed complete addition formulas of Renes, Costello and Batina \
+      for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
+      unless the digit is zero; the \
       inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
       batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
       giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
@@ -53,17 +54,18 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
   { Spec.Ecdsa.P521.verifyApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
-      field arithmetic, ladder and inversions, with `vg_ecdh_p521`'s checks of the public key: it \
+      field arithmetic and inversions, with `vg_ecdh_p521`'s checks of the public key and window \
+      method: it \
       saves its caller's callee-saved registers in `scratch`; field elements and scalars are nine \
       64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
       (CIOS, its accumulator in `scratch`) with a final conditional subtraction, and the hash's \
       integer is shifted right by its last 7 bits. The key is checked without branches (its \
-      first byte, both coordinates below `p`, and the curve's equation), and the second ladder \
+      first byte, both coordinates below `p`, and the curve's equation), and the window method \
       multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
       curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
       signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`), and \
-      `[v]Q` a double-and-add ladder over all 576 bits of the nine words of `v`, with the \
+      `[v]Q` by `vg_ecdh_p521`'s signed 4-bit windows over the 145 digits of `v`, with the \
       complete addition formulas of Renes, Costello and Batina, which also add the two. The \
       result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not \
       the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the \

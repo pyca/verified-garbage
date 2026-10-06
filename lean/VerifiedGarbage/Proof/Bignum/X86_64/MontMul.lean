@@ -15,108 +15,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- The offset of array `j`. -/
-def slot (w j : Nat) : Nat := hdrBytes + j * (8 * (w + 2))
-
-theorem slot_sep {w j k : Nat} (h : j ≠ k) :
-    slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j := by
-  unfold slot
-  rcases Nat.lt_or_gt_of_ne h with h | h
-  · left
-    have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ k by omega)
-    rw [Nat.add_mul, Nat.one_mul] at this
-    omega
-  · right
-    have := Nat.mul_le_mul_right (8 * (w + 2)) (show k + 1 ≤ j by omega)
-    rw [Nat.add_mul, Nat.one_mul] at this
-    omega
-
-theorem slot_le {w j : Nat} (h : j < 8) : slot w j + 8 * (w + 2) ≤ slot w 8 := by
-  unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ 8 by omega)
-  rw [Nat.add_mul, Nat.one_mul] at this
-  omega
-
-theorem hdr_lt_slot (w j : Nat) {i : Nat} (hi : i < 32) : 8 * i + 8 ≤ slot w j := by
-  unfold slot hdrBytes; omega
-
-/-- The header: `w`, `-m⁻¹` and the arrays' bases. -/
-structure Hdr (m : Mem) (B : Addr) (w : Nat) (minv : BitVec 64) : Prop where
-  hw : word m B (8 * sW) = BitVec.ofNat 64 w
-  hminv : word m B (8 * sMinv) = minv
-  harr : ∀ j < 8, word m B (8 * sArr j) = off B (slot w j)
-
-/-- Memory that changes only in the arrays `js`. -/
-def Arrays (B : Addr) (w : Nat) (js : List Nat) (m m' : Mem) : Prop :=
-  ∀ x, (∀ j ∈ js, ofs B x < slot w j ∨ slot w j + 8 * (w + 2) ≤ ofs B x) → m' x = m x
-
-theorem Arrays.of_outside {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} {j : Nat} (hj : j ∈ js)
-    {o n : Nat} (h : Outside B o n m m') (ho : slot w j ≤ o) (hn : o + n ≤ slot w j + 8 * (w + 2)) :
-    Arrays B w js m m' := fun x hx => h x (by have := hx j hj; omega)
-
-theorem Arrays.trans {B : Addr} {w : Nat} {js : List Nat} {m₁ m₂ m₃ : Mem}
-    (h₁ : Arrays B w js m₁ m₂) (h₂ : Arrays B w js m₂ m₃) : Arrays B w js m₁ m₃ :=
-  fun x hx => (h₂ x hx).trans (h₁ x hx)
-
-theorem Arrays.mono {B : Addr} {w : Nat} {js js' : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    (hs : ∀ j ∈ js, j ∈ js') : Arrays B w js' m m' := fun x hx => h x fun j hj => hx j (hs j hj)
-
-theorem Arrays.word_eq {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    {d : Nat} (hd : ∀ j ∈ js, d + 8 ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ d) (hd' : d + 8 ≤ 2 ^ 64) :
-    word m' B d = word m B d :=
-  (Mem.readW_congr fun i hi => (h _ fun j hj => by
-    have := hd j hj; rw [ofs_off B (by omega)]; omega).symm).symm
-
-theorem Arrays.wv_eq {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    {d k : Nat} (hd : ∀ j ∈ js, d + 8 * k ≤ slot w j ∨ slot w j + 8 * (w + 2) ≤ d)
-    (hd' : d + 8 * k ≤ 2 ^ 64) : VG.Proof.Bignum.X86_64.wv m' B d k = VG.Proof.Bignum.X86_64.wv m B d k :=
-  wv_congr fun i hi => h.word_eq (fun j hj => by have := hd j hj; omega) (by omega)
-
-theorem Arrays.hdr {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    {minv : BitVec 64} (hH : Hdr m B w minv) : Hdr m' B w minv := by
-  have hh : ∀ i < 32, word m' B (8 * i) = word m B (8 * i) := fun i hi =>
-    h.word_eq (fun j _ => Or.inl (hdr_lt_slot w j hi)) (by omega)
-  exact ⟨(hh _ (by decide)).trans hH.hw, (hh _ (by decide)).trans hH.hminv,
-    fun j hj => (hh _ (by unfold sArr; omega)).trans (hH.harr j hj)⟩
-
-/-- Memory that changes only in the byte ranges `rs` (offsets and lengths
-from `B`). -/
-def Frm (B : Addr) (rs : List (Nat × Nat)) (m m' : Mem) : Prop :=
-  ∀ x, (∀ r ∈ rs, ofs B x < r.1 ∨ r.1 + r.2 ≤ ofs B x) → m' x = m x
-
-theorem Frm.refl (B : Addr) (rs : List (Nat × Nat)) (m : Mem) : Frm B rs m m := fun _ _ => rfl
-
-theorem Frm.trans {B : Addr} {rs : List (Nat × Nat)} {m₁ m₂ m₃ : Mem} (h₁ : Frm B rs m₁ m₂)
-    (h₂ : Frm B rs m₂ m₃) : Frm B rs m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
-
-theorem Frm.mono {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
-    (hs : ∀ r ∈ rs, r ∈ rs') : Frm B rs' m m' := fun x hx => h x fun r hr => hx r (hs r hr)
-
-theorem Frm.of_outside {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} {o n : Nat} (h : Outside B o n m m')
-    (hr : (o, n) ∈ rs) : Frm B rs m m' := fun x hx => h x (hx _ hr)
-
-theorem Frm.of_arrays {B : Addr} {w : Nat} {js : List Nat} {rs : List (Nat × Nat)} {m m' : Mem}
-    (h : Arrays B w js m m') (hr : ∀ j ∈ js, (slot w j, 8 * (w + 2)) ∈ rs) : Frm B rs m m' :=
-  fun x hx => h x fun j hj => hx _ (hr j hj)
-
-theorem Frm.word_eq {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {d : Nat}
-    (hd : ∀ r ∈ rs, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 ≤ 2 ^ 64) : word m' B d = word m B d :=
-  (Mem.readW_congr fun i hi => (h _ fun r hr => by
-    have := hd r hr; rw [ofs_off B (by omega)]; omega).symm).symm
-
-theorem Frm.wv_eq {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {d k : Nat}
-    (hd : ∀ r ∈ rs, d + 8 * k ≤ r.1 ∨ r.1 + r.2 ≤ d) (hd' : d + 8 * k ≤ 2 ^ 64) :
-    VG.Proof.Bignum.X86_64.wv m' B d k = VG.Proof.Bignum.X86_64.wv m B d k :=
-  wv_congr fun i hi => h.word_eq (fun r hr => by have := hd r hr; omega) (by omega)
-
-/-- The header, after a store to a slot of the functions' own (`sFn`). -/
-theorem Hdr.store {m : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (hH : Hdr m B w minv) {i : Nat}
-    (hi : 16 ≤ i) (hi' : i < 32) (v : BitVec 64) : Hdr (m.writeW (off B (8 * i)) v) B w minv := by
-  have hh : ∀ k < 16, word (m.writeW (off B (8 * i)) v) B (8 * k) = word m B (8 * k) := fun k hk =>
-    (writeW_outside m B v (by omega)).word (by omega) (by omega)
-  exact ⟨(hh _ (by decide)).trans hH.hw, (hh _ (by decide)).trans hH.hminv,
-    fun j hj => (hh _ (by unfold sArr; omega)).trans (hH.harr j hj)⟩
-
 /-- A header slot's address, as `xrun` leaves it. -/
 theorem hdrOff (B : Addr) (i : Nat) : B + BitVec.ofInt 64 (8 * (i : Int)) = off B (8 * i) := by
   rw [show (8 * (i : Int)) = ((8 * i : Nat) : Int) by omega, BitVec.ofInt_natCast]
@@ -148,13 +46,6 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
 /-- The registers `montMul` may change: all but `rdi` and `rsp`. -/
 def mmRegs : List Reg :=
   [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
-
-/-- A number of `w + 2` words: its low `w` words and the two above. -/
-theorem wv_top2 (m : Mem) (B : Addr) (d w : Nat) :
-    wv m B d (w + 2) = wv m B d w + 2 ^ (64 * w) *
-      ((word m B (d + 8 * w)).toNat + 2 ^ 64 * (word m B (d + 8 * w + 8)).toNat) := by
-  rw [show w + 2 = w + 1 + 1 from rfl, wv, wv, pow64_succ, show d + 8 * (w + 1) = d + 8 * w + 8 by omega]
-  grind
 
 /-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
 `[b] < m` and `-m⁻¹` is right. -/

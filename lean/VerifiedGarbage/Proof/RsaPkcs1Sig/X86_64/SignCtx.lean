@@ -10,7 +10,7 @@ stack (`sign_implies`).
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer `vg_rsa_pkcs1_sign` uses: its frame of
 1192 bytes, the return address of its call, and the 3248 bytes its callee

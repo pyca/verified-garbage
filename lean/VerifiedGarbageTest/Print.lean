@@ -22,8 +22,56 @@ def text (ls : List Line) : List String :=
     | .sym s .page n => s!"{s}<page {n}>"
     | .sym s .pageOff n => s!"{s}<pageoff {n}>"
     | .sym s .ripRel n => s!"{s}<riprel {n}>"
+    | .sym s .x86PcRel n => s!"{s}<pcrel {n}>"
 
 open X86_64
+
+-- IA-32's position-independent static address is an explicit four-byte
+-- frame. The ADD sets flags; releasing its scratch slot preserves them.
+#guard text (X86.printer.function
+    (.frame (.symPush .edx "VG_TABLE") (.block []) (.free 4) : Prog X86.isa)) ==
+  ["call 2f", "2:", "mov edx, DWORD PTR [esp]", ".byte 0x81, 194", ".long <pcrel VG_TABLE>",
+    "lea esp, [esp+4]", "ret"]
+
+#guard Rust.line "call" (.sym ".long " .x86PcRel "VG_TABLE") ==
+  "        \".long {VG_TABLE} - 2b\",\n"
+
+-- Neither a plain block nor an invalid frame can use symPush.
+def symState : X86.State :=
+  { gpr := fun r => if r = .esp then 4096 else 17
+    cf := some true, zf := some false, sf := none, of := some false
+    mem := fun _ => 0, rd := [], wr := [], unknowns := fun n => BitVec.ofNat 32 (8192 + n)
+    syms := fun _ => 12288 }
+
+#guard (X86.exec (.symPush .eax "VG_TABLE") symState).isNone
+#guard (X86.push (.symPush .esp "VG_TABLE") symState).isNone
+#guard (X86.push (.symPush .eax "VG_TABLE") (symState.setReg .esp 3)).isNone
+#guard match X86.push (.symPush .eax "VG_TABLE") symState with
+  | none => false
+  | some s => s.gpr .esp == 4092 && s.gpr .eax == 12288 && s.gpr .edx == 17 &&
+      s.mem.readW 4092 32 == 8192 && s.unknowns 0 == 8193 &&
+      s.cf == some false && s.zf == some false && s.sf == some false && s.of == some false &&
+      s.syms "VG_TABLE" == 12288 && s.wr == [⟨4092, 4⟩] &&
+      match X86.pop (.free 4) s s with
+      | none => false
+      | some t => t.gpr .esp == 4096 && t.gpr .eax == 12288 && t.wr.isEmpty &&
+          t.mem.readW 4092 32 == 8192
+
+-- The ModR/M /0 encoding follows Intel's register encoding, not an
+-- accidental order inferred by the assembler from the instruction text.
+#guard ([X86.Reg.eax, .ecx, .edx, .ebx, .esp, .ebp, .esi, .edi].map fun r =>
+    (X86.Instr.asm (.symPush r "VG_TABLE")).getD 3 "") ==
+  [".byte 0x81, 192", ".byte 0x81, 193", ".byte 0x81, 194", ".byte 0x81, 195",
+    ".byte 0x81, 196", ".byte 0x81, 197", ".byte 0x81, 198", ".byte 0x81, 199"]
+
+-- A backwards displacement carries; crossing the signed boundary overflows.
+#guard match X86.push (.symPush .esi "VG_TABLE") { symState with syms := fun _ => 4096 } with
+  | none => false
+  | some s => s.gpr .esi == 4096 && s.cf == some true && s.of == some false
+#guard match X86.push (.symPush .edi "VG_TABLE")
+    { symState with unknowns := fun _ => 0x7fff0000, syms := fun _ => 0x80000000 } with
+  | none => false
+  | some s => s.gpr .edi == 0x80000000 && s.cf == some false && s.of == some true && s.sf == some true
 
 /-- Every `Code` constructor, nested. -/
 def sample : Prog isa :=

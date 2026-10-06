@@ -17,7 +17,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK After init_call upd_call fin_call UpdArgs FinArgs)
 
@@ -27,7 +28,7 @@ theorem scr_ok {t : State} {F S : Addr} (L : Lay t F S) {d : Reg} (hd : d ≠ .r
   refine WP.mono (WP.keep [d] (Q := fun t' => t'.gpr d = off S o ∧ t'.mem = t.mem) ?_ ?_) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   · have hl := L.ld (d := sScr) (by decide)
     have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [scr, Impl.Mgf1.X86_64.scr, lay, ea_sp, L.rsp, hl, hs, VG.Proof.MlKem.X86_64.sx_ofNat ho]
   · cases d <;> first | exact absurd rfl hd | rfl
 

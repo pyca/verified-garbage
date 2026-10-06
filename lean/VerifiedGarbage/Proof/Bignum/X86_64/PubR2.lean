@@ -63,67 +63,6 @@ def r2Steps : List (Prog isa) := [
   doubles aN aAcc aTmp aR2 sCnt,
   M.mm aR2 aR2 aR2, M.mm aR2 aR2 aR2, M.mm aR2 aR2 aR2, M.mm aR2 aR2 aR2, M.mm aR2 aR2 aR2, M.mm aR2 aR2 aR2]
 
-/-- What `R² mod m` changes. -/
-def r2Ranges (w : Nat) : List (Nat × Nat) :=
-  [(slot w aAcc, 8 * (w + 2)), (slot w aTmp, 8 * (w + 2)), (slot w aR2, 8 * (w + 2)), (8 * sCnt, 8)]
-
-/-- The start, `2^(b - 1)` for the bit length `b` of the odd `N`, is below
-it. -/
-theorem start_lt {N T L w : Nat} (hw : 2 ≤ w) (hodd : N % 2 = 1)
-    (hT : N = N % 2 ^ (64 * (w - 1)) + 2 ^ (64 * (w - 1)) * T) (hL : 2 ^ L ≤ T) :
-    2 ^ L * 2 ^ (64 * (w - 1)) < N := by
-  have h1 : 2 ^ L * 2 ^ (64 * (w - 1)) ≤ 2 ^ (64 * (w - 1)) * T := by
-    rw [Nat.mul_comm]; exact Nat.mul_le_mul_left _ hL
-  rcases Nat.lt_or_ge (2 ^ L * 2 ^ (64 * (w - 1))) N with h | h
-  · exact h
-  · exfalso
-    have he : N = 2 ^ L * 2 ^ (64 * (w - 1)) := by omega
-    have : 2 ^ L * 2 ^ (64 * (w - 1)) % 2 = 0 := by
-      rw [show 64 * (w - 1) = (64 * (w - 1) - 1) + 1 by omega, Nat.pow_succ, ← Nat.mul_assoc, Nat.mul_mod_left]
-    omega
-
-theorem r2Ranges_arr (w : Nat) {j : Nat} (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aR2) :
-    ∀ r ∈ r2Ranges w, slot w j + 8 * (w + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot w j := by
-  have := hdr_lt_slot w j (show sCnt < 32 by decide)
-  have s1 := slot_sep (w := w) h1
-  have s2 := slot_sep (w := w) h2
-  have s3 := slot_sep (w := w) h3
-  simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> omega
-
-theorem r2Ranges_hdr (w : Nat) {i : Nat} (hi : i < 32) (h : i ≠ sCnt) :
-    ∀ r ∈ r2Ranges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
-  have := hdr_lt_slot w aAcc hi
-  have := hdr_lt_slot w aTmp hi
-  have := hdr_lt_slot w aR2 hi
-  simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sCnt, sFn] at * <;> omega
-
-theorem r2Ranges_le (w : Nat) : ∀ r ∈ r2Ranges w, r.1 + r.2 ≤ slot w 8 := by
-  have := slot_le (w := w) (show aAcc < 8 by decide)
-  have := slot_le (w := w) (show aTmp < 8 by decide)
-  have := slot_le (w := w) (show aR2 < 8 by decide)
-  have := hdr_lt_slot w 0 (show sCnt < 32 by decide)
-  have := slot_le (w := w) (show 0 < 8 by decide)
-  simp only [r2Ranges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> omega
-
-theorem Frm.r2_wv {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (r2Ranges w) m m')
-    (hn : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aR2) :
-    wv m' B (slot w j) w = wv m B (slot w j) w :=
-  h.wv_eq (fun r hr => by have := r2Ranges_arr w h1 h2 h3 r hr; omega)
-    (by have := slot_le (w := w) hj; omega)
-
-theorem Frm.r2_word {B : Addr} {w : Nat} {m m' : Mem} (h : Frm B (r2Ranges w) m m')
-    (hn : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ aAcc) (h2 : j ≠ aTmp) (h3 : j ≠ aR2) :
-    word m' B (slot w j) = word m B (slot w j) :=
-  h.word_eq (fun r hr => by have := r2Ranges_arr w h1 h2 h3 r hr; omega)
-    (by have := slot_le (w := w) hj; omega)
-
-theorem pow_r2 {L w : Nat} (hL : L < 64) (hw : 1 ≤ w) :
-    2 ^ (64 - L + w) * (2 ^ L * 2 ^ (64 * (w - 1))) = 2 ^ w * 2 ^ (64 * w) := by
-  rw [← Nat.pow_add, ← Nat.pow_add, ← Nat.pow_add]; congr 1; omega
-
 /-- `R² mod m`, for the odd `m` of `w ≥ 2` words, its top word not zero. -/
 theorem r2_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat} (hg : Good s B Z w minv)
     (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw30 : w < 2 ^ 30) (hn : wv s.mem B (slot w aN) w = N)

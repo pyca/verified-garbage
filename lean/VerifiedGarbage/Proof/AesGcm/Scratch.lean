@@ -159,13 +159,13 @@ theorem bytesAt_congr {m₁ m₂ : Mem} {p : Addr} {n : Nat}
   exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
 
 /-- `bytesAt_congr`, at an offset `d` into the agreeing bytes. -/
-private theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
+theorem bytesAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d n N : Nat} (hn : d + n ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
   bytesAt_congr fun i hi => by rw [Offset.add_add]; exact h _ (by omega)
 
 /-- The block at offset `d` into the agreeing bytes. -/
-private theorem blockAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d N : Nat} (hn : d + 16 ≤ N)
+theorem blockAt_congr_off {m₁ m₂ : Mem} {p : Addr} {d N : Nat} (hn : d + 16 ≤ N)
     (h : ∀ i < N, m₂ (p + BitVec.ofNat 64 i) = m₁ (p + BitVec.ofNat 64 i)) :
     blockAt m₂ (p + BitVec.ofNat 64 d) = blockAt m₁ (p + BitVec.ofNat 64 d) := by
   simp only [blockAt]
@@ -443,7 +443,7 @@ theorem openPre_local : ∀ vs m₁ m₂, vs.length = (openSig.words pb).length 
 
 /-- `openResult` on the memory `m₂` is that on `m₁` where they agree on the
 buffers. -/
-private theorem openResult_local {pb : Nat} {m₁ m₂ : Mem}
+theorem openResult_local {pb : Nat} {m₁ m₂ : Mem}
     {ctx nonce aad data tag : Addr} {rd nl al len tl : BitVec 64}
     (hn : (rd.setWidth pb).toNat ≤ 15)
     (hc : ∀ i < 32 * 8, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i))

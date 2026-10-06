@@ -13,51 +13,15 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-- A prime's workspace at `off B o`: its header and its link to `B`. -/
-structure WsAt (m : Mem) (B : Addr) (o wx : Nat) (minv : BitVec 64) : Prop where
-  hdr : Hdr m (off B o) wx minv
-  link : word m (off B o) (8 * sLink) = B
-
 /-- Entering a prime's workspace from the modulus'. -/
 theorem SubCtx.mk' {t : State} {B : Addr} {Z o w wx : Nat} {minvN minv : BitVec 64}
     (hs : Scr t B Z) (hH : Hdr t.mem B w minvN) (hws : WsAt t.mem B o wx minv) (hdi : t.gpr .rdi = off B o)
     (hlo : slot w 8 ≤ o) (hhi : o + slot wx 8 + tabBytes wx ≤ Z) : SubCtx t B Z o w wx minv :=
   ⟨hs, hdi, hws.hdr, hws.link, hH.hw, hH.harr, hlo, hhi⟩
 
-/-- What a load into an array of the workspace at `off B o` changes, at `B`:
-within its arrays. -/
-theorem Frm.of_load {B : Addr} {o wx j : Nat} {m m' : Mem} {rs : List (Nat × Nat)}
-    (h : Outside (off B o) (slot wx j) (8 * (wx + 2)) m m') (hj : j < 8) (ho : o + slot wx 8 ≤ 2 ^ 64)
-    (hr : (o + 256, slot wx 8 - 256) ∈ rs) : Frm B rs m m' := by
-  have h1 := slot_le (w := wx) hj
-  have h2 := hdr_lt_slot wx j (show 31 < 32 by decide)
-  have h3 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  refine (Frm.of_outside_off h (by omega) (by omega)).widen fun r hr' => ⟨_, hr, ?_⟩
-  rw [List.mem_singleton.mp hr']
-  simp only
-  omega
-
 theorem SubCtx.ws {t : State} {B : Addr} {Z o w wx : Nat} {minv : BitVec 64} (h : SubCtx t B Z o w wx minv) :
     WsAt t.mem B o wx minv :=
   ⟨h.hdr, h.link⟩
-
-theorem WsAt.of_words {m m' : Mem} {B : Addr} {o wx : Nat} {minv : BitVec 64} (h : WsAt m B o wx minv)
-    (hw : ∀ i < 17, word m' (off B o) (8 * i) = word m (off B o) (8 * i)) : WsAt m' B o wx minv :=
-  ⟨⟨(hw _ (by decide)).trans h.hdr.hw, (hw _ (by decide)).trans h.hdr.hminv,
-    fun j hj => (hw _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩, (hw _ (by decide)).trans h.link⟩
-
-/-- The header of the workspace at `off B o` with whatever `-X⁻¹` it holds. -/
-theorem hdr_any {m : Mem} {B : Addr} {o wx : Nat} (hw : word m (off B o) (8 * sW) = BitVec.ofNat 64 wx)
-    (ha : ∀ j < 8, word m (off B o) (8 * sArr j) = off (off B o) (slot wx j)) :
-    Hdr m (off B o) wx (word m (off B o) (8 * sMinv)) :=
-  ⟨hw, rfl, ha⟩
-
-theorem wsWords_le {len w : Nat} (h : len < 8 * w) (hw : 2 ≤ w) : wsWords len ≤ w := by
-  unfold wsWords; omega
-
-/-- The workspaces' layout: `p`'s after the modulus', `q`'s after `p`'s. -/
-def offP (w : Nat) : Nat := slot w 8
-def offQ (w pl : Nat) : Nat := slot w 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl)
 
 /-- `primesSetup`: the primes' workspaces, `p` and `qInv` into `p`'s (arrays
 `aN` and `aChunk`), and `q` into `q`'s. -/

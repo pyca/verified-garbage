@@ -28,9 +28,10 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
   subtraction (`csub`) or addition of `m`.
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
-  reduced below `m`: the difference with `m` is computed into the
-  temporary area `[M.tmp]`, and then selected with a mask if it did not
-  borrow.
+  reduced below `m`: the difference with `m` is computed, and taken if it
+  did not borrow. For at most four words it is computed in `rax`, `rcx`,
+  `rdx` and `rbp` and taken by `cmovae` (`csubC`); for more, into the
+  temporary area `[M.tmp]`, and selected by `cmovae` (`csubM`).
 
 For `n ≤ 6` the accumulator is in registers (`mulR`, `addR`, `subR`). For
 more words (P-521's 9) it does not fit, and `mulW`, `addW` and `subW` keep
@@ -49,7 +50,7 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
   `[o]`).
 
 `mul`, `add` and `sub` choose by `n`. Every multiplication is `mul` or `mulx`, every
-selection a mask, and every address `rdi` plus a constant: nothing but `rdi`
+selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
 `rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
 write only `[o]` and `[M.tmp]`.
@@ -191,20 +192,42 @@ def diffs (op : AluOp) : List Reg → Nat → Nat → List Instr
   | t :: ts, mo, tmp => [.mov .rax (.reg t), .alu op .rax (.mem (sc mo)), .store (sc tmp) .rax] ++
     diffs .sbb ts (mo + 8) (tmp + 8)
 
-/-- `ts = [tmp]` where the mask `rax` is all ones, word by word. -/
+/-- Replace `ts` by `[tmp]` when the subtraction did not borrow, preserving
+its carry flag across all words. -/
 def selects : List Reg → Nat → List Instr
   | [], _ => []
-  | t :: ts, tmp => [.mov .rdx (.mem (sc tmp)), .alu .xor .rdx (.reg t), .alu .and .rdx (.reg .rax),
-      .alu .xor t (.reg .rdx)] ++ selects ts (tmp + 8)
+  | t :: ts, tmp => [.cmov .ae t (.mem (sc tmp))] ++ selects ts (tmp + 8)
 
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: the
-difference with `m` is computed into `[tmp]`; `rax` is all ones if it did not
-borrow, and selects it. -/
-def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+difference with `m` is computed into `[tmp]`; its final borrow selects it. -/
+def csubM (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   diffs .sub ts M.mo M.tmp ++
-  [.mov .rax (.reg top), .alu .sbb .rax (.imm 0), .alu .sbb .rax (.reg .rax),
-    .alu .xor .rax (.imm (-1))] ++
-  selects ts M.tmp
+  [.mov .rax (.reg top), .alu .sbb .rax (.imm 0)] ++ selects ts M.tmp
+
+/-- The registers `csubC` computes the difference in. -/
+def cregs : List Reg := [.rax, .rcx, .rdx, .rbp]
+
+/-- `ds = ts - [mo]`, word by word, with `op` (`sub`, then `sbb`) on the
+first word: its borrow is in CF. -/
+def diffsC (op : AluOp) : List Reg → List Reg → Nat → List Instr
+  | t :: ts, d :: ds, mo => [.mov d (.reg t), .alu op d (.mem (sc mo))] ++ diffsC .sbb ts ds (mo + 8)
+  | _, _, _ => []
+
+/-- `ts = ds` if CF is clear (`cmovae`). -/
+def cmovs : List Reg → List Reg → List Instr
+  | t :: ts, d :: ds => .cmov .ae t (.reg d) :: cmovs ts ds
+  | _, _ => []
+
+/-- `csubM` in registers, for at most four words: the difference with `m` in
+`cregs`, the top word's borrow, and the difference moved to `ts` if it did not
+borrow. -/
+def csubC (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  diffsC .sub ts cregs M.mo ++ [.alu .sbb top (.imm 0)] ++ cmovs ts cregs
+
+/-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: by `csubC`
+for at most four words, else by `csubM`. -/
+def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  if ts.length ≤ 4 then csubC M ts top else csubM M ts top
 
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr

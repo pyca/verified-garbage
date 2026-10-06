@@ -14,7 +14,7 @@ frame's push, the call (`pub_call`) and the pop: `code_correct`.
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Ver
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Verify
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64 VG.WriteBytes
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64 VG.WriteBytes
 open Spec.RsaPkcs1Sig
 
 /-! ## Memory in the frame -/
@@ -280,7 +280,7 @@ theorem afterPub_ok {s t : State} (hp : PreV s) (he : Env s t)
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
     word (m.writeW base v) base d' = word m base d' := by
   have := word_wo m base v (d := 0) (d' := d') (.inl (by omega)) (by decide) hd'
-  simpa only [Bignum.X86_64.word, off, BitVec.add_zero] using this
+  simpa only [Bignum.word, off, BitVec.add_zero] using this
 
 theorem word_self0 (m : Mem) (base : Addr) (v : BitVec 64) : word (m.writeW base v) base 0 = v := by
   have := word_writeW_self m base 0 v

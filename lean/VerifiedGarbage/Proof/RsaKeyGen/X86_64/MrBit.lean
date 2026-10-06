@@ -13,7 +13,7 @@ form in `aB`, and `R mod c`, `c − R mod c` in `aR1`, `aRm1`. `mrExpBit_ok`:
 namespace VG.Proof.RsaKeyGen.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
-open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum.X86_64
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 /-- What Miller–Rabin keeps: `-c⁻¹`, `c`, the witness `b R mod c` in `aB`,
@@ -78,7 +78,7 @@ theorem bitTail_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Goo
       ofNat64_pred hn1 hn', ofNat64_beq_zero (show n - 1 < 2 ^ 64 by omega)]) rfl) fun t ⟨⟨hm, hz⟩, k⟩ => ⟨hm, hz, k⟩
 
 /-- The header survives changes away from its first 16 words. -/
-theorem Hdr.of_frm {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64} {rs : List (Nat × Nat)} (hH : Hdr m B w mi)
+theorem _root_.VG.Proof.Bignum.Hdr.of_frm {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64} {rs : List (Nat × Nat)} (hH : Hdr m B w mi)
     (hf : Frm B rs m m') (hd : ∀ r ∈ rs, 128 ≤ r.1) : Hdr m' B w mi := by
   have hh : ∀ i < 16, word m' B (8 * i) = word m B (8 * i) := fun i hi =>
     hf.word_eq (fun r hr => Or.inl (by have := hd r hr; omega)) (by omega)

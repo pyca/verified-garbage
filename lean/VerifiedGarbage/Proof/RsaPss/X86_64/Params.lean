@@ -14,7 +14,7 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off)
+open VG.Proof.Bignum (off)
 
 /-- What `smear` computes from `y`. -/
 abbrev smearV (y : BitVec 64) : BitVec 64 :=
@@ -127,7 +127,7 @@ theorem dbSlots_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       Rep u'.mem F S V (upd (upd W 24 (BitVec.ofNat 64 (a + 1))) 23 (off S (oEm + lo))) := by
   have G := L.geo
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have R1 := R.wf G (k := 24) (by decide) (BitVec.ofNat 64 (a + 1))
   have R2 := R1.wf G (k := 23) (by decide) (off S (oEm + lo))
   rw [show off F (8 * 24) = off F sDb from rfl] at R1 R2

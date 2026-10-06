@@ -17,35 +17,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-! ## The result -/
-
-/-- What `Crt.code` leaves: the result `r` and flag `c` of `fail` or
-`main`. -/
-theorem crtWritten_of {m : Mem} {out : Addr} {k : Nat} {rax : BitVec 64} {nb xb pb qb dpb dqb qib : List Byte}
-    (hnl : nb.length = k) {r : Nat} {c : Bool}
-    (hb : Spec.Rsa.bytesAt m out k = Spec.Rsa.i2osp r k) (hr : rax = BitVec.ofNat 64 c.toNat)
-    (hc : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true →
-      (c = true ↔ Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip pb * Spec.Rsa.os2ip qb =
-        Spec.Rsa.os2ip nb ∧ Spec.Rsa.os2ip qib < Spec.Rsa.os2ip pb) ∧
-      r = if c then crtResult (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip dpb) (Spec.Rsa.os2ip dqb)
-        (Spec.Rsa.os2ip qib) (Spec.Rsa.os2ip xb) else 0)
-    (hf : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = false → c = false ∧ r = 0) :
-    Spec.Rsa.written m out k (rax.setWidth 32) (Spec.Rsa.privateCrt nb xb pb qb dpb dqb qib) := by
-  simp only [Spec.Rsa.privateCrt]
-  rw [hnl, hr, setWidth_flag]
-  cases hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k
-  · obtain ⟨rfl, rfl⟩ := hf hv
-    simp only [Bool.false_eq_true, ite_false, Spec.Rsa.written]
-    exact ⟨trivial, by rw [hb, i2osp_zero']⟩
-  · obtain ⟨hiff, rfl⟩ := hc hv
-    simp only [ite_true, decryptCrt_eq]
-    cases c <;> simp only [Bool.false_eq_true, ite_false, ite_true] at hb
-    · have hx := mt hiff.mpr (by decide)
-      simp only [hx, Bool.false_eq_true, ite_false, Option.map_none, Spec.Rsa.written]
-      exact ⟨trivial, by rw [hb, i2osp_zero']⟩
-    · simp only [hiff.mp rfl, and_self, ite_true, Option.map_some, Spec.Rsa.written]
-      exact ⟨trivial, hb⟩
-
 /-! ## The precondition, as `main` uses it -/
 
 theorem stackArgAddr_add (s : State) (j b : Nat) :

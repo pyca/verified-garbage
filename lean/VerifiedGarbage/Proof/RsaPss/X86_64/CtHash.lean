@@ -15,7 +15,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn load64_eq store64_eq)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (initK)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
@@ -28,7 +29,7 @@ theorem scr_ok {t : State} {F S : Addr} (L : Lay t F S) {d : Reg} (hd : d ≠ .r
   refine WP.mono (WP.keep [d] (Q := fun t' => t'.gpr d = off S o ∧ t'.mem = t.mem) ?_ ?_) fun t' ⟨h, k⟩ => ⟨h.1, h.2, k⟩
   · have hl := L.ld (d := sScr) (by decide)
     have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [scr, ea_sp, L.rsp, hl, hs, VG.Proof.MlKem.X86_64.sx_ofNat ho]
   · cases d <;> first | exact absurd rfl hd | rfl
 
@@ -129,7 +130,7 @@ theorem pad80_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W 
       u.gpr .rdx = BitVec.ofNat 64 ℓ ∧ u.gpr .r10 = BitVec.ofNat 64 (nbm * H.P.B) ∧
       u.gpr .r8 = BitVec.ofNat 64 0 ∧ u.mem = t.mem) ?_ rfl) fun u ⟨⟨h₁, h₂, h₃, h₄, hm⟩, hk⟩ => ?_)
   · have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     have e27 : t.mem.readW (off F sL) 64 = BitVec.ofNat 64 ℓ := by
       rw [← hl, ← R.fr 27 (by decide)]; rfl
     have e28 : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by
@@ -188,7 +189,7 @@ theorem lenField_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} 
   have hL := hH.dims.L
   have e27 : t.mem.readW (off F sL) 64 = BitVec.ofNat 64 ℓ := by rw [← hl, ← R.fr 27 (by decide)]; rfl
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   rw [lenField, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (WP.keep [.rbx, .r12] (Q := fun u => u.gpr .rbx = off S (oLen - (H.P.N + H.P.B - H.P.L)) ∧
       u.gpr .r12 = BitVec.ofNat 64 ℓ ∧ u.mem = t.mem) ?_ rfl) fun u ⟨⟨h₁, h₂, hm⟩, hk⟩ => ?_
@@ -293,7 +294,7 @@ theorem lenLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {
   have hN0 := hH.dims.N
   have hnbm : nbm ≤ 2048 := Nat.le_trans (Nat.le_mul_of_pos_right nbm hB0) hnb
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have e30 : t.mem.readW (off F sFb) 64 = BitVec.ofNat 64 fb := by rw [← hf, ← R.fr 30 (by decide)]; rfl
   have e28 : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm := by rw [← hn, ← R.fr 28 (by decide)]; rfl
   refine WP.seq (WP.mono (WP.keep [.rcx, .rsi, .rdx, .r10, .r8, .r11, .r9, .rax, .rdi] (Q := fun u =>

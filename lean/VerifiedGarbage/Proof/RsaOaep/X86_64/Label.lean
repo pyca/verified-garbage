@@ -14,7 +14,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
 
@@ -42,7 +43,7 @@ theorem labA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
       u'.gpr .rsi = BitVec.ofNat 64 0 ∧ u'.gpr .rdx = lab ∧ u'.gpr .rcx = BitVec.ofNat 64 labLen ∧
       u'.gpr .r8 = off S oW ∧ u'.mem = u.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx, .r8] u u' := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8] (Q := fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = BitVec.ofNat 64 0 ∧ u'.gpr .rdx = lab ∧ u'.gpr .rcx = BitVec.ofNat 64 labLen ∧
       u'.gpr .r8 = off S oW ∧ u'.mem = u.mem) ?_ rfl) fun u' ⟨⟨a, b, c, d, e, f⟩, k⟩ => ⟨a, b, c, d, e, f, k⟩
@@ -58,7 +59,7 @@ theorem labF_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
       u'.gpr .rdi = off S oSt ∧ u'.gpr .rsi = BitVec.ofNat 64 labLen ∧ u'.gpr .rdx = off S o ∧
       u'.gpr .rcx = off S oW ∧ u'.mem = u.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx] u u' := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx] (Q := fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = BitVec.ofNat 64 labLen ∧ u'.gpr .rdx = off S o ∧ u'.gpr .rcx = off S oW ∧
       u'.mem = u.mem) ?_ rfl) fun u' ⟨⟨a, b, c, d, e⟩, k⟩ => ⟨a, b, c, d, e, k⟩

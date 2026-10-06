@@ -253,7 +253,7 @@ structure SignKeep (c : Cfg) (s₀ s' : State) : Prop where
   frame : ∃ m : Mem, Unch (ptr s₀ 4) [(0, size)] s₀.mem m ∧ Outside (ptr s₀ 0) 0 (2 * c.C.len) m s'.mem
 
 /-- `s`, its check, and the result. -/
-theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = ptr s₀ 4)
+theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Region} (hp : Pre c s₀ extra) {base : Addr} (hb : base = ptr s₀ 4)
     {s : State} (hS : St₃ c .sign s₀ base s) :
     WP isa c.scalar s fun s' => SignKeep c s₀ s' ∧ SignPost c s₀ s' := by
   have h0 := hc.n0

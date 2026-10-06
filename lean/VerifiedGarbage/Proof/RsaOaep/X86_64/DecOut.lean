@@ -14,7 +14,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
 /-- `ok`: all ones iff the private-key operation's result `r` (word 30) is 1
@@ -58,7 +59,7 @@ theorem outLoop_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     WP isa outLoop u fun u' => Lay u' F S ∧ Keep [.rdi, .rcx, .r10, .r11, .r8, .rax] u u' ∧ Rep u'.mem F S V W ∧
       (∀ i < k, u'.mem (o + BitVec.ofNat 64 i) = andB (V (oBuf + i)) (W 33)) ∧ Frame [⟨o, k⟩] u.mem u'.mem := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c3 : oBuf = 1024 := rfl
   unfold outLoop
   refine WP.seq (WP.mono (WP.keep [.rdi, .rcx, .r10, .r11, .r8] (Q := fun v => v.gpr .rdi = o ∧

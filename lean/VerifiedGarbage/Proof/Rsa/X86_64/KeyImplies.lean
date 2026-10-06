@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 namespace VG.Proof.Rsa.X86_64.Key
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- A state meeting `keyContract.pre`: a 512-bit modulus, one-byte `e`, `d`,
 primes, exponents and `qInv`, and the stack arguments at `0x6008`. -/

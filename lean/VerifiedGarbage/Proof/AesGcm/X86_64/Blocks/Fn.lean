@@ -14,10 +14,11 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 /-- With nothing left, `Mid` is the end, when encrypting. -/
@@ -36,9 +37,10 @@ theorem decDone_of {q : Nat} {st : State} (M : Mid s q q (blocksAt s.mem (D s) q
 
 end
 
-theorem encrypt_wp (v : GcmImpl) (st : Option StitchImpl) {s : State} (hpre : Proof.AesGcm.blocksPre s) :
+theorem encrypt_wp (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) {s : State}
+    (hpre : Proof.AesGcm.blocksPreM M s) :
     WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s (EncDone s) := by
-  have hp := BP.of hpre
+  have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st →
       WP isa (tail (ctrCall v.callees.ctr) (ghCall v.callees.gh)) st (EncDone s) := fun q st M =>
@@ -48,9 +50,10 @@ theorem encrypt_wp (v : GcmImpl) (st : Option StitchImpl) {s : State} (hpre : Pr
   | some p => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp p.ok h11 hg hk hf hrd hwr) fun st M =>
       WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
 
-theorem decrypt_wp (v : GcmImpl) (st : Option StitchImpl) {s : State} (hpre : Proof.AesGcm.blocksPre s) :
+theorem decrypt_wp (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) {s : State}
+    (hpre : Proof.AesGcm.blocksPreM M s) :
     WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) s (DecDone s) := by
-  have hp := BP.of hpre
+  have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (blocksAt s.mem (D s) q) st →
       WP isa (tail (ghCall v.callees.gh) (ctrCall v.callees.ctr)) st (DecDone s) := fun q st M =>

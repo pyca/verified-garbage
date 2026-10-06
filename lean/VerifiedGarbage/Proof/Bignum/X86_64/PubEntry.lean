@@ -22,15 +22,6 @@ theorem entry_eq : entry = ([.mov .r11 (.mem { base := .rsp, disp := 24 }),
     .store (hdr11 sElen) .r9] : List Instr) ++ [.mov .rax (.mem { base := .rsp, disp := 8 }), .store (hdr11 sIn) .rax,
     .mov .rdi (.reg .r11)] := rfl
 
-/-- A word of the header past a store to another slot. -/
-theorem word_skip {m : Mem} {B : Addr} {i j : Nat} {v x : BitVec 64} (h : word m B (8 * j) = x)
-    (hij : i ≠ j) (hi : i < 32) (hj : j < 32) : word (m.writeW (off B (8 * i)) v) B (8 * j) = x :=
-  (hdrStore_hdr m B v hi hj hij).trans h
-
-theorem Outside.store_hdr {B : Addr} {n : Nat} {m m' : Mem} (h : Outside B 0 n m m') {i : Nat}
-    (hi : 8 * i + 8 ≤ n) (hn : n ≤ 2 ^ 64) (v : BitVec 64) : Outside B 0 n m (m'.writeW (off B (8 * i)) v) :=
-  fun x hx => (writeW_outside m' B v (by omega) x (by omega)).trans (h x hx)
-
 /-- The header after `entry`'s stores. -/
 def entryMem (m : Mem) (B : Addr) (v0 v1 v2 v3 v4 v5 vo vn vk ve vl : BitVec 64) : Mem :=
   ((((((((((m.writeW (off B (8 * 0)) v0).writeW (off B (8 * 1)) v1).writeW (off B (8 * 2)) v2).writeW

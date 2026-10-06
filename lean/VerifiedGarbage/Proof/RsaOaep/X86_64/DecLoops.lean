@@ -15,7 +15,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 
 /-! ## `lHash'` against `lHash` -/
@@ -38,7 +39,7 @@ theorem accLh_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat
     WP isa (accLh Hm) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rsi, .rdx, .r8, .rax, .r9] u u' ∧
       Rep u'.mem F S V (upd W 31 (accL V Hm.D Hm.D)) := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c1 : oLh = 3392 := rfl
   have c2 : oEm = 0 := rfl
   have z : BitVec.ofNat 64 0 = 0#64 := rfl
@@ -130,7 +131,7 @@ theorem scan_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : Nat 
         (k - (2 * Hm.D + 1))).2.2 ||| (scanS (tF V Hm.D) (W 31) (k - (2 * Hm.D + 1))).1))
         32 (scanS (tF V Hm.D) (W 31) (k - (2 * Hm.D + 1))).2.1) := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c2 : oEm = 0 := rfl
   unfold scan
   refine WP.seq (WP.mono (WP.keep [.rdi, .r10, .rdx, .rsi, .rcx, .r8] (Q := fun v =>
@@ -190,7 +191,7 @@ theorem clearBuf_ok {Hm : Stream} {u : State} {F S : Addr} (L : Lay u F S) {V : 
       u'.gpr .rsi = off S (oEm + 1 + 2 * Hm.D) ∧ u'.gpr .r10 = BitVec.ofNat 64 (k - (2 * Hm.D + 1)) ∧
       u'.gpr .rcx = off S oBuf ∧ Rep u'.mem F S (clrV V oBuf 2048) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.seq (WP.mono (WP.keep [.rsi, .r10, .rcx, .rax, .r8] (Q := fun v =>
       v.gpr .rsi = off S (oEm + 1 + 2 * Hm.D) ∧ v.gpr .r10 = BitVec.ofNat 64 (k - (2 * Hm.D + 1)) ∧
       v.gpr .rcx = off S oBuf ∧ v.gpr .rax = 0 ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)

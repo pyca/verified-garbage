@@ -17,7 +17,7 @@
 use serde::Deserialize;
 use verified_garbage::chacha20::ChaCha20;
 
-use crate::harness::{self, Expectation};
+use crate::harness::{self, Count, Expectation};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -45,10 +45,10 @@ fn unhex(s: &str) -> Vec<u8> {
 fn chacha20_poly1305_ciphertexts() {
     require_vectors!();
     let file = harness::load::<Group, Case>("chacha20_poly1305_test.json");
-    let mut checked = 0;
-    for (group, test) in file.tests() {
+    let checked = Count::default();
+    file.par_tests(|group, test| {
         if group.params.iv_size != 96 || test.result != Expectation::Valid {
-            continue;
+            return;
         }
         let key: [u8; 32] = unhex(&test.case.key).try_into().unwrap();
         let mut nonce = [0u8; 16];
@@ -57,7 +57,7 @@ fn chacha20_poly1305_ciphertexts() {
         let mut data = unhex(&test.case.msg);
         ChaCha20::new(&key, &nonce).apply_keystream(&mut data);
         assert_eq!(data, unhex(&test.case.ct), "tcId {}", test.tc_id);
-        checked += 1;
-    }
-    assert!(checked > 0);
+        checked.add();
+    });
+    assert!(checked.get() > 0);
 }

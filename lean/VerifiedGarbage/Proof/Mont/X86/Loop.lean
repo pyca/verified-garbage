@@ -17,6 +17,29 @@ open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 /-- The registers the arithmetic changes. -/
 def clob : List Reg := [.eax, .ebx, .ecx, .edx, .ebp]
 
+/-- The inverse-one specialization has the same reduction digit and frame. -/
+theorem redDigit_ok {M : Mod} {s : State} {base : Addr} {size i acc : Nat}
+    (hs : Scr s base size) (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
+    (ha : 4 * i + acc + 4 ≤ size) :
+    WP isa (.block (redDigit M acc)) s fun t =>
+      (t.gpr .ecx).toNat = (s.mem.readW (off base (4 * i + acc)) 32).toNat * (minv32 M).toNat % 2^32 ∧
+      Keeps [.eax, .ecx, .edx] s t ∧ t.mem = s.mem := by
+  unfold redDigit
+  split
+  next h =>
+    refine wp_movS (readSrc_at hs hp ha) fun _t u _ => WP.block_nil ⟨?_, u.keeps.mono (by decide), u.mem⟩
+    rw [u.gpr, h]
+    change _ = _ * 1 % 2^32
+    rw [Nat.mul_one, Nat.mod_eq_of_lt (s.mem.readW (off base (4 * i + acc)) 32).isLt]
+  next _ =>
+    refine wp_movS (readSrc_at hs hp ha) fun _s₁ u₁ _ => ?_
+    refine wp_movS rfl fun _s₂ u₂ _ => ?_
+    refine wp_mul fun _s₃ m₃ => ?_
+    refine wp_movS rfl fun _s₄ u₄ _ => WP.block_nil ⟨?_, ?_, ?_⟩
+    · rw [u₄.gpr, m₃.eax, u₂.other .eax (by decide), u₁.gpr, u₂.gpr, BitVec.toNat_ofNat]
+    · exact ((u₁.keeps.mono (by decide) |>.widen u₂.keeps).widen m₃.keeps).widen u₄.keeps
+    · rw [u₄.mem, m₃.mem, u₂.mem, u₁.mem]
+
 /-- `t₀ + (t₀ m' mod 2³²) m ≡ 0 (mod 2³²)` when `m m' ≡ -1`. -/
 theorem mont_low32 (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 32 = 0) :
     (t0 + t0 * minv % 2 ^ 32 * m) % 2 ^ 32 = 0 := by
@@ -142,25 +165,18 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [mem₁, hTw, ecx₁] at V₂
   rw [mem₁] at O₂
   -- `ecx = q`, from the window's low word.
-  refine wp_movS (readSrc_at hs₂ hp₂ (d := acc) (by omega)) fun s₃ u₃ _ => ?_
-  refine wp_movS rfl fun s₄ u₄ _ => ?_
-  refine wp_mul fun s₅ m₅ => ?_
-  refine wp_movS rfl fun s₆ u₆ _ => ?_
-  have k₆ : Keeps clob s s₆ :=
-    ((k₂.widen u₃.keeps).widen u₄.keeps |>.widen m₅.keeps).widen u₆.keeps
+  refine WP.block_append (WP.mono (redDigit_ok (M := M) hs₂ hp₂ (by omega)) fun s₆ ⟨q₆, K₆, mem₆⟩ => ?_)
+  have k₆ : Keeps clob s s₆ := k₂.widen K₆
   have hs₆ := hs.of_keeps k₆ (by decide)
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * i) := by
-    rw [u₆.other _ (by decide), m₅.other _ (by decide) (by decide), u₄.other _ (by decide),
-      u₃.other _ (by decide), u₆.other _ (by decide), m₅.other _ (by decide) (by decide),
-      u₄.other _ (by decide), u₃.other _ (by decide)]; exact hp₂
-  have mem₆ : s₆.mem = s₂.mem := by rw [u₆.mem, m₅.mem, u₄.mem, u₃.mem]
+    rw [K₆.1 _ (by decide), K₆.1 _ (by decide)]; exact hp₂
   have t0 : (s₂.mem.readW (off base (4 * i + acc)) 32).toNat = val32 s₂.mem base w (N + 2) % 2 ^ 32 := by
     rw [hw, val32]
     have := (s₂.mem.readW (off base w) 32).isLt
     simp only [w32]
     omega
   have ecx₆ : (s₆.gpr .ecx).toNat = val32 s₂.mem base w (N + 2) % 2 ^ 32 * (minv32 M).toNat % 2 ^ 32 := by
-    rw [u₆.gpr, m₅.eax, u₄.other .eax (by decide), u₃.gpr, u₄.gpr, BitVec.toNat_ofNat, t0]
+    rw [q₆, t0]
   -- The window `+= q m`.
   have hmo₂ : val32 s₂.mem base M.mo N = m := by rw [O₂.val32 (by omega) (by omega), hm]
   have hq : (s₆.gpr .ecx).toNat < 2 ^ 32 := (s₆.gpr .ecx).isLt

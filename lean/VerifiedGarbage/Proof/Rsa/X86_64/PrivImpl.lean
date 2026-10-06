@@ -17,7 +17,7 @@ check its result, which need no more CPU features.
 
 namespace VG.Proof.Rsa.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64
 
 /-- An implementation of `vg_rsa_private_crt` on x86-64. -/
 structure CrtImpl where

@@ -39,34 +39,34 @@ theorem rel_envT {Ctx St W SP : Addr} {F : State → Prop} {c : Prog isa} (rs : 
     · exact env_agree (hF _ h.1) (hF _ h.2) r hr) hc
 
 /-- One run between the pieces of `streamText`: `SInv`, with no hypotheses. -/
-def SI (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j : Nat) (s : State) : Prop :=
-  ∃ H icb x₀ m₀, SCtx Ctx St W SP R H D n m₀ ∧ x₀.length % 16 = P₀ % 16 ∧
-    SInv False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s
+def SI (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j : Nat) (s : State) : Prop :=
+  ∃ H icb x₀ m₀, SCtx M Ctx St W SP R H D n m₀ ∧ x₀.length % 16 = P₀ % 16 ∧
+    SInv M False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s
 
 section
-variable {Ctx St W SP : Addr} {R P₀ : Nat} {enc : Bool} {D : Addr} {n : Nat}
+variable {M : Gcm.X86_64.Stitch.CtxMode} {Ctx St W SP : Addr} {R P₀ : Nat} {enc : Bool} {D : Addr} {n : Nat}
 
-theorem SI.env {j : Nat} {s : State} (h : SI Ctx St W SP R P₀ enc D n j s) : Env Ctx St W SP s :=
+theorem SI.env {j : Nat} {s : State} (h : SI M Ctx St W SP R P₀ enc D n j s) : Env Ctx St W SP s :=
   let ⟨_, _, _, _, _, _, I⟩ := h; I.env
 
 /-- What a piece does to `SInv`, to `SI`. -/
-theorem SI.lift {j j' : Nat} {s : State} {c : Prog isa} {G : State → Prop} (h : SI Ctx St W SP R P₀ enc D n j s)
-    (hw : ∀ {H icb x₀ m₀}, SCtx Ctx St W SP R H D n m₀ → x₀.length % 16 = P₀ % 16 →
-      SInv False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s →
-      WP isa c s fun s' => SInv False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j' s' ∧ G s') :
-    WP isa c s fun s' => SI Ctx St W SP R P₀ enc D n j' s' ∧ G s' := by
+theorem SI.lift {j j' : Nat} {s : State} {c : Prog isa} {G : State → Prop} (h : SI M Ctx St W SP R P₀ enc D n j s)
+    (hw : ∀ {H icb x₀ m₀}, SCtx M Ctx St W SP R H D n m₀ → x₀.length % 16 = P₀ % 16 →
+      SInv M False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s →
+      WP isa c s fun s' => SInv M False Ctx St W SP R H icb x₀ P₀ enc D n m₀ j' s' ∧ G s') :
+    WP isa c s fun s' => SI M Ctx St W SP R P₀ enc D n j' s' ∧ G s' := by
   obtain ⟨H, icb, x₀, m₀, K, hx, I⟩ := h
   exact WP.mono (hw K hx I) fun s' ⟨I', g⟩ => ⟨⟨H, icb, x₀, m₀, K, hx, I'⟩, g⟩
 
-theorem SI.regs {j : Nat} {s s' : State} (h : SI Ctx St W SP R P₀ enc D n j s)
+theorem SI.regs {j : Nat} {s s' : State} (h : SI M Ctx St W SP R P₀ enc D n j s)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : SI Ctx St W SP R P₀ enc D n j s' :=
+    (hwr : s'.wr = s.wr) : SI M Ctx St W SP R P₀ enc D n j s' :=
   let ⟨H, icb, x₀, m₀, K, hx, I⟩ := h; ⟨H, icb, x₀, m₀, K, hx, I.regs hg hm hrd hwr⟩
 
-theorem SI.slots {j : Nat} {s s' : State} (h : SI Ctx St W SP R P₀ enc D n j s)
+theorem SI.slots {j : Nat} {s s' : State} (h : SI M Ctx St W SP R P₀ enc D n j s)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     {d k : Nat} (h₁ : 192 ≤ d) (h₂ : d + k ≤ 224) (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] s.mem s'.mem) :
-    SI Ctx St W SP R P₀ enc D n j s' :=
+    SI M Ctx St W SP R P₀ enc D n j s' :=
   let ⟨H, icb, x₀, m₀, K, hx, I⟩ := h; ⟨H, icb, x₀, m₀, K, hx, I.slots K hg hrd hwr h₁ h₂ hf⟩
 
 end
@@ -74,12 +74,13 @@ end
 /-! ## A part of the data -/
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {R P₀ : Nat} {D : Addr} {n : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+  {R P₀ : Nat} {D : Addr} {n : Nat}
 include L
 
 /-- Before `part`: what `part_ok` needs. -/
-def PartPre (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j k : Nat) (s : State) : Prop :=
-  SI Ctx St W SP R P₀ enc D n j s ∧ j + k ≤ n ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧
+def PartPre (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j k : Nat) (s : State) : Prop :=
+  SI M Ctx St W SP R P₀ enc D n j s ∧ j + k ≤ n ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧
     s.gpr .rbp = BitVec.ofNat 64 k ∧ s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16) ∧
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j ∧
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k ∧
@@ -93,7 +94,7 @@ def PartMid (Ctx St W SP : Addr) (R P₀ : Nat) (D : Addr) (j k : Nat) (s : Stat
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)
 
 omit L in
-theorem PartPre.mid {enc : Bool} {j k : Nat} {s : State} (h : PartPre Ctx St W SP R P₀ enc D n j k s) :
+theorem PartPre.mid {enc : Bool} {j k : Nat} {s : State} (h : PartPre M Ctx St W SP R P₀ enc D n j k s) :
     PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧ s.gpr .rbp = BitVec.ofNat 64 k ∧
       s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16) := by
   obtain ⟨⟨H, icb, x₀, m₀, K, hx, I⟩, hk, h12, hbp, hbx, hdat, hlen, htl⟩ := h
@@ -157,7 +158,7 @@ theorem partMid_absorb {j k : Nat} {s : State}
 
 /-- `crypt` and `absorb` over the same part of the data in both runs. -/
 theorem part_rel (enc : Bool) {j k : Nat} :
-    RelCT isa (fun s₁ s₂ => PartPre Ctx St W SP R P₀ enc D n j k s₁ ∧ PartPre Ctx St W SP R P₀ enc D n j k s₂)
+    RelCT isa (fun s₁ s₂ => PartPre M Ctx St W SP R P₀ enc D n j k s₁ ∧ PartPre M Ctx St W SP R P₀ enc D n j k s₂)
       (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
         else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) fun _ _ => True := by
   let M : State → Prop := fun s => PartMid Ctx St W SP R P₀ D j k s ∧ s.gpr .r12 = D + BitVec.ofNat 64 j ∧
@@ -184,34 +185,35 @@ end
 /-! ## The whole blocks -/
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {R P₀ : Nat} {D : Addr} {n : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+  {R P₀ : Nat} {D : Addr} {n : Nat}
 include L
 
 theorem callBlocks_rel (enc : Bool) {D' : Addr} {n' q : Nat} :
-    RelCT isa (fun s₁ s₂ => ObIn Ctx St W SP R D' n' q s₁ ∧ ObIn Ctx St W SP R D' n' q s₂)
-      (.frame (.push [.rax]) (.call (if enc then v.callees.enc else v.callees.dec).name
-        (if enc then v.callees.enc else v.callees.dec).code) (.pop .rax 1)) fun _ _ => True := by
+    RelCT isa (fun s₁ s₂ => ObIn M Ctx St W SP R D' n' q s₁ ∧ ObIn M Ctx St W SP R D' n' q s₂)
+      (.frame (.push [.rax]) (.call (if enc then B.enc else B.dec).name
+        (if enc then B.enc else B.dec).code) (.pop .rax 1)) fun _ _ => True := by
   cases enc
-  · exact obFrameD_rel v L
-  · exact obFrameE_rel v L
+  · exact obFrameD_rel B L
+  · exact obFrameE_rel B L
 
 /-- Before `streamBlocks`: what `blocks_ok` needs. -/
-def BPre (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j : Nat) (s : State) : Prop :=
-  SI Ctx St W SP R P₀ enc D n j s ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j ∧
+def BPre (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R P₀ : Nat) (enc : Bool) (D : Addr) (n j : Nat) (s : State) : Prop :=
+  SI M Ctx St W SP R P₀ enc D n j s ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j ∧
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n - j) ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)
 
 /-- `streamBlocks`, with the same number of whole blocks, at the same
 address, in both runs. -/
 theorem blocks_rel (enc : Bool) {j : Nat} :
-    RelCT isa (fun s₁ s₂ => BPre Ctx St W SP R P₀ enc D n j s₁ ∧ BPre Ctx St W SP R P₀ enc D n j s₂)
-      (streamBlocks (if enc then v.callees.enc else v.callees.dec)) fun _ _ => True := by
+    RelCT isa (fun s₁ s₂ => BPre M Ctx St W SP R P₀ enc D n j s₁ ∧ BPre M Ctx St W SP R P₀ enc D n j s₂)
+      (streamBlocks (if enc then B.enc else B.dec)) fun _ _ => True := by
   -- After the number of whole blocks: what the call's arguments need.
   let G₁ : State → Prop := fun s => s.zf = some (decide ((n - j) / 16 = 0)) ∧ Env Ctx St W SP s ∧
     ((n - j) / 16 ≠ 0 → WP isa (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++
       ptr .rdx .r14 48 ++ ptr .rcx .r14 16 ++ ([.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] : List Instr) ++
-      ptr .rax .r15 bScrO)) s (ObIn Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16)))
-  have g₁ : ∀ s, BPre Ctx St W SP R P₀ enc D n j s → WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),
+      ptr .rax .r15 bScrO)) s (ObIn M Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16)))
+  have g₁ : ∀ s, BPre M Ctx St W SP R P₀ enc D n j s → WP isa (.block [.mov .rax (.mem (at_ .r15 lenO)),
       .shift .shr .rax 4, .alu .test .rax (.reg .rax)]) s G₁ := fun s h => by
     obtain ⟨⟨H, icb, x₀, m₀, K, hx, I⟩, hdat, hlen, htl⟩ := h
     have hlt := I.data.ok.lt
@@ -230,20 +232,21 @@ theorem blocks_rel (enc : Bool) {j : Nat} :
       rcases hr with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide) (by decide) (by decide)
         (by decide) (by decide) (by decide)) rd₂ wr₂
     exact ⟨he₂, (I.data.drop hj).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁), by omega, K.t_c, K.t_w,
-      K.t_d.sub_right (Offset.sub_base D (by omega)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s⟩
-  have a := rel_both (rel_envT (F := BPre Ctx St W SP R P₀ enc D n j) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by
+      K.t_d.sub_right (Offset.sub_base D (by omega)), K.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, K.rounds.2, K.t_s,
+      (I.ext K).of_eq (rd₂.trans rd₁) (wr₂.trans wr₁) (m₂.trans m₁)⟩
+  have a := rel_both (rel_envT (F := BPre M Ctx St W SP R P₀ enc D n j) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by
     cases h) ⟨_, by taint_decide⟩) g₁ g₁
   have hw₂ : ∀ s, G₁ s ∧ s.zf = some false → WP isa (.block (([.mov .rdi (.reg .r13), .mov .rsi (.mem (at_ .r15 roundsO))] : List Instr) ++
       ptr .rdx .r14 48 ++ ptr .rcx .r14 16 ++ ([.mov .r8 (.mem (at_ .r15 dataO)), .mov .r9 (.reg .rax)] : List Instr) ++
-      ptr .rax .r15 bScrO)) s (ObIn Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16)) :=
+      ptr .rax .r15 bScrO)) s (ObIn M Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16)) :=
     fun s h => h.1.2.2 fun hz => by have := h.1.1; rw [h.2] at this; simp [hz] at this
   have b := rel_both (rel_envT (F := fun s => G₁ s ∧ s.zf = some false) [] (fun _ h => h.1.2.1)
     (fun _ _ _ _ _ h => by cases h) ⟨_, by taint_decide⟩) hw₂ hw₂
-  have hw₃ : ∀ s, ObIn Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16) s →
-      WP isa (.frame (.push [.rax]) (.call (if enc then v.callees.enc else v.callees.dec).name
-        (if enc then v.callees.enc else v.callees.dec).code) (.pop .rax 1)) s (Env Ctx St W SP) := fun s h =>
-    WP.mono (callBlocks_ok v L enc h) fun _ o => h.env.of_saved o.1 o.2.1 o.2.2.1
-  have c := rel_both (callBlocks_rel v L enc) hw₃ hw₃
+  have hw₃ : ∀ s, ObIn M Ctx St W SP R (D + BitVec.ofNat 64 j) (n - j) ((n - j) / 16) s →
+      WP isa (.frame (.push [.rax]) (.call (if enc then B.enc else B.dec).name
+        (if enc then B.enc else B.dec).code) (.pop .rax 1)) s (Env Ctx St W SP) := fun s h =>
+    WP.mono (callBlocks_ok B L enc h) fun _ o => h.env.of_saved o.1 o.2.1 o.2.2.1
+  have c := rel_both (callBlocks_rel B L enc) hw₃ hw₃
   have d := rel_envT (F := Env Ctx St W SP) (c := .block [.mov .rax (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rax),
       .alu .and .rcx (imm 15), .store (at_ .r15 lenO) .rcx, .alu .sub .rax (.reg .rcx),
       .mov .rcx (.mem (at_ .r15 dataO)), .alu .add .rcx (.reg .rax), .store (at_ .r15 dataO) .rcx,
@@ -329,7 +332,7 @@ end
 /-! ## All of `streamText` -/
 
 /-- Before `streamText`: what the entry leaves, in each run. -/
-structure TPre (Ctx St W SP : Addr) (R aL P₀ : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
+structure TPre (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R aL P₀ : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
   env : Env Ctx St W SP s
   data : DataW Ctx St W SP s D n
   rbp : s.gpr .rbp = BitVec.ofNat 64 n
@@ -337,17 +340,19 @@ structure TPre (Ctx St W SP : Addr) (R aL P₀ : Nat) (D : Addr) (n : Nat) (s : 
   tlen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀
   dat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D
   len : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n
-  K : SCtx Ctx St W SP R (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) D n s.mem
+  K : SCtx M Ctx St W SP R (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) D n s.mem
   hP : P₀ < 2 ^ 64
+  cov : Covers [⟨Ctx, M.len⟩] (s.rd ++ s.wr)
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP) {R aL P₀ : Nat} {D : Addr} {n : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+  {R aL P₀ : Nat} {D : Addr} {n : Nat}
 
 /-- What `part_ok` does to `PartPre`. -/
-theorem si_part (enc : Bool) {j k : Nat} {s : State} (h : PartPre Ctx St W SP R P₀ enc D n j k s) :
+theorem si_part (enc : Bool) {j k : Nat} {s : State} (h : PartPre M Ctx St W SP R P₀ enc D n j k s) :
     WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
       else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s fun s' =>
-      SI Ctx St W SP R P₀ enc D n (j + k) s' ∧
+      SI M Ctx St W SP R P₀ enc D n (j + k) s' ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
   let ⟨hs, hk, h12, hbp, hbx, hdat, hlen, htl⟩ := h
   hs.lift fun K hx I => part_ok v K enc I hx hk h12 hbp hbx hdat hlen htl
@@ -355,29 +360,29 @@ theorem si_part (enc : Bool) {j k : Nat} {s : State} (h : PartPre Ctx St W SP R 
 include L in
 /-- `streamText` in two runs, with the same data and lengths. -/
 theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
-    RelCT isa (fun s₁ s₂ => TPre Ctx St W SP R aL P₀ D n s₁ ∧ TPre Ctx St W SP R aL P₀ D n s₂)
-      (streamText v.callees enc) fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
+    RelCT isa (fun s₁ s₂ => TPre M Ctx St W SP R aL P₀ D n s₁ ∧ TPre M Ctx St W SP R aL P₀ D n s₂)
+      (streamText (v.withBlk B) enc) fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
   generalize hk : headLen P₀ n = k
   have hkw := headLen_whole P₀ n
   have hkn := headLen_le P₀ n
   rw [hk] at hkw hkn
   -- Whether there is any data.
-  let T1 : State → Prop := fun s => TPre Ctx St W SP R aL P₀ D n s ∧ s.zf = some (decide (n = 0))
-  have g₁ : ∀ s, TPre Ctx St W SP R aL P₀ D n s → WP isa (.block [.alu .test .rbp (.reg .rbp)]) s T1 := fun s h => by
+  let T1 : State → Prop := fun s => TPre M Ctx St W SP R aL P₀ D n s ∧ s.zf = some (decide (n = 0))
+  have g₁ : ∀ s, TPre M Ctx St W SP R aL P₀ D n s → WP isa (.block [.alu .test .rbp (.reg .rbp)]) s T1 := fun s h => by
     obtain ⟨s', run, hz, hg, hm, hrd, hwr⟩ := test_ok s .rbp h.rbp h.data.ok.lt
     exact WP.of_runBlock ⟨s', run, ⟨h.env.keep (fun r _ => by rw [hg]) hrd hwr, h.data.of_eq hrd hwr,
-      by rw [hg]; exact h.rbp, hm ▸ h.alen, hm ▸ h.tlen, hm ▸ h.dat, hm ▸ h.len, by rw [hm]; exact h.K, h.hP⟩, hz⟩
-  have a := rel_both (rel_envT (F := TPre Ctx St W SP R aL P₀ D n) [.rbp] (fun _ h => h.env) (fun _ _ h₁ h₂ r hr => by
+      by rw [hg]; exact h.rbp, hm ▸ h.alen, hm ▸ h.tlen, hm ▸ h.dat, hm ▸ h.len, by rw [hm]; exact h.K, h.hP, by rw [hrd, hwr]; exact h.cov⟩, hz⟩
+  have a := rel_both (rel_envT (F := TPre M Ctx St W SP R aL P₀ D n) [.rbp] (fun _ h => h.env) (fun _ _ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rbp, h₂.rbp]) ⟨_, by taint_decide⟩) g₁ g₁
   -- The start.
   let F₀ : State → Prop := fun s => T1 s ∧ s.zf = some false
-  let G₂ : State → Prop := fun s => SI Ctx St W SP R P₀ enc D n 0 s ∧
+  let G₂ : State → Prop := fun s => SI M Ctx St W SP R P₀ enc D n 0 s ∧
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧ s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀
   have g₂ : ∀ s, F₀ s → WP isa (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.ite .e (firstFlush v.callees) (.block []))) s G₂ := fun s h => by
     have t := h.1.1
-    refine WP.mono (start_ok v t.K enc (Hyp := False) (icb := 0) t.env rfl t.data (a := List.replicate aL 0)
+    refine WP.mono (start_ok v t.K enc (Hyp := False) (icb := 0) t.env rfl t.data t.cov (a := List.replicate aL 0)
       (c₀ := List.replicate P₀ 0) (by simpa using t.hP) (by simpa using t.alen) (by simpa using t.tlen)
       False.elim False.elim) fun s' ⟨I, sl⟩ => ?_
     simp only [List.length_replicate] at I
@@ -388,7 +393,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have b := rel_both (start_rel v L (aL := aL) (F := F₀) hP (fun s h => ⟨h.1.1.env, h.1.1.tlen, h.1.1.alen⟩))
     g₂ g₂
   -- The data loaded.
-  let G₃ : State → Prop := fun s => SI Ctx St W SP R P₀ enc D n 0 s ∧ s.gpr .r12 = D ∧
+  let G₃ : State → Prop := fun s => SI M Ctx St W SP R P₀ enc D n 0 s ∧ s.gpr .r12 = D ∧
     s.gpr .rbp = BitVec.ofNat 64 n ∧ s.gpr .rbx = BitVec.ofNat 64 (P₀ % 16) ∧
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧ s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀
@@ -412,10 +417,10 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
         by rw [hg .rbx (by decide)]; exact hbx, hm ▸ hdat, hm ▸ hlen, hm ▸ htl⟩, hcf⟩
   have cs := rel_both (rel_envT (F := G₃) [.rbp] (fun _ h => h.1.env) (fun _ _ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.1, h₂.2.2.1]) ⟨_, by taint_decide⟩) g₃s g₃s
-  have pp : ∀ s, G₃ s → PartPre Ctx St W SP R P₀ enc D n 0 n s := fun s h =>
+  have pp : ∀ s, G₃ s → PartPre M Ctx St W SP R P₀ enc D n 0 n s := fun s h =>
     ⟨h.1, by omega, by simp [h.2.1], h.2.2.1, by rw [h.2.2.2.1, Nat.add_zero], by rw [h.2.2.2.2.1]; simp,
       h.2.2.2.2.2.1, by rw [h.2.2.2.2.2.2, Nat.add_zero]⟩
-  have gsm : ∀ s, PartPre Ctx St W SP R P₀ enc D n 0 n s →
+  have gsm : ∀ s, PartPre M Ctx St W SP R P₀ enc D n 0 n s →
       WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
         else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
     fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
@@ -423,7 +428,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     ((G₃ s₁ ∧ s₁.cf = some (decide (n < 256))) ∧ (G₃ s₂ ∧ s₂.cf = some (decide (n < 256)))) ∧
       isa.eval .b s₁ = some true) (fun _ _ h => ⟨pp _ h.1.1.1, pp _ h.1.2.1⟩) fun _ _ h => h
   -- The head's length.
-  let G₄ : State → Prop := fun s => PartPre Ctx St W SP R P₀ enc D n 0 k s ∧
+  let G₄ : State → Prop := fun s => PartPre M Ctx St W SP R P₀ enc D n 0 k s ∧
     s.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n
   have g₄ : ∀ s, G₃ s → WP isa streamHead s G₄ := fun s h => by
     obtain ⟨hs, h12, hbp, hbx, hdat, hlen, htl⟩ := h
@@ -447,7 +452,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     · rw [h₁.2.2.2.1, h₂.2.2.2.1]
     · rw [h₁.2.2.1, h₂.2.2.1]) ⟨_, by taint_decide⟩) g₄ g₄
   -- The head.
-  let G₅ : State → Prop := fun s => SI Ctx St W SP R P₀ enc D n k s ∧
+  let G₅ : State → Prop := fun s => SI M Ctx St W SP R P₀ enc D n k s ∧
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k ∧
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀ ∧
@@ -464,7 +469,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     · rw [sl 216 (by decide) (by decide)]; exact ha
   have e := rel_both ((part_rel v L enc (j := 0) (k := k)).mono (fun _ _ h => ⟨h.1.1, h.2.1⟩) fun _ _ h => h) g₅ g₅
   -- Past the head.
-  have g₆ : ∀ s, G₅ s → WP isa (.block streamNext) s (BPre Ctx St W SP R P₀ enc D n k) := fun s h => by
+  have g₆ : ∀ s, G₅ s → WP isa (.block streamNext) s (BPre M Ctx St W SP R P₀ enc D n k) := fun s h => by
     obtain ⟨hs, hl, hdat, htl, ha⟩ := h
     have hlt := (let ⟨_, _, _, _, _, _, I⟩ := hs; I.data.ok.lt : n < 2 ^ 64)
     exact WP.mono (next_ok hs.env hkn hlt hl hdat htl ha) fun s' ⟨hg, d', t', l', f, hrd, hwr⟩ =>
@@ -475,20 +480,20 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
   have f := rel_both (rel_envT (F := G₅) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g₆ g₆
   -- The whole blocks.
-  let G₇ : State → Prop := fun s => SI Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) s ∧
+  let G₇ : State → Prop := fun s => SI M Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) s ∧
     s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (k + 16 * ((n - k) / 16)) ∧
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 ((n - k) % 16) ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + (k + 16 * ((n - k) / 16)))
-  have g₇ : ∀ s, BPre Ctx St W SP R P₀ enc D n k s → WP isa (streamBlocks (if enc then v.callees.enc
-      else v.callees.dec)) s G₇ := fun s h => by
+  have g₇ : ∀ s, BPre M Ctx St W SP R P₀ enc D n k s → WP isa (streamBlocks (if enc then B.enc
+      else B.dec)) s G₇ := fun s h => by
     obtain ⟨hs, hdat, hlen, htl⟩ := h
     obtain ⟨H, icb, x₀, m₀, K, hx, I⟩ := hs
-    exact WP.mono (blocks_ok v K enc I hx hdat hlen htl (fun hq => hkw.resolve_left (by omega)))
+    exact WP.mono (blocks_ok B K enc I hx hdat hlen htl (fun hq => hkw.resolve_left (by omega)))
       fun s' ⟨I', d', l', t'⟩ => ⟨⟨H, icb, x₀, m₀, K, hx, I'⟩, d', l', t'⟩
-  have g := rel_both (blocks_rel v L enc) g₇ g₇
+  have g := rel_both (blocks_rel B L enc) g₇ g₇
   -- The rest.
   have g₈ : ∀ s, G₇ s → WP isa (.block streamLoad) s
-      (PartPre Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) ((n - k) % 16)) := fun s h => by
+      (PartPre M Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) ((n - k) % 16)) := fun s h => by
     obtain ⟨hs, hdat, hlen, htl⟩ := h
     obtain ⟨s', run, h12, hbp, hbx, hg, hm, hrd, hwr⟩ := load_ok hs.env hdat hlen htl
     rw [toNat_mod16] at hbx
@@ -496,7 +501,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
       hm ▸ hlen, hm ▸ htl⟩
   have i := rel_both (rel_envT (F := G₇) [] (fun _ h => h.1.env) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g₈ g₈
-  have g₉ : ∀ s, PartPre Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) ((n - k) % 16) s →
+  have g₉ : ∀ s, PartPre M Ctx St W SP R P₀ enc D n (k + 16 * ((n - k) / 16)) ((n - k) % 16) s →
       WP isa (if enc then .seq (crypt v.callees) (.seq (.block streamLoad) (absorb v.callees 16))
         else .seq (absorb v.callees 16) (.seq (.block streamLoad) (crypt v.callees))) s (Env Ctx St W SP) :=
     fun s h => WP.mono (si_part v enc h) fun _ h' => h'.1.env
@@ -516,14 +521,19 @@ end
 /-! ## The functions -/
 
 /-- After the entry, what `streamText` needs. -/
-theorem cryptEntry_tpre {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
-    WP isa (.block cryptEntry) s (TPre (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) (s.gpr .rsi).toNat
+theorem cryptEntry_tpre {M : Gcm.X86_64.Stitch.CtxMode} {s : State} (hp : Proof.AesGcm.streamCryptPre M.len s)
+    (hok : M.ok s.mem (s.gpr .rdi)) :
+    WP isa (.block cryptEntry) s (TPre M (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) (s.gpr .rsi).toNat
       (s.gpr .rcx).toNat (s.gpr .r8).toNat (s.gpr .r9) (stackArg s 0).toNat) := by
-  have C := CryptCtx.of hp
+  have C := CryptCtx.of hp M.ge
+  have X := CtxExt.ofCrypt hp hok
   refine WP.mono (cryptEntry_ok rfl rfl rfl rfl rfl rfl C.perm C.ww C.args C.dA C.rounds) fun s₁ E => ?_
   exact ⟨E.env, C.data.of_eq E.rd E.wr, E.rbp, by rw [E.alen, BitVec.ofNat_toNat, BitVec.setWidth_eq],
     by rw [E.tlen, BitVec.ofNat_toNat, BitVec.setWidth_eq], E.dat, E.len,
-    ⟨C.lay, E.rounds, rfl, C.t_c, C.t_s, C.t_w, C.t_d, C.sp24⟩, (s.gpr .r8).isLt⟩
+    ⟨C.lay, E.rounds, rfl, C.t_c, C.t_s, C.t_w, C.t_d, C.sp24, X.w, X.cs, X.cw, X.cd, X.ct,
+      M.frame E.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact X.cw.sub_right (Lay.wSub (by decide))) X.w X.ok⟩,
+    (s.gpr .r8).isLt, by rw [E.rd, E.wr]; exact X.cov⟩
 
 theorem stream_pub {s₀ s₀' : State} (hq : Proof.AesGcm.streamCryptPub s₀ s₀') :
     ∀ r ∈ [Reg.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp], s₀.gpr r = s₀'.gpr r := by
@@ -534,32 +544,44 @@ theorem stream_pub {s₀ s₀' : State} (hq : Proof.AesGcm.streamCryptPub s₀ s
 
 /-- `stream_encrypt` (`enc`) or `stream_decrypt` from two states with the
 same public values. -/
-theorem stream_rel (v : GcmImpl) (enc : Bool) {s₀ s₀' : State} (hp : Proof.AesGcm.streamCryptPre s₀)
-    (hp' : Proof.AesGcm.streamCryptPre s₀') (hq : Proof.AesGcm.streamCryptPub s₀ s₀') :
+theorem stream_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (enc : Bool) {s₀ s₀' : State}
+    (hp : Proof.AesGcm.streamCryptPre M.len s₀) (hok : M.ok s₀.mem (s₀.gpr .rdi))
+    (hp' : Proof.AesGcm.streamCryptPre M.len s₀') (hok' : M.ok s₀'.mem (s₀'.gpr .rdi))
+    (hq : Proof.AesGcm.streamCryptPub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
-      (.seq (.block cryptEntry) (.seq (streamText v.callees enc) (.block restore))) fun _ _ => True := by
-  have L := (CryptCtx.of hp).lay
-  have hE₂ := cryptEntry_tpre hp'
+      (.seq (.block cryptEntry) (.seq (streamText (v.withBlk B) enc) (.block restore))) fun _ _ => True := by
+  have L := (CryptCtx.of hp M.ge).lay
+  have hE₂ := cryptEntry_tpre hp' hok'
   have hq' := hq
   obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, q₈, q₉⟩ := hq'
   simp only [Proof.AesGcm.arg] at q₈ q₉
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← q₈, ← q₉] at hE₂
-  have hE₁ := cryptEntry_tpre hp
+  have hE₁ := cryptEntry_tpre hp hok
   rw [cryptEntry, List.append_assoc] at hE₁ hE₂
   rw [cryptEntry, List.append_assoc]
   exact fn_rel₂ (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rdx) (W := stackArg s₀ 1) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (k := 16) (by simp) ⟨_, by taint_decide⟩ (stream_pub hq) q₉
-    (CryptCtx.of hp).args.2 (CryptCtx.of hp').args.2 ⟨_, by taint_decide⟩ hE₁ hE₂
-    ((streamText_rel v L enc (s₀.gpr .r8).isLt).mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)
+    (CryptCtx.of hp M.ge).args.2 (CryptCtx.of hp' M.ge).args.2 ⟨_, by taint_decide⟩ hE₁ hE₂
+    ((streamText_rel v B L enc (s₀.gpr .r8).isLt).mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)
+
+theorem streamEncryptM_ct (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    ConstantTime isa (Proof.AesGcm.streamEncryptX86_64M M).pre Proof.AesGcm.streamEncryptX86_64.pub
+      (streamEncrypt (v.withBlk B)) :=
+  ct_of_rel fun _ _ hp hp' hq => stream_rel v B true hp.1 hp.2 hp'.1 hp'.2 hq
+
+theorem streamDecryptM_ct (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    ConstantTime isa (Proof.AesGcm.streamDecryptX86_64M M).pre Proof.AesGcm.streamDecryptX86_64.pub
+      (streamDecrypt (v.withBlk B)) :=
+  ct_of_rel fun _ _ hp hp' hq => stream_rel v B false hp.1 hp.2 hp'.1 hp'.2 hq
 
 theorem streamEncrypt_ct (v : GcmImpl) :
     ConstantTime isa Proof.AesGcm.streamEncryptX86_64.pre Proof.AesGcm.streamEncryptX86_64.pub
       (streamEncrypt v.callees) :=
-  ct_of_rel fun _ _ hp hp' hq => stream_rel v true hp hp' hq
+  ct_of_rel fun _ _ hp hp' hq => stream_rel v v.blkB true hp trivial hp' trivial hq
 
 theorem streamDecrypt_ct (v : GcmImpl) :
     ConstantTime isa Proof.AesGcm.streamDecryptX86_64.pre Proof.AesGcm.streamDecryptX86_64.pub
       (streamDecrypt v.callees) :=
-  ct_of_rel fun _ _ hp hp' hq => stream_rel v false hp hp' hq
+  ct_of_rel fun _ _ hp hp' hq => stream_rel v v.blkB false hp trivial hp' trivial hq
 
 end VG.Proof.AesGcm.X86_64

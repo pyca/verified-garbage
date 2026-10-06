@@ -53,6 +53,8 @@ theorem setupT_ok {s₀ : State} (hp : SPre s₀) {s₁ : State} (l0 : ∀ l < 2
       rw [wr₁, hr11]; exact in_sub_int hp.p_in (by simp [pregs] at hk; omega))
     (by rw [hr11]; simp [pregs]; omega)) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
   rw [hr11, Nat.mul_zero, BitVec.add_zero, show 32 * pregs.length = 256 from rfl, m₁] at fr
+  replace fr : Frame [pR s₀] s₀.mem s₂.mem := fr.sub fun r hr => ⟨pR s₀, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
   have hp₂ : ∀ {p : Addr}, Region.Disjoint ⟨p, 16⟩ (pR s₀) → blockAt s₂.mem p = blockAt s₀.mem p :=
     fun hd => by rw [blockAt_outP fr hd]
   refine WP.mono (setupC_ok s₂ (fun l hl => by rw [l₂]; exact l0 l hl)

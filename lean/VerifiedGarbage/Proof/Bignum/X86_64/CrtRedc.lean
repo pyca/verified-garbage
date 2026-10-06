@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtFrame
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
 import VerifiedGarbage.Proof.Bignum.X86_64.PubSetup
 import VerifiedGarbage.Proof.Bignum.CrtMath
+import VerifiedGarbage.Proof.Bignum.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.Exp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 
@@ -20,40 +21,6 @@ namespace VG.Proof.Bignum.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
-
-/-- What `redc` changes in the prime's workspace. -/
-def redcRanges (wx : Nat) : List (Nat × Nat) :=
-  [(slot wx Public.aAcc, 8 * (wx + 2)), (slot wx Public.aTmp, 8 * (wx + 2)), (slot wx aXc, 8 * (wx + 2)),
-    (slot wx aChunk, 8 * (wx + 2)), (slot wx aT, 8 * (wx + 2)), (8 * sSrc, 8), (8 * sRem, 8)]
-
-theorem redcRanges_ok (wx : Nat) : ∀ r ∈ redcRanges wx, 8 * 17 ≤ r.1 ∧ r.1 + r.2 ≤ slot wx 8 := by
-  have := hdr_lt_slot wx 0 (show 31 < 32 by decide)
-  have := slot_le (w := wx) (show 0 < 8 by decide)
-  have := slot_le (w := wx) (show Public.aAcc < 8 by decide)
-  have := slot_le (w := wx) (show Public.aTmp < 8 by decide)
-  have := slot_le (w := wx) (show aXc < 8 by decide)
-  have := slot_le (w := wx) (show aChunk < 8 by decide)
-  have := slot_le (w := wx) (show aT < 8 by decide)
-  have h1 : slot wx 0 ≤ slot wx Public.aAcc := by unfold slot; omega
-  have h2 : slot wx 0 ≤ slot wx Public.aTmp := by unfold slot; omega
-  have h3 : slot wx 0 ≤ slot wx aXc := by unfold slot; omega
-  have h4 : slot wx 0 ≤ slot wx aChunk := by unfold slot; omega
-  have h5 : slot wx 0 ≤ slot wx aT := by unfold slot; omega
-  simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega
-
-theorem redcRanges_arr (wx : Nat) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp)
-    (h3 : j ≠ aXc) (h4 : j ≠ aChunk) (h5 : j ≠ aT) :
-    ∀ r ∈ redcRanges wx, slot wx j + 8 * (wx + 2) ≤ r.1 ∨ r.1 + r.2 ≤ slot wx j := by
-  have := hdr_lt_slot wx j (show 31 < 32 by decide)
-  have s1 := slot_sep (w := wx) h1
-  have s2 := slot_sep (w := wx) h2
-  have s3 := slot_sep (w := wx) h3
-  have s4 := slot_sep (w := wx) h4
-  have s5 := slot_sep (w := wx) h5
-  have := hj
-  simp only [redcRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> simp only [sSrc, sRem, sFn] at * <;> omega
 
 /-- The prime `X` and the number 1 in its workspace, and `-X⁻¹`. -/
 structure XVals (t : State) (B : Addr) (o wx : Nat) (minv : BitVec 64) (X : Nat) : Prop where
@@ -73,13 +40,6 @@ theorem XVals.of_frm {s t : State} {B : Addr} {o wx : Nat} {minv : BitVec 64} {X
   exact ⟨by rw [hf.wv_eq (fun r hr => by have := rN r hr; omega) (by omega)]; exact h.n,
     by rw [hf.word_eq (fun r hr => by have := rN r hr; omega) (by omega)]; exact h.inv,
     by rw [hf.wv_eq (fun r hr => by have := rO r hr; omega) (by omega)]; exact h.one⟩
-
-theorem wv_split (m : Mem) (p : Addr) (d : Nat) {n k L : Nat} (h : n + k = L) :
-    wv m p d L = wv m p d n + 2 ^ (64 * n) * wv m p (d + 8 * n) k := by
-  subst h; exact wv_add m p d n k
-
-/-- The words of `x` read after `k` chunks. -/
-def lowW (w wx k : Nat) : Nat := min w (k * wx)
 
 theorem ofNat_add_off (B : Addr) (a d : Nat) : BitVec.ofNat 64 a + off B d = off B (d + a) := by
   rw [BitVec.add_comm]; simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
@@ -387,11 +347,6 @@ theorem redcAcc_ok (M : Mont) {t : State} {B : Addr} {Z o w wx : Nat} {minv : Bi
   · rw [hm', hval₄]; exact Nat.mod_lt _ (by omega)
   · rw [hm₂, hXc₁]
   · rw [hm₃, hCh₂, hCh₁]
-
-/-- `k < K = ⌈w / w_X⌉` iff the first `k` chunks leave words. -/
-theorem lt_chunks {w wx k : Nat} (hwx : 1 ≤ wx) : k < (w + wx - 1) / wx ↔ k * wx < w := by
-  rw [Nat.lt_iff_add_one_le, Nat.le_div_iff_mul_le (by omega), Nat.add_mul, Nat.one_mul]
-  omega
 
 /-- After `k` chunks: `A R^k ≡ x mod R^k`. -/
 structure RInv (s : State) (B : Addr) (Z o w wx j : Nat) (minv : BitVec 64) (X k : Nat) (t : State) : Prop where
