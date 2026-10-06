@@ -229,4 +229,48 @@ theorem zeroOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
     · rw [ifn (Offset.add_ofNat_ne o (by omega) (by omega) hij), Ow i (by omega)]
   · rw [x12', w12, counter_step hj (by omega)]; exact counter_ne hj (by omega)
 
+/-! ## Failure before decoding -/
+
+theorem Step.weaken {F S : Addr} {ws ws' : List Region} {t u : State} (h : Step F S ws t u)
+    (hs : ∀ r ∈ ws, r ∈ ws') : Step F S ws' t u := h.mono hs
+
+/-- Zeros to `out` and `*msg_len`, and the result `(r = 2) ? 2 : 0`. -/
+theorem decFail_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {o ml : Addr} {k : Nat} (ho : W 19 = o) (hml : W 27 = ml)
+    (hk : W 21 = BitVec.ofNat 64 k) (hk0 : 0 < k) (hk1 : k ≤ 1024) (hw : Covers [⟨o, k⟩] u.wr)
+    (hnw : o.toNat + k ≤ 2 ^ 64) (ha : Apart F S ⟨o, k⟩) (hwm : Covers [⟨ml, 8⟩] u.wr) (ham : Apart F S ⟨ml, 8⟩)
+    (hom : Region.Disjoint ⟨o, k⟩ ⟨ml, 8⟩) :
+    WP isa decFail u fun u' => Lay u' F S ∧ Step F S [⟨o, k⟩, ⟨ml, 8⟩] u u' ∧
+      (∀ i < k, u'.mem (off o i) = 0) ∧ u'.mem.readW ml 64 = 0 ∧ u'.gpr .x0 = fltW W := by
+  refine WP.seq (WP.mono (zeroOut_ok L R ho hk hk0 hk1 hw hnw ha) fun v ⟨Lv, Sv, Rv, x13, hz⟩ => ?_)
+  have h216 : InRegions (v.rd ++ v.wr) (F + BitVec.ofNat 64 216) 8 := Lv.ld (d := 216) (by decide)
+  have h224 : InRegions (v.rd ++ v.wr) (F + BitVec.ofNat 64 224) 8 := Lv.ld (d := 224) (by decide)
+  have rml := Rv.rd8 (d := 216) (k := 27) rfl (by decide) hml
+  have cm : Region.Contains ⟨ml, 8⟩ ml 8 := Region.contains_self _ _
+  have w1 : InRegions v.wr (ml + BitVec.ofNat 64 0) 8 := by
+    rw [BitVec.add_zero, Sv.wr]; exact hwm _ _ ⟨_, List.mem_singleton_self _, cm⟩
+  have R1 : Rep (v.mem.write (ml + BitVec.ofNat 64 0) 8 (0 : BitVec 64)) F S V W :=
+    Rv.apart Lv.geo ham (by rw [BitVec.add_zero]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ cm)
+  have rr1 := R1.rd8 (d := 224) (k := 28) rfl (by decide) rfl
+  refine WP.mono (Q := fun (u' : State) => u'.mem = v.mem.write (ml + BitVec.ofNat 64 0) 8 (0 : BitVec 64) ∧
+      u'.rd = v.rd ∧ u'.wr = v.wr ∧ u'.sp = v.sp ∧ u'.v = v.v ∧ (∀ r ∈ preserved, r ≠ .x30 → u'.gpr r = v.gpr r) ∧
+      u'.gpr .x0 = fltW W) ?_ fun u' ⟨hm, hrd, hwr, hsp, hv, hcs, x0⟩ => ?_
+  · oaep_run [faultBit, isZero, sMl, sR, h216, h224, Lv.sp, rml, x13, w1, rr1, sbc_one, fltW,
+      show BitVec.setWidth 64 (1 : BitVec 16) <<< 0 = 1 by decide,
+      show BitVec.setWidth 64 (2 : BitVec 16) <<< 0 = 2 by decide]
+    oaep_fin
+  have hf : Frame [⟨ml, 8⟩] v.mem u'.mem := by
+    rw [hm, BitVec.add_zero]; exact Frame.write (Frame.refl _ _) (List.mem_singleton_self _) _ cm
+  refine ⟨Lv.congr hsp hwr ?_, (Sv.weaken (by simp)).trans ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv],
+    hf.mono (by simp)⟩, fun i hi => ?_, ?_, x0⟩
+  · rw [hm, show sScr = 8 * 12 from rfl, R1.fr 12 (by decide), Rv.fr 12 (by decide)]
+  · rw [hf _ fun r hr hc => ?_]
+    · exact hz i hi
+    rw [List.mem_singleton.mp hr] at hc
+    exact hom _ ((Offset.contains_base o (d := i) (n := 1) (k := k) (by omega) (by omega)).byte
+      (by rw [BitVec.sub_self]; decide)) hc
+  · rw [hm, BitVec.add_zero]
+    simpa only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq] using
+      Mem.readW_writeW_self64 v.mem ml (0 : BitVec 64)
+
 end VG.Proof.RsaOaep.AArch64
