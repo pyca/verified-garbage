@@ -14,8 +14,8 @@ HMAC, its output length, 8 candidates), its code (`Hash`), what PBKDF2's
 proofs know of it (`HashOK`, `CoreOK`, so that HMAC's `init`, `update` and
 `finalize` are verified), and the sizes the frame and `scratch` are laid
 out for: the output and block sizes of SHA-256, SHA-384 or SHA-512, no
-shorter than the curve's scalars, and states and working space no larger
-than SHA-512's. Each hash function's file builds one for each
+shorter than the curve's scalars (or, for a `wide` curve, SHA-512's), and
+states and working space no larger than SHA-512's. Each hash function's file builds one for each
 implementation of its compression function.
 -/
 
@@ -49,8 +49,8 @@ structure RfcHash where
   hS : H.S ≤ 192
   hW : 8 * H.W ≤ 1872
   hWb : ok.stream.Wb ≤ 1872
-  /-- The hash is no shorter than the scalars. -/
-  hQ : 8 * R.E.n ≤ H.D
+  /-- The hash is no shorter than the scalars, or, for a `wide` curve, SHA-512's. -/
+  hQ : if R.wide then H.D = 64 ∧ H.P.B = 128 else 8 * R.E.n ≤ H.D
 
 namespace RfcHash
 
@@ -70,35 +70,80 @@ theorem hFd : P.H.hmacFin.aarch64Depth ≤ 1 := hmacFin_fdepth P.ok.stream.finDe
 /-- The words of the curve's scalars. -/
 abbrev w : Nat := P.R.E.n
 
+/-- The bytes of the curve's scalars. -/
+abbrev Q : Nat := P.R.E.C.len
+
+/-- The bytes at the frame's top: the digest for `core` and the candidate,
+if two `V`s make a candidate. -/
+abbrev e : Nat := Impl.Ecdsa.Rfc6979.AArch64.extra P.R.wide
+
 /-- The sizes, as the proofs use them. -/
 theorem sizes : P.H.S ≤ 192 ∧ P.H.P.N + P.H.P.B ≤ 192 ∧ 8 * P.H.W ≤ 1872 ∧ P.ok.stream.Wb ≤ 1872 ∧
     P.H.stream.S ≤ 192 ∧ P.H.stream.D = P.H.D ∧ 32 ≤ P.H.D ∧ P.H.D ≤ 64 ∧ P.H.D % 8 = 0 ∧
-    P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 ∧ 4 ≤ P.w ∧ P.w ≤ 6 ∧ 8 * P.w ≤ P.H.D := by
+    P.H.D < P.H.P.B ∧ P.H.P.B ≤ 128 := by
   have hDL := P.ok.sizes.DN
-  refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, ?_, ?_, P.R.n4, P.R.n6, P.hQ⟩ <;>
+  refine ⟨P.hS, P.hS, P.hW, P.hWb, P.hS, rfl, ?_, ?_, ?_, ?_, ?_⟩ <;>
     rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> simp only [h, h'] <;> omega
+
+/-- The sizes of the scalars, as the proofs use them. -/
+theorem wsizes : 4 ≤ P.w ∧ P.w ≤ 9 ∧ 8 ≤ P.Q ∧ P.Q ≤ P.H.D + 8 ∧ P.Q ≤ 8 * P.w ∧ 8 * P.w < P.Q + 8 ∧
+    P.e ≤ 144 := by
+  have hw : 8 ≤ P.Q ∧ 8 * P.w < P.Q + 8 ∧ P.Q ≤ 8 * P.w := P.R.len_words
+  have hQD : P.Q ≤ P.H.D + 8 := by
+    have hQ := P.hQ
+    cases hW : P.R.wide
+    · have := P.R.sizesA hW; rw [hW] at hQ; simp only [Bool.false_eq_true, ite_false] at hQ
+      show P.R.E.C.len ≤ _; omega
+    · have := P.R.sizesW hW; rw [hW] at hQ; simp only [ite_true] at hQ
+      show P.R.E.C.len ≤ _; omega
+  exact ⟨P.R.n4, P.R.n9, hw.1, hQD, hw.2.2, hw.2.1, by
+    simp only [e, Impl.Ecdsa.Rfc6979.AArch64.extra]; split <;> omega⟩
+
+/-- Unless `wide`, the scalars are `8 w` bytes, at most 6 words, and no longer than the digest. -/
+theorem sizesA (h : P.R.wide = false) : P.Q = 8 * P.w ∧ P.w ≤ 6 ∧ P.Q ≤ P.H.D := by
+  have hQ := P.hQ
+  have := P.R.sizesA h
+  rw [h] at hQ
+  simp only [Bool.false_eq_true, ite_false] at hQ
+  rcases this.1 with h' | h' <;> simp only [Q, w] <;> omega
+
+/-- If `wide`, P-521's sizes and SHA-512's. -/
+theorem sizesW (h : P.R.wide = true) : P.w = 9 ∧ P.Q = 66 ∧ P.H.D = 64 ∧ P.H.P.B = 128 := by
+  have hQ := P.hQ
+  have := P.R.sizesW h
+  rw [h] at hQ
+  simp only [ite_true] at hQ
+  exact ⟨this.1, this.2.1, hQ⟩
 
 /-- The digest is at least 32 bytes. -/
 theorem len32 : 32 ≤ P.I.hashLen := by
   rw [P.len]; rcases P.hDB with ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ <;> omega
 
-/-- The digest is at least the scalars' `8 w` bytes. -/
-theorem lenQ : 8 * P.w ≤ P.I.hashLen := by rw [P.len]; exact P.hQ
+/-- The curve's scalars are `Q` bytes. -/
+theorem curveLen : P.I.ecdsa.curve.len = P.Q := by rw [P.ecdsa, P.R.curve]
 
-/-- The curve's scalars are `8 w` bytes. -/
-theorem curveLen : P.I.ecdsa.curve.len = 8 * P.w := by rw [P.ecdsa, P.R.curve, P.R.len]
+/-- HMAC's output is the hash function's. -/
+theorem mac_length (K t : List Byte) : (P.mac K t).length = P.H.D := by
+  have := P.ok.sizes.DN
+  simp only [RfcHash.mac, Spec.Hmac.hmac, Spec.Hmac.hmacBlockKey, P.ok.hash, List.length_take,
+    Proof.MdStream.Md.hash, P.ok.md.digest_length]
+  omega
 
 end RfcHash
 
 /-- Facts about the sizes of the hash function `‹RfcHash›`'s states, working
 space, block and output, and the arithmetic they decide. -/
 macro "anums" : tactic => `(tactic| first | omega |
-  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›; omega))
+  (obtain ⟨_, _, _, _, _, _, _, _, _, _, _⟩ := RfcHash.sizes ‹RfcHash›
+   obtain ⟨_, _, _, _, _, _, _⟩ := RfcHash.wsizes ‹RfcHash›; omega))
 
 /-- The code, with the hash function `P`. -/
 def cfgOf (P : RfcHash) : Cfg where
   H := P.H
   w := P.R.E.n
+  len := P.R.E.C.len
+  wide := P.R.wide
+  sh := P.R.sh
   n := P.R.E.C.n
   tries := 8
   coreN := P.R.coreN

@@ -2,12 +2,19 @@
 //! (`vg_ecdsa_p521_sha512_sign`, which calls `vg_ecdsa_p521_sign`), public
 //! keys (`vg_ec_p521_public_key`), and verification (`vg_ecdsa_p521_verify`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "arm"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 
 use super::{Error, P521, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_p521::vg_ec_p521_public_key;
 use crate::arch::ecdsa_p521::vg_ecdsa_p521_verify;
 use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_p521_sha512::vg_ecdsa_p521_sha512_sign_sha3;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p521_sha512::{
     vg_ecdsa_p521_sha512_sign_avx2, vg_ecdsa_p521_sha512_sign_shani,
@@ -56,6 +63,8 @@ impl sealed::Functions<P521> for Sha512 {
     fn sign(d: &[u8; 66], digest: &[u8; 64]) -> Result<[u8; 132], Error> {
         let sign = match Sha512Backend::select(crate::cpu::detected()) {
             Sha512Backend::Scalar => vg_ecdsa_p521_sha512_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha512Backend::Sha3 => vg_ecdsa_p521_sha512_sign_sha3,
             #[cfg(target_arch = "x86_64")]
             Sha512Backend::ShaNi => vg_ecdsa_p521_sha512_sign_shani,
             #[cfg(target_arch = "x86_64")]
