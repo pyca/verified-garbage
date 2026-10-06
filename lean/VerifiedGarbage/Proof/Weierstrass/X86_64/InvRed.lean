@@ -254,7 +254,7 @@ local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_me
 
 /-- `[dst] = mred p m T` (`n` words), for `[t]` (`n + 1` words) holding `T`, `|T| ≤ 2^63 p`. -/
 theorem mredC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOk M size p s.mem base) {dst t U : Nat}
+    (hM : ModOkW M size p s.mem base) {dst t U : Nat}
     (ht : t + 8 * (M.n + 2) ≤ size) (hd : dst + 8 * M.n ≤ size) (hU : U + 8 * (M.n + 1) ≤ size)
     (htm : t + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ t) (hdt : dst + 8 * M.n ≤ t ∨ t + 8 * (M.n + 2) ≤ dst)
     (htU : t + 8 * (M.n + 2) ≤ U ∨ U + 8 * (M.n + 1) ≤ t) (hUm : U + 8 * (M.n + 1) ≤ M.mo ∨ M.mo + 8 * M.n ≤ U)

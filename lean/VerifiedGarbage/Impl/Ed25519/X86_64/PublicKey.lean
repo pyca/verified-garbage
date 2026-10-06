@@ -96,19 +96,19 @@ def pkHash (f : Callee) (suffix : String) : Prog isa :=
     (.seq (callWith pkUpdateArgs (Spec.Sha512.updateScratchApi.name ++ suffix) (Sha512.X86_64.Stream.update f))
       (callWith pkFinalizeArgs (Spec.Sha512.finalizeScratchApi.name ++ suffix) (Sha512.X86_64.Stream.finalize f)))
 
-/-- The name of the base-point multiplication called, with the field
-multiplications' suffix `fs` (`_adx`, or none). -/
+/-- The name of the base-point multiplication called, with its suffix `fs` (`_adx`,
+`_ifma`, or none). -/
 def scalarBaseName (fs : String) : String := "vg_ed25519_scalar_base" ++ fs
 
-/-- The frame's body. -/
-def pkBody (fld : Arith) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
+/-- The frame's body, calling the base-point multiplication `bs`. -/
+def pkBody (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
   .seq (pkHash f suffix)
     (.seq (.block pkBaseArgs) (.seq (.block pkPrune)
-    (.seq (.call (scalarBaseName fs) (scalarBase_precomputed fld)) (.block pkWipe))))
+    (.seq (.call (scalarBaseName fs) bs) (.block pkWipe))))
 
-/-- `vg_ed25519_public_key` (with `suffix`), with the field multiplications
-`fld`, those of `vg_ed25519_scalar_base` with the suffix `fs`. -/
-def publicKey (fld : Arith) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
-  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBody fld fs f suffix) (.pop .rax 7)
+/-- `vg_ed25519_public_key` (with `suffix`), calling the base-point multiplication `bs`,
+`vg_ed25519_scalar_base` with the suffix `fs`. -/
+def publicKey (bs : Prog isa) (fs : String) (f : Callee) (suffix : String) : Prog isa :=
+  .frame (.push [.rdi, .rsi, .rdx, .rax, .rax, .rax, .rax]) (pkBody bs fs f suffix) (.pop .rax 7)
 
 end VG.Impl.Ed25519.X86_64

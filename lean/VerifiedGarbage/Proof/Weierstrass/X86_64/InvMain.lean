@@ -22,8 +22,8 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 /-- The registers the inversion writes. -/
-theorem invClob_sub {n : Nat} (h4 : 4 ≤ n) (h7 : n < 7) : ∀ r ∈ batchRegs, r ∈ invClob n := by
-  obtain rfl | rfl | rfl : n = 4 ∨ n = 5 ∨ n = 6 := by omega
+theorem invClob_sub {n : Nat} (h4 : 4 ≤ n) (h7 : n < 10) : ∀ r ∈ batchRegs, r ∈ invClob n := by
+  obtain rfl | rfl | rfl | rfl | rfl | rfl : n = 4 ∨ n = 5 ∨ n = 6 ∨ n = 7 ∨ n = 8 ∨ n = 9 := by omega
   all_goals decide
 
 /-- `[dst] = [src]` (`n` words) with a zero word on top. -/
@@ -98,7 +98,7 @@ theorem init_eq (P : InvCfg) : P.init = init₁ P ++ init₂ P := by
   simp only [InvCfg.init, init₁, init₂, List.append_assoc, List.cons_append, List.nil_append]
 
 theorem init₁_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hB : P.B < 2 ^ 16) :
+    (hM : ModOkW P.M size m s.mem base) (hB : P.B < 2 ^ 16) :
     WP isa (.block (init₁ P)) s fun t =>
       t.gpr .rbx = BitVec.ofInt 64 1 ∧ t.gpr .r14 = BitVec.ofNat 64 P.B ∧
       wordsVal t.mem base P.sF P.L = m ∧ wordsVal t.mem base P.sG P.L = wordsVal s.mem base P.base P.M.n ∧
@@ -158,7 +158,7 @@ theorem init₂_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) 
 
 /-- The start: `d = 1`, the count, and `(f, g, a, b) = (m, x, 0, 1)`. -/
 theorem init_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hB : P.B < 2 ^ 16) :
+    (hM : ModOkW P.M size m s.mem base) (hB : P.B < 2 ^ 16) :
     WP isa (.block P.init) s fun t =>
       IInv P base ⟨1, m, wordsVal s.mem base P.base P.M.n, 0, 1⟩ t ∧
       t.gpr .r14 = BitVec.ofNat 64 P.B ∧
@@ -183,7 +183,7 @@ theorem init_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
 
 /-- The batches, counted down in memory, from `invRun 0` to `invRun B`. -/
 theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) {X : Nat} (hX : X < m) (hm2 : m % 2 = 1) (hm1 : 1 < m)
+    (hM : ModOkW P.M size m s.mem base) {X : Nat} (hX : X < m) (hm2 : m % 2 = 1) (hm1 : 1 < m)
     (hB1 : 1 ≤ P.B) (hB : P.B < 2 ^ 16)
     (hI : IInv P base (Divstep.invRun 59 m P.M.minv.toNat X 0) s)
     (hc : s.gpr .r14 = BitVec.ofNat 64 P.B) :
@@ -195,7 +195,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
   have hmi : ((m : Int) * (P.M.minv.toNat : Int) + 1) % 2 ^ 64 = 0 := by exact_mod_cast hM.inv
   refine countLoop_ok (n := P.B)
     (Inv := fun j t => IInv P base (Divstep.invRun 59 m P.M.minv.toNat X (P.B - j)) t ∧
-      t.gpr .r14 = BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOk P.M size m t.mem base ∧
+      t.gpr .r14 = BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOkW P.M size m t.mem base ∧
       KeepRegs batchRegs s t ∧ Unch base (batchW P) s.mem t.mem)
     (fun j t hj1 hjB ⟨It, ct, St, Mt, Kt, Ut⟩ => ?_) (fun t ⟨It, _, _, _, Kt, Ut⟩ => ⟨by simpa using It, Kt, Ut⟩)
     hB1 ⟨by rw [Nat.sub_self]; exact hI, hc, hs, hM, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _⟩
@@ -261,7 +261,7 @@ theorem selRows_ok {P : InvCfg} {s : State} {base : Addr} {size : Nat} (hs : Scr
 
 /-- The end: `[C] = C` or `Cn` by the sign of `f` (`±1`), and `acc = a [C] / R`. -/
 theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) {I : Divstep.IState} (hI : IInv P base I s) (hC : P.C < m)
+    (hM : ModOkW P.M size m s.mem base) {I : Divstep.IState} (hI : IInv P base I s) (hC : P.C < m)
     (hCn : P.Cn < m) :
     WP isa (.block P.finish) s fun t =>
       ∃ Cs, (I.f = 1 → Cs = P.C) ∧ (I.f = -1 → Cs = P.Cn) ∧
@@ -270,7 +270,7 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
         KeepRegs (powClob P.M.n) s t ∧ Unch base (invW P) s.mem t.mem := by
   have hn := hs.nowrap
   obtain ⟨eL, eF, eG, eA, eB, eNF, eNG, eT, eU⟩ := slots P
-  have n4 := hL.n4; have n7 := hL.n7; have htbl := hL.tbl; unfold invTbl at htbl
+  have n4 := hL.n4; have n7 := hL.n10; have htbl := hL.tbl; unfold invTbl at htbl
   have hmt := hL.mo_tbl; unfold invTbl at hmt; have hmo := hM.mo; have hacc := hL.acc
   have hat := hL.acc_tbl; unfold invTbl at hat; have htt := hL.tbl_tmp; unfold invTbl at htt
   have hmc := hL.mo_acc; have hct := hL.acc_tmp; have htmp := hL.tmp
@@ -283,14 +283,14 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
   refine WP.mono (selRows_ok hs₂ mk₂ P.M.n (by rw [hsC]; slot_omega)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have m₂ : s₂.mem = s.mem := by rw [k₂.2.1, k₁.2.1]
-  have M₃ : ModOk P.M size m s₃.mem base :=
+  have M₃ : ModOkW P.M size m s₃.mem base :=
     modOk_out hM (by rw [← m₂]; exact O₃.unch) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; rw [hsC]; slotm_omega) hn
   have hmP : m < 2 ^ (64 * P.M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   have hCs : (if s₂.gpr .rcx = BitVec.allOnes 64 then P.Cn else P.C) < m := by split; exacts [hCn, hC]
   have e₃' : wordsVal s₃.mem base P.sC P.M.n = if s₂.gpr .rcx = BitVec.allOnes 64 then P.Cn else P.C := by
     rw [e₃, Nat.mod_eq_of_lt (by omega)]
-  refine WP.mono (mul_ok hs₃ M₃.toW (o := P.acc) (a := P.sA) (b := P.sC) hacc (by slot_omega)
+  refine WP.mono (mul_ok hs₃ M₃ (o := P.acc) (a := P.sA) (b := P.sC) hacc (by slot_omega)
     (by rw [hsC]; slot_omega) hct (by omega_using [eA, htt, n4]) (by rw [hsC]; omega_using [eNF, htt, n4])
     (by omega_using [hmc]) (by rw [e₃']; exact hCs))
     fun t ⟨Kt, lt, ev⟩ =>
@@ -342,13 +342,13 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
 /-- `[acc] = [base]^(m - 2)` in Montgomery form, for a prime `m > 2`. -/
 theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.Prime) (hT : InvToM m)
     (hL : InvLay P size) (hm2 : 2 < m) (hR : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m) :
+    (hM : ModOkW P.M size m s.mem base) (hX : wordsVal s.mem base P.base P.M.n < m) (hC : InvOk P m) :
     WP isa (InvCfg.inv P) s fun s' => KeepRegs (invClob P.M.n) s s' ∧ Unch base (invW P) s.mem s'.mem ∧
       wordsVal s'.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (m - 2) := by
   have hn := hs.nowrap
-  have n4 := hL.n4; have n7 := hL.n7; have htbl := hL.tbl; have hmt := hL.mo_tbl; have hmo := hM.mo
+  have n4 := hL.n4; have n7 := hL.n10; have htbl := hL.tbl; have hmt := hL.mo_tbl; have hmo := hM.mo
   unfold invTbl at htbl hmt
   have hm2' : m % 2 = 1 := (hpr.eq_one_or_self_of_dvd 2 |>.mt (by omega) |> fun h => by
     rcases Nat.even_or_odd m with ⟨k, hk⟩ | ⟨k, hk⟩
@@ -357,7 +357,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
   have hCm : P.C < m := by rw [hC.C]; exact Nat.mod_lt _ (by omega)
   have hCnm : P.Cn < m := by rw [hC.Cn]; have := hC.Cpos; omega
   -- The modulus, through writes to the working area.
-  have modU : ∀ {mem' : Mem}, Unch base (batchW P) s.mem mem' → ModOk P.M size m mem' base := fun U =>
+  have modU : ∀ {mem' : Mem}, Unch base (batchW P) s.mem mem' → ModOkW P.M size m mem' base := fun U =>
     modOk_out hM U (fun w hw => by
       simp only [batchW, List.mem_cons, List.not_mem_nil, or_false] at hw
       subst hw; unfold invTbl; dsimp only; omega) hn
@@ -392,7 +392,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
     have hodd : (m : Int) % 2 = 1 := by exact_mod_cast hm2'
     have hmP := hM.val ▸ wordsVal_lt s.mem base P.M.mo P.M.n
     have hfn : (m : Int) < 2 ^ (64 * P.M.n) := by exact_mod_cast hmP
-    exact Divstep.divsteps_words hodd h0 h1.le hfn (hC.bound.imp id .inl)
+    exact Divstep.divsteps_words hodd h0 h1.le hfn hC.bound
   -- `x ≠ 0`: `f = ±1` and `x f a 2^(5 B) ≡ 1`.
   have spec : X ≠ 0 → (I.f = 1 ∨ I.f = -1) ∧ (X : Int) * (I.f * I.a) * 2 ^ ((64 - 59) * P.B) ≡ 1 [ZMOD m] :=
     fun hX0 => Divstep.invRun_spec (N := 59) (B := P.B) (by decide) (by exact_mod_cast hm2')

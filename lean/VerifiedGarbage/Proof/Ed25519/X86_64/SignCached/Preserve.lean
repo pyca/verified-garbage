@@ -567,9 +567,9 @@ section
 /-! The nonce's base-point multiplication in complete signing. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 open VG VG.X86_64
-open VG.Impl.Ed25519.X86_64 (scalarBaseName scalarBase_precomputed)
+open VG.Impl.Ed25519.X86_64 (scalarBaseName)
 open VG.Impl.Ed25519.X86_64.SignCached
 open VG.Proof.Ed25519.X86_64.PublicKey
   (Within within_base gpr_ce rsp_ce sub8 ea_stk add_add sx32 ce_byte)
@@ -592,9 +592,9 @@ theorem baseArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
   exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial,
     by rw [sx32 (by decide : 64 < 2 ^ 31), add_add], trivial⟩
 
-theorem base_nosp : NoSp (scalarBase_precomputed fld) := PublicKey.base_nosp
+theorem base_nosp : NoSp bs := PublicKey.base_nosp
 
-theorem base_depth : (scalarBase_precomputed fld).depth ≤ 1 := PublicKey.base_depth
+theorem base_depth : bs.depth ≤ 1 := PublicKey.base_depth
 
 abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 80, 32⟩, L.TBL]
 abbrev baseWr (L : Lay) : List Region := [⟨L.out, 32⟩, L.SCR]
@@ -654,10 +654,10 @@ theorem base_wsub : ∀ r ∈ baseWr L, Within r L.DATA ∨ Within r L.OUT ∨ W
 
 theorem base_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) {scalar : List Byte}
     (hs : Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 80) 32 = scalar) :
-    WP isa (.call (scalarBaseName fs) (scalarBase_precomputed fld)) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call (scalarBaseName fs) bs) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed25519.bytesAt t'.mem L.out 32 =
         Spec.Ed25519.scalarBase scalar ∧ Frame (baseWr L ++ [⟨L.B, 16⟩]) t.mem t'.mem := by
-  refine call_ok hL Proof.Ed25519.X86_64.scalarBase_precomputed_ok base_nosp base_depth hc
+  refine call_ok hL (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) base_nosp base_depth hc
     (base_pre hL hc ha) base_sub base_wsub fun s' hc' hf _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_, hf⟩
   obtain ⟨g1, g2, -⟩ := base_regs ha (baseRd L) (baseWr L)
   have h := hpost

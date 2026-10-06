@@ -53,7 +53,7 @@ conditional subtraction), the Montgomery constants (and the reduction's words
 of `(p + 1) / 2⁶⁴` if `p ≡ -1 (mod 2⁶⁴)`, `red_p`) are right, encodings are
 `len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at least one word), and
 the bits of a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n`
-has fewer than `8 len` bits) are fewer than 32, and for up to six words
+has fewer than `8 len` bits) are fewer than 32, and for up to nine words
 (from four) the inversion by divsteps modulo `p` sound with its batches and
 constants right, and modulo `n` if `fastN`. The group law needs more (`Weierstrass.Law`, which a prime field
 and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
@@ -78,11 +78,11 @@ structure CfgOk (c : Cfg) : Prop where
   sh : c.sh < 32
   /-- The comb, if the curve has one. -/
   comb : ∀ d, c.comb = some d → CombOk c d
-  /-- For up to six words, the inversion by divsteps modulo `p` sound
+  /-- For up to nine words, the inversion by divsteps modulo `p` sound
   (`InvSound`, which a prime gives) with its batches and constants right
   (`InvOk`), and modulo `n` too if `fastN`. -/
-  inv : c.n ≤ 6 → 4 ≤ c.n ∧ InvSound c.C.p ∧ InvOk c.invP c.C.p
-  inv_n : c.fastN = true → c.n ≤ 6 → InvSound c.C.n ∧ InvOk c.invN c.C.n
+  inv : c.n ≤ 9 → 4 ≤ c.n ∧ InvSound c.C.p ∧ InvOk c.invP c.C.p
+  inv_n : c.fastN = true → c.n ≤ 9 → InvSound c.C.n ∧ InvOk c.invN c.C.n
   /-- `a = -3`, for the window method's formulas, and for up to six words an
   even number of them, for its selection of 16 bytes at a time. -/
   am3 : AM3 c.C

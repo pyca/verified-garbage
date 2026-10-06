@@ -24,10 +24,11 @@ theorem coreK_p521 : coreK Impl.Ecdsa.X86_64.p521 = Proof.Ecdsa.X86_64.P521.sign
     implies_true, and_true, Proof.Ecdsa.X86_64.P521.signX86_64, Proof.Ecdsa.X86_64.P521.TblHeld]
   rfl
 
-/-- P-521, with the group law `hL` and the comb's tables `hT`. -/
+/-- P-521, with the group law `hL`, the comb's tables `hT` and the inversions'
+soundness `hI`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve)
-    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
-    RfcCurve where
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) : RfcCurve where
   E := Impl.Ecdsa.X86_64.p521
   inst := Spec.Ecdsa.P521.inst
   curve := rfl
@@ -38,7 +39,7 @@ def p521 (hL : Weierstrass.Law Spec.P521.curve)
   sh_eq := Proof.Ecdsa.X86_64.P521.p521_sh
   coreN := Spec.Ecdsa.P521.signApi.name
   coreC := Impl.Ecdsa.X86_64.signP521
-  coreX := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_x86 hL hT
+  coreX := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_x86 hL hT hI
   coreCT := by rw [coreK_p521]; exact Proof.Ecdsa.X86_64.P521.sign_ct
   coreNs := by lit_decide
   coreSp := by lit_decide

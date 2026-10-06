@@ -15,10 +15,18 @@ def uOps : List FieldOp := [.add 0 2 1, .sub 2 2 1]
 def uEncode (fld : Arith) : Prog isa :=
   .seq (.block (fieldCode fld uOps)) (.seq (pointAffine fld) (.block (freeze 64)))
 
-def engine (fld : Arith) : Prog isa :=
+/-- The scalar's bits, clamped, `[k]B` by the comb `comb`, and its u-coordinate. -/
+def engineOf (fld : Arith) (comb : Prog isa) : Prog isa :=
   .seq (scalarBasePrepare fld) (.seq (.block clampBits)
-    (.seq (combMultiply fld) (uEncode fld)))
+    (.seq comb (uEncode fld)))
+
+def engine (fld : Arith) : Prog isa := engineOf fld (combMultiply fld)
 
 def x25519Base (fld : Arith) : Prog isa := scalarBaseWith (engine fld)
+
+/-- With the comb of AVX512_IFMA (`Ed25519.X86_64.Ifma.combMultiply`), and BMI2's and ADX's
+field multiplications for the rest. -/
+def x25519BaseIfma : Prog isa :=
+  scalarBaseWith (engineOf VG.Impl.X25519.X86_64.adx (Ifma.combMultiply VG.Impl.X25519.X86_64.adx))
 
 end VG.Impl.X25519.X86_64.Base

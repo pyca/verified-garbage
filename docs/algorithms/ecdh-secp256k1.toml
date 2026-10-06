@@ -1,0 +1,5 @@
+name = "ECDH secp256k1"
+family = "Key agreement"
+specs = ["Weierstrass", "Secp256k1", "EcKey", "Ecdh"]
+modules = ["src/ecdh/secp256k1.rs"]
+asm = ["ecdh_secp256k1", "ec_secp256k1"]
