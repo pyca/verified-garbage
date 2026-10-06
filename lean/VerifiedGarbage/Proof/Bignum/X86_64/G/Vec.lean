@@ -88,7 +88,7 @@ theorem OutE.toOutside {B : Addr} {m m' : Mem} (h : OutE l B m m') : Outside B 0
 
 theorem OutE.word_at {B : Addr} {m m' : Mem} (h : OutE l B m m') {p c : Nat} (hp : p < 2)
     (hY : c + 8 ≤ l.oY ∨ l.oY + l.NB ≤ c) (hS : c + 8 ≤ l.oS ∨ l.oS + l.NB ≤ c) (hV : c + 8 ≤ l.oV ∨ l.oV + 8 ≤ c)
-    (hT : c + 8 ≤ l.oTab ∨ l.oTab + 16 * l.NB ≤ c) (hcD : c + 8 ≤ l.D) (hD : l.D + l.NB ≤ 2 ^ 30) :
+    (hT : c + 8 ≤ l.oTab ∨ l.oTab + 16 * l.NB ≤ c) (hcD : c + 8 ≤ l.D) (hD : l.D + l.NB ≤ 2 ^ 20) :
     word m' B (l.D * p + c) = word m B (l.D * p + c) := by
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   refine (Mem.readW_congr fun i hi => (h _ fun p' hp' => ?_).symm).symm

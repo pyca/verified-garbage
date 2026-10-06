@@ -151,7 +151,7 @@ theorem amm_ok (hl : LayOk l) {s : State} {B : Addr} {o a b : Nat} {k : Nat → 
       (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 →
         s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.mxcsr = s.mxcsr := by
-  have hD : l.D + l.NB ≤ 2 ^ 30 := hl.D_bounds.2
+  have hD : l.D + l.NB ≤ 2 ^ 20 := hl.D_bounds.2
   refine WP.seq ?_
   refine setOff (by omega) fun s₁ u₁ => setOff (by omega) fun s₂ u₂ =>
     setOff (by omega) fun s₃ u₃ => WP.block_nil ?_
