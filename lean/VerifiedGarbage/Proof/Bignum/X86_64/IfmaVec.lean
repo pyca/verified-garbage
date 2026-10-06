@@ -13,7 +13,8 @@ and `Y := Y Fin / R`: `Y ≡ x^e Fin`.
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off writeW_outside)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oK1 oTab oS oV oX oY oE oFin oMx mask52)
 
 theorem Scr.mono {s : State} {B : Addr} {Z Z' : Nat} (h : Scr s B Z) (hz : Z' ≤ Z) : Scr s B Z' :=
@@ -295,7 +296,7 @@ theorem ev_of_hi {p : Nat} (hp : p < 2) : ev m' B p 128 = ev m B p 128 :=
 end
 
 
-theorem Outside.readW32 {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m') {d : Nat}
+theorem _root_.VG.Proof.Bignum.Outside.readW32 {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m') {d : Nat}
     (hd : d + 4 ≤ o ∨ o + n ≤ d) (hd' : d + 4 ≤ 2 ^ 64) : m'.readW (off B d) 32 = m.readW (off B d) 32 :=
   (Mem.readW_congr fun i hi => (h _ (by have : i < 4 := hi; rw [ofs_off B (by omega)]; omega)).symm).symm
 

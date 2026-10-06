@@ -17,20 +17,6 @@ open VG.Proof.MlKem.X86_64
 
 /-! ## Regions -/
 
-theorem contains_scr {B a : Addr} {Z : Nat} (h : ofs B a < Z) : (⟨B, Z⟩ : Region).Contains a 1 := by
-  simp only [Region.Contains, ofs] at *; omega
-
-/-- A byte of a region disjoint from the working space is outside it. -/
-theorem out_scr {B : Addr} {Z : Nat} {r : Region} (hd : r.Disjoint ⟨B, Z⟩) {a : Addr} (ha : r.Contains a 1) :
-    Z ≤ ofs B a := by
-  rcases Nat.lt_or_ge (ofs B a) Z with h | h
-  · exact absurd (contains_scr h) (hd a ha)
-  · exact h
-
-theorem contains_byte (p : Addr) {i len : Nat} (hi : i < len) (hlen : len ≤ 2 ^ 64) :
-    (⟨p, len⟩ : Region).Contains (p + BitVec.ofNat 64 i) 1 :=
-  Offset.contains_base p (by omega) (by omega)
-
 /-- A buffer disjoint from the working space, as a byte string. -/
 theorem src_of_region {s : State} {B : Addr} {Z : Nat} {p : Addr} {len : Nat}
     (hr : (⟨p, len⟩ : Region) ∈ s.rd ++ s.wr) (hlen : len ≤ 2 ^ 64)
@@ -81,44 +67,6 @@ def pubContract : Contract isa where
         Spec.Rsa.bytesAt s₂.mem (s₂.gpr .r8) (s₂.gpr .r9).toNat
 
 /-! ## Correctness -/
-
-theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Rsa.bytesAt m p n).length = n := by
-  simp [Spec.Rsa.bytesAt]
-
-theorem i2osp_zero' (k : Nat) : Spec.Rsa.i2osp 0 k = List.replicate k 0 := by
-  rw [i2osp_zero]; simp [List.map_const']
-
-theorem setWidth_flag (c : Bool) : (BitVec.ofNat 64 c.toNat).setWidth 32 = if c then 1 else 0 := by
-  cases c <;> rfl
-
-/-- What `code` leaves: the result `r` and flag `c` of `fail` or `main`. -/
-theorem written_of {m : Mem} {out : Addr} {k : Nat} {rax : BitVec 64} {nb eb xb : List Byte}
-    (hnl : nb.length = k) {r : Nat} {c : Bool}
-    (hb : Spec.Rsa.bytesAt m out k = Spec.Rsa.i2osp r k) (hr : rax = BitVec.ofNat 64 c.toNat)
-    (hc : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true →
-      c = decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb) ∧
-      r = if Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb then
-        Spec.Rsa.os2ip xb ^ Spec.Rsa.os2ip eb % Spec.Rsa.os2ip nb else 0)
-    (hf : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = false → c = false ∧ r = 0) :
-    Spec.Rsa.written m out k (rax.setWidth 32) (Spec.Rsa.publicOp nb eb xb) := by
-  unfold Spec.Rsa.publicOp
-  rw [hnl, hr, setWidth_flag]
-  cases hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k
-  · obtain ⟨rfl, rfl⟩ := hf hv
-    simp only [hv, Bool.false_eq_true, ite_false, Spec.Rsa.written]
-    exact ⟨trivial, by rw [hb, i2osp_zero']⟩
-  · obtain ⟨rfl, rfl⟩ := hc hv
-    by_cases hx : Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb
-    · simp only [hv, hx, ite_true, decide_true, Spec.Rsa.encrypt, Option.map_some, Spec.Rsa.written]
-      simp only [hx, ite_true] at hb
-      exact ⟨trivial, by rw [hb, VG.Proof.Bignum.powMod_eq]⟩
-    · simp only [hv, hx, ite_true, ite_false, decide_false, Spec.Rsa.encrypt, Option.map_none,
-        Spec.Rsa.written, Bool.false_eq_true]
-      simp only [hx, ite_false] at hb
-      exact ⟨trivial, by rw [hb, i2osp_zero']⟩
-
-theorem bytesAt_eq (m : Mem) (p : Addr) (k : Nat) :
-    Spec.Rsa.bytesAt m p k = (List.range k).map fun i => m (p + BitVec.ofNat 64 i) := rfl
 
 theorem stackArgAddr_two (s : State) : stackArgAddr s 2 = stackArgAddr s 0 + BitVec.ofNat 64 16 := by
   simp only [stackArgAddr]; rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
@@ -182,9 +130,6 @@ structure HeadPost (s t : State) : Prop where
   hIn : word t.mem (stackArg s 2) (8 * sIn) = stackArg s 0
   inScr : InScr (stackArg s 2) ((stackArg s 3).toNat * 8) s.mem t.mem
   keep : Keep [.r11, .rax, .rdi, .rdx, .rcx] s t
-
-theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
-  rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- `entry`, and `m` and `k` into `rdx` and `rcx`. -/
 theorem head_ok {s : State} (c : CodeCtx s) :

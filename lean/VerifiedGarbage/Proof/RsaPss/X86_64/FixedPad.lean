@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.CtHash
 namespace VG.Proof.RsaPss.X86_64
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)
-open VG.Proof.Bignum.X86_64 (off)
+open VG.Proof.Bignum (off)
 
 /-- The padding facts used by the remainder of the hash computation. -/
 structure PadResult (t : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64)
@@ -29,7 +29,7 @@ theorem fixedPad80_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte
   refine WP.mono (WP.keep [.rax] (Q := fun v =>
       v.mem = u.mem.writeW (off S (oY + ℓ)) (u.mem (off S (oY + ℓ)) ||| 0x80)) ?_ rfl)
     fun v ⟨hv, kv⟩ => ?_
-  · xrun [ea_at, hcx, Bignum.X86_64.off_off, Lu.sld8 hb, Lu.sst8 hb, fixed_or80]
+  · xrun [ea_at, hcx, VG.Proof.Bignum.off_off, Lu.sld8 hb, Lu.sst8 hb, fixed_or80]
   · have Rv : Rep v.mem F S (v80 V ℓ N) W := by
       rw [hv]
       have rr := Ru.wb Lu.geo (o := oY + ℓ) hb (u.mem (off S (oY + ℓ)) ||| 0x80)

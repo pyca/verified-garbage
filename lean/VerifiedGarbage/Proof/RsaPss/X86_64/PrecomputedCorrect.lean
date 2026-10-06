@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedBody
 
 namespace VG.Proof.RsaPss.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 
 theorem public_safe (v : PublicImpl) : v.code.allInstrs safeI = true := by

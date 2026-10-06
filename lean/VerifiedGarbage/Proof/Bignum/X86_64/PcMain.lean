@@ -32,24 +32,6 @@ theorem seqs_one (c : Prog isa) : seqs [c] = c := rfl
 
 theorem pcMain_eq (M : Mont) : Precompute.main M.mm = seqs (pcLoad ++ (r2Steps M ++ pcOut)) := rfl
 
-/-- What the load changes. -/
-def pcLoadRanges (w : Nat) : List (Nat × Nat) :=
-  [(8 * sW, 8), (8 * sArr 0, 64), (slot w aN, 8 * (w + 2)), (8 * sMinv, 8)]
-
-theorem pcLoadRanges_fixed (w : Nat) :
-    ∀ r ∈ pcLoadRanges w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have h1 : slot w 0 ≤ slot w aN := by unfold slot; omega
-  simp only [pcLoadRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sW, sArr, sMinv] at * <;> omega
-
-theorem pcLoadRanges_le (w : Nat) : ∀ r ∈ pcLoadRanges w, r.1 + r.2 ≤ slot w 8 := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show 0 < 8 by decide)
-  have := slot_le (w := w) (show aN < 8 by decide)
-  simp only [pcLoadRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sW, sArr, sMinv] at * <;> omega
-
 /-- The load: `w`, the bases, `m`, and `-m⁻¹` for the odd `m`. -/
 theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
@@ -118,37 +100,6 @@ theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte
     exact hinv
 
 /-! ## The result to `pre` -/
-
-/-- An address outside the working space is past the `n` bytes of a buffer
-outside it, from that buffer's start. -/
-theorem le_ofs_of_sep {B op x : Addr} {Z n : Nat} (hsep : ∀ i < n, Z ≤ ofs B (op + BitVec.ofNat 64 i))
-    (hx : ofs B x < Z) : n ≤ ofs op x := by
-  rcases Nat.lt_or_ge (ofs op x) n with h | h
-  · have := hsep (ofs op x) h
-    rw [show op + BitVec.ofNat 64 (ofs op x) = x by
-      rw [ofs, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]] at this
-    omega
-  · exact h
-
-/-- A word of a number, as `toWords` gives it. -/
-theorem word_eq_ofNat (m : Mem) (B : Addr) (ed w : Nat) {q : Nat} (hq : q < w) :
-    word m B (ed + 8 * q) = BitVec.ofNat 64 (wv m B ed w / 2 ^ (64 * q)) := by
-  apply BitVec.eq_of_toNat_eq
-  rw [word_of_wv m B ed w hq, BitVec.toNat_ofNat]
-
-/-- The `2 w` words at `op`: two numbers of `w` words. -/
-theorem wordsAt_two {m : Mem} {op : Addr} {w : Nat} {x y : Nat}
-    (hx : ∀ i < w, word m op (8 * i) = BitVec.ofNat 64 (x / 2 ^ (64 * i)))
-    (hy : ∀ i < w, word m op (8 * w + 8 * i) = BitVec.ofNat 64 (y / 2 ^ (64 * i))) :
-    Spec.Rsa.wordsAt m op (2 * w) = Spec.Rsa.toWords x w ++ Spec.Rsa.toWords y w := by
-  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega, List.range_add,
-    List.map_append, List.map_map]
-  congr 1
-  · exact List.map_congr_left fun i hi => hx i (List.mem_range.mp hi)
-  · refine List.map_congr_left fun i hi => ?_
-    simp only [Function.comp_apply]
-    rw [show 8 * (w + i) = 8 * w + 8 * i by omega]
-    exact hy i (List.mem_range.mp hi)
 
 /-- What `main` (and `fail`) leave: the words `ws` to `pre`, the flag `c`
 returned, the saved registers restored, and memory outside the working space
@@ -261,13 +212,6 @@ theorem pcOut_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {op : Add
     · exact h5
   · intro x _ hx
     rw [hm, ho₄ x (Or.inr (by omega)), ho₂ x (Or.inr (by omega))]
-
-/-- The precomputed values of a valid modulus. -/
-theorem publicPrecompute_some {nb : List Byte} {k : Nat} (hnl : nb.length = k)
-    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
-    Spec.Rsa.publicPrecompute nb = some (Spec.Rsa.toWords (Spec.Rsa.os2ip nb) ((k + 7) / 8) ++
-      Spec.Rsa.toWords (2 ^ (128 * ((k + 7) / 8)) % Spec.Rsa.os2ip nb) ((k + 7) / 8)) := by
-  simp only [Spec.Rsa.publicPrecompute, hnl, hv, ite_true]; rfl
 
 /-- `main`, for a valid modulus `m`: `m` and `R² mod m` to `pre`, and 1
 returned. -/

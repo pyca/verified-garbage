@@ -13,7 +13,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 
 /-- A region apart from the frame, our working space and the stack below the
 frame. -/
@@ -31,7 +32,7 @@ theorem Rep.apart {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
     rw [List.mem_singleton.mp hr'] at hc
     exact ha.dS _ ((cS S (o := o) (n := 1) (by omega)).byte (by rw [BitVec.sub_self]; decide)) hc
   fr k hk := by
-    rw [Bignum.X86_64.word, hf.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_)
+    rw [Bignum.word, hf.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r' hr' => ?_)
       (by decide)]
     · exact R.fr k hk
     · rw [List.mem_singleton.mp hr']

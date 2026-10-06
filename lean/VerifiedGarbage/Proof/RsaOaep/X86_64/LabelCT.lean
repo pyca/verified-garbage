@@ -15,7 +15,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp seqs)
 open VG.Proof.MlKem.X86_64 (Keep)
-open VG.Proof.Bignum.X86_64 (off word Two Pins two_post)
+open VG.Proof.Bignum (off word)
+open VG.Proof.Bignum.X86_64 (Two Pins two_post)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
 

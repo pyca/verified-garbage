@@ -13,7 +13,7 @@ AVX512_IFMA), which need AVX512_IFMA, AVX512VL, AVX2, BMI2 and ADX.
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Ifma
 
-open VG.X86_64 VG.Proof.Bignum.X86_64
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 def variant : Proof.Rsa.X86_64.CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_ifma"

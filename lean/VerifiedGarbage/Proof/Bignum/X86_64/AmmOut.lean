@@ -14,7 +14,7 @@ each, as numbers (`Amm52.carried`).
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside ofs_off writeW_outside word_writeW_self)
+open VG.Proof.Bignum (off word ofs Outside ofs_off writeW_outside word_writeW_self)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 carryOut mask52)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr xi qw qword256_ymm)
 

@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 Ver
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 Ver
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify
 open VG.Proof.MlKem.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl pdChkContract)

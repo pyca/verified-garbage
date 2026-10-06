@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Out
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 open VG.Impl.RsaKeyGen.X86_64.Candidate (loadE)
 
 /-- The inputs as numbers: `p`, `q`, `e`, ordered, and `L`. -/

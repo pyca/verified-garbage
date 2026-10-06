@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCorrect
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 Ver
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 Ver
 
 def contract : Contract isa where
   pre := (Spec.RsaPkcs1Sig.verifyPrecomputedContract abi verStack).pre

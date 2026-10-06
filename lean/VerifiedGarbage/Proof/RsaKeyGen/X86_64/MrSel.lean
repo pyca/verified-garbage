@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtChecks
 namespace VG.Proof.RsaKeyGen.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
-open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum.X86_64
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 theorem sel_word (a b : BitVec 64) (c : Bool) : ((a ^^^ b) &&& mask c) ^^^ b = if c then a else b := by

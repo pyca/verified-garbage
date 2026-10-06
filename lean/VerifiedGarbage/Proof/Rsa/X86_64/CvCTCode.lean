@@ -12,7 +12,7 @@ public data (the pointers, the lengths and `n`), and so do `fail` and
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- A state the contract allows, with the public data `p`. -/
 def CVRel (p : CvP) (s : State) : Prop := cvContract.pre s ∧ (cvIn s).pub = p
@@ -55,8 +55,8 @@ def zoVal (ptr : Addr) (len : Nat) : Reg → BitVec 64
   | _ => 0
 
 theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : CvP → Addr) (len : CvP → Nat)
-    (hA : ∀ p s, GF p s → Bignum.X86_64.word s.mem p.B (8 * sPtr) = ptr p ∧
-      Bignum.X86_64.word s.mem p.B (8 * sLen) = BitVec.ofNat 64 (len p) ∧
+    (hA : ∀ p s, GF p s → Bignum.word s.mem p.B (8 * sPtr) = ptr p ∧
+      Bignum.word s.mem p.B (8 * sLen) = BitVec.ofNat 64 (len p) ∧
       (∀ i < len p, InRegions p.W (ptr p + BitVec.ofNat 64 i) 1) ∧
       (∀ i < len p, p.Z ≤ ofs p.B (ptr p + BitVec.ofNat 64 i)) ∧ 1 ≤ len p ∧ len p < 2 ^ 31)
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
@@ -86,7 +86,7 @@ theorem zeroOut_ct {sPtr sLen : Nat} (hP : sPtr < 32) (hL : sLen < 32) (ptr : Cv
       have h256 : 8 * 32 ≤ I.Z := by have := L.z; have := L.k1; omega
       refine WP.mono (zeroOut_ok hs hdi h256 hP hL hp hl hl1 hl2 ⟨fun i hi => by rw [hW]; exact hwr i hi, hsep⟩)
         fun t ⟨_, hx, k⟩ => ?_
-      have fw : ∀ i < 32, Bignum.X86_64.word t.mem I.B (8 * i) = Bignum.X86_64.word s.mem I.B (8 * i) :=
+      have fw : ∀ i < 32, Bignum.word t.mem I.B (8 * i) = Bignum.word s.mem I.B (8 * i) :=
         fun i hi => (frm_scr hsep hx).word_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact Or.inl (by omega))
           (by omega)
       exact ⟨I, rfl, hs.congr k.2.2, (k.gpr (by decide)).trans hdi, ha.congr fun i hi => fw i (by

@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtCall
 
 namespace VG.Proof.RsaPss.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)

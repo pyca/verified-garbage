@@ -95,8 +95,8 @@ namespace Precomputed
 
 variable (mul : Nat → Nat → Nat → Prog isa)
 
-/-- Whether the exponentiation has met a set bit of `e`: 0 or 1. -/
-def sStarted : Nat := sFn 11
+-- Whether the exponentiation has met a set bit of `e` (`Impl/Bignum/Layout.lean`).
+export VG.Impl.Bignum.Public (sStarted)
 
 /-- Save the callee-saved registers and the arguments in the header, with
 the working space's base in `rdi`. -/

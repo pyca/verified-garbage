@@ -21,10 +21,6 @@ structure FailInv (s₀ : State) (op : Addr) (k j : Nat) (t : State) : Prop wher
   bytes : ∀ i < j, t.mem (op + BitVec.ofNat 64 i) = 0
   frame : ∀ x, (∀ i < j, x ≠ op + BitVec.ofNat 64 i) → t.mem x = s₀.mem x
 
-theorem i2osp_zero (k : Nat) : Spec.Rsa.i2osp 0 k = (List.range k).map fun _ => 0 := by
-  unfold Spec.Rsa.i2osp
-  simp
-
 theorem fail_ok {s : State} {B : Addr} {Z k : Nat} {op : Addr} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (hZ : 8 * 32 ≤ Z) (hk1 : 1 ≤ k) (hk' : k < 2 ^ 31)
     (hO : word s.mem B (8 * sOut) = op) (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k)

@@ -13,7 +13,7 @@ frame and the calls use, `decStack`) on the registers and the stack
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
 
 /-- The stack below the stack pointer: the frame of 296 bytes, a return

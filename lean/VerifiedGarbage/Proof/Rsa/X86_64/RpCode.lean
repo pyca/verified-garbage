@@ -12,7 +12,7 @@ contract's precondition on the registers and the stack.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 
 /-! ## The contract on the registers and the stack -/
@@ -294,11 +294,11 @@ theorem rpHead_ok' {s : State} (c : RpCtx s) :
   rw [← hm] at hsv hP hQ hN hK hE hEl hD hDl
   refine ⟨hs₀.congr k₁.2.2, (k₁.gpr (by decide)).trans hdi, hdx, by rw [hcx, ofNat_toNat64],
     ⟨hP, hQ, hN,
-      show Bignum.X86_64.word _ (stackArg s 4) _ = BitVec.ofNat 64 (s.gpr .r9).toNat by rw [hK, ofNat_toNat64],
+      show Bignum.word _ (stackArg s 4) _ = BitVec.ofNat 64 (s.gpr .r9).toNat by rw [hK, ofNat_toNat64],
       hE,
-      show Bignum.X86_64.word _ (stackArg s 4) _ = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hEl, ofNat_toNat64],
+      show Bignum.word _ (stackArg s 4) _ = BitVec.ofNat 64 (stackArg s 1).toNat by rw [hEl, ofNat_toNat64],
       hD,
-      show Bignum.X86_64.word _ (stackArg s 4) _ = BitVec.ofNat 64 (stackArg s 3).toNat by rw [hDl, ofNat_toNat64],
+      show Bignum.word _ (stackArg s 4) _ = BitVec.ofNat 64 (stackArg s 3).toNat by rw [hDl, ofNat_toNat64],
       hsv⟩,
     by rw [hm]; exact InScr.of_outside ho₀ (by omega), (k₀.trans k₁).mono (by decide)⟩
 

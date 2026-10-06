@@ -19,26 +19,6 @@ open VG.Proof.Poly1305.Limbs64 (add_adc_toNat)
 
 theorem sx0 : BitVec.signExtend 64 (0 : BitVec 32) = 0 := rfl
 
-/-- `lo + 2⁶⁴ hi = lo + c` with the carry into `hi`. -/
-theorem addc_toNat (lo hi c : BitVec 64) (h : lo.toNat + c.toNat + 2 ^ 64 * hi.toNat < 2 ^ 128) :
-    (lo + c).toNat + 2 ^ 64 * (hi + 0 +
-      (BitVec.ofBool (decide (2 ^ 64 ≤ lo.toNat + c.toNat))).setWidth 64).toNat =
-      lo.toNat + c.toNat + 2 ^ 64 * hi.toNat := by
-  have := add_adc_toNat lo c hi 0 (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)
-  rwa [show (0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at this
-
-/-- The product `rdx:rax` of `mul`, as a number. -/
-theorem mul_toNat (a b : BitVec 64) :
-    (BitVec.ofNat 64 (a.toNat * b.toNat)).toNat +
-      2 ^ 64 * (BitVec.ofNat 64 (a.toNat * b.toNat / 2 ^ 64)).toNat = a.toNat * b.toNat := by
-  have ha := a.isLt; have hb := b.isLt
-  have hp : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) := Nat.mul_le_mul (by omega) (by omega)
-  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a.toNat * b.toNat / 2 ^ 64) (by omega)]
-  exact Nat.mod_add_div _ _
-
-theorem mul_le (a b : BitVec 64) : a.toNat * b.toNat ≤ (2 ^ 64 - 1) * (2 ^ 64 - 1) :=
-  Nat.mul_le_mul (by have := a.isLt; omega) (by have := b.isLt; omega)
-
 /-- A multiply-accumulate step (`mac src d`) whose operand word is at `aS`,
 accumulator word at `aX`, and destination at `aD`. -/
 theorem mac_ok (s : State) {src : Reg} {d : Int} {aS aX aD : Addr}

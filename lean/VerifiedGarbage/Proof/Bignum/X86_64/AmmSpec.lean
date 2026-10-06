@@ -16,7 +16,8 @@ The numbers are in the vector layout: limb `j` at `off j`
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr)
+open VG.Proof.Bignum (off word ofs Outside off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 mask52)
 
 /-- Limb `j` of the number at `B + d`. -/

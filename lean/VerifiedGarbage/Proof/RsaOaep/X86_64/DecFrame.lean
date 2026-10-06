@@ -13,7 +13,7 @@ working space), and the prologue (`decPro_ok`): the argument slots, as
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep ifp ifn)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack)
@@ -299,7 +299,7 @@ theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15
     fun t12 ⟨k12, L12, R12, f12, rd12, fr12⟩ => ?_
   -- The working space's address and length, and the registers.
   have hs := L12.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have kk := (((((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans
     k10).trans k11).trans k12)
   refine WP.mono (WP.keep [.rax] (Q := fun u' => u'.mem =
@@ -317,7 +317,7 @@ theorem privArgs_ok {s u : State} (hp : DPre s) (L : Lay u (fb s) (stackArg s 15
   have R14 : Rep t14.mem (fb s) (stackArg s 15) V (privW s) := hm14 ▸ R13.wf G' (k := 13) (by decide) _
   have L14 := L13.of_rep' R13 R14 (by simp [upd, privW]) (k14.gpr (by decide)) k14.2.2
   have hs' := L14.slot
-  simp only [Bignum.X86_64.word] at hs'
+  simp only [Bignum.word] at hs'
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8, .r9] (Q := fun u' => u'.mem = t14.mem ∧
       u'.gpr .rdi = off (stackArg s 15) oEm ∧ u'.gpr .rsi = s.gpr .r8 ∧ u'.gpr .rdx = s.gpr .rcx ∧
       u'.gpr .rcx = s.gpr .r8 ∧ u'.gpr .r8 = s.gpr .r9 ∧ u'.gpr .r9 = stackArg s 0) ?_ rfl)

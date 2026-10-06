@@ -19,7 +19,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn load64_eq load32_eq load8_eq store64_eq store32_eq store8_eq)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 
 /-! ## Memory operands -/
 
@@ -203,7 +204,7 @@ theorem Rep.ws {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
   scr x hx := by
     rw [ww_off m S (by unfold oRsa at *; omega) (by unfold oRsa at *; omega), stBytes, R.scr x hx]
   fr k hk := by
-    rw [Bignum.X86_64.word, Mem.readW_writeW_sep (Region.Disjoint.sep G.dFS (cF F hk) (cS S ho)) (by decide)]
+    rw [Bignum.word, Mem.readW_writeW_sep (Region.Disjoint.sep G.dFS (cF F hk) (cS S ho)) (by decide)]
     exact R.fr k hk
 
 theorem stBytes_byte (v : Byte) (o : Nat) (V : Nat → Byte) : stBytes v o V = upd V o v := by
@@ -231,8 +232,8 @@ theorem Rep.wf {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
   fr j hj := by
     by_cases h : j = k
     · subst h
-      rw [Bignum.X86_64.word, Mem.readW_writeW_self64, upd, ifp rfl]
-    · rw [Bignum.X86_64.word, Mem.readW_writeW_sep (Offset.sep F (by unfold nW frameBytes at *; omega)
+      rw [Bignum.word, Mem.readW_writeW_self64, upd, ifp rfl]
+    · rw [Bignum.word, Mem.readW_writeW_sep (Offset.sep F (by unfold nW frameBytes at *; omega)
         (by unfold nW frameBytes at *; have := G.Fw; omega) (by unfold nW frameBytes at *; have := G.Fw; omega))
         (by decide), upd, ifn h]
       exact R.fr j hj
@@ -279,7 +280,7 @@ theorem Rep.frame {m m' : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitV
       · simp only [List.mem_singleton] at hr; subst hr
         exact G.dRS' ho hc
   fr k hk := by
-    rw [Bignum.X86_64.word, hF.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
+    rw [Bignum.word, hF.readW (r := ⟨off F (8 * k), 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
     · exact R.fr k hk
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
@@ -311,7 +312,7 @@ theorem Rep.wbs {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64
     · rw [ifp (e.mpr h), ifp h, Offset.sub_toNat S h.1 (by unfold oRsa at *; omega)]
     · rw [ifn (fun h' => h (e.mp h')), ifn h]; exact R.scr x hx
   fr k hk := by
-    rw [Bignum.X86_64.word]
+    rw [Bignum.word]
     refine Eq.trans (Mem.readW_congr fun i hi => ?_) (R.fr k hk)
     simp only [VG.WriteBytes.writeBytes]
     rw [ifn]

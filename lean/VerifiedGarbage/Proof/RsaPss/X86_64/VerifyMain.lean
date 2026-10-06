@@ -12,7 +12,7 @@ call, which leaves RSAVP1's result (zeros if it fails, `vx`) at
 
 namespace VG.Proof.RsaPss.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 

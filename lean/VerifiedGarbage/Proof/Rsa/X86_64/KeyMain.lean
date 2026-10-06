@@ -14,7 +14,7 @@ returns `keyValid` as 1 or 0 (`main_ok`).
 namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask sN sK exit)
 
 /-- What `main` starts from: the header `entry` leaves, `e`'s value in

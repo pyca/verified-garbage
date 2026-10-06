@@ -72,33 +72,6 @@ theorem storeWord_ok {t : State} {B : Addr} {Z ed p : Nat} (hs : Scr t B Z) (hp 
 
 /-! ## The loop of `loadBE` -/
 
-/-- OS2IP of the first `i` bytes. -/
-def pre (bs : List Byte) (i : Nat) : Nat := Spec.Rsa.os2ip (bs.take i)
-
-theorem pre_succ (bs : List Byte) {i : Nat} (hi : i < bs.length) :
-    pre bs (i + 1) = 256 * pre bs i + (bs[i]).toNat := by
-  unfold pre Spec.Rsa.os2ip
-  rw [← List.take_concat_get hi, List.concat_eq_append, List.foldl_append]
-  rfl
-
-theorem pre_zero (bs : List Byte) : pre bs 0 = 0 := rfl
-
-theorem pre_len (bs : List Byte) : pre bs bs.length = Spec.Rsa.os2ip bs := by
-  unfold pre; rw [List.take_length]
-
-theorem pow256 (a : Nat) : (256 : Nat) ^ (8 * a) = 2 ^ (64 * a) := by
-  rw [show (256 : Nat) = 2 ^ 8 by rfl, ← Nat.pow_mul]; congr 1; omega
-
-/-- Words that are the base-`2⁶⁴` digits of `V` make `V mod 2^(64 n)`. -/
-theorem wv_digits {m : Mem} {B : Addr} {ed V : Nat} (n : Nat)
-    (h : ∀ q < n, word m B (ed + 8 * q) = BitVec.ofNat 64 (V / 256 ^ (8 * q))) :
-    wv m B ed n = V % 2 ^ (64 * n) := by
-  induction n with
-  | zero => simp [wv, Nat.mod_one]
-  | succ n ih =>
-    rw [wv, ih fun q hq => h q (by omega), h n (by omega), BitVec.toNat_ofNat, pow256,
-      show 64 * (n + 1) = 64 * n + 64 by omega, Nat.pow_add, Nat.mod_mul]
-
 /-- After `i` bytes of `loadBE` from `s₀`, with `p = k - i` bytes left. -/
 structure LInv (s₀ : State) (B : Addr) (Z ed k w : Nat) (src : Addr) (bs : List Byte) (i : Nat)
     (t : State) : Prop where
@@ -200,15 +173,6 @@ theorem loadStep_ok {s₀ : State} {B : Addr} {Z ed k w : Nat} {src : Addr} {bs 
       rw [hm', hm₁]
       exact hwords q hq (by omega)
     · rw [hm', hm₁]; exact hI.out
-
-theorem pre_lt (bs : List Byte) {i : Nat} (hi : i ≤ bs.length) : pre bs i < 256 ^ i := by
-  induction i with
-  | zero => exact Nat.one_pos
-  | succ i ih =>
-    rw [pre_succ bs (by omega), Nat.pow_succ]
-    have := ih (by omega)
-    have := (bs[i]'(by omega)).isLt
-    omega
 
 /-- `loadBE`: the `k` bytes at `rsi`, most significant first, as the
 `w = ⌈k / 8⌉` words of the array at `rbx`. -/

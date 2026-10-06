@@ -14,7 +14,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Sign
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify (sp lea)
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64 VG.WriteBytes
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64 VG.WriteBytes
 
 /-! ## Memory in the frame -/
 

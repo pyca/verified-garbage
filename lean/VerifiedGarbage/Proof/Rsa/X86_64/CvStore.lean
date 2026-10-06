@@ -12,7 +12,7 @@ restored (`cvStores_ok`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- Memory below `Z`, after a store outside the working space. -/
 theorem frm_scr {m m' : Mem} {B out : Addr} {Z len : Nat} (hsep : ∀ i < len, Z ≤ ofs B (out + BitVec.ofNat 64 i))

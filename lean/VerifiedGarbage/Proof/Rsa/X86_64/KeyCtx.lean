@@ -12,7 +12,7 @@ it writes or `sMask`.
 namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask)
 
 structure KCtx (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N : Nat) : Prop where
@@ -32,14 +32,14 @@ section
 variable {s t t' : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
 
 /-- An array `j` that `js` leaves alone. -/
-theorem Arrays.wv_other {m m' : Mem} {js : List Nat} (ha : Arrays B w js m m') {j : Nat} (hj : j ∉ js)
+theorem _root_.VG.Proof.Bignum.Arrays.wv_other {m m' : Mem} {js : List Nat} (ha : Arrays B w js m m') {j : Nat} (hj : j ∉ js)
     (hj8 : j < 8) (hZ : slot w 8 ≤ Z) (hn : B.toNat + Z ≤ 2 ^ 64) :
     wv m' B (slot w j) w = wv m B (slot w j) w :=
   ha.wv_eq (fun i hi => by
     have := slot_sep (w := w) (show j ≠ i by rintro rfl; exact hj hi); omega)
     (by have := slot_le (w := w) hj8; omega)
 
-theorem Outside.wv_arr {m m' : Mem} (ho : Outside B (8 * sMask) 8 m m') {j : Nat} (hj8 : j < 8)
+theorem _root_.VG.Proof.Bignum.Outside.wv_arr {m m' : Mem} (ho : Outside B (8 * sMask) 8 m m') {j : Nat} (hj8 : j < 8)
     (hZ : slot w 8 ≤ Z) (hn : B.toNat + Z ≤ 2 ^ 64) {k : Nat} (hk : k ≤ w + 2) :
     wv m' B (slot w j) k = wv m B (slot w j) k :=
   ho.wv (Or.inr (by have := hdr_lt_slot w j (show sMask < 32 by decide); omega))

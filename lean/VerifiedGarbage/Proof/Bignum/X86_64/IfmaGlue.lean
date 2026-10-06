@@ -151,10 +151,10 @@ theorem result_ok {s : State} {B : Addr} {Z o a p X : Nat} {mx : BitVec 64} (hs 
     ho₂.wv (by omega) (by omega)
   rw [show (17 : Nat) = 16 + 1 from rfl, wv] at hacc
   rw [hN₁] at hD₂
-  have hX := VG.Proof.Bignum.X86_64.wv_lt s.mem (off B o) (slot 16 Public.aN) 16
+  have hX := VG.Proof.Bignum.wv_lt s.mem (off B o) (slot 16 Public.aN) 16
   rw [hN] at hX
-  have hDl := VG.Proof.Bignum.X86_64.wv_lt s₂.mem (off B o) (slot 16 Public.aTmp) 16
-  have hTl := VG.Proof.Bignum.X86_64.wv_lt s₁.mem (off B o) (slot 16 Public.aAcc) 16
+  have hDl := VG.Proof.Bignum.wv_lt s₂.mem (off B o) (slot 16 Public.aTmp) 16
+  have hTl := VG.Proof.Bignum.wv_lt s₁.mem (off B o) (slot 16 Public.aAcc) 16
   -- The powers in these facts use core's `instPowNat`; say so, or `generalize` evaluates `2 ^ 1024`.
   generalize @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) 2 (64 * 16) = R
     at hacc hD₂ hX hDl hTl

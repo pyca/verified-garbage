@@ -57,7 +57,7 @@ theorem wsEndT_ok {s : State} {X : Addr} {Z wx : Nat} (hs : Scr s X Z) (hdx : s.
   unfold slot tabBytes Public.aOne; omega
 
 /-- A change within ranges, each within one of `rs'`, is within `rs'`. -/
-theorem Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
+theorem _root_.VG.Proof.Bignum.Frm.widen {B : Addr} {rs rs' : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
     (hr : ∀ r ∈ rs, ∃ r' ∈ rs', r'.1 ≤ r.1 ∧ r.1 + r.2 ≤ r'.1 + r'.2) : Frm B rs' m m' := fun x hx =>
   h x fun r hr' => by
     obtain ⟨r', hr'', h1, h2⟩ := hr r hr'

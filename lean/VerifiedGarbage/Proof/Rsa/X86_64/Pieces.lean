@@ -15,7 +15,7 @@ clear, copy and store arrays (`zeroA_ok`, `copyA_ok`, `loadA_ok`,
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The working space at `B` of `Z` bytes, for `w`-word numbers. -/
 structure Ws (s : State) (B : Addr) (Z w : Nat) : Prop where
@@ -36,8 +36,8 @@ theorem wv_zero {m : Mem} {B : Addr} {d n : Nat} (h : ∀ k < n, word m B (d + 8
 /-- The ranges the pieces may change: arrays, `sMask` and `sMo`. -/
 def Mut (r : Nat × Nat) : Prop := 8 * 32 ≤ r.1 ∨ r = (8 * Impl.Bignum.X86_64.Public.sMask, 8) ∨ r = (8 * sMo, 8)
 
-theorem Mut.ofSlot (w j : Nat) (n : Nat) : Mut (Bignum.X86_64.slot w j, n) :=
-  Or.inl (by unfold Bignum.X86_64.slot hdrBytes; omega)
+theorem Mut.ofSlot (w j : Nat) (n : Nat) : Mut (Bignum.slot w j, n) :=
+  Or.inl (by unfold Bignum.slot hdrBytes; omega)
 
 theorem Ws.congr {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : List (Nat × Nat)}
     (hf : Frm B rs s.mem t.mem) (hm : ∀ r ∈ rs, Mut r) {regs : List Reg} (k : Keep regs s t)

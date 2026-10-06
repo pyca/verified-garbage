@@ -45,7 +45,7 @@ theorem mmY_ok (M : Mont) {t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} 
 
 /-- The modulus' arrays but `Y`, the accumulator and the temporary are kept
 by a change within `gRanges` and a prime's workspace. -/
-theorem Frm.gx_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
+theorem _root_.VG.Proof.Bignum.Frm.gx_wv {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc)
     (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) : wv m' B (slot w j) w = wv m B (slot w j) w := by
   have := slot_le (w := w) hj

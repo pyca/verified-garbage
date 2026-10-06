@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 
 namespace VG.Proof.Rsa.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- An implementation of `vg_rsa_public_precomputed_checked`, with the
 properties its callers need. The suffix and features propagate to callers. -/

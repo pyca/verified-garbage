@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCorrect
 
 namespace VG.Proof.RsaPss.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 variable (G : Spec.Mgf1.Hash)
 

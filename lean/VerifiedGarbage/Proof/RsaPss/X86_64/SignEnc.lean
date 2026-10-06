@@ -15,7 +15,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-! ## `Y` -/
@@ -27,7 +28,7 @@ theorem clearY_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax, .r8] (Q := fun v => v.gpr .rcx = off S oY ∧ v.gpr .rax = 0 ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, h₃, hm⟩, hk⟩ => ?_)
   · have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oY < 2 ^ 31 by decide)]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
@@ -131,7 +132,7 @@ theorem clearEm_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       v.gpr .r10 = BitVec.ofNat 64 k ∧ v.gpr .rax = 0 ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)
     fun v ⟨⟨h₁, h₁₀, h₂, h₃, hm⟩, hkv⟩ => ?_)
   · have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [clearEm, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       L.ld (d := sK) (by decide), R.rd (d := sK) 17 rfl (by decide), hk,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oEm < 2 ^ 31 by decide)]
@@ -206,7 +207,7 @@ theorem putH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
   have c1 : oEm = 2560 := rfl
   have c3 : oDig = 2304 := rfl
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   unfold putH
   refine WP.seq (WP.mono (WP.keep [.rdi, .rsi, .r8, .rax] (Q := fun v => v.gpr .rdi = off S (e + db) ∧
       v.gpr .rsi = off S oDig ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)

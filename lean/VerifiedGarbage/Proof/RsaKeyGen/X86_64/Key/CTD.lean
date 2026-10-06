@@ -11,7 +11,7 @@ and `dOdd`'s blocks.
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 /-- A header store of some value into slot `i`. -/
 theorem KS.hdrSome {I : KIn} {m₀ : Mem} {s t : State} (h : KS I m₀ s) {i : Nat} (hi : 29 ≤ i ∧ i < 32)

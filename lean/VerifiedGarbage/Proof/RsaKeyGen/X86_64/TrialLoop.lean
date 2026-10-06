@@ -12,7 +12,7 @@ each of its first `N` words, and leaves ZF clear iff one divides `c`
 namespace VG.Proof.RsaKeyGen.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
-open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum.X86_64
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 theorem slot_ext (w j : Nat) (hj : 7 ≤ j) : slot w j = slot w aOne + (j - 7) * (8 * (w + 2)) := by

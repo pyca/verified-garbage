@@ -17,8 +17,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-! ## Helpers -/
-
 namespace CrtCTQ
 
 /-- `Φ a` fixes `rdi`. -/
@@ -44,7 +42,7 @@ theorem gxRanges_le {w o wx : Nat} (hlo : slot w 8 ≤ o) :
 
 /-- The modulus' header words but `sD`'s and `sCnt`'s, past a change within
 `gRanges` and a prime's workspace. -/
-theorem Frm.gx_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
+theorem _root_.VG.Proof.Bignum.Frm.gx_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
     (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD)
     (h2 : i ≠ Public.sCnt) : word m' B (8 * i) = word m B (8 * i) := by
   have := hdr_lt_slot w Public.aAcc hi
@@ -171,8 +169,6 @@ theorem unit_ct (M : Mont) {sl : Nat} (hG : GPowCT M sl) (hR : RedcCT M Public.a
     (pinsRdi (fun p : UPub => p.B) fun _ _ ⟨_, _, hg, _⟩ => hg.rdi) hT fun _ _ h => blk_rpre h) ?_)
   exact two_map xp (fun _ _ h => h) (redcCopy_ct M hR)
 
-/-! ## The power in a prime's phase -/
-
 namespace CrtCTQ
 
 /-- After entering the prime's workspace. -/
@@ -246,8 +242,6 @@ theorem pow_ct (M : Mont) {sl sd slen : Nat} (hR : RedcCT M Public.aY) (hE : Exp
   exact RelCT.seqs_append (by simp [redc]) (by simp [Crt.expLoop]) (RelCT.seq (two_post (Ψ := EPre sd slen)
     (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, hX, hwx2, hwx, hw28, hX1, _⟩ =>
       ⟨mx, X, hc, hX, hwx2, hwx, by omega, hX1, by decide⟩) hR) fun _ _ h => redc_ePre M h) hE)
-
-/-! ## `q`'s phase -/
 
 namespace CrtCTQ
 

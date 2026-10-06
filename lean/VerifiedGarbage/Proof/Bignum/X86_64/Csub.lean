@@ -15,36 +15,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- The mask of a borrow, as `sbb rbp, rbp` leaves it. -/
-def mask (c : Bool) : BitVec 64 := 0 - (BitVec.ofBool c).setWidth 64
-
-theorem mask_false : mask false = 0 := rfl
-theorem mask_true : mask true = BitVec.allOnes 64 := rfl
-
-/-- `add rbp, rbp` sets the carry from the mask. -/
-theorem cf_mask (c : Bool) : decide (2 ^ 64 ≤ (mask c).toNat + (mask c).toNat) = c := by
-  cases c <;> decide
-
-/-- `sbb`, as numbers: `a - b - c`, plus `2⁶⁴` if it borrows. -/
-theorem sbb_toNat (a b : BitVec 64) (c : Bool) :
-    (a - b - (BitVec.ofBool c).setWidth 64).toNat + b.toNat + c.toNat =
-      a.toNat + 2 ^ 64 * (decide (a.toNat < b.toNat + c.toNat)).toNat := by
-  have ha := a.isLt; have hb := b.isLt
-  have hc : ((BitVec.ofBool c).setWidth 64).toNat = c.toNat := by cases c <;> rfl
-  have hc1 := Bool.toNat_le c
-  rw [BitVec.toNat_sub, BitVec.toNat_sub, hc]
-  by_cases h : a.toNat < b.toNat + c.toNat <;> simp only [h, decide_true, decide_false,
-    Bool.toNat_true, Bool.toNat_false] <;> omega
-
-/-- The selection: `((a ^ b) & m) ^ b` is `a` for the mask of `true`, `b`
-for that of `false`. -/
-theorem select_mask (a b : BitVec 64) (c : Bool) :
-    ((a ^^^ b) &&& mask c) ^^^ b = if c then a else b := by
-  cases c
-  · simp [mask_false]
-  · simp only [mask_true, BitVec.and_allOnes, ite_true]
-    rw [BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
-
 /-! ## `T - m` -/
 
 /-- After `j` words of `subMod`'s loop from `s₀`: `D_j + m_j = T_j + 2^(64 j) c`

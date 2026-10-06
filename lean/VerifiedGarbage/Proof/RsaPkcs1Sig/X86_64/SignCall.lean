@@ -15,7 +15,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Sign
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify (sp lea)
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
 open VG.Proof.Rsa.X86_64 (CrtImpl chkContract code_correct code_spSafe)
 
 /-! ## The private operation -/

@@ -13,15 +13,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- Numbers at two places with the same words. -/
-theorem wv_congr2 {m m' : Mem} {p p' : Addr} {d d' n : Nat}
-    (h : ∀ i < n, word m' p' (d' + 8 * i) = word m p (d + 8 * i)) : wv m' p' d' n = wv m p d n := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    simp only [wv]
-    rw [ih fun i hi => h i (by omega), h n (by omega)]
-
 /-- After copying `j` words from `S + eS` to `D + eD`. -/
 structure CopyInv (s₀ : State) (S D : Addr) (eS eD : Nat) (j : Nat) (t : State) : Prop where
   keep : Keep [.rax, .r14] s₀ t

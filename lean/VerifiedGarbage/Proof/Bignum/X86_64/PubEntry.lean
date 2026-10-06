@@ -27,7 +27,7 @@ theorem word_skip {m : Mem} {B : Addr} {i j : Nat} {v x : BitVec 64} (h : word m
     (hij : i ≠ j) (hi : i < 32) (hj : j < 32) : word (m.writeW (off B (8 * i)) v) B (8 * j) = x :=
   (hdrStore_hdr m B v hi hj hij).trans h
 
-theorem Outside.store_hdr {B : Addr} {n : Nat} {m m' : Mem} (h : Outside B 0 n m m') {i : Nat}
+theorem _root_.VG.Proof.Bignum.Outside.store_hdr {B : Addr} {n : Nat} {m m' : Mem} (h : Outside B 0 n m m') {i : Nat}
     (hi : 8 * i + 8 ≤ n) (hn : n ≤ 2 ^ 64) (v : BitVec 64) : Outside B 0 n m (m'.writeW (off B (8 * i)) v) :=
   fun x hx => (writeW_outside m' B v (by omega) x (by omega)).trans (h x hx)
 

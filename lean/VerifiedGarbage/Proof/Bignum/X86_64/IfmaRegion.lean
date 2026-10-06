@@ -13,7 +13,8 @@ modulus, `2¹⁰⁵⁶ mod X`, the base and `R` in the vector layout (`arr52_ok`
 namespace VG.Proof.Bignum.X86_64.AmmSym
 
 open VG VG.X86_64 VG.Proof.Bignum.Amm52
-open VG.Proof.Bignum.X86_64 (off word ofs Outside off_off Scr ofs_off writeW_outside wv)
+open VG.Proof.Bignum (off word ofs Outside off_off ofs_off writeW_outside wv)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Rsa.X86_64.CrtIfma (D oM oK0 oK1 oTab oS oV oX oY oE oFin oMx mask52)
 
 /-! ## Stores of `rax` -/
@@ -76,7 +77,7 @@ theorem word_stMem (C : Addr) (v : BitVec 64) {e : Nat} :
         rcases hs x (List.mem_cons_of_mem _ hx) with h | h
         · exact absurd (h ▸ hx) hl
         · exact h) h'']
-      exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+      exact VG.Proof.Bignum.word_writeW_self _ _ _ _
 
 /-- A frame at `B + o` as one at `B`. -/
 theorem Outside.rebase {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside (off B o) 0 n m m')
@@ -213,7 +214,7 @@ theorem finOne_ok {s : State} {C : Addr} (hC : s.gpr .r11 = C) (ha : s.gpr .rax 
   · rw [me]
     by_cases e : j = 0
     · subst e
-      exact VG.Proof.Bignum.X86_64.word_writeW_self _ _ _ _
+      exact VG.Proof.Bignum.word_writeW_self _ _ _ _
     · rw [(writeW_outside _ C _ (by simp only [oFin]; omega_arith)).word (.inr (by rw [off_lim]; omega_arith))
         (by have := hF j hj; simp only [oFin] at this ⊢; omega_arith)]
       rw [word_stMem _ _ _ _ (List.mem_map.mpr ⟨j, List.mem_range.mpr hj, rfl⟩) (fun d hd => by
@@ -466,7 +467,7 @@ theorem word_below_frm {m m' : Mem} {B : Addr} {rs : List (Nat × Nat)} {L : Nat
     (hr : ∀ r ∈ rs, L ≤ r.1) {d : Nat} (hd : d + 8 ≤ L) (hz : L ≤ 2 ^ 64) : word m' B d = word m B d :=
   hf.word_eq (fun r h => .inl (by have := hr r h; omega_arith)) (by omega_arith)
 
-theorem Hdr.of_below {m m' : Mem} {B : Addr} {o wx : Nat} {mx : BitVec 64} (hH : Hdr m (off B o) wx mx)
+theorem _root_.VG.Proof.Bignum.Hdr.of_below {m m' : Mem} {B : Addr} {o wx : Nat} {mx : BitVec 64} (hH : Hdr m (off B o) wx mx)
     {rs : List (Nat × Nat)} (hf : Frm B rs m m') (hr : ∀ r ∈ rs, o + hdrBytes ≤ r.1)
     (hz : o + hdrBytes ≤ 2 ^ 64) : Hdr m' (off B o) wx mx := by
   have hh : ∀ i < 32, word m' (off B o) (8 * i) = word m (off B o) (8 * i) := fun i hi => by

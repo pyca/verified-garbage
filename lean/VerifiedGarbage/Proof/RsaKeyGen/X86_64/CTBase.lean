@@ -15,7 +15,7 @@ there, and each piece starts from what correctness says about the header
 
 namespace VG.Proof.RsaKeyGen.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Bignum.X86_64
 
 /-- The taint of a piece: `rs` and `rdi` public, `rdi` the base of writable
 region 2 (the scratch space), whose header words `S` are public. -/
