@@ -149,6 +149,7 @@ def ZBinOp.name : ZBinOp → String
   | .vpaddq => "vpaddq" | .vpmuludq => "vpmuludq" | .vpandq => "vpandq" | .vporq => "vporq"
   | .vpandnq => "vpandnq"
   | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vpshufb => "vpshufb"
+  | .vpsubq => "vpsubq"
 
 def ZShiftOp.name : ZShiftOp → String
   | .vpsllq => "vpsllq" | .vpsrlq => "vpsrlq"
@@ -170,6 +171,8 @@ def ZOp.asm : ZOp → String
   | .vpternlogd d a b n => s!"vpternlogd {d.zname}, {a.zname}, {b.zname}, {n.toNat}"
   | .vprorq d r n => s!"vprorq {d.zname}, {r.zname}, {n.toNat}"
   | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
+  | .vpmadd52 hi d a b =>
+    s!"{if hi then "vpmadd52huq" else "vpmadd52luq"} {d.zname}, {a.zname}, {b.zname}"
 
 def HReg.name : HReg → String
   | .xmm16 => "xmm16" | .xmm17 => "xmm17" | .xmm18 => "xmm18" | .xmm19 => "xmm19"

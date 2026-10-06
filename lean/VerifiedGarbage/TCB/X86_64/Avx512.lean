@@ -19,6 +19,7 @@ inductive ZBinOp
   | vpaddd | vpxord | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddq | vpmuludq | vpandq | vporq | vpandnq
   | vaesenc | vaesenclast | vpshufb
+  | vpsubq
   deriving DecidableEq, Repr
 
 /-- EVEX-encoded shifts of each quadword by an immediate count,
@@ -62,18 +63,25 @@ inductive ZOp
   quadwords of each 256-bit half of `zmm2` permuted by `imm8` (see
   `ZOp.exec`). -/
   | vpermq (dst src : XReg) (order : BitVec 8)
+  /-- `vpmadd52luq zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 B4 /r`), or with `hi`
+  `vpmadd52huq zmm1, zmm2, zmm3` (`EVEX.512.66.0F38.W1 B5 /r`); AVX512_IFMA:
+  each quadword of `zmm1` plus the low (or high) 52 bits of the 104-bit product
+  of the low 52 bits of the quadwords of `zmm2` and `zmm3` (see `madd52`). -/
+  | vpmadd52 (hi : Bool) (dst src1 src2 : XReg)
   deriving DecidableEq, Repr
 
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPXORD, VPUNPCK{L,H}{DQ,QDQ}, VPADDQ, VPMULUDQ, VPANDQ, VPORQ and
 VPANDNQ are, lane by lane, PADDD, PXOR, PUNPCK{L,H}{DQ,QDQ}, PADDQ, PMULUDQ,
-PAND, POR and PANDN (SDM Vol. 2, each instruction's "EVEX.512 encoded
+PAND, POR and PANDN, and VPSUBQ is PSUBQ (SDM Vol. 2, each instruction's "EVEX.512 encoded
 version" pseudocode, with `SRC1` in place of the destination and no write
 mask nor embedded broadcast, the second source being a register: VPADDD and
 VPXORD act on each doubleword; VPADDQ (`DEST[i+63:i] := SRC1[i+63:i] +
-SRC2[i+63:i]`), VPANDQ, VPORQ and VPANDNQ (`DEST[i+63:i] := ((NOT
-SRC1[i+63:i]) BITWISE AND SRC2[i+63:i])`) on each quadword, which on each
-128-bit lane is what PADDQ, PAND, POR and PANDN compute; VPMULUDQ
+SRC2[i+63:i]`), VPSUBQ ("PSUBB/PSUBW/PSUBD/PSUBQ", `EVEX.512.66.0F.W1 FB /r`:
+`DEST[i+63:i] := SRC1[i+63:i] - SRC2[i+63:i]`), VPANDQ, VPORQ and VPANDNQ
+(`DEST[i+63:i] := ((NOT SRC1[i+63:i]) BITWISE AND SRC2[i+63:i])`) on each
+quadword, which on each 128-bit lane is what PADDQ, PSUBQ, PAND, POR and PANDN
+compute; VPMULUDQ
 (`DEST[i+63:i] := ZeroExtend64( SRC1[i+31:i]) * ZeroExtend64( SRC2[i+31:i]
 )`) multiplies the low doublewords of each quadword, as PMULUDQ does on
 each lane's two; and VPUNPCK* interleave the elements of each 128-bit lane
@@ -85,6 +93,7 @@ def ZBinOp.sse : ZBinOp → XBinOp
   | .vpaddq => .paddq | .vpmuludq => .pmuludq | .vpandq => .pand | .vporq => .por
   | .vpandnq => .pandn
   | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vpshufb => .pshufb
+  | .vpsubq => .psubq
 
 /-! Intel SDM Vol. 2, "AESENC", "AESENCLAST" and "PCLMULQDQ":
 EVEX.512 VAESENC/VAESENCLAST and VPCLMULQDQ apply the same operation as
@@ -176,7 +185,13 @@ SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
   (IMM8[1:0] * 64))[63:0]; …; TMP_DEST[511:448] := (TMP_SRC[511:256] >>
   (IMM8[7:6] * 64))[63:0]`, with `TMP_SRC := SRC`: each 256-bit half of
   `DEST` is the same half of `SRC` permuted as VEX.256 VPERMQ permutes a
-  register (`permQwords`). -/
+  register (`permQwords`).
+* VPMADD52LUQ and VPMADD52HUQ ("EVEX encoded version", `(KL, VL) = (8,
+  512)`, no write mask, a register `SRC3`): `temp128 :=
+  ZeroExtend64(SRC2[i+51:i]) * ZeroExtend64(SRC3[i+51:i]); DEST[i+63:i] :=
+  DEST[i+63:i] + ZeroExtend64(temp128[51:0])` (`temp128[103:52]` for
+  VPMADD52HUQ) for each of the eight quadwords: `madd52` on each lane, as the
+  256-bit forms (`Avx.lean`) on two. -/
 def ZOp.exec : ZOp → State → State
   | .zbin op d a b, s =>
     let f (i : Nat) := op.sse.eval (s.zlane a i) (s.zlane b i)
@@ -217,5 +232,8 @@ def ZOp.exec : ZOp → State → State
     let hi := permQwords (s.zlane r 3 ++ s.zlane r 2) o
     s.setZ d (lo.extractLsb' 0 128) (lo.extractLsb' 128 128) (hi.extractLsb' 0 128)
       (hi.extractLsb' 128 128)
+  | .vpmadd52 hi d a b, s =>
+    let f (i : Nat) := madd52 hi (s.zlane d i) (s.zlane a i) (s.zlane b i)
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
 
 end VG.X86_64
