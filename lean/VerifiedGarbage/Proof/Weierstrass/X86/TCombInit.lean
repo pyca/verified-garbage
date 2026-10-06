@@ -54,18 +54,13 @@ theorem movEsi_ok (s : State) {j : Nat} (_hj : j < 2^31) :
 
 /-- `[k]G` into `A`, for `k < 2^kbytes` whose bits are the table at `K.bits`;
 only `powClob` and `tcombW` change. -/
-theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
-    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
-    (hM3 : AM3 C)
-    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
+theorem tcombInit_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hV : TCombVals K C tbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
-    WP isa (.seq (.block K.initCore) (.loop K.step .ne)) s fun s' => KeepRegs powClob s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
-      ModOkW K.M size C.p s'.mem base ∧
-      (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
-      Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
-        (mul k (G C)) := by
+    WP isa (.block K.initCore) s fun s' =>
+      TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' K.J := by
   have hn := hs.nowrap
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
@@ -86,7 +81,6 @@ theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T 
   have hbz := hL.bits
   have hzw : K.w * K.J ≤ K.kbytes + 4 * K.zw := by unfold TCombCfg.zw; have := hL.kbytes; omega
   have hJ31 : K.J < 2 ^ 31 := by omega
-  refine WP.seq ?_
   have e : K.initCore = setConst K.M.n K.A.x K.start.1 ++ (setConst K.M.n K.A.y K.start.2 ++
       (setConst K.M.n K.A.z K.one ++ ([.mov .eax (.imm 0)] ++ ((List.range K.zw).map
         (fun i => .store (sc (K.bits + K.kbytes + 4 * i)) .eax) ++
@@ -123,10 +117,7 @@ theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T 
     rw [m₆]
     refine (U₃.trans (show Unch base [(K.bits + K.kbytes, 4 * K.zw)] s₃.mem s₅.mem by
       rw [← k₄.2.1]; exact O₅.unch)).mono fun _ hw => hw
-  have U₆full : Unch base (tcombW K) s.mem s₆.mem := U₆.mono fun w hw => by
-    rcases List.mem_append.mp hw with hw | hw
-    · exact List.mem_append_left _ hw
-    · exact List.mem_append_right _ (List.mem_append_left _ hw)
+  have U₆full : Unch base (tcombW K) s.mem s₆.mem := U₆
   have hmo := tcombW_mo hL hM
   -- `A`, apart from the cleared words.
   have hA5 : ∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s₆.mem base x K.M.n = wordsVal s₃.mem base x K.M.n :=
@@ -140,8 +131,6 @@ theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T 
   have vy : wordsVal s₆.mem base K.A.y K.M.n = K.start.2 := by
     rw [hA5 _ (by simp), O₃.wordsVal ayz (b64 _ (by tcomb_mem)), e₂]
   have vz : wordsVal s₆.mem base K.A.z K.M.n = K.one := by rw [hA5 _ (by simp), e₃]
-  have hk : k < 2 ^ (K.w * K.J) :=
-    Nat.lt_of_lt_of_le hF.k_lt (Nat.pow_le_pow_right (by decide) hL.kbytes)
   have I₆ : TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s₆ K.J := by
     refine ⟨hs₅.of_keeps k₆.keeps (by decide), b₆, ?_, U₆full, hM.unch U₆full hmo (by omega), ?_, ?_, fun t ht => ?_, ?_,
       by rw [unch_read32 U₆ (by have := hL.ptr_le; omega) (tcombW_ptr hL)]; exact hF.tsym⟩
@@ -163,9 +152,8 @@ theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T 
           rcases List.mem_append.mp hw with hw | hw
           · exact combW_bits hL ht w hw
           · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-            rcases hw with rfl | rfl
-            · dsimp only; omega
-            · have := hL.ptr_bits; dsimp only; omega)
+            rcases hw with rfl
+            dsimp only; omega)
           (by omega_using [hbz, hzw, ht, hn])]
         exact hF.bits t htk
       · have := z₅ (t - K.kbytes) (by omega)
@@ -175,11 +163,31 @@ theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T 
         rfl
     · exact TblMem.of_unch hF.tbl (by rw [k₆.2.2.1, k₆.2.2.2, k₅.rd, k₅.wr, k₄.2.2.1, k₄.2.2.2, k₃.rd,
         k₃.wr, k₂.rd, k₂.wr, k₁.rd, k₁.wr]) U₆full (tcombW_size hL hM) hF.out
+  exact I₆
+
+/-- `[k]G` from initialization and the complete-addition loop. -/
+theorem tcombCore_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Addr}
+    {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
+    (hM3 : AM3 C)
+    (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl)
+    (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
+    (hM : ModOkW K.M size C.p s.mem base)
+    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
+    WP isa (.seq (.block K.initCore) (.loop K.step .ne)) s fun s' => KeepRegs powClob s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
+      ModOkW K.M size C.p s'.mem base ∧
+      (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
+      Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
+        (mul k (G C)) := by
+  have hJ := hL.comb.J
+  rw [TCombCfg.toComb_J] at hJ
+  have hk : k < 2 ^ (K.w * K.J) :=
+    Nat.lt_of_lt_of_le hF.k_lt (Nat.pow_le_pow_right (by decide) hL.kbytes)
+  refine WP.seq (WP.mono (tcombInit_ok hL hV hpn hs hM hF) fun s' I => ?_)
   exact countLoop_ok (Inv := fun j s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' j) (n := K.J)
     (fun j s' h1 h2 hi => tstep_ok hL hC hM3 hG hV hpn hF h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.mod, hi.lt, by rw [← combEW_zero hk]; exact hi.rep⟩)
-    hJ.1 I₆
+    hJ.1 I
 
 
 end VG.Proof.Weierstrass.X86

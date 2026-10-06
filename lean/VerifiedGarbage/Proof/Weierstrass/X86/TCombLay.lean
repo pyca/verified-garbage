@@ -42,7 +42,7 @@ bits. -/
 def combWx (K : TCombCfg) : List (Nat × Nat) := combW K.toComb ++ [(K.wk, accLen K.M)]
 
 def tcombW (K : TCombCfg) : List (Nat × Nat) :=
-  combWx K ++ [(K.bits + K.kbytes, 4 * K.zw), (K.ptr, 4)]
+  combWx K ++ [(K.bits + K.kbytes, 4 * K.zw)]
 
 /-- The comb's layout (`CombLay` of `toComb`); the table of bits of `w J`
 bytes (and its cleared words) in the working space, apart from what the loop

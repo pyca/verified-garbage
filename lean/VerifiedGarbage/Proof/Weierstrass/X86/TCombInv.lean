@@ -41,35 +41,32 @@ theorem tcombW_size {K : TCombCfg} {C : Curve} {size : Nat} {mem : Mem} {base : 
   intro w hw
   simp only [tcombW, combWx, combW, List.mem_append, List.mem_map, List.mem_cons,
     List.not_mem_nil, or_false] at hw
-  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | (rfl | rfl)
+  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | rfl
   · exact hL.comb.lay.le y (combWs_slots _ y hy)
   · exact hM.tmp
   · exact hL.wk.le
   · exact hL.bits
-  · exact hL.ptr_le
 
 theorem tcombW_mo {K : TCombCfg} {size m : Nat} {mem : Mem} {base : Addr} (hL : TCombLay K size)
     (hM : ModOkW K.M size m mem base) : ∀ w ∈ tcombW K, K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := by
   intro w hw
   simp only [tcombW, combWx, combW, List.mem_append, List.mem_map, List.mem_cons,
     List.not_mem_nil, or_false] at hw
-  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | (rfl | rfl)
+  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | rfl
   · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega
   · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega
   · exact .inl hL.wk.mo
   · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
-  · have := hL.ptr_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
 
 theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
     (hx : x ∈ combRo K.toComb) : ∀ w ∈ tcombW K, x + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
   intro w hw
   have hxs := combRo_slots x hx
   simp only [tcombW, combWx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with (hw | rfl) | (rfl | rfl)
+  rcases hw with (hw | rfl) | rfl
   · exact combW_ro hL.comb hx w hw
   · exact .inl (hL.wk.sl x hxs)
   · have := hL.bits_sl x (List.mem_cons_of_mem _ hxs); dsimp only; omega
-  · have := hL.ptr_sl x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hxs)); dsimp only; omega
 
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
     ∀ w ∈ combWx K, K.bits + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ K.bits + t := by
