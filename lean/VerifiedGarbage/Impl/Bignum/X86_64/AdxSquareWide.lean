@@ -25,4 +25,23 @@ def row : Prog isa :=
     (.ite .e
       (.seq (.block [.mov .rbx (.reg .rbp), .mov32 .rcx (.imm 0), .mov32 .r14 (.imm 0)])
         (.loop (.block block) .ne)) AdxSquare.macRow)
+/-- Limits for the sixteen-word and four-word prefixes of a general row. -/
+def limit16 : List Instr :=
+  [.mov .rbx (.reg .rbp), .shift .shr .rbx 4,
+    .alu .add .rbx (.reg .rbx), .alu .add .rbx (.reg .rbx),
+    .alu .add .rbx (.reg .rbx), .alu .add .rbx (.reg .rbx), .alu .cmp .r14 (.reg .rbx)]
+
+def limit4 : List Instr :=
+  [.mov .rbx (.reg .rbp), .shift .shr .rbx 2,
+    .alu .add .rbx (.reg .rbx), .alu .add .rbx (.reg .rbx), .alu .cmp .r14 (.reg .rbx)]
+
+/-- Longer carry chains for full blocks, followed by four-word blocks and
+at most three scalar words. No arithmetic is added for padding words. -/
+def generalRow : Prog isa :=
+  .seq (.block [.mov32 .rcx (.imm 0), .mov32 .r14 (.imm 0)])
+    (.seq (.block limit16) (.seq (.ite .ne (.loop (.block block) .ne) (.block []))
+      (.seq (.block limit4) (.seq (.ite .ne (.loop (.block AdxSquare.mac4Store) .ne) (.block []))
+        (.seq (.block AdxSquare.rowRemainder)
+          (.ite .ne (.loop (.block AdxSquare.mac1Store) .ne) (.block [])))))))
+
 end VG.Impl.Bignum.X86_64.AdxSquareWide

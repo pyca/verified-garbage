@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRow
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideGeneral
 import VerifiedGarbage.Proof.Bignum.Square
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
 
@@ -50,7 +50,7 @@ theorem crossRow_ok {s : State} {B : Addr} {Z e eb i w : Nat} (hs : Scr s B Z)
     readSrc_word hs (by simpa using ea_ixk s h9 hbp 0) (by omega)
   unfold AdxSquare.crossRow
   refine WP.seq (WP.mono (movMem_ok s (dst := .rdx) rd) fun s₁ ⟨hdx, _, _, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (macRow_ok (hs.congr k₁.2.2.2) ((k₁.gpr (by decide)).trans h8)
+  refine WP.seq (WP.mono (AdxSquareWide.generalRow_ok (hs.congr k₁.2.2.2) ((k₁.gpr (by decide)).trans h8)
     ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega)
     (by omega) (by omega) (by omega)) fun s₂ ⟨hv, ho, h14, k₂⟩ => ?_)
   have k12 := k₁.keep.trans k₂

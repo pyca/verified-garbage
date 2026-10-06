@@ -13,7 +13,7 @@ def crossTail : List Instr :=
 Only products strictly below the diagonal are accumulated. -/
 def crossRow : Prog isa :=
   .seq (.block [.mov .rdx (.mem (ix .r9 .rbp))])
-    (.seq macRow (.block crossTail))
+    (.seq AdxSquareWide.generalRow (.block crossTail))
 
 /-- Clear the product buffer, then accumulate its off-diagonal products.
 `r8` addresses `2 w + 2` words; `r9` addresses the input; `rbx = w ≥ 2`. -/
