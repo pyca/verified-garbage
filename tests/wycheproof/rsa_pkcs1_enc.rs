@@ -12,7 +12,10 @@
 //! below the modulus, which is refused. A `valid` vector decrypts to its
 //! message, and so does that message encrypted again.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
