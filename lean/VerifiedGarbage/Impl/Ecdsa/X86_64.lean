@@ -135,6 +135,11 @@ structure Cfg where
   /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/
   adx : Bool := false
 
+/-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
+def bitLen (e : Nat) : Nat → Nat
+  | 0 => 0
+  | k + 1 => if e < 2 ^ k then bitLen e k else k + 1
+
 namespace Cfg
 
 variable (c : Cfg)
@@ -211,7 +216,9 @@ def gMul : Prog isa :=
   | none => ladder c.ladderCfg
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
-def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+/-- The power mod `n` from the top bit of `n - 2` (its `bitLen` bits), not of its
+`64 n` bits' table. -/
+def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, bitLen (c.C.n - 2) (64 * c.n)⟩
 
 /-- The inversions by divsteps, their working area past the tables of bits. -/
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
