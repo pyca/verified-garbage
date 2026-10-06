@@ -44,7 +44,8 @@ abbrev nbOf (w j : Nat) : Nat := if w - j = 1 then 63 else 64
 
 /-- After `i` bits of word `w − 1 − j`. -/
 def BI (p : WsP × Nat) (i : Nat) (s : State) : Prop :=
-  4 ≤ p.1.w ∧ p.1.w ≤ 64 ∧ p.2 < p.1.w ∧ ∃ c b s₀ W, BitInv p.1.B p.1.Z p.1.w c b (p.1.w - p.2) (nbOf p.1.w p.2) W s₀ i s ∧
+  4 ≤ p.1.w ∧ p.1.w ≤ 64 ∧ p.2 < p.1.w ∧ ∃ c b s₀ W,
+    BitInv p.1.B p.1.Z p.1.w c b (p.1.w - p.2) (nbOf p.1.w p.2) W s₀ i s ∧
     (∀ u < 64, W.toNat.testBit u = c.testBit (64 * (p.1.w - p.2 - 1) + u)) ∧ c % 2 = 1 ∧ 1 < c
 
 /-- The registers pinned before a word's load. -/

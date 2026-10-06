@@ -122,7 +122,8 @@ theorem mrIterB_ct (M : Mont) : RelCT isa (Two fun (p : FPub × Nat) s => p.2 < 
     have h' := h
     obtain ⟨h4, h64, hrl, c, r, s₀, res, uni, hI, hS, hrlen, hc1, hsh, hE, hit⟩ := h'
     obtain ⟨bm, hc⟩ := hI.ctx
-    exact WP.mono (iterHead_ok (r := r) hc.ws h64 (by rw [hrlen]; exact hrl) hI.ul hI.len hI.rlen hI.kused) fun t ⟨hz, hm, k⟩ => ⟨⟨h4, h64, hrl, c, r, s₀, res, uni, hI.congr hm k (by decide), hS, hrlen, hc1,
+    exact WP.mono (iterHead_ok (r := r) hc.ws h64 (by rw [hrlen]; exact hrl) hI.ul hI.len hI.rlen hI.kused)
+      fun t ⟨hz, hm, k⟩ => ⟨⟨h4, h64, hrl, c, r, s₀, res, uni, hI.congr hm k (by decide), hS, hrlen, hc1,
         hsh, hE, hit⟩, by rw [hz, hrlen]⟩
   · intro p s h
     have hr := avI_r0 h.1 h.2

@@ -223,7 +223,8 @@ theorem msH_ct : RelCT isa (Two MS0) (.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++
         movi .x13 0]) := rfl
   rw [e]
   refine blk_pin _ _ [.x0] [.x0, .x8] (fun L r => match r with | .x0 => L.B | _ => off L.B (slot L.w aN))
-    (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) fun _ _ h => h.1) (by taint_decide) (fun L s h => ?_) (by taint_decide)
+    (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) fun _ _ h => h.1)
+    (by taint_decide) (fun L s h => ?_) (by taint_decide)
     fun L s h => by rw [← e]; exact msH_ok h
   have hw := h.1
   have hnw := hw.scr.nowrap
@@ -238,7 +239,8 @@ theorem msH_ct : RelCT isa (Two MS0) (.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++
   · exact h8
 
 theorem msOne_ct : RelCT isa (Two MSa) (setWord aOne) (Two MSb) :=
-  two_post (setWord_ct (by decide) (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ => 0) (fun _ _ h => ⟨⟨_, h.1.1.good⟩, h.2.1, h.2.2.2⟩)
+  two_post (setWord_ct (by decide) (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) (fun _ => 0)
+    (fun _ _ h => ⟨⟨_, h.1.1.good⟩, h.2.1, h.2.2.2⟩)
     (by taint_decide) (by taint_decide)) fun _ _ h => msOne_ok h
 
 theorem msR2_ct (M : Mont) : RelCT isa (Two MSb) (seqs (r2Steps M.mm)) (Two MSb) :=
@@ -260,8 +262,9 @@ theorem subA_eq' (o a b : Nat) : seqs (subA o a b) = .seq (.block (ws ++ ([movi 
   rfl
 
 theorem msTail_ct : RelCT isa (Two MSb) (seqs (subA aRm1 aN aR1 ++
-    [.block ([ldh .x12 sW, movi .x5 27] ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++
-      checksIf 22 4 ++ checksIf 59 3 ++ [sth .x5 kChecks])])) fun _ _ => True := by
+    ([.block (([ldh .x12 sW, movi .x5 27] : List Instr) ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++
+      checksIf 8 5 ++ checksIf 22 4 ++ checksIf 59 3 ++ ([sth .x5 kChecks] : List Instr))] : List (Prog isa))))
+    fun _ _ => True := by
   exact RelCT.seqs_append (by simp [subA]) (by simp) (RelCT.seq (R := Two fun (L : WsP) t => Ws t L.B L.Z L.w)
     (show RelCT isa _ (seqs (subA aRm1 aN aR1)) _ by
       rw [subA_eq']
@@ -271,10 +274,11 @@ theorem msTail_ct : RelCT isa (Two MSb) (seqs (subA aRm1 aN aR1 ++
     (two_taint [.x0] (pins_ws' (fun L : WsP => L.B) (fun L : WsP => L.Z) (fun L : WsP => L.w) fun _ _ h => h) (by taint_decide)))
 
 theorem montSetup_eq' (mul : Nat → Nat → Nat → Prog isa) : montSetup mul =
-    [.block ([ldh .x8 (sArr aN), ld .x3 .x8] ++ minv ++ [sth .x15 sMinv, ldh .x12 sW, movi .x9 1, movi .x13 0]),
-      setWord aOne] ++ (r2Steps mul ++ ([mul aY aR2 aOne, copyA aR1 aY] ++ (subA aRm1 aN aR1 ++
-      [.block ([ldh .x12 sW, movi .x5 27] ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++ checksIf 8 5 ++
-        checksIf 22 4 ++ checksIf 59 3 ++ [sth .x5 kChecks])]))) := by
+    ([.block (([ldh .x8 (sArr aN), ld .x3 .x8] : List Instr) ++ minv ++ ([sth .x15 sMinv, ldh .x12 sW, movi .x9 1,
+      movi .x13 0] : List Instr)), setWord aOne] : List (Prog isa)) ++ (r2Steps mul ++
+      (([mul aY aR2 aOne, copyA aR1 aY] : List (Prog isa)) ++ (subA aRm1 aN aR1 ++
+      ([.block (([ldh .x12 sW, movi .x5 27] : List Instr) ++ checksIf 5 8 ++ checksIf 6 7 ++ checksIf 7 6 ++
+        checksIf 8 5 ++ checksIf 22 4 ++ checksIf 59 3 ++ ([sth .x5 kChecks] : List Instr))] : List (Prog isa))))) := by
   simp only [montSetup, List.append_assoc, List.cons_append, List.nil_append]
 
 /-- `montSetup` leaks the same in runs that agree on the working space. -/

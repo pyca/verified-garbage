@@ -543,7 +543,7 @@ theorem closeCheck_ct : RelCT isa (Two KSt) (seqs closeCheck) fun _ _ => True :=
 
 /-! ## Trial division -/
 
-theorem pins_nil' {α : Type} (Φ : α → State → Prop) : Pins Φ [] := fun _ _ _ _ _ _ hr => absurd hr (by simp)
+theorem pins_nil₀ {α : Type} (Φ : α → State → Prop) : Pins Φ [] := fun _ _ _ _ _ _ hr => absurd hr (by simp)
 
 /-- The words of the table. -/
 def trN (q : FPub) : Nat := if 17 ≤ q.w then 256 else 128
@@ -556,7 +556,7 @@ def TI (q : FPub) (k : Nat) (s : State) : Prop :=
     s.gpr .x1 = mask (anyPre (wv s.mem q.B (slot q.w aN) q.w) (4 * k))
 
 /-- In word `k` of the table, entry by entry. -/
-def BI (p : FPub × Nat) (s : State) : Prop :=
+def TBI (p : FPub × Nat) (s : State) : Prop :=
   Ws s p.1.B p.1.Z p.1.w ∧ p.2 < 256 ∧ s.gpr .x17 = BitVec.ofNat 64 (tabWord p.2) ∧ s.gpr .x7 = 0 ∧
     s.gpr .x8 = mask true
 
@@ -624,7 +624,7 @@ def entryPre (j : Nat) : List Instr :=
   (if j = 0 then [mov .x3 .x17] else [.lsr .x .x3 .x17 (16 * j)]) ++
     [.movz .x .x4 0xFFFF 0, .logic .and .x .x3 .x3 .x4] ++ minv ++ [mov .x13 .x3]
 
-theorem entryPre_ok {p : FPub × Nat} {s : State} {j : Nat} (hj : j < 4) (h : BI p s) :
+theorem entryPre_ok {p : FPub × Nat} {s : State} {j : Nat} (hj : j < 4) (h : TBI p s) :
     WP isa (.block (entryPre j)) s fun t => Ws t p.1.B p.1.Z p.1.w := by
   obtain ⟨hw, hk, h17, -, -⟩ := h
   obtain ⟨hodd, -, -⟩ := tabEntry_facts (i := 4 * p.2 + j) (by omega)
@@ -644,8 +644,8 @@ theorem trialEntry_eq (j : Nat) : seqs (trialEntry j) = .seq (.block (entryPre j
       .subs .x .x3 .x3 .x4, .csel .x .x6 .x7 .x8, .logic .orr .x .x5 .x5 .x6, .logic .orr .x .x1 .x1 .x5])) := by
   simp only [trialEntry, entryPre, seqs, List.append_assoc]
 
-/-- Entry `j` leaks the same, and keeps `BI`. -/
-theorem entry_ct {j : Nat} (hj : j < 4) {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
+/-- Entry `j` leaks the same, and keeps `TBI`. -/
+theorem trialEntry_ct {j : Nat} (hj : j < 4) {hc₁ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs []) (.block (entryPre j)) hc₁).isSome = true)
     {hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₂ : (taint.check (Taint.ofRegs [.x0, .x12, .x11])
@@ -655,13 +655,13 @@ theorem entry_ct {j : Nat} (hj : j < 4) {hc₁ : VG.Taint.Hint VG.AArch64.Taint.
       (.block [movi .x4 1, .subs .x .x3 .x2 .x4, .csel .x .x5 .x7 .x8, .logic .eor .x .x3 .x2 .x13,
         .subs .x .x3 .x3 .x4, .csel .x .x6 .x7 .x8, .logic .orr .x .x5 .x5 .x6, .logic .orr .x .x1 .x1 .x5])))
       hc₂).isSome = true) :
-    RelCT isa (Two BI) (seqs (trialEntry j)) (Two BI) := by
+    RelCT isa (Two TBI) (seqs (trialEntry j)) (Two TBI) := by
   refine two_post ?_ fun p s h => WP.mono (trialEntry_ok h.1 h.2.1 hj h.2.2.1 h.2.2.2.1 h.2.2.2.2)
     fun t ⟨_, hm, k⟩ => ⟨h.1.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), h.2.1,
       (k.gpr .x17 (by decide)).trans h.2.2.1, (k.gpr .x7 (by decide)).trans h.2.2.2.1,
       (k.gpr .x8 (by decide)).trans h.2.2.2.2⟩
   rw [trialEntry_eq]
-  exact RelCT.block_seq (RelCT.seq (two_post (two_taint [] (pins_nil' _) ht₁) fun _ _ h => entryPre_ok hj h)
+  exact RelCT.block_seq (RelCT.seq (two_post (two_taint [] (pins_nil₀ _) ht₁) fun _ _ h => entryPre_ok hj h)
     (ws_ct0 (fun p : FPub × Nat => p.1.B) (fun p => p.1.Z) (fun p => p.1.w) (fun _ _ h => h) ht₂))
 
 /-- One word of the table leaks the same. -/
@@ -670,7 +670,7 @@ theorem trialBody_ct : RelCT isa (Two fun (p : FPub × Nat) s => p.2 < trN p.1 �
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) fun _ _ => True := by
   simp only [List.append_assoc, List.singleton_append]
   have ne : ∀ j, trialEntry j ≠ [] := fun j => by unfold trialEntry; exact List.cons_ne_nil _ _
-  refine seqs_cons_ct (by simp [ne]) (RelCT.seq (two_post (Ψ := BI) (two_taint [.x9] (fun p s₁ s₂ h₁ h₂ r hr => by
+  refine seqs_cons_ct (by simp [ne]) (RelCT.seq (two_post (Ψ := TBI) (two_taint [.x9] (fun p s₁ s₂ h₁ h₂ r hr => by
     simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.2.1, h₂.2.2.2.1]) (by taint_decide))
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -⟩ := h
@@ -678,11 +678,11 @@ theorem trialBody_ct : RelCT isa (Two fun (p : FPub × Nat) s => p.2 < trN p.1 �
     exact WP.mono (tlLoad_ok hT (by omega) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
       ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega, h17,
         (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
-  refine RelCT.seqs_append (ne 0) (by simp) (RelCT.seq (entry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
-  refine RelCT.seqs_append (ne 1) (by simp) (RelCT.seq (entry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
-  refine RelCT.seqs_append (ne 2) (by simp) (RelCT.seq (entry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
-  refine RelCT.seqs_append (ne 3) (by simp) (RelCT.seq (entry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
-  exact two_taint [] (pins_nil' _) (by taint_decide)
+  refine RelCT.seqs_append (ne 0) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
+  refine RelCT.seqs_append (ne 1) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
+  refine RelCT.seqs_append (ne 2) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
+  refine RelCT.seqs_append (ne 3) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
+  exact two_taint [] (pins_nil₀ _) (by taint_decide)
 
 /-- `trial` leaks the same in runs that agree on the public data. -/
 theorem trial_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KSt q s) :
@@ -812,7 +812,7 @@ theorem gcdCheck_ct {Φ : FPub → State → Prop} (hΦ : ∀ q s, Φ q s → KS
   refine RelCT.seq (?_ : RelCT isa (Two GE) _ (Two KW)) (two_taint [.x0] pins_KW (by taint_decide))
   refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2])
     (RelCT.block_nil fun _ _ h => two_mono (fun _ _ h => h.1.1.1) h) ?_
-  refine RelCT.seq (two_post (two_taint [] (pins_nil' _) (by taint_decide)) fun _ _ h => geDec_ok h) ?_
+  refine RelCT.seq (two_post (two_taint [] (pins_nil₀ _) (by taint_decide)) fun _ _ h => geDec_ok h) ?_
   refine two_ite (fun q s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2.2, h₂.2.2])
     (RelCT.block_nil fun _ _ h => two_mono (fun _ _ h => h.1.1.1) h) ?_
   exact gcdE_ct.mono (fun _ _ h => two_mono (fun _ _ h => GE2.gg h) h) fun _ _ h => h
