@@ -45,6 +45,7 @@ theorem zf_awc (s : State) (d : Reg) (a b : BitVec 64) (c : Bool) :
 theorem step_v {x : Nat} (hx : x < 2 ^ 34) (b : Byte) :
     BitVec.ofNat 64 x <<< 8 + BitVec.setWidth 64 (BitVec.setWidth 32 b) = BitVec.ofNat 64 (256 * x + b.toNat) := by
   have hb := b.isLt
+  have hx' := hx
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, byte_toNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq, Nat.mod_eq_of_lt (b := 2 ^ 64) (by omega)]

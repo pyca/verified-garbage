@@ -60,17 +60,34 @@ theorem PcM.congr {p : PcPub} {s t : State} (h : PcM p s) {rs : List (Nat × Nat
 theorem pins_PcM : Pins PcM [.x0] := fun _ _ _ h₁ h₂ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
 
+/-- What the load of `m` and `-m⁻¹` needs: `PcM` but for `pre`. -/
+def PcL (p : PcPub) (s : State) : Prop :=
+  Scr s p.B p.Z ∧ s.gpr .x0 = p.B ∧ slot p.w 8 ≤ p.Z ∧ 64 ≤ p.k ∧ p.k ≤ 1024 ∧
+    word s.mem p.B (8 * sK) = BitVec.ofNat 64 p.k ∧ word s.mem p.B (8 * sN) = p.np ∧ Src s p.B p.Z p.np p.nb ∧
+    p.nb.length = p.k ∧ Spec.Rsa.modulusValid p.N p.k = true
+
+theorem PcM.load {p : PcPub} {s : State} (h : PcM p s) : PcL p s :=
+  let ⟨hs, h0, hZ, hk1, hk2, _, hK, hN, hn, hnl, hv, _⟩ := h
+  ⟨hs, h0, hZ, hk1, hk2, hK, hN, hn, hnl, hv⟩
+
+/-- `PcL` after code that changes only memory in the working space outside
+the header's arguments, and not `x0`. -/
+theorem PcL.congr {p : PcPub} {s t : State} (h : PcL p s) {rs : List (Nat × Nat)}
+    (hf : Frm p.B rs s.mem t.mem) (hz : ∀ r ∈ rs, r.1 + r.2 ≤ p.Z)
+    (hx : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16))
+    {regs : List Reg} (k : Keep regs s t) (hr : .x0 ∉ regs) : PcL p t := by
+  obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, hn, hnl, hv⟩ := h
+  have hi := InScr.of_frm hf hz
+  have hfx := Fixed.of_frm hf hx
+  exact ⟨hs.congr k.wr, (k.gpr .x0 hr).trans h0, hZ, hk1, hk2, (hfx sK (by decide)).trans hK,
+    (hfx sN (by decide)).trans hN, hn.congrK hi k, hnl, hv⟩
+
+theorem pins_PcL : Pins PcL [.x0] := fun _ _ _ h₁ h₂ r hr => by
+  simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.1, h₂.2.1]
+
 /-- After the first block. -/
 def Pc1 (p : PcPub) (s : State) : Prop :=
-  PcM p s ∧ word s.mem p.B (8 * sW) = BitVec.ofNat 64 p.w ∧
-    (∀ j < 8, word s.mem p.B (8 * sArr j) = off p.B (slot p.w j)) ∧
-    s.gpr .x1 = p.np ∧ s.gpr .x2 = BitVec.ofNat 64 p.k ∧ s.gpr .x8 = off p.B (slot p.w aN)
-
-/-- After `m`'s load. -/
-def Pc2 (p : PcPub) (s : State) : Prop :=
-  PcM p s ∧ word s.mem p.B (8 * sW) = BitVec.ofNat 64 p.w ∧
-    (∀ j < 8, word s.mem p.B (8 * sArr j) = off p.B (slot p.w j)) ∧
-    wv s.mem p.B (slot p.w aN) p.w = p.N ∧ s.gpr .x8 = off p.B (slot p.w aN)
+  PcL p s ∧ s.gpr .x1 = p.np ∧ s.gpr .x2 = BitVec.ofNat 64 p.k ∧ s.gpr .x8 = off p.B (slot p.w aN)
 
 /-- After `-m⁻¹`: `R² mod m`'s hypotheses, and `PcM`. -/
 def Pc3 (p : PcPub) (s : State) : Prop :=
@@ -81,84 +98,50 @@ theorem pins_Pc1 : Pins Pc1 [.x0, .x1, .x2, .x8] := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · rw [h₁.1.2.1, h₂.1.2.1]
-  · rw [h₁.2.2.2.1, h₂.2.2.2.1]
-  · rw [h₁.2.2.2.2.1, h₂.2.2.2.2.1]
-  · rw [h₁.2.2.2.2.2, h₂.2.2.2.2.2]
-
-theorem pins_Pc2 : Pins Pc2 [.x0, .x8] := by
-  intro p s₁ s₂ h₁ h₂ r hr
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl
-  · rw [h₁.1.2.1, h₂.1.2.1]
-  · rw [h₁.2.2.2.2, h₂.2.2.2.2]
+  · rw [h₁.2.1, h₂.2.1]
+  · rw [h₁.2.2.1, h₂.2.2.1]
+  · rw [h₁.2.2.2, h₂.2.2.2]
 
 /-- The load of `m` and `-m⁻¹` leak the same in runs that agree on `m`. -/
-theorem pcLoad_ct : RelCT isa (Two PcM) (seqs pcLoad) (Two Pc3) := by
+theorem pcLoad_ct : RelCT isa (Two PcL) (seqs pcLoad) fun _ _ => True := by
   unfold pcLoad
   -- `w`, the bases, and `m`'s registers.
-  refine RelCT.seq (two_piece (Ψ := Pc1) _ pins_PcM (by taint_decide) ?_) ?_
+  refine RelCT.seq (two_piece (Ψ := Pc1) _ pins_PcL (by taint_decide) ?_) ?_
   · intro p s h
     have h' := h
-    obtain ⟨hs, h0, hZ, hk1, hk2, -, hK, hN, -⟩ := h'
+    obtain ⟨hs, h0, hZ, hk1, hk2, hK, hN, -⟩ := h'
     obtain ⟨g0, g8⟩ := slot0_ge p.w
-    refine WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN) fun t ⟨h1, h2, h8, hW, hb, hf, k⟩ =>
-      ⟨h.congr hf (fun r hr => ?_) (fun r hr => ?_) k (by decide), hW, hb, h1, h2, h8⟩
+    refine WP.mono (pcHead_ok hs h0 hZ (by omega) hK hN) fun t ⟨h1, h2, h8, _, _, hf, k⟩ =>
+      ⟨h.congr hf (fun r hr => ?_) (fun r hr => ?_) k (by decide), h1, h2, h8⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp only [sW, sArr] <;> omega
   -- `m`.
-  refine RelCT.seq (two_piece (Ψ := Pc2) _ pins_Pc1 (by taint_decide) ?_) ?_
-  · intro p s ⟨h, hW, hb, h1, h2, h8⟩
-    have h' := h
-    obtain ⟨hs, -, hZ, hk1, hk2, -, -, -, hn, hnl, -⟩ := h'
-    have := slot_le (w := p.w) (show aN < 8 by decide)
-    refine WP.mono (loadArr_ok hs (by decide) hZ hn hnl (by omega) (by omega) h1 h2 h8) fun t ⟨hv, ha, k⟩ =>
-      ⟨h.congr (Frm.of_arrays1 ha (List.mem_singleton_self _)) (fun r hr => ?_) (fun r hr => ?_) k (by decide),
-        by rw [ha.hslot (by decide)]; exact hW, fun j hj => by rw [ha.hslot (by unfold sArr; omega)]; exact hb j hj,
-        hv, (k.gpr .x8 (by decide)).trans h8⟩
-    · rw [List.mem_singleton.mp hr]; exact Nat.le_trans this hZ
-    · rw [List.mem_singleton.mp hr]; exact arr_fixed _
+  refine RelCT.seq (two_piece (Ψ := fun (p : PcPub) s => s.gpr .x0 = p.B ∧ s.gpr .x8 = off p.B (slot p.w aN)) _
+    pins_Pc1 (by taint_decide) ?_) ?_
+  · intro p s ⟨h, h1, h2, h8⟩
+    obtain ⟨hs, h0, hZ, hk1, hk2, -, -, hn, hnl, -⟩ := h
+    exact WP.mono (loadArr_ok hs (by decide) hZ hn hnl (by omega) (by omega) h1 h2 h8) fun t ⟨_, _, k⟩ =>
+      ⟨(k.gpr .x0 (by decide)).trans h0, (k.gpr .x8 (by decide)).trans h8⟩
   -- `-m⁻¹`.
-  refine two_piece (Ψ := Pc3) _ pins_Pc2 (by taint_decide) ?_
-  intro p s ⟨h, hW, hb, hv, h8⟩
-  have h' := h
-  obtain ⟨hs, h0, hZ, hk1, hk2, -, -, -, -, hnl, hval, -⟩ := h'
-  obtain ⟨hodd, -, hlo⟩ := valid_facts hval hk1
-  have hn := hs.nowrap
-  have h0' := slot_le (w := p.w) (show 0 < 8 by decide)
-  have h8' := hdr_lt_slot p.w 0 (show 31 < 32 by decide)
-  have hsN := slot_le (w := p.w) (show aN < 8 by decide)
-  have hw1 : 2 ≤ p.w := by unfold PcPub.w; omega
-  have eW : sW = 6 := rfl
-  have eM : sMinv = 7 := rfl
-  have hodd₀ : (word s.mem p.B (slot p.w aN)).toNat % 2 = 1 := by
-    rw [← wv_mod64 _ _ _ (show 1 ≤ p.w by omega), Nat.mod_mod_of_dvd _ (by decide), hv, hodd]
-  show WP isa (.block ([ld .x3 .x8] ++ minv ++ [sth .x15 sMinv])) s _
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (WP.keep [.x3] (Q := fun t => t.gpr .x3 = word s.mem p.B (slot p.w aN) ∧ t.mem = s.mem) (by
-    brun [h8, hs.ld (d := slot p.w aN) (by omega)]) (by decide) (by decide) (by decide +kernel))
-    fun t₃ ⟨⟨h3₃, hm₃⟩, k₃⟩ => ?_
-  refine WP.mono (minv_ok t₃ (by rw [h3₃]; exact hodd₀)) fun t₄ ⟨hinv, k₄, hm₄⟩ => ?_
-  rw [h3₃] at hinv
-  have hs₄ := (hs.congr k₃.wr).congr k₄.wr
-  have h0₄ : t₄.gpr .x0 = p.B := (k₄.gpr .x0 (by decide)).trans ((k₃.gpr .x0 (by decide)).trans h0)
-  refine WP.mono (WP.keep [] (Q := fun t => t.mem = t₄.mem.writeW (off p.B (8 * sMinv)) (t₄.gpr .x15)) (by
-    brun [h0₄, hdr_enc (show sMinv < 32 by decide), hs₄.st (d := 8 * sMinv) (by omega)])
-    (by decide) (by decide) (by decide +kernel)) fun t ⟨hm, k₅⟩ => ?_
-  have hm' : t.mem = s.mem.writeW (off p.B (8 * sMinv)) (t₄.gpr .x15) := by rw [hm, hm₄, hm₃]
-  have hwo : Outside p.B (8 * sMinv) 8 s.mem t.mem := by rw [hm']; exact writeW_outside _ p.B _ (by omega)
-  have kk := (k₃.trans k₄).trans k₅
-  refine ⟨t₄.gpr .x15, h.congr (Frm.of_outside hwo (List.mem_singleton_self _)) (by simp [sMinv]; omega)
-    (by simp [sMinv]) kk (by decide), ⟨⟨hs₄.congr k₅.wr, (k₅.gpr .x0 (by decide)).trans h0₄, ⟨?_, ?_, fun j hj => ?_⟩⟩, hZ⟩,
-    hw1, by dsimp only; unfold PcPub.w; omega, ?_, ?_, hodd, hlo⟩
-  · rw [hwo.word (by omega) (by omega)]; exact hW
-  · rw [hm', word_writeW_self]
-  · rw [hwo.word (d := 8 * sArr j) (by unfold sArr; omega) (by unfold sArr; omega)]; exact hb j hj
-  · dsimp only
-    rw [hwo.wv (by have := hdr_lt_slot p.w aN (show sMinv < 32 by decide); omega) (by omega)]; exact hv
-  · dsimp only
-    rw [hwo.word (by have := hdr_lt_slot p.w aN (show sMinv < 32 by decide); omega) (by omega)]; exact hinv
+  exact two_taint [.x0, .x8] (fun p s₁ s₂ h₁ h₂ r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · rw [h₁.1, h₂.1]
+    · rw [h₁.2, h₂.2]) (by taint_decide)
+
+/-- `R² mod m`'s hypotheses after the load of `m` and `-m⁻¹`. -/
+theorem pcLoad_r2 {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
+    (h0 : s.gpr .x0 = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 64 ≤ k) (hk2 : k ≤ 1024)
+    (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = np)
+    (hnb : Src s B Z np nb) (hnl : nb.length = k) (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) :
+    WP isa (seqs pcLoad) s fun t => ∃ minv, R2Pre ⟨⟨B, Z, (k + 7) / 8, minv⟩, Spec.Rsa.os2ip nb⟩ t ∧
+      Frm B (pcLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
+  obtain ⟨hodd, -, hlo⟩ := valid_facts hv hk1
+  exact WP.mono (pcLoad_ok hs h0 hZ (by omega) (by omega) hK hN hnb hnl hodd)
+    fun t ⟨minv, hg, hn, hinv, f, k⟩ => ⟨minv, ⟨⟨hg, hZ⟩, by dsimp only; omega, by dsimp only; omega, hn, hinv,
+      hodd, hlo⟩, f, k⟩
 
 /-! ## `R² mod m` -/
 
@@ -320,7 +303,13 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs Precompute.pcOut) fun _ _ => True :
 /-- `main` leaks the same in runs that agree on the public data and `n`. -/
 theorem pcMain_ct (M : Mont) : RelCT isa (Two PcM) (Precompute.main M.mm) fun _ _ => True := by
   rw [pcMain_eq M]
-  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2Steps]) (RelCT.seq pcLoad_ct ?_)
+  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2Steps]) (RelCT.seq (R := Two Pc3)
+    (two_post (pcLoad_ct.mono (fun _ _ h => two_mono (fun _ _ h => PcM.load h) h) fun _ _ _ => trivial)
+      fun p s h => ?_) ?_)
+  · have h' := h
+    obtain ⟨hs, h0, hZ, hk1, hk2, -, hK, hN, hn, hnl, hv, -⟩ := h'
+    refine WP.mono (pcLoad_r2 hs h0 hZ hk1 hk2 hK hN hn hnl hv) fun t ⟨mi, hr, f, k⟩ =>
+      ⟨mi, h.congr f (fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ) (pcLoadRanges_fixed _) k (by decide), hr⟩
   exact RelCT.seqs_append (by simp [r2Steps]) (by simp [Precompute.pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
 
 /-! ## The whole function -/
