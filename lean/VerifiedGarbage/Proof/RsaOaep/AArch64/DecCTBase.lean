@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncVerified
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
 /-!
 # RSAES-OAEP decryption on AArch64: two runs
@@ -127,6 +128,39 @@ theorem pw_blk {S : Nat} {e : Env} {c : Prog isa} {X X' : (Nat → BitVec 64) �
     RelCT isa (PW S e X) c (PW S e X') :=
   pw_wp (pw_taint rs h hag) hw
 
+/-- Code whose second part `c₂` dereferences the registers `rs`, which its
+first part `c₁` sets to `pin` in both runs. -/
+theorem pw_seq_tr {S : Nat} {e : Env} {c₁ c₂ : Prog isa} {X : (Nat → BitVec 64) → State → Prop}
+    (rs : List Reg) (pin : Reg → BitVec 64) {h₁ h₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (t₁ : (taint.check (Taint.ofRegs []) c₁ h₁).isSome = true)
+    (t₂ : (taint.check (Taint.ofRegs rs) c₂ h₂).isSome = true)
+    (hA : ∀ g vv m₀ (t : State) V W, e.L.Ok → e.L.P = S + 1 → Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W →
+      Slots e.L W → X W t → WP isa c₁ t fun u => u.sp = t.sp ∧ ∀ r ∈ rs, u.gpr r = pin r) :
+    RelCT isa (PW S e X) (.seq c₁ c₂) fun _ _ => True := by
+  have h1 : RelCT isa (PW S e X) c₁ fun a b => a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r := by
+    have hw := (RelCT.taint (A := taint) (P := PW S e X) (Taint.ofRegs []) (fun _ _ hp =>
+      ⟨pw_sp hp, fun r hr => absurd (Taint.mem_ofRegs.mp hr) List.not_mem_nil⟩) t₁).wpDep
+      (F := fun (s u : State) => u.sp = s.sp ∧ ∀ r ∈ rs, u.gpr r = pin r) fun s₁ s₂ hp => by
+        obtain ⟨hL, hP, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ := hp
+        exact ⟨hA _ _ _ _ _ _ hL hP c₁ R₁ S₁ x₁, hA _ _ _ _ _ _ hL hP c₂ R₂ S₂ x₂⟩
+    refine hw.mono (fun _ _ h => h) fun a b ⟨_, σ₁, σ₂, hσ, ⟨sa, ra⟩, ⟨sb, rb⟩⟩ =>
+      ⟨by rw [sa, sb]; exact pw_sp hσ, fun r hr => (ra r hr).trans (rb r hr).symm⟩
+  have h2 : RelCT isa (fun a b => a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r) c₂ fun _ _ => True :=
+    RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨hs, hr⟩ =>
+      ⟨hs, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) t₂
+  exact h1.seq h2
+
+/-- `pw_seq_tr`, with what the whole establishes by correctness. -/
+theorem pw_seq {S : Nat} {e : Env} {c₁ c₂ : Prog isa} {X X' : (Nat → BitVec 64) → State → Prop}
+    (rs : List Reg) (pin : Reg → BitVec 64) {h₁ h₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+    (t₁ : (taint.check (Taint.ofRegs []) c₁ h₁).isSome = true)
+    (t₂ : (taint.check (Taint.ofRegs rs) c₂ h₂).isSome = true)
+    (hA : ∀ g vv m₀ (t : State) V W, e.L.Ok → e.L.P = S + 1 → Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W →
+      Slots e.L W → X W t → WP isa c₁ t fun u => u.sp = t.sp ∧ ∀ r ∈ rs, u.gpr r = pin r)
+    (hw : PWStep S e (.seq c₁ c₂) X X') :
+    RelCT isa (PW S e X) (.seq c₁ c₂) (PW S e X') :=
+  pw_wp (pw_seq_tr rs pin t₁ t₂ hA) hw
+
 /-- A block whose second part dereferences the registers `rs`, which its
 first part sets to `pin` in both runs. -/
 theorem pw_split {S : Nat} {e : Env} {A B : List Instr} {X X' : (Nat → BitVec 64) → State → Prop}
@@ -136,19 +170,8 @@ theorem pw_split {S : Nat} {e : Env} {A B : List Instr} {X X' : (Nat → BitVec 
     (hA : ∀ g vv m₀ (t : State) V W, e.L.Ok → e.L.P = S + 1 → Ctx e.L g vv m₀ t → Rep t.mem e.L.Q e.L.scr V W →
       Slots e.L W → X W t → WP isa (.block A) t fun u => u.sp = t.sp ∧ ∀ r ∈ rs, u.gpr r = pin r)
     (hw : PWStep S e (.block (A ++ B)) X X') :
-    RelCT isa (PW S e X) (.block (A ++ B)) (PW S e X') := by
-  have h1 : RelCT isa (PW S e X) (.block A) fun a b => a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r := by
-    have hw := (RelCT.taint (A := taint) (P := PW S e X) (Taint.ofRegs []) (fun _ _ hp =>
-      ⟨pw_sp hp, fun r hr => absurd (Taint.mem_ofRegs.mp hr) List.not_mem_nil⟩) tA).wpDep
-      (F := fun (s u : State) => u.sp = s.sp ∧ ∀ r ∈ rs, u.gpr r = pin r) fun s₁ s₂ hp => by
-        obtain ⟨hL, hP, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ := hp
-        exact ⟨hA _ _ _ _ _ _ hL hP c₁ R₁ S₁ x₁, hA _ _ _ _ _ _ hL hP c₂ R₂ S₂ x₂⟩
-    refine hw.mono (fun _ _ h => h) fun a b ⟨_, σ₁, σ₂, hσ, ⟨sa, ra⟩, ⟨sb, rb⟩⟩ =>
-      ⟨by rw [sa, sb]; exact pw_sp hσ, fun r hr => (ra r hr).trans (rb r hr).symm⟩
-  have h2 : RelCT isa (fun a b => a.sp = b.sp ∧ ∀ r ∈ rs, a.gpr r = b.gpr r) (.block B) fun _ _ => True :=
-    RelCT.taint (A := taint) (Taint.ofRegs rs) (fun _ _ ⟨hs, hr⟩ =>
-      ⟨hs, fun r h => hr r (Taint.mem_ofRegs.mp h)⟩) tB
-  exact pw_wp (RelCT.block_append (h1.seq h2)) hw
+    RelCT isa (PW S e X) (.block (A ++ B)) (PW S e X') :=
+  pw_wp (RelCT.block_append (pw_seq_tr rs pin tA tB hA)) hw
 
 /-- Facts `X` fixes in both runs. -/
 theorem pin {a b : State} {r : Reg} {x : BitVec 64} (ha : a.gpr r = x) (hb : b.gpr r = x) :
