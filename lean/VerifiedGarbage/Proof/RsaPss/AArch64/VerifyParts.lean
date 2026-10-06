@@ -80,8 +80,9 @@ theorem posCheckBlk_ok {t : State} {F S : Addr} (L : Lay t F S) {acc m v any : B
     (h13 : t.gpr .x13 = m) (h14 : t.gpr .x14 = BitVec.ofNat 64 pos) (h15 : t.gpr .x15 = v)
     (h26 : t.gpr .x26 = acc) (h25 : t.gpr .x25 = BitVec.ofNat 64 db) (hpos : pos < db)
     (hA : t.mem.readW (off F sAny) 64 = any) :
-    WP isa (.block ([movi .x9 1, .logic .eor .x .x15 .x15 .x9, .lsr .x .x13 .x13 63, .logic .orr .x .x15 .x15 .x13,
-      .logic .orr .x .x26 .x26 .x15] ++ st .x14 sPos ++ [.sub .x .x11 .x25 .x14, .subImm .x .x11 .x11 1, ld .x9 sAny]))
+    WP isa (.block (([movi .x9 1, .logic .eor .x .x15 .x15 .x9, .lsr .x .x13 .x13 63, .logic .orr .x .x15 .x15 .x13,
+      .logic .orr .x .x26 .x26 .x15] : List Instr) ++ st .x14 sPos ++
+        ([.sub .x .x11 .x25 .x14, .subImm .x .x11 .x11 1, ld .x9 sAny] : List Instr)))
       t fun u => Keep [.x9, .x15, .x13, .x26, .x16, .x11] t u ∧
         u.mem = t.mem.writeW (off F sPos) (BitVec.ofNat 64 pos) ∧
         u.gpr .x26 = acc ||| ((v ^^^ 1#64) ||| m >>> 63) ∧ u.gpr .x11 = BitVec.ofNat 64 (db - pos - 1) ∧
