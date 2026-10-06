@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 
 /-! A complete row of Montgomery reduction, retaining its pending carry. -/
 
@@ -65,8 +66,8 @@ theorem redcRow_ok {s : State} {B : Addr} {Z e w n : Nat} {minv : BitVec 64}
   have hN := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxSquare.redcRow
   refine WP.seq (WP.mono (redcHead_ok hs hdi hH h8 (by omega) hZ) fun s₁ ⟨hdx, hm₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (macRow_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega)
+  refine WP.seq (WP.mono (AdxSquareWide.row_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega) (by omega)
     (by omega) (by omega) (by omega)) fun s₂ ⟨hv, ho, h14, k₂⟩ => ?_)
   rw [hm₁, hdx] at hv
   rw [hm₁] at ho

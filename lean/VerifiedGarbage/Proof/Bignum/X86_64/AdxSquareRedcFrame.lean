@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcStep
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareWideRow
 
 /-! The reduction row's memory and public-control behavior, even when the
 header's inverse does not match the modulus. -/
@@ -23,8 +24,8 @@ theorem redcRow_frame {s : State} {B : Addr} {Z e w : Nat} {minv : BitVec 64}
   have hN := slot_le (w := w) (show aN < 8 by decide)
   unfold AdxSquare.redcRow
   refine WP.seq (WP.mono (redcHead_ok hs hdi hH h8 (by omega) hZ) fun s₁ ⟨_, hm₁, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (macRow_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
-    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega)
+  refine WP.seq (WP.mono (AdxSquareWide.row_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans h8)
+    ((k₁.gpr (by decide)).trans h9) ((k₁.gpr (by decide)).trans hbp) (by omega) (by omega)
     (by omega) (by omega) (by omega)) fun s₂ ⟨_, ho, h14, k₂⟩ => ?_)
   rw [hm₁] at ho
   have k12 := k₁.trans k₂
