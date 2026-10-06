@@ -71,12 +71,6 @@ theorem subSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b c : N
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans h8))
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans h10)
 
-/-- `R` is invertible modulo `n`, and `R mod n`'s value. -/
-theorem r_one {Y N R R2 : Nat} (hR : Nat.Coprime R N) (hY : Y < N) (hr2 : R2 % N = R * R % N)
-    (h : Y * R % N = R2 * 1 % N) : Y = R % N := by
-  rw [← Nat.mod_eq_of_lt hY]
-  exact mont_cancel hR (by rw [h, Nat.mul_one, hr2])
-
 /-- `mont`: `R² mod n`, 1, `R mod n` and `n - R mod n`, for the odd `n` in
 its array, of `w` words with the top one not zero, and `-n⁻¹` in `sMinv`. -/
 theorem mont_ok (M : Mont) {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w)

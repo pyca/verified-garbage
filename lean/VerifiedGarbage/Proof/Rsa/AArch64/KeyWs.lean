@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 import VerifiedGarbage.Proof.Bignum.AArch64.Store
+import VerifiedGarbage.Proof.Rsa.Ranges
 
 /-!
 # RSA private keys on AArch64: the working space and its pieces
@@ -18,14 +19,8 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Rsa.AArch64.Key
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep)
 
-theorem slot_lt {w j K : Nat} (h : j < K) : slot w j + 8 * (w + 2) ≤ slot w K := by
-  unfold slot
-  have := Nat.mul_le_mul_right (8 * (w + 2)) (show j + 1 ≤ K by omega)
-  rw [Nat.add_mul, Nat.one_mul] at this
-  omega
-
-/-- The byte range of array `j`. -/
-abbrev ar (w j : Nat) : Nat × Nat := (slot w j, 8 * (w + 2))
+/-- The words of `w = ⌈k / 8⌉` for `64 ≤ k ≤ 1024`. -/
+abbrev wk (k : Nat) : Nat := (k + 7) / 8
 
 /-- The working space at `B` of `Z` bytes, for `w`-word numbers. -/
 structure Ws (s : State) (B : Addr) (Z w : Nat) : Prop where

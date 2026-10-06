@@ -14,8 +14,6 @@
     any(target_arch = "x86_64", target_arch = "aarch64"),
     feature = "alloc"
 ))]
-// Loading a key from `(n, e, d)` is on x86-64 only for now: on AArch64 the
-// keys without their primes are skipped.
 
 use std::collections::BTreeMap;
 
@@ -79,22 +77,9 @@ fn check_key(name: &str, k: &Key) -> bool {
         &k.exponent2,
         &k.coefficient,
     );
-    // The key from `(n, e, d)` where there is one, otherwise from its CRT
-    // values.
-    #[cfg(target_arch = "x86_64")]
-    let key = {
-        let key =
-            PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
-        assert!(key.check_key(), "{name}: from_components");
-        key
-    };
-    #[cfg(not(target_arch = "x86_64"))]
-    let key = {
-        let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
-            return false;
-        };
-        PrivateKey::from_crt(n, e, d, &p.0, &q.0, &dp.0, &dq.0, &qi.0).unwrap()
-    };
+    // The key from `(n, e, d)`.
+    let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
+    assert!(key.check_key(), "{name}: from_components");
     assert_eq!(key.modulus_len(), len, "{name}");
     // RSAEP of each result gives back the input.
     let expect: Vec<Vec<u8>> = [&x, &y]

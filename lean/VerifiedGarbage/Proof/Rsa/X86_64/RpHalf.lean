@@ -30,16 +30,6 @@ theorem bw_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
         hl _ (show Impl.Bignum.X86_64.Public.sElen < 32 by decide), h.hw, hel, bw_val w el hel']) rfl)
     fun t ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
 
-/-- Halving never grows `m`. -/
-theorem halve_le (m : Nat) : ∀ j, (halveStep^[j] (m, 0)).1 ≤ m
-  | 0 => Nat.le_refl _
-  | j + 1 => by
-    rw [Function.iterate_succ_apply']
-    have := halve_le m j
-    generalize halveStep^[j] (m, 0) = st at this ⊢
-    unfold halveStep
-    split <;> (try simp only) <;> omega
-
 /-- `halfHead`: the bases of `m` and the temporary, `r12 := Bw`, and `rbp`
 the mask of `m` odd. -/
 theorem halfHead_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
@@ -234,8 +224,6 @@ theorem halfStep_ok {s₁ t : State} {B : Addr} {Z w m el j : Nat} (hI : HalfInv
     rcases Nat.mod_two_eq_zero_or_one mj with he | ho
     · simp [he]
     · simp [ho]
-
-theorem dbl6 (x : Nat) : 2 * (2 * (2 * (2 * (2 * (2 * x))))) = 64 * x := by omega
 
 /-- `halfInit`: `r11 := 64 Bw`, `r13 := 0` and `t := 0`. -/
 theorem halfInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}

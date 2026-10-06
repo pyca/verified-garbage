@@ -58,11 +58,4 @@ theorem Ws.congrR {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : Li
     (hh sStride (.inl (by simp))).trans h.hS, fun j hj => (hh (sArr j) (.inr (by unfold sArr; omega))).trans (h.harr j hj),
     h.hZ, h.w1, h.w2⟩
 
-/-- The low `j` words of a number of `w ≥ j` words. -/
-theorem wv_mod (m : Mem) (B : Addr) (e : Nat) {j w : Nat} (hj : j ≤ w) :
-    wv m B e w % 2 ^ (64 * j) = wv m B e j := by
-  have e1 := wv_add m B e j (w - j)
-  rw [show j + (w - j) = w by omega] at e1
-  rw [e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wv_lt _ _ _ _)]
-
 end VG.Proof.Rsa.X86_64
