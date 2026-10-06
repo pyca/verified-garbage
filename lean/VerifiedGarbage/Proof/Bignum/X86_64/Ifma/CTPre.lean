@@ -1,7 +1,8 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaPre
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTQ
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTRedc
+import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, before the vector code

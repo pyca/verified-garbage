@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtUnit
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtPow
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtQ
+import VerifiedGarbage.Impl.Rsa.X86_64.Crt
 import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 
 /-!
@@ -48,7 +49,6 @@ theorem enterRedc_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : Bi
   · rw [← hm₂]; exact f₃
   · exact (k₂.trans k₃).mono (by simp [mmRegs])
 
-
 /-- Back to `n`'s workspace, whose header the prime's phase kept. -/
 theorem leaveBack_ok {s₀ t : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 64} {o wx : Nat}
     (hg : Good s₀ B Z w minv) (hc : SubCtx t B Z o w wx mx) (hf : Frm B [xRange o wx] s₀.mem t.mem)
@@ -70,7 +70,6 @@ theorem leaveBack_ok {s₀ t : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 6
     (hb _ (by unfold sMinv; omega)).trans hH.hminv,
     fun j hj => (hb _ (by have := hdr_lt_slot w 8 (show sArr j < 32 by unfold sArr; omega); omega)).trans
       (hH.harr j hj)⟩, hm, k⟩
-
 
 /-- `K = 2` chunks of the prime's words in `n`'s. -/
 theorem nChunks_two {w wx : Nat} (hw2 : w = 2 * wx) (hwx : 1 ≤ wx) : nChunks w wx = 2 := by
@@ -208,23 +207,6 @@ theorem prep_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv mx : BitVec 
     rw [hm', ha₆.hslot (by decide), ho₅.word (.inl (by omega)) (by omega), ha₄.hslot (by decide),
       r₃.word_eq hrm (by omega), ho₂.word (.inl (by omega)) (by omega), r₁.word_eq hrm (by omega)]
 
-/-- `n`'s values after a write to another of its arrays. -/
-theorem NVals.of_outsideArr {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N j n : Nat}
-    (h : NVals s B w minv N) (ho : Outside B (slot w j) n s.mem t.mem) (hj : j < 8) (h1 : j ≠ Public.aN)
-    (h2 : j ≠ Public.aR2) (h3 : j ≠ Public.aOne) (hn : n ≤ 8 * (w + 2)) (hz : B.toNat + slot w 8 ≤ 2 ^ 64) :
-    NVals t B w minv N := by
-  have s1 := slot_sep (w := w) h1
-  have s2 := slot_sep (w := w) h2
-  have s3 := slot_sep (w := w) h3
-  have l1 := slot_le (w := w) (show Public.aN < 8 by decide)
-  have l2 := slot_le (w := w) (show Public.aR2 < 8 by decide)
-  have l3 := slot_le (w := w) (show Public.aOne < 8 by decide)
-  have lj := slot_le (w := w) hj
-  exact ⟨by rw [ho.wv (by omega) (by omega)]; exact h.n,
-    by rw [ho.word (by omega) (by omega)]; exact h.inv,
-    by rw [ho.wv (by omega) (by omega)]; exact h.r2, by rw [ho.wv (by omega) (by omega)]; exact h.r2lt,
-    by rw [ho.wv (by omega) (by omega)]; exact h.one⟩
-
 theorem Good.of_outsideArr {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {j n : Nat}
     (h : Good s B Z w minv) (ho : Outside B (slot w j) n s.mem t.mem) (hk : Keep mmRegs s t) :
     Good t B Z w minv := by
@@ -233,7 +215,6 @@ theorem Good.of_outsideArr {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 6
     ho.word (Or.inl (by have := hdr_lt_slot w j hi; omega)) (by have := hdr_lt_slot w j hi; omega)
   exact ⟨h.scr.congr hk.2.2, (hk.gpr (by decide)).trans h.rdi, (hh _ (by decide)).trans h.hdr.hw,
     (hh _ (by decide)).trans h.hdr.hminv, fun j hj => (hh _ (by unfold sArr; omega)).trans (h.hdr.harr j hj)⟩
-
 
 /-- `n`'s header and the arrays but `aAcc`, `aTmp`, `aY` and `aX`, and both primes' workspaces: what
 `pre` may change (it changes only the primes' workspaces). -/
@@ -276,44 +257,6 @@ theorem gRanges_lt (w : Nat) : ∀ r ∈ gRanges w, 8 * 22 ≤ r.1 ∧ r.1 + r.2
   have := hdr_lt_slot w Public.aY (show 31 < 32 by decide)
   simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
-
-/-- `n`'s header words but `sD` and `sCnt` are kept by a change within `gRanges` and above. -/
-theorem gRanges_hdr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
-    (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, hdrBytes ≤ r.1) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD)
-    (h2 : i ≠ Public.sCnt) (hz : 8 * i + 8 ≤ 2 ^ 64) : word m' B (8 * i) = word m B (8 * i) :=
-  hf.word_eq (fun r hr' => by
-    rcases List.mem_append.mp hr' with hr' | hr'
-    · have := hdr_lt_slot w Public.aAcc hi
-      have := hdr_lt_slot w Public.aTmp hi
-      have := hdr_lt_slot w Public.aY hi
-      simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      rcases hr' with rfl | rfl | rfl | rfl | rfl
-      · exact Or.inl (by omega)
-      · exact Or.inl (by omega)
-      · exact Or.inl (by omega)
-      · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-        unfold Crt.sD sFn at h1 ⊢; omega
-      · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-        unfold Public.sCnt sFn at h2 ⊢; omega
-    · exact Or.inl (by have := hr r hr'; unfold hdrBytes at this; omega)) hz
-
-/-- An array of `n` but `aAcc`, `aTmp`, `aY` is kept by a change within `gRanges` and above. -/
-theorem gRanges_arr {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)}
-    {j : Nat} (hf : Frm B (gRanges w ++ rs) m m') (hr : ∀ r ∈ rs, slot w j + 8 * w ≤ r.1 ∨ r.1 + r.2 ≤ slot w j)
-    (hj : j < 8)
-    (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY) (hz : slot w 8 ≤ 2 ^ 64) :
-    wv m' B (slot w j) w = wv m B (slot w j) w := by
-  have := slot_le (w := w) hj
-  exact hf.wv_eq (fun r hr' => by
-    rcases List.mem_append.mp hr' with hr' | hr'
-    · simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at hr'
-      have := slot_sep (w := w) h1
-      have := slot_sep (w := w) h2
-      have := slot_sep (w := w) h3
-      have := hdr_lt_slot w j (show Crt.sD < 32 by decide)
-      have := hdr_lt_slot w j (show Public.sCnt < 32 by decide)
-      rcases hr' with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega
-    · exact hr r hr') (by omega)
 
 /-- A prime's part of `pre`'s result: `R_X` in its `aY`, `x R_X` in its `aXc`. -/
 structure PrimeRdy (t : State) (B : Addr) (o wx : Nat) (mx : BitVec 64) (N X C : Nat) : Prop where

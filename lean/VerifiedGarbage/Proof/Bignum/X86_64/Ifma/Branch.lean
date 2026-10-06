@@ -1,122 +1,47 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaPost
-import VerifiedGarbage.Proof.Bignum.X86_64.CrtBack
-import Mathlib.Data.Int.GCD
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Ws
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Comp
 
 /-!
-# RSA with AVX512_IFMA on x86-64: the IFMA branch
+# RSA with AVX512_IFMA on x86-64, any size: the IFMA branch
 
-`ifmaBranch_ok`: from the checks (`CrtReady`) of a modulus of 32 words and
-primes of 16, `pre`, `ifma` and `post` leave what `qPart` and `pPart` leave
-(`PDone`), and MXCSR's bits 15:0.
+From the checks (`CrtReady`) of a modulus of
+`2 W` words and primes of `W`, `pre`, `ifma` and `post` leave what `qPart`
+and `pPart` leave (`PDone`), and MXCSR's bits 15:0.
 -/
 
-namespace VG.Proof.Bignum.X86_64
+namespace VG.Proof.Bignum.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
-open VG.Impl.Rsa.X86_64.CrtIfma (D sIfma)
+open VG.Impl.Rsa.X86_64.CrtIfma
+open VG.Proof.Bignum.X86_64 (NSafe nsafe_word above_nsafe preRanges_nsafe APost exists_mont')
 
-/-- Ranges that keep `n`'s values and header but `aAcc`, `aTmp`, `aY`, `aX`,
-`sD` and `sCnt`: those of `gRanges`, `aX`, and anything above `n`'s arrays. -/
-def NSafe (w : Nat) (rs : List (Nat × Nat)) : Prop :=
-  ∀ r ∈ rs, r ∈ gRanges w ∨ r = (slot w Public.aX, 8 * (w + 2)) ∨ slot w 8 ≤ r.1
-
-theorem NSafe.append {w : Nat} {rs rs' : List (Nat × Nat)} (h : NSafe w rs) (h' : NSafe w rs') :
-    NSafe w (rs ++ rs') := fun r hr => (List.mem_append.mp hr).elim (h r) (h' r)
-
-theorem nsafe_wv {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (hf : Frm B rs m m')
-    (hr : NSafe w rs) {j : Nat} (hj : j < 8) (h1 : j ≠ Public.aAcc) (h2 : j ≠ Public.aTmp) (h3 : j ≠ Public.aY)
-    (h4 : j ≠ Public.aX) (hz : slot w 8 ≤ 2 ^ 64) : wv m' B (slot w j) w = wv m B (slot w j) w := by
-  have := slot_le (w := w) hj
-  refine hf.wv_eq (fun r hr' => ?_) (by omega)
-  rcases hr r hr' with h | h | h
-  · have := slot_sep (w := w) h1
-    have := slot_sep (w := w) h2
-    have := slot_sep (w := w) h3
-    have := hdr_lt_slot w j (show Crt.sD < 32 by decide)
-    have := hdr_lt_slot w j (show Public.sCnt < 32 by decide)
-    simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl <;> simp only [Crt.sD, Public.sCnt, sFn] at * <;> omega
-  · subst h; have := slot_sep (w := w) h4; simp only; omega
-  · exact .inl (by omega)
-
-theorem nsafe_word {m m' : Mem} {B : Addr} {w : Nat} {rs : List (Nat × Nat)} (hf : Frm B rs m m')
-    (hr : NSafe w rs) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD) (h2 : i ≠ Public.sCnt) :
-    word m' B (8 * i) = word m B (8 * i) := by
-  have := hdr_lt_slot w 8 hi
-  refine hf.word_eq (fun r hr' => ?_) (by omega)
-  rcases hr r hr' with h | h | h
-  · have := hdr_lt_slot w Public.aAcc hi
-    have := hdr_lt_slot w Public.aTmp hi
-    have := hdr_lt_slot w Public.aY hi
-    simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl
-    · exact .inl (by omega)
-    · exact .inl (by omega)
-    · exact .inl (by omega)
-    · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-      unfold Crt.sD sFn at h1 ⊢; omega
-    · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-      unfold Public.sCnt sFn at h2 ⊢; omega
-  · subst h; have := hdr_lt_slot w Public.aX hi; exact .inl (by simp only; omega)
-  · exact .inl (by omega)
-
-theorem NVals.of_nsafe {s t : State} {B : Addr} {w : Nat} {minv : BitVec 64} {N : Nat} (h : NVals s B w minv N)
-    {rs : List (Nat × Nat)} (hf : Frm B rs s.mem t.mem) (hr : NSafe w rs) (hz : slot w 8 ≤ 2 ^ 64) (hw : 1 ≤ w) :
-    NVals t B w minv N := by
-  have lN := slot_le (w := w) (show Public.aN < 8 by decide)
-  have hN0 := hdr_lt_slot w Public.aN (show 31 < 32 by decide)
-  have e := fun {j} (hj : j < 8) h1 h2 h3 h4 => nsafe_wv (j := j) hf hr hj h1 h2 h3 h4 hz
-  refine ⟨by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.n, ?_,
-    by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.r2,
-    by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.r2lt,
-    by rw [e (by decide) (by decide) (by decide) (by decide) (by decide)]; exact h.one⟩
-  have := (wv_mod64 t.mem B (slot w Public.aN) (n := w) hw).symm
-  rw [this, e (by decide) (by decide) (by decide) (by decide) (by decide), wv_mod64 s.mem B (slot w Public.aN) hw]
-  exact h.inv
+variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
 /-- After `pre` and `ifma`: `q`'s result `C^dq mod q` and `p`'s `C^dp R_p`. -/
-structure IDone (s t : State) (B : Addr) (Z w op oq a : Nat) (minv mp mq : BitVec 64) (N C P Q : Nat)
+structure IDone (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (s t : State) (B : Addr) (Z w op oq a : Nat) (minv mp mq : BitVec 64) (N C P Q : Nat)
     (dpp dqp qip : Addr) (pl ql : Nat) (dpb dqb : List Byte) (Mk : Bool) : Prop where
-  good : Good t B Z w minv
+  good : VG.Proof.Bignum.X86_64.Good t B Z w minv
   nv : NVals t B w minv N
   msk : word t.mem B (8 * Public.sMask) = mask Mk
-  im : IMem t.mem B w op oq a minv mp mq (mask Mk) (if Mk then P else 3) (if Mk then Q else 3) dpp dqp pl ql
-  qlt : wv t.mem (off B oq) (slot 16 Public.aY) 16 < if Mk then Q else 3
-  qval : Mk = true → wv t.mem (off B oq) (slot 16 Public.aY) 16 = C ^ Spec.Rsa.os2ip dqb % Q
-  plt : wv t.mem (off B op) (slot 16 Public.aY) 16 < if Mk then P else 3
-  pval : Mk = true → wv t.mem (off B op) (slot 16 Public.aY) 16 % P = C ^ Spec.Rsa.os2ip dpb * 2 ^ (64 * 16) % P
+  im : IMem l t.mem B w op oq a minv mp mq (mask Mk) (if Mk then P else 3) (if Mk then Q else 3) dpp dqp pl ql
+  qlt : wv t.mem (off B oq) (slot l.W Public.aY) l.W < if Mk then Q else 3
+  qval : Mk = true → wv t.mem (off B oq) (slot l.W Public.aY) l.W = C ^ Spec.Rsa.os2ip dqb % Q
+  plt : wv t.mem (off B op) (slot l.W Public.aY) l.W < if Mk then P else 3
+  pval : Mk = true → wv t.mem (off B op) (slot l.W Public.aY) l.W % P = C ^ Spec.Rsa.os2ip dpb * 2 ^ (64 * l.W) % P
   qi : word t.mem B (8 * sQinv) = qip
   hfix : HFix B s.mem t.mem
   iscr : InScr B Z s.mem t.mem
   keep : Keep mmRegs s t
 
-theorem preRanges_nsafe {w op wp oq wq : Nat} (hp : slot w 8 ≤ op) (hq : slot w 8 ≤ oq) :
-    NSafe w (preRanges w op wp oq wq) := fun r hr => by
-  simp only [preRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with hr | rfl | rfl | rfl
-  · exact .inl hr
-  · exact .inr (.inl rfl)
-  · exact .inr (.inr (by simp only [xRange]; omega))
-  · exact .inr (.inr (by simp only [xRange]; omega))
-
-theorem above_nsafe {w L : Nat} {rs : List (Nat × Nat)} (hL : slot w 8 ≤ L) (hr : ∀ r ∈ rs, L ≤ r.1) :
-    NSafe w rs := fun r h => .inr (.inr (by have := hr r h; omega))
-
-theorem ifmaR_ge {op oq a : Nat} (hpq : op ≤ oq) (hqa : oq ≤ a) : ∀ r ∈ ifmaR op oq a, op ≤ r.1 := by
+theorem ifmaR_ge {op oq a : Nat} (hpq : op ≤ oq) (hqa : oq ≤ a) : ∀ r ∈ ifmaR l op oq a, op ≤ r.1 := by
   simp only [ifmaR, shiftRanges, k1Ranges, resRanges, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
     simp only <;> omega
 
-/-- What `pre` leaves (`pre_ok`), from `s`. -/
-def APost (s t : State) (B : Addr) (Z w op oq wp : Nat) (minv mp mq : BitVec 64) (N P Q C : Nat) : Prop :=
-  Good t B Z w minv ∧ NVals t B w minv N ∧ PrimeRdy t B op wp mp N P C ∧ PrimeRdy t B oq wp mq N Q C ∧
-    Frm B (preRanges w op wp oq wp) s.mem t.mem ∧ Keep mmRegs s t ∧
-    word t.mem (off B op) (8 * sMaskX) = word s.mem (off B op) (8 * sMaskX)
-
 /-- `ifma`, after `pre`. -/
-theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
@@ -124,14 +49,14 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 32) (hpl : wsWords pl = 16) (hql : wsWords ql = 16)
-    (hZa : offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16 + 2 * D + 8 ≤ Z)
-    (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) 16 minv mp mq
+    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
+    (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W + 2 * l.D + 8 ≤ Z)
+    (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
       (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
       (Spec.Rsa.os2ip xb)) :
-    WP isa (seqs CrtIfma.ifma) s₁ fun t =>
-      IDone s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+    WP isa (seqs (ifma l)) s₁ fun t =>
+      IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
       t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
@@ -147,13 +72,16 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
   obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
   have hn := hr.good.scr.nowrap
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
-  have hT : tabBytes 16 = 2304 := rfl
-  have hD : D = 3712 := rfl
-  have hpl' : pl ≤ 128 := by unfold wsWords at hpl; omega
-  have hql' : ql ≤ 128 := by unfold wsWords at hql; omega
+  have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
+  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
+  obtain ⟨hW1, hW2⟩ := W_bounds hl
+  have hEW : l.E = 8 * l.W := rfl
+  have hpl' : pl ≤ l.E := by unfold wsWords at hpl; omega
+  have hql' : ql ≤ l.E := by unfold wsWords at hql; omega
   have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
-  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot 16 8 + tabBytes 16 := by
+  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot l.W 8 + tabBytes l.W := by
     unfold offQ; rw [hpl]
   rw [hql] at hZq
   have pws := hr.pws
@@ -164,11 +92,11 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   obtain ⟨hg₁, hN₁, rp, rq, f₁, k₁, mk₁⟩ := hA
-  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := 16) (wq := 16) (le_refl (offP ((k + 7) / 8)))
+  have ns₁ := preRanges_nsafe (w := (k + 7) / 8) (wp := l.W) (wq := l.W) (le_refl (offP ((k + 7) / 8)))
     (show slot ((k + 7) / 8) 8 ≤ offQ ((k + 7) / 8) pl by rw [hoq]; omega)
   have hz : slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
-  have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) 16 (offQ ((k + 7) / 8) pl) 16,
-      r.1 + r.2 ≤ offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16 := fun r hr => by
+  have hpr : ∀ r ∈ preRanges ((k + 7) / 8) (offP ((k + 7) / 8)) l.W (offQ ((k + 7) / 8) pl) l.W,
+      r.1 + r.2 ≤ offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W := fun r hr => by
     simp only [preRanges, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with hr | rfl | rfl | rfl
     · have := (gRanges_lt _ r hr).2; rw [hoq]; omega
@@ -183,7 +111,7 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
     have h2 : i ≠ Public.sCnt := by rintro rfl; revert hf; decide
     rw [hb₁ i hi h1 h2, hh₀ i hi hf]
   have kk₁ := hr.keep.trans k₁
-  have ip : IPre s₁.mem B ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) minv mp mq (mask Mk)
+  have ip : IPre l s₁.mem B ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) minv mp mq (mask Mk)
       (if Mk then P else 3) (if Mk then Q else 3) dpp dqp dpb.length dqb.length :=
     ⟨hg₁.hdr, by rw [hb₁ _ (by decide) (by decide) (by decide)]; exact hr.wsP,
       by rw [hb₁ _ (by decide) (by decide) (by decide)]; exact hr.wsQ, rp.ws, rq.ws, rp.x.n, rp.x.inv, rp.x.one,
@@ -191,14 +119,14 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
       by rw [hf₁ _ (by decide) (by decide), h.dpl]; exact h.hPl, by rw [hf₁ _ (by decide) (by decide)]; exact h.hDq,
       by rw [hf₁ _ (by decide) (by decide), h.dql]; exact h.hQl⟩
   -- `ifma`.
-  refine WP.mono (ifma_ok (K := (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := 16) hg₁.scr hg₁.rdi
+  refine WP.mono (ifma_ok hl (K := (if Mk then P else 3) ∣ N ∧ (if Mk then Q else 3) ∣ N) (wp := l.W) hg₁.scr hg₁.rdi
     ip (le_refl _) (by rw [hoq, hop]) rfl (by omega) rfl hP'.2 hQ'.2 rp.ylt rq.ylt rp.clt rq.clt
     (fun hK => rp.cv hK.1) (fun hK => rq.cv hK.2) (fun hK => rp.yv hK.1) (fun hK => rq.yv hK.2)
     (h.dp.congrK (hr.iscr.trans i₀₁) kk₁) (h.dq.congrK (hr.iscr.trans i₀₁) kk₁) (by rw [h.dpl]; exact hpl1)
     (by rw [h.dpl]; exact hpl') (by rw [h.dql]; exact hql1) (by rw [h.dql]; exact hql'))
     fun t ⟨m₂, qlt, qv, plt, pv, f₂, d₂, k₂, mx₂⟩ => ?_
   have hge : ∀ r ∈ [(offP ((k + 7) / 8) + 8 * sIfma, 8), (offQ ((k + 7) / 8) pl + 8 * sIfma, 8)] ++
-      ifmaR (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16),
+      ifmaR l (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W),
       offP ((k + 7) / 8) ≤ r.1 := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -207,7 +135,7 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
       · simp only; rw [hoq, hop]; omega
     · exact ifmaR_ge (by rw [hoq, hop]; omega) (by omega) r hr
   have hlZ : ∀ r ∈ [(offP ((k + 7) / 8) + 8 * sIfma, 8), (offQ ((k + 7) / 8) pl + 8 * sIfma, 8)] ++
-      ifmaR (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16),
+      ifmaR l (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W),
       r.1 + r.2 ≤ Z := fun r hr => by
     rcases List.mem_append.mp hr with hr | hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -236,7 +164,7 @@ theorem branchA2_ok {s t₀ s₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp
 
 
 /-- `pre` and `ifma`, from the checks. -/
-theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+theorem branchA_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
@@ -244,15 +172,15 @@ theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip 
       (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 32) (hpl : wsWords pl = 16) (hql : wsWords ql = 16)
-    (hZa : offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16 + 2 * D + 8 ≤ Z)
+    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
+    (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W + 2 * l.D + 8 ≤ Z)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    WP isa (seqs (CrtIfma.pre M.mm ++ CrtIfma.ifma)) t₀ fun t =>
-      IDone s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+    WP isa (seqs (CrtIfma.pre M.mm ++ ifma l)) t₀ fun t =>
+      IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
       t.mxcsr = t₀.mxcsr &&& 0xFFFF := by
-  have hA2 := fun s₁ => branchA2_ok (s₁ := s₁) h hv hr hMk hw32 hpl hql hZa
+  have hA2 := fun s₁ => branchA2_ok hl (s₁ := s₁) h hv hr hMk hw32 hpl hql hZa
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hpl1 := h.pl1
@@ -266,13 +194,16 @@ theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip 
   obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
   have hn := hr.good.scr.nowrap
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
-  have hT : tabBytes 16 = 2304 := rfl
-  have hD : D = 3712 := rfl
-  have hpl' : pl ≤ 128 := by unfold wsWords at hpl; omega
-  have hql' : ql ≤ 128 := by unfold wsWords at hql; omega
+  have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
+  have hT : tabBytes l.W = 128 * (l.W + 2) := by unfold tabBytes; omega
+  obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
+  obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
+  obtain ⟨hW1, hW2⟩ := W_bounds hl
+  have hEW : l.E = 8 * l.W := rfl
+  have hpl' : pl ≤ l.E := by unfold wsWords at hpl; omega
+  have hql' : ql ≤ l.E := by unfold wsWords at hql; omega
   have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
-  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot 16 8 + tabBytes 16 := by
+  have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot l.W 8 + tabBytes l.W := by
     unfold offQ; rw [hpl]
   rw [hql] at hZq
   have pws := hr.pws
@@ -283,30 +214,23 @@ theorem branchA_ok (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip 
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
   -- `pre`.
-  refine wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [CrtIfma.ifma]) (WP.mono_mx hpre
-    (pre_ok M (wp := 16) hr.good (by omega) (le_refl _) (by rw [hoq]) (by omega) (by decide)
+  refine wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [ifma]) (WP.mono_mx hpre
+    (pre_ok M (wp := l.W) hr.good (by omega) (le_refl _) (by rw [hoq]) (by omega) (by omega)
       (by omega) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2)
     fun s₁ hA mx₁ => WP.mono (hA2 s₁ hA) fun t ⟨hd, mx⟩ =>
       ⟨hd, by rw [mx, mx₁]⟩)
 
-/-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
-theorem exists_mont' {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
-    ∃ x, X % N = x * R % N := by
-  obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hR hN1
-  refine ⟨X * m, ?_⟩
-  rw [Nat.mul_assoc, Nat.mul_mod, Nat.mul_comm m R, hm, Nat.mul_one, Nat.mod_mod]
-
 /-- `post`, after `pre` and `ifma`: what `pPart` leaves. -/
-theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
-    (hd : IDone s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot 16 8 + tabBytes 16) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+    (hd : IDone l s t₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
         (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk)
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
-    (hw32 : (k + 7) / 8 = 32) (hpl : wsWords pl = 16) (hql : wsWords ql = 16)
+    (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
     WP isa (seqs (CrtIfma.post M.mm)) t₁ fun t => PDone s t B Z ((k + 7) / 8) pl ql minv mp mq
       (Spec.Rsa.os2ip xb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib) dpb dqb Mk ∧
@@ -325,7 +249,9 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
   obtain ⟨hMk', hP', hQ'⟩ := mask_facts hMk hodd hPN hQN
   have hn := hd.good.scr.nowrap
   have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hpl' : pl ≤ 128 := by unfold wsWords at hpl; omega
+  obtain ⟨hW1, hW2⟩ := W_bounds hl
+  have hEW : l.E = 8 * l.W := rfl
+  have hpl' : pl ≤ l.E := by unfold wsWords at hpl; omega
   have hop : offP ((k + 7) / 8) = slot ((k + 7) / 8) 8 := rfl
   have hoq : offQ ((k + 7) / 8) pl = slot ((k + 7) / 8) 8 + slot (wsWords pl) 8 + tabBytes (wsWords pl) := rfl
   have hW8 : 256 ≤ slot (wsWords pl) 8 := by unfold slot hdrBytes; omega
@@ -337,7 +263,7 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
     (oq := offQ ((k + 7) / 8) pl) (mx := mp) (mq := mq) (X := if Mk then P else 3)
     (m1 := if Mk then C ^ Spec.Rsa.os2ip dpb else x0) (c := Mk) (qib := qib) hd.good (by omega) hd.nv
     (by rw [hpl]; omega) hm.wsQ (by rw [hpl]; exact hm.qws) (by have := hZq; rw [hql] at this; rw [hpl]; exact this)
-    (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; decide) hm.wsP
+    (le_refl _) (by rw [hoq, hop]) (by rw [hpl]; omega) hm.wsP
     (by rw [hpl]; exact hm.pws) (by rw [hpl]; exact ⟨hm.pn, hm.pinv, hm.pone⟩) hP'.1 hP'.2
     (by rw [hpl]; exact hd.plt) (fun _ => ?_) hm.pmk
     (fun hm' => by obtain ⟨_, hpq, _⟩ := hMk' hm'; simp only [hm', ↓reduceIte]; exact ⟨Q, hpq.symm⟩) hd.qi
@@ -361,9 +287,9 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
         rcases hr with rfl | rfl
         · exact .inr (.inl rfl)
         · exact .inr (.inr (by simp only [xRange]; omega))
-  have hqZ : offQ ((k + 7) / 8) pl + slot 16 8 ≤ 2 ^ 64 := by
+  have hqZ : offQ ((k + 7) / 8) pl + slot l.W 8 ≤ 2 ^ 64 := by
     have := hZq; rw [hql] at this; omega
-  have h16 := hdr_lt_slot 16 8 (show 31 < 32 by decide)
+  have h16 := hdr_lt_slot l.W 8 (show 31 < 32 by decide)
   have hqk : ∀ d, offQ ((k + 7) / 8) pl ≤ d → d + 8 ≤ 2 ^ 64 → word t.mem B d = word t₁.mem B d :=
     fun d hd' hd'' => f'.word_eq (fun r hr => by
       rcases List.mem_append.mp hr with hr | hr
@@ -372,11 +298,11 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
         rcases hr with rfl | rfl
         · have := slot_le (w := (k + 7) / 8) (show Public.aX < 8 by decide); simp only; rw [hoq] at hd'; omega
         · simp only [xRange]; rw [hoq] at hd'; omega) hd''
-  have hqv : ∀ d n, d + 8 * n ≤ slot 16 8 → wv t.mem (off B (offQ ((k + 7) / 8) pl)) d n =
+  have hqv : ∀ d n, d + 8 * n ≤ slot l.W 8 → wv t.mem (off B (offQ ((k + 7) / 8) pl)) d n =
       wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) d n := fun d n hdn => by
     rw [wv_off, wv_off]; exact wv_congr fun i hi => hqk _ (by omega) (by omega)
-  have hY8 := slot_le (w := 16) (show Public.aY < 8 by decide)
-  have hN8 := slot_le (w := 16) (show Public.aN < 8 by decide)
+  have hY8 := slot_le (w := l.W) (show Public.aY < 8 by decide)
+  have hN8 := slot_le (w := l.W) (show Public.aN < 8 by decide)
   refine ⟨⟨hg', by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hd.msk,
     by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hm.wsP,
     by rw [nsafe_word f' ns (by decide) (by decide) (by decide)]; exact hm.wsQ, hws',
@@ -399,7 +325,7 @@ theorem branchB_ok (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip 
   obtain ⟨a, b, ha, hb, hbP, hh⟩ := hh' hmk
   simp only [hmk, ↓reduceIte] at ha hb hbP hh
   rw [show wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot (wsWords pl) Public.aY) (wsWords pl) =
-    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot 16 Public.aY) 16 by rw [hpl], hd.qval hmk] at hb
+    wv t₁.mem (off B (offQ ((k + 7) / 8) pl)) (slot l.W Public.aY) l.W by rw [hpl], hd.qval hmk] at hb
   exact ⟨a, b, ha, hb, hbP, by rw [hh, hQIe]⟩
 
-end VG.Proof.Bignum.X86_64
+end VG.Proof.Bignum.X86_64.Ifma

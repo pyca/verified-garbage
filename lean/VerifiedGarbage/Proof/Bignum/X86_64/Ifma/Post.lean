@@ -1,5 +1,7 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaComp
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Lemmas
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Pre
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtP
+import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 
 /-!
 # RSA with AVX512_IFMA on x86-64: after the exponentiations

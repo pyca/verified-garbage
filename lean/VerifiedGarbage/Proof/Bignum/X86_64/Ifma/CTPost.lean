@@ -1,6 +1,7 @@
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaPost
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Post
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPH
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaCTPre
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTPre
+import VerifiedGarbage.Impl.Rsa.X86_64.CrtIfma
 
 /-!
 # RSA with AVX512_IFMA on x86-64: constant time, after the exponentiations

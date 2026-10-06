@@ -1410,7 +1410,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1426,7 +1426,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, SHA512, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1442,7 +1442,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -1458,7 +1458,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA extensions, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>❌</td>
 
@@ -1474,7 +1474,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, BMI2, ADX</td>
 
 <td>✅</td>
 
