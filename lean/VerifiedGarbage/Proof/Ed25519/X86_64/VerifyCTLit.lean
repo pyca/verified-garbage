@@ -49,14 +49,20 @@ materialize_code windowPrepLitAdx :=
   (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx)) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
 materialize_code addDigitA :=
   (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    (pointAddCached Impl.X25519.X86_64.baseline)) : Prog isa)
+    fieldCode Impl.X25519.X86_64.baseline (addCachedOps true)) : Prog isa)
 materialize_code addDigitAAdx :=
   (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
-    (pointAddCached Impl.X25519.X86_64.adx)) : Prog isa)
+    fieldCode Impl.X25519.X86_64.adx (addCachedOps true)) : Prog isa)
+materialize_code addDigitALast :=
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
+materialize_code addDigitALastAdx :=
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
 materialize_code baseAddLit :=
-  (.block (pointFromTableQ ++ (pointAddCached Impl.X25519.X86_64.baseline)) : Prog isa)
+  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
 materialize_code baseAddLitAdx :=
-  (.block (pointFromTableQ ++ (pointAddCached Impl.X25519.X86_64.adx)) : Prog isa)
+  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
 materialize_code negRBlock := (.block (negR Impl.X25519.X86_64.baseline) : Prog isa)
 materialize_code negRBlockAdx := (.block (negR Impl.X25519.X86_64.adx) : Prog isa)
 

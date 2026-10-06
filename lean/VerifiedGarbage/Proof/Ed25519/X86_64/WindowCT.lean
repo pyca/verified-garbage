@@ -164,10 +164,11 @@ theorem prefixK_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi) (.block (dig
 
 /-! ## Windows -/
 
-theorem addDigitA_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rbx = y.gpr .rbx)
-    (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAddCached fld)))
+theorem addDigitA_ct (tb : Bool) : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rbx = y.gpr .rbx)
+    (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+      fieldCode fld (addCachedOps tb)))
     (fun _ _ => True) := by
-  apply taintFld (Taint.ofRegs [.rdi, .rbx]) _ (by fld_taint_decide)
+  apply taintFld (Taint.ofRegs [.rdi, .rbx]) _ (by cases tb <;> fld_taint_decide)
   intro x y h
   apply Taint.agree_ofRegs
   intro r hr
@@ -188,7 +189,7 @@ theorem baseAddrPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gp
   · exact h.2
 
 theorem baseAddPart_ct : RelCT isa (fun x y => x.gpr .rdi = y.gpr .rdi ∧ x.gpr .rax = y.gpr .rax)
-    (.block (pointFromTableQ ++ pointAddCached fld)) (fun _ _ => True) := by
+    (.block (pointFromTableQ ++ fieldCode fld (addCachedOps false))) (fun _ _ => True) := by
   apply taintFld (Taint.ofRegs [.rdi, .rax]) _ (by fld_taint_decide)
   intro x y h
   apply Taint.agree_ofRegs
@@ -222,8 +223,9 @@ theorem addBase_ct {base T : Addr} {v : Nat} :
     refine WP.mono (baseAddr_ok (T := T) (h.scratch.of_keeps kb (by decide)) (by rw [kb.2.1]; exact h.header) n
       (by have := h.bound; omega) bc) fun u ⟨ua, ku⟩ => ?_
     exact ⟨(ku.1 _ (by decide)).trans ((kb.1 _ (by decide)).trans h.scratch.rdi), ua⟩
-  rw [show (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++ pointAddCached fld) =
-    (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr) ++ (pointFromTableQ ++ pointAddCached fld) by
+  rw [show (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr ++ pointFromTableQ ++
+      fieldCode fld (addCachedOps false)) =
+    (([.alu .sub .rbx (.imm 1)] : List Instr) ++ baseAddr) ++ (pointFromTableQ ++ fieldCode fld (addCachedOps false)) by
       simp only [List.append_assoc]]
   have hv (x : State) (h : BasePre base T v x) (he : isa.eval .ne x = some true) : v ≠ 0 := by
     intro h0

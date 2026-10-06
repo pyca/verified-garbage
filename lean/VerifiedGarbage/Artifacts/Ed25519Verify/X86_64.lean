@@ -18,8 +18,8 @@ def artifacts : List Artifact := [
       digits at least w positions apart (w = 5 for k, from a table of ±[1]A to ±[15]A; w = 8 \
       for S, from the static VG_ED25519_VERIFY_BASE of ∓[1]B to ∓[127]B), both cached for \
       addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero bytes of k above its low \
-      32 and the leading zero digits, computing T only for a doubling that an addition \
-      follows, and compares it with -R projectively."])
+      32 and the leading zero digits, computing T only in a doubling or addition that an \
+      addition follows, and compares it with -R projectively."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
       (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline)
     consts := Impl.Ed25519.X86_64.baseOddConsts

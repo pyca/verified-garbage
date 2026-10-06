@@ -107,9 +107,9 @@ theorem dblBlock_ct (t : Bool) :
 
 /-- `k`'s digit at `p`: the branch is on it, its entry's address from it. -/
 theorem addA_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
-    (hdg : Digits fA fB top) (hp : p ≤ top) :
+    (tb : Bool) (hdg : Digits fA fB top) (hp : p ≤ top) :
     RelCT isa (fun x y => MidRun R₀ base kp sp T A fA fB top p x ∧ MidRun R₀ base kp sp T A fA fB top p y)
-      (.seq (.block (digitAt 0)) (addDigit 5376 (pointAddCached fld))) (fun _ _ => True) := by
+      (.seq (.block (digitAt 0)) (addDigit 5376 (fieldCode fld (addCachedOps tb)))) (fun _ _ => True) := by
   have w (x : State) (h : MidRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 0)) x fun u =>
       u.gpr .rdi = base ∧ u.gpr .rbx = BitVec.ofNat 64 (fA p) ∧ u.zf = some (decide (fA p = 0)) := by
     obtain ⟨_, _, h⟩ := h
@@ -121,7 +121,7 @@ theorem addA_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {f
   rw [addDigit]
   refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.2.2, h.2.2.2]) ?_
     (VG.RelCT.block_nil fun _ _ _ => trivial)
-  exact addDigitA_ct.mono (fun x y h => ⟨h.1.1.1.trans h.1.2.1.symm, h.1.1.2.1.trans h.1.2.2.1.symm⟩)
+  exact (addDigitA_ct tb).mono (fun x y h => ⟨h.1.1.1.trans h.1.2.1.symm, h.1.1.2.1.trans h.1.2.2.1.symm⟩)
     (fun _ _ h => h)
 
 /-- `S`'s digit at `p`: the branch is on it, its entry's address from it and the static's. -/
@@ -146,9 +146,29 @@ theorem addsAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} 
     RelCT isa (fun x y => MidRun R₀ base kp sp T A fA fB top p x ∧ MidRun R₀ base kp sp T A fA fB top p y)
       (addsAt fld) (fun _ _ => True) := by
   rw [addsAt]
-  apply RelCT.assoc
-  exact seq_same (addA_ct hdg hp) (fun x h => by
-    obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addA_ok hdg hp h) fun u hu => ⟨s₀, r₀, hu⟩) (addB_ct hdg hp)
+  have w (x : State) (h : MidRun R₀ base kp sp T A fA fB top p x) : WP isa (.block (digitAt 1)) x fun u =>
+      u.zf = some (decide (fB p = 0)) ∧ MidRun R₀ base kp sp T A fA fB top p u := by
+    obtain ⟨s₀, r₀, h⟩ := h
+    refine WP.mono (digitAt_ok h.ctx.scratch (by have := hdg.top; omega) (by decide) h.counter)
+      fun u ⟨_, uz, ku⟩ => ?_
+    rw [(h.digits p (by have := hdg.top; omega)).2] at uz
+    exact ⟨uz, s₀, r₀, h.of_byte (ByteKeep.of_keeps ku (by decide)) (fun i _ => by rw [ku.2.1])
+      (by rw [ku.2.1])⟩
+  refine VG.RelCT.seq (R := fun (x y : State) => (x.zf = some (decide (fB p = 0)) ∧
+    MidRun R₀ base kp sp T A fA fB top p x) ∧ (y.zf = some (decide (fB p = 0)) ∧
+    MidRun R₀ base kp sp T A fA fB top p y))
+    ((VG.RelCT.wp (digitAt_ct 1 (by decide) fun x h => by
+      obtain ⟨_, _, h⟩ := h; exact ⟨h.ctx.scratch, h.counter⟩) fun x y h => ⟨w x h.1, w y h.2⟩).mono
+      (fun _ _ h => h) (fun _ _ h => h.2)) ?_
+  refine VG.RelCT.ite (fun x y h => by simp only [eval, h.1.1, h.2.1]) ?_ ?_
+  · refine (show RelCT isa (fun x y => MidRun R₀ base kp sp T A fA fB top p x ∧
+        MidRun R₀ base kp sp T A fA fB top p y) _ _ from ?_).mono (fun x y h => ⟨h.1.1.2, h.1.2.2⟩)
+      (fun _ _ h => h)
+    apply RelCT.assoc
+    exact seq_same (addA_ct true hdg hp) (fun x h => by
+      obtain ⟨s₀, r₀, h⟩ := h; exact WP.mono (addA_ok hdg hp h fun _ => rfl) fun u hu => ⟨s₀, r₀, hu⟩)
+      (addB_ct hdg hp)
+  · exact (addA_ct false hdg hp).mono (fun x y h => ⟨h.1.1.2, h.1.2.2⟩) (fun _ _ h => h)
 
 /-- The doubling: the branch is on whether a digit at `p` is nonzero. -/
 theorem dblAt_ct {R₀ : State → Prop} {base kp sp T : Addr} {A : EPoint dZ} {fA fB : Nat → Nat} {top p : Nat}
