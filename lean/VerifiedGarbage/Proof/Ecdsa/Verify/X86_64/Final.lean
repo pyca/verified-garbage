@@ -79,7 +79,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.final c =
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
-    {u : Nat} {Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base g u Q₂ s) :
+    {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
     WP isa (.seq c.pPow (Impl.Ecdsa.Verify.X86_64.Cfg.final c)) s fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧

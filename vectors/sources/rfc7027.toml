@@ -1,0 +1,5 @@
+name = "RFC 7027, Elliptic Curve Cryptography (ECC) Brainpool Curves for Transport Layer Security (TLS) (ECDH test vectors for brainpoolP256r1, brainpoolP384r1 and brainpoolP512r1 in Appendix A)"
+directories = ["rfc7027"]
+url = "https://www.rfc-editor.org/rfc/rfc7027.txt"
+sha256 = "28aaaff85a4d52b426194839b222e314fa6476ec75d7fa70427724710696a1f5"
+retrieved = 2026-10-05
