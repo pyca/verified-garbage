@@ -1,3 +1,4 @@
+import VerifiedGarbage.Impl.Weierstrass.JacMul
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Comb
 
 /-!
@@ -77,12 +78,16 @@ def ySelWord (w : Nat) : List Instr :=
 /-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
 def ySel : List Instr := zeroMask K.M.n K.E.z ++ (List.range K.M.n).flatMap (ySelWord K)
 
+/-- Four-word fields use direct `2YZ` while its squares use the general multiplier. -/
+def double (p o : Pt) : List FOp :=
+  if K.M.n == 4 then dblJMul K.S p o else dblJ K.S p o
+
 /-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, four
 doublings between `E` and `D`, and back. -/
 def jac : Prog isa :=
   .seq (fprogB K.M (toJ K.S K.R (zeroPt K) K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .seq (fprogB K.M (double K K.E K.D)) <| .seq (fprogB K.M (double K K.D K.E)) <|
+  .seq (fprogB K.M (double K K.E K.D)) <| .seq (fprogB K.M (double K K.D K.E)) <|
   fprogB K.M (fromJ K.S K.E (zeroPt K) K.R)
 
 /-- `R = 16 R`. -/

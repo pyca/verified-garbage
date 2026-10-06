@@ -125,7 +125,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
-      ModOkA c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
+      ModOkA c.MP' size c.C.p s'.mem base ∧ (sv c base s' RZ < c.C.p ∧ sv c base s' RX < c.C.p) ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd3 (tmv c.C c.n base s (c.sl BM))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
@@ -198,7 +198,9 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have ne : ∀ i ∈ sumW, MP ≠ i := by decide
       exact sl_apart c (ne i hi)
-  · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
+  · constructor
+    · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
+    · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
   · have vx := I₁.val _ (hD DX (by simp))
     have vy := I₁.val _ (hD DY (by simp))
     have vz := I₁.val _ (hD DZ (by simp))
@@ -223,9 +225,11 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64)
     (tmv c.C c.n base s (c.sl RX), tmv c.C c.n base s (c.sl RY), tmv c.C c.n base s (c.sl RZ)) =
       rcbAdd (Fin.ofNat c.C.p c.C.a) (Fin.ofNat c.C.p (3 * c.C.b)) X1 Y1 Z1 X2 Y2 Z2
   unch : Unch base [(0, size)] s₀.mem s.mem
+  k : sv c base s K = sigR c s₀
+  rx_lt : sv c base s RX < c.C.p
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg)
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (TCombCfg.comb c.combCfg (c.C.len == 32))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) (.seq (c.winPrep (c.sl V))
       (.seq (WinCfg.window (winQ c)) (Impl.Ecdsa.Verify.AArch64.Cfg.sum c))))) := rfl
 
@@ -285,7 +289,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     · intro t ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
-  have WC := tcomb_ok (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
+  have WC := tcomb_ok (publicLookup := c.C.len == 32) (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hs₁
     (modP_of hc F₁.mp) hF
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
@@ -368,12 +372,12 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
   refine ⟨hs₆, by rw [wr₆, W.wr, k₃.wr, K₂.wr, k₁.wr, hM.wr],
     by rw [rd₆, W.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆, ?_,
     by rw [v₆ (by decide) (by decide)]; exact hM.rm_lt,
-    by rw [v₆ (by decide) (by decide)]; exact hM.rm, rz₆,
+    by rw [v₆ (by decide) (by decide)]; exact hM.rm, rz₆.1,
     ⟨_, _, _, _, _, _, q₂, q₅, by
       rw [t₆, tR₅ (by decide), hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃, rcbAdd3_eq, ← hc.am3,
         ← ofNat_three_mul]
-      rfl⟩, ?_⟩
+      rfl⟩, ?_, by rw [v₆ (by decide) (by decide)]; exact hM.k, rz₆.2⟩
   · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hM.flag
     · simp only [List.mem_append] at hw
