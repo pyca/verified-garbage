@@ -125,7 +125,8 @@ theorem pointDecodeLoad_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp
     WP isa (.block pointDecodeLoad) s fun t => DecodeKeep base s t ∧
       t.gpr .rsi = signWord (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) / 2 ^ 255 == 1) ∧
       env t.mem base 1 = Proof.X25519.toFe (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) % 2 ^ 255) ∧
-      t.zf = some (decide (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) % 2 ^ 255 < Spec.X25519.P)) := by
+      t.zf = some (decide (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) % 2 ^ 255 < Spec.X25519.P)) ∧
+      env t.mem base 15 = env s.mem base 15 := by
   rw [pointDecodeLoad, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (loadSign_ok s p hp (hr 24 (by decide))) fun a ⟨asign, ka⟩ => ?_
   have kar : DecodeKeep base s a := DecodeKeep.of_keeps ka (by decide)
@@ -147,9 +148,12 @@ theorem pointDecodeLoad_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp
       Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) % 2 ^ 255 := by
     rw [val4, cg .r8, cg .r9, cg .r10, cg .r11]; exact byval
   refine WP.mono (canonicalY_ok c _ (Nat.mod_lt _ (by decide)) cv) fun t ⟨tz, kt⟩ => ?_
-  refine ⟨(kab.trans kc).trans (DecodeKeep.of_keeps kt (by decide)), ?_, ?_, tz⟩
+  refine ⟨(kab.trans kc).trans (DecodeKeep.of_keeps kt (by decide)), ?_, ?_, tz, ?_⟩
   · rw [kt.1 .rsi (by decide), cg .rsi, kb.1 .rsi (by decide)]; exact asign
   · rw [kt.2.1]; exact cy
+  · change F t.mem base (offset 15) = F s.mem base (offset 15)
+    rw [kt.2.1, Outside_F cmem (by simp only [offset]; omega) (Or.inr (by simp only [offset]; omega)),
+      kb.2.1, ka.2.1]
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -163,19 +167,25 @@ open VG.Proof.X25519.X86_64 (off)
 
 variable {fld : Arith} [EdArith fld]
 
+/-- The y-coordinate the 32 bytes `bs` encode, their top bit masked. -/
+def decodedY (bs : List Byte) : Spec.X25519.Fe := Proof.X25519.toFe (Spec.Ed25519.decodeLE bs % 2 ^ 255)
+
+/-- Decoding, with its square root's power in slot 15 (`hpow`). -/
 theorem pointDecode_ok {s : State} {base p : Addr} (hs : Scratch s base) (hp : s.gpr .rdx = p)
-    (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) :
+    (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8)
+    (hpow : env s.mem base 15 = rootPow (decodedY (Spec.Ed25519.bytesAt s.mem p 32))) :
     WP isa (pointDecode fld) s fun t => DecodeKeep base s t ∧
       DecodeResult base (Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem p 32)) t := by
   have hl : (Spec.Ed25519.bytesAt s.mem p 32).length = 32 := by
     simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range]
   rw [pointDecode]
-  refine WP.seq (WP.mono (pointDecodeLoad_ok hs hp hr) fun a ⟨ka, asign, ay, az⟩ => ?_)
+  refine WP.seq (WP.mono (pointDecodeLoad_ok hs hp hr) fun a ⟨ka, asign, ay, az, a15⟩ => ?_)
   apply WP.ite (decide (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem p 32) % 2 ^ 255 < Spec.X25519.P))
     (by exact az)
   · intro ht
     have hy := of_decide_eq_true ht
-    refine WP.mono (recoverPoint_ok (ka.scratch hs) _ asign) fun t ⟨kt, tr⟩ => ?_
+    refine WP.mono (recoverPoint_ok (ka.scratch hs) _ asign (by rw [a15, hpow, ay]; rfl))
+      fun t ⟨kt, tr⟩ => ?_
     refine ⟨ka.trans (DecodeKeep.of_rbx kt), ?_⟩
     rw [decodePoint32 _ hl, ite_eq_left hy]
     rw [ay] at tr
