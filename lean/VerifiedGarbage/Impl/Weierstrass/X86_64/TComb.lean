@@ -22,7 +22,7 @@ is 1, so the addition is the mixed one for `a = -3` (`rcb3m`, with `b` in
 under the mask of a nonzero digit (`eqMask 0`, from the digit computed
 again).
 
-The digits are secret, so their entries are selected in constant time: every
+For secret scalars, entries are selected in constant time: every
 entry of the table is loaded, 16 bytes at a time, at an address that depends
 only on `j` (public), into `xmm14`, and kept (`pand`, `por`) under a mask in
 both quadwords of `xmm15` that is all ones exactly when its index is the
@@ -32,8 +32,11 @@ stored to `E`'s `x` and `y`, which are adjacent. The entry's `Z` is `1`
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
 
-The counter is `rbx`, and products of it with constants are by `mul`: the
-model has no left shift.
+Public verification scalars may instead use `selectPublic`: it directly
+loads the selected entry, with a safe first-entry address for a zero digit.
+The default `comb` and `step` keep the full scan for secret scalars.
+
+The counter is `rbx`, and products of it with constants are by `mul`.
 -/
 
 namespace VG.Impl.Weierstrass.X86_64
@@ -154,6 +157,29 @@ def selOne : List Instr :=
 /-- The entry of table `rbx` for the magnitude in `r8` into `E`. -/
 def select : List Instr := K.selSetup ++ K.selPass ++ K.selOne
 
+/-- Address of the public digit's entry. A zero magnitude safely reads the
+first entry, which the mask subsequently clears. -/
+def publicAddress : List Instr :=
+  [.mov .rax (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 K.H)), .mul .rcx,
+    .mov .rcx (.reg .r8), .alu .sub .rcx (.imm 1), .alu .adc .rcx (.imm 0),
+    .alu .add .rax (.reg .rcx), .mov32 .rcx (.imm (BitVec.ofNat 32 (16 * K.M.n))), .mul .rcx,
+    .leaSym .rdx K.tsym, .alu .add .rdx (.reg .rax)]
+
+/-- All ones in both halves of `xmm15` unless the public magnitude is zero. -/
+def publicMask : List Instr :=
+  eqMask 0 ++ [.alu .xor .rcx (.imm (-1)),
+    .xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)]
+
+/-- Read only the selected public entry, then store its masked coordinates.
+All loads precede the stores. -/
+def publicLoad : List Instr :=
+  (List.range K.M.n).flatMap (fun i =>
+    [.movdquLoad (selAcc i) (tblAt (16 * i)), .xop (.bin .pand (selAcc i) .xmm15)]) ++
+  (List.range K.M.n).map (fun i => .movdquStore (sc (K.E.x + 16 * i)) (selAcc i))
+
+/-- Direct lookup for public scalars only. Secret scalars use `select`. -/
+def selectPublic : List Instr := K.publicAddress ++ publicMask ++ K.publicLoad ++ K.selOne
+
 /-- The digit's magnitude into `rax` and `r8`: its window and `|k - H|`. -/
 def digit : List Instr := winIndex K.w ++ hornerBits K.bits K.w ++ magnitudeH K.H
 
@@ -169,8 +195,8 @@ def negY : List Instr := Mont.X86_64.sub K.M K.neg K.zero K.E.y ++ K.signMask ++
 
 /-- Iteration `j = rbx - 1` (with `rbx` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
-def step : Prog isa :=
-  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ K.select)) <|
+def step (publicLookup : Bool := false) : Prog isa :=
+  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ (if publicLookup then K.selectPublic else K.select))) <|
   .seq (.block K.negY) <|
   .seq (fprogB K.M (rcb3m K.S K.A K.E K.D)) <|
   .block (K.digit ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ [.alu .test .rbx (.reg .rbx)])
@@ -187,7 +213,7 @@ def init : List Instr :=
     [.mov32 .rbx (.imm (BitVec.ofNat 32 K.J))]
 
 /-- `[k]G` into `A`. -/
-def comb : Prog isa := .seq (.block K.init) (.loop K.step .ne)
+def comb (publicLookup : Bool := false) : Prog isa := .seq (.block K.init) (.loop (K.step publicLookup) .ne)
 
 end TCombCfg
 

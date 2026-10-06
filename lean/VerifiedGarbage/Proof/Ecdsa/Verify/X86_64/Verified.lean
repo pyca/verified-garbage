@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
@@ -13,11 +13,9 @@ registration file supplies: `Proof.P256.law`, `Proof.P256.combOk7` and the
 variant's `inv`), so `verify_ok` gives the contract's
 postcondition; the callee-saved registers are restored, `rsp` is never
 written, and every store is to `scratch`, which the return address is apart
-from (`abiPreserved`). Constant time by taint tracking with the address of
-the comb's static public (`taintSym`): the only branches are on loop
-counters, and every address is an argument or the static's address plus a
-constant or a counter, so only the pointers affect timing (the contract would
-let the key, the hash and the signature affect it too).
+from (`abiPreserved`). Direct table lookup uses the scalar determined by
+the public digest and signature. `verify_public_ct` relates those lookups,
+and taint tracking checks the remaining code against the shared contract.
 -/
 
 namespace VG.Proof.Ecdsa.Verify.X86_64
@@ -80,22 +78,59 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve)
   verify_x86_of (p256_ok hI) hL (p256_tbls hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
-theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP256 :=
-  VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx])
-    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact h1
-      · exact h2
-      · exact h3
-      · exact h4, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
-    (by taint_decide)
+def p256Table : CombData := ⟨7,Impl.P256.p256Comb7,Impl.P256.p256Comb7Start,"VG_P256_COMB"⟩
+
+theorem verify_checks : VerifyChecks p256 p256Table where
+  comb := {
+    init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
+      (fun _ _ _ _ h => h) (by taint_decide)
+    head := VG.Taint.constantTime (A := taintSym ["VG_P256_COMB"]) (Taint.ofRegs [.rdi,.rbx])
+      (fun _ _ _ _ h => h) (by taint_decide)
+    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rbx,.rdx])
+      (fun _ _ _ _ h => h) (by taint_decide) }
+  before := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
+    (fun _ _ _ _ h => h) (by taint_decide)
+  after := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+/-- The shared contract declares all verification input buffers public. -/
+theorem verify_public_of_spec {s₁ s₂ : State}
+    (pub : (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub s₁ s₂) :
+    VerifyPublic p256 p256Table s₁ s₂ := by
+  sig_pub [Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.P256.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p256_combConsts,
+    Abi.withConsts] at pub
+  obtain ⟨_,hsy,inputs,h0,h1,h2,h3⟩ := pub
+  refine ⟨Taint.agree_ofRegs ?_,hsy,?_⟩
+  · intro r hr
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact h0
+    · exact h1
+    · exact h2
+    · exact h3
+  · have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+    have parts := List.append_inj eqBytes (by simp only [List.length_append,Weierstrass.length_bytesAt])
+    have digest := (List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])).2
+    exact publicU_congr digest parts.2
+
+theorem verify_ct (hL : Weierstrass.Law Spec.P256.curve)
+    (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
+    ConstantTime isa
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pre
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)).pub verifyP256 := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  exact verify_public_ct (p256_ok hI) hL (p256_tbls hT) rfl (by decide) verify_checks
+    _ _ _ _ _ _ (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂)) (verify_public_of_spec pub) e₁ e₂
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP256
-      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)) :=
-  Verified.of_correct (verify_x86 hL hT hI) verify_ct implies
+      (Spec.Ecdsa.P256.inst.verifyContract (X86_64.abi.withConsts p256.combConsts)) := by
+  refine ⟨fun s hs => ?_,verify_ct hL hT hI,implies.sat⟩
+  obtain ⟨t,s',he,ha,hp⟩ := verify_x86 hL hT hI s (implies.pre _ hs)
+  exact ⟨t,s',he,ha,implies.post s s' hs hp⟩
 
 end VG.Proof.Ecdsa.Verify.X86_64

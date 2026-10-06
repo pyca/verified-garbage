@@ -26,12 +26,14 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    up to nine words, with `b R mod p` set again in ECDH's slot of it), or
    its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
    complete addition, into `R`;
-6. `Z^(p-2)` by the signature's inversion (or power), `x = X Z^(p-2)` out of Montgomery's
-   form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
-   flag, which is returned as 0 or 1.
+6. for P-256, compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`;
+   other curves invert `Z` and compare the affine x-coordinate modulo `n`.
+   Reject `Z = 0` and return the combined validity flag as 0 or 1.
 
-Everything is computed whatever the flag, and only the pointers affect
-timing, although the contract would let every input affect it.
+Everything is computed whatever the flag. P-256 directly indexes the fixed-base
+table using the public verification scalar. The shared contract declares
+the public key, digest and signature public; secret signing scalars continue
+to use constant-time table scans.
 -/
 
 namespace VG.Impl.Ecdsa.Verify.X86_64
@@ -113,6 +115,40 @@ def final : Prog isa :=
     Mont.X86_64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
     c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86_64.Cfg.checkZero c (c.sl W) ++ finish c]
 
+/-- Constants for comparison in projective coordinates. `MN` is no longer
+needed for arithmetic modulo the group order. -/
+def projectivePrepare : List Instr :=
+  setConst c.n (c.sl XM) (c.R * c.R % c.C.p) ++
+  setConst c.n (c.sl ACC) (c.mont c.C.n) ++ setConst c.n (c.sl MN) (c.C.p - c.C.n)
+
+/-- Homogeneous coordinates use `X = x Z`: compute both possible lifts of
+`x mod n = r`, without an inversion. -/
+def projectiveOps (sl : Nat → Nat) : List FOp :=
+  [.mul (sl X) (sl XM) (sl RZ), .sub (sl W) (sl RX) (sl X),
+    .add (sl XM) (sl XM) (sl ACC), .mul (sl X) (sl XM) (sl RZ), .sub (sl XN) (sl RX) (sl X)]
+
+/-- Match `X = r Z`, or `X = (r+n) Z` with `r+n < p`. -/
+def projectiveMatch : List Instr :=
+  Impl.Ecdh.X86_64.Cfg.zero c (c.sl W) ++ ([.mov .rbp (.reg .rdx)] : List Instr) ++
+  c.ltN (c.sl K) ++ ([.mov .r12 (.reg .rax)] : List Instr) ++
+  Impl.Ecdh.X86_64.Cfg.zero c (c.sl XN) ++
+  [.alu .and .rdx (.reg .r12), .alu .or .rdx (.reg .rbp)]
+
+/-- Reject infinity and combine the match with the preceding input checks. -/
+def projectiveChecks : List Instr :=
+  projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
+
+/-- Verify using the projective x-coordinate. -/
+def projectiveFinal : Prog isa :=
+  .seq (.seq (.block (projectivePrepare c))
+    (.seq (.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
+      (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
+
+/-- P-256 has at most two possible field representatives of `x mod n`. -/
+def tail : Prog isa :=
+  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  else .seq c.pPow (final c)
+
 /-- `[v]Q`, into `R`: for up to nine words, `b R mod p` to ECDH's `BP` (the
 hash's `e R mod n` was there) and ECDH's window method from `v`; for more,
 the table of `v`'s bits and ECDH's ladder. -/
@@ -125,12 +161,12 @@ def mulV : Prog isa :=
 
 /-- `[u]G + [v]Q`, into `R`, from `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <| .seq (.block (save c)) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul (c.C.len == 32)) <| .seq (.block (save c)) <|
   .seq (mulV c) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <| .seq c.pPow (final c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) (tail c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
