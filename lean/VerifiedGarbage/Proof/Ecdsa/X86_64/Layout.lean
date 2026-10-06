@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.BytesLen
 import VerifiedGarbage.Proof.Framework.X86_64.Spill
 import VerifiedGarbage.Proof.Weierstrass.CombW
 import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.Law3
 
 /-!
 # ECDSA on x86-64: the curve, the arguments and the working space
@@ -48,7 +49,8 @@ def CombTbls (c : Cfg) : Prop :=
 /-- What the proof of the code needs of a curve: its field and order are odd
 and fit in `n` words (`n < 10`, so that the slots and tables fit in the
 working space), `G` is on the curve, `p < 2n` (so `x mod n` is one
-conditional subtraction), the Montgomery constants are right, encodings are
+conditional subtraction), the Montgomery constants (and the reduction's words
+of `(p + 1) / 2⁶⁴` if `p ≡ -1 (mod 2⁶⁴)`, `red_p`) are right, encodings are
 `len` bytes in `n` words (`8 (n - 1) < len ≤ 8 n`, at least one word), and
 the bits of a hash of `len` bytes that are not `e`'s (`c.sh`, 0 unless `n`
 has fewer than `8 len` bits) are fewer than 32, and for up to six words
@@ -68,6 +70,7 @@ structure CfgOk (c : Cfg) : Prop where
   n_ge : 3 ≤ c.C.n
   p_lt_2n : c.C.p < 2 * c.C.n
   minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
+  red_p : c.MP'.ok c.C.p = true
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   len8 : 8 ≤ c.C.len
   len_lo : 8 * c.n < c.C.len + 8
@@ -80,6 +83,10 @@ structure CfgOk (c : Cfg) : Prop where
   (`InvOk`), and modulo `n` too if `fastN`. -/
   inv : c.n ≤ 6 → 4 ≤ c.n ∧ InvSound c.C.p ∧ InvOk c.invP c.C.p
   inv_n : c.fastN = true → c.n ≤ 6 → InvSound c.C.n ∧ InvOk c.invN c.C.n
+  /-- `a = -3`, for the window method's formulas, and for up to six words an
+  even number of them, for its selection of 16 bytes at a time. -/
+  am3 : AM3 c.C
+  even : c.n ≤ 6 → c.n % 2 = 0
 
 /-- The comb's tables, if any, at the address of their static: held, not
 wrapping around, and apart from the regions `wr`, as `Abi.withConsts`

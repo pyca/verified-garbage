@@ -58,7 +58,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Na
       rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl))]
       exact hS.t₁ t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
-      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
+      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
     (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s₅ i := fun hi h₁ =>

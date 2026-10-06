@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # Deterministic ECDSA on 32-bit ARM: the contract the proof is written against
 
 The facts of `I.signContract` for an instance `I` of a curve of `len`-byte
-scalars with a hash of `I.hashLen` bytes, for 32-bit ARM and 240 bytes of
+scalars with a hash of `I.hashLen` bytes, for 32-bit ARM and `N` bytes of
 stack, by name:
 `vg_ecdsa_<curve>_<hash>_sign(out = r0, d = r1, digest = r2, scratch = r3)`,
 the result in `r0` (the low word of `r1:r0`). Each instance's file shows
@@ -21,22 +21,22 @@ open VG VG.Arm Spec.Weierstrass Spec.Ecdsa
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
   I.result m d digest
 
-/-- The 240 bytes of stack below `sp`. -/
-abbrev stkR (sp : BitVec 32) : Region := ⟨State.addr sp - BitVec.ofNat 64 240, 240⟩
+/-- The `N` bytes of stack below `sp`. -/
+abbrev stkR (sp : BitVec 32) (N : Nat) : Region := ⟨State.addr sp - BitVec.ofNat 64 N, N⟩
 
-def rfcArm (I : Spec.Ecdsa.Rfc6979.Instance) : Contract Arm.isa where
+def rfcArm (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract Arm.isa where
   pre s :=
     let out : Region := ⟨State.addr (s.gpr .r0), 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨State.addr (s.gpr .r1), I.ecdsa.curve.len⟩
     let digest : Region := ⟨State.addr (s.gpr .r2), I.hashLen⟩
     let scratch : Region := ⟨State.addr (s.gpr .r3), 8192⟩
-    let stk : Region := stkR s.sp
+    let stk : Region := stkR s.sp N
     s.rd = [d, digest] ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
       (s.gpr .r0).toNat + 2 * I.ecdsa.curve.len ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + I.ecdsa.curve.len ≤ 2 ^ 32 ∧
-      (s.gpr .r2).toNat + I.hashLen ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32 ∧ 240 ≤ s.sp.toNat
+      (s.gpr .r2).toNat + I.hashLen ≤ 2 ^ 32 ∧ (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32 ∧ N ≤ s.sp.toNat
   post s s' :=
     match (result I s.mem (State.addr (s.gpr .r1)) (State.addr (s.gpr .r2))).1 with
     | some rs => BitVec.setWidth 32 (s'.gpr .r1 ++ s'.gpr .r0) = 1 ∧

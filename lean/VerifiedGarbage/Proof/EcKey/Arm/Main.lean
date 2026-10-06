@@ -120,20 +120,20 @@ working space since `s₀`, with `out` in `lr`. -/
 theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : Scr s base size)
     (F : Fixed c base s₀.gpr s.mem) (hacc : sv c base s ACC < c.C.p) (hflag : flagW c base s = BitVec.allOnes 32)
     (hwhole : Unch base [(0, 8192)] s₀.mem s.mem) (hrest : Rest (.lr :: work) s₀ s) (hlr : s.gpr .lr = s₀.gpr .r0)
-    (hofit : (s₀.gpr .r0).toNat + (1 + 16 * c.n) ≤ 2 ^ 32)
-    (hw : (⟨ptr s₀ .r0, 1 + 16 * c.n⟩ : Region) ∈ s₀.wr)
-    (hd : Region.Disjoint ⟨ptr s₀ .r0, 1 + 16 * c.n⟩ ⟨base, size⟩) :
+    (hofit : (s₀.gpr .r0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32)
+    (hw : (⟨ptr s₀ .r0, 1 + 2 * c.C.len⟩ : Region) ∈ s₀.wr)
+    (hd : Region.Disjoint ⟨ptr s₀ .r0, 1 + 2 * c.C.len⟩ ⟨base, size⟩) :
     WP isa (Impl.EcKey.Arm.Cfg.middle c) s fun s' => ∃ xv yv, xv < c.C.p ∧
       Fin.ofNat c.C.p xv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
       yv < c.C.p ∧ Fin.ofNat c.C.p yv =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s RY) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 16 * c.n) =
-        (if ok c base s then 4 :: (toBytes (8 * c.n) xv ++ toBytes (8 * c.n) yv)
-          else List.replicate (1 + 16 * c.n) 0) ∧
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 2 * c.C.len) =
+        (if ok c base s then 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
+          else List.replicate (1 + 2 * c.C.len) 0) ∧
       s'.gpr .r0 = (if ok c base s then 1 else 0) ∧
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.sp = s₀.sp ∧
-      ∃ m, Unch base [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (1 + 16 * c.n) m s'.mem := by
+      ∃ m, Unch base [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (1 + 2 * c.C.len) m s'.mem := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -172,52 +172,52 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
         s₆.mem, W₆, Oout⟩
   rw [bytes, e₆ (i := X) (by decide) (by decide), e₆ (i := Y) (by decide) (by decide)]
 
-/-- The arguments: `out` (`1 + 16 n` bytes), `d` (`8 n` bytes) and `scratch`,
+/-- The arguments: `out` (`1 + 2 len` bytes), `d` (`len` bytes) and `scratch`,
 readable and writable as the contract says and apart from each other as it
 says. -/
 structure PkPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨ptr s .r1, 8 * c.n⟩]
-  wr : s.wr = [⟨ptr s .r0, 1 + 16 * c.n⟩, ⟨ptr s .r2, 8192⟩]
-  out_sc : Region.Disjoint ⟨ptr s .r0, 1 + 16 * c.n⟩ ⟨ptr s .r2, 8192⟩
-  d_sc : Region.Disjoint ⟨ptr s .r1, 8 * c.n⟩ ⟨ptr s .r2, 8192⟩
-  out_fit : (s.gpr .r0).toNat + (1 + 16 * c.n) ≤ 2 ^ 32
-  d_fit : (s.gpr .r1).toNat + 8 * c.n ≤ 2 ^ 32
+  rd : s.rd = [⟨ptr s .r1, c.C.len⟩]
+  wr : s.wr = [⟨ptr s .r0, 1 + 2 * c.C.len⟩, ⟨ptr s .r2, 8192⟩]
+  out_sc : Region.Disjoint ⟨ptr s .r0, 1 + 2 * c.C.len⟩ ⟨ptr s .r2, 8192⟩
+  d_sc : Region.Disjoint ⟨ptr s .r1, c.C.len⟩ ⟨ptr s .r2, 8192⟩
+  out_fit : (s.gpr .r0).toNat + (1 + 2 * c.C.len) ≤ 2 ^ 32
+  d_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32
 
-theorem PkPre.setup {s : State} (hp : PkPre c s) (hl : c.C.len = 8 * c.n) : SetupPre c Args.publicKey s where
+theorem PkPre.setup {s : State} (hp : PkPre c s) : SetupPre c Args.publicKey s where
   shift := .inl rfl
   args := by unfold argsOk; decide
   sc_in := fun h => nomatch h
   wr := by show (⟨ptr s .r2, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
-  k_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  d_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  e_in := hl ▸ inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
-  k_sc := hl ▸ hp.d_sc.sub_right (Region.sub_prefix (by decide))
-  d_sc := hl ▸ hp.d_sc.sub_right (Region.sub_prefix (by decide))
-  e_sc := hl ▸ hp.d_sc.sub_right (Region.sub_prefix (by decide))
-  k_fit := hl ▸ hp.d_fit
-  d_fit := hl ▸ hp.d_fit
-  e_fit := hl ▸ hp.d_fit
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  k_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
+  d_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
+  e_sc := hp.d_sc.sub_right (Region.sub_prefix (by decide))
+  k_fit := hp.d_fit
+  d_fit := hp.d_fit
+  e_fit := hp.d_fit
   sc_fit := hp.sc_fit
 
 /-- The private key. -/
-abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r1) (8 * c.n))
+abbrev dk (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ .r1) c.C.len)
 
 /-- The result the contract asks for: the specification's public key of `d`,
 `04 ‖ x ‖ y`, and `1`, or zeros and `0`. -/
 def PkPost (c : Cfg) (s₀ s' : State) : Prop :=
   match Spec.EcKey.publicKey c.C (dk c s₀) with
   | some (.affine x y) => s'.gpr .r0 = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 16 * c.n) = Spec.EcKey.encodePoint (.affine x y)
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 2 * c.C.len) = Spec.EcKey.encodePoint (.affine x y)
   | _ => s'.gpr .r0 = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 16 * c.n) = List.replicate (1 + 16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (ptr s₀ .r0) (1 + 2 * c.C.len) = List.replicate (1 + 2 * c.C.len) 0
 
 /-- What the function keeps: the callee-saved registers and `lr`, `sp`, and
 memory but the working space and `out`. -/
 structure PkKeep (c : Cfg) (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   sp : s'.sp = s₀.sp
-  frame : ∃ m : Mem, Unch (ptr s₀ .r2) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (1 + 16 * c.n) m s'.mem
+  frame : ∃ m : Mem, Unch (ptr s₀ .r2) [(0, 8192)] s₀.mem m ∧ Outside (ptr s₀ .r0) 0 (1 + 2 * c.C.len) m s'.mem
 
 theorem publicKey_eq' (c : Cfg) : Impl.EcKey.Arm.Cfg.publicKey c =
     .seq (.seq (.block (c.setupWith Args.publicKey)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
@@ -227,16 +227,16 @@ theorem publicKey_eq' (c : Cfg) : Impl.EcKey.Arm.Cfg.publicKey c =
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.Arm.Cfg.publicKey c) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [publicKey_eq']
-  refine WP.seq (stage₁ hc (hp.setup hl) fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
+  refine WP.seq (stage₁ hc hp.setup fun _ S₁ => stage₂ hc hC S₁ fun s₂ S₂ => WP.block_nil ?_)
   refine WP.mono (middle_ok hc S₂.scr S₂.fixed S₂.acc_lt S₂.flag S₂.whole S₂.rest S₂.lr
     hp.out_fit (by rw [hp.wr]; simp) (hp.out_sc.sub_right (Region.sub_prefix (by decide))))
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, rax, saved, sp, frame⟩ => ⟨⟨saved, sp, frame⟩, ?_⟩
   -- The specification.
-  have hD : sv c (scBase Args.publicKey s₀) s₂ D = dk c s₀ := by rw [S₂.d, dv_eq rfl, hl]
+  have hD : sv c (scBase Args.publicKey s₀) s₂ D = dk c s₀ := by rw [S₂.d, dv_eq (A := Args.publicKey) rfl]
   have hR := S₂.rep
   have hxX : Fin.ofNat c.C.p xv = tmv c.C c.n (scBase Args.publicKey s₀) s₂ (c.sl RX) *
       tmv c.C c.n (scBase Args.publicKey s₀) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hx, S₂.acc]
@@ -244,7 +244,7 @@ theorem publicKey_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C) {s�
       tmv c.C c.n (scBase Args.publicKey s₀) s₂ (c.sl RZ) ^ (c.C.p - 2) := by rw [hy, S₂.acc]
   have hz := toM_eq_zero_iff hpR (x := sv c (scBase Args.publicKey s₀) s₂ RZ) S₂.rz_lt
   unfold PkPost
-  have hdk : dk c s₀ = kv c Args.publicKey s₀ := by rw [kv_eq rfl, hl]
+  have hdk : dk c s₀ = kv c Args.publicKey s₀ := (kv_eq (A := Args.publicKey) rfl).symm
   rw [hdk, publicKey_eq hC hR hxl hxX hyl hyY, ← hdk]
   by_cases hd : 1 ≤ dk c s₀ ∧ dk c s₀ < c.C.n
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hd)]
@@ -257,7 +257,7 @@ theorem publicKey_ok (hc : CfgOk c) (hl : c.C.len = 8 * c.n) (hC : Law c.C) {s�
       refine ⟨by rw [rax, hok]; rfl, ?_⟩
       rw [bytes, hok]
       show _ = 4 :: (toBytes c.C.len xv ++ toBytes c.C.len yv)
-      rw [hl]; rfl
+      rfl
   · have hok : ok c (scBase Args.publicKey s₀) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩

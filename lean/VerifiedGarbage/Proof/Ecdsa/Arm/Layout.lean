@@ -267,6 +267,11 @@ theorem enc8n {c : Cfg} (hn : c.n < 10) : encodable (BitVec.ofNat 32 (8 * c.n)) 
   have : ∀ n < 10, encodable (BitVec.ofNat 32 (8 * n)) = true := by decide
   exact this _ hn
 
+/-- The bytes of an encoding, an immediate. -/
+theorem encLen {c : Cfg} (hc : CfgOk c) : encodable (BitVec.ofNat 32 c.C.len) = true := by
+  have : ∀ x < 73, encodable (BitVec.ofNat 32 x) = true := by decide
+  exact this _ (by have := hc.len_hi; have := hc.n10; omega)
+
 /-- Table `j` of the bits of slot `i`. -/
 theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hf : Far s base 8192) {i j : Nat} (hi : i < 45) (hj : j < 3) :
