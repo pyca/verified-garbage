@@ -211,6 +211,13 @@ theorem Rep.wf {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64}
         (by decide), upd, ifn h]
       exact R.fr j hj
 
+/-- A word store to the frame, as `str` writes it. -/
+theorem Rep.wq {m : Mem} {F S : Addr} {V : Nat → Byte} {W : Nat → BitVec 64} (G : Geo F S)
+    (R : Rep m F S V W) {k : Nat} (hk : k < nW) (v : BitVec 64) :
+    Rep (m.write (off F (8 * k)) 8 v) F S V (upd W k v) := by
+  have := R.wf G hk v
+  simpa only [Mem.writeW, Nat.reduceDiv, Nat.reduceMul, BitVec.setWidth_eq] using this
+
 theorem upd_self {α : Type} (f : Nat → α) (a : Nat) : upd f a (f a) = f := by
   funext x; simp only [upd]; split <;> simp_all
 
@@ -250,6 +257,9 @@ theorem byte_xor (x y : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (x.setWidt
 
 /-! ## Running blocks -/
 
+theorem v_addWithCarry (s : State) (sz : Size) (d : Reg) (a b : BitVec sz.bits) (c : Bool) :
+    (s.addWithCarry sz d a b c).v = s.v := rfl
+
 /-- Runs a block symbolically with `runBlock_cons` and `runStep_some`, the
 registers' writes kept folded (`RegUpd`), with the facts `hs`. -/
 syntax "oaep_run" " [" Lean.Parser.Tactic.simpLemma,* "]" : tactic
@@ -259,7 +269,8 @@ macro_rules
       Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, and_self,
       ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
       RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.v_write,
-      $hs,*]))
+      RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry, RegUpd.mem_addWithCarry, RegUpd.rd_addWithCarry,
+      RegUpd.wr_addWithCarry, RegUpd.sp_addWithCarry, v_addWithCarry, $hs,*]))
 
 /-! ## Masks -/
 
