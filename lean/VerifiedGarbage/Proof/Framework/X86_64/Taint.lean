@@ -247,7 +247,7 @@ def step (τ : T) : Instr → Option T
   | .movdquLoad _ m => if memPub τ m then some τ else none
   | .movdquStore m _ => storeStep τ m 16 false
   | .xop _ | .vop _ => some τ
-  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => if memPub τ m then some τ else none
+  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m => if memPub τ m then some τ else none
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some τ
@@ -725,7 +725,7 @@ def dstOf : Instr → Option Reg
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
-  | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _ | .vmovdqu32Load ..
+  | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
@@ -1206,7 +1206,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     subst e₁ e₂
     rw [VOp.exec_eq op s₁, VOp.exec_eq op s₂]
     exact ⟨rfl, ha.withVec _ _ _ _ _ _⟩
-  | vmovdquLoad len d m =>
+  | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
     rename_i hok; cases hs
@@ -1776,7 +1776,7 @@ def stepK (τ : T) : Instr → Option T
   | .movdquLoad _ m => bif memPub τ m then some τ else none
   | .movdquStore m _ => storeStepK τ m 16 false
   | .xop _ | .vop _ => some τ
-  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => bif memPub τ m then some τ else none
+  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m => bif memPub τ m then some τ else none
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some τ
@@ -1999,7 +1999,8 @@ def stepKDFn : Instr → Step
   | .movdquLoad _ m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .movdquStore m _ => ⟨fun τ => storeStepK τ m 16 false⟩
   | .xop _ | .vop _ => ⟨fun τ => some τ⟩
-  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m => ⟨fun τ => bif memPub τ m then some τ else none⟩
+  | .vmovdquLoad _ _ m | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m =>
+    ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepK τ m 16 false⟩
   | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepK τ m 32 false⟩
   | .zop _ => ⟨fun τ => some τ⟩
