@@ -13,6 +13,7 @@ def variant : PublicImpl where
   ct := precomputedChecked_constantTime _
   keepsV := by decide +kernel
   spSafe := Code.all_of_forall (fun _ => rfl) _
+  depth := by decide +kernel
   suffix := ""
   features := []
 

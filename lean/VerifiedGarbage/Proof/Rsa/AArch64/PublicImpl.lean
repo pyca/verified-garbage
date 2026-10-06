@@ -15,6 +15,8 @@ structure PublicImpl where
   ct : ConstantTime isa pdContract.pre pdContract.pub code
   keepsV : code.allInstrs keepsV = true
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- It has no frame and makes no calls: its callers reserve no stack for it. -/
+  depth : code.aarch64Depth = 0
   suffix : String
   features : List String
 
