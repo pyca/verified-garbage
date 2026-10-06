@@ -108,12 +108,20 @@ def ySelWord (w : Nat) : List Instr :=
 /-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
 def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 
-/-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, four
-doublings between `E` and `D`, and back. -/
+/-- A pair of Jacobian doublings, with a public count in the bits above the
+window index in `rbx`. The window index is less than 4096. -/
+def jacPair : Prog isa :=
+  .seq (fprogB K.M (dblJ K.S K.E K.D)) <|
+  .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .block [.alu .sub .rbx (.imm 4096), .alu .cmp .rbx (.imm 4096)]
+
+/-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, two
+pairs of doublings between `E` and `D`, and back. The pair loop restores
+`rbx` to the window index without an additional scratch slot. -/
 def jac : Prog isa :=
   .seq (fprogB K.M (toJ K.S K.R (zeroPt K) K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .seq (.block [.alu .add .rbx (.imm 8192)]) <|
+  .seq (.loop (jacPair K) .ae) <|
   fprogB K.M (fromJ K.S K.E (zeroPt K) K.R)
 
 /-- `R = 16 R`. -/
