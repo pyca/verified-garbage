@@ -145,6 +145,107 @@ theorem copyH_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R 
   · rw [hm, Ru.bytes (by omega)]
     exact Ru.writeBytes (by simp only [List.length_map, List.length_range]; omega)
 
+/-- A slot of the frame. -/
+abbrev slotR (F : Addr) (d : Nat) : Region := ⟨off F d, 8⟩
+
+theorem frame_slot (m : Mem) (F : Addr) (d : Nat) (v : BitVec 64) :
+    Frame [slotR F d] m (m.writeW (off F d) v) :=
+  (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+
+theorem Lay.slotS {t : State} {F S : Addr} (L : Lay t F S) {d : Nat} (h : d + 8 ≤ frameBytes) :
+    ∀ r ∈ [slotR F d], Region.Disjoint ⟨S, oRsa⟩ r := by
+  intro r hr
+  rw [List.mem_singleton.mp hr]
+  exact (L.dFS.sub_left (Offset.sub_base F h)).symm
+
+/-- `Y` with the counter `c` after `H`. -/
+def ctrV (D : Nat) (V : Nat → Byte) (c : Nat) (x : Nat) : Byte :=
+  if oY + D ≤ x ∧ x < oY + D + 4 then (Spec.Rsa.i2osp c 4).getD (x - (oY + D)) 0 else V x
+
+theorem byte_shr {c : Nat} (k : Nat) (hc : c < 2 ^ 64) :
+    ((BitVec.ofNat 64 c) >>> k).setWidth 8 = BitVec.ofNat 8 (c / 2 ^ k) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+    Nat.mod_eq_of_lt hc]
+
+include hH in
+theorem counter_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {c : Nat}
+    (h28 : t.gpr .x28 = BitVec.ofNat 64 c) (hc : c < 2 ^ 32) :
+    WP isa (.block (counter H)) t fun t' => Keep [.x10, .x9, .x22, .x16] t t' ∧
+      t'.gpr .x22 = BitVec.ofNat 64 (H.D + 4) ∧ t'.mem.readW (off F sNb) 64 = BitVec.ofNat 64 (mgfNb H) ∧
+      Frame [⟨S, oRsa⟩, slotR F sNb] t.mem t'.mem ∧ Rep t'.mem S (ctrV H.D V c) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  obtain ⟨_, hnb, _⟩ := mgfNb_spec hH
+  have hmg : mgfNb H ≤ 256 := Nat.le_trans (Nat.le_mul_of_pos_right _ hH.B_pos) hnb
+  have c1 : oY = 3584 := rfl
+  have c6 : oRsa = 8192 := rfl
+  unfold counter st
+  simp only [List.cons_append, List.nil_append]
+  refine wp_addImm (by omega) fun u₁ o₁ e₁ => wp_lsr (by decide) fun u₂ o₂ e₂ => ?_
+  have a₂ : u₂.gpr .x10 = off S (oY + H.D) := by rw [o₂.get .x10, e₁, L.x20]
+  have w₂ : u₂.wr = t.wr := by rw [o₂.wr, o₁.wr]
+  refine wp_strb (by decide) (by rw [a₂, BitVec.add_zero]) (by rw [w₂]; exact L.st (by omega)) fun u₃ m₃ => ?_
+  refine wp_lsr (by decide) fun u₄ o₄ e₄ => ?_
+  refine wp_strb (by decide) (by rw [o₄.get .x10, m₃.gpr, a₂, off_add])
+    (by rw [o₄.wr, m₃.wr, w₂]; exact L.st (by omega)) fun u₅ m₅ => ?_
+  refine wp_lsr (by decide) fun u₆ o₆ e₆ => ?_
+  refine wp_strb (by decide) (by rw [o₆.get .x10, m₅.gpr, o₄.get .x10, m₃.gpr, a₂, off_add])
+    (by rw [o₆.wr, m₅.wr, o₄.wr, m₃.wr, w₂]; exact L.st (by omega)) fun u₇ m₇ => ?_
+  refine wp_strb (by decide) (by rw [m₇.gpr, o₆.get .x10, m₅.gpr, o₄.get .x10, m₃.gpr, a₂, off_add])
+    (by rw [m₇.wr, o₆.wr, m₅.wr, o₄.wr, m₃.wr, w₂]; exact L.st (by omega)) fun u₈ m₈ => ?_
+  refine wp_movz fun u₉ o₉ e₉ => wp_movz fun u₁₀ o₁₀ e₁₀ => wp_addSp (by decide) fun u₁₁ o₁₁ e₁₁ => ?_
+  have sp₁₁ : u₁₀.sp = F := by
+    rw [o₁₀.sp, o₉.sp, m₈.sp, m₇.sp, o₆.sp, m₅.sp, o₄.sp, m₃.sp, o₂.sp, o₁.sp, L.sp]
+  have wr₁₁ : u₁₁.wr = t.wr := by rw [o₁₁.wr, o₁₀.wr, o₉.wr, m₈.wr, m₇.wr, o₆.wr, m₅.wr, o₄.wr, m₃.wr, w₂]
+  refine wp_strx (by decide) (by rw [e₁₁, sp₁₁, BitVec.add_zero]) (by rw [wr₁₁]; exact L.fst (by decide))
+    fun u₁₂ m₁₂ => wp_nil ?_
+  have x28 : ∀ k, k < 64 → ((t.gpr .x28) >>> k).setWidth 8 = BitVec.ofNat 8 (c / 2 ^ k) := fun k _ => by
+    rw [h28]; exact byte_shr k (by omega)
+  have b0 : (u₂.gpr .x9).setWidth 8 = BitVec.ofNat 8 (c / 2 ^ 24) := by
+    rw [e₂, o₁.get .x28]; exact x28 24 (by decide)
+  have b1 : (u₄.gpr .x9).setWidth 8 = BitVec.ofNat 8 (c / 2 ^ 16) := by
+    rw [e₄, m₃.gpr, o₂.get .x28, o₁.get .x28]; exact x28 16 (by decide)
+  have b2 : (u₆.gpr .x9).setWidth 8 = BitVec.ofNat 8 (c / 2 ^ 8) := by
+    rw [e₆, m₅.gpr, o₄.get .x28, m₃.gpr, o₂.get .x28, o₁.get .x28]; exact x28 8 (by decide)
+  have b3 : (u₇.gpr .x28).setWidth 8 = BitVec.ofNat 8 c := by
+    rw [m₇.gpr, o₆.get .x28, m₅.gpr, o₄.get .x28, m₃.gpr, o₂.get .x28, o₁.get .x28]
+    have := x28 0 (by decide)
+    rwa [BitVec.ushiftRight_zero, Nat.pow_zero, Nat.div_one] at this
+  have hm₈ : u₈.mem = (((t.mem.writeW (off S (oY + H.D)) (BitVec.ofNat 8 (c / 2 ^ 24))).writeW
+      (off S (oY + H.D + 1)) (BitVec.ofNat 8 (c / 2 ^ 16))).writeW (off S (oY + H.D + 2))
+      (BitVec.ofNat 8 (c / 2 ^ 8))).writeW (off S (oY + H.D + 3)) (BitVec.ofNat 8 c) := by
+    rw [m₈.mem, m₇.mem, o₆.mem, m₅.mem, o₄.mem, m₃.mem, o₂.mem, o₁.mem, b0, b1, b2, b3]
+  have R₈ := (((R.wb (o := oY + H.D) (by omega) (BitVec.ofNat 8 (c / 2 ^ 24))).wb (o := oY + H.D + 1) (by omega)
+    (BitVec.ofNat 8 (c / 2 ^ 16))).wb (o := oY + H.D + 2) (by omega) (BitVec.ofNat 8 (c / 2 ^ 8))).wb
+    (o := oY + H.D + 3) (by omega) (BitVec.ofNat 8 c)
+  rw [← hm₈] at R₈
+  have hm₁₂ : u₁₂.mem = u₈.mem.writeW (off F sNb) (BitVec.ofNat 64 (mgfNb H)) := by
+    rw [m₁₂.mem, o₁₁.mem, o₁₀.mem, o₉.mem, o₁₁.get .x9, e₁₀, setWidth_ofNat16 (by omega)]
+  have F₈ : Frame [⟨S, oRsa⟩] t.mem u₈.mem := by
+    rw [hm₈]
+    refine (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
+      |>.writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_ <;>
+    exact Offset.contains_base S (by omega) (by omega)
+  refine ⟨(((o₁.keep.trans (o₂.keep.trans (m₃.keep.trans (o₄.keep.trans (m₅.keep.trans (o₆.keep.trans
+    (m₇.keep.trans (m₈.keep.trans (o₉.keep.trans (o₁₀.keep.trans (o₁₁.keep.trans m₁₂.keep)))))))))))).mono),
+    ?_, ?_, ?_, ?_⟩
+  · rw [m₁₂.gpr, o₁₁.get .x22, o₁₀.get .x22, e₉, setWidth_ofNat16 (by omega)]
+  · rw [hm₁₂, Mem.readW_writeW_self64]
+  · rw [hm₁₂]
+    exact (F₈.mono (by simp)).trans ((frame_slot _ F sNb _).mono (by simp))
+  · rw [hm₁₂]
+    refine (R₈.frame (frame_slot _ F sNb _) (L.slotS (by decide))).congr fun x _ => ?_
+    simp only [upd, ctrV]
+    rcases (show x = oY + H.D ∨ x = oY + H.D + 1 ∨ x = oY + H.D + 2 ∨ x = oY + H.D + 3 ∨
+        ¬(oY + H.D ≤ x ∧ x < oY + H.D + 4) by omega) with h | h | h | h | h
+    · subst h; simp [Spec.Rsa.i2osp]
+    · subst h; simp [Spec.Rsa.i2osp]
+    · subst h; simp [Spec.Rsa.i2osp]
+    · subst h; simp [Spec.Rsa.i2osp]
+    · rw [ite_eq_right h, ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega),
+        ite_eq_right (by omega)]
+
 end
 
 end VG.Proof.RsaPss.AArch64
