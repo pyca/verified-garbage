@@ -17,8 +17,8 @@
 use serde::Deserialize;
 use verified_garbage::hashes::HashFunction;
 use verified_garbage::hashes::{
-    sha1::Sha1, sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512, sha224::Sha224,
-    sha256::Sha256, sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224, sha512_256::Sha512_256,
+    sha3::Sha3_224, sha3::Sha3_256, sha3::Sha3_384, sha3::Sha3_512, sha224::Sha224, sha256::Sha256,
+    sha384::Sha384, sha512::Sha512, sha512_224::Sha512_224, sha512_256::Sha512_256,
 };
 use verified_garbage::rsa::{Error, PublicKey};
 
@@ -55,8 +55,7 @@ fn trim(x: &[u8]) -> &[u8] {
 type Digest = fn(&[u8]) -> Vec<u8>;
 
 /// The hash functions by the names the vectors give them.
-const HASHES: [(&str, Digest); 11] = [
-    ("SHA-1", |m| Sha1::digest(m).as_ref().to_vec()),
+const HASHES: [(&str, Digest); 10] = [
     ("SHA-224", |m| Sha224::digest(m).as_ref().to_vec()),
     ("SHA-256", |m| Sha256::digest(m).as_ref().to_vec()),
     ("SHA-384", |m| Sha384::digest(m).as_ref().to_vec()),
