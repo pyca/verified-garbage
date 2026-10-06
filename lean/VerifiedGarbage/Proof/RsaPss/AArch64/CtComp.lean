@@ -218,6 +218,28 @@ theorem comp_step {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte}
       BitVec.toNat_ofNat]
     omega
 
+/-- Every block: the hash value at `oSel` is that of the first `fb + 1`
+blocks. -/
+theorem compLoop_ok {t : State} {F S : Addr} (L : Lay t F S) {V₀ : Nat → Byte} (R : Rep t.mem S V₀) {ℓ nbm : Nat}
+    (hB : 2 ^ lgB H = H.P.B) (hlg : lgB H < 64) (hℓ : ℓ < 2 ^ 62) (hnb : nbm * H.P.B ≤ 2048) (hnb0 : 0 < nbm)
+    (h22 : t.gpr .x22 = BitVec.ofNat 64 ℓ) (h19 : t.gpr .x19 = off S oSt)
+    (hNb : t.mem.readW (off F sNb) 64 = BitVec.ofNat 64 nbm) :
+    WP isa (compLoop H) t
+      (CInv hH t F S V₀ (hH.md.stateAt t.mem (off S oSt)) nbm ((ℓ + H.P.L) / H.P.B) nbm) := by
+  unfold compLoop
+  refine WP.seq (wp_movz fun u o e => wp_nil ?_)
+  refine VG.Proof.MlKem.AArch64.count_loop (cr := .x9) hnb0 _
+    (fun b hb u I => comp_step hH L hB hlg hℓ hnb hb h22 h19 hNb I) ?_
+  exact {
+    sp := o.sp, rd := o.rd, wr := o.wr
+    cs := fun r hr => o.gpr r (by revert r; decide)
+    x27 := by rw [e]; rfl
+    vec := o.vcs
+    fr := by rw [o.mem]; exact Frame.refl _ _
+    keep := fun x hx _ => by rw [o.mem]; exact R x hx
+    st := by rw [o.mem, hH.md.compressList_zero]
+    sel := fun h => absurd h (Nat.not_lt_zero _) }
+
 end
 
 end VG.Proof.RsaPss.AArch64
