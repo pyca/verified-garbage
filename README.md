@@ -1599,13 +1599,14 @@ lake build                           # check all proofs
 lake env lean --run Emit.lean        # regenerate src/asm/ after changing lean/VerifiedGarbage/Artifacts/
 ```
 
-To benchmark against OpenSSL (through rust-openssl; needs its headers), and
+To benchmark against OpenSSL (through rust-openssl; needs its headers) and
+aws-lc-rs (built from source; needs a C compiler), and
 to compare a branch with a checkout of `main`, as CI does for every pull
 request that changes the library:
 
 ```sh
 (cd bench && cargo bench)
-python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's times
+python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's and aws-lc-rs's times
 ```
 
 ## Credits

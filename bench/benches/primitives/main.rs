@@ -1,5 +1,6 @@
 //! Throughput of each public API, next to the same operation in OpenSSL
-//! (through rust-openssl), at a few message sizes.
+//! (through rust-openssl) and, where it has one, in aws-lc-rs, at a few
+//! message sizes.
 //!
 //! Every benchmark is one complete operation (setup included), as a caller
 //! of either library would do it. Benchmark ids are
@@ -88,13 +89,16 @@ const SIZES: [usize; 3] = [64, 1024, 16384];
 
 const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
+const AWS_LC: &str = "aws-lc-rs";
 
-/// Benchmarks the hash `vg` against OpenSSL's `md`.
+/// Benchmarks the hash `vg` against OpenSSL's `md` and, if it has the hash,
+/// aws-lc-rs's `aws_lc`.
 pub(crate) fn hash_group<const N: usize>(
     c: &mut Criterion,
     name: &str,
     vg: fn(&[u8]) -> [u8; N],
     md: MessageDigest,
+    aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
 ) {
     let mut g = c.benchmark_group(name);
     for size in SIZES {
@@ -106,6 +110,15 @@ pub(crate) fn hash_group<const N: usize>(
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| hash(md, black_box(&data)).unwrap())
         });
+        if let Some(alg) = aws_lc {
+            assert_eq!(
+                aws_lc_rs::digest::digest(alg, &data).as_ref(),
+                &vg(&data)[..]
+            );
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| aws_lc_rs::digest::digest(alg, black_box(&data)))
+            });
+        }
     }
     g.finish();
 }

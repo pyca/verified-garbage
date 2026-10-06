@@ -9,5 +9,5 @@ use crate::hash_group;
 pub const USES: &[&str] = &["md5"];
 
 pub fn bench(c: &mut Criterion) {
-    hash_group(c, "md5", Md5::digest, MessageDigest::md5());
+    hash_group(c, "md5", Md5::digest, MessageDigest::md5(), None);
 }

@@ -9,5 +9,11 @@ use crate::hash_group;
 pub const USES: &[&str] = &["sha224", "sha256"];
 
 pub fn bench(c: &mut Criterion) {
-    hash_group(c, "sha224", Sha224::digest, MessageDigest::sha224());
+    hash_group(
+        c,
+        "sha224",
+        Sha224::digest,
+        MessageDigest::sha224(),
+        Some(&aws_lc_rs::digest::SHA224),
+    );
 }

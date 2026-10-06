@@ -22,12 +22,13 @@ run.
 Writes a Markdown table of the results to stdout (and appends it to
 `--summary`, e.g. `$GITHUB_STEP_SUMMARY`), and exits with status 1 if any
 verified-garbage benchmark got slower by more than `--threshold`. If BASE
-does not exist, HEAD runs alone, next to OpenSSL.
+does not exist, HEAD runs alone, next to OpenSSL and aws-lc-rs.
 
-OpenSSL's code is the same on both sides, so its benchmarks are only a
-reference point for HEAD's times, not part of the comparison: they run once,
-with HEAD's binary, with `--openssl` or when BASE does not exist; and only
-without `VG_CPU_FEATURES`, which does not change OpenSSL's code either.
+OpenSSL's and aws-lc-rs's code is the same on both sides, so their
+benchmarks are only a reference point for HEAD's times, not part of the
+comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
+does not exist; and only without `VG_CPU_FEATURES`, which does not change
+their code either. aws-lc-rs has no benchmark where it lacks the primitive.
 
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
 features both sides use, and is named in the report. Each side is passed
@@ -54,11 +55,13 @@ from bench_arches import bench_catalog
 # Criterion filters (regexes over benchmark ids, which are
 # `<primitive>/<library>/<bytes>`, see bench/benches/primitives/main.rs).
 VG = "verified-garbage"
-OPENSSL = "openssl"
+# The libraries benchmarked for reference, with their names in the report.
+REFERENCES = {"openssl": "OpenSSL", "aws-lc-rs": "aws-lc-rs"}
 
 
 # Every build shares one target directory, so the dependencies (criterion,
-# rust-openssl), which are the same on both sides, are compiled only once.
+# rust-openssl, aws-lc-rs), which are the same on both sides, are compiled
+# only once.
 TARGET = pathlib.Path("bench-target").resolve()
 
 
@@ -208,8 +211,8 @@ def run(binary, home, library, args, checkout, modules, groups=None):
     return times
 
 
-def vs_openssl(ours, theirs):
-    """How head's time compares with OpenSSL's, in words."""
+def vs_reference(ours, theirs):
+    """How head's time compares with a reference library's, in words."""
     if ours > theirs * 1.05:
         return f"{ours / theirs:.1f}× slower"
     if theirs > ours * 1.05:
@@ -235,7 +238,8 @@ def main():
     p.add_argument("--threshold", type=float, default=0.35)
     p.add_argument("--warm-up-time", type=float, default=0.1)
     p.add_argument("--measurement-time", type=float, default=0.3)
-    p.add_argument("--openssl", action="store_true", help="also run OpenSSL's benchmarks, for reference")
+    p.add_argument("--openssl", action="store_true",
+                   help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
@@ -249,7 +253,7 @@ def main():
     if modules["head"] is None or (args.modules and set(modules["head"].split()) != set(args.modules.split())):
         p.error("head's benchmark registry does not use the selected modules")
     binaries = {"head": build(head / "bench"), "base": None}
-    note = "Base has no selected benchmarks; head/OpenSSL results are new."
+    note = "Base has no selected benchmarks; head's and the references' results are new."
     if not base.is_dir():
         note = "No base to compare with, so head ran alone."
     elif modules["base"] is not None:
@@ -293,12 +297,13 @@ def main():
             for bench_id, t in times.items():
                 best[side][bench_id] = min(t, best[side].get(bench_id, t))
     cpu_features = os.environ.get("VG_CPU_FEATURES", "")
-    openssl = {}
-    with_openssl = (args.openssl or binaries["base"] is None) and not cpu_features
-    if with_openssl:
-        print("OpenSSL", file=sys.stderr)
-        openssl = run(binaries["head"], args.work_dir.resolve() / "openssl", OPENSSL, args, head, modules["head"],
-                      groups)
+    references = {}
+    with_references = (args.openssl or binaries["base"] is None) and not cpu_features
+    if with_references:
+        for library, name in REFERENCES.items():
+            print(name, file=sys.stderr)
+            references[library] = run(binaries["head"], args.work_dir.resolve() / library, library, args, head,
+                                       modules["head"], groups)
 
     title = ", ".join([*([f"VG_CPU_FEATURES={cpu_features}"] if cpu_features else []),
                        *([f"shard {shard}/{shards}"] if shards > 1 else [])])
@@ -308,9 +313,9 @@ def main():
         f"## Benchmarks ({title})" if title else "## Benchmarks",
         "",
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
-        + (" OpenSSL (through rust-openssl) ran once, for reference." if with_openssl
-           else " OpenSSL ran only in the configuration without VG_CPU_FEATURES." if cpu_features
-           else " OpenSSL did not run (it does with `--openssl`, as in the workflow's manual runs)."),
+        + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference." if with_references
+           else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
+           else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, as in the workflow's manual runs)."),
         *(
             [
                 f"Changed modules: {args.modules}. Only the benchmarks that use them ran"
@@ -329,8 +334,9 @@ def main():
             else []
         ),
         "",
-        "| Benchmark | Base | Head | Change |" + (" OpenSSL | Head vs OpenSSL |" if with_openssl else ""),
-        "|---|--:|--:|--:|" + ("--:|--:|" if with_openssl else ""),
+        "| Benchmark | Base | Head | Change |"
+        + "".join(f" {name} | Head vs {name} |" for name in REFERENCES.values() if with_references),
+        "|---|--:|--:|--:|" + "--:|--:|" * len(references),
     ]
     regressions = []
     for primitive, size in sorted(best["head"]):
@@ -345,9 +351,9 @@ def main():
                 change += " 🚨"
         b = fmt_time(b) if b else "–"
         row = f"| `{bench_id}` | {b} | {fmt_time(h)} | {change} |"
-        if with_openssl:
-            o = openssl.get((primitive, size))
-            row += f" {fmt_time(o) if o else '–'} | {vs_openssl(h, o) if o else '–'} |"
+        for times in references.values():
+            o = times.get((primitive, size))
+            row += f" {fmt_time(o) if o else '–'} | {vs_reference(h, o) if o else '–'} |"
         lines.append(row)
     lines.append("")
     if regressions:
