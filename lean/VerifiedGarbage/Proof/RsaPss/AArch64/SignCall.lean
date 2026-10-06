@@ -288,4 +288,145 @@ theorem privArgs_ok {D K : Nat} {s t : State} (hp : PreS D K s) (hK : 16 ≤ K) 
     exact bytes_apart (R := ⟨off (scr s) oEm, (s.gpr .x3).toNat⟩) fA₁₂ (hemR.symm.sub_right s96)
       (by dsimp only; omega)
 
+/-! ## The call -/
+
+/-- `EM`, and the call's working space. -/
+abbrev emR (s : State) : Region := ⟨off (scr s) oEm, (s.gpr .x3).toNat⟩
+abbrev scR (s : State) : Region := ⟨off (scr s) oRsa, (stackArg s 12 - BitVec.ofNat 64 1024).toNat * 8⟩
+
+theorem scr_toNat {D K : Nat} {s : State} (hp : PreS D K s) :
+    (stackArg s 12 - BitVec.ofNat 64 1024).toNat = (stackArg s 12).toNat - 1024 := by
+  have := hp.hs
+  rw [BitVec.toNat_sub, BitVec.toNat_ofNat]
+  have := (stackArg s 12).isLt
+  omega
+
+theorem em_sub {D K : Nat} {s : State} (hp : PreS D K s) : Region.Sub (emR s) (sR s) :=
+  Offset.sub_base _ (by have := hp.hs; have := hp.k2; unfold oEm; omega)
+
+theorem sc_sub {D K : Nat} {s : State} (hp : PreS D K s) : Region.Sub (scR s) (sR s) :=
+  Offset.sub_base _ (by rw [scr_toNat hp]; have := hp.hs; unfold oRsa; omega)
+
+theorem a96_sub (K : Nat) (s : State) : Region.Sub ⟨fb s, 96⟩ (kR K s) := by
+  have := frame_sub K s (d := 0) (n := 96) (by decide); rwa [BitVec.add_zero] at this
+
+theorem privOk_of (c : PrivChecked) {D K : Nat} {s t : State} (hp : PreS D K s) (hcK : c.stack ≤ K)
+    {em : List Byte} (ha : AtCall s em t) : PrivOk c.stack t := by
+  have hk1 := hp.k1; have hk2 := hp.k2
+  have hfb := fb_toNat hp
+  have hkb := kb_toNat hp
+  have hcl := c.le
+  have hpos := c.pos
+  have hws : (scr s).toNat + (stackArg s 12).toNat * 8 ≤ 2 ^ 64 := hp.ws
+  have hsc := scr_toNat hp
+  have hhs := hp.hs
+  have hK : Region.Sub ⟨fb s - BitVec.ofNat 64 c.stack, c.stack⟩ (kR K s) := fun a h =>
+    (Offset.sub_below (fb s) (a := c.stack) (b := K) (n := c.stack) (m := K) hcK (by omega) a h) |>
+      fun h' => by
+        have e : fb s - BitVec.ofNat 64 K = kb K s := by rw [fb_eq K, BitVec.add_sub_cancel]
+        rw [e] at h'
+        exact Region.sub_prefix (by unfold stk; omega) a h'
+  have a0 : stackArg t 0 = s.gpr .x6 := ha.args 0 (by decide)
+  have a1 : stackArg t 1 = s.gpr .x7 := ha.args 1 (by decide)
+  have a2 : stackArg t 2 = stackArg s 0 := ha.args 2 (by decide)
+  have a3 : stackArg t 3 = stackArg s 1 := ha.args 3 (by decide)
+  have a4 : stackArg t 4 = stackArg s 2 := ha.args 4 (by decide)
+  have a5 : stackArg t 5 = stackArg s 3 := ha.args 5 (by decide)
+  have a6 : stackArg t 6 = stackArg s 4 := ha.args 6 (by decide)
+  have a7 : stackArg t 7 = stackArg s 5 := ha.args 7 (by decide)
+  have a8 : stackArg t 8 = stackArg s 6 := ha.args 8 (by decide)
+  have a9 : stackArg t 9 = stackArg s 7 := ha.args 9 (by decide)
+  have a10 : stackArg t 10 = off (scr s) oRsa := ha.args 10 (by decide)
+  have a11 : stackArg t 11 = stackArg s 12 - BitVec.ofNat 64 1024 := ha.args 11 (by decide)
+  have ol : (s.gpr .x3).toNat = (s.gpr .x1).toNat := hp.ol.symm
+  have hO : (⟨s.gpr .x0, (s.gpr .x3).toNat⟩ : Region) = oR s := by rw [ol]
+  have s96 := a96_sub K s
+  have hSem := em_sub hp
+  have hSsc := sc_sub hp
+  have hwem : (off (scr s) oEm).toNat + (s.gpr .x3).toNat ≤ 2 ^ 64 := by
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; unfold oEm at *; omega
+  have hwsc : (off (scr s) oRsa).toNat + (stackArg s 12 - BitVec.ofNat 64 1024).toNat * 8 ≤ 2 ^ 64 := by
+    simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; rw [hsc]; unfold oRsa at *; omega
+  refine ⟨?hl, ?hrd, ?hwr, ?hk, ?h1, ?h7, ?he1, ?he2, ?hp1, ?hp2, ?hq1, ?hq2, ?hdp, ?hqi, ?hdq, ?hs⟩
+  case hl =>
+    rw [ha.x0, ha.x1, ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, ha.sp, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
+      a11, hO]
+    exact {
+      sp1 := by unfold stk at *; omega
+      sp2 := by omega
+      on := hp.on
+      oe := hp.oe
+      oi := hp.os.sub_right hSem
+      op := hp.op
+      oq := hp.oq
+      odp := hp.odp
+      odq := hp.odq
+      oqi := hp.oqi
+      os := hp.os.sub_right hSsc
+      oa := (hp.ko.sub_left s96).symm
+      ns := hp.ns.sub_right hSsc
+      es := hp.es.sub_right hSsc
+      is := Offset.disjoint _ (Or.inl (by unfold oEm oRsa; omega)) (by unfold oEm; omega)
+        (by rw [hsc]; unfold oRsa; omega)
+      ps := hp.ps.sub_right hSsc
+      qs := hp.qs.sub_right hSsc
+      dps := hp.dps.sub_right hSsc
+      dqs := hp.dqs.sub_right hSsc
+      qis := hp.qis.sub_right hSsc
+      sa := ((hp.ks.sub_left s96).symm.sub_left hSsc)
+      ko := hp.ko.sub_left hK
+      kn := hp.kn.sub_left hK
+      ke := hp.ke.sub_left hK
+      ki := (hp.ks.sub_left hK).sub_right hSem
+      kp := hp.kp.sub_left hK
+      kq := hp.kq.sub_left hK
+      kdp := hp.kdp.sub_left hK
+      kdq := hp.kdq.sub_left hK
+      kqi := hp.kqi.sub_left hK
+      ks := (hp.ks.sub_left hK).sub_right hSsc
+      ka := (Offset.base_disjoint_below (fb s) (n := c.stack) (k := 96) (by omega)).symm
+      wo := hp.wo
+      wn := hp.wn
+      we := hp.we
+      wi := hwem
+      wp := hp.wp
+      wq := hp.wq
+      wdp := hp.wdp
+      wdq := hp.wdq
+      wqi := hp.wqi
+      ws := hwsc }
+  case hrd =>
+    simp only [privRd]
+    rw [ha.x2, ha.x3, ha.x4, ha.x5, ha.x6, ha.x7, ha.sp, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, ha.rd, ha.wr]
+    have hm : ∀ r ∈ [nR s, eR s, pR s, qR s, dpR s, dqR s, qiR s, dgR D s, slR s, aR s],
+        Covers [r] (s.rd ++ (⟨fb s, frameBytes⟩ :: s.wr)) :=
+      fun r hr => Covers.left (Covers.trans (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact hr)
+        hp.hrd)
+    refine Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.cons
+      (Covers.right (Covers.one ⟨sR s, List.mem_cons_of_mem _ hp.hws,
+        Offset.contains_base _ (by unfold oEm; omega) (by unfold oEm; omega)⟩))
+      (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp))
+      (Covers.cons (hm _ (by simp)) (Covers.cons (hm _ (by simp))
+      (Covers.right (Covers.one ?_)))))))))
+    simpa using in_frame s s.wr (d := 0) (n := 96) (by decide)
+  case hwr =>
+    simp only [privWr]
+    rw [ha.x0, ha.x1, a10, a11, ha.wr, hO]
+    exact Covers.cons (Covers.of_mem fun x hx => by rw [List.mem_singleton.mp hx]; exact List.mem_cons_of_mem _ hp.hwo)
+      (Covers.one ⟨sR s, List.mem_cons_of_mem _ hp.hws,
+        Offset.contains_base _ (by rw [hsc]; unfold oRsa; omega) (by unfold oRsa; omega)⟩)
+  case hk => rw [ha.x3]; exact ⟨hk1, hk2⟩
+  case h1 => rw [ha.x1, ha.x3]
+  case h7 => rw [ha.x7, ha.x3]
+  case he1 => rw [ha.x5]; exact hp.e1
+  case he2 => rw [ha.x5, ha.x3]; exact hp.e2
+  case hp1 => rw [a1]; exact hp.p1
+  case hp2 => rw [a1, ha.x3]; exact hp.p2
+  case hq1 => rw [a3]; exact hp.q1
+  case hq2 => rw [a3, ha.x3]; exact hp.q2
+  case hdp => rw [a5, a1]; exact hp.hdp
+  case hqi => rw [a9, a1]; exact hp.hqi
+  case hdq => rw [a7, a3]; exact hp.hdq
+  case hs => rw [a11, ha.x3, hsc]; unfold Spec.Rsa.scratchWords; omega
+
 end VG.Proof.RsaPss.AArch64.Sgn
