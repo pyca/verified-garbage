@@ -22,6 +22,7 @@ pub fn bench(c: &mut Criterion) {
         "pbkdf2-hmac-md5",
         pbkdf2_hmac::<Md5>,
         MessageDigest::md5(),
+        None,
         16,
     );
 }

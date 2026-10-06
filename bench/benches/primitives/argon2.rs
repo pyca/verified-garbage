@@ -5,6 +5,7 @@
 //!
 //! OpenSSL supplies Argon2 from version 3.2; the runners use 3.0. Enable
 //! `openssl-argon2` on a supported host to benchmark it alongside this library.
+//! aws-lc-rs has no Argon2.
 
 use criterion::Criterion;
 
