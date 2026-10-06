@@ -109,13 +109,13 @@ theorem pw_seq_tr {P : Nat} {e : Env} {c₁ c₂ : Prog isa} {X : (Nat → BitVe
   exact h1.seq h2
 
 /-- A piece shared with decryption, related by `LR` from what `In` gives. -/
-theorem pw_lr {P : Nat} (hP16 : 16 ≤ P) {e : Env} {c : Prog isa} {X Y : (Nat → BitVec 64) → State → Prop}
+theorem pw_lr {P : Nat} {e : Env} (hP16 : 16 ≤ e.L.P) {c : Prog isa} {X Y : (Nat → BitVec 64) → State → Prop}
     (hct : RelCT isa (LR e.L.Q e.L.scr Y) c fun _ _ => True)
     (hxy : ∀ g vv m₀ (t : State) W, e.L.Ok → Ctx e.L g vv m₀ t → Slots e.L W → X W t → Y W t) :
     RelCT isa (PW P e X) c fun _ _ => True :=
-  hct.mono (fun _ _ ⟨hL, hP, _, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ =>
-    ⟨⟨V₁, W₁, c₁.lay hL (hP ▸ hP16) R₁ S₁.scr, R₁, hxy _ _ _ _ _ hL c₁ S₁ x₁⟩,
-      ⟨V₂, W₂, c₂.lay hL (hP ▸ hP16) R₂ S₂.scr, R₂, hxy _ _ _ _ _ hL c₂ S₂ x₂⟩⟩) fun _ _ h => h
+  hct.mono (fun _ _ ⟨hL, _, _, ⟨c₁, V₁, W₁, R₁, S₁, x₁⟩, ⟨c₂, V₂, W₂, R₂, S₂, x₂⟩⟩ =>
+    ⟨⟨V₁, W₁, c₁.lay hL hP16 R₁ S₁.scr, R₁, hxy _ _ _ _ _ hL c₁ S₁ x₁⟩,
+      ⟨V₂, W₂, c₂.lay hL hP16 R₂ S₂.scr, R₂, hxy _ _ _ _ _ hL c₂ S₂ x₂⟩⟩) fun _ _ h => h
 
 /-- `In`, from a piece's `Step` and `Rep`. -/
 theorem In.of_step {L : ELay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t u : State}
