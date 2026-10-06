@@ -47,6 +47,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       # The keys CI saved this commit's build under.
       - uses: ./.github/actions/lean-keys
         id: keys
