@@ -67,14 +67,13 @@ theorem mgfWr_disj {D K : Nat} {s : State} (hp : PreS D K s) (hK : 16 ≤ K) {R 
   · exact hs.sub_right (rsa_sub hp)
   · exact (hk.sub_left h).symm
 
-theorem main_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PrivChecked) {K : Nat} {s w : State}
-    (hp : PreS H.D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte}
+/-- The encoding: `EM` holds `encEm`. -/
+theorem enc_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
+    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) {K : Nat} {s w : State}
+    (hp : PreS H.D K s) (hK : 16 ≤ K) {lo : Nat} {cb : Byte}
     (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
     (hfit : H.D + (stackArg s 10).toNat + 2 ≤ (s.gpr .x3).toNat - lo) :
-    WP isa (signMain H c.name c.code) w fun t => Mid s t ∧
-      Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32)
-        (privOut s (encEm G H.D s lo cb)) := by
+    WP isa (signEnc H) w (Main s (encEm G H.D s lo cb)) := by
   have hk2 := hp.k2
   have hfb := fb_toNat hp
   have hws : (scr s).toNat + (stackArg s 12).toNat * 8 ≤ 2 ^ 64 := hp.ws
@@ -105,15 +104,14 @@ theorem main_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
   have hbs : Spec.Rsa.bytesAt w.mem (stackArg s 9) (stackArg s 10).toNat = saltB s :=
     VG.Proof.RsaPkcs1Sig.bytes_apart (R := slR s) hm.mem (hp.ksl.sub_left (frame_sub0 K s)).symm
       (by have := hp.wsl; dsimp only; omega)
-  unfold signMain seqs seqs seqs
-  refine WP.seq (WP.mono (signEnc_ok hH hGh hGl hG L (fun _ _ => rfl) (k := (s.gpr .x3).toNat) (lo := lo)
+  refine WP.mono (signEnc_ok hH hGh hGl hG L (fun _ _ => rfl) (k := (s.gpr .x3).toNat) (lo := lo)
     (sl := (stackArg s 10).toNat) (c := cb) (dig := stackArg s 8) (q := stackArg s 9) hm.x19 hm.x21
     (by rw [hm.x23, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hm.x9 hm.lo hm.c hm.fr.dig hm.fr.salt
     (by rw [hm.fr.sl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) hk2 hlo hfit hdR
     (mgfWr_disj hp hK hp.kdg hp.dgs) hqR (mgfWr_disj hp hK hp.ksl hp.sls))
-    fun t ⟨sp', rd', wr', cs', v', fr', em'⟩ => ?_)
+    fun t ⟨sp', rd', wr', cs', v', fr', em'⟩ => ?_
   rw [hbd, hbs] at em'
-  have hM : Main s (encEm G H.D s lo cb) t := {
+  exact {
     sp := sp'.trans hm.sp
     rd := rd'.trans hm.rd
     wr := wr'.trans hm.wr
@@ -146,6 +144,17 @@ theorem main_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.
       refine List.map_congr_left fun i hi => ?_
       rw [off_add]
       exact em' i (List.mem_range.mp hi) }
+
+theorem main_ok {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
+    (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (c : PrivChecked) {K : Nat} {s w : State}
+    (hp : PreS H.D K s) (hK : 16 ≤ K) (hcK : c.stack ≤ K) {lo : Nat} {cb : Byte}
+    (hm : AtMain H.D s lo cb w) (hlo : lo ≤ 1)
+    (hfit : H.D + (stackArg s 10).toNat + 2 ≤ (s.gpr .x3).toNat - lo) :
+    WP isa (signMain H c.name c.code) w fun t => Mid s t ∧
+      Spec.Rsa.writtenOutcome t.mem (s.gpr .x0) (s.gpr .x3).toNat ((t.gpr .x0).setWidth 32)
+        (privOut s (encEm G H.D s lo cb)) := by
+  unfold signMain seqs seqs seqs
+  refine WP.seq (WP.mono (enc_ok hH hGh hGl hG hp hK hm hlo hfit) fun t hM => ?_)
   refine WP.seq (WP.mono (privArgs_ok hp hK hM) fun u hu => ?_)
   exact WP.mono (call_ok c hp hK hcK hu) fun t' ht' => ⟨ht'.toMid, ht'.res⟩
 
