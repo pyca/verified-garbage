@@ -1,6 +1,5 @@
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSpec
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 
 /-!

@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecPriv
 import VerifiedGarbage.Proof.RsaOaep.X86_64.DecOut
-import VerifiedGarbage.Proof.RsaOaep.X86_64.DecMask
+import VerifiedGarbage.Proof.RsaOaep.X86_64.DecSpec
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncMain
 
 /-!
