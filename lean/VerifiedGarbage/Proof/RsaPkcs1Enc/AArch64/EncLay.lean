@@ -154,6 +154,9 @@ theorem add_add (p : Addr) (a b : Nat) :
     p + BitVec.ofNat 64 a + BitVec.ofNat 64 b = p + BitVec.ofNat 64 (a + b) := by
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]
 
+/-- The offsets of the kept words. -/
+def keptOff (d : Nat) : Prop := (d + 8 ≤ 32) ∨ (1072 ≤ d ∧ d + 8 ≤ 1088) ∨ (1088 ≤ d ∧ d + 8 ≤ 1120)
+
 namespace Lay.Ok
 
 variable {L : Lay} (h : L.Ok)
@@ -192,6 +195,19 @@ theorem fr_low {d n : Nat} (hd : d + n ≤ 1120) : Region.Disjoint ⟨L.Q + BitV
 theorem args_out : L.ARGS.Disjoint L.OUT := h.oA.symm
 theorem args_scr : L.ARGS.Disjoint L.SCR := h.sA.symm
 
+/-- A kept word misses a range within `out` or `scratch`. -/
+theorem kept_buf {d : Nat} (hd : keptOff d) {R : Region} (hR : Region.Sub R L.OUT ∨ Region.Sub R L.SCR) :
+    Region.Disjoint ⟨L.Q + BitVec.ofNat 64 d, 8⟩ R := by
+  unfold keptOff at hd
+  by_cases h₁ : d + 8 ≤ 1088
+  · rcases hR with hs | hs
+    · exact (h.stk_buf h₁ (.inl rfl)).sub_right hs
+    · exact (h.stk_buf h₁ (.inr (.inr (.inr (.inr (.inr rfl)))))).sub_right hs
+  · have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 d, 8⟩ L.ARGS := Offset.sub _ (by omega) (by omega)
+    rcases hR with hR | hR
+    · exact (h.args_out.sub_left hs).sub_right hR
+    · exact (h.args_scr.sub_left hs).sub_right hR
+
 end Lay.Ok
 
 /-! ## The words no step changes -/
@@ -208,9 +224,6 @@ structure Kept (L : Lay) (lr : BitVec 64) (m : Mem) : Prop where
   pl : m.readW (L.Q + BitVec.ofNat 64 (arg 1)) 64 = L.pl
   ascr : m.readW (L.Q + BitVec.ofNat 64 (arg 2)) 64 = L.scr
   asl : m.readW (L.Q + BitVec.ofNat 64 (arg 3)) 64 = L.sl
-
-/-- The offsets of the kept words. -/
-def keptOff (d : Nat) : Prop := (d + 8 ≤ 32) ∨ (1072 ≤ d ∧ d + 8 ≤ 1120)
 
 /-- The kept words survive changes to memory that miss them. -/
 theorem Kept.frame {L : Lay} {lr : BitVec 64} {m m' : Mem} {rs : List Region} (hk : Kept L lr m)

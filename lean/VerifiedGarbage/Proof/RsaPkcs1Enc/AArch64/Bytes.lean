@@ -123,4 +123,62 @@ theorem exec_movz_x (s : State) (d : Reg) (imm : BitVec 16) :
   simp only [exec, Size.bits, Nat.mul_zero, show (0 : Nat) < 64 from by decide, ite_true,
     BitVec.shiftLeft_zero]
 
+theorem read_one (m : Mem) (a : Addr) : m.read a 1 = m a := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [Mem.read, BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod, Nat.zero_shiftLeft, Nat.zero_or]
+
+/-- A byte, zero-extended to 32 bits and then to 64. -/
+theorem byte64 (b : Byte) : BitVec.setWidth 64 (BitVec.setWidth 32 b) = b.setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega
+
+/-- A byte, zero-extended and truncated back. -/
+theorem byte_rt (b : Byte) :
+    BitVec.setWidth 8 (BitVec.setWidth 32 (BitVec.setWidth 64 (BitVec.setWidth 32 b))) = b := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega
+
+theorem byte_rt64 (b : Byte) : BitVec.setWidth 8 (BitVec.setWidth 32 (b.setWidth 64)) = b := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  have := b.isLt
+  omega
+
+/-- `x - 1`'s borrow, by `x + NOT(x) + C` after `subs` of 1: all ones exactly
+when `x` is zero. -/
+theorem borrow (x : BitVec 64) :
+    x + ~~~x + BitVec.ofNat 64 (decide (2 ^ 64 ≤ x.toNat + (~~~(1 : BitVec 64)).toNat + 1)).toNat =
+      if x = 0 then BitVec.allOnes 64 else 0 := by
+  have h1 : (~~~(1 : BitVec 64)).toNat = 2 ^ 64 - 2 := by rw [BitVec.toNat_not]; rfl
+  have hn : x + ~~~x = BitVec.allOnes 64 := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_add, BitVec.toNat_not, BitVec.toNat_allOnes]
+    have := x.isLt
+    rw [Nat.mod_eq_of_lt (by omega)]; omega
+  rw [hn, h1]
+  by_cases hx : x = 0
+  · subst hx
+    simp
+  · have : 1 ≤ x.toNat := by
+      rcases Nat.eq_zero_or_pos x.toNat with h | h
+      · exact absurd (BitVec.eq_of_toNat_eq (by simpa using h)) hx
+      · exact h
+    rw [decide_eq_true (by omega)]
+    simp only [hx, ite_false]
+    decide
+
+theorem setWidth64_eq_zero (b : Byte) : b.setWidth 64 = 0 ↔ b = 0 := by
+  constructor
+  · intro h
+    bv_omega
+  · intro h; subst h; rfl
+
+theorem rotateRight_zero (x : BitVec 64) : x.rotateRight 0 = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [hi]
+
 end VG.AArch64.Bytes
