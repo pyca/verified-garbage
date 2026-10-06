@@ -20,25 +20,44 @@ open VG.Proof.Pbkdf2.Md.AArch64.Calls (initG finG After)
 variable {v : Compress} {L : Lay} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {R : BitVec 64}
   {EM : List Byte}
 
-/-- The ranges of `scratch` from 1024 on, but the output `[o, o + n)`, keep their bytes. -/
-def Keep (L : Lay) (o n : Nat) (m m' : Mem) : Prop :=
-  ∀ a l, 1024 ≤ a → a + l ≤ scrBytes → (a + l ≤ o ∨ o + n ≤ a) →
+/-- The ranges of `scratch` from 1024 on, but the output `[o, o + n)`, keep their bytes, and the frame's
+words from `oI` on theirs. -/
+structure Keep (L : Lay) (o n : Nat) (m m' : Mem) : Prop where
+  scr : ∀ a l, 1024 ≤ a → a + l ≤ scrBytes → (a + l ≤ o ∨ o + n ≤ a) →
     Spec.Rsa.bytesAt m' (scA L a) l = Spec.Rsa.bytesAt m (scA L a) l
+  slot : ∀ d, oI ≤ d → d + 8 ≤ frameBytes →
+    m'.readW (L.Q + BitVec.ofNat 64 d) 64 = m.readW (L.Q + BitVec.ofNat 64 d) 64
 
 theorem Keep.trans {o n : Nat} {m m' m'' : Mem} (h : Keep L o n m m') (h' : Keep L o n m' m'') : Keep L o n m m'' :=
-  fun a l h₁ h₂ h₃ => (h' a l h₁ h₂ h₃).trans (h a l h₁ h₂ h₃)
+  ⟨fun a l h₁ h₂ h₃ => (h'.scr a l h₁ h₂ h₃).trans (h.scr a l h₁ h₂ h₃),
+    fun d h₁ h₂ => (h'.slot d h₁ h₂).trans (h.slot d h₁ h₂)⟩
 
-theorem Keep.refl (o n : Nat) (m : Mem) : Keep L o n m m := fun _ _ _ _ _ => rfl
+theorem Keep.refl (o n : Nat) (m : Mem) : Keep L o n m m := ⟨fun _ _ _ _ _ => rfl, fun _ _ _ => rfl⟩
 
-theorem Keep.of_eq {o n : Nat} {m m' : Mem} (h : m' = m) : Keep L o n m m' := fun _ _ _ _ _ => by rw [h]
+theorem Keep.of_eq {o n : Nat} {m m' : Mem} (h : m' = m) : Keep L o n m m' :=
+  ⟨fun _ _ _ _ _ => by rw [h], fun _ _ _ => by rw [h]⟩
+
+/-- The frame's words miss what a call writing only in `scratch` (and below the frame) writes. -/
+theorem Post.slotKeep (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g vv m₀ R EM t) {ws : List Region}
+    (h : After t ws t') (hs : ∀ r ∈ ws, Region.Sub r L.SC) {d : Nat} (hd : d + 8 ≤ frameBytes) :
+    t'.mem.readW (L.Q + BitVec.ofNat 64 d) 64 = t.mem.readW (L.Q + BitVec.ofNat 64 d) 64 :=
+  h.frame.readW (Region.contains_self _ _) (fun r hr => by
+    rcases List.mem_append.mp hr with hr | hr
+    · exact hL.stk_buf (by unfold frameBytes at hd; omega) (.inr (.inr (sub_trans (hs r hr) hL.sc_sub)))
+    · rw [List.mem_singleton.mp hr, hc.ctx.sp]
+      exact (hL.fr_low (by unfold frameBytes at hd; omega)).sub_right
+        (Offset.sub_below _ hP (by have := hL.pQ; omega))) (by decide)
 
 /-- A call writing below 1024 in `scratch` keeps the rest. -/
 theorem Post.keepLow (hL : L.Ok) (hP : 16 ≤ L.P) {t t' : State} (hc : Post L g vv m₀ R EM t) {ws : List Region}
     (h : After t ws t') (hs : ∀ r ∈ ws, ∃ a n, a + n ≤ 1024 ∧ r = ⟨scA L a, n⟩) (o n : Nat) :
-    Keep L o n t.mem t'.mem := fun a l h₁ h₂ _ =>
-  hc.keep hL hP h h₂ fun r hr => by
+    Keep L o n t.mem t'.mem :=
+  ⟨fun a l h₁ h₂ _ => hc.keep hL hP h h₂ fun r hr => by
     obtain ⟨b, k, hb, rfl⟩ := hs r hr
-    exact scD hL (.inr (by omega)) h₂ (by unfold scrBytes; omega)
+    exact scD hL (.inr (by omega)) h₂ (by unfold scrBytes; omega),
+   fun _ _ hd => hc.slotKeep hL hP h (fun r hr => by
+    obtain ⟨b, k, hb, rfl⟩ := hs r hr
+    exact scSub (by unfold scrBytes; omega)) hd⟩
 
 /-- The streaming state at `scratch + a` represents what it did, if a call
 missed it. -/
@@ -207,7 +226,8 @@ theorem mac_fin (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀
       scnw := by
         show (scA L sWork).toNat + 832 ≤ 2 ^ 64
         rw [scA_toNat hL (by decide)]; have := hL.bS; unfold sWork; omega }
-    fun u a hf => ⟨hc.after hL hP a fun r hr => ?_, ?_, fun b l h₁ h₂ h₃ => hc.keep hL hP a h₂ fun r hr => ?_⟩
+    fun u a hf => ⟨hc.after hL hP a fun r hr => ?_, ?_, ⟨fun b l h₁ h₂ h₃ => hc.keep hL hP a h₂ fun r hr => ?_,
+      fun _ _ hd => hc.slotKeep hL hP a (fun r hr => ?_) hd⟩⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact scSub (a := sSt) (n := 96) (by decide)
@@ -219,5 +239,10 @@ theorem mac_fin (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} (hc : Post L g vv m₀
     · exact scD hL (b := sSt) (m := 96) (.inr (by unfold sSt; omega)) h₂ (by decide)
     · exact scD hL (b := o) (m := 32) h₃ h₂ ho2
     · exact scD hL (b := sWork) (m := 832) (.inr (by unfold sWork; omega)) h₂ (by decide)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact scSub (a := sSt) (n := 96) (by decide)
+    · exact scSub (a := o) (n := 32) ho2
+    · exact scSub (a := sWork) (n := 832) (by decide)
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec
