@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Mont.X86_64.MulF
 import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -13,7 +14,8 @@ temporary area (`OpKeep`). With at most six words they are the operations
 with the accumulator in registers (`mulR_ok`, …, `OpsReg.lean`); with more,
 those with the accumulator in the temporary area (`mulW_ok`, …, here), but
 the multiplications by columns: for P-521's `p` (`mulP_ok`, `MulP.lean`, and
-its squares, `sqrP_ok`, `SqrP.lean`) and
+its squares, `sqrP_ok`, `SqrP.lean`; with BMI2 and ADX by rows, `mulPX_ok`,
+`MulPX.lean`) and
 for any other modulus of nine words (`mulF_ok`, `MulF.lean`).
 -/
 
@@ -222,10 +224,12 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   · exact mulR_ok hs (hM.toModOk ‹_›) ho ha hb hB
   · split
     · split
-      · rename_i hred hab
-        subst hab
-        exact sqrP_ok hs hM hred ho ha hoT haT hoM hB
-      · exact mulP_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+      · exact mulPX_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+      · split
+        · rename_i hred _ hab
+          subst hab
+          exact sqrP_ok hs hM hred ho ha hoT haT hoM hB
+        · exact mulP_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
     · split
       · exact mulF_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
       · exact mulW_ok hs hM ho ha hb hoT haT hbT hoM hB

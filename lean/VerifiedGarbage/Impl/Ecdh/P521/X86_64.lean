@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ecdh_p521`. -/
 def exchangeP521 : Prog isa := Cfg.exchange Impl.Ecdsa.X86_64.p521
 
+/-- `vg_ecdh_p521_adx`. -/
+def exchangeP521Adx : Prog isa := Cfg.exchange Impl.Ecdsa.X86_64.p521x
+
 end VG.Impl.Ecdh.X86_64

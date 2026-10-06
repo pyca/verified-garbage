@@ -7,26 +7,35 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.VerifiedAdx
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.LitAdx
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86-64
 
 A generic file (see `TCB/Emit.lean`) over P-521's group law and
 inversions `h`, the variant
-`Variants/P521/X86_64/Law.lean`.
+`Variants/P521/X86_64/Law.lean`, for each multiplication modulo `p`: the
+baseline's, and BMI2's and ADX's (`_adx`).
 -/
 
 namespace VG.Generic.P521.X86_64.EcdsaP521
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
+/-- The function of `Spec.Ecdsa.P521.signApi`, multiplying modulo `p` with BMI2
+and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction
+writing `rsp` (`hsp`). -/
+def sign (adx : Bool) (code : Prog X86_64.isa)
+    (hv : Verified X86_64.target code
+      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)))
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P521.signApi with
+    name := Spec.Ecdsa.P521.signApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
     doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves its caller's callee-saved \
       registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
-      form, multiplied modulo `p` by Montgomery multiplication by columns (product \
-      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up; \
-      a square computes each product of two different words once and adds it twice) and \
+      form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and \
       modulo `n` by columns too (finely integrated product scanning: each column also adds the \
       reduction's products by `n`'s words, and each of the first nine computes its multiplier \
       `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction; the 66-byte encodings are read and \
@@ -51,21 +60,28 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       square-and-always-multiply over the bits of `n - 2`. The signature (or \
       zeros) is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p521.combConsts
-    code := Impl.Ecdsa.X86_64.signP521
+    code
     contract := Spec.Ecdsa.P521.inst.signContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
-    verified := Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) },
+    verified := hv
+    spSafe := hsp
+    features := if adx then ["bmi2", "adx"] else [] }
+
+/-- The function of `Spec.Ecdsa.P521.verifyApi`, multiplying modulo `p` with
+BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
+instruction writing `rsp` (`hsp`). -/
+def verify (adx : Bool) (code : Prog X86_64.isa)
+    (hv : Verified X86_64.target code
+      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)))
+    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.Ecdsa.P521.verifyApi with
+    name := Spec.Ecdsa.P521.verifyApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
-    doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
-      field arithmetic and inversions, with `vg_ecdh_p521`'s checks of the public key and window \
+    doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
+      field arithmetic and inversions, with `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s checks of the public key and window \
       method: it \
       saves its caller's callee-saved registers in `scratch`; field elements and scalars are nine \
-      64-bit words in Montgomery form, multiplied modulo `p` by Montgomery multiplication by columns (product \
-      scanning, the accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each \
-      reduction's multiplier is its column's low word, added 512 times eight columns up; \
-      a square computes each product of two different words once and adds it twice) and \
+      64-bit words in Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and \
       modulo `n` by columns too (finely integrated product scanning: each column also adds the \
       reduction's products by `n`'s words, and each of the first nine computes its multiplier \
       `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction, and the hash's \
@@ -75,16 +91,27 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Ar
       curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
       signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`), and \
-      `[v]Q` by `vg_ecdh_p521`'s signed 4-bit windows over the 145 digits of `v`, with the \
+      `[v]Q` by `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows over the 145 digits of `v`, with the \
       complete addition formulas of Renes, Costello and Batina, which also add the two. The \
       result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not \
       the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the \
       pointers, although the contract would let every input affect it."])
     consts := Impl.Ecdsa.X86_64.p521.combConsts
-    code := Impl.Ecdsa.Verify.X86_64.verifyP521
+    code
     contract := Spec.Ecdsa.P521.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
-    verified := Proof.Ecdsa.Verify.X86_64.P521.verify_verified h.law (Proof.P521.combOk7 h.law) h.inv
-    spSafe := Code.all_of_allInstrs (by lit_decide) }]
+    verified := hv
+    spSafe := hsp
+    features := if adx then ["bmi2", "adx"] else [] }
+
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
+  sign false Impl.Ecdsa.X86_64.signP521
+    (Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify false Impl.Ecdsa.Verify.X86_64.verifyP521
+    (Proof.Ecdsa.Verify.X86_64.P521.verify_verified h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  sign true Impl.Ecdsa.X86_64.signP521Adx
+    (Proof.Ecdsa.X86_64.P521.sign_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify true Impl.Ecdsa.Verify.X86_64.verifyP521Adx
+    (Proof.Ecdsa.Verify.X86_64.P521.verify_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P521.X86_64.EcdsaP521

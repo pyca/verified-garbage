@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ec_p521_public_key`. -/
 def publicKeyP521 : Prog isa := Cfg.publicKey Impl.Ecdsa.X86_64.p521
 
+/-- `vg_ec_p521_public_key_adx`. -/
+def publicKeyP521Adx : Prog isa := Cfg.publicKey Impl.Ecdsa.X86_64.p521x
+
 end VG.Impl.EcKey.X86_64

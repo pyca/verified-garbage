@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Verified
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Adx
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha512
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
 
@@ -7,7 +7,8 @@ import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
 # Deterministic ECDSA over P-521 with HMAC-SHA-512 on x86-64
 
 SHA-512, with any implementation `v` of SHA-512's compression function, as the
-proof's hash function (`pack`), and the contract
+proof's hash function, and P-521's multiplication with BMI2 and ADX or without
+(`pack`), and the contract
 `Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract` for 384 bytes of stack and
 the comb's tables,
 which implies the one the proof is written against (`implies`):
@@ -103,12 +104,13 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p521.combConsts Spec.Ecdsa.Rfc697
     simp only [p521_combConsts, List.mem_singleton] at hc; subst hc; exact hsy
   sat := ⟨_, sat_spec⟩
 
-/-- SHA-512, with the implementation `v` of SHA-512's compression function. -/
-def pack (hL : Weierstrass.Law Spec.P521.curve)
+/-- SHA-512, with the implementation `v` of SHA-512's compression function, and
+P-521's multiplication with BMI2 and ADX (`adx`) or without. -/
+def pack (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
     RfcHash where
-  R := p521 hL hT hI
+  R := p521Of adx hL hT hI
   I := Spec.Ecdsa.Rfc6979.P521Sha512.inst
   H := Proof.Pbkdf2.Md.X86_64.Sha512.sha512H v
   ok := Proof.Pbkdf2.Md.X86_64.Sha512.sha512OK v
@@ -116,7 +118,7 @@ def pack (hL : Weierstrass.Law Spec.P521.curve)
   K := Proof.Pbkdf2.Md.X86_64.Sha512.sha512K v
   satI := Proof.Pbkdf2.Md.X86_64.Sha512.sha512_satI
   satF := Proof.Pbkdf2.Md.X86_64.Sha512.sha512_satF
-  ecdsa := rfl
+  ecdsa := by cases adx <;> rfl
   hash := rfl
   len := rfl
   tries := rfl
@@ -124,14 +126,14 @@ def pack (hL : Weierstrass.Law Spec.P521.curve)
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl
-  hQ := ⟨rfl, rfl⟩
+  hQ := by cases adx <;> exact ⟨rfl, rfl⟩
   updSp := show (Proof.Pbkdf2.Md.X86_64.Sha512.coreH 64).updC.allInstrs _ = true by decide +kernel
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve)
+theorem sign_verified (adx : Bool) (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (v : Compress) :
-    Verified X86_64.target (cfgOf (pack hL hT hI v)).sign
+    Verified X86_64.target (cfgOf (pack adx hL hT hI v)).sign
       (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384) :=
-  X86_64.sign_verified (pack hL hT hI v) implies
+  by cases adx <;> exact X86_64.sign_verified (pack _ hL hT hI v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512

@@ -442,6 +442,62 @@ of two different words computed once and added twice (`sTerm`), 45
 products in place of 81. -/
 def sqrP (M : Mod) (o a : Nat) : List Instr := prodCols M o (sCol M a)
 
+/-! ## P-521's modulus with BMI2 and ADX: the product by rows -/
+
+/-- The registers of `mulPX`'s accumulator. -/
+def xRegs : List Reg := [.rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
+
+/-- The register of word `k` of `mulPX`'s accumulator: the nine words of a
+row's accumulator are in distinct registers, word `k + 9` taking the
+register of word `k` once that is stored. -/
+def xAcc (k : Nat) : Reg := xRegs.getD (k % 9) .rbp
+
+/-- The nine registers of words `k` to `k + 8`. -/
+def xWin (k : Nat) : List Reg := (List.range 9).map fun j => xAcc (k + j)
+
+/-- `mov eax, 0`, `adox t, rax`: the carry OF added into `t`. -/
+def xTail (t : Reg) : List Instr := [.mov32 .rax (.imm 0), .adox t (.reg .rax)]
+
+/-- Row `i` of `mulPX o a b`: `rdx = a_i`, both carries cleared
+(`xor eax, eax`), `t += a_i [b]` with the first product's word `i` stored at
+`[tmp + 8i]` once final and its register cleared for word `i + 9`, then the
+eight other products (`maddSteps`), and the carry OF into word `i + 9`. -/
+def xRow (M : Mod) (a b i : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc (a + 8 * i))), .alu32 .xor .rax (.reg .rax)] ++
+    madd (xAcc i) (xAcc (i + 1)) (.mem (sc b)) ++
+    [.store (sc (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0)] ++
+    maddSteps 8 (xWin (i + 1)) (b + 8) ++ xTail (xAcc (i + 9))
+
+/-- The reduction of `mulPX`, for `P = a b` with its low words `P₀ … P₈` at
+`[tmp]` and its high words in `xWin 9`: `(P + U p) / 2⁵⁷⁶` for
+`U = P₀ … P₇, u₈` with `u₈ = P₈ + 512 P₀ mod 2⁶⁴` (stored over `P₈`), as
+`U p = 2⁵²¹ U - U`: `512 U` added at word 8 (`rdx = 512`), the low words
+cancelling. -/
+def xRed (M : Mod) : List Instr :=
+  [.mov32 .rdx (.imm 512), .alu32 .xor .rax (.reg .rax), .mulx .rcx .rax (.mem (sc M.tmp)),
+    .adox .rax (.mem (sc (M.tmp + 64))), .store (sc (M.tmp + 64)) .rax, .adcx (xAcc 9) (.reg .rcx)] ++
+    maddSteps 8 (xWin 9) (M.tmp + 8) ++ xTail (xAcc 17)
+
+/-- `xWin 9`, a number `S < 2p` for P-521's `p = 2⁵²¹ - 1`, reduced and
+stored at `[o]`: `S + 1` in place, whose bit 521 `c` (in `rax`) is whether
+`S ≥ p`; then `1 - c` subtracted, which leaves `S + c`, and its bits from 521
+cleared: `S - p` if `S ≥ p`, else `S`. -/
+def xCanon (o : Nat) : List Instr :=
+  .alu .add (xAcc 9) (.imm 1) :: (List.range 8).map (fun k => .alu .adc (xAcc (10 + k)) (.imm 0)) ++
+    [.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9, .alu .xor .rax (.imm 1),
+      .alu .sub (xAcc 9) (.reg .rax)] ++
+    (List.range 8).map (fun k => .alu .sbb (xAcc (10 + k)) (.imm 0)) ++
+    [.alu .and (xAcc 17) (.imm 511)] ++ stores (xWin 9) o
+
+/-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p = 2⁵²¹ - 1` (`o` may be `a` or
+`b`), with BMI2 and ADX: the product `a b` by rows (operand scanning,
+`xRow`), each row's `mulx` products added through the two carry chains
+(`adox`, `adcx`) into nine registers, its low word stored in the temporary
+area; then the reduction (`xRed`), which leaves `(a b + U p) / 2⁵⁷⁶ < 2p` in
+the registers; then `xCanon`, which reduces it below `p` into `[o]`. -/
+def mulPX (M : Mod) (o a b : Nat) : List Instr :=
+  zeros xRegs ++ (List.range 9).flatMap (xRow M a b) ++ xRed M ++ xCanon o
+
 /-! ## Nine words: the product by columns for any modulus -/
 
 /-- The terms of column `c` of `mulF o a b`: the products `[a + 8i] [b + 8j]`
@@ -485,7 +541,8 @@ def mulF (M : Mod) (o a b : Nat) : List Instr :=
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
 def mul (M : Mod) (o a b : Nat) : List Instr :=
   if M.n < 7 then mulR M o a b
-  else if M.red = .friendly p521Ws then (if a = b then sqrP M o a else mulP M o a b)
+  else if M.red = .friendly p521Ws then
+    (if M.adx then mulPX M o a b else if a = b then sqrP M o a else mulP M o a b)
   else if M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
