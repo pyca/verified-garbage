@@ -7,8 +7,8 @@ import VerifiedGarbage.Impl.Weierstrass.X86
 `sign R H core (out, d, digest, scratch) -> eax`, every argument on the
 stack (cdecl), as on x86-64 and AArch64 (`Impl/Ecdsa/Rfc6979/X86_64.lean`):
 RFC 6979 §3.2 for a curve of `Q`-byte scalars in `w` 32-bit words and a
-Merkle–Damgård hash function `H` whose output is `D` bytes, a multiple of 8,
-at most 64, with HMAC computed by calling `H`'s HMAC `init`, streaming
+Merkle–Damgård hash function `H` whose output is `D` bytes, a multiple of 4
+from 28 to 64, with HMAC computed by calling `H`'s HMAC `init`, streaming
 `update` and HMAC `finalize`, and each candidate tried by calling `core`,
 the signature with a given `k` (`vg_ecdsa_<curve>_sign`), which reads `Q`
 bytes of the digest and of `k`, and takes the digest's leftmost `qlen` bits
@@ -16,10 +16,10 @@ bytes of the digest and of `k`, and takes the digest's leftmost `qlen` bits
 
 Two kinds of curve and hash function, as on x86-64:
 
-* `Q = 4 w ≤ D` and `qlen = 8 Q` (P-256 and P-384, `wide = false`): one `V`
-  makes a candidate, its leftmost `Q` bytes; `bits2octets` is a conditional
-  subtraction of `n` from the digest's leftmost `Q` bytes; and `core` reads
-  the digest and `V` in place.
+* `Q ≤ D`, a multiple of 4, and `qlen = 8 Q` (P-224, P-256 and P-384,
+  `wide = false`): one `V` makes a candidate, its leftmost `Q` bytes;
+  `bits2octets` is a conditional subtraction of `n` from the digest's
+  leftmost `Q` bytes; and `core` reads the digest and `V` in place.
 * `8 D < qlen ≤ 16 D` and `Q ≤ D + 4` (P-521 with SHA-512, `wide`): two `V`s
   make a candidate, the leftmost `Q` bytes of the second's concatenation with
   the first, shifted right by `sh` bits; the digest's integer is below `n`,
@@ -46,7 +46,7 @@ h.3, and the words of the conversions.
 
 1. `h = bits2octets(digest)`: unless `wide`, the leftmost `Q` bytes, minus
    `n` if they are at least `n` (a conditional subtraction, as
-   `2^(8 Q) < 2n`): the bytes, as `w` 32-bit words, go to `h`'s place and
+   `2^(8 Q) < 2n`): the bytes, as `Q / 4` 32-bit words (`qw`), go to `h`'s place and
    `h - n` to `K`'s, and a mask of the borrow selects between them, word by
    word, big-endian into `h`. If `wide`, the digest for `core` instead: the
    digest then `Q - D` zero bytes, shifted right by `8 (Q - D) - sh` bits.
@@ -249,25 +249,28 @@ def coreDigest : List Instr :=
   [.mov .eax (.imm 0), .store (stk (fX + c.len - 4)) .eax] ++
     copyN (c.F.H.D / 4) .esi 0 .esp fX ++ c.conv fX (8 * (c.len - c.F.H.D) - c.sh)
 
+/-- The 32-bit words of the scalars, unless `wide`. -/
+def qw : Nat := c.len / 4
+
 /-- Word `j` (least significant first) of the `Q` bytes at `digest` (in
 `esi`), as a big-endian number, to `h`'s place, and that word of the
 difference with `n` (`sub` for the first, `sbb` for the others) to `K`'s:
 both at the offset of the word's bytes. -/
 def subWord (j : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esi (4 * (c.w - 1 - j)))), .bswap .eax, .store (stk (fH + 4 * (c.w - 1 - j))) .eax,
-    .alu (if j = 0 then .sub else .sbb) .eax (.imm (c.nWord j)), .store (stk (fK + 4 * (c.w - 1 - j))) .eax]
+  [.mov .eax (.mem (at_ .esi (4 * (c.qw - 1 - j)))), .bswap .eax, .store (stk (fH + 4 * (c.qw - 1 - j))) .eax,
+    .alu (if j = 0 then .sub else .sbb) .eax (.imm (c.nWord j)), .store (stk (fK + 4 * (c.qw - 1 - j))) .eax]
 
 /-- Word `j` of `h`: of the digest's number if subtracting `n` borrowed
 (the mask in `edx`), of the difference if not, big-endian into `h`. -/
 def selWord (j : Nat) : List Instr :=
-  [.mov .eax (.mem (stk (fH + 4 * (c.w - 1 - j)))), .mov .ecx (.mem (stk (fK + 4 * (c.w - 1 - j)))),
+  [.mov .eax (.mem (stk (fH + 4 * (c.qw - 1 - j)))), .mov .ecx (.mem (stk (fK + 4 * (c.qw - 1 - j)))),
     -- `x = d ^ ((x ^ d) & mask)`: `x` if it borrowed, `d` if not.
     .alu .xor .eax (.reg .ecx), .alu .and .eax (.reg .edx), .alu .xor .eax (.reg .ecx),
-    .bswap .eax, .store (stk (fH + 4 * (c.w - 1 - j))) .eax]
+    .bswap .eax, .store (stk (fH + 4 * (c.qw - 1 - j))) .eax]
 
 /-- `h`: the `Q` bytes at `digest` (in `esi`), minus `n` if that does not borrow. -/
 def reduce : List Instr :=
-  (List.range c.w).flatMap c.subWord ++ [.alu .sbb .edx (.reg .edx)] ++ (List.range c.w).flatMap c.selWord
+  (List.range c.qw).flatMap c.subWord ++ [.alu .sbb .edx (.reg .edx)] ++ (List.range c.qw).flatMap c.selWord
 
 /-- `V = 0x01…`, `K = 0x00…`, all 64 bytes of each. -/
 def initKV : List Instr :=
