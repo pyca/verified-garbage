@@ -52,6 +52,15 @@ theorem code_verified (hsat : ∃ s, (Spec.RsaPss.verifyPrecomputedContract G G 
 
 end
 
+/-- MGF1's hash function, as a hash function of `MdHash` takes it, is valid. -/
+theorem mgf_valid {H : Hash} {hH : HashOK H} (lk : Proof.Pbkdf2.Md.AArch64.MgfLink H hH) :
+    Proof.Mgf1.Valid lk.G := by
+  have hD := hH.sizes.D0
+  refine ⟨by rw [lk.len]; exact hD, fun x => ?_⟩
+  rw [lk.hash, hH.hash, List.length_take, MdStream.Md.hash, hH.md.digest_length, lk.len]
+  have := hH.sizes.DN
+  omega
+
 /-! ## A state meeting the precondition -/
 
 /-- A 512-bit modulus, a one-byte `e`, the digest and the signature, a
