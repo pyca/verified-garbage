@@ -203,46 +203,18 @@ should add files, not edit lists that every other PR edits too.
 
 ## Stacking PRs
 
-A PR that builds on one that has not merged yet (an implementation on its
-spec, a variant on its baseline) is stacked on it: its base is the earlier
-PR's branch, so its diff is only its own change. PRs are squash-merged, so
-the earlier PR lands on `main` as one new commit, and its original commits,
-still in the later branch, are not in `main`'s history. A plain
-`git rebase origin/main` replays them onto their own squash, and every
-commit that touched a file the earlier PR changed again (a regenerated
-`README.md` table or `src/asm/` file) conflicts with the earlier PR itself.
+PRs are squash-merged, so once the PR below a stacked branch merges, never
+`git rebase origin/main`: it replays the merged PR's commits onto their own
+squash. Restack only the branch's own commits:
 
-* Push every branch of a stack to this repository, not a fork (GitHub's
-  stacked PRs do not span forks), and open each PR with the branch below it
-  as its base. Name the PR it is stacked on in the description.
-* Keep a stack linear: never merge `main` into a stacked branch (GitHub
-  merges a stack only if its history is linear). Update a branch with PRs
-  above it only by adding commits, and bring them into the branch above
-  with `git rebase origin/<branch below>`; rebase it onto anything else
-  only by restacking the whole stack, as below.
-* When the PR below merges, restack: replay only this branch's own
-  commits, cutting the stack at the merged PR's last head, which
-  `pull/<N>/head` keeps after its branch is deleted:
+```sh
+git fetch origin main +pull/<N>/head:stack-base   # <N>: the merged PR
+git rebase --onto origin/main stack-base          # --update-refs for taller stacks
+```
 
-  ```sh
-  git fetch origin main +pull/<N>/head:stack-base   # <N>: the merged PR
-  git rebase --onto origin/main stack-base
-  git push --force-with-lease origin HEAD:<this branch>
-  ```
-
-  From the top of a taller stack, `git rebase --update-refs --onto
-  origin/main stack-base` moves the branches in between too; push each of
-  them. Then set each PR's base to the branch now below it (`main` for the
-  bottom one) if GitHub has not retargeted it. GitHub's "Rebase stack"
-  button and `gh stack rebase` do the same restack; use them where you
-  can.
-* What conflicts after a restack is a change that landed on `main` from
-  another PR. Resolve generated files by regenerating them, never by hand:
-  during the rebase, take `main`'s side (`git checkout --ours -- <file>`;
-  in a rebase, "ours" is the new base), and once it finishes, rerun the
-  emitter (`src/asm/`) and `python3 ci/algorithms_table.py` (`README.md`)
-  and commit what changed. Run the checks under "Checks to run before
-  pushing" again before pushing a restacked branch.
+Keep stacks linear (never merge `main` into them) and their branches in this
+repository, as GitHub's stacked PRs require. When a generated file conflicts,
+take `main`'s side (`git checkout --ours`) and regenerate it after the rebase.
 
 ## Keeping proofs fast
 
