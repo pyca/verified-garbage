@@ -285,14 +285,6 @@ jobs:
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
-
-  vectors:
-    name: Test vector provenance
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - run: python3 ci/check_vectors.py
 
   rust:
@@ -826,7 +818,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-latest
     # To list the run's artifacts.
     permissions:
@@ -839,7 +831,7 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
             ${{ needs.coverage.result }}
           # Skipped when `lean` built the proofs itself.
