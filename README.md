@@ -1078,7 +1078,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+<td>✅ AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>✅ public keys by a fixed-base comb on edwards25519</td>
 
@@ -1292,7 +1292,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+<td>✅ SHA512, AVX-512F, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
 
 <td>✅ SHA extensions</td>
 

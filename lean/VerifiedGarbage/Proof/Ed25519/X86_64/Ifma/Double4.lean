@@ -562,6 +562,7 @@ structure MxKeep (base : Addr) (s t : State) : Prop where
   mem : Outside base EMX 8 s.mem t.mem
   xmm : t.xmm = s.xmm
   ymm : t.ymmHi = s.ymmHi
+  zmm : t.zmmHi = s.zmmHi
 
 theorem MxKeep.qw_eq {base : Addr} {s t : State} (h : MxKeep base s t) : ∀ x l, qw t x l = qw s x l :=
   fun _ _ => by simp only [qw, State.lane, h.xmm, h.ymm]
@@ -594,7 +595,7 @@ theorem save_wp {s : State} {base : Addr} (hs : Scratch s base) :
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32, readSrc32,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, h1, h2, ite_true, Option.bind_some, Option.map_some,
     Mem.readW_writeW_self32, execAlu32, State.setReg32, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
   · simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
   · simp only [RegUpd.gpr_setReg_self, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide),
       BitVec.setWidth_eq]
@@ -611,7 +612,7 @@ theorem load_wp {s : State} {base : Addr} (hs : Scratch s base) :
     VG.Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.wr_setReg, RegUpd.rd_setReg, hs.rdi, h1, h2,
     ite_true, ite_false, reduceCtorEq, Option.bind_some, Option.map_some, Mem.readW_writeW_self32,
     State.setReg32, e, Option.some.injEq, exists_eq_left']
-  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl⟩⟩
+  refine ⟨fun r hr => ?_, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
   simp only [hr, ite_false]
 
 /-- MXCSR back from `r11`, through `[EMX]`. -/
@@ -625,7 +626,7 @@ theorem restore_wp {s : State} {base : Addr} (hs : Scratch s base)
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, State.load32,
     VG.Proof.X25519.X86_64.ea_sc, hs.rdi, h1, h2, ite_true, Option.bind_some, Mem.readW_writeW_self32,
     h11, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl⟩⟩
+  exact ⟨trivial, ⟨rfl, rfl, outside_emx _ _ (by simp only [EMX]; omega) _, rfl, rfl, rfl⟩⟩
 
 theorem and_ffff (v : BitVec 32) : (v &&& 0xFFFF).extractLsb' 16 16 = 0 := by
   apply BitVec.eq_of_getLsbD_eq; intro i hi

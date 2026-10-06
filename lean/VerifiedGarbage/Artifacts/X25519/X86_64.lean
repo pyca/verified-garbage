@@ -82,17 +82,17 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := "vg_x25519_base_ifma"
     doc := Spec.X25519.x25519BaseApi.doc (notes := ["The fixed-base comb of \
-      `vg_x25519_base_adx` with the accumulated point in the four quadwords of `ymm` registers: \
-      each addition of a table's entry is two products of four field multiplications at once \
-      with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm` registers, with AVX512VL), as \
-      `vg_ed25519_scalar_base_ifma`'s; the selection loads 32 bytes of each entry at a time. The \
-      comb runs with MXCSR `0x1FBF` (Intel's MCDT prologue and epilogue), saved in `scratch` and \
-      restored."])
+      `vg_x25519_base_adx` with two accumulated points, one in each half of `zmm` registers, \
+      as `vg_ed25519_scalar_base_ifma`'s: one sums the entries of the odd digits and the other \
+      those of the even digits, two tables' entries at once with AVX512_IFMA's `vpmadd52luq` \
+      and `vpmadd52huq`, and the first, doubled five times, is added to the second at the end. \
+      The comb runs with MXCSR `0x1FBF` (Intel's MCDT prologue and epilogue), saved in \
+      `scratch` and restored."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.X25519.X86_64.Base.x25519BaseIfma
     contract := Spec.X25519.x25519BaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
     verified := Proof.X25519.X86_64.Base.x25519BaseIfma_verified
-    features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
+    features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.X25519.X86_64

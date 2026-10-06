@@ -47,19 +47,22 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := "vg_ed25519_scalar_base_ifma"
     doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["The comb of `vg_ed25519_scalar_base_adx` \
-      with the accumulated point (X, Y, Z, T) in the four quadwords of `ymm` registers, as five \
-      limbs of 51 bits: each addition of a table's entry is two products of four field \
-      multiplications at once, with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm` \
-      registers, with AVX512VL), and the five doublings are `vg_ed25519_verify_ifma`'s. Each \
-      entry is selected from the static `VG_ED25519_COMB` in constant time, 32 bytes at a time, \
-      split into limbs and negated under the mask of its digit's sign. The comb runs with MXCSR \
-      `0x1FBF` (Intel's MCDT prologue and epilogue), saved in `scratch` and restored; the rest \
-      uses BMI2's and ADX's field multiplications."])
+      with two accumulated points, one in each half of `zmm` registers, (X, Y, Z, T) in the four \
+      quadwords of the half as five limbs of 51 bits: one sums the entries of the odd digits, \
+      the other those of the even digits, so each of the 26 steps adds two tables' entries at \
+      once, each addition two products of eight field multiplications at once with \
+      AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq`. Each entry is selected from the static \
+      `VG_ED25519_COMB` in constant time, 32 bytes at a time into both halves, split into limbs \
+      and negated under the mask of its digit's sign. The odd digits' sum is then doubled five \
+      times as `vg_ed25519_verify_ifma`'s doublings (on `ymm` registers, with AVX512VL) and the \
+      even digits' added. The comb runs with MXCSR `0x1FBF` (Intel's MCDT prologue and \
+      epilogue), saved in `scratch` and restored; the rest uses BMI2's and ADX's field \
+      multiplications."])
     consts := Impl.Ed25519.X86_64.combConsts
     code := Impl.Ed25519.X86_64.scalarBase_ifma
     contract := Spec.Ed25519.scalarBaseContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts)
     verified := Proof.Ed25519.X86_64.Ifma.scalarBase_ifma_verified
-    features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
+    features := ["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma", "avx512vl"]
     stack := 0
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

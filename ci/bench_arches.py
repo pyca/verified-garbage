@@ -137,7 +137,7 @@ CPU_FEATURES = {
         "avx,avx2,bmi1,bmi2",
         "bmi2,adx",
         "sha,ssse3",
-        "avx,avx2,bmi2,adx,avx512ifma,avx512vl",
+        "avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl",
         "aes,ssse3",
         "pclmulqdq,ssse3",
         "aes,pclmulqdq,ssse3",

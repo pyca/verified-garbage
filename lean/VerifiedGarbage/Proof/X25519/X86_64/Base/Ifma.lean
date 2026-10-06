@@ -15,7 +15,7 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.X25519.X86_64.Base VG.Proof.Ed2
 
 /-- The engine with the comb with AVX512_IFMA. -/
 abbrev engineIfma : Prog isa :=
-  engineOf Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.Ifma.combMultiply Impl.X25519.X86_64.adx)
+  engineOf Impl.X25519.X86_64.adx (Impl.Ed25519.X86_64.Zmm.combMultiply Impl.X25519.X86_64.adx)
 
 theorem engineIfma_ok [DivstepInv] : UEngineOk engineIfma := engineOf_ok Ifma.combOk
 

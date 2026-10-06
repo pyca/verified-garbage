@@ -68,14 +68,17 @@ the lanes of `ymm5–ymm9`. -/
 def eload : List Instr :=
   [.vop (.vmovq (y 10) .rax), v .vpor 11 11 10, v .vpor 12 12 10, ld 14 K2] ++ esplit
 
-/-- The entry in the lanes of `ymm5–ymm9` negated if the mask `rcx` is all ones: lanes 0 and 1
-exchanged, and lane 2 subtracted from the bias `2¹¹ p` (`kb`), under the mask in `ymm15`. -/
-def vneg : List Instr :=
-  [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))] ++
+/-- `vneg` with the mask already in each quadword of `ymm15`. -/
+def vnegBody : List Instr :=
   (List.range 5).flatMap fun j =>
     [perm 10 (5 + j) (ord 1 0 2 3), ld 11 (kb j), v .vpsubq 11 11 (5 + j),
       blend 10 10 11 (lanes false false true false), v .vpxor 10 10 (5 + j), v .vpand 10 10 15,
       v .vpxor (5 + j) (5 + j) 10]
+
+/-- The entry in the lanes of `ymm5–ymm9` negated if the mask `rcx` is all ones: lanes 0 and 1
+exchanged, and lane 2 subtracted from the bias `2¹¹ p` (`kb`), under the mask in `ymm15`. -/
+def vneg : List Instr :=
+  [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))] ++ vnegBody
 
 /-! ## An addition -/
 
