@@ -84,7 +84,7 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
   have hb : (winQ c).bits = c.sl WB := rfl
   have hK : (winQ c).tbl = c.sl WT := rfl
   have hMn : (winQ c).M.n = c.n := rfl
-  refine ⟨?_, ?_, ?_, ?_, hn, ⟨by omega, by omega⟩, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, hn, ⟨by omega, by omega⟩, ?_, ?_⟩
   · rw [winSlots_eq]; exact lay_map' hc rfl rfl rfl winIdx_lt
   · exact map_sl_disj hn (l₁ := roI) (l₂ := otherI) (by decide)
   · exact map_sl_nodup hn (l := otherI) (by decide)
@@ -95,9 +95,6 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
     have := key i hi
     rw [hK, hMn]; exact Or.inl (sl_lt c this)
   · rw [hb, hJ, sl_eq]; show 64 + 8 * c.n * 55 + _ ≤ 8192
-    have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
-    omega
-  · rw [hb, sl_eq]; show 64 + 8 * c.n * 55 + 3 < 4096
     have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
   · intro w hw
@@ -116,12 +113,18 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
       have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
       omega
 
-theorem winAQ (c : Cfg) : WinA (winQ c) where
+theorem winAQ (hc : CfgOk c) : WinA (winQ c) where
   sl x hx := by
     rw [winSlots_eq] at hx
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     exact sl_mod8 c i
   mod := MP'_A c
+  bits4 := by
+    have h7 := hc.n10
+    show c.sl WB + 3 < 4096
+    rw [sl_eq]; show 64 + 8 * c.n * 55 + 3 < 4096
+    have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
+    omega
 
 /-! ## The recoded scalar's areas -/
 
@@ -282,7 +285,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega)
-  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ c) hpR hC hc.am3 hP hc.p_lt (hmont 1)
+  refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ hc) hpR hC hc.am3 hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_)
   rw [winW_eq] at U₃

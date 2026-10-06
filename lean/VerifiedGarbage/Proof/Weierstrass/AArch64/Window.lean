@@ -26,10 +26,11 @@ open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open Spec.Weierstrass
 
 /-- The window method's slots and modulus at offsets that loads and stores
-can encode. -/
+can encode, and the table of bits at offsets `ldrb` can encode. -/
 structure WinA (K : WinCfg) : Prop where
   sl : ∀ x ∈ winSlots K, x % 8 = 0
   mod : ModA K.M
+  bits4 : K.bits + 3 < 4096
 
 /-! ## The complete addition into `R` -/
 
@@ -554,7 +555,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       hsep o (sub3 o ho) c hc i' hi'⟩
   -- The digit's masks.
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hL.bits4 hx
+  refine WP.mono (digit_ok hs K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hA.bits4 hx
     hbits) fun s₁ ⟨m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have hm₁ : MasksOf s₁ (mag (nib k i)) := m₁
@@ -649,7 +650,7 @@ theorem winEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k i : Nat} (hL 
       have := hL.bits
       rw [U₄₅.byte (fun w hw => by have := hL.bits_w w hw; omega) (by omega)]; exact hbits t ht
   rw [WP.block_append_iff]
-  have W6 := signMask_ok hs₅ K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hL.bits4 hx₅
+  have W6 := signMask_ok hs₅ K.bits (k := k) (j := i) (N := 4 * K.J) (by omega) hL.bits hA.bits4 hx₅
     hbits₅
   refine WP.mono W6 fun s₆ h₆ => ?_
   obtain ⟨x₆, k₆⟩ := h₆

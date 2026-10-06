@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.Window
 Iteration `j` reads digit `j` as the comb reads its digits (`digit_ok` for
 windows of 4 bits: `combWin 4 k j` is `nib k j`), selects the entry of its
 magnitude `a` from the table at `rdx = rdi + tbl` (`winSelSetup_ok`) as the
-comb selects one, for entries of `3 n / 2` pairs of words (`selPass_ok`), so
-that `E` holds the point `[a]P`'s three coordinates, sets `y = R` for `a = 0`
+comb selects one (`selLoad_ok`), its `⌈3 n / 2⌉` 16-byte pieces stored to `E`
+(the last over the entry's last 16 bytes), so that `E` holds the point `[a]P`'s three coordinates, sets `y = R` for `a = 0`
 (`ySel0_ok`, so that `E` is `(0 : 1 : 0)`), and negates `y` for a negative
 digit as the comb does (`winEntry_ok`).
 -/
@@ -67,46 +67,79 @@ structure WinSelPost (K : WinCfg) (base : Addr) (s : State) (a : Nat) (t : State
 
 /-- The entry of the magnitude `r8 = a ≤ 8` into `E`. -/
 theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 8 ∧ K.M.n % 2 = 0) (ht : K.tbl < 2 ^ 31)
+    (hn : 1 ≤ K.M.n ∧ K.M.n ≤ 9) (ht : K.tbl < 2 ^ 31)
     (htb : K.tbl + 192 * K.M.n ≤ size) (hexy : K.E.y = K.E.x + 8 * K.M.n)
     (hexz : K.E.z = K.E.x + 16 * K.M.n) (hz : K.E.z + 8 * K.M.n ≤ size) (hone : K.one < 2 ^ (64 * K.M.n))
     {a : Nat} (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (ha : a ≤ 8) :
     WP isa (.block (WinCfg.select K)) s (WinSelPost K base s a) := by
   have hnw := hs.nowrap
-  have hm : 2 * (3 * K.M.n / 2) = 3 * K.M.n := by omega
+  have hnp : WinCfg.np K = (3 * K.M.n + 1) / 2 := rfl
+  have hpo : ∀ c, WinCfg.po K c = if c + 1 < WinCfg.np K then 16 * c else 24 * K.M.n - 16 := fun _ => rfl
+  have hpo16 : ∀ c < WinCfg.np K, WinCfg.po K c + 16 ≤ 24 * K.M.n := fun c hc => by
+    rw [hpo]; rw [hnp] at hc ⊢; split <;> omega
+  have hlast : WinCfg.po K (WinCfg.np K - 1) = 24 * K.M.n - 16 := by
+    rw [hpo, ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
   rw [WinCfg.select, List.append_assoc, WP.block_append_iff]
   refine WP.mono (winSelSetup_ok K s hs.rdi ht) fun s₁ ⟨x₁, k₁, _⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
-  rw [WP.block_append_iff]
-  have hr : ∀ e < (WinCfg.selCfg K).H, ∀ c < (WinCfg.selCfg K).M.n, InRegions (s₁.rd ++ s₁.wr)
-      (base + BitVec.ofNat 64 K.tbl + BitVec.ofNat 64 (16 * (WinCfg.selCfg K).M.n * e + 16 * c)) 16 := by
+  rw [WP.block_append_iff, selPassAt, WP.block_append_iff]
+  -- Every piece is within its entry, and the entries within the table.
+  have hr : ∀ e < 8, ∀ c < WinCfg.np K, InRegions (s₁.rd ++ s₁.wr)
+      (base + BitVec.ofNat 64 K.tbl + BitVec.ofNat 64 (24 * K.M.n * e + WinCfg.po K c)) 16 := by
     intro e he c hc
-    have hH : (WinCfg.selCfg K).H = 8 := rfl
-    have hM : (WinCfg.selCfg K).M.n = 3 * K.M.n / 2 := rfl
-    rw [hH] at he
-    rw [hM] at hc ⊢
     rw [Offset.add_add]
-    have := Nat.mul_le_mul_left (16 * (3 * K.M.n / 2)) (show e + 1 ≤ 8 by omega)
+    have := hpo16 c hc
+    have := Nat.mul_le_mul_left (24 * K.M.n) (show e + 1 ≤ 8 by omega)
     rw [Nat.mul_succ] at this
-    refine ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega) (by decide)⟩
-  refine WP.mono (selPass_ok (WinCfg.selCfg K) hs₁ (show 3 * K.M.n / 2 ≤ 14 by omega) (by show 2 ^ (4 - 1) < 2 ^ 31; decide)
-    (by omega) h8₁ x₁ hr (show K.E.x + 16 * (3 * K.M.n / 2) ≤ size by omega)) fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+    exact ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega) (by decide)⟩
+  refine WP.mono (selLoad_ok (st := 24 * K.M.n) (H := 8) (by rw [hnp]; omega) (by decide) (by omega)
+    h8₁ x₁ hr) fun s₂l ⟨a₂, k₂l, m₂l⟩ => ?_
+  have hs₂l : Scr s₂l base size := hs₁.of_keepRegs k₂l (by decide)
+  -- The pieces but the last are `16` bytes apart; the last ends the entry.
+  rw [show WinCfg.np K = (WinCfg.np K - 1) + 1 by rw [hnp]; omega, List.range_succ, List.map_append,
+    List.map_singleton, WP.block_append_iff,
+    List.map_congr_left (l := List.range (WinCfg.np K - 1))
+      (g := fun c => Instr.movdquStore (sc (K.E.x + 16 * c)) (selAcc c)) fun c hc => by
+        rw [List.mem_range] at hc; rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true (by omega))]]
+  refine WP.mono (storeAcc_ok (o := K.E.x) (WinCfg.np K - 1) s₂l hs₂l (by rw [hnp]; omega))
+    fun s₂f ⟨a₃, O₃f, g₃, r₃, w₃, x₃⟩ => ?_
+  have hs₂f : Scr s₂f base size := ⟨by rw [g₃]; exact hs₂l.rdi, by rw [w₃]; exact hs₂l.wr, hnw⟩
+  refine WP.mono (store128_ok (d := K.E.x + WinCfg.po K (WinCfg.np K - 1)) s₂f hs₂f
+    (by rw [hlast]; omega) _) fun s₂ ⟨a₄, O₄, g₄, r₄, w₄, x₄⟩ => ?_
+  have k₂ : KeepRegs [.rcx] s₁ s₂ :=
+    ⟨fun r hr => by rw [g₄, g₃, k₂l.gpr r hr], by rw [r₄, r₃, k₂l.rd], by rw [w₄, w₃, k₂l.wr]⟩
+  have O₂ : Outside base K.E.x (24 * K.M.n) s₁.mem s₂.mem := by
+    rw [← m₂l]
+    exact (O₃f.mono (Nat.le_refl _) (by rw [hnp]; omega)).trans (O₄.mono (by omega) (by rw [hlast]; omega))
+  have hs₂ : Scr s₂ base size := hs₁.of_keepRegs k₂ (by decide)
   have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [k₂.gpr _ (by decide), h8₁]
   refine WP.mono (ySel0_ok K hs₂ (by omega) h8₂ (by omega)) fun t ⟨ey, k₃, O₃⟩ => ?_
-  have W := accVal_word a₂
-  rw [k₁.2.1, show (WinCfg.selCfg K).E.x = K.E.x from rfl,
-    show (WinCfg.selCfg K).M.n = 3 * K.M.n / 2 from rfl, show (WinCfg.selCfg K).H = 8 from rfl] at W
   have hX : ∀ d, word s.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
     rw [Mont.word, Mont.word, off, off, Offset.add_add]
   -- The words of `E`, from the table at `s`.
   have hW : ∀ i < 3 * K.M.n, word s₂.mem base (K.E.x + 8 * i) =
       if 1 ≤ a ∧ a ≤ 8 then word s.mem base (K.tbl + 24 * K.M.n * (a - 1) + 8 * i) else 0 := by
     intro i hi
-    rw [W i (by omega), hX,
-      show K.tbl + (16 * (3 * K.M.n / 2) * (a - 1) + 8 * i) = K.tbl + 24 * K.M.n * (a - 1) + 8 * i by
-        rw [show 16 * (3 * K.M.n / 2) = 24 * K.M.n by omega]; omega]
+    have e₂ : ∀ c < WinCfg.np K, s₂l.xmm (selAcc c) =
+        accVal s.mem (base + BitVec.ofNat 64 K.tbl) (24 * K.M.n) (WinCfg.po K) a 8 c := fun c hc => by
+      rw [a₂ c hc, k₁.2.1]
+    by_cases hi2 : 3 * K.M.n - 2 ≤ i
+    · have h := a₄
+      rw [x₃, e₂ _ (by rw [hnp]; omega)] at h
+      have w := accVal_word1 (q := i - (3 * K.M.n - 2)) h (by omega)
+      rw [hlast, show K.E.x + (24 * K.M.n - 16) + 8 * (i - (3 * K.M.n - 2)) = K.E.x + 8 * i by omega,
+        hX] at w
+      rw [w, show K.tbl + (24 * K.M.n * (a - 1) + (24 * K.M.n - 16) + 8 * (i - (3 * K.M.n - 2))) =
+        K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega]
+    · have hc : i / 2 + 1 < WinCfg.np K := by rw [hnp]; omega
+      have h := a₃ (i / 2) (by omega)
+      rw [e₂ _ (by omega)] at h
+      have w := accVal_word1 (q := i % 2) h (Nat.mod_lt _ (by decide))
+      rw [hpo, ite_eq_left_of_eq_true _ _ (eq_true hc), show K.E.x + 16 * (i / 2) + 8 * (i % 2) = K.E.x + 8 * i by omega, hX] at w
+      rw [O₄.word (by rw [hlast]; omega) (by omega), w,
+        show K.tbl + (24 * K.M.n * (a - 1) + 16 * (i / 2) + 8 * (i % 2)) =
+          K.tbl + 24 * K.M.n * (a - 1) + 8 * i by omega]
   have hxw : ∀ i < K.M.n, word t.mem base (K.E.x + 8 * i) = word s₂.mem base (K.E.x + 8 * i) := fun i hi =>
     O₃.word (by omega) (by omega)
   have hzw : ∀ i < K.M.n, word t.mem base (K.E.z + 8 * i) = word s₂.mem base (K.E.z + 8 * i) := fun i hi =>
@@ -154,8 +187,7 @@ theorem winSelect_ok (K : WinCfg) {s : State} {base : Addr} {size : Nat} (hs : S
   · rw [← k₁.2.1]
     have U₂ : Unch base [(K.E.x, 3 * (8 * K.M.n))] s₁.mem s₂.mem := by
       have := O₂.unch
-      rwa [show (WinCfg.selCfg K).M.n = 3 * K.M.n / 2 from rfl,
-        show 16 * (3 * K.M.n / 2) = 3 * (8 * K.M.n) by omega] at this
+      rwa [show 24 * K.M.n = 3 * (8 * K.M.n) by omega] at this
     refine ((Unch.split3 U₂).trans O₃.unch).mono fun w hw => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with (rfl | rfl | rfl) | rfl
@@ -185,9 +217,10 @@ theorem mul_zero_pt' {C : Curve} (P : Point C) : mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
 /-- The layout facts the entry needs: `E`'s three slots adjacent, the table's
-address an immediate, and `n` even (the selection moves 16 bytes at a time). -/
+address an immediate, and at most nine words (the selection keeps an entry's
+16-byte pieces in fourteen registers). -/
 structure WinX (K : WinCfg) (size : Nat) : Prop where
-  n : 1 ≤ K.M.n ∧ K.M.n ≤ 8 ∧ K.M.n % 2 = 0
+  n : 1 ≤ K.M.n ∧ K.M.n ≤ 9
   tbl : K.tbl < 2 ^ 31
   exy : K.E.y = K.E.x + 8 * K.M.n
   exz : K.E.z = K.E.x + 16 * K.M.n

@@ -48,7 +48,6 @@ structure WinLay (K : WinCfg) (size : Nat) : Prop where
   n0 : 0 < K.M.n
   J : 1 ≤ K.J ∧ K.J ≤ 4096
   bits : K.bits + 4 * K.J ≤ size
-  bits4 : K.bits + 3 < 4096
   bits_w : ∀ w ∈ winW K, K.bits + 4 * K.J ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
 
 /-- `x ∈ l` for the window method's lists. -/
