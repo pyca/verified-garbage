@@ -79,9 +79,11 @@ jobs:
     name: Compare with base (${{ matrix.arch }}${{ matrix.cpu-features && format(', VG_CPU_FEATURES={0}', matrix.cpu-features) || '' }}${{ matrix.shard && format(', shard {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os }}
     # Running every benchmark took 25-30 minutes on every runner with 3
-    # rounds; with 2, about 20-25. If it outgrows the timeout again, set
-    # BENCHMARKS_PER_JOB (ci/bench_arches.py) to split configurations into
-    # shards.
+    # rounds; with 2, about 20-25, until the x86-64 configurations outgrew
+    # the timeout. One round with a shorter warm-up and measurement, and no
+    # OpenSSL reference on pull requests (bench_compare.py), take about half.
+    # If it outgrows the timeout again, set BENCHMARKS_PER_JOB
+    # (ci/bench_arches.py) to split configurations into shards.
     timeout-minutes: 30
     # With an empty image the job runs directly on the runner.
     container:
@@ -116,4 +118,7 @@ jobs:
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}
-        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY"
+          # OpenSSL's times are a reference for manual runs; a pull request
+          # needs only its comparison with the base.
+          OPENSSL: ${{ github.event_name == 'workflow_dispatch' && '--openssl' || '' }}
+        run: python3 head/ci/bench_compare.py base head --modules "$MODULES" --shard "$SHARD" --summary "$GITHUB_STEP_SUMMARY" $OPENSSL
