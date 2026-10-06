@@ -59,7 +59,8 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
         f₄.av hok4 hj (by simp [h1, h2, h3]) hZ, f₃.av (by decide) hj (by simp [h1]) hZ,
         f₂.av (by decide) hj (by simp [h1]) hZ]
   have vQm₆ : av I s₆.mem aQm = b := by
-    rw [pres6 aQm (by decide) (by decide) (by decide) (by decide) (by decide), f₁.av hok1 (by decide) (by decide) hZ, hb]
+    rw [pres6 aQm (by decide) (by decide) (by decide) (by decide) (by decide), f₁.av hok1 (by decide) (by decide) hZ,
+      hb]
   have vD₆ : av I s₆.mem aDd = d := by
     rw [pres6 aDd (by decide) (by decide) (by decide) (by decide) (by decide), vD₁]
   -- `dQ`.
@@ -72,7 +73,8 @@ theorem crtPart_k {I : KIn} {s₀ s : State} (h : KS I s₀ s) {d a b : Nat} (hd
   refine WP.seq (WP.mono (zeroA_k h₇ (j := aU) (by decide)) fun s₈ ⟨h₈, f₈, _, _⟩ =>
     WP.seq (WP.mono (copyA_k h₈ (o := aU) (a := aDd) (by decide) (by decide) (by decide)) fun s₉ ⟨h₉, f₉, v₉, _, _⟩ =>
       WP.mono (divmod_k h₉ (iQ := aU) (iR := aV) (iD := aM) (iT := aT) (by decide) (by decide) (by decide)
-        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨ht, f₁₀, d₁₀⟩ => ?_))
+        (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
+        fun t ⟨ht, f₁₀, d₁₀⟩ => ?_))
   have vM₉ : av I s₉.mem aM = dv b := by
     rw [f₉.av (by decide) (by decide) (by decide) hZ, f₈.av (by decide) (by decide) (by decide) hZ, v₇]
   have vU₉ : av I s₉.mem aU = d := by rw [v₉, f₈.av (by decide) (by decide) (by decide) hZ, vD₇]
