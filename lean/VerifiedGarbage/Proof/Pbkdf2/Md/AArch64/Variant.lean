@@ -99,6 +99,11 @@ structure MdHash where
   ECDSA's) are made (`Generic/MdHash/P256/AArch64/EcdsaP256Sha384.lean`); `none`
   for the other hash functions. -/
   sha384 : Option Proof.Sha512.AArch64.Compress := none
+  /-- For SHA-224's variants, the implementation of SHA-256's compression
+  function, from which the functions built on SHA-224 alone (deterministic
+  ECDSA's) are made (`Generic/MdHash/P224/AArch64/EcdsaP224Sha224.lean`); `none`
+  for the other hash functions. -/
+  sha224 : Option Proof.Sha256.AArch64.Compress := none
 
 namespace MdHash
 

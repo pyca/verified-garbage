@@ -21,14 +21,14 @@ abbrev kOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) 
 abbrev vOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : List Byte :=
   Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 80) P.H.D
 abbrev hOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (m : Mem) : List Byte :=
-  Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 144) (8 * P.w)
+  Spec.Sha256.bytesAt m (L.B + BitVec.ofNat 64 144) P.Q
 
 /-- What follows `V ‖ b` in the message of steps d and f: `d ‖ h`, or, if
 `wide`, `d ‖ 0 0 ‖ digest`. -/
 abbrev tailOf (P : RfcHash) {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (wide : Bool) (m : Mem) :
     List Byte :=
   if wide then Spec.Sha256.bytesAt m L.d P.Q ++ List.replicate (P.Q - P.H.D) 0 ++ Spec.Sha256.bytesAt m L.dg P.H.D
-  else Spec.Sha256.bytesAt m L.d (8 * P.w) ++ hOf P L m
+  else Spec.Sha256.bytesAt m L.d P.Q ++ hOf P L m
 
 /-- What the steps change: `scratch`, the stack below the frame, `K` and `V`. -/
 abbrev KVW {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) : List Region := [L.SCR, ⟨L.B, 144⟩]
@@ -90,16 +90,16 @@ theorem msgAny_ok (hL : L.Ok) (hq : L.q = P.Q) (hdn : dn = P.H.D) {t : State} (h
           (if full then P.H.D + 2 * P.Q + 1 else P.H.D + 1) =
         vOf P L t.mem ++ [BitVec.ofNat 8 b] ++ (if full then tailOf P L wide t.mem else []) := by
   cases wide
-  · refine WP.mono (msg_ok hL hc h9 h10 h15 b full (D := P.H.D) (w := P.w) P.Q (by anums) (by anums)
+  · refine WP.mono (msg_ok hL hc h9 h10 h15 b full (D := P.H.D) (w := P.w) (Q := P.Q) (by anums) (by anums)
       fun hf => ?_) fun t' ⟨hc', hf', hb'⟩ => ⟨hc', hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, ?_⟩
-    · have := P.sizesA (hA hf rfl); omega
+    · have := P.sizesA (hA hf rfl)
+      exact ⟨by anums, by omega, fun _ => by omega, by omega⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact Region.sub_prefix (by anums)
     · cases full
       · simpa using hb'
-      · have hs := P.sizesA (hA rfl rfl)
-        simp only [ite_true, tailOf, hOf, Bool.false_eq_true, ite_false] at hb' ⊢
-        rw [show P.H.D + 2 * P.Q + 1 = P.H.D + 16 * P.w + 1 by omega, hb']
+      · simp only [ite_true, tailOf, hOf, Bool.false_eq_true, ite_false] at hb' ⊢
+        exact hb'
   · obtain ⟨hfull, hRW⟩ := hW rfl
     subst hfull
     obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hRW

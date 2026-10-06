@@ -180,9 +180,10 @@ theorem satPF :
 
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
-with `v` carries. -/
+with `v` carries; it carries `v` for deterministic ECDSA's functions
+(`MdHash.sha224`). -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK rfl rfl satI satF satT satP (by decide)
+  { MdHash.of (ok v) coreOK rfl rfl satI satF satT satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -190,6 +191,7 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features
+    v.suffix v.features with
+    sha224 := some v }
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224
