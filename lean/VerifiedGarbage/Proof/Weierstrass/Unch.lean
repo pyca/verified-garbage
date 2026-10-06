@@ -89,4 +89,11 @@ theorem Unch.far {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch ba
     {x : Addr} (hx : ∀ w ∈ W, w.1 + w.2 ≤ ofs base x) : m' x = m x :=
   h x fun w hw => Or.inr (hx w hw)
 
+/-- The modulus survives a change of memory apart from it. -/
+theorem _root_.VG.Proof.Mont.ModOkW.unch {M : VG.Impl.Mont.Mod} {size m : Nat} {mem mem' : Mem} {base : Addr} {W : List (Nat × Nat)}
+    (h : ModOkW M size m mem base) (hU : Unch base W mem mem')
+    (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
+    ModOkW M size m mem' base :=
+  ⟨h.n0, h.mo, h.tmp, h.sep, by rw [hU.wordsVal hW (by have := h.mo; omega)]; exact h.val, h.inv, h.red⟩
+
 end VG.Proof.Weierstrass

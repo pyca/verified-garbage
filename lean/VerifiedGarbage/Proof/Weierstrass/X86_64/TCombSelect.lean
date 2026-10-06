@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Mont.Words128
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombDigit
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombLay
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
@@ -211,21 +212,6 @@ theorem clearAcc_ok : ∀ k ≤ 14, ∀ (s : State),
       · subst hck; exact RegUpd.xmm_setXmm_self _ _ _
       · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hck (selAcc_inj c (by omega) k (by omega) h), a₁ c (by omega)]
     · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hr ⟨k, by omega, h⟩, k₁.xmm r fun ⟨c, hc, h⟩ => hr ⟨c, by omega, h⟩]
-
-/-- A 16-byte write changes only its bytes. -/
-theorem writeW128_out (m : Mem) (base : Addr) {d : Nat} (v : BitVec 128) (h : d + 16 ≤ 2 ^ 64) :
-    Outside base d 16 m (m.writeW (off base d) v) := by
-  intro x hx
-  simp only [Mem.writeW]
-  apply Mem.write_apply
-  rw [Offset.lt_iff x base (by omega)]
-  simp only [ofs] at hx
-  omega
-
-/-- 16 bytes outside the bytes that changed. -/
-theorem _root_.VG.Proof.Mont.Outside.read128 {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
-    (hd : d + 16 ≤ o ∨ o + n ≤ d) (hd' : d + 16 ≤ 2 ^ 64) : m'.readW (off base d) 128 = m.readW (off base d) 128 :=
-  (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)).symm).symm
 
 /-- The accumulators `c < k` stored to the 16 bytes at `o + 16 c`. -/
 theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s base size → o + 16 * k ≤ size →
