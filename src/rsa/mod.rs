@@ -26,8 +26,8 @@
 //! key's values. On a CPU with BMI2 and ADX, `vg_rsa_private_checked_adx`
 //! does the same with the faster Montgomery multiplication; on one with
 //! AVX512_IFMA and AVX512VL too, `vg_rsa_private_checked_ifma` does the same,
-//! computing the two exponentiations of a 2048-bit key with primes of 1024
-//! bits at once, in 256-bit vector registers.
+//! computing the two exponentiations of a 2048-, 3072- or 4096-bit key with
+//! primes of half its size at once, in 256-bit vector registers.
 //!
 //! A private key can also be loaded from its modulus, its exponents and its
 //! primes `(n, e, d, p, q)`, whose CRT values `dP`, `dQ` and `qInv` the
@@ -98,7 +98,7 @@ pub(crate) enum Backend {
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// `Adx`, and for the private-key operation, AVX512_IFMA's
-    /// multiplications for 2048-bit keys.
+    /// multiplications for 2048-, 3072- and 4096-bit keys.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -405,7 +405,7 @@ mod tests {
             Backend::Ifma
         );
         assert_eq!(
-            Backend::select(Features::of(&["avx", "avx2", "avx512ifma", "avx512vl"])),
+            Backend::select(Features::of(&["avx", "avx512f", "avx512ifma", "avx512vl"])),
             Backend::Baseline
         );
     }
