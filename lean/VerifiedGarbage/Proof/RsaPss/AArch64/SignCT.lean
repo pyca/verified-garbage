@@ -112,7 +112,7 @@ theorem call_ct (c : PrivChecked) {D K : Nat} (hK : 16 ≤ K) (hcK : c.stack ≤
 
 section
 variable {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) (c : PrivChecked) {K : Nat}
+  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) (c : PrivChecked) {K : Nat}
   (hK : 16 ≤ K) (hcK : c.stack ≤ K)
 
 include hK in

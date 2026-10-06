@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.RsaPss.AArch64.CtHash
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Two
 import VerifiedGarbage.Proof.Framework.AArch64.TaintEraseOff
+import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 
 /-!
 # RSASSA-PSS on AArch64: `ctHashWith` is constant time
@@ -40,12 +41,6 @@ theorem two_step {α : Type} {Φ Ψ : α → State → Prop} {l : List Instr} {c
 
 theorem pins_nil {α : Type} {Φ : α → State → Prop} (h : ∀ a s₁ s₂, Φ a s₁ → Φ a s₂ → s₁.sp = s₂.sp) : Pins Φ [] :=
   fun a s₁ s₂ h₁ h₂ => ⟨h a s₁ s₂ h₁ h₂, fun _ h => absurd h List.not_mem_nil⟩
-
-/-- The taint checks of the hash function's code in `ctHashWith`, once for
-each hash function: its length field from `ℓ` (secret) and its digest. -/
-structure PssChecks (H : Hash) : Prop where
-  lenField : ∃ hc, (taint.check (VG.AArch64.Taint.ofRegs [.x20]) (.block (lenField H)) hc).isSome = true
-  digestOut : ∃ hc, (taint.check (VG.AArch64.Taint.ofRegs [.x20, .x21]) (.block (digestOut H)) hc).isSome = true
 
 /-- A hash function with every size zero and no code: the code that depends
 on a hash function only through its immediates is, without them, that of
@@ -162,7 +157,7 @@ theorem HR.pins {H : Hash} {rs : List (Reg × (HA → BitVec 64))} {qs : List Re
     · rw [h₁.2 _ hf, h₂.2 _ hf]
 
 include hH in
-theorem lenField_ct (hc : PssChecks H) : RelCT isa (Two (HE H)) (.block (lenField H)) (Two (HE H)) := by
+theorem lenField_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (lenField H)) (Two (HE H)) := by
   have hd := hH.sizes.dims
   have hNL := hH.sizes.NL
   have hN := hH.N_le
@@ -180,7 +175,7 @@ theorem lenField_ct (hc : PssChecks H) : RelCT isa (Two (HE H)) (.block (lenFiel
     hnb := h.hnb
     fx := fun ℓ e => by rw [k.get .x22]; exact h.fx ℓ e }
 
-theorem digestOut_ct (hc : PssChecks H) : RelCT isa (Two (HE H)) (.block (digestOut H)) fun _ _ => True := by
+theorem digestOut_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (.block (digestOut H)) fun _ _ => True := by
   obtain ⟨_, hcl⟩ := hc.digestOut
   exact two_taint [.x20, .x21] (HE.pins fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp) hcl
 
@@ -474,7 +469,7 @@ theorem compLoop_ct : RelCT isa (Two (HE H)) (compLoop H) (Two (HE H)) := by
 /-! ## The whole hash -/
 
 include hH in
-theorem ctHashWith_ct (hc : PssChecks H) {padding : Prog isa} {X : HA → Prop}
+theorem ctHashWith_ct (hc : PssChecks H.P H.D) {padding : Prog isa} {X : HA → Prop}
     (hp : RelCT isa (Two fun a u => HE H a u ∧ X a) padding (Two (HE H))) :
     RelCT isa (Two fun a u => HE H a u ∧ X a) (ctHashWith H padding) fun _ _ => True := by
   unfold ctHashWith seqs seqs seqs seqs seqs
@@ -482,13 +477,13 @@ theorem ctHashWith_ct (hc : PssChecks H) {padding : Prog isa} {X : HA → Prop}
     (lenField_ct hH hc) (RelCT.seq (lenLoop_ct hH) (RelCT.seq (compLoop_ct hH) (digestOut_ct hc)))))
 
 include hH in
-theorem ctHash_ct (hc : PssChecks H) : RelCT isa (Two (HE H)) (ctHash H) fun _ _ => True :=
+theorem ctHash_ct (hc : PssChecks H.P H.D) : RelCT isa (Two (HE H)) (ctHash H) fun _ _ => True :=
   (ctHashWith_ct hH hc (X := fun _ => True) ((pad80_ct hH).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, h₁.1, h₂.1⟩) fun _ _ h => h)).mono
     (fun _ _ ⟨a, h₁, h₂⟩ => ⟨a, ⟨h₁, trivial⟩, h₂, trivial⟩) fun _ _ h => h
 
 include hH in
-theorem mgfHash_ct (hc : PssChecks H) :
+theorem mgfHash_ct (hc : PssChecks H.P H.D) :
     RelCT isa (Two fun a u => HE H a u ∧ a.fx = some (H.D + 4)) (mgfHash H) fun _ _ => True := by
   have hDN := hH.sizes.DN
   have hN := hH.N_le

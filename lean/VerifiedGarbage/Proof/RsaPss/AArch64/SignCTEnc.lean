@@ -273,7 +273,7 @@ theorem sregs_cs : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∈ [Reg.x19, 
   decide
 
 include hH in
-theorem ctHash_sct {K : Nat} (hc : PssChecks H) :
+theorem ctHash_sct {K : Nat} (hc : PssChecks H.P H.D) :
     RelCT isa (Two (SR H.D K (rsL H.D) (slL H))) (ctHash H) (Two (SR H.D K (sregs H.D) sslots)) := by
   have hDN := hH.sizes.DN
   have hN := hH.N_le
@@ -440,7 +440,7 @@ def rsT : List (Reg × (State → BitVec 64)) := [(.x24, fun a => off (scr a) (o
 
 include hH in
 theorem mgfXor_sct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
     RelCT isa (Two (SR H.D K (sregs H.D) sslots)) (mgfXor H) (Two (SR H.D K rsT [])) := by
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
@@ -467,7 +467,7 @@ theorem clearTop_sct {D K : Nat} : RelCT isa (Two (SR D K rsT [])) (.block clear
 
 /-- The encoding is constant time. -/
 theorem signEnc_ct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
     RelCT isa (Two (SR H.D K (sregs0 H.D) sslots)) (signEnc H) fun _ _ => True := by
   unfold signEnc seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
   exact RelCT.seq dbRegs_sct (RelCT.seq clearY_sct (RelCT.seq (copyDigest_sct hH) (RelCT.seq (copySaltY_sct hH)

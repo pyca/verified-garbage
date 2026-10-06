@@ -130,7 +130,7 @@ theorem counter_mct :
     · rw [List.mem_singleton.mp hq]; exact nb
 
 include hH in
-theorem mgfHash_mct (hc : PssChecks H) :
+theorem mgfHash_mct (hc : PssChecks H.P H.D) :
     RelCT isa (Two (MR H.D (mregs2 H) (mslots2 H))) (mgfHash H) (Two (MR H.D mregs (mslots H.D))) := by
   have hDN := hH.sizes.DN
   have hN := hH.N_le
@@ -235,7 +235,7 @@ theorem MI.mr {G : Spec.Mgf1.Hash} {D : Nat} {p : MA × Nat} {u : State} (h : MI
 
 include hH in
 theorem mgfXor_ct {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
     RelCT isa (Two (MS H.D)) (mgfXor H) fun _ _ => True := by
   have hD := hH.sizes.D0
   have c2 : oY = 3584 := rfl

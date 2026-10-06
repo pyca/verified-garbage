@@ -203,7 +203,7 @@ variable {H : Hash} (hH : HashOK H)
 
 include hH in
 theorem mgfXor_vct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
     RelCT isa (Two (VR H.D K (vregs H.D) vslots)) (mgfXor H) (Two (VR H.D K (vregs H.D) vslots)) := by
   have c1 : oEm = 2560 := rfl
   have c2 : oY = 3584 := rfl
@@ -365,7 +365,7 @@ theorem verifyNb_vct {K : Nat} :
         · rw [List.mem_singleton.mp hq, m, Mem.readW_writeW_self64]
 
 include hH in
-theorem ctHash_vct {K : Nat} (hc : PssChecks H) :
+theorem ctHash_vct {K : Nat} (hc : PssChecks H.P H.D) :
     RelCT isa (Two fun a u => VR H.D K (vregs H.D) (vslots ++ [(sNb, fun a => BitVec.ofNat 64 (nbA H a))]) a u ∧
         LX H.D a u) (ctHash H) (Two (VR H.D K (vregs H.D) vslots)) := by
   have hDN := hH.sizes.DN
@@ -427,7 +427,7 @@ theorem cmpH_vct {K : Nat} :
 
 /-- The checks of `EM` are constant time. -/
 theorem check_ct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
-    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) :
     RelCT isa (Two (VR H.D K (vregs H.D) vslots))
       (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck, clearY, copyDigest H, copyDb H, shift H,
         .block (verifyNb H), ctHash H, cmpH H]) (Two fun a t => t.sp = fb a) := by

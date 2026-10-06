@@ -91,7 +91,7 @@ theorem vr_of {D K : Nat} (hK : 16 ≤ K) {a s t : State} (ok : VOk D a) (e : E 
 
 section
 variable {H : Hash} (hH : HashOK H) {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x)
-  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) (c : PdChecked) {K : Nat}
+  (hGl : G.len = H.D) (hG : Proof.Mgf1.Valid G) (hc : PssChecks H.P H.D) (c : PdChecked) {K : Nat}
   (hK : 16 ≤ K) (hcK : c.stack ≤ K)
 
 include hH hGh hGl hG hc hK hcK in
