@@ -1,5 +1,5 @@
 diff --git a/Cargo.toml b/Cargo.toml
-index efbf1ef..6710c58 100644
+index efbf1ef6..6710c589 100644
 --- a/Cargo.toml
 +++ b/Cargo.toml
 @@ -144,3 +144,7 @@ unused_qualifications = "warn"
@@ -11,7 +11,7 @@ index efbf1ef..6710c58 100644
 +[patch."https://github.com/rustls/rustls"]
 +rustls = { path = "rustls" }
 diff --git a/rustls-bench/Cargo.toml b/rustls-bench/Cargo.toml
-index f21627e..d3e8a73 100644
+index f21627e3..a4197a10 100644
 --- a/rustls-bench/Cargo.toml
 +++ b/rustls-bench/Cargo.toml
 @@ -9,6 +9,7 @@ clap = { workspace = true }
@@ -40,10 +40,10 @@ index f21627e..d3e8a73 100644
 +required-features = ["aws-lc-rs", "verified-garbage"]
 diff --git a/rustls-bench/src/bin/provider_primitives.rs b/rustls-bench/src/bin/provider_primitives.rs
 new file mode 100644
-index 0000000..e94dc07
+index 00000000..3026f876
 --- /dev/null
 +++ b/rustls-bench/src/bin/provider_primitives.rs
-@@ -0,0 +1,283 @@
+@@ -0,0 +1,285 @@
 +//! Times each provider's primitives as a handshake uses them, through the
 +//! rustls traits: key exchange, signing, signature verification, the record
 +//! layer, the key schedule and tickets.
@@ -81,9 +81,11 @@ index 0000000..e94dc07
 +    samples[3]
 +}
 +
++/// A row: both times, and verified-garbage's speed relative to aws-lc-rs's
++/// (below 1 is slower).
 +fn report(name: &str, results: &[f64]) {
 +    let [aws, vg] = results else { unreachable!() };
-+    println!("{name:<44} {:>12.0} {:>12.0} {:>7.2}x", aws, vg, vg / aws);
++    println!("{name:<44} {:>12.0} {:>12.0} {:>7.2}", aws, vg, aws / vg);
 +}
 +
 +/// The `subjectPublicKey` of an SPKI.
@@ -138,7 +140,7 @@ index 0000000..e94dc07
 +        ("aws-lc-rs", rustls_aws_lc_rs::DEFAULT_PROVIDER),
 +        ("verified-garbage", rustls_verified_garbage::DEFAULT_PROVIDER),
 +    ];
-+    println!("{:<44} {:>12} {:>12} {:>8}", "ns per operation", "aws-lc-rs", "verified-g", "ratio");
++    println!("{:<44} {:>12} {:>12} {:>8}", "ns per operation", "aws-lc-rs", "verified-g", "speed");
 +
 +    // Key exchange: the client's share, the server's side, the client's
 +    // completion.
@@ -328,7 +330,7 @@ index 0000000..e94dc07
 +    report("ticket decrypt 200 B", &dec);
 +}
 diff --git a/rustls-bench/src/main.rs b/rustls-bench/src/main.rs
-index 0a3df37..41298d9 100644
+index 0a3df37b..41298d9e 100644
 --- a/rustls-bench/src/main.rs
 +++ b/rustls-bench/src/main.rs
 @@ -881,6 +881,8 @@ enum Provider {
@@ -360,7 +362,7 @@ index 0a3df37..41298d9 100644
              [] => panic!("no providers available in this build"),
              [one] => one,
 diff --git a/rustls-test/Cargo.toml b/rustls-test/Cargo.toml
-index b8ac36c..3ef867d 100644
+index b8ac36ca..f4e675b8 100644
 --- a/rustls-test/Cargo.toml
 +++ b/rustls-test/Cargo.toml
 @@ -21,6 +21,7 @@ num-bigint = { workspace = true }
@@ -372,7 +374,7 @@ index b8ac36c..3ef867d 100644
  x509-parser = { workspace = true }
  webpki = { workspace = true }
 diff --git a/rustls-test/src/lib.rs b/rustls-test/src/lib.rs
-index e10df50..7db12ad 100644
+index e10df504..7db12ad2 100644
 --- a/rustls-test/src/lib.rs
 +++ b/rustls-test/src/lib.rs
 @@ -2250,6 +2250,27 @@ pub mod macros {
@@ -404,7 +406,7 @@ index e10df50..7db12ad 100644
      macro_rules! provider_aws_lc_rs {
          () => {
 diff --git a/rustls-test/tests/api.rs b/rustls-test/tests/api.rs
-index 60c8327..f8106a5 100644
+index 60c83273..f8106a5c 100644
 --- a/rustls-test/tests/api.rs
 +++ b/rustls-test/tests/api.rs
 @@ -67,3 +67,37 @@ mod tests_with_aws_lc_rs {
