@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 
 /-!

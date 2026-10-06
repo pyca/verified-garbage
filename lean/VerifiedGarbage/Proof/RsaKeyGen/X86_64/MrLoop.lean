@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrBitAll
-import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Bits
+import VerifiedGarbage.Proof.RsaKeyGen.Bits
 
 /-!
 # A candidate on x86-64: Miller–Rabin's exponentiation loops
