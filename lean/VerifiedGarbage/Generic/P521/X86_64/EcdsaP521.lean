@@ -11,13 +11,14 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Lit
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86-64
 
-A generic file (see `TCB/Emit.lean`) over P-521's group law `h`, the variant
+A generic file (see `TCB/Emit.lean`) over P-521's group law and
+inversions `h`, the variant
 `Variants/P521/X86_64/Law.lean`.
 -/
 
 namespace VG.Generic.P521.X86_64.EcdsaP521
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
   { Spec.Ecdsa.P521.signApi with
     target := X86_64.target
     doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves its caller's callee-saved \
@@ -33,14 +34,21 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's \
       magnitude (or the point at infinity for a zero digit), negated by a mask of its sign, and \
       added by the complete addition formulas of Renes, Costello and Batina for `a = -3` \
-      (Algorithm 4); the inversions modulo `p` and `n` are Fermat's, by \
-      square-and-always-multiply over the bits of `p - 2` and `n - 2`. The signature (or \
+      (Algorithm 4); the \
+      inversion modulo `p` is by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
+      batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
+      giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
+      coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 1357 \
+      divsteps in all, enough for 576-bit moduli by Bernstein and Yang's bound (which the proof \
+      checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
+      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is Fermat's, by \
+      square-and-always-multiply over the bits of `n - 2`. The signature (or \
       zeros) is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code := Impl.Ecdsa.X86_64.signP521
     contract := Spec.Ecdsa.P521.inst.signContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
-    verified := Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law)
+    verified := Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P521.verifyApi with
     target := X86_64.target
@@ -52,7 +60,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       integer is shifted right by its last 7 bits. The key is checked without branches (its \
       first byte, both coordinates below `p`, and the curve's equation), and the second ladder \
       multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
-      curve. `s⁻¹` modulo `n` and `Z⁻¹` are Fermat's, by square-and-always-multiply; `[u]G` is the \
+      curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
+      signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`), and \
       `[v]Q` a double-and-add ladder over all 576 bits of the nine words of `v`, with the \
       complete addition formulas of Renes, Costello and Batina, which also add the two. The \
@@ -63,7 +72,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
     code := Impl.Ecdsa.Verify.X86_64.verifyP521
     contract := Spec.Ecdsa.P521.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
-    verified := Proof.Ecdsa.Verify.X86_64.P521.verify_verified h.law (Proof.P521.combOk7 h.law)
+    verified := Proof.Ecdsa.Verify.X86_64.P521.verify_verified h.law (Proof.P521.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P521.X86_64.EcdsaP521

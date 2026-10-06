@@ -217,10 +217,11 @@ def finish : List Instr :=
       .store (sc (P.sC + 8 * i)) .rax]) ++
   Mont.X86_64.mul P.M P.acc P.sA P.sC
 
-/-- The inversion modulo `m` (`n ≤ 6` words): `10` batches for up to 256
-bits, `15` for 384 (`590` and `885` divsteps), and `C = 2^(5 B) R³ mod m`. -/
+/-- The inversion modulo `m` (`n ≤ 9` words): `10` batches for up to 256
+bits, `15` for 384 and `23` for 576 (`590`, `885` and `1357` divsteps), and
+`C = 2^(5 B) R³ mod m`. -/
 def ofMod (M : Mod) (acc base tbl m : Nat) : InvCfg :=
-  let B := if M.n ≤ 4 then 10 else 15
+  let B := if M.n ≤ 4 then 10 else if M.n ≤ 6 then 15 else 23
   let C := 2 ^ (5 * B) * (2 ^ (64 * M.n)) ^ 3 % m
   { M, acc, base, tbl, B, C, Cn := m - C }
 

@@ -18,7 +18,7 @@ the candidate and the digest shifted into 66 bytes), and the 24 bytes below
 it that the calls use (`vg_ecdsa_p521_sign` only its return address).
 
 It reads the comb's tables of `vg_ecdsa_p521_sign`, the static `VG_P521_COMB`.
-It is generic over P-521's group law `h` too, the variant
+It is generic over P-521's group law and inversions `h` too, the variant
 `Variants/P521/X86_64/Law.lean`.
 -/
 
@@ -27,7 +27,7 @@ namespace VG.Generic.MdHash.P521.X86_64.EcdsaP521Sha512
 open VG.Proof.Ecdsa.Rfc6979.X86_64 (cfgOf sign_spSafe signNotesWide)
 open VG.Proof.Ecdsa.Rfc6979.X86_64.P521Sha512 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.HasLaw Spec.P521.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) :
     List Artifact :=
   match v.sha512 with
   | none => []
@@ -36,15 +36,15 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.HasLaw 
       name := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.name ++ c.suffix
       target := X86_64.target
       doc := Spec.Ecdsa.Rfc6979.P521Sha512.signApi.doc
-        (notes := [signNotesWide (cfgOf (pack h.law (Proof.P521.combOk7 h.law) c)).H 66 521 64
+        (notes := [signNotesWide (cfgOf (pack h.law (Proof.P521.combOk7 h.law) h.inv c)).H 66 521 64
           Spec.Ecdsa.P521.signApi.name])
-      code := (cfgOf (pack h.law (Proof.P521.combOk7 h.law) c)).sign
+      code := (cfgOf (pack h.law (Proof.P521.combOk7 h.law) h.inv c)).sign
       consts := Impl.Ecdsa.X86_64.p521.combConsts
       contract := Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract
         (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 384
       stack := 384
-      verified := sign_verified h.law (Proof.P521.combOk7 h.law) c
-      spSafe := sign_spSafe (pack h.law (Proof.P521.combOk7 h.law) c)
+      verified := sign_verified h.law (Proof.P521.combOk7 h.law) h.inv c
+      spSafe := sign_spSafe (pack h.law (Proof.P521.combOk7 h.law) h.inv c)
       features := c.features }]
 
 end VG.Generic.MdHash.P521.X86_64.EcdsaP521Sha512
