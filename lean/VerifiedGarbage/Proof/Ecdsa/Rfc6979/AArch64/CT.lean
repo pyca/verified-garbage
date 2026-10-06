@@ -99,15 +99,15 @@ structure Blks (w Q D B : Nat) (wide : Bool) : Prop where
 theorem blks (P : RfcHash) : Blks P.w P.Q P.H.D P.H.P.B P.R.wide := by
   have hw' : P.w = P.R.E.n := rfl
   cases hw : P.R.wide
-  · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
-    rw [hQ8, hw']
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
-      rw [hn, h, h'] <;>
+  · obtain ⟨hQ8, -, hQD⟩ := P.sizesA hw
+    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases P.sizesQ hw with hq | hq | hq <;>
+      rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
-      | (exfalso; rw [hQ8, hw', hn, h] at hQD; omega)
-      | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      | (exfalso; omega)
+      | (rw [hw', hn, hq, h, h']
+         exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
           ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+          ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩)
   · obtain ⟨hw9, hQ66, hD64, hB⟩ := P.sizesW hw
     rw [hQ66, hD64, hB, hw9]
     exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,

@@ -18,12 +18,6 @@ open VG.Proof.Ed25519.AArch64 (read_x)
 
 variable {P : RfcHash} {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} {L : Lay dn E} {g : Reg → BitVec 64} {m₀ : Mem}
 
-/-- The first `n` of `k` bytes. -/
-theorem bytesAt_take (m : Mem) (p : Addr) {n k : Nat} (h : n ≤ k) :
-    Spec.Sha256.bytesAt m p n = (Spec.Sha256.bytesAt m p k).take n := by
-  rw [show k = n + (k - n) by omega, Proof.Hmac.Common.bytesAt_add, List.take_left']
-  simp [Spec.Sha256.bytesAt]
-
 /-- The `8 k` bytes at `q`, each of whose words is `w`. -/
 theorem bytesAt_of_readW (m : Mem) (q : Addr) (w : BitVec 64) {k : Nat}
     (h : ∀ j < k, m.readW (q + BitVec.ofNat 64 (8 * j)) 64 = w) :
