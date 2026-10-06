@@ -3,16 +3,18 @@
 //! `(n, e, d, p, q)` or from `(n, e, d)`, and the check of a key: see the
 //! parent module.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
+use crate::arch::rsa::vg_rsa_private_checked;
+#[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
-    vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked, vg_rsa_private_checked_adx,
-    vg_rsa_private_checked_ifma, vg_rsa_recover_primes, vg_rsa_recover_primes_adx,
+    vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma,
+    vg_rsa_recover_primes, vg_rsa_recover_primes_adx,
 };
 use crate::cpu::detected;
 
@@ -134,6 +136,7 @@ impl PrivateKey {
     /// that `p` and `q` are prime or that `d` is the private exponent of
     /// `e` (but [`private_op`](Self::private_op) never releases a result
     /// that does not match `e`).
+    #[cfg(target_arch = "x86_64")]
     pub fn from_primes(n: &[u8], e: &[u8], d: &[u8], p: &[u8], q: &[u8]) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
@@ -201,6 +204,7 @@ impl PrivateKey {
     /// `2^33 - 1`, and `d` 1 to `n.len()` bytes long without its leading
     /// zeros. For a valid RSA key
     /// the primes are found, but for a negligible fraction of keys.
+    #[cfg(target_arch = "x86_64")]
     pub fn from_components(n: &[u8], e: &[u8], d: &[u8]) -> Result<Self, Error> {
         let k = n.len();
         if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
@@ -274,6 +278,7 @@ impl PrivateKey {
     /// `RSA_check_key`, it does not check that `p` and `q` are prime. Loading
     /// a key does not run this check, which costs about as much as two
     /// private-key operations.
+    #[cfg(target_arch = "x86_64")]
     pub fn check_key(&self) -> bool {
         let k = self.n.len();
         let d = trim(&self.d);
@@ -335,7 +340,9 @@ impl PrivateKey {
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_private_checked,
             // `select` chose them because the CPU has the features they need.
+            #[cfg(target_arch = "x86_64")]
             Backend::Adx => vg_rsa_private_checked_adx,
+            #[cfg(target_arch = "x86_64")]
             Backend::Ifma => vg_rsa_private_checked_ifma,
         };
         // SAFETY: each pointer is valid for its length (`out` for writes,
@@ -503,6 +510,7 @@ mod tests {
 
     /// With `d = 1`, `dP = dQ = 1`: as for `private_identities`, 0 and 1 are
     /// their own result, and 2 is refused by the check against `e = 3`.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn private_from_primes() {
         for (pl, ql) in [(32, 32), (33, 31), (40, 24), (100, 28)] {
@@ -544,6 +552,7 @@ mod tests {
     /// `crt_key`'s keys fail the check (`d e = 21`, not 1 modulo `p - 1`),
     /// and so does a `d` of zero or longer than `n`, which the check refuses
     /// before the arithmetic.
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn check_key_invalid() {
         let (n, p, q) = crt_key(32, 32);
@@ -553,6 +562,7 @@ mod tests {
         }
     }
 
+    #[cfg(target_arch = "x86_64")]
     #[test]
     fn private_from_components_invalid() {
         let (n, _, _) = crt_key(32, 32);

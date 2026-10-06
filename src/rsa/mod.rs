@@ -38,9 +38,10 @@
 //! on a CPU with BMI2 and ADX). The timing of the first may depend on `n`
 //! but not on the private key; that of the second on `n`, `e` and the number
 //! of candidates the recovery tried (1 or 2 for most keys), but not
-//! otherwise on `d`.
+//! otherwise on `d`. On AArch64, a key is loaded from its CRT values only
+//! (`PrivateKey::from_crt`) for now.
 //!
-//! [`PrivateKey::check_key`] checks a loaded key as BoringSSL's
+//! `PrivateKey::check_key` (on x86-64 only for now) checks a loaded key as BoringSSL's
 //! `RSA_check_key` does, by the verified `vg_rsa_check_key` (contract
 //! `VG.Spec.Rsa.checkKeyContract`): `d < n`, `p q = n`, `d` and the CRT
 //! exponents inverse to `e` modulo `p - 1` and `q - 1`, `qInv < p` and
@@ -331,7 +332,6 @@ impl PublicKey {
 }
 
 mod privatekey;
-#[cfg(target_arch = "x86_64")]
 pub use privatekey::PrivateKey;
 
 #[cfg(test)]
