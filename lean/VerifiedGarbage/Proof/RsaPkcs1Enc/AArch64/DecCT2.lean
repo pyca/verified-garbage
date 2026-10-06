@@ -145,17 +145,17 @@ def XUp (d : Addr) (n : Nat) (L : Lay) (t : State) : Prop :=
     t.gpr .x4 = scA L sWork
 
 theorem upd_pw {S : Nat} (hS : 15 ≤ S) {e : Env} {G : State → Prop} (hG : SlotsPred e.L G) {d : Addr} {n : Nat}
-    (hcd : ∀ g vv m₀ R EM (t : State), Post e.L g vv m₀ R EM t → Covers [⟨d, n⟩] (t.rd ++ t.wr))
+    (hcd : e.L.Ok → ∀ g vv m₀ R EM (t : State), Post e.L g vv m₀ R EM t → Covers [⟨d, n⟩] (t.rd ++ t.wr))
     (hds : e.L.Ok → ∀ a l, a + l ≤ 1024 → Region.Disjoint ⟨d, n⟩ ⟨scA e.L a, l⟩)
     (hdk : e.L.Ok → e.L.P = S + 1 → (below e.L.Q 16).Disjoint ⟨d, n⟩) :
     RelCT isa (PW S e fun t => G t ∧ XUp d n e.L t) (.call (HH v).updN (HH v).updC) (PW S e G) :=
   pw_wp (Proof.Pbkdf2.Md.AArch64.Calls.upd_rel (OK v).stream fun a b h => by
       obtain ⟨hL, hP, ⟨_, _, ha⟩, ⟨_, _, hb⟩, ⟨_, a0, a1, a2, a3, a4⟩, ⟨_, b0, b1, b2, b3, b4⟩⟩ := h
-      exact ⟨updA hL (by omega) ha a0 a2 a3 a4 (hcd _ _ _ _ _ _ ha) (hds hL) (hdk hL hP),
-        updA hL (by omega) hb b0 b2 b3 b4 (hcd _ _ _ _ _ _ hb) (hds hL) (hdk hL hP), a1.trans b1.symm,
+      exact ⟨updA hL (by omega) ha a0 a2 a3 a4 (hcd hL _ _ _ _ _ _ ha) (hds hL) (hdk hL hP),
+        updA hL (by omega) hb b0 b2 b3 b4 (hcd hL _ _ _ _ _ _ hb) (hds hL) (hdk hL hP), a1.trans b1.symm,
         ha.ctx.sp.trans hb.ctx.sp.symm⟩)
     fun g vv m₀ R EM t hL hP hc ⟨hx, x0, _, x2, x3, x4⟩ =>
-      WP.mono (updW (v := v) hL (by omega) hc (updA hL (by omega) hc x0 x2 x3 x4 (hcd _ _ _ _ _ _ hc) (hds hL)
+      WP.mono (updW (v := v) hL (by omega) hc (updA hL (by omega) hc x0 x2 x3 x4 (hcd hL _ _ _ _ _ _ hc) (hds hL)
         (hdk hL hP))) fun u hu => ⟨hu.1, hG t u hx hu.2⟩
 
 /-- The registers before HMAC's `finalize` to `scratch + o` with the count `cnt`. -/
@@ -189,7 +189,7 @@ theorem kdkMac_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
         ⟨⟨R, EM, hc.same hs⟩, trivial, by simp only [x0, hc.ctx.kept.scr], x1, by simp only [x2, hc.ctx.kept.inp],
           by simp only [x3, hc.ctx.kept.k], by simp only [x4, hc.ctx.kept.scr]⟩)).seq ?_
   refine ((upd_pw (v := v) hS hG
-    (fun _ _ _ _ _ _ hc => Covers.left (Covers.of_mem fun r hr => by
+    (fun _ _ _ _ _ _ _ hc => Covers.left (Covers.of_mem fun r hr => by
       rw [List.mem_singleton.mp hr, hc.ctx.rd]; simp))
     (fun hL a l hal => (hL.sR _ (ro_INP e.L)).symm.sub_right (sub_trans (scSub (by unfold scrBytes; omega))
       hL.sc_sub))
@@ -201,5 +201,21 @@ theorem kdkMac_tr {S : Nat} (hS : 15 ≤ S) (e : Env) :
           by simp only [x2, hc.ctx.kept.k], by simp only [x3, hc.ctx.kept.scr],
           by simp only [x4, hc.ctx.kept.scr]⟩)).seq ?_
   exact (hfin_pw (v := v) hS hG (o := sKDK) (by decide) (by decide)).mono (fun _ _ h => h) fun _ _ _ => trivial
+
+/-! ## The pieces -/
+
+theorem hashD_ct {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Two S fun L g vv m₀ t => ∃ R EM, DB L g vv m₀ R EM t) (hashD (HH v))
+      (Two S fun L g vv m₀ t => ∃ R EM, HD L g vv m₀ R EM t) :=
+  two_wp (fun e => (hashD_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩⟩ =>
+      ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, trivial, trivial⟩) fun _ _ h => h)
+    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (hashD_ok hL (by omega) h) fun _ h' => ⟨_, _, h'⟩
+
+theorem kdkMac_ct {S : Nat} (hS : 15 ≤ S) :
+    RelCT isa (Two S fun L g vv m₀ t => ∃ R EM, HD L g vv m₀ R EM t) (kdkMac (HH v))
+      (Two S fun L g vv m₀ t => ∃ R EM, KD L g vv m₀ R EM t) :=
+  two_wp (fun e => (kdkMac_tr hS e).mono (fun _ _ ⟨hL, hP, _, ⟨_, _, f₁⟩, ⟨_, _, f₂⟩⟩ =>
+      ⟨hL, hP, ⟨_, _, f₁.post⟩, ⟨_, _, f₂.post⟩, trivial, trivial⟩) fun _ _ h => h)
+    fun _ _ _ _ _ hL hP ⟨_, _, h⟩ => WP.mono (kdkMac_ok hL (by omega) h) fun _ h' => ⟨_, _, h'⟩
 
 end VG.Proof.RsaPkcs1Enc.AArch64.Dec

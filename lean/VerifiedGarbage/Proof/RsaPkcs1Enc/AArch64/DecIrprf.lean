@@ -131,13 +131,15 @@ theorem Post.msgW (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
   exact (scCov hL hc.ctx (a := sMsg + d) (n := 1) (by unfold sMsg scrBytes; omega)) _ _
     ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
 
-theorem clLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (hc : Post L g vv m₀ R EM t)
-    (hkd : Spec.Rsa.bytesAt t.mem (scA L sKDK) 32 = kd) :
-    WP isa (clLoop (HH v)) t (CLR L g vv m₀ R EM kd) := by
+/-- After `clInit`: the counter zero, the number of `AM`'s blocks in its slot, and `scratch` as before. -/
+theorem clStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t) :
+    WP isa (.block clInit) t fun t₁ => Post L g vv m₀ R EM t₁ ∧ slot t₁ L.Q oI = BitVec.ofNat 64 0 ∧
+      slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) ∧ ∀ a l, a + l ≤ scrBytes →
+        Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := by
   have hk := hL.k1024
   have hnQ := hL.nQ
-  refine WP.seq (WP.mono (clInit_ok hc.ctx.sp hc.slots fun d _ h₂ => hc.ctx.inFr (by unfold frameBytes; omega))
-    fun t₁ ⟨S₁, m₁⟩ => ?_)
+  refine WP.mono (clInit_ok hc.ctx.sp hc.slots fun d _ h₂ => hc.ctx.inFr (by unfold frameBytes; omega))
+    fun t₁ ⟨S₁, m₁⟩ => ?_
   have F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩, ⟨L.Q + BitVec.ofNat 64 oNB, 8⟩] t.mem t₁.mem := by
     rw [m₁]
     refine Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_cons_self ..) _ ?_)
@@ -165,6 +167,12 @@ theorem clLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (hc
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_self64, Mem.readW_writeW_sep (sep _ _ (by decide) (by decide) (by decide)) (by decide),
       hc.ctx.kept.k, nb_eq hk]
+  exact ⟨hc₁, ct₁, nb₁, kp₁⟩
+
+theorem clLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (hc : Post L g vv m₀ R EM t)
+    (hkd : Spec.Rsa.bytesAt t.mem (scA L sKDK) 32 = kd) :
+    WP isa (clLoop (HH v)) t (CLR L g vv m₀ R EM kd) := by
+  refine WP.seq (WP.mono (clStart_ok hL hc) fun t₁ ⟨hc₁, ct₁, nb₁, kp₁⟩ => ?_)
   refine WP.mono (prfLoop_ok (v := v) hL hP (label := lengthLabel) (len := clLen) (count := [.movz .x .x12 8 0])
     (dst := sCL) (N := 8) (C := BitVec.ofNat 64 8) (t₀ := t₁)
     (textF := fun i => Spec.Rsa.i2osp i 2 ++ Spec.RsaPkcs1Enc.ascii "length" ++ Spec.Rsa.i2osp (8 * 256) 2)
@@ -187,13 +195,15 @@ structure AMR (L : Lay) (g : Reg → BitVec 64) (vv : VReg → BitVec 128) (m₀
   am : Spec.Rsa.bytesAt t.mem (scA L sAM) L.k.toNat =
     Spec.RsaPkcs1Enc.irprf kd (Spec.RsaPkcs1Enc.ascii "message") L.k.toNat
 
-theorem amLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (h : CLR L g vv m₀ R EM kd t) :
-    WP isa (amLoop (HH v)) t (AMR L g vv m₀ R EM kd) := by
-  have hk := hL.k1024
-  have hk64 := hL.k64
+/-- After `AM`'s counter is zeroed: `scratch` as before. -/
+theorem amStart_ok (hL : L.Ok) {t : State} (hc : Post L g vv m₀ R EM t)
+    (hnb : slot t L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32)) :
+    WP isa (.block [.addSp .x9 0, .movz .x .x10 0 0, .str .x .x10 .x9 oI]) t fun t₁ =>
+      Post L g vv m₀ R EM t₁ ∧ slot t₁ L.Q oI = BitVec.ofNat 64 0 ∧
+      slot t₁ L.Q oNB = BitVec.ofNat 64 ((L.k.toNat + 31) / 32) ∧ ∀ a l, a + l ≤ scrBytes →
+        Spec.Rsa.bytesAt t₁.mem (scA L a) l = Spec.Rsa.bytesAt t.mem (scA L a) l := by
   have hnQ := hL.nQ
-  have hc := h.post
-  refine WP.seq (WP.mono (amInit_ok hc.ctx.sp (hc.ctx.inFr (d := 184) (by decide))) fun t₁ ⟨S₁, m₁⟩ => ?_)
+  refine WP.mono (amInit_ok hc.ctx.sp (hc.ctx.inFr (d := 184) (by decide))) fun t₁ ⟨S₁, m₁⟩ => ?_
   have F₁ : Frame [⟨L.Q + BitVec.ofNat 64 oI, 8⟩] t.mem t₁.mem := by
     rw [m₁]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have hc₁ := hc.step hL S₁.rd S₁.wr S₁.sp (fun r _ => by rw [S₁.v]) (fun r hr _ => S₁.cs r hr) F₁ fun r hr => by
@@ -211,7 +221,14 @@ theorem amLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (h 
     show t₁.mem.readW _ 64 = _
     rw [m₁, Mem.readW_writeW_sep (Offset.sep _ (by decide) (by unfold oNB; omega) (by unfold oI; omega))
       (by decide)]
-    exact h.nb
+    exact hnb
+  exact ⟨hc₁, ct₁, nb₁, kp₁⟩
+
+theorem amLoop_ok (hL : L.Ok) (hP : 16 ≤ L.P) {t : State} {kd : List Byte} (h : CLR L g vv m₀ R EM kd t) :
+    WP isa (amLoop (HH v)) t (AMR L g vv m₀ R EM kd) := by
+  have hk := hL.k1024
+  have hk64 := hL.k64
+  refine WP.seq (WP.mono (amStart_ok hL h.post h.nb) fun t₁ ⟨hc₁, ct₁, nb₁, kp₁⟩ => ?_)
   have hN0 : 0 < (L.k.toNat + 31) / 32 := by omega
   refine WP.mono (prfLoop_ok (v := v) hL hP (label := messageLabel) (len := amLen) (count := [.ldrSp .x12 oNB])
     (dst := sAM) (N := (L.k.toNat + 31) / 32) (C := BitVec.ofNat 64 ((L.k.toNat + 31) / 32)) (t₀ := t₁)
