@@ -405,6 +405,7 @@ def Instr.requires : Instr → List String
   | .andn32 .. | .andn .. => ["bmi1"]
   | .zop (.zbin .vaesenc ..) | .zop (.zbin .vaesenclast ..) => ["vaes", "avx512f"]
   | .zop (.vpclmulqdq ..) => ["vpclmulqdq", "avx512f"]
+  | .zop (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
   | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) =>
     ["avx512bw"]
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. =>
