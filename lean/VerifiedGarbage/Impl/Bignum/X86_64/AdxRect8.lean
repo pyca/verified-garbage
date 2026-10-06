@@ -34,8 +34,17 @@ def setup (a b : Nat) : List Instr :=
    .alu .add .rax (.reg .rdx), .mov .rsi (.mem (hdr (sArr Public.aAcc))),
    .alu .add .rsi (.reg .rax), .alu .add .rsi (.imm 16)]
 
+def tileAt (a b : Nat) : Prog isa := .seq (.block (setup a b)) tile
+
 def nextColumn : List Instr :=
   [.mov .rax (.mem (hdr (sFn 13))), .alu .add .rax (.imm 8),
    .store (hdr (sFn 13)) .rax, .alu .cmp .rax (.mem (hdr sW))]
+
+def rowStep (a b : Nat) : Prog isa :=
+  .seq (tileAt a b) (.block nextColumn)
+
+/-- Process the remaining column blocks of a row; the caller supplies its
+starting public column index and a zero pending carry. -/
+def row (a b : Nat) : Prog isa := .loop (rowStep a b) .ne
 
 end VG.Impl.Bignum.X86_64.AdxRect8
