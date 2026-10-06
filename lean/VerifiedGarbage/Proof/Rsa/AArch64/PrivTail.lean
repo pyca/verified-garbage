@@ -188,4 +188,88 @@ theorem masks_ok (hL : L.Ok) {t : State} (hc : Ctx L g vv m₀ t) (hs : Slots L 
 
 end
 
+/-! ## The release -/
+
+theorem write1_apply (m : Mem) (a x : Addr) (b : BitVec (8 * 1)) :
+    m.write a 1 b x = if x = a then b else m x := by
+  simp only [Mem.write]
+  by_cases h : x = a
+  · subst h; simp
+  · have : ¬ (x - a).toNat < 1 := by
+      intro h'
+      apply h
+      have : (x - a).toNat = 0 := by omega
+      have : x - a = 0 := BitVec.eq_of_toNat_eq (by simpa using this)
+      rw [← BitVec.sub_add_cancel x a, this]; exact BitVec.zero_add a
+    simp only [this, h, ite_false]
+
+theorem ite_neg' {α : Type} {p : Prop} [Decidable p] {a b : α} (h : ¬p) : (if p then a else b) = b := by
+  simp [h]
+
+theorem ite_pos' {α : Type} {p : Prop} [Decidable p] {a b : α} (h : p) : (if p then a else b) = a := by
+  simp [h]
+
+theorem low8 (x : BitVec 64) : BitVec.setWidth 8 (BitVec.setWidth 32 x) = BitVec.setWidth 8 x := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth]
+  exact Nat.mod_mod_of_dvd _ (by decide)
+
+/-- After `j` bytes of the release of the `k` bytes at `Mb` to `op`, under
+the mask `relMask gv eq` in `x12`. -/
+structure RelInv (t₀ : State) (op Mb : Addr) (gv : BitVec 64) (eq : Bool) (k j : Nat) (t : State) : Prop where
+  keep : Keep [.x8, .x11, .x14, .x15] t₀ t
+  x11 : t.gpr .x11 = op + BitVec.ofNat 64 j
+  x14 : t.gpr .x14 = Mb + BitVec.ofNat 64 j
+  x15 : t.gpr .x15 = BitVec.ofNat 64 (k - j)
+  out : ∀ i < j, t.mem (op + BitVec.ofNat 64 i) = if gv = 1 ∧ eq = true then t₀.mem (Mb + BitVec.ofNat 64 i) else 0
+  m : ∀ i < j, t.mem (Mb + BitVec.ofNat 64 i) = 0
+  frame : ∀ x, (∀ i < j, x ≠ op + BitVec.ofNat 64 i) → (∀ i < j, x ≠ Mb + BitVec.ofNat 64 i) → t.mem x = t₀.mem x
+
+theorem rel_step {t₀ t : State} {op Mb : Addr} {gv : BitVec 64} {eq : Bool} {k j : Nat} (hj : j < k)
+    (hk : k < 2 ^ 63) (h10 : t₀.gpr .x10 = 0) (h12 : t₀.gpr .x12 = Proof.Rsa.relMask gv eq)
+    (hsep : ∀ i < k, ∀ i' < k, op + BitVec.ofNat 64 i ≠ Mb + BitVec.ofNat 64 i')
+    (hinj : ∀ i < k, ∀ i' < k, op + BitVec.ofNat 64 i = op + BitVec.ofNat 64 i' → i = i')
+    (hinjM : ∀ i < k, ∀ i' < k, Mb + BitVec.ofNat 64 i = Mb + BitVec.ofNat 64 i' → i = i')
+    (ho : InRegions t.wr (op + BitVec.ofNat 64 j) 1) (hm : InRegions t.wr (Mb + BitVec.ofNat 64 j) 1)
+    (hI : RelInv t₀ op Mb gv eq k j t) :
+    WP isa (.block [.ldrb .x8 .x14 0, .logic .and .x .x8 .x8 .x12, .strb .x8 .x11 0, .strb .x10 .x14 0,
+      .addImm .x .x11 .x11 1, .addImm .x .x14 .x14 1, .subImm .x .x15 .x15 1]) t fun t' =>
+      t'.gpr .x15 = BitVec.ofNat 64 (k - (j + 1)) ∧ RelInv t₀ op Mb gv eq k (j + 1) t' := by
+  have hmr : InRegions (t.rd ++ t.wr) (Mb + BitVec.ofNat 64 j) 1 := by
+    obtain ⟨r, hr, hc⟩ := hm; exact ⟨r, List.mem_append_right _ hr, hc⟩
+  have h12' : t.gpr .x12 = Proof.Rsa.relMask gv eq := (hI.keep.gpr _ (by decide)).trans h12
+  have h10' : t.gpr .x10 = 0 := (hI.keep.gpr _ (by decide)).trans h10
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, addr, State.load, State.store, State.read,
+    Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.mem_write,
+    Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hI.x11, hI.x14, hI.x15, h12', h10',
+    BitVec.add_zero, ho, hm, hmr, Option.some.injEq, exists_eq_left', Nat.zero_mod, and_self,
+    show (0 : Nat) < 4096 * 1 by decide, show (1 : Nat) < 4096 by decide]
+  rw [zext_read1]
+  refine ⟨ofNat_sub_one hj (by omega), ⟨⟨fun r hr => ?_, hI.keep.rd, hI.keep.wr, hI.keep.sp, hI.keep.v⟩,
+    ?_, ?_, ?_, fun i hi => ?_, fun i hi => ?_, fun x hx hx' => ?_⟩⟩
+  all_goals simp only [RegUpd.gpr_write, RegUpd.mem_write, reduceCtorEq, ite_false, ite_true,
+    BitVec.setWidth_eq, write1_apply]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h8, h11, h14, h15⟩ := hr
+    simp only [h8, h11, h14, h15, ite_false]
+    exact hI.keep.gpr r (by simp [h8, h11, h14, h15])
+  · exact ofNat_add_one' _ _
+  · exact ofNat_add_one' _ _
+  · exact ofNat_sub_one hj (by omega)
+  · rw [ite_neg' (hsep i (by omega) j hj)]
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+    · rw [ite_neg' fun h => absurd (hinj i (by omega) j hj h) (by omega)]
+      exact hI.out i hi
+    · rw [ite_pos' rfl, hI.frame _ (fun i' hi' h => hsep i' (by omega) i hj h.symm)
+        (fun i' hi' h => absurd (hinjM i hj i' (by omega) h) (by omega)), low8,
+        Proof.Rsa.low_and_mask]
+  · rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+    · rw [ite_neg' fun h => absurd (hinjM i (by omega) j hj h) (by omega),
+        ite_neg' fun h => hsep j hj i (by omega) h.symm]
+      exact hI.m i hi
+    · rw [ite_pos' rfl]; rfl
+  · rw [ite_neg' (hx' j (by omega)), ite_neg' (hx j (by omega))]
+    exact hI.frame x (fun i hi => hx i (by omega)) fun i hi => hx' i (by omega)
+
 end VG.Proof.Rsa.AArch64
