@@ -21,7 +21,8 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (Two Pins two_taint two_post two_map two_ite w
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK)
 open VG.Proof.RsaPss.AArch64 (off loV maskV two_taintE zH Lay slot_keep slotR mgfWr PssChecks HA HE MA MS
   dbRegs_ok clearY_ok copyDigest_ok copySaltY_ok signLen_ok clearEm_ok putSalt_ok putH_ok clearTop_ok
-  ctHash_ct mgfXor_ct mgfXor_ok ctHashWith_out pad80_ok nb_keep slot_not_below)
+  ctHash_ct mgfXor_ct mgfXor_ok ctHashWith_out pad80_ok nb_keep slot_not_below wS_frame off_sub off_add ld_slot
+  DbAt)
 
 /-! ## The public values -/
 
@@ -271,6 +272,216 @@ theorem signLen_sct {K : Nat} :
       simp only [sslots, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl <;> exact Offset.disjoint _ (by decide) (by decide) (by decide)
     · rw [List.mem_singleton.mp hq, m, Mem.readW_writeW_self64]
+
+theorem sslots_fb : ∀ q ∈ sslots, q.1 + 8 ≤ frameBytes := by
+  intro q hq
+  simp only [sslots, List.mem_cons, List.not_mem_nil, or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl <;> decide
+
+theorem sregs_cs : ∀ r ∈ [Reg.x19, .x21, .x23, .x24, .x25], r ∈ [Reg.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x28] := by
+  decide
+
+include hH in
+theorem ctHash_sct {K : Nat} (hc : PssChecks H) :
+    RelCT isa (Two (SR H.D K (rsL H.D) (slL H))) (ctHash H) (Two (SR H.D K (sregs H.D) sslots)) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have hL := hH.L
+  have hB0 := hH.B_pos
+  have hBl := hH.B_le
+  have hlg : 2 ^ lgB H = H.P.B ∧ lgB H < 64 := by
+    unfold lgB
+    rcases hH.sizes.B with h | h <;> rw [h]
+    · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
+    · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
+  have hb : ∀ a : State, slA a ≤ 1024 → 8 + H.D + slA a + 1 + H.P.L ≤ nbA H a * H.P.B ∧ nbA H a * H.P.B ≤ 2048 :=
+    fun a hs => by
+      have hnb1 := Nat.lt_div_mul_add (a := 8 + H.D + slA a + H.P.L) (b := H.P.B) hB0
+      have hnb2 := Nat.div_mul_le_self (8 + H.D + slA a + H.P.L) H.P.B
+      have hnbB : ((8 + H.D + slA a + H.P.L) / H.P.B + 1) * H.P.B =
+          (8 + H.D + slA a + H.P.L) / H.P.B * H.P.B + H.P.B := Nat.succ_mul _ _
+      show _ ≤ ((8 + H.D + slA a + H.P.L) / H.P.B + 1) * H.P.B ∧ ((8 + H.D + slA a + H.P.L) / H.P.B + 1) * H.P.B ≤ 2048
+      rw [hnbB]; omega
+  have x19 : ∀ {a u : State}, SR H.D K (rsL H.D) (slL H) a u → u.gpr .x19 = off (scr a) oSt := fun h =>
+    h.r (.x19, fun a => off (scr a) oSt) (by simp [rsL, sregs])
+  have x21 : ∀ {a u : State}, SR H.D K (rsL H.D) (slL H) a u → u.gpr .x21 = off (scr a) oDig := fun h =>
+    h.r (.x21, fun a => off (scr a) oDig) (by simp [rsL, sregs])
+  have x22 : ∀ {a u : State}, SR H.D K (rsL H.D) (slL H) a u → u.gpr .x22 = BitVec.ofNat 64 (8 + H.D + slA a) :=
+    fun h => h.r (.x22, fun a => BitVec.ofNat 64 (8 + H.D + slA a)) (by simp [rsL])
+  have nb : ∀ {a u : State}, SR H.D K (rsL H.D) (slL H) a u →
+      u.mem.readW (off (fb a) sNb) 64 = BitVec.ofNat 64 (nbA H a) := fun h =>
+    h.sl (sNb, fun a => BitVec.ofNat 64 (nbA H a)) (by simp [slL])
+  refine two_post (two_map (fun a => (⟨fb a, scr a, nbA H a, none⟩ : HA)) (fun a u h => {
+      L := h.L
+      x19 := x19 h
+      x21 := x21 h
+      nb := nb h
+      len := ⟨8 + H.D + slA a, x22 h, (hb a h.sl_le).1⟩
+      hnb := (hb a h.sl_le).2
+      fx := fun _ e => nomatch e }) (ctHash_ct hH hc)) fun a u h => ?_
+  have hs := h.sl_le
+  refine WP.mono (ctHashWith_out hH (pad80 H) h.L (fun _ _ => rfl) (x19 h) (x21 h) (x22 h) (nb h) (hb a hs).1
+    (hb a hs).2 fun L' R' h22' hNb' => ?_) fun u' O => ?_
+  · exact WP.mono (pad80_ok H L' R' hlg.1 hlg.2 (by omega) (hb a hs).2 (by have := (hb a hs).1; omega) h22' hNb')
+      fun _ ⟨k, f, r⟩ => ⟨k.mono, f, r⟩
+  refine h.congr O.sp O.rd O.wr (O.cs .x20 (by decide)) (fun q hq => ?_) fun q hq => ?_
+  · rw [O.cs q.1 (sregs_cs _ (sregs_fst hq))]; exact h.r q (List.mem_append_left _ hq)
+  · rw [slot_keep O.fr fun r hr => ?_]
+    · exact h.sl q (List.mem_append_left _ hq)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact h.L.dFS.sub_left (Offset.sub_base _ (sslots_fb q hq))
+    · exact slot_not_below _ (sslots_fb q hq)
+
+theorem clearEm_sct {D K : Nat} :
+    RelCT isa (Two (SR D K (sregs D) sslots)) clearEm (Two (SR D K (sregs D) sslots)) :=
+  two_post (two_taint [.x20, .x23] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl <;> simp [sregs]) (by taint_decide))
+    fun a _ h => WP.mono (clearEm_ok h.L (fun _ _ => rfl) (k := kA a) (h.x23 (by simp [sregs]))
+      (by have := h.ok.k1; omega) h.ok.k2) fun _ ⟨k, f, _⟩ => h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L)
+
+/-- In `putSalt`, after `x14 := DB + dbLen` and the salt's length, and after
+the `0x01` and the salt's address. -/
+def rsP1 (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  sregs D ++ [(.x14, fun a => off (scr a) (oEm + loA a + dbA D a)), (.x12, fun a => stackArg a 10)]
+def rsP2 (D : Nat) : List (Reg × (State → BitVec 64)) :=
+  sregs D ++ [(.x11, fun a => stackArg a 9), (.x14, fun a => off (scr a) (oEm + loA a + dbA D a - slA a)),
+    (.x12, fun a => stackArg a 10)]
+
+theorem sl_ofNat (a : State) : stackArg a 10 = BitVec.ofNat 64 (slA a) := by
+  rw [slA, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+
+theorem putSalt_sct {D K : Nat} :
+    RelCT isa (Two (SR D K (sregs D) sslots)) putSalt (Two (SR D K (sregs D) sslots)) := by
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have c6 : oRsa = 8192 := rfl
+  have x24 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR D K (sregs D ++ rs) sslots a u →
+      u.gpr .x24 = off (scr a) (oEm + loA a) := fun h =>
+    h.r (.x24, fun a => off (scr a) (oEm + loA a)) (List.mem_append_left _ (by simp [sregs]))
+  have x25 : ∀ {rs : List (Reg × (State → BitVec 64))} {a u : State}, SR D K (sregs D ++ rs) sslots a u →
+      u.gpr .x25 = BitVec.ofNat 64 (dbA D a) := fun h =>
+    h.r (.x25, fun a => BitVec.ofNat 64 (dbA D a)) (List.mem_append_left _ (by simp [sregs]))
+  refine two_post ?_ fun a u h => ?_
+  rotate_left
+  · have hf := h.ok.fit; have hk2 := h.ok.k2
+    have hdb : dbA D a = kA a - loA a - D - 1 := rfl
+    exact WP.mono (putSalt_ok h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA D a) (q := stackArg a 9)
+      (sl := slA a) (x24 (rs := []) (by rw [List.append_nil]; exact h)) (x25 (rs := []) (by rw [List.append_nil]; exact h))
+      (h.sl (sSalt, fun a => stackArg a 9) (by simp [sslots]))
+      ((h.sl (sSaltLen, fun a => stackArg a 10) (by simp [sslots])).trans (sl_ofNat a))
+      (by omega) (by omega) h.salt.1 h.salt.2) fun _ ⟨k, f, _⟩ =>
+        h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L)
+  unfold putSalt
+  refine RelCT.seq_block_append (M := isa) (l₁ := [.add .x .x14 .x24 .x25, ld .x12 sSaltLen]) ?_
+  refine two_step (Ψ := SR D K (rsP1 D) sslots) (two_taint [] (pins_nil SR.sp) (by taint_decide))
+    (fun a u h => ?_) ?_
+  · have nk : ∀ q ∈ sregs D, q.1 ∉ [Reg.x14, .x12] := nk_of (by decide)
+    unfold ld
+    refine wp_add fun u₁ o₁ e₁ => wp_ldrSp (by decide) (by rw [o₁.sp, o₁.rd, o₁.wr]; exact ld_slot h.L (by decide))
+      fun u₂ o₂ e₂ => wp_nil ?_
+    have O : Only [.x14, .x12] u u₂ := (o₁.trans o₂).mono
+    refine h.congr O.sp O.rd O.wr (O.get .x20) (fun q hq => ?_) fun q hq => by rw [O.mem]; exact h.sl q hq
+    rcases List.mem_append.mp hq with hq | hq
+    · rw [O.get q.1 (nk q hq)]; exact h.r q hq
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl
+      · rw [o₂.get .x14, e₁, x24 (rs := []) (by rw [List.append_nil]; exact h),
+          x25 (rs := []) (by rw [List.append_nil]; exact h), off_add]
+      · rw [e₂, o₁.mem, o₁.sp, h.L.sp]; exact h.sl (sSaltLen, fun a => stackArg a 10) (by simp [sslots])
+  refine two_step (Ψ := SR D K (rsP2 D) sslots) (two_taint [.x12, .x14] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl <;> simp [rsP1]) (by taint_decide)) (fun a u h => ?_) ?_
+  · have nk : ∀ q ∈ sregs D, q.1 ∉ [Reg.x14, .x9, .x11] := nk_of (by decide)
+    have hf := h.ok.fit; have hk2 := h.ok.k2
+    have hdb : dbA D a = kA a - loA a - D - 1 := rfl
+    have x14 : u.gpr .x14 = off (scr a) (oEm + loA a + dbA D a) :=
+      h.r (.x14, fun a => off (scr a) (oEm + loA a + dbA D a)) (by simp [rsP1])
+    have x12 : u.gpr .x12 = stackArg a 10 := h.r (.x12, fun a => stackArg a 10) (by simp [rsP1])
+    unfold ld
+    refine wp_sub fun u₃ o₃ e₃ => wp_subImm (by decide) fun u₄ o₄ e₄ => wp_movz fun u₅ o₅ e₅ => ?_
+    have h14 : u₅.gpr .x14 = off (scr a) (oEm + loA a + dbA D a - slA a - 1) := by
+      rw [o₅.get .x14, e₄, e₃, x14, x12, sl_ofNat, off_sub _ (by omega), off_sub _ (by omega)]
+    have O₅ : Only [.x14, .x9] u u₅ := (o₃.trans (o₄.trans o₅)).mono
+    refine wp_strb (by decide) (by rw [h14, BitVec.add_zero]) (by rw [O₅.wr]; exact h.L.st (by omega))
+      fun u₆ m₆ => wp_addImm (by decide) fun u₇ o₇ e₇ => wp_ldrSp (by decide)
+        (by rw [o₇.sp, o₇.rd, o₇.wr, m₆.sp, m₆.rd, m₆.wr, O₅.sp, O₅.rd, O₅.wr]; exact ld_slot h.L (by decide))
+        fun u₈ o₈ e₈ => wp_nil ?_
+    have K : Keep [.x14, .x9, .x11] u u₈ := (O₅.keep.trans (m₆.keep.trans (o₇.keep.trans o₈.keep))).mono
+    have hm : u₈.mem = u.mem.writeW (off (scr a) (oEm + loA a + dbA D a - slA a - 1)) (1 : Byte) := by
+      rw [o₈.mem, o₇.mem, m₆.mem, O₅.mem, e₅]; rfl
+    have hfr := wS_frame u.mem (scr a) (x := oEm + loA a + dbA D a - slA a - 1) (by omega) (1 : Byte)
+    refine h.congr K.sp K.rd K.wr (K.get .x20) (fun q hq => ?_) fun q hq => ?_
+    · rcases List.mem_append.mp hq with hq | hq
+      · rw [K.get q.1 (nk q hq)]; exact h.r q (List.mem_append_left _ hq)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+        rcases hq with rfl | rfl | rfl
+        · rw [e₈, o₇.mem, m₆.mem, O₅.mem, o₇.sp, m₆.sp, O₅.sp, h.L.sp, ← O₅.mem, ← m₆.mem, ← o₇.mem, ← o₈.mem, hm,
+            slot_keep hfr (h.L.slotSd (by decide))]
+          exact h.sl (sSalt, fun a => stackArg a 9) (by simp [sslots])
+        · rw [o₈.get .x14, e₇, m₆.gpr, h14, off_add, show oEm + loA a + dbA D a - slA a - 1 + 1 =
+            oEm + loA a + dbA D a - slA a by omega]
+        · rw [K.get .x12]; exact x12
+    · rw [hm, slot_keep hfr (sslots_S h.L q hq)]; exact h.sl q hq
+  have p12 : ∀ a s, SR D K (rsP2 D) sslots a s → s.gpr .x12 = stackArg a 10 := fun a s h =>
+    h.r (.x12, fun a => stackArg a 10) (by simp [rsP2])
+  exact two_ite (fun a s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, p12 a s₁ h₁, p12 a s₂ h₂])
+    (two_taint [] (fun a s₁ s₂ h₁ h₂ => pins_nil SR.sp a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+    (two_taint [.x11, .x12, .x14] (fun a s₁ s₂ h₁ h₂ => SR.pins (rs := rsP2 D) (fun r hr => by
+      simp at hr; rcases hr with rfl | rfl | rfl <;> simp [rsP2]) a s₁ s₂ h₁.1 h₂.1) (by taint_decide))
+
+include hH in
+theorem putH_sct {K : Nat} :
+    RelCT isa (Two (SR H.D K (sregs H.D) sslots)) (putH H) (Two (SR H.D K (sregs H.D) sslots)) := by
+  have c1 : oEm = 2560 := rfl
+  refine two_post (two_taintE [.x20, .x21, .x23, .x24, .x25] (SR.pins fun r hr => by
+      simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [sregs])
+    (c' := Code.eraseOff (putH zH)) rfl (by taint_decide)) fun a u h => ?_
+  have hf := h.ok.fit; have hk2 := h.ok.k2
+  have hdb : dbA H.D a = kA a - loA a - H.D - 1 := rfl
+  exact WP.mono (putH_ok hH h.L (fun _ _ => rfl) (e := oEm + loA a) (db := dbA H.D a) (k := kA a)
+    (h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]))
+    (h.r (.x25, fun a => BitVec.ofNat 64 (dbA H.D a)) (by simp [sregs]))
+    (h.r (.x21, fun a => off (scr a) oDig) (by simp [sregs])) (h.x23 (by simp [sregs])) (by omega) (by omega) hk2)
+    fun _ ⟨k, f, _⟩ => h.keep k (nk_of (by decide)) (by decide) f (sslots_S h.L)
+
+/-- After `mgfXor`: `DB`'s place. -/
+def rsT : List (Reg × (State → BitVec 64)) := [(.x24, fun a => off (scr a) (oEm + loA a))]
+
+include hH in
+theorem mgfXor_sct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    RelCT isa (Two (SR H.D K (sregs H.D) sslots)) (mgfXor H) (Two (SR H.D K rsT [])) := by
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have hd : ∀ a : State, SOk H.D a → DbAt H.D (oEm + loA a) (dbA H.D a) := fun a ok => by
+    have hf := ok.fit; have hk2 := ok.k2
+    have hdb : dbA H.D a = kA a - loA a - H.D - 1 := rfl
+    exact ⟨by omega, by omega, by omega⟩
+  have g : ∀ {a u : State}, SR H.D K (sregs H.D) sslots a u → u.gpr .x19 = off (scr a) oSt ∧
+      u.gpr .x21 = off (scr a) oDig ∧ u.gpr .x24 = off (scr a) (oEm + loA a) ∧
+      u.gpr .x25 = BitVec.ofNat 64 (dbA H.D a) := fun h =>
+    ⟨h.r (.x19, fun a => off (scr a) oSt) (by simp [sregs]), h.r (.x21, fun a => off (scr a) oDig) (by simp [sregs]),
+      h.r (.x24, fun a => off (scr a) (oEm + loA a)) (by simp [sregs]),
+      h.r (.x25, fun a => BitVec.ofNat 64 (dbA H.D a)) (by simp [sregs])⟩
+  refine two_post (two_map (fun a => (⟨fb a, scr a, oEm + loA a, dbA H.D a⟩ : MA))
+    (fun a u h => ⟨h.L, hd a h.ok, (g h).1, (g h).2.1, (g h).2.2.1, (g h).2.2.2⟩) (mgfXor_ct hH hGh hGl hG hc))
+    fun a u h => WP.mono (mgfXor_ok hH hGh hGl hG h.L (fun _ _ => rfl) (hd a h.ok) (g h).1 (g h).2.1 (g h).2.2.1
+      (g h).2.2.2) fun u' ⟨sp, rd, wr, cs, _⟩ => h.congr sp rd wr (cs .x20 (by decide)) (fun q hq => ?_)
+        fun _ h => absurd h List.not_mem_nil
+  rw [List.mem_singleton.mp hq]
+  exact (cs .x24 (by decide)).trans (g h).2.2.1
+
+theorem clearTop_sct {D K : Nat} : RelCT isa (Two (SR D K rsT [])) (.block clearTop) fun _ _ => True :=
+  two_taint [.x24] (SR.pins fun r hr => by simp at hr; subst hr; simp [rsT]) (by taint_decide)
+
+/-- The encoding is constant time. -/
+theorem signEnc_ct {K : Nat} {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (hGl : G.len = H.D)
+    (hG : Proof.Mgf1.Valid G) (hc : PssChecks H) :
+    RelCT isa (Two (SR H.D K (sregs0 H.D) sslots)) (signEnc H) fun _ _ => True := by
+  unfold signEnc seqs seqs seqs seqs seqs seqs seqs seqs seqs seqs
+  exact RelCT.seq dbRegs_sct (RelCT.seq clearY_sct (RelCT.seq (copyDigest_sct hH) (RelCT.seq (copySaltY_sct hH)
+    (RelCT.seq (signLen_sct hH) (RelCT.seq (ctHash_sct hH hc) (RelCT.seq clearEm_sct (RelCT.seq putSalt_sct
+      (RelCT.seq (putH_sct hH) (RelCT.seq (mgfXor_sct hH hGh hGl hG hc) clearTop_sct)))))))))
 
 end
 
