@@ -34,11 +34,11 @@ theorem adx_spSafe : (verifyEquation Impl.X25519.X86_64.adx
   Code.all_of_allInstrs (by lit_decide)
 
 theorem ifma_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx Ifma.double4)) = true := by
+    Ifma.windows) = true := by
   lit_decide
 
 theorem ifma_spSafe : (verifyEquation Impl.X25519.X86_64.adx
-    (windows Impl.X25519.X86_64.adx Ifma.double4)).all
+    Ifma.windows).all
     (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (by lit_decide)
 

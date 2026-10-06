@@ -1,13 +1,14 @@
 import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 
 /-!
-# Ed25519: doublings with AVX512_IFMA
+# Ed25519: points in the lanes, with AVX512_IFMA
 
-`Ifma.double4` doubles the point in slots 0–3 four times, as `double4` does,
-with the four coordinates `(X, Y, Z, T)` in the four quadwords (lanes) of
-`ymm` registers and X25519's four-lane field arithmetic
-(`Impl/X25519/X86_64/Ifma.lean`): five limbs of 51 bits, `mul4`'s
-products with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq`, and `carry`.
+The building blocks of the four-lane point arithmetic of verification's
+windows (`Ifma.windows`) and of the comb (`Ifma.combMultiply`): the four
+coordinates `(X, Y, Z, T)` in the four quadwords (lanes) of `ymm` registers
+and X25519's four-lane field arithmetic (`Impl/X25519/X86_64/Ifma.lean`):
+five limbs of 51 bits, `mul4`'s products with AVX512_IFMA's `vpmadd52luq`
+and `vpmadd52huq`, and `carry`.
 
 * `vload` splits the words of slots 0–3 into the limbs of the lanes of
   `ymm0–ymm4`: the four rows transposed (`vpunpck{l,h}qdq`, `vperm2i128`),
@@ -23,12 +24,12 @@ products with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq`, and `carry`.
 
 The constants are X25519's (`KM`, `K19`, `KB0`, `KB1`) and the masks of
 `vstore` (`EK13`, `EK26`, `EK39`), all below byte 1888 of the scratch, as
-are the operands' slots `OPL` and `OPV`. The doublings and `vstore` run
+are the operands' slots `OPL` and `OPV`. The code using them runs
 between Intel's MXCSR prologue and epilogue (`withMx`, see "MCDT" in
 `TCB/X86_64/Isa.lean`), which save MXCSR in `r11` and through the 8 bytes at
 `EMX`, below the constants: verification's inputs are public, but
 `ci/check_mcdt.py` checks every such product. Every address is the scratch
-plus a constant, and the only branch is on the loop counter.
+plus a constant.
 -/
 
 namespace VG.Impl.Ed25519.X86_64.Ifma
@@ -109,11 +110,5 @@ def withMx (c : Prog isa) : Prog isa :=
     (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (EMX + 4)) .rax,
         .ldmxcsr (sc (EMX + 4)), .lfence]) (.seq c (.block [.lfence])))
       (.block [.store32 (sc EMX) .r11, .ldmxcsr (sc EMX)]))
-
-/-- Four doublings of slots 0–3, in the lanes, counted by `rsi`, with MXCSR
-`0x1FBF`. -/
-def double4 : Prog isa :=
-  .seq (.block (VG.Impl.X25519.X86_64.Ifma.consts ++ vload ++ [.mov32 .rsi (.imm 4)]))
-    (withMx (.seq (.loop (.block (vdbl ++ [.alu .sub .rsi (.imm 1)])) .ne) (.block vstore)))
 
 end VG.Impl.Ed25519.X86_64.Ifma

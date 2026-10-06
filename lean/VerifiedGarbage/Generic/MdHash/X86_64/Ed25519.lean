@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyMessage.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.SignCached.Verified
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
 
 /-!
 # Ed25519 (RFC 8032) on x86-64, over SHA-512
@@ -12,7 +12,7 @@ Complete key derivation, cached-key signing, and verification are emitted
 for every SHA-512 compression backend carried by `MdHash.sha512`, and for
 each field multiplication of the Ed25519 functions they call (the baseline's,
 and BMI2's and ADX's, `_adx`), and with AVX512_IFMA (`_ifma`): verification for
-its doublings, key derivation and signing for its comb (`vg_ed25519_scalar_base_ifma`). Each operation includes its streaming hash calls and
+its windows, key derivation and signing for its comb (`vg_ed25519_scalar_base_ifma`). Each operation includes its streaming hash calls and
 carries the backend's suffix and CPU features, then the field's.
 Other hash families emit no Ed25519 artifacts.
 -/
@@ -100,7 +100,7 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
 /-- Each operation with the SHA-512 implementation of `v`, if it has one, and
 each field multiplication of the Ed25519 functions: the baseline's, and
 BMI2's and ADX's (`_adx`); and with AVX512_IFMA (`_ifma`), verification with its
-doublings, and key derivation and signing with its comb. -/
+windows, and key derivation and signing with its comb. -/
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   match v.sha512 with
   | none => []
@@ -111,7 +111,7 @@ def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         ⟨Proof.Ed25519.X86_64.VerifyCode.adx_mx, by lit_decide, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.adx_spSafe⟩ ++
       [verifyWith c Impl.X25519.X86_64.adx
-        (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4) "_ifma"
+        Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
         ⟨Proof.Ed25519.X86_64.VerifyCode.ifma_mx, by lit_decide, by lit_decide,
           Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe⟩,

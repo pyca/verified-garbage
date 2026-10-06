@@ -1,7 +1,7 @@
 import VerifiedGarbage.Impl.X25519.X86_64.Adx
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Impl.Ed25519.X86_64.Verify
-import VerifiedGarbage.Impl.Ed25519.X86_64.Ifma
+import VerifiedGarbage.Impl.Ed25519.X86_64.VerifyIfma
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMulCTLit
 
@@ -16,6 +16,6 @@ materialize_code verifyEquationAdxLit := (Impl.Ed25519.X86_64.verifyEquation Imp
   (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx
       (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)))
 materialize_code verifyEquationIfmaLit := (Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-  (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4))
+  Impl.Ed25519.X86_64.Ifma.windows)
 
 end VG

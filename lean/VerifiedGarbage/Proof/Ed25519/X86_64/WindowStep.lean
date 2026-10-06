@@ -745,7 +745,7 @@ structure WinCtx (base kp sp : Addr) (A : EPoint dZ) (s : State) : Prop where
   bTab : TableOf cache s.mem base 2048 (-baseAff)
 
 /-- Four doublings of the point in slots 0–3, as a window runs them:
-`double4` with the field arithmetic, or `Ifma.double4`. -/
+`double4` with the field arithmetic. -/
 class EdDouble (dbl : Prog isa) : Prop where
   ok : ∀ {s : State} {base : Addr} {a : EPoint dZ}, Scratch s base →
     Rep (point (env s.mem base) 0 1 2 3) a → WP isa dbl s fun t =>

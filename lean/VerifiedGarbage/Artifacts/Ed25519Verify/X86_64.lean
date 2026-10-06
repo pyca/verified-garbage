@@ -1,6 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
@@ -43,14 +43,15 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := "vg_ed25519_verify_equation_ifma"
     doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["The code of \
-      `vg_ed25519_verify_equation_adx` but for its doublings, four at a time, which hold the \
-      point's coordinates `X, Y, Z, T` in the four lanes of `ymm` registers, as five 51-bit \
-      limbs each, and double it with two four-lane multiplications (AVX512_IFMA's \
-      `vpmadd52luq` and `vpmadd52huq` on `ymm` registers, with AVX512VL), as `vg_x25519_ifma`'s \
-      ladder multiplies, between Intel's MXCSR prologue and epilogue, which save MXCSR \
+      `vg_ed25519_verify_equation_adx` but for its windows, which hold the point's coordinates \
+      `X, Y, Z, T` in the four lanes of `ymm` registers throughout, as five 51-bit limbs each: \
+      each doubling, and each addition of a digit's cached table entry (loaded and split into \
+      limbs), is two four-lane multiplications (AVX512_IFMA's `vpmadd52luq` and \
+      `vpmadd52huq` on `ymm` registers, with AVX512VL), as in `vg_ed25519_scalar_base_ifma`'s \
+      comb. The windows run between Intel's MXCSR prologue and epilogue, which save MXCSR \
       through bytes 1600 to 1608 of `scratch`."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4)
+      Impl.Ed25519.X86_64.Ifma.windows
     contract := Spec.Ed25519.verifyEquationContract X86_64.abi
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.ifma_mx
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
