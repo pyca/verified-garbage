@@ -42,6 +42,27 @@ theorem Step.trans {F S : Addr} {ws : List Region} {t u w : State} (h : Step F S
   ⟨h'.rd.trans h.rd, h'.wr.trans h.wr, h'.sp.trans h.sp, fun r hr h30 => (h'.cs r hr h30).trans (h.cs r hr h30),
     h.vec.trans h'.vec, h.frame.trans h'.frame⟩
 
+theorem preserved_cases {P : Reg → Prop} (h19 : P .x19) (h20 : P .x20) (h21 : P .x21) (h22 : P .x22)
+    (h23 : P .x23) (h24 : P .x24) (h25 : P .x25) (h26 : P .x26) (h27 : P .x27) (h28 : P .x28) (h30 : P .x30) :
+    ∀ r ∈ preserved, P r := by
+  intro r hr
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+/-- A block that keeps memory, the regions, `sp`, the vector registers and
+the callee-saved registers. -/
+theorem Step.blk {F S : Addr} (ws : List Region) {t t' : State} (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
+    (hsp : t'.sp = t.sp) (hv : t'.v = t.v) (hcs : ∀ r ∈ preserved, r ≠ .x30 → t'.gpr r = t.gpr r)
+    (hm : t'.mem = t.mem) : Step F S ws t t' :=
+  ⟨hrd, hwr, hsp, hcs, fun r _ => by rw [hv], by rw [hm]; exact Frame.refl _ _⟩
+
+/-- The callee-saved registers, unchanged by a block that writes none. -/
+macro "cs_rfl" : term => `(preserved_cases (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
+  (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl))
+
+/-- `Step` of a block that keeps memory and writes no callee-saved register. -/
+macro "blk_step" : term => `(Step.blk _ rfl rfl rfl rfl cs_rfl rfl)
+
 /-- A step in fewer regions. -/
 theorem Step.mono {F S : Addr} {ws ws' : List Region} {t u : State} (h : Step F S ws t u)
     (hs : ∀ r ∈ ws, r ∈ ws') : Step F S ws' t u :=

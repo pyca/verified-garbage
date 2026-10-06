@@ -217,6 +217,19 @@ theorem inR_cons (a n : Nat) (rgs : List (Nat × Nat)) (o : Nat) :
     inR ((a, n) :: rgs) o ↔ (a ≤ o ∧ o < a + n) ∨ inR rgs o := by
   simp [inR]
 
+/-! ## Running blocks -/
+
+/-- Runs a block symbolically with `runBlock_cons` and `runStep_some`, the
+registers' writes kept folded (`RegUpd`), with the facts `hs`. -/
+syntax "oaep_run" " [" Lean.Parser.Tactic.simpLemma,* "]" : tactic
+macro_rules
+  | `(tactic| oaep_run [$hs,*]) => `(tactic| (apply WP.of_runBlock; simp only [List.cons_append, List.nil_append,
+      runBlock_cons, runStep_some, runBlock_nil, exec, State.read, State.load, State.store, addr, Size.bits,
+      Size.bytes, BitVec.setWidth_eq, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, and_self,
+      ite_true, ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+      RegUpd.gpr_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, RegUpd.mem_write, RegUpd.v_write,
+      $hs,*]))
+
 /-! ## Masks -/
 
 /-- `sbc r, r, r` after `subs _, a, b`: the borrow of `a - b`, as a mask. -/
