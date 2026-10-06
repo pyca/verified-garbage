@@ -36,6 +36,28 @@ code uses, and both are generated from the same signature, calling
 convention, `writeArgs` and `stack` as the contract (`Artifact.ofSig`), so
 the `doc` must not state them itself (`checkLayout`).
 
+An artifact that reads tables of constants (`Artifact.consts`) names each
+by the name of a `static` holding it, which `files` writes once per target,
+in the module `consts` (`src/asm/<target>/consts.rs`), after checking that
+every artifact of the target with a table of that name gives the same words
+and that the code names only its own tables (`checkConsts`):
+
+```rust
+pub(crate) static <NAME>: [u64; <n>] = [<word>, …];
+```
+
+The code forms a table's address from the static's symbol (a `sym`
+operand), on AArch64 by `adrp` and `add` (`Line.sym`), whose operands
+`vg_sym_page!` and `vg_sym_pageoff!` (`src/asm/mod.rs`) write in the syntax
+of the object format: `<sym>@PAGE` and `<sym>@PAGEOFF` for Mach-O, on
+Apple's platforms, and `<sym>` and `:lo12:<sym>` for ELF and COFF; on
+x86-64 by `lea` of the RIP-relative operand `[rip + <sym>]`, which is the
+same in every object format (`SymPart.ripRel`). The
+linker resolves them to the static's address, which the model gives
+(`State.syms`, fixed for the run as a static's address is) and at which the
+contract (`Abi.withConsts`) says the memory holds the table, readable and
+apart from every writable region: a `static` is a distinct immutable object.
+
 An artifact whose code needs CPU features beyond the target's baseline
 (`Artifact.features`) also gets a last `# Safety` item saying the CPU must
 support them, and a constant of them, for the Rust that checks for them
@@ -85,6 +107,10 @@ operand of the same name. -/
 def line (call : String) : Line → String
   | .text l => s!"        \"{escape l}\",\n"
   | .call n => s!"        \"{escape call} " ++ "{" ++ n ++ "}\",\n"
+  | .sym s .page n => s!"        concat!(\"{escape s}\", vg_sym_page!(\"" ++ "{" ++ n ++ "}\")),\n"
+  | .sym s .pageOff n =>
+    s!"        concat!(\"{escape s}\", vg_sym_pageoff!(\"" ++ "{" ++ n ++ "}\")),\n"
+  | .sym s .ripRel n => s!"        \"{escape s}[rip + " ++ "{" ++ n ++ "}]\",\n"
 
 /-- `fs` as an English list of code spans: "`a`, `b` and `c`". -/
 def codeList : List String → String
@@ -201,7 +227,8 @@ def function (a : Artifact) (moduleOf : String → String) : String :=
   let P := a.target.printer
   let body := (a.features.flatMap P.enableFeature).map .text ++ P.function a.code ++
     (a.features.flatMap P.disableFeature).map .text ++ P.funcAlign.map .text
-  let callees := dedup (body.filterMap fun | .call n => some n | .text _ => none)
+  let callees := dedup (body.filterMap fun | .call n => some n | _ => none)
+  let syms := dedup (body.filterMap fun | .sym _ _ n => some n | _ => none)
   featuresConst a.name a.features ++
   docComment "" (fullDoc a) ++
   "#[unsafe(naked)]\n" ++
@@ -209,6 +236,7 @@ def function (a : Artifact) (moduleOf : String → String) : String :=
   "    core::arch::naked_asm!(\n" ++
   String.join (body.map (line a.target.printer.call)) ++
   String.join (callees.map fun n => s!"        {n} = sym super::{moduleOf n}::{n},\n") ++
+  String.join (syms.map fun n => s!"        {n} = sym super::consts::{n},\n") ++
   "    )\n" ++
   "}\n"
 
@@ -273,6 +301,70 @@ def checkUnique (as : List Artifact) : Except String Unit :=
     unless (as.filter fun b => b.target.name == a.target.name && b.name == a.name).length == 1 do
       throw s!"{a.target.name}: {a.name} is defined more than once"
 
+/-- A table's name is a Rust constant's: an uppercase ASCII letter, then
+uppercase ASCII letters, digits and underscores. -/
+def tableName (n : String) : Bool :=
+  match n.toList with
+  | [] => false
+  | c :: cs => ('A' ≤ c && c ≤ 'Z') && cs.all fun c => ('A' ≤ c && c ≤ 'Z') || c.isDigit || c == '_'
+
+/-- Tables of the same name in `cs` and `ds` have the same words. -/
+def consistent (cs ds : List (String × List (BitVec 64))) : Bool :=
+  cs.all fun (n, ws) => ds.all fun (m, vs) => m != n || vs == ws
+
+/-- The tables of constants of `a` (`Artifact.consts`) have distinct names
+that are Rust constants', and none is named `consts` or the module of an
+artifact; every artifact of the target with a table of one of these names
+gives the same words; its code names only these tables; and its target's code
+can name a `static` (`Abi.sym`), if it has any. -/
+def checkConsts (as : List Artifact) (a : Artifact) : Except String Unit := do
+  unless a.consts.isEmpty || a.target.abi.sym.isSome do
+    throw s!"{a.target.name}: {a.name} reads tables of constants, which its target's code cannot name"
+  let names := a.consts.map (·.1)
+  unless (dedup names).length == names.length do
+    throw s!"{a.target.name}: {a.name} has two tables of constants of the same name"
+  for (n, _) in a.consts do
+    unless tableName n do
+      throw s!"{a.target.name}: {a.name}'s table of constants {n} is not named as a Rust constant"
+  for b in as do
+    unless b.target.name != a.target.name || consistent a.consts b.consts do
+      throw s!"{a.target.name}: {a.name} and {b.name} give a table of constants different words"
+  if (as.any fun b => b.target.name == a.target.name && b.module == "consts") then
+    throw s!"{a.target.name}: an artifact's module is `consts`, the module of the tables of constants"
+  let used := (a.target.printer.function a.code).filterMap fun | .sym _ _ n => some n | _ => none
+  for n in used do
+    unless names.contains n do
+      throw s!"{a.target.name}: {a.name} names the table {n}, which it does not have (`Artifact.consts`)"
+
+/-- The macros that write the page of a static's address and its offset in
+the page in the syntax of the object format (`Line.sym`): Mach-O's on
+Apple's platforms, ELF's (which COFF's is too) elsewhere. -/
+def symMacros : String :=
+  "\n/// The page of a `static`'s address, in the assembler syntax of the object format.\n" ++
+  "#[cfg(target_vendor = \"apple\")]\n#[allow(unused_macros)]\n" ++
+  "macro_rules! vg_sym_page {\n    ($s:literal) => {\n        concat!($s, \"@PAGE\")\n    };\n}\n" ++
+  "#[cfg(not(target_vendor = \"apple\"))]\n#[allow(unused_macros)]\n" ++
+  "macro_rules! vg_sym_page {\n    ($s:literal) => {\n        $s\n    };\n}\n" ++
+  "\n/// The offset of a `static`'s address in its page, in the assembler syntax of the object format.\n" ++
+  "#[cfg(target_vendor = \"apple\")]\n#[allow(unused_macros)]\n" ++
+  "macro_rules! vg_sym_pageoff {\n    ($s:literal) => {\n        concat!($s, \"@PAGEOFF\")\n    };\n}\n" ++
+  "#[cfg(not(target_vendor = \"apple\"))]\n#[allow(unused_macros)]\n" ++
+  "macro_rules! vg_sym_pageoff {\n    ($s:literal) => {\n        concat!(\":lo12:\", $s)\n    };\n}\n"
+
+/-- The tables of constants of the artifacts `arts`, by name, each once. -/
+def tables (arts : List Artifact) : List (String × List (BitVec 64)) :=
+  let all := arts.flatMap (·.consts)
+  ((dedup (all.map (·.1))).mergeSort (· ≤ ·)).filterMap fun n => all.find? (·.1 == n)
+
+/-- The module of a target's tables of constants. -/
+def tablesFile (t : String) (ts : List (String × List (BitVec 64))) : String :=
+  header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
+  "#![allow(dead_code)]\n" ++
+  String.join (ts.map fun (n, ws) =>
+    s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
+    s!"pub(crate) static {n}: [u64; {ws.length}] = [\n" ++
+    String.join (ws.map fun w => s!"    {w.toNat},\n") ++ "];\n")
+
 /-- `mod` declarations for generated child modules (never reformatted by rustfmt). -/
 def modDecls (ms : List String) (cfg : String → Option String) : String :=
   String.join (ms.map fun m =>
@@ -292,13 +384,17 @@ def render (as : List Artifact) (moduleOf : Artifact → String → String) : Li
     "//! Every function in these modules is the direct rendering of an `Artifact`\n" ++
     "//! whose machine code has been proven correct, memory safe and constant time\n" ++
     "//! against its contract.\n" ++
+    symMacros ++
     modDecls targets cfgOf
   let perTarget (t : String) : List (String × String) :=
     let arts := as.filter (·.target.name == t)
     -- In order of their names, wherever their artifacts come in the list.
     let modules := (distinct arts (·.module)).mergeSort (· ≤ ·)
+    let ts := tables arts
+    let mods := if ts.isEmpty then modules else (modules ++ ["consts"]).mergeSort (· ≤ ·)
     (s!"{t}/mod.rs", header ++ s!"//! Verified functions for `{t}`.\n" ++
-      modDecls modules (fun _ => none)) ::
+      modDecls mods (fun _ => none)) ::
+    (if ts.isEmpty then [] else [(s!"{t}/consts.rs", tablesFile t ts)]) ++
     modules.map fun m =>
       (s!"{t}/{m}.rs",
         header ++ s!"//! Verified `{m}` functions for `{t}`.\n" ++
@@ -310,7 +406,8 @@ def render (as : List Artifact) (moduleOf : Artifact → String → String) : Li
 `mod.rs`, and for each target `<target>/mod.rs` and one `<target>/<module>.rs`
 per module; an error if an artifact is not made from an `Api` with a
 contract (`checkApi`), two artifacts of a target have the same name
-(`checkUnique`), a call is not of the code it runs (`checkCalls`), an
+(`checkUnique`), a call is not of the code it runs (`checkCalls`), its
+tables of constants are not as `checkConsts` requires, an
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`) or its doc has no `# Safety` section at its end for what
@@ -319,6 +416,7 @@ def files (as : List Artifact) : Except String (List (String × String)) := do
   as.forM checkApi
   checkUnique as
   as.forM (checkCalls as)
+  as.forM (checkConsts as)
   as.forM checkFeatures
   as.forM checkEncodable
   as.forM checkLayout

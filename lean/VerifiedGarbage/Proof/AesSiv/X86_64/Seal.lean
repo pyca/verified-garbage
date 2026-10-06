@@ -15,6 +15,7 @@ namespace VG.Proof.AesSiv.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesSiv.X86_64
 open VG.Proof.CmacAes.X86_64 (bytesAt_frame k0)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 variable {s₀ : State} {C D P W : Addr} {R L : Nat}
 
@@ -150,10 +151,10 @@ theorem ctr_sub (h : Env s₀ C D P W R L) :
 with the plaintext into the first 16 bytes of the working space
 (`finish_wp`), the counter from that IV (`counter_ok`), CTR over the data in
 place (`ctr_wp`) and the restore of the registers saved in the working space. -/
-theorem sealTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64}
     (hsv : Spill.Saved s.mem W g saved) :
-    WP isa (.seq (finish v.callee v.suffix 0) (.seq (.block (counter 0)) (.seq (ctr v.callee) (.block restore)))) s
+    WP isa (.seq (finish v.callee v.ctr.callee v.ctr.suffix 0) (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.block restore)))) s
       fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = g r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
         Frame (endRegions W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
@@ -181,7 +182,8 @@ theorem sealTail_wp (v : Ctr32Impl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
-  refine WP.seq (WP.mono (ctr_wp v h hcp hPw hr₃ hcnt h208 h216) fun s₄ h₄ => ?_)
+  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt h208 h216)
+    fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
   have hsv₄ : Spill.Saved s₄.mem W g saved := by

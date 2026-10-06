@@ -609,9 +609,6 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         · exact hp.dSC }
   have hi₇ : KInv s₇ b (scP s₀) R w R s₇ :=
     { hj := Nat.le_refl _
-      lr := by
-        rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r1₃]
-        simp only [R]; bv_omega
       r12 := by
         rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr, u₄.other _ (by decide), r0₃,
           u₄.other _ (by decide), r1₃, shl4]
@@ -627,7 +624,10 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have r8₇ : s₇.gpr .r8 = dP s₀ := by rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide),
     u₄.other _ (by decide), r3₃]
   -- The key loop.
-  refine WP.seq (WP.mono (keyLoop_ok hk hi₇) fun s₈ d₈ => ?_)
+  have lr₇ : s₇.gpr .lr = BitVec.ofNat 32 (R + 1) := by
+    rw [u₇.other _ (by decide), u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), r1₃]
+    simp only [R]; bv_omega
+  refine WP.seq (WP.mono (keyLoop_ok hk hi₇ lr₇) fun s₈ d₈ => ?_)
   have f₀₈ : Frame [⟨B, 2048⟩, ⟨State.addr (ctP s₀), 16⟩] s₀.mem s₈.mem :=
     f₀₇.trans (d₈.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨B, 2048⟩, by simp, keyArea_sub _⟩)

@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.X448.AArch64.Base.AddEnv
+import VerifiedGarbage.Proof.X448.AArch64.Base.AddDefs
+import VerifiedGarbage.Impl.X448.AArch64.Base
 
 /-!
 # X448 of the base point on AArch64: the complete addition

@@ -8,7 +8,8 @@ name: Benchmarks
 #
 # It can also be run by hand (Actions > Benchmarks > Run workflow), comparing
 # the chosen branch with any earlier commit on every architecture, e.g. to
-# measure the total speedup of a series of pull requests.
+# measure the total speedup of a series of pull requests; or, with no
+# commit, measuring the chosen branch alone, next to OpenSSL.
 on:
   pull_request:
     paths:
@@ -22,8 +23,8 @@ on:
   workflow_dispatch:
     inputs:
       base_commit:
-        description: The commit to compare against
-        required: true
+        description: The commit to compare against (empty to run the branch alone, next to OpenSSL)
+        required: false
 
 permissions:
   contents: read
@@ -42,22 +43,31 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.arches.outputs.matrix }}
+      base: ${{ steps.arches.outputs.base }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # A pull request's checkout is its merge with the base branch's
+          # current tip, which is the merge's first parent.
+          fetch-depth: 2
           persist-credentials: false
       - id: arches
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
+          BASE_COMMIT: ${{ inputs.base_commit }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            base=$BASE_COMMIT
             matrix=$(python3 ci/bench_arches.py --all)
           else
-            git fetch -q --depth=1 origin "$BASE"
-            matrix=$(git diff --name-only "$BASE" HEAD | python3 ci/bench_arches.py --base "$BASE")
+            # Not `pull_request.base.sha`: it can be an older commit of the
+            # base branch, whose later changes would then count as the pull
+            # request's (selecting every benchmark) and be measured as such.
+            base=$(git rev-parse HEAD^1)
+            matrix=$(git diff --name-only "$base" HEAD | python3 ci/bench_arches.py --base "$base")
           fi
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
 
   compare:
     needs: arches
@@ -85,30 +95,16 @@ jobs:
       # implementations (see ci/bench_arches.py); empty restricts nothing.
       VG_CPU_FEATURES: ${{ matrix.cpu-features }}
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: head
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ needs.arches.outputs.base }}
         with:
-          ref: ${{ github.event.pull_request.base.sha || inputs.base_commit }}
+          ref: ${{ needs.arches.outputs.base }}
           path: base
           persist-credentials: false
-      - name: Install OpenSSL headers
-        run: |
-          # GitHub's runner images have all of these; only the containers
-          # need them installed (as root, without sudo).
-          if ! { pkg-config --exists openssl && command -v openssl && command -v python3; } > /dev/null 2>&1; then
-            if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
-            $sudo apt-get update -qq
-            $sudo apt-get install -qq -y --no-install-recommends libssl-dev openssl pkg-config python3
-          fi
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a

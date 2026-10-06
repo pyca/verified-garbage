@@ -10,16 +10,19 @@ on x86-64 (`Impl/Ecdh/X86_64.lean`):
 
 1. `scratch` to `x4`, `peer` to `x6`, `d`'s pointer to `x3` (the
    signature's `k`) and `peer + 1` to `x2` (its hash); then the
-   signature's setup and tables of bits, unchanged: `d` is read into the
-   slots of `k` and `d`, the peer's `x` into that of the hash;
+   signature's setup and table of bits, unchanged: `d` is read into the
+   slots of `k` and `d`, the peer's `x` into that of the hash (and `x5`,
+   which ECDH does not use, into the slot of the comb's tables' address);
 2. `R² mod p` and `b R mod p` to slots of their own, the peer's `y` to
    another, and into the flag the masks of the peer's first byte being
    `04`, `x < p` and `y < p`;
 3. `x` and `y` into Montgomery's form, and the mask of `y² = x³ + a x + b`
    into the flag;
-4. the peer's point, or `G` if the flag is clear (so the ladder always runs
-   on a point of the curve), to the slots the ladder takes its point from;
-5. `[d]P` by the signature's ladder, and `Z^(p-2)` by its power;
+4. the peer's point, or `G` if the flag is clear (so the window method always runs
+   on a point of the curve), to the slots the window method takes its point from;
+5. `d + 8 Σ_{j<J} 16^j` and its bits, `[d]P` by the window method (`WinCfg.window`, its
+   table of `[1 … 8]P` past the signature's table of bits), and `Z^(p-2)` by the
+   signature's power;
 6. `x = X Z^(p-2)`, out of Montgomery's form, and the masks of `d` in
    `[1, n-1]` and `Z ≠ 0` into the flag, which selects `x` or zeros for
    `out` (big-endian) and is returned as 0 or 1.
@@ -51,7 +54,7 @@ def W0 : Nat := KM
 def W1 : Nat := TT
 def W2 : Nat := SM
 def W3 : Nat := RM
-/-- The point the ladder multiplies: the peer's, or `G`. -/
+/-- The point the window method multiplies: the peer's, or `G`. -/
 def PX : Nat := RM
 def PY : Nat := SS
 
@@ -65,12 +68,13 @@ and the hash the peer's `x`. -/
 def args : List Instr :=
   [.addImm .x .x4 .x3 0, .addImm .x .x6 .x2 0, .addImm .x .x3 .x1 0, .addImm .x .x2 .x2 1]
 
-/-- The signature's setup and tables of bits. -/
-def prefix' : Prog isa :=
-  .seq (.block c.setup) <|
-  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
-  .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
+/-- The signature's setup (shifting the slot `hs`) and table of bits. -/
+def prefixWith (hs : Option Nat) : Prog isa :=
+  .seq (.block (c.setupWith hs)) <|
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])
+
+/-- The signature's setup, shifting nothing, and table of bits. -/
+def prefix' : Prog isa := prefixWith c none
 
 /-- The constants ECDH adds to the signature's. -/
 def consts : List (Nat × Nat) := [(R2P, c.R * c.R % c.C.p), (BP, c.mont c.C.b)]
@@ -88,13 +92,11 @@ def checkLtP (a : Nat) : List Instr := ltP c a ++ c.andFlag
 
 /-- The mask `x2` of `x1 = 0` (all ones if it is), with `x7 = 0`, through
 `x5` and `x16`. -/
-def isZero : List Instr := [.movz .x .x5 1 0, .subs .x .x16 .x1 .x5, .sbc .x .x2 .x7 .x7]
+def isZero : List Instr := isZeroMask
 
 /-- The mask `x2` of `[a] = 0` (all ones if it is), through `x1`, `x5`, `x7`
 and `x16`. -/
-def zero (a : Nat) : List Instr :=
-  [zero7, ld .x1 a] ++ ((List.range (c.n - 1)).flatMap fun j =>
-    [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2]) ++ isZero
+def zero (a : Nat) : List Instr := zeroMask c.n a
 
 /-- `[a] = 0`: the flag `&=` its mask. -/
 def checkZero (a : Nat) : List Instr := zero c a ++ c.andFlag
@@ -107,8 +109,8 @@ def checkLead : List Instr :=
 and `y`. -/
 def peer : List Instr :=
   (consts c).flatMap (fun (i, x) => setConst c.n (c.sl i) x) ++
-  [.addImm .x .x2 .x6 (1 + 8 * c.n)] ++
-  loadBE c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
+  [.addImm .x .x2 .x6 (1 + c.C.len)] ++
+  loadBytes c.C.len c.n (c.sl QY) .x2 ++ checkLead c ++ checkLtP c (c.sl E) ++ checkLtP c (c.sl QY)
 
 /-- `y² - (x³ + a x + b)`, from `x R` and `y R`, to `W1`. -/
 def curveOps : List FOp :=
@@ -117,26 +119,23 @@ def curveOps : List FOp :=
     .add (c.sl W3) (c.sl W2) (c.sl W1), .add (c.sl W2) (c.sl W3) (c.sl BP),
     .sub (c.sl W1) (c.sl W0) (c.sl W2)]
 
-/-- The point to the ladder's slots: the peer's if the flag is set, else
+/-- The point to the window method's slots: the peer's if the flag is set, else
 `G`. -/
 def select : List Instr :=
   [ld .x3 (c.sl FLAG)] ++
   sel c.n (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel c.n (c.sl PY) (c.sl GY) (c.sl QYM)
 
 /-- `x` and `y` into Montgomery's form, the check that the point is on the
-curve, and the point the ladder multiplies. -/
+curve, and the point the window method multiplies. -/
 def validate : Prog isa :=
   blocks ([Mont.AArch64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P),
     Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P)] ++
     (curveOps c).map (opCode c.MP') ++ [checkZero c (c.sl W1) ++ select c])
 
-/-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
-def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
-
-/-- `x` (or zeros) to `out`, `x19` and `x20` restored, and the flag's low
-bit to `x0`. -/
+/-- `x` (or zeros, `len` bytes) to `out`, `x19`–`x25` restored, and the
+flag's low bit to `x0`. -/
 def finish : List Instr :=
-  [ld .x3 (c.sl FLAG)] ++ storeBE c.n .x20 0 (c.sl X) ++
+  [ld .x3 (c.sl FLAG)] ++ storeBytes c.C.len c.n .x20 0 (c.sl X) ++
   Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
 
@@ -150,7 +149,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (ladder (ladderQ c)) <| .seq (pow c.powP) (middle c)
+  .seq (c.winPrep (c.sl K)) <| .seq (WinCfg.window (c.winCfg PX PY)) <| .seq c.pPow (middle c)
 
 end Cfg
 

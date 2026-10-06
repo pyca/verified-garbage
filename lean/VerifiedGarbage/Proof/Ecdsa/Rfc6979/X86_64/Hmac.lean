@@ -75,7 +75,7 @@ theorem safe_call {u : State} (hc : Ctx L g m₀ u) {ws : List Region} (hs : ∀
   rcases List.mem_append.mp hr with hr | hr
   · exact hs r hr
   · simp only [List.mem_singleton] at hr; subst hr
-    exact .inr (.inr ((hc.below_sub hn).trans (Region.sub_prefix (by omega))))
+    exact .inr (.inr (.inl ((hc.below_sub hn).trans (Region.sub_prefix (by omega)))))
 
 /-- The key `K`: the first `D` bytes of the frame. -/
 abbrev keyOf (P : RfcHash) {dn : Nat} (L : Lay dn) (m : Mem) : List Byte :=
@@ -125,14 +125,15 @@ theorem init_step (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   refine WP.seq (WP.mono (initArgs_ok hL hc P.H.D (by nums)) fun u ⟨hcu, hmu, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : below (u.gpr .rsp) 24 = ⟨L.B, 24⟩ := by rw [hcu.rsp, below24]
   have a := initA (P := P) hL hcu hdi hsi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId a
-    fun u' hrd hwr hcs hf hi ho => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Pbk.hinit_call P.ok P.hI P.hIsp P.hId a
+    fun u' hrd hwr hcs hf hi ho hsy => ?_)
   have hsafe : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region), ⟨L.scr + BitVec.ofNat 64 192, P.H.S⟩,
       ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> exact scr_work (by nums)
   refine ⟨hcu.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf
-    (safe_call hcu (fun r hr => .inr (.inl ((hsafe r hr).trans (Region.sub_prefix (by omega))))) (Nat.le_refl _)),
+    (safe_call hcu (fun r hr => .inr (.inl ((hsafe r hr).trans (Region.sub_prefix (by omega))))) (Nat.le_refl _))
+    hsy,
     hmu ▸ hf.sub fun r hr => ?_, by rw [← hmu]; exact hi, by rw [← hmu]; exact ho⟩
   rcases List.mem_append.mp hr with hr | hr
   · exact ⟨⟨L.scr, 2256⟩, by simp, hsafe r hr⟩
@@ -185,7 +186,7 @@ structure Updated (P : RfcHash) {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) 
 
 /-- The arguments of the streaming `update`. -/
 theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : Nat} (hd : DataOk L da len)
-    (hlen : len ≤ 192) (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 0) (hdx : w.gpr .rdx = da)
+    (hlen : len ≤ 256) (hdi : w.gpr .rdi = L.scr + BitVec.ofNat 64 0) (hdx : w.gpr .rdx = da)
     (hcx : w.gpr .rcx = BitVec.ofNat 64 len) (h8 : w.gpr .r8 = L.scr + BitVec.ofNat 64 384) :
     Proof.Pbkdf2.Md.X86_64.Calls.UpdArgs P.ok.stream w (L.scr + BitVec.ofNat 64 0) da
       (L.scr + BitVec.ofNat 64 384) len := by
@@ -206,14 +207,14 @@ theorem updA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {da : Addr} {len : N
 
 theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA : List Instr} {da : Addr} {len : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
-    (hlen : len ≤ 192) :
+    (hlen : len ≤ 256) :
     WP isa (.seq (.block (Cfg.hmacArgs₂ P.H.P.B dataA len)) (.call P.H.updN P.H.updC)) u
       (Updated P L g m₀ t da len) := by
   refine WP.seq (WP.mono (updArgs_ok hL hu.ctx hdA (B := P.H.P.B) (by nums) (by omega))
     fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : Region.Sub (below (w.gpr .rsp) 16) ⟨L.B, 24⟩ := hcw.below_sub (by omega)
   have a := updA (P := P) hL hcw hd hlen hdi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w' af hr => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Calls.upd_call P.ok.stream a (by omega) fun w' af hr hsy => ?_)
   have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.stream.S⟩ : Region),
       ⟨L.scr + BitVec.ofNat 64 384, P.ok.stream.Wb⟩], Region.Sub r ⟨L.scr, 2256⟩ := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -231,7 +232,7 @@ theorem upd_step (hL : L.Ok) {t u : State} (hu : Inited P L g m₀ t u) {dataA :
     · simpa using hd.work hL (e := 0) (k := 2256) (by omega)
     · exact (hd.low hL).symm
   refine ⟨hcw.keep hL af.rd af.wr (af.cs .rsp (by decide)) (fun r hr _ => af.cs r hr) af.frame
-      (safe_call hcw (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)),
+      (safe_call hcw (fun r hr => .inr (.inl ((hws r hr).trans (Region.sub_prefix (by omega))))) (by omega)) hsy,
     hu.frame.trans (hmw ▸ hf'), ?_, ?_⟩
   · rw [← hdata]
     exact hr _ (hmw ▸ hu.inner) (by rw [hsi, xorPad_length, blockKey_length (keyOf_length _)])
@@ -305,15 +306,15 @@ theorem finA (hL : L.Ok) {w : State} (hcw : Ctx L g m₀ w) {len dst : Nat} (hds
       scnw := by rw [toNat_add_of (by have := hL.nc; omega)]; have := hL.nc; nums }
 
 theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Updated P L g m₀ t da len u)
-    (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168) :
+    (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa (.seq (.block (Cfg.hmacArgs₃ P.H.P.B len dst)) (.call P.H.hmacFinN P.H.hmacFin)) u
       (Done P L g m₀ t da len dst) := by
   refine WP.seq (WP.mono (finArgs_ok hL hu.ctx (B := P.H.P.B) (len := len) (by nums) (by omega))
     fun w ⟨hcw, hmw, hdi, hsi, hdx, hcx, h8⟩ => ?_)
   have hsp : below (w.gpr .rsp) 24 = ⟨L.B, 24⟩ := by rw [hcw.rsp, below24]
   have a := finA (P := P) hL hcw (len := len) hdst hdi hsi hdx hcx h8
-  refine Proof.Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd a
-    fun w' hrd hwr hcs hf hpost => ?_
+  refine WP.of_syms (Proof.Pbkdf2.Md.X86_64.Pbk.hfin_call P.ok P.hF P.hFsp P.hFd a
+    fun w' hrd hwr hcs hf hpost hsy => ?_)
   have hws : ∀ r ∈ [(⟨L.scr + BitVec.ofNat 64 0, P.H.S⟩ : Region),
       ⟨L.B + BitVec.ofNat 64 (24 + dst), P.H.D⟩, ⟨L.scr + BitVec.ofNat 64 384, 8 * P.H.W⟩] ++
       [below (w.gpr .rsp) 24], ∃ r' ∈ [(⟨L.scr, 2256⟩ : Region), ⟨L.B, 24⟩,
@@ -325,7 +326,7 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     · exact ⟨⟨L.scr, 2256⟩, by simp, scr_work (by nums)⟩
     · exact ⟨⟨L.B, 24⟩, by simp, sub_refl _⟩
   have hl : (Spec.Sha256.bytesAt t.mem da len).length = len := by simp [Spec.Sha256.bytesAt]
-  refine ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf fun r hr => ?_,
+  refine ⟨hcw.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf (hsy := hsy) fun r hr => ?_,
     hu.frame.sub (fun r hr => ⟨r, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h],
       sub_refl _⟩) |>.trans (hmw ▸ hf.sub hws), ?_⟩
@@ -333,9 +334,8 @@ theorem fin_step (hL : L.Ok) {t u : State} {da : Addr} {len dst : Nat} (hu : Upd
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
     rcases hr' with rfl | rfl | rfl
     · exact .inr (.inl (hs.trans (Region.sub_prefix (by omega))))
-    · exact .inr (.inr (hs.trans (Region.sub_prefix (by omega))))
-    · exact safe_low L (by omega) |>.elim (fun h => .inl (hs.trans h)) fun h => h.elim
-        (fun h => .inr (.inl (hs.trans h))) fun h => .inr (.inr (hs.trans h))
+    · exact .inr (.inr (.inl (hs.trans (Region.sub_prefix (by omega)))))
+    · exact (safe_low L (by omega)).of_sub hs
   · have hk := blockKey_length (P := P) (keyOf_length (L := L) t.mem)
     exact hpost _ _ hk (by rw [hk, hl]; nums)
       (hmw ▸ hu.inner) (by rw [hl]) (hmw ▸ hu.outer)
@@ -352,7 +352,7 @@ theorem seq_seq {a b c : Prog isa} {s : State} {P Q : State → Prop} (h : WP is
 /-- `HMAC_K(data)`, for the key `K` in the frame, to the frame at `dst`. -/
 theorem hmac_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {dataA : List Instr} {da : Addr} {len dst : Nat}
     (hdA : ∀ u, Ctx L g m₀ u → WP isa (.block dataA) u (Upd L g m₀ u .rdx da)) (hd : DataOk L da len)
-    (hlen : len ≤ 192) (hdst : dst + P.H.D ≤ 168) :
+    (hlen : len ≤ 256) (hdst : dst + P.H.D ≤ 168) :
     WP isa ((cfgOf P).hmac dataA len dst) t (Done P L g m₀ t da len dst) :=
   seq_seq (init_step hL hc) fun _ hu => seq_seq (upd_step hL hu hdA hd hlen) fun _ hw =>
     fin_step hL hw hlen hdst

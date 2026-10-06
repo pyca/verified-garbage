@@ -121,6 +121,7 @@ def abi : Abi isa where
   argAreaDoc ws := if ws.length - argRegs.length = 0 then none else
     some ("the arguments on the stack", false)
   reservedDoc n := if n = 0 then none else some s!"the {n} bytes of stack below the stack pointer"
+  sym := some fun s name => s.syms name
 
 abbrev target : Target where
   name := "aarch64"

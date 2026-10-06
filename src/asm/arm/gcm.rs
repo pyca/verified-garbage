@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// This implementation calls `vg_aes_expand_key` for the key schedule and `vg_aes_ctr32` to encrypt the zero block into the hash subkey.
+/// This implementation calls `vg_aes_expand_key_scratch` for the key schedule and `vg_aes_ctr32` to encrypt the zero block into the hash subkey.
 ///
 /// # Safety
 ///
@@ -34,7 +34,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "lsr r8, r1, #2",
         "add r8, r8, #6",
         "add r3, r11, #512",
-        "bl {vg_aes_expand_key}",
+        "bl {vg_aes_expand_key_scratch}",
         "mov r0, #0",
         "str r0, [r9, #240]",
         "str r0, [r9, #244]",
@@ -64,12 +64,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "ldr r11, [r11, #156]",
         "add sp, sp, #2560",
         "bx lr",
-        vg_aes_expand_key = sym super::aes::vg_aes_expand_key,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one.
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
 /// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
 ///
@@ -83,14 +83,30 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #16]",
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "add lr, sp, #28",
+        "str lr, [r12, #20]",
+        "ldr lr, [sp, #24]",
+        "ldr r12, [sp, #20]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
         "str r6, [r12, #136]",
@@ -630,6 +646,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
         "push {{r12, lr}}",
         "bl {vg_aes_ctr32}",
         "ldr r12, [sp], #8",
+        "ldr r1, [sp, #16]",
+        "ldr r0, [r11, #0]",
+        "str r0, [r1, #0]",
+        "ldr r0, [r11, #4]",
+        "str r0, [r1, #4]",
+        "ldr r0, [r11, #8]",
+        "str r0, [r1, #8]",
+        "ldr r0, [r11, #12]",
+        "str r0, [r1, #12]",
         "ldr r4, [r11, #128]",
         "ldr r5, [r11, #132]",
         "ldr r6, [r11, #136]",
@@ -639,13 +664,14 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
 
-/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// AES-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
 /// The function checks no other length: GCM requires a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of ciphertext and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must check.
 ///
@@ -659,14 +685,32 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `data` and `work` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `work` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #16]",
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #28]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #2612]",
+        "str lr, [r12, #20]",
+        "add lr, sp, #32",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #28]",
+        "ldr r12, [sp, #24]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
         "str r6, [r12, #136]",
@@ -1166,12 +1210,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "bl {vg_aes_ctr32}",
         "ldr r12, [sp], #8",
         "ldr r6, [sp, #20]",
+        "ldr r1, [sp, #16]",
         "mov r0, #0",
         "str r0, [r11, #256]",
         "str r0, [r11, #260]",
         "str r0, [r11, #264]",
         "str r0, [r11, #268]",
-        "mov r1, r11",
         "add r2, r11, #256",
         "mov r3, r6",
         "269:",
@@ -1324,6 +1368,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
@@ -2254,7 +2299,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
     )
 }
 
-/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to the first 16 bytes of `*work`. The rest of `*work` is working space, unspecified on return. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
+/// Finishes an incremental AES-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_aes_gcm_stream_verify`.
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
@@ -2264,15 +2309,31 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `state` and `tag` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320]) {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #16]",
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "add lr, sp, #28",
+        "str lr, [r12, #20]",
+        "ldr lr, [sp, #24]",
+        "ldr r12, [sp, #20]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
         "str r6, [r12, #136]",
@@ -2368,6 +2429,15 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
         "push {{r12, lr}}",
         "bl {vg_aes_ctr32}",
         "ldr r12, [sp], #8",
+        "ldr r1, [sp, #16]",
+        "ldr r0, [r11, #0]",
+        "str r0, [r1, #0]",
+        "ldr r0, [r11, #4]",
+        "str r0, [r1, #4]",
+        "ldr r0, [r11, #8]",
+        "str r0, [r1, #8]",
+        "ldr r0, [r11, #12]",
+        "str r0, [r1, #12]",
         "ldr r4, [r11, #128]",
         "ldr r5, [r11, #132]",
         "ldr r6, [r11, #136]",
@@ -2377,13 +2447,14 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
 
-/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag in the first `tag_len` bytes of `*work`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, which it then writes to the first 16 bytes of `*work`; otherwise returns 0 and writes 16 zero bytes there. The rest of `*work` is working space, unspecified on return. The tags are compared without a branch.
+/// Finishes an incremental AES-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is 4, 8, 12, 13, 14, 15 or 16 (§5.2.1.2) and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
@@ -2393,15 +2464,33 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
 ///
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
-/// * `work` must be valid for reads and writes of 2560 bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The contents of `state` on return are unspecified.
-/// * `state` and `work` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `work` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * `state` must not overlap `ctx`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `tag` may overlap the 2600 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, work: *mut [u64; 320], tag_len: usize) -> u32 {
+pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        "ldr r12, [sp, #16]",
+        "sub sp, sp, #2592",
+        "add r12, sp, #0",
+        "str lr, [r12, #28]",
+        "ldr lr, [sp, #2592]",
+        "str lr, [r12, #0]",
+        "ldr lr, [sp, #2596]",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #2600]",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #2604]",
+        "str lr, [r12, #12]",
+        "ldr lr, [sp, #2608]",
+        "str lr, [r12, #16]",
+        "ldr lr, [sp, #2612]",
+        "str lr, [r12, #20]",
+        "add lr, sp, #32",
+        "str lr, [r12, #24]",
+        "ldr lr, [sp, #28]",
+        "ldr r12, [sp, #24]",
         "str r4, [r12, #128]",
         "str r5, [r12, #132]",
         "str r6, [r12, #136]",
@@ -2461,12 +2550,12 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "213:",
         "cmp r0, #0",
         "beq 214f",
+        "ldr r1, [sp, #16]",
         "mov r0, #0",
         "str r0, [r11, #256]",
         "str r0, [r11, #260]",
         "str r0, [r11, #264]",
         "str r0, [r11, #268]",
-        "mov r1, r11",
         "add r2, r11, #256",
         "mov r3, r6",
         "216:",
@@ -2595,27 +2684,9 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "lsr r0, r0, #31",
         "mov r1, #1",
         "sub r0, r1, r0",
-        "mov r1, #0",
-        "sub r1, r1, r0",
-        "ldr r2, [r11, #0]",
-        "and r2, r2, r1",
-        "str r2, [r11, #0]",
-        "ldr r2, [r11, #4]",
-        "and r2, r2, r1",
-        "str r2, [r11, #4]",
-        "ldr r2, [r11, #8]",
-        "and r2, r2, r1",
-        "str r2, [r11, #8]",
-        "ldr r2, [r11, #12]",
-        "and r2, r2, r1",
-        "str r2, [r11, #12]",
         "b 215f",
         "214:",
         "mov r0, #0",
-        "str r0, [r11, #0]",
-        "str r0, [r11, #4]",
-        "str r0, [r11, #8]",
-        "str r0, [r11, #12]",
         "215:",
         "ldr r4, [r11, #128]",
         "ldr r5, [r11, #132]",
@@ -2626,6 +2697,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "ldr r10, [r11, #152]",
         "ldr lr, [r11, #160]",
         "ldr r11, [r11, #156]",
+        "add sp, sp, #2592",
         "bx lr",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,

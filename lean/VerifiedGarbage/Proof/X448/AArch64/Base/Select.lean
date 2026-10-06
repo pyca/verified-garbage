@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.X448.AArch64.Base.Digit
+import VerifiedGarbage.Proof.X448.AArch64.Base.Const
 import VerifiedGarbage.Proof.X448.AArch64.Init
 import VerifiedGarbage.Proof.X448.Wide.Limbs
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
@@ -231,27 +232,6 @@ theorem fieldPrefix_ok {s : State} {base : Addr} (hs : Scr s base) {ao ae : Nat}
 
 /-! ## The selected field's value -/
 
-theorem limb_valN (v : Spec.X448.Fe) : ∀ n, VG.Proof.X448.Wide.valN (fun i => (limb v i).toNat) n =
-    v.val % VG.Proof.X448.Wide.radix ^ n
-  | 0 => by simp [VG.Proof.X448.Wide.valN, Nat.mod_one]
-  | n + 1 => by
-    rw [VG.Proof.X448.Wide.valN_succ, limb_valN v n, Nat.pow_succ, Nat.mod_mul]
-    congr 2
-    simp only [limb, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (by decide)) (by decide)),
-      show 2 ^ (56 * n) = VG.Proof.X448.Wide.radix ^ n by rw [Nat.pow_mul]; rfl]
-    rfl
-
-theorem limb_val (v : Spec.X448.Fe) : VG.Proof.X448.Wide.valN (fun i => (limb v i).toNat) 8 = v.val := by
-  rw [limb_valN]
-  refine Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le v.isLt ?_)
-  rw [show VG.Proof.X448.Wide.radix ^ 8 = VG.Proof.X448.Wide.full from rfl, VG.Proof.X448.Wide.full_eq]
-  omega
-
-theorem limb_lt (v : Spec.X448.Fe) (w : Nat) : (limb v w).toNat < 2 ^ 56 := by
-  simp only [limb, BitVec.toNat_ofNat]
-  exact Nat.lt_of_le_of_lt (Nat.mod_le _ _) (Nat.mod_lt _ (by decide))
-
 private theorem entries_getD (j a : Nat) (ha : a < 9) (f : Spec.X448.Fe × Spec.X448.Fe → Spec.X448.Fe) :
     (((List.range 9).map (Impl.X448.baseTable j)).map f).getD a 0 = f (Impl.X448.baseTable j a) := by
   simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range ha, Option.map_some,
@@ -302,7 +282,7 @@ def Selected (base : Addr) (j ao ae : Nat) (s t : State) : Prop :=
     word t.mem base (EY + 8 * w) = limb (Impl.X448.baseTable j ae).2 w) ∧
   VG.Proof.X448.AArch64.Outside base OX 512 s.mem t.mem ∧ Keeps [.x9, .x6, .x7, .x1, .x2] s t
 
-theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 56) (hk : k < 56)
+theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 57) (hk : k < 57)
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (.block [.subImm .x .x9 .x19 k]) s fun t =>
       (t.gpr .x9 == 0) = decide (j = k) ∧ Keeps [.x9] s t ∧ t.mem = s.mem := by
@@ -316,16 +296,16 @@ theorem dispatch_ok (s : State) {j k : Nat} (hj : j < 56) (hk : k < 56)
     Option.some.injEq, exists_eq_left']
   exact ⟨True.intro, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl⟩, rfl⟩
 
-theorem selectFrom_ok (ks : List Nat) (hks : ∀ k ∈ ks, k < 56) {s : State} {base : Addr}
+theorem selectFrom_ok (ks : List Nat) (hks : ∀ k ∈ ks, k < 57) {s : State} {base : Addr}
     (hs : Scr s base) {ao ae : Nat} (hao : ao < 9) (hae : ae < 9) (hm : Masks ao ae s)
-    {j : Nat} (hj : j ∈ ks) (hj56 : j < 56) (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
+    {j : Nat} (hj : j ∈ ks) (hj57 : j < 57) (hc : s.gpr .x19 = BitVec.ofNat 64 j) :
     WP isa (selectFrom ks) s (Selected base j ao ae s) := by
   induction ks generalizing s with
   | nil => exact absurd hj List.not_mem_nil
   | cons k ks ih =>
-    have hk : k < 56 := hks k (by simp)
+    have hk : k < 57 := hks k (by simp)
     rw [selectFrom]
-    refine WP.seq (WP.mono (dispatch_ok s hj56 hk hc) fun t ⟨tz, kt, mt⟩ => ?_)
+    refine WP.seq (WP.mono (dispatch_ok s hj57 hk hc) fun t ⟨tz, kt, mt⟩ => ?_)
     have ht : Scr t base := hs.of_keeps kt (by decide)
     have hm' : Masks ao ae t := hm.of_keeps kt
     refine WP.ite (decide (j = k)) (by simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, tz])

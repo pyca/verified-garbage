@@ -80,7 +80,8 @@ abbrev KFin (p : Params) (σ s : State) : Prop :=
 theorem trHash_chk {p : Params} (hF : PFacts p) :
     hashChk kgR (kgW p) [⟨.x26, 0, p.pkLen⟩] ⟨.x27, 64, 64⟩ = true := by
   have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq p
-  rcases hF.eta with ⟨_, hlen⟩ | ⟨_, hlen⟩ <;> (unfold hashChk pieceChk; lay [hF.pk, hF.sk, hlen])
+  have hlen : lenS p = 96 ∨ lenS p = 128 := hF.eta.imp And.right And.right
+  unfold hashChk pieceChk; lay [hF.pk, hF.sk]
 
 theorem trHash_taint {p : Params} (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
     ∀ {P : State → State → Prop}, (∀ x y, P x y → x.sp = y.sp ∧ ∀ r ∈ bases, x.gpr r = y.gpr r) →

@@ -14,8 +14,8 @@ on environments (`Inv`). A slot is read only once it holds a number below
 (`Proof.Weierstrass.readsOk`). Only the registers `clob n`, the slots written and the temporary
 area change (`ProgKeep`).
 
-The complete addition `rcb` is such a program, and computes `rcbAdd`
-(`rcb_ok`).
+The complete additions `rcb` and, for `a = -3`, `rcb3` are such programs,
+and compute `rcbAdd` and `rcbAdd3` (`rcb_ok`, `rcb3_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -27,7 +27,7 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
     (E : Nat → Fin m) (s : State) : Prop where
   scr : Scr s base size
-  mod : ModOk M size m s.mem base
+  mod : ModOkW M size m s.mem base
   sl : ∀ x ∈ V, Sl x
   lt : ∀ x ∈ V, wordsVal s.mem base x M.n < m
   val : ∀ x ∈ V, toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
@@ -100,7 +100,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.le x hx
       exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
   refine ⟨⟨(hk.gpr _ (rdi_not_clob _)).trans hI.scr.rdi, hk.wr ▸ hI.scr.wr, hn⟩,
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩, ?_, ?_, ?_⟩
+    ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
     rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]
@@ -133,7 +133,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
     refine WP.mono (mul_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
@@ -141,7 +141,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
     refine WP.mono (add_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
-      (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) (by omega)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
@@ -149,7 +149,8 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (sub_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2) hA hB)
+    refine WP.mono (sub_ok hI.scr hI.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+      (hL.tmp o hS.1) (hL.tmp a hS.2.1) (hL.tmp b hS.2.2) (hL.mo o hS.1) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
@@ -205,5 +206,40 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (rcb_out_mem hx)
     · exact Or.inl hx
+
+/-- A formula on numbered slots, renamed to `p`, `q` and `o`: it writes only
+`rcbW S o`, and its result is what the numbered formula computes. -/
+theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp} (hN : NumOk N) {S : RcbSlots}
+    {p q o : Pt} (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat}
+    {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (.block (fprog M (ofN N S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (ofN N S p q o) E) s' ∧
+      (runOps (ofN N S p q o) E o.x, runOps (ofN N S p q o) E o.y, runOps (ofN N S p q o) E o.z) =
+        (runOps N (fun y => E (rcbσ S p q o y)) 6, runOps N (fun y => E (rcbσ S p q o y)) 7,
+          runOps N (fun y => E (rcbσ S p q o y)) 8) := by
+  have hR : readsOk (ofN N S p q o) V = true := readsOk_mono (ofN_readsOk hN S p q o) hV
+  refine WP.mono (fprog_ok hL hm _ hI (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
+    fun s' ⟨hk, hI'⟩ => ⟨hk.mono fun w hw => ?_, hI'.sub fun x hx => ?_, ?_⟩
+  · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
+    exact ofN_out hN op hop
+  · rw [mem_validAfter]
+    rcases List.mem_append.mp hx with hx | hx
+    · exact Or.inr (ofN_out_mem hN hx)
+    · exact Or.inl hx
+  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+
+/-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
+theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
+    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (.block (fprog M (rcb3 S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
+      (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
+        VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
+  rw [rcb3_eq]
+  exact WP.mono (ofN_ok hL hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
+    ⟨k, I, v.trans (rcb3N_run _)⟩
 
 end VG.Proof.Weierstrass.X86_64

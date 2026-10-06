@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Gcm.Arm
 # AES-GCM: 32-bit ARM implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, composed of calls of the
-verified `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`.
+verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`.
 
 `vg_aes_ctr32(schedule, rounds, counter, data, n, scratch)` takes `n` and
 `scratch` on the stack, and `vg_ghash(h, y, data, n, scratch)` takes
@@ -21,8 +21,8 @@ are needed (the stack pointer is the one on entry outside the frames).
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
 
-* `[0, 16)`: the tag (written by `finish`, `verify` and `seal`; the received
-  tag of `verify` and `open`);
+* `[0, 16)`: the tag `finish`, `verify` and `seal` compute (which `finish`
+  and `seal` then copy to `tag`);
 * `[16, 96)`: the streaming state of `seal` and `open`;
 * `[96, 112)`: a block `T`: a partial block padded with zeros, or the
   lengths block;
@@ -59,17 +59,18 @@ the two 64-bit lengths in `r4:r5` and `r6:r7` (low words first). `r0`–`r3`,
 * `j0`: `J₀` for the `r5`-byte nonce at `r4` (GHASH'd with `absorb`,
   `flush` and `lens` unless it is 12 bytes, its length kept in `r7`), and the
   state's accumulator and first counter block `inc₃₂(J₀)` (`initState`).
-* `recv`, `cmp o`: the received tag and the computed one (at `W + o`), each
-  of `r6` bytes, padded with zeros; `r0` is 1 if they are equal and 0 if
-  not, without a branch (`1 - ((x | -x) >> 31)` of the OR `x` of the XORs
-  of their words).
+* `recv`, `cmp o`: the received tag (at `tag`, the stack argument at
+  `[sp + 16]`) and the computed one (at `W + o`), each of `r6` bytes,
+  padded with zeros; `r0` is 1 if they are equal and 0 if not, without a
+  branch (`1 - ((x | -x) >> 31)` of the OR `x` of the XORs of their words).
+* `tagOut`: the tag at `W` copied to `tag` (`[sp + 16]`).
 
 The model has no register-offset addressing and branches only on `Z`: the
 bytes are copied and XORed through advancing pointers, counting down with
 `subs`, and `min (16 - r6, r5)` takes the carry of a comparison with `adc`.
 Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
-the tag is right can affect timing: the branches are on those, and the
-comparison is masked.
+the tag is right can affect timing: the branches are on those, and the tags
+are compared without a branch.
 -/
 
 namespace VG.Impl.AesGcm.Arm
@@ -286,9 +287,9 @@ def j0 : Prog isa :=
 def zero16 (o : Nat) : List Instr :=
   [.mov .r0 (imm 0), .str .r0 .r11 o, .str .r0 .r11 (o + 4), .str .r0 .r11 (o + 8), .str .r0 .r11 (o + 12)]
 
-/-- The `r6` bytes of the received tag (at `W`), padded with zeros at `W + rO`. -/
+/-- The `r6` bytes of the received tag (at `tag`, `[sp + 16]`), padded with zeros at `W + rO`. -/
 def recv : Prog isa :=
-  .seq (.block (zero16 rO ++ [.mov .r1 (.reg .r11), addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
+  .seq (.block (.ldrSp .r1 16 :: zero16 rO ++ [addI .r2 .r11 rO, .mov .r3 (.reg .r6)])) copyLoop
 
 /-- Word `k` of the XOR of the two padded tags into `d`. -/
 def xorW (d : Reg) (k : Nat) : List Instr :=
@@ -336,7 +337,7 @@ def initArgs : List Instr :=
 
 def init : Prog isa :=
   .seq (.block initPre)
-  (.seq (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey)
+  (.seq (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey)
   (.seq (.block initArgs) (.seq ctrFrame (.block restore))))
 
 /-- `vg_aes_gcm_stream_init(ctx = r0, nonce = r1, nonce_len = r2, state = r3, scratch = [sp])`. -/
@@ -392,9 +393,9 @@ def streamDecrypt : Prog isa :=
   .seq (.block cryptEntry) (.seq textAbsorb (.seq (.block textArgs) (.seq crypt (.block restore))))
 
 /-- The entry of `finish` and `verify`: `(ctx = r0, rounds = r1, state = r2,
-aad_len = [sp]:[sp + 4], text_len = [sp + 8]:[sp + 12], work = [sp + 16])`. -/
-def finEntry : List Instr :=
-  .ldrSp .r12 16 :: save .r12 ++
+aad_len = [sp]:[sp + 4], text_len = [sp + 8]:[sp + 12], tag = [sp + 16], …, work = [sp + off])`. -/
+def finEntry (off : Nat) : List Instr :=
+  .ldrSp .r12 off :: save .r12 ++
     [.mov .r11 (.reg .r12), .mov .r10 (.reg .r2), .mov .r9 (.reg .r0), .mov .r8 (.reg .r1)]
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
@@ -406,33 +407,31 @@ def finTag (o : Nat) : Prog isa :=
   (.seq (.block [.ldrSp .r4 0, .ldrSp .r5 4, .ldrSp .r6 8, .ldrSp .r7 12])
     (tag o)))))
 
-/-- `vg_aes_gcm_stream_finish`. -/
+/-- The tag at `W` copied to `tag` (`[sp + 16]`). -/
+def tagOut : List Instr :=
+  [.ldrSp .r1 16, .ldr .r0 .r11 0, .str .r0 .r1 0, .ldr .r0 .r11 4, .str .r0 .r1 4, .ldr .r0 .r11 8,
+   .str .r0 .r1 8, .ldr .r0 .r11 12, .str .r0 .r1 12]
+
+/-- `vg_aes_gcm_stream_finish`, with `work = [sp + 20]`. -/
 def streamFinish : Prog isa :=
-  .seq (.block finEntry) (.seq (finTag 0) (.block restore))
+  .seq (.block (finEntry 20)) (.seq (finTag 0) (.seq (.block tagOut) (.block restore)))
 
-/-- The tag at `W` masked with `-r0`: kept if `r0 = 1`, zeroed if `r0 = 0`. -/
-def mask : List Instr :=
-  [.mov .r1 (imm 0), .dp .sub .r1 .r1 (.reg .r0), .ldr .r2 .r11 0, .dp .and .r2 .r2 (.reg .r1),
-   .str .r2 .r11 0, .ldr .r2 .r11 4, .dp .and .r2 .r2 (.reg .r1), .str .r2 .r11 4, .ldr .r2 .r11 8,
-   .dp .and .r2 .r2 (.reg .r1), .str .r2 .r11 8, .ldr .r2 .r11 12, .dp .and .r2 .r2 (.reg .r1),
-   .str .r2 .r11 12]
-
-/-- `vg_aes_gcm_stream_verify`, with `tag_len = [sp + 20]`. -/
+/-- `vg_aes_gcm_stream_verify`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
 def streamVerify : Prog isa :=
-  .seq (.block (finEntry ++ [.ldrSp .r6 20]))
+  .seq (.block (finEntry 24 ++ [.ldrSp .r6 20]))
   (.seq tagLenOk
-  (.seq (.ite .eq (.block (zero16 0))
+  (.seq (.ite .eq (.block [.mov .r0 (imm 0)])
       (.seq recv
       (.seq (finTag 0)
       (.seq (.block [.ldrSp .r6 20])
-      (.seq (cmp 0) (.block mask))))))
+        (cmp 0)))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx = r0, rounds = r1, nonce = r2,
 nonce_len = r3, aad = [sp], aad_len = [sp + 4], data = [sp + 8], len = [sp + 12],
-work = [sp + 16])`. The state is at `W + 16`. -/
-def oneEntry : List Instr :=
-  .ldrSp .r12 16 :: save .r12 ++
+tag = [sp + 16], …, work = [sp + off])`. The state is at `W + 16`. -/
+def oneEntry (off : Nat) : List Instr :=
+  .ldrSp .r12 off :: save .r12 ++
     [.mov .r11 (.reg .r12), addI .r10 .r11 16, .mov .r9 (.reg .r0), .mov .r8 (.reg .r1),
      .mov .r4 (.reg .r2), .mov .r5 (.reg .r3)]
 
@@ -459,13 +458,14 @@ def oneTag (o : Nat) : Prog isa :=
 /-- The data encrypted or decrypted, from the first counter block. -/
 def oneCrypt : Prog isa := .seq (.block dataArgs) crypt
 
-/-- `vg_aes_gcm_seal`. -/
+/-- `vg_aes_gcm_seal`, with `work = [sp + 20]`. -/
 def «seal» : Prog isa :=
-  .seq (.block oneEntry) (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.block restore))))
+  .seq (.block (oneEntry 20))
+    (.seq oneAad (.seq oneCrypt (.seq (oneTag 0) (.seq (.block tagOut) (.block restore)))))
 
-/-- `vg_aes_gcm_open`, with `tag_len = [sp + 20]`. -/
+/-- `vg_aes_gcm_open`, with `tag_len = [sp + 20]` and `work = [sp + 24]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry ++ [.ldrSp .r6 20]))
+  .seq (.block (oneEntry 24 ++ [.ldrSp .r6 20]))
   (.seq tagLenOk
   (.seq (.ite .eq (.block [.mov .r0 (imm 0)])
       (.seq oneAad

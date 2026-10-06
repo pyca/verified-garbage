@@ -8,8 +8,7 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 `verify_ok`: `Cfg.verify` returns 1 exactly if the specification's
 verification of the signature holds, for any curve the proof of the code
 supports (`CfgOk`) whose group law the proofs support (`Law`), and
-restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` (with
-the invariants of the group law for the two ladders, `step_rep`) and
+restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` and
 `tail_ok` compute what `verify_eq` connects to the specification.
 -/
 
@@ -28,45 +27,37 @@ variable {c : Cfg}
 verification holds. -/
 def VPost (c : Cfg) (s₀ s' : State) : Prop :=
   (s'.gpr .x0).setWidth 32 =
-    if Spec.Ecdsa.verify c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 16 * c.n))
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) (8 * c.n)))
-      (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (16 * c.n)) then 1 else 0
+    if Spec.Ecdsa.verify c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len))
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x1) c.C.len))
+      (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * c.C.len)) then 1 else 0
 
 theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
-    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block c.setup)
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
-      (.seq (pow c.powN) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq (pow c.powP)
+      (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq c.pPow
         (Impl.Ecdsa.Verify.AArch64.Cfg.final c)))))))))) := rfl
 
-/-- What the slots of `a`, `3b` and `G` stand for. -/
-theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
-    (F : Fixed c base g s.mem) :
-    tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a ∧
-      tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) ∧
-      tmv c.C c.n base s (c.sl ONEP) = 1 := by
-  refine ⟨?_, ?_, ?_⟩
-  · show toM _ _ (wordsVal s.mem base (c.sl AP) c.n) = _
-    rw [F.ap]; exact toM_cmont hc _
-  · show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
-    rw [F.b3p]; exact toM_cmont hc _
-  · show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
-    rw [F.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
+/-- What the slot of Montgomery's one stands for. -/
+theorem onep_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
+    (F : Fixed c base g s.mem) : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+  show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
+  rw [F.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.verify c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [verify_eq'']
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
-  obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
-  -- The point the second ladder multiplies.
+  have h1 := onep_tmv hc F₂
+  -- The point the window method multiplies.
   let P := peerPt c (s₀.mem (s₀.gpr .x0) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _
   have hG : Rep c.C (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GX)) (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GY))
@@ -85,11 +76,8 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀
   refine points_ok hc hM
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
-    (step_rep hC hc.onG ha hb hG)
-    (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-    (step_rep hC hPc ha hb hQ)
-    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
-    fun s₃ hP => ?_
+    hC hT hp.tbl (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
+    (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) fun s₃ hP => ?_
   refine WP.mono (tail_ok hc hP) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
@@ -99,25 +87,25 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀
     have := q2; simp only [Nat.shiftRight_zero] at this; exact this
   have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1' q2' hsum.symm
   -- The arguments as the specification reads them.
-  have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 16 * c.n)).length = 2 * c.C.len + 1 := by
-    rw [length_bytesAt, hc.len]; omega
-  have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 16 * c.n)).head? = some (s₀.mem (s₀.gpr .x0)) := by
+  have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
+    rw [length_bytesAt]; omega
+  have hb0 : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).head? = some (s₀.mem (s₀.gpr .x0)) := by
     rw [peer_bytes]; rfl
-  have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 16 * c.n)).drop 1).take c.C.len) =
+  have hxv : ofBytes (((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).drop 1).take c.C.len) =
       keyX c s₀ := by
-    rw [peer_bytes, List.drop_one, List.tail_cons, hc.len, List.take_left' (length_bytesAt _ _ _)]
-  have hyv : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 16 * c.n)).drop (c.C.len + 1)) =
+    rw [peer_bytes, List.drop_one, List.tail_cons, List.take_left' (length_bytesAt _ _ _)]
+  have hyv : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).drop (c.C.len + 1)) =
       keyY c s₀ := by
-    rw [peer_bytes, hc.len, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
+    rw [peer_bytes, List.drop_succ_cons, List.drop_left' (length_bytesAt _ _ _)]
   have hP' : ∀ h : Ecdh.Valid c.C (s₀.mem (s₀.gpr .x0)) (keyX c s₀) (keyY c s₀),
       P = .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     show peerPt c _ _ _ = _
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
-  have h16 : 16 * c.n = 8 * c.n + 8 * c.n := by omega
-  have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (16 * c.n)).take c.C.len) = sigR c s₀ := by
-    rw [h16, bytesAt_add, hc.len, List.take_left' (length_bytesAt _ _ _)]
-  have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (16 * c.n)).drop c.C.len) = sigS c s₀ := by
-    rw [h16, bytesAt_add, hc.len, List.drop_left' (length_bytesAt _ _ _)]
+  have h16 : 2 * c.C.len = c.C.len + c.C.len := by omega
+  have hr : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * c.C.len)).take c.C.len) = sigR c s₀ := by
+    rw [h16, bytesAt_add, List.take_left' (length_bytesAt _ _ _)]
+  have hs : ofBytes ((Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (2 * c.C.len)).drop c.C.len) = sigS c s₀ := by
+    rw [h16, bytesAt_add, List.drop_left' (length_bytesAt _ _ _)]
   have hspec := Proof.Ecdsa.verify_eq hC hlen hb0 hxv hyv hP' hr hs hM.u_lt hM.v_lt hM.u hM.v hR hxo hx
   -- The conditions.
   have hz := not_congr (toM_eq_zero_iff hpR hP.rz_lt)
@@ -132,7 +120,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀
     · rintro ⟨⟨⟨⟨⟨h4, hx⟩, hy⟩, hcv⟩, hr, hs⟩, hZ, he⟩
       exact ⟨⟨h4, hx, hy, hcv⟩, hr, hs, hz.mpr hZ, he⟩
   unfold VPost
-  rw [hashToInt_eq hc, hspec, ret]
+  rw [hashToInt_eq c, hspec, ret]
   by_cases h : (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧
       sv c (s₀.gpr .x3) s₃ RZ ≠ 0 ∧ Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀)
   · rw [ite_eq_left (decide_eq_true (hiff.mpr h)), ite_eq_left h]

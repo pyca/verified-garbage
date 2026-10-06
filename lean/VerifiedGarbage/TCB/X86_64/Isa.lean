@@ -32,7 +32,12 @@ Modelling choices:
   is one of the instructions whose timing Intel documents as independent of
   their data operands ("Data Operand Independent Timing Instruction Set
   Architecture (ISA) Guidance", which lists `MUL`), and so are BMI2's `mulx`
-  and ADX's `adcx` and `adox` (it lists `MULX`, `ADCX` and `ADOX`).
+  and ADX's `adcx` and `adox` (it lists `MULX`, `ADCX` and `ADOX`), `shl`
+  (`SHL`), `cmovcc` (`CMOVcc`), and SSE2's `pcmpeqd` and its VEX forms
+  `vpcmpeqd` (`PCMPEQD`, `VPCMPEQD`). `cmovcc` is not a branch: whether the
+  condition holds changes the destination, not which instructions run or
+  for how long, so the model's leakage of it is only its memory source's
+  address (`addrs`), which it reads whether or not the condition holds.
 * Assumed, not proven: the model's instructions take a time independent of
   their data operands on every processor that runs this code. Intel's
   guidance, the only vendor statement the model cites, is narrower. It
@@ -55,6 +60,11 @@ Modelling choices:
 * Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
   "RET"). The return addresses are the next of the state's `unknowns`,
   which nothing constrains (see `TCB/Code.lean`).
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `leaSym` (`lea` of a
+  RIP-relative operand, resolved by the linker) puts in a register. No
+  instruction changes `syms`: a static's address is fixed for the run of
+  the program.
 * `push` and `pop` (of 64-bit registers other than `rsp`) only occur as the
   push and pop of a frame (see `push`), as a sequence of them. A caller
   passes arguments on the stack by pushing them, the last first, just
@@ -79,8 +89,9 @@ Modelling choices:
   modelled: no modelled instruction names them, and none here is masked.
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
-  `vbroadcasti128`/`vbroadcasti32x4`, and the quadword source of the
-  embedded-broadcast forms `zbcst` (`m64bcst`), which (like every VEX or
+  `vbroadcasti128`/`vbroadcasti32x4`, the quadword source of the
+  embedded-broadcast forms `zbcst` (`m64bcst`), and the 256-bit second
+  source of `vpmadd52Load` (`m256`), which (like every VEX or
   EVEX memory operand but those of the aligned moves) need no alignment, so
   no alignment fault needs modelling.
 * MXCSR (SDM Vol. 1 §10.2.3) is modelled as a 32-bit value that only
@@ -113,6 +124,42 @@ Modelling choices:
 -/
 
 namespace VG.X86_64
+
+/-- Branch conditions (`jcc` suffixes), also those of `cmovcc`. -/
+inductive Cond
+  /-- `je`: ZF = 1 -/
+  | e
+  /-- `jne`: ZF = 0 -/
+  | ne
+  /-- `jb`: CF = 1 -/
+  | b
+  /-- `jae`: CF = 0 -/
+  | ae
+  deriving DecidableEq, Repr
+
+/-- Whether a condition holds (SDM Vol. 2, "Jcc" and "CMOVcc", the
+description of each condition: E, "equal (ZF=1)"; NE, "not equal (ZF=0)";
+B, "below (CF=1)"; AE, "above or equal (CF=0)"); `none`, and so a fault, if
+the flag it reads is undefined. -/
+def eval : Cond → State → Option Bool
+  | .e, s => s.zf
+  | .ne, s => s.zf.map (!·)
+  | .b, s => s.cf
+  | .ae, s => s.cf.map (!·)
+
+/-- SDM Vol. 2, "CMOVcc—Conditional Move", for 64-bit operands (`REX.W + 0F
+4x /r`, `CMOVcc r64, r/m64`): `temp := SRC; IF condition TRUE THEN DEST :=
+temp; FI;` (its `ELSE IF (OperandSize = 32 and IA-32e mode active) THEN
+DEST[63:32] := 0` is for 32-bit operands only); "Flags Affected: None." The
+source is read whether or not the condition holds, so a memory source
+outside the readable regions faults either way (and its address is
+accessed, `addrs`). An immediate source does not exist, and a condition on
+an undefined flag faults, as a branch on it does. -/
+def execCmov (cc : Cond) (dst : Reg) (src : Src) (s : State) : Option State :=
+  match src with
+  | .imm _ => none
+  | _ => (readSrc s src).bind fun temp => (eval cc s).map fun c =>
+    if c then s.setReg dst temp else s
 
 inductive Instr
   /-- `mov dst, src` (64-bit) -/
@@ -158,6 +205,9 @@ inductive Instr
   /-- `movabs r64, imm64`: `MOV r64, imm64` (REX.W + B8+rd io), a full 64-bit
   immediate. -/
   | movImm64 (dst : Reg) (v : BitVec 64)
+  /-- `lea r64, [rip + name]` (REX.W + 8D /r, with a RIP-relative memory
+  operand): the address of the `static` `name`, `State.syms name`. -/
+  | leaSym (dst : Reg) (name : String)
   /-- `movdqu xmm, XMMWORD PTR [src]` (`F3 0F 6F /r`) -/
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
@@ -192,6 +242,12 @@ inductive Instr
   `vpandq` (`EVEX.512.66.0F.W1 DB /r`) or `vporq` (`EVEX.512.66.0F.W1 EB
   /r`). -/
   | zbcst (op : ZBcstOp) (dst src1 : XReg) (src2 : MemOp)
+  /-- `vpmadd52luq ymm1, ymm2, YMMWORD PTR [src2]` (`EVEX.256.66.0F38.W1 B4
+  /r`), or with `hi` `vpmadd52huq ymm1, ymm2, YMMWORD PTR [src2]`
+  (`EVEX.256.66.0F38.W1 B5 /r`), AVX512_IFMA and AVX512VL: the forms of
+  `VOp.vpmadd52luq` and `VOp.vpmadd52huq` whose second source is the 32
+  bytes at `src2` (`ymm3/m256`), unmasked and without embedded broadcast. -/
+  | vpmadd52Load (hi : Bool) (dst src1 : XReg) (src2 : MemOp)
   /-- `stmxcsr DWORD PTR [dst]` (`NP 0F AE /3`) -/
   | stmxcsr (dst : MemOp)
   /-- `ldmxcsr DWORD PTR [src]` (`NP 0F AE /2`) -/
@@ -210,6 +266,11 @@ inductive Instr
   /-- `adox r64, src` (`F3 REX.w 0F 38 F6 /r`, ADX): `OF:dst := dst + src +
   OF`, the other flags unchanged. `src` is a register or memory. -/
   | adox (dst : Reg) (src : Src)
+  /-- `cmovcc r64, src` (`REX.W + 0F 4x /r`: `0F 42` CMOVB, `0F 43` CMOVAE,
+  `0F 44` CMOVE, `0F 45` CMOVNE): `dst := src` if the condition `cc`
+  holds, the flags unchanged. `src` is a register or memory, read whether or
+  not the condition holds. -/
+  | cmov (cc : Cond) (dst : Reg) (src : Src)
   /-- `push r64` (50+rd) for each `r` of `rs`, in order: the push of a frame
   (see `push`); `rs` must not be empty or contain `rsp` -/
   | push (rs : List Reg)
@@ -225,18 +286,6 @@ inductive Instr
   | free (bytes : Nat)
   deriving DecidableEq, Repr
 
-/-- Branch conditions (`jcc` suffixes). -/
-inductive Cond
-  /-- `je`: ZF = 1 -/
-  | e
-  /-- `jne`: ZF = 0 -/
-  | ne
-  /-- `jb`: CF = 1 -/
-  | b
-  /-- `jae`: CF = 0 -/
-  | ae
-  deriving DecidableEq, Repr
-
 /-- The CPU features an instruction needs beyond the x86-64 baseline
 (x86-64-v1, which includes SSE and SSE2: System V AMD64 psABI,
 "Micro-Architecture Levels"), named as Rust's target features. SDM Vol. 2,
@@ -248,19 +297,24 @@ SHA256RNDS2, SHA256MSG1 and SHA256MSG2 (`NP 0F 38 CB /r`, `NP 0F 38 CC /r`,
 and AESKEYGENASSIST (`66 0F 38 DC /r`, `66 0F 38 DD /r`, `66 0F 38 DE /r`,
 `66 0F 38 DF /r`, `66 0F 38 DB /r`, `66 0F 3A DF /r ib`); PCLMULQDQ for
 PCLMULQDQ (`66 0F 3A 44 /r ib`); SSE2 for MOVQ xmm, r64 (`66 REX.W 0F 6E /r`),
-PAND, PANDN, PADDQ, PMULUDQ, PSLLQ, PSRLQ, PSLLDQ and PSRLDQ; AVX for the
+PAND, PANDN, PADDQ, PMULUDQ, PSLLQ, PSRLQ, PSLLDQ, PSRLDQ and PCMPEQD
+(`66 0F 76 /r`); AVX for the
 VEX.128 forms of the lane-wise instructions (e.g. `VEX.128.66.0F.WIG FE /r`
-VPADDD), for VMOVDQA, VMOVDQU (both lengths), VMOVQ and VZEROUPPER; AVX2 for
-their VEX.256 forms (e.g. `VEX.256.66.0F.WIG FE /r` VPADDD) and for VPBLENDD,
-VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128, VINSERTI128,
-VEXTRACTI128 and VBROADCASTI128 at any length; AVX for VPMOVMSKB reg, xmm1
+VPADDD, `VEX.128.66.0F.WIG 76 /r` VPCMPEQD), for VMOVDQA, VMOVDQU (both
+lengths), VMOVQ and VZEROUPPER; AVX2 for their VEX.256 forms (e.g.
+`VEX.256.66.0F.WIG FE /r` VPADDD, `VEX.256.66.0F.WIG 76 /r` VPCMPEQD) and
+for VPBLENDD, VPSLLVD/Q, VPSRLVD/Q, VPBROADCASTD/Q, VPERMQ, VPERM2I128,
+VINSERTI128, VEXTRACTI128 and VBROADCASTI128 at any length; AVX for VPMOVMSKB reg, xmm1
 (`VEX.128.66.0F.WIG D7 /r`) and AVX2 for VPMOVMSKB reg, ymm1
 (`VEX.256.66.0F.WIG D7 /r`) and VPERMD (`VEX.256.66.0F38.W0 36 /r`). LDMXCSR and STMXCSR (SSE,
 `NP 0F AE /2`, `NP 0F AE /3`) and LFENCE (SSE2, `NP 0F AE E8`) are in the
-baseline. BMI2 for RORX (`VEX.LZ.F2.0F3A.W0 F0 /r ib`, `VEX.LZ.F2.0F3A.W1
-F0 /r ib`) and for MULX (`VEX.LZ.F2.0F38.W1 F6 /r`), ADX for ADCX and ADOX
-(`66 REX.w 0F 38 F6 /r`, `F3 REX.w 0F 38 F6 /r`), and BMI1 for ANDN (`VEX.LZ.0F38.W0 F2 /r`, `VEX.LZ.0F38.W1 F2
-/r`). AVX512F for the EVEX.512 forms of VPADDD
+baseline, and so is CMOVcc (`REX.W + 0F 4x /r`), whose "CPUID Feature Flag"
+CMOV (CPUID.01H:EDX.CMOV[bit 15]) is part of x86-64-v1; SHL (`C1 /4 ib`,
+`REX.W + C1 /4 ib`, and by 1 `D1 /4`, `REX.W + D1 /4`) needs none. BMI2 for
+RORX (`VEX.LZ.F2.0F3A.W0 F0 /r ib`, `VEX.LZ.F2.0F3A.W1 F0 /r ib`) and for
+MULX (`VEX.LZ.F2.0F38.W1 F6 /r`), ADX for ADCX and ADOX (`66 REX.w 0F 38 F6
+/r`, `F3 REX.w 0F 38 F6 /r`), and BMI1 for ANDN (`VEX.LZ.0F38.W0 F2 /r`,
+`VEX.LZ.0F38.W1 F2 /r`). AVX512F for the EVEX.512 forms of VPADDD
 (`EVEX.512.66.0F.W0 FE /r`), VPXORD (`EVEX.512.66.0F.W0 EF /r`),
 VPUNPCKLDQ, VPUNPCKHDQ, VPUNPCKLQDQ and VPUNPCKHQDQ (`EVEX.512.66.0F.W0 62
 /r`, `EVEX.512.66.0F.W0 6A /r`, `EVEX.512.66.0F.W1 6C /r`,
@@ -279,11 +333,13 @@ VPANDQ and VPORQ with an `m64bcst` source (`EVEX.512.66.0F.W1 F4 /r`,
 VSHA512MSG1 and VSHA512MSG2 (`VEX.256.F2.0F38.W0 CB /r`, `VEX.256.F2.0F38.W0
 CC /r`, `VEX.256.F2.0F38.W0 CD /r`). AVX512_IFMA and AVX512VL for the
 EVEX.128 and EVEX.256 forms of VPMADD52LUQ and VPMADD52HUQ
-(`EVEX.256.66.0F38.W1 B4 /r`, `EVEX.256.66.0F38.W1 B5 /r`; the SDM's
+(`EVEX.256.66.0F38.W1 B4 /r`, `EVEX.256.66.0F38.W1 B5 /r`, with a register
+or an `m256` second source; the SDM's
 "CPUID Feature Flag" column lists both, AVX512VL for the vector lengths
 below 512 bits). AVX512VL and AVX512F for the EVEX.128 and EVEX.256 forms
-of VPROLD (`EVEX.128.66.0F.W0 72 /1 ib`, `EVEX.256.66.0F.W0 72 /1 ib`) and
-VPTERNLOGD (`EVEX.128.66.0F3A.W0 25 /r ib`, `EVEX.256.66.0F3A.W0 25 /r ib`),
+of VPROLD (`EVEX.128.66.0F.W0 72 /1 ib`, `EVEX.256.66.0F.W0 72 /1 ib`),
+VPTERNLOGD (`EVEX.128.66.0F3A.W0 25 /r ib`, `EVEX.256.66.0F3A.W0 25 /r ib`)
+and VPRORQ (`EVEX.128.66.0F.W1 72 /0 ib`, `EVEX.256.66.0F.W1 72 /0 ib`),
 likewise.
 
 Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "PCLMULQDQ",
@@ -329,8 +385,9 @@ def Instr.requires : Instr → List String
   | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. =>
     ["avx512f"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
-  | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) => ["avx512ifma", "avx512vl"]
-  | .vop (.vprold ..) | .vop (.vpternlogd ..) => ["avx512f", "avx512vl"]
+  | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
+    ["avx512ifma", "avx512vl"]
+  | .vop (.vprold ..) | .vop (.vpternlogd ..) | .vop (.vprorq ..) => ["avx512f", "avx512vl"]
   | _ => []
 
 /-- Semantics of an instruction. The byte forms: SDM Vol. 2, "MOVZX":
@@ -357,6 +414,18 @@ def exec : Instr → State → Option State
   | .shift op d n, s => execShift op d n s
   -- SDM Vol. 2, "MOV": `DEST := SRC`; no flags are affected.
   | .movImm64 d v, s => some (s.setReg d v)
+  -- `leaSym`: SDM Vol. 2, "LEA—Load Effective Address", with a 64-bit operand
+  -- size and address size: `DEST := EffectiveAddress(SRC)`; "Flags Affected:
+  -- None"; it accesses no memory. Its source is RIP-relative (SDM Vol. 2
+  -- §2.2.1.6, "RIP-Relative Addressing": ModR/M `mod = 00`, `r/m = 101` in
+  -- 64-bit mode is `RIP + disp32`, Table 2-7: "An effective address is
+  -- formed by adding displacement to the 64-bit RIP of the next
+  -- instruction"), its `disp32` written by the linker so that the sum is the
+  -- static's address `S` (`S + A - P`, with the addend `A = -4`: System V
+  -- AMD64 psABI §4.4, "Relocation Types", `R_X86_64_PC32`; Mach-O's
+  -- `X86_64_RELOC_SIGNED`; COFF's `IMAGE_REL_AMD64_REL32`): `DEST := S`. A
+  -- static beyond `disp32`'s range (±2 GB) does not link.
+  | .leaSym d name, s => some (s.setReg d (s.syms name))
   -- SDM Vol. 2, "MOVDQU": `DEST[127:0] := SRC[127:0]`, with memory in
   -- little-endian byte order (SDM Vol. 1 §1.3.1); no alignment is required
   -- and no flags are affected.
@@ -399,6 +468,14 @@ def exec : Instr → State → Option State
   | .zbcst op d a m, s => (s.load64 (s.ea m)).map fun v =>
     let f (i : Nat) := op.sse.eval (s.zlane a i) (v ++ v)
     s.setZ d (f 0) (f 1) (f 2) (f 3)
+  -- SDM Vol. 2, "VPMADD52LUQ" and "VPMADD52HUQ" (EVEX.256 encoded, without a
+  -- write mask or embedded broadcast): as the register form (see `madd52`,
+  -- each lane), with `SRC3` the 32 bytes at the address, in little-endian
+  -- byte order (bits 127:0 the lower lane), and `DEST[MAXVL-1:256] := 0`
+  -- (`setV`); no alignment is required.
+  | .vpmadd52Load hi d a m, s => (s.load256 (s.ea m)).map fun v =>
+    s.setV .l256 d (madd52 hi (s.lane d 0) (s.lane a 0) (v.extractLsb' 0 128))
+      (madd52 hi (s.lane d 1) (s.lane a 1) (v.extractLsb' 128 128))
   -- SDM Vol. 2, "STMXCSR": `m32 := MXCSR`. "LDMXCSR": `MXCSR := m32`, with
   -- #GP(0) "for an attempt to set reserved bits in MXCSR", which are bits
   -- 31:16 (SDM Vol. 1 §10.2.3); on processors without DAZ, bit 6 is
@@ -414,6 +491,7 @@ def exec : Instr → State → Option State
   | .mulx hi lo src, s => execMulx hi lo src s
   | .adcx d src, s => execAdcx d src s
   | .adox d src, s => execAdox d src s
+  | .cmov cc d src, s => execCmov cc d src s
   -- Only the push and pop of a frame (`push`, `pop`).
   | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ => none
 
@@ -435,6 +513,7 @@ def addrs : Instr → State → List Addr
   | .bswap _, _ => []
   | .shift .., _ => []
   | .movImm64 .., _ => []
+  | .leaSym .., _ => []
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
   | .xop _, _ => []
@@ -448,6 +527,7 @@ def addrs : Instr → State → List Addr
   | .vmovdqu32Store m _, s => [s.ea m]
   | .vbroadcasti32x4 _ m, s => [s.ea m]
   | .zbcst _ _ _ m, s => [s.ea m]
+  | .vpmadd52Load _ _ _ m, s => [s.ea m]
   | .stmxcsr m, s => [s.ea m]
   | .ldmxcsr m, s => [s.ea m]
   | .lfence, _ => []
@@ -455,15 +535,10 @@ def addrs : Instr → State → List Addr
   | .mulx _ _ src, s => srcAddrs s src
   | .adcx _ src, s => srcAddrs s src
   | .adox _ src, s => srcAddrs s src
+  | .cmov _ _ src, s => srcAddrs s src
   | .push rs, s => (List.range rs.length).map fun i => s.gpr .rsp - BitVec.ofNat 64 (8 * (i + 1))
   | .pop _ k, s => (List.range k).map fun i => s.gpr .rsp + BitVec.ofNat 64 (8 * i)
   | .alloc _, _ | .free _, _ => []
-
-def eval : Cond → State → Option Bool
-  | .e, s => s.zf
-  | .ne, s => s.zf.map (!·)
-  | .b, s => s.cf
-  | .ae, s => s.cf.map (!·)
 
 /-- SDM Vol. 2, "CALL", near call: `RSP := RSP − 8; Memory[RSP] := RIP`
 (`Push(RIP)`, where `RIP` is the address of the next instruction), then the
@@ -558,11 +633,12 @@ two, `rax` and `rdx`, and stores and SSE instructions none. -/
 def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .adcx d _ | .adox d _ | .pop d _ | .vpmovmskb _ d _ => some d
+  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .pop d _
+  | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .zop _
-  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .stmxcsr _
-  | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
+  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load ..
+  | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
 abbrev isa : ISA where
   State := State

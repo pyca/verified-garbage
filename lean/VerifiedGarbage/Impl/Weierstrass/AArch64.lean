@@ -2,7 +2,7 @@ import VerifiedGarbage.Impl.Mont.AArch64
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
-# Short Weierstrass curves on AArch64: points, scalar multiplication, powers
+# Short Weierstrass curves on AArch64: points and scalar multiplication
 
 Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
 words, with the Montgomery arithmetic of `Impl/Mont/AArch64.lean`. Field
@@ -15,9 +15,7 @@ coordinates `(X : Y : Z)`.
 * `ladder`: `[k]G` by double-and-add from the top bit, 256 times (or as many
   bits as the table has): `D = R + R`, `S = D + G` and `R = D` or `S` by a
   mask of the bit, so every iteration does the same.
-* `pow`: `x^e` by square-and-multiply over the bits of a public exponent,
-  also always multiplying and selecting by a mask, so that one loop serves
-  every exponent.
+* powers are by chains of the exponent (`AArch64/Chain.lean`).
 * `bits`: the bits of a little-endian number in a slot, one byte each.
 
 The loops count down in `x19`. The only branches are on it, and every
@@ -84,17 +82,14 @@ caller (the point at infinity). -/
 def ladder (L : LadderCfg) : Prog isa :=
   .seq (.block [.movz .x .x19 (BitVec.ofNat 16 L.nbits) 0]) (.loop (ladderBody L) (.nonzero .x .x19))
 
-/-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
-exponent's bit `x19 - 1` is set. -/
-def powBody (P : PowCfg) : Prog isa :=
-  .seq (.block (decCounter :: Mont.AArch64.mul P.M P.acc P.acc P.acc)) <|
-  .seq (.block (Mont.AArch64.mul P.M P.tmp P.acc P.base)) <|
-    .block (bitMask P.bits ++ sel P.M.n P.acc P.acc P.tmp)
+/-- `x2` all ones iff `x1 = 0` (below 1), with `x7 = 0`, through `x5` and `x16`. -/
+def isZeroMask : List Instr := [.movz .x .x5 1 0, .subs .x .x16 .x1 .x5, .sbc .x .x2 .x7 .x7]
 
-/-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
-def pow (P : PowCfg) : Prog isa :=
-  .seq (.block (copy P.M.n P.acc P.one ++ [.movz .x .x19 (BitVec.ofNat 16 P.nbits) 0]))
-    (.loop (powBody P) (.nonzero .x .x19))
+/-- `x2` all ones iff the `n`-word number at `a` is zero: the `orr` of its words
+in `x1`, through `x2`. -/
+def zeroMask (n a : Nat) : List Instr :=
+  [zero7, ld .x1 a] ++ ((List.range (n - 1)).flatMap fun j =>
+    [ld .x2 (a + 8 * (j + 1)), .logic .orr .x .x1 .x1 .x2]) ++ isZeroMask
 
 /-- Byte `j` of the table at `dst` for byte `x19` of the number: bit `j` of
 `x1` (with `x5 = 1`), stored at `x17 + dst + j`, where `x17 = x0 + 8 x19`. -/
@@ -113,17 +108,44 @@ def bits (src dst nbytes : Nat) : Prog isa :=
 
 /-! ## Numbers as bytes -/
 
-/-- `[x0 + o] = ` the `n`-word big-endian number at `[src]`, little-endian,
-through `x5` (so `src` may be any of `x1`–`x4`). -/
-def loadBE (n : Nat) (o : Nat) (src : Reg) : List Instr :=
+/-- `[x0 + o] = ` the `len`-byte big-endian number at `[src]`, `n` words
+(`8 (n - 1) < len ≤ 8 n`, `8 ≤ len`), through `x5` (and `x17`): word `j` the
+byte reversal of the eight bytes at `src + len - 8 (j + 1)` (through
+`x17 = ` that address unless `len` is a multiple of 8, as `ldr` needs), and a
+top word of fewer bytes `t` the first eight bytes' reversal shifted right by
+`8 (8 - t)`. -/
+def loadBytes (len n o : Nat) (src : Reg) : List Instr :=
   (List.range n).flatMap fun j =>
-    [.ldr .x .x5 src (8 * (n - 1 - j)), .rev .x5 .x5, st .x5 (o + 8 * j)]
+    if 8 * (j + 1) ≤ len then
+      if len % 8 = 0 then [.ldr .x .x5 src (len - 8 * (j + 1)), .rev .x5 .x5, st .x5 (o + 8 * j)]
+      else [.addImm .x .x17 src (len - 8 * (j + 1)), .ldr .x .x5 .x17 0, .rev .x5 .x5, st .x5 (o + 8 * j)]
+    else [.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (j + 1) - len)), st .x5 (o + 8 * j)]
 
-/-- `[dst + d] = ` the `n`-word number at `[x0 + a]`, big-endian, masked with
-`x3`, through `x1`. -/
-def storeBE (n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
+/-- `[x0 + o] = [x0 + o] >> sh`, `n` words (`0 < sh < 64`), through `x1` and
+`x2`: word `j` is bits `sh … sh + 63` of words `j + 1` and `j` (`extr`), the
+top word shifted right. -/
+def shrWords (n o sh : Nat) : List Instr :=
   (List.range n).flatMap fun j =>
-    [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3, .rev .x1 .x1, .str .x .x1 dst (d + 8 * (n - 1 - j))]
+    [ld .x1 (o + 8 * j)] ++
+    (if j + 1 < n then [ld .x2 (o + 8 * (j + 1)), .extr .x .x1 .x2 .x1 sh] else [.lsr .x .x1 .x1 sh]) ++
+    [st .x1 (o + 8 * j)]
+
+/-- `[dst + d] = ` the `n`-word number at `[x0 + a]` masked with `x3`, in
+`len` bytes big-endian (`8 (n - 1) < len ≤ 8 n`), through `x1`, `x2` (and
+`x17`): its whole words byte-reversed to `dst + d + len - 8 (j + 1)`
+(through `x17 = ` that address unless `d + len` is a multiple of 8), and a
+top word of fewer bytes a byte at a time. -/
+def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
+  (List.range n).flatMap fun j =>
+    if 8 * (j + 1) ≤ len then
+      [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3, .rev .x1 .x1] ++
+      (if (d + len) % 8 = 0 then [.str .x .x1 dst (d + (len - 8 * (j + 1)))]
+      else [.addImm .x .x17 dst (d + (len - 8 * (j + 1))), .str .x .x1 .x17 0])
+    else
+      [ld .x1 (a + 8 * j), .logic .and .x .x1 .x1 .x3] ++
+      (List.range (len - 8 * j)).flatMap fun i =>
+        if len - 8 * j - 1 - i = 0 then [.strb .x1 dst (d + i)]
+        else [.lsr .x .x2 .x1 (8 * (len - 8 * j - 1 - i)), .strb .x2 dst (d + i)]
 
 /-- `[x0 + o] = x`, `n` words, through `x1`. -/
 def setConst (n : Nat) (o x : Nat) : List Instr :=

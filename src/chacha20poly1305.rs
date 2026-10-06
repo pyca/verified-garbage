@@ -4,8 +4,10 @@
 //! `vg_chacha20_poly1305_seal` and `vg_chacha20_poly1305_open` (contracts
 //! `VG.Spec.ChaCha20Poly1305.sealContract` and `openContract`), which compose
 //! the verified ChaCha20 and Poly1305 functions themselves; this module only
-//! lays out their context (the key, the nonce and the tag) and checks the
-//! length limit.
+//! chooses the implementation and checks the length limit. They take the key,
+//! the nonce and the tag by pointer, and keep their working space (which holds
+//! the one-time Poly1305 key and keystream) on their own stack, zeroing it
+//! before they return.
 //!
 //! They are emitted once for each implementation of `vg_chacha20_xor`
 //! (`crate::chacha20::Backend`), each calling it and the implementation of
@@ -14,6 +16,8 @@
 //! `vg_chacha20_poly1305_open_avx512` (with `vg_chacha20_xor_avx512` and
 //! `vg_poly1305_blocks_avx512`), and other CPUs with AVX2
 //! `vg_chacha20_poly1305_seal_avx2` and `vg_chacha20_poly1305_open_avx2`.
+//! On x86, CPUs with SSSE3 run `vg_chacha20_poly1305_seal_ssse3` and
+//! `vg_chacha20_poly1305_open_ssse3` (with `vg_chacha20_xor_ssse3`).
 //! On AArch64, CPUs with AdvSIMD (the baseline) run
 //! `vg_chacha20_poly1305_seal_neon` and `vg_chacha20_poly1305_open_neon`,
 //! which absorb each whole 512 bytes into Poly1305 in the integer registers
@@ -42,6 +46,10 @@ use crate::arch::chacha20poly1305::{vg_chacha20_poly1305_open, vg_chacha20_poly1
 use crate::arch::chacha20poly1305::{
     vg_chacha20_poly1305_open_neon, vg_chacha20_poly1305_open_sve2, vg_chacha20_poly1305_seal_neon,
     vg_chacha20_poly1305_seal_sve2,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::chacha20poly1305::{
+    vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_ssse3,
 };
 use crate::chacha20::Backend;
 use crate::cpu::{Features, detected};
@@ -119,21 +127,6 @@ impl ChaCha20Poly1305 {
         }
     }
 
-    /// The context of the assembly functions: the key, the nonce and the tag
-    /// (`VG.Spec.ChaCha20Poly1305.sealContract`), then working space.
-    fn ctx(&self, nonce: &[u8; 12], tag: &[u8; 16]) -> [u64; 128] {
-        let mut ctx = [0u64; 128];
-        let words = |b: &[u8]| -> [u64; 2] {
-            core::array::from_fn(|i| u64::from_le_bytes(b[8 * i..8 * i + 8].try_into().unwrap()))
-        };
-        ctx[..2].copy_from_slice(&words(&self.key[..16]));
-        ctx[2..4].copy_from_slice(&words(&self.key[16..]));
-        ctx[4] = u64::from_le_bytes(nonce[..8].try_into().unwrap());
-        ctx[5] = u64::from(u32::from_le_bytes(nonce[8..].try_into().unwrap()));
-        ctx[6..8].copy_from_slice(&words(tag));
-        ctx
-    }
-
     /// Encrypts `data` in place, with the nonce `nonce` and the additional
     /// data `aad`, and returns the tag.
     pub fn encrypt_in_place(
@@ -144,7 +137,6 @@ impl ChaCha20Poly1305 {
     ) -> Result<[u8; 16], Error> {
         // Check the length before encrypting anything.
         check_len(data.len())?;
-        let mut ctx = self.ctx(nonce, &[0; 16]);
         let seal = match self.backend {
             Backend::Scalar => vg_chacha20_poly1305_seal,
             #[cfg(target_arch = "aarch64")]
@@ -155,27 +147,31 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_seal_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_seal_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_poly1305_seal_ssse3,
         };
-        // SAFETY: `ctx` is valid for reads and writes of 1024 bytes, `aad`
-        // for reads of `aad.len()` bytes and `data` for reads and writes of
-        // `data.len()` bytes; they are distinct objects (`aad` is a shared
-        // borrow and `data` a unique one), so they do not overlap each other
-        // or anything on the stack (the return address, any arguments, and
-        // the stack below the stack pointer the calls use), and do not wrap
-        // around the end of the address space. The CPU has the features of
-        // the implementation selected (see `features` in the tests).
+        let mut tag = [0; 16];
+        // SAFETY: `self.key` is valid for reads of 32 bytes, `nonce` for
+        // reads of 12, `aad` for reads of `aad.len()` bytes, `data` for reads
+        // and writes of `data.len()` bytes and `tag` for writes of 16 bytes;
+        // `data` and `tag` are unique borrows (and `tag` a local), so they
+        // overlap neither each other nor the shared borrows `self.key`,
+        // `nonce` and `aad`, nor anything on the stack (the return address,
+        // any arguments, and the stack below the stack pointer that the
+        // function's frame and calls use), and no Rust object wraps around
+        // the end of the address space. The CPU has the features of the
+        // implementation selected (see `features` in the tests).
         unsafe {
             seal(
-                &mut ctx,
+                &self.key,
+                nonce,
                 aad.as_ptr(),
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
+                &mut tag,
             )
         };
-        let mut tag = [0; 16];
-        tag[..8].copy_from_slice(&ctx[6].to_le_bytes());
-        tag[8..].copy_from_slice(&ctx[7].to_le_bytes());
         Ok(tag)
     }
 
@@ -190,7 +186,6 @@ impl ChaCha20Poly1305 {
         tag: &[u8; 16],
     ) -> Result<(), Error> {
         check_len(data.len())?;
-        let mut ctx = self.ctx(nonce, tag);
         let open = match self.backend {
             Backend::Scalar => vg_chacha20_poly1305_open,
             #[cfg(target_arch = "aarch64")]
@@ -201,15 +196,22 @@ impl ChaCha20Poly1305 {
             Backend::Avx2 => vg_chacha20_poly1305_open_avx2,
             #[cfg(target_arch = "x86_64")]
             Backend::Avx512 => vg_chacha20_poly1305_open_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
-        // SAFETY: as in `encrypt_in_place`.
+        // SAFETY: as in `encrypt_in_place`, with `tag` valid for reads of 16
+        // bytes: `data` is the only buffer written, a unique borrow, which
+        // overlaps none of the shared borrows `self.key`, `nonce`, `aad` and
+        // `tag`.
         let ok = unsafe {
             open(
-                &mut ctx,
+                &self.key,
+                nonce,
                 aad.as_ptr(),
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
+                tag,
             )
         };
         if ok == 1 {
@@ -360,6 +362,27 @@ mod tests {
         // calls its AVX2 implementation.
         assert_eq!(select(VG_CHACHA20_XOR_AVX512_FEATURES), Backend::Scalar);
         assert_eq!(select(Features::of(&["avx"])), Backend::Scalar);
+    }
+
+    /// On x86, the SSSE3 instances need the features of
+    /// `vg_chacha20_xor_ssse3` (and of `vg_chacha20_apply_ssse3`, which
+    /// `select` checks), and `select` chooses them with SSSE3.
+    #[cfg(target_arch = "x86")]
+    #[test]
+    fn features() {
+        use crate::arch::chacha20::{
+            VG_CHACHA20_APPLY_SSSE3_FEATURES, VG_CHACHA20_XOR_SSSE3_FEATURES,
+        };
+        use crate::arch::chacha20poly1305::{
+            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
+        };
+        use crate::cpu::Features;
+        let ssse3 = VG_CHACHA20_XOR_SSSE3_FEATURES;
+        assert_eq!(VG_CHACHA20_APPLY_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
+        assert_eq!(select(ssse3), Backend::Ssse3);
+        assert_eq!(select(Features::of(&[])), Backend::Scalar);
     }
 
     /// On AArch64, the SVE2 instances need the features of

@@ -141,21 +141,22 @@ def streamDecryptX86 : Contract isa where
         bytesAt s'.mem ((arg s 7).setWidth 64) (arg s 8).toNat = (gctr ciph (inc32 (j0 h iv)) c').drop c.length
   pub := pubN 10
 
-/-- `vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, work)`. -/
+/-- `vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag, work)`. -/
 def finPre (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 2).setWidth 64, 80⟩
-  let scr : Region := ⟨(arg s 7).setWidth 64, 2560⟩
-  let args : Region := ⟨argAddr s 0, 32⟩
+  let tag : Region := ⟨(arg s 7).setWidth 64, 16⟩
+  let scr : Region := ⟨(arg s 8).setWidth 64, 2560⟩
+  let args : Region := ⟨argAddr s 0, 36⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
-  s.rd = [ctx] ∧ s.wr = [st, scr, args] ∧
-  ctx.Disjoint st ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ st.Disjoint scr ∧ st.Disjoint args ∧
-  scr.Disjoint args ∧
-  ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
-  stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
-  (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧
-  (arg s 7).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 36 ≤ 2 ^ 32 ∧ roundsOk s 1
+  s.rd = [ctx] ∧ s.wr = [st, tag, scr, args] ∧
+  ctx.Disjoint st ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ st.Disjoint tag ∧
+  st.Disjoint scr ∧ st.Disjoint args ∧ tag.Disjoint scr ∧ tag.Disjoint args ∧ scr.Disjoint args ∧
+  ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
+  stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
+  (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + 16 ≤ 2 ^ 32 ∧
+  (arg s 8).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def streamFinishX86 : Contract isa where
   pre := finPre
@@ -165,23 +166,24 @@ def streamFinishX86 : Contract isa where
     ∀ iv a c, StreamRepr s.mem ((arg s 2).setWidth 64) ciph h iv a c →
       arg s 4 ++ arg s 3 = BitVec.ofNat 64 a.length → (arg s 6 ++ arg s 5).toNat = c.length →
       bytesAt s'.mem ((arg s 7).setWidth 64) 16 = fullTag ciph h iv a c
-  pub := pubN 8
+  pub := pubN 9
 
-/-- `vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, work, tag_len)`. -/
+/-- `vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len, work)`. -/
 def verifyPre (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let st : Region := ⟨(arg s 2).setWidth 64, 80⟩
-  let scr : Region := ⟨(arg s 7).setWidth 64, 2560⟩
-  let args : Region := ⟨argAddr s 0, 36⟩
+  let tag : Region := ⟨(arg s 7).setWidth 64, (arg s 8).toNat⟩
+  let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
+  let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
-  s.rd = [ctx] ∧ s.wr = [st, scr, args] ∧
-  ctx.Disjoint st ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ st.Disjoint scr ∧ st.Disjoint args ∧
-  scr.Disjoint args ∧
-  ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
-  stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
-  (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧
-  (arg s 7).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 40 ≤ 2 ^ 32 ∧ roundsOk s 1
+  s.rd = [ctx, tag] ∧ s.wr = [st, scr, args] ∧
+  ctx.Disjoint st ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ tag.Disjoint st ∧ tag.Disjoint scr ∧
+  tag.Disjoint args ∧ st.Disjoint scr ∧ st.Disjoint args ∧ scr.Disjoint args ∧
+  ret.Disjoint ctx ∧ ret.Disjoint st ∧ ret.Disjoint tag ∧ ret.Disjoint scr ∧ ret.Disjoint args ∧
+  stack.Disjoint ctx ∧ stack.Disjoint st ∧ stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
+  (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 80 ≤ 2 ^ 32 ∧ (arg s 7).toNat + (arg s 8).toNat ≤ 2 ^ 32 ∧
+  (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def streamVerifyX86 : Contract isa where
   pre := verifyPre
@@ -192,42 +194,67 @@ def streamVerifyX86 : Contract isa where
       arg s 4 ++ arg s 3 = BitVec.ofNat 64 a.length → (arg s 6 ++ arg s 5).toNat = c.length →
       let t := fullTag ciph h iv a c
       if tagLenOk (arg s 8).toNat ∧ t.take (arg s 8).toNat = bytesAt s.mem ((arg s 7).setWidth 64) (arg s 8).toNat then
-        (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1 ∧ bytesAt s'.mem ((arg s 7).setWidth 64) 16 = t
-      else (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 0 ∧ bytesAt s'.mem ((arg s 7).setWidth 64) 16 = zeros 16
-  pub := pubN 9
+        (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1
+      else (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 0
+  pub := pubN 10
 
-/-- `vg_aes_gcm_seal` and `_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, work[, tag_len])`,
-with `nA` stack arguments. -/
-def onePre (nA : Nat) (s : State) : Prop :=
+/-- `vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, work)`. -/
+def sealPre (s : State) : Prop :=
   let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
   let nonce : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
   let aad : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩
   let data : Region := ⟨(arg s 6).setWidth 64, (arg s 7).toNat⟩
-  let scr : Region := ⟨(arg s 8).setWidth 64, 2560⟩
-  let args : Region := ⟨argAddr s 0, 4 * nA⟩
+  let tag : Region := ⟨(arg s 8).setWidth 64, 16⟩
+  let scr : Region := ⟨(arg s 9).setWidth 64, 2560⟩
+  let args : Region := ⟨argAddr s 0, 40⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
   let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
-  s.rd = [ctx, nonce, aad] ∧ s.wr = [data, scr, args] ∧
-  ctx.Disjoint data ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
-  nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint scr ∧ aad.Disjoint args ∧ data.Disjoint scr ∧
-  data.Disjoint args ∧ scr.Disjoint args ∧
-  ret.Disjoint ctx ∧ ret.Disjoint nonce ∧ ret.Disjoint aad ∧ ret.Disjoint data ∧ ret.Disjoint scr ∧
-  ret.Disjoint args ∧
+  s.rd = [ctx, nonce, aad] ∧ s.wr = [data, tag, scr, args] ∧
+  ctx.Disjoint data ∧ ctx.Disjoint tag ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ nonce.Disjoint data ∧
+  nonce.Disjoint tag ∧ nonce.Disjoint scr ∧ nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint tag ∧
+  aad.Disjoint scr ∧ aad.Disjoint args ∧ data.Disjoint tag ∧ data.Disjoint scr ∧ data.Disjoint args ∧
+  tag.Disjoint scr ∧ tag.Disjoint args ∧ scr.Disjoint args ∧
+  ret.Disjoint ctx ∧ ret.Disjoint nonce ∧ ret.Disjoint aad ∧ ret.Disjoint data ∧ ret.Disjoint tag ∧
+  ret.Disjoint scr ∧ ret.Disjoint args ∧
   stack.Disjoint ctx ∧ stack.Disjoint nonce ∧ stack.Disjoint aad ∧ stack.Disjoint data ∧
-  stack.Disjoint scr ∧ stack.Disjoint args ∧
+  stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
-  (arg s 8).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32 ∧
-  roundsOk s 1
+  (arg s 8).toNat + 16 ≤ 2 ^ 32 ∧ (arg s 9).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (s.gpr .esp).toNat + 44 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 def sealX86 : Contract isa where
-  pre := onePre 9
+  pre := sealPre
   post s s' :=
     encryptWith (ctxCiph s.mem ((arg s 0).setWidth 64) (arg s 1).toNat) (ctxH s.mem ((arg s 0).setWidth 64)) 16
         (bytesAt s.mem ((arg s 2).setWidth 64) (arg s 3).toNat) (bytesAt s.mem ((arg s 6).setWidth 64) (arg s 7).toNat)
         (bytesAt s.mem ((arg s 4).setWidth 64) (arg s 5).toNat) =
       (bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat, bytesAt s'.mem ((arg s 8).setWidth 64) 16)
-  pub := pubN 9
+  pub := pubN 10
+
+/-- `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
+def openPre (s : State) : Prop :=
+  let ctx : Region := ⟨(arg s 0).setWidth 64, 256⟩
+  let nonce : Region := ⟨(arg s 2).setWidth 64, (arg s 3).toNat⟩
+  let aad : Region := ⟨(arg s 4).setWidth 64, (arg s 5).toNat⟩
+  let data : Region := ⟨(arg s 6).setWidth 64, (arg s 7).toNat⟩
+  let tag : Region := ⟨(arg s 8).setWidth 64, (arg s 9).toNat⟩
+  let scr : Region := ⟨(arg s 10).setWidth 64, 2560⟩
+  let args : Region := ⟨argAddr s 0, 44⟩
+  let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 28, 28⟩
+  s.rd = [ctx, nonce, aad, tag] ∧ s.wr = [data, scr, args] ∧
+  ctx.Disjoint data ∧ ctx.Disjoint scr ∧ ctx.Disjoint args ∧ nonce.Disjoint data ∧ nonce.Disjoint scr ∧
+  nonce.Disjoint args ∧ aad.Disjoint data ∧ aad.Disjoint scr ∧ aad.Disjoint args ∧ data.Disjoint tag ∧
+  data.Disjoint scr ∧ data.Disjoint args ∧ tag.Disjoint scr ∧ tag.Disjoint args ∧ scr.Disjoint args ∧
+  ret.Disjoint ctx ∧ ret.Disjoint nonce ∧ ret.Disjoint aad ∧ ret.Disjoint data ∧ ret.Disjoint tag ∧
+  ret.Disjoint scr ∧ ret.Disjoint args ∧
+  stack.Disjoint ctx ∧ stack.Disjoint nonce ∧ stack.Disjoint aad ∧ stack.Disjoint data ∧
+  stack.Disjoint tag ∧ stack.Disjoint scr ∧ stack.Disjoint args ∧
+  (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
+  (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
+  (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + 2560 ≤ 2 ^ 32 ∧ 28 ≤ (s.gpr .esp).toNat ∧
+  (s.gpr .esp).toNat + 48 ≤ 2 ^ 32 ∧ roundsOk s 1
 
 /-- What `open` computes. -/
 abbrev openRes (s : State) : Option (List Byte) :=
@@ -237,13 +264,13 @@ abbrev openRes (s : State) : Option (List Byte) :=
     (bytesAt s.mem ((arg s 8).setWidth 64) (arg s 9).toNat)
 
 def openX86 : Contract isa where
-  pre := onePre 10
+  pre := openPre
   post s s' :=
     match openRes s with
     | some pt => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 1 ∧ bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = pt
     | none => (s'.gpr .edx ++ s'.gpr .eax).setWidth 32 = 0 ∧
       bytesAt s'.mem ((arg s 6).setWidth 64) (arg s 7).toNat = bytesAt s.mem ((arg s 6).setWidth 64) (arg s 7).toNat
-  pub s₁ s₂ := pubN 10 s₁ s₂ ∧ (openRes s₁).isSome = (openRes s₂).isSome
+  pub s₁ s₂ := pubN 11 s₁ s₂ ∧ (openRes s₁).isSome = (openRes s₂).isSome
 
 /-- The `u32` a function returns, from `edx:eax`: `eax`. -/
 theorem ret32_eq (a b : BitVec 32) : (a ++ b).setWidth 32 = b := by

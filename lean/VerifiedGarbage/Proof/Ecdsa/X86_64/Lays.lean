@@ -42,7 +42,7 @@ theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = 
   have hn := hc.n0
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn]; exact sl_le c hc.n7 (hl i hi).1
+    rw [hMn]; exact sl_le c hc.n10 (hl i hi).1
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
     rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
@@ -66,7 +66,7 @@ theorem rcbApart_of (hn : 0 < c.n) {S : RcbSlots} {p q o : Pt} {lw lr : List Nat
 
 theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   refine ⟨?_, rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, DX, DY, DZ])
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
@@ -92,15 +92,16 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
       exact Or.inr (sl_below_bits c (hl i hi) 0 0)
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
-theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP]) (minv : BitVec 64)
+theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
+    (minv : BitVec 64) {red : Red} {adx : Bool}
     {base one j : Nat} (hj : j < 3) (hb : base ∉ [ACC, PT, TMP]) (hb45 : base < 45) (ho : one ≠ ACC)
     (ho45 : one < 45) :
-    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
+    PowLay ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
       64 * c.n⟩ size := by
   have hn := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hw : ∀ i, i ∉ [ACC, PT, TMP] →
-      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
+      ∀ w ∈ powW ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, adx⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one,
         bitsAt c.n j, 64 * c.n⟩, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
     simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -111,7 +112,8 @@ theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP]) (minv 
     · exact sl_apart c hi.2.2
   refine ⟨sl_le c h7 (by decide), sl_le c h7 (by decide), sl_le c h7 hb45, sl_le c h7 ho45,
     bitsAt_le c h7 hj, ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩,
-    sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho), hw base hb, ?_,
+    sl_apart c (by decide), sl_apart c (by decide), sl_apart c (by decide), sl_apart c (Ne.symm ho),
+    hw base hb, ?_,
     hw jm hjm⟩
   intro w hw'
   simp only [powW, List.mem_cons, List.not_mem_nil, or_false] at hw'

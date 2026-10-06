@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
+import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
 import VerifiedGarbage.Proof.Ecdsa.Sign
 
 /-!
@@ -22,95 +22,66 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 variable {c : Cfg}
 
-/-- After `[k]G` and `Z^(p-2)`. -/
-structure St₂ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
+/-- After `[k]G` and `Z^(p-2)`, with the slot `hs` shifted by the setup. -/
+structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : State) : Prop
+    extends Keep c s₀ base s where
   k : sv c base s K = kv c s₀
-  d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  d : sv c base s D = dv c s₀ >>> shAt c hs D
+  e : sv c base s E = ev c s₀ >>> shAt c hs E
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
-  t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
     (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
   acc_lt : sv c base s ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s RZ < c.C.p
 
-/-- `[k]G`, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c s₀ base s)
-    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (ladder c.ladderCfg) (.seq (pow c.powP) rest)) s Q := by
+/-- `[k]G` by the comb, then `Z^(p-2)`. -/
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
+    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have F := hS.fixed
   have hkl : kv c s₀ < 2 ^ (64 * c.n) := hS.k ▸ wordsVal_lt _ _ _ _
-  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hlt : ∀ x ∈ ladR c.ladderCfg, wordsVal s.mem base x c.MP'.n < c.C.p := by
-    intro x hx
-    have hx' : x ∈ [AP, B3P, GX, GY, ONEP, RX, RY, RZ].map c.sl := hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
-    show sv c base s i < c.C.p
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact lt_of_eq_of_lt F.ap (hmont _)
-    · exact lt_of_eq_of_lt F.b3p (hmont _)
-    · exact lt_of_eq_of_lt F.gx (hmont _)
-    · exact lt_of_eq_of_lt F.gy (hmont _)
-    · exact lt_of_eq_of_lt F.onep (Nat.mod_lt _ (by omega))
-    · exact lt_of_eq_of_lt hS.rx (by omega)
-    · exact lt_of_eq_of_lt hS.ry (hmont _)
-    · exact lt_of_eq_of_lt hS.rz (by omega)
-  have hG : Rep c.C (tmv c.C c.n base s (c.sl GX)) (tmv c.C c.n base s (c.sl GY))
-      (tmv c.C c.n base s (c.sl ONEP)) (G c.C) := by
-    show Rep c.C (toM _ _ (wordsVal s.mem base (c.sl GX) c.n)) (toM _ _ (wordsVal s.mem base (c.sl GY) c.n))
-      (toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n)) (G c.C)
-    rw [F.gx, F.gy, F.onep, toM_cmont hc, toM_cmont hc, toM_one hpR]
-    exact rep_affine' hC _ _
-  have hR : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
-      (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀ >>> (64 * c.n)) (G c.C)) := by
-    show Rep c.C (toM _ _ (sv c base s RX)) (toM _ _ (sv c base s RY)) (toM _ _ (sv c base s RZ)) _
-    rw [hS.rx, hS.ry, hS.rz, toM_cmont hc, toM_zero, shiftRight_eq_zero hkl, mul_zero_pt]
-    exact rep_infinity' hC
-  have hstep := step_rep (L := c.ladderCfg) (k := kv c s₀) hC hc.onG (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
-      rw [F.ap]; exact toM_cmont hc _)
-    (by
-      show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl B3P) c.n) = _
-      rw [F.b3p]; exact toM_cmont hc _) hG
-  refine WP.seq (WP.mono (ladder_ok (ladLay hc) (ladA c h0 h7) hpR hS.scr (modP_of hc F.mp) hlt hstep hR hS.t₀)
-    fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
-  rw [Nat.shiftRight_zero] at R₅
-  rw [ladW_eq] at U₅
-  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_powClob h7)
-  have F₅ := F.unch h7 hn (fixedOk_slW (by decide)) U₅
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powAP c h0 h7) hpR hs₅ M₅
-    (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
-    (fun t ht => by
-      show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slW (by decide) 1 t)]
-      exact hS.t₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWP_eq] at U₆
-  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
-      i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
+  obtain ⟨hTM, hout⟩ := tbl_of hTP hS.rd hS.unch
+  have hF : TCombFixed c.combCfg c.C base size s (kv c s₀) (s₀.syms c.tsym) c.combWords := by
+    refine ⟨?_, ?_, ?_, F.zero, fun t ht => hS.t₀ t ht, hkl, by rw [hS.syms]; rfl, hTM, hout⟩
+    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl AP) c.n) = _
+      rw [F.ap]; exact toM_cmont hc _
+    · show toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl BM) c.n) = _
+      rw [F.bm]; exact toM_cmont hc _
+    · intro x hx
+      simp only [combRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl
+      · show wordsVal s.mem base (c.sl AP) c.n < _; rw [F.ap]; exact mont_lt hc _
+      · show wordsVal s.mem base (c.sl BM) c.n < _; rw [F.bm]; exact mont_lt hc _
+      · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega
+  have W := tcomb_ok (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hS.scr
+    (modP_of hc F.mp) hF
+  refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
+  obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
+  have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n10)
+  have F₅ := F.unch h7 hn fixedOk_tcombW U₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
+    (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))))
+    fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+  have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] →
+      i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slW h₁)).trans (sv_unch U₅ h7 hn hi (apart_slW h₂))
-  have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slW h₁)
+    (sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)).trans (sv_unch_tcomb U₅ h7 hn hi h₂)
+  have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
+    sv_unch U₆ h7 hn hi (apart_chainWc hi h₁)
   refine ⟨⟨hs₅.of_keepRegs K₆ (x0_not_powClob h7), ?_, by rw [K₆.wr, K₅.wr, hS.wr],
-    F₅.unch h7 hn (fixedOk_slW (by decide)) U₆⟩,
+    F₅.unch h7 hn fixedOk_chainWc U₆⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), hS.flag], ?_, ?_, lt₆, ?_,
+    by rw [flag_unch_chain U₆ h7 h0 hn, flag_unch_tcomb U₅ h7 h0 hn, hS.flag], ?_, lt₆, ?_,
     ?_⟩
-  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_powClob h7), hS.x20]
-  · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
-      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
-    exact hS.t₂ t ht
+  · rw [K₆.gpr _ (x20_not_powClob h7), K₅.gpr _ (x20_not_tcombClob hc.n10), hS.x20]
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
       r₆ (i := RZ) (by decide) (by decide)]
@@ -124,7 +95,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
 structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
   d : sv c base s D = dv c s₀
-  e : sv c base s E = ev c s₀
+  e : sv c base s E = ev c s₀ >>> c.sh
   rep : Rep c.C (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY))
     (tmv c.C c.n base s (c.sl RZ)) (mul (kv c s₀) (G c.C))
   x_lt : sv c base s X < c.C.p
@@ -137,11 +108,11 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c s₀) ^ (c.C.n - 2)
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
-theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c s₀ base s)
+theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (pow c.powN) rest)) s Q := by
+    WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have F := hS.fixed
@@ -157,19 +128,13 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     sv_flag O₈ h0 h7 hn hi hf
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slW hl)
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) (powAN c h0 h7) hnR hs₈ (modN_of hc F₈.mn)
-    (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
-    (fun t ht => by
-      show s₈.mem (off base (bitsAt c.n 2 + t)) = _
-      rw [tbl_unch O₈.unch h7 (j := 2) (by decide) ht (tbl_apart_flag h0 2 t),
-        tbl_unch Mp.unch h7 (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
-      exact hS.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
-  rw [powWN_eq] at U₉
-  have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
-    sv_unch U₉ h7 hn hi (apart_slW hl)
+  refine WP.seq (WP.mono (nPow_ok hc hs₈ (modN_of hc F₈.mn)
+    (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt))
+    fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
+  have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
+    sv_unch U₉ h7 hn hi (apart_chainWc hi hl)
   -- The slots `middle` and the power do not write.
-  have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
+  have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
       sv c base s₉ i = sv c base s i := fun hi h₁ h₂ h₃ =>
     ((e₉ hi h₁).trans (e₈ hi h₂)).trans (e₇ hi h₃)
   have x₉ : sv c base s₉ X = sv c base s₇ X :=
@@ -182,16 +147,17 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
   refine ⟨⟨hs₈.of_keepRegs K₉ (x0_not_powClob h7), ?_, by rw [K₉.wr, k₈.wr, Mp.wr, hS.wr],
-    F₈.unch h7 hn (fixedOk_slW (by decide)) U₉⟩,
-    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d],
-    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e],
+    F₈.unch h7 hn fixedOk_chainWc U₉⟩,
+    by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d, shAt_E_D, Nat.shiftRight_zero],
+    by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e, shAt_self],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
     by rw [x₉]; exact Mp.x_lt,
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
   · rw [K₉.gpr _ (x20_not_powClob h7), k₈.gpr _ (by decide), Mp.gpr _ (x20_not_clob h7), hS.x20]
-  · rw [flag_unch U₉ h7 h0 hn (by decide), f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
-      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, hS.k, Mp.rr, x₉]
+  · rw [flag_unch_chain U₉ h7 h0 hn, f₈, flag_unch Mp.unch h7 h0 hn (by decide), hS.flag,
+      e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, shAt_E_D,
+      Nat.shiftRight_zero, hS.k, Mp.rr, x₉]
   · refine v₉.trans ?_
     show toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ KM) ^ _ = _
     rw [e₈ (i := KM) (by decide) (by decide), Mp.km, hS.k]
@@ -200,18 +166,18 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
 hash with `d` and `k`, big-endian, and `1`, or zeros and `0`. -/
 def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
   match Spec.Ecdsa.signWith c.C (dv c s₀)
-      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) (8 * c.n))) (kv c s₀) with
+      (Spec.Ecdsa.hashToInt c.C (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x2) c.C.len)) (kv c s₀) with
   | some rs => (s'.gpr .x0).setWidth 32 = 1 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (16 * c.n) = Spec.Ecdsa.encode c.C rs
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (2 * c.C.len) = Spec.Ecdsa.encode c.C rs
   | none => (s'.gpr .x0).setWidth 32 = 0 ∧
-      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (16 * c.n) = List.replicate (16 * c.n) 0
+      Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (2 * c.C.len) = List.replicate (2 * c.C.len) 0
 
 /-- `s`, its check, and the result. -/
 theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .x4)
     {s : State} (hS : St₃ c s₀ base s) :
     WP isa c.scalar s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have F := hS.fixed
@@ -244,16 +210,16 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     simp only [mask, decide_eq_true_eq]
   have hx20 : s₁₂.gpr .x20 = s₀.gpr .x0 := by
     rw [k₁₂.gpr _ (by decide), g₁₁ _ (x20_not_clob h7), g₁₀ _ (x20_not_clob h7), hS.x20]
-  have hw : (⟨s₀.gpr .x0, 16 * c.n⟩ : Region) ∈ s₁₂.wr := by
+  have hw : (⟨s₀.gpr .x0, 2 * c.C.len⟩ : Region) ∈ s₁₂.wr := by
     rw [k₁₂.wr, wr₁₁, wr₁₀, hS.wr, hp.wr]; simp
-  refine WP.mono (finish_ok hc hs₁₂ hx20 hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
+  refine WP.mono (finish_ok hc hs₁₂ hx20 hp.out_fit hw (hb ▸ hp.out_sc) F₁₂.saved _ hflag)
     fun s' ⟨bytes, ret, saved, _⟩ => ⟨saved, ?_⟩
   -- The specification.
-  have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀) (k := kv c s₀) hS.rep hS.x_lt hS.x
+  have hsig := signWith_eq hC (C := c.C) (d := dv c s₀) (e := ev c s₀ >>> c.sh) (k := kv c s₀) hS.rep hS.x_lt hS.x
     (s := wordsVal s₁₁.mem base (c.sl SS) c.n) ss_lt (by
       rw [ss, trm, tdm, tem, acc₁₀, hS.acc, hS.rr, hS.d, hS.e, Lean.Grind.AddCommMonoid.add_comm])
   unfold SignPost
-  rw [hashToInt_eq hc, hsig]
+  rw [hashToInt_eq c, hsig]
   rw [ss₁₂, rr₁₂, hS.rr] at bytes
   by_cases hP : 1 ≤ dv c s₀ ∧ dv c s₀ < c.C.n ∧ 1 ≤ kv c s₀ ∧ kv c s₀ < c.C.n ∧
       sv c base s X % c.C.n ≠ 0 ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0
@@ -262,7 +228,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
       simp only [decide_eq_true_eq]; omega
     rw [ite_eq_left_of_eq_true _ _ (eq_true hP)]
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
-    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode, hc.len]
+    rw [bytes, hd, ite_eq_left_of_eq_true _ _ (eq_true rfl), Spec.Ecdsa.encode]
   · have hd : decide ((((0 < dv c s₀ ∧ dv c s₀ < c.C.n) ∧ (0 < kv c s₀ ∧ kv c s₀ < c.C.n)) ∧
         sv c base s X % c.C.n ≠ 0) ∧ wordsVal s₁₁.mem base (c.sl SS) c.n ≠ 0) = false := by
       simp only [decide_eq_false_iff_not]; omega
@@ -270,16 +236,17 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     refine ⟨by rw [ret, hd]; rfl, ?_⟩
     rw [bytes, hd]; rfl
 
-theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
-    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (ladder c.ladderCfg) (.seq (pow c.powP) (.seq c.middle (.seq (pow c.powN) c.scalar))))))) := rfl
+theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
+  rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/
-theorem sign_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) :
+theorem sign_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} (hp : Pre c s₀) :
     WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   rw [sign_eq]
-  exact stage₁ hc (hp.setup hc.n7) fun _ S₁ => stage₂ hc hC S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+  exact stage₁ hc (.inr (.inr rfl)) (hp.setup hc) fun _ S₁ => stage₂ hc hC hT hp.tbl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 
 end VG.Proof.Ecdsa.AArch64

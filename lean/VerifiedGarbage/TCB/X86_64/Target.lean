@@ -98,6 +98,7 @@ def abi : Abi isa where
     some ("the arguments on the stack", false)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")
+  sym := some fun s name => s.syms name
 
 abbrev target : Target where
   name := "x86_64"

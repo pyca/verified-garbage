@@ -510,9 +510,9 @@ theorem expandKey_ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem expandKey_verified :
-    Verified AArch64.target expandKey (Spec.Aes.expandKeyContract AArch64.abi) :=
+    Verified AArch64.target expandKey (Spec.Aes.expandKeyScratchContract AArch64.abi) :=
   Verified.of_correct expandKey_correct expandKey_ct (by
-    sig_implies [Spec.Aes.expandKeyContract, Spec.Aes.expandKeySig, Proof.Aes.expandKeyAArch64,
+    sig_implies [Spec.Aes.expandKeyScratchContract, Spec.Aes.expandKeyScratchSig, Proof.Aes.expandKeyAArch64,
       AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.ekSatState] using
       Proof.Aes.AArch64.ekSatState)
 

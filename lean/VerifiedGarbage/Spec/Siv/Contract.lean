@@ -25,19 +25,22 @@ absorbs one component at a time (§2.4):
   `SIV-ENCRYPT` and `SIV-DECRYPT` (`encryptWith`, `decryptWith`) in one
   call: they take the vector of associated data as a list of slices
   (`Param.slices`, read by `components`), and run S2V over it themselves.
-  `encrypt` encrypts the plaintext in place, writing the synthetic IV `V`.
-  `decrypt` decrypts the ciphertext in place with the synthetic IV it is
-  given, finishes S2V with the plaintext and compares, and if they differ
-  overwrites the plaintext with zeros, so that it is never released.
+  `encrypt` encrypts the plaintext in place, writing the synthetic IV `V`
+  to `siv`. `decrypt` decrypts the ciphertext in place with the synthetic IV
+  it is given at `siv`, finishes S2V with the plaintext and compares, and if
+  they differ overwrites the plaintext with zeros, so that it is never
+  released.
   Whether `V` is right is public: `decrypt` may leak it (it is the result),
   and nothing else secret.
 
 The functions check no length; the RFC limits the associated data to 126
-components (§7), which the caller counts. The synthetic IV travels in the
-first 16 bytes of `work`, which is also working space, so that fewer
-arguments are passed in memory. `encrypt`'s and `decrypt`'s working space
-(`work`) has room for `vg_aes_ctr32`'s (2048 bytes) and 528 bytes more, for
-S2V's state; `init` keeps its working space on the stack.
+components (§7), which the caller counts. `encrypt` writes the synthetic IV
+to the 16 bytes at `siv`, and `decrypt` reads the received one from the 16
+bytes at `siv`. The functions keep their working space on the stack. The
+postconditions (and `decrypt`'s leak) are stated for `rounds` of 10, 12 or
+14, which the preconditions require, so that they read only the buffers
+(the round keys and subkeys in the key context for those rounds) and the
+components of associated data.
 
 Every contract takes the number of bytes of stack below the stack pointer
 that an implementation's calls and frames use (`stack`, see `Sig.contract`),
@@ -94,31 +97,36 @@ each slice `Sig.listed` gives, in order. -/
 def components (ptrBits : Nat) (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (Sig.listed ptrBits m .u8 p n).map fun r => Aes.bytesAt m r.base r.len
 
-/-- `vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, work: *mut [u64; 322])`,
-and `vg_aes_siv_decrypt` with the same parameters, returning a `u32`.
-`rounds` is public; `ads` lists the components of associated data; `work`
-is working space but for the synthetic IV, with room for that of
-`seal` and `open` and S2V's state besides. -/
+/-- `vg_aes_siv_encrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *mut [u8; 16])`.
+`rounds` is public; `ads` lists the components of associated data, and `siv`
+receives the synthetic IV. -/
 def encryptSig : Sig where
   params := [("ctx", .array false .u64 64), ("rounds", .int .usize true),
     ("ads", .slices .u8 "ads_count"), ("data", .slice true .u8 "len"),
-    ("work", .array true .u64 322)]
+    ("siv", .array true .u8 16)]
 
-/-- `vg_aes_siv_decrypt`'s signature: `vg_aes_siv_encrypt`'s, returning a `u32`. -/
-def decryptSig : Sig := { encryptSig with ret := some .u32 }
+/-- `vg_aes_siv_encrypt`'s precondition: `rounds` is 10, 12 or 14. -/
+def encryptPre (pb : Nat) : Curry (encryptSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _ads _adsCount _data _len _siv _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
+components of associated data `ads` lists (`components`): the `len` bytes of
+plaintext at `data` are encrypted (`encryptWith`), and the synthetic IV `V`
+is the 16 bytes at `siv`. -/
+def encryptPost (pb : Nat) : encryptSig.Post pb :=
+  fun ctx rounds ads adsCount data len siv m m' _ =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    encryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
+        (components pb m ads adsCount.toNat) (Aes.bytesAt m data len.toNat) =
+      (Aes.bytesAt m' siv 16, Aes.bytesAt m' data len.toNat)
 
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx` and the
 components of associated data `ads` lists (`components`): encrypts the `len`
 bytes of plaintext at `data` in place (`encryptWith`) and writes the
-synthetic IV `V` to the first 16 bytes of `work`. -/
+synthetic IV `V` to `siv`. -/
 def encryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptSig.contract A
-    (pre := fun _ctx rounds _ads _adsCount _data _len _work _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds ads adsCount data len work m m' _ =>
-      encryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
-          (components A.ptrBits m ads adsCount.toNat) (Aes.bytesAt m data len.toNat) =
-        (Aes.bytesAt m' work 16, Aes.bytesAt m' data len.toNat))
+  encryptSig.contract A (pre := encryptPre A.ptrBits) (post := encryptPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
 
@@ -133,38 +141,63 @@ def encryptApi : Api where
     that `vg_aes_siv_init` wrote for `rounds` rounds, computes the synthetic IV \
     `V = S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that \
     `ads` lists (each an address and a length, in bytes; for nonce-based encryption, §3, the \
-    nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to the first \
-    16 bytes of `*work`, and encrypts the plaintext in place with AES-CTR under `K2` from `V` \
-    with bits 31 and 63 cleared. The RFC's output is `V` followed by the encrypted data. The \
-    rest of `*work` is working space, unspecified on return.\n\n\
+    nonce is the last) and the `len` bytes of plaintext `P` at `data`, writes it to `*siv`, \
+    and encrypts the plaintext in place with AES-CTR under `K2` from `V` with bits 31 and 63 \
+    cleared. The RFC's output is `V` followed by the encrypted data.\n\n\
     Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, \
     `ads_count`, `len` and where the components are (their addresses and lengths) may affect \
     timing, not the key context, the associated data or the plaintext."
   safety := ["`rounds` must be 10, 12 or 14."]
 
+/-- `vg_aes_siv_decrypt(ctx: *const [u64; 64], rounds: usize, ads: *const [usize; 2], ads_count: usize, data: *mut u8, len: usize, siv: *const [u8; 16]) -> u32`.
+`rounds` is public; `ads` lists the components of associated data, and `siv`
+is the received synthetic IV. -/
+def decryptSig : Sig where
+  params := [("ctx", .array false .u64 64), ("rounds", .int .usize true),
+    ("ads", .slices .u8 "ads_count"), ("data", .slice true .u8 "len"),
+    ("siv", .array false .u8 16)]
+  ret := some .u32
+
+/-- `vg_aes_siv_decrypt`'s precondition: `rounds` is 10, 12 or 14. -/
+def decryptPre (pb : Nat) : Curry (decryptSig.words pb) (Mem → Prop) :=
+  fun _ctx rounds _ads _adsCount _data _len _siv _ =>
+    rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14
+
 /-- For `rounds` of 10, 12 or 14, with the key context at `ctx`, the
 components of associated data `ads` lists and the received synthetic IV `V`
-in the first 16 bytes of `work`: if `V` is right for the plaintext of the
-`len` bytes of ciphertext at `data` (`decryptWith`), returns 1 and leaves the
-plaintext at `data`; otherwise returns 0 and leaves zeros at `data`. May leak
-which (`decryptWith`'s outcome). -/
+the 16 bytes at `siv`: if `V` is right for the plaintext of the `len` bytes
+of ciphertext at `data` (`decryptWith`), the result is 1 and the plaintext is
+at `data`; otherwise the result is 0 and zeros are at `data`. -/
+def decryptPost (pb : Nat) : decryptSig.Post pb :=
+  fun ctx rounds ads adsCount data len siv m m' r =>
+    (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) →
+    match decryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
+        (components pb m ads adsCount.toNat) (Aes.bytesAt m siv 16)
+        (Aes.bytesAt m data len.toNat) with
+    | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
+    | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = zeros len.toNat
+
+/-- What `vg_aes_siv_decrypt` may leak, for `rounds` of 10, 12 or 14: whether
+it returns 1 (`decryptWith`'s outcome). -/
+def decryptLeak (pb : Nat) : Curry (decryptSig.words pb) (Mem → List Nat) :=
+  fun ctx rounds ads adsCount data len siv m =>
+    if ¬(rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) then [] else
+    [if (decryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
+        (components pb m ads adsCount.toNat) (Aes.bytesAt m siv 16)
+        (Aes.bytesAt m data len.toNat)).isSome
+      then 1 else 0]
+
+/-- For `rounds` of 10, 12 or 14, with the key context at `ctx`, the
+components of associated data `ads` lists and the received synthetic IV `V`
+the 16 bytes at `siv`: if `V` is right for the plaintext of the `len` bytes
+of ciphertext at `data` (`decryptWith`), returns 1 and leaves the plaintext
+at `data`; otherwise returns 0 and leaves zeros at `data`. May leak which
+(`decryptWith`'s outcome). -/
 def decryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  decryptSig.contract A
-    (pre := fun _ctx rounds _ads _adsCount _data _len _work _ =>
-      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
-    (post := fun ctx rounds ads adsCount data len work m m' r =>
-      match decryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
-          (components A.ptrBits m ads adsCount.toNat) (Aes.bytesAt m work 16)
-          (Aes.bytesAt m data len.toNat) with
-      | some pt => r = 1 ∧ Aes.bytesAt m' data len.toNat = pt
-      | none => r = 0 ∧ Aes.bytesAt m' data len.toNat = zeros len.toNat)
+  decryptSig.contract A (pre := decryptPre A.ptrBits) (post := decryptPost A.ptrBits)
     (writeArgs := true)
     (stack := stack)
-    (leak := some fun ctx rounds ads adsCount data len work m =>
-      [if (decryptWith (ctxMac m ctx rounds.toNat) (ctxCiph m ctx rounds.toNat)
-          (components A.ptrBits m ads adsCount.toNat) (Aes.bytesAt m work 16)
-          (Aes.bytesAt m data len.toNat)).isSome
-        then 1 else 0])
+    (leak := some (decryptLeak A.ptrBits))
 
 /-- `vg_aes_siv_decrypt` on every target. -/
 def decryptApi : Api where
@@ -174,14 +207,13 @@ def decryptApi : Api where
   writeArgs := true
   contracts := some fun A stack => decryptContract A stack
   summary := "AES-SIV decryption, `SIV-DECRYPT` (RFC 5297 §2.7): with the key context `*ctx` \
-    that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` in the \
-    first 16 bytes of `*work`, decrypts the `len` bytes of ciphertext at `data` in place with \
+    that `vg_aes_siv_init` wrote for `rounds` rounds and the received synthetic IV `V` at `siv`, \
+    decrypts the `len` bytes of ciphertext at `data` in place with \
     AES-CTR under `K2` from `V` with bits 31 and 63 cleared, computes \
     `S2V(K1, AD1, …, ADn, P)` of the `ads_count` components of associated data that `ads` \
     lists (each an address and a length, in bytes) and the plaintext `P`, and returns 1 if it \
-    is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The rest \
-    of `*work` is working space, unspecified on return. The IVs are compared without a \
-    branch.\n\n\
+    is `V`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The IVs \
+    are compared without a branch.\n\n\
     Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the \
     pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and \
     lengths) and whether the function returns 1 or 0 may affect timing, not the key context, \

@@ -97,49 +97,47 @@ def Below (o : Nat) : Prop := o + 32 ≤ T
 
 instance : DecidablePred Below := fun o => inferInstanceAs (Decidable (o + 32 ≤ T))
 
-theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o a b : Nat} (ho : Below o) (ha : Below a)
-    (hb : Below b) :
-    WP isa (.block (mul o a b)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
-      fe s'.mem x o % P = fe s.mem x a * fe s.mem x b % P := by
-  simp only [Below, T] at ho ha hb
+/-- Squaring by columns: the products of distinct words doubled, and the squares. -/
+theorem sqr_identity (fa : Nat → Nat) :
+    num (fun k => ((((List.range 8).filter fun i => 2 * i < k && k - i < 8).map fun i =>
+      2 * (fa i * fa (k - i))) ++ if k % 2 == 0 && k < 16 then [fa (k / 2) * fa (k / 2)] else []).sum) 16 =
+      num fa 8 * num fa 8 := by
+  simp only [num_eq_numB]
+  generalize 2 ^ 32 = B
+  simp only [numB, List.range_succ, List.range_zero, List.nil_append, List.cons_append,
+    List.filter_cons, List.filter_nil]
+  simp (config := {decide := true}) only [ite_true, ite_false, List.map_cons, List.map_nil,
+    List.sum_cons, List.sum_nil, List.nil_append, List.cons_append]
+  grind
+
+/-- 16 columns summed into `T`, then reduced to `[o]`: the value of the columns modulo `p`, when
+they read only below `T` and each is below `2⁶⁸`. -/
+theorem mulCols_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o : Nat} (ho : Below o)
+    (ts : Nat → List Term) (hr : ∀ k < 16, ∀ t ∈ ts k, ∀ d ∈ treads t, d + 4 ≤ T)
+    (hb : ∀ k < 16, colv s.mem x (ts k) < 2 ^ 68) {V : Nat} (hV : V < 2 ^ 256 * 2 ^ 256)
+    (hv : num (fun k => colv s.mem x (ts k)) 16 = V) :
+    WP isa (.block (mulCols o ts)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
+      fe s'.mem x o % P = V % P := by
+  simp only [Below, T] at ho
   have hfit := hc.fit4
   refine WP.block_append (WP.block_append (WP.mono zeroAcc_ok fun s₁ ⟨k₁, m₁, a₁⟩ => ?_))
   have c₁ := k₁.ctx hc
-  have hcol : ∀ k, colv s₁.mem x (prodTerms a b k) = (((List.range 8).filter fun i => i ≤ k && k - i < 8).map
-      fun i => wv s.mem x (a + 4 * i) * wv s.mem x (b + 4 * (k - i))).sum := fun k => by
-    simp only [colv, prodTerms, List.map_map, m₁]; rfl
-  refine WP.mono (cols_ok c₁ (prodTerms a b) 16 (by simp only [T]; decide) (fun k hk t ht d hd => ?_)
+  refine WP.mono (cols_ok c₁ ts 16 (by simp only [T]; decide) (fun k hk t ht d hd => ?_)
     (fun k hk => ?_) (by rw [a₁]; decide)) fun s₂ ⟨k₂, f₂, e₂, _⟩ => ?_
-  · simp only [prodTerms, List.mem_map, List.mem_filter, List.mem_range, Bool.and_eq_true,
-      decide_eq_true_eq] at ht
-    obtain ⟨i, ⟨hi, -, hki⟩, rfl⟩ := ht
-    simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
-    simp only [T]
-    rcases hd with rfl | rfl <;> exact ⟨by omega_using [ha, hb, hi, hki], .inl (by omega_using [ha, hb, hi, hki])⟩
-  · have hl : (prodTerms a b k).length ≤ 8 := by
-      simp only [prodTerms, List.length_map]
-      exact Nat.le_trans (List.length_filter_le _ _) (by simp)
-    have h1 := colv_le_len (m := s₁.mem) (x := x) (B := 2 ^ 64) (ts := prodTerms a b k) fun t ht => by
-      simp only [prodTerms, List.mem_map] at ht
-      obtain ⟨i, -, rfl⟩ := ht
-      exact wv_mul_le _ _ _ _
-    have h2 := Nat.mul_le_mul_right (2 ^ 64) hl
-    omega_using [h1, h2]
+  · have := hr k hk t ht d hd
+    simp only [T] at this ⊢
+    exact ⟨by omega_using [this], .inl this⟩
+  · rw [m₁]; exact hb k hk
   · -- The product, in `T`.
-    rw [a₁, Nat.zero_add] at e₂
-    simp only [hcol] at e₂
-    rw [prod_identity (fun i => wv s.mem x (a + 4 * i)) (fun j => wv s.mem x (b + 4 * j))] at e₂
-    change _ = fe s.mem x a * fe s.mem x b at e₂
-    have hA := fe_lt s.mem x a; have hB := fe_lt s.mem x b
-    have hAB : fe s.mem x a * fe s.mem x b < 2 ^ 256 * 2 ^ 256 := Nat.mul_lt_mul_of_lt_of_lt hA hB
-    have e₃ : num (fun k => wv s₂.mem x (T + 4 * k)) 16 = fe s.mem x a * fe s.mem x b := by
+    rw [a₁, Nat.zero_add, m₁, hv] at e₂
+    have e₃ : num (fun k => wv s₂.mem x (T + 4 * k)) 16 = V := by
       have hQ : ((2 : Nat) ^ 32) ^ 16 = 2 ^ 256 * 2 ^ 256 := by decide
       rw [hQ] at e₂
       have : acc s₂ = 0 := by
         rcases Nat.eq_zero_or_pos (acc s₂) with h | h
         · exact h
         · have := Nat.mul_le_mul_left (2 ^ 256 * 2 ^ 256) h
-          omega_using [this, e₂, hAB]
+          omega_using [this, e₂, hV]
       rw [this, Nat.mul_zero, Nat.add_zero] at e₂
       exact e₂
     rw [num_16] at e₃
@@ -170,6 +168,80 @@ theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o a b : Nat} (ho : 
       exact (f₂.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]).trans
         (f₃.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])
     · rw [e₄, hs, ← fold256, ← e₃]
+
+theorem mul_ok {x : BitVec 32} {s : State} (hc : Ctx W x s) {o a b : Nat} (ho : Below o) (ha : Below a)
+    (hb : Below b) :
+    WP isa (.block (mul o a b)) s fun s' => Keep s s' ∧ Frame [sub x o 32, sub x T 64] s.mem s'.mem ∧
+      fe s'.mem x o % P = fe s.mem x a * fe s.mem x b % P := by
+  simp only [Below, T] at ha hb
+  have hA := fe_lt s.mem x a; have hB := fe_lt s.mem x b
+  have hAB : fe s.mem x a * fe s.mem x b < 2 ^ 256 * 2 ^ 256 := Nat.mul_lt_mul_of_lt_of_lt hA hB
+  unfold mul
+  split
+  · subst b
+    refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
+    · simp only [sqrTerms, List.mem_append, List.mem_map, List.mem_filter, List.mem_range,
+        Bool.and_eq_true, decide_eq_true_eq] at ht
+      rcases ht with ⟨i, ⟨hi, -, hki⟩, rfl⟩ | ht
+      · simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+        simp only [T]
+        rcases hd with rfl | rfl <;> omega_using [ha, hi, hki]
+      · split at ht
+        · rename_i hk2
+          simp only [beq_iff_eq] at hk2
+          simp only [List.mem_singleton] at ht
+          subst ht
+          simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+          simp only [T]
+          rcases hd with rfl | rfl <;> omega_using [ha, hk2]
+        · exact absurd ht List.not_mem_nil
+    · have hl : (sqrTerms a k).length ≤ 5 := by
+        simp only [sqrTerms, List.length_append, List.length_map]
+        have := (by decide : ∀ k < 16, ((List.range 8).filter fun i => 2 * i < k && k - i < 8).length ≤ 4) k hk
+        split <;> simp only [List.length_cons, List.length_nil] <;> omega_using [this]
+      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 65) (ts := sqrTerms a k) fun t ht => by
+        simp only [sqrTerms, List.mem_append, List.mem_map] at ht
+        rcases ht with ⟨i, -, rfl⟩ | ht
+        · have := wv_mul_le s.mem x (a + 4 * i) (a + 4 * (k - i))
+          simp only [tval]; omega_using [this]
+        · split at ht
+          · simp only [List.mem_singleton] at ht
+            subst ht
+            have := wv_mul_le s.mem x (a + 4 * (k / 2)) (a + 4 * (k / 2))
+            simp only [tval]; omega_using [this]
+          · exact absurd ht List.not_mem_nil
+      have h2 := Nat.mul_le_mul_right (2 ^ 65) hl
+      omega_using [h1, h2]
+    · have hcol : ∀ k, colv s.mem x (sqrTerms a k) = ((((List.range 8).filter fun i => 2 * i < k && k - i < 8).map
+          fun i => 2 * (wv s.mem x (a + 4 * i) * wv s.mem x (a + 4 * (k - i)))) ++
+          if k % 2 == 0 && k < 16 then [wv s.mem x (a + 4 * (k / 2)) * wv s.mem x (a + 4 * (k / 2))]
+          else []).sum := fun k => by
+        unfold colv sqrTerms
+        rw [List.map_append, List.map_map]
+        split <;> rfl
+      simp only [hcol]
+      exact sqr_identity (fun i => wv s.mem x (a + 4 * i))
+  · refine mulCols_ok hc ho _ (fun k hk t ht d hd => ?_) (fun k hk => ?_) hAB ?_
+    · simp only [prodTerms, List.mem_map, List.mem_filter, List.mem_range, Bool.and_eq_true,
+        decide_eq_true_eq] at ht
+      obtain ⟨i, ⟨hi, -, hki⟩, rfl⟩ := ht
+      simp only [treads, List.mem_cons, List.not_mem_nil, or_false] at hd
+      simp only [T]
+      rcases hd with rfl | rfl <;> omega_using [ha, hb, hi, hki]
+    · have hl : (prodTerms a b k).length ≤ 8 := by
+        simp only [prodTerms, List.length_map]
+        exact Nat.le_trans (List.length_filter_le _ _) (by simp)
+      have h1 := colv_le_len (m := s.mem) (x := x) (B := 2 ^ 64) (ts := prodTerms a b k) fun t ht => by
+        simp only [prodTerms, List.mem_map] at ht
+        obtain ⟨i, -, rfl⟩ := ht
+        exact wv_mul_le _ _ _ _
+      have h2 := Nat.mul_le_mul_right (2 ^ 64) hl
+      omega_using [h1, h2]
+    · have hcol : ∀ k, colv s.mem x (prodTerms a b k) = (((List.range 8).filter fun i => i ≤ k && k - i < 8).map
+          fun i => wv s.mem x (a + 4 * i) * wv s.mem x (b + 4 * (k - i))).sum := fun k => by
+        simp only [colv, prodTerms, List.map_map]; rfl
+      simp only [hcol]
+      exact prod_identity (fun i => wv s.mem x (a + 4 * i)) (fun j => wv s.mem x (b + 4 * j))
 
 /-- The reads of a column `k` of an output at `o` from `[a + 4k]`. -/
 theorem read_ok {o a k : Nat} (h : Apart o a) (ha : Below a) (hk : k < 8) :

@@ -12,6 +12,8 @@ are reduced (and the coefficients of `HighBits(w[i])` bounded): `maskR_trL`,
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -169,7 +171,7 @@ theorem rowW_trL {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {t i : Na
           ⟨_, hW.trans hP' (fun _ h => List.mem_append_left _ h) (fun _ h => List.mem_append_right _ h),
             ⟨σ, I'.step hP' c1⟩, by rw [hP'.pa (pS_bases _)]; exact hq.1⟩) x ⟨[], PostB.refl D x [], I, r⟩)
       fun x' ⟨W, hW, j⟩ => ⟨⟨W, hW⟩, j⟩
-  · exact RelCT.mono (ipAt_tr (t := nttInv) hP.invNtt ci) (fun _ _ h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
+  · exact RelCT.mono (ipAt_tr (t := inverse P.montgomery) hP.invNtt ci) (fun _ _ h => ⟨h.1, h.2.1.2, h.2.2.2⟩) fun _ _ h => h
 
 /-! ## `w₁` -/
 

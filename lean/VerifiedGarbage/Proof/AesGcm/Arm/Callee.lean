@@ -475,9 +475,9 @@ theorem gh_rel {P : State → State → Prop}
     h₂.r3, h₂.r12, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## `vg_aes_expand_key` -/
+/-! ## `vg_aes_expand_key_scratch` -/
 
-/-- What a call of `vg_aes_expand_key` needs: the `L`-byte key at `K`, the key
+/-- What a call of `vg_aes_expand_key_scratch` needs: the `L`-byte key at `K`, the key
 schedule at `C` and working space at `S`. -/
 structure KeyCall (s : State) (K C S : BitVec 32) (L : Nat) : Prop where
   r0 : s.gpr .r0 = K
@@ -494,7 +494,7 @@ structure KeyCall (s : State) (K C S : BitVec 32) (L : Nat) : Prop where
   reads : Covers [⟨State.addr K, L⟩] (s.rd ++ s.wr)
   writes : Covers [⟨State.addr C, 240⟩, ⟨State.addr S, 512⟩] s.wr
 
-/-- What a call of `vg_aes_expand_key` leaves. -/
+/-- What a call of `vg_aes_expand_key_scratch` leaves. -/
 structure KeyPost (s : State) (K C S : BitVec 32) (L : Nat) (s' : State) : Prop where
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
@@ -522,7 +522,7 @@ theorem pre : Proof.Aes.expandKeyArm.pre
 end KeyCall
 
 theorem key_call {s : State} {K C S : BitVec 32} {L : Nat} (h : KeyCall s K C S L) :
-    WP isa (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) s (KeyPost s K C S L) := by
+    WP isa (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) s (KeyPost s K C S L) := by
   refine WP.call (k := Proof.Aes.expandKeyArm) Proof.Aes.Arm.expandKey_correct
     (rd := [⟨State.addr K, L⟩]) (wr := [⟨State.addr C, 240⟩, ⟨State.addr S, 512⟩]) h.pre
     (covers_append' h.reads (fun x n' hi => by
@@ -536,7 +536,7 @@ theorem key_call {s : State} {K C S : BitVec 32} {L : Nat} (h : KeyCall s K C S 
 
 theorem key_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C S : BitVec 32, ∃ L : Nat, KeyCall s₁ K C S L ∧ KeyCall s₂ K C S L) :
-    RelCT isa P (.call "vg_aes_expand_key" Impl.Aes.Arm.expandKey) fun _ _ => True := by
+    RelCT isa P (.call "vg_aes_expand_key_scratch" Impl.Aes.Arm.expandKey) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨K, C, S, L, h₁, h₂⟩ := h _ _ hp
   have cov : ∀ {s : State}, KeyCall s K C S L →

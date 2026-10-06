@@ -50,6 +50,7 @@ structure Prims where
   expandMask4 : Prog isa
   /-- What the names of the polynomial arithmetic's functions end with (`Arith.Backend`). -/
   sfx : String := ""
+  montgomery : Bool := false
 
 /-! ## The layout of the working space (in bytes)
 
@@ -177,11 +178,11 @@ variable (P : Prims)
 
 def nttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_ntt" ++ P.sfx) P.ntt [.ptr f, .ptr (sc oPS)]
 
-def invNttAt (f : Ptr) : Prog isa := callP ("vg_mldsa_inv_ntt" ++ P.sfx) P.invNtt [.ptr f, .ptr (sc oPS)]
+def invNttAt (f : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_inv_ntt" else "vg_mldsa_inv_ntt") ++ P.sfx) P.invNtt [.ptr f, .ptr (sc oPS)]
 
-def mulAt (h f g : Ptr) : Prog isa := callP ("vg_mldsa_multiply_ntt" ++ P.sfx) P.mul [.ptr h, .ptr f, .ptr g]
+def mulAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_ntt" else "vg_mldsa_multiply_ntt") ++ P.sfx) P.mul [.ptr h, .ptr f, .ptr g]
 
-def mulAddAt (h f g : Ptr) : Prog isa := callP ("vg_mldsa_multiply_add_ntt" ++ P.sfx) P.mulAdd [.ptr h, .ptr f, .ptr g]
+def mulAddAt (h f g : Ptr) : Prog isa := callP ((if P.montgomery then "vg_mldsa_montgomery_multiply_add_ntt" else "vg_mldsa_multiply_add_ntt") ++ P.sfx) P.mulAdd [.ptr h, .ptr f, .ptr g]
 
 def addAt (f g : Ptr) : Prog isa := callP ("vg_mldsa_add" ++ P.sfx) P.add [.ptr f, .ptr g]
 

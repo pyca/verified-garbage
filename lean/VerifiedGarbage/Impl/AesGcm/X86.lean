@@ -6,16 +6,16 @@ import VerifiedGarbage.Impl.Gcm.X86
 # AES-GCM: x86 (32-bit) implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, cdecl (every argument on
-the stack), composed of calls of the verified `vg_aes_expand_key`,
+the stack), composed of calls of the verified `vg_aes_expand_key_scratch`,
 `vg_aes_ctr32` and `vg_ghash`, as on x86-64 (`Impl/AesGcm/X86_64.lean`),
 whose algorithm and pieces these follow.
 
 ## The working space
 
-Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
+Every function has a buffer `W` of 2560 bytes (`scratch` or `work`, its
+last argument):
 
-* `[0, 16)`: the tag (written by `finish`, `verify` and `seal`; the received
-  tag of `verify` and `open`);
+* `[0, 16)`: the tag `finish`, `verify` and `seal` compute;
 * `[16, 96)`: the streaming state of `seal` and `open`;
 * `[96, 112)`: a block `T`: a partial block padded with zeros, or the
   lengths block;
@@ -26,6 +26,7 @@ Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
 * `[196, 212)` and `[240, 256)`: the received tag and the computed one,
   compared, padded with zeros (the first is kept by the pieces, like the
   values before it);
+* `[212, 216)`: the pointer `tag`, copied from the arguments on entry;
 * `[272, 288)`: the arguments of the piece running (`dO`, `nO`, `bO`);
 * `[512, 2560)`: the working space of the functions called.
 
@@ -36,7 +37,7 @@ called preserve them. Everything else is reloaded from `W`: a piece takes
 its arguments from `W + 272` on (`dO`: a pointer, `nO`: a length, `bO`: an
 offset). Each call pushes its arguments (last to first) in a frame of its
 own, popped into `eax`: `vg_aes_ctr32` six, `vg_ghash` five and
-`vg_aes_expand_key` four, with the return address 28 bytes of stack at
+`vg_aes_expand_key_scratch` four, with the return address 28 bytes of stack at
 most. The working space of the callee, `W + 512`, is passed in `ebp`, which
 is moved there before the frame and back after it.
 
@@ -58,9 +59,10 @@ is moved there before the frame and back after it.
 * `j0`: `J₀` for the `nO`-byte nonce at `dO` (GHASH'd with `absorb`,
   `flush` and `lens` unless it is 12 bytes), and the state's accumulator and
   first counter block `inc₃₂(J₀)` (`initState`).
-* `recv`, `cmp o`: the received tag and the computed one (at `W + o`), each
-  of `tag_len` bytes, padded with zeros; `eax` is 1 if they are equal and 0
-  if not, without a branch.
+* `recv`, `cmp o`: the received tag (at `tag`) and the computed one (at
+  `W + o`), each of `tag_len` bytes, padded with zeros; `eax` is 1 if they
+  are equal and 0 if not, without a branch.
+* `tagOut o`: the tag at `W + o` copied to `tag`.
 
 Only the pointers, the lengths, `rounds`, `tag_len` and (for `open`) whether
 the tag is right can affect timing: the branches are on those, and the
@@ -100,6 +102,7 @@ abbrev zO : Nat := 188
 abbrev nlO : Nat := 192
 abbrev vO : Nat := 240
 abbrev rO : Nat := 196
+abbrev tpO : Nat := 212
 abbrev dO : Nat := 272
 abbrev nO : Nat := 276
 abbrev bO : Nat := 280
@@ -129,7 +132,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key` and
+/-- The implementations of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash` a set of AES-GCM functions calls. -/
 structure Callees where
   ctr : Fn
@@ -147,7 +150,7 @@ def ctrCall : Prog isa :=
 def ghCall : Prog isa :=
   .frame (.push [.ebp, .edi, .ebx, .edx, .eax]) (.call c.gh.name c.gh.code) (.pop .eax 5)
 
-/-- `vg_aes_expand_key(eax, ecx, edx, ebp)`. -/
+/-- `vg_aes_expand_key_scratch(eax, ecx, edx, ebp)`. -/
 def keyCall : Prog isa :=
   .frame (.push [.ebp, .edx, .ecx, .eax]) (.call c.key.name c.key.code) (.pop .eax 4)
 
@@ -324,9 +327,9 @@ def j0 : Prog isa :=
 
 /-! ## Comparing tags -/
 
-/-- The `tag_len` bytes of the received tag (at `W`), padded with zeros at `W + rO`. -/
+/-- The `tag_len` bytes of the received tag (at `tag`, kept at `W + tpO`), padded with zeros at `W + rO`. -/
 def recv : Prog isa :=
-  .seq (.block (zero4 rO ++ [.mov .edi (.reg .ebp), .mov .edx (.reg .ebp), .alu .add .edx (imm rO),
+  .seq (.block (zero4 rO ++ [.mov .edi (slot tpO), .mov .edx (.reg .ebp), .alu .add .edx (imm rO),
     .mov .ecx (slot tglO)]))
     copyLoop
 
@@ -418,9 +421,9 @@ def streamDecrypt : Prog isa :=
   .seq cryptEntry (.seq (textAbsorb c) (.seq (.block setText) (.seq (crypt c) (.block restore))))
 
 /-- The entry of `finish` and `verify`: `(ctx, rounds, state, aad_len (2 words),
-text_len (2 words), work)`, and `rest`. -/
-def finEntry (rest : List Instr) : Prog isa :=
-  entry 7 ([.mov .esi (argOp 2)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
+text_len (2 words), tag, …)`, with `W` the stack argument `w`, and `rest`. -/
+def finEntry (w : Nat) (rest : List Instr) : Prog isa :=
+  entry w ([.mov .esi (argOp 2)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 3 alO ++ keep 4 ahO ++
     keep 5 xlO ++ keep 6 xhO ++ rest)
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
@@ -430,31 +433,32 @@ def finTag (o : Nat) : Prog isa :=
   (.seq (.block [.alu .and .eax (imm 15), .store (at_ .ebp bO) .eax])
   (.seq (flush c 16) (tag c o alO ahO xlO xhO))))
 
-/-- `vg_aes_gcm_stream_finish`. -/
+/-- The tag at `W + o` copied to `tag` (kept at `W + tpO`): its words into
+`eax`, `ecx`, `edx`, `ebx` and `tag` into `edi`, then stored. -/
+def tagOut (o : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (slot o), .mov .ecx (slot (o + 4)), .mov .edx (slot (o + 8)), .mov .ebx (slot (o + 12)),
+      .mov .edi (slot tpO)])
+    (.block [.store (at_ .edi 0) .eax, .store (at_ .edi 4) .ecx, .store (at_ .edi 8) .edx, .store (at_ .edi 12) .ebx])
+
+/-- `vg_aes_gcm_stream_finish(ctx, rounds, state, aad_len, text_len, tag, work)`. -/
 def streamFinish : Prog isa :=
-  .seq (finEntry []) (.seq (finTag c 0) (.block restore))
+  .seq (finEntry 8 (keep 7 tpO)) (.seq (finTag c 0) (.seq (tagOut 0) (.block restore)))
 
-/-- The computed tag at `W` kept if `eax` is 1, zeroed if it is 0. -/
-def mask : List Instr :=
-  [.mov .ecx (imm 0), .alu .sub .ecx (.reg .eax), .mov .edx (slot 0), .alu .and .edx (.reg .ecx),
-    .store (at_ .ebp 0) .edx, .mov .edx (slot 4), .alu .and .edx (.reg .ecx), .store (at_ .ebp 4) .edx,
-    .mov .edx (slot 8), .alu .and .edx (.reg .ecx), .store (at_ .ebp 8) .edx, .mov .edx (slot 12),
-    .alu .and .edx (.reg .ecx), .store (at_ .ebp 12) .edx]
-
-/-- `vg_aes_gcm_stream_verify`, with `tag_len` the stack argument 8. -/
+/-- `vg_aes_gcm_stream_verify(ctx, rounds, state, aad_len, text_len, tag, tag_len, work)`. -/
 def streamVerify : Prog isa :=
-  .seq (finEntry (keep 8 tglO))
+  .seq (finEntry 9 (keep 7 tpO ++ keep 8 tglO))
   (.seq tagLenOk
-  (.seq (.ite .e (.block (zero4 0))
-      (.seq recv (.seq (finTag c 0) (.seq (cmp 0) (.block mask)))))
+  (.seq (.ite .e (.block [.mov .eax (imm 0)])
+      (.seq recv (.seq (finTag c 0) (cmp 0))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx, rounds, nonce, nonce_len, aad,
-aad_len, data, len, work)`, and `rest`. The state is at `W + 16`. -/
-def oneEntry (rest : List Instr) : Prog isa :=
-  entry 8 ([.mov .esi (.reg .ebp), .alu .add .esi (imm stO)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 2 dO ++
-    keep 3 nO ++ keep 3 nlO ++ keep 4 aadO ++ keep 5 alO ++ keep 6 dataO ++ keep 7 lenO ++
-    [.mov .eax (imm 0), .store (at_ .ebp zO) .eax] ++ rest)
+aad_len, data, len, tag, …)`, with `W` the stack argument `w`, and `rest`.
+The state is at `W + 16`. -/
+def oneEntry (w : Nat) (rest : List Instr) : Prog isa :=
+  entry w ([.mov .esi (.reg .ebp), .alu .add .esi (imm stO)] ++ keep 0 ctxO ++ keep 1 roundsO ++ keep 2 dO ++
+    keep 3 nO ++ keep 3 nlO ++ keep 4 aadO ++ keep 5 alO ++ keep 6 dataO ++ keep 7 lenO ++ rest ++
+    [.mov .eax (imm 0), .store (at_ .ebp zO) .eax])
 
 /-- `J₀`, then the additional data absorbed and padded. -/
 def oneAad : Prog isa :=
@@ -480,13 +484,14 @@ def oneTag (o : Nat) : Prog isa :=
 /-- The data encrypted or decrypted, from the first counter block. -/
 def oneCrypt : Prog isa := .seq (.block setData) (crypt c)
 
-/-- `vg_aes_gcm_seal`. -/
+/-- `vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, work)`. -/
 def «seal» : Prog isa :=
-  .seq (oneEntry []) (.seq (oneAad c) (.seq (oneCrypt c) (.seq (oneTag c 0) (.block restore))))
+  .seq (oneEntry 9 (keep 8 tpO))
+    (.seq (oneAad c) (.seq (oneCrypt c) (.seq (oneTag c 0) (.seq (tagOut 0) (.block restore)))))
 
-/-- `vg_aes_gcm_open`, with `tag_len` the stack argument 9. -/
+/-- `vg_aes_gcm_open(ctx, rounds, nonce, nonce_len, aad, aad_len, data, len, tag, tag_len, work)`. -/
 def «open» : Prog isa :=
-  .seq (oneEntry (keep 9 tglO))
+  .seq (oneEntry 10 (keep 8 tpO ++ keep 9 tglO))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov .eax (imm 0)])
       (.seq (oneAad c)

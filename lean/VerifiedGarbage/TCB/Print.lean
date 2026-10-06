@@ -11,6 +11,9 @@ conditional branches:
 * `call name body` ⟶  `<call> name` (the call instruction, e.g. `call` or
   `bl`, of the function `name`, which is emitted separately: see
   `VG.Rust.files`)
+* an instruction naming a `static` (`Printer.symLines`) ⟶ lines with the
+  page of its address or the offset in that page (`Line.sym`), which
+  `VG.Rust.files` writes in the syntax of the object format
 * `frame push body pop` ⟶  `push; body; pop`
 
 Labels are numeric local labels (`N:`, referenced as `Nf` forward or `Nb`
@@ -39,10 +42,22 @@ tests in `VerifiedGarbageTest/Print.lean`.
 
 namespace VG
 
-/-- A line of assembly: text, or a call instruction of the function it names. -/
+/-- The part of a `static`'s address a line names: its 4 KB page, or its
+offset in that page (AArch64's `adrp` and `add`), or the whole address as a
+RIP-relative memory operand, `[rip + <sym>]` (x86-64's `lea`). -/
+inductive SymPart
+  | page
+  | pageOff
+  | ripRel
+  deriving DecidableEq, Repr
+
+/-- A line of assembly: text, a call instruction of the function it names,
+or text followed by the page or the offset in its page of the address of the
+`static` it names, or by a RIP-relative operand of that address. -/
 inductive Line
   | text (s : String)
   | call (name : String)
+  | sym (s : String) (part : SymPart) (name : String)
   deriving DecidableEq, Repr
 
 structure Printer (M : ISA) where
@@ -57,6 +72,9 @@ structure Printer (M : ISA) where
   /-- The mnemonic of the call instruction whose operand is a function's
   symbol (`ISA.call`), e.g. `call` or `bl`. -/
   call : String
+  /-- The lines of an instruction that names a `static` (`Line.sym`); `none`
+  for the others, whose lines are `instr`'s text. -/
+  symLines : M.Instr → Option (List Line) := fun _ => none
   /-- Assembler directives before, and after, the body of a function that
   needs the CPU feature `f` (`Artifact.features`), for an assembler that
   rejects the instructions of a feature the target does not enable: they
@@ -81,7 +99,7 @@ def labelNum (n : Nat) : String := s!"2{n}"
 /-- Lower code to lines of assembly, using labels `labelNum n`; returns the
 next unused label number. -/
 def Printer.lower : Code M.Instr M.Cond → Nat → List Line × Nat
-  | .block is, n => ((is.map P.instr).flatten.map .text, n)
+  | .block is, n => (is.flatMap fun i => (P.symLines i).getD ((P.instr i).map .text), n)
   | .seq c₁ c₂, n =>
     let (l₁, n) := lower c₁ n
     let (l₂, n) := lower c₂ n

@@ -209,9 +209,10 @@ theorem sha384_satPF :
 
 theorem sha384_coreOK : CoreOK (coreH 48) := coreOK 48 (Or.inr (Or.inr (Or.inl rfl)))
 
-/-- SHA-384 with its compression function. -/
+/-- SHA-384 with its compression function, which it carries for the
+functions built on SHA-384 alone (`MdHash.sha384`). -/
 def sha384 (v : Compress) : MdHash :=
-  MdHash.of (H := hash v Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384)
+  { MdHash.of (H := hash v Spec.Hmac.sha384I 48 Spec.Sha512.init384Api.name H0_384)
     (ok v rfl (fun _ => rfl) rfl rfl rfl (Or.inr (Or.inr (Or.inl rfl))) rfl (Or.inl rfl)) sha384_coreOK rfl rfl
     sha384_satI sha384_satF sha384_satT sha384_satP (by decide)
     (by
@@ -221,7 +222,8 @@ def sha384 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha384_satPF
-    v.suffix v.features
+    v.suffix v.features with
+    sha384 := some v }
 
 /-! ## SHA-512 -/
 

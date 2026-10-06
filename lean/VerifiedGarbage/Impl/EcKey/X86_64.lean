@@ -10,8 +10,8 @@ curve of `n` 64-bit words, from the code of ECDSA's signature
 1. `scratch` to `r8`, and `d`'s pointer to `rcx` and `rdx` too, as the
    signature's arguments `k` and `digest`; then the signature's code up to
    `Z^(p-2)`, unchanged: its setup (which reads `d` into the slots of `k`,
-   `d` and the hash), its tables of bits, `Q = [d]G` by its ladder, and its
-   power;
+   `d` and the hash), its tables of bits, `Q = [d]G` by its comb (or its
+   ladder, for a curve without one: `Cfg.gMul`), and its power;
 2. `x = X Z^(p-2)` and `y = Y Z^(p-2)`, each left Montgomery's form by a
    multiplication by 1;
 3. the flag, `d` in `[1, n-1]` and `Z ≠ 0`, as a mask, selects `04 ‖ x ‖ y`
@@ -44,19 +44,19 @@ def args : List Instr := [.mov .r8 (.reg .rdx), .mov .rcx (.reg .rsi), .mov .rdx
 
 /-- The signature's code up to `Z^(p-2)`. -/
 def upToPow : Prog isa :=
-  .seq (.block c.setup) <|
+  .seq (.block (c.setupWith none)) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg) <|
-  .seq (pow c.powP) (.block [])
+  .seq c.gMul <|
+  .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/
 def finish : List Instr :=
   [.mov .rcx (.mem (sc (c.sl FLAG))), .mov32 .rax (.imm 4), .alu .and .rax (.reg .rcx),
-    .store8 { base := .r14, disp := 0 } .rax] ++
-  storeBE c.n .r14 1 (c.sl X) ++ storeBE c.n .r14 (1 + 8 * c.n) (c.sl Y) ++
+    .store8 { base := .rsi, disp := 0 } .rax] ++
+  storeBytes c.C.len c.n .rsi 1 (c.sl X) ++ storeBytes c.C.len c.n .rsi (1 + c.C.len) (c.sl Y) ++
   [.mov .rax (.reg .rcx), .alu .and .rax (.imm 1)] ++
   Impl.Ecdsa.X86_64.Cfg.saved.map (fun (r, d) => .mov r (.mem (sc d)))
 

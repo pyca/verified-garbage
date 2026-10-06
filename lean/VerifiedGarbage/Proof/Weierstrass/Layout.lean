@@ -35,8 +35,9 @@ def ladR (L : LadderCfg) : List Nat := ladRo L ++ [L.R.x, L.R.y, L.R.z]
 /-- The ladder's slots are in the working space and apart (`lay`), the two
 additions write slots apart from what they read (`a1`, `a2`), the slots read
 only are not written (`ro`), `R`'s are not `D`'s or `T`'s, and the table of
-bits is apart from what is written. -/
-structure LadLay (L : LadderCfg) (size : Nat) : Prop where
+bits, within `bsize` bytes (the working space's, but for a target whose
+tables are past the slots' offsets), is apart from what is written. -/
+structure LadLay (L : LadderCfg) (size : Nat) (bsize : Nat := size) : Prop where
   lay : Lay L.M size (· ∈ ladSlots L)
   a1 : RcbApart L.S L.R L.R L.D
   a2 : RcbApart L.S L.D L.G L.T
@@ -44,7 +45,7 @@ structure LadLay (L : LadderCfg) (size : Nat) : Prop where
   rne : L.R.x ≠ L.R.y ∧ L.R.x ≠ L.R.z ∧ L.R.y ≠ L.R.z
   rdt : ∀ x ∈ [L.R.x, L.R.y, L.R.z], x ∉ [L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z]
   nbits : 1 ≤ L.nbits ∧ L.nbits < 2 ^ 16
-  bits : L.bits + L.nbits ≤ size
+  bits : L.bits + L.nbits ≤ bsize
   bits_w : ∀ w ∈ ladW L, L.bits + L.nbits ≤ w.1 ∨ w.1 + w.2 ≤ L.bits
 
 theorem ladWs_slots (L : LadderCfg) : ∀ x ∈ ladWs L, x ∈ ladSlots L := by
@@ -60,7 +61,7 @@ theorem ladR_slots (L : LadderCfg) : ∀ x ∈ ladR L, x ∈ ladSlots L := by
   grind
 
 /-- A slot the ladder does not write is apart from what it writes. -/
-theorem LadLay.apart_w {L : LadderCfg} {size : Nat} (hL : LadLay L size) {x : Nat}
+theorem LadLay.apart_w {L : LadderCfg} {size bsize : Nat} (hL : LadLay L size bsize) {x : Nat}
     (hx : x ∈ ladSlots L) (hxw : x ∉ ladWs L) :
     ∀ w ∈ ladW L, x + 8 * L.M.n ≤ w.1 ∨ w.1 + w.2 ≤ x := by
   intro w hw
@@ -128,17 +129,18 @@ temporary area. -/
 def powW (P : PowCfg) : List (Nat × Nat) :=
   [(P.acc, 8 * P.M.n), (P.tmp, 8 * P.M.n), (P.M.tmp, 8 * P.M.n)]
 
-/-- Where a power's slots and table are: in the working space, and what it
-reads apart from what it writes. -/
-structure PowLay (P : PowCfg) (size : Nat) : Prop where
+/-- Where a power's slots and table are: in the working space (the table
+within `bsize` bytes), and what it reads apart from what it writes. -/
+structure PowLay (P : PowCfg) (size : Nat) (bsize : Nat := size) : Prop where
   acc : P.acc + 8 * P.M.n ≤ size
   tmp : P.tmp + 8 * P.M.n ≤ size
   base : P.base + 8 * P.M.n ≤ size
   one : P.one + 8 * P.M.n ≤ size
-  bits : P.bits + P.nbits ≤ size
+  bits : P.bits + P.nbits ≤ bsize
   nbits : 1 ≤ P.nbits ∧ P.nbits < 2 ^ 16
   acc_tmp : P.acc + 8 * P.M.n ≤ P.tmp ∨ P.tmp + 8 * P.M.n ≤ P.acc
   acc_mtmp : P.acc + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.acc
+  tmp_mtmp : P.tmp + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.tmp
   acc_one : P.acc + 8 * P.M.n ≤ P.one ∨ P.one + 8 * P.M.n ≤ P.acc
   base_w : ∀ w ∈ powW P, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base
   bits_w : ∀ w ∈ powW P, P.bits + P.nbits ≤ w.1 ∨ w.1 + w.2 ≤ P.bits

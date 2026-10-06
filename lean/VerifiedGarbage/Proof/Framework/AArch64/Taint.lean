@@ -9,8 +9,9 @@ The abstract state is the set of registers known to be public; the stack
 pointer is always public. Memory is always secret: a loaded value is secret,
 and an address must be computed from public registers or the stack pointer.
 The vector registers are always secret too: a value moved from one to a
-general-purpose register (`umov`) is secret. (No modelled instruction
-touches the flags.)
+general-purpose register (`umov`) is secret. The flags are not tracked: an
+instruction that reads them (`adcs`, `csel`, `csneg`, …) writes a secret
+value, and branches never read them.
 -/
 
 namespace VG.AArch64.Taint
@@ -34,28 +35,43 @@ def Agree (τ : T) (s₁ s₂ : State) : Prop := s₁.sp = s₂.sp ∧ ∀ r ∈
 def set (τ : T) (r : Reg) (p : Bool) : T :=
   if p then τ.insert r else τ.erase r
 
-def step (τ : T) : Instr → Option T
+/-- An instruction transfer function, independent of the incoming taint. -/
+structure Step where
+  run : T → Option T
+
+/-- Classify the instruction before substituting its incoming taint. The kernel
+can share this result between checks of the instruction from different taints. -/
+def stepFn : Instr → Step
   | .add _ d n m | .sub _ d n m | .adds _ d n m | .subs _ d n m
   | .logic _ _ d n m | .logicRor _ _ d n m _ | .bicRor _ d n m _ | .extr _ d n m _
-  | .mul _ d n m | .umulh d n m =>
-    some (set τ d (pub τ n && pub τ m))
+  | .mul _ d n m | .umulh d n m => ⟨fun τ =>
+    some (set τ d (pub τ n && pub τ m))⟩
   -- This register-only domain conservatively treats the carry as secret.
-  | .adcs _ d _ _ | .sbcs _ d _ _ | .adc _ d _ _ | .sbc _ d _ _ => some (set τ d false)
-  | .madd _ d n m a => some (set τ d (pub τ n && pub τ m && pub τ a))
+  | .adcs _ d _ _ | .sbcs _ d _ _ | .adc _ d _ _ | .sbc _ d _ _ | .csel _ d _ _
+  | .cselc _ d _ _ _ | .csneg _ d _ _ _ => ⟨fun τ =>
+    some (set τ d false)⟩
+  -- Writing only the flags.
+  | .tst .. | .ccmp .. => ⟨fun τ => some τ⟩
+  -- Nor does it track the addresses of statics.
+  | .adrSym d _ => ⟨fun τ => some (set τ d false)⟩
+  | .madd _ d n m a => ⟨fun τ => some (set τ d (pub τ n && pub τ m && pub τ a))⟩
   | .addImm _ d n _ | .subImm _ d n _ | .ror _ d n _ | .lsr _ d n _ | .lsl _ d n _ | .rev32 d n
-  | .rev d n => some (set τ d (pub τ n))
-  | .addSp d _ | .movz _ d _ _ => some (set τ d true)
-  | .movk _ d _ _ => some (set τ d (pub τ d))
-  | .ldr _ t n _ | .ldrb t n _ => if pub τ n then some (set τ t false) else none
+  | .rev d n => ⟨fun τ => some (set τ d (pub τ n))⟩
+  | .addSp d _ | .movz _ d _ _ => ⟨fun τ => some (set τ d true)⟩
+  | .movk _ d _ _ => ⟨fun τ => some (set τ d (pub τ d))⟩
+  | .ldr _ t n _ | .ldrb t n _ => ⟨fun τ => if pub τ n then some (set τ t false) else none⟩
   -- The stack pointer is public, and memory secret.
-  | .ldrSp t _ => some (set τ t false)
-  | .str _ _ n _ | .strb _ n _ => if pub τ n then some τ else none
-  | .vop _ => some τ
-  | .ldrq _ n _ | .strq _ n _ => if pub τ n then some τ else none
-  | .umov _ d _ _ => some (set τ d false)
+  | .ldrSp t _ => ⟨fun τ => some (set τ t false)⟩
+  | .str _ _ n _ | .strb _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  | .vop _ => ⟨fun τ => some τ⟩
+  | .ldrq _ n _ | .strq _ n _ => ⟨fun τ => if pub τ n then some τ else none⟩
+  | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
   -- Frames are analysed by the `push` and `pop` hooks (`Taint.push`,
   -- `Taint.pop`), not here.
-  | .push .. | .pop .. | .alloc _ | .free _ => none
+  | .push .. | .pop .. | .alloc _ | .free _ => ⟨fun _ => none⟩
+
+/-- Apply the preclassified instruction to the incoming taint. -/
+def step (τ : T) (i : Instr) : Option T := (stepFn i).run τ
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -87,47 +103,67 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free => simp only [step, stepFn, reduceCtorEq] at hs
   | add sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | sub sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | adds sz d n m | subs sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | adcs sz d n m | sbcs sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d (p := false) (by simp)⟩
-  | adc sz d n m | sbc sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+  | adc sz d n m | sbc sz d n m | csel sz d n m =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d (p := false) (by simp)⟩
+  | cselc sz d n m cond | csneg sz d n m cond =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.write sz d (p := false) (by simp)⟩
+  | tst sz n m =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.1, ha.2⟩
+  | ccmp sz n imm nzcv cond =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    by_cases h : imm < 32 ∧ nzcv < 16
+    · simp only [exec, h, and_self, ↓reduceIte, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+      refine ⟨rfl, ?_, fun r hr => ?_⟩
+      · split <;> split <;> exact ha.1
+      · split <;> split <;> exact ha.2 r hr
+    · simp only [exec, h, ↓reduceIte, reduceCtorEq] at e₁
+  | adrSym d name =>
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
+    simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.write .x d (p := false) (by simp)⟩
   | umulh d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write .x d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.reg hp.1, ha.reg hp.2]
   | logic op sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | logicRor op sz d n m sh | bicRor sz d n m sh | extr sz d n m sh =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h
@@ -136,75 +172,75 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | addSp d imm =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write .x d fun _ => by rw [ha.1]⟩
   | addImm sz d n imm =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | subImm sz d n imm =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | ror sz d n sh =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | lsr sz d n sh =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | lsl sz d n sh =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | madd sz d n m a =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1.1, ha.read hp.1.2, ha.read hp.2]
   | mul sz d n m =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     refine ⟨rfl, ha.write sz d fun hp => ?_⟩
     simp only [Bool.and_eq_true] at hp
     rw [ha.read hp.1, ha.read hp.2]
   | rev32 d n =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write .w d fun hp => by rw [ha.read hp]⟩
   | rev d n =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write .x d fun hp => by rw [ha.read hp]⟩
   | movz sz d imm hw =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun _ => rfl⟩
   | movk sz d imm hw =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂
     exact ⟨rfl, ha.write sz d fun hp => by rw [ha.read hp]⟩
   | ldr sz t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -212,7 +248,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ha.write sz t fun h => by cases h
   | str sz t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -222,7 +258,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
   | ldrb t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -230,7 +266,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ha.write .w t fun h => by cases h
   | ldrSp t off =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     refine ⟨by simp [addrs, ha.1], ?_⟩
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
@@ -238,7 +274,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ha.write .x t fun h => by cases h
   | strb t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -248,12 +284,12 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
   | vop op =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨⟨_, _⟩, -, rfl⟩ := e₁; obtain ⟨⟨_, _⟩, -, rfl⟩ := e₂
     exact ⟨rfl, ha.1, ha.2⟩
   | ldrq t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -261,7 +297,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     obtain ⟨a₁, -, v₁, -, rfl⟩ := e₁; obtain ⟨a₂, -, v₂, -, rfl⟩ := e₂
     exact ⟨ha.1, ha.2⟩
   | strq t n off =>
-    simp only [step] at hs
+    simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]
     rename_i hn; cases hs
     refine ⟨by simp [addrs, ha.reg hn], ?_⟩
@@ -271,7 +307,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [cases e₂; cases e₂]
     exact ha
   | umov sz d n i =>
-    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [step, stepFn, Option.some.injEq] at hs; subst hs
     simp only [exec] at e₁ e₂
     split at e₁ <;> [skip; cases e₁]
     rename_i h; simp only [h, ite_true, Option.some.injEq] at e₁ e₂; subst e₁ e₂

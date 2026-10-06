@@ -18,7 +18,7 @@ open VG VG.AArch64 VG.AArch64.RegUpd VG.Impl.AesGcm.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 
-/-- The block before the call of `vg_aes_expand_key`. -/
+/-- The block before the call of `vg_aes_expand_key_scratch`. -/
 theorem init1_ok {s : State} {K Ctx W : Addr} {L : Nat} (hK : s.gpr .x0 = K) (hLn : (s.gpr .x1).toNat = L)
     (hCtx : s.gpr .x2 = Ctx) (hW : s.gpr .x3 = W) (hrd : s.rd = [⟨K, L⟩])
     (hwr : s.wr = [⟨Ctx, 256⟩, ⟨W, 2560⟩]) (d_kc : (⟨K, L⟩ : Region).Disjoint ⟨Ctx, 256⟩)

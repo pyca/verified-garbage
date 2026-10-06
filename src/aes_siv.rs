@@ -18,20 +18,55 @@
 //! (`vg_aes_expand_key` and `vg_aes_ctr32`, through the CMAC functions made
 //! with them, and directly for CTR), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). Only
-//! x86-64 has an implementation so far.
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), and
+//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
+//! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
+//! the associated-data components and the data total more than 32 bytes,
+//! both run the `_aesni_cbc` instances, whose CMAC chains whole blocks with
+//! the round keys and the chaining value kept in SSE registers, and which
+//! call the other CMAC functions and CTR made with `vg_aes_ctr32_aesni`
+//! (`chains_long`); on x86, CPUs with AES-NI run the `_aesni` instances. On
+//! AArch64, CPUs with the AES extension run `vg_aes_siv_init_aes`, and
+//! `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt` follow the implementations
+//! of `vg_cmac_aes_update` too, as AES-CMAC does (`crate::cmac::aes`): when
+//! the associated-data components and the data total more than 32 bytes,
+//! the `_aes_cbc` instances, whose CMAC chains whole blocks with the round
+//! keys and the chaining value kept in vector registers, and otherwise the
+//! `_aes` ones (`chains_long`). On ARMv7 there is one implementation of
+//! AES, and so one instance of each function.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes::Backend;
+#[cfg(target_arch = "aarch64")]
 use crate::arch::aes_siv::{
-    VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_DECRYPT_VAES_FEATURES,
+    VG_AES_SIV_DECRYPT_AES_CBC_FEATURES, VG_AES_SIV_DECRYPT_AES_FEATURES,
+    VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES, VG_AES_SIV_ENCRYPT_AES_FEATURES,
+    VG_AES_SIV_INIT_AES_FEATURES, vg_aes_siv_decrypt_aes, vg_aes_siv_decrypt_aes_cbc,
+    vg_aes_siv_encrypt_aes, vg_aes_siv_encrypt_aes_cbc, vg_aes_siv_init_aes,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_siv::{
+    VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES, VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+    VG_AES_SIV_DECRYPT_VAES_FEATURES, VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
     VG_AES_SIV_ENCRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_VAES_FEATURES,
-    VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt,
-    vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt,
-    vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes, vg_aes_siv_init, vg_aes_siv_init_aesni,
+    VG_AES_SIV_INIT_AESNI_FEATURES, VG_AES_SIV_INIT_VAES_FEATURES, vg_aes_siv_decrypt_aesni,
+    vg_aes_siv_decrypt_aesni_cbc, vg_aes_siv_decrypt_vaes, vg_aes_siv_encrypt_aesni,
+    vg_aes_siv_encrypt_aesni_cbc, vg_aes_siv_encrypt_vaes, vg_aes_siv_init_aesni,
     vg_aes_siv_init_vaes,
 };
+#[cfg(target_arch = "x86")]
+use crate::arch::aes_siv::{
+    VG_AES_SIV_DECRYPT_AESNI_FEATURES, VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
+    VG_AES_SIV_INIT_AESNI_FEATURES, vg_aes_siv_decrypt_aesni, vg_aes_siv_encrypt_aesni,
+    vg_aes_siv_init_aesni,
+};
+use crate::arch::aes_siv::{vg_aes_siv_decrypt, vg_aes_siv_encrypt, vg_aes_siv_init};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
@@ -39,35 +74,111 @@ use core::mem::MaybeUninit;
 /// A 16-byte block.
 type Block = [u8; 16];
 
-/// The working space of `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`, in
-/// 64-bit words: the synthetic IV in its first 16 bytes.
-const WORK: usize = 322;
-
-/// The instance of a function for `backend`.
+/// The instance of a function for `backend`; for `encrypt` and `decrypt`,
+/// `$aesni_cbc` on x86-64 (rather than `$aesni` or `$vaes`) and `$aes_cbc`
+/// on AArch64 with the AES extension (rather than `$aes`) if `$long`
+/// (`chains_long`).
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident) => {
+    ($backend:expr, $long:expr, $scalar:ident,
+     x86_64: [$aesni:ident, $vaes:ident, $aesni_cbc:ident],
+     aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
+            #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
-            Backend::Vaes => $vaes,
+            #[cfg(target_arch = "x86_64")]
+            Backend::AesNi => {
+                if $long {
+                    $aesni_cbc
+                } else {
+                    $aesni
+                }
+            }
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => {
+                if $long {
+                    $aesni_cbc
+                } else {
+                    $vaes
+                }
+            }
+            #[cfg(target_arch = "aarch64")]
+            Backend::Aes => {
+                if $long {
+                    $aes_cbc
+                } else {
+                    $aes
+                }
+            }
         }
     };
 }
 
+/// Whether `encrypt` and `decrypt` should run the `_aes_cbc` instances (on
+/// AArch64 with the AES extension) or the `_aesni_cbc` ones (on x86-64 with
+/// AES-NI), whose CMAC chains whole blocks with the round keys and the
+/// chaining value kept in vector registers, rather than the others: when
+/// the associated-data components `ads` and the `len` bytes of data total
+/// more than 32 bytes, as AES-CMAC's updates (`crate::cmac::aes`).
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+fn chains_long(ads: &[&[u8]], len: usize) -> bool {
+    ads.iter()
+        .fold(len, |total, ad| total.saturating_add(ad.len()))
+        > 32
+}
+
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the AES-SIV functions for it.
+#[cfg(target_arch = "aarch64")]
+fn select(f: Features) -> Backend {
+    const AES: Features = Features::all(&[
+        VG_AES_SIV_INIT_AES_FEATURES,
+        VG_AES_SIV_ENCRYPT_AES_FEATURES,
+        VG_AES_SIV_ENCRYPT_AES_CBC_FEATURES,
+        VG_AES_SIV_DECRYPT_AES_FEATURES,
+        VG_AES_SIV_DECRYPT_AES_CBC_FEATURES,
+    ]);
+    Backend::select_for(f, AES)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-SIV functions for it.
+#[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
     const VAES: Features = Features::all(&[
         VG_AES_SIV_INIT_VAES_FEATURES,
         VG_AES_SIV_ENCRYPT_VAES_FEATURES,
         VG_AES_SIV_DECRYPT_VAES_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES,
     ]);
     const AESNI: Features = Features::all(&[
         VG_AES_SIV_INIT_AESNI_FEATURES,
         VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
         VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_CBC_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_CBC_FEATURES,
     ]);
     Backend::select_for(f, VAES, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-SIV functions for it.
+#[cfg(target_arch = "x86")]
+fn select(f: Features) -> Backend {
+    const AESNI: Features = Features::all(&[
+        VG_AES_SIV_INIT_AESNI_FEATURES,
+        VG_AES_SIV_ENCRYPT_AESNI_FEATURES,
+        VG_AES_SIV_DECRYPT_AESNI_FEATURES,
+    ]);
+    Backend::select_for(f, AESNI)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-SIV functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
 }
 
 /// Why an AES-SIV operation failed.
@@ -124,16 +235,17 @@ impl AesSiv {
         };
         let init = instance!(
             k.backend,
+            false,
             vg_aes_siv_init,
-            vg_aes_siv_init_aesni,
-            vg_aes_siv_init_vaes
+            x86_64: [vg_aes_siv_init_aesni, vg_aes_siv_init_vaes, vg_aes_siv_init_aesni],
+            aarch64: [vg_aes_siv_init_aes, vg_aes_siv_init_aes]
         );
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
         // 48 or 64, and `k.ctx` for reads and writes of 512 bytes. They are
         // distinct objects, so they do not overlap each other, the return
-        // addresses on the stack or the stack below them, and neither wraps
-        // around the end of the address space. The CPU has the features of
-        // the implementation selected.
+        // addresses on the stack (on x86 and x86-64) or the stack below them that
+        // the function uses, and neither wraps around the end of the address
+        // space. The CPU has the features of the implementation selected.
         unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
         Ok(k)
     }
@@ -166,12 +278,13 @@ impl AesSiv {
     pub fn encrypt_in_place(&self, ads: &[&[u8]], data: &mut [u8]) -> Result<Block, Error> {
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut siv = [0u8; 16];
         let encrypt = instance!(
             self.backend,
+            chains_long(ads, data.len()),
             vg_aes_siv_encrypt,
-            vg_aes_siv_encrypt_aesni,
-            vg_aes_siv_encrypt_vaes
+            x86_64: [vg_aes_siv_encrypt_aesni, vg_aes_siv_encrypt_vaes, vg_aes_siv_encrypt_aesni_cbc],
+            aarch64: [vg_aes_siv_encrypt_aes, vg_aes_siv_encrypt_aes_cbc]
         );
         // SAFETY: `self.ctx` is the key context `vg_aes_siv_init` wrote for
         // `self.rounds` (10, 12 or 14) rounds (every implementation writes
@@ -179,16 +292,14 @@ impl AesSiv {
         // `storage`, whose first `ads.len()` entries (`16 * ads.len()`
         // bytes, all the function reads) `descriptors` initialized to list
         // the components of `ads`, each valid for reads of its length in
-        // bytes. `data` is valid for
-        // reads and writes of `data.len()` bytes and `work` for reads and
-        // writes of 2576. `data` and `work` are unique borrows, so they
-        // overlap neither each other nor `self.ctx`, `storage` or a component;
-        // no buffer overlaps the arguments on the stack, the return address
-        // or the stack below it, and none wraps around the end of the address
-        // space. The CPU has the features of the implementation selected.
-        // `work` is uninitialized: it is only working space but for the
-        // synthetic IV written to its first 16 bytes, and the contract's
-        // result does not depend on what it holds.
+        // bytes. `data` is valid for reads and writes of `data.len()` bytes
+        // and `siv` for reads and writes of 16. `data` and `siv` are unique
+        // borrows, so they overlap neither each other nor `self.ctx`,
+        // `storage` or a component; no buffer overlaps the arguments on the
+        // stack or the return address (on x86 and x86-64) or the stack below
+        // them that the function uses, and none wraps around the end of the
+        // address space. The CPU has the features of the implementation
+        // selected.
         unsafe {
             encrypt(
                 &self.ctx,
@@ -197,12 +308,10 @@ impl AesSiv {
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                &mut siv,
             )
         };
-        // SAFETY: `encrypt` wrote the synthetic IV to the first 16 bytes of
-        // `work`.
-        Ok(unsafe { first_block(&work) })
+        Ok(siv)
     }
 
     /// `SIV-DECRYPT` (RFC 5297 §2.7): decrypts `data` in place with the
@@ -217,22 +326,17 @@ impl AesSiv {
     ) -> Result<(), Error> {
         let mut storage = [const { MaybeUninit::uninit() }; Self::MAX_COMPONENTS];
         let descs = Self::descriptors(ads, &mut storage)?;
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
         let decrypt = instance!(
             self.backend,
+            chains_long(ads, data.len()),
             vg_aes_siv_decrypt,
-            vg_aes_siv_decrypt_aesni,
-            vg_aes_siv_decrypt_vaes
+            x86_64: [vg_aes_siv_decrypt_aesni, vg_aes_siv_decrypt_vaes, vg_aes_siv_decrypt_aesni_cbc],
+            aarch64: [vg_aes_siv_decrypt_aes, vg_aes_siv_decrypt_aes_cbc]
         );
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 322 words.
-        unsafe {
-            w.write(u64::from_le_bytes(tag[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(tag[8..].try_into().unwrap()));
-        }
         // SAFETY: as in `encrypt_in_place`, with the received synthetic IV
-        // in the first 16 bytes of `work`.
+        // `tag`, valid for reads of 16 bytes, in place of `siv`: it is a
+        // shared borrow, so it does not overlap `data`, a unique one, and
+        // only read-only buffers may overlap it.
         let ok = unsafe {
             decrypt(
                 &self.ctx,
@@ -241,7 +345,7 @@ impl AesSiv {
                 ads.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag,
             )
         };
         // `decrypt`'s contract leaves the plaintext in `data` if it returns
@@ -254,25 +358,23 @@ impl AesSiv {
     }
 }
 
-/// The first 16 bytes of `work`, where `encrypt` writes the synthetic IV.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> Block {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
-}
-
 #[cfg(test)]
 mod tests {
     use super::{AesSiv, Error};
+
+    /// The `_aes_cbc` (or `_aesni_cbc`) instances run when the components
+    /// and the data total more than 32 bytes, and the others otherwise.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    #[test]
+    fn chains_long() {
+        use super::chains_long;
+        assert!(!chains_long(&[], 0));
+        assert!(!chains_long(&[], 32));
+        assert!(chains_long(&[], 33));
+        assert!(!chains_long(&[&[0; 16], &[0; 8]], 8));
+        assert!(chains_long(&[&[0; 16], &[0; 8]], 9));
+        assert!(chains_long(&[&[0; 33]], 0));
+    }
 
     #[test]
     fn key_lengths() {

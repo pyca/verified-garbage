@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
 # Deterministic ECDSA on x86-64: addresses and registers
@@ -109,8 +110,8 @@ theorem Ctx.of_keep {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
     (hk : (instrs (.block is : Prog isa)).all (fun i => calleeSaved.all fun r => !Taint.clobbers i r) = true)
     (hs : ∀ r ∈ ws, Safe L r) :
     WP isa (.block is) t fun t' => Ctx L g m₀ t' ∧ Frame ws t.mem t'.mem ∧ Q t' :=
-  WP.mono (WP.keepCs h hk) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hcs⟩ =>
-    ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf hs, hf, hq⟩
+  WP.mono_syms (WP.keepCs h hk) fun _ ⟨⟨hrd, hwr, hf, hq⟩, hcs⟩ hsy =>
+    ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf hs hsy, hf, hq⟩
 
 /-! ## Code that sets one register -/
 
@@ -126,21 +127,21 @@ structure Upd {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (m₀ : Mem) (u : 
 variable {dn : Nat} {L : Lay dn} {g : Reg → BitVec 64} {m₀ : Mem}
 
 theorem Ctx.set (hL : L.Ok) {u u' : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved)
-    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) :
-    Ctx L g m₀ u' :=
-  hc.regs hL hrd hwr hm fun r hr => hk r (ne_cs hr hd)
+    (hrd : u'.rd = u.rd) (hwr : u'.wr = u.wr) (hm : u'.mem = u.mem) (hsy : u'.syms = u.syms)
+    (hk : ∀ r, r ≠ d → u'.gpr r = u.gpr r) : Ctx L g m₀ u' :=
+  hc.regs hL hrd hwr hm hsy fun r hr => hk r (ne_cs hr hd)
 
 /-- `d ← scratch + a`. -/
 theorem scr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d ∉ calleeSaved) {a : Nat}
     (ha : a < 2 ^ 31) :
     WP isa (.block (Cfg.scr d a)) u (Upd L g m₀ u d (L.scr + BitVec.ofNat 64 a)) := by
-  have h192 := hc.inFr (d := 192) (by omega) (by omega)
+  have h192 := hc.inFr (d := 208) (by omega) (by omega)
   have hrsp : d ≠ .rsp := fun h => hd (h ▸ by decide)
   apply WP.of_runBlock
   simp only [Cfg.scr, fScratch, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     State.load64, ea_stk, hc.rsp, Offset.add_add, Nat.reduceAdd, h192, ite_true, Option.map_some,
     Option.bind_some, RegUpd.gpr_setReg_self, hc.pScr, sx32 ha, Option.some.injEq, exists_eq_left']
-  refine ⟨hc.set hL hd rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
 
@@ -152,7 +153,7 @@ theorem fr_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d �
   simp only [Cfg.fr, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
     Option.map_some, Option.bind_some, RegUpd.gpr_setReg_self, hc.rsp, sx32 ho, Offset.add_add,
     Option.some.injEq, exists_eq_left']
-  refine ⟨hc.set hL hd rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
+  refine ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => ?_, rfl, RegUpd.gpr_setReg_self _ _ _, fun r hr => ?_⟩
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
   · rw [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr]
 
@@ -163,7 +164,7 @@ theorem mov32_ok (hL : L.Ok) {u : State} (hc : Ctx L g m₀ u) {d : Reg} (hd : d
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32, State.setReg32,
     Option.map_some, zx32 hn, Option.some.injEq, exists_eq_left']
-  exact ⟨hc.set hL hd rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
+  exact ⟨hc.set hL hd rfl rfl rfl rfl fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr, rfl, RegUpd.gpr_setReg_self _ _ _,
     fun r hr => RegUpd.gpr_setReg_of_ne _ _ hr⟩
 
 /-- Two pieces of code, each setting one register. -/

@@ -36,12 +36,12 @@ theorem nib_neg (k i : Nat) : decide (nib k i < 8) = decide ((k / 2 ^ (4 * i + 3
   apply decide_eq_decide.mpr
   omega
 
-private theorem index3_fact : ∀ j < 56, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
+private theorem index3_fact : ∀ j < 57, BitVec.ofNat 64 j <<< 3 = BitVec.ofNat 64 (8 * j) := by
   decide +kernel
 
-theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) {k j i o : Nat} (hj : j < 56)
-    (hi : i < 112) (hoi : 8 * j + o = BITS + 4 * i) (ho : o + 3 < 4096)
-    (hc : s.gpr .x19 = BitVec.ofNat 64 j) (hb : Bits base k s.mem) :
+theorem signLoad_ok {s : State} {base : Addr} (hs : Scr s base) {n k j i o : Nat} (hn : n ≤ 57)
+    (hj : j < 57) (hi : i < 2 * n) (hoi : 8 * j + o = BITS + 4 * i) (ho : o + 3 < 4096)
+    (hc : s.gpr .x19 = BitVec.ofNat 64 j) (hb : Bits n base k s.mem) :
     WP isa (.block [.lsl .x .x6 .x19 3, .add .x .x6 .x3 .x6, .ldrb .x6 .x6 (o + 3),
       .subImm .x .x6 .x6 1]) s fun t =>
       t.gpr .x6 = VG.Proof.X448.AArch64.mask (decide (nib k i < 8)) ∧ Keeps [.x6] s t ∧
@@ -71,8 +71,8 @@ theorem ofs_off0 (base : Addr) {d : Nat} (h : d < 2 ^ 64) : VG.Proof.X448.AArch6
   simpa only [BitVec.add_zero, Nat.add_zero] using this
 
 /-- The scalar's bits are outside the slots and the products' working space. -/
-theorem Bits.of_fkeep {base : Addr} {k : Nat} {s t : State} (hs : Scr s base) (h : Bits base k s.mem)
-    (hk : FKeep base s t) : Bits base k t.mem := fun q hq => by
+theorem Bits.of_fkeep {base : Addr} {n k : Nat} {s t : State} (hn : n ≤ 57) (hs : Scr s base)
+    (h : Bits n base k s.mem) (hk : FKeep base s t) : Bits n base k t.mem := fun q hq => by
   have hn := hs.nowrap
   rw [hk.mem _ (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
     (by rw [ofs_off0 base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
@@ -96,8 +96,9 @@ theorem negate_eq (ox : Index) (n : Nat) :
 
 /-- **The negation** of the entry's `x` in slot `ox` for the digit `nib k i - 8`, if negative. -/
 theorem negate_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem base) {k j i o : Nat}
-    (ox : Index) (hox : ox ≠ 10) (hj : j < 56) (hi : i < 112) (hoi : 8 * j + o = BITS + 4 * i)
-    (ho : o + 3 < 4096) (hc : s.gpr .x19 = BitVec.ofNat 64 j) (hbits : Bits base k s.mem)
+    (ox : Index) (hox : ox ≠ 10) {n : Nat} (hn : n ≤ 57) (hj : j < 57) (hi : i < 2 * n)
+    (hoi : 8 * j + o = BITS + 4 * i) (ho : o + 3 < 4096) (hc : s.gpr .x19 = BitVec.ofNat 64 j)
+    (hbits : Bits n base k s.mem)
     (hx : Bnd Mb s.mem base (slot ox.val)) (h19 : Bnd Mb s.mem base (slot (19 : Index).val)) :
     WP isa (.block (negate (slot ox.val) o (slot (10 : Index).val))) s fun t =>
       FKeep base s t ∧ BEnv t.mem base ∧ Same base ([10] ++ [ox, 10]) s.mem t.mem ∧
@@ -107,8 +108,8 @@ theorem negate_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BEnv s.mem b
   refine WP.mono (block_codeOf (subNeg_ok hs hb ox hox hx h19)) fun t1 ⟨k1, b1, s1, e1⟩ => ?_
   have hs1 := k1.scr hs
   rw [WP.block_append_iff]
-  refine WP.mono (signLoad_ok hs1 hj hi hoi ho (by rw [k1.regs.1 _ (by decide)]; exact hc)
-    (Bits.of_fkeep hs hbits k1)) fun t2 ⟨m2, k2, mem2⟩ => ?_
+  refine WP.mono (signLoad_ok hs1 hn hj hi hoi ho (by rw [k1.regs.1 _ (by decide)]; exact hc)
+    (Bits.of_fkeep hn hs hbits k1)) fun t2 ⟨m2, k2, mem2⟩ => ?_
   have f2 : FKeep base t1 t2 := ⟨k2.mono (by decide), fun x _ _ => by rw [mem2]⟩
   have hs2 := f2.scr hs1
   have b2 : BEnv t2.mem base := fun i => by

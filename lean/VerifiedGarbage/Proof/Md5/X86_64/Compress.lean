@@ -65,20 +65,6 @@ theorem var_ne (t : Nat) {i j : Nat} (hi : i < 4) (hj : j < 4) (h : i ≠ j) : v
 
 /-! ## The auxiliary functions -/
 
-theorem G_add (x y z : Word) : G x y z = ((z ^^^ 0xffffffff) &&& y) + (z &&& x) := by
-  rw [show (0xffffffff : Word) = BitVec.allOnes 32 by decide, BitVec.xor_allOnes,
-    BitVec.add_eq_or_of_and_eq_zero]
-  · ext i; simp only [G, BitVec.getElem_and, BitVec.getElem_or, BitVec.getElem_not]
-    cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
-  · ext i; simp only [BitVec.getElem_and, BitVec.getElem_not, BitVec.getElem_zero]
-    cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
-
-theorem H_eq' (x y z : Word) : H x y z = y ^^^ z ^^^ x := by
-  simp only [H]; ac_rfl
-
-/-- The function's value is added last. -/
-theorem add_fn (a x T f : Word) : a + x + T + f = a + f + x + T := by ac_rfl
-
 theorem fn_ok (r : Nat) (hr : r < 4) (a b c d : Reg) (ha : a ≠ T0) (hb : b ≠ T0) (hc : c ≠ T0)
     (hd : d ≠ T0) (hab : a ≠ b) (hac : a ≠ c) (had : a ≠ d)
     (s : State) (va vb vc vd : Word) (h₀ : s.gpr a = va.setWidth 64) (h₁ : s.gpr b = vb.setWidth 64)

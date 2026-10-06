@@ -5,9 +5,9 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamFinishCT
 # AES-GCM on x86-64: `vg_aes_gcm_stream_verify` is constant time
 
 Untrusted: everything here is checked by Lean. The only branch is on the
-tag length (`tagLenOk`, checked by the taint analysis); the tag is computed
-from the same lengths and number of rounds (`finTag_rel`), and the
-comparison and the mask have no branch.
+tag length (`tagLenOk`, checked by the taint analysis); the received tag is
+read from the same address (`r9`), the tag is computed from the same lengths
+and number of rounds (`finTag_rel`), and the comparison has no branch.
 -/
 
 namespace VG.Proof.AesGcm.X86_64
@@ -18,74 +18,35 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
 def VerS (Ctx St W SP : Addr) (R : Nat) (aL tL tl : BitVec 64) (s : State) : Prop :=
   FinS Ctx St W SP R aL tL s ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = tl
 
-theorem verifyEntry_ok {s : State} (hp : Proof.AesGcm.verifyPre s) :
-    WP isa (.block (finEntry ++ ([.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx] : List Instr))) s fun s₂ =>
-      VerS (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r9) (s.gpr .rsp) (s.gpr .rsi).toNat (s.gpr .rcx) (s.gpr .r8)
-        (stackArg s 0) s₂ ∧ s₂.gpr .rbx = stackArg s 0 := by
-  have hp' := hp
-  simp only [Proof.AesGcm.verifyPre, Proof.AesGcm.stk, Proof.AesGcm.ret, Proof.AesGcm.rounds,
-    Proof.AesGcm.args] at hp'
-  obtain ⟨hrd, hwr, d_cs, d_cw, d_sw, d_sa, d_wa, r_s, r_w, k_c, k_s, k_w, wc, ws, ww, wsp, hR⟩ := hp'
-  have htlR : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 8) 64 = stackArg s 0 := rfl
-  generalize stackArg s 0 = tl at *
-  generalize hCtx : s.gpr .rdi = Ctx at *
-  generalize hSt : s.gpr .rdx = St at *
-  generalize hW : s.gpr .r9 = W at *
-  generalize hSP : s.gpr .rsp = SP at *
-  have L : Lay Ctx St W SP := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w
-  have hperm : Perm Ctx St W s := ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
-    by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..),
-    by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))⟩
-  have hA : stackArgAddr s 0 = SP + BitVec.ofNat 64 8 := by simp [stackArgAddr, hSP]
-  rw [hA] at d_sa d_wa hrd
-  refine WP.block_append (WP.mono (finEntry_ok hCtx hSt hW hSP hperm ww hR) fun s₁ he => ?_)
-  have dA : ∀ r ∈ [savedR W, slotsR W], (⟨SP + BitVec.ofNat 64 8, 8⟩ : Region).Disjoint r := by
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact d_wa.symm.sub_right (Lay.wSub (by decide))
-  have htl₁ : s₁.mem.readW (SP + BitVec.ofNat 64 8) 64 = tl := by
-    rw [he.frame.readW (r := ⟨SP + BitVec.ofNat 64 8, 8⟩) (Region.contains_self _ _) dA (by decide), htlR]
-  have r₁ : InRegions (s₁.rd ++ s₁.wr) (SP + BitVec.ofNat 64 8) 8 := by
-    rw [he.rd, he.wr, hrd]
-    exact ⟨_, List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)), Region.contains_self _ _⟩
-  have w₁ := he.env.perm.wW (show 224 + 8 ≤ 2560 by decide)
-  obtain ⟨s₂, run₂, hbx₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.mov .rbx (.mem (at_ .rsp 8)),
-      .store (at_ .r15 tlO) .rbx] s₁ = some s₂ ∧ s₂.gpr .rbx = tl ∧ (∀ r, r ≠ .rbx → s₂.gpr r = s₁.gpr r) ∧
-      s₂.mem = s₁.mem.writeW (W + BitVec.ofNat 64 224) tl ∧ s₂.rd = s₁.rd ∧ s₂.wr = s₁.wr := by
-    refine ⟨_, by xrun [he.env.rsp, he.env.r15, r₁, w₁], ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_setReg, htl₁]
-    · intro r a; simp [gpr_setReg, a]
-    · simp [htl₁]
-    all_goals rfl
-  have f₂ : Frame [⟨W + BitVec.ofNat 64 224, 8⟩] s₁.mem s₂.mem := by
-    rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have rd₂ : ∀ d, (d + 8 ≤ 224 ∨ 232 ≤ d) → d + 8 ≤ 2560 →
-      s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
-    f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (by omega) h' (by decide)) (by decide)
-  refine WP.of_runBlock ⟨s₂, run₂, ⟨⟨he.env.keep (fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide)) hrd₂ hwr₂,
-    ⟨by rw [rd₂ 176 (.inl (by decide)) (by decide)]; exact he.rounds.1, he.rounds.2⟩,
-    by rw [rd₂ 184 (.inl (by decide)) (by decide)]; exact he.alen,
-    by rw [rd₂ 192 (.inl (by decide)) (by decide)]; exact he.tlen⟩, by rw [hm₂, Mem.readW_writeW_self64]⟩, hbx₂⟩
-
 section
 variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
+/-- What `verify` has before checking a received tag of length `t` at `Tp`. -/
+def VerT (R : Nat) (aL tL : BitVec 64) (t : Nat) (Tp : Addr) (s : State) : Prop :=
+  VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s ∧ s.gpr .rbx = BitVec.ofNat 64 t ∧ s.gpr .rsi = Tp ∧
+    Covers [⟨Tp, t⟩] (s.rd ++ s.wr)
+
+omit L in
+theorem VerT.keep {R : Nat} {aL tL : BitVec 64} {t : Nat} {Tp : Addr} {s s' : State}
+    (h : VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s) (k : Keeps s s') :
+    VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s' :=
+  ⟨⟨h.1.1.keep (fun r hr => k.gpr r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> decide)) k.mem k.rd k.wr, by rw [k.mem]; exact h.1.2⟩,
+    by rw [k.gpr _ (by decide), h.2.1], by rw [k.gpr _ (by decide), h.2.2.1], by rw [k.rd, k.wr]; exact h.2.2.2⟩
+
 /-- The tag computed and compared, for an allowed length `t`. -/
-theorem verifyCheck_rel {R t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVec 64} :
-    RelCT isa (fun s₁ s₂ => (VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 t) ∧
-        VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 t)
-      (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))])
-        (.seq (cmp 0) (.block [.mov32 .rcx (imm 0), .alu .sub .rcx (.reg .rax), .mov .rdx (.mem (at_ .r15 0)),
-          .alu .and .rdx (.reg .rcx), .store (at_ .r15 0) .rdx, .mov .rdx (.mem (at_ .r15 8)),
-          .alu .and .rdx (.reg .rcx), .store (at_ .r15 8) .rdx]))))) fun _ _ => True := by
+theorem verifyCheck_rel {R t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVec 64} {Tp : Addr}
+    (dTW : (⟨Tp, t⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    RelCT isa (fun s₁ s₂ => VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s₁ ∧
+        VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s₂)
+      (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0))))
+      fun _ _ => True := by
   -- `recv` keeps the lengths.
-  have hR : ∀ s, VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s ∧ s.gpr .rbx = BitVec.ofNat 64 t →
-      WP isa recv s (VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t)) := fun s ⟨⟨h, ht⟩, hbx⟩ =>
-    WP.mono (recv_ok L h.1 hbx h1 h16) fun s' ⟨he', _, f, _⟩ => by
+  have hR : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s →
+      WP isa recv s (VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t)) := fun s ⟨⟨h, ht⟩, hbx, hsi, hTr⟩ =>
+    WP.mono (recv_ok h.1 hbx h1 h16 hsi hTr (dTW.sub_right (Lay.wSub (by decide)))) fun s' ⟨he', _, f, _⟩ => by
       have d : ∀ d, 176 ≤ d → d + 8 ≤ 256 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
           (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact L.w_w (.inl (by omega)) (by omega) (by decide)
@@ -93,11 +54,13 @@ theorem verifyCheck_rel {R t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : Bit
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 184 (by decide) (by decide)) (by decide), h.2.2.1],
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 192 (by decide) (by decide)) (by decide), h.2.2.2]⟩,
         by rw [f.readW (r := ⟨_, 8⟩) (Region.contains_self _ _) (d 224 (by decide) (by decide)) (by decide), ht]⟩
-  have a := rel_wp (rel_taint (P := fun s₁ s₂ => (VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₁ ∧
-      s₁.gpr .rbx = BitVec.ofNat 64 t) ∧ VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₂ ∧
-      s₂.gpr .rbx = BitVec.ofNat 64 t) ([.rbx] ++ [.r13, .r14, .r15, .rsp])
+  have a := rel_wp (rel_taint (P := fun s₁ s₂ => VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s₁ ∧
+      VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R aL tL t Tp s₂) ([.rbx, .rsi] ++ [.r13, .r14, .r15, .rsp])
       (fun _ _ h => EnvAgree.regs ⟨h.1.1.1.1, h.2.1.1.1, fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2, h.2.2]⟩) ⟨_, by taint_decide⟩)
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [h.1.2.1, h.2.2.1]
+        · rw [h.1.2.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h) hR hR
   -- `finTag` keeps the tag length.
   have hT : ∀ s, VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s → WP isa (finTag v.callees 0) s fun s' =>
@@ -117,7 +80,7 @@ theorem verifyCheck_rel {R t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : Bit
       (P' := fun s₁ s₂ => True ∧ VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₁ ∧
         VerS Ctx St W SP R aL tL (BitVec.ofNat 64 t) s₂) (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hT hT
-  -- The tag length, and the comparison and mask.
+  -- The tag length, and the comparison.
   have hL : ∀ s, (Env Ctx St W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t) →
       WP isa (.block [.mov .rbx (.mem (at_ .r15 tlO))]) s fun s' => Env Ctx St W SP s' ∧
         s'.gpr .rbx = BitVec.ofNat 64 t := fun s ⟨he, ht⟩ => by
@@ -136,10 +99,7 @@ theorem verifyCheck_rel {R t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : Bit
       s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t)) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.2.1.1 h.2.2.1) ⟨_, by taint_decide⟩) (fun _ _ h => h.2) hL hL
   have d := rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 t) ∧
-      (Env Ctx St W SP s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 t)) (c := .seq (cmp 0)
-      (.block [.mov32 .rcx (imm 0), .alu .sub .rcx (.reg .rax), .mov .rdx (.mem (at_ .r15 0)),
-        .alu .and .rdx (.reg .rcx), .store (at_ .r15 0) .rdx, .mov .rdx (.mem (at_ .r15 8)),
-        .alu .and .rdx (.reg .rcx), .store (at_ .r15 8) .rdx])) ([.rbx] ++ [.r13, .r14, .r15, .rsp])
+      (Env Ctx St W SP s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 t)) (c := cmp 0) ([.rbx] ++ [.r13, .r14, .r15, .rsp])
     (fun _ _ h => EnvAgree.regs ⟨h.2.1.1, h.2.2.1, fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) ⟨_, by taint_decide⟩
   exact RelCT.seq a (RelCT.seq b (RelCT.seq c d))
@@ -149,54 +109,62 @@ end
 theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.streamVerifyX86_64.pre s₀)
     (hp' : Proof.AesGcm.streamVerifyX86_64.pre s₀') (hq : Proof.AesGcm.streamVerifyX86_64.pub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (streamVerify v.callees) fun _ _ => True := by
-  have L : Lay (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .r9) (s₀.gpr .rsp) := by
-    have hp₀ := hp
-    simp only [Proof.AesGcm.streamVerifyX86_64, Proof.AesGcm.verifyPre, Proof.AesGcm.stk, Proof.AesGcm.ret,
-      Proof.AesGcm.rounds, Proof.AesGcm.args] at hp₀
-    obtain ⟨-, -, d_cs, d_cw, d_sw, -, -, -, -, k_c, k_s, k_w, wc, ws, ww, -, -⟩ := hp₀
-    exact Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, q₈⟩ := hq
-  have hE₂ := verifyEntry_ok hp'
-  simp only [Proof.AesGcm.arg] at q₈
-  rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← q₈] at hE₂
-  generalize hctx : s₀.gpr .rdi = Ctx at *
-  generalize hst : s₀.gpr .rdx = St at *
-  generalize hw : s₀.gpr .r9 = W at *
-  generalize hsp : s₀.gpr .rsp = SP at *
-  refine rel_reassoc_inner (fn_rel (Ctx := Ctx) (St := St) (W := W) (SP := SP) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (fun r hr => by
+  obtain ⟨L, hperm, ha, hta, dA, hTr, dTW, -, -, -, hR⟩ := ver_lay hp
+  obtain ⟨L', hperm', ha', hta', dA', hTr', -, -, -, -, hR'⟩ := ver_lay hp'
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, q₈, q₉⟩ := hq
+  simp only [Proof.AesGcm.arg] at q₈ q₉
+  have hw16 : s₀.mem.readW (s₀.gpr .rsp + BitVec.ofNat 64 16) 64 =
+      s₀'.mem.readW (s₀'.gpr .rsp + BitVec.ofNat 64 16) 64 := q₉
+  -- What the entry leaves in each run.
+  let I : State → State → Prop := fun s₀ s => VerS (s₀.gpr .rdi) (s₀.gpr .rdx) (stackArg s₀ 1) (s₀.gpr .rsp)
+      (s₀.gpr .rsi).toNat (s₀.gpr .rcx) (s₀.gpr .r8) (stackArg s₀ 0) s ∧ s.gpr .rbx = stackArg s₀ 0 ∧
+    s.gpr .rsi = s₀.gpr .r9 ∧ Covers [⟨s₀.gpr .r9, (stackArg s₀ 0).toNat⟩] (s.rd ++ s.wr)
+  have hE : ∀ {s : State}, Lay (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) →
+      Perm (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) s → InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 16) 8 →
+      InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 →
+      (⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩ : Region).Disjoint ⟨stackArg s 1, 2560⟩ →
+      Covers [⟨s.gpr .r9, (stackArg s 0).toNat⟩] (s.rd ++ s.wr) →
+      ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14) →
+      WP isa (.block (finEntry 16 ++ ([.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx,
+        .mov .rsi (.reg .r9)] : List Instr))) s (I s) := fun L hperm ha hta dA hTr hR =>
+    WP.mono (verifyEntry_ok L rfl rfl rfl rfl ha hta dA hperm hR) fun _ e =>
+      ⟨⟨⟨e.env, e.rounds, e.alen, e.tlen⟩, e.tl⟩, e.rbx, e.rsi, by rw [e.rd, e.wr]; exact hTr⟩
+  have hE₁ := hE L hperm ha hta dA hTr hR
+  have hE₂ := hE L' hperm' ha' hta' dA' hTr' hR'
+  simp only [I] at hE₁ hE₂
+  rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← q₈, ← q₉] at hE₂
+  rw [finEntry, List.append_assoc, List.append_assoc] at hE₁ hE₂
+  rw [streamVerify, finEntry, List.append_assoc, List.append_assoc]
+  refine rel_reassoc_inner (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rdx) (W := stackArg s₀ 1)
+    (SP := s₀.gpr .rsp) (k := 16) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp) ⟨_, by taint_decide⟩
+    (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · rw [hctx, ← q₁]
-      · exact q₂
-      · rw [hst, ← q₃]
-      · exact q₄
-      · exact q₅
-      · rw [hw, ← q₆]
-      · rw [hsp, ← q₇])
-    ⟨_, by taint_decide⟩ (by have := verifyEntry_ok hp; rwa [hctx, hst, hw, hsp] at this) hE₂ ?_)
-  generalize hR : (s₀.gpr .rsi).toNat = R
-  generalize htl : stackArg s₀ 0 = tl
-  generalize ht : tl.toNat = t
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
+    hw16 ha ha' ⟨_, by taint_decide⟩ hE₁ hE₂ ?_)
+  generalize s₀.gpr .rdi = Ctx at *
+  generalize s₀.gpr .rdx = St at *
+  generalize stackArg s₀ 1 = W at *
+  generalize s₀.gpr .rsp = SP at *
+  generalize s₀.gpr .r9 = Tp at *
+  generalize (s₀.gpr .rsi).toNat = R at *
+  generalize htl : stackArg s₀ 0 = tl at *
+  generalize ht : tl.toNat = t at *
   have htl' : tl = BitVec.ofNat 64 t := by rw [← ht, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   subst htl'
   -- The tag length.
-  let A : State → Prop := fun s => (VerS Ctx St W SP R (s₀.gpr .rcx) (s₀.gpr .r8) (BitVec.ofNat 64 t) s ∧
-    s.gpr .rbx = BitVec.ofNat 64 t) ∧ s.zf = some (!Spec.Gcm.tagLenOk t)
-  have hK : ∀ s, VerS Ctx St W SP R (s₀.gpr .rcx) (s₀.gpr .r8) (BitVec.ofNat 64 t) s ∧
-      s.gpr .rbx = BitVec.ofNat 64 t → WP isa tagLenOk s A := fun s ⟨⟨h, hm⟩, hbx⟩ =>
-    WP.mono (tagLenOk_ok s hbx (by rw [← ht]; exact (BitVec.ofNat 64 t).isLt)) fun s' ⟨hz, k⟩ =>
-      ⟨⟨⟨h.keep (fun r hr => k.gpr r (by
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl <;> decide)) k.mem k.rd k.wr, by rw [k.mem]; exact hm⟩,
-        by rw [k.gpr _ (by decide), hbx]⟩, hz⟩
+  let A : State → Prop := fun s => VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s ∧
+    s.zf = some (!Spec.Gcm.tagLenOk t)
+  have hK : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s →
+      WP isa tagLenOk s A := fun s h =>
+    WP.mono (tagLenOk_ok s h.2.1 (by rw [← ht]; exact (BitVec.ofNat 64 t).isLt)) fun s' ⟨hz, k⟩ => ⟨h.keep k, hz⟩
   have a := rel_wp (rel_regs (P := fun s₁ s₂ => True ∧
-      (VerS Ctx St W SP R (s₀.gpr .rcx) (s₀.gpr .r8) (BitVec.ofNat 64 t) s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 t) ∧
-      (VerS Ctx St W SP R (s₀.gpr .rcx) (s₀.gpr .r8) (BitVec.ofNat 64 t) s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 t))
+      VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s₁ ∧
+      VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s₂)
       ([.rbx] ++ [.r13, .r14, .r15, .rsp]) [] true (fun _ _ h => EnvAgree.regs ⟨h.2.1.1.1.1, h.2.2.1.1.1,
-        fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) ⟨_, by taint_decide⟩)
+        fun r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2.1, h.2.2.2.1]⟩) ⟨_, by taint_decide⟩)
     (fun _ _ h => h.2) hK hK
   refine RelCT.seq a (rel_ite_e (fun _ _ h => (h.1.2 rfl).2.1) ?_ ?_)
-  · -- A length §5.2.1.2 does not allow (`rax` is 0 and the tag zeroed).
+  · -- A length §5.2.1.2 does not allow (`rax` is 0).
     exact (rel_env (by decide) (fun _ _ h => ⟨h.1.2.1.1.1.1.1, h.1.2.2.1.1.1.1⟩)
       (rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.1.2.1.1.1.1.1 h.1.2.2.1.1.1.1)
         ⟨_, by taint_decide⟩)).mono (fun _ _ h => h) fun _ _ h => h.2
@@ -206,16 +174,13 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.AesGcm.s
     have hb : 1 ≤ t ∧ t ≤ 16 := by
       simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
       omega
-    have hc : ∀ s, (VerS Ctx St W SP R (s₀.gpr .rcx) (s₀.gpr .r8) (BitVec.ofNat 64 t) s ∧
-        s.gpr .rbx = BitVec.ofNat 64 t) → WP isa (.seq recv (.seq (finTag v.callees 0)
-          (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (.seq (cmp 0) (.block [.mov32 .rcx (imm 0),
-            .alu .sub .rcx (.reg .rax), .mov .rdx (.mem (at_ .r15 0)), .alu .and .rdx (.reg .rcx),
-            .store (at_ .r15 0) .rdx, .mov .rdx (.mem (at_ .r15 8)), .alu .and .rdx (.reg .rcx),
-            .store (at_ .r15 8) .rdx]))))) s (Env Ctx St W SP) := fun s ⟨⟨h, hm⟩, hbx⟩ =>
-      WP.mono (verifyCheck_ok v L h.1 h.2.1 h.2.2.1 h.2.2.2 hm hbx hb.1 hb.2
+    have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) R (s₀.gpr .rcx) (s₀.gpr .r8) t Tp s →
+        WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s
+          (Env Ctx St W SP) := fun s ⟨⟨h, hm⟩, hbx, hsi, hTr⟩ =>
+      WP.mono (verifyCheck_ok v L h.1 h.2.1 h.2.2.1 h.2.2.2 hm hbx hb.1 hb.2 hsi hTr dTW
         (x := List.replicate ((if s₀.gpr .r8 = 0 then (s₀.gpr .rcx).toNat else (s₀.gpr .r8).toNat) % 16) 0)
         (by simp)) fun _ h => h.1
-    exact (rel_wp ((verifyCheck_rel v L hb.1 hb.2).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h)
+    exact (rel_wp ((verifyCheck_rel v L hb.1 hb.2 dTW).mono (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) fun _ _ h => h)
       (fun _ _ h => ⟨h.1.2.1.1, h.1.2.2.1⟩) hc hc).mono (fun _ _ h => h) fun _ _ h => h.2
 
 theorem streamVerify_ct (v : GcmImpl) :

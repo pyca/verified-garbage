@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Scrypt.X86_64.Common
 import VerifiedGarbage.Proof.Scrypt.X86_64.Salsa
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 import Mathlib.Tactic.DefEqTransformations
@@ -10,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Spill
 /-!
 # scryptBlockMix on x86-64: correctness
 
-The calls of `vg_salsa20_8` are used through `SalsaSpec`, what its proof says
-about a call; the proof of this file holds for any code meeting it.
+The inlined Salsa20/8 cores are used through `SalsaSpec`; the functional
+proof holds for any code meeting that specification.
 -/
 
 namespace VG.Proof.Scrypt.X86_64.BlockMix
@@ -26,21 +27,21 @@ open VG.Proof.Scrypt.Memory (toNat_ofNat_lt add_ofNat toNat_add_ofNat contains_o
   InRegions.of_mem bytesAt_length frame_bytesAt bytesAt_writeBytes_self blk_bytesAt xorBytes_length
   bytesAt_add bytesAt_blocks)
 
-/-! ## What a call of `vg_salsa20_8` does -/
+/-! ## What the inlined Salsa20/8 core does -/
 
-/-- A call of `c` replaces the 64 bytes at `rdi` by their Salsa20/8 Core,
+/-- Executing `c` replaces the 64 bytes at `rdi` by their Salsa20/8 Core,
 with the 64 bytes at `rsi` as working space. -/
 def SalsaSpec (c : Prog isa) : Prop :=
   ∀ (s : State) (d sc : Addr), s.gpr .rdi = d → s.gpr .rsi = sc →
     Region.Disjoint ⟨d, 64⟩ ⟨sc, 64⟩ →
-    (below (s.gpr .rsp) 8).Disjoint ⟨d, 64⟩ → (below (s.gpr .rsp) 8).Disjoint ⟨sc, 64⟩ →
+    (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨d, 64⟩ → (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨sc, 64⟩ →
     d.toNat + 64 ≤ 2 ^ 64 → sc.toNat + 64 ≤ 2 ^ 64 →
     InRegions s.wr d 64 → InRegions s.wr sc 64 →
     ∀ Q : State → Prop, (∀ s', s'.rd = s.rd → s'.wr = s.wr →
         (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
         Frame [⟨d, 64⟩, ⟨sc, 64⟩, below (s.gpr .rsp) 8] s.mem s'.mem →
         bytesAt s'.mem d 64 = salsa (bytesAt s.mem d 64) → Q s') →
-    WP isa (.call "vg_salsa20_8" c) s Q
+    WP isa c s Q
 
 /-! ## The precondition -/
 
@@ -190,7 +191,7 @@ theorem blk_B (s₀ : State) {i : Nat} (hi : i < 2 * rr s₀) :
     blk (B s₀) i = bytesAt s₀.mem (bP s₀ + BitVec.ofNat 64 (64 * i)) 64 :=
   blk_bytesAt _ _ (by omega)
 
-/-! ## A call of `vg_salsa20_8` on a block of `y` -/
+/-! ## Inlining Salsa20/8 on a block of `y` -/
 
 theorem calleeSaved_ne {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rdi ∧ r ≠ .rsi := by
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -222,7 +223,7 @@ theorem salsaAt_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s�
   have hsc : (scR s₀).Contains (sc s₀) 64 := by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
   refine hS s₂ _ _ e₁ e₂ (hp.y_s.sub_left hsub |>.sub_right hsub')
-    (by rw [e₄]; exact hp.stk_y.sub_right hsub) (by rw [e₄]; exact hp.stk_s.sub_right hsub')
+    (by rw [e₄]; exact hp.ret_y.sub_right hsub) (by rw [e₄]; exact hp.ret_s.sub_right hsub')
     (by rw [toNat_add_ofNat _ (by have := hp.y_nw; omega)]; have := hp.y_nw; omega)
     (by have := hp.s_nw; omega)
     (by rw [u₂.wr, u₁.wr, hwr, hp.wr]; exact InRegions.of_mem (by simp) (in_y hp ho))
@@ -524,49 +525,36 @@ theorem body_ok {c : Prog isa} (hS : SalsaSpec c) {s₀ : State} (hp : Pre s₀)
 end VG.Proof.Scrypt.X86_64.BlockMix
 
 /-!
-# Calls of `vg_salsa20_8` on x86-64
+# Inlining Salsa20/8 on x86-64
 
 `SalsaSpec` of the verified Salsa20/8 Core, from its `Verified` proof by
-`WP.call`.
+`WP.inline`.
 -/
 
 namespace VG.Proof.Scrypt.X86_64.BlockMix
 
 open VG VG.X86_64
 open VG.Spec.Scrypt (bytesAt salsa)
-open VG.Proof.MdStream.X86_64 (callEntry_byte)
-open VG.Proof.Scrypt.Memory (bytesAt_congr)
-
-theorem salsa_depth : Impl.Scrypt.X86_64.salsa.depth = 0 := by decide +kernel
-
-theorem salsa_nosp : NoSp Impl.Scrypt.X86_64.salsa := by
-  have : ((instrs Impl.Scrypt.X86_64.salsa).all fun i => !Taint.clobbers i .rsp) = true := by
-    rw [← Code.allInstrs_eq]; decide +kernel
-  intro i hi
-  simpa using List.all_eq_true.mp this i hi
-
 theorem salsaSpec : SalsaSpec Impl.Scrypt.X86_64.salsa := by
   intro s d sc hd hsc hds hsd hss _ _ hind hins Q hQ
-  have hne : ∀ r : Reg, r ≠ .rsp → s.callEntry.gpr r = s.gpr r := fun r h => State.callEntry_gpr _ h
-  refine WP.call (k := Proof.Scrypt.salsaX86_64) salsa_correct salsa_nosp
-    (by rw [salsa_depth]; decide) (rd := []) (wr := [⟨d, 64⟩, ⟨sc, 64⟩]) ?_ ?_ ?_ ?_
+  refine WP.inline (k := Proof.Scrypt.salsaX86_64) salsa_correct
+    (rd := []) (wr := [⟨d, 64⟩, ⟨sc, 64⟩]) ?_ ?_ ?_ ?_
   · simp only [Proof.Scrypt.salsaX86_64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_rsp, hne _ (by decide : Reg.rdi ≠ .rsp),
-      hne _ (by decide : Reg.rsi ≠ .rsp), hd, hsc]
+      State.withRegions_wr, hd, hsc]
     exact ⟨trivial, trivial, hds, hsd, hss⟩
-  · have := Covers.pair (Covers.one hind) (Covers.one hins)
+  · have cw := Covers.pair (Covers.one hind) (Covers.one hins)
     intro a n h
-    obtain ⟨R, hR, hc⟩ := this a n (by simpa using h)
+    obtain ⟨R, hR, hc⟩ := cw a n (by simpa using h)
     exact ⟨R, List.mem_append_right _ hR, hc⟩
   · exact Covers.pair (Covers.one hind) (Covers.one hins)
-  · intro s₂ hrd hwr hcs hf _ ⟨s₃, hm₃, _, hpost⟩
-    simp only [Proof.Scrypt.salsaX86_64, State.withRegions_gpr, State.withRegions_mem,
-      hne _ (by decide : Reg.rdi ≠ .rsp), hd, hm₃] at hpost
-    rw [salsa_depth] at hf
-    refine hQ s₂ hrd hwr hcs (by simpa using hf) ?_
-    rw [hpost]
-    congr 1
-    exact bytesAt_congr fun i hi => callEntry_byte s (R := ⟨d, 64⟩) hsd (by simp) hi
+  · intro s' hrd hwr habi hf _ hpost
+    refine hQ s' hrd hwr habi.1 (hf.sub ?_) ?_
+    · intro R hR
+      refine ⟨R, ?_, fun _ h => h⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hR ⊢
+      exact hR.elim Or.inl (fun h => Or.inr (Or.inl h))
+    · simpa only [Proof.Scrypt.salsaX86_64, State.withRegions_gpr,
+        State.withRegions_mem, hd] using hpost
 
 end VG.Proof.Scrypt.X86_64.BlockMix
 
@@ -774,14 +762,11 @@ end VG.Proof.Scrypt.X86_64.BlockMix
 /-!
 # scryptBlockMix on x86-64: constant time
 
-The taint analysis alone cannot prove this: across a call of
-`vg_salsa20_8`, which saves and restores our registers in memory it also
-writes secrets to through a pointer of unknown provenance, it forgets that
-our pointers are public. So we relate two runs (`RelCT`): at every point,
-correctness determines our registers from the public arguments alone, so
-they agree; between the calls, the taint analysis proves each block
-constant time from that; and the calls are constant time by Salsa20/8's own
-proof.
+Across an inlined Salsa core, the taint analysis forgets that the restored
+loop pointers are public: the scratch buffer also holds secrets. Relational
+composition (`RelCT`) recovers their values from correctness at each core
+boundary. Taint analysis proves each core and each intervening block constant
+time from its public pointers.
 -/
 
 namespace VG.Proof.Scrypt.X86_64.BlockMix
@@ -907,33 +892,6 @@ theorem movs_wp {s₀ : State} {k : Nat} {bx : Addr} {dR : Reg} {o : Addr}
   · rw [u₂.other _ (by decide), u₁.gpr, hd]
   · rw [u₂.gpr, u₁.other _ (by decide), h.r13]
 
-/-- What a call of `vg_salsa20_8` on block `o` of `y` needs. -/
-theorem call_hyps {s₀ : State} (hp : Pre s₀) {o : Nat} (ho : o + 64 ≤ 128 * rr s₀) {s : State}
-    (hrdi : s.gpr .rdi = yP s₀ + BitVec.ofNat 64 o) (hrsi : s.gpr .rsi = sc s₀)
-    (hrsp : s.gpr .rsp = s₀.gpr .rsp) (hwr : s.wr = s₀.wr) :
-    Proof.Scrypt.salsaX86_64.pre
-      (s.callEntry.withRegions [] [⟨yP s₀ + BitVec.ofNat 64 o, 64⟩, ⟨sc s₀, 64⟩]) ∧
-    Covers ([] ++ [⟨yP s₀ + BitVec.ofNat 64 o, 64⟩, ⟨sc s₀, 64⟩]) (s.rd ++ s.wr) ∧
-    Covers [⟨yP s₀ + BitVec.ofNat 64 o, 64⟩, ⟨sc s₀, 64⟩] s.wr := by
-  have lt := r_lt hp
-  have hsub : Region.Sub ⟨yP s₀ + BitVec.ofNat 64 o, 64⟩ (yR s₀) := y_sub hp ho
-  have hsub' : Region.Sub ⟨sc s₀, 64⟩ (scR s₀) := Region.sub_prefix (by omega)
-  have hsc : (scR s₀).Contains (sc s₀) 64 := by
-    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega
-  have cw : Covers [⟨yP s₀ + BitVec.ofNat 64 o, 64⟩, ⟨sc s₀, 64⟩] s.wr := by
-    rw [hwr, hp.wr]
-    exact Covers.pair (Covers.one (InRegions.of_mem (by simp) (in_y hp ho)))
-      (Covers.one (InRegions.of_mem (R := scR s₀) (by simp) hsc))
-  have hne : ∀ r : Reg, r ≠ .rsp → s.callEntry.gpr r = s.gpr r := fun r h => State.callEntry_gpr _ h
-  refine ⟨?_, fun a n h => ?_, cw⟩
-  · simp only [Proof.Scrypt.salsaX86_64, State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_rsp, hne _ (by decide : Reg.rdi ≠ .rsp),
-      hne _ (by decide : Reg.rsi ≠ .rsp), hrdi, hrsi, hrsp]
-    exact ⟨trivial, trivial, hp.y_s.sub_left hsub |>.sub_right hsub',
-      hp.stk_y.sub_right hsub, hp.stk_s.sub_right hsub'⟩
-  · obtain ⟨R, hR, hc⟩ := cw a n (by simpa using h)
-    exact ⟨R, List.mem_append_right _ hR, hc⟩
-
 /-! ## Two runs -/
 
 section
@@ -966,20 +924,17 @@ theorem salsaAt_rel {k : Nat} {bx bx' : Addr} {dR : Reg} (hdR : dR = .rbp ∨ dR
   have ho' : o + 64 ≤ 128 * rr s₀' := hq.rr ▸ ho
   have ey : yP s₀' = yP s₀ := hq.rdx.symm
   have es : sc s₀' = sc s₀ := hq.r8.symm
-  have call := RelCT.call (n := "vg_salsa20_8") (P := fun s s' =>
+  have inlined : RelCT isa (fun s s' =>
       (KR s₀ k bx s ∧ s.gpr .rdi = yP s₀ + BitVec.ofNat 64 o ∧ s.gpr .rsi = sc s₀) ∧
       (KR s₀' k bx' s' ∧ s'.gpr .rdi = yP s₀' + BitVec.ofNat 64 o ∧ s'.gpr .rsi = sc s₀'))
-    salsa_correct salsa_ct [] [⟨yP s₀ + BitVec.ofNat 64 o, 64⟩, ⟨sc s₀, 64⟩]
-    fun s s' ⟨⟨h, hd, hs⟩, ⟨h', hd', hs'⟩⟩ => by
-      obtain ⟨p₁, c₁, w₁⟩ := call_hyps hp ho hd hs h.rsp h.wr
-      obtain ⟨p₂, c₂, w₂⟩ := call_hyps hp' ho' hd' hs' h'.rsp h'.wr
-      rw [ey, es] at p₂ c₂ w₂
-      refine ⟨p₁, p₂, ?_, c₁, w₁, c₂, w₂, by rw [h.rsp, h'.rsp, hq.rsp]⟩
-      simp only [Proof.Scrypt.salsaX86_64, State.withRegions_gpr,
-        State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
-        State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), hd, hs, hd', hs', ey, es]
-      exact ⟨trivial, trivial⟩
-  exact ((RelCT.seq (movs_rel hdR) call).wp fun s s' h =>
+      salsa (fun _ _ => True) :=
+    RelCT.taint (A := taint) (Taint.ofRegs [.rdi, .rsi]) (fun s s' h =>
+      Taint.agree_ofRegs fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · rw [h.1.2.1, h.2.2.1, ey]
+        · rw [h.1.2.2, h.2.2.2, es]) (by taint_decide)
+  exact ((RelCT.seq (movs_rel hdR) inlined).wp fun s s' h =>
     ⟨salsa_wp hp ho h.1.1 h.1.2, salsa_wp hp' ho' h.2.1 h.2.2⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
 

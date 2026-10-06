@@ -209,7 +209,7 @@ theorem bitStep_ok {t s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X 
   refine WP.mono (expBit_ok hI.ctx hZ hw hw' hR hXN hXc hY hYN hYc hI.v
     (by have := Nat.mul_le_mul_left v hp; omega) hI.b (by omega) (by omega))
     fun s' ⟨hc', ⟨Y', hY', hYN', hYc'⟩, hV', hb', hz', hfr', k'⟩ => ⟨?_, ⟨hc', ⟨Y', hY', hYN', ?_⟩, ?_, ?_,
-      hI.frm.trans hfr', (hI.keep.trans k').mono (by simp [mmRegs])⟩⟩
+      hI.frm.trans hfr', (hI.keep.trans k').mono (by decide)⟩⟩
   · rw [hz']; congr 1; exact decide_eq_decide.mpr (by omega)
   · rw [hYc', show 2 * (E * 2 ^ j + v / 2 ^ (8 - j)) + v * 2 ^ j / 128 % 2 =
       E * 2 ^ (j + 1) + v / 2 ^ (8 - (j + 1)) by
@@ -419,7 +419,7 @@ theorem byte_ok {t₀ t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N X 
   refine ⟨ExpCtx.store hc₂ hZ (i := sI) (by decide) (by decide) hm' k'.2.2 ((k'.gpr (by decide)).trans
     hc₂.good.rdi), ⟨Y₂, ?_, hYN₂, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm', hdrStore_wv (i := sI) (j := aY) _ _ _ (by decide) (by decide) hn']; exact hY₂
-  · rw [hYc₂, pre_succ eb (by omega), Nat.pow_zero, Nat.div_one, Nat.mul_comm (pre eb i)]; rfl
+  · rw [hYc₂, pre_succ eb (by omega), Nat.pow_zero, Nat.div_one, Nat.mul_comm (pre eb i)]
   · rw [hm', word_writeW_self]
   · rw [hm', hdrStore_hdr (i := sI) _ _ _ (by decide) (by decide) (by decide)]; exact he₂
   · rw [hm', hdrStore_hdr (i := sI) _ _ _ (by decide) (by decide) (by decide)]; exact hlen₂

@@ -50,22 +50,22 @@ theorem rowR_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
     ⟨h23, h24, h2a, h2d, h2c, h2b, h2i⟩, ⟨h34, h3a, h3d, h3c, h3b, h3i⟩,
     ⟨h4a, h4d, h4c, h4b, h4i⟩, -⟩ := hd
   rw [rowR, WP.block_append_iff]
-  refine WP.mono (rowStart_ok hs (by omega)) fun s₁ ⟨c1, b1, k1⟩ => ?_
+  refine WP.mono (rowStart_ok hs (by omega_arith)) fun s₁ ⟨c1, b1, k1⟩ => ?_
   have hs₁ := hs.of_keeps k1 (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (mulStep_ok s₁ (readSrc_sc hs₁ (by omega)) h0a h0d (by decide) (by decide)
+  refine WP.mono (mulStep_ok s₁ (readSrc_sc hs₁ (by omega_arith)) h0a h0d (by decide) (by decide)
     (by decide) h0b) fun s₂ ⟨e2, k2⟩ => ?_
   have hs₂ := hs₁.of_keeps k2 (by simp [Ne.symm h0i])
   rw [WP.block_append_iff]
-  refine WP.mono (mulStep_ok s₂ (readSrc_sc hs₂ (by omega)) h1a h1d (by decide) (by decide)
+  refine WP.mono (mulStep_ok s₂ (readSrc_sc hs₂ (by omega_arith)) h1a h1d (by decide) (by decide)
     (by decide) h1b) fun s₃ ⟨e3, k3⟩ => ?_
   have hs₃ := hs₂.of_keeps k3 (by simp [Ne.symm h1i])
   rw [WP.block_append_iff]
-  refine WP.mono (mulStep_ok s₃ (readSrc_sc hs₃ (by omega)) h2a h2d (by decide) (by decide)
+  refine WP.mono (mulStep_ok s₃ (readSrc_sc hs₃ (by omega_arith)) h2a h2d (by decide) (by decide)
     (by decide) h2b) fun s₄ ⟨e4, k4⟩ => ?_
   have hs₄ := hs₃.of_keeps k4 (by simp [Ne.symm h2i])
   rw [WP.block_append_iff]
-  refine WP.mono (mulStep_ok s₄ (readSrc_sc hs₄ (by omega)) h3a h3d (by decide) (by decide)
+  refine WP.mono (mulStep_ok s₄ (readSrc_sc hs₄ (by omega_arith)) h3a h3d (by decide) (by decide)
     (by decide) h3b) fun s₅ ⟨e5, k5⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
@@ -102,7 +102,7 @@ theorem rowR_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat}
     have hp : ∀ x y z w v : Nat, v * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) =
         v * x + 2 ^ 64 * (v * y) + 2 ^ 128 * (v * z) + 2 ^ 192 * (v * w) := by intros; grind
     rw [hp]
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [RegUpd.gpr_setReg_of_ne _ _ hr.2.2.2.2.1]
     rw [k5.1 _ (by simp [hr.2.2.2.1, hr.2.2.2.2.2.2.2.2, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1]),
@@ -178,7 +178,7 @@ theorem reduceSteps_ok (s : State) :
     have h38 : (38 : BitVec 64).toNat = 38 := rfl
     rw [h38] at e2 e3 e4 e5
     rw [z] at e2
-    omega
+    omega_arith
   · rw [g k5 .rcx (by decide), g k4 .rcx (by decide), g k3 .rcx (by decide), g k2 .rcx (by decide), c1]
 
 /-- `fold`: `r8–r11 + 38 rbp`, with `rcx = 38` and `rbp < 2⁵²`. -/
@@ -197,10 +197,10 @@ theorem fold_ok (s : State) (hc : s.gpr .rcx = 38) (hb : (s.gpr .rbp).toNat < 2 
       exists_eq_left', hc]
     refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
     · rw [BitVec.toNat_ofNat, show (38 : BitVec 64).toNat = 38 from rfl, Nat.mul_comm]
-      exact Nat.mod_eq_of_lt (by omega)
+      exact Nat.mod_eq_of_lt (by omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]) fun s₁ ⟨e1, k1⟩ => ?_
-  refine WP.mono (carry38_ok s₁ (by omega)) fun s₂ ⟨e2, k2⟩ => ?_
+  refine WP.mono (carry38_ok s₁ (by omega_arith)) fun s₂ ⟨e2, k2⟩ => ?_
   refine ⟨?_, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
   rw [e2, e1, k1.1 .r8 (by decide), k1.1 .r9 (by decide), k1.1 .r10 (by decide),
     k1.1 .r11 (by decide)]

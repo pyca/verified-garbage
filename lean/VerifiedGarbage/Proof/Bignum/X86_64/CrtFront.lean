@@ -21,6 +21,7 @@ structure CrtPre (s : State) (B : Addr) (Z k : Nat) (op np ip pp qp dpp dqp qip 
   scr : Scr s B Z
   rdi : s.gpr .rdi = B
   z : offQ ((k + 7) / 8) pl + slot (wsWords ql) 8 + tabBytes (wsWords ql) ≤ Z
+  zk : 128 * k ≤ Z
   k1 : 64 ≤ k
   k2 : k ≤ 1024
   hO : word s.mem B (8 * Public.sOut) = op

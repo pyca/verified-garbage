@@ -1,5 +1,7 @@
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseCTSetup
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+import VerifiedGarbage.Proof.Ed25519.X86.CombCT
+import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.Inline
 
@@ -44,25 +46,19 @@ end
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-theorem baseWr_agree {s t : State} (hs : scalarBaseLocal.pre s) (ht : scalarBaseLocal.pre t)
-    (hp : scalarBaseLocal.pub s t) : s.wr = t.wr := by
-  rw [hs.2.1, ht.2.1, hp.2.1, hp.2.2.2]
-
 def BaseCTReady (s₀ s : State) : Prop :=
   Saved s₀ (arg s₀ 2) s ∧ MulCTInput (arg s₀ 2) (baseScalar s₀) 16 s
 
 theorem scalarBaseTail_ct (s₀ t₀ : State) (hs : scalarBaseLocal.pre s₀) (ht : scalarBaseLocal.pre t₀)
     (hp : scalarBaseLocal.pub s₀ t₀) :
     RelCT isa (fun s t => BaseCTReady s₀ s ∧ BaseCTReady t₀ t)
-      (.seq (pointMultiply 16) (.seq pointEncode (.block (finishWords 96)))) (fun _ _ => True) := by
-  have hwr := baseWr_agree hs ht hp
-  have mulct := (pointMultiply_ct (arg s₀ 2) (baseScalar s₀) (baseScalar t₀) 16 (Or.inl rfl)).mono
+      (.seq combMultiply (.seq pointEncode (.block (finishWords 96)))) (fun _ _ => True) := by
+  have mulct := combMultiply_ct.mono
     (P' := fun (s t : State) => BaseCTReady s₀ s ∧ BaseCTReady t₀ t)
-    (fun _ _ h => ⟨h.1.2, hp.2.2.2.symm ▸ h.2.2,
-      h.1.1.wr.trans (hwr.trans h.2.1.wr.symm)⟩) (fun _ _ h => h)
-  have mw (u s : State) (h : BaseCTReady u s) : WP isa (pointMultiply 16) s (Saved u (arg u 2)) := by
-    refine WP.mono (pointMultiply_ok h.2.ctx.ctx (baseScalar u) 16 (by decide) (by decide)
-      h.2.bound h.2.bits h.2.d) fun t ⟨kt, _, _⟩ => ?_
+    (fun _ _ h => h.1.2.ctx.ctx.edi.trans (hp.2.2.2.trans h.2.2.ctx.ctx.edi.symm)) (fun _ _ h => h)
+  have mw (u s : State) (h : BaseCTReady u s) : WP isa combMultiply s (Saved u (arg u 2)) := by
+    refine WP.mono (combMultiply_ok (S := baseScalar u) h.2.ctx.ctx (by simpa using h.2.bound)
+      (fun q hq => by rw [h.2.bits q (by omega), scalarBit_nat]) h.2.d) fun t ⟨_, kt⟩ => ?_
     exact h.1.mulkeep h.2.ctx.ctx.fit kt
   have mul := ctWithRuns mulct (fun s t h => ⟨mw s₀ s h.1, mw t₀ t h.2⟩)
   have encct := pointEncode_ct.mono (P' := BaseSaved s₀ t₀)
@@ -91,6 +87,36 @@ end
 
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
+
+theorem scalarBase_correct {s : State} (h : scalarBaseLocal.pre s) :
+    WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
+  obtain ⟨hp, hi, ho⟩ := scalarBase_pre h
+  let scalar := Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
+  have scalar_bound : scalar < 2 ^ (16 * 16) := by
+    have hb := decodeLE_lt (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
+    simp only [Spec.Ed25519.bytesAt, List.length_map, List.length_range] at hb
+    change scalar < 256 ^ 32 at hb
+    rw [show 2 ^ (16 * 16) = 256 ^ 32 by decide]
+    exact hb
+  simp only [scalarBase, List.append_assoc]
+  refine WP.seq (WP.block_append (WP.mono (abiSave_ok hp) fun a ha => ?_))
+  refine WP.block_append (WP.mono (inputBits_ok hp hi ha (by decide) (by decide)) fun b ⟨hb, bits⟩ => ?_)
+  have cb := hb.ctx hp.fit hp.wr
+  refine WP.mono (fieldCode_ok baseSetupOps cb) fun c ⟨kc, ec⟩ => ?_
+  have hc := hb.ikeep hp.fit (IKeep.of_field kc)
+  have cc := hc.ctx hp.fit hp.wr
+  have dc : env c.mem (arg s 2) 16 = Spec.Ed25519.d := by rw [ec, baseSetup_d]
+  have bc : ∀ i < 256, c.mem (addr (arg s 2) (7168 + i)) = BitVec.ofNat 8 ((scalar / 2 ^ i) % 2) := by
+    intro i ii
+    rw [IKeep.bit (IKeep.of_field kc) cb i (by omega_using [ii]), bits i (by omega_using [ii])]
+  refine WP.seq (WP.mono (combMultiply_ok cc (by simpa using scalar_bound) bc dc) fun d ⟨pd, kd⟩ => ?_)
+  have hd := hc.mulkeep hp.fit kd
+  refine WP.seq (WP.mono (pointEncode_value (hd.ctx hp.fit hp.wr)) fun e ⟨ke, ve⟩ => ?_)
+  have he := hd.ikeep hp.fit ke
+  refine WP.mono (finishWords_ok hp ho he (src := 96) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
+  change Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 = _
+  rw [et, ve, encodePoint_rep pd, Spec.Ed25519.scalarBase,
+    encodePoint_rep (pointMul_rep _ basePoint_rep)]
 
 def baseSatMem : Mem := fun a =>
   if a = 0x8005 then 0x10 else if a = 0x8009 then 0x20 else if a = 0x800d then 0x40 else 0
@@ -152,8 +178,9 @@ theorem scalarBase_verified : Verified X86.target scalarBase (Spec.Ed25519.scala
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [scalarBaseRd, scalarBaseWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [scalarBaseRd, scalarBaseWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    rcases hr with (rfl | rfl) | rfl | rfl <;> simp only [true_or, or_true]
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩

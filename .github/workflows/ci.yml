@@ -21,12 +21,17 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  # The Lean build is split into shards that build in parallel (see
-  # ci/lean_shards.py).
-  lean-plan:
-    name: Plan the Lean build
+  # Plans the Lean build: when it needs shards (see ci/lean_shards.py), it
+  # stops there, and they build in parallel; otherwise (or when a push to
+  # main reuses the merge queue's outputs) it builds on this runner, rather
+  # than queue for another.
+  lean:
+    name: "Lean: plan and build"
+    # More independent files, with two compiler threads per file (lakefile.toml).
+    env:
+      LEAN_NUM_THREADS: "6"
     runs-on: ubuntu-latest
-    # To find the merge queue's run of this commit.
+    # To find the merge queue's run of this commit, and download its outputs.
     permissions:
       actions: read
       contents: read
@@ -35,15 +40,23 @@ jobs:
       shards: ${{ steps.plan.outputs.shards }}
       build-key: ${{ steps.plan.outputs.build-key }}
       reuse: ${{ steps.reuse.outputs.run-id }}
+      # The caches' keys, for every job that restores them.
+      build-cache: ${{ steps.keys.outputs.build-cache }}
+      build-cache-prefix: ${{ steps.keys.outputs.build-cache-prefix }}
+      manifest-cache: ${{ steps.keys.outputs.manifest-cache }}
+      manifest-cache-prefix: ${{ steps.keys.outputs.manifest-cache-prefix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # The keys of the caches of the build and of its manifest.
+      - uses: ./.github/actions/lean-keys
+        id: keys
       # GitHub moves main to exactly the commit its merge queue tested, with
       # this workflow, restoring only main's caches (and its own new
       # branch's, which start empty): that run's Lean outputs are what a push
-      # to main would build. So the push reuses them (see `lean`) instead of
-      # running the shards, if that run succeeded and they're still there.
+      # to main would build. So the push reuses them instead of running the
+      # shards, if that run succeeded and they're still there.
       # Never a pull request's run: only the merge queue's branches for main.
       - id: reuse
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -54,8 +67,9 @@ jobs:
           id=$(gh run list --workflow ci.yml --event merge_group --commit "$GITHUB_SHA" --status success \
             --json databaseId,headBranch \
             --jq '[.[] | select(.headBranch | startswith("gh-readonly-queue/main/"))][0].databaseId // empty' || true)
-          if [ -n "$id" ] && [ "$(gh api "repos/$GH_REPO/actions/runs/$id/artifacts?name=lean-build-final" \
-              --jq '.artifacts[0].expired' || true)" = false ]; then
+          # Its final outputs are named after the job that assembled them.
+          if [ -n "$id" ] && [ -n "$(gh api --paginate "repos/$GH_REPO/actions/runs/$id/artifacts?per_page=100" \
+              --jq '.artifacts[] | select((.name | startswith("lean-build-final-")) and (.expired | not)) | .name' || true)" ]; then
             echo "Reusing the Lean outputs of run $id."
             echo "run-id=$id" >> "$GITHUB_OUTPUT"
           fi
@@ -66,8 +80,8 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lean-manifest
-          key: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-          restore-keys: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
+          key: ${{ steps.keys.outputs.manifest-cache }}
+          restore-keys: ${{ steps.keys.outputs.manifest-cache-prefix }}
       - id: plan
         env:
           MATCHED: ${{ steps.manifest.outputs.cache-matched-key }}
@@ -83,21 +97,75 @@ jobs:
           path: ${{ runner.temp }}/lean-plan.json
           retention-days: 1
           if-no-files-found: error
+      # The rest builds here: with shards, it is skipped, so that they start
+      # as soon as the plan is done.
+      - name: Decide whether to build here
+        id: here
+        env:
+          COUNT: ${{ steps.plan.outputs.count }}
+          REUSE: ${{ steps.reuse.outputs.run-id }}
+        run: |
+          if [ "$COUNT" = 0 ] || [ -n "$REUSE" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$COUNT shards build the proofs."
+          fi
+      - uses: ./.github/actions/lean-prepare
+        id: prepare
+        if: ${{ steps.here.outputs.build == 'true' }}
+        with:
+          key: ${{ steps.keys.outputs.build-cache }}
+          restore-keys: |
+            ${{ steps.plan.outputs.build-key }}
+            ${{ steps.keys.outputs.build-cache-prefix }}
+      # On a push to main, the merge queue run's outputs of this commit: its
+      # shards' and its final ones (`lean-build-final-*`, extracted last).
+      # Lake rebuilds whatever doesn't match the sources.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: ${{ steps.here.outputs.build == 'true' && steps.reuse.outputs.run-id != '' }}
+        with:
+          pattern: lean-build-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/lean-build
+          run-id: ${{ steps.reuse.outputs.run-id }}
+          github-token: ${{ github.token }}
+      - uses: ./.github/actions/lean-assemble
+        if: ${{ steps.here.outputs.build == 'true' }}
+        with:
+          id: lean
+          cache-hit: ${{ steps.prepare.outputs.cache-hit }}
+          cache-key: ${{ steps.prepare.outputs.cache-primary-key }}
+          manifest-cache: ${{ steps.keys.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ steps.keys.outputs.manifest-cache-prefix }}
 
+  # Each shard uploads its outputs, then lists the run's artifacts; one that
+  # finds every shard's assembles them (`lean-assemble`), on the runner it
+  # has set up already, and then uploads a marker, `lean-assembled-<shard>`.
+  # Whichever shard lists last lists after every upload, so one normally
+  # finds them all, and two that both do check the same build twice. That
+  # relies on the artifacts API listing an upload as soon as it is done,
+  # which GitHub does not promise: if no shard assembles, `all-green`, which
+  # requires every shard to succeed and a marker, assembles itself instead.
+  # So whatever the API lists, a run passes only if some job checked the
+  # whole build.
   lean-shard:
     # More independent files, with two compiler threads per file (lakefile.toml).
     env:
       LEAN_NUM_THREADS: "6"
-    needs: lean-plan
-    if: ${{ needs.lean-plan.outputs.count != '0' && needs.lean-plan.outputs.reuse == '' }}
+    needs: lean
+    # To list the run's artifacts.
+    permissions:
+      actions: read
+      contents: read
+    if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON(needs.lean-plan.outputs.shards) }}
+        shard: ${{ fromJSON(needs.lean.outputs.shards) }}
     # No expressions: GitHub does not evaluate them in the name of a skipped
     # job, and shows them as written. It adds the shard to each running
-    # job's name itself ("Lean proof shard (3)").
-    name: Lean proof shard
+    # job's name itself ("Lean: shard (3)").
+    name: "Lean: shard"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -106,29 +174,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # The build the plan is for (or, if it has none, the last build `lean`
-      # saved): Lake rebuilds only what changed since. Mostly extraction,
-      # into `.lake/build`: it runs in the background while `lean-setup`,
-      # which runs no Lake command, installs Lean and restores Mathlib.
-      - name: Restore this project's build
-        id: lean-build
-        background: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The build the plan is for (or, if it has none, the last build main
+      # saved).
+      - uses: ./.github/actions/lean-prepare
+        id: prepare
         with:
-          path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
+          key: ${{ needs.lean.outputs.build-cache }}
           restore-keys: |
-            ${{ needs.lean-plan.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
-      - uses: ./.github/actions/lean-setup
-        id: lean-setup
-      - wait: [lean-build]
-      # Lake, only once nothing else writes to `lean/.lake`.
-      - uses: ./.github/actions/lean-mathlib
-        with:
-          mods: ${{ steps.lean-setup.outputs.mods }}
-          cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
-          cache-key: ${{ steps.lean-setup.outputs.cache-key }}
+            ${{ needs.lean.outputs.build-key }}
+            ${{ needs.lean.outputs.build-cache-prefix }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: lean-plan
@@ -163,148 +217,56 @@ jobs:
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
-
-  lean:
-    env:
-      LEAN_NUM_THREADS: "6"
-    name: Lean proofs
-    needs: [lean-plan, lean-shard]
-    # Also when the plan has no shards, or reuses the merge queue's outputs,
-    # which skip `lean-shard`.
-    if: ${{ !cancelled() && needs.lean-plan.result == 'success' && (needs.lean-shard.result == 'success' || needs.lean-shard.result == 'skipped') }}
-    runs-on: ubuntu-latest
-    # To download the merge queue run's outputs.
-    permissions:
-      actions: read
-      contents: read
-    defaults:
-      run:
-        working-directory: lean
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      # Both restores run in the background while `lean-setup`, which runs
-      # no Lake command, installs Lean and restores Mathlib.
-      - name: Restore this project's build
-        id: lean-build
-        background: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lean/.lake/build
-          key: lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-          restore-keys: |
-            ${{ needs.lean-plan.outputs.build-key }}
-            lean-build-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
-      - name: Restore the manifest of the last build
-        id: lean-manifest
-        background: true
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .lean-manifest
-          key: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-${{ hashFiles('lean/lakefile.toml', 'lean/*.lean', 'lean/VerifiedGarbage/**', 'lean/VerifiedGarbageTest/**') }}
-          restore-keys: lean-manifest-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain', 'lean/lake-manifest.json') }}-
-      - uses: ./.github/actions/lean-setup
-        id: lean-setup
-      - wait: [lean-build, lean-manifest]
-      # Lake, only once nothing else writes to `lean/.lake`.
-      - uses: ./.github/actions/lean-mathlib
-        with:
-          mods: ${{ steps.lean-setup.outputs.mods }}
-          cache-hit: ${{ steps.lean-setup.outputs.cache-hit }}
-          cache-key: ${{ steps.lean-setup.outputs.cache-key }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        if: ${{ needs.lean-shard.result == 'success' }}
-        with:
-          pattern: lean-build-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/lean-build
-      # On a push to main, the merge queue run's outputs of this commit (see
-      # `lean-plan`): its shards' and its own (`lean-build-final`, extracted
-      # last). Lake rebuilds whatever doesn't match the sources.
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        if: ${{ needs.lean-plan.outputs.reuse != '' }}
-        with:
-          pattern: lean-build-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/lean-build
-          run-id: ${{ needs.lean-plan.outputs.reuse }}
-          github-token: ${{ github.token }}
-      - name: Add the shards' outputs to the build
+      # Only after this shard's upload, so that the last shard to list finds
+      # every shard's.
+      - name: Find out whether every shard's outputs are uploaded
+        id: all-uploaded
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SHARDS: ${{ needs.lean.outputs.shards }}
         run: |
-          mkdir -p .lake/build
-          for f in "$RUNNER_TEMP"/lean-build/*.tar.zst; do
-            [ -e "$f" ] || continue
-            tar --zstd -xf "$f" -C .lake/build
+          # An error here only leaves the assembly to another job.
+          names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            --jq '.artifacts[].name' || true)
+          for s in $(jq -r '.[]' <<< "$SHARDS"); do
+            if ! grep -qxF "lean-build-$s" <<< "$names"; then
+              echo "Shard $s's outputs are not uploaded yet: another job assembles the build."
+              exit 0
+            fi
           done
-      # With every shard's outputs this builds only what the plan left to
-      # this job (all of it, with no shards); anything else it builds (e.g.
-      # if a newer cache was restored here than in a shard) is checked here.
-      - name: Check every proof (and the axiom audit)
-        run: |
-          set -o pipefail
-          touch "$RUNNER_TEMP/before-build"
-          lake build 2>&1 | tee "$RUNNER_TEMP/build.log"
-      # In the merge queue, what this job built, for the push to main to reuse.
-      - name: Collect the outputs of this build
-        if: ${{ github.event_name == 'merge_group' }}
-        run: |
-          python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times-final.json"
-          cd .lake/build
-          find . -type f -newer "$RUNNER_TEMP/before-build" -printf '%P\n' \
-            | tar --zstd -cf "$RUNNER_TEMP/lean-build-final.tar.zst" -T -
-      - if: ${{ github.event_name == 'merge_group' }}
+          echo "Every shard's outputs are uploaded: this shard assembles the build."
+          echo "all=true" >> "$GITHUB_OUTPUT"
+      - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: lean-build-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/lean-build
+      - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
+        uses: ./.github/actions/lean-assemble
+        with:
+          id: ${{ matrix.shard }}
+          cache-hit: ${{ steps.prepare.outputs.cache-hit }}
+          cache-key: ${{ steps.prepare.outputs.cache-primary-key }}
+          manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}
+      # Last: only once every check of the whole build has passed.
+      - name: Record that this shard assembled the build
+        if: ${{ steps.all-uploaded.outputs.all == 'true' }}
+        run: echo "Shard $SHARD assembled the build." > "$RUNNER_TEMP/lean-assembled"
+        env:
+          SHARD: ${{ matrix.shard }}
+      - if: ${{ steps.all-uploaded.outputs.all == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: lean-build-final
-          path: |
-            ${{ runner.temp }}/lean-build-final.tar.zst
-            ${{ runner.temp }}/lean-times-final.json
-          compression-level: 0
+          name: lean-assembled-${{ matrix.shard }}
+          path: ${{ runner.temp }}/lean-assembled
           retention-days: 1
           if-no-files-found: error
-      # Only main saves. A pull request restores its own branch's caches
-      # before main's, so an entry it saved would win over main's newer one
-      # after it merges main, and it would re-prove everything main changed
-      # since. (Merge queue runs each get their own branch, whose caches no
-      # other run can restore.)
-      - name: Write the manifest of this build
-        id: manifest
-        if: ${{ steps.lean-build.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' }}
-        env:
-          KEY: ${{ steps.lean-build.outputs.cache-primary-key }}
-        run: |
-          python3 ../ci/lean_shards.py times < "$RUNNER_TEMP/build.log" > "$RUNNER_TEMP/lean-times.json"
-          python3 ../ci/lean_shards.py manifest ../.lean-manifest/manifest.json \
-            "$RUNNER_TEMP"/lean-build/lean-times-*.json "$RUNNER_TEMP/lean-times.json" > "$RUNNER_TEMP/manifest.json"
-          mkdir -p ../.lean-manifest
-          mv "$RUNNER_TEMP/manifest.json" ../.lean-manifest/manifest.json
-          echo "key=lean-manifest-${KEY#lean-build-}" >> "$GITHUB_OUTPUT"
-      # Lake never deletes the outputs of a module that was deleted or
-      # renamed, and each build starts from the last one saved: without
-      # this, they would be saved again until the toolchain changes.
-      - name: Remove the outputs of modules that no longer exist
-        if: ${{ steps.manifest.outcome == 'success' }}
-        run: python3 ../ci/lean_shards.py prune .lake/build
-      - name: Save this project's build
-        if: ${{ steps.manifest.outcome == 'success' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: lean/.lake/build
-          key: ${{ steps.lean-build.outputs.cache-primary-key }}
-      # After the build, so that a plan never finds a manifest without its
-      # build.
-      - name: Save the manifest of this build
-        if: ${{ steps.manifest.outcome == 'success' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .lean-manifest
-          key: ${{ steps.manifest.outputs.key }}
-      - name: Check the generated Rust is up to date
-        run: lake env lean --run Emit.lean --check
 
   lean-imports:
-    name: Lean import discipline
+    name: Static checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -336,22 +298,20 @@ jobs:
       matrix:
         platform:
           - os: ubuntu-latest
-          # x86: a 32-bit userspace, run natively on the x86-64 host. There's
-          # no pyca runner image for i386, so the job starts by installing the
-          # amd64 libc that the runner's (64-bit) Node needs for JS actions
-          # (and Python, for the coverage export).
+          # x86: a 32-bit userspace, run natively on the x86-64 host, in the
+          # image ci/runner.Dockerfile builds (Runner images workflow). It
+          # holds only that platform, so it is named.
           - os: ubuntu-latest
             container:
-              image: rust:slim
+              image: ghcr.io/pyca/verified-garbage-runner:i686
               options: --platform linux/386
-            install-amd64-libc: true
           - os: ubuntu-24.04-arm
-          # ARMv7: a 32-bit userspace, run natively on the ARM64 host.
+          # ARMv7: a 32-bit userspace, run natively on the ARM64 host, in the
+          # same Dockerfile's image for it.
           - os: ubuntu-24.04-arm
             container:
-              image: ghcr.io/pyca/cryptography-runner-ubuntu-rolling:armv7l
-              # A fresh home avoids upgrading the image's incomplete Rust installation.
-              options: --env RUSTUP_HOME=/tmp/verified-garbage-rustup
+              image: ghcr.io/pyca/verified-garbage-runner:armv7l
+              options: --platform linux/arm/v7
           # PPC64LE: pyca's ppc64le runner image, on a ppc64le runner (as
           # pyca/cryptography does).
           - os: ubuntu-24.04-ppc64le
@@ -390,13 +350,6 @@ jobs:
       LLVM_PROFILE_FILE: .rust-cov/cov-%p-%m.profraw
       WYCHEPROOF_ROOT: wycheproof
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.platform.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -417,6 +370,10 @@ jobs:
           # key but run no clippy, so when one of them saved the entry first,
           # this job's clippy checked the dependencies again on every run.
           shared-key: rust
+          # The benchmark crate is outside the library's workspace.
+          workspaces: |
+            . -> target
+            bench -> target
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Lint
         if: ${{ matrix.rust == 'stable' }}
@@ -433,13 +390,6 @@ jobs:
         env:
           RUSTFLAGS: -D warnings
         run: |
-          # GitHub's runner images have OpenSSL's headers and pkg-config;
-          # only the containers need them installed (as root, without sudo).
-          if ! pkg-config --exists openssl 2>/dev/null; then
-            if [ "$(id -u)" != 0 ]; then sudo=sudo; fi
-            $sudo apt-get update -qq
-            $sudo apt-get install -qq -y --no-install-recommends libssl-dev pkg-config
-          fi
           cargo fmt --check
           cargo clippy --all-targets --locked
       - run: rustc -vV
@@ -469,9 +419,8 @@ jobs:
     name: Rust (Thumb, ${{ matrix.rust }})
     runs-on: ubuntu-24.04-arm
     container:
-      image: ghcr.io/pyca/cryptography-runner-ubuntu-rolling:armv7l
-      # A fresh home avoids upgrading the image's incomplete Rust installation.
-      options: --env RUSTUP_HOME=/tmp/verified-garbage-rustup
+      image: ghcr.io/pyca/verified-garbage-runner:armv7l
+      options: --platform linux/arm/v7
     env:
       RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
       # For every cargo command, with the container's native linker.
@@ -507,6 +456,25 @@ jobs:
             awk '$4 == "FUNC" && $8 ~ /vg_/ { n++; if ($2 ~ /[02468aceACE]$/) { print "not Thumb: " $8; bad++ } }
                  END { print n " verified function symbols"; exit (n == 0 || bad > 0) }'
 
+  # The latest CPU time of each line of `rust-cpu-features`' runs on `main`,
+  # per class of host, which its shards deal out their lines by
+  # (ci/cpu_shards.py):
+  # restored once, so that every shard has the same; `{}` before `main` has
+  # saved any.
+  cpu-features-times:
+    name: "Rust: times of the CPU feature runs"
+    runs-on: ubuntu-latest
+    outputs:
+      times: ${{ steps.times.outputs.times }}
+    steps:
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}
+          restore-keys: cpu-features-times-
+      - id: times
+        run: echo "times=$(cat .cpu-features-times/times.json 2>/dev/null || echo '{}')" >> "$GITHUB_OUTPUT"
+
   # CPU feature detection (src/cpu.rs) and the primitives that choose an
   # implementation by CPU feature, tested end to end on this runner's CPU,
   # on CPUs that Intel SDE emulates, and natively on ARM64 (where
@@ -522,9 +490,14 @@ jobs:
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
   # somewhere; the coverage, merged with the rest, checks that every one
   # was. These are the only runs that set `VG_CPU_FEATURES`, and a CPU runs
-  # each value of it once (the lint job and the loop below check both), so
-  # that no run repeats another's.
+  # each value of it once (the lint job and ci/cpu_shards.py check both), so
+  # that no run repeats another's. A CPU whose lines take long is split into
+  # shards: matrix entries with the same `runs` (a YAML alias of the first's)
+  # and a `shard` of `i/n`, each a job that runs its share of the lines,
+  # dealt out by the CPU time each took on `main` on one class of host
+  # (ci/cpu_shards.py, with the times `cpu-features-times` restores).
   rust-cpu-features:
+    needs: cpu-features-times
     strategy:
       fail-fast: false
       matrix:
@@ -533,89 +506,125 @@ jobs:
             arch: x86_64
             # AES-GCM's instances for AES's or GHASH's extension alone, which
             # no runner or chip has without the other; AES-NI's and
-            # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's
-            # AES-NI functions), which a runner with VAES and VPCLMULQDQ never
-            # chooses; and VAES's and VPCLMULQDQ's 256-bit ones, which a
-            # runner with AVX512BW too never chooses.
+            # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's,
+            # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
+            # blocks in registers among them, and AES-OCB's through
+            # `Backend::AesNi`), which a runner with VAES and VPCLMULQDQ never
+            # chooses; and VAES's and
+            # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
+            # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
+            # RSASSA-PSS with the hash functions' SHA extensions and RSA's
+            # baseline code.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              aes,ssse3 | aes_gcm cmac cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+              sha,ssse3 | rsa_pkcs1 rsa_pss rsa_oaep cpu
           # x86 feature dispatch, natively in a 32-bit userspace, with the
-          # runner's features and every test with the baseline
-          # implementations; and AES-GCM's instances for AES's or GHASH's
-          # extension alone, as on x86-64.
+          # runner's features (ChaCha20's and ChaCha20-Poly1305's SSSE3
+          # instances) and every test with the baseline implementations; and
+          # AES-GCM's and AES-GCM-SIV's instances for AES's or GHASH's
+          # extension alone.
           - chip: native
             arch: x86
             container:
-              image: rust:slim
+              image: ghcr.io/pyca/verified-garbage-runner:i686
               options: --platform linux/386
-            install-amd64-libc: true
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 mlkem scrypt x25519 ed25519 cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
-              aes | aes_gcm cpu
-              pclmulqdq,ssse3 | aes_gcm cpu
-          # AVX-512F (with Argon2's vg_argon2_compress_avx512), BMI2 and ADX;
-          # and BMI2 and ADX without AVX-512F.
+              aes | aes_gcm aes_gcm_siv cpu
+              pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
+          # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
+          # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
+          # RSA's and P-256's ADX functions); BMI2 and ADX without AVX-512F; AVX-512F
+          # without AVX2, for Argon2 with G's AVX-512 code and BLAKE2b's
+          # baseline code; and AVX-512F without AVX512VL, for Argon2 with G's
+          # AVX-512 code and BLAKE2b's AVX2 code.
           - chip: skx
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              bmi2,adx | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              bmi2,adx | ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx512f | argon2 rfc9106 cpu
+              avx,avx2,avx512f | argon2 rfc9106 mlkem cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
-          # not VAES or VPCLMULQDQ.
+          # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
+          # with the hash functions' AVX2 code and RSA's baseline code, and
+          # P-256 with its baseline multiplications).
           - chip: hsw
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           - chip: p4p
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Arrow Lake: the SHA512 extension, which no runner has.
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+          # Arrow Lake: the SHA512 extension, which no runner has (and
+          # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
+          # it, and P-256's signatures with SHA-384 using it, with and
+          # without ADX).
           - chip: arl
             runs: |
-              - | sha384 sha512 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,sha512 | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
-          # and Ed25519's IFMA variants; VAES, VPCLMULQDQ and AVX512BW, for
-          # vg_aes_ctr32_vaes, vg_ghash_vpclmul and the AES-GCM and AES-CMAC
-          # instances calling them (AES-GCM's with its 512-bit loops); and
-          # AES-GCM's instances with VAES or VPCLMULQDQ alone or paired with
-          # the other's 128-bit instruction, which no chip has without the
-          # other, and with both in 256-bit registers alone, which a chip
-          # with AVX512BW never chooses.
+              - | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,sha512 | ed25519 rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
+          # Ed25519's IFMA variants and vg_rsa_private_checked_ifma; VAES,
+          # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
+          # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
+          # with its 512-bit loops); and AES-GCM's instances with VAES or
+          # VPCLMULQDQ alone or paired with the other's 128-bit instruction,
+          # which no chip has without the other, and with both in 256-bit
+          # registers alone, which a chip with AVX512BW never chooses; and
+          # RSAES-PKCS1-v1_5 decryption and RSASSA-PSS signing with
+          # vg_rsa_private_checked_ifma and each hash function's
+          # implementations.
+          # Three shards: its RSA lines each run Wycheproof's RSA tests
+          # under SDE, which take minutes on a runner without AVX-512, and
+          # three times as long sharing a runner's cores.
           - chip: icx
-            runs: |
-              - | x25519 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
-              avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+            shard: 1/3
+            runs: &icx-runs |
+              - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
+              avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq | aes_gcm cpu
+          - chip: icx
+            shard: 2/3
+            runs: *icx-runs
+          - chip: icx
+            shard: 3/3
+            runs: *icx-runs
           # Diamond Rapids: the SHA512 extension and AVX512_IFMA, for
-          # Ed25519's verification with both (vg_ed25519_verify_shani_ifma).
+          # Ed25519's verification with both (vg_ed25519_verify_shani_ifma)
+          # and RSASSA-PSS signing with both.
           - chip: dmr
             runs: |
-              - | ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | ed25519 rsa_pss message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-          # and `sha3` and `none` the SHA-3 prototype and its scalar fallback.
+          # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
+          # the instances of ML-KEM, ML-DSA and Ed448 calling each),
+          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
+          # and AES-CCM with the scalar AES, and the unrestricted run and
+          # `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
           - chip: native
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
-              - | aes_gcm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
-              sha3 | sha3 shake mlkem mldsa
-              none | chacha20 sha3 shake mlkem mldsa
-    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }})
+              sha3 | sha3 shake mlkem mldsa ed448
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
+    name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
       image: ${{ matrix.container.image || '' }}
@@ -629,13 +638,6 @@ jobs:
       SDE_URL: https://downloadmirror.intel.com/924984/sde-external-10.13.1-2026-07-28-lin.tar.xz
       SDE_SHA256: 94e97d623fec54385686e1e7ba65ebc9941748c05ee451423948334892bf2b50
     steps:
-      - name: Install the amd64 libc for the runner's Node
-        if: ${{ matrix.install-amd64-libc }}
-        run: |
-          dpkg --add-architecture amd64
-          apt-get update -qq
-          apt-get install -qq -y --no-install-recommends libc6:amd64 libstdc++6:amd64 git ca-certificates python3
-
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -676,28 +678,28 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs`. The lines run at the same time, as many as the runner has
-      # cores: each `cargo test` starts every test binary, under SDE a second
-      # or more each on one core, whether or not its filter selects any test,
-      # so that one line at a time left the other cores idle. (Cargo holds the
-      # build directory's lock only while building, which the first command
-      # does for all of them; the coverage files are named by process.) Each
-      # line's output is printed afterwards in a log group of its own; every
-      # line runs, and the step fails at the end, naming the lines that
-      # failed.
+      # `runs` (of this shard's, ci/cpu_shards.py). The lines run at the same
+      # time, slowest first, as many as the runner has cores: each `cargo
+      # test` starts every test binary, under SDE a second or more each on one
+      # core, whether or not its filter selects any test, so that one line at
+      # a time left the other cores idle. (Cargo holds the build directory's
+      # lock only while building, which the first command does for all of
+      # them; the coverage files are named by process.) Each line's output is
+      # printed afterwards in a log group of its own; every line runs, and the
+      # step fails at the end, naming the lines that failed. Each line's CPU
+      # time (user and system, of its `cargo test` and everything it ran) is
+      # kept, for `main` to save for the next runs' shards.
       - name: Test the implementations
         shell: bash
         run: |
+          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
           logs=$RUNNER_TEMP/runs
           mkdir -p "$logs"
           names=()
-          declare -A seen
+          keys=()
           while IFS='|' read -r -u 3 features tests; do
-            features=$(echo $features) tests=$(echo $tests)
-            [ -n "$tests" ] || continue
-            [ -z "${seen[$features]}" ] || { echo "::error::VG_CPU_FEATURES=$features twice: put its tests on one line"; exit 1; }
-            seen[$features]=1
+            keys+=("$features")
             [ "$features" = - ] && features=
             filter=$tests
             [ "$tests" = all ] && filter=
@@ -705,24 +707,43 @@ jobs:
             log=$logs/${#names[@]}
             (
               status=0
-              VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-                > "$log" 2>&1 || status=$?
+              TIMEFORMAT='%U %S'
+              { time VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
+                > "$log" 2>&1 || status=$?; } 2> "$log.time"
               echo "$status" > "$log.status"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
-          done 3<<< "$RUNS"
+          done 3<<< "$lines"
           wait
           failed=()
           for i in "${!names[@]}"; do
             echo "::group::${names[$i]}"
             cat "$logs/$i"
             echo "::endgroup::"
+            echo "${names[$i]}: $(cat "$logs/$i.time") s of CPU (user, system)"
+            printf '%s\t%s\n' "${keys[$i]}" "$(cat "$logs/$i.time")" >> "$logs/times"
             [ "$(cat "$logs/$i.status")" = 0 ] || failed+=("${names[$i]}")
           done
+          # SDE emulates AVX-512 several times slower without it: the times
+          # are kept per class of host (ci/cpu_shards.py).
+          host=no-avx512f
+          if grep -qw avx512f /proc/cpuinfo; then host=avx512f; fi
+          python3 ci/cpu_shards.py times "$CPU" "$host" "$logs/times" > "cpu-features-times-$JOB.json"
           for f in "${failed[@]}"; do echo "::error::Failed with $f"; done
           [ ${#failed[@]} -eq 0 ]
         env:
           RUNS: ${{ matrix.runs }}
+          CPU: ${{ matrix.chip }} ${{ matrix.arch }} ${{ matrix.os }}
+          SHARD: ${{ matrix.shard }}
+          TIMES: ${{ needs.cpu-features-times.outputs.times }}
+          JOB: ${{ strategy.job-index }}
+      # For `cpu-features-times-save`, on `main`.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-features-times-${{ strategy.job-index }}
+          path: cpu-features-times-${{ strategy.job-index }}.json
+          retention-days: 1
+          if-no-files-found: error
       - name: Export coverage
         run: python3 ci/export_rust_coverage.py .rust-cov --features cpu-features-env
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -731,7 +752,42 @@ jobs:
           path: "*.lcov"
           if-no-files-found: error
 
+  # The CPU time of each line of `rust-cpu-features`' runs in this run of
+  # `main`, over those of earlier runs (so that each line keeps its latest
+  # time on each class of host, whichever its shard ran on this time),
+  # saved for the next runs' `cpu-features-times`.
+  cpu-features-times-save:
+    name: "Rust: save the times of the CPU feature runs"
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    needs: rust-cpu-features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}
+          restore-keys: cpu-features-times-
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cpu-features-times-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/times
+      - run: |
+          mkdir -p .cpu-features-times
+          [ -f .cpu-features-times/times.json ] || echo '{}' > .cpu-features-times/times.json
+          python3 ci/cpu_shards.py merge .cpu-features-times/times.json "$RUNNER_TEMP"/times/*.json > "$RUNNER_TEMP/merged.json"
+          mv "$RUNNER_TEMP/merged.json" .cpu-features-times/times.json
+          cat .cpu-features-times/times.json
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cpu-features-times
+          key: cpu-features-times-${{ github.run_id }}-${{ github.run_attempt }}
+
   coverage:
+    name: Rust coverage
     needs: [rust, rust-cpu-features]
     runs-on: ubuntu-latest
     steps:
@@ -770,16 +826,71 @@ jobs:
 
   # The one check to require in branch protection (and so for the merge queue),
   # so the required checks don't have to track every job and matrix entry.
+  # With shards, it also requires that one of them assembled the build (see
+  # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-latest
+    # To list the run's artifacts.
+    permissions:
+      actions: read
+      contents: read
+    env:
+      LEAN_NUM_THREADS: "6"
     steps:
       - name: Check every job succeeded
+        id: check
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
+          RESULTS: >-
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
+            ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
+            ${{ needs.coverage.result }}
+          # Skipped when `lean` built the proofs itself.
+          SHARDS: ${{ needs.lean-shard.result }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          echo "$RESULTS"
+          echo "$RESULTS $SHARDS"
           for r in $RESULTS; do
             [ "$r" = success ] || exit 1
           done
+          case "$SHARDS" in
+            skipped) ;;
+            success)
+              if gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+                  --jq '.artifacts[].name' | grep -q '^lean-assembled-'; then
+                echo "A shard assembled the build."
+              else
+                echo "No shard assembled the build: assembling it here."
+                echo "assemble=true" >> "$GITHUB_OUTPUT"
+              fi ;;
+            *) exit 1 ;;
+          esac
+      # What `lean` does without shards, after them.
+      - if: ${{ steps.check.outputs.assemble == 'true' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/lean-prepare
+        id: prepare
+        if: ${{ steps.check.outputs.assemble == 'true' }}
+        with:
+          key: ${{ needs.lean.outputs.build-cache }}
+          restore-keys: |
+            ${{ needs.lean.outputs.build-key }}
+            ${{ needs.lean.outputs.build-cache-prefix }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: ${{ steps.check.outputs.assemble == 'true' }}
+        with:
+          pattern: lean-build-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/lean-build
+      - uses: ./.github/actions/lean-assemble
+        if: ${{ steps.check.outputs.assemble == 'true' }}
+        with:
+          id: all-green
+          cache-hit: ${{ steps.prepare.outputs.cache-hit }}
+          cache-key: ${{ steps.prepare.outputs.cache-primary-key }}
+          manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
+          manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}

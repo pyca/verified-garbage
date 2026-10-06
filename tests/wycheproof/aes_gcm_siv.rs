@@ -4,7 +4,12 @@
 //! decrypt back. An invalid vector (a modified tag) must be rejected by
 //! decryption, which leaves zeros.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use serde::Deserialize;
 use verified_garbage::aes_gcm_siv::{AesGcmSiv, Error};

@@ -1,63 +1,61 @@
 import VerifiedGarbage.Proof.AesCcm.X86_64.OpenCT
 import VerifiedGarbage.Proof.CmacAes.X86_64.Verified
 import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Spec.Ccm.Contract
+import VerifiedGarbage.Proof.AesCcm.Scratch
 
 /-!
 # AES-CCM on x86-64: `Verified`
 
 Correctness and constant time (for any implementation `v` of
-`vg_aes_ctr32`), a state satisfying the precondition, and the shared
-contracts of `Spec/Ccm/Contract.lean`, with 16 bytes of stack: the return
+`vg_cmac_aes_update`, and the implementation of `vg_aes_ctr32` that goes with
+it), states satisfying the preconditions, and the shared
+contracts of `Spec/Ccm/Contract.lean` with the working space as a last
+argument (`Proof/AesCcm/Scratch.lean`), with 16 bytes of stack: the return
 addresses of the call of `vg_cmac_aes_update` (or of `vg_aes_ctr32`) and of
-its call of `vg_aes_ctr32`.
+its call of `vg_aes_ctr32`, if it makes one. `Frame.lean` allocates the working space.
 -/
 
 namespace VG.Proof.AesCcm.X86_64
 
 open VG VG.X86_64 VG.Impl.AesCcm.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (update_mx update_spSafe)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
-theorem seal_mx (v : Ctr32Impl) : («seal» v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«seal», mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
-    Code.allInstrs, update_mx v, v.mxcsr]
+theorem seal_mx (v : UpdateImpl) : («seal» v.callee v.ctr.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [«seal», sealFront, tagOut, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
+    Code.allInstrs, v.mxcsr, v.ctr.mxcsr]
   decide +kernel
 
-theorem open_mx (v : Ctr32Impl) : («open» v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [«open», mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
-    Code.allInstrs, update_mx v, v.mxcsr]
+theorem open_mx (v : UpdateImpl) : («open» v.callee v.ctr.callee).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [«open», openFront, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
+    Code.allInstrs, v.mxcsr, v.ctr.mxcsr]
   decide +kernel
 
-theorem seal_spSafe (v : Ctr32Impl) : («seal» v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«seal», mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
-    Code.all, update_spSafe v, v.spSafe]
+theorem seal_spSafe (v : UpdateImpl) : («seal» v.callee v.ctr.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [«seal», sealFront, tagOut, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
+    Code.all, v.spSafe, v.ctr.spSafe]
   decide +kernel
 
-theorem open_spSafe (v : Ctr32Impl) : («open» v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [«open», mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
-    Code.all, update_spSafe v, v.spSafe]
+theorem open_spSafe (v : UpdateImpl) : («open» v.callee v.ctr.callee).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [«open», openFront, mac, b0, aad, aadHead, absorbPad, updBlock, tag, ctr, ctrChunk, callUpdate, callCtr,
+    Code.all, v.spSafe, v.ctr.spSafe]
   decide +kernel
 
-theorem seal_correct (v : Ctr32Impl) (s : State) (hs : sealX86_64.pre s) :
-    ∃ t s', Exec isa («seal» v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
+theorem seal_correct (v : UpdateImpl) (s : State) (hs : sealX86_64.pre s) :
+    ∃ t s', Exec isa («seal» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := seal_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (seal_mx v) he hg, hp⟩
 
-theorem open_correct (v : Ctr32Impl) (s : State) (hs : openX86_64.pre s) :
-    ∃ t s', Exec isa («open» v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
+theorem open_correct (v : UpdateImpl) (s : State) (hs : openX86_64.pre s) :
+    ∃ t s', Exec isa («open» v.callee v.ctr.callee) s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := open_wp v hs
   exact ⟨t, s', he, abiPreserved_of_exec (open_mx v) he hg, hp⟩
 
-theorem seal_ct (v : Ctr32Impl) : ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callee v.suffix) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
-
-theorem open_ct (v : Ctr32Impl) : ConstantTime isa openX86_64.pre openX86_64.pub («open» v.callee v.suffix) :=
+theorem open_ct (v : UpdateImpl) : ConstantTime isa openX86_64.pre openX86_64.pub («open» v.callee v.ctr.callee) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel v h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-/-- A state satisfying the precondition of `vg_aes_ccm_seal` and
-`vg_aes_ccm_open`: a 7-byte nonce, no associated data, no data and a 4-byte
-tag. -/
+/-- A state satisfying the precondition of `vg_aes_ccm_seal`: a 7-byte nonce,
+no associated data, no data, a 4-byte tag at `0x3000` and `work` at 0. -/
 def sealSat : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 10 | .rdx => 0x2000 | .rcx => 7 | .r8 => 0x2100 | .rsp => 0x8000 | _ => 0
@@ -65,55 +63,68 @@ def sealSat : State where
   zf := none
   sf := none
   of := none
-  mem a := if a = 0x8020 then 4 else 0
-  rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩]
-  wr := [⟨0, 0⟩, ⟨0, 2560⟩]
+  mem a := if a = 0x8020 then 4 else if a = 0x8019 then 0x30 else 0
+  rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩, ⟨0x8008, 40⟩]
+  wr := [⟨0, 0⟩, ⟨0x3000, 4⟩, ⟨0, 2560⟩]
 
-theorem seal_verified (v : Ctr32Impl) :
-    Verified X86_64.target («seal» v.callee v.suffix) (Spec.Ccm.sealContract X86_64.abi 16) :=
+theorem seal_verified (v : UpdateImpl) :
+    Verified X86_64.target («seal» v.callee v.ctr.callee) (Proof.AesCcm.sealScratchContract X86_64.abi 16) :=
   Verified.of_correct (seal_correct v) (seal_ct v) (by
-    sig_implies [Spec.Ccm.sealContract, Spec.Ccm.sealSig, Proof.AesCcm.sealX86_64, Proof.AesCcm.onePre,
-      Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args, Proof.AesCcm.stk16, Proof.AesCcm.ret,
-      Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
-      VG.X86_64.below, X86_64.argRegs] [sealSat] using sealSat)
+    sig_implies [Proof.AesCcm.sealScratchContract, Proof.AesCcm.sealScratchSig, Spec.Ccm.sealPre,
+      Spec.Ccm.sealPost, Proof.AesCcm.sealX86_64, Proof.AesCcm.sealPre, Proof.AesCcm.oneLay, Proof.AesCcm.onePub,
+      X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args, Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds,
+      X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [sealSat] using sealSat)
+
+/-- A state satisfying the precondition of `vg_aes_ccm_open`: as `sealSat`,
+with the tag read only. -/
+def openSat : State := { sealSat with
+  rd := [⟨0x1000, 240⟩, ⟨0x2000, 7⟩, ⟨0x2100, 0⟩, ⟨0x3000, 4⟩, ⟨0x8008, 40⟩]
+  wr := [⟨0, 0⟩, ⟨0, 2560⟩] }
 
 theorem leak_bool {a b : Bool} (h : [if a = true then 1 else 0] = [if b = true then 1 else 0]) : a = b := by
   cases a <;> cases b <;> simp_all
 
-theorem open_verified (v : Ctr32Impl) :
-    Verified X86_64.target («open» v.callee v.suffix) (Spec.Ccm.openContract X86_64.abi 16) :=
+/-- `open`'s public data include its leak, from which `pub` has whether it
+succeeds. -/
+theorem open_verified (v : UpdateImpl) :
+    Verified X86_64.target («open» v.callee v.ctr.callee) (Proof.AesCcm.openScratchContract X86_64.abi 16) :=
   Verified.of_correct (open_correct v) (open_ct v)
-    { pre := by sig_implies_pre [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+    { pre := by sig_implies_pre [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
         List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      post := by sig_implies_post [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+      post := by sig_implies_post [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
         List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        sig_pub [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
         List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] at h
         sig_split h
-        sig_reduce [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        sig_reduce [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
         List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-        sig_simp [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        sig_simp [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
         List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const, true_and]
         sig_and_intros
         sig_close
-        all_goals first
-          | with_reducible assumption
-          | (apply leak_bool; with_reducible assumption)
-      sat := by sig_implies_sat [Spec.Ccm.openContract, Spec.Ccm.openSig, Spec.Ccm.sealSig, Proof.AesCcm.openX86_64,
-        Proof.AesCcm.onePre, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
+        all_goals with_reducible assumption
+      sat := by sig_implies_sat [Proof.AesCcm.openScratchContract, Proof.AesCcm.openScratchSig, Spec.Ccm.openPre,
+        Spec.Ccm.openPost, Spec.Ccm.openLeak, Proof.AesCcm.openX86_64, Proof.AesCcm.openLeak, Proof.AesCcm.openPre,
+        Proof.AesCcm.oneLay, Proof.AesCcm.onePub, X86_64.abi, Proof.AesCcm.arg, Proof.AesCcm.args,
         Proof.AesCcm.stk16, Proof.AesCcm.ret, Proof.AesCcm.rounds, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
-        List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [sealSat] using sealSat }
+        List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs] [openSat, sealSat] using openSat }
 
 end VG.Proof.AesCcm.X86_64

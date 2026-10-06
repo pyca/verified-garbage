@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBaseEngine
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.MulAddCodec
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMain
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! Merged from `Proof.Ed25519.X86_64.ScalarBaseMemory`. -/
 section
@@ -61,15 +62,19 @@ open VG.Spec.Ed25519 (bytesAt)
 
 variable {fld : Arith} [EdArith fld]
 
+/-- The contract the proof is written against: the comb's tables at the static `combSym`,
+readable after the scalar (`CombHeld`). -/
 def scalarBaseLocal : Contract isa where
-  pre s := s.rd = [⟨s.gpr .rsi, 32⟩] ∧ s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩] ∧
+  pre s := s.rd = [⟨s.gpr .rsi, 32⟩, combRegion (s.syms combSym)] ∧
+    s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩] ∧
     (⟨s.gpr .rsi, 32⟩ : Region).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
     (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, 32⟩ ∧
     (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, 8192⟩ ∧
-    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64 ∧
+    CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩]
   post s t := bytesAt t.mem (s.gpr .rdi) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .rsi) 32)
   pub s t := s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧
-    s.gpr .rsi = t.gpr .rsi ∧ s.gpr .rdx = t.gpr .rdx
+    s.gpr .rsi = t.gpr .rsi ∧ s.gpr .rdx = t.gpr .rdx ∧ s.syms combSym = t.syms combSym
 
 theorem farScratch {base p : Addr} {n : Nat}
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
@@ -79,28 +84,39 @@ theorem farScratch {base p : Addr} {n : Nat}
   change (off p i - base).toNat < 8192 at h
   omega
 
+/-- The comb's tables, from the contract: readable, held, and past the scratch at `rdx`. -/
+theorem scalarBaseLocal_tbl {s : State} (hs : scalarBaseLocal.pre s) :
+    CombTbl s (s.syms combSym) ∧ TblFar (s.gpr .rdx) (s.syms combSym) := by
+  obtain ⟨hr, -, -, -, -, -, hh⟩ := hs
+  refine ⟨CombTbl.of_held (by rw [hr]; simp) hh, fun i hi => ?_⟩
+  exact farScratch (hh.2.2 _ (by simp)) hi (by decide)
+
 theorem scalarBase_correct_of_engine (engine : Prog isa) (engine_ok : BaseEngineCorrect engine)
     {s : State} (hs : scalarBaseLocal.pre s) :
     WP isa (scalarBaseWith engine) s fun t => gprPreserved s t ∧ scalarBaseLocal.post s t := by
-  obtain ⟨hr, hw, hd, hro, hrs, hn⟩ := hs
+  have ⟨tbl, far⟩ := scalarBaseLocal_tbl hs
+  obtain ⟨hr, hw, hd, hro, hrs, hn, hh⟩ := hs
   have hws : (⟨s.gpr .rdx, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   rw [scalarBaseWith]
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, ma, sva⟩ => ?_
+  refine WP.mono_syms (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, ma, sva⟩ asy => ?_
   have hwa : (⟨a.gpr .rdx, 8192⟩ : Region) ∈ a.wr := by rw [ga, wa]; exact hws
-  refine WP.mono (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, ob, mb⟩ => ?_
+  refine WP.mono_syms (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, ob, mb⟩ bsy => ?_
   rw [ga] at pb ob mb
   have hb : Scratch b (s.gpr .rdx) := ⟨pb, by rw [wb, wa]; exact hws, hn⟩
   have fm : Frame [⟨s.gpr .rdx, 8192⟩] s.mem b.mem :=
     (scratchFrame ma (by decide)).trans (scratchFrame mb (by decide))
   have svb : Saved (s.gpr .rdx) s.gpr b.mem := sva.outside mb (by decide)
   have input : bytesAt b.mem (s.gpr .rsi) 32 = bytesAt s.mem (s.gpr .rsi) 32 := bytesAt32_frame fm hd
+  have tblb : CombTbl b (s.syms combSym) := tbl.frame fm (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hh.2.2 _ (by simp))
+    (by rw [rb, wb, ra, wa]) (by rw [bsy, asy])
   apply WP.seq
   refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .rsi, 32⟩, by rw [rb, ra, hr]; simp,
       Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun q hq => farScratch hd hq (by decide))) fun c ⟨kc, vc⟩ => ?_
+    (fun q hq => farScratch hd hq (by decide)) tblb far) fun c ⟨kc, vc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .rdx) s.gpr c.mem := svb.outside mc (by decide)
   have oc : c.mem.readW (off (s.gpr .rdx) 48) 64 = s.gpr .rdi :=

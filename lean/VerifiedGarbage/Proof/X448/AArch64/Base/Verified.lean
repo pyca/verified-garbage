@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X448.AArch64.Base.Main
-import VerifiedGarbage.Proof.X448.AArch64.Base.Lit
+import VerifiedGarbage.Proof.X448.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.Contract
 
@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 Untrusted: everything here is checked by Lean. Constant time (by taint
 tracking: the only branches are on the counters, every address is an argument
-plus a constant or a counter, and the digits' masks only select), and the
+plus a constant or a counter, and the digits' masks only select; checked on the code
+without its immediates, `Base/Erase.lean`), and the
 shared contract of `Spec/`.
 -/
 
@@ -19,7 +20,8 @@ open VG VG.AArch64
 
 theorem x448Base_ct : ConstantTime isa Proof.X448.x448BaseAArch64.pre Proof.X448.x448BaseAArch64.pub
     Impl.X448.AArch64.Base.x448Base := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) ?_ (by taint_decide)
+  refine Taint.constantTime_eraseImm_of_eq (Taint.ofRegs [.x0, .x1, .x2]) ?_ x448Base_eraseImm
+    (by taint_decide)
   intro s₁ s₂ _ _ ⟨h1, h2, h3, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

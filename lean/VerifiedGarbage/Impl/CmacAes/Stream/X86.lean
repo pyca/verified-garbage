@@ -9,7 +9,7 @@ import VerifiedGarbage.Impl.Aes.X86.Callee
 `vg_cmac_aes_finish(state, rounds, count, out, scratch)` (see
 `VG.Spec.Cmac.aesInitContract` and the others), every argument on the stack
 (cdecl; `count` takes two slots, its low word first), composed of calls of
-the verified `vg_aes_expand_key`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
+the verified `vg_aes_expand_key_scratch`, `vg_cmac_aes_subkeys`, `vg_cmac_aes_update`
 and `vg_cmac_aes_finalize`.
 
 The state (`VG.Spec.Cmac.Repr`) is the key schedule (bytes 0–239), the
@@ -82,7 +82,7 @@ def countHeld (r : Reg) : Prog isa := .seq (.block (count0 r)) (held r)
 /-! ## `vg_cmac_aes_init` -/
 
 /-- Saves the registers and sets up the arguments of
-`vg_aes_expand_key(key, key_len, schedule = state, scratch)`. -/
+`vg_aes_expand_key_scratch(key, key_len, schedule = state, scratch)`. -/
 def initPre : List Instr :=
   [.mov .eax (argOp 3)] ++ save ++ [.mov .eax (argOp 1), .mov .ecx (argOp 2), .mov .edx (argOp 0), .mov .ebx (argOp 3)]
 

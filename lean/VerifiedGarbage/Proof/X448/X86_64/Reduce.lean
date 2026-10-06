@@ -38,7 +38,7 @@ theorem reduce_arith (L h0 h1 h2 h3 h4 h5 h6 lo hi rax : Nat) (hlo : lo + 2 ^ 32
     generalize P * H = PH at e1 ⊢
     generalize P * K = PK at e2 ⊢
     clear hP
-    omega
+    omega_arith
   rw [e, Nat.add_mul_mod_self_left]
 
 /-! ## The blocks of `reduce` -/
@@ -81,7 +81,7 @@ theorem splitLo_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d
     have : ¬(word s.mem base d).toNat < (word s.mem base d).toNat % 2 ^ 32 :=
       Nat.not_lt.mpr (Nat.mod_le _ _)
     simp only [this, decide_false, Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at *
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [RegUpd.gpr_setReg_of_ne _ _ hr.1, RegUpd.gpr_arithFlags, RegUpd.gpr_setReg_of_ne _ _ hr.2,
       RegUpd.gpr_setReg_of_ne _ _ hr.1]
@@ -93,7 +93,7 @@ theorem splitH_ok {s : State} {base : Addr} (hs : Scr s base) :
       (s'.gpr .rdx).toNat = (word s.mem base (h 10)).toNat % 2 ^ 32 ∧
       (s'.gpr .rax).toNat + (s'.gpr .rdx).toNat = (word s.mem base (h 10)).toNat ∧
       Keeps [.rax, .rdx] s s' :=
-  splitLo_ok hs (by simp only [h, ACC]; omega) (by decide)
+  splitLo_ok hs (by simp only [h, ACC]; omega_arith) (by decide)
 
 /-- The word 4 bytes into the word at `d`: its high half, and the low half of
 the next. -/
@@ -107,16 +107,16 @@ theorem word_mid (m : Mem) (base : Addr) (d : Nat) :
   have l : ∀ e, X25519.leNum (Spec.X25519.bytesAt m (off base e) 4) < 2 ^ 32 := fun e => by
     have := X25519.leNum_lt (Spec.X25519.bytesAt m (off base e) 4)
     rwa [X25519.length_bytesAt] at this
-  rw [e d, e (d + 4), e (d + 8), show d + 4 + 4 = d + 8 by omega]
+  rw [e d, e (d + 4), e (d + 8), show d + 4 + 4 = d + 8 by omega_arith]
   have := l d; have := l (d + 4); have := l (d + 8); have := l (d + 8 + 4)
-  omega
+  omega_arith
 
 /-- The 32-bit word 4 bytes into the word at `d`: its high half. -/
 theorem readW32_mid (m : Mem) (base : Addr) (d : Nat) :
     (m.readW (off base (d + 4)) 32).toNat = (word m base d).toNat / 2 ^ 32 := by
   rw [readW32, ← word, word_mid]
   have := (word m base d).isLt
-  omega
+  omega_arith
 
 /-- `rcx += [d]`'s low half, without overflow. -/
 theorem addLo_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 8192)
@@ -126,7 +126,7 @@ theorem addLo_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d +
       Keeps [.rcx, .rdx] s s' := by
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
-    State.load32, ea_sc, hs.rdi, hs.read (d := d) (n := 4) (by omega), ite_true, Option.map_some,
+    State.load32, ea_sc, hs.rdi, hs.read (d := d) (n := 4) (by omega_arith), ite_true, Option.map_some,
     Option.bind_some, State.setReg32, RegUpd.gpr_setReg_self,
     RegUpd.gpr_setReg_of_ne _ _ (by decide : ¬Reg.rcx = Reg.rdx), Option.some.injEq,
     exists_eq_left']
@@ -152,12 +152,12 @@ def clob : List Reg := [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11, .r12, .r13
 
 theorem rvW_split (s : State) :
     rv s W = rv s [.r8, .r9, .r10] + 2 ^ 192 * rv s [.r11, .r12, .r13, .r14] := by
-  simp only [rv, W]; omega
+  simp only [rv, W]; omega_arith
 
 theorem rv5_split (s : State) :
     rv s [.r11, .r12, .r13, .r14, .r15] = rv s [.r11, .r12, .r13, .r14] +
       2 ^ 256 * (s.gpr .r15).toNat := by
-  simp only [rv]; omega
+  simp only [rv]; omega_arith
 
 theorem len64_1 {α : Type} (a : α) : 64 * [a].length = 64 := rfl
 theorem len64_5 {α : Type} (a b c d e : α) : 64 * [a, b, c, d, e].length = 320 := rfl
@@ -187,7 +187,7 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     Src.mem (sc (h 7)) :: ([h 8, h 9, h 10, h 11, h 12, h 13].map fun d => Src.mem (sc d)) from rfl]
   refine WP.mono (add_chain_ok W s2 .r8 [.r9, .r10, .r11, .r12, .r13, .r14] _ _
     (word s2.mem base (h 7)) _ (fun _ h => h) W_nodup rfl
-    (stable_sc hs2 (by decide) (by simp only [h, ACC]; omega))
+    (stable_sc hs2 (by decide) (by simp only [h, ACC]; omega_arith))
     (stable_scs hs2 (by decide) _ (by simp only [h, ACC]; decide))) fun s3 ⟨c1, hc1, e3, k3⟩ => ?_
   have hs3 := hs2.of_keeps k3 (by decide)
   rw [show ([.alu .adc .r15 (.imm 0), .mov .rax (.mem (sc (h 10))), .mov32 .rdx (.reg .rax),
@@ -205,9 +205,9 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     (.reg .rax) [.mem (sc (h 11)), .mem (sc (h 12)), .mem (sc (h 13)), .imm 0] (s5.gpr .rax)
     [word s5.mem base (h 11), word s5.mem base (h 12), word s5.mem base (h 13), 0] (fun _ h => h)
     (by decide) rfl (stable_reg s5 (by decide))
-    (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega))
-      (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega))
-        (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega))
+    (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega_arith))
+      (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega_arith))
+        (.cons (stable_sc hs5 (by decide) (by simp only [h, ACC]; omega_arith))
           (.cons (stable_imm0 _ _) .nil))))) fun s6 ⟨c6, _, e6, k6⟩ => ?_
   have hs6 := hs5.of_keeps k6 (by decide)
   rw [WP.block_append_iff, show ([.mov .rcx (.mem (sc (h 6 + 4))), .mov32 .rdx (.reg .rcx),
@@ -215,7 +215,7 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
       List Instr) = [.mov .rcx (.mem (sc (h 6 + 4))), .mov32 .rdx (.reg .rcx),
       .alu .sub .rcx (.reg .rdx)] ++ [.mov32 .rdx (.mem (sc (h 13 + 4))), .alu .add .rcx (.reg .rdx)]
       from rfl, WP.block_append_iff]
-  refine WP.mono (splitLo_ok hs6 (d := h 6 + 4) (by simp only [h, ACC]; omega) (r := .rcx)
+  refine WP.mono (splitLo_ok hs6 (d := h 6 + 4) (by simp only [h, ACC]; omega_arith) (r := .rcx)
     (t := .rdx) (by decide)) fun s7 ⟨d7, a7, k7⟩ => ?_
   have hs7 := hs6.of_keeps k7 (by decide)
   have g := fun {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg) (h : r ∉ rs) => k.1 r h
@@ -232,13 +232,13 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     rw [m6] at d7 a7
     have := Nat.div_lt_of_lt_mul (m := (word s.mem base (h 6)).toNat) (n := 2 ^ 32) (k := 2 ^ 32)
       (word s.mem base (h 6)).isLt
-    omega
+    omega_arith
   have hi13 := readW32_mid s.mem base (h 13)
   have hb13 : (word s.mem base (h 13)).toNat / 2 ^ 32 < 2 ^ 32 :=
     Nat.div_lt_of_lt_mul (word s.mem base (h 13)).isLt
   have hl7 : (word s.mem base (h 7)).toNat % 2 ^ 32 < 2 ^ 32 := Nat.mod_lt _ (by decide)
-  refine WP.mono (addLo_ok hs7 (d := h 13 + 4) (by simp only [h, ACC]; omega)
-    (by rw [r7, m7, hi13]; omega)) fun s8 ⟨e8, k8⟩ => ?_
+  refine WP.mono (addLo_ok hs7 (d := h 13 + 4) (by simp only [h, ACC]; omega_arith)
+    (by rw [r7, m7, hi13]; omega_arith)) fun s8 ⟨e8, k8⟩ => ?_
   have hs8 := hs7.of_keeps k8 (by decide)
   have m8 : s8.mem = s.mem := k8.2.1.trans m7
   rw [m7, hi13, r7] at e8
@@ -248,13 +248,13 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     (word s8.mem base (h 10 + 4)) [word s8.mem base (h 11 + 4), word s8.mem base (h 12 + 4),
       s8.gpr .rcx, word s8.mem base (h 7 + 4), word s8.mem base (h 8 + 4),
       word s8.mem base (h 9 + 4)] (fun _ h => h) W_nodup rfl
-    (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega))
-    (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega))
-      (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega))
+    (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith))
+    (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith))
+      (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith))
         (.cons (stable_reg s8 (by decide))
-          (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega))
-            (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega))
-              (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega)) .nil)))))))
+          (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith))
+            (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith))
+              (.cons (stable_sc hs8 (by decide) (by simp only [h, ACC]; omega_arith)) .nil)))))))
     fun s9 ⟨c9, hc9, e9, k9⟩ => ?_
   have hs9 := hs8.of_keeps k9 (by decide)
   rw [WP.block_append_iff]
@@ -266,7 +266,7 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
   rw [len64_1] at e4
   simp only [rv, wv, r15_3, toNat_zero64] at e4
   have hc1 := Bool.toNat_le c1
-  have r15_5 : (s5.gpr .r15).toNat = c1.toNat := by rw [g k5 _ (by decide)]; omega
+  have r15_5 : (s5.gpr .r15).toNat = c1.toNat := by rw [g k5 _ (by decide)]; omega_arith
   have l6 := rv_lt s6 [.r11, .r12, .r13, .r14]
   have l5 := rv_lt s5 [.r11, .r12, .r13, .r14]
   rw [len64_5] at e6
@@ -279,8 +279,8 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     have := (word s5.mem base (h 13)).isLt; have := (s5.gpr .rax).isLt
     have := (s6.gpr .r15).isLt
     rcases Nat.lt_or_ge c6.toNat 1 with h | h
-    · omega
-    · exfalso; omega
+    · omega_arith
+    · exfalso; omega_arith
   rw [len64_1] at e10
   simp only [rv, wv, toNat_zero64] at e10
   have r15_9 : s9.gpr .r15 = s6.gpr .r15 := by
@@ -376,9 +376,9 @@ theorem reduce_ok {s : State} {base : Addr} (hs : Scr s base) {o : Nat} (ho : o 
     have b13 := (word s.mem base (h 13)).isLt; have ba := (s5.gpr .rax).isLt
     omega_using [tot, b1, b2, b7, b8, b9, b10, b11, b12, b13, ba, hHI, hLO]
   rw [WP.block_append_iff]
-  refine WP.mono (fold2_ok s10 (by omega)) fun s11 ⟨e11, k11⟩ => ?_
+  refine WP.mono (fold2_ok s10 (by omega_arith)) fun s11 ⟨e11, k11⟩ => ?_
   have hs11 := hs10.of_keeps k11 (by decide)
-  refine WP.mono (stores_ok hs11 o W (by rw [show W.length = 7 from rfl]; simp only [ACC] at ho; omega)) fun s12 ⟨e12, o12, g12, rd12, wr12⟩ => ?_
+  refine WP.mono (stores_ok hs11 o W (by rw [show W.length = 7 from rfl]; simp only [ACC] at ho; omega_arith)) fun s12 ⟨e12, o12, g12, rd12, wr12⟩ => ?_
   rw [show W.length = 7 from rfl] at e12 o12
   have K : Keeps clob s s11 := (k1.mono (by decide)).trans <| (k2.mono (by decide)).trans <|
     (k3.mono (by decide)).trans <| (k4.mono (by decide)).trans <| (k5.mono (by decide)).trans <|

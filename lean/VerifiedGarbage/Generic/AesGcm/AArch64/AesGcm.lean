@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 # AES-GCM (NIST SP 800-38D) on AArch64
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`,
+implementations `v` of `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`,
 are emitted once for each combination (`Variants/AesGcm/AArch64/`), named with
 its suffix (e.g. `vg_aes_gcm_seal_aes`), and need its CPU features.
 **Review note**: `sig` and `doc` are trusted, as they tie the Rust caller to
@@ -21,9 +21,9 @@ Each function needs the CPU features of the implementations it calls:
 
 The functions' calls (`bl`) keep the return address in `x30`, which they
 save in the working space. `seal` and `open` read their last arguments from
-the stack. `init`, `stream_init`, `stream_aad`, `stream_encrypt` and
-`stream_decrypt` keep their working space in a frame of 2560 bytes; the
-others use no stack.
+the stack. Every function keeps its working space in a frame of 2560 bytes,
+or, for `seal` and `open`, 2576 and 2592 bytes that also hold a copy of
+their stack arguments.
 -/
 
 namespace VG.Generic.AesGcm.AArch64.AesGcm
@@ -51,18 +51,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.sealApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.«seal» v.callees
-    contract := Spec.Gcm.sealContract AArch64.abi
-    verified := seal_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1
+      (Impl.AesGcm.AArch64.«seal» v.callees)
+    contract := Spec.Gcm.sealContract AArch64.abi 2576
+    stack := 2576
+    verified := seal_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.openApi with
     name := Spec.Gcm.openApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.openApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.«open» v.callees
-    contract := Spec.Gcm.openContract AArch64.abi
-    verified := open_verified v
+    code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2
+      (Impl.AesGcm.AArch64.«open» v.callees)
+    contract := Spec.Gcm.openContract AArch64.abi 2592
+    stack := 2592
+    verified := open_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.streamInitApi with
@@ -109,18 +113,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamFinishApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamFinishApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamFinish v.callees
-    contract := Spec.Gcm.streamFinishContract AArch64.abi
-    verified := streamFinish_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
+      (Impl.AesGcm.AArch64.streamFinish v.callees)
+    contract := Spec.Gcm.streamFinishContract AArch64.abi 2560
+    stack := 2560
+    verified := streamFinish_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := AArch64.target
     doc := Spec.Gcm.streamVerifyApi.doc (notes := [note v])
-    code := Impl.AesGcm.AArch64.streamVerify v.callees
-    contract := Spec.Gcm.streamVerifyContract AArch64.abi
-    verified := streamVerify_verified v
+    code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
+      (Impl.AesGcm.AArch64.streamVerify v.callees)
+    contract := Spec.Gcm.streamVerifyContract AArch64.abi 2560
+    stack := 2560
+    verified := streamVerify_framed v
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 

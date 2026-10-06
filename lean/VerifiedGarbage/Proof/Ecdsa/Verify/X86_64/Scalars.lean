@@ -50,6 +50,7 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
   v : Fin.ofNat c.C.n (sv c base s V) =
     Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
   unch : Unch base [(0, size)] s₀.mem s.mem
+  syms : s.syms = s₀.syms
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
@@ -66,18 +67,18 @@ theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.uv c =
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
 theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
-    (hMN : ModOk c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
-    (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
+    (hMN : ModOkW c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
+    (hS : SlotsOk o a b MN) (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
     WP isa (.block (Impl.Mont.X86_64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
-      Scr s' base size ∧ ModOk c.MN' size c.C.n s'.mem base ∧
+      Scr s' base size ∧ ModOkW c.MN' size c.C.n s'.mem base ∧
       (∀ r, r ∉ clob c.n → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Unch base (slW c [o, TMP]) s.mem s'.mem ∧
       (∀ {i}, i < 45 → i ≠ o → i ≠ TMP → sv c base s' i = sv c base s i) ∧
       sv c base s' o < c.C.n ∧
       sv c base s' o * 2 ^ (64 * c.n) % c.C.n = sv c base s a * sv c base s b % c.C.n := by
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hs.nowrap
-  exact WP.mono (slMul_ok (MN'_n c) h7 hs hMN ho ha hb hB) fun s' ⟨k, lt, e⟩ =>
+  exact WP.mono (slMul_ok (MN'_n c) (MN'_tmp c) (MN'_mo c) h7 hs hMN ho ha hb hS hB) fun s' ⟨k, lt, e⟩ =>
     ⟨k.scr hs, hMN.keep (j := MN) (by decide) rfl rfl rfl rfl h7 hn k (Ne.symm hoN) (by decide),
       k.gpr, k.rd, k.wr, unch_slots (MN'_n c) rfl k.unch (l := [o, TMP]) (by simp) (by simp),
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
@@ -86,10 +87,10 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) (.seq (pow c.powN)
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c) (.seq c.nPow
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
   have hn := hF.scr.nowrap
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have hn3 := hc.n_ge
@@ -101,13 +102,13 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
   -- The checks.
   refine WP.seq (WP.seq ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (checkRange_ok c hF.scr h0 (sl_le c h7 (i := K) (by decide)) (sl_le c h7 (i := MN) (by decide))
-    hf) fun s₁ ⟨f₁, k₁, O₁⟩ => ?_
+  refine WP.mono_syms (checkRange_ok c hF.scr h0 (sl_le c h7 (i := K) (by decide)) (sl_le c h7 (i := MN) (by decide))
+    hf) fun s₁ ⟨f₁, k₁, O₁⟩ sy₁ => ?_
   have hs₁ := hF.scr.of_keepRegs k₁ (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₁ i = sv c base s i := fun hi hf =>
     sv_flag O₁ h0 h7 hn hi hf
-  refine WP.mono (checkRange_ok c hs₁ h0 (sl_le c h7 (i := PT) (by decide)) (sl_le c h7 (i := MN) (by decide))
-    hf) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
+  refine WP.mono_syms (checkRange_ok c hs₁ h0 (sl_le c h7 (i := PT) (by decide)) (sl_le c h7 (i := MN) (by decide))
+    hf) fun s₂ ⟨f₂, k₂, O₂⟩ sy₂ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have v₂ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₂ i = sv c base s i := fun hi hf =>
     (sv_flag O₂ h0 h7 hn hi hf).trans (v₁ hi hf)
@@ -124,67 +125,65 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     rw [f₂, f₁, hF.flag, mask_and, mask_and, hmn₁, hmn, hk, hpt₁]
     simp only [and_assoc]
   -- `s R mod n`.
-  refine WP.mono (mulN_ok hc hs₂ (modN_of hc F₂.mn) (o := SM') (a := PT) (b := R2N) (by decide) (by decide)
-    (by decide) (hr2lt F₂.r2n) (by decide)) fun s₃ ⟨hs₃, M₃, g₃, rd₃, wr₃, U₃, v₃, lt₃, e₃⟩ => ?_
+  refine WP.mono_syms (mulN_ok hc hs₂ (modN_of hc F₂.mn) (o := SM') (a := PT) (b := R2N) (by decide) (by decide)
+    (by decide) (by decide) (hr2lt F₂.r2n) (by decide)) fun s₃ ⟨hs₃, M₃, g₃, rd₃, wr₃, U₃, v₃, lt₃, e₃⟩ sy₃ => ?_
   have F₃ := F₂.unch h7 hn (fixedOk_slW (by decide)) U₃
   have sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs₃ M₃ lt₃ F₃.onen
+  refine WP.seq (WP.mono_syms (nPow_ok hc hs₃ M₃ lt₃ F₃.onen
     (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch U₃ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
         tbl_unch U₂ h7 hn (j := 2) (by decide) ht (tbl_apart_flag h0 2 t)]
-      exact hF.t₂ t ht)
-    (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_)
-  rw [powWN_eq] at U₄
-  have hs₄ := hs₃.of_keepRegs K₄ (rdi_not_powClob _)
-  have F₄ := F₃.unch h7 hn (fixedOk_slW (by decide)) U₄
+      exact hF.t₂ t ht)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ sy₄ => ?_)
+  have hs₄ := hs₃.of_keepRegs K₄ (rdi_not_invClob _)
+  have F₄ := F₃.unch h7 hn fixedOk_pwW U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
-    sv_unch U₄ h7 hn hi (apart_slW hl)
+    sv_unch U₄ h7 hn hi (apart_pwW hi hl)
   have w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
   -- `u` and `v`.
   rw [uv_eq]
   refine WP.seq ?_
-  refine WP.seq (WP.mono (mulN_ok hc hs₄ (modN_of hc F₄.mn) (o := EM') (a := D) (b := R2N) (by decide)
-    (by decide) (by decide) (hr2lt F₄.r2n) (by decide)) fun s₅ ⟨hs₅, M₅, g₅, rd₅, wr₅, U₅, v₅, lt₅, e₅⟩ => ?_)
+  refine WP.seq (WP.mono_syms (mulN_ok hc hs₄ (modN_of hc F₄.mn) (o := EM') (a := D) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (hr2lt F₄.r2n) (by decide)) fun s₅ ⟨hs₅, M₅, g₅, rd₅, wr₅, U₅, v₅, lt₅, e₅⟩ sy₅ => ?_)
   have F₅ := F₄.unch h7 hn (fixedOk_slW (by decide)) U₅
-  refine WP.seq (WP.mono (mulN_ok hc hs₅ M₅ (o := RM') (a := K) (b := R2N) (by decide)
-    (by decide) (by decide) (hr2lt F₅.r2n) (by decide)) fun s₆ ⟨hs₆, M₆, g₆, rd₆, wr₆, U₆, v₆, lt₆, e₆⟩ => ?_)
+  refine WP.seq (WP.mono_syms (mulN_ok hc hs₅ M₅ (o := RM') (a := K) (b := R2N) (by decide)
+    (by decide) (by decide) (by decide) (hr2lt F₅.r2n) (by decide)) fun s₆ ⟨hs₆, M₆, g₆, rd₆, wr₆, U₆, v₆, lt₆, e₆⟩ sy₆ => ?_)
   have F₆ := F₅.unch h7 hn (fixedOk_slW (by decide)) U₆
   have acc₆ : sv c base s₆ ACC = sv c base s₄ ACC := by
     rw [v₆ (by decide) (by decide) (by decide), v₅ (by decide) (by decide) (by decide)]
-  refine WP.seq (WP.mono (mulN_ok hc hs₆ M₆ (o := UM) (a := EM') (b := ACC) (by decide)
-    (by decide) (by decide) (acc₆ ▸ lt₄) (by decide)) fun s₇ ⟨hs₇, M₇, g₇, rd₇, wr₇, U₇, v₇, lt₇, e₇⟩ => ?_)
+  refine WP.seq (WP.mono_syms (mulN_ok hc hs₆ M₆ (o := UM) (a := EM') (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (acc₆ ▸ lt₄) (by decide)) fun s₇ ⟨hs₇, M₇, g₇, rd₇, wr₇, U₇, v₇, lt₇, e₇⟩ sy₇ => ?_)
   have F₇ := F₆.unch h7 hn (fixedOk_slW (by decide)) U₇
   have acc₇ : sv c base s₇ ACC = sv c base s₄ ACC := by
     rw [v₇ (by decide) (by decide) (by decide), acc₆]
-  refine WP.seq (WP.mono (mulN_ok hc hs₇ M₇ (o := VM) (a := RM') (b := ACC) (by decide)
-    (by decide) (by decide) (acc₇ ▸ lt₄) (by decide))
-    fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ => ?_)
+  refine WP.seq (WP.mono_syms (mulN_ok hc hs₇ M₇ (o := VM) (a := RM') (b := ACC) (by decide)
+    (by decide) (by decide) (by decide) (acc₇ ▸ lt₄) (by decide))
+    fun s₈ ⟨hs₈, M₈, g₈, rd₈, wr₈, U₈, v₈, lt₈, e₈⟩ sy₈ => ?_)
   have F₈ := F₇.unch h7 hn (fixedOk_slW (by decide)) U₈
-  refine WP.seq (WP.mono (mulN_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
-    fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ => ?_)
+  refine WP.seq (WP.mono_syms (mulN_ok hc hs₈ M₈ (o := U) (a := UM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by rw [show sv c base s₈ ONE = 1 from F₈.one]; omega) (by decide))
+    fun s₉ ⟨hs₉, M₉, g₉, rd₉, wr₉, U₉, v₉, lt₉, e₉⟩ sy₉ => ?_)
   have F₉ := F₈.unch h7 hn (fixedOk_slW (by decide)) U₉
-  refine WP.mono (mulN_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
-    (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
-    fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ => h s₁₀ ?_
+  refine WP.mono_syms (mulN_ok hc hs₉ M₉ (o := V) (a := VM) (b := ONE) (by decide)
+    (by decide) (by decide) (by decide) (by rw [show sv c base s₉ ONE = 1 from F₉.one]; omega) (by decide))
+    fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ sy₁₀ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slW (by decide)) U₁₀
   -- What changed: the flag and `midW`.
-  have UW : Unch base ([(c.sl FLAG, 8)] ++ slW c midW) s.mem s₁₀.mem := by
+  have UW : Unch base ([(c.sl FLAG, 8)] ++ slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s.mem s₁₀.mem := by
     refine (U₂.trans (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀)))))))).mono fun w hw => ?_
     simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
       or_false] at hw ⊢
     rcases hw with hw | hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
-      | exact Or.inl hw
+      | exact Or.inl (Or.inl hw)
       | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
+      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
-    sv_unch UW h7 hn hi (apart_append (apart_flag h0 hf) (apart_slW hl))
+    sv_unch UW h7 hn hi (apart_append (apart_append (apart_flag h0 hf) (apart_slW hl)) (apart_pwA hi))
   -- The values.
   have d₄ : sv c base s₄ D = dig c s₀ := by
     rw [e₄ (by decide) (by decide), v₃ (by decide) (by decide) (by decide), v₂ (by decide) (by decide), hF.d]
@@ -202,7 +201,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
   have vm₈ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₈ VM) =
       Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [toM_mul hnR e₈, v₇ (i := RM') (by decide) (by decide) (by decide), rm₆, acc₇, w₄]
-  have U' : Unch base (slW c midW) s₂.mem s₁₀.mem := by
+  have U' : Unch base (slW c midW ++ [(bitsAt c.n 3, 64 * c.n + 64)]) s₂.mem s₁₀.mem := by
     refine (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans
       U₁₀))))))).mono fun w hw => ?_
     simp only [List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
@@ -210,7 +209,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     rcases hw with hw | hw | hw | hw | hw | hw | hw | hw
     all_goals first
       | (rcases hw with hw | hw <;> subst hw <;> simp)
-      | (rcases hw with hw | hw | hw <;> subst hw <;> simp)
+      | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
   refine ⟨hs₁₀, by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, K₄.wr, wr₃, k₂.wr, k₁.wr, hF.wr],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, K₄.rd, rd₃, k₂.rd, k₁.rd, hF.rd], F₁₀,
     by rw [a (i := RX) (by decide) (by decide) (by decide), hF.rx],
@@ -229,17 +228,19 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
       toM_one_mul hnR (by rw [e₉, show sv c base s₈ ONE = 1 from F₈.one]), um₈],
     lt₁₀,
     by rw [toM_one_mul hnR (by rw [e₁₀, show sv c base s₉ ONE = 1 from F₉.one]),
-      v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_⟩
-  · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (tbl_apart_flag h0 1 t)
-      (tbl_apart_slW (by decide) 1 t))]
+      v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
+    by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms]⟩
+  · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_flag h0 1 t)
+      (tbl_apart_slW (by decide) 1 t)) (tbl_apart_pwA (by decide) ht))]
     exact hF.t₁ t ht
-  · rw [flag_unch U' h7 h0 hn (by decide)]
+  · rw [flag_unch_of U' h7 h0 hn (apart_append (apart_slW (by decide)) (apart_pwA (by decide)))]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_
     simp only [List.mem_append] at hw
-    rcases hw with hw | hw | hw
+    rcases hw with hw | (hw | hw) | hw
     · rw [List.mem_singleton.mp hw]; exact Nat.le_of_eq (Nat.zero_add _)
     · exact flag_le h0 h7 w hw
     · exact slW_le h7 (by decide) w hw
+    · rw [List.mem_singleton.mp hw]; exact pwA_le h7
 
 end VG.Proof.Ecdsa.Verify.X86_64

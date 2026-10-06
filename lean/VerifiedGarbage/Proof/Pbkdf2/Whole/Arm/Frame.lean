@@ -34,7 +34,7 @@ theorem pbkFramed {I : Spec.Hmac.Instance} {c : Prog isa} {bytes : Nat}
     (n := I.pbkdf2Scratch) (pre := Spec.Pbkdf2.pbkdf2Pre I.S Arm.abi.ptrBits)
     (post := Spec.Pbkdf2.pbkdf2Post I.S Arm.abi.ptrBits) (wa := true) (stack := 24) (m := 3) h
     rfl rfl rfl hb
-    (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat rfl
+    (Pbkdf2.pbkdf2Pre_local I.S _) (Pbkdf2.pbkdf2Post_local I.S _) hsat
 
 /-- A state satisfying `pbkdf2`'s precondition without the working space: an
 empty password, salt and output, and `c = 1`; the stack arguments `1, 0x1200,

@@ -2,12 +2,14 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Main
 import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
+import VerifiedGarbage.Proof.P256.X86_64.TaintSums
 
 /-!
 # ECDH over P-256 on x86-64: `Verified`
 
-P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law,
-which the registration file supplies: `Proof.P256.law`), so `exchange_ok`
+P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law
+and `InvSounds` for its inversions, which the registration file supplies:
+`Proof.P256.law` and the variant's `inv`), so `exchange_ok`
 gives the contract's postcondition; the callee-saved registers are restored,
 `rsp` is never written, and every store is to `out` or `scratch`, which the
 return address is apart from (`abiPreserved`). Constant time by taint
@@ -22,8 +24,8 @@ open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdh.X86_64
 open VG.Proof.Ecdsa.X86_64
 
 theorem pre_of {s : State} (h : ecdhX86_64.pre s) : EPre p256 s := by
-  obtain ⟨h1, h2, h3, -, -, h6, h7, -, -, -, h11⟩ := h
-  exact ⟨h1, h2, h3, h6, h7, h11⟩
+  obtain ⟨h1, h2, h3, -, -, h6, h7, -, -, h10, h11⟩ := h
+  exact ⟨h1, h2, h3, h6, h7, h10, h11⟩
 
 theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := by
   unfold EPost at h
@@ -34,20 +36,28 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
   revert h
   generalize hq : ex s.mem (s.gpr .rsi) (s.gpr .rdx) = q
   rw [show Spec.Ecdh.exchange p256.C (dk p256 s)
-      (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 16 * p256.n)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
+      (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p256.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok p256_ok hL (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP256, Taint.clobbers i .rsp = false := by
-    have h : exchangeP256.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+/-- The exchange `code` of a curve `c` (P-256, with either multiplication)
+that the proof supports, whose precondition the contract's gives (`hpre`),
+never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
+theorem ecdh_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C)
+    (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
+    (hcode : Impl.Ecdh.X86_64.Cfg.exchange c = code)
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
+    (hnc : code.noCalls = true) (hmx : code.allInstrs (fun i => !loadsMxcsr i) = true) (s : State)
+    (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+  subst hcode
+  obtain ⟨t, s', he, hsv, hpost'⟩ := exchange_ok hc hL (hpre s hs)
+  have hsp : ∀ i ∈ instrs (Impl.Ecdh.X86_64.Cfg.exchange c), Taint.clobbers i .rsp = false := by
+    rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
-    simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+    simpa using hsp i hi
+  have F := (Exec.regions he hnc).2.2
   obtain ⟨-, hwr, -, -, -, -, -, hro, hrs, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec hmx he ⟨fun r hr => ?_, ?_⟩, hpost _ _ hpost'⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -64,8 +74,16 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhX8
       · exact hro
       · exact hrs) (by decide)
 
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (s : State) (hs : ecdhX86_64.pre s) :
+    ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
+  ecdh_x86_of (p256_ok hI) hL (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide)
+    (by lit_decide) (by lit_decide) s hs
+
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP256 h).isSome = true := by
+    taint_decide_sum [Proof.P256.X86_64.ladderGSum, Proof.P256.X86_64.powPSum]
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -75,8 +93,8 @@ theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 :=
   · exact h3
   · exact h4
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL) ecdh_ct implies
+  Verified.of_correct (ecdh_x86 hL hI) ecdh_ct implies
 
 end VG.Proof.Ecdh.X86_64

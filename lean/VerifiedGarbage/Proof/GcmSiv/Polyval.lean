@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.Poly
-import VerifiedGarbage.Spec.GcmSiv
+import VerifiedGarbage.Proof.GcmSiv.Spec
+import VerifiedGarbage.Proof.GcmSiv.Words
 
 /-!
 # AES-GCM-SIV: POLYVAL is GHASH
@@ -14,7 +15,8 @@ in bit `i` of a block (`getLsbD i`), and GCM's GHASH in
 `dot(a, b) = a · b · y⁻¹²⁸` is GHASH's product of `a` and `b · x`
 (`dot_eq`), and POLYVAL with `H` is GHASH with `H · x` (`polyvalFrom_eq`),
 RFC 8452's Appendix A: with blocks read in the other byte order (`ofBytes_eq`,
-`toBytes_eq`), so that the bits are the same.
+`toBytes_eq`), so that the bits are the same. So the tag input is the one
+computed with GHASH (`tagInput_eq_tagInputG`).
 -/
 
 namespace VG.Proof.GcmSiv.Polyval
@@ -145,10 +147,6 @@ theorem φ_dot (a b : Spec.GcmSiv.Elem) : φ (Spec.GcmSiv.dot a b) = x * φ a * 
     φ_xInv128, ← x255]
   linear_combination (x ^ 128) * h₂
 
-/-- GHASH's product with `x`: a shift to the right (`Proof.Gcm.Poly.φ_shr1`). -/
-def mulXG (h : Spec.Gcm.Block) : Spec.Gcm.Block :=
-  if h.getLsbD 0 then (h >>> 1) ^^^ Spec.Gcm.R else h >>> 1
-
 theorem dot_eq (a b : Spec.GcmSiv.Elem) : Spec.GcmSiv.dot a b = Spec.Gcm.mul a (mulXG b) := by
   refine φ_inj ?_
   rw [φ_dot, VG.Proof.Gcm.Poly.φ_mul, mulXG, φ_shr1]
@@ -164,5 +162,11 @@ theorem polyvalFrom_eq (h s : Spec.GcmSiv.Elem) (xs : List Spec.GcmSiv.Elem) :
     show Spec.GcmSiv.polyvalFrom h (Spec.GcmSiv.dot (s ^^^ y) h) ys =
       Spec.Gcm.ghashFrom (mulXG h) (Spec.Gcm.mul (s ^^^ y) (mulXG h)) ys
     rw [ih, dot_eq]
+
+/-- The tag input of RFC 8452 is the one computed with GHASH. -/
+theorem tagInput_eq_tagInputG (a n pt d : List Byte) :
+    Spec.GcmSiv.tagInput a n pt d = Words.tagInputG a n pt d := by
+  rw [GcmSiv.tagInput_eq, Spec.GcmSiv.polyval, polyvalFrom_eq]
+  rfl
 
 end VG.Proof.GcmSiv.Polyval

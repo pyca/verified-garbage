@@ -38,10 +38,11 @@ Modelling choices:
   Each operand is a 32-bit (`w`) or a 64-bit (`x`) register; a 32-bit
   result is zero-extended into the 64-bit register (DDI 0487, the pseudocode
   accessor `X[n, width] = value` sets `_R[n] = ZeroExtend(value, 64)`).
-* Of the condition flags, only PSTATE.C is observable: ADDS/ADCS/SUBS/SBCS
-  write it and ADCS/SBCS/ADC/SBC read it. N, Z and V are not observable by any
-  modelled instruction; control flow uses `cbz`/`cbnz`. A call makes C
-  unknown, since NZCV is undefined at a public interface (AAPCS64 §6.1.1).
+* The condition flags PSTATE.N, Z, C and V: ADDS/ADCS/SUBS/SBCS, TST and
+  CCMP write them; ADCS/SBCS/ADC/SBC and CSEL with the condition HS read C,
+  and CCMP, CSEL and CSNEG with a condition code (`CondCode`) read all four.
+  Control flow uses `cbz`/`cbnz`, never the flags. A call makes NZCV
+  unknown, since it is undefined at a public interface (AAPCS64 §6.1.1).
 * Immediates that the instruction cannot encode make the instruction fault,
   so verified code only ever contains encodable instructions.
 * Memory accesses (32-bit, 64-bit, and single bytes via `ldrb`/`strb`) must
@@ -54,13 +55,17 @@ Modelling choices:
   of their data when PSTATE.DIT is 1 (DDI 0487, "About PSTATE.DIT", FEAT_DIT,
   which lists MADD and UBFM, as it does the other modelled data-processing
   instructions that read a register: ADD, SUB, AND, BIC, EOR, ORR, EXTR, REV and
-  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC and UMULH). The code does not set PSTATE.DIT,
+  MOVK, ADDS, ADCS, SUBS, SBCS, ADC, SBC, CSEL, CSNEG, CCMP, TST and UMULH). The code does not set PSTATE.DIT,
   for these as for the others.
 * Calls are `bl` and returns `ret` (DDI 0487, C6.2 "BL", "RET"). The return
   addresses are the next of the state's `unknowns`, which nothing constrains
   (see `TCB/Code.lean`). A linker veneer between a `bl` and its target may
   change `x16` and `x17` (IP0, IP1: AAPCS64 §6.1.1, "Use of IP0 and IP1 by
   the linker"), so a call leaves unknown values in them too.
+* A `static` the code reads (`Artifact.consts`) is at the address
+  `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
+  `add`, resolved by the linker) puts in a register. No instruction changes
+  `syms`: a static's address is fixed for the run of the program.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
   = 0"), and a frame moves it by 16 bytes, so the model does not check the
   stack alignment that the push and pop of a frame require.
@@ -148,6 +153,12 @@ structure State where
   sp : BitVec 64
   /-- PSTATE.C: unsigned carry, or no borrow after subtraction. -/
   c : Bool := false
+  /-- PSTATE.N: the result's top bit. -/
+  nf : Bool := false
+  /-- PSTATE.Z: the result is zero. -/
+  zf : Bool := false
+  /-- PSTATE.V: signed overflow. -/
+  vf : Bool := false
   /-- The SIMD and floating-point registers (`V[n]`, 128 bits). -/
   v : VReg → BitVec 128 := fun _ => 0
   mem : Mem
@@ -159,6 +170,8 @@ structure State where
   call stores and, on the ARM targets, what a linker veneer may leave in the
   intra-procedure-call scratch registers (see `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 64 := fun _ => 0
+  /-- The address of each `static` the code can name (`adrSym`), by name. -/
+  syms : String → BitVec 64 := fun _ => 0
 
 inductive LogicOp | and | orr | eor
   deriving DecidableEq, Repr
@@ -304,6 +317,30 @@ inductive VOp
   | xarS (d m : VReg) (rot : Nat)
   deriving DecidableEq, Repr
 
+/-- The condition codes of conditional instructions (DDI 0487 C1.2.4, Table
+C1-1; `al` and `nv` are not modelled). -/
+inductive CondCode | eq | ne | hs | lo | mi | pl | vs | vc | hi | ls | ge | lt | gt | le
+  deriving DecidableEq, Repr
+
+/-- DDI 0487 J1.3 shared pseudocode `ConditionHolds(cond)`: `cond<3:1>`
+selects the test (EQ: Z; HS: C; MI: N; VS: V; HI: C and not Z; GE: N = V; GT:
+N = V and not Z), and `cond<0>` (and not `'1111'`) inverts it. -/
+def CondCode.holds (s : State) : CondCode → Bool
+  | .eq => s.zf
+  | .ne => !s.zf
+  | .hs => s.c
+  | .lo => !s.c
+  | .mi => s.nf
+  | .pl => !s.nf
+  | .vs => s.vf
+  | .vc => !s.vf
+  | .hi => s.c && !s.zf
+  | .ls => !(s.c && !s.zf)
+  | .ge => s.nf == s.vf
+  | .lt => s.nf != s.vf
+  | .gt => s.nf == s.vf && !s.zf
+  | .le => !(s.nf == s.vf && !s.zf)
+
 inductive Instr
   /-- `add d, n, m` (ADD (shifted register), no shift) -/
   | add (sz : Size) (d n m : Reg)
@@ -322,6 +359,25 @@ inductive Instr
   /-- SBC: subtract the second operand and NOT(PSTATE.C); the flags are not
   set. -/
   | sbc (sz : Size) (d n m : Reg)
+  /-- `csel d, n, m, hs` (CSEL with the condition HS, "carry set"): `n` if
+  PSTATE.C is set, else `m`; the flags are not set. (`lo` is `hs` with the
+  sources swapped.) -/
+  | csel (sz : Size) (d n m : Reg)
+  /-- `tst n, m` (TST (shifted register), no shift: ANDS with the zero
+  register as destination): N and Z of `n AND m`, C and V cleared. -/
+  | tst (sz : Size) (n m : Reg)
+  /-- `ccmp n, #imm, #nzcv, cond` (CCMP (immediate), `imm < 32`, `nzcv < 16`):
+  the flags of `n - imm` if `cond` holds, else `nzcv`. -/
+  | ccmp (sz : Size) (n : Reg) (imm nzcv : Nat) (cond : CondCode)
+  /-- `csel d, n, m, cond` (CSEL): `n` if `cond` holds, else `m`; the flags
+  are not set. -/
+  | cselc (sz : Size) (d n m : Reg) (cond : CondCode)
+  /-- `csneg d, n, m, cond` (CSNEG): `n` if `cond` holds, else `-m`; the flags
+  are not set. -/
+  | csneg (sz : Size) (d n m : Reg) (cond : CondCode)
+  /-- `adrp d, name` then `add d, d, :lo12:name` (ADRP, ADD (immediate), no
+  shift): the address of the `static` `name`, `State.syms name`. -/
+  | adrSym (d : Reg) (name : String)
   /-- `add d, n, #imm` (ADD (immediate), `imm < 4096`, no shift) -/
   | addImm (sz : Size) (d n : Reg) (imm : Nat)
   /-- `sub d, n, #imm` (SUB (immediate), `imm < 4096`, no shift) -/
@@ -411,16 +467,29 @@ def read (s : State) (sz : Size) (r : Reg) : BitVec sz.bits := (s.gpr r).setWidt
 def write (s : State) (sz : Size) (r : Reg) (v : BitVec sz.bits) : State :=
   { s with gpr := fun r' => if r' = r then v.setWidth 64 else s.gpr r' }
 
-/-- DDI 0487 C6.2, ADDS/ADCS/SUBS/SBCS and shared pseudocode AddWithCarry:
-the result is the low `size` bits of `UInt(a) + UInt(b) + UInt(carry)`;
-C says that the unsigned sum does not fit. The other NZCV bits are not
-observable in this model. SUBS uses `(a, NOT(b), 1)` and SBCS uses
-`(a, NOT(b), PSTATE.C)`. All four are baseline A64 instructions.
-https://developer.arm.com/documentation/ddi0487/latest -/
+/-- DDI 0487 J1.1 shared pseudocode `AddWithCarry(x, y, carry_in)`: the
+result is the low `size` bits of `UInt(x) + UInt(y) + UInt(carry_in)`; N is
+its top bit, Z that it is zero, C that the unsigned sum does not fit (`UInt(result)
+!= unsigned_sum`) and V that the signed sum does not (`SInt(result) !=
+SInt(x) + SInt(y) + UInt(carry_in)`). -/
+def flagsAdd (s : State) {w : Nat} (a b : BitVec w) (carry : Bool) : State :=
+  { s with
+    nf := (a + b + BitVec.ofNat w carry.toNat).msb
+    zf := decide (a + b + BitVec.ofNat w carry.toNat = 0)
+    c := decide (2 ^ w ≤ a.toNat + b.toNat + carry.toNat)
+    vf := decide ((a + b + BitVec.ofNat w carry.toNat).toInt ≠ a.toInt + b.toInt + carry.toNat) }
+
+/-- DDI 0487 C6.2, ADDS/ADCS/SUBS/SBCS: `(result, nzcv) = AddWithCarry(...)`,
+`X[d] = result`, `PSTATE.<N,Z,C,V> = nzcv` (`flagsAdd`). SUBS uses `(a,
+NOT(b), 1)` and SBCS uses `(a, NOT(b), PSTATE.C)`. All four are baseline A64
+instructions. https://developer.arm.com/documentation/ddi0487/latest -/
 def addWithCarry (s : State) (sz : Size) (d : Reg)
     (a b : BitVec sz.bits) (carry : Bool) : State :=
   { s.write sz d (a + b + BitVec.ofNat sz.bits carry.toNat) with
-    c := decide (2 ^ sz.bits ≤ a.toNat + b.toNat + carry.toNat) }
+    c := decide (2 ^ sz.bits ≤ a.toNat + b.toNat + carry.toNat)
+    nf := (a + b + BitVec.ofNat sz.bits carry.toNat).msb
+    zf := decide (a + b + BitVec.ofNat sz.bits carry.toNat = 0)
+    vf := decide ((a + b + BitVec.ofNat sz.bits carry.toNat).toInt ≠ a.toInt + b.toInt + carry.toNat) }
 
 /-- Write a vector register (`V[n] = value`, 128 bits). -/
 def setV (s : State) (r : VReg) (x : BitVec 128) : State :=
@@ -771,6 +840,36 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   and DDI 0596:
   https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/ADC--Add-with-Carry-
   https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/SBC--Subtract-with-Carry-;
+* "CSEL": `if ConditionHolds(cond) then result = X[n, datasize] else
+  result = X[m, datasize]; X[d, datasize] = result`, where for HS
+  (`cond = '0010'`) `ConditionHolds` is `PSTATE.C == '1'` (DDI 0487 C6.2 and
+  J1.3, `ConditionHolds`); the flags are not set. See
+  https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/CSEL--Conditional-Select-;
+  with another condition code (`cselc`), the same with `CondCode.holds`;
+* "CSNEG": `if ConditionHolds(cond) then result = X[n] else result =
+  NOT(X[m]) + 1` (that is, `-X[m]`), the flags not set. See
+  https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/CSNEG--Conditional-Select-Negation-;
+* "TST (shifted register)", the alias of "ANDS (shifted register)" with
+  `Rd = '11111'` (the result is not written), no shift: `result = operand1
+  AND operand2; PSTATE.<N,Z,C,V> = result<datasize-1>:IsZeroBit(result):'00'`. See
+  https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/TST--shifted-register---Test--shifted-register---an-alias-of-ANDS--shifted-register--;
+* "CCMP (immediate)": `if ConditionHolds(cond) then operand2 = NOT(imm5);
+  (-, flags) = AddWithCarry(operand1, operand2, '1')` (the flags of
+  `operand1 - imm5`), `else flags = nzcv`; `PSTATE.<N,Z,C,V> = flags`, with
+  `imm5 < 32` and `nzcv` four bits (`nzcv<3>` is N). See
+  https://developer.arm.com/documentation/ddi0596/2020-12/Base-Instructions/CCMP--immediate---Conditional-Compare--immediate--;
+  All four are baseline A64 instructions.
+* "ADRP" then "ADD (immediate)" into the same register (`adrSym`): ADRP's
+  `base = PC[]; base<11:0> = Zeros(12); X[d, 64] = base + imm`, with `imm`
+  the page offset the linker writes for the static's address `S`
+  (`Page(S) - Page(P)`, `Page(x) = x` with bits 11:0 cleared: ELF for the
+  Arm 64-bit Architecture, `R_AARCH64_ADR_PREL_PG_HI21`; Mach-O's
+  `ARM64_RELOC_PAGE21`), so `X[d] = Page(S)`; then ADD's `X[d, 64] = X[d] +
+  imm12`, with `imm12 = S<11:0>` (`R_AARCH64_ADD_ABS_LO12_NC`;
+  `ARM64_RELOC_PAGEOFF12`): `X[d] = S`, the flags not set. A static beyond
+  ADRP's range (±4 GB) does not link. See Arm DDI 0487 C6.2 and
+  https://developer.arm.com/documentation/ddi0602/2025-09/Base-Instructions/ADRP--Form-PC-relative-address-to-4KB-page-
+  https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst;
 * "AND/ORR/EOR (shifted register)" and "BIC (shifted register)": the
   ROR forms use `operand2 = ShiftReg(m, SRType_ROR, shift_amount, datasize)`;
   BIC complements this rotated operand before AND. `imm6<5> = 1` is
@@ -820,6 +919,25 @@ def exec : Instr → State → Option State
     some (s.write sz d (s.read sz n + s.read sz m + BitVec.ofNat sz.bits s.c.toNat))
   | .sbc sz d n m, s =>
     some (s.write sz d (s.read sz n + ~~~s.read sz m + BitVec.ofNat sz.bits s.c.toNat))
+  | .csel sz d n m, s => some (s.write sz d (if s.c then s.read sz n else s.read sz m))
+  | .tst sz n m, s =>
+    some { s with
+      nf := (s.read sz n &&& s.read sz m).msb
+      zf := decide ((s.read sz n &&& s.read sz m) = 0)
+      c := false
+      vf := false }
+  | .ccmp sz n imm nzcv cond, s =>
+    if imm < 32 ∧ nzcv < 16 then
+      some (if cond.holds s then s.flagsAdd (s.read sz n) (~~~(BitVec.ofNat sz.bits imm)) true
+        else { s with
+          nf := nzcv.testBit 3
+          zf := nzcv.testBit 2
+          c := nzcv.testBit 1
+          vf := nzcv.testBit 0 })
+    else none
+  | .cselc sz d n m cond, s => some (s.write sz d (if cond.holds s then s.read sz n else s.read sz m))
+  | .csneg sz d n m cond, s => some (s.write sz d (if cond.holds s then s.read sz n else -s.read sz m))
+  | .adrSym d name, s => some (s.write .x d (s.syms name))
   | .addImm sz d n imm, s =>
     if imm < 4096 then some (s.write sz d (s.read sz n + BitVec.ofNat _ imm)) else none
   | .subImm sz d n imm, s =>
@@ -907,7 +1025,7 @@ def eval : Cond → State → Option Bool
 instruction), then the branch, possibly through a linker veneer, which may
 change `x16` and `x17` (AAPCS64 §6.1.1). The return address and the values
 left in `x16` and `x17` are the next three of the state's unknowns. The
-fourth supplies an independent C bit: AAPCS64 §6.1.1 makes NZCV undefined
+fourth supplies independent N, Z, C and V bits: AAPCS64 §6.1.1 makes NZCV undefined
 at public interfaces, and AAELF64 §5.7.7 (Call and Jump relocations) permits
 veneers to corrupt it.
 https://github.com/ARM-software/abi-aa/blob/main/aaelf64/aaelf64.rst -/
@@ -917,6 +1035,9 @@ def call (s : State) : Option State :=
       if r = .x30 then s.unknowns 0 else if r = .x16 then s.unknowns 1
       else if r = .x17 then s.unknowns 2 else s.gpr r
     c := (s.unknowns 3).getLsbD 0
+    nf := (s.unknowns 3).getLsbD 1
+    zf := (s.unknowns 3).getLsbD 2
+    vf := (s.unknowns 3).getLsbD 3
     unknowns := fun n => s.unknowns (n + 4) }
 
 /-- DDI 0487, C6.2 "RET" (with the default register `x30`): `target =

@@ -1,9 +1,11 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`]), and signs with a hash function `H` that the curve has
-//! signatures with ([`SignatureHash<C>`]: for P-256, SHA-256 and SHA-384),
-//! as in `key.sign::<Sha256>(message)`. Each signature is one call of
+//! [`P256`], [`P384`], `P521` and, on x86-64, `P224`), and signs with a hash
+//! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
+//! P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
+//! P-521, SHA-512), as in
+//! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
 //! `VG.Spec.Ecdsa.Rfc6979.Instance.signContract`). That code
@@ -12,7 +14,8 @@
 //! (`vg_ecdsa_<curve>_sign`). It checks the key, and tries further
 //! candidates for `k` when one is unsuitable. It follows the implementation
 //! of the hash function that this CPU runs (e.g. on x86-64,
-//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions).
+//! `vg_ecdsa_p256_sha256_sign_shani` with the SHA extensions, or on
+//! AArch64 `vg_ecdsa_p256_sha256_sign_sha2` with the SHA-256 instructions).
 //!
 //! Signing is constant time except for the number of candidates for `k`
 //! that it tries, almost always one.
@@ -29,11 +32,28 @@
 //! that the key is valid (SP 800-56A §5.6.2.3.3). It runs in constant time,
 //! although nothing it handles is secret.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
+mod p224;
 mod p256;
+mod p384;
+mod p521;
 
-pub use crate::ec::{Curve, P256};
+#[cfg(target_arch = "x86_64")]
+pub use crate::ec::P224;
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+pub use crate::ec::P521;
+pub use crate::ec::{Curve, P256, P384};
 
 use crate::zeroize::zeroize;
 
@@ -52,8 +72,10 @@ mod sealed {
 }
 
 /// A hash function that ECDSA signs with, and verifies signatures of, over
-/// the curve `C`: for P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
-/// [`Sha384`](crate::hashes::sha384::Sha384).
+/// the curve `C`: for P-224, [`Sha224`](crate::hashes::sha224::Sha224); for
+/// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
+/// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
+/// P-521, [`Sha512`](crate::hashes::sha512::Sha512).
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
 /// Why signing, deriving the public key, or verifying a signature failed.
@@ -61,7 +83,9 @@ pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 pub enum Error {
     /// The private key is not in `[1, n − 1]`. For a valid key, signing
     /// fails only if none of the candidates for `k` it tries is suitable:
-    /// for P-256, with probability under 2⁻²⁴⁸; deriving the public key
+    /// for P-224, with probability under 2⁻⁸⁸⁸, for P-256 under 2⁻²⁴⁸, for
+    /// P-384 under 2⁻¹⁵⁴⁴,
+    /// and for P-521 under 2⁻²⁰⁸⁸; deriving the public key
     /// never fails.
     InvalidKey,
     /// The signature is not valid for the public key, or the public key is

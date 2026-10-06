@@ -26,6 +26,7 @@ use openssl::sign::Signer;
 mod aes_ccm;
 mod aes_gcm;
 mod aes_gcm_siv;
+mod aes_ocb;
 mod aes_siv;
 mod argon2;
 mod blake2b;
@@ -34,8 +35,14 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod ecdh_p224;
 mod ecdh_p256;
+mod ecdh_p384;
+mod ecdh_p521;
+mod ecdsa_p224;
 mod ecdsa_p256;
+mod ecdsa_p384;
+mod ecdsa_p521;
 mod ed25519;
 mod ed448;
 mod hmac_md5;
@@ -65,6 +72,11 @@ mod poly1305;
 mod rc2_cbc;
 mod rc4;
 mod rsa;
+mod rsa_keygen;
+mod rsa_oaep;
+mod rsa_pkcs1_enc;
+mod rsa_pkcs1_sig;
+mod rsa_pss;
 mod scrypt;
 mod sha1;
 mod sha224;
@@ -253,6 +265,7 @@ const BENCHES: &[Bench] = &[
     (aes_ccm::USES, aes_ccm::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
+    (aes_ocb::USES, aes_ocb::bench),
     (aes_siv::USES, aes_siv::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
@@ -286,6 +299,11 @@ const BENCHES: &[Bench] = &[
     (rc2_cbc::USES, rc2_cbc::bench),
     (rc4::USES, rc4::bench),
     (rsa::USES, rsa::bench),
+    (rsa_keygen::USES, rsa_keygen::bench),
+    (rsa_oaep::USES, rsa_oaep::bench),
+    (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
+    (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
+    (rsa_pss::USES, rsa_pss::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
@@ -301,8 +319,14 @@ const BENCHES: &[Bench] = &[
     (x448::USES, x448::bench),
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
+    (ecdsa_p224::USES, ecdsa_p224::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
+    (ecdsa_p384::USES, ecdsa_p384::bench),
+    (ecdsa_p521::USES, ecdsa_p521::bench),
+    (ecdh_p224::USES, ecdh_p224::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
+    (ecdh_p384::USES, ecdh_p384::bench),
+    (ecdh_p521::USES, ecdh_p521::bench),
 ];
 
 /// Runs the benchmarks that use any of the modules in `$VG_BENCH_MODULES`

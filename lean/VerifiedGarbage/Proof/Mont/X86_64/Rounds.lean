@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Round
+import VerifiedGarbage.Proof.Mont.X86_64.Adx
 
 /-!
 # Montgomery arithmetic on x86-64: the rounds of the multiplication
@@ -50,7 +50,7 @@ theorem acc_regs_lt : ∀ n < 7, ∀ r ∈ acc n, r ≠ .rax ∧ r ≠ .rcx ∧ 
 /-- `k` rounds, from a cleared accumulator. -/
 theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) :
+    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true) :
     ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size →
       wordsVal s.mem base M.mo M.n = m → wordsVal s.mem base b M.n < m →
       regsVal s (wins M.n 0) = 0 →
@@ -63,7 +63,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       fun _ _ => rfl, rfl, rfl, rfl⟩
   | k + 1, hk, s, base, hs, hm, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn ha hb hmo hinv k (by omega) hs hm hB h0)
+    refine WP.mono (rounds_ok hn ha hb hmo hinv hred k (by omega) hs hm hB h0)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.2.1
     have hs₁ := hs.of_keeps k₁ (by
@@ -75,7 +75,7 @@ theorem rounds_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact (acc_regs_lt _ hn _ h).2.2.2.2 rfl)
-    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo (by rw [hmem, hm]) hinv
+    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo (by rw [hmem, hm]) hinv hred
       (by rw [hmem]; exact hB) hT) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_)⟩

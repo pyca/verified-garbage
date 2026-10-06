@@ -182,7 +182,7 @@ theorem fused_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, aTmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
-  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => (slot_le hj).trans hZ
+  have sl : ∀ j < 8, slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_le hj) hZ
   have hAT : slot w aAcc + 8 * (w + 2) = slot w aTmp := by unfold slot aAcc aTmp; omega
   have hg0 : hdrBytes ≤ slot w aAcc := by unfold slot; omega
   have hTs := sl aTmp (by decide)

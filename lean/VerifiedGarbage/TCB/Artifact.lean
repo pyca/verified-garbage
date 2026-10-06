@@ -287,6 +287,13 @@ structure Artifact where
   anything the contract declares the function may leak (`Sig.contract`'s
   `leak`). -/
   doc : String
+  /-- Tables of 64-bit constants the code reads, by name: the emitter writes
+  each as a `static` of that name, from which the code forms the table's
+  address (`Abi.sym`; on AArch64, `adrSym`; on x86-64, `leaSym`), and
+  checks that every artifact of the target with a table of that name gives
+  the same words (`Rust.checkConsts`). So `contract` is one for the calling convention
+  `target.abi.withConsts consts` (`Abi.withConsts`). -/
+  consts : List (String × List (BitVec 64)) := []
   code : Prog target.isa
   contract : Contract target.isa
   verified : Verified target code contract
@@ -298,7 +305,8 @@ structure Artifact where
   arguments and writes the return value where the calling convention places
   them for `sig`, and requires what `Sig.layoutDoc` documents of where the
   buffers are. -/
-  ofSig : ∃ pre post leak, contract = sig.contract target.abi pre post writeArgs stack leak := by
+  ofSig : ∃ pre post leak,
+      contract = sig.contract (target.abi.withConsts consts) pre post writeArgs stack leak := by
     exact ⟨_, _, _, rfl⟩
   /-- The contract of the function on every target, which an artifact made
   from an `Api` (`{ api with … }`) takes from it with its `name` and `sig`
@@ -308,7 +316,7 @@ structure Artifact where
   /-- `contract` is `contracts` on the target, for `stack`: an artifact made
   from an `Api` is proven against the contract `Spec/` gives the function,
   not one chosen where the artifact is built. -/
-  ofApi : contracts.elim True fun f => contract = f target.abi stack := by
+  ofApi : contracts.elim True fun f => contract = f (target.abi.withConsts consts) stack := by
     first | exact True.intro | exact rfl
   /-- The code changes the stack pointer only by calls and returns and by
   the pushes and pops of frames, which are nested: no other instruction of

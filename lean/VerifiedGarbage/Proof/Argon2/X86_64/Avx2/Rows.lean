@@ -133,7 +133,8 @@ theorem loadRow_ok {i : Nat} (hi : i < 8) {s : State} {p : Addr} (hs : Scratch s
     State.setV_rd, State.setV_wr, State.setV_gpr, State.setV_mem, hs.reg, r 0 (by decide),
     r 1 (by decide), r 2 (by decide), r 3 (by decide), ite_true, Option.map_some,
     Option.some.injEq, exists_eq_left']
-  refine ⟨?_, trivial, ⟨rfl, rfl, rfl, by simp only [State.setV_mxcsr]⟩,
+  refine ⟨?_, trivial, ⟨by simp only [State.setV_gpr], by simp only [State.setV_rd],
+      by simp only [State.setV_wr], by simp only [State.setV_mxcsr]⟩,
     (((hm.setV (by decide) (by decide)).setV (by decide) (by decide)).setV (by decide)
       (by decide)).setV (by decide) (by decide)⟩
   apply Vector.ext
@@ -314,6 +315,16 @@ theorem qw_col (s : State) {k b x : Nat} (h1 : x / 32 = k) (h2 : x / 16 % 2 = b)
     qword (s.lane (vreg k) b) (x % 2) = qw s (vreg (x / 32)) (2 * (x / 16 % 2) + x % 2) := by
   rw [h1, h2, qw, show (2 * b + x % 2) / 2 = b by omega, show (2 * b + x % 2) % 2 = x % 2 by omega]
 
+/-- Whether word `8 q + r` of the block is in row `2 k` of column `c`. -/
+theorem col_cond (q r k c : Nat) (hr : r < 8) (hc : c < 8) :
+    (8 * q + r = 16 * k + c) = (q = 2 * k ∧ r = c) := by
+  apply propext; omega
+
+/-- Whether word `8 q + r` of the block is in row `2 k + 1` of column `c`. -/
+theorem col_cond8 (q r k c : Nat) (hr : r < 8) (hc : c < 8) :
+    (8 * q + r = 16 * k + c + 8) = (q = 2 * k + 1 ∧ r = c) := by
+  apply propext; omega
+
 theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch s p) :
     WP isa (.block (storeCol c)) s fun t =>
       (∀ w : Fin 128, (working t.mem p)[w] =
@@ -332,7 +343,7 @@ theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch 
     State.setMem_lane, State.lane_setV128, ↓reduceIte, reduceCtorEq]
   refine ⟨fun x => ?_, ?_, ?_, ?_, fun h => ?_⟩
   · have hx := x.isLt
-    simp only [working_write128 _ p (show 16 * 3 + c + 8 < 64 by omega),
+    rw [working_write128 _ p (show 16 * 3 + c + 8 < 64 by omega),
       working_write128 _ p (show 16 * 3 + c < 64 by omega),
       working_write128 _ p (show 16 * 2 + c + 8 < 64 by omega),
       working_write128 _ p (show 16 * 2 + c < 64 by omega),
@@ -340,18 +351,24 @@ theorem storeCol_ok {c : Nat} (hc : c < 8) {s : State} {p : Addr} (hs : Scratch 
       working_write128 _ p (show 16 * 1 + c < 64 by omega),
       working_write128 _ p (show 16 * 0 + c + 8 < 64 by omega),
       working_write128 _ p (show 16 * 0 + c < 64 by omega)]
-    repeat' split
-    all_goals first
-      | omega
-      | rfl
-      | exact qw_col s (k := 0) (b := 0) (by omega) (by omega)
-      | exact qw_col s (k := 0) (b := 1) (by omega) (by omega)
-      | exact qw_col s (k := 1) (b := 0) (by omega) (by omega)
-      | exact qw_col s (k := 1) (b := 1) (by omega) (by omega)
-      | exact qw_col s (k := 2) (b := 0) (by omega) (by omega)
-      | exact qw_col s (k := 2) (b := 1) (by omega) (by omega)
-      | exact qw_col s (k := 3) (b := 0) (by omega) (by omega)
-      | exact qw_col s (k := 3) (b := 1) (by omega) (by omega)
+    obtain ⟨q, hq16⟩ : ∃ q, x.val / 16 = q := ⟨_, rfl⟩
+    have hr : x.val % 16 / 2 < 8 := by omega
+    rw [show x.val / 2 = 8 * q + x.val % 16 / 2 by omega]
+    simp only [col_cond _ _ _ _ hr hc, col_cond8 _ _ _ _ hr hc]
+    by_cases h : x.val % 16 / 2 = c
+    · simp only [h, and_true, ↓reduceIte]
+      rcases (by omega : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3 ∨ q = 4 ∨ q = 5 ∨ q = 6 ∨ q = 7) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [Nat.reduceMul, Nat.reduceAdd, Nat.reduceEqDiff, ↓reduceIte]
+      · exact qw_col s (k := 0) (b := 0) (by omega) (by omega)
+      · exact qw_col s (k := 0) (b := 1) (by omega) (by omega)
+      · exact qw_col s (k := 1) (b := 0) (by omega) (by omega)
+      · exact qw_col s (k := 1) (b := 1) (by omega) (by omega)
+      · exact qw_col s (k := 2) (b := 0) (by omega) (by omega)
+      · exact qw_col s (k := 2) (b := 1) (by omega) (by omega)
+      · exact qw_col s (k := 3) (b := 0) (by omega) (by omega)
+      · exact qw_col s (k := 3) (b := 1) (by omega) (by omega)
+    · simp only [h, and_false, ↓reduceIte]
   · repeat (first
       | refine Frame.writeW ?_ (List.mem_singleton_self _) _ (working_contains p (by omega))
       | exact Frame.refl _ _)

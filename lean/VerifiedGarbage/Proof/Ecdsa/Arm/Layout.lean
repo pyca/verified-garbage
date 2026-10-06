@@ -1,0 +1,288 @@
+import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
+import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+import VerifiedGarbage.TCB.Arm.Target
+
+/-!
+# ECDSA on 32-bit ARM: the curve, the arguments and the working space
+
+What the proof of `Impl.Ecdsa.Arm.Cfg.sign` needs of a curve (`CfgOk`) and
+of its arguments (`Pre`), for any curve of `n` 64-bit words, and the state
+`setup` leaves (`SetupPost`), as on x86 (`Proof/Ecdsa/X86/Layout.lean`).
+
+The arguments are `out`, `d`, `digest` and `k` in `r0`–`r3` and `scratch`
+on the stack (AAPCS). The working space is the first `4096` bytes of the
+`8192` at `scratch` (every offset in it is an immediate offset of `ldr` and
+`str`): the saved registers in `[0, 36)`, the slots
+`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and the
+multiplications' accumulator at `c.wk = c.sl nslots`. The tables of bits
+`bitsAt n j` (`64 n` bytes each, `j < 3`) follow it, in `scratch` but past
+the working space for the largest curves (`Far`).
+-/
+
+namespace VG.Proof.Ecdsa.Arm
+
+open VG VG.Arm VG.Impl.Mont.Arm VG.Impl.Mont VG.Impl.Weierstrass.Arm VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.Arm
+open VG.Proof.Mont.Arm VG.Proof.Mont VG.Proof.Weierstrass.Arm VG.Proof.Weierstrass Spec.Weierstrass
+
+/-- The size of the working space, in bytes. -/
+abbrev size : Nat := 4096
+
+/-- The register `r`, a pointer, as an address. -/
+abbrev ptr (s : State) (r : Reg) : Addr := State.addr (s.gpr r)
+
+/-- `scratch`, the stack argument, as an address. -/
+abbrev scPtr (s : State) : Addr := State.addr (stackArg s 0)
+
+/-- What the proof of the code needs of a curve: its field and order are odd
+and fit in `n` words (`n < 10`, so that the slots and the accumulator fit in
+the working space and the tables in `scratch`), `G` is on the curve,
+`p < 2n` (so `x mod n` is one conditional subtraction), the Montgomery
+constants are right, encodings are `len` bytes in `n` words
+(`8 (n - 1) < len ≤ 8 n`, at least one word), and the bits of a hash of
+`len` bytes that are not `e`'s (`c.sh`, 0 unless `n` has fewer than
+`8 len` bits) are fewer than 32. -/
+structure CfgOk (c : Cfg) : Prop where
+  n0 : 0 < c.n
+  n10 : c.n < 10
+  onG : onCurve c.C (G c.C) = true
+  p_odd : c.C.p % 2 = 1
+  n_odd : c.C.n % 2 = 1
+  p_lt : c.C.p < 2 ^ (64 * c.n)
+  n_lt : c.C.n < 2 ^ (64 * c.n)
+  p_ge : 3 ≤ c.C.p
+  n_ge : 3 ≤ c.C.n
+  p_lt_2n : c.C.p < 2 * c.C.n
+  minv_p : (c.C.p * (BitVec.ofNat 64 (minv c.C.p)).toNat + 1) % 2 ^ 64 = 0
+  minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
+  len8 : 8 ≤ c.C.len
+  len_lo : 8 * c.n < c.C.len + 8
+  len_hi : c.C.len ≤ 8 * c.n
+  sh : c.sh < 32
+
+section
+variable (c : Cfg) (s : State)
+/-- The regions of the arguments, on entry. -/
+abbrev outR : Region := ⟨ptr s .r0, 2 * c.C.len⟩
+abbrev dR : Region := ⟨ptr s .r1, c.C.len⟩
+abbrev digestR : Region := ⟨ptr s .r2, c.C.len⟩
+abbrev kR : Region := ⟨ptr s .r3, c.C.len⟩
+abbrev scR : Region := ⟨scPtr s, 8192⟩
+abbrev argsR : Region := ⟨State.addr s.sp, 4⟩
+end
+
+/-- The arguments, readable and writable as the contract says and apart from
+each other as it says. -/
+structure Pre (c : Cfg) (s : State) : Prop where
+  rd : s.rd = [dR c s, digestR c s, kR c s, argsR s]
+  wr : s.wr = [outR c s, scR s]
+  out_sc : (outR c s).Disjoint (scR s)
+  d_sc : (dR c s).Disjoint (scR s)
+  digest_sc : (digestR c s).Disjoint (scR s)
+  k_sc : (kR c s).Disjoint (scR s)
+  out_args : (outR c s).Disjoint (argsR s)
+  sc_args : (scR s).Disjoint (argsR s)
+  out_fit : (s.gpr .r0).toNat + 2 * c.C.len ≤ 2 ^ 32
+  d_fit : (s.gpr .r1).toNat + c.C.len ≤ 2 ^ 32
+  digest_fit : (s.gpr .r2).toNat + c.C.len ≤ 2 ^ 32
+  k_fit : (s.gpr .r3).toNat + c.C.len ≤ 2 ^ 32
+  sc_fit : (stackArg s 0).toNat + 8192 ≤ 2 ^ 32
+  sp_fit : s.sp.toNat + 4 ≤ 2 ^ 32
+
+/-- The working space's base, from where `A` says. -/
+def scVal (A : Args) (s : State) : BitVec 32 :=
+  match A.sc with
+  | none => stackArg s 0
+  | some r => s.gpr r
+
+theorem scVal_sign (s : State) : scVal .sign s = stackArg s 0 := rfl
+
+/-- The working space's base, as an address. -/
+abbrev scBase (A : Args) (s : State) : Addr := State.addr (scVal A s)
+
+/-- The registers `A` names hold none of the working registers of the setup. -/
+def argsOk (A : Args) : Prop := A.k ∉ [.r4, .r12, .lr] ∧ A.d ∉ [.r4, .r12, .lr] ∧ A.e ∉ [.r4, .r12, .lr]
+
+/-- Which slot `setupWith` may shift: none, `d`'s (verification reads the
+hash there) or the hash's. -/
+def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some D ∨ hs = some E
+
+/-- What `setupWith A` needs of its arguments: the slot `A.hs` one it may
+shift, `scratch` readable (if on the stack) and its `8192` bytes writable,
+`k`, `d` and the hash (`len` bytes each) readable and apart from the working
+space, and nothing wrapping around `2³²`. -/
+structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
+  shift : ShiftOk A.hs
+  args : argsOk A
+  sc_in : A.sc = none → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 4
+  wr : (⟨scBase A s, 8192⟩ : Region) ∈ s.wr
+  k_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.k + BitVec.ofNat 64 e) 4
+  d_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.d + BitVec.ofNat 64 e) 4
+  e_in : ∀ e, e + 4 ≤ c.C.len → InRegions (s.rd ++ s.wr) (ptr s A.e + BitVec.ofNat 64 e) 4
+  k_sc : Region.Disjoint ⟨ptr s A.k, c.C.len⟩ ⟨scBase A s, size⟩
+  d_sc : Region.Disjoint ⟨ptr s A.d, c.C.len⟩ ⟨scBase A s, size⟩
+  e_sc : Region.Disjoint ⟨ptr s A.e, c.C.len⟩ ⟨scBase A s, size⟩
+  k_fit : (s.gpr A.k).toNat + c.C.len ≤ 2 ^ 32
+  d_fit : (s.gpr A.d).toNat + c.C.len ≤ 2 ^ 32
+  e_fit : (s.gpr A.e).toNat + c.C.len ≤ 2 ^ 32
+  sc_fit : (scVal A s).toNat + 8192 ≤ 2 ^ 32
+
+/-- The words of a region are accessible. -/
+theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
+    (hl : len ≤ 2 ^ 64) : ∀ d, d + 4 ≤ len → InRegions rs (p + BitVec.ofNat 64 d) 4 :=
+  fun _ hd => ⟨_, h, Offset.contains_base p hd (by omega)⟩
+
+theorem stackArgAddr0 (s : State) : stackArgAddr s 0 = State.addr s.sp := by
+  simp [stackArgAddr]
+
+/-- The working space, the first `size` bytes of `scratch`. -/
+theorem sc_sub (s : State) : Region.Sub ⟨scPtr s, size⟩ (scR s) := Region.sub_prefix (by decide)
+
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) : SetupPre c .sign s where
+  shift := .inr (.inr rfl)
+  args := by unfold argsOk; decide
+  sc_in := fun _ => by rw [stackArgAddr0]; exact ⟨argsR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩
+  wr := by show (⟨scPtr s, 8192⟩ : Region) ∈ s.wr; rw [hp.wr]; simp
+  k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.k_fit; omega)
+  d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.d_fit; omega)
+  e_in := inRegions_words (by rw [hp.rd]; simp) (by have := hp.digest_fit; omega)
+  k_sc := hp.k_sc.sub_right (sc_sub s)
+  d_sc := hp.d_sc.sub_right (sc_sub s)
+  e_sc := hp.digest_sc.sub_right (sc_sub s)
+  k_fit := hp.k_fit
+  d_fit := hp.d_fit
+  e_fit := hp.digest_fit
+  sc_fit := hp.sc_fit
+
+/-- The number in slot `i`. -/
+abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
+
+/-- The bits slot `i` is shifted right by when `setupWith` reads it, if `hs`
+is `A.hs`: `c.sh` for the slot `hs` holding a hash, 0 for the others. -/
+abbrev shAt (c : Cfg) (hs : Option Nat) (i : Nat) : Nat := if hs = some i then c.sh else 0
+
+theorem shAt_none (c : Cfg) (i : Nat) : shAt c none i = 0 := rfl
+theorem shAt_self (c : Cfg) (i : Nat) : shAt c (some i) i = c.sh := ite_eq_left_of_eq_true _ _ (eq_true rfl)
+theorem shAt_E_D (c : Cfg) : shAt c (some E) D = 0 := rfl
+theorem shAt_E_K (c : Cfg) : shAt c (some E) K = 0 := rfl
+theorem shAt_D_K (c : Cfg) : shAt c (some D) K = 0 := rfl
+theorem shAt_D_E (c : Cfg) : shAt c (some D) E = 0 := rfl
+
+/-- What `setupWith A` leaves, from the state `s₀` at entry, with the working
+space at `base`: `r12 = base`, `r4`–`r11` and `lr` in `[0, 36)`, `lr = out`,
+`k`, `d` and the hash in their slots (the slot `A.hs` shifted, `shAt`), the
+constants in theirs, and the flag all ones; only `r4`, `r5`, `r12`, `lr` and
+the working space changed. -/
+structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : Prop where
+  scr : Scr s base size
+  far : Far s base 8192
+  keep : VG.Proof.X25519.Arm.Rest [.r4, .r5, .r12, .lr] s₀ s
+  unch : Unch base [(0, size)] s₀.mem s.mem
+  saved : ∀ rd ∈ Cfg.saved, s.mem.readW (off base rd.2) 32 = s₀.gpr rd.1
+  lr : s.gpr .lr = s₀.gpr .r0
+  k : sv c base s K = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.k) c.C.len) >>> shAt c A.hs K
+  d : sv c base s D = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.d) c.C.len) >>> shAt c A.hs D
+  e : sv c base s E = ofBytes (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ A.e) c.C.len) >>> shAt c A.hs E
+  consts : ∀ ix ∈ c.consts, sv c base s ix.1 = ix.2
+  flag : flagW c base s = BitVec.allOnes 32
+
+/-! ## Slots -/
+
+theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
+
+theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 := rfl
+
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (32 * c.n + 8) + 64 * c.n * j := rfl
+
+theorem accLen_eq (M : Mod) : accLen M = 32 * M.n + 8 := by
+  simp only [accLen, digits]; omega
+
+/-- Slots `i < j` are apart. -/
+theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
+  rw [sl_eq, sl_eq]
+  have := Nat.mul_le_mul_left (8 * c.n) h
+  rw [Nat.mul_succ] at this
+  omega
+
+theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
+    c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
+  rcases Nat.lt_or_gt_of_ne h with h | h
+  · exact Or.inl (sl_lt c h)
+  · exact Or.inr (sl_lt c h)
+
+theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
+  by_contra hij
+  have := sl_apart c hij
+  omega
+
+/-- A slot is below the accumulator. -/
+theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
+  have := sl_lt c hi
+  rw [sl_eq c 45] at this
+  rw [wk_eq]
+  omega
+
+/-- The accumulator is below the tables. -/
+theorem wk_below_bits (c : Cfg) {M : Mod} (hM : M.n = c.n) (j : Nat) :
+    c.wk + accLen M ≤ bitsAt c.n j := by
+  rw [wk_eq, bitsAt_eq, accLen_eq, hM]
+  omega
+
+/-- A slot is below the tables. -/
+theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) :
+    c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
+  have := sl_below_wk c hi
+  have := wk_below_bits c (M := c.MP') rfl j
+  omega
+
+/-- The accumulator is in the working space. -/
+theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
+  rw [wk_eq, accLen_eq, hM]
+  show _ ≤ 4096
+  omega
+
+/-- Every slot is in the working space. -/
+theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
+  have := sl_below_wk c hi
+  have := wk_le c hn (M := c.MP') rfl
+  omega
+
+/-- Every table is in `scratch`. -/
+theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ 8192 := by
+  rw [bitsAt_eq]
+  have : 64 * c.n * j ≤ 64 * c.n * 2 := Nat.mul_le_mul_left _ (by omega)
+  omega
+
+theorem bitsAt_lt {c : Cfg} (hc : CfgOk c) {j : Nat} (hj : j < 3) : bitsAt c.n j < 8192 := by
+  have := bitsAt_le c hc.n10 hj
+  have := hc.n0
+  omega
+
+/-- The tables are at offsets of 8-byte words. -/
+theorem bitsAt_al (c : Cfg) (j : Nat) : bitsAt c.n j % 8 = 0 := by
+  rw [bitsAt_eq, Nat.mul_assoc 64]; omega
+
+/-- The bytes of a number, an immediate. -/
+theorem enc8n {c : Cfg} (hn : c.n < 10) : encodable (BitVec.ofNat 32 (8 * c.n)) = true := by
+  have : ∀ n < 10, encodable (BitVec.ofNat 32 (8 * n)) = true := by decide
+  exact this _ hn
+
+/-- The bytes of an encoding, an immediate. -/
+theorem encLen {c : Cfg} (hc : CfgOk c) : encodable (BitVec.ofNat 32 c.C.len) = true := by
+  have : ∀ x < 73, encodable (BitVec.ofNat 32 x) = true := by decide
+  exact this _ (by have := hc.len_hi; have := hc.n10; omega)
+
+/-- Table `j` of the bits of slot `i`. -/
+theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hf : Far s base 8192) {i j : Nat} (hi : i < 45) (hj : j < 3) :
+    WP isa (bits (c.sl i) (bitsAt c.n j) (8 * c.n)) s fun s' =>
+      (∀ t < 64 * c.n, s'.mem (off base (bitsAt c.n j + t)) =
+        if (wordsVal s.mem base (c.sl i) c.n).testBit t then 1 else 0) ∧
+      VG.Proof.X25519.Arm.Rest [.r4, .r5, .r7, .r11] s s' ∧
+      Outside base (bitsAt c.n j) (64 * c.n) s.mem s'.mem := by
+  have hb := bitsAt_le c hc.n10 hj
+  have := hc.n0
+  exact bits_ok hs hf hc.n0 (sl_le c hc.n10 hi) hb (by omega) (bitsAt_al c j)
+    (Or.inl (sl_below_bits c hi j 0)) (enc8n hc.n10)
+
+end VG.Proof.Ecdsa.Arm

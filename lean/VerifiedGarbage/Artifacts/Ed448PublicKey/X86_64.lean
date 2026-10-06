@@ -1,10 +1,13 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed448.X86_64.PublicKey.Verified
+import VerifiedGarbage.Proof.Ed448.Facts
 
 /-!
 # Ed448 public-key derivation on x86-64
 
-The signature and documentation come from the reviewed Ed448 API.
+The signature and documentation come from the reviewed Ed448 API. The
+reference ladder's agreement with the specification (`Proof/Ed448/Facts.lean`)
+is passed to the proof here, so that only registration files import it.
 -/
 
 namespace VG.Artifacts.Ed448PublicKey.X86_64
@@ -22,6 +25,7 @@ def artifacts : List Artifact := [
     contract := Spec.Ed448.publicKeyContract X86_64.abi 104
     stack := 104
     verified := Proof.Ed448.X86_64.PublicKey.publicKey_verified
+      Proof.Ed448.baseLadder_ok
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Artifacts.Ed448PublicKey.X86_64

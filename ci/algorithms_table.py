@@ -42,7 +42,7 @@ END = "<!-- END ci/algorithms_table.py -->\n"
 ARCHES = {"x86_64": "x86-64", "aarch64": "ARM64", "arm": "ARMv7", "x86": "x86"}
 
 # The families, in README order: each has its own table, under a heading.
-FAMILIES = ["Hashes", "MACs", "Ciphers", "AEADs", "KDFs", "KEMs", "Key agreement", "Signatures"]
+FAMILIES = ["Hashes", "MACs", "Ciphers", "AEADs", "KDFs", "KEMs", "Key agreement", "Signatures", "RSA"]
 
 # How the table names CPU features (Rust's `target_feature` names), in the
 # order it lists them; None leaves a feature out, e.g. one that only comes
@@ -102,7 +102,8 @@ def optimized(row, arch):
     shown = []
     for f in sorted(set(features), key=lambda f: (order.index(f) if f in order else len(order), f)):
         f = {**FEATURES, **ARCH_FEATURES.get(arch, {})}.get(f, f)
-        if f is not None:
+        # Several features may share a name (AArch64's SHA-2 and SHA-3).
+        if f is not None and f not in shown:
             shown.append(f)
     note = row.get("optimized", {}).get(arch)
     return ", ".join(shown) + ("; " if shown and note else "") + (note or "")

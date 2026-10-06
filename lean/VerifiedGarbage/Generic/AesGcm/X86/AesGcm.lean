@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
 # AES-GCM (NIST SP 800-38D) on x86
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, calling the
-implementations `v` of `vg_aes_ctr32` with its `vg_aes_expand_key` and of
+implementations `v` of `vg_aes_ctr32` with its `vg_aes_expand_key_scratch` and of
 `vg_ghash`, are emitted once for each combination (`Variants/AesGcm/X86/`),
 named with its suffix (e.g. `vg_aes_gcm_seal_aesni_pclmul`), and need its CPU
 features: `init` only AES's, `stream_init` and `stream_aad` only GHASH's.
@@ -21,10 +21,11 @@ against the contract.
 Each function calls `vg_aes_ctr32` (six stack arguments) or `vg_ghash`
 (five) in a frame of its own, so uses 28 bytes of stack with the return
 address (24 for `stream_init` and `stream_aad`, which call only
-`vg_ghash`). `init`, `stream_init`, `stream_aad`, `stream_encrypt` and
-`stream_decrypt` also keep their working space in a frame of their own,
-which copies their arguments passed on the stack: 2580, 2584, 2592 and (for
-the last two) 2604 bytes.
+`vg_ghash`). Every function also keeps its working space in a frame of its own, which
+copies its arguments passed on the stack: 2580 bytes for `init`, 2584 for
+`stream_init`, 2592 for `stream_aad`, 2600 for `stream_finish`, 2604 for
+`stream_encrypt`, `stream_decrypt`, `stream_verify` and `seal`, and 2608 for
+`open`.
 -/
 
 namespace VG.Generic.AesGcm.X86.AesGcm
@@ -93,41 +94,41 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     name := Spec.Gcm.streamFinishApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.streamFinishApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.streamFinish v.callees
-    contract := Spec.Gcm.streamFinishContract X86.abi 28
-    stack := 28
-    verified := streamFinish_verified (vg := v)
-    spSafe := streamFinish_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2600 8 (Impl.AesGcm.X86.streamFinish v.callees)
+    contract := Spec.Gcm.streamFinishContract X86.abi 2628
+    stack := 2628
+    verified := streamFinish_framed v
+    spSafe := withStackScratch_spSafe (by decide) (streamFinish_spSafe v)
     features := v.features },
   { Spec.Gcm.streamVerifyApi with
     name := Spec.Gcm.streamVerifyApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.streamVerifyApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.streamVerify v.callees
-    contract := Spec.Gcm.streamVerifyContract X86.abi 28
-    stack := 28
-    verified := streamVerify_verified (vg := v)
-    spSafe := streamVerify_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamVerify v.callees)
+    contract := Spec.Gcm.streamVerifyContract X86.abi 2632
+    stack := 2632
+    verified := streamVerify_framed v
+    spSafe := withStackScratch_spSafe (by decide) (streamVerify_spSafe v)
     features := v.features },
   { Spec.Gcm.sealApi with
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.sealApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.«seal» v.callees
-    contract := Spec.Gcm.sealContract X86.abi 28
-    stack := 28
-    verified := seal_verified (vg := v)
-    spSafe := seal_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» v.callees)
+    contract := Spec.Gcm.sealContract X86.abi 2632
+    stack := 2632
+    verified := seal_framed v
+    spSafe := withStackScratch_spSafe (by decide) (seal_spSafe v)
     features := v.features },
   { Spec.Gcm.openApi with
     name := Spec.Gcm.openApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Gcm.openApi.doc (notes := [callNote v])
-    code := Impl.AesGcm.X86.«open» v.callees
-    contract := Spec.Gcm.openContract X86.abi 28
-    stack := 28
-    verified := open_verified (vg := v)
-    spSafe := open_spSafe v
+    code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesGcm.X86.«open» v.callees)
+    contract := Spec.Gcm.openContract X86.abi 2636
+    stack := 2636
+    verified := open_framed v
+    spSafe := withStackScratch_spSafe (by decide) (open_spSafe v)
     features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names. -/

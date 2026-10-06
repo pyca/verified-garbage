@@ -40,7 +40,7 @@ theorem initFramed {I : Spec.Hmac.Instance} {c : Prog isa}
       refine ⟨?_, by simp only [initFrame]; omega, by simp only [initFrame]; omega⟩
       change 8 + 4 * 4 + I.scratch * 8 ≤ initFrame I
       simp only [initFrame]; omega)
-    hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat rfl
+    hsp hd (Hmac.initPre_local I.S _) (Hmac.initPost_local I.S _) hsat
 
 theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
     (h : Verified X86.target c (I.finalizeScratchContract X86.abi 48)) (hs : 8 * I.scratch < 4068)
@@ -57,7 +57,7 @@ theorem finFramed {I : Spec.Hmac.Instance} {c : Prog isa}
       change 8 + 4 * 5 + I.scratch * 8 ≤ finFrame I
       simp only [finFrame]; omega)
     hsp hd (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
-    (Hmac.finalizePost_local I.S _ hR hS) hsat rfl
+    (Hmac.finalizePost_local I.S _ hR hS) hsat
 
 /-- Memory holding the arguments `0x1000, 0x1400, 0x1800, 0` of `init` at
 `0x6004`. -/

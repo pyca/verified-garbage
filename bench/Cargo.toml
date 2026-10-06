@@ -15,6 +15,10 @@ publish = false
 # `src/cpu.rs` and `ci/bench_arches.py`).
 verified-garbage = { path = "..", features = ["cpu-features-env"] }
 
+# Low-level KEM calls are not yet wrapped by rust-openssl.
+openssl-sys = { version = "0.9.117", optional = true }
+foreign-types = { version = "0.3", optional = true }
+
 [features]
 # OpenSSL 3.2+ supplies Argon2; the benchmark runners use 3.0.
 # On a supported host, use `cargo bench --features openssl-argon2` and
@@ -22,6 +26,8 @@ verified-garbage = { path = "..", features = ["cpu-features-env"] }
 openssl-argon2 = []
 # OpenSSL 3.5+ supplies ML-DSA; enable its benchmark comparisons on a supported host.
 openssl-mldsa = []
+# OpenSSL 3.5+ supplies ML-KEM.
+openssl-mlkem = ["dep:openssl-sys", "dep:foreign-types"]
 
 [dev-dependencies]
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }

@@ -24,8 +24,14 @@ hand (`hcl`, `hloc`, decidable): the buffer is the stack argument after the
 others, which take `4m` bytes of stack and otherwise `r0`–`r3`, which
 `setArgs` keeps. The copies are memory the code reads on entry, which the
 contract without the argument says nothing of: the precondition and
-postcondition must read memory only within the function's buffers (`hpre`,
-`hpost`), which the frame lies outside of.
+postcondition must read memory only within the function's buffers and its
+lists of slices (`hpre`, `hpost`), which the frame lies outside of. So must
+the leak the contract may declare (`Sig.contract`'s `leak`, which the code's
+contract takes too): `hleak` (`Sig.LeakLocalL`, which holds of no leak and is
+then proved by default). The lists are the same in the frame's memory, whose
+descriptors are as on entry (`Sig.lists_eq_of_agree`). `pubL_arm` is
+`pub_arm` with a leak; `pre_armL` and `pubL_armL` are `pre_arm` and
+`pubL_arm` for a signature that may have lists of slices.
 -/
 
 namespace VG.Arm
@@ -136,6 +142,77 @@ theorem pub_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
   rw [args_arm]
   simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
   exact Iff.rfl
+
+/-- The public data of a contract, and what it may leak, by where AAPCS passes
+the arguments. -/
+theorem pubL_arm {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
+    (hl : Sig.noLists sig.params = true) :
+    (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
+      (s₁.sp = s₂.sp ∧ leakAgree leak (armArgs sig s₁) s₁.mem (armArgs sig s₂) s₂.mem) ∧
+      ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
+        ((armArgs sig s₁).getD i 0).setWidth ((widths sig).getD i 64) =
+          ((armArgs sig s₂).getD i 0).setWidth ((widths sig).getD i 64) := by
+  simp only [Sig.contract]
+  rw [args_arm]
+  simp only [Sig.descs_of_noLists _ _ _ hl, List.not_mem_nil, false_implies, implies_true, and_true]
+  cases leak with
+  | none => simp only [leakAgree, and_true]; exact Iff.rfl
+  | some f => exact Iff.rfl
+
+/-- The buffers of `sig` and its lists of slices, read only, and whether each
+is writable. -/
+def bufRegions (sig : Sig) (s : State) : List (Region × Bool) :=
+  Sig.bufs sig.params (armArgs sig s) ++
+    (Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s)).map fun r => (r, false)
+
+/-- The buffers, the lists of slices and the stack arguments of `sig`, and
+whether each is writable. -/
+def allRegionsL (sig : Sig) (s : State) : List (Region × Bool) :=
+  bufRegions sig s ++ argArea sig s
+
+/-- `pre_arm`, for a signature that may have lists of slices. -/
+theorem pre_armL {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s : State} :
+    (sig.contract abi pre post wa stack leak).pre s ↔
+      ((stack = 0 ∨ stack ≤ s.sp.toNat) ∧ s.sp.toNat + nsaa sig ≤ 2 ^ 32) ∧
+      s.rd = ((allRegionsL sig s).filter (!·.2)).map (·.1) ∧
+      s.wr = ((allRegionsL sig s).filter (·.2)).map (·.1) ∧
+      (allRegionsL sig s).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) ∧
+      (∀ r ∈ stackBelow (State.addr s.sp) stack, ∀ a ∈ allRegionsL sig s, r.Disjoint a.1) ∧
+      (∀ a ∈ bufRegions sig s, a.1.base.toNat + a.1.len ≤ 2 ^ 32) ∧
+      Curry.apply (sig.words abi.ptrBits) pre (armArgs sig s) s.mem := by
+  have hwf : abi.wf ((sig.words abi.ptrBits).map (·.bits abi.ptrBits)) stack s ↔
+      ((stack = 0 ∨ stack ≤ s.sp.toNat) ∧ s.sp.toNat + nsaa sig ≤ 2 ^ 32) := by
+    show (match stack with
+      | 0 => s.sp.toNat + nsaa sig ≤ 2 ^ 32
+      | n => n ≤ s.sp.toNat ∧ s.sp.toNat + nsaa sig ≤ 2 ^ 32) ↔ _
+    cases stack <;> simp
+  simp only [Sig.contract]
+  rw [args_arm]
+  simp only [argArea_arm]
+  rw [hwf]
+  exact Iff.rfl
+
+/-- `pubL_arm`, for a signature that may have lists of slices: their
+descriptors are public too. -/
+theorem pubL_armL {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s₁ s₂ : State} :
+    (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
+      (s₁.sp = s₂.sp ∧ leakAgree leak (armArgs sig s₁) s₁.mem (armArgs sig s₂) s₂.mem) ∧
+      (∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
+        ((armArgs sig s₁).getD i 0).setWidth ((widths sig).getD i 64) =
+          ((armArgs sig s₂).getD i 0).setWidth ((widths sig).getD i 64)) ∧
+      ∀ r ∈ Sig.descs abi.ptrBits sig.params (armArgs sig s₁), ∀ i < r.len,
+        s₁.mem (r.base + BitVec.ofNat 64 i) = s₂.mem (r.base + BitVec.ofNat 64 i) := by
+  simp only [Sig.contract]
+  rw [args_arm]
+  cases leak with
+  | none => simp only [leakAgree, and_true]; exact Iff.rfl
+  | some f => exact Iff.rfl
 
 theorem classify_length : ∀ (ws : List Nat) (ncrn nsaa : Nat), (classify ws ncrn nsaa).1.length = ws.length
   | [], _, _ => rfl
@@ -474,11 +551,13 @@ def allocState (bytes : Nat) (s : State) : State :=
 @[simp] theorem allocState_gpr (bytes : Nat) (s : State) : (allocState bytes s).gpr = s.gpr := rfl
 
 /-- The regions of the contract with the buffer, from the state after
-`setArgs`: the buffers, the buffer, and the stack arguments in the frame. -/
+`setArgs`: the buffers, the buffer, the lists of slices, and the stack
+arguments in the frame. -/
 def oldRegions (sig : Sig) (e : Elem) (n bytes m : Nat) (s : State) : List (Region × Bool) :=
-  Sig.bufs sig.params (armArgs sig s) ++
-    [(⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩, true),
-      (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 4⟩, false)]
+  (Sig.bufs sig.params (armArgs sig s) ++
+    [(⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩, true)]) ++
+    (Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s)).map (fun r => (r, false)) ++
+    [(⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 4⟩, false)]
 
 /-- The state the code runs from, with the permissions of the contract with
 the buffer: the state after the frame's push and `setArgs`, which may read
@@ -495,7 +574,7 @@ theorem narrow_mem (sig : Sig) (e : Elem) (n bytes m : Nat) (s : State) :
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-  {stack bytes m : Nat}
+  {stack bytes m : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
 
 /-- The sizes `withStackScratch` needs: the frame holds the copies, the
 buffer's address, the saved `lr` and the buffer; the offsets are encodable. -/
@@ -505,8 +584,8 @@ abbrev Fits (m bytes : Nat) (e : Elem) (n : Nat) : Prop :=
 
 /-- What `setArgs` gives, from a state satisfying the contract without the
 buffer. -/
-theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hN : nsaa sig = 4 * m) (hb : Fits m bytes e n) (hl : Sig.noLists sig.params = true) :
+theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s)
+    (hN : nsaa sig = 4 * m) (hb : Fits m bytes e n) :
     let u := allocState bytes s
     execBlock isa (setArgs bytes m) u =
         some (setArgsState bytes m u, setArgsTrace bytes u.sp m) ∧
@@ -518,7 +597,7 @@ theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + b
       stackArg (setArgsState bytes m u) m = u.sp + BitVec.ofNat 32 (4 * m + 8) := by
   intro u
   obtain ⟨hb1, -, -, -, himm, ho⟩ := hb
-  rw [pre_arm hl] at hs
+  rw [pre_armL] at hs
   obtain ⟨⟨hst, hfit⟩, hrd, -, -, -, -, -⟩ := hs
   have hsb : bytes ≤ s.sp.toNat := by omega
   have hE : u.sp.toNat = s.sp.toNat - bytes := sub_toNat' hsb
@@ -527,8 +606,8 @@ theorem argsState_run {s : State} (hs : (sig.contract abi pre post wa (stack + b
     rw [BitVec.ofNat_add, ← BitVec.add_assoc, BitVec.sub_add_cancel]
   -- The caller's stack arguments hold the sources.
   have hargs : ∀ j < m, InRegions (u.rd ++ u.wr) (sa u.sp (bytes + 4 * j)) 4 := fun j hj => by
-    have hmem : (⟨stackArgAddr s 0, nsaa sig⟩, false) ∈ allRegions sig s := by
-      simp [allRegions, argArea, show nsaa sig ≠ 0 by omega]
+    have hmem : (⟨stackArgAddr s 0, nsaa sig⟩, false) ∈ allRegionsL sig s := by
+      simp [allRegionsL, argArea, show nsaa sig ≠ 0 by omega]
     refine ⟨⟨stackArgAddr s 0, nsaa sig⟩, List.mem_append_left _ ?_, ?_⟩
     · simp only [u, allocState_rd, hrd]
       exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨hmem, rfl⟩, rfl⟩
@@ -557,13 +636,13 @@ theorem armArgs_congr {s s' : State} (hloc : (locs sig).all (Loc.ok (4 * m)) = t
 /-- What `narrow` keeps of `s`, and what it holds. -/
 theorem narrow_facts (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
     (narrow sig e n bytes m s).sp = s.sp - BitVec.ofNat 32 bytes ∧
       (∀ q, q ≠ .r12 → (narrow sig e n bytes m s).gpr q = s.gpr q) ∧
       armArgs (sig.withScratch nm e n) (narrow sig e n bytes m s) =
         armArgs sig s ++ [sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8)] ∧
       Frame [⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 8⟩] s.mem (narrow sig e n bytes m s).mem := by
-  obtain ⟨-, -, -, hsp', hg, hf, hv, hl⟩ := argsState_run hs hN hb hl
+  obtain ⟨-, -, -, hsp', hg, hf, hv, hl⟩ := argsState_run hs hN hb
   refine ⟨hsp', hg, ?_, by rw [narrow_mem]; exact hf⟩
   rw [armArgs_withScratch hcl, hN, show 4 * m / 4 = m by omega]
   refine congr (congrArg HAppend.hAppend (armArgs_congr hloc (fun r hr => hg r ?_) ?_)) ?_
@@ -581,40 +660,79 @@ theorem stackBelow_sub (E : Addr) (bytes stack : Nat) :
   | zero => rfl
   | succ k => simp [stackBelow, BitVec.sub_sub, BitVec.ofNat_add]
 
-/-- The buffers lie outside the frame: `narrow`'s memory is `s`'s there. -/
-theorem narrow_agree (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
-    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
-    ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 →
-      (narrow sig e n bytes m s).mem x = s.mem x := by
-  obtain ⟨-, -, -, hf⟩ := narrow_facts (nm := "") hcl hN hloc hb hs hl
+/-- The buffers and the lists of slices lie outside the copies of the stack
+arguments. -/
+theorem area_disj (hb : Fits m bytes e n) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    ∀ b ∈ bufRegions sig s, ∀ x, b.1.Contains x 1 →
+      ¬ (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 8⟩ : Region).Contains x 1 := by
   obtain ⟨hb1, -⟩ := hb
-  rw [pre_arm hl] at hs
+  rw [pre_armL] at hs
   obtain ⟨⟨hst, -⟩, -, -, -, hres, -, -⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by omega
   have hbelow : (⟨State.addr s.sp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region) ∈
       stackBelow (State.addr s.sp) (stack + bytes) := by
     rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
-  intro b hb x hx
-  refine hf x fun r hr hc => ?_
-  simp only [List.mem_singleton] at hr; subst hr
+  intro b hb x hx hc
   rw [addr_sub' (by omega)] at hc
   exact (Region.Disjoint.symm (hres _ hbelow b (List.mem_append_left _ hb))).sub_right
     (Offset.sub_below _ (by omega) (by omega)) x hx hc
 
+/-- The buffers and the lists of slices lie outside the frame: `narrow`'s
+memory is `s`'s there. -/
+theorem narrow_agreeL (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    ∀ b ∈ bufRegions sig s, ∀ x, b.1.Contains x 1 → (narrow sig e n bytes m s).mem x = s.mem x := by
+  obtain ⟨-, -, -, hf⟩ := narrow_facts (nm := "") hcl hN hloc hb hs
+  intro b hb' x hx
+  refine hf x fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  exact area_disj hb hs b hb' x hx hc
+
+/-- The buffers lie outside the frame: `narrow`'s memory is `s`'s there. -/
+theorem narrow_agree (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    ∀ b ∈ Sig.bufs sig.params (armArgs sig s), ∀ x, b.1.Contains x 1 →
+      (narrow sig e n bytes m s).mem x = s.mem x :=
+  fun b hb' => narrow_agreeL hcl hN hloc hb hs b (List.mem_append_left _ hb')
+
+/-- The lists of slices lie outside the frame: `narrow`'s memory is `s`'s
+there. -/
+theorem narrow_agreeLists (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    ∀ r ∈ Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s), ∀ x, r.Contains x 1 →
+      (narrow sig e n bytes m s).mem x = s.mem x :=
+  fun r hr => narrow_agreeL hcl hN hloc hb hs (r, false)
+    (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr, rfl⟩))
+
+/-- `narrow`'s memory lists the same slices as `s`'s. -/
+theorem narrow_lists (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    Sig.lists abi.ptrBits (narrow sig e n bytes m s).mem sig.params (armArgs sig s) =
+      Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s) :=
+  (Sig.lists_eq_of_agree _ fun r hr x hx => (narrow_agreeLists hcl hN hloc hb hs r hr x hx).symm).symm
+
 /-- The precondition of the contract without the buffer gives the one with it
-in `narrow`, if the precondition reads memory only within the buffers. -/
+in `narrow`, if the precondition reads memory only within the buffers and the
+lists of slices. -/
 theorem narrow_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pre (narrow sig e n bytes m s) := by
-  obtain ⟨hsp₂, -, hst', -⟩ := narrow_facts (nm := nm) hcl hN hloc hb hs hl
-  have hag := narrow_agree hcl hN hloc hb hs hl
+    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre (narrow sig e n bytes m s) := by
+  obtain ⟨hsp₂, -, hst', -⟩ := narrow_facts (nm := nm) hcl hN hloc hb hs
+  have hagB := narrow_agree hcl hN hloc hb hs
+  have hagL := narrow_agreeLists hcl hN hloc hb hs
+  have hlists := narrow_lists hcl hN hloc hb hs
   obtain ⟨hb1, -⟩ := hb
-  rw [pre_arm hl] at hs
+  rw [pre_armL] at hs
   obtain ⟨⟨hst, hfit⟩, hrd, hwr, hpw, hres, hnw, hpr⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by omega
   have hlt := s.sp.isLt
@@ -628,12 +746,24 @@ theorem narrow_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
   have hbelow : (⟨State.addr s.sp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region) ∈
       stackBelow (State.addr s.sp) (stack + bytes) := by
     rw [show stack + bytes = (stack + bytes - 1) + 1 by omega]; simp [stackBelow]
-  -- The buffers lie outside the frame.
-  have hout : ∀ a ∈ Sig.bufs sig.params (armArgs sig s), ∀ {x k : Nat}, x ≤ stack + bytes →
+  -- The buffers and the lists lie outside the frame.
+  have hout : ∀ a ∈ bufRegions sig s, ∀ {x k : Nat}, x ≤ stack + bytes →
       stack + bytes - x + k ≤ stack + bytes →
       a.1.Disjoint ⟨State.addr s.sp - BitVec.ofNat 64 x, k⟩ := fun a ha _ _ hx hk =>
     (Region.Disjoint.symm (hres _ hbelow a (List.mem_append_left _ ha))).sub_right
       (Offset.sub_below _ hx hk)
+  have hB : ∀ a ∈ Sig.bufs sig.params (armArgs sig s), a ∈ bufRegions sig s :=
+    fun a ha => List.mem_append_left _ ha
+  have hL : ∀ a ∈ (Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s)).map (fun r => (r, false)),
+      a ∈ bufRegions sig s := fun a ha => List.mem_append_right _ ha
+  have hpwB : (bufRegions sig s).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) :=
+    List.Pairwise.sublist (List.sublist_append_left _ _) hpw
+  have hscrD : ∀ a ∈ bufRegions sig s,
+      a.1.Disjoint ⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩ :=
+    fun a ha => by rw [hscr]; exact hout a ha (by omega) (by omega)
+  have hareaD : ∀ a ∈ bufRegions sig s,
+      a.1.Disjoint ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 4⟩ :=
+    fun a ha => by rw [hsp]; exact hout a ha (by omega) (by omega)
   -- The arguments of the contract with the buffer.
   have hlen := armArgs_length sig s
   have harg0 : stackArgAddr (narrow sig e n bytes m s) 0 = State.addr (s.sp - BitVec.ofNat 32 bytes) := by
@@ -644,89 +774,123 @@ theorem narrow_pre (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
       Sig.bufs sig.params (armArgs sig s) ++
         [(⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩, true)] :=
     Sig.bufs_append_array abi.ptrBits nm e n _ sig.params _ hlen
-  have hall : allRegions (sig.withScratch nm e n) (narrow sig e n bytes m s) =
+  have hlistsW : Sig.lists abi.ptrBits (narrow sig e n bytes m s).mem (sig.withScratch nm e n).params
+      (armArgs sig s ++ [sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8)]) =
+      Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s) :=
+    (Sig.lists_append_array abi.ptrBits _ nm e n _ sig.params _ hlen).trans hlists
+  have hall : allRegionsL (sig.withScratch nm e n) (narrow sig e n bytes m s) =
       oldRegions sig e n bytes m s := by
-    rw [allRegions, hst', argArea, nsaa_withScratch hcl, harg0, hN, hbufs]
-    simp only [show 4 * m + 4 ≠ 0 by omega, ite_false, oldRegions, List.append_assoc,
-      List.singleton_append]
-  refine (pre_arm (sig := sig.withScratch nm e n)
+    rw [allRegionsL, bufRegions, hst', argArea, nsaa_withScratch hcl, harg0, hN, hbufs, hlistsW]
+    simp only [show 4 * m + 4 ≠ 0 by omega, ite_false]
+    rfl
+  refine (pre_armL (sig := sig.withScratch nm e n)
     (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-    (Sig.noLists_withScratch nm e n hl)).mpr ?_
-  rw [hall, hsp₂, nsaa_withScratch hcl, hst', hN]
+    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mpr ?_
+  rw [hall, hsp₂, nsaa_withScratch hcl, hN]
   refine ⟨⟨.inr ?_, ?_⟩, rfl, rfl, ?_, ?_, ?_, ?_⟩
   · rw [sub_toNat' (by omega)]; omega
   · rw [sub_toNat' (by omega)]; omega
   · -- Pairwise disjoint.
-    simp only [oldRegions]
-    rw [List.pairwise_append]
-    refine ⟨List.Pairwise.sublist (List.sublist_append_left _ _) hpw, ?_, fun a ha b hb _ => ?_⟩
-    · simp only [List.pairwise_cons, List.mem_singleton, forall_eq, List.not_mem_nil,
-        List.Pairwise.nil, and_true, Bool.true_or, forall_const]
+    simp only [bufRegions, List.pairwise_append] at hpwB
+    obtain ⟨pB, pL, pBL⟩ := hpwB
+    have hsa : (⟨sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8), n * e.size⟩ : Region).Disjoint
+        ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), 4 * m + 4⟩ := by
       rw [hscr, hsp]
-      exact ⟨below_disjoint _ (stack + bytes) (a := bytes - (4 * m + 8)) (n := n * e.size)
-        (b := bytes) (k := 4 * m + 4) (by omega) (by omega) (.inr (by omega)) (by omega) (by omega),
-        fun _ h => h.elim⟩
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hb
-      rcases hb with rfl | rfl
-      · rw [hscr]; exact hout a ha (by omega) (by omega)
-      · rw [hsp]; exact hout a ha (by omega) (by omega)
+      exact below_disjoint _ (stack + bytes) (a := bytes - (4 * m + 8)) (n := n * e.size)
+        (b := bytes) (k := 4 * m + 4) (by omega) (by omega) (.inr (by omega)) (by omega) (by omega)
+    simp only [oldRegions, List.pairwise_append, List.pairwise_singleton, List.mem_append,
+      List.mem_singleton]
+    refine ⟨⟨⟨pB, trivial, fun a ha b hb _ => ?_⟩, pL, fun a ha b hb hab => ?_⟩, trivial,
+      fun a ha b hb _ => ?_⟩
+    · subst hb; exact hscrD a (hB a ha)
+    · rcases ha with ha | rfl
+      · exact pBL a ha b hb hab
+      · exact (hscrD b (hL b hb)).symm
+    · subst hb
+      rcases ha with (ha | rfl) | ha
+      · exact hareaD a (hB a ha)
+      · exact hsa
+      · exact hareaD a (hL a ha)
   · -- The reserved stack: the stack below the frame.
     intro r hr a ha
     rw [hsp, stackBelow_sub] at hr
     by_cases h0 : stack = 0
     · simp [h0] at hr
     simp only [h0, ite_false, List.mem_singleton] at hr; subst hr
-    simp only [oldRegions, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at ha
-    rcases ha with ha | rfl | rfl
-    · exact Region.Disjoint.symm (hout a ha (by omega) (by omega))
+    simp only [oldRegions, List.mem_append, List.mem_singleton] at ha
+    rcases ha with ((ha | rfl) | ha) | rfl
+    · exact Region.Disjoint.symm (hout a (hB a ha) (by omega) (by omega))
     · rw [hscr]
       exact below_disjoint _ (stack + bytes) (a := bytes + stack) (n := stack)
         (b := bytes - (4 * m + 8)) (k := n * e.size) (by omega) (by omega) (.inl (by omega))
         (by omega) (by omega)
+    · exact Region.Disjoint.symm (hout a (hL a ha) (by omega) (by omega))
     · rw [hsp]
       exact below_disjoint _ (stack + bytes) (a := bytes + stack) (n := stack) (b := bytes)
         (k := 4 * m + 4) (by omega) (by omega) (.inl (by omega)) (by omega) (by omega)
-  · -- No buffer wraps around.
+  · -- No buffer or list wraps around.
     intro a ha
-    rw [hbufs] at ha
+    rw [bufRegions, hst', hbufs, hlistsW] at ha
     rcases List.mem_append.mp ha with ha | ha
-    · exact hnw a ha
-    · simp only [List.mem_singleton] at ha; subst ha
-      show (sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8)).toNat + n * e.size ≤ 2 ^ 32
-      rw [hscr, toNat_sub64 (by omega), hE]
-      omega
-  · -- The precondition, which reads only the buffers.
+    · rcases List.mem_append.mp ha with ha | ha
+      · exact hnw a (hB a ha)
+      · simp only [List.mem_singleton] at ha; subst ha
+        show (sa (s.sp - BitVec.ofNat 32 bytes) (4 * m + 8)).toNat + n * e.size ≤ 2 ^ 32
+        rw [hscr, toNat_sub64 (by omega), hE]
+        omega
+    · exact hnw a (hL a ha)
+  · -- The precondition, which reads only the buffers and the lists.
+    rw [hst']
     refine Eq.mpr (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params pre _ _ hlen) _) ?_
-    exact hpre _ _ _ hlen (fun b hb x hx => (hag b hb x hx).symm) hpr
+    exact hpre _ _ _ hlen (fun b hb x hx => (hagB b hb x hx).symm)
+      (fun r hr x hx => (hagL r hr x hx).symm) hpr
 
 /-- The public data of the contract without the buffer gives that of the
 one with it in `narrow`: the buffer's address is the stack pointer's. -/
 theorem narrow_pub (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s₁ s₂ : State}
-    (h₁ : (sig.contract abi pre post wa (stack + bytes)).pre s₁)
-    (h₂ : (sig.contract abi pre post wa (stack + bytes)).pre s₂)
-    (hp : (sig.contract abi pre post wa (stack + bytes)).pub s₁ s₂) (hl : Sig.noLists sig.params = true) :
-    (Sig.scratchContract abi sig nm e n pre post wa stack).pub (narrow sig e n bytes m s₁)
+    (h₁ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
+    (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrow sig e n bytes m s₁)
       (narrow sig e n bytes m s₂) := by
-  rw [pub_arm hl] at hp
-  obtain ⟨hsp, hpa⟩ := hp
-  obtain ⟨e₁, -, a₁, -⟩ := narrow_facts (nm := nm) hcl hN hloc hb h₁ hl
-  obtain ⟨e₂, -, a₂, -⟩ := narrow_facts (nm := nm) hcl hN hloc hb h₂ hl
-  refine (pub_arm (sig := sig.withScratch nm e n)
-    (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
-    (Sig.noLists_withScratch nm e n hl)).mpr ?_
-  rw [e₁, e₂, a₁, a₂, hsp]
-  refine ⟨rfl, fun i hi => ?_⟩
+  rw [pubL_armL] at hp
+  obtain ⟨⟨hsp, hlk⟩, hpa, hdesc⟩ := hp
+  obtain ⟨e₁, -, a₁, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb h₁
+  obtain ⟨e₂, -, a₂, f₂⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb h₂
   have l₁ := armArgs_length sig s₁
   have l₂ := armArgs_length sig s₂
+  have hL₁ : ∀ r ∈ Sig.lists abi.ptrBits (narrow sig e n bytes m s₁).mem sig.params (armArgs sig s₁),
+      ∀ x, r.Contains x 1 → (narrow sig e n bytes m s₁).mem x = s₁.mem x := fun r hr =>
+    narrow_agreeLists hcl hN hloc hb h₁ r ((narrow_lists hcl hN hloc hb h₁) ▸ hr)
+  have hL₂ : ∀ r ∈ Sig.lists abi.ptrBits (narrow sig e n bytes m s₂).mem sig.params (armArgs sig s₂),
+      ∀ x, r.Contains x 1 → (narrow sig e n bytes m s₂).mem x = s₂.mem x := fun r hr =>
+    narrow_agreeLists hcl hN hloc hb h₂ r ((narrow_lists hcl hN hloc hb h₂) ▸ hr)
+  refine (pubL_armL (sig := sig.withScratch nm e n)
+    (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+    (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mpr ?_
+  rw [e₁, e₂, a₁, a₂, hsp,
+    show (sig.withScratch nm e n).params = sig.params ++ [((nm, .array true e n) : String × Param)]
+      from rfl, Sig.descs_append_array abi.ptrBits nm e n _ sig.params _ l₁]
+  refine ⟨⟨rfl, leakAgree_withScratchL hleak _ _ l₁ l₂ (narrow_agree hcl hN hloc hb h₁) hL₁
+    (narrow_agree hcl hN hloc hb h₂) hL₂ hlk⟩, fun i hi => ?_, fun r hr i hi => ?_⟩
+  rotate_left
+  · have hx : r.Contains (r.base + BitVec.ofNat 64 i) 1 := Region.contains_ofNat r.base hi
+    have hr' : r ∈ Sig.lists abi.ptrBits s₁.mem sig.params (armArgs sig s₁) :=
+      Sig.descs_sub_lists _ _ _ _ r hr
+    rw [narrow_agreeLists hcl hN hloc hb h₁ r hr' _ hx, hdesc r hr i hi]
+    refine (f₂ _ fun q hq hc => ?_).symm
+    simp only [List.mem_singleton] at hq; subst hq
+    rw [← hsp] at hc
+    exact area_disj (n := n) (e := e) hb h₁ (r, false)
+      (List.mem_append_right _ (List.mem_map.mpr ⟨r, hr', rfl⟩)) _ hx hc
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have lw : (widths sig).length = (sig.params.flatMap fun p => p.2.words abi.ptrBits).length := by
     rw [widths, List.length_map]; rfl
-  have hps : ((sig.withScratch nm e n).params.flatMap (·.2.pubs)) =
+  have hps : ((sig.params ++ [((nm, .array true e n) : String × Param)]).flatMap (·.2.pubs)) =
       sig.params.flatMap (·.2.pubs) ++ [true] := by
-    simp [Sig.withScratch, Param.pubs]
+    simp [Param.pubs]
   rw [hps] at hi
   rw [widths_withScratch]
   by_cases hik : i < (sig.params.flatMap fun p => p.2.words abi.ptrBits).length
@@ -753,16 +917,16 @@ def popState (bytes : Nat) (s s₃ : State) : State :=
 requires, and whose memory and registers are those of the code's run. -/
 theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + bytes)).pre s) {t : List Leak} {s₃ : State}
-    (he : Exec isa c (narrow sig e n bytes m s) t s₃) (ha : abiPreserved (narrow sig e n bytes m s) s₃) (hl : Sig.noLists sig.params = true) :
+    (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {s₃ : State}
+    (he : Exec isa c (narrow sig e n bytes m s) t s₃) (ha : abiPreserved (narrow sig e n bytes m s) s₃) :
     Exec isa (withStackScratch bytes m c) s
         (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
       abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
       (popState bytes s s₃).gpr = s₃.gpr := by
-  obtain ⟨hrun, hrd', hwr', -, -, -, -, -⟩ := argsState_run hs hN hb hl
-  obtain ⟨hsp₂, hg, -, -⟩ := narrow_facts (nm := "") hcl hN hloc hb hs hl
+  obtain ⟨hrun, hrd', hwr', -, -, -, -, -⟩ := argsState_run hs hN hb
+  obtain ⟨hsp₂, hg, -, -⟩ := narrow_facts (nm := "") hcl hN hloc hb hs
   obtain ⟨hb1, hb2, hb3, hb4, -⟩ := hb
-  rw [pre_arm hl] at hs
+  rw [pre_armL] at hs
   obtain ⟨⟨hst, -⟩, hrd, hwr, -, -, -, -⟩ := hs
   have hsb : stack + bytes ≤ s.sp.toNat := by omega
   have hsp : State.addr (s.sp - BitVec.ofNat 32 bytes) = State.addr s.sp - BitVec.ofNat 64 bytes :=
@@ -781,20 +945,29 @@ theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsa
       rw [hsp]; exact Offset.contains_below _ ha hk (by omega)⟩
   have hbufR : ∀ a ∈ Sig.bufs sig.params (armArgs sig s), a.2 = false → a.1 ∈ s.rd := fun a ha h => by
     rw [hrd]
-    exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, by simp [h]⟩, rfl⟩
+    exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ ha),
+      by simp [h]⟩, rfl⟩
+  have hlistR : ∀ a ∈ (Sig.lists abi.ptrBits s.mem sig.params (armArgs sig s)).map (fun r => (r, false)),
+      a.1 ∈ s.rd := fun a ha => by
+    rw [hrd]
+    obtain ⟨r, -, rfl⟩ := List.mem_map.mp ha
+    exact List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_right _ ha),
+      rfl⟩, rfl⟩
   have hbufW : ∀ a ∈ Sig.bufs sig.params (armArgs sig s), a.2 = true → a.1 ∈ s.wr := fun a ha h => by
     rw [hwr]
-    exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ ha, h⟩, rfl⟩
+    exact List.mem_map.mpr ⟨a, List.mem_filter.mpr ⟨List.mem_append_left _ (List.mem_append_left _ ha), h⟩,
+      rfl⟩
   have hcovW : Covers (((oldRegions sig e n bytes m s).filter (·.2)).map (·.1))
       (⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) := by
     refine Covers.of_forall fun r hr => ?_
     obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
     obtain ⟨ha, hf'⟩ := List.mem_filter.mp ha
     simp only [oldRegions, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at ha
-    rcases ha with ha | rfl | rfl
+    rcases ha with ((ha | rfl) | ha) | rfl
     · exact Covers.of_mem fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact List.mem_cons_of_mem _ (hbufW a ha hf')
     · rw [hscr]; exact hF (by omega) (by omega)
+    · obtain ⟨r, -, rfl⟩ := List.mem_map.mp ha; simp at hf'
     · simp at hf'
   have hcovR : Covers (((oldRegions sig e n bytes m s).filter (!·.2)).map (·.1))
       (s.rd ++ ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr) := by
@@ -802,10 +975,12 @@ theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsa
     obtain ⟨a, ha, rfl⟩ := List.mem_map.mp hr
     obtain ⟨ha, hf'⟩ := List.mem_filter.mp ha
     simp only [oldRegions, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at ha
-    rcases ha with ha | rfl | rfl
+    rcases ha with ((ha | rfl) | ha) | rfl
     · exact Covers.left (Covers.of_mem fun x hx => by
         simp only [List.mem_singleton] at hx; subst hx; exact hbufR a ha (by simpa using hf'))
     · simp at hf'
+    · exact Covers.left (Covers.of_mem fun x hx => by
+        simp only [List.mem_singleton] at hx; subst hx; exact hlistR a ha)
     · exact Covers.right (by simpa only [hsp] using hF (a := bytes) (k := 4 * m + 4) (by omega) (by omega))
   have hw := Exec.widen he (rd := s.rd)
     (wr := ⟨State.addr (s.sp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr)
@@ -835,12 +1010,63 @@ theorem withStackScratch_run {c : Prog isa} (hcl : ScratchOnStack sig) (hN : nsa
 /-- Code verified for a function whose last argument, on the stack, is a
 scratch buffer of `n` elements `e`, with `stack` bytes of stack, is verified
 for the function without it, which allocates the buffer in a frame of
-`bytes` more bytes of stack (`withStackScratch`), if its precondition and
-postcondition read memory only within the function's buffers (`hpre`,
-`hpost`). The other arguments are in `r0`–`r3` and the first `4m` bytes of
-stack (`hcl`, `hN`, `hloc`). -/
+`bytes` more bytes of stack (`withStackScratch`), if its precondition,
+postcondition and leak read memory only within the function's buffers and its
+lists of slices (`hpre`, `hpost`, `hleak`, which holds of no leak). The other
+arguments are in `r0`–`r3` and the first `4m` bytes of stack (`hcl`, `hN`,
+`hloc`). -/
+theorem Verified.stackScratchL {c : Prog isa}
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
+    (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hpost : ∀ vs m₁ m₂ m' r, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
+        Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes) leak) := by
+  obtain ⟨hcor, hct, -⟩ := h
+  -- Every run is `setArgs`, then the code's run from `narrow`.
+  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes) leak).pre s → ∃ t s₃,
+      Exec isa c (narrow sig e n bytes m s) t s₃ ∧
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).post (narrow sig e n bytes m s) s₃ ∧
+      Exec isa (withStackScratch bytes m c) s
+        (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
+      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
+      (popState bytes s s₃).gpr = s₃.gpr := by
+    intro s hs
+    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hcl hN hloc hb hpre hs)
+    exact ⟨t, s₃, he, hq, withStackScratch_run hcl hN hloc hb hs he ha⟩
+  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
+  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
+    refine ⟨_, _, hex, ha, ?_⟩
+    rw [post_arm]
+    have hq' := (post_arm (sig := sig.withScratch nm e n)
+      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
+      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp hq
+    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) (e := e) (n := n) hcl hN hloc hb hs
+    rw [hargs] at hq'
+    rw [hm, hg]
+    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
+      post _ _ (armArgs_length sig s)) _) s₃.mem) _) hq'
+    exact hpost _ _ _ _ _ (armArgs_length sig s) (narrow_agree hcl hN hloc hb hs)
+      (fun r hr x hx => narrow_agreeLists hcl hN hloc hb hs r ((narrow_lists hcl hN hloc hb hs) ▸ hr) x hx) hq''
+  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
+    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, (pubL_armL.mp hp).1.1,
+      hct _ _ _ _ _ _ (narrow_pre hcl hN hloc hb hpre h₁) (narrow_pre hcl hN hloc hb hpre h₂)
+        (narrow_pub hcl hN hloc hb h₁ h₂ hp hleak) f₁ f₂]
+
+/-- `Verified.stackScratchL`, for a precondition, postcondition and leak that
+read memory only within the function's buffers. -/
 theorem Verified.stackScratch {c : Prog isa}
-    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack))
+    (h : Verified target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hcl : ScratchOnStack sig) (hN : nsaa sig = 4 * m)
     (hloc : (locs sig).all (Loc.ok (4 * m)) = true) (hb : Fits m bytes e n)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
@@ -851,38 +1077,10 @@ theorem Verified.stackScratch {c : Prog isa}
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' r →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' r)
     (hsat : ∃ s, (sig.contract abi pre post wa (stack + bytes)).pre s)
-    (hl : Sig.noLists sig.params = true := by decide) :
-    Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes)) := by
-  obtain ⟨hcor, hct, -⟩ := h
-  -- Every run is `setArgs`, then the code's run from `narrow`.
-  have hrun : ∀ s, (sig.contract abi pre post wa (stack + bytes)).pre s → ∃ t s₃,
-      Exec isa c (narrow sig e n bytes m s) t s₃ ∧
-      (Sig.scratchContract abi sig nm e n pre post wa stack).post (narrow sig e n bytes m s) s₃ ∧
-      Exec isa (withStackScratch bytes m c) s
-        (setArgsTrace bytes (s.sp - BitVec.ofNat 32 bytes) m ++ t) (popState bytes s s₃) ∧
-      abiPreserved s (popState bytes s s₃) ∧ (popState bytes s s₃).mem = s₃.mem ∧
-      (popState bytes s s₃).gpr = s₃.gpr := by
-    intro s hs
-    obtain ⟨t, s₃, he, ha, hq⟩ := hcor _ (narrow_pre hcl hN hloc hb hpre hs hl)
-    exact ⟨t, s₃, he, hq, withStackScratch_run hcl hN hloc hb hs he ha hl⟩
-  refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, hsat⟩
-  · obtain ⟨t, s₃, -, hq, hex, ha, hm, hg⟩ := hrun s hs
-    refine ⟨_, _, hex, ha, ?_⟩
-    rw [post_arm]
-    have hq' := (post_arm (sig := sig.withScratch nm e n)
-      (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
-      (post := Curry.withScratch abi.ptrBits nm e n sig.params post)).mp hq
-    obtain ⟨-, -, hargs, -⟩ := narrow_facts (nm := nm) hcl hN hloc hb hs hl
-    rw [hargs] at hq'
-    rw [hm, hg]
-    have hq'' := Eq.mp (congrFun (congrFun (congrFun (Curry.apply_withScratch abi.ptrBits nm e n sig.params
-      post _ _ (armArgs_length sig s)) _) s₃.mem) _) hq'
-    exact hpost _ _ _ _ _ (armArgs_length sig s) (narrow_agree hcl hN hloc hb hs hl) hq''
-  · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
-    obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_arm hl).mp hp).1,
-      hct _ _ _ _ _ _ (narrow_pre hcl hN hloc hb hpre h₁ hl) (narrow_pre hcl hN hloc hb hpre h₂ hl)
-        (narrow_pub hcl hN hloc hb h₁ h₂ hp hl) f₁ f₂]
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
+    Verified target (withStackScratch bytes m c) (sig.contract abi pre post wa (stack + bytes) leak) :=
+  Verified.stackScratchL h hcl hN hloc hb (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb)
+    (fun vs m₁ m₂ m' r hl hb _ => hpost vs m₁ m₂ m' r hl hb) hsat hleak.toL
 
 end
 

@@ -154,8 +154,9 @@ theorem signCached_verified : Verified X86.target code (Spec.Ed25519.signCachedC
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [signRd, signWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [signRd, signWr, List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr ⊢
+    rcases hr with (rfl | rfl | rfl | rfl) | (rfl | rfl) <;> simp
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩

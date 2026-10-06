@@ -33,7 +33,7 @@ structure Aligned (M : Mod) (Sl : Nat → Prop) : Prop where
 structure Inv (M : Mod) (base : Addr) (size m : Nat) [NeZero m] (Sl : Nat → Prop) (V : List Nat)
     (E : Nat → Fin m) (s : State) : Prop where
   scr : Scr s base size
-  mod : ModOk M size m s.mem base
+  mod : ModOkA M size m s.mem base
   sl : ∀ x ∈ V, Sl x
   lt : ∀ x ∈ V, wordsVal s.mem base x M.n < m
   val : ∀ x ∈ V, toM m (2 ^ (64 * M.n)) (wordsVal s.mem base x M.n) = E x
@@ -61,13 +61,7 @@ theorem ProgKeep.mono {M : Mod} {base : Addr} {W W' : List Nat} {s s' : State}
     (h : ProgKeep M base W s s') (hW : ∀ w ∈ W, w ∈ W') : ProgKeep M base W' s s' :=
   ⟨h.gpr, h.rd, h.wr, h.sp, fun x hx ht => h.mem x (fun w hw => hx w (hW w hw)) ht⟩
 
-theorem x0_not_clob' (n : Nat) : Reg.x0 ∉ clob n := by
-  intro h
-  simp only [clob, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with h | h
-  · rcases h with h | h | h | h | h | h | h | h | h <;> exact absurd h (by decide)
-  · have := List.mem_of_mem_take h
-    simp only [List.mem_cons, reduceCtorEq, List.not_mem_nil, or_self] at this
+theorem x0_not_clob' (n : Nat) : Reg.x0 ∉ clob n := fun h => absurd (mem_clobAll h) (by decide)
 
 theorem ProgKeep.scr {M : Mod} {base : Addr} {W : List Nat} {s s' : State} {size : Nat}
     (h : ProgKeep M base W s s') (hs : Scr s base size) : Scr s' base size :=
@@ -104,7 +98,7 @@ theorem Inv.update {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       have := hL.le x hx
       exact opKeep_wordsVal hk (by omega) (by omega) (by omega)
   refine ⟨⟨(hk.gpr _ (x0_not_clob' _)).trans hI.scr.x0, hk.wr ▸ hI.scr.wr, hn, hI.scr.enc⟩,
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, ?_, hM.inv⟩, ?_, ?_, ?_⟩
+    ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hM.mo
     have := hM.sep
     rw [opKeep_wordsVal hk (by omega) (by omega) (by omega)]
@@ -210,5 +204,41 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     rcases List.mem_append.mp hx with hx | hx
     · exact Or.inr (rcb_out_mem hx)
     · exact Or.inl hx
+
+
+/-- A formula on numbered slots, renamed to `p`, `q` and `o`: it writes only
+`rcbW S o`, and its result is what the numbered formula computes. -/
+theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp} (hN : NumOk N) {S : RcbSlots}
+    {p q o : Pt} (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat}
+    {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (.block (fprog M (ofN N S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (ofN N S p q o) E) s' ∧
+      (runOps (ofN N S p q o) E o.x, runOps (ofN N S p q o) E o.y, runOps (ofN N S p q o) E o.z) =
+        (runOps N (fun y => E (rcbσ S p q o y)) 6, runOps N (fun y => E (rcbσ S p q o y)) 7,
+          runOps N (fun y => E (rcbσ S p q o y)) 8) := by
+  have hR : readsOk (ofN N S p q o) V = true := readsOk_mono (ofN_readsOk hN S p q o) hV
+  refine WP.mono (fprog_ok hL hAl hm _ hI (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
+    fun s' ⟨hk, hI'⟩ => ⟨hk.mono fun w hw => ?_, hI'.sub fun x hx => ?_, ?_⟩
+  · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
+    exact ofN_out hN op hop
+  · rw [mem_validAfter]
+    rcases List.mem_append.mp hx with hx | hx
+    · exact Or.inr (ofN_out_mem hN hx)
+    · exact Or.inl hx
+  · exact congrArg₂ Prod.mk (ofN_run hN hA E 6) (congrArg₂ Prod.mk (ofN_run hN hA E 7) (ofN_run hN hA E 8))
+
+/-- `o = p + q` by Algorithm 4 (`a = -3`, with `b` in `S.b3`). -/
+theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+    (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
+    {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
+    WP isa (.block (fprog M (rcb3 S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+      Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
+      (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
+        VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by
+  rw [rcb3_eq]
+  exact WP.mono (ofN_ok hL hAl hm rcb3N_ok hA hSl hI hV) fun s' ⟨k, I, v⟩ =>
+    ⟨k, I, v.trans (rcb3N_run _)⟩
 
 end VG.Proof.Weierstrass.AArch64

@@ -317,7 +317,7 @@ theorem call_rel {A A' : BitVec 32} (hA : SrcOK s₀ A) (hA' : SrcOK s₀' A') (
         by rw [k' _ (by decide) (by decide) (by decide), h.2], hax, hcx, hdx⟩
   have ar : RelCT isa (fun s s' => (KR s₀ q s ∧ s.gpr .esi = A) ∧ (KR s₀' q' s' ∧ s'.gpr .esi = A))
       (.block bmArgs) fun s s' => F s₀ q s ∧ F s₀' q' s' :=
-    RelCT.mono ((RelCT.taint (A := taint) (τk [.esp]) (fun _ _ h => agree_k hp hp' hq (rs := [])
+    RelCT.mono ((RelCT.taint (A := sseTaint) (τk [.esp]) (fun _ _ h => agree_k hp hp' hq (rs := [])
       h.1.1.toBase h.2.1.toBase (by simp)) (by taint_decide)).wp
       fun s s' h => ⟨wpArgs hp s h.1, wpArgs hp' s' h.2⟩) (fun _ _ h => h) fun _ _ h => h.2
   -- The call, from each run's `F`.
@@ -412,9 +412,9 @@ theorem body2_rel {i : Nat} (hi : i < NN s₀) :
     · rw [h.1.ebp, h'.1.ebp, en]
   have Kof : ∀ {t₀ t : State}, Inv2 t₀ i t → K t₀ t := fun h => ⟨⟨h.toBase, h.ebx, h.ebp⟩, h.esi⟩
   have ac : RelCT isa (fun s s' => Inv2 s₀ i s ∧ Inv2 s₀' i s')
-      (.seq (.block (timesR 32 ++ ([.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)),
+      (.seq (.block (timesR 8 ++ ([.mov .edx (.reg .eax), .mov .eax (.mem (at_ .esp 4)),
         .mov .ecx (.reg .esi)] : List Instr))) copyLoop) fun s s' => K s₀ s ∧ K s₀' s' :=
-    RelCT.post (RelCT.taint (A := taint) (τk [.esp, .ebx, .esi, .ebp])
+    RelCT.post (RelCT.taint (A := sseTaint) (τk [.esp, .ebx, .esi, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.toBase h.2.toBase (regs (Kof h.1) (Kof h.2)))
       (by taint_decide))
       fun _ _ _ _ _ _ h e e' => ⟨KR.exec' (by decide +kernel) (by decide +kernel) hp e (Kof h.1),
@@ -424,7 +424,7 @@ theorem body2_rel {i : Nat} (hi : i < NN s₀) :
   have e : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s')
       (.block (timesR 128 ++ ([.alu .add .esi (.reg .eax), .alu .sub .ebx (.imm 1)] : List Instr)))
       fun _ _ => True :=
-    RelCT.taint (A := taint) (τk [.esp, .ebx, .esi, .ebp])
+    RelCT.taint (A := sseTaint) (τk [.esp, .ebx, .esi, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.1.toBase h.2.1.toBase (regs h.1 h.2)) (by taint_decide)
   have body := RelCT.assoc (ac.seq (cl.seq e))
   exact (body.wp fun _ _ h => ⟨step2_ok blockMixSpec hp hi h.1, step2_ok blockMixSpec hp' hi' h.2⟩).mono
@@ -490,12 +490,12 @@ theorem body3_rel_j {i : Nat} (hi : i < NN s₀) (j : Nat) :
         by rw [o _ (by decide) (by decide) (by decide) (by decide), h.1.ebp]⟩, by rw [ax, h.2], di⟩
   have jb : RelCT isa (fun s s' => (Inv3 s₀ i s ∧ jOf s₀ s.mem = j) ∧
         (Inv3 s₀' i s' ∧ jOf s₀' s'.mem = j)) (.block jBlock) fun s s' => J s₀ s ∧ J s₀' s' :=
-    RelCT.mono ((RelCT.taint (A := taint) (τk [.esp, .ebx, .ebp])
+    RelCT.mono ((RelCT.taint (A := sseTaint) (τk [.esp, .ebx, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.1.toBase h.2.1.toBase (regs (Kof h.1.1) (Kof h.2.1)))
       (by taint_decide)).wp fun _ _ h => ⟨jwp hp h.1, jwp hp' h.2⟩) (fun _ _ h => h) fun _ _ h => h.2
   have mx : RelCT isa (fun s s' => J s₀ s ∧ J s₀' s') (.seq (.block vjBlock) xorLoop)
       fun s s' => K s₀ s ∧ K s₀' s' :=
-    RelCT.post (RelCT.taint (A := taint) (τk [.esp, .eax, .edi, .ebx, .ebp])
+    RelCT.post (RelCT.taint (A := sseTaint) (τk [.esp, .eax, .edi, .ebx, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.1.toBase h.2.1.toBase (by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -509,14 +509,14 @@ theorem body3_rel_j {i : Nat} (hi : i < NN s₀) (j : Nat) :
         KR.exec (by decide +kernel) (by decide +kernel) hp' e' h.2.1⟩
   have tb : RelCT isa (fun s s' => K s₀ s ∧ K s₀' s') (.block tBlock)
       fun s s' => (K s₀ s ∧ s.gpr .esi = tP32 s₀) ∧ (K s₀' s' ∧ s'.gpr .esi = tP32 s₀') :=
-    RelCT.mono ((RelCT.taint (A := taint) (τk [.esp, .ebx, .ebp])
+    RelCT.mono ((RelCT.taint (A := sseTaint) (τk [.esp, .ebx, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.toBase h.2.toBase (regs h.1 h.2)) (by taint_decide)).wp
       fun _ _ h => ⟨t_wp hp h.1, t_wp hp' h.2⟩) (fun _ _ h => h) fun _ _ h => h.2
   have cl := call_rel hp hp' hq (srcOK_t hp) (srcOK_t hp') hq.tP32
     (q := BitVec.ofNat 32 (NN s₀ - i)) (q' := BitVec.ofNat 32 (NN s₀' - i))
   have e : RelCT isa (fun s s' => (K s₀ s ∧ s.gpr .esi = tP32 s₀) ∧ (K s₀' s' ∧ s'.gpr .esi = tP32 s₀'))
       (.block [.alu .sub .ebx (.imm 1)]) fun _ _ => True :=
-    RelCT.taint (A := taint) (τk [.esp, .ebx, .ebp])
+    RelCT.taint (A := sseTaint) (τk [.esp, .ebx, .ebp])
       (fun _ _ h => agree_k hp hp' hq h.1.1.toBase h.2.1.toBase (regs h.1.1 h.2.1)) (by taint_decide)
   have body := jb.seq (RelCT.assoc (mx.seq (tb.seq (cl.seq e))))
   exact (body.wp fun _ _ h => ⟨step3_ok blockMixSpec hp hi h.1.1,
@@ -565,13 +565,13 @@ theorem roMix_rel :
   have b₀' : Base s₀' s₀' := ⟨rfl, rfl, rfl, Frame.refl _ _⟩
   have pro : RelCT isa (fun s s' => s = s₀ ∧ s' = s₀') (.block rmPrologue)
       fun s s' => P1 s₀ s ∧ P1 s₀' s' :=
-    ((RelCT.taint (A := taint) (τk [.esp]) (P := fun s s' => s = s₀ ∧ s' = s₀')
+    ((RelCT.taint (A := sseTaint) (τk [.esp]) (P := fun s s' => s = s₀ ∧ s' = s₀')
       (fun _ _ ⟨e, e'⟩ => by rw [e, e']; exact agree_k hp hp' hq (rs := []) b₀ b₀' (by simp))
       (c := .block rmPrologue) (by taint_decide)).wp
       (F₁ := P1 s₀) (F₂ := P1 s₀') fun _ _ ⟨e, e'⟩ => by
         rw [e, e']; exact ⟨prologue_ok hp, prologue_ok hp'⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have nl : RelCT isa (fun s s' => P1 s₀ s ∧ P1 s₀' s') nLoop fun s s' => N1 s₀ s ∧ N1 s₀' s' :=
-    ((RelCT.taint (A := taint) (τk [.esp, .eax, .ecx, .edx])
+    ((RelCT.taint (A := sseTaint) (τk [.esp, .eax, .ecx, .edx])
       (fun _ _ ⟨h, h'⟩ => agree_k hp hp' hq h.toBase h'.toBase fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -582,21 +582,21 @@ theorem roMix_rel :
       fun _ _ h => ⟨nloop_ok hp h.1, nloop_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have st : RelCT isa (fun s s' => N1 s₀ s ∧ N1 s₀' s') (.block rmSetup)
       fun s s' => Inv2 s₀ 0 s ∧ Inv2 s₀' 0 s' :=
-    ((RelCT.taint (A := taint) (τk [.esp, .ecx])
+    ((RelCT.taint (A := sseTaint) (τk [.esp, .ecx])
       (fun _ _ ⟨h, h'⟩ => agree_k hp hp' hq h.toBase h'.toBase fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         rw [h.ecx, h'.ecx, hq.NN]) (c := .block rmSetup) (by taint_decide)).wp
       fun _ _ h => ⟨setup2_ok hp h.1, setup2_ok hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have md : RelCT isa (fun s s' => Inv2 s₀ (NN s₀) s ∧ Inv2 s₀' (NN s₀') s') (.block rmMid)
       fun s s' => Inv3 s₀ 0 s ∧ Inv3 s₀' 0 s' :=
-    ((RelCT.taint (A := taint) (τk [.esp, .ebp])
+    ((RelCT.taint (A := sseTaint) (τk [.esp, .ebp])
       (fun _ _ ⟨h, h'⟩ => agree_k hp hp' hq h.toBase h'.toBase fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         rw [h.ebp, h'.ebp, hq.NN]) (c := .block rmMid) (by taint_decide)).wp
       fun _ _ h => ⟨mid_ok h.1, mid_ok h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
   have epi : RelCT isa (fun s s' => Inv3 s₀ (NN s₀) s ∧ Inv3 s₀' (NN s₀') s') (.block rmEpilogue)
       fun _ _ => True :=
-    RelCT.taint (A := taint) (τk [.esp])
+    RelCT.taint (A := sseTaint) (τk [.esp])
       (fun _ _ h => agree_k hp hp' hq (rs := []) h.1.toBase h.2.toBase (by simp)) (by taint_decide)
   exact pro.seq (nl.seq (st.seq ((loop2_rel hp hp' hq).seq
     (md.seq ((loop3_rel hp hp' hq hL).seq epi)))))

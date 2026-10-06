@@ -1,3 +1,4 @@
+import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
@@ -248,8 +249,27 @@ theorem lines_ok {p : Addr} {s₀ : State} (hw : scR p ∈ s₀.wr) :
     rw [List.flatMap_cons, WP.block_append_iff, List.foldl_cons]
     exact WP.mono (line_ok hl.1 h hw) fun s' h' => lines_ok hw l hl.2 _ s' h'
 
+private def sequentialLines : List (Nat × Nat × Nat × Nat) := [
+  (4, 0, 12, 7), (8, 4, 0, 9), (12, 8, 4, 13), (0, 12, 8, 18),
+  (9, 5, 1, 7), (13, 9, 5, 9), (1, 13, 9, 13), (5, 1, 13, 18),
+  (14, 10, 6, 7), (2, 14, 10, 9), (6, 2, 14, 13), (10, 6, 2, 18),
+  (3, 15, 11, 7), (7, 3, 15, 9), (11, 7, 3, 13), (15, 11, 7, 18),
+  (1, 0, 3, 7), (2, 1, 0, 9), (3, 2, 1, 13), (0, 3, 2, 18),
+  (6, 5, 4, 7), (7, 6, 5, 9), (4, 7, 6, 13), (5, 4, 7, 18),
+  (11, 10, 9, 7), (8, 11, 10, 9), (9, 8, 11, 13), (10, 9, 8, 18),
+  (12, 15, 14, 7), (13, 12, 15, 9), (14, 13, 12, 13), (15, 14, 13, 18)]
+
+private theorem doubleRound_sequential (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
+    sequentialLines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := rfl
+
 theorem doubleRound_eq (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
-    lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := rfl
+    lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := by
+  rw [doubleRound_sequential]
+  apply Vector.ext
+  intro i hi
+  interval_cases i <;>
+    simp (disch := decide) only [sequentialLines, lines, List.foldl_cons, List.foldl_nil,
+      stepN_get, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem doubleRound_ok {p : Addr} {v : Vector Word 16} {s₀ s : State} (h : RI p v s₀ s)
     (hw : scR p ∈ s₀.wr) : WP isa doubleRound s (RI p (Spec.Scrypt.doubleRound v) s₀) := by

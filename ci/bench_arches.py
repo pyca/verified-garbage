@@ -9,10 +9,22 @@ workflow's matrix: an architecture is benchmarked when its own assembly
 rest of `src/`, the benchmarks, the dependencies, the comparison). Changes
 to other files (e.g. Lean that leaves `src/asm/` as it was) need none.
 
+A Rust file outside `src/asm/<arch>/` counts as changed on an architecture
+only if what that architecture compiles of it changed: without comments,
+items under a `cfg` that cannot hold there (one naming only other
+architectures, e.g. PPC64LE's), and `cfg_attr`s that cannot apply. A `cfg`
+that holds there is as if absent, so adding another architecture to a
+module's list changes nothing. A `cfg` that depends on more than
+`target_arch` and `target_endian` (a feature, `test`) is kept as written,
+and a file this cannot follow counts as changed everywhere.
+
 Each platform's `modules` narrows its benchmarks to the modules whose own
 files changed:
 
-  * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture;
+  * `src/asm/<arch>/<module>.rs`: `<module>`, on that architecture, or
+    for a module no benchmark lists (e.g. `consts`, the tables of
+    constants), the modules of `src/asm/<arch>/` that use it (`super::`),
+    if no other Rust code does;
   * `src/<module>.rs` or `src/hashes/<module>.rs`: `<module>`, and
     `src/hashes/mod.rs` (`streaming_hash!`, `HashFunction`): every hash
     module in `src/hashes/` (benchmarks of code built on a hash, such as
@@ -22,7 +34,8 @@ files changed:
   * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
     `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
     whose code names `crate::<helper>`;
-  * a module only tests compile (`#[cfg(test)] mod <name>;`): none;
+  * a module only tests compile (`#[cfg(test)] mod <name>;`), or its
+    declaration: none, also when it is new or removed;
   * `bench/benches/primitives/<name>.rs`, or its differential test
     `bench/tests/<name>.rs`: the modules in its `USES`, or for a helper
     without one (e.g. `mlkem.rs`, a macro), those of the benchmarks that
@@ -79,21 +92,20 @@ import re
 import sys
 
 # The architectures benchmarked, and where each one runs natively (as in
-# ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container on
-# the 64-bit host of the same family).
+# ci.yml's `rust` job: the 32-bit ones in a 32-bit userspace container, built
+# by ci/runner.Dockerfile, on the 64-bit host of the same family).
 PLATFORMS = {
     "x86_64": {"os": "ubuntu-latest"},
     "aarch64": {"os": "ubuntu-24.04-arm"},
     "x86": {
         "os": "ubuntu-latest",
-        "image": "rust:slim",
+        "image": "ghcr.io/pyca/verified-garbage-runner:i686",
         "options": "--platform linux/386",
-        "install-amd64-libc": True,
     },
     "arm": {
         "os": "ubuntu-24.04-arm",
-        "image": "ghcr.io/pyca/cryptography-runner-ubuntu-rolling:armv7l",
-        "options": "--env RUSTUP_HOME=/tmp/verified-garbage-rustup",
+        "image": "ghcr.io/pyca/verified-garbage-runner:armv7l",
+        "options": "--platform linux/arm/v7",
     },
 }
 
@@ -105,14 +117,20 @@ PLATFORMS = {
 # `_aesni_pclmul_avx` and the instances with VAES or VPCLMULQDQ alone or
 # paired with the other's 128-bit instruction, which a runner with both never
 # chooses, and with both in 256-bit registers alone, which a runner with
-# AVX512BW never chooses; on AArch64, ChaCha20's `_neon` instances,
-# which the SVE2 runner never chooses; no runner has the SHA512 extension,
-# whose variants only ci.yml tests, under SDE).
+# AVX512BW never chooses; Argon2 with G's AVX-512 code and BLAKE2b's
+# baseline code, which a runner with AVX2 never chooses, and with BLAKE2b's
+# AVX2 code, which a runner with AVX512VL never chooses; RSAES-PKCS1-v1_5
+# decryption with SHA-256's SHA extensions and RSA's baseline code, which a
+# runner with ADX never chooses; on AArch64,
+# ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
+# runner has the SHA512 extension, whose variants only ci.yml tests, under
+# SDE).
 CPU_FEATURES = {
     "x86_64": [
         "avx,avx2,bmi1,bmi2,adx",
         "avx,avx2,bmi1,bmi2",
         "bmi2,adx",
+        "sha,ssse3",
         "avx,avx2,bmi2,adx,avx512ifma,avx512vl",
         "aes,ssse3",
         "pclmulqdq,ssse3",
@@ -123,6 +141,8 @@ CPU_FEATURES = {
         "aes,avx,avx2,pclmulqdq,ssse3,vaes",
         "aes,avx,avx2,pclmulqdq,ssse3,vpclmulqdq",
         "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
+        "avx,avx512f",
+        "avx,avx2,avx512f",
         "none",
     ],
     "aarch64": ["neon", "sha3", "none"],
@@ -244,23 +264,227 @@ def tests_only(path, base):
                for tag, i1, i2, j1, j2 in matcher.get_opcodes() if tag != "equal")
 
 
-def registrations(path, base):
-    """Only changed module declarations/registry entries; other code means all."""
+def registrations(path, base, arch):
+    """Only changed module declarations/registry entries, as `arch` compiles
+    them; other code means all. A declaration added or removed with its
+    `#[cfg(test)]` declares a module no benchmark compiles, which needs
+    nothing; the attribute alone may change what they compile."""
     if not base:
         return None
-    diff = subprocess.check_output(["git", "diff", "--unified=0", base, "HEAD", "--", path], text=True)
+    try:
+        sides = [with_test_attributes(for_arch(read(path, r), arch)) for r in (base, None)]
+    except Unreadable:
+        return None
     names = set()
-    for line in diff.splitlines():
-        if not line.startswith(("+", "-")) or line.startswith(("+++", "---")):
-            continue
-        line = line[1:].strip()
-        if not line or line.startswith("//") or line == "#[rustfmt::skip]":
-            continue
-        match = re.fullmatch(r"(?:pub(?:\(crate\))? )?mod (\w+);|\((\w+)::USES, \2::bench\),", line)
-        if not match:
-            return None
-        names.add(match[1] or match[2])
+    matcher = difflib.SequenceMatcher(None, *sides, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        for line in sides[0][i1:i2] + sides[1][j1:j2] if tag != "equal" else ():
+            test = line.startswith(TEST_ATTRIBUTE + " ")
+            if test:
+                line = line[len(TEST_ATTRIBUTE) + 1:]
+            elif line == "#[rustfmt::skip]":
+                continue
+            match = re.fullmatch(r"(?:pub(?:\(crate\))? )?mod (\w+);|\((\w+)::USES, \2::bench\),", line)
+            if not match or (test and not match[1]):
+                return None
+            if not test:
+                names.add(match[1] or match[2])
     return names
+
+
+TEST_ATTRIBUTE = "#[cfg(test)]"
+
+
+def with_test_attributes(lines):
+    """`lines` with each `#[cfg(test)]` joined to the line after it, so that
+    a diff keeps them together."""
+    out = []
+    for line in lines:
+        if out and out[-1] == TEST_ATTRIBUTE:
+            out[-1] += " " + line
+        else:
+            out.append(line)
+    return out
+
+
+class Unreadable(Exception):
+    """Rust that `for_arch` cannot follow."""
+
+
+# A literal whose contents could look like code: a (byte) string, raw or
+# not, or a character.
+RAW = re.compile(r'(?<![A-Za-z0-9_])b?r(#*)"')
+STRING = re.compile(r'(?<![A-Za-z0-9_])b?"(?:[^"\\]|\\.)*"', re.S)
+CHAR = re.compile(r"(?<![A-Za-z0-9_])b?'(?:\\(?:x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]+\}|.)|[^\\'\n])'")
+# An attribute that `for_arch` evaluates: `#[cfg(`, `#![cfg_attr(`, ….
+CFG_ATTR = re.compile(r"#(!?)\[\s*(cfg|cfg_attr)\s*\(")
+# The `target_endian` of every benchmarked architecture.
+ENDIAN = "little"
+
+
+def literal_end(text, i):
+    """The end of the literal starting at `i`, or None if none does."""
+    if m := RAW.match(text, i):
+        end = text.find('"' + m[1], m.end())
+        if end < 0:
+            raise Unreadable
+        return end + 1 + len(m[1])
+    if text[i] in "\"b" and (m := STRING.match(text, i)):
+        return m.end()
+    if text[i] == '"':
+        raise Unreadable
+    m = CHAR.match(text, i)
+    return m.end() if m else None
+
+
+def without_comments(text):
+    out, i = [], 0
+    while i < len(text):
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            i = len(text) if end < 0 else end
+        elif text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end < 0 or "/*" in text[i + 2:end]:
+                raise Unreadable
+            out.append(" ")
+            i = end + 2
+        elif (end := literal_end(text, i)) is not None:
+            out.append(text[i:end])
+            i = end
+        else:
+            out.append(text[i])
+            i += 1
+    return "".join(out)
+
+
+def closing(text, i):
+    """The end of the brackets opening at `i`."""
+    depth = 0
+    while i < len(text):
+        if (end := literal_end(text, i)) is not None:
+            i = end
+            continue
+        if text[i] in "([{":
+            depth += 1
+        elif text[i] in ")]}":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    raise Unreadable
+
+
+def item_end(text, i):
+    """The end of the item (or field, variant, arm, statement) starting at
+    `i`. It may end early (e.g. at the `,` of `impl<A, B>`), which leaves the
+    rest of it in, never late."""
+    depth = 0
+    while i < len(text):
+        if (end := literal_end(text, i)) is not None:
+            i = end
+            continue
+        c = text[i]
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            if depth == 0:
+                return i
+            depth -= 1
+            if depth == 0 and c == "}":
+                return i + 1
+        elif c in ";," and depth == 0:
+            return i + 1
+        i += 1
+    return i
+
+
+def split_top(text):
+    """`text` split at its commas outside brackets."""
+    parts, depth, start = [], 0, 0
+    for i, c in enumerate(text):
+        depth += (c in "([{") - (c in ")]}")
+        if c == "," and depth == 0:
+            parts.append(text[start:i])
+            start = i + 1
+    parts.append(text[start:])
+    return [p.strip() for p in parts if p.strip()]
+
+
+def cfg_value(predicate, arch):
+    """Whether a `cfg` predicate holds on `arch`: None if that depends on
+    more than the architecture (a feature, `test`, …)."""
+    if m := re.fullmatch(r'(\w+)\s*=\s*"([^"]*)"', predicate):
+        return {"target_arch": m[2] == arch, "target_endian": m[2] == ENDIAN}.get(m[1])
+    if m := re.fullmatch(r"(all|any|not)\s*\((.*)\)", predicate, re.S):
+        values = [cfg_value(p, arch) for p in split_top(m[2])]
+        if m[1] == "not":
+            if len(values) != 1:
+                raise Unreadable
+            return None if values[0] is None else not values[0]
+        decisive = m[1] == "any"
+        if decisive in values:
+            return decisive
+        return None if None in values else not decisive
+    if re.fullmatch(r"\w+", predicate):
+        return None
+    raise Unreadable
+
+
+def for_arch(text, arch):
+    """The lines of `text` that `arch` compiles, without comments: an item
+    whose `cfg` does not hold there is left out (a whole file, for one of
+    its inner `cfg`s), as is a `cfg` that holds, and a `cfg_attr` that does
+    not. A missing file is empty."""
+    if text is None:
+        return []
+    text = without_comments(text)
+    out, i = [], 0
+    while i < len(text):
+        if (end := literal_end(text, i)) is not None:
+            out.append(text[i:end])
+            i = end
+            continue
+        m = CFG_ATTR.match(text, i)
+        if not m:
+            out.append(text[i])
+            i += 1
+            continue
+        end = closing(text, m.end() - 1)
+        close = re.compile(r"\s*\]").match(text, end)
+        if not close:
+            raise Unreadable
+        args = split_top(text[m.end():end - 1])
+        if not args or (m[2] == "cfg") != (len(args) == 1):
+            raise Unreadable
+        value = cfg_value(args[0], arch)
+        if value is None or (m[2] == "cfg_attr" and value):
+            out.append(text[i:close.end()])
+            i = close.end()
+        elif m[2] == "cfg_attr" or value:
+            i = close.end()
+        elif m[1]:
+            # An inner `cfg` that does not hold: of the file, if only inner
+            # attributes come before it.
+            if not re.fullmatch(r"(\s*#!\[[^\n]*\])*\s*", "".join(out)):
+                raise Unreadable
+            return []
+        else:
+            i = item_end(text, close.end())
+    return [line.strip() for line in "".join(out).splitlines() if line.strip()]
+
+
+def affected(path, base):
+    """The benchmarked architectures that compile `path` differently at
+    `base` and now: all of them for a file that is not Rust, cannot be
+    read, or did not change."""
+    old, new = (read(path, base) if base else None), read(path)
+    if not path.endswith(".rs") or old == new:
+        return list(PLATFORMS)
+    try:
+        return [a for a in PLATFORMS if for_arch(old, a) != for_arch(new, a)]
+    except Unreadable:
+        return list(PLATFORMS)
 
 
 def members(family, known):
@@ -286,9 +510,10 @@ def lib_modules(revision=None, root="."):
 
 
 def test_only(module, base=None):
-    """Whether only tests compile `module` (at `base` too, if given), so no
-    benchmark can measure it."""
-    return all(lib_modules(r).get(module, (False,))[0] for r in ([base, None] if base else [None]))
+    """Whether only tests compile `module` (at `base` too, if given, or it
+    is new or removed there), so no benchmark can measure it."""
+    declared = [lib_modules(r).get(module) for r in ([base, None] if base else [None])]
+    return any(declared) and all(d is None or d[0] for d in declared)
 
 
 def users(family, known, root="."):
@@ -313,6 +538,23 @@ def users(family, known, root="."):
         else:
             names.add(f"{other[1]}_{other[2]}" if other else path)
     return names
+
+
+def asm_users(arch, module, root="."):
+    """The other modules of `src/asm/<arch>/` that use the generated module
+    `module` (e.g. `consts`, the tables of constants), or None if Rust code
+    outside them does (through `crate::arch` or `crate::asm`) or none does."""
+    names = set()
+    sibling = re.compile(rf"\bsuper::{module}\b")
+    outside = re.compile(rf"\b(?:arch|asm::{arch})::{module}\b")
+    for path in rust_files(root):
+        text = read(path, None, root) or ""
+        if not path.startswith(f"src/asm/{arch}/"):
+            if outside.search(text):
+                return None
+        elif (m := ASM.match(path)) and m[2] not in ("mod", module) and sibling.search(text):
+            names.add(m[2])
+    return names or None
 
 
 def helper_uses(name, catalog):
@@ -402,13 +644,22 @@ def arches(changed, base=None):
         elif needed.get(arch, set()) is not ALL:
             needed.setdefault(arch, set()).add(module)
 
+    def need_asm(arch, module):
+        # A generated module no benchmark lists, such as `consts`, needs
+        # the modules of its architecture that use it.
+        for name in {module} if module in known else asm_users(arch, module) or {module}:
+            need(arch, name)
+
     for path in changed:
         asm, api, family = ASM.match(path), API.match(path), FAMILY.match(path)
         if path.startswith("src/") and not asm and tests_only(path, base):
             continue
+        # A change to code only other architectures compile (e.g. PPC64LE's)
+        # needs nothing.
+        targets = [asm[1]] if asm else affected(path, base)
         if path in ("src/lib.rs", "bench/benches/primitives/main.rs") or (asm and asm[2] == "mod"):
-            names = registrations(path, base)
-            for arch in ([asm[1]] if asm else PLATFORMS):
+            for arch in targets:
+                names = registrations(path, base, arch)
                 if names is None:
                     needed[arch] = ALL
                 for name in names or ():
@@ -418,11 +669,13 @@ def arches(changed, base=None):
                             needed[arch] = ALL
                         for module in uses:
                             need(arch, module)
+                    elif asm:
+                        need_asm(arch, name)
                     else:
                         need(arch, name)
         elif path == "src/cpu.rs":
             changes = cpu_changes(base)
-            for a in PLATFORMS:
+            for a in targets:
                 if changes is None:
                     needed[a] = ALL
                     continue
@@ -435,13 +688,13 @@ def arches(changed, base=None):
                 for module in modules or ():
                     need(a, module)
         elif asm and asm[1] in PLATFORMS:
-            need(asm[1], asm[2])
+            need_asm(asm[1], asm[2])
         elif asm:
             # The assembly of an architecture that is not benchmarked (e.g.
             # PPC64LE) needs no benchmark.
             pass
         elif path == HASHES:
-            for a in PLATFORMS:
+            for a in targets:
                 for name in hashes():
                     need(a, name)
         elif api and path == f"src/{api[1]}.rs" and test_only(api[1], base):
@@ -450,13 +703,13 @@ def arches(changed, base=None):
               and lib_modules().get(api[1], (False, True)) == (False, False)):
             # A private helper: only the crate's own modules can use it.
             names = users(api[1], known)
-            for a in PLATFORMS:
+            for a in targets:
                 if not names:
                     needed[a] = ALL
                 for name in names:
                     need(a, name)
         elif api:
-            for a in PLATFORMS:
+            for a in targets:
                 need(a, api[1])
         elif family:
             # A family's `mod.rs` is the code its `<family>_<hash>` modules
@@ -464,17 +717,17 @@ def arches(changed, base=None):
             # benchmark runs.
             names = ((members(family[1], known) | users(family[1], known)) or {family[1]}
                      if family[2] == "mod" else {f"{family[1]}_{family[2]}"})
-            for a in PLATFORMS:
+            for a in targets:
                 for name in names:
                     need(a, name)
         elif (bench := BENCH.match(path) or BENCH_TEST.match(path)) and (
                 uses := bench_uses(f"bench/benches/primitives/{bench[1]}.rs")
                 or helper_uses(bench[1], catalogs[-1])):
-            for a in PLATFORMS:
+            for a in targets:
                 for m in uses:
                     need(a, m)
         elif SHARED.match(path):
-            for a in PLATFORMS:
+            for a in targets:
                 needed[a] = ALL
     revisions = [base, None] if base else [None]
     return [p for a in PLATFORMS if a in needed

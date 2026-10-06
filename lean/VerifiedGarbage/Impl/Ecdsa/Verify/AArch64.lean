@@ -10,21 +10,20 @@ ECDSA's signature (`Impl/Ecdsa/AArch64.lean`) and of ECDH
 on x86-64 (`Impl/Ecdsa/Verify/X86_64.lean`):
 
 1. `scratch` to `x4`, `public` to `x6`, `sig` to `x3` (the signature's
-   `k`), `sig + 8 n` to `x8` and `public + 1` to `x2` (its hash); then
-   the signature's setup and tables of bits, unchanged: `r` is read into
-   the slot of `k`, the hash (`digest = x1`) into that of `d`, the key's
-   `x` into that of the hash; then `s` into `PT` (which only the powers
-   use);
+   `k`), `sig + len` to `x8` and `public + 1` to `x2` (its hash); then
+   the signature's setup and tables of bits: `r` is read into the slot of
+   `k`, the hash (`digest = x1`) into that of `d`, shifted right by the bits
+   of the digest that are not `e`'s, the key's `x` into that of the hash;
+   then `s` into `PT` (which only the powers use);
 2. ECDH's checks of the key (`peer`, `validate`): its first byte, `x < p`,
    `y < p` and the curve's equation, into the flag, and the key's point, or
-   `G` if the flag is clear, to the slots of ECDH's ladder;
+   `G` if the flag is clear, to the slots of ECDH's window method;
 3. the masks of `r` and `s` in `[1, n-1]` into the flag, and
    `w = s^(n-2)`, in Montgomery form modulo `n`;
 4. `u = e w` and `v = r w` modulo `n`, out of Montgomery's form;
-5. `[u]G` by the signature's ladder (from the table of `u`'s bits), saved
-   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's ladder (from the
-   table of `v`'s bits) and `[u]G + [v]Q` by the complete addition, into
-   `R`;
+5. `[u]G` by the signature's comb (from the table of `u`'s bits), saved
+   to `U`, and `R` reset to `O`; then `[v]Q` by ECDH's window method and
+   `[u]G + [v]Q` by the complete addition, into `R`;
 6. `Z^(p-2)` by the signature's power, `x = X Z^(p-2)` out of Montgomery's
    form, and the masks of `Z ≠ 0` and `x R ≡ r R` modulo `n` into the
    flag, which is returned as 0 or 1.
@@ -37,6 +36,7 @@ namespace VG.Impl.Ecdsa.Verify.AArch64
 
 open VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass
 open VG.Impl.Ecdsa.AArch64
+open VG.Impl.Ecdh.AArch64 (PX PY)
 
 /-! Slots of the signature's layout, as verification uses them, after ECDH's
 checks of the key: `K` holds `r`, `D` the hash and `PT` `s` (until the
@@ -64,15 +64,15 @@ namespace Cfg
 
 variable (c : Impl.Ecdsa.AArch64.Cfg)
 
-/-- `scratch` to `x4`, `public` to `x6`, `sig` to `x3`, `sig + 8 n` to
+/-- `scratch` to `x4`, `public` to `x6`, `sig` to `x3`, `sig + len` to
 `x8` and `public + 1` to `x2`: the signature's arguments, with `k` the
 signature's `r`, `d` the hash and the hash the key's `x`. -/
 def args : List Instr :=
-  [.addImm .x .x4 .x3 0, .addImm .x .x6 .x0 0, .addImm .x .x3 .x2 0, .addImm .x .x8 .x2 (8 * c.n),
+  [.addImm .x .x4 .x3 0, .addImm .x .x6 .x0 0, .addImm .x .x3 .x2 0, .addImm .x .x8 .x2 c.C.len,
     .addImm .x .x2 .x0 1]
 
 /-- `s`, into `PT`. -/
-def loadS : List Instr := loadBE c.n (c.sl PT) .x8
+def loadS : List Instr := loadBytes c.C.len c.n (c.sl PT) .x8
 
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
@@ -95,11 +95,11 @@ def save : List Instr :=
 
 /-- `R = U + R`, through `D`. -/
 def sum : Prog isa :=
-  .seq (fprogB c.MP' (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
+  .seq (fprogB c.MP' (rcb3 c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
     (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
       copy c.n (c.sl RZ) (c.sl DZ)))
 
-/-- `x19` and `x20` restored, and the flag's low bit to `x0`. -/
+/-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++ Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]
@@ -113,18 +113,20 @@ def final : Prog isa :=
     Mont.AArch64.sub c.MN' (c.sl W) (c.sl XN) (c.sl RM'),
     c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.AArch64.Cfg.checkZero c (c.sl W) ++ finish c]
 
-/-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
+/-- `[u]G + [v]Q`, into `R`: `[u]G` by the comb from the table of the bits of
+`u`, `[v]Q` by ECDH's window method. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg) <| .seq (.block (save c)) <|
-  .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder (Impl.Ecdh.AArch64.Cfg.ladderQ c)) (sum c)
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (TCombCfg.comb c.combCfg) <|
+  .seq (.block (save c)) <|
+  .seq (c.winPrep (c.sl V)) <| .seq (WinCfg.window (c.winCfg PX PY)) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN) <| .seq (uv c) <| .seq (points c) <| .seq (pow c.powP) (final c)
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <| .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=
-  .seq (.block (args c)) <| .seq (Impl.Ecdh.AArch64.Cfg.prefix' c) <| .seq (.block (loadS c)) <|
+  .seq (.block (args c)) <| .seq (Impl.Ecdh.AArch64.Cfg.prefixWith c (some D)) <| .seq (.block (loadS c)) <|
   .seq (.block (Impl.Ecdh.AArch64.Cfg.peer c)) <| .seq (Impl.Ecdh.AArch64.Cfg.validate c) (back c)
 
 end Cfg

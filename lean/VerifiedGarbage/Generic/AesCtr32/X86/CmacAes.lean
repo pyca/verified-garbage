@@ -12,7 +12,7 @@ implementation `v` of `vg_aes_ctr32`, are emitted once for each implementation
 
 The stack is 28 bytes for the first three functions: their six AES arguments
 and the return address. Streaming `init` uses 48 bytes; `absorb` and
-`finish` use 56 bytes; `init` also calls the implementation of `vg_aes_expand_key`
+`finish` use 56 bytes; `init` also calls the implementation of `vg_aes_expand_key_scratch`
 that goes with `v`.
 
 The streaming functions keep their working space in a frame of their own

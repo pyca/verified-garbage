@@ -1,5 +1,6 @@
 import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.Proof.X25519.Bytes
+import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
 # Ed448 scalar arithmetic: the numbers
@@ -43,17 +44,25 @@ theorem fold_words (w r0 r1 r2 r3 r4 r5 r6 : Nat) (hw : w < 2 ^ 64) (h0 : r0 < 2
     r6 < 2 ^ 62 ∧ h < 2 ^ 64 ∧ l + h * cL < 2 * L ∧
       (l + h * cL) % L = (w + 2 ^ 64 * (r0 + 2 ^ 64 * (r1 + 2 ^ 64 * (r2 + 2 ^ 64 * (r3 +
         2 ^ 64 * (r4 + 2 ^ 64 * (r5 + 2 ^ 64 * r6))))))) % L := by
-  intro l h
-  have hL := L_lit
-  have hc : cL = 13818066809895115352007386748515426880336692474882178609894547503885 := rfl
-  have h6' : r6 < 2 ^ 62 := by rw [hL] at hr; omega
-  have hh : h < 2 ^ 64 := by omega
-  have hhc : h * cL < 2 ^ 64 * 2 ^ 224 := Nat.mul_lt_mul'' hh (by rw [hc]; omega)
+  obtain ⟨m, q, rfl, hm⟩ : ∃ m q, r5 = m + 2 ^ 62 * q ∧ m < 2 ^ 62 :=
+    ⟨_, _, (Nat.mod_add_div r5 (2 ^ 62)).symm, Nat.mod_lt r5 (by decide)⟩
+  rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hm, Nat.add_mul_div_left _ _ (by decide),
+    Nat.div_eq_of_lt hm, Nat.zero_add]
+  dsimp only
+  have h6' : r6 < 2 ^ 62 := by omega_using [hr, L_lt]
+  have hh : q + 4 * r6 < 2 ^ 64 := by omega_using [h5, h6, h6']
+  have hhc : (q + 4 * r6) * cL < 2 ^ 64 * 2 ^ 224 := Nat.mul_lt_mul'' hh cL_lt
   have e : w + 2 ^ 64 * (r0 + 2 ^ 64 * (r1 + 2 ^ 64 * (r2 + 2 ^ 64 * (r3 + 2 ^ 64 * (r4 +
-      2 ^ 64 * (r5 + 2 ^ 64 * r6)))))) = (l + h * cL) + L * h := by
-    rw [hL, hc]; omega
-  refine ⟨h6', hh, by rw [hL] at *; omega, ?_⟩
-  rw [e, Nat.add_mul_mod_self_left]
+      2 ^ 64 * (m + 2 ^ 62 * q + 2 ^ 64 * r6)))))) =
+      (w + 2 ^ 64 * (r0 + 2 ^ 64 * (r1 + 2 ^ 64 * (r2 + 2 ^ 64 * (r3 + 2 ^ 64 * (r4 + 2 ^ 64 * m))))) +
+        (q + 4 * r6) * cL) + (q + 4 * r6) * L := by
+    have e' : w + 2 ^ 64 * (r0 + 2 ^ 64 * (r1 + 2 ^ 64 * (r2 + 2 ^ 64 * (r3 + 2 ^ 64 * (r4 +
+        2 ^ 64 * (m + 2 ^ 62 * q + 2 ^ 64 * r6)))))) =
+        w + 2 ^ 64 * (r0 + 2 ^ 64 * (r1 + 2 ^ 64 * (r2 + 2 ^ 64 * (r3 + 2 ^ 64 * (r4 + 2 ^ 64 * m))))) +
+          (q + 4 * r6) * 2 ^ 446 := by omega_using []
+    rw [e', ← L_add, Nat.mul_add (q + 4 * r6) L cL, ← Nat.add_assoc, Nat.add_right_comm]
+  refine ⟨h6', hh, by omega_using [L_add, cL_lt, hhc, hm, hw, h0, h1, h2, h3, h4], ?_⟩
+  rw [e, Nat.add_mul_mod_self_right]
 
 /-- The conditional subtraction: `K = M - L` added to `x < 2L` carries out of
 `M` (`2^448`) exactly when `x ≥ L`, and then the sum is `x - L`. -/
@@ -145,5 +154,16 @@ theorem sCheck_nat {y b r c : Nat} (hy : y < 2 ^ 448) (hr : r < 2 ^ 448) (hc : c
         omega
     subst this
     rcases (by omega : c = 0 ∨ c = 1) with rfl | rfl <;> omega
+
+theorem bytesAt_getD (m : Mem) (p : Addr) {n i : Nat} (hi : i < n) :
+    (bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
+  rw [bytesAt_eq]
+  simp [Spec.X25519.bytesAt, List.getD_eq_getElem?_getD, hi]
+
+/-- Bit `t` of the scalar is bit `t % 8` of its byte `t / 8`. -/
+theorem scalar_bit (m : Mem) (p : Addr) {t : Nat} (ht : t < 456) :
+    ((m (p + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1 =
+      (decodeLE (bytesAt m p 57) >>> t) &&& 1 := by
+  rw [decodeLE_eq, Proof.X25519.leNum_bit, bytesAt_getD m p (by omega)]
 
 end VG.Proof.Ed448

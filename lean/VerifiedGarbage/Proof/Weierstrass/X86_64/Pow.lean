@@ -59,7 +59,7 @@ structure PowInv (P : PowCfg) (base : Addr) (size m e : Nat) [NeZero m] (s₀ s 
 
 /-- An iteration. -/
 theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size)
-    (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State} (hM₀ : ModOk P.M size m s₀.mem base)
+    (hm : UnitMod m (2 ^ (64 * P.M.n))) {s₀ : State} (hM₀ : ModOkW P.M size m s₀.mem base)
     (hB : wordsVal s₀.mem base P.base P.M.n < m)
     (hbits : ∀ t < P.nbits, s₀.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits) (hI : PowInv P base size m e s₀ s j) :
@@ -76,9 +76,9 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   have hmo' := hM₀.mo
   have hbase := hL.base
   have hbl := hL.bits
-  have hM : ModOk P.M size m s.mem base :=
-    ⟨hM₀.n0, hM₀.n7, hM₀.mo, hM₀.tmp, hM₀.sep,
-      by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv⟩
+  have hM : ModOkW P.M size m s.mem base :=
+    ⟨hM₀.n0, hM₀.mo, hM₀.tmp, hM₀.sep,
+      by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega)
   -- `sub rbx, 1` and `acc = acc²`.
@@ -88,16 +88,17 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
   refine WP.mono (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_
   have hs₁ := hI.scr.of_keeps k₁ (by decide)
   have hm₁ : s₁.mem = s.mem := k₁.2.1
-  refine WP.mono (mul_ok hs₁ (hm₁ ▸ hM) hacc hacc hacc (by rw [hm₁]; exact hI.lt))
+  refine WP.mono (mul_ok hs₁ (hm₁ ▸ hM) hacc hacc hacc ham ham ham
+    (hmo (P.acc, _) (by simp [powW])).symm (by rw [hm₁]; exact hI.lt))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_
   have hs₂ := k₂.scr hs₁
-  have hM₂ : ModOk P.M size m s₂.mem base :=
-    ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by
+  have hM₂ : ModOkW P.M size m s₂.mem base :=
+    ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
       rw [k₂.unch.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · exact hmo _ (by simp [powW])
-        · exact hmo _ (by simp [powW])) (by omega), hm₁]; exact hM.val, hM.inv⟩
+        · exact hmo _ (by simp [powW])) (by omega), hm₁]; exact hM.val, hM.inv, hM.red⟩
   have v₂ : toM m (2 ^ (64 * P.M.n)) (wordsVal s₂.mem base P.acc P.M.n) =
       toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.acc P.M.n) ^ 2 := by
     rw [toM_mul hm (e₂.trans (by rw [hm₁])), Lean.Grind.Semiring.pow_two]
@@ -109,7 +110,8 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
       · exact hbw _ (by simp [powW])) (by omega), hm₁, hBs]
   -- `tmp = acc · base`.
   refine WP.seq ?_
-  refine WP.mono (mul_ok hs₂ hM₂ htmp hacc hL.base (by rw [hB₂]; exact hB))
+  refine WP.mono (mul_ok hs₂ hM₂ htmp hacc hL.base hL.tmp_mtmp ham (hbw (P.M.tmp, _) (by simp [powW]))
+    (hmo (P.tmp, _) (by simp [powW])).symm (by rw [hB₂]; exact hB))
     fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_
   have hs₃ := k₃.scr hs₂
   have hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
@@ -170,7 +172,7 @@ theorem powBody_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : 
 whose bits are the table at `P.bits`; only `powClob` and `powW` change. -/
 theorem pow_ok {P : PowCfg} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size)
     (hm : UnitMod m (2 ^ (64 * P.M.n))) {s : State} (hs : Scr s base size)
-    (hM : ModOk P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
+    (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
     (hO : wordsVal s.mem base P.one P.M.n = 2 ^ (64 * P.M.n) % m)
     (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     (he : e < 2 ^ P.nbits) :

@@ -44,7 +44,9 @@ VerifiedGarbage/
   Generic/        Callers proven for any variant of an interface, emitted once per
                   variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
                   interfaces, once per combination of their variants:
-                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`
+                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
+                  named by `Emit.qualifiedName` (a tag and the suffix of each
+                  interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
   Artifacts.lean  An empty list, which the emitter still reads; add nothing to it
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../src/asm/` (see `TCB/Emit.lean`)
@@ -146,3 +148,39 @@ lake env lean --run Emit.lean       # regenerate ../src/asm
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
+
+## Restoring the CI build cache
+
+After CI passes on `main`, it publishes the Linux x86-64 project build and
+Mathlib dependencies to `ghcr.io/pyca/vg-lean-cache:latest`. The image contains
+one file, `/lean-cache.tar.zst`, with `.lake/build` and `.lake/packages`
+relative to `lean/`. Only the latest image version is retained. CI compares
+the checked build's cache key with the image's `io.pyca.lean.cache-key` label
+and skips packaging and publishing when it matches, so Rust- or docs-only
+changes do not create a new cache version.
+
+With Docker and zstd installed, restore it from the repository root:
+
+```sh
+docker pull ghcr.io/pyca/vg-lean-cache:latest
+container=$(docker create ghcr.io/pyca/vg-lean-cache:latest /unused)
+set -o pipefail
+docker cp "$container":/lean-cache.tar.zst - | tar -xOf - | zstd -dc | tar --no-same-owner -xf - -C lean
+docker rm "$container"
+```
+
+The container never runs. Install the toolchain in `lean/lean-toolchain`
+separately; the image's `io.pyca.lean.toolchain` and
+`org.opencontainers.image.revision` labels identify the cached build. Lake
+rebuilds outputs that differ from the checkout. Private package access
+requires authenticating to GHCR before pulling.
+
+Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
+`tar` run as root (as in a container) would keep that owner. Git then refuses
+the dependencies' checkouts in `.lake/packages` as owned by someone else, so
+Lake clones them again and builds Mathlib from source.
+
+Moving the cache to a different absolute path can also make Lake relink
+native libraries and rebuild affected native modules. A normal `lake build`
+handles this; the restored cache need not pass `lake build --no-build` for
+every project target immediately after extraction.

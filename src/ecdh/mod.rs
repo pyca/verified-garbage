@@ -1,20 +1,42 @@
 //! Elliptic curve Diffie-Hellman: the ECC CDH primitive of NIST SP 800-56A
 //! Rev. 3, §5.7.1.2.
 //!
-//! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], the curves of [`ecdsa`](crate::ecdsa)). Each exchange is one
-//! call of verified code (`vg_ecdh_<curve>`, contract
+//! A [`PrivateKey<C>`] holds a private key on the curve `C` (so far [`P256`],
+//! [`P384`], and on x86-64, x86, 32-bit ARM and AArch64, `P521` and `P224`). Each exchange is one call of
+//! verified code (`vg_ecdh_<curve>`, contract
 //! `VG.Spec.Ecdh.Instance.exchangeContract`): it validates the peer's public
 //! key as SP 800-56A §5.6.2.3.3 requires (the uncompressed form of SEC 1
-//! §2.3.3, both coordinates below `p`, on the curve), checks the private
-//! key, and returns the x-coordinate of `dQ`, in constant time. The public
-//! key is one call too (`vg_ec_<curve>_public_key`).
+//! §2.3.3, both coordinates below `p`, on the curve), checks the private key,
+//! and returns the x-coordinate of `dQ`, in constant time. The public key is
+//! one call too (`vg_ec_<curve>_public_key`).
 
-#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
+mod p224;
 mod p256;
+mod p384;
+mod p521;
 
-pub use crate::ec::{Curve, P256};
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+pub use crate::ec::P224;
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
+pub use crate::ec::P521;
+pub use crate::ec::{Curve, P256, P384};
 
 use crate::zeroize::zeroize;
 

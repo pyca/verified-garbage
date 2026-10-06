@@ -21,6 +21,7 @@ inductive VBinOp
   | vpaddw | vpsubw | vpsubd | vpmullw | vpmulhw | vpackssdw | vpunpcklwd | vpunpckhwd
   | vpsubq
   | vaesenc | vaesenclast
+  | vpcmpeqd
   deriving DecidableEq, Repr
 
 /-- AVX2 shifts of each element by the count in the corresponding element
@@ -97,6 +98,10 @@ inductive VOp
   of `imm8` that the bits of `dst`, `src1` and `src2` there index (see
   `ternlog`). -/
   | vpternlogd (len : VLen) (dst src1 src2 : XReg) (imm : BitVec 8)
+  /-- `vprorq dst, src, imm8` (`EVEX.256.66.0F.W1 72 /0 ib`, `EVEX.128` for
+  `.l128`; AVX512F and AVX512VL): each quadword of `src` rotated right by
+  `imm8` modulo 64 (see `rorQwords`). -/
+  | vprorq (len : VLen) (dst src : XReg) (count : BitVec 8)
   deriving DecidableEq, Repr
 
 /-! ### AVX
@@ -110,11 +115,12 @@ into `DEST[127:0]`, then of `SRC1[255:128]` and `SRC2[255:128]` into
 /-- The legacy SSE instruction whose operation `op` applies to each lane:
 VPADDD, VPADDQ, VPXOR, VPOR, VPAND, VPANDN, VPSHUFB, VPMULUDQ,
 VPUNPCK{L,H}{DQ,QDQ}, VPADDW, VPSUBW, VPSUBD, VPMULLW, VPMULHW, VPACKSSDW,
-VPUNPCK{L,H}WD and VPSUBQ are, lane by lane, PADDD, PADDQ, PXOR, POR, PAND, PANDN,
-PSHUFB, PMULUDQ, PUNPCK{L,H}{DQ,QDQ}, PADDW, PSUBW, PSUBD, PMULLW, PMULHW,
-PACKSSDW, PUNPCK{L,H}WD and PSUBQ (SDM Vol. 2, each instruction's "VEX.256 encoded
-version" pseudocode, with `SRC1` in place of the destination; VPACKSSDW
-and VPUNPCK{L,H}WD pack and interleave within each 128-bit lane). -/
+VPUNPCK{L,H}WD, VPSUBQ and VPCMPEQD are, lane by lane, PADDD, PADDQ, PXOR,
+POR, PAND, PANDN, PSHUFB, PMULUDQ, PUNPCK{L,H}{DQ,QDQ}, PADDW, PSUBW, PSUBD,
+PMULLW, PMULHW, PACKSSDW, PUNPCK{L,H}WD, PSUBQ and PCMPEQD (SDM Vol. 2, each
+instruction's "VEX.256 encoded version" pseudocode, with `SRC1` in place of
+the destination; VPACKSSDW and VPUNPCK{L,H}WD pack and interleave within
+each 128-bit lane). -/
 def VBinOp.sse : VBinOp → XBinOp
   | .vpaddd => .paddd | .vpaddq => .paddq | .vpxor => .pxor | .vpor => .por
   | .vpand => .pand | .vpandn => .pandn | .vpshufb => .pshufb | .vpmuludq => .pmuludq
@@ -123,7 +129,7 @@ def VBinOp.sse : VBinOp → XBinOp
   | .vpaddw => .paddw | .vpsubw => .psubw | .vpsubd => .psubd | .vpmullw => .pmullw
   | .vpmulhw => .pmulhw | .vpackssdw => .packssdw | .vpunpcklwd => .punpcklwd
   | .vpunpckhwd => .punpckhwd | .vpsubq => .psubq
-  | .vaesenc => .aesenc | .vaesenclast => .aesenclast
+  | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vpcmpeqd => .pcmpeqd
 
 /-! ### Vector AES and carry-less multiplication
 
@@ -306,6 +312,16 @@ def rolDwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
   let r (i : Nat) := (dword x i).rotateLeft (n.toNat % 32)
   ofDwords (r 0) (r 1) (r 2) (r 3)
 
+/-- SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right", for one
+lane: `RIGHT_ROTATE_QWORDS(SRC, COUNT_SRC) { COUNT := COUNT_SRC modulo 64;
+DEST[63:0] := (SRC >> COUNT) | (SRC << (64 - COUNT)); }` for each quadword
+(the "EVEX encoded versions" with an immediate count, no write mask and a
+register source: `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i], imm8)`
+for each quadword `j`, `i := j * 64`). -/
+def rorQwords (x : BitVec 128) (n : BitVec 8) : BitVec 128 :=
+  let r (i : Nat) := (qword x i).rotateRight (n.toNat % 64)
+  r 1 ++ r 0
+
 /-- SDM Vol. 2, "VPTERNLOGD/VPTERNLOGQ", for one lane, with no write mask
 and a register `SRC2`: `FOR k := 0 TO 31 … DEST[j][k] := imm[(DEST[i+k] <<
 2) + (SRC1[ i+k ] << 1) + SRC2[ i+k ]]` for each doubleword `j` (`i := j *
@@ -351,7 +367,9 @@ Vol. 2 (no flags are affected; `VEX.128` versions zero `DEST[MAXVL-1:128]`):
 * VPMADD52LUQ and VPMADD52HUQ: see `madd52`, each lane (`EVEX.128` and
   `EVEX.256` versions: `DEST[MAXVL-1:VL] := 0`, as `setV` does).
 * VPROLD (`imm8` form) and VPTERNLOGD: see `rolDwords` and `ternlog`, each
-  lane (`EVEX.128` and `EVEX.256` versions: `DEST[MAXVL-1:VL] := 0`). -/
+  lane (`EVEX.128` and `EVEX.256` versions: `DEST[MAXVL-1:VL] := 0`).
+* VPRORQ (`imm8` form, register source, no write mask): see `rorQwords`,
+  each lane (`EVEX.128` and `EVEX.256` versions: `DEST[MAXVL-1:VL] := 0`). -/
 def VOp.exec : VOp → State → State
   | .vbin op len d a b, s =>
     s.setV len d (op.sse.eval (s.lane a 0) (s.lane b 0)) (op.sse.eval (s.lane a 1) (s.lane b 1))
@@ -408,5 +426,6 @@ def VOp.exec : VOp → State → State
   | .vpternlogd len d a b n, s =>
     s.setV len d (ternlog (s.lane d 0) (s.lane a 0) (s.lane b 0) n)
       (ternlog (s.lane d 1) (s.lane a 1) (s.lane b 1) n)
+  | .vprorq len d r n, s => s.setV len d (rorQwords (s.lane r 0) n) (rorQwords (s.lane r 1) n)
 
 end VG.X86_64

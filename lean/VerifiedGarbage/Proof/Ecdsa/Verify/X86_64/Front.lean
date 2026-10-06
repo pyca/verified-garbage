@@ -22,26 +22,30 @@ open VG.Impl.Ecdh.X86_64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 
 variable {c : Cfg}
 
-/-- The arguments: `public = rdi` (`1 + 16 n` bytes), `digest = rsi`
-(`8 n` bytes), `sig = rdx` (`16 n` bytes) and `scratch = rcx`, readable and
+/-- The arguments: `public = rdi` (`1 + 2 len` bytes), `digest = rsi`
+(`len` bytes), `sig = rdx` (`2 len` bytes) and `scratch = rcx`, readable and
 writable as the contract says and apart from `scratch`. -/
 structure VPre (c : Cfg) (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .rdi, 1 + 16 * c.n⟩, ⟨s.gpr .rsi, 8 * c.n⟩, ⟨s.gpr .rdx, 16 * c.n⟩]
+  rd : s.rd = [⟨s.gpr .rdi, 1 + 2 * c.C.len⟩, ⟨s.gpr .rsi, c.C.len⟩, ⟨s.gpr .rdx, 2 * c.C.len⟩] ++
+    Abi.constRegions (fun n => s.syms n) c.combConsts
   wr : s.wr = [⟨s.gpr .rcx, size⟩]
-  pk_sc : Region.Disjoint ⟨s.gpr .rdi, 1 + 16 * c.n⟩ ⟨s.gpr .rcx, size⟩
-  dg_sc : Region.Disjoint ⟨s.gpr .rsi, 8 * c.n⟩ ⟨s.gpr .rcx, size⟩
-  sig_sc : Region.Disjoint ⟨s.gpr .rdx, 16 * c.n⟩ ⟨s.gpr .rcx, size⟩
+  pk_sc : Region.Disjoint ⟨s.gpr .rdi, 1 + 2 * c.C.len⟩ ⟨s.gpr .rcx, size⟩
+  dg_sc : Region.Disjoint ⟨s.gpr .rsi, c.C.len⟩ ⟨s.gpr .rcx, size⟩
+  sig_sc : Region.Disjoint ⟨s.gpr .rdx, 2 * c.C.len⟩ ⟨s.gpr .rcx, size⟩
   sc_fit : (s.gpr .rcx).toNat + size ≤ 2 ^ 64
+  tbls : TblsHeld c s s.wr
 
-/-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
+/-- The key's `x` and `y`, the hash's integer `e`, and the signature's `r`
+and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdi + BitVec.ofNat 64 1) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdi + BitVec.ofNat 64 1) c.C.len)
 abbrev keyY (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdi + BitVec.ofNat 64 (1 + 8 * c.n)) (8 * c.n))
-abbrev dig (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) (8 * c.n))
-abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdi + BitVec.ofNat 64 (1 + c.C.len)) c.C.len)
+abbrev dig (c : Cfg) (s₀ : State) : Nat :=
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rsi) c.C.len) >>> c.sh
+abbrev sigR (c : Cfg) (s₀ : State) : Nat := ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx) c.C.len)
 abbrev sigS (c : Cfg) (s₀ : State) : Nat :=
-  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx + BitVec.ofNat 64 (8 * c.n)) (8 * c.n))
+  ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .rdx + BitVec.ofNat 64 c.C.len) c.C.len)
 
 /-- The key is valid as the code checks it. -/
 abbrev KeyOk (c : Cfg) (s₀ : State) : Prop :=
@@ -72,11 +76,12 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyY c s₀) else Fin.ofNat c.C.p c.C.gy
   /-- Memory outside the working space is unchanged. -/
   unch : Unch base [(0, size)] s₀.mem s.mem
+  syms : s.syms = s₀.syms
 
-theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 7) :
+theorem args_ok (c : Cfg) (s : State) (hl : c.C.len < 128) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) s fun s' =>
       s'.gpr .r8 = s.gpr .rcx ∧ s'.gpr .r9 = s.gpr .rdi ∧ s'.gpr .rcx = s.gpr .rdx ∧
-        s'.gpr .r10 = s.gpr .rdx + BitVec.ofNat 64 (8 * c.n) ∧
+        s'.gpr .r10 = s.gpr .rdx + BitVec.ofNat 64 c.C.len ∧
         s'.gpr .rdx = s.gpr .rdi + BitVec.ofNat 64 1 ∧ Keeps [.r8, .r9, .rcx, .r10, .rdx] s s' := by
   apply WP.of_runBlock
   simp only [Impl.Ecdsa.Verify.X86_64.Cfg.args, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
@@ -89,7 +94,7 @@ theorem args_ok (c : Cfg) (s : State) (h7 : c.n < 7) :
       hr.2.2.2.2, ite_false]
 
 theorem verify_eq' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
-    .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block c.setup)
+    .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
@@ -100,12 +105,12 @@ theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch 
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
   (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
 
-theorem slW_le (h7 : c.n < 7) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
+theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact sl_le c h7 (hl i hi)
 
-theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 7) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := by
+theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 + w.2 ≤ size := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   have := sl_le c h7 (i := FLAG) (by decide)
@@ -115,30 +120,32 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 7) : ∀ w ∈ [(c.sl FLAG, 8)], w.1 
 theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .rcx) g s →
       WP isa rest s Q) :
-    WP isa (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block c.setup)
+    WP isa (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
       (.seq (Impl.Ecdh.X86_64.Cfg.validate c) rest))))) s₀ Q := by
   have h0 := hc.n0
-  have h7 := hc.n7
+  have h7 := hc.n10
+  have := hc.len8; have := hc.len_lo; have := hc.len_hi
   have hsz : size = 8192 := rfl
-  refine WP.seq (WP.mono (args_ok c s₀ h7) fun s₁ ⟨r8₁, r9₁, rcx₁, r10₁, rdx₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono_syms (args_ok c s₀ (by omega)) fun s₁ ⟨r8₁, r9₁, rcx₁, r10₁, rdx₁, k₁⟩ sy₁ => ?_)
   have rsi₁ : s₁.gpr .rsi = s₀.gpr .rsi := k₁.1 _ (by decide)
   have hrd₁ : s₁.rd ++ s₁.wr = s₀.rd ++ s₀.wr := by rw [k₁.2.2.1, k₁.2.2.2]
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.2.2.2, hp.wr, r8₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [r8₁]; exact hp.sc_fit⟩
     · rw [rcx₁, hrd₁, hp.rd]
-      exact ⟨⟨s₀.gpr .rdx, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .rdx, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
     · rw [rsi₁, hrd₁, hp.rd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
     · rw [rdx₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .rdi, 1 + 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
+      exact ⟨⟨s₀.gpr .rdi, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
     · rw [rsi₁, r8₁]; exact hp.dg_sc
     · rw [rdx₁, r8₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
     · rw [rcx₁, r8₁]; exact hp.sig_sc.sub_left (Region.sub_prefix (by omega))
-  refine WP.seq (WP.mono (stage₁ hc hsp (rest := .block []) (Q := St₁ c s₁ (s₁.gpr .r8))
+  refine WP.seq (WP.mono (stage₁ hc (hs := some D) (Or.inr (Or.inl rfl)) hsp (rest := .block [])
+    (Q := St₁ c (some D) s₁ (s₁.gpr .r8))
     fun _ S => WP.block_nil S) fun s₂ S₂ => ?_)
   rw [r8₁] at S₂
   have hn := S₂.scr.nowrap
@@ -146,16 +153,17 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have W₂ : Outside (s₀.gpr .rcx) 0 size s₀.mem s₂.mem := fun x hx =>
     (S₂.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact hx).trans (congrFun k₁.2.1 x)
   -- `s`.
-  have hr10 : s₂.gpr .r10 = s₀.gpr .rdx + BitVec.ofNat 64 (8 * c.n) := by rw [S₂.gpr _ (by decide), r10₁]
+  have hr10 : s₂.gpr .r10 = s₀.gpr .rdx + BitVec.ofNat 64 c.C.len := by rw [S₂.gpr _ (by decide), r10₁]
   have hPT := sl_le c h7 (i := PT) (by decide)
   rw [Impl.Ecdsa.Verify.X86_64.Cfg.loadS]
-  refine WP.seq (WP.mono (loadBE_ok S₂.scr (src := .r10) (by decide) hPT (fun d hd => by
+  refine WP.seq (WP.mono_syms (loadBytes_ok S₂.scr (src := .r10) (by decide) hPT hc.len8 hc.len_lo hc.len_hi
+    (fun d hd => by
       rw [hrw₂, hp.rd, hr10, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-      exact ⟨⟨s₀.gpr .rdx, 16 * c.n⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
+      exact ⟨⟨s₀.gpr .rdx, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hr10]
       exact (hp.sig_sc.sub_left (Offset.sub_base _ (by omega))).sub_right
-        (Offset.sub_base _ hPT))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_)
+        (Offset.sub_base _ hPT))) fun s₃ ⟨e₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := S₂.scr.of_keepRegs k₃ (by decide)
   have U₃ : Unch (s₀.gpr .rcx) (slW c [PT]) s₂.mem s₃.mem := O₃.unch
   have F₃ := S₂.fixed.unch h7 hn (fixedOk_slW (l := [PT]) (by decide)) U₃
@@ -167,8 +175,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   -- The key.
   have hq₃ : s₃.gpr .r9 = s₀.gpr .rdi := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), r9₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
-  refine WP.seq (WP.mono (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
-    fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ => ?_)
+  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
+    fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ sy₄ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →
       sv c (s₀.gpr .rcx) s₄ i = sv c (s₀.gpr .rcx) s₃ i := fun hi hl hf =>
@@ -179,7 +187,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       exact ⟨Nat.zero_le _, hPT⟩))
   have x₄ : sv c (s₀.gpr .rcx) s₃ E = keyX c s₀ := by
     rw [v₃ (by decide) (by decide), S₂.e]
-    simp only [ev, k₁.2.1, rdx₁]
+    simp only [k₁.2.1, rdx₁, shAt_D_E, Nat.shiftRight_zero]
   have hq0 : s₃.mem (s₀.gpr .rdi) = s₀.mem (s₀.gpr .rdi) := by
     have := keep_of_disjoint' W₃ hp.pk_sc (by omega) (i := 0) (by omega) (by omega)
     rwa [BitVec.add_zero] at this
@@ -189,8 +197,8 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       sv c (s₀.gpr .rcx) s₄ E < c.C.p) ∧ sv c (s₀.gpr .rcx) s₄ QY < c.C.p)) := by
     rw [f₄, flag_unch U₃ h7 h0 hn (by decide), S₂.flag, BitVec.allOnes_and, mask_and, mask_and, hq0,
       e₄ (i := E) (by decide) (by decide) (by decide)]
-  refine WP.seq (WP.mono (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
-    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₁.gpr s₅
+  refine WP.seq (WP.mono_syms (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
+    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ sy₅ => h s₁.gpr s₅
       (fun r hr => k₁.1 r (by revert r; decide)) ?_)
   have F₅ := F₄.unch h7 hn ((fixedOk_slW (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₅
@@ -216,13 +224,14 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k]
        simp only [kv, k₁.2.1, rcx₁],
     by rw [a₅ (i := D) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.d]
-       simp only [dv, k₁.2.1, rsi₁],
+       simp only [dv, k₁.2.1, rsi₁, shAt_self],
     by rw [e₅ (i := PT) (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide), pt₃],
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],
     by rw [a₅ (i := RZ) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rz],
     fun t ht => by rw [t₅ (j := 1) (by decide) t ht, S₂.t₁ t ht],
-    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, ?_⟩
+    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, ?_,
+    by rw [sy₅, sy₄, sy₃, S₂.syms, sy₁]⟩
   have U := ((S₂.unch.trans U₃).trans U₄).trans U₅
   rw [k₁.2.1] at U
   refine unch_whole U fun w hw => ?_

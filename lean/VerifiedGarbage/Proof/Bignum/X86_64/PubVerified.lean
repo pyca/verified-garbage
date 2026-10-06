@@ -3,11 +3,11 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# `vg_rsa_public` on x86-64: verified against the shared contract
+# RSAEP on x86-64: helpers for the shared contracts
 
-`pubContract` states the shared contract on the registers and the stack
-(`public_implies`); with correctness (`code_correct`) and constant time
-(`code_constantTime`), `code` is verified (`public_verified`).
+What the proofs of `pubContract`'s callers against their shared contracts
+(`vg_rsa_public_checked`'s, `PubChecked.lean`) share: the stack arguments,
+a state meeting `pubContract.pre`, and the leak of `n` and `e`.
 -/
 
 namespace VG.Proof.Bignum.X86_64
@@ -36,33 +36,7 @@ def satState : State where
 the same. -/
 theorem leak_eq {a b c d : List Byte} (hl : a.length = c.length)
     (h : (a ++ b).map (·.toNat) = (c ++ d).map (·.toNat)) : a = c ∧ b = d := by
-  have hi : (a ++ b) = (c ++ d) := List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) h
+  have hi : (a ++ b) = (c ++ d) := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 h
   exact List.append_inj hi hl
-
-theorem public_implies : pubContract.Implies (Spec.Rsa.publicContract abi) where
-  pre := by
-    intro s h
-    -- Twice: the stack arguments' list evaluates only on the second pass.
-    sig_pre [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq] at h
-    sig_pre [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq] at h
-    sig_split h
-    sig_reduce [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq]
-    sig_and_intros
-    sig_close
-    all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq]
-  pub := by
-    rintro s₁ s₂ - - h
-    sig_pub [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq] at h
-    simp only [List.getD_cons_succ, List.getD_cons_zero] at h
-    obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3⟩ := h
-    obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hl
-    refine ⟨?_, a0, a1, a2, a3, hn, he⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp⟩
-  sat := by sig_implies_sat [Spec.Rsa.publicContract, Spec.Rsa.publicSig, abi, argRegs, pubContract, stackArgs_four, List.append_eq] [satState, stackArg, stackArgAddr, Mem.readW, Mem.read] using satState
-
-theorem public_verified : Verified target code (Spec.Rsa.publicContract abi) :=
-  Verified.of_correct code_correct code_constantTime public_implies
 
 end VG.Proof.Bignum.X86_64

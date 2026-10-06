@@ -5,6 +5,18 @@
 pub(crate) mod aes;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ccm;
+
+#[rustfmt::skip]
+pub(crate) mod aes_gcm_siv;
+
+#[rustfmt::skip]
+pub(crate) mod aes_ocb;
+
+#[rustfmt::skip]
+pub(crate) mod aes_siv;
+
+#[rustfmt::skip]
 pub(crate) mod argon2;
 
 #[rustfmt::skip]
@@ -26,16 +38,58 @@ pub(crate) mod cmac_aes;
 pub(crate) mod cmac_triple_des;
 
 #[rustfmt::skip]
+pub(crate) mod consts;
+
+#[rustfmt::skip]
 pub(crate) mod ct;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p224;
 
 #[rustfmt::skip]
 pub(crate) mod ec_p256;
 
 #[rustfmt::skip]
+pub(crate) mod ec_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ec_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p224;
+
+#[rustfmt::skip]
 pub(crate) mod ecdh_p256;
 
 #[rustfmt::skip]
+pub(crate) mod ecdh_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdh_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p224;
+
+#[rustfmt::skip]
 pub(crate) mod ecdsa_p256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha256;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p256_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p384_sha384;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p521;
+
+#[rustfmt::skip]
+pub(crate) mod ecdsa_p521_sha512;
 
 #[rustfmt::skip]
 pub(crate) mod ed25519;

@@ -64,7 +64,7 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 8)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_whole (h7 : c.n < 7) : FixedOk c [(size, 2 ^ 64)] := by
+theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   refine Or.inr ?_
@@ -81,7 +81,7 @@ theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i
   · exact Or.inl (Nat.le_trans (sl_lt c hi) h)
 
 theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed c base g m)
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
     (hu : Unch base W m m') : Fixed c base g m' := by
   have e : ∀ i, i < 12 → i ≠ TMP → wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
     fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega); omega)
@@ -125,14 +125,14 @@ theorem apart_append {W W' : List (Nat × Nat)} {x k : Nat}
 
 /-- A number in a slot apart from what changed. -/
 theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hW : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
   hu.wordsVal hW (by have := sl_le c h7 hi; omega)
 
 /-- A byte of table `j` apart from what changed. -/
 theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
   hu.byte hW (by have := bitsAt_le c h7 hj; omega)
@@ -157,32 +157,38 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
   rw [List.mem_singleton.mp hw]
   simp only [bitsAt_eq]
   rcases Nat.lt_or_gt_of_ne hjj with h | h
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 8) h
     rw [Nat.mul_succ] at this
     omega
-  · have := Nat.mul_le_mul_left (64 * c.n) h
+  · have := Nat.mul_le_mul_left (64 * c.n + 8) h
     rw [Nat.mul_succ] at this
     omega
 
 /-- The moduli, from their slots. -/
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
-    ModOk c.MP' size c.C.p m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_p⟩
+    ModOkW c.MP' size c.C.p m base :=
+  ⟨hc.n0, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
+    hc.minv_p, hc.red_p⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
-    ModOk c.MN' size c.C.n m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_n⟩
+    ModOkW c.MN' size c.C.n m base :=
+  ⟨hc.n0, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
+    hc.minv_n, rfl⟩
 
-theorem r14_not_clob {n : Nat} (h : n ≤ 4) : Reg.r14 ∉ clob n := by
-  have : ∀ n < 5, Reg.r14 ∉ clob n := by decide
-  exact this n (by omega)
+theorem rsi_not_clob (n : Nat) : Reg.rsi ∉ clob n := by
+  intro h
+  simp only [clob, List.mem_cons] at h
+  rcases h with h | h | h | h | h
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd h (by decide)
+  · exact absurd (List.mem_of_mem_take h) (by decide)
 
-theorem r14_not_powClob {n : Nat} (h : n ≤ 4) : Reg.r14 ∉ powClob n := by
+theorem rsi_not_powClob (n : Nat) : Reg.rsi ∉ powClob n := by
   intro h'
   rcases List.mem_cons.mp h' with h' | h'
   · exact absurd h' (by decide)
-  · exact r14_not_clob h h'
+  · exact rsi_not_clob n h'
 
 end VG.Proof.Ecdsa.X86_64

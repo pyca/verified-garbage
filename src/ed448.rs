@@ -5,11 +5,45 @@
 //! assembly operation, including SHAKE256. Signing uses the public key derived
 //! once by [`SigningKey::from_seed`]. This is Ed448 with a context (`dom4` with
 //! flag 0), not Ed448ph. Secret scratch values are cleared after use.
+//!
+//! On AArch64, each operation has an instance for each implementation of the
+//! Keccak permutation, and calls the one the SHA-3 functions use
+//! (`crate::hashes::sha3::Backend`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "x86"
+))]
 
+#[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+use crate::arch::ed448::{
+    VG_ED448_PUBLIC_KEY_SHA3_FEATURES, VG_ED448_SIGN_CACHED_SHA3_FEATURES,
+    VG_ED448_VERIFY_SHA3_FEATURES, vg_ed448_public_key_sha3, vg_ed448_sign_cached_sha3,
+    vg_ed448_verify_sha3,
+};
 use crate::arch::ed448::{vg_ed448_public_key, vg_ed448_sign_cached, vg_ed448_verify};
+use crate::hashes::sha3::Backend;
 use crate::zeroize::zeroize;
+
+/// The implementation to call: the Keccak implementation the SHA-3
+/// functions use, if the CPU has the features of every instance calling it.
+fn backend() -> Backend {
+    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+    if !crate::cpu::detected().contains(
+        const {
+            crate::cpu::Features::all(&[
+                VG_ED448_PUBLIC_KEY_SHA3_FEATURES,
+                VG_ED448_SIGN_CACHED_SHA3_FEATURES,
+                VG_ED448_VERIFY_SHA3_FEATURES,
+            ])
+        },
+    ) {
+        return Backend::Scalar;
+    }
+    Backend::detected()
+}
 
 /// The longest context RFC 8032 allows.
 pub const MAX_CONTEXT_LEN: usize = 255;
@@ -66,17 +100,30 @@ impl VerifyingKey {
         let mut scratch = [0u64; 1024];
         // SAFETY: the input references are valid for their declared lengths,
         // and scratch is a distinct writable object. No object overlaps the
-        // call's stack or wraps the address space.
+        // call's stack or wraps the address space. Backend selection checks
+        // the generated CPU feature requirements.
         let valid = unsafe {
-            vg_ed448_verify(
-                &self.bytes,
-                context.as_ptr(),
-                context.len(),
-                message.as_ptr(),
-                message.len(),
-                signature,
-                &mut scratch,
-            )
+            match backend() {
+                Backend::Scalar => vg_ed448_verify(
+                    &self.bytes,
+                    context.as_ptr(),
+                    context.len(),
+                    message.as_ptr(),
+                    message.len(),
+                    signature,
+                    &mut scratch,
+                ),
+                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                Backend::Sha3 => vg_ed448_verify_sha3(
+                    &self.bytes,
+                    context.as_ptr(),
+                    context.len(),
+                    message.as_ptr(),
+                    message.len(),
+                    signature,
+                    &mut scratch,
+                ),
+            }
         };
         zeroize(&mut scratch);
         if valid == 1 {
@@ -117,7 +164,14 @@ impl SigningKey {
         // SAFETY: the output, seed, and scratch are distinct objects valid for
         // 57, 57, and 8192 bytes, respectively, so they overlap neither each
         // other nor the call's stack, and none wraps the address space.
-        unsafe { vg_ed448_public_key(&mut public, seed, &mut scratch) };
+        // Backend selection checks the generated CPU feature requirements.
+        unsafe {
+            match backend() {
+                Backend::Scalar => vg_ed448_public_key(&mut public, seed, &mut scratch),
+                #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                Backend::Sha3 => vg_ed448_public_key_sha3(&mut public, seed, &mut scratch),
+            }
+        };
         zeroize(&mut scratch);
         Self {
             seed: *seed,
@@ -163,18 +217,32 @@ fn sign_message(seed: &[u8; 57], pk: &[u8; 57], context: &[u8], message: &[u8]) 
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
     // public key (`SigningKey::sign` passes the one `from_seed` derived), and
-    // the context is at most 255 bytes long (the callers check it).
+    // the context is at most 255 bytes long (the callers check it). Backend
+    // selection checks the generated CPU feature requirements.
     unsafe {
-        vg_ed448_sign_cached(
-            &mut signature,
-            seed,
-            pk,
-            context.as_ptr(),
-            context.len(),
-            message.as_ptr(),
-            message.len(),
-            &mut scratch,
-        )
+        match backend() {
+            Backend::Scalar => vg_ed448_sign_cached(
+                &mut signature,
+                seed,
+                pk,
+                context.as_ptr(),
+                context.len(),
+                message.as_ptr(),
+                message.len(),
+                &mut scratch,
+            ),
+            #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+            Backend::Sha3 => vg_ed448_sign_cached_sha3(
+                &mut signature,
+                seed,
+                pk,
+                context.as_ptr(),
+                context.len(),
+                message.as_ptr(),
+                message.len(),
+                &mut scratch,
+            ),
+        }
     };
     zeroize(&mut scratch);
     signature

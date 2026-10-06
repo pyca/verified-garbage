@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
 # ECDSA on AArch64: what every phase keeps
 
 After `setup`, the slots below `12` but the temporary area's hold constants
-the code only reads, and `[0, 16)` the saved registers (`Fixed`); every
+the code only reads, and `[0, 56)` the saved registers (`Fixed`); every
 later phase writes only slots from `12` on, the temporary area, the flag
 and the tables (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
@@ -27,7 +27,7 @@ structure Fixed (c : Cfg) (base : Addr) (g : Reg → BitVec 64) (m : Mem) : Prop
   one : wordsVal m base (c.sl ONE) c.n = 1
   onep : wordsVal m base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p
   ap : wordsVal m base (c.sl AP) c.n = c.mont c.C.a
-  b3p : wordsVal m base (c.sl B3P) c.n = c.mont (3 * c.C.b)
+  bm : wordsVal m base (c.sl BM) c.n = c.mont c.C.b
   gx : wordsVal m base (c.sl GX) c.n = c.mont c.C.gx
   gy : wordsVal m base (c.sl GY) c.n = c.mont c.C.gy
   r2n : wordsVal m base (c.sl R2N) c.n = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n
@@ -64,7 +64,7 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 8)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_whole (h7 : c.n < 7) : FixedOk c [(size, 2 ^ 64)] := by
+theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   refine Or.inr ?_
@@ -81,14 +81,14 @@ theorem fixed_apart {W : List (Nat × Nat)} (hW : FixedOk c W) {i : Nat} (hi : i
   · exact Or.inl (Nat.le_trans (sl_lt c hi) h)
 
 theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed c base g m)
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {W : List (Nat × Nat)} (hW : FixedOk c W)
     (hu : Unch base W m m') : Fixed c base g m' := by
   have e : ∀ i, i < 12 → i ≠ TMP → wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
     fun i hi hit => hu.wordsVal (fixed_apart hW hi hit) (by have := sl_le c h7 (i := i) (by omega); omega)
   refine ⟨(e MP (by decide) (by decide)).trans h.mp, (e MN (by decide) (by decide)).trans h.mn,
     (e ZERO (by decide) (by decide)).trans h.zero, (e ONE (by decide) (by decide)).trans h.one,
     (e ONEP (by decide) (by decide)).trans h.onep, (e AP (by decide) (by decide)).trans h.ap,
-    (e B3P (by decide) (by decide)).trans h.b3p, (e GX (by decide) (by decide)).trans h.gx,
+    (e BM (by decide) (by decide)).trans h.bm, (e GX (by decide) (by decide)).trans h.gx,
     (e GY (by decide) (by decide)).trans h.gy, (e R2N (by decide) (by decide)).trans h.r2n,
     (e ONEN (by decide) (by decide)).trans h.onen, fun p hp => ?_⟩
   have := setupSaved_lt p hp
@@ -125,17 +125,17 @@ theorem apart_append {W W' : List (Nat × Nat)} {x k : Nat}
 
 /-- A number in a slot apart from what changed. -/
 theorem sv_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
+    (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64) {i : Nat} (hi : i < 45)
     (hW : ∀ w ∈ W, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i) :
     wordsVal m' base (c.sl i) c.n = wordsVal m base (c.sl i) c.n :=
   hu.wordsVal hW (by have := sl_le c h7 hi; omega)
 
 /-- A byte of table `j` apart from what changed. -/
 theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch base W m m')
-    (h7 : c.n < 7) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
+    (h7 : c.n < 10) {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n)
     (hW : ∀ w ∈ W, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t) :
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
-  hu.byte hW (by have := bitsAt_le c h7 hj; omega)
+  hu.byte hW (by have := bitsAt_le c h7 hj; have : size = 8192 := rfl; omega)
 
 theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
@@ -164,22 +164,108 @@ theorem tbl_apart_tbl {j j' t : Nat} (hjj : j ≠ j') (ht : t < 64 * c.n) :
     rw [Nat.mul_succ] at this
     omega
 
+/-- What a power writes: `ACC`, its table and the temporary area. -/
+abbrev chainWc (c : Cfg) : List (Nat × Nat) :=
+  [(c.sl ACC, 8 * c.n), (c.sl CT, 9 * (8 * c.n)), (c.sl TMP, 8 * c.n)]
+
+theorem invWP_eq (c : Cfg) : invW c.invP = chainWc c := rfl
+theorem invWN_eq (c : Cfg) : invW c.invN = chainWc c := rfl
+theorem chainWN_eq (c : Cfg) : chainW c.powN = chainWc c := rfl
+
+theorem fixedOk_chainWc : FixedOk c (chainWc c) := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < ACC by decide)))
+  · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < CT by decide)))
+  · exact Or.inl ⟨rfl, rfl⟩
+
+/-- A slot but `ACC` and `TMP` is apart from what a power writes. -/
+theorem apart_chainWc {i : Nat} (hi : i < 45) (hl : i ∉ [ACC, TMP]) :
+    ∀ w ∈ chainWc c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hw hl
+  rcases hw with rfl | rfl | rfl
+  · exact sl_apart c hl.1
+  · exact Or.inl (sl_lt c (show i < CT by unfold CT; omega))
+  · exact sl_apart c hl.2
+
+/-- The tables of bits are apart from what a power writes. -/
+theorem tbl_apart_chainWc {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
+    ∀ w ∈ chainWc c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact Or.inr (sl_below_bits c (by decide) j t)
+  · refine Or.inl ?_
+    rw [bitsAt_eq, sl_eq]; unfold CT
+    have := Nat.mul_le_mul_left (64 * c.n) (show j ≤ 2 by omega)
+    omega
+  · exact Or.inr (sl_below_bits c (by decide) j t)
+
+/-- The flag survives a power and changes of other slots. -/
+theorem flag_unch_cw {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (chainWc c ++ slW c l) m m')
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_append (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide)) (apart_slW hl) w hw
+    with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
+/-- The flag survives a power. -/
+theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m m') (h7 : c.n < 10)
+    (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) :
+    word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
+  have hF := sl_le c h7 (i := FLAG) (by decide)
+  refine hu.word (fun w hw => ?_) (by omega)
+  rcases apart_chainWc (c := c) (i := FLAG) (by decide) (by decide) w hw with h | h
+  · exact Or.inl (by omega)
+  · exact Or.inr h
+
 /-- The moduli, from their slots. -/
 theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
-    ModOk c.MP' size c.C.p m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_p⟩
+    ModOkA c.MP' size c.C.p m base :=
+  ⟨hc.n0, hc.n10, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
+    hc.minv_p, hc.red_p⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
-    ModOk c.MN' size c.C.n m base :=
-  ⟨hc.n0, hc.n7, sl_le c hc.n7 (by decide), sl_le c hc.n7 (by decide), sl_apart c (by decide), h,
-    hc.minv_n⟩
+    ModOkA c.MN' size c.C.n m base :=
+  ⟨hc.n0, hc.n10, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
+    hc.minv_n, hc.red_n⟩
 
-theorem x20_not_clob {n : Nat} (h : n < 7) : Reg.x20 ∉ clob n := by
-  have : ∀ n < 7, Reg.x20 ∉ clob n := by decide
+/-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps. -/
+theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOkA c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
+    WP isa c.pPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
+      toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl RZ) c.n) ^ (c.C.p - 2) := by
+  have := hc.p_ge
+  exact hc.sound_p (invLayP hc) (by omega) (unitMod_pow_two hc.p_odd _) hs hM hB hc.inv_p
+
+/-- `ACC = KM^(n - 2)` (in Montgomery form), by divsteps or a chain. -/
+theorem nPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+    (hM : ModOkA c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
+    WP isa c.nPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
+      wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧
+      toM c.C.n (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
+        toM c.C.n (2 ^ (64 * c.n)) (wordsVal s.mem base (c.sl KM) c.n) ^ (c.C.n - 2) := by
+  have := hc.n_ge
+  rw [Cfg.nPow]
+  split
+  · rename_i h
+    exact (hc.inv_n h).1 (invLayN hc) (by omega) (unitMod_pow_two hc.n_odd _) hs hM hB (hc.inv_n h).2
+  · rename_i h
+    exact WP.mono (chainPow_ok (chainLayN hc) (unitMod_pow_two hc.n_odd _) hs hM hB
+      (chainOkN hc (by simpa using h))) fun s' ⟨K, U, lt, v⟩ => ⟨K, by rw [chainWN_eq] at U; exact U, lt, v⟩
+
+theorem x20_not_clob {n : Nat} (h : n < 10) : Reg.x20 ∉ clob n := by
+  have : ∀ n < 10, Reg.x20 ∉ clob n := by decide
   exact this n h
 
-theorem x20_not_powClob {n : Nat} (h : n < 7) : Reg.x20 ∉ powClob n := by
+theorem x20_not_powClob {n : Nat} (h : n < 10) : Reg.x20 ∉ powClob n := by
   intro h'
   rcases List.mem_cons.mp h' with h' | h'
   · exact absurd h' (by decide)

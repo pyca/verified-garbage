@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 
 /-!
@@ -12,15 +13,18 @@ MXCSR. The proofs of `vg_mldsa*_verify` hold for any such `P`.
 
 namespace VG.Proof.MlDsa.X86_64.Verify
 
+open VG.Proof.MlDsa.Arith.Representation
+variable {mont : Bool}
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Verify
 open VG.Spec.MlDsa
 
 /-- Implementations of the primitives, correct and constant time. -/
 structure PrimsOk (P : Prims) : Prop where
   ntt : CalleeOk P.ntt (nttContract X86_64.abi 16)
-  invNtt : CalleeOk P.invNtt (nttInvContract X86_64.abi 16)
-  mul : CalleeOk P.mul (mulContract X86_64.abi 16)
-  mulAdd : CalleeOk P.mulAdd (mulAddContract X86_64.abi 16)
+  invNtt : CalleeOk P.invNtt (inverseContract P.montgomery X86_64.abi 16)
+  mul : CalleeOk P.mul (productContract P.montgomery X86_64.abi 16)
+  mulAdd : CalleeOk P.mulAdd (accumulateContract P.montgomery X86_64.abi 16)
   sub : CalleeOk P.sub (subContract X86_64.abi 16)
   rejNtt : CalleeOk P.rejNtt (rejNTTContract X86_64.abi 16)
   ball : CalleeOk P.ball (sampleInBallContract X86_64.abi 16)

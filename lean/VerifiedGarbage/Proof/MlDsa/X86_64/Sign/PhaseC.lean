@@ -15,6 +15,8 @@ at `KAP`, `814 - t` at `CNT`, and the `t` iterations before rejected (within
 
 namespace VG.Proof.MlDsa.X86_64.Sign
 
+open VG.Proof.MlDsa.Arith.Representation
+
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Sign
 open VG.Proof.MlKem.X86_64 (Keep Keep.gpr WP.keep)
 open VG.Proof.MlDsa.Sign
@@ -419,22 +421,22 @@ theorem rowW_ok {P : Prims} {D : Nat} (hP : PrimsOk P D) {p : Params} {σ : Stat
   refine WP.seq (WP.mono (mulAt_ok hP.mul h.l.st.lay (cm 0 hl) (hA h 0 hl).1 (hY h 0 hl).1)
     fun s1 ⟨hP1, _, hq1⟩ => ?_)
   have I1 := h.step hP1 c1
-  rw [(hA h 0 hl).2, (hY h 0 hl).2, ← wAcc_one] at hq1
-  refine WP.seq (WP.mono (seqR_ok (I := fun j s => ICw p D σ t i s ∧ Pl s (wBase p + i) (wAcc p σ (p.ℓ * t) i j))
+  rw [product, (hA h 0 hl).2, (hY h 0 hl).2, ← wAcc_one] at hq1
+  refine WP.seq (WP.mono (seqR_ok (I := fun j s => ICw p D σ t i s ∧ Pl s (wBase p + i) (encode P.montgomery (wAcc p σ (p.ℓ * t) i j)))
     (p.ℓ - 1) 1 (fun j hj1 hj s ⟨I, hw⟩ => ?_) s1 ⟨I1, by show PolyIs _ _ _; rw [hP1.pa (pS_bases _)]; exact hq1⟩)
     fun s2 ⟨I2, hw2⟩ => ?_)
   · refine WP.mono (mulAddAt_ok hP.mulAdd I.l.st.lay (cm j (by omega)) hw.1 (hA I j (by omega)).1
       (hY I j (by omega)).1) fun s' ⟨hP', _, hq'⟩ => ⟨I.step hP' c1, ?_⟩
-    rw [hw.2, (hA I j (by omega)).2, (hY I j (by omega)).2, ← wAcc_succ] at hq'
+    rw [product, hw.2, (hA I j (by omega)).2, (hY I j (by omega)).2, ← encode_add, ← wAcc_succ] at hq'
     show PolyIs _ _ _
     rw [hP'.pa (pS_bases _)]; exact hq'
   rw [show 1 + (p.ℓ - 1) = p.ℓ by omega] at hw2
-  refine WP.mono (ipAt_ok (t := nttInv) hP.invNtt I2.l.st.lay ci hw2.1) fun s3 ⟨hP3, _, hq3⟩ => ?_
+  refine WP.mono (ipAt_ok (t := inverse P.montgomery) hP.invNtt I2.l.st.lay ci hw2.1) fun s3 ⟨hP3, _, hq3⟩ => ?_
   have I3 := I2.step hP3 c2
   refine ⟨I3.l, I3.y, I3.yh, Fam.snoc I3.w ?_⟩
   show PolyIs _ _ _
   rw [hP3.pa (pS_bases _)]
-  rw [hw2.2] at hq3
+  rw [hw2.2, inverse_encode] at hq3
   exact hq3
 
 /-! ## `w₁` and `c̃` -/

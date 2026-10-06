@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.VectorPermute
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Unrolled
 import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 
 namespace VG.Proof.Sha3.AArch64.Scalar.VectorSlots
@@ -8,11 +8,22 @@ open VG VG.AArch64
 
 def callee : Impl.Sha3.AArch64.Callee where
   name := "vg_keccak_f1600"
-  code := Impl.Sha3.AArch64.Scalar.vectorPermute
+  code := Impl.Sha3.AArch64.Scalar.unrolledPermute
   suffix := ""
   absorbOverride := none
 
-sponge_taint_summaries VSums callee saving
+/- The rounds of the permutation, from nothing public. They write every
+general-purpose register but no vector register other than the temporary
+lanes `v24` and `v25`, so they keep public the vectors that hold the
+callee-saved registers and the pointers (`Boundary.save`). Each summary of
+the permutation below uses this one rather than analysing the rounds again. -/
+taint_summary VSums.rounds : VectorTaint.taint (VectorTaint.ofRegs [])
+  (.block Impl.Sha3.AArch64.Scalar.unrolledRounds)
+  keeping ((AArch64.Taint.ofRegs [], RegSet.ofList
+    [.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15,
+      .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v26, .v27, .v28, .v29, .v30, .v31]) : VectorTaint.T)
+
+sponge_taint_summaries VSums callee saving using VSums.rounds
 
 theorem absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true :=
@@ -131,8 +142,8 @@ theorem mldsaSignCommitTaint : ∀ p : Spec.MlDsa.Params,
 def backend : Permutation where
   callee := callee
   features := []
-  ok := VG.Proof.Sha3.AArch64.Scalar.vector_permute_correct
-  noFrames := VG.Proof.Sha3.AArch64.Scalar.vector_permute_noFrames
+  ok := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_correct
+  noFrames := VG.Proof.Sha3.AArch64.Scalar.unrolled_permute_noFrames
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
   absorbTaint := absorbTaint

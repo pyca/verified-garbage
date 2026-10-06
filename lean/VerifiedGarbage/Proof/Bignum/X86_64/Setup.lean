@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.Store
-import Mathlib.Data.Int.ModEq
 
 /-!
 # Multiword arithmetic on x86-64: setting up
@@ -14,28 +13,26 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.Proof.Bignum (newton_step emod_pow_weaken odd_sq)
 
-theorem toNat_ofNat_modEq (n : Nat) : ((BitVec.ofNat 64 n).toNat : Int) ≡ n [ZMOD 2 ^ 64] := by
-  rw [BitVec.toNat_ofNat]; push_cast; exact Int.mod_modEq _ _
+theorem toNat_ofNat_modEq (n : Nat) :
+    ((BitVec.ofNat 64 n).toNat : Int) % 2 ^ 64 = (n : Int) % 2 ^ 64 := by
+  rw [BitVec.toNat_ofNat, Int.natCast_emod]
+  exact Int.emod_emod _ _
 
 theorem toNat_two_sub_modEq (y : BitVec 64) :
-    ((BitVec.setWidth 64 (2 : BitVec 32) - y).toNat : Int) ≡ 2 - y.toNat [ZMOD 2 ^ 64] := by
-  rw [BitVec.toNat_sub, show (BitVec.setWidth 64 (2 : BitVec 32)).toNat = 2 from rfl]
+    ((BitVec.setWidth 64 (2 : BitVec 32) - y).toNat : Int) % 2 ^ 64 =
+      (2 - (y.toNat : Int)) % 2 ^ 64 := by
+  rw [BitVec.toNat_sub, show (BitVec.setWidth 64 (2 : BitVec 32)).toNat = 2 from rfl,
+    Int.natCast_emod, show ((2 ^ 64 : Nat) : Int) = 2 ^ 64 from rfl, Int.emod_emod]
   have hy := y.isLt
-  have : ((2 ^ 64 - y.toNat + 2 : Nat) : Int) = 2 - y.toNat + 2 ^ 64 := by push_cast [Nat.cast_sub hy.le]; omega
-  rw [Int.natCast_emod, this]
-  refine (Int.mod_modEq _ _).trans ?_
-  show (2 - (y.toNat : Int) + 2 ^ 64) % 2 ^ 64 = (2 - (y.toNat : Int)) % 2 ^ 64
-  exact Int.add_emod_right _ _
+  omega
 
 /-- The value of a Newton step, modulo `2⁶⁴`. -/
 theorem newton_val (a x : BitVec 64) :
     ((BitVec.ofNat 64 (x.toNat * (BitVec.setWidth 64 (2 : BitVec 32) -
-      BitVec.ofNat 64 (a.toNat * x.toNat)).toNat)).toNat : Int) ≡
-      x.toNat * (2 - a.toNat * x.toNat) [ZMOD 2 ^ 64] := by
-  refine (toNat_ofNat_modEq _).trans ?_
-  push_cast
-  refine Int.ModEq.mul_left _ ((toNat_two_sub_modEq _).trans (Int.ModEq.sub_left 2 ?_))
-  exact toNat_ofNat_modEq _
+      BitVec.ofNat 64 (a.toNat * x.toNat)).toNat)).toNat : Int) % 2 ^ 64 =
+      ((x.toNat : Int) * (2 - (a.toNat : Int) * x.toNat)) % 2 ^ 64 := by
+  rw [toNat_ofNat_modEq, Int.natCast_mul, Int.mul_emod, toNat_two_sub_modEq,
+    Int.sub_emod, toNat_ofNat_modEq, Int.natCast_mul, ← Int.sub_emod, ← Int.mul_emod]
 
 theorem newton_ok (t : State) :
     WP isa (.block newton) t fun t' =>
@@ -47,7 +44,7 @@ theorem newton_ok (t : State) :
     fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
   unfold newton
   xrun
-  exact Int.emod_eq_zero_of_dvd (newton_val _ _).symm.dvd
+  exact Int.emod_eq_emod_iff_emod_sub_eq_zero.mp (newton_val _ _)
 
 /-- A Newton step on the state: `a x' ≡ 1 (mod 2^(2j))` from `a x ≡ 1 (mod 2^j)`. -/
 theorem newton_step_ok (t : State) {j : Nat} (hj : 2 * j ≤ 64)
@@ -60,22 +57,22 @@ theorem newton_step_ok (t : State) {j : Nat} (hj : 2 * j ≤ 64)
 /-- Negating an inverse: `a (-x) + 1 ≡ 0` from `a x ≡ 1 (mod 2⁶⁴)`. -/
 theorem neg_inv {a x : Nat} (hx : x < 2 ^ 64) (h : ((a : Int) * x - 1) % (2 ^ 64 : Int) = 0) :
     (a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1) % 2 ^ 64 = 0 := by
-  have hr : (((2 ^ 64 - x + 0) % 2 ^ 64 : Nat) : Int) ≡ -(x : Int) [ZMOD 2 ^ 64] := by
-    rw [Int.natCast_emod]
-    refine (Int.mod_modEq _ _).trans ?_
-    unfold Int.ModEq
+  have hr : (((2 ^ 64 - x + 0) % 2 ^ 64 : Nat) : Int) % 2 ^ 64 = -(x : Int) % 2 ^ 64 := by
+    rw [Int.natCast_emod, show ((2 ^ 64 : Nat) : Int) = 2 ^ 64 from rfl, Int.emod_emod]
     omega
-  have h2 : ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) ≡ -((a : Int) * x - 1) [ZMOD 2 ^ 64] := by
-    push_cast
-    have := (hr.mul_left (a : Int)).add_right 1
-    refine this.trans ?_
-    rw [show (a : Int) * -(x : Int) + 1 = -((a : Int) * x - 1) by rw [Int.mul_neg]; omega]
-  have h3 : -((a : Int) * x - 1) ≡ 0 [ZMOD 2 ^ 64] := by
-    unfold Int.ModEq
-    rw [Int.emod_eq_zero_of_dvd (dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))]
-    rfl
+  have h2 : ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) % 2 ^ 64 =
+      (-((a : Int) * x - 1)) % 2 ^ 64 := by
+    rw [Int.natCast_add, Int.natCast_mul, Int.add_emod, Int.mul_emod, hr, ← Int.mul_emod,
+      ← Int.add_emod]
+    congr 1
+    rw [Int.mul_neg]
+    omega
+  have h3 : (-((a : Int) * x - 1)) % 2 ^ 64 = 0 :=
+    Int.emod_eq_zero_of_dvd (Int.dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))
   have h4 := h2.trans h3
-  exact_mod_cast h4
+  change ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) % ((2 ^ 64 : Nat) : Int) = 0 at h4
+  rw [← Int.natCast_emod] at h4
+  exact Int.ofNat_inj.mp h4
 
 /-- `minv`: `-m₀⁻¹ mod 2⁶⁴` into `r15`, for the odd `m₀` in `rbx`. -/
 theorem minv_ok (s : State) (hodd : (s.gpr .rbx).toNat % 2 = 1) :
@@ -91,19 +88,21 @@ theorem minv_ok (s : State) (hodd : (s.gpr .rbx).toNat % 2 = 1) :
   have e₀ : (((t₀.gpr .rbx).toNat : Int) * (t₀.gpr .rcx).toNat - 1) % (2 ^ 3 : Int) = 0 := by
     rw [hb₀, h₀]
     have h1 := odd_sq _ hodd
-    have h2 : (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat) % 8 = 1 := by exact_mod_cast h1
+    have h2 : (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat) % 8 = 1 := by
+      simpa only [Int.natCast_mul, Int.natCast_emod, show ((8 : Nat) : Int) = 8 from rfl,
+        show ((1 : Nat) : Int) = 1 from rfl] using congrArg (fun n : Nat => (n : Int)) h1
     show (((s.gpr .rbx).toNat : Int) * (s.gpr .rbx).toNat - 1) % 8 = 0
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (newton_step_ok t₀ (j := 3) (by norm_num) e₀) fun t₁ ⟨e₁, hb₁, hm₁, k₁⟩ => ?_
+  refine WP.mono (newton_step_ok t₀ (j := 3) (by decide) e₀) fun t₁ ⟨e₁, hb₁, hm₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (newton_step_ok t₁ (j := 6) (by norm_num) e₁) fun t₂ ⟨e₂, hb₂, hm₂, k₂⟩ => ?_
+  refine WP.mono (newton_step_ok t₁ (j := 6) (by decide) e₁) fun t₂ ⟨e₂, hb₂, hm₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (newton_step_ok t₂ (j := 12) (by norm_num) e₂) fun t₃ ⟨e₃, hb₃, hm₃, k₃⟩ => ?_
+  refine WP.mono (newton_step_ok t₂ (j := 12) (by decide) e₂) fun t₃ ⟨e₃, hb₃, hm₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (newton_step_ok t₃ (j := 24) (by norm_num) e₃) fun t₄ ⟨e₄, hb₄, hm₄, k₄⟩ => ?_
+  refine WP.mono (newton_step_ok t₃ (j := 24) (by decide) e₃) fun t₄ ⟨e₄, hb₄, hm₄, k₄⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (newton_step_ok t₄ (j := 32) (by norm_num) (emod_pow_weaken (by norm_num) e₄))
+  refine WP.mono (newton_step_ok t₄ (j := 32) (by decide) (emod_pow_weaken (by decide) e₄))
     fun t₅ ⟨e₅, hb₅, hm₅, k₅⟩ => ?_
   have hb : t₅.gpr .rbx = s.gpr .rbx := hb₅.trans (hb₄.trans (hb₃.trans (hb₂.trans (hb₁.trans hb₀))))
   have kk := ((((k₀.trans k₁).trans k₂).trans k₃).trans k₄).trans k₅

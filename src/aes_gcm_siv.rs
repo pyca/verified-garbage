@@ -13,35 +13,46 @@
 //! The functions are emitted once for each combination of the
 //! implementations of AES (`vg_aes_ctr32`, `vg_aes_expand_key`) and of GHASH
 //! (`vg_ghash`, with which POLYVAL is computed) that AES-GCM has, and are
-//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). Only x86-64 has an
-//! implementation so far.
+//! chosen as AES-GCM's are (`crate::aes_gcm`'s backends). x86-64, x86,
+//! AArch64 and 32-bit ARM (the baseline ISA's implementations alone) have
+//! implementations so far.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes_gcm::{Backend, instance, select};
-use crate::arch::aes::{vg_aes_expand_key, vg_aes_expand_key_aesni};
+use crate::arch::aes::vg_aes_expand_key;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes::vg_aes_expand_key_aes;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::aes::vg_aes_expand_key_aesni;
+use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open, vg_aes_gcm_siv_seal};
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes_gcm_siv::{vg_aes_gcm_siv_open_aes, vg_aes_gcm_siv_seal_aes};
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_gcm_siv::{
-    vg_aes_gcm_siv_open, vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul,
+    vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_aesni_pclmul, vg_aes_gcm_siv_open_pclmul,
+    vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_aesni_pclmul, vg_aes_gcm_siv_seal_pclmul,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_gcm_siv::{
     vg_aes_gcm_siv_open_aesni_pclmul_avx, vg_aes_gcm_siv_open_aesni_vpclmul,
-    vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vaes_pclmul,
-    vg_aes_gcm_siv_open_vaes_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul_avx512,
-    vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_seal, vg_aes_gcm_siv_seal_aesni,
-    vg_aes_gcm_siv_seal_aesni_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul_avx,
-    vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_vaes,
-    vg_aes_gcm_siv_seal_vaes_pclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
+    vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vaes_pclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
+    vg_aes_gcm_siv_open_vaes_vpclmul_avx512, vg_aes_gcm_siv_open_vpclmul,
+    vg_aes_gcm_siv_seal_aesni_pclmul_avx, vg_aes_gcm_siv_seal_aesni_vpclmul,
+    vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vaes_pclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
     vg_aes_gcm_siv_seal_vaes_vpclmul_avx512, vg_aes_gcm_siv_seal_vpclmul,
 };
 use crate::cpu::detected;
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
-
-/// The working space of `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open`, in
-/// 64-bit words: the tag in its first 16 bytes.
-const WORK: usize = 512;
 
 /// The longest plaintext and additional data, in bytes (§6: `P_MAX` and
 /// `A_MAX`, `2^36`).
-const MAX_LEN: usize = 1 << 36;
+const MAX_LEN: u64 = 1 << 36;
 
 /// Why an AES-GCM-SIV operation failed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +87,7 @@ impl Drop for AesGcmSiv {
 }
 
 /// Checks the lengths of §6: of the additional data and of the text.
-fn check(aad_len: usize, len: usize) -> Result<(), Error> {
+fn check(aad_len: u64, len: u64) -> Result<(), Error> {
     if len > MAX_LEN {
         return Err(Error::InvalidTextLength);
     }
@@ -98,29 +109,21 @@ impl AesGcmSiv {
             rounds: key.len() / 4 + 6,
             backend: select(detected()),
         };
-        // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`.
+        // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`,
+        // those with the AArch64 AES instructions `vg_aes_expand_key_aes`.
         let expand = instance!(k.backend, vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
-            aarch64: [vg_aes_expand_key]);
-        let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
+            aarch64: [vg_aes_expand_key_aes]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 32; `k.schedule` and `scratch` are valid for reads and writes of
-        // 240 and 512 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap the return address on the stack or the stack
-        // below it, and none wraps around the end of the address space. The
-        // CPU has the features of the implementation selected. `scratch` is
-        // uninitialized: it is only working space.
-        unsafe {
-            expand(
-                key.as_ptr(),
-                key.len(),
-                &mut k.schedule,
-                scratch.as_mut_ptr(),
-            )
-        };
+        // or 32, and `k.schedule` for reads and writes of 240 bytes. They are
+        // distinct objects, so they do not overlap, nor do they overlap the
+        // return address on the stack or the stack below it, and neither
+        // wraps around the end of the address space. The CPU has the
+        // features of the implementation selected.
+        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
         Ok(k)
     }
 
@@ -135,26 +138,25 @@ impl AesGcmSiv {
         aad: &[u8],
         data: &mut [u8],
     ) -> Result<[u8; 16], Error> {
-        check(aad.len(), data.len())?;
+        check(aad.len() as u64, data.len() as u64)?;
         let seal = instance!(self.backend, vg_aes_gcm_siv_seal,
             x86_64: [vg_aes_gcm_siv_seal_aesni, vg_aes_gcm_siv_seal_pclmul, vg_aes_gcm_siv_seal_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_seal_vaes, vg_aes_gcm_siv_seal_vpclmul, vg_aes_gcm_siv_seal_vaes_pclmul,
                 vg_aes_gcm_siv_seal_aesni_vpclmul, vg_aes_gcm_siv_seal_vaes_vpclmul,
                 vg_aes_gcm_siv_seal_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_seal_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_seal]);
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+            aarch64: [vg_aes_gcm_siv_seal_aes]);
+        let mut tag = [0u8; 16];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10 or 14) rounds, valid for reads of 240
         // bytes. `nonce` (12 bytes) and `aad` are valid for reads of their
         // lengths, `data` for reads and writes of `data.len()` bytes, and
-        // `work` for reads and writes of 4096. `data` and `work` are unique
+        // `tag` for reads and writes of 16. `data` and `tag` are unique
         // borrows, so they overlap neither each other nor the other buffers;
         // no buffer overlaps the arguments on the stack, the return address
         // or the stack below it, and none wraps around the end of the address
         // space. The CPU has the features of the implementation selected
-        // (see `features_cover_instances`). `work` is uninitialized: it is
-        // only working space but for the tag written to its first 16 bytes.
+        // (see `features_cover_instances`).
         unsafe {
             seal(
                 &self.schedule,
@@ -164,11 +166,10 @@ impl AesGcmSiv {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                &mut tag,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first 16 bytes of `work`.
-        Ok(unsafe { first_block(&work) })
+        Ok(tag)
     }
 
     /// Decryption (§5): if `tag` authenticates the ciphertext in `data`,
@@ -181,24 +182,17 @@ impl AesGcmSiv {
         data: &mut [u8],
         tag: &[u8; 16],
     ) -> Result<(), Error> {
-        check(aad.len(), data.len())?;
+        check(aad.len() as u64, data.len() as u64)?;
         let open = instance!(self.backend, vg_aes_gcm_siv_open,
             x86_64: [vg_aes_gcm_siv_open_aesni, vg_aes_gcm_siv_open_pclmul, vg_aes_gcm_siv_open_aesni_pclmul],
             vaes: [vg_aes_gcm_siv_open_vaes, vg_aes_gcm_siv_open_vpclmul, vg_aes_gcm_siv_open_vaes_pclmul,
                 vg_aes_gcm_siv_open_aesni_vpclmul, vg_aes_gcm_siv_open_vaes_vpclmul,
                 vg_aes_gcm_siv_open_vaes_vpclmul_avx512],
             avx: [vg_aes_gcm_siv_open_aesni_pclmul_avx],
-            aarch64: [vg_aes_gcm_siv_open]);
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 512 words.
-        unsafe {
-            w.write(u64::from_le_bytes(tag[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(tag[8..].try_into().unwrap()));
-        }
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first 16 bytes of `work`.
+            aarch64: [vg_aes_gcm_siv_open_aes]);
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of 16 bytes, which `data`, a unique borrow, does not
+        // overlap.
         let ok = unsafe {
             open(
                 &self.schedule,
@@ -208,7 +202,7 @@ impl AesGcmSiv {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag,
             )
         };
         // `open`'s contract leaves the plaintext in `data` if it returns 1,
@@ -221,36 +215,29 @@ impl AesGcmSiv {
     }
 }
 
-/// The first 16 bytes of `work`, where `seal` writes the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
-}
-
 #[cfg(test)]
 mod tests {
     use super::{AesGcmSiv, Error, MAX_LEN, check};
     use crate::aes_gcm::{Backend, instance};
+    #[cfg(target_arch = "aarch64")]
     use crate::arch::aes_gcm_siv::{
-        VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES,
-        VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_FEATURES,
-        VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
+        VG_AES_GCM_SIV_OPEN_AES_FEATURES, VG_AES_GCM_SIV_SEAL_AES_FEATURES,
+    };
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    use crate::arch::aes_gcm_siv::{
+        VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_FEATURES,
+        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES,
+    };
+    #[cfg(target_arch = "x86_64")]
+    use crate::arch::aes_gcm_siv::{
+        VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_VAES_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES,
         VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_SEAL_AESNI_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES,
-        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES,
-        VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_FEATURES,
-        VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
+        VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES, VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES,
+        VG_AES_GCM_SIV_SEAL_VAES_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES,
+        VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES,
         VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES,
     };
     use crate::cpu::Features;
@@ -267,14 +254,14 @@ mod tests {
                     VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [NONE]);
+                aarch64: [VG_AES_GCM_SIV_SEAL_AES_FEATURES]);
             let open = instance!(b, NONE,
                 x86_64: [VG_AES_GCM_SIV_OPEN_AESNI_FEATURES, VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES],
                 vaes: [VG_AES_GCM_SIV_OPEN_VAES_FEATURES, VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES, VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES,
                     VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES],
                 avx: [VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES],
-                aarch64: [NONE]);
+                aarch64: [VG_AES_GCM_SIV_OPEN_AES_FEATURES]);
             assert!(need.contains(seal) && need.contains(open), "{b:?}");
         }
     }

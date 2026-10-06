@@ -66,7 +66,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -82,7 +82,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ AVX</td>
 
 <td>✅</td>
 
@@ -100,7 +100,7 @@ yours to keep:
 
 <td>✅ operations scheduled for latency</td>
 
-<td>✅</td>
+<td>✅ operations scheduled for latency</td>
 
 <td>✅</td>
 
@@ -116,11 +116,11 @@ yours to keep:
 
 <td>✅ SHA extensions</td>
 
+<td>✅ SHA extensions; round constants and the state kept in registers across blocks</td>
+
+<td>✅</td>
+
 <td>✅ SHA extensions</td>
-
-<td>✅</td>
-
-<td>✅</td>
 
 </tr>
 
@@ -132,7 +132,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -148,7 +148,7 @@ yours to keep:
 
 <td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; round constants built by the first block and kept in registers</td>
 
 <td>✅</td>
 
@@ -164,7 +164,7 @@ yours to keep:
 
 <td>✅ lane complementing</td>
 
-<td>✅ SHA extensions</td>
+<td>✅ SHA extensions; rounds unrolled, round constants as immediates; whole blocks absorbed with the state in registers</td>
 
 <td>✅</td>
 
@@ -318,7 +318,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -484,7 +484,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SSE2, SSSE3</td>
 
 </tr>
 
@@ -550,11 +550,11 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
@@ -566,11 +566,11 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI, PCLMULQDQ</td>
 
 </tr>
 
@@ -596,13 +596,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
@@ -614,11 +614,11 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
@@ -666,7 +666,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -682,7 +682,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -698,7 +698,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX-512F, AVX2</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2</td>
 
 <td>✅</td>
 
@@ -736,7 +736,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SHA extensions</td>
 
 </tr>
 
@@ -880,7 +880,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 
@@ -896,7 +896,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AVX2; SSE2 polynomial arithmetic</td>
+<td>✅ AVX-512F, AVX-512VL, AVX2; SSE2 polynomial arithmetic</td>
 
 <td>✅ SHA extensions; NEON polynomial arithmetic</td>
 
@@ -930,13 +930,13 @@ yours to keep:
 
 <tr>
 
-<td>ECDH P-256</td>
+<td>ECDH brainpoolP256r1</td>
 
 <td>✅</td>
 
-<td>✅</td>
+<td>❌</td>
 
-<td>✅</td>
+<td>❌</td>
 
 <td>❌</td>
 
@@ -946,7 +946,119 @@ yours to keep:
 
 <tr>
 
+<td>ECDH brainpoolP384r1</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH brainpoolP512r1</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-192</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-224</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-256</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
 <td>ECDH P-384</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH P-521</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDH secp256k1</td>
 
 <td>✅</td>
 
@@ -968,7 +1080,7 @@ yours to keep:
 
 <td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
-<td>✅</td>
+<td>✅ public keys by a fixed-base comb on edwards25519</td>
 
 <td>✅</td>
 
@@ -1032,11 +1144,11 @@ yours to keep:
 
 <tr>
 
-<td>ECDSA P-256</td>
+<td>ECDSA brainpoolP256r1</td>
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
+<td>❌</td>
 
 <td>❌</td>
 
@@ -1048,7 +1160,119 @@ yours to keep:
 
 <tr>
 
+<td>ECDSA brainpoolP384r1</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA brainpoolP512r1</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-192</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-224</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, AVX2, BMI1, BMI2</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-256</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2, ADX</td>
+
+<td>✅ SHA extensions</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions</td>
+
+</tr>
+
+<tr>
+
 <td>ECDSA P-384</td>
+
+<td>✅</td>
+
+<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+
+<td>✅ SHA extensions</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA P-521</td>
+
+<td>✅</td>
+
+<td>✅ SHA512, AVX2, BMI1, BMI2</td>
+
+<td>✅ SHA extensions</td>
+
+<td>✅</td>
+
+<td>✅</td>
+
+</tr>
+
+<tr>
+
+<td>ECDSA secp256k1</td>
 
 <td>✅</td>
 
@@ -1086,11 +1310,11 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ SHA extensions; keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅</td>
 
 </tr>
 
@@ -1142,13 +1366,115 @@ yours to keep:
 
 </tr>
 
+</table>
+
+### RSA
+
+<table>
+
+<tr>
+
+<th>Algorithm</th>
+
+<th>Spec landed</th>
+
+<th>x86-64</th>
+
+<th>ARM64</th>
+
+<th>ARMv7</th>
+
+<th>x86</th>
+
+</tr>
+
+<tr>
+
+<td>RSA key generation</td>
+
+<td>✅</td>
+
+<td>✅ BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSAES-OAEP</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSASSA-PSS</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, SHA512, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 <tr>
 
 <td>RSA</td>
 
 <td>✅</td>
 
-<td>✅ BMI2, ADX</td>
+<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSAES-PKCS1-v1_5 (implicit rejection)</td>
+
+<td>✅</td>
+
+<td>✅ SHA extensions, AVX-512 IFMA, AVX-512VL, AVX2, BMI1, BMI2, ADX</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
+<td>RSASSA-PKCS1-v1_5</td>
+
+<td>✅</td>
+
+<td>✅ AVX-512 IFMA, AVX-512VL, AVX2, BMI2, ADX</td>
 
 <td>❌</td>
 

@@ -326,7 +326,7 @@ def step (τ : T) : Instr → Option T
   | .mul r => some (mulStep τ r)
   -- A frame's push and pop are analysed by the `push` and `pop` hooks
   -- (`pushStep`, `popStep`), not here; the SSE instructions are not analysed.
-  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => none
 
 def meet (τ₁ τ₂ : T) : T where
   regs := τ₁.regs.inter τ₂.regs
@@ -864,7 +864,7 @@ theorem alu_sound {τ : T} {op : AluOp} {d : Reg} {src : Src} {s₁ s₂ : State
 stores, and for `mul`, which writes two). -/
 def dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
-  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _
+  | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ => none
 
 /-- Whether an instruction may write the register `r`. -/
@@ -908,7 +908,7 @@ theorem exec_dst {i : Instr} {d : Reg} (hd : dst i = some d) {s s' : State}
     exact ⟨rfl, rfl, fun r h => setReg_ne h⟩
   | store m r => simp [dst] at hd
   | store8 m r => simp [dst] at hd
-  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | xop => simp [dst] at hd
+  | mul r | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms => simp [dst] at hd
 
 theorem Agree.write {τ τ' : T} {i : Instr} {d : Reg} (hd : dst i = some d) (hesp : d ≠ .esp)
     {s₁ s₂ s₁' s₂' : State}
@@ -1035,7 +1035,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | movdquLoad | movdquStore | movqLoad | movqStore | xop | mop | mmxStore | mmxEnter | emms => simp only [step, reduceCtorEq] at hs
   | mov d src =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -2322,7 +2322,7 @@ def stepK (τ : T) : Instr → Option T
     else none
   | .store8 m r => storeStepK τ m 1 (pub τ r.reg) []
   | .mul r => some (mulStep τ r)
-  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ => none
+  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => none
 
 /-- `l.contains a`, for a known base address. -/
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
@@ -2437,28 +2437,37 @@ def storeStepKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (nb : List Nat) : Opti
   bif pub τ m.base then some { τ with slots := storeSlotsKD τ m w p, wbases := storeWbasesK τ m w nb }
   else none
 
-/-- `stepK`, with stores that do not repeat a slot (written out, rather than
-calling `stepK`, so that the kernel matches on the instruction once). -/
-def stepKD (τ : T) : Instr → Option T
-  | .mov d src =>
+/-- An instruction transfer function, independent of the incoming taint. -/
+structure Step where
+  run : T → Option T
+
+/-- Classify an instruction before substituting its incoming taint, so the
+kernel can share the classification between checks from different taints.
+Stores retain the duplicate-slot optimization of `storeStepKD`. -/
+def stepKDFn : Instr → Step
+  | .mov d src => ⟨fun τ =>
     bif !regEq d .esp && srcOkK τ src then
       some { τ with regs := setK τ d (srcPub τ src || loadPubK τ src), bases := movBasesK τ d src }
-    else none
-  | .store m r => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)
-  | .alu op d src =>
+    else none⟩
+  | .store m r => ⟨fun τ => storeStepKD τ m 4 (pub τ r) (regBasesK τ r)⟩
+  | .alu op d src => ⟨fun τ =>
     bif !regEq d .esp && srcOkK τ src then
       let p := pub τ d && srcPub τ src && (!usesCarry op || τ.flags)
       some { τ with regs := bif writes op then setK τ d p else τ.regs, flags := p, bases := killK τ d }
-    else none
-  | .shift _ d _ =>
-    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none
-  | .bswap d => bif !regEq d .esp then some { τ with bases := killK τ d } else none
-  | .movzx8 d m =>
+    else none⟩
+  | .shift _ d _ => ⟨fun τ =>
+    bif !regEq d .esp then some { τ with flags := τ.flags && pub τ d, bases := killK τ d } else none⟩
+  | .bswap d => ⟨fun τ => bif !regEq d .esp then some { τ with bases := killK τ d } else none⟩
+  | .movzx8 d m => ⟨fun τ =>
     bif !regEq d .esp && pub τ m.base then some { τ with regs := setK τ d false, bases := killK τ d }
-    else none
-  | .store8 m r => storeStepKD τ m 1 (pub τ r.reg) []
-  | .mul r => some (mulStep τ r)
-  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ => none
+    else none⟩
+  | .store8 m r => ⟨fun τ => storeStepKD τ m 1 (pub τ r.reg) []⟩
+  | .mul r => ⟨fun τ => some (mulStep τ r)⟩
+  | .push _ | .pop .. | .alloc _ | .free _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms => ⟨fun _ => none⟩
+
+/-- Apply the preclassified instruction to the incoming taint. -/
+def stepKD (τ : T) (i : Instr) : Option T := (stepKDFn i).run τ
+
 
 /-- The same taints, but for repeated slots. -/
 structure Sim (a b : T) : Prop where

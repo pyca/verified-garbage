@@ -3,8 +3,9 @@ import VerifiedGarbage.Impl.Aes.X86.Ctr32
 /-!
 # The AES key expansion on x86 (32-bit)
 
-`vg_aes_expand_key(key, key_len, schedule, scratch)`, cdecl: the arguments
-are at `[esp + 4]` … `[esp + 16]`.
+`vg_aes_expand_key_scratch(key, key_len, schedule, scratch)`, cdecl: the arguments
+are at `[esp + 4]` … `[esp + 16]`. `vg_aes_expand_key` runs it with `scratch` in a
+frame of its own (`Proof/Aes/X86/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
 the bitsliced S-box of `Sbox.lean` on the word in slot 0 (as BearSSL's

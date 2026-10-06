@@ -26,7 +26,7 @@ theorem wrap_correct (middle : Prog isa)
       VG.Proof.Sha3.permuteAArch64.post orig s' := by
   unfold wrap
   rw [WP.seq_iff]
-  refine (save_ok orig hp).mono fun s₁ h₁ => ?_
+  refine (save_ok orig).mono fun s₁ h₁ => ?_
   rw [WP.seq_iff]
   refine (load_ok s₁ (fun i hi => ?_)).mono fun s₂ h₂ => ?_
   · rw [h₁.1.rd,h₁.1.wr,h₁.2.1]

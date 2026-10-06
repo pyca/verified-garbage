@@ -8,7 +8,9 @@ and the `#[cfg(not(...))]` of the empty one for the other architectures)
 must name exactly the architectures that every library module it uses
 (`verified_garbage::<path>`) states in its inner `#![cfg(...)]`. Where a construction over hash functions has a file per hash
 (`src/<family>/<hash>.rs`, e.g. `src/hmac/sha256.rs`), a file that uses
-both `<family>` and `hashes::<hash>` needs that file's architectures too.
+both `<family>` and `hashes::<hash>` needs that file's architectures too;
+and an item named for a module's file (`ecdh::P384`, of `src/ecdh/p384.rs`,
+a curve's file) needs that file's.
 
 Only `target_arch` is compared; other conditions (`feature = "alloc"`) are
 allowed alongside.
@@ -74,6 +76,10 @@ def required(text, mods):
     used = set()
     for p in paths:
         parts = p.split("::")
+        named = "::".join(parts[:-1] + [parts[-1].lower()])
+        if len(parts) > 1 and named in mods:
+            used.add(named)
+            continue
         for n in range(len(parts), 0, -1):
             if "::".join(parts[:n]) in mods:
                 used.add("::".join(parts[:n]))

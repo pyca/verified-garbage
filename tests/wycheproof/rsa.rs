@@ -1,13 +1,12 @@
-//! The RSA private-key operation with the CRT key (RSADP, RFC 8017 §5.1.2),
-//! with the private keys and ciphertexts of the RSAES decryption vectors
-//! (`rsa_pkcs1_*_test.json`, `rsa_oaep_*_test.json`), whose padding is not
-//! this primitive's.
+//! The RSA private-key operation with the CRT key, checked against the
+//! public exponent (RSADP, RFC 8017 §5.1.2), with the private keys and
+//! ciphertexts of the RSAES decryption vectors (`rsa_pkcs1_*_test.json`,
+//! `rsa_oaep_*_test.json`), whose padding is not this primitive's.
 //!
-//! For each ciphertext of the modulus' length and below it, the result is
-//! `c^d mod n` (by the public-key operation with `d` as the exponent), RSAEP
-//! of it gives back the ciphertext, and for a valid PKCS #1 v1.5 vector it is
-//! an encryption block of type 2 holding the message. Other ciphertexts are
-//! refused.
+//! For each ciphertext of the modulus' length and below it, the operation
+//! succeeds, RSAEP of its result gives back the ciphertext, and for a valid
+//! PKCS #1 v1.5 vector it is an encryption block of type 2 holding the
+//! message. Other ciphertexts are refused.
 
 #![cfg(all(target_arch = "x86_64", feature = "alloc"))]
 
@@ -60,6 +59,8 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
     let n = trim(&k.modulus.0);
     let key = PrivateKey::from_crt(
         n,
+        &k.public_exponent.0,
+        &k.private_exponent.0,
         &k.prime1.0,
         &k.prime2.0,
         &k.exponent1.0,
@@ -67,8 +68,7 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
         &k.coefficient.0,
     )
     .unwrap_or_else(|e| panic!("{name}: {e}"));
-    let by_d = PublicKey::new(n, trim(&k.private_exponent.0)).unwrap();
-    let public = PublicKey::new(n, trim(&k.public_exponent.0)).unwrap();
+    let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
     for test in &group.tests {
         let id = test.tc_id;
         let ct = &test.case.ct.0;
@@ -89,9 +89,6 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
             continue;
         }
         key.private_op(ct, &mut out).unwrap();
-        let mut by_exp = vec![0; n.len()];
-        by_d.public_op(ct, &mut by_exp).unwrap();
-        assert_eq!(out, by_exp, "{name} tcId {id}");
         let mut back = vec![0; n.len()];
         public.public_op(&out, &mut back).unwrap();
         assert_eq!(&back, ct, "{name} tcId {id}");

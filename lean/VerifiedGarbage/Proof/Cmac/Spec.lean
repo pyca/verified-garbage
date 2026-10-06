@@ -89,7 +89,7 @@ theorem ctr32_one (ciph : Spec.Gcm.Block → Spec.Gcm.Block) (icb : Spec.Gcm.Blo
 theorem aesWith_bytes (nr : Nat) (w : List Byte) {x : List Byte} (h : x.length = 16) :
     Spec.Gcm.toBytes (Spec.Gcm.aesWith nr w (Spec.Gcm.ofBytes x)) = aesWith nr w x := by
   rw [Spec.Gcm.aesWith, toBytes_ofBytes (by simp), aesWith]
-  congr 2
+  refine congrArg (fun v => (Spec.Aes.cipher nr w v).toList) ?_
   exact Vector.ext fun i hi => by simpa only [Vector.getElem_ofFn] using Proof.Aes.toBytes_ofBytes h hi
 
 theorem bytesAt_length (m : Mem) (p : Addr) (n : Nat) : (Spec.Aes.bytesAt m p n).length = n := by

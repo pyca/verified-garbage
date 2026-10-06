@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86_64.Layout
 The Montgomery operations of `Proof/Mont/X86_64/Ops.lean` on the slots
 `c.sl i` of the working space, modulo `p` (`c.MP'`) or `n` (`c.MN'`): an
 operation writing slot `o` keeps every other slot but the temporary area's
-(`sv_keep`) and the moduli (`ModOk.keep`); and what a slot stands for after
+(`sv_keep`) and the moduli (`ModOkW.keep`); and what a slot stands for after
 a multiplication by `1` or by `R² mod m` (`toM_one_mul`, `toM_r2`).
 -/
 
@@ -25,7 +25,7 @@ theorem MP'_mo (c : Cfg) : c.MP'.mo = c.sl MP := rfl
 theorem MN'_mo (c : Cfg) : c.MN'.mo = c.sl MN := rfl
 
 /-- A slot apart from what an operation writes keeps its number. -/
-theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n < 7)
+theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n < 10)
     {base : Addr} (hn : base.toNat + size ≤ 2 ^ 64) {o : Nat} {s s' : State}
     (h : OpKeep M base (c.sl o) s s') {i : Nat} (hi : i < 45) (hio : i ≠ o) (hit : i ≠ TMP) :
     sv c base s' i = sv c base s i := by
@@ -37,35 +37,55 @@ theorem sv_keep {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) (h7 : c.n <
   · rw [hMn, hMt]; exact sl_apart c hit
 
 /-- The modulus in slot `j` survives an operation writing another slot. -/
-theorem _root_.VG.Proof.Mont.ModOk.keep {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
-    (hM : ModOk M size m s.mem base) {j : Nat} (hj : j < 45) (hmo : M.mo = c.sl j) (hMn : M.n = c.n)
-    (hM'n : M'.n = c.n) (hM't : M'.tmp = c.sl TMP) (h7 : c.n < 7) (hn : base.toNat + size ≤ 2 ^ 64)
+theorem _root_.VG.Proof.Mont.ModOkW.keep {M M' : Mod} {m : Nat} {base : Addr} {s s' : State}
+    (hM : ModOkW M size m s.mem base) {j : Nat} (hj : j < 45) (hmo : M.mo = c.sl j) (hMn : M.n = c.n)
+    (hM'n : M'.n = c.n) (hM't : M'.tmp = c.sl TMP) (h7 : c.n < 10) (hn : base.toNat + size ≤ 2 ^ 64)
     {o : Nat} (h : OpKeep M' base (c.sl o) s s') (hjo : j ≠ o) (hjt : j ≠ TMP) :
-    ModOk M size m s'.mem base :=
-  ⟨hM.n0, hM.n7, hM.mo, hM.tmp, hM.sep, by
+    ModOkW M size m s'.mem base :=
+  ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
     have := sv_keep hM'n hM't h7 hn h hj hjo hjt
     simp only [sv] at this
-    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv⟩
+    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red⟩
+
+/-- What an operation on slots needs of them: none is the temporary area,
+and the result is not the modulus (slot `jm`). -/
+abbrev SlotsOk (o a b jm : Nat) : Prop := o ≠ TMP ∧ a ≠ TMP ∧ b ≠ TMP ∧ o ≠ jm
+
+/-- The facts the operations take, on slots. -/
+theorem slots_apart {M : Mod} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}
+    (hMo : M.mo = c.sl jm) {o a b : Nat} (hS : SlotsOk o a b jm) :
+    (c.sl o + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ c.sl o) ∧
+    (c.sl a + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ c.sl a) ∧
+    (c.sl b + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ c.sl b) ∧
+    (c.sl o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ c.sl o) := by
+  rw [hMn, hMt, hMo]
+  exact ⟨sl_apart c hS.1, sl_apart c hS.2.1, sl_apart c hS.2.2.1, sl_apart c hS.2.2.2⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, on slots. -/
-theorem slMul_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o < 45)
-    (ha : a < 45) (hb : b < 45) (hB : sv c base s b < m) :
+theorem slMul_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}
+    (hMo : M.mo = c.sl jm) (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hS : SlotsOk o a b jm) (hB : sv c base s b < m) :
     WP isa (.block (mul M (c.sl o) (c.sl a) (c.sl b))) s fun s' => OpKeep M base (c.sl o) s s' ∧
       sv c base s' o < m ∧ sv c base s' o * 2 ^ (64 * c.n) % m = sv c base s a * sv c base s b % m := by
+  have hA := slots_apart hMn hMt hMo hS
   have := mul_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
-    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (by rw [hMn]; exact hB)
+    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) hA.1 hA.2.1 hA.2.2.1 hA.2.2.2
+    (by rw [hMn]; exact hB)
   rw [hMn] at this
   exact this
 
 /-- `[o] = ([a] + [b]) mod m`, on slots. -/
-theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 7) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o < 45)
-    (ha : a < 45) (hb : b < 45) (hAB : sv c base s a + sv c base s b < 2 * m) :
+theorem slAdd_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hMt : M.tmp = c.sl TMP) {jm : Nat}
+    (hMo : M.mo = c.sl jm) (h7 : c.n < 10) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
+    (ha : a < 45) (hb : b < 45) (hS : SlotsOk o a b jm) (hAB : sv c base s a + sv c base s b < 2 * m) :
     WP isa (.block (add M (c.sl o) (c.sl a) (c.sl b))) s fun s' => OpKeep M base (c.sl o) s s' ∧
       sv c base s' o = (sv c base s a + sv c base s b) % m := by
+  have hA := slots_apart hMn hMt hMo hS
   have := add_ok hs hM (o := c.sl o) (a := c.sl a) (b := c.sl b) (by rw [hMn]; exact sl_le c h7 ho)
-    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) (by rw [hMn]; exact hAB)
+    (by rw [hMn]; exact sl_le c h7 ha) (by rw [hMn]; exact sl_le c h7 hb) hA.1 hA.2.1 hA.2.2.1 hA.2.2.2
+    (by rw [hMn]; exact hAB)
   rw [hMn] at this
   exact this
 

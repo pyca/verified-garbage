@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.AArch64.StreamVerify
 
 Untrusted: everything here is checked by Lean. The layout of a one-shot call
 (`oneLay`): the state at `W + 16`, inside `work`; everything the pieces
-write is inside `work`, but for the data (`*_work`).
+write is inside `work`, but for the data (`*_work`) and the tag.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -79,15 +79,16 @@ theorem keep_body {W D : Addr} {n : Nat} {X : Region} (hX : X.Disjoint (workR W)
   · exact hX.sub_right h
   · exact hD
 
-/-- What `onePre` gives. -/
-structure OneLay (s : State) (n : Nat) : Prop where
-  lay : Lay (s.gpr .x0) (stackArg s 0 + BitVec.ofNat 64 16) (stackArg s 0)
-  perm : Perm (s.gpr .x0) (stackArg s 0 + BitVec.ofNat 64 16) (stackArg s 0) s
-  hsp : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 0) 8
-  nonce : (⟨s.gpr .x2, (s.gpr .x3).toNat⟩ : Region).Disjoint (workR (stackArg s 0))
-  aad : (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint (workR (stackArg s 0))
-  data : (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint (workR (stackArg s 0))
-  ctx : (⟨s.gpr .x0, 256⟩ : Region).Disjoint (workR (stackArg s 0))
+/-- What `oneCore` gives, with `work` the `w`-th of the `n` arguments on the stack. -/
+structure OneLay (s : State) (n w : Nat) : Prop where
+  lay : Lay (s.gpr .x0) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w)
+  perm : Perm (s.gpr .x0) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) s
+  hsp : ∀ i < n, InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 (8 * i)) 8
+  nonce : (⟨s.gpr .x2, (s.gpr .x3).toNat⟩ : Region).Disjoint (workR (stackArg s w))
+  aad : (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint (workR (stackArg s w))
+  data : (⟨s.gpr .x6, (s.gpr .x7).toNat⟩ : Region).Disjoint (workR (stackArg s w))
+  ctx : (⟨s.gpr .x0, 256⟩ : Region).Disjoint (workR (stackArg s w))
+  args : (args s n).Disjoint (workR (stackArg s w))
   nd : (⟨s.gpr .x2, (s.gpr .x3).toNat⟩ : Region).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   ad : (⟨s.gpr .x4, (s.gpr .x5).toNat⟩ : Region).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
   cd : (⟨s.gpr .x0, 256⟩ : Region).Disjoint ⟨s.gpr .x6, (s.gpr .x7).toNat⟩
@@ -99,24 +100,25 @@ structure OneLay (s : State) (n : Nat) : Prop where
   aadR : Covers [⟨s.gpr .x4, (s.gpr .x5).toNat⟩] (s.rd ++ s.wr)
   dataW : Covers [⟨s.gpr .x6, (s.gpr .x7).toNat⟩] s.wr
 
-theorem oneLay {s : State} {n : Nat} (hn : 1 ≤ n) (hs : onePre n s) : OneLay s n := by
-  simp only [onePre] at hs
-  obtain ⟨hrd, hwr, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
-  have sub16 : Region.Sub ⟨stackArg s 0 + BitVec.ofNat 64 16, 80⟩ (workR (stackArg s 0)) := Lay.wSub (by decide)
-  refine ⟨⟨wc, ?_, ww, dcw.sub_right sub16, dcw, ?_, ?_⟩, ⟨covers_mem (by rw [hrd, hwr]; simp),
-    covers_off (k := 2560) (covers_of_mem (by rw [hwr]; simp)) (show 16 + 80 ≤ 2560 by decide) (by decide),
-    covers_of_mem (by rw [hwr]; simp)⟩,
-    ?_, dnw, daw, ddw, dcw, dnd, dad, dcd, wn, wa, wd, hR, covers_mem (by rw [hrd, hwr]; simp),
-    covers_mem (by rw [hrd, hwr]; simp), covers_of_mem (by rw [hwr]; simp)⟩
+theorem oneLay {s : State} {n w : Nat} (hs : oneCore n w s) : OneLay s n w := by
+  simp only [oneCore] at hs
+  obtain ⟨mc, mn, ma, mg, md, mw, dcd, dcw, dnd, dnw, dad, daw, ddw, dda, dwa, wc, wn, wa, wd, ww, wsp, hR⟩ := hs
+  have sub16 : Region.Sub ⟨stackArg s w + BitVec.ofNat 64 16, 80⟩ (workR (stackArg s w)) := Lay.wSub (by decide)
+  refine ⟨⟨wc, ?_, ww, dcw.sub_right sub16, dcw, ?_, ?_⟩, ⟨covers_mem (List.mem_append_left _ mc),
+    covers_off (k := 2560) (covers_of_mem mw) (show 16 + 80 ≤ 2560 by decide) (by decide),
+    covers_of_mem mw⟩,
+    fun i hi => ?_, dnw, daw, ddw, dcw, dwa.symm, dnd, dad, dcd, wn, wa, wd, hR,
+    covers_mem (List.mem_append_left _ mn), covers_mem (List.mem_append_left _ ma), covers_of_mem md⟩
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := 16) (by decide), Nat.mod_eq_of_lt (by omega)]
     omega
-  · simpa using Offset.disjoint (stackArg s 0) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))
+  · simpa using Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 0) (k := 16) (.inr (by decide))
       (by decide) (by decide)
-  · have := Offset.disjoint (stackArg s 0) (d := 16) (n := 80) (e := 96) (k := 2464) (.inl (by decide))
+  · have := Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 96) (k := 2464) (.inl (by decide))
       (by decide) (by decide)
     exact this
-  · refine ⟨args s n, by rw [hrd]; simp, ?_⟩
-    simp only [args, stackArgAddr, Nat.mul_zero, Region.Contains, BitVec.sub_self, BitVec.toNat_zero]
-    omega
+  · refine ⟨args s n, List.mem_append_left _ mg, ?_⟩
+    have e : stackArgAddr s 0 = s.sp := by simp only [stackArgAddr, Nat.mul_zero, BitVec.add_zero]
+    simp only [args, e]
+    exact Offset.contains_base _ (by omega) (by omega)
 
 end VG.Proof.AesGcm.AArch64

@@ -15,7 +15,7 @@ the curve (`onCurve_add`).
 
 The proofs are in `ZMod C.p`, a field, with the image there (`ZRep`) of a
 triple over `Fin C.p` (`Rep`, `Law.lean`); the results over `Fin C.p` make
-`Good.law` (`LadderStep.lean`), which the proofs of the code take, so that
+`Good.law` (`Group.lean`), which the proofs of the code take, so that
 they need none of Mathlib's algebra.
 -/
 

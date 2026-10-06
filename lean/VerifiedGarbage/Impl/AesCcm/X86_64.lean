@@ -1,27 +1,29 @@
 import VerifiedGarbage.Impl.AesGcm.X86_64
-import VerifiedGarbage.Impl.CmacAes.X86_64
+import VerifiedGarbage.Impl.CmacAes.X86_64.Callee
 
 /-!
 # AES-CCM: x86-64 implementation
 
-`vg_aes_ccm_seal(schedule = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16], work = [rsp + 24], tag_len = [rsp + 32])`
+`vg_aes_ccm_seal(schedule = rdi, rounds = rsi, nonce = rdx, nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16], tag = [rsp + 24], tag_len = [rsp + 32], work = [rsp + 40])`
 and `vg_aes_ccm_open` with the same arguments (see `VG.Spec.Ccm.sealContract`
-and `openContract`), composed of calls of the verified `vg_cmac_aes_update`,
+and `openContract`), with the working space `work` as a last argument, which
+a frame on the stack allocates (`Impl.StackScratch.X86_64.withStackArgScratch`),
+composed of calls of the verified `vg_cmac_aes_update`,
 whose chaining (`Cᵢ = CIPH_K(Cᵢ₋₁ ⊕ Mᵢ)`) from a zero block is CCM's CBC-MAC
-(§6.1 steps 1–4), and `vg_aes_ctr32`. Like those, they are generic over the
-implementation of AES they call (`Ctr32`, and `sfx`, the suffix of the name
-of `vg_cmac_aes_update` made with it).
+(§6.1 steps 1–4), and `vg_aes_ctr32`. They are generic over the
+implementations of both they call (`Update` and `Ctr32`).
 
 ## The working space
 
-`work` (`W`, 2560 bytes): `[0, 16)` the tag (the received one, for `open`),
-`[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
+`work` (`W`, 2560 bytes): `[0, 16)` the tag `seal` computes, which it then
+copies to `tag`, `[32, 48)` a block `B`: `B₀`, the first block of the associated data or a
 last block padded with zeros, `[48, 64)` the counter block `Ctr₀`,
 `[64, 80)` the counter block passed to `vg_aes_ctr32`, `[80, 96)` a
 keystream block, `[96, 112)` the MAC `open` computes, `[112, 160)` our
 caller's `rbx, rbp, r12–r15`, `[160, 240)` the arguments and other public
 values kept across calls, `[240, 272)` the two tags `open` compares, padded
-with zeros (`cmp`, `recv`), and `[384, 2560)` the working space of the
+with zeros (AES-GCM's `cmp` and `recv`, which reads the received tag from
+`tag`), and `[384, 2560)` the working space of the
 functions called.
 
 ## Registers
@@ -56,12 +58,16 @@ before each call.
   length: the low 32 bits of `Ctrⱼ` are `j` modulo 2³² when `q ≥ 4`, and
   never wrap around when `q < 4`, as `j < 2^(8q)`.
 * `mask`: every byte of the data ANDed with `0 − ok`, for `ok` the result
-  of `cmp`.
+  of `cmp`, 16 bytes at a time (in an SSE register) and then the last
+  `len mod 16` one at a time.
+* `tagOut`: the first `tag_len` bytes of the tag at `W` copied to `tag`,
+  whose address is on the stack.
 
-`seal` computes the MAC of the payload, the tag, then encrypts the payload;
-`open` decrypts it, computes the MAC of the plaintext and the tag at
-`W + 96`, compares the first `tag_len` bytes of the two tags without a
-branch, and masks the data.
+`seal` computes the MAC of the payload, the tag, then encrypts the payload
+(`sealFront`) and copies the tag to `tag`; `open` decrypts it, computes the
+MAC of the plaintext and the tag at `W + 96` (`openFront`), compares the
+first `tag_len` bytes of it with the received tag at `tag` without a branch,
+and masks the data.
 
 Only the pointers, `rounds`, the lengths and `tag_len` can affect timing:
 the branches are on those, and so are the numbers of calls, bytes copied and
@@ -72,7 +78,7 @@ namespace VG.Impl.AesCcm.X86_64
 
 open VG.X86_64
 open VG.Impl.Aes.X86_64 (Ctr32)
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr copyLoop xorLoop minLen recv cmp maskTail)
 
 /-! ## The working space -/
 
@@ -106,9 +112,9 @@ def restore : List Instr := saved.map fun (r, d) => .mov r (.mem (at_ .r15 d))
 def zero16 (d : Nat) : List Instr :=
   [.mov32 .rax (imm 0), .store (at_ .r15 d) .rax, .store (at_ .r15 (d + 8)) .rax]
 
-variable (c : Ctr32) (sfx : String)
+variable (u : Impl.CmacAes.X86_64.Update) (c : Ctr32)
 
-def callUpdate : Prog isa := .call ("vg_cmac_aes_update" ++ sfx) (Impl.CmacAes.X86_64.update c)
+def callUpdate : Prog isa := .call u.name u.code
 
 def callCtr : Prog isa := .call c.name c.code
 
@@ -122,18 +128,18 @@ def updArgs (y : Nat) : List Instr :=
 
 /-- `B` chained into the MAC state at `W + y`. -/
 def updBlock (y : Nat) : Prog isa :=
-  .seq (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) (callUpdate c sfx)
+  .seq (.block (updArgs y ++ ptr .rcx .r15 bO ++ [.mov32 .r8 (imm 1)])) (callUpdate u)
 
 /-- The `rbp` bytes at `r12`, padded with zeros to whole blocks, chained into
 the MAC state at `W + y`. -/
 def absorbPad (y : Nat) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rbp), .shift .shr .r8 4, .alu .test .r8 (.reg .r8)])
-  (.seq (.ite .e (.block []) (.seq (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) (callUpdate c sfx)))
+  (.seq (.ite .e (.block []) (.seq (.block (updArgs y ++ [.mov .rcx (.reg .r12)])) (callUpdate u)))
   (.seq (.block [.mov .rcx (.reg .rbp), .alu .and .rcx (imm 15), .alu .test .rcx (.reg .rcx)])
     (.ite .e (.block [])
       (.seq (.block (zero16 bO ++ [.mov .rsi (.reg .rbp), .alu .sub .rsi (.reg .rcx), .alu .add .rsi (.reg .r12)] ++
           ptr .rdi .r15 bO))
-        (.seq copyLoop (updBlock c sfx y))))))
+        (.seq copyLoop (updBlock u y))))))
 
 /-- `B` zeroed, and the encoding (A.2.2) of the length `rbp` (not 0) of the
 associated data at its start, its length (2, 6 or 10) in `rbx`. -/
@@ -158,12 +164,12 @@ def aadHead (y : Nat) : Prog isa :=
   (.seq minLen
   (.seq (.block [.mov .rsi (.reg .r12), .mov .rdi (.reg .r15), .alu .add .rdi (.reg .rbx),
       .alu .add .rdi (imm bO), .alu .add .r12 (.reg .rcx), .alu .sub .rbp (.reg .rcx)])
-  (.seq copyLoop (updBlock c sfx y))))
+  (.seq copyLoop (updBlock u y))))
 
 /-- The associated data, formatted (A.2.2) and chained into `W + y`. -/
 def aad (y : Nat) : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO)), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block []) (.seq (aadHead c sfx y) (absorbPad c sfx y)))
+    (.ite .e (.block []) (.seq (aadHead u y) (absorbPad u y)))
 
 /-- `Ctr₀ = [q − 1]₈ ‖ N ‖ 0⁸q` (A.3) at `W + 48`. -/
 def ctrs : Prog isa :=
@@ -190,15 +196,15 @@ def b0 (y : Nat) : Prog isa :=
   (.seq (.block ([.mov .rcx (.mem (at_ .r15 c0O)), .mov .rdx (.mem (at_ .r15 (c0O + 8))),
       .mov .rsi (.mem (at_ .r15 lenO)), .store (at_ .r15 bO) .rcx, .store8 (at_ .r15 bO) .rax, .bswap .rsi,
       .alu .or .rsi (.reg .rdx), .store (at_ .r15 (bO + 8)) .rsi] ++ zero16 y))
-    (updBlock c sfx y)))
+    (updBlock u y)))
 
 /-- `Yᵣ`, the CBC-MAC of the formatted nonce, associated data and payload
 (§6.1 steps 1–4), at `W + y`. -/
 def mac (y : Nat) : Prog isa :=
-  .seq (b0 c sfx y)
-  (.seq (aad c sfx y)
+  .seq (b0 u y)
+  (.seq (aad u y)
   (.seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))])
-    (absorbPad c sfx y)))
+    (absorbPad u y)))
 
 /-- `Yᵣ ⊕ CIPH_K(Ctr₀)` at `W + y`, by `vg_aes_ctr32` on it with a copy of
 `Ctr₀` (which it increments). -/
@@ -243,45 +249,52 @@ def ctr : Prog isa :=
 
 /-! ## Masking the data -/
 
-/-- `[r12 + r10]`. -/
-def maskByte : MemOp := { base := .r12, index := some .r10 }
-
-/-- Every byte of the data ANDed with `0 − ok`. -/
+/-- Every byte of the data ANDed with `0 − ok` (`maskTail`): its whole
+blocks, then the rest. -/
 def mask : Prog isa :=
   .seq (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .r11 (imm 0),
-      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .alu .test .rbp (.reg .rbp)])
-    (.ite .e (.block [])
-      (.loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
-        .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne))
+      .alu .sub .r11 (.mem (at_ .r15 okO)), .mov32 .r10 (imm 0), .mov .rcx (.reg .rbp),
+      .shift .shr .rcx 4, .alu .test .rcx (.reg .rcx)])
+    maskTail
 
 /-! ## The functions -/
 
-/-- Saves the registers in the working space (whose address, the ninth
+/-- Saves the registers in the working space (whose address, the eleventh
 argument, is on the stack above the return address), keeps `W` in `r15` and
-the key schedule in `r13`, and the other arguments in `W`. -/
+the key schedule in `r13`, and the other arguments but `tag` in `W`. -/
 def entry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 24)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
+  [.mov .rax (.mem (at_ .rsp 40)), .mov .r10 (.mem (at_ .rsp 8)), .mov .r11 (.mem (at_ .rsp 16))] ++ save .rax ++
     [.mov .r15 (.reg .rax), .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi,
       .store (at_ .r15 nonceO) .rdx, .store (at_ .r15 nlenO) .rcx, .store (at_ .r15 aadO) .r8,
       .store (at_ .r15 alenO) .r9, .store (at_ .r15 dataO) .r10, .store (at_ .r15 lenO) .r11,
       .mov .rax (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rax]
 
+/-- The first `tag_len` bytes of the tag at `W` copied to `tag`, whose
+address is at `[rsp + 24]`. -/
+def tagOut : Prog isa :=
+  .seq (.block [.mov .rdi (.mem (at_ .rsp 24)), .mov .rsi (.reg .r15), .mov .rcx (.mem (at_ .r15 tlO))]) copyLoop
+
+/-- `seal` after its entry, up to the tag: `Ctr₀`, the MAC and the tag at
+`W`, and the payload encrypted. -/
+def sealFront : Prog isa := .seq ctrs (.seq (mac u 0) (.seq (tag c 0) (ctr c)))
+
 /-- `vg_aes_ccm_seal`. -/
 def «seal» : Prog isa :=
-  .seq (.block entry) (.seq ctrs (.seq (mac c sfx 0) (.seq (tag c 0) (.seq (ctr c) (.block restore)))))
+  .seq (.block entry) (.seq (sealFront u c) (.seq tagOut (.block restore)))
 
-/-- `vg_aes_ccm_open`. -/
+/-- `open` after its entry, up to the comparison: `Ctr₀`, the payload
+decrypted, and the MAC of the plaintext and its tag at `W + 96`. -/
+def openFront : Prog isa := .seq ctrs (.seq (ctr c) (.seq (mac u uO) (tag c uO)))
+
+/-- `vg_aes_ccm_open`, with the received tag at `tag` (`[rsp + 24]`). -/
 def «open» : Prog isa :=
   .seq (.block entry)
-  (.seq ctrs
-  (.seq (ctr c)
-  (.seq (mac c sfx uO)
-  (.seq (tag c uO)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))])
+  (.seq (openFront u c)
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
   (.seq recv
   (.seq (cmp uO)
   (.seq (.block [.store (at_ .r15 okO) .rax])
   (.seq mask
-    (.block ([.mov .rax (.mem (at_ .r15 okO))] ++ restore)))))))))))
+    (.block ([.mov .rax (.mem (at_ .r15 okO))] ++ restore))))))))
 
 end VG.Impl.AesCcm.X86_64

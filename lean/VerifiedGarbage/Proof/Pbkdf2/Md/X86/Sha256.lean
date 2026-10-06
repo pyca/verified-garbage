@@ -61,12 +61,6 @@ where
       show 96 = 32 + 64 from rfl, show 112 ≤ 8 * 20 by decide, show 20 ≤ 64 by decide,
       show 32 ≤ 32 ∧ 32 ≤ 64 by decide⟩
 
-/-- `H` without the names and code of the functions it calls: the code
-between the calls depends on nothing else. -/
-def shapeOf (H : Hash) : Hash :=
-  ⟨⟨H.st.B, H.st.S, H.st.D, H.st.F, H.st.W, "", .block [], "", .block [], "", .block []⟩, H.N, H.L, H.be, H.so,
-    "", .block [], H.out⟩
-
 /-- SHA-256's sizes and digest code, without the functions: `shapeOf` of
 every backend's `sha256M`, written out, so that the kernel reduces each side
 to it field by field rather than comparing the backends' functions. -/
@@ -107,15 +101,6 @@ theorem sha256Shape_finChecks : HmacFin.Checks sha256Shape := by
     mid := ⟨?_, ?_⟩
     out := ⟨?_, ?_⟩ }
   taint_decide_all
-
-theorem iterChecks_of_shape {H : Hash} (h : Iterate.Checks (shapeOf H)) : Iterate.Checks H :=
-  ⟨h.pro, h.load, h.mid, h.tail, h.restore⟩
-
-theorem initChecks_of_shape {H : Hash} (h : HmacInit.Checks (shapeOf H)) : HmacInit.Checks H :=
-  ⟨h.pro, h.blocks, h.toOuter, h.restore⟩
-
-theorem finChecks_of_shape {H : Hash} (h : HmacFin.Checks (shapeOf H)) : HmacFin.Checks H :=
-  ⟨h.pro, h.fin1, h.mid, h.out⟩
 
 theorem sha256_iterChecks (v : Sha256Stream) (cmpN : String) (cmpC : Prog isa) :
     Iterate.Checks (sha256M v cmpN cmpC) :=

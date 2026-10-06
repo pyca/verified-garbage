@@ -52,6 +52,44 @@ theorem pointAddCachedWide_ok {s : State} {base : Addr} (hs : Scratch s base)
   rw [hv]
   exact ⟨hk, pointAddCached_eval _ q hq, pointAddCached_high _⟩
 
+def addAffineResult (e : Env) : Spec.Ed25519.Point :=
+  let a := (e 1 - e 0) * e 4
+  let b := (e 1 + e 0) * e 5
+  let c := e 3 * e 6
+  let dd := e 2 + e 2
+  ⟨(b - a) * (dd - c), (dd + c) * (b + a), (dd - c) * (dd + c), (b - a) * (b + a)⟩
+
+theorem pointAddAffine_formula (e : Env) :
+    point (evalOps pointAddAffineOps e) 0 1 2 3 = addAffineResult e := rfl
+
+/-- The addition of an affine cached point, `[Y - X, Y + X, 2dT]` in slots 4–6 with `2Z = 2`. -/
+theorem pointAddAffine_eval (e : Env) (q : Spec.Ed25519.Point)
+    (hq : (⟨e 4, e 5, e 6, 2⟩ : Spec.Ed25519.Point) = cache q) :
+    point (evalOps pointAddAffineOps e) 0 1 2 3 = Spec.Ed25519.pointAdd (point e 0 1 2 3) q := by
+  have h4 : e 4 = q.Y - q.X := congrArg Spec.Ed25519.Point.X hq
+  have h5 : e 5 = q.Y + q.X := congrArg Spec.Ed25519.Point.Y hq
+  have h6 : e 6 = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z hq
+  have h7 : (2 : Spec.X25519.Fe) = q.Z * 2 := congrArg Spec.Ed25519.Point.T hq
+  have hdd : e 2 + e 2 = e 2 * (q.Z * 2) := by rw [← h7]; grind
+  rw [pointAddAffine_formula]
+  simp only [addAffineResult, point, Spec.Ed25519.pointAdd, h4, h5, h6, hdd]
+  congr 1 <;> grind
+
+theorem pointAddAffine_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
+    evalOps pointAddAffineOps e i = e i :=
+  point_ops_high _ (by decide) e i hi
+
+theorem pointAddAffineWide_ok {s : State} {base : Addr} (hs : Scratch s base)
+    (q : Spec.Ed25519.Point)
+    (hq : (⟨env s.mem base 4, env s.mem base 5, env s.mem base 6, 2⟩ : Spec.Ed25519.Point) = cache q) :
+    WP isa (.block (pointAddAffine fld)) s fun t =>
+      Keep base s t ∧ point (env t.mem base) 0 1 2 3 =
+        Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) q ∧
+      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
+  refine WP.mono (fieldCodeWide_ok hs pointAddAffineOps) fun t ⟨hk, hv⟩ => ?_
+  rw [hv]
+  exact ⟨hk, pointAddAffine_eval _ q hq, pointAddAffine_high _⟩
+
 theorem cachedFieldStore_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (v : Spec.X25519.Fe) (dst : Nat) (ho : o + dst + 32 ≤ 8192) :
     WP isa (.block (cachedFieldStore v dst)) s fun t =>

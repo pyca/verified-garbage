@@ -15,10 +15,10 @@ against the contract.
 
 Each function calls `vg_aes_ctr32` or `vg_ghash` in a frame that pushes
 their two stack arguments, so uses 8 bytes of stack (`init` also calls
-`vg_aes_expand_key`, which takes no stack arguments). `init`, `stream_init`,
-`stream_aad`, `stream_encrypt` and `stream_decrypt` also keep their working
-space in a frame of their own (2560 bytes for `init`, 2576 for `stream_init`
-and `stream_aad`, 2592 for the others, `Proof/AesGcm/Arm/Frame.lean`).
+`vg_aes_expand_key_scratch`, which takes no stack arguments). Every function also
+keeps its working space in a frame of its own (2560 bytes for `init`, 2576
+for `stream_init` and `stream_aad`, 2592 for the others,
+`Proof/AesGcm/Arm/Frame.lean`).
 -/
 
 namespace VG.Artifacts.AesGcm.Arm
@@ -26,7 +26,7 @@ namespace VG.Artifacts.AesGcm.Arm
 open VG.Proof.AesGcm.Arm
 
 /-- How `init` is built. -/
-def initNote : String := "This implementation calls `vg_aes_expand_key` for the key schedule and \
+def initNote : String := "This implementation calls `vg_aes_expand_key_scratch` for the key schedule and \
   `vg_aes_ctr32` to encrypt the zero block into the hash subkey."
 
 /-- How `stream_init` and `stream_aad` are built. -/
@@ -47,18 +47,18 @@ def artifacts : List Artifact := [
   { Spec.Gcm.sealApi with
     target := Arm.target
     doc := Spec.Gcm.sealApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.«seal»
-    contract := Spec.Gcm.sealContract Arm.abi 8
-    stack := 8
-    verified := seal_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.«seal»
+    contract := Spec.Gcm.sealContract Arm.abi 2600
+    stack := 2600
+    verified := seal_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.openApi with
     target := Arm.target
     doc := Spec.Gcm.openApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.«open»
-    contract := Spec.Gcm.openContract Arm.abi 8
-    stack := 8
-    verified := open_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.«open»
+    contract := Spec.Gcm.openContract Arm.abi 2600
+    stack := 2600
+    verified := open_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamInitApi with
     target := Arm.target
@@ -95,18 +95,18 @@ def artifacts : List Artifact := [
   { Spec.Gcm.streamFinishApi with
     target := Arm.target
     doc := Spec.Gcm.streamFinishApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.streamFinish
-    contract := Spec.Gcm.streamFinishContract Arm.abi 8
-    stack := 8
-    verified := streamFinish_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 5 Impl.AesGcm.Arm.streamFinish
+    contract := Spec.Gcm.streamFinishContract Arm.abi 2600
+    stack := 2600
+    verified := streamFinish_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Gcm.streamVerifyApi with
     target := Arm.target
     doc := Spec.Gcm.streamVerifyApi.doc (notes := [callNote])
-    code := Impl.AesGcm.Arm.streamVerify
-    contract := Spec.Gcm.streamVerifyContract Arm.abi 8
-    stack := 8
-    verified := streamVerify_verified
+    code := Impl.StackScratch.Arm.withStackScratch 2592 6 Impl.AesGcm.Arm.streamVerify
+    contract := Spec.Gcm.streamVerifyContract Arm.abi 2600
+    stack := 2600
+    verified := streamVerify_framed
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.AesGcm.Arm

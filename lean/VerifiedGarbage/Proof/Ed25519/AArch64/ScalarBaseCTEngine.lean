@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
-import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseLit
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombErase
 import VerifiedGarbage.Proof.Ed25519.AArch64.CTSupport
 
 /-! Expanding the secret scalar's bits, the comb and the encoding have a public
@@ -19,7 +19,8 @@ def BaseEnginePre (base k : Addr) (s : State) : Prop :=
 theorem scalarBaseEngine_ct (base k : Addr) :
     CT (fun x y => BaseEnginePre base k x ∧ BaseEnginePre base k y)
       scalarBaseEngine (fun _ _ => True) := by
-  apply CT.taint (Taint.ofRegs [.x0, .x1]) _ (by taint_decide)
+  apply CT.taint (Taint.ofRegs [.x0, .x1]) _
+    (Taint.isSome_check_of_eraseImm scalarBaseEngine_eraseImm (by taint_decide))
   intro x y h
   apply agree_ofRegs
   intro r hr

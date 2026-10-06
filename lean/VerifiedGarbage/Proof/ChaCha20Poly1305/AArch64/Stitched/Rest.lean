@@ -17,23 +17,25 @@ open VG.Proof.ChaCha20 (ctr)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Spec.ChaCha20 (stateAt keystream)
 
+variable {e : Bool}
+
 /-- The data after the chunks. -/
 abbrev restR (s₀ : State) (T : Nat) : Region :=
   ⟨dp s₀ + BitVec.ofNat 64 (512 * T), L s₀ - 512 * T⟩
 
 theorem data_in {s₀ : State} {k : Nat} (hk : k < L s₀) :
     (dR s₀).Contains (dp s₀ + BitVec.ofNat 64 k) 1 :=
-  Offset.contains_base _ (by omega) (by have h : L s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt; omega)
+  Offset.contains_base _ (by omega) (by have h : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt; omega)
 
 theorem not_rest {s₀ : State} {T k : Nat} (hk : k < 512 * T) (hT : 512 * T ≤ L s₀) :
     ¬ (restR s₀ T).Contains (dp s₀ + BitVec.ofNat 64 k) 1 := by
-  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
+  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   simp only [Region.Contains]
   rw [Offset.sub_toNat' _ (by omega) (by omega)]
   split <;> omega
 
 /-- The data from `512 T`, encrypted from the counter after `8 T` blocks. -/
-theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre s₀) {s w : State}
+theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre e s₀) {s w : State}
     {T : Nat} (hle : 512 * T ≤ L s₀)
     (hx0 : w.gpr .x0 = off (cx s₀) 64) (hx1 : w.gpr .x1 = dp s₀ + BitVec.ofNat 64 (512 * T))
     (hx2 : w.gpr .x2 = BitVec.ofNat 64 (L s₀ - 512 * T)) (hx3 : w.gpr .x3 = off (cx s₀) 128)
@@ -47,15 +49,15 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
       Kept [sub s₀ 64 384, dR s₀] w s' ∧ Frame [sub s₀ 64 384, restR s₀ T] w.mem s'.mem ∧
       bytesAt s'.mem (dp s₀) (L s₀) =
         Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (bytesAt s.mem (dp s₀) (L s₀)) := by
-  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
+  have hL : L s₀ < 2 ^ 64 := (s₀.gpr .x5).isLt
   have ts : Region.Sub (restR s₀ T) (dR s₀) := Offset.sub_base _ (by omega)
   have hw : Covers [⟨off (cx s₀) 64, 64⟩, restR s₀ T, ⟨off (cx s₀) 128, 320⟩] w.wr := by
     refine Covers.of_sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨ctxR s₀, by simp [hwr, hp.wr], 64, rfl, by show 64 + 64 ≤ 1024; omega⟩
-    · exact ⟨dR s₀, by simp [hwr, hp.wr], 512 * T, rfl, by show 512 * T + (L s₀ - 512 * T) ≤ L s₀; omega⟩
-    · exact ⟨ctxR s₀, by simp [hwr, hp.wr], 128, rfl, by show 128 + 320 ≤ 1024; omega⟩
+    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 64, rfl, by show 64 + 64 ≤ 760; omega⟩
+    · exact ⟨dR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 512 * T, rfl, by show 512 * T + (L s₀ - 512 * T) ≤ L s₀; omega⟩
+    · exact ⟨ctxR s₀, by rw [hwr]; first | exact hp.ctx_wr | exact hp.d_wr, 128, rfl, by show 128 + 320 ≤ 760; omega⟩
   refine xor_call v hx0 hx1 hx2 hx3 (by omega)
     ((hp.c_d.sub_left (sub_ctx s₀ (k := 64) (n := 64) (by lit_omega))).sub_right ts)
     (sub_disj s₀ (a := 64) (n := 64) (b := 128) (m := 320) (by lit_omega) (by lit_omega) (by lit_omega))
@@ -100,7 +102,7 @@ theorem rest_call (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre
       rw [x, VG.Proof.ChaCha20.AArch64.Mixed8.ks_shift _ hk (t := T) (by omega)]
 
 /-- The data before the rest is kept. -/
-theorem prefix_rest {s₀ : State} (hp : APre s₀) {m m' : Mem} {T n : Nat}
+theorem prefix_rest {s₀ : State} (hp : APre e s₀) {m m' : Mem} {T n : Nat}
     (hf : Frame [sub s₀ 64 384, restR s₀ T] m m') (hn : n ≤ 512 * T) (hT : 512 * T ≤ L s₀) :
     bytesAt m' (dp s₀) n = bytesAt m (dp s₀) n := by
   simp only [bytesAt]

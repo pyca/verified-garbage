@@ -3,6 +3,13 @@
 This library is written entirely by LLMs, so these rules are what keep it
 trustworthy. Read `lean/README.md` first.
 
+For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
+before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
+
+After rebasing a long-running session onto `main`, consider pulling and
+restoring the latest cache again to avoid rebuilding upstream Lean changes.
+Lake rebuilds your changes and anything not yet cached.
+
 ## Hard rules
 
 * **All assembly comes from Lean.** Never write `asm!`, `naked_asm!`,
@@ -147,9 +154,21 @@ instructions in an ISA model) go in their own PR before either.
    takes a variant of each, in path order: the emitter applies it to every
    combination (e.g. Argon2's x86-64 derivation,
    `Generic/Blake2b/Argon2Compress/X86_64/Argon2.lean`, calling BLAKE2b's
-   streaming functions and Argon2's `G`). Never list the
+   streaming functions and Argon2's `G`). Its instances are named by
+   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
+   each interface whose variant is not the baseline, in path order
+   (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline),
+   since variants of different interfaces may share a suffix; callers of one
+   interface append the suffix alone. Never list the
    implementations in the caller: a new implementation is a new variant
    file, and its callers follow.
+   A function whose proof takes a Weierstrass curve's group law (`Law`,
+   `Proof/Weierstrass/Law.lean`) is registered generic over it the same
+   way: the law is the one variant of the interface `<Curve>` on each target
+   (`Variants/<Curve>/<Target>/Law.lean`, the only files that import the
+   Mathlib algebra of its proof), and the registration file is
+   `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
+   when it is generic over an implementation too). The law has no suffix.
 5. Regenerate `src/asm/`, build the public Rust API on top of the primitive,
    and test it against the Wycheproof vectors in `tests/wycheproof/` (set
    `WYCHEPROOF_ROOT` to a checkout of C2SP/wycheproof). Benchmark the new
@@ -274,6 +293,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
   caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
   taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
+  A summary pays when declarations or modules share it: within one
+  `taint_decide`, the kernel already analyses identical code from the same
+  taint once, so splitting one check into summaries makes it slower. Give a
+  summary the smallest taint its callers need (public slots that are never
+  read back as addresses cost the kernel at every store). Code that differs
+  only in immediates (table selections) has the same taint: check one copy
+  (`Proof/Framework/AArch64/TaintErase.lean`, `constantTime_eraseImm_of_eq`).
 * **Tactics run compiled:** a module defining tactics, elaborators,
   simprocs or `MetaM` functions that imports only Lean core and precompiled
   modules goes in `NativeTactics` (lakefile); the interpreter runs it an
@@ -338,7 +364,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `compress H (blockAt m p) = compress H (parseBlock f)` or
   `bytesAt m p n ++ [0x80] = xs ++ [0x80]`, use
   `refine congrArg (compress _) ?_` or `refine congrArg (· ++ [0x80]) ?_`,
-  not `congr 1`, which first tries to unify both sides.
+  not `congr 1`, which first tries to unify both sides. A lemma proved
+  `:= rfl` is one `simp` uses by definitional unfolding, which the kernel
+  then repeats; where a profile shows that (e.g. `exec` of an instruction,
+  `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
+  framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
+  slower.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one
@@ -449,6 +480,10 @@ to test is a line of a CPU's `runs` in `rust-cpu-features`
 (`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
 a run never repeats another: add tests to a CPU's line for those features.
+A CPU whose lines take long runs as shards (matrix entries with a `shard`
+of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
+lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
+one up, add a shard, never split its lines by hand.
 To test the baseline ISA's implementations:
 
 ```sh

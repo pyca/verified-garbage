@@ -84,7 +84,7 @@ def XBinOp.name : XBinOp → String
   | .pmulhw => "pmulhw" | .packssdw => "packssdw" | .punpcklwd => "punpcklwd"
   | .punpckhwd => "punpckhwd"
   | .aesenc => "aesenc" | .aesenclast => "aesenclast" | .aesdec => "aesdec"
-  | .aesdeclast => "aesdeclast" | .aesimc => "aesimc"
+  | .aesdeclast => "aesdeclast" | .aesimc => "aesimc" | .pcmpeqd => "pcmpeqd"
 
 def XShiftOp.name : XShiftOp → String
   | .pslld => "pslld" | .psrld => "psrld" | .psllq => "psllq" | .psrlq => "psrlq"
@@ -110,7 +110,7 @@ def VBinOp.name : VBinOp → String
   | .vpaddw => "vpaddw" | .vpsubw => "vpsubw" | .vpsubd => "vpsubd" | .vpmullw => "vpmullw"
   | .vpmulhw => "vpmulhw" | .vpackssdw => "vpackssdw" | .vpunpcklwd => "vpunpcklwd"
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
-  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast"
+  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vpcmpeqd => "vpcmpeqd"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
@@ -140,6 +140,7 @@ def VOp.asm : VOp → String
   | .vpmadd52huq l d a b => s!"vpmadd52huq {d.vname l}, {a.vname l}, {b.vname l}"
   | .vprold l d r n => s!"vprold {d.vname l}, {r.vname l}, {n.toNat}"
   | .vpternlogd l d a b n => s!"vpternlogd {d.vname l}, {a.vname l}, {b.vname l}, {n.toNat}"
+  | .vprorq l d r n => s!"vprorq {d.vname l}, {r.vname l}, {n.toNat}"
 
 def ZBinOp.name : ZBinOp → String
   | .vpaddd => "vpaddd" | .vpxord => "vpxord"
@@ -186,7 +187,10 @@ def AluOp.name : AluOp → String
   | .or => "or" | .xor => "xor" | .cmp => "cmp" | .test => "test"
 
 def ShiftOp.name : ShiftOp → String
-  | .ror => "ror" | .shr => "shr"
+  | .ror => "ror" | .shr => "shr" | .shl => "shl"
+
+def Cond.name : Cond → String
+  | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
 def Instr.asm : Instr → List String
   | .mov d s => [s!"mov {d.name}, {s.str}"]
@@ -207,6 +211,7 @@ def Instr.asm : Instr → List String
   | .shift op d n => [s!"{op.name} {d.name}, {n}"]
   -- `movabs` always selects the `REX.W + B8+rd io` encoding, whatever the value.
   | .movImm64 d v => [s!"movabs {d.name}, {v.toInt}"]
+  | .leaSym d name => [s!"lea {d.name}, [rip + {name}]"]
   | .movdquLoad d m => [s!"movdqu {d.name}, {m.str128}"]
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
   | .xop op => [op.asm]
@@ -220,6 +225,8 @@ def Instr.asm : Instr → List String
   | .vmovdqu32Store m r => [s!"vmovdqu32 {m.str512}, {r.zname}"]
   | .vbroadcasti32x4 d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .zbcst op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str}" ++ "{1to8}"]
+  | .vpmadd52Load hi d a m =>
+    [s!"vpmadd52{if hi then "h" else "l"}uq {d.vname .l256}, {a.vname .l256}, {m.strV .l256}"]
   | .stmxcsr m => [s!"stmxcsr {m.str32}"]
   | .ldmxcsr m => [s!"ldmxcsr {m.str32}"]
   | .lfence => ["lfence"]
@@ -227,13 +234,11 @@ def Instr.asm : Instr → List String
   | .mulx hi lo s => [s!"mulx {hi.name}, {lo.name}, {s.str}"]
   | .adcx d s => [s!"adcx {d.name}, {s.str}"]
   | .adox d s => [s!"adox {d.name}, {s.str}"]
+  | .cmov c d s => [s!"cmov{c.name} {d.name}, {s.str}"]
   | .push rs => rs.map fun r => s!"push {r.name}"
   | .pop r k => List.replicate k s!"pop {r.name}"
   | .alloc bytes => [s!"lea rsp, [rsp-{bytes}]"]
   | .free bytes => [s!"lea rsp, [rsp+{bytes}]"]
-
-def Cond.name : Cond → String
-  | .e => "e" | .ne => "ne" | .b => "b" | .ae => "ae"
 
 /-- Whether the displacement of `m` fits in the 32-bit field it is encoded
 in, which the processor sign-extends: `-2^31 ≤ disp < 2^31`. SDM Vol. 2
@@ -253,13 +258,14 @@ def Src.memOps : Src → List MemOp
 
 /-- The memory operands of an instruction. -/
 def Instr.memOps : Instr → List MemOp
-  | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s =>
-    s.memOps
+  | .mov _ s | .alu _ _ s | .mov32 _ s | .alu32 _ _ s | .mulx _ _ s | .adcx _ s | .adox _ s
+  | .cmov _ _ s => s.memOps
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vmovdqu32Load _ m
-  | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .stmxcsr m | .ldmxcsr m => [m]
+  | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
+  | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
-  | .shift .. | .movImm64 .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
+  | .shift .. | .movImm64 .. | .leaSym .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .lfence | .mul _
   | .push _ | .pop .. | .alloc _ | .free _ => []
 
 def printer : Printer isa where
@@ -268,6 +274,11 @@ def printer : Printer isa where
   jump l := s!"jmp {l}"
   ret := ["ret"]
   call := "call"
+  -- The static's RIP-relative address, which `TCB/Rust.lean` writes with
+  -- its symbol; `asm` gives the same text, for reading.
+  symLines
+    | .leaSym d name => some [.sym s!"lea {d.name}, " .ripRel name]
+    | _ => none
   /- Every function starts on a 64-byte boundary, a cache line: the unit
   AMD's op cache builds its entries from (Zen 4 Software Optimization Guide,
   57647, §2.9.1), and one of the 16- and 32-byte windows Intel's decoders and

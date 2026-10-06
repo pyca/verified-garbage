@@ -24,7 +24,7 @@ theorem mul_val4 (v x y z w : Nat) : v * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192
 /-- A word times four words. -/
 theorem word_mul_lt (w : BitVec 64) (f : Nat) (hf : f < 2 ^ 256) :
     w.toNat * f ≤ (2 ^ 64 - 1) * (2 ^ 256 - 1) :=
-  Nat.mul_le_mul (by have := w.isLt; omega) (by omega)
+  Nat.mul_le_mul (by have := w.isLt; omega_arith) (by omega_arith)
 
 /-! ## Row 0 -/
 
@@ -91,7 +91,7 @@ theorem rowX0_ok {s : State} {base : Addr} (hs : Scr s base) {a b : Nat} (ha : S
     k6.1 .r10 (by decide), k7.1 .r11 (by decide)]
   simp only [Bool.toNat_false, Nat.add_zero] at e4
   have := Bool.toNat_le c7
-  omega
+  omega_arith
 
 /-! ## Rows 1 to 3 -/
 
@@ -168,13 +168,13 @@ theorem rowR'_ok {s : State} {base : Addr} (hs : Scr s base) {a b i : Nat} (ha :
     simp only [val4]
     have := (s.gpr r0).isLt; have := (s.gpr r1).isLt; have := (s.gpr r2).isLt
     have := (s.gpr r3).isLt
-    omega
+    omega_arith
   simp only [X86_64.fe, val4, mul_val4] at b1 b2 ⊢
   rw [k6.1 r0 (by nm), k5.1 r0 (by nm), k4.1 r0 (by nm), k6.1 r1 (by nm), k5.1 r1 (by nm),
     k6.1 r2 (by nm)]
   simp only [Bool.toNat_false, Nat.add_zero, Nat.mul_zero] at e3
   have := Bool.toNat_le c6; have := Bool.toNat_le o6
-  omega
+  omega_arith
 
 /-! ## The reduction -/
 
@@ -237,7 +237,7 @@ theorem reduceX_ok (s : State) :
     have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
     have := (s.gpr .r11).isLt; have := (s.gpr .r12).isLt; have := (s.gpr .r13).isLt
     have := (s.gpr .r14).isLt; have := (s.gpr .r15).isLt
-    omega
+    omega_arith
   have hv : val4 (s6.gpr .r8) (s6.gpr .r9) (s6.gpr .r10) (s6.gpr .r11) +
       2 ^ 256 * (s6.gpr .r12).toNat =
         val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) +
@@ -247,14 +247,14 @@ theorem reduceX_ok (s : State) :
     simp only [val4] at hB ⊢
     have := (s6.gpr .r11).isLt; have := (s6.gpr .r12).isLt
     have := Bool.toNat_le c6; have := Bool.toNat_le o6
-    omega
+    omega_arith
   have h12 : (s6.gpr .r12).toNat < 39 := by
     simp only [val4] at hv hB
-    omega
+    omega_arith
   have hax : (s7.gpr .rax).toNat = 38 * (s6.gpr .r12).toNat := by
     have := (s7.gpr .rax).isLt
-    omega
-  refine WP.mono (carry38_ok s7 (by omega)) fun s8 ⟨e8, k8⟩ => ?_
+    omega_arith
+  refine WP.mono (carry38_ok s7 (by omega_arith)) fun s8 ⟨e8, k8⟩ => ?_
   refine ⟨?_, ((((((((k1.mono (by decide)).trans (k2.mono (by decide))).trans
     (k3.mono (by decide))).trans (k4.mono (by decide))).trans (k5.mono (by decide))).trans
     (k6.mono (by decide))).trans (k7.mono (by decide))).trans (k8.mono (by decide)))⟩

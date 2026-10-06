@@ -13,13 +13,36 @@ theorem getLsbD_word (x : BitVec 128) (k i : Nat) :
     (word x k).getLsbD i = (decide (i < 16) && x.getLsbD (16 * k + i)) := by
   simp only [word, BitVec.getLsbD_extractLsb']
 
+private theorem getLsbD_append_lo {n : Nat} (x : BitVec n) (y : BitVec 16) {i : Nat} (h : i < 16) :
+    (x ++ y).getLsbD i = y.getLsbD i := by
+  simp only [BitVec.getLsbD_append, h, ↓reduceIte]
+
+private theorem getLsbD_append_hi {n : Nat} (x : BitVec n) (y : BitVec 16) (i : Nat) :
+    (x ++ y).getLsbD (i + 16) = x.getLsbD i := by
+  simp only [BitVec.getLsbD_append, show ¬i + 16 < 16 by omega, ↓reduceIte, Nat.add_sub_cancel]
+
 theorem getLsbD_ofWords (f : Nat → BitVec 16) {k r : Nat} (hk : k < 8) (hr : r < 16) :
     (ofWords f).getLsbD (16 * k + r) = (f k).getLsbD r := by
   unfold ofWords
-  simp only [BitVec.getLsbD_append]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  (repeat' split) <;> first | (exfalso; omega) | (congr 1; omega)
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · rw [Nat.mul_zero, Nat.zero_add, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 1 + r = r + 16 by omega, getLsbD_append_hi, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 2 + r = r + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 3 + r = r + 16 + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 4 + r = r + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 5 + r = r + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 6 + r = r + 16 + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_lo _ _ hr]
+  · rw [show 16 * 7 + r = r + 16 + 16 + 16 + 16 + 16 + 16 + 16 by omega, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi, getLsbD_append_hi,
+      getLsbD_append_hi, getLsbD_append_hi]
 
 @[simp] theorem word_ofWords (f : Nat → BitVec 16) {i : Nat} (hi : i < 8) : word (ofWords f) i = f i := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj

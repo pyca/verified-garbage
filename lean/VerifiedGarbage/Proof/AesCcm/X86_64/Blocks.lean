@@ -17,6 +17,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Cmac (le8)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.CmacAes.Stream.X86_64 (upd_call)
 
 /-! ## `ctrAt` -/
@@ -61,10 +62,10 @@ theorem ctrAt_ok {K W SP : Addr} {s : State} (E : Env K W SP s) {nonce : List By
 /-! ## Chaining `B` -/
 
 /-- `B` (at `W + 32`) chained into the MAC state at `W + y`. -/
-theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
+theorem updBlock_ok (v : UpdateImpl) {K W SP : Addr} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hRo : s.mem.readW (W + BitVec.ofNat 64 232) 64 = BitVec.ofNat 64 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
-    WP isa (updBlock v.callee v.suffix y) s fun s' => Env K W SP s' ∧
+    WP isa (updBlock v.callee y) s fun s' => Env K W SP s' ∧
       (∀ r ∈ [Reg.rbx, .rbp, .r12, .r14], s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Frame [⟨W + BitVec.ofNat 64 y, 16⟩, ⟨W + BitVec.ofNat 64 384, 2176⟩, below SP 16] s.mem s'.mem ∧
       bytesAt s'.mem (W + BitVec.ofNat 64 y) 16 =
@@ -99,7 +100,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : Addr} {s : State} (L : Lay K W SP)
     rcases hy with rfl | rfl
     · exact L.w_w (.inr (by decide)) (by decide) (by decide)
     · exact L.w_w (.inl (by decide)) (by decide) (by decide)
-  refine WP.mono (upd_call v _ (uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9))
+  refine WP.mono (upd_call v (uargs L E₁ hR (by omega) hq hqy (by decide) hdi hsi hdx hcx hr8 hr9))
     fun s₂ h => ⟨E₁.of_saved h.saved h.rd h.wr, fun r hr => ?_, by rw [h.rd, hrd₁], by rw [h.wr, hwr₁], ?_, ?_⟩
   · rw [h.saved r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
       hg₁ r (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl | rfl <;> simp)]

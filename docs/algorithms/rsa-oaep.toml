@@ -1,0 +1,20 @@
+name = "RSAES-OAEP"
+family = "RSA"
+specs = ["RsaOaep", "Mgf1"]
+modules = ["src/rsa_oaep.rs"]
+asm = [
+  "rsa_oaep_sha1_mgf1_sha1",
+  "rsa_oaep_sha224_mgf1_sha1",
+  "rsa_oaep_sha224_mgf1_sha224",
+  "rsa_oaep_sha256_mgf1_sha1",
+  "rsa_oaep_sha256_mgf1_sha256",
+  "rsa_oaep_sha384_mgf1_sha1",
+  "rsa_oaep_sha384_mgf1_sha384",
+  "rsa_oaep_sha512_mgf1_sha1",
+  "rsa_oaep_sha512_mgf1_sha512",
+  "rsa_oaep_sha512_224_mgf1_sha1",
+  "rsa_oaep_sha512_224_mgf1_sha512_224",
+  "rsa_oaep_sha512_256_mgf1_sha1",
+  "rsa_oaep_sha512_256_mgf1_sha512_256",
+  "rsa",
+]

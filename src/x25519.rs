@@ -9,6 +9,14 @@
 //! whose ladder does four field multiplications at once.
 //! This module gives it working space, and destroys what it leaves there.
 //!
+//! On AArch64, x86 and x86-64, [`public_key`](PrivateKey::public_key) is the verified
+//! assembly `vg_x25519_base` (contract `VG.Spec.X25519.x25519BaseContract`):
+//! `X25519(k, 9)` computed as the u-coordinate of a fixed-base multiplication
+//! on edwards25519, with Ed25519's precomputed tables, rather than with the
+//! ladder. On x86-64, `vg_x25519_base_adx` uses BMI2 and ADX when available,
+//! and `vg_x25519_base_ifma` also AVX512_IFMA and AVX512VL, whose comb adds
+//! each table entry with four-lane field multiplications.
+//!
 //! [`diffie_hellman`](PrivateKey::diffie_hellman) rejects the all-zero
 //! shared secret that a public key of small order gives (RFC 7748 §6.1), in
 //! constant time; [`x25519`] is the function itself, which does not.
@@ -21,9 +29,12 @@
 ))]
 
 use crate::arch::x25519::vg_x25519;
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::x25519::vg_x25519_base;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::x25519::{
-    VG_X25519_ADX_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx, vg_x25519_ifma,
+    VG_X25519_ADX_FEATURES, VG_X25519_BASE_IFMA_FEATURES, VG_X25519_IFMA_FEATURES, vg_x25519_adx,
+    vg_x25519_base_adx, vg_x25519_base_ifma, vg_x25519_ifma,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -37,8 +48,8 @@ enum Backend {
     #[cfg(target_arch = "x86_64")]
     Adx,
     /// AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm` registers,
-    /// with AVX512VL) for the ladder, and `Adx`'s multiplications for the
-    /// inversion.
+    /// with AVX512VL) for the ladder and the fixed-base comb, and `Adx`'s
+    /// multiplications for the inversion.
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -47,7 +58,9 @@ impl Backend {
     /// The best implementation a CPU with the features `f` can run.
     #[cfg(target_arch = "x86_64")]
     fn select(f: Features) -> Backend {
-        if f.contains(VG_X25519_IFMA_FEATURES) {
+        if f.contains(
+            const { Features::all(&[VG_X25519_IFMA_FEATURES, VG_X25519_BASE_IFMA_FEATURES]) },
+        ) {
             Backend::Ifma
         } else if f.contains(VG_X25519_ADX_FEATURES) {
             Backend::Adx
@@ -103,6 +116,35 @@ pub fn x25519(scalar: &[u8; 32], u: &[u8; 32]) -> [u8; 32] {
     out
 }
 
+/// `X25519(scalar, 9)`, by `vg_x25519_base`.
+#[cfg(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64"))]
+fn base(scalar: &[u8; 32]) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    let mut scratch = [0u64; 1024];
+    #[cfg(target_arch = "x86_64")]
+    let f = match Backend::select(detected()) {
+        Backend::Baseline => vg_x25519_base,
+        Backend::Adx => vg_x25519_base_adx,
+        Backend::Ifma => vg_x25519_base_ifma,
+    };
+    #[cfg(not(target_arch = "x86_64"))]
+    let f = vg_x25519_base;
+    // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
+    // 8192 bytes, and `scalar` for reads of 32 bytes; the writable buffers are
+    // disjoint from each other and from the input. No buffer overlaps the
+    // callee's stack or wraps around the address space. The selected backend
+    // has the required CPU features.
+    unsafe { f(&mut out, scalar, &mut scratch) };
+    zeroize(&mut scratch);
+    out
+}
+
+/// `X25519(scalar, 9)`, with the ladder.
+#[cfg(target_arch = "arm")]
+fn base(scalar: &[u8; 32]) -> [u8; 32] {
+    x25519(scalar, &BASE_POINT)
+}
+
 /// An X25519 private key: 32 bytes, which X25519 decodes into a scalar.
 #[derive(Clone)]
 pub struct PrivateKey {
@@ -150,7 +192,7 @@ impl PrivateKey {
 
     /// The public key, `X25519(k, 9)` (RFC 7748 §6.1).
     pub fn public_key(&self) -> [u8; 32] {
-        x25519(&self.bytes, &BASE_POINT)
+        base(&self.bytes)
     }
 
     /// The shared secret with the peer whose public key is `peer`,
@@ -183,6 +225,30 @@ mod tests {
         assert_eq!(a.diffie_hellman(&kb), b.diffie_hellman(&ka));
         assert_eq!(PrivateKey::from_bytes(a.as_bytes()).public_key(), ka);
         assert_eq!(a.clone().public_key(), ka);
+    }
+
+    /// The public key is `X25519(k, 9)` for many scalars: random ones, and
+    /// ones with every nibble the same (each digit of the fixed-base comb),
+    /// and each individual bit (including the bits that clamping overrides).
+    #[test]
+    fn public_key_is_x25519_of_base_point() {
+        let check = |k: &[u8; 32]| {
+            assert_eq!(
+                PrivateKey::from_bytes(k).public_key(),
+                x25519(k, &BASE_POINT)
+            );
+        };
+        for n in 0..=15u8 {
+            check(&[n * 0x11; 32]);
+        }
+        for bit in 0..256 {
+            let mut k = [0; 32];
+            k[bit / 8] = 1 << (bit % 8);
+            check(&k);
+        }
+        for _ in 0..64 {
+            check(PrivateKey::generate().unwrap().as_bytes());
+        }
     }
 
     /// The baseline agrees with the implementation chosen for this CPU,

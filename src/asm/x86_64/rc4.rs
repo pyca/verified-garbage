@@ -12,13 +12,11 @@
 ///
 /// * `key` must be valid for reads of `key_len` bytes.
 /// * `ctx` must be valid for reads and writes of 258 bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
 /// * On failure, the contents of `ctx` on return are unspecified.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx` and `scratch` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `key`, `ctx` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258], scratch: *mut [u64; 8]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_rc4_init(key: *const u8, key_len: usize, ctx: *mut [u8; 258]) -> u32 {
     core::arch::naked_asm!(
         "mov rax, rsi",
         "sub rax, 1",
@@ -626,12 +624,10 @@ pub(crate) unsafe extern "sysv64" fn vg_rc4_init(key: *const u8, key_len: usize,
 ///
 /// * `ctx` must be valid for reads and writes of 258 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
-/// * `scratch` must be valid for reads and writes of 64 bytes.
-/// * The contents of `scratch` on return are unspecified.
-/// * `ctx`, `data` and `scratch` must not overlap each other (distinct Rust objects never do).
-/// * None of `ctx`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * `ctx` and `data` must not overlap each other (distinct Rust objects never do).
+/// * Neither `ctx` nor `data` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize, scratch: *mut [u64; 8]) {
+pub(crate) unsafe extern "sysv64" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         "movzx ecx, BYTE PTR [rdi+256]",
         "movzx r8d, BYTE PTR [rdi+257]",

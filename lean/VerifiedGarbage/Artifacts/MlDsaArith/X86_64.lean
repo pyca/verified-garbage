@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.LazyNtt
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YMontgomeryInv
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mul
@@ -81,50 +83,50 @@ def artifacts : List Artifact := [
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
         before returning."])
-    code := Impl.MlDsa.X86_64.Arith.nttAvx2
+    code := Impl.MlDsa.X86_64.Arith.lazyNtt
     contract := Spec.MlDsa.nttContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.nttY_verified
+    verified := Proof.MlDsa.X86_64.Arith.Lazy.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"]
     ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttContract Spec.MlDsa.inPlaceContract; rfl⟩ },
-  { Spec.MlDsa.nttInvApi with
-    name := Spec.MlDsa.nttInvApi.name ++ "_avx2"
+  { Spec.MlDsa.montgomeryNttInvApi with
+    name := Spec.MlDsa.montgomeryNttInvApi.name ++ "_avx2"
     target := X86_64.target
-    doc := Spec.MlDsa.nttInvApi.doc
+    doc := Spec.MlDsa.montgomeryNttInvApi.doc
       (notes := ["The function computes on eight coefficients at a time in AVX2 registers, with a table of \
         the 256 zetas that it stores in `scratch`. It sets MXCSR to `0x1FBF` around its multiplications \
         (Intel's mitigation of MXCSR-configuration-dependent timing) and loads the caller's MXCSR back \
         before returning."])
-    code := Impl.MlDsa.X86_64.Arith.nttInvAvx2
-    contract := Spec.MlDsa.nttInvContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.nttInvY_verified
+    code := Impl.MlDsa.X86_64.Arith.montNttInvAvx2
+    contract := Spec.MlDsa.montgomeryNttInvContract X86_64.abi
+    verified := Proof.MlDsa.X86_64.Arith.MontgomeryInv.verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"]
-    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.nttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
-  { Spec.MlDsa.mulApi with
-    name := Spec.MlDsa.mulApi.name ++ "_avx2"
+    ofSig := ⟨_, _, _, by unfold Spec.MlDsa.montgomeryNttInvContract Spec.MlDsa.inPlaceContract; rfl⟩ },
+  { Spec.MlDsa.montgomeryMulApi with
+    name := Spec.MlDsa.montgomeryMulApi.name ++ "_avx2"
     target := X86_64.target
-    doc := Spec.MlDsa.mulApi.doc
+    doc := Spec.MlDsa.montgomeryMulApi.doc
       (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
         returning."])
-    code := Impl.MlDsa.X86_64.Arith.mulAvx2
-    contract := Spec.MlDsa.mulContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.mulY_verified
+    code := Impl.MlDsa.X86_64.Arith.montMulAvx2
+    contract := Spec.MlDsa.montgomeryMulContract X86_64.abi
+    verified := Proof.MlDsa.X86_64.Arith.montMulY_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
-  { Spec.MlDsa.mulAddApi with
-    name := Spec.MlDsa.mulAddApi.name ++ "_avx2"
+  { Spec.MlDsa.montgomeryMulAddApi with
+    name := Spec.MlDsa.montgomeryMulAddApi.name ++ "_avx2"
     target := X86_64.target
-    doc := Spec.MlDsa.mulAddApi.doc
+    doc := Spec.MlDsa.montgomeryMulAddApi.doc
       (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It sets MXCSR to \
         `0x1FBF` around its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing), \
         through the last 8 bytes of `h`, which it stores last, and loads the caller's MXCSR back before \
         returning."])
-    code := Impl.MlDsa.X86_64.Arith.mulAddAvx2
-    contract := Spec.MlDsa.mulAddContract X86_64.abi
-    verified := Proof.MlDsa.X86_64.Arith.mulAddY_verified
+    code := Impl.MlDsa.X86_64.Arith.montMulAddAvx2
+    contract := Spec.MlDsa.montgomeryMulAddContract X86_64.abi
+    verified := Proof.MlDsa.X86_64.Arith.montMulAddY_verified
     spSafe := Code.all_of_allInstrs (by lit_decide)
     features := ["avx", "avx2"] },
   { Spec.MlDsa.addApi with

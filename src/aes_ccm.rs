@@ -24,47 +24,157 @@
 //! (`vg_aes_ctr32`, directly for counter mode and through
 //! `vg_cmac_aes_update` for the CBC-MAC), which have the same contracts: on
 //! x86-64, CPUs with AES-NI and SSSE3 run the `_aesni` instances, and CPUs
-//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`). Only
-//! x86-64 has an implementation so far.
+//! with VAES and AVX2 too the `_vaes` ones (`crate::aes::Backend`), whose
+//! CBC-MAC calls `vg_aes_ctr32_aesni` (or `_vaes`) on one block at a time;
+//! when the associated data and the payload are longer than 32 bytes
+//! together, both run the `_aesni_cbc` ones instead, whose CBC-MAC keeps the
+//! round keys and the chaining value in SSE registers across blocks
+//! (`vg_cmac_aes_update_aesni_cbc`, as AES-CMAC chooses it in
+//! `crate::cmac::aes`), and which encrypt with `vg_aes_ctr32_aesni`. On x86,
+//! CPUs with AES-NI run the `_aesni` instances. On
+//! AArch64, CPUs with the AES extension run the `_aes` instances, whose
+//! CBC-MAC is `vg_cmac_aes_update_aes` (calling `vg_aes_ctr32_aes` on one
+//! block at a time), or, when the associated data and the payload are longer
+//! than 32 bytes together, the `_aes_cbc` ones, whose CBC-MAC keeps the
+//! round keys and the chaining value in vector registers across blocks
+//! (`vg_cmac_aes_update_aes_cbc`, as AES-CMAC chooses it in
+//! `crate::cmac::aes`); both encrypt with `vg_aes_ctr32_aes`. On ARMv7 there
+//! is only the constant-time scalar implementation.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(
+    target_arch = "x86",
+    target_arch = "x86_64",
+    target_arch = "aarch64",
+    target_arch = "arm"
+))]
 
 use crate::aes::Backend;
-use crate::arch::aes::{vg_aes_expand_key, vg_aes_expand_key_aesni};
+use crate::arch::aes::vg_aes_expand_key;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::aes::vg_aes_expand_key_aes;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::aes::vg_aes_expand_key_aesni;
+#[cfg(target_arch = "aarch64")]
 use crate::arch::aes_ccm::{
-    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES,
-    VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open, vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes,
-    vg_aes_ccm_seal, vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes,
+    VG_AES_CCM_OPEN_AES_CBC_FEATURES, VG_AES_CCM_OPEN_AES_FEATURES,
+    VG_AES_CCM_SEAL_AES_CBC_FEATURES, VG_AES_CCM_SEAL_AES_FEATURES, vg_aes_ccm_open_aes,
+    vg_aes_ccm_open_aes_cbc, vg_aes_ccm_seal_aes, vg_aes_ccm_seal_aes_cbc,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_ccm::{
+    VG_AES_CCM_OPEN_AESNI_CBC_FEATURES, VG_AES_CCM_OPEN_AESNI_FEATURES,
+    VG_AES_CCM_OPEN_VAES_FEATURES, VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+    VG_AES_CCM_SEAL_AESNI_FEATURES, VG_AES_CCM_SEAL_VAES_FEATURES, vg_aes_ccm_open_aesni,
+    vg_aes_ccm_open_aesni_cbc, vg_aes_ccm_open_vaes, vg_aes_ccm_seal_aesni,
+    vg_aes_ccm_seal_aesni_cbc, vg_aes_ccm_seal_vaes,
+};
+#[cfg(target_arch = "x86")]
+use crate::arch::aes_ccm::{
+    VG_AES_CCM_OPEN_AESNI_FEATURES, VG_AES_CCM_SEAL_AESNI_FEATURES, vg_aes_ccm_open_aesni,
+    vg_aes_ccm_seal_aesni,
+};
+use crate::arch::aes_ccm::{vg_aes_ccm_open, vg_aes_ccm_seal};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
-use core::mem::MaybeUninit;
 
-/// The working space of `vg_aes_ccm_seal` and `vg_aes_ccm_open`, in 64-bit
-/// words: the tag in its first bytes.
-const WORK: usize = 320;
-
-/// The instance of a function for `backend`.
+/// The instance of a function for `backend`; the `_aesni_cbc` one on x86-64
+/// (rather than the `_aesni` or `_vaes` one), and the `_aes_cbc` one on
+/// AArch64 (rather than the `_aes` one), if `cbc`.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident) => {
+    ($backend:expr, $cbc:expr, $scalar:ident,
+     x86_64: [$aesni:ident, $vaes:ident, $aesni_cbc:ident],
+     aarch64: [$aes:ident, $aes_cbc:ident]) => {
         match $backend {
             Backend::Scalar => $scalar,
+            #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
-            Backend::Vaes => $vaes,
+            #[cfg(target_arch = "x86_64")]
+            Backend::AesNi => {
+                if $cbc {
+                    $aesni_cbc
+                } else {
+                    $aesni
+                }
+            }
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => {
+                if $cbc {
+                    $aesni_cbc
+                } else {
+                    $vaes
+                }
+            }
+            #[cfg(target_arch = "aarch64")]
+            Backend::Aes => {
+                if $cbc {
+                    $aes_cbc
+                } else {
+                    $aes
+                }
+            }
         }
     };
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
 /// the AES-CCM functions for it.
+#[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
-    const VAES: Features =
-        Features::all(&[VG_AES_CCM_SEAL_VAES_FEATURES, VG_AES_CCM_OPEN_VAES_FEATURES]);
+    const VAES: Features = Features::all(&[
+        VG_AES_CCM_SEAL_VAES_FEATURES,
+        VG_AES_CCM_OPEN_VAES_FEATURES,
+        VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_CBC_FEATURES,
+    ]);
+    const AESNI: Features = Features::all(&[
+        VG_AES_CCM_SEAL_AESNI_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_FEATURES,
+        VG_AES_CCM_SEAL_AESNI_CBC_FEATURES,
+        VG_AES_CCM_OPEN_AESNI_CBC_FEATURES,
+    ]);
+    Backend::select_for(f, VAES, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-CCM functions for it.
+#[cfg(target_arch = "x86")]
+fn select(f: Features) -> Backend {
     const AESNI: Features = Features::all(&[
         VG_AES_CCM_SEAL_AESNI_FEATURES,
         VG_AES_CCM_OPEN_AESNI_FEATURES,
     ]);
-    Backend::select_for(f, VAES, AESNI)
+    Backend::select_for(f, AESNI)
+}
+
+/// The best implementation of AES a CPU with the features `f` can run, with
+/// the AES-CCM functions for it: both instances for the AES extension.
+#[cfg(target_arch = "aarch64")]
+fn select(f: Features) -> Backend {
+    const AES: Features = Features::all(&[
+        VG_AES_CCM_SEAL_AES_FEATURES,
+        VG_AES_CCM_OPEN_AES_FEATURES,
+        VG_AES_CCM_SEAL_AES_CBC_FEATURES,
+        VG_AES_CCM_OPEN_AES_CBC_FEATURES,
+    ]);
+    Backend::select_for(f, AES)
+}
+
+/// The only implementation of AES on ARMv7, with the AES-CCM functions for
+/// it.
+#[cfg(target_arch = "arm")]
+fn select(f: Features) -> Backend {
+    Backend::select(f)
+}
+
+/// Whether to run the instances whose CBC-MAC keeps the round keys and the
+/// chaining value in registers (`_aes_cbc` on AArch64, `_aesni_cbc` on
+/// x86-64), for `aad_len` bytes of associated data and `len` bytes of
+/// payload: when they are longer than 32 bytes together (as
+/// `crate::cmac::aes` chooses for an update), where that pays for loading
+/// the round keys.
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+fn cbc(aad_len: usize, len: usize) -> bool {
+    aad_len.saturating_add(len) > 32
 }
 
 /// Fails to compile unless `T` is a tag length Appendix A.1 allows: 4, 6,
@@ -140,28 +250,22 @@ impl AesCcm {
             backend: select(detected()),
         };
         // `_vaes` calls `vg_aes_expand_key_aesni`'s schedule.
-        let expand = instance!(
-            k.backend,
-            vg_aes_expand_key,
-            vg_aes_expand_key_aesni,
-            vg_aes_expand_key_aesni
-        );
-        let mut scratch = MaybeUninit::<[u64; 64]>::uninit();
-        // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.schedule` and `scratch` are valid for reads and writes
-        // of 240 and 512 bytes. They are distinct objects, so no two overlap,
-        // nor do they overlap the return address on the stack or the stack
-        // below it, and none wraps around the end of the address space. The
-        // CPU has the features of the implementation selected. `scratch` is
-        // uninitialized: it is only working space.
-        unsafe {
-            expand(
-                key.as_ptr(),
-                key.len(),
-                &mut k.schedule,
-                scratch.as_mut_ptr(),
-            )
+        let expand = match k.backend {
+            Backend::Scalar => vg_aes_expand_key,
+            #[cfg(target_arch = "x86")]
+            Backend::AesNi => vg_aes_expand_key_aesni,
+            #[cfg(target_arch = "x86_64")]
+            Backend::AesNi | Backend::Vaes => vg_aes_expand_key_aesni,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Aes => vg_aes_expand_key_aes,
         };
+        // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
+        // 24 or 32, and `k.schedule` for reads and writes of 240 bytes. They
+        // are distinct objects, so they do not overlap, nor do they overlap
+        // the return address on the stack or the stack below it, and neither
+        // wraps around the end of the address space. The CPU has the
+        // features of the implementation selected.
+        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
         Ok(k)
     }
 
@@ -183,24 +287,24 @@ impl AesCcm {
         check(nonce, data.len())?;
         let seal = instance!(
             self.backend,
+            cbc(aad.len(), data.len()),
             vg_aes_ccm_seal,
-            vg_aes_ccm_seal_aesni,
-            vg_aes_ccm_seal_vaes
+            x86_64: [vg_aes_ccm_seal_aesni, vg_aes_ccm_seal_vaes, vg_aes_ccm_seal_aesni_cbc],
+            aarch64: [vg_aes_ccm_seal_aes, vg_aes_ccm_seal_aes_cbc]
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
+        let mut tag = [0u8; T];
         // SAFETY: `self.schedule` is the key schedule `vg_aes_expand_key`
         // wrote for `self.rounds` (10, 12 or 14) rounds, valid for reads of
         // 240 bytes. `nonce` (7 to 13 bytes) and `aad` are valid for reads
         // of their lengths, `data` for reads and writes of `data.len()`
         // bytes, which `check` has checked is less than `2^(8 (15 −
-        // nonce.len()))`, and `work` for reads and writes of 2560. `T` is a
-        // length Appendix A.1 allows (`assert_tag_length`). `data` and
-        // `work` are unique borrows, so they overlap neither each other nor
-        // the other buffers; no buffer overlaps the arguments on the stack,
-        // the return address or the stack below it, and none wraps around
-        // the end of the address space. The CPU has the features of the
-        // implementation selected. `work` is uninitialized: it is only
-        // working space but for the tag written to its first `T` bytes.
+        // nonce.len()))`, and `tag` for reads and writes of `T` bytes, a
+        // length Appendix A.1 allows (`assert_tag_length`). `data` and `tag`
+        // are unique borrows, so they overlap neither each other nor the
+        // other buffers; no buffer overlaps the arguments on the stack, the
+        // return address or the stack below it, and none wraps around the
+        // end of the address space. The CPU has the features of the
+        // implementation selected.
         unsafe {
             seal(
                 &self.schedule,
@@ -211,15 +315,10 @@ impl AesCcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_mut_ptr(),
                 T,
             )
         };
-        // SAFETY: `seal` wrote the tag to the first `T` (at most 16) bytes
-        // of `work`, and so the first 16 bytes.
-        let b = unsafe { first_block(&work) };
-        let mut tag = [0u8; T];
-        tag.copy_from_slice(&b[..T]);
         Ok(tag)
     }
 
@@ -241,22 +340,14 @@ impl AesCcm {
         check(nonce, data.len())?;
         let open = instance!(
             self.backend,
+            cbc(aad.len(), data.len()),
             vg_aes_ccm_open,
-            vg_aes_ccm_open_aesni,
-            vg_aes_ccm_open_vaes
+            x86_64: [vg_aes_ccm_open_aesni, vg_aes_ccm_open_vaes, vg_aes_ccm_open_aesni_cbc],
+            aarch64: [vg_aes_ccm_open_aes, vg_aes_ccm_open_aes_cbc]
         );
-        let mut work = MaybeUninit::<[u64; WORK]>::uninit();
-        let mut t = [0u8; 16];
-        t[..T].copy_from_slice(tag);
-        let w = work.as_mut_ptr().cast::<u64>();
-        // SAFETY: `work` is valid for writes of 320 words.
-        unsafe {
-            w.write(u64::from_le_bytes(t[..8].try_into().unwrap()));
-            w.add(1)
-                .write(u64::from_le_bytes(t[8..].try_into().unwrap()));
-        }
-        // SAFETY: as in `encrypt_in_place`, with the received tag in the
-        // first `T` bytes of `work`.
+        // SAFETY: as in `encrypt_in_place`, with the received tag `tag`
+        // valid for reads of `T` bytes; `tag` is a shared borrow, which
+        // `data`, a unique one, does not overlap.
         let ok = unsafe {
             open(
                 &self.schedule,
@@ -267,7 +358,7 @@ impl AesCcm {
                 aad.len(),
                 data.as_mut_ptr(),
                 data.len(),
-                work.as_mut_ptr(),
+                tag.as_ptr(),
                 T,
             )
         };
@@ -281,25 +372,25 @@ impl AesCcm {
     }
 }
 
-/// The first 16 bytes of `work`, where `seal` writes the tag.
-///
-/// # Safety
-///
-/// They must have been written.
-unsafe fn first_block(work: &MaybeUninit<[u64; WORK]>) -> [u8; 16] {
-    let w = work.as_ptr().cast::<u64>();
-    let mut b = [0u8; 16];
-    // SAFETY: the first two words are initialized (the caller's guarantee).
-    unsafe {
-        b[..8].copy_from_slice(&w.read().to_le_bytes());
-        b[8..].copy_from_slice(&w.add(1).read().to_le_bytes());
-    }
-    b
-}
-
 #[cfg(test)]
 mod tests {
     use super::{AesCcm, Error};
+
+    /// The `_aes_cbc` (or `_aesni_cbc`) instances run for more than 32 bytes
+    /// of associated data and payload together, the others otherwise.
+    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+    #[test]
+    fn cbc() {
+        use super::cbc;
+        assert!(!cbc(0, 0));
+        assert!(!cbc(16, 16));
+        assert!(!cbc(0, 32));
+        assert!(!cbc(32, 0));
+        assert!(cbc(16, 17));
+        assert!(cbc(33, 0));
+        assert!(cbc(0, 33));
+        assert!(cbc(usize::MAX, usize::MAX));
+    }
 
     #[test]
     fn key_lengths() {

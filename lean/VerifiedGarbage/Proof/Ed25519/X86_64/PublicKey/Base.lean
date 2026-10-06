@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
 import VerifiedGarbage.Proof.Ed25519.Bytes
-import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedVerified
+import VerifiedGarbage.Proof.Ed25519.X86_64.BaseCallee
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombLit
 
 /-!
@@ -13,7 +13,7 @@ cleared (`wipe_ok`).
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -57,7 +57,7 @@ theorem prune_words (d₀ d₁ d₂ d₃ : BitVec 64) :
 
 /-- Code that writes only caller-saved registers and the frame's scalar. -/
 theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
     (hf : Frame [⟨L.B + BitVec.ofNat 64 16, 32⟩] t.mem t'.mem) : Ctx L g mx m₀ t' := by
   have keep : ∀ d, 48 ≤ d → d + 8 ≤ 72 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
@@ -70,7 +70,7 @@ theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (
     (keep 64 (by omega) (by omega)).trans hc.pOut,
     hc.frame.trans (Frame.sub hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩)⟩
+      exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩), by rw [hsy]; exact hc.sym, hc.held⟩
 
 /-- Word `k` of the digest. -/
 abbrev dw (t : State) (L : Lay) (k : Nat) : BitVec 64 :=
@@ -89,7 +89,7 @@ theorem baseArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     State.load64, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
     Option.map_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, l48, l64,
     Option.some.injEq, exists_eq_left', hc.pScr, hc.pOut, BaseArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial⟩
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial⟩
 
 theorem pruneRegs_ok {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     WP isa (.block pkPruneRegs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ BaseArgs L t' ∧
@@ -107,7 +107,7 @@ theorem pruneRegs_ok {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, 
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hdx,
     Nat.reduceAdd, s0, s1, s2, s3, Option.some.injEq, exists_eq_left', BaseArgs, hdi, hsi]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, ⟨trivial, trivial, trivial⟩,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, ⟨trivial, trivial, trivial⟩,
     congrArg (_ &&& ·) (by decide : BitVec.signExtend 64 (BitVec.ofInt 32 (-8)) = BitVec.ofNat 64 (2 ^ 64 - 8)),
     trivial, trivial, trivial⟩
 
@@ -154,13 +154,13 @@ theorem stores_ok {u : State} (hc : Ctx L g mx m₀ u) :
     ea_stk, hc.rsp, add_add, Nat.reduceAdd, w0, w1, w2, w3, ite_true, Option.some.injEq,
     exists_eq_left']
   obtain ⟨hf, h0, h1, h2, h3⟩ := four_ok L.B u.mem (u.gpr .r8) (u.gpr .r9) (u.gpr .r10) (u.gpr .r11)
-  exact ⟨hc.store rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
+  exact ⟨hc.store rfl rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
 
 end VG.Proof.Ed25519.X86_64.PublicKey
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -197,7 +197,7 @@ end VG.Proof.Ed25519.X86_64.PublicKey
 
 namespace VG.Proof.Ed25519.X86_64.PublicKey
 
-variable {fld : VG.Impl.Ed25519.X86_64.Arith} [VG.Proof.Ed25519.X86_64.EdArith fld] {fs : String}
+variable {bs : VG.Prog VG.X86_64.isa} [VG.Proof.Ed25519.X86_64.EdBase bs] {fs : String}
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 
@@ -205,9 +205,9 @@ variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem}
 
 /-- Both facts about every instruction of the base-point multiplication that
 the calls need, in one evaluation of its code. -/
-theorem base_instrs : (scalarBase_precomputed fld).allInstrs
-    (fun i => !VG.X86_64.Taint.clobbers i .rsp && !isa.writesSp i) = true := by
-  fld_lit_decide
+theorem base_instrs : bs.allInstrs
+    (fun i => !VG.X86_64.Taint.clobbers i .rsp && !isa.writesSp i) = true :=
+  VG.Proof.Ed25519.X86_64.EdBase.instrs
 
 theorem allInstrs_and {p q : Instr → Bool} {c : Prog isa}
     (h : c.allInstrs (fun i => p i && q i) = true) :
@@ -215,16 +215,16 @@ theorem allInstrs_and {p q : Instr → Bool} {c : Prog isa}
   simp only [Code.allInstrs_eq, List.all_eq_true, Bool.and_eq_true] at h ⊢
   exact ⟨fun i hi => (h i hi).1, fun i hi => (h i hi).2⟩
 
-theorem base_nosp : NoSp (scalarBase_precomputed fld) :=
+theorem base_nosp : NoSp bs :=
   Proof.Pbkdf2.Md.X86_64.nosp_of (allInstrs_and base_instrs).1
 
-theorem base_depth : (scalarBase_precomputed fld).depth ≤ 1 := by fld_lit_decide
+theorem base_depth : bs.depth ≤ 1 := VG.Proof.Ed25519.X86_64.EdBase.depth
 
 /-- No instruction of the base-point multiplication writes `rsp`. -/
-theorem base_spSafe : (scalarBase_precomputed fld).all (fun i => !isa.writesSp i) = true :=
+theorem base_spSafe : bs.all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (allInstrs_and base_instrs).2
 
-abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 16, 32⟩]
+abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 16, 32⟩, L.TBL]
 abbrev baseWr (L : Lay) : List Region := [L.OUT, L.SCR]
 
 theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
@@ -234,17 +234,42 @@ theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
   ⟨(gpr_ce _ _ _ (by decide)).trans ha.1, (gpr_ce _ _ _ (by decide)).trans ha.2.1,
     (gpr_ce _ _ _ (by decide)).trans ha.2.2⟩
 
+/-- The tables, as on entry, on entry to a call from the frame. -/
+theorem ce_tbl (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < 3072) :
+    t.callEntry.mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
+  rw [← hc.held i hi]
+  refine Mem.readW_congr fun b hb => ?_
+  have e : L.T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b = L.TBL.base + BitVec.ofNat 64 (8 * i + b) := by
+    rw [Offset.add_add]
+  rw [e, ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tbk.sub_right (Offset.sub_base _ (by omega))).symm)
+    (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)]
+  exact Frame.bytes (R := L.TBL) hc.frame (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hL.tbo
+    · exact hL.tbc
+    · exact hL.tbk) (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)
+
 theorem base_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     Proof.Ed25519.X86_64.scalarBaseLocal.pre (t.callEntry.withRegions (baseRd L) (baseWr L)) := by
   obtain ⟨g1, g2, g3⟩ := base_regs ha (baseRd L) (baseWr L)
-  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, g1, g2, g3, rsp_ce, hc.rsp, sub8,
-    State.withRegions_rd, State.withRegions_wr]
-  exact ⟨trivial, trivial, hL.stk_SCR (by omega), hL.stk_OUT (by omega), hL.stk_SCR (by omega), hL.nc⟩
-
-theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  have hsy : (t.callEntry.withRegions (baseRd L) (baseWr L)).syms combSym = L.T := hc.sym
+  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, Proof.Ed25519.X86_64.CombHeld, g1, g2, g3, rsp_ce,
+    hc.rsp, sub8, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, hsy]
+  refine ⟨trivial, trivial, hL.stk_SCR (by omega), hL.stk_OUT (by omega), hL.stk_SCR (by omega), hL.nc,
+    fun i hi => ce_tbl hL hc hi, hL.nt, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
+  · exact hL.tbo
+  · exact hL.tbc
+  · exact hL.tbk.sub_right (Offset.sub_base _ (by omega))
+
+theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
   · exact ⟨L.FR, by simp, within_stk _ (by omega) (by omega)⟩
+  · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
   · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
 
@@ -256,10 +281,10 @@ theorem base_wsub : ∀ r ∈ baseWr L, Within r L.OUT ∨ Within r L.SCR := by
 
 theorem base_ok (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) {s : Nat}
     (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (L.B + BitVec.ofNat 64 16) 32) = s) :
-    WP isa (.call (scalarBaseName fs) (scalarBase_precomputed fld)) t fun t' => Ctx L g mx m₀ t' ∧
+    WP isa (.call (scalarBaseName fs) bs) t fun t' => Ctx L g mx m₀ t' ∧
       Spec.Ed25519.bytesAt t'.mem L.out 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul s Spec.Ed25519.basePoint) := by
-  refine call_ok hL Proof.Ed25519.X86_64.scalarBase_precomputed_ok base_nosp base_depth hc
+  refine call_ok hL (VG.Proof.Ed25519.X86_64.EdBase.ok (bs := bs)) base_nosp base_depth hc
     (base_pre hL hc ha) base_sub base_wsub fun s' hc' _ _ ⟨s₂, hm, _, hpost⟩ => ⟨hc', ?_⟩
   obtain ⟨g1, g2, -⟩ := base_regs ha (baseRd L) (baseWr L)
   have h := hpost

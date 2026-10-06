@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.X448.X86_64
 import VerifiedGarbage.Impl.Ed448.X86_64.Scalar
 import VerifiedGarbage.Spec.Ed448
+import VerifiedGarbage.Impl.Ed448.Formulas
 
 /-!
 # Ed448 base-point multiplication on x86-64
@@ -34,41 +35,15 @@ open VG.Impl.X448.X86_64 (at_ sc W w loads stores slot Field add sub cswap freez
 
 /-! ## Field programs on the slots -/
 
-/-- A field operation on slots (X448's 64-byte slots, numbered from 0). -/
-inductive FOp where
-  | mul (o a b : Nat)
-  | sqr (o a : Nat)
-  | add (o a b : Nat)
-  | sub (o a b : Nat)
-  deriving DecidableEq, Repr
-
-/-- The code of a field operation, with the field multiplications `F`. -/
-def FOp.code (F : Field) : FOp → List Instr
+/-- The code of a field operation (`Impl/Ed448/Formulas.lean`), with the field
+multiplications `F`. -/
+def fopCode (F : Field) : FOp → List Instr
   | .mul o a b => F.mul (slot o) (slot a) (slot b)
   | .sqr o a => F.sqr (slot o) (slot a)
   | .add o a b => Impl.X448.X86_64.add (slot o) (slot a) (slot b)
   | .sub o a b => Impl.X448.X86_64.sub (slot o) (slot a) (slot b)
 
-def fieldCode (F : Field) (ops : List FOp) : List Instr := ops.flatMap (FOp.code F)
-
-/-- `R = 2R` in slots 0–2 (RFC 8032 §5.2.4, doubling), with the temporaries
-12–19: `B = (X + Y)²`, `C = X²`, `D = Y²`, `E = C + D`, `H = Z²`,
-`J = E - 2H`, `X = (B - E) J`, `Y = E (C - D)`, `Z = E J`. -/
-def doubleOps : List FOp := [
-  .add 12 0 1, .sqr 12 12, .sqr 13 0, .sqr 14 1, .add 15 13 14, .sqr 16 2,
-  .add 17 16 16, .sub 17 15 17, .sub 18 12 15, .mul 0 18 17, .sub 19 13 14, .mul 1 15 19,
-  .mul 2 15 17]
-
-/-- `T = R + Q` into slots 3–5, for `R` in slots 0–2, `Q` in slots 8–10 and
-`d` in slot 11 (RFC 8032 §5.2.4, addition), with the temporaries 12–20:
-`A = Z₁Z₂`, `B = A²`, `C = X₁X₂`, `D = Y₁Y₂`, `E = dCD`, `F = B - E`,
-`G = B + E`, `H = (X₁ + Y₁)(X₂ + Y₂)`, `X₃ = AF(H - C - D)`,
-`Y₃ = AG(D - C)`, `Z₃ = FG`. -/
-def addOps : List FOp := [
-  .mul 12 2 10, .sqr 13 12, .mul 14 0 8, .mul 15 1 9, .mul 16 11 14, .mul 16 16 15,
-  .sub 17 13 16, .add 18 13 16, .add 19 0 1, .add 20 8 9, .mul 19 19 20, .mul 20 12 17,
-  .sub 19 19 14, .sub 19 19 15, .mul 3 20 19, .mul 20 12 18, .sub 19 15 14, .mul 4 20 19,
-  .mul 5 17 18]
+def fieldCode (F : Field) (ops : List FOp) : List Instr := ops.flatMap (fopCode F)
 
 /-! ## Constants -/
 

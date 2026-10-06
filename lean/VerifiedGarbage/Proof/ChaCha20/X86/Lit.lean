@@ -9,5 +9,6 @@ namespace VG
 
 materialize_code Impl.ChaCha20.X86.block
 materialize_code Impl.ChaCha20.X86.Xor.xor
+materialize_code Impl.ChaCha20.X86.Xor.xorSsse3
 
 end VG

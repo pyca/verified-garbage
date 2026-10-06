@@ -1,0 +1,5 @@
+name = "RSASSA-PSS"
+family = "RSA"
+specs = ["RsaPss", "Mgf1"]
+modules = ["src/rsa_pss/mod.rs"]
+asm = ["rsa", "rsa_pss_md5_mgf1_md5", "rsa_pss_sha1_mgf1_sha1", "rsa_pss_sha224_mgf1_sha224", "rsa_pss_sha256_mgf1_sha256", "rsa_pss_sha384_mgf1_sha384", "rsa_pss_sha512_mgf1_sha512", "rsa_pss_sha512_224_mgf1_sha512_224", "rsa_pss_sha512_256_mgf1_sha512_256"]

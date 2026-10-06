@@ -183,25 +183,33 @@ def negate (ox o w : Nat) : List Instr :=
 
 /-! ## The function -/
 
-/-- Step `x19 = j`: both digits' entries of table `j`, negated for negative digits, added
-to their accumulators. `x9` is nonzero while another step follows. -/
-def step : Prog isa :=
+/-- Step `x19 = j` of a comb of `n` tables: both digits' entries of table `j`, negated for
+negative digits, added to their accumulators. `x9` is nonzero while another step follows. -/
+def stepN (n : Nat) : Prog isa :=
   .seq (.block digits) <|
-  .seq (selectFrom (List.range 56)) <|
+  .seq (selectFrom (List.range n)) <|
   .block (negate OX (BITS + 4) (t 0) ++ addAffine AX AY AZ OX OY ++
     negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
-    [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 56])
+    [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n])
+
+/-- X448's step: 56 tables, for its 448-bit scalars. -/
+def step : Prog isa := stepN 56
 
 /-- Save the registers, keep the output pointer in `x20`, set `x12` to `2²⁸ - 1` and every slot to
-zero, expand the clamped scalar's bits, and start both accumulators at `[G] B` and the
-counter at 0. -/
-def setup : Prog isa :=
-  .seq (.block ([.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
+zero. -/
+def entry : List Instr :=
+  [.addImm .x .x3 .x2 0, .movz .x .x12 0xffff 0, .movk .x .x12 0x0fff 1,
     st .x19 0, st .x20 8, .addImm .x .x20 .x0 0] ++ save ++ Fast.vsave ++ [.movz .x .x4 0 0] ++
-    (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i)))) <|
-  .seq AArch64.bits <|
-  .block (constSlot AX baseG.1 ++ constSlot AY baseG.2 ++ constSlot AZ 1 ++
-    constSlot BX baseG.1 ++ constSlot BY baseG.2 ++ constSlot BZ 1 ++ [.movz .x .x19 0 0])
+    (List.range 352).map (fun i => st .x4 (slot 0 + 8 * i))
+
+/-- Both accumulators at the affine point `g`, and the counter at 0. -/
+def accs (g : Spec.X448.Fe × Spec.X448.Fe) : List Instr :=
+  constSlot AX g.1 ++ constSlot AY g.2 ++ constSlot AZ 1 ++
+    constSlot BX g.1 ++ constSlot BY g.2 ++ constSlot BZ 1 ++ [.movz .x .x19 0 0]
+
+/-- `entry`, the clamped scalar's bits, and both accumulators at `[G] B`. -/
+def setup : Prog isa :=
+  .seq (.block entry) <| .seq AArch64.bits <| .block (accs baseG)
 
 /-- `A := 16 A + B`. -/
 def combine : Prog isa :=

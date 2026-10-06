@@ -7,17 +7,17 @@ import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 # AES-GCM: x86-64 implementation
 
 The AES-GCM functions of `Spec/Gcm/Contract.lean`, composed of calls of the
-verified `vg_aes_expand_key`, `vg_aes_ctr32` and `vg_ghash`. They are generic
+verified `vg_aes_expand_key_scratch`, `vg_aes_ctr32` and `vg_ghash`. They are generic
 over the implementations of those they call (`Callees`): each is emitted once
-for each implementation of `vg_aes_ctr32` (with the `vg_aes_expand_key` for
+for each implementation of `vg_aes_ctr32` (with the `vg_aes_expand_key_scratch` for
 the same CPUs) and of `vg_ghash`.
 
 ## The working space
 
 Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
 
-* `[0, 16)`: the tag (written by `finish`, `verify` and `seal`; the received
-  tag of `verify` and `open`);
+* `[0, 16)`: the tag `finish`, `verify` and `seal` compute (which `finish`
+  and `seal` then copy to `tag`);
 * `[16, 96)`: the streaming state of `seal` and `open`;
 * `[96, 112)`: a block `T`: a partial block padded with zeros, or the
   lengths block;
@@ -27,7 +27,8 @@ Every function has a buffer `W` of 2560 bytes (`scratch` or `work`):
   `open` keep the whole length at `tlenO` and what is left of the data after
   its whole blocks at `dataO` and `lenO`; `stream_encrypt` and
   `stream_decrypt` keep the text so far at `tlenO`, what is left of the data
-  at `dataO` and `lenO`, and the whole length at `auxO`);
+  at `dataO` and `lenO`, and the whole length at `auxO`; `finish` keeps the
+  address of `tag` at `tagPO`);
 * `[240, 256)` and `[256, 272)`: the two tags compared, padded with zeros;
 * `[512, 2560)`: the working space of the functions called, and
   `[448, 2560)` that of `vg_aes_gcm_encrypt_blocks` and
@@ -60,9 +61,13 @@ rounds is kept in `W` (`roundsO`) and loaded before each call of
 * `j0`: `J₀` for the `rbp`-byte nonce at `r12` (GHASH'd with `absorb`,
   `flush` and `lens` unless it is 12 bytes), and the state's accumulator and
   first counter block `inc₃₂(J₀)` (`initState`).
-* `recv`, `cmp o`: the received tag and the computed one (at `W + o`), each
-  of `rbx` bytes, padded with zeros; `eax` is 1 if they are equal and 0 if
-  not, without a branch.
+* `recv`, `cmp o`: the received tag (at `rsi`: `tag`, which `verify` has in
+  `r9` and `open` on the stack) and the computed one (at `W + o`), each of
+  `rbx` bytes, padded with zeros; `eax` is 1 if they are equal and 0 if not,
+  without a branch.
+* `tagOut src`: the tag computed at `W` copied to `tag`, whose address is in
+  memory at `src` (`finish` keeps it at `W + tagPO`; `seal` has it on the
+  stack).
 * `oneBlocks f`: `seal` and `open` encrypt or decrypt the whole blocks of the
   data and absorb them in one call of `f` (`vg_aes_gcm_encrypt_blocks` or
   `vg_aes_gcm_decrypt_blocks`), which can interleave the two; the pieces
@@ -88,7 +93,7 @@ structure Fn where
   name : String
   code : Prog isa
 
-/-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key` and
+/-- The implementations called: of `vg_aes_ctr32`, `vg_aes_expand_key_scratch` and
 `vg_ghash`, and the instances of `vg_aes_gcm_encrypt_blocks` and
 `vg_aes_gcm_decrypt_blocks` that call them. -/
 structure Callees where
@@ -117,6 +122,8 @@ def lenO : Nat := 208
 def auxO : Nat := 216
 def tlO : Nat := 224
 def aadO : Nat := 232
+/-- Where `finish` keeps the address of `tag` (`seal` and `open` keep `dataO` there). -/
+def tagPO : Nat := 200
 def vO : Nat := 240
 def rO : Nat := 256
 def scrO : Nat := 512
@@ -148,6 +155,31 @@ def xorLoop : Prog isa :=
   .seq (.block [.mov32 .r10 (imm 0)])
     (.loop (.block [.movzx8 .rax dstB, .movzx8 .r11 srcB, .alu .xor .rax (.reg .r11), .store8 dstB .rax,
       .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]) .ne)
+
+/-- `[r12 + r10]`. -/
+def maskByte : MemOp := { base := .r12, index := some .r10 }
+
+/-- The mask in `r11` in both halves of `xmm0`. -/
+def maskX : List Instr := [.xop (.movq .xmm0 .r11), .xop (.bin .punpcklqdq .xmm0 .xmm0)]
+
+/-- The `⌊n / 16⌋` whole blocks at `r12` (counted down in `rcx`) ANDed with
+the mask in both halves of `xmm0`, 16 bytes at a time from `r10`. -/
+def maskBlocks : Prog isa :=
+  .loop (.block [.movdquLoad .xmm1 maskByte, .xop (.bin .pand .xmm1 .xmm0), .movdquStore maskByte .xmm1,
+    .alu .add .r10 (imm 16), .alu .sub .rcx (imm 1)]) .ne
+
+/-- The bytes at `r12` from `r10` to `rbp` ANDed with the mask in `r11`, one
+at a time. -/
+def maskBytes : Prog isa :=
+  .loop (.block [.movzx8 .rax maskByte, .alu .and .rax (.reg .r11), .store8 maskByte .rax,
+    .alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rbp)]) .ne
+
+/-- The `rbp` bytes at `r12` ANDed with the mask in `r11` (`0 − ok`): the
+whole blocks (`rcx = ⌊rbp / 16⌋` of them, ZF set if none), with the mask in
+`xmm0`, then the last `rbp mod 16` bytes, from `r10 = 0`. -/
+def maskTail : Prog isa :=
+  .seq (.ite .e (.block []) (.seq (.block maskX) maskBlocks))
+    (.seq (.block [.alu .cmp .r10 (.reg .rbp)]) (.ite .e (.block []) maskBytes))
 
 /-- `rcx := min (16 - rbx, rbp)`. -/
 def minLen : Prog isa :=
@@ -290,10 +322,10 @@ def j0 : Prog isa :=
 
 /-! ## Comparing tags -/
 
-/-- The `rbx` bytes of the received tag (at `W`), padded with zeros at `W + rO`. -/
+/-- The `rbx` bytes of the received tag (at `rsi`), padded with zeros at `W + rO`. -/
 def recv : Prog isa :=
   .seq (.block ([.mov32 .rax (imm 0), .store (at_ .r15 rO) .rax, .store (at_ .r15 (rO + 8)) .rax] ++
-    ptr .rdi .r15 rO ++ [.mov .rsi (.reg .r15), .mov .rcx (.reg .rbx)]))
+    ptr .rdi .r15 rO ++ [.mov .rcx (.reg .rbx)]))
     copyLoop
 
 /-- The first `rbx` bytes of the tag at `W + o`, padded with zeros at
@@ -305,6 +337,11 @@ def cmp (o : Nat) : Prog isa :=
     (.block [.mov .rax (.mem (at_ .r15 vO)), .alu .xor .rax (.mem (at_ .r15 rO)),
       .mov .rdx (.mem (at_ .r15 (vO + 8))), .alu .xor .rdx (.mem (at_ .r15 (rO + 8))),
       .alu .or .rax (.reg .rdx), .alu .cmp .rax (imm 1), .mov32 .rax (imm 0), .alu32 .adc .rax (imm 0)]))
+
+/-- The 16-byte tag at `W` copied to `tag`, whose address is in memory at `src`. -/
+def tagOut (src : MemOp) : List Instr :=
+  [.mov .rdi (.mem src), .mov .rax (.mem (at_ .r15 0)), .mov .rdx (.mem (at_ .r15 8)), .store (at_ .rdi 0) .rax,
+    .store (at_ .rdi 8) .rdx]
 
 /-- ZF is clear iff the tag length `rbx` is one §5.2.1.2 allows (4, 8 or 12 to 16). -/
 def tagLenOk : Prog isa :=
@@ -431,10 +468,11 @@ def streamDecrypt : Prog isa :=
   .seq (.block cryptEntry) (.seq (streamText c false) (.block restore))
 
 /-- The entry of `finish` and `verify`: `(ctx = rdi, rounds = rsi, state = rdx,
-aad_len = rcx, text_len = r8, work = r9)`. -/
-def finEntry : List Instr :=
-  save .r9 ++ [.mov .r15 (.reg .r9), .mov .r14 (.reg .rdx), .mov .r13 (.reg .rdi),
-    .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 alenO) .rcx, .store (at_ .r15 tlenO) .r8]
+aad_len = rcx, text_len = r8, tag = r9)`, and `work` at `[rsp + wo]`. -/
+def finEntry (wo : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++ [.mov .r15 (.reg .rax), .mov .r14 (.reg .rdx),
+    .mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 alenO) .rcx,
+    .store (at_ .r15 tlenO) .r8]
 
 /-- The buffered bytes padded and absorbed, and the tag into `W + o`. -/
 def finTag (o : Nat) : Prog isa :=
@@ -446,29 +484,28 @@ def finTag (o : Nat) : Prog isa :=
   (.seq (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))])
     (tag c o)))))
 
-/-- `vg_aes_gcm_stream_finish`. -/
+/-- `vg_aes_gcm_stream_finish`, with `work = [rsp + 8]`: the tag computed at
+`W` and copied to `tag`. -/
 def streamFinish : Prog isa :=
-  .seq (.block finEntry) (.seq (finTag c 0) (.block restore))
+  .seq (.block (finEntry 8 ++ [.store (at_ .r15 tagPO) .r9]))
+    (.seq (.seq (finTag c 0) (.block (tagOut (at_ .r15 tagPO)))) (.block restore))
 
-/-- `vg_aes_gcm_stream_verify`, with `tag_len = [rsp + 8]`. -/
+/-- `vg_aes_gcm_stream_verify`, with `tag_len = [rsp + 8]` and `work = [rsp + 16]`. -/
 def streamVerify : Prog isa :=
-  .seq (.block (finEntry ++ [.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx]))
+  .seq (.block (finEntry 16 ++ [.mov .rbx (.mem (at_ .rsp 8)), .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r9)]))
   (.seq tagLenOk
-  (.seq (.ite .e (.block [.mov32 .rax (imm 0), .store (at_ .r15 0) .rax, .store (at_ .r15 8) .rax])
+  (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq recv
       (.seq (finTag c 0)
       (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))])
-      (.seq (cmp 0)
-        (.block [.mov32 .rcx (imm 0), .alu .sub .rcx (.reg .rax), .mov .rdx (.mem (at_ .r15 0)),
-          .alu .and .rdx (.reg .rcx), .store (at_ .r15 0) .rdx, .mov .rdx (.mem (at_ .r15 8)),
-          .alu .and .rdx (.reg .rcx), .store (at_ .r15 8) .rdx]))))))
+        (cmp 0)))))
     (.block restore)))
 
 /-- The entry of `seal` and `open`: `(ctx = rdi, rounds = rsi, nonce = rdx,
 nonce_len = rcx, aad = r8, aad_len = r9, data = [rsp + 8], len = [rsp + 16],
-work = [rsp + 24])`. The state is at `W + 16`. -/
-def oneEntry : List Instr :=
-  [.mov .rax (.mem (at_ .rsp 24))] ++ save .rax ++
+tag = [rsp + 24])`, and `work` at `[rsp + wo]`. The state is at `W + 16`. -/
+def oneEntry (wo : Nat) : List Instr :=
+  [.mov .rax (.mem (at_ .rsp wo))] ++ save .rax ++
     [.mov .r15 (.reg .rax)] ++ ptr .r14 .r15 stO ++
     [.mov .r13 (.reg .rdi), .store (at_ .r15 roundsO) .rsi, .store (at_ .r15 aadO) .r8,
       .store (at_ .r15 alenO) .r9, .mov .rax (.mem (at_ .rsp 8)), .store (at_ .r15 dataO) .rax,
@@ -528,20 +565,21 @@ def oneUndo : Prog isa :=
           ptr .r9 .r15 scrO))
         (.call c.ctr.name c.ctr.code)))
 
-/-- `vg_aes_gcm_seal`. -/
+/-- `vg_aes_gcm_seal`, with `work = [rsp + 32]`: the tag computed at `W` and
+copied to `tag`. -/
 def «seal» : Prog isa :=
-  .seq (.block oneEntry) (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (.seq (oneTag c 0)
-    (.block restore)))))
+  .seq (.block (oneEntry 32)) (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c)
+    (.seq (.seq (oneTag c 0) (.block (tagOut (at_ .rsp 24)))) (.block restore)))))
 
-/-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]`. -/
+/-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]` and `work = [rsp + 40]`. -/
 def «open» : Prog isa :=
-  .seq (.block (oneEntry ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
+  .seq (.block (oneEntry 40 ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
       (.seq (oneAad c)
       (.seq (oneBlocks c.dec)
       (.seq (oneTag c uO)
-      (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))])
+      (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
       (.seq recv
       (.seq (cmp uO)
       (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])

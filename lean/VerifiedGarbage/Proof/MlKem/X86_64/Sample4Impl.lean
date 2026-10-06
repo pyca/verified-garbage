@@ -96,6 +96,24 @@ def avx2 : Sample4Impl where
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
 
+/-- The AVX-512VL implementation, `vg_mlkem_sample_ntt4_avx512`. -/
+def avx512 : Sample4Impl where
+  callee := .avx512
+  ok := S4.correct
+  ct := S4.ct
+  nosp := nosp_of (by decide +kernel)
+  depth_le := by decide +kernel
+  mxcsr := by decide +kernel
+  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  prfs_ok := fun L hcs => prfsAvx2_ok L hcs
+  prfs_tr := fun hcs => prfsAvx2_tr hcs
+  prfs_ctl := prfsAvx2_ctl
+  prfs_sp := prfsAvx2_sp
+  arith := ArithOk.avx2
+  suffix := "_avx512"
+  prfsDoc := "four at a time, with AVX-512VL quadword rotates (and the first one or two of `4k + 1` or `4k + 2` on their own)"
+  features := ["avx", "avx2", "avx512f", "avx512vl"]
+
 end Sample4Impl
 
 open Lean Elab Tactic in

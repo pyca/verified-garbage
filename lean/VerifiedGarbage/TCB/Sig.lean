@@ -174,6 +174,51 @@ structure Abi (M : ISA) where
   /-- How documentation names `reserved n`: `none` if it is empty on every
   state. -/
   reservedDoc : Nat → Option String
+  /-- The address of each `static` the code can name, by name
+  (`Artifact.consts`), on a target whose code can name one; `none` on the
+  others. -/
+  sym : Option (M.State → String → BitVec 64) := none
+
+/-! ## Tables of constants
+
+An artifact may read tables of constants (`Artifact.consts`): the emitter
+writes each as a Rust `static` of its name, and the code forms its address
+from the name (on AArch64, `adrSym`: `adrp` and `add`; on x86-64,
+`leaSym`: `lea` of a RIP-relative operand), which the linker resolves to
+the static (see `TCB/Rust.lean`). `A.withConsts cs` is the
+calling convention as a contract for such code sees it: the state gives each
+table's address (`A.sym`), which is public, and the memory holds the table
+there; the code may read it (the tables come last in the regions it may
+read, after those the contract gives the arguments), no writable region or
+reserved memory overlaps it, and it does not wrap around the address space:
+as for a Rust `static`, a distinct immutable object holding exactly those
+words. With no tables, or on a target whose code cannot name a static, it is
+`A`. -/
+
+/-- The tables `cs` at the addresses `f` gives their names, each `8 * length`
+bytes. -/
+def Abi.constRegions (f : String → BitVec 64) (cs : List (String × List (BitVec 64))) :
+    List Region :=
+  cs.map fun c => ⟨f c.1, 8 * c.2.length⟩
+
+/-- The memory `m` holds each table at its address: word `i` (64 bits,
+little-endian) at the address plus `8 i`. -/
+def Abi.constsHeld (m : Mem) (f : String → BitVec 64) (cs : List (String × List (BitVec 64))) :
+    Prop :=
+  ∀ c ∈ cs, ∀ i < c.2.length, m.readW (f c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
+
+def Abi.withConsts {M : ISA} (A : Abi M) (cs : List (String × List (BitVec 64))) : Abi M :=
+  match A.sym, cs with
+  | none, _ | _, [] => A
+  | some f, cs =>
+    { A with
+      rd s := (A.rd s).take ((A.rd s).length - cs.length)
+      wf ws n s := A.wf ws n s ∧
+        (A.rd s).drop ((A.rd s).length - cs.length) = Abi.constRegions (f s) cs ∧
+        Abi.constsHeld (A.mem s) (f s) cs ∧
+        (∀ t ∈ Abi.constRegions (f s) cs, t.base.toNat + t.len ≤ 2 ^ A.ptrBits ∧
+          (∀ r ∈ A.wr s, t.Disjoint r) ∧ ∀ r ∈ A.reserved n s, t.Disjoint r)
+      pub s₁ s₂ := A.pub s₁ s₂ ∧ ∀ c ∈ cs, f s₁ c.1 = f s₂ c.1 }
 
 /-- The `n` bytes below the stack pointer `sp`, if any. -/
 def stackBelow (sp : Addr) : Nat → List Region
