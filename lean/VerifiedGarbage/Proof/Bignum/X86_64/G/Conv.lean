@@ -20,7 +20,8 @@ open VG.Proof.Bignum.X86_64.AmmSym (shl_eq' drop_hi div_split or_shr_shl mod52_o
 
 variable {l : Lay}
 
-theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 40 ∧ 64 * l.W + 1 ≤ 52 * l.L := by
+theorem conv_bounds (hl : LayOk l) : 1 ≤ l.W ∧ 64 * l.W ≤ 52 * l.L ∧ l.L ≤ 40 ∧ 64 * l.W + 2 ≤ 52 * l.L ∧
+    128 * l.W ≤ 416 * l.R := by
   rcases hl with rfl | rfl | rfl <;> decide
 
 theorem and_mask' (x : BitVec 64) : x &&& mask52 = BitVec.ofNat 64 (x.toNat % 2 ^ 52) := AmmSym.and_mask' x
