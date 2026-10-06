@@ -73,11 +73,33 @@ structure FieldOk (fld : Field) : Prop where
   a24 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
     WP isa (.block (fld.a24 o a)) s fun s' =>
       Op base o s s' ∧ F s'.mem base o = Spec.X25519.a24 * F s.mem base a
+  mul2 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a b : Nat}, Slot o → Slot a → Slot b →
+    WP isa (.block (fld.mul2 o a b)) s fun s' => Op base o s s' ∧
+      F s'.mem base o = F s.mem base a * F s.mem base b + F s.mem base a * F s.mem base b
+  sqr2 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a : Nat}, Slot o → Slot a →
+    WP isa (.block (fld.sqr2 o a)) s fun s' => Op base o s s' ∧
+      F s'.mem base o = F s.mem base a * F s.mem base a + F s.mem base a * F s.mem base a
+
+theorem Op.trans {base : Addr} {o : Nat} {s t u : State} (h : Op base o s t) (k : Op base o t u) :
+    Op base o s u :=
+  ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr, h.mem.trans k.mem⟩
+
+/-- A field operation into `[o]`, then `[o] = [o] + [o]`. -/
+theorem dbl_after {code : List Instr} {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
+    (ho : Slot o) {v : Spec.X25519.Fe}
+    (h : WP isa (.block code) s fun s' => Op base o s s' ∧ F s'.mem base o = v) :
+    WP isa (.block (code ++ add o o o)) s fun s' => Op base o s s' ∧ F s'.mem base o = v + v := by
+  rw [WP.block_append_iff]
+  refine WP.mono h fun t ⟨ht, et⟩ => ?_
+  refine WP.mono (add_ok (ht.scr hs) ho ho ho) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, ?_⟩
+  rw [eu, et]
 
 theorem baseline_ok : FieldOk baseline where
   mul hs _ _ _ ho ha hb := mul_ok hs ho ha hb
   sqr hs _ _ ho ha := sqr_ok hs ho ha
   a24 hs _ _ ho ha := mulA24_ok hs ho ha
+  mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
+  sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
 
 /-! ## The field operations on the slots -/
 

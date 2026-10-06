@@ -41,6 +41,10 @@ inductive FieldOp where
   | sqr (out a : Slot)
   | add (out a b : Slot)
   | sub (out a b : Slot)
+  /-- `2ab`: the doubling in the product's reduction (`Field.mul2`). -/
+  | mul2 (out a b : Slot)
+  /-- `2a²` (`Field.sqr2`). -/
+  | sqr2 (out a : Slot)
   deriving DecidableEq
 
 def FieldOp.code (fld : Arith) : FieldOp → List Instr
@@ -50,6 +54,8 @@ def FieldOp.code (fld : Arith) : FieldOp → List Instr
   | .sqr o a => fld.sqr (offset o) (offset a)
   | .add o a b => Impl.X25519.X86_64.add (offset o) (offset a) (offset b)
   | .sub o a b => Impl.X25519.X86_64.sub (offset o) (offset a) (offset b)
+  | .mul2 o a b => fld.mul2 (offset o) (offset a) (offset b)
+  | .sqr2 o a => fld.sqr2 (offset o) (offset a)
 
 def fieldCode (fld : Arith) (ops : List FieldOp) : List Instr := ops.flatMap (FieldOp.code fld)
 
