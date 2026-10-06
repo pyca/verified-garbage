@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesOcb.AArch64.Pass
+import VerifiedGarbage.Proof.AesOcb.AArch64.Batch
 
 /-!
 # AES-OCB on AArch64: the whole blocks (`whole`)
@@ -85,6 +85,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
         (blockAtMem s.mem (D + BitVec.ofNat 64 (16 * i))))
     {pre post : List Instr} {fC1 fC2 : Block → Block → Block → Block} {ckF1 ckF2 : Nat → Block}
     (hB1 : ∀ {W}, BodyOk W pre (fun b o => b ^^^ o) fC1) (hB2 : ∀ {W}, BodyOk W post (fun b o => b ^^^ o) fC2)
+    (hV1 : pre.all keepsCache = true) (hV2 : post.all keepsCache = true)
     {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {t : State} (E : Env K W D R n SP t)
     (hR : R = 10 ∨ R = 12 ∨ R = 14) {m : Nat} (hD : DBuf K W t D n) (hmn : 16 * m ≤ n) (hm0 : 0 < m)
     (hm : m < 2 ^ 60) {O0 l : Block} (h26 : t.gpr .x26 = BitVec.ofNat 64 m)
@@ -114,7 +115,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
       gpr := fun _ _ => rfl }
   unfold whole
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  refine WP.seq (WP.mono (pass_ok L hB1 (fun i _ => by rw [hckF1, m₁]) hD₁ hm0 hm P₀) fun s₂ P₂ => ?_)
+  refine WP.seq (WP.mono (pass_ok L hB1 hV1 (fun i _ => by rw [hckF1, m₁]) hD₁ hm hm0 P₀) fun s₂ P₂ => ?_)
   have hw := hD.wrap
   have h26₂ : s₂.gpr .x26 = BitVec.ofNat 64 m := by rw [P₂.gpr _ (by decide), g₁ _ (by decide), h26]
   have hD₂ : DBuf K W s₂ D (16 * m) := hD₁.of_eq P₂.rd P₂.wr
@@ -183,7 +184,7 @@ theorem whole_ok {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
           kWP (by decide), m₁, hl0]
       gpr := fun _ _ => rfl }
   refine WP.seq (WP.of_runBlock ⟨s₄, by rw [runBlock_append, run₄a, Option.bind_some, run₄], ?_⟩)
-  refine WP.mono (pass_ok L hB2 (fun i hi => by rw [hckF2, X₄ i hi]) hD₄ hm0 hm P₀') fun s₅ P₅ => ?_
+  refine WP.mono (pass_ok L hB2 hV2 (fun i hi => by rw [hckF2, X₄ i hi]) hD₄ hm hm0 P₀') fun s₅ P₅ => ?_
   have subW : ∀ r ∈ [(⟨W + BitVec.ofNat 64 lO, 16⟩ : Region), ⟨W + BitVec.ofNat 64 ofsO, 16⟩,
       ⟨W + BitVec.ofNat 64 ckO, 16⟩, ⟨D, 16 * m⟩], ∃ r' ∈ wholeR W D (16 * m), Region.Sub r r' := by
     intro r hr

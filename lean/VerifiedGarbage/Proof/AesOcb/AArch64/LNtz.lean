@@ -50,6 +50,64 @@ theorem low1_ok (s : State) {v : Nat} (hv : v < 2 ^ 64) (h14 : s.gpr .x14 = BitV
   · simp [gpr_write, h1]
   all_goals rfl
 
+/-- Continue the public-index doubling loop from any already computed L_a. -/
+theorem lNtzLoop_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W)
+    (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block} {i a : Nat} (hi' : i < 2^64)
+    (hpos : 0 < i / 2^a) (he : i / 2^a % 2 = 0) (hntz : ntz i = a + ntz (i / 2^a))
+    (h14 : s.gpr .x14 = BitVec.ofNat 64 (i / 2^a))
+    (hl : blockAtMem s.mem (W + BitVec.ofNat 64 lO) = lAt l a) :
+    WP isa (.loop (.block (dbl .x19 lO lO ++ ([.lsr .x .x14 .x14 1] : List Instr) ++ low1)) (.zero .x .x12)) s
+      (LNtzPost W l i s) := by
+  have wW : ∀ {d n : Nat}, d + n ≤ 2560 → InRegions s.wr (W + BitVec.ofNat 64 d) n := fun h =>
+    Proof.AesGcm.AArch64.in_off hw h (by decide)
+  refine WP.loop (M := isa)
+    (fun (k : Nat) (t : State) => ∃ j, k = i / 2 ^ j ∧ 0 < i / 2 ^ j ∧ i / 2 ^ j % 2 = 0 ∧
+      ntz i = j + ntz (i / 2 ^ j) ∧ t.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ j) ∧
+      Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t.mem ∧ blockAtMem t.mem (W + BitVec.ofNat 64 lO) = lAt l j ∧
+      (∀ r, r ∉ ntzRegs → t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (i / 2 ^ a) _
+    ⟨a, rfl, hpos, he, hntz, h14, Frame.refl _ _, hl, fun _ _ => rfl, rfl, rfl, rfl⟩
+  rintro k t ⟨j, rfl, hpos, hev, hntz, x14, fr, v, g, sp, rd, wr⟩
+  have hv : i / 2 ^ j < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hi'
+  have h19t : t.gpr .x19 = W := by rw [g _ (by decide), h19]
+  obtain ⟨t₁, runt₁, D₁⟩ := dbl_ok (s := t) (b := .x19) (a := lO) (d := lO) (by decide) (by decide) h19t h19t
+    (by decide) (by rw [rd, wr]; exact Proof.AesGcm.AArch64.in_left (wW (by decide)))
+    (by rw [rd, wr]; exact Proof.AesGcm.AArch64.in_left (wW (by decide)))
+    (by rw [wr]; exact wW (by decide)) (by rw [wr]; exact wW (by decide))
+  have e : i / 2 ^ (j + 1) = i / 2 ^ j / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
+  obtain ⟨t₂, runt₂, x14₂', g₂', m₂', sp₂'', rd₂'', wr₂''⟩ : ∃ t₂, runBlock isa [.lsr .x .x14 .x14 1] t₁ = some t₂ ∧
+      t₂.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ (j + 1)) ∧ (∀ r, r ≠ .x14 → t₂.gpr r = t₁.gpr r) ∧ t₂.mem = t₁.mem ∧
+      t₂.sp = t₁.sp ∧ t₂.rd = t₁.rd ∧ t₂.wr = t₁.wr := by
+    have x14₁ : t₁.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), x14]
+    refine ⟨_, by orun [], ?_, fun r h => ?_, ?_, ?_, ?_, ?_⟩
+    · simp [gpr_write, x14₁, shr1 hv, e]
+    · simp [gpr_write, h]
+    all_goals rfl
+  obtain ⟨t₃, runt₃, x12₃, x14₃, g₃, m₃, sp₃, rd₃, wr₃⟩ := low1_ok t₂ (by omega) x14₂'
+  refine WP.of_runBlock ⟨t₃, by rw [runBlock_append, runBlock_append, runt₁, Option.bind_some, runt₂,
+    Option.bind_some, runt₃], ?_⟩
+  have fr' : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
+    rw [m₃, m₂']
+    exact fun x hx => (D₁.frame x hx).trans (fr x hx)
+  have v' : blockAtMem t₃.mem (W + BitVec.ofNat 64 lO) = lAt l (j + 1) := by rw [m₃, m₂', D₁.val, v]; rfl
+  have g' : ∀ r, r ∉ ntzRegs → t₃.gpr r = s.gpr r := fun r hr => by
+    simp only [ntzRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g₃ r hr.2.2.2.1, g₂' r hr.2.2.2.2.2, D₁.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1]),
+      g r (by simp [ntzRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
+  have sp' : t₃.sp = s.sp := by rw [sp₃, sp₂'', D₁.sp, sp]
+  have rd' : t₃.rd = s.rd := by rw [rd₃, rd₂'', D₁.rd, rd]
+  have wr' : t₃.wr = s.wr := by rw [wr₃, wr₂'', D₁.wr, wr]
+  have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
+    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
+  have hv' : i / 2 ^ (j + 1) < 2 ^ 64 := by omega
+  by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
+  · right
+    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
+      by rw [e]; omega, hodd, hntz', x14₃, fr', v', g', sp', rd', wr'⟩
+  · left
+    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), ⟨fr', ?_, g', sp', rd', wr'⟩⟩
+    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+
+
 theorem lNtz_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W, 2560⟩] s.wr) {l : Block} {i : Nat}
     (hi : 0 < i) (hi' : i < 2 ^ 64) (h25 : s.gpr .x25 = BitVec.ofNat 64 i)
     (hl0 : blockAtMem s.mem (W + BitVec.ofNat 64 l0O) = lAt l 0) :
@@ -90,52 +148,8 @@ theorem lNtz_ok {W : Addr} {s : State} (h19 : s.gpr .x19 = W) (hw : Covers [⟨W
   rotate_left
   · rw [v₂, Proof.Ocb.ntz_odd (by simp at hb; omega)]
   have he : i % 2 = 0 := of_decide_eq_true hb
-  refine WP.loop (M := isa)
-    (fun (k : Nat) (t : State) => ∃ j, k = i / 2 ^ j ∧ 0 < i / 2 ^ j ∧ i / 2 ^ j % 2 = 0 ∧
-      ntz i = j + ntz (i / 2 ^ j) ∧ t.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ j) ∧
-      Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t.mem ∧ blockAtMem t.mem (W + BitVec.ofNat 64 lO) = lAt l j ∧
-      (∀ r, r ∉ ntzRegs → t.gpr r = s₂.gpr r) ∧ t.sp = s.sp ∧ t.rd = s.rd ∧ t.wr = s.wr) ?_ (i / 2 ^ 0) _
-    ⟨0, rfl, by simpa using hi, by simpa using he, by simp, by simpa using x14₂, fr₂, v₂,
-      fun _ _ => rfl, sp₂', rd₂', wr₂'⟩
-  rintro k t ⟨j, rfl, hpos, hev, hntz, x14, fr, v, g, sp, rd, wr⟩
-  have hv : i / 2 ^ j < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.div_le_self _ _) hi'
-  have h19t : t.gpr .x19 = W := by rw [g _ (by decide), h19₂]
-  obtain ⟨t₁, runt₁, D₁⟩ := dbl_ok (s := t) (b := .x19) (a := lO) (d := lO) (by decide) (by decide) h19t h19t
-    (by decide) (by rw [rd, wr]; exact Proof.AesGcm.AArch64.in_left (wW (by decide)))
-    (by rw [rd, wr]; exact Proof.AesGcm.AArch64.in_left (wW (by decide)))
-    (by rw [wr]; exact wW (by decide)) (by rw [wr]; exact wW (by decide))
-  have e : i / 2 ^ (j + 1) = i / 2 ^ j / 2 := by rw [Nat.pow_succ, Nat.div_div_eq_div_mul]
-  obtain ⟨t₂, runt₂, x14₂', g₂', m₂', sp₂'', rd₂'', wr₂''⟩ : ∃ t₂, runBlock isa [.lsr .x .x14 .x14 1] t₁ = some t₂ ∧
-      t₂.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ (j + 1)) ∧ (∀ r, r ≠ .x14 → t₂.gpr r = t₁.gpr r) ∧ t₂.mem = t₁.mem ∧
-      t₂.sp = t₁.sp ∧ t₂.rd = t₁.rd ∧ t₂.wr = t₁.wr := by
-    have x14₁ : t₁.gpr .x14 = BitVec.ofNat 64 (i / 2 ^ j) := by rw [D₁.gpr _ (by decide), x14]
-    refine ⟨_, by orun [], ?_, fun r h => ?_, ?_, ?_, ?_, ?_⟩
-    · simp [gpr_write, x14₁, shr1 hv, e]
-    · simp [gpr_write, h]
-    all_goals rfl
-  obtain ⟨t₃, runt₃, x12₃, x14₃, g₃, m₃, sp₃, rd₃, wr₃⟩ := low1_ok t₂ (by omega) x14₂'
-  refine WP.of_runBlock ⟨t₃, by rw [runBlock_append, runBlock_append, runt₁, Option.bind_some, runt₂,
-    Option.bind_some, runt₃], ?_⟩
-  have fr' : Frame [⟨W + BitVec.ofNat 64 lO, 16⟩] s.mem t₃.mem := by
-    rw [m₃, m₂']
-    exact fun x hx => (D₁.frame x hx).trans (fr x hx)
-  have v' : blockAtMem t₃.mem (W + BitVec.ofNat 64 lO) = lAt l (j + 1) := by rw [m₃, m₂', D₁.val, v]; rfl
-  have g' : ∀ r, r ∉ ntzRegs → t₃.gpr r = s₂.gpr r := fun r hr => by
-    simp only [ntzRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [g₃ r hr.2.2.2.1, g₂' r hr.2.2.2.2.2, D₁.gpr r (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1]),
-      g r (by simp [ntzRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2])]
-  have sp' : t₃.sp = s.sp := by rw [sp₃, sp₂'', D₁.sp, sp]
-  have rd' : t₃.rd = s.rd := by rw [rd₃, rd₂'', D₁.rd, rd]
-  have wr' : t₃.wr = s.wr := by rw [wr₃, wr₂'', D₁.wr, wr]
-  have hntz' : ntz i = (j + 1) + ntz (i / 2 ^ (j + 1)) := by
-    rw [hntz, Proof.Ocb.ntz_even hpos hev, e]; omega
-  have hv' : i / 2 ^ (j + 1) < 2 ^ 64 := by omega
-  by_cases hodd : i / 2 ^ (j + 1) % 2 = 0
-  · right
-    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), i / 2 ^ (j + 1), by rw [e]; omega, j + 1, rfl,
-      by rw [e]; omega, hodd, hntz', x14₃, fr', v', g', sp', rd', wr'⟩
-  · left
-    refine ⟨(eval_zero x12₃ (by omega)).trans (by simp [hodd]), post_of t₃ fr' ?_ g' sp' rd' wr'⟩
-    rw [v', hntz', Proof.Ocb.ntz_odd (by omega)]
+  exact WP.mono (lNtzLoop_ok h19₂ (by rw [wr₂']; exact hw) hi' (a := 0)
+    (by simpa using hi) (by simpa using he) (by simp) (by simpa using x14₂) v₂) fun t P =>
+      post_of t (fr₂.trans P.frame) P.val P.gpr (P.sp.trans sp₂') (P.rd.trans rd₂') (P.wr.trans wr₂')
 
 end VG.Proof.AesOcb.AArch64

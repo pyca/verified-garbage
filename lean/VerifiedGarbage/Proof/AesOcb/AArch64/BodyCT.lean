@@ -180,12 +180,12 @@ theorem bodySeal_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R 
     (wholeIte_ok (O0 := O₁) (l := ctxLstar σ₁.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok (by decide) (by decide) L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K)
       (ckF1 := ckOf fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)))
       (ckF2 := fun _ => ckOf (fun i => blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i))) (n / 16))
-      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.encOk v.encNoFrames hcall_enc sealPre_ok xorOfs_ok (by decide) (by decide) L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v true P₁.env P₂.env hD₁.lt
 
@@ -206,13 +206,13 @@ theorem bodyOpen_rel (v : BlocksImpl) {σ₁ σ₂ : State} (E₁ : Env K W D R 
       (ckF2 := ckOf fun i => decG (bytesAt σ₁.mem K (16 * (R + 1)))
         (blockAtMem σ₁.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₁ (ctxLstar σ₁.mem K) (i + 1)) ^^^
           offAt O₁ (ctxLstar σ₁.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
+      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok (by decide) (by decide) L E₁ hR hD₁ hofs₁ ho0₁ hck₁ hl0₁
       (fun _ => rfl) rfl (fun _ => rfl))
     (wholeIte_ok (O0 := O₂) (l := ctxLstar σ₂.mem K) (ckF1 := fun _ => 0)
       (ckF2 := ckOf fun i => decG (bytesAt σ₂.mem K (16 * (R + 1)))
         (blockAtMem σ₂.mem (D + BitVec.ofNat 64 (16 * i)) ^^^ offAt O₂ (ctxLstar σ₂.mem K) (i + 1)) ^^^
           offAt O₂ (ctxLstar σ₂.mem K) (i + 1))
-      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
+      v.decOk v.decNoFrames hcall_dec xorOfs_ok openPost_ok (by decide) (by decide) L E₂ hR hD₂ hofs₂ ho0₂ hck₂ hl0₂
       (fun _ => rfl) rfl (fun _ => rfl)) fun t₁ t₂ P₁ P₂ => ?_)
   exact restIte_rel L hR v false P₁.env P₂.env hD₁.lt
 
