@@ -69,16 +69,21 @@ theorem uEncode_ok {s : State} {base : Addr} (hs : Scratch s base) :
   refine ⟨(kac.trans kb).trans (RbxKeep.of_keeps kt (by decide)), ?_⟩
   rw [tv, bx, va, (uOps_eval _).1, (uOps_eval _).2]
 
-theorem engine_ok {s : State} {base k T : Addr} (hs : Scratch s base) (hp : s.gpr .rsi = k)
-    (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
-    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (engine fld) s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
+/-- What an engine of fixed-base X25519 computes: the u-coordinate of `[k]B`, in `r8–r11`. -/
+def UEngineOk (eng : Prog isa) : Prop :=
+  ∀ {s : State} {base k T : Addr}, Scratch s base → s.gpr .rsi = k →
+    (∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1) → (∀ q < 32, 8192 ≤ ofs base (off k q)) →
+    CombTbl s T → TblFar base T →
+    WP isa eng s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = w.val ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
-        Spec.X25519.encodeUCoordinate w := by
+        Spec.X25519.encodeUCoordinate w
+
+theorem engineOf_ok {comb : Prog isa} (hcomb : CombOk comb) : UEngineOk (engineOf fld comb) := by
+  intro s base k T hs hp hr hd ht hfar
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   set kb := Spec.Ed25519.bytesAt s.mem k 32
-  rw [engine]
+  rw [engineOf]
   refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, _, bd, bbits, _⟩ bsy => ?_)
   have hsb := kab.scratch hs
   refine WP.seq (WP.mono_syms (clampBits_ok hsb) fun c ⟨kbc, cd, cbits⟩ csy => ?_)
@@ -96,9 +101,11 @@ theorem engine_ok {s : State} {base k T : Addr} (hs : Scratch s base) (hp : s.gp
     · rfl
     · exact bbits q (by simpa using hq)
   have tc : CombTbl c T := (ht.keep hfar kab bsy).keep hfar kbc csy
-  refine WP.seq (WP.mono (combMultiply_ok (fld := fld) hsc hS (cd.trans bd) cb tc hfar) fun d ⟨dp, kd⟩ => ?_)
+  refine WP.seq (WP.mono (hcomb.ok hsc hS (cd.trans bd) cb tc hfar) fun d ⟨dp, kd⟩ => ?_)
   refine WP.mono (uEncode_ok (kd.scratch hsc)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨((kab.trans kbc).trans kd).trans (PowersKeep.of_rbx kt), _, tv, ?_⟩
   exact VG.Proof.X25519.Edwards.x25519_basePoint hk _ (u_rep dp)
+
+theorem engine_ok : UEngineOk (engine fld) := engineOf_ok combOk
 
 end VG.Proof.X25519.X86_64.Base

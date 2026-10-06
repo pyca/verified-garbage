@@ -62,22 +62,22 @@ private theorem start_ct (base k T out : Addr) :
   exact (hc.wp (fun _ _ h => ⟨start_ok h.1, start_ok h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)
 
-private theorem engine_ready {base k T out : Addr} {s : State} (hs : BasePrepared base k T out s) :
-    WP isa (engine fld) s (BaseReady base out) := by
-  refine WP.mono (engine_ok hs.1.1 hs.1.2.1 hs.1.2.2.1 hs.1.2.2.2.1 hs.1.2.2.2.2.1 hs.1.2.2.2.2.2)
+private theorem engine_ready {eng : Prog isa} (heng : UEngineOk eng) {base k T out : Addr} {s : State}
+    (hs : BasePrepared base k T out s) : WP isa eng s (BaseReady base out) := by
+  refine WP.mono (heng hs.1.1 hs.1.2.1 hs.1.2.2.1 hs.1.2.2.2.1 hs.1.2.2.2.2.1 hs.1.2.2.2.2.2)
     fun t ⟨kt, _⟩ => ?_
   exact ⟨kt.scratch hs.1.1, ((powersKeep_outside kt).word
     (d := 48) (Or.inl (by decide)) (by decide)).trans hs.2⟩
 
-private theorem engine_ct
+private theorem engine_ct {eng : Prog isa} (heng : UEngineOk eng)
     (engine_ct : ∀ base k T, RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (engine fld) (fun _ _ => True)) (base k T out : Addr) :
+      eng (fun _ _ => True)) (base k T out : Addr) :
     RelCT isa (fun x y => BasePrepared base k T out x ∧ BasePrepared base k T out y)
-      (engine fld) (fun x y => BaseReady base out x ∧ BaseReady base out y) := by
+      eng (fun x y => BaseReady base out x ∧ BaseReady base out y) := by
   have hc := (engine_ct base k T).mono
     (fun _ _ (h : BasePrepared base k T out _ ∧ BasePrepared base k T out _) => ⟨h.1.1, h.2.1⟩)
     (fun _ _ h => h)
-  exact (hc.wp (fun _ _ h => ⟨engine_ready h.1, engine_ready h.2⟩)).mono
+  exact (hc.wp (fun _ _ h => ⟨engine_ready heng h.1, engine_ready heng h.2⟩)).mono
     (fun _ _ h => h) (fun _ _ h => h.2)
 
 private theorem finish_ct (base out : Addr) :
@@ -108,16 +108,21 @@ private theorem finish_ct (base out : Addr) :
   · exact h.1.1.trans h.2.1.symm
   · exact h.1.2.trans h.2.2.symm
 
-theorem x25519Base_ct
+theorem x25519BaseWith_ct (eng : Prog isa) (heng : UEngineOk eng)
     (engineCT : ∀ base k T, RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
-      (engine fld) (fun _ _ => True)) :
-    ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base fld) := by
+      eng (fun _ _ => True)) :
+    ConstantTime isa baseLocal.pre baseLocal.pub (scalarBaseWith eng) := by
   apply VG.RelCT.constantTime (Q := fun _ _ => True)
   intro x y tx ty x' y' ⟨hx, hy, _, ho, hk, hb, hT⟩ ex ey
   have hc := VG.RelCT.seq (start_ct (x.gpr .rdx) (x.gpr .rsi) (x.syms combSym) (x.gpr .rdi))
-    (VG.RelCT.seq (engine_ct engineCT (x.gpr .rdx) (x.gpr .rsi) (x.syms combSym) (x.gpr .rdi))
+    (VG.RelCT.seq (engine_ct heng engineCT (x.gpr .rdx) (x.gpr .rsi) (x.syms combSym) (x.gpr .rdi))
       (finish_ct (x.gpr .rdx) (x.gpr .rdi)))
   exact hc _ _ _ _ _ _ ⟨⟨hx, rfl, rfl, rfl, rfl⟩, ⟨hy, ho.symm, hk.symm, hb.symm, hT.symm⟩⟩ ex ey
 
+theorem x25519Base_ct
+    (engineCT : ∀ base k T, RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
+      (engine fld) (fun _ _ => True)) :
+    ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base fld) :=
+  x25519BaseWith_ct _ engine_ok engineCT
 
 end VG.Proof.X25519.X86_64.Base
