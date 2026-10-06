@@ -3,13 +3,13 @@
 //! compute. On x86-64 CPUs with BMI2 and ADX, the `_adx` variants multiply
 //! field elements and scalars with `mulx`, `adcx` and `adox`.
 
+use crate::arch::ec_p256::vg_ec_p256_public_key;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ec_p256::{VG_EC_P256_PUBLIC_KEY_ADX_FEATURES, vg_ec_p256_public_key_adx};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdh_p256::VG_ECDH_P256_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::{VG_ECDSA_P256_SIGN_ADX_FEATURES, VG_ECDSA_P256_VERIFY_ADX_FEATURES};
-use crate::arch::ec_p256::vg_ec_p256_public_key;
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 

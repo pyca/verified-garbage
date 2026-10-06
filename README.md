@@ -966,7 +966,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ BMI2, ADX</td>
 
 <td>✅</td>
 
@@ -1116,7 +1116,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2</td>
+<td>✅ SHA extensions, SHA512, AVX2, BMI1, BMI2, ADX</td>
 
 <td>✅ SHA extensions</td>
 

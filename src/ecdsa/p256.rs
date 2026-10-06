@@ -16,15 +16,15 @@ use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256::vg_ecdsa_p256_verify_adx;
 use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_p256_sha256::{
     vg_ecdsa_p256_sha256_sign_adx, vg_ecdsa_p256_sha256_sign_avx2,
     vg_ecdsa_p256_sha256_sign_avx2_adx, vg_ecdsa_p256_sha256_sign_shani_adx,
 };
-#[cfg(target_arch = "aarch64")]
-use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_sha2;
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::ecdsa_p256_sha256::vg_ecdsa_p256_sha256_sign_shani;
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::ecdsa_p256_sha384::vg_ecdsa_p256_sha384_sign_sha3;
@@ -227,8 +227,14 @@ mod tests {
         for bits in 0..1u32 << NAMES.len() {
             let f = Features(bits);
             let m = Mul::select(f);
-            assert!(f.contains(sha256_required(Sha256Backend::select(f), m)), "{bits:#b}");
-            assert!(f.contains(sha384_required(Sha384Backend::select(f), m)), "{bits:#b}");
+            assert!(
+                f.contains(sha256_required(Sha256Backend::select(f), m)),
+                "{bits:#b}"
+            );
+            assert!(
+                f.contains(sha384_required(Sha384Backend::select(f), m)),
+                "{bits:#b}"
+            );
         }
     }
 }
