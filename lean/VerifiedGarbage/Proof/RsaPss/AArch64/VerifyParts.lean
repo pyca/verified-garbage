@@ -124,4 +124,54 @@ theorem posCheck_ok {t : State} {F S : Addr} (L : Lay t F S) {acc m v any sv : B
   · rw [h9, beq_eq_false_iff_ne] at hb
     exact wp_nil ⟨K.mono, hm, by rw [h26', ite_eq_right hb, oz]⟩
 
+section
+variable {H : Hash} (hH : HashOK H)
+
+include hH in
+/-- `DB` (`db` bytes at `scratch + e`) after `mHash` in `Y`. -/
+theorem copyDb_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} (R : Rep t.mem S V) {e db : Nat}
+    (hdb : 0 < db) (hfit : e + db ≤ oY) (h24 : t.gpr .x24 = off S e)
+    (h25 : t.gpr .x25 = BitVec.ofNat 64 db) :
+    WP isa (copyDb H) t fun t' => Keep [.x11, .x14, .x12, .x15] t t' ∧ Frame [⟨S, oRsa⟩] t.mem t'.mem ∧
+      Rep t'.mem S (updL V (oY + 8 + H.D) ((List.range db).map fun i => V (e + i))) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have c1 : oEm = 2560 := rfl
+  have c2 : oY = 3584 := rfl
+  have c6 : oRsa = 8192 := rfl
+  unfold copyDb
+  refine WP.seq (WP.mono (Q := fun (u : State) => Only [.x11, .x14, .x12] t u ∧ u.gpr .x11 = off S e ∧
+      u.gpr .x14 = off S (oY + 8 + H.D) ∧ u.gpr .x12 = BitVec.ofNat 64 db) ?_ fun u ⟨O, h11, h14, h12⟩ => ?_)
+  · exact wp_mov fun u₁ o₁ e₁ => wp_addImm (by omega) fun u₂ o₂ e₂ => wp_mov fun u₃ o₃ e₃ => wp_nil
+      ⟨(o₁.trans (o₂.trans o₃)).mono, by rw [o₃.get .x11, o₂.get .x11, e₁, h24],
+        by rw [o₃.get .x14, e₂, o₁.get .x20, L.x20], by rw [e₃, o₂.get .x25, o₁.get .x25, h25]⟩
+  refine WP.mono (copyWithin_ok (L.congr O.sp O.wr (O.get .x20)) (O.mem ▸ R) hdb (by omega) (by omega)
+    (by omega) h14 h11 h12) fun v ⟨k, f, r⟩ => ⟨(O.keep.trans k).mono, O.mem ▸ f, r⟩
+
+include hH in
+/-- `nbm = ⌊(dbLen + 7 + hLen + L) / B⌋ + 1` to its slot. -/
+theorem verifyNb_ok {t : State} {F S : Addr} (L : Lay t F S) {db : Nat} (hdb : db ≤ 1024)
+    (h25 : t.gpr .x25 = BitVec.ofNat 64 db) :
+    WP isa (.block (verifyNb H)) t fun t' => Keep [.x9, .x16] t t' ∧
+      t'.mem = t.mem.writeW (off F sNb) (BitVec.ofNat 64 ((db + 7 + H.D + H.P.L) / H.P.B + 1)) := by
+  have hDN := hH.sizes.DN
+  have hN := hH.N_le
+  have hL := hH.L
+  have hlg : 2 ^ lgB H = H.P.B ∧ lgB H < 64 := by
+    unfold lgB
+    rcases hH.sizes.B with h | h <;> rw [h]
+    · rw [show (64 : Nat) = 2 ^ 6 from rfl, Nat.log2_two_pow]; decide
+    · rw [show (128 : Nat) = 2 ^ 7 from rfl, Nat.log2_two_pow]; decide
+  unfold verifyNb
+  simp only [List.cons_append, List.nil_append]
+  refine wp_addImm (by omega) fun u₁ o₁ e₁ => wp_lsr hlg.2 fun u₂ o₂ e₂ => wp_addImm (by decide) fun u₃ o₃ e₃ => ?_
+  rw [← List.append_nil (st .x9 sNb)]
+  have O₃ : Only [.x9] t u₃ := (o₁.trans (o₂.trans o₃)).mono
+  refine st_slot (by rw [O₃.sp, L.sp]) (by decide) (by rw [O₃.wr]; exact L.fst (by decide))
+    (fun u₄ k₄ m₄ _ => wp_nil ⟨(O₃.keep.trans k₄).mono, ?_⟩) (by decide)
+  rw [m₄, O₃.mem, e₃, e₂, e₁, h25, BitVec.ofNat_add_ofNat, LenLoop.lsr_val (by omega), hlg.1,
+    BitVec.ofNat_add_ofNat, show db + (7 + H.D + H.P.L) = db + 7 + H.D + H.P.L by omega]
+
+end
+
 end VG.Proof.RsaPss.AArch64
