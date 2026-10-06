@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksVerifiedP
 import VerifiedGarbage.Proof.AesGcm.ScratchP
+import VerifiedGarbage.Proof.AesGcm.X86_64.InitPCT
 
 /-!
 # AES-GCM on x86-64, for a key context of either kind
@@ -407,5 +408,94 @@ theorem streamDecryptP_framed :
     (bytes := 2584) (streamDecryptP_verified v) (by decide) (by decide) (by decide)
     (streamDecryptM_spSafe v v.blkP) (streamDecryptM_xdepth v v.blkP) (Proof.AesGcm.streamTextPrecomputedPre_local _)
     (Proof.AesGcm.streamDecryptPrecomputedPost_local _) streamDecryptFrameSatP_pre
+
+
+/-! ### `vg_aes_gcm_init_precomputed` -/
+
+omit B in
+theorem powSteps_allInstrs {p : Instr → Bool} (h : (powStep v.callees).allInstrs p = true) :
+    ∀ n, (powSteps v.callees n).allInstrs p = true
+  | 0 => rfl
+  | n + 1 => by simp only [powSteps, Code.allInstrs, powSteps_allInstrs h n, h, Bool.and_self]
+
+omit B in
+theorem powSteps_all {p : Instr → Bool} (h : (powStep v.callees).all p = true) :
+    ∀ n, (powSteps v.callees n).all p = true
+  | 0 => rfl
+  | n + 1 => by simp only [powSteps, Code.all, powSteps_all h n, h, Bool.and_self]
+
+omit B in
+theorem powSteps_xdepth (h : (powStep v.callees).x86_64Depth ≤ 8) :
+    ∀ n, (powSteps v.callees n).x86_64Depth ≤ 8
+  | 0 => by show (Code.block ([] : List Instr)).x86_64Depth ≤ 8; decide
+  | n + 1 => by simp only [powSteps, Code.x86_64Depth, Nat.max_le]; exact ⟨powSteps_xdepth h n, h⟩
+
+omit B in
+theorem initP_mx : (initPrecomputed v.callees).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hs : (powSteps v.callees 47).allInstrs (fun i => !loadsMxcsr i) = true := powSteps_allInstrs v (by
+    simp only [powStep, Code.allInstrs, GcmImpl.callees, v.gh.mxcsr, Bool.true_and, Bool.and_true]
+    decide +kernel) 47
+  simp only [initPrecomputed, initWith, Code.allInstrs]
+  rw [hs]
+  simp only [GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+omit B in
+theorem initP_spSafe : (initPrecomputed v.callees).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have hs : (powSteps v.callees 47).all (fun i => !X86_64.isa.writesSp i) = true := powSteps_all v (by
+    simp only [powStep, Code.all, GcmImpl.callees, v.gh.spSafe, Bool.true_and, Bool.and_true]
+    decide +kernel) 47
+  simp only [initPrecomputed, initWith, Code.all]
+  rw [hs]
+  simp only [GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+omit B in
+theorem initP_xdepth : (initPrecomputed v.callees).x86_64Depth ≤ 8 := by
+  have hs : (powSteps v.callees 47).x86_64Depth ≤ 8 := powSteps_xdepth v (by
+    simp only [powStep, Code.x86_64Depth, GcmImpl.callees, v.gh.noStack, Nat.max_le]
+    decide +kernel) 47
+  simp only [initPrecomputed, initWith, Code.x86_64Depth, Nat.max_le]
+  refine ⟨?_, ?_, ?_, ?_, ?_, hs, ?_⟩
+  all_goals first | decide +kernel | (simp only [GcmImpl.callees, v.ctr.noStack, v.key.noStack]; decide +kernel)
+
+omit B in
+theorem initP_correct (s : State) (hs : Proof.AesGcm.initPrecomputedX86_64.pre s) :
+    ∃ t s', Exec isa (initPrecomputed v.callees) s t s' ∧ abiPreserved s s' ∧
+      Proof.AesGcm.initPrecomputedX86_64.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initP_wp v hs
+  exact ⟨t, s', he, abiPreserved_of_exec (initP_mx v) he hg, hp⟩
+
+/-- A state satisfying `vg_aes_gcm_init_precomputed`'s precondition: `initSat`,
+with a key context of 1024 bytes. -/
+def initSatP : State := { initSat with wr := [⟨0x2000, 1024⟩, ⟨0x3000, 2560⟩] }
+
+omit B in
+theorem initP_verified :
+    Verified X86_64.target (initPrecomputed v.callees) (Proof.AesGcm.initPrecomputedScratchContract X86_64.abi 8) :=
+  Verified.of_correct (initP_correct v) (initP_ct v) (by
+    sig_implies [Proof.AesGcm.initPrecomputedScratchContract, Proof.AesGcm.initPrecomputedScratchSig,
+      Spec.Gcm.initPre, Spec.Gcm.initPrecomputedPost, Proof.AesGcm.initPrecomputedX86_64, Proof.AesGcm.initX86_64,
+      Proof.AesGcm.initPreL, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [initSatP, initSat] using initSatP)
+
+/-- A state satisfying `vg_aes_gcm_init_precomputed`'s precondition, without
+the working space. -/
+def initFrameSatP : State := { initSat with wr := [⟨0x2000, 1024⟩] }
+
+theorem initFrameSatP_pre : ∃ s, (Spec.Gcm.initPrecomputedContract X86_64.abi 2576).pre s := by
+  implies_sat [Spec.Gcm.initPrecomputedContract, Spec.Gcm.initPrecomputedSig, Spec.Gcm.initPre,
+    Spec.Gcm.initPrecomputedPost, X86_64.abi, X86_64.argRegs] [initFrameSatP, initSat] using initFrameSatP
+
+omit B in
+theorem initP_framed :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (initPrecomputed v.callees))
+      (Spec.Gcm.initPrecomputedContract X86_64.abi 2576) :=
+  X86_64.Verified.stackScratch (sig := Spec.Gcm.initPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Spec.Gcm.initPre X86_64.abi.ptrBits) (post := Spec.Gcm.initPrecomputedPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 8) (bytes := 2568) (initP_verified v) (by decide) (by decide)
+    (by decide) (initP_spSafe v) (initP_xdepth v) initFrameSatP_pre
 
 end VG.Proof.AesGcm.X86_64

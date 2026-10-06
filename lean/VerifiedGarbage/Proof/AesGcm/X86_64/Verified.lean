@@ -211,7 +211,7 @@ def initSat : State where
 theorem init_verified (v : GcmImpl) :
     Verified X86_64.target (init v.callees) (Proof.AesGcm.initScratchContract X86_64.abi 8) :=
   Verified.of_correct (init_correct v) (init_ct v) (by
-    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, Proof.AesGcm.initX86_64, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
+    sig_implies [Proof.AesGcm.initScratchContract, Proof.AesGcm.initScratchSig, Spec.Gcm.initPre, Spec.Gcm.initPost, Proof.AesGcm.initX86_64, Proof.AesGcm.initPreL, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [initSat] using initSat)

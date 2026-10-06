@@ -36,17 +36,21 @@ abbrev args (s : State) (n : Nat) : Region := ⟨stackArgAddr s 0, 8 * n⟩
 abbrev rounds (s : State) : Prop :=
   (s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14
 
+/-- What `vg_aes_gcm_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`
+needs, for a key context of `cl` bytes. -/
+def initPreL (cl : Nat) (s : State) : Prop :=
+  let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+  let ctx : Region := ⟨s.gpr .rdx, cl⟩
+  let scr : Region := ⟨s.gpr .rcx, 2560⟩
+  s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+    key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧ (ret s).Disjoint ctx ∧ (ret s).Disjoint scr ∧
+    (stk s).Disjoint key ∧ (stk s).Disjoint ctx ∧ (stk s).Disjoint scr ∧
+    (s.gpr .rdx).toNat + cl ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 2560 ≤ 2 ^ 64 ∧
+    ((s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32)
+
 /-- `vg_aes_gcm_init(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`. -/
 def initX86_64 : Contract isa where
-  pre s :=
-    let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
-    let ctx : Region := ⟨s.gpr .rdx, 256⟩
-    let scr : Region := ⟨s.gpr .rcx, 2560⟩
-    s.rd = [key] ∧ s.wr = [ctx, scr] ∧
-      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧ (ret s).Disjoint ctx ∧ (ret s).Disjoint scr ∧
-      (stk s).Disjoint key ∧ (stk s).Disjoint ctx ∧ (stk s).Disjoint scr ∧
-      (s.gpr .rdx).toNat + 256 ≤ 2 ^ 64 ∧ (s.gpr .rcx).toNat + 2560 ≤ 2 ^ 64 ∧
-      ((s.gpr .rsi).toNat = 16 ∨ (s.gpr .rsi).toNat = 24 ∨ (s.gpr .rsi).toNat = 32)
+  pre := initPreL 256
   post s s' := KeyRepr s'.mem (s.gpr .rdx) (bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat)
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp

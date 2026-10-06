@@ -16,6 +16,18 @@ namespace VG.Proof.AesGcm
 
 open VG.Spec.Gcm
 
+/-- `vg_aes_gcm_init_precomputed` with `scratch: *mut [u64; 320]`. -/
+def initPrecomputedScratchSig : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 128),
+    ("scratch", .array true .u64 320)]
+
+/-- `initPrecomputedContract`, whatever `scratch` is. -/
+def initPrecomputedScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initPrecomputedScratchSig.contract A
+    (pre := fun key keyLen ctx _scratch => initPre A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => initPrecomputedPost A.ptrBits key keyLen ctx)
+    (writeArgs := true) (stack := stack)
+
 /-- `vg_aes_gcm_seal_precomputed` with `work: *mut [u64; 320]`. -/
 def sealPrecomputedScratchSig : Sig where
   params := [("ctx", .array false .u64 128), ("rounds", .int .usize true),

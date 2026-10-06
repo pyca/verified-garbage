@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
+import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
 import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
@@ -102,6 +103,21 @@ def blocksNote (v : GcmImpl) : String :=
       v.gh.fn.name ++ "`."
   else
     "This implementation calls `" ++ v.ctr.callee.name ++ "` and `" ++ v.gh.fn.name ++ "`."
+
+/-- How an instance of `vg_aes_gcm_encrypt_blocks_precomputed` or
+`_decrypt_blocks_precomputed` works. -/
+def blocksNoteP (v : GcmImpl) : String :=
+  if v.stitchP.isSome then
+    "This implementation interleaves the AES rounds of 16 blocks at a time with GHASH's \
+      multiplications of the 16 blocks before them, from the powers of the hash subkey it \
+      reads from the key context, and handles the rest with `" ++ v.ctr.callee.name ++ "` and `" ++
+      v.gh.fn.name ++ "`."
+  else
+    "This implementation calls `" ++ v.ctr.callee.name ++ "` and `" ++ v.gh.fn.name ++ "`."
+
+/-- How an instance of `vg_aes_gcm_init_precomputed` works. -/
+def initNoteP (v : GcmImpl) : String :=
+  note v ++ " It computes the powers of the hash subkey with `" ++ v.gh.fn.name ++ "`, one at a time."
 
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
@@ -216,7 +232,79 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     stack := 2592
     verified := streamVerify_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
-    features := (v.ctr.features ++ v.gh.features).dedup }]
+    features := (v.ctr.features ++ v.gh.features).dedup },
+  { Spec.Gcm.initPrecomputedApi with
+    name := Spec.Gcm.initPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.initPrecomputedApi.doc (notes := [initNoteP v])
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.initPrecomputed v.callees)
+    contract := Spec.Gcm.initPrecomputedContract X86_64.abi 2576
+    stack := 2576
+    verified := initP_framed v
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (initP_spSafe v)
+    features := (v.ctr.features ++ v.key.features ++ v.gh.features).dedup },
+  { Spec.Gcm.encryptBlocksPrecomputedApi with
+    name := Spec.Gcm.encryptBlocksPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.encryptBlocksPrecomputedApi.doc (notes := [blocksNoteP v])
+    code := v.blkP.enc.code
+    contract := Spec.Gcm.encryptBlocksPrecomputedContract X86_64.abi 8
+    stack := 8
+    verified := encryptBlocksP_verified v v.stitchP
+    spSafe := v.blkP.encSp
+    features := v.features },
+  { Spec.Gcm.decryptBlocksPrecomputedApi with
+    name := Spec.Gcm.decryptBlocksPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.decryptBlocksPrecomputedApi.doc (notes := [blocksNoteP v])
+    code := v.blkP.dec.code
+    contract := Spec.Gcm.decryptBlocksPrecomputedContract X86_64.abi 8
+    stack := 8
+    verified := decryptBlocksP_verified v v.stitchP
+    spSafe := v.blkP.decSp
+    features := v.features },
+  { Spec.Gcm.sealPrecomputedApi with
+    name := Spec.Gcm.sealPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := [note v])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.«seal» (v.withBlk v.blkP))
+    contract := Spec.Gcm.sealPrecomputedContract X86_64.abi 2624
+    stack := 2624
+    verified := sealP_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (sealM_spSafe v v.blkP)
+    features := v.features },
+  { Spec.Gcm.openPrecomputedApi with
+    name := Spec.Gcm.openPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.openPrecomputedApi.doc (notes := [note v])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.«open» (v.withBlk v.blkP))
+    contract := Spec.Gcm.openPrecomputedContract X86_64.abi 2632
+    stack := 2632
+    verified := openP_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (openM_spSafe v v.blkP)
+    features := v.features },
+  { Spec.Gcm.streamEncryptPrecomputedApi with
+    name := Spec.Gcm.streamEncryptPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.streamEncryptPrecomputedApi.doc (notes := [note v])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))
+    contract := Spec.Gcm.streamEncryptPrecomputedContract X86_64.abi 2608
+    stack := 2608
+    verified := streamEncryptP_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP)
+    features := v.features },
+  { Spec.Gcm.streamDecryptPrecomputedApi with
+    name := Spec.Gcm.streamDecryptPrecomputedApi.name ++ v.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.streamDecryptPrecomputedApi.doc (notes := [note v])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamDecrypt (v.withBlk v.blkP))
+    contract := Spec.Gcm.streamDecryptPrecomputedContract X86_64.abi 2608
+    stack := 2608
+    verified := streamDecryptP_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
+    features := v.features }]
 
 /-- The artifacts of a variant, from the implementations it names. -/
 def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl

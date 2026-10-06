@@ -114,6 +114,13 @@ says. -/
 section
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
+/-- `vg_aes_gcm_init_precomputed(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`. -/
+def initPrecomputedX86_64 : Contract isa where
+  pre := initPreL 1024
+  post s s' := Spec.Gcm.KeyRepr s'.mem (s.gpr .rdx) (Spec.Aes.bytesAt s.mem (s.gpr .rdi) (s.gpr .rsi).toNat) ∧
+    Spec.Gcm.PowersRepr s'.mem (s.gpr .rdx)
+  pub := initX86_64.pub
+
 /-- `vg_aes_gcm_seal`, for a key context of kind `M`. -/
 def sealX86_64M (M : CtxMode) : Contract isa where
   pre s := sealPre M.len s ∧ M.ok s.mem (s.gpr .rdi)
