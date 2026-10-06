@@ -13,7 +13,7 @@ As on x86-64 (`Proof/EcKey/X86_64/Main.lean`).
 ## The result
 
 `finish` writes `04 ‖ x ‖ y` big-endian to `out`, or zeros, by the flag's
-mask, restores `x19` and `x20`, and returns the flag's low bit
+mask, restores `x19`–`x25`, and returns the flag's low bit
 (`pkFinish_ok`): the leading byte (`lead_ok`), then the two coordinates as
 the signature's `finish` writes `r ‖ s`, from `out + 1` in `x6`.
 -/

@@ -4,7 +4,12 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["ecdh_p521", "ec_p521"];
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86", target_arch = "arm"))]
+#[cfg(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
@@ -58,5 +63,10 @@ pub fn bench(c: &mut Criterion) {
     g.finish();
 }
 
-#[cfg(not(any(target_arch = "x86_64", target_arch = "x86", target_arch = "arm")))]
+#[cfg(not(any(
+    target_arch = "x86_64",
+    target_arch = "x86",
+    target_arch = "arm",
+    target_arch = "aarch64"
+)))]
 pub fn bench(_: &mut Criterion) {}

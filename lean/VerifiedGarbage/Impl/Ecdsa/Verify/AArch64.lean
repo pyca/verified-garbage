@@ -99,7 +99,7 @@ def sum : Prog isa :=
     (.block (copy c.n (c.sl RX) (c.sl DX) ++ copy c.n (c.sl RY) (c.sl DY) ++
       copy c.n (c.sl RZ) (c.sl DZ)))
 
-/-- `x19` and `x20` restored, and the flag's low bit to `x0`. -/
+/-- `x19`–`x25` restored, and the flag's low bit to `x0`. -/
 def finish : List Instr :=
   [ld .x3 (c.sl FLAG)] ++ Impl.Ecdsa.AArch64.Cfg.saved.map (fun (r, d) => ld r d) ++
   [.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1]

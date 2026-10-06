@@ -17,7 +17,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P384.curve) : List A
     target := AArch64.target
     doc := Spec.Ecdh.P384.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s \
       setup, field arithmetic and inversion, with the peer's point in place of `G`: it \
-      saves the callee-saved registers it uses (`x19` and `x20`) in `scratch`; field elements are \
+      saves the callee-saved registers `x19`–`x25` in `scratch`; field elements are \
       six 64-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication \
       (CIOS, with `mul` and `umulh`, four of the multiplicand's words in registers and the other \
       two loaded for each word of the multiplier; each reduction step multiplies the \

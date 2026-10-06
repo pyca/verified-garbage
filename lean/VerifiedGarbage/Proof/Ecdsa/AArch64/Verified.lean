@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.P256.Prime
 
 P-256 is a curve the proof supports (`p256_ok`, given the inversions' soundness `InvSounds`, and `Law` for its group
 law, which the registration file supplies: `Proof.P256.law` and `invSound_of_toM`), so `sign_ok` gives
-the contract's postcondition; `x19` and `x20` are restored, and no instruction
+the contract's postcondition; `x19`–`x25` are restored, and no instruction
 writes the other callee-saved registers, `sp` or a SIMD register
 (`abiPreserved_of`). Constant time by taint tracking: the only branches are on
 loop counters, and every address is an argument plus a constant or a counter.
