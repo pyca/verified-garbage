@@ -394,6 +394,7 @@ impl Powers {
             return None;
         }
         let mut ctx = Box::new([0; 128]);
+        let init = vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512;
         // SAFETY: the key is the first `key_len` bytes (16, 24 or 32, from
         // `rounds`) of its key context `key` (`VG.Spec.Gcm.KeyRepr`: the key
         // schedule, whose first `Nk` words are the key, FIPS 197 §5.2,
@@ -402,13 +403,7 @@ impl Powers {
         // overlap each other or anything on the stack, or wrap around. The
         // CPU has the features of `backend`, the only one with
         // `_precomputed` instances.
-        unsafe {
-            vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512(
-                key.as_ptr().cast(),
-                (rounds - 6) * 4,
-                &mut *ctx,
-            )
-        };
+        unsafe { init(key.as_ptr().cast(), (rounds - 6) * 4, &mut *ctx) };
         Some(self.publish(ctx))
     }
 
@@ -753,12 +748,13 @@ impl AesGcm {
     fn seal_precomputed(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
+        let seal = vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512;
         // SAFETY: as in `encrypt_in_place`, with `ctx` the key context
         // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
         // reads of 1024 bytes, and the CPU has the features of
         // `self.backend`, whose `_precomputed` instance this is.
         unsafe {
-            vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512(
+            seal(
                 ctx,
                 self.rounds,
                 nonce.as_ptr(),
@@ -784,10 +780,11 @@ impl AesGcm {
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
+        let open = vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512;
         // SAFETY: as in `seal_precomputed`, with the received tag `tag`
         // valid for reads of its length.
         let ok = unsafe {
-            vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512(
+            open(
                 ctx,
                 self.rounds,
                 nonce.as_ptr(),
@@ -1612,10 +1609,8 @@ mod tests {
                 assert_eq!(&st[..len], &msg[..len]);
                 let mut bad = tag;
                 bad[0] ^= 1;
-                assert_eq!(
-                    k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad),
-                    Err(Error::TagMismatch)
-                );
+                let rejected = k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &bad);
+                assert_eq!(rejected, Err(Error::TagMismatch));
                 k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
                     .unwrap();
                 assert_eq!(&ct[..len], &msg[..len]);
