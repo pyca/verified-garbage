@@ -42,7 +42,7 @@ theorem implies (hG : G ∈ Pbkdf2.Md.X86_64.mdHashes) :
     simp only [List.getD_cons_succ, List.getD_cons_zero] at h
     obtain ⟨hsp, hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6⟩ := h
     obtain ⟨hb, hp⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hsi, hcx])
-    have hp' := List.map_injective_iff.2 (fun _ _ h => BitVec.toNat_inj.1 h) hp
+    have hp' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hp
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hsi]) hb
     refine ⟨⟨?_, a0, a1, a2, a3, a4, hn, he⟩, a5, a6, hp'⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
