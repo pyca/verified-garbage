@@ -63,6 +63,13 @@ theorem ne_of_disjoint {p q : Addr} {n k : Nat} (hd : (⟨p, n⟩ : Region).Disj
   · simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
   · rw [h]; simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]; omega
 
+/-- Bytes apart from those written. -/
+theorem bytes_apart {m m' : Mem} {R W : Region} (hf : Frame [W] m m') (hd : R.Disjoint W) (hl : R.len ≤ 2 ^ 64) :
+    Spec.Rsa.bytesAt m' R.base R.len = Spec.Rsa.bytesAt m R.base R.len := by
+  simp only [Spec.Rsa.bytesAt]
+  exact List.map_congr_left fun i hi => hf.bytes (R := R) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd)
+    hl (List.mem_range.mp hi)
+
 /-- The last bytes of a string of bytes. -/
 theorem bytesAt_drop (m : Mem) (p : Addr) (d n : Nat) :
     (Spec.Rsa.bytesAt m p (d + n)).drop d = Spec.Rsa.bytesAt m (p + BitVec.ofNat 64 d) n := by

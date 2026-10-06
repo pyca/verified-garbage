@@ -20,7 +20,8 @@ open VG.Proof.RsaPkcs1Sig.AArch64.Ver (stk sR aR kR fb kb frame_sub in_frame sav
 open VG.Proof.MlKem.AArch64 (Only Keep MemTo wp_nil wp_movz wp_add wp_sub eval_nonzero ne_zero_iff)
 open VG.Proof.RsaPkcs1Sig.AArch64 (wp_addSp wp_mov wp_movw EPre EPost EOut encodeId encode_ok compare_ok
   fill_ok copy_ok)
-open VG.Proof.RsaPkcs1Sig (bytesAt_length bytesAt_writeBytes frame_writeBytes ne_of_disjoint bytesAt_drop)
+open VG.Proof.RsaPkcs1Sig (bytesAt_length bytesAt_writeBytes frame_writeBytes ne_of_disjoint bytesAt_drop
+  bytes_apart)
 
 /-! ## `Mid` -/
 
@@ -141,13 +142,6 @@ theorem frame_bytes {s u : State} (hwr : u.wr = ⟨fb s, frameBytes⟩ :: s.wr) 
   rw [hwr, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   exact InRegions_append_cons (xs := u.rd) |>.mpr (.inl (Offset.contains_base _ (by omega)
     (by unfold frameBytes at h; omega)))
-
-/-- Bytes apart from those written. -/
-theorem bytes_apart {m m' : Mem} {R W : Region} (hf : Frame [W] m m') (hd : R.Disjoint W) (hl : R.len ≤ 2 ^ 64) :
-    Spec.Rsa.bytesAt m' R.base R.len = Spec.Rsa.bytesAt m R.base R.len := by
-  simp only [Spec.Rsa.bytesAt]
-  exact List.map_congr_left fun i hi => hf.bytes (R := R) (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd)
-    hl (List.mem_range.mp hi)
 
 /-! ## The release of the hash value -/
 
