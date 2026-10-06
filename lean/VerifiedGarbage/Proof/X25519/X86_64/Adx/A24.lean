@@ -116,5 +116,7 @@ theorem adx_ok : FieldOk adx where
   mul hs _ _ _ ho ha hb := mulX_ok hs ho ha hb
   sqr hs _ _ ho ha := sqrX_ok hs ho ha
   a24 hs _ _ ho ha := a24X_ok hs ho ha
+  mul2 hs _ _ _ ho ha hb := mul2X_ok hs ho ha hb
+  sqr2 hs _ _ ho ha := sqr2X_ok hs ho ha
 
 end VG.Proof.X25519.X86_64

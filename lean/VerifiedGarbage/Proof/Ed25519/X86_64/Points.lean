@@ -11,7 +11,8 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 variable {fld : Arith} [EdArith fld]
 
 def fieldDest : FieldOp → Slot
-  | .copy o _ | .const o _ | .mul o _ _ | .sqr o _ | .add o _ _ | .sub o _ _ => o
+  | .copy o _ | .const o _ | .mul o _ _ | .sqr o _ | .add o _ _ | .sub o _ _ | .mul2 o _ _
+  | .sqr2 o _ => o
 
 theorem evalOp_unchanged (op : FieldOp) (e : Env) (i : Slot) (hi : i ≠ fieldDest op) :
     evalOp op e i = e i := by

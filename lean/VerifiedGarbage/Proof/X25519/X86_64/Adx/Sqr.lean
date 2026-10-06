@@ -315,4 +315,56 @@ theorem sqrX_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Sl
     simp only [val4] at e4
     omega_arith
 
+theorem sqr2X_eq (o a : Nat) :
+    sqr2X o a = sqrA a ++ (sqrB a ++ (sqrC a ++ (sqrD a ++ (reduceX2 ++ store4 o)))) := by
+  simp only [sqr2X, List.append_assoc]
+
+/-- `[o] = 2 · [a]²`. -/
+theorem sqr2X_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat} (ho : Slot o)
+    (ha : Slot a) :
+    WP isa (.block (sqr2X o a)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o =
+        F s.mem base a * F s.mem base a + F s.mem base a * F s.mem base a := by
+  rw [sqr2X_eq, WP.block_append_iff]
+  refine WP.mono (sqrA_ok hs ha) fun s₁ ⟨e1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by nd)
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrB_ok hs₁ ha) fun s₂ ⟨e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by nd)
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrC_ok hs₂ ha) fun s₃ ⟨e3, k3⟩ => ?_
+  have hs₃ := hs₂.of_keeps k3 (by nd)
+  rw [WP.block_append_iff]
+  refine WP.mono (sqrD_ok hs₃ ha) fun s₄ ⟨co, e4, k4⟩ => ?_
+  have hs₄ := hs₃.of_keeps k4 (by nd)
+  rw [WP.block_append_iff]
+  refine WP.mono (reduceX2_ok s₄) fun s₅ ⟨e5, k5⟩ => ?_
+  have hs₅ := hs₄.of_keeps k5 (by nd)
+  refine WP.mono (store4_ok hs₅ ho) fun s₆ ⟨m6, g6, rd6, wr6⟩ => ?_
+  have M : s₅.mem = s.mem := k5.2.1.trans (k4.2.1.trans (k3.2.1.trans (k2.2.1.trans k1.2.1)))
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := hr
+    rw [g6, k5.1 r (by simp [*]), k4.1 r (by simp [*]), k3.1 r (by simp [*]),
+      k2.1 r (by simp [*]), k1.1 r (by simp [*])]
+  · rw [rd6, k5.2.2.1, k4.2.2.1, k3.2.2.1, k2.2.2.1, k1.2.2.1]
+  · rw [wr6, k5.2.2.2, k4.2.2.2, k3.2.2.2, k2.2.2.2, k1.2.2.2]
+  · rw [m6, M]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_mul2
+    rw [m6, fe_st4 _ _ (by omega), e5]
+    refine congrArg (fun x => 2 * x % VG.Spec.X25519.P) ?_
+    -- Every phase read the same memory.
+    rw [k1.2.1] at e2
+    rw [k2.2.1, k1.2.1] at e3
+    rw [k3.2.1, k2.2.1, k1.2.1] at e4
+    -- The products into `r9–r14` along the way.
+    rw [k3.1 .r9 (by nd), k2.1 .r9 (by nd), k3.1 .r10 (by nd), k2.1 .r10 (by nd),
+      k3.1 .r11 (by nd), k3.1 .r12 (by nd)] at e4
+    have hb : fe s.mem base a * fe s.mem base a < 2 ^ 256 * 2 ^ 256 :=
+      Nat.mul_lt_mul'' (fe_lt _ _ _) (fe_lt _ _ _)
+    simp only [X86_64.fe, val4, sq_words] at hb ⊢
+    simp only [val4] at e4
+    omega_arith
+
 end VG.Proof.X25519.X86_64

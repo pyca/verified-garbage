@@ -33,7 +33,7 @@ def tableStart (o : Nat) : List Instr := [.movImm64 .rax (BitVec.ofNat 64 o), .a
 `C = 2Z²`, `E = 2XY`, `G = B - A`, `F = C - G`, `H = A + B`, and `X = EF`, `Y = GH`,
 `Z = FG`, and `T = EH` if `t` (only an addition reads `T`). -/
 def dblOps (t : Bool) : List FieldOp :=
-  [.sqr 8 0, .sqr 9 1, .sqr 10 2, .add 10 10 10, .mul 11 0 1, .add 11 11 11,
+  [.sqr 8 0, .sqr 9 1, .sqr2 10 2, .mul2 11 0 1,
     .sub 12 9 8, .sub 13 10 12, .add 14 8 9, .mul 0 11 13, .mul 1 12 14, .mul 2 13 12] ++
     if t then [.mul 3 11 14] else []
 
@@ -45,7 +45,7 @@ def double4 (fld : Arith) : Prog isa :=
 
 /-- Slots 8–11 = the point in slots 0–3 cached for addition, `[Y - X, Y + X, 2dT, 2Z]`
 (`d` in slot 16). -/
-def cacheOps : List FieldOp := [.sub 8 1 0, .add 9 1 0, .mul 10 3 16, .add 10 10 10, .add 11 2 2]
+def cacheOps : List FieldOp := [.sub 8 1 0, .add 9 1 0, .mul2 10 3 16, .add 11 2 2]
 
 /-- Slots 8–11 to the table entry addressed by `rax`. -/
 def cachedToTable : List Instr :=

@@ -16,6 +16,10 @@ halves through CF.
 * `sqrX`: the products `a_i a_j` (`i < j`) into `r9–r14`, then doubled
   through CF while the squares `a_i²` are added through OF, and reduced as
   in `mulX`.
+* `mul2X` and `sqr2X` (for Ed25519's doublings): `2ab` and `2a²`, as
+  `mulX` and `sqrX` but doubling `lo + 38 hi` before its carry word is
+  folded, which costs five instructions rather than an addition's
+  twenty-one.
 
 Both use the registers `rax`, `rcx`, `rdx`, `rbp` (zero, for the chains'
 last carries) and `r8–r15`, and address memory only as `vg_x25519` does.
@@ -60,12 +64,21 @@ def rowX (a b i : Nat) : List Instr :=
     madd (t (i + 2)) (t (i + 3)) (.mem (sc (a + 16))) ++
     maddLast (t (i + 3)) (t (i + 4)) (.mem (sc (a + 24)))
 
-/-- `r8–r11 + 2²⁵⁶ r12 = r8–r11 + 38 · r12–r15` (with `rdx = 38`), then
-`r8–r11 += 38 r12`, folded. -/
-def reduceX : List Instr :=
+/-- `r8–r11 + 2²⁵⁶ r12 = r8–r11 + 38 · r12–r15` (with `rdx = 38`). -/
+def reduceLo : List Instr :=
   [.mov32 .rdx (.imm 38), clear] ++ madd .r8 .r9 (.reg .r12) ++ madd .r9 .r10 (.reg .r13) ++
-    madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15) ++
-    [.mulx .rcx .rax (.reg .r12)] ++ carry38
+    madd .r10 .r11 (.reg .r14) ++ maddLast .r11 .r12 (.reg .r15)
+
+/-- `reduceLo`, then `r8–r11 += 38 r12`, folded. -/
+def reduceX : List Instr := reduceLo ++ [.mulx .rcx .rax (.reg .r12)] ++ carry38
+
+/-- `r8–r12` doubled. -/
+def dbl5 : List Instr :=
+  [.alu .add .r8 (.reg .r8), .alu .adc .r9 (.reg .r9), .alu .adc .r10 (.reg .r10),
+    .alu .adc .r11 (.reg .r11), .alu .adc .r12 (.reg .r12)]
+
+/-- `reduceX`, doubling `r8–r11 + 2²⁵⁶ r12` before its last fold (`r12` is small). -/
+def reduceX2 : List Instr := reduceLo ++ dbl5 ++ [.mulx .rcx .rax (.reg .r12)] ++ carry38
 
 /-- `[o] = [a] · [b]`. -/
 def mulX (o a b : Nat) : List Instr :=
@@ -111,11 +124,20 @@ def a24X (o a : Nat) : List Instr :=
     [.adcx .r12 (.reg .rbp), .mov32 .rdx (.imm 38), .mulx .rcx .rax (.reg .r12)] ++ carry38 ++
     store4 o
 
+/-- `[o] = 2 · [a] · [b]`: `mulX`, doubled in its reduction. -/
+def mul2X (o a b : Nat) : List Instr :=
+  rowX0 a b ++ rowX a b 1 ++ rowX a b 2 ++ rowX a b 3 ++ reduceX2 ++ store4 o
+
+/-- `[o] = 2 · [a]²`: `sqrX`, doubled in its reduction. -/
+def sqr2X (o a : Nat) : List Instr := sqrA a ++ sqrB a ++ sqrC a ++ sqrD a ++ reduceX2 ++ store4 o
+
 /-- The field multiplications with BMI2 and ADX. -/
 def adx : Field where
   mul := mulX
   sqr := sqrX
   a24 := a24X
+  mul2 := mul2X
+  sqr2 := sqr2X
 
 def x25519Adx : Prog isa := x25519With adx
 

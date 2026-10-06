@@ -220,12 +220,18 @@ structure Field where
   sqr : Nat → Nat → List Instr
   /-- `[o] = a24 · [a]` -/
   a24 : Nat → Nat → List Instr
+  /-- `[o] = 2 · [a] · [b]` (Ed25519's doublings) -/
+  mul2 : Nat → Nat → Nat → List Instr
+  /-- `[o] = 2 · [a]²` (Ed25519's doublings) -/
+  sqr2 : Nat → Nat → List Instr
 
-/-- The baseline's: `mul`, `sqr` and `mulSmall`. -/
+/-- The baseline's: `mul`, `sqr` and `mulSmall`, and a product doubled by `add`. -/
 def baseline : Field where
   mul := mul
   sqr := sqr
   a24 o a := mulSmall o a a24
+  mul2 o a b := mul o a b ++ add o o o
+  sqr2 o a := sqr o a ++ add o o o
 
 /-- `[o] = [a]^(2^n)`, for `n ≥ 2`: a square, then `n - 1` in place. -/
 def sqn (F : Field) (o a n : Nat) : Prog isa :=
