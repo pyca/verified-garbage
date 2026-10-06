@@ -153,12 +153,15 @@ pub(crate) fn hash_verify_group<const N: usize>(
 }
 
 /// Benchmarks HMAC with the hash of `vg` and `md` (32-byte key) against
-/// OpenSSL's.
-pub(crate) fn hmac_group<O>(
+/// OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`. aws-lc-rs makes
+/// its `hmac::Key`, which keys the hash, in each iteration, as OpenSSL makes
+/// its `Signer`.
+pub(crate) fn hmac_group<O: AsRef<[u8]>>(
     c: &mut Criterion,
     name: &str,
     vg: fn(&[u8], &[u8]) -> O,
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
 ) {
     let key = [0x0b; 32];
     let pkey = PKey::hmac(&key).unwrap();
@@ -176,14 +179,23 @@ pub(crate) fn hmac_group<O>(
                 s.sign_oneshot(&mut out, black_box(&data)).unwrap()
             })
         });
+        if let Some(alg) = aws_lc {
+            use aws_lc_rs::hmac;
+            let tag = hmac::sign(&hmac::Key::new(alg, &key), &data);
+            assert_eq!(tag.as_ref(), vg(&key, &data).as_ref());
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| hmac::sign(&hmac::Key::new(alg, black_box(&key)), black_box(&data)))
+            });
+        }
     }
     g.finish();
 }
 
 /// Benchmarks checking an HMAC with the hash `H` and `md` (32-byte key)
-/// against OpenSSL's: computing the MAC of the data and comparing it with
-/// the expected one in constant time (`Hmac::verify`; OpenSSL's
-/// `CRYPTO_memcmp`).
+/// against OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`:
+/// computing the MAC of the data and comparing it with the expected one in
+/// constant time (`Hmac::verify`; OpenSSL's `CRYPTO_memcmp`; aws-lc-rs's
+/// `hmac::verify`, making its key in each iteration).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -194,6 +206,7 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     c: &mut Criterion,
     name: &str,
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
 ) {
     use verified_garbage::hmac::Hmac;
     let key = [0x0b; 32];
@@ -218,6 +231,16 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
                 assert!(openssl::memcmp::eq(&out[..n], black_box(mac.as_ref())))
             })
         });
+        if let Some(alg) = aws_lc {
+            use aws_lc_rs::hmac;
+            hmac::verify(&hmac::Key::new(alg, &key), &data, mac.as_ref()).unwrap();
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| {
+                    let k = hmac::Key::new(alg, black_box(&key));
+                    hmac::verify(&k, black_box(&data), black_box(mac.as_ref())).unwrap()
+                })
+            });
+        }
     }
     g.finish();
 }
