@@ -196,8 +196,11 @@ theorem sep_lt (EM : List Byte) {k : Nat} (hk : 0 < k) : (firstZero EM k).getD 0
   | none => simp; omega
   | some i => exact (Proof.RsaPkcs1Enc.firstZero_some h).2.1
 
-theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
-    WP isa selPart t (Fin L g vv m₀ R EM (amOf L kd) (vOfEM L EM) (decide (R = 1)) (lenOf L EM kd)) := by
+/-- After the validity and `*msg_len`: the selection's loop from byte 0. -/
+theorem selInit_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
+    WP isa (.seq (.block validBlock) (.block outInit)) t (OInv L g vv m₀ R
+      (BitVec.ofNat 64 (lenOf L EM kd) &&& bm (decide (R = 1))) EM (amOf L kd) (vOfEM L EM) (decide (R = 1))
+      (L.k.toNat - lenOf L EM kd) 0) := by
   have hk := hL.k1024
   have hk64 := hL.k64
   have hnQ := hL.nQ
@@ -232,9 +235,9 @@ theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
   rw [hO] at x11
   -- `*msg_len`.
   have hml : slot t₁ L.Q oML = L.ml := by rw [slot, S₁.mem]; exact hc.ctx.kept.ml
-  refine WP.seq (WP.mono (outInit_ok hc₁.ctx.sp hc₁.slots (by
+  refine WP.mono (outInit_ok hc₁.ctx.sp hc₁.slots (by
     rw [hml, BitVec.add_zero]
-    exact ⟨L.ML, by rw [hc₁.ctx.wr]; simp, Region.contains_self _ _⟩)) fun t₂ ⟨S₂, m₂, x10, x9, o₂⟩ => ?_)
+    exact ⟨L.ML, by rw [hc₁.ctx.wr]; simp, Region.contains_self _ _⟩)) fun t₂ ⟨S₂, m₂, x10, x9, o₂⟩ => ?_
   rw [hml, x13] at m₂ x10
   have F₂ : Frame [L.ML] t₁.mem t₂.mem := by
     rw [m₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
@@ -248,8 +251,7 @@ theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
   have bk : ∀ (X : Region), X.Disjoint L.ML → X.len ≤ 2 ^ 64 → ∀ i < X.len,
       t₂.mem (X.base + BitVec.ofNat 64 i) = t.mem (X.base + BitVec.ofNat 64 i) := fun X hX hl i hi => by
     rw [F₂.bytes (fun Y hY => by rw [List.mem_singleton.mp hY]; exact hX) hl hi, S₁.mem]
-  have hOi : OInv L g vv m₀ R (BitVec.ofNat 64 (lenOf L EM kd) &&& bm (decide (R = 1))) EM (amOf L kd)
-      (vOfEM L EM) (decide (R = 1)) (L.k.toNat - lenOf L EM kd) 0 t₂ :=
+  exact
     { ctx := hc₂
       r := by rw [frm _ (by decide), S₁.mem]; exact hc.r
       ml := by rw [m₂, Mem.readW_writeW_self64]
@@ -268,6 +270,11 @@ theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
           hL.sc_sub)).symm |>.symm) (by show L.k.toNat ≤ 2 ^ 64; omega) j hj]
         have ham : Spec.Rsa.bytesAt t.mem (scA L sAM) L.k.toNat = amOf L kd := h.amr.am
         rw [← ham, bytes_getD' _ _ hj] }
+
+theorem selPart_ok (hL : L.Ok) {t : State} (h : SC L g vv m₀ R EM kd t) :
+    WP isa selPart t (Fin L g vv m₀ R EM (amOf L kd) (vOfEM L EM) (decide (R = 1)) (lenOf L EM kd)) := by
+  have hk64 := hL.k64
+  refine WP.assoc (WP.seq (WP.mono (selInit_ok hL h) fun t₂ hOi => ?_))
   refine WP.seq (WP.mono (selLoop_ok hL (by omega) hOi) fun t₃ h₃ => ?_)
   refine WP.mono (retR_ok h₃.ctx.sp (fun d hd => h₃.ctx.inFrR (by unfold frameBytes; omega))) fun t₄ ⟨S₄, m₄, x0⟩ => ?_
   refine ⟨h₃.ctx.regs S₄.rd S₄.wr S₄.sp m₄ S₄.v fun r hr _ => S₄.cs r hr, by rw [x0]; exact h₃.r,

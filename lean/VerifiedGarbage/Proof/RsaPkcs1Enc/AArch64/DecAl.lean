@@ -68,24 +68,19 @@ theorem dbl (p : Nat) (h1 : 1 ≤ p) (h : p * 2 < 2 ^ 34) :
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 64).toNat = 1 from rfl]
   omega
 
-theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (h8 : t₀.gpr .x8 = BitVec.ofNat 64 0)
-    (h9 : t₀.gpr .x9 = BitVec.ofNat 64 x) :
-    WP isa maskLoop t₀ fun u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (bitMask x) ∧
-      u.gpr .x9 = BitVec.ofNat 64 x := by
-  have hb : 0 < Spec.RsaPkcs1Enc.bitLength x := by
-    simp only [Spec.RsaPkcs1Enc.bitLength]; split <;> omega
-  have hp : ∀ j, j < Spec.RsaPkcs1Enc.bitLength x → 2 ^ (j + 1) < 2 ^ 34 := fun j hj => by
-    have := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j) (by omega) hj
-    rw [Nat.pow_succ]; generalize 2 ^ j = p at *; omega
-  refine Bytes.count_loop hb (fun j u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (2 ^ j - 1) ∧
-    u.gpr .x9 = BitVec.ofNat 64 x) (fun j hj u ⟨hs, hu8, hu9⟩ => ?_) ⟨Same.refl _, by rw [h8]; rfl, h9⟩ |>.mono
-    fun u ⟨hs, hu8, hu9⟩ => ⟨hs, by rw [hu8]; rfl, hu9⟩
+/-- An iteration of the mask's loop: `2 ^ j - 1` to `2 ^ (j + 1) - 1`, and whether to go on. -/
+theorem maskStep_ok {x j : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (hj : j < Spec.RsaPkcs1Enc.bitLength x) {u : State}
+    (hu8 : u.gpr .x8 = BitVec.ofNat 64 (2 ^ j - 1)) (hu9 : u.gpr .x9 = BitVec.ofNat 64 x) :
+    WP isa (.block [.add .x .x8 .x8 .x8, .addImm .x .x8 .x8 1, .subs .x .x10 .x8 .x9, .sbc .x .x10 .x10 .x10]) u
+      fun w => Same u w ∧ w.gpr .x8 = BitVec.ofNat 64 (2 ^ (j + 1) - 1) ∧ w.gpr .x9 = BitVec.ofNat 64 x ∧
+        (w.gpr .x10 != 0) = decide (j + 1 ≠ Spec.RsaPkcs1Enc.bitLength x) := by
   have hlt := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j) (by omega) hj
-  have hpj := hp j hj
+  have hpj : 2 ^ (j + 1) < 2 ^ 34 := by
+    rw [Nat.pow_succ]; generalize 2 ^ j = p at *; omega
   have e8 : BitVec.ofNat 64 (2 ^ j - 1) + BitVec.ofNat 64 (2 ^ j - 1) + 1 = BitVec.ofNat 64 (2 ^ (j + 1) - 1) := by
     rw [show 2 ^ (j + 1) = 2 ^ j * 2 from Nat.pow_succ ..] at hpj ⊢
     exact dbl _ Nat.one_le_two_pow hpj
-  refine WP.mono maskBody_ok fun w ⟨hw, w8, w9, w10⟩ => ⟨⟨hs.trans hw, by rw [w8, hu8, e8], by rw [w9, hu9]⟩, ?_⟩
+  refine WP.mono maskBody_ok fun w ⟨hw, w8, w9, w10⟩ => ⟨hw, by rw [w8, hu8, e8], by rw [w9, hu9], ?_⟩
   rw [w10, hu9, hu8, e8, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
     Nat.mod_eq_of_lt (by omega)]
   by_cases he : j + 1 = Spec.RsaPkcs1Enc.bitLength x
@@ -94,6 +89,18 @@ theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (
     simp only [h1, ↓reduceIte, ne_eq, not_true_eq_false, decide_false]; rfl
   · have h1 := Proof.RsaPkcs1Enc.bitMask_lt (x := x) (j := j + 1) (by omega) (by omega)
     simp only [show ¬ x ≤ 2 ^ (j + 1) - 1 by omega, ↓reduceIte, he, ne_eq, not_false_eq_true, decide_true]; rfl
+
+theorem bitLength_pos {x : Nat} (hx1 : 1 ≤ x) : 0 < Spec.RsaPkcs1Enc.bitLength x := by
+  simp only [Spec.RsaPkcs1Enc.bitLength]; split <;> omega
+
+theorem maskLoop_ok {t₀ : State} {x : Nat} (hx1 : 1 ≤ x) (hx : x < 2 ^ 32) (h8 : t₀.gpr .x8 = BitVec.ofNat 64 0)
+    (h9 : t₀.gpr .x9 = BitVec.ofNat 64 x) :
+    WP isa maskLoop t₀ fun u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (bitMask x) ∧
+      u.gpr .x9 = BitVec.ofNat 64 x :=
+  Bytes.count_loop (bitLength_pos hx1) (fun j u => Same t₀ u ∧ u.gpr .x8 = BitVec.ofNat 64 (2 ^ j - 1) ∧
+    u.gpr .x9 = BitVec.ofNat 64 x) (fun j hj u ⟨hs, hu8, hu9⟩ => WP.mono (maskStep_ok hx1 hx hj hu8 hu9)
+      fun _ ⟨hw, w8, w9, w10⟩ => ⟨⟨hs.trans hw, w8, w9⟩, w10⟩) ⟨Same.refl _, by rw [h8]; rfl, h9⟩ |>.mono
+    fun u ⟨hs, hu8, hu9⟩ => ⟨hs, by rw [hu8]; rfl, hu9⟩
 
 /-- The carry of `subs a, c`: no borrow. -/
 theorem carry_sub (a c : BitVec 64) :
