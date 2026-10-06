@@ -57,7 +57,7 @@ theorem prune_words (d₀ d₁ d₂ d₃ : BitVec 64) :
 
 /-- Code that writes only caller-saved registers and the frame's scalar. -/
 theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r)
     (hf : Frame [⟨L.B + BitVec.ofNat 64 16, 32⟩] t.mem t'.mem) : Ctx L g mx m₀ t' := by
   have keep : ∀ d, 48 ≤ d → d + 8 ≤ 72 →
       t'.mem.readW (L.B + BitVec.ofNat 64 d) 64 = t.mem.readW (L.B + BitVec.ofNat 64 d) 64 :=
@@ -70,7 +70,7 @@ theorem Ctx.store {t t' : State} (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (
     (keep 64 (by omega) (by omega)).trans hc.pOut,
     hc.frame.trans (Frame.sub hf fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩)⟩
+      exact ⟨L.STK, by simp, Offset.sub_base _ (by omega)⟩), by rw [hsy]; exact hc.sym, hc.held⟩
 
 /-- Word `k` of the digest. -/
 abbrev dw (t : State) (L : Lay) (k : Nat) : BitVec 64 :=
@@ -89,7 +89,7 @@ theorem baseArgs_ok {t : State} (hc : Ctx L g mx m₀ t) :
     State.load64, ea_stk, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setReg,
     Option.map_some, reduceCtorEq, ite_false, ite_true, hc.rsp, add_add, Nat.reduceAdd, l48, l64,
     Option.some.injEq, exists_eq_left', hc.pScr, hc.pOut, BaseArgs]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial⟩
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, trivial, trivial, trivial⟩
 
 theorem pruneRegs_ok {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     WP isa (.block pkPruneRegs) t fun t' => Ctx L g mx m₀ t' ∧ t'.mem = t.mem ∧ BaseArgs L t' ∧
@@ -107,7 +107,7 @@ theorem pruneRegs_ok {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     RegUpd.mem_setReg, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, 
     Option.map_some, Option.bind_some, reduceCtorEq, ite_false, ite_true, hdx,
     Nat.reduceAdd, s0, s1, s2, s3, Option.some.injEq, exists_eq_left', BaseArgs, hdi, hsi]
-  exact ⟨hc.regs rfl rfl rfl rfl (by cs_tac), trivial, ⟨trivial, trivial, trivial⟩,
+  exact ⟨hc.regs rfl rfl rfl rfl rfl (by cs_tac), trivial, ⟨trivial, trivial, trivial⟩,
     congrArg (_ &&& ·) (by decide : BitVec.signExtend 64 (BitVec.ofInt 32 (-8)) = BitVec.ofNat 64 (2 ^ 64 - 8)),
     trivial, trivial, trivial⟩
 
@@ -154,7 +154,7 @@ theorem stores_ok {u : State} (hc : Ctx L g mx m₀ u) :
     ea_stk, hc.rsp, add_add, Nat.reduceAdd, w0, w1, w2, w3, ite_true, Option.some.injEq,
     exists_eq_left']
   obtain ⟨hf, h0, h1, h2, h3⟩ := four_ok L.B u.mem (u.gpr .r8) (u.gpr .r9) (u.gpr .r10) (u.gpr .r11)
-  exact ⟨hc.store rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
+  exact ⟨hc.store rfl rfl rfl rfl (fun _ _ => rfl) hf, hf, trivial, h0, h1, h2, h3⟩
 
 end VG.Proof.Ed25519.X86_64.PublicKey
 
@@ -224,7 +224,7 @@ theorem base_depth : (scalarBase_precomputed fld).depth ≤ 1 := by fld_lit_deci
 theorem base_spSafe : (scalarBase_precomputed fld).all (fun i => !isa.writesSp i) = true :=
   Code.all_of_allInstrs (allInstrs_and base_instrs).2
 
-abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 16, 32⟩]
+abbrev baseRd (L : Lay) : List Region := [⟨L.B + BitVec.ofNat 64 16, 32⟩, L.TBL]
 abbrev baseWr (L : Lay) : List Region := [L.OUT, L.SCR]
 
 theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
@@ -234,17 +234,42 @@ theorem base_regs {t : State} (ha : BaseArgs L t) (rd wr : List Region) :
   ⟨(gpr_ce _ _ _ (by decide)).trans ha.1, (gpr_ce _ _ _ (by decide)).trans ha.2.1,
     (gpr_ce _ _ _ (by decide)).trans ha.2.2⟩
 
+/-- The tables, as on entry, on entry to a call from the frame. -/
+theorem ce_tbl (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) {i : Nat} (hi : i < 3072) :
+    t.callEntry.mem.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0 := by
+  rw [← hc.held i hi]
+  refine Mem.readW_congr fun b hb => ?_
+  have e : L.T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b = L.TBL.base + BitVec.ofNat 64 (8 * i + b) := by
+    rw [Offset.add_add]
+  rw [e, ce_byte t (R := L.TBL) (by rw [hc.ret]; exact (hL.tbk.sub_right (Offset.sub_base _ (by omega))).symm)
+    (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)]
+  exact Frame.bytes (R := L.TBL) hc.frame (by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hL.tbo
+    · exact hL.tbc
+    · exact hL.tbk) (by show 8 * 3072 ≤ 2 ^ 64; decide) (by show 8 * i + b < 8 * 3072; omega)
+
 theorem base_pre (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t) (ha : BaseArgs L t) :
     Proof.Ed25519.X86_64.scalarBaseLocal.pre (t.callEntry.withRegions (baseRd L) (baseWr L)) := by
   obtain ⟨g1, g2, g3⟩ := base_regs ha (baseRd L) (baseWr L)
-  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, g1, g2, g3, rsp_ce, hc.rsp, sub8,
-    State.withRegions_rd, State.withRegions_wr]
-  exact ⟨trivial, trivial, hL.stk_SCR (by omega), hL.stk_OUT (by omega), hL.stk_SCR (by omega), hL.nc⟩
-
-theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ [L.SEED, L.FR, L.OUT, L.SCR], Within r R := by
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  have hsy : (t.callEntry.withRegions (baseRd L) (baseWr L)).syms combSym = L.T := hc.sym
+  simp only [Proof.Ed25519.X86_64.scalarBaseLocal, Proof.Ed25519.X86_64.CombHeld, g1, g2, g3, rsp_ce,
+    hc.rsp, sub8, State.withRegions_rd, State.withRegions_wr, State.withRegions_mem, hsy]
+  refine ⟨trivial, trivial, hL.stk_SCR (by omega), hL.stk_OUT (by omega), hL.stk_SCR (by omega), hL.nc,
+    fun i hi => ce_tbl hL hc hi, hL.nt, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false]
   rintro r (rfl | rfl | rfl)
+  · exact hL.tbo
+  · exact hL.tbc
+  · exact hL.tbk.sub_right (Offset.sub_base _ (by omega))
+
+theorem base_sub : ∀ r ∈ baseRd L ++ baseWr L, ∃ R ∈ [L.SEED, L.TBL, L.FR, L.OUT, L.SCR], Within r R := by
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
   · exact ⟨L.FR, by simp, within_stk _ (by omega) (by omega)⟩
+  · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
   · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
   · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
 

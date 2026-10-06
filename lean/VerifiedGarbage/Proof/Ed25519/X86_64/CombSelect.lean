@@ -2,6 +2,8 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.CombTable
 import VerifiedGarbage.Proof.Ed25519.WindowConstants
 import VerifiedGarbage.Impl.Ed25519.X86_64.Comb
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowStep
+import VerifiedGarbage.Proof.Framework.X86_64.Avx
+import VerifiedGarbage.Proof.Framework.CallLay
 
 /-! Merged from `Proof.Ed25519.X86_64.CombConstants`. -/
 section
@@ -93,7 +95,7 @@ private def recache (e : Fe × Fe × Fe) : Fe × Fe × Fe :=
 private theorem tables_cached :
     combTable.all (fun row => row.all fun e => decide (recache e = e)) = true := by decide +kernel
 
-private theorem tables_length :
+theorem tables_length :
     combTable.length = 32 ∧ combTable.all (fun row => row.length == 8) = true := by decide +kernel
 
 private theorem getD_map' {α β : Type} (l : List α) (f : α → β) (n : Nat) (d : α) :
@@ -161,308 +163,652 @@ end VG.Proof.Ed25519.X86_64
 end
 
 /-!
-# The comb's constant-time selection
+# The comb's constant-time selection, from the tables in the static
 
-`combMask k` stores all ones exactly when the digit in `rax` is `k`, and zero
-otherwise; `selectField` then ORs every candidate's words, each ANDed with its
-mask, so only the digit's candidate survives.
+`combWords` holds entry `k = 1 … 8` of table `j` (`combCached j k`, without
+its `2Z`) at word `96 j + 12 (k - 1)`, at `T + 768 j + 96 (k - 1)` in a memory
+holding the tables at `T` (`CombTbl`). The selection (`combSelect_ok`) sets
+`rdx` to table `j`'s address (`combSelSetup_ok`), clears the accumulators,
+keeps, for every entry `m`, its six 16-byte pieces under the mask of the
+magnitude `a = m` (`combSelEntry_ok`), so that accumulator `c` ends with piece
+`c` of entry `a`, or zero for `a = 0` (`accVal`), and stores them to slots
+4–6; for `a = 0`, `combSelOne` sets the low words of `Y - X` and `Y + X` to 1,
+the identity's.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
-open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
+open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside F val4)
 
-/-- The mask of candidate `k`, for the digit `d`. -/
-def maskVal (d k : Nat) : BitVec 64 := if d = k then BitVec.allOnes 64 else 0
+/-! ## The tables' words -/
 
-private theorem mask_fact : ∀ d < 16, ∀ k < 16,
-    ((BitVec.ofNat 64 d ^^^ (BitVec.ofNat 32 k).signExtend 64) - (1 : BitVec 32).signExtend 64) -
-      ((BitVec.ofNat 64 d ^^^ (BitVec.ofNat 32 k).signExtend 64) - (1 : BitVec 32).signExtend 64) -
-      (BitVec.ofBool (decide ((BitVec.ofNat 64 d ^^^ (BitVec.ofNat 32 k).signExtend 64).toNat <
-        ((1 : BitVec 32).signExtend 64).toNat))).setWidth 64 = maskVal d k := by
-  decide +kernel
+/-- The words of an entry: `Y - X`, `Y + X`, `2dT`. -/
+abbrev entryWords (e : Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25519.Fe) : List (BitVec 64) :=
+  feWords e.1 ++ feWords e.2.1 ++ feWords e.2.2
 
-theorem combMask_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 16)
-    (hax : s.gpr .rax = BitVec.ofNat 64 d) (k : Nat) (hk : k < 16) :
-    WP isa (.block (combMask k)) s fun t =>
-      t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k ∧
-      (∀ r, r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base (combMasks + 8 * k) 8 s.mem t.mem := by
-  have hw : InRegions s.wr (off base (combMasks + 8 * k)) 8 :=
-    ⟨_, hs.wr, Offset.contains_base _ (by simp only [combMasks]; omega) (by simp only [combMasks]; omega)⟩
-  apply WP.of_runBlock
-  simp only [combMask, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-    State.store64, Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
-    RegUpd.cf_setReg, RegUpd.cf_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags,
-    RegUpd.mem_setReg, RegUpd.mem_arithFlags, hs.rdi, hax, hw, ite_true, ite_false, reduceCtorEq,
-    Option.bind_some, Option.map_some, Option.some.injEq, exists_eq_left']
-  refine ⟨?_, fun r hr => ?_, rfl, trivial, ?_⟩
-  · rw [Mem.readW_writeW_self64]; exact mask_fact d hd k hk
-  · simp only [hr, ite_false]
-  · exact VG.Proof.X25519.X86_64.writeW_outside _ _ _ (by simp only [combMasks]; omega)
+theorem entryWords_length (e : Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25519.Fe) :
+    (entryWords e).length = 12 := by simp [feWords]
 
-theorem combMaskPrefix_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 16)
-    (hax : s.gpr .rax = BitVec.ofNat 64 d) (n : Nat) (hn : n ≤ 16) :
-    WP isa (.block ((List.range n).flatMap combMask)) s fun t =>
-      (∀ k < n, t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) ∧
-      (∀ r, r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base combMasks 128 s.mem t.mem := by
-  induction n with
-  | zero =>
-    exact WP.block_nil ⟨fun k hk => absurd hk (Nat.not_lt_zero _), fun _ _ => rfl, rfl, rfl,
-      Outside.refl _ _ _ _⟩
-  | succ n ih =>
-    rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-      WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨tv, tg, tr, tw, tm⟩ => ?_
-    have ht : Scratch t base := ⟨(tg _ (by decide)).trans hs.rdi, tw ▸ hs.wr, hs.nowrap⟩
-    refine WP.mono (combMask_ok ht hd ((tg _ (by decide)).trans hax) n (by omega))
-      fun u ⟨uv, ug, ur, uw, um⟩ => ?_
-    refine ⟨fun k hk => ?_, fun r hr => (ug r hr).trans (tg r hr), ur.trans tr, uw.trans tw,
-      tm.trans (um.mono (by simp only [combMasks]; omega) (by simp only [combMasks]; omega))⟩
-    by_cases h : k < n
-    · exact (um.word (d := combMasks + 8 * k) (Or.inl (by omega))
-        (by simp only [combMasks]; omega)).trans (tv k h)
-    · obtain rfl : k = n := by omega
-      exact uv
+theorem length_flatMap_const {α β : Type} (f : α → List β) (k : Nat) :
+    ∀ (l : List α), (∀ x ∈ l, (f x).length = k) → (l.flatMap f).length = l.length * k
+  | [], _ => by simp
+  | x :: l, h => by
+    rw [List.flatMap_cons, List.length_append, h x (List.mem_cons_self ..),
+      length_flatMap_const f k l (fun y hy => h y (List.mem_cons_of_mem _ hy)), List.length_cons,
+      Nat.succ_mul, Nat.add_comm]
 
-theorem combMaskAll_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 16)
-    (hax : s.gpr .rax = BitVec.ofNat 64 d) :
-    WP isa (.block combMaskAll) s fun t =>
-      (∀ k < 9, t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) ∧
-      (∀ r, r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base combMasks 128 s.mem t.mem :=
-  combMaskPrefix_ok hs hd hax 9 (by decide)
+/-- Element `q k + r` of a list of lists of `k` elements each. -/
+theorem getD_flatMap_const {α β : Type} (f : α → List β) (k : Nat) (d : β) :
+    ∀ (l : List α) (da : α), (∀ x ∈ l, (f x).length = k) → ∀ q < l.length, ∀ r < k,
+      (l.flatMap f).getD (q * k + r) d = (f (l.getD q da)).getD r d
+  | [], _, _, q, hq, _, _ => absurd hq (Nat.not_lt_zero _)
+  | x :: l, da, h, q, hq, r, hr => by
+    have hx := h x (List.mem_cons_self ..)
+    rw [List.flatMap_cons]
+    cases q with
+    | zero =>
+      simp only [Nat.zero_mul, Nat.zero_add, List.getD_cons_zero]
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_left (by omega), ← List.getD_eq_getElem?_getD]
+    | succ q =>
+      simp only [List.getD_cons_succ, List.length_cons] at hq ⊢
+      rw [List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [hx, Nat.succ_mul]; omega), hx,
+        show (q + 1) * k + r - k = q * k + r by rw [Nat.succ_mul]; omega, ← List.getD_eq_getElem?_getD]
+      exact getD_flatMap_const f k d l da (fun y hy => h y (List.mem_cons_of_mem _ hy)) q (by omega) r hr
 
-/-! ## Selection -/
+theorem combRow_length {row : List (Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25519.Fe)}
+    (h : row ∈ combTable) : row.length = 8 :=
+  beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ h)
 
-theorem selectCand_ok {s : State} {base : Addr} (hs : Scratch s base) (v : Spec.X25519.Fe) (k : Nat)
-    (hk : k < 16) {m : BitVec 64} (hm : s.mem.readW (off base (combMasks + 8 * k)) 64 = m) :
-    WP isa (.block ((List.range 4).flatMap fun w => selectWord v k w)) s fun t =>
-      t.gpr .r8 = s.gpr .r8 ||| (feWord v 0 &&& m) ∧ t.gpr .r9 = s.gpr .r9 ||| (feWord v 1 &&& m) ∧
-      t.gpr .r10 = s.gpr .r10 ||| (feWord v 2 &&& m) ∧
-      t.gpr .r11 = s.gpr .r11 ||| (feWord v 3 &&& m) ∧ Keeps [.rcx, .r8, .r9, .r10, .r11] s t := by
-  have hr : InRegions (s.rd ++ s.wr) (off base (combMasks + 8 * k)) 8 :=
-    ⟨_, List.mem_append_right _ hs.wr,
-      Offset.contains_base _ (by simp only [combMasks]; omega) (by simp only [combMasks]; omega)⟩
-  rw [show ((List.range 4).flatMap fun w => selectWord v k w) =
-    [.movImm64 .rcx (feWord v 0), .alu .and .rcx (.mem (Impl.X25519.X86_64.sc (combMasks + 8 * k))),
-      .alu .or .r8 (.reg .rcx),
-      .movImm64 .rcx (feWord v 1), .alu .and .rcx (.mem (Impl.X25519.X86_64.sc (combMasks + 8 * k))),
-      .alu .or .r9 (.reg .rcx),
-      .movImm64 .rcx (feWord v 2), .alu .and .rcx (.mem (Impl.X25519.X86_64.sc (combMasks + 8 * k))),
-      .alu .or .r10 (.reg .rcx),
-      .movImm64 .rcx (feWord v 3), .alu .and .rcx (.mem (Impl.X25519.X86_64.sc (combMasks + 8 * k))),
-      .alu .or .r11 (.reg .rcx)] from rfl]
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load64,
-    Proof.X25519.X86_64.ea_sc, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.rd_setReg,
-    RegUpd.rd_arithFlags, RegUpd.wr_setReg, RegUpd.wr_arithFlags, RegUpd.mem_setReg,
-    RegUpd.mem_arithFlags, hs.rdi, hr, hm, ite_true, ite_false, reduceCtorEq, Option.bind_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, trivial, trivial, trivial, fun r hr => ?_, ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
-      hr.2.2.2.2, ite_false]
-  · simp only [RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.rd_arithFlags,
-      RegUpd.wr_setReg, RegUpd.wr_arithFlags, and_self]
+theorem combWords_length : combWords.length = 3072 := by
+  rw [combWords, length_flatMap_const _ 96 _ (fun row hrow => by
+    rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow]),
+    tables_length.1]
 
-private theorem or_and_zero (x y : BitVec 64) : x ||| (y &&& 0) = x := by ext i; simp
-private theorem zero_or' (x : BitVec 64) : 0 ||| x = x := by ext i; simp
-private theorem zero_or_and_ones (x : BitVec 64) : 0 ||| (x &&& BitVec.allOnes 64) = x := by
-  rw [BitVec.and_allOnes, zero_or']
-private theorem or_zero' (x : BitVec 64) : x = x ||| 0 := by ext i; simp
+/-- Word `i < 12` of entry `k < 8` of table `j < 32`. -/
+theorem combWords_getD {j k i : Nat} (hj : j < 32) (hk : k < 8) (hi : i < 12) :
+    combWords.getD (j * 96 + (k * 12 + i)) 0 =
+      (entryWords ((combTable.getD j []).getD k (1, 1, 0))).getD i 0 := by
+  have hrow : (combTable.getD j []) ∈ combTable := by
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [tables_length.1]; exact hj)]
+    exact List.getElem_mem _
+  rw [combWords, getD_flatMap_const _ 96 0 combTable [] (fun row hrow => by
+      rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow])
+      j (by rw [tables_length.1]; exact hj) _ (by omega),
+    getD_flatMap_const _ 12 0 _ (1, 1, 0) (fun e _ => entryWords_length e) k
+      (by rw [combRow_length hrow]; exact hk) i hi]
 
-theorem sel_step (d n : Nat) (x y : BitVec 64) (hy : d = n → y = x) :
-    (if d < n then x else 0) ||| (y &&& maskVal d n) = if d < n + 1 then x else 0 := by
-  by_cases h : d < n
-  · have hne : d ≠ n := by omega
-    simp only [maskVal, h, hne, ↓reduceIte, show d < n + 1 by omega]
-    exact or_and_zero x y
-  · by_cases he : d = n
-    · subst he
-      simp only [maskVal, h, ↓reduceIte, Nat.lt_add_one, hy rfl]
-      exact zero_or_and_ones x
-    · simp only [maskVal, h, he, ↓reduceIte, show ¬ d < n + 1 by omega]
-      exact or_and_zero 0 y
+theorem feWords_getD (v : Spec.X25519.Fe) {w : Nat} (hw : w < 4) : (feWords v).getD w 0 = feWord v w := by
+  simp only [feWords, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hw,
+    Option.map_some, Option.getD_some]
 
-/-- The candidates `k < n`, from cleared registers. -/
-theorem selectCands_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat}
-    (hm : ∀ k < 9, s.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k)
-    (vs : List Spec.X25519.Fe) (n : Nat) (hn : n ≤ 9) :
-    WP isa (.block ((List.range n).flatMap fun k => (List.range 4).flatMap fun w =>
-      selectWord (vs.getD k 0) k w)) s fun t =>
-      t.gpr .r8 = s.gpr .r8 ||| (if d < n then feWord (vs.getD d 0) 0 else 0) ∧
-      t.gpr .r9 = s.gpr .r9 ||| (if d < n then feWord (vs.getD d 0) 1 else 0) ∧
-      t.gpr .r10 = s.gpr .r10 ||| (if d < n then feWord (vs.getD d 0) 2 else 0) ∧
-      t.gpr .r11 = s.gpr .r11 ||| (if d < n then feWord (vs.getD d 0) 3 else 0) ∧
-      Keeps [.rcx, .r8, .r9, .r10, .r11] s t := by
-  induction n with
-  | zero =>
-    refine WP.block_nil ⟨?_, ?_, ?_, ?_, fun _ _ => rfl, rfl, rfl, rfl⟩ <;>
-      simp only [Nat.not_lt_zero, ↓reduceIte] <;> exact or_zero' _
-  | succ n ih =>
-    rw [List.range_succ (n := n), List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-      WP.block_append_iff]
-    refine WP.mono (ih (by omega)) fun t ⟨t8, t9, t10, t11, kt⟩ => ?_
-    have ht : Scratch t base := ⟨(kt.1 _ (by decide)).trans hs.rdi, kt.2.2.2 ▸ hs.wr, hs.nowrap⟩
-    refine WP.mono (selectCand_ok (m := maskVal d n) ht (vs.getD n 0) n (by omega)
-      (by rw [kt.2.1]; exact hm n (by omega))) fun u ⟨u8, u9, u10, u11, ku⟩ => ?_
-    have hy : ∀ w, d = n → feWord (vs.getD n 0) w = feWord (vs.getD d 0) w := fun _ h => by rw [h]
-    refine ⟨?_, ?_, ?_, ?_, ⟨fun r hr => (ku.1 r hr).trans (kt.1 r hr), ku.2.1.trans kt.2.1,
-      ku.2.2.1.trans kt.2.2.1, ku.2.2.2.trans kt.2.2.2⟩⟩
-    · rw [u8, t8, BitVec.or_assoc, sel_step d n _ _ (hy 0)]
-    · rw [u9, t9, BitVec.or_assoc, sel_step d n _ _ (hy 1)]
-    · rw [u10, t10, BitVec.or_assoc, sel_step d n _ _ (hy 2)]
-    · rw [u11, t11, BitVec.or_assoc, sel_step d n _ _ (hy 3)]
-
-/-- `store4`, in the larger scratch. -/
-theorem store4W_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat} (ho : o + 32 ≤ 8192) :
-    WP isa (.block (Impl.X25519.X86_64.store4 o)) s fun t =>
-      t.mem = Proof.X25519.X86_64.st4 s.mem base o (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) ∧
-      (∀ r, t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have w : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
-    fun d hd => ⟨_, hs.wr, Offset.contains_base base hd (by omega)⟩
-  apply WP.of_runBlock
-  simp only [Impl.X25519.X86_64.store4, Impl.X25519.X86_64.stores, runBlock_cons, runStep_some,
-    runBlock_nil, exec, Proof.X25519.X86_64.ea_sc, hs.rdi, State.store64, w o (by omega),
-    w (o + 8) (by omega), w (o + 16) (by omega), w (o + 24) (by omega), ite_true,
-    Option.some.injEq, exists_eq_left']
-  exact ⟨rfl, fun _ => trivial, trivial, trivial⟩
+theorem entryWords_getD (e : Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25519.Fe) (f w : Nat) (hf : f < 3)
+    (hw : w < 4) : (entryWords e).getD (4 * f + w) 0 =
+      feWord ([e.1, e.2.1, e.2.2].getD f 0) w := by
+  have hl : ∀ v, (feWords v).length = 4 := fun v => by simp [feWords]
+  unfold entryWords
+  rw [List.getD_eq_getElem?_getD]
+  obtain rfl | rfl | rfl : f = 0 ∨ f = 1 ∨ f = 2 := by omega
+  · rw [List.append_assoc, List.getElem?_append_left (by rw [hl]; omega), ← List.getD_eq_getElem?_getD,
+      show 4 * 0 + w = w by omega, feWords_getD _ hw]
+    try rfl
+  · rw [List.append_assoc, List.getElem?_append_right (by rw [hl]; omega), hl,
+      List.getElem?_append_left (by rw [hl]; omega), show 4 * 1 + w - 4 = w by omega,
+      ← List.getD_eq_getElem?_getD, feWords_getD _ hw]
+    try rfl
+  · rw [List.getElem?_append_right (by simp [hl]), List.length_append, hl, hl,
+      show 4 * 2 + w - (4 + 4) = w by omega, ← List.getD_eq_getElem?_getD, feWords_getD _ hw]
+    try rfl
 
 theorem feWord_val (v : Spec.X25519.Fe) :
-    Proof.X25519.X86_64.val4 (feWord v 0) (feWord v 1) (feWord v 2) (feWord v 3) = v.val := by
+    val4 (feWord v 0) (feWord v 1) (feWord v 2) (feWord v 3) = v.val := by
   simp only [feWord, Nat.mul_zero, pow_zero, Nat.div_one, Nat.reduceMul]
   exact limbs_nat _ (by have := v.isLt; simp only [Spec.X25519.P] at this; omega)
 
-theorem selectField_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 9)
-    (hm : ∀ k < 9, s.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k)
-    (vs : List Spec.X25519.Fe) {o : Nat} (ho : o + 32 ≤ 8192) :
-    WP isa (.block (selectField vs o)) s fun t =>
-      Proof.X25519.X86_64.F t.mem base o = vs.getD d 0 ∧
-      (∀ r, r ∉ [Reg.rcx, .r8, .r9, .r10, .r11] → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Outside base o 32 s.mem t.mem := by
-  rw [selectField, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (Proof.X25519.X86_64.zero4_ok s) fun a ⟨a8, a9, a10, a11, ka⟩ => ?_
-  have ha : Scratch a base := ⟨(ka.1 _ (by decide)).trans hs.rdi, ka.2.2.2 ▸ hs.wr, hs.nowrap⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (selectCands_ok (d := d) ha (by rw [ka.2.1]; exact hm) vs 9 (Nat.le_refl _))
-    fun b ⟨b8, b9, b10, b11, kb⟩ => ?_
-  have hb : Scratch b base := ⟨(kb.1 _ (by decide)).trans ha.rdi, kb.2.2.2 ▸ ha.wr, hs.nowrap⟩
-  refine WP.mono (store4W_ok hb ho) fun t ⟨tm, tg, tr, tw⟩ => ?_
-  refine ⟨?_, fun r hr => ?_, tr.trans (kb.2.2.1.trans ka.2.2.1), tw.trans (kb.2.2.2.trans ka.2.2.2),
-    ?_⟩
-  · rw [tm, Proof.X25519.X86_64.F, Proof.X25519.X86_64.fe_st4 _ _ (by omega), b8, b9, b10, b11, a8, a9,
-      a10, a11]
-    simp only [hd, ↓reduceIte, zero_or']
-    rw [feWord_val, Proof.X25519.toFe_self]
-  · rw [tg, kb.1 r hr, ka.1 r (fun h => hr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
-      rcases h with h | h | h | h <;> simp [h]))]
-  · rw [tm, kb.2.1, ka.2.1]
-    exact Proof.X25519.X86_64.st4_outside _ _ (by omega) _ _ _ _
+/-- The tables at `T`, the static's address: readable, and word `i` of
+`combWords` at `T + 8 i`. -/
+structure CombTbl (s : State) (T : Addr) : Prop where
+  sym : s.syms combSym = T
+  rd : InRegions (s.rd ++ s.wr) T (8 * 3072)
+  val : ∀ i < 3072, s.mem.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
-private theorem entries_getD (j d : Nat) (hd : d < 9) (f : Spec.Ed25519.Point → Spec.X25519.Fe) :
-    (((List.range 9).map (combCached j)).map f).getD d 0 = f (combCached j d) := by
-  simp only [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hd, Option.map_some,
-    Option.getD_some]
+/-! ## Masks and pieces -/
 
-/-- A field selected to slot `i` (4 to 7), keeping the masks and the slots below. -/
-private theorem selectSlot_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 9)
-    (hm : ∀ k < 9, s.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k)
-    (vs : List Spec.X25519.Fe) (i : Slot) (hi : 4 ≤ i.val) (hi' : i.val < 8) :
-    WP isa (.block (selectField vs (offset i))) s fun t =>
-      env t.mem base i = vs.getD d 0 ∧
-      (∀ i' : Slot, i' ≠ i → env t.mem base i' = env s.mem base i') ∧ Keep base s t ∧
-      (∀ k < 9, t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) := by
-  refine WP.mono (selectField_ok hs hd hm vs (by simp only [offset]; omega))
-    fun t ⟨tv, tg, tr, tw, tm⟩ => ⟨tv, fun i' hi' => ?_, ⟨fun r hr => tg r (fun h => hr (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with rfl | rfl | rfl | rfl | rfl <;> decide)), tr, tw,
-      tm.mono (by simp only [offset]; omega) (by simp only [offset]; omega)⟩,
-      fun k hk => (tm.word (d := combMasks + 8 * k) (Or.inr (by simp only [offset, combMasks]; omega))
-        (by simp only [combMasks]; omega)).trans (hm k hk)⟩
-  have hne : i'.val ≠ i.val := fun h => hi' (Fin.ext h)
-  exact Outside_F tm (by simp only [offset]; omega) (by simp only [offset]; omega)
+/-- Runs a block by symbolic execution, reading registers through the writes. -/
+syntax "erun" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
+macro_rules
+  | `(tactic| erun) => `(tactic| erun [])
+  | `(tactic| erun [$ls,*]) => `(tactic| (
+      apply WP.of_runBlock
+      set_option linter.unusedSimpArgs false in
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32, execAlu,
+        execShift, execMul, State.setReg32, State.load8, State.ea, Option.bind_some,
+        Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags,
+        RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
+        RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.mem_setFlags,
+        RegUpd.rd_setFlags, RegUpd.wr_setFlags, ite_true, ite_false, reduceCtorEq, Nat.le_refl,
+        true_and, and_true, and_self, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceEqDiff, ↓reduceIte,
+        Option.some.injEq, exists_eq_left', $ls,*]))
 
-theorem combSelect_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 9)
-    (hm : ∀ k < 9, s.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) (j : Nat) :
-    WP isa (.block (combSelect j)) s fun t =>
-      point (env t.mem base) 4 5 6 7 = combCached j d ∧ Keep base s t ∧
-      (∀ k < 9, t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) ∧
-      (∀ i : Slot, (i.val < 4 ∨ 8 ≤ i.val) → env t.mem base i = env s.mem base i) := by
-  rw [combSelect]
-  simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono (selectSlot_ok hs hd hm _ 4 (by decide) (by decide)) fun a ⟨av, ao, ka, am⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (selectSlot_ok (hs.of_keep ka) hd am _ 5 (by decide) (by decide))
-    fun b ⟨bv, bo, kb, bm⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (selectSlot_ok ((hs.of_keep ka).of_keep kb) hd bm _ 6 (by decide) (by decide))
-    fun c ⟨cv, co, kc, cm⟩ => ?_
-  refine WP.mono (selectSlot_ok (((hs.of_keep ka).of_keep kb).of_keep kc) hd cm _ 7 (by decide)
-    (by decide)) fun t ⟨tv, tO, kt, tm⟩ => ⟨?_, ((ka.trans kb).trans kc).trans kt, tm, fun i hi => ?_⟩
-  · rw [entries_getD j d hd] at av bv cv tv
-    simp only [point, tv, tO 6 (by decide), cv, tO 5 (by decide), co 5 (by decide), bv,
-      tO 4 (by decide), co 4 (by decide), bo 4 (by decide), av]
-  · have ne : ∀ (k : Nat) (h2 : k < 8), 4 ≤ k → i ≠ (⟨k, by omega⟩ : Slot) := fun k _ h1 h => by
-      have := congrArg Fin.val h; simp only at this; omega
-    rw [tO i (ne 7 (by decide) (by decide)), co i (ne 6 (by decide) (by decide)),
-      bo i (ne 5 (by decide) (by decide)), ao i (ne 4 (by decide) (by decide))]
+/-- All ones if `b`, else zero. -/
+abbrev cmask (b : Bool) : BitVec 64 := if b then BitVec.allOnes 64 else 0
 
-theorem rdxCmp_ok (s : State) (j k : Nat) (hj : j < 32) (hk : k < 32)
-    (hc : s.gpr .rdx = BitVec.ofNat 64 j) :
-    WP isa (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 k))]) s fun t =>
-      t.zf = some (decide (j = k)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have he : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
-    have : ∀ k < 32, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by decide
-    exact this k hk
-  have hz : (BitVec.ofNat 64 j - BitVec.ofNat 64 k == 0) = decide (j = k) := by
-    apply Bool.eq_iff_iff.mpr
-    simp only [beq_iff_eq, decide_eq_true_eq]
-    bv_omega_using [hj, hk]
+/-- All ones in both quadwords if `b`, else zero. -/
+abbrev cmask128 (b : Bool) : BitVec 128 := if b then BitVec.allOnes 128 else 0
+
+theorem imm32_ofNat {v : Nat} (hv : v < 2 ^ 31) :
+    (BitVec.ofNat 32 v).setWidth 64 = BitVec.ofNat 64 v := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (by omega : v < 2 ^ 32), Nat.mod_eq_of_lt (by omega : v < 2 ^ 64)]
+
+/-- `rcx` all ones if `r8 = a` is `v`, else zero. -/
+theorem combEqMask_ok (s : State) {v a : Nat} (hv : v < 2 ^ 31) (ha : a < 2 ^ 31)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
+    WP isa (.block (combEqMask v)) s fun t => t.gpr .rcx = cmask (decide (a = v)) ∧ Keeps [.rcx] s t ∧
+      t.xmm = s.xmm ∧ t.syms = s.syms := by
+  erun [combEqMask, imm32_ofNat hv, h8, RegUpd.xmm_setReg, RegUpd.xmm_arithFlags]
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl⟩
+  · have h1 : (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 := by decide
+    have hx : decide ((BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 a).toNat < 1) = decide (a = v) := by
+      refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => ?_⟩
+      · have e0 : BitVec.ofNat 64 v ^^^ BitVec.ofNat 64 a = 0 :=
+          BitVec.eq_of_toNat_eq ((Nat.lt_one_iff.mp h).trans rfl)
+        have e := BitVec.xor_eq_zero_iff.mp e0
+        have := congrArg BitVec.toNat e
+        simp only [BitVec.toNat_ofNat] at this
+        omega
+      · subst h; rw [BitVec.xor_self, BitVec.toNat_zero]; decide
+    rw [BitVec.sub_self, h1, hx]
+    cases decide (a = v) <;> decide
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+theorem dup_cmask (b : Bool) :
+    XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ cmask b) ((0 : BitVec 64) ++ cmask b) = cmask128 b := by
+  cases b <;> rfl
+
+theorem combAcc_ne : ∀ c < 6, combAcc c ≠ .xmm14 ∧ combAcc c ≠ .xmm15 := by decide
+
+theorem combAcc_inj : ∀ c < 6, ∀ d < 6, combAcc c = combAcc d → c = d := by decide
+
+theorem ea_combTblAt (s : State) (d : Nat) : s.ea (combTblAt d) = s.gpr .rdx + BitVec.ofNat 64 d := by
+  simp only [State.ea, combTblAt, BitVec.ofInt_natCast]
+
+/-- What the selection leaves of the other registers: the general-purpose
+registers but `rs`, the memory and the regions, and the `xmm` registers but
+those of `xs`. -/
+structure XKeep (rs : List Reg) (xs : XReg → Prop) (s t : State) : Prop where
+  gpr : ∀ r, r ∉ rs → t.gpr r = s.gpr r
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  xmm : ∀ r, ¬ xs r → t.xmm r = s.xmm r
+  syms : t.syms = s.syms
+
+theorem XKeep.refl (rs : List Reg) (xs : XReg → Prop) (s : State) : XKeep rs xs s s :=
+  ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl⟩
+
+theorem XKeep.trans {rs : List Reg} {xs : XReg → Prop} {s₁ s₂ s₃ : State} (h₁ : XKeep rs xs s₁ s₂)
+    (h₂ : XKeep rs xs s₂ s₃) : XKeep rs xs s₁ s₃ :=
+  ⟨fun r hr => (h₂.gpr r hr).trans (h₁.gpr r hr), h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd,
+    h₂.wr.trans h₁.wr, fun r hr => (h₂.xmm r hr).trans (h₁.xmm r hr), h₂.syms.trans h₁.syms⟩
+
+theorem XKeep.mono {rs rs' : List Reg} {xs xs' : XReg → Prop} {s t : State} (h : XKeep rs xs s t)
+    (hr : ∀ r ∈ rs, r ∈ rs') (hx : ∀ r, xs r → xs' r) : XKeep rs' xs' s t :=
+  ⟨fun r h' => h.gpr r fun h'' => h' (hr r h''), h.mem, h.rd, h.wr,
+    fun r h' => h.xmm r fun h'' => h' (hx r h''), h.syms⟩
+
+/-- Piece `c` of the 16 bytes at `rdx + d`, kept under the mask `xmm15` in accumulator `c`. -/
+theorem combSelStep_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc : c < 6)
+    (hr : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 d) 16) :
+    WP isa (.block [.movdquLoad .xmm14 (combTblAt d), .xop (.bin .pand .xmm14 .xmm15),
+        .xop (.bin .por (combAcc c) .xmm14)]) s fun t =>
+      t.xmm (combAcc c) = s.xmm (combAcc c) ||| (s.mem.readW (X + BitVec.ofNat 64 d) 128 &&& s.xmm .xmm15) ∧
+      XKeep [] (fun r => r = combAcc c ∨ r = .xmm14) s t := by
+  have h14 := (combAcc_ne c hc).1
   apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-    RegUpd.zf_arithFlags, hc, he, hz, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, rfl, rfl, rfl, rfl⟩
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_combTblAt, hx, State.load128, hr,
+    ite_true, Option.map_some, XOp.exec, XBinOp.eval, RegUpd.xmm_setXmm_self,
+    RegUpd.xmm_setXmm_of_ne _ _ h14, Option.some.injEq,
+    exists_eq_left', RegUpd.xmm_setXmm_of_ne _ _ (show XReg.xmm15 ≠ XReg.xmm14 from by decide)]
+  refine ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl, fun r hr => ?_, rfl⟩
+  simp only [not_or] at hr
+  rw [RegUpd.xmm_setXmm_of_ne _ _ hr.1, RegUpd.xmm_setXmm_of_ne _ _ hr.2, RegUpd.xmm_setXmm_of_ne _ _ hr.2]
 
-theorem combSelectFrom_ok (ks : List Nat) (hks : ∀ k ∈ ks, k < 32) {s : State} {j : Nat}
-    (hj : j ∈ ks) (hj32 : j < 32) (hc : s.gpr .rdx = BitVec.ofNat 64 j) {Q : State → Prop}
-    (hq : ∀ s', s'.gpr = s.gpr → s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr →
-      WP isa (.block (combSelect j)) s' Q) :
-    WP isa (combSelectFrom ks) s Q := by
-  induction ks generalizing s with
-  | nil => exact absurd hj List.not_mem_nil
-  | cons k ks ih =>
-    rw [combSelectFrom]
-    refine WP.seq (WP.mono (rdxCmp_ok s j k hj32 (hks k (by simp)) hc)
-      fun t ⟨tz, tg, tm, tr, tw⟩ => ?_)
-    refine WP.ite (decide (j = k)) (by simp only [eval, tz]) (fun h => ?_) (fun h => ?_)
-    · obtain rfl : j = k := of_decide_eq_true h
-      exact hq t tg tm tr tw
-    · have hne : j ≠ k := of_decide_eq_false h
-      have hj' : j ∈ ks := by
-        rcases List.mem_cons.mp hj with h | h
-        · exact absurd h hne
-        · exact h
-      exact ih (fun k hk => hks k (List.mem_cons_of_mem _ hk)) hj' (by rw [tg]; exact hc)
-        (fun s' g m r w => hq s' (g.trans tg) (m.trans tm) (r.trans tr) (w.trans tw))
+/-- The pieces `c < k` of entry `m` of the table at `rdx = X` kept under the
+mask `xmm15` in their accumulators. -/
+theorem combSelSteps_ok {m : Nat} {X : Addr} : ∀ k ≤ 6, ∀ (s : State), s.gpr .rdx = X →
+    (∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * (m - 1) + 16 * c)) 16) →
+    WP isa (.block ((List.range k).flatMap fun c =>
+        [.movdquLoad .xmm14 (combTblAt (combEntryBytes * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
+          .xop (.bin .por (combAcc c) .xmm14)])) s fun t =>
+      (∀ c < 6, t.xmm (combAcc c) = if c < k then s.xmm (combAcc c) |||
+          (s.mem.readW (X + BitVec.ofNat 64 (combEntryBytes * (m - 1) + 16 * c)) 128 &&& s.xmm .xmm15)
+        else s.xmm (combAcc c)) ∧
+      XKeep [] (fun r => (∃ c < 6, r = combAcc c) ∨ r = .xmm14) s t
+  | 0, _, s, _, _ => WP.block_nil ⟨fun c _ => by simp, XKeep.refl _ _ _⟩
+  | k + 1, hk, s, hx, hr => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (combSelSteps_ok k (by omega) s hx hr) fun s₁ ⟨a₁, k₁⟩ => ?_
+    have h15 : s₁.xmm .xmm15 = s.xmm .xmm15 := k₁.xmm _ (by
+      rintro (⟨c, hc, h⟩ | h)
+      · exact (combAcc_ne c hc).2 h.symm
+      · exact absurd h (by decide))
+    refine WP.mono (combSelStep_ok s₁ ((k₁.gpr _ (List.not_mem_nil)).trans hx) (c := k) (by omega)
+      (by rw [k₁.rd, k₁.wr]; exact hr k (by omega))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc => ?_, ?_⟩
+    · by_cases hck : c = k
+      · subst hck
+        rw [a₂, a₁ c hc, h15, k₁.mem]
+        simp only [Nat.lt_irrefl, ↓reduceIte, Nat.lt_succ_self]
+      · rw [k₂.xmm _ (by
+          rintro (h | h)
+          · exact hck (combAcc_inj c hc k (by omega) h)
+          · exact (combAcc_ne c hc).1 h), a₁ c hc]
+        by_cases hlt : c < k
+        · simp only [hlt, show c < k + 1 by omega, ↓reduceIte]
+        · simp only [hlt, show ¬ c < k + 1 by omega, ↓reduceIte]
+    · exact k₁.trans (k₂.mono (fun _ h => h) fun r h => by
+        rcases h with h | h
+        · exact Or.inl ⟨k, by omega, h⟩
+        · exact Or.inr h)
 
-theorem combSelectAll_ok {s : State} {base : Addr} (hs : Scratch s base) {d : Nat} (hd : d < 9)
-    (hm : ∀ k < 9, s.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) {j : Nat}
-    (hj : j < 32) (hc : s.gpr .rdx = BitVec.ofNat 64 j) :
-    WP isa (combSelectFrom (List.range 32)) s fun t =>
-      point (env t.mem base) 4 5 6 7 = combCached j d ∧ Keep base s t ∧
-      (∀ k < 9, t.mem.readW (off base (combMasks + 8 * k)) 64 = maskVal d k) ∧
-      (∀ i : Slot, (i.val < 4 ∨ 8 ≤ i.val) → env t.mem base i = env s.mem base i) := by
-  refine combSelectFrom_ok _ (fun k hk => List.mem_range.mp hk) (List.mem_range.mpr hj) hj hc ?_
-  intro t tg tm tr tw
-  have ht : Scratch t base := ⟨by rw [tg]; exact hs.rdi, tw ▸ hs.wr, hs.nowrap⟩
-  refine WP.mono (combSelect_ok ht hd (by rw [tm]; exact hm) j) fun u ⟨uv, ku, um, ue⟩ =>
-    ⟨uv, ?_, um, fun i hi => by rw [ue i hi, tm]⟩
-  exact ⟨fun r hr => (ku.gpr r hr).trans (by rw [tg]), ku.rd.trans tr, ku.wr.trans tw,
-    by rw [← tm]; exact ku.mem⟩
+/-- `xmm15` = the mask `rcx` in both quadwords. -/
+theorem combDupMask_ok (s : State) {b : Bool} (hc : s.gpr .rcx = cmask b) :
+    WP isa (.block [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)]) s fun t =>
+      t.xmm .xmm15 = cmask128 b ∧ XKeep [] (· = .xmm15) s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, RegUpd.xmm_setXmm_self, hc,
+    dup_cmask, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, fun _ _ => rfl, rfl, rfl, rfl, fun r hr => by
+    rw [RegUpd.xmm_setXmm_of_ne _ _ hr, RegUpd.xmm_setXmm_of_ne _ _ hr], rfl⟩
+
+/-- Accumulator `c` after the entries `1 … m` for the magnitude `a`: piece
+`c` of entry `a` of the table at `X` if `1 ≤ a ≤ m`, else zero. -/
+def accVal (mem : Mem) (X : Addr) (a m c : Nat) : BitVec 128 :=
+  if 1 ≤ a ∧ a ≤ m then mem.readW (X + BitVec.ofNat 64 (combEntryBytes * (a - 1) + 16 * c)) 128 else 0
+
+theorem accVal_step (mem : Mem) (X : Addr) (a m c : Nat) (hm : 1 ≤ m) :
+    accVal mem X a (m - 1) c |||
+      (mem.readW (X + BitVec.ofNat 64 (combEntryBytes * (m - 1) + 16 * c)) 128 &&& cmask128 (decide (a = m))) =
+      accVal mem X a m c := by
+  unfold accVal
+  by_cases h : a = m
+  · subst h
+    rw [decide_eq_true rfl, show cmask128 true = BitVec.allOnes 128 from rfl, BitVec.and_allOnes,
+      ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
+      ite_eq_left_of_eq_true _ _ (eq_true ⟨hm, Nat.le_refl _⟩)]
+    simp
+  · rw [decide_eq_false h, show cmask128 false = 0 from rfl]
+    have e : ∀ x y : BitVec 128, x ||| (y &&& 0) = x := fun x y => by simp
+    rw [e]
+    by_cases h' : 1 ≤ a ∧ a ≤ m - 1
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h'), ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h'), ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+
+/-- Entry `m` of the table at `rdx = X` kept in the accumulators under the
+mask of `r8 = a`. -/
+theorem combSelEntry_ok {s : State} {X : Addr} {a m : Nat} (hm1 : 1 ≤ m)
+    (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
+    (hr : ∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * (m - 1) + 16 * c)) 16)
+    (hacc : ∀ c < 6, s.xmm (combAcc c) = accVal s.mem X a (m - 1) c) :
+    WP isa (.block (combSelEntry m)) s fun t =>
+      (∀ c < 6, t.xmm (combAcc c) = accVal s.mem X a m c) ∧
+      XKeep [.rcx] (fun r => (∃ c < 6, r = combAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t := by
+  rw [combSelEntry, WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (combEqMask_ok s hm ha h8) fun s₁ ⟨c₁, k₁, x₁, y₁⟩ => ?_
+  refine WP.mono (combDupMask_ok s₁ c₁) fun s₂ ⟨x₂, k₂⟩ => ?_
+  have hx₂ : s₂.gpr .rdx = X := by rw [k₂.gpr _ List.not_mem_nil, k₁.1 _ (by decide), hx]
+  have hm₂ : s₂.mem = s.mem := k₂.mem.trans k₁.2.1
+  refine WP.mono (combSelSteps_ok 6 (Nat.le_refl _) s₂ hx₂ (by
+      rw [k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]; exact hr)) fun t ⟨a₃, k₃⟩ => ⟨fun c hc => ?_, ?_⟩
+  · rw [a₃ c (by omega), ite_eq_left_of_eq_true _ _ (eq_true hc), x₂, hm₂,
+      k₂.xmm _ (fun h => (combAcc_ne c (by omega)).2 h), x₁, hacc c hc]
+    exact accVal_step _ _ _ _ _ hm1
+  · refine ⟨fun r hr => ?_, k₃.mem.trans hm₂, by rw [k₃.rd, k₂.rd, k₁.2.2.1],
+      by rw [k₃.wr, k₂.wr, k₁.2.2.2], fun r hr => ?_, by rw [k₃.syms, k₂.syms, y₁]⟩
+    · rw [k₃.gpr r List.not_mem_nil, k₂.gpr r List.not_mem_nil, k₁.1 r hr]
+    · simp only [not_or] at hr
+      rw [k₃.xmm r (by rintro (h | h); exacts [hr.1 h, hr.2.1 h]), k₂.xmm r hr.2.2, x₁]
+
+/-- The entries `1 … h` of the table at `rdx = X` kept in the cleared
+accumulators under the masks of `r8 = a`. -/
+theorem combSelEntries_ok {X : Addr} {a : Nat} (ha : a < 2 ^ 31) :
+    ∀ h, h < 2 ^ 31 → ∀ (s : State), s.gpr .r8 = BitVec.ofNat 64 a → s.gpr .rdx = X →
+    (∀ e < h, ∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16) →
+    (∀ c < 6, s.xmm (combAcc c) = 0) →
+    WP isa (.block ((List.range h).flatMap fun m => combSelEntry (m + 1))) s fun t =>
+      (∀ c < 6, t.xmm (combAcc c) = accVal s.mem X a h c) ∧
+      XKeep [.rcx] (fun r => (∃ c < 6, r = combAcc c) ∨ r = .xmm14 ∨ r = .xmm15) s t
+  | 0, _, s, _, _, _, h0 => WP.block_nil ⟨fun c hc => by
+      rw [h0 c hc, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], XKeep.refl _ _ _⟩
+  | h + 1, hh, s, h8, hx, hr, h0 => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (combSelEntries_ok ha h (by omega) s h8 hx (fun e he => hr e (by omega)) h0)
+      fun s₁ ⟨a₁, k₁⟩ => ?_
+    refine WP.mono (combSelEntry_ok (X := X) (m := h + 1) (by omega) hh ha
+      (by rw [k₁.gpr _ (by decide), h8]) (by rw [k₁.gpr _ (by decide), hx])
+      (fun c hc => by rw [k₁.rd, k₁.wr, Nat.add_sub_cancel]; exact hr h (by omega) c hc)
+      (fun c hc => by rw [a₁ c hc, k₁.mem, Nat.add_sub_cancel])) fun t ⟨a₂, k₂⟩ =>
+      ⟨fun c hc => by rw [a₂ c hc, k₁.mem], k₁.trans k₂⟩
+
+/-- The accumulators `c < k` cleared. -/
+theorem combClearAcc_ok : ∀ k ≤ 6, ∀ (s : State),
+    WP isa (.block ((List.range k).map fun c => .xop (.bin .pxor (combAcc c) (combAcc c)))) s fun t =>
+      (∀ c < k, t.xmm (combAcc c) = 0) ∧ XKeep [] (fun r => ∃ c < k, r = combAcc c) s t
+  | 0, _, s => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), XKeep.refl _ _ _⟩
+  | k + 1, hk, s => by
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (combClearAcc_ok k (by omega) s) fun s₁ ⟨a₁, k₁⟩ => ?_
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, XBinOp.eval, BitVec.xor_self,
+      Option.some.injEq, exists_eq_left']
+    refine ⟨fun c hc => ?_, ⟨fun r hr => k₁.gpr r hr, k₁.mem, k₁.rd, k₁.wr, fun r hr => ?_, k₁.syms⟩⟩
+    · by_cases hck : c = k
+      · subst hck; exact RegUpd.xmm_setXmm_self _ _ _
+      · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hck (combAcc_inj c (by omega) k (by omega) h),
+          a₁ c (by omega)]
+    · rw [RegUpd.xmm_setXmm_of_ne _ _ fun h => hr ⟨k, by omega, h⟩,
+        k₁.xmm r fun ⟨c, hc, h⟩ => hr ⟨c, by omega, h⟩]
+
+/-- A 16-byte write changes only its bytes. -/
+theorem writeW128_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec 128) (h : d + 16 ≤ 2 ^ 64) :
+    Outside base d 16 m (m.writeW (off base d) v) := by
+  intro x hx
+  simp only [Mem.writeW]
+  apply Mem.write_apply
+  rw [Offset.lt_iff x base (by omega)]
+  simp only [ofs] at hx
+  omega
+
+/-- 16 bytes outside the bytes that changed. -/
+theorem outside_read128 {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') {d : Nat}
+    (hd : d + 16 ≤ o ∨ o + n ≤ d) (hd' : d + 16 ≤ 2 ^ 64) :
+    m'.readW (off base d) 128 = m.readW (off base d) 128 :=
+  (Mem.readW_congr fun i hi => (h _ (by rw [Proof.X25519.X86_64.ofs_off base (by omega)]; omega)).symm).symm
+
+/-- The accumulators `c < k` stored to the 16 bytes at `o + 16 c`. -/
+theorem combStoreAcc_ok {base : Addr} {o : Nat} : ∀ k, ∀ (s : State), Scratch s base → o + 16 * k ≤ 8192 →
+    WP isa (.block ((List.range k).map fun c => .movdquStore (Impl.X25519.X86_64.sc (o + 16 * c)) (combAcc c)))
+      s fun t =>
+      (∀ c < k, t.mem.readW (off base (o + 16 * c)) 128 = s.xmm (combAcc c)) ∧
+      Outside base o (16 * k) s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.xmm = s.xmm ∧
+      t.syms = s.syms
+  | 0, s, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, rfl, rfl,
+      rfl, rfl, rfl⟩
+  | k + 1, s, hs, hk => by
+    have hn := hs.nowrap
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (combStoreAcc_ok k s hs (by omega)) fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁, y₁⟩ => ?_
+    have hw : InRegions s₁.wr (off base (o + 16 * k)) 16 := by
+      rw [w₁]; exact ⟨_, hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
+    have hd₁ : s₁.gpr .rdi = base := by rw [g₁]; exact hs.rdi
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, Proof.X25519.X86_64.ea_sc, hd₁,
+      State.store128, hw, ite_true, Option.some.injEq, exists_eq_left']
+    have O₂ := writeW128_outside s₁.mem base (s₁.xmm (combAcc k)) (d := o + 16 * k) (by omega)
+    refine ⟨fun c hc => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
+      g₁, r₁, w₁, x₁, y₁⟩
+    by_cases hck : c = k
+    · subst hck
+      rw [x₁]; exact Mem.readW_writeW_self (n := 16) _ _ _ (by decide)
+    · rw [outside_read128 O₂ (by omega) (by omega), a₁ c (by omega)]
+
+/-- `rdx` = the address of table `rdx = j`, `T + tb j` for the static `sym` at `T`, through
+`rax` and `rcx`. -/
+theorem tblSetup_ok (s : State) {j tb : Nat} {T : Addr} (sym : String) (htb : tb < 2 ^ 31)
+    (hd : s.gpr .rdx = BitVec.ofNat 64 j) (hT : s.syms sym = T) :
+    WP isa (.block [.mov .rax (.reg .rdx), .mov32 .rcx (.imm (BitVec.ofNat 32 tb)), .mul .rcx,
+      .leaSym .rdx sym, .alu .add .rdx (.reg .rax)]) s fun t =>
+      t.gpr .rdx = T + BitVec.ofNat 64 (j * tb) ∧
+      Keeps [.rax, .rcx, .rdx] s t ∧ t.xmm = s.xmm ∧ t.syms = s.syms := by
+  subst hT
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, readSrc32,
+    execAlu, execMul, State.setReg32, imm32_ofNat htb, hd,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, Option.map_some, Option.bind_some,
+    ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl⟩, rfl, rfl⟩
+  · congr 1
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show tb < 2 ^ 64 by omega), Nat.mod_mul_mod]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hr.1, hr.2.1, hr.2.2,
+      ite_false]
+
+/-- `rdx` = the address of table `rdx = j`, `T + 768 j`, through `rax` and `rcx`. -/
+theorem combSelSetup_ok (s : State) {j : Nat} {T : Addr} (hd : s.gpr .rdx = BitVec.ofNat 64 j)
+    (hT : s.syms combSym = T) :
+    WP isa (.block combSelSetup) s fun t => t.gpr .rdx = T + BitVec.ofNat 64 (j * combTblBytes) ∧
+      Keeps [.rax, .rcx, .rdx] s t ∧ t.xmm = s.xmm ∧ t.syms = s.syms :=
+  tblSetup_ok s combSym (by decide) hd hT
+
+/-- The accumulators cleared, entries `1 … 8` of the table at `rdx = X` kept
+under the masks of `r8 = a`, and stored to slots 4–6. -/
+theorem combSelPass_ok {s : State} {base : Addr} (hs : Scratch s base) {X : Addr} {a : Nat}
+    (ha : a < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
+    (hr : ∀ e < 8, ∀ c < 6, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16) :
+    WP isa (.block combSelPass) s fun t =>
+      (∀ c < 6, t.mem.readW (off base (offset 4 + 16 * c)) 128 = accVal s.mem X a 8 c) ∧
+      Outside base (offset 4) 96 s.mem t.mem ∧ (∀ r, r ≠ .rcx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ t.syms = s.syms := by
+  unfold combSelPass
+  rw [WP.block_append_iff, WP.block_append_iff]
+  refine WP.mono (combClearAcc_ok 6 (Nat.le_refl _) s) fun s₁ ⟨a₁, k₁⟩ => ?_
+  refine WP.mono (combSelEntries_ok (X := X) ha 8 (by decide) s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
+    (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) a₁) fun s₂ ⟨a₂, k₂⟩ => ?_
+  have hs₂ : Scratch s₂ base :=
+    ⟨by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil, hs.rdi], by rw [k₂.wr, k₁.wr]; exact hs.wr,
+      hs.nowrap⟩
+  refine WP.mono (combStoreAcc_ok (o := offset 4) 6 s₂ hs₂ (by decide)) fun t ⟨a₃, O₃, g₃, r₃, w₃, _, y₃⟩ =>
+    ⟨fun c hc => by rw [a₃ c hc, a₂ c hc, k₁.mem], by rw [k₂.mem, k₁.mem] at O₃; exact O₃,
+      fun r hr => by rw [g₃, k₂.gpr r (by simpa using hr), k₁.gpr r List.not_mem_nil],
+      by rw [r₃, k₂.rd, k₁.rd], by rw [w₃, k₂.wr, k₁.wr], by rw [y₃, k₂.syms, k₁.syms]⟩
+
+/-- The words the selection stores: those of entry `a` of the table at `X`
+if `1 ≤ a ≤ 8`, else zero. -/
+theorem accVal_word {mem mem' : Mem} {base X : Addr} {a o : Nat}
+    (h : ∀ c < 6, mem'.readW (off base (o + 16 * c)) 128 = accVal mem X a 8 c) :
+    ∀ i < 12, Proof.X25519.X86_64.word mem' base (o + 8 * i) =
+      if 1 ≤ a ∧ a ≤ 8 then Proof.X25519.X86_64.word mem X (combEntryBytes * (a - 1) + 8 * i) else 0 := by
+  intro i hi
+  obtain ⟨c, q, hq, rfl⟩ : ∃ c q, q < 2 ∧ i = 2 * c + q :=
+    ⟨i / 2, i % 2, Nat.mod_lt _ (by decide), by omega⟩
+  have e := readW_extract mem' (off base (o + 16 * c)) (w := 128) (k := 8 * q) (n := 8) (by omega)
+  rw [show 8 * 8 = 64 from rfl, off, Offset.add_add, show o + 16 * c + 8 * q = o + 8 * (2 * c + q) by omega] at e
+  rw [Proof.X25519.X86_64.word, off, ← e, h c (by omega), accVal]
+  split
+  · have e2 := readW_extract mem (X + BitVec.ofNat 64 (combEntryBytes * (a - 1) + 16 * c)) (w := 128)
+      (k := 8 * q) (n := 8) (by omega)
+    rw [show 8 * 8 = 64 from rfl, Offset.add_add] at e2
+    rw [e2, Proof.X25519.X86_64.word, off]
+    rw [show combEntryBytes * (a - 1) + 16 * c + 8 * q = combEntryBytes * (a - 1) + 8 * (2 * c + q) by omega]
+  · simp
+
+/-- Word `i < 12` of entry `a` (from 1) of table `j`, in the memory holding the tables at `T`. -/
+theorem combTbl_word {s : State} {T : Addr} (ht : CombTbl s T) {j a i : Nat} (hj : j < 32) (ha1 : 1 ≤ a)
+    (ha : a ≤ 8) (hi : i < 12) :
+    Proof.X25519.X86_64.word s.mem (T + BitVec.ofNat 64 (j * combTblBytes)) (combEntryBytes * (a - 1) + 8 * i) =
+      (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 := by
+  rw [← combWords_getD hj (by omega) hi, ← ht.val _ (by omega), Proof.X25519.X86_64.word, off,
+    BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+  congr 2
+  simp only [combTblBytes, combEntryBytes]
+  grind
+
+/-- The identity's `Y - X = Y + X = 1` for a zero magnitude `r8 = a`. -/
+theorem combSelOne_ok {s : State} {base : Addr} (hs : Scratch s base) {a : Nat} (ha : a < 2 ^ 64)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
+    WP isa (.block combSelOne) s fun t =>
+      t.mem = (s.mem.writeW (off base (offset 4))
+          (Proof.X25519.X86_64.word s.mem base (offset 4) ||| (if a = 0 then 1 else 0))).writeW
+        (off base (offset 5)) (Proof.X25519.X86_64.word s.mem base (offset 5) ||| (if a = 0 then 1 else 0)) ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.syms = s.syms := by
+  have hw : ∀ d, d + 8 ≤ 8192 → InRegions s.wr (off base d) 8 :=
+    fun d hd => ⟨_, hs.wr, Offset.contains_base _ hd (by omega)⟩
+  have hr : ∀ d, d + 8 ≤ 8192 → InRegions (s.rd ++ s.wr) (off base d) 8 :=
+    fun d hd => ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ hd (by omega)⟩
+  have hM : (BitVec.ofNat 64 a - BitVec.ofNat 64 a - BitVec.setWidth 64 (BitVec.ofBool
+      (decide ((BitVec.ofNat 64 a).toNat < (BitVec.signExtend 64 (1 : BitVec 32)).toNat)))) &&&
+      BitVec.signExtend 64 (1 : BitVec 32) = if a = 0 then 1 else 0 := by
+    by_cases h : a = 0
+    · subst h; decide
+    · have h1 : (BitVec.signExtend 64 (1 : BitVec 32)).toNat = 1 := by decide
+      rw [h1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, decide_eq_false (by omega),
+        ite_eq_right_iff.mpr (fun h2 => absurd h2 h)]
+      simp
+  erun [combSelOne, State.load64, State.store64, Impl.X25519.X86_64.sc, Impl.X25519.X86_64.at_,
+    BitVec.ofInt_natCast, hs.rdi, h8,
+    hw _ (show offset 4 + 8 ≤ 8192 by decide), hr _ (show offset 4 + 8 ≤ 8192 by decide),
+    hw _ (show offset 5 + 8 ≤ 8192 by decide), hr _ (show offset 5 + 8 ≤ 8192 by decide), hM]
+  constructor
+  · rw [Mem.readW_writeW_sep (Proof.X25519.X86_64.sep_off base (by decide) (by decide) (by decide)) (by decide)]
+  · repeat' constructor
+    all_goals first | rfl | (intro r h1 h2; simp only [h1, h2, ite_false])
+
+/-- The fields `Y - X`, `Y + X` and `2dT` of entry `a` of table `j`. -/
+abbrev combField (j a f : Nat) : Spec.X25519.Fe :=
+  [(combCached j a).X, (combCached j a).Y, (combCached j a).Z].getD f 0
+
+/-- A field element from its words. -/
+theorem F_of_words {m : Mem} {base : Addr} {o : Nat} {v : Spec.X25519.Fe}
+    (h : ∀ w < 4, Proof.X25519.X86_64.word m base (o + 8 * w) = feWord v w) : F m base o = v := by
+  have h0 := h 0 (by decide); have h1 := h 1 (by decide); have h2 := h 2 (by decide); have h3 := h 3 (by decide)
+  simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at h0 h1 h2 h3
+  simp only [F, Proof.X25519.X86_64.fe, h0, h1, show o + 16 = o + 8 * 2 from rfl, h2,
+    show o + 24 = o + 8 * 3 from rfl, h3, feWord_val, Proof.X25519.toFe_self]
+
+private theorem ones_words : ∀ f < 3, ∀ w < 4, (if 4 * f + w = 0 ∨ 4 * f + w = 4 then (1 : BitVec 64) else 0) =
+    feWord ([(1 : Spec.X25519.Fe), 1, 0].getD f 0) w := by decide
+
+theorem combCached_succ (j a : Nat) (ha : 1 ≤ a) :
+    combCached j a = ⟨((combTable.getD j []).getD (a - 1) (1, 1, 0)).1,
+      ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.1, ((combTable.getD j []).getD (a - 1) (1, 1, 0)).2.2, 2⟩ := by
+  simp only [combCached, show a ≠ 0 by omega, ↓reduceIte]
+
+/-- The selection: entry `a ≤ 8` (`combCached`, but its `2Z`) of table `j < 32`, from the tables
+at `T`, to slots 4–6. -/
+theorem combSelect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombTbl s T)
+    {j a : Nat} (hj : j < 32) (ha : a ≤ 8) (hd : s.gpr .rdx = BitVec.ofNat 64 j)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) :
+    WP isa (.block combSelect) s fun t =>
+      (∀ f < 3, F t.mem base (offset 4 + 32 * f) = combField j a f) ∧
+      Outside base (offset 4) 96 s.mem t.mem ∧
+      (∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      t.syms = s.syms := by
+  have hnw := hs.nowrap
+  rw [combSelect, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (combSelSetup_ok s hd ht.sym) fun s₁ ⟨x₁, k₁, _, y₁⟩ => ?_
+  rw [WP.block_append_iff]
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
+  have hr : ∀ e < 8, ∀ c < 6, InRegions (s₁.rd ++ s₁.wr)
+      (T + BitVec.ofNat 64 (j * combTblBytes) + BitVec.ofNat 64 (combEntryBytes * e + 16 * c)) 16 := by
+    intro e he c hc
+    rw [k₁.2.2.1, k₁.2.2.2, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    refine VG.CallLay.inRegions_sub ht.rd ?_ (by decide)
+    simp only [combTblBytes, combEntryBytes]; omega
+  refine WP.mono (combSelPass_ok hs₁ (by omega) h8₁ x₁ hr) fun s₂ ⟨a₂, O₂, g₂, r₂, w₂, y₂⟩ => ?_
+  have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [w₂]; exact hs₁.wr, hnw⟩
+  have h8₂ : s₂.gpr .r8 = BitVec.ofNat 64 a := by rw [g₂ _ (by decide), h8₁]
+  refine WP.mono (combSelOne_ok hs₂ (by omega) h8₂) fun t ⟨mt, gt, rt, wt, yt⟩ => ?_
+  have W := accVal_word a₂
+  rw [k₁.2.1] at W
+  -- The words of slots 4–6 after the pass: entry `a`'s, or zero.
+  have hw₂ : ∀ i < 12, Proof.X25519.X86_64.word s₂.mem base (offset 4 + 8 * i) =
+      if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else 0 := by
+    intro i hi
+    rw [W i hi]
+    by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true ⟨h1, ha⟩), ite_eq_left_of_eq_true _ _ (eq_true h1)]
+      exact combTbl_word ht hj h1 ha hi
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false h1)]
+  -- After the identity's ones.
+  have hwt : ∀ i < 12, Proof.X25519.X86_64.word t.mem base (offset 4 + 8 * i) =
+      if 1 ≤ a then (entryWords ((combTable.getD j []).getD (a - 1) (1, 1, 0))).getD i 0 else
+        if i = 0 ∨ i = 4 then 1 else 0 := by
+    intro i hi
+    have e0 : ∀ x : BitVec 64, x ||| 0 = x := fun x => by simp
+    have e1 : (0 : BitVec 64) ||| 1 = 1 := by decide
+    rw [mt]
+    by_cases h4 : i = 4
+    · subst h4
+      rw [Proof.X25519.X86_64.word, show offset 4 + 8 * 4 = offset 5 from rfl, Mem.readW_writeW_self64,
+        show offset 5 = offset 4 + 8 * 4 from rfl, hw₂ 4 (by decide)]
+      by_cases h1 : 1 ≤ a
+      · simp only [h1, ↓reduceIte, show a ≠ 0 by omega, e0]
+      · obtain rfl : a = 0 := by omega
+        simp only [show ¬ 1 ≤ 0 from by decide, ↓reduceIte, e1, or_true]
+    · rw [Proof.X25519.X86_64.word, Mem.readW_writeW_sep
+        (Proof.X25519.X86_64.sep_off base (by simp only [offset] at *; omega) (by simp only [offset]; omega)
+          (by simp only [offset]; omega)) (by decide)]
+      by_cases h0 : i = 0
+      · subst h0
+        rw [show offset 4 + 8 * 0 = offset 4 from rfl, Mem.readW_writeW_self64,
+          show offset 4 = offset 4 + 8 * 0 from rfl, hw₂ 0 (by decide)]
+        by_cases h1 : 1 ≤ a
+        · simp only [h1, ↓reduceIte, show a ≠ 0 by omega, e0]
+        · obtain rfl : a = 0 := by omega
+          simp only [show ¬ 1 ≤ 0 from by decide, ↓reduceIte, e1, true_or]
+      · rw [Mem.readW_writeW_sep
+          (Proof.X25519.X86_64.sep_off base (by simp only [offset] at *; omega) (by simp only [offset]; omega)
+            (by simp only [offset]; omega)) (by decide), ← Proof.X25519.X86_64.word, hw₂ i hi]
+        by_cases h1 : 1 ≤ a
+        · simp only [h1, ↓reduceIte]
+        · simp only [h1, ↓reduceIte, h0, h4, or_self]
+          done
+  refine ⟨fun f hf => F_of_words fun w hw => ?_, ?_, fun r h1 h2 h3 => ?_, ?_, ?_, ?_⟩
+  · rw [show offset 4 + 32 * f + 8 * w = offset 4 + 8 * (4 * f + w) by omega, hwt _ (by omega)]
+    by_cases h1 : 1 ≤ a
+    · rw [ite_eq_left_of_eq_true _ _ (eq_true h1), entryWords_getD _ f w hf hw, combField, combCached_succ j a h1]
+    · rw [ite_eq_right_of_eq_false _ _ (eq_false h1), combField,
+        show combCached j a = ⟨1, 1, 0, 2⟩ by simp only [combCached, show a = 0 by omega, ↓reduceIte]]
+      exact ones_words f hf w hw
+  · rw [mt, ← k₁.2.1]
+    exact (O₂.trans ((Proof.X25519.X86_64.writeW_outside _ base _ (d := offset 4) (by decide)).mono
+      (by decide) (by decide))).trans
+      ((Proof.X25519.X86_64.writeW_outside _ base _ (d := offset 5) (by decide)).mono (by decide) (by decide))
+  · rw [gt r h1 h2, g₂ r h2, k₁.1 r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨h1, h2, h3⟩)]
+  · rw [rt, r₂, k₁.2.2.1]
+  · rw [wt, w₂, k₁.2.2.2]
+  · rw [yt, y₂, y₁]
+
+/-! ## The tables -/
+
+/-- The tables' bytes lie past the scratch. -/
+def TblFar (base T : Addr) : Prop := ∀ i < 8 * 3072, 8192 ≤ ofs base (T + BitVec.ofNat 64 i)
+
+/-- The tables survive what changes only the scratch, the registers and nothing else. -/
+theorem CombTbl.keep {s t : State} {base T : Addr} (h : CombTbl s T) (hf : TblFar base T)
+    (hk : PowersKeep base 56 7368 s t) (hsy : t.syms = s.syms) : CombTbl t T :=
+  ⟨(congrFun hsy combSym).trans h.sym, by rw [hk.rd, hk.wr]; exact h.rd, fun i hi => by
+    rw [← h.val i hi]
+    refine Mem.readW_congr fun b hb => hk.mem _ (Or.inr ?_) (Or.inr ?_) <;>
+    · have := hf (8 * i + b) (by omega)
+      rw [Offset.add_add]
+      omega⟩
+
+/-- The tables' region at `T`. -/
+abbrev combRegion (T : Addr) : Region := ⟨T, 8 * 3072⟩
+
+/-- What a contract with the comb's static (`Abi.withConsts combConsts`) says of its tables:
+held at the static's address, not wrapping around, and apart from the regions `wr`. -/
+def CombHeld (s : State) (wr : List Region) : Prop :=
+  (∀ i < 3072, s.mem.readW (s.syms combSym + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0) ∧
+  (s.syms combSym).toNat + 8 * 3072 ≤ 2 ^ 64 ∧ ∀ r ∈ wr, Region.Disjoint (combRegion (s.syms combSym)) r
+
+theorem CombTbl.of_held {s : State} {wr : List Region} (hrd : combRegion (s.syms combSym) ∈ s.rd)
+    (h : CombHeld s wr) : CombTbl s (s.syms combSym) :=
+  ⟨rfl, ⟨_, List.mem_append_left _ hrd, Region.contains_self _ _⟩, h.1⟩
+
+/-- The tables survive a change of memory within regions apart from them. -/
+theorem CombTbl.frame {s t : State} {T : Addr} {rs : List Region} (h : CombTbl s T)
+    (hf : Frame rs s.mem t.mem) (hd : ∀ r ∈ rs, (combRegion T).Disjoint r)
+    (hrd : t.rd ++ t.wr = s.rd ++ s.wr) (hsy : t.syms = s.syms) : CombTbl t T :=
+  ⟨by rw [hsy]; exact h.sym, by rw [hrd]; exact h.rd, fun i hi => by
+    rw [hf.readW (r := combRegion T) (Offset.contains_base _ (by omega) (by omega)) hd (by decide)]
+    exact h.val i hi⟩
 
 end VG.Proof.Ed25519.X86_64

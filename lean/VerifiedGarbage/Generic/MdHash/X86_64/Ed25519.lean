@@ -58,8 +58,9 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
         `vg_ed25519_scalar_base" ++ fs ++ "`. The pruned scalar `s` is kept in a \
         56-byte stack frame with the pointers and cleared before the frame is popped; the calls \
         use the 16 bytes below it."])
+      consts := Impl.Ed25519.X86_64.combConsts
       code := Impl.Ed25519.X86_64.publicKey fld fs c.callee c.suffix
-      contract := Spec.Ed25519.publicKeyContract X86_64.abi 72
+      contract := Spec.Ed25519.publicKeyContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 72
       stack := 72
       verified := Proof.Ed25519.X86_64.PublicKey.publicKey_verified c
       spSafe := Proof.Ed25519.X86_64.PublicKey.publicKey_spSafe c
@@ -74,8 +75,9 @@ def withField (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Arit
         The 248-byte stack frame holds the pruned scalar, nonce prefix, nonce, challenge, digest \
         and saved arguments; its secret buffers are cleared before return. Calls use another 16 \
         bytes below the frame."])
+      consts := Impl.Ed25519.X86_64.combConsts
       code := Impl.Ed25519.X86_64.SignCached.code fld fs c.callee c.suffix
-      contract := Spec.Ed25519.signCachedContract X86_64.abi 264
+      contract := Spec.Ed25519.signCachedContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.combConsts) 264
       stack := 264
       verified := Proof.Ed25519.X86_64.SignCached.verified c
       spSafe := Proof.Ed25519.X86_64.SignCached.spSafe c

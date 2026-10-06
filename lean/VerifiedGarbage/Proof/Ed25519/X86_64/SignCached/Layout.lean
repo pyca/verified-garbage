@@ -1,11 +1,13 @@
 import VerifiedGarbage.Impl.Ed25519.X86_64.SignCached
 import VerifiedGarbage.Proof.Ed25519.X86_64.PublicKey.Hash
+import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-! The frame and memory invariant of complete Ed25519 signing. -/
 namespace VG.Proof.Ed25519.X86_64.SignCached
 
 open VG VG.X86_64
 open VG.Proof.Ed25519.X86_64.PublicKey (Within within_base within_off)
+open VG.Impl.Ed25519.X86_64 (combSym combWords)
 
 structure Lay where
   out : Addr
@@ -15,6 +17,8 @@ structure Lay where
   len : BitVec 64
   scr : Addr
   B : Addr
+  /-- The comb's tables (the static `combSym`). -/
+  T : Addr
 
 namespace Lay
 variable (L : Lay)
@@ -27,7 +31,9 @@ abbrev STK : Region := ⟨L.B, 264⟩
 abbrev FR : Region := ⟨L.B + BitVec.ofNat 64 16, 248⟩
 abbrev DATA : Region := ⟨L.B + BitVec.ofNat 64 16, 192⟩
 abbrev RET : Region := ⟨L.B + BitVec.ofNat 64 264, 8⟩
-def inputs : List Region := [L.SEED, L.PK, L.MSG]
+abbrev TBL : Region := combRegion L.T
+/-- The regions only read: the seed, the public key, the message and the comb's tables. -/
+def inputs : List Region := [L.SEED, L.PK, L.MSG, L.TBL]
 structure Ok : Prop where
   os : ∀ r ∈ L.inputs, L.OUT.Disjoint r
   oc : L.OUT.Disjoint L.SCR
@@ -43,6 +49,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
   ns : L.seed.toNat + 32 ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
+  nt : L.T.toNat + 8 * 3072 ≤ 2 ^ 64
 end Lay
 
 namespace Lay.Ok
@@ -71,16 +78,20 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pSeed : t.mem.readW (L.B + BitVec.ofNat 64 248) 64 = L.seed
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 256) 64 = L.out
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
+  sym : t.syms combSym = L.T
+  held : ∀ i < 3072, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 namespace Ctx
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}
 theorem regs (hc : Ctx L g mx m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
-    (hmx : t'.mxcsr = t.mxcsr) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) : Ctx L g mx m₀ t' :=
+    (hmx : t'.mxcsr = t.mxcsr) (hsy : t'.syms = t.syms) (hg : ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) :
+    Ctx L g mx m₀ t' :=
   ⟨hrd.trans hc.rd, hwr.trans hc.wr, (hg .rsp (by decide)).trans hc.rsp,
     fun r hr hr' => (hg r hr).trans (hc.cs r hr hr'), by rw [hmx]; exact hc.mx,
     by rw [hm]; exact hc.pScr, by rw [hm]; exact hc.pLen,
     by rw [hm]; exact hc.pMsg, by rw [hm]; exact hc.pPk,
-    by rw [hm]; exact hc.pSeed, by rw [hm]; exact hc.pOut, by rw [hm]; exact hc.frame⟩
+    by rw [hm]; exact hc.pSeed, by rw [hm]; exact hc.pOut, by rw [hm]; exact hc.frame,
+    by rw [hsy]; exact hc.sym, hc.held⟩
 theorem ret (hc : Ctx L g mx m₀ t) : below (t.gpr .rsp) 8 = ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
   rw [hc.rsp]
   show (⟨L.B + BitVec.ofNat 64 16 - BitVec.ofNat 64 8, 8⟩ : Region) = _
@@ -131,7 +142,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
       exact ⟨L.FR, by simp, off, hb, by exact Nat.le_trans hn (by show 192 ≤ 248; decide)⟩
     · exact ⟨L.OUT, by simp, h⟩
     · exact ⟨L.SCR, by simp, h⟩
-  refine WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx => ?_
+  refine WP.of_syms (WP.call_mx hv hsp (by omega) hpre hcov hcovw fun s' hrd hwr hcs hf hg hpost hmx hsy => ?_)
   have hf' : Frame (wr ++ [⟨L.B, 16⟩]) t.mem s'.mem := by
     refine Frame.sub hf fun r hr => ?_
     rcases List.mem_append.mp hr with hr | hr
@@ -159,7 +170,7 @@ theorem call_ok {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {mx : BitVec 32} {
     (keep 224 (by omega) (by omega)).trans hc.pLen, (keep 232 (by omega) (by omega)).trans hc.pMsg,
     (keep 240 (by omega) (by omega)).trans hc.pPk, (keep 248 (by omega) (by omega)).trans hc.pSeed,
     (keep 256 (by omega) (by omega)).trans hc.pOut,
-    hc.frame.trans (Frame.sub hf' fun r hr => ?_)⟩ hf' hg hpost
+    hc.frame.trans (Frame.sub hf' fun r hr => ?_), hsy.symm ▸ hc.sym, hc.held⟩ hf' hg hpost
   · rw [hcs .rsp (by simp [calleeSaved]), hc.rsp]
   · rcases List.mem_append.mp hr with hr | hr
     · rcases hwsub r hr with h | h | h
