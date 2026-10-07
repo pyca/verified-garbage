@@ -195,16 +195,17 @@ place. -/
 def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
 
+/-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
+def exchangeWith (mq : Prog isa) : Prog isa :=
+  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
+  .seq mq <| .seq c.pPow (middle c)
+
 /-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
 order. -/
-def exchangeJ (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (mulQJ c dbl) <| .seq c.pPow (middle c)
+def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
 
 /-- `vg_ecdh_<curve>`. -/
-def exchange : Prog isa :=
-  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (mulQ c) <| .seq c.pPow (middle c)
+def exchange : Prog isa := exchangeWith c (mulQ c)
 
 end Cfg
 
