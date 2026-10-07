@@ -115,27 +115,35 @@ def run(mod, config, threshold, outdir):
         "-c", str(out / "m.c"),
         str(source_file(mod).relative_to(LEAN)),
     ]
-    start = time.monotonic()
-    proc = subprocess.Popen(
-        lean_cmd() + args, cwd=LEAN, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
-    stdout = proc.stdout.read()
-    _, status, usage = os.wait4(proc.pid, 0)
-    wall = time.monotonic() - start
-    proc.returncode = os.waitstatus_to_exitcode(status)
+    # Lean prints `profiler` lines outside messages (`parsing took`, the
+    # cumulative summary) to stderr, which would split the JSON messages on
+    # stdout if the two were one stream: keep them apart, as Lake does.
+    with tempfile.TemporaryFile() as err:
+        start = time.monotonic()
+        proc = subprocess.Popen(
+            lean_cmd() + args, cwd=LEAN, stdout=subprocess.PIPE, stderr=err)
+        stdout = proc.stdout.read()
+        _, status, usage = os.wait4(proc.pid, 0)
+        wall = time.monotonic() - start
+        err.seek(0)
+        stderr = err.read()
     text = stdout.decode("utf-8", "replace")
-    if proc.returncode != 0:
-        sys.exit(f"{mod} ({config}) failed:\n{text[-4000:]}")
-    messages, other = [], []
+    if os.waitstatus_to_exitcode(status) != 0:
+        sys.exit(f"{mod} ({config}) failed:\n{text[-4000:]}"
+                 f"{stderr.decode('utf-8', 'replace')[-4000:]}")
+    messages, other = [], stderr.decode("utf-8", "replace").splitlines()
     for line in text.splitlines():
-        try:
-            messages.append(json.loads(line))
-        except ValueError:
+        if line.startswith("{"):
+            try:
+                messages.append(json.loads(line))
+            except ValueError:
+                sys.exit(f"{mod} ({config}): unparsable message: {line[:200]}")
+        else:
             other.append(line)
     outputs = {p: (out / p).read_bytes() for p in ("m.olean", "m.ilean", "m.c")}
     return {
         "wall": wall, "cpu": usage.ru_utime + usage.ru_stime,
-        "rss_mb": usage.ru_maxrss / 1024, "log_bytes": len(stdout),
+        "rss_mb": usage.ru_maxrss / 1024, "log_bytes": len(stdout) + len(stderr),
         "messages": messages, "other": other, "outputs": outputs,
     }
 
