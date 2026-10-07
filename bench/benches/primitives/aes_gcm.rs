@@ -4,10 +4,11 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
-/// One-shot AES-GCM encryption and decryption (setup included), and
-/// streaming encryption, in place and out of place, with a 16-byte key, a
-/// 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which has no streaming AES-GCM, is measured
-/// one-shot only, in place with a separate tag as this library's is. The
+/// One-shot AES-GCM encryption (in place and out of place) and decryption
+/// (setup included), and streaming encryption, with a 16-byte key, a 12-byte
+/// nonce and 16 bytes of additional data. aws-lc-rs, which has no streaming
+/// AES-GCM, is measured one-shot only, with a separate tag as this
+/// library's is. The
 /// one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
 /// call (the hash subkey's powers, the tag) weigh the most.
@@ -91,13 +92,10 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
-        // Out of place, shaped as a TLS 1.3 record: the plaintext and the
-        // content-type byte after it encrypted into a separate buffer, as
-        // rustls's record layer asks of its provider (aws-lc-rs's
-        // `seal_out_of_place_scatter` with the byte as `extra_in`).
-        let typ = [0x17u8];
-        let mut out = vec![0u8; size + 1];
-        let mut extra = [0u8; 17];
+        // Out of place: from `data` into a separate buffer.
+        let mut out = vec![0u8; size];
+        let mut ossl_out = vec![0u8; size + cipher.block_size()];
+        let mut aws_lc_tag = [0u8; 16];
         let mut g = c.benchmark_group("aes-128-gcm-encrypt-out-of-place");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench_function(BenchmarkId::new(VG, size), |b| {
@@ -106,13 +104,12 @@ pub fn bench(c: &mut Criterion) {
                 k.encrypt(
                     black_box(&nonce),
                     black_box(&aad),
-                    &[black_box(&data[..]), &typ],
+                    black_box(&data),
                     black_box(&mut out),
                 )
                 .unwrap()
             })
         });
-        let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(
@@ -124,7 +121,6 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap();
                 s.aad_update(black_box(&aad)).unwrap();
                 let n = s.update(black_box(&data), &mut ossl_out).unwrap();
-                let n = n + s.update(&typ, &mut ossl_out[n..]).unwrap();
                 s.finalize(&mut ossl_out[n..]).unwrap();
                 s.get_tag(&mut t).unwrap();
             })
@@ -136,9 +132,9 @@ pub fn bench(c: &mut Criterion) {
                         Nonce::assume_unique_for_key(*black_box(&nonce)),
                         Aad::from(black_box(&aad)),
                         black_box(&data),
-                        black_box(&mut out[..size]),
-                        &typ,
-                        &mut extra,
+                        black_box(&mut out),
+                        &[],
+                        &mut aws_lc_tag,
                     )
                     .unwrap()
             })
@@ -203,36 +199,6 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = vec![0u8; size + cipher.block_size()];
-        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
-            b.iter(|| {
-                let mut s = Crypter::new(
-                    cipher,
-                    Mode::Encrypt,
-                    black_box(&key),
-                    Some(black_box(&nonce)),
-                )
-                .unwrap();
-                s.aad_update(black_box(&aad)).unwrap();
-                let n = s.update(black_box(&data), &mut out).unwrap();
-                s.finalize(&mut out[n..]).unwrap();
-                s.get_tag(&mut t).unwrap();
-            })
-        });
-        g.finish();
-
-        // Streaming out of place: OpenSSL's `update` always is.
-        let mut g = c.benchmark_group("aes-128-gcm-stream-out-of-place");
-        g.throughput(Throughput::Bytes(size as u64));
-        g.bench_function(BenchmarkId::new(VG, size), |b| {
-            b.iter(|| {
-                let k = AesGcm::new(black_box(&key)).unwrap();
-                let mut s = k.encryptor(black_box(&nonce)).unwrap();
-                s.update_aad(black_box(&aad)).unwrap();
-                s.update_into(black_box(&data), black_box(&mut buf))
-                    .unwrap();
-                s.finalize()
-            })
-        });
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(

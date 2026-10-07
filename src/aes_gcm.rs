@@ -18,15 +18,10 @@
 //! fits in memory, [`AesGcm::decrypt_in_place`] checks the tag before it
 //! decrypts.
 //!
-//! [`AesGcm::encrypt`] and [`AesGcmEncryptor::update_into`] encrypt out of
-//! place, from plaintext in buffers of the caller's (in pieces, for
-//! `encrypt`) into an output buffer, as a TLS record layer needs. On x86-64
-//! they call `vg_aes_gcm_stream_encrypt_to`, whose whole blocks go from the
-//! input to the output in one pass (`VG.Spec.Gcm.streamEncryptToContract`),
-//! except that `encrypt` copies a text shorter than `STREAM_MIN_LEN` into
-//! the output and encrypts it there, which costs less; elsewhere they copy
-//! the plaintext into the output and encrypt it there with the in-place
-//! functions.
+//! [`AesGcm::encrypt`] encrypts out of place, from one buffer into another.
+//! On x86-64 that is one call of `vg_aes_gcm_stream_encrypt_to`
+//! (`VG.Spec.Gcm.streamEncryptToContract`); elsewhere it copies the
+//! plaintext into the output and encrypts it there.
 //!
 //! # Tags
 //!
@@ -510,35 +505,8 @@ pub enum Error {
     /// was called after `update`: GCM authenticates all of the additional
     /// data before the text.
     AadAfterText,
-    /// The output buffer of [`AesGcm::encrypt`] or
-    /// [`AesGcmEncryptor::update_into`] is not exactly as long as the input.
+    /// The output of [`AesGcm::encrypt`] is not as long as the plaintext.
     InvalidOutputLength,
-}
-
-/// The total length of the pieces `chunks`, if it fits in a `usize`.
-fn total_len(chunks: &[&[u8]]) -> Option<usize> {
-    chunks
-        .iter()
-        .try_fold(0usize, |n, c| n.checked_add(c.len()))
-}
-
-/// The shortest text [`AesGcm::encrypt`] encrypts by streaming it from the
-/// pieces to the output (`vg_aes_gcm_stream_encrypt_to`, on x86-64): shorter
-/// ones cost less copied into the output and encrypted there in one call,
-/// as the streaming functions' calls (start, additional data, a call or two
-/// per piece, tag) cost more than the copy.
-#[cfg(target_arch = "x86_64")]
-const STREAM_MIN_LEN: usize = 4096;
-
-/// Copies the pieces `chunks` one after the other into `out`, which is
-/// exactly as long as they are in all.
-fn gather(chunks: &[&[u8]], out: &mut [u8]) {
-    let mut rest = out;
-    for c in chunks {
-        let (head, tail) = rest.split_at_mut(c.len());
-        head.copy_from_slice(c);
-        rest = tail;
-    }
 }
 
 /// `len + n`, if it is at most `max`.
@@ -767,46 +735,33 @@ impl AesGcm {
         }
     }
 
-    /// GCM-AE (§7.1), out of place: encrypts the concatenation of the pieces
-    /// of `plaintext` under `nonce`, writes the ciphertext to `out`, and
-    /// returns the 16-byte tag authenticating it and `aad`. A caller holding
-    /// the plaintext in buffers it does not own, such as a TLS record layer
-    /// with a record in several pieces and its content type after them,
-    /// encrypts it without first gathering it into `out` itself.
-    ///
-    /// `out` must be exactly as long as the plaintext (the pieces' lengths
-    /// added up), or this returns [`Error::InvalidOutputLength`] and writes
-    /// nothing. The nonce is as for
+    /// GCM-AE (§7.1), out of place: encrypts `plaintext` under `nonce` into
+    /// `out`, which must be exactly as long, and returns the 16-byte tag
+    /// authenticating it and `aad`. The nonce is as for
     /// [`encrypt_in_place`](Self::encrypt_in_place).
     pub fn encrypt(
         &self,
         nonce: &[u8],
         aad: &[u8],
-        plaintext: &[&[u8]],
+        plaintext: &[u8],
         out: &mut [u8],
     ) -> Result<Block, Error> {
-        // Check every length before writing anything.
-        if total_len(plaintext) != Some(out.len()) {
+        if plaintext.len() != out.len() {
             return Err(Error::InvalidOutputLength);
         }
-        check_nonce(nonce)?;
-        add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "x86_64")]
-        if out.len() >= STREAM_MIN_LEN {
-            // Every length is checked: nothing below fails.
+        {
             let mut s = Stream::new(self, nonce)?;
             s.update_aad(aad)?;
-            let mut rest = out;
-            for c in plaintext {
-                let (head, tail) = rest.split_at_mut(c.len());
-                s.update_into(c, head)?;
-                rest = tail;
-            }
-            return Ok(s.finish());
+            s.encrypt_to(plaintext, out)?;
+            Ok(s.finish())
         }
-        gather(plaintext, out);
-        self.encrypt_in_place(nonce, aad, out)
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            check_nonce(nonce)?;
+            out.copy_from_slice(plaintext);
+            self.encrypt_in_place(nonce, aad, out)
+        }
     }
 
     /// Starts encrypting a message under this key and `nonce` (of any
@@ -1078,61 +1033,46 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 impl Stream<'_, false> {
-    /// Encrypts the next `src.len()` bytes of the text from `src` into
-    /// `dst`, which is as long.
-    fn update_into(&mut self, src: &[u8], dst: &mut [u8]) -> Result<(), Error> {
-        let text_len =
-            add_len(self.text_len, src.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
-        #[cfg(target_arch = "x86_64")]
-        {
-            self.in_text = true;
-            // `vg_aes_gcm_stream_encrypt_to` takes the whole blocks from `src`
-            // to `dst` in one pass after text that ends a block, or after no
-            // text and additional data of whole blocks; otherwise it copies
-            // them to `dst` and encrypts them there. Before the first block
-            // of text, pad the additional data with zeros to a whole block, as
-            // GHASH does: the state then represents a message with the padded
-            // additional data, which, once it has some text, is the same
-            // message as with the additional data itself (GHASH's input,
-            // `VG.Spec.Gcm.ghashInput`, is the same).
-            let mut aad_len = self.aad_len;
-            if self.text_len == 0 && src.len() >= 16 && !aad_len.is_multiple_of(16) {
-                let pad = 16 - (aad_len % 16) as usize;
-                self.absorb_aad(aad_len, &[0; 16][..pad]);
-                aad_len += pad as u64;
-            }
-            // Then the bytes that finish the block the text so far left
-            // partial, and the rest.
-            let head = (16 - (self.text_len % 16) as usize) % 16;
-            let (s0, s1) = src.split_at(head.min(src.len()));
-            let (d0, d1) = dst.split_at_mut(s0.len());
-            if !s0.is_empty() {
-                self.encrypt_to(aad_len, s0, d0);
-                self.text_len += s0.len() as u64;
-            }
-            if !s1.is_empty() {
-                self.encrypt_to(aad_len, s1, d1);
-            }
-            self.text_len = text_len;
-            Ok(())
+    /// Encrypts the whole text, `src.len()` bytes, from `src` into `dst`, as
+    /// long, with one call of `vg_aes_gcm_stream_encrypt_to`.
+    fn encrypt_to(&mut self, src: &[u8], dst: &mut [u8]) -> Result<(), Error> {
+        add_len(0, src.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        // The function encrypts the whole blocks from `src` to `dst` in one
+        // pass only after additional data of whole blocks (with no text before
+        // them): pad the additional data with zeros to a whole block first.
+        // GHASH pads it so anyway, so with the text after it the state
+        // represents the same message (`VG.Spec.Gcm.ghashInput` is the same).
+        let pad = (16 - (self.aad_len % 16) as usize) % 16;
+        if pad != 0 && !src.is_empty() {
+            self.absorb_aad(self.aad_len, &[0; 16][..pad]);
         }
-        #[cfg(not(target_arch = "x86_64"))]
-        {
-            let _ = text_len;
-            dst.copy_from_slice(src);
-            self.update(dst)
-        }
-    }
-
-    /// One call of `vg_aes_gcm_stream_encrypt_to`, from `src` to `dst`, as
-    /// long, after `aad_len` bytes of additional data and `self.text_len`
-    /// bytes of text (leaving `self.text_len` to the caller).
-    #[cfg(target_arch = "x86_64")]
-    fn encrypt_to(&mut self, aad_len: u64, src: &[u8], dst: &mut [u8]) {
+        let aad_len = self.aad_len + pad as u64;
         #[cfg(feature = "alloc")]
-        if src.len() >= POWERS_MIN_LEN && self.encrypt_to_precomputed(aad_len, src, dst) {
-            return;
+        if src.len() >= POWERS_MIN_LEN
+            && let Some(ctx) = self
+                .key
+                .powers
+                .get(self.key.backend, self.key.rounds, &self.key.ctx)
+        {
+            // SAFETY: as below, with `ctx` the key context with the powers,
+            // as in `update_precomputed`.
+            unsafe {
+                vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512(
+                    ctx,
+                    self.key.rounds,
+                    &mut self.state,
+                    aad_len,
+                    0,
+                    src.as_ptr(),
+                    src.len(),
+                    dst.as_mut_ptr(),
+                    dst.len(),
+                )
+            };
+            self.text_len = src.len() as u64;
+            return Ok(());
         }
         let f = match self.key.backend {
             Backend::Scalar => vg_aes_gcm_stream_encrypt_to,
@@ -1151,51 +1091,26 @@ impl Stream<'_, false> {
         // bytes and `dst` for reads and writes of as many (a unique borrow,
         // so it overlaps nothing else, `src` included), and `self.state`
         // representing a message with `aad_len` bytes of additional data and
-        // `self.text_len` of text.
+        // no text yet.
         unsafe {
             f(
                 &self.key.ctx,
                 self.key.rounds,
                 &mut self.state,
                 aad_len,
-                self.text_len,
+                0,
                 src.as_ptr(),
                 src.len(),
                 dst.as_mut_ptr(),
                 dst.len(),
             )
         };
+        self.text_len = src.len() as u64;
+        Ok(())
     }
+}
 
-    /// `encrypt_to` with the key context with the powers, if `Powers::get`
-    /// gives it: whether it did.
-    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-    #[inline(never)]
-    fn encrypt_to_precomputed(&mut self, aad_len: u64, src: &[u8], dst: &mut [u8]) -> bool {
-        let Some(ctx) = self
-            .key
-            .powers
-            .get(self.key.backend, self.key.rounds, &self.key.ctx)
-        else {
-            return false;
-        };
-        // SAFETY: as in `encrypt_to` and `update_precomputed`.
-        unsafe {
-            vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512(
-                ctx,
-                self.key.rounds,
-                &mut self.state,
-                aad_len,
-                self.text_len,
-                src.as_ptr(),
-                src.len(),
-                dst.as_mut_ptr(),
-                dst.len(),
-            )
-        };
-        true
-    }
-
+impl Stream<'_, false> {
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
         let f = instance!(self.key.backend, vg_aes_gcm_stream_finish,
@@ -1285,16 +1200,6 @@ impl AesGcmEncryptor<'_> {
         self.stream.update(data)
     }
 
-    /// Encrypts the next `input.len()` bytes of the plaintext, from `input`,
-    /// into `output`, which must be exactly as long (or this returns
-    /// [`Error::InvalidOutputLength`] and writes nothing).
-    pub fn update_into(&mut self, input: &[u8], output: &mut [u8]) -> Result<(), Error> {
-        if input.len() != output.len() {
-            return Err(Error::InvalidOutputLength);
-        }
-        self.stream.update_into(input, output)
-    }
-
     /// Finishes the message and returns its full 16-byte tag. A protocol
     /// that sends a shorter tag sends its first bytes. GCM leaves no
     /// buffered text to return.
@@ -1363,7 +1268,7 @@ impl AesGcmDecryptor<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select, total_len};
+    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select};
     use crate::cpu::{Features, detected};
 
     /// The implementation chosen for each set of features: AES's and
@@ -1775,58 +1680,9 @@ mod tests {
                     k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
                         .unwrap();
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
-                    // Out of place, in two pieces split on and off block
-                    // boundaries, and streaming in pieces of 100 bytes.
-                    for a in [0, 1, 16, 33, len] {
-                        let mut out = [0u8; 1300];
-                        let pieces = [&msg[..a], &msg[a..len]];
-                        let tag = k.encrypt(&nonce, &aad, &pieces, &mut out[..len]);
-                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
-                    }
-                    let mut e = k.encryptor(&nonce).unwrap();
-                    e.update_aad(&aad).unwrap();
                     let mut out = [0u8; 1300];
-                    for (x, y) in msg[..len].chunks(100).zip(out[..len].chunks_mut(100)) {
-                        e.update_into(x, y).unwrap();
-                    }
-                    let tag = e.finalize();
-                    assert_eq!((&out[..len], tag), (&want[..len], want_tag), "{b:?}");
-                }
-            }
-        }
-    }
-
-    /// Every implementation the CPU can run encrypts a message long enough
-    /// for `encrypt` to stream it (`STREAM_MIN_LEN`) out of place, in pieces
-    /// split on and off block boundaries, after additional data of whole
-    /// blocks, of none and of a partial block, as the baseline one does in
-    /// place.
-    #[cfg(target_arch = "x86_64")]
-    #[test]
-    fn backends_agree_long_out_of_place() {
-        use super::STREAM_MIN_LEN;
-        let msg: [u8; 5000] = core::array::from_fn(|i| (i * 17 + 3) as u8);
-        let nonce = [4u8; 12];
-        let k = AesGcm::new(&[0x77; 16]).unwrap();
-        let base = k.with_backend(Backend::Scalar);
-        for &(b, need) in Backend::ALL {
-            if !detected().contains(need) {
-                continue;
-            }
-            let k = k.with_backend(b);
-            for aad_len in [0, 5, 16] {
-                let aad = &msg[..aad_len];
-                for len in [STREAM_MIN_LEN, 4100, 5000] {
-                    let mut want = msg;
-                    let want_tag = base
-                        .encrypt_in_place(&nonce, aad, &mut want[..len])
-                        .unwrap();
-                    for a in [0, 1, 16, 33, 4095] {
-                        let mut out = [0u8; 5000];
-                        let pieces = [&msg[..a], &msg[a..len]];
-                        let tag = k.encrypt(&nonce, aad, &pieces, &mut out[..len]);
-                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
-                    }
+                    let tag = k.encrypt(&nonce, &aad, &msg[..len], &mut out[..len]);
+                    assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
                 }
             }
         }
@@ -1902,21 +1758,12 @@ mod tests {
                     .unwrap();
                 assert_eq!(&ct[..len], &msg[..len]);
             }
-            // Out of place, with the powers: the second piece, after the
-            // first's partial block, is long enough to use them.
-            for (len, a) in [(300, 16), (700, 17)] {
-                let mut want = msg;
-                let want_tag = base
-                    .encrypt_in_place(&nonce, &aad, &mut want[..len])
-                    .unwrap();
-                let mut out = [0u8; 700];
-                let mut e = k.encryptor(&nonce).unwrap();
-                e.update_aad(&aad).unwrap();
-                let (o, p) = out[..len].split_at_mut(a);
-                e.update_into(&msg[..a], o).unwrap();
-                e.update_into(&msg[a..len], p).unwrap();
-                assert_eq!((&out[..len], e.finalize()), (&want[..len], want_tag));
-            }
+            // Out of place, with the powers.
+            let mut want = msg;
+            let want_tag = base.encrypt_in_place(&nonce, &aad, &mut want).unwrap();
+            let mut out = [0u8; 700];
+            let tag = k.encrypt(&nonce, &aad, &msg, &mut out);
+            assert_eq!((out, tag), (want, Ok(want_tag)));
             // A clone copies the powers if they are ready, and not otherwise.
             let copy = k.clone();
             let powers = k.powers.get(k.backend, k.rounds, &k.ctx).unwrap();
@@ -2117,57 +1964,33 @@ mod tests {
         truncated::<16>();
     }
 
-    /// Out-of-place encryption matches in-place encryption for every split
-    /// of the plaintext into pieces, empty ones included, and its errors
-    /// write nothing.
+    /// Out-of-place encryption matches in-place encryption, after additional
+    /// data of whole blocks, of a partial block and of none, and for an
+    /// empty text; an output of the wrong length is refused.
     #[test]
     fn out_of_place() {
         let k = AesGcm::new(&[3; 16]).unwrap();
         let nonce = [5u8; 12];
-        let aad = [6u8; 20];
-        let msg: [u8; 70] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
-        let mut ct = msg;
-        let tag = k.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
-        for a in 0..=msg.len() {
-            for b in a..=msg.len() {
-                let mut out = [0u8; 70];
-                let pieces = [&msg[..a], &[][..], &msg[a..b], &msg[b..]];
-                assert_eq!(k.encrypt(&nonce, &aad, &pieces, &mut out), Ok(tag));
-                assert_eq!(out, ct);
+        let msg: [u8; 300] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        for aad_len in [0, 5, 16, 20] {
+            let aad = &msg[..aad_len];
+            for len in [0, 1, 16, 17, 300] {
+                let mut want = msg;
+                let want_tag = k.encrypt_in_place(&nonce, aad, &mut want[..len]).unwrap();
+                let mut out = [0u8; 300];
+                let tag = k.encrypt(&nonce, aad, &msg[..len], &mut out[..len]);
+                assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
             }
         }
-        // A short piece at a time, as `update_into`.
-        let mut e = k.encryptor(&nonce).unwrap();
-        e.update_aad(&aad).unwrap();
-        let mut out = [0u8; 70];
-        for (x, y) in msg.chunks(3).zip(out.chunks_mut(3)) {
-            e.update_into(x, y).unwrap();
-        }
-        assert_eq!(out, ct);
-        assert_eq!(e.finalize(), tag);
-
-        let mut out = [9u8; 4];
-        let three = [1u8; 3];
+        let mut out = [0u8; 4];
         assert_eq!(
-            k.encrypt(&nonce, &aad, &[&three[..]], &mut out),
+            k.encrypt(&nonce, &[], &msg[..3], &mut out),
             Err(Error::InvalidOutputLength)
         );
         assert_eq!(
-            k.encrypt(&[], &aad, &[&three[..], &[2][..]], &mut out),
+            k.encrypt(&[], &[], &msg[..4], &mut out),
             Err(Error::InvalidNonceLength)
         );
-        let mut e = k.encryptor(&nonce).unwrap();
-        assert_eq!(
-            e.update_into(&three, &mut out),
-            Err(Error::InvalidOutputLength)
-        );
-        e.stream.text_len = MAX_TEXT;
-        assert_eq!(
-            e.update_into(&three, &mut out[..3]),
-            Err(Error::InvalidTextLength)
-        );
-        assert_eq!(out, [9; 4]);
-        assert_eq!(total_len(&[&three[..], &three[..2]]), Some(5));
     }
 
     #[test]

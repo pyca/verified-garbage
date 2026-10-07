@@ -1,7 +1,7 @@
 //! AES-GCM (`AeadTest` vectors, `aes_gcm_test.json`).
 //!
-//! A valid vector must encrypt to exactly its ciphertext and tag, in place
-//! and out of place, and decrypt back, both at once and streaming. An
+//! A valid vector must encrypt to exactly its ciphertext and tag (in place
+//! and out of place), and decrypt back, both at once and streaming. An
 //! invalid vector must be rejected, at once and streaming: by decryption (a
 //! modified tag, ciphertext or additional data), or already by the nonce
 //! check (an empty nonce).
@@ -82,20 +82,9 @@ fn aes_gcm() {
                 e.update(&mut buf).unwrap();
                 assert_eq!(buf, c.ct.0, "tcId {id}");
                 assert_eq!(e.finalize(), tag, "tcId {id}");
-
-                // Out of place, the plaintext in two pieces.
-                let (x, y) = c.msg.0.split_at(c.msg.0.len() / 2);
                 let mut out = vec![0; c.msg.0.len()];
-                let sealed = key.encrypt(&c.iv.0, &c.aad.0, &[x, y], &mut out);
-                assert_eq!(sealed, Ok(tag), "tcId {id}");
-                assert_eq!(out, c.ct.0, "tcId {id}");
-                let mut e = key.encryptor(&c.iv.0).unwrap();
-                e.update_aad(&c.aad.0).unwrap();
-                let (o, p) = out.split_at_mut(x.len());
-                e.update_into(x, o).unwrap();
-                e.update_into(y, p).unwrap();
-                assert_eq!(out, c.ct.0, "tcId {id}");
-                assert_eq!(e.finalize(), tag, "tcId {id}");
+                let sealed = key.encrypt(&c.iv.0, &c.aad.0, &c.msg.0, &mut out);
+                assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
                 valid.add();
             }
