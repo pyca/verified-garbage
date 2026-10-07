@@ -20,7 +20,7 @@ in `r12` (`BAD`), which stays 0 exactly when every one passes: each check
 ORs into it a word that is 0 if and only if it passes. X448's full reduction
 works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
 
-* The bits: byte `t` at `BITS` is bit `t` of `S` plus twice bit `t` of `k`.
+* The bits: byte `t` at `VBITS` is bit `t` of `S` plus twice bit `t` of `k`.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
   limbs `kLimb` of scalar reduction) do not carry out of 448 bits.
 * Decoding a point (RFC 8032 §5.2.3) at `p` into the slots `xo` and `yo`:
@@ -31,11 +31,12 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
   `2^223 - 1`, then 223 squarings), the check `v x² = u`, the check that
   `x = 0` comes with the sign bit 0, and `x` swapped with `-x` by a mask if
   its low bit is not the sign bit.
-* `A` is decoded into slots 6–7 (`Z = 1` in slot 10) and negated, and
+* `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
+  kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
   `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
   (slots 0, 21, 2) doubled, `B` (slots 8–10) added and swapped into `Q` by
   bit `t` of `S`, then `-A` added and swapped in by bit `t` of `k`.
-* `R` is decoded into slots 8–9 (`B` is no longer needed), `Q` and `R` are
+* `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
   doubled twice (a loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
 
@@ -46,12 +47,23 @@ pointers.
 namespace VG.Impl.Ed448.Arm
 
 open VG.Arm
-open VG.Impl.X448.Arm (slot BITS TMP X2 saved ld st Op ops cswap freeze copy pass sqn)
+open VG.Impl.X448.Arm (slot TMP X2 saved ld st Op ops cswap freeze copy pass sqn)
 
 /-! ## The working space -/
 
 /-- The sign bit of the point being decoded. -/
 def SIGN : Nat := 32
+
+/-- `R`, decoded first, kept while `A` is decoded and `Q` computed: its `X` and `Y`, where no
+field operation writes (between the slots and `VBITS`). -/
+def RX : Nat := 2880
+def RY : Nat := 2992
+
+/-- The bits of `S` and `k`, one byte per bit. -/
+def VBITS : Nat := 3104
+
+/-- The link register, while the decoding loop counts in it. -/
+def LR : Nat := 3560
 
 /-! ## Checks -/
 
@@ -182,7 +194,7 @@ def addAt (x y : Nat) : List Op := [
 
 /-- `r5 = -bit`, for bit `r11` of `S` (`hi = false`) or of `k` (`hi = true`). -/
 def vmask (hi : Bool) : List Instr :=
-  [.dp .add .r7 .r0 (.reg .r11), .ldrb .r3 .r7 BITS,
+  [.dp .add .r7 .r0 (.reg .r11), .ldrb .r3 .r7 VBITS,
     if hi then .mov .r3 (.shifted .r3 .lsr 1) else .dp .and .r3 .r3 (.imm 1),
     .mov .r5 (.imm 0), .dp .sub .r5 .r5 (.reg .r3)]
 
@@ -200,15 +212,15 @@ def vloop : Prog isa := .seq (.block [.movw .r11 456]) (.loop vstep .ne)
 
 /-! ## The function -/
 
-/-- Bit `j` of the bytes of `S` (in `r3`) and `k` (in `r9`) to `BITS + j`
+/-- Bit `j` of the bytes of `S` (in `r3`) and `k` (in `r9`) to `VBITS + j`
 from `r7`, as bit 0 and bit 1. -/
 def vbitJ (j : Nat) : List Instr :=
   [.mov .r1 (if j = 0 then .reg .r3 else .shifted .r3 .lsr j), .dp .and .r1 .r1 (.imm 1),
     .mov .r4 (if j = 0 then .reg .r9 else .shifted .r9 .lsr j), .dp .and .r4 .r4 (.imm 1),
-    .dp .add .r1 .r1 (.shifted .r4 .lsl 1), .strb .r1 .r7 (BITS + j)]
+    .dp .add .r1 .r1 (.shifted .r4 .lsl 1), .strb .r1 .r7 (VBITS + j)]
 
 /-- Byte `r11` of `S` (at `r10 + 57`) and of `k` (at `r2`) expanded to bytes
-`BITS + 8 r11 + j`. -/
+`VBITS + 8 r11 + j`. -/
 def vbitsBody : List Instr :=
   [.dp .add .r7 .r10 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
     .dp .add .r7 .r0 (.shifted .r11 .lsl 3)] ++
@@ -219,11 +231,11 @@ def vbits : Prog isa := .seq (.block [.mov .r11 (.imm 0)]) (.loop (.block vbitsB
 
 /-- The callee-saved registers saved at the working space (`r3`), the
 pointers to `A` and the signature into `r8` and `r10`, the working space into
-`r0` and the limb mask into `r6`. -/
+`r0`, the limb mask into `r6`, and the link register saved at `LR`. -/
 def ventry : List Instr :=
   (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
     [.mov .r12 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535, .mov .r8 (.reg .r12),
-      .mov .r10 (.reg .r1)]
+      .mov .r10 (.reg .r1), st .lr LR]
 
 /-- `BAD = 0`, the check of `S`, and the slots initialized as for base-point
 multiplication, with `Q`'s `Y` (1) in slot 21. -/
@@ -236,6 +248,19 @@ def vdouble : Prog isa :=
     (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
 
+/-- One decoding, of the point at `r10` into slots 6–7, after slots 6–7 are kept at `RX` and
+`RY`; then `r10 = r8` and the count `lr` moved down. -/
+def vdecodeBody : Prog isa :=
+  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode .r10 6 7)
+    (.block [.mov .r10 (.reg .r8), .subs .lr .lr (.imm 1)])
+
+/-- `R` (at `r10`) decoded, then `A` (at `r8`): a loop of two iterations, counted by `lr`
+(which the field arithmetic preserves). `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
+def vdecode : Prog isa := .seq (.block [.movw .lr 2]) (.loop vdecodeBody .ne)
+
+/-- `R` into slots 8–9 (`B` is no longer needed). -/
+def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
+
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point), the callee-saved registers restored, and `r0 = (BAD == 0)`. -/
 def vfinish : Prog isa :=
@@ -245,11 +270,11 @@ def vfinish : Prog isa :=
   .seq (ops [.mul (slot 12) (slot 21) (slot 10), .mul (slot 13) (slot 9) (slot 2)]) <|
   .block (eqSlots (slot 12) (slot 13) ++
     [.dp .sub .r1 .r12 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
-    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [.mov .r0 (.reg .r1)])
+    (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)])
 
 /-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/
 def verifyEquation : Prog isa :=
-  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (decode .r8 6 7) <|
-  .seq (ops [.sub (slot 6) (slot 0) (slot 6)]) <| .seq vloop <| .seq (decode .r10 8 9) vfinish
+  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq vdecode <|
+  .seq (ops [.sub (slot 6) (slot 0) (slot 6)]) <| .seq vloop <| .seq (.block vR) vfinish
 
 end VG.Impl.Ed448.Arm

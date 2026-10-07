@@ -115,10 +115,11 @@ theorem vtail_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.
     {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r12).toNat < 65536) :
     WP isa (.block (eqSlots (slot 12) (slot 13) ++
       ([.dp .sub .r1 .r12 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] : List Instr) ++
-      (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ ([.mov .r0 (.reg .r1)] : List Instr))) s fun t =>
+      (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++
+      ([ld .lr LR, .mov .r0 (.reg .r1)] : List Instr))) s fun t =>
       t.gpr .r0 = (if s.gpr .r12 = 0 ∧ E s.mem base 12 = E s.mem base 13 then 1 else 0) ∧
-      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧
-      (∀ r, r ∉ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
+      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = word s.mem base LR ∧
+      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
   simp only [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (eqSlots_ok hs hb 12 13 (by decide) (by decide) (by decide))
     fun s1 ⟨k1, _, _, ⟨c, hc, hcz, he⟩⟩ => ?_
@@ -130,19 +131,26 @@ theorem vtail_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.
   have sv2 : Saved base g s2.mem := by
     rw [m2]; exact hsv.outside2 k1.mem (by decide) (by decide)
   refine VG.Proof.X25519.Arm.WP.append (restore_ok hs2 sv2) fun s3 ⟨r3, m3, k3⟩ => ?_
-  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun t ht => WP.block_nil ⟨?_, ?_, ?_⟩
-  · rw [ht.gpr, k3.1 _ (by decide), r2, he]
+  refine VG.Proof.X25519.Arm.wp_ldr (a := off base LR) (by decide)
+    (by rw [k3.1 _ (by decide)]; exact hs2.ea (by decide))
+    (by rw [k3.2.1, k3.2.2]; exact hs2.read (by decide)) fun s4 h4 => ?_
+  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun t ht => WP.block_nil ⟨?_, ?_, ?_, ?_⟩
+  · rw [ht.gpr, h4.other _ (by decide), k3.1 _ (by decide), r2, he]
     refine if_congr ?_ rfl rfl
     exact BitVec.or_eq_zero_iff.trans (and_congr_right fun _ => hcz)
   · intro i hi
-    rw [ht.other _ (by revert i; decide), r3 i hi]
+    rw [ht.other _ (by revert i; decide), h4.other _ (by revert i; decide), r3 i hi]
+  · rw [ht.other _ (by decide), h4.gpr, m3, m2]
+    exact k1.mem.word (by decide) (by decide) (by decide)
   · intro r hr
-    have a1 : ∀ x ∈ [Reg.r0], x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a2 : ∀ x ∈ saved, x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a3 : ∀ x ∈ [Reg.r1], x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a4 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs, x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by
-      decide
-    rw [ht.other r (fun h => hr (a1 r (h ▸ List.mem_singleton_self _))), k3.1 r (fun h => hr (a2 r h)),
+    have a0 : ∀ x ∈ [Reg.lr], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a1 : ∀ x ∈ [Reg.r0], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a2 : ∀ x ∈ saved, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a3 : ∀ x ∈ [Reg.r1], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a4 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs,
+        x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    rw [ht.other r (fun h => hr (a1 r (h ▸ List.mem_singleton_self _))),
+      h4.other r (fun h => hr (a0 r (h ▸ List.mem_singleton_self _))), k3.1 r (fun h => hr (a2 r h)),
       k2.1 r (fun h => hr (a3 r h)), k1.regs.1 r (fun h => hr (a4 r h))]
 
 theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
@@ -150,8 +158,8 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     WP isa vfinish s fun t =>
       t.gpr .r0 = (if s.gpr .r12 = 0 ∧ Spec.Ed448.pointEqual (double (double (pt (E s.mem base) 0 21 2)))
         (double (double (pt (E s.mem base) 8 9 10))) = true then 1 else 0) ∧
-      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧
-      (∀ r, r ∉ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
+      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = word s.mem base LR ∧
+      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
   unfold vfinish
   refine WP.seq (WP.mono (vdouble_ok hs hb) fun sd ⟨kd, od, bd, qd, rd⟩ => ?_)
   have hsd := hs.of_keeps kd (by decide)
@@ -177,7 +185,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   rw [r12'] at r12
   have h12' : (s3.gpr .r12).toNat < 65536 := by
     rw [r12, BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 16) h12 hc
-  refine WP.mono (vtail_ok hs3 b3 sv3 h12') fun t ⟨rt, st, gt⟩ => ⟨?_, st, fun r hr => ?_⟩
+  refine WP.mono (vtail_ok hs3 b3 sv3 h12') fun t ⟨rt, st, lt, gt⟩ => ⟨?_, st, ?_, fun r hr => ?_⟩
   · rw [rt]
     refine if_congr ?_ rfl rfl
     -- the values
@@ -196,10 +204,14 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     change (s.gpr .r12 = 0 ∧ c = 0) ∧ E s3.mem base 12 = E s3.mem base 13 ↔ _
     rw [hcz, x12, x13, y12, y13, ← q4, ← r4]
     simp only [Spec.Ed448.pointEqual, pt, Bool.and_eq_true, beq_iff_eq, and_assoc]
-  · have a1 : ∀ x ∈ workRegs, x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a3 : ∀ x ∈ Reg.r11 :: workRegs, x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a2 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs, x ∈ .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by
+  · rw [lt, (Outside2.widen k3.mem).word (by decide) (by decide) (by decide),
+      k2.mem.word (by decide) (by decide) (by decide), (Outside2.widen k1.mem).word (by decide) (by decide)
+        (by decide), od.word (by decide) (by decide) (by decide)]
+  · have a1 : ∀ x ∈ workRegs, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a3 : ∀ x ∈ Reg.r11 :: workRegs, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by
       decide
+    have a2 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs,
+        x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
     rw [gt r hr, k3.regs.1 r (fun h => hr (a1 r h)), k2.regs.1 r (fun h => hr (a2 r h)),
       k1.regs.1 r (fun h => hr (a1 r h)), kd.1 r (fun h => hr (a3 r h))]
 
