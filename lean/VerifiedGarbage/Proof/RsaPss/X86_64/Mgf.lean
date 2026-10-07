@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
 import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
