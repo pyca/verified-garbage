@@ -6,7 +6,10 @@ trustworthy. Read `lean/README.md` first.
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
 Docker is not required: the README shows how to stream it straight from the
-registry API with `curl`.
+registry API with `curl`. Either way needs `zstd` to decompress it; without
+the command, `pip install zstandard` and use the README's Python one-liner.
+Restoring takes the whole cache (about 10.5 GB unpacked), since optimizing a
+proof means rebuilding it.
 
 After rebasing a long-running session onto `main`, consider pulling and
 restoring the latest cache again to avoid rebuilding upstream Lean changes.
@@ -426,7 +429,15 @@ python3 ci/lean_profile.py                        # the 30 costliest declaration
 python3 ci/lean_profile.py --sort kernel          # by kernel time alone
 python3 ci/lean_profile.py --by module --top 50   # the costliest modules
 python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
+python3 ci/lean_profile.py --tests                # with the known-answer tests
 ```
+
+A command that generates declarations (`materialize_code`, `taint_summary`,
+`run_cmd`) has no declaration range: its row is its line and the start of
+that line of the source, `[line 70] taint_summary winBuildSum : …`. The
+known-answer tests in `VerifiedGarbageTest`, which cost spec evaluation
+rather than proofs, are left out unless `--tests` (or `--module` naming
+them) is given.
 
 Each declaration's time is `kernel` (the kernel checking it: large proof
 terms, `decide +kernel`, `taint_decide`, `lit_decide`) and `elab`
