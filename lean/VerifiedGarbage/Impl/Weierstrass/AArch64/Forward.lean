@@ -62,6 +62,7 @@ def foldMoves : List Instr → List Instr
 def put {α β : Type} [BEq α] (k : α) (v : β) (xs : List (α×β)) : List (α×β) :=
   (k,v)::xs.filter (fun x => x.1 != k)
 
+/-- Build the output in reverse to avoid copying every emitted prefix during kernel evaluation. -/
 def forward (is : List Instr) : List Instr := Id.run do
   let mut regs : List (Reg×Nat) := []
   let mut mem : List (Nat×Nat) := []
@@ -75,24 +76,24 @@ def forward (is : List Instr) : List Instr := Id.run do
       let src := if regs.lookup d==some value then some d
         else (regs.find? (fun p => p.2==value)).map Prod.fst
       match src with
-      | some r => if r !=d then out := out ++ [.logic .orr .x d r r]
-      | none => out := out ++ [i]
+      | some r => if r !=d then out := .logic .orr .x d r r :: out
+      | none => out := i :: out
       regs := put d value regs
       mem := put off value mem
     | .str .x r .x0 off =>
       let value := (regs.lookup r).getD fresh
       mem := put off value mem
       regs := put r value regs
-      out := out ++ [i]
+      out := i :: out
     | .movz .x r 0 _ =>
-      if regs.lookup r !=some 0 then out := out ++ [i]
+      if regs.lookup r !=some 0 then out := i :: out
       regs := put r 0 regs
     | _ =>
-      out := out ++ [i]
+      out := i :: out
       match writeReg i with
       | some d => regs := put d fresh regs
       | none => regs := []; mem := []
-  return out
+  return out.reverse
 
 def deadStores (is : List Instr) : List Instr := Id.run do
   let mut later : List Nat := []
