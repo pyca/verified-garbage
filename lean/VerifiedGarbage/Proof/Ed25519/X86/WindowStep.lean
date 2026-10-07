@@ -1,14 +1,14 @@
 import VerifiedGarbage.Proof.Ed25519.X86.WindowTables
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyContract
 import VerifiedGarbage.Proof.Ed25519.X86.InputSlice
-import VerifiedGarbage.Proof.Ed25519.Window
+import VerifiedGarbage.Proof.Ed25519.WindowNibble
 
 /-!
 # Verification's windows
 
 A window doubles the sum four times (`dbl-2008-hwcd`, `dblPoint_rep`), reads a
-digit of a scalar from the inputs (a nibble of the byte `esi`), and adds the
-digit's entry of a table, unless the digit is zero. The sum represents a
+digit of a scalar from the inputs (its nibble `esi`), and adds the digit's
+entry of a table, unless the digit is zero. The sum represents a
 multiple of `A` plus a multiple of `-B` throughout (`Rep`).
 -/
 
@@ -105,54 +105,87 @@ theorem bytesAt_getD (m : Mem) (p : Addr) (n i : Nat) (hi : i < n) :
     (Spec.Ed25519.bytesAt m p n).getD i 0 = m (p + BitVec.ofNat 64 i) := by
   simp [Spec.Ed25519.bytesAt, List.getD_eq_getElem?_getD, hi]
 
-theorem digitByte_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
-    {a add n i : Nat} (ha : a < 4) (hsl : SlicePre s₀ 3 (arg s₀ a + BitVec.ofNat 32 add) n) (hi : i < n)
-    (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
-    WP isa (.block (digitByte (4 + 4 * a) add)) s fun t => EaxKeep s t ∧
-      t.gpr .eax = ((Spec.Ed25519.bytesAt s₀.mem ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n).getD i
-        0).setWidth 32 := by
-  refine Wp.wp_ldm hs.esp (by rw [hs.rd, hs.wr]; exact hp.argIn ha) fun u hu => ?_
-  have eu : u.gpr .eax = arg s₀ a := by rw [hu.gpr]; exact hp.arg_same hs.frame ha
-  refine Wp.wp_add fun v hv _ => ?_
-  have ev : v.gpr .eax = arg s₀ a + BitVec.ofNat 32 i := by
-    rw [hv.gpr, eu, hu.other .esi (by decide), hesi]
-  have hA : addr (v.gpr .eax) add = addr (arg s₀ a + BitVec.ofNat 32 add) i := by
-    rw [ev]; simp only [addr]
-    rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 32 i)]
-  have hrd : v.rd ++ v.wr = s₀.rd ++ s₀.wr := by rw [hv.rd, hv.wr, hu.rd, hu.wr, hs.rd, hs.wr]
-  refine scalar_ld8 hA (by rw [hrd]; exact slice_read hsl (by omega) (by decide)) fun t ht => WP.block_nil ?_
-  refine ⟨(EaxKeep.of_upd hu).trans ((EaxKeep.of_upd hv).trans (EaxKeep.of_upd ht)), ?_⟩
-  rw [ht.gpr, hv.mem, hu.mem, bytesAt_getD _ _ _ _ hi,
-    ← addr_eq (by have := hsl.fit; omega)]
-  congr 1
-  apply hs.frame
-  intro r hr; rw [List.mem_singleton.mp hr]
-  exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+/-- `test d, v`. -/
+theorem wp_testi {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Wp.Fupd s s' → s'.zf = some (s.gpr d &&& v == 0) → WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .test d (.imm v) :: is)) s Q :=
+  Wp.cons rfl (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl)
+
+theorem EaxKeep.of_fupd {s t : State} (h : Wp.Fupd s t) : EaxKeep s t :=
+  ⟨fun _ _ => by rw [h.gpr], h.mem, h.rd, h.wr⟩
+
+theorem shr1_ofNat {i : Nat} (hi : i < 2 ^ 32) : BitVec.ofNat 32 i >>> 1 = BitVec.ofNat 32 (i / 2) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega
+
+theorem and1_beq {i : Nat} (hi : i < 2 ^ 32) :
+    (BitVec.ofNat 32 i &&& 1 == 0) = decide (i % 2 = 0) := by
+  have : BitVec.ofNat 32 i &&& 1 = BitVec.ofNat 32 (i % 2) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, show (1 : BitVec 32).toNat = 1 from rfl, Nat.and_one_is_mod]
+    simp only [BitVec.toNat_ofNat]
+    omega
+  rw [this, Wp.ofNat_beq_zero (by omega)]
 
 private theorem nibble_fact : ∀ b : BitVec 8,
     b.setWidth 32 >>> 4 = BitVec.ofNat 32 (b.toNat / 16) ∧
     b.setWidth 32 &&& 15 = BitVec.ofNat 32 (b.toNat % 16) := by decide
 
-theorem digitHigh_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
-    {a add n i : Nat} (ha : a < 4) (hsl : SlicePre s₀ 3 (arg s₀ a + BitVec.ofNat 32 add) n) (hi : i < n)
-    (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
-    WP isa (.block (digitHigh (4 + 4 * a) add)) s fun t => EaxKeep s t ∧
-      t.gpr .eax = BitVec.ofNat 32 (((Spec.Ed25519.bytesAt s₀.mem
-        ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n).getD i 0).toNat / 16) := by
-  refine WP.block_append (WP.mono (digitByte_ok hp hs ha hsl hi hesi) fun u ⟨ku, eu⟩ => ?_)
-  refine Wp.wp_shr (by decide) fun t ht _ => WP.block_nil ⟨ku.trans ?_, ?_⟩
-  · exact ⟨fun r hr => ht.other r hr, ht.mem, ht.rd, ht.wr⟩
-  · rw [ht.gpr, eu]; exact (nibble_fact _).1
+/-- The address of a nibble's byte: the input's pointer plus half the nibble's index. -/
+theorem nibbleAddr_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
+    {a i : Nat} (ha : a < 4) (hi : i < 2 ^ 32) (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
+    WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))])
+      s fun t => EaxKeep s t ∧ t.gpr .eax = arg s₀ a + BitVec.ofNat 32 (i / 2) := by
+  refine Wp.wp_mov fun u₁ h₁ => Wp.wp_shr (by decide) fun u₂ h₂ _ => ?_
+  have e₂ : u₂.gpr .eax = BitVec.ofNat 32 (i / 2) := by rw [h₂.gpr, h₁.gpr, hesi, shr1_ofNat hi]
+  have hr₂ : u₂.rd ++ u₂.wr = s₀.rd ++ s₀.wr := by rw [h₂.rd, h₂.wr, h₁.rd, h₁.wr, hs.rd, hs.wr]
+  refine Wp.wp_addm (B := s₀.gpr .esp) (by rw [h₂.other _ (by decide), h₁.other _ (by decide)]; exact hs.esp)
+    (by rw [hr₂]; exact hp.argIn ha) fun t ht => WP.block_nil
+      ⟨(EaxKeep.of_upd h₁).trans ((EaxKeep.of_upd h₂).trans (EaxKeep.of_upd ht)), ?_⟩
+  rw [ht.gpr, e₂, h₂.mem, h₁.mem, hp.arg_same hs.frame ha, BitVec.add_comm]
 
-theorem digitLow_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
-    {a add n i : Nat} (ha : a < 4) (hsl : SlicePre s₀ 3 (arg s₀ a + BitVec.ofNat 32 add) n) (hi : i < n)
-    (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
-    WP isa (.block (digitLow (4 + 4 * a) add)) s fun t => EaxKeep s t ∧
-      t.gpr .eax = BitVec.ofNat 32 (((Spec.Ed25519.bytesAt s₀.mem
-        ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n).getD i 0).toNat % 16) := by
-  refine WP.block_append (WP.mono (digitByte_ok hp hs ha hsl hi hesi) fun u ⟨ku, eu⟩ => ?_)
-  refine Wp.wp_andi fun t ht => WP.block_nil ⟨ku.trans (EaxKeep.of_upd ht), ?_⟩
-  rw [ht.gpr, eu]; exact (nibble_fact _).2
+/-- The byte of a nibble, and the nibble's parity in ZF. -/
+theorem nibbleByte_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
+    {a add n i : Nat} (ha : a < 4) (hsl : SlicePre s₀ 3 (arg s₀ a + BitVec.ofNat 32 add) n)
+    (hi : i < 2 * n) (hn : n ≤ 64) (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
+    WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a))),
+      .movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)]) s fun t => EaxKeep s t ∧
+      t.gpr .eax = ((Spec.Ed25519.bytesAt s₀.mem ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n).getD
+        (i / 2) 0).setWidth 32 ∧ t.zf = some (decide (i % 2 = 0)) := by
+  have hn : i < 2 ^ 32 := by omega
+  show WP isa (.block (([.mov .eax (.reg .esi), .shift .shr .eax 1,
+    .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))] : List Instr) ++
+    [.movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)])) s _
+  refine WP.block_append (WP.mono (nibbleAddr_ok hp hs ha hn hesi) fun u₃ ⟨k₃, e₃⟩ => ?_)
+  have hA : addr (u₃.gpr .eax) add = addr (arg s₀ a + BitVec.ofNat 32 add) (i / 2) := by
+    rw [e₃]; simp only [addr]
+    rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 32 (i / 2))]
+  have hr₃ : u₃.rd ++ u₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hs.rd, hs.wr]
+  refine scalar_ld8 hA (by rw [hr₃]; exact slice_read hsl (by omega) (by decide)) fun u₄ h₄ =>
+    wp_testi fun t ht zt => WP.block_nil ⟨?_, ?_, ?_⟩
+  · exact k₃.trans ((EaxKeep.of_upd h₄).trans (EaxKeep.of_fupd ht))
+  · rw [ht.gpr, h₄.gpr, k₃.mem, bytesAt_getD _ _ _ _ (by omega), ← addr_eq (by have := hsl.fit; omega)]
+    congr 1
+    apply hs.frame
+    intro r hr; rw [List.mem_singleton.mp hr]
+    exact hsl.sep _ (slice_contains hsl (by omega) (by decide))
+  · rw [zt, h₄.other _ (by decide), k₃.gpr _ (by decide), hesi, and1_beq hn]
+
+theorem digitNibble_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s)
+    {a add n i : Nat} (ha : a < 4) (hsl : SlicePre s₀ 3 (arg s₀ a + BitVec.ofNat 32 add) n)
+    (hi : i < 2 * n) (hn : n ≤ 64) (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
+    WP isa (digitNibble (4 + 4 * a) add) s fun t => EaxKeep s t ∧
+      t.gpr .eax = BitVec.ofNat 32 (nibbleOf (Spec.Ed25519.bytesAt s₀.mem
+        ((arg s₀ a + BitVec.ofNat 32 add).setWidth 64) n) i) := by
+  refine WP.seq (WP.mono (nibbleByte_ok hp hs ha hsl hi hn hesi) fun u ⟨ku, eu, zu⟩ => ?_)
+  refine WP.ite (!decide (i % 2 = 0)) (by show u.zf.map (!·) = _; rw [zu]; rfl) (fun h => ?_) (fun h => ?_)
+  · have h1 : i % 2 = 1 := by simp at h; omega
+    refine Wp.wp_shr (by decide) fun t ht _ => WP.block_nil ⟨ku.trans (EaxKeep.of_upd ht), ?_⟩
+    rw [ht.gpr, eu, (nibble_fact _).1, nibbleOf, ite_eq_left h1]
+  · have h0 : ¬ i % 2 = 1 := by simp at h; omega
+    refine Wp.wp_andi fun t ht => WP.block_nil ⟨ku.trans (EaxKeep.of_upd ht), ?_⟩
+    rw [ht.gpr, eu, (nibble_fact _).2, nibbleOf, ite_eq_right h0]
 
 /-! ## Adding a digit's entry -/
 
@@ -242,24 +275,5 @@ theorem WinCtx.of_ikeep {s₀ s t : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Po
   · rw [tablePoint_frame hfit k.frame (by decide) (by omega) (Or.inr (by omega))]; exact h.ta j hj
   · rw [tablePoint_frame hfit k.frame (by decide) (by omega) (Or.inr (by omega))]; exact h.tb j hj
   · rw [tablePoint_frame hfit k.frame (by decide) (by decide) (Or.inr (by decide))]; exact h.r
-
-theorem windowWith_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
-    (h : WinCtx s₀ Aa R s) (hesi : (s.gpr .esi).toNat < 2 ^ 30) {o : Nat} (ho : 1024 ≤ o)
-    (hn : o + 1920 ≤ 8192) {X : EPoint dZ}
-    (htab : ∀ t, WinCtx s₀ Aa R t → ∀ j < 15, Rep (tablePoint t.mem (arg s₀ 3) (o + 128 * j)) ((j + 1) • X))
-    {digit : List Instr} {v : Nat} (hv : v < 16)
-    (hdig : ∀ t, WinCtx s₀ Aa R t → t.gpr .esi = s.gpr .esi →
-      WP isa (.block digit) t fun u => EaxKeep t u ∧ u.gpr .eax = BitVec.ofNat 32 v)
-    {a : EPoint dZ} (hacc : Rep (point (env s.mem (arg s₀ 3)) 0 1 2 3) a) :
-    WP isa (windowWith o digit) s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = s.gpr .esi ∧
-      Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) ((16 : Nat) • a + v • X) := by
-  refine WP.seq (WP.mono (doubleWindow_ok h.ctx hesi hacc) fun b ⟨kb, eb, rb, hb⟩ => ?_)
-  have wb := h.of_ikeep kb (hb 16 (by decide))
-  refine WP.seq (WP.mono (hdig b wb eb) fun c ⟨kc, ec⟩ => ?_)
-  have wc := wb.of_ikeep kc.ikeep (by rw [kc.mem])
-  have rc : Rep (point (env c.mem (arg s₀ 3)) 0 1 2 3) ((16 : Nat) • a) := by rw [kc.mem]; exact rb
-  refine WP.mono (addDigit_ok wc.ctx ho hn hv ec (htab c wc) rc wc.d) fun t ⟨kt, et, rt, ht⟩ =>
-    ⟨wc.of_ikeep kt (ht 16 (by decide)), ?_, rt⟩
-  rw [et, kc.gpr _ (by decide)]; exact eb
 
 end VG.Proof.Ed25519.X86

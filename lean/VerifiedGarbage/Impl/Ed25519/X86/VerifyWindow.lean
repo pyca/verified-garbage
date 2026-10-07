@@ -10,11 +10,12 @@ four per 4-bit window of the scalars (a loop, `doubleWindow`), from the top: eac
 for `k`'s digit `a` from a table of `[1]A … [15]A` built at run time (byte
 1024), and `[-b]B` for `S`'s digit `b` from a table of constants
 (`baseMultiples`, negated, byte 3072), both with the specification's
-addition. A zero digit adds nothing. The digits are read from the inputs, byte
-by byte (the counter `esi` is the number of bytes left), high nibble first:
-`k`'s 64 bytes, of which only the low 32 have a byte of `S` beside them. The
-leading zero bytes of `k` above its low 32 are skipped (`skipZero`): before
-them the sum is zero, which doubles to itself. The equation
+addition. A zero digit adds nothing. The leading zero bytes of `k` above its
+low 32 are skipped (`skipZero`, counting bytes in `esi`): before them the sum
+is zero, which doubles to itself. The windows are then one loop
+(`nibbleStep`) over the nibbles left (in `esi`, twice the bytes), from the
+top, each read from the inputs: `k`'s 128, of which only the low 64 have a
+nibble of `S` beside them. The equation
 `[S]B = R + [k]A` holds exactly when the result equals `-R`, which the
 projective comparison `pointEqual` checks.
 
@@ -86,16 +87,12 @@ def bEntries : List Nat → Prog isa
 /-- Entries `j < 15` of the table at byte 3072 are `-[j + 1]B`. -/
 def bTable : Prog isa := bEntries (List.range 15)
 
-/-- `eax` = byte `esi + add` of the input whose pointer is at `[esp + arg]`. -/
-def digitByte (arg add : Nat) : List Instr :=
-  [.mov .eax (.mem (at_ .esp arg)), .alu .add .eax (.reg .esi), .movzx8 .eax (at_ .eax add)]
-
-/-- The byte's high nibble. -/
-def digitHigh (arg add : Nat) : List Instr := digitByte arg add ++ [.shift .shr .eax 4]
-
-/-- The byte's low nibble. -/
-def digitLow (arg add : Nat) : List Instr :=
-  digitByte arg add ++ [.alu .and .eax (.imm 15)]
+/-- `eax` = nibble `esi` of the input whose pointer is at `[esp + arg]`, from its byte `add`
+on: the high nibble of byte `esi / 2` if `esi` is odd, and its low nibble if it is even. -/
+def digitNibble (arg add : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp arg)),
+      .movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)])
+    (.ite .ne (.block [.shift .shr .eax 4]) (.block [.alu .and .eax (.imm 15)]))
 
 /-- `edx` = entry `eax - 1` of the table at byte `o`. -/
 def entryAddr (o : Nat) : List Instr :=
@@ -107,27 +104,21 @@ def addDigit (o : Nat) : Prog isa :=
   .seq (.block [.alu .test .eax (.reg .eax)])
     (.ite .ne (.block (entryAddr o ++ pointFromTableQ ++ pointAdd)) (.block []))
 
-/-- Four doublings, then the digit computed by `digit` added from the table at byte `o`. -/
-def windowWith (o : Nat) (digit : List Instr) : Prog isa :=
-  .seq doubleWindow (.seq (.block digit) (addDigit o))
+/-- `k`'s nibble `esi` (`k` is the third argument, at `[esp + 12]`), added from the table at
+byte 1024. -/
+def addK : Prog isa := .seq (digitNibble 12 0) (addDigit 1024)
 
-/-- A window of `k` alone (`k` is the third argument, at `[esp + 12]`). -/
-def windowA (digit : List Instr) : Prog isa := windowWith 1024 digit
+/-- `S`'s nibble `esi` (the signature's second half, the second argument at `[esp + 8]`),
+added from the table at byte 3072, if `esi` is below 64 (`S` has 32 bytes). -/
+def addS : Prog isa :=
+  .seq (.block [.alu .cmp .esi (.imm 64)]) (.ite .b (.seq (digitNibble 8 32) (addDigit 3072)) (.block []))
 
-/-- A window of `k` and of `S` (the signature's second half, the second argument at
-`[esp + 8]`): the doublings, `k`'s digit, then `S`'s. -/
-def windowAB (digitA digitB : List Instr) : Prog isa :=
-  .seq (windowA digitA) (.seq (.block digitB) (addDigit 3072))
-
-/-- A byte of `k` alone (bytes 63 down to 32); ZF is clear while another follows. -/
-def byteStepA : Prog isa :=
-  .seq (.block [.alu .sub .esi (.imm 1)]) (.seq (windowA (digitHigh 12 0))
-    (.seq (windowA (digitLow 12 0)) (.block [.alu .cmp .esi (.imm 32)])))
-
-/-- A byte of `k` and of `S` (bytes 31 down to 0); ZF is clear while another follows. -/
-def byteStepAB : Prog isa :=
-  .seq (.block [.alu .sub .esi (.imm 1)]) (.seq (windowAB (digitHigh 12 0) (digitHigh 8 32))
-    (.seq (windowAB (digitLow 12 0) (digitLow 8 32)) (.block [.alu .test .esi (.reg .esi)])))
+/-- A window of the nibble below `esi` (the nibbles left of the scalars): the counter moved
+down, four doublings, then `k`'s nibble added and `S`'s; ZF is clear while another nibble
+follows. -/
+def nibbleStep : Prog isa :=
+  .seq (.block [.alu .sub .esi (.imm 1)])
+    (.seq doubleWindow (.seq addK (.seq addS (.block [.alu .test .esi (.reg .esi)]))))
 
 /-- `eax` = byte `esi - 1` of `k`, and `edx = esi - 1`. -/
 def skipLoad : List Instr :=
@@ -143,10 +134,6 @@ def skipBody : Prog isa :=
 /-- Skip the leading zero bytes of `k` above its low 32. -/
 def skipZero : Prog isa := .loop skipBody .ne
 
-/-- The bytes of `k` alone that are left after `skipZero`. -/
-def windowsA : Prog isa :=
-  .seq (.block [.alu .cmp .esi (.imm 32)]) (.ite .ne (.loop byteStepA .ne) (.block []))
-
 /-- `-R` from byte 7808 into slots 4–7. -/
 def negR : List Instr := pointTableQ 7808 ++ fieldCode [.const 8 0, .sub 4 8 4, .sub 7 8 7]
 
@@ -159,8 +146,8 @@ def windowInit : List Instr := constPoint Spec.Ed25519.identity ++ [.mov .esi (.
 /-- The tables, and the sum at the identity. -/
 def windowPrep : Prog isa := .seq (.block windowSetup) (.seq aTable (.seq bTable (.block windowInit)))
 
-/-- `[k]A - [S]B` in slots 0–3. -/
+/-- `[k]A - [S]B` in slots 0–3: the nibbles left after `skipZero`, two per byte. -/
 def windowMultiply : Prog isa :=
-  .seq windowPrep (.seq skipZero (.seq windowsA (.loop byteStepAB .ne)))
+  .seq windowPrep (.seq skipZero (.seq (.block [.alu .add .esi (.reg .esi)]) (.loop nibbleStep .ne)))
 
 end VG.Impl.Ed25519.X86

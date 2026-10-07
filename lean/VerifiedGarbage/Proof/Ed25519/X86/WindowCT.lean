@@ -49,9 +49,13 @@ theorem VerifyCTFacts.kByte {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i
     kByte s₀ i = kByte t₀ i :=
   congrArg (·.getD i 0) h.challengeBytes
 
-theorem VerifyCTFacts.sByte {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i : Nat) :
-    sByte s₀ i = sByte t₀ i :=
-  congrArg (·.getD i 0) h.scalarBytes
+theorem VerifyCTFacts.kNib {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (n : Nat) :
+    kNib s₀ n = kNib t₀ n :=
+  congrArg (nibbleOf · n) h.challengeBytes
+
+theorem VerifyCTFacts.sNib {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (n : Nat) :
+    sNib s₀ n = sNib t₀ n :=
+  congrArg (nibbleOf · n) h.scalarBytes
 
 theorem VerifyCTFacts.challengeNat {s t : State} (h : VerifyCTFacts s t) :
     verificationChallenge s = verificationChallenge t :=
@@ -71,74 +75,66 @@ theorem saved_esp {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) (hx : Sa
 
 /-! ## Digits -/
 
-theorem argLoad_ok {s₀ s : State} (hp : ScratchPre s₀ 3 4) (hs : Saved s₀ (arg s₀ 3) s) {a : Nat}
-    (ha : a < 4) :
-    WP isa (.block [.mov .eax (.mem (at_ .esp (4 + 4 * a)))]) s fun u =>
-      u.gpr .eax = arg s₀ a ∧ u.gpr .esi = s.gpr .esi :=
-  Wp.wp_ldm hs.esp (by rw [hs.rd, hs.wr]; exact hp.argIn ha) fun u hu =>
-    WP.block_nil ⟨by rw [hu.gpr]; exact hp.arg_same hs.frame ha, hu.other .esi (by decide)⟩
-
-/-- A digit's code: the pointer's load by the taint analysis with `esp` public, the byte's by
-the taint analysis with the pointer, from correctness, and the counter public. -/
-theorem digit_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P₂ : State → Prop} {a i : Nat}
-    {rest : List Instr} (ha : a < 4)
+/-- A nibble's byte: its address from `esp` and the counter, which are public, then its load
+at an address the same in both runs by correctness, and the nibble's parity. -/
+theorem nibbleByte_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P₂ : State → Prop} {a add i : Nat}
+    (ha : a < 4) (hi : i < 2 ^ 32)
     (h₁ : ∀ x, P₁ x → Saved s₀ (arg s₀ 3) x ∧ x.gpr .esi = BitVec.ofNat 32 i)
     (h₂ : ∀ y, P₂ y → Saved t₀ (arg t₀ 3) y ∧ y.gpr .esi = BitVec.ofNat 32 i)
-    (hfirst : RelCT isa (fun x y => x.gpr .esp = y.gpr .esp)
-      (.block [.mov .eax (.mem (at_ .esp (4 + 4 * a)))]) (fun _ _ => True))
+    (hfirst : RelCT isa (fun x y => x.gpr .esp = y.gpr .esp ∧ x.gpr .esi = y.gpr .esi)
+      (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))])
+      (fun _ _ => True))
     (hrest : RelCT isa (fun x y => x.gpr .eax = y.gpr .eax ∧ x.gpr .esi = y.gpr .esi)
-      (.block rest) (fun _ _ => True)) :
+      (.block [.movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)]) (fun _ _ => True)) :
     RelCT isa (fun x y => P₁ x ∧ P₂ y)
-      (.block (([.mov .eax (.mem (at_ .esp (4 + 4 * a)))] : List Instr) ++ rest)) (fun _ _ => True) := by
-  have w₁ (x : State) (hx : P₁ x) : WP isa (.block [.mov .eax (.mem (at_ .esp (4 + 4 * a)))]) x
-      fun u => u.gpr .eax = arg s₀ a ∧ u.gpr .esi = BitVec.ofNat 32 i :=
-    WP.mono (argLoad_ok (verify_pre h.left).scratch (h₁ x hx).1 ha) fun _ ⟨e1, e2⟩ =>
-      ⟨e1, e2.trans (h₁ x hx).2⟩
-  have w₂ (y : State) (hy : P₂ y) : WP isa (.block [.mov .eax (.mem (at_ .esp (4 + 4 * a)))]) y
-      fun u => u.gpr .eax = arg t₀ a ∧ u.gpr .esi = BitVec.ofNat 32 i :=
-    WP.mono (argLoad_ok (verify_pre h.right).scratch (h₂ y hy).1 ha) fun _ ⟨e1, e2⟩ =>
-      ⟨e1, e2.trans (h₂ y hy).2⟩
+      (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a))),
+        .movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)]) (fun _ _ => True) := by
+  have w₁ (x : State) (hx : P₁ x) : WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1,
+      .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))]) x fun u =>
+        u.gpr .eax = arg s₀ a + BitVec.ofNat 32 (i / 2) ∧ u.gpr .esi = BitVec.ofNat 32 i :=
+    WP.mono (nibbleAddr_ok (verify_pre h.left).scratch (h₁ x hx).1 ha hi (h₁ x hx).2)
+      fun _ ⟨k, e⟩ => ⟨e, (k.gpr _ (by decide)).trans (h₁ x hx).2⟩
+  have w₂ (y : State) (hy : P₂ y) : WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1,
+      .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))]) y fun u =>
+        u.gpr .eax = arg t₀ a + BitVec.ofNat 32 (i / 2) ∧ u.gpr .esi = BitVec.ofNat 32 i :=
+    WP.mono (nibbleAddr_ok (verify_pre h.right).scratch (h₂ y hy).1 ha hi (h₂ y hy).2)
+      fun _ ⟨k, e⟩ => ⟨e, (k.gpr _ (by decide)).trans (h₂ y hy).2⟩
+  show RelCT isa _ (.block (([.mov .eax (.reg .esi), .shift .shr .eax 1,
+    .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))] : List Instr) ++
+    [.movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)])) _
   refine ctBlockAppend (((hfirst.mono (P' := fun x y => P₁ x ∧ P₂ y)
-    (fun x y hh => saved_esp h (h₁ x hh.1).1 (h₂ y hh.2).1) (fun _ _ h => h)).wp
-    fun x y hh => ⟨w₁ x hh.1, w₂ y hh.2⟩).mono (fun _ _ h => h) ?_) hrest
+    (fun x y hh => ⟨saved_esp h (h₁ x hh.1).1 (h₂ y hh.2).1, (h₁ x hh.1).2.trans (h₂ y hh.2).2.symm⟩)
+    (fun _ _ h => h)).wp fun x y hh => ⟨w₁ x hh.1, w₂ y hh.2⟩).mono (fun _ _ h => h) ?_) hrest
   intro x y ⟨_, ex, ey⟩
-  exact ⟨ex.1.trans ((h.args a ha).trans ey.1.symm), ex.2.trans ey.2.symm⟩
+  exact ⟨ex.1.trans ((congrArg (· + BitVec.ofNat 32 (i / 2)) (h.args a ha)).trans ey.1.symm),
+    ex.2.trans ey.2.symm⟩
 
-theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P₂ : State → Prop} {i : Nat}
+/-- A nibble's code: its byte, then a branch on its parity, the same in both runs by
+correctness. -/
+theorem digitNibble_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P₂ : State → Prop} {a add i : Nat}
+    (ha : a < 4) (hi : i < 2 ^ 32)
     (h₁ : ∀ x, P₁ x → Saved s₀ (arg s₀ 3) x ∧ x.gpr .esi = BitVec.ofNat 32 i)
-    (h₂ : ∀ y, P₂ y → Saved t₀ (arg t₀ 3) y ∧ y.gpr .esi = BitVec.ofNat 32 i) (high : Bool) :
-    RelCT isa (fun x y => P₁ x ∧ P₂ y) (.block (if high then digitHigh 12 0 else digitLow 12 0))
-      (fun _ _ => True) := by
-  have first : RelCT isa (fun x y => x.gpr .esp = y.gpr .esp)
-      (.block [.mov .eax (.mem (at_ .esp (4 + 4 * 2)))]) (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint [.esp]) (fun _ _ hh => agree_one hh) (by taint_decide)
-  cases high
-  · show RelCT isa _ (.block ([.mov .eax (.mem (at_ .esp (4 + 4 * 2)))] ++
-      [.alu .add .eax (.reg .esi), .movzx8 .eax (at_ .eax 0), .alu .and .eax (.imm 15)])) _
-    exact digit_ct h (by decide) h₁ h₂ first
-      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
-  · show RelCT isa _ (.block ([.mov .eax (.mem (at_ .esp (4 + 4 * 2)))] ++
-      [.alu .add .eax (.reg .esi), .movzx8 .eax (at_ .eax 0), .shift .shr .eax 4])) _
-    exact digit_ct h (by decide) h₁ h₂ first
-      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
-
-theorem digitS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {P₁ P₂ : State → Prop} {i : Nat}
-    (h₁ : ∀ x, P₁ x → Saved s₀ (arg s₀ 3) x ∧ x.gpr .esi = BitVec.ofNat 32 i)
-    (h₂ : ∀ y, P₂ y → Saved t₀ (arg t₀ 3) y ∧ y.gpr .esi = BitVec.ofNat 32 i) (high : Bool) :
-    RelCT isa (fun x y => P₁ x ∧ P₂ y) (.block (if high then digitHigh 8 32 else digitLow 8 32))
-      (fun _ _ => True) := by
-  have first : RelCT isa (fun x y => x.gpr .esp = y.gpr .esp)
-      (.block [.mov .eax (.mem (at_ .esp (4 + 4 * 1)))]) (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) (regsTaint [.esp]) (fun _ _ hh => agree_one hh) (by taint_decide)
-  cases high
-  · show RelCT isa _ (.block ([.mov .eax (.mem (at_ .esp (4 + 4 * 1)))] ++
-      [.alu .add .eax (.reg .esi), .movzx8 .eax (at_ .eax 32), .alu .and .eax (.imm 15)])) _
-    exact digit_ct h (by decide) h₁ h₂ first
-      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
-  · show RelCT isa _ (.block ([.mov .eax (.mem (at_ .esp (4 + 4 * 1)))] ++
-      [.alu .add .eax (.reg .esi), .movzx8 .eax (at_ .eax 32), .shift .shr .eax 4])) _
-    exact digit_ct h (by decide) h₁ h₂ first
-      (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (h₂ : ∀ y, P₂ y → Saved t₀ (arg t₀ 3) y ∧ y.gpr .esi = BitVec.ofNat 32 i)
+    (hfirst : RelCT isa (fun x y => x.gpr .esp = y.gpr .esp ∧ x.gpr .esi = y.gpr .esi)
+      (.block [.mov .eax (.reg .esi), .shift .shr .eax 1, .alu .add .eax (.mem (at_ .esp (4 + 4 * a)))])
+      (fun _ _ => True))
+    (hrest : RelCT isa (fun x y => x.gpr .eax = y.gpr .eax ∧ x.gpr .esi = y.gpr .esi)
+      (.block [.movzx8 .eax (at_ .eax add), .alu .test .esi (.imm 1)]) (fun _ _ => True))
+    (z₁ : ∀ x, P₁ x → WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1,
+      .alu .add .eax (.mem (at_ .esp (4 + 4 * a))), .movzx8 .eax (at_ .eax add),
+      .alu .test .esi (.imm 1)]) x fun u => u.zf = some (decide (i % 2 = 0)))
+    (z₂ : ∀ y, P₂ y → WP isa (.block [.mov .eax (.reg .esi), .shift .shr .eax 1,
+      .alu .add .eax (.mem (at_ .esp (4 + 4 * a))), .movzx8 .eax (at_ .eax add),
+      .alu .test .esi (.imm 1)]) y fun u => u.zf = some (decide (i % 2 = 0))) :
+    RelCT isa (fun x y => P₁ x ∧ P₂ y) (digitNibble (4 + 4 * a) add) (fun _ _ => True) := by
+  rw [digitNibble]
+  refine VG.RelCT.seq (((nibbleByte_ct h ha hi h₁ h₂ hfirst hrest).wp fun x y hh => ⟨z₁ x hh.1, z₂ y hh.2⟩).mono
+    (fun _ _ h => h) (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+  · intro x y hh
+    change x.zf.map Bool.not = y.zf.map Bool.not
+    rw [hh.1, hh.2]
+  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
+  · exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
 
 /-! ## Adding a digit's entry -/
 
@@ -188,10 +184,10 @@ theorem doubleWindow_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : 
     (fun _ _ hh => agree_two ⟨saved_edi h hh.1.1.saved hh.2.1.saved, hh.1.2.1.trans hh.2.2.1.symm⟩)
     (by taint_decide)
 
-theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64)
+theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 128)
     (hx : WinAt s₀ Aa R i x) : WP isa doubleWindow x (WinAt s₀ Aa R i) := by
   obtain ⟨w, e, a, ha⟩ := hx
-  exact WP.mono (doubleWindow_ok w.ctx (esi_lt hi e) ha) fun b ⟨kb, eb, rb, hb⟩ =>
+  exact WP.mono (doubleWindow_ok w.ctx (esi_lt (by omega) e) ha) fun b ⟨kb, eb, rb, hb⟩ =>
     ⟨w.of_ikeep kb (hb 16 (by decide)), eb.trans e, _, rb⟩
 
 /-- After a digit's code, its value in `eax`, the workspace pointer in `edi`, and the window's
@@ -205,151 +201,129 @@ theorem DigitAt.of_keep {s₀ x u : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Po
   ⟨⟨hx.1.of_ikeep k.ikeep (by rw [k.mem]), by rw [k.gpr _ (by decide)]; exact hx.2.1,
     by rw [k.mem]; exact hx.2.2⟩, hv, by rw [k.gpr _ (by decide)]; exact hx.1.saved.edi⟩
 
-/-- A digit's code and its addition, from the digit's value in both runs. -/
+/-- A digit's addition, after its code, from the digit's value in both runs. -/
 theorem digitAdd_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i v : Nat} (hv : v < 16) {digit : List Instr} {o : Nat}
-    (ho : o = 1024 ∨ o = 3072)
-    (hct : RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y) (.block digit)
-      (fun _ _ => True))
-    (w₁ : ∀ x, WinAt s₀ Aa R i x → WP isa (.block digit) x (DigitAt s₀ Aa R i v))
-    (w₂ : ∀ y, WinAt t₀ Aa R i y → WP isa (.block digit) y (DigitAt t₀ Aa R i v)) :
-    RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y) (.seq (.block digit) (addDigit o))
-      (fun _ _ => True) :=
-  seq_runs hct w₁ w₂ ((addDigit_ct o ho hv (arg s₀ 3)).mono
+    {R : Spec.Ed25519.Point} {i v : Nat} (hv : v < 16) {o : Nat} (ho : o = 1024 ∨ o = 3072) :
+    RelCT isa (fun x y => DigitAt s₀ Aa R i v x ∧ DigitAt t₀ Aa R i v y) (addDigit o) (fun _ _ => True) :=
+  (addDigit_ct o ho hv (arg s₀ 3)).mono
     (fun _ _ hh => ⟨⟨hh.1.2.1, hh.1.2.2⟩, ⟨hh.2.2.1, hh.2.2.2.trans (h.args 3 (by decide)).symm⟩⟩)
-    (fun _ _ h => h))
+    (fun _ _ h => h)
 
-theorem digitK_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64)
-    (high : Bool) (hx : WinAt s₀ Aa R i x) :
-    WP isa (.block (if high then digitHigh 12 0 else digitLow 12 0)) x
-      (DigitAt s₀ Aa R i (if high then (kByte s₀ i).toNat / 16 else (kByte s₀ i).toNat % 16)) :=
-  WP.mono (digitK_ok hi high x hx.1 hx.2.1) fun _ ⟨k, e⟩ => DigitAt.of_keep hx k e
+theorem digitK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
+    RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) (digitNibble 12 0) (fun _ _ => True) :=
+  digitNibble_ct (a := 2) h (by decide) (by omega) (fun _ hx => ⟨hx.1.saved, hx.2.1⟩)
+    (fun _ hy => ⟨hy.1.saved, hy.2.1⟩)
+    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (fun _ hx => WP.mono (nibbleByte_ok (a := 2) hx.1.pre.scratch hx.1.saved (by decide) hx.1.pre.challenge
+      (by omega) (by decide) hx.2.1) fun _ h => h.2.2)
+    (fun _ hy => WP.mono (nibbleByte_ok (a := 2) hy.1.pre.scratch hy.1.saved (by decide) hy.1.pre.challenge
+      (by omega) (by decide) hy.2.1) fun _ h => h.2.2)
 
-theorem digitS_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 32)
-    (high : Bool) (hx : WinAt s₀ Aa R i x) :
-    WP isa (.block (if high then digitHigh 8 32 else digitLow 8 32)) x
-      (DigitAt s₀ Aa R i (if high then (sByte s₀ i).toNat / 16 else (sByte s₀ i).toNat % 16)) :=
-  WP.mono (digitS_ok hi high x hx.1 hx.2.1) fun _ ⟨k, e⟩ => DigitAt.of_keep hx k e
+theorem digitS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 64) {P₁ P₂ : State → Prop}
+    (h₁ : ∀ x, P₁ x → WinAt s₀ Aa R n x) (h₂ : ∀ y, P₂ y → WinAt t₀ Aa R n y) :
+    RelCT isa (fun x y => P₁ x ∧ P₂ y) (digitNibble 8 32) (fun _ _ => True) :=
+  digitNibble_ct (a := 1) h (by decide) (by omega) (fun _ hx => ⟨(h₁ _ hx).1.saved, (h₁ _ hx).2.1⟩)
+    (fun _ hy => ⟨(h₂ _ hy).1.saved, (h₂ _ hy).2.1⟩)
+    (VG.RelCT.taint (A := taint) (regsTaint [.esp, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (VG.RelCT.taint (A := taint) (regsTaint [.eax, .esi]) (fun _ _ hh => agree_two hh) (by taint_decide))
+    (fun _ hx => WP.mono (nibbleByte_ok (a := 1) (h₁ _ hx).1.pre.scratch (h₁ _ hx).1.saved (by decide)
+      (h₁ _ hx).1.pre.scalar (by omega) (by decide) (h₁ _ hx).2.1) fun _ h => h.2.2)
+    (fun _ hy => WP.mono (nibbleByte_ok (a := 1) (h₂ _ hy).1.pre.scratch (h₂ _ hy).1.saved (by decide)
+      (h₂ _ hy).1.pre.scalar (by omega) (by decide) (h₂ _ hy).2.1) fun _ h => h.2.2)
 
-theorem windowA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64) (high : Bool) :
-    RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y)
-      (windowA (if high then digitHigh 12 0 else digitLow 12 0)) (fun _ _ => True) := by
-  rw [windowA, windowWith]
-  refine seq_runs (doubleWindow_ct h) (fun _ hx => doubleWindow_at hi hx) (fun _ hy => doubleWindow_at hi hy) ?_
-  refine digitAdd_ct h (nibble_lt (kByte s₀ i) high) (.inl rfl)
-    (digitK_ct h (fun _ hx => ⟨hx.1.saved, hx.2.1⟩) (fun _ hy => ⟨hy.1.saved, hy.2.1⟩) high)
-    (fun _ hx => digitK_at hi high hx) (fun y hy => ?_)
-  rw [h.kByte i]
-  exact digitK_at hi high hy
+theorem digitK_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
+    (hx : WinAt s₀ Aa R n x) : WP isa (digitNibble 12 0) x (DigitAt s₀ Aa R n (kNib s₀ n)) :=
+  WP.mono (digitK_ok hn x hx.1 hx.2.1) fun _ ⟨k, e⟩ => DigitAt.of_keep hx k e
 
-theorem windowA_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64)
-    (high : Bool) (hx : WinAt s₀ Aa R i x) :
-    WP isa (windowA (if high then digitHigh 12 0 else digitLow 12 0)) x (WinAt s₀ Aa R i) := by
+theorem digitS_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 64)
+    (hx : WinAt s₀ Aa R n x) : WP isa (digitNibble 8 32) x (DigitAt s₀ Aa R n (sNib s₀ n)) :=
+  WP.mono (digitS_ok hn x hx.1 hx.2.1) fun _ ⟨k, e⟩ => DigitAt.of_keep hx k e
+
+theorem addK_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
+    RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) addK (fun _ _ => True) :=
+  seq_runs (digitK_ct h hn) (fun _ hx => digitK_at hn hx)
+    (fun y hy => by rw [h.kNib n]; exact digitK_at hn hy) (digitAdd_ct h (kNib_lt s₀ n) (.inl rfl))
+
+theorem addK_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
+    (hx : WinAt s₀ Aa R n x) : WP isa addK x (WinAt s₀ Aa R n) := by
   obtain ⟨w, e, a, ha⟩ := hx
-  exact WP.mono (windowA_byte_ok w hi e high ha) fun _ ⟨wt, et, rt⟩ => ⟨wt, et.trans e, _, rt⟩
+  exact WP.mono (addK_ok w hn e ha) fun _ ⟨wt, et, rt⟩ => ⟨wt, et.trans e, _, rt⟩
 
-theorem windowAB_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 32) (high : Bool) :
-    RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y)
-      (windowAB (if high then digitHigh 12 0 else digitLow 12 0)
-        (if high then digitHigh 8 32 else digitLow 8 32)) (fun _ _ => True) := by
-  rw [windowAB]
-  refine seq_runs (windowA_ct h (by omega) high) (fun _ hx => windowA_at (by omega) high hx)
-    (fun _ hy => windowA_at (by omega) high hy) ?_
-  refine digitAdd_ct h (nibble_lt (sByte s₀ i) high) (.inr rfl)
-    (digitS_ct h (fun _ hx => ⟨hx.1.saved, hx.2.1⟩) (fun _ hy => ⟨hy.1.saved, hy.2.1⟩) high)
-    (fun _ hx => digitS_at hi high hx) (fun y hy => ?_)
-  rw [h.sByte i]
-  exact digitS_at hi high hy
+theorem cmp64_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
+    (hx : WinAt s₀ Aa R n x) : WP isa (.block [.alu .cmp .esi (.imm 64)]) x fun t =>
+      WinAt s₀ Aa R n t ∧ t.cf = some (decide (n < 64)) :=
+  WP.mono (cmp64_ok hx.1 hn hx.2.1) fun _ ⟨w, e, m, c⟩ => ⟨⟨w, e.trans hx.2.1, by rw [m]; exact hx.2.2⟩, c⟩
 
-theorem windowAB_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 32)
-    (high : Bool) (hx : WinAt s₀ Aa R i x) :
-    WP isa (windowAB (if high then digitHigh 12 0 else digitLow 12 0)
-      (if high then digitHigh 8 32 else digitLow 8 32)) x (WinAt s₀ Aa R i) := by
-  obtain ⟨w, e, a, ha⟩ := hx
-  exact WP.mono (windowAB_byte_ok w hi e high ha) fun _ ⟨wt, et, rt⟩ => ⟨wt, et.trans e, _, rt⟩
+/-- `S`'s digit, added below its 64 nibbles: the branch is on the counter. -/
+theorem addS_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
+    RelCT isa (fun x y => WinAt s₀ Aa R n x ∧ WinAt t₀ Aa R n y) addS (fun _ _ => True) := by
+  rw [addS]
+  refine VG.RelCT.seq (((VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none)
+    (by taint_decide)).wp fun x y hh => ⟨cmp64_at hn hh.1, cmp64_at hn hh.2⟩).mono (fun _ _ h => h)
+    (fun _ _ h => h.2)) (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
+  · intro x y hh
+    change x.cf = y.cf
+    rw [hh.1.2, hh.2.2]
+  · by_cases h64 : n < 64
+    · exact (seq_runs (digitS_ct h h64 (fun _ hx => hx) (fun _ hy => hy))
+        (fun _ hx => digitS_at h64 hx) (fun _ hy => by rw [h.sNib n]; exact digitS_at h64 hy)
+        (digitAdd_ct h (sNib_lt s₀ n) (.inr rfl))).mono (fun _ _ hh => ⟨hh.1.1.1, hh.1.2.1⟩)
+        (fun _ _ h => h)
+    · refine VG.RelCT.of_false fun x y hh => h64 ?_
+      have e : x.cf = some true := hh.2
+      rw [hh.1.1.2] at e
+      simpa using e
+  · exact VG.RelCT.block_nil fun _ _ _ => trivial
 
-/-! ## Bytes -/
+theorem addS_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128)
+    (hx : WinAt s₀ Aa R n x) : WP isa addS x fun _ => True :=
+  WP.mono (addS_ok hx.1 hn hx.2.1 hx.2.2.choose_spec) fun _ _ => trivial
+
+/-! ## Nibbles -/
+
+/-- With `n` nibbles of the scalars left. -/
+def NLoopAt (s₀ : State) (Aa : EPoint dZ) (R : Spec.Ed25519.Point) (n : Nat) (t : State) : Prop :=
+  WinCtx s₀ Aa R t ∧ t.gpr .esi = BitVec.ofNat 32 n ∧
+    Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) (nsum s₀ Aa n)
 
 theorem esiDec_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat}
-    (hx : LoopAt s₀ Aa R (i + 1) x) : WP isa (.block [.alu .sub .esi (.imm 1)]) x (WinAt s₀ Aa R i) :=
+    (hx : NLoopAt s₀ Aa R (i + 1) x) : WP isa (.block [.alu .sub .esi (.imm 1)]) x (WinAt s₀ Aa R i) :=
   WP.mono (esiDec_ok hx.1 hx.2.1) fun _ ⟨w, e, m⟩ => ⟨w, e, _, by rw [m]; exact hx.2.2⟩
 
-theorem byteStepA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64) :
-    RelCT isa (fun x y => LoopAt s₀ Aa R (i + 1) x ∧ LoopAt t₀ Aa R (i + 1) y) byteStepA
+theorem nibbleStep_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {n : Nat} (hn : n < 128) :
+    RelCT isa (fun x y => NLoopAt s₀ Aa R (n + 1) x ∧ NLoopAt t₀ Aa R (n + 1) y) nibbleStep
       (fun _ _ => True) := by
-  rw [byteStepA]
+  rw [nibbleStep]
   refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide))
     (fun _ hx => esiDec_at hx) (fun _ hy => esiDec_at hy) ?_
-  refine seq_runs (windowA_ct h hi true) (fun _ hx => windowA_at hi true hx)
-    (fun _ hy => windowA_at hi true hy) ?_
-  refine seq_runs (F₁ := fun _ => True) (F₂ := fun _ => True) (windowA_ct h hi false)
-    (fun _ hx => WP.mono (windowA_at hi false hx) fun _ _ => trivial)
-    (fun _ hy => WP.mono (windowA_at hi false hy) fun _ _ => trivial) ?_
+  refine seq_runs (doubleWindow_ct h) (fun _ hx => doubleWindow_at hn hx)
+    (fun _ hy => doubleWindow_at hn hy) ?_
+  refine seq_runs (addK_ct h hn) (fun _ hx => addK_at hn hx) (fun _ hy => addK_at hn hy) ?_
+  refine seq_runs (F₁ := fun _ => True) (F₂ := fun _ => True) (addS_ct h hn) (fun _ hx => addS_at hn hx)
+    (fun _ hy => addS_at hn hy) ?_
   exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
 
-theorem byteStepAB_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 32) :
-    RelCT isa (fun x y => LoopAt s₀ Aa R (i + 1) x ∧ LoopAt t₀ Aa R (i + 1) y) byteStepAB
+theorem loopN_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
+    {R : Spec.Ed25519.Point} {c : Nat} (hc0 : 0 < c) (hc : c ≤ 128) :
+    RelCT isa (fun x y => NLoopAt s₀ Aa R c x ∧ NLoopAt t₀ Aa R c y) (.loop nibbleStep .ne)
       (fun _ _ => True) := by
-  rw [byteStepAB]
-  refine seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide))
-    (fun _ hx => esiDec_at hx) (fun _ hy => esiDec_at hy) ?_
-  refine seq_runs (windowAB_ct h hi true) (fun _ hx => windowAB_at hi true hx)
-    (fun _ hy => windowAB_at hi true hy) ?_
-  refine seq_runs (F₁ := fun _ => True) (F₂ := fun _ => True) (windowAB_ct h hi false)
-    (fun _ hx => WP.mono (windowAB_at hi false hx) fun _ _ => trivial)
-    (fun _ hy => WP.mono (windowAB_at hi false hy) fun _ _ => trivial) ?_
-  exact VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
-
-/-! ## Loops -/
-
-theorem loopA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {c : Nat} (hc1 : 32 < c) (hc2 : c ≤ 64) :
-    RelCT isa (fun x y => LoopAt s₀ Aa R c x ∧ LoopAt t₀ Aa R c y) (.loop byteStepA .ne)
-      (fun x y => LoopAt s₀ Aa R 32 x ∧ LoopAt t₀ Aa R 32 y) := by
-  refine (VG.RelCT.loop (I := fun m x y => (LoopAt s₀ Aa R (32 + m) x ∧ LoopAt t₀ Aa R (32 + m) y) ∧
-    0 < m ∧ m ≤ 32) ?_ (c - 32)).mono
-      (fun x y hh => ⟨by rw [show 32 + (c - 32) = c by omega]; exact hh, by omega, by omega⟩)
-      (fun _ _ h => h)
+  refine (VG.RelCT.loop (I := fun m x y => (NLoopAt s₀ Aa R m x ∧ NLoopAt t₀ Aa R m y) ∧
+    0 < m ∧ m ≤ 128) ?_ c).mono (fun x y hh => ⟨hh, hc0, hc⟩) (fun _ _ h => h)
   intro n
   rcases n with _ | j
   · exact VG.RelCT.of_false fun _ _ hh => Nat.lt_irrefl 0 hh.2.1
-  by_cases hj : j < 32
-  · have hw (u x : State) (hx : LoopAt u Aa R (32 + j + 1) x) : WP isa byteStepA x fun t =>
-        t.zf.map (!·) = some (!decide (32 + j = 32)) ∧ LoopAt u Aa R (32 + j) t :=
-      WP.mono (byteStepA_ok hx.1 (by omega) (by omega) hx.2.1 hx.2.2) fun t ⟨wt, et, zt, rt⟩ =>
+  by_cases hj : j < 128
+  · have hw (u x : State) (hx : NLoopAt u Aa R (j + 1) x) : WP isa nibbleStep x fun t =>
+        t.zf.map (!·) = some (!decide (j = 0)) ∧ NLoopAt u Aa R j t :=
+      WP.mono (nibbleStep_ok hx.1 hj hx.2.1 hx.2.2) fun t ⟨wt, et, zt, rt⟩ =>
         ⟨by rw [zt]; rfl, wt, et, rt⟩
-    refine (((byteStepA_ct h (i := 32 + j) (by omega)).mono (fun x y hh => hh.1) (fun _ _ h => h)).wp
-      fun x y hh => ⟨hw s₀ x hh.1.1, hw t₀ y hh.1.2⟩).mono (fun _ _ h => h) ?_
-    intro x y ⟨_, ⟨xz, hx⟩, ⟨yz, hy⟩⟩
-    refine ⟨xz.trans yz.symm, fun he => ?_, fun he => ?_⟩
-    · have he' := xz.symm.trans he
-      have : j = 0 := by simpa using he'
-      subst this
-      exact ⟨hx, hy⟩
-    · have he' := xz.symm.trans he
-      have : j ≠ 0 := by simpa using he'
-      exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
-  · exact VG.RelCT.of_false fun _ _ hh => hj (by omega)
-
-theorem loopAB_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} :
-    RelCT isa (fun x y => LoopAt s₀ Aa R 32 x ∧ LoopAt t₀ Aa R 32 y) (.loop byteStepAB .ne)
-      (fun _ _ => True) := by
-  refine (VG.RelCT.loop (I := fun m x y => (LoopAt s₀ Aa R m x ∧ LoopAt t₀ Aa R m y) ∧
-    0 < m ∧ m ≤ 32) ?_ 32).mono (fun x y hh => ⟨hh, by decide, by decide⟩) (fun _ _ h => h)
-  intro n
-  rcases n with _ | j
-  · exact VG.RelCT.of_false fun _ _ hh => Nat.lt_irrefl 0 hh.2.1
-  by_cases hj : j < 32
-  · have hw (u x : State) (hx : LoopAt u Aa R (j + 1) x) : WP isa byteStepAB x fun t =>
-        t.zf.map (!·) = some (!decide (j = 0)) ∧ LoopAt u Aa R j t :=
-      WP.mono (byteStepAB_ok hx.1 hj hx.2.1 hx.2.2) fun t ⟨wt, et, zt, rt⟩ =>
-        ⟨by rw [zt]; rfl, wt, et, rt⟩
-    refine (((byteStepAB_ct h (i := j) hj).mono (fun x y hh => hh.1) (fun _ _ h => h)).wp
+    refine (((nibbleStep_ct h hj).mono (fun x y hh => hh.1) (fun _ _ h => h)).wp
       fun x y hh => ⟨hw s₀ x hh.1.1, hw t₀ y hh.1.2⟩).mono (fun _ _ h => h) ?_
     intro x y ⟨_, ⟨xz, hx⟩, ⟨yz, hy⟩⟩
     refine ⟨xz.trans yz.symm, fun _ => trivial, fun he => ?_⟩
@@ -358,41 +332,9 @@ theorem loopAB_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint
     exact ⟨j, by omega, ⟨hx, hy⟩, by omega, by omega⟩
   · exact VG.RelCT.of_false fun _ _ hh => hj (by omega)
 
-theorem cmp32_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {c : Nat} (hc : c ≤ 64)
-    (hx : LoopAt s₀ Aa R c x) : WP isa (.block [.alu .cmp .esi (.imm 32)]) x fun t =>
-      LoopAt s₀ Aa R c t ∧ t.zf = some (decide (c = 32)) :=
-  Wp.wp_cmpi fun t ht _ zt => WP.block_nil ⟨⟨hx.1.of_ikeep ⟨by rw [ht.gpr], by rw [ht.gpr], ht.rd, ht.wr,
-    by rw [ht.mem]; exact Frame.refl _ _⟩ (by rw [ht.mem]), by rw [ht.gpr]; exact hx.2.1,
-    by rw [ht.mem]; exact hx.2.2⟩,
-    by rw [zt, hx.2.1, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, Wp.sub_beq (by omega) (by omega)]⟩
-
-theorem windowsA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
-    {R : Spec.Ed25519.Point} {c : Nat} (hc1 : 32 ≤ c) (hc2 : c ≤ 64) :
-    RelCT isa (fun x y => LoopAt s₀ Aa R c x ∧ LoopAt t₀ Aa R c y) windowsA
-      (fun x y => LoopAt s₀ Aa R 32 x ∧ LoopAt t₀ Aa R 32 y) := by
-  rw [windowsA]
-  refine VG.RelCT.seq ((VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none)
-    (by taint_decide)).wp fun x y hh => ⟨cmp32_at hc2 hh.1, cmp32_at hc2 hh.2⟩)
-    (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-  · intro x y hh
-    change x.zf.map Bool.not = y.zf.map Bool.not
-    rw [hh.2.1.2, hh.2.2.2]
-  · by_cases hc : c = 32
-    · refine VG.RelCT.of_false fun x y hh => ?_
-      have e := hh.2
-      change x.zf.map Bool.not = some true at e
-      rw [hh.1.2.1.2, hc] at e
-      simp at e
-    · exact (loopA_ct h (by omega) hc2).mono (fun x y hh => ⟨hh.1.2.1.1, hh.1.2.2.1⟩) (fun _ _ h => h)
-  · refine VG.RelCT.block_nil fun x y hh => ?_
-    have hc : c = 32 := by
-      by_contra hne
-      have e := hh.2
-      change x.zf.map Bool.not = some false at e
-      rw [hh.1.2.1.2, decide_eq_false hne] at e
-      simp at e
-    subst hc
-    exact ⟨hh.1.2.1.1, hh.1.2.2.1⟩
+theorem nibbles_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {c : Nat}
+    (hx : LoopAt s₀ Aa R c x) : WP isa (.block [.alu .add .esi (.reg .esi)]) x (NLoopAt s₀ Aa R (2 * c)) :=
+  WP.mono (nibbles_ok hx.1 hx.2.1) fun _ ⟨w, e, m⟩ => ⟨w, e, by rw [m, nsum_two_mul]; exact hx.2.2⟩
 
 /-! ## Skipping the leading zero bytes of `k` -/
 
@@ -492,8 +434,9 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
   refine VG.RelCT.exists_ (M := isa)
     (P := fun c x y => 32 ≤ c ∧ c ≤ 64 ∧ LoopAt s₀ Aa r c x ∧ LoopAt t₀ Aa r c y) fun c => ?_
   by_cases hc : 32 ≤ c ∧ c ≤ 64
-  · exact VG.RelCT.seq ((windowsA_ct h hc.1 hc.2).mono (fun _ _ hh => hh.2.2) (fun _ _ h => h))
-      ((loopAB_ct h).mono (fun _ _ h => h) (fun _ _ _ => trivial))
+  · exact (seq_runs (VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide))
+      (fun _ hx => nibbles_at hx) (fun _ hy => nibbles_at hy)
+      (loopN_ct h (c := 2 * c) (by omega) (by omega))).mono (fun _ _ hh => hh.2.2) (fun _ _ h => h)
   · exact VG.RelCT.of_false fun _ _ hh => hc ⟨hh.1, hh.2.1⟩
 
 end VG.Proof.Ed25519.X86
