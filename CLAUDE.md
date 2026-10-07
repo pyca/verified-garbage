@@ -511,10 +511,10 @@ changing them.
 ## Measuring CI
 
 Every CI run keeps a `ci-metrics` artifact (`ci/ci_metrics.py`, the last
-steps of `all-green`), for as long as the repository keeps artifacts: every job's
-and step's queue and run times, the Lean build's plan, and what each shard
-and assembly restored and built (each module and its time). The plan and the
-shards' outputs last a day; these do not. To analyse CI (shard balance,
+steps of `all-green`), for as long as the repository keeps artifacts: every
+job's and step's queue and run times, the Lean build's plan, and what each
+shard and assembly restored and built (each module and its time). The plan
+and the shards' outputs last a day; these do not. To analyse CI (shard balance,
 duplicate work, failed restores, slow jobs), download them rather than
 scraping logs:
 

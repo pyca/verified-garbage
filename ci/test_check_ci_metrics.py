@@ -1,107 +1,92 @@
-"""The run's metrics (ci_metrics.py) from what the Lean jobs record; no API."""
+"""The run's metrics (ci_metrics.py) from its jobs and their logs; no API."""
 
-import json
-import pathlib
-import subprocess
-import sys
-import tempfile
 import unittest
 
 import ci_metrics
 
-SCRIPT = pathlib.Path(__file__).with_name("ci_metrics.py")
-LOG = """\
-✔ [10/20] Built VerifiedGarbage.A (1.5s)
-✔ [11/20] Built VerifiedGarbage.B (250ms)
-✔ [12/20] Built VerifiedGarbage.A:c.o (3s)
-"""
+KEY = "lean-build-Linux-X64-a-b"
 
 
-def run(*args, stdin=""):
-    return subprocess.run([sys.executable, SCRIPT, *args], input=stdin, capture_output=True, text=True, check=True).stdout
+def step(name, start, end):
+    return {"name": name, "conclusion": "success",
+            "started_at": f"2026-10-07T12:{start}Z", "completed_at": f"2026-10-07T12:{end}Z"}
 
 
 def api_job(name, start, end, steps=()):
     return {"name": name, "conclusion": "success", "runner_name": "r", "labels": ["ubuntu-latest"],
-            "created_at": "2026-10-07T12:00:00Z", "started_at": start, "completed_at": end,
-            "steps": [{"name": n, "conclusion": "success", "started_at": a, "completed_at": b} for n, a, b in steps]}
+            "created_at": "2026-10-07T12:00:00Z", "started_at": f"2026-10-07T12:{start}Z",
+            "completed_at": end and f"2026-10-07T12:{end}Z", "steps": list(steps)}
 
 
-class Records(unittest.TestCase):
-    def test_shard(self):
-        r = json.loads(run("shard", "2", "planned", "exact", "planned", stdin=LOG))
-        # A facet's line (`A:c.o`) is not a module's.
-        self.assertEqual(r["times"], {"VerifiedGarbage.A": 1.5, "VerifiedGarbage.B": 0.25})
-        self.assertEqual((r["kind"], r["shard"], r["restored"]), ("shard", "2", "planned"))
+def line(at, text):
+    return f"2026-10-07T12:{at}.1234567Z {text}\n"
 
-    def test_assembly(self):
-        r = json.loads(run("assembly", "1", "", stdin=""))
-        self.assertEqual((r["kind"], r["id"], r["restored"], r["times"]), ("assembly", "1", "", {}))
+
+PLAN_LOG = (line("00:30", "Cache restored from key: lean-manifest-Linux-X64-a-b")
+            + line("00:31", "1168 modules to build, about 7208 s; shards' estimated times: [508, 285]"))
+SHARD_BUILD = "Check the shard's proofs (and the axiom audit)"
+ASSEMBLE = "Run ./.github/actions/lean-assemble"
 
 
 class Collect(unittest.TestCase):
-    plan = {"stale": 3, "work": 40, "loads": [10, 8], "targets": [["X"], ["Y"]]}
     jobs = [
-        api_job("Lean: shard (1)", "2026-10-07T12:01:00Z", "2026-10-07T12:05:00Z",
-                [("Check the shard's proofs (and the axiom audit)", "2026-10-07T12:02:00Z", "2026-10-07T12:04:00Z")]),
-        api_job("Lean: shard (2)", "2026-10-07T12:01:30Z", "2026-10-07T12:03:00Z",
-                [("Check the shard's proofs (and the axiom audit)", "2026-10-07T12:02:00Z", "2026-10-07T12:02:30Z")]),
-        api_job("Coverage", "2026-10-07T12:00:10Z", None),
+        api_job("Lean: plan and build", "00:10", "00:40"),
+        api_job("Lean: shard (1)", "01:00", "09:00",
+                [step("Run ./.github/actions/lean-prepare", "01:00", "02:00"),
+                 step(SHARD_BUILD, "02:00", "04:00"), step(ASSEMBLE, "04:01", "09:00")]),
+        api_job("Lean: shard (2)", "01:00", "03:00", [step(SHARD_BUILD, "02:00", "02:30")]),
+        api_job("Coverage", "00:10", None),
     ]
-    records = [
-        {"kind": "shard", "shard": "2", "planned": "k", "exact": "e", "restored": "",
-         "times": {"A": 2.0, "C": 5.0}},
-        {"kind": "shard", "shard": "1", "planned": "k", "exact": "e", "restored": "k",
-         "times": {"A": 3.0, "B": 4.0}},
-        {"kind": "assembly", "id": "1", "restored": "k", "times": {"D": 1.0}},
-    ]
+    logs = {
+        "Lean: plan and build": PLAN_LOG,
+        # Its restore failed: it restored no build.
+        "Lean: shard (1)": (line("01:10", f"  key: {KEY}") + line("01:50", "##[warning]Failed to restore")
+                            + line("03:00", "✔ [1/9] Built VerifiedGarbage.A (3s)")
+                            + line("03:10", "✔ [2/9] Built VerifiedGarbage.A:c.o (9s)")
+                            + line("03:59", "✔ [3/9] Built VerifiedGarbage.B (500ms)")
+                            # In the assembly: a step of its own.
+                            + line("05:00", "✔ [4/9] Built VerifiedGarbage.C (2s)")),
+        "Lean: shard (2)": (line("01:10", f"  key: {KEY}") + line("01:20", f"Cache restored from key: {KEY}")
+                            + line("02:10", "✔ [1/9] Built VerifiedGarbage.A (2s)")),
+    }
 
     def metrics(self):
-        return ci_metrics.collect({"id": 7, "event": "pull_request", "base_ref": "main"}, self.jobs, self.plan,
-                                  self.records)
+        return ci_metrics.collect({"id": 7, "event": "pull_request", "base_ref": "main"}, self.jobs, self.logs)
 
-    def test_shards(self):
-        m = self.metrics()
-        one, two = m["lean"]["shards"]
-        self.assertEqual((one["shard"], one["estimate_s"], one["build_s"], one["modules"], one["work"]),
-                         (1, 10, 120, 2, 7.0))
-        self.assertTrue(one["restored_planned"])
-        # Shard 2's restore failed: it restored nothing.
-        self.assertEqual((two["estimate_s"], two["build_s"], two["restored_planned"]), (8, 30, False))
-        # A was built twice: the cheaper build counts as duplicate work.
-        self.assertEqual(m["lean"]["duplicate_work"], 2.0)
-        self.assertEqual(m["lean"]["plan"], {"stale": 3, "work": 40, "count": 2, "estimates": [10, 8]})
-        self.assertEqual(m["lean"]["assemblies"][0]["modules"], 1)
+    def test_plan(self):
+        self.assertEqual(self.metrics()["lean"]["plan"],
+                         {"stale": 1168, "work": 7208, "estimates": [508, 285], "build": KEY})
+
+    def test_builds_by_step(self):
+        one, two = [j for j in self.metrics()["lean"]["jobs"] if j["name"].startswith("Lean: shard")]
+        # A facet's line (`A:c.o`) is not a module's.
+        self.assertEqual(one["built"], {SHARD_BUILD: {"VerifiedGarbage.A": 3.0, "VerifiedGarbage.B": 0.5},
+                                        ASSEMBLE: {"VerifiedGarbage.C": 2.0}})
+        self.assertEqual((one["restored"], one["restored_planned"]), (None, False))
+        self.assertEqual((two["restored"], two["restored_planned"]), (KEY, True))
+        # A was built by both shards: the cheaper build counts as duplicate.
+        self.assertEqual(self.metrics()["lean"]["duplicate_work"], 2.0)
 
     def test_jobs(self):
         m = self.metrics()
         self.assertEqual(m["run"]["base_ref"], "main")
-        shard = m["jobs"][0]
-        self.assertEqual((shard["queued_s"], shard["duration_s"]), (60, 240))
+        shard = m["jobs"][1]
+        self.assertEqual((shard["queued_s"], shard["duration_s"]), (60, 480))
         # A job still running has no duration.
-        self.assertIsNone(m["jobs"][2]["duration_s"])
+        self.assertIsNone(m["jobs"][3]["duration_s"])
+
+    def test_summary(self):
+        text = ci_metrics.summary(self.metrics())
+        self.assertIn("Plan: 1168 modules to build, about 7208 s of work, 2 shards.", text)
+        self.assertIn(f"| Lean: shard (1) | {SHARD_BUILD} | 508 s | 120 s | 2 | 4 s | **no** (none) |", text)
+        self.assertIn(f"| Lean: shard (1) | {ASSEMBLE} | – | 299 s | 1 | 2 s | **no** (none) |", text)
+        self.assertIn(f"| Lean: shard (2) | {SHARD_BUILD} | 285 s | 30 s | 1 | 2 s | yes |", text)
+        self.assertIn("| Lean: shard (1) | 60 s | 480 s |", text)
 
     def test_without_a_lean_build(self):
-        m = ci_metrics.collect({"id": 7}, [], None, [])
+        m = ci_metrics.collect({"id": 7}, [api_job("Coverage", "00:10", "01:00")], {})
         self.assertIsNone(m["lean"]["plan"])
         self.assertIn("No plan", ci_metrics.summary(m))
-
-    def test_end_to_end(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            d = pathlib.Path(tmp)
-            (d / "records").mkdir()
-            for r in self.records:
-                name = f"lean-{r['kind']}-{r.get('shard', r.get('id'))}.json"
-                (d / "records" / name).write_text(json.dumps(r))
-            (d / "run.json").write_text(json.dumps({"id": 7}))
-            (d / "jobs.json").write_text(json.dumps(self.jobs))
-            (d / "plan.json").write_text(json.dumps(self.plan))
-            out = run("collect", d / "run.json", d / "jobs.json", d / "plan.json", d / "records")
-            (d / "m.json").write_text(out)
-            text = run("summary", d / "m.json")
-        self.assertIn("| 2 | 8 s | 30 s | 2 | 7 s | **no** (none) |", text)
-        self.assertIn("Assembly (1): built 1 modules", text)
-        self.assertIn("| Lean: shard (1) | 60 s | 240 s |", text)
 
 
 if __name__ == "__main__":

@@ -18,10 +18,6 @@ inputs:
   cache-key:
     description: That restore's primary key, to save the build under.
     required: true
-  restored:
-    description: The key of the build `lean-prepare` restored (empty if none), for the metrics.
-    required: false
-    default: ""
   manifest-cache:
     description: The key of the cache of the build's manifest (the plan job's `manifest-cache`).
     required: true
@@ -53,27 +49,6 @@ runs:
         # Warnings and errors only: not the profile every module records
         # (lean/lakefile.toml), which Lake replays for each one it finds built.
         lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
-    # What it restored and built, for ci/ci_metrics.py (the last
-    # steps of `all-green`): with every shard's outputs, few modules.
-    - name: Record the assembly's metrics
-      if: ${{ !cancelled() }}
-      shell: bash
-      working-directory: lean
-      env:
-        ID: ${{ inputs.id }}
-        RESTORED: ${{ inputs.restored }}
-      run: |
-        mkdir -p "$RUNNER_TEMP/ci-metrics"
-        touch "$RUNNER_TEMP/assembly.log"
-        python3 ../ci/ci_metrics.py assembly "$ID" "$RESTORED" \
-          < "$RUNNER_TEMP/assembly.log" > "$RUNNER_TEMP/ci-metrics/lean-assembly-$ID.json"
-    - if: ${{ !cancelled() }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: ci-metrics-lean-assembly-${{ inputs.id }}
-        path: ${{ runner.temp }}/ci-metrics/lean-assembly-${{ inputs.id }}.json
-        retention-days: 1
-        if-no-files-found: ignore
     # In the merge queue, what this build built, for the push to main to reuse.
     - name: Collect the outputs of this build
       if: ${{ github.event_name == 'merge_group' }}
