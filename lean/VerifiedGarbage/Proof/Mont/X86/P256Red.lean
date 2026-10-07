@@ -43,28 +43,15 @@ theorem p256Red_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have hs₁ := hs.of_keeps K₁ (by decide)
   have hp₁ : s₁.gpr .ebp = s₁.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [K₁.1 _ (by decide), K₁.1 _ (by decide)]; exact hp
-  refine WP.block_append (WP.mono (sparseShiftAdd_ok hs₁ hp₁ hw (N := 10) (j := 3) (k := 6) rfl hb)
+  refine WP.block_append (WP.mono (positive_ok hs₁ hp₁ hw hb)
     fun s₂ ⟨O₂, ⟨c₂, V₂⟩, K₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have hp₂ : s₂.gpr .ebp = s₂.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [K₂.1 _ (by decide), K₂.1 _ (by decide)]; exact hp₁
-  refine WP.block_append (WP.mono (sparseShiftAdd_ok hs₂ hp₂ hw (N := 10) (j := 6) (k := 3) rfl hb)
-    fun s₃ ⟨O₃, ⟨c₃, V₃⟩, K₃⟩ => ?_)
-  have hs₃ := hs₂.of_keeps K₃ (by decide)
-  have hp₃ : s₃.gpr .ebp = s₃.gpr .edi + BitVec.ofNat 32 (4 * i) := by
-    rw [K₃.1 _ (by decide), K₃.1 _ (by decide)]; exact hp₂
-  refine WP.block_append (WP.mono (sparseShiftAdd_ok hs₃ hp₃ hw (N := 10) (j := 8) (k := 1) rfl hb)
-    fun s₄ ⟨O₄, ⟨c₄, V₄⟩, K₄⟩ => ?_)
-  have hs₄ := hs₃.of_keeps K₄ (by decide)
-  have hp₄ : s₄.gpr .ebp = s₄.gpr .edi + BitVec.ofNat 32 (4 * i) := by
-    rw [K₄.1 _ (by decide), K₄.1 _ (by decide)]; exact hp₃
-  refine WP.mono (sparseShiftSub_ok hs₄ hp₄ hw (N := 10) (j := 7) (k := 2) rfl hb)
-    fun u ⟨O₅, ⟨c₅, V₅⟩, K₅⟩ => ⟨(((O₁.trans O₂).trans O₃).trans O₄).trans O₅, ?_,
-      (((K₁.trans K₂).trans K₃).trans K₄).trans K₅⟩
+  refine WP.mono (sparseShiftSub_ok hs₂ hp₂ hw (N := 10) (j := 7) (k := 2) rfl hb)
+    fun u ⟨O₃, ⟨c₃, V₃⟩, K₃⟩ => ⟨(O₁.trans O₂).trans O₃, ?_, (K₁.trans K₂).trans K₃⟩
   rw [K₁.1 .ecx (by decide)] at V₂
   rw [K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₃
-  rw [K₃.1 .ecx (by decide), K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₄
-  rw [K₄.1 .ecx (by decide), K₃.1 .ecx (by decide), K₂.1 .ecx (by decide), K₁.1 .ecx (by decide)] at V₅
   have hu := val32_lt u.mem base w 10
   omega
 

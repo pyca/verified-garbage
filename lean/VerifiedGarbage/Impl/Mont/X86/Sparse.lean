@@ -28,14 +28,19 @@ def sparseStep (acc j : Nat) (op : AluOp) (first : Bool) : List Instr :=
 def sparseChain (acc : Nat) (op op' : AluOp) (k : Nat) : List Instr :=
   (List.range k).flatMap fun j => sparseStep acc j (if j = 0 then op else op') (j == 0)
 
+/-- Add `ecx` at the selected word positions in one carry chain. -/
+def multiChain (acc : Nat) (useQ : Nat → Bool) (k : Nat) : List Instr :=
+  (List.range k).flatMap fun j => sparseStep acc j (if j = 0 then .add else .adc) (useQ j)
+
+/-- The positive terms at words 3, 6 and 8, relative to word 3. -/
+def positiveMask (j : Nat) : Bool := j == 0 || j == 3 || j == 5
+
 /-- `T + q p`, where `q` is the low word of `T` and
 `p = 2^256 - 2^224 + 2^192 + 2^96 - 1`. The subtraction of `q`
 clears the low word; all other terms are sparse carry chains. -/
 def p256Red (acc : Nat) : List Instr :=
   [.mov .eax (.imm 0), .store { base := .ebp, disp := acc } .eax] ++
-  sparseChain (acc + 12) .add .adc 7 ++
-  sparseChain (acc + 24) .add .adc 4 ++
-  sparseChain (acc + 32) .add .adc 2 ++
+  multiChain (acc + 12) positiveMask 7 ++
   sparseChain (acc + 28) .sub .sbb 3
 
 end VG.Impl.Mont.X86
