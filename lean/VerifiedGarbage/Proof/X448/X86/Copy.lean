@@ -11,7 +11,7 @@ namespace VG.Proof.X448.X86
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
 theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
-    (ho : o + 112 ≤ 4096) (ha : a + 112 ≤ 4096) (hi : i < 28) :
+    (ho : o + 112 ≤ 8192) (ha : a + 112 ≤ 8192) (hi : i < 28) :
     WP isa (.block [ld .eax (a + 4 * i), st .eax (o + 4 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (o + 4 * i)) (word s.mem base (a + 4 * i)) ∧ Keeps clob s t := by
   refine load_ok hs (by omega) fun t ht => ?_
@@ -20,7 +20,7 @@ theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
   · exact (ht.rest (by decide)).trans (hu.rest _)
 
 theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
-    (ho : o + 112 ≤ 4096) (ha : a + 112 ≤ 4096)
+    (ho : o + 112 ≤ 8192) (ha : a + 112 ≤ 8192)
     (hsep : o = a ∨ o + 112 ≤ a ∨ a + 112 ≤ o) :
     WP isa (.block (copy o a)) s fun t =>
       (∀ i < 28, limbs t.mem base o i = limbs s.mem base a i) ∧

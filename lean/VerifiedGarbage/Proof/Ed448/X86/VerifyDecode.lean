@@ -40,13 +40,12 @@ theorem decodeLE_56 (m : Mem) (p : Addr) :
 /-! ## Decoding -/
 
 theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {d : Nat} {a : Addr} (ha : s.ea (at_ .esp d) = a) (har : InRegions (s.rd ++ s.wr) a 4)
-    {p : BitVec 32} (hp : s.mem.readW a 32 = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
+    {p : BitVec 32} (hp : s.gpr .esi = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 j))
     (xo yo : Index) (hxy : xo = 6 ∧ yo = 7 ∨ xo = 8 ∧ yo = 9)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
-    WP isa (decode d xo.val yo.val) s fun t =>
+    WP isa (decode xo.val yo.val) s fun t =>
       VKeep base s t ∧ BoundedEnv t.mem base ∧
       BadUpd ((Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem (p.setWidth 64) 57)).isSome)
         (word s.mem base BAD) (word t.mem base BAD) ∧
@@ -64,7 +63,7 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
   generalize hq : p.setWidth 64 = q
   unfold decode
   -- `y`, the sign bit, and the first checks
-  refine WP.seq (WP.mono (decodeY_ok hs hb ha har hp hfit hr hd yo hy1)
+  refine WP.seq (WP.mono (decodeY_ok hs hb hp hfit hr hd yo hy1)
     fun s1 ⟨k1, b1, sg1, c1, y1, e1⟩ => ?_)
   rw [hq] at sg1 c1 y1
   have hs1 := k1.scr hs

@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLocal
-import VerifiedGarbage.Proof.Ed448.X86.VerifyDecode
+import VerifiedGarbage.Proof.Ed448.X86.VerifyDecodeLoop
 import VerifiedGarbage.Proof.Ed448.X86.VerifyLoop
 import VerifiedGarbage.Proof.Ed448.X86.VerifyFinish
 import VerifiedGarbage.Proof.Ed448.X86.BaseMain
@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.Ed448.X86.BaseMain
 challenge = [esp + 12], scratch = [esp + 16])` returns `verifyEquation` of
 its inputs (`verifyEquation_main`), given the reference computations'
 agreement with the specification (`RecoverOk`, `VerifyEqOk`): the entry (the
-registers saved, the bits of `S` and `k`, the check of `S`, the slots), `A`
-decoded and negated, `Q = [S]B + [k](-A)` by the loop, `R` decoded, and the
-comparison of `[4]Q` and `[4]R`. Every write is in the working space, so the
+registers saved, the bits of `S` and `k`, the check of `S`, the slots), `R`
+and `A` decoded by one loop, `A` negated, `Q = [S]B + [k](-A)` by the loop,
+`R` copied back, and the comparison of `[4]Q` and `[4]R`. Every write is in the working space, so the
 arguments and the inputs are read unchanged; the callee-saved registers are
 restored from the working space, and the return address is kept.
 -/
@@ -80,6 +80,15 @@ theorem bits_kept {base : Addr} {m m' : Mem} (h : Outside2 base 16 2864 ACC 512 
     ∀ t < 456, m' (off base (BITS + t)) = m (off base (BITS + t)) := fun t ht =>
   h _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
     (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)
+
+theorem bits_keptD {base : Addr} {m m' : Mem} (h : DFrame base m m') :
+    ∀ t < 456, m' (off base (BITS + t)) = m (off base (BITS + t)) := fun t ht =>
+  h _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
+    (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)
+
+/-- The checks of the decodings, in the order the result uses. -/
+theorem decShape {S R A : Prop} : (S ∧ ((0 ≤ 1 → R) ∧ (0 = 0 → A))) ↔ ((S ∧ A) ∧ R) :=
+  ⟨fun ⟨hs, hr, ha⟩ => ⟨⟨hs, ha rfl⟩, hr (by decide)⟩, fun ⟨⟨hs, ha⟩, hr⟩ => ⟨hs, fun _ => hr, fun _ => ha⟩⟩
 
 /-! ## The entry -/
 
@@ -163,6 +172,33 @@ theorem ventry_ok {s₀ : State} (h : VerifyPre s₀) {base : Addr} (hbase : (ar
       o₄ _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, BAD]; omega)]
     exact b₂ j hj
 
+/-- What the decoding loop needs of the state `s` after the entry, with the arguments of
+`s₀`. -/
+structure LoopPre (s₀ s : State) : Prop where
+  scr : Scr s ((arg s₀ 3).setWidth 64)
+  bounded : BoundedEnv s.mem ((arg s₀ 3).setWidth 64)
+  sig : ArgAt s ((arg s₀ 3).setWidth 64) 8 (arg s₀ 1)
+  pk : ArgAt s ((arg s₀ 3).setWidth 64) 4 (arg s₀ 0)
+  isig : Input s ((arg s₀ 3).setWidth 64) (arg s₀ 1) 57
+  ipk : Input s ((arg s₀ 3).setWidth 64) (arg s₀ 0) 57
+  e10 : E s.mem ((arg s₀ 3).setWidth 64) 10 = 1
+  e11 : E s.mem ((arg s₀ 3).setWidth 64) 11 = Spec.Ed448.d
+
+theorem ventry_loopPre {s₀ : State} (h : VerifyPre s₀) : WP isa (.block ventry) s₀ (LoopPre s₀) := by
+  have hA := h.args
+  have ipk : Input s₀ ((arg s₀ 3).setWidth 64) (arg s₀ 0) 57 :=
+    Input.of_region h.f0 (by rw [h.rd]; simp) h.pk_sc
+  have isig : Input s₀ ((arg s₀ 3).setWidth 64) (arg s₀ 1) 114 :=
+    Input.of_region h.f1 (by rw [h.rd]; simp) h.sig_sc
+  refine WP.mono (ventry_ok h rfl) fun s₁ ⟨hs₁, _, o₁, k₁, _, _, b₁, e₁⟩ => ?_
+  obtain ⟨_, eq, ed⟩ := initE _ e₁
+  have hArg : ∀ i < 2, ArgAt s₁ ((arg s₀ 3).setWidth 64) (4 + 4 * i) (arg s₀ i) := fun i hi t h1 h2 h3 h4 => by
+    obtain ⟨ae, ar, av⟩ := hA.argRead (h1.trans (k₁.1 .esp (by decide))) (h2.trans k₁.2.1) (h3.trans k₁.2.2)
+      (o₁.trans h4) (i := i) (by omega)
+    exact ⟨_, ae, ar, av⟩
+  exact ⟨hs₁, b₁, hArg 1 (by decide), hArg 0 (by decide), (isig.take57 (by decide)).of_keeps k₁,
+    ipk.of_keeps k₁, congrArg Spec.Ed448.Point.Z eq, ed⟩
+
 /-! ## The whole function -/
 
 theorem sub6_E (e : Env) : evalOps [.sub 6 0 6] e 6 = e 0 - e 6 ∧ ∀ i : Index, i ≠ 6 → evalOps [.sub 6 0 6] e i = e i :=
@@ -187,13 +223,28 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
   rw [hK] at bits₁
   obtain ⟨er, eq, ed⟩ := initE _ e₁
   have h10 : E s₁.mem base 10 = 1 := congrArg Spec.Ed448.Point.Z eq
-  -- `A`.
-  obtain ⟨a0e, a0r, a0v⟩ := hA.argRead (k₁.1 .esp (by decide)) k₁.2.1 k₁.2.2 (hbase ▸ o₁) (i := 0) (by decide)
-  refine WP.seq (WP.mono (decode_ok hR hs₁ b₁ a0e a0r a0v h.f0
-    (fun j hj => by rw [k₁.2.1, k₁.2.2]; exact ipk.read j hj) ipk.far 6 7 (Or.inl ⟨rfl, rfl⟩) h10 ed)
-    fun s₂ ⟨k₂, b₂, c₂, v₂, e₂⟩ => ?_)
-  rw [ipk.bytes o₁] at c₂ v₂
-  have hs₂ := k₂.scr hs₁
+  -- `R` and `A`.
+  have hArg : ∀ i < 2, ArgAt s₁ base (4 + 4 * i) (arg s₀ i) := fun i hi t h1 h2 h3 h4 => by
+    obtain ⟨ae, ar, av⟩ := hA.argRead (h1.trans (k₁.1 .esp (by decide))) (h2.trans k₁.2.1) (h3.trans k₁.2.2)
+      (hbase ▸ (o₁.trans h4)) (i := i) (by omega)
+    exact ⟨_, ae, ar, av⟩
+  have isig57 : Input s₀ base (arg s₀ 1) 57 := isig.take57 (by decide)
+  refine WP.seq (WP.mono (vdecode_ok hR hs₁ b₁ (hArg 1 (by decide)) (hArg 0 (by decide))
+    (isig57.of_keeps k₁) (ipk.of_keeps k₁) h10 ed) fun s₂ D₂ => ?_)
+  have dR : decAt s₁.mem (arg s₀ 1) = Spec.Ed448.decodePoint ((bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 114).take 57) := by
+    rw [bytesAt_take57]; exact congrArg Spec.Ed448.decodePoint (isig57.bytes o₁)
+  have dA : decAt s₁.mem (arg s₀ 0) = Spec.Ed448.decodePoint (bytesAt s₀.mem ((arg s₀ 0).setWidth 64) 57) :=
+    congrArg Spec.Ed448.decodePoint (ipk.bytes o₁)
+  have c₂ := D₂.bad
+  have v₂ := D₂.aIn rfl
+  have vR₂ := D₂.rOut rfl
+  have e₂ := D₂.other
+  rw [dR, dA] at c₂
+  rw [dA] at v₂
+  rw [dR] at vR₂
+  have hs₂ := D₂.scr hs₁
+  have b₂ := D₂.bounded
+  unfold vafter
   -- `-A`.
   refine field_seq [.sub 6 0 6] (by decide) hs₂ b₂ fun s₃ k₃ b₃ e₃ => ?_
   have hs₃ := k₃.scr hs₂
@@ -214,11 +265,11 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
     rw [e₄k i (fun h => by subst h; omega), k₃e i (fun h => by subst h; omega),
       e₂ i (fun h => by subst h; omega) (fun h => by subst h; omega) (by omega)]
   have O₄ : Outside base 0 8192 s₀.mem s₄.mem :=
-    ((o₁.trans (k₂.mem.whole (by decide) (by decide))).trans (k₃.mem.whole (by decide) (by decide))).trans
+    ((o₁.trans (D₂.frame.whole (by decide) (by decide))).trans (k₃.mem.whole (by decide) (by decide))).trans
       (k₄.mem.whole (by decide) (by decide))
   have bits₄ : ∀ t < 456, s₄.mem (off base (BITS + t)) = BitVec.ofNat 8 (pair2 S K t) := fun t ht => by
     rw [bits_kept (Outside2.widen k₄.mem) t ht, bits_kept (Outside2.widen k₃.mem) t ht,
-      bits_kept k₂.mem t ht]
+      bits_keptD D₂.frame t ht]
     exact bits₁ t ht
   -- The loop.
   refine WP.seq (WP.mono (vloop_ok (s₀ := s₄) (A := pt (E s₄.mem base) 6 7 10) bits₄
@@ -249,36 +300,31 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
   have O₆ : Outside base 0 8192 s₀.mem s₆.mem :=
     (O₄.trans (I₅.mem.whole (by decide) (by decide))).trans (k₆.mem.whole (by decide) (by decide))
   have k06 : Keeps (.esi :: workRegs) s₁ s₆ :=
-    ((k₂.regs.trans (k₃.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
+    ((D₂.keeps.trans (k₃.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
       (k₄.regs.mono (fun _ h => List.mem_cons_of_mem _ h))).trans
       (I₅.regs.trans (k₆.regs.mono (fun _ h => List.mem_cons_of_mem _ h)))
-  -- `R`.
-  obtain ⟨a1e, a1r, a1v⟩ := hA.argRead (s := s₆) (by rw [k06.1 _ (by decide), k₁.1 _ (by decide)])
-    (by rw [k06.2.1, k₁.2.1]) (by rw [k06.2.2, k₁.2.2]) (hbase ▸ O₆) (i := 1) (by decide)
+  -- `R` copied back.
   have h106 : E s₆.mem base 10 = 1 := by rw [e₆k 10 (by decide)]; exact congrArg Spec.Ed448.Point.Z I₅.q
-  have d₆ : E s₆.mem base 11 = Spec.Ed448.d := by rw [e₆k 11 (by decide)]; exact I₅.d
-  refine WP.seq (WP.mono (decode_ok hR hs₆ b₆ a1e a1r a1v (by have := h.f1; omega)
-    (fun j hj => by rw [k06.2.1, k06.2.2, k₁.2.1, k₁.2.2]; exact isig.read j (by omega))
-    (fun j hj => isig.far j (by omega)) 8 9 (Or.inr ⟨rfl, rfl⟩) h106 d₆)
-    fun s₇ ⟨k₇, b₇, c₇, v₇, e₇⟩ => ?_)
-  have bR : bytesAt s₆.mem ((arg s₀ 1).setWidth 64) 57 = bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 57 := by
-    simp only [bytesAt]
-    refine List.map_congr_left fun i hi => O₆ _ (Or.inr ?_)
-    simp only [List.mem_range] at hi
-    exact isig.far i (by omega)
-  rw [bR, ← bytesAt_take57] at c₇ v₇
+  have FR : ∀ o, o = RX ∨ o = RY →
+      F s₆.mem base o = F s₂.mem base o ∧ (Bounded s₂.mem base o → Bounded s₆.mem base o) := fun o ho => by
+    obtain ⟨f3, g3⟩ := F_high k₃.mem (by decide) ho
+    obtain ⟨f4, g4⟩ := F_high k₄.mem (by decide) ho
+    obtain ⟨f5, g5⟩ := F_high I₅.mem (by decide) ho
+    obtain ⟨f6, g6⟩ := F_high k₆.mem (by decide) ho
+    exact ⟨f6.trans (f5.trans (f4.trans f3)), fun h => g6 (g5 (g4 (g3 h)))⟩
+  obtain ⟨bRX, bRY⟩ := D₂.rBnd rfl
+  refine WP.seq (WP.mono (vR_ok hs₆ b₆ ((FR RX (Or.inl rfl)).2 bRX) ((FR RY (Or.inr rfl)).2 bRY))
+    fun s₇ ⟨k₇, b₇, x₇, y₇, e₇⟩ => ?_)
   have hs₇ := k₇.scr hs₆
   -- `BAD`.
   have bad₄ : word s₄.mem base BAD = word s₂.mem base BAD := by rw [Keep.bad k₄, Keep.bad k₃]
   have bad₆ : word s₆.mem base BAD = word s₄.mem base BAD := by
     rw [Keep.bad k₆]; exact I₅.mem.word (Or.inl (by decide)) (Or.inl (by decide)) (by decide)
-  have c₇' : BadUpd ((Spec.Ed448.decodePoint ((bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 114).take 57)).isSome)
-      (word s₂.mem base BAD) (word s₇.mem base BAD) := by
-    rw [← bad₄, ← bad₆]; exact c₇
-  have z₇ := ((c₁.trans c₂).trans c₇').zero
+  have bad₇ : word s₇.mem base BAD = word s₂.mem base BAD := by rw [Keep.bad k₇, bad₆, bad₄]
+  have z₇ := ((c₁.trans (c₂.of_eq bad₇)).congr decShape).zero
   -- The comparison.
   have sv₇ : Saved base s₀.gpr s₇.mem :=
-    (((((sv₁.outside2 k₂.mem (by decide) (by decide)).outside2 k₃.mem (by decide) (by decide)).outside2
+    (((((sv₁.outside2 D₂.frame (by decide) (by decide)).outside2 k₃.mem (by decide) (by decide)).outside2
       k₄.mem (by decide) (by decide)).outside2 I₅.mem (by decide) (by decide)).outside2 k₆.mem (by decide)
       (by decide)).outside2 k₇.mem (by decide) (by decide)
   refine WP.mono (vfinish_ok hs₇ b₇ sv₇ z₇.2) fun t ⟨rt, st, spt, ot⟩ => ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
@@ -313,7 +359,7 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
         exact ⟨fun h => absurd h.1.2 (by simp), fun h => absurd h (by decide)⟩
       | some r =>
         obtain ⟨ax, ay, az⟩ := v₂ a ha
-        obtain ⟨rx, ry, rz⟩ := v₇ r hr
+        obtain ⟨rx, ry, rz⟩ := vR₂ r hr
         have e20 : E s₂.mem base 0 = 0 := by
           rw [e₂ 0 (by decide) (by decide) (Or.inl rfl)]; exact congrArg Spec.Ed448.Point.X er
         have e210 : E s₂.mem base 10 = 1 := by
@@ -323,14 +369,14 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s₀ : State} (h
           rw [e₄k 6 (by decide), e₄k 7 (by decide), e₄k 10 (by decide), n₃, k₃e 7 (by decide),
             k₃e 10 (by decide), e20, ax, ay, e210, az]
         have hQ : pt (E s₇.mem base) 0 6 2 = vladder S K (negPoint a) 456 := by
-          rw [pt_congr' (e₇ 0 (by decide) (by decide) (Or.inl rfl)) (e₇ 6 (by decide) (by decide)
-            (Or.inr (Or.inr ⟨by decide, by decide⟩))) (e₇ 2 (by decide) (by decide) (Or.inr (Or.inl rfl)))]
+          rw [pt_congr' (e₇ 0 (by decide) (by decide)) (e₇ 6 (by decide) (by decide)) (e₇ 2 (by decide) (by decide))]
           show (⟨E s₆.mem base 0, E s₆.mem base 6, E s₆.mem base 2⟩ : Spec.Ed448.Point) = _
           rw [e₆k 0 (by decide), e₆6, e₆k 2 (by decide), ← hA']
           exact I₅.rep
         have hRR : pt (E s₇.mem base) 8 9 10 = r := by
           show (⟨E s₇.mem base 8, E s₇.mem base 9, E s₇.mem base 10⟩ : Spec.Ed448.Point) = r
-          rw [rx, ry, e₇ 10 (by decide) (by decide) (by decide), h106, ← rz]
+          rw [x₇, y₇, (FR RX (Or.inl rfl)).1, (FR RY (Or.inr rfl)).1, rx, ry, e₇ 10 (by decide) (by decide), h106,
+            ← rz]
         rw [hE _ _ _ _ _ (bytesAt57_len _ _) (bytesAt114_len _ _) (bytesAt57_len _ _) ha hr, hQ, hRR,
           bytesAt_drop57, hS, hK]
         simp only [Option.isSome_some, and_true, Bool.and_eq_true, decide_eq_true_eq]
