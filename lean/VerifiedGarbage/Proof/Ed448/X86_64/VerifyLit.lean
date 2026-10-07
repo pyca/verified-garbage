@@ -14,8 +14,7 @@ open VG VG.X86_64 VG.Impl.Ed448.X86_64
 
 materialize_code verifyRootLit := (root Impl.X448.X86_64.baseline 12 : Prog isa)
 materialize_code verifyDecodeALit := (decode Impl.X448.X86_64.baseline 6 7 : Prog isa)
-materialize_code verifyDecodeRLit := (decode Impl.X448.X86_64.baseline 8 9 : Prog isa)
-materialize_code verifyDecodeAFullLit := (vdecodeA Impl.X448.X86_64.baseline : Prog isa)
+materialize_code verifyDecodeLit := (vdecode Impl.X448.X86_64.baseline : Prog isa)
 materialize_code verifyLoopLit := (vloop Impl.X448.X86_64.baseline : Prog isa)
 materialize_code verifyFinishLit := (vfinish Impl.X448.X86_64.baseline : Prog isa)
 

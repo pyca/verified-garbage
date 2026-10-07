@@ -19,8 +19,9 @@ def artifacts : List Artifact := [
     doc := Spec.Ed448.verifyEquationApi.doc (notes := ["Uses baseline integer instructions, \
       and runs the same operations whatever the inputs: the checks (the encodings of A and R, \
       S < L, and the comparison) are accumulated in one word of `scratch`, 0 exactly when \
-      all pass. Decodes A with RFC 8032's square root (X448's addition chain up to \
-      z^(2^223 - 1), then 223 squarings) and negates it; computes [S]B + [k](-A) with one \
+      all pass. Decodes R, then A, by one loop running the decoding twice, with RFC 8032's \
+      square root (X448's addition chain up to z^(2^223 - 1), then 223 squarings), and \
+      negates A; computes [S]B + [k](-A) with one \
       chain of doublings, adding B and -A for every bit of S and k and swapping each sum in \
       with a mask of the bit; then compares [4] of it with [4]R projectively. Field elements \
       are X448's seven 64-bit words, multiplied with `mul` by columns. Callee-saved \
