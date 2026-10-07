@@ -184,13 +184,14 @@ def WinAt (s₀ : State) (Aa : EPoint dZ) (R : Spec.Ed25519.Point) (i : Nat) (x 
 theorem doubleWindow_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoint dZ}
     {R : Spec.Ed25519.Point} {i : Nat} :
     RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y) doubleWindow (fun _ _ => True) :=
-  VG.RelCT.taint (A := taint) (regsTaint [.edi])
-    (fun _ _ hh => agree_one (saved_edi h hh.1.1.saved hh.2.1.saved)) (by taint_decide)
+  VG.RelCT.taint (A := taint) (regsTaint [.edi, .esi])
+    (fun _ _ hh => agree_two ⟨saved_edi h hh.1.1.saved hh.2.1.saved, hh.1.2.1.trans hh.2.2.1.symm⟩)
+    (by taint_decide)
 
-theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat}
+theorem doubleWindow_at {s₀ x : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point} {i : Nat} (hi : i < 64)
     (hx : WinAt s₀ Aa R i x) : WP isa doubleWindow x (WinAt s₀ Aa R i) := by
   obtain ⟨w, e, a, ha⟩ := hx
-  exact WP.mono (doubleWindow_ok w.ctx ha) fun b ⟨kb, eb, rb, hb⟩ =>
+  exact WP.mono (doubleWindow_ok w.ctx (esi_lt hi e) ha) fun b ⟨kb, eb, rb, hb⟩ =>
     ⟨w.of_ikeep kb (hb 16 (by decide)), eb.trans e, _, rb⟩
 
 /-- After a digit's code, its value in `eax`, the workspace pointer in `edi`, and the window's
@@ -235,7 +236,7 @@ theorem windowA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {Aa : EPoin
     RelCT isa (fun x y => WinAt s₀ Aa R i x ∧ WinAt t₀ Aa R i y)
       (windowA (if high then digitHigh 12 0 else digitLow 12 0)) (fun _ _ => True) := by
   rw [windowA, windowWith]
-  refine seq_runs (doubleWindow_ct h) (fun _ hx => doubleWindow_at hx) (fun _ hy => doubleWindow_at hy) ?_
+  refine seq_runs (doubleWindow_ct h) (fun _ hx => doubleWindow_at hi hx) (fun _ hy => doubleWindow_at hi hy) ?_
   refine digitAdd_ct h (nibble_lt (kByte s₀ i) high) (.inl rfl)
     (digitK_ct h (fun _ hx => ⟨hx.1.saved, hx.2.1⟩) (fun _ hy => ⟨hy.1.saved, hy.2.1⟩) high)
     (fun _ hx => digitK_at hi high hx) (fun y hy => ?_)

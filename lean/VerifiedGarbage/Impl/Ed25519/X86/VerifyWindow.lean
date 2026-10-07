@@ -6,7 +6,7 @@ import VerifiedGarbage.Impl.Ed25519.X86.PointTable
 
 Verification may leak its inputs, so its scalars `S` and `k` are public. It
 computes `[k]A - [S]B` with one chain of doublings (`dblOps`, `dbl-2008-hwcd`),
-four per 4-bit window of the scalars, from the top: each window adds `[a]A`
+four per 4-bit window of the scalars (a loop, `doubleWindow`), from the top: each window adds `[a]A`
 for `k`'s digit `a` from a table of `[1]A … [15]A` built at run time (byte
 1024), and `[-b]B` for `S`'s digit `b` from a table of constants
 (`baseMultiples`, negated, byte 3072), both with the specification's
@@ -52,8 +52,12 @@ def dblOps : List FieldOp :=
 /-- One doubling. -/
 def dbl : Prog isa := .block (fieldCode dblOps)
 
-/-- Four doublings. -/
-def doubleWindow : Prog isa := .seq dbl (.seq dbl (.seq dbl dbl))
+/-- A doubling, then `2³⁰` added to `esi`. -/
+def dblStep : List Instr := fieldCode dblOps ++ [.alu .add .esi (.imm 0x40000000)]
+
+/-- Four doublings, in a loop counted by the top two bits of `esi` (the byte counter, below
+`2³⁰`): adding `2³⁰` carries out of them the fourth time, leaving `esi` as it was. -/
+def doubleWindow : Prog isa := .loop (.block dblStep) .ae
 
 /-- `A` from byte 7680 into slots 0–3 and into the table's entry 0; the counter `esi` = 1. -/
 def aTableInit : List Instr := pointTableRead 7680 ++ pointTableWrite 1024 ++ [.mov .esi (.imm 1)]
