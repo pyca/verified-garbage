@@ -42,14 +42,20 @@ def tableStore (K : WinCfg) : List Instr :=
 def cache (K : WinCfg) : Prog isa :=
   fp K.M [.mul (K.E.x+96) K.R.z K.R.z,.mul (K.E.x+128) (K.E.x+96) K.R.z]
 
+def tableCalc (K : WinCfg) : Prog isa :=
+  .ite .e (dbl K K.R K.R)
+    (.seq (mixed K K.R K.P K.D) (.block (copyPt 4 K.R K.D)))
+
+def tableStep (K : WinCfg) : Prog isa :=
+  .seq (tableLoad K) <|
+  .seq (.block [.alu .test .rbx (.imm 1)]) <|
+  .seq (tableCalc K) <|
+  .seq (cache K) <|
+  .block (tableStore K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 17)])
+
 def build (K : WinCfg) : Prog isa :=
-  .seq (.block (copyPt 4 (tablePt K 1) K.P ++ setConst 4 ((tablePt K 1).x+96) K.one ++ setConst 4 ((tablePt K 1).x+128) K.one ++ [.mov32 .rbx (.imm 2)])) <|
-  .loop (.seq (tableLoad K) <|
-    .seq (.block [.alu .test .rbx (.imm 1)]) <|
-    .seq (.ite .e (dbl K K.R K.R)
-      (.seq (mixed K K.R K.P K.D) (.block (copyPt 4 K.R K.D)))) <|
-    .seq (cache K) <|
-    .block (tableStore K ++ [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 17)])) .ne
+  .seq (.block (copyPt 4 (tablePt K 1) K.P ++ setConst 4 ((tablePt K 1).x+96) K.one ++ setConst 4 ((tablePt K 1).x+128) K.one ++ [.mov32 .rbx (.imm 2)]))
+    (.loop (tableStep K) .ne)
 
 def doubles (K : WinCfg) : Prog isa :=
   .seq (.block [.alu .add .rbx (.imm (BitVec.ofNat 32 20480))]) <|
