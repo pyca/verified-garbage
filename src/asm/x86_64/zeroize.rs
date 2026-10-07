@@ -58,3 +58,66 @@ pub(crate) unsafe extern "sysv64" fn vg_zeroize(p: *mut u8, len: usize) {
         ".p2align 6",
     )
 }
+
+/// The CPU features `vg_zeroize_avx` requires (`Artifact.features`).
+pub(crate) const VG_ZEROIZE_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx"]);
+
+/// Wipes a buffer: sets the `len` bytes at `p` to zero, and writes no other memory. A call of it is not a dead store the compiler may remove, since the compiler cannot see its code.
+///
+/// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
+///
+/// It stores 64 bytes at a time from `ymm0`, and clears the upper halves of the vector registers (`vzeroupper`) before returning.
+///
+/// # Safety
+///
+/// * `p` must be valid for reads and writes of `len` bytes.
+/// * `p` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_zeroize_avx(p: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        "vpxor xmm0, xmm0, xmm0",
+        "mov rax, 0",
+        "mov rdx, rsi",
+        "shr rdx, 6",
+        "cmp rdx, 0",
+        "je 20f",
+        "22:",
+        "vmovdqu YMMWORD PTR [rdi], ymm0",
+        "vmovdqu YMMWORD PTR [rdi+32], ymm0",
+        "add rdi, 64",
+        "sub rdx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov rdx, rsi",
+        "shr rdx, 3",
+        "and rdx, 7",
+        "cmp rdx, 0",
+        "je 23f",
+        "25:",
+        "mov QWORD PTR [rdi], rax",
+        "add rdi, 8",
+        "sub rdx, 1",
+        "jne 25b",
+        "jmp 24f",
+        "23:",
+        "24:",
+        "mov rdx, rsi",
+        "and rdx, 7",
+        "cmp rdx, 0",
+        "je 26f",
+        "28:",
+        "mov BYTE PTR [rdi], al",
+        "add rdi, 1",
+        "sub rdx, 1",
+        "jne 28b",
+        "jmp 27f",
+        "26:",
+        "27:",
+        "vzeroupper",
+        "ret",
+        ".p2align 6",
+    )
+}

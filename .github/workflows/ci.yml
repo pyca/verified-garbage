@@ -508,10 +508,11 @@ jobs:
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
             # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
-            # baseline code.
+            # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
+            # AVX.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
+              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu

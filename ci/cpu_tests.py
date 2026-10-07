@@ -331,6 +331,10 @@ GROUPS = {
         "lib": ["x448"],
         "tests": ["rfc7748::x448", "wycheproof::x448"],
     },
+    "zeroize": {
+        "lib": ["zeroize"],
+        "tests": [],
+    },
 }
 
 PATH = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(::[A-Za-z_][A-Za-z0-9_]*)*")
