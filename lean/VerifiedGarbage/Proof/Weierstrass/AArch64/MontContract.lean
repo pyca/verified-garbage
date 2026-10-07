@@ -49,9 +49,9 @@ theorem numAt_eq (m : Mem) (ws : Addr) (o : BitVec 32) (k : Nat) :
     numAt m ws o k = wordsVal m ws o.toNat k :=
   read_eq_wordsVal m ws k o.toNat
 
-theorem pre_of {M : Modulus} {s : State} (h : aPre M s) : Pre M.k s := by
+theorem pre_of {M : Modulus} (hk : M.k ≤ 9) {s : State} (h : aPre M s) : Pre M.k 8192 s := by
   obtain ⟨h1, h2, h3, ho, ha, hb⟩ := h
-  exact ⟨h1, h2, h3, ho, ha, hb⟩
+  exact ⟨h1, h2, h3, by simp only [moAt]; omega, Nat.le_refl _, ho, ha, hb⟩
 
 theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m' : Mem}
     (h : Kept k ws o.toNat m m') : Keeps k ws o m m' := by
@@ -66,7 +66,7 @@ theorem keeps_of_kept {k : Nat} (hk : k ≤ 9) {ws : Addr} {o : BitVec 32} {m m'
 
 theorem mul_a {M : Modulus} (hM : ModOk M.k M.m) (s : State) (hs : (mulA M).pre s) :
     ∃ t s', Exec isa (mulFn M.k M.m) s t s' ∧ abiPreserved s s' ∧ (mulA M).post s s' := by
-  obtain ⟨t, s', he, A, K, ⟨V, C⟩, -⟩ := mulFn_ok hM (pre_of hs.1) (by rw [← numAt_eq]; exact hs.2)
+  obtain ⟨t, s', he, A, K, ⟨V, C⟩, -, -, -, -⟩ := mulFn_ok hM (pre_of hM.n9 hs.1) (by rw [← numAt_eq]; exact hs.2)
   refine ⟨t, s', he, A, ?_, ?_, keeps_of_kept hM.n9 K⟩
   · rw [numAt_eq]; exact V
   · simp only [argNum, numAt_eq]; exact C

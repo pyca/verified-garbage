@@ -46,7 +46,7 @@ def moAt (n : Nat) : Nat := 4096 - 16 * n
 def mod (n m : Nat) : Mod where
   n := n
   mo := moAt n
-  tmp := moAt n + 8 * n
+  tmp := moAt n - 8 * n
   minv := BitVec.ofNat 64 (minv m)
   red := Red.ofModulus n m
   tight := tightOk n m

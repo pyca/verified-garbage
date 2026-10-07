@@ -42,10 +42,12 @@ structure ModOk (n m : Nat) : Prop where
     vdstOf i = none
 
 /-- The precondition, on the registers. -/
-structure Pre (n : Nat) (s : State) : Prop where
+structure Pre (n W : Nat) (s : State) : Prop where
   rd : s.rd = []
-  wr : s.wr = [⟨s.gpr .x0, 8192⟩]
-  fit : (s.gpr .x0).toNat + 8192 ≤ 2 ^ 64
+  wr : s.wr = [⟨s.gpr .x0, W⟩]
+  fit : (s.gpr .x0).toNat + W ≤ 2 ^ 64
+  w : moAt n + 8 * n ≤ W
+  w8 : W ≤ 8192
   o : arg s .x1 + 8 * n ≤ own n
   a : arg s .x2 + 8 * n ≤ own n
   b : arg s .x3 + 8 * n ≤ own n
@@ -166,9 +168,9 @@ theorem setConst_eq' (n o x : Nat) :
 the numbers, the saved registers in their lanes, the other registers but the
 offsets' and the pointers', the memory but the modulus's, and the vector
 registers but the lanes'. -/
-structure Entered (n m : Nat) (s s₁ : State) : Prop where
-  scr : Scr s₁ (s.gpr .x0) 8192
-  mod : ModOkW (mod n m) 8192 m s₁.mem (s.gpr .x0)
+structure Entered (n m W : Nat) (s s₁ : State) : Prop where
+  scr : Scr s₁ (s.gpr .x0) W
+  mod : ModOkW (mod n m) W m s₁.mem (s.gpr .x0)
   pa : Ptr s₁ (ptrs n).1 (off (s.gpr .x0) (arg s .x2)) (8 * n)
   pb : Ptr s₁ (ptrs n).2.1 (off (s.gpr .x0) (arg s .x3)) (8 * n)
   po : PtrW s₁ (ptrs n).2.2 (off (s.gpr .x0) (arg s .x1)) (8 * n)
@@ -185,8 +187,10 @@ theorem moAt_facts {n : Nat} (h : n ≤ 9) (h4 : 4 ≤ n) :
     own n ≤ moAt n ∧ moAt n + 16 * n = 4096 ∧ moAt n % 8 = 0 := by
   simp only [own, moAt, Spec.Weierstrass.Mont.ownAt, Spec.Weierstrass.Mont.ownBytes]; omega
 
-theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
-    WP isa (.block (entry n m)) s (Entered n m s) := by
+theorem entry_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s) :
+    WP isa (.block (entry n m)) s (Entered n m W s) := by
+  have hw := hp.w
+  have hw8 := hp.w8
   obtain ⟨Pa, Pb, Po, hlen, hnd, hpres, hsv, ha0, hb0, ho0, hpd, h019⟩ := regs_facts n hM.hn
   have hn9 := hM.n9
   have hn4 := hM.n4
@@ -205,14 +209,14 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   refine WP.mono (ptrs_ok s₂ ha0 hb0 ho0 hpd) fun s₃ ⟨go, ga, gb, K₃, V₃⟩ => ?_
   have x0₃ : s₃.gpr .x0 = s.gpr .x0 := by
     rw [K₃.gpr _ (h019 .x0 (by simp)).2.2.2, K₂.gpr, K₁.gpr _ (h019 .x0 (by simp)).2.2.1]
-  have hs₃ : Scr s₃ (s.gpr .x0) 8192 := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by decide⟩
+  have hs₃ : Scr s₃ (s.gpr .x0) W := ⟨x0₃, by rw [K₃.wr, K₂.wr, K₁.wr, hp.wr]; simp, hfit, by omega⟩
   have hW := setConst_ok hs₃ (n := n) (o := moAt n) (x := m) (by omega) hmo8 hM.m_lt
   rw [← setConst_eq'] at hW
   refine WP.mono (WP.block_novec (fun i hi => hM.novec i (List.mem_append_right _ hi)) hW)
     fun s₄ ⟨⟨e₄, k₄, O₄⟩, V₄⟩ => ?_
   have pg : ∀ r, r ∉ [(ptrs n).1, (ptrs n).2.1, (ptrs n).2.2] → r ≠ .x1 → s₄.gpr r = s₃.gpr r :=
     fun r _ h1 => k₄.gpr r (by simpa using h1)
-  have hs₄ : Scr s₄ (s.gpr .x0) 8192 := hs₃.of_keepRegs k₄ (by decide)
+  have hs₄ : Scr s₄ (s.gpr .x0) W := hs₃.of_keepRegs k₄ (by decide)
   have mem₄ : Outside (s.gpr .x0) (moAt n) (8 * n) s.mem s₄.mem := by
     rw [← K₁.mem, ← K₂.mem, ← K₃.mem]; exact O₄
   -- The registers of `s₃` kept by the constant's stores (all but `x1`).
@@ -234,7 +238,7 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
     have := hs₄.ld (d := e + d) (by have := hd; have := he; omega)
     rwa [hs₄.x0] at this
   refine ⟨hs₄, ⟨by simp only [mod]; omega, by simp only [mod]; omega, by simp only [mod]; omega,
-    .inl (by simp only [mod]; omega), e₄, ?_, hM.red⟩, ⟨?_, fun d hd => hP d _ hd ha, by omega⟩,
+    .inr (by simp only [mod]; omega), e₄, ?_, hM.red⟩, ⟨?_, fun d hd => hP d _ hd ha, by omega⟩,
     ⟨?_, fun d hd => hP d _ hd hb, by omega⟩, ⟨?_, fun d hd => ?_, by omega, ?_⟩,
     fun i hi => ?_, fun r h1 hpr => ?_, mem₄, ?_, ?_, ?_, fun d hd => ?_⟩
   · rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat,
@@ -270,19 +274,22 @@ theorem mulFn_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFn n 
   exact WP.block_append_iff.symm
 
 /-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
+theorem mulFn_ok {n m W : Nat} (hM : ModOk n m) {s : State} (hp : Pre n W s)
     (hb : wordsVal s.mem (s.gpr .x0) (arg s .x3) n < m) :
     WP isa (mulFn n m) s fun s' => abiPreserved s s' ∧ Kept n (s.gpr .x0) (arg s .x1) s.mem s'.mem ∧
       (wordsVal s'.mem (s.gpr .x0) (arg s .x1) n < m ∧
       wordsVal s'.mem (s.gpr .x0) (arg s .x1) n * 2 ^ (64 * n) % m =
         wordsVal s.mem (s.gpr .x0) (arg s .x2) n * wordsVal s.mem (s.gpr .x0) (arg s .x3) n % m) ∧
-      s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      s'.gpr .x0 = s.gpr .x0 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      ∀ d, (∀ i < 8, d ≠ (slot i).1) → s'.v d = s.v d := by
   obtain ⟨Pa, Pb, Po, hlen, hnd, hpres, hsv, ha0, hb0, ho0, hpd, h019⟩ := regs_facts n hM.hn
   have hn9 := hM.n9
   have hn4 := hM.n4
   have hown := own_eq hn9
   obtain ⟨hmo1, hmo2, hmo8⟩ := moAt_facts hn9 hn4
   have hfit := hp.fit
+  have hw := hp.w
+  have hw8 := hp.w8
   have ho := hp.o
   have ha := hp.a
   have hb' := hp.b
@@ -310,7 +317,8 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     rw [K₃.gpr r h1, K.gpr r h2, E.gpr r h3 h4]
   refine ⟨⟨fun r hr => ?_, by rw [K₃.sp, K.sp, E.sp], fun d hd => ?_⟩, fun x hx hx' => ?_, ⟨?_, ?_⟩,
     keep .x0 (h019 .x0 (by simp)).2.1 (h019 .x0 (by simp)).1 (h019 .x0 (by simp)).2.2.1
-      (h019 .x0 (by simp)).2.2.2, by rw [K₃.rd, K.rd, E.rd], by rw [K₃.wr, K.wr, E.wr]⟩
+      (h019 .x0 (by simp)).2.2.2, by rw [K₃.rd, K.rd, E.rd], by rw [K₃.wr, K.wr, E.wr],
+    fun d hd => by rw [V₃, Vv, E.v d hd]⟩
   · by_cases hs : r ∈ saved n
     · obtain ⟨i, hi, rfl⟩ := List.mem_iff_getElem.mp hs
       rw [R₃ i hi, Nat.zero_add, Vv, E.lanes i hi]
