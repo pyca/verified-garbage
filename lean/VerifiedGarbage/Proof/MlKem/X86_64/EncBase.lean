@@ -196,8 +196,8 @@ theorem mat_tr (v : Sample4Impl) {L : Kem} {C : Ctx rbs wbs} {E : Ptr} (hk : L.k
       (fun x y => LRel rbs wbs x y ∧ EBρ L C E ρ (L.k * L.k) x ∧ EBρ L C E ρ (L.k * L.k) y) := by
   have hc₁' := hc₁
   simp only [matChk, copyChk, wrOk, rdOk, Bool.and_eq_true] at hc₁'
-  have hin₁ : inB (rbs ++ wbs) (sc oSB) 32 = true := hc₁'.1.1.1.1.1.1.1.2
-  have hin₂ : inB (rbs ++ wbs) (E.1, E.2 + 384 * L.k) 32 = true := hc₁'.1.1.1.1.1.2.2
+  have hin₁ : inB (rbs ++ wbs) (sc oSB) 32 = true := hc₁'.1.1.1.1.1.1.1.1.2
+  have hin₂ : inB (rbs ++ wbs) (E.1, E.2 + 384 * L.k) 32 = true := hc₁'.1.1.1.1.1.1.2.2
   unfold mat
   refine RelCT.seq (RelCT.stepL (J := EBρ L C E ρ 0) C.bs (taintRel [.rbx, E.1] (fun x y h =>
       fa2 (h.1.eq hin₁) (h.1.eq (p := (E.1, E.2 + 384 * L.k)) hin₂)) ht) fun x ⟨ek, m, r, eρ, hx, h15⟩ => ?_)

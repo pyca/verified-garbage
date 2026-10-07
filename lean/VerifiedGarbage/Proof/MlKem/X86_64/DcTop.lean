@@ -120,7 +120,7 @@ theorem select_okD (W : DcWf L) {σ : State} {s : State} (h : EncO W σ s) : WP 
   have cR : ∀ {p : Ptr} {l : Nat}, inB (dcB L) p l = true → InRegions (s.rd ++ s.wr) (pa s p) l := fun hi =>
     L₀.cR hi _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   obtain ⟨i1, i2, i3, i4, i5, s1, s2⟩ := W.sel
-  refine WP.mono (select_ok W.ct.1 W.ct.2.1 W.ct.2.2 (cR i1) (cR i2) (cR i3) (cR i4)
+  refine WP.mono (select_ok W.ct.1 W.ct.2.1 W.ct.2.2.1 W.ct.2.2.2 (cR i1) (cR i2) (cR i3) (cR i4)
     (L₀.cW i5 _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩) (L₀.disj s1) (L₀.disj s2))
     fun s' ⟨hP, hb⟩ => ?_
   refine ⟨k.dc.step W hp hP.b W.selK, by rw [hP.cs .r15 (by decide)]; exact h.r15, fun ho => ?_⟩

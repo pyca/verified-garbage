@@ -116,7 +116,7 @@ structure DcWf : Prop extends KemWf L where
   sel : inB (dcB L) (.r14, 0) L.ctLen = true ∧ inB (dcB L) (sc L.oCT) L.ctLen = true ∧
     inB (dcB L) (sc oG) 32 = true ∧ inB (dcB L) (sc oKB) 32 = true ∧ inB (dcW L) (.r12, 0) 32 = true ∧
     sepB (dcB L) (sc oG) 32 (.r12, 0) 32 = true ∧ sepB (dcB L) (sc oKB) 32 (.r12, 0) 32 = true
-  ct : L.oCT < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen
+  ct : L.oCT < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen ∧ L.ctLen % 8 = 0
   sv : ∀ k < 6, inB (dcB L) (sc (oSV + 8 * k)) 8 = true
   -- constant time
   inBs : inB (dcB L) (sc 0) 1 = true ∧ inB (dcB L) (.r12, 0) 1 = true ∧ inB (dcB L) (.r14, 0) 1 = true
