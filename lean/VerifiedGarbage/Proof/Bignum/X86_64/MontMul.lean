@@ -47,16 +47,20 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
 def mmRegs : List Reg :=
   [.rax, .rbx, .rcx, .rdx, .rsi, .rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
 
-/-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
-`[b] < m` and `-m⁻¹` is right. -/
-theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
-    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+/-- What follows `bases` in `montMul`: from the bases, `w` and `-m⁻¹` in
+registers (`bases_ok`), `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if `[b] < m`
+and `-m⁻¹` is right. -/
+theorem mmTail_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
     (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
     (d6 : tmp ≠ mo) (d7 : tmp ≠ o)
+    (hbx : s.gpr .rbx = off B (slot w o)) (h11 : s.gpr .r11 = off B (slot w a)) (h9 : s.gpr .r9 = off B (slot w b))
+    (h10 : s.gpr .r10 = off B (slot w mo)) (h8 : s.gpr .r8 = off B (slot w acc))
+    (h12 : s.gpr .r12 = BitVec.ofNat 64 w) (h15 : s.gpr .r15 = minv) (hsi₁ : s.gpr .rsi = off B (slot w tmp))
     (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
     (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
-    WP isa (montMul mo acc tmp o a b) s fun t =>
+    WP isa (.seq zeroAccLoop (.seq rounds (.seq subMod selectAcc))) s fun t =>
       wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
@@ -66,15 +70,11 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
   have sp : ∀ {j k}, j ≠ k → slot w j + 8 * (w + 2) ≤ slot w k ∨ slot w k + 8 * (w + 2) ≤ slot w j :=
     fun h => slot_sep h
   have hN0 : 0 < wv s.mem B (slot w mo) w := by omega
-  unfold montMul
-  -- The bases.
-  refine WP.seq (WP.mono (bases_ok hs hdi hH hZ ho ha hb hmo hacc htmp)
-    fun s₁ ⟨hbx, h11, h9, h10, h8, h12, h15, hsi₁, hm₁, k₁⟩ => ?_)
-  have hs₁ := hs.congr k₁.2.2
+  have hs₁ := hs
+  have k₁ : Keep [] s s := Keep.refl _ _
   -- The accumulator := 0.
   refine WP.seq (WP.mono (zeroAccLoop_ok hs₁ h8 h12 (by omega) hw' (sl acc hacc))
     fun s₂ ⟨hz₂, ho₂, k₂⟩ => ?_)
-  rw [hm₁] at ho₂
   have hs₂ := hs₁.congr k₂.2.2
   have k12 := k₁.trans k₂
   have fr₂ : ∀ {j}, j < 8 → j ≠ acc → wv s₂.mem B (slot w j) w = wv s.mem B (slot w j) w :=
@@ -87,7 +87,7 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
     hw hw' (sl acc hacc) (by have := sl b hb; omega) (by have := sl mo hmo; omega)
     (by have := sl a ha; omega) (by have := sp (Ne.symm d5); omega) (by have := sp (Ne.symm d1); omega)
     (by have := sp (Ne.symm d4); omega)
-    (by rw [fw₂, (k₂.gpr (by decide) : s₂.gpr .r15 = s₁.gpr .r15), h15]; exact hinv) hz₂
+    (by rw [fw₂, (k₂.gpr (by decide) : s₂.gpr .r15 = s.gpr .r15), h15]; exact hinv) hz₂
     (by rw [fr₂ hb (Ne.symm d5), fr₂ hmo (Ne.symm d1)]; exact hB)) fun s₃ hR => ?_)
   have hTlt := hR.lt
   have hTc := hR.cong
@@ -138,5 +138,26 @@ theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
     have a6 : Arrays B w [acc, tmp, o] s₅.mem t.mem :=
       Arrays.of_outside (j := o) (by simp) hot (Nat.le_refl _) (by omega)
     exact (a3.trans a5).trans a6
+
+/-- Montgomery multiplication: `[o] = [a] [b] R⁻¹ mod m` for `m = [mo]`, if
+`[b] < m` and `-m⁻¹` is right. -/
+theorem montMul_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    {mo acc tmp o a b : Nat} (hmo : mo < 8) (hacc : acc < 8) (htmp : tmp < 8) (ho : o < 8) (ha : a < 8)
+    (hb : b < 8) (d1 : acc ≠ mo) (d2 : acc ≠ tmp) (d3 : acc ≠ o) (d4 : acc ≠ a) (d5 : acc ≠ b)
+    (d6 : tmp ≠ mo) (d7 : tmp ≠ o)
+    (hinv : ((word s.mem B (slot w mo)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
+    (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w mo) w) :
+    WP isa (montMul mo acc tmp o a b) s fun t =>
+      wv t.mem B (slot w o) w < wv s.mem B (slot w mo) w ∧
+      wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w mo) w =
+        wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w mo) w ∧
+      Arrays B w [acc, tmp, o] s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold montMul
+  refine WP.seq (WP.mono (bases_ok hs hdi hH hZ ho ha hb hmo hacc htmp)
+    fun s₁ ⟨hbx, h11, h9, h10, h8, h12, h15, hsi₁, hm₁, k₁⟩ => ?_)
+  rw [← hm₁] at hinv hB ⊢
+  exact WP.mono (mmTail_ok (hs.congr k₁.2.2) hZ hw hw' hmo hacc htmp ho ha hb d1 d2 d3 d4 d5 d6 d7 hbx h11 h9 h10
+    h8 h12 h15 hsi₁ hinv hB) fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
 
 end VG.Proof.Bignum.X86_64

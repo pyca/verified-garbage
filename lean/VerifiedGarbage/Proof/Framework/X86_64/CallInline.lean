@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # Calls as inlined code (x86-64)
@@ -821,5 +822,39 @@ theorem ConstantTime.of_inline {c : Prog isa} (hc : c.InlineOk = true) {P : Stat
   subst ht
   rw [hpub s₁ s₂ p₁ p₂ hp] at l₁
   exact l₁.unique l₂
+
+
+/-- The return address above `rsp` is not in the hole below it. -/
+theorem not_hole_of_above {sp x : Addr} (h : (x - sp).toNat < 8) : ¬ (hole sp).Contains x 1 := by
+  rw [hole_contains]
+  have : x - (sp - 8) = (x - sp) + 8 := by
+    rw [BitVec.sub_eq_add_neg x (sp - 8), BitVec.neg_sub, BitVec.sub_eq_add_neg x sp, BitVec.add_assoc]
+  rw [this, BitVec.toNat_add, show (8 : BitVec 64).toNat = 8 from rfl]
+  omega
+
+/-- The calling convention's obligations hold of the run of `c` if they do of `c.inline`'s. -/
+theorem abiPreserved_patch {s b : State} (hv : Mem) (u : Nat → BitVec 64) (h : abiPreserved s b) :
+    abiPreserved s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  refine ⟨h.1, ?_, h.2.2⟩
+  rw [State.patch_readW (by decide) fun x hx => not_hole_of_above hx]
+  exact h.2.1
+
+/-- `c` is verified against `k` if `c.inline` is correct and constant time
+against a contract `k₀` that `k` implies, `k₀`'s postcondition does not read
+the 8 bytes below `rsp`, and `k` keeps every buffer away from them. -/
+theorem Verified.of_inline {c : Prog isa} (hc : c.InlineOk = true) {k₀ k : Contract isa}
+    (hcor : ∀ s, k₀.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ k₀.post s s')
+    (hct : ConstantTime isa k₀.pre k₀.pub c.inline) (himp : k₀.Implies k)
+    (hclear : ∀ s, k.pre s → Clear (hole (s.gpr .rsp)) s)
+    (hpost : ∀ s b hv u, k.pre s → k₀.post s b → k₀.post s (b.patch (hole (s.gpr .rsp)) hv u))
+    (hrsp : ∀ s₁ s₂, k.pre s₁ → k.pre s₂ → k.pub s₁ s₂ → s₁.gpr .rsp = s₂.gpr .rsp) : Verified target c k := by
+  refine ⟨fun s hs => ?_, ?_, himp.sat⟩
+  · obtain ⟨t, b, he, ha, hp⟩ := hcor s (himp.pre s hs)
+    obtain ⟨hv, u, ta, ha', _, _⟩ := Exec.of_inline hc he (hclear s hs)
+    exact ⟨ta, _, ha', abiPreserved_patch hv u ha, himp.post s _ hs (hpost s b hv u hs hp)⟩
+  · refine ConstantTime.of_inline hc (fun s hs => ?_) hclear hrsp fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ =>
+      hct s₁ s₂ t₁ t₂ s₁' s₂' (himp.pre _ h₁) (himp.pre _ h₂) (himp.pub _ _ h₁ h₂ hp) e₁ e₂
+    obtain ⟨t, b, he, -, -⟩ := hcor s (himp.pre s hs)
+    exact ⟨t, b, he⟩
 
 end VG.X86_64
