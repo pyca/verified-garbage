@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-!
 # Short Weierstrass curves on x86-64: scalar multiplication by windows
@@ -108,11 +109,16 @@ def ySelWord (w : Nat) : List Instr :=
 /-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
 def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 
+/-- For four-limb fields, form `2YZ` directly: squaring and multiplication
+use the same Montgomery kernel, so this saves two field subtractions. -/
+def double (p o : Pt) : List FOp :=
+  if K.M.n == 4 then dblJMul K.S p o else dblJ K.S p o
+
 /-- A pair of Jacobian doublings, with a public count in the bits above the
 window index in `rbx`. The window index is less than 4096. -/
 def jacPair : Prog isa :=
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <|
-  .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .seq (fprogB K.M (double K K.E K.D)) <|
+  .seq (fprogB K.M (double K K.D K.E)) <|
   .block [.alu .sub .rbx (.imm 4096), .alu .cmp .rbx (.imm 4096)]
 
 /-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, two
