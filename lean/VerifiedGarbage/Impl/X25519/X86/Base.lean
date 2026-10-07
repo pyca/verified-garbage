@@ -6,7 +6,8 @@ import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 `X25519(k, 9)` as `u = (Z + Y) / (Z - Y)` of `[k] B` on edwards25519
 (`Proof/X25519/Edwards/Ladder.lean`), with Ed25519's fixed-base comb
 (`Impl/Ed25519/X86/Comb.lean`): the scalar's bits are expanded one per byte
-at byte 7168 of the workspace, as for `vg_ed25519_scalar_base`, then clamped
+at byte 7168 of the workspace, as for `vg_ed25519_scalar_base` (after the
+address of the comb's tables at byte `combTbl`), then clamped
 as RFC 7748 §5 decodes the scalar (bits 0–2 and 255 cleared, bit 254 set);
 the comb leaves `[k] B` in slots 0–3, and one inversion gives `u`, which is
 reduced and written out.
@@ -38,8 +39,11 @@ def uEncode : Prog isa :=
 /-- The callee-saved registers saved, the clamped scalar's bits expanded, and `d` in slot 16. -/
 def x25519BaseStart : List Instr := abiSave 2 ++ inputBits 1 32 ++ clampBits ++ fieldCode baseSetupOps
 
-def x25519Base : Code Instr Cond :=
+/-- After the comb's tables' address (`combAddr`). -/
+def x25519BaseBody : Prog isa :=
   .seq (.block x25519BaseStart)
     (.seq combMultiply (.seq uEncode (.block (finishWords 64))))
+
+def x25519Base : Code Instr Cond := .seq (combAddr 2) x25519BaseBody
 
 end VG.Impl.X25519.X86.Base

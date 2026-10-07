@@ -10,7 +10,7 @@ The scalar's 64 nibbles `n_i` (from its bits, expanded one per byte at byte
 `d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 32} 256^j`. Table `j`
 holds `[k]([256^j]B)` for `k ≤ 8` (`combCached`), affine and cached. Step `j`
 selects from table `j` the entries of both digits that use it, `d_{2j+1}` and
-`d_{2j}`, sharing each candidate's immediate between the two selections, and
+`d_{2j}`, sharing each candidate's load between the two selections, and
 adds them, or their negations, to two accumulators, which start at `[G]B`:
 `A` (slots 0–3) for the odd digits and `B` (slots 17–20) for the even ones.
 At the end, `[s]B = 16 A + B`: four doublings and one addition. That is 64
@@ -20,14 +20,17 @@ additions of affine cached points (seven multiplications each, `addOddOps`,
 
 The digits are secret: their entries are selected in constant time. The
 masks of the nine magnitudes `k = 0 … 8` of each digit (all ones exactly for
-`|d|`) are stored in the workspace (`combOddMasks`, `combEvenMasks`). Each
-nonzero word of a candidate is loaded from an immediate once, ANDed with both
-digits' masks and ORed into `ebx` (odd) and `ebp` (even). Each entry is
-negated, or not, with the mask of its digit's sign (`combOddSign`,
-`combEvenSign`: all ones if the nibble is below 8), by exchanging `Y - X`
-and `Y + X` and choosing between `2dT` and its negation. The loop's counter
-`esi`, which is also the table index, is public, and so are the addresses
-of the bits (`edi + 8 esi` plus a constant).
+`|d|`) are stored in the workspace (`combOddMasks`, `combEvenMasks`). The 32
+tables (of the entries `k = 1 … 8`, 768 bytes each) are the static `combSym`
+(`combWords`), whose address the function stores at byte `combTbl` of the
+workspace (`combAddr`). Each word of a candidate is loaded from the table once,
+ANDed with both digits' masks and ORed into `ebx` (odd) and `ebp` (even): every
+entry of the table is read, at addresses from the static's and the loop's
+counter. Each entry is negated, or not, with the mask of its digit's sign
+(`combOddSign`, `combEvenSign`: all ones if the nibble is below 8), by
+exchanging `Y - X` and `Y + X` and choosing between `2dT` and its negation.
+The loop's counter `esi`, which is also the table index, is public, and so are
+the addresses of the bits (`edi + 8 esi` plus a constant).
 -/
 
 namespace VG.Impl.Ed25519.X86
@@ -105,38 +108,73 @@ def combDigits : List Instr :=
 /-- Word `w` of a field element. -/
 def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 32 := BitVec.ofNat 32 (v.val / (2 ^ 32) ^ w)
 
-/-- Word `w` of candidate `k`'s value `v`, loaded once, masked with each digit's mask and ORed
-into `ebx` (odd) and `ebp` (even); nothing for a zero word. -/
-def selectCand (v : Spec.X25519.Fe) (k w : Nat) : List Instr :=
-  if feWord v w = 0 then [] else
-    [.mov .eax (.imm (feWord v w)), .mov .edx (.reg .eax),
-      .alu .and .eax (.mem (sc (combOddMasks + 4 * k))),
-      .alu .and .edx (.mem (sc (combEvenMasks + 4 * k))),
-      .alu .or .ebx (.reg .eax), .alu .or .ebp (.reg .edx)]
+/-! ## The tables -/
 
-/-- Word `w` of `vs[|d|]` for both digits, to bytes `o + 4w` (odd) and `e + 4w` (even). -/
-def selectWord (vs : List Spec.X25519.Fe) (o e w : Nat) : List Instr :=
-  [.mov .ebx (.imm 0), .mov .ebp (.imm 0)] ++
-    (List.range 9).flatMap (fun k => selectCand (vs.getD k 0) k w) ++
+/-- The static holding the comb's tables. -/
+def combSym : String := "VG_ED25519_COMB"
+
+/-- Byte of the workspace holding the static's address. -/
+def combTbl : Nat := 1160
+
+/-- Word `i` (of 64 bits) of the tables: table `j = i / 96` takes 768 bytes, the `Y - X`
+(`c = 0`), the `Y + X` (`c = 1`) and the `2dT` (`c = 2`) of its entries `m + 1 = 1 … 8`, four
+words each. -/
+def combWord (i : Nat) : BitVec 64 :=
+  let e := combCached (i / 96) (i % 32 / 4 + 1)
+  BitVec.ofNat 64 ((if i % 96 < 32 then e.X else if i % 96 < 64 then e.Y else e.Z).val /
+    2 ^ (64 * (i % 4)))
+
+/-- The words of the 32 tables, as the static `combSym` holds them. -/
+def combWords : List (BitVec 64) := (List.range (32 * 96)).map combWord
+
+/-- The static the comb reads. -/
+def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
+
+/-- The static's address, obtained in a balanced four-byte CALL frame (`symPush`; the saved
+`eip` is popped into `ecx`), stored at byte `combTbl` of the workspace, whose address is
+argument `i`. -/
+def combAddr (i : Nat) : Prog isa :=
+  .seq (.frame (.symPush .eax combSym) (.block []) (.pop .ecx 1))
+    (.block [.mov .edx (.mem (at_ .esp (4 + 4 * i))), .store (at_ .edx combTbl) .eax])
+
+/-- `ecx` = the address of table `esi`: the static's, plus 768 bytes a table (`eax = 256 esi`,
+added three times). -/
+def tblAddr : List Instr :=
+  [.mov .eax (.reg .esi)] ++ List.replicate 8 (.alu .add .eax (.reg .eax)) ++
+    [.mov .ecx (.mem (sc combTbl))] ++ List.replicate 3 (.alu .add .ecx (.reg .eax))
+
+/-- Word `w` of candidate `k`, at `ecx + d`: loaded, masked with each digit's mask and ORed into
+`ebx` (odd) and `ebp` (even). -/
+def selectCand (d k : Nat) : List Instr :=
+  [.mov .eax (.mem (at_ .ecx d)), .mov .edx (.reg .eax),
+    .alu .and .eax (.mem (sc (combOddMasks + 4 * k))),
+    .alu .and .edx (.mem (sc (combEvenMasks + 4 * k))),
+    .alu .or .ebx (.reg .eax), .alu .or .ebp (.reg .edx)]
+
+/-- The start of word `w`'s selections: `1` for `|d| = 0` in word 0 of the identity's `Y - X`
+and `Y + X` (`one`), else `0`. -/
+def selectStart (one : Bool) (w : Nat) : List Instr :=
+  if one && w == 0 then
+    [.mov .ebx (.mem (sc combOddMasks)), .alu .and .ebx (.imm 1),
+      .mov .ebp (.mem (sc combEvenMasks)), .alu .and .ebp (.imm 1)]
+  else [.mov .ebx (.imm 0), .mov .ebp (.imm 0)]
+
+/-- Word `w` of entry `|d|`'s coordinate `c` (at `ecx + 256 c`) for both digits, to bytes
+`o + 4w` (odd) and `e + 4w` (even); entry 0's (the identity's) is `1` (if `one`) or `0`. -/
+def selectWord (one : Bool) (c o e w : Nat) : List Instr :=
+  selectStart one w ++
+    (List.range 8).flatMap (fun m => selectCand (256 * c + 32 * m + 4 * w) (m + 1)) ++
     [.store (sc (o + 4 * w)) .ebx, .store (sc (e + 4 * w)) .ebp]
 
-/-- The field `vs[|d|]` for both digits, to bytes `o` (odd) and `e` (even). -/
-def selectField (vs : List Spec.X25519.Fe) (o e : Nat) : List Instr :=
-  (List.range 8).flatMap fun w => selectWord vs o e w
+/-- Coordinate `c` of entry `|d|` for both digits, to bytes `o` (odd) and `e` (even). -/
+def selectField (one : Bool) (c o e : Nat) : List Instr :=
+  (List.range 8).flatMap fun w => selectWord one c o e w
 
-/-- The entries of both digits from table `j`: the odd one to slots 4–6, the even one to
+/-- The entries of both digits from table `esi`: the odd one to slots 4–6, the even one to
 slots 13–15. -/
-def combSelect (j : Nat) : List Instr :=
-  let entries := (List.range 9).map (combCached j)
-  selectField (entries.map (·.X)) (offset 4) (offset 13) ++
-    selectField (entries.map (·.Y)) (offset 5) (offset 14) ++
-    selectField (entries.map (·.Z)) (offset 6) (offset 15)
-
-/-- The selection from table `esi`, for the table indices listed. -/
-def combSelectFrom : List Nat → Prog isa
-  | [] => .block []
-  | j :: js => .seq (.block [.alu .cmp .esi (.imm (BitVec.ofNat 32 j))])
-      (.ite .e (.block (combSelect j)) (combSelectFrom js))
+def combSelect : List Instr :=
+  tblAddr ++ selectField true 0 (offset 4) (offset 13) ++
+    selectField true 1 (offset 5) (offset 14) ++ selectField false 2 (offset 6) (offset 15)
 
 /-- The cached point in slots `a`, `b`, `c` negated if its digit is negative, that is if the
 mask of its sign at byte `sign` is all ones: `[Y - X, Y + X, 2dT]` becomes
@@ -149,7 +187,7 @@ def combNeg (a b c : Slot) (sign : Nat) : List Instr :=
 their accumulators. ZF is clear while another step follows. -/
 def combStep : Prog isa :=
   .seq (.block combDigits) <|
-  .seq (combSelectFrom (List.range 32)) <|
+  .seq (.block combSelect) <|
   .seq (.block (combNeg 4 5 6 combOddSign ++ fieldCode addOddOps)) <|
   .block (combNeg 13 14 15 combEvenSign ++ fieldCode addEvenOps ++
     [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm 32)])
@@ -164,8 +202,8 @@ def combInit : List Instr :=
 def combFinish : Prog isa :=
   .seq double4 (.block (fieldCode [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] ++ pointAdd))
 
-/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 7168 onward and `d` in
-slot 16. -/
+/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 7168 onward, `d` in slot 16
+and the tables' address at byte `combTbl`. -/
 def combMultiply : Prog isa :=
   .seq (.block combInit) (.seq (.loop combStep .ne) combFinish)
 

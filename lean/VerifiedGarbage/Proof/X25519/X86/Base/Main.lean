@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.X25519.X86.Base
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
+import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
 import VerifiedGarbage.Spec.X25519.Contract
 
 /-!
@@ -20,7 +21,8 @@ open VG.Proof.Ed25519.X86
 open VG.Proof.Ed25519 (Rep baseAff)
 
 /-- The contract the proof is written against: `vg_ed25519_scalar_base`'s
-precondition (the same arguments), with `X25519(k, 9)` as postcondition. -/
+precondition (the same arguments, and the comb's tables), with `X25519(k, 9)` as
+postcondition. -/
 def x25519BaseLocal : Contract isa :=
   { scalarBaseLocal with
     post := fun s t => Spec.X25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
@@ -76,13 +78,16 @@ theorem storeBit_saved {s₀ s : State} {x : BitVec 32} (hs : Saved s₀ x s)
     (hx : x.toNat + 8192 ≤ 2 ^ 32) (hw : scR 8192 x ∈ s₀.wr) {q v : Nat} (hq : q < 256)
     (hv : v < 2) {f : Nat → Nat}
     (hb : ∀ k < 256, s.mem (addr x (7168 + k)) = BitVec.ofNat 8 (f k)) :
-    WP isa (.block (storeBit q v)) s fun t => Saved s₀ x t ∧
+    WP isa (.block (storeBit q v)) s fun t => Saved s₀ x t ∧ Frame [sub x 7168 256] s.mem t.mem ∧
       ∀ k < 256, t.mem (addr x (7168 + k)) = BitVec.ofNat 8 (if k = q then v else f k) := by
-  refine WP.mono (storeBit_ok (hs.ctx hx hw) hq hv) fun t ⟨kt, mt⟩ => ⟨?_, fun k hk => ?_⟩
+  refine WP.mono (storeBit_ok (hs.ctx hx hw) hq hv) fun t ⟨kt, mt⟩ => ⟨?_, ?_, fun k hk => ?_⟩
   · refine hs.of_offset hx (Keep.scalar kt) (o := 7168 + q) (n := 1) ?_ (by omega_using [])
       (by omega_using [hq]) (by omega_using [hq])
     rw [mt]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  · rw [mt]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (sub_contains (by omega_using [hx]) (by omega_using []) (by omega_using [hq]) (by decide))
   · rw [mt]
     by_cases he : k = q
     · subst he; simp only [↓reduceIte]; exact bits_byte_write_self _ _ _
@@ -94,21 +99,21 @@ theorem storeBit_saved {s₀ s : State} {x : BitVec 32} (hs : Saved s₀ x s)
 theorem clampBits_ok {s₀ s : State} {x : BitVec 32} (hs : Saved s₀ x s)
     (hx : x.toNat + 8192 ≤ 2 ^ 32) (hw : scR 8192 x ∈ s₀.wr) {f : Nat → Nat}
     (hb : ∀ k < 256, s.mem (addr x (7168 + k)) = BitVec.ofNat 8 (f k)) :
-    WP isa (.block clampBits) s fun t => Saved s₀ x t ∧
+    WP isa (.block clampBits) s fun t => Saved s₀ x t ∧ Frame [sub x 7168 256] s.mem t.mem ∧
       ∀ k < 256, t.mem (addr x (7168 + k)) = BitVec.ofNat 8
         (if k = 254 then 1 else if k = 255 then 0 else if k = 2 then 0 else if k = 1 then 0 else
           if k = 0 then 0 else f k) := by
   simp only [clampBits, List.append_assoc]
   refine WP.block_append (WP.mono (storeBit_saved hs hx hw (by decide) (by decide) hb)
-    fun a ⟨ha, ba⟩ => ?_)
+    fun a ⟨ha, fa, ba⟩ => ?_)
   refine WP.block_append (WP.mono (storeBit_saved ha hx hw (by decide) (by decide) ba)
-    fun b ⟨hb', bb⟩ => ?_)
+    fun b ⟨hb', fb, bb⟩ => ?_)
   refine WP.block_append (WP.mono (storeBit_saved hb' hx hw (by decide) (by decide) bb)
-    fun c ⟨hc, bc⟩ => ?_)
+    fun c ⟨hc, fc, bc⟩ => ?_)
   refine WP.block_append (WP.mono (storeBit_saved hc hx hw (by decide) (by decide) bc)
-    fun d ⟨hd, bd⟩ => ?_)
-  refine WP.mono (storeBit_saved hd hx hw (by decide) (by decide) bd) fun t ⟨ht, bt⟩ =>
-    ⟨ht, fun k hk => ?_⟩
+    fun d ⟨hd, fd, bd⟩ => ?_)
+  refine WP.mono (storeBit_saved hd hx hw (by decide) (by decide) bd) fun t ⟨ht, ft, bt⟩ =>
+    ⟨ht, (((fa.trans fb).trans fc).trans fd).trans ft, fun k hk => ?_⟩
   rw [bt k hk]
 
 /-! ## The u-coordinate -/
@@ -157,6 +162,8 @@ structure Ready (s₀ s : State) : Prop where
     ((Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32) /
       2 ^ q) % 2)
   d : env s.mem (arg s₀ 2) 16 = Spec.Ed25519.d
+  ptr : wd s.mem (arg s₀ 2) combTbl = s₀.syms combSym
+  tbl : TblAt (arg s₀ 2) (s₀.syms combSym) s
 
 theorem scalar_length (s : State) :
     (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32).length = 32 := by
@@ -168,34 +175,43 @@ theorem scalar_lt (s : State) : Spec.X25519.decodeScalar25519
   rw [Nat.shiftRight_eq_div_pow, Nat.div_eq_zero_iff_lt (by decide)] at e
   exact Nat.lt_trans e (by decide)
 
-theorem start_ok {s : State} (h : x25519BaseLocal.pre s) :
+theorem start_ok {s : State} (h : BodyPre s) :
     WP isa (.block x25519BaseStart) s (Ready s) := by
-  obtain ⟨hp, hi, _⟩ := scalarBase_pre h
+  obtain ⟨hr, hptr, htbl⟩ := h
+  obtain ⟨hp, hi, _⟩ := scalarBase_pre hr
   simp only [x25519BaseStart, List.append_assoc]
-  refine WP.block_append (WP.mono (abiSave_ok hp) fun a ha => ?_)
-  refine WP.block_append (WP.mono (inputBits_ok hp hi ha (by decide) (by decide))
-    fun b ⟨hb, bits⟩ => ?_)
+  refine WP.block_append (WP.mono (abiSave_frame hp) fun a ⟨ha, fa⟩ => ?_)
+  refine WP.block_append (WP.mono (inputBits_frame hp hi ha (by decide) (by decide))
+    fun b ⟨hb, fb, bits⟩ => ?_)
   refine WP.block_append (WP.mono (clampBits_ok hb hp.fit hp.wr
-    (fun k hk => bits k (by omega_using [hk]))) fun b' ⟨hb', bits'⟩ => ?_)
+    (fun k hk => bits k (by omega_using [hk]))) fun b' ⟨hb', fb', bits'⟩ => ?_)
   have cb := hb'.ctx hp.fit hp.wr
   refine WP.mono (fieldCode_ok baseSetupOps cb) fun c ⟨kc, ec⟩ => ?_
-  refine ⟨hb'.ikeep hp.fit (IKeep.of_field kc), fun q qq => ?_, by rw [ec, baseSetup_d]⟩
-  rw [IKeep.bit (IKeep.of_field kc) cb q (by omega_using [qq]), bits' q qq,
-    clamp_bit (scalar_length s) qq]
+  have hc := hb'.ikeep hp.fit (IKeep.of_field kc)
+  refine ⟨hc, fun q qq => ?_, by rw [ec, baseSetup_d], ?_,
+    htbl.of_frame hc.rd hc.frame fun r hr => by rw [List.mem_singleton.mp hr]; exact fun _ h => h⟩
+  · rw [IKeep.bit (IKeep.of_field kc) cb q (by omega_using [qq]), bits' q qq,
+      clamp_bit (scalar_length s) qq]
+  · rw [wd_frame1 kc.frame hp.fit (by decide) (by decide) (Or.inr (by decide)),
+      wd_frame1 fb' hp.fit (by decide) (by decide) (Or.inl (by decide)),
+      wd_frame1 fb hp.fit (by decide) (by decide) (Or.inl (by decide)),
+      wd_frame1 fa hp.fit (by decide) (by decide) (Or.inr (by decide))]
+    exact hptr
 
-theorem comb_ok {s₀ s : State} (h : x25519BaseLocal.pre s₀) (hr : Ready s₀ s) :
+theorem comb_ok {s₀ s : State} (h : BaseRegions s₀) (hr : Ready s₀ s) :
     WP isa combMultiply s fun t => Rep (point (env t.mem (arg s₀ 2)) 0 1 2 3)
       ((Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32)) •
         baseAff) ∧ Saved s₀ (arg s₀ 2) t := by
   obtain ⟨hp, _, _⟩ := scalarBase_pre h
-  exact WP.mono (combMultiply_ok (hr.saved.ctx hp.fit hp.wr) (scalar_lt s₀) hr.bits hr.d)
+  exact WP.mono (combMultiply_ok (hr.saved.ctx hp.fit hp.wr) (scalar_lt s₀) hr.bits hr.d hr.ptr hr.tbl)
     fun t ⟨pt, kt⟩ => ⟨pt, hr.saved.mulkeep hp.fit kt⟩
 
-theorem x25519Base_correct {s : State} (h : x25519BaseLocal.pre s) :
-    WP isa x25519Base s fun t => abiPreserved s t ∧ x25519BaseLocal.post s t := by
-  obtain ⟨hp, _, ho⟩ := scalarBase_pre h
+theorem x25519BaseBody_correct {s : State} (h : BodyPre s) :
+    WP isa x25519BaseBody s fun t => abiPreserved s t ∧ x25519BaseLocal.post s t := by
+  obtain ⟨hp, _, ho⟩ := scalarBase_pre h.1
+  rw [x25519BaseBody]
   refine WP.seq (WP.mono (start_ok h) fun c hc => ?_)
-  refine WP.seq (WP.mono (comb_ok h hc) fun d ⟨pd, hd⟩ => ?_)
+  refine WP.seq (WP.mono (comb_ok h.1 hc) fun d ⟨pd, hd⟩ => ?_)
   refine WP.seq (WP.mono (uEncode_ok (hd.ctx hp.fit hp.wr)) fun e ⟨ke, ve⟩ => ?_)
   have he := hd.ikeep hp.fit ke
   refine WP.mono (finishWords_ok hp ho he (src := 64) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
@@ -204,5 +220,18 @@ theorem x25519Base_correct {s : State} (h : x25519BaseLocal.pre s) :
   rw [bytesAt_eq, bytesAt_eq, et, ve,
     Proof.X25519.Edwards.x25519_basePoint (scalar_length s) _ (u_rep pd)]
   rfl
+
+theorem x25519Base_correct {s : State} (h : x25519BaseLocal.pre s) :
+    WP isa x25519Base s fun t => abiPreserved s t ∧ x25519BaseLocal.post s t := by
+  rw [x25519Base]
+  refine WP.seq (WP.mono (combAddr_ok h) fun s₁ P => ?_)
+  refine WP.mono (x25519BaseBody_correct P.pre) fun t ⟨ha, hq⟩ => ⟨P.abi ha, ?_⟩
+  change Spec.X25519.bytesAt t.mem ((arg s₁ 0).setWidth 64) 32 =
+    Spec.X25519.x25519 (Spec.X25519.bytesAt s₁.mem ((arg s₁ 1).setWidth 64) 32)
+      Spec.X25519.basePoint at hq
+  change Spec.X25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
+    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) Spec.X25519.basePoint
+  rw [P.args 0 (by decide), P.args 1 (by decide), bytesAt_eq s₁.mem, P.input] at hq
+  exact hq
 
 end VG.Proof.X25519.X86.Base

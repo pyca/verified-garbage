@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Ed25519.X86.SignCached
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Setup
+import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.Layout`. -/
 section
@@ -16,6 +17,8 @@ structure Lay where
   len : BitVec 32
   scr : BitVec 32
   E : BitVec 32
+  /-- The address of the comb's tables (the static `combSym`). -/
+  T : BitVec 32
 
 namespace Lay
 variable (L : Lay)
@@ -28,7 +31,8 @@ abbrev ARGS : Region := ⟨L.E.setWidth 64 + 260, 24⟩
 abbrev RET : Region := ⟨L.E.setWidth 64 + 256, 4⟩
 abbrev FR : Region := Whole.FR L.E
 abbrev STK : Region := Whole.STK L.E
-def inputs : List Region := [L.SEED, L.PK, L.MSG, L.ARGS]
+abbrev TB : Region := TBL (L.T.setWidth 64)
+def inputs : List Region := [L.SEED, L.PK, L.MSG, L.ARGS, L.TB]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : BitVec 32 :=
   match j with | 0 => L.out | 1 => L.seed | 2 => L.pk | 3 => L.msg | 4 => L.len | _ => L.scr
@@ -50,6 +54,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 32
   ns : L.seed.toNat + 32 ≤ 2 ^ 32
   nc : L.scr.toNat + 8192 ≤ 2 ^ 32
+  nt : L.T.toNat + 8 * Impl.Ed25519.X86.combWords.length ≤ 2 ^ 32
 end Lay
 
 abbrev Ctx (L : Lay) (g : Reg → BitVec 32) (m₀ : Mem) (t : State) :=
@@ -93,8 +98,10 @@ end
 namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86 VG.Impl.Ed25519.X86.Whole
 
+/-- The arguments in memory, and the comb's tables. -/
 def Arguments (L : Lay) (m : Mem) : Prop :=
-  ∀ j < 6, m.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 = L.value j
+  (∀ j < 6, m.readW (L.E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j)) 32 = L.value j) ∧
+    TblWords (L.T.setWidth 64) m
 
 def value (L : Lay) : Value → BitVec 32
   | .const n => BitVec.ofNat 32 n
@@ -114,7 +121,7 @@ theorem Ctx.value (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   | caller j d =>
     change j < 6 at hv
     simp only [Whole.value, SignCached.value]
-    rw [addr_eq (by have := hL.top; omega), hc.arg_word hL hv, ha j hv]
+    rw [addr_eq (by have := hL.top; omega), hc.arg_word hL hv, ha.1 j hv]
 
 theorem args_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     {vs : List Value} (hlen : vs.length ≤ 6) (hv : ∀ v ∈ vs, Whole.valid 6 v) :
@@ -128,5 +135,17 @@ theorem args_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     · rw [addr_eq (by have := hL.top; omega)]
       exact Offset.contains _ (e := 260) (k := 24) (by omega) (by omega) (by decide)
   · simpa only [Nat.zero_add, hc.value hL ha (hv _ (List.getElem_mem _))] using hvals j hj
+
+/-- The tables survive everything the function writes. -/
+theorem Ctx.tbl (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+    TblWords (L.T.setWidth 64) s.mem := by
+  have ht : L.TB ∈ L.inputs := by simp [Lay.inputs]
+  refine ha.2.frame hc.frame fun r hr => ?_
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+    or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact (hL.os _ ht).symm
+  · exact hL.sc _ ht
+  · exact (hL.ks _ ht).symm
 
 end VG.Proof.Ed25519.X86.SignCached

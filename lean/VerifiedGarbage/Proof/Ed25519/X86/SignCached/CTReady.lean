@@ -103,13 +103,15 @@ def reduce_ready (hc : Ctx L g m₀ s) (hL : L.Ok)
     · exact .inr ⟨0, by simp, by simp⟩
   exact ⟨_, _, Whole.reduce_pre hc H hd hd' a0 a1 a2, cov, ws⟩
 
-def base_ready (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) :
+def base_ready (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
+    (hy : s.syms Impl.Ed25519.X86.combSym = L.T) (ht : TblWords (L.T.setWidth 64) s.mem) :
     Whole.CallReady scalarBaseLocal L.E L.inputs L.outputs s := by
   have cov := hash_covers (L := L) (rs := baseRd L ++ baseWr L) (by
     simp only [baseRd, baseWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact .inl (fieldWithin hL (by decide))
     · exact .inl (argsWithin L (by decide))
+    · exact .inr ⟨L.TB, by simp [Lay.inputs], 0, by simp, by simp⟩
     · exact .inr ⟨L.OUT, by simp [Lay.outputs], 0, by simp [baseOut], by change 0 + 32 ≤ 64; decide⟩
     · exact scratch_covered ⟨0, by simp, by simp⟩)
   have ws : ∀ r ∈ baseWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
@@ -117,7 +119,7 @@ def base_ready (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : BaseArgs L s) :
     rintro r (rfl | rfl)
     · exact .inr ⟨L.OUT, by simp [Lay.outputs], 0, by simp [baseOut], by change 0 + 32 ≤ 64; decide⟩
     · exact .inr ⟨L.SCR, by simp [Lay.outputs], 0, by simp, by simp⟩
-  exact ⟨_, _, base_pre hc hL ha, cov, ws⟩
+  exact ⟨_, _, base_pre hc hL ha hy ht, cov, ws⟩
 
 def mul_ready (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : MulArgs L s) :
     Whole.CallReady scalarMulAddLocal L.E L.inputs L.outputs s := by
