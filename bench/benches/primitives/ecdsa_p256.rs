@@ -255,9 +255,9 @@ pub fn bench(c:&mut Criterion) {
   assert!(Verifier::new(MessageDigest::sha256(),&pk).unwrap().verify_oneshot(&x.der,&x.message).unwrap());
  }
  let mut g=c.benchmark_group("ecdsa_p256_sha256_verify_rotating256");
- g.bench_function("verified-garbage/64",|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;VerifyingKey::<P256>::from_bytes(&x.q).verify::<Sha256>(&x.message,&x.sig).unwrap()})});
- g.bench_function("aws-lc/64",|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;aws_lc_rs::signature::UnparsedPublicKey::new(&aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED,&x.q).verify(&x.message,&x.sig).unwrap()})});
- g.bench_function("openssl/64",|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;let point=EcPoint::from_bytes(&group,&x.q,&mut ctx).unwrap();let ec=EcKey::from_public_key(&group,&point).unwrap();ec.check_key().unwrap();let pk=PKey::from_ec_key(ec).unwrap();assert!(Verifier::new(MessageDigest::sha256(),&pk).unwrap().verify_oneshot(&x.der,&x.message).unwrap())})});
+ g.bench_function(criterion::BenchmarkId::new("verified-garbage",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;VerifyingKey::<P256>::from_bytes(&x.q).verify::<Sha256>(&x.message,&x.sig).unwrap()})});
+ g.bench_function(criterion::BenchmarkId::new("aws-lc-rs",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;aws_lc_rs::signature::UnparsedPublicKey::new(&aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED,&x.q).verify(&x.message,&x.sig).unwrap()})});
+ g.bench_function(criterion::BenchmarkId::new("openssl",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;let point=EcPoint::from_bytes(&group,&x.q,&mut ctx).unwrap();let ec=EcKey::from_public_key(&group,&point).unwrap();ec.check_key().unwrap();let pk=PKey::from_ec_key(ec).unwrap();assert!(Verifier::new(MessageDigest::sha256(),&pk).unwrap().verify_oneshot(&x.der,&x.message).unwrap())})});
  g.finish();
 }
 

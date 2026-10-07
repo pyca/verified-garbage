@@ -232,7 +232,7 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=2)
+    p.add_argument("--rounds", type=int, default=4)
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
