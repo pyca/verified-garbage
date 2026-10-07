@@ -165,9 +165,9 @@ theorem basesR_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
 theorem cmpIdx_ok {s : State} {a b : Nat} (ha : a < 8) (hb : b < 8) (hcx : s.gpr .rcx = BitVec.ofNat 64 a)
     (h8 : s.gpr .r8 = BitVec.ofNat 64 b) :
     WP isa (.block [.alu .cmp .rcx (.reg .r8)]) s fun t =>
-      t.zf = some (decide (a = b)) ∧ t.mem = s.mem ∧ Keep [.rcx] s t := by
-  refine WP.mono (WP.keep [.rcx] (Q := fun t => t.zf = some (decide (a = b)) ∧ t.mem = s.mem) ?_ rfl)
-    fun t ⟨h, k⟩ => ⟨h.1, h.2, k⟩
+      t.zf = some (decide (a = b)) ∧ t.mem = s.mem ∧ t.gpr .rcx = s.gpr .rcx ∧ Keep [.rcx] s t := by
+  refine WP.mono (WP.keep [.rcx] (Q := fun t => t.zf = some (decide (a = b)) ∧ t.mem = s.mem ∧
+    t.gpr .rcx = s.gpr .rcx) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2, k⟩
   xrun [hcx, h8, ofNat_sub_beq (show a < 2 ^ 64 by omega) (show b < 2 ^ 64 by omega)]
 
 /-- The operands' slots as the head leaves them. -/
@@ -212,7 +212,7 @@ theorem adxBody_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : S
     unfold tiled
     have hcx₁ : s₁.gpr .rcx = BitVec.ofNat 64 a := (k₁.gpr (by decide)).trans hcx
     have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 b := (k₁.gpr (by decide)).trans h8
-    refine WP.seq (WP.mono (cmpIdx_ok ha hb hcx₁ h8₁) fun s₂ ⟨hz₂, hm₂, k₂⟩ => ?_)
+    refine WP.seq (WP.mono (cmpIdx_ok ha hb hcx₁ h8₁) fun s₂ ⟨hz₂, hm₂, _, k₂⟩ => ?_)
     have hs₂ := hs₁.congr k₂.2.2
     have hdi₂ : s₂.gpr .rdi = B := (k₂.gpr (by decide)).trans hdi₁
     rw [← hm₂] at hinv hB hH hv ⊢
@@ -374,6 +374,29 @@ theorem restore_ok {s : State} {B : Addr} {Z : Nat} (hs : Scr s B Z) (hdi : s.gp
     rw [w₄ x (Or.inl (by omega)), h3]
     exact write_restore _ _ B (by unfold sFn; omega) (by unfold sFn; omega) (by unfold sFn at *; omega)
 
+/-- `enter` and `slotsIn`. -/
+theorem adxHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {o a b : Nat}
+    (ho : o < 8) (ha : a < 8) (hb : b < 8) (hdx : (s.gpr .rdx).setWidth 32 = BitVec.ofNat 32 o)
+    (hcx : (s.gpr .rcx).setWidth 32 = BitVec.ofNat 32 a) (h8 : (s.gpr .r8).setWidth 32 = BitVec.ofNat 32 b) :
+    WP isa (.block (enter ++ slotsIn)) s fun s₁ =>
+      s₁.mem = headMem s.mem B w o a b ∧ s₁.gpr .rdx = BitVec.ofNat 64 o ∧
+      s₁.gpr .rcx = BitVec.ofNat 64 a ∧ s₁.gpr .r8 = BitVec.ofNat 64 b ∧
+      Keep [.rdx, .rcx, .r8, .rax] s s₁ ∧
+      s₁.xmm .xmm0 = s.gpr .rbp ++ s.gpr .rbx ∧ s₁.xmm .xmm1 = s.gpr .r13 ++ s.gpr .r12 ∧
+      s₁.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14 ∧ s₁.xmm .xmm3 = s.mem.readW (off B (8 * sFn 0)) 128 ∧
+      s₁.xmm .xmm4 = s.mem.readW (off B (8 * sFn 2)) 128 ∧ s₁.xmm .xmm5 = s.mem.readW (off B (8 * sFn 4)) 128 := by
+  rw [show enter ++ slotsIn = zext ++ (saves ++ slotsIn) from by simp [enter], WP.block_append_iff]
+  refine WP.mono (zextIdx_ok ho ha hb hdx hcx h8) fun s₀ ⟨hdx₀, hcx₀, h8₀, hm₀, _, k₀⟩ => ?_
+  refine WP.mono (adxRest_ok (hs.congr k₀.2.2) ((k₀.gpr (by decide)).trans hdi) (hm₀ ▸ hH) hZ ho ha hb hdx₀
+    hcx₀ h8₀) fun s₁ ⟨hm₁, k₁, x0, x1, x2, x3, x4, x5⟩ => ?_
+  rw [hm₀] at hm₁ x3 x4 x5
+  refine ⟨hm₁, (k₁.gpr (by decide)).trans hdx₀, (k₁.gpr (by decide)).trans hcx₀,
+    (k₁.gpr (by decide)).trans h8₀, (k₀.trans k₁).mono (by decide), ?_, ?_, ?_, x3, x4, x5⟩
+  · rw [x0, k₀.gpr (by decide), k₀.gpr (by decide)]
+  · rw [x1, k₀.gpr (by decide), k₀.gpr (by decide)]
+  · rw [x2, k₀.gpr (by decide), k₀.gpr (by decide)]
+
 /-- `vg_rsa_mont_mul_adx`'s code: what `mulBase_ok` says of `vg_rsa_mont_mul`'s. -/
 theorem mulAdx_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
@@ -395,25 +418,7 @@ theorem mulAdx_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
   have s0 : ∀ j, slot w 0 ≤ slot w j := fun j => by unfold slot; omega
   have hZ32 : 8 * 32 ≤ Z := by have := hdr_lt_slot w 0 (show 31 < 32 by decide); have := sl 0 (by decide); omega
   unfold mulAdx
-  rw [show enter ++ slotsIn = zext ++ (saves ++ slotsIn) from by simp [enter]]
-  have hhead : WP isa (.block (zext ++ (saves ++ slotsIn))) s fun s₁ =>
-      s₁.mem = headMem s.mem B w o a b ∧ s₁.gpr .rdx = BitVec.ofNat 64 o ∧
-      s₁.gpr .rcx = BitVec.ofNat 64 a ∧ s₁.gpr .r8 = BitVec.ofNat 64 b ∧
-      Keep [.rdx, .rcx, .r8, .rax] s s₁ ∧
-      s₁.xmm .xmm0 = s.gpr .rbp ++ s.gpr .rbx ∧ s₁.xmm .xmm1 = s.gpr .r13 ++ s.gpr .r12 ∧
-      s₁.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14 ∧ s₁.xmm .xmm3 = s.mem.readW (off B (8 * sFn 0)) 128 ∧
-      s₁.xmm .xmm4 = s.mem.readW (off B (8 * sFn 2)) 128 ∧ s₁.xmm .xmm5 = s.mem.readW (off B (8 * sFn 4)) 128 := by
-    rw [WP.block_append_iff]
-    refine WP.mono (zextIdx_ok ho ha hb hdx hcx h8) fun s₀ ⟨hdx₀, hcx₀, h8₀, hm₀, _, k₀⟩ => ?_
-    refine WP.mono (adxRest_ok (hs.congr k₀.2.2) ((k₀.gpr (by decide)).trans hdi) (hm₀ ▸ hH) hZ ho ha hb hdx₀
-      hcx₀ h8₀) fun s₁ ⟨hm₁, k₁, x0, x1, x2, x3, x4, x5⟩ => ?_
-    rw [hm₀] at hm₁ x3 x4 x5
-    refine ⟨hm₁, (k₁.gpr (by decide)).trans hdx₀, (k₁.gpr (by decide)).trans hcx₀,
-      (k₁.gpr (by decide)).trans h8₀, (k₀.trans k₁).mono (by decide), ?_, ?_, ?_, x3, x4, x5⟩
-    · rw [x0, k₀.gpr (by decide), k₀.gpr (by decide)]
-    · rw [x1, k₀.gpr (by decide), k₀.gpr (by decide)]
-    · rw [x2, k₀.gpr (by decide), k₀.gpr (by decide)]
-  refine WP.seq (WP.mono hhead fun s₁ ⟨hm₁, hdx₁, hcx₁, h8₁, k₁, x0, x1, x2, x3, x4, x5⟩ => ?_)
+  refine WP.seq (WP.mono (adxHead_ok hs hdi hH hZ ho ha hb hdx hcx h8) fun s₁ ⟨hm₁, hdx₁, hcx₁, h8₁, k₁, x0, x1, x2, x3, x4, x5⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hdi₁ : s₁.gpr .rdi = B := (k₁.gpr (by decide)).trans hdi
   have ho₁ : Outside B (8 * sArr xO) 24 s.mem s₁.mem := hm₁ ▸ headMem_outside s.mem B w o a b

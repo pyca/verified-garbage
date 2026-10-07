@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Bignum.X86_64.MontFnVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxVerified
 
 /-! # Montgomery multiplication in the RSA working space, as a function, on x86-64 -/
 
@@ -17,6 +18,22 @@ def artifacts : List Artifact := [
     code := Impl.Bignum.X86_64.MontFn.mulBase
     contract := Spec.Rsa.Mont.mulContract X86_64.abi
     verified := Proof.Bignum.X86_64.MontFn.fn_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.Mont.mulApi with
+    target := X86_64.target
+    name := "vg_rsa_mont_mul_adx"
+    doc := Spec.Rsa.Mont.mulApi.doc
+      (notes := ["For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by \
+        8-by-8 tiles of `mulx` with two carry chains (`adcx`, `adox`), or, when `a = b`, the square \
+        by triangular tiles computing each cross product once; then a word-by-word reduction and \
+        the selected subtraction of `m`. Other sizes take `vg_rsa_mont_mul`'s code. The tiles read \
+        their operands' addresses from header words 16–18, which the function sets from `o`, `a` \
+        and `b` and, with words 19–21, restores before it returns. It uses no stack: it keeps \
+        `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2`."])
+    code := Impl.Bignum.X86_64.MontFn.mulAdx
+    contract := Spec.Rsa.Mont.mulContract X86_64.abi
+    verified := Proof.Bignum.X86_64.MontFn.fnAdx_verified
+    features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.RsaMont.X86_64
