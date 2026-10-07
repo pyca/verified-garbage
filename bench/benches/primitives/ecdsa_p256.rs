@@ -25,6 +25,7 @@ pub const USES: &[&str] = &[
     target_arch = "arm"
 ))]
 pub fn bench(c: &mut Criterion) {
+    experimental_corpus::bench(c);
     use std::hint::black_box;
 
     use aws_lc_rs::agreement::{ECDH_P256, PrivateKey};
@@ -226,3 +227,38 @@ fn hash<H: verified_garbage::ecdsa::SignatureHash<verified_garbage::ecdsa::P256>
     target_arch = "arm"
 )))]
 pub fn bench(_: &mut Criterion) {}
+
+mod experimental_corpus {
+use criterion::Criterion;
+use std::hint::black_box;
+use openssl::{bn::{BigNum, BigNumContext},ec::{EcGroup,EcKey,EcPoint},ecdsa::EcdsaSig,hash::MessageDigest,nid::Nid,pkey::PKey,sign::Verifier};
+use verified_garbage::{ecdsa::{P256,SigningKey,VerifyingKey},hashes::sha256::Sha256};
+struct Case { q:[u8;65], message:[u8;64], sig:[u8;64], der:Vec<u8> }
+pub fn bench(c:&mut Criterion) {
+ let group=EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
+ let mut ctx=BigNumContext::new().unwrap();
+ let cases:Vec<_>=(0..256u64).map(|i| {
+  let mut d=[0x42;32];d[24..].copy_from_slice(&(i+1).to_be_bytes());
+  let key=SigningKey::<P256>::from_bytes(&d);
+  let q=key.public_key().unwrap();
+  let mut message=[0x5a;64]; message[..8].copy_from_slice(&i.to_be_bytes());
+  let sig=key.sign::<Sha256>(&message).unwrap();
+  let der=EcdsaSig::from_private_components(BigNum::from_slice(&sig[..32]).unwrap(),BigNum::from_slice(&sig[32..]).unwrap()).unwrap().to_der().unwrap();
+  Case{q,message,sig,der}
+ }).collect();
+ for x in &cases {
+  VerifyingKey::<P256>::from_bytes(&x.q).verify::<Sha256>(&x.message,&x.sig).unwrap();
+  aws_lc_rs::signature::UnparsedPublicKey::new(&aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED,&x.q).verify(&x.message,&x.sig).unwrap();
+  let point=EcPoint::from_bytes(&group,&x.q,&mut ctx).unwrap();
+  let ec=EcKey::from_public_key(&group,&point).unwrap();ec.check_key().unwrap();
+  let pk=PKey::from_ec_key(ec).unwrap();
+  assert!(Verifier::new(MessageDigest::sha256(),&pk).unwrap().verify_oneshot(&x.der,&x.message).unwrap());
+ }
+ let mut g=c.benchmark_group("ecdsa_p256_sha256_verify_rotating256");
+ g.bench_function(criterion::BenchmarkId::new("verified-garbage",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;VerifyingKey::<P256>::from_bytes(&x.q).verify::<Sha256>(&x.message,&x.sig).unwrap()})});
+ g.bench_function(criterion::BenchmarkId::new("aws-lc-rs",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;aws_lc_rs::signature::UnparsedPublicKey::new(&aws_lc_rs::signature::ECDSA_P256_SHA256_FIXED,&x.q).verify(&x.message,&x.sig).unwrap()})});
+ g.bench_function(criterion::BenchmarkId::new("openssl",64),|b|{let mut i=0;b.iter(||{let x=black_box(&cases[i]);i=(i+1)&255;let point=EcPoint::from_bytes(&group,&x.q,&mut ctx).unwrap();let ec=EcKey::from_public_key(&group,&point).unwrap();ec.check_key().unwrap();let pk=PKey::from_ec_key(ec).unwrap();assert!(Verifier::new(MessageDigest::sha256(),&pk).unwrap().verify_oneshot(&x.der,&x.message).unwrap())})});
+ g.finish();
+}
+
+}
