@@ -498,49 +498,4 @@ theorem redF_ok (xm : Bool) {s : State} {n i m : Nat} (hn : n < 7) {ws : List MW
     omega
   · exact (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))
 
-/-! ## A round -/
-
-/-- Round `i` of the multiplication by `mul`: `2⁶⁴ T' = T + a_i B + u m`, and
-`T' < 2m` if `T < 2m`. -/
-theorem roundM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
-    (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true)
-    (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
-    WP isa (.block (roundM M a b i)) s fun s' =>
-      (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
-        (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n + u * m) ∧
-      regsVal s' (wins M.n (i + 1)) < 2 * m ∧
-      Keeps (.rax :: .rcx :: .rdx :: .rbp :: wins M.n i) s s' := by
-  have hm' : m < 2 ^ (64 * M.n) := hm ▸ wordsVal_lt _ _ _ _
-  have hA := (word s.mem base (a + 8 * i)).isLt
-  have hAB : (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n ≤ (2 ^ 64 - 1) * m :=
-    Nat.mul_le_mul (by omega) (by omega)
-  rw [show roundM M a b i = (([.mov .rcx (.mem (sc (a + 8 * i)))] : List Instr) ++
-      (mulRow ((List.range M.n).map (win M.n i)) b ++ carryUp (win M.n i M.n) (win M.n i (M.n + 1)))) ++
-        redRound M i by simp only [roundM, List.append_assoc], WP.block_append_iff]
-  refine WP.mono (prod_ok hs hn ha hb hm' hB hT) fun s₂ ⟨e₂, hs₂, k₂⟩ => ?_
-  have hmem : s₂.mem = s.mem := k₂.2.1
-  -- From `2⁶⁴ T' = T + a_i B + u m` for a word `u`.
-  have fin : ∀ {s' : State} (u : Nat), u < 2 ^ 64 →
-      2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s₂ (wins M.n i) + u * m →
-      (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
-        (word s.mem base (a + 8 * i)).toNat * wordsVal s.mem base b M.n + u * m) ∧
-      regsVal s' (wins M.n (i + 1)) < 2 * m := fun u hu e => by
-    rw [e₂] at e
-    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
-    refine ⟨⟨u, e⟩, Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_⟩
-    rw [e]; omega
-  unfold redRound
-  split
-  · rename_i hg
-    refine WP.mono (redGen_ok hs₂ hn hmo (by rw [hmem, hm]) hinv (by rw [e₂]; omega))
-      fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₂.trans k⟩
-  · rename_i ws hf
-    rw [hf] at hred
-    have ht0 := (s₂.gpr (win M.n i 0)).isLt
-    have hum : (s₂.gpr (win M.n i 0)).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
-    refine WP.mono (redF_ok false hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
-      ⟨(fin _ ht0 e).1, (fin _ ht0 e).2, k₂.trans (k.mono (by sub_regs))⟩
-
 end VG.Proof.Mont.X86_64

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
+import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 
 /-!
@@ -235,7 +235,7 @@ and `T' < 2m` if `T < 2m`. -/
 theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
     (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
     (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true)
+    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)
     (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
     WP isa (.block (roundX M a b i)) s fun s' =>
       (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
@@ -284,6 +284,13 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
     refine ⟨⟨u, e⟩, Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_⟩
     rw [e]; omega
+  dsimp only
+  split
+  · rename_i hsp
+    obtain ⟨hn6, hm6⟩ := Mod.ok_sparse hok hsp
+    refine WP.mono (redS_ok hn6 hm6 (by rw [e₂]; omega))
+      fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₁₂.trans k⟩
+  have hred := Mod.ok_red hok
   split
   · refine WP.mono (redGenX_ok hs₂ hn hmo (by rw [hmem, hm]) hinv (by rw [e₂]; omega))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₁₂.trans k⟩
@@ -299,7 +306,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
 theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
     (hn : M.n < 7) {a b i m : Nat} (ha : a + 8 * i + 8 ≤ size) (hb : b + 8 * M.n ≤ size)
     (hmo : M.mo + 8 * M.n ≤ size) (hm : wordsVal s.mem base M.mo M.n = m)
-    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hred : M.red.ok M.n m = true)
+    (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true)
     (hB : wordsVal s.mem base b M.n < m) (hT : regsVal s (wins M.n i) < 2 * m) :
     WP isa (.block (round M a b i)) s fun s' =>
       (∃ u, 2 ^ 64 * regsVal s' (wins M.n (i + 1)) = regsVal s (wins M.n i) +
@@ -307,7 +314,7 @@ theorem round_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       regsVal s' (wins M.n (i + 1)) < 2 * m ∧
       Keeps (.rax :: .rcx :: .rdx :: .rbp :: wins M.n i) s s' := by
   unfold round; split
-  · exact roundX_ok hs hn ha hb hmo hm hinv hred hB hT
-  · exact roundM_ok hs hn ha hb hmo hm hinv hred hB hT
+  · exact roundX_ok hs hn ha hb hmo hm hinv hok hB hT
+  · exact roundM_ok hs hn ha hb hmo hm hinv hok hB hT
 
 end VG.Proof.Mont.X86_64

@@ -63,11 +63,18 @@ def Red.ofModulus (n m : Nat) : Red :=
 one below `m` fits in `n + 1` words (`m`'s top word is not all ones). -/
 def tightOk (n m : Nat) : Bool := (2 ^ 64 + 1) * m ≤ 2 ^ (64 * (n + 1))
 
+/-- P-384's `p = 2³⁸⁴ - 2¹²⁸ - 2⁹⁶ + 2³² - 1`, of six words, which a reduction
+step may add a multiple of without multiplying by its words (`Mod.sparse`):
+`2³⁸⁴ - p = 2¹²⁸ + 2⁹⁶ - 2³² + 1` has three, and `-p⁻¹ mod 2⁶⁴ = 2³² + 1`. -/
+def sparseOk (n m : Nat) : Bool :=
+  n == 6 && m == 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319
+
 /-- A modulus: its number of words `n`, where it is (`mo`, `n` words), the
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,
 its reduction (`red`), whether it is `tightOk` (`tight`), which only
-some targets use, and whether to multiply with BMI2 and ADX (`adx`, x86-64
-only). -/
+some targets use, whether to multiply with BMI2 and ADX (`adx`, x86-64
+only), and whether it is P-384's `p`, reduced by `2³⁸⁴ - p` (`sparse`, x86-64
+only, which needs `sparseOk`). -/
 structure Mod where
   n : Nat
   mo : Nat
@@ -76,5 +83,6 @@ structure Mod where
   red : Red := .general
   tight : Bool := false
   adx : Bool := false
+  sparse : Bool := false
 
 end VG.Impl.Mont

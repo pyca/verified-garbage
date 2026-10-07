@@ -175,7 +175,7 @@ def sl (i : Nat) : Nat := slot c.n i
 
 def MP' : Mod :=
   { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
-    adx := c.adx }
+    adx := c.adx, sparse := sparseOk c.n c.C.p }
 def MN' : Mod :=
   { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n), adx := c.adx }
 
