@@ -65,15 +65,18 @@ def doubles (K : WinCfg) : Prog isa :=
 def add (K : WinCfg) : Prog isa :=
   .seq (CachedJac.maskedAdd K K.R K.E K.D (K.E.x+96)) (.block (copyPt 4 K.R K.D))
 
+def scalarStep (K : WinCfg) : Prog isa :=
+  let tc := {WinCfg.tc K with w := 5, kbytes := 5*K.J}
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (doubles K) <|
+  .seq (.block (tc.digit ++ select K ++ tc.negY)) <|
+  .seq (add K) (.block [.alu .test .rbx (.reg .rbx)])
+
 def window (K : WinCfg) : Prog isa :=
   let tc := {WinCfg.tc K with w := 5, kbytes := 5*K.J}
   .seq (build K) <|
   .seq (.block ([.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J-1)))] ++
     tc.digit ++ select K ++ tc.negY ++ copyPt 4 K.R K.E)) <|
-  .seq (.loop (
-    .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (doubles K) <|
-    .seq (.block (tc.digit ++ select K ++ tc.negY)) <|
-    .seq (add K) (.block [.alu .test .rbx (.reg .rbx)])) .ne) <|
+  .seq (.loop (scalarStep K) .ne) <|
   fp K.M [.mul K.R.z K.R.z K.R.z]
 
 def cfg (c : Ecdsa.X86_64.Cfg) : WinCfg :=
