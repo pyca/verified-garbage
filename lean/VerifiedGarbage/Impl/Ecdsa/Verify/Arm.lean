@@ -87,16 +87,16 @@ def loadS : List Instr :=
 /-- The checks of `r` and `s`, and `s R mod n`. -/
 def scalars : Prog isa :=
   .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
-    (Mont.Arm.mul c.MN' c.wk (c.sl SM') (c.sl PT) (c.sl R2N))
+    (Mont.mulCall c.SN (c.sl SM') (c.sl PT) (c.sl R2N))
 
 /-- `u` and `v`, from `w R mod n` in `ACC`. -/
 def uv : Prog isa :=
-  progs [Mont.Arm.mul c.MN' c.wk (c.sl EM') (c.sl D) (c.sl R2N),
-    Mont.Arm.mul c.MN' c.wk (c.sl RM') (c.sl K) (c.sl R2N),
-    Mont.Arm.mul c.MN' c.wk (c.sl UM) (c.sl EM') (c.sl ACC),
-    Mont.Arm.mul c.MN' c.wk (c.sl VM) (c.sl RM') (c.sl ACC),
-    Mont.Arm.mul c.MN' c.wk (c.sl U) (c.sl UM) (c.sl ONE),
-    Mont.Arm.mul c.MN' c.wk (c.sl V) (c.sl VM) (c.sl ONE)]
+  progs [Mont.mulCall c.SN (c.sl EM') (c.sl D) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl RM') (c.sl K) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl UM) (c.sl EM') (c.sl ACC),
+    Mont.mulCall c.SN (c.sl VM) (c.sl RM') (c.sl ACC),
+    Mont.mulCall c.SN (c.sl U) (c.sl UM) (c.sl ONE),
+    Mont.mulCall c.SN (c.sl V) (c.sl VM) (c.sl ONE)]
 
 /-- `U = R`, then `R = O = (0 : 1 : 0)`. -/
 def save : List Instr :=
@@ -106,7 +106,7 @@ def save : List Instr :=
 
 /-- `R = U + R`, through `D`. -/
 def sum : Prog isa :=
-  .seq (fprog c.MP' c.wk (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
+  .seq (fprog c.SP (rcb c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) (c.pt DX DY DZ)))
     (.block (copy (2 * c.n) (c.sl RX) (c.sl DX) ++ copy (2 * c.n) (c.sl RY) (c.sl DY) ++
       copy (2 * c.n) (c.sl RZ) (c.sl DZ)))
 
@@ -117,22 +117,22 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery form, `x R mod n`
 and `x R - r R mod n`, the checks of `Z` and of `x ≡ r`, and the result. -/
 def final : Prog isa :=
-  progs [Mont.Arm.mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.Arm.mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.Arm.mul c.MN' c.wk (c.sl XN) (c.sl X) (c.sl R2N),
-    .block (Mont.Arm.sub c.MN' c.wk (c.sl W) (c.sl XN) (c.sl RM')),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+    Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N),
+    Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'),
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++ finish c)]
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg c.wk) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg c.SP) <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk) (sum c)
+  .seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (sum c)
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (points c) <|
-  .seq (pow c.powP c.wk) (final c)
+  .seq (scalars c) <| .seq (pow c.powN c.SN) <| .seq (uv c) <| .seq (points c) <|
+  .seq (pow c.powP c.SP) (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=

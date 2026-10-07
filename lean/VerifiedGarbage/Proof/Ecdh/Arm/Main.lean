@@ -97,8 +97,8 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     exact O₂
 
 theorem middle_eq (c : Cfg) : Impl.Ecdh.Arm.Cfg.middle c =
-    .seq (mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE))
+    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
     (.block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.Arm.Cfg.finish c))) := rfl
 
 /-- Whether the result is a shared secret: the peer's key (`V`), `d` in
@@ -108,7 +108,7 @@ abbrev ok (c : Cfg) (base : Addr) (s : State) (V : Prop) [Decidable V] : Bool :=
 
 /-- `x`, the checks of `d` and `Z`, and the result, from a state that
 changed only the working space since `s₀`, with `out` in `lr`. -/
-theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : Scr s base size)
+theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : Scr s base size) (hfar : Far s base 8192)
     (F : Fixed c base s₀.gpr s.mem) (hacc : sv c base s ACC < c.C.p)
     {V : Prop} [Decidable V] (hflag : flagW c base s = mask32 V)
     (hwhole : Unch base [(0, 8192)] s₀.mem s.mem) (hrest : Rest (.lr :: work) s₀ s) (hlr : s.gpr .lr = s₀.gpr .r0)
@@ -127,22 +127,22 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
+  have hfl : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   rw [middle_eq]
   have hM := modP_of hc F.mp
   have hone : sv c base s ONE = 1 := F.one
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs hM (o := XM) (a := RX) (b := ACC) (by decide)
-    (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs hfar (o := XM) (a := RX) (b := ACC) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
+  have hf₁ := hfar.of_rest k₁.rest
   have kP₁ := hM.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have v₁ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₁ i = sv c base s i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₁ hi h₁ h₂
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide)
-    (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [v₁ (by decide) (by decide) (by decide), hone]; omega))
     fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
+  have hf₂ := hf₁.of_rest k₂.rest
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ X → i ≠ TMP → sv c base s₂ i = sv c base s i := fun hi h₁ h₂ h₃ =>
     (sv_keep (MP'_n c) rfl h7 hn k₂ hi h₂ h₃).trans (v₁ hi h₁ h₃)
   have x₂ : Fin.ofNat c.C.p (sv c base s₂ X) =
@@ -150,15 +150,15 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
     rw [toM_one_mul hpR (by rw [e₂, v₁ (i := ONE) (by decide) (by decide) (by decide), hone]),
       toM_mul hpR e₁]
   have U₂ : Unch base (slWk c [XM, X, TMP]) s.mem s₂.mem :=
-    ((unch_slots (MP'_n c) rfl k₁.unch (l := [XM, X, TMP]) (by simp) (by simp)).trans
-      (unch_slots (MP'_n c) rfl k₂.unch (l := [XM, X, TMP]) (by simp) (by simp))).mono
+    ((unch_slots (MP'_n c) rfl k₁.unchOne (l := [XM, X, TMP]) (by simp) (by simp)).trans
+      (unch_slots (MP'_n c) rfl k₂.unchOne (l := [XM, X, TMP]) (by simp) (by simp))).mono
       fun w hw => by simpa only [List.mem_append, or_self] using hw
-  have F₂ := F.unch h7 hn (fixedOk_slWk (l := [XM, X, TMP]) (by decide)) U₂
+  have F₂ := F.unch h7 hn (fixedOk_slWk h7 (l := [XM, X, TMP]) (by decide)) U₂
   rw [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (checkRange_ok c hs₂ h0 (sl_le c h7 (i := D) (by decide))
-    (sl_le c h7 (i := MN) (by decide)) hf) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
+    (sl_le c h7 (i := MN) (by decide)) hfl) fun s₅ ⟨f₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₂.of_rest k₅ (by decide)
-  refine VG.Proof.X25519.Arm.WP.append (checkNonzero_ok c hs₅ h0 (sl_le c h7 (i := RZ) (by decide)) hf)
+  refine VG.Proof.X25519.Arm.WP.append (checkNonzero_ok c hs₅ h0 (sl_le c h7 (i := RZ) (by decide)) hfl)
     fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
   have hs₆ := hs₅.of_rest k₆ (by decide)
   have F₆ := (F₂.unch h7 hn fixedOk_flag O₅.unch).unch h7 hn fixedOk_flag O₆.unch
@@ -173,7 +173,7 @@ theorem middle_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hs : 
     whole_of (whole_of (whole_of hwhole U₂ (slWk_le h7 (by decide))) O₅.unch (flag_le h0 h7))
       O₆.unch (flag_le h0 h7)
   have K₆ : Rest work s s₆ :=
-    ((k₁.rest.trans k₂.rest).mono clob_work).trans ((k₅.mono (by decide)).trans (k₆.mono (by decide)))
+    ((k₁.rest.trans k₂.rest).mono callClob_work).trans ((k₅.mono (by decide)).trans (k₆.mono (by decide)))
   have hlr₆ : s₆.gpr .lr = s₀.gpr .r0 := by rw [K₆.gpr _ (by decide), hlr]
   have hwr₆ : s₆.wr = s₀.wr := by rw [K₆.wr, hrest.wr]
   refine WP.mono (ecFinish_ok hc hs₆ hlr₆ hofit (by rw [hwr₆]; exact hw) hd F₆.saved _ hflag₆)
@@ -300,7 +300,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.Arm.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.Arm.Cfg.peerAt c .r2)) (.seq (Impl.Ecdh.Arm.Cfg.validate c)
-    (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.wk) (.seq (pow c.powP c.wk) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
+    (.seq (ladder (Impl.Ecdh.Arm.Cfg.ladderQ c) c.SP) (.seq (pow c.powP c.SP) (Impl.Ecdh.Arm.Cfg.middle c))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
@@ -338,18 +338,18 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       sv c (ptr s₀ .r3) s₃ E < c.C.p) ∧ sv c (ptr s₀ .r3) s₃ QY < c.C.p)) := by
     rw [f₃, S₂.flag, BitVec.allOnes_and, mask32_and, mask32_and]
     simp only [hq0]
-  refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
+  refine WP.seq (WP.mono (validate_ok hc hs₃ (S₂.far.of_rest k₃) F₃ r2₃ bp₃ hf₃)
     fun s₄ ⟨hs₄, g₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
-  have F₄ := F₃.unch h7 hn ((fixedOk_slWk (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
+  have F₄ := F₃.unch h7 hn ((fixedOk_slWk h7 (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
       sv c (ptr s₀ .r3) s₄ i = sv c (ptr s₀ .r3) s₃ i := fun hi hl hf =>
-    sv_unch U₄ h7 hn hi (apart_append (apart_slWk hi hl) (apart_flag h0 hf))
+    sv_unch U₄ h7 hn hi (apart_append (apart_slWk h7 hi hl) (apart_flag h0 hf))
   have t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₄.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) = s₂.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk (by decide)) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
+      rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slWk h7 (by decide)) (tbl_apart_flag h7 h0 _ t)),
+        tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t))]
   have hpk : sv c (ptr s₀ .r3) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   -- `[d]P`, then `Z^(p-2)`.
   have hstep := step_rep (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (k := sv c (ptr s₀ .r3) s₂ K) hC
@@ -374,19 +374,19 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((fixedOk_slWk (by decide)).append (fixedOk_slWk (l := [ACC, PT, TMP]) (by decide)))
+  have F₅ := F₄.unch h7 hn ((fixedOk_slWk h7 (by decide)).append (fixedOk_slWk h7 (l := [ACC, PT, TMP]) (by decide)))
     L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
       TX, TY, TZ, TMP] → i ∉ [ACC, PT, TMP] → sv c (ptr s₀ .r3) s₅ i = sv c (ptr s₀ .r3) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slWk hi h₁) (apart_slWk hi h₂))
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (apart_slWk h7 hi h₁) (apart_slWk h7 hi h₂))
   have hflag₅ : flagW c (ptr s₀ .r3) s₅ = mask32 (PeerOk c (ptr s₀ .r3) s₃ ((s₀.mem (ptr s₀ .r2) = 4 ∧
       sv c (ptr s₀ .r3) s₃ E < c.C.p) ∧ sv c (ptr s₀ .r3) s₃ QY < c.C.p)) := by
     have hFl := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ w ∈ slWk c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
         TX, TY, TZ, TMP] ++ slWk c [ACC, PT, TMP], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
       intro w hw
-      rcases apart_append (apart_slWk (c := c) (i := FLAG) (by decide) (by decide))
-        (apart_slWk (c := c) (i := FLAG) (l := [ACC, PT, TMP]) (by decide) (by decide)) w hw with h | h
+      rcases apart_append (apart_slWk (c := c) h7 (i := FLAG) (by decide) (by decide))
+        (apart_slWk (c := c) h7 (i := FLAG) (l := [ACC, PT, TMP]) (by decide) (by decide)) w hw with h | h
       · exact Or.inl (by omega)
       · exact Or.inr h
     rw [flagW, Unch.readW32 L.unch ap (by omega), ← flagW]
@@ -400,7 +400,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
       fun h w hw => h w (List.mem_append_left _ hw)) (flag_le h0 h7))) U₄
       (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))) L.unch
       (le_append (slWk_le h7 (by decide)) (slWk_le h7 (by decide)))
-  refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ W₅ K₅ hlr₅ hp.out_fit (by rw [hp.wr]; simp)
+  refine WP.mono (middle_ok hc hs₅ (((S₂.far.of_rest k₃).of_rest g₄).of_rest L.rest) F₅ L.acc_lt hflag₅ W₅ K₅ hlr₅ hp.out_fit (by rw [hp.wr]; simp)
     (hp.out_sc.sub_right (Region.sub_prefix (by decide))))
     fun s' ⟨xv, hxl, hxv, bytes, ret, saved, sp, m, Wm, Om⟩ => ⟨⟨saved, sp, m, Wm, Om⟩, ?_⟩
   -- The specification.

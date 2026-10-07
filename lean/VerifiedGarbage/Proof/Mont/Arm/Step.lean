@@ -3,9 +3,9 @@ import VerifiedGarbage.Proof.Mont.Arm.Words
 /-!
 # Montgomery arithmetic on 32-bit ARM: a multiply-accumulate step
 
-`mulStep acc src j` adds `r2 · d_j` and the carry `r3` to the digit of the
+`mulStep acc rb d j` adds `r2 · d_j` and the carry `r3` to the digit of the
 accumulator at `[r0 + acc + 4j]`, for digit `j` of the number at
-`[r12 + src]`, and leaves the carry in `r3` (`mulStep_ok`): with every
+`[rb + d]` (`src` bytes into the working space, `rb` at `src - d`), and leaves the carry in `r3` (`mulStep_ok`): with every
 operand below `2¹⁶`, `x = u d + t + c` is below `2³²`; its low half is
 stored and its high half is the carry. `carryUp` adds the carry into the
 digits `D` and `D + 1` (`carryUp_ok`).
@@ -48,13 +48,17 @@ theorem wp_half {s : State} {is : List Instr} {Q : State → Prop} {d w : Reg} {
       omega
     exact e ▸ u
 
-/-- `r7 = ` digit `j` of the number at `[r12 + src]`. -/
-theorem digitAt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {src j : Nat}
+/-- `r7 = ` digit `j` of the number at `[rb + d]`, which is `src = K + d`
+bytes into the working space when `rb = r12 + K`. -/
+theorem digitAt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {rb : Reg} {K d src j : Nat}
+    (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = src)
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hd : src + 4 * (j / 2) + 4 ≤ size) {is : List Instr} {Q : State → Prop}
     (k : ∀ s', Upd s s' .r7 (BitVec.ofNat 32 (pdig s.mem base src j)) → WP isa (.block is) s' Q) :
-    WP isa (.block (digitAt src j ++ is)) s Q := by
+    WP isa (.block (digitAt rb d j ++ is)) s Q := by
   simp only [digitAt, List.cons_append, List.nil_append]
-  refine wp_ldr (hs.off_lt (by omega)) (hs.ea (by omega)) (hs.read hd) fun s₁ u₁ => ?_
+  have ea : State.addr (s.gpr rb + BitVec.ofNat 32 (d + 4 * (j / 2))) = off base (src + 4 * (j / 2)) := by
+    rw [← hK, Nat.add_assoc]; exact hs.ea_off hb (by omega)
+  refine wp_ldr (hs.off_lt (d := d + 4 * (j / 2)) (by omega)) ea (hs.read hd) fun s₁ u₁ => ?_
   refine wp_half (Nat.mod_lt _ (by decide)) (by rw [u₁.other _ (by decide)]; exact h6) fun s₂ u₂ => k s₂ ?_
   rw [u₁.gpr] at u₂
   exact ⟨u₂.gpr, fun r hr => (u₂.other r hr).trans (u₁.other r hr), u₂.mem.trans u₁.mem, u₂.rd.trans u₁.rd,
@@ -62,11 +66,12 @@ theorem digitAt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 
 /-- `[r0 + acc + 4j] += r2 · d_j + r3`, the carry to `r3`. -/
 theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc src i j : Nat}
+    {rb : Reg} {K d : Nat} (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = src)
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hp : s.gpr .r0 = s.gpr .r12 + BitVec.ofNat 32 (4 * i))
     (hsrc : src + 4 * (j / 2) + 4 ≤ size) (ht : 4 * i + (acc + 4 * j) + 4 ≤ size)
     (hu : (s.gpr .r2).toNat < 2 ^ 16) (hc : (s.gpr .r3).toNat < 2 ^ 16)
     (htd : w32 s.mem base (4 * i + (acc + 4 * j)) < 2 ^ 16) :
-    WP isa (.block (mulStep acc src j)) s fun u =>
+    WP isa (.block (mulStep acc rb d j)) s fun u =>
       u.mem = s.mem.writeW (off base (4 * i + (acc + 4 * j))) (BitVec.ofNat 32
         (((s.gpr .r2).toNat * pdig s.mem base src j + w32 s.mem base (4 * i + (acc + 4 * j)) +
           (s.gpr .r3).toNat) % 2 ^ 16)) ∧
@@ -74,7 +79,7 @@ theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
           w32 s.mem base (4 * i + (acc + 4 * j)) + (s.gpr .r3).toNat) / 2 ^ 16 ∧
       Rest [.r3, .r5, .r7] s u := by
   simp only [mulStep]
-  refine digitAt_ok hs h6 hsrc fun s₁ u₁ => ?_
+  refine digitAt_ok hs hb hK h6 hsrc fun s₁ u₁ => ?_
   refine wp_mul fun s₂ u₂ => ?_
   have hs₂ : Scr s₂ base size := hs.of_rest ((u₁.rest (ws := [.r7]) (by simp)).trans (u₂.rest (by simp)))
     (by decide)

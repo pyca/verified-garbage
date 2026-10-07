@@ -18,9 +18,11 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
   { Spec.Ecdsa.P521.signApi with
     target := Arm.target
     doc := Spec.Ecdsa.P521.signApi.doc (notes := ["The function saves the callee-saved registers \
-      `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr`. Field elements and scalars are \
+      `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field \
+      elements and scalars are \
       thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery \
-      multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final \
+      multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final \
       conditional subtraction; the 66-byte encodings are read and written a 32-bit word at a \
       time, the top word's two bytes from the first four or a byte at a time, and the hash's \
       integer is shifted right by its last 7 bits. `[k]G` is a double-and-add ladder over all \
@@ -39,7 +41,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
       field arithmetic, ladder and inversions, with `vg_ecdh_p521`'s checks of the public key: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and \
       scalars are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit \
-      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final \
+      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final \
       conditional subtraction, and the hash's integer is shifted right by its last 7 bits. The \
       key is checked without branches (its first byte, both coordinates below `p`, and the \
       curve's equation), and the second ladder multiplies the key's point if it is valid, else \

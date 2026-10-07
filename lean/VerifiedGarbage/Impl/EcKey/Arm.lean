@@ -49,8 +49,8 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.wk) <|
-  .seq (pow c.powP c.wk) (.block [])
+  .seq (ladder c.ladderCfg c.SP) <|
+  .seq (pow c.powP c.SP) (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (in `lr`), the flag's low bit to `r0`,
 and the callee-saved registers restored. -/
@@ -62,10 +62,10 @@ def finish : List Instr :=
 /-- `x = X Z⁻¹` and `y = Y Z⁻¹`, with `Z⁻¹ R` in `ACC`, out of Montgomery
 form, the checks of `d` and `Z`, and the result. -/
 def middle : Prog isa :=
-  progs [Mont.Arm.mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.Arm.mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE),
-    Mont.Arm.mul c.MP' c.wk (c.sl YM) (c.sl RY) (c.sl ACC),
-    Mont.Arm.mul c.MP' c.wk (c.sl Y) (c.sl YM) (c.sl ONE),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+    Mont.mulCall c.SP (c.sl YM) (c.sl RY) (c.sl ACC),
+    Mont.mulCall c.SP (c.sl Y) (c.sl YM) (c.sl ONE),
     .block (c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c)]
 
 /-- `vg_ec_<curve>_public_key`. -/

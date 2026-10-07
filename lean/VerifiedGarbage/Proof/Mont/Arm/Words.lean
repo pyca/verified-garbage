@@ -46,6 +46,13 @@ theorem Scr.ea_at {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   rw [hp, Offset.add_add]
   exact hs.ea hd
 
+/-- `[r + d]`, with `r` at `K` bytes into the working space. -/
+theorem Scr.ea_off {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {r : Reg} {K d : Nat}
+    (hr : s.gpr r = s.gpr .r12 + BitVec.ofNat 32 K) (hd : K + d < size) :
+    State.addr (s.gpr r + BitVec.ofNat 32 d) = off base (K + d) := by
+  rw [hr, Offset.add_add]
+  exact hs.ea hd
+
 theorem Scr.contains {base : Addr} {size d n : Nat} (hn : base.toNat + size ≤ 2 ^ 32) (h : d + n ≤ size) :
     (⟨base, size⟩ : Region).Contains (off base d) n :=
   Offset.contains_base base h (by omega)

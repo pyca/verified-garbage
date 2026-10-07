@@ -18,9 +18,10 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
     doc := Spec.EcKey.P384.publicKeyApi.doc (notes := ["The function is `vg_ecdsa_p384_sign`'s \
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in \
-      `lr`; field elements are twenty-four 16-bit digits in Montgomery form, multiplied by \
+      `lr` (in `r10` during the calls); field elements are twenty-four 16-bit digits in Montgomery form, multiplied by \
       digit-by-digit Montgomery multiplication (CIOS, with `mul` and the accumulator in \
-      `scratch`) with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
+      `scratch`, in calls of `vg_p384_mul_mod_p` and the other functions of `p384_mont`) \
+      with a final conditional subtraction; `[d]G` is a double-and-add ladder over \
       all 384 bits of `d`, with the complete addition formulas of Renes, Costello and Batina for \
       every addition and doubling and a masked selection for each bit; and `Z⁻¹` is Fermat's, \
       by square-and-always-multiply over the bits of `p - 2`. The result (or zeros) is selected \

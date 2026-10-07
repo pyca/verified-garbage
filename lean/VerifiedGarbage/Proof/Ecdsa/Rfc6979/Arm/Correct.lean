@@ -370,7 +370,7 @@ theorem entry_ok {s : State} (h : (rfcArm P.I (240 + 4 * P.e)).pre s) :
          omega, by rw [v₁.wr]; exact List.mem_cons_self⟩,
       by rw [hA, Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega)]; omega, by omega⟩
   rw [WP.block_append_iff]
-  refine WP.mono (Proof.Ecdsa.Arm.strs_ok hs _ (fun p hp => (saved_off p hp).2) saved_pairwise)
+  refine WP.mono (Proof.Weierstrass.Arm.strs_ok hs _ (fun p hp => (saved_off p hp).2) saved_pairwise)
     fun u₂ ⟨K₂, O₂, V₂⟩ => ?_
   refine wp_mov (op2_reg _ _) fun u₃ v₃ => wp_mov (op2_reg _ _) fun u₄ v₄ => wp_mov (op2_reg _ _) fun u₅ v₅ => ?_
   refine wp_mov (op2_reg _ _) fun u₆ v₆ => wp_mov (op2_reg _ _) fun u₇ v₇ => WP.block_nil ?_

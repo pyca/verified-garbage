@@ -146,6 +146,18 @@ pub(crate) mod mlkem1024;
 pub(crate) mod mlkem768;
 
 #[rustfmt::skip]
+pub(crate) mod p224_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p256_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p384_mont;
+
+#[rustfmt::skip]
+pub(crate) mod p521_mont;
+
+#[rustfmt::skip]
 pub(crate) mod pbkdf2_md5;
 
 #[rustfmt::skip]

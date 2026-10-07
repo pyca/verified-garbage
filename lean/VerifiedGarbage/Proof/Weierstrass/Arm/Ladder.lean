@@ -3,14 +3,15 @@ import VerifiedGarbage.Proof.Weierstrass.Arm.Pow
 /-!
 # Short Weierstrass curves on 32-bit ARM: the ladder
 
-An iteration of `ladder L wk` computes `D = R + R` and `T = D + G` with the
+An iteration of `ladder L S` computes `D = R + R` and `T = D + G` with the
 complete addition (`rcb_ok`), and selects `T` into `R` if the scalar's bit
 is set, else `D` (`ladderBody_ok`), for the scalar `k` whose bits are the
 table at `L.bits`. `ladder_ok` takes the loop's invariant `Q j` on what `R`
 holds, and that an iteration keeps it (`Step`): the callers' invariant is
 that `R` represents `[k >>> j]P` (`step_rep`, in `Rep.lean`), and only they
-need the group law and the algebra it is proven with. The multiplications'
-accumulator at `wk` is above the ladder's slots and table (`LadWk`).
+need the group law and the algebra it is proven with. The field arithmetic
+is calls of the functions of `S` (`FnOk`), whose own working space at `wk`
+is above the ladder's slots and below its table (`LadWk`).
 -/
 
 namespace VG.Proof.Weierstrass.Arm
@@ -24,17 +25,17 @@ open Spec.Weierstrass
 abbrev tmv (C : Curve) (n : Nat) (base : Addr) (s : State) (x : Nat) : Fe C :=
   toM C.p (2 ^ (64 * n)) (wordsVal s.mem base x n)
 
-/-- What the ladder writes: `ladW` and the multiplications' accumulator. -/
-def ladWx (L : LadderCfg) (wk : Nat) : List (Nat × Nat) := ladW L ++ [(wk, accLen L.M)]
+/-- What the ladder writes: `ladW` and the functions' own working space. -/
+def ladWx (L : LadderCfg) (wk : Nat) : List (Nat × Nat) := ladW L ++ [(wk, 64 * L.M.n)]
 
-/-- The multiplications' accumulator at `wk`, in the working space above the
+/-- The functions' own working space at `wk`, in the working space above the
 ladder's slots and modulus, and below its table. -/
 structure LadWk (L : LadderCfg) (size wk : Nat) : Prop where
-  le : wk + accLen L.M ≤ size
+  le : wk + 64 * L.M.n ≤ size
   sl : ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ wk
   mo : L.M.mo + 8 * L.M.n ≤ wk
   tmp : L.M.tmp + 8 * L.M.n ≤ wk
-  bits : wk + accLen L.M ≤ L.bits
+  bits : wk + 64 * L.M.n ≤ L.bits
 
 theorem LadWk.wk {L : LadderCfg} {size wk : Nat} (h : LadWk L size wk) :
     WkOk L.M size wk (· ∈ ladSlots L) := ⟨h.le, h.sl, h.mo, h.tmp⟩
@@ -91,7 +92,7 @@ structure AddsPost (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : 
     (s s' : State) : Prop where
   scr : Scr s' base size
   mod : ModOkW L.M size C.p s'.mem base
-  keep : Rest clob s s'
+  keep : Rest Mont.callClob s s'
   unch : Unch base (ladWx L wk) s.mem s'.mem
   lt : ∀ x ∈ [L.D.x, L.D.y, L.D.z, L.T.x, L.T.y, L.T.z], wordsVal s'.mem base x L.M.n < C.p
   vals : ∃ X2 Y2 Z2 X3 Y3 Z3 : Fe C,
@@ -105,14 +106,15 @@ structure AddsPost (L : LadderCfg) (wk : Nat) (C : Curve) (base : Addr) (size : 
 
 /-- The two additions, from a state holding `E` in the slots `ladR`. -/
 theorem ladAdds_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len : Nat} (hL : LadLay L size len)
-    (hW : LadWk L size wk) (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
+    (hW : LadWk L size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
+    (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', AddsPost L wk C base size E s s' → WP isa rest s' Q) :
-    WP isa (.seq (fprog L.M wk (rcb L.S L.R L.R L.D)) (.seq (fprog L.M wk (rcb L.S L.D L.G L.T)) rest))
+    WP isa (.seq (fprog S (rcb L.S L.R L.R L.D)) (.seq (fprog S (rcb L.S L.D L.G L.T)) rest))
       s Q := by
-  refine WP.seq (WP.mono (rcb_ok hL.lay hW.wk hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
+  refine WP.seq (WP.mono (rcb_ok hL.lay hW.wk hF hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
     fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_)
-  refine WP.seq (WP.mono (rcb_ok hL.lay hW.wk hp hL.a2 (ladR_S₂ L) I₂ (ladR_V₂ L))
+  refine WP.seq (WP.mono (rcb_ok hL.lay hW.wk hF hp hL.a2 (ladR_S₂ L) I₂ (ladR_V₂ L))
     fun s₃ ⟨k₃, I₃, t₃, n₃⟩ => h s₃ ?_)
   have hro : ∀ x ∈ ladRo L, x ∉ rcbW L.S L.D := fun x hx h =>
     hL.ro x hx (by simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr h))
@@ -177,14 +179,15 @@ theorem ladSel_ok {L : LadderCfg} {wk : Nat} {base : Addr} {size len : Nat} (hL 
     by rw [ex₅, hm₄], by rw [ey₅, hm₄], by rw [ez₅, hm₄]⟩
 
 /-- An iteration. -/
-theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len k : Nat}
-    {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size len) (hW : LadWk L size wk)
+theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
+    {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size 8192) (hW : LadWk L size wk)
+    {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hb8 : L.bits < 8192)
-    {s₀ : State} (hf₀ : Far s₀ base len) (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
+    {s₀ : State} (hf₀ : Far s₀ base 8192) (hlt₀ : ∀ x ∈ ladRo L, wordsVal s₀.mem base x L.M.n < C.p)
     (hstep : Step L C base s₀ k Q)
     (hbits : ∀ t < L.nbits, s₀.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInv L wk C base size Q s₀ s j) :
-    WP isa (ladderBody L wk) s fun s' =>
+    WP isa (ladderBody L S) s fun s' =>
       LadInv L wk C base size Q s₀ s' (j - 1) ∧ s'.z = decide (j - 1 = 0) := by
   have hn := hI.scr.nowrap
   have hnb := hL.nbits
@@ -203,14 +206,15 @@ theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size
   have k₁ : Rest [.r11] s s₁ := u₁.rest (by simp)
   have I₁ : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) (tmv C L.M.n base s) s₁ := by
     refine ⟨hI.scr.of_rest k₁ (by decide), hm₁ ▸ hI.mod, ladR_slots L, fun x hx => ?_,
-      fun x _ => by rw [tmv, hm₁]⟩
+      fun x _ => by rw [tmv, hm₁], ?_⟩
     rw [hm₁]
     simp only [ladR, List.mem_append] at hx
     rcases hx with hx | hx
     · rw [hro x hx]; exact hlt₀ x hx
     · exact hI.lt x hx
+    · exact (hf₀.of_rest hI.keep).of_rest k₁
   -- The additions.
-  refine ladAdds_ok hL hW hp I₁ fun s₃ A => ?_
+  refine ladAdds_ok hL hW hF hp I₁ fun s₃ A => ?_
   obtain ⟨X2, Y2, Z2, X3, Y3, Z3, h2, h3, dx, dy, dz, tx, ty, tz⟩ := A.vals
   have hU₃ : Unch base (ladWx L wk) s₀.mem s₃.mem := by
     refine (hI.unch.trans (by rw [← hm₁]; exact A.unch)).mono fun w hw => ?_
@@ -287,15 +291,16 @@ theorem ladderBody_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size
 /-- `Q 0` accepts what `R` holds at the end, if `Q L.nbits` accepts what it
 holds at the start and an iteration keeps `Q` (`Step`), for the scalar `k`
 whose bits are the table at `L.bits`; only `powClob` and `ladWx` change. -/
-theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len k : Nat}
-    {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size len) (hW : LadWk L size wk)
+theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size k : Nat}
+    {Q : Nat → Fe C → Fe C → Fe C → Prop} (hL : LadLay L size 8192) (hW : LadWk L size wk)
+    {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk L.M wk S C.p)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) (hb8 : L.bits < 8192)
-    {s : State} (hs : Scr s base size) (hf : Far s base len) (hM : ModOkW L.M size C.p s.mem base)
+    {s : State} (hs : Scr s base size) (hf : Far s base 8192) (hM : ModOkW L.M size C.p s.mem base)
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
     (henc : encodable (BitVec.ofNat 32 L.nbits) = true) :
-    WP isa (ladder L wk) s fun s' => Rest powClob s s' ∧ Unch base (ladWx L wk) s.mem s'.mem ∧
+    WP isa (ladder L S) s fun s' => Rest powClob s s' ∧ Unch base (ladWx L wk) s.mem s'.mem ∧
       ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by
@@ -304,7 +309,7 @@ theorem ladder_ok {L : LadderCfg} {wk : Nat} {C : Curve} {base : Addr} {size len
   refine WP.seq (wp_mov (op2_imm henc) fun s₁ u₁ => WP.block_nil ?_)
   have hm₁ : s₁.mem = s.mem := u₁.mem
   refine countLoop_ok (Inv := fun j s' => LadInv L wk C base size Q s s' j) (n := L.nbits)
-    (fun j s' h1 h2 hi => ladderBody_ok hL hW hp hb8 hf (fun x hx => hlt x (mem_ladRo_ladR hx))
+    (fun j s' h1 h2 hi => ladderBody_ok hL hW hF hp hb8 hf (fun x hx => hlt x (mem_ladRo_ladR hx))
       hstep hbits h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.mod, hi.lt, hi.q⟩)
     hnb.1 ?_

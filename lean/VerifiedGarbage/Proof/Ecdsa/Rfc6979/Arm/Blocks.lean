@@ -315,7 +315,7 @@ theorem wipe_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   have hs : VG.Proof.Mont.Arm.Scr u₃ (L.B + BitVec.ofNat 64 24) 216 :=
     ⟨by rw [hg₃, h12]; exact hL.fpA0, ⟨216 + 4 * L.e, by omega, by omega, by rw [hwr₃, hwr₂]; simp⟩,
       by rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (by omega)]; omega, by omega⟩
-  refine WP.mono (Proof.Ecdsa.Arm.ldrs_ok hs _ (fun p hp => (saved_off p hp).2) saved_nodup (by decide))
+  refine WP.mono (Proof.Weierstrass.Arm.ldrs_ok hs _ (fun p hp => (saved_off p hp).2) saved_nodup (by decide))
     fun u₄ ⟨hm₄, K₄, hv₄⟩ => ⟨?_, ?_, ?_, fun p hp => ?_, ?_, ?_⟩
   · rw [K₄.rd, hrd₃, v₂.rd, v₁.rd]
   · rw [K₄.wr, hwr₃, v₂.wr, v₁.wr]

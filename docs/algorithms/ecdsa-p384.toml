@@ -2,4 +2,4 @@ name = "ECDSA P-384"
 family = "Signatures"
 specs = ["Weierstrass", "P384", "EcKey", "Ecdsa", "Ecdsa/Rfc6979", "Ecdsa/Verify"]
 modules = ["src/ecdsa/p384.rs"]
-asm = ["ec_p384", "ecdsa_p384", "ecdsa_p384_sha384"]
+asm = ["ec_p384", "ecdsa_p384", "ecdsa_p384_sha384", "p384_mont"]

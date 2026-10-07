@@ -17,9 +17,10 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P521.curve) : List Artifact := 
     target := Arm.target
     doc := Spec.Ecdh.P521.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p521_sign`'s setup, \
       field arithmetic, ladder and inversion, with the peer's point in place of `G`: it saves the \
-      callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr`; field \
-      elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit \
-      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final \
+      callee-saved registers `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` \
+      during the calls); field elements are thirty-six 16-bit digits in Montgomery form, multiplied by digit-by-digit \
+      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      `vg_p521_mul_mod_p` and the other functions of `p521_mont`) with a final \
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and the ladder multiplies the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is a \

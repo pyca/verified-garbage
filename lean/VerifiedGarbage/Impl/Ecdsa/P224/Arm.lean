@@ -8,7 +8,7 @@ namespace VG.Impl.Ecdsa.Arm
 open VG.Arm
 
 /-- P-224 as the code has it. -/
-def p224 : Cfg := ⟨4, Spec.P224.curve⟩
+def p224 : Cfg := ⟨4, Spec.P224.curve, Spec.Weierstrass.Mont.p224p, Spec.Weierstrass.Mont.p224n⟩
 
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign

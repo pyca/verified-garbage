@@ -18,9 +18,11 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
   { Spec.Ecdsa.P224.signApi with
     target := Arm.target
     doc := Spec.Ecdsa.P224.signApi.doc (notes := ["The function saves the callee-saved registers \
-      `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr`. Field elements and scalars are \
+      `r4`–`r11` and `lr` in `scratch`, and keeps `out` in `lr` (in `r10` during the calls). Field \
+      elements and scalars are \
       sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit Montgomery \
-      multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final \
+      multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final \
       conditional subtraction. `[k]G` is a double-and-add ladder over all 256 bits of `k`, with \
       the complete addition formulas of Renes, Costello and Batina for every addition and \
       doubling and a masked selection for each bit; the inversions modulo `p` and `n` are \
@@ -36,7 +38,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P224.curve) : List Artifact := 
       field arithmetic, ladder and inversions, with `vg_ecdh_p224`'s checks of the public key: it \
       saves the callee-saved registers `r4`–`r11` and `lr` in `scratch`; field elements and \
       scalars are sixteen 16-bit digits in Montgomery form, multiplied by digit-by-digit \
-      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final \
+      Montgomery multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of \
+      `vg_p224_mul_mod_p` and the other functions of `p224_mont`) with a final \
       conditional subtraction. The key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and the second ladder multiplies the \
       key's point if it is valid, else `G`, so it always runs on a point of the curve. `s⁻¹` \

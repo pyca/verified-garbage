@@ -2,4 +2,4 @@ name = "ECDH P-521"
 family = "Key agreement"
 specs = ["Weierstrass", "P521", "EcKey", "Ecdh"]
 modules = ["src/ecdh/p521.rs"]
-asm = ["ecdh_p521", "ec_p521"]
+asm = ["ecdh_p521", "ec_p521", "p521_mont"]
