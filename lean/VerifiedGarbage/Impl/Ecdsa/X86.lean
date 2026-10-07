@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.TComb
-import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
+import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -218,6 +218,9 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 /-- Field inversion uses P-256's fixed addition chain when applicable. -/
 def pPow : Prog isa := powField c.powP c.wk c.C.p
 
+/-- Scalar inversion reuses the fixed upper half of P-256’s exponent. -/
+def nPow : Prog isa := powScalar c.powN c.wk c.C.n
+
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]
 
@@ -329,7 +332,7 @@ def signPrep : Prog isa := c.prepareWith .sign
 def signTail : Prog isa :=
   .seq c.pPow <|
   .seq c.middle <|
-  .seq (pow c.powN c.wk) c.scalar
+  .seq c.nPow c.scalar
 
 def signWithMul (fixed : Prog isa) : Prog isa :=
   .seq c.signPrep (.seq fixed c.signTail)

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
 
 /-!
@@ -91,7 +92,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     (hF : Front c s₀ base s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalars c) (.seq (pow c.powN c.wk)
+    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.scalars c) (.seq c.nPow
       (.seq (Impl.Ecdsa.Verify.X86.Cfg.uv c) rest))) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -135,7 +136,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) (powWkN hc) hnR hs₃ M₃ lt₃
+  refine WP.seq (WP.mono (powScalar_ok (P := c.powN) (powLayN hc) (powWkN hc) hnR hs₃ M₃ lt₃
     F₃.onen (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
