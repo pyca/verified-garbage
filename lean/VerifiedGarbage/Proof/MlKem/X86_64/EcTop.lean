@@ -129,7 +129,7 @@ theorem kemEncapsH_correct (v : Sample4Impl) {L : Kem} (W : EcWf L) {wc wd : Lis
   obtain ⟨t, s', he, hF⟩ := WP.seq (WP.mono (pro_ok W hp) fun s₁ h₁ =>
     WP.seq (WP.mono (hCopy_ok W hp h₁) fun s₂ ⟨h₂, hH, h15⟩ =>
       WP.seq (WP.mono (hashes_ok W hp h₂ hH h15) fun s₃ h₃ =>
-        WP.seq (WP.mono (Enc.encrypt_ok v K W.k (C := ecC W σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
+        WP.seq (WP.mono (Enc.encrypt_ok v K W.toKemWf (C := ecC W σ) W.enc h₃.1 h₃.2) fun s₄ h₄ =>
           WP.seq (WP.mono (out_ok W h₄) fun s₅ h₅ =>
             WP.mono (topEpi_ok h₅.ec.top (h₅.hin W hp)) fun s₆ ⟨hr, hg, hm⟩ =>
               (⟨hg, post_of W h₅ hr hm⟩ : gprPreserved σ s₆ ∧ (encapsK L).post σ s₆))))))
@@ -246,7 +246,7 @@ theorem kemEncapsH_ct (v : Sample4Impl) {L : Kem} (W : EcWf L) {wc wd : List Nat
     s.gpr .r15 = 1) (fun σ s hp hs => hCopy_ok W hp hs) hCopy_tr) ?_
   refine RelCT.seq (relInv (I' := EncI W) (fun σ s hp hs => hashes_ok W hp hs.1 hs.2.1 hs.2.2)
     (hashes_tr W)) ?_
-  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.k (C := ecC W σ) W.enc hs.1 hs.2)
+  refine RelCT.seq (relInv (I' := EncO W) (fun σ s _ hs => Enc.encrypt_ok v K W.toKemWf (C := ecC W σ) W.enc hs.1 hs.2)
     (encrypt_tr W v K)) ?_
   refine RelCT.seq (relInv (I' := ECEnd L) (fun σ s _ hs => out_ok W hs) (out_tr W)) ?_
   exact RelCT.mono epi_tr (fun _ _ h => h) fun _ _ _ => trivial
