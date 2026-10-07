@@ -106,6 +106,7 @@ pub(crate) unsafe extern \"C\" fn vg_test_consts() -> u64 {
         concat!(\"add x0, x0, \", vg_sym_pageoff!(\"{VG_TEST_TABLE}\")),
         \"ldr x0, [x0, #8]\",
         \"ret\",
+        \".p2align 6\",
         VG_TEST_TABLE = sym super::consts::VG_TEST_TABLE,
     )
 }
