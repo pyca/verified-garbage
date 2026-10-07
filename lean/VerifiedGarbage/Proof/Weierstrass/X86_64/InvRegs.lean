@@ -690,4 +690,48 @@ theorem addPNeg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     obtain ⟨rw, ra, rb, rc, rd, rbp, r8, r13, r15⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, rw, ra, rc, rd, rbp, r8, r13, r15, ite_false]
 
+/-- The reduction's `csub`: `redRegs` and `w` (below `2p`) modulo `p`. -/
+theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (M : Mod)
+    (hmo : M.mo + 32 ≤ size) {w : Reg} (hw : w ∉ clobX) {p : Nat} (hp : wordsVal s.mem base M.mo 4 = p)
+    (hV : regsVal s redRegs + 2 ^ 256 * (s.gpr w).toNat < 2 * p) :
+    WP isa (.block (diffsC .sub redRegs redDiff M.mo ++ [.alu .sbb w (.imm 0)] ++ cmovs redRegs redDiff)) s
+      fun t => regsVal t redRegs = (regsVal s redRegs + 2 ^ 256 * (s.gpr w).toNat) % p ∧
+        Keeps (w :: clobX) s t := by
+  simp only [clobX, List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨wa, wb, wc, wd, wbp, w8, w13, w15⟩ := hw
+  have hpX : p < 2 ^ 256 := hp ▸ wordsVal_lt _ _ _ _
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (diffsC_ok hs (t := .rbp) (ts := [.r8, .r13, .r15]) (d := .rax) (ds := [.rcx, .rdx, .rbx])
+    (mo := M.mo) rfl (by simp only [List.length_cons, List.length_nil]; omega) (by decide) (by decide))
+    fun s₁ ⟨b, c₁, e₁, k₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (sbbTop_ok s₁ w c₁) fun s₂ ⟨c₂, k₂⟩ => ?_
+  have hw₁ : s₁.gpr w = s.gpr w := k₁.1 w (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨wa, wc, wd, wb⟩)
+  rw [hw₁] at c₂
+  refine WP.mono (cmovs_ok redRegs redDiff _ c₂ rfl (by decide) (by decide)) fun t ⟨e₃, k₃⟩ => ?_
+  have hR₂ : regsVal s₂ redRegs = regsVal s redRegs := by
+    rw [regsVal_congr fun q hq => k₂.1 q (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      intro h; subst h; simp only [redRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with h | h | h | h <;> simp_all)]
+    exact regsVal_congr fun q hq => k₁.1 q (by
+      simp only [redRegs, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl | rfl | rfl <;> decide)
+  have hD₂ : regsVal s₂ redDiff = regsVal s₁ redDiff :=
+    regsVal_congr fun q hq => k₂.1 q (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      intro h; subst h; simp only [redDiff, List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with h | h | h | h <;> simp_all)
+  have hDlt : regsVal s₁ redDiff < 2 ^ 256 := regsVal_lt s₁ redDiff
+  simp only [List.length_cons, List.length_nil, Nat.reduceAdd, Nat.reduceMul, hp] at e₁
+  refine ⟨?_, ?_⟩
+  · rw [e₃, hR₂, hD₂]
+    simp only [decide_eq_true_eq]
+    exact csub_arith (b := b) hpX hDlt hV e₁
+  · refine ((k₁.mono fun q hq => ?_).trans (k₂.mono (by simp))).trans (k₃.mono fun q hq => ?_)
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
+      rcases hq with rfl | rfl | rfl | rfl <;> simp
+    · simp only [redRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
+      rcases hq with rfl | rfl | rfl | rfl <;> simp
+
 end VG.Proof.Weierstrass.X86_64
