@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirect
-import VerifiedGarbage.Proof.RsaPss.X86_64.Loops
+import VerifiedGarbage.Proof.RsaPss.X86_64.BufferXor
 import VerifiedGarbage.Proof.RsaPss.MgfBytes
 
 /-!
@@ -69,10 +69,10 @@ structure DbAt (D e db : Nat) : Prop where
   fit : e + db + D ≤ oEm + 1024
 
 include hH in
-theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem copyHBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {e db : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
     (hdb : W 24 = BitVec.ofNat 64 db) (hcx : u.gpr .rcx = off S oY) :
-    WP isa (copyH H) u fun u' => Lay u' F S ∧ Keep [.rsi, .r8, .rax] u u' ∧
+    WP isa (copyHBytes H) u fun u' => Lay u' F S ∧ Keep [.rsi, .r8, .rax] u u' ∧
       Rep u'.mem F S (cpV V (fun i => V (e + db + i)) oY H.D) W := by
   have hD := hH.hD0
   have hDN := hH.hDN
@@ -81,7 +81,7 @@ theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
   have h24 : u.mem.readW (off F sDb) 64 = BitVec.ofNat 64 db := by rw [← hdb, ← R.fr 24 (by decide)]; rfl
   refine WP.seq (WP.mono (WP.keep [.rsi, .r8] (Q := fun v => v.gpr .rsi = off S (e + db) ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, hm⟩, hk⟩ => ?_)
-  · xrun [copyH, ea_sp, L.rsp, L.ld (d := sEb) (by decide), L.ld (d := sDb) (by decide), h23, h24]
+  · xrun [copyHBytes, ea_sp, L.rsp, L.ld (d := sEb) (by decide), L.ld (d := sDb) (by decide), h23, h24]
     exact off_off S e db
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
@@ -100,6 +100,35 @@ theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
   split
   · rw [off_plus, Rv.scr _ (by unfold oRsa; omega)]
   · rfl
+
+include hH in
+theorem copyH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {e db : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (hdb : W 24 = BitVec.ofNat 64 db) (hcx : u.gpr .rcx = off S oY) :
+    WP isa (copyH H) u fun u' => Lay u' F S ∧ Keep [.rsi, .r8, .rax] u u' ∧
+      Rep u'.mem F S (cpV V (fun i => V (e + db + i)) oY H.D) W := by
+  unfold copyH
+  split
+  · rename_i h8
+    have hDN := hH.hDN
+    have hN := hH.N_le
+    have hfit := hd.fit
+    have hwords : 8 * (H.D / 8) = H.D := by omega
+    have h23 : u.mem.readW (off F sEb) 64 = off S e := by rw [← he, ← R.fr 23 (by decide)]; rfl
+    have h24 : u.mem.readW (off F sDb) 64 = BitVec.ofNat 64 db := by rw [← hdb, ← R.fr 24 (by decide)]; rfl
+    refine WP.seq (WP.mono (WP.keep [.rsi, .r8] (Q := fun v =>
+      v.gpr .rsi = off S (e + db) ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨hsrc, hm⟩, hk⟩ => ?_)
+    · xrun [ea_sp, L.rsp, L.ld (d := sEb) (by decide), L.ld (d := sDb) (by decide), h23, h24]
+      exact off_off S e db
+    have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+    refine WP.mono (copyScratchWords_ok Lv (hm ▸ R) (by decide) (by decide)
+      (by rw [hwords]; unfold oEm oRsa at *; omega)
+      (by rw [hwords]; unfold oY oRsa; omega)
+      (by rw [hwords]; unfold oEm oY at *; omega) hsrc ((hk.gpr (by decide)).trans hcx))
+      fun w ⟨Lw, kw, Rw⟩ => ?_
+    rw [hwords] at Rw
+    exact ⟨Lw, (hk.trans kw).mono (by decide), Rw⟩
+  · exact copyHBytes_ok hH L R hd he hdb hcx
 
 /-- `Y` with the counter `c` after `H`. -/
 def ctrV (D : Nat) (V : Nat → Byte) (c : Nat) (x : Nat) : Byte :=
@@ -171,11 +200,14 @@ theorem counter_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
 /-! ## The digest into `DB` -/
 
 include hH in
-theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem xorArgs_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
     (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
-    WP isa (xorOut H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r10, .r8, .rdx] u u' ∧
-      Rep u'.mem F S (xorV V oDig (e + done) (min H.D (db - done))) W := by
+    WP isa (.block (xorArgs H)) u fun v =>
+      (v.gpr .rcx = off S oDig ∧ v.gpr .rdi = off S (e + done) ∧
+        v.gpr .rax = BitVec.ofNat 64 (db - done) ∧ v.gpr .r10 = BitVec.ofNat 64 H.D ∧
+        v.cf = some (decide (db - done < H.D)) ∧ v.mem = u.mem) ∧
+      Keep [.rcx, .rdi, .rax, .r10, .rdx] u v := by
   have hD := hH.hD0
   have hDN := hH.hDN
   have hN := hH.N_le
@@ -189,16 +221,30 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have h32 : u.mem.readW (off F sDone) 64 = BitVec.ofNat 64 done := by rw [← hdn, ← R.fr 32 (by decide)]; rfl
   have hs := L.slot
   simp only [Bignum.word] at hs
-  unfold xorOut seqs seqs seqs
-  refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rax, .r10, .rdx] (Q := fun v => v.gpr .rcx = off S oDig ∧
-      v.gpr .rdi = off S (e + done) ∧ v.gpr .rax = BitVec.ofNat 64 (db - done) ∧
-      v.gpr .r10 = BitVec.ofNat 64 H.D ∧ v.cf = some (decide (db - done < H.D)) ∧ v.mem = u.mem) ?_ rfl)
+  refine WP.keep [.rcx, .rdi, .rax, .r10, .rdx] ?_ rfl
+  xrun [xorArgs, scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
+    VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide), L.ld (d := sEb) (by decide),
+    L.ld (d := sDone) (by decide), L.ld (d := sDb) (by decide), h23, h24, h32,
+    VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega), zx32 (show H.D < 2 ^ 32 by omega), off_plus]
+  rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+
+include hH in
+theorem xorOutBytes_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
+    WP isa (xorOutBytes H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r10, .r8, .rdx] u u' ∧
+      Rep u'.mem F S (xorV V oDig (e + done) (min H.D (db - done))) W := by
+  have hD := hH.hD0
+  have hDN := hH.hDN
+  have hN := hH.N_le
+  have hfit := hd.fit
+  have he1 := hd.e1
+  have c1 : oEm = 2560 := rfl
+  have c3 : oDig = 2304 := rfl
+  have hdbn : db < 2 ^ 63 := by omega
+  unfold xorOutBytes seqs seqs seqs
+  refine WP.seq (WP.mono (xorArgs_ok hH L R hd he hdb hdn hlt)
     fun v ⟨⟨h₁, h₂, h₃, h₄, h₅, hm⟩, hk⟩ => ?_)
-  · xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
-      VG.Proof.MlKem.X86_64.sx_ofNat (show oDig < 2 ^ 31 by decide), L.ld (d := sEb) (by decide),
-      L.ld (d := sDone) (by decide), L.ld (d := sDb) (by decide), h23, h24, h32,
-      VG.Offset.ofNat_sub_ofNat (show done ≤ db by omega), zx32 (show H.D < 2 ^ 32 by omega), off_plus]
-    rw [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
   have Rv : Rep v.mem F S V W := hm ▸ R
   -- The count, `min(hLen, dbLen - done)`.
@@ -228,6 +274,40 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
     ((kvx.gpr (by decide)).trans h₁) ((kvx.gpr (by decide)).trans h₂) h8)
     fun y ⟨Ly, ky, Ry⟩ => ⟨Ly, ?_, Ry⟩
   exact (hk.trans (kvx.trans ky)).mono (by decide)
+
+include hH in
+theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {e db done : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e)
+    (hdb : W 24 = BitVec.ofNat 64 db) (hdn : W 32 = BitVec.ofNat 64 done) (hlt : done < db) :
+    WP isa (xorOut H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r10, .r8, .rdx] u u' ∧
+      Rep u'.mem F S (xorV V oDig (e + done) (min H.D (db - done))) W := by
+  unfold xorOut
+  split
+  · rename_i h8
+    have hD := hH.hD0
+    have hDN := hH.hDN
+    have hN := hH.N_le
+    have hfit := hd.fit
+    have he1 := hd.e1
+    have c1 : oEm = 2560 := rfl
+    have c3 : oDig = 2304 := rfl
+    have hdbn : db < 2 ^ 63 := by omega
+    refine WP.seq (WP.mono (xorArgs_ok hH L R hd he hdb hdn hlt)
+      fun v ⟨⟨h₁, h₂, h₃, h₄, h₅, hm⟩, hk⟩ => ?_)
+    have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
+    have Rv : Rep v.mem F S V W := hm ▸ R
+    refine WP.ite (M := isa) _ (show isa.eval .b v = _ from h₅) (fun _ => ?_) (fun hb => ?_)
+    · exact WP.mono (xorOutBytes_ok hH Lv Rv hd he hdb hdn hlt) fun t ⟨Lt, kt, Rt⟩ =>
+        ⟨Lt, (hk.trans kt).mono (by decide), Rt⟩
+    · rw [decide_eq_false_iff_not] at hb
+      have hw : 8 * (H.D / 8) = H.D := by omega
+      refine WP.mono (xorScratchWords_ok (H.D / 8) Lv Rv
+        (by rw [hw]; unfold oDig oRsa; omega)
+        (by rw [hw]; unfold oRsa; omega)
+        (by rw [hw]; unfold oDig; omega) h₁ h₂) fun t ⟨Lt, kt, Rt⟩ => ?_
+      rw [Nat.min_eq_left (by omega)]
+      exact ⟨Lt, (hk.trans kt).mono (by decide), by simpa only [hw] using Rt⟩
+  · exact xorOutBytes_ok hH L R hd he hdb hdn hlt
 
 /-! ## The next counter -/
 

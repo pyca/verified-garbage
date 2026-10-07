@@ -1,3 +1,4 @@
+import VerifiedGarbage.Impl.RsaPss.X86_64.Buffers
 import VerifiedGarbage.Impl.Pbkdf2.Md.X86_64
 
 /-!
@@ -255,10 +256,18 @@ def fixedPad80 (ℓ : Nat) : Prog isa :=
   .seq (.block (scr .rcx oY))
     (.block [.movzx8 .rax (at_ .rcx ℓ), .alu .or .rax (.imm 0x80), .store8 (at_ .rcx ℓ) .rax])
 
+/-- The public one-block length field needs only one or two word copies. -/
+def directLen : Prog isa :=
+  .seq (.block (scr .rsi oLen ++ scr .rcx (oY + (H.P.B - H.P.L))))
+    (if H.P.L % 8 = 0 then .block (copyWords64 .rsi .rcx 0 0 (H.P.L / 8))
+    else .seq (.block [.mov32 .r8 (.imm 0)])
+      (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax]
+        (.imm (BitVec.ofNat 32 H.P.L))))
+
 /-- For an MGF1 input whose padding fits one block, use the compression
 state directly instead of copying it under a last-block mask. -/
 def mgfDirectHash : Prog isa := seqs [ctInit H, fixedPad80 (H.D + 4),
-  .block (lenField H), lenLoop H,
+  .block (lenField H), directLen H,
   .block [.mov32 .rax (.imm 0), .store (sp sB) .rax],
   .seq (.block (compArgs H)) (.call H.compN H.compC), .block (digestAt H oSt)]
 
@@ -282,9 +291,16 @@ def clearBlock : Prog isa :=
       .alu .cmp .r8 (.imm (BitVec.ofNat 32 (mgfNb H * H.P.B)))]) .ne)
 
 /-- `H` (at `DB + dbLen`) to `Y` (in `rcx`). -/
-def copyH : Prog isa :=
+def copyHBytes : Prog isa :=
   .seq (.block [.mov .rsi (.mem (sp sEb)), .mov .r8 (.mem (sp sDb)), .alu .add .rsi (.reg .r8), .mov32 .r8 (.imm 0)])
     (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8) .rax] (.imm (BitVec.ofNat 32 H.D)))
+
+/-- Whole-word digest seeds use fixed word copies; other lengths retain byte copies. -/
+def copyH : Prog isa :=
+  if H.D % 8 = 0 then
+    .seq (.block [.mov .rsi (.mem (sp sEb)), .mov .r8 (.mem (sp sDb)), .alu .add .rsi (.reg .r8)])
+      (.block (copyWords64 .rsi .rcx 0 0 (H.D / 8)))
+  else copyHBytes H
 
 /-- The counter, big-endian, after `H` in `Y` (in `rcx`); the message's
 length, `hLen + 4`, and its `mgfNb` blocks, for `mgfHash`. -/
@@ -297,14 +313,23 @@ def counter : List Instr :=
 
 /-- The first `min(hLen, dbLen - done)` bytes of the digest XORed into `DB`
 at `done`. -/
-def xorOut : Prog isa :=
-  seqs [.block (scr .rcx oDig ++ [.mov .rdx (.mem (sp sDone)), .mov .rdi (.mem (sp sEb)), .alu .add .rdi (.reg .rdx),
-      .mov .rax (.mem (sp sDb)), .alu .sub .rax (.reg .rdx), .mov32 .r10 (.imm (BitVec.ofNat 32 H.D)),
-      .alu .cmp .rax (.reg .r10)]),
+def xorArgs : List Instr :=
+  scr .rcx oDig ++ [.mov .rdx (.mem (sp sDone)), .mov .rdi (.mem (sp sEb)), .alu .add .rdi (.reg .rdx),
+    .mov .rax (.mem (sp sDb)), .alu .sub .rax (.reg .rdx), .mov32 .r10 (.imm (BitVec.ofNat 32 H.D)),
+    .alu .cmp .rax (.reg .r10)]
+
+def xorOutBytes : Prog isa :=
+  seqs [.block (xorArgs H),
     .ite .b (.block [.mov .r10 (.reg .rax)]) (.block []),
     .block [.mov32 .r8 (.imm 0)],
     byteLoop [.movzx8 .rax (ix .rcx .r8), .movzx8 .rdx (ix .rdi .r8), .alu .xor .rdx (.reg .rax),
       .store8 (ix .rdi .r8) .rdx] (.reg .r10)]
+
+/-- Complete digest blocks use words; the final partial block is byte bounded. -/
+def xorOut : Prog isa :=
+  if H.D % 8 = 0 then
+    .seq (.block (xorArgs H)) (.ite .b (xorOutBytes H) (.block (xorWords64 (H.D / 8))))
+  else xorOutBytes H
 
 /-- The next counter, and CF set while `done < dbLen`. -/
 def nextCtr : List Instr :=
