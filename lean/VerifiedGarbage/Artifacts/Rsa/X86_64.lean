@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -27,10 +28,13 @@ def artifacts : List Artifact := [
   { Spec.Rsa.publicPrecomputeApi with
     target := X86_64.target
     doc := Spec.Rsa.publicPrecomputeApi.doc
-      (notes := ["Baseline x86-64: R² mod n as `vg_rsa_public_checked` computes it."])
-    code := Impl.Rsa.X86_64.Precompute.code Proof.Bignum.X86_64.Mont.base.mm
-    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi
-    verified := Proof.Bignum.X86_64.precompute_verified _ (by decide +kernel)
+      (notes := ["Baseline x86-64: R² mod n as `vg_rsa_public_checked` computes it, with Montgomery \
+        multiplication by calls of `vg_rsa_mont_mul`."])
+    code := Impl.Rsa.X86_64.Precompute.code (Impl.Bignum.X86_64.MontFn.call "vg_rsa_mont_mul"
+      Impl.Bignum.X86_64.MontFn.mulBase)
+    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Bignum.X86_64.precompute_fn_verified
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputeApi with
     target := X86_64.target

@@ -55,7 +55,7 @@ theorem fnHead_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Sc
       t.xmm .xmm2 = s.gpr .r15 ++ s.gpr .r14) ?_ rfl)
     fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2.1, h.2.2.2.2.2.2.1,
       h.2.2.2.2.2.2.2.1, h.2.2.2.2.2.2.2.2.1, k, h.2.2.2.2.2.2.2.2.2⟩
-  unfold enter basesR
+  unfold enter zext saves basesR
   simp only [List.cons_append, List.nil_append]
   xrun [XOp.exec, setXmm_gpr, setXmm_mem, setXmm_rd, setXmm_wr, setXmm_xmm, setReg_xmm, XBinOp.eval, qword_movq,
     State.ea, arrAt, hdr, hdi, hdx, hcx, h8, hdrOff, arr_off B (show o < 2 ^ 32 by omega),

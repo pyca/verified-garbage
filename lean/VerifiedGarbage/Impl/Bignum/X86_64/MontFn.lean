@@ -26,13 +26,17 @@ def arrAt (i : Reg) : MemOp := { base := .rdi, index := some i, scale := 8, disp
 /-- `[b + d]`. -/
 def at_ (b : Reg) (d : Int) : MemOp := { base := b, disp := d }
 
-/-- The indices zero-extended (only their low 32 bits are arguments), and
-the callee-saved registers into `xmm0`–`xmm2`, two to a register. -/
-def enter : List Instr :=
-  [.mov32 .rdx (.reg .rdx), .mov32 .rcx (.reg .rcx), .mov32 .r8 (.reg .r8),
-    .xop (.movq .xmm0 .rbx), .xop (.movq .xmm1 .rbp), .xop (.bin .punpcklqdq .xmm0 .xmm1),
+/-- The indices zero-extended (only their low 32 bits are arguments). -/
+def zext : List Instr := [.mov32 .rdx (.reg .rdx), .mov32 .rcx (.reg .rcx), .mov32 .r8 (.reg .r8)]
+
+/-- The callee-saved registers into `xmm0`–`xmm2`, two to a register. -/
+def saves : List Instr :=
+  [.xop (.movq .xmm0 .rbx), .xop (.movq .xmm1 .rbp), .xop (.bin .punpcklqdq .xmm0 .xmm1),
     .xop (.movq .xmm1 .r12), .xop (.movq .xmm2 .r13), .xop (.bin .punpcklqdq .xmm1 .xmm2),
     .xop (.movq .xmm2 .r14), .xop (.movq .xmm3 .r15), .xop (.bin .punpcklqdq .xmm2 .xmm3)]
+
+/-- `zext`, then `saves`. -/
+def enter : List Instr := zext ++ saves
 
 /-- `bases` for the arrays in `edx`, `ecx` and `r8`: `rbx`, `r11`, `r9` the
 bases of `o`, `a`, `b`; `r10`, `r8`, `rsi` those of `m`, the accumulator and
