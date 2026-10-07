@@ -538,6 +538,27 @@ refuses a file that is new or that other registration files also emit into;
 the full emitter handles those, and the checks below still run everything
 before pushing.
 
+## Measuring a change's speed
+
+Measure only what the change affects. `python3 ci/bench_arches.py --choices`
+lists the architectures, each one's `VG_CPU_FEATURES` configurations and the
+features `src/cpu.rs` detects there, and the library modules with the
+benchmarks that use each (a benchmark's `USES`). On this machine, for the
+features its CPU has (`/proc/cpuinfo`):
+
+```sh
+VG_CPU_FEATURES=avx,avx2 python3 ci/bench_compare.py --modules chacha20 path/to/main-checkout .
+(cd bench && VG_CPU_FEATURES=none VG_BENCH_MODULES=chacha20 cargo bench -- '^chacha20/verified-garbage/')
+```
+
+For another architecture, or features this CPU lacks, run the Benchmarks
+workflow by hand on a pushed branch (`workflow_dispatch` on `bench.yml`)
+with `base_commit` (empty to run the branch alone, next to OpenSSL and
+aws-lc-rs), `arches`, `cpu_features` (space-separated configurations, `-`
+for none; empty for those choosing among the modules' implementations) and
+`modules`; the results are in each job's summary. Leaving all three empty
+runs every benchmark in about thirty jobs: never do that for one change.
+
 ## Checks to run before pushing
 
 ```sh

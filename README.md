@@ -1609,6 +1609,26 @@ request that changes the library:
 python3 ci/bench_compare.py path/to/main-checkout .   # --openssl to add OpenSSL's and aws-lc-rs's times
 ```
 
+For a targeted run, `VG_CPU_FEATURES` (see `src/cpu.rs`) restricts the CPU
+features the library uses, `VG_BENCH_MODULES` the library modules whose
+benchmarks run, and Criterion's filter the benchmark ids
+(`<primitive>/<library>/<bytes>`):
+
+```sh
+(cd bench && VG_CPU_FEATURES=avx,avx2 VG_BENCH_MODULES=chacha20 cargo bench -- '^chacha20/verified-garbage/')
+VG_CPU_FEATURES=none python3 ci/bench_compare.py --modules chacha20 path/to/main-checkout .
+```
+
+The Benchmarks workflow's manual runs take the architectures, the
+`VG_CPU_FEATURES` configurations (`-` for none) and the modules to run, so
+that an implementation can be measured on a runner of its architecture.
+`python3 ci/bench_arches.py --choices` lists the values each takes:
+
+```sh
+gh workflow run bench.yml --ref my-branch -f base_commit=<sha> \
+  -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
+```
+
 ## Credits
 
 This project is inspired by:

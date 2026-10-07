@@ -312,6 +312,39 @@ class Selection(unittest.TestCase):
         self.files['bench/benches/primitives/x448.rs'] = ''
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
 
+    def test_manual_runs_select_architectures_and_configurations(self):
+        rows = planner.manual()
+        self.assertEqual(len(rows), self.full_matrix())
+        self.assertTrue(all(r['modules'] == '' for r in rows))
+        self.assertEqual(self.configurations(planner.manual('aarch64'), 'aarch64'),
+                         ['', *planner.CPU_FEATURES['aarch64']])
+        # `-` is the configuration without a restriction, and others need
+        # not be in `CPU_FEATURES`; the platforms keep their order.
+        rows = planner.manual('arm x86_64', '- avx2,avx')
+        self.assertEqual([(r['arch'], r['cpu-features']) for r in rows],
+                         [('x86_64', ''), ('x86_64', 'avx2,avx'), ('arm', ''), ('arm', 'avx2,avx')])
+        with self.assertRaisesRegex(ValueError, 'unknown architecture'):
+            planner.manual('riscv64')
+
+    def test_manual_runs_select_modules_and_their_configurations(self):
+        with mock.patch.object(planner, 'bench_catalog', return_value=self.catalog), \
+                mock.patch.object(planner, 'read', self.read), \
+                mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
+                    p for p in self.files if p.startswith('src/'))):
+            # Neither module has a variant: one configuration each.
+            rows = planner.manual(modules='triple_des_ecb')
+            self.assertEqual([(r['arch'], r['cpu-features'], r['modules']) for r in rows],
+                             [(a, '', 'triple_des_ecb') for a in planner.PLATFORMS])
+            # Configurations named run as named.
+            rows = planner.manual('x86_64', 'none', 'triple_des_ecb')
+            self.assertEqual([(r['arch'], r['cpu-features']) for r in rows], [('x86_64', 'none')])
+            with self.assertRaisesRegex(ValueError, 'no benchmark uses module'):
+                planner.manual(modules='nonexistent')
+            choices = planner.choices()
+        for arch in planner.PLATFORMS:
+            self.assertIn(f'  {arch} (runner: ', choices)
+        self.assertIn('  triple_des_ecb: ', choices)
+
     def test_shards_follow_the_number_of_benchmarks(self):
         shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
         with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):
