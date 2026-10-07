@@ -154,6 +154,90 @@ theorem frame_stk {m m' : Mem} {a n : Nat} (ha : a ≤ 2624) (hn : n ≤ a)
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨tR s, by simp, stk_sub (s := s) ha hn⟩
 
+/-- What the call of `vg_aes_gcm_encrypt_blocks_to` needs, after the push. -/
+theorem blkEntry {q : Nat} (hq : 16 * q ≤ L s) {st : State}
+    (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) (hf : Frame (wR s ++ [tR s]) s.mem st.mem)
+    (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = s.gpr .rsi) (h_dx : st.gpr .rdx = St s + BitVec.ofNat 64 48)
+    (h_cx : st.gpr .rcx = St s + BitVec.ofNat 64 16) (h_8 : st.gpr .r8 = Src s) (h_9 : st.gpr .r9 = BitVec.ofNat 64 q)
+    (h_10 : st.gpr .r10 = Dst s) (h_ax : st.gpr .rax = W s + BitVec.ofNat 64 80) :
+    (Proof.AesGcm.encryptBlocksToX86_64M M).pre ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)) ∧
+      Covers (blkRd s M q ++ blkWr s q) ((pushed [.rax, .r9, .r10] st).rd ++ (pushed [.rax, .r9, .r10] st).wr) ∧
+      Covers (blkWr s q) (pushed [.rax, .r9, .r10] st).wr ∧
+      stackArg ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)) 0 = Dst s ∧
+      stackArg ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)) 1 = BitVec.ofNat 64 q ∧
+      stackArg ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)) 2 =
+        W s + BitVec.ofNat 64 80 := by
+  have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
+  have wt := hp.w_t
+  have wsp := hp.w_sp
+  have hn8 : 8 * [Reg.rax, .r9, .r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega
+  obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.rax, .r9, .r10] (by decide) hn8
+  have hpj' : ∀ j (hj : j < 3), (pushed [.rax, .r9, .r10] st).mem.readW (SP s - BitVec.ofNat 64 (8 * (j + 1))) 64 =
+      st.gpr ([Reg.rax, .r9, .r10][j]'hj) := fun j hj => by rw [← hsp]; exact hpj j hj
+  have hP : (pushed [.rax, .r9, .r10] st).gpr .rsp = SP s - BitVec.ofNat 64 24 := by rw [pushed_rsp, hsp]; rfl
+  have hpf' : Frame [⟨SP s - BitVec.ofNat 64 24, 24⟩] st.mem (pushed [.rax, .r9, .r10] st).mem := by
+    rw [hsp] at hpf; exact hpf
+  have hE : Frame [⟨SP s - BitVec.ofNat 64 32, 8⟩] (pushed [.rax, .r9, .r10] st).mem
+      (pushed [.rax, .r9, .r10] st).callEntry.mem := by
+    have := callEntry_frame (pushed [.rax, .r9, .r10] st)
+    rw [hP] at this
+    simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
+  -- The memory the call starts from, from `s`'s.
+  have fU : Frame (wR s ++ [tR s]) s.mem (pushed [.rax, .r9, .r10] st).callEntry.mem :=
+    (hf.trans (frame_stk (s := s) (by decide) (by decide) hpf')).trans (frame_stk (s := s) (by decide) (by decide) hE)
+  have fS : Frame (wR s ++ [tR s]) st.mem (pushed [.rax, .r9, .r10] st).callEntry.mem :=
+    (frame_stk (s := s) (by decide) (by decide) hpf').trans (frame_stk (s := s) (by decide) (by decide) hE)
+  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 24).toNat := by rw [toNat_sub_ofNat (by omega)]; omega
+  have hPt : (SP s - BitVec.ofNat 64 24).toNat = (SP s).toNat - 24 := toNat_sub_ofNat (by omega)
+  have ea : ∀ i, i < 3 → stackArg ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)) i =
+      (pushed [.rax, .r9, .r10] st).mem.readW (SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 (8 * i)) 64 :=
+    fun i hi => stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega)
+  have a0 := ea 0 (by decide)
+  have a1 := ea 1 (by decide)
+  have a2 := ea 2 (by decide)
+  rw [show SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 (8 * 0) = SP s - BitVec.ofNat 64 (8 * (2 + 1)) from
+    by simp, hpj' 2 (by decide)] at a0
+  rw [show SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 (8 * 1) = SP s - BitVec.ofNat 64 (8 * (1 + 1)) from
+    sub_add_ofNat _ (by decide), hpj' 1 (by decide)] at a1
+  rw [show SP s - BitVec.ofNat 64 24 + BitVec.ofNat 64 (8 * 2) = SP s - BitVec.ofNat 64 (8 * (0 + 1)) from
+    sub_add_ofNat _ (by decide), hpj' 0 (by decide)] at a2
+  simp only [List.getElem_cons_zero, List.getElem_cons_succ] at a0 a1 a2
+  have gU : ∀ r, r ≠ .rsp →
+      ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)).gpr r = st.gpr r :=
+    fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
+  have hU : ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)).gpr .rsp =
+      SP s - BitVec.ofNat 64 32 := by
+    rw [State.withRegions_gpr, State.callEntry_rsp, hP, ← Offset.sub_add_eq]; rfl
+  have hok : M.ok ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)).mem (K s) := by
+    rw [State.withRegions_mem]
+    exact M.frame fU (k_disj hp) hp.w_k hp.ok
+  have hpre := blkPre hp hq hU rfl rfl (by rw [gU _ (by decide)]; exact h_di) (by rw [gU _ (by decide)]; exact h_si)
+    (by rw [gU _ (by decide)]; exact h_dx) (by rw [gU _ (by decide)]; exact h_cx) (by rw [gU _ (by decide)]; exact h_8)
+    (by rw [gU _ (by decide)]; exact h_9) (by rw [a0, h_10]) (by rw [a1, h_9]) (by rw [a2, h_ax]) hok
+  have hPw : (pushed [.rax, .r9, .r10] st).wr = ⟨SP s - BitVec.ofNat 64 24, 24⟩ :: wR s := by
+    rw [pushed_wr, hsp, hwr, hp.wr]; rfl
+  have hPr : (pushed [.rax, .r9, .r10] st).rd = [kR M s, srcR s, aR s] := by rw [pushed_rd, hrd, hp.rd]
+  have cC : ∀ {ts : List Region}, stR s ∈ ts → Covers [ctrR s] ts := fun h =>
+    covers_off (k := 80) (d := 48) (m := 16) h (by decide) (by decide)
+  have cY : ∀ {ts : List Region}, stR s ∈ ts → Covers [yR s] ts := fun h =>
+    covers_off (k := 80) (d := 16) (m := 16) h (by decide) (by decide)
+  have cSc : ∀ {ts : List Region}, wkR s ∈ ts → Covers [scR s] ts := fun h =>
+    covers_off (k := 2192) (d := 80) (m := 2112) h (by decide) (by decide)
+  have cD : ∀ {ts : List Region}, dR s ∈ ts → Covers [⟨Dst s, q * 16⟩] ts := fun h =>
+    covers_prefix (L := L s) h (by omega)
+  have cR : ∀ {ts : List Region}, srcR s ∈ ts → Covers [⟨Src s, q * 16⟩] ts := fun h =>
+    covers_prefix (L := L s) h (by omega)
+  have cw : Covers (blkWr s q) (pushed [.rax, .r9, .r10] st).wr := by
+    rw [hPw]
+    exact covers_cons' (cC (by simp)) (covers_cons' (cY (by simp)) (covers_cons' (cD (by simp))
+      (covers_cons' (cSc (by simp)) covers_nil')))
+  have cr : Covers (blkRd s M q ++ blkWr s q) ((pushed [.rax, .r9, .r10] st).rd ++ (pushed [.rax, .r9, .r10] st).wr) := by
+    rw [hPr, hPw]
+    exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (cR (by simp))
+      (covers_cons' (covers_of_mem (by simp)) (covers_cons' (cC (by simp)) (covers_cons' (cY (by simp))
+      (covers_cons' (cD (by simp)) (covers_cons' (cSc (by simp)) covers_nil'))))))
+  exact ⟨hpre, cr, cw, by rw [a0, h_10], by rw [a1, h_9], by rw [a2, h_ax]⟩
+
 /-- The call of `vg_aes_gcm_encrypt_blocks_to` on `q` whole blocks, with
 `dst`, `q` and the working space pushed for it. -/
 theorem blkCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ L s) {st : State}
@@ -209,12 +293,7 @@ theorem blkCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ L s) {st : State}
   have hU : ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)).gpr .rsp =
       SP s - BitVec.ofNat 64 32 := by
     rw [State.withRegions_gpr, State.callEntry_rsp, hP, ← Offset.sub_add_eq]; rfl
-  have hok : M.ok ((pushed [.rax, .r9, .r10] st).callEntry.withRegions (blkRd s M q) (blkWr s q)).mem (K s) := by
-    rw [State.withRegions_mem]
-    exact M.frame fU (k_disj hp) hp.w_k hp.ok
-  have hpre := blkPre hp hq hU rfl rfl (by rw [gU _ (by decide)]; exact h_di) (by rw [gU _ (by decide)]; exact h_si)
-    (by rw [gU _ (by decide)]; exact h_dx) (by rw [gU _ (by decide)]; exact h_cx) (by rw [gU _ (by decide)]; exact h_8)
-    (by rw [gU _ (by decide)]; exact h_9) (by rw [a0, h_10]) (by rw [a1, h_9]) (by rw [a2, h_ax]) hok
+  obtain ⟨hpre, cr, cw, -, -, -⟩ := blkEntry hp hq hsp hrd hwr hf h_di h_si h_dx h_cx h_8 h_9 h_10 h_ax
   -- What the push and the return address leave as it was.
   have keep : ∀ {p : Addr} {n : Nat}, (⟨p, n⟩ : Region).Disjoint (tR s) → n ≤ 2 ^ 64 →
       bytesAt (pushed [.rax, .r9, .r10] st).callEntry.mem p n = bytesAt st.mem p n := fun hd hn => by
@@ -233,28 +312,6 @@ theorem blkCall_ok (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ L s) {st : State}
   have eY := keepB (hp.b_st.symm.sub_left y_sub)
   have eS := keepBs (n := q) (hp.b_r.symm.sub_left (Region.sub_prefix (by omega))) (by omega)
   have hqn : (BitVec.ofNat 64 q).toNat = q := by rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
-  have hPw : (pushed [.rax, .r9, .r10] st).wr = ⟨SP s - BitVec.ofNat 64 24, 24⟩ :: wR s := by
-    rw [pushed_wr, hsp, hwr, hp.wr]; rfl
-  have hPr : (pushed [.rax, .r9, .r10] st).rd = [kR M s, srcR s, aR s] := by rw [pushed_rd, hrd, hp.rd]
-  have cC : ∀ {ts : List Region}, stR s ∈ ts → Covers [ctrR s] ts := fun h =>
-    covers_off (k := 80) (d := 48) (m := 16) h (by decide) (by decide)
-  have cY : ∀ {ts : List Region}, stR s ∈ ts → Covers [yR s] ts := fun h =>
-    covers_off (k := 80) (d := 16) (m := 16) h (by decide) (by decide)
-  have cSc : ∀ {ts : List Region}, wkR s ∈ ts → Covers [scR s] ts := fun h =>
-    covers_off (k := 2192) (d := 80) (m := 2112) h (by decide) (by decide)
-  have cD : ∀ {ts : List Region}, dR s ∈ ts → Covers [⟨Dst s, q * 16⟩] ts := fun h =>
-    covers_prefix (L := L s) h (by omega)
-  have cR : ∀ {ts : List Region}, srcR s ∈ ts → Covers [⟨Src s, q * 16⟩] ts := fun h =>
-    covers_prefix (L := L s) h (by omega)
-  have cw : Covers (blkWr s q) (pushed [.rax, .r9, .r10] st).wr := by
-    rw [hPw]
-    exact covers_cons' (cC (by simp)) (covers_cons' (cY (by simp)) (covers_cons' (cD (by simp))
-      (covers_cons' (cSc (by simp)) covers_nil')))
-  have cr : Covers (blkRd s M q ++ blkWr s q) ((pushed [.rax, .r9, .r10] st).rd ++ (pushed [.rax, .r9, .r10] st).wr) := by
-    rw [hPr, hPw]
-    exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (cR (by simp))
-      (covers_cons' (covers_of_mem (by simp)) (covers_cons' (cC (by simp)) (covers_cons' (cY (by simp))
-      (covers_cons' (cD (by simp)) (covers_cons' (cSc (by simp)) covers_nil'))))))
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := Proof.AesGcm.encryptBlocksToX86_64M M)
     T.ok T.sp (by have := T.xd; omega) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)

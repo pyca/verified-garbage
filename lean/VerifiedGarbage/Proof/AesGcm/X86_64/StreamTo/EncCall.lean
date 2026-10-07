@@ -89,6 +89,56 @@ include hp
 
 open VG.Spec.Gcm (StreamRepr gctr inc32 j0)
 
+/-- What the call of `vg_aes_gcm_stream_encrypt` needs, after the push. -/
+theorem encEntry {o : Nat} (ho : o < L s) {st : State}
+    (hsp : st.gpr .rsp = SP s) (hrd : st.rd = s.rd) (hwr : st.wr = s.wr) (hf : Frame (wR s ++ [tR s]) s.mem st.mem)
+    (h_di : st.gpr .rdi = K s) (h_si : st.gpr .rsi = s.gpr .rsi) (h_dx : st.gpr .rdx = St s)
+    (h_9 : st.gpr .r9 = Dst s + BitVec.ofNat 64 o) (h_10 : st.gpr .r10 = BitVec.ofNat 64 (L s - o)) :
+    (encK M).pre ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)) ∧
+      Covers (encRd s M ++ encWr s o) ((pushed [.r10] st).rd ++ (pushed [.r10] st).wr) ∧
+      Covers (encWr s o) (pushed [.r10] st).wr ∧
+      stackArg ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)) 0 = BitVec.ofNat 64 (L s - o) := by
+  have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
+  have wt := hp.w_t
+  have wsp := hp.w_sp
+  have hn8 : 8 * [Reg.r10].length ≤ (st.gpr .rsp).toNat := by rw [hsp]; simp; omega
+  obtain ⟨hpf, hpj⟩ := pushRegs_mem st [.r10] (by decide) hn8
+  have hP : (pushed [.r10] st).gpr .rsp = SP s - BitVec.ofNat 64 8 := by rw [pushed_rsp, hsp]; rfl
+  have hpf' : Frame [⟨SP s - BitVec.ofNat 64 8, 8⟩] st.mem (pushed [.r10] st).mem := by
+    rw [hsp] at hpf; exact hpf
+  have hE : Frame [⟨SP s - BitVec.ofNat 64 16, 8⟩] (pushed [.r10] st).mem (pushed [.r10] st).callEntry.mem := by
+    have := callEntry_frame (pushed [.r10] st)
+    rw [hP] at this
+    simpa only [below, ← Offset.sub_add_eq, ← BitVec.ofNat_add] using this
+  have fU : Frame (wR s ++ [tR s]) s.mem (pushed [.r10] st).callEntry.mem :=
+    (hf.trans (frame_stk (s := s) (by decide) (by decide) hpf')).trans (frame_stk (s := s) (by decide) (by decide) hE)
+  have hPsp8 : 8 ≤ (SP s - BitVec.ofNat 64 8).toNat := by rw [toNat_sub_ofNat (by omega)]; omega
+  have hPt : (SP s - BitVec.ofNat 64 8).toNat = (SP s).toNat - 8 := toNat_sub_ofNat (by omega)
+  have a0 : stackArg ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)) 0 = BitVec.ofNat 64 (L s - o) := by
+    rw [stackArg_entry hP hPsp8 _ _ (by rw [hPt]; omega), show SP s - BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * 0) =
+      SP s - BitVec.ofNat 64 (8 * (0 + 1)) by simp, ← hsp]
+    exact (hpj 0 (by decide)).trans h_10
+  have gU : ∀ r, r ≠ .rsp → ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)).gpr r = st.gpr r :=
+    fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
+  have hU : ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)).gpr .rsp = SP s - BitVec.ofNat 64 16 := by
+    rw [State.withRegions_gpr, State.callEntry_rsp, hP, ← Offset.sub_add_eq]; rfl
+  have hok : M.ok ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)).mem (K s) := by
+    rw [State.withRegions_mem]; exact M.frame fU (k_disj hp) hp.w_k hp.ok
+  have hpre := encPre hp ho hU rfl rfl (by rw [gU _ (by decide)]; exact h_di) (by rw [gU _ (by decide)]; exact h_si)
+    (by rw [gU _ (by decide)]; exact h_dx) (by rw [gU _ (by decide)]; exact h_9) a0 hok
+  have hPw : (pushed [.r10] st).wr = ⟨SP s - BitVec.ofNat 64 8, 8⟩ :: wR s := by
+    rw [pushed_wr, hsp, hwr, hp.wr]; rfl
+  have hPr : (pushed [.r10] st).rd = [kR M s, srcR s, aR s] := by rw [pushed_rd, hrd, hp.rd]
+  have cDq : ∀ {ts : List Region}, dR s ∈ ts → Covers [dqR s o] ts := fun h =>
+    covers_off (k := L s) (d := o) (m := L s - o) h (by omega) (by omega)
+  have cw : Covers (encWr s o) (pushed [.r10] st).wr := by
+    rw [hPw]; exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (cDq (by simp)) covers_nil')
+  have cr : Covers (encRd s M ++ encWr s o) ((pushed [.r10] st).rd ++ (pushed [.r10] st).wr) := by
+    rw [hPr, hPw]
+    exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (covers_of_mem (by simp))
+      (covers_cons' (covers_of_mem (by simp)) (covers_cons' (cDq (by simp)) covers_nil')))
+  exact ⟨hpre, cr, cw, a0⟩
+
 /-- The call of `vg_aes_gcm_stream_encrypt` on the `L - o` bytes left at
 `Dst + o`, with their number pushed for it. -/
 theorem encCall_ok (E : EncFn M) {o : Nat} (ho : o < L s) {st : State}
@@ -130,10 +180,7 @@ theorem encCall_ok (E : EncFn M) {o : Nat} (ho : o < L s) {st : State}
     fun r hr => by rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
   have hU : ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)).gpr .rsp = SP s - BitVec.ofNat 64 16 := by
     rw [State.withRegions_gpr, State.callEntry_rsp, hP, ← Offset.sub_add_eq]; rfl
-  have hok : M.ok ((pushed [.r10] st).callEntry.withRegions (encRd s M) (encWr s o)).mem (K s) := by
-    rw [State.withRegions_mem]; exact M.frame fU (k_disj hp) hp.w_k hp.ok
-  have hpre := encPre hp ho hU rfl rfl (by rw [gU _ (by decide)]; exact h_di) (by rw [gU _ (by decide)]; exact h_si)
-    (by rw [gU _ (by decide)]; exact h_dx) (by rw [gU _ (by decide)]; exact h_9) a0 hok
+  obtain ⟨hpre, cr, cw, -⟩ := encEntry hp ho hsp hrd hwr hf h_di h_si h_dx h_9 h_10
   -- What the push and the return address leave as it was.
   have fS : Frame [⟨SP s - BitVec.ofNat 64 8, 8⟩, ⟨SP s - BitVec.ofNat 64 16, 8⟩] st.mem
       (pushed [.r10] st).callEntry.mem :=
@@ -150,17 +197,6 @@ theorem encCall_ok (E : EncFn M) {o : Nat} (ho : o < L s) {st : State}
   have eD : bytesAt (pushed [.r10] st).callEntry.mem (Dst s + BitVec.ofNat 64 o) (L s - o) =
       bytesAt st.mem (Dst s + BitVec.ofNat 64 o) (L s - o) :=
     bytesAt_frame fS (outT (hp.b_d.symm.sub_left dsq)) (by omega)
-  have hPw : (pushed [.r10] st).wr = ⟨SP s - BitVec.ofNat 64 8, 8⟩ :: wR s := by
-    rw [pushed_wr, hsp, hwr, hp.wr]; rfl
-  have hPr : (pushed [.r10] st).rd = [kR M s, srcR s, aR s] := by rw [pushed_rd, hrd, hp.rd]
-  have cDq : ∀ {ts : List Region}, dR s ∈ ts → Covers [dqR s o] ts := fun h =>
-    covers_off (k := L s) (d := o) (m := L s - o) h (by omega) (by omega)
-  have cw : Covers (encWr s o) (pushed [.r10] st).wr := by
-    rw [hPw]; exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (cDq (by simp)) covers_nil')
-  have cr : Covers (encRd s M ++ encWr s o) ((pushed [.r10] st).rd ++ (pushed [.r10] st).wr) := by
-    rw [hPr, hPw]
-    exact covers_cons' (covers_of_mem (by simp)) (covers_cons' (covers_of_mem (by simp))
-      (covers_cons' (covers_of_mem (by simp)) (covers_cons' (cDq (by simp)) covers_nil')))
   refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.call_sp_mx (k := encK M)
     E.ok E.sp (by have := E.xd; omega) hpre cr cw fun s' hrd' hwr' hcs hfr _ ⟨s₂, hm₂, _, hpost⟩ _ => ?_)
   have r₃ := hcs _ (by decide : Reg.rsp ∈ calleeSaved)

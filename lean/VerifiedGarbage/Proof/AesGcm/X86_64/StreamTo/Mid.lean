@@ -148,4 +148,16 @@ theorem mid_entry {s₁ : State} (hsp : s₁.gpr .rsp = s.gpr .rsp)
 
 end
 
+/-- `Sem` through a frame of the slots kept. -/
+theorem Sem.kR' {M : CtxMode} {s : State} (hp : SP' M s) {o : Nat} {m m' : Mem} (h : Sem s o m)
+    (hf : Frame [kR' s] m m') (ho : o ≤ L s) : Sem s o m' := fun iv a p hr hal hpl => by
+  obtain ⟨sr, dd⟩ := h iv a p hr hal hpl
+  have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
+  refine ⟨streamRepr_frame hf (fun r hr' => by
+    simp only [List.mem_singleton] at hr'; subst hr'; exact hp.st_w.sub_right kR'_sub) sr, ?_⟩
+  rw [← dd]
+  exact bytesAt_frame hf (fun r hr' => by
+    simp only [List.mem_singleton] at hr'; subst hr'
+    exact (hp.d_w.sub_left (Region.sub_prefix ho)).sub_right kR'_sub) (by omega)
+
 end VG.Proof.AesGcm.X86_64.StreamTo

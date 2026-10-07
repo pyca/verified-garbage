@@ -60,11 +60,13 @@ theorem j0_blk {q : Nat} (hq : 16 * q ≤ L s) : ∀ r ∈ blkWr s q ++ [tR s], 
   · exact (hp.st_w.sub_left hs).sub_right scR_sub
   · exact hp.b_st.symm.sub_left hs
 
-/-- What the call of the whole blocks leaves: `Mid s (16 q)`. -/
+/-- What the call of the whole blocks leaves: `Mid s (16 q)`, from the
+state `st₄` it starts from (with nothing done but the bytes done kept). -/
 theorem call_mid {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).toNat + 16 * q < 2 ^ 64)
-    (ht0 : TL s ≠ 0) (ht16 : (TL s).toNat % 16 = 0) {st st₄ st' : State} (h : Mid s 0 st)
-    (hf₄ : Frame [kR' s] st.mem st₄.mem) (hk₄ : Kept s (16 * q) st₄.mem) (hsp₄ : st₄.gpr .rsp = SP s)
-    (hcs₄ : ∀ r ∈ calleeSaved, st₄.gpr r = st.gpr r) (hrd₄ : st₄.rd = st.rd) (hwr₄ : st₄.wr = st.wr)
+    (ht0 : TL s ≠ 0) (ht16 : (TL s).toNat % 16 = 0) {st₄ st' : State}
+    (f₄ : Frame (wR s ++ [tR s]) s.mem st₄.mem) (sem₄ : Sem s 0 st₄.mem) (hk₄ : Kept s (16 * q) st₄.mem)
+    (hsp₄ : st₄.gpr .rsp = SP s) (hcs₄ : ∀ r ∈ calleeSaved, st₄.gpr r = s.gpr r) (hrd₄ : st₄.rd = s.rd)
+    (hwr₄ : st₄.wr = s.wr)
     (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st₄.gpr r) (hrd : st'.rd = st₄.rd) (hwr : st'.wr = st₄.wr)
     (hf : Frame (blkWr s q ++ [tR s]) st₄.mem st'.mem)
     (o₁ : blocksAt st'.mem (Dst s) q =
@@ -74,17 +76,14 @@ theorem call_mid {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).t
     (o₃ : blockAt st'.mem (St s + BitVec.ofNat 64 16) =
       Spec.Gcm.ghashFrom (hk s) (blockAt st₄.mem (St s + BitVec.ofNat 64 16)) (blocksAt st'.mem (Dst s) q)) :
     Mid s (16 * q) st' := by
-  have f₄ : Frame (wR s ++ [tR s]) s.mem st₄.mem := h.frame.trans (frame_kR' hf₄)
   have f' : Frame (wR s ++ [tR s]) s.mem st'.mem := f₄.trans (blk_wR (s := s) hq hf)
-  refine ⟨hq, htl, by rw [hcs _ (by decide), hsp₄], fun r hr => by rw [hcs r hr, hcs₄ r hr, h.saved r hr],
-    by rw [hrd, hrd₄, h.rd], by rw [hwr, hwr₄, h.wr], hk₄.frame hf (kR'_blk hp hq), f',
+  refine ⟨hq, htl, by rw [hcs _ (by decide), hsp₄], fun r hr => by rw [hcs r hr, hcs₄ r hr],
+    by rw [hrd, hrd₄], by rw [hwr, hwr₄], hk₄.frame hf (kR'_blk hp hq), f',
     fun iv a p hr hal hpl => ?_⟩
-  -- The state before the call, from `Mid s 0`.
-  have hr₀ := (h.sem iv a p hr hal hpl).1
+  -- The state before the call.
+  have hr₄ := (sem₄ iv a p hr hal hpl).1
   have z : pt s 0 = [] := rfl
-  rw [z, List.append_nil] at hr₀
-  have hr₄ := streamRepr_frame hf₄ (fun r hr' => by
-    simp only [List.mem_singleton] at hr'; subst hr'; exact hp.st_w.sub_right kR'_sub) hr₀
+  rw [z, List.append_nil] at hr₄
   have hc : gctr (ciph s) (inc32 (j0 (hk s) iv)) p ≠ [] := by
     intro e; have := congrArg List.length e
     rw [Proof.Gcm.length_gctr] at this; simp at this
@@ -146,11 +145,13 @@ theorem blocks_ok (T : BlkToFn M) {st : State} (h : Mid s 0 st) (h11 : st.gpr .r
   have si₅ : s₅.gpr .rsi = s.gpr .rsi := si
   refine WP.mono (blkCall_ok hp T hq sp₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr) (M₄.frame.trans (frame_kR' f₅))
     di si₅ dx cx r8₅ r9₅ r10₅ ax₅) fun s₆ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ => ⟨16 * (L s / 16), ?_⟩
-  exact call_mid hp hq0 hq htl ht0 ht16 M₄ f₅ k₅ sp₅
-    (fun r hr => g₅ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
+  have cs₅ : ∀ r ∈ calleeSaved, s₅.gpr r = s.gpr r := fun r hr => by
+    rw [g₅ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
-      (by rintro rfl; simp [calleeSaved] at hr)) rd₅ wr₅ cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
+      (by rintro rfl; simp [calleeSaved] at hr), M₄.saved r hr]
+  exact call_mid hp hq0 hq htl ht0 ht16 (M₄.frame.trans (frame_kR' f₅)) (M₄.sem.kR' hp f₅ (Nat.zero_le _)) k₅
+    sp₅ cs₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr) cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
 
 end
 
