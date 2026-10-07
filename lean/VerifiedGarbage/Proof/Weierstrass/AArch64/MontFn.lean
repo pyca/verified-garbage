@@ -196,7 +196,7 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   have ho := hp.o
   have ha := hp.a
   have hb := hp.b
-  simp only [entry, List.append_assoc]
+  simp only [entry, entryRest, zextCode, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (zext_ok s) fun s₁ ⟨g1, g2, g3, K₁, V₁⟩ => ?_
   rw [WP.block_append_iff, saveCode_eq]
@@ -263,9 +263,11 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   · rw [k₄.sp, K₃.sp, K₂.sp, K₁.sp]
   · rw [V₄, V₃, V₂ d hd, V₁]
 
-theorem mulFn_eq (n m : Nat) : mulFn n m = .block (entry n m ++
-    (mulR (mod n m) (ptrs n).1 (ptrs n).2.1 (ptrs n).2.2 0 0 0 ++ restoreCode n)) := by
-  simp only [mulFn, List.append_assoc]
+theorem mulFn_wp (n m : Nat) {s : State} {Q : State → Prop} : WP isa (mulFn n m) s Q ↔
+    WP isa (.block (entry n m ++ (mulR (mod n m) (ptrs n).1 (ptrs n).2.1 (ptrs n).2.2 0 0 0 ++
+      restoreCode n))) s Q := by
+  rw [mulFn, WP.seq_iff, entry, List.append_assoc]
+  exact WP.block_append_iff.symm
 
 /-- `vg_<curve>_mul_mod_<p|n>`: `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
@@ -284,7 +286,7 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
   have ho := hp.o
   have ha := hp.a
   have hb' := hp.b
-  rw [mulFn_eq, WP.block_append_iff]
+  rw [mulFn_wp, WP.block_append_iff]
   refine WP.mono (entry_ok hM hp) fun s₁ E => ?_
   -- The numbers the entry left.
   have ev : ∀ d, d + 8 * n ≤ own n → wordsVal s₁.mem (s.gpr .x0) d n = wordsVal s.mem (s.gpr .x0) d n :=

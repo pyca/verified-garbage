@@ -77,16 +77,23 @@ def restoreCode (n : Nat) : List Instr :=
 def setConst (n : Nat) (o x : Nat) : List Instr :=
   (List.range n).flatMap fun j => const64 .x1 (BitVec.ofNat 64 (x >>> (64 * j))) ++ [st .x1 (o + 8 * j)]
 
-/-- The offsets zero-extended, the registers saved, the pointers
+/-- The offsets zero-extended (as 32-bit additions of zero). -/
+def zextCode : List Instr := [.addImm .w .x1 .x1 0, .addImm .w .x2 .x2 0, .addImm .w .x3 .x3 0]
+
+/-- After the offsets are zero-extended: the registers saved, the pointers
 `ro = ws + o`, `ra = ws + a`, `rb = ws + b`, and the modulus stored. -/
-def entry (n m : Nat) : List Instr :=
-  [.addImm .w .x1 .x1 0, .addImm .w .x2 .x2 0, .addImm .w .x3 .x3 0] ++ saveCode n ++
+def entryRest (n m : Nat) : List Instr :=
+  saveCode n ++
     [.add .x (ptrs n).2.2 .x0 .x1, .add .x (ptrs n).1 .x0 .x2, .add .x (ptrs n).2.1 .x0 .x3] ++
     setConst n (moAt n) m
+
+/-- The entry. -/
+def entry (n m : Nat) : List Instr := zextCode ++ entryRest n m
 
 /-- `vg_<curve>_mul_mod_<p|n>`: the entry, the product, the registers
 restored. -/
 def mulFn (n m : Nat) : Prog isa :=
-  .block (entry n m ++ mulR (mod n m) (ptrs n).1 (ptrs n).2.1 (ptrs n).2.2 0 0 0 ++ restoreCode n)
+  .seq (.block zextCode)
+    (.block (entryRest n m ++ mulR (mod n m) (ptrs n).1 (ptrs n).2.1 (ptrs n).2.2 0 0 0 ++ restoreCode n))
 
 end VG.Impl.Weierstrass.AArch64.Mont
