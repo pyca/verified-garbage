@@ -32,23 +32,56 @@ theorem dbl_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {a : EPoint dZ}
 theorem two_smul_add (a : EPoint dZ) (n : Nat) : n • a + n • a = (2 * n) • a := by
   rw [← two_nsmul, smul_smul]
 
-theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {a : EPoint dZ}
-    (h : Rep (point (env s.mem x) 0 1 2 3) a) :
+/-- `add d, v`, and the carry. -/
+theorem wp_addiC {is : List Instr} {s : State} {Q : State → Prop} {d : Reg} {v : BitVec 32}
+    (k : ∀ s', Wp.Upd s s' d (s.gpr d + v) → s'.cf = some (decide (2 ^ 32 ≤ (s.gpr d).toNat + v.toNat)) →
+      WP isa (.block is) s' Q) :
+    WP isa (.block (.alu .add d (.imm v) :: is)) s Q :=
+  Wp.cons rfl (k _ (Wp.Upd.flags _ _ _ _ _ _) rfl)
+
+/-- The doubling loop's counter: `esi` after `4 - n` of its four iterations, `n` left, and
+`2³⁰` added: the next count, carrying out exactly on the last. -/
+theorem dblCount_step {e u : BitVec 32} {n : Nat} (he : e.toNat < 2 ^ 30) (h1 : 1 ≤ n) (h4 : n ≤ 4)
+    (hu : u.toNat = e.toNat + (4 - n) * 2 ^ 30) :
+    (u + 0x40000000).toNat = (e.toNat + (4 - (n - 1)) * 2 ^ 30) % 2 ^ 32 ∧
+      (decide (2 ^ 32 ≤ u.toNat + (0x40000000 : BitVec 32).toNat) = decide (n = 1)) := by
+  have h30 : (0x40000000 : BitVec 32).toNat = 2 ^ 30 := rfl
+  rw [BitVec.toNat_add, hu, h30]
+  constructor
+  · congr 1; omega
+  · simp only [decide_eq_decide]; omega
+
+theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (hesi : (s.gpr .esi).toNat < 2 ^ 30)
+    {a : EPoint dZ} (h : Rep (point (env s.mem x) 0 1 2 3) a) :
     WP isa doubleWindow s fun t => IKeep x s t ∧ t.gpr .esi = s.gpr .esi ∧
       Rep (point (env t.mem x) 0 1 2 3) ((16 : Nat) • a) ∧
       ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i := by
-  rw [← one_nsmul a] at h
-  refine WP.seq (WP.mono (dbl_ok hc h) fun b ⟨kb, rb, hb⟩ => ?_)
-  rw [two_smul_add] at rb
-  refine WP.seq (WP.mono (dbl_ok (kb.ctx hc) rb) fun c ⟨kc, rc, hc'⟩ => ?_)
-  rw [two_smul_add] at rc
-  refine WP.seq (WP.mono (dbl_ok ((kb.trans kc).ctx hc) rc) fun d ⟨kd, rd, hd⟩ => ?_)
-  rw [two_smul_add] at rd
-  refine WP.mono (dbl_ok ((kb.trans kc |>.trans kd).ctx hc) rd) fun t ⟨kt, rt, ht⟩ =>
-    ⟨IKeep.of_field (((kb.trans kc).trans kd).trans kt), (((kb.trans kc).trans kd).trans kt).keep.esi,
-      ?_, fun i hi => ?_⟩
-  · rw [two_smul_add] at rt; exact rt
-  · rw [ht i hi, hd i hi, hc' i hi, hb i hi]
+  refine WP.loop (M := isa) (Inv := fun n (t : State) => 1 ≤ n ∧ n ≤ 4 ∧
+    (t.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 ∧ IKeep x s t ∧
+    Rep (point (env t.mem x) 0 1 2 3) ((2 ^ (4 - n) : Nat) • a) ∧
+    ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i) ?_ 4 s
+    ⟨by decide, by decide, by simp, IKeep.refl _ _, by simpa using h, fun _ _ => rfl⟩
+  intro n t ⟨h1, h4, he, kt, rt, ht⟩
+  rw [dblStep, WP.block_append_iff]
+  refine WP.mono (dbl_ok (kt.ctx hc) rt) fun u ⟨ku, ru, hu⟩ => ?_
+  refine wp_addiC fun v hv cv => WP.block_nil ?_
+  have eu : (u.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 := by rw [ku.keep.esi]; exact he
+  obtain ⟨ev, cv'⟩ := dblCount_step hesi h1 h4 eu
+  rw [cv'] at cv
+  have kv : IKeep x s v := kt.trans ((IKeep.of_field ku).trans (IKeep.of_counter hv))
+  have rv : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
+    rw [hv.mem, show 4 - (n - 1) = (4 - n) + 1 by omega, pow_succ, mul_comm, ← smul_smul, two_nsmul]
+    exact ru
+  have hv16 : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
+    fun i hi => by rw [hv.mem, hu i hi, ht i hi]
+  rw [← hv.gpr] at ev
+  by_cases hn : n = 1
+  · subst hn
+    refine .inl ⟨by simp only [eval, cv]; rfl, kv, ?_, by simpa using rv, hv16⟩
+    apply BitVec.eq_of_toNat_eq
+    rw [ev]; omega
+  · refine .inr ⟨by simp only [eval, cv, hn]; rfl, n - 1, by omega, by omega, by omega,
+      by rw [ev, Nat.mod_eq_of_lt (by omega)], kv, rv, hv16⟩
 
 /-! ## Digits -/
 
@@ -211,7 +244,8 @@ theorem WinCtx.of_ikeep {s₀ s t : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Po
   · rw [tablePoint_frame hfit k.frame (by decide) (by decide) (Or.inr (by decide))]; exact h.r
 
 theorem windowWith_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
-    (h : WinCtx s₀ Aa R s) {o : Nat} (ho : 1024 ≤ o) (hn : o + 1920 ≤ 8192) {X : EPoint dZ}
+    (h : WinCtx s₀ Aa R s) (hesi : (s.gpr .esi).toNat < 2 ^ 30) {o : Nat} (ho : 1024 ≤ o)
+    (hn : o + 1920 ≤ 8192) {X : EPoint dZ}
     (htab : ∀ t, WinCtx s₀ Aa R t → ∀ j < 15, Rep (tablePoint t.mem (arg s₀ 3) (o + 128 * j)) ((j + 1) • X))
     {digit : List Instr} {v : Nat} (hv : v < 16)
     (hdig : ∀ t, WinCtx s₀ Aa R t → t.gpr .esi = s.gpr .esi →
@@ -219,7 +253,7 @@ theorem windowWith_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     {a : EPoint dZ} (hacc : Rep (point (env s.mem (arg s₀ 3)) 0 1 2 3) a) :
     WP isa (windowWith o digit) s fun t => WinCtx s₀ Aa R t ∧ t.gpr .esi = s.gpr .esi ∧
       Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3) ((16 : Nat) • a + v • X) := by
-  refine WP.seq (WP.mono (doubleWindow_ok h.ctx hacc) fun b ⟨kb, eb, rb, hb⟩ => ?_)
+  refine WP.seq (WP.mono (doubleWindow_ok h.ctx hesi hacc) fun b ⟨kb, eb, rb, hb⟩ => ?_)
   have wb := h.of_ikeep kb (hb 16 (by decide))
   refine WP.seq (WP.mono (hdig b wb eb) fun c ⟨kc, ec⟩ => ?_)
   have wc := wb.of_ikeep kc.ikeep (by rw [kc.mem])

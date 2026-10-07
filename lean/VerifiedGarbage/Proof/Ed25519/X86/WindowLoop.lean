@@ -61,13 +61,18 @@ theorem nibble_lt (b : Byte) (high : Bool) : (if high then b.toNat / 16 else b.t
   · exact low_lt16 b
   · exact nib_lt16 b
 
+/-- The byte counter leaves the top two bits of `esi` to the doublings' loop. -/
+theorem esi_lt {s : State} {i : Nat} (hi : i < 64) (hesi : s.gpr .esi = BitVec.ofNat 32 i) :
+    (s.gpr .esi).toNat < 2 ^ 30 := by
+  rw [hesi, BitVec.toNat_ofNat]; omega
+
 theorem windowA_byte_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}
     (h : WinCtx s₀ Aa R s) {i : Nat} (hi : i < 64) (hesi : s.gpr .esi = BitVec.ofNat 32 i)
     (high : Bool) {a : EPoint dZ} (hacc : Rep (point (env s.mem (arg s₀ 3)) 0 1 2 3) a) :
     WP isa (windowA (if high then digitHigh 12 0 else digitLow 12 0)) s fun t => WinCtx s₀ Aa R t ∧
       t.gpr .esi = s.gpr .esi ∧ Rep (point (env t.mem (arg s₀ 3)) 0 1 2 3)
         ((16 : Nat) • a + (if high then (kByte s₀ i).toNat / 16 else (kByte s₀ i).toNat % 16) • Aa) :=
-  windowWith_ok h (by decide) (by decide) (fun t ht => ht.ta) (nibble_lt _ high)
+  windowWith_ok h (esi_lt hi hesi) (by decide) (by decide) (fun t ht => ht.ta) (nibble_lt _ high)
     (fun t ht et => digitK_ok hi high t ht (et.trans hesi)) hacc
 
 theorem windowAB_byte_ok {s₀ s : State} {Aa : EPoint dZ} {R : Spec.Ed25519.Point}

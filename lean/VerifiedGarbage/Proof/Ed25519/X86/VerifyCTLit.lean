@@ -13,6 +13,6 @@ materialize_code verifyWriteR := (.block (pointTableWrite 7808) : Prog isa)
 materialize_code verifyReadA := (.block (pointTableRead 7680) : Prog isa)
 materialize_code verifyScalarTail := (.block (copyWords 64 8 ++ scalarSubtract ++ ([.alu .test .ebx (.reg .ebx)] : List Instr)) : Prog isa)
 materialize_code verifyLoadWords := (.block (copyWords 96 8) : Prog isa)
-materialize_code dbl
+materialize_code doubleWindow
 materialize_code windowPrep
 end VG.Proof.Ed25519.X86
