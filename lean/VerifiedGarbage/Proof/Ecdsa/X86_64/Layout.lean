@@ -79,6 +79,12 @@ structure CfgOk (c : Cfg) : Prop where
   len_lo : 8 * c.n < c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   n_len : c.C.n ≤ 2 ^ (8 * c.C.len)
+  /-- The window method's scalars' bits (`Cfg.nbits`): enough for `n`, at
+  most the bytes', and for ECDH's reduction of `d` (`maskK`), within its top
+  word, by a mask an immediate holds. -/
+  n_bits : c.C.n ≤ 2 ^ c.nbits
+  nbits_le : c.nbits ≤ 8 * c.C.len
+  mask : c.nbits < 8 * c.C.len → 64 * (c.n - 1) < c.nbits ∧ c.nbits - 64 * (c.n - 1) < 31
   sh : c.sh < 32
   /-- The comb, if the curve has one. -/
   comb : ∀ d, c.comb = some d → CombOk c d

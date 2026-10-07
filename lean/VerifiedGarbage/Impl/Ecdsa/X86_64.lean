@@ -145,6 +145,12 @@ structure Cfg where
   public lookups (`u` is public) and compares `x mod n` with `r` in
   projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
   pubVerify : Bool := false
+  /-- The bits the window method's scalars have: `8 len`, but for a curve
+  whose `n` has fewer bits than its `len` bytes (P-521's `n < 2⁵²¹`, in 66
+  bytes), as many as `n` has. ECDH reduces its `d` below `2^nbits` before
+  the window method (`Impl.Ecdh.X86_64.Cfg.maskK`); a `d` it changes is out
+  of range, and its result is discarded. -/
+  nbits : Nat := 8 * C.len
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat
@@ -246,10 +252,10 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
 
-/-- The window method's digits: two per byte of the scalar (`len` bytes:
-ECDH's `d`, or verification's `v < n`), and one more for the recoding's
-carry. -/
-def winJ : Nat := 2 * c.C.len + 1
+/-- The window method's digits, for scalars below `2^nbits` (ECDH's `d`
+reduced by `maskK`, or verification's `v < n`): `⌈(nbits + 2) / 4⌉`, enough
+for the recoding's carry; `2 len + 1` when `nbits = 8 len`. -/
+def winJ : Nat := (c.nbits + 5) / 4
 
 /-- The window method's areas. -/
 def winK : Nat := c.sl WK

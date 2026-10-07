@@ -289,7 +289,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     {rest : Prog isa} {R : State → Prop}
-    (hv8 : sv c base s V < 2 ^ (8 * c.C.len))
+    (hv8 : sv c base s V < 2 ^ c.nbits)
     (h : ∀ s', VMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c) rest) s R := by
   have h0 := hc.n0
@@ -468,7 +468,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   refine mulV_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]; exact hrep)
-    rx₃ ry₃ rz₃ (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_len)
+    rx₃ ry₃ rz₃ (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_bits)
     fun s₅ V₅ => ?_
   rw [show sv c base s₃ V = sv c base s V from W₃ (by decide) (by decide)] at V₅
   have hs₅ := V₅.scr
