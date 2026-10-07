@@ -5,9 +5,10 @@ import VerifiedGarbage.Proof.MlKem1024.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem1024.X86_64.DecodeDecompress
 import VerifiedGarbage.Impl.MlKem1024.X86_64.Kem
 import VerifiedGarbage.Spec.MlKem.Contract1024
+import VerifiedGarbage.Spec.MlKem.EncapsH
 
 /-!
-# ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps` and `vg_mlkem1024_decaps`
+# ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h` and `vg_mlkem1024_decaps`
 
 The proofs for any parameter set (`Proof/MlKem/X86_64/KgTop.lean`,
 `EcTop.lean`, `DcTop.lean`) for ML-KEM-1024 (`kem1024`): its layout passes
@@ -43,18 +44,6 @@ def keyGen1024Sat : State where
   rd := [⟨0x1000, 64⟩]
   wr := [⟨0x2000, 1568⟩, ⟨0x3000, 3168⟩, ⟨0x10000, 49152⟩]
 
-def encaps1024Sat : State where
-  gpr r := match r with
-    | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x4000 | .r8 => 0x10000 | .rsp => 0x80000
-    | _ => 0
-  cf := none
-  zf := none
-  sf := none
-  of := none
-  mem _ := 0
-  rd := [⟨0x1000, 1568⟩, ⟨0x2000, 32⟩]
-  wr := [⟨0x3000, 32⟩, ⟨0x4000, 1568⟩, ⟨0x10000, 49152⟩]
-
 def decaps1024Sat : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsi => 0x2000 | .rdx => 0x3000 | .rcx => 0x10000 | .rsp => 0x80000 | _ => 0
@@ -79,18 +68,26 @@ theorem keyGen1024_verified (v : Sample4Impl) :
       sat := by sig_implies_sat [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, keyGenK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024] [keyGen1024Sat]
         using keyGen1024Sat }
 
-theorem encaps1024_verified (v : Sample4Impl) :
-    Verified X86_64.target (kemEncaps kem1024 v.callee) (Spec.MlKem1024.encapsContract X86_64.abi 32) :=
-  Verified.of_correct (kemEncaps_correct v ecWf1024 calls1024 (by s4_ctl v)) (kemEncaps_ct v ecWf1024 calls1024)
-    { pre := by sig_implies_pre [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
-      post := by sig_implies_post [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
+theorem encapsH1024_verified (v : Sample4Impl) :
+    Verified X86_64.target (kemEncapsH kem1024 v.callee) (Spec.MlKem1024.encapsHContract X86_64.abi 32) :=
+  Verified.of_correct (kemEncapsH_correct v ecWf1024 calls1024 (by s4_ctl v))
+    (kemEncapsH_ct v ecWf1024 calls1024)
+    { pre := by sig_implies_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
+      post := by sig_implies_post [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
       pub := by
         intro s₁ s₂ _ _ h
-        sig_pub [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encapsK, X86_64.abi, VG.X86_64.argRegs] at h
-        obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8⟩ := h
-        exact ⟨hdi, hsi, hdx, hcx, h8, hsp, map_toNat_inj hb⟩
-      sat := by sig_implies_sat [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024] [encaps1024Sat]
-        using encaps1024Sat }
+        sig_pub [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs] at h
+        obtain ⟨hsp, hb, hdi, hsi, hdx, hcx, h8, h9⟩ := h
+        exact ⟨hdi, hsi, hdx, hcx, h8, h9, hsp, map_toNat_inj hb⟩
+      sat := by
+        refine ⟨encapsHSat 1568 1568 49152, ?_⟩
+        sig_pre [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, encapsK, X86_64.abi, VG.X86_64.argRegs, kem1024, Kem.ekLen, Kem.dkLen, Kem.ctLen, Params.ekLen, Params.dkLen, Params.ctLen, mlKem1024]
+        sig_and_intros
+        all_goals first
+          | exact encapsHSat_h (ekLen := 1568) (ctLen := 1568) (scr := 49152) (by decide)
+          | rfl
+          | decide
+          | exact Region.disjoint_of_sep (by decide) }
 
 theorem decaps1024_verified (v : Sample4Impl) :
     Verified X86_64.target (kemDecaps kem1024 v.callee) (Spec.MlKem1024.decapsContract X86_64.abi 32) :=
