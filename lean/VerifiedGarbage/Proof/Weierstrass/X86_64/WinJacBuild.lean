@@ -329,4 +329,205 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
   · obtain rfl : m = 2 := by omega
     exact J₃.congr fun c hc => e₄ c hc
 
+/-- The program's frame as registers. -/
+theorem ProgKeep.regs {base : Addr} {W : List Nat} {s t : State} (h : ProgKeep K.M base W s t) :
+    KeepRegs (powClob K.M.n) s t := (⟨h.gpr, h.rd, h.wr⟩ : KeepRegs (clob K.M.n) s t).mono clob_powClob
+
+theorem _root_.VG.Proof.Mont.X86_64.OpKeep.regs {base : Addr} {o : Nat} {s t : State} (h : OpKeep K.M base o s t) :
+    KeepRegs (powClob K.M.n) s t := (⟨h.gpr, h.rd, h.wr⟩ : KeepRegs (clob K.M.n) s t).mono clob_powClob
+
+/-- `P` as a Jacobian triple with `Z = 1`, at any state of the frame. -/
+theorem JacWinFixed.jac (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C} {k : Nat}
+    (hF : JacWinFixed K C base s₀ P k) (hf : JFrame K C base size s₀ s) :
+    InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y) 1 P := by
+  rw [hf.ro_tmv hL (by jw_mem), hf.ro_tmv hL (by jw_mem), ← hF.pz]
+  exact InvJ.of_rep01 hF.pt (Or.inl hF.pz)
+
+theorem JacWinFixed.lt (hL : JacWinLay K size) {base : Addr} {s₀ s : State} {P : Point C} {k : Nat}
+    (hF : JacWinFixed K C base s₀ P k) (hf : JFrame K C base size s₀ s) :
+    ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s.mem base x K.M.n < C.p := by
+  intro x hx
+  have hro : x ∈ jwRo K := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> jw_mem
+  rw [hf.ro hL hro]
+  exact hF.ro_lt x hx
+
+/-- The mixed addition's `H` is not zero: `[m]P ≠ ±P`. -/
+theorem madd_H (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
+    (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n) {m : Nat} (h2 : 2 ≤ m) (h15 : m ≤ 15) {X1 Y1 Z1 X2 Y2 : Fe C}
+    (h1 : InvJ C X1 Y1 Z1 (mul m P)) (hq : InvJ C X2 Y2 1 P) (hz : Z1 ≠ 0) :
+    X2 * (Z1 * Z1) - X1 * (1 * 1) ≠ 0 := by
+  intro hx
+  obtain ⟨ne1, ne2⟩ := Window5.tbl_noexc hC hO hP hP0 hn17 h2 h15
+  by_cases hy : Y2 * Z1 * (Z1 * Z1) - Y1 * 1 * (1 * 1) = 0
+  · exact ne1 (h1.same hC hq hz hC.one_ne_zero hx hy)
+  · exact ne2 (h1.opposite hC (hC.onCurve_mul hP m) hP hq hz hC.one_ne_zero hx hy)
+
+/-- An entry of the table: `T = T + P`, its powers, stored as entry `m + 1`. -/
+theorem buildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
+    (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
+    (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {m : Nat}
+    (h2 : 2 ≤ m) (h15 : m ≤ 15) {s : State} (hI : JBInv K C base size P s₀ m s) :
+    WP isa K.buildStep s fun s' =>
+      JBInv K C base size P s₀ (m + 1) s' ∧ s'.zf = some (decide (m + 1 = 16)) := by
+  have hs := hI.fr.scr
+  have hn := hs.nowrap
+  obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
+  obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
+  obtain ⟨lx, ly, lz, l2, l3⟩ := hL.T_lw
+  have o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
+  have st2 : K.S.t2 ∈ jwSlots K := by jw_mem
+  have st4 : K.S.t4 ∈ jwSlots K := by jw_mem
+  have tE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ≠ K.S.t2 ∧ x ≠ K.S.t4 := by
+    intro x hx
+    simp only [hL.Tx, hL.Ty, hL.Tz, List.mem_cons, List.not_mem_nil, or_false] at hx
+    have g := fun c (hc : c < 5) (y : Nat) (hy : y ∈ jwOther K) =>
+      hL.jg_ne (List.mem_append_right _ hy) (i := 80 + c) (by omega)
+    rcases hx with rfl | rfl | rfl
+    · exact ⟨fun e => g 0 (by decide) _ (by jw_mem) e.symm, fun e => g 0 (by decide) _ (by jw_mem) e.symm⟩
+    · exact ⟨fun e => g 1 (by decide) _ (by jw_mem) e.symm, fun e => g 1 (by decide) _ (by jw_mem) e.symm⟩
+    · exact ⟨fun e => g 2 (by decide) _ (by jw_mem) e.symm, fun e => g 2 (by decide) _ (by jw_mem) e.symm⟩
+  have tP : ∀ x ∈ [K.P.x, K.P.y], x ≠ K.S.t2 ∧ x ≠ K.S.t4 := by
+    intro x hx
+    have hro : x ∈ jwRo K := by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl <;> jw_mem
+    exact ⟨fun e => hL.ro x hro (by rw [e]; jw_mem), fun e => hL.ro x hro (by rw [e]; jw_mem)⟩
+  have t24 : K.S.t2 ≠ K.S.t4 := o 9 11 (by decide) (by decide) (by decide)
+  rw [JacWinCfg.buildStep]
+  refine WP.seq ?_
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (addRbx_ok s (c := 1) (by decide) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  have m₁ : s₁.mem = s.mem := k₁.2.1
+  have F₁ := hI.fr.next hL hs₁ ((Keeps.regs k₁).mono (sub_powClob (by decide))) (W := [])
+    (by rw [m₁]; exact Unch.refl _ _ _) (by simp)
+  have tv₁ : ∀ x, tmv C K.M.n base s₁ x = tmv C K.M.n base s x := fun x => by
+    show toM _ _ _ = toM _ _ _; rw [m₁]
+  have hPl := hF.lt hL F₁
+  have I₁ : Inv K.M base size C.p (· ∈ jwSlots K) [K.E.x, K.E.y, K.E.z, K.P.x, K.P.y]
+      (tmv C K.M.n base s₁) s₁ := by
+    refine ⟨hs₁, F₁.mod, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl
+      any_goals assumption
+      all_goals jw_mem
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl
+      · rw [m₁, ← tx]; exact hI.T.lt 0 (by decide)
+      · rw [m₁, ← ty]; exact hI.T.lt 1 (by decide)
+      · rw [m₁, ← tz]; exact hI.T.lt 2 (by decide)
+      · exact hPl _ (by simp)
+      · exact hPl _ (by simp)
+  rw [WP.block_append_iff]
+  refine WP.mono (copyField_ok hL.lay I₁ st2 (a := K.E.x) (by simp)) fun s₂ ⟨k₂, I₂⟩ => ?_
+  refine WP.mono (copyField_ok hL.lay I₂ st4 (a := K.E.y) (by simp)) fun s₃ ⟨k₃, I₃⟩ => ?_
+  have F₃ := (F₁.next hL (k₂.scr hs₁) k₂.regs (k₂.loopW (other_loopW (by jw_mem))) (jwLoopW_sub K)).next hL
+    (k₃.scr (k₂.scr hs₁)) k₃.regs (k₃.loopW (other_loopW (by jw_mem))) (jwLoopW_sub K)
+  -- The environment after the copies.
+  generalize hE₃ : Function.update (Function.update (tmv C K.M.n base s₁) K.S.t2 (tmv C K.M.n base s₁ K.E.x))
+    K.S.t4 (Function.update (tmv C K.M.n base s₁) K.S.t2 (tmv C K.M.n base s₁ K.E.x) K.E.y) = E₃ at I₃
+  have v₃ : ∀ x, x ≠ K.S.t2 → x ≠ K.S.t4 → E₃ x = tmv C K.M.n base s x := fun x h2 h4 => by
+    rw [← hE₃, Function.update_of_ne h4, Function.update_of_ne h2, tv₁]
+  have e₃2 : E₃ K.S.t2 = E₃ K.E.x := by
+    rw [v₃ K.E.x (tE _ (by simp)).1 (tE _ (by simp)).2, ← hE₃, Function.update_of_ne t24,
+      Function.update_self, tv₁]
+  have e₃4 : E₃ K.S.t4 = E₃ K.E.y := by
+    rw [v₃ K.E.y (tE _ (by simp)).1 (tE _ (by simp)).2, ← hE₃, Function.update_self,
+      Function.update_of_ne (tE K.E.y (by simp)).1, tv₁]
+  have hV₃ : ∀ x ∈ [K.S.t2, K.S.t4, K.E.x, K.E.y, K.E.z, K.P.x, K.P.y],
+      x ∈ K.S.t4 :: K.S.t2 :: [K.E.x, K.E.y, K.E.z, K.P.x, K.P.y] := by
+    intro x hx
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+    rcases hx with h | h | h | h | h | h | h <;> simp [h]
+  refine WP.seq (WP.mono (maddCache_ok hL hp I₃ hV₃ e₃2 e₃4) fun s₄ ⟨k₄, E₄, I₄, v₄, z₄, z₄'⟩ => ?_)
+  have F₄ := F₃.next hL (k₄.scr F₃.scr) k₄.regs (k₄.loopW (by
+    intro x hx
+    rcases List.mem_append.mp hx with hx | hx
+    · exact rcbW_loopW (by
+        intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+        rcases hy with rfl | rfl | rfl <;> assumption) x hx
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl <;> assumption)) (jwLoopW_sub K)
+  -- The point.
+  have J : InvJ C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z)
+      (mul m P) := by rw [← tx, ← ty, ← tz]; exact hI.T.jac
+  have hz : tmv C K.M.n base s K.E.z ≠ 0 := by rw [← tz]; exact hI.T.z
+  have JP := hF.jac hL hI.fr
+  have hh := madd_H hC hO hP hP0 hn17 h2 h15 J JP hz
+  have hadd := J.add_ne hC hM3 (hC.onCurve_mul hP m) hP JP hz hC.one_ne_zero hh
+  dsimp only at hadd
+  rw [show Spec.Weierstrass.add (mul m P) P = mul (m + 1) P by
+    rw [show Spec.Weierstrass.add (mul m P) P = Spec.Weierstrass.add (mul m P) (mul 1 P) by
+      rw [mul_one_pt], hC.add_mul_mul hP]] at hadd
+  rw [v₃ K.E.x (tE _ (by simp)).1 (tE _ (by simp)).2, v₃ K.E.y (tE _ (by simp)).1 (tE _ (by simp)).2,
+    v₃ K.E.z (tE _ (by simp)).1 (tE _ (by simp)).2, v₃ K.P.x (tP _ (by simp)).1 (tP _ (by simp)).2,
+    v₃ K.P.y (tP _ (by simp)).1 (tP _ (by simp)).2] at v₄
+  rw [← v₄] at hadd
+  have val : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n], tmv C K.M.n base s₄ x = E₄ x :=
+    fun x hx => I₄.val x (List.mem_append_left _ hx)
+  have hm1 : mul (m + 1) P ≠ .infinity := Window5.mul_ne_infinity hO hP hP0 (by omega) (by omega)
+  have J₄ : JPt C K.M.n base s₄ (TS K) (mul (m + 1) P) := by
+    have hz₄ : E₄ K.E.z ≠ 0 := fun h => hm1 ((hadd.z_zero_iff hC).mp h)
+    refine ⟨fun c hc => I₄.lt _ (List.mem_append_left _ ?_), ?_, ?_, ?_, ?_⟩
+    · have : c = 0 ∨ c = 1 ∨ c = 2 ∨ c = 3 ∨ c = 4 := by omega
+      rcases this with rfl | rfl | rfl | rfl | rfl
+      · rw [tx]; simp
+      · rw [ty]; simp
+      · rw [tz]; simp
+      · rw [t2]; simp
+      · rw [t3]; simp
+    · rw [tx, ty, tz, val _ (by simp), val _ (by simp), val _ (by simp)]; exact hadd
+    · rw [tz, val _ (by simp)]; exact hz₄
+    · rw [t2, tz, val K.z2 (by simp), val K.E.z (by simp), z₄]
+    · rw [t3, t2, tz, val (K.z2 + 8 * K.M.n) (by simp), val K.z2 (by simp), val K.E.z (by simp), z₄']
+  have T₄ : TblOk K C base P m s₄ :=
+    ((((hI.tbl.loopW hL (by rw [m₁]; exact Unch.refl _ _ _) hn (by omega)).loopW hL
+      (k₂.loopW (other_loopW (by jw_mem))) hn (by omega)).loopW hL (k₃.loopW (other_loopW (by jw_mem))) hn
+      (by omega)).loopW hL (k₄.loopW (by
+    intro x hx
+    rcases List.mem_append.mp hx with hx | hx
+    · exact rcbW_loopW (by
+        intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+        rcases hy with rfl | rfl | rfl <;> assumption) x hx
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl <;> assumption)) hn (by omega))
+  -- The entry.
+  have hb₄ : s₄.gpr .rbx = BitVec.ofNat 64 (m + 1) := by
+    rw [k₄.gpr _ (rbx_not_clob _), k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _), b₁]
+  rw [WP.block_append_iff]
+  refine WP.mono (storeEntry_ok hL F₄.scr hb₄ (by omega) (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+  rw [Nat.add_sub_cancel] at e₅ O₅
+  have hs₅ := F₄.scr.of_keepRegs k₅ (by decide)
+  refine WP.mono (cmpRbxJ_ok s₅ (j := m + 1) (i := 16) (by decide) (by omega)
+    (by rw [k₅.gpr _ (by decide), hb₄])) fun s₆ ⟨z₆, k₆⟩ => ?_
+  have m₆ : s₆.mem = s₅.mem := k₆.2.1
+  have F₆ := (F₄.next hL hs₅ (k₅.mono (sub_powClob (by decide))) (outside_grid5 hL O₅)
+    (grid5_jwW (by omega))).next hL (hs₅.of_keeps k₆ (by decide)) ((Keeps.regs k₆).mono (by simp))
+    (W := []) (by rw [m₆]; exact Unch.refl _ _ _) (by simp)
+  refine ⟨⟨F₆, fun j h1 hj => ?_, (J₄.store hL (b := 5 * m) (by omega) O₅ hn).congr fun c _ => by rw [m₆],
+    by rw [k₆.1 _ (by simp), k₅.gpr _ (by decide), hb₄]⟩, z₆⟩
+  rcases Nat.lt_or_ge j (m + 1) with h | h
+  · exact ((T₄.store hL O₅ hn (by omega)) j h1 (by omega)).congr fun c _ => by rw [m₆]
+  · obtain rfl : j = m + 1 := by omega
+    exact J₄.congr fun c hc => by rw [m₆]; exact e₅ c hc
+
+/-- The table `[1 … 16]P`. -/
+theorem build_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
+    (hM3 : AM3 C) (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
+    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n) {base : Addr} {s : State}
+    (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) {k : Nat}
+    (hF : JacWinFixed K C base s P k) :
+    WP isa (K.build dbl) s fun s' => JFrame K C base size s s' ∧ TblOk K C base P 16 s' := by
+  rw [JacWinCfg.build]
+  refine WP.seq (WP.mono (buildInit_ok hL hC hs hM hF) fun s₁ I₁ => ?_)
+  refine WP.seq (WP.mono (buildDbl_ok hL hp hC hO hD hP hP0 hn17 I₁) fun s₂ h₂ =>
+    WP.seq (WP.mono h₂ fun s₃ h₃ => WP.seq (WP.mono h₃ fun s₄ I₄ => ?_)))
+  exact countLoop_ok (Inv := fun j t => JBInv K C base size P s (16 - j) t) (n := 14)
+    (fun j t h1 h2 hi => WP.mono (buildStep_ok hL hp hC hM3 hO hP hP0 hn17 hF (m := 16 - j) (by omega)
+      (by omega) hi) fun u ⟨I, z⟩ => ⟨by rw [show 16 - (j - 1) = 16 - j + 1 by omega]; exact I,
+        by rw [z]; congr 1; simp only [decide_eq_decide]; omega⟩)
+    (fun t hi => ⟨hi.fr, hi.tbl⟩) (by decide) I₄
+
 end VG.Proof.Weierstrass.X86_64

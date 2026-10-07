@@ -191,7 +191,7 @@ theorem ProgKeep.loopW {base : Addr} {W : List Nat} {s t : State} (h : ProgKeep 
     · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact hW x hx
     · rw [List.mem_singleton.mp hw]; exact tmp_loopW
 
-theorem OpKeep.loopW {base : Addr} {o : Nat} {s t : State} (h : OpKeep K.M base o s t)
+theorem _root_.VG.Proof.Mont.X86_64.OpKeep.loopW {base : Addr} {o : Nat} {s t : State} (h : OpKeep K.M base o s t)
     (ho : (o, 8 * K.M.n) ∈ jwLoopW K) : Unch base (jwLoopW K) s.mem t.mem :=
   h.unch.mono fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
