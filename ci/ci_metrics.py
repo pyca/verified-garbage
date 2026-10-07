@@ -223,8 +223,8 @@ def collect_this_run():
         # A job just cancelled may have no log yet: the rest still count.
         try:
             return gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace")
-        except subprocess.CalledProcessError:
-            print(f"No log for {j['name']}", file=sys.stderr)
+        except subprocess.CalledProcessError as e:
+            print(f"No log for {j['name']}: {e.stderr.decode(errors='replace').strip()}", file=sys.stderr)
             return None
 
     # A few MB in all; requests one at a time would wait on each other.

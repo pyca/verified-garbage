@@ -105,7 +105,7 @@ class CollectThisRun(unittest.TestCase):
         # The plan's log comes; a cancelled shard's does not.
         def gh(path, *args):
             if path.endswith("/jobs/2/logs"):
-                raise subprocess.CalledProcessError(1, "gh")
+                raise subprocess.CalledProcessError(1, "gh", stderr=b"HTTP 404")
             if path.endswith("/jobs/1/logs"):
                 return PLAN_LOG.encode()
             if "/jobs?" in path:
