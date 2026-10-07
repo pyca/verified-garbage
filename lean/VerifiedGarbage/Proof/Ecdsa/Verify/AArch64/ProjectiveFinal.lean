@@ -10,7 +10,7 @@ variable {c : VG.Impl.Ecdsa.AArch64.Cfg}
 /-- The inversion-free final check has the same result as affine conversion. -/
 theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
-    {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base g Q₁ Q₂ s) :
+    {s : State} (hP : FinalState c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveFinal c) s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.AArch64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
@@ -64,7 +64,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
   simpa only [iff] using ret
 
 theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
-    {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base g Q₁ Q₂ s) :
+    {s : State} (hP : FinalState c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.tail c) s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.AArch64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧

@@ -1,0 +1,93 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.ArithmeticAdd
+import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
+
+namespace VG.Proof.Weierstrass.AArch64
+open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Impl.Weierstrass
+open VG.Impl.Weierstrass.AArch64 VG.Proof.Mont VG.Proof.Mont.AArch64
+
+structure ArithmeticAddChecks (K : WinCfg) (p q o : Pt) : Prop where
+  zero : ∀ a∈[p.z,q.z,K.S.t3,K.S.t5], FieldCT (.block (zeroMask K.M.n a))
+  copyP : FieldCT (.block (copyPt K.M.n o p))
+  copyQ : FieldCT (.block (copyPt K.M.n o q))
+  head : FieldCT (VG.Impl.P256.VerifyArithmetic.program K.M (jacHead K.S p q))
+  tail : FieldCT (VG.Impl.P256.VerifyArithmetic.program K.M (jacTail K.S p q o))
+  double : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S p o)
+  infinity : FieldCT (.block (Jacobian.infinity K o))
+
+/-- The complete addition's data-dependent branches inspect only field values
+shared by the two executions. No condition on uninitialized scratch is needed. -/
+theorem arithmeticAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    (hm : UnitMod m (2^(64*K.M.n))) (hsize : 8192≤size) {p q o : Pt} (hA : RcbApart K.S p q o)
+    (hSl : ∀ x∈rcbW K.S o ++ rcbR K.S p q, Sl x)
+    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q, x∈V)
+    (hOne : K.one<m) (hc : ArithmeticAddChecks K p q o) :
+    RelCT isa (FieldPair K.M base size m Sl V E) (ArithmeticAdd.add K p q o)
+      (fun s t => ∃ E', FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
+  have os : ∀ x∈[o.x,o.y,o.z], Sl x := by
+    intro x hx; apply hSl x
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> simp [rcbW]
+  have pv : ∀ x∈[p.x,p.y,p.z], x∈V := by
+    intro x hx; apply hV x
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> simp [rcbR]
+  have qv : ∀ x∈[q.x,q.y,q.z], x∈V := by
+    intro x hx; apply hV x
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
+    rcases hx with rfl | rfl | rfl <;> simp [rcbR]
+  rw [ArithmeticAdd.add]
+  apply fieldBranch_relCT hL hAl hm (pv _ (by simp)) (hc.zero _ (by simp))
+  · intro _
+    exact (copyPoint_relCT hL hAl os qv hc.copyQ).mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+  · intro _
+    apply fieldBranch_relCT hL hAl hm (qv _ (by simp)) (hc.zero _ (by simp))
+    · intro _
+      exact (copyPoint_relCT hL hAl os pv hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+    · intro _
+      have hh : RelCT isa (FieldPair K.M base size m Sl V E) (VG.Impl.P256.VerifyArithmetic.program K.M (jacHead K.S p q))
+          (FieldPair K.M base size m Sl (validAfter (jacHead K.S p q) V) (runOps (jacHead K.S p q) E)) := by
+        apply fieldWP_relCT hc.head
+        intro s hi
+        exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
+          ((fprogB_wp _ _).mpr (jacHead_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
+      apply RelCT.seq hh
+      have oldV : ∀ x∈V, x∈validAfter (jacHead K.S p q) V :=
+        fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
+      have subV : ∀ x∈[o.x,o.y,o.z]++V, x∈[o.x,o.y,o.z]++validAfter (jacHead K.S p q) V := by
+        intro x hx
+        rcases List.mem_append.mp hx with hx | hx
+        · exact List.mem_append_left _ hx
+        · exact List.mem_append_right _ (oldV x hx)
+      apply fieldBranch_relCT hL hAl hm (a:=K.S.t3) (by
+        rw [mem_validAfter]; right; simp [jacHead,FOp.out]) (hc.zero _ (by simp))
+      · intro _
+        apply fieldBranch_relCT hL hAl hm (a:=K.S.t5) (by
+          rw [mem_validAfter]; right; simp [jacHead,FOp.out]) (hc.zero _ (by simp))
+        · intro _
+          have hdA : RcbApart K.S p p o := ⟨hA.nodup,fun x hx => hA.apart x (rcbR_self_mem _ _ _ hx)⟩
+          have hdSl : ∀ x∈rcbW K.S o ++ rcbR K.S p p, Sl x := by
+            intro x hx
+            rcases List.mem_append.mp hx with hx | hx
+            · exact hSl x (List.mem_append_left _ hx)
+            · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
+          have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacHead K.S p q) V :=
+            fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hm hdA hdSl hv hc.double
+          exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
+        · intro _
+          exact (infinity_relCT hL hAl os hOne hc.infinity).mono
+            (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
+      · intro _
+        have ht : RelCT isa
+            (FieldPair K.M base size m Sl (validAfter (jacHead K.S p q) V) (runOps (jacHead K.S p q) E))
+            (VG.Impl.P256.VerifyArithmetic.program K.M (jacTail K.S p q o))
+            (FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V)
+              (runOps (jacHead K.S p q ++ jacTail K.S p q o) E)) := by
+          apply fieldWP_relCT hc.tail
+          intro s hi
+          exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
+            ((fprogB_wp _ _).mpr (jacTail_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
+        exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
+
+end VG.Proof.Weierstrass.AArch64

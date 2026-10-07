@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafPoints
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
 
 /-! The Jacobian verifier satisfies the existing complete verification postcondition. -/
 namespace VG.Proof.Ecdsa.Verify.AArch64
@@ -13,54 +13,42 @@ open VG.Impl.Ecdsa.Verify.AArch64 (U V)
 
 variable {c : Cfg}
 
-theorem nafVerify_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.nafVerify c =
-    .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
+/-- Any proven joint multiplication can feed the unchanged verifier prefix and final check. -/
+theorem verify_of_joint (hc : CfgOk c) (hC : Law c.C) (points program : Prog isa)
+    (heq : program =
+      .seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8*c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.nafPoints c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
-
-/-- `vg_ecdsa_<curve>_verify` returns whether the specification's
-verification holds, and restores the callee-saved registers. -/
-theorem nafVerify_ok (hc : CfgOk c) (hn : c.n=4) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+      (.seq points (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))))
+    (hpoints : ∀ {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State},
+      Mid c s₀ base g s → TblPre c s₀ (s₀.syms c.tsym) base →
+      ∀ {P : Point c.C},onCurve c.C P=true →
+      Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+        (tmv c.C c.n base s (c.sl ONEP)) P →
+      WP isa points s fun t => FinalState c s₀ base g t ∧
+        Rep c.C (tmv c.C c.n base t (c.sl RX)) (tmv c.C c.n base t (c.sl RY))
+          (tmv c.C c.n base t (c.sl RZ))
+          (add (mul (sv c base s U) (G c.C)) (mul (sv c base s V) P)))
     {s₀ : State} (hp : VPre c s₀) :
-    WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.nafVerify c) s₀ fun s' =>
-      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
+    WP isa program s₀ fun s' =>
+      (∀ r∈Cfg.saved.map Prod.fst,s'.gpr r=s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  rw [nafVerify_eq]
+  rw [heq]
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   have h1 := onep_tmv hc F₂
   -- The point the window method multiplies.
   let P := peerPt c (s₀.mem (s₀.gpr .x0) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _
-  have hG : Rep c.C (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GX)) (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl GY))
-      (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl ONEP)) (G c.C) := by
-    show Rep c.C (toM _ _ (wordsVal s₂.mem _ (c.sl GX) c.n)) (toM _ _ (wordsVal s₂.mem _ (c.sl GY) c.n))
-      (toM _ _ (wordsVal s₂.mem _ (c.sl ONEP) c.n)) (G c.C)
-    rw [F₂.gx, F₂.gy, toM_cmont hc, toM_cmont hc, show toM c.C.p (2 ^ (64 * c.n))
-      (wordsVal s₂.mem (s₀.gpr .x3) (c.sl ONEP) c.n) = 1 from h1]
-    exact rep_affine' hC _ _
   have hQ : Rep c.C (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl PX)) (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl PY))
       (tmv c.C c.n (s₀.gpr .x3) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  have hu : sv c (s₀.gpr .x3) s₂ U < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  have hv : sv c (s₀.gpr .x3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  refine nafPoints_ok hc hn hM
-    (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ U >>> j) (G c.C)))
-    (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
-    hC hT hp.tbl (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
-    (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) fun s₃ hP => ?_
-  refine WP.mono (tail_dispatch_ok hc hC hP.toFinalState) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
-    ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
-  obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
-  have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (s₀.gpr .x3) s₂ U) (G c.C)) := by
-    have := q1; simp only [Nat.shiftRight_zero] at this; exact this
-  have q2' : Rep c.C X2 Y2 Z2 (mul (sv c (s₀.gpr .x3) s₂ V) P) := by
-    have := q2; simp only [Nat.shiftRight_zero] at this; exact this
-  have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1' q2' hsum.symm
+  refine WP.seq (WP.mono (hpoints hM hp.tbl hPc hQ) fun s₃ ⟨hP,hR⟩ => ?_)
+  refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved,xo,hxo,hx,ret⟩ =>
+    ⟨fun r hr => (saved r hr).trans (hg r hr),?_⟩
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]; omega
