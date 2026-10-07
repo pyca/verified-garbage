@@ -13,7 +13,7 @@ def signCachedLocal : Contract isa where
     let msg : Region := ⟨s.gpr .x3, (s.gpr .x4).toNat⟩
     let scr : Region := ⟨s.gpr .x5, 8192⟩
     let stk : Region := below s.sp 352
-    s.rd = [seed, pk, msg] ∧ s.wr = [out, scr] ∧
+    s.rd = [seed, pk, msg, TBL (s.syms Impl.Ed25519.AArch64.combSym)] ∧ s.wr = [out, scr] ∧
       out.Disjoint seed ∧ out.Disjoint pk ∧ out.Disjoint msg ∧ out.Disjoint scr ∧
       seed.Disjoint scr ∧ pk.Disjoint scr ∧ msg.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint pk ∧ stk.Disjoint msg ∧ stk.Disjoint scr ∧
@@ -21,15 +21,18 @@ def signCachedLocal : Contract isa where
       (s.gpr .x2).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x3).toNat + (s.gpr .x4).toNat ≤ 2 ^ 64 ∧
       (s.gpr .x5).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧
       Spec.Ed25519.bytesAt s.mem (s.gpr .x2) 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32)
+        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32) ∧
+      CombHeld s [out, scr, stk]
   post s t := Spec.Ed25519.bytesAt t.mem (s.gpr .x0) 64 = Spec.Ed25519.sign
     (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32)
     (Spec.Ed25519.bytesAt s.mem (s.gpr .x3) (s.gpr .x4).toNat)
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧
-    s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.gpr .x5 = t.gpr .x5
+    s.gpr .x2 = t.gpr .x2 ∧ s.gpr .x3 = t.gpr .x3 ∧ s.gpr .x4 = t.gpr .x4 ∧ s.gpr .x5 = t.gpr .x5 ∧
+    s.syms Impl.Ed25519.AArch64.combSym = t.syms Impl.Ed25519.AArch64.combSym
 
 def lay (s : State) : Lay :=
-  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, Whole.base s⟩
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.gpr .x4, s.gpr .x5, Whole.base s,
+    s.syms Impl.Ed25519.AArch64.combSym⟩
 
 theorem entry_below {s : State} (h : signCachedLocal.pre s) : 352 ≤ s.sp.toNat := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hb, _⟩ := h
@@ -46,7 +49,8 @@ theorem entry_writes {s : State} (h : signCachedLocal.pre s) :
   · exact kc
 
 theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
-  obtain ⟨_, _, os, op, om, oc, sc, pc, mc, ko, ks, kp, km, kc, no, ns, np, nm, nc, hb, _⟩ := h
+  obtain ⟨_, _, os, op, om, oc, sc, pc, mc, ko, ks, kp, km, kc, no, ns, np, nm, nc, hb, _, -, fit, dj⟩ := h
+  have dk := dj (below s.sp 352) (by simp)
   have stk := Whole.stk_sub s
   have fr : Region.Sub (Whole.FR (Whole.base s)) (below s.sp 352) :=
     fun a h => stk a ((Region.sub_prefix (by decide) : Region.Sub (Whole.FR (Whole.base s)) ⟨Whole.base s, 336⟩) a h)
@@ -54,48 +58,64 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
     fun a h => stk a ((Offset.sub_base _ (by decide) : Region.Sub (Whole.ARGS (Whole.base s)) ⟨Whole.base s, 336⟩) a h)
   have ck := Whole.ck_sub s
   refine ⟨?_, ?_, oc, ko.sub_left fr, no, ?_, ?_, kc.sub_left fr, np, nm, ns, nc, Whole.base_16 hb, ?_,
-    ko.sub_left ck, kc.sub_left ck⟩
+    ko.sub_left ck, kc.sub_left ck, fit⟩
   · change (s.sp - 336#64).toNat + 304 ≤ 2 ^ 64
     rw [BitVec.toNat_sub_of_le (by change 336 ≤ s.sp.toNat; omega)]
     have hs := s.sp.isLt
     change s.sp.toNat - 336 + 304 ≤ 2 ^ 64
     omega
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact os
     · exact op
     · exact om
+    · exact (dj ⟨s.gpr .x0, 64⟩ (by simp)).symm
     · exact (ko.sub_left ar).symm
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact sc
     · exact pc
     · exact mc
+    · exact dj ⟨s.gpr .x5, 8192⟩ (by simp)
     · exact kc.sub_left ar
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact ks.sub_left fr
     · exact kp.sub_left fr
     · exact km.sub_left fr
+    · exact dk.symm.sub_left fr
     · exact Offset.base_disjoint _ (by decide) (by decide)
   · simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact ks.sub_left ck
     · exact kp.sub_left ck
     · exact km.sub_left ck
+    · exact dk.symm.sub_left ck
     · exact Whole.ck_frame (by decide : 256 + 48 ≤ 304)
 
 theorem entry_ctx {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
     Ctx (lay s) s.gpr s.v p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
   have hc := Whole.saved_ctx hp
   simpa only [Whole.bodyRd, h.1, Whole.bodyWr, h.2.1, Ctx, Lay.inputs, Lay.outputs,
-    Lay.SEED, Lay.PK, Lay.MSG, Lay.OUT, Lay.SCR, Lay.ARGS, Whole.ARGS, show BitVec.ofNat 64 256 = (256 : Addr) from rfl, lay, List.cons_append, List.nil_append] using hc
+    Lay.SEED, Lay.PK, Lay.MSG, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, Whole.ARGS, show BitVec.ofNat 64 256 = (256 : Addr) from rfl, lay, List.cons_append, List.nil_append] using hc
 
-theorem entry_args {s p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay s) p.mem := by
-  intro j hj
-  have hw := Whole.saved_words hp hj
-  have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
-  rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+theorem entry_args {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
+    Arguments (lay s) p.mem := by
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := Whole.saved_words hp hj
+    have he : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 := by omega
+    rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+  · obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, held, fit, dj⟩ := h
+    have hf := Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := TBL (s.syms Impl.Ed25519.AArch64.combSym))
+      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (Whole.stk_sub s)
+
+theorem entry_syms {s p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
+    (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)).syms Impl.Ed25519.AArch64.combSym = (lay s).T :=
+  congrFun hp.step.syms Impl.Ed25519.AArch64.combSym
 
 theorem entry_input {s : State} (h : signCachedLocal.pre s) {m : Mem}
     (hf : Frame [below s.sp 336] s.mem m) {r : Region} (hr : r ∈ s.rd) (hn : r.len ≤ 2 ^ 64) :
@@ -104,21 +124,22 @@ theorem entry_input {s : State} (h : signCachedLocal.pre s) {m : Mem}
   refine List.map_congr_left fun i hi => hf.bytes ?_ hn (List.mem_range.mp hi)
   rintro R hR
   rw [List.mem_singleton.mp hR]
-  obtain ⟨hrd, _, _, _, _, _, _, _, _, _, ks, kp, km, _⟩ := h
+  obtain ⟨hrd, _, _, _, _, _, _, _, _, _, ks, kp, km, _, _, _, _, _, _, _, _, -, -, dj⟩ := h
   rw [hrd] at hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   have hb : Region.Sub (below s.sp 336) (below s.sp 352) := below_sub (by decide) (by decide)
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact (ks.sub_left hb).symm
   · exact (kp.sub_left hb).symm
   · exact (km.sub_left hb).symm
+  · exact (dj (below s.sp 352) (by simp)).sub_right hb
 
 theorem entry_key {s p : State} (h : signCachedLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
     Spec.Ed25519.bytesAt p.mem (lay s).pk 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt p.mem (lay s).seed 32) := by
   have hk : Spec.Ed25519.bytesAt s.mem (s.gpr .x2) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32) := by
-    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk⟩ := h
+    obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
     exact hk
   have hf := Whole.saved_frame hp
   have hp' := entry_input h hf (r := ⟨s.gpr .x2, 32⟩) (by rw [h.1]; simp) (by change 32 ≤ 2 ^ 64; decide)

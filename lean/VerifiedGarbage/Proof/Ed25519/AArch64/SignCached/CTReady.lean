@@ -10,18 +10,32 @@ variable {L : Lay} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 
 
 def Two (L : Lay) (g₁ g₂ : Reg → BitVec 64) (v₁ v₂ : VReg → BitVec 128)
     (m₁ m₂ : Mem) (P : State → Prop) (a b : State) : Prop :=
-  Ctx L g₁ v₁ m₁ a ∧ Ctx L g₂ v₂ m₂ b ∧ P a ∧ P b
+  Ctx L g₁ v₁ m₁ a ∧ Ctx L g₂ v₂ m₂ b ∧ P a ∧ P b ∧
+    a.syms Impl.Ed25519.AArch64.combSym = L.T ∧ b.syms Impl.Ed25519.AArch64.combSym = L.T
 
 theorem two_sp {P : State → Prop} {a b : State} (h : Two L g₁ g₂ v₁ v₂ m₁ m₂ P a b) :
     a.sp = b.sp := h.1.sp.trans h.2.1.sp.symm
+
+/-- `two_wp`, whose runs may use the static's address. -/
+theorem two_wpS {P Q : State → Prop} {c : Prog isa}
+    (hct : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ P) c fun _ _ => True)
+    (ha : ∀ t, Ctx L g₁ v₁ m₁ t → t.syms Impl.Ed25519.AArch64.combSym = L.T → P t →
+      WP isa c t fun u => Ctx L g₁ v₁ m₁ u ∧ Q u)
+    (hb : ∀ t, Ctx L g₂ v₂ m₂ t → t.syms Impl.Ed25519.AArch64.combSym = L.T → P t →
+      WP isa c t fun u => Ctx L g₂ v₂ m₂ u ∧ Q u) :
+    RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ P) c (Two L g₁ g₂ v₁ v₂ m₁ m₂ Q) :=
+  (hct.wp (F₁ := fun (u : State) => (Ctx L g₁ v₁ m₁ u ∧ Q u) ∧ u.syms Impl.Ed25519.AArch64.combSym = L.T)
+    (F₂ := fun (u : State) => (Ctx L g₂ v₂ m₂ u ∧ Q u) ∧ u.syms Impl.Ed25519.AArch64.combSym = L.T) fun a b h =>
+    ⟨WP.mono_syms (ha a h.1 h.2.2.2.2.1 h.2.2.1) fun _ hu su => ⟨hu, by rw [su]; exact h.2.2.2.2.1⟩,
+      WP.mono_syms (hb b h.2.1 h.2.2.2.2.2 h.2.2.2.1) fun _ hu su => ⟨hu, by rw [su]; exact h.2.2.2.2.2⟩⟩).mono
+    (fun _ _ h => h) fun _ _ h => ⟨h.2.1.1.1, h.2.2.1.1, h.2.1.1.2, h.2.2.1.2, h.2.1.2, h.2.2.2⟩
 
 theorem two_wp {P Q : State → Prop} {c : Prog isa}
     (hct : RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ P) c fun _ _ => True)
     (ha : ∀ t, Ctx L g₁ v₁ m₁ t → P t → WP isa c t fun u => Ctx L g₁ v₁ m₁ u ∧ Q u)
     (hb : ∀ t, Ctx L g₂ v₂ m₂ t → P t → WP isa c t fun u => Ctx L g₂ v₂ m₂ u ∧ Q u) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ P) c (Two L g₁ g₂ v₁ v₂ m₁ m₂ Q) :=
-  (hct.wp fun a b h => ⟨ha a h.1 h.2.2.1, hb b h.2.1 h.2.2.2⟩).mono
-    (fun _ _ h => h) fun _ _ h => ⟨h.2.1.1, h.2.2.1, h.2.1.2, h.2.2.2⟩
+  two_wpS hct (fun t hc _ hp => ha t hc hp) (fun t hc _ hp => hb t hc hp)
 
 theorem setup_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     (args : List (Reg × Value)) (hn : (args.map Prod.fst).Nodup)
@@ -38,7 +52,7 @@ theorem setup_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
 
 theorem args_eq {args : List (Reg × Value)} {a b : State}
     (h : Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L args) a b) {p : Reg × Value} (hp : p ∈ args) :
-    a.gpr p.1 = b.gpr p.1 := (h.2.2.1 p hp).trans (h.2.2.2 p hp).symm
+    a.gpr p.1 = b.gpr p.1 := (h.2.2.1 p hp).trans (h.2.2.2.1 p hp).symm
 
 theorem call_gpr_eq {args : List (Reg × Value)} {a b : State}
     (h : Two L g₁ g₂ v₁ v₂ m₁ m₂ (OutArgs L args) a b) {p : Reg × Value}
@@ -46,26 +60,30 @@ theorem call_gpr_eq {args : List (Reg × Value)} {a b : State}
   rw [State.callEntry_gpr _ hl, State.callEntry_gpr _ hl]
   exact args_eq h hp
 
-theorem call_ct {P : State → Prop} {k : Contract isa} {c : Prog isa} {name : String}
+theorem call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    {P : State → Prop} {k : Contract isa} {c : Prog isa} {name : String}
     (correct : ∀ s, k.pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ k.post s s')
     (ct : ConstantTime isa k.pre k.pub c) (hd : c.aarch64Depth ≤ 1)
-    (ready : ∀ {g v m t}, Ctx L g v m t → P t → Whole.CallReady k L.E L.inputs L.outputs t)
+    (ready : ∀ {g v m t}, Ctx L g v m t → t.syms Impl.Ed25519.AArch64.combSym = L.T →
+      TblWords L.T t.mem → P t → Whole.CallReady k L.E L.inputs L.outputs t)
     (kp : ∀ (a b : State) ar aw br bw, Two L g₁ g₂ v₁ v₂ m₁ m₂ P a b →
       k.pub (a.callEntry.withRegions ar aw) (b.callEntry.withRegions br bw)) :
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ P) (.call name c)
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
-  apply two_wp
+  apply two_wpS
   · refine Whole.callEx correct ct fun a b h => ?_
-    let ra := ready h.1 h.2.2.1
-    let rb := ready h.2.1 h.2.2.2
+    let ra := ready h.1 h.2.2.2.2.1 (h.1.tbl hL ha.2) h.2.2.1
+    let rb := ready h.2.1 h.2.2.2.2.2 (h.2.1.tbl hL hb.2) h.2.2.2.1
     obtain ⟨ca, wa⟩ := Whole.CallReady.covers_state h.1 ra
     obtain ⟨cb, wb⟩ := Whole.CallReady.covers_state h.2.1 rb
     exact ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre,
       kp a b _ _ _ _ h, ca, wa, cb, wb⟩
-  · intro t hc hs
-    exact WP.mono (Whole.CallReady.wpF hc (ready hc hs) correct hd) fun _ hu => ⟨hu, trivial⟩
-  · intro t hc hs
-    exact WP.mono (Whole.CallReady.wpF hc (ready hc hs) correct hd) fun _ hu => ⟨hu, trivial⟩
+  · intro t hc hy hs
+    exact WP.mono (Whole.CallReady.wpF hc (ready hc hy (hc.tbl hL ha.2) hs) correct hd)
+      fun _ hu => ⟨hu, trivial⟩
+  · intro t hc hy hs
+    exact WP.mono (Whole.CallReady.wpF hc (ready hc hy (hc.tbl hL hb.2) hs) correct hd)
+      fun _ hu => ⟨hu, trivial⟩
 
 end VG.Proof.Ed25519.AArch64.SignCached
 end
@@ -91,13 +109,15 @@ def reduce_ready (hL : L.Ok) {d : Nat} (hd : d + 32 ≤ 256) (ha : ReduceArgs L 
     · exact .inr (.inr (scratchWithin L))
   exact ⟨reduceRd L, reduceWr L d, reduce_pre hL ha, cov, ws⟩
 
-def base_ready (hL : L.Ok) (ha : BaseArgs L s) : Whole.CallReady scalarBaseLocal L.E L.inputs L.outputs s := by
+def base_ready (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T)
+    (hm : TblWords L.T s.mem) : Whole.CallReady scalarBaseLocal L.E L.inputs L.outputs s := by
   have cov : Covers (baseRd L ++ baseWr L) (L.inputs ++ L.FR :: L.outputs) := by
     apply covers
     simp only [baseRd, baseWr, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl)
     · exact .inl (fieldWithin L (by decide))
+    · exact .inr ⟨L.TB, by simp [Lay.inputs], 0, (BitVec.add_zero _).symm, by simp⟩
     · exact .inr (output_covered (baseWithin L))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ baseWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
@@ -106,7 +126,7 @@ def base_ready (hL : L.Ok) (ha : BaseArgs L s) : Whole.CallReady scalarBaseLocal
     rintro r (rfl | rfl)
     · exact .inr (.inl (baseWithin L))
     · exact .inr (.inr (scratchWithin L))
-  exact ⟨baseRd L, baseWr L, base_pre hL ha, cov, ws⟩
+  exact ⟨baseRd L, baseWr L, base_pre hL ha hsy hm, cov, ws⟩
 
 def mul_ready (hL : L.Ok) (ha : MulArgs L s) : Whole.CallReady scalarMulAddLocal L.E L.inputs L.outputs s := by
   have cov : Covers (mulRd L ++ mulWr L) (L.inputs ++ L.FR :: L.outputs) := by

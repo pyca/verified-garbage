@@ -8,9 +8,9 @@ import VerifiedGarbage.Impl.Ed25519.AArch64.PointLoop
 The scalar's 64 nibbles `n_i` (from its bits, expanded one per byte at byte
 768 of the workspace) give `[s]B = Σ d_i [16^i]B + [17 G]B` for the digits
 `d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 32} 256^j`. Table `j`
-holds `[k]([256^j]B)` for `k ≤ 8` (`combCached`), affine. Step `j` selects
-from table `j` the entries of both digits that use it, `d_{2j+1}` and
-`d_{2j}`, sharing each candidate's immediates between the two selections,
+holds `[k]([256^j]B)` for `k ≤ 8` (`combCached`), affine; the 32 tables are
+the static `combSym` (`combWords`, 768 bytes a table). Step `j` selects from
+table `j` the entries of both digits that use it, `d_{2j+1}` and `d_{2j}`,
 and adds them, or their negations, to two accumulators, which start at
 `[G]B`: `A` (slots 0–3) for the odd digits and `B` (slots 17–20) for the even
 ones. At the end, `[s]B = 16 A + B`: four doublings and one addition. That
@@ -20,8 +20,10 @@ is 64 additions of affine cached points (seven multiplications each,
 The digits are secret: their entries are selected in constant time. The
 masks of the eight magnitudes `k = 1 … 8` (all ones exactly for `|d|`) and
 the bit of `|d| = 0` of both digits stay in registers (`oddRegs`, `x22`;
-`evenRegs`, `x8`). Each candidate word is built from immediates once, masked
-with both digits' masks and ORed into `x4` (odd) and `x5` (even). Each entry
+`evenRegs`, `x8`). Each candidate word is loaded from the table (once for each
+digit: no other register is free), masked with the digit's mask and ORed into
+`x4` (odd) and `x5` (even): every entry of the table is read, at addresses from
+the static's and the loop's counter. Each entry
 is negated, or not, with the mask of its digit's sign (from its nibble's top bit), by
 exchanging `Y - X` and `Y + X` and choosing between `2dT` and its negation.
 The loop's counter `x19`, which is also the table index, is public.
@@ -96,12 +98,33 @@ def combDigits : List Instr :=
 /-- Word `w` of a field element. -/
 def feWord (v : Spec.X25519.Fe) (w : Nat) : BitVec 64 := BitVec.ofNat 64 (v.val / 2 ^ (64 * w))
 
-/-- Word `w` of candidate `k`'s value `v`, built once, masked with each digit's mask and ORed
-into `x4` (odd) and `x5` (even). -/
-def selectCand (v : Spec.X25519.Fe) (k w : Nat) : List Instr :=
-  const64 .x9 (feWord v w) ++
-    [.logic .and .x .x2 .x9 (oddReg k), .logic .orr .x .x4 .x4 .x2,
-      .logic .and .x .x2 .x9 (evenReg k), .logic .orr .x .x5 .x5 .x2]
+/-! ## The tables -/
+
+/-- The static holding the comb's tables. -/
+def combSym : String := "VG_ED25519_COMB"
+
+/-- Word `i` of the tables: table `j = i / 96` takes 768 bytes, the `Y - X` (`c = 0`), the
+`Y + X` (`c = 1`) and the `2dT` (`c = 2`) of its entries `m + 1 = 1 … 8`, four words each. -/
+def combWord (i : Nat) : BitVec 64 :=
+  let e := combCached (i / 96) (i % 32 / 4 + 1)
+  feWord (if i % 96 < 32 then e.X else if i % 96 < 64 then e.Y else e.Z) (i % 4)
+
+/-- The words of the 32 tables, as the static `combSym` holds them. -/
+def combWords : List (BitVec 64) := (List.range (32 * 96)).map combWord
+
+/-- The static the comb reads. -/
+def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
+
+/-- `x9` = the address of table `x19`: the static's, plus 768 bytes a table. -/
+def tblAddr : List Instr :=
+  [.adrSym .x9 combSym, .lsl .x .x2 .x19 8, .add .x .x9 .x9 .x2, .add .x .x9 .x9 .x2,
+    .add .x .x9 .x9 .x2]
+
+/-- Word `w` of candidate `k`, at `x9 + d`: loaded, masked with each digit's mask and ORed into
+`x4` (odd) and `x5` (even). -/
+def selectCand (d k : Nat) : List Instr :=
+  [.ldr .x .x2 .x9 d, .logic .and .x .x2 .x2 (oddReg k), .logic .orr .x .x4 .x4 .x2,
+    .ldr .x .x2 .x9 d, .logic .and .x .x2 .x2 (evenReg k), .logic .orr .x .x5 .x5 .x2]
 
 /-- The start of word `w`'s selections: `1` for `|d| = 0` in word 0 of the identity's
 `Y - X` and `Y + X` (`one`), else `0`. -/
@@ -109,29 +132,21 @@ def selectStart (one : Bool) (w : Nat) : List Instr :=
   if one && w == 0 then [.addImm .x .x4 .x22 0, .addImm .x .x5 .x8 0]
   else [.movz .w .x4 0 0, .movz .w .x5 0 0]
 
-/-- Word `w` of `vs[|d|]` for both digits, to bytes `o + 8w` (odd) and `e + 8w` (even), where
-`vs[0]` is `1` (if `one`) or `0`. -/
-def selectWord (one : Bool) (vs : List Spec.X25519.Fe) (o e w : Nat) : List Instr :=
-  selectStart one w ++ (List.range 8).flatMap (fun k => selectCand (vs.getD (k + 1) 0) (k + 1) w) ++
+/-- Word `w` of entry `|d|`'s coordinate `c` (at `x9 + 256 c`) for both digits, to bytes
+`o + 8w` (odd) and `e + 8w` (even); entry 0's (the identity's) is `1` (if `one`) or `0`. -/
+def selectWord (one : Bool) (c o e w : Nat) : List Instr :=
+  selectStart one w ++ (List.range 8).flatMap (fun m => selectCand (256 * c + 32 * m + 8 * w) (m + 1)) ++
     [st .x4 (o + 8 * w), st .x5 (e + 8 * w)]
 
-/-- The field `vs[|d|]` for both digits, to bytes `o` (odd) and `e` (even). -/
-def selectField (one : Bool) (vs : List Spec.X25519.Fe) (o e : Nat) : List Instr :=
-  (List.range 4).flatMap fun w => selectWord one vs o e w
+/-- Coordinate `c` of entry `|d|` for both digits, to bytes `o` (odd) and `e` (even). -/
+def selectField (one : Bool) (c o e : Nat) : List Instr :=
+  (List.range 4).flatMap fun w => selectWord one c o e w
 
-/-- The entries of both digits from table `j`: the odd one to slots 4–6, the even one to
+/-- The entries of both digits from table `x19`: the odd one to slots 4–6, the even one to
 slots 13–15. -/
-def combSelect (j : Nat) : List Instr :=
-  let entries := (List.range 9).map (combCached j)
-  selectField true (entries.map (·.X)) (offset 4) (offset 13) ++
-    selectField true (entries.map (·.Y)) (offset 5) (offset 14) ++
-    selectField false (entries.map (·.Z)) (offset 6) (offset 15)
-
-/-- The selection from table `x19`, for the table indices listed. -/
-def combSelectFrom : List Nat → Prog isa
-  | [] => .block []
-  | j :: js => .seq (.block [.subImm .x .x9 .x19 j])
-      (.ite (.zero .x .x9) (.block (combSelect j)) (combSelectFrom js))
+def combSelect : List Instr :=
+  tblAddr ++ selectField true 0 (offset 4) (offset 13) ++ selectField true 1 (offset 5) (offset 14) ++
+    selectField false 2 (offset 6) (offset 15)
 
 /-- The cached point in slots `a`, `b`, `c` negated if its digit is negative, that is if the
 top bit of its nibble (at `x0 + 8 x19 + o + 3`) is clear, its mask `bit - 1` all ones:
@@ -146,7 +161,7 @@ def combNeg (a b c : Slot) (o : Nat) : List Instr :=
 their accumulators. `x8` is nonzero while another step follows. -/
 def combStep : Prog isa :=
   .seq (.block combDigits) <|
-  .seq (combSelectFrom (List.range 32)) <|
+  .seq (.block combSelect) <|
   .block (combNeg 4 5 6 772 ++ fieldCode addOddOps ++
     combNeg 13 14 15 768 ++ fieldCode addEvenOps ++
     [.addImm .x .x19 .x19 1, .subImm .x .x8 .x19 32])

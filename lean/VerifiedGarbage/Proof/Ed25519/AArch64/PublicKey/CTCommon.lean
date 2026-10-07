@@ -22,6 +22,8 @@ structure Lay where
   seed : Addr
   scr : Addr
   E : Addr
+  /-- The comb's tables (the static `combSym`), which `vg_ed25519_scalar_base` reads. -/
+  T : Addr
 
 namespace Lay
 variable (L : Lay)
@@ -33,7 +35,8 @@ abbrev FR : Region := Whole.FR L.E
 abbrev STK : Region := ⟨L.E, 336⟩
 /-- The frame of a callee, below the locals. -/
 abbrev CK : Region := Whole.CK L.E
-def inputs : List Region := [L.SEED, L.ARGS]
+abbrev TB : Region := TBL L.T
+def inputs : List Region := [L.SEED, L.TB, L.ARGS]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : Addr := match j with | 0 => L.out | 1 => L.seed | _ => L.scr
 structure Ok : Prop where
@@ -50,13 +53,19 @@ structure Ok : Prop where
   co : L.CK.Disjoint L.OUT
   cs : L.CK.Disjoint L.SEED
   cc : L.CK.Disjoint L.SCR
+  tbo : L.TB.Disjoint L.OUT
+  tbc : L.TB.Disjoint L.SCR
+  tbk : L.TB.Disjoint L.STK
+  tbck : L.TB.Disjoint L.CK
+  tbfit : L.T.toNat + 8 * Impl.Ed25519.AArch64.combWords.length ≤ 2 ^ 64
 end Lay
 
 abbrev Ctx (L : Lay) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) :=
   Whole.Ctx L.E g vec m₀ L.inputs L.outputs t
 
+/-- The saved arguments, and the comb's words. -/
 def Arguments (L : Lay) (m : Mem) : Prop :=
-  ∀ j < 3, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j
+  (∀ j < 3, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j) ∧ TblWords L.T m
 
 def argValue (L : Lay) : Value → Addr
   | .const n => BitVec.ofNat 64 n
@@ -67,6 +76,19 @@ variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {
 
 theorem frame_sub (L : Lay) : Region.Sub L.FR L.STK := Region.sub_prefix (by decide : 256 ≤ 336)
 theorem args_sub (L : Lay) : Region.Sub L.ARGS L.STK := Offset.sub_base _ (by decide : 256 + 48 ≤ 336)
+
+/-- The comb's words, as on entry: no write reaches them. -/
+theorem Ctx.tbl (hc : Ctx L g vec m₀ t) (hL : L.Ok) (hm : TblWords L.T m₀) : TblWords L.T t.mem :=
+  fun i hi => by
+    have := hL.tbfit
+    rw [← hm i hi]
+    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl | rfl)
+    · exact hL.tbo
+    · exact hL.tbc
+    · exact hL.tbk.sub_right (frame_sub L)
+    · exact hL.tbck
 
 theorem Ctx.seed_bytes (hc : Ctx L g vec m₀ t) (hL : L.Ok) :
     Spec.Ed25519.bytesAt t.mem L.seed 32 = Spec.Ed25519.bytesAt m₀ L.seed 32 := by
@@ -110,7 +132,7 @@ theorem setup_ok (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     have hj := hi (r, .caller j d) hp j d rfl
     simp only [Whole.value, argValue]
     change t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 + BitVec.ofNat 64 d = _
-    rw [hc.arg_word hL hj, ha j hj]
+    rw [hc.arg_word hL hj, ha.1 j hj]
 
 end VG.Proof.Ed25519.AArch64.PublicKey
 end
@@ -128,32 +150,46 @@ theorem base_noFrames : Impl.Ed25519.AArch64.scalarBase.noFrames = true := by li
 def BaseArgs (L : Lay) (t : State) : Prop :=
   t.gpr .x0 = L.out ∧ t.gpr .x1 = L.E + 32 ∧ t.gpr .x2 = L.scr
 
-theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) :
-    scalarBaseLocal.pre (t.callEntry.withRegions [⟨L.E + 32, 32⟩] L.outputs) := by
+theorem base_pre (hL : L.Ok) (ha : BaseArgs L t) (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T)
+    (hm : TblWords L.T t.mem) :
+    scalarBaseLocal.pre (t.callEntry.withRegions [⟨L.E + 32, 32⟩, L.TB] L.outputs) := by
   obtain ⟨h0, h1, h2⟩ := ha
-  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr,
+  have hT : (t.callEntry.withRegions [⟨L.E + 32, 32⟩, L.TB] L.outputs).syms
+      Impl.Ed25519.AArch64.combSym = L.T := hsy
+  have hC : CombHeld (t.callEntry.withRegions [⟨L.E + 32, 32⟩, L.TB] L.outputs) [⟨L.out, 32⟩, ⟨L.scr, 8192⟩] := by
+    refine ⟨fun i hi => ?_, ?_, fun r hr => ?_⟩
+    · rw [hT]; exact hm i hi
+    · rw [hT]; exact hL.tbfit
+    · rw [hT]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [hL.tbo, hL.tbc]
+  simp only [scalarBaseLocal, tblRegion, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), h0, h1, h2]
-  exact ⟨True.intro, rfl, hL.kc.sub_left (Offset.sub_base _ (by decide : 32 + 32 ≤ 336)), hL.nc⟩
+    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), h0, h1, h2, hT]
+  exact ⟨trivial, rfl, hL.kc.sub_left (Offset.sub_base _ (by decide : 32 + 32 ≤ 336)), hL.nc, hC⟩
 
-theorem base_covers (L : Lay) : Covers ([⟨L.E + 32, 32⟩] ++ L.outputs)
+theorem base_covers (L : Lay) : Covers ([⟨L.E + 32, 32⟩, L.TB] ++ L.outputs)
     (L.inputs ++ Whole.FR L.E :: L.outputs) := by
   refine Covers.of_sub fun r hr => ?_
   rcases List.mem_append.mp hr with hr | hr
-  · rw [List.mem_singleton.mp hr]
-    exact ⟨Whole.FR L.E, List.mem_append_right _ List.mem_cons_self, 32, rfl, by change 32 + 32 ≤ 256; decide⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨Whole.FR L.E, List.mem_append_right _ List.mem_cons_self, 32, rfl, by change 32 + 32 ≤ 256; decide⟩
+    · exact ⟨L.TB, List.mem_append_left _ (by simp [Lay.inputs]), 0, (BitVec.add_zero _).symm, by simp⟩
   · exact ⟨r, List.mem_append_right _ (List.mem_cons_of_mem _ hr), 0, by simp⟩
 
 theorem base_writes (L : Lay) : ∀ r ∈ L.outputs,
     Whole.Within r (Whole.FR L.E) ∨ ∃ R ∈ L.outputs, Whole.Within r R :=
   fun r hr => .inr ⟨r, hr, 0, (BitVec.add_zero _).symm, by simp⟩
 
-theorem base_call (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : BaseArgs L t) :
+theorem base_call (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : BaseArgs L t)
+    (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T t.mem) :
     WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem L.out 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem (L.E + 32) 32) := by
-  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha) (base_covers L)
+  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha hsy hm) (base_covers L)
     (base_writes L) fun u hu _ hp => ⟨hu, ?_⟩
   change Spec.Ed25519.bytesAt u.mem (t.callEntry.gpr .x0) 32 =
     Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem (t.callEntry.gpr .x1) 32) at hp
@@ -179,18 +215,20 @@ theorem prune_step (hc : Ctx L g vec m₀ t) {digest : List Byte}
     exact hp
 
 theorem base_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) {n : Nat}
-    (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (L.E + 32) 32) = n) :
+    (hs : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem (L.E + 32) 32) = n)
+    (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.AArch64.scalarBase) t fun u =>
       Ctx L g vec m₀ u ∧ Spec.Ed25519.bytesAt u.mem L.out 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
-  refine WP.seq (WP.mono (setup_ok hc hL ha
+  refine WP.seq (WP.mono_syms (setup_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 32), (.x2, .caller 2 0)])
-    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, hm, hav⟩ => ?_)
+    (by decide) (by simp [Whole.valid]) (by simp) (by simp [preserved])) fun u ⟨hu, hm, hav⟩ sy => ?_)
   have h0 := hav (.x0, .caller 0 0) (by simp)
   have h1 := hav (.x1, .frame 32) (by simp)
   have h2 := hav (.x2, .caller 2 0) (by simp)
   simp only [argValue, Lay.value, BitVec.add_zero] at h0 h1 h2
-  refine WP.mono (base_call hu hL ⟨h0, h1, h2⟩) fun u' ⟨hu', hp⟩ => ⟨hu', ?_⟩
+  refine WP.mono (base_call hu hL ⟨h0, h1, h2⟩ (by rw [sy]; exact hsy) (hu.tbl hL ha.2))
+    fun u' ⟨hu', hp⟩ => ⟨hu', ?_⟩
   rw [hp, hm, Spec.Ed25519.scalarBase, hs]
 
 theorem wipe_step (hc : Ctx L g vec m₀ t) (hL : L.Ok) :
@@ -313,24 +351,29 @@ def pkLocal : Contract isa where
     let seed : Region := ⟨s.gpr .x1, 32⟩
     let scr : Region := ⟨s.gpr .x2, 8192⟩
     let stk : Region := below s.sp 352
-    s.rd = [seed] ∧ s.wr = [out, scr] ∧
+    s.rd = [seed, TBL (s.syms Impl.Ed25519.AArch64.combSym)] ∧ s.wr = [out, scr] ∧
       out.Disjoint seed ∧ out.Disjoint scr ∧ seed.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint scr ∧
       (s.gpr .x0).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 32 ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat
+      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧ CombHeld s [out, scr, stk]
   post s t := Spec.Ed25519.bytesAt t.mem (s.gpr .x0) 32 =
     Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32)
-  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2
+  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
+    s.syms Impl.Ed25519.AArch64.combSym = t.syms Impl.Ed25519.AArch64.combSym
 
-def lay (s : State) : Lay := ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, Whole.base s⟩
+def lay (s : State) : Lay :=
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, Whole.base s, s.syms Impl.Ed25519.AArch64.combSym⟩
 
 theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
-  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hsp⟩ := h
+  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hsp, -, fit, dj⟩ := h
+  have dk := dj (below s.sp 352) (by simp)
   exact ⟨os, oc, sc, ko.sub_left (Whole.stk_sub s), ks.sub_left (Whole.stk_sub s),
     kc.sub_left (Whole.stk_sub s), no, ns, nc, Whole.base_16 hsp, ko.sub_left (Whole.ck_sub s),
-    ks.sub_left (Whole.ck_sub s), kc.sub_left (Whole.ck_sub s)⟩
+    ks.sub_left (Whole.ck_sub s), kc.sub_left (Whole.ck_sub s),
+    dj ⟨s.gpr .x0, 32⟩ (by simp), dj ⟨s.gpr .x2, 8192⟩ (by simp),
+    dk.sub_right (Whole.stk_sub s), dk.sub_right (Whole.ck_sub s), fit⟩
 
-theorem entry_below {s : State} (h : pkLocal.pre s) : 352 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2
+theorem entry_below {s : State} (h : pkLocal.pre s) : 352 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.1
 
 theorem entry_writes {s : State} (h : pkLocal.pre s) :
     ∀ r ∈ s.wr, (below s.sp 352).Disjoint r := by
@@ -345,25 +388,25 @@ theorem entry_ctx {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.ent
     Ctx (lay s) s.gpr s.v p.mem (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)) := by
   have hc := Whole.saved_ctx hp
   simpa only [Whole.bodyRd, h.1, Whole.bodyWr, h.2.1, Ctx, Lay.inputs, Lay.outputs,
-    Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, lay, List.cons_append, List.nil_append] using hc
+    Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, lay, List.cons_append, List.nil_append] using hc
 
-theorem entry_args {s p : State} (hp : Whole.Saved (Whole.entered s) 6 p) : Arguments (lay s) p.mem := by
-  intro j hj
-  have hw := Whole.saved_words hp (j := j) (by omega)
-  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
-  rcases he with rfl | rfl | rfl <;> exact hw
+theorem entry_args {s p : State} (h : pkLocal.pre s) (hp : Whole.Saved (Whole.entered s) 6 p) :
+    Arguments (lay s) p.mem := by
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := Whole.saved_words hp (j := j) (by omega)
+    have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+    rcases he with rfl | rfl | rfl <;> exact hw
+  · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2
+    have hf := Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := TBL (s.syms Impl.Ed25519.AArch64.combSym))
+      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (Whole.stk_sub s)
 
-def satState : State where
-  gpr r := match r with | .x0 => 0x1000 | .x1 => 0x2000 | .x2 => 0x4000 | _ => 0
-  sp := 0x9000
-  mem _ := 0
-  rd := [⟨0x2000, 32⟩]
-  wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
-
-theorem pk_implies : pkLocal.Implies (Spec.Ed25519.publicKeyContract AArch64.abi 352) := by
-  sig_implies [Spec.Ed25519.publicKeyContract, Spec.Ed25519.publicKeySig,
-    Spec.Ed25519.scratchWords, pkLocal, below, AArch64.abi, AArch64.argRegs]
-    [satState] using satState
+theorem entry_syms {s p : State} (hp : Whole.Saved (Whole.entered s) 6 p) :
+    (p.withRegions (Whole.bodyRd s) (Whole.bodyWr s)).syms Impl.Ed25519.AArch64.combSym = (lay s).T :=
+  congrFun hp.step.syms Impl.Ed25519.AArch64.combSym
 
 end VG.Proof.Ed25519.AArch64.PublicKey
 end
@@ -373,12 +416,13 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64.PublicKey
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
-theorem body_ok (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem body_ok (v : Whole.Backend) (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
+    (hsy : t.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (body v.code v.suffix) t fun u => Ctx L g vec m₀ u ∧
       Spec.Ed25519.bytesAt u.mem L.out 32 = Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ L.seed 32) := by
-  refine WP.seq (WP.mono (hash_ok v hc hL ha) fun u ⟨hu, hh⟩ => ?_)
-  refine WP.seq (WP.mono (prune_step hu hh) fun u' ⟨hu', hs⟩ => ?_)
-  refine WP.seq (WP.mono (base_step hu' hL ha hs) fun u'' ⟨hu'', hp⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok v hc hL ha) fun u ⟨hu, hh⟩ su => ?_)
+  refine WP.seq (WP.mono_syms (prune_step hu hh) fun u' ⟨hu', hs⟩ su' => ?_)
+  refine WP.seq (WP.mono (base_step hu' hL ha hs (by rw [su', su]; exact hsy)) fun u'' ⟨hu'', hp⟩ => ?_)
   exact WP.mono (wipe_step hu'' hL) fun w ⟨hw, hm⟩ => ⟨hw, hm.trans hp⟩
 
 theorem body_depth (v : Whole.Backend) : (body v.code v.suffix).aarch64Depth ≤ 1 := by
@@ -396,9 +440,10 @@ theorem publicKey_ok (v : Whole.Backend) {s : State} (h : pkLocal.pre s) :
   have hw := Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed25519.bytesAt m' (s.gpr .x0) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m (s.gpr .x1) 32))
-    (fun p hp => WP.mono (body_ok v (entry_ctx h hp) (lay_ok h) (entry_args hp)) fun u ⟨hu, ho⟩ => ⟨by
+    (fun p hp => WP.mono (body_ok v (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_syms hp))
+      fun u ⟨hu, ho⟩ => ⟨by
       simpa only [Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT,
-        Lay.SCR, Lay.ARGS, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
+        Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have hs : Spec.Ed25519.bytesAt m (s.gpr .x1) 32 = Spec.Ed25519.bytesAt s.mem (s.gpr .x1) 32 := by
     unfold Spec.Ed25519.bytesAt
@@ -417,7 +462,9 @@ namespace VG.Proof.Ed25519.AArch64.PublicKey
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole
 
 abbrev Two (L : Lay) (g₁ g₂ : Reg → Addr) (v₁ v₂ : VReg → BitVec 128) (m₁ m₂ : Mem)
-    (P : State → Prop) (a b : State) := (Ctx L g₁ v₁ m₁ a ∧ P a) ∧ (Ctx L g₂ v₂ m₂ b ∧ P b)
+    (P : State → Prop) (a b : State) :=
+  (Ctx L g₁ v₁ m₁ a ∧ a.syms Impl.Ed25519.AArch64.combSym = L.T ∧ P a) ∧
+    (Ctx L g₂ v₂ m₂ b ∧ b.syms Impl.Ed25519.AArch64.combSym = L.T ∧ P b)
 
 def Slots (L : Lay) (args : List (Reg × Value)) (s : State) := ∀ p ∈ args, s.gpr p.1 = argValue L p.2
 
@@ -431,16 +478,19 @@ theorem setup_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
     RelCT isa (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) (.block (setup args))
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ (Slots L args)) := by
   refine Whole.rel_wp (Whole.block_rel (fun _ _ h => h.1.1.sp.trans h.2.1.sp.symm) ht) ?_ ?_
-  · intro t ⟨hc, _⟩
-    exact WP.mono (setup_ok hc hL ha hn hv hi hr) fun _ ⟨hc, _, hs⟩ => ⟨hc, hs⟩
-  · intro t ⟨hc, _⟩
-    exact WP.mono (setup_ok hc hL hb hn hv hi hr) fun _ ⟨hc, _, hs⟩ => ⟨hc, hs⟩
+  · intro t ⟨hc, hy, _⟩
+    exact WP.mono_syms (setup_ok hc hL ha hn hv hi hr) fun _ ⟨hc, _, hs⟩ sy => ⟨hc, sy ▸ hy, hs⟩
+  · intro t ⟨hc, hy, _⟩
+    exact WP.mono_syms (setup_ok hc hL hb hn hv hi hr) fun _ ⟨hc, _, hs⟩ sy => ⟨hc, sy ▸ hy, hs⟩
 
-theorem call_ct {args : List (Reg × Value)} {k : Contract isa} {c : Prog isa} {name : String}
+theorem call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂)
+    {args : List (Reg × Value)} {k : Contract isa} {c : Prog isa} {name : String}
     (correct : ∀ s, k.pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ k.post s s')
     (ct : ConstantTime isa k.pre k.pub c) (hd : c.aarch64Depth ≤ 1)
-    (ready : ∀ t, t.sp = L.E → Slots L args t → Whole.CallReady k L.E L.inputs L.outputs t)
+    (ready : ∀ t, t.sp = L.E → t.syms Impl.Ed25519.AArch64.combSym = L.T → TblWords L.T t.mem →
+      Slots L args t → Whole.CallReady k L.E L.inputs L.outputs t)
     (kp : ∀ (a b : State) ar aw br bw, a.sp = b.sp →
+      a.syms Impl.Ed25519.AArch64.combSym = b.syms Impl.Ed25519.AArch64.combSym →
       (∀ p ∈ args, a.callEntry.gpr p.1 = b.callEntry.gpr p.1) →
       k.pub (a.callEntry.withRegions ar aw) (b.callEntry.withRegions br bw))
     (hl : ∀ p ∈ args, p.1 ∉ linkRegs) :
@@ -448,17 +498,19 @@ theorem call_ct {args : List (Reg × Value)} {k : Contract isa} {c : Prog isa} {
       (Two L g₁ g₂ v₁ v₂ m₁ m₂ fun _ => True) := by
   refine Whole.rel_wp ?_ ?_ ?_
   · refine Whole.callEx correct ct fun a b h => ?_
-    let ra := ready a h.1.1.sp h.1.2
-    let rb := ready b h.2.1.sp h.2.2
+    let ra := ready a h.1.1.sp h.1.2.1 (h.1.1.tbl hL ha.2) h.1.2.2
+    let rb := ready b h.2.1.sp h.2.2.1 (h.2.1.tbl hL hb.2) h.2.2.2
     obtain ⟨ca, wa⟩ := ra.covers_state h.1.1
     obtain ⟨cb, wb⟩ := rb.covers_state h.2.1
     refine ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre,
-      kp a b _ _ _ _ (h.1.1.sp.trans h.2.1.sp.symm) ?_, ca, wa, cb, wb⟩
+      kp a b _ _ _ _ (h.1.1.sp.trans h.2.1.sp.symm) (h.1.2.1.trans h.2.2.1.symm) ?_, ca, wa, cb, wb⟩
     intro p hp
-    rw [State.callEntry_gpr _ (hl p hp), State.callEntry_gpr _ (hl p hp), h.1.2 p hp, h.2.2 p hp]
-  · intro t ⟨hc, hs⟩
-    exact WP.mono ((ready t hc.sp hs).wpF hc correct hd) fun _ hu => ⟨hu, trivial⟩
-  · intro t ⟨hc, hs⟩
-    exact WP.mono ((ready t hc.sp hs).wpF hc correct hd) fun _ hu => ⟨hu, trivial⟩
+    rw [State.callEntry_gpr _ (hl p hp), State.callEntry_gpr _ (hl p hp), h.1.2.2 p hp, h.2.2.2 p hp]
+  · intro t ⟨hc, hy, hs⟩
+    exact WP.mono_syms ((ready t hc.sp hy (hc.tbl hL ha.2) hs).wpF hc correct hd)
+      fun _ hu sy => ⟨hu, sy ▸ hy, trivial⟩
+  · intro t ⟨hc, hy, hs⟩
+    exact WP.mono_syms ((ready t hc.sp hy (hc.tbl hL hb.2) hs).wpF hc correct hd)
+      fun _ hu sy => ⟨hu, sy ▸ hy, trivial⟩
 
 end VG.Proof.Ed25519.AArch64.PublicKey

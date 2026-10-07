@@ -177,15 +177,16 @@ structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
   nonce : Spec.Ed25519.bytesAt t.mem (L.E + 96) 32 = nonce L m
   point : Spec.Ed25519.bytesAt t.mem (L.out) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
 
-theorem nonce_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s) :
+theorem nonce_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (nonceCode b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧ NonceReady L m₀ t := by
-  refine WP.seq (WP.mono (hashNonce_ok b hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hashNonce_ok b hc hL ha) fun u ⟨hu, fu, du⟩ syu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 32) (by decide)).trans hs.scalar
-  refine WP.seq (WP.mono (reduce_step hu hL ha 96 (by decide)) fun v ⟨hv, fv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step hu hL ha 96 (by decide)) fun v ⟨hv, fv, nv⟩ syv => ?_)
   rw [du] at nv
   have sv := (reduce_field_bytes hL fv (d := 32) (by decide) (by decide) (by decide)).trans su
-  refine WP.mono (base_step hv hL ha) fun t ⟨ht, ft, pt⟩ => ⟨ht, ?_, ?_, ?_⟩
+  refine WP.mono (base_step hv hL ha (by rw [syv, syu]; exact hsy)) fun t ⟨ht, ft, pt⟩ => ⟨ht, ?_, ?_, ?_⟩
   · exact (base_field_bytes hL ft (d := 32) (by decide)).trans sv
   · exact (base_field_bytes hL ft (d := 96) (by decide)).trans nv
   · change Spec.Ed25519.bytesAt v.mem (L.E + 96) 32 = _ at nv
@@ -231,13 +232,14 @@ theorem wipe_ok (hc : Ctx L g vec m₀ s) (hL : L.Ok) :
 
 theorem body_ok (b : Backend) (hc : Ctx L g vec m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hk : Spec.Ed25519.bytesAt m₀ (L.pk) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32)) :
+      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed) 32))
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (body b.code b.suffix) s fun t => Ctx L g vec m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (L.out) 64 = Spec.Ed25519.sign
         (Spec.Ed25519.bytesAt m₀ (L.seed) 32)
         (Spec.Ed25519.bytesAt m₀ (L.msg) L.len.toNat) := by
-  refine WP.seq (WP.mono (secret_ok b hc hL ha) fun u ⟨hu, su⟩ => ?_)
-  refine WP.seq (WP.mono (nonce_ok b hu hL ha su) fun v ⟨hv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (secret_ok b hc hL ha) fun u ⟨hu, su⟩ syu => ?_)
+  refine WP.seq (WP.mono (nonce_ok b hu hL ha su (by rw [syu]; exact hsy)) fun v ⟨hv, nv⟩ => ?_)
   refine WP.seq (WP.mono (challenge_ok b hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
 

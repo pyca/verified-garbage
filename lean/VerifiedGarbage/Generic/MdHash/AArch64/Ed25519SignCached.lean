@@ -12,7 +12,8 @@ def artifacts (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     target := AArch64.target
     doc := Spec.Ed25519.signCachedApi.doc
     code := Impl.Ed25519.AArch64.SignCached.code v.code v.suffix
-    contract := Spec.Ed25519.signCachedContract AArch64.abi 352
+    consts := Impl.Ed25519.AArch64.combConsts
+    contract := Spec.Ed25519.signCachedContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts) 352
     stack := 352
     verified := Proof.Ed25519.AArch64.SignCached.signCached_verified v
     spSafe := Code.all_of_forall (fun _ => rfl) _

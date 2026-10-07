@@ -98,9 +98,9 @@ theorem uEncode_ok {s : State} {base : Addr} (hs : Scr s base) :
 
 /-! ## The engine -/
 
-theorem engine_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
+theorem engine_ok {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
-    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) :
+    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
     WP isa engine s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = w.val ∧
       Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
@@ -108,9 +108,9 @@ theorem engine_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   set kb := Spec.Ed25519.bytesAt s.mem k 32
   rw [engine]
-  refine WP.seq (WP.mono (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, bbits, _⟩ => ?_)
+  refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, bbits, _⟩ syb => ?_)
   have hsb := kab.scratch hs
-  refine WP.seq (WP.mono (clampBits_ok hsb) fun c ⟨kbc, cbits⟩ => ?_)
+  refine WP.seq (WP.mono_syms (clampBits_ok hsb) fun c ⟨kbc, cbits⟩ syc => ?_)
   have hsc := kbc.scratch hsb
   have hS : decodeScalar25519 kb < 2 ^ 256 := by
     have h := Edwards.decodeScalar25519_shift hk
@@ -124,7 +124,10 @@ theorem engine_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 
     · rfl
     · rfl
     · exact bbits q (by simpa using hq)
-  refine WP.seq (WP.mono (combMultiply_ok hsc hS cb) fun d ⟨dp, kd⟩ => ?_)
+  have htc : TblAt c base T := htb.of_far (by rw [kbc.rd, kbc.wr, kab.rd, kab.wr])
+    (fun x hx => (powersKeep_outside (kab.trans kbc)) x (Or.inr (by omega)))
+  refine WP.seq (WP.mono (combMultiply_ok hsc htc (by rw [syc, syb]; exact hT) hS cb)
+    fun d ⟨dp, kd⟩ => ?_)
   refine WP.mono (uEncode_ok (kd.scr hsc)) fun t ⟨kt, tv⟩ => ?_
   refine ⟨((kab.trans kbc).trans kd.powers).trans
     ⟨fun r hb _ hr => kt.gpr r hr hb, kt.rd, kt.wr, kt.sp, TableFrame.workspace kt.mem⟩, _, tv, ?_⟩

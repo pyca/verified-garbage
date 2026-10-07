@@ -11,13 +11,14 @@ def artifacts : List Artifact := [
     doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["Uses baseline integer instructions and \
       a comb: the scalar's 64 nibbles n give the digits n - 8, and each digit's multiple of \
       [16^i]B is one of 32 tables of [k 256^j]B for k <= 8, affine, cached as \
-      [Y - X, Y + X, 2dT] in immediates and checked against the specification in Lean. \
-      Each table serves two digits, accumulated apart: their entries are selected together, \
-      each candidate built once and read under both digits' masks, and negated under their \
+      [Y - X, Y + X, 2dT] in the static `VG_ED25519_COMB` and checked against the specification \
+      in Lean. Each table serves two digits, accumulated apart: their entries are selected \
+      together, in constant time (reading every entry of the table), and negated under their \
       signs' masks; 64 additions, four doublings and one addition, in a fixed schedule. The \
       working values and saved registers reside in `scratch`."])
+    consts := Impl.Ed25519.AArch64.combConsts
     code := Impl.Ed25519.AArch64.scalarBase
-    contract := Spec.Ed25519.scalarBaseContract AArch64.abi
+    contract := Spec.Ed25519.scalarBaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)
     verified := Proof.Ed25519.AArch64.scalarBase_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

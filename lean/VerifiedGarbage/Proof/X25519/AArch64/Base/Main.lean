@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
-import VerifiedGarbage.Proof.X25519.AArch64.Base.Erase
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
 import VerifiedGarbage.Spec.X25519.Contract
 
@@ -17,27 +16,29 @@ open VG.Proof.Ed25519.AArch64
 open VG.Proof.Ed25519.Word64 (val4)
 open VG.Spec.Ed25519 (bytesAt)
 
+/-- `vg_x25519_base(out = x0, scalar = x1, scratch = x2)`, with the comb's tables at the
+static's address. -/
 def baseLocal : Contract isa where
-  pre s := s.rd = [⟨s.gpr .x1, 32⟩] ∧ s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩] ∧
+  pre s := s.rd = [⟨s.gpr .x1, 32⟩, tblRegion s] ∧ s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩] ∧
     (⟨s.gpr .x1, 32⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩]
   post s t := Spec.X25519.bytesAt t.mem (s.gpr .x0) 32 =
     Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) Spec.X25519.basePoint
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
-    s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2
+    s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
 
 theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
     WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
-  apply WP.withPreservedV
-    (hc := Code.allInstrs_keepsV_of_eraseImm x25519Base_eraseImm (by lit_decide))
-  obtain ⟨hr, hw, hd, hn⟩ := hs
+  apply WP.withPreservedV (hc := by lit_decide)
+  obtain ⟨hr, hw, hd, hn, hct⟩ := hs
   have hws : (⟨s.gpr .x2, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   rw [x25519Base]
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, spa, ma, sva⟩ => ?_
+  have htb : TblAt s (s.gpr .x2) (s.syms combSym) := hct.tblAt (by rw [hr]; simp) (by simp)
+  refine WP.mono_syms (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, spa, ma, sva⟩ sya => ?_
   have hwa : (⟨a.gpr .x2, 8192⟩ : Region) ∈ a.wr := by rw [ga, wa]; exact hws
-  refine WP.mono (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, spb, ob, mb⟩ => ?_
+  refine WP.mono_syms (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, spb, ob, mb⟩ syb => ?_
   rw [ga] at pb ob mb
   have hb : Scr b (s.gpr .x2) := ⟨pb, by rw [wb, wa]; exact hws, hn⟩
   have fm : Frame [⟨s.gpr .x2, 8192⟩] s.mem b.mem :=
@@ -48,7 +49,10 @@ theorem x25519Base_correct {s : State} (hs : baseLocal.pre s) :
   refine WP.mono (engine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .x1, 32⟩, by rw [rb, ra, hr]; simp,
       Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun q hq => farScr hd hq (by decide))) fun c ⟨kc, w, vc, xc⟩ => ?_
+    (fun q hq => farScr hd hq (by decide))
+    (htb.of_far (by rw [rb, ra, wb, wa]) fun x hx => by
+      rw [mb x (Or.inr (by omega)), ma x (Or.inr (by omega))])
+    (by rw [syb, sya])) fun c ⟨kc, w, vc, xc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .x2) s.gpr c.mem := svb.outside mc (by decide)
   have oc : c.mem.readW (off (s.gpr .x2) 48) 64 = s.gpr .x0 :=

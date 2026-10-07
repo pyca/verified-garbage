@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-! Relational constant-time composition with a public stack pointer.
 The AArch64 taint domain always includes sp; this wrapper carries its agreement
@@ -56,6 +57,17 @@ theorem taint {P : State → State → Prop} {c : Prog isa} (τ : VG.AArch64.Tai
   obtain ⟨τ', hh⟩ := Option.isSome_iff_exists.mp h
   obtain ⟨ht, ha⟩ := VG.Taint.check_sound hh (show VG.AArch64.Taint.Agree τ x y from ⟨hsp, hp x y hp'⟩) ex ey
   exact ⟨ht, ha.1, True.intro⟩
+
+/-- `taint`, for code that also forms the addresses of the statics `L`, whose addresses agree. -/
+theorem taintS {L : List String} {P : State → State → Prop} {c : Prog isa} (τ : VG.AArch64.Taint.T)
+    (hp : ∀ x y, P x y → (∀ r ∈ τ, x.gpr r = y.gpr r) ∧ ∀ n ∈ L, x.syms n = y.syms n)
+    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (h : ((VG.AArch64.taintS L).check τ c hc).isSome = true) : CT P c (fun _ _ => True) := by
+  intro x y tx ty u v ⟨hsp, hp'⟩ ex ey
+  obtain ⟨τ', hh⟩ := Option.isSome_iff_exists.mp h
+  obtain ⟨ht, ha⟩ := VG.Taint.check_sound hh
+    (show (VG.AArch64.taintS L).Agree τ x y from ⟨⟨hsp, (hp x y hp').1⟩, (hp x y hp').2⟩) ex ey
+  exact ⟨ht, ha.1.1, True.intro⟩
 
 theorem taintRegs {τ : VG.AArch64.Taint.T} {P : State → State → Prop} {c : Prog isa}
     (hp : ∀ x y, P x y → ∀ r ∈ τ, x.gpr r = y.gpr r) (rs : List Reg)

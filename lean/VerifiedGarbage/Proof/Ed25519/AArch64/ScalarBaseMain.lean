@@ -1,7 +1,6 @@
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
-import VerifiedGarbage.Proof.Ed25519.AArch64.CombErase
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMain
 
@@ -62,13 +61,18 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64
 open Word64
 open VG.Spec.Ed25519 (bytesAt)
 
+/-- The region of the comb's tables, the static `combSym`. -/
+abbrev tblRegion (s : State) : Region := ⟨s.syms combSym, 8 * combWords.length⟩
+
+/-- `vg_ed25519_scalar_base(out = x0, scalar = x1, scratch = x2)`, with the comb's tables at the
+static's address. -/
 def scalarBaseLocal : Contract isa where
-  pre s := s.rd = [⟨s.gpr .x1, 32⟩] ∧ s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩] ∧
+  pre s := s.rd = [⟨s.gpr .x1, 32⟩, tblRegion s] ∧ s.wr = [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩] ∧
     (⟨s.gpr .x1, 32⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩]
   post s t := bytesAt t.mem (s.gpr .x0) 32 = Spec.Ed25519.scalarBase (bytesAt s.mem (s.gpr .x1) 32)
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
-    s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2
+    s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
 
 theorem farScr {base p : Addr} {n : Nat}
     (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat} (hi : i < n) (hn : n ≤ 2 ^ 64) :
@@ -80,16 +84,16 @@ theorem farScr {base p : Addr} {n : Nat}
 
 theorem scalarBase_correct {s : State} (hs : scalarBaseLocal.pre s) :
     WP isa scalarBase s fun t => abiPreserved s t ∧ scalarBaseLocal.post s t := by
-  apply WP.withPreservedV
-    (hc := Code.allInstrs_keepsV_of_eraseImm scalarBase_eraseImm (by lit_decide))
-  obtain ⟨hr, hw, hd, hn⟩ := hs
+  apply WP.withPreservedV (hc := by lit_decide)
+  obtain ⟨hr, hw, hd, hn, hct⟩ := hs
   have hws : (⟨s.gpr .x2, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   rw [scalarBase]
   apply WP.seq
   rw [WP.block_append_iff]
-  refine WP.mono (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, spa, ma, sva⟩ => ?_
+  have htb : TblAt s (s.gpr .x2) (s.syms combSym) := hct.tblAt (by rw [hr]; simp) (by simp)
+  refine WP.mono_syms (scalarSave_ok rfl hws) fun a ⟨ga, ra, wa, spa, ma, sva⟩ sya => ?_
   have hwa : (⟨a.gpr .x2, 8192⟩ : Region) ∈ a.wr := by rw [ga, wa]; exact hws
-  refine WP.mono (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, spb, ob, mb⟩ => ?_
+  refine WP.mono_syms (scalarBaseSetup_ok a hwa) fun b ⟨pb, gb, rb, wb, spb, ob, mb⟩ syb => ?_
   rw [ga] at pb ob mb
   have hb : Scr b (s.gpr .x2) := ⟨pb, by rw [wb, wa]; exact hws, hn⟩
   have fm : Frame [⟨s.gpr .x2, 8192⟩] s.mem b.mem :=
@@ -100,7 +104,12 @@ theorem scalarBase_correct {s : State} (hs : scalarBaseLocal.pre s) :
   refine WP.mono (scalarBaseEngine_ok hb ((gb _ (by decide)).trans (congrFun ga _))
     (fun q hq => ⟨⟨s.gpr .x1, 32⟩, by rw [rb, ra, hr]; simp,
       Offset.contains_base _ (by omega) (by omega)⟩)
-    (fun q hq => farScr hd hq (by decide))) fun c ⟨kc, vc⟩ => ?_
+    (fun q hq => farScr hd hq (by decide))
+    (htb.of_far (by rw [rb, ra, wb, wa]) fun x hx => by
+      have h1 := mb x (Or.inr (by omega))
+      have h2 := ma x (Or.inr (by omega))
+      rw [h1, h2])
+    (by rw [syb, sya])) fun c ⟨kc, vc⟩ => ?_
   have mc := powersKeep_outside kc
   have svc : Saved (s.gpr .x2) s.gpr c.mem := svb.outside mc (by decide)
   have oc : c.mem.readW (off (s.gpr .x2) 48) 64 = s.gpr .x0 :=

@@ -28,8 +28,9 @@ def artifacts : List Artifact := [
       (bits 0-2 and 255 cleared, bit 254 set), the comb's 64 additions accumulate `[k] B` in \
       extended coordinates, and `(Z + Y) / (Z - Y)` takes one inversion. The function saves the \
       callee-saved registers it uses (`x19`-`x24`) in `scratch`."])
+    consts := Impl.Ed25519.AArch64.combConsts
     code := Impl.X25519.AArch64.Base.x25519Base
-    contract := Spec.X25519.x25519BaseContract AArch64.abi
+    contract := Spec.X25519.x25519BaseContract (AArch64.abi.withConsts Impl.Ed25519.AArch64.combConsts)
     verified := Proof.X25519.AArch64.Base.x25519Base_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
