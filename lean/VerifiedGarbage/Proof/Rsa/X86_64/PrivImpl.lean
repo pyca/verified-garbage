@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
+import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 
 /-!
 # Implementations of `vg_rsa_private_crt` on x86-64
@@ -24,23 +25,24 @@ structure CrtImpl where
   /-- Its symbol and code. -/
   name : String
   code : Prog isa
-  /-- It makes no calls. -/
-  depth : code.depth = 0
-  ok : ∀ s, crtContract.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ crtContract.post s s'
-  ct : ConstantTime isa crtContract.pre crtContract.pub code
+  /-- Its calls make no calls. -/
+  depth : code.depth = 1
+  ok : ∀ s, crtContract.clear.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ crtContract.post s s'
+  ct : ConstantTime isa crtContract.clear.pre crtContract.pub code
   /-- It never writes the stack pointer. -/
   nosp : NoSp code
   spSafe : code.all (fun i => !isa.writesSp i) = true
-  /-- The Montgomery multiplication of `vg_rsa_public_precompute` and
-  the suffix of its name. -/
-  mont : Mont
+  /-- The suffix of the name of `vg_rsa_public_precompute`, and its code. -/
   montSuffix : String
-  pcMx : (Precompute.code mont.mm).allInstrs (fun i => !loadsMxcsr i) = true
+  pc : Prog isa
+  pcOk : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s'
+  pcCt : ConstantTime isa pcContract.clear.pre pcContract.pub pc
+  pcMx : pc.allInstrs (fun i => !loadsMxcsr i) = true
   /-- The independently verified public operation used to check the result. -/
   pubOp : PublicImpl
-  pcNosp : NoSp (Precompute.code mont.mm)
-  pcDepth : (Precompute.code mont.mm).depth = 0
-  pcSpSafe : (Precompute.code mont.mm).all (fun i => !isa.writesSp i) = true
+  pcNosp : NoSp pc
+  pcDepth : pc.depth = 1
+  pcSpSafe : pc.all (fun i => !isa.writesSp i) = true
   /-- What the names of `vg_rsa_private_checked`'s instances end with (e.g.
   `_adx`; nothing for the baseline implementation). -/
   suffix : String

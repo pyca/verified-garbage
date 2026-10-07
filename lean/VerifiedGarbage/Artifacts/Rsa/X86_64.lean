@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
+import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -30,21 +31,23 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.publicPrecomputeApi.doc
       (notes := ["Baseline x86-64: R² mod n as `vg_rsa_public_checked` computes it, with Montgomery \
         multiplication by calls of `vg_rsa_mont_mul`."])
-    code := Impl.Rsa.X86_64.Precompute.code (Impl.Bignum.X86_64.MontFn.call "vg_rsa_mont_mul"
-      Impl.Bignum.X86_64.MontFn.mulBase)
+    code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm
     contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
     stack := 8
-    verified := Proof.Bignum.X86_64.precompute_fn_verified
+    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl
+      (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputeApi with
     target := X86_64.target
     name := Spec.Rsa.publicPrecomputeApi.name ++ "_adx"
     doc := Spec.Rsa.publicPrecomputeApi.doc
-      (notes := ["`vg_rsa_public_precompute`'s code, with `vg_rsa_public_precomputed_checked_adx`'s \
-        Montgomery multiplication."])
-    code := Impl.Rsa.X86_64.Precompute.code Proof.Bignum.X86_64.Mont.adxSquare.mm
-    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi
-    verified := Proof.Bignum.X86_64.precompute_verified _ (by decide +kernel)
+      (notes := ["`vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of \
+        `vg_rsa_mont_mul_adx`."])
+    code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.adx.mm
+    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
+      (by decide +kernel)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputedCheckedApi with
@@ -55,9 +58,12 @@ def artifacts : List Artifact := [
         first set bit, which starts the result as the input; a square per later bit and a multiplication \
         per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before \
         any arithmetic, so that values of no modulus are safe."])
-    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Bignum.X86_64.Mont.base.mm
-    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
-    verified := Proof.Rsa.X86_64.precomputedChecked_verified _ (by decide +kernel)
+    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Rsa.X86_64.CallMont.base.mm
+    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.pd_call_verified (by decide +kernel)
+      (Proof.Rsa.X86_64.precomputedChecked_correct Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel))
+      (Proof.Rsa.X86_64.precomputedChecked_constantTime Proof.Bignum.X86_64.Mont.fnBase)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputedCheckedApi with
     target := X86_64.target
@@ -69,9 +75,13 @@ def artifacts : List Artifact := [
         number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the \
         accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and \
         ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."])
-    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
-    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
-    verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
+    code := Impl.Rsa.X86_64.Folded.checked Proof.Rsa.X86_64.CallMont.adx.mm
+    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.pd_call_verified (by decide +kernel)
+      (Proof.Bignum.X86_64.FoldedPublic.checked_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel)
+        (by decide +kernel))
+      (Proof.Bignum.X86_64.FoldedPublic.checked_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Rsa.X86_64.fnAdx_final_ct)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
@@ -86,19 +96,25 @@ def artifacts : List Artifact := [
         over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
         window's power of the input, from a table of all 16 after the prime's working space, read \
         by a masked selection from every entry."])
-    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.base.mm
-    contract := Spec.Rsa.privateCrtContract X86_64.abi
-    verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.base.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnBase)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
     target := X86_64.target
     name := Spec.Rsa.privateCrtApi.name ++ "_adx"
     doc := Spec.Rsa.privateCrtApi.doc
-      (notes := ["`vg_rsa_private_crt`'s code, with `vg_rsa_public_precomputed_checked_adx`'s Montgomery \
-        multiplication."])
-    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.adxSquare.mm
-    contract := Spec.Rsa.privateCrtContract X86_64.abi
-    verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
+      (notes := ["`vg_rsa_private_crt`'s code, with Montgomery multiplication by calls of \
+        `vg_rsa_mont_mul_adx`."])
+    code := Impl.Rsa.X86_64.Crt.code Proof.Rsa.X86_64.CallMont.adx.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
+      (Proof.Bignum.X86_64.crtCode_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
+      (Proof.Bignum.X86_64.crtCode_constantTime Proof.Bignum.X86_64.Mont.fnAdx)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
@@ -113,10 +129,13 @@ def artifacts : List Artifact := [
         the table read by a masked selection from every entry. MXCSR is set to `0x1FBF` around the \
         vector code, as Intel's guidance for data-operand-independent timing asks, and restored after \
         it."])
-    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Bignum.X86_64.Mont.adxSquare.mm
-    contract := Spec.Rsa.privateCrtContract X86_64.abi
-    verified := Proof.Bignum.X86_64.Ifma.verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (by decide +kernel)
+    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm
+    contract := Spec.Rsa.privateCrtContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
+      (Proof.Bignum.X86_64.Ifma.code_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) (by decide +kernel)
+        (by decide +kernel) (by decide +kernel))
+      (Proof.Bignum.X86_64.Ifma.code_constantTime Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.crtValuesApi with
@@ -143,19 +162,23 @@ def artifacts : List Artifact := [
         candidates stop at the first that finds the factors, which is the only branch on the key. \
         `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \
         `64 w` steps of bit-serial division."])
-    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.base.mm
-    contract := Spec.Rsa.recoverPrimesContract X86_64.abi
-    verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
+    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.base.mm
+    contract := Spec.Rsa.recoverPrimesContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel) rfl
+      (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.recoverPrimesApi with
     target := X86_64.target
     name := Spec.Rsa.recoverPrimesApi.name ++ "_adx"
     doc := Spec.Rsa.recoverPrimesApi.doc
-      (notes := ["`vg_rsa_recover_primes`'s code, with `vg_rsa_public_precomputed_adx`'s Montgomery \
-        multiplication."])
-    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.adxSquare.mm
-    contract := Spec.Rsa.recoverPrimesContract X86_64.abi
-    verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
+      (notes := ["`vg_rsa_recover_primes`'s code, with Montgomery multiplication by calls of \
+        `vg_rsa_mont_mul_adx`."])
+    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Rsa.X86_64.CallMont.adx.mm
+    contract := Spec.Rsa.recoverPrimesContract X86_64.abi 8
+    stack := 8
+    verified := Proof.Rsa.X86_64.rp_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
+      (by decide +kernel)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.checkKeyApi with

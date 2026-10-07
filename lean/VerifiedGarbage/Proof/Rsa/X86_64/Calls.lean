@@ -23,6 +23,26 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.Rsa.X86_64
 
+/-- Montgomery multiplication by calls of `name`, whose code is `body`;
+`mont` is what the calls run as, inlined. -/
+structure CallMont where
+  name : String
+  body : Prog isa
+  mont : Mont
+
+/-- The call of `[o] = [a] [b] R⁻¹ mod m`. -/
+def CallMont.mm (M : CallMont) : Nat → Nat → Nat → Prog isa := Impl.Bignum.X86_64.MontFn.call M.name M.body
+
+/-- By calls of `vg_rsa_mont_mul`. -/
+def CallMont.base : CallMont := ⟨"vg_rsa_mont_mul", Impl.Bignum.X86_64.MontFn.mulBase, Mont.fnBase⟩
+
+/-- By calls of `vg_rsa_mont_mul_adx`. -/
+def CallMont.adx : CallMont := ⟨"vg_rsa_mont_mul_adx", Impl.Bignum.X86_64.MontFn.mulAdx, Mont.fnAdx⟩
+
+/-- `Mont.fnAdx` for the final multiplication of the folded public operation. -/
+theorem fnAdx_final_ct : RelCT isa (Two GoodL) (Mont.fnAdx.mm Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aX Impl.Bignum.X86_64.Public.aY) (fun _ _ => True) :=
+  RelCT.ofW (mmFnAdx_ct (by unfold Opnds; decide) (by taint_decide))
+
 /-- `Verified.of_inline` for a contract `Sig.contract` builds with 8 bytes
 of stack, from the shared contract `k₀` it implies. -/
 theorem Verified.of_inline_sig {c : Prog isa} (hc : c.InlineOk = true) {k₀ k : Contract isa}
