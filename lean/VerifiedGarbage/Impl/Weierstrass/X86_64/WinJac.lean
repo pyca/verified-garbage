@@ -179,6 +179,51 @@ def window (dbl : Pt → Prog isa) : Prog isa :=
   .seq (K.build dbl) <| .seq (.block K.init) <| .seq (.loop (K.step dbl) .ne) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
+/-! PROTOTYPE (unverified): co-Z table and the first window from the top digit. -/
+
+def zz : Nat := K.z2 + 8 * K.M.n
+
+/-- Co-Z doubling: `T = 2P` and `D = P` with `T`'s `Z`, and `T`'s powers. -/
+def dbluOps : List FOp :=
+  [.mul K.S.t0 K.P.x K.P.x, .mul K.S.t1 K.P.y K.P.y, .mul K.S.t2 K.S.t1 K.S.t1,
+   .mul K.S.t3 K.P.x K.S.t1, .add K.S.t3 K.S.t3 K.S.t3, .add K.S.t3 K.S.t3 K.S.t3,
+   .sub K.S.t4 K.S.t0 K.P.z, .add K.S.t5 K.S.t4 K.S.t4, .add K.S.t4 K.S.t5 K.S.t4,
+   .mul K.E.x K.S.t4 K.S.t4, .sub K.E.x K.E.x K.S.t3, .sub K.E.x K.E.x K.S.t3,
+   .sub K.S.t5 K.S.t3 K.E.x, .mul K.E.y K.S.t4 K.S.t5,
+   .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2,
+   .sub K.E.y K.E.y K.S.t2, .add K.E.z K.P.y K.P.y,
+   .mul K.z2 K.E.z K.E.z, .mul K.zz K.z2 K.E.z]
+
+/-- Co-Z addition: `T = T + D`, `D` to `T`'s new `Z`, and `T`'s powers. -/
+def zadduOps : List FOp :=
+  [.sub K.S.t0 K.D.x K.E.x, .mul K.S.t1 K.S.t0 K.S.t0, .mul K.E.z K.E.z K.S.t0,
+   .mul K.D.x K.D.x K.S.t1, .mul K.S.t3 K.E.x K.S.t1, .sub K.S.t4 K.D.y K.E.y,
+   .mul K.S.t5 K.S.t4 K.S.t4, .sub K.S.t2 K.D.x K.S.t3, .mul K.D.y K.D.y K.S.t2,
+   .sub K.E.x K.S.t5 K.D.x, .sub K.E.x K.E.x K.S.t3, .sub K.E.y K.D.x K.E.x,
+   .mul K.E.y K.S.t4 K.E.y, .sub K.E.y K.E.y K.D.y,
+   .mul K.z2 K.z2 K.S.t1, .mul K.zz K.z2 K.E.z]
+
+def buildStepZ : Prog isa :=
+  .seq (.block [.alu .add .rbx (.imm 1)]) <|
+  .seq (ForwardField.programB K.M K.zadduOps) <|
+  .block (K.storeEntry ++ [.alu .cmp .rbx (.imm 16)])
+
+def buildZ : Prog isa :=
+  .seq (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
+    [.mov32 .rbx (.imm 1)] ++ K.storeEntry)) <|
+  .seq (ForwardField.programB K.M K.dbluOps) <|
+  .seq (.block (copy K.M.n K.D.x K.S.t3 ++ copy K.M.n K.D.y K.S.t2 ++ [.mov32 .rbx (.imm 2)] ++ K.storeEntry)) <|
+  .loop K.buildStepZ .ne
+
+/-- The top digit's entry into `R`, and `rbx = J - 1`. -/
+def first : List Instr :=
+  [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++ K.tc.digit ++ K.select ++ K.tc.negY ++
+    copyPt K.M.n K.R K.E
+
+def windowZ (dbl : Pt → Prog isa) : Prog isa :=
+  .seq K.buildZ <| .seq (.block K.first) <| .seq (.loop (K.step dbl) .ne) <|
+  .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
+
 end JacWinCfg
 
 end VG.Impl.Weierstrass.X86_64

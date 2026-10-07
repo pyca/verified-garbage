@@ -193,7 +193,7 @@ def jwinPrep : Prog isa :=
 /-- `[d]P` into `R` by the Jacobian window method, `dbl` doubling a point in
 place. -/
 def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).windowZ dbl))
 
 /-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
 def exchangeWith (mq : Prog isa) : Prog isa :=
