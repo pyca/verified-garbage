@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.VerifyMain
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBack
 
 /-!
 # RSASSA-PSS verification on x86-64: correctness
@@ -170,16 +170,16 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
     (hsl : Spec.RsaPss.expectedSaltLen (stackArg s 1) ((stackArg s 2).setWidth 32) =
       if fixed then some (stackArg s 1).toNat else none) :
     WP isa (seqs [.block acc0, mgfXor H, .block clearTop, posScan, posCheck H,
-      clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]) u3 (PaddingDone result s) := by
+      saltBack H]) u3 (PaddingDone result s) := by
   have hk1 := hp.k1; have hk2 := hp.k2
   have hD : H.D = lk.G.len := lk.len.symm
   have hG := validG hH lk.hash lk.len
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
   rw [show [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H,
-      clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H] =
+      saltBack H] =
     [Code.block acc0, mgfXor H, .block clearTop, posScan, posCheck H] ++
-    [clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H] from rfl]
+    [saltBack H] from rfl]
   set k := (s.gpr .rsi).toNat with hk
   set db := k - lo - lk.G.len - 1 with hdb
   -- `acc` and the first nonzero byte of `DB`.
@@ -216,8 +216,8 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
   have hwr4 : u4.wr = frR s :: s.wr := by rw [wr4, hw]
   have wDg := hp.wDg
   -- The salt, its hash, and the comparison.
-  refine WP.mono (WP.keepIn (vback_safe hH K) (by rw [vback_xd K])
-    (vback_ok hH K lk L4 R3 (lo := lo) (db := db) (pos := if lz dbL < db then lz dbL else 0) (dig := s.gpr .r8)
+  refine WP.mono (WP.keepIn (saltBack_safe hH K) (by rw [saltBack_xd K])
+    (saltBack_ok hH K lk L4 R3 (lo := lo) (db := db) (pos := if lz dbL < db then lz dbL else 0) (dig := s.gpr .r8)
       h23' h24' h34 h27 h37' hlo (by omega) hpd (by omega)
       (fun i hi => by
         rw [hrd4]
@@ -226,11 +226,18 @@ theorem vpadding_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH)
       (fun i hi => by
         have := hp.outside lk.G hp.ddgs hp.dKdg (a := s.gpr .r8 + BitVec.ofNat 64 i)
           (Offset.contains_base _ (by omega) (by omega))
-        rwa [← hwr4] at this)))
+        rwa [← hwr4] at this)
+      (fun hany hacc => by
+        have hfixed : fixed = true := by
+          rw [hW3 35 (by decide) (.inr (by decide)), h35] at hany
+          cases fixed <;> simp_all
+        rw [h33, acc1V_eq_zero] at hacc
+        rw [hW3 36 (by decide) (.inr (by decide))]
+        exact (hacc.2.2.2 hfixed).symm)))
     fun u5 ⟨⟨L5, rd5, wr5, cs5, ⟨V5, W5, R5, hW5⟩, hax5⟩, f5⟩ => ?_
   have g3 : ∀ j, j < nW → 34 < j → W3 j = W1 j := fun j hj h => hW3 j hj (.inr h)
   have g5 : ∀ j, j < nW → 34 < j → j ≠ 44 → j ≠ 45 → j ≠ 46 → W5 j = W1 j := fun j hj h a b c =>
-    (hW5 j hj (by omega) (by omega) (by omega) a b c).trans (g3 j hj h)
+    (hW5 j hj (by omega) (by omega) (by omega) (by omega) a b c).trans (g3 j hj h)
   refine ⟨L5, by rw [wr5, hwr4], fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · have hr' : r ∈ [Reg.r13, .r14, .r15, .rsp] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp

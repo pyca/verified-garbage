@@ -394,10 +394,13 @@ def copySaltY : Prog isa :=
     (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8), .store8 (ix .rcx .r8 (8 + H.D)) .rax] (.reg .r10)))
 
 /-- `ℓ = 8 + hLen + sLen` and `nbm = ⌊(ℓ + L) / B⌋ + 1`. -/
-def signLen : List Instr :=
-  [.mov .rax (.mem (sp sSaltLen)), .alu .add .rax (.imm (BitVec.ofNat 32 (8 + H.D))), .store (sp sL) .rax,
+def hashSaltLen (k : Nat) : List Instr :=
+  [.mov .rax (.mem (sp (8 * k))), .alu .add .rax (.imm (BitVec.ofNat 32 (8 + H.D))), .store (sp sL) .rax,
     .alu .add .rax (.imm (BitVec.ofNat 32 H.P.L)), .shift .shr .rax (lgB H), .alu .add .rax (.imm 1),
     .store (sp sNb) .rax]
+
+/-- Signing supplies its salt length in slot 40. -/
+def signLen : List Instr := hashSaltLen H 40
 
 /-- `EM`'s `k` bytes cleared. -/
 def clearEm : Prog isa :=
@@ -559,10 +562,37 @@ def cmpH : Prog isa :=
 
 variable (pubN : String) (pubC : Prog isa)
 
+/-- Copy a fixed-length salt from the end of `DB`; both the address and
+count depend only on the public requested salt length. -/
+def copyFixedSalt : Prog isa :=
+  .seq (.block [.mov .rsi (.mem (sp sEb)), .mov .rax (.mem (sp sDb)),
+    .alu .add .rsi (.reg .rax), .mov .r10 (.mem (sp sSlen)), .alu .sub .rsi (.reg .r10),
+    .mov32 .r8 (.imm 0), .alu .test .r10 (.reg .r10)])
+    (.ite .e (.block []) (byteLoop [.movzx8 .rax (ix .rsi .r8),
+      .store8 (ix .rcx .r8 (8 + H.D)) .rax] (.reg .r10)))
+
+/-- Build only the requested salt's hash input, avoiding the masked shift. -/
+def fixedSaltPrefix : Prog isa := seqs [clearY, copyDigest H, copyFixedSalt H,
+  .block (hashSaltLen H 36)]
+
+/-- Hash and compare the fixed-length verification input. -/
+def fixedSaltBack : Prog isa := .seq (fixedSaltPrefix H) (.seq (ctHash H) (cmpH H))
+
+/-- Verification with an inferred salt length keeps the masked shift. -/
+def genericSaltBack : Prog isa := seqs [clearY, copyDigest H, copyDb H,
+  shift H, .block (verifyNb H), ctHash H, cmpH H]
+
+/-- The fast path's length check also makes this tail safe independently
+of the outer verification entry checks. -/
+def saltBack : Prog isa :=
+  .seq (.block [.mov .rax (.mem (sp sAny)), .alu .test .rax (.reg .rax)])
+    (.ite .e (.seq (.block [.mov .rax (.mem (sp sSlen)), .alu .cmp .rax (.mem (sp sDb))])
+      (.ite .b (fixedSaltBack H) (genericSaltBack H))) (genericSaltBack H))
+
 /-- After the public checks. -/
 def verifyMain : Prog isa :=
   seqs [.block dbSlots, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop,
-    posScan, posCheck H, clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H]
+    posScan, posCheck H, saltBack H]
 
 def verifyBody : Prog isa :=
   seqs [.block (verifyPrologue ++ n0),
