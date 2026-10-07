@@ -38,8 +38,8 @@ reduction works on slot 1 alone, which comparisons and decoding use.
   and swapped into `Q` by bit `t` of `S`, then `-A` added and swapped in by
   bit `t` of `k`.
 * `Q`'s `Y` is moved to slot 6 (slot 1 is used to compare), `R` decoded
-  into slots 8–9 (`B` is no longer needed), `Q` and `R` doubled twice, and
-  compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`, fully reduced.
+  into slots 8–9 (`B` is no longer needed), `Q` and `R` doubled twice (a
+  loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
 pointers.
@@ -198,12 +198,17 @@ check of `S`, and the slots initialized as for base-point multiplication. -/
 def ventry : List Instr :=
   save 16 ++ vbits ++ [.mov .eax (.imm 0), st .eax BAD] ++ sCheck ++ initSlots
 
+/-- `Q` (slots 0, 6 and 2) and `R` (slots 8–10) doubled twice: a loop of two
+iterations, counted by `esi`, each doubling both. -/
+def vdouble : Prog isa :=
+  .seq (.block [.mov .esi (.imm 2)])
+    (.loop (.seq (field (doubleAt 0 6 2 ++ doubleAt 8 9 10)) (.block [.alu .sub .esi (.imm 1)])) .ne)
+
 /-- `[4]Q` and `[4]R` compared (`Q` in slots 0, 6 and 2, `R` in 8–10;
 `BAD |= 0` exactly when they are the same point), the callee-saved
 registers restored, and `eax = (BAD == 0)`. -/
 def vfinish : Prog isa :=
-  .seq (field (doubleAt 0 6 2 ++ doubleAt 0 6 2 ++ doubleAt 8 9 10 ++ doubleAt 8 9 10 ++
-    [.mul 12 0 10, .mul 13 8 2])) <|
+  .seq vdouble <| .seq (field [.mul 12 0 10, .mul 13 8 2]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <| .seq (field [.mul 12 6 10, .mul 13 9 2]) <|
   .block (eqSlots (slot 12) (slot 13) ++
     [ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])

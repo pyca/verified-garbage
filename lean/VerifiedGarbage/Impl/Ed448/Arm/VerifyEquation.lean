@@ -36,7 +36,7 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
   (slots 0, 21, 2) doubled, `B` (slots 8–10) added and swapped into `Q` by
   bit `t` of `S`, then `-A` added and swapped in by bit `t` of `k`.
 * `R` is decoded into slots 8–9 (`B` is no longer needed), `Q` and `R` are
-  doubled twice, and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
+  doubled twice (a loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
 
 The result is 1 if `BAD` is 0. Every address and branch depends only on the
@@ -229,11 +229,17 @@ def ventry : List Instr :=
 multiplication, with `Q`'s `Y` (1) in slot 21. -/
 def vstart : List Instr := [.mov .r12 (.imm 0)] ++ sCheck ++ initSlots ++ copy (slot 21) X2
 
+/-- `Q` (slots 0, 21 and 2) and `R` (slots 8–10) doubled twice: a loop of two
+iterations, counted by `r11`, each doubling both. -/
+def vdouble : Prog isa :=
+  .seq (.block [.movw .r11 2])
+    (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
+      (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
+
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point), the callee-saved registers restored, and `r0 = (BAD == 0)`. -/
 def vfinish : Prog isa :=
-  .seq (ops (doubleAt 0 21 2)) <| .seq (ops (doubleAt 0 21 2)) <|
-  .seq (ops (doubleAt 8 9 10)) <| .seq (ops (doubleAt 8 9 10)) <|
+  .seq vdouble <|
   .seq (ops [.mul (slot 12) (slot 0) (slot 10), .mul (slot 13) (slot 8) (slot 2)]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
   .seq (ops [.mul (slot 12) (slot 21) (slot 10), .mul (slot 13) (slot 9) (slot 2)]) <|

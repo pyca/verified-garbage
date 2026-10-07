@@ -44,51 +44,16 @@ theorem movRsi_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d 
   erun [hs.rdi, rb]
   exact fun r hr => by simp only [hr, ite_false]
 
-/-- `[4]Q` and `[4]R`, doubling `Q` twice and then `R` twice. -/
-def vcompare : List FOp := doubleAt 0 1 2 ++ doubleAt 0 1 2 ++ doubleAt 8 9 10 ++ doubleAt 8 9 10
-
-/-- The slots after `vcompare` and the first products: `[4]Q` and `[4]R`, `X_Q Z_R` and `X_R Z_Q`. -/
-theorem compare_eval (e : Env) :
-    pt (evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e) 0 1 2 =
-      Proof.Ed448.double (Proof.Ed448.double (pt e 0 1 2)) ∧
-    pt (evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e) 8 9 10 =
-      Proof.Ed448.double (Proof.Ed448.double (pt e 8 9 10)) ∧
-    evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 12 =
-      evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 0 *
-        evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 10 ∧
-    evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 13 =
-      evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 8 *
-        evalOps (vcompare ++ ([.mul 12 0 10, .mul 13 8 2] : List FOp)) e 2 := by
+/-- Both doublings of `vdouble`'s body. -/
+theorem double2_eval (e : Env) :
+    pt (evalOps (doubleAt 0 1 2 ++ doubleAt 8 9 10) e) 0 1 2 = Proof.Ed448.double (pt e 0 1 2) ∧
+    pt (evalOps (doubleAt 0 1 2 ++ doubleAt 8 9 10) e) 8 9 10 = Proof.Ed448.double (pt e 8 9 10) := by
   rw [evalOps_append]
-  have h4 : ∀ (ec : Env) (i : Index), i.val < 3 ∨ (8 ≤ i.val ∧ i.val < 11) →
-      evalOps [.mul 12 0 10, .mul 13 8 2] ec i = ec i := fun ec i hi =>
-    evalOps_keep _ _ _ fun op hop => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hop
-      rcases hop with rfl | rfl <;> simp only [fopDest] <;> omega
-  have p12 : ∀ ec : Env, evalOps [.mul 12 0 10, .mul 13 8 2] ec 12 = ec 0 * ec 10 := fun _ => rfl
-  have p13 : ∀ ec : Env, evalOps [.mul 12 0 10, .mul 13 8 2] ec 13 = ec 8 * ec 2 := fun _ => rfl
-  simp only [vcompare, evalOps_append]
-  generalize h1 : evalOps (doubleAt 0 1 2) e = e1
-  generalize h2 : evalOps (doubleAt 0 1 2) e1 = e2
-  generalize h3 : evalOps (doubleAt 8 9 10) e2 = e3
-  generalize h4' : evalOps (doubleAt 8 9 10) e3 = e4
-  have q4 : pt e4 0 1 2 = Proof.Ed448.double (Proof.Ed448.double (pt e 0 1 2)) := by
-    rw [pt_congr (by rw [← h4', doubleAt_keep8 _ _ (Or.inl (by decide))])
-      (by rw [← h4', doubleAt_keep8 _ _ (Or.inl (by decide))]) (by rw [← h4', doubleAt_keep8 _ _ (Or.inl (by decide))]),
-      pt_congr (by rw [← h3, doubleAt_keep8 _ _ (Or.inl (by decide))])
-      (by rw [← h3, doubleAt_keep8 _ _ (Or.inl (by decide))]) (by rw [← h3, doubleAt_keep8 _ _ (Or.inl (by decide))]),
-      ← h2, doubleAt_eval0, ← h1, doubleAt_eval0]
-  have r4 : pt e4 8 9 10 = Proof.Ed448.double (Proof.Ed448.double (pt e 8 9 10)) := by
-    rw [← h4', doubleAt_eval8, ← h3, doubleAt_eval8,
-      pt_congr (by rw [← h2, doubleAt_keep0 _ _ (Or.inl (by decide))])
-      (by rw [← h2, doubleAt_keep0 _ _ (Or.inl (by decide))]) (by rw [← h2, doubleAt_keep0 _ _ (Or.inl (by decide))]),
-      pt_congr (by rw [← h1, doubleAt_keep0 _ _ (Or.inl (by decide))])
-      (by rw [← h1, doubleAt_keep0 _ _ (Or.inl (by decide))]) (by rw [← h1, doubleAt_keep0 _ _ (Or.inl (by decide))])]
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [pt_congr (h4 e4 0 (by decide)) (h4 e4 1 (by decide)) (h4 e4 2 (by decide)), q4]
-  · rw [pt_congr (h4 e4 8 (by decide)) (h4 e4 9 (by decide)) (h4 e4 10 (by decide)), r4]
-  · rw [p12, h4 e4 0 (by decide), h4 e4 10 (by decide)]
-  · rw [p13, h4 e4 8 (by decide), h4 e4 2 (by decide)]
+  constructor
+  · rw [pt_congr (doubleAt_keep8 _ 0 (Or.inl (by decide))) (doubleAt_keep8 _ 1 (Or.inl (by decide)))
+      (doubleAt_keep8 _ 2 (Or.inl (by decide))), doubleAt_eval0]
+  · rw [doubleAt_eval8, pt_congr (doubleAt_keep0 e 8 (Or.inl (by decide)))
+      (doubleAt_keep0 e 9 (Or.inl (by decide))) (doubleAt_keep0 e 10 (Or.inl (by decide)))]
 
 /-- `rdx = [rdi + BAD]`, then `rdx = (rdx == 0)` into `rax`. -/
 theorem result_ok {s : State} {base : Addr} (hs : Scr s base) :
@@ -280,6 +245,60 @@ theorem far_bytes {base p : Addr} {n : Nat} {m m' : Mem} (h : Outside base 0 819
 variable {fld : Impl.X448.X86_64.Field} (hf : FieldOk fld)
 
 include hf in
+/-- `[2]Q` and `[2]R`, a step of `vdouble` with `k + 1` left. -/
+theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) {k : Nat} (hk : k < 2 ^ 32)
+    (he : s.gpr .rbx = BitVec.ofNat 64 (k + 1)) :
+    WP isa (.block (fieldCode fld (doubleAt 0 1 2 ++ doubleAt 8 9 10) ++
+      ([.alu .sub .rbx (.imm 1)] : List Instr))) s fun t =>
+      t.gpr .rbx = BitVec.ofNat 64 k ∧ t.zf = some (decide (k = 0)) ∧
+      (∀ r, r ∉ .rbx :: clob → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 64 1584 s.mem t.mem ∧
+      pt (E t.mem base) 0 1 2 = Proof.Ed448.double (pt (E s.mem base) 0 1 2) ∧
+      pt (E t.mem base) 8 9 10 = Proof.Ed448.double (pt (E s.mem base) 8 9 10) := by
+  rw [WP.block_append_iff]
+  refine WP.mono (fieldCode_ok hf _ (fun op hop => by
+    rcases List.mem_append.mp hop with h | h
+    exacts [doubleAt_valid0 op h, doubleAt_valid8 op h]) hs) fun u ⟨ku, eu⟩ => ?_
+  refine WP.mono (Proof.X448.X86_64.decRbx_ok hk (by rw [ku.gpr _ (by decide), he])) fun t ⟨et, gt, mt, rt, wt, zt⟩ => ?_
+  obtain ⟨d1, d2⟩ := double2_eval (E s.mem base)
+  refine ⟨et, zt, fun r hr => ?_, rt.trans ku.rd, wt.trans ku.wr, by rw [mt]; exact ku.mem,
+    by rw [mt, eu]; exact d1, by rw [mt, eu]; exact d2⟩
+  rw [gt r (fun h => hr (by simp [h])), ku.gpr r (fun h => hr (List.mem_cons_of_mem _ h))]
+
+include hf in
+/-- `[4]Q` and `[4]R`. -/
+theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) :
+    WP isa (vdouble fld) s fun t => (∀ r, r ∉ .rbx :: clob → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧
+      t.wr = s.wr ∧ Outside base 64 1584 s.mem t.mem ∧
+      pt (E t.mem base) 0 1 2 = Proof.Ed448.double (Proof.Ed448.double (pt (E s.mem base) 0 1 2)) ∧
+      pt (E t.mem base) 8 9 10 = Proof.Ed448.double (Proof.Ed448.double (pt (E s.mem base) 8 9 10)) := by
+  unfold vdouble
+  refine WP.seq (WP.mono (show WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 2))]) s _ from
+    Proof.X448.X86_64.setRbx_ok s 2 (by decide)) fun s₁ ⟨e₁, g₁, m₁, r₁, w₁⟩ => ?_)
+  refine WP.loop (M := isa) (fun m (t : State) => 1 ≤ m ∧ m ≤ 2 ∧ t.gpr .rbx = BitVec.ofNat 64 m ∧
+      (∀ r, r ∉ .rbx :: clob → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 64 1584 s.mem t.mem ∧
+      pt (E t.mem base) 0 1 2 = (if m = 2 then id else Proof.Ed448.double) (pt (E s.mem base) 0 1 2) ∧
+      pt (E t.mem base) 8 9 10 = (if m = 2 then id else Proof.Ed448.double) (pt (E s.mem base) 8 9 10))
+    ?_ 2 s₁ ⟨by decide, by decide, e₁, fun r hr => g₁ r (fun h => hr (by simp [h])), r₁, w₁,
+      by rw [m₁]; exact Outside.refl _ _ _ _, by rw [m₁]; rfl, by rw [m₁]; rfl⟩
+  intro m t ⟨h1, h2, et, gt, rt, wt, ot, qt, pt'⟩
+  obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
+  have ht : Scr t base := ⟨(gt _ (by decide)).trans hs.rdi, wt ▸ hs.wr, hs.nowrap⟩
+  refine WP.mono (vdoubleStep_ok hf ht (by omega) et) fun u ⟨eu, zu, gu, ru, wu, ou, qu, pu⟩ => ?_
+  have gu' : ∀ r, r ∉ .rbx :: clob → u.gpr r = s.gpr r := fun r hr => (gu r hr).trans (gt r hr)
+  have ou' : Outside base 64 1584 s.mem u.mem := fun x hx => (ou x hx).trans (ot x hx)
+  simp only [eval, zu, Option.map_some]
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · refine .inl ⟨rfl, gu', ru.trans rt, wu.trans wt, ou', ?_, ?_⟩
+    · rw [qu, qt]; rfl
+    · rw [pu, pt']; rfl
+  · have k1 : k = 1 := by omega
+    subst k1
+    refine .inr ⟨rfl, 1, by omega, by omega, by omega, eu, gu', ru.trans rt, wu.trans wt, ou',
+      by rw [qu, qt]; rfl, by rw [pu, pt']; rfl⟩
+
+include hf in
 theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitVec 64}
     (hsv : Saved base g s.mem) :
     WP isa (vfinish fld) s fun t =>
@@ -291,25 +310,27 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
       Outside2 base 64 1584 BAD 80 s.mem t.mem := by
   rw [vfinish]
   apply WP.seq
-  refine WP.mono (fieldCode_ok hf _ doubleAt_valid0 hs) fun sa ⟨ka, ea⟩ => ?_
-  have hsa := ka.scr hs
-  apply WP.seq
-  refine WP.mono (fieldCode_ok hf _ doubleAt_valid0 hsa) fun sb ⟨kb, eb⟩ => ?_
-  have hsb := kb.scr hsa
-  apply WP.seq
-  refine WP.mono (fieldCode_ok hf _ doubleAt_valid8 hsb) fun sc' ⟨kc, ec⟩ => ?_
-  have hsc := kc.scr hsb
-  apply WP.seq
-  refine WP.mono (fieldCode_ok hf _ doubleAt_valid8 hsc) fun sd ⟨kd, ed⟩ => ?_
-  have hsd := kd.scr hsc
+  refine WP.mono (vdouble_ok hf hs) fun sd ⟨gd, rdd, wrd, od, qd, pd⟩ => ?_
+  have hsd : Scr sd base := ⟨(gd _ (by decide)).trans hs.rdi, wrd ▸ hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
   refine WP.mono (fieldCode_ok hf [.mul 12 0 10, .mul 13 8 2] (by decide) hsd) fun s1 ⟨k1', e1'⟩ => ?_
   have hs1 := k1'.scr hsd
-  have k1 : Keep base s s1 := ((ka.trans kb).trans kc).trans (kd.trans k1')
-  have e1 : E s1.mem base = evalOps (vcompare ++ [.mul 12 0 10, .mul 13 8 2]) (E s.mem base) := by
-    rw [e1', ed, ec, eb, ea]; simp only [vcompare, evalOps_append]
-  obtain ⟨q1, r1, x12, x13⟩ := compare_eval (E s.mem base)
-  rw [← e1] at q1 r1 x12 x13
+  have k1 : Keep base sd s1 := k1'
+  have h4 : ∀ i : Index, i.val < 3 ∨ (8 ≤ i.val ∧ i.val < 11) → E s1.mem base i = E sd.mem base i :=
+    fun i hi => by
+      rw [e1']
+      exact evalOps_keep _ _ _ fun op hop => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hop
+        rcases hop with rfl | rfl <;> simp only [fopDest] <;> omega
+  have q1 : pt (E s1.mem base) 0 1 2 = Proof.Ed448.double (Proof.Ed448.double (pt (E s.mem base) 0 1 2)) := by
+    rw [pt_congr (h4 0 (by decide)) (h4 1 (by decide)) (h4 2 (by decide)), qd]
+  have r1 : pt (E s1.mem base) 8 9 10 =
+      Proof.Ed448.double (Proof.Ed448.double (pt (E s.mem base) 8 9 10)) := by
+    rw [pt_congr (h4 8 (by decide)) (h4 9 (by decide)) (h4 10 (by decide)), pd]
+  have x12 : E s1.mem base 12 = E s1.mem base 0 * E s1.mem base 10 := by
+    rw [h4 0 (by decide), h4 10 (by decide), e1']; rfl
+  have x13 : E s1.mem base 13 = E s1.mem base 8 * E s1.mem base 2 := by
+    rw [h4 8 (by decide), h4 2 (by decide), e1']; rfl
   rw [WP.block_append_iff]
   refine WP.mono (eqSlots_ok hs1 12 13) fun s2 ⟨c4, hc4, b2, k2, _⟩ => ?_
   have hs2 := k2.scr hs1
@@ -324,7 +345,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
   have hs5 : Scr s5 base := ⟨(g5 _ (by decide) (by decide)).trans hs4.rdi, wr5 ▸ hs4.wr, hs4.nowrap⟩
   have sv5 : Saved base g s5.mem := by
     rw [m5]
-    exact ((((hsv.outside k1.mem (by decide)).outside k2.mem (by decide)).outside k3.mem (by decide)).outside
+    exact (((((hsv.outside od (by decide)).outside k1.mem (by decide)).outside k2.mem (by decide)).outside k3.mem (by decide)).outside
       k4.mem (by decide))
   refine WP.mono (Proof.X448.X86_64.restore_ok hs5 sv5) fun t ⟨rt, gt, mt, rdt, wrt⟩ => ?_
   -- the values
@@ -336,7 +357,8 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
         E s1.mem base 1 * E s1.mem base 10 = E s1.mem base 9 * E s1.mem base 2) := by
     simp only [Spec.Ed448.pointEqual, pt, Bool.and_eq_true, beq_iff_eq]
   have hb : word s4.mem base BAD = word s.mem base BAD ||| c4 ||| c5 := by
-    rw [b4, k3.mem.word (Or.inr (by decide)) (by decide), b2, k1.mem.word (Or.inr (by decide)) (by decide)]
+    rw [b4, k3.mem.word (Or.inr (by decide)) (by decide), b2, k1.mem.word (Or.inr (by decide)) (by decide),
+      od.word (Or.inr (by decide)) (by decide)]
   refine ⟨?_, rt, fun r hr => ?_, ?_, ?_, ?_⟩
   · have hcond : (word s.mem base BAD ||| c4 ||| c5 = 0) ↔ (word s.mem base BAD = 0 ∧
         Spec.Ed448.pointEqual (Proof.Ed448.double (Proof.Ed448.double (pt (E s.mem base) 0 1 2)))
@@ -351,11 +373,11 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) {g : Reg → BitV
       refine ⟨fun h => hr (h ▸ List.mem_cons_self), fun h => hr' (h ▸ by decide), fun h => hr' (h ▸ by decide),
         fun h => hr' (h ▸ by decide), fun h => hr' (h ▸ by decide), fun h => hr' (h ▸ by decide)⟩),
       g5 r (fun h => hr' (h ▸ by decide)) (fun h => hr' (h ▸ by decide)), k4.gpr r (fun h => hr' (s1' r h)),
-      k3.gpr r hr', k2.gpr r (fun h => hr' (s1' r h)), k1.gpr r hr']
-  · rw [rdt, rd5, k4.rd, k3.rd, k2.rd, k1.rd]
-  · rw [wrt, wr5, k4.wr, k3.wr, k2.wr, k1.wr]
+      k3.gpr r hr', k2.gpr r (fun h => hr' (s1' r h)), k1.gpr r hr', gd r hr]
+  · rw [rdt, rd5, k4.rd, k3.rd, k2.rd, k1.rd, rdd]
+  · rw [wrt, wr5, k4.wr, k3.wr, k2.wr, k1.wr, wrd]
   · intro x h1 h2
-    rw [mt, m5, k4.mem x h2, k3.mem x h1, k2.mem x h2, k1.mem x h1]
+    rw [mt, m5, k4.mem x h2, k3.mem x h1, k2.mem x h2, k1.mem x h1, od x h1]
 
 include hf in
 /-- `A` decoded and negated into slots 6, 7 and 10, `Q` the neutral point, `B` and `d`. -/
