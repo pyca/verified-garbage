@@ -76,9 +76,7 @@ theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
         simp only [p256Comb_consts, List.mem_singleton] at hc
         subst c
         exact held
-      · intro T hT
-        simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil, List.mem_singleton] at hT
-        subst T
+      · rw [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
         refine ⟨by simp only [BitVec.toNat_setWidth]; omega, ?_⟩
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

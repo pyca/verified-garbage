@@ -399,7 +399,10 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
   and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
   `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
-  take the region apart.
+  take the region apart. A definition the kernel unfolds (a witness's
+  memory) states a table's size as a literal, not as `8 * words.length`. A
+  table's shape (`<curve>Comb7_length`, `_rows`) is proven once, in
+  `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
 * **Code without its literal:** `lit_decide` and `taint_decide` read the
   literal of code only if the module imports the module that materializes
   it; otherwise the kernel builds the code again (seconds for unrolled

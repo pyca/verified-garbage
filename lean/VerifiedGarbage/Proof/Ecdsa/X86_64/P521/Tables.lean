@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P521.Comb7Shape
 
 /-!
 # ECDSA over P-521 on x86-64: the comb's tables in a static
@@ -35,9 +36,11 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
   (s.syms "VG_P521_COMB").toNat + 764928 ≤ 2 ^ 64 ∧
   ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_P521_COMB", 764928⟩ r
 
-theorem p521_tbl_len : Impl.P521.p521Comb7.length = 83 := by decide
+theorem p521_tbl_len : Impl.P521.p521Comb7.length = 83 :=
+  Proof.P521.p521Comb7_length
 
-theorem p521_tbl_lenH : ∀ j < 83, (Impl.P521.p521Comb7.getD j []).length = 64 := by decide +kernel
+theorem p521_tbl_lenH : ∀ j < 83, (Impl.P521.p521Comb7.getD j []).length = 64 :=
+  Proof.P521.p521Comb7_rows
 
 /-- `p521W` has `83 · 64 · 18` words. -/
 theorem p521W_length : p521W.length = 95616 :=

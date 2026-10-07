@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P256.Comb7Shape
 
 /-!
 # ECDSA over P-256 on AArch64: the comb's tables in a static
@@ -29,9 +30,11 @@ theorem p256_combConsts : p256.combConsts = [(p256.tsym, p256.combWords)] := rfl
 
 theorem p256_tsym : p256.tsym = "VG_P256_COMB" := rfl
 
-theorem p256_tbl_len : Impl.P256.p256Comb7.length = 37 := by decide
+theorem p256_tbl_len : Impl.P256.p256Comb7.length = 37 :=
+  Proof.P256.p256Comb7_length
 
-theorem p256_tbl_lenH : ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 := by decide
+theorem p256_tbl_lenH : ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 :=
+  Proof.P256.p256Comb7_rows
 
 /-- `p256.combWords` has `37 · 64 · 8` words. -/
 theorem p256_combWords_length : p256.combWords.length = 18944 :=

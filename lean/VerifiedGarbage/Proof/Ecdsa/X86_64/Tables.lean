@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P256.X86_64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P256.Comb7Shape
 
 /-!
 # ECDSA over P-256 on x86-64: the comb's tables in a static
@@ -34,9 +35,11 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
   (s.syms "VG_P256_COMB").toNat + 8 * p256W.length ≤ 2 ^ 64 ∧
   ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_P256_COMB", 8 * p256W.length⟩ r
 
-theorem p256_tbl_len : Impl.P256.p256Comb7.length = 37 := by decide
+theorem p256_tbl_len : Impl.P256.p256Comb7.length = 37 :=
+  Proof.P256.p256Comb7_length
 
-theorem p256_tbl_lenH : ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 := by decide
+theorem p256_tbl_lenH : ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 :=
+  Proof.P256.p256Comb7_rows
 
 /-- `p256W` has `37 · 64 · 8` words. -/
 theorem p256W_length : p256W.length = 18944 :=
