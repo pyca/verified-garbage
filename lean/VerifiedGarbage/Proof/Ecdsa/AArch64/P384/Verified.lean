@@ -58,8 +58,8 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
       by decide +kernel]
     exact Proof.P384.prime_39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319)
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
-  inv_n := fun h => absurd h (by decide)
-  chain_n := fun _ => by decide +kernel
+  inv_n := fun _ => ⟨hI Proof.P384.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
