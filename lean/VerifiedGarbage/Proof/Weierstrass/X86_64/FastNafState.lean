@@ -90,19 +90,51 @@ theorem fastClear_ok {s : State} {base : Addr} {size n bits : Nat}
     simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
   · rwa [show 8*(8*n+1)=64*n+8 by omega] at ot
 
+/-- `loads_ok` for any distinct registers but `rdi`: nine words load into `rbp`
+too, which `Fresh` excludes. -/
+theorem loadsScalar_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
+    Scr s base size → a+8*ts.length≤size → ts.Nodup → Reg.rdi∉ts →
+    WP isa (.block (loads ts a)) s fun s' =>
+      regsVal s' ts=wordsVal s.mem base a ts.length ∧ Keeps ts s s'
+  | [],s,_,_,_,_,_,_ => WP.block_nil ⟨rfl,fun _ _ => rfl,rfl,rfl,rfl⟩
+  | t::ts,s,base,a,hs,ha,hn,hd => by
+    simp only [List.length_cons] at ha
+    have ht : t∉ts := (List.nodup_cons.mp hn).1
+    have htd : t≠.rdi := fun h => hd (h ▸ List.mem_cons_self ..)
+    rw [loads,←List.singleton_append,WP.block_append_iff]
+    refine WP.mono (show WP isa (.block [.mov t (.mem (sc a))]) s
+        (fun s₁ => s₁.gpr t=word s.mem base a ∧ Keeps [t] s s₁) by
+      apply WP.of_runBlock
+      simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc_sc hs (d:=a) (by omega),
+        Option.map_some,RegUpd.gpr_setReg,ite_true,Option.some.injEq,exists_eq_left']
+      refine ⟨trivial,fun r hr => ?_,rfl,rfl,rfl⟩
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+      simp only [RegUpd.gpr_setReg,hr,ite_false]) fun s₁ ⟨e₁,k₁⟩ => ?_
+    have hs₁ := hs.of_keeps k₁ (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false]; exact fun h => htd h.symm)
+    refine WP.mono (loadsScalar_ok ts hs₁ (a:=a+8) (by omega) (List.nodup_cons.mp hn).2
+      (fun h => hd (List.mem_cons_of_mem _ h))) fun s₂ ⟨e₂,k₂⟩ => ?_
+    have ht' : s₂.gpr t=s₁.gpr t := k₂.1 t ht
+    refine ⟨?_,(k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+    rw [List.length_cons,regsVal,wordsVal,ht',e₁,e₂,k₁.2.1]
+
 theorem initN_four (src : Nat) : Naf.initN 4 src=Naf.init src := rfl
 
 theorem initN_six (src : Nat) : Naf.initN 6 src=
     loads [.r8,.r9,.r10,.r11,.r12,.r13] src++
       ([.mov32 .r14 (.imm 0),.mov32 .rbx (.imm 0)] : List Instr) := rfl
 
+theorem initN_nine (src : Nat) : Naf.initN 9 src=
+    loads [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp] src++
+      ([.mov32 .rsi (.imm 0),.mov32 .rbx (.imm 0)] : List Instr) := rfl
+
 /-- Load a scalar of `n` words, a zero top word and a zero index. -/
-theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 ∨ n=6)
+theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hs : Scr s base size) (hsrc : src+8*n≤size) :
     WP isa (.block (Naf.initN n src)) s fun t =>
       nafValN n t=wordsVal s.mem base src n ∧ t.gpr .rbx=BitVec.ofNat 64 0 ∧
       KeepRegs (nafPrepClobN n) s t ∧ t.mem=s.mem ∧ Scr t base size := by
-  rcases hn with rfl|rfl
+  rcases hn with rfl|rfl|rfl
   · rw [initN_four,Naf.init,WP.block_append_iff]
     refine WP.mono (loads_ok [.r8,.r9,.r10,.r11] hs hsrc (by simp [Fresh])) fun a ⟨va,ka⟩ => ?_
     have sa := hs.of_keeps ka (by decide)
@@ -137,8 +169,28 @@ theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 �
       simp only [RegUpd.gpr_setReg,h14,hbx,ite_false]
       exact ka.1 r (fun h => hr ((by decide : ∀ q∈[Reg.r8,.r9,.r10,.r11,.r12,.r13],
         q∈nafPrepClobN 6) r h))
+  · rw [initN_nine,WP.block_append_iff]
+    refine WP.mono (loadsScalar_ok [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp] hs hsrc (by decide)
+      (by decide))
+      fun a ⟨va,ka⟩ => ?_
+    have sa := hs.of_keeps ka (by decide)
+    apply WP.of_runBlock
+    simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
+      Option.map_some,Option.some.injEq,exists_eq_left']
+    refine ⟨?_,rfl,?_,ka.2.1,⟨sa.rdi,sa.wr,sa.nowrap⟩⟩
+    · simp only [nafValN_nine,nafVal10,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
+      change _+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*0))))))))=
+        wordsVal s.mem base src 9
+      simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
+      omega
+    · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
+      have hsi : r≠.rsi := fun h => hr (h ▸ (by decide))
+      have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
+      simp only [RegUpd.gpr_setReg,hsi,hbx,ite_false]
+      exact ka.1 r (fun h => hr ((by decide : ∀ q∈[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp],
+        q∈nafPrepClobN 9) r h))
 
-theorem fastPrepInit_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6)
+theorem fastPrepInit_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size) :
     WP isa (.block (Naf.initN n src++setConst (8*n+1) bits 0)) s fun t =>
       FastPrepState n base size bits w (wordsVal s.mem base src n) 0 t ∧
@@ -148,9 +200,9 @@ theorem fastPrepInit_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn 
   refine WP.mono (fastClear_ok sa hb) fun t ⟨zt,kt,ot⟩ => ?_
   have hv : nafValN n t=nafValN n a :=
     VG.Proof.Mont.X86_64.regsVal_congr fun r hr => kt.gpr r (by
-      rcases hn with rfl|rfl <;> revert r <;> decide)
+      rcases hn with rfl|rfl|rfl <;> revert r <;> decide)
   refine ⟨⟨sa.of_keepRegs kt (by decide),?_,?_,?_⟩,ka.trans (kt.mono (by
-    rcases hn with rfl|rfl <;> decide)),?_⟩
+    rcases hn with rfl|rfl|rfl <;> decide)),?_⟩
   · rw [hv,va,FastNaf.residual_zero]
   · exact (kt.gpr .rbx (by decide)).trans ca
   · intro i hi

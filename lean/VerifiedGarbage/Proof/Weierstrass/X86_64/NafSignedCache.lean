@@ -62,7 +62,7 @@ theorem nafSignedCachedEntry_of_lookup {K : WinCfg} {base : Addr} {size tbl dst 
     exact (ht.prefix kw).prefix (pu.trans pv)
 
 theorem nafSignedCachedPoint_ok {K : WinCfg} {base : Addr} {size tbl dst : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hm : UnitMod C.p (2^(64*K.M.n)))
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     {V : List Nat} {E : Nat → Fe C} {s : State}

@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafSubtract
 import VerifiedGarbage.Proof.Weierstrass.FastNaf
 
 /-! Signed-digit subtraction shares the same x86-64 implementation at both widths, for scalars of
-four words (five registers) and six words (seven registers). -/
+four words (five registers), six words (seven registers) and nine words (ten registers). -/
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64
@@ -152,17 +152,67 @@ theorem fastSubtract7_ok (s : State) (w k j : Nat)
       hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2.1,hr.2.2.2.2.2.1,hr.2.2.2.2.2.2.1,
       hr.2.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.2,ite_false]
 
+theorem fastSub10_next (a b c d e f g h i l : BitVec 64) (w k j : Nat)
+    (hv : nafVal10 a b c d e f g h i l=FastNaf.residual w k j) (hb : FastNaf.residual w k j≤(2^64)^9) :
+    let x := BitVec.ofInt 64 (FastNaf.digit w k j)
+    let out := nafSub10 a b c d e f g h i l x (0#64-(x>>>63))
+    nafVal10 out.1 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 out.2.2.2.2.2.1 out.2.2.2.2.2.2.1 out.2.2.2.2.2.2.2.1 out.2.2.2.2.2.2.2.2.1 out.2.2.2.2.2.2.2.2.2 =
+      2*FastNaf.residual w k (j+1) := by
+  have hs := nafSub10_value a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j))
+    (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))
+  have hlt := nafVal10_lt (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.2.1 (nafSub10 a b c d e f g h i l (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63))).2.2.2.2.2.2.2.2.2
+  dsimp only at hs ⊢
+  rw [hv] at hs
+  have he : nafVal10 (BitVec.ofInt 64 (FastNaf.digit w k j)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) (0#64-((BitVec.ofInt 64 (FastNaf.digit w k j))>>>63)) =
+      if FastNaf.negative w k j then 2^256*2^256*2^128-FastNaf.magnitude w k j else FastNaf.magnitude w k j := by
+    simp only [nafVal10,fastWord_toNat,fastSign_toNat]
+    cases hn : FastNaf.negative w k j <;> simp only [Bool.false_eq_true,ite_false,ite_true]
+    · omega
+    · have := fastMagnitude_bound w k j; omega
+  rw [he] at hs
+  have hr := FastNaf.recurrence w k j
+  have hm := fastMagnitude_bound w k j
+  cases hn : FastNaf.negative w k j <;> simp only [hn,Bool.false_eq_true,ite_false,ite_true] at hs hr <;> omega
+
+theorem subtractDigitN_nine : Naf.subtractDigitN 9=
+    [.mov .rax (.reg .rcx),.shift .shr .rax 63,.mov32 .rdx (.imm 0),.alu .sub .rdx (.reg .rax),
+     .alu .sub .r8 (.reg .rcx),.alu .sbb .r9 (.reg .rdx),.alu .sbb .r10 (.reg .rdx),.alu .sbb .r11 (.reg .rdx),.alu .sbb .r12 (.reg .rdx),.alu .sbb .r13 (.reg .rdx),.alu .sbb .r14 (.reg .rdx),.alu .sbb .r15 (.reg .rdx),.alu .sbb .rbp (.reg .rdx),.alu .sbb .rsi (.reg .rdx)] := rfl
+
+theorem fastSubtract10_ok (s : State) (w k j : Nat)
+    (hx : s.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit w k j))
+    (hv : nafVal10 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15) (s.gpr .rbp) (s.gpr .rsi)=FastNaf.residual w k j)
+    (hb : FastNaf.residual w k j≤(2^64)^9) :
+    WP isa (.block (Naf.subtractDigitN 9)) s fun t =>
+      nafVal10 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) (t.gpr .r12) (t.gpr .r13) (t.gpr .r14) (t.gpr .r15) (t.gpr .rbp) (t.gpr .rsi)=2*FastNaf.residual w k (j+1) ∧
+      Keeps [.rax,.rdx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi] s t := by
+  have hs := fastSub10_next (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) (s.gpr .r13) (s.gpr .r14) (s.gpr .r15) (s.gpr .rbp) (s.gpr .rsi) w k j hv hb
+  apply WP.of_runBlock
+  simp only [subtractDigitN_nine,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
+    readSrc,readSrc32,State.setReg32,Option.map_some,Option.bind_some,
+    RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
+    RegUpd.cf_arithFlags,RegUpd.cf_setReg,ite_true,ite_false,and_self,reduceCtorEq,hx,
+    show 1≤63 ∧ 63≤63 from by decide,show ¬(63=1) from by decide,
+    Option.some.injEq,exists_eq_left']
+  refine ⟨?_,fun r hr => ?_,rfl,rfl,rfl⟩
+  · exact hs
+  · simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+    simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
+      hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2.1,hr.2.2.2.2.2.1,hr.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.2.2.2.1,hr.2.2.2.2.2.2.2.2.2.2.2,ite_false]
+
 /-- `r8 … = r8 … - digit` for a scalar of `n` words and its top word. -/
-theorem fastSubtractN_ok (s : State) {n : Nat} (hn : n=4 ∨ n=6) (w k j : Nat)
+theorem fastSubtractN_ok (s : State) {n : Nat} (hn : n=4 ∨ n=6 ∨ n=9) (w k j : Nat)
     (hx : s.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit w k j))
     (hv : nafValN n s=FastNaf.residual w k j)
     (hb : FastNaf.residual w k j≤2^(64*n)) :
     WP isa (.block (Naf.subtractDigitN n)) s fun t =>
       nafValN n t=2*FastNaf.residual w k (j+1) ∧ Keeps (.rax::.rdx::Naf.sregs n) s t := by
-  rcases hn with rfl|rfl
+  rcases hn with rfl|rfl|rfl
   · rw [nafValN_four] at hv
     exact WP.mono (fastSubtract_ok s w k j hx hv hb) fun t ⟨vt,kt⟩ => ⟨(nafValN_four t).trans vt,kt⟩
   · rw [nafValN_six] at hv
     exact WP.mono (fastSubtract7_ok s w k j hx hv (Nat.le_trans hb (Nat.le_of_eq (Nat.pow_mul 2 64 6)))) fun t ⟨vt,kt⟩ => ⟨(nafValN_six t).trans vt,kt⟩
+  · rw [nafValN_nine] at hv
+    exact WP.mono (fastSubtract10_ok s w k j hx hv (Nat.le_trans hb (Nat.le_of_eq (Nat.pow_mul 2 64 9))))
+      fun t ⟨vt,kt⟩ => ⟨(nafValN_nine t).trans vt,kt⟩
 
 end VG.Proof.Weierstrass.X86_64

@@ -44,7 +44,7 @@ theorem Inv.transferPoint {M : Mod} {base : Addr} {size : Nat} {C : Curve}
   exact hJ
 
 theorem nafPublicPoint_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s)
@@ -70,7 +70,7 @@ theorem nafPublicPoint_ok {K : WinCfg} {base : Addr} {size a : Nat} {C : Curve}
       using hv 2 (by decide)
 
 theorem nafTablePoint_ok {K : WinCfg} {base : Addr} {size j : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hy : K.R.y=K.R.x+8*K.M.n) (hz : K.R.z=K.R.x+16*K.M.n)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s)

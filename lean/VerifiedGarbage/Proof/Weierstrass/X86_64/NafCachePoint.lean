@@ -60,7 +60,7 @@ theorem Inv.transferCachedPoint {M : Mod} {base : Addr} {size : Nat} {C : Curve}
   exact ⟨hJ,h2,h3⟩
 
 theorem nafCachedPoint_ok {K : WinCfg} {base : Addr} {size tbl dst a : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s)
