@@ -255,7 +255,11 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   rw [add]; split
   · exact addR_ok hs (hM.toModOk ‹_›) ho ha hb hAB
   · split
-    · exact addMer_ok hs hM ‹_› ho ha hb hAB
+    · split
+      · rename_i hab
+        subst hab
+        exact dblMer_ok hs hM ‹_› ho ha hAB
+      · exact addMer_ok hs hM ‹_› ho ha hb hAB
     · exact addW_ok hs hM ho ha hb hoT haT hbT hoM hAB
 
 /-- `[o] = [a] - [b] mod m`. -/

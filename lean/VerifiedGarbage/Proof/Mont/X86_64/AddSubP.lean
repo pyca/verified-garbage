@@ -275,4 +275,183 @@ theorem subMer_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   · rw [e₄, hD, show wordsVal s.mem base a 9 + m + 1 - wordsVal s.mem base b 9 - 1 =
       wordsVal s.mem base a 9 + m - wordsVal s.mem base b 9 by omega]
 
+/-! ## Doubling -/
+
+/-- `dblChain .adc` for `FreshX` registers: twice their number, plus the
+carry in. -/
+theorem dblAdcX_ok : ∀ (ts : List Reg) {s : State} {c : Bool}, s.cf = some c → FreshX ts →
+    WP isa (.block (dblChain .adc ts)) s fun s' => ∃ c' : Bool, s'.cf = some c' ∧
+      regsVal s' ts + 2 ^ (64 * ts.length) * c'.toNat = 2 * regsVal s ts + c.toNat ∧ Keeps ts s s'
+  | [], s, c, hc, _ => WP.block_nil ⟨c, hc, by simp [regsVal], fun _ _ => rfl, rfl, rfl, rfl⟩
+  | t :: ts, s, c, hc, hf => by
+    rw [dblChain, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (show WP isa (.block [.alu .adc t (.reg t)]) s (fun s₁ =>
+        (s₁.gpr t).toNat + 2 ^ 64 * (decide (2 ^ 64 ≤ (s.gpr t).toNat + (s.gpr t).toNat +
+          c.toNat)).toNat = (s.gpr t).toNat + (s.gpr t).toNat + c.toNat ∧
+        s₁.cf = some (decide (2 ^ 64 ≤ (s.gpr t).toNat + (s.gpr t).toNat + c.toNat)) ∧
+        Keeps [t] s s₁) by
+      apply WP.of_runBlock
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+        Option.map_some, hc, RegUpd.gpr_setReg_self, RegUpd.cf_setReg, RegUpd.cf_arithFlags,
+        Option.some.injEq, exists_eq_left']
+      refine ⟨adc_carry _ _ _, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
+    refine WP.mono (dblAdcX_ok ts c₁ hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+    have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
+    have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
+    rw [hR] at e₂
+    refine ⟨c', c₂, ?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+    simp only [regsVal, List.length_cons, pow64_succ, ht]
+    rw [Nat.mul_assoc]
+    omega
+
+/-- `dblChain .add` for `FreshX` registers: twice their number, its first
+word even. -/
+theorem dblChainX_ok {s : State} {t : Reg} {ts : List Reg} (hf : FreshX (t :: ts)) :
+    WP isa (.block (dblChain .add (t :: ts))) s fun s' => ∃ c' : Bool,
+      regsVal s' (t :: ts) + 2 ^ (64 * (t :: ts).length) * c'.toNat = 2 * regsVal s (t :: ts) ∧
+      (s'.gpr t).toNat % 2 = 0 ∧ Keeps (t :: ts) s s' := by
+  rw [dblChain, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (show WP isa (.block [.alu .add t (.reg t)]) s (fun s₁ =>
+      (s₁.gpr t).toNat + 2 ^ 64 * (decide (2 ^ 64 ≤ (s.gpr t).toNat + (s.gpr t).toNat)).toNat =
+        (s.gpr t).toNat + (s.gpr t).toNat ∧
+      s₁.cf = some (decide (2 ^ 64 ≤ (s.gpr t).toNat + (s.gpr t).toNat)) ∧ Keeps [t] s s₁) by
+    apply WP.of_runBlock
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+      RegUpd.gpr_setReg_self, RegUpd.cf_setReg, RegUpd.cf_arithFlags, Option.some.injEq,
+      exists_eq_left']
+    refine ⟨add_carry _ _, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨e₁, c₁, k₁⟩ => ?_
+  refine WP.mono (dblAdcX_ok ts c₁ hf.tail) fun s₂ ⟨c', c₂, e₂, k₂⟩ => ?_
+  have ht : s₂.gpr t = s₁.gpr t := k₂.1 t hf.head.1
+  have hR : regsVal s₁ ts = regsVal s ts := regsVal_congr fun q hq => k₁.1 q (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false]; exact fun h => hf.head.1 (h ▸ hq))
+  rw [hR] at e₂
+  refine ⟨c', ?_, ?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+  · simp only [regsVal, List.length_cons, pow64_succ, ht]
+    rw [Nat.mul_assoc]
+    omega
+  · rw [ht]; omega
+
+/-- `rax = ⌊t / 512⌋`. -/
+theorem top_ok (s : State) (t : Reg) :
+    WP isa (.block [.mov .rax (.reg t), .shift .shr .rax 9]) s fun s' =>
+      (s'.gpr .rax).toNat = (s.gpr t).toNat / 512 ∧ Keeps [.rax] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execShift, readSrc,
+    Option.map_some, RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left',
+    show 1 ≤ 9 ∧ 9 ≤ 63 from ⟨by decide, by decide⟩, and_self, ite_true]
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]
+
+/-- `add t, rax`. -/
+theorem addRax_ok (s : State) (t : Reg) :
+    WP isa (.block [.alu .add t (.reg .rax)]) s fun s' =>
+      ∃ c : Bool, (s'.gpr t).toNat + 2 ^ 64 * c.toNat = (s.gpr t).toNat + (s.gpr .rax).toNat ∧
+        Keeps [t] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
+    RegUpd.gpr_setReg_self, Option.some.injEq, exists_eq_left']
+  refine ⟨_, add_carry _ _, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- The arithmetic of `dblMer`: `2A = x₉ + 2⁶⁴ (L + 2⁴⁴⁸ x₁₇)` with `x₉`
+even, and bit 521 moved into bit 0. -/
+theorem dbl_arith {m A L x9 x17 y9 c₂ c₄ : Nat} (hm : m + 1 = 512 * (2 ^ 64) ^ 8)
+    (hA : A + A < 2 * m) (e₂ : x9 + 2 ^ 64 * (L + (2 ^ 64) ^ 7 * x17) + (2 ^ 64) ^ 9 * c₂ = 2 * A)
+    (ev : x9 % 2 = 0) (hL : L < (2 ^ 64) ^ 7) (hx9 : x9 < 2 ^ 64) (hx17 : x17 < 2 ^ 64)
+    (hc₂ : c₂ ≤ 1) (e₄ : y9 + 2 ^ 64 * c₄ = x9 + x17 / 512) :
+    y9 + 2 ^ 64 * (L + (2 ^ 64) ^ 7 * (x17 % 512)) = (A + A) % m := by
+  have hm' : m = 512 * (2 ^ 64) ^ 8 - 1 := by omega
+  subst hm'
+  have hc0 : c₂ = 0 := by omega
+  subst hc0
+  have h17 : x17 < 1024 := by omega
+  by_cases hlt : x17 < 512
+  · rw [Nat.mod_eq_of_lt hlt, Nat.div_eq_of_lt hlt] at *
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [show x17 / 512 = 1 by omega] at e₄
+    rw [show x17 % 512 = x17 - 512 by omega, Nat.mod_eq_sub_mod (by omega), Nat.mod_eq_of_lt (by omega)]
+    omega
+
+/-- `[o] = 2 [a] mod p` for P-521's `p`. -/
+theorem dblMer_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (hred : M.red = .friendly p521Ws) {o a : Nat}
+    (ho : o + 8 * M.n ≤ size) (ha : a + 8 * M.n ≤ size)
+    (hAA : wordsVal s.mem base a M.n + wordsVal s.mem base a M.n < 2 * m) :
+    WP isa (.block (dblMer o a)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base a M.n) % m := by
+  obtain ⟨hn9, hm⟩ := p521_of_red hred hM.red
+  have hnw := hs.nowrap
+  rw [hn9] at ho ha hAA ⊢
+  rw [dblMer, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (loadsX_ok (xWin 9) hs (a := a) (by simp [xWin]; omega) (xWin_fresh 9))
+    fun s₁ ⟨e₁, k₁⟩ => ?_
+  rw [WP.block_append_iff, xWin9]
+  refine WP.mono (dblChainX_ok (s := s₁) (xWin_fresh 9)) fun s₂ ⟨c₂, e₂, ev₂, k₂⟩ => ?_
+  rw [← xWin9] at e₂ k₂
+  rw [e₁, Nat.pow_mul, show (xWin 9).length = 9 from rfl] at e₂
+  rw [show ([.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9, .alu .add (xAcc 9) (.reg .rax),
+      .alu .and (xAcc 17) (.imm 511)] : List Instr) = [.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9] ++
+      ([.alu .add (xAcc 9) (.reg .rax)] : List Instr) ++ [.alu .and (xAcc 17) (.imm 511)] from rfl,
+    List.append_assoc, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (top_ok s₂ (xAcc 17)) fun s₃ ⟨e₃, k₃⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (addRax_ok s₃ (xAcc 9)) fun s₄ ⟨c₄, e₄, k₄⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (and511_ok s₄ (xAcc 17)) fun s₅ ⟨e₅, k₅⟩ => ?_
+  have hK : Keeps (.rax :: xRegs) s s₅ := by
+    refine ⟨fun r hr => ?_, ?_, ?_, ?_⟩
+    · have hw : r ∉ xWin 9 := fun h => hr (List.mem_cons_of_mem _ (xWin_sub 9 r h))
+      rw [k₅.1 r (fun h => hw ((List.mem_singleton.mp h) ▸ by decide)),
+        k₄.1 r (fun h => hw ((List.mem_singleton.mp h) ▸ by decide)),
+        k₃.1 r (fun h => hr (by simp at h; simp [h])), k₂.1 r hw, k₁.1 r hw]
+    · rw [k₅.2.1, k₄.2.1, k₃.2.1, k₂.2.1, k₁.2.1]
+    · rw [k₅.2.2.1, k₄.2.2.1, k₃.2.2.1, k₂.2.2.1, k₁.2.2.1]
+    · rw [k₅.2.2.2, k₄.2.2.2, k₃.2.2.2, k₂.2.2.2, k₁.2.2.2]
+  have hs₅ : Scr s₅ base size := hs.of_keeps hK (by decide)
+  refine WP.mono (stores_ok (xWin 9) hs₅ (o := o) (by simp [xWin]; omega) (xWin_fresh 9).1)
+    fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
+  have hK₆ := (Keeps.regs hK).trans (k₆.mono (by simp))
+  refine ⟨⟨fun r hr => ?_, hK₆.rd, hK₆.wr, fun x hx _ => ?_⟩, ?_⟩
+  · exact hK₆.gpr r (xWin_clob hr hn9).2.2
+  · rw [hn9] at hx
+    rw [O₆ x (by rw [show (xWin 9).length = 9 from rfl]; exact hx), ← hK.2.1]
+  · rw [show (xWin 9).length = 9 from rfl] at e₆
+    rw [e₆, regsVal_xWin]
+    rw [regsVal_xWin] at e₂
+    have n17 : ∀ c, 10 ≤ c → c < 17 → xAcc c ≠ xAcc 17 := fun c h1 h2 => xAcc_ne_of (by omega) (by omega)
+    have n9 : ∀ c, 10 ≤ c → c < 18 → xAcc c ≠ xAcc 9 := fun c h1 h2 =>
+      (xAcc_ne_of (show 9 < c by omega) (by omega)).symm
+    have hL : hval (xg s₅) 10 7 = hval (xg s₂) 10 7 := hval_congr fun c h1 h2 => by
+      simp only [xg]
+      rw [k₅.1 _ (by simpa using n17 c h1 (by omega)), k₄.1 _ (by simpa using n9 c h1 (by omega)),
+        k₃.1 _ (by simpa using (xAcc_ne c).1)]
+    have h₅ : hval (xg s₅) 9 9 = xg s₅ 9 + 2 ^ 64 * (hval (xg s₅) 10 7 + (2 ^ 64) ^ 7 * xg s₅ 17) := by
+      rw [← hval_succ_last]; rfl
+    have h₂ : hval (xg s₂) 9 9 = xg s₂ 9 + 2 ^ 64 * (hval (xg s₂) 10 7 + (2 ^ 64) ^ 7 * xg s₂ 17) := by
+      rw [← hval_succ_last]; rfl
+    have a₃ : xg s₃ 9 = xg s₂ 9 := by simp only [xg]; rw [k₃.1 _ (by simpa using (xAcc_ne 9).1)]
+    have b₄ : xg s₄ 17 = xg s₂ 17 := by
+      simp only [xg]
+      rw [k₄.1 _ (by simpa using (xAcc_ne_of (show 9 < 17 by omega) (by omega)).symm),
+        k₃.1 _ (by simpa using (xAcc_ne 17).1)]
+    have a₅ : xg s₅ 9 = xg s₄ 9 := by
+      simp only [xg]; rw [k₅.1 _ (by simpa using (xAcc_ne_of (show 9 < 17 by omega) (by omega)))]
+    change xg s₅ 17 = xg s₄ 17 % 512 at e₅
+    change xg s₄ 9 + 2 ^ 64 * c₄.toNat = xg s₃ 9 + (s₃.gpr .rax).toNat at e₄
+    change (s₃.gpr .rax).toNat = xg s₂ 17 / 512 at e₃
+    change xg s₂ 9 % 2 = 0 at ev₂
+    rw [e₃, a₃] at e₄
+    rw [h₂] at e₂
+    rw [h₅, hL, a₅, e₅, b₄]
+    exact dbl_arith hm hAA e₂ ev₂ (hval_lt fun c _ _ => (s₂.gpr _).isLt) (s₂.gpr _).isLt
+      (s₂.gpr _).isLt (Bool.toNat_le _) e₄
 end VG.Proof.Mont.X86_64
