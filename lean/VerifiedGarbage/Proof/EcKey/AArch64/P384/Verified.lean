@@ -42,7 +42,7 @@ theorem pk_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch64.
     ∃ t s', Exec isa publicKeyP384 s t s' ∧ abiPreserved s s' ∧ pkAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : publicKeyP384.noCalls = true := by lit_decide
+  have hn : CallsKeep publicKeyP384 := by lit_decide
   have hu : KeepsUntouched publicKeyP384 := by lit_decide
   have hv : publicKeyP384.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p384_ok hI) hL hT (pre_of hs)

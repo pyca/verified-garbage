@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Lit
@@ -61,6 +62,11 @@ theorem p384_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p384 where
   inv_n := fun _ => ⟨hI Proof.P384.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
+  call_p := fun _ _ h => by
+    have e : (Mont.callOf p384.MP').map Prod.snd = some p384.C.p := by decide +kernel
+    obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
+    exact ⟨rfl, Mont.p384p_ok⟩
+  call_n := by decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h
@@ -73,7 +79,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : signP384.noCalls = true := by lit_decide
+  have hn : CallsKeep signP384 := by lit_decide
   have hu : KeepsUntouched signP384 := by lit_decide
   have hv : signP384.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL hT (pre_of hs)

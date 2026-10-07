@@ -69,6 +69,8 @@ theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
   inv_n := fun _ => ⟨hI Proof.P224.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
+  call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
+  call_n := callOf_small (by decide)
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h
@@ -81,7 +83,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-224's
   -- terms before the literals' facts are known.
-  have hn : signP224.noCalls = true := by lit_decide
+  have hn : CallsKeep signP224 := by lit_decide
   have hu : KeepsUntouched signP224 := by lit_decide
   have hv : signP224.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL hT (pre_of hs)

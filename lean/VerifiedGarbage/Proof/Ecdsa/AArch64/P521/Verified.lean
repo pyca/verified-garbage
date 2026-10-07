@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Lit
@@ -69,6 +70,11 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
   inv_n := fun _ => ⟨hI Proof.P521.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
+  call_p := fun _ _ h => by
+    have e : (Mont.callOf p521.MP').map Prod.snd = some p521.C.p := by decide +kernel
+    obtain rfl : _ = _ := Option.some.inj (e.symm.trans (congrArg (Option.map Prod.snd) h))
+    exact ⟨rfl, Mont.p521p_ok⟩
+  call_n := by decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h
@@ -81,7 +87,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have hn : signP521.noCalls = true := by lit_decide
+  have hn : CallsKeep signP521 := by lit_decide
   have hu : KeepsUntouched signP521 := by lit_decide
   have hv : signP521.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p521_ok hI) hL hT (pre_of hs)

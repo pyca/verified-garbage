@@ -15,8 +15,8 @@ theorem nafWinPrep_relCT {c : Cfg} (hc : CfgOk c) (hn4 : c.n=4)
     RelCT isa (JacWinPublic c base P k) (nafWinPrep c) (fun _ _ => True) := by
   have h := nafPrep_relCT (jacWinCfg c) (base:=base)
     (by simpa only [hn4] using sl_le c hc.n10 (i:=V) (by decide)) (sl_mod8 c _)
-    (by change c.sl WB<4096; rw [sl_eq,hn4]; decide)
-    (by change c.sl WB+257≤size; rw [sl_eq,hn4]; decide) checks
+    (by change c.sl WB<4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)
+    (by change c.sl WB+257≤size; simp (disch := decide) only [sl_eq]; rw [hn4]; decide) checks
   exact h.mono (fun _ _ hp => ⟨hp.left.scr,hp.right.scr,hp.sp,by
     rw [←hn4]; exact hp.left.scalar.trans hp.right.scalar.symm⟩) (fun _ _ h => h)
 
@@ -51,8 +51,8 @@ theorem nafWinMul_relCT {c : Cfg} (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C)
       have hmont : ∀ x,c.mont x<c.C.p := fun x => Nat.mod_lt _ (by have := hc.p_ge; omega)
       obtain ⟨hw,_,post⟩ := nafWindow_relCT (jacLay hc hn4) rfl (jacAligned c hn4)
         (unitMod_pow_two hc.p_odd (64*c.n)) hC hc.am3
-        (by change c.sl WT<4096; rw [sl_eq,hn4]; decide)
-        (by change c.sl WB+5≤4096; rw [sl_eq,hn4]; decide) (hmont 1)
+        (by change c.sl WT<4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)
+        (by change c.sl WB+5≤4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide) (hmont 1)
         (toM_cmont hc 1) hk hchecks hP
         _ _ _ _ _ _ ⟨pair,bs,bt⟩ ws wt
       exact ⟨by rw [he,hw],post.public⟩

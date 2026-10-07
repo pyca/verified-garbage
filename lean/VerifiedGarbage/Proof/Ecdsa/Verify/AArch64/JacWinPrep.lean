@@ -41,7 +41,7 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   have hoff : 16*Window5.geom 52 < 2^(64*(c.n+1)) := by omega
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le' c h7 (i := WK + 1) (by decide)
-    rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+    simp (disch := decide) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
   have hKW := sl_lt c (show V < WK by decide)
   have h16 : (16 : Nat) ^ (16 * c.n + 1) ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
@@ -49,13 +49,13 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   have hJ : (winQ c).J = 16 * c.n + 1 := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have e69 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
+  have e69 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := decide) only [sl_eq]; unfold WK WB; omega
   have hB4 : c.sl WB + 8 ≤ 4096 := by
-    rw [sl_eq]; unfold WB
+    simp (disch := decide) only [sl_eq]; unfold WB
     have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
   have hBs : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
-    rw [sl_eq, sl_eq]; unfold WB WT
+    simp (disch := decide) only [sl_eq]; unfold WB WT
     have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
     omega
   have hTs := sl_le' c h7 (i := WT) (by decide)
@@ -79,7 +79,7 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
       (by intro w hw; simpa [winX, hK, hB] using hw)
   have F₂ := F.unch h7 hn fixedOk_winX U₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
-    sv_unch U₂ h7 hn hi (apart_winX hi)
+    sv_unch U₂ h7 hn hi (apart_winX4 (Nat.le_of_eq hn4) hi)
   have hM₂ := modP_of hc F₂.mp
   have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
@@ -112,6 +112,8 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   refine ⟨hI,⟨F₂.zero,fun i hi => b₂ i (by rw [hn4]; omega),hj⟩,?_,k₂.sp.trans k₁.sp,U₂,k₂.rd.trans k₁.rd,k₂.wr.trans k₁.wr⟩
   intro x hx
   simp only [winRo,List.mem_cons,List.not_mem_nil,or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact tv (by decide)
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [tv (i := AP) (by decide), tv (i := BM) (by decide), tv (i := ZERO) (by decide),
+    tv (i := PX) (by decide), tv (i := PY) (by decide), tv (i := ONEP) (by decide)]
 
 end VG.Proof.Ecdsa.Verify.AArch64

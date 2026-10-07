@@ -19,7 +19,8 @@ theorem layout : Weierstrass.AArch64.JointLayout P256Joint.cfg 8192 where
       exact fun x y hx hy hxy => h x hx y hy hxy
     mo := by decide +kernel
     tmp := by decide +kernel }
-  aligned := {sl := by decide +kernel,mod := MP'_A p256}
+  aligned := ⟨by decide +kernel, MP'_A p256,
+    fun _ _ h => nomatch (callOf_small (M := p256.MP') (by decide)).symm.trans h⟩
   n := rfl
   stableBounds := by decide +kernel
   stableSep := by decide +kernel

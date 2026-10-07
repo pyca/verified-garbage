@@ -12,7 +12,7 @@ theorem jacPre_of {s : State} (h : verifyAArch64.pre s) : VPre p256 s := by
   obtain ⟨h1,h2,h3,h4,h5,h6,held,fit,hdw⟩ := h
   exact ⟨h1,h2,h3,h4,h5,h6,⟨by rw [h1]; simp,held,fit,hdw _ (by simp)⟩⟩
 
-theorem jacVerify_noCalls : verifyP256.noCalls=true := by lit_decide
+theorem jacVerify_callsKeep : CallsKeep verifyP256 := by lit_decide
 
 theorem jacVerify_untouched : KeepsUntouched verifyP256 := by lit_decide
 
@@ -23,6 +23,6 @@ theorem jacVerify_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.A
     (s : State) (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t,s',he,hsv,hpost⟩ := nafVerify_ok (p256_ok hI) (by decide) hL hT (jacPre_of hs)
-  exact ⟨t,s',he,abiPreserved_of he jacVerify_noCalls jacVerify_untouched jacVerify_keepsV hsv,hpost⟩
+  exact ⟨t,s',he,abiPreserved_of he jacVerify_callsKeep jacVerify_untouched jacVerify_keepsV hsv,hpost⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64

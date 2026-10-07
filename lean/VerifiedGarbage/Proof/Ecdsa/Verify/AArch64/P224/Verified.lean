@@ -25,7 +25,7 @@ theorem pre_of {s : State} (h : verifyAArch64.pre s) : VPre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, held, fit, hdw⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, ⟨by rw [h1]; simp, held, fit, hdw _ (by simp)⟩⟩
 
-theorem verify_noCalls : verifyP224.noCalls = true := by lit_decide
+theorem verify_callsKeep : CallsKeep verifyP224 := by lit_decide
 
 theorem verify_untouched : KeepsUntouched verifyP224 := by lit_decide
 
@@ -37,7 +37,7 @@ theorem verify_a64 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArc
     (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP224 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := verify_ok (p224_ok hI) hL hT (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he verify_noCalls verify_untouched verify_keepsV hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_of he verify_callsKeep verify_untouched verify_keepsV hsv, hpost⟩
 
 theorem verify_ct : ConstantTime isa verifyAArch64.pre verifyAArch64.pub verifyP224 :=
   VG.Taint.constantTime (A := taintS [p224.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3])

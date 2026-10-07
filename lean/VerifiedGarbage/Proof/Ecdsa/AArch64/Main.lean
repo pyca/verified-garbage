@@ -54,7 +54,7 @@ theorem combCorrect (hc : CfgOk c) (hC : Law c.C)
     (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
     CombCorrect c (TCombCfg.comb c.combCfg) := by
   intro base k T s hs hm hf
-  exact tcomb_ok (publicLookup := false) (tcombLay hc) (combA c) hC hc.am3 hc.onG
+  exact tcomb_ok (publicLookup := false) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
     (tcombVals hc hC hT) hc.p_lt hs hm hf
 
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/

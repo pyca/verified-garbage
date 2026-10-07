@@ -49,10 +49,10 @@ theorem finish_eq (c : Cfg) : c.finish = ([ld .x3 (c.sl FLAG)] : List Instr) ++
     ([.movz .x .x1 1 0, .logic .and .x .x0 .x3 .x1] : List Instr)))) := by
   simp only [Cfg.finish, List.append_assoc]; rfl
 
-theorem saved_lt : ∀ p ∈ Cfg.saved, p.2 + 8 ≤ 56 := by decide
+theorem saved_lt : ∀ p ∈ Cfg.saved, p.2 + 8 ≤ 64 := by decide
 
 theorem Saved.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem}
-    (h : Spill.Saved base g Cfg.saved m) {W : List (Nat × Nat)} (hW : ∀ w ∈ W, 56 ≤ w.1)
+    (h : Spill.Saved base g Cfg.saved m) {W : List (Nat × Nat)} (hW : ∀ w ∈ W, 64 ≤ w.1)
     (hu : Unch base W m m') : Spill.Saved base g Cfg.saved m' := fun p hp => by
   have := saved_lt p hp
   exact (hu.word (d := p.2) (fun w hw => Or.inl (by have := hW w hw; omega)) (by omega)).trans (h p hp)
@@ -70,7 +70,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
           else List.replicate (2 * c.C.len) 0) ∧
       (s'.gpr .x0).setWidth 32 = (if b then 1 else 0) ∧
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧
-      (∀ r, r ∉ [.x0, .x1, .x2, .x3, .x17, .x19, .x20, .x21, .x22, .x23, .x24, .x25] →
+      (∀ r, r ∉ [.x0, .x1, .x2, .x3, .x17, .x19, .x20, .x21, .x22, .x23, .x24, .x25, .x30] →
         s'.gpr r = s.gpr r) := by
   have h7 := hc.n10
   have hn0 := hc.n0
@@ -132,7 +132,7 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     rw [(BitVec.add_zero out : out + BitVec.ofNat 64 0 = out)] at e₂'
     rw [e₂', hm₁]
   have hsv₃ : Spill.Saved base g Cfg.saved s₃.mem := by
-    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 56 ≤ w.1 := fun w hw => by
+    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; decide
     exact Saved.unch (Saved.unch (hm₁ ▸ hsv) h16 U₂) h16 U₃
   refine Spill.restore_ok hs₃.x0 (by decide) (by decide) (fun p hp => ?_) hsv₃ fun s₄ R₄ => ?_
@@ -152,8 +152,8 @@ theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
     exact R₄.gpr p hp
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    obtain ⟨h0, h1, h2, h3, h17, h19, h20, h21, h22, h23, h24, h25⟩ := hr
-    rw [k₅.gpr r (by simp [h0, h1]), R₄.other r (by simp [Cfg.saved, h19, h20, h21, h22, h23, h24, h25]),
+    obtain ⟨h0, h1, h2, h3, h17, h19, h20, h21, h22, h23, h24, h25, h30⟩ := hr
+    rw [k₅.gpr r (by simp [h0, h1]), R₄.other r (by simp [Cfg.saved, h19, h20, h21, h22, h23, h24, h25, h30]),
       k₃.gpr r (by simp [h1, h2, h17]), k₂.gpr r (by simp [h1, h2, h17]), k₁.gpr r (by simp [h3])]
 
 end VG.Proof.Ecdsa.AArch64

@@ -89,6 +89,28 @@ theorem gpr_top {r : Reg} (hr : r ∉ linkRegs) {c : Prog isa} {s s' : State} {t
     obtain ⟨-, -, -, hg, -⟩ := push_eq hp
     rw [(pop_eq hq).2.2.2.1 r (fun hd => by simp [keepsReg, hd] at hc), ih hc.1.2 hb, hg]
 
+/-- A run that writes no register of `untouched` outside the functions it
+calls, which keep them, keeps them. -/
+theorem untouched_keep {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec isa c s t s')
+    (hn : CallsKeep c) (hu : KeepsUntouched c) : ∀ r ∈ untouched, s'.gpr r = s.gpr r := by
+  intro r h
+  refine gpr_top (by revert h; revert r; decide) he ?_ ?_
+  · have : ∀ p q : Instr → Bool, (∀ i, p i = true → q i = true) → ∀ c : Prog isa,
+        topAll p c = true → topAll q c = true := by
+      intro p q hpq c
+      induction c with
+      | block is => simp only [topAll, List.all_eq_true]; exact fun h i hi => hpq i (h i hi)
+      | seq a b iha ihb | ite _ a b iha ihb =>
+        simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨iha h.1, ihb h.2⟩
+      | loop b _ ih => exact ih
+      | call _ _ _ => intro _; rfl
+      | frame i b j ih =>
+        simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨⟨hpq i h.1.1, ih h.1.2⟩, hpq j h.2⟩
+    exact this _ _ (fun i hi => keepsReg_of_untouched h hi) c hu
+  · refine List.all_eq_true.mpr fun nb hnb => ?_
+    obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp (List.all_eq_true.mp hn nb hnb)
+    exact (Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩
+
 /-- A run that restores `x19`–`x25` and `x30`, writes no other callee-saved
 register outside the functions it calls, which keep them, and writes no
 callee-saved SIMD register, preserves what the ABI asks. -/
@@ -98,22 +120,7 @@ theorem abiPreserved_of {c : Prog isa} {s s' : State} {t : List Leak} (he : Exec
     abiPreserved s s' := by
   refine ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he hv⟩
   by_cases h : r ∈ untouched
-  · refine gpr_top (by revert h; revert r; decide) he ?_ ?_
-    · have : ∀ p q : Instr → Bool, (∀ i, p i = true → q i = true) → ∀ c : Prog isa,
-          topAll p c = true → topAll q c = true := by
-        intro p q hpq c
-        induction c with
-        | block is => simp only [topAll, List.all_eq_true]; exact fun h i hi => hpq i (h i hi)
-        | seq a b iha ihb | ite _ a b iha ihb =>
-          simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨iha h.1, ihb h.2⟩
-        | loop b _ ih => exact ih
-        | call _ _ _ => intro _; rfl
-        | frame i b j ih =>
-          simp only [topAll, Bool.and_eq_true]; exact fun h => ⟨⟨hpq i h.1.1, ih h.1.2⟩, hpq j h.2⟩
-      exact this _ _ (fun i hi => keepsReg_of_untouched h hi) c hu
-    · refine List.all_eq_true.mpr fun nb hnb => ?_
-      obtain ⟨is, his, hres⟩ := (Option.any_eq_true _ _).mp (List.all_eq_true.mp hn nb hnb)
-      exact (Option.any_eq_true _ _).mpr ⟨is, his, List.all_eq_true.mp hres r h⟩
+  · exact untouched_keep he hn hu r h
   · refine hsv r ?_
     revert h
     revert r

@@ -81,8 +81,8 @@ theorem nafVerify_public_ct (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C)
     rw [base,pub.u,pub.table]; exact r₂
   have hpR := unitMod_pow_two hc.p_odd (64*c.n)
   have hmont : c.mont 1<c.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have hsum := jacComb_sum_ok (base:=s₁.gpr .x3) (tcombLay hc) (combA c) hC hc.am3 hpR hn4 hmont
-  obtain ⟨hcTrace,ec,shared⟩ := jacComb_relCT (tcombLay hc) (combA c) hC hc.onG
+  have hsum := jacComb_sum_ok (base:=s₁.gpr .x3) (tcombLay hc) (combA hc) hC hc.am3 hpR hn4 hmont
+  obtain ⟨hcTrace,ec,shared⟩ := jacComb_relCT (tcombLay hc) (combA hc) hC hc.onG
     (tcombVals hc hC hT) hc.p_lt hpR hn4 checks.comb hsum checks.combFinish
     _ _ _ _ _ _ ⟨r₁.1,second.1,sp,r₁.2.1,second.2.1,r₁.2.2,second.2.2⟩ ec₁ ec₂
   have hsTrace := checks.save _ _ _ _ _ _ trivial trivial shared.public es₁ es₂

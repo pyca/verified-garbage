@@ -22,12 +22,12 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont VG.Proof.Weierstrass.AArch64 VG.Proof.W
 
 /-! ## Saving the callee-saved registers -/
 
-theorem setupSaved_lt : ∀ rd ∈ Cfg.saved, rd.2 + 8 ≤ 56 := by decide
+theorem setupSaved_lt : ∀ rd ∈ Cfg.saved, rd.2 + 8 ≤ 64 := by decide
 
 theorem setupSaves_ok {s : State} {base : Addr} (hb : s.gpr .x4 = base)
     (hw : (⟨base, size⟩ : Region) ∈ s.wr) :
     WP isa (.block (Spill.saveCode .x4 Cfg.saved)) s fun s' =>
-      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Outside base 0 56 s.mem s'.mem ∧
+      s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧ Outside base 0 64 s.mem s'.mem ∧
       Spill.Saved base s.gpr Cfg.saved s'.mem := by
   refine WP.mono (Spill.save_wp (by decide) fun p hp => ?_) fun s' h => ⟨h.gpr, h.rd, h.wr, h.sp, ?_, ?_⟩
   · have := setupSaved_lt p hp
@@ -95,8 +95,8 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
   have hKl := sl_le c h7 (i := K) (by decide)
   have hDl := sl_le c h7 (i := D) (by decide)
   have hEl := sl_le c h7 (i := E) (by decide)
-  have hKD : c.sl D = c.sl K + 8 * c.n := by rw [sl_eq, sl_eq]; show _ = _ + 8 * c.n; simp only [D, K]; omega
-  have hKE : c.sl E = c.sl K + 16 * c.n := by rw [sl_eq, sl_eq]; show _ = _ + 16 * c.n; simp only [E, K]; omega
+  have hKD : c.sl D = c.sl K + 8 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 8 * c.n; simp only [D, K]; omega
+  have hKE : c.sl E = c.sl K + 16 * c.n := by simp (disch := decide) only [sl_eq]; show _ = _ + 16 * c.n; simp only [E, K]; omega
   have nil : WP isa (.block ([] : List Instr)) t fun t' =>
       wordsVal t'.mem base (c.sl K) c.n = wordsVal t.mem base (c.sl K) c.n >>> 0 ∧
       wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> 0 ∧
@@ -151,11 +151,19 @@ theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (N
     rcases List.mem_cons.mp h with rfl | h
     · refine (U'.wordsVal (fun w hw => ?_) (by dsimp only; omega)).trans e₁
       obtain ⟨jy, hjy, rfl⟩ := List.mem_map.mp hw
-      exact sl_apart c fun heq => hnd.1 (heq ▸ List.mem_map_of_mem hjy)
+      have hj17 := (hb _ (List.mem_cons_of_mem _ hjy)).1
+      exact sl_apart c (fun heq => hnd.1 (heq ▸ List.mem_map_of_mem hjy)) (.inr (by omega))
+        (.inr (by omega))
     · exact e' ix h
 
 theorem consts_fst (c : Cfg) :
     c.consts.map Prod.fst = [0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16] := rfl
+
+theorem consts_ne_tmp (c : Cfg) : ∀ ix ∈ c.consts, ix.1 ≠ TMP := by
+  intro ix hix
+  have : ix.1 ∈ c.consts.map Prod.fst := List.mem_map_of_mem hix
+  rw [consts_fst] at this
+  revert this; generalize ix.1 = i; decide +revert
 
 theorem consts_nodup (c : Cfg) : (c.consts.map Prod.fst).Nodup := by
   rw [consts_fst]; decide
@@ -270,11 +278,11 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {
   have hs₆ := hsS.of_keepRegs k₆ (by decide)
   have O₆ : Outside (s.gpr .x4) (c.sl 0) (8 * c.n * 17) sS.mem s₆.mem := U₆.outside fun w hw => by
     obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
-    have := sl_lt c (consts_bounds hc ix hix).1
-    have h0' : c.sl 0 = 64 := by rw [sl_eq]; omega
-    have : c.sl 0 ≤ c.sl ix.1 := by rw [h0', sl_eq]; omega
+    have := sl_lt c (consts_bounds hc ix hix).1 (consts_ne_tmp c ix hix)
+    have h0' : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega
+    have : c.sl 0 ≤ c.sl ix.1 := by rw [h0', sl_eq c ix.1 (consts_ne_tmp c ix hix)]; omega
     exact ⟨this, by omega⟩
-  have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega
+  have hsl0 : c.sl 0 = 64 := by simp (disch := decide) only [sl_eq]; omega
   -- the flag
   refine WP.mono (setupFlag_ok hc hs₆) fun s' ⟨f', k', O'⟩ => ?_
   have K₃ : KeepRegs [.x1, .x2, .x5, .x17] s₂ s' :=
@@ -304,7 +312,7 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {
       O₅.wordsVal (by omega) (by omega), e₄]
   · show wordsVal s'.mem _ _ _ = _
     rw [O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), fE, e₅]
-  · have := sl_lt c (consts_bounds hc ix hix).1
+  · have := sl_lt c (consts_bounds hc ix hix).1 (consts_ne_tmp c ix hix)
     have := sl_le c hc.n10 (i := 17) (by decide)
     show wordsVal s'.mem _ _ _ = _
     rw [O'.wordsVal (by omega) (by omega), e₆ ix hix]

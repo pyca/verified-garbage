@@ -37,7 +37,7 @@ theorem jointOps_ok {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
     dsimp only [P256Joint.ops]
     refine WP.mono_syms (Forward.Arithmetic.double_ok (S:=cfg.K.S) Forward.Arithmetic.cases
       JointLayout.layout.lay JointLayout.layout.aligned hm (by decide) hC ha
-      (by decide +kernel) (by decide +kernel) hs.field (jointLive_R cfg) hA hs.point)
+      (by decide +kernel) (by decide +kernel) (Low.small (by decide) _) hs.field (jointLive_R cfg) hA hs.point)
       fun t ⟨hk,hi,hj⟩ hsym => ?_
     have kp : ProgKeep cfg.K.M base (jointWork cfg) s t := hk.mono (by decide +kernel)
     exact ⟨kp,hs.next JointLayout.layout kp hi hj (jointExternal_frame kp hsym hs.external)⟩

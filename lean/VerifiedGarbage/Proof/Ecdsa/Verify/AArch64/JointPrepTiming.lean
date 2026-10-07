@@ -37,10 +37,11 @@ theorem JointPrepPost.fields {base : Addr} {g : Reg → BitVec 64} {P : Point p2
     ∀ x∈winRo P256Joint.cfg.K,tmv p256.C 4 base t x=tmv p256.C 4 base s x := by
   intro x hx
   simp only [winRo,List.mem_cons,List.not_mem_nil,or_false] at hx
+  have e : ∀ i<45,tmv p256.C 4 base t (p256.sl i)=tmv p256.C 4 base s (p256.sl i) :=
+    fun i hi => by change toM _ _ (sv p256 base t i)=toM _ _ (sv p256 base s i); rw [h.same i hi]
   rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    change toM _ _ (sv p256 base t _)=toM _ _ (sv p256 base s _)
-    rw [h.same _ (by decide)]
+  exacts [e AP (by decide),e BM (by decide),e ZERO (by decide),e VG.Impl.Ecdh.AArch64.PX (by decide),e VG.Impl.Ecdh.AArch64.PY (by decide),
+    e ONEP (by decide)]
 
 /-- Shared table values and the exact public scalar digits after preparation. -/
 def JointTablePair (base : Addr) (P : Point p256.C) (u v : Nat) (a b s t : State) : Prop :=

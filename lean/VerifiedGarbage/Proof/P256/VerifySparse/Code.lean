@@ -33,8 +33,8 @@ theorem op_mul (o a b : Nat) (hab : a≠b) : Impl.P256.VerifySparse.op (.mul o a
     sparseMul Impl.P256.VerifySparse.M o a b := by
   have h : (a==b)=false := beq_eq_false_iff_ne.mpr hab
   let ts := (List.range 4).map (win 4 4)
-  let pre := mulSetup Impl.P256.VerifySparse.M b ++
-    (List.range 4).flatMap (round Impl.P256.VerifySparse.M a b)
+  let pre := mulSetup Impl.P256.VerifySparse.M .x0 b ++
+    (List.range 4).flatMap (round Impl.P256.VerifySparse.M .x0 .x0 a b)
   let tail := csubR Impl.P256.VerifySparse.M ts (win 4 4 4) ++ stores ts o
   have raw : opCode Impl.P256.VerifySparse.M (.mul o a b)=pre++tail := by
     rw [opCode,h]

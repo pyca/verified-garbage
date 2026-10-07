@@ -237,9 +237,9 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     · exact flag_le h0 h7 w hw
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
-      · exact sl_le c h7 (by decide)
+      · exact sl_le c h7 (i := ACC) (by decide)
       · exact ct_le c h7
-      · exact sl_le c h7 (by decide)
+      · exact sl_le c h7 (i := TMP) (by decide)
     · exact slW_le h7 (by decide) w hw
 
 end VG.Proof.Ecdsa.Verify.AArch64

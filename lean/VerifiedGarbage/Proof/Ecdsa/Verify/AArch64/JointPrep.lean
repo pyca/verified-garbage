@@ -33,8 +33,8 @@ theorem apart_jointPrep {i : Nat} (hi : i<45) :
   intro w hw
   simp only [jointPrepRanges,List.mem_cons,List.not_mem_nil,or_false] at hw
   rcases hw with rfl | rfl
-  · apply Or.inl; change 64+32*i+32≤1504; omega
-  · apply Or.inl; change 64+32*i+32≤1824; omega
+  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1504; omega
+  · apply Or.inl; rw [sl_eq4 p256 (by decide)]; change 64+32*i+32≤1824; omega
 
 theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s : State}
     (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed p256 base g s.mem) {P : Point p256.C}
