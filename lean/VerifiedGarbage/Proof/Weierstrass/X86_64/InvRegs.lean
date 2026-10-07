@@ -694,7 +694,8 @@ theorem addPNeg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
 theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (M : Mod)
     (hmo : M.mo + 32 ≤ size) {w : Reg} (hw : w ∉ clobX) {p : Nat} (hp : wordsVal s.mem base M.mo 4 = p)
     (hV : regsVal s redRegs + 2 ^ 256 * (s.gpr w).toNat < 2 * p) :
-    WP isa (.block (diffsC .sub redRegs redDiff M.mo ++ [.alu .sbb w (.imm 0)] ++ cmovs redRegs redDiff)) s
+    WP isa (.block (diffsC .sub redRegs redDiff M.mo ++ ([.alu .sbb w (.imm 0)] : List Instr) ++
+      cmovs redRegs redDiff)) s
       fun t => regsVal t redRegs = (regsVal s redRegs + 2 ^ 256 * (s.gpr w).toNat) % p ∧
         Keeps (w :: clobX) s t := by
   simp only [clobX, List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
@@ -733,5 +734,81 @@ theorem csubR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (
       rcases hq with rfl | rfl | rfl | rfl <;> simp
     · simp only [redRegs, List.mem_cons, List.not_mem_nil, or_false] at hq ⊢
       rcases hq with rfl | rfl | rfl | rfl <;> simp
+
+theorem aVal_lt (s : State) : aVal s < 2 ^ 320 := by
+  have h0 := (s.gpr .rcx).isLt; have h1 := (s.gpr .rbp).isLt; have h2 := (s.gpr .r8).isLt
+  have h3 := (s.gpr .r13).isLt; have h4 := (s.gpr .r15).isLt
+  simp only [aVal, aRegs, regsVal]; omega
+
+/-- `mredX`: `[dst] = mred t` (four words), for `t` in `aRegs` (signed), `|t| ≤ 2^63 p`. -/
+theorem mredX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
+    (hM : ModOkW M size p s.mem base) (hn4 : M.n = 4) {w : Reg} (hw : w ∉ clobX) (hwd : w ≠ .rdi)
+    {dst : Nat} (hd : dst + 32 ≤ size) {T : Int} (hT : |T| ≤ 2 ^ 63 * p)
+    (hW : (aVal s : Int) % ((2 ^ 320 : Nat) : Int) = T % ((2 ^ 320 : Nat) : Int)) :
+    WP isa (.block (mredX M dst w)) s fun t =>
+      (wordsVal t.mem base dst 4 : Int) = Divstep.mred p M.minv.toNat T ∧
+      KeepRegs (w :: clobX) s t ∧ Outside base dst 32 s.mem t.mem := by
+  have hmo : M.mo + 32 ≤ size := by have := hM.mo; rw [hn4] at this; omega
+  have hP : wordsVal s.mem base M.mo 4 = p := by have := hM.val; rwa [hn4] at this
+  have hp0 : 0 < p := by
+    have := hM.inv
+    rcases Nat.eq_zero_or_pos p with h | h
+    · rw [h, Nat.zero_mul] at this; exact absurd this (by decide)
+    · exact h
+  have hpA : p < 2 ^ 256 := hP ▸ wordsVal_lt _ _ _ _
+  have hrdi : Reg.rdi ∉ w :: clobX := by
+    simp only [clobX, List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨Ne.symm hwd, by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
+  have hsplit : mredX M dst w = mredRow M w ++ (addPNeg M w ++ ((diffsC .sub redRegs redDiff M.mo ++
+      ([.alu .sbb w (.imm 0)] : List Instr) ++ cmovs redRegs redDiff) ++ stores redRegs dst)) := by
+    simp only [mredX, List.append_assoc]
+  rw [hsplit, WP.block_append_iff]
+  refine WP.mono (mredRow_ok hs M hmo hw hwd) fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ hrdi
+  rw [WP.block_append_iff]
+  refine WP.mono (addPNeg_ok hs₁ M hmo hw) fun s₂ ⟨e₂, k₂⟩ => ?_
+  have hs₂ := hs₁.of_keeps k₂ hrdi
+  -- The arithmetic.
+  have h320 : (2 : Nat) ^ 256 * 2 ^ 64 = 2 ^ 320 := by rw [show (320 : Nat) = 256 + 64 from rfl, Nat.pow_add]
+  have h384 : (2 : Nat) ^ 320 * 2 ^ 64 = 2 ^ 384 := by rw [show (384 : Nat) = 320 + 64 from rfl, Nat.pow_add]
+  rw [k₁.2.1, hP] at e₂
+  have hW0 : aVal s % 2 ^ 64 = (s.gpr .rcx).toNat := by
+    have h0 := (s.gpr .rcx).isLt
+    simp only [aVal, aRegs, regsVal]; omega
+  have hsg : (if 2 ^ 256 * 2 ^ 63 ≤ aVal s then 2 ^ 64 - 1 else 0) = sgnW (s.gpr .r15) := by
+    have hc : 2 ^ 256 * 2 ^ 63 ≤ aVal s ↔ 2 ^ 63 ≤ (s.gpr .r15).toNat := by
+      have h0 := (s.gpr .rcx).isLt; have h1 := (s.gpr .rbp).isLt; have h2 := (s.gpr .r8).isLt
+      have h3 := (s.gpr .r13).isLt
+      simp only [aVal, aRegs, regsVal]; omega
+    unfold sgnW; simp only [hc]
+  have hb : (if 2 ^ 256 * 2 ^ 63 ≤ regsVal s₁ [.rbp, .r8, .r13, .r15, w] then p else 0) =
+      (s₁.gpr w).toNat / 2 ^ 63 * p := by
+    have h0 := (s₁.gpr .rbp).isLt; have h1 := (s₁.gpr .r8).isLt; have h2 := (s₁.gpr .r13).isLt
+    have h3 := (s₁.gpr .r15).isLt; have h4 := (s₁.gpr w).isLt
+    split <;> rename_i h <;> simp only [regsVal] at h
+    · rw [show (s₁.gpr w).toNat / 2 ^ 63 = 1 by omega, Nat.one_mul]
+    · rw [show (s₁.gpr w).toNat / 2 ^ 63 = 0 by omega, Nat.zero_mul]
+  have key := Divstep.mredR₁_nat (A := 2 ^ 256) (B := 2 ^ 64) (H := 2 ^ 63) (p := p) (m := M.minv.toNat)
+    (t := T) (W := aVal s) (k := (s.gpr .rcx).toNat * M.minv.toNat % 2 ^ 64)
+    (E := regsVal s₁ [.rcx, .rbp, .r8, .r13, .r15, w]) (R := regsVal s₁ [.rbp, .r8, .r13, .r15, w])
+    (R₁ := regsVal s₂ [.rbp, .r8, .r13, .r15, w]) rfl rfl (Nat.two_pow_pos _) hp0 hpA hM.inv hT
+    (by rw [h320]; exact aVal_lt s) (by rw [h320]; exact hW) (by rw [hW0])
+    (by rw [e₁, h320, h384, hsg, hP]) ?_ (by rw [e₂, h320, hb])
+  swap
+  · rw [show regsVal s₁ [.rcx, .rbp, .r8, .r13, .r15, w] =
+        (s₁.gpr .rcx).toNat + 2 ^ 64 * regsVal s₁ [.rbp, .r8, .r13, .r15, w] from rfl,
+      Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt (s₁.gpr .rcx).isLt, Nat.zero_add]
+  have hR₁ : regsVal s₂ [.rbp, .r8, .r13, .r15, w] = regsVal s₂ redRegs + 2 ^ 256 * (s₂.gpr w).toNat := by
+    simp only [redRegs, regsVal]; omega
+  rw [hR₁] at key
+  have hP₂ : wordsVal s₂.mem base M.mo 4 = p := by rw [k₂.2.1, k₁.2.1, hP]
+  rw [WP.block_append_iff]
+  refine WP.mono (csubR_ok hs₂ M hmo hw hP₂ key.1) fun s₃ ⟨e₃, k₃⟩ => ?_
+  have hs₃ := hs₂.of_keeps k₃ hrdi
+  refine WP.mono (stores_ok redRegs hs₃ (o := dst) (by simp only [redRegs, List.length_cons, List.length_nil]; omega)
+    (by decide)) fun t ⟨e₄, k₄, O₄⟩ => ⟨?_, (((Keeps.regs k₁).trans (Keeps.regs k₂)).trans (Keeps.regs k₃)).trans
+      (k₄.mono (by simp)), ?_⟩
+  · rw [show (4 : Nat) = redRegs.length from rfl, e₄, e₃]; exact key.2
+  · rw [k₃.2.1, k₂.2.1, k₁.2.1] at O₄; simpa only [redRegs, List.length_cons, List.length_nil] using O₄
 
 end VG.Proof.Weierstrass.X86_64
