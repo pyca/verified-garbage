@@ -297,6 +297,26 @@ def subR (M : Mod) (o a b : Nat) : List Instr :=
   loads (low M.n) a ++ chain .sub .sbb (low M.n) b ++ [.alu .sbb .rax (.reg .rax)] ++
     masked M.n M.mo M.tmp ++ chain .add .adc (low M.n) M.tmp ++ stores (low M.n) o
 
+
+/-- The four words of `(p + 1) / 2⁶⁴` for P-256. -/
+def p256Ws : List MWord :=
+  [.pow2 32, .zero, .gen 0xffffffff00000001, .zero]
+
+/-- P-256 masked by the borrow in `rax`: its nonzero words in `rax`, `rcx`, `rdx`. -/
+def p256SubMask : List Instr :=
+  [.mov32 .rcx (.reg .rax),
+   .movImm64 .rdx 0xffffffff00000001, .alu .and .rdx (.reg .rax)]
+
+/-- Add the masked modulus to the difference in `r8`–`r11`. -/
+def p256SubAdd : List Instr :=
+  [.alu .add .r8 (.reg .rax), .alu .adc .r9 (.reg .rcx),
+   .alu .adc .r10 (.imm 0), .alu .adc .r11 (.reg .rdx)]
+
+/-- `[o] = [a] - [b] mod p` for P-256, without a temporary-memory round trip. -/
+def sub256 (o a b : Nat) : List Instr :=
+  loads (low 4) a ++ chain .sub .sbb (low 4) b ++ [.alu .sbb .rax (.reg .rax)] ++
+    p256SubMask ++ p256SubAdd ++ stores (low 4) o
+
 /-! ## More than six words: the accumulator in the temporary area -/
 
 /-- `[t] = [t] + rcx · src + rbp` and its carry word in `rbp`, through `r8`. -/
@@ -626,8 +646,10 @@ def mul (M : Mod) (o a b : Nat) : List Instr :=
 def add (M : Mod) (o a b : Nat) : List Instr :=
   if M.n < 7 then addR M o a b else if M.red = .friendly p521Ws then addMer o a b else addW M o a b
 
-/-- `[o] = [a] - [b] mod m`. -/
+/-- `[o] = [a] - [b] mod m`. The BMI2/ADX P-256 backend uses the
+register-only masked modulus; other backends retain their existing subtraction. -/
 def sub (M : Mod) (o a b : Nat) : List Instr :=
-  if M.n < 7 then subR M o a b else if M.red = .friendly p521Ws then subMer o a b else subW M o a b
+  if M.adx ∧ M.red = .friendly p256Ws then sub256 o a b
+  else if M.n < 7 then subR M o a b else if M.red = .friendly p521Ws then subMer o a b else subW M o a b
 
 end VG.Impl.Mont.X86_64
