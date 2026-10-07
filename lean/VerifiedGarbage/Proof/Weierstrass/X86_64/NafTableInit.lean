@@ -5,7 +5,7 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG
 open VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
-private theorem initCounter_ok (s : State) :
+theorem nafTable_initCounter_ok (s : State) :
     WP isa (.block [.mov32 .rbx (.imm 1)]) s fun t => t.gpr .rbx=1 ∧ Keeps [.rbx] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
@@ -94,7 +94,7 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx; omega
   have bc := kc.invJ hL.lay ib.scr (fun x hx => slO x (rr x hx)) bs (sep 9 (by decide) (by decide)) bb
   have tc := kc.invJ hL.lay ib.scr (fun x hx => slO x (rr x hx)) ts (sep 1 (by decide) (by decide)) jb
-  refine WP.mono (initCounter_ok c) fun t ⟨ct,kt⟩ => ?_
+  refine WP.mono (nafTable_initCounter_ok c) fun t ⟨ct,kt⟩ => ?_
   have it := (ic.of_keeps kt (by decide)).to_tmv
   have ua := nafTable_progUnch ka dw
   have ub := nafTable_progUnch kb (fun x hx => List.mem_append_right _ (bt 1 (by decide) (by decide) x hx))

@@ -7,21 +7,16 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64
 
-theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
+theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
-    (hm : UnitMod C.p (2^(64*M.n))) {ptbl tbl i : Nat}
-    (hSep : tbl+64*(i+1)≤ptbl ∨ ptbl+96*(i+1)≤tbl)
-    {V : List Nat} {E : Nat → Fin C.p} {s : State}
-    (hI : Inv M base size C.p Sl V E s) (hZ : ptbl+96*i+64∈V)
+    (hm : UnitMod m (2^(64*M.n))) {ptbl tbl i : Nat}
+    {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) (hZ : ptbl+96*i+64∈V)
     (h2 : Sl (tbl+64*i)) (h3 : Sl (tbl+64*i+32)) :
     WP isa (Naf.cachePair M ptbl tbl i) s fun t =>
-      ProgKeep M base [tbl+64*i,tbl+64*i+32] s t ∧
-      Inv M base size C.p Sl ([tbl+64*i,tbl+64*i+32]++V) (tmv C M.n base t) t ∧
-      tmv C M.n base t (tbl+64*i)=E (ptbl+96*i+64)*E (ptbl+96*i+64) ∧
-      tmv C M.n base t (tbl+64*i+32)=
-        tmv C M.n base t (tbl+64*i)*E (ptbl+96*i+64) := by
-  have hz2 : ptbl+96*i+64≠tbl+64*i := by omega
-  have h23 : tbl+64*i≠tbl+64*i+32 := by omega
+      ProgKeep M base ((Naf.cachePairOps ptbl tbl i).map FOp.out) s t ∧
+      Inv M base size m Sl (validAfter (Naf.cachePairOps ptbl tbl i) V)
+        (runOps (Naf.cachePairOps ptbl tbl i) E) t := by
   have hS : ∀ op∈Naf.cachePairOps ptbl tbl i,∀ x∈op.out::op.ins,Sl x := by
     intro op hop x hx
     simp only [Naf.cachePairOps,List.mem_cons,List.not_mem_nil,or_false] at hop
@@ -37,15 +32,28 @@ theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstra
       · exact hI.sl _ hZ
   have hR : readsOk (Naf.cachePairOps ptbl tbl i) V=true := by
     simp [Naf.cachePairOps,readsOk,FOp.ins,FOp.out,hZ]
-  have hp : WP isa (Naf.cachePair M ptbl tbl i) s fun t =>
-      ProgKeep M base ((Naf.cachePairOps ptbl tbl i).map FOp.out) s t ∧
-      Inv M base size C.p Sl (validAfter (Naf.cachePairOps ptbl tbl i) V)
-        (runOps (Naf.cachePairOps ptbl tbl i) E) t := by
-    rw [Naf.cachePair]
-    split
-    · exact WP.mono (ForwardField.program_ok hn hL hm _ hI hS hR (fun _ h => by cases h))
-        (fun _ h => ⟨h.1,h.2.1⟩)
-    · exact (fprogB_wp _ _).mpr (fprog_ok hL hm _ hI hS hR)
+  rw [Naf.cachePair]
+  split
+  · exact WP.mono (ForwardField.program_ok hn hL hm _ hI hS hR (fun _ h => by cases h))
+      (fun _ h => ⟨h.1,h.2.1⟩)
+  · exact (fprogB_wp _ _).mpr (fprog_ok hL hm _ hI hS hR)
+
+theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
+    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    (hm : UnitMod C.p (2^(64*M.n))) {ptbl tbl i : Nat}
+    (hSep : tbl+64*(i+1)≤ptbl ∨ ptbl+96*(i+1)≤tbl)
+    {V : List Nat} {E : Nat → Fin C.p} {s : State}
+    (hI : Inv M base size C.p Sl V E s) (hZ : ptbl+96*i+64∈V)
+    (h2 : Sl (tbl+64*i)) (h3 : Sl (tbl+64*i+32)) :
+    WP isa (Naf.cachePair M ptbl tbl i) s fun t =>
+      ProgKeep M base [tbl+64*i,tbl+64*i+32] s t ∧
+      Inv M base size C.p Sl ([tbl+64*i,tbl+64*i+32]++V) (tmv C M.n base t) t ∧
+      tmv C M.n base t (tbl+64*i)=E (ptbl+96*i+64)*E (ptbl+96*i+64) ∧
+      tmv C M.n base t (tbl+64*i+32)=
+        tmv C M.n base t (tbl+64*i)*E (ptbl+96*i+64) := by
+  have hz2 : ptbl+96*i+64≠tbl+64*i := by omega
+  have h23 : tbl+64*i≠tbl+64*i+32 := by omega
+  have hp := nafCachePair_fields_ok hn hL hm hI hZ h2 h3
   refine WP.mono hp fun t ⟨kt,it⟩ => ?_
   have iv : Inv M base size C.p Sl ([tbl+64*i,tbl+64*i+32]++V)
       (runOps (Naf.cachePairOps ptbl tbl i) E) t := it.sub (by
