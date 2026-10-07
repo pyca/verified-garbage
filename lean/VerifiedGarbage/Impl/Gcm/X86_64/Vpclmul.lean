@@ -9,7 +9,7 @@ VPCLMULQDQ and AVX2 (and PCLMULQDQ and SSSE3, for the blocks left).
 
 `vg_ghash_pclmul`'s prologue computes `H'` (`H'ᵏ = Hᵏ · x⁻¹`) into `xmm3`
 and loads `Y` into `xmm2`, and with four blocks or more `H'²`–`H'⁴` into
-`xmm4`–`xmm6`. With eight blocks or more, four more products, all from
+`xmm4`–`xmm6`. With 32 blocks or more, four more products, all from
 `H'⁴` (`H'⁴⁺ᵏ = mul(H'⁴, H'ᵏ)`), so that none waits for another, give
 `H'⁵`–`H'⁸`, and the eight powers are paired in the lanes
 of `ymm15` (`H'⁸`, `H'⁷`), `ymm14` (`H'⁶`, `H'⁵`), `ymm13` (`H'⁴`, `H'³`) and
@@ -36,8 +36,10 @@ the same with eight blocks and `ymm12`–`ymm15`.
 
 After the loops, `vzeroupper` clears the upper lanes (so that the SSE code
 that follows pays no transition penalty), and the blocks left (fewer than
-eight) go through `vg_ghash_pclmul`'s loops and epilogue
-(`Pclmul.ghashTail`), with `xmm0`–`xmm6` as it left them.
+eight, or all of them if there are fewer than 32) go through
+`vg_ghash_pclmul`'s loops and epilogue (`Pclmul.ghashTail`), with
+`xmm0`–`xmm6` as it left them: below 32 blocks, computing `H'⁵`–`H'¹⁶` costs
+more than the 256-bit loops save.
 
 `pmuludq` is not used. `scratch` is not used, and no callee-saved register
 is written. Every branch and every address depends only on the pointers and
@@ -140,7 +142,7 @@ def restore : List Instr :=
   [.vop (.vextracti128 .xmm3 .xmm12 1), .vop (.vmovdqa .l128 .xmm4 .xmm12),
    .vop (.vextracti128 .xmm5 .xmm13 1), .vop (.vmovdqa .l128 .xmm6 .xmm13)]
 
-/-- With eight blocks or more (after `cmp rcx, 8`): the powers, sixteen blocks
+/-- With eight blocks or more (from `ghash`, 32 or more): the powers, sixteen blocks
 at a time, then eight. -/
 def wide : Prog isa :=
   .seq (.block (powers ++ [.alu .cmp .rcx (.imm 16)]))
@@ -149,7 +151,7 @@ def wide : Prog isa :=
 
 def ghash : Prog isa :=
   .seq (.block prologue)
-    (.seq (withPows (.seq (.block [.alu .cmp .rcx (.imm 8)]) (.ite .b (.block []) wide)))
+    (.seq (withPows (.seq (.block [.alu .cmp .rcx (.imm 32)]) (.ite .b (.block []) wide)))
       (.seq (.block [.vop .vzeroupper, .alu .cmp .rcx (.imm 4)]) ghashTail))
 
 end VG.Impl.Gcm.X86_64.Vpclmul

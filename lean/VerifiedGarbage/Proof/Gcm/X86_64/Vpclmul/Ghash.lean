@@ -803,13 +803,13 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' := by
   have hn := hp.nb_lt
   refine WP.seq (WP.mono (prologue_ok hp) fun s₁ ⟨hB, hcf₁⟩ => ?_)
-  refine WP.seq (WP.mono (Q := fun s => ∃ i, nb s₀ - i < 8 ∧ Inv s₀ i s) ?_ fun s₃ ⟨i, _, hI₃⟩ =>
+  refine WP.seq (WP.mono (Q := fun s => ∃ i, Inv s₀ i s) ?_ fun s₃ ⟨i, hI₃⟩ =>
     WP.seq (WP.mono (mid_ok hp hI₃) fun s₄ ⟨hI₄, hcf₄⟩ => tail_ok hp hI₄ hcf₄))
-  refine withPows_ok hB hcf₁ (fun hI h => ⟨0, by omega, hI⟩) fun s₂ hI₂ _ => ?_
-  refine WP.seq (WP.mono (cmp_ok hp hI₂ 8 (by decide) (by decide)) fun s₂ ⟨hI₂, hcf⟩ => ?_)
-  refine WP.ite (decide (nb s₀ - 0 < 8)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
-  · exact WP.block_nil ⟨0, by simpa using h, hI₂⟩
-  · exact wide_ok hp (by simp at h; omega) hI₂
+  refine withPows_ok hB hcf₁ (fun hI _ => ⟨0, hI⟩) fun s₂ hI₂ _ => ?_
+  refine WP.seq (WP.mono (cmp_ok hp hI₂ 32 (by decide) (by decide)) fun s₂ ⟨hI₂, hcf⟩ => ?_)
+  refine WP.ite (decide (nb s₀ - 0 < 32)) (by simp only [eval, hcf]) (fun _ => ?_) (fun h => ?_)
+  · exact WP.block_nil ⟨0, hI₂⟩
+  · exact WP.mono (wide_ok hp (by simp at h; omega) hI₂) fun _ ⟨i, _, hI⟩ => ⟨i, hI⟩
 
 theorem ghash_correct (s : State) (hs : ghashX86_64.pre s) :
     ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ ghashX86_64.post s s' := by
