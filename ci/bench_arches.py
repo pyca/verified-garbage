@@ -901,7 +901,7 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--all"]:
-        matrix = [p for a in PLATFORMS for p in platforms(a)]
+        matrix = [p for p in platforms("aarch64", {"ecdsa_p256", "ec_p256"}, benchmarks=bench_count({"ecdsa_p256", "ec_p256"})) if p["cpu-features"] == ""]
     else:
         if sys.argv[1:] and (len(sys.argv) != 3 or sys.argv[1] != "--base"):
             sys.exit("usage: bench_arches.py [--all | --base REV]")
