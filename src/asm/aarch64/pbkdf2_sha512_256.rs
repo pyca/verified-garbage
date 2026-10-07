@@ -270,6 +270,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate(key: *const [u
         "ldr x24, [x20, #680]",
         "ldr x20, [x20, #648]",
         "ret",
+        ".p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -615,6 +616,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256(password: *const u8, p
         "ldr x23, [x23, #1920]",
         "add sp, sp, #3408",
         "ret",
+        ".p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
@@ -898,6 +900,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_iterate_sha3(key: *con
         "ldr x20, [x20, #648]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
@@ -1249,6 +1252,7 @@ pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha512_256_sha3(password: *const 
         "add sp, sp, #3408",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_256_init = sym super::sha512::vg_sha512_256_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,

@@ -13,7 +13,7 @@ frame and the calls use, `verifyStack`) on the registers and the stack
 
 namespace VG.Proof.RsaPss.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer: the frame, and the return address of
 its calls, which use no stack. -/

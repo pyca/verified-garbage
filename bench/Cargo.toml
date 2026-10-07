@@ -2,12 +2,12 @@
 name = "verified-garbage-bench"
 version = "0.0.0"
 edition = "2024"
-description = "Benchmarks of verified-garbage, against OpenSSL (through rust-openssl)"
+description = "Benchmarks of verified-garbage, against OpenSSL (through rust-openssl) and aws-lc-rs"
 license = "Apache-2.0 OR BSD-3-Clause"
 publish = false
 
 # A package of its own, outside the library's, so that the library's tests,
-# lints and coverage never build criterion or link OpenSSL.
+# lints and coverage never build criterion or link OpenSSL or AWS-LC.
 [workspace]
 
 [dependencies]
@@ -30,6 +30,13 @@ openssl-mldsa = []
 openssl-mlkem = ["dep:openssl-sys", "dep:foreign-types"]
 
 [dev-dependencies]
+# AWS-LC, built from source by aws-lc-sys (with only a C compiler, on every
+# architecture benchmarked).
+aws-lc-rs = { version = "1.18", default-features = false, features = ["aws-lc-sys"] }
+# The same AWS-LC, for ML-KEM key generation from a seed, which aws-lc-rs does
+# not wrap. Without `all-bindings` (its default), whose ARMv7 bindings need
+# bindgen.
+aws-lc-sys = { version = "0.45", default-features = false }
 criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 openssl = "0.10"
 

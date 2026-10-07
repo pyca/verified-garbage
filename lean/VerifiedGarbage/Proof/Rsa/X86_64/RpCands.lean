@@ -11,13 +11,9 @@ tried: `recoverPrimes.go`'s result and the number of tries
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 open VG.Spec.Rsa (powMod recoverStep recoverPrimes recoverTries)
-
-/-- Step 5's factors from `y`, the larger first. -/
-def pqOf (N y : Nat) : Nat × Nat :=
-  (max (Nat.gcd (y - 1) N) (N / Nat.gcd (y - 1) N), min (Nat.gcd (y - 1) N) (N / Nat.gcd (y - 1) N))
 
 /-- The candidates `c` and on, from `s₀`. -/
 structure CandI (s₀ : State) (B : Addr) (w N t r c : Nat) (u : State) : Prop where

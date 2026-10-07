@@ -10,7 +10,7 @@ and `dEven` for an even one (`dPart_k`).
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 /-- `e = 1`: `d = 1`, `kOk` the mask of `L ≠ 1`. -/
 theorem dOne_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {L : Nat} (hL : av I s.mem aL = L) :

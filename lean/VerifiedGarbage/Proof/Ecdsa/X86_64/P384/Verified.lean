@@ -56,6 +56,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
+  n_len := by decide +kernel
   sh := by rw [p384_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
@@ -70,7 +71,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   even _ := by decide
 
 theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start) :
-    CombTbls p384 := fun d h => by cases h; exact hT
+    CombTbls p384 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h

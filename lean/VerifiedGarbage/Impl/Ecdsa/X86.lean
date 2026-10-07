@@ -1,3 +1,4 @@
+import VerifiedGarbage.Impl.Weierstrass.X86.TComb
 import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
@@ -94,7 +95,7 @@ def FLAG := 44
 def nslots := 45
 
 /-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
-def bitsAt (n j : Nat) : Nat := slot n nslots + 64 * n * j
+def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 4) * j
 
 /-- The multiplications' accumulator: after the tables. -/
 def wkAt (n : Nat) : Nat := bitsAt n 3
@@ -113,10 +114,18 @@ structure Args where
 `E`. -/
 abbrev Args.sign : Args := ⟨4, 3, 1, 2, some E⟩
 
-/-- A curve as the code has it: `n` words, and its parameters. -/
+/-- A fixed-base comb's digit width, affine tables, offset point and symbol. -/
+structure CombData where
+  w : Nat
+  tbl : List (List (Nat × Nat))
+  start : Nat × Nat
+  tsym : String
+
+/-- A curve as the code has it, and an optional fixed-base comb. -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
+  comb : Option CombData := none
 
 namespace Cfg
 
@@ -153,6 +162,51 @@ def ladderCfg : LadderCfg where
   bits := bitsAt c.n 0
   nbits := 64 * c.n
 
+/-- The number of signed windows covering the scalar. -/
+def combJ (w : Nat) : Nat := (64 * c.n + w - 1) / w
+
+/-- The comb's pointer is in the unused tail of the saved-register header. -/
+def combPtr : Nat := 60
+
+def combCfg (d : CombData) : TCombCfg where
+  M := c.MP'
+  S := { c.rcbSlots with b3 := c.sl EM }
+  A := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := bitsAt c.n 0
+  kbytes := 64 * c.n
+  tsym := d.tsym
+  w := d.w
+  J := c.combJ d.w
+  start := (c.mont d.start.1, c.mont d.start.2)
+  one := c.mont 1
+  wk := c.wk
+  ptr := combPtr
+
+def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
+
+def combConsts : List (String × List (BitVec 64)) :=
+  match c.comb with
+  | none => []
+  | some d => [(d.tsym, c.combWords d)]
+
+/-- Obtain the table address before setup; restore ESP before reading cdecl
+arguments. The saved EIP is popped into the caller-saved ECX. -/
+def tableAddr : Prog isa :=
+  match c.comb with
+  | none => .block []
+  | some d => .frame (.symPush .eax d.tsym) (.block []) (.pop .ecx 1)
+
+/-- The fixed-base multiplication, after setup saved the table pointer. -/
+def gMul : Prog isa :=
+  match c.comb with
+  | none => ladder c.ladderCfg c.wk
+  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
+      (.seq (.block (c.combCfg d).initCore) (.loop (c.combCfg d).step .ne))
+
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
@@ -177,13 +231,20 @@ def shiftCode : Option Nat → List Instr
   | none => []
   | some i => if c.sh = 0 then [] else shrWords c.n (c.sl i) c.sh
 
+/-- Save the public table address supplied in EAX before ordinary setup
+uses EAX for the scratch pointer. -/
+def prepTable (A : Args) : List Instr :=
+  match c.comb with
+  | none => []
+  | some _ => [.mov .edx (.mem (argOp A.sc)), .store (at_ .edx combPtr) .eax]
+
 /-- Saves them through `eax`, with the working space from its argument, which
 then goes to `edi`; reads `k`, `d` and the hash (`len` bytes each) through
 `ebx` from the arguments `A` names, and shifts the slot `A.hs` holding a hash;
 stores the constants; and sets `R = (0 : 1 : 0)` and the flag (a word) to
 all ones. -/
 def setupWith (A : Args) : List Instr :=
-  [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
+  c.prepTable A ++ [.mov .eax (.mem (argOp A.sc))] ++ saveCode ++
   [.mov .edi (.reg .eax), .mov .ebx (.mem (argOp A.k))] ++ loadBytes c.C.len c.n (c.sl K) .ebx ++
   [.mov .ebx (.mem (argOp A.d))] ++ loadBytes c.C.len c.n (c.sl D) .ebx ++
   [.mov .ebx (.mem (argOp A.e))] ++ loadBytes c.C.len c.n (c.sl E) .ebx ++
@@ -249,15 +310,32 @@ def scalar : Prog isa :=
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
+def prepareWith (A : Args) : Prog isa :=
+  .seq (.block (c.setupWith A)) <|
+  .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
+  .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
+  .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])
+
+def signPrep : Prog isa := c.prepareWith .sign
+
+def signTail : Prog isa :=
+  .seq (pow c.powP c.wk) <|
+  .seq c.middle <|
+  .seq (pow c.powN c.wk) c.scalar
+
+def signWithMul (fixed : Prog isa) : Prog isa :=
+  .seq c.signPrep (.seq fixed c.signTail)
+
+/-- The existing ladder path. -/
 def sign : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.wk) <|
-  .seq (pow c.powP c.wk) <|
-  .seq c.middle <|
-  .seq (pow c.powN c.wk) c.scalar
+  .seq (ladder c.ladderCfg c.wk) c.signTail
+
+/-- The table address is obtained before reading the cdecl arguments. -/
+def signComb : Prog isa := .seq c.tableAddr (c.signWithMul c.gMul)
 
 end Cfg
 

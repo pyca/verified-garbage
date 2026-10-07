@@ -21,14 +21,14 @@ theorem engine_public (base k T : Addr) :
   · simp only [List.mem_singleton] at hn; subst hn
     exact h.1.2.2.2.2.1.sym.trans h.2.2.2.2.2.1.sym.symm
 
-theorem x25519Base_ok (s : State) (hs : baseLocal.pre s) :
+theorem x25519Base_ok [DivstepInv] (s : State) (hs : baseLocal.pre s) :
     ∃ tr t, Exec isa (x25519Base fld) s tr t ∧ abiPreserved s t ∧ baseLocal.post s t := by
   obtain ⟨tr, t, he, h⟩ := x25519Base_correct (fld := fld) hs
   exact ⟨tr, t, he, abiPreserved_of_exec (by fld_lit_decide) he h.1, h.2⟩
 
 /-- The shared contract's precondition, from its facts. -/
 theorem base_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 24576⟩])
+    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 39936⟩])
     (hw : s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩])
     (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩)
     (h2 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩)
@@ -82,7 +82,7 @@ theorem base_implies :
     exact ⟨h0, h1, h2, h3, hs⟩
   sat := ⟨baseSatStateT, base_sat⟩
 
-theorem x25519Base_verified : Verified X86_64.target (x25519Base fld)
+theorem x25519Base_verified [DivstepInv] : Verified X86_64.target (x25519Base fld)
     (Spec.X25519.x25519BaseContract (X86_64.abi.withConsts combConsts)) :=
   Verified.of_correct x25519Base_ok (x25519Base_ct engine_public) base_implies
 

@@ -17,61 +17,12 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 
-/-! ## Helpers -/
-
 namespace CrtCTQ
 
 /-- `Φ a` fixes `rdi`. -/
 theorem pinsRdi {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : ∀ a s, Φ a s → s.gpr .rdi = f a) :
     Pins Φ [.rdi] :=
   pins_of (fun a _ => f a) fun a s hs r hr => by rw [List.mem_singleton.mp hr]; exact h a s hs
-
-theorem gRanges_le (w : Nat) : ∀ r ∈ gRanges w, r.1 + r.2 ≤ slot w 8 := by
-  have := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show Public.aAcc < 8 by decide)
-  have := slot_le (w := w) (show Public.aTmp < 8 by decide)
-  have := slot_le (w := w) (show Public.aY < 8 by decide)
-  simp only [gRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl) <;> simp only [Crt.sD, Public.sCnt, sFn] <;> omega
-
-theorem gxRanges_le {w o wx : Nat} (hlo : slot w 8 ≤ o) :
-    ∀ r ∈ gRanges w ++ [xRange o wx], r.1 + r.2 ≤ o + slot wx 8 + tabBytes wx := by
-  have hX8 : 8 * 17 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  intro r hr
-  rcases List.mem_append.mp hr with hr | hr
-  · have := gRanges_le w r hr; omega
-  · rw [List.mem_singleton.mp hr]; simp only [xRange]; omega
-
-/-- The modulus' header words but `sD`'s and `sCnt`'s, past a change within
-`gRanges` and a prime's workspace. -/
-theorem Frm.gx_hdr {m m' : Mem} {B : Addr} {w o wx : Nat} (hf : Frm B (gRanges w ++ [xRange o wx]) m m')
-    (hlo : slot w 8 ≤ o) {i : Nat} (hi : i < 32) (h1 : i ≠ Crt.sD)
-    (h2 : i ≠ Public.sCnt) : word m' B (8 * i) = word m B (8 * i) := by
-  have := hdr_lt_slot w Public.aAcc hi
-  have := hdr_lt_slot w Public.aTmp hi
-  have := hdr_lt_slot w Public.aY hi
-  have := hdr_lt_slot w 8 hi
-  refine hf.word_eq (fun r hr => ?_) (by omega)
-  simp only [gRanges, xRange, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
-  · exact Or.inl (by omega)
-  · show 8 * i + 8 ≤ 8 * Crt.sD ∨ 8 * Crt.sD + 8 ≤ 8 * i
-    unfold Crt.sD sFn at h1 ⊢; omega
-  · show 8 * i + 8 ≤ 8 * Public.sCnt ∨ 8 * Public.sCnt + 8 ≤ 8 * i
-    unfold Public.sCnt sFn at h2 ⊢; omega
-  · exact Or.inl (by omega)
-
-/-- A prime's workspace header past a change within `gRanges`. -/
-theorem WsAt.of_g {m m' : Mem} {B : Addr} {w o wx : Nat} {mx : BitVec 64} (h : WsAt m B o wx mx)
-    (hf : Frm B (gRanges w) m m') (hlo : slot w 8 ≤ o) (hoL : B.toNat + o + slot wx 8 ≤ 2 ^ 64) :
-    WsAt m' B o wx mx :=
-  h.of_words fun i hi => by
-    have : 8 * 32 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-    rw [word_off, word_off]
-    exact hf.word_eq (fun r hr => Or.inr (by have := gRanges_le w r hr; omega)) (by omega)
 
 /-! ## The start of a prime's phase -/
 
@@ -171,8 +122,6 @@ theorem unit_ct (M : Mont) {sl : Nat} (hG : GPowCT M sl) (hR : RedcCT M Public.a
     (pinsRdi (fun p : UPub => p.B) fun _ _ ⟨_, _, hg, _⟩ => hg.rdi) hT fun _ _ h => blk_rpre h) ?_)
   exact two_map xp (fun _ _ h => h) (redcCopy_ct M hR)
 
-/-! ## The power in a prime's phase -/
-
 namespace CrtCTQ
 
 /-- After entering the prime's workspace. -/
@@ -246,8 +195,6 @@ theorem pow_ct (M : Mont) {sl sd slen : Nat} (hR : RedcCT M Public.aY) (hE : Exp
   exact RelCT.seqs_append (by simp [redc]) (by simp [Crt.expLoop]) (RelCT.seq (two_post (Ψ := EPre sd slen)
     (two_map BPub.x (fun _ _ ⟨mx, X, _, hc, hX, hwx2, hwx, hw28, hX1, _⟩ =>
       ⟨mx, X, hc, hX, hwx2, hwx, by omega, hX1, by decide⟩) hR) fun _ _ h => redc_ePre M h) hE)
-
-/-! ## `q`'s phase -/
 
 namespace CrtCTQ
 

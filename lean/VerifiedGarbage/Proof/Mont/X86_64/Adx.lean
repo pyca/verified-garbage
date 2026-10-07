@@ -43,7 +43,7 @@ theorem carryO_ok (s : State) {x : Reg} {o : Bool} (ho : s.of = some o) (hz : s.
 `ts₀ … ts_k`, with the carries OF into `ts₀` and CF into `ts₁` in, and OF
 (into `ts_k`) and CF (into `ts_{k+1}`) out. -/
 theorem maddSteps_ok {size : Nat} : ∀ (k : Nat) (ts : List Reg) {s : State} {base : Addr} {d : Nat}
-    {c o : Bool}, Scr s base size → d + 8 * k ≤ size → k + 2 ≤ ts.length → Fresh ts →
+    {c o : Bool}, Scr s base size → d + 8 * k ≤ size → k + 1 ≤ ts.length → FreshX ts →
     s.cf = some c → s.of = some o →
     WP isa (.block (maddSteps k ts d)) s fun s' => ∃ c' o', s'.cf = some c' ∧ s'.of = some o' ∧
       regsVal s' (ts.take (k + 1)) + 2 ^ (64 * k) * o'.toNat + 2 ^ (64 * (k + 1)) * c'.toNat =
@@ -53,9 +53,11 @@ theorem maddSteps_ok {size : Nat} : ∀ (k : Nat) (ts : List Reg) {s : State} {b
   | 0, ts, s, _, _, c, o, _, _, _, _, hc, ho => by
     show WP isa (.block []) s _
     exact WP.block_nil ⟨c, o, hc, ho, by simp [wordsVal], fun _ _ => rfl, rfl, rfl, rfl⟩
+  | _ + 1, [], _, _, _, _, _, _, _, hl, _, _, _ => absurd hl (by simp)
+  | _ + 1, [_], _, _, _, _, _, _, _, hl, _, _, _ => absurd hl (by simp)
   | k + 1, x :: y :: rest, s, base, d, c, o, hs, hd, hl, hf, hc, ho => by
-    obtain ⟨hxn, hxa, hxc, hxd, -, hxr⟩ := hf.head
-    obtain ⟨hyn, hya, hyc, hyd, -, hyr⟩ := hf.tail.head
+    obtain ⟨hxn, hxa, hxc, hxd, hxr⟩ := hf.head
+    obtain ⟨hyn, hya, hyc, hyd, hyr⟩ := hf.tail.head
     have hxy : x ≠ y := fun h => hxn (h ▸ List.mem_cons_self ..)
     simp only [List.length_cons] at hl
     rw [maddSteps, madd_eq, WP.block_append_iff]
@@ -118,7 +120,7 @@ theorem rowX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {L
   refine WP.mono (clear_ok s) fun s₁ ⟨z₁, cf₁, of₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)
   have g₁ : ∀ q, q ≠ .rbp → s₁.gpr q = s.gpr q := fun q h => k₁.1 q (by simpa using h)
-  refine WP.mono (maddSteps_ok L.length (L ++ [tn, tn1]) hs₁ hd (by simp) hf cf₁ of₁)
+  refine WP.mono (maddSteps_ok L.length (L ++ [tn, tn1]) hs₁ hd (by simp) hf.toX cf₁ of₁)
     fun s₂ ⟨c', o', cf₂, of₂, e₂, k₂⟩ => ?_
   rw [ht] at e₂ k₂
   have g₂ : ∀ q, q ≠ .rcx → q ≠ .rax → q ∉ L → q ≠ tn → s₂.gpr q = s₁.gpr q := fun q h1 h2 h3 h4 =>
@@ -289,7 +291,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     rw [hf] at hred
     have ht0 := (s₂.gpr (win M.n i 0)).isLt
     have hum : (s₂.gpr (win M.n i 0)).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
-    refine WP.mono (redF_ok hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
+    refine WP.mono (redF_ok true hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
       ⟨(fin _ ht0 e).1, (fin _ ht0 e).2, k₁₂.trans (k.mono (by sub_regs))⟩
 
 /-- Round `i` of the multiplication, by `mul` or with BMI2 and ADX:

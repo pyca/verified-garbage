@@ -17,6 +17,9 @@ namespace VG.X86
 /-- `s`, permitted to read `rd` and write `wr` instead. -/
 def State.withRegions (s : State) (rd wr : List Region) : State := { s with rd := rd, wr := wr }
 
+theorem State.withRegions_syms (s : State) (rd wr : List Region) :
+    (s.withRegions rd wr).syms = s.syms := rfl
+
 @[simp] theorem State.withRegions_gpr (s : State) (rd wr) : (s.withRegions rd wr).gpr = s.gpr := rfl
 @[simp] theorem State.withRegions_mem (s : State) (rd wr) : (s.withRegions rd wr).mem = s.mem := rfl
 @[simp] theorem State.withRegions_rd (s : State) (rd wr) : (s.withRegions rd wr).rd = rd := rfl
@@ -155,7 +158,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
     subst h
     simp only [State.withRegions_mmx, State.withRegions_wr, State.withRegions_ea, hm, hw _ _ hi, ite_true]
     rfl
-  | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
 
 theorem addrs_withRegions (i : Instr) (s : State) (rd wr : List Region) :
     addrs i (s.withRegions rd wr) = addrs i s := by
@@ -222,7 +225,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
     subst h
     obtain ⟨r, hr, hc⟩ := hi
     exact ⟨rfl, rfl, (Frame.refl _ _).writeW hr _ hc⟩
-  | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+  | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
 
 theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : exec i s = some s') :
     s'.gpr r = s.gpr r := by
@@ -267,7 +270,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : Taint.clobbers i r = false) (h : ex
       split at h <;> [skip; cases h]
       simp only [Option.some.injEq] at h
       subst h; rfl
-    | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
+    | symPush _ _ | push _ | pop _ _ | alloc _ | free _ | mmxEnter | emms => simp only [exec, reduceCtorEq] at h
     | _ => simp [Taint.dst] at hd
 
 theorem eval_withRegions (c : Cond) (s : State) (rd wr : List Region) :
@@ -300,27 +303,37 @@ theorem popReg_withRegions (s : State) (d : Reg) (k : Nat) (rd wr : List Region)
     exact ih ((s.setReg d (s.mem.readW ((s.gpr .esp).setWidth 64) 32)).setReg .esp (s.gpr .esp + 4))
 
 /-- A frame's push adds its region at the head of `wr`, and changes no
-register but `esp`. -/
+register but `esp` and the destination of a static-address push. -/
 theorem push_eq {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     ∃ k, s₁.rd = s.rd ∧ s₁.wr = ⟨(s₁.gpr .esp).setWidth 64, 4 * k⟩ :: s.wr ∧
-      (∀ r, r ≠ .esp → s₁.gpr r = s.gpr r) ∧
+      (∀ r, r ≠ .esp → dstOf i ≠ some r → s₁.gpr r = s.gpr r) ∧
       s₁.gpr .esp = s.gpr .esp - BitVec.ofNat 32 (4 * k) := by
   cases i <;> simp only [isa, push, reduceCtorEq] at h
   case mmxEnter =>
     split at h <;> cases h
-    exact ⟨0, rfl, rfl, fun _ _ => rfl, by simp⟩
+    exact ⟨0, rfl, rfl, fun _ _ _ => rfl, by simp⟩
   case push rs =>
     split at h <;> cases h
     obtain ⟨h₁, -, h₃, h₄⟩ := pushRegs_eq s rs
-    exact ⟨rs.length, h₁, by rw [h₃], h₄, h₃⟩
+    exact ⟨rs.length, h₁, by rw [h₃], fun r hr _ => h₄ r hr, h₃⟩
   case alloc bytes =>
     split at h <;> cases h
     rename_i hc
     have e : 4 * (bytes / 4) = bytes := Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero hc.2.2.1)
-    refine ⟨bytes / 4, rfl, ?_, fun r hr => ?_, ?_⟩
+    refine ⟨bytes / 4, rfl, ?_, fun r hr _ => ?_, ?_⟩
     · simp only [State.setReg, ite_true, e]
     · simp only [State.setReg, hr, ite_false]
     · simp only [State.setReg, ite_true, e]
+
+  case symPush d name =>
+    split at h <;> cases h
+    rename_i hc
+    have he : Reg.esp ≠ d := hc.1.symm
+    refine ⟨1, rfl, ?_, fun r hr hd => ?_, ?_⟩
+    · simp only [State.setReg, he, ↓reduceIte]
+    · have hd' : r ≠ d := fun e => hd (by simp [dstOf, Taint.dst, e])
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, hd', ↓reduceIte]
+    · simp only [State.setReg, he, ↓reduceIte]; rfl
 
 /-- A frame's pop removes the region at the head of `wr`, and changes only
 its register and `esp`. -/
@@ -373,6 +386,15 @@ theorem push_widen {i : Instr} {s s₁ : State} (h : isa.push i s = some s₁) :
     simp only [isa, push, State.withRegions_gpr, hc.1, hc.2.1, hc.2.2.1, hc.2.2.2, and_self, ite_true]
     rfl
 
+  case symPush d name =>
+    split at h <;> cases h
+    rename_i hc
+    refine ⟨_, rfl, rfl, fun rd wr => ?_⟩
+    simp only [isa, push]
+    split
+    · rfl
+    · rename_i hn; exact (hn hc).elim
+
 theorem pop_widen {j : Instr} {s₁ s₂ s' : State} (h : isa.pop j s₁ s₂ = some s') (rd : List Region)
     {wr : List Region} (hw : wr.head? = s₁.wr.head?) :
     isa.pop j (s₁.withRegions rd wr) (s₂.withRegions rd wr) = some (s'.withRegions rd wr.tail) := by
@@ -407,8 +429,8 @@ theorem call_ret_gpr {s s₁ s₂ s' : State} (hc : isa.call s = some s₁) (hr 
     exact BitVec.sub_add_cancel _ _
   · simp only [hrs, ite_false, hb, call_gpr hc]
 
-/-- A frame restores every register but its pop's. -/
-theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hj : Taint.clobbers j r = false)
+/-- A frame restores registers written by neither its push nor its pop. -/
+theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hi : Taint.clobbers i r = false) (hj : Taint.clobbers j r = false)
     (hp : isa.push i s = some s₁) (hq : isa.pop j s₁ s₂ = some s') (hb : s₂.gpr r = s₁.gpr r) :
     s'.gpr r = s.gpr r := by
   obtain ⟨k, -, w₁, g₁, e₁⟩ := push_eq hp
@@ -420,7 +442,7 @@ theorem frame_gpr {i j : Instr} {s s₁ s₂ s' : State} {r : Reg} (hj : Taint.c
     have : k = k' := by omega
     subst this
     rw [e₃, hb, e₁, BitVec.sub_add_cancel]
-  · rw [g₂ r hrs (Taint.dst_ne_of_clobbers hj), hb, g₁ r hrs]
+  · rw [g₂ r hrs (Taint.dst_ne_of_clobbers hj), hb, g₁ r hrs (Taint.dst_ne_of_clobbers hi)]
 
 /-- The permissions of x86 states, for the inlining theory
 (`Proof/Framework/Inline.lean`). -/
@@ -473,8 +495,20 @@ theorem Exec.widen {c : Prog isa} {s s' : State} {t : List Leak} {rd wr : List R
 
 /-- A register that no instruction writes keeps its value. -/
 theorem Exec.gpr {c : Prog isa} {r : Reg} (hc : ∀ i ∈ instrs c, Taint.clobbers i r = false)
-    {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.gpr r = s.gpr r :=
-  Exec.keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) frame_gpr hc (.inr fun _ _ _ _ hc hr hb => call_ret_gpr hc hr hb) h
+    {s s' : State} {t : List Leak} (h : Exec isa c s t s') : s'.gpr r = s.gpr r := by
+  induction h with
+  | block h => exact execBlock_keep (fun s : State => s.gpr r) (fun hi he => exec_gpr hi he) hc h
+  | seq _ _ ih₁ ih₂ =>
+    rw [ih₂ (fun i hi => hc i (List.mem_append_right _ hi)),
+      ih₁ (fun i hi => hc i (List.mem_append_left _ hi))]
+  | iteT _ _ ih => exact ih (fun i hi => hc i (List.mem_append_left _ hi))
+  | iteF _ _ ih => exact ih (fun i hi => hc i (List.mem_append_right _ hi))
+  | loopExit _ _ ih => exact ih hc
+  | loopNext _ _ _ ih₁ ih₂ => rw [ih₂ hc, ih₁ hc]
+  | call hp _ hq ih => exact call_ret_gpr hp hq (ih hc)
+  | frame hp _ hq ih =>
+    exact frame_gpr (hc _ (by simp [instrs])) (hc _ (by simp [instrs])) hp hq
+      (ih (fun i hi => hc i (by simp [instrs, hi])))
 
 /-- A register that no instruction writes keeps its value, as a
 postcondition. -/

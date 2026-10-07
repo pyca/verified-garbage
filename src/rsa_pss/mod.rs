@@ -10,24 +10,28 @@
 //! function and the lengths, but not on the hash value, the salt or the
 //! private key.
 //!
-//! [`verify`] is the verified `vg_rsa_pss_<H>_mgf1_<H>_verify` (contract
-//! `VG.Spec.RsaPss.verifyContract`): RSAVP1, then EMSA-PSS-VERIFY (RFC 8017
+//! [`verify`] is the verified `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` (contract
+//! `VG.Spec.RsaPss.verifyPrecomputedContract`): RSAVP1, then EMSA-PSS-VERIFY (RFC 8017
 //! §9.1.2), expecting a salt of a given length or of any length
 //! ([`SaltLength::Any`], BoringSSL's `RSA_PSS_SALTLEN_AUTO`), as BoringSSL's
 //! `RSA_verify_pss_mgf1` does. Its timing may depend on the public key, the
 //! hash function, the lengths and the expected salt length, but not on the
 //! signature, the hash value or anything computed from them but the result.
+//! Verification reuses the public-key values cached by [`PublicKey::new`].
 //!
 //! Each function runs the implementation of the hash function's compression
 //! function that the CPU is best at (as [`crate::hashes`] does), and for
-//! signing, the private-key operation's (see [`crate::rsa`]): the verified
+//! both operations, the RSA backend's (see [`crate::rsa`]): the verified
 //! functions are emitted for each pair, all with the same contracts.
 //!
 //! MGF1 over another hash function than the hash value's is not supported.
 //! This module only checks the lengths, draws the salt and allocates the
 //! memory the functions work in.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 mod md5;
 mod sha1;
@@ -125,6 +129,7 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 /// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
+#[cfg(target_arch = "x86_64")]
 type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut u8,
     usize,
@@ -148,8 +153,34 @@ type SignFn<const N: usize> = unsafe extern "sysv64" fn(
     *mut u64,
     usize,
 ) -> u32;
+/// `vg_rsa_pss_<H>_mgf1_<H>_sign`'s signature, for `N`-byte hash values.
+#[cfg(target_arch = "aarch64")]
+type SignFn<const N: usize> = unsafe extern "C" fn(
+    *mut u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const [u8; N],
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+) -> u32;
 
-/// `vg_rsa_pss_<H>_mgf1_<H>_verify`'s signature, for `N`-byte hash values.
+/// `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`'s signature, for `N`-byte hash values.
+#[cfg(target_arch = "x86_64")]
 type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     *const u8,
     usize,
@@ -161,6 +192,25 @@ type VerifyFn<const N: usize> = unsafe extern "sysv64" fn(
     usize,
     u32,
     *mut u64,
+    usize,
+    *const u64,
+    usize,
+) -> u32;
+/// `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed`'s signature, for `N`-byte hash values.
+#[cfg(target_arch = "aarch64")]
+type VerifyFn<const N: usize> = unsafe extern "C" fn(
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const [u8; N],
+    *const u8,
+    usize,
+    usize,
+    u32,
+    *mut u64,
+    usize,
+    *const u64,
     usize,
 ) -> u32;
 
@@ -282,7 +332,7 @@ pub fn verify(
         SaltLength::Len(l) => (l, 0),
         SaltLength::Any => (0, 1),
     };
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = key.verify_scratch.take(scratch_words(k));
     let r = with_functions!(hash, |fns| call_verify(
         fns.1,
         key,
@@ -292,9 +342,7 @@ pub fn verify(
         any,
         &mut scratch
     ));
-    // The working space holds the encoding, which is as secret as the
-    // signature's validity.
-    zeroize(&mut scratch);
+    // ScratchLease wipes the encoding before returning its buffer to the key.
     r == 1
 }
 
@@ -346,7 +394,7 @@ fn call_sign<const N: usize>(
     }
 }
 
-/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_verify` that this CPU can run, on the
+/// `f`, a `vg_rsa_pss_<H>_mgf1_<H>_verify_precomputed` that this CPU can run, on the
 /// key, the modulus-long signature, the hash value (as long as `H`'s
 /// values), the salt length and whether any is allowed, and the working
 /// space.
@@ -366,7 +414,8 @@ fn call_verify<const N: usize>(
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
     // and `scratch_len = 16 n_len + 1024`; and the CPU has the features of
-    // the function `functions` chose.
+    // the function `functions` chose. `PublicKey::new` supplies the matching
+    // precomputed values and their required length.
     unsafe {
         f(
             key.n.as_ptr(),
@@ -380,23 +429,30 @@ fn call_verify<const N: usize>(
             any,
             scratch.as_mut_ptr(),
             scratch.len(),
+            key.pre.as_ptr(),
+            key.pre.len(),
         )
     }
 }
 
 /// The verified functions of one hash function: for each implementation of
 /// its compression function (a variant of its streaming backend), `verify`
-/// and `sign` calling each implementation of the private-key operation
-/// (`crate::rsa::Backend`), with the CPU features each needs.
+/// and `sign` calling the selected public- and private-key operations
+/// (`crate::rsa::Backend`), with the CPU features each needs. The functions
+/// calling the x86-64 RSA backends (`verify_adx`, `adx`, `ifma`) are given for
+/// the variants that have them, and used on x86-64 only.
 macro_rules! pss_hash {
     (
         $n:literal, $backend:ident {
             $(
                 $(#[$attr:meta])* $variant:ident => {
                     verify: $verify:path [$($vreq:path),*],
-                    sign: $sign:path [$($sreq:path),*],
-                    adx: $adx:path [$($areq:path),*],
-                    ifma: $ifma:path [$($ireq:path),*] $(,)?
+                    sign: $sign:path [$($sreq:path),*]
+                    $(,
+                        verify_adx: $verify_adx:path [$($vareq:path),*],
+                        adx: $adx:path [$($areq:path),*],
+                        ifma: $ifma:path [$($ireq:path),*]
+                    )? $(,)?
                 }
             ),* $(,)?
         }
@@ -407,7 +463,11 @@ macro_rules! pss_hash {
         // The features are checked by the test below.
         $(
             $(#[$attr])*
-            const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)* $($areq,)* $($ireq,)*];
+            const _: &[$crate::cpu::Features] = &[$($vreq,)* $($sreq,)*];
+            $(
+                #[cfg(target_arch = "x86_64")]
+                const _: &[$crate::cpu::Features] = &[$($vareq,)* $($areq,)* $($ireq,)*];
+            )?
         )*
 
         /// The functions for the implementations that a CPU with the
@@ -420,10 +480,20 @@ macro_rules! pss_hash {
                     $backend::$variant => (
                         match crt {
                             $crate::rsa::Backend::Baseline => $sign,
-                            $crate::rsa::Backend::Adx => $adx,
-                            $crate::rsa::Backend::Ifma => $ifma,
+                            $(
+                                #[cfg(target_arch = "x86_64")]
+                                $crate::rsa::Backend::Adx => $adx,
+                                #[cfg(target_arch = "x86_64")]
+                                $crate::rsa::Backend::Ifma => $ifma,
+                            )?
                         },
-                        $verify,
+                        match crt {
+                            $crate::rsa::Backend::Baseline => $verify,
+                            $(
+                                #[cfg(target_arch = "x86_64")]
+                                $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => $verify_adx,
+                            )?
+                        },
                     ),
                 )*
             }
@@ -445,11 +515,22 @@ macro_rules! pss_hash {
                     $(
                         $(#[$attr])*
                         if $backend::select(f) == $backend::$variant {
-                            assert!(f.contains(Features::all(&[$($vreq),*])));
+                            let v: Features = match crt {
+                                $crate::rsa::Backend::Baseline => Features::all(&[$($vreq),*]),
+                                $(
+                                    #[cfg(target_arch = "x86_64")]
+                                    $crate::rsa::Backend::Adx | $crate::rsa::Backend::Ifma => Features::all(&[$($vareq),*]),
+                                )?
+                            };
+                            assert!(f.contains(v));
                             let s: Features = match crt {
                                 $crate::rsa::Backend::Baseline => Features::all(&[$($sreq),*]),
-                                $crate::rsa::Backend::Adx => Features::all(&[$($areq),*]),
-                                $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
+                                $(
+                                    #[cfg(target_arch = "x86_64")]
+                                    $crate::rsa::Backend::Adx => Features::all(&[$($areq),*]),
+                                    #[cfg(target_arch = "x86_64")]
+                                    $crate::rsa::Backend::Ifma => Features::all(&[$($ireq),*]),
+                                )?
                             };
                             assert!(f.contains(s));
                         }

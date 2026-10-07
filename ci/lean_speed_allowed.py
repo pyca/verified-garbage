@@ -38,6 +38,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/AesSiv/X86_64/Init.lean": 4,
     "VerifiedGarbage/Proof/AesSiv/X86_64/Open.lean": 5,
     "VerifiedGarbage/Proof/AesSiv/X86_64/XorBytes.lean": 1,
+    "VerifiedGarbage/Proof/Bignum/AArch64/Run.lean": 1,
     "VerifiedGarbage/Proof/Blake2/AArch64/Compress.lean": 11,
     "VerifiedGarbage/Proof/Blake2/Arm/CompressB.lean": 9,
     "VerifiedGarbage/Proof/Blake2/Arm/CompressS/Compress.lean": 11,

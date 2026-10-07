@@ -20,7 +20,7 @@ and the masked addition (`addM_ok`) and subtraction (`sub_ok`) of
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## Bases -/
 
@@ -112,7 +112,7 @@ theorem shlStep_ok {s₀ : State} {B : Addr} {Z w e : Nat} {c₀ : Bool}
       hI.scr.st (show e + 8 * j + 8 ≤ Z by omega)]
     refine ⟨_, rfl, _, rfl, ?_⟩
     rw [adc_toNat]
-    simp only [Bignum.X86_64.word]
+    simp only [Bignum.word]
     omega
   have t₁14 : t₁.gpr .r14 = BitVec.ofNat 64 j := (k₁.gpr (by decide)).trans hI.r14
   have t₁12 : t₁.gpr .r12 = BitVec.ofNat 64 w := (k₁.gpr (by decide)).trans t12

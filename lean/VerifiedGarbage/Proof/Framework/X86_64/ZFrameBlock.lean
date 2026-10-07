@@ -26,7 +26,7 @@ def VOp.dst? : VOp → Option XReg
 def ZOp.dst : ZOp → XReg
   | .zbin _ d _ _ | .vpclmulqdq d _ _ _ | .vprold d _ _ | .vpshufd d _ _ | .vshufi32x4 d _ _ _
   | .vshift _ d _ _ | .vpslldq d _ _ | .vpsrldq d _ _ | .vpbroadcastq d _ | .vmovdqa64 d _
-  | .vpternlogd d _ _ _ | .vprorq d _ _ | .vpermq d _ _ => d
+  | .vpternlogd d _ _ _ | .vprorq d _ _ | .vpermq d _ _ | .vpmadd52 _ d _ _ => d
 
 /-- The register a vector instruction writes, if it writes only one and
 nothing else. -/

@@ -22,6 +22,11 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
   have h₂ : Spec.P384.curve.n.log2 < 384 := (Nat.log2_lt (by decide +kernel)).mpr (by decide +kernel)
   omega
 
+private theorem core_pre_384 {s : State} (h : (coreK Impl.Ecdsa.X86.p384).pre s) :
+    Proof.Ecdsa.X86.P384.signX86.pre s := by
+  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, _⟩ := h
+  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp⟩
+
 /-- P-384, with the group law `hL`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   E := Impl.Ecdsa.X86.p384
@@ -34,8 +39,12 @@ def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where
   sh_eq := by show 8 * 48 - Spec.Ecdsa.nBits Spec.P384.curve = 0; rw [p384_nBits]
   coreN := Spec.Ecdsa.P384.signApi.name
   coreC := Impl.Ecdsa.X86.signP384
-  coreX := Proof.Ecdsa.X86.P384.sign_x86 hL
-  coreCT := Proof.Ecdsa.X86.P384.sign_ct
+  coreX := fun s h => Proof.Ecdsa.X86.P384.sign_x86 hL s (core_pre_384 h)
+  coreCT := by
+    intro s t tr₁ tr₂ s' t' hs ht hp
+    obtain ⟨he, a0, a1, a2, a3, a4, _⟩ := hp
+    exact Proof.Ecdsa.X86.P384.sign_ct s t tr₁ tr₂ s' t' (core_pre_384 hs) (core_pre_384 ht)
+      ⟨he, a0, a1, a2, a3, a4⟩
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide
   reduceT := Function.const _ ⟨_, by taint_decide⟩

@@ -177,8 +177,8 @@ theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     exact WP.mono (sn (invLay_of hc h6 h4 (M := c.MN') rfl (jm := MN) rfl (Or.inr rfl) rfl (base := KM) (Or.inr rfl) c.C.n)
       (by have := hc.n_ge; omega) hnR hs hM hB iN)
       fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwW rfl rfl), lt, v⟩
-  · exact WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs hM hB hO hbits
-      (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega))
+  · exact WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs hM hB hO
+      (fun t ht => hbits t (Nat.lt_of_lt_of_le ht (nbitsN_ok hc).2.1)) (nbitsN_ok hc).2.2)
       fun s' ⟨K, U, lt, v⟩ => ⟨K.mono fun r h => List.mem_cons_of_mem _ h, Unch.cover U (powW_pwW (powWN_eq c)), lt, v⟩
 
 end VG.Proof.Ecdsa.X86_64

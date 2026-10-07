@@ -36,14 +36,14 @@ theorem ldmxcsr_ok (v : BitVec 32) :
 
 /-- `withMxcsr` runs `c` from `s` but for `rax`, `r11` and `mxR`, and
 changes nothing more than `mxR` and MXCSR after it. -/
-theorem withMxcsr_ok {c : Prog isa} {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .rax) (rs : List Reg)
+theorem withMxcsr_ok' {c : Prog isa} {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .rax) (rs : List Reg)
     (hrs : r ∉ rs ∧ Reg.r11 ∉ rs) {sP : Addr} {s : State} {Q : State → Prop}
-    (hsi : s.gpr r = sP) (hw : pR sP ∈ s.wr) (hk : writesOnly rs c = true)
+    (hsi : s.gpr r = sP) (h0 : InRegions s.wr (sP + BitVec.ofNat 64 768) 4)
+    (h4 : InRegions s.wr (sP + BitVec.ofNat 64 772) 4) (hk : writesOnly rs c = true)
     (hc : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR sP] s.mem s1.mem → WP isa c s1 Q) :
     WP isa (withMxcsr r 768 c) s fun s' => ∃ s2, Q s2 ∧ Frame [mxR sP] s2.mem s'.mem ∧ Keep [] s2 s' := by
-  have h0 := mx_in hw 768 (by decide)
-  have h0' := mx_in (List.mem_append_right s.rd hw) 768 (by decide)
-  have h4 := mx_in hw 772 (by decide)
+  have h0' : InRegions (s.rd ++ s.wr) (sP + BitVec.ofNat 64 768) 4 :=
+    let ⟨r, hr, hc⟩ := h0; ⟨r, List.mem_append_right _ hr, hc⟩
   simp only [withMxcsr]
   refine WP.seq (WP.mono (Q := fun (s1 : State) => s1.gpr .r11 = (s.mxcsr &&& 0xFFFF).setWidth 64 ∧ Keep [.r11] s s1 ∧
     Frame [mxR sP] s.mem s1.mem) (by
@@ -77,6 +77,13 @@ theorem withMxcsr_ok {c : Prog isa} {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .rax) (
   vrunm [hsi3, h113, h03, h03', Mem.readW_writeW_self32, ldmxcsr_ok]
   exact ⟨_, hq, (Frame.refl _ _).writeW (List.mem_singleton_self _) _
     (Offset.contains sP (by decide) (by decide) (by decide)), fun _ _ => rfl, rfl, rfl⟩
+
+theorem withMxcsr_ok {c : Prog isa} {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .rax) (rs : List Reg)
+    (hrs : r ∉ rs ∧ Reg.r11 ∉ rs) {sP : Addr} {s : State} {Q : State → Prop}
+    (hsi : s.gpr r = sP) (hw : pR sP ∈ s.wr) (hk : writesOnly rs c = true)
+    (hc : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR sP] s.mem s1.mem → WP isa c s1 Q) :
+    WP isa (withMxcsr r 768 c) s fun s' => ∃ s2, Q s2 ∧ Frame [mxR sP] s2.mem s'.mem ∧ Keep [] s2 s' :=
+  withMxcsr_ok' hr rs hrs hsi (mx_in hw 768 (by decide)) (mx_in hw 772 (by decide)) hk hc
 
 /-! ## Regions of `scratch` -/
 

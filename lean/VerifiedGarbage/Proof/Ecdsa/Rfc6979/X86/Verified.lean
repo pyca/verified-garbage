@@ -29,15 +29,15 @@ theorem sign_spSafe (P : RfcHash) : (cfgOf P).sign.all (fun i => !isa.writesSp i
   generalize Impl.Ecdsa.Rfc6979.X86.frameBytes (cfgOf P).wide = n
   rfl
 
-theorem sign_x86 (P : RfcHash) (s : State) (h : (rfcX86 P.I (272 + 4 * P.e)).pre s) :
-    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcX86 P.I (272 + 4 * P.e)).post s s' := by
+theorem sign_x86 (P : RfcHash) (s : State) (h : (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s) :
+    ∃ t s', Exec isa (cfgOf P).sign s t s' ∧ abiPreserved s s' ∧ (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := sign_ok (P := P) h
   exact ⟨t, s', he, hg, hp⟩
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
-def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa :=
-  { rfcX86 I N with
+def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64)) := []) : Contract isa :=
+  { rfcX86 I N cs with
   pre := fun s =>
     let out : Region := ⟨(arg s 0).setWidth 64, 2 * I.ecdsa.curve.len⟩
     let d : Region := ⟨(arg s 1).setWidth 64, I.ecdsa.curve.len⟩
@@ -47,24 +47,24 @@ def rfcWide (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) : Contract isa :=
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
     let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 N, N⟩
     N ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
-    s.rd = [d, digest] ∧ s.wr = [out, scratch, args] ∧
+    s.rd = [d, digest] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) cs ∧ s.wr = [out, scratch, args] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       stack.Disjoint out ∧ stack.Disjoint d ∧ stack.Disjoint digest ∧ stack.Disjoint scratch ∧
       (arg s 0).toNat + 2 * I.ecdsa.curve.len ≤ 2 ^ 32 ∧ (arg s 1).toNat + I.ecdsa.curve.len ≤ 2 ^ 32 ∧
-      (arg s 2).toNat + I.hashLen ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 }
+      (arg s 2).toNat + I.hashLen ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ TblsOk cs s [out, scratch, ret, stack] }
 
-def wideRd (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) : List Region :=
-  [⟨(arg s 1).setWidth 64, I.ecdsa.curve.len⟩, ⟨(arg s 2).setWidth 64, I.hashLen⟩, ⟨argAddr s 0, 16⟩]
+def wideRd (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) (cs : List (String × List (BitVec 64)) := []) : List Region :=
+  [⟨(arg s 1).setWidth 64, I.ecdsa.curve.len⟩, ⟨(arg s 2).setWidth 64, I.hashLen⟩, ⟨argAddr s 0, 16⟩] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) cs
 def wideWr (I : Spec.Ecdsa.Rfc6979.Instance) (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 2 * I.ecdsa.curve.len⟩, ⟨(arg s 3).setWidth 64, 8192⟩]
 
-theorem wide_pre (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (s : State) (h : (rfcWide I N).pre s) :
-    (rfcX86 I N).pre (s.withRegions (wideRd I s) (wideWr I s)) := by
+theorem wide_pre (I : Spec.Ecdsa.Rfc6979.Instance) (N : Nat) (cs : List (String × List (BitVec 64))) (s : State) (h : (rfcWide I N cs).pre s) :
+    (rfcX86 I N cs).pre (s.withRegions (wideRd I s cs) (wideWr I s)) := by
   obtain ⟨h₁, h₂, -, -, h⟩ := h
   simp only [rfcX86, wideRd, wideWr, arg_withRegions, argAddr_withRegions, State.withRegions_gpr,
-    State.withRegions_rd, State.withRegions_wr]
+    State.withRegions_rd, State.withRegions_wr, State.withRegions_syms]
   exact ⟨h₁, h₂, trivial, trivial, h⟩
 
 /-- The notes on the implementation, for the documentation of the function
@@ -114,27 +114,27 @@ def satState (Q D : Nat) : State where
   wr := [⟨0x1000, 2 * Q⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
 theorem sign_verified (P : RfcHash)
-    (himp : (rfcWide P.I (272 + 4 * P.e)).Implies (P.I.signContract X86.abi (272 + 4 * P.e))) :
-    Verified X86.target (cfgOf P).sign (P.I.signContract X86.abi (272 + 4 * P.e)) := by
+    (himp : (rfcWide P.I (272 + 4 * P.e) P.R.E.combConsts).Implies (P.I.signContract (X86.abi.withConsts P.R.E.combConsts) (272 + 4 * P.e))) :
+    Verified X86.target (cfgOf P).sign (P.I.signContract (X86.abi.withConsts P.R.E.combConsts) (272 + 4 * P.e)) := by
   have hsat := himp.sat_left
-  have satLocal : ∃ s, (rfcX86 P.I (272 + 4 * P.e)).pre s := hsat.elim fun s h => ⟨_, wide_pre P.I _ s h⟩
-  have verifiedLocal : Verified X86.target (cfgOf P).sign (rfcX86 P.I (272 + 4 * P.e)) :=
+  have satLocal : ∃ s, (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s := hsat.elim fun s h => ⟨_, wide_pre P.I _ P.R.E.combConsts s h⟩
+  have verifiedLocal : Verified X86.target (cfgOf P).sign (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts) :=
     Verified.of_correct (sign_x86 P) sign_ct (.refl satLocal)
-  apply Verified.of_implies (Verified.narrowTo verifiedLocal (wideRd P.I) (wideWr P.I) (wide_pre P.I _)
+  apply Verified.of_implies (Verified.narrowTo verifiedLocal (fun s => wideRd P.I s P.R.E.combConsts) (wideWr P.I) (wide_pre P.I _ P.R.E.combConsts)
     ?_ ?_ ?_ ?_ hsat) himp
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.2.1, h.2.2.2.1]
     refine ⟨r, ?_, hc⟩
     simp only [wideRd, wideWr, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
-    rcases hr with (rfl | rfl | rfl) | (rfl | rfl) <;> simp
+    rcases hr with ((rfl | rfl | rfl) | hr) | (rfl | rfl) <;> simp_all
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.2.2.1]
     refine ⟨r, ?_, hc⟩
     simp only [wideWr, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl <;> simp
   · intro s t _ h
-    simpa only [rfcWide, rfcX86, arg_withRegions, State.withRegions_gpr, State.withRegions_mem] using h
+    simpa only [rfcWide, rfcX86, arg_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_syms] using h
   · intro s t _ _ h
-    simpa only [rfcWide, rfcX86, arg_withRegions, State.withRegions_gpr, State.withRegions_mem] using h
+    simpa only [rfcWide, rfcX86, arg_withRegions, State.withRegions_gpr, State.withRegions_mem, State.withRegions_syms] using h
 
 end VG.Proof.Ecdsa.Rfc6979.X86

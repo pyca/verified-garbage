@@ -368,6 +368,39 @@ def init : Prog isa :=
   (.seq (.call c.ctr.name c.ctr.code)
     (.block restore))))
 
+/-- `init` with `t` in place of its exit. -/
+def initWith (t : Prog isa) : Prog isa :=
+  .seq (.block (save .rcx ++ [.mov .r15 (.reg .rcx), .mov .r13 (.reg .rdx), .mov .rbx (.reg .rsi),
+      .shift .shr .rbx 2, .alu .add .rbx (imm 6)] ++ ptr .rcx .r15 scrO))
+  (.seq (.call c.key.name c.key.code)
+  (.seq (.block ([.mov32 .rax (imm 0), .store (at_ .r13 240) .rax, .store (at_ .r13 248) .rax,
+      .store (at_ .r15 tO) .rax, .store (at_ .r15 (tO + 8)) .rax, .mov .rdi (.reg .r13),
+      .mov .rsi (.reg .rbx)] ++ ptr .rdx .r15 tO ++ ptr .rcx .r13 240 ++ [.mov32 .r8 (imm 1)] ++
+      ptr .r9 .r15 scrO))
+  (.seq (.call c.ctr.name c.ctr.code) t)))
+
+/-- The next power of the hash subkey `H` (at `r13 + 240`), into the block at
+`rbp`: zeroed, then `vg_ghash` over the block before it, `Hᵏ`, which makes it
+`(0 ⊕ Hᵏ) • H = Hᵏ⁺¹`; then `rbp` past it. -/
+def powStep : Prog isa :=
+  .seq (.block (([.mov32 .rax (imm 0), .store (at_ .rbp 0) .rax, .store (at_ .rbp 8) .rax] : List Instr) ++
+      ptr .rdi .r13 240 ++ ([.mov .rsi (.reg .rbp), .mov .rdx (.reg .rbp), .alu .sub .rdx (imm 16),
+      .mov32 .rcx (imm 1)] : List Instr) ++ ptr .r8 .r15 scrO))
+  (.seq (.call c.gh.name c.gh.code) (.block [.alu .add .rbp (imm 16)]))
+
+/-- `n` powers, one after the other. -/
+def powSteps : Nat → Prog isa
+  | 0 => .block []
+  | n + 1 => .seq (powSteps n) (powStep c)
+
+/-- `vg_aes_gcm_init_precomputed(key = rdi, key_len = rsi, ctx = rdx, scratch = rcx)`:
+`init`, then the hash subkey `H` copied to `ctx + 256`, and its powers
+`H²`–`H⁴⁸` after it (`powStep`). -/
+def initPrecomputed : Prog isa :=
+  initWith c (.seq (.block (([.mov .rax (.mem (at_ .r13 240)), .store (at_ .r13 256) .rax,
+      .mov .rax (.mem (at_ .r13 248)), .store (at_ .r13 264) .rax] : List Instr) ++ ptr .rbp .r13 272))
+    (.seq (powSteps c 47) (.block restore)))
+
 /-- `vg_aes_gcm_stream_init(ctx = rdi, nonce = rsi, nonce_len = rdx, state = rcx, scratch = r8)`. -/
 def streamInit : Prog isa :=
   .seq (.block (save .r8 ++ [.mov .r15 (.reg .r8), .mov .r14 (.reg .rcx), .mov .r13 (.reg .rdi),

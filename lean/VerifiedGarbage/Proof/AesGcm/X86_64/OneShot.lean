@@ -46,8 +46,8 @@ structure OneCtx (s : State) (k : Nat) (Ctx W SP Np A D : Addr) (nl al n : Nat) 
 
 /-- `OneCtx`, from `oneLay` and where the buffers are, with `work` the `w`-th
 of `k` arguments on the stack. -/
-theorem OneCtx.of {w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay w k s)
-    (pc : Covers [⟨s.gpr .rdi, 256⟩] (s.rd ++ s.wr)) (pn : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] (s.rd ++ s.wr))
+theorem OneCtx.of {cl w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay cl w k s) (hcl : 256 ≤ cl)
+    (pc : Covers [⟨s.gpr .rdi, cl⟩] (s.rd ++ s.wr)) (pn : Covers [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩] (s.rd ++ s.wr))
     (pa : Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s.rd ++ s.wr))
     (pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8 * k⟩] (s.rd ++ s.wr))
     (pd : Covers [⟨stackArg s 0, (stackArg s 1).toNat⟩] s.wr) (pW : Covers [⟨stackArg s w, 2560⟩] s.wr) :
@@ -57,6 +57,14 @@ theorem OneCtx.of {w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay w k s)
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
   obtain ⟨d_cd, d_cw, d_nd, d_nw, d_ad, d_aw, d_dw, d_da, d_wa, r_d, r_w, t_c, t_n, t_a, t_d, t_w,
     wc, wn, wa, wd, ww, sp24, wsp, hR⟩ := hp
+  have c256 : Region.Sub ⟨s.gpr .rdi, 256⟩ ⟨s.gpr .rdi, cl⟩ := Region.sub_prefix hcl
+  replace d_cd := d_cd.sub_left c256
+  replace d_cw := d_cw.sub_left c256
+  replace t_c := t_c.sub_right c256
+  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega
+  replace pc : Covers [⟨s.gpr .rdi, 256⟩] (s.rd ++ s.wr) := fun a m ⟨r, hr, hc⟩ => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact pc a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega⟩
   have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
   have k_c := t_c.sub_left b8
   have k_n := t_n.sub_left b8
@@ -84,7 +92,7 @@ theorem OneCtx.of {w k : Nat} {s : State} (hp : Proof.AesGcm.oneLay w k s)
 
 /-- What `seal`'s precondition gives: `OneCtx`, and `tag`, 16 bytes to write
 at `T` (the third argument on the stack). -/
-theorem OneCtx.ofSeal {s : State} (hp : Proof.AesGcm.sealPre s) :
+theorem OneCtx.ofSeal {cl : Nat} {s : State} (hp : Proof.AesGcm.sealPre cl s) (hcl : 256 ≤ cl) :
     OneCtx s 4 (s.gpr .rdi) (stackArg s 3) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0)
       (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat ∧ Covers [⟨stackArg s 2, 16⟩] s.wr ∧
       (⟨stackArg s 2, 16⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat⟩ ∧
@@ -95,7 +103,7 @@ theorem OneCtx.ofSeal {s : State} (hp : Proof.AesGcm.sealPre s) :
   obtain ⟨hrd, hwr, hl, d_td, d_tw, r_t, -⟩ := hp'
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd
-  refine ⟨OneCtx.of (w := 3) hl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, r_t⟩
+  refine ⟨OneCtx.of (w := 3) hl hcl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, r_t⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
@@ -108,7 +116,7 @@ theorem OneCtx.ofSeal {s : State} (hp : Proof.AesGcm.sealPre s) :
 
 /-- What `open`'s precondition gives: `OneCtx`, and the received tag, the
 `tag_len` (fourth argument on the stack) bytes to read at `T` (the third). -/
-theorem OneCtx.ofOpen {s : State} (hp : Proof.AesGcm.openPre s) :
+theorem OneCtx.ofOpen {cl : Nat} {s : State} (hp : Proof.AesGcm.openPre cl s) (hcl : 256 ≤ cl) :
     OneCtx s 5 (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0)
       (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat ∧
       Covers [⟨stackArg s 2, (stackArg s 3).toNat⟩] (s.rd ++ s.wr) ∧
@@ -120,7 +128,7 @@ theorem OneCtx.ofOpen {s : State} (hp : Proof.AesGcm.openPre s) :
   obtain ⟨hrd, hwr, hl, d_td, d_tw, t_t, -⟩ := hp'
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd
-  refine ⟨OneCtx.of (w := 4) hl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, t_t⟩
+  refine ⟨OneCtx.of (w := 4) hl hcl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, t_t⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _

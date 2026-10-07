@@ -3,6 +3,7 @@ import VerifiedGarbage.Spec.RsaKeyGen.Contract
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 import VerifiedGarbage.Proof.Bignum.X86_64.R2
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.RsaKeyGen.CandMath
 
 /-!
 # A candidate on x86-64: too close to `p`
@@ -17,7 +18,7 @@ without `p`, in `rbp` (`closeCheck_ok`).
 namespace VG.Proof.RsaKeyGen.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
-open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum.X86_64
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 /-- After `j` words of the negation: the low `j` words negated if `b`, with
@@ -93,13 +94,6 @@ theorem negStep_ok {s₀ : State} {B : Addr} {Z w e : Nat} {b : Bool}
       have e2 : P * (2 ^ 64 - 1 - x + c.toNat) + P * x + P = P * 2 ^ 64 + P * c.toNat := by
         rw [← Nat.mul_add, ← Nat.mul_succ, ← Nat.mul_add]; congr 1; omega
       omega
-
-/-- `|c − p|` from the difference `D` and its borrow `b`. -/
-theorem absDiff_of {D p c P : Nat} {b : Bool} (h : D + p = c + P * b.toNat) (hD : D < P) :
-    (if b then P - D else D) = Spec.RsaKeyGen.absDiff c p := by
-  unfold Spec.RsaKeyGen.absDiff
-  cases b <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero,
-    Bool.false_eq_true, ↓reduceIte] at h ⊢ <;> split <;> omega
 
 /-- `diffLoop`: `[aAcc] := c − p` (`aN` minus `aX`), its borrow's mask in `rbp`. -/
 theorem diff_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good s B Z w minv) (hZ : slot w 8 ≤ Z)

@@ -7,7 +7,9 @@ pub const USES: &[&str] = &["pbkdf2_sha256", "hmac_sha256", "sha256"];
 /// PBKDF2-HMAC-SHA-256 of a 32-byte key (one block), with the sizes as the
 /// iteration counts: deriving it, and checking a password against it
 /// (`pbkdf2_hmac_verify`, one instance of the generic function; OpenSSL
-/// derives the key and compares it with `CRYPTO_memcmp`).
+/// derives the key and compares it with `CRYPTO_memcmp`; aws-lc-rs's
+/// `pbkdf2::verify` derives it into a buffer it allocates, compares it in
+/// constant time and zeroes the buffer).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -23,13 +25,14 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::hashes::sha256::Sha256;
     use verified_garbage::pbkdf2::{pbkdf2_hmac, pbkdf2_hmac_verify};
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, OPENSSL, SIZES, VG};
 
     crate::pbkdf2_group(
         c,
         "pbkdf2-hmac-sha256",
         pbkdf2_hmac::<Sha256>,
         MessageDigest::sha256(),
+        Some(aws_lc_rs::pbkdf2::PBKDF2_HMAC_SHA256),
         32,
     );
 
@@ -64,6 +67,20 @@ pub fn bench(c: &mut Criterion) {
                 )
                 .unwrap();
                 assert!(openssl::memcmp::eq(&out, black_box(&expected)))
+            })
+        });
+        let alg = aws_lc_rs::pbkdf2::PBKDF2_HMAC_SHA256;
+        aws_lc_rs::pbkdf2::verify(alg, n, &salt, &password, &expected).unwrap();
+        g.bench_function(BenchmarkId::new(AWS_LC, iterations), |b| {
+            b.iter(|| {
+                aws_lc_rs::pbkdf2::verify(
+                    alg,
+                    n,
+                    black_box(&salt),
+                    black_box(&password),
+                    black_box(&expected),
+                )
+                .unwrap()
             })
         });
     }

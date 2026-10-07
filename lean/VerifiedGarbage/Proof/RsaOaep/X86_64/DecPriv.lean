@@ -12,7 +12,7 @@ words.
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privStack privK PrivImpl)
 

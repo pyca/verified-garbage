@@ -11,7 +11,7 @@ and `sqLogic` updates `done`, `ok` and `y` as `RecoverMath.sqStep` does
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 open VG.Proof.Bignum (mont_cancel mont_sq)
 
@@ -73,47 +73,6 @@ theorem sqNext_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el k : Na
     fun u ⟨⟨hz, mu⟩, k₃⟩ => ⟨hz, by rw [mu, m₂, m₁], ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-! ## The squaring's arithmetic -/
-
-theorem mont_inj {x y R N : Nat} (hR : Nat.Coprime R N) (hx : x < N) (hy : y < N)
-    (h : x * R % N = y * R % N) : x = y := by
-  have := mont_cancel hR h
-  rwa [Nat.mod_eq_of_lt hx, Nat.mod_eq_of_lt hy] at this
-
-theorem mod_ne_zero_of_coprime {R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) : R % N ≠ 0 := by
-  intro h
-  have := Nat.Coprime.eq_one_of_dvd hR.symm (Nat.dvd_of_mod_eq_zero h)
-  omega
-
-/-- `-1` in Montgomery form. -/
-theorem neg_one_mont {R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) : (N - 1) * R % N = N - R % N := by
-  have ha := mod_ne_zero_of_coprime hR hN
-  have hlt := Nat.mod_lt R (show 0 < N by omega)
-  obtain ⟨M, rfl⟩ : ∃ M, N = M + 1 := ⟨N - 1, by omega⟩
-  obtain ⟨b, hb⟩ : ∃ b, R % (M + 1) = b + 1 := ⟨R % (M + 1) - 1, by omega⟩
-  have hR' := Nat.div_add_mod R (M + 1)
-  rw [hb] at hR' hlt ⊢
-  have e : M * R = (M + 1) * (M * (R / (M + 1)) + b) + (M - b) := by
-    conv => lhs; rw [← hR']
-    rw [Nat.mul_add, Nat.mul_succ, Nat.mul_left_comm M (M + 1), Nat.mul_add (M + 1), Nat.succ_mul M b]
-    omega
-  rw [Nat.add_sub_cancel, e, Nat.mul_add_mod, Nat.mod_eq_of_lt (by omega)]
-  omega
-
-/-- `x = 1` and `x = -1` from Montgomery forms. -/
-theorem eq_one_mont {X x R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) (hx : x < N) (hX : X = x * R % N) :
-    X = R % N ↔ x = 1 := by
-  subst hX
-  constructor
-  · intro h; exact mont_inj hR hx hN (by rw [h, Nat.one_mul])
-  · intro h; rw [h, Nat.one_mul]
-
-theorem eq_neg_mont {X x R N : Nat} (hR : Nat.Coprime R N) (hN : 1 < N) (hx : x < N) (hX : X = x * R % N) :
-    X = N - R % N ↔ x = N - 1 := by
-  subst hX
-  rw [← neg_one_mont hR hN]
-  constructor
-  · intro h; exact mont_inj hR hx (by omega) h
-  · intro h; rw [h]
 
 /-- `sqLogic`'s masks, for `sC1 = k`, `t`, `done`, `ok`, `x = 1` (`e1`) and
 `x = -1` (`em`, from `rbp`): `done` and `ok` updated, and `rbp` the mask of
@@ -192,14 +151,6 @@ structure SqI (t₀ : State) (B : Addr) (w N tt : Nat) (st₀ : Nat × Bool × B
   c3 : word u.mem B (8 * sC3) = mask (sqIter N tt k st₀).2.2
 
 theorem sq_hs : ∀ i ∈ [sMask, sC1, sC2, sC3], rSlot i = true ∧ i ≠ sMinv ∧ i ≠ sT := by decide
-
-/-- The square in Montgomery form. -/
-theorem sq_mont {X Y y R N : Nat} (hR : Nat.Coprime R N) (hY : Y = y * R % N) (hX : X < N)
-    (h : X * R % N = Y * Y % N) : X = y * y % N * R % N := by
-  have e : X % N = y * y % N * R % N := by
-    apply mont_cancel hR
-    rw [h, hY, ← Nat.mul_mod, Nat.mul_assoc (y * y % N), Nat.mod_mul_mod, Nat.mul_mul_mul_comm]
-  rwa [Nat.mod_eq_of_lt hX] at e
 
 /-- A squaring. -/
 theorem sqBody_ok (M : Mont) {t₀ u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t k : Nat}

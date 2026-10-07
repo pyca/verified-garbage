@@ -24,5 +24,5 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::hash_group;
 
-    hash_group(c, "md5", Md5::digest, MessageDigest::md5());
+    hash_group(c, "md5", Md5::digest, MessageDigest::md5(), None);
 }

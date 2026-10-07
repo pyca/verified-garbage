@@ -11,7 +11,7 @@ the check of `k` (zeros to `out` and `*msg_len` if the operation failed or
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs mgfXor)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash Stream)
@@ -44,26 +44,6 @@ theorem ArgsD_privW (s : State) : ArgsD s (privW s) := fun j hj => by
     show j ≠ 4 by omega, show j ≠ 5 by omega, show j ≠ 6 by omega, show j ≠ 7 by omega, show j ≠ 8 by omega,
     show j ≠ 9 by omega, show j ≠ 10 by omega, show j ≠ 11 by omega, show j ≠ 12 by omega,
     show j ≠ 13 by omega, ↓reduceIte]
-
-/-! ## The specification -/
-
-theorem decrypt_eq {H G : Spec.Mgf1.Hash} {nB eB pB qB dPB dQB qInvB label cB : List Byte}
-    (h : cB.length = nB.length) :
-    Spec.RsaOaep.decrypt H G nB eB pB qB dPB dQB qInvB label cB =
-      decOut H G label (Spec.Rsa.privateChecked nB eB cB pB qB dPB dQB qInvB) := by
-  simp only [Spec.RsaOaep.decrypt, h, ne_eq, not_true_eq_false, ↓reduceIte]
-  cases Spec.Rsa.privateChecked nB eB cB pB qB dPB dQB qInvB <;> rfl
-
-/-- `EM` too short for the hash: the decoding fails. -/
-theorem decOut_short {H G : Spec.Mgf1.Hash} {label : List Byte} {o : Spec.Rsa.Outcome} {k : Nat}
-    (hl : ∀ em, o = .ok em → em.length = k) (hk : k < 2 * H.len + 2) :
-    decOut H G label o = match o with | .fault => .fault | _ => .invalid := by
-  cases o with
-  | ok em =>
-    simp only [decOut, Spec.RsaOaep.decode]
-    rw [ifp (by rw [hl em rfl]; exact hk)]
-  | invalid => rfl
-  | fault => rfl
 
 /-! ## The end -/
 

@@ -125,6 +125,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_cbc_init(key: *const u8, key_len: usize, 
         "str x17, [x16, #568]",
         "add sp, sp, #576",
         "ret",
+        ".p2align 6",
         vg_rc2_expand_key = sym super::rc2::vg_rc2_expand_key,
     )
 }
@@ -288,6 +289,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt_update(ctx: *mut [u8; 144], p
         "str x17, [x16, #568]",
         "add sp, sp, #576",
         "ret",
+        ".p2align 6",
         vg_rc2_cbc_encrypt = sym super::rc2::vg_rc2_cbc_encrypt,
     )
 }
@@ -451,6 +453,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt_update(ctx: *mut [u8; 144], p
         "str x17, [x16, #568]",
         "add sp, sp, #576",
         "ret",
+        ".p2align 6",
         vg_rc2_cbc_decrypt = sym super::rc2::vg_rc2_cbc_decrypt,
     )
 }
@@ -499,6 +502,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_cbc_encrypt(schedule: *const [u8; 128], i
         "ldr x24, [x2, #272]",
         "ldr x30, [x2, #280]",
         "ret",
+        ".p2align 6",
         vg_rc2_encrypt_block = sym super::rc2::vg_rc2_encrypt_block,
     )
 }
@@ -2040,6 +2044,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_cbc_decrypt(schedule: *const [u8; 128], i
         "ldr x24, [x2, #272]",
         "ldr x30, [x2, #280]",
         "ret",
+        ".p2align 6",
         vg_rc2_decrypt_block = sym super::rc2::vg_rc2_decrypt_block,
     )
 }
@@ -2714,6 +2719,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_expand_key(key: *const u8, key_len: usize
         "ldr x21, [x4, #32]",
         "ldr x22, [x4, #40]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3873,6 +3879,7 @@ pub(crate) unsafe extern "C" fn vg_rc2_encrypt_block(schedule: *const [u8; 128],
         "ldr x21, [x2, #16]",
         "ldr x22, [x2, #24]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -5032,5 +5039,6 @@ pub(crate) unsafe extern "C" fn vg_rc2_decrypt_block(schedule: *const [u8; 128],
         "ldr x21, [x2, #16]",
         "ldr x22, [x2, #24]",
         "ret",
+        ".p2align 6",
     )
 }

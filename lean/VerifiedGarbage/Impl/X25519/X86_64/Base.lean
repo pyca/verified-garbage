@@ -24,9 +24,14 @@ def engine (fld : Arith) : Prog isa := engineOf fld (combMultiply fld)
 
 def x25519Base (fld : Arith) : Prog isa := scalarBaseWith (engine fld)
 
-/-- With the comb of AVX512_IFMA (`Ed25519.X86_64.Ifma.combMultiply`), and BMI2's and ADX's
-field multiplications for the rest. -/
+/-- With BMI2's and ADX's field multiplications, and the comb's entries selected with AVX2
+(`combSelectY`). -/
+def x25519BaseAdx : Prog isa :=
+  scalarBaseWith (engineOf VG.Impl.X25519.X86_64.adx (combMultiply VG.Impl.X25519.X86_64.adx combSelectY))
+
+/-- With the comb of AVX512_IFMA in `zmm` registers (`Ed25519.X86_64.Zmm.combMultiply`), and
+BMI2's and ADX's field multiplications for the rest. -/
 def x25519BaseIfma : Prog isa :=
-  scalarBaseWith (engineOf VG.Impl.X25519.X86_64.adx (Ifma.combMultiply VG.Impl.X25519.X86_64.adx))
+  scalarBaseWith (engineOf VG.Impl.X25519.X86_64.adx (Zmm.combMultiply VG.Impl.X25519.X86_64.adx))
 
 end VG.Impl.X25519.X86_64.Base

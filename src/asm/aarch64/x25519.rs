@@ -5064,6 +5064,7 @@ pub(crate) unsafe extern "C" fn vg_x25519(out: *mut [u8; 32], scalar: *const [u8
         "ldr x23, [x0, #32]",
         "ldr x24, [x0, #40]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -39027,5 +39028,6 @@ pub(crate) unsafe extern "C" fn vg_x25519_base(out: *mut [u8; 32], scalar: *cons
         "str x6, [x0, #16]",
         "str x7, [x0, #24]",
         "ret",
+        ".p2align 6",
     )
 }

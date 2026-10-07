@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Verified
+import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.CombContract
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
 import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Instances
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P256Sha384
@@ -17,35 +17,10 @@ namespace VG.Proof.Ecdsa.Rfc6979.X86.Sha384
 open VG VG.X86
 
 theorem implies :
-    (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst 272).Implies
-      (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 272) := by
-  have a0 : arg (satState 32 48) 0 = 0x1000 := by decide
-  have a1 : arg (satState 32 48) 1 = 0x2000 := by decide
-  have a2 : arg (satState 32 48) 2 = 0x3000 := by decide
-  have a3 : arg (satState 32 48) 3 = 0x8000 := by decide
-  have e : argAddr (satState 32 48) 0 = 0x20004 := by decide
-  have esp : (satState 32 48).gpr .esp = 0x20000 := rfl
-  exact
-    { pre := by
-        sig_implies_pre [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-          Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86]
-      post := by
-        sig_implies_post [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-          Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86]
-      pub := by
-        rintro s₁ s₂ - - h
-        sig_pub [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-          Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86] at h
-        obtain ⟨h0, hl, h1, h2, h3, h4⟩ := h
-        exact ⟨h0, h1, h2, h3, h4, (List.cons.inj hl).1⟩
-      sat := by
-        sig_implies_sat [Spec.Ecdsa.Rfc6979.P256Sha384.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-          Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P256.inst, Spec.P256.curve, Spec.Ecdsa.scratchWords,
-          X86.abi, X86.argSlots, X86.argVal, X86.argBytes, rfcWide, rfcX86] [a0, a1, a2, a3, e, esp]
-          using satState 32 48 }
+    (rfcWide Spec.Ecdsa.Rfc6979.P256Sha384.inst 272 Impl.Ecdsa.X86.p256Comb.combConsts).Implies
+      (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract
+        (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
+  comb_implies _ rfl (by decide)
 
 /-- SHA-384, for P-256's group law `hL`. -/
 def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
@@ -67,7 +42,7 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
   hQ := Nat.le_of_ble_eq_true rfl
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified X86.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract X86.abi 272) :=
+    Verified X86.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
   X86.sign_verified (pack hL) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86.Sha384

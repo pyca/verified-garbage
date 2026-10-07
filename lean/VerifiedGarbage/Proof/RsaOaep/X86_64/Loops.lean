@@ -13,7 +13,8 @@ namespace VG.Proof.RsaOaep.X86_64
 open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 
 /-! ## Counters -/
 

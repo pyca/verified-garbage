@@ -15,7 +15,7 @@ products the reductions start from (`mulE_ok`, `mulXR_ok`).
 namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask)
 
 theorem slot_eq (w j : Nat) : slot w j = 256 + j * (8 * (w + 2)) := by unfold slot hdrBytes; rfl

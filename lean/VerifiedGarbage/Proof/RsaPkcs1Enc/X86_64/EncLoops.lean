@@ -11,7 +11,7 @@ message after the separator.
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.WriteBytes (writeW8_apply)
 
 /-- `[b + i + d]` for `b = p` and `i = j`. -/

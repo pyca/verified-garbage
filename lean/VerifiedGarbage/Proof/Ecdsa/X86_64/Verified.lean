@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.P256.Order
 
 /-!
 # ECDSA over P-256 on x86-64: `Verified`
@@ -56,6 +57,7 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
+  n_len := by decide +kernel
   sh := by rw [p256_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ p256.C.p_ne_zero Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
@@ -63,8 +65,9 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
 
-theorem p256_tbls (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
-    CombTbls p256 := fun d h => by cases h; exact hT
+theorem p256_tbls (hL : Law Spec.P256.curve)
+    (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :
+    CombTbls p256 := fun d h => by cases h; exact ⟨hT, fun _ => Proof.P256.booth hL⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h
@@ -118,7 +121,7 @@ theorem sign_x86 (hL : Law Spec.P256.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  sign_x86_of (p256_ok hI) hL (p256_tbls hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
+  sign_x86_of (p256_ok hI) hL (p256_tbls hL hT) (fun _ => pre_of) (fun _ _ => id) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP256 :=

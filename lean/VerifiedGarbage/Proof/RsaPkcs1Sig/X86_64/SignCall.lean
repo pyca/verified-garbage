@@ -15,7 +15,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64.Sgn
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Sign
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify (sp lea)
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
 open VG.Proof.Rsa.X86_64 (CrtImpl chkContract code_correct code_spSafe)
 
 /-! ## The private operation -/
@@ -23,13 +23,13 @@ open VG.Proof.Rsa.X86_64 (CrtImpl chkContract code_correct code_spSafe)
 /-- The names of the public operation `vg_rsa_private_checked` calls, as in
 `Generic/RsaPrivateCrt/X86_64/Rsa.lean`. -/
 def pcName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputeApi.name ++ v.montSuffix
-def pdName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputedCheckedApi.name ++ v.montSuffix
+def pdName (v : CrtImpl) : String := v.pubOp.name
 
 /-- `vg_rsa_private_checked`'s name and code, for `v`. -/
 def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa :=
   Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) (Impl.Rsa.X86_64.Precompute.code v.mont.mm)
-    (pdName v) (Impl.Rsa.X86_64.Checked.precomputedChecked v.mont.mm)
+    (pdName v) v.pubOp.code
 
 /-- Code that never writes `rsp` and makes no calls uses no stack. -/
 theorem xdepth_zero {c : Prog isa} (hsp : NoSp c) (hd : c.depth = 0) : c.x86_64Depth = 0 := by
@@ -55,7 +55,7 @@ theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3248 := by
   simp only [privCode, Impl.Rsa.X86_64.PrivChecked.code, Impl.Rsa.X86_64.PrivChecked.body,
     Impl.Rsa.X86_64.PrivChecked.check, Impl.Rsa.X86_64.PrivChecked.tail, List.cons_append, List.nil_append,
     Impl.Bignum.X86_64.seqs, Code.x86_64Depth, xdepth_zero v.nosp v.depth, xdepth_zero v.pcNosp v.pcDepth,
-    xdepth_zero v.pdNosp v.pdDepth, X86_64.Instr.frameBytes, Impl.Rsa.X86_64.PrivChecked.frameBytes,
+    xdepth_zero v.pubOp.nosp v.pubOp.depth, X86_64.Instr.frameBytes, Impl.Rsa.X86_64.PrivChecked.frameBytes,
     Impl.Rsa.X86_64.PrivChecked.cmpLoop, Impl.Rsa.X86_64.PrivChecked.releaseLoop]
   rfl
 

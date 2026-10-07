@@ -290,6 +290,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_scalar_mul_add(out: *mut [u8; 32], r:
         "str x6, [x0, #16]",
         "str x7, [x0, #24]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -405,6 +406,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_scalar_reduce(out: *mut [u8; 32], wid
         "str x6, [x0, #16]",
         "str x7, [x0, #24]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -34345,6 +34347,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_scalar_base(out: *mut [u8; 32], scala
         "str x6, [x0, #16]",
         "str x7, [x0, #24]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -61207,6 +61210,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_verify_equation(pk: *const [u8; 32], 
         "ldr x23, [x2, #32]",
         "ldr x24, [x2, #40]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -61374,6 +61378,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_public_key(out: *mut [u8; 32], seed: 
         "add sp, sp, #320",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
@@ -61646,6 +61651,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached(out: *mut [u8; 64], seed:
         "add sp, sp, #320",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
@@ -61752,6 +61758,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_verify(pk: *const [u8; 32], message: 
         "add sp, sp, #320",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch,
         vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch,
@@ -61930,6 +61937,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_public_key_sha3(out: *mut [u8; 32], s
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
@@ -62208,6 +62216,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_sign_cached_sha3(out: *mut [u8; 64], 
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,
@@ -62320,6 +62329,7 @@ pub(crate) unsafe extern "C" fn vg_ed25519_verify_sha3(pk: *const [u8; 32], mess
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_init = sym super::sha512::vg_sha512_init,
         vg_sha512_update_scratch_sha3 = sym super::sha512::vg_sha512_update_scratch_sha3,
         vg_sha512_finalize_scratch_sha3 = sym super::sha512::vg_sha512_finalize_scratch_sha3,

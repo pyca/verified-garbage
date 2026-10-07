@@ -1,9 +1,9 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
 import VerifiedGarbage.Proof.Bignum.X86_64.PcVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxCT
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedBackend
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
-import VerifiedGarbage.Proof.Bignum.X86_64.IfmaVerified
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
@@ -38,7 +38,7 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.publicPrecomputeApi.doc
       (notes := ["`vg_rsa_public_precompute`'s code, with `vg_rsa_public_precomputed_checked_adx`'s \
         Montgomery multiplication."])
-    code := Impl.Rsa.X86_64.Precompute.code Proof.Bignum.X86_64.Mont.adx.mm
+    code := Impl.Rsa.X86_64.Precompute.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.publicPrecomputeContract X86_64.abi
     verified := Proof.Bignum.X86_64.precompute_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
@@ -59,13 +59,15 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := Spec.Rsa.publicPrecomputedCheckedApi.name ++ "_adx"
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
-      (notes := ["`vg_rsa_public_precomputed_checked`'s code but for Montgomery multiplication, which for a \
+      (notes := ["For exponent 65537, sixteen squares and a final multiplication by the ordinary input \
+        combine the last exponent bit with conversion out of Montgomery form. Other exponents use \
+        the general scan. Montgomery multiplication for a \
         number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the \
         accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and \
         ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."])
-    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Bignum.X86_64.Mont.adx.mm
+    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
-    verified := Proof.Rsa.X86_64.precomputedChecked_verified _ (by decide +kernel)
+    verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with
@@ -90,7 +92,7 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.privateCrtApi.doc
       (notes := ["`vg_rsa_private_crt`'s code, with `vg_rsa_public_precomputed_checked_adx`'s Montgomery \
         multiplication."])
-    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.adx.mm
+    code := Impl.Rsa.X86_64.Crt.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.privateCrtContract X86_64.abi
     verified := Proof.Bignum.X86_64.crt_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]
@@ -99,18 +101,19 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := Spec.Rsa.privateCrtApi.name ++ "_ifma"
     doc := Spec.Rsa.privateCrtApi.doc
-      (notes := ["`vg_rsa_private_crt_adx`'s code, but for a modulus of 32 words and primes of 16 words \
-        each, whose exponentiations run at once in radix 2^52 with AVX512_IFMA's `vpmadd52luq` and \
-        `vpmadd52huq` on 256-bit registers: almost-Montgomery multiplications modulo both primes, a \
-        table of 16 powers of each base, and a fixed window of 4 bits over the exponents padded with \
-        zeros to 128 bytes, the table read by a masked selection from every entry. MXCSR is set to \
-        `0x1FBF` around the vector code, as Intel's guidance for data-operand-independent timing asks, \
-        and restored after it."])
-    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Bignum.X86_64.Mont.adx.mm
+      (notes := ["`vg_rsa_private_crt_adx`'s code, but for a modulus of 32, 48 or 64 words and primes of \
+        half as many words each (2048-, 3072- and 4096-bit keys), whose exponentiations run at once in \
+        radix 2^52 with AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` on 256-bit registers, `ymm0` to \
+        `ymm31`: almost-Montgomery multiplications modulo both primes, a table of 16 powers of each \
+        base, and a fixed window of 4 bits over the exponents padded with zeros to the primes' size, \
+        the table read by a masked selection from every entry. MXCSR is set to `0x1FBF` around the \
+        vector code, as Intel's guidance for data-operand-independent timing asks, and restored after \
+        it."])
+    code := Impl.Rsa.X86_64.CrtIfma.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.privateCrtContract X86_64.abi
-    verified := Proof.Bignum.X86_64.ifma_verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    verified := Proof.Bignum.X86_64.Ifma.verified _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (by decide +kernel)
-    features := ["avx", "avx2", "avx512ifma", "avx512vl", "bmi2", "adx"]
+    features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.crtValuesApi with
     target := X86_64.target
@@ -146,7 +149,7 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.recoverPrimesApi.doc
       (notes := ["`vg_rsa_recover_primes`'s code, with `vg_rsa_public_precomputed_adx`'s Montgomery \
         multiplication."])
-    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.adx.mm
+    code := Impl.Rsa.X86_64.Keys.Recover.code Proof.Bignum.X86_64.Mont.adxSquare.mm
     contract := Spec.Rsa.recoverPrimesContract X86_64.abi
     verified := Proof.Rsa.X86_64.rp_verified _ (by decide +kernel)
     features := ["bmi2", "adx"]

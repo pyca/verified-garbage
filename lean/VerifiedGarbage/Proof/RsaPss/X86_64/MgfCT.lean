@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHashCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 
@@ -8,14 +9,15 @@ Two runs of `mgfXor` with the same frame, working space, writable regions
 and place and length of `DB` (`MA`) leak the same trace (`mgfXor_ct`): the
 loop runs once per `hLen` bytes of `DB` in both, each round's pieces between
 the calls are checked by the taint analysis (`HashChecks`), and the hash is
-constant time (`ctHash_ct`).
+constant time (`mgfHash_ct`).
 -/
 
 namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Two two_post two_map two_mono two_loop)
+open VG.Proof.Bignum (off)
+open VG.Proof.Bignum.X86_64 (Two two_post two_map two_mono two_loop)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
@@ -204,16 +206,16 @@ def mHA (H : Hash) (p : MA × Nat) : HA := ⟨p.1.F, p.1.S, p.1.rest, mgfNb H⟩
 
 include hH K in
 theorem hash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
-    RelCT isa (Two (M2 H n)) (ctHash H) (Two (M3 H n)) := by
+    RelCT isa (Two (M2 H n)) (mgfHash H) (Two (M3 H n)) := by
   obtain ⟨hnb1, hnb2⟩ := mgfNb_spec hH
   refine two_post (two_map (mHA H) (fun p t h => ⟨⟨h.1.1, by simp only [mHA]; exact Nat.succ_pos _, by simp only [mHA]; omega⟩,
     h.2.2.sub (fun q hq => by
       simp only [hws, mHA, List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl <;> simp [mws]) (fun _ h => h) fun _ _ ⟨h27, _⟩ => ⟨H.D + 4, h27, by simp only [mHA]; omega⟩⟩)
-    (ctHash_ct hH K n hc hfx)) fun p t h => ?_
+      rcases hq with rfl | rfl <;> simp [mws]) (fun _ h => h) fun _ _ ⟨h27, _⟩ => ⟨h27, by simp only [mHA]; omega⟩⟩)
+    (mgfHash_ct hH K n hc hfx)) fun p t h => ?_
   obtain ⟨hm, hj, P⟩ := h
   obtain ⟨V, W, R, hw, h27, hz⟩ := P.W
-  refine WP.mono (ctHash_ok hH K P.L R (msg := (List.range (H.D + 4)).map fun i => V (oY + i)) (nbm := mgfNb H)
+  refine WP.mono (mgfHash_ok hH K P.L R (msg := (List.range (H.D + 4)).map fun i => V (oY + i)) (nbm := mgfNb H) (by simp)
     (by simp [h27]) (hw (28, BitVec.ofNat 64 (mgfNb H)) (by simp)) (by simp; omega) (by omega) fun i hi => ?_)
     fun u ⟨L', _, hwr, _, V', W', R', _, hW', _⟩ =>
       ⟨hm, hj, P.next L' hwr R' (fun q hq => ?_) trivial⟩
@@ -253,14 +255,14 @@ theorem nextCtr_ct (hc : HashChecks H.P H.D n) : RelCT isa (Two (M4 H n)) (.bloc
 include hH K in
 theorem round_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     RelCT isa (Two (MB H n G))
-      (seqs [clearBlock H, copyH H, .block (counter H), ctHash H, xorOut H, .block (nextCtr H)]) fun _ _ => True := by
+      (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) fun _ _ => True := by
   simp only [seqs]
   exact RelCT.assoc ((clearCopy_ct hH n hc).seq ((counter_ct hH n hc).seq ((hash_ct hH K n hc hfx).seq
     ((xorOut_ct hH n hc).seq (nextCtr_ct n hc)))))
 
 include hH K hGh hGl hG in
 theorem round_wp {a : MA} {j : Nat} {t : State} (h : MI H n G a j t) :
-    WP isa (seqs [clearBlock H, copyH H, .block (counter H), ctHash H, xorOut H, .block (nextCtr H)]) t fun t' =>
+    WP isa (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) t fun t' =>
       isa.eval .b t' = some (decide (j + 1 < mN H.D a)) ∧ (j + 1 < mN H.D a → MI H n G a (j + 1) t') ∧
       (j + 1 = mN H.D a → True) := by
   have hD := hH.hD0

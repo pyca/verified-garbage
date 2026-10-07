@@ -29,6 +29,7 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
   wr : s.wr = s₀.wr
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
+  k : sv c base s K = sigR c s₀
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
@@ -212,6 +213,7 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
       | (rcases hw with (hw | hw | hw) | hw <;> subst hw <;> simp)
   refine ⟨hs₁₀, by rw [wr₁₀, wr₉, wr₈, wr₇, wr₆, wr₅, K₄.wr, wr₃, k₂.wr, k₁.wr, hF.wr],
     by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, rd₅, K₄.rd, rd₃, k₂.rd, k₁.rd, hF.rd], F₁₀,
+    by rw [a (i := K) (by decide) (by decide) (by decide), hF.k],
     by rw [a (i := RX) (by decide) (by decide) (by decide), hF.rx],
     by rw [a (i := RY) (by decide) (by decide) (by decide), hF.ry],
     by rw [a (i := RZ) (by decide) (by decide) (by decide), hF.rz], fun t ht => ?_, ?_,

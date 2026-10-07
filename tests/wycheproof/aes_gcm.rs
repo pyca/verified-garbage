@@ -19,7 +19,7 @@
 use serde::Deserialize;
 use verified_garbage::aes_gcm::{AesGcm, Error};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -58,8 +58,8 @@ fn stream_decrypt(key: &AesGcm, c: &Case) -> Result<Vec<u8>, Error> {
 fn aes_gcm() {
     require_vectors!();
     let file = harness::load::<Group, Case>("aes_gcm_test.json");
-    let (mut valid, mut invalid) = (0, 0);
-    for (group, test) in file.tests() {
+    let (valid, invalid) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
         assert_eq!(group.params.tag_size, 8 * c.tag.0.len(), "tcId {id}");
@@ -83,7 +83,7 @@ fn aes_gcm() {
                 assert_eq!(buf, c.ct.0, "tcId {id}");
                 assert_eq!(e.finalize(), tag, "tcId {id}");
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
-                valid += 1;
+                valid.add();
             }
             // The file has no acceptable vectors.
             _ => {
@@ -91,9 +91,9 @@ fn aes_gcm() {
                 assert!(decrypted.is_err(), "tcId {id}");
                 assert!(stream_decrypt(&key, c).is_err(), "tcId {id}");
                 assert_eq!(buf, c.ct.0, "tcId {id}: rejected ciphertext was modified");
-                invalid += 1;
+                invalid.add();
             }
         }
-    }
-    assert!(valid > 0 && invalid > 0);
+    });
+    assert!(valid.get() > 0 && invalid.get() > 0);
 }

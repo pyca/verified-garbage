@@ -12,6 +12,12 @@ open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 materialize_code recoverCandidateLit := (recoverCandidate Impl.X25519.X86_64.baseline : Prog isa)
 materialize_code recoverCandidateAdxLit := (recoverCandidate Impl.X25519.X86_64.adx : Prog isa)
 materialize_code decodeLoadBlock := (.block pointDecodeLoad : Prog isa)
+materialize_code decodeInput3Lit := (.block (decodeInput Impl.X25519.X86_64.baseline 3) : Prog isa)
+materialize_code decodeInput3AdxLit := (.block (decodeInput Impl.X25519.X86_64.adx 3) : Prog isa)
+materialize_code decodeInput2Lit := (.block (decodeInput Impl.X25519.X86_64.baseline 2) : Prog isa)
+materialize_code decodeInput2AdxLit := (.block (decodeInput Impl.X25519.X86_64.adx 2) : Prog isa)
+materialize_code powerSaveLit := (.block powerSave : Prog isa)
+materialize_code powerRestoreLit := (.block powerRestore : Prog isa)
 materialize_code parityBlock :=
   (.block (Impl.X25519.X86_64.freeze (offset 0) ++ recoverParity) : Prog isa)
 materialize_code zeroBlock := (.block (fieldZero 0) : Prog isa)
@@ -38,21 +44,25 @@ materialize_code verifyScalarTail := (.block (loadScalarWords ++ scalarSubtract)
 materialize_code verifyFinishBlock :=
   (.block (([.mov .rdx (.reg .rdi)] : List Instr) ++ scalarRestore) : Prog isa)
 materialize_code windowPrepLit :=
-  (.seq (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.baseline)) (.block bTable)) (.block (windowInit Impl.X25519.X86_64.baseline)) : Prog isa)
+  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.baseline)) (.block (windowInit Impl.X25519.X86_64.baseline)) : Prog isa)
 materialize_code windowPrepLitAdx :=
-  (.seq (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx)) (.block bTable)) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
+  (.seq (.seq (.block windowSetup) (aTable Impl.X25519.X86_64.adx)) (.block (windowInit Impl.X25519.X86_64.adx)) : Prog isa)
 materialize_code addDigitA :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAdd Impl.X25519.X86_64.baseline)) :
-    Prog isa)
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.baseline (addCachedOps true)) : Prog isa)
 materialize_code addDigitAAdx :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++ (pointAdd Impl.X25519.X86_64.adx)) :
-    Prog isa)
-materialize_code addDigitB :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 2048 ++ pointFromTableQ ++
-    (pointAddCached Impl.X25519.X86_64.baseline)) : Prog isa)
-materialize_code addDigitBAdx :=
-  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 2048 ++ pointFromTableQ ++
-    (pointAddCached Impl.X25519.X86_64.adx)) : Prog isa)
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.adx (addCachedOps true)) : Prog isa)
+materialize_code addDigitALast :=
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
+materialize_code addDigitALastAdx :=
+  (.block (([.alu .sub .rbx (.imm 1)] : List Instr) ++ tableAddr 5376 ++ pointFromTableQ ++
+    fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
+materialize_code baseAddLit :=
+  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.baseline (addCachedOps false)) : Prog isa)
+materialize_code baseAddLitAdx :=
+  (.block (pointFromTableQ ++ fieldCode Impl.X25519.X86_64.adx (addCachedOps false)) : Prog isa)
 materialize_code negRBlock := (.block (negR Impl.X25519.X86_64.baseline) : Prog isa)
 materialize_code negRBlockAdx := (.block (negR Impl.X25519.X86_64.adx) : Prog isa)
 

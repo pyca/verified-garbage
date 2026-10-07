@@ -7,7 +7,7 @@ namespace VG.Proof.Ed25519.X86_64.SignCached
 
 open VG VG.X86_64
 open VG.Proof.Ed25519.X86_64.PublicKey (Within within_base within_off)
-open VG.Impl.Ed25519.X86_64 (combSym combWords)
+open VG.Impl.Ed25519.X86_64 (combSym combWords combWordCount)
 
 structure Lay where
   out : Addr
@@ -49,7 +49,7 @@ structure Ok : Prop where
   nm : L.msg.toNat + L.len.toNat ≤ 2 ^ 64
   ns : L.seed.toNat + 32 ≤ 2 ^ 64
   nc : L.scr.toNat + 8192 ≤ 2 ^ 64
-  nt : L.T.toNat + 8 * 3072 ≤ 2 ^ 64
+  nt : L.T.toNat + 8 * combWordCount ≤ 2 ^ 64
 end Lay
 
 namespace Lay.Ok
@@ -79,7 +79,7 @@ structure Ctx (L : Lay) (g : Reg → BitVec 64) (mx : BitVec 32) (m₀ : Mem) (t
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 256) 64 = L.out
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
   sym : t.syms combSym = L.T
-  held : ∀ i < 3072, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
+  held : ∀ i < combWordCount, m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 namespace Ctx
 variable {L : Lay} {g : Reg → BitVec 64} {mx : BitVec 32} {m₀ : Mem} {t t' : State}

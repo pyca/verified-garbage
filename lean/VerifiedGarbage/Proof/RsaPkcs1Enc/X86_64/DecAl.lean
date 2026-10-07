@@ -10,7 +10,7 @@ The mask of the candidates, `2^bitLength(k - 11) - 1`, by doublings
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 
 theorem maskInit_run {s : State} (hp : DPre s) {R : BitVec 64} {EM : List Byte} {t : State} (hc : Ctx s R EM t) :
     WP isa (.block maskInit) t fun t' => t'.mem = t.mem ∧ t'.gpr .r9 = BitVec.ofNat 64 (kOf s - 11) ∧

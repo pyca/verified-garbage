@@ -346,6 +346,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
     (k := sv c (s₀.gpr .rcx) s₂ K)
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)])
+    (by rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _)
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr

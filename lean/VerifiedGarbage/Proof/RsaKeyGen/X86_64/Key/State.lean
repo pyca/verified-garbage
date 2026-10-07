@@ -15,7 +15,7 @@ slots `sMo`, `kEv` and `kOk` (`KS.step`).
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64 VG.Proof.Rsa
 open VG.Impl.RsaKeyGen.X86_64.Candidate (kE kElen)
 
 /-! ## Frames by codes -/
@@ -102,7 +102,7 @@ theorem range_sep_hdr {W i : Nat} (hi : i < 32) {c : Rc} (hc : c.ok = true) (hne
 theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
     {j : Nat} (hj : j < 16) (hn : .arr j ∉ cs) {d k : Nat} (hd : slot W j ≤ d)
     (hdk : d + 8 * k ≤ slot W j + 8 * (W + 2)) (hZ : slot W 16 ≤ 2 ^ 64) :
-    VG.Proof.Bignum.X86_64.wv m' B d k = VG.Proof.Bignum.X86_64.wv m B d k := by
+    VG.Proof.Bignum.wv m' B d k = VG.Proof.Bignum.wv m B d k := by
   have := slot_lt (w := W) hj
   refine Frm.wv_eq h (fun r hr => ?_) (by omega)
   obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hr
@@ -111,7 +111,7 @@ theorem KF.wv {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m 
 /-- An array the parts do not include. -/
 theorem KF.arr {B : Addr} {W : Nat} {cs : List Rc} {m m' : Mem} (h : KF B W cs m m') (hok : cs.all Rc.ok = true)
     {j : Nat} (hj : j < 16) (hn : .arr j ∉ cs) (hZ : slot W 16 ≤ 2 ^ 64) :
-    VG.Proof.Bignum.X86_64.wv m' B (slot W j) W = VG.Proof.Bignum.X86_64.wv m B (slot W j) W :=
+    VG.Proof.Bignum.wv m' B (slot W j) W = VG.Proof.Bignum.wv m B (slot W j) W :=
   h.wv hok hj hn (Nat.le_refl _) (by omega) hZ
 
 /-- Word `W` of an array the parts do not include. -/

@@ -5,6 +5,8 @@ trustworthy. Read `lean/README.md` first.
 
 For a fast Lean bootstrap on Linux x86-64, restore the prebuilt GHCR cache
 before compiling proofs; see [Restoring the CI build cache](lean/README.md#restoring-the-ci-build-cache).
+Docker is not required: the README shows how to stream it straight from the
+registry API with `curl`.
 
 After rebasing a long-running session onto `main`, consider pulling and
 restoring the latest cache again to avoid rebuilding upstream Lean changes.
@@ -44,9 +46,10 @@ Lake rebuilds your changes and anything not yet cached.
   `vectors/sources/<name>.toml` for that directory saying where they came
   from (`ci/check_vectors.py` checks it), and read them from there.
 * **Every public API has a benchmark** in `bench/benches/primitives/`,
-  next to OpenSSL's equivalent. The Benchmarks check compares each pull
-  request that changes an architecture's code with its base, and fails on a
-  slowdown; an optimization's speedup is shown in its run summary.
+  next to OpenSSL's equivalent, and aws-lc-rs's if it has one. The
+  Benchmarks check compares each pull request that changes an
+  architecture's code with its base, and fails on a slowdown; an
+  optimization's speedup is shown in its run summary.
 * **An optimized implementation reaches everything built on it.** An
   implementation of a function for CPU features (or any other faster
   version) is a *variant*: named `<function>_<suffix>` (`_shani`, `_avx2`),
@@ -192,7 +195,11 @@ should add files, not edit lists that every other PR edits too.
   architecture, not with a `use` per architecture; only functions a target
   alone has (e.g. an x86-64 `_shani` variant) take a `#[cfg(target_arch)]`.
 * Tests of one algorithm go in a file of their own (`tests/cavp/<alg>.rs`,
-  `tests/wycheproof/<alg>.rs`), declared with one `mod` line.
+  `tests/wycheproof/<alg>.rs`), declared with one `mod` line. Every test
+  directory is a module of the one test binary, `tests/main.rs`: a new one
+  adds its `#[path = "<dir>/main.rs"] mod <dir>;` line there
+  (`ci/check_arch_gates.py` fails a directory without it, which would
+  never run).
 * A construction over many hash functions (HMAC, PBKDF2) gets a file per
   hash everywhere: its `Api`s' `module` is `<family>_<hash>` (so
   `src/asm/<target>/hmac_sha256.rs`), its registration files are
@@ -200,6 +207,21 @@ should add files, not edit lists that every other PR edits too.
   `src/<family>/<hash>.rs` (the generic code stays in `src/<family>/mod.rs`),
   and its tests, benchmarks and `docs/algorithms/` row are
   `<family>_<hash>.rs` and `<family>-<hash>.toml`.
+
+## Stacking PRs
+
+PRs are squash-merged, so once the PR below a stacked branch merges, never
+`git rebase origin/main`: it replays the merged PR's commits onto their own
+squash. Restack only the branch's own commits:
+
+```sh
+git fetch origin main +pull/<N>/head:stack-base   # <N>: the merged PR
+git rebase --onto origin/main stack-base          # --update-refs for taller stacks
+```
+
+Keep stacks linear (never merge `main` into them) and their branches in this
+repository, as GitHub's stacked PRs require. When a generated file conflicts,
+take `main`'s side (`git checkout --ours`) and regenerate it after the rebase.
 
 ## Keeping proofs fast
 
@@ -463,6 +485,7 @@ python3 ci/check_vectors.py
 python3 ci/check_arch_gates.py
 python3 ci/check_variants.py
 python3 ci/check_mcdt.py
+python3 ci/cpu_tests.py lint .github/workflows/ci.yml
 cargo fmt --check && cargo clippy --all-targets -- -D warnings
 WYCHEPROOF_ROOT=/path/to/wycheproof cargo test
 ```
@@ -477,9 +500,15 @@ extensions' code very slowly, so the chips that have them run only the
 tests that need them); and benchmarks each with
 `VG_CPU_FEATURES` (`CPU_FEATURES` in `ci/bench_arches.py`). A configuration
 to test is a line of a CPU's `runs` in `rust-cpu-features`
-(`<VG_CPU_FEATURES> | <tests>`), never a step or job of its own, and
+(`<VG_CPU_FEATURES> | <groups>`), never a step or job of its own, and
 each CPU has one line per value of `VG_CPU_FEATURES` (CI checks both), so
-a run never repeats another: add tests to a CPU's line for those features.
+a run never repeats another: add groups to a CPU's line for those features.
+A group (`GROUPS` in `ci/cpu_tests.py`) names its tests explicitly, by the
+path of each test or of the module around it, in the library's unit tests
+and in `tests/main.rs`; a line runs exactly those tests, so a new test of a
+primitive that varies by CPU feature goes into its group (or a new group),
+never into a line by matching part of its name. CI fails a path that
+selects no test on any CPU, and a group that selects none on a line's CPU.
 A CPU whose lines take long runs as shards (matrix entries with a `shard`
 of `i/n` and the first entry's `runs` as a YAML alias), which deal out its
 lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed

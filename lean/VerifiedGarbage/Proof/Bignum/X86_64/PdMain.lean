@@ -58,26 +58,6 @@ theorem checkBlk_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (h10 : t
     hs.ld (show slot w aN + 8 * (w - 1) + 8 ≤ Z by omega), hs.ld (show slot w aN + 8 ≤ Z by omega)]
   rw [check_eq]
 
-/-- What the load changes. -/
-def pdLoadRanges (w : Nat) : List (Nat × Nat) :=
-  [(8 * sW, 8), (8 * sArr 0, 64), (slot w aN, 8 * (w + 2)), (slot w aR2, 8 * (w + 2))]
-
-theorem pdLoadRanges_le (w : Nat) : ∀ r ∈ pdLoadRanges w, r.1 + r.2 ≤ slot w 8 := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show 0 < 8 by decide)
-  have := slot_le (w := w) (show aN < 8 by decide)
-  have := slot_le (w := w) (show aR2 < 8 by decide)
-  simp only [pdLoadRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sW, sArr] at * <;> omega
-
-theorem pdLoadRanges_fixed (w : Nat) :
-    ∀ r ∈ pdLoadRanges w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
-  have := hdr_lt_slot w 0 (show 31 < 32 by decide)
-  have h1 : slot w 0 ≤ slot w aN := by unfold slot; omega
-  have h2 : slot w 0 ≤ slot w aR2 := by unfold slot; omega
-  simp only [pdLoadRanges, List.mem_cons, List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl) <;> simp only [sW, sArr] at * <;> omega
-
 /-- The load: `w`, the bases, `m` and `R² mod m` from `pre` (at `pp`, the
 `2 w` words outside the working space), and ZF clear iff they pass the
 checks. -/
@@ -269,36 +249,6 @@ theorem pdIn_ok {s : State} {B : Addr} {Z k : Nat} {ip : Addr} {xb : List Byte} 
   refine WP.mono (loadArr_ok (hs.congr k₁.2.2) (by decide) hZ
     (hx.congrK (by rw [hm₁]; exact InScr.refl _ _ _) k₁) hxl (by omega) hk hsi hcx hbx)
     fun t ⟨hv, ha, k₂⟩ => ⟨hv, by rw [hm₁] at ha; exact ha, (k₁.trans k₂).mono (by decide)⟩
-
-/-- What `rest` changes. -/
-def pdAll (w : Nat) : List (Nat × Nat) :=
-  [(slot w aX, 8 * (w + 2)), (8 * sMinv, 8), (8 * sMask, 8), (slot w aOne, 8 * (w + 2)),
-    (slot w aXm, 8 * (w + 2))] ++ pExpRanges w
-
-theorem pdAll_le (w : Nat) : ∀ r ∈ pdAll w, r.1 + r.2 ≤ slot w 8 := by
-  have := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have := slot_le (w := w) (show aX < 8 by decide)
-  have := slot_le (w := w) (show aOne < 8 by decide)
-  have := slot_le (w := w) (show aXm < 8 by decide)
-  have := slot_le (w := w) (show aAcc < 8 by decide)
-  have := slot_le (w := w) (show aTmp < 8 by decide)
-  have := slot_le (w := w) (show aY < 8 by decide)
-  simp only [pdAll, pExpRanges, pBitRanges, bitRanges, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [sMinv, sMask, sI, sV, sBit, sStarted, sFn] at * <;> omega
-
-theorem pdAll_fixed (w : Nat) : ∀ r ∈ pdAll w, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16) := by
-  have := hdr_lt_slot w aX (show 31 < 32 by decide)
-  have := hdr_lt_slot w aOne (show 31 < 32 by decide)
-  have := hdr_lt_slot w aXm (show 31 < 32 by decide)
-  have := hdr_lt_slot w aAcc (show 31 < 32 by decide)
-  have := hdr_lt_slot w aTmp (show 31 < 32 by decide)
-  have := hdr_lt_slot w aY (show 31 < 32 by decide)
-  simp only [pdAll, pExpRanges, pBitRanges, bitRanges, List.cons_append, List.nil_append, List.mem_cons,
-    List.not_mem_nil, or_false]
-  rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only [sMinv, sMask, sI, sV, sBit, sStarted, sFn] at * <;> omega
 
 /-- The input, the mask of `input < N`, `-m⁻¹` and the number 1. -/
 theorem pdSetup_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat} {eb xb : List Byte} {N R : Nat}

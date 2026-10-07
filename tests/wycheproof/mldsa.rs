@@ -24,7 +24,7 @@ macro_rules! mldsa_tests {
         use serde::Deserialize;
         use verified_garbage::$module::{Error, $SigningKey, $VerifyingKey};
 
-        use crate::harness::{self, Expectation, Hex};
+        use super::harness::{self, Expectation, Hex};
         use crate::require_vectors;
 
         type Sig = [u8; $VerifyingKey::SIGNATURE_SIZE];
@@ -70,12 +70,12 @@ macro_rules! mldsa_tests {
             require_vectors!();
             let file =
                 harness::load::<SignGroup, Sign>(concat!("mldsa_", $n, "_sign_seed_test.json"));
-            for (g, test) in file.tests() {
+            file.par_tests(|g, test| {
                 let c = &test.case;
                 let id = test.tc_id;
                 let Ok(seed) = <[u8; 32]>::try_from(&g.params.private_seed.0[..]) else {
                     assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
-                    continue;
+                    return;
                 };
                 let key = $SigningKey::from_seed(&seed).unwrap();
                 let pk = g.params.public_key.as_ref().map(|pk| &pk.0[..]);
@@ -105,7 +105,7 @@ macro_rules! mldsa_tests {
                     assert!(ctx.len() > 255, "tcId {id}");
                     assert_eq!(key.sign_deterministic(msg, ctx), Err(Error::ContextTooLong));
                 }
-            }
+            });
         }
 
         #[test]
@@ -113,7 +113,7 @@ macro_rules! mldsa_tests {
             require_vectors!();
             let file =
                 harness::load::<VerifyGroup, Verify>(concat!("mldsa_", $n, "_verify_test.json"));
-            for (g, test) in file.tests() {
+            file.par_tests(|g, test| {
                 let c = &test.case;
                 let id = test.tc_id;
                 let pk = <[u8; $VerifyingKey::SIZE]>::try_from(&g.params.public_key.0[..]);
@@ -127,7 +127,7 @@ macro_rules! mldsa_tests {
                     _ => false,
                 };
                 assert_eq!(ok, test.result == Expectation::Valid, "tcId {id}");
-            }
+            });
         }
     };
 }

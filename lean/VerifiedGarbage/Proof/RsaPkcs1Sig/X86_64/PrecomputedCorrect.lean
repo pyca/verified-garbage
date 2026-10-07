@@ -2,7 +2,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.PrecomputedCall
 
 namespace VG.Proof.RsaPkcs1Sig.X86_64.Pc
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 Ver
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 Ver
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify
 open VG.Proof.MlKem.X86_64
 open VG.Proof.Rsa.X86_64 (PublicImpl)
@@ -64,7 +64,7 @@ theorem mask_ok {s t : State} (he : Env s t) :
       Keep [.rax, .rcx] t u ∧ u.mem = t.mem ∧ (u.gpr .rax).setWidth 32 =
         (t.gpr .rax).setWidth 32 &&& (word t.mem (fb s) 0).setWidth 32 := by
     refine WP.keep [.rax, .rcx] ?_ rfl |> WP.mono <| fun u ⟨h, k⟩ => ⟨k, h⟩
-    xrun [ea_sp, he.rsp, hr, Bignum.X86_64.word, off]
+    xrun [ea_sp, he.rsp, hr, Bignum.word, off]
   exact WP.mono hx fun u ⟨hk, hm, ha⟩ => ⟨he.regs (hk.gpr (by decide)) hm hk.2.1 hk.2.2, ha⟩
 
 

@@ -81,6 +81,19 @@ theorem vdbl4_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s
   · exact Or.inr ⟨by simp only [eval, wz, decide_eq_false hk0, Option.map_some, Bool.not_false],
       k, by omega, ⟨by omega, by have := h.le; omega, wr', wc, wg, wrd, wwr, wm, wk, wsm, wp⟩⟩
 
+/-- Five doublings: `vdbl4`'s, and one more. -/
+theorem vdbl5_ok {s : State} {base : Addr} (hs : Scratch s base) (hk : EConsts s.mem base) (hx : Small s)
+    {a : EPoint dZ} (ha : Rep (lanePt s) a) :
+    WP isa vdbl5 s fun t => (∀ r, r ≠ .rsi → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Outside base 1024 320 s.mem t.mem ∧ Small t ∧ Rep (lanePt t) ((32 : Nat) • a) := by
+  rw [vdbl5]
+  refine WP.seq (WP.mono (vdbl4_ok hs hk hx ha) fun u ⟨ug, urd, uwr, uo, usm, up⟩ => ?_)
+  have hsu : Scratch u base := ⟨by rw [ug _ (by decide)]; exact hs.rdi, by rw [uwr]; exact hs.wr, hs.nowrap⟩
+  refine WP.mono (vdbl_wp hsu.rdi (ctx_of hsu) (hk.outside uo) usm) fun t ⟨tg, trd, twr, tou, tsm, tp⟩ =>
+    ⟨fun r hr => by rw [tg]; exact ug r hr, trd.trans urd, twr.trans uwr, uo.trans tou, tsm, ?_⟩
+  rw [tp, show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
+  exact dblPoint_rep up.proj
+
 /-! ## `[G]B`'s entry -/
 
 def gloadS : Sym := symOf [ld 11 (offset 9), ld 12 (offset 10), ld 13 (offset 11)]
@@ -276,7 +289,7 @@ theorem VFrame.bits {s₀ s : State} {base T : Addr} {S : Nat} (hp : LoopPre s�
 
 /-- The loop's invariant after `c` steps, with the point in the lanes `[v]B`. -/
 structure VInv (s₀ : State) (base : Addr) (c : Nat) (v : ℤ) (s : State) : Prop where
-  bound : c ≤ 64
+  bound : c ≤ 52
   rdi : s.gpr .rdi = base
   counter : s.gpr .rbx = BitVec.ofNat 64 c
   frame : VFrame s₀ base s
@@ -295,12 +308,12 @@ theorem lanes0_eq {s t : State} (h : ∀ r < 5, ∀ l < 4, qw t (xr r) l = qw s 
 theorem lanes0_vec {s t : State} (hx : t.xmm = s.xmm) (hy : t.ymmHi = s.ymmHi) :
     ∀ r < 5, ∀ l < 4, qw t (xr r) l = qw s (xr r) l := fun _ _ _ _ => qw_of hx hy _ _
 
-/-- Before the even digits: four doublings, then `[G]B` added. -/
+/-- Before the even digits: five doublings, then `[G]B` added. -/
 theorem vstepG_ok {s₀ a : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : LoopPre s₀ base T S)
     (h : VInv s₀ base c v a) :
-    WP isa (.seq vdbl4 (.block (gEntry ++ ventry))) a fun b => VInv s₀ base c (16 * v + combGVal) b := by
+    WP isa (.seq vdbl5 (.block (gEntry ++ ventry))) a fun b => VInv s₀ base c (32 * v + combGVal) b := by
   have hsa := h.frame.scratch hp h.rdi
-  refine WP.seq (WP.mono_syms (vdbl4_ok hsa (h.frame.consts hp) h.small h.value)
+  refine WP.seq (WP.mono_syms (vdbl5_ok hsa (h.frame.consts hp) h.small h.value)
     fun b₁ ⟨g₁, rd₁, wr₁, o₁, sm₁, rep₁⟩ sy₁ => ?_)
   have f₁ : VFrame s₀ base b₁ := h.frame.step (rs := [.rsi]) (by decide) (fun r hr => g₁ r (by simpa using hr))
     rd₁ wr₁ o₁ sy₁
@@ -330,7 +343,7 @@ theorem vstepG_ok {s₀ a : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : L
   refine ⟨h.bound, by rw [g₃]; exact hs₂.rdi, ?_, f₃, sm₃, ?_⟩
   · rw [g₃, g₂ _ (by decide) (by decide), g₁ _ (by decide)]; exact h.counter
   · rw [p₃, p₂, he, show negIf false combGCached = combGCached from rfl, combGCached_eq, vAddPt_cache,
-      ← zsmul_16]
+      ← zsmul_32]
     exact pointAdd_rep rep₁ combG_ok
 
 theorem combCached_T (j a : Nat) : (combCached j a).T = 2 := by
@@ -338,23 +351,23 @@ theorem combCached_T (j a : Nat) : (combCached j a).T = 2 := by
 
 /-- The digit's entry of its table, negated for a negative digit, added. -/
 theorem vstepD_ok {s₀ b : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : LoopPre s₀ base T S)
-    (h : VInv s₀ base c v b) (hc : c < 64) :
-    WP isa (.seq combIndex (.block (combDigit ++ combSign ++ ([.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx),
-      .alu .and .rdx (.imm 31)] : List Instr) ++ vselect ++ combFlags ++ ventry ++
-      ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)] : List Instr)))) b fun t =>
-      t.zf = some (decide (c + 1 = 64)) ∧
-        VInv s₀ base (c + 1) (sdig S (combIdx c) * 256 ^ (c % 32) + v) t := by
+    (hS : S < 2 ^ 256) (h : VInv s₀ base c v b) (hc : c < 52) :
+    WP isa (.seq combIndex (.seq combChunk (.block (combSign ++ ([.mov .r8 (.reg .rax),
+      .mov .rdx (.reg .r9)] : List Instr) ++ vselect ++ combFlags ++ ventry ++
+      ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)] : List Instr))))) b fun t =>
+      t.zf = some (decide (c + 1 = 52)) ∧
+        VInv s₀ base (c + 1) (sdig S (combIdx c) * 1024 ^ (combTblIdx c) + v) t := by
   have hsb := h.frame.scratch hp h.rdi
   refine WP.seq (WP.mono_syms (WP.vecKeep (by decide) (combIndex_ok b hc h.counter))
-    fun e ⟨⟨ec, ke⟩, ex, ey⟩ esy => ?_)
+    fun e ⟨⟨ec, e9, ke⟩, ex, ey⟩ esy => ?_)
   have fe : VFrame s₀ base e := h.frame.keeps ke (by decide) esy
   have hse : Scratch e base := hsb.of_keeps ke (by decide)
-  have hn : nib S (combIdx c) < 16 := Nat.mod_lt _ (by decide)
-  have hmag : mag (nib S (combIdx c)) < 9 := by unfold mag; split <;> omega
+  have hn : nib S (combIdx c) < 32 := Nat.mod_lt _ (by decide)
+  have hmag : mag (nib S (combIdx c)) < 17 := by unfold mag; split <;> omega
+  refine WP.seq (WP.mono_syms (WP.vecKeep (by decide) (combChunk_ok (S := S) hse hc hS
+    (by rw [ke.1 _ (by decide)]; exact h.counter) ec (fe.bits hp)))
+    fun f ⟨⟨fax, kf⟩, fx, fy⟩ fsy => ?_)
   simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono_syms (WP.vecKeep (by decide) (combDigit_ok (S := S) hse (combIdx_lt hc) ec (fe.bits hp)))
-    fun f ⟨⟨fax, kf⟩, fx, fy⟩ fsy => ?_
   have ff : VFrame s₀ base f := fe.keeps kf (by decide) fsy
   have hsf : Scratch f base := hse.of_keeps kf (by decide)
   rw [WP.block_append_iff]
@@ -366,13 +379,15 @@ theorem vstepD_ok {s₀ b : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : L
   have hsf' : Scratch f' base := ⟨(f'g _ (by decide) (by decide)).trans hsf.rdi, f'w ▸ hsf.wr, hsf.nowrap⟩
   have f'c : f'.gpr .rbx = BitVec.ofNat 64 c := by
     rw [f'g _ (by decide) (by decide), kf.1 _ (by decide), ke.1 _ (by decide)]; exact h.counter
+  have f'9 : f'.gpr .r9 = BitVec.ofNat 64 (combTblIdx c) := by
+    rw [f'g _ (by decide) (by decide), kf.1 _ (by decide)]; exact e9
   rw [WP.block_append_iff]
-  refine WP.mono_syms (WP.vecKeep (by decide) (combMagIdx_ok f' hc f'ax f'c))
+  refine WP.mono_syms (WP.vecKeep (by decide) (combMagIdx_ok f' f'ax f'9))
     fun g ⟨⟨g8, gx, kg⟩, gxx, gyy⟩ gsy => ?_
   have fg : VFrame s₀ base g := ff'.keeps kg (by decide) gsy
   have hsg : Scratch g base := hsf'.of_keeps kg (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono_syms (vselect_ok (fg.tbl hp) (Nat.mod_lt _ (by decide)) (by omega) gx g8)
+  refine WP.mono_syms (vselect_ok (fg.tbl hp) (combTblIdx_lt hc) (by omega) gx g8)
     fun u ⟨uq, ku⟩ usy => ?_
   have fu : VFrame s₀ base u := fg.step (rs := [.rax, .rcx, .rdx]) (by decide) ku.gpr ku.rd ku.wr
     (by rw [ku.mem]; exact Outside.refl _ _ _ _) usy
@@ -401,40 +416,40 @@ theorem vstepD_ok {s₀ b : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : L
   obtain ⟨pu', smu'⟩ := lanes0_eq hl
   -- The entry.
   have hq' : ∀ c' < 3, ∀ k < 4, qw u' (xr (11 + c')) k = if 1 ≤ mag (nib S (combIdx c)) then
-      feWord (combField (c % 32) (mag (nib S (combIdx c))) c') k else 0 := fun c' hc' k hk => by
+      feWord (combField (combTblIdx c) (mag (nib S (combIdx c))) c') k else 0 := fun c' hc' k hk => by
     rw [qw_of u'x u'y]; exact uq c' hc' k hk
   have hentry := entryOf_tbl hq' u'ax
   rw [WP.block_append_iff]
-  refine WP.mono_syms (ventry_wp (b := decide (nib S (combIdx c) < 8)) hsu'.rdi (ctx_of hsu') (fu'.consts hp)
+  refine WP.mono_syms (ventry_wp (b := decide (nib S (combIdx c) < 16)) hsu'.rdi (ctx_of hsu') (fu'.consts hp)
     (smu' h.small) (fu'.k2 hp) (by rw [u'cx, signMask_eq])) fun w ⟨wg, wrd, wwr, wo, wsm, wp⟩ wsy => ?_
   have fw : VFrame s₀ base w := fu'.step (rs := []) (by decide) (fun r _ => by rw [wg]) wrd wwr wo wsy
   have wc : w.gpr .rbx = BitVec.ofNat 64 c := by
     rw [wg, u'g _ (by decide) (by decide), ku.gpr _ (by decide), kg.1 _ (by decide)]; exact f'c
-  refine WP.mono_syms (WP.vecKeep (by decide) (rbxNext64_ok w c hc wc)) fun t ⟨⟨tc, tz, kt⟩, tx, ty⟩ tsy =>
+  refine WP.mono_syms (WP.vecKeep (by decide) (rbxNext52_ok w c hc wc)) fun t ⟨⟨tc, tz, kt⟩, tx, ty⟩ tsy =>
     ⟨tz, by omega, by rw [kt.1 _ (by decide), wg]; exact hsu'.rdi, tc, fw.keeps kt (by decide) tsy,
       (lanes0_eq (lanes0_vec tx ty)).2 wsm, ?_⟩
   rw [(lanes0_eq (lanes0_vec tx ty)).1, wp, pu', hentry]
-  obtain ⟨q₀, hq₀, hrq₀⟩ := combCached_ok (c % 32) (mag (nib S (combIdx c))) (Nat.mod_lt _ (by decide)) hmag
-  have hcc : (⟨combField (c % 32) (mag (nib S (combIdx c))) 0, combField (c % 32) (mag (nib S (combIdx c))) 1,
-      combField (c % 32) (mag (nib S (combIdx c))) 2, 2⟩ : Spec.Ed25519.Point) = cache q₀ := by
-    rw [← hq₀, ← combCached_T (c % 32) (mag (nib S (combIdx c)))]
+  obtain ⟨q₀, hq₀, hrq₀⟩ := combCached_ok (combTblIdx c) (mag (nib S (combIdx c))) (combTblIdx_lt hc) hmag
+  have hcc : (⟨combField (combTblIdx c) (mag (nib S (combIdx c))) 0, combField (combTblIdx c) (mag (nib S (combIdx c))) 1,
+      combField (combTblIdx c) (mag (nib S (combIdx c))) 2, 2⟩ : Spec.Ed25519.Point) = cache q₀ := by
+    rw [← hq₀, ← combCached_T (combTblIdx c) (mag (nib S (combIdx c)))]
     rfl
-  let q := if nib S (combIdx c) < 8 then negPoint q₀ else q₀
-  have hneg : negIf (decide (nib S (combIdx c) < 8)) (cache q₀) = cache q := by
-    by_cases hlt : nib S (combIdx c) < 8
+  let q := if nib S (combIdx c) < 16 then negPoint q₀ else q₀
+  have hneg : negIf (decide (nib S (combIdx c) < 16)) (cache q₀) = cache q := by
+    by_cases hlt : nib S (combIdx c) < 16
     · simp only [hlt, decide_true, negIf, ↓reduceIte, q]
       exact VG.Proof.Ed25519.X86_64.negCached_cache q₀
     · simp only [hlt, decide_false, negIf, Bool.false_eq_true, ↓reduceIte, q]
-  have hrq : Rep q ((sdig S (combIdx c) * 256 ^ (c % 32)) • baseAff) := by
-    by_cases hlt : nib S (combIdx c) < 8
+  have hrq : Rep q ((sdig S (combIdx c) * 1024 ^ (combTblIdx c)) • baseAff) := by
+    by_cases hlt : nib S (combIdx c) < 16
     · simp only [hlt, ↓reduceIte, q]
-      have e : sdig S (combIdx c) * 256 ^ (c % 32) = -(((mag (nib S (combIdx c)) * 256 ^ (c % 32) : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : nib S (combIdx c) ≤ 8)]; ring
+      have e : sdig S (combIdx c) * 1024 ^ (combTblIdx c) = -(((mag (nib S (combIdx c)) * 1024 ^ (combTblIdx c) : Nat) : ℤ)) := by
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : nib S (combIdx c) ≤ 16)]; ring
       rw [e, neg_smul, natCast_zsmul]
       exact hrq₀.neg
     · simp only [hlt, ↓reduceIte, q]
-      have e : sdig S (combIdx c) * 256 ^ (c % 32) = (((mag (nib S (combIdx c)) * 256 ^ (c % 32) : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ nib S (combIdx c))]; ring
+      have e : sdig S (combIdx c) * 1024 ^ (combTblIdx c) = (((mag (nib S (combIdx c)) * 1024 ^ (combTblIdx c) : Nat) : ℤ)) := by
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 16 ≤ nib S (combIdx c))]; ring
       rw [e, natCast_zsmul]
       exact hrq₀
   rw [hcc, hneg, vAddPt_cache, add_smul, add_comm]
@@ -442,25 +457,25 @@ theorem vstepD_ok {s₀ b : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : L
 
 /-- A step of the loop. -/
 theorem vstep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (hp : LoopPre s₀ base T S)
-    (h : VInv s₀ base c (combVal S c) s) (hc : c < 64) :
+    (hS : S < 2 ^ 256) (h : VInv s₀ base c (combVal S c) s) (hc : c < 52) :
     WP isa Impl.Ed25519.X86_64.Ifma.combStep s fun t =>
-      t.zf = some (decide (c + 1 = 64)) ∧ VInv s₀ base (c + 1) (combVal S (c + 1)) t := by
+      t.zf = some (decide (c + 1 = 52)) ∧ VInv s₀ base (c + 1) (combVal S (c + 1)) t := by
   rw [Impl.Ed25519.X86_64.Ifma.combStep]
-  refine WP.seq (WP.mono_syms (WP.vecKeep (by decide) (rbxCmp_ok s c 32 hc (by decide) h.counter))
+  refine WP.seq (WP.mono_syms (WP.vecKeep (by decide) (rbxCmp_ok s c 26 (by omega) (by decide) h.counter))
     fun a ⟨⟨az, ag, am, ar, aw⟩, ax, ay⟩ asy => ?_)
   have ha : VInv s₀ base c (combVal S c) a :=
     ⟨h.bound, by rw [ag]; exact h.rdi, by rw [ag]; exact h.counter,
       h.frame.step (rs := []) (by decide) (fun r _ => by rw [ag]) ar aw (by rw [am]; exact Outside.refl _ _ _ _)
         asy, (lanes0_eq (lanes0_vec ax ay)).2 h.small, by rw [(lanes0_eq (lanes0_vec ax ay)).1]; exact h.value⟩
-  refine WP.seq (WP.mono (show WP isa (.ite .e (.seq vdbl4 (.block (gEntry ++ ventry))) (.block [])) a
-      fun b => VInv s₀ base c (if c = 32 then 16 * combVal S c + combGVal else combVal S c) b from
-    WP.ite (decide (c = 32)) (by simp only [eval, az])
+  refine WP.seq (WP.mono (show WP isa (.ite .e (.seq vdbl5 (.block (gEntry ++ ventry))) (.block [])) a
+      fun b => VInv s₀ base c (if c = 26 then 32 * combVal S c + combGVal else combVal S c) b from
+    WP.ite (decide (c = 26)) (by simp only [eval, az])
       (fun hy => by
         rw [ite_eq_left_of_eq_true _ _ (eq_true (of_decide_eq_true hy))]
         exact vstepG_ok hp ha)
       (fun hn => by
         rw [ite_eq_right_of_eq_false _ _ (eq_false (of_decide_eq_false hn))]
         exact WP.block_nil ha)) fun b hb => ?_)
-  exact WP.mono (vstepD_ok hp hb hc) fun t ⟨tz, ht⟩ => ⟨tz, by rw [← combIdx_nib S c hc]; exact ht⟩
+  exact WP.mono (vstepD_ok hp hS hb hc) fun t ⟨tz, ht⟩ => ⟨tz, by rw [← combIdx_nib S c hc]; exact ht⟩
 
 end VG.Proof.Ed25519.X86_64.Ifma

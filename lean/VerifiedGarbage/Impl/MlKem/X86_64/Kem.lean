@@ -1,11 +1,12 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!
 # ML-KEM on x86-64: what a parameter set fixes of the top-level functions
 
 The key generation, encapsulation and decapsulation of ML-KEM-768 and
-ML-KEM-1024 are the same code (`KeyGen.lean`, `Encrypt.lean`, `Encaps.lean`,
+ML-KEM-1024 are the same code (`KeyGen.lean`, `Encrypt.lean`, `EncapsH.lean`,
 `Decaps.lean`) for a `Kem`: the rank `k` and the widths `d_u` and `d_v` of
 the parameter set, the size of `scratch`, where the matrix, the outputs of
 `PRF₂`, the working space of their computation and the ciphertext of the
@@ -66,6 +67,13 @@ abbrev aS (i j : Nat) : Ptr := pS (L.pA + L.k * i + j)
 /-- `ByteEncode_d(Compress_d(f))` to `out`, for `d = d_u` or `d_v`. -/
 def ceAt (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall L.ceN L.ce f d out
 
+/-- `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` to `w`, for the `k` polynomials `ŝ` from `s` and
+`u'` from `u`, with the working space `z` (4096 bytes):
+`vg_mlkem*_decrypt_mul`, with the arithmetic of `A`. -/
+def decMulAt (A : Arith) (w s u z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi w ++ lea .rsi s ++ lea .rdx u ++ lea .rcx z))
+    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (decryptMul A.bodies L.k))
+
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, for `d = d_u` or `d_v`. -/
 def ddAt (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall L.ddN L.dd b d f
 
@@ -88,7 +96,7 @@ for the products), accumulated left to right. -/
 def dotN (A : Arith) (f g : Nat → Ptr) : Nat → Prog isa
   | 0 => .block []
   | 1 => mulAt A (pS 15) (f 0) (g 0)
-  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt (pS 15) (pS 16)))
+  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt A (pS 15) (pS 16)))
 
 /-- ML-KEM-768: `k = 3`, `d_u = 10`, `d_v = 4`; 28 polynomials in `scratch`:
 `Â` in polynomials 6–14, the working space from 17, the outputs of `PRF₂`

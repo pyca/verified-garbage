@@ -311,7 +311,7 @@ abbrev RQ (rbs wbs : List (Reg × Nat)) (ρ : List Byte) (n e₀ K : Nat) (x y :
 theorem copyChk_dst {bs wbs : List (Reg × Nat)} {dst src : Ptr} {n : Nat} (hc : copyChk bs wbs dst src n = true) :
     inB bs dst n = true := by
   simp only [copyChk, wrOk, rdOk, Bool.and_eq_true] at hc
-  exact hc.1.1.1.1.1.2
+  exact hc.1.1.1.1.1.1.2
 
 theorem seed_tr (hcs : ∀ b ∈ rbs ++ wbs, b.1 ∈ bases) {ρ : List Byte} {n e₀ K : Nat} (he : e₀ + K < 256)
     (hK : K < 4) (hi : (e₀ + K) / n < 4) (hj : (e₀ + K) % n < 4) (hc : seedsChk (rbs ++ wbs) wbs K = true) :

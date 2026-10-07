@@ -59,6 +59,14 @@ pub(crate) fn zeroize<T: Int>(x: &mut [T]) {
 /// `p` must be valid for writes of `len` bytes, which may not wrap around the
 /// end of the address space or overlap the callee's stack frame.
 pub(crate) unsafe fn zeroize_raw(p: *mut u8, len: usize) {
+    #[cfg(target_arch = "x86_64")]
+    if crate::cpu::detected().contains(crate::arch::zeroize::VG_ZEROIZE_AVX_FEATURES) {
+        // SAFETY: the caller's, and the CPU has AVX, the feature
+        // `vg_zeroize_avx` needs.
+        unsafe { crate::arch::zeroize::vg_zeroize_avx(p, len) };
+        core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+        return;
+    }
     // SAFETY: the caller's.
     unsafe { crate::arch::zeroize::vg_zeroize(p, len) };
     core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
@@ -71,7 +79,8 @@ mod tests {
     #[test]
     fn zeroizes() {
         // Bytes before, between and after aligned words, at every offset,
-        // through the 32-byte, word and byte loops.
+        // through the 32-byte (or, with AVX on x86-64, 64-byte), word and
+        // byte loops.
         for start in 0..8 {
             for end in start..=100 {
                 let mut words = [u64::MAX; 13];
@@ -82,6 +91,14 @@ mod tests {
                     assert_eq!(*b == 0, (start..end).contains(&i));
                 }
             }
+        }
+        // Several iterations of the widest loop, and every tail after them.
+        for len in 192..=263 {
+            let mut big = [u8::MAX; 264];
+            zeroize(&mut big[1..len]);
+            assert_eq!(big[0], u8::MAX);
+            assert!(big[1..len].iter().all(|&b| b == 0));
+            assert!(big[len..].iter().all(|&b| b == u8::MAX));
         }
         let mut y = [u64::MAX; 3];
         zeroize(&mut y);

@@ -54,26 +54,6 @@ theorem newton_step_ok (t : State) {j : Nat} (hj : 2 * j ≤ 64)
       t'.gpr .rbx = t.gpr .rbx ∧ t'.mem = t.mem ∧ Keep [.rax, .rcx, .rdx, .rsi] t t' :=
   WP.mono (newton_ok t) fun t' ⟨hv, hb, hm, k⟩ => ⟨by rw [hb]; exact newton_step hj h hv, hb, hm, k⟩
 
-/-- Negating an inverse: `a (-x) + 1 ≡ 0` from `a x ≡ 1 (mod 2⁶⁴)`. -/
-theorem neg_inv {a x : Nat} (hx : x < 2 ^ 64) (h : ((a : Int) * x - 1) % (2 ^ 64 : Int) = 0) :
-    (a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1) % 2 ^ 64 = 0 := by
-  have hr : (((2 ^ 64 - x + 0) % 2 ^ 64 : Nat) : Int) % 2 ^ 64 = -(x : Int) % 2 ^ 64 := by
-    rw [Int.natCast_emod, show ((2 ^ 64 : Nat) : Int) = 2 ^ 64 from rfl, Int.emod_emod]
-    omega
-  have h2 : ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) % 2 ^ 64 =
-      (-((a : Int) * x - 1)) % 2 ^ 64 := by
-    rw [Int.natCast_add, Int.natCast_mul, Int.add_emod, Int.mul_emod, hr, ← Int.mul_emod,
-      ← Int.add_emod]
-    congr 1
-    rw [Int.mul_neg]
-    omega
-  have h3 : (-((a : Int) * x - 1)) % 2 ^ 64 = 0 :=
-    Int.emod_eq_zero_of_dvd (Int.dvd_neg.mpr (Int.dvd_of_emod_eq_zero h))
-  have h4 := h2.trans h3
-  change ((a * ((2 ^ 64 - x + 0) % 2 ^ 64) + 1 : Nat) : Int) % ((2 ^ 64 : Nat) : Int) = 0 at h4
-  rw [← Int.natCast_emod] at h4
-  exact Int.ofNat_inj.mp h4
-
 /-- `minv`: `-m₀⁻¹ mod 2⁶⁴` into `r15`, for the odd `m₀` in `rbx`. -/
 theorem minv_ok (s : State) (hodd : (s.gpr .rbx).toNat % 2 = 1) :
     WP isa (.block minv) s fun t =>

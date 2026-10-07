@@ -95,9 +95,12 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₃ := hs₂.of_keepRegs k₃ (by
     intro h
     simp only [List.mem_cons] at h
-    rcases h with h | h | h
+    rcases h with h | h | h | h | h | h
     · exact absurd h (by decide)
     · exact absurd h (by decide)
+    · exact absurd h (by decide)
+    · exact absurd h (by decide)
+    · exact (fresh_low M.n hM.n7).head.2.2.2.2.2 h.symm
     · exact (fresh_low' M.n hM.n7).2 _ h |>.2.2.2.2 rfl)
   refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) (fresh_low' M.n hM.n7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
@@ -105,9 +108,13 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
   · rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (by
       simp only [clob, List.mem_cons] at h ⊢
-      rcases h with h | h | h
+      rcases h with h | h | h | h | h | h
       · exact Or.inl h
+      · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr (Or.inl h))
+      · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+      · exact Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc hM.n7 M.n r (by
+          rw [hsplit]; simp only [List.mem_append, List.mem_cons]; exact Or.inr (Or.inl h))))))
       · exact Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc hM.n7 M.n r (by
           rw [hsplit]; simp only [List.mem_append]; exact Or.inl h))))))),
       k₂.1 r (fun h => hr (by simpa [clob] using h)), k₁.1 r (fun h => hr (by
@@ -202,9 +209,12 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₅ := hs₄.of_keepRegs k₅ (by
     intro h
     simp only [List.mem_cons] at h
-    rcases h with h | h | h
+    rcases h with h | h | h | h | h | h
     · exact absurd h (by decide)
     · exact absurd h (by decide)
+    · exact absurd h (by decide)
+    · exact absurd h (by decide)
+    · exact hf.head.2.2.2.2.2 h.symm
     · exact (hf.tail.2 _ h).2.2.2.2 rfl)
   refine WP.mono (stores_ok _ hs₅ (o := o) (by rw [hl]; omega) hf.tail.1) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hl] at e₆ O₆
@@ -212,9 +222,12 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   · have hr' : r ∉ top M.n :: low M.n := fun h => hr (hsub r h)
     rw [k₆.gpr r (by simp), k₅.gpr r (fun h => hr (by
         simp only [List.mem_cons] at h
-        rcases h with h | h | h
+        rcases h with h | h | h | h | h | h
         · simp [clob, h]
         · simp [clob, h]
+        · simp [clob, h]
+        · simp [clob, h]
+        · exact hsub r (by rw [h]; exact List.mem_cons_self ..)
         · exact hsub r (List.mem_cons_of_mem _ h))),
       k₄.1 r (fun h => hr' (by simp at h; simp [h])), k₃.1 r (fun h => hr' (List.mem_cons_of_mem _ h)),
       k₂.1 r (fun h => hr' (by simp at h; simp [h])), k₁.1 r (fun h => hr' (List.mem_cons_of_mem _ h))]

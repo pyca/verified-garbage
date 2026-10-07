@@ -14,7 +14,7 @@ swaps (`invSwap_ok`), the subtractions (`invSub_ok`) and the halvings
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem mask_and' (a b : Bool) : mask a &&& mask b = mask (a && b) := by
   cases a <;> cases b <;> rfl

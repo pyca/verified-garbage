@@ -40,6 +40,8 @@ def evalOp (op : FieldOp) (e : Env) : Env :=
   | .sqr o a => Function.update e o (e a * e a)
   | .add o a b => Function.update e o (e a + e b)
   | .sub o a b => Function.update e o (e a - e b)
+  | .mul2 o a b => Function.update e o (e a * e b + e a * e b)
+  | .sqr2 o a => Function.update e o (e a * e a + e a * e a)
 
 theorem evalOp_mul_apply (e : Env) (o a b i : Slot) :
     evalOp (.mul o a b) e i = if i = o then e a * e b else e i := by
@@ -115,6 +117,15 @@ theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (op : FieldOp) :
     refine WP.mono (Proof.X25519.X86_64.sub_ok hs
       (by simp only [offset]; omega) (by simp only [offset]; omega)
       (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+  | mul2 o a b =>
+    refine WP.mono ((EdArith.ok (fld := fld)).mul2 hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)
+      (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
+    exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
+  | sqr2 o a =>
+    refine WP.mono ((EdArith.ok (fld := fld)).sqr2 hs
+      (by simp only [offset]; omega) (by simp only [offset]; omega)) fun t ⟨h, e⟩ => ?_
     exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
 
 theorem fieldCode_ok (ops : List FieldOp) {s : State} {base : Addr} (hs : Scr s base) :

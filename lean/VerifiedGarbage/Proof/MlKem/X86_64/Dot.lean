@@ -86,7 +86,7 @@ theorem dotN_ok {A : Arith} (hA : ArithOk A) {rbs wbs : List (Reg × Nat)} (hcs 
     have L₂ := L₁.post hP₂.b hcs
     rw [ha₁.2, hb₁.2, ← hP₂.pa rbx_cs] at hp₂
     have hq₂ := L₁.keepPoly hP₂.b hc.k15 hp₁
-    refine WP.mono (addAt_ok L₂ rbx_na hc.acc hq₂.1 hp₂.1) fun s₃ ⟨hP₃, hp₃⟩ =>
+    refine WP.mono (addAt_ok hA L₂ rbx_na hc.acc hq₂.1 hp₂.1) fun s₃ ⟨hP₃, hp₃⟩ =>
       ⟨PPost.app (PPost.app hP₁ hP₂ (by decide)) hP₃ (by decide), ?_⟩
     rw [hq₂.2, hp₂.2, hP₂.pa rbx_cs, hP₁.pa rbx_cs] at hp₃
     exact hp₃
@@ -119,6 +119,6 @@ theorem dotN_tr {A : Arith} (hA : ArithOk A) {rbs wbs : List (Reg × Nat)} (hcs 
       (fun x Lx hi => WP.mono (mulAt_okL hA Lx (hc.k (n + 1) (by omega)).2.2.1 (hc.k (n + 1) (by omega)).2.2.2
         (hc.m (n + 1) (by omega)) (hi.1 (n + 1) (by omega)).1 (hi.1 (n + 1) (by omega)).2) fun x' ⟨hP, hp⟩ =>
           ⟨⟨_, hP.b⟩, Lx.keepRed hP.b hc.k15 hi.2, by rw [hP.pa rbx_cs]; exact hp.1⟩) ?_
-    exact RelCT.mono (addAt_tr rbx_na hc.acc) (fun _ _ ⟨e, i1, i2⟩ => ⟨e, i1, i2⟩) fun _ _ _ => trivial
+    exact RelCT.mono (addAt_tr hA rbx_na hc.acc) (fun _ _ ⟨e, i1, i2⟩ => ⟨e, i1, i2⟩) fun _ _ _ => trivial
 
 end VG.Proof.MlKem.X86_64

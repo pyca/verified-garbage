@@ -1,5 +1,6 @@
 //! Throughput of each public API, next to the same operation in OpenSSL
-//! (through rust-openssl), at a few message sizes.
+//! (through rust-openssl) and, where it has one, in aws-lc-rs, at a few
+//! message sizes.
 //!
 //! Every benchmark is one complete operation (setup included), as a caller
 //! of either library would do it. Benchmark ids are
@@ -77,6 +78,7 @@ mod rsa_oaep;
 mod rsa_pkcs1_enc;
 mod rsa_pkcs1_sig;
 mod rsa_pss;
+mod rsa_public;
 mod scrypt;
 mod sha1;
 mod sha224;
@@ -94,13 +96,16 @@ const SIZES: [usize; 3] = [64, 1024, 16384];
 
 const VG: &str = "verified-garbage";
 const OPENSSL: &str = "openssl";
+const AWS_LC: &str = "aws-lc-rs";
 
-/// Benchmarks the hash `vg` against OpenSSL's `md`.
+/// Benchmarks the hash `vg` against OpenSSL's `md` and, if it has the hash,
+/// aws-lc-rs's `aws_lc`.
 pub(crate) fn hash_group<const N: usize>(
     c: &mut Criterion,
     name: &str,
     vg: fn(&[u8]) -> [u8; N],
     md: MessageDigest,
+    aws_lc: Option<&'static aws_lc_rs::digest::Algorithm>,
 ) {
     let mut g = c.benchmark_group(name);
     for size in SIZES {
@@ -112,6 +117,15 @@ pub(crate) fn hash_group<const N: usize>(
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| hash(md, black_box(&data)).unwrap())
         });
+        if let Some(alg) = aws_lc {
+            assert_eq!(
+                aws_lc_rs::digest::digest(alg, &data).as_ref(),
+                &vg(&data)[..]
+            );
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| aws_lc_rs::digest::digest(alg, black_box(&data)))
+            });
+        }
     }
     g.finish();
 }
@@ -146,12 +160,15 @@ pub(crate) fn hash_verify_group<const N: usize>(
 }
 
 /// Benchmarks HMAC with the hash of `vg` and `md` (32-byte key) against
-/// OpenSSL's.
-pub(crate) fn hmac_group<O>(
+/// OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`. aws-lc-rs makes
+/// its `hmac::Key`, which keys the hash, in each iteration, as OpenSSL makes
+/// its `Signer`.
+pub(crate) fn hmac_group<O: AsRef<[u8]>>(
     c: &mut Criterion,
     name: &str,
     vg: fn(&[u8], &[u8]) -> O,
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
 ) {
     let key = [0x0b; 32];
     let pkey = PKey::hmac(&key).unwrap();
@@ -169,14 +186,23 @@ pub(crate) fn hmac_group<O>(
                 s.sign_oneshot(&mut out, black_box(&data)).unwrap()
             })
         });
+        if let Some(alg) = aws_lc {
+            use aws_lc_rs::hmac;
+            let tag = hmac::sign(&hmac::Key::new(alg, &key), &data);
+            assert_eq!(tag.as_ref(), vg(&key, &data).as_ref());
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| hmac::sign(&hmac::Key::new(alg, black_box(&key)), black_box(&data)))
+            });
+        }
     }
     g.finish();
 }
 
 /// Benchmarks checking an HMAC with the hash `H` and `md` (32-byte key)
-/// against OpenSSL's: computing the MAC of the data and comparing it with
-/// the expected one in constant time (`Hmac::verify`; OpenSSL's
-/// `CRYPTO_memcmp`).
+/// against OpenSSL's and, if it has the hash, aws-lc-rs's `aws_lc`:
+/// computing the MAC of the data and comparing it with the expected one in
+/// constant time (`Hmac::verify`; OpenSSL's `CRYPTO_memcmp`; aws-lc-rs's
+/// `hmac::verify`, making its key in each iteration).
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -187,6 +213,7 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
     c: &mut Criterion,
     name: &str,
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::hmac::Algorithm>,
 ) {
     use verified_garbage::hmac::Hmac;
     let key = [0x0b; 32];
@@ -211,13 +238,23 @@ pub(crate) fn hmac_verify_group<H: verified_garbage::hmac::HmacHash>(
                 assert!(openssl::memcmp::eq(&out[..n], black_box(mac.as_ref())))
             })
         });
+        if let Some(alg) = aws_lc {
+            use aws_lc_rs::hmac;
+            hmac::verify(&hmac::Key::new(alg, &key), &data, mac.as_ref()).unwrap();
+            g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+                b.iter(|| {
+                    let k = hmac::Key::new(alg, black_box(&key));
+                    hmac::verify(&k, black_box(&data), black_box(mac.as_ref())).unwrap()
+                })
+            });
+        }
     }
     g.finish();
 }
 
-/// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's, of a
-/// 32-byte password, deriving `len` bytes (a digest), with the sizes as the
-/// iteration counts.
+/// Benchmarks PBKDF2 with the hash of `vg` and `md` against OpenSSL's and,
+/// if it has the hash, aws-lc-rs's `aws_lc`, of a 32-byte password, deriving
+/// `len` bytes (a digest), with the sizes as the iteration counts.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -229,6 +266,7 @@ pub(crate) fn pbkdf2_group(
     name: &str,
     vg: fn(&[u8], &[u8], std::num::NonZeroU32, &mut [u8]),
     md: MessageDigest,
+    aws_lc: Option<aws_lc_rs::pbkdf2::Algorithm>,
     len: usize,
 ) {
     let password = [0x0b; 32];
@@ -253,6 +291,23 @@ pub(crate) fn pbkdf2_group(
                 .unwrap()
             })
         });
+        if let Some(alg) = aws_lc {
+            let mut expected = vec![0u8; len];
+            vg(&password, &salt, n, &mut expected);
+            aws_lc_rs::pbkdf2::derive(alg, n, &salt, &password, &mut out);
+            assert_eq!(out, expected);
+            g.bench_function(BenchmarkId::new(AWS_LC, iterations), |b| {
+                b.iter(|| {
+                    aws_lc_rs::pbkdf2::derive(
+                        alg,
+                        n,
+                        black_box(&salt),
+                        black_box(&password),
+                        &mut out,
+                    )
+                })
+            });
+        }
     }
     g.finish();
 }
@@ -304,6 +359,7 @@ const BENCHES: &[Bench] = &[
     (rsa_pkcs1_enc::USES, rsa_pkcs1_enc::bench),
     (rsa_pkcs1_sig::USES, rsa_pkcs1_sig::bench),
     (rsa_pss::USES, rsa_pss::bench),
+    (rsa_public::USES, rsa_public::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),

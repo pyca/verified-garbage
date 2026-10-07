@@ -123,97 +123,6 @@ theorem pdEntry_ok {s : State} {B : Addr} (hB : stackArg s 2 = B)
   · exact Outside.store_hdr ho₁ (by decide) (by decide) _
   · exact (k₁.trans k₂).mono (by decide)
 
-/-! ## The values in `pre` -/
-
-/-- A number from its words. -/
-theorem wv_of_words {m : Mem} {p : Addr} {d x : Nat} : ∀ {n : Nat},
-    (∀ i < n, (word m p (d + 8 * i)).toNat = x / 2 ^ (64 * i) % 2 ^ 64) → wv m p d n = x % 2 ^ (64 * n)
-  | 0, _ => by simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.mod_one]
-  | n + 1, h => by
-    rw [wv, wv_of_words fun i hi => h i (by omega), h n (by omega), pow64_succ, Nat.mod_mul]
-
-/-- The `2 w` words at `pp`, as two numbers of `w` words. -/
-theorem pre_words {m : Mem} {pp : Addr} {w N R : Nat}
-    (h : Spec.Rsa.wordsAt m pp (2 * w) = Spec.Rsa.toWords N w ++ Spec.Rsa.toWords R w)
-    (hN : N < 2 ^ (64 * w)) (hR : R < 2 ^ (64 * w)) :
-    wv m pp 0 w = N ∧ wv m pp (8 * w) w = R := by
-  rw [Spec.Rsa.wordsAt, Spec.Rsa.toWords, Spec.Rsa.toWords, show 2 * w = w + w by omega, List.range_add,
-    List.map_append, List.map_map] at h
-  obtain ⟨h1, h2⟩ := List.append_inj h (by simp)
-  rw [List.map_inj_left] at h1 h2
-  refine ⟨?_, ?_⟩
-  · rw [← Nat.mod_eq_of_lt hN]
-    refine wv_of_words fun i hi => ?_
-    show (m.readW (pp + BitVec.ofNat 64 (0 + 8 * i)) 64).toNat = _
-    rw [Nat.zero_add, h1 i (List.mem_range.mpr hi), BitVec.toNat_ofNat]
-  · rw [← Nat.mod_eq_of_lt hR]
-    refine wv_of_words fun i hi => ?_
-    have := h2 i (List.mem_range.mpr hi)
-    simp only [Function.comp_apply] at this
-    show (m.readW (pp + BitVec.ofNat 64 (8 * w + 8 * i)) 64).toNat = _
-    rw [show 8 * w + 8 * i = 8 * (w + i) by omega, this, BitVec.toNat_ofNat]
-
-/-- `pre` holds the values of the valid modulus `nB`. -/
-theorem pre_of_some {m : Mem} {pp : Addr} {k : Nat} {nB : List Byte} (hl : nB.length = k) (hk : 64 ≤ k)
-    (hpp : Spec.Rsa.publicPrecompute nB = some (Spec.Rsa.wordsAt m pp (2 * ((k + 7) / 8)))) :
-    Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) k = true ∧ wv m pp 0 ((k + 7) / 8) = Spec.Rsa.os2ip nB ∧
-      wv m pp (8 * ((k + 7) / 8)) ((k + 7) / 8) = 2 ^ (128 * ((k + 7) / 8)) % Spec.Rsa.os2ip nB := by
-  have hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) k = true := by
-    cases hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nB) k
-    · simp [Spec.Rsa.publicPrecompute, hl, hv] at hpp
-    · rfl
-  rw [publicPrecompute_some hl hv] at hpp
-  have hlt : Spec.Rsa.os2ip nB < 2 ^ (64 * ((k + 7) / 8)) := by
-    have := os2ip_lt nB
-    rw [hl, pow256_eq] at this
-    exact Nat.lt_of_lt_of_le this (Nat.pow_le_pow_right (by decide) (by omega))
-  have hpos : 0 < Spec.Rsa.os2ip nB := by
-    have := (valid_facts hv hk).2.1; omega
-  obtain ⟨h1, h2⟩ := pre_words (Option.some.inj hpp).symm hlt (Nat.lt_trans (Nat.mod_lt _ hpos) hlt)
-  exact ⟨hv, h1, h2⟩
-
-/-- The checks pass for the values of a valid modulus. -/
-theorem checks_true {m : Mem} {B : Addr} {w N : Nat} (hw : 1 ≤ w) (hN : wv m B (slot w aN) w = N)
-    (hodd : N % 2 = 1) (hlo : 2 ^ (64 * (w - 1)) ≤ N) (hRN : wv m B (slot w aR2) w < N) :
-    (decide ((word m B (slot w aN)).toNat % 2 = 1) &&
-      decide (wv m B (slot w aR2) w < wv m B (slot w aN) w) &&
-      decide (word m B (slot w aN + 8 * (w - 1)) ≠ 0)) = true := by
-  have h1 : (word m B (slot w aN)).toNat % 2 = 1 := by
-    rw [← wv_mod64 _ _ _ hw, Nat.mod_mod_of_dvd _ (by decide), hN, hodd]
-  have h3 : word m B (slot w aN + 8 * (w - 1)) ≠ 0 := by
-    intro h0
-    have h := word_of_wv m B (slot w aN) w (q := w - 1) (by omega)
-    rw [h0, hN, show (0 : BitVec 64).toNat = 0 from rfl] at h
-    have hlt := wv_lt m B (slot w aN) w
-    rw [hN] at hlt
-    have hp : 0 < 2 ^ (64 * (w - 1)) := Nat.two_pow_pos _
-    have hq : N / 2 ^ (64 * (w - 1)) < 2 ^ 64 := by
-      rw [Nat.div_lt_iff_lt_mul hp, ← Nat.pow_add, show 64 + 64 * (w - 1) = 64 * w by omega]; exact hlt
-    have hq1 : 1 ≤ N / 2 ^ (64 * (w - 1)) := (Nat.le_div_iff_mul_le hp).mpr (by omega)
-    rw [Nat.mod_eq_of_lt hq] at h
-    omega
-  rw [hN]
-  simp only [h1, hRN, decide_true, Bool.and_true, Bool.true_and, decide_eq_true_eq]
-  exact h3
-
-/-- What values that pass the checks give: an odd `N > 1`, and `R < N`. -/
-theorem checks_facts {m : Mem} {B : Addr} {w : Nat} (hw : 2 ≤ w)
-    (h : (decide ((word m B (slot w aN)).toNat % 2 = 1) &&
-      decide (wv m B (slot w aR2) w < wv m B (slot w aN) w) &&
-      decide (word m B (slot w aN + 8 * (w - 1)) ≠ 0)) = true) :
-    wv m B (slot w aN) w % 2 = 1 ∧ 1 < wv m B (slot w aN) w ∧ wv m B (slot w aR2) w < wv m B (slot w aN) w := by
-  simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-  obtain ⟨⟨h1, h2⟩, h3⟩ := h
-  refine ⟨by rw [← Nat.mod_mod_of_dvd _ (show 2 ∣ 2 ^ 64 by decide), wv_mod64 _ _ _ (by omega)]; exact h1, ?_, h2⟩
-  obtain ⟨v, rfl⟩ : ∃ v, w = v + 1 := ⟨w - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at h3
-  have ht : (word m B (slot (v + 1) aN + 8 * v)).toNat ≠ 0 := fun h0 => h3 (BitVec.eq_of_toNat_eq (by rw [h0]; rfl))
-  have hp : 1 < 2 ^ (64 * v) := Nat.one_lt_two_pow (by omega)
-  rw [wv]
-  have : 2 ^ (64 * v) ≤ 2 ^ (64 * v) * (word m B (slot (v + 1) aN + 8 * v)).toNat :=
-    Nat.le_mul_of_pos_right _ (by omega)
-  omega
-
 /-! ## The whole function -/
 
 /-- What `code` uses of its contract's precondition, for the working space
@@ -266,23 +175,6 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
     fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)), fun b hb => ?_⟩
   have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
   exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega) (by omega))⟩
-
-/-- The checks' result, from the numbers in the arrays. -/
-def chkv (w N R : Nat) : Bool :=
-  decide (N % 2 = 1) && decide (R < N) && decide (N / 2 ^ (64 * (w - 1)) % 2 ^ 64 ≠ 0)
-
-theorem chk_eq {m : Mem} {B : Addr} {w : Nat} (hw : 1 ≤ w) :
-    (decide ((word m B (slot w aN)).toNat % 2 = 1) &&
-      decide (wv m B (slot w aR2) w < wv m B (slot w aN) w) &&
-      decide (word m B (slot w aN + 8 * (w - 1)) ≠ 0)) =
-      chkv w (wv m B (slot w aN) w) (wv m B (slot w aR2) w) := by
-  have h1 : (word m B (slot w aN)).toNat % 2 = wv m B (slot w aN) w % 2 := by
-    rw [← wv_mod64 _ _ _ hw, Nat.mod_mod_of_dvd _ (by decide)]
-  have h3 : word m B (slot w aN + 8 * (w - 1)) ≠ 0 ↔ wv m B (slot w aN) w / 2 ^ (64 * (w - 1)) % 2 ^ 64 ≠ 0 := by
-    rw [← word_of_wv m B _ w (q := w - 1) (by omega)]
-    exact ⟨fun h h0 => h (BitVec.eq_of_toNat_eq (by rw [h0]; rfl)), fun h h0 => h (by rw [h0]; rfl)⟩
-  unfold chkv
-  rw [h1, decide_eq_decide.mpr h3]
 
 /-- `pre`'s words after the entry, as before it. -/
 theorem pre_wv_entry {s t₁ : State} (c : PdCtx s)

@@ -16,6 +16,7 @@ pub fn bench(c: &mut Criterion) {
         verified_garbage::mlkem768,
         DecapsulationKey768,
         EncapsulationKey768,
+        ML_KEM_768,
         ML_KEM_768
     );
 }

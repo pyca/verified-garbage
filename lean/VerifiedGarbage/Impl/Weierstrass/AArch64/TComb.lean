@@ -191,13 +191,32 @@ def select : List Instr :=
   else K.selThirds) ++
   K.selZ
 
+/-- Copy the selected public entry from `x16`, replacing it by `fallback`
+when the carry is clear (the zero digit). Only scalar loads are needed. -/
+def directWords (src dst fallback count : Nat) : List Instr :=
+  (List.range count).flatMap fun i =>
+    [.ldr .x .x4 .x16 (src + 8 * i)] ++ const64 .x6 (wordOf fallback i) ++
+    [.csel .x .x4 .x4 .x6, st .x4 (dst + 8 * i)]
+
+/-- Address the public digit's entry, clamping zero to the first entry.
+The carry records whether the actual digit is nonzero. -/
+def directAddress : List Instr :=
+  [.subs .x .x3 .x2 .x5, .csel .x .x3 .x3 .x7,
+   .movz .x .x17 (BitVec.ofNat 16 (16 * K.M.n)) 0,
+   .mul .x .x3 .x3 .x17, .add .x .x16 .x16 .x3]
+
+/-- Direct selection for public scalars only; signing keeps `select`. -/
+def selectPublic : List Instr :=
+  K.selSetup ++ K.directAddress ++
+  directWords 0 K.E.x 0 K.M.n ++ directWords (8 * K.M.n) K.E.y K.one K.M.n ++ K.selZ
+
 /-- The digit's magnitude into `x2`: its window and `|k - H|`. -/
 def digit : List Instr := winIndex K.w ++ hornerBits K.bits K.w ++ magnitudeH K.H
 
 /-- Iteration `j = x19 - 1` (with `x19` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
-def step : Prog isa :=
-  .seq (.block (decCounter :: K.digit ++ K.select)) <|
+def step (publicLookup : Bool := false) : Prog isa :=
+  .seq (.block (decCounter :: K.digit ++ (if publicLookup then K.selectPublic else K.select))) <|
   .seq (.block (negYW K.M K.w K.neg K.zero K.E.y K.bits)) <|
   .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
   .block (copyPt K.M.n K.A K.D)
@@ -211,7 +230,8 @@ def init : List Instr :=
     [.movz .x .x19 (BitVec.ofNat 16 K.J) 0]
 
 /-- `[k]G` into `A`. -/
-def comb : Prog isa := .seq (.block K.init) (.loop K.step (.nonzero .x .x19))
+def comb (publicLookup : Bool := false) : Prog isa :=
+  .seq (.block K.init) (.loop (K.step publicLookup) (.nonzero .x .x19))
 
 end TCombCfg
 

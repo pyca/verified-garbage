@@ -36,7 +36,7 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
     cases op <;> (simp only [Option.some.injEq] at h; subst h; rfl)
   | xop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.XOp.exec_eq op s]
   | vop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.VOp.exec_eq op s]
-  | vmovdquLoad len d m =>
+  | vmovdquLoad len d m | vbinLoad _ len d _ m =>
     cases len <;> simp only [exec, Option.map_eq_some_iff] at h <;> obtain ⟨_, _, rfl⟩ := h <;> rfl
   | vmovdquStore len m r =>
     cases len
@@ -48,7 +48,11 @@ theorem exec_mxcsr {i : Instr} (hi : loadsMxcsr i = false) {s s' : State} (h : e
   | movdquStore m r => simp only [exec, State.store128] at h; split at h <;> cases h; rfl
   | stmxcsr m => simp only [exec, State.store32] at h; split at h <;> cases h; rfl
   | vmovdqu32Store m r => simp only [exec, State.store512] at h; split at h <;> cases h; rfl
+  | evStore m r => simp only [exec, State.store256] at h; split at h <;> cases h; rfl
   | zop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.ZOp.exec_eq op s]
+  | eop op => simp only [exec, Option.some.injEq] at h; subst h; rw [Taint.EOp.exec_eq op s]
+  | evLoad d | evMadd52Load _ d =>
+    simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; cases d <;> rfl
   | mov | mov32 | movzx8 | movdquLoad | vbroadcasti128 | vmovdqu32Load | vbroadcasti32x4 | zbcst
   | vpmadd52Load =>
     simp only [exec, Option.map_eq_some_iff] at h; obtain ⟨_, _, rfl⟩ := h; rfl

@@ -105,7 +105,7 @@ theorem st_obFrame {D : Addr} {n d k : Nat} (h : (d + k ≤ 16) ∨ (32 ≤ d �
 
 /-- What `seal` and `open` know after `oneBlocks`, from what it did to the
 whole blocks (`ho`, `hc`) and the accumulator (`hy`, over `Z`). -/
-theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} (h : ObPre Ctx W SP R D n s)
+theorem ob_facts {R : Nat} {D : Addr} {n : Nat} {s s₃ : State} {M : Gcm.X86_64.Stitch.CtxMode} (h : ObPre M Ctx W SP R D n s)
     (P : ObPost Ctx W SP D n s s₃) {H icb : Block} {x Z : List Byte}
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hcb : blockAt s.mem (cbA W) = icb)
     (habs : Absorbed s.mem (yA W) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x) (hx : x.length % 16 = 0)

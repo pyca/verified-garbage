@@ -20,7 +20,7 @@ open VG.Proof.Rsa.X86_64
 
 /-- The names of the public operation the check calls. -/
 def pcName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputeApi.name ++ v.montSuffix
-def pdName (v : CrtImpl) : String := Spec.Rsa.publicPrecomputedCheckedApi.name ++ v.montSuffix
+def pdName (v : CrtImpl) : String := v.pubOp.name
 
 def artifacts (v : CrtImpl) : List Artifact := [
   { Spec.Rsa.privateCheckedApi with
@@ -34,7 +34,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
       copy of `m` with zeros."])
     code := Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v)
       (Impl.Rsa.X86_64.Precompute.code v.mont.mm) (pdName v)
-      (Impl.Rsa.X86_64.Checked.precomputedChecked v.mont.mm)
+      (v.pubOp.code)
     contract := Spec.Rsa.privateCheckedContract X86_64.abi stackBytes
     stack := stackBytes
     verified := code_verified v _ _

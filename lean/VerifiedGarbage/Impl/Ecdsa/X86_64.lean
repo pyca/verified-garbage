@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Window
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Inv
+import VerifiedGarbage.Impl.Weierstrass.X86_64.TCombJ
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -105,13 +106,14 @@ bytes each, and a word of zeros past them that the comb's last digit may
 read. -/
 def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 8) * j
 
-/-- The window method's slots, past the inversion's working area (for up to
-six words): `k + offset J` (`n + 1` words, two slots), the table of its bits
-(`64 (n + 1)` bytes, ten slots) and the table of points `[1 … 8]P` (24
-slots). -/
-def WK : Nat := 80
-def WB : Nat := 82
-def WT : Nat := 92
+/-- The window method's slots, past the tables of bits (over the inversion's
+working area, which each inversion initializes): `k + offset J`
+(`n + 1` words, two slots), the table of its bits (`64 (n + 1)` bytes, ten
+slots) and the table of points `[1 … 8]P` (24 slots), below `8192` bytes
+for up to nine words. -/
+def WK : Nat := 71
+def WB : Nat := 73
+def WT : Nat := 83
 
 /-- A fixed-base comb for `G`: its digits' width `w`, its tables
 (`tbl[j][m - 1]` is `[m 2^(w j)]G`, affine, for `j < combJ` and
@@ -122,6 +124,9 @@ structure CombData where
   tbl : List (List (Nat × Nat))
   start : Nat × Nat
   tsym : String
+  /-- Whether the comb adds Booth's digits by Jacobian mixed additions
+  (`TCombCfg.combJ`), else by the complete ones (`TCombCfg.comb`). -/
+  jac : Bool := false
 
 /-- A curve as the code has it: `n` words, its parameters, and the comb for
 `G`, if it has one (else `[k]G` is by the ladder). -/
@@ -133,6 +138,18 @@ structure Cfg where
   fastN : Bool := false
   /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/
   adx : Bool := false
+  /-- Whether the comb selects its entries 32 bytes at a time, with AVX2
+  (`TCombCfg.avx2`). -/
+  avx2 : Bool := false
+  /-- Whether verification reads the comb's entries for `[u]G` by direct,
+  public lookups (`u` is public) and compares `x mod n` with `r` in
+  projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
+  pubVerify : Bool := false
+
+/-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
+def bitLen (e : Nat) : Nat → Nat
+  | 0 => 0
+  | k + 1 => if e < 2 ^ k then bitLen e k else k + 1
 
 namespace Cfg
 
@@ -191,6 +208,7 @@ def combCfg (d : CombData) : TCombCfg where
   J := c.combJ d.w
   start := (c.mont d.start.1, c.mont d.start.2)
   one := c.mont 1
+  avx2 := c.avx2
 
 /-- The comb's tables, in memory (`Artifact.consts`). -/
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
@@ -203,18 +221,35 @@ def combConsts : List (String × List (BitVec 64)) :=
   | none => []
 
 /-- `R = [k]G`, from the table of the bits of `k`: by the comb (with `b R mod p`
-in `EM` for its complete addition for `a = -3`), or the ladder. -/
-def gMul : Prog isa :=
+in `EM` for its complete addition for `a = -3`), or the ladder.
+`publicLookup` permits direct table lookup only for public scalars. -/
+def gMul (publicLookup : Bool := false) : Prog isa :=
   match c.comb with
-  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d))
+  | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.comb (c.combCfg d) publicLookup)
   | none => ladder c.ladderCfg
 
+/-- `R = [k]G` for a secret `k`: as `gMul`, but by the comb with Booth's digits
+and Jacobian mixed additions (`TCombCfg.combJ`) for a curve whose comb has
+them (`jac`). -/
+def gMulK : Prog isa :=
+  match c.comb with
+  | some d => if d.jac then .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) (TCombCfg.combJ (c.combCfg d))
+      else c.gMul
+  | none => c.gMul
+
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
-def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
+/-- The power mod `n` from the top bit of `n - 2` (its `bitLen` bits), not of its
+`64 n` bits' table. -/
+def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, bitLen (c.C.n - 2) (64 * c.n)⟩
 
 /-- The inversions by divsteps, their working area past the tables of bits. -/
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
+
+/-- The window method's digits: two per byte of the scalar (`len` bytes:
+ECDH's `d`, or verification's `v < n`), and one more for the recoding's
+carry. -/
+def winJ : Nat := 2 * c.C.len + 1
 
 /-- The window method's areas. -/
 def winK : Nat := c.sl WK
@@ -235,12 +270,12 @@ def winCfg (px py bm : Nat) : WinCfg where
   zero := c.sl ZERO
   bits := c.winBits
   tbl := c.winTbl
-  J := 16 * c.n + 1
+  J := c.winJ
   one := c.mont 1
 
 /-- `k + offset J` and its bits, from the slot at `k`. -/
 def winPrep (k : Nat) : Prog isa :=
-  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
+  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset c.winJ)))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to nine words
@@ -336,7 +371,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq c.gMul <|
+  .seq c.gMulK <|
   .seq c.pPow <|
   .seq c.middle <|
   .seq c.nPow c.scalar

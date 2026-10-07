@@ -48,6 +48,8 @@ structure State where
   call stores and, on the ARM targets, what a linker veneer may leave in the
   intra-procedure-call scratch registers (see `TCB/Code.lean`). -/
   unknowns : Nat → BitVec 32 := fun _ => 0
+  /-- The linked address of each constant static, fixed for the run. -/
+  syms : String → BitVec 32 := fun _ => 0
 
 /-- A memory operand `[base + disp]`. -/
 structure MemOp where

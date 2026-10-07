@@ -14,7 +14,7 @@ on entry (`FrE`).
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.RsaPkcs1Sig.X86_64 (PubImpl pubChk pubChkPost pubChecked)
@@ -70,7 +70,7 @@ theorem pubArgs_ok {s u : State} (L : Lay u (fb s) (stackArg s 5)) {V : Nat → 
       u'.gpr .rdi = s.gpr .rdi ∧ u'.gpr .rsi = s.gpr .rcx ∧ u'.gpr .rdx = s.gpr .rdx ∧ u'.gpr .rcx = s.gpr .rcx ∧
       u'.gpr .r8 = s.gpr .r8 ∧ u'.gpr .r9 = s.gpr .r9 := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have G' := L.geo
   have e : ∀ k, 21 ≤ k → k ≤ 26 → W k = encW s k := hW
   have w21 : W 21 = s.gpr .rdi := (e 21 (by omega) (by omega)).trans (by simp [encW, upd])

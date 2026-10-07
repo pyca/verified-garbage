@@ -10,7 +10,7 @@ with `d` and `k`, for any curve the proof of the code supports (`CfgOk`)
 whose group law the proofs support (`Law`), with its comb's tables, if
 any, right (`CombTbls`), and restores the callee-saved registers. Four
 stages, each a lemma: the setup and the tables of bits (`stage₁`, in
-`Stages.lean`), `[k]G` (`gMul_ok`) and `Z^(p-2)` (`stage₂`, `pPow_ok`), `x`,
+`Stages.lean`), `[k]G` (`gMulK_ok`) and `Z^(p-2)` (`stage₂`, `pPow_ok`), `x`,
 `r`, the checks and `k^(n-2)` (`stage₃`, `nPow_ok`), and `s`, its check and the result
 (`stage₄`); `signWith_eq` connects what they compute to the specification.
 -/
@@ -41,14 +41,14 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
     (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMul (.seq c.pPow rest)) s Q := by
+    WP isa (.seq c.gMulK (.seq c.pPow rest)) s Q := by
   subst hb
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have F := hS.fixed
-  refine WP.seq (WP.mono (gMul_ok hc hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+  refine WP.seq (WP.mono (gMulK_ok hc hC hT hp hS) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keepRegs K₅ (rdi_not_powClob _)
   have F₅ := F.unch h7 hn fixedOk_gW U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
@@ -235,7 +235,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq c.gMul (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
+    (.seq c.gMulK (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/

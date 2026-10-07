@@ -1,4 +1,4 @@
-//! X448.
+//! X448 (aws-lc-rs has no X448, so OpenSSL is its only comparison).
 
 use criterion::Criterion;
 

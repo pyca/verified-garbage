@@ -18,7 +18,7 @@ open VG VG.X86_64
 open VG.Impl.Ecdsa.X86_64 (p256 CombData)
 
 /-- P-256's comb. -/
-abbrev p256d : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩
+abbrev p256d : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
 
 theorem p256_comb : p256.comb = some p256d := rfl
 

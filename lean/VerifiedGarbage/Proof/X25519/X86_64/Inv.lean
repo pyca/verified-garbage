@@ -2,20 +2,19 @@ import VerifiedGarbage.Proof.X25519.X86_64.Env
 import VerifiedGarbage.Proof.X25519.Invert
 
 /-!
-# X25519 on x86-64: the inversion
+# X25519 on x86-64: chains of multiplications
 
-The inversion `invert` writes only the temporaries `T0`–`T3` (slots 16–19,
-bytes `[512, 640)`) and, in its runs of squarings, the counter `rbx`; slot 17
-(`T1`) ends as `VG.Proof.X25519.invert` of slot 4 (`Z2`). Each part of it is
-an `ISpec`: a change of the slots by a function of them, keeping everything
-else.
+An addition chain (Ed25519's `rootPower`) writes only the temporaries
+`T0`–`T3` (slots 16–19, bytes `[512, 640)`) and, in its runs of squarings
+(`sqn`), the counter `rbx`. Each part of it is an `ISpec`: a change of the
+slots by a function of them, keeping everything else.
 -/
 
 namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Proof.X25519
 
-/-- What the inversion keeps: the registers but `clob` and `rbx`, the regions,
+/-- What a chain keeps: the registers but `clob` and `rbx`, the regions,
 and the memory outside `[512, 640)`. -/
 structure IKeep (base : Addr) (s s' : State) : Prop where
   gpr : ∀ r, r ∉ clob → r ≠ .rbx → s'.gpr r = s.gpr r
@@ -48,13 +47,13 @@ theorem ISpec.append {base : Addr} {l₁ l₂ : List Instr} {f g : Env → Env}
   exact WP.mono (h₁ s hs) fun _ ⟨k₁, e₁⟩ =>
     WP.mono (h₂ _ (k₁.scr hs)) fun _ ⟨k₂, e₂⟩ => ⟨k₁.trans k₂, by rw [e₂, e₁]⟩
 
-/-- A slot of the inversion's: 16 to 19. -/
+/-- A slot of a chain's: 16 to 19. -/
 abbrev ISlot (o : Fin 128) : Prop := 16 ≤ o.val ∧ o.val < 20
 
 variable {fld : Field} (hf : FieldOk fld)
 
 include hf in
-/-- A multiplication into a slot of the inversion's, which also keeps `rbx`. -/
+/-- A multiplication into a slot of a chain's, which also keeps `rbx`. -/
 theorem mulI_ok {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (ho : ISlot o) :
     WP isa (.block (fld.mul (32 * o.val) (32 * a.val) (32 * b.val))) s fun s' =>
       IKeep base s s' ∧ s'.gpr .rbx = s.gpr .rbx ∧ E s'.mem base = opMul o a b (E s.mem base) :=
@@ -63,7 +62,7 @@ theorem mulI_ok {s : State} {base : Addr} (hs : Scr s base) (o a b : Fin 128) (h
       h.gpr _ (by decide), by rw [E_update h.mem, e]; rfl⟩
 
 include hf in
-/-- A square into a slot of the inversion's, which also keeps `rbx`. -/
+/-- A square into a slot of a chain's, which also keeps `rbx`. -/
 theorem sqrI_ok {s : State} {base : Addr} (hs : Scr s base) (o a : Fin 128) (ho : ISlot o) :
     WP isa (.block (fld.sqr (32 * o.val) (32 * a.val))) s fun s' =>
       IKeep base s s' ∧ s'.gpr .rbx = s.gpr .rbx ∧ E s'.mem base = opMul o a a (E s.mem base) :=
@@ -176,56 +175,5 @@ theorem sqnI (base : Addr) (o a : Fin 128) (ho : ISlot o) (n : Nat) (hn : 2 ≤ 
   refine sqLoop_ok hf hs o ho (E s.mem base a) n hn' (n - 1) s2 (by omega) (by omega) k2 b2 ?_
   rw [m2, e1, show n - (n - 1) = 1 by omega]
   rfl
-
-/-! ## The inversion -/
-
-/-- The slots after the inversion. -/
-def invEnv (e : Env) : Env :=
-  opMul 17 17 16 (opSqn 17 17 5 (opMul 17 18 17 (opSqn 18 18 50 (opMul 18 19 18 (opSqn 19 18 100
-    (opMul 18 18 17 (opSqn 18 17 50 (opMul 17 18 17 (opSqn 18 18 10 (opMul 18 19 18 (opSqn 19 18 20
-    (opMul 18 18 17 (opSqn 18 17 10 (opMul 17 18 17 (opSqn 18 17 5 (opMul 17 17 18
-    (opMul 18 16 16 (opMul 16 16 17 (opMul 17 4 17 (opMul 17 17 17 (opMul 17 16 16
-    (opMul 16 4 4 e))))))))))))))))))))))
-
-include hf in
-theorem invert_spec (base : Addr) : ISpec base (Impl.X25519.X86_64.invert fld) invEnv := by
-  have h : ISpec base _ _ :=
-    (sqrI hf base 16 4 ⟨by decide, by decide⟩).seq <|
-    ((sqrI hf base 17 16 ⟨by decide, by decide⟩).append
-      (sqrI hf base 17 17 ⟨by decide, by decide⟩)).seq <|
-    ((((mulI hf base 17 4 17 ⟨by decide, by decide⟩).append
-      (mulI hf base 16 16 17 ⟨by decide, by decide⟩)).append
-      (sqrI hf base 18 16 ⟨by decide, by decide⟩)).append
-      (mulI hf base 17 17 18 ⟨by decide, by decide⟩)).seq <|
-    (sqnI hf base 18 17 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq <|
-    (mulI hf base 17 18 17 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 18 17 ⟨by decide, by decide⟩ 10 (by decide) (by decide)).seq <|
-    (mulI hf base 18 18 17 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 19 18 ⟨by decide, by decide⟩ 20 (by decide) (by decide)).seq <|
-    (mulI hf base 18 19 18 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 18 18 ⟨by decide, by decide⟩ 10 (by decide) (by decide)).seq <|
-    (mulI hf base 17 18 17 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 18 17 ⟨by decide, by decide⟩ 50 (by decide) (by decide)).seq <|
-    (mulI hf base 18 18 17 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 19 18 ⟨by decide, by decide⟩ 100 (by decide) (by decide)).seq <|
-    (mulI hf base 18 19 18 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 18 18 ⟨by decide, by decide⟩ 50 (by decide) (by decide)).seq <|
-    (mulI hf base 17 18 17 ⟨by decide, by decide⟩).seq <|
-    (sqnI hf base 17 17 ⟨by decide, by decide⟩ 5 (by decide) (by decide)).seq
-    (mulI hf base 17 17 16 ⟨by decide, by decide⟩)
-  exact h
-
-theorem invEnv_eval (e : Env) : invEnv e 17 = VG.Proof.X25519.invert (e 4) := by
-  simp only [↓reduceIte, invEnv, opMul, opSqn, Function.update_apply]
-  rfl
-
-include hf in
-theorem invert_ok {s : State} {base : Addr} (hs : Scr s base) :
-    WP isa (Impl.X25519.X86_64.invert fld) s fun s' =>
-      (∀ r, r ∉ clob → r ≠ .rbx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Outside base 512 128 s.mem s'.mem ∧
-      E s'.mem base 17 = VG.Proof.X25519.invert (E s.mem base 4) :=
-  WP.mono (invert_spec hf base s hs) fun _ ⟨k, e⟩ =>
-    ⟨k.gpr, k.rd, k.wr, k.mem, by rw [e, invEnv_eval]⟩
 
 end VG.Proof.X25519.X86_64

@@ -16,7 +16,7 @@ use serde::Deserialize;
 use verified_garbage::cmac::InvalidKeyLength;
 use verified_garbage::cmac::aes::AesCmac;
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -37,8 +37,8 @@ struct Case {
 fn cmac_aes() {
     require_vectors!();
     let file = harness::load::<Group, Case>("aes_cmac_test.json");
-    let (mut valid, mut modified, mut bad_keys) = (0, 0, 0);
-    for (group, test) in file.tests() {
+    let (valid, modified, bad_keys) = (Count::default(), Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let Case { key, msg, tag } = &test.case;
         let id = test.tc_id;
         assert_eq!(key.0.len() * 8, group.params.key_size, "tcId {id}");
@@ -47,8 +47,8 @@ fn cmac_aes() {
             assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
             let err = AesCmac::new(&key.0).err();
             assert_eq!(err, Some(InvalidKeyLength), "tcId {id}");
-            bad_keys += 1;
-            continue;
+            bad_keys.add();
+            return;
         }
         let full = AesCmac::mac(&key.0, &msg.0).unwrap();
         let mut c = AesCmac::new(&key.0).unwrap();
@@ -65,13 +65,13 @@ fn cmac_aes() {
         if test.result == Expectation::Valid {
             assert!(ok, "tcId {id}");
             assert_eq!(&full[..], &tag.0[..], "tcId {id}");
-            valid += 1;
+            valid.add();
         } else {
             assert_eq!(test.result, Expectation::Invalid, "tcId {id}");
             assert!(!ok, "tcId {id}");
             assert_ne!(&full[..], &tag.0[..], "tcId {id}");
-            modified += 1;
+            modified.add();
         }
-    }
-    assert_eq!((valid, modified, bad_keys), (63, 243, 5));
+    });
+    assert_eq!((valid.get(), modified.get(), bad_keys.get()), (63, 243, 5));
 }

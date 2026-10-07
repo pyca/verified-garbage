@@ -10,9 +10,10 @@ section
 /-!
 # The comb's digits
 
-Step `c` reads digit `2c + 1` (`c < 32`) or `2(c - 32)` of the scalar from its
-bits, expanded one per byte at byte 768 of the scratch (`combIdx`), by
-Horner's rule.
+Step `c` reads chunk `2c + 1` (`c < 26`) or `2(c - 26)` of the scalar, five of
+its bits, expanded one per byte at byte 768 of the scratch (`combIdx`), by
+Horner's rule, from table `c` or `c - 26` (`combTblIdx`); chunk 51 is bit 255
+alone.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -20,91 +21,107 @@ namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
-/-- The digit step `c` reads. -/
-def combIdx (c : Nat) : Nat := if c < 32 then 2 * c + 1 else 2 * (c - 32)
+/-- The chunk step `c` reads. -/
+def combIdx (c : Nat) : Nat := if c < 26 then 2 * c + 1 else 2 * (c - 26)
 
-theorem combIdx_lt {c : Nat} (hc : c < 64) : combIdx c < 64 := by
+/-- The table step `c` reads. -/
+def combTblIdx (c : Nat) : Nat := if c < 26 then c else c - 26
+
+theorem combIdx_lt {c : Nat} (hc : c < 52) : combIdx c < 52 := by
   unfold combIdx; split <;> omega
 
-theorem combIndex_ok (s : State) {c : Nat} (hc : c < 64) (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
-    WP isa combIndex s fun t => t.gpr .rcx = BitVec.ofNat 64 (4 * combIdx c) ∧ Keeps [.rcx] s t := by
+theorem combTblIdx_lt {c : Nat} (hc : c < 52) : combTblIdx c < 26 := by
+  unfold combTblIdx; split <;> omega
+
+theorem combIndex_ok (s : State) {c : Nat} (hc : c < 52) (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
+    WP isa combIndex s fun t => t.gpr .rcx = BitVec.ofNat 64 (5 * combIdx c) ∧
+      t.gpr .r9 = BitVec.ofNat 64 (combTblIdx c) ∧ Keeps [.rcx, .r9] s t := by
   rw [combIndex]
-  have h8 : BitVec.ofNat 64 c + BitVec.ofNat 64 c + (BitVec.ofNat 64 c + BitVec.ofNat 64 c) +
-      (BitVec.ofNat 64 c + BitVec.ofNat 64 c + (BitVec.ofNat 64 c + BitVec.ofNat 64 c)) =
-      BitVec.ofNat 64 (8 * c) := by
+  have h10 : BitVec.ofNat 64 c + BitVec.ofNat 64 c + (BitVec.ofNat 64 c + BitVec.ofNat 64 c) +
+      (BitVec.ofNat 64 c + BitVec.ofNat 64 c + (BitVec.ofNat 64 c + BitVec.ofNat 64 c)) +
+      (BitVec.ofNat 64 c + BitVec.ofNat 64 c) = BitVec.ofNat 64 (10 * c) := by
     apply BitVec.eq_of_toNat_eq; simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega
-  have hcf : decide ((BitVec.ofNat 64 c).toNat < ((32 : BitVec 32).signExtend 64).toNat) =
-      decide (c < 32) := by
-    rw [show (32 : BitVec 32).signExtend 64 = BitVec.ofNat 64 32 from rfl, BitVec.toNat_ofNat,
+  have hcf : decide ((BitVec.ofNat 64 c).toNat < ((26 : BitVec 32).signExtend 64).toNat) =
+      decide (c < 26) := by
+    rw [show (26 : BitVec 32).signExtend 64 = BitVec.ofNat 64 26 from rfl, BitVec.toNat_ofNat,
       BitVec.toNat_ofNat]
     congr 1; apply propext; omega
   refine WP.seq (WP.mono (show WP isa (.block [.mov .rcx (.reg .rbx), .alu .add .rcx (.reg .rcx),
-      .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .cmp .rbx (.imm 32)]) s
-      (fun t => t.gpr .rcx = BitVec.ofNat 64 (8 * c) ∧ t.cf = some (decide (c < 32)) ∧
-        Keeps [.rcx] s t) by
+      .mov .r9 (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+      .alu .add .rcx (.reg .r9), .mov .r9 (.reg .rbx), .alu .cmp .rbx (.imm 26)]) s
+      (fun t => t.gpr .rcx = BitVec.ofNat 64 (10 * c) ∧ t.gpr .r9 = BitVec.ofNat 64 c ∧
+        t.cf = some (decide (c < 26)) ∧ Keeps [.rcx, .r9] s t) by
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, hb, h8, hcf, ite_true,
+      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, hb, h10, hcf, ite_true,
       ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
-    refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun a ⟨ac, af, ka⟩ => ?_)
-  refine WP.ite (decide (c < 32)) (by simp only [eval, af]) (fun h => ?_) (fun h => ?_)
-  · have hc32 : c < 32 := of_decide_eq_true h
+    refine ⟨trivial, trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false])
+    fun a ⟨ac, a9, af, ka⟩ => ?_)
+  refine WP.ite (decide (c < 26)) (by simp only [eval, af]) (fun h => ?_) (fun h => ?_)
+  · have hc26 : c < 26 := of_decide_eq_true h
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ac, ite_true, Option.bind_some,
-      Option.some.injEq, exists_eq_left']
-    refine ⟨?_, fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
+      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ac, ite_true, ite_false, reduceCtorEq,
+      Option.bind_some, Option.some.injEq, exists_eq_left']
+    refine ⟨?_, ?_, fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
     · apply BitVec.eq_of_toNat_eq
-      simp only [combIdx, hc32, ↓reduceIte, BitVec.toNat_add, BitVec.toNat_ofNat,
-        show (4 : BitVec 32).signExtend 64 = BitVec.ofNat 64 4 from rfl]
+      simp only [combIdx, hc26, ↓reduceIte, BitVec.toNat_add, BitVec.toNat_ofNat,
+        show (5 : BitVec 32).signExtend 64 = BitVec.ofNat 64 5 from rfl]
       omega
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]; exact ka.1 r (by simpa using hr)
-  · have hc32 : ¬ c < 32 := of_decide_eq_false h
+    · simp only [combTblIdx, hc26, ↓reduceIte]; exact a9
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, ite_false]
+      exact ka.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)
+  · have hc26 : ¬ c < 26 := of_decide_eq_false h
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ac, ite_true, Option.bind_some,
-      Option.some.injEq, exists_eq_left']
-    refine ⟨?_, fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
+      RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ac, a9, ite_true, ite_false, reduceCtorEq,
+      Option.bind_some, Option.some.injEq, exists_eq_left']
+    refine ⟨?_, ?_, fun r hr => ?_, ka.2.1, ka.2.2.1, ka.2.2.2⟩
     · apply BitVec.eq_of_toNat_eq
-      simp only [combIdx, hc32, ↓reduceIte, BitVec.toNat_sub, BitVec.toNat_ofNat,
-        show (256 : BitVec 32).signExtend 64 = BitVec.ofNat 64 256 from rfl]
+      simp only [combIdx, hc26, ↓reduceIte, BitVec.toNat_sub, BitVec.toNat_ofNat,
+        show (260 : BitVec 32).signExtend 64 = BitVec.ofNat 64 260 from rfl]
       omega
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]; exact ka.1 r (by simpa using hr)
+    · apply BitVec.eq_of_toNat_eq
+      simp only [combTblIdx, hc26, ↓reduceIte, BitVec.toNat_sub, BitVec.toNat_ofNat,
+        show (26 : BitVec 32).signExtend 64 = BitVec.ofNat 64 26 from rfl]
+      omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+      simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2, ite_false]
+      exact ka.1 r (by simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]; exact hr)
 
 theorem digit_bits (S i : Nat) :
-    (S / 16 ^ i) % 16 = ((((S / 2 ^ (4 * i + 3)) % 2 * 2 + (S / 2 ^ (4 * i + 2)) % 2) * 2 +
-      (S / 2 ^ (4 * i + 1)) % 2) * 2 + (S / 2 ^ (4 * i)) % 2) := by
-  have h16 : 16 ^ i = 2 ^ (4 * i) := by rw [pow_mul]; norm_num
-  have e : ∀ t, S / 2 ^ (4 * i + t) = S / 16 ^ i / 2 ^ t := fun t => by
-    rw [h16, Nat.div_div_eq_div_mul, ← pow_add]
-  rw [e 3, e 2, e 1, ← Nat.add_zero (4 * i), e 0]
+    (S / 32 ^ i) % 32 = (((((S / 2 ^ (5 * i + 4)) % 2 * 2 + (S / 2 ^ (5 * i + 3)) % 2) * 2 +
+      (S / 2 ^ (5 * i + 2)) % 2) * 2 + (S / 2 ^ (5 * i + 1)) % 2) * 2 + (S / 2 ^ (5 * i)) % 2) := by
+  have h32 : 32 ^ i = 2 ^ (5 * i) := by rw [pow_mul]; norm_num
+  have e : ∀ t, S / 2 ^ (5 * i + t) = S / 32 ^ i / 2 ^ t := fun t => by
+    rw [h32, Nat.div_div_eq_div_mul, ← pow_add]
+  rw [e 4, e 3, e 2, e 1, ← Nat.add_zero (5 * i), e 0]
   simp only [pow_zero, Nat.div_one, Nat.reducePow]
   omega
 
 theorem combBit_ea {s : State} {base : Addr} (hs : Scratch s base) {i : Nat}
-    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (4 * i)) (t : Nat) :
+    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (5 * i)) (t : Nat) :
     s.ea { base := .rdi, index := some .rcx, disp := 768 + (t : Int) } =
-      off base (768 + (4 * i + t)) := by
+      off base (768 + (5 * i + t)) := by
   simp only [State.ea, hs.rdi, hrcx, BitVec.mul_one]
   rw [show (768 : Int) + (t : Int) = ((768 + t : Nat) : Int) by omega, BitVec.ofInt_natCast,
     BitVec.add_assoc, ← BitVec.ofNat_add]
   exact congrArg (off base) (by omega)
 
-theorem loadBit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat} (hi : i < 64)
-    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (4 * i))
+theorem loadBit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat}
+    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (5 * i))
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (dst : Reg) (t : Nat) (ht : t < 4) :
+    (dst : Reg) (t : Nat) (ht : 5 * i + t < 256) :
     WP isa (.block [combBit dst t]) s fun u =>
-      u.gpr dst = BitVec.ofNat 64 ((S / 2 ^ (4 * i + t)) % 2) ∧ Keeps [dst] s u := by
-  have hr : InRegions (s.rd ++ s.wr) (off base (768 + (4 * i + t))) 1 :=
+      u.gpr dst = BitVec.ofNat 64 ((S / 2 ^ (5 * i + t)) % 2) ∧ Keeps [dst] s u := by
+  have hr : InRegions (s.rd ++ s.wr) (off base (768 + (5 * i + t))) 1 :=
     ⟨_, List.mem_append_right _ hs.wr, Offset.contains_base _ (by omega) (by omega)⟩
-  have bit : (s.mem (off base (768 + (4 * i + t)))).setWidth 64 =
-      BitVec.ofNat 64 ((S / 2 ^ (4 * i + t)) % 2) := by
-    rw [hb _ (by omega)]
+  have bit : (s.mem (off base (768 + (5 * i + t)))).setWidth 64 =
+      BitVec.ofNat 64 ((S / 2 ^ (5 * i + t)) % 2) := by
+    rw [hb _ ht]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     omega
@@ -126,15 +143,16 @@ theorem addRax_ok (s : State) (r : Reg) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hq, ite_false]
 
-theorem combDigit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat} (hi : i < 64)
-    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (4 * i))
+theorem combDigit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat} (hi : i < 51)
+    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (5 * i))
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
     WP isa (.block combDigit) s fun t =>
-      t.gpr .rax = BitVec.ofNat 64 ((S / 16 ^ i) % 16) ∧ Keeps [.rax, .rdx] s t := by
-  rw [show combDigit = [combBit .rax 3] ++ ([.alu .add .rax (.reg .rax)] ++ ([combBit .rdx 2] ++
+      t.gpr .rax = BitVec.ofNat 64 ((S / 32 ^ i) % 32) ∧ Keeps [.rax, .rdx] s t := by
+  rw [show combDigit = [combBit .rax 4] ++ ([.alu .add .rax (.reg .rax)] ++ ([combBit .rdx 3] ++
+      ([.alu .add .rax (.reg .rdx)] ++ ([.alu .add .rax (.reg .rax)] ++ ([combBit .rdx 2] ++
       ([.alu .add .rax (.reg .rdx)] ++ ([.alu .add .rax (.reg .rax)] ++ ([combBit .rdx 1] ++
       ([.alu .add .rax (.reg .rdx)] ++ ([.alu .add .rax (.reg .rax)] ++ ([combBit .rdx 0] ++
-      [.alu .add .rax (.reg .rdx)])))))))) from rfl]
+      [.alu .add .rax (.reg .rdx)]))))))))))) from rfl]
   have keep : ∀ {x y : State} {rs : List Reg}, Keeps rs x y → (∀ r ∈ rs, r = .rax ∨ r = .rdx) →
       Keeps [.rax, .rdx] x y := fun k h => ⟨fun r hr => k.1 r (fun hm => by
         rcases h r hm with rfl | rfl <;> simp at hr), k.2⟩
@@ -142,54 +160,115 @@ theorem combDigit_ok {s : State} {base : Addr} (hs : Scratch s base) {S i : Nat}
       Keeps [.rax, .rdx] x z := fun a b => ⟨fun r hr => (b.1 r hr).trans (a.1 r hr),
         b.2.1.trans a.2.1, b.2.2.1.trans a.2.2.1, b.2.2.2.trans a.2.2.2⟩
   have st : ∀ {x : State}, Keeps [.rax, .rdx] s x → Scratch x base ∧
-      x.gpr .rcx = BitVec.ofNat 64 (4 * i) ∧
+      x.gpr .rcx = BitVec.ofNat 64 (5 * i) ∧
       ∀ q < 256, x.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) := fun k =>
     ⟨⟨(k.1 _ (by decide)).trans hs.rdi, k.2.2.2 ▸ hs.wr, hs.nowrap⟩,
       (k.1 _ (by decide)).trans hrcx, fun q hq => by rw [k.2.1]; exact hb q hq⟩
   rw [WP.block_append_iff]
-  refine WP.mono (loadBit_ok hs hi hrcx hb .rax 3 (by decide)) fun a ⟨a3, ka⟩ => ?_
+  refine WP.mono (loadBit_ok hs hrcx hb .rax 4 (by omega)) fun a ⟨a4, ka⟩ => ?_
   have ka' := keep ka (by simp)
   rw [WP.block_append_iff]
-  refine WP.mono (addRax_ok a .rax) fun b ⟨bv, kb⟩ => ?_
-  have kb' := tr ka' (keep kb (by simp))
-  obtain ⟨hsb, hcb, hbb⟩ := st kb'
+  refine WP.mono (addRax_ok a .rax) fun a' ⟨a'v, ka₂⟩ => ?_
+  have ka'' := tr ka' (keep ka₂ (by simp))
+  obtain ⟨hsa, hca, hba⟩ := st ka''
   rw [WP.block_append_iff]
-  refine WP.mono (loadBit_ok hsb hi hcb hbb .rdx 2 (by decide)) fun c ⟨c2, kc⟩ => ?_
-  have kc' := tr kb' (keep kc (by simp))
+  refine WP.mono (loadBit_ok hsa hca hba .rdx 3 (by omega)) fun b ⟨b3, kb⟩ => ?_
+  have kb' := tr ka'' (keep kb (by simp))
   rw [WP.block_append_iff]
-  refine WP.mono (addRax_ok c .rdx) fun d ⟨dv, kd⟩ => ?_
+  refine WP.mono (addRax_ok b .rdx) fun b' ⟨b'v, kb₂⟩ => ?_
+  have kb'' := tr kb' (keep kb₂ (by simp))
+  rw [WP.block_append_iff]
+  refine WP.mono (addRax_ok b' .rax) fun c ⟨cv, kc⟩ => ?_
+  have kc' := tr kb'' (keep kc (by simp))
+  obtain ⟨hsc, hcc, hbc⟩ := st kc'
+  rw [WP.block_append_iff]
+  refine WP.mono (loadBit_ok hsc hcc hbc .rdx 2 (by omega)) fun d ⟨d2, kd⟩ => ?_
   have kd' := tr kc' (keep kd (by simp))
   rw [WP.block_append_iff]
-  refine WP.mono (addRax_ok d .rax) fun e ⟨ev, ke⟩ => ?_
+  refine WP.mono (addRax_ok d .rdx) fun e ⟨ev, ke⟩ => ?_
   have ke' := tr kd' (keep ke (by simp))
-  obtain ⟨hse, hce, hbe⟩ := st ke'
   rw [WP.block_append_iff]
-  refine WP.mono (loadBit_ok hse hi hce hbe .rdx 1 (by decide)) fun f ⟨f1, kf⟩ => ?_
+  refine WP.mono (addRax_ok e .rax) fun f ⟨fv, kf⟩ => ?_
   have kf' := tr ke' (keep kf (by simp))
+  obtain ⟨hsf, hcf, hbf⟩ := st kf'
   rw [WP.block_append_iff]
-  refine WP.mono (addRax_ok f .rdx) fun g ⟨gv, kg⟩ => ?_
+  refine WP.mono (loadBit_ok hsf hcf hbf .rdx 1 (by omega)) fun g ⟨g1, kg⟩ => ?_
   have kg' := tr kf' (keep kg (by simp))
   rw [WP.block_append_iff]
-  refine WP.mono (addRax_ok g .rax) fun h ⟨hv, kh⟩ => ?_
+  refine WP.mono (addRax_ok g .rdx) fun h ⟨hv, kh⟩ => ?_
   have kh' := tr kg' (keep kh (by simp))
-  obtain ⟨hsh, hch, hbh⟩ := st kh'
   rw [WP.block_append_iff]
-  refine WP.mono (loadBit_ok hsh hi hch hbh .rdx 0 (by decide)) fun u ⟨u0, ku⟩ => ?_
+  refine WP.mono (addRax_ok h .rax) fun u ⟨uv, ku⟩ => ?_
   have ku' := tr kh' (keep ku (by simp))
-  refine WP.mono (addRax_ok u .rdx) fun t ⟨tv, kt⟩ => ⟨?_, tr ku' (keep kt (by simp))⟩
-  rw [tv, u0, ku.1 _ (by decide), hv, gv, f1, kf.1 _ (by decide), ev, dv, c2, kc.1 _ (by decide), bv,
-    a3, digit_bits S i, Nat.add_zero]
-  have l0 := Nat.mod_lt (S / 2 ^ (4 * i)) (show 2 > 0 by decide)
-  have l1 := Nat.mod_lt (S / 2 ^ (4 * i + 1)) (show 2 > 0 by decide)
-  have l2 := Nat.mod_lt (S / 2 ^ (4 * i + 2)) (show 2 > 0 by decide)
-  have l3 := Nat.mod_lt (S / 2 ^ (4 * i + 3)) (show 2 > 0 by decide)
-  generalize S / 2 ^ (4 * i) % 2 = b0 at *
-  generalize S / 2 ^ (4 * i + 1) % 2 = b1 at *
-  generalize S / 2 ^ (4 * i + 2) % 2 = b2 at *
-  generalize S / 2 ^ (4 * i + 3) % 2 = b3 at *
+  obtain ⟨hsu, hcu, hbu⟩ := st ku'
+  rw [WP.block_append_iff]
+  refine WP.mono (loadBit_ok hsu hcu hbu .rdx 0 (by omega)) fun w ⟨w0, kw⟩ => ?_
+  have kw' := tr ku' (keep kw (by simp))
+  refine WP.mono (addRax_ok w .rdx) fun t ⟨tv, kt⟩ => ⟨?_, tr kw' (keep kt (by simp))⟩
+  rw [tv, w0, kw.1 _ (by decide), uv, hv, g1, kg.1 _ (by decide), fv, ev, d2, kd.1 _ (by decide), cv,
+    b'v, b3, kb.1 _ (by decide), a'v, a4, digit_bits S i, Nat.add_zero]
+  have l0 := Nat.mod_lt (S / 2 ^ (5 * i)) (show 2 > 0 by decide)
+  have l1 := Nat.mod_lt (S / 2 ^ (5 * i + 1)) (show 2 > 0 by decide)
+  have l2 := Nat.mod_lt (S / 2 ^ (5 * i + 2)) (show 2 > 0 by decide)
+  have l3 := Nat.mod_lt (S / 2 ^ (5 * i + 3)) (show 2 > 0 by decide)
+  have l4 := Nat.mod_lt (S / 2 ^ (5 * i + 4)) (show 2 > 0 by decide)
+  generalize S / 2 ^ (5 * i) % 2 = b0 at *
+  generalize S / 2 ^ (5 * i + 1) % 2 = b1 at *
+  generalize S / 2 ^ (5 * i + 2) % 2 = b2 at *
+  generalize S / 2 ^ (5 * i + 3) % 2 = b3 at *
+  generalize S / 2 ^ (5 * i + 4) % 2 = b4 at *
   apply BitVec.eq_of_toNat_eq
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat]
   omega
+
+theorem rbxCmp_ok (s : State) (c k : Nat) (hc : c < 64) (hk : k < 64)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
+    WP isa (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 k))]) s fun t =>
+      t.zf = some (decide (c = k)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
+  have he : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
+    have : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by decide
+    exact this k hk
+  have hz : (BitVec.ofNat 64 c - BitVec.ofNat 64 k == 0) = decide (c = k) := by
+    apply Bool.eq_iff_iff.mpr
+    simp only [beq_iff_eq, decide_eq_true_eq]
+    bv_omega_using [hc, hk]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.zf_arithFlags, hb, he, hz, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, rfl, rfl, rfl, rfl⟩
+
+/-- The top chunk, bit 255 alone, is chunk 51 of a scalar below `2^256`. -/
+theorem top_chunk {S : Nat} (hS : S < 2 ^ 256) : (S / 2 ^ (5 * 51 + 0)) % 2 = (S / 32 ^ 51) % 32 := by
+  rw [show (32 : Nat) ^ 51 = 2 ^ (5 * 51 + 0) by norm_num]
+  have : S / 2 ^ (5 * 51 + 0) < 2 :=
+    Nat.div_lt_of_lt_mul (by rw [show 2 ^ (5 * 51 + 0) * 2 = 2 ^ 256 by norm_num]; exact hS)
+  omega
+
+theorem combChunk_ok {s : State} {base : Addr} (hs : Scratch s base) {S c : Nat} (hc : c < 52)
+    (hS : S < 2 ^ 256) (hb : s.gpr .rbx = BitVec.ofNat 64 c)
+    (hrcx : s.gpr .rcx = BitVec.ofNat 64 (5 * combIdx c))
+    (hbits : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
+    WP isa combChunk s fun t =>
+      t.gpr .rax = BitVec.ofNat 64 ((S / 32 ^ combIdx c) % 32) ∧ Keeps [.rax, .rdx] s t := by
+  rw [combChunk]
+  refine WP.seq (WP.mono (rbxCmp_ok s c 25 (by omega) (by decide) hb) fun a ⟨az, ag, am, ar, aw⟩ => ?_)
+  have hsa : Scratch a base := ⟨by rw [ag]; exact hs.rdi, aw ▸ hs.wr, hs.nowrap⟩
+  have ka : Keeps [.rax, .rdx] s a := ⟨fun r _ => by rw [ag], am, ar, aw⟩
+  have hca : a.gpr .rcx = BitVec.ofNat 64 (5 * combIdx c) := by rw [ag]; exact hrcx
+  have hba : ∀ q < 256, a.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) := by
+    rw [am]; exact hbits
+  refine WP.ite (decide (c = 25)) (by simp only [eval, az]) (fun h => ?_) (fun h => ?_)
+  · have h25 : c = 25 := of_decide_eq_true h
+    have hi : combIdx c = 51 := by subst h25; rfl
+    rw [hi] at hca ⊢
+    refine WP.mono (loadBit_ok hsa hca hba .rax 0 (by decide)) fun t ⟨tv, kt⟩ =>
+      ⟨by rw [tv, top_chunk hS], ⟨fun r hr => (kt.1 r (by simp at hr ⊢; exact hr.1)).trans (ka.1 r hr),
+        kt.2.1.trans ka.2.1, kt.2.2.1.trans ka.2.2.1, kt.2.2.2.trans ka.2.2.2⟩⟩
+  · have h25 : c ≠ 25 := of_decide_eq_false h
+    have hi : combIdx c < 51 := by unfold combIdx; split <;> omega
+    refine WP.mono (combDigit_ok hsa hi hca hba) fun t ⟨tv, kt⟩ => ⟨tv, ?_⟩
+    exact ⟨fun r hr => (kt.1 r hr).trans (ka.1 r hr), kt.2.1.trans ka.2.1, kt.2.2.1.trans ka.2.2.1,
+      kt.2.2.2.trans ka.2.2.2⟩
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -199,7 +278,7 @@ section
 /-!
 # The comb's signed digits
 
-`combSign` turns the nibble `n` into the digit `n - 8`'s magnitude, in `rax`,
+`combSign` turns the chunk `n` into the digit `n - 16`'s magnitude, in `rax`,
 and the mask of its sign, at byte `combSignMask`; `combNeg` negates the
 selected cached point in slots 4–7 under that mask.
 -/
@@ -209,23 +288,23 @@ namespace VG.Proof.Ed25519.X86_64
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64
 open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
-/-- The magnitude of the digit `n - 8`. -/
-def mag (n : Nat) : Nat := if n < 8 then 8 - n else n - 8
+/-- The magnitude of the digit `n - 16`. -/
+def mag (n : Nat) : Nat := if n < 16 then 16 - n else n - 16
 
-/-- The mask of the digit `n - 8`'s sign: all ones if it is negative. -/
-def signMask (n : Nat) : BitVec 64 := if n < 8 then BitVec.allOnes 64 else 0
+/-- The mask of the digit `n - 16`'s sign: all ones if it is negative. -/
+def signMask (n : Nat) : BitVec 64 := if n < 16 then BitVec.allOnes 64 else 0
 
-private theorem sign_fact : ∀ n < 16,
-    ((BitVec.ofNat 64 n - (8 : BitVec 32).signExtend 64 ^^^
+private theorem sign_fact : ∀ n < 32,
+    ((BitVec.ofNat 64 n - (16 : BitVec 32).signExtend 64 ^^^
         0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
-          ((8 : BitVec 32).signExtend 64).toNat))).setWidth 64) -
+          ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64) -
       (0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
-        ((8 : BitVec 32).signExtend 64).toNat))).setWidth 64) = BitVec.ofNat 64 (mag n)) ∧
+        ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64) = BitVec.ofNat 64 (mag n)) ∧
     0#64 - (BitVec.ofBool (decide ((BitVec.ofNat 64 n).toNat <
-      ((8 : BitVec 32).signExtend 64).toNat))).setWidth 64 = signMask n := by
+      ((16 : BitVec 32).signExtend 64).toNat))).setWidth 64 = signMask n := by
   decide +kernel
 
-theorem combSign_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat} (hn : n < 16)
+theorem combSign_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat} (hn : n < 32)
     (hax : s.gpr .rax = BitVec.ofNat 64 n) :
     WP isa (.block combSign) s fun t =>
       t.gpr .rax = BitVec.ofNat 64 (mag n) ∧ t.mem.readW (off base combSignMask) 64 = signMask n ∧
@@ -271,13 +350,13 @@ theorem loadSignMask_ok {s : State} {base : Addr} (hs : Scratch s base) {m : Bit
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_setReg, hr, ite_false]
 
-theorem signMask_eq (n : Nat) : signMask n = Proof.X25519.X86_64.mask (decide (n < 8)) := by
-  by_cases h : n < 8 <;> simp [signMask, Proof.X25519.X86_64.mask, h]
+theorem signMask_eq (n : Nat) : signMask n = Proof.X25519.X86_64.mask (decide (n < 16)) := by
+  by_cases h : n < 16 <;> simp [signMask, Proof.X25519.X86_64.mask, h]
 
 theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
     (hm : s.mem.readW (off base combSignMask) 64 = signMask n) :
     WP isa (.block (combNeg fld)) s fun t =>
-      point (env t.mem base) 4 5 6 7 = (if n < 8 then negCached (point (env s.mem base) 4 5 6 7)
+      point (env t.mem base) 4 5 6 7 = (if n < 16 then negCached (point (env s.mem base) 4 5 6 7)
         else point (env s.mem base) 4 5 6 7) ∧ Keep base s t ∧
       (∀ i : Slot, (i.val < 4 ∨ 10 ≤ i.val) → env t.mem base i = env s.mem base i) := by
   rw [combNeg, List.append_assoc, WP.block_append_iff]
@@ -290,16 +369,16 @@ theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
   have hsb := hsa.of_keeps kb (by decide)
   refine WP.mono (swapFieldsWide_ok hsb [(4, 5), (6, 8)]
     (fun ab h => by simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with rfl | rfl <;> decide)
-    (sw := decide (n < 8))
+    (sw := decide (n < 16))
     (by rw [bc, signMask_eq])) fun t ⟨kt, _, vt⟩ => ?_
   have kbk : Keep base a b := ⟨fun r hr => kb.1 r (fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; decide)),
     kb.2.2.1, kb.2.2.2, by rw [kb.2.1]; exact Outside.refl _ _ _ _⟩
-  have ev : env t.mem base = swapEnvs [(4, 5), (6, 8)] (decide (n < 8))
+  have ev : env t.mem base = swapEnvs [(4, 5), (6, 8)] (decide (n < 16))
       (evalOps [.const 9 0, .sub 8 9 6] (env s.mem base)) := by rw [vt, kb.2.1, va]
   refine ⟨?_, (ka.trans kbk).trans kt, fun i hi => ?_⟩
   · rw [ev]
-    by_cases h : n < 8
+    by_cases h : n < 16
     · simp [h, swapEnvs, swapEnv, evalOps, evalOp, point, negCached]
     · simp [h, swapEnvs, swapEnv, evalOps, evalOp, point]
   · rw [ev]
@@ -317,10 +396,10 @@ end
 # The comb's loop
 
 After step `c`, the accumulator represents `[v]B` for the partial sum `v =
-combVal S c`: `G` and the odd digits `d_{2j+1} 256^j` for `j < c` while `c ≤
-32`, then sixteen times all of those, `G` again, and the even digits `d_{2j}
-256^j` for `j < c - 32`, with the digits `d_i = n_i - 8`. At `c = 64` that is
-the scalar (`comb_sum`), since `G = 8 Σ_{j < 32} 256^j`.
+combVal S c`: `G` and the odd digits `d_{2j+1} 1024^j` for `j < c` while `c ≤
+26`, then 32 times all of those, `G` again, and the even digits `d_{2j}
+1024^j` for `j < c - 26`, with the digits `d_i = n_i - 16`. At `c = 52` that is
+the scalar (`comb_sum`), since `G = 16 Σ_{j < 26} 1024^j`.
 -/
 
 namespace VG.Proof.Ed25519.X86_64
@@ -330,62 +409,62 @@ open VG.Proof.X25519.X86_64 (off ofs Keeps clob Outside)
 
 variable {fld : Arith} [EdArith fld]
 
-/-- Digit `i` of `S` in radix 16. -/
-def nib (S i : Nat) : Nat := (S / 16 ^ i) % 16
+/-- Digit `i` of `S` in radix 32. -/
+def nib (S i : Nat) : Nat := (S / 32 ^ i) % 32
 
-/-- `Σ_{j < c} n_{2j+1} 256^j`. -/
+/-- `Σ_{j < c} n_{2j+1} 1024^j`. -/
 def oddSum (S : Nat) : Nat → Nat
   | 0 => 0
-  | c + 1 => oddSum S c + nib S (2 * c + 1) * 256 ^ c
+  | c + 1 => oddSum S c + nib S (2 * c + 1) * 1024 ^ c
 
-/-- `Σ_{j < c} n_{2j} 256^j`. -/
+/-- `Σ_{j < c} n_{2j} 1024^j`. -/
 def evenSum (S : Nat) : Nat → Nat
   | 0 => 0
-  | c + 1 => evenSum S c + nib S (2 * c) * 256 ^ c
+  | c + 1 => evenSum S c + nib S (2 * c) * 1024 ^ c
 
-theorem comb_partial (S : Nat) : ∀ n, 16 * oddSum S n + evenSum S n = S % 256 ^ n
+theorem comb_partial (S : Nat) : ∀ n, 32 * oddSum S n + evenSum S n = S % 1024 ^ n
   | 0 => by simp [oddSum, evenSum, Nat.mod_one]
   | n + 1 => by
     have ih := comb_partial S n
-    have h16 : 256 ^ n = 16 ^ (2 * n) := by rw [pow_mul]; norm_num
-    have hd : S / 16 ^ (2 * n + 1) = S / 16 ^ (2 * n) / 16 := by
+    have h32 : 1024 ^ n = 32 ^ (2 * n) := by rw [pow_mul]; norm_num
+    have hd : S / 32 ^ (2 * n + 1) = S / 32 ^ (2 * n) / 32 := by
       rw [Nat.div_div_eq_div_mul, ← pow_succ]
-    have hm : S % 256 ^ (n + 1) = S % 256 ^ n + 256 ^ n * (S / 256 ^ n % 256) := by
+    have hm : S % 1024 ^ (n + 1) = S % 1024 ^ n + 1024 ^ n * (S / 1024 ^ n % 1024) := by
       rw [pow_succ, Nat.mod_mul]
     simp only [oddSum, evenSum, nib]
-    rw [hm, ← ih, hd, h16]
-    generalize S / 16 ^ (2 * n) = x
-    generalize 16 ^ (2 * n) = y
-    have : x % 256 = x % 16 + 16 * (x / 16 % 16) := by omega
+    rw [hm, ← ih, hd, h32]
+    generalize S / 32 ^ (2 * n) = x
+    generalize 32 ^ (2 * n) = y
+    have : x % 1024 = x % 32 + 32 * (x / 32 % 32) := by omega
     rw [this]; ring
 
-/-- `Σ_{j < c} 256^j`. -/
+/-- `Σ_{j < c} 1024^j`. -/
 def geom : Nat → Nat
   | 0 => 0
-  | c + 1 => geom c + 256 ^ c
+  | c + 1 => geom c + 1024 ^ c
 
-theorem combGVal_eq : combGVal = 8 * geom 32 := by decide
+theorem combGVal_eq : combGVal = 16 * geom 26 := by decide
 
-/-- The comb's digit `i`: `n_i - 8`, from `-8` to `7`. -/
-def sdig (S i : Nat) : ℤ := (nib S i : ℤ) - 8
+/-- The comb's digit `i`: `n_i - 16`, from `-16` to `15`. -/
+def sdig (S i : Nat) : ℤ := (nib S i : ℤ) - 16
 
-/-- `Σ_{j < c} d_{2j+1} 256^j`. -/
+/-- `Σ_{j < c} d_{2j+1} 1024^j`. -/
 def oddSumZ (S : Nat) : Nat → ℤ
   | 0 => 0
-  | c + 1 => oddSumZ S c + sdig S (2 * c + 1) * 256 ^ c
+  | c + 1 => oddSumZ S c + sdig S (2 * c + 1) * 1024 ^ c
 
-/-- `Σ_{j < c} d_{2j} 256^j`. -/
+/-- `Σ_{j < c} d_{2j} 1024^j`. -/
 def evenSumZ (S : Nat) : Nat → ℤ
   | 0 => 0
-  | c + 1 => evenSumZ S c + sdig S (2 * c) * 256 ^ c
+  | c + 1 => evenSumZ S c + sdig S (2 * c) * 1024 ^ c
 
-theorem oddSumZ_eq (S : Nat) : ∀ c, oddSumZ S c = oddSum S c - 8 * geom c
+theorem oddSumZ_eq (S : Nat) : ∀ c, oddSumZ S c = oddSum S c - 16 * geom c
   | 0 => rfl
   | c + 1 => by
     simp only [oddSumZ, oddSum, geom, oddSumZ_eq S c, sdig]
     push_cast; ring
 
-theorem evenSumZ_eq (S : Nat) : ∀ c, evenSumZ S c = evenSum S c - 8 * geom c
+theorem evenSumZ_eq (S : Nat) : ∀ c, evenSumZ S c = evenSum S c - 16 * geom c
   | 0 => rfl
   | c + 1 => by
     simp only [evenSumZ, evenSum, geom, evenSumZ_eq S c, sdig]
@@ -393,76 +472,46 @@ theorem evenSumZ_eq (S : Nat) : ∀ c, evenSumZ S c = evenSum S c - 8 * geom c
 
 /-- The accumulator's multiple of `B` after `c` steps. -/
 def combVal (S c : Nat) : ℤ :=
-  if c ≤ 32 then combGVal + oddSumZ S c else 16 * (combGVal + oddSumZ S 32) + combGVal + evenSumZ S (c - 32)
+  if c ≤ 26 then combGVal + oddSumZ S c else 32 * (combGVal + oddSumZ S 26) + combGVal + evenSumZ S (c - 26)
 
-theorem comb_sum {S : Nat} (hS : S < 2 ^ (16 * 16)) : combVal S 64 = S := by
-  simp only [combVal, show ¬ 64 ≤ 32 by decide, ↓reduceIte, show 64 - 32 = 32 from rfl, oddSumZ_eq,
+theorem comb_sum {S : Nat} (hS : S < 2 ^ 256) : combVal S 52 = S := by
+  simp only [combVal, show ¬ 52 ≤ 26 by decide, ↓reduceIte, show 52 - 26 = 26 from rfl, oddSumZ_eq,
     evenSumZ_eq, combGVal_eq]
-  have h := comb_partial S 32
-  rw [Nat.mod_eq_of_lt (by simpa using hS)] at h
-  have h' : (16 * oddSum S 32 + evenSum S 32 : ℤ) = S := by exact_mod_cast h
+  have h := comb_partial S 26
+  rw [Nat.mod_eq_of_lt (by have : (2 : Nat) ^ 256 < 1024 ^ 26 := by norm_num
+                           omega)] at h
+  have h' : (32 * oddSum S 26 + evenSum S 26 : ℤ) = S := by exact_mod_cast h
   push_cast
   linear_combination h'
 
-theorem combIdx_nib (S c : Nat) (hc : c < 64) :
-    sdig S (combIdx c) * 256 ^ (c % 32) + (if c = 32 then 16 * combVal S c + combGVal else combVal S c) =
-      combVal S (c + 1) := by
-  unfold combIdx combVal
-  by_cases h : c < 32
-  · simp only [h, ↓reduceIte, show c ≠ 32 by omega, show c ≤ 32 by omega, show c + 1 ≤ 32 by omega,
-      oddSumZ, Nat.mod_eq_of_lt h]
+theorem combIdx_nib (S c : Nat) (hc : c < 52) :
+    sdig S (combIdx c) * 1024 ^ (combTblIdx c) +
+      (if c = 26 then 32 * combVal S c + combGVal else combVal S c) = combVal S (c + 1) := by
+  unfold combIdx combTblIdx combVal
+  by_cases h : c < 26
+  · simp only [h, ↓reduceIte, show c ≠ 26 by omega, show c ≤ 26 by omega, show c + 1 ≤ 26 by omega,
+      oddSumZ]
     ring
-  · have hs : c + 1 - 32 = (c - 32) + 1 := by omega
-    by_cases h32 : c = 32
-    · subst h32
-      simp only [show ¬ 32 < 32 by decide, ↓reduceIte, le_refl, show ¬ 33 ≤ 32 by decide,
-        show 33 - 32 = 0 + 1 from rfl, evenSumZ]
+  · have hs : c + 1 - 26 = (c - 26) + 1 := by omega
+    by_cases h26 : c = 26
+    · subst h26
+      simp only [show ¬ 26 < 26 by decide, ↓reduceIte, le_refl, show ¬ 27 ≤ 26 by decide,
+        show 27 - 26 = 0 + 1 from rfl, evenSumZ, show 26 - 26 = 0 from rfl]
       ring
-    · simp only [h, h32, ↓reduceIte, show ¬ c ≤ 32 by omega, show ¬ c + 1 ≤ 32 by omega, hs, evenSumZ,
-        show c % 32 = c - 32 by omega]
+    · simp only [h, h26, ↓reduceIte, show ¬ c ≤ 26 by omega, show ¬ c + 1 ≤ 26 by omega, hs, evenSumZ]
       ring
 
 /-! ## Counters -/
 
-theorem rbxCmp_ok (s : State) (c k : Nat) (hc : c < 64) (hk : k < 64)
-    (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
-    WP isa (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 k))]) s fun t =>
-      t.zf = some (decide (c = k)) ∧ t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr := by
-  have he : (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by
-    have : ∀ k < 64, (BitVec.ofNat 32 k).signExtend 64 = BitVec.ofNat 64 k := by decide
-    exact this k hk
-  have hz : (BitVec.ofNat 64 c - BitVec.ofNat 64 k == 0) = decide (c = k) := by
-    apply Bool.eq_iff_iff.mpr
-    simp only [beq_iff_eq, decide_eq_true_eq]
-    bv_omega_using [hc, hk]
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-    RegUpd.zf_arithFlags, hb, he, hz, Option.bind_some, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, rfl, rfl, rfl, rfl⟩
-
-private theorem mod32_fact : ∀ c < 64,
-    BitVec.ofNat 64 c &&& (31 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (c % 32) := by decide
-
-theorem rdxMod_ok (s : State) (c : Nat) (hc : c < 64) (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
-    WP isa (.block [.mov .rdx (.reg .rbx), .alu .and .rdx (.imm 31)]) s fun t =>
-      t.gpr .rdx = BitVec.ofNat 64 (c % 32) ∧ Keeps [.rdx] s t := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, RegUpd.gpr_setReg,
-    RegUpd.gpr_arithFlags, hb, mod32_fact c hc, ite_true, Option.map_some, Option.bind_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
-
-theorem rbxNext64_ok (s : State) (n : Nat) (hn : n < 64) (hc : s.gpr .rbx = BitVec.ofNat 64 n) :
-    WP isa (.block [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)]) s fun t =>
-      t.gpr .rbx = BitVec.ofNat 64 (n + 1) ∧ t.zf = some (decide (n + 1 = 64)) ∧
+theorem rbxNext52_ok (s : State) (n : Nat) (hn : n < 52) (hc : s.gpr .rbx = BitVec.ofNat 64 n) :
+    WP isa (.block [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)]) s fun t =>
+      t.gpr .rbx = BitVec.ofNat 64 (n + 1) ∧ t.zf = some (decide (n + 1 = 52)) ∧
       Keeps [.rbx] s t := by
   have ha : BitVec.ofNat 64 n + (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 (n + 1) := by
     rw [show (1 : BitVec 32).signExtend 64 = BitVec.ofNat 64 1 from rfl, BitVec.ofNat_add]
-  have hz : (BitVec.ofNat 64 (n + 1) - (64 : BitVec 32).signExtend 64 == 0) =
-      decide (n + 1 = 64) := by
-    rw [show (64 : BitVec 32).signExtend 64 = BitVec.ofNat 64 64 from rfl]
+  have hz : (BitVec.ofNat 64 (n + 1) - (52 : BitVec 32).signExtend 64 == 0) =
+      decide (n + 1 = 52) := by
+    rw [show (52 : BitVec 32).signExtend 64 = BitVec.ofNat 64 52 from rfl]
     apply Bool.eq_iff_iff.mpr
     simp only [beq_iff_eq, decide_eq_true_eq]
     bv_omega_using [hn]
@@ -478,7 +527,7 @@ theorem rbxNext64_ok (s : State) (n : Nat) (hn : n < 64) (hc : s.gpr .rbx = BitV
 
 /-- The loop's invariant, after `c` steps. -/
 structure CombInv (s₀ : State) (base T : Addr) (S c : Nat) (s : State) : Prop where
-  bound : c ≤ 64
+  bound : c ≤ 52
   scratch : Scratch s base
   counter : s.gpr .rbx = BitVec.ofNat 64 c
   d : env s.mem base 16 = Spec.Ed25519.d
@@ -504,49 +553,53 @@ theorem combAddG_ok {s : State} {base : Addr} (hs : Scratch s base) (_hd : env s
     (by rw [va, ← combGCached_eq]; rfl)) fun t ⟨kt, tp, th⟩ =>
     ⟨ka.trans kt, by rw [tp, hp], fun i hi => (th i hi).trans (ha16 i hi)⟩
 
-theorem zsmul_16 (v : ℤ) (g : Nat) (P : EPoint dZ) :
-    (16 : Nat) • (v • P) + g • P = (16 * v + g) • P := by
+theorem zsmul_32 (v : ℤ) (g : Nat) (P : EPoint dZ) :
+    (32 : Nat) • (v • P) + g • P = (32 * v + g) • P := by
   rw [add_smul, mul_smul, ← natCast_zsmul, ← natCast_zsmul]; rfl
 
-/-- `r8` = the magnitude in `rax`, and `rdx` = the table index `rbx mod 32`. -/
-theorem combMagIdx_ok (s : State) {m c : Nat} (hc : c < 64) (ha : s.gpr .rax = BitVec.ofNat 64 m)
-    (hb : s.gpr .rbx = BitVec.ofNat 64 c) :
-    WP isa (.block [.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx), .alu .and .rdx (.imm 31)]) s fun t =>
-      t.gpr .r8 = BitVec.ofNat 64 m ∧ t.gpr .rdx = BitVec.ofNat 64 (c % 32) ∧ Keeps [.r8, .rdx] s t := by
-  rw [show ([.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx), .alu .and .rdx (.imm 31)] : List Instr) =
-    [.mov .r8 (.reg .rax)] ++ [.mov .rdx (.reg .rbx), .alu .and .rdx (.imm 31)] from rfl,
-    WP.block_append_iff]
-  refine WP.mono (show WP isa (.block [.mov .r8 (.reg .rax)]) s fun t =>
-      t.gpr .r8 = BitVec.ofNat 64 m ∧ Keeps [.r8] s t by
-    apply WP.of_runBlock
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg, ha,
-      ite_true, Option.map_some, Option.some.injEq, exists_eq_left']
-    refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, hr, ite_false]) fun a ⟨a8, ka⟩ => ?_
-  refine WP.mono (rdxMod_ok a c hc (by rw [ka.1 _ (by decide)]; exact hb)) fun t ⟨tx, kt⟩ =>
-    ⟨by rw [kt.1 _ (by decide)]; exact a8, tx,
-      (ka.mono (by decide)).trans (kt.mono (by decide))⟩
+/-- Five doublings: `[32]` of the point in slots 0–3. -/
+theorem combDouble_ok {s : State} {base : Addr} {a : EPoint dZ} (hs : Scratch s base)
+    (ha : Rep (point (env s.mem base) 0 1 2 3) a) :
+    WP isa (combDouble fld) s fun t => Rep (point (env t.mem base) 0 1 2 3) ((32 : Nat) • a) ∧
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ DoubleKeep base s t := by
+  rw [combDouble]
+  refine WP.seq (WP.mono (double4_ok (fld := fld) hs ha) fun b ⟨br, bh, bk⟩ => ?_)
+  refine WP.mono (dbl_ok (fld := fld) (bk.scratch hs) true br.proj) fun t ⟨kt, _, tr, th⟩ =>
+    ⟨?_, fun i h => (th i h).trans (bh i h), bk.trans ⟨fun r _ hc => kt.gpr r hc, kt.rd, kt.wr, kt.mem⟩⟩
+  rw [show (32 : Nat) = 16 * 2 by rfl, mul_nsmul, two_nsmul]
+  exact tr rfl
 
-theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s₀ base T S c s)
-    (hfar : TblFar base T) (hc : c < 64) :
-    WP isa (combStep fld) s fun t => t.zf = some (decide (c + 1 = 64)) ∧
+/-- `r8` = the magnitude in `rax`, and `rdx` = the table index in `r9`. -/
+theorem combMagIdx_ok (s : State) {m j : Nat} (ha : s.gpr .rax = BitVec.ofNat 64 m)
+    (h9 : s.gpr .r9 = BitVec.ofNat 64 j) :
+    WP isa (.block [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)]) s fun t =>
+      t.gpr .r8 = BitVec.ofNat 64 m ∧ t.gpr .rdx = BitVec.ofNat 64 j ∧ Keeps [.r8, .rdx] s t := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, RegUpd.gpr_setReg, ha, h9,
+    ite_true, ite_false, reduceCtorEq, Option.map_some, Option.some.injEq, exists_eq_left']
+  refine ⟨trivial, trivial, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, hr.1, hr.2, ite_false]
+
+theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base T : Addr} {S c : Nat}
+    (h : CombInv s₀ base T S c s) (hfar : TblFar base T) (hS : S < 2 ^ 256) (hc : c < 52) :
+    WP isa (combStep fld sel) s fun t => t.zf = some (decide (c + 1 = 52)) ∧
       CombInv s₀ base T S (c + 1) t := by
   rw [combStep]
-  refine WP.seq (WP.mono_syms (rbxCmp_ok s c 32 hc (by decide) h.counter)
+  refine WP.seq (WP.mono_syms (rbxCmp_ok s c 26 (by omega) (by decide) h.counter)
     fun a ⟨az, ag, am, ar, aw⟩ asy => ?_)
   have hsa : Scratch a base := ⟨by rw [ag]; exact h.scratch.rdi, aw ▸ h.scratch.wr, h.scratch.nowrap⟩
   have kas : PowersKeep base 56 7368 s a := ⟨fun r _ _ _ => by rw [ag], ar, aw, by rw [am]; exact TableFrame.refl _ _ _ _⟩
   -- The doublings and `[G]B`, before the even digits.
-  have hite : WP isa (.ite .e (.seq (double4 fld) (.block (combAddG fld))) (.block [])) a fun b =>
+  have hite : WP isa (.ite .e (.seq (combDouble fld) (.block (combAddG fld))) (.block [])) a fun b =>
       Scratch b base ∧ b.gpr .rbx = BitVec.ofNat 64 c ∧ env b.mem base 16 = Spec.Ed25519.d ∧
       (∀ q < 256, b.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) ∧
       Rep (point (env b.mem base) 0 1 2 3)
-        ((if c = 32 then 16 * combVal S c + combGVal else combVal S c) • baseAff) ∧
+        ((if c = 26 then 32 * combVal S c + combGVal else combVal S c) • baseAff) ∧
       PowersKeep base 56 7368 a b := by
-    refine WP.ite (decide (c = 32)) (by simp only [eval, az]) (fun hy => ?_) (fun hn => ?_)
-    · have h32 : c = 32 := of_decide_eq_true hy
-      refine WP.seq (WP.mono (double4_ok (fld := fld) (a := combVal S c • baseAff) hsa (by rw [am]; exact h.value))
+    refine WP.ite (decide (c = 26)) (by simp only [eval, az]) (fun hy => ?_) (fun hn => ?_)
+    · have h26 : c = 26 := of_decide_eq_true hy
+      refine WP.seq (WP.mono (combDouble_ok (fld := fld) (a := combVal S c • baseAff) hsa (by rw [am]; exact h.value))
         fun b ⟨br, bh, bk⟩ => ?_)
       have hsb := bk.scratch hsa
       have bd : env b.mem base 16 = Spec.Ed25519.d := by rw [bh 16 (by decide), am]; exact h.d
@@ -559,46 +612,49 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
           exact h.bits q hq, ?_,
         (⟨fun r _ hs hc' => bk.gpr r hs hc', bk.rd, bk.wr, TableFrame.workspace bk.mem⟩ :
           PowersKeep base 56 7368 a b).trans (PowersKeep.of_keep ke)⟩
-      simp only [h32, ↓reduceIte]
-      rw [ep, ← zsmul_16]
-      subst h32
+      simp only [h26, ↓reduceIte]
+      rw [ep, ← zsmul_32]
+      subst h26
       exact pointAdd_rep br combG_ok
-    · have h32 : c ≠ 32 := of_decide_eq_false hn
+    · have h26 : c ≠ 26 := of_decide_eq_false hn
       refine WP.block_nil ⟨hsa, by rw [ag]; exact h.counter, by rw [am]; exact h.d,
-        fun q hq => by rw [am]; exact h.bits q hq, by simp only [h32, ↓reduceIte]; rw [am]; exact h.value,
+        fun q hq => by rw [am]; exact h.bits q hq, by simp only [h26, ↓reduceIte]; rw [am]; exact h.value,
         PowersKeep.refl _ _ _ _⟩
   refine WP.seq (WP.mono_syms hite fun b ⟨hsb, bc, bd, bbits, bv, kb⟩ bsy => ?_)
-  -- The digit's bit index.
-  refine WP.seq (WP.mono_syms (combIndex_ok b hc bc) fun e ⟨ec, ke⟩ esy => ?_)
+  -- The chunk's bit index and table.
+  refine WP.seq (WP.mono_syms (combIndex_ok b hc bc) fun e ⟨ec, e9, ke⟩ esy => ?_)
   have hse : Scratch e base := hsb.of_keeps ke (by decide)
-  have kse : PowersKeep base 56 7368 s e :=
-    ((kas.trans kb).trans (PowersKeep.of_keeps ke (by decide)))
-  have te : CombTbl e T := h.tbl.keep hfar kse (by rw [esy, bsy, asy])
-  -- The digit, its sign and magnitude, and the table's entry.
-  have hn : nib S (combIdx c) < 16 := Nat.mod_lt _ (by decide)
-  have hmag : mag (nib S (combIdx c)) < 9 := by unfold mag; split <;> omega
+  have ec' : e.gpr .rbx = BitVec.ofNat 64 c := by rw [ke.1 _ (by decide)]; exact bc
+  -- The chunk.
+  refine WP.seq (WP.mono_syms (combChunk_ok (S := S) hse hc hS ec' ec (by rw [ke.2.1]; exact bbits))
+    fun f ⟨fax, kf⟩ fsy => ?_)
+  have kse : PowersKeep base 56 7368 s f :=
+    (((kas.trans kb).trans (PowersKeep.of_keeps ke (by decide))).trans (PowersKeep.of_keeps kf (by decide)))
+  have te : CombTbl f T := h.tbl.keep hfar kse (by rw [fsy, esy, bsy, asy])
+  have hn : nib S (combIdx c) < 32 := Nat.mod_lt _ (by decide)
+  have hmag : mag (nib S (combIdx c)) < 17 := by unfold mag; split <;> omega
+  have hsf : Scratch f base := hse.of_keeps kf (by decide)
+  -- Its sign and magnitude, and the table's entry.
   apply WP.seq
   simp only [List.append_assoc]
-  rw [WP.block_append_iff]
-  refine WP.mono_syms (combDigit_ok (S := S) hse (combIdx_lt hc) ec (by rw [ke.2.1]; exact bbits))
-    fun f ⟨fax, kf⟩ fsy => ?_
-  have hsf : Scratch f base := hse.of_keeps kf (by decide)
   rw [WP.block_append_iff]
   refine WP.mono_syms (combSign_ok (n := nib S (combIdx c)) hsf hn fax)
     fun f' ⟨f'ax, f'm, f'g, f'r, f'w, f'mem⟩ f'sy => ?_
   have hsf' : Scratch f' base := ⟨(f'g _ (by decide) (by decide)).trans hsf.rdi, f'w ▸ hsf.wr, hsf.nowrap⟩
   have f'c : f'.gpr .rbx = BitVec.ofNat 64 c := by
-    rw [f'g _ (by decide) (by decide), kf.1 _ (by decide), ke.1 _ (by decide)]; exact bc
+    rw [f'g _ (by decide) (by decide), kf.1 _ (by decide)]; exact ec'
+  have f'9 : f'.gpr .r9 = BitVec.ofNat 64 (combTblIdx c) := by
+    rw [f'g _ (by decide) (by decide), kf.1 _ (by decide)]; exact e9
   rw [WP.block_append_iff]
-  refine WP.mono_syms (combMagIdx_ok f' hc f'ax f'c) fun g ⟨g8, gx, kg⟩ gsy => ?_
+  refine WP.mono_syms (combMagIdx_ok f' f'ax f'9) fun g ⟨g8, gx, kg⟩ gsy => ?_
   have hsg : Scratch g base := hsf'.of_keeps kg (by decide)
-  have ksg : PowersKeep base 56 7368 e g :=
-    ((PowersKeep.of_keeps kf (by decide)).trans
-      ⟨fun r _ _ hcl => f'g r (by rintro rfl; exact hcl (by decide)) (by rintro rfl; exact hcl (by decide)),
+  have ksg : PowersKeep base 56 7368 f g :=
+    (⟨fun r _ _ hcl => f'g r (by rintro rfl; exact hcl (by decide)) (by rintro rfl; exact hcl (by decide)),
         f'r, f'w, TableFrame.table (f'mem.mono (by simp only [combSignMask]; omega)
-          (by simp only [combSignMask]; omega))⟩).trans (PowersKeep.of_keeps kg (by decide))
-  have tg : CombTbl g T := te.keep hfar ksg (by rw [gsy, f'sy, fsy])
-  refine WP.mono_syms (combSelect_ok hsg tg (Nat.mod_lt _ (by decide)) (by omega) gx g8)
+          (by simp only [combSignMask]; omega))⟩ : PowersKeep base 56 7368 f f').trans
+      (PowersKeep.of_keeps kg (by decide))
+  have tg : CombTbl g T := te.keep hfar ksg (by rw [gsy, f'sy])
+  refine WP.mono_syms (hsel hsg tg (combTblIdx_lt hc) (by omega) gx g8)
     fun u ⟨uq, uo, ug, ur, uw, usy⟩ _ => ?_
   have hsu : Scratch u base := ⟨by rw [ug _ (by decide) (by decide) (by decide)]; exact hsg.rdi,
     by rw [uw]; exact hsg.wr, hsg.nowrap⟩
@@ -623,13 +679,13 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
   have ud : env u'.mem base 16 = Spec.Ed25519.d := (eu 16 (by decide)).trans bd
   have up : point (env u'.mem base) 0 1 2 3 = point (env b.mem base) 0 1 2 3 := by
     simp only [point, eu 0 (by decide), eu 1 (by decide), eu 2 (by decide), eu 3 (by decide)]
-  obtain ⟨q₀, hq₀, hrq₀⟩ := combCached_ok (c % 32) (mag (nib S (combIdx c))) (Nat.mod_lt _ (by decide)) hmag
-  let q := if nib S (combIdx c) < 8 then negPoint q₀ else q₀
+  obtain ⟨q₀, hq₀, hrq₀⟩ := combCached_ok (combTblIdx c) (mag (nib S (combIdx c))) (combTblIdx_lt hc) hmag
+  let q := if nib S (combIdx c) < 16 then negPoint q₀ else q₀
   have hsel : (⟨env u.mem base 4, env u.mem base 5, env u.mem base 6, 2⟩ : Spec.Ed25519.Point) = cache q₀ := by
     rw [← hq₀]
     have e4 := uq 0 (by decide); have e5 := uq 1 (by decide); have e6 := uq 2 (by decide)
     simp only [combField] at e4 e5 e6
-    have t2 : (combCached (c % 32) (mag (nib S (combIdx c)))).T = 2 := by
+    have t2 : (combCached (combTblIdx c) (mag (nib S (combIdx c)))).T = 2 := by
       simp only [combCached]; split <;> rfl
     show (⟨Proof.X25519.X86_64.F u.mem base (offset 4), Proof.X25519.X86_64.F u.mem base (offset 5),
       Proof.X25519.X86_64.F u.mem base (offset 6), 2⟩ : Spec.Ed25519.Point) = _
@@ -640,23 +696,25 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
     have hx := congrArg Spec.Ed25519.Point.X u'q
     have hy := congrArg Spec.Ed25519.Point.Y u'q
     have hz := congrArg Spec.Ed25519.Point.Z u'q
-    by_cases hlt : nib S (combIdx c) < 8
+    by_cases hlt : nib S (combIdx c) < 16
     · simp only [hlt, ↓reduceIte, point, negCached] at hx hy hz
       have hs' := congrArg negCached hsel
       rw [negCached_cache] at hs'
       simp only [q, hlt, ↓reduceIte, ← hs', negCached, hx, hy, hz]
     · simp only [hlt, ↓reduceIte, point] at hx hy hz
       simp only [q, hlt, ↓reduceIte, ← hsel, hx, hy, hz]
-  have hrq : Rep q ((sdig S (combIdx c) * 256 ^ (c % 32)) • baseAff) := by
-    by_cases hlt : nib S (combIdx c) < 8
+  have hrq : Rep q ((sdig S (combIdx c) * 1024 ^ (combTblIdx c)) • baseAff) := by
+    by_cases hlt : nib S (combIdx c) < 16
     · simp only [hlt, ↓reduceIte, q]
-      have e : sdig S (combIdx c) * 256 ^ (c % 32) = -(((mag (nib S (combIdx c)) * 256 ^ (c % 32) : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : nib S (combIdx c) ≤ 8)]; ring
+      have e : sdig S (combIdx c) * 1024 ^ (combTblIdx c) =
+          -(((mag (nib S (combIdx c)) * 1024 ^ (combTblIdx c) : Nat) : ℤ)) := by
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : nib S (combIdx c) ≤ 16)]; ring
       rw [e, neg_smul, natCast_zsmul]
       exact hrq₀.neg
     · simp only [hlt, ↓reduceIte, q]
-      have e : sdig S (combIdx c) * 256 ^ (c % 32) = (((mag (nib S (combIdx c)) * 256 ^ (c % 32) : Nat) : ℤ)) := by
-        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 8 ≤ nib S (combIdx c))]; ring
+      have e : sdig S (combIdx c) * 1024 ^ (combTblIdx c) =
+          (((mag (nib S (combIdx c)) * 1024 ^ (combTblIdx c) : Nat) : ℤ)) := by
+        simp only [sdig, mag, hlt, ↓reduceIte]; push_cast [Nat.cast_sub (by omega : 16 ≤ nib S (combIdx c))]; ring
       rw [e, natCast_zsmul]
       exact hrq₀
   -- The addition and the counter.
@@ -665,10 +723,10 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
   have vc : v.gpr .rbx = BitVec.ofNat 64 c := by
     rw [kv.gpr _ (by decide), ku'.gpr _ (by decide), ug _ (by decide) (by decide) (by decide),
       kg.1 _ (by decide), f'c]
-  refine WP.mono_syms (rbxNext64_ok v c hc vc) fun t ⟨tc, tz, kt⟩ tsy => ⟨tz, ?_⟩
+  refine WP.mono_syms (rbxNext52_ok v c hc vc) fun t ⟨tc, tz, kt⟩ tsy => ⟨tz, ?_⟩
   have kbu : PowersKeep base 56 7368 b u' :=
-    (((PowersKeep.of_keeps ke (by decide)).trans ksg).trans (PowersKeep.of_keep ku)).trans
-      (PowersKeep.of_keep ku')
+    ((((PowersKeep.of_keeps ke (by decide)).trans (PowersKeep.of_keeps kf (by decide))).trans ksg).trans
+      (PowersKeep.of_keep ku)).trans (PowersKeep.of_keep ku')
   have kst : PowersKeep base 56 7368 s t :=
     ((((kas.trans kb).trans kbu).trans (PowersKeep.of_keep kv)).trans (PowersKeep.of_keeps kt (by decide)))
   refine ⟨by omega, hsu'.of_keep kv |>.of_keeps kt (by decide), tc, ?_, fun x hx => ?_, ?_,
@@ -685,12 +743,15 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S c : Nat} (h : CombInv s�
 
 /-! ## The loop -/
 
-theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
+/-- `combMultiply` with the selection `sel`. -/
+theorem combMultiplyWith_ok {sel : List Instr} (hsel : SelOk sel) {s : State} {base T : Addr}
+    (hs : Scratch s base) {S : Nat}
     (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
     (ht : CombTbl s T) (hfar : TblFar base T) :
-    WP isa (combMultiply fld) s fun t =>
+    WP isa (combMultiply fld sel) s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
+  have hS' : S < 2 ^ 256 := hS
   rw [combMultiply]
   apply WP.seq
   rw [WP.block_append_iff]
@@ -706,20 +767,28 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : N
     · rw [kb.2.1, va, constPoint_eval, show combVal S 0 = (combGVal : ℤ) by simp [combVal, oddSumZ],
         natCast_zsmul]
       exact combG_ok
-  apply WP.loop (fun n t => CombInv s base T S (64 - n) t ∧ 0 < n ∧ n ≤ 64) (n := 64)
+  apply WP.loop (fun n t => CombInv s base T S (52 - n) t ∧ 0 < n ∧ n ≤ 52) (n := 52)
   · intro n t ⟨ht, hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono (combStep_ok (fld := fld) ht hfar (by omega)) fun u ⟨uz, hu⟩ => ?_
+    refine WP.mono (combStep_ok (fld := fld) hsel ht hfar hS' (by omega)) fun u ⟨uz, hu⟩ => ?_
     by_cases hk : k = 0
     · subst hk
-      refine Or.inl ⟨by simp only [eval, uz, show 64 - (0 + 1) + 1 = 64 from rfl, decide_true,
+      refine Or.inl ⟨by simp only [eval, uz, show 52 - (0 + 1) + 1 = 52 from rfl, decide_true,
         Option.map_some, Bool.not_true], ?_, hu.keep⟩
       have hv := hu.value
-      rw [show 64 - (0 + 1) + 1 = 64 from rfl, comb_sum hS, natCast_zsmul] at hv
+      rw [show 52 - (0 + 1) + 1 = 52 from rfl, comb_sum hS', natCast_zsmul] at hv
       exact hv
-    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (64 - (k + 1) + 1 = 64) by omega, decide_false,
+    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (52 - (k + 1) + 1 = 52) by omega, decide_false,
         Option.map_some, Bool.not_false], k, by omega, ?_, by omega, by omega⟩
-      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
+      rw [show 52 - k = 52 - (k + 1) + 1 by omega]; exact hu
   · exact ⟨init, by decide, by decide⟩
+
+theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
+    (hS : S < 2 ^ (16 * 16)) (hd : env s.mem base 16 = Spec.Ed25519.d)
+    (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
+    (ht : CombTbl s T) (hfar : TblFar base T) :
+    WP isa (combMultiply fld) s fun t =>
+      Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t :=
+  combMultiplyWith_ok combSelect_sel hs hS hd hb ht hfar
 
 end VG.Proof.Ed25519.X86_64

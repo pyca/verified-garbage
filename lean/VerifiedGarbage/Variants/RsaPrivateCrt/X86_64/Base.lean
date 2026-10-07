@@ -1,3 +1,4 @@
+import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Base
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtVerified
 
@@ -11,7 +12,7 @@ A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Base
 
-open VG.X86_64 VG.Proof.Bignum.X86_64
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 def variant : Proof.Rsa.X86_64.CrtImpl where
   name := Spec.Rsa.privateCrtApi.name
@@ -24,13 +25,10 @@ def variant : Proof.Rsa.X86_64.CrtImpl where
   mont := Mont.base
   montSuffix := ""
   pcMx := by decide +kernel
-  pdMx := by decide +kernel
+  pubOp := VG.Variants.RsaPublicPrecomputed.X86_64.Base.variant
   pcNosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
-  pdNosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
-  pdDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
-  pdSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := ""
   features := []
 

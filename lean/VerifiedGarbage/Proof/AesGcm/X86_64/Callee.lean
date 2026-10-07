@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
 import VerifiedGarbage.Impl.AesGcm.X86_64.Blocks
 import VerifiedGarbage.Spec.Gcm.Contract
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecP
 import VerifiedGarbage.Proof.Aes.X86_64.Variant
 import VerifiedGarbage.Proof.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
@@ -379,9 +379,24 @@ structure StitchImpl where
   encP : Piece enc
   decP : Piece dec
 
+open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
+/-- Loops for a key context of kind `M`, with their proof. -/
+structure StitchCode (M : CtxMode) where
+  enc : Prog isa
+  dec : Prog isa
+  ok : StitchOkM M enc dec
+  encP : Piece enc
+  decP : Piece dec
+
+open Gcm.X86_64.Stitch (CtxMode) in
+/-- The loops `st`, for a key context of kind `M` (they read only its first
+256 bytes). -/
+def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
+  ⟨st.enc, st.dec, st.ok.toM M, st.encP, st.decP⟩
+
 namespace StitchImpl
 
-variable (st : Option StitchImpl) {f : StitchImpl → Prog isa} (hf : ∀ i, Piece (f i))
+variable {α : Type} (st : Option α) {f : α → Prog isa} (hf : ∀ i, Piece (f i))
 include hf
 
 theorem head_mxcsr : (Blocks.head (st.map f)).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -415,6 +430,12 @@ structure GcmImpl where
   /-- The loops with which `vg_aes_gcm_encrypt_blocks` and `_decrypt_blocks`
   interleave counter mode and GHASH, if any. -/
   stitch : Option StitchImpl := none
+  /-- The loops for a key context of `vg_aes_gcm_init_precomputed`, if any. -/
+  stitchP : Option (StitchCode Gcm.X86_64.Stitch.CtxMode.powers) := none
+  /-- Whether `seal` and `open` take the short path for short inputs
+  (`Impl/AesGcm/X86_64/Short.lean`), which needs the CPU features of the
+  loops on 512-bit registers. -/
+  short : Bool := false
 
 namespace GcmImpl
 

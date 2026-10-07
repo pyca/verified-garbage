@@ -1,6 +1,6 @@
 //! ECDH over P-256 (`vg_ecdh_p256`), and public keys
-//! (`vg_ec_p256_public_key`), with BMI2 and ADX where the CPU has them
-//! (`_adx`).
+//! (`vg_ec_p256_public_key`), with BMI2 and ADX (and the public keys' comb's
+//! selection by AVX2) where the CPU has them (`_adx`).
 
 #![cfg(any(
     target_arch = "x86_64",

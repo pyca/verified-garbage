@@ -13,7 +13,7 @@ frame and the calls use, `encStack`) on the registers and the stack
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer: the frame of 296 bytes, and the 16
 bytes below it that the calls of the streaming hash functions use (the

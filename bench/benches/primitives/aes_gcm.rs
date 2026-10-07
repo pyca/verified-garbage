@@ -6,7 +6,11 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
 /// One-shot AES-GCM encryption and decryption (setup included), and
 /// streaming encryption, with a 16-byte key, a 12-byte nonce and 16 bytes of
-/// additional data.
+/// additional data. aws-lc-rs, which has no streaming AES-GCM, is measured
+/// one-shot only, in place with a separate tag as this library's is. The
+/// one-shot functions are also measured at `RECORD_SIZES`, the short
+/// messages of protocols such as TLS and QUIC, where the fixed costs of a
+/// call (the hash subkey's powers, the tag) weigh the most.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -16,17 +20,24 @@ pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::aead::{AES_128_GCM, Aad, LessSafeKey, Nonce, UnboundKey};
     use criterion::{BenchmarkId, Throughput};
     use openssl::symm::{Cipher, Crypter, Mode, decrypt_aead, encrypt_aead};
     use verified_garbage::aes_gcm::AesGcm;
 
-    use crate::{OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+
+    /// The sizes measured one-shot only, besides `SIZES`.
+    const RECORD_SIZES: [usize; 3] = [128, 192, 384];
 
     let key = [0x42; 16];
     let nonce = [0x24; 12];
     let aad = [0x5a; 16];
     let cipher = Cipher::aes_128_gcm();
-    for size in SIZES {
+    let aws_lc_key = |key: &[u8]| LessSafeKey::new(UnboundKey::new(&AES_128_GCM, key).unwrap());
+    let mut sizes = [SIZES.as_slice(), RECORD_SIZES.as_slice()].concat();
+    sizes.sort_unstable();
+    for size in sizes {
         let data = vec![0u8; size];
         let mut buf = data.clone();
         let tag = AesGcm::new(&key)
@@ -34,6 +45,15 @@ pub fn bench(c: &mut Criterion) {
             .encrypt_in_place(&nonce, &aad, &mut buf)
             .unwrap();
         let ct = buf.clone();
+        let mut aws_lc_ct = data.clone();
+        let aws_lc_tag = aws_lc_key(&key)
+            .seal_in_place_separate_tag(
+                Nonce::assume_unique_for_key(nonce),
+                Aad::from(aad),
+                &mut aws_lc_ct,
+            )
+            .unwrap();
+        assert_eq!((&aws_lc_ct, aws_lc_tag.as_ref()), (&ct, &tag[..]));
 
         let mut g = c.benchmark_group("aes-128-gcm-encrypt");
         g.throughput(Throughput::Bytes(size as u64));
@@ -56,6 +76,17 @@ pub fn bench(c: &mut Criterion) {
                     &mut t,
                 )
                 .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .seal_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&mut buf),
+                    )
+                    .unwrap()
             })
         });
         g.finish();
@@ -88,8 +119,24 @@ pub fn bench(c: &mut Criterion) {
                 .unwrap()
             })
         });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                buf.copy_from_slice(&ct);
+                aws_lc_key(black_box(&key))
+                    .open_in_place_separate_tag(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        &tag,
+                        black_box(&mut buf),
+                    )
+                    .unwrap();
+            })
+        });
         g.finish();
 
+        if !SIZES.contains(&size) {
+            continue;
+        }
         let mut g = c.benchmark_group("aes-128-gcm-stream");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench_function(BenchmarkId::new(VG, size), |b| {

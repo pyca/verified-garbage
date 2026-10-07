@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Sha3.X86_64.X4.Loop
+import VerifiedGarbage.Proof.Sha3.X86_64.X4R.Loop
 
 /-!
 # Keccak-f[1600] four times at once on x86-64: the states byte by byte

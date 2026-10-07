@@ -26,6 +26,21 @@ theorem Fresh.head {t : Reg} {ts : List Reg} (h : Fresh (t :: ts)) :
     t ∉ ts ∧ t ≠ .rax ∧ t ≠ .rcx ∧ t ≠ .rdx ∧ t ≠ .rbp ∧ t ≠ .rdi :=
   ⟨(List.nodup_cons.mp h.1).1, h.2 t (List.mem_cons_self ..)⟩
 
+/-- Registers rows with BMI2 and ADX can use for words: distinct, and none of
+`rax`, `rcx`, `rdx` and `rdi` (`rbp` may be one). -/
+def FreshX (ts : List Reg) : Prop :=
+  ts.Nodup ∧ ∀ t ∈ ts, t ≠ .rax ∧ t ≠ .rcx ∧ t ≠ .rdx ∧ t ≠ .rdi
+
+theorem Fresh.toX {ts : List Reg} (h : Fresh ts) : FreshX ts :=
+  ⟨h.1, fun t ht => have := h.2 t ht; ⟨this.1, this.2.1, this.2.2.1, this.2.2.2.2⟩⟩
+
+theorem FreshX.tail {t : Reg} {ts : List Reg} (h : FreshX (t :: ts)) : FreshX ts :=
+  ⟨(List.nodup_cons.mp h.1).2, fun q hq => h.2 q (List.mem_cons_of_mem _ hq)⟩
+
+theorem FreshX.head {t : Reg} {ts : List Reg} (h : FreshX (t :: ts)) :
+    t ∉ ts ∧ t ≠ .rax ∧ t ≠ .rcx ∧ t ≠ .rdx ∧ t ≠ .rdi :=
+  ⟨(List.nodup_cons.mp h.1).1, h.2 t (List.mem_cons_self ..)⟩
+
 /-- Closes `∀ r ∈ rs, r ∈ rs'` for literal lists of registers and variables. -/
 macro "sub_regs" : tactic => `(tactic| (intro q hq; simp only [List.mem_cons, List.mem_append,
   List.mem_singleton, List.not_mem_nil, or_false] at hq ⊢; grind))

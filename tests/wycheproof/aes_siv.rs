@@ -18,7 +18,7 @@
 use serde::Deserialize;
 use verified_garbage::aes_siv::{AesSiv, Error};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -85,28 +85,28 @@ fn check(
 fn aes_siv_cmac() {
     require_vectors!();
     let file = harness::load::<DaeadGroup, DaeadCase>("aes_siv_cmac_test.json");
-    let (mut valid, mut invalid) = (0, 0);
-    for (group, test) in file.tests() {
+    let (valid, invalid) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
         assert_eq!(group.params.key_size, 8 * c.key.0.len(), "tcId {id}");
         let (tag, ct) = c.ct.0.split_at(16);
         check(id, test.result, &c.key.0, &[&c.aad.0], &c.msg.0, tag, ct);
         if test.result == Expectation::Valid {
-            valid += 1;
+            valid.add();
         } else {
-            invalid += 1;
+            invalid.add();
         }
-    }
-    assert!(valid > 0 && invalid > 0);
+    });
+    assert!(valid.get() > 0 && invalid.get() > 0);
 }
 
 #[test]
 fn aead_aes_siv_cmac() {
     require_vectors!();
     let file = harness::load::<AeadGroup, AeadCase>("aead_aes_siv_cmac_test.json");
-    let (mut valid, mut invalid) = (0, 0);
-    for (group, test) in file.tests() {
+    let (valid, invalid) = (Count::default(), Count::default());
+    file.par_tests(|group, test| {
         let c = &test.case;
         let id = test.tc_id;
         assert_eq!(group.params.key_size, 8 * c.key.0.len(), "tcId {id}");
@@ -121,10 +121,10 @@ fn aead_aes_siv_cmac() {
             &c.ct.0,
         );
         if test.result == Expectation::Valid {
-            valid += 1;
+            valid.add();
         } else {
-            invalid += 1;
+            invalid.add();
         }
-    }
-    assert!(valid > 0 && invalid > 0);
+    });
+    assert!(valid.get() > 0 && invalid.get() > 0);
 }

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.RpBase
+import VerifiedGarbage.Proof.Rsa.RecoverMath
 import VerifiedGarbage.Proof.Bignum.X86_64.Row
 
 /-!
@@ -11,7 +12,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Row
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- `prodInit`: the bases, `e`'s words and the row counter. -/
 theorem prodInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {el : Nat}
@@ -65,22 +66,6 @@ theorem rowHead_ok {t : State} {B : Addr} {Z w j : Nat} (hs : Scr t B Z) (hZ : s
     BitVec.add_assoc, BitVec.ofNat_add_ofNat]
   congr 2
   omega
-
-/-- A number below `P R` of the form `A + P (W + Q H)` with `R ≤ Q`: `H = 0`
-and `W < R`. -/
-theorem window_split {T A W H P Q R : Nat} (hT : T = A + P * (W + Q * H)) (hlt : T < P * R) (hRQ : R ≤ Q) :
-    H = 0 ∧ W < R := by
-  have h1 : P * (W + Q * H) < P * R := Nat.lt_of_le_of_lt (by rw [hT]; exact Nat.le_add_left _ _) hlt
-  have h2 : W + Q * H < R := Nat.lt_of_mul_lt_mul_left h1
-  refine ⟨?_, by omega⟩
-  rcases Nat.eq_zero_or_pos H with h | h
-  · exact h
-  · have : Q ≤ Q * H := Nat.le_mul_of_pos_right _ h
-    omega
-
-theorem row_alg {A P W c D Ej Q : Nat} (hT : D * Ej = A + P * (W + Q * 0)) :
-    A + P * (W + c * D + Q * 0) = D * (Ej + P * c) := by
-  grind
 
 /-- After `j` rows: `M = d (e mod 2^(64 j))`. -/
 structure ProdInv (s₁ : State) (B : Addr) (Z w : Nat) (j : Nat) (t : State) : Prop where

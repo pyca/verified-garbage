@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
@@ -9,6 +10,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 
@@ -17,6 +20,31 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 namespace VG.Artifacts.MlKem.X86_64
 
 def artifacts : List Artifact := [
+  { Spec.MlKem.decryptMulApi with
+    target := X86_64.target
+    doc := Spec.MlKem.decryptMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
+        `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \
+        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
+        loads the caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.decryptMul .sse 3
+    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.decMulSse3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.MlKem.decryptMulApi with
+    name := Spec.MlKem.decryptMulApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.decryptMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
+        `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
+        registers. It sets MXCSR to `0x1FBF` once \
+        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
+        loads the caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.decryptMul .avx2 3
+    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.decMulAvx3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.nttApi with
     target := X86_64.target
     doc := Spec.MlKem.nttApi.doc
@@ -79,6 +107,28 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.subContract X86_64.abi
     verified := Proof.MlKem.X86_64.sub_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.MlKem.addApi with
+    name := Spec.MlKem.addApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.addApi.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."])
+    code := Impl.MlKem.X86_64.addAvx2
+    contract := Spec.MlKem.addContract X86_64.abi
+    verified := Proof.MlKem.X86_64.addY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
+  { Spec.MlKem.subApi with
+    name := Spec.MlKem.subApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.subApi.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."])
+    code := Impl.MlKem.X86_64.subAvx2
+    contract := Spec.MlKem.subContract X86_64.abi
+    verified := Proof.MlKem.X86_64.subY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.mulApi with
     target := X86_64.target
     doc := Spec.MlKem.mulApi.doc
@@ -123,6 +173,18 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.decode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.decode12_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.MlKem.decode12Api with
+    name := Spec.MlKem.decode12Api.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.decode12Api.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers, from 12 bytes \
+        loaded 16 at a time (the last 12 from 4 bytes before them, so that it reads only the 384 bytes of \
+        `*b`). It has no multiplications."])
+    code := Impl.MlKem.X86_64.decode12Avx2
+    contract := Spec.MlKem.decode12Contract X86_64.abi
+    verified := Proof.MlKem.X86_64.decode12Y_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.cbd2Api with
     target := X86_64.target
     doc := Spec.MlKem.cbd2Api.doc

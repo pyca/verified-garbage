@@ -12,7 +12,7 @@ From the frame's push, the first four pieces (`setup`, `psLoop`, `sep`,
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The message, the padding string and the modulus' length of an entry
 state. -/
@@ -41,7 +41,7 @@ theorem Slots.outside {s : State} {m m' : Mem} (h : Slots s m) {o n : Nat} (ho :
     (w (by decide)).trans h.sE, (w (by decide)).trans h.sEl, ?_, (w (by decide)).trans h.a1,
     (w (by decide)).trans h.a2, (w (by decide)).trans h.a3⟩
   have := w (d := 0) (by decide)
-  simp only [Bignum.X86_64.word, off_zero] at this
+  simp only [Bignum.word, off_zero] at this
   rw [this]; exact h.a0
 
 theorem setupMem_slots (s : State) : Slots s (setupMem s) := by

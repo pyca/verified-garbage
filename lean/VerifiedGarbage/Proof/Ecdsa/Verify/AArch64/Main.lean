@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Final
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify
 import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 
@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 verification of the signature holds, for any curve the proof of the code
 supports (`CfgOk`) whose group law the proofs support (`Law`), and
 restores the callee-saved registers. `front_ok`, `mid_ok`, `points_ok` and
-`tail_ok` compute what `verify_eq` connects to the specification.
+`tail_dispatch_ok` compute what `verify_eq` connects to the specification.
 -/
 
 namespace VG.Proof.Ecdsa.Verify.AArch64
@@ -37,8 +37,7 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c)
       (.seq c.nPow (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv c)
-      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (.seq c.pPow
-        (Impl.Ecdsa.Verify.AArch64.Cfg.final c)))))))))) := rfl
+      (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
 
 /-- What the slot of Montgomery's one stands for. -/
 theorem onep_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
@@ -78,7 +77,7 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (s₀.gpr .x3) s₂ V >>> j) P))
     hC hT hp.tbl (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) hPc hQ
     (fun X Y Z h => by simp only [Nat.shiftRight_zero]; exact h) fun s₃ hP => ?_
-  refine WP.mono (tail_ok hc hP) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, xo, hxo, hx, ret⟩ =>
     ⟨fun r hr => (saved r hr).trans (hg r hr), ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (s₀.gpr .x3) s₂ U) (G c.C)) := by

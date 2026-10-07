@@ -10,7 +10,7 @@
 use serde::Deserialize;
 use verified_garbage::ed25519::{Error, VerifyingKey};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Count, Expectation, Hex};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -35,8 +35,8 @@ struct Case {
 fn ed25519_test() {
     require_vectors!();
     let file = harness::load::<Group, Case>("ed25519_test.json");
-    let mut checked = 0;
-    for (group, test) in file.tests() {
+    let checked = Count::default();
+    file.par_tests(|group, test| {
         assert_eq!(group.params.public_key.curve, "edwards25519");
         let public: [u8; 32] = group.params.public_key.pk.0.clone().try_into().unwrap();
         let key = VerifyingKey::from_bytes(&public);
@@ -48,7 +48,7 @@ fn ed25519_test() {
         };
         let actual = key.verify(&test.case.msg.0, &test.case.sig.0);
         assert_eq!(actual, expected, "tcId {}", test.tc_id);
-        checked += 1;
-    }
-    assert!(checked > 0);
+        checked.add();
+    });
+    assert!(checked.get() > 0);
 }

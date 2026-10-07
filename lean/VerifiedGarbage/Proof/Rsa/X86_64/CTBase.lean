@@ -17,7 +17,7 @@ the rest of the piece with the taint analysis.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- A block followed by code, as its two parts in sequence: it runs the same
 and leaks the same trace. -/

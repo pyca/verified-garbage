@@ -175,6 +175,28 @@ separately; the image's `io.pyca.lean.toolchain` and
 rebuilds outputs that differ from the checkout. Private package access
 requires authenticating to GHCR before pulling.
 
+Docker is not needed: the image is a single gzipped layer, which `curl` can
+stream straight from the registry API with an anonymous pull token (useful
+in containers and sandboxes without Docker). With `curl`, `python3` and
+`zstd` installed, from the repository root:
+
+```sh
+set -o pipefail
+repo=pyca/vg-lean-cache
+token=$(curl -fsS "https://ghcr.io/token?scope=repository:$repo:pull" |
+  python3 -c 'import json, sys; print(json.load(sys.stdin)["token"])')
+layer=$(curl -fsS -H "Authorization: Bearer $token" \
+  -H "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json" \
+  "https://ghcr.io/v2/$repo/manifests/latest" |
+  python3 -c 'import json, sys; [l] = json.load(sys.stdin)["layers"]; print(l["digest"])')
+curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$layer" |
+  gzip -dc | tar -xOf - lean-cache.tar.zst | zstd -dc | tar --no-same-owner -xf - -C lean
+```
+
+The download (a little over 2 GB) streams through the pipeline and is never
+stored. The labels are in the image config
+(`/v2/$repo/blobs/<config digest>`, under `config.Labels`).
+
 Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
 `tar` run as root (as in a container) would keep that owner. Git then refuses
 the dependencies' checkouts in `.lake/packages` as owned by someone else, so

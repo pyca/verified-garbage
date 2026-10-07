@@ -25,26 +25,33 @@
 //! the ciphertext is genuine, and must check the message (its length, and
 //! its contents if it can) in constant time. Whether the padding is valid,
 //! the length of the message and which of the two messages is returned do
-//! not affect the timing of the verified function. On a CPU with the SHA
-//! extensions or AVX2, and with BMI2 and ADX (and AVX512_IFMA), it uses the
-//! faster SHA-256 compression functions and private-key operations, as
+//! not affect the timing of the verified function. On an x86-64 CPU with the
+//! SHA extensions or AVX2, and with BMI2 and ADX (and AVX512_IFMA), and on
+//! an AArch64 CPU with the SHA-2 instructions, it uses the faster SHA-256
+//! compression functions and private-key operations, as
 //! [`hashes::sha256`](crate::hashes::sha256) and [`rsa`](crate::rsa) do.
 //!
 //! This module only checks the lengths, draws the padding string and
 //! allocates the memory the functions work in.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+#[cfg(target_arch = "aarch64")]
+use crate::arch::rsa_pkcs1_enc::vg_rsa_pkcs1_decrypt_sha256_sha2;
+use crate::arch::rsa_pkcs1_enc::{vg_rsa_pkcs1_decrypt, vg_rsa_pkcs1_encrypt};
+#[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_pkcs1_enc::{
-    vg_rsa_pkcs1_decrypt, vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma,
-    vg_rsa_pkcs1_decrypt_sha256_avx2, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx,
-    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_shani,
-    vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx, vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
-    vg_rsa_pkcs1_encrypt,
+    vg_rsa_pkcs1_decrypt_crt_adx, vg_rsa_pkcs1_decrypt_crt_ifma, vg_rsa_pkcs1_decrypt_sha256_avx2,
+    vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx, vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+    vg_rsa_pkcs1_decrypt_sha256_shani, vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
+    vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
 };
 use crate::cpu::detected;
 use crate::hashes::sha256::Sha256Backend;
@@ -163,7 +170,35 @@ fn encrypt_with(key: &PublicKey, plaintext: &[u8], ps: &[u8]) -> Vec<u8> {
 }
 
 /// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type DecryptFn = unsafe extern "sysv64" fn(
+    *mut u8,
+    usize,
+    *mut [u64; 1],
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *const u8,
+    usize,
+    *mut u64,
+    usize,
+) -> u32;
+/// The type of the implementations of `vg_rsa_pkcs1_decrypt`.
+#[cfg(target_arch = "aarch64")]
+type DecryptFn = unsafe extern "C" fn(
     *mut u8,
     usize,
     *mut [u64; 1],
@@ -194,14 +229,24 @@ type DecryptFn = unsafe extern "sysv64" fn(
 fn decrypt_fn(sha: Sha256Backend, crt: Backend) -> DecryptFn {
     match (sha, crt) {
         (Sha256Backend::Scalar, Backend::Baseline) => vg_rsa_pkcs1_decrypt,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Scalar, Backend::Adx) => vg_rsa_pkcs1_decrypt_crt_adx,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Scalar, Backend::Ifma) => vg_rsa_pkcs1_decrypt_crt_ifma,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::ShaNi, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_shani,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::ShaNi, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_adx,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::ShaNi, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_shani_crt_ifma,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Avx2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_avx2,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Avx2, Backend::Adx) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_adx,
+        #[cfg(target_arch = "x86_64")]
         (Sha256Backend::Avx2, Backend::Ifma) => vg_rsa_pkcs1_decrypt_sha256_avx2_crt_ifma,
+        #[cfg(target_arch = "aarch64")]
+        (Sha256Backend::Sha2, Backend::Baseline) => vg_rsa_pkcs1_decrypt_sha256_sha2,
     }
 }
 
@@ -335,19 +380,30 @@ mod tests {
     /// to end on a CPU that chooses it).
     #[test]
     fn rsa_pkcs1_backends() {
+        #[cfg(target_arch = "x86_64")]
+        let (shas, crts) = (
+            [
+                Sha256Backend::Scalar,
+                Sha256Backend::ShaNi,
+                Sha256Backend::Avx2,
+            ]
+            .as_slice(),
+            [Backend::Baseline, Backend::Adx, Backend::Ifma].as_slice(),
+        );
+        #[cfg(target_arch = "aarch64")]
+        let (shas, crts) = (
+            [Sha256Backend::Scalar, Sha256Backend::Sha2].as_slice(),
+            [Backend::Baseline].as_slice(),
+        );
         let mut fns = Vec::new();
-        for sha in [
-            Sha256Backend::Scalar,
-            Sha256Backend::ShaNi,
-            Sha256Backend::Avx2,
-        ] {
-            for crt in [Backend::Baseline, Backend::Adx, Backend::Ifma] {
+        for &sha in shas {
+            for &crt in crts {
                 fns.push(decrypt_fn(sha, crt) as usize);
             }
         }
         fns.sort_unstable();
         fns.dedup();
-        assert_eq!(fns.len(), 9);
+        assert_eq!(fns.len(), shas.len() * crts.len());
     }
 
     #[test]

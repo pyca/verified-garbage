@@ -1,4 +1,9 @@
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
+import VerifiedGarbage.Proof.Mont.X86_64.MulF
+import VerifiedGarbage.Proof.Mont.X86_64.SqrP
+import VerifiedGarbage.Proof.Mont.X86_64.MulPX
+import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
+import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -10,7 +15,12 @@ for `[a]`, `[b]` below `m`, and `[o]`, `[a]`, `[b]` apart from the
 temporary area. Each changes only the registers `clob n`, the result and the
 temporary area (`OpKeep`). With at most six words they are the operations
 with the accumulator in registers (`mulR_ok`, …, `OpsReg.lean`); with more,
-those with the accumulator in the temporary area (`mulW_ok`, …, here).
+those with the accumulator in the temporary area (`mulW_ok`, …, here), but
+the multiplications by columns: for P-521's `p` (`mulP_ok`, `MulP.lean`, and
+its squares, `sqrP_ok`, `SqrP.lean`; with BMI2 and ADX by rows, `mulPX_ok`,
+`MulPX.lean`, and `sqrPX_ok`, `SqrPX.lean`) and
+for any other modulus of nine words (`mulF_ok`, `MulF.lean`), and the sums and
+differences for P-521's `p` in registers (`addMer_ok`, `subMer_ok`, `AddSubP.lean`).
 -/
 
 namespace VG.Proof.Mont.X86_64
@@ -200,8 +210,9 @@ theorem mul_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : mul M o a b = mulR M o
 theorem add_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : add M o a b = addR M o a b := by
   simp only [add, h, ↓reduceIte]
 
-theorem sub_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : sub M o a b = subR M o a b := by
-  simp only [sub, h, ↓reduceIte]
+theorem sub_of_lt {M : Mod} (h : M.n < 7) (hred : M.red ≠ .friendly p256Ws)
+    (o a b : Nat) : sub M o a b = subR M o a b := by
+  simp only [sub, hred, and_false, h, ↓reduceIte]
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -216,7 +227,21 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   rw [mul]; split
   · exact mulR_ok hs (hM.toModOk ‹_›) ho ha hb hB
-  · exact mulW_ok hs hM ho ha hb hoT haT hbT hoM hB
+  · split
+    · split
+      · split
+        · rename_i hred _ hab
+          subst hab
+          exact sqrPX_ok hs hM hred ho ha hoT haT hoM hB
+        · exact mulPX_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+      · split
+        · rename_i hred _ hab
+          subst hab
+          exact sqrP_ok hs hM hred ho ha hoT haT hoM hB
+        · exact mulP_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+    · split
+      · exact mulF_ok hs hM ‹_› ho ha hb hoT haT hbT hoM hB
+      · exact mulW_ok hs hM ho ha hb hoT haT hbT hoM hB
 
 /-- `[o] = [a] + [b] mod m`. -/
 theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -229,7 +254,9 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
   rw [add]; split
   · exact addR_ok hs (hM.toModOk ‹_›) ho ha hb hAB
-  · exact addW_ok hs hM ho ha hb hoT haT hbT hoM hAB
+  · split
+    · exact addMer_ok hs hM ‹_› ho ha hb hAB
+    · exact addW_ok hs hM ho ha hb hoT haT hbT hoM hAB
 
 /-- `[o] = [a] - [b] mod m`. -/
 theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -241,7 +268,12 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   rw [sub]; split
-  · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
-  · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
+  · obtain ⟨hn, hm⟩ := p256_of_red (show M.red = .friendly p256Ws from ‹_ ∧ _›.2) hM.red
+    exact sub256_ok hs hn hm ho ha hb hA hB
+  · split
+    · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
+    · split
+      · exact subMer_ok hs hM ‹_› ho ha hb hA hB
+      · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
 
 end VG.Proof.Mont.X86_64

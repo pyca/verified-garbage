@@ -5812,6 +5812,7 @@ pub(crate) unsafe extern "C" fn vg_ec_p256_public_key(out: *mut [u8; 65], d: *co
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P256_COMB = sym super::consts::VG_P256_COMB,
     )
 }

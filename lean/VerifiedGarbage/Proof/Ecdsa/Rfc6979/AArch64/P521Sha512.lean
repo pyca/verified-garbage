@@ -108,7 +108,7 @@ def pack (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch64.InvSou
   hash := rfl
   len := rfl
   tries := rfl
-  hDB := .inr (.inr ⟨rfl, rfl⟩)
+  hDB := .inr (.inr (.inl ⟨rfl, rfl⟩))
   hS := Nat.le_of_ble_eq_true rfl
   hW := Nat.le_of_ble_eq_true rfl
   hWb := Nat.le_of_ble_eq_true rfl

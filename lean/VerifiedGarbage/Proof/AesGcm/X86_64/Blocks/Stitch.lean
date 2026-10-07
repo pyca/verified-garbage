@@ -16,6 +16,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 /-- The registers the entry leaves as they were. -/
@@ -25,7 +26,7 @@ theorem contains_prefix (a : Addr) {k L : Nat} (h : k ≤ L) : (⟨a, L⟩ : Reg
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact h
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 omit hp in
@@ -57,7 +58,7 @@ theorem spre_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.of
   have hq : (s₃.gpr .r9).toNat = n s - n s % 16 := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * (n s - n s % 16) ≤ n s * 16 := by omega
   have pd : Region.Sub ⟨D s, 16 * (n s - n s % 16)⟩ (dR s) := Region.sub_prefix hqn
-  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 256⟩ (sR s) := Offset.sub_base _ (by decide)
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 1024⟩ (sR s) := Offset.sub_base _ (by decide)
   have hws := hp.w_s
   have ts : (S s + BitVec.ofNat 64 64).toNat = (S s).toNat + 64 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [Nat.reducePow, Nat.reduceMod]; omega
@@ -67,27 +68,49 @@ theorem spre_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.of
   have ey : s₃.gpr .rcx = Y s := hg _ (by simp [argRegs])
   have ed : s₃.gpr .r8 = D s := hg _ (by simp [argRegs])
   have wr : s.wr = wR s := hp.wr
+  have pk : Region.Sub ⟨K s, 256⟩ (kR M s) := Region.sub_prefix M.ge
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   simp only [Gcm.X86_64.Stitch.nr, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.kp,
     Gcm.X86_64.Stitch.cp, Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.pp,
     Gcm.X86_64.Stitch.kR, Gcm.X86_64.Stitch.cR, Gcm.X86_64.Stitch.yR, Gcm.X86_64.Stitch.dR,
     Gcm.X86_64.Stitch.pR, ek, er, ec, ey, ed, h11, hq, hrd, hwr]
-  exacts [hp.rounds, by omega, by omega, ⟨kR s, by rw [hp.rd]; simp, Region.contains_self _ _⟩,
+  exacts [hp.rounds, by omega, by omega, ⟨kR M s, by rw [hp.rd]; simp, contains_prefix _ M.ge⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
     ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩, ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by decide) (by decide)⟩,
-    hp.k_d.symm.sub_left pd, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
-    (hp.d_s.sub_left pd).sub_right ps, hp.k_s.symm.sub_left ps, hp.c_s.symm.sub_left ps,
-    hp.y_s.symm.sub_left ps, hp.c_y, hp.k_c.symm, hp.k_y.symm, by have := hp.w_d; omega, hp.w_k,
-    by rw [ts]; omega]
+    (hp.k_d.symm.sub_left pd).sub_right pk, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
+    (hp.d_s.sub_left pd).sub_right ps, (hp.k_s.symm.sub_left ps).sub_right pk, hp.c_s.symm.sub_left ps,
+    hp.y_s.symm.sub_left ps, hp.c_y, hp.k_c.symm.sub_right pk, hp.k_y.symm.sub_right pk,
+    by have := hp.w_d; omega, by have := hp.w_k; have := M.ge; omega, by rw [ts]; omega]
+
+/-- What the interleaved loops need, for a key context of kind `M`: also its
+`M.len` bytes, apart from the data and the working space, and what it holds,
+kept by the entry's writes to `scratch`. -/
+theorem spreM_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16))
+    (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 64) (hrd : s₃.rd = s.rd)
+    (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : Gcm.X86_64.Stitch.SPreM M s₃ := by
+  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+  have hq : (s₃.gpr .r9).toNat = n s - n s % 16 := by rw [h9, toNat_ofNat_of_lt (by omega)]
+  have hqn : 16 * (n s - n s % 16) ≤ n s * 16 := by omega
+  have pd : Region.Sub ⟨D s, 16 * (n s - n s % 16)⟩ (dR s) := Region.sub_prefix hqn
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 1024⟩ (sR s) := Offset.sub_base _ (by decide)
+  have ek : s₃.gpr .rdi = K s := hg _ (by simp [argRegs])
+  refine ⟨spre_of hp h16 h9 hg h11 hrd hwr, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  simp only [Gcm.X86_64.Stitch.kp, Gcm.X86_64.Stitch.kMR, Gcm.X86_64.Stitch.dR, Gcm.X86_64.Stitch.pR,
+    Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.nb, Gcm.X86_64.Stitch.pp, ek, h11, hq, hrd, hwr,
+    show s₃.gpr .r8 = D s from hg _ (by simp [argRegs])]
+  exacts [⟨kR M s, by rw [hp.rd]; simp, Region.contains_self _ _⟩, hp.w_k, hp.k_d.symm.sub_left pd,
+    hp.k_s.symm.sub_left ps,
+    M.frame hf₃ (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]
 
 /-- The hash subkey is apart from `scratch`'s slots. -/
 theorem kR'_disj' : (⟨K s + 240, 16⟩ : Region).Disjoint (kR' s) :=
-  (hp.k_s.sub_right kR'_sub).sub_left (Offset.sub_base (d := 240) _ (by decide))
+  (hp.k_s.sub_right kR'_sub).sub_left (Offset.sub_base (d := 240) _ (by have := M.ge; have := M.le; omega))
 
 /-- The data from block `q` on, apart from the first `q` blocks and from the
 other regions written. -/
 theorem rest_disj {q : Nat} (hq : q ≤ n s) :
-    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 256⟩ : Region)],
+    ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 1024⟩ : Region)],
       (⟨dq s q, 16 * (n s - q)⟩ : Region).Disjoint r := by
   have hsub : Region.Sub ⟨dq s q, 16 * (n s - q)⟩ (dR s) := Offset.sub_base _ (by omega)
   intro r hr
@@ -131,11 +154,11 @@ theorem mid_of_post {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n 
   rw [ec, hq9] at ctr
   simp only [Gcm.X86_64.Stitch.ciph, Gcm.X86_64.Stitch.sch, Gcm.X86_64.Stitch.nr, Gcm.X86_64.Stitch.kp, ek,
     er] at data
-  have kd : ∀ r ∈ [kR' s], (kR s).Disjoint r := fun r hr => by
+  have kd : ∀ r ∈ [kR' s], (kR M s).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub
   have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   have eK : Spec.Aes.bytesAt s₃.mem (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt s.mem (K s) (16 * (R s + 1)) :=
-    bytesAt_frame hf₃ (fun r hr => (kd r hr).sub_left (Region.sub_prefix hRb)) (by omega)
+    bytesAt_frame hf₃ (fun r hr => (kd r hr).sub_left (Region.sub_prefix (Nat.le_trans hRb M.ge))) (by omega)
   have eC : blockAt s₃.mem (C s) = cb s := block_kR' hf₃ (kR'_disj hp _ (by simp)).symm
   have pd : Region.Sub ⟨D s, 16 * q⟩ (dR s) := Region.sub_prefix (by omega)
   have eD : blocksAt s₃.mem (D s) q = blocksAt s.mem (D s) q := blocksAt_frame hf₃ (fun r hr => by
@@ -144,9 +167,9 @@ theorem mid_of_post {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n 
   rw [eK, eC, eD] at data
   rw [eC] at ctr
   have y' := y (block_kR' hf₃ (kR'_disj' hp)) (block_kR' hf₃ (kR'_disj hp _ (by simp)).symm) eD data
-  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 64, 256⟩ :=
+  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 64, 1024⟩ :=
     Offset.base_disjoint _ (by decide) (by have := hp.w_s; omega)
-  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 256⟩ : Region)],
+  have fk : ∀ r ∈ [cR s, yR s, (⟨D s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 1024⟩ : Region)],
       (kR' s).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -191,7 +214,7 @@ theorem cmp16_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) :
 what the loops leave (`post`) as `Mid` for the blocks hashed `ys q`. -/
 theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat → List Block}
     (hys : ys 0 = [])
-    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPre s₃ → WP isa piece s₃ (Post s₃))
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → WP isa piece s₃ (Post s₃))
     (hpost : ∀ s₃ s₄, s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16) → (∀ r ∈ argRegs, s₃.gpr r = s.gpr r) →
       (∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r) → s₃.gpr .r11 = S s + BitVec.ofNat 64 64 → s₃.rd = s.rd →
       s₃.wr = s.wr →
@@ -225,11 +248,11 @@ theorem stitch_ok {piece : Prog isa} {Post : State → State → Prop} {ys : Nat
     have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
     have hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
     have hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
-    exact WP.mono (hpiece s₃ (spre_of hp h16 h9 ga g11 rd₃' wr₃')) fun s₄ hP =>
+    exact WP.mono (hpiece s₃ (spreM_of hp h16 h9 ga g11 rd₃' wr₃' hf₃)) fun s₄ hP =>
       hpost s₃ s₄ h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP
 
 /-- Encryption: the blocks hashed are those written. -/
-theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOk enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOkM M enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (stitchPart enc) s₁
       (Mid s (n s - n s % 16) 0
@@ -249,7 +272,7 @@ theorem stitchE_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOk enc dec
     h11 hg hk hf hrd hwr
 
 /-- Decryption: the blocks hashed are those read. -/
-theorem stitchD_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOk enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
+theorem stitchD_ok {enc dec : Prog isa} (hS : Gcm.X86_64.Stitch.StitchOkM M enc dec) {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
     WP isa (stitchPart dec) s₁
       (Mid s (n s - n s % 16) 0

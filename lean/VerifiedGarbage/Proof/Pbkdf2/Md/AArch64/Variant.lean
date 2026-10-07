@@ -3,6 +3,7 @@ import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Sha512.AArch64.Variant
 import VerifiedGarbage.Proof.Sha256.AArch64.Variant
+import VerifiedGarbage.Proof.RsaPss.AArch64.Checks
 
 /-!
 # Merkle–Damgård hash functions on AArch64, as variants
@@ -60,6 +61,15 @@ structure MdHash where
   H : Hash
   /-- The instance of the shared contracts. -/
   I : Spec.Hmac.Instance
+  /-- What the proofs know of the hash function's code (for the callers that
+  work at the level of its compression function: RSASSA-PSS's,
+  `Generic/MdHash/RsaPrivateCrt/AArch64/RsaPss.lean`). -/
+  ok : HashOK H
+  /-- The hash function as RSA's padding takes it. -/
+  mgf : MgfLink H ok
+  /-- RSASSA-PSS's taint checks of the pieces of its code that depend on the
+  hash function, once for each hash function. -/
+  pss : Proof.RsaPss.AArch64.PssChecks H.P H.D
   hmacInit : Verified AArch64.target H.hmacInit (I.initScratchContract AArch64.abi 16)
   hmacFin : Verified AArch64.target H.hmacFin (I.finalizeScratchContract AArch64.abi 16)
   iterate : Verified AArch64.target H.iterate (I.iterateContract AArch64.abi)
@@ -99,6 +109,11 @@ structure MdHash where
   ECDSA's) are made (`Generic/MdHash/P256/AArch64/EcdsaP256Sha384.lean`); `none`
   for the other hash functions. -/
   sha384 : Option Proof.Sha512.AArch64.Compress := none
+  /-- For SHA-224's variants, the implementation of SHA-256's compression
+  function, from which the functions built on SHA-224 alone (deterministic
+  ECDSA's) are made (`Generic/MdHash/P224/AArch64/EcdsaP224Sha224.lean`); `none`
+  for the other hash functions. -/
+  sha224 : Option Proof.Sha256.AArch64.Compress := none
 
 namespace MdHash
 
@@ -170,7 +185,8 @@ end MdHash
 
 /-- The variant of hash function `H`, of instance `I`, from what the proofs
 need of it and the satisfiability of the shared contracts. -/
-def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H))
+def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (core H)) (lk : MgfLink H hH)
+    (pss : Proof.RsaPss.AArch64.PssChecks H.P H.D)
     (hSH : hH.SH = I.S) (hW : H.W = I.scratch)
     (hsI : ∃ s, (I.initScratchContract AArch64.abi 16).pre s)
     (hsF : ∃ s, (I.finalizeScratchContract AArch64.abi 16).pre s)
@@ -184,6 +200,9 @@ def MdHash.of {H : Hash} {I : Spec.Hmac.Instance} (hH : HashOK H) (C : CoreOK (c
     (suffix : String) (features : List String) (stream : List StreamFn := []) : MdHash where
   H := H
   I := I
+  ok := hH
+  mgf := lk
+  pss := pss
   hmacInit := MdHash.hmacInit_of hH C hSH hW hsI
   hmacFin := MdHash.hmacFin_of hH C hSH hW hsF
   iterate := MdHash.iterate_of hH C hSH hW hsT

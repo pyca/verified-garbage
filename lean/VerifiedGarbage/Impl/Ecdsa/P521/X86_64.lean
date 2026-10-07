@@ -12,9 +12,18 @@ open VG.X86_64
 def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
-  comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB"⟩
+  comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+  fastN := true
+  pubVerify := true
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
+
+/-- P-521 multiplying modulo `p` with BMI2 and ADX (`Mod.adx`), and selecting
+the comb's entries with AVX2 (`TCombCfg.avx2`). -/
+def p521x : Cfg := { p521 with adx := true, avx2 := true }
+
+/-- `vg_ecdsa_p521_sign_adx`. -/
+def signP521Adx : Prog isa := p521x.sign
 
 end VG.Impl.Ecdsa.X86_64

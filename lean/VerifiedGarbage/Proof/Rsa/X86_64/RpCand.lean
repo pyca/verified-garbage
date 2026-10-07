@@ -13,7 +13,7 @@ if it was the last.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt sMask)
 open VG.Proof.Bignum (mont_cancel mont_sq powMod_eq)
 open VG.Spec.Rsa (powMod recoverStep)
@@ -33,12 +33,6 @@ theorem gBlk_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {c : Nat}
     xrun [State.ea, hdr, h.rdi, hdrOff, h.scr.ld (d := 8 * sCand) (by simp only [sCand, Impl.Bignum.X86_64.Public.sV, sFn]; omega),
       h.scr.ld (d := 8 * sW) (by simp only [sW]; omega), hcand, h.hw, e2]) rfl)
     fun u ⟨⟨a, b, c, d⟩, k⟩ => ⟨a, b, c, d, k⟩
-
-/-- `g R` from `R² mod n`. -/
-theorem g_mont {X g R R2 N : Nat} (hR : Nat.Coprime R N) (hr2 : R2 % N = R * R % N)
-    (h : X * R % N = g * R2 % N) : X % N = g * R % N := by
-  apply mont_cancel hR
-  rw [h, Nat.mul_mod, hr2, ← Nat.mul_mod, Nat.mul_assoc]
 
 /-- The candidate's `y = g^r mod n`, in Montgomery form in `Y`. -/
 theorem candA_ok (M : Mont) {u : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N el r t c : Nat}

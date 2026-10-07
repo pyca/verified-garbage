@@ -98,6 +98,8 @@ def XOp.asm : XOp → String
   | .pclmulqdq d r n => s!"pclmulqdq {d.name}, {r.name}, {n.toNat}"
 
 def Instr.asm : Instr → List String
+  | .symPush d name => ["call 2f", "2:", s!"mov {d.name}, DWORD PTR [esp]",
+      s!".byte 0x81, {192 + d.ctorIdx}", s!".long {name} - 2b"]
   | .mov d s => [s!"mov {d.name}, {s.str}"]
   | .store m r => [s!"mov {m.str}, {r.name}"]
   | .alu op d s => [s!"{op.name} {d.name}, {s.str}"]
@@ -126,6 +128,17 @@ def Cond.name : Cond → String
 
 def printer : Printer isa where
   instr := Instr.asm
+  -- Label 2 is private to this adjacent call/address pair. Structured
+  -- control flow uses 20, 21, ...; repeated pairs use the nearest 2b/2f.
+  -- LLVM's Intel-syntax parser rejects symbol differences as ADD operands.
+  -- Spell ADD r32, imm32 as its SDM encoding (81 /0 id), with the immediate
+  -- in a .long so the assembler emits a PC-relative relocation. Reg's
+  -- constructor order is the ModR/M encoding, EAX=0 through EDI=7.
+  symLines
+    | .symPush d name => some [.text "call 2f", .text "2:",
+        .text s!"mov {d.name}, DWORD PTR [esp]",
+        .text s!".byte 0x81, {192 + d.ctorIdx}", .sym ".long " .x86PcRel name]
+    | _ => none
   branch c l := s!"j{c.name} {l}"
   jump l := s!"jmp {l}"
   ret := ["ret"]

@@ -9,7 +9,7 @@ nothing else of the working space or the frame.
 
 namespace VG.Proof.RsaPss.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 
 /-- `Rep` across changes outside the working space and the frame. -/

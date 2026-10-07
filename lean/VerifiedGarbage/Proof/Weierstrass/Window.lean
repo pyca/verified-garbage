@@ -126,4 +126,16 @@ theorem recode_lt {k n : Nat} (hk : k < 2 ^ (64 * n)) :
   rw [Nat.pow_succ, h16]
   omega
 
+/-- The recoded scalar of `len` bytes: `k + 8 Σ_{j<J} 16^j < 16^J` for
+`k < 2^(8 len)`, with `J = 2 len + 1`. -/
+theorem recode_lt_len {k len : Nat} (hk : k < 2 ^ (8 * len)) :
+    k + 8 * geom (2 * len + 1) < 16 ^ (2 * len + 1) := by
+  have h16 : (16 : Nat) ^ (2 * len) = 2 ^ (8 * len) := by
+    rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul, show 4 * (2 * len) = 8 * len by omega]
+  have := eight_geom_lt (2 * len)
+  rw [h16] at this
+  show k + 8 * (geom (2 * len) + 16 ^ (2 * len)) < 16 ^ (2 * len + 1)
+  rw [Nat.pow_succ, h16]
+  omega
+
 end VG.Proof.Weierstrass

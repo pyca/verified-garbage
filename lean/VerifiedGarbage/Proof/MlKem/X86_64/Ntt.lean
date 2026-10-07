@@ -29,7 +29,7 @@ def inPlaceK (t : Poly → Poly) : Contract isa where
 
 /-- The table of zetas at `scratch`, `f` as words in `S`, and the constants. -/
 theorem vpro_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
-    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
+    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.rd ++ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
     WP isa vpro s fun s' => S16 s'.mem (spW sP) F ∧ T16 s'.mem sP ∧ VConsts s' ∧
       Frame [pR sP] s.mem s'.mem ∧ Keep [.rax, .rcx, .rdx, .r9] s s' := by
   simp only [vpro, List.append_assoc]
@@ -54,7 +54,7 @@ theorem vpro_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (h
     rw [hm2]
     exact polyIs_frame hf1 (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hd.sub_right (pR_sub_tab sP)) hF
-  have hwf2 : pR fP ∈ s2.rd ++ s2.wr := by rw [k12.2.2]; exact List.mem_append_right _ hwf
+  have hwf2 : pR fP ∈ s2.rd ++ s2.wr := by rw [k12.2.1, k12.2.2]; exact hwf
   have hw2 : pR sP ∈ s2.wr := by rw [k12.2.2]; exact hw
   refine WP.mono (vpack_ok hc hF2 h9 hdx hwf2 hw2 hd) fun s3 ⟨hS, hf3, hc3, k3, _⟩ =>
     ⟨hS, (hm2 ▸ hT).frame hf3, hc3, ?_, (k12.trans k3).mono (by simp)⟩
@@ -175,7 +175,7 @@ theorem ntt_correct (s : State) (hs : (inPlaceK ntt).pre s) :
     have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
       polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub _))
         ⟨hs.2.2.2.2.2, rfl⟩
-    refine WP.seq (WP.mono (vpro_ok hdi1 hsi1 hF1 (by rw [k1.2.2]; exact hwf) (by rw [k1.2.2]; exact hw) hd)
+    refine WP.seq (WP.mono (vpro_ok hdi1 hsi1 hF1 (by rw [k1.2.1, k1.2.2]; exact List.mem_append_right _ hwf) (by rw [k1.2.2]; exact hw) hd)
       fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := by rw [k2.gpr (by decide), hsi1]
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2, k1.2.2]; exact hw

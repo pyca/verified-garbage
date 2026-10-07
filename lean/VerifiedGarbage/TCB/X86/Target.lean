@@ -80,6 +80,7 @@ def abi : Abi isa where
   rd s := s.rd
   wr s := s.wr
   ret s := s.gpr .edx ++ s.gpr .eax
+  sym := some fun s name => (s.syms name).setWidth 64
   argAreaDoc ws := if argBytes ws = 0 then none else some ("the arguments on the stack", true)
   reservedDoc n := some (if n = 0 then "the return address on the stack" else
     s!"the return address on the stack or the {n} bytes of stack below it")

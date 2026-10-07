@@ -13,7 +13,7 @@ working space (`Ws.congrR`); and the value of a number's low words
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The header slots the recovery changes: `-n⁻¹` (7), the mask (22), the
 candidate's number (25), the counters and masks (26, 30, 31), `t` (27) and
@@ -25,8 +25,8 @@ def rSlot (i : Nat) : Bool :=
 `rSlot`. -/
 def RMut (r : Nat × Nat) : Prop := 8 * 32 ≤ r.1 ∨ ∃ i, rSlot i = true ∧ r = (8 * i, 8)
 
-theorem RMut.ofSlot (w j n : Nat) : RMut (Bignum.X86_64.slot w j, n) :=
-  Or.inl (by unfold Bignum.X86_64.slot hdrBytes; omega)
+theorem RMut.ofSlot (w j n : Nat) : RMut (Bignum.slot w j, n) :=
+  Or.inl (by unfold Bignum.slot hdrBytes; omega)
 
 theorem RMut.hdr {i : Nat} (h : rSlot i = true) : RMut (8 * i, 8) := Or.inr ⟨i, h, rfl⟩
 
@@ -57,12 +57,5 @@ theorem Ws.congrR {s t : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {rs : Li
   exact ⟨h.scr.congr k.2.2, (k.gpr hr).trans h.rdi, (hh sW (.inl (by simp))).trans h.hw,
     (hh sStride (.inl (by simp))).trans h.hS, fun j hj => (hh (sArr j) (.inr (by unfold sArr; omega))).trans (h.harr j hj),
     h.hZ, h.w1, h.w2⟩
-
-/-- The low `j` words of a number of `w ≥ j` words. -/
-theorem wv_mod (m : Mem) (B : Addr) (e : Nat) {j w : Nat} (hj : j ≤ w) :
-    wv m B e w % 2 ^ (64 * j) = wv m B e j := by
-  have e1 := wv_add m B e j (w - j)
-  rw [show j + (w - j) = w by omega] at e1
-  rw [e1, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (wv_lt _ _ _ _)]
 
 end VG.Proof.Rsa.X86_64

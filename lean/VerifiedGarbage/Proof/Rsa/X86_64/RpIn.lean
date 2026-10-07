@@ -13,7 +13,7 @@ arrays and slots of `rSlot` (`RpS.step`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 
 /-- The inputs of `vg_rsa_recover_primes` and where they are. -/
@@ -87,15 +87,6 @@ structure RpS (I : RpIn) (m₀ : Mem) (s : State) : Prop where
   inScr : InScr I.B I.Z m₀ s.mem
   wr : s.wr = I.W
   rsp : s.gpr .rsp = I.sp
-
-/-- The ranges of `rg` are in the working space. -/
-theorem rg_le {w Z : Nat} (hZ : slot w 16 ≤ Z) {js hs : List Nat} (hjs : ∀ j ∈ js, j < 16)
-    (hhs : ∀ i ∈ hs, i < 32) : ∀ r ∈ rg w js hs, r.1 + r.2 ≤ Z := by
-  intro r hr
-  simp only [rg, List.mem_append, List.mem_map] at hr
-  rcases hr with ⟨j, hj, rfl⟩ | ⟨i, hi, rfl⟩
-  · have := slot_lt (w := w) (hjs j hj); dsimp only; omega
-  · have := hdr_lt_slot w 16 (hhs i hi); dsimp only; omega
 
 theorem RpS.step {I : RpIn} {m₀ : Mem} {s t : State} (h : RpS I m₀ s) {js hs : List Nat}
     (hf : Frm I.B (rg (wk I.k) js hs) s.mem t.mem) (hjs : ∀ j ∈ js, j < 16) (hhs : ∀ i ∈ hs, rSlot i = true)

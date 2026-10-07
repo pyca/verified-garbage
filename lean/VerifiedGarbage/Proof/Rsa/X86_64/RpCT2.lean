@@ -11,7 +11,7 @@ after each halving's head.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 open VG.Spec.Rsa (splitTwos)
 
@@ -27,7 +27,7 @@ abbrev hN (p : RpP) : Nat := 64 * (wk p.k + (p.el + 7) / 8)
 
 /-- After `j` halvings, from `s₁`. -/
 def HL (p : RpP) (j : Nat) (s : State) : Prop :=
-  ∃ (s₁ : State) (m : Nat), Bignum.X86_64.word s₁.mem p.B (8 * Impl.Bignum.X86_64.Public.sElen) =
+  ∃ (s₁ : State) (m : Nat), Bignum.word s₁.mem p.B (8 * Impl.Bignum.X86_64.Public.sElen) =
     BitVec.ofNat 64 p.el ∧ 1 ≤ p.el ∧ p.el ≤ 8 * wk p.k ∧ m < 2 ^ (64 * (wk p.k + (p.el + 7) / 8)) ∧
     s₁.gpr .r11 = BitVec.ofNat 64 (hN p) ∧ HalfInv s₁ p.B p.Z (wk p.k) m j s
 
@@ -56,7 +56,7 @@ theorem halfBody_ct : RelCT isa (Two fun (q : RpP × Nat) s => q.2 < hN q.1 ∧ 
     (fun _ _ h => h) fun _ _ _ => trivial
   · rw [← halfHead_eq]
     obtain ⟨-, s₁, m, hel, he1, he2, -, h11, hI⟩ := h
-    have hel₀ : Bignum.X86_64.word s.mem q.1.B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 q.1.el := by
+    have hel₀ : Bignum.word s.mem q.1.B (8 * Impl.Bignum.X86_64.Public.sElen) = BitVec.ofNat 64 q.1.el := by
       have hT0 := hdr_lt_slot (wk q.1.k) aM (show Impl.Bignum.X86_64.Public.sElen < 32 by decide)
       have hT1 := hdr_lt_slot (wk q.1.k) aH (show Impl.Bignum.X86_64.Public.sElen < 32 by decide)
       have hZ := hI.ws.hZ

@@ -107,7 +107,7 @@ theorem vcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
     rw [lanePt_qw q₄, lanePt_qw q₃, p₁, show combVal S 0 = (combGVal : ℤ) by simp [combVal, oddSumZ],
       natCast_zsmul]
     exact combG_ok
-  have fin : ∀ w, VInv s₃ base 64 (combVal S 64) w → WP isa (.block vstore) w fun y =>
+  have fin : ∀ w, VInv s₃ base 52 (combVal S 52) w → WP isa (.block vstore) w fun y =>
       WP isa (.block [.lfence]) y fun z =>
         WP isa (.block [.store32 (Impl.X25519.X86_64.sc EMX) .r11, .ldmxcsr (Impl.X25519.X86_64.sc EMX)]) z
           fun t => Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
@@ -137,17 +137,17 @@ theorem vcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
           (((TableFrame.table tou).mono (by decide) (by decide)).trans
             ((TableFrame.table k₈.mem).mono (by decide) (by decide))))
   refine WP.seq ?_
-  apply WP.loop (fun n t => VInv s₃ base (64 - n) (combVal S (64 - n)) t ∧ 0 < n ∧ n ≤ 64) (n := 64)
+  apply WP.loop (fun n t => VInv s₃ base (52 - n) (combVal S (52 - n)) t ∧ 0 < n ∧ n ≤ 52) (n := 52)
   · intro n t ⟨ht', hn0, hn⟩
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-    refine WP.mono (vstep_ok hp ht' (by omega)) fun u ⟨uz, hu⟩ => ?_
+    refine WP.mono (vstep_ok hp hS ht' (by omega)) fun u ⟨uz, hu⟩ => ?_
     by_cases hk : k = 0
     · subst hk
-      exact Or.inl ⟨by simp only [eval, uz, show 64 - (0 + 1) + 1 = 64 from rfl, decide_true,
+      exact Or.inl ⟨by simp only [eval, uz, show 52 - (0 + 1) + 1 = 52 from rfl, decide_true,
         Option.map_some, Bool.not_true], fin u hu⟩
-    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (64 - (k + 1) + 1 = 64) by omega, decide_false,
+    · refine Or.inr ⟨by simp only [eval, uz, show ¬ (52 - (k + 1) + 1 = 52) by omega, decide_false,
         Option.map_some, Bool.not_false], k, by omega, ?_, by omega, by omega⟩
-      rw [show 64 - k = 64 - (k + 1) + 1 by omega]; exact hu
+      rw [show 52 - k = 52 - (k + 1) + 1 by omega]; exact hu
   · exact ⟨i₄, by decide, by decide⟩
 
 end VG.Proof.Ed25519.X86_64.Ifma

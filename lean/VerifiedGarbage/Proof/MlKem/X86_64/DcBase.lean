@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.EncTop
 import VerifiedGarbage.Proof.MlKem.X86_64.DcSel
+import VerifiedGarbage.Proof.MlKem.X86_64.FragDM
 
 /-!
 # ML-KEM on x86-64: decapsulation, its contract, layout, checks and entry
@@ -67,24 +68,24 @@ def drChk (nu ns : Nat) (ws : List (Ptr × Nat)) : Bool :=
   dcChk L ws && (List.range nu).all (fun i => keepB (dcB L) ws (pS i) 1024) &&
     (List.range ns).all (fun i => keepB (dcB L) ws (pS (L.k + i)) 1024)
 
-abbrev uW (i : Nat) : List (Ptr × Nat) := [(pS i, 1024)] ++ [(pS i, 1024), (sc oSS, 1024)]
+abbrev uW (i : Nat) : List (Ptr × Nat) := [(pS i, 1024)]
 
 def uChk (i : Nat) : Bool :=
-  twoChk (dcB L) (dcW L) (.r14, 32 * L.du * i) (32 * L.du) (pS i) 1024 && ipChk (dcB L) (dcW L) (pS i) &&
-    drChk L i 0 (uW i)
+  twoChk (dcB L) (dcW L) (.r14, 32 * L.du * i) (32 * L.du) (pS i) 1024 && drChk L i 0 (uW i)
 
 def sChk (i : Nat) : Bool :=
   twoChk (dcB L) (dcW L) (.rbp, 384 * i) 384 (pS (L.k + i)) 1024 && drChk L L.k i [(pS (L.k + i), 1024)]
 
-abbrev tailW : List (Ptr × Nat) := dotW L.k ++ [(pS 15, 1024), (sc oSS, 1024)] ++ [(pS 16, 1024)] ++
-  [(pS 16, 1024)] ++ [(sc oM, 32 * 1)]
+/-- What `vg_mlkem*_decrypt_mul` writes: polynomial 15, and its working space. -/
+abbrev dmW : List (Ptr × Nat) := [(pS 15, 1024), (pS (2 * L.k), 4096)]
+
+abbrev tailW : List (Ptr × Nat) := dmW L ++ [(pS 16, 1024)] ++ [(pS 16, 1024)] ++ [(sc oM, 32 * 1)]
 
 def tailChk : Bool :=
-  dotChk (dcB L) (dcW L) (fun j => pS (L.k + j)) pS L.k && ipChk (dcB L) (dcW L) (pS 15) &&
+  dmChk (dcB L) (dcW L) L.k (pS 15) (pS L.k) (pS 0) (pS (2 * L.k)) &&
     twoChk (dcB L) (dcW L) (.r14, 32 * L.du * L.k) (32 * L.dv) (pS 16) 1024 &&
     keepB (dcB L) [(pS 16, 1024)] (pS 15) 1024 && accChk (dcB L) (dcW L) (pS 16) (pS 15) &&
-    twoChk (dcB L) (dcW L) (pS 16) 1024 (sc oM) (32 * 1) && dcChk L (tailW L) &&
-    dcChk L (dotW L.k ++ [(pS 15, 1024), (sc oSS, 1024)])
+    twoChk (dcB L) (dcW L) (pS 16) 1024 (sc oM) (32 * 1) && dcChk L (tailW L) && dcChk L (dmW L)
 
 def dckChk (ws : List (Ptr × Nat)) : Bool := dcChk L ws && keepB (dcB L) ws (sc oG) 32 && keepB (dcB L) ws (sc oKB) 32
 
@@ -95,6 +96,7 @@ abbrev hW₂ : List (Ptr × Nat) := [(sc 0, 200), (sc 200, 640), (sc oKB, 32)]
 /-- What every piece of decapsulation needs of the layout, evaluated for each parameter set. -/
 structure DcWf : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
+  k34 : L.k = 3 ∨ L.k = 4
   small : ∀ b ∈ dcB L, b.2 < 2 ^ 32
   -- K-PKE.Decrypt
   u : ∀ i < L.k, uChk L i = true
@@ -114,7 +116,7 @@ structure DcWf : Prop extends KemWf L where
   sel : inB (dcB L) (.r14, 0) L.ctLen = true ∧ inB (dcB L) (sc L.oCT) L.ctLen = true ∧
     inB (dcB L) (sc oG) 32 = true ∧ inB (dcB L) (sc oKB) 32 = true ∧ inB (dcW L) (.r12, 0) 32 = true ∧
     sepB (dcB L) (sc oG) 32 (.r12, 0) 32 = true ∧ sepB (dcB L) (sc oKB) 32 (.r12, 0) 32 = true
-  ct : L.oCT < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen
+  ct : L.oCT < 2 ^ 31 ∧ L.ctLen < 2 ^ 32 ∧ 0 < L.ctLen ∧ L.ctLen % 8 = 0
   sv : ∀ k < 6, inB (dcB L) (sc (oSV + 8 * k)) 8 = true
   -- constant time
   inBs : inB (dcB L) (sc 0) 1 = true ∧ inB (dcB L) (.r12, 0) 1 = true ∧ inB (dcB L) (.r14, 0) 1 = true

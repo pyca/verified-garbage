@@ -120,7 +120,8 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
-      ModOkW c.MP' size c.C.p s'.mem base ∧ sv c base s' RZ < c.C.p ∧
+      ModOkW c.MP' size c.C.p s'.mem base ∧
+      sv c base s' RX < c.C.p ∧ sv c base s' RZ < c.C.p ∧
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl B3P))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
@@ -182,7 +183,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
       rcases hy with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [MP'_n]
     all_goals (subst hw; simp [MP'_n, MP'_tmp])
   refine ⟨hs₃.of_keepRegs k₄ (by decide), by rw [k₄.rd, k₃.rd, k₂.rd, k₁.rd],
-    by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_⟩
+    by rw [k₄.wr, k₃.wr, k₂.wr, k₁.wr], U₄, ?_, ?_, ?_, ?_⟩
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
     rw [U₄.wordsVal (fun w hw => ?_) (by have := hM₁.mo; omega)]
@@ -190,6 +191,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have ne : ∀ i ∈ sumW, MP ≠ i := by decide
       exact sl_apart c (ne i hi)
+  · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
   · rw [z₄]; exact I₁.lt _ (hD DZ (by simp))
   · have vx := I₁.val _ (hD DX (by simp))
     have vy := I₁.val _ (hD DY (by simp))
@@ -216,10 +218,10 @@ theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k :
 /-- The slots `mulV` may write, in either case. -/
 abbrev vI : List Nat := BP :: (otherI ++ tblI ++ [TMP])
 
-/-- What `mulV` writes: for up to six words, `BP` and the window method's
+/-- What `mulV` writes: for up to nine words, `BP` and the window method's
 areas and slots; for more, the table of bits and the ladder's slots. -/
 def vW (c : Cfg) : List (Nat × Nat) :=
-  if c.n ≤ 6 then winX c ++ slW c vI
+  if c.n ≤ 9 then winX c ++ slW c vI
   else [(bitsAt c.n 0, 64 * c.n)] ++ slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2,
     T3, T4, T5, TX, TY, TZ, TMP]
 
@@ -249,20 +251,20 @@ theorem tbl₁_apart_vW {t : Nat} (ht : t < 64 * c.n) :
 /-- What `mulV` writes is in the working space. -/
 theorem vW_le (h7 : c.n < 10) : ∀ w ∈ vW c, w.1 + w.2 ≤ size := by
   unfold vW; split
-  · rename_i h6
+  · rename_i h9
     intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · show c.sl WK + 16 * c.n ≤ size
-        have := sl_le_win c h6 (i := WK + 1) (by decide)
+        have := sl_le_win c h9 (i := WK + 1) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
       · show c.sl WB + 80 * c.n ≤ size
-        have := sl_le_win c h6 (i := WB + 9) (by decide)
+        have := sl_le_win c h9 (i := WB + 9) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have lt : ∀ i ∈ vI, i < 116 := by decide
-      exact sl_le_win c h6 (lt i hi)
+      have lt : ∀ i ∈ vI, i < 107 := by decide
+      exact sl_le_win c h9 (lt i hi)
   · intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]; have := bitsAt_le c h7 (j := 0) (by decide); exact this
@@ -279,7 +281,7 @@ structure VMulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Sta
     (tmv c.C c.n base s' (c.sl RZ)) (mul k P)
 
 /-- `[v]P`, for `v` at `V`, `P` at `PX`, `PY` and `R = O`: by windows for up
-to six words, else by the ladder. -/
+to nine words, else by the ladder. -/
 theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
@@ -287,6 +289,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     {rest : Prog isa} {R : State → Prop}
+    (hv8 : sv c base s V < 2 ^ (8 * c.C.len))
     (h : ∀ s', VMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c) rest) s R := by
   have h0 := hc.n0
@@ -297,7 +300,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   unfold Impl.Ecdsa.Verify.X86_64.Cfg.mulV
   split
-  · rename_i h6
+  · rename_i h9
     have hb : c.mont c.C.b < 2 ^ (64 * c.n) := by have := hc.p_lt; have := hmont c.C.b; omega
     refine WP.seq (WP.seq (WP.mono (setSl_ok hc hs (o := BP) (by decide) hb) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_))
     have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -308,19 +311,20 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       show Rep _ (toM _ _ (sv c base s₁ PX)) (toM _ _ (sv c base s₁ PY)) (toM _ _ (sv c base s₁ ONEP)) P
       rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide)]
       exact hrep
-    refine WP.seq_iff.mp (winMul_ok hc h6 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
-      (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide) fun s₂ W => h s₂ ?_)
+    refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
+      (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide)
+      (by rw [v₁ (by decide) (by decide)]; exact hv8) fun s₂ W => h s₂ ?_)
     rw [v₁ (by decide) (by decide)] at W
     refine ⟨W.scr, (k₁.mono fun r hr => ?_).trans W.keep, ?_, W.mod, W.lt, W.q⟩
     · rw [List.mem_singleton.mp hr]; simp [powClob, clob]
-    · simp only [vW, h6, ↓reduceIte]
+    · simp only [vW, h9, ↓reduceIte]
       refine (O₁.unch.trans W.unch).mono fun w hw => ?_
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]; exact List.mem_append_right _ (List.mem_cons_self ..)
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_left _ hw
         · exact List.mem_append_right _ (List.mem_cons_of_mem _ hw)
-  · rename_i h6
+  · rename_i h9
     refine WP.seq (WP.seq (WP.mono (bits_ok hs h0 (by omega) (sl_le c h7 (i := V) (by decide))
       (bitsAt_le c h7 (j := 0) (by decide)) (Or.inl (by have := sl_below_bits c (i := V) (by decide) 0 0; omega)))
       fun s₁ ⟨b₁, k₁, O₁⟩ => ?_))
@@ -366,7 +370,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
         (k₁.mono fun r hr => ?_).trans K₂, ?_, M₂, L₂, by rwa [Nat.shiftRight_zero] at q₂⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
-    · simp only [vW, h6, ↓reduceIte]
+    · simp only [vW, h9, ↓reduceIte]
       rw [← ladWQ_eq]
       exact U₁.trans U₂
 
@@ -378,11 +382,13 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   wr : s.wr = s₀.wr
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
+  k : sv c base s K = sigR c s₀
   t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) =
     mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
   rm_lt : sv c base s RM' < c.C.n
   rm : toM c.C.n (2 ^ (64 * c.n)) (sv c base s RM') = Fin.ofNat c.C.n (sigR c s₀)
+  rx_lt : sv c base s RX < c.C.p
   rz_lt : sv c base s RZ < c.C.p
   pt : ∃ X1 Y1 Z1 X2 Y2 Z2 : Fe c.C, Rep c.C X1 Y1 Z1 (mul u (G c.C)) ∧ Rep c.C X2 Y2 Z2 (mul v P) ∧
     (tmv c.C c.n base s (c.sl RX), tmv c.C c.n base s (c.sl RY), tmv c.C c.n base s (c.sl RZ)) =
@@ -390,7 +396,7 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   unch : Unch base [(0, size)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq c.gMul
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (c.gMul c.pubVerify)
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c)) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)))) := rfl
 
@@ -439,7 +445,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
       rcases hw with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_singleton_self _, Nat.zero_le _, by dsimp only; omega⟩
-  refine WP.seq (WP.mono (gMul_ok' hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
+  refine WP.seq (WP.mono (gMul_ok' (publicLookup := c.pubVerify) hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry]) (by rw [v₁ (by decide), hM.rz])
     (fun t ht => b₁ t ht) hTb)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
@@ -462,7 +468,8 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   refine mulV_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]; exact hrep)
-    rx₃ ry₃ rz₃ fun s₅ V₅ => ?_
+    rx₃ ry₃ rz₃ (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_len)
+    fun s₅ V₅ => ?_
   rw [show sv c base s₃ V = sv c base s V from W₃ (by decide) (by decide)] at V₅
   have hs₅ := V₅.scr
   have F₅ := F₃.unch h7 hn fixedOk_vW V₅.unch
@@ -472,7 +479,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   have u₅ : ∀ {i}, i ∈ [UX, UY, UZ] → sv c base s₅ i = sv c base s₃ i := fun {i} hi => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> exact v₅ (by decide) (by decide)
-  refine WP.mono (sum_ok hc hs₅ V₅.mod (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ V₅.mod (fun i hi => ?_)) fun s₆ ⟨hs₆, rd₆, wr₆, U₆, M₆, rx₆, rz₆, t₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -524,9 +531,10 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     show toM _ _ (wordsVal s.mem base (c.sl B3P) c.n) = _
     rw [F.b3p]; exact toM_cmont hc _
   refine ⟨hs₆, by rw [wr₆, V₅.keep.wr, k₃.wr, K₂.wr, k₁.wr, hM.wr],
-    by rw [rd₆, V₅.keep.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆, fun t ht => ?_, ?_,
+    by rw [rd₆, V₅.keep.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆,
+    by rw [v₆ (i := K) (by decide) (by decide) (by decide), hM.k], fun t ht => ?_, ?_,
     by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm_lt,
-    by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm, rz₆,
+    by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm, rx₆, rz₆,
     ⟨_, _, _, _, _, _, q₂, V₅.q, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]⟩, ?_⟩

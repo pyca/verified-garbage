@@ -24,5 +24,11 @@ pub fn bench(c: &mut Criterion) {
 
     use crate::hash_group;
 
-    hash_group(c, "sha256", Sha256::digest, MessageDigest::sha256());
+    hash_group(
+        c,
+        "sha256",
+        Sha256::digest,
+        MessageDigest::sha256(),
+        Some(&aws_lc_rs::digest::SHA256),
+    );
 }

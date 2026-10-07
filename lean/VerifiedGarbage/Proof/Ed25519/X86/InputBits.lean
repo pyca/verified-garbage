@@ -16,7 +16,7 @@ theorem scalar_store8 {is : List Instr} {s : State} {Q : State → Prop} {b : Re
     (k : ∀ t, Wp.Mupd s t (s.mem.writeW a ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) t Q) :
     WP isa (.block (.store8 ⟨b, o⟩ r :: is)) s Q := by
   refine Wp.cons (s' := { s with mem := s.mem.writeW a ((s.gpr r.reg).setWidth 8) }) ?_
-    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   change (s.gpr b + BitVec.ofNat 32 o).setWidth 64 = a at ha
   simp only [exec, State.store8, State.ea, ha, hout, ite_true]
 

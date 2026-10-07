@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivPc
-import VerifiedGarbage.Proof.Rsa.X86_64.PubChecked
+import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the call of `vg_rsa_public_precomputed_checked`
@@ -11,7 +11,7 @@ whatever `M` holds.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14) :
     InRegions (t.rd ++ t.wr) (stackArgAddr s j) 8 :=
@@ -23,7 +23,7 @@ theorem arg_in {s t : State} (hp : PreF s) (he : Env s t) {j : Nat} (hj : j < 14
 theorem word_wo0 (m : Mem) (base : Addr) (v : BitVec 64) {d' : Nat} (h : 8 ≤ d') (hd' : d' + 8 ≤ 4096) :
     (m.writeW base v).readW (off base d') 64 = m.readW (off base d') 64 := by
   have := word_wo m base v (d := 0) (d' := d') (.inl (by omega)) (by decide) hd'
-  simpa only [Bignum.X86_64.word, off, BitVec.add_zero] using this
+  simpa only [Bignum.word, off, BitVec.add_zero] using this
 
 theorem arg_wo0 {s : State} (m : Mem) (v : BitVec 64) {j : Nat} (hj : j < 14) :
     (m.writeW (fb s) v).readW (stackArgAddr s j) 64 = m.readW (stackArgAddr s j) 64 := by
@@ -73,7 +73,7 @@ theorem pdArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
     · rw [List.mem_singleton.mp hr]
       have := frame_sub s (d := 0) (n := frameBytes) (by decide)
       exact .inl (by simpa only [off, BitVec.add_zero] using this)
-  all_goals rw [hm]; simp (disch := decide) only [Bignum.X86_64.word, word_wo, word_wo0]
+  all_goals rw [hm]; simp (disch := decide) only [Bignum.word, word_wo, word_wo0]
   · exact he.sOut
   · exact he.sN
   · exact he.sK
@@ -197,15 +197,14 @@ theorem pd_covers {s t : State} (hp : PreF s) (he : Env s t) :
 /-- The call of `vg_rsa_public_precomputed_checked`: `M^e mod n` to `out`,
 for whatever modulus `n`'s values in the frame are of. `M` and the slots of
 `r₁` and `r₃` are kept. -/
-theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hsp : NoSp (Checked.precomputedChecked M.mm)) (hd : (Checked.precomputedChecked M.mm).depth = 0)
+theorem pd_call (P : PublicImpl) (name : String)
     {s t : State} (hp : PreF s) (he : Env s t)
     (hw0 : word t.mem (fb s) 0 = off (fb s) oM) (hw1 : word t.mem (fb s) 8 = s.gpr .rcx)
     (hw2 : word t.mem (fb s) 16 = stackArg s 12) (hw3 : word t.mem (fb s) 24 = stackArg s 13)
     (hdi : t.gpr .rdi = s.gpr .rdi) (hsi : t.gpr .rsi = s.gpr .rcx) (hdx : t.gpr .rdx = off (fb s) oPre)
     (hcx : t.gpr .rcx = BitVec.ofNat 64 (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat))
     (h8 : t.gpr .r8 = s.gpr .r8) (h9 : t.gpr .r9 = s.gpr .r9) :
-    WP isa (.call name (Checked.precomputedChecked M.mm)) t fun t' => Env s t' ∧
+    WP isa (.call name (P.code)) t fun t' => Env s t' ∧
       (∀ nB : List Byte, nB.length = (s.gpr .rcx).toNat →
         Spec.Rsa.publicPrecompute nB =
           some (Spec.Rsa.wordsAt t.mem (off (fb s) oPre) (Spec.Rsa.precomputedWords (s.gpr .rcx).toNat)) →
@@ -220,17 +219,17 @@ theorem pd_call (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allIns
   have hk2 := hp.k2
   have hsi' := hp.hsi
   obtain ⟨cr, cw⟩ := pd_covers hp he
-  have hv := Proof.Rsa.X86_64.precomputedChecked_correct M hmx
+  have hv := P.ok
   have hpre := pd_pre hp he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9
-  have hdd : 8 * (Checked.precomputedChecked M.mm).depth + 16 < 2 ^ 64 := by rw [hd]; decide
+  have hdd : 8 * (P.code).depth + 16 < 2 ^ 64 := by rw [P.depth]; decide
   have hpre' : (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
       (t.callEntry.withRegions (pdRd s) (pdWr s)) := hpre
   have hcov := Covers.append_left cr cw.right
   refine WP.call_mx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := pdRd s) (wr := pdWr s)
-    hv hsp hdd
+    hv P.nosp hdd
     hpre' hcov cw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
-  rw [hd, he.rsp] at hf
+  rw [P.depth, he.rsp] at hf
   have hfE : Frame [stkR s, outR s, scrR s] s.mem t.callEntry.mem :=
     frame_call he.mem (callEntry_frame he.rsp) fun r hr => by
       rw [List.mem_singleton.mp hr]; exact .inl (below_sub s)

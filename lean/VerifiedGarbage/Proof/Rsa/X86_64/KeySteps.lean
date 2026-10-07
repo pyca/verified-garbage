@@ -10,7 +10,7 @@ and what it changes (`Arrays`, or only `sMask`).
 namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aOne sMask)
 
 theorem mask_and' (a b : Bool) : mask a &&& mask b = mask (a && b) := by
@@ -19,7 +19,7 @@ theorem mask_and' (a b : Bool) : mask a &&& mask b = mask (a && b) := by
 section
 variable {s t : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {N : Nat}
 
-theorem Arrays.mask_eq {m m' : Mem} {js : List Nat} (ha : Arrays B w js m m') (hn : B.toNat + Z ≤ 2 ^ 64)
+theorem _root_.VG.Proof.Bignum.Arrays.mask_eq {m m' : Mem} {js : List Nat} (ha : Arrays B w js m m') (hn : B.toNat + Z ≤ 2 ^ 64)
     (hZ : slot w 8 ≤ Z) : word m' B (8 * sMask) = word m B (8 * sMask) :=
   ha.word_eq (fun j _ => .inl (hdr_lt_slot w j (by decide)))
     (by have := hdr_lt_slot w 8 (show sMask < 32 by decide); omega)

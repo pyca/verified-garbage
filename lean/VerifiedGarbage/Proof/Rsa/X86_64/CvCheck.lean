@@ -11,7 +11,7 @@ The loads of `n`, `p`, `q` and `d` (`cvLoads_ok`), and the mask of
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.CrtValues
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN)
 
 /-- `p q = n` for an odd `n`, as `pqCheck` checks it. -/
@@ -242,7 +242,7 @@ the word of `u` above its `w` zero. -/
 theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvLens I) :
     WP isa (seqs invSetup) s fun t =>
       CvS I m₀ t ∧ mword t.mem I.B = mword s.mem I.B ∧
-      Bignum.X86_64.word t.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 ∧
+      VG.Proof.Bignum.word t.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 ∧
       wv t.mem I.B (slot (wk I.k) aU) (wk I.k) = wv s.mem I.B (slot (wk I.k) aQ) (wk I.k) ∧
       wv t.mem I.B (slot (wk I.k) aV) (wk I.k) = wv t.mem I.B (slot (wk I.k) aP) (wk I.k) ∧
       wv t.mem I.B (slot (wk I.k) aX₁) (wk I.k) = 1 ∧ wv t.mem I.B (slot (wk I.k) aX₂) (wk I.k) = 0 ∧
@@ -316,14 +316,14 @@ theorem invSetup_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : 
     rw [ot o₇ (Nat.le_refl _) (by decide) (by decide), m₆, wv_low (by have := h.ws.w1; omega_arith), word_writeW_self,
       (writeW_outside s₅.mem I.B (1 : BitVec 64) (d := slot (wk I.k) aX₁) (by
         have := h.ws.sl (j := aX₁) (by decide); omega_arith)).wv (Or.inr (by omega_arith)) (by have := h.ws.sl (j := aX₁) (by decide); omega_arith)]
-    have hz : ∀ q < wk I.k + 2, Bignum.X86_64.word s₅.mem I.B (slot (wk I.k) aX₁ + 8 * q) = 0 :=
+    have hz : ∀ q < wk I.k + 2, VG.Proof.Bignum.word s₅.mem I.B (slot (wk I.k) aX₁ + 8 * q) = 0 :=
       (wv_eq_zero_iff _ _ _ _).mp z₅
     rw [wv_zero (n := wk I.k - 1) fun q hq => by
       have := hz (1 + q) (by omega_arith)
       rwa [show slot (wk I.k) aX₁ + 8 * (1 + q) = slot (wk I.k) aX₁ + 8 + 8 * q by omega_arith] at this]
     rfl
-  have vU0 : Bignum.X86_64.word s₇.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 := by
-    have e1 : Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 := by
+  have vU0 : VG.Proof.Bignum.word s₇.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 := by
+    have e1 : VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aU + 8 * wk I.k) = 0 := by
       rw [o₂.word (Or.inr (by omega_arith)) (by have := h.ws.sl (j := aU) (by decide); omega_arith)]
       exact (wv_eq_zero_iff _ _ _ _).mp z₁ (wk I.k) (by omega_arith)
     have r := fun {j Ln : Nat} {m m' : Mem} (o : Outside I.B (slot (wk I.k) j) Ln m m') (hL : Ln ≤ 8 * (wk I.k + 2))
@@ -448,7 +448,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
     rw [m₁₀, wv_low (by have := h.ws.w1; omega_arith), word_writeW_self,
       (writeW_outside s₉.mem I.B (1 : BitVec 64) (d := slot (wk I.k) aC) (by
         have := h.ws.sl (j := aC) (by decide); omega_arith)).wv (Or.inr (by omega_arith)) (by have := h.ws.sl (j := aC) (by decide); omega_arith)]
-    have hz : ∀ q < wk I.k + 2, Bignum.X86_64.word s₉.mem I.B (slot (wk I.k) aC + 8 * q) = 0 :=
+    have hz : ∀ q < wk I.k + 2, VG.Proof.Bignum.word s₉.mem I.B (slot (wk I.k) aC + 8 * q) = 0 :=
       (wv_eq_zero_iff _ _ _ _).mp z₉
     rw [wv_zero (n := wk I.k - 1) fun q hq => by
       have := hz (1 + q) (by omega_arith)
@@ -488,7 +488,7 @@ theorem cvInv_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L : CvL
 /-- `decA j`: the low word of `[j]` minus one. -/
 theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (hj : j < 16) :
     WP isa (.block (decA j)) s fun t =>
-      t.mem = s.mem.writeW (off B (slot w j)) (Bignum.X86_64.word s.mem B (slot w j) - 1) ∧
+      t.mem = s.mem.writeW (off B (slot w j)) (VG.Proof.Bignum.word s.mem B (slot w j) - 1) ∧
         Keep [.r12, .r9, .rbx, .rax] s t := by
   have hn := h.scr.nowrap
   have sj := h.sl hj
@@ -499,7 +499,7 @@ theorem decA_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j : Nat} (h
     fun t₂ ⟨hbx, n₂, j₂⟩ => ?_
   have hs₂ := h.scr.congr (j₁.trans j₂).2.2
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = s.mem.writeW (off B (slot w j))
-    (Bignum.X86_64.word s.mem B (slot w j) - 1)) (by
+    (VG.Proof.Bignum.word s.mem B (slot w j) - 1)) (by
     xrun [State.ea, at0, hbx, show BitVec.ofInt 64 0 = 0#64 from rfl, BitVec.add_zero,
       hs₂.ld (d := slot w j) (by omega_arith), hs₂.st (d := slot w j) (by omega_arith), n₂, n₁]) rfl)
     fun t ⟨mt, j₃⟩ => ⟨mt, ((j₁.trans j₂).trans j₃).mono (by simp)⟩
@@ -538,7 +538,7 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
   -- The low word.
   have sC := h.ws.sl (j := aC) (by decide)
   refine WP.seq (WP.mono (decA_ok h₂.ws (j := aC) (by decide)) fun s₃ ⟨m₃, k₃⟩ => ?_)
-  have o₃ := writeW_outside s₂.mem I.B (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1)
+  have o₃ := writeW_outside s₂.mem I.B (VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aC) - 1)
     (d := slot (wk I.k) aC) (by omega_arith)
   rw [← m₃] at o₃
   have h₃ := h₂.arr (by decide) (by omega_arith) o₃ k₃ (by decide)
@@ -548,16 +548,16 @@ theorem cvDivPart_ok {I : CvIn} {m₀ : Mem} {s : State} (h : CvS I m₀ s) (L :
     have w1 := h.ws.w1
     have e3 := wv_low (m := s₃.mem) (B := I.B) (e := slot (wk I.k) aC) (w := wk I.k) (by omega_arith)
     have e2 := wv_low (m := s₂.mem) (B := I.B) (e := slot (wk I.k) aC) (w := wk I.k) (by omega_arith)
-    have hw3 : Bignum.X86_64.word s₃.mem I.B (slot (wk I.k) aC) =
-        Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1 := by
+    have hw3 : VG.Proof.Bignum.word s₃.mem I.B (slot (wk I.k) aC) =
+        VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aC) - 1 := by
       rw [m₃, word_writeW_self]
     have hup : wv s₃.mem I.B (slot (wk I.k) aC + 8) (wk I.k - 1) = wv s₂.mem I.B (slot (wk I.k) aC + 8) (wk I.k - 1) := by
       rw [m₃]; exact (writeW_outside s₂.mem I.B _ (by omega_arith)).wv (Or.inr (by omega_arith)) (by omega_arith)
     intro ho
     rw [e2] at ho ⊢
-    have hodd : (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC)).toNat % 2 = 1 := by omega_arith
-    have hsub : (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC) - 1).toNat =
-        (Bignum.X86_64.word s₂.mem I.B (slot (wk I.k) aC)).toNat - 1 := by
+    have hodd : (VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aC)).toNat % 2 = 1 := by omega_arith
+    have hsub : (VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aC) - 1).toNat =
+        (VG.Proof.Bignum.word s₂.mem I.B (slot (wk I.k) aC)).toNat - 1 := by
       rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def]; simp; omega_arith)]; rfl
     rw [e3, hup, hw3, hsub]
     omega_arith

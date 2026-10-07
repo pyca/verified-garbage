@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.RsaPkcs1Enc.Checked
+import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
+import VerifiedGarbage.Proof.Rsa.Octets
+import Mathlib.Data.Fintype.Card
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Octets
 
 /-!
@@ -185,7 +187,7 @@ theorem i2osp_add {x : Nat} (n l : Nat) (hx : x < 256 ^ l) :
 theorem i2osp_os2ip_pad (dB : List Byte) {k : Nat} (h : dB.length ≤ k) :
     i2osp (os2ip dB) k = List.replicate (k - dB.length) 0 ++ dB := by
   obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [Nat.add_sub_cancel_left, Nat.add_comm, i2osp_add n _ (Proof.Rsa.lt_of_os2ip dB), i2osp_os2ip]
+  rw [Nat.add_sub_cancel_left, Nat.add_comm, i2osp_add n _ (Proof.Rsa.lt_of_os2ip dB), Proof.Rsa.i2osp_os2ip]
 
 /-! ## The output -/
 

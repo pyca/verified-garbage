@@ -20,8 +20,14 @@ pub fn bench(c: &mut Criterion) {
         "hmac-sha224",
         Hmac::<Sha224>::mac,
         MessageDigest::sha224(),
+        Some(aws_lc_rs::hmac::HMAC_SHA224),
     );
-    crate::hmac_verify_group::<Sha224>(c, "hmac-sha224-verify", MessageDigest::sha224());
+    crate::hmac_verify_group::<Sha224>(
+        c,
+        "hmac-sha224-verify",
+        MessageDigest::sha224(),
+        Some(aws_lc_rs::hmac::HMAC_SHA224),
+    );
 }
 
 #[cfg(not(any(

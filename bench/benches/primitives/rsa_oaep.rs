@@ -1,7 +1,9 @@
 //! RSAES-OAEP encryption and decryption of a 32-byte message with an empty
 //! label, with each supported pair of hash function and MGF1 hash: every
 //! pair with a 2048-bit modulus, and SHA-256 with MGF1 over SHA-256 with
-//! 3072- and 4096-bit moduli too.
+//! 3072- and 4096-bit moduli too; beside OpenSSL and, for the pairs it has
+//! (SHA-1, SHA-256, SHA-384 and SHA-512, each with MGF1 over itself),
+//! aws-lc-rs.
 
 use criterion::Criterion;
 
@@ -30,10 +32,15 @@ pub const USES: &[&str] = &[
     "sha512_256",
 ];
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::rsa::{
+        OAEP_SHA1_MGF1SHA1, OAEP_SHA256_MGF1SHA256, OAEP_SHA384_MGF1SHA384, OAEP_SHA512_MGF1SHA512,
+        OaepPrivateDecryptingKey, OaepPublicEncryptingKey, PrivateDecryptingKey,
+        PublicEncryptingKey, PublicKeyComponents,
+    };
     use criterion::BenchmarkId;
     use openssl::bn::BigNum;
     use openssl::encrypt::{Decrypter, Encrypter};
@@ -43,22 +50,40 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::rsa::{PrivateKey, PublicKey};
     use verified_garbage::rsa_oaep::{Hash, decrypt, encrypt};
 
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
 
     // Each supported hash function, by the name its modules have and
-    // OpenSSL's.
+    // OpenSSL's, and aws-lc-rs's algorithm with MGF1 over the same hash, if
+    // it has one.
     let hashes = [
-        ("sha1", Hash::Sha1, "SHA1"),
-        ("sha224", Hash::Sha224, "SHA224"),
-        ("sha256", Hash::Sha256, "SHA256"),
-        ("sha384", Hash::Sha384, "SHA384"),
-        ("sha512", Hash::Sha512, "SHA512"),
-        ("sha512_224", Hash::Sha512_224, "SHA512-224"),
-        ("sha512_256", Hash::Sha512_256, "SHA512-256"),
+        ("sha1", Hash::Sha1, "SHA1", Some(&OAEP_SHA1_MGF1SHA1)),
+        ("sha224", Hash::Sha224, "SHA224", None),
+        (
+            "sha256",
+            Hash::Sha256,
+            "SHA256",
+            Some(&OAEP_SHA256_MGF1SHA256),
+        ),
+        (
+            "sha384",
+            Hash::Sha384,
+            "SHA384",
+            Some(&OAEP_SHA384_MGF1SHA384),
+        ),
+        (
+            "sha512",
+            Hash::Sha512,
+            "SHA512",
+            Some(&OAEP_SHA512_MGF1SHA512),
+        ),
+        ("sha512_224", Hash::Sha512_224, "SHA512-224", None),
+        ("sha512_256", Hash::Sha512_256, "SHA512-256", None),
     ];
     // Moduli of 2048, 3072 and 4096 bits with the exponent 65537, generated
     // once; the ids' size is the modulus' bytes. Each library loads the key
-    // once, outside the measurements. Both draw a fresh seed per encryption.
+    // once, outside the measurements. All draw a fresh seed per encryption.
+    // aws-lc-rs sets up its `EVP_PKEY_CTX` in every operation, where OpenSSL
+    // reuses one.
     let keys: Vec<_> = [2048, 3072, 4096]
         .into_iter()
         .map(|bits| Rsa::generate(bits).unwrap())
@@ -73,7 +98,8 @@ pub fn bench(c: &mut Criterion) {
             .take(if h.0 == "sha1" { 1 } else { 2 })
             .map(move |g| (h, g))
     });
-    for ((h_name, h, h_md), (g_name, g, g_md)) in pairs {
+    for ((h_name, h, h_md, aws_lc), (g_name, g, g_md, _)) in pairs {
+        let aws_lc = if h_name == g_name { *aws_lc } else { None };
         let (h_md, g_md) = (
             MessageDigest::from_name(h_md).unwrap(),
             MessageDigest::from_name(g_md).unwrap(),
@@ -109,6 +135,33 @@ pub fn bench(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| black_box(&enc).encrypt(black_box(&msg), &mut out).unwrap())
             });
+            if let Some(alg) = aws_lc {
+                let public: PublicEncryptingKey =
+                    PublicKeyComponents { n: &n, e: &e }.try_into().unwrap();
+                let aws_key = OaepPublicEncryptingKey::new(public).unwrap();
+                // verified-garbage decrypts aws-lc-rs's ciphertext.
+                let ct = aws_key.encrypt(alg, &msg, &mut out, None).unwrap();
+                let vg_private = PrivateKey::from_crt(
+                    &n,
+                    &e,
+                    &key.d().to_vec(),
+                    &key.p().unwrap().to_vec(),
+                    &key.q().unwrap().to_vec(),
+                    &key.dmp1().unwrap().to_vec(),
+                    &key.dmq1().unwrap().to_vec(),
+                    &key.iqmp().unwrap().to_vec(),
+                )
+                .unwrap();
+                assert_eq!(decrypt(&vg_private, ct, *h, *g, b"").unwrap(), msg);
+                group.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+                    b.iter(|| {
+                        black_box(&aws_key)
+                            .encrypt(alg, black_box(&msg), &mut out, None)
+                            .unwrap()
+                            .len()
+                    })
+                });
+            }
         }
         group.finish();
 
@@ -143,10 +196,26 @@ pub fn bench(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
                 b.iter(|| black_box(&dec).decrypt(black_box(&ct), &mut out).unwrap())
             });
+            if let Some(alg) = aws_lc {
+                let aws_key = OaepPrivateDecryptingKey::new(
+                    PrivateDecryptingKey::from_pkcs8(&pkey.private_key_to_pkcs8().unwrap())
+                        .unwrap(),
+                )
+                .unwrap();
+                assert_eq!(aws_key.decrypt(alg, &ct, &mut out, None).unwrap(), msg);
+                group.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+                    b.iter(|| {
+                        black_box(&aws_key)
+                            .decrypt(alg, black_box(&ct), &mut out, None)
+                            .unwrap()
+                            .len()
+                    })
+                });
+            }
         }
         group.finish();
     }
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}

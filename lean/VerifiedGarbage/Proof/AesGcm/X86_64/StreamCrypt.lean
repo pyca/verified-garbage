@@ -183,12 +183,18 @@ structure CryptCtx (s : State) (Ctx St W SP D : Addr) (n : Nat) : Prop where
   t_d : (below SP 24).Disjoint ⟨D, n⟩
   sp24 : 24 ≤ SP.toNat
 
-theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
+theorem CryptCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.streamCryptPre cl s) (hcl : 256 ≤ cl) :
     CryptCtx s (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) (s.gpr .r9) (stackArg s 0).toNat := by
   simp only [Proof.AesGcm.streamCryptPre, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
   obtain ⟨hrd, hwr, d_cs, d_cd, d_cw, d_sd, d_sw, d_sa, d_dw, d_da, d_wa, r_s, r_d, r_w, t_c, t_s, t_d, t_w,
     wc, ws, wd, ww, sp24, wsp, hR⟩ := hp
+  have c256 : Region.Sub ⟨s.gpr .rdi, 256⟩ ⟨s.gpr .rdi, cl⟩ := Region.sub_prefix hcl
+  replace d_cs := d_cs.sub_left c256
+  replace d_cd := d_cd.sub_left c256
+  replace d_cw := d_cw.sub_left c256
+  replace t_c := t_c.sub_right c256
+  replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega
   have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
   have k_c := t_c.sub_left b8
   have k_s := t_s.sub_left b8
@@ -202,7 +208,9 @@ theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine ⟨L, ⟨?_, ?_, ?_⟩, ww, ⟨?_, ?_⟩, d_wa.symm, ⟨⟨?_, by have := (stackArg s 0).isLt; omega, wd, d_sd.symm, d_dw,
     k_d⟩, ?_, d_cd⟩, r_d, r_s, r_w, d_dw, hR, t_c, t_s, t_w, t_d, sp24⟩
-  · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
+  · rw [hrd]; intro a m ⟨r, hr, hc⟩
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_append_left _ (List.mem_cons_self ..), by simp only [Region.Contains] at hc ⊢; omega⟩
   · rw [hwr]; exact covers_of_mem (List.mem_cons_self ..)
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · simpa using in_off pm (show 0 + 8 ≤ 16 by decide) (by decide)
@@ -210,5 +218,15 @@ theorem CryptCtx.of {s : State} (hp : Proof.AesGcm.streamCryptPre s) :
     rwa [add_ofNat_assoc] at this
   · rw [hwr]; exact covers_left (covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+
+/-- The key context of kind `M`, from the precondition of `encrypt` and `decrypt`. -/
+theorem CtxExt.ofCrypt {M : Gcm.X86_64.Stitch.CtxMode} {s : State} (hp : Proof.AesGcm.streamCryptPre M.len s)
+    (hok : M.ok s.mem (s.gpr .rdi)) :
+    CtxExt M (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) (s.gpr .r9) (stackArg s 0).toNat s := by
+  simp only [Proof.AesGcm.streamCryptPre, Proof.AesGcm.stk24, Proof.AesGcm.ret, Proof.AesGcm.args,
+    Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
+  obtain ⟨hrd, -, d_cs, d_cd, d_cw, -, -, -, -, -, -, -, -, -, t_c, -, -, -, wc, -⟩ := hp
+  exact ⟨wc, d_cs, d_cw, d_cd, t_c,
+    by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)), hok⟩
 
 end VG.Proof.AesGcm.X86_64

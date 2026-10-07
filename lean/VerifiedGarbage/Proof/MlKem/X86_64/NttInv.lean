@@ -65,7 +65,7 @@ theorem nttInv_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
     have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
       polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub _))
         ⟨hs.2.2.2.2.2, rfl⟩
-    refine WP.seq (WP.mono (vpro_ok hdi1 hsi1 hF1 (by rw [k1.2.2]; exact hwf) (by rw [k1.2.2]; exact hw) hd)
+    refine WP.seq (WP.mono (vpro_ok hdi1 hsi1 hF1 (by rw [k1.2.1, k1.2.2]; exact List.mem_append_right _ hwf) (by rw [k1.2.2]; exact hw) hd)
       fun s2 ⟨hS, hT, hc, hf2, k2⟩ => ?_)
     have hsi2 : s2.gpr .rsi = s.gpr .rsi := by rw [k2.gpr (by decide), hsi1]
     have hw2 : pR (s.gpr .rsi) ∈ s2.wr := by rw [k2.2.2, k1.2.2]; exact hw

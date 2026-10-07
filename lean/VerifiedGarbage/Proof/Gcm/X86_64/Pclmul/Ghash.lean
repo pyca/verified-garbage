@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.Poly
 import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.HInvBits
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 import Mathlib.Tactic.LinearCombination
@@ -194,63 +195,11 @@ theorem φ_reduce (p : Prod) : φ (reduce p) = p.val := by
   simp only [reduce, φ_xor, φ_fold, φ_shr64, φ_shl64, Prod.val, φ_q p.mid]
   ring
 
-/-! ## `H · x⁻¹` -/
+theorem φ_reduceB (p : Prod) : φ (reduceB p) = p.val := by
+  simp only [reduceB, φ_xor, φ_fold, Prod.val]
+  ring
 
-theorem shl1 (h : BitVec 128) :
-    XShiftOp.eval .psllq h 1 ||| XShiftOp.eval .pslldq (XShiftOp.eval .psrlq h 63) 8 = h <<< 1 := by
-  have e1 : XShiftOp.eval .psllq h 1 = (qword h 1 <<< 1) ++ (qword h 0 <<< 1) := rfl
-  have e2 : XShiftOp.eval .psrlq h 63 = (qword h 1 >>> 63) ++ (qword h 0 >>> 63) := rfl
-  have e3 : ∀ y, XShiftOp.eval .pslldq y 8 = y <<< 64 := fun _ => rfl
-  rw [e1, e2, e3]
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_or, BitVec.getLsbD_append, BitVec.getLsbD_shiftLeft,
-    BitVec.getLsbD_ushiftRight, qword, BitVec.getLsbD_extractLsb']
-  rcases (by omega : i = 0 ∨ (1 ≤ i ∧ i < 64) ∨ i = 64 ∨ 64 < i) with h | h | h | h
-  · subst h; simp only [Nat.ofNat_pos, ↓reduceIte, decide_true, Order.lt_one_iff, Bool.not_true, Bool.and_false, zero_tsub, mul_zero, add_zero, BitVec.getLsbD_eq_getElem, Bool.true_and, Bool.false_and, Nat.lt_add_one, zero_add, Nat.reduceLT, Bool.or_self]
-  · simp (disch := omega) only [ite_eq_left, decide_eq_true, decide_eq_false, Bool.true_and,
-      Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true, Bool.not_true]
-    exact congrArg _ (by omega)
-  · subst h; simp
-  · simp (disch := omega) only [ite_eq_left, ite_eq_right, decide_eq_true, decide_eq_false,
-      Bool.true_and, Bool.not_false, Bool.false_and, Bool.or_false, Bool.and_false, Bool.and_true,
-      Bool.not_true]
-    exact congrArg _ (by omega)
-
-theorem shr31 (y : BitVec 32) : y >>> 31 = if y.msb then 1#32 else 0#32 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_ushiftRight, BitVec.msb_eq_decide]
-  have := y.isLt
-  split_ifs with h
-  · simp only [Nat.add_one_sub_one, Nat.reducePow, decide_eq_true_eq] at h; simp only [Nat.shiftRight_eq_div_pow, Nat.reducePow, BitVec.toNat_ofNat, Nat.one_mod]; omega
-  · simp only [Nat.add_one_sub_one, Nat.reducePow, decide_eq_true_eq, not_le] at h; simp only [Nat.shiftRight_eq_div_pow, Nat.reducePow, BitVec.toNat_ofNat, Nat.zero_mod, Nat.div_eq_zero_iff, OfNat.ofNat_ne_zero, false_or, gt_iff_lt]; omega
-
-theorem msb_dword3 (h : BitVec 128) : dword h 3 >>> 31 = if h.getMsbD 0 then 1#32 else 0#32 := by
-  have e : (dword h 3).msb = h.getMsbD 0 := by
-    simp only [BitVec.msb_eq_getLsbD_last, getLsbD_dword, BitVec.getMsbD]; rfl
-  rw [shr31, e]
-
-/-- The mask of `hInv`: `x⁻¹` if the bit shifted out of `h` is 1, else 0. -/
-theorem mask_eq (h : BitVec 128) :
-    XBinOp.eval .pandn (XBinOp.eval .paddd (XShiftOp.eval .psrld (shufDwords h 0xff) 31)
-      (XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64))
-        ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64)))) xInv =
-      if h.getMsbD 0 then xInv else 0 := by
-  have e0 : shufDwords h 0xff = ofDwords (dword h 3) (dword h 3) (dword h 3) (dword h 3) := rfl
-  have e1 : ∀ a, XShiftOp.eval .psrld a 31 =
-      ofDwords (dword a 0 >>> 31) (dword a 1 >>> 31) (dword a 2 >>> 31) (dword a 3 >>> 31) :=
-    fun _ => rfl
-  have e2 : XBinOp.eval .punpcklqdq ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64))
-      ((0 : BitVec 64) ++ (0xffffffffffffffff : BitVec 64)) = ofDwords (-1) (-1) (-1) (-1) := by rfl
-  rw [e0, e1, e2]
-  simp only [dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3, msb_dword3]
-  split_ifs
-  · simp only [XBinOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
-      show (1#32 : BitVec 32) + -1 = 0 by rfl, show ofDwords 0 0 0 0 = 0 by rfl]
-    rfl
-  · simp only [XBinOp.eval, dword_ofDwords_0, dword_ofDwords_1, dword_ofDwords_2, dword_ofDwords_3,
-      show (0#32 : BitVec 32) + -1 = -1 by rfl,
-      show ~~~ofDwords (-1) (-1) (-1) (-1) = 0 by rfl]
-    rfl
+/-! ## `H · x⁻¹` (its bits: `Pclmul/HInvBits.lean`) -/
 
 theorem gp_xInv : gp xInv = 1 + X + X ^ 6 + X ^ 127 := by
   have hb : ∀ d < 128, xInv.getMsbD d = (d = 0 || d = 1 || d = 6 || d = 127) := by decide +kernel
@@ -347,6 +296,38 @@ theorem hInv_ok (s : State) :
       shl1, mask_eq, x_φ_hInv]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
+
+/-- `H'²`, then `H'³` and `H'⁴` from it, into `xmm4`–`xmm6`, for any hash
+subkey `H` whose `H'` is in `xmm3`. -/
+theorem pows_ok {H : Spec.Gcm.Block} (s : State) (h1 : s.xmm .xmm1 = poly) (hH : x * φ (s.xmm .xmm3) = φ H) :
+    WP isa (.block Impl.Gcm.X86_64.Pclmul.pows) s fun s' =>
+      x * φ (s'.xmm .xmm4) = φ H ^ 2 ∧ x * φ (s'.xmm .xmm5) = φ H ^ 3 ∧
+      x * φ (s'.xmm .xmm6) = φ H ^ 4 ∧
+      Only [.xmm4, .xmm5, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] s s' := by
+  simp only [Impl.Gcm.X86_64.Pclmul.pows, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (mul_ok .xmm4 .xmm3 .xmm3 s (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h1)
+    fun s₁ ⟨m₁, o₁⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (mul_ok .xmm5 .xmm4 .xmm3 s₁ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by rw [o₁.xmm _ (by decide), h1])) fun s₂ ⟨m₂, o₂⟩ => ?_
+  refine WP.mono (mul_ok .xmm6 .xmm4 .xmm4 s₂ (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by rw [o₂.xmm _ (by decide), o₁.xmm _ (by decide), h1])) fun s₃ ⟨m₃, o₃⟩ => ?_
+  have H2 : x * φ (s₁.xmm .xmm4) = φ H ^ 2 := by
+    rw [m₁, show ∀ a : Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, hH]; ring
+  have H3 : x * φ (s₂.xmm .xmm5) = φ H ^ 3 := by
+    rw [m₂, o₁.xmm .xmm3 (by decide),
+      show ∀ a b : Q, x * (x * a * b) = (x * a) * (x * b) from fun a b => by ring, H2, hH]; ring
+  have H4 : x * φ (s₃.xmm .xmm6) = φ H ^ 4 := by
+    rw [m₃, o₂.xmm .xmm4 (by decide),
+      show ∀ a : Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, H2]; ring
+  refine ⟨by rw [(o₂.trans o₃).xmm _ (by decide)]; exact H2, by rw [o₃.xmm _ (by decide)]; exact H3, H4,
+    (o₁.trans (o₂.trans o₃)).weaken fun r hr => ?_⟩
+  simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+  rcases hr with (h | h | h | h | h) | (h | h | h | h | h) | (h | h | h | h | h) <;> simp [h]
 
 end VG.Proof.Gcm.X86_64.Pclmul
 
@@ -505,15 +486,16 @@ end Pre
 
 /-! ## The loop invariant -/
 
-/-- What holds after `i` blocks. -/
+/-- What holds after `i` blocks: `H'²`–`H'⁴` only with four blocks or more,
+which the prologue computes only then (`withPows_ok`). -/
 structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
   le : i ≤ nb s₀
   x0 : s.xmm .xmm0 = revMask
   x1 : s.xmm .xmm1 = poly
   t1 : x * φ (s.xmm .xmm3) = φ (H₀ s₀)
-  t2 : x * φ (s.xmm .xmm4) = φ (H₀ s₀) ^ 2
-  t3 : x * φ (s.xmm .xmm5) = φ (H₀ s₀) ^ 3
-  t4 : x * φ (s.xmm .xmm6) = φ (H₀ s₀) ^ 4
+  t2 : 4 ≤ nb s₀ → x * φ (s.xmm .xmm4) = φ (H₀ s₀) ^ 2
+  t3 : 4 ≤ nb s₀ → x * φ (s.xmm .xmm5) = φ (H₀ s₀) ^ 3
+  t4 : 4 ≤ nb s₀ → x * φ (s.xmm .xmm6) = φ (H₀ s₀) ^ 4
   y : s.xmm .xmm2 = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) i)
   gpr : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → s.gpr r = s₀.gpr r
   rdx : s.gpr .rdx = blkAddr s₀ i
@@ -630,10 +612,10 @@ theorem body4_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 4 ≤ nb s�
   refine ⟨⟨by omega, by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.x0], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.x1], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t1], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t2], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t3], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t4], ?_, fun r ha hd hc => by rw [fg r hd hc, o₁₁₁.gpr r ha, hI.gpr r ha hd hc],
+      (by decide), hI.t1], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t2 h], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t3 h], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t4 h], ?_, fun r ha hd hc => by rw [fg r hd hc, o₁₁₁.gpr r ha, hI.gpr r ha hd hc],
       by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 64) _ (by omega), by rw [frcx, hrcx],
       by rw [fm, o₁₁₁.mem, hI.mem], by rw [frd, o₁₁₁.rd, hI.rd], by rw [fwr, o₁₁₁.wr, hI.wr]⟩, ?_⟩
   · -- The new `Y`.
@@ -645,7 +627,8 @@ theorem body4_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 4 ≤ nb s�
       show i + 4 = i + 3 + 1 from rfl, ghashFrom_blocksAt_succ, show i + 3 = i + 2 + 1 from rfl,
       ghashFrom_blocksAt_succ, show i + 2 = i + 1 + 1 from rfl, ghashFrom_blocksAt_succ,
       ghashFrom_blocksAt_succ, Nat.add_zero]
-    exact step4 _ _ _ _ _ _ _ _ _ _ hI.t1 hI.t2 hI.t3 hI.t4
+    have h4 : 4 ≤ nb s₀ := by omega
+    exact step4 _ _ _ _ _ _ _ _ _ _ hI.t1 (hI.t2 h4) (hI.t3 h4) (hI.t4 h4)
   · rw [fcf, hrcx, toNat_ofNat_lt (by omega)]
 
 theorem beq_ofNat_zero {k : Nat} (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
@@ -690,10 +673,10 @@ theorem body1_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s 
   refine ⟨⟨by omega, by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.x0], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), hI.x1], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t1], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t2], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t3], by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide), hI.t4], ?_, fun r ha hd hc => by rw [fg r hd hc, o₁₅.gpr r ha, hI.gpr r ha hd hc],
+      (by decide), hI.t1], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t2 h], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t3 h], fun h => by rw [kx _ (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide), hI.t4 h], ?_, fun r ha hd hc => by rw [fg r hd hc, o₁₅.gpr r ha, hI.gpr r ha hd hc],
       by rw [frdx, hrdx]; exact add_ofNat_ofNat (b := 16) _ (by omega), by rw [frcx, hrcx],
       by rw [fm, o₁₅.mem, hI.mem], by rw [frd, o₁₅.rd, hI.rd], by rw [fwr, o₁₅.wr, hI.wr]⟩, ?_⟩
   · rw [fx, p₅, p₄, o₃.prod (by decide) (by decide) (by decide), o₂.prod (by decide) (by decide)
@@ -721,8 +704,31 @@ theorem loadY_ok (s : State) (h0 : s.xmm .xmm0 = revMask)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [hr, ite_false]
 
+/-- What holds after the prologue: `Inv s₀ 0` but for `H'²`–`H'⁴`. -/
+structure Base (s₀ s : State) : Prop where
+  x0 : s.xmm .xmm0 = revMask
+  x1 : s.xmm .xmm1 = poly
+  t1 : x * φ (s.xmm .xmm3) = φ (H₀ s₀)
+  y : s.xmm .xmm2 = Y₀ s₀
+  gpr : ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r
+  mem : s.mem = s₀.mem
+  rd : s.rd = s₀.rd
+  wr : s.wr = s₀.wr
+
+/-- `Base`, with `H'²`–`H'⁴` if there are four blocks or more, is the
+invariant before any block. -/
+theorem Base.inv {s₀ s : State} (hB : Base s₀ s)
+    (hP : 4 ≤ nb s₀ → x * φ (s.xmm .xmm4) = φ (H₀ s₀) ^ 2 ∧ x * φ (s.xmm .xmm5) = φ (H₀ s₀) ^ 3 ∧
+      x * φ (s.xmm .xmm6) = φ (H₀ s₀) ^ 4) :
+    Inv s₀ 0 s :=
+  ⟨Nat.zero_le _, hB.x0, hB.x1, hB.t1, fun h => (hP h).1, fun h => (hP h).2.1, fun h => (hP h).2.2,
+    by rw [hB.y, ghashFrom_blocksAt_zero], fun r ha _ _ => hB.gpr r ha,
+    by rw [hB.gpr _ (by decide)]; simp only [blkAddr, mul_zero, BitVec.add_zero],
+    by rw [hB.gpr _ (by decide)]; simp only [nb, tsub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq],
+    hB.mem, hB.rd, hB.wr⟩
+
 theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block prologue) s₀ fun s' => Inv s₀ 0 s' ∧ s'.cf = some (decide (nb s₀ < 4)) := by
+    WP isa (.block prologue) s₀ fun s' => Base s₀ s' ∧ s'.cf = some (decide (nb s₀ < 4)) := by
   simp only [prologue, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (const_ok .xmm0 _ s₀ (by decide)) fun s₁ ⟨c₁, o₁⟩ => ?_
@@ -737,43 +743,44 @@ theorem prologue_ok {s₀ : State} (hp : Pre s₀) :
   rw [WP.block_append_iff]
   refine WP.mono (hInv_ok s₃) fun s₄ ⟨t₄, o₄⟩ => ?_
   have o₁₄ := o₁₃.trans o₄
-  have x1 : ∀ {s'} {rs : List XReg}, Only rs s₄ s' → .xmm1 ∉ rs → s'.xmm .xmm1 = poly :=
-    fun o h => by rw [o.xmm _ h, o₄.xmm _ (by decide), o₃.xmm _ (by decide), c₂]
-  rw [WP.block_append_iff]
-  refine WP.mono (mul_ok .xmm4 .xmm3 .xmm3 s₄ (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (x1 (rs := []) ⟨fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl⟩ (by decide)))
-    fun s₅ ⟨m₅, o₅⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mul_ok .xmm5 .xmm4 .xmm3 s₅ (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (x1 o₅ (by decide))) fun s₆ ⟨m₆, o₆⟩ => ?_
-  rw [WP.block_append_iff]
-  refine WP.mono (mul_ok .xmm6 .xmm5 .xmm3 s₆ (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (x1 (o₅.trans o₆) (by decide))) fun s₇ ⟨m₇, o₇⟩ => ?_
-  have o₂₇ := o₂.trans (o₃.trans (o₄.trans (o₅.trans (o₆.trans o₇))))
-  have o₁₇ := o₁.trans o₂₇
-  refine WP.mono (loadY_ok s₇ (by rw [o₂₇.xmm _ (by decide), c₁, rev_eq])
-    (by rw [o₁₇.rd, o₁₇.wr, o₁₇.gpr _ (by decide)]; exact hp.in_y)) fun s' ⟨ly, fcf, oy⟩ => ?_
-  have O := o₁₇.trans oy
-  have hH : x * φ (s₄.xmm .xmm3) = φ (H₀ s₀) := by rw [t₄, l₃, add_zero', o₁₂.mem, o₁₂.gpr _ (by decide)]
-  have hH2 : x * φ (s₅.xmm .xmm4) = φ (H₀ s₀) ^ 2 := by
-    rw [m₅, show ∀ a : Q, x * (x * a * a) = (x * a) * (x * a) from fun a => by ring, hH]; ring
-  have hH3 : x * φ (s₆.xmm .xmm5) = φ (H₀ s₀) ^ 3 := by
-    rw [m₆, o₅.xmm .xmm3 (by decide),
-      show ∀ a b : Q, x * (x * a * b) = (x * a) * (x * b) from fun a b => by ring, hH2, hH]; ring
-  have hH4 : x * φ (s₇.xmm .xmm6) = φ (H₀ s₀) ^ 4 := by
-    rw [m₇, (o₅.trans o₆).xmm .xmm3 (by decide),
-      show ∀ a b : Q, x * (x * a * b) = (x * a) * (x * b) from fun a b => by ring, hH3, hH]; ring
-  refine ⟨⟨Nat.zero_le _, by rw [(o₂₇.trans oy).xmm _ (by decide), c₁, rev_eq],
-    x1 (o₅.trans (o₆.trans (o₇.trans oy))) (by decide),
-    by rw [(o₅.trans (o₆.trans (o₇.trans oy))).xmm _ (by decide), hH],
-    by rw [(o₆.trans (o₇.trans oy)).xmm _ (by decide), hH2],
-    by rw [(o₇.trans oy).xmm _ (by decide), hH3], by rw [oy.xmm _ (by decide), hH4],
-    by rw [ly, o₁₇.mem, o₁₇.gpr _ (by decide), add_zero', ghashFrom_blocksAt_zero],
-    fun r ha _ _ => O.gpr r ha, by rw [O.gpr _ (by decide)]; simp only [blkAddr, mul_zero, BitVec.add_zero],
-    by rw [O.gpr _ (by decide)]; simp only [nb, tsub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq], O.mem, O.rd, O.wr⟩, by rw [fcf, o₁₇.gpr _ (by decide)]⟩
+  refine WP.mono (loadY_ok s₄ (by rw [o₄.xmm _ (by decide), o₃.xmm _ (by decide), o₂.xmm _ (by decide),
+      c₁, rev_eq])
+    (by rw [o₁₄.rd, o₁₄.wr, o₁₄.gpr _ (by decide)]; exact hp.in_y)) fun s' ⟨ly, fcf, oy⟩ => ?_
+  have O := o₁₄.trans oy
+  refine ⟨⟨by rw [(o₂.trans (o₃.trans (o₄.trans oy))).xmm _ (by decide), c₁, rev_eq],
+    by rw [(o₃.trans (o₄.trans oy)).xmm _ (by decide), c₂],
+    by rw [oy.xmm _ (by decide), t₄, l₃, add_zero', o₁₂.mem, o₁₂.gpr _ (by decide)],
+    by rw [ly, o₁₄.mem, o₁₄.gpr _ (by decide), add_zero'],
+    fun r ha => O.gpr r ha, O.mem, O.rd, O.wr⟩, by rw [fcf, o₁₄.gpr _ (by decide)]⟩
+
+/-- After the prologue: `H'²`–`H'⁴` unless there are fewer than four blocks,
+and `rest`. -/
+theorem withPows_ok {s₀ s : State} (hB : Base s₀ s) (hcf : s.cf = some (decide (nb s₀ < 4)))
+    {rest : Prog isa} {Q : State → Prop} (hlt : Inv s₀ 0 s → nb s₀ < 4 → Q s)
+    (hrest : ∀ s', Inv s₀ 0 s' → 4 ≤ nb s₀ → WP isa rest s' Q) :
+    WP isa (Impl.Gcm.X86_64.Pclmul.withPows rest) s Q := by
+  refine WP.ite (decide (nb s₀ < 4)) (by simp only [eval, hcf]) (fun h => ?_) (fun h => ?_)
+  · have h' : nb s₀ < 4 := of_decide_eq_true h
+    exact WP.block_nil (hlt (hB.inv fun h4 => absurd h4 (by omega)) h')
+  · have h' : 4 ≤ nb s₀ := Nat.le_of_not_lt (of_decide_eq_false h)
+    refine WP.seq (WP.mono (pows_ok s hB.x1 hB.t1) fun s' ⟨H2, H3, H4, o⟩ => hrest s' ?_ h')
+    exact Base.inv ⟨by rw [o.xmm _ (by decide), hB.x0], by rw [o.xmm _ (by decide), hB.x1],
+      by rw [o.xmm _ (by decide)]; exact hB.t1, by rw [o.xmm _ (by decide), hB.y],
+      fun r ha => by rw [o.gpr r ha, hB.gpr r ha], by rw [o.mem, hB.mem], by rw [o.rd, hB.rd],
+      by rw [o.wr, hB.wr]⟩ fun _ => ⟨H2, H3, H4⟩
+
+/-- `cmp rcx, c`, after `i` blocks. -/
+theorem cmp_ok {s₀ : State} (hp : Pre s₀) {i : Nat} {s : State} (hI : Inv s₀ i s) (c : Nat) (hc : c < 2 ^ 31)
+    (ec : BitVec.signExtend 64 (BitVec.ofNat 32 c) = BitVec.ofNat 64 c) :
+    WP isa (.block [.alu .cmp .rcx (.imm (BitVec.ofNat 32 c))]) s fun s' =>
+      Inv s₀ i s' ∧ s'.cf = some (decide (nb s₀ - i < c)) := by
+  have hn := hp.nb_lt
+  have hrcx := hI.rcx
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu,
+    readSrc, arithFlags, State.setFlags, isa, hrcx, ec, Option.bind_some, Option.some.injEq, exists_eq_left']
+  refine ⟨{ hI with }, ?_⟩
+  simp only [toNat_ofNat_lt (show nb s₀ - i < 2 ^ 64 by omega), toNat_ofNat_lt (show c < 2 ^ 64 by omega)]
 
 theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (nb s₀) s) :
     WP isa (.block epilogue) s fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' := by
@@ -848,7 +855,10 @@ theorem tail_ok {s₀ : State} (hp : Pre s₀) {i₀ : Nat} {s₁ : State} (hI�
 
 theorem correct {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' => gprPreserved s₀ s' ∧ ghashX86_64.post s₀ s' :=
-  WP.seq (WP.mono (prologue_ok hp) fun _ ⟨hI₁, hcf⟩ => tail_ok hp hI₁ (by simpa using hcf))
+  WP.seq (WP.mono (prologue_ok hp) fun _ ⟨hB, hcf⟩ =>
+    WP.seq (WP.mono (withPows_ok (Q := Inv s₀ 0) hB hcf (fun hI _ => hI) fun _ hI _ => WP.block_nil hI)
+      fun _ hI => WP.seq (WP.mono (cmp_ok hp hI 4 (by decide) (by decide)) fun _ ⟨hI', hcf'⟩ =>
+        tail_ok hp hI' hcf')))
 
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where

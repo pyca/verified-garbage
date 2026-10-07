@@ -15,9 +15,10 @@ pub fn bench(c: &mut Criterion) {
     use verified_garbage::hashes::sha512_256::Sha512_256;
     use verified_garbage::hmac::Hmac;
 
+    // aws-lc-rs has no HMAC with SHA-512/256.
     let md = MessageDigest::from_name("SHA512-256").unwrap();
-    crate::hmac_group(c, "hmac-sha512-256", Hmac::<Sha512_256>::mac, md);
-    crate::hmac_verify_group::<Sha512_256>(c, "hmac-sha512-256-verify", md);
+    crate::hmac_group(c, "hmac-sha512-256", Hmac::<Sha512_256>::mac, md, None);
+    crate::hmac_verify_group::<Sha512_256>(c, "hmac-sha512-256-verify", md, None);
 }
 
 #[cfg(not(any(

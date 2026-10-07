@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Pbkdf2.Md.AArch64
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 import VerifiedGarbage.Proof.Hmac.Generic.Common
 import VerifiedGarbage.Proof.Pbkdf2.AArch64.IterateCT
+import VerifiedGarbage.Spec.Mgf1
 
 /-!
 # HMAC and PBKDF2-HMAC over any Merkle–Damgård hash function on AArch64: the hash function
@@ -169,5 +170,17 @@ theorem pbkdf2_keepsV : H.pbkdf2.allInstrs keepsV = true := by
     Code.allInstrs, keepsV, vdstOf, hk, hs, hb]
 
 end HashOK
+
+/-- The hash functions RSA's padding takes (`Spec.Mgf1.Hash`). -/
+def mdHashes : List Spec.Mgf1.Hash :=
+  [Spec.Mgf1.md5, Spec.Mgf1.sha1, Spec.Mgf1.sha224, Spec.Mgf1.sha256, Spec.Mgf1.sha384, Spec.Mgf1.sha512,
+    Spec.Mgf1.sha512_224, Spec.Mgf1.sha512_256]
+
+/-- The hash function `H` as RSA's padding takes it (`Spec.Mgf1.Hash`). -/
+structure MgfLink (H : Hash) (hH : HashOK H) where
+  G : Spec.Mgf1.Hash
+  mem : G ∈ mdHashes
+  hash : ∀ x, G.hash x = hH.SH.H.hash x
+  len : G.len = H.D
 
 end VG.Proof.Pbkdf2.Md.AArch64

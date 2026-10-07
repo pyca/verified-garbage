@@ -12,7 +12,7 @@ only below `sMsg` (HMAC's states and working space) and at `d` (`KeepHi`).
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 
 variable {v : Compress}

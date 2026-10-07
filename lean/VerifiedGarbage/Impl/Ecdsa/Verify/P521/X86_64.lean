@@ -10,4 +10,7 @@ open VG.X86_64
 /-- `vg_ecdsa_p521_verify`. -/
 def verifyP521 : Prog isa := Cfg.verify Impl.Ecdsa.X86_64.p521
 
+/-- `vg_ecdsa_p521_verify_adx`. -/
+def verifyP521Adx : Prog isa := Cfg.verify Impl.Ecdsa.X86_64.p521x
+
 end VG.Impl.Ecdsa.Verify.X86_64

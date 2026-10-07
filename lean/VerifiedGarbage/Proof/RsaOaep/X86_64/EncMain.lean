@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Good
-import VerifiedGarbage.Proof.RsaOaep.X86_64.EncSpec
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
+import VerifiedGarbage.Proof.RsaOaep.Encode
 
 /-!
 # RSAES-OAEP encryption on x86-64: after the checks
@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.RsaOaep.X86_64.Out
 
 namespace VG.Proof.RsaOaep.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs mgfXor)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
@@ -69,15 +69,6 @@ theorem ArgsW.w {s : State} {W : Nat → BitVec 64} (h : ArgsW s W) :
 
 variable {Hl Gm : Hash} (hH : HashOK Hl) (KH : Callees Hl) (hG : HashOK Gm) (KG : Callees Gm)
   (mH : MgfLink Hl hH) (mG : MgfLink Gm hG)
-
-/-- `EM` before masking: `0x00 ‖ seed ‖ lHash ‖ 0…0 ‖ 0x01 ‖ M`, in our working space. -/
-structure EmAt (V : Nat → Byte) (k D : Nat) (sd lh m : List Byte) (mLen : Nat) : Prop where
-  z0 : V 0 = 0
-  sd : ∀ i < D, V (1 + i) = sd.getD i 0
-  lh : ∀ i < D, V (1 + D + i) = lh.getD i 0
-  ps : ∀ i, 1 + 2 * D ≤ i → i < k - mLen - 1 → V i = 0
-  one : V (k - mLen - 1) = 1
-  msg : ∀ i < mLen, V (k - mLen + i) = m.getD i 0
 
 include hH KH mH in
 theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))
@@ -170,38 +161,6 @@ theorem encEm_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb
       ((s.gpr .rcx).toNat - (stackArg s 3).toNat - 1 + 1) = i by omega,
       FrE.byte he4.fr hp.d_stk_ms hp.d_out_ms hp.d_ms_scr.symm (by have := hp.wM; omega) hi,
       bytesAt_getD _ _ hi]
-
-/-- `DB`, from `EM` before masking. -/
-theorem EmAt.db {V : Nat → Byte} {k D : Nat} {sd lh m : List Byte} {mLen : Nat} (h : EmAt V k D sd lh m mLen)
-    (hlh : lh.length = D) (hm : m.length = mLen) (hk : 2 * D + 2 + mLen ≤ k) :
-    ∀ i < k - D - 1, V (1 + D + i) = (lh ++ Spec.RsaOaep.zeros (k - mLen - 2 * D - 2) ++ 0x01 :: m).getD i 0 := by
-  intro i hi
-  have hz : (Spec.RsaOaep.zeros (k - mLen - 2 * D - 2)).length = k - mLen - 2 * D - 2 := by
-    simp [Spec.RsaOaep.zeros]
-  rw [Proof.Mgf1.getD_append, List.length_append, hlh, hz]
-  by_cases h1 : i < D + (k - mLen - 2 * D - 2)
-  · rw [ifp h1, Proof.Mgf1.getD_append, hlh]
-    by_cases h2 : i < D
-    · rw [ifp h2]; exact h.lh i h2
-    · rw [ifn h2, h.ps _ (by omega) (by omega)]
-      simp only [Spec.RsaOaep.zeros, List.getD_eq_getElem?_getD, List.getElem?_replicate]
-      rw [ifp (by omega)]; rfl
-  · rw [ifn h1]
-    by_cases h3 : i = D + (k - mLen - 2 * D - 2)
-    · subst h3; rw [Nat.sub_self, show 1 + D + (D + (k - mLen - 2 * D - 2)) = k - mLen - 1 by omega, h.one]; rfl
-    · obtain ⟨j, rfl⟩ : ∃ j, i = D + (k - mLen - 2 * D - 2) + 1 + j := ⟨i - (D + (k - mLen - 2 * D - 2) + 1), by omega⟩
-      rw [show D + (k - mLen - 2 * D - 2) + 1 + j - (D + (k - mLen - 2 * D - 2)) = j + 1 by omega,
-        show 1 + D + (D + (k - mLen - 2 * D - 2) + 1 + j) = k - mLen + j by omega, h.msg j (by omega)]
-      simp [List.getD_eq_getElem?_getD]
-
-theorem mixV_congr {V V' : Nat → Byte} (mk : List Byte) (e n : Nat) {o : Nat} (h : V o = V' o) :
-    mixV V mk e n o = mixV V' mk e n o := by simp only [mixV, h]
-
-/-- `EM`: `0x00 ‖ maskedSeed ‖ maskedDB`. -/
-def emOf (G : Spec.Mgf1.Hash) (D k mLen : Nat) (sd lh m : List Byte) : List Byte :=
-  let db := lh ++ Spec.RsaOaep.zeros (k - mLen - 2 * D - 2) ++ 0x01 :: m
-  let mdb := Spec.Mgf1.xorBytes db (Spec.Mgf1.mgf1 G sd (k - D - 1))
-  0 :: Spec.Mgf1.xorBytes sd (Spec.Mgf1.mgf1 G mdb D) ++ mdb
 
 include hH KH hG KG mH mG in
 theorem encMain_ok {s t : State} (hp : EPre mH.G s) (he : EnvE s t) (L : Lay t (fb s) (stackArg s 5))

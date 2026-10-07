@@ -13,7 +13,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Scr off_off)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees MgfLink)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 

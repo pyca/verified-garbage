@@ -1,4 +1,4 @@
-//! ECDH over P-224 beside OpenSSL.
+//! ECDH over P-224 beside OpenSSL (aws-lc-rs has no ECDH over P-224).
 
 use criterion::Criterion;
 

@@ -14,7 +14,7 @@ validity, and `main` (`keyCode_ct`).
 namespace VG.Proof.Rsa.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.CheckKey
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (sN sK sMask exit invalid)
 
 /-- The public data of `vg_rsa_check_key`. -/

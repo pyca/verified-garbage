@@ -313,4 +313,44 @@ theorem iters_end_some {L rl u : Nat} {b : Bool} {n : Nat} (hL : 0 < L) (h : n +
     itersOf L rl (some (b, n)) u = 1 := by
   simp only [itersOf]; rw [show rl - n - u = L by omega, Nat.div_self hL]
 
+/-! ## The schedule, stage by stage -/
+
+theorem sched_close (L e : Nat) (p : Option Nat) (r : List Byte) :
+    (schedOf L e p r).close =
+      Spec.RsaKeyGen.tooClose (8 * L) p (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) := by
+  unfold schedOf; dsimp only
+  cases h : Spec.RsaKeyGen.tooClose (8 * L) p (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)))
+  · simp only [Bool.false_eq_true, ↓reduceIte]; split <;> (try split) <;> rfl
+  · rfl
+
+theorem sched_comp {L e : Nat} {p : Option Nat} {r : List Byte}
+    (h : Spec.RsaKeyGen.tooClose (8 * L) p (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) = false) :
+    (schedOf L e p r).comp =
+      Spec.RsaKeyGen.obviouslyComposite (8 * L) (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) := by
+  unfold schedOf; dsimp only; rw [h]; simp only [Bool.false_eq_true, ↓reduceIte]
+  cases h' : Spec.RsaKeyGen.obviouslyComposite (8 * L) (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)))
+  · simp only [Bool.false_eq_true, ↓reduceIte]; split <;> rfl
+  · rfl
+
+theorem sched_gbad {L e : Nat} {p : Option Nat} {r : List Byte}
+    (h : Spec.RsaKeyGen.tooClose (8 * L) p (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) = false)
+    (h' : Spec.RsaKeyGen.obviouslyComposite (8 * L)
+      (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) = false) :
+    (schedOf L e p r).gbad =
+      !(Nat.gcd (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)) - 1) e == 1) := by
+  unfold schedOf; dsimp only; rw [h, h']; simp only [Bool.false_eq_true, ↓reduceIte]
+  cases h'' : !(Nat.gcd (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)) - 1) e == 1)
+  · simp only [Bool.false_eq_true, ↓reduceIte]
+  · rfl
+
+theorem sched_mr {L e : Nat} {p : Option Nat} {r : List Byte}
+    (h : Spec.RsaKeyGen.tooClose (8 * L) p (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) = false)
+    (h' : Spec.RsaKeyGen.obviouslyComposite (8 * L)
+      (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L))) = false)
+    (h'' : (!(Nat.gcd (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)) - 1) e == 1)) = false) :
+    (schedOf L e p r).mr =
+      shapeOf (Spec.RsaKeyGen.primalityTest (Spec.RsaKeyGen.candidate (8 * L) (Spec.Rsa.os2ip (r.take L)))
+        (r.drop L)) := by
+  unfold schedOf; dsimp only; rw [h, h', h'']; rfl
+
 end VG.Proof.RsaKeyGen

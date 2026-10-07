@@ -5,14 +5,15 @@ import VerifiedGarbage.Impl.Ed25519.X86_64.PointSelect
 /-!
 # Ed25519: base-point multiplication with a comb
 
-The scalar's 64 nibbles `n_i` (4-bit digits, from the bits at byte 768 of the
-scratch) give `[s]B = Σ n_i [16^i]B = Σ d_i [16^i]B + [16 G + G]B` for the
-digits `d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 32} 256^j`.
-Table `j` holds `[k]([256^j]B)` for `k ≤ 8`, so, from `[G]B`, the odd digits
-`d_{2j+1}` are added first, one from each table, as the entry `|d|` or its
-negation; four doublings multiply their sum by 16, and `[G]B` is added again;
-then the even digits `d_{2j}` are added from the same tables. That is 65
-additions of affine cached points and four doublings.
+The scalar's 52 chunks `n_i` of five bits (from the bits at byte 768 of the
+scratch, one per byte; chunk 51 is bit 255 alone) give
+`[s]B = Σ n_i [32^i]B = Σ d_i [32^i]B + [32 G + G]B` for the digits
+`d_i = n_i - 16`, from `-16` to `15`, and `G = 16 Σ_{j < 26} 1024^j`.
+Table `j` holds `[k]([1024^j]B)` for `k ≤ 16`, so, from `[G]B`, the odd
+digits `d_{2j+1}` are added first, one from each table, as the entry `|d|` or
+its negation; five doublings multiply their sum by 32, and `[G]B` is added
+again; then the even digits `d_{2j}` are added from the same tables. That is
+54 additions of affine cached points and five doublings.
 
 The digit is secret: the tables are in the static `combSym` (`combWords`),
 and the entry of table `j` for the digit's magnitude is selected in constant
@@ -23,8 +24,8 @@ selects zeros, which become the identity's `[1, 1, 0]`. The entry is negated,
 or not, with the mask of the digit's sign (at byte 1152) by exchanging `Y - X`
 and `Y + X` and choosing between `2dT` and its negation. The entries are
 affine (`Z = 1`), so an addition multiplies by `2Z = 2` with an addition
-(`pointAddAffine`). The loop's counter `rbx` and the table index `rdx` are
-public.
+(`pointAddAffine`). The loop's counter `rbx`, the bit index `rcx` and the
+table index `r9` are public.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -39,16 +40,21 @@ def combSignMask : Nat := 1152
 def combBit (dst : Reg) (i : Nat) : Instr :=
   .movzx8 dst { base := .rdi, index := some .rcx, disp := 768 + i }
 
-/-- `rax` = the digit `b₀ + 2b₁ + 4b₂ + 8b₃` of the bits at index `rcx`, by Horner's rule. -/
+/-- `rax` = the chunk `b₀ + 2b₁ + 4b₂ + 8b₃ + 16b₄` of the bits at index `rcx`, by Horner's
+rule. -/
 def combDigit : List Instr :=
-  [combBit .rax 3, .alu .add .rax (.reg .rax), combBit .rdx 2, .alu .add .rax (.reg .rdx),
+  [combBit .rax 4, .alu .add .rax (.reg .rax), combBit .rdx 3, .alu .add .rax (.reg .rdx),
+    .alu .add .rax (.reg .rax), combBit .rdx 2, .alu .add .rax (.reg .rdx),
     .alu .add .rax (.reg .rax), combBit .rdx 1, .alu .add .rax (.reg .rdx),
     .alu .add .rax (.reg .rax), combBit .rdx 0, .alu .add .rax (.reg .rdx)]
 
-/-- From the nibble `n` in `rax`: the sign's mask (all ones if `n < 8`, from the borrow of
-`n - 8`) to byte `combSignMask`, and `|n - 8|` into `rax`. -/
+/-- `rax` = the top chunk, bit 255 alone, at index `rcx`. -/
+def combDigitTop : List Instr := [combBit .rax 0]
+
+/-- From the chunk `n` in `rax`: the sign's mask (all ones if `n < 16`, from the borrow of
+`n - 16`) to byte `combSignMask`, and `|n - 16|` into `rax`. -/
 def combSign : List Instr :=
-  [.alu .sub .rax (.imm 8), .alu .sbb .rdx (.reg .rdx), .store (sc combSignMask) .rdx,
+  [.alu .sub .rax (.imm 16), .alu .sbb .rdx (.reg .rdx), .store (sc combSignMask) .rdx,
     .alu .xor .rax (.reg .rdx), .alu .sub .rax (.reg .rdx)]
 
 /-! ## The selection, from the tables in the static `combSym` -/
@@ -82,7 +88,7 @@ def combSelSetup : List Instr :=
 cleared, every entry kept under its mask, and stored (zero for a zero magnitude). -/
 def combSelPass : List Instr :=
   (List.range 6).map (fun c => .xop (.bin .pxor (combAcc c) (combAcc c))) ++
-  (List.range 8).flatMap (fun m => combSelEntry (m + 1)) ++
+  (List.range 16).flatMap (fun m => combSelEntry (m + 1)) ++
   (List.range 6).map fun c => .movdquStore (sc (offset 4 + 16 * c)) (combAcc c)
 
 /-- For a zero magnitude `r8`, the identity's `Y - X = Y + X = 1` (the low words of slots 4
@@ -102,30 +108,44 @@ def combNeg (fld : Arith) : List Instr :=
   fieldCode fld [.const 9 0, .sub 8 9 6] ++ [.mov .rcx (.mem (sc combSignMask))] ++
     swapFields [(4, 5), (6, 8)]
 
-/-- `rcx` = the bit index of digit `2 rbx + 1` (odd digits, `rbx < 32`) or `2 (rbx - 32)`. -/
+/-- `rcx` = the bit index of chunk `2 rbx + 1` (odd chunks, `rbx < 26`) or `2 (rbx - 26)`,
+and `r9` = its table, `rbx` or `rbx - 26`. -/
 def combIndex : Prog isa :=
-  .seq (.block [.mov .rcx (.reg .rbx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-    .alu .add .rcx (.reg .rcx), .alu .cmp .rbx (.imm 32)])
-    (.ite .b (.block [.alu .add .rcx (.imm 4)]) (.block [.alu .sub .rcx (.imm 256)]))
+  .seq (.block [.mov .rcx (.reg .rbx), .alu .add .rcx (.reg .rcx), .mov .r9 (.reg .rcx),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .r9),
+    .mov .r9 (.reg .rbx), .alu .cmp .rbx (.imm 26)])
+    (.ite .b (.block [.alu .add .rcx (.imm 5)])
+      (.block [.alu .sub .rcx (.imm 260), .alu .sub .r9 (.imm 26)]))
+
+/-- The chunk at `rcx` into `rax`: bit 255 alone for step `rbx = 25` (chunk 51), else five
+bits. -/
+def combChunk : Prog isa :=
+  .seq (.block [.alu .cmp .rbx (.imm 25)]) (.ite .e (.block combDigitTop) (.block combDigit))
+
+/-- Five doublings: `double4`'s, and one with `T`. -/
+def combDouble (fld : Arith) : Prog isa :=
+  .seq (double4 fld) (.block (fieldCode fld (dblOps true)))
 
 /-- `[G]B` added to slots 0–3. -/
 def combAddG (fld : Arith) : List Instr :=
   fieldCode fld [.const 4 combGCached.X, .const 5 combGCached.Y, .const 6 combGCached.Z] ++
     pointAddAffine fld
 
-/-- Step `rbx`: before the even digits, the four doublings and `[G]B`; then the digit's entry
-of table `rbx mod 32`, negated for a negative digit, added. -/
-def combStep (fld : Arith) : Prog isa :=
-  .seq (.block [.alu .cmp .rbx (.imm 32)]) <|
-  .seq (.ite .e (.seq (double4 fld) (.block (combAddG fld))) (.block [])) <|
+/-- Step `rbx`: before the even digits, the five doublings and `[G]B`; then the digit's entry
+of table `r9` (selected by `sel`, `combSelect` or `combSelectY`), negated for a negative digit,
+added. -/
+def combStep (fld : Arith) (sel : List Instr := combSelect) : Prog isa :=
+  .seq (.block [.alu .cmp .rbx (.imm 26)]) <|
+  .seq (.ite .e (.seq (combDouble fld) (.block (combAddG fld))) (.block [])) <|
   .seq combIndex <|
-  .seq (.block (combDigit ++ combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .rbx),
-    .alu .and .rdx (.imm 31)] ++ combSelect)) <|
-  .block (combNeg fld ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 64)])
+  .seq combChunk <|
+  .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
+  .block (combNeg fld ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
 
-/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward. -/
-def combMultiply (fld : Arith) : Prog isa :=
+/-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, the entries
+selected by `sel`. -/
+def combMultiply (fld : Arith) (sel : List Instr := combSelect) : Prog isa :=
   .seq (.block (constPoint fld combG ++ [.mov32 .rbx (.imm 0)]))
-    (.loop (combStep fld) .ne)
+    (.loop (combStep fld sel) .ne)
 
 end VG.Impl.Ed25519.X86_64

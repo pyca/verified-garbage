@@ -59,6 +59,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
+  n_len := by decide +kernel
   sh := by rw [p521_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
@@ -68,12 +69,12 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
       by decide +kernel]
     exact Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
-  inv_n h := absurd h (by decide)
+  inv_n _ _ := ⟨@hI _ p521.C.n_ne_zero Proof.P521.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
 
 theorem p521_tbls (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start) :
-    CombTbls p521 := fun d h => by cases h; exact hT
+    CombTbls p521 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p521 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h

@@ -19,14 +19,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
-/-- `t₀ + (t₀ m' mod 2⁶⁴) m ≡ 0 (mod 2⁶⁴)` when `m m' ≡ -1`. -/
-theorem mont_low (t0 minv m : Nat) (h : (m * minv + 1) % 2 ^ 64 = 0) :
-    (t0 * minv % 2 ^ 64 * m + t0) % 2 ^ 64 = 0 := by
-  rw [Nat.add_mod, Nat.mul_mod (t0 * minv % 2 ^ 64), Nat.mod_mod, ← Nat.mul_mod, ← Nat.add_mod,
-    show t0 * minv * m + t0 = t0 * (m * minv + 1) by
-      rw [Nat.mul_add, Nat.mul_one, Nat.mul_assoc, Nat.mul_comm minv m],
-    Nat.mul_mod, h, Nat.mul_zero, Nat.zero_mod]
-
 theorem redHead_ok {s : State} {B : Addr} {Z eA eN : Nat} (hs : Scr s B Z)
     (h8 : s.gpr .r8 = off B eA) (h10 : s.gpr .r10 = off B eN) (hA : eA + 8 ≤ Z) (hN : eN + 8 ≤ Z)
     (hinv : ((word s.mem B eN).toNat * (s.gpr .r15).toNat + 1) % 2 ^ 64 = 0) :

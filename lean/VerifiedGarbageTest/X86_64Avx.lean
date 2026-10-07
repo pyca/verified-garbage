@@ -138,6 +138,42 @@ def tern (imm : BitVec 8) (len : VLen := .l256) : BitVec 256 :=
 #guard tern 0xca .l128 == 0x0000000000000000000000000000000089abcdef000000007edcba9f12141217#256
 #guard ((VOp.vpternlogd .l256 .xmm0 .xmm0 .xmm1 0x96).exec s).ymm .xmm0 == B
 
+/-! `vpternlogq` and `vprorq` on `ymm0`–`ymm31` (`EOp`; `_mm256_ternarylogic_epi64`
+and `_mm256_ror_epi64` on a Sapphire Rapids Xeon): the ternary logic of `A`
+(the destination), `B` and `C` for the selections of `vpternlogd` above,
+bitwise as it is, and rotations of `A` right by 0, 1, 13, 63, 64 and 65
+(taken modulo 64), with operands in `ymm16`–`ymm31`. -/
+
+/-- `s` with `A` in `ymm16`, `B` in `ymm17` and `C` in `ymm31`. -/
+def sH : State :=
+  { s with ymmH := fun r => if r = .xmm16 then A else if r = .xmm17 then B else if r = .xmm31 then C else 0 }
+
+/-- `ymm16` after `vpternlogq ymm16, ymm17, ymm31, imm8`. -/
+def ternq (imm : BitVec 8) : BitVec 256 :=
+  ((EOp.vpternlogq (.hi .xmm16) (.hi .xmm17) (.hi .xmm31) imm).exec sH).vy (.hi .xmm16)
+
+/-- `ymm20` after `vprorq ymm20, ymm16, n`. -/
+def rorq (n : BitVec 8) : BitVec 256 := ((EOp.vprorq (.hi .xmm20) (.hi .xmm16) n).exec sH).vy (.hi .xmm20)
+
+#guard ternq 0xca == 0x01020524090a49688684a4a4c2d2a0bf89abcdef000000007edcba9f12141217#256
+#guard ternq 0x96 == 0x0e3d685bc2f1a4d7593b1b5b092c5b717654321181234567812345786460646f#256
+#guard ternq 0xe8 == 0x01020524090a49688684a4a4c2d2a0be89abcdef000000007edcba9f12141210#256
+#guard ternq 0x01 == 0xf0c09280340412002040400034010400000000007edcba9800000000898b8980#256
+#guard ternq 0x80 == 0x0000000000000040000000000000003000000001000000000000001800000000#256
+#guard ternq 0xd2 == 0x0f1e2d3c4b5a69788796a5b4c3d2e1f189abcdef01234567fedcba9876543217#256
+#guard rorq 0 == A
+#guard rorq 1 == 0x078f169e25ad34bc43cb52da61e970f8c4d5e6f78091a2b37f6e5d4c3b2a1908#256
+#guard rorq 13 == 0x4bc078f169e25ad30f843cb52da61e972b3c4d5e6f78091a9087f6e5d4c3b2a1#256
+#guard rorq 63 == 0x1e3c5a7896b4d2f00f2d4b6987a5c3e113579bde02468acffdb97530eca86421#256
+#guard rorq 64 == A
+#guard rorq 65 == rorq 1
+-- Between the two register files: `ymm0`–`ymm15` as `.lo`, and as the destination.
+#guard ((EOp.vpternlogq (.lo .xmm5) (.lo .xmm1) (.hi .xmm31) 0xca).exec
+    { sH with xmm := fun r => (if r = .xmm5 then A.extractLsb' 0 128 else s.xmm r)
+              ymmHi := fun r => (if r = .xmm5 then A.extractLsb' 128 128 else s.ymmHi r) }).ymm .xmm5 ==
+  ternq 0xca
+#guard ((EOp.vprorq (.lo .xmm5) (.hi .xmm16) 13).exec sH).ymm .xmm5 == rorq 13
+
 /-- `ymm5` after `op ymm5, ymm0, n`. -/
 def shift (op : XShiftOp) (n : BitVec 8) : BitVec 256 := run (.vshift op .l256 .xmm5 .xmm0 n)
 
@@ -246,6 +282,31 @@ def M : BitVec 256 := s.mem.readW 0x100 256
 #guard ((exec (.vbroadcasti128 .xmm5 { base := .rdi }) s).map (·.ymm .xmm5)) ==
   some (M.extractLsb' 0 128 ++ M.extractLsb' 0 128)
 #guard (exec (.vbroadcasti128 .xmm5 { base := .rdi, disp := 17 }) s).isNone
+
+/-! `op` with a memory second source (`vbinLoad`), run as the printed
+instructions in inline assembly with `A` in `ymm0`, `M` in memory and `ymm5`
+all ones, `VEX.128` forms at offsets 0, 16 and (unaligned) 1. -/
+
+/-- `ymm5` after `op ymm5, ymm0, [rdi+disp]` (or its `VEX.128` form). -/
+def binM (op : VBinOp) (len : VLen := .l256) (disp : Int := 0) : Option (BitVec 256) :=
+  (exec (.vbinLoad op len .xmm5 .xmm0 { base := .rdi, disp := disp }) s).map (·.ymm .xmm5)
+
+#guard binM .vpand == some 0x0200201c4a182818821020144210201000a1c0cf002104037a48180036041000#256
+#guard binM .vpaddd == some 0x21201e1b1a18161312100e0b0a0806038c9daebebfd0e1f2794612dfac794613#256
+#guard binM .vpor == some 0x1f1ffdffcfffedfb8fffedf7c7f7e5f38bfbedefbfafddeffefdfadf76753613#256
+#guard binM .vpand .l128 == some 0x0000000000000000000000000000000000a1c0cf002104037a48180036041000#256
+#guard binM .vpaddd .l128 16 == some 0x000000000000000000000000000000009badbececfe0f202895622efbc895623#256
+#guard binM .vpxor .l128 1 == some 0x000000000000000000000000000000009aa93c0fce9de8fb75a6d3c031621704#256
+-- The same as the register form with `M` in a register.
+#guard binM .vpaddd == some (((VOp.vbin .vpaddd .l256 .xmm5 .xmm0 .xmm6).exec
+  (s.setV .l256 .xmm6 (M.extractLsb' 0 128) (M.extractLsb' 128 128))).ymm .xmm5)
+-- Unreadable memory faults.
+#guard (binM .vpand .l256 1).isNone
+#guard (binM .vpand .l128 17).isNone
+-- Only the destination changes.
+#guard (exec (.vbinLoad .vpand .l256 .xmm0 .xmm0 { base := .rdi }) s).map
+  (fun t => (t.ymm .xmm0, t.ymm .xmm1, t.gpr .rdi, t.mem.readW 0x100 256, t.cf)) ==
+  some (A &&& M, B, 0x100, M, none)
 #guard ((exec (.vmovdquStore .l256 { base := .rdi, disp := 0x100 } .xmm0) s).map
   (·.mem.readW 0x200 256)) == some A
 #guard ((exec (.vmovdquStore .l128 { base := .rdi, disp := 0x110 } .xmm0) s).map
@@ -287,6 +348,9 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard printer.instr (.vop (.vbin .vpaddd .l256 .xmm1 .xmm2 .xmm15)) == ["vpaddd ymm1, ymm2, ymm15"]
 #guard printer.instr (.vop (.vbin .vpxor .l128 .xmm1 .xmm2 .xmm3)) == ["vpxor xmm1, xmm2, xmm3"]
 #guard printer.instr (.vop (.vmovdqa .l256 .xmm4 .xmm5)) == ["vmovdqa ymm4, ymm5"]
+#guard printer.instr (.eop (.vpternlogq (.hi .xmm16) (.lo .xmm1) (.hi .xmm31) 150)) ==
+  ["vpternlogq ymm16, ymm1, ymm31, 150"]
+#guard printer.instr (.eop (.vprorq (.hi .xmm20) (.lo .xmm15) 63)) == ["vprorq ymm20, ymm15, 63"]
 #guard printer.instr (.vop (.vshift .psrlq .l256 .xmm6 .xmm7 13)) == ["vpsrlq ymm6, ymm7, 13"]
 #guard printer.instr (.vop (.vshift .pslldq .l128 .xmm6 .xmm7 4)) == ["vpslldq xmm6, xmm7, 4"]
 #guard printer.instr (.vop (.vshift .psraw .l256 .xmm6 .xmm7 15)) == ["vpsraw ymm6, ymm7, 15"]
@@ -331,6 +395,12 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
   ["vmovdqu YMMWORD PTR [rsi+rcx*8], ymm15"]
 #guard printer.instr (.vbroadcasti128 .xmm1 { base := .rdx }) ==
   ["vbroadcasti128 ymm1, XMMWORD PTR [rdx]"]
+#guard printer.instr (.vbinLoad .vpand .l256 .xmm11 .xmm15 { base := .rdx, disp := 4064 }) ==
+  ["vpand ymm11, ymm15, YMMWORD PTR [rdx+4064]"]
+#guard printer.instr (.vbinLoad .vpaddd .l128 .xmm1 .xmm2 { base := .rsi, index := some .rcx, scale := 8 }) ==
+  ["vpaddd xmm1, xmm2, XMMWORD PTR [rsi+rcx*8]"]
+#guard Instr.memOps (.vbinLoad .vpor .l256 .xmm0 .xmm1 { base := .rdi, disp := 32 }) ==
+  [{ base := .rdi, disp := 32 }]
 #guard printer.instr (.vpmadd52Load false .xmm1 .xmm15 { base := .rsi, disp := 96 }) ==
   ["vpmadd52luq ymm1, ymm15, YMMWORD PTR [rsi+96]"]
 #guard printer.instr (.vpmadd52Load true .xmm14 .xmm2 { base := .r8, index := some .rcx, scale := 8 }) ==
@@ -358,6 +428,8 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard isa.requires (.vop (.vprold .l256 .xmm0 .xmm1 7)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vpternlogd .l128 .xmm0 .xmm1 .xmm2 0)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vpternlogd .l256 .xmm0 .xmm1 .xmm2 0)) == ["avx512f", "avx512vl"]
+#guard isa.requires (.eop (.vpternlogq (.hi .xmm16) (.lo .xmm1) (.hi .xmm31) 0)) == ["avx512f", "avx512vl"]
+#guard isa.requires (.eop (.vprorq (.hi .xmm16) (.lo .xmm1) 1)) == ["avx512f", "avx512vl"]
 #guard isa.requires (.vop (.vshift .psraw .l256 .xmm0 .xmm1 1)) == ["avx2"]
 #guard isa.requires (.vop (.vpshufd .l256 .xmm0 .xmm1 1)) == ["avx2"]
 #guard isa.requires (.vop (.vpalignr .l128 .xmm0 .xmm1 .xmm2 1)) == ["avx"]
@@ -374,6 +446,11 @@ def madd (hi : Bool) (d a : XReg) (disp : Int := 0) : Option (BitVec 256) :=
 #guard isa.requires (.vop (.vinserti128 .xmm0 .xmm1 .xmm2 0)) == ["avx2"]
 #guard isa.requires (.vop (.vextracti128 .xmm0 .xmm1 0)) == ["avx2"]
 #guard isa.requires (.vbroadcasti128 .xmm0 { base := .rdi }) == ["avx2"]
+#guard isa.requires (.vbinLoad .vpand .l256 .xmm0 .xmm1 { base := .rdi }) == ["avx2"]
+#guard isa.requires (.vbinLoad .vpand .l128 .xmm0 .xmm1 { base := .rdi }) == ["avx"]
+#guard isa.requires (.vbinLoad .vaesenc .l128 .xmm0 .xmm1 { base := .rdi }) == ["aes", "avx"]
+#guard isa.requires (.vbinLoad .vaesenclast .l256 .xmm0 .xmm1 { base := .rdi }) == ["vaes", "avx"]
+#guard !isa.writesSp (.vbinLoad .vpand .l256 .xmm0 .xmm1 { base := .rsp })
 #guard isa.requires (.vop (.vpermd .xmm0 .xmm1 .xmm2)) == ["avx2"]
 #guard isa.requires (.vpmovmskb .l256 .rax .xmm0) == ["avx2"]
 #guard isa.requires (.vpmovmskb .l128 .rax .xmm0) == ["avx"]

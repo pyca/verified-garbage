@@ -12,7 +12,7 @@ Montgomery forms of 1 and `-1` (`mont_ok`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt)
 open VG.Proof.Bignum (mont_cancel)
 
@@ -70,12 +70,6 @@ theorem subSet_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) (a b c : N
       ((k₂.gpr (by decide)).trans h12)))
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans h8))
   · exact (k₅.gpr (by decide)).trans ((k₄.gpr (by decide)).trans h10)
-
-/-- `R` is invertible modulo `n`, and `R mod n`'s value. -/
-theorem r_one {Y N R R2 : Nat} (hR : Nat.Coprime R N) (hY : Y < N) (hr2 : R2 % N = R * R % N)
-    (h : Y * R % N = R2 * 1 % N) : Y = R % N := by
-  rw [← Nat.mod_eq_of_lt hY]
-  exact mont_cancel hR (by rw [h, Nat.mul_one, hr2])
 
 /-- `mont`: `R² mod n`, 1, `R mod n` and `n - R mod n`, for the odd `n` in
 its array, of `w` words with the top one not zero, and `-n⁻¹` in `sMinv`. -/

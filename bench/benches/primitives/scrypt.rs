@@ -7,7 +7,7 @@ pub const USES: &[&str] = &["scrypt", "pbkdf2_sha256", "hmac_sha256", "sha256"];
 /// scrypt with `r = 8` and `p = 1` (the RFC 7914 vectors' block size) at a
 /// few costs `N`, deriving a 64-byte key, and checking a password against it
 /// (`verify`; OpenSSL derives the key and compares it with
-/// `CRYPTO_memcmp`). The ids' sizes are `N`.
+/// `CRYPTO_memcmp`). The ids' sizes are `N`. aws-lc-rs has no scrypt.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",

@@ -1,13 +1,13 @@
 import VerifiedGarbage.Proof.AesOcb.AArch64.Hash
 
 /-!
-# AES-OCB on AArch64: a pass over the whole blocks (`pass`)
+# AES-OCB on AArch64: a scalar pass over whole blocks (`passScalar`)
 
-Untrusted: everything here is checked by Lean. `pass body` goes over the
+Untrusted: everything here is checked by Lean. `passScalar body` goes over the
 `m` whole blocks of the data at `D`: for block `i` it computes
 `Offset_{i+1}` (`lNtz_ok`, `xor16_ok`), then runs `body` on the block, which
 replaces it with `fB` of it and the offset, and the checksum with `fC` of
-them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `pass_ok`
+them (`BodyOk`: `xorOfs`, `addCk ++ xorOfs`, `xorOfs ++ addCk`); `passScalar_ok`
 gives the blocks and the checksum after all `m`.
 -/
 
@@ -130,18 +130,18 @@ structure PassInv (K W D : Addr) (R n : Nat) (SP : Addr) (m : Nat) (O0 l : Block
   l0 : blockAtMem t.mem (W + BitVec.ofNat 64 l0O) = lAt l 0
   gpr : ∀ r, r ∉ passRegs → t.gpr r = t₀.gpr r
 
-theorem pass_step {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat} {O0 l : Block} {X : Nat → Block}
+theorem pass_step_with {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat} {O0 l : Block} {X : Nat → Block}
     {fB : Block → Block → Block} {fC : Block → Block → Block → Block} {ckF : Nat → Block} {body : List Instr}
     (hB : BodyOk W body fB fC) (hckF : ∀ i < m, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
-    {t₀ : State} (hD : DBuf K W t₀ D (16 * m)) (hm : m < 2 ^ 60) {t : State} {i : Nat} (hi : i < m)
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t i) :
-    WP isa (.seq nextOffset (.block (body ++ nextBlock))) t fun t' =>
+    {t₀ : State} (hD : DBuf K W t₀ D (16 * m)) (_hm : m < 2 ^ 60) {t : State} {i : Nat} (hi : i < m)
+    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t i) {offset : Prog isa}
+    (ho : WP isa offset t (LNtzPost W l (i + 1) t)) :
+    WP isa (.seq (.seq offset (.block (xor16 .x19 lO ofsO))) (.block (body ++ nextBlock))) t fun t' =>
       PassInv K W D R n SP m O0 l X fB ckF t₀ t' (i + 1) := by
   have hDt : DBuf K W t D (16 * m) := hD.of_eq P.rd P.wr
   have hBi := hDt.slice (a := 16 * i) (k := 16) (by omega)
   have E := P.env
-  unfold nextOffset
-  refine WP.seq (WP.seq (WP.mono (lNtz_ok E.x19 E.perm.w (by omega) (by omega) P.x25 P.l0) fun t₁ P₁ => ?_))
+  refine WP.seq (WP.seq (WP.mono ho fun t₁ P₁ => ?_))
   have h19₁ : t₁.gpr .x19 = W := by rw [P₁.gpr _ (by decide), E.x19]
   obtain ⟨t₂, run₂, B₂⟩ := xor16_ok (s := t₁) (b := .x19) (a := lO) (d := ofsO) (by decide) (by decide) h19₁ h19₁
     (by decide) (by decide) (by decide) (by rw [P₁.rd, P₁.wr]; exact E.perm.wR (by decide))
@@ -255,17 +255,18 @@ theorem pass_step {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat}
       P.gpr r (by simp [passRegs, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
         hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2])]
 
-theorem pass_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat} {O0 l : Block} {X : Nat → Block}
+theorem passScalar_ok {K W D : Addr} {R n : Nat} {SP : Addr} (L : Lay K W) {m : Nat} {O0 l : Block} {X : Nat → Block}
     {fB : Block → Block → Block} {fC : Block → Block → Block → Block} {ckF : Nat → Block} {body : List Instr}
     (hB : BodyOk W body fB fC) (hckF : ∀ i < m, ckF (i + 1) = fC (ckF i) (X i) (offAt O0 l (i + 1)))
-    {t₀ : State} (hD : DBuf K W t₀ D (16 * m)) (hm0 : 0 < m) (hm : m < 2 ^ 60) {t : State}
-    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t 0) :
-    WP isa (pass body) t (fun t' => PassInv K W D R n SP m O0 l X fB ckF t₀ t' m) := by
+    {t₀ : State} (hD : DBuf K W t₀ D (16 * m)) {j : Nat} (hj : j < m) (hm : m < 2 ^ 60) {t : State}
+    (P : PassInv K W D R n SP m O0 l X fB ckF t₀ t j) :
+    WP isa (passScalar body) t (fun t' => PassInv K W D R n SP m O0 l X fB ckF t₀ t' m) := by
   refine WP.loop (M := isa)
     (fun (k : Nat) (u : State) => ∃ i, k = m - i ∧ i < m ∧ PassInv K W D R n SP m O0 l X fB ckF t₀ u i) ?_
-    (m - 0) _ ⟨0, rfl, hm0, P⟩
+    (m - j) _ ⟨j, rfl, hj, P⟩
   rintro k u ⟨i, rfl, hi, P⟩
-  refine WP.mono (pass_step L hB hckF hD hm hi P) fun u' P' => ?_
+  refine WP.mono (pass_step_with L hB hckF hD hm hi P
+    (lNtz_ok P.env.x19 P.env.perm.w (by omega) (by omega) P.x25 P.l0)) fun u' P' => ?_
   have ev := eval_nonzero P'.x24 (by omega)
   by_cases he : m - (i + 1) = 0
   · left

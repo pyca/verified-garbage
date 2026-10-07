@@ -28,6 +28,12 @@
 //! instance for each implementation of `vg_mlkem_sample_ntt4`, which samples
 //! four entries of the matrix at once, and each operation calls the best one
 //! the CPU can run.
+//!
+//! On x86-64, encapsulation is `vg_mlkem1024_encaps_h` (contract
+//! `encapsHContract`), which takes the hash `H(ek)` of the encapsulation key
+//! (FIPS 203 §4.1) rather than computing it each time: an
+//! [`EncapsulationKey1024`] keeps it, computed when the key is checked or
+//! taken from the decapsulation key, which holds it.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -45,12 +51,13 @@ crate::mlkem_common::ml_kem! {
     encaps: crate::arch::mlkem1024::vg_mlkem1024_encaps,
     decaps: crate::arch::mlkem1024::vg_mlkem1024_decaps,
     keygen_sha3: (crate::arch::mlkem1024::vg_mlkem1024_keygen_sha3, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_SHA3_FEATURES),
+    encaps_h: crate::arch::mlkem1024::vg_mlkem1024_encaps_h,
     encaps_sha3: (crate::arch::mlkem1024::vg_mlkem1024_encaps_sha3, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_SHA3_FEATURES),
     decaps_sha3: (crate::arch::mlkem1024::vg_mlkem1024_decaps_sha3, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_SHA3_FEATURES),
     keygen_avx2: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx2, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX2_FEATURES),
     keygen_avx512: (crate::arch::mlkem1024::vg_mlkem1024_keygen_avx512, crate::arch::mlkem1024::VG_MLKEM1024_KEYGEN_AVX512_FEATURES),
-    encaps_avx2: (crate::arch::mlkem1024::vg_mlkem1024_encaps_avx2, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX2_FEATURES),
-    encaps_avx512: (crate::arch::mlkem1024::vg_mlkem1024_encaps_avx512, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_AVX512_FEATURES),
+    encaps_h_avx2: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_avx2, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX2_FEATURES),
+    encaps_h_avx512: (crate::arch::mlkem1024::vg_mlkem1024_encaps_h_avx512, crate::arch::mlkem1024::VG_MLKEM1024_ENCAPS_H_AVX512_FEATURES),
     decaps_avx2: (crate::arch::mlkem1024::vg_mlkem1024_decaps_avx2, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX2_FEATURES),
     decaps_avx512: (crate::arch::mlkem1024::vg_mlkem1024_decaps_avx512, crate::arch::mlkem1024::VG_MLKEM1024_DECAPS_AVX512_FEATURES),
     ek: 1568,

@@ -66,8 +66,8 @@ theorem p521_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p521 where
       by decide +kernel]
     exact Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151)
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
-  inv_n := fun h => absurd h (by decide)
-  chain_n := fun _ => by decide +kernel
+  inv_n := fun _ => ⟨hI Proof.P521.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p521 s := by

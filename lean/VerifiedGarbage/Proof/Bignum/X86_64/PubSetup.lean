@@ -14,54 +14,6 @@ namespace VG.Proof.Bignum.X86_64
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.MlKem.X86_64
 
-/-! ## Frames -/
-
-/-- Memory that changes only in the working space. -/
-def InScr (B : Addr) (Z : Nat) (m m' : Mem) : Prop := ∀ x, Z ≤ ofs B x → m' x = m x
-
-theorem InScr.refl (B : Addr) (Z : Nat) (m : Mem) : InScr B Z m m := fun _ _ => rfl
-
-theorem InScr.trans {B : Addr} {Z : Nat} {m₁ m₂ m₃ : Mem} (h₁ : InScr B Z m₁ m₂) (h₂ : InScr B Z m₂ m₃) :
-    InScr B Z m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
-
-theorem InScr.of_outside {B : Addr} {Z o n : Nat} {m m' : Mem} (h : Outside B o n m m') (hZ : o + n ≤ Z) :
-    InScr B Z m m' := fun x hx => h x (Or.inr (by omega))
-
-theorem InScr.of_frm {B : Addr} {Z : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
-    (hZ : ∀ r ∈ rs, r.1 + r.2 ≤ Z) : InScr B Z m m' :=
-  fun x hx => h x fun r hr => Or.inr (by have := hZ r hr; omega)
-
-theorem InScr.of_arrays {B : Addr} {Z w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m')
-    (hZ : slot w 8 ≤ Z) (hjs : ∀ j ∈ js, j < 8) : InScr B Z m m' :=
-  fun x hx => h x fun j hj => Or.inr (by have := slot_le (w := w) (hjs j hj); omega)
-
-/-- The header slots read on exit and by the setup: the saved registers and
-the arguments. -/
-def Fixed (B : Addr) (m m' : Mem) : Prop :=
-  ∀ i, i < 6 ∨ (16 ≤ i ∧ i < 22) → word m' B (8 * i) = word m B (8 * i)
-
-theorem Fixed.refl (B : Addr) (m : Mem) : Fixed B m m := fun _ _ => rfl
-
-theorem Fixed.trans {B : Addr} {m₁ m₂ m₃ : Mem} (h₁ : Fixed B m₁ m₂) (h₂ : Fixed B m₂ m₃) :
-    Fixed B m₁ m₃ := fun i hi => (h₂ i hi).trans (h₁ i hi)
-
-theorem Fixed.of_outside {B : Addr} {o n : Nat} {m m' : Mem} (h : Outside B o n m m')
-    (ho : 8 * 22 ≤ o ∨ (8 * 6 ≤ o ∧ o + n ≤ 8 * 16)) : Fixed B m m' :=
-  fun _ hi => h.word (by omega) (by omega)
-
-theorem Fixed.of_frm {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m')
-    (ho : ∀ r ∈ rs, 8 * 22 ≤ r.1 ∨ (8 * 6 ≤ r.1 ∧ r.1 + r.2 ≤ 8 * 16)) : Fixed B m m' :=
-  fun _ hi => h.word_eq (fun r hr => by have := ho r hr; omega) (by omega)
-
-theorem Fixed.of_arrays {B : Addr} {w : Nat} {js : List Nat} {m m' : Mem} (h : Arrays B w js m m') :
-    Fixed B m m' :=
-  fun i hi => h.word_eq (fun j _ => Or.inl (by have := hdr_lt_slot w j (show i < 32 by omega); omega))
-    (by omega)
-
-theorem Fixed.store (m : Mem) (B : Addr) {i : Nat} (v : BitVec 64) (hi : 6 ≤ i) (hi' : i < 32)
-    (hi'' : i < 16 ∨ 22 ≤ i) : Fixed B m (m.writeW (off B (8 * i)) v) :=
-  Fixed.of_outside (writeW_outside m B v (by omega)) (by omega)
-
 /-! ## `w` -/
 
 theorem shr3_w (k : Nat) (hk : k < 2 ^ 32) :
@@ -181,14 +133,6 @@ def restSteps : List (Prog isa) := [.block [.mov .r12 (.mem (hdr sW)), .mov .rbx
         [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
       setWord aOne .rcx]
 
-/-- What the loads change. -/
-def loadRanges (w : Nat) : List (Nat × Nat) :=
-  [(8 * sW, 8), (8 * sArr 0, 64), (slot w aN, 8 * (w + 2)), (slot w aX, 8 * (w + 2))]
-
-theorem Frm.of_arrays1 {B : Addr} {w j : Nat} {rs : List (Nat × Nat)} {m m' : Mem} (h : Arrays B w [j] m m')
-    (hr : (slot w j, 8 * (w + 2)) ∈ rs) : Frm B rs m m' :=
-  Frm.of_arrays h fun _ hj => (List.mem_singleton.mp hj) ▸ hr
-
 /-- `w`, the bases, `m` into array `aN` and the input into `aX`. -/
 theorem setupLoad_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : List Byte} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 1 ≤ k) (hk : k < 2 ^ 31)
@@ -255,16 +199,6 @@ theorem setupLoad_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : 
     (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
   · rw [ha.hslot (by decide), hm₃, ha₂.hslot (by decide)]; exact hW₁
   · rw [ha.hslot (by unfold sArr; omega), hm₃]; exact hb₂ j hj
-
-theorem wv_mod64 (m : Mem) (p : Addr) (d : Nat) {n : Nat} (hn : 1 ≤ n) :
-    wv m p d n % 2 ^ 64 = (word m p d).toNat := by
-  induction n with
-  | zero => omega
-  | succ n ih =>
-    rcases Nat.eq_zero_or_pos n with rfl | hn'
-    · simp [wv, Nat.mod_eq_of_lt (word m p d).isLt]
-    · rw [wv, Nat.add_mod, ih hn', show 64 * n = 64 + 64 * (n - 1) by omega, Nat.pow_add, Nat.mul_assoc,
-        Nat.mul_mod_right, Nat.add_zero, Nat.mod_eq_of_lt (word m p d).isLt]
 
 /-- After the setup: the modulus `N`, `-N⁻¹` in the header, the input `X`,
 the number 1, and the mask of `X < N`. -/
@@ -375,10 +309,6 @@ theorem setupRest_ok {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s 
     exact ((Frm.of_outside (writeW_outside _ B _ (by omega)) (by simp)).trans
       (Frm.of_outside (writeW_outside _ B _ (by omega)) (by simp))).trans (Frm.of_outside ho (by simp))
   · exact (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
-
-/-- What the setup changes. -/
-def setupRanges (w : Nat) : List (Nat × Nat) :=
-  loadRanges w ++ [(8 * sMinv, 8), (8 * sMask, 8), (slot w aOne, 8 * (w + 2))]
 
 /-- The setup, for a valid modulus. -/
 theorem setup_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : List Byte} (hs : Scr s B Z)

@@ -119,7 +119,7 @@ theorem x25519BaseWith_ct (eng : Prog isa) (heng : UEngineOk eng)
       (finish_ct (x.gpr .rdx) (x.gpr .rdi)))
   exact hc _ _ _ _ _ _ ⟨⟨hx, rfl, rfl, rfl, rfl⟩, ⟨hy, ho.symm, hk.symm, hb.symm, hT.symm⟩⟩ ex ey
 
-theorem x25519Base_ct
+theorem x25519Base_ct [DivstepInv]
     (engineCT : ∀ base k T, RelCT isa (fun x y => BaseEnginePre base k T x ∧ BaseEnginePre base k T y)
       (engine fld) (fun _ _ => True)) :
     ConstantTime isa baseLocal.pre baseLocal.pub (x25519Base fld) :=

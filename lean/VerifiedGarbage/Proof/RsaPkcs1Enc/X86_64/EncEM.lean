@@ -13,7 +13,7 @@ The separator and the zero test's slot (`sep_run`), the copy of `M`
 namespace VG.Proof.RsaPkcs1Enc.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Encrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## `EM` from its bytes -/
 

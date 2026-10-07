@@ -3,12 +3,13 @@
 //! Key derivation, signing, and verification each call one complete verified
 //! assembly operation, including SHA-512, on every supported architecture.
 //! x86-64 and AArch64 variants follow the selected SHA-512 backend. On
-//! x86-64 CPUs with BMI2 and ADX, the `_adx` variants multiply field
-//! elements with `mulx`, `adcx` and `adox`, and on those that also have
-//! AVX512_IFMA and AVX512VL, the `_ifma` variants use four-lane field
-//! multiplications for verification's doublings and for the fixed-base comb
-//! of key derivation and signing. Secret scratch values are cleared after
-//! use.
+//! x86-64 CPUs with BMI2, ADX and AVX2, the `_adx` variants multiply field
+//! elements with `mulx`, `adcx` and `adox` (and select the fixed-base comb's
+//! entries with AVX2), and on those that also have
+//! AVX512F, AVX512_IFMA and AVX512VL, the `_ifma` variants use four-lane
+//! field multiplications for verification's doublings and eight-lane ones
+//! for the fixed-base comb of key derivation and signing. Secret scratch
+//! values are cleared after use.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -45,12 +46,14 @@ use crate::zeroize::zeroize;
 enum Field {
     /// The target's baseline ISA.
     Baseline,
-    /// BMI2's `mulx` and ADX's `adcx` and `adox` (the `_adx` variants).
+    /// BMI2's `mulx` and ADX's `adcx` and `adox`, and AVX2 for the
+    /// fixed-base comb's selection (the `_adx` variants).
     #[cfg(target_arch = "x86_64")]
     Adx,
-    /// `Adx`, and AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` (on `ymm`
-    /// registers, with AVX512VL) for verification's doublings and for the
-    /// fixed-base comb of key derivation and signing (the `_ifma` variants).
+    /// `Adx`, and AVX512_IFMA's `vpmadd52luq` and `vpmadd52huq` for
+    /// verification's doublings (on `ymm` registers, with AVX512VL) and for
+    /// the fixed-base comb of key derivation and signing (on `zmm` registers,
+    /// with AVX512F) (the `_ifma` variants).
     #[cfg(target_arch = "x86_64")]
     Ifma,
 }
@@ -406,11 +409,13 @@ mod x86_64_tests {
     }
 
     /// The implementations chosen with exactly the features of each one,
-    /// with only one of BMI2 and ADX, which `_adx` needs both of, and with
-    /// all of `_ifma`'s but AVX512VL.
+    /// with only one of BMI2 and ADX, which `_adx` needs both of, with both
+    /// but without the AVX2 of `_adx`'s comb, with all of `_ifma`'s but
+    /// AVX512VL, and with verification's `_ifma` features alone, without the
+    /// AVX512F of the comb of key derivation and signing.
     #[test]
     fn select() {
-        let cases: [(Features, Sha512Backend, Field); 12] = [
+        let cases: [(Features, Sha512Backend, Field); 14] = [
             (Features::of(&[]), Sha512Backend::Scalar, Field::Baseline),
             (
                 Features::of(&["bmi2"]),
@@ -424,6 +429,11 @@ mod x86_64_tests {
             ),
             (
                 Features::of(&["bmi2", "adx"]),
+                Sha512Backend::Scalar,
+                Field::Baseline,
+            ),
+            (
+                Features::of(&["avx", "avx2", "bmi2", "adx"]),
                 Sha512Backend::Scalar,
                 Field::Adx,
             ),
@@ -448,22 +458,27 @@ mod x86_64_tests {
                 Field::Adx,
             ),
             (
-                VG_ED25519_VERIFY_IFMA_FEATURES,
+                VG_ED25519_PUBLIC_KEY_IFMA_FEATURES,
                 Sha512Backend::Scalar,
                 Field::Ifma,
             ),
             (
-                Features::of(&["avx", "avx2", "bmi2", "adx", "avx512ifma"]),
+                Features::of(&["avx", "avx2", "bmi2", "adx", "avx512f", "avx512ifma"]),
                 Sha512Backend::Scalar,
                 Field::Adx,
             ),
             (
-                VG_ED25519_VERIFY_AVX2_IFMA_FEATURES,
+                VG_ED25519_VERIFY_IFMA_FEATURES,
+                Sha512Backend::Scalar,
+                Field::Adx,
+            ),
+            (
+                VG_ED25519_PUBLIC_KEY_AVX2_IFMA_FEATURES,
                 Sha512Backend::Avx2,
                 Field::Ifma,
             ),
             (
-                VG_ED25519_VERIFY_SHANI_IFMA_FEATURES,
+                VG_ED25519_PUBLIC_KEY_SHANI_IFMA_FEATURES,
                 Sha512Backend::ShaNi,
                 Field::Ifma,
             ),

@@ -219,6 +219,34 @@ class Selection(unittest.TestCase):
         self.assertEqual({r['modules'] for r in self.rows(['bench/tests/argon2.rs'])}, {'argon2'})
         self.assertEqual({r['modules'] for r in self.rows(['src/nofamily/mod.rs'])}, {''})
 
+    def test_a_module_directory_selects_the_module_and_its_private_submodules_follow_it(self):
+        # `src/rsa/mod.rs` is the module `rsa`'s code as well as the shared
+        # code of `rsa_pss`; `scratch` is a private submodule, x86-64's alone.
+        self.catalog.update({'rsa': {'rsa'}, 'rsa_pss': {'rsa_pss', 'rsa'}})
+        self.files.update({
+            'src/rsa/mod.rs': '#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]\n'
+                              '#[cfg(target_arch = "x86_64")]\nmod scratch;\nfn f() {}\n',
+            'src/rsa/scratch.rs': 'pub(crate) struct Scratch;\n',
+        })
+        self.base_files['src/rsa/mod.rs'] = self.files['src/rsa/mod.rs'].replace('f()', 'f(x: u8)')
+        self.assertEqual(self.modules(self.rows(['src/rsa/mod.rs'])),
+                         {'x86_64': 'rsa rsa_pss', 'aarch64': 'rsa rsa_pss'})
+        # New: on the architectures compiling its declaration, as its parent.
+        self.assertEqual(self.modules(self.rows(['src/rsa/scratch.rs'])), {'x86_64': 'rsa rsa_pss'})
+        # A private helper it uses selects its parent's modules, and a
+        # feature it names chooses among its parent's implementations.
+        self.files.update({'src/lib.rs': 'mod ct;\npub mod rsa;\n', 'src/ct.rs': 'pub(crate) fn eq() {}',
+                           'src/rsa/scratch.rs': 'crate::ct::eq(); Features::of(&["adx"])'})
+        self.assertEqual({r['modules'] for r in self.rows(['src/ct.rs'])}, {'rsa rsa_pss'})
+        with mock.patch.object(planner, 'read', self.read), mock.patch.object(
+                planner, 'rust_files', lambda root='.': sorted(p for p in self.files if p.startswith('src/'))):
+            self.assertIn('src/rsa/scratch.rs', planner.sources('rsa'))
+            self.assertEqual(planner.requirements('x86_64', {'rsa'}, [None]), {frozenset({'adx'})})
+        # Declared nowhere, it is no module's: every benchmark runs.
+        self.files['src/rsa/mod.rs'] = self.files['src/rsa/mod.rs'].replace('mod scratch;', '')
+        self.base_files.pop('src/rsa/mod.rs')
+        self.assertEqual(len(self.rows(['src/rsa/scratch.rs'])), self.full_matrix())
+
     def test_shared_hash_code_selects_every_hash(self):
         # `hmac_sha256`'s benchmark follows through its `USES` of `sha256`.
         self.files['src/hashes/sha256.rs'] = ''

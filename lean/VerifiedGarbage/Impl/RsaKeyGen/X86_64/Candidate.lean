@@ -109,19 +109,7 @@ def extBase (j : Nat) (r : Reg) : List Instr :=
   [.mov .rax (.mem (hdr sW)), .alu .add .rax (.imm 2), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
     .alu .add .rax (.reg .rax), .mov r (.mem (hdr (sArr aOne)))] ++ List.replicate (j - 7) (.alu .add r (.reg .rax))
 
-/-! ## The table of small primes -/
-
-/-- The table's 1024 entries: the primes 3 to 3671 (the 2nd to the 512th),
-3, then the primes 3673 to 8161 (the 513th to the 1024th). -/
-def slots : List Nat := (primes.take 512).drop 1 ++ [3] ++ primes.drop 512
-
-/-- Entry `i` of the table. -/
-def tabEntry (i : Nat) : Nat := slots.getD i 0
-
-/-- Word `i` of the table: entries `4 i` to `4 i + 3`, 16 bits each, the first
-the least significant. -/
-def tabWord (i : Nat) : Nat :=
-  tabEntry (4 * i) + tabEntry (4 * i + 1) * 2 ^ 16 + tabEntry (4 * i + 2) * 2 ^ 32 + tabEntry (4 * i + 3) * 2 ^ 48
+/-! ## The table of small primes (`Impl/RsaKeyGen/Primes.lean`) -/
 
 /-- Store word `i` of the table at `[rbx + 8 i]`. -/
 def tabStore (i : Nat) : List Instr :=

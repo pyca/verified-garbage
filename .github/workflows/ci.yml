@@ -49,6 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       # The keys of the caches of the build and of its manifest.
       - uses: ./.github/actions/lean-keys
         id: keys
@@ -159,7 +160,10 @@ jobs:
       contents: read
     if: ${{ needs.lean.outputs.count != '0' && needs.lean.outputs.reuse == '' }}
     strategy:
-      fail-fast: false
+      # One failed shard cancels the others: without its outputs nothing
+      # assembles the build, so theirs would go unused (their times reach
+      # later plans only through an assembled build's manifest).
+      fail-fast: true
       matrix:
         shard: ${{ fromJSON(needs.lean.outputs.shards) }}
     # No expressions: GitHub does not evaluate them in the name of a skipped
@@ -174,6 +178,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       # The build the plan is for (or, if it has none, the last build main
       # saved).
       - uses: ./.github/actions/lean-prepare
@@ -280,16 +285,9 @@ jobs:
       # `rust-cpu-features` sets it per line of a CPU's `runs`, inline.
       - name: Only rust-cpu-features sets VG_CPU_FEATURES
         run: "! grep -nE '^ *VG_CPU_FEATURES:' .github/workflows/ci.yml"
+      - run: python3 ci/cpu_tests.py lint .github/workflows/ci.yml
       - run: python3 -m unittest discover -s ci -p 'test_check_*.py'
       - run: python3 ci/check_mcdt.py
-
-  vectors:
-    name: Test vector provenance
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - run: python3 ci/check_vectors.py
 
   rust:
@@ -353,6 +351,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -431,6 +430,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: ./.github/actions/runner-info
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: C2SP/wycheproof
@@ -483,8 +483,9 @@ jobs:
   # SHA extensions' code tens of times slower than hardware (#274), so the
   # chips that have them (arl, icx, dmr) run only the tests they are there
   # for. A job is one CPU (and userspace); its `runs` are lines of
-  # `<VG_CPU_FEATURES> | <tests>` (`all` for every test), each a `cargo
-  # test` of the one build, since `VG_CPU_FEATURES` is read at run time.
+  # `<VG_CPU_FEATURES> | <groups>` (`all` for every test), each running the
+  # one build's tests of those groups (ci/cpu_tests.py, which names each
+  # group's tests by path), since `VG_CPU_FEATURES` is read at run time.
   # `VG_CPU_FEATURES` restricts the CPU's features (`-` for no restriction,
   # `none` for the baseline ISA), so that each implementation, and each of
   # Ed25519's combinations of SHA-512 and field multiplication, is chosen
@@ -514,10 +515,11 @@ jobs:
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
             # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
-            # baseline code.
+            # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
+            # AVX.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
+              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
@@ -540,25 +542,29 @@ jobs:
               pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
           # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
           # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
-          # RSA's and P-256's ADX functions); BMI2 and ADX without AVX-512F; AVX-512F
-          # without AVX2, for Argon2 with G's AVX-512 code and BLAKE2b's
-          # baseline code; and AVX-512F without AVX512VL, for Argon2 with G's
-          # AVX-512 code and BLAKE2b's AVX2 code.
+          # RSA's ADX functions), and with AVX2 too (P-256's, P-521's and
+          # Ed25519's `_adx` functions, whose combs select their entries with
+          # AVX2, P-521's with SHA-512's baseline code); BMI2 and
+          # ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
+          # AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
+          # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
+          # code.
           - chip: skx
             arch: x86_64
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              bmi2,adx | ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              bmi2,adx | rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi2,adx | p256 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
               avx,avx2,avx512f | argon2 rfc9106 mlkem cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
           # with the hash functions' AVX2 code and RSA's baseline code, and
-          # P-256 with its baseline multiplications).
+          # P-256 and P-521 with their baseline multiplications).
           - chip: hsw
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           - chip: p4p
             arch: x86_64
@@ -566,14 +572,15 @@ jobs:
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
-          # it, and P-256's signatures with SHA-384 using it, with and
-          # without ADX).
+          # it, and P-256's signatures with SHA-384 and P-521's with SHA-512
+          # using it, with and without ADX).
           - chip: arl
             runs: |
               - | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,sha512 | ed25519 rsa_oaep p256 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma,
-          # Ed25519's IFMA variants and vg_rsa_private_checked_ifma; VAES,
+              avx,avx2,sha512 | ed25519 rsa_oaep p256 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+          # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
+          # and (with AVX512F) vg_x25519_base_ifma, Ed25519's IFMA variants
+          # and vg_rsa_private_checked_ifma; VAES,
           # VPCLMULQDQ and AVX512BW, for vg_aes_ctr32_vaes, vg_ghash_vpclmul
           # and the AES-GCM and AES-CMAC instances calling them (AES-GCM's
           # with its 512-bit loops); and AES-GCM's instances with VAES or
@@ -590,8 +597,8 @@ jobs:
             shard: 1/3
             runs: &icx-runs |
               - | x25519 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs aes_gcm cmac cpu
-              avx,avx2,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
+              avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl | ed25519 rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl | rsa_pkcs1 rsa_pss rsa_oaep cpu
               aes,avx,avx2,ssse3,vaes | aes_gcm cpu
               avx,avx2,pclmulqdq,ssse3,vpclmulqdq | aes_gcm cpu
               aes,avx,avx2,pclmulqdq,ssse3,vaes | aes_gcm cpu
@@ -614,16 +621,23 @@ jobs:
           # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
           # the instances of ML-KEM, ML-DSA and Ed448 calling each),
           # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
-          # and AES-CCM with the scalar AES, and the unrestricted run and
+          # and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
+          # with the scalar SHA-256 (the unrestricted runs of the plain tests
+          # take its `_sha256_sha2` instance), and the unrestricted run and
           # `none` AES-GCM-SIV's and AES-OCB's `_aes` and scalar instances.
+          # RSAES-OAEP: the plain runs take SHA-1's and SHA-256's `_sha2`
+          # instances with SHA-512's scalar ones, `none` the scalar ones,
+          # `sha3` SHA-512's `_sha3` ones with SHA-1's scalar MGF1, and
+          # `sha2,sha3` both extensions together.
           - chip: native
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
               - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
-              sha3 | sha3 shake mlkem mldsa ed448
-              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb
+              sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
+              sha2,sha3 | rsa_oaep
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
@@ -678,22 +692,54 @@ jobs:
         env:
           CHIP: ${{ matrix.chip }}
       # Only the tests of what depends on CPU features, once per line of
-      # `runs` (of this shard's, ci/cpu_shards.py). The lines run at the same
-      # time, slowest first, as many as the runner has cores: each `cargo
-      # test` starts every test binary, under SDE a second or more each on one
-      # core, whether or not its filter selects any test, so that one line at
-      # a time left the other cores idle. (Cargo holds the build directory's
-      # lock only while building, which the first command does for all of
-      # them; the coverage files are named by process.) Each line's output is
-      # printed afterwards in a log group of its own; every line runs, and the
-      # step fails at the end, naming the lines that failed. Each line's CPU
-      # time (user and system, of its `cargo test` and everything it ran) is
-      # kept, for `main` to save for the next runs' shards.
+      # `runs` (of this shard's, ci/cpu_shards.py): each of the line's
+      # groups' tests by its exact name (ci/cpu_tests.py, from the lists of
+      # the library's unit tests and of the test binary's tests), in the one
+      # binary or both that hold them. The lines run at the same time, slowest
+      # first, as many as the runner has cores: each binary takes a second or
+      # more to start under SDE, on one core, so that one line at a time left
+      # the other cores idle. (Cargo holds the build directory's lock only
+      # while building, which the first command does for all of them; the
+      # coverage files are named by process.) Each line's output is printed
+      # afterwards in a log group of its own; every line runs, and the step
+      # fails at the end, naming the lines that failed. Each line's CPU time
+      # (user and system, of its `cargo test`s and everything they ran) is
+      # kept, for `main` to save for the next runs' shards, and the CPU's
+      # tests and groups, for `coverage` to check every group's paths with.
       - name: Test the implementations
         shell: bash
         run: |
           lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
+          # On a host without AVX512_IFMA (some runners' CPUs have none, or
+          # do not expose it), SDE emulates it for -icx and -dmr some thirty
+          # times slower than the ADX code runs: the RSA tests then leave
+          # out the 3072- and 4096-bit keys that its private-key code runs
+          # with but in one test (tests/wycheproof/harness.rs).
+          if [ "${CPU%% *}" != native ] && ! grep -qw avx512ifma /proc/cpuinfo; then
+            export VG_TEST_HOST_WITHOUT_IFMA=1
+          fi
           cargo test --locked --features cpu-features-env --no-run
+          lists=$RUNNER_TEMP/lists
+          mkdir -p "$lists"
+          cargo test --locked --features cpu-features-env --lib -- --list --format terse > "$lists/lib"
+          cargo test --locked --features cpu-features-env --test tests -- --list --format terse > "$lists/tests"
+          python3 ci/cpu_tests.py record "$CPU" "$RUNS" "$lists/lib" "$lists/tests" > "cpu-tests-$JOB.json"
+          # A line's tests: every test for `all`, otherwise those its groups
+          # select, by exact name, in each binary that has any.
+          run_line() {
+            local tests=$1 status=0 selected
+            if [ "$tests" = all ]; then
+              cargo test --locked --features cpu-features-env
+              return
+            fi
+            for binary in lib tests; do
+              selected=$(python3 ci/cpu_tests.py select "$binary" "$lists/lib" "$lists/tests" $tests) || return
+              [ -n "$selected" ] || continue
+              if [ "$binary" = lib ]; then target=(--lib); else target=(--test tests); fi
+              cargo test --locked --features cpu-features-env "${target[@]}" -- --exact $selected || status=$?
+            done
+            return "$status"
+          }
           logs=$RUNNER_TEMP/runs
           mkdir -p "$logs"
           names=()
@@ -701,15 +747,13 @@ jobs:
           while IFS='|' read -r -u 3 features tests; do
             keys+=("$features")
             [ "$features" = - ] && features=
-            filter=$tests
-            [ "$tests" = all ] && filter=
             while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
             log=$logs/${#names[@]}
             (
               status=0
               TIMEFORMAT='%U %S'
-              { time VG_CPU_FEATURES=$features cargo test --locked --features cpu-features-env -- $filter \
-                > "$log" 2>&1 || status=$?; } 2> "$log.time"
+              export VG_CPU_FEATURES=$features
+              { time run_line "$tests" > "$log" 2>&1 || status=$?; } 2> "$log.time"
               echo "$status" > "$log.status"
             ) &
             names+=("VG_CPU_FEATURES=$features: $tests")
@@ -742,6 +786,13 @@ jobs:
         with:
           name: cpu-features-times-${{ strategy.job-index }}
           path: cpu-features-times-${{ strategy.job-index }}.json
+          retention-days: 1
+          if-no-files-found: error
+      # For `coverage`'s check of ci/cpu_tests.py's groups.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cpu-tests-${{ strategy.job-index }}
+          path: cpu-tests-${{ strategy.job-index }}.json
           retention-days: 1
           if-no-files-found: error
       - name: Export coverage
@@ -802,6 +853,16 @@ jobs:
           pattern: coverage-data-*
           merge-multiple: true
           path: coverage-data/
+      # Every path of ci/cpu_tests.py's groups selects a test on some CPU of
+      # `rust-cpu-features`, from the tests each one listed: a test renamed
+      # or moved out of its group fails here, not by running less.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: cpu-tests-*
+          merge-multiple: true
+          path: cpu-tests/
+      - name: Check the CPU feature runs' groups
+        run: python3 ci/cpu_tests.py check cpu-tests/*.json
       - name: Combine coverage and fail if it's <100%
         id: combinecoverage
         run: |
@@ -830,7 +891,7 @@ jobs:
   # `lean-shard`), and assembles it itself if none did.
   all-green:
     if: ${{ always() }}
-    needs: [lean, lean-shard, lean-imports, vectors, rust, rust-thumb, rust-cpu-features, coverage]
+    needs: [lean, lean-shard, lean-imports, rust, rust-thumb, rust-cpu-features, coverage]
     runs-on: ubuntu-latest
     # To list the run's artifacts.
     permissions:
@@ -843,7 +904,7 @@ jobs:
         id: check
         env:
           RESULTS: >-
-            ${{ needs.lean.result }} ${{ needs.lean-imports.result }} ${{ needs.vectors.result }}
+            ${{ needs.lean.result }} ${{ needs.lean-imports.result }}
             ${{ needs.rust.result }} ${{ needs.rust-thumb.result }} ${{ needs.rust-cpu-features.result }}
             ${{ needs.coverage.result }}
           # Skipped when `lean` built the proofs itself.

@@ -12,7 +12,7 @@ use core::num::NonZeroU32;
 
 use serde::Deserialize;
 
-use crate::harness::{self, Expectation, Fields, Hex};
+use super::harness::{self, Expectation, Fields, Hex};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,7 +28,7 @@ struct Case {
 /// valid vectors), with `derive`.
 pub(crate) fn check_with(name: &str, derive: fn(&[u8], &[u8], NonZeroU32, &mut [u8])) {
     let file = harness::load::<Fields, Case>(name);
-    for (_, test) in file.tests() {
+    file.par_tests(|_, test| {
         let c = &test.case;
         assert_eq!(test.result, Expectation::Valid, "tcId {}", test.tc_id);
         let mut dk = vec![0u8; c.dk_len];
@@ -39,5 +39,5 @@ pub(crate) fn check_with(name: &str, derive: fn(&[u8], &[u8], NonZeroU32, &mut [
             &mut dk,
         );
         assert_eq!(dk, c.dk.0, "tcId {}", test.tc_id);
-    }
+    });
 }

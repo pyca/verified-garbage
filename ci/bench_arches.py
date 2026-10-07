@@ -30,10 +30,16 @@ files changed:
     module in `src/hashes/` (benchmarks of code built on a hash, such as
     HMAC, list that hash in their `USES`);
   * `src/<family>/<hash>.rs`: `<family>_<hash>` (as in `src/asm/`), and
-    `src/<family>/mod.rs`: every `<family>_<hash>`;
+    `src/<family>/mod.rs`: every `<family>_<hash>`, and `<family>` itself
+    if it is a module (e.g. `src/rsa/mod.rs`: `rsa`, and `rsa_pss`, …);
+  * a private submodule of a module, `src/<module>/<name>.rs` with no
+    `<module>_<name>` (e.g. `src/rsa/scratch.rs`, declared in
+    `src/rsa/mod.rs`): as its parent's `mod.rs`, on the architectures that
+    compile its `mod <name>;`;
   * a private module of the crate, `src/<helper>.rs` (`mod <helper>;` in
     `src/lib.rs`, used by none of the benchmarks, e.g. `ct`): the modules
-    whose code names `crate::<helper>`;
+    whose code names `crate::<helper>` (a private submodule's: its
+    parent's);
   * a module only tests compile (`#[cfg(test)] mod <name>;`), or its
     declaration: none, also when it is new or removed;
   * `bench/benches/primitives/<name>.rs`, or its differential test
@@ -129,9 +135,9 @@ CPU_FEATURES = {
     "x86_64": [
         "avx,avx2,bmi1,bmi2,adx",
         "avx,avx2,bmi1,bmi2",
-        "bmi2,adx",
+        "avx,avx2,bmi2,adx",
         "sha,ssse3",
-        "avx,avx2,bmi2,adx,avx512ifma,avx512vl",
+        "avx,avx2,avx512f,bmi2,adx,avx512ifma,avx512vl",
         "aes,ssse3",
         "pclmulqdq,ssse3",
         "aes,pclmulqdq,ssse3",
@@ -150,10 +156,12 @@ CPU_FEATURES = {
 }
 
 # The benchmarks (`BENCHES` entries of bench/benches/primitives/main.rs) one
-# job runs at most, or None for one job per configuration. Every runner takes
-# about 1 s per benchmark id per pass; with 2 rounds (bench_compare.py), all
-# 51 fit in one job on every runner, and each shard would add a job per
-# configuration (with its own builds), so none is split for now.
+# job runs at most, or None for one job per configuration. A pass took about
+# 1 s per benchmark id (Criterion's analysis included) with a 0.2 s warm-up
+# and 0.5 s of measurement; with one round of 0.1 s and 0.3 s
+# (bench_compare.py), they should fit in one job on every runner, and each
+# shard would add a job per configuration (with its own builds), so none is
+# split for now.
 BENCHMARKS_PER_JOB = None
 
 # Changes to this script choose benchmarks but are not measured by any:
@@ -492,6 +500,27 @@ def members(family, known):
     return {m for m in known if m.startswith(f"{family}_")}
 
 
+def submodule_arches(parent, name, base, root="."):
+    """The benchmarked architectures that compile a `mod <name>;` of
+    `src/<parent>/mod.rs` (or `src/<parent>.rs`), at `base` or now: those its
+    file's and the declaration's `cfg`s allow; empty if neither revision
+    declares it."""
+    declaration = re.compile(rf"^(?:pub(?:\([a-z]+\))? )?mod {name};$")
+    texts = [read(f"src/{parent}{suffix}", revision, root) for suffix in ("/mod.rs", ".rs")
+             for revision in ([base, None] if base else [None])]
+    arches = []
+    for a in PLATFORMS:
+        for text in texts:
+            try:
+                lines = for_arch(text, a)
+            except Unreadable:
+                lines = (text or "").splitlines()
+            if any(declaration.match(line.strip()) for line in lines):
+                arches.append(a)
+                break
+    return arches
+
+
 def rust_files(root="."):
     return sorted(p.relative_to(root).as_posix() for p in pathlib.Path(root, "src").glob("**/*.rs"))
 
@@ -516,11 +545,23 @@ def test_only(module, base=None):
     return any(declared) and all(d is None or d[0] for d in declared)
 
 
-def users(family, known, root="."):
+def parent_code(family, known, root=".", seen=frozenset()):
+    """The modules whose code `src/<family>/mod.rs` (or a private submodule
+    of it) is: its `<family>_<hash>` modules, those using it, and `<family>`
+    itself if it is a module; `<family>`, which no benchmark uses, if none.
+    `seen` are the families whose users are already being found."""
+    found = members(family, known) | ({family} & known)
+    if family not in seen:
+        found |= users(family, known, root, seen)
+    return found or {family}
+
+
+def users(family, known, root=".", seen=frozenset()):
     """The modules whose Rust code (outside the family's) uses the family's
     shared code, or a private module of the crate; a file that is no
     module's names itself, which no benchmark uses. Modules only tests
-    compile are left out."""
+    compile are left out, and a private submodule counts as its parent."""
+    seen = seen | {family}
     names = set()
     tests = {m for m, (test, _) in lib_modules(None, root).items() if test}
     for path in rust_files(root):
@@ -535,6 +576,8 @@ def users(family, known, root="."):
                 names.add(api[1])
         elif other and other[2] == "mod":
             names |= members(other[1], known) or {path}
+        elif other and f"{other[1]}_{other[2]}" not in known and submodule_arches(other[1], other[2], None, root):
+            names |= parent_code(other[1], known, root, seen)
         else:
             names.add(f"{other[1]}_{other[2]}" if other else path)
     return names
@@ -572,12 +615,14 @@ def helper_uses(name, catalog):
 
 
 def sources(module):
-    """The Rust files that can choose among `module`'s implementations."""
+    """The Rust files that can choose among `module`'s implementations: with
+    its private submodules (those its file declares now)."""
     paths = [f"src/{module}.rs", f"src/{module}/mod.rs", f"src/hashes/{module}.rs", "src/hashes/mod.rs"]
     family, _, hash_ = module.partition("_")
     if hash_:
         paths += [f"src/{family}/{hash_}.rs", f"src/{family}/mod.rs"]
-    return paths
+    return paths + [path for path in rust_files() if (m := FAMILY.match(path)) and m[1] == module
+                    and m[2] != "mod" and path not in paths and submodule_arches(module, m[2], None)]
 
 
 def detectable(arch, cpu):
@@ -713,10 +758,16 @@ def arches(changed, base=None):
                 need(a, api[1])
         elif family:
             # A family's `mod.rs` is the code its `<family>_<hash>` modules
-            # share, which others may use too; with no module, every
-            # benchmark runs.
-            names = ((members(family[1], known) | users(family[1], known)) or {family[1]}
-                     if family[2] == "mod" else {f"{family[1]}_{family[2]}"})
+            # share, which others may use too, and the code of `<family>`
+            # itself if it is a module; with no module, every benchmark runs.
+            # A private submodule (no `<family>_<name>`, but declared by
+            # the parent) is part of the parent's code, where it is compiled.
+            submodule = family[2] != "mod" and f"{family[1]}_{family[2]}" not in known and (
+                sub_arches := submodule_arches(family[1], family[2], base))
+            if submodule:
+                targets = [a for a in targets if a in sub_arches]
+            names = (parent_code(family[1], known) if family[2] == "mod" or submodule
+                     else {f"{family[1]}_{family[2]}"})
             for a in targets:
                 for name in names:
                     need(a, name)

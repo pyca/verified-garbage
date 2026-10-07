@@ -103,7 +103,7 @@ theorem mem_kr_r {kr r : XReg} {regs G : List XReg} (h : r ∈ G) : r ∈ kr :: 
 /-- Rounds 1 to `k` (at most 9), with `g j` after round `j`. -/
 theorem roundsZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ regs) {nr : Nat}
     {w : List Byte} {x : XReg → Nat → Spec.Aes.State} (g : Nat → List Instr) (G : List XReg)
-    (hG : ∀ r ∈ G, r ≠ kr ∧ r ∉ regs) (Q : Nat → State → Prop)
+    (hG : ∀ r ∈ G, r ∉ regs) (Q : Nat → State → Prop)
     (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys nr w s → Q j s →
       WP isa (.block (g j)) s fun s' => Q (j + 1) s' ∧ ZFrame G s s')
     (hq : ∀ j s s', Q j s → ZFrame (kr :: regs) s s' → Q j s')
@@ -123,7 +123,7 @@ theorem roundsZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr �
       fun s₂ ⟨hI₂, hf₂⟩ => ?_
     refine WP.mono (hg (k + 1) (by omega) (by omega) s₂ (ZFrame.of_keys (ZFrame.of_keys hK hf₁) hf₂)
       (hq _ _ _ hQ₁ hf₂)) fun s' ⟨hQ', hf'⟩ => ⟨fun b hb l hl => ?_, hQ', ?_⟩
-    · rw [hf'.zlane b (fun h => (hG b h).2 hb) l hl]; exact hI₂ b hb l hl
+    · rw [hf'.zlane b (fun h => hG b h hb) l hl]; exact hI₂ b hb l hl
     · exact hf₁.trans ((hf₂.mono fun _ => mem_kr_l).trans
         (hf'.mono fun _ => mem_kr_r))
 
@@ -137,7 +137,7 @@ theorem cmpRsiZ_ok (s : State) (c : BitVec 32) (nr : Nat) (hrsi : s.gpr .rsi = B
 
 theorem aesZ_ok (kr : XReg) (regs : List XReg) (hnd : regs.Nodup) (h8 : kr ∉ regs) {nr : Nat}
     (hnr : nr = 10 ∨ nr = 12 ∨ nr = 14) {w : List Byte} (g : Nat → List Instr) (G : List XReg)
-    (hG : ∀ r ∈ G, r ≠ kr ∧ r ∉ regs) (Q : Nat → State → Prop)
+    (hG : ∀ r ∈ G, r ∉ regs) (Q : Nat → State → Prop)
     (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys nr w s → Q j s →
       WP isa (.block (g j)) s fun s' => Q (j + 1) s' ∧ ZFrame G s s')
     (hq : ∀ j s s', Q j s → ZFrame (kr :: regs) s s' → Q j s')

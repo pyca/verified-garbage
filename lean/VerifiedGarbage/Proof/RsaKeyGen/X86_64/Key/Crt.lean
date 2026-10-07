@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Key.Qinv
 namespace VG.Proof.RsaKeyGen.X86_64.Key
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.RsaKeyGen.X86_64.Key
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
 /-- A divisor: `x`, or 1 for 0. -/
 abbrev dv (x : Nat) : Nat := if x = 0 then 1 else x

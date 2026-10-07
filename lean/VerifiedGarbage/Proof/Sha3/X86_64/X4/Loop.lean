@@ -3,9 +3,9 @@ import VerifiedGarbage.Proof.Sha3.X86_64.X4.Round
 /-!
 # Keccak-f[1600] four times at once on x86-64: the 24 rounds
 
-`permute4` applies Keccak-f[1600] to each of the four interleaved states at
+`permute4M` applies Keccak-f[1600] to each of the four interleaved states at
 `rdi`, using the 800 bytes at `rsi` for every other round and the table of
-round constants at `rdx` (`permute4_ok`).
+round constants at `rdx` (`permute4M_ok`).
 -/
 
 namespace VG.Proof.Sha3.X86_64.X4
@@ -97,11 +97,11 @@ theorem end_beq (tbl : Addr) (r : Nat) (hr : r < 24) :
 
 theorem round_step {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp : Pre4 s₀ src oth tbl)
     (hcx : s₀.gpr .rcx = tbl + BitVec.ofNat 64 768) {r : Nat} (hr : r < 24) {s : State}
-    (hL : LInv s₀ src oth tbl A r s) (fast : Bool := false) :
-    WP isa (.block (round fast)) s fun s' =>
+    (hL : LInv s₀ src oth tbl A r s) :
+    WP isa (.block round) s fun s' =>
       eval .ne s' = some (!decide (r + 1 = 24)) ∧ LInv s₀ src oth tbl A (r + 1) s' := by
   have he := hp.env r hr
-  refine WP.mono (round_ok (fast := fast) s _ _ _ _ (RC r) (by rw [hL.rd, hL.wr]; exact he) hL.rdi hL.rsi hL.rdx
+  refine WP.mono (round_ok s _ _ _ _ (RC r) (by rw [hL.rd, hL.wr]; exact he) hL.rdi hL.rsi hL.rdx
     hL.state fun k hk => by rw [la_rc]; exact hp.rc_frame hL.frame hr hk)
     fun s' ⟨hl, hf, hrd, hwr, hdi, hsi, hdx, hg, hzf⟩ => ?_
   have hcx' : s.gpr .rcx = tbl + BitVec.ofNat 64 768 := by
@@ -120,18 +120,18 @@ theorem round_step {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp 
 /-- Two rounds, from an even round `r`. -/
 theorem body_ok {s₀ : State} {src oth tbl : Addr} {A : Nat → KState} (hp : Pre4 s₀ src oth tbl)
     (hcx : s₀.gpr .rcx = tbl + BitVec.ofNat 64 768) {r : Nat} (hr : r + 2 ≤ 24) {s : State}
-    (hL : LInv s₀ src oth tbl A r s) (fast : Bool := false) :
-    WP isa (.block (round fast ++ round fast)) s fun s' =>
+    (hL : LInv s₀ src oth tbl A r s) :
+    WP isa (.block (round ++ round)) s fun s' =>
       eval .ne s' = some (!decide (r + 2 = 24)) ∧ LInv s₀ src oth tbl A (r + 2) s' := by
   rw [WP.block_append_iff]
-  exact WP.mono (round_step (fast := fast) hp hcx (by omega) hL) fun s₁ ⟨_, h₁⟩ => round_step (fast := fast) hp hcx (by omega) h₁
+  exact WP.mono (round_step hp hcx (by omega) hL) fun s₁ ⟨_, h₁⟩ => round_step hp hcx (by omega) h₁
 
 /-- The 24 rounds: Keccak-f[1600] on each of the four states at `src`,
 with `rdi`, `rsi` and every register but `rax` and `rdx` as they were. -/
-theorem permute4_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth tbl)
+theorem permute4M_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth tbl)
     (hdi : s₀.gpr .rdi = src) (hsi : s₀.gpr .rsi = oth) (hdx : s₀.gpr .rdx = tbl)
-    (hcx : s₀.gpr .rcx = tbl + BitVec.ofNat 64 768) {A : Nat → KState} (hA : Lanes4 s₀.mem src A) (fast : Bool := false) :
-    WP isa (permute4 fast) s₀ fun s =>
+    (hcx : s₀.gpr .rcx = tbl + BitVec.ofNat 64 768) {A : Nat → KState} (hA : Lanes4 s₀.mem src A) :
+    WP isa permute4M s₀ fun s =>
       Lanes4 s.mem src (fun k => keccakF (A k)) ∧ Frame [⟨src, 800⟩, ⟨oth, 800⟩] s₀.mem s.mem ∧
       s.rd = s₀.rd ∧ s.wr = s₀.wr ∧ s.gpr .rdx = tbl + BitVec.ofNat 64 768 ∧
       ∀ g, g ≠ .rax → g ≠ .rdx → s.gpr g = s₀.gpr g := by
@@ -141,7 +141,7 @@ theorem permute4_ok {s₀ : State} {src oth tbl : Addr} (hp : Pre4 s₀ src oth 
   let Inv : Nat → State → Prop := fun n s => ∃ j, n = 12 - j ∧ j < 12 ∧ LInv s₀ src oth tbl A (2 * j) s
   refine WP.loop (M := isa) (Q := fun s => LInv s₀ src oth tbl A 24 s) Inv (fun n s ⟨j, hn, hj, hL⟩ => ?_)
     12 s₀ ⟨0, rfl, by omega, h₀⟩ |>.mono fun s hL => ?_
-  · refine WP.mono (body_ok (fast := fast) hp hcx (by omega) hL) fun s' ⟨he, hl⟩ => ?_
+  · refine WP.mono (body_ok hp hcx (by omega) hL) fun s' ⟨he, hl⟩ => ?_
     by_cases hlast : 2 * j + 2 = 24
     · exact .inl ⟨by show eval .ne s' = _; rw [he, hlast]; rfl, hlast ▸ hl⟩
     · exact .inr ⟨by show eval .ne s' = _; rw [he]; simp [hlast], 12 - (j + 1), by omega, j + 1, rfl, by omega,

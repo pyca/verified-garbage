@@ -65,7 +65,7 @@ theorem rest_ok (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) (hk 
     fun s₂ h₂ => ?_)
   rw [Nat.zero_add] at h₂
   refine WP.seq (WP.mono (seqR_ok (I := fun k => ER L C E ek m r L.k L.k k) L.k 0
-    (fun k _ hk' s hs => WP.mono (t_ok (by omega) (hc.t k (by omega)) hs) fun _ h => h.2) s₂ h₂) fun s₃ h₃ => ?_)
+    (fun k _ hk' s hs => WP.mono (t_ok v.arith (by omega) (hc.t k (by omega)) hs) fun _ h => h.2) s₂ h₂) fun s₃ h₃ => ?_)
   rw [Nat.zero_add] at h₃
   exact WP.mono (v_ok v.arith K hk.1 hc.v h₃) fun _ ⟨_, ho, h15, hct⟩ => ⟨ho, by rw [h15, ifp h₃.ok], fun _ => hct⟩
 
@@ -93,7 +93,7 @@ theorem rest_tr (v : Sample4Impl) {wc wd : List Nat} (K : KemCalls L wc wd) (hk 
     fun k _ hk' => u_tr v.arith K hk.1 (by omega) (hc.u k (by omega))) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k x y => LRel rbs wbs x y ∧ ERρ L C E ρ L.k L.k k x ∧
-    ERρ L C E ρ L.k L.k k y) L.k 0 fun k _ hk' => t_tr (by omega) (hc.t k (by omega))) ?_
+    ERρ L C E ρ L.k L.k k y) L.k 0 fun k _ hk' => t_tr v.arith (by omega) (hc.t k (by omega))) ?_
   rw [Nat.zero_add]
   exact v_tr v.arith K hk.1 hc.v
 

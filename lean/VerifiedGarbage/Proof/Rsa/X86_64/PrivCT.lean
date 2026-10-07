@@ -15,7 +15,7 @@ callee's contract, whose public data it fixes too (`body_ct`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-! ## Entry states and the anchor -/
 
@@ -240,13 +240,13 @@ theorem pd_view {a s t : State} (S : Sib a s) (h : J5 s t) :
       State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), h8, h9]
     rw [he.entryBytes _ _ hp.dKe hp.dOe hp.des.symm (by have := hp.wE; omega), S.e]
 
-theorem pd_ct (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (At J5)) (.call name (Checked.precomputedChecked M.mm)) fun _ _ => True := by
+theorem pd_ct (P : PublicImpl) (name : String) :
+    RelCT isa (Two (At J5)) (.call name (P.code)) fun _ _ => True := by
   have hct : ConstantTime isa (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
-      (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pub (Checked.precomputedChecked M.mm) :=
-    precomputedChecked_constantTime M
+      (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pub (P.code) :=
+    P.ct
   refine RelCT.callEx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩)
-    (precomputedChecked_correct M hmx) hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
+    P.ok hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, w₁', e₁⟩ := pd_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, w₂', e₂⟩ := pd_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := pd_covers (preF_of S₁.1) j₁.1.1
@@ -315,11 +315,10 @@ theorem pdArgs_two : RelCT isa (Two (At J4)) (.block pdArgs) (Two (At J5)) :=
       exact ⟨s, S, ⟨he₃, hpre.trans hpw⟩, hw (d := 0) (by decide), hw (d := 1) (by decide),
         hw (d := 2) (by decide), hw (d := 3) (by decide), hdi₃, hsi₃, hdx₃, hcx₃, h8₃, h9₃⟩
 
-theorem pdCall_two (M : Mont) (name : String) (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hsp : NoSp (Checked.precomputedChecked M.mm)) (hd : (Checked.precomputedChecked M.mm).depth = 0) :
-    RelCT isa (Two (At J5)) (.call name (Checked.precomputedChecked M.mm)) (Two (At J2)) :=
-  two_post (pd_ct M name hmx) fun _ _ ⟨s, S, ⟨he, _⟩, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9⟩ =>
-    WP.mono (pd_call M name hmx hsp hd (preF_of S.1) he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) fun _ h => ⟨s, S, h.1⟩
+theorem pdCall_two (P : PublicImpl) (name : String) :
+    RelCT isa (Two (At J5)) (.call name (P.code)) (Two (At J2)) :=
+  two_post (pd_ct P name) fun _ _ ⟨s, S, ⟨he, _⟩, hw0, hw1, hw2, hw3, hdi, hsi, hdx, hcx, h8, h9⟩ =>
+    WP.mono (pd_call P name (preF_of S.1) he hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) fun _ h => ⟨s, S, h.1⟩
 
 theorem cmpArgs_two : RelCT isa (Two (At J2)) (.block cmpArgs) (Two (At J7)) :=
   two_piece [.rsp] (pins_rsp fun _ _ h => h) (by taint_decide)
@@ -344,11 +343,11 @@ theorem rest_ct : RelCT isa (Two (At J7))
 
 theorem body_ct (v : CrtImpl) (pcName pdName : String) :
     RelCT isa (Two (At J0)) (body v.name v.code pcName (Precompute.code v.mont.mm) pdName
-      (Checked.precomputedChecked v.mont.mm)) fun _ _ => True := by
+      (v.pubOp.code)) fun _ _ => True := by
   rw [body_eq, check_eq, tail_eq]
   exact RelCT.seq crtArgs_two (RelCT.seq (crtCall_two v) (RelCT.seq pcArgs_two
     (RelCT.seq (pcCall_two v.mont pcName v.pcMx v.pcNosp v.pcDepth) (RelCT.seq pdArgs_two
-      (RelCT.seq (pdCall_two v.mont pdName v.pdMx v.pdNosp v.pdDepth) (RelCT.seq cmpArgs_two rest_ct))))))
+      (RelCT.seq (pdCall_two v.pubOp pdName) (RelCT.seq cmpArgs_two rest_ct))))))
 
 /-! ## The frame -/
 
@@ -375,7 +374,7 @@ theorem relCT_alloc {body : Prog isa} {P R : State → State → Prop}
 
 theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
     ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
-      (Checked.precomputedChecked v.mont.mm)) :=
+      (v.pubOp.code)) :=
   RelCT.constantTime (relCT_alloc ((body_ct v pcName pdName).mono
     (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
     fun _ _ h => h))
@@ -383,20 +382,20 @@ theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
 /-! ## `Verified` -/
 
 /-- `vg_rsa_private_checked`, calling the implementation `v` of the CRT and
-the public operation of the same Montgomery multiplication, meets the shared
+its independently verified public operation, meets the shared
 contract. -/
 theorem code_verified (v : CrtImpl) (pcName pdName : String) :
     Verified target (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
-      (Checked.precomputedChecked v.mont.mm)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
+      (v.pubOp.code)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
   have hct : ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName
-      (Precompute.code v.mont.mm) pdName (Checked.precomputedChecked v.mont.mm)) := code_constantTime v pcName pdName
+      (Precompute.code v.mont.mm) pdName (v.pubOp.code)) := code_constantTime v pcName pdName
   Verified.of_correct (k := chkContract) (code_correct v pcName pdName) hct private_checked_implies
 
 /-- It writes `rsp` only in its frame's push and pop. -/
 theorem code_spSafe (v : CrtImpl) (pcName pdName : String) :
-    (code v.name v.code pcName (Precompute.code v.mont.mm) pdName (Checked.precomputedChecked v.mont.mm)).all
+    (code v.name v.code pcName (Precompute.code v.mont.mm) pdName (v.pubOp.code)).all
       (fun i => !isa.writesSp i) = true := by
-  simp only [code, body_eq, check_eq, tail_eq, Code.all, v.spSafe, v.pcSpSafe, v.pdSpSafe,
+  simp only [code, body_eq, check_eq, tail_eq, Code.all, v.spSafe, v.pcSpSafe, v.pubOp.spSafe,
     Bool.true_and]
   decide +kernel
 

@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyVerified
-import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.Window
+import VerifiedGarbage.Proof.Ed25519.X86_64.Ifma.VerifyCT
+import VerifiedGarbage.Proof.Ed25519.X86_64.WindowSlideCT
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyCode
 
 /-! Complete strict Ed25519 equation verification with a caller-supplied SHA-512 challenge. -/
@@ -13,12 +14,17 @@ def artifacts : List Artifact := [
     doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["Uses baseline integer instructions. \
       Checks canonical point encodings and S < L, then evaluates the uncofactored equation \
       using all 512 challenge bits. No additional subgroup or small-order policy is imposed. \
-      Computes [k]A - [S]B with one chain of doublings and 4-bit windows of the public \
-      scalars, from a table of [1]A to [15]A and constant -[1]B to -[15]B, and compares it \
-      with -R projectively."])
+      Computes [k]A - [S]B with one chain of doublings, recoding both scalars into signed odd \
+      digits at least w positions apart (w = 5 for k, from a table of ±[1]A to ±[15]A; w = 8 \
+      for S, from the static VG_ED25519_VERIFY_BASE of ∓[1]B to ∓[127]B), both cached for \
+      addition as [Y - X, Y + X, 2dT, 2Z], skipping the leading zero bytes of k above its low \
+      32 and the leading zero digits, computing T only in a doubling or addition that an \
+      addition follows, and compares it with -R projectively."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.baseline
-      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.baseline)
-    contract := Spec.Ed25519.verifyEquationContract X86_64.abi
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.baseline)
+    consts := Impl.Ed25519.X86_64.baseOddConsts
+    contract :=
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.baseline_mx
     spSafe := Proof.Ed25519.X86_64.VerifyCode.baseline_spSafe },
   { Spec.Ed25519.verifyEquationApi with
@@ -28,11 +34,14 @@ def artifacts : List Artifact := [
       `vg_ed25519_verify_equation` but for the field multiplications and squarings, which use \
       BMI2's `mulx` and ADX's `adcx` and `adox` (two carry chains at once), as `vg_x25519_adx` \
       does. Checks canonical point encodings and S < L, then evaluates the uncofactored \
-      equation using all 512 challenge bits, with one chain of doublings and 4-bit windows of \
-      the public scalars."])
+      equation using all 512 challenge bits, with one chain of doublings and signed odd digits \
+      of k (w = 5) and of S (w = 8), skipping the leading zero bytes of k above its low 32 \
+      and the leading zero digits."])
     code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
-      (Impl.Ed25519.X86_64.double4 Impl.X25519.X86_64.adx)
-    contract := Spec.Ed25519.verifyEquationContract X86_64.abi
+      (Impl.Ed25519.X86_64.windows Impl.X25519.X86_64.adx)
+    consts := Impl.Ed25519.X86_64.baseOddConsts
+    contract :=
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.adx_mx
     features := ["bmi2", "adx"]
     spSafe := Proof.Ed25519.X86_64.VerifyCode.adx_spSafe },
@@ -40,14 +49,18 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := "vg_ed25519_verify_equation_ifma"
     doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["The code of \
-      `vg_ed25519_verify_equation_adx` but for its doublings, four at a time, which hold the \
-      point's coordinates `X, Y, Z, T` in the four lanes of `ymm` registers, as five 51-bit \
-      limbs each, and double it with two four-lane multiplications (AVX512_IFMA's \
-      `vpmadd52luq` and `vpmadd52huq` on `ymm` registers, with AVX512VL), as `vg_x25519_ifma`'s \
-      ladder multiplies, between Intel's MXCSR prologue and epilogue, which save MXCSR \
+      `vg_ed25519_verify_equation_adx` but for its windows, which hold the point's coordinates \
+      `X, Y, Z, T` in the four lanes of `ymm` registers throughout, as five 51-bit limbs each: \
+      each doubling, and each addition of a digit's cached table entry (loaded and split into \
+      limbs), is two four-lane multiplications (AVX512_IFMA's `vpmadd52luq` and \
+      `vpmadd52huq` on `ymm` registers, with AVX512VL), as in `vg_ed25519_scalar_base_ifma`'s \
+      comb. The windows run between Intel's MXCSR prologue and epilogue, which save MXCSR \
       through bytes 1600 to 1608 of `scratch`."])
-    code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx Impl.Ed25519.X86_64.Ifma.double4
-    contract := Spec.Ed25519.verifyEquationContract X86_64.abi
+    code := Impl.Ed25519.X86_64.verifyEquation Impl.X25519.X86_64.adx
+      Impl.Ed25519.X86_64.Ifma.windows
+    consts := Impl.Ed25519.X86_64.baseOddConsts
+    contract :=
+      Spec.Ed25519.verifyEquationContract (X86_64.abi.withConsts Impl.Ed25519.X86_64.baseOddConsts)
     verified := Proof.Ed25519.X86_64.verify_verified Proof.Ed25519.X86_64.VerifyCode.ifma_mx
     features := ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
     spSafe := Proof.Ed25519.X86_64.VerifyCode.ifma_spSafe }]

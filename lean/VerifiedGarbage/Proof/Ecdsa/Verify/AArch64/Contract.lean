@@ -8,9 +8,9 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.Contract
 
 The facts of `Spec.Ecdsa.P256.inst.verifyContract` for AArch64, by name:
 `vg_ecdsa_p256_verify(public = x0, digest = x1, sig = x2, scratch = x3)`,
-the result in `w0`. Only the pointers are public here: the proof shows that
-nothing else affects timing, although the contract would let the contents of
-the three buffers.
+the result in `w0`. This adapter supplies the correctness precondition and
+postcondition. The timing proof uses the shared contract directly, including
+its public input buffers.
 -/
 
 namespace VG.Proof.Ecdsa.Verify.AArch64

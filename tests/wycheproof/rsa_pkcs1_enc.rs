@@ -12,13 +12,16 @@
 //! below the modulus, which is refused. A `valid` vector decrypts to its
 //! message, and so does that message encrypted again.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 use verified_garbage::rsa_pkcs1_enc::{Error, decrypt, encrypt};
 
-use crate::harness::{self, Expectation, Hex, TestFile};
+use super::harness::{self, Count, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -55,9 +58,9 @@ fn trim(x: &[u8]) -> &[u8] {
 /// Checks every vector of the file `name`; returns the numbers of valid
 /// vectors, of invalid paddings and of refused ciphertexts.
 fn check(name: &str) -> (usize, usize, usize) {
-    let (mut valid, mut padding, mut refused) = (0, 0, 0);
+    let (valid, padding, refused) = (Count::default(), Count::default(), Count::default());
     let file: TestFile<Group, Case> = harness::load(name);
-    for group in &file.test_groups {
+    let keys = |group: &TestGroup<Group, Case>| {
         let k = &group.params.private_key;
         let n = trim(&k.modulus.0);
         let key = PrivateKey::from_crt(
@@ -71,33 +74,34 @@ fn check(name: &str) -> (usize, usize, usize) {
             &k.coefficient.0,
         )
         .unwrap_or_else(|e| panic!("{name}: {e}"));
-        let public = PublicKey::new(n, &k.public_exponent.0).unwrap();
-        for test in &group.tests {
-            let id = test.tc_id;
-            let ct = &test.case.ct.0;
-            let r = decrypt(&key, ct);
-            if test.result == Expectation::Valid {
-                assert_eq!(r.as_deref(), Ok(&test.case.msg.0[..]), "{name} tcId {id}");
-                let again = encrypt(&public, &test.case.msg.0).unwrap();
-                assert_eq!(decrypt(&key, &again), r, "{name} tcId {id}");
-                valid += 1;
-            } else if test.flags.iter().any(|f| f == "InvalidPkcs1Padding") {
-                let m = r.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
-                assert!(m.len() <= n.len() - 11, "{name} tcId {id}");
-                assert_eq!(decrypt(&key, ct), Ok(m), "{name} tcId {id}");
-                padding += 1;
+        (key, PublicKey::new(n, &k.public_exponent.0).unwrap())
+    };
+    file.par_tests_with(keys, |group, (key, public), test| {
+        let n = trim(&group.params.private_key.modulus.0);
+        let id = test.tc_id;
+        let ct = &test.case.ct.0;
+        let r = decrypt(key, ct);
+        if test.result == Expectation::Valid {
+            assert_eq!(r.as_deref(), Ok(&test.case.msg.0[..]), "{name} tcId {id}");
+            let again = encrypt(public, &test.case.msg.0).unwrap();
+            assert_eq!(decrypt(key, &again), r, "{name} tcId {id}");
+            valid.add();
+        } else if test.flags.iter().any(|f| f == "InvalidPkcs1Padding") {
+            let m = r.unwrap_or_else(|e| panic!("{name} tcId {id}: {e}"));
+            assert!(m.len() <= n.len() - 11, "{name} tcId {id}");
+            assert_eq!(decrypt(key, ct), Ok(m), "{name} tcId {id}");
+            padding.add();
+        } else {
+            let e = if ct.len() == n.len() {
+                Error::InputOutOfRange
             } else {
-                let e = if ct.len() == n.len() {
-                    Error::InputOutOfRange
-                } else {
-                    Error::InvalidLength
-                };
-                assert_eq!(r, Err(e), "{name} tcId {id}");
-                refused += 1;
-            }
+                Error::InvalidLength
+            };
+            assert_eq!(r, Err(e), "{name} tcId {id}");
+            refused.add();
         }
-    }
-    (valid, padding, refused)
+    });
+    (valid.get(), padding.get(), refused.get())
 }
 
 #[test]
@@ -107,7 +111,10 @@ fn rsa_pkcs1_test() {
         "rsa_pkcs1_2048_test.json",
         "rsa_pkcs1_3072_test.json",
         "rsa_pkcs1_4096_test.json",
-    ] {
+    ]
+    .into_iter()
+    .filter(|n| harness::rsa_file_tested(n))
+    {
         let (valid, padding, refused) = check(name);
         assert!(valid > 0 && padding > 0 && refused > 0, "{name}");
     }

@@ -11,7 +11,8 @@ lanes of `zmm3`–`zmm6` (`VaesZ.ctrsZ_ok`), AES of each lane
 (`VaesZ.aesZ_ok`), and the XOR into the data (`VaesZ.xorDataZ_ok`). The
 blocks `g i` between the rounds do what `Q` says, which neither the counter
 blocks, the rounds nor the XOR (which writes only those sixteen blocks)
-undo; as `Stitch.batch_ok` does with eight blocks in two lanes.
+undo; as `Stitch.batch_ok` does with eight blocks in two lanes. The blocks `g i`
+may write `zmm13`, which the next round reloads.
 -/
 
 namespace VG.Proof.Gcm.X86_64.StitchZ
@@ -58,7 +59,7 @@ theorem AInv.keys {s₀ : State} (hp : SPre s₀) {c : Nat} {s : State} (hI : AI
 theorem aregs_ok : aregs.Nodup ∧ .xmm13 ∉ aregs ∧ ∀ r ∈ aregs, r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15 := by decide
 
 theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : List XReg)
-    (hG : ∀ r ∈ G, r ≠ .xmm13 ∧ r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
+    (hG : ∀ r ∈ G, r ∉ aregs ∧ r ≠ .xmm14 ∧ r ≠ .xmm0 ∧ r ≠ .xmm15)
     (Q : Nat → State → Prop)
     (hg : ∀ j, 1 ≤ j → j ≤ 9 → ∀ s, Keys (nr s₀) (sch s₀) s → Q j s →
       WP isa (.block (g j)) s fun s' => Q (j + 1) s' ∧ ZFrame G s s')
@@ -78,7 +79,7 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     hI.ctr hI.msk hI.inc) fun s₁ ⟨e₁, c₁, f₁⟩ => ?_)
   have hK₁ : Keys (nr s₀) (sch s₀) s₁ := ZFrame.of_keys (hI.keys hp) f₁
   have hQ₁ : Q 1 s₁ := hq _ _ _ hQ (f₁.mono fun r hr => List.mem_cons_of_mem _ hr)
-  refine WP.seq (WP.mono (aesZ_ok .xmm13 aregs hnd h13 hp.rounds g G (fun r h => ⟨(hG r h).1, (hG r h).2.1⟩) Q
+  refine WP.seq (WP.mono (aesZ_ok .xmm13 aregs hnd h13 hp.rounds g G (fun r h => (hG r h).1) Q
     hg (fun j s s' h f => hq j s s' h (f.mono fun r hr => by
       rcases List.mem_cons.mp hr with rfl | hr
       · exact List.mem_cons_self
@@ -118,10 +119,10 @@ theorem batch_ok {s₀ : State} (hp : SPre s₀) (g : Nat → List Instr) (G : L
     by rw [g₃, f₂.gpr, f₁.gpr], kx, fr'⟩
   · rw [x₃ _ (by decide) (by decide) l hl, f₂.zlane _ (by
       simp only [List.mem_cons, List.mem_append, not_or]
-      exact ⟨by decide, by decide, fun h => (hG _ h).2.2.1 rfl⟩) l hl, c₁ l hl]
+      exact ⟨by decide, by decide, fun h => (hG _ h).2.1 rfl⟩) l hl, c₁ l hl]
     simp [aregs]
-  · rw [kx _ (by decide) (by decide) (by decide) (fun h => (hG _ h).2.2.2.1 rfl) l hl, hI.msk l hl]
-  · rw [kx _ (by decide) (by decide) (by decide) (fun h => (hG _ h).2.2.2.2 rfl) l hl, hI.inc l hl]
+  · rw [kx _ (by decide) (by decide) (by decide) (fun h => (hG _ h).2.2.1 rfl) l hl, hI.msk l hl]
+  · rw [kx _ (by decide) (by decide) (by decide) (fun h => (hG _ h).2.2.2 rfl) l hl, hI.inc l hl]
   · -- The data written is only in the data.
     refine hI.frame.trans (fr'.sub fun r hr => ⟨dR s₀, List.mem_cons_self, fun a ha => ?_⟩)
     simp only [List.mem_singleton] at hr

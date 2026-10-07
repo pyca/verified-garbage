@@ -178,11 +178,17 @@ theorem satPF :
     Spec.Pbkdf2.pbkdf2Contract, Spec.Pbkdf2.pbkdf2Sig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha224S, Spec.Hmac.sha224, AArch64.abi,
     AArch64.argRegs, pbkFrameSat, pbkSat] using pbkFrameSat
 
+/-- RSASSA-PSS's taint checks of the pieces that depend on the hash function. -/
+theorem pss_sha224 : Proof.RsaPss.AArch64.PssChecks coreH.P 28 := by
+  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
+  taint_decide_all
+
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
 Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
-with `v` carries. -/
+with `v` carries; it carries `v` for deterministic ECDSA's functions
+(`MdHash.sha224`). -/
 def variant : MdHash :=
-  MdHash.of (ok v) coreOK rfl rfl satI satF satT satP (by decide)
+  { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
     (by
       unfold Spec.Hmac.Instance.initContract Spec.Hmac.initContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (Nat.le_of_ble_eq_true rfl))
@@ -190,6 +196,7 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features
+    v.suffix v.features with
+    sha224 := some v }
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224

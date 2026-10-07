@@ -7,9 +7,11 @@ import VerifiedGarbage.Impl.Gcm.X86_64.Pclmul
 the contract of `vg_ghash` (`Spec.Gcm.ghashContract`), for CPUs with
 VPCLMULQDQ and AVX2 (and PCLMULQDQ and SSSE3, for the blocks left).
 
-`vg_ghash_pclmul`'s prologue computes `H'`–`H'⁴` (`H'ᵏ = Hᵏ · x⁻¹`) into
-`xmm3`–`xmm6` and loads `Y` into `xmm2`. With eight blocks or more, four
-more products give `H'⁵`–`H'⁸`, and the eight powers are paired in the lanes
+`vg_ghash_pclmul`'s prologue computes `H'` (`H'ᵏ = Hᵏ · x⁻¹`) into `xmm3`
+and loads `Y` into `xmm2`, and with four blocks or more `H'²`–`H'⁴` into
+`xmm4`–`xmm6`. With 32 blocks or more, four more products, all from
+`H'⁴` (`H'⁴⁺ᵏ = mul(H'⁴, H'ᵏ)`), so that none waits for another, give
+`H'⁵`–`H'⁸`, and the eight powers are paired in the lanes
 of `ymm15` (`H'⁸`, `H'⁷`), `ymm14` (`H'⁶`, `H'⁵`), `ymm13` (`H'⁴`, `H'³`) and
 `ymm12` (`H'²`, `H'`); the byte-reversal mask and the reduction constant are
 copied to the upper lanes of `ymm0` and `ymm1`, and the upper lane of `ymm2`
@@ -34,8 +36,10 @@ the same with eight blocks and `ymm12`–`ymm15`.
 
 After the loops, `vzeroupper` clears the upper lanes (so that the SSE code
 that follows pays no transition penalty), and the blocks left (fewer than
-eight) go through `vg_ghash_pclmul`'s loops and epilogue
-(`Pclmul.ghashTail`), with `xmm0`–`xmm6` as it left them.
+eight, or all of them if there are fewer than 32) go through
+`vg_ghash_pclmul`'s loops and epilogue (`Pclmul.ghashTail`), with
+`xmm0`–`xmm6` as it left them: below 32 blocks, computing `H'⁵`–`H'¹⁶` costs
+more than the 256-bit loops save.
 
 `pmuludq` is not used. `scratch` is not used, and no callee-saved register
 is written. Every branch and every address depends only on the pointers and
@@ -45,7 +49,7 @@ is written. Every branch and every address depends only on the pointers and
 namespace VG.Impl.Gcm.X86_64.Vpclmul
 
 open VG.X86_64
-open VG.Impl.Gcm.X86_64.Pclmul (at_ mul prologue ghashTail)
+open VG.Impl.Gcm.X86_64.Pclmul (at_ mul prologue withPows ghashTail)
 
 /-! Registers: `ymm0` the byte-reversal mask, `ymm1` the reduction constant,
 `xmm2` `Y`, `ymm7` two blocks, `ymm8`–`ymm10` the products (`lo`, `mid`,
@@ -61,10 +65,10 @@ def preg16 : Nat → XReg
   | 0 => .xmm3 | 1 => .xmm4 | 2 => .xmm5 | 3 => .xmm6 | 4 => .xmm15 | 5 => .xmm14 | 6 => .xmm13
   | _ => .xmm12
 
-/-- `H'⁵`–`H'⁸` from `H'` and `H'⁴`, and the lanes paired. -/
+/-- `H'⁵`–`H'⁸` from `H'⁴` and `H'`–`H'⁴`, and the lanes paired. -/
 def powers : List Instr :=
-  mul .xmm12 .xmm6 .xmm3 ++ mul .xmm13 .xmm12 .xmm3 ++ mul .xmm14 .xmm13 .xmm3 ++
-  mul .xmm15 .xmm14 .xmm3 ++
+  mul .xmm12 .xmm6 .xmm3 ++ mul .xmm13 .xmm6 .xmm4 ++ mul .xmm14 .xmm6 .xmm5 ++
+  mul .xmm15 .xmm6 .xmm6 ++
   [.vop (.vinserti128 .xmm15 .xmm15 .xmm14 1), .vop (.vinserti128 .xmm14 .xmm13 .xmm12 1),
    .vop (.vinserti128 .xmm13 .xmm6 .xmm5 1), .vop (.vinserti128 .xmm12 .xmm4 .xmm3 1),
    .vop (.vinserti128 .xmm0 .xmm0 .xmm0 1), .vop (.vinserti128 .xmm1 .xmm1 .xmm1 1),
@@ -138,7 +142,7 @@ def restore : List Instr :=
   [.vop (.vextracti128 .xmm3 .xmm12 1), .vop (.vmovdqa .l128 .xmm4 .xmm12),
    .vop (.vextracti128 .xmm5 .xmm13 1), .vop (.vmovdqa .l128 .xmm6 .xmm13)]
 
-/-- With eight blocks or more (after `cmp rcx, 8`): the powers, sixteen blocks
+/-- With eight blocks or more (from `ghash`, 32 or more): the powers, sixteen blocks
 at a time, then eight. -/
 def wide : Prog isa :=
   .seq (.block (powers ++ [.alu .cmp .rcx (.imm 16)]))
@@ -146,8 +150,8 @@ def wide : Prog isa :=
       (.seq (.block [.alu .cmp .rcx (.imm 8)]) (.ite .b (.block []) (.loop (.block body8) .ae))))
 
 def ghash : Prog isa :=
-  .seq (.block (prologue ++ [.alu .cmp .rcx (.imm 8)]))
-    (.seq (.ite .b (.block []) wide)
+  .seq (.block prologue)
+    (.seq (withPows (.seq (.block [.alu .cmp .rcx (.imm 32)]) (.ite .b (.block []) wide)))
       (.seq (.block [.vop .vzeroupper, .alu .cmp .rcx (.imm 4)]) ghashTail))
 
 end VG.Impl.Gcm.X86_64.Vpclmul

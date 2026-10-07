@@ -18,7 +18,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Two two_post two_map two_mono two_loop)
+open VG.Proof.Bignum (off)
+open VG.Proof.Bignum.X86_64 (Two two_post two_map two_mono two_loop)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (initK)
 open VG.Proof.MdStream.X86_64 (compressK)
@@ -352,7 +353,7 @@ include hH K in
 /-- `ctHash` is constant time. -/
 theorem ctHash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
     RelCT isa (Two (HE H n)) (ctHash H) fun _ _ => True := by
-  unfold ctHash seqs seqs seqs seqs seqs
+  unfold ctHash ctHashWith seqs seqs seqs seqs seqs
   exact (ctInit_ct hH K n hfx).seq ((pad80_ct hH n hc).seq ((lenField_ct hH n hc).seq ((lenLoop_ct hH n hc).seq
     ((compLoop_ct hH n hc hfx).seq (digestOut_ct n hc)))))
 

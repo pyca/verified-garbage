@@ -15,11 +15,14 @@ bits of `k` and the digits `d_j = k_j - H ∈ [-H, H)`,
 `k = c + Σ d_j 2^(wj)` for `c = H Σ_{j<J} 2^(wj)`: the accumulator `A`
 starts at `[c]G` (a constant), and iteration `j` adds the entry of table `j`
 for `|d_j|` (or the point at infinity for `d_j = 0`), negated if `d_j < 0`,
-by the complete addition for `a = -3` (`rcb3`, with `b` in `S.b3`), for
-`j = J - 1` down to `0`: `J` additions, and no doublings. This is the comb of `Impl/Weierstrass/AArch64/TComb.lean`, with
-the same tables.
+for `j = J - 1` down to `0`: `J` additions, and no doublings. This is the comb
+of `Impl/Weierstrass/AArch64/TComb.lean`, with the same tables. An entry's `Z`
+is 1, so the addition is the mixed one for `a = -3` (`rcb3m`, with `b` in
+`S.b3`), into `D`; it is wrong for the point at infinity, so `A` takes `D`
+under the mask of a nonzero digit (`eqMask 0`, from the digit computed
+again).
 
-The digits are secret, so their entries are selected in constant time: every
+For secret scalars, entries are selected in constant time: every
 entry of the table is loaded, 16 bytes at a time, at an address that depends
 only on `j` (public), into `xmm14`, and kept (`pand`, `por`) under a mask in
 both quadwords of `xmm15` that is all ones exactly when its index is the
@@ -29,8 +32,11 @@ stored to `E`'s `x` and `y`, which are adjacent. The entry's `Z` is `1`
 `(0 : 1 : 0)`. The negation computes `0 - y` and selects it by the mask of the
 digit's sign.
 
-The counter is `rbx`, and products of it with constants are by `mul`: the
-model has no left shift.
+Public verification scalars may instead use `selectPublic`: it directly
+loads the selected entry, with a safe first-entry address for a zero digit.
+The default `comb` and `step` keep the full scan for secret scalars.
+
+The counter is `rbx`, and products of it with constants are by `mul`.
 -/
 
 namespace VG.Impl.Weierstrass.X86_64
@@ -59,6 +65,8 @@ structure TCombCfg where
   J : Nat
   start : Nat × Nat
   one : Nat
+  /-- Whether the selection loads 32 bytes at a time, with AVX2 (`selPassV`). -/
+  avx2 : Bool := false
 
 /-- The accumulators of the selection: `xmm0`, `xmm1`, …, sixteen bytes of the
 entry each. -/
@@ -94,6 +102,56 @@ def eqMask (v : Nat) : List Instr :=
 /-- `[o] = [a]` for a point. -/
 def copyPt (n : Nat) (o a : Pt) : List Instr := copy n o.x a.x ++ copy n o.y a.y ++ copy n o.z a.z
 
+/-- `[rdx + d]`: byte `d` of the table at `rdx`. -/
+def tblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
+
+/-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
+apart: its `np` 16-byte pieces, piece `c` at `po c` bytes into the entry,
+kept in the accumulators under the mask of `r8 = m`. -/
+def selEntryAt (st np : Nat) (po : Nat → Nat) (m : Nat) : List Instr :=
+  eqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
+  (List.range np).flatMap fun c =>
+    [.movdquLoad .xmm14 (tblAt (st * (m - 1) + po c)), .xop (.bin .pand .xmm14 .xmm15),
+      .xop (.bin .por (selAcc c) .xmm14)]
+
+/-- The entry for the magnitude in `r8` of the `H` entries of the table at
+`rdx` (`selEntryAt st np po`) to `o`, piece `c` at `o + po c`: the
+accumulators cleared, every entry kept under its mask, and stored. -/
+def selPassAt (o H st np : Nat) (po : Nat → Nat) : List Instr :=
+  (List.range np).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
+  (List.range H).flatMap (fun m => selEntryAt st np po (m + 1)) ++
+  (List.range np).map fun c => .movdquStore (sc (o + po c)) (selAcc c)
+
+/-- The 16-byte piece where 32-byte piece `c` of an entry of `n` 16-byte
+pieces starts: `2 c`, and for the last of the `(n + 1) / 2`, `n - 2`, so
+that for an odd `n` it overlaps the one before rather than reading past the
+entry. -/
+def qY (n c : Nat) : Nat := if c + 1 < (n + 1) / 2 then 2 * c else n - 2
+
+/-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
+apart, with AVX2: the mask of `ymm14 = ymm13` (both broadcasts of a
+doubleword: `m` and the magnitude) in `ymm15`, `ymm14` incremented by
+`ymm12` (one in every doubleword), and the entry's `np` 32-byte pieces,
+piece `c` at `16 q c` bytes into the entry, kept in the 256-bit
+accumulators under the mask, through `ymm11`. -/
+def selEntryY (st np : Nat) (q : Nat → Nat) (m : Nat) : List Instr :=
+  [.vop (.vbin .vpcmpeqd .l256 .xmm15 .xmm14 .xmm13), .vop (.vbin .vpaddd .l256 .xmm14 .xmm14 .xmm12)] ++
+  (List.range np).flatMap fun c =>
+    [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 16 * q c)),
+      .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)]
+
+/-- `selPassAt` with AVX2, for entries of `np` 32-byte pieces, piece `c` at
+`16 q c` bytes into the entry: the magnitude in `r8` and the counter (from
+1) broadcast, the 256-bit accumulators cleared, every entry kept under its
+mask (`selEntryY`), the accumulators stored to `o + 16 q c`, and the upper
+halves of the `ymm` registers cleared (`vzeroupper`), through `rcx`. -/
+def selPassY (o H st np : Nat) (q : Nat → Nat) : List Instr :=
+  [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
+    .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
+  (List.range np).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) ++
+  (List.range H).flatMap (fun m => selEntryY st np q (m + 1)) ++
+  (List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 16 * q c)) (selAcc c)) ++ [.vop .vzeroupper]
+
 namespace TCombCfg
 
 variable (K : TCombCfg)
@@ -104,16 +162,9 @@ def H : Nat := 2 ^ (K.w - 1)
 /-- The bytes of a table. -/
 def tblBytes : Nat := 16 * K.M.n * K.H
 
-/-- `[rdx + d]`: byte `d` of the table at `rdx`. -/
-def tblAt (d : Nat) : MemOp := { base := .rdx, disp := d }
-
 /-- Entry `m` (from 1) of the table at `rdx`, its `n` pairs of words kept in
 the accumulators under the mask of `r8 = m`. -/
-def selEntry (m : Nat) : List Instr :=
-  eqMask m ++ [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
-  (List.range K.M.n).flatMap fun c =>
-    [.movdquLoad .xmm14 (tblAt (16 * K.M.n * (m - 1) + 16 * c)), .xop (.bin .pand .xmm14 .xmm15),
-      .xop (.bin .por (selAcc c) .xmm14)]
+def selEntry (m : Nat) : List Instr := selEntryAt (16 * K.M.n) K.M.n (16 * ·) m
 
 /-- `rdx` = table `rbx`'s address, from the static `tsym`'s, through `rax` and
 `rcx`. -/
@@ -123,10 +174,13 @@ def selSetup : List Instr :=
 
 /-- The entry of table `rbx` for the magnitude in `r8` into `E`'s `x` and
 `y`: the accumulators cleared, every entry kept under its mask, and stored. -/
-def selPass : List Instr :=
-  (List.range K.M.n).map (fun c => .xop (.bin .pxor (selAcc c) (selAcc c))) ++
-  (List.range K.H).flatMap (fun m => K.selEntry (m + 1)) ++
-  (List.range K.M.n).map fun c => .movdquStore (sc (K.E.x + 16 * c)) (selAcc c)
+def selPass : List Instr := selPassAt K.E.x K.H (16 * K.M.n) K.M.n (16 * ·)
+
+/-- `selPass`, with AVX2 (`selPassY`, 32 bytes at a time) if the comb uses
+it: for an odd number of words, the last two 32-byte pieces of an entry
+overlap (`qY`). -/
+def selPassV : List Instr :=
+  if K.avx2 && 2 ≤ K.M.n then selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n) else K.selPass
 
 /-- `y = R` if the magnitude in `r8` is zero (when the selected `y` is zero),
 and `Z = R` unless it is, through `rax`, `rcx` and `rdx`. -/
@@ -139,7 +193,30 @@ def selOne : List Instr :=
     [.movImm64 .rax (wordOf K.one i), .alu .and .rax (.reg .rcx), .store (sc (K.E.z + 8 * i)) .rax]
 
 /-- The entry of table `rbx` for the magnitude in `r8` into `E`. -/
-def select : List Instr := K.selSetup ++ K.selPass ++ K.selOne
+def select : List Instr := K.selSetup ++ K.selPassV ++ K.selOne
+
+/-- Address of the public digit's entry. A zero magnitude safely reads the
+first entry, which the mask subsequently clears. -/
+def publicAddress : List Instr :=
+  [.mov .rax (.reg .rbx), .mov32 .rcx (.imm (BitVec.ofNat 32 K.H)), .mul .rcx,
+    .mov .rcx (.reg .r8), .alu .sub .rcx (.imm 1), .alu .adc .rcx (.imm 0),
+    .alu .add .rax (.reg .rcx), .mov32 .rcx (.imm (BitVec.ofNat 32 (16 * K.M.n))), .mul .rcx,
+    .leaSym .rdx K.tsym, .alu .add .rdx (.reg .rax)]
+
+/-- All ones in both halves of `xmm15` unless the public magnitude is zero. -/
+def publicMask : List Instr :=
+  eqMask 0 ++ [.alu .xor .rcx (.imm (-1)),
+    .xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)]
+
+/-- Read only the selected public entry, then store its masked coordinates.
+All loads precede the stores. -/
+def publicLoad : List Instr :=
+  (List.range K.M.n).flatMap (fun i =>
+    [.movdquLoad (selAcc i) (tblAt (16 * i)), .xop (.bin .pand (selAcc i) .xmm15)]) ++
+  (List.range K.M.n).map (fun i => .movdquStore (sc (K.E.x + 16 * i)) (selAcc i))
+
+/-- Direct lookup for public scalars only. Secret scalars use `select`. -/
+def selectPublic : List Instr := K.publicAddress ++ publicMask ++ K.publicLoad ++ K.selOne
 
 /-- The digit's magnitude into `rax` and `r8`: its window and `|k - H|`. -/
 def digit : List Instr := winIndex K.w ++ hornerBits K.bits K.w ++ magnitudeH K.H
@@ -156,11 +233,11 @@ def negY : List Instr := Mont.X86_64.sub K.M K.neg K.zero K.E.y ++ K.signMask ++
 
 /-- Iteration `j = rbx - 1` (with `rbx` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
-def step : Prog isa :=
-  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ K.select)) <|
+def step (publicLookup : Bool := false) : Prog isa :=
+  .seq (.block ([.alu .sub .rbx (.imm 1)] ++ K.digit ++ (if publicLookup then K.selectPublic else K.select))) <|
   .seq (.block K.negY) <|
-  .seq (fprogB K.M (rcb3 K.S K.A K.E K.D)) <|
-  .block (copyPt K.M.n K.A K.D ++ [.alu .test .rbx (.reg .rbx)])
+  .seq (fprogB K.M (rcb3m K.S K.A K.E K.D)) <|
+  .block (K.digit ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++ [.alu .test .rbx (.reg .rbx)])
 
 /-- The words of the table of bits the comb clears, past the scalar's
 `kbytes`, up to `w J`. -/
@@ -174,7 +251,7 @@ def init : List Instr :=
     [.mov32 .rbx (.imm (BitVec.ofNat 32 K.J))]
 
 /-- `[k]G` into `A`. -/
-def comb : Prog isa := .seq (.block K.init) (.loop K.step .ne)
+def comb (publicLookup : Bool := false) : Prog isa := .seq (.block K.init) (.loop (K.step publicLookup) .ne)
 
 end TCombCfg
 

@@ -10,15 +10,17 @@
 //! `dQ` or `qInv` changed by one. (Every key's public exponent, 3 or 65537,
 //! is within BoringSSL's limits.)
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use std::collections::BTreeMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
 use verified_garbage::rsa::{PrivateKey, PublicKey};
 
-use crate::harness::{self, Hex, TestFile};
+use super::harness::{self, Count, Hex, TestFile};
 use crate::require_vectors;
 
 #[derive(Clone, Deserialize)]
@@ -68,9 +70,17 @@ fn check_key(name: &str, k: &Key) -> bool {
     x[len - 1] = 2;
     let mut y = n.to_vec();
     y[0] >>= 1;
+    let (p, q, dp, dq, qi) = (
+        &k.prime1,
+        &k.prime2,
+        &k.exponent1,
+        &k.exponent2,
+        &k.coefficient,
+    );
+    // The key from `(n, e, d)`.
     let key = PrivateKey::from_components(n, e, d).unwrap_or_else(|err| panic!("{name}: {err}"));
-    assert_eq!(key.modulus_len(), len, "{name}");
     assert!(key.check_key(), "{name}: from_components");
+    assert_eq!(key.modulus_len(), len, "{name}");
     // RSAEP of each result gives back the input.
     let expect: Vec<Vec<u8>> = [&x, &y]
         .iter()
@@ -87,13 +97,7 @@ fn check_key(name: &str, k: &Key) -> bool {
         assert_eq!(private(key, &y), expect[1], "{name}: {how}");
         assert!(key.check_key(), "{name}: {how}");
     };
-    let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (
-        &k.prime1,
-        &k.prime2,
-        &k.exponent1,
-        &k.exponent2,
-        &k.coefficient,
-    ) else {
+    let (Some(p), Some(q), Some(dp), Some(dq), Some(qi)) = (p, q, dp, dq, qi) else {
         return false;
     };
     let key =
@@ -131,30 +135,20 @@ fn rsa_keys_from_components() {
         for group in file.test_groups {
             if let Some(k) = group.params.private_key
                 && k.other_prime_infos.is_none()
+                && harness::rsa_key_tested(&k.modulus.0)
             {
                 keys.entry(k.modulus.0.clone()).or_insert((name.clone(), k));
             }
         }
     }
     let keys: Vec<(String, Key)> = keys.into_values().collect();
-    // The recoveries are most of this test's time: shared among as many
-    // threads as the machine runs at once.
-    let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let next = AtomicUsize::new(0);
-    let with_primes = AtomicUsize::new(0);
-    let without_primes = AtomicUsize::new(0);
-    std::thread::scope(|s| {
-        for _ in 0..workers.min(keys.len()) {
-            s.spawn(|| {
-                while let Some((name, k)) = keys.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    if check_key(name, k) {
-                        with_primes.fetch_add(1, Ordering::Relaxed);
-                    } else {
-                        without_primes.fetch_add(1, Ordering::Relaxed);
-                    }
-                }
-            });
+    let (with_primes, without_primes) = (Count::default(), Count::default());
+    harness::par_each(&keys, |(name, k)| {
+        if check_key(name, k) {
+            with_primes.add();
+        } else {
+            without_primes.add();
         }
     });
-    assert!(with_primes.into_inner() > 0 && without_primes.into_inner() > 0);
+    assert!(with_primes.get() > 0 && without_primes.get() > 0);
 }

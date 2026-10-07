@@ -120,7 +120,7 @@ theorem select_okD (W : DcWf L) {σ : State} {s : State} (h : EncO W σ s) : WP 
   have cR : ∀ {p : Ptr} {l : Nat}, inB (dcB L) p l = true → InRegions (s.rd ++ s.wr) (pa s p) l := fun hi =>
     L₀.cR hi _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   obtain ⟨i1, i2, i3, i4, i5, s1, s2⟩ := W.sel
-  refine WP.mono (select_ok W.ct.1 W.ct.2.1 W.ct.2.2 (cR i1) (cR i2) (cR i3) (cR i4)
+  refine WP.mono (select_ok W.ct.1 W.ct.2.1 W.ct.2.2.1 W.ct.2.2.2 (cR i1) (cR i2) (cR i3) (cR i4)
     (L₀.cW i5 _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩) (L₀.disj s1) (L₀.disj s2))
     fun s' ⟨hP, hb⟩ => ?_
   refine ⟨k.dc.step W hp hP.b W.selK, by rw [hP.cs .r15 (by decide)]; exact h.r15, fun ho => ?_⟩
@@ -151,10 +151,10 @@ theorem post_of (W : DcWf L) {σ s : State} (h : DEnd L σ s) {s' : State}
 theorem decrypt_ok {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ : State}
     (hp : (decapsK L).pre σ) {s : State} (h : DC L σ s) (h15 : s.gpr .r15 = 1) : WP isa (decrypt L A) s (DM L σ) := by
   unfold decrypt
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok hA W K hp (by omega) hs) s
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok W K hp (by omega) hs) s
     (DR.zero h h15)) fun s₁ h₁ => ?_)
   rw [Nat.zero_add] at h₁
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok W hp (by omega) hs) s₁ h₁)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok hA W hp (by omega) hs) s₁ h₁)
     fun s₂ h₂ => ?_)
   rw [Nat.zero_add] at h₂
   exact tail_ok hA W K hp h₂
@@ -189,12 +189,12 @@ theorem decrypt_tr {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
     RelCT isa (R L fun σ s => DC L σ s ∧ s.gpr .r15 = 1) (decrypt L A) fun _ _ => True := by
   unfold decrypt
   refine RelCT.seq (RelCT.mono (seqR_tr (R := fun k => R L (DR L k 0)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => u_ok hA W K hp (by omega) hs) (u_tr hA W K (by omega)))
+    fun k _ hk => relInv (fun σ s hp hs => u_ok W K hp (by omega) hs) (u_tr W K (by omega)))
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, DR.zero h₁.1 h₁.2, DR.zero h₂.1 h₂.2⟩)
     fun _ _ h => h) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k => R L (DR L L.k k)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => s_ok W hp (by omega) hs) (s_tr W (by omega))) ?_
+    fun k _ hk => relInv (fun σ s hp hs => s_ok hA W hp (by omega) hs) (s_tr hA W (by omega))) ?_
   rw [Nat.zero_add]
   exact tail_tr hA W K
 

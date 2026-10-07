@@ -52,6 +52,13 @@ Modelling choices:
 * Calls (`call`) and returns (`ret`) are near and direct (SDM Vol. 2, "CALL",
   "RET"). The return addresses are the next of the state's `unknowns`,
   which nothing constrains (see `TCB/Code.lean`).
+* `symPush` obtains a static's position-independent address with a near
+  call to the next instruction, a load of that return address, and an ADD
+  of the link-time difference to the static (`State.syms`). Its four-byte
+  stack slot is an explicit frame, released by `free 4`. No instruction
+  changes `syms`. The CALL rel32 with displacement zero does not push a
+  shadow-stack entry (SDM Vol. 2, CALL pseudocode, `DEST != 0`), so the
+  sequence also works with CET shadow stacks enabled.
 * `push` and `pop` (of registers other than `esp`) only occur as the push
   and pop of a frame (see `push`), as a sequence of them.
 * A frame may instead allocate a buffer of `bytes` bytes on the stack
@@ -110,6 +117,10 @@ inductive ShiftOp | ror | shr
   deriving DecidableEq, Repr
 
 inductive Instr
+  /-- Position-independent address of a static, as the push of a four-byte
+  frame: `call 2f; 2: mov dst, [esp]; add dst, offset name - 2b`.
+  `dst` must not be `esp`; release the frame with `free 4`. -/
+  | symPush (dst : Reg) (name : String)
   /-- `mov dst, src` -/
   | mov (dst : Reg) (src : Src)
   /-- `mov DWORD PTR [dst], src` -/
@@ -286,9 +297,10 @@ def exec : Instr → State → Option State
   | .mop op, s => op.exec s
   | .mmxStore m r, s => if s.mmx then s.store64 (s.ea m) (s.mm r) else none
   -- Only the push and pop of a frame (`push`, `pop`).
-  | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _ => none
+  | .symPush .., _ | .push _, _ | .pop .., _ | .alloc _, _ | .free _, _ | .mmxEnter, _ | .emms, _ => none
 
 def addrs : Instr → State → List Addr
+  | .symPush .., s => [(s.gpr .esp - 4).setWidth 64, (s.gpr .esp - 4).setWidth 64]
   | .mov _ src, s => srcAddrs s src
   | .store m _, s => [s.ea m]
   | .alu _ _ src, s => srcAddrs s src
@@ -372,6 +384,23 @@ Or the push of an MMX frame (`mmxEnter`, no instruction): a frame of no
 bytes (the empty region at `esp`, at the head of `wr`; `esp` and memory
 unchanged), which enters MMX mode (`State.mmx`), faulting inside one. -/
 def push : Instr → State → Option State
+  -- Intel SDM Vol. 2, CALL (near, rel32), MOV (r32, r/m32), and ADD
+  -- (r32, imm32). CALL pushes the next EIP; MOV reads it; ADD adds the
+  -- link-time displacement from that EIP to the static, modulo 2^32.
+  -- ADD sets the flags, as in execAlu. The stored EIP is an unknown, and
+  -- its slot remains part of memory. The frame accounts for its stack use.
+  | .symPush d name, s =>
+    if d ≠ .esp ∧ 4 ≤ (s.gpr .esp).toNat then
+      let sp := s.gpr .esp - 4
+      let pc := s.unknowns 0
+      let delta := s.syms name - pc
+      let t := arithFlags s (s.syms name) (2 ^ 32 ≤ pc.toNat + delta.toNat)
+        (addOverflow pc delta (s.syms name))
+      some { (t.setReg .esp sp).setReg d (s.syms name) with
+        mem := s.mem.writeW (sp.setWidth 64) (s.unknowns 0)
+        unknowns := fun n => s.unknowns (n + 1)
+        wr := ⟨sp.setWidth 64, 4⟩ :: s.wr }
+    else none
   | .mmxEnter, s =>
     if s.mmx then none else some { s with mmx := true, wr := ⟨(s.gpr .esp).setWidth 64, 0⟩ :: s.wr }
   | .alloc bytes, s =>
@@ -424,6 +453,7 @@ def pop : Instr → State → State → Option State
 a frame also moves `esp`, as the push does): `mul` writes two, `eax` and
 `edx`, and stores none. -/
 def Instr.dst : Instr → Option Reg
+  | .symPush d _ => some d
   | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _ | .pop d _ => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .xop _
   | .movqLoad .. | .movqStore .. | .mop _ | .mmxStore .. | .mmxEnter | .emms

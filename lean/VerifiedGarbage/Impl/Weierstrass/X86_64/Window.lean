@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.TComb
+import VerifiedGarbage.Impl.Weierstrass.JacMul
 
 /-!
 # Short Weierstrass curves on x86-64: scalar multiplication by windows
@@ -18,9 +19,10 @@ with `b` in `S.b3`).
 The digits are secret. Their magnitudes and signs are read as the comb's
 (`TCombCfg.digit`, `TCombCfg.signMask`, `Impl/Weierstrass/X86_64/TComb.lean`,
 for windows of 4 bits), and the entry is selected as the comb selects one
-(`TCombCfg.selPass`): the table's eight points are 24 n bytes apart, so it is
-the comb's selection for entries of `3 n / 2` pairs of words, from the table
-at `rdx = rdi + tbl`; then `y = R` for a zero digit (the entry `(0 : 1 : 0)`).
+(`selPassAt`), from the table at `rdx = rdi + tbl`, whose eight points are
+`24 n` bytes apart, 16 bytes at a time: `⌈3 n / 2⌉` pieces of each entry,
+the last its last 16 bytes (for odd `n`, overlapping the one before it by a
+word); then `y = R` for a zero digit (the entry `(0 : 1 : 0)`).
 The counter `rbx` is public, as are every address and branch.
 -/
 
@@ -68,9 +70,12 @@ def tc : TCombCfg where
   start := (0, 0)
   one := K.one
 
-/-- The comb's selection for entries of `3 n / 2` pairs of words: the table's
-points, `24 n` bytes each, into `E`'s three coordinates. -/
-def selCfg : TCombCfg := { tc K with M := { K.M with n := 3 * K.M.n / 2 } }
+/-- The 16-byte pieces of an entry of the table: `⌈3 n / 2⌉`. -/
+def np : Nat := (3 * K.M.n + 1) / 2
+
+/-- Piece `c` of an entry is at `16 c` bytes into it, but the last at its last
+16 bytes (which for odd `n` overlap the piece before it by a word). -/
+def po (c : Nat) : Nat := if c + 1 < np K then 16 * c else 24 * K.M.n - 16
 
 /-- `rdx = rdi + tbl`, the table's address. -/
 def selSetup : List Instr := [.mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl))]
@@ -84,7 +89,7 @@ def ySel0 : List Instr :=
       .store (sc (K.E.y + 8 * i)) .rax]
 
 /-- The entry for the magnitude in `r8` into `E`: `(0 : 1 : 0)` for `0`. -/
-def select : List Instr := selSetup K ++ (selCfg K).selPass ++ ySel0 K
+def select : List Instr := selSetup K ++ selPassAt K.E.x 8 (24 * K.M.n) (np K) (po K) ++ ySel0 K
 
 /-- The slots of zero, as a point (`toJ` and `fromJ` add zero to copy). -/
 def zeroPt : Pt := ⟨K.zero, K.zero, K.zero⟩
@@ -104,12 +109,25 @@ def ySelWord (w : Nat) : List Instr :=
 /-- `R = (0 : 1 : 0)` where `E.z` is zero: `R.x` and `R.z` are zero then already. -/
 def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 
-/-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, four
-doublings between `E` and `D`, and back. -/
+/-- For four-limb fields, form `2YZ` directly: squaring and multiplication
+use the same Montgomery kernel, so this saves two field subtractions. -/
+def double (p o : Pt) : List FOp :=
+  if K.M.n == 4 then dblJMul K.S p o else dblJ K.S p o
+
+/-- A pair of Jacobian doublings, with a public count in the bits above the
+window index in `rbx`. The window index is less than 4096. -/
+def jacPair : Prog isa :=
+  .seq (fprogB K.M (double K K.E K.D)) <|
+  .seq (fprogB K.M (double K K.D K.E)) <|
+  .block [.alu .sub .rbx (.imm 4096), .alu .cmp .rbx (.imm 4096)]
+
+/-- `R = 16 R` but where it is `O`: into Jacobian coordinates in `E`, two
+pairs of doublings between `E` and `D`, and back. The pair loop restores
+`rbx` to the window index without an additional scratch slot. -/
 def jac : Prog isa :=
   .seq (fprogB K.M (toJ K.S K.R (zeroPt K) K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
-  .seq (fprogB K.M (dblJ K.S K.E K.D)) <| .seq (fprogB K.M (dblJ K.S K.D K.E)) <|
+  .seq (.block [.alu .add .rbx (.imm 8192)]) <|
+  .seq (.loop (jacPair K) .ae) <|
   fprogB K.M (fromJ K.S K.E (zeroPt K) K.R)
 
 /-- `R = 16 R`. -/

@@ -12,11 +12,12 @@ open VG.X86_64
 def p256 : Cfg where
   n := 4
   C := Spec.P256.curve
-  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩
+  comb := some ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB", true⟩
   fastN := true
+  pubVerify := true
 
 /-- P-256, multiplying with BMI2 and ADX. -/
-def p256x : Cfg := { p256 with adx := true }
+def p256x : Cfg := { p256 with adx := true, avx2 := true }
 
 /-- `vg_ecdsa_p256_sign`. -/
 def signP256 : Prog isa := p256.sign

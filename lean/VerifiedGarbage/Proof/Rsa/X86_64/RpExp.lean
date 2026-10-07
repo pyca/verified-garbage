@@ -11,44 +11,11 @@ by a mask: `Y ≡ g^r R` (`expLoop_ok`), for `G ≡ g R` and `Y ≡ R` on entry.
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64.Keys VG.Impl.Rsa.X86_64.Keys.Recover
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Impl.Bignum.X86_64.Public (aN aX aAcc aTmp aR2 aXm aY aOne sCnt)
 open VG.Proof.Bignum (mont_cancel mont_sq)
 
 /-! ## Bits -/
-
-/-- The top bit of a word shifted left by `j`. -/
-theorem top_bit {W j : Nat} (hj : j < 64) : W * 2 ^ j % 2 ^ 64 / 2 ^ 63 = W / 2 ^ (63 - j) % 2 := by
-  have e1 : 2 ^ 64 = 2 ^ (64 - j) * 2 ^ j := by rw [← Nat.pow_add]; congr 1; omega
-  have e2 : 2 ^ 63 = 2 ^ (63 - j) * 2 ^ j := by rw [← Nat.pow_add]; congr 1; omega
-  have e3 : 2 ^ (64 - j) = 2 ^ (63 - j) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
-  rw [e1, Nat.mul_mod_mul_right, e2, Nat.mul_div_mul_right _ _ (Nat.two_pow_pos j), e3,
-    Nat.mod_mul_right_div_self]
-
-/-- Bit `63 - j` of word `i` of `r`. -/
-theorem word_bit (r i : Nat) {j : Nat} (hj : j < 64) :
-    r / 2 ^ (64 * i) % 2 ^ 64 / 2 ^ (63 - j) % 2 = r / 2 ^ (64 * i + (63 - j)) % 2 := by
-  have e : 2 ^ 64 = 2 ^ (63 - j) * 2 ^ (j + 1) := by rw [← Nat.pow_add]; congr 1; omega
-  rw [e, Nat.mod_mul_right_div_self, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 (show 1 ≤ j + 1 by omega)),
-    Nat.pow_one, Nat.div_div_eq_div_mul, ← Nat.pow_add]
-
-/-- One more bit of `r`. -/
-theorem prefix_step (r a : Nat) : r / 2 ^ a = 2 * (r / 2 ^ (a + 1)) + r / 2 ^ a % 2 := by
-  rw [Nat.pow_succ, ← Nat.div_div_eq_div_mul]; omega
-
-/-- One more bit of a word's prefix. -/
-theorem prefix_step' (e : Nat) {j : Nat} (hj : j < 64) :
-    e / 2 ^ (64 - (j + 1)) = 2 * (e / 2 ^ (64 - j)) + e / 2 ^ (63 - j) % 2 := by
-  have := prefix_step e (63 - j)
-  rw [show 63 - j + 1 = 64 - j by omega, show 63 - j = 64 - (j + 1) by omega] at this
-  rw [show 63 - j = 64 - (j + 1) by omega]
-  exact this
-
-/-- A Montgomery multiplication of `Y ≡ x^E R` by `X ≡ x^b R`. -/
-theorem mont_mulp {Y Y' X x E b R m : Nat} (hR : Nat.Coprime R m) (hY : Y % m = x ^ E * R % m)
-    (hX : X % m = x ^ b * R % m) (h : Y' * R % m = Y * X % m) : Y' % m = x ^ (E + b) * R % m := by
-  apply mont_cancel hR
-  rw [h, Nat.mul_mod, hY, hX, ← Nat.mul_mod, Nat.pow_add, Nat.mul_mul_mul_comm, Nat.mul_assoc (x ^ E * x ^ b)]
 
 theorem shr63 (x : BitVec 64) : x >>> 63 = BitVec.ofNat 64 (x.toNat / 2 ^ 63) := by
   apply BitVec.eq_of_toNat_eq
@@ -95,11 +62,6 @@ theorem bitSel_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {V : Nat}
   exact ⟨(k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hbp)),
     (k₄.gpr (by decide)).trans h8, hsi, (k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans h12),
     by rw [m₄, m₃, m₂, m₁], (((k₁.trans k₂).trans k₃).trans k₄).mono (by decide)⟩
-
-/-- Bit `63 - j` of a number's low word. -/
-theorem low_bit (e : Nat) {j : Nat} (hj : j < 64) : e % 2 ^ 64 / 2 ^ (63 - j) % 2 = e / 2 ^ (63 - j) % 2 := by
-  have := word_bit e 0 hj
-  simpa using this
 
 /-- A counter in header slot `i`, decremented: `ZF` set when it reaches 0. -/
 theorem ctrDec_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {i a : Nat} (hi : 16 ≤ i) (hi' : i < 32)

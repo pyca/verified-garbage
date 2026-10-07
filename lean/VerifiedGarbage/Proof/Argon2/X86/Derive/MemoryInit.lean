@@ -49,7 +49,7 @@ theorem wp_cmpm {s : State} {is : List Instr} {Q : State → Prop} {d b : Reg} {
       (decide ((s.gpr d).toNat < (s.mem.readW (addr B o) 32).toNat))
       (subOverflow (s.gpr d) (s.mem.readW (addr B o) 32) (s.gpr d - s.mem.readW (addr B o) 32)))
     (by simp only [exec, execAlu, Wp.readSrc_mem hb hin, Option.bind_some])
-    (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl rfl)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl⟩ rfl rfl)
 
 /-- The loop's state after `j` words. -/
 structure CI (s₀ s₁ : State) (j : Nat) (s : State) : Prop where

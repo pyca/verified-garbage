@@ -357,11 +357,11 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w 
 /-- `r8 *= 32`. -/
 theorem shl5_ok (s : State) :
     WP isa (.block shl5) s fun t => (t.gpr .r8).toNat = (s.gpr .r8).toNat * 32 % 2 ^ 64 ∧ Keeps [.r8] s t := by
-  irun [shl5, List.replicate]
+  irun [shl5]
   refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · simp only [BitVec.toNat_add]; omega
+  · simp only [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
   · simp only [List.mem_singleton] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]
 
 /-- A word of the shift: `(lo >> 59) + 32 hi` does not wrap. -/
 theorem shr_word (lo y : BitVec 64) {hi : Nat} (hy : y.toNat = hi * 32 % 2 ^ 64) :

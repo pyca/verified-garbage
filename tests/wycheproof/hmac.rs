@@ -11,7 +11,7 @@
 use serde::Deserialize;
 use verified_garbage::hmac::{Hmac, HmacHash};
 
-use crate::harness::{self, Expectation, Hex};
+use super::harness::{self, Expectation, Hex};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,7 +32,7 @@ struct Case {
 /// one exactly when the test is valid.
 pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
     let file = harness::load::<Group, Case>(name);
-    for (group, test) in file.tests() {
+    file.par_tests(|group, test| {
         let Case { key, msg, tag } = &test.case;
         assert_eq!(key.0.len() * 8, group.params.key_size);
         assert!(group.params.tag_size <= H::OUTPUT_SIZE * 8);
@@ -62,5 +62,5 @@ pub(crate) fn check<H: HmacHash>(name: &str, new: fn(&[u8]) -> Hmac<H>) {
             assert_eq!(test.result, Expectation::Invalid);
             assert_ne!(computed, &tag.0[..], "tcId {}", test.tc_id);
         }
-    }
+    });
 }

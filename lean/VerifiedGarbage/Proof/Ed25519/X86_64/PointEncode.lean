@@ -71,7 +71,7 @@ theorem encodeSign_ok (s : State) (x y : Nat) (hy : y < 2 ^ 255)
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
-theorem pointEncode_ok {s : State} {base : Addr} (hs : Scratch s base) :
+theorem pointEncode_ok [X25519.X86_64.DivstepInv] {s : State} {base : Addr} (hs : Scratch s base) :
     WP isa (pointEncode fld) s fun t => RbxKeep base s t ∧
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) =
         (env s.mem base 1 * Spec.X25519.pow (env s.mem base 2) (Spec.X25519.P - 2)).val +

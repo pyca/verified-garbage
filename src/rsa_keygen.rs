@@ -49,17 +49,21 @@
 //! and the generations, and compares the pairwise test's result with its
 //! message.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::arch::rsa_keygen::{
-    vg_rsa_keygen_candidate, vg_rsa_keygen_candidate_adx, vg_rsa_keygen_key,
-};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::rsa_keygen::vg_rsa_keygen_candidate_adx;
+use crate::arch::rsa_keygen::{vg_rsa_keygen_candidate, vg_rsa_keygen_key};
 use crate::cpu::detected;
-use crate::rsa::{Backend, PrivateKey, PublicKey};
+use crate::rsa::PublicKey;
+use crate::rsa::{Backend, PrivateKey};
 
 /// The shortest prime, in bits.
 pub const MIN_PRIME_BITS: usize = 256;
@@ -211,6 +215,7 @@ fn prime_from(
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_keygen_candidate,
         // `select` chose it because the CPU has the features it needs.
+        #[cfg(target_arch = "x86_64")]
         Backend::Adx | Backend::Ifma => vg_rsa_keygen_candidate_adx,
     };
     let mut read = 0;

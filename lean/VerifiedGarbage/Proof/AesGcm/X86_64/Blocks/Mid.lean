@@ -15,6 +15,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.AesGcm.X86_64.Blocks
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Blocks
+open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Gcm (Block blockAt blocksAt ctxCiph ctxH ctr32 ghashFrom inc32)
 
 section
@@ -46,7 +47,7 @@ structure Mid (s : State) (q k : Nat) (ys : List Block) (st : State) : Prop wher
   y : blockAt st.mem (Y s) = ghashFrom (hk s) (y₀ s) ys
 
 section
-variable {s : State} (hp : BP s)
+variable {M : CtxMode} {s : State} (hp : BP M s)
 include hp
 
 /-- The slots of the arguments are apart from the other regions written. -/

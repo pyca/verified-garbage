@@ -51,6 +51,7 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
     Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
   unch : Unch base [(0, size)] s₀.mem s.mem
   syms : s.syms = s₀.syms
+  k : sv c base s K = sigR c s₀
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
@@ -225,7 +226,8 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     lt₁₀,
     by rw [toM_one_mul hnR (by rw [e₁₀, show sv c base s₉ ONE = 1 from F₉.one]),
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
-    by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms]⟩
+    by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms],
+    by rw [a (i := K) (by decide) (by decide) (by decide), hF.k]⟩
   · rw [flag_unch_cw U' h7 h0 hn (by decide)]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_

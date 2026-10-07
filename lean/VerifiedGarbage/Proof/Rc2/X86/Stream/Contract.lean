@@ -103,7 +103,7 @@ theorem wp_stb {b : Reg} {r : Reg8} {B : BitVec 32} {o : Nat} (hb : s.gpr b = B)
     (k : ∀ s', Mupd s s' (s.mem.writeW (addr B o) ((s.gpr r.reg).setWidth 8)) → WP isa (.block is) s' Q) :
     WP isa (.block (.store8 ⟨b, o⟩ r :: is)) s Q := by
   refine cons (s' := { s with mem := s.mem.writeW (addr B o) ((s.gpr r.reg).setWidth 8) }) ?_
-    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩)
+    (k _ ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
   simp [exec, State.store8, ea_mk, hb, hout]
 
 end

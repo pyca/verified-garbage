@@ -25,5 +25,11 @@ pub fn bench(c: &mut Criterion) {
     use crate::hash_group;
 
     let md = MessageDigest::from_name("SHA512-256").unwrap();
-    hash_group(c, "sha512-256", Sha512_256::digest, md);
+    hash_group(
+        c,
+        "sha512-256",
+        Sha512_256::digest,
+        md,
+        Some(&aws_lc_rs::digest::SHA512_256),
+    );
 }

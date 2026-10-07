@@ -14,7 +14,7 @@ bit cleared), reduces it modulo `e` (`modWords_ok`), runs the binary gcd
 namespace VG.Proof.RsaKeyGen.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
-open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum.X86_64
+open VG.Impl.RsaKeyGen.X86_64.Candidate VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 
 theorem sx_m2 : BitVec.signExtend 64 (BitVec.ofInt 32 (-2)) = BitVec.allOnes 64 - 1 := by decide
@@ -56,7 +56,7 @@ theorem wv_low (m : Mem) (B : Addr) (d n : Nat) :
   rw [Nat.add_comm n 1, wv_add, Nat.mul_one]; simp [wv]
 
 /-- The header, after changes past it. -/
-theorem Hdr.outside {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (h : Hdr m B w minv) {o n : Nat}
+theorem _root_.VG.Proof.Bignum.Hdr.outside {m m' : Mem} {B : Addr} {w : Nat} {minv : BitVec 64} (h : Hdr m B w minv) {o n : Nat}
     (ho : Outside B o n m m') (hlo : hdrBytes ≤ o) : Hdr m' B w minv :=
   ⟨by rw [ho.word (Or.inl (by unfold sW hdrBytes at *; omega)) (by unfold sW hdrBytes at *; omega)]; exact h.hw,
     by rw [ho.word (Or.inl (by unfold sMinv hdrBytes at *; omega)) (by unfold sMinv hdrBytes at *; omega)]; exact h.hminv,
@@ -187,18 +187,18 @@ theorem gcdE_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hg : Good
   -- `aX` holds `c − 1`.
   have hcm1 : wv s₃.mem B (slot w aX) w = wv s.mem B (slot w aN) w - 1 := by
     obtain ⟨w', rfl⟩ : ∃ w', w = w' + 1 := ⟨w - 1, by omega⟩
-    have hodd : (VG.Proof.Bignum.X86_64.word s₂.mem B (slot (w' + 1) aX)).toNat % 2 = 1 := by
+    have hodd : (VG.Proof.Bignum.word s₂.mem B (slot (w' + 1) aX)).toNat % 2 = 1 := by
       have := hc; rw [← hc₂, wv_low] at this; omega
     rw [hm₃, wv_low, word_writeW_self, and_m2_toNat hodd,
       (writeW_outside s₂.mem B _ (by omega)).wv (Or.inr (Nat.le_refl _)) (by omega), ← hc₂, wv_low]
-    have : 1 ≤ (VG.Proof.Bignum.X86_64.word s₂.mem B (slot (w' + 1) aX)).toNat := by omega
+    have : 1 ≤ (VG.Proof.Bignum.word s₂.mem B (slot (w' + 1) aX)).toNat := by omega
     omega
   have hs₃ := hg₂.scr.congr k₃.2.2
   refine WP.mono (modWords_ok hs₃ h8₃ ((k₃.gpr (by decide)).trans h12₂) h14₃ hw hw' (by omega) hsi₃
       (by rw [hbx₃, hG₂]; exact he1)) fun s₄ ⟨hv₄, hm₄, k₄⟩ => ?_
   have hg₄ : Good s₄ B Z w minv := ⟨hs₃.congr k₄.2.2, (k₄.gpr (by decide)).trans ((k₃.gpr (by decide)).trans hg₂.rdi),
     by rw [hm₄, hm₃]; exact Hdr.outside hg₂.hdr (writeW_outside _ _ _ (by omega)) (by unfold slot; omega)⟩
-  have hG₄ : VG.Proof.Bignum.X86_64.word s₄.mem B (8 * kG) = s.gpr .rbx := by
+  have hG₄ : VG.Proof.Bignum.word s₄.mem B (8 * kG) = s.gpr .rbx := by
     rw [hm₄, hm₃, (writeW_outside s₂.mem B _ (by omega)).word (by omega) (by omega), hG₂]
   refine WP.mono (gcdTail_ok hg₄ hZ (by rw [hG₄]; exact he)) fun t ⟨hgt, hgd, hot, kt⟩ => ⟨?_, hgd, ?_, ?_⟩
   · rw [hgt, hG₄, hv₄, hcm1, hbx₃, hG₂, ← Nat.gcd_rec, Nat.gcd_comm]

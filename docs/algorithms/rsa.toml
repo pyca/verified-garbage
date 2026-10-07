@@ -1,5 +1,5 @@
 name = "RSA"
 family = "RSA"
 specs = ["Rsa"]
-modules = ["src/rsa.rs"]
+modules = ["src/rsa/mod.rs", "src/rsa/privatekey.rs"]
 asm = ["rsa"]

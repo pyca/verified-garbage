@@ -12,7 +12,7 @@ says, the frame and the rest of our working space kept (`pub_call`).
 
 namespace VG.Proof.RsaPss.X86_64
 
-open VG VG.X86_64 VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
+open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
 open VG.Proof.Rsa.X86_64 (pubChkContract)
 
@@ -129,15 +129,21 @@ theorem pub_covers {s t : State} (hp : VPre G s) (hrd : t.rd = s.rd) (hwr : t.wr
     rcases hr with rfl | rfl
     · exact ⟨_, hscr, oEm, rfl, by dsimp only; omega⟩
     · exact ⟨_, hscr, oRsa, rfl, by dsimp only; rw [hsc]; omega⟩
-  refine ⟨Covers.append_left (Covers.of_sub fun r hr => ?_) cw.right, cw⟩
-  have hin : ∀ x, x ∈ s.rd → x ∈ t.rd ++ t.wr := fun x hx => List.mem_append_left _ (by rw [hrd]; exact hx)
+  refine ⟨Covers.append_left ?_ cw.right, cw⟩
+  have cr : Covers [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩,
+      ⟨s.gpr .r8, G.len⟩, ⟨s.gpr .r9, (stackArg s 0).toNat⟩, ⟨stackArgAddr s 0, 40⟩]
+      (t.rd ++ t.wr) := by rw [hrd]; exact hp.hrd.left
+  apply Covers.of_forall
+  intro r hr
   simp only [vRd, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨⟨s.gpr .r9, (stackArg s 0).toNat⟩, hin _ (by rw [hp.hrd]; simp), 0, z _,
-      by dsimp only; rw [hp.hsg]; omega⟩
-  · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · rw [← hp.hsg]
+    exact (Covers.of_mem (by intro r hr; rw [List.mem_singleton.mp hr]; simp)).trans cr
+  · exact Covers.of_sub fun r hr => by
+      rw [List.mem_singleton.mp hr]
+      exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 theorem pub_call {pubN : String} {pubC : Prog isa}
     (hv : ∀ s, pubContract.pre s → ∃ t s', Exec isa pubC s t s' ∧ abiPreserved s s' ∧ pubChkContract.post s s')

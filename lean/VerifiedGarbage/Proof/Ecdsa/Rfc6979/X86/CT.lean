@@ -258,8 +258,8 @@ theorem initS_ct {Φ : Pred P} :
     RelCT isa (Two P Φ) (.seq (.block (Cfg.hmacArgs₁ P.R.wide P.F.H.D))
       (.frame (.push [.ebp, .ecx, .edx, .esi, .edi]) (.call P.F.hiN P.F.hiC) (.pop .eax 5))) (Two P (Ini P)) :=
   two_wp ((two_wp (Ψ := IA P) (two_blk [.esp] espOnly (blks P).init) fun _ _ _ _ hL hk hc _ => by
-      rw [← hk.2.2]; exact WP.mono (initArgs_ok hL hc _) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq hinit_ct)
-    fun _ _ _ t hL hk hc _ => WP.mono (init_step hL hk.2.2 hc) fun _ h => ⟨h.ctx, t, h⟩
+      rw [← hk.2.2.1]; exact WP.mono (initArgs_ok hL hc _) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq hinit_ct)
+    fun _ _ _ t hL hk hc _ => WP.mono (init_step hL hk.2.2.1 hc) fun _ h => ⟨h.ctx, t, h⟩
 
 theorem updS_ct {dataA : List Instr} {dv : Lay P.I.hashLen → BitVec 32} {len : Nat}
     (hdA : ∀ (L : Lay P.I.hashLen) g m₀ u, L.Ok → CoreOk P L → Ctx L g m₀ u →
@@ -270,11 +270,11 @@ theorem updS_ct {dataA : List Instr} {dv : Lay P.I.hashLen → BitVec 32} {len :
       (.frame (.push [.ebp, .ecx, .edx, .eax, .esi, .edi]) (.call P.F.H.updN P.F.H.updC) (.pop .eax 6)))
       (Two P (Upt P dv len)) :=
   two_wp ((two_wp (Ψ := UA P dv len) (two_blk [.esp] espOnly t₂) fun L g m₀ _ hL hk hc _ => by
-      rw [← hk.2.2]
+      rw [← hk.2.2.1]
       exact WP.mono (updArgs_ok hL hc (fun u hu => hdA L g m₀ u hL hk hu) (len := len) P.F.H.B)
         fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq (hupd_ct hd hlen))
     fun L g m₀ _ hL hk _ ⟨t, hi⟩ =>
-      WP.mono (upd_step hL hk.2.2 hi (fun u hu => hdA L g m₀ u hL hk hu) (hd L hL) hlen) fun _ h => ⟨h.ctx, t, h⟩
+      WP.mono (upd_step hL hk.2.2.1 hi (fun u hu => hdA L g m₀ u hL hk hu) (hd L hL) hlen) fun _ h => ⟨h.ctx, t, h⟩
 
 theorem finS_ct {dv : Lay P.I.hashLen → BitVec 32} {len dst : Nat} (hdst : dst + P.F.H.D ≤ 180)
     (t₃ : TaintOk [.esp] (Cfg.hmacArgs₃ P.R.wide P.F.H.B len dst)) :
@@ -282,7 +282,7 @@ theorem finS_ct {dv : Lay P.I.hashLen → BitVec 32} {len dst : Nat} (hdst : dst
       (.frame (.push [.ebp, .edi, .ecx, .eax, .esi, .edx]) (.call P.F.hfN P.F.hfC) (.pop .eax 6)))
       fun _ _ => True :=
   (two_wp (Ψ := FA P len dst) (two_blk [.esp] espOnly t₃) fun _ _ _ _ hL hk hc _ => by
-    rw [← hk.2.2]; exact WP.mono (finArgs_ok hL hc _ len dst) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq (hfin_ct hdst)
+    rw [← hk.2.2.1]; exact WP.mono (finArgs_ok hL hc _ len dst) fun _ ⟨c, _, a⟩ => ⟨c, a⟩).seq (hfin_ct hdst)
 
 /-- `HMAC_K(data)`: its blocks address only the frame and `scratch`, from
 `esp` (the taint checks of the blocks that depend on the data, `t₂` and
@@ -308,7 +308,7 @@ theorem hmacK_ct {Φ : Pred P} {len : Nat} (hlen : len ≤ 256)
     (t₃ : TaintOk [.esp] (Cfg.hmacArgs₃ P.R.wide P.F.H.B len fK)) :
     RelCT isa (Two P Φ) ((cfgOf P).hmac (Cfg.scr P.R.wide .edx sMsg) len fK) fun _ _ => True :=
   hmac_ct (dv := fun L => L.a3 + BitVec.ofNat 32 2256) (dst := 0)
-    (fun _ _ _ _ hL hk hu => by rw [← hk.2.2]; exact scr_ok hL hu (d := .edx) (by decide) 2256)
+    (fun _ _ _ _ hL hk hu => by rw [← hk.2.2.1]; exact scr_ok hL hu (d := .edx) (by decide) 2256)
     (fun _ _ => .inr ⟨2256, rfl, by omega, by omega⟩) hlen (by nums) t₂ t₃
 
 /-- `scratch` in `edi`, `d` in `esi`, and, if `wd`, `digest` in `edx`. -/
@@ -325,9 +325,9 @@ theorem rekey_gen_ct {Φ : Pred P} {b : Nat} {full wd : Bool} (hwd : wd = (full 
       (.seq ((cfgOf P).hmac (Cfg.scr P.R.wide .edx sMsg) len fK) (cfgOf P).hmacV))) fun _ _ => True := by
   have hlen' : len ≤ 256 := by cases full <;> simp only [hlen, Bool.false_eq_true, ite_true, ite_false] <;> nums
   refine (two_wp (Ψ := PtrsIn wd) (two_blk [.esp] espOnly (msgPtrs_blk _ _)) fun _ _ _ _ hL hk hc _ => by
-    rw [← hk.2.2]
+    rw [← hk.2.2.1]
     exact WP.mono (ptrs_ok hL hc full) fun _ ⟨c, _, a, b', d⟩ => ⟨c, a, b', fun h => d (by
-      rw [hk.2.2]; rw [hwd] at h; exact ((Bool.and_eq_true _ _).mp h).2) (by
+      rw [hk.2.2.1]; rw [hwd] at h; exact ((Bool.and_eq_true _ _).mp h).2) (by
       rw [hwd] at h; exact ((Bool.and_eq_true _ _).mp h).1)⟩).seq ?_
   refine (two_wp (Ψ := fun _ _ _ _ => True) (two_blk (msgRegs wd) (fun L t₁ t₂ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
       cases wd
@@ -353,7 +353,7 @@ theorem rekey_gen_ct {Φ : Pred P} {b : Nat} {full wd : Bool} (hwd : wd = (full 
         have := P.sizesW hW; exact ⟨by omega, by omega, by rw [P.len]⟩))
       fun _ h => ⟨h.1, trivial⟩).seq ?_
   exact (two_wp (Ψ := fun _ _ _ _ => True) (hmacK_ct hlen' t₂ t₃) fun _ _ _ _ hL hk hc _ =>
-    WP.mono (hmacK_ok (P := P) hL hk.2.2 hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct
+    WP.mono (hmacK_ok (P := P) hL hk.2.2.1 hc hlen') fun _ h => ⟨h.1, trivial⟩).seq hmacV_ct
 
 theorem rekeyFull_ct {Φ : Pred P} (b : Nat) (hb : b < 2) :
     RelCT isa (Two P Φ) ((cfgOf P).rekeyFull b) fun _ _ => True := by
@@ -379,10 +379,10 @@ theorem cand_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).cand fun _ _ => T
     have W := wideBlks hw
     simp only [Cfg.cand, e, ite_true]
     refine (two_wp (Ψ := fun _ _ _ _ => True) hmacV_ct fun _ _ _ _ hL hk hc _ =>
-      WP.mono (hmacV_ok hL hk.2.2 hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
+      WP.mono (hmacV_ok hL hk.2.2.1 hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
     refine (two_wp (Ψ := fun _ _ _ _ => True) (two_blk [.esp] espOnly W.keep) fun L _ _ _ hL hk hc _ => ?_).seq ?_
     · obtain ⟨hw9, hQ66, hD64, -⟩ := P.sizesW hw
-      have he := e36 hk.2.2 hw
+      have he := e36 hk.2.2.1 hw
       have e₃ : (cfgOf P).F.H.D = 64 := hD64
       simp only [Cfg.keepV, e₃]
       exact WP.mono (copyF_ok hL hc (src := .esp) (S := L.F) (SA := L.B + BitVec.ofNat 64 140) hc.esp
@@ -390,10 +390,10 @@ theorem cand_ct {Φ : Pred P} : RelCT isa (Two P Φ) (cfgOf P).cand fun _ _ => T
         (fun j hj => by rw [Offset.add_add]; exact hc.inFr (by omega) (by omega) hL)
         (Offset.disjoint _ (by omega) (by omega) (by omega))) fun _ h => ⟨h.1, trivial⟩
     refine (two_wp (Ψ := fun _ _ _ _ => True) hmacV_ct fun _ _ _ _ hL hk hc _ =>
-      WP.mono (hmacV_ok hL hk.2.2 hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
+      WP.mono (hmacV_ok hL hk.2.2.1 hc) fun _ h => ⟨h.1, trivial⟩).seq ?_
     refine (two_wp (Ψ := ScrIn) (two_blk [.esp] espOnly ⟨_, by taint_decide⟩) fun _ _ _ _ hL hk hc _ => by
       have ha := arg_ok hL hc (d := .edi) (by decide) (i := 3) (by omega)
-      rw [hk.2.2, hw] at ha
+      rw [hk.2.2.1, hw] at ha
       exact WP.mono ha fun _ h => ⟨h.ctx, h.val⟩).seq ?_
     exact two_blk [.esp, .edi] (fun _ _ _ _ _ _ _ c₁ c₂ f₁ f₂ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -412,9 +412,12 @@ theorem core_ct {i : Nat} :
     fun _ _ ⟨hL, hk, _, c₁, c₂, ⟨_, a₁⟩, ⟨_, a₂⟩⟩ => by
       obtain ⟨v₀, v₁, v₂, v₃, v₄⟩ := core_argv hL c₁ a₁ (rd := coreRd P e.1) (wr := coreWr P e.1)
       obtain ⟨w₀, w₁, w₂, w₃, w₄⟩ := core_argv hL c₂ a₂ (rd := coreRd P e.1) (wr := coreWr P e.1)
-      exact ⟨core_callPre hL hk c₁ a₁, core_callPre hL hk c₂ a₂, esp_two c₁ c₂,
+      refine ⟨core_callPre hL hk c₁ a₁, core_callPre hL hk c₂ a₂, esp_two c₁ c₂,
         by rw [State.withRegions_gpr, State.withRegions_gpr, core_esp c₁, core_esp c₂],
-        by rw [v₀, w₀], by rw [v₁, w₁], by rw [v₂, w₂], by rw [v₃, w₃], by rw [v₄, w₄]⟩
+        by rw [v₀, w₀], by rw [v₁, w₁], by rw [v₂, w₂], by rw [v₃, w₃], by rw [v₄, w₄], ?_⟩
+      intro c hc
+      rw [← hk.2.2.2] at hc
+      rw [core_syms c₁ hc, core_syms c₂ hc]
 
 /-- Whether to go on agrees: in both runs, iff the candidate is before the one it stops at. -/
 theorem dec_two {L : Lay P.I.hashLen} {m₁ m₂ : Mem} {i : Nat} (hx : exitAt P L m₁ = exitAt P L m₂) {u₁ u₂ : State}
@@ -481,7 +484,7 @@ theorem loop_ct :
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [.esp] (cfgC ⟨4, Spec.P256.curve⟩).initCnt := ⟨_, by taint_decide⟩
+theorem initCnt_blk : TaintOk [.esp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
 
 /-- `digest` in `esi`, and, if two `V`s make a candidate, `scratch` in `edi`. -/
 def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Reg → BitVec 32) (_ : Mem) (u : State) : Prop :=
@@ -526,8 +529,8 @@ theorem rest_ct :
 /-- Two runs from states that satisfy the precondition and agree on public
 data, after the frame's allocation. -/
 def Entered (P : RfcHash) (a b : State) : Prop :=
-  ∃ s₁ s₂, ((rfcX86 P.I (272 + 4 * P.e)).pre s₁ ∧ (rfcX86 P.I (272 + 4 * P.e)).pre s₂ ∧
-    (rfcX86 P.I (272 + 4 * P.e)).pub s₁ s₂) ∧ a = allocState (196 + 4 * P.e) s₁ ∧ b = allocState (196 + 4 * P.e) s₂
+  ∃ s₁ s₂, ((rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s₁ ∧ (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s₂ ∧
+    (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pub s₁ s₂) ∧ a = allocState (196 + 4 * P.e) s₁ ∧ b = allocState (196 + 4 * P.e) s₂
 
 theorem start_tk (wide : Bool) : TaintOk [.esp] (Cfg.save ++ Cfg.digestPtr wide) := by
   cases wide
@@ -546,31 +549,39 @@ which agree, and the same number of candidates. -/
 theorem start_ct : RelCT isa (Entered P) (.block (Cfg.save ++ Cfg.digestPtr P.R.wide)) (Two P (DgIn P)) := by
   intro a b t₁ t₂ a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := start_blk _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, hres⟩, rfl, rfl⟩ := hp
-  have hw : ∀ s, (rfcX86 P.I (272 + 4 * P.e)).pre s → WP isa (.block (Cfg.save ++ Cfg.digestPtr P.R.wide))
+  obtain ⟨s₁, s₂, ⟨p₁, p₂, hsp, hdi, hsi, hdx, hcx, hres, hsy⟩, rfl, rfl⟩ := hp
+  have hw : ∀ s, (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre s → WP isa (.block (Cfg.save ++ Cfg.digestPtr P.R.wide))
       (allocState (196 + 4 * P.e) s)
-      fun u => Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.gpr s.mem u ∧
-        DgIn P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s) s.gpr s.mem u := fun s h =>
+      fun u => Ctx (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) s.gpr s.mem u ∧
+        DgIn P (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s P.R.E.combConsts) s.gpr s.mem u := fun s h =>
     save_ok h fun _ hc _ => WP.mono (digestPtr_ok (lay_ok h) hc) fun _ ⟨c, a, d⟩ => ⟨c, a, d⟩
   obtain ⟨_, u₁, x₁, y₁⟩ := hw s₁ p₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw s₂ p₂
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₂ = lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ := by
-    simp only [lay, hsp, hdi, hsi, hdx, hcx]
-  have hr : (result P.I s₁.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁).d
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁).dg).2 =
-      (result P.I s₂.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁).d
-        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁).dg).2 := by
+  have hl : lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₂ P.R.E.combConsts = lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts := by
+    have hs : (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₂.syms n else 0) =
+        (fun n => if n ∈ P.R.E.combConsts.map Prod.fst then s₁.syms n else 0) := by
+      funext n
+      split
+      · rename_i hn
+        obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hn
+        exact (hsy c hc).symm
+      · rfl
+    simp only [lay, hsp, hdi, hsi, hdx, hcx, hs]
+  have hr : (result P.I s₁.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts).d
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts).dg).2 =
+      (result P.I s₂.mem (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts).d
+        (lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts).dg).2 := by
     show (result P.I s₁.mem ((arg s₁ 1).setWidth 64) ((arg s₁ 2).setWidth 64)).2 =
       (result P.I s₂.mem ((arg s₁ 1).setWidth 64) ((arg s₁ 2).setWidth 64)).2
     rw [hres, hsi, hdx]
   rw [hl] at y₂
-  exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
+  exact ⟨ht, ⟨lay P.I.hashLen P.I.ecdsa.curve.len P.R.wide s₁ P.R.E.combConsts, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok p₁,
     coreOk_lay P s₁, congrArg (fun x => if x = 0 then 7 else x - 1) hr, y₁.1, y₂.1, y₁.2, y₂.2⟩
 
 /-- Runs whose public data agree have the same layout, and stop at the same candidate. -/
-theorem sign_ct : ConstantTime isa (rfcX86 P.I (272 + 4 * P.e)).pre (rfcX86 P.I (272 + 4 * P.e)).pub
+theorem sign_ct : ConstantTime isa (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pre (rfcX86 P.I (272 + 4 * P.e) P.R.E.combConsts).pub
     (cfgOf P).sign :=
   VG.RelCT.constantTime (Q := fun _ _ => True) (alloc_ct (start_ct.seq rest_ct |>.mono
     (fun _ _ ⟨s₁, s₂, h, ea, eb⟩ => ⟨s₁, s₂, h, ea, eb⟩) fun _ _ h => h))

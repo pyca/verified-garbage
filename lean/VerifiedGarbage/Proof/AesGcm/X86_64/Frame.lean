@@ -98,16 +98,16 @@ theorem streamAad_framed :
     (streamAad_spSafe v) (streamAad_xdepth v) streamAadFrameSat_pre
 
 theorem streamEncrypt_xdepth : (streamEncrypt v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
 theorem streamDecrypt_xdepth : (streamDecrypt v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, oneAad, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
@@ -164,16 +164,16 @@ theorem streamVerify_xdepth : (streamVerify v.callees).x86_64Depth ≤ 8 := by
   decide +kernel
 
 theorem seal_xdepth : («seal» v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
 
 theorem open_xdepth : («open» v.callees).x86_64Depth ≤ 24 := by
-  have e := encryptBlocks_xdepth v v.stitch
-  have d := decryptBlocks_xdepth v v.stitch
+  have e := encryptBlocks_xdepthB v v.stitch
+  have d := decryptBlocks_xdepthB v v.stitch
   simp only [GcmImpl.callees] at e d
   simp only [init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, cmp, tagOut, copyLoop, xorLoop, minLen, j012, initState, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
@@ -228,15 +228,24 @@ theorem sealFrameSat_pre : ∃ s, (Spec.Gcm.sealContract X86_64.abi 2624).pre s 
   implies_sat [Spec.Gcm.sealContract, Spec.Gcm.sealSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
-theorem seal_framed :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» v.callees))
+/-- `vg_aes_gcm_seal` in its frame, for any code that meets the contract
+within it. -/
+theorem sealCode_framed {c : Prog isa}
+    (hv : Verified X86_64.target c (Proof.AesGcm.sealScratchContract X86_64.abi 24))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
       (Spec.Gcm.sealContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (bytes := 2600) (seal_verified v) (by decide) (by decide) (by decide)
-    (seal_spSafe v) (seal_xdepth v) (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+    (bytes := 2600) hv (by decide) (by decide) (by decide)
+    hsp hxd (sealPre_local _) (sealPost_local _) sealFrameSat_pre
+
+theorem seal_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» v.callees))
+      (Spec.Gcm.sealContract X86_64.abi 2624) :=
+  sealCode_framed (seal_verified v) (seal_spSafe v) (seal_xdepth v)
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition, without the working
 space. -/
@@ -248,15 +257,24 @@ theorem openFrameSat_pre : ∃ s, (Spec.Gcm.openContract X86_64.abi 2632).pre s 
   implies_sat [Spec.Gcm.openContract, Spec.Gcm.openSig, Spec.Gcm.openPre, Spec.Gcm.openPost,
     Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, openSat] using openFrameSat
 
-theorem open_framed :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callees))
+/-- `vg_aes_gcm_open` in its frame, for any code that meets the contract
+within it. -/
+theorem openCode_framed {c : Prog isa}
+    (hv : Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Spec.Gcm.openContract X86_64.abi 2632) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) (open_verified v)
-    (by decide) (by decide) (by decide) (open_spSafe v) (open_xdepth v) (openPre_local _)
+    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
+    (by decide) (by decide) (by decide) hsp hxd (openPre_local _)
     (openPost_local _) openFrameSat_pre (hleak := openLeak_local _)
+
+theorem open_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» v.callees))
+      (Spec.Gcm.openContract X86_64.abi 2632) :=
+  openCode_framed (open_verified v) (open_spSafe v) (open_xdepth v)
 
 end VG.Proof.AesGcm.X86_64

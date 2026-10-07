@@ -16,7 +16,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
 /-! ## Bits -/
@@ -83,7 +84,7 @@ theorem acc0_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
     WP isa (.block acc0) u fun u' => Lay u' F S ∧ Keep [.rcx, .rdi, .rax, .r9, .r11, .r10] u u' ∧
       Rep u'.mem F S V (upd W 33 (acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) c lo)) := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
   have R1 := R.wf L.geo (k := 33) (by decide) (acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) c lo)
@@ -156,7 +157,7 @@ theorem cmpH_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
   have hN := hH.N_le
   have c3 : oDig = 2304 := rfl
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rdx, .r8] (Q := fun v => v.gpr .rcx = off S oDig ∧
       v.gpr .rdi = off S (e + db) ∧ v.gpr .rdx = W 33 ∧ v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl)
     fun v ⟨⟨h₁, h₂, h₃, h₄, hm⟩, hk⟩ => ?_)
@@ -449,7 +450,7 @@ theorem shiftPass_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
     WP isa (shiftPass H) u fun u' => Lay u' F S ∧ Keep [.rcx, .rsi, .r11, .r9, .r10, .r8, .rax, .rdi] u u' ∧
       Rep u'.mem F S (shV V (decide (a % 2 = 1)) d (oY + 8 + H.D) db) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have c7 : oY = 3584 := rfl
   have c5 : oRsa = 8192 := rfl
   have hDN := hH.hDN

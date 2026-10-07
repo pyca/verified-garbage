@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivPd
+import VerifiedGarbage.Proof.Rsa.PrivCheck
 
 /-!
 # `vg_rsa_private_checked` on x86-64: the check and the release
@@ -12,7 +13,7 @@ and zeroed (`releaseLoop_ok`), whatever `M` and `out` hold (`tail_ok`).
 namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.PrivChecked
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 open VG.WriteBytes (writeW8_apply)
 
 theorem ea_at10 (t : State) {b : Reg} {p : Addr} {j : Nat} (hb : t.gpr b = p)
@@ -23,18 +24,6 @@ theorem ea_mByte (t : State) {S : Addr} {j : Nat} (hb : t.gpr .rsp = S) (hi : t.
     t.ea mByte = off S oM + BitVec.ofNat 64 j := by
   simp only [State.ea, mByte, hb, hi, BitVec.mul_one, BitVec.ofInt_natCast, off]
   rw [BitVec.add_assoc, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 j)]
-
-/-- `r₂ & r₁ & r₃ & 1`. -/
-def gOf (r₂ r₁ r₃ : BitVec 64) : BitVec 64 := r₂ &&& r₁ &&& r₃ &&& 1
-
-theorem gOf_cases (r₂ r₁ r₃ : BitVec 64) : gOf r₂ r₁ r₃ = 0 ∨ gOf r₂ r₁ r₃ = 1 := by
-  unfold gOf
-  generalize r₂ &&& r₁ &&& r₃ = x
-  have h : (x &&& 1).toNat = x.toNat % 2 := by
-    rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-  rcases Nat.mod_two_eq_zero_or_one x.toNat with h0 | h1
-  · exact .inl (BitVec.eq_of_toNat_eq (by rw [h, h0]; rfl))
-  · exact .inr (BitVec.eq_of_toNat_eq (by rw [h, h1]; rfl))
 
 /-- The comparison's registers. -/
 theorem cmpArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
@@ -51,14 +40,6 @@ theorem cmpArgs_ok {s t : State} (hp : PreF s) (he : Env s t) :
       hs.ld (d := oOut) (by decide), hs.ld (d := oK) (by decide), arg_in hp he (show 0 < 14 by decide),
       show fb s + BitVec.ofNat 64 (frameBytes + 8 + 8 * 0) = stackArgAddr s 0 from (stackArgAddr_fb s 0).symm,
       he.sOut, he.sK, he.arg hp (show 0 < 14 by decide)]) rfl) fun t' ⟨⟨h1, h2, h3, h4, h5, h6, h7⟩, k⟩ => ⟨h1, h2, h3, h4, h5, h6, h7, k⟩
-
-theorem zext_xor_eq_zero (a b : Byte) : (BitVec.setWidth 64 a ^^^ BitVec.setWidth 64 b = 0) ↔ a = b := by
-  rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.xor_eq_zero_iff]
-  constructor
-  · intro h
-    have := congrArg (BitVec.setWidth 8) h
-    simpa using this
-  · rintro rfl; rfl
 
 /-- After `j` bytes of the comparison. -/
 structure CmpInv (t₀ : State) (op ip : Addr) (j : Nat) (t : State) : Prop where
@@ -102,10 +83,6 @@ theorem cmpLoop_ok {t : State} {op ip : Addr} {k : Nat} (hk1 : 1 ≤ k) (hk : k 
   · intro h
     exact ⟨fun i hi => h i (by omega), h j (by omega)⟩
 
-/-- The release mask and the result. -/
-def relMask (g : BitVec 64) (eq : Bool) : BitVec 64 := if g = 1 ∧ eq = true then BitVec.allOnes 64 else 0
-def result (g : BitVec 64) (eq : Bool) : BitVec 64 := if g = 1 then (if eq then 1 else 2) else 0
-
 theorem masks_ok {t : State} {g : BitVec 64} {eq : Bool} (h11 : t.gpr .r11 = g) (hg : g = 0 ∨ g = 1)
     (hdx : t.gpr .rdx = 0 ↔ eq = true) :
     WP isa (.block masks) t fun t' => t'.mem = t.mem ∧ t'.gpr .r9 = relMask g eq ∧ t'.gpr .r11 = result g eq ∧
@@ -122,13 +99,6 @@ theorem masks_ok {t : State} {g : BitVec 64} {eq : Bool} (h11 : t.gpr .r11 = g) 
     xrun [masks, h11, hcf]
     rcases hg with rfl | rfl <;> cases eq <;> decide) rfl)
     fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, k⟩
-
-theorem low_and_mask (b : Byte) (g : BitVec 64) (eq : Bool) :
-    (BitVec.setWidth 64 b &&& relMask g eq).setWidth 8 = if g = 1 ∧ eq = true then b else 0 := by
-  unfold relMask
-  split
-  · rw [BitVec.and_allOnes]; simp
-  · rw [show (0 : BitVec 64) = 0#64 from rfl, BitVec.and_zero]; rfl
 
 /-- After `j` bytes of the release. -/
 structure RelInv (t₀ : State) (op Mb : Addr) (g : BitVec 64) (eq : Bool) (j : Nat) (t : State) : Prop where
@@ -190,17 +160,6 @@ theorem releaseLoop_ok {t : State} {S op : Addr} {k : Nat} {g : BitVec 64} {eq :
     rw [hm, writeW8_apply, writeW8_apply, ite_eq_right_of_eq_false _ _ (eq_false (hx' j (by omega))),
       ite_eq_right_of_eq_false _ _ (eq_false (hx j (by omega)))]
     exact hI.frame x (fun i hi => hx i (by omega)) fun i hi => hx' i (by omega)
-
-theorem bytesAt_eq_iff (m : Mem) (a b : Addr) (k : Nat) :
-    Spec.Rsa.bytesAt m a k = Spec.Rsa.bytesAt m b k ↔
-      ∀ i < k, m (a + BitVec.ofNat 64 i) = m (b + BitVec.ofNat 64 i) := by
-  simp only [Spec.Rsa.bytesAt]
-  constructor
-  · intro h i hi
-    have := congrArg (fun l => l[i]?) h
-    simpa [hi] using this
-  · intro h
-    exact List.map_congr_left fun i hi => h i (List.mem_range.mp hi)
 
 theorem contains_of_byte {r : Region} {p : Addr} {n : Nat} (h : r = ⟨p, n⟩) (hn : n ≤ 2 ^ 64) {i : Nat}
     (hi : i < n) : r.Contains (p + BitVec.ofNat 64 i) 1 := by

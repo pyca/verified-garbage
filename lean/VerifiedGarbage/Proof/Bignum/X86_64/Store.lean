@@ -16,38 +16,6 @@ open VG VG.X86_64 VG.Impl.Bignum.X86_64
 open VG.Proof.MlKem.X86_64
 open VG.WriteBytes (writeW8_apply)
 
-theorem and_mask_toNat (x : BitVec 64) (c : Bool) : (x &&& mask c).toNat = if c then x.toNat else 0 := by
-  cases c
-  · simp [mask_false]
-  · rw [mask_true, BitVec.and_allOnes]; rfl
-
-theorem shr8_toNat (x : BitVec 64) : (x >>> 8).toNat = x.toNat / 256 := by
-  rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-
-/-- A word of a number of `w` words. -/
-theorem word_of_wv (m : Mem) (B : Addr) (ed w : Nat) {q : Nat} (hq : q < w) :
-    (word m B (ed + 8 * q)).toNat = wv m B ed w / 2 ^ (64 * q) % 2 ^ 64 := by
-  have h := wv_add m B ed q (w - q)
-  rw [show q + (w - q) = w by omega] at h
-  obtain ⟨r, hr⟩ : ∃ r, w - q = r + 1 := ⟨w - q - 1, by omega⟩
-  rw [hr, show r + 1 = 1 + r by omega, wv_add, show (wv m B (ed + 8 * q) 1) = (word m B (ed + 8 * q)).toNat
-    by simp [wv]] at h
-  rw [h]
-  have hl := wv_lt m B ed q
-  have hw := (word m B (ed + 8 * q)).isLt
-  rw [Nat.add_mul_div_left _ _ (by exact Nat.pow_pos (by decide)), Nat.div_eq_of_lt hl, Nat.zero_add,
-    show 64 * 1 = 64 from rfl, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hw]
-
-theorem out_ne {out : Addr} {i j : Nat} (hi : i < 2 ^ 64) (hj : j < 2 ^ 64) (h : i ≠ j) :
-    out + BitVec.ofNat 64 i ≠ out + BitVec.ofNat 64 j := by
-  intro he
-  apply h
-  have h2 : BitVec.ofNat 64 i = BitVec.ofNat 64 j := by
-    have := congrArg (fun x => x - out) he
-    simpa only [Offset.add_sub_cancel_left] using this
-  have := congrArg BitVec.toNat h2
-  rwa [BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj] at this
-
 /-- After `p` bytes of `storeBE` from `s`: the bytes `k - 1 - j` for `j < p`
 are the bytes `j` of `Y_m` (the number, or 0, by the mask), and `rax`
 holds what is left of the current word. -/

@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.RsaPss.MgfBytes
 `mgfXor` XORs `MGF1(H, dbLen)` into `DB`, the `dbLen` bytes at
 `scratch + e`, where `H` is the `hLen` bytes after them (`mgfXor_ok`): for
 each counter `c`, `H ‖ I2OSP(c, 4)` is written to `Y` (`clearBlock`,
-`copyH`, `counter`), hashed (`ctHash`), and the first
+`copyH`, `counter`), hashed (`mgfHash`), and the first
 `min(hLen, dbLen - c hLen)` bytes of its digest XORed into `DB` at `c hLen`
 (`xorOut`).
 -/
@@ -17,7 +17,8 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Impl.RsaPss.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off Scr off_off ofNat_add_one ofNat_sub_beq wp_upto)
+open VG.Proof.Bignum (off off_off)
+open VG.Proof.Bignum.X86_64 (Scr ofNat_add_one ofNat_sub_beq wp_upto)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK Callees)
 open VG.Impl.Pbkdf2.Md.X86_64 (Hash)
 
@@ -53,7 +54,7 @@ theorem clearBlock_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte
   refine WP.seq (WP.mono (WP.keep [.rcx, .rax, .r8] (Q := fun v => v.gpr .rcx = off S oY ∧ v.gpr .rax = 0 ∧
       v.gpr .r8 = BitVec.ofNat 64 0 ∧ v.mem = u.mem) ?_ rfl) fun v ⟨⟨h₁, h₂, h₃, hm⟩, hk⟩ => ?_)
   · have hs := L.slot
-    simp only [Bignum.X86_64.word] at hs
+    simp only [Bignum.word] at hs
     xrun [scr, List.cons_append, List.nil_append, ea_sp, L.rsp, L.ld (d := sScr) (by decide), hs,
       VG.Proof.MlKem.X86_64.sx_ofNat (show oY < 2 ^ 31 by decide)]
   have Lv : Lay v F S := L.congr (hk.gpr (by decide)) hk.2.2 (by rw [hm])
@@ -187,7 +188,7 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have h24 : u.mem.readW (off F sDb) 64 = BitVec.ofNat 64 db := by rw [← hdb, ← R.fr 24 (by decide)]; rfl
   have h32 : u.mem.readW (off F sDone) 64 = BitVec.ofNat 64 done := by rw [← hdn, ← R.fr 32 (by decide)]; rfl
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   unfold xorOut seqs seqs seqs
   refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rax, .r10, .rdx] (Q := fun v => v.gpr .rcx = off S oDig ∧
       v.gpr .rdi = off S (e + done) ∧ v.gpr .rax = BitVec.ofNat 64 (db - done) ∧
@@ -298,7 +299,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
     {e db c : Nat} (hd : DbAt H.D e db) (he : W 23 = off S e) (hdb : W 24 = BitVec.ofNat 64 db)
     {v : State} (I : MgfI u₀ F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db)
       e db H.D c v) (hc : c * H.D < db) :
-    WP isa (seqs [clearBlock H, copyH H, .block (counter H), ctHash H, xorOut H, .block (nextCtr H)]) v
+    WP isa (seqs [clearBlock H, copyH H, .block (counter H), mgfHash H, xorOut H, .block (nextCtr H)]) v
       fun v' => v'.cf = some (decide ((c + 1) * H.D < db)) ∧
         MgfI u₀ F S V W (Spec.Mgf1.mgf1 G ((List.range H.D).map fun i => V (e + db + i)) db)
           e db H.D (c + 1) v' := by
@@ -335,7 +336,7 @@ theorem round_ok {G : Spec.Mgf1.Hash} (hGh : ∀ x, G.hash x = hH.SH.H.hash x) (
   -- The digest of `H ‖ C`.
   have hml : (hB ++ Spec.Rsa.i2osp c 4).length = H.D + 4 := by
     rw [List.length_append, hBl, i2osp_len]
-  refine WP.seq (WP.mono (ctHash_ok hH K L3 R3 (msg := hB ++ Spec.Rsa.i2osp c 4) (nbm := mgfNb H)
+  refine WP.seq (WP.mono (mgfHash_ok hH K L3 R3 (msg := hB ++ Spec.Rsa.i2osp c 4) (nbm := mgfNb H) hml
     (by simp [upd, hml]) (by simp [upd]) (by omega) (by omega) (fun i hi => ?_))
     fun u4 ⟨L4, rd4, wr4, cs4, V5, W3, R4, hout4, hW4, hdig⟩ => ?_)
   · simp only [ctrV, cpV, clrV, getD_app, hBl]

@@ -13,7 +13,7 @@ SHA-256's functions, with an implementation `v` of its compression function
 namespace VG.Proof.RsaPkcs1Enc.X86_64.Dec
 
 open VG VG.X86_64 VG.Impl.RsaPkcs1Enc.X86_64.Decrypt
-open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
+open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Enc.X86_64
 open VG.Proof.Sha256.X86_64 (Compress)
 open VG.Proof.Pbkdf2.Md.X86_64 (HashOK hmacInit_ok hmacFin_ok core_hmacInit core_hmacFin core_hmacInit_depth
   core_hmacFin_depth nosp_of)

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.RsaOaep.X86_64.Hash
 import VerifiedGarbage.Proof.Mgf1.Bytes
+import VerifiedGarbage.Proof.RsaOaep.Mask
 
 /-!
 # RSAES-OAEP on x86-64: MGF1
@@ -20,7 +21,8 @@ open VG VG.X86_64 VG.Impl.RsaOaep.X86_64
 open VG.Impl.Mgf1.X86_64 (sp ix at_ step byteLoop seqs round xorOut xorHead nextCtr initArgs updSrcArgs
   updCtrArgs finArgs mgfXor)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep writesOnly ifp ifn)
-open VG.Proof.Bignum.X86_64 (off word Scr off_off)
+open VG.Proof.Bignum (off word off_off)
+open VG.Proof.Bignum.X86_64 (Scr)
 open VG.Impl.Pbkdf2.Md.X86_64 (Stream)
 open VG.Proof.Pbkdf2.Md.X86_64.Calls (StreamOK)
 
@@ -74,7 +76,7 @@ theorem updSrc_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
       u'.gpr .rdx = off S src ∧ u'.gpr .rcx = BitVec.ofNat 64 srcLen ∧ u'.gpr .r8 = off S oW ∧ u'.mem = u.mem ∧
       Keep [.rdi, .rsi, .rdx, .rcx, .r8] u u' := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8] (Q := fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = BitVec.ofNat 64 0 ∧ u'.gpr .rdx = off S src ∧ u'.gpr .rcx = BitVec.ofNat 64 srcLen ∧
       u'.gpr .r8 = off S oW ∧ u'.mem = u.mem) ?_ rfl) fun u' ⟨⟨a, b, c, d, e, f⟩, k⟩ => ⟨a, b, c, d, e, f, k⟩
@@ -100,7 +102,7 @@ theorem updCtr_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
       u'.gpr .rsi = BitVec.ofNat 64 srcLen ∧ u'.gpr .rdx = off S oCtr ∧ u'.gpr .rcx = BitVec.ofNat 64 4 ∧
       u'.gpr .r8 = off S oW ∧ Keep [.rdi, .rsi, .rdx, .rcx, .r8, .rax] u u' ∧ Rep u'.mem F S (ctrV V c) W := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   have G' := L.geo
   have R1 := (((R.wb G' (o := oCtr + 3) (by decide) (BitVec.ofNat 8 c)).wb G'
     (o := oCtr + 2) (by decide) (BitVec.ofNat 8 (c / 2 ^ 8))).wb G'
@@ -148,7 +150,7 @@ theorem finA_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W :
     WP isa (.block (finArgs lay)) u fun u' => u'.gpr .rdi = off S oSt ∧ u'.gpr .rsi = BitVec.ofNat 64 (srcLen + 4) ∧
       u'.gpr .rdx = off S oDig ∧ u'.gpr .rcx = off S oW ∧ u'.mem = u.mem ∧ Keep [.rdi, .rsi, .rdx, .rcx] u u' := by
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   refine WP.mono (WP.keep [.rdi, .rsi, .rdx, .rcx] (Q := fun u' => u'.gpr .rdi = off S oSt ∧
       u'.gpr .rsi = BitVec.ofNat 64 (srcLen + 4) ∧ u'.gpr .rdx = off S oDig ∧ u'.gpr .rcx = off S oW ∧
       u'.mem = u.mem) ?_ rfl) fun u' ⟨⟨a, b, c, d, e⟩, k⟩ => ⟨a, b, c, d, e, k⟩
@@ -170,7 +172,7 @@ theorem xorOut_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W
   have c1 : oSt = 3072 := rfl
   have c3 : oDig = 3328 := rfl
   have hs := L.slot
-  simp only [Bignum.X86_64.word] at hs
+  simp only [Bignum.word] at hs
   unfold xorOut seqs seqs seqs
   refine WP.seq (WP.mono (WP.keep [.rcx, .rdi, .rax, .r10, .rdx] (Q := fun v => v.gpr .rcx = off S oDig ∧
       v.gpr .rdi = off S (dst + done) ∧ v.gpr .rax = BitVec.ofNat 64 (dstLen - done) ∧
@@ -256,19 +258,6 @@ theorem Rep.ex {m : Mem} {F S : Addr} {p : Nat → Prop} [DecidablePred p] {f V 
 
 theorem repr_congr {R : Mem → Addr → List Byte → Prop} {m : Mem} {p : Addr} {a b : List Byte} (h : a = b)
     (hr : R m p a) : R m p b := h ▸ hr
-
-/-- `dst` with the first `n` bytes of the mask `mk` XORed in. -/
-def mixV (V : Nat → Byte) (mk : List Byte) (e n : Nat) (o : Nat) : Byte :=
-  if e ≤ o ∧ o < e + n then V o ^^^ mk.getD (o - e) 0 else V o
-
-theorem map_range_getD {f : Nat → Byte} {n : Nat} {xs : List Byte} (h : (List.range n).map f = xs) {j : Nat}
-    (hj : j < n) : f j = xs.getD j 0 := by
-  subst h
-  rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj]
-  rfl
-
-/-- The bytes of `src`, as `V` has them. -/
-def srcB (V : Nat → Byte) (src srcLen : Nat) : List Byte := (List.range srcLen).map fun i => V (src + i)
 
 /-- The loop's invariant after `c` counters. -/
 structure MgfI (u₀ : State) (F S : Addr) (V : Nat → Byte) (W : Nat → BitVec 64) (mk : List Byte)

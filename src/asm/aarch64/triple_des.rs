@@ -1909,6 +1909,7 @@ pub(crate) unsafe extern "C" fn vg_triple_des_expand_key(key: *const u8, key_len
         "str x17, [x16, #504]",
         "add sp, sp, #512",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -6917,6 +6918,7 @@ pub(crate) unsafe extern "C" fn vg_triple_des_encrypt_block(schedule: *const [u8
         "ldr x22, [x2, #24]",
         "str x3, [x1, #0]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -11925,6 +11927,7 @@ pub(crate) unsafe extern "C" fn vg_triple_des_decrypt_block(schedule: *const [u8
         "ldr x22, [x2, #24]",
         "str x3, [x1, #0]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -26969,6 +26972,7 @@ pub(crate) unsafe extern "C" fn vg_triple_des_ecb_encrypt(schedule: *const [u8; 
         "str x17, [x16, #1016]",
         "add sp, sp, #1024",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -42013,5 +42017,6 @@ pub(crate) unsafe extern "C" fn vg_triple_des_ecb_decrypt(schedule: *const [u8; 
         "str x17, [x16, #1016]",
         "add sp, sp, #1024",
         "ret",
+        ".p2align 6",
     )
 }

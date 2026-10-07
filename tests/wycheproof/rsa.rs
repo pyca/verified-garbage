@@ -8,15 +8,17 @@
 //! PKCS #1 v1.5 vector it is an encryption block of type 2 holding the
 //! message. Other ciphertexts are refused.
 
-#![cfg(all(target_arch = "x86_64", feature = "alloc"))]
+#![cfg(all(
+    any(target_arch = "x86_64", target_arch = "aarch64"),
+    feature = "alloc"
+))]
 
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::Deserialize;
 use verified_garbage::rsa::{Error, PrivateKey, PublicKey};
 
-use crate::harness::{self, Expectation, Hex, TestFile, TestGroup};
+use super::harness::{self, Expectation, Hex, TestFile, TestGroup};
 use crate::require_vectors;
 
 #[derive(Deserialize)]
@@ -104,32 +106,25 @@ fn check_group(name: &str, group: &TestGroup<Group, Case>, pkcs1: bool) -> (usiz
     (done, refused)
 }
 
-/// Checks every vector of each of `names`, as `check_group`, and returns
+/// Checks every vector of each of `names` with a key that
+/// [`harness::rsa_key_tested`] tests, as `check_group`, and returns
 /// the numbers of ciphertexts each file had decrypted and refused. The
-/// groups, each with its own key, are shared among as many threads as the
-/// machine runs at once: the decryptions are most of this binary's time,
-/// and one file (`rsa_oaep_misc_test.json`) has 128 keys.
+/// groups, each with its own key, are shared among threads (`par_each`):
+/// one file (`rsa_oaep_misc_test.json`) has 128 keys.
 fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
     let files: Vec<TestFile<Group, Case>> = names.iter().map(|n| harness::load(n)).collect();
     let groups: Vec<(usize, &TestGroup<Group, Case>)> = files
         .iter()
         .enumerate()
         .flat_map(|(i, f)| f.test_groups.iter().map(move |g| (i, g)))
+        .filter(|(_, g)| harness::rsa_key_tested(&g.params.private_key.modulus.0))
         .collect();
-    let workers = std::thread::available_parallelism().map_or(1, |n| n.get());
-    let next = AtomicUsize::new(0);
     let results = Mutex::new(vec![(0, 0); names.len()]);
-    std::thread::scope(|s| {
-        for _ in 0..workers.min(groups.len()) {
-            s.spawn(|| {
-                while let Some(&(i, group)) = groups.get(next.fetch_add(1, Ordering::Relaxed)) {
-                    let (done, refused) = check_group(names[i], group, pkcs1);
-                    let mut results = results.lock().unwrap();
-                    results[i].0 += done;
-                    results[i].1 += refused;
-                }
-            });
-        }
+    harness::par_each(&groups, |&(i, group)| {
+        let (done, refused) = check_group(names[i], group, pkcs1);
+        let mut results = results.lock().unwrap();
+        results[i].0 += done;
+        results[i].1 += refused;
     });
     results.into_inner().unwrap()
 }
@@ -137,11 +132,14 @@ fn check_all(names: &[&str], pkcs1: bool) -> Vec<(usize, usize)> {
 #[test]
 fn rsa_pkcs1_test() {
     require_vectors!();
-    let names = [
+    let names: Vec<&str> = [
         "rsa_pkcs1_2048_test.json",
         "rsa_pkcs1_3072_test.json",
         "rsa_pkcs1_4096_test.json",
-    ];
+    ]
+    .into_iter()
+    .filter(|n| harness::rsa_file_tested(n))
+    .collect();
     for (name, (done, refused)) in names.iter().zip(check_all(&names, true)) {
         assert!(done > 0 && refused > 0, "{name}");
     }
@@ -154,6 +152,7 @@ fn rsa_oaep_test() {
         .unwrap()
         .into_iter()
         .filter(|n| n.starts_with("rsa_oaep_") && n.ends_with("_test.json"))
+        .filter(|n| harness::rsa_file_tested(n))
         .collect();
     assert!(!names.is_empty());
     let names: Vec<&str> = names.iter().map(String::as_str).collect();
