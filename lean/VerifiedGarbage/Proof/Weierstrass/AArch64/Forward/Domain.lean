@@ -31,6 +31,7 @@ def decode : (i : Instr) → Option {v : Decoded // v.instr=i}
   | .madd .x d a b c => some ⟨.scalar .madd d a b c,rfl⟩
   | .lsl .x d a n => some ⟨.scalar (.lsl n) d a .x0 .x0,rfl⟩
   | .lsr .x d a n => some ⟨.scalar (.lsr n) d a .x0 .x0,rfl⟩
+  | .extr .x d a b n => some ⟨.scalar (.extr n) d a b .x0,rfl⟩
   | .movz .x d v n => some ⟨.scalar (.movz v n) d .x0 .x0 .x0,rfl⟩
   | .movk .x d v n => some ⟨.scalar (.movk v n) d .x0 .x0 .x0,rfl⟩
   | .ldr .x d .x0 off => some ⟨.load d off,rfl⟩

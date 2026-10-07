@@ -10,7 +10,7 @@ inductive Op where
   | add | sub | adds | adcs | subs | sbcs | adc | sbc | csel
   | logic (o : LogicOp)
   | mul | umulh | madd
-  | lsl (n : Nat) | lsr (n : Nat)
+  | lsl (n : Nat) | lsr (n : Nat) | extr (n : Nat)
   | movz (v : BitVec 16) (n : Nat) | movk (v : BitVec 16) (n : Nat)
   deriving DecidableEq, Repr
 
@@ -30,11 +30,12 @@ def Op.instr : Op → Reg → Reg → Reg → Reg → Instr
   | .madd,d,a,b,c => .madd .x d a b c
   | .lsl n,d,a,_,_ => .lsl .x d a n
   | .lsr n,d,a,_,_ => .lsr .x d a n
+  | .extr n,d,a,b,_ => .extr .x d a b n
   | .movz v n,d,_,_,_ => .movz .x d v n
   | .movk v n,d,_,_,_ => .movk .x d v n
 
 def Op.valid : Op → Bool
-  | .lsl n | .lsr n => n<64
+  | .lsl n | .lsr n | .extr n => n<64
   | .movz _ n | .movk _ n => 16*n<64
   | _ => true
 

@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Sha256
 
@@ -25,7 +25,7 @@ namespace VG.Generic.MdHash.P256.AArch64.EcdsaP256Sha256
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.Sha256 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P256.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvToM Spec.P256.curve) :
     List Artifact :=
   match v.sha256 with
   | none => []

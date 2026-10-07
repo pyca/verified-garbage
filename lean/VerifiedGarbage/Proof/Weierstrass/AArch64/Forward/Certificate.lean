@@ -26,6 +26,7 @@ def Op.key : Op → Nat
   | .logic .and => 9 | .logic .orr => 10 | .logic .eor => 11
   | .mul => 12 | .umulh => 13 | .madd => 14
   | .lsl n => 100+n | .lsr n => 200+n
+  | .extr n => 300+n
   | .movz v n => 100000+64*v.toNat+n
   | .movk v n => 10000000+64*v.toNat+n
 
