@@ -23,10 +23,13 @@ theorem offset_eq (J : Nat) : JacWinCfg.offset J = 16 * Window5.geom J := by
   unfold JacWinCfg.offset
   omega
 
-/-- The loop's invariant at `rbx = j`: `R` is a triple of `[winE k' J j]P`. -/
+/-- The loop's invariant at `rbx = j`: `R` is a triple of a point of the curve,
+`[winE k' J j]P` for `k < n`. -/
 structure JInv (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State)
     (k : Nat) (j : Nat) (s : State) : Prop where
-  st : RSt K C base size P s₀ (mul (Window5.winE (k + 16 * Window5.geom K.J) K.J j) P) s
+  st : ∃ Q : Point C, onCurve C Q = true ∧
+    (k < C.n → Q = mul (Window5.winE (k + 16 * Window5.geom K.J) K.J j) P) ∧
+    RSt K C base size P s₀ Q s
   rbx : s.gpr .rbx = BitVec.ofNat 64 j
 
 /-- `R`'s and `T`'s slots are apart from what `D = R + T` writes. -/
@@ -95,19 +98,20 @@ theorem tmv_sel {m0 : Prop} [Decidable m0] {n : Nat} {wz a b c : Nat}
 theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
     (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
     (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n)
-    {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) (hk : k < C.n) {j : Nat}
+    {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
     (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInv K C base size P s₀ k j s) :
     WP isa (K.step dbl) s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧
       s'.zf = some (decide (j - 1 = 0)) := by
-  have hn := hI.st.fr.scr.nowrap
+  obtain ⟨Q, hQ, hQe, R₀⟩ := hI.st
+  have hn := R₀.fr.scr.nowrap
   have hJ := hL.J
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   rw [JacWinCfg.step]
   refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  have R₁ := hI.st.rbxKeeps hL k₁
-  rw [show j = j - 1 + 1 by omega] at R₁
-  refine WP.seq (WP.mono (dbls_ok hL hC hD hP (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂⟩ => ?_)
+  have R₁ := R₀.rbxKeeps hL k₁
+  rw [← mul_one_pt Q] at R₁
+  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂⟩ => ?_)
   refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
@@ -213,7 +217,9 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   have vz := congrArg (fun p => p.2.2) v₅
   dsimp only at vx vy vz
   rw [vx] at ex; rw [vy] at ey; rw [vz] at ez
-  have hR := jstep_point hC hM3 hO hP hP0 hn17 hn64 hk (i := j - 1) (J := K.J) (by omega) R₂.rep
+  have hR := jstep_pt hC hM3 hO hP hP0 hn17 hn64 (k := k) (i := j - 1) (J := K.J) (by omega)
+    (hC.onCurve_mul hQ 32) (fun hk => by
+      rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega]) R₂.rep
     (Z2 := tmv C K.M.n base s₄ K.E.z) (X2 := tmv C K.M.n base s₄ K.E.x) (Y2 := tmv C K.M.n base s₄ K.E.y)
     (fun h => by
       have J := ent h
@@ -222,7 +228,8 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
       rw [tx, ty, tz] at j1
       rw [tz] at j2
       exact ⟨j1, j2⟩)
-  refine ⟨⟨⟨F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL U₆ hn (by decide),
+  obtain ⟨Q', hQ', hQe', hR⟩ := hR
+  refine ⟨⟨⟨Q', hQ', hQe', F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL U₆ hn (by decide),
     fun x hx => ?_, ?_⟩, b₆⟩, z₆⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl

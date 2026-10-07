@@ -203,4 +203,12 @@ theorem tbl_noexc (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C
       rw [mul_one_pt], hC.add_mul_mul hP] at h
     exact mul_ne_infinity hO hP hP0 (m := m + 1) (by omega) (by omega) h
 
+/-- `[a]([b]P) = [a b]P`. -/
+theorem mul_mul (hC : Law C) {P : Point C} (hP : onCurve C P = true) (a b : Nat) :
+    mul a (mul b P) = mul (a * b) P := by
+  induction a with
+  | zero => rw [mul_zero_pt, Nat.zero_mul, mul_zero_pt]
+  | succ a ih =>
+    rw [← hC.add_mul_mul (hC.onCurve_mul hP b) a 1, mul_one_pt, ih, hC.add_mul_mul hP, Nat.succ_mul]
+
 end VG.Proof.Weierstrass.Window5

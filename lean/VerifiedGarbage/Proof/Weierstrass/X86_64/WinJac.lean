@@ -9,8 +9,10 @@ curve of prime order `n ≡ 17 (mod 32)` (as P-256's), whose bits plus the
 recoding's offset are the table at `K.bits`, with any doubling `dbl` that
 doubles a Jacobian triple in place (`DblOk`): the table `[1 … 16]P`
 (`build_ok`), `R = O` (`jinit_ok`), `J` iterations `R = 32 R + [d_j]P`
-(`jstep_ok`), whose additions are never exceptional
-(`Window5.loop_noexc`), and `R = (XZ : Y : Z³)` with `Y = 1` for `O`.
+(`jstep_ok`), whose additions are never exceptional for `k < n`
+(`Window5.loop_noexc`), and `R = (XZ : Y : Z³)` with `Y = 1` for `O`. For
+`k ≥ n` (whose result the callers do not use) the code runs the same way and
+writes the same places, and `R` is a triple of some point of the curve.
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -69,30 +71,31 @@ theorem jinit_ok (hL : JacWinLay K size) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt
   have F₅ := hf.next hL (hs₄.of_keeps k₅ (by decide)) ((((k₂.mono hc).trans (k₃.mono hc)).trans (k₄.mono hc)).trans
     ((Keeps.regs k₅).mono (sub_powClob (by decide)))) U (jwLoopW_sub K)
   have hk' : k + 16 * Window5.geom K.J < 32 ^ K.J := by rw [← offset_eq]; exact hkJ
-  refine ⟨⟨F₅, hT.loopW hL U hn (by decide), fun x hx => ?_, ?_⟩, b₅⟩
+  refine ⟨⟨.infinity, rfl, fun _ => by rw [Window5.winE_top hk', Window5.mul_zero_pt],
+    F₅, hT.loopW hL U hn (by decide), fun x hx => ?_, ?_⟩, b₅⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · rw [vx]; exact hp0
     · rw [vy]; exact hone_lt
     · rw [vz]; exact hp0
-  · rw [Window5.winE_top hk', Window5.mul_zero_pt]
-    refine Or.inl ⟨rfl, ?_⟩
+  · refine Or.inl ⟨rfl, ?_⟩
     show toM _ _ _ = 0
     rw [vz]; exact toM_zero _ _
 
-/-- `[k]P` into `R`, in projective coordinates, for `k < n` whose bits plus
-`offset J` are the table at `K.bits`; only `powClob` and `jwW` change. -/
+/-- `[k]P` into `R`, in projective coordinates, for `k` whose bits plus
+`offset J` are the table at `K.bits`, if `k < n`; only `powClob` and `jwW`
+change. -/
 theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hM3 : AM3 C) (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n) {P : Point C} (hP : onCurve C P = true) {k : Nat}
-    (hk : k < C.n) (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {base : Addr} {s : State}
+    (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {base : Addr} {s : State}
     (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) (hF : JacWinFixed K C base s P k) :
     WP isa (K.window dbl) s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
-      Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
-        (mul k P) := by
+      (k < C.n → Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y)
+        (tmv C K.M.n base s' K.R.z) (mul k P)) := by
   have hn := hs.nowrap
   have hJ := hL.J
   have hP0 : P ≠ .infinity := by
@@ -105,10 +108,10 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   refine WP.seq (WP.mono (jinit_ok hL hpn hone_lt hkJ F₁ T₁) fun s₂ I₂ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
     (Inv := fun j t => JInv K C base size P s k j t) (n := K.J)
-    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF hk h1 h2 hi)
+    (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 h2 hi)
     (fun _ h => h) hJ.1 I₂) fun s₃ I₃ => ?_)
-  have R₃ := I₃.st
-  rw [Window5.winE_zero'] at R₃
+  obtain ⟨Q, -, hQe, R₃⟩ := I₃.st
+  rw [Window5.winE_zero'] at hQe
   -- `Y = 1` where `Z = 0`.
   have hs₃ := R₃.fr.scr
   have hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [R₃.fr.ro hL (by jw_mem)]; exact hF.zero
@@ -162,7 +165,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
       List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> exact other_loopW (by jw_mem))
   have F₅ := F₄.next hL (P₅.scr hs₄) P₅.regs U₅ (jwLoopW_sub K)
-  refine ⟨F₅.keep, F₅.unch, F₅.mod, fun x hx => (hval x hx).2, ?_⟩
+  refine ⟨F₅.keep, F₅.unch, F₅.mod, fun x hx => (hval x hx).2, fun hk => ?_⟩
   have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base s₅ x = runOps K.tc.outOps (tmv C K.M.n base s₄) x :=
     fun x hx => (hval x hx).1
   rw [e _ (by simp), e _ (by simp), e _ (by simp)]
@@ -188,7 +191,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     show toM _ _ _ = toM _ _ _; rw [ex₄]
   have ez : tmv C K.M.n base s₄ K.R.z = tmv C K.M.n base s₃ K.R.z := by
     show toM _ _ _ = toM _ _ _; rw [ez₄]
-  rw [hy, ex, ez]
+  rw [hy, ex, ez, ← hQe hk]
   exact InvJ.out hC R₃.rep
 
 end VG.Proof.Weierstrass.X86_64

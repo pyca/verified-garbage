@@ -134,21 +134,21 @@ theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M 
 
 /-- `R = 32 R`, `rbx` the window index `j < 4096` before and after. -/
 theorem dbls_ok (hL : JacWinLay K size) (hC : Law C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
-    {base : Addr} {P : Point C} (hP : onCurve C P = true) {s₀ s : State} {e j : Nat} (hj : j < 4096)
-    (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h : RSt K C base size P s₀ (mul e P) s) :
-    WP isa (K.dbls dbl) s fun t => RSt K C base size P s₀ (mul (32 * e) P) t ∧
+    {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State} {e j : Nat} (hj : j < 4096)
+    (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h : RSt K C base size P s₀ (mul e Q) s) :
+    WP isa (K.dbls dbl) s fun t => RSt K C base size P s₀ (mul (32 * e) Q) t ∧
       t.gpr .rbx = BitVec.ofNat 64 j := by
   rw [JacWinCfg.dbls]
   refine WP.seq (WP.mono (addRbx_ok s (c := 5 * 4096) (by decide) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  refine aeLoop_ok (n := 5) (Inv := fun i t => RSt K C base size P s₀ (mul (2 ^ (5 - i) * e) P) t ∧
+  refine aeLoop_ok (n := 5) (Inv := fun i t => RSt K C base size P s₀ (mul (2 ^ (5 - i) * e) Q) t ∧
       t.gpr .rbx = BitVec.ofNat 64 (j + 4096 * i))
     (fun i t h1 h5 ⟨R, b⟩ => ?_) (fun t ⟨R, b⟩ => ⟨by simpa using R, by simpa using b⟩) (by decide)
     ⟨by simpa using h.rbxKeeps hL k₁, by rw [b₁]⟩
   rw [JacWinCfg.dblStep]
-  refine WP.seq (WP.mono (dblR_ok hL hD (hC.onCurve_mul hP _) R) fun t₁ ⟨R₁, b₁'⟩ => ?_)
+  refine WP.seq (WP.mono (dblR_ok hL hD (hC.onCurve_mul hQ _) R) fun t₁ ⟨R₁, b₁'⟩ => ?_)
   refine WP.mono (dblCount_ok t₁ hj h1 h5 (by rw [b₁', b])) fun t₂ ⟨b₂, c₂, k₂⟩ => ⟨⟨?_, b₂⟩, c₂⟩
   have := R₁.rbxKeeps hL k₂
-  rwa [hC.add_mul_mul hP, show 2 ^ (5 - i) * e + 2 ^ (5 - i) * e = 2 ^ (5 - (i - 1)) * e by
+  rwa [hC.add_mul_mul hQ, show 2 ^ (5 - i) * e + 2 ^ (5 - i) * e = 2 ^ (5 - (i - 1)) * e by
     rw [show 5 - (i - 1) = 5 - i + 1 by omega, Nat.pow_succ]; grind] at this
 
 end VG.Proof.Weierstrass.X86_64
