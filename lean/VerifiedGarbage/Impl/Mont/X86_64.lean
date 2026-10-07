@@ -484,6 +484,14 @@ def cOf (d : Nat) : Nat := if d < 2 ^ 31 then d else 0
 def rdiAdd (c : Nat) : Instr := .alu .add .rdi (.imm (BitVec.ofNat 32 c))
 def rdiSub (c : Nat) : Instr := .alu .sub .rdi (.imm (BitVec.ofNat 32 c))
 
+/-- `rdi` from `c` to `c'` bytes past its base. -/
+def rdiMove (c c' : Nat) : Instr := .alu .add .rdi (.imm (BitVec.ofInt 32 ((c' : Int) - c)))
+
+/-- `stores` while `rdi` is `c` bytes past its base (`rc`). -/
+def storesC (c : Nat) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, o => .store (rc c o) t :: storesC c ts (o + 8)
+
 /-- `maddSteps` while `rdi` is `c` bytes past its base (`rc`). -/
 def maddStepsC (c : Nat) : Nat → List Reg → Nat → List Instr
   | k + 1, x :: y :: rest, d => madd x y (.mem (rc c d)) ++ maddStepsC c k (y :: rest) (d + 8)
@@ -542,20 +550,20 @@ def setCF : List Instr := [.alu32 .xor .rax (.reg .rax), .alu .cmp .rax (.imm (-
 `U = P₀ … P₇, u₈` with `u₈ = P₈ + 512 P₀ mod 2⁶⁴` (stored over `P₈`), as
 `U p = 2⁵²¹ U - U`: `512 U` added at word 8 (`rdx = 512`), the low words
 cancelling, and the one (`xCanon`'s) as the carry CF into word 9 (`setCF`). -/
-def xRed (M : Mod) : List Instr :=
-  [.mov32 .rdx (.imm 512)] ++ setCF ++ [.mulx .rcx .rax (.mem (sc M.tmp)),
-    .adox .rax (.mem (sc (M.tmp + 64))), .store (sc (M.tmp + 64)) .rax, .adcx (xAcc 9) (.reg .rcx)] ++
-    maddSteps 8 (xWin 9) (M.tmp + 8) ++ xTail (xAcc 17)
+def xRed (M : Mod) (c : Nat) : List Instr :=
+  [.mov32 .rdx (.imm 512)] ++ setCF ++ [.mulx .rcx .rax (.mem (rc c M.tmp)),
+    .adox .rax (.mem (rc c (M.tmp + 64))), .store (rc c (M.tmp + 64)) .rax, .adcx (xAcc 9) (.reg .rcx)] ++
+    maddStepsC c 8 (xWin 9) (M.tmp + 8) ++ xTail (xAcc 17)
 
 /-- `xWin 9`, `S + 1` for a number `S < 2p` for P-521's `p = 2⁵²¹ - 1`, as
 its producer leaves it, `S` reduced and stored at `[o]`: bit 521 `c` of
 `S + 1` (in `rax`) is whether `S ≥ p`; `1 - c` subtracted leaves `S + c`, and
 its bits from 521 cleared: `S - p` if `S ≥ p`, else `S`. -/
-def xCanon (o : Nat) : List Instr :=
+def xCanon (c o : Nat) : List Instr :=
     [.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9, .alu .xor .rax (.imm 1),
       .alu .sub (xAcc 9) (.reg .rax)] ++
     (List.range 8).map (fun k => .alu .sbb (xAcc (10 + k)) (.imm 0)) ++
-    [.alu .and (xAcc 17) (.imm 511)] ++ stores (xWin 9) o
+    [.alu .and (xAcc 17) (.imm 511)] ++ storesC c (xWin 9) o
 
 /-- `[o] = [a] [b] R⁻¹ mod p` for P-521's `p = 2⁵²¹ - 1` (`o` may be `a` or
 `b`), with BMI2 and ADX: the product `a b` by rows (operand scanning,
@@ -567,8 +575,8 @@ The rows run with `rdi` moved to `[b]` (`rc`), whose words their 81 `mulx`
 read at displacements of a byte: the code is bound by its decoding, and
 each is three bytes shorter. -/
 def mulPX (M : Mod) (o a b : Nat) : List Instr :=
-  [rdiAdd (cOf b)] ++ (List.range 9).flatMap (xRowV M (cOf b) a b) ++ [rdiSub (cOf b)] ++ xRed M ++
-    xCanon o
+  [rdiAdd (cOf b)] ++ (List.range 9).flatMap (xRowV M (cOf b) a b) ++ [rdiMove (cOf b) (cOf M.tmp)] ++
+    xRed M (cOf M.tmp) ++ [rdiMove (cOf M.tmp) (cOf o)] ++ xCanon (cOf o) o ++ [rdiSub (cOf o)]
 
 /-! ## P-521's modulus with BMI2 and ADX: the square
 
@@ -624,7 +632,8 @@ of two different words by rows (`sRowV`), doubled and the squares added
 the squares run with `rdi` moved to `[a]` (`rc`), as in `mulPX`. -/
 def sqrPX (M : Mod) (o a : Nat) : List Instr :=
   [rdiAdd (cOf a)] ++ (List.range 8).flatMap (sRowV M (cOf a) a) ++ sDiag M (cOf a) a ++
-    [rdiSub (cOf a)] ++ xRed M ++ xCanon o
+    [rdiMove (cOf a) (cOf M.tmp)] ++ xRed M (cOf M.tmp) ++ [rdiMove (cOf M.tmp) (cOf o)] ++
+    xCanon (cOf o) o ++ [rdiSub (cOf o)]
 
 /-! ## P-521's modulus: the sum and the difference in registers
 
@@ -637,7 +646,7 @@ plus one: `[a] + [b] + 1` with a carry in, and `[a] - [b] + 2⁵²¹`, which is
 `[a] + [b] + 1` in `xWin 9` (`[a]` loaded, CF set, `[b]` added with `adc`),
 reduced by `xCanon`. -/
 def addMer (o a b : Nat) : List Instr :=
-  loads (xWin 9) a ++ setCF ++ chain .adc .adc (xWin 9) b ++ xCanon o
+  loads (xWin 9) a ++ setCF ++ chain .adc .adc (xWin 9) b ++ xCanon 0 o
 
 /-- `ts += ts`: each register added to itself, with `op` on the first and
 `adc` on the rest, which doubles the number in them. -/
@@ -657,7 +666,7 @@ def dblMer (o a : Nat) : List Instr :=
 `[a] - [b] + 2⁵²¹` in `xWin 9` (`[a]` loaded, `[b]` subtracted, 512 added to
 the top word), which is `[a] + (p - [b]) + 1 < 2p + 1`, reduced by `xCanon`. -/
 def subMer (o a b : Nat) : List Instr :=
-  loads (xWin 9) a ++ chain .sub .sbb (xWin 9) b ++ [.alu .add (xAcc 17) (.imm 512)] ++ xCanon o
+  loads (xWin 9) a ++ chain .sub .sbb (xWin 9) b ++ [.alu .add (xAcc 17) (.imm 512)] ++ xCanon 0 o
 
 /-! ## Nine words: the product by columns for any modulus -/
 

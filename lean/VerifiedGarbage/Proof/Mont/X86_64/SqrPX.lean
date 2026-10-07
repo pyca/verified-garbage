@@ -719,7 +719,7 @@ theorem sqrPX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     have := Nat.lt_of_mul_lt_mul_left this
     omega
   rw [WP.block_append_iff]
-  refine WP.mono (rdiSub_ok hs₆ (cOf_lt a)) fun s₆' ⟨hs₆', k₆'⟩ => ?_
+  refine WP.mono (rdiMove_ok hs₆ (cOf_lt a) (cOf_lt M.tmp)) fun s₆' ⟨hs₆', k₆'⟩ => ?_
   have hx₆ : hval (xg s₆') 9 9 = hval (xg s₆) 9 9 := hval_congr fun c _ _ => by
     simp only [xg]; rw [k₆'.1 _ (by simpa using (xAcc_ne c).2.2.2.1)]
   rw [← k₆'.2.1, ← hx₆] at e₆'
@@ -729,26 +729,34 @@ theorem sqrPX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [e₆'] at e₇
   have hU : wordsVal s₇.mem base M.tmp 9 < (2 ^ 64) ^ 9 := by rw [← Nat.pow_mul]; exact wordsVal_lt _ _ _ 9
   obtain ⟨hW1, hW2, eW⟩ := mulP_arith1 hm hAl hB hU e₇.symm
-  refine WP.mono (xCanon_ok hs₇ (o := o) (by omega) hm hW1 hW2) fun s₈ ⟨e₈, k₈, O₈⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (rdiMove_ok hs₇ (cOf_lt M.tmp) (cOf_lt o)) fun s₇' ⟨hs₇', k₇'⟩ => ?_
+  have hx₇ : hval (xg s₇') 9 9 = hval (xg s₇) 9 9 := hval_congr fun c _ _ => by
+    simp only [xg]; rw [k₇'.1 _ (by simpa using (xAcc_ne c).2.2.2.1)]
+  rw [WP.block_append_iff]
+  refine WP.mono (xCanon_ok hs₇' (o := o) (by omega) hm (by rw [hx₇]; exact hW1) (by rw [hx₇]; exact hW2))
+    fun s₈' ⟨e₈, k₈, O₈⟩ => ?_
+  rw [hx₇] at e₈
+  refine WP.mono (rdiSub_ok (hs₇'.of_keepRegs k₈ (by decide)) (cOf_lt o)) fun s₈ ⟨hs₈, k₈'⟩ => ?_
+  rw [← k₈'.2.1] at e₈
   have hmo : 0 < m := by omega
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
   · have hr' : r ∉ Reg.rax :: Reg.rcx :: Reg.rdx :: xRegs := fun h => hr (by rw [hn9]; exact xRegs_clob r h)
     have hx : ∀ k, xAcc k ≠ r := fun k h => hr' (h ▸ List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_of_mem _ (xAcc_ne k).2.2.2.2)))
-    rw [k₈.gpr r (fun h => hr' (by
-        rcases List.mem_cons.mp h with h | h
-        · exact h ▸ List.mem_cons_self ..
-        · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))),
-      k₇.gpr r hr']
     by_cases hrd : r = .rdi
-    · rw [hrd, hs₆'.rdi, hs.rdi]
-    · rw [k₆'.1 r (by simpa using hrd), k₆.gpr r hr',
+    · rw [hrd, hs₈.rdi, hs.rdi]
+    · rw [k₈'.1 r (by simpa using hrd), k₈.gpr r (fun h => hr' (by
+          rcases List.mem_cons.mp h with h | h
+          · exact h ▸ List.mem_cons_self ..
+          · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))),
+        k₇'.1 r (by simpa using hrd), k₇.gpr r hr', k₆'.1 r (by simpa using hrd), k₆.gpr r hr',
         k₅.1 r (fun h => hr' (by simp only [List.mem_singleton] at h; exact h ▸ List.mem_cons_self ..)),
         k₄.1 r (by simpa using (hx 17).symm), g₃, k₂.gpr r hr', k₁.1 r (by simpa using hrd)]
-  · rw [k₈.rd, k₇.rd, k₆'.2.2.1, k₆.rd, k₅.2.2.1, k₄.2.2.1, rd₃, k₂.rd, k₁.2.2.1]
-  · rw [k₈.wr, k₇.wr, k₆'.2.2.2, k₆.wr, k₅.2.2.2, k₄.2.2.2, wr₃, k₂.wr, k₁.2.2.2]
+  · rw [k₈'.2.2.1, k₈.rd, k₇'.2.2.1, k₇.rd, k₆'.2.2.1, k₆.rd, k₅.2.2.1, k₄.2.2.1, rd₃, k₂.rd, k₁.2.2.1]
+  · rw [k₈'.2.2.2, k₈.wr, k₇'.2.2.2, k₇.wr, k₆'.2.2.2, k₆.wr, k₅.2.2.2, k₄.2.2.2, wr₃, k₂.wr, k₁.2.2.2]
   · rw [hn9] at hx hx'
-    rw [O₈ x hx, O₇ x (by omega), k₆'.2.1, O₆ x hx', hm₅, O₃ x (by omega), O₂ x hx']
+    rw [k₈'.2.1, O₈ x hx, k₇'.2.1, O₇ x (by omega), k₆'.2.1, O₆ x hx', hm₅, O₃ x (by omega), O₂ x hx']
   · rw [e₈]; exact Nat.mod_lt _ hmo
   · rw [e₈, Nat.mod_mul_mod, Nat.mul_comm, eW, Nat.add_mul_mod_self_right]
 

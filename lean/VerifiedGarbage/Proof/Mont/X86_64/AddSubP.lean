@@ -190,7 +190,7 @@ theorem addMer_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hT : hval (xg s₃) 9 9 = wordsVal s.mem base a 9 + wordsVal s.mem base b 9 + 1 := by
     rw [← regsVal_xWin]
     omega
-  refine WP.mono (xCanon_ok hs₃ (o := o) ho hm (by rw [hT]; omega) (by rw [hT]; omega))
+  refine WP.mono (xCanon_ok hs₃.toC (o := o) ho hm (by rw [hT]; omega) (by rw [hT]; omega))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx _ => ?_⟩, ?_⟩
   · obtain ⟨ra, hw, hr'⟩ := xWin_clob hr hn9
@@ -262,7 +262,7 @@ theorem subMer_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     have hm' : m = 512 * (2 ^ 64) ^ 8 - 1 := by omega
     subst hm'
     omega
-  refine WP.mono (xCanon_ok hs₃ (o := o) ho hm (by rw [hD]; omega) (by rw [hD]; omega))
+  refine WP.mono (xCanon_ok hs₃.toC (o := o) ho hm (by rw [hD]; omega) (by rw [hD]; omega))
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx _ => ?_⟩, ?_⟩
   · obtain ⟨_, hw, hr'⟩ := xWin_clob hr hn9
