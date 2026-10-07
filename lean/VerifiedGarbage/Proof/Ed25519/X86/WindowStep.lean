@@ -62,8 +62,7 @@ theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (hesi : (s.gp
     ∀ i : Slot, 16 ≤ i.val → env t.mem x i = env s.mem x i) ?_ 4 s
     ⟨by decide, by decide, by simp, IKeep.refl _ _, by simpa using h, fun _ _ => rfl⟩
   intro n t ⟨h1, h4, he, kt, rt, ht⟩
-  rw [doubleWindow, dblStep] at *
-  rw [WP.block_append_iff]
+  rw [dblStep, WP.block_append_iff]
   refine WP.mono (dbl_ok (kt.ctx hc) rt) fun u ⟨ku, ru, hu⟩ => ?_
   refine wp_addiC fun v hv cv => WP.block_nil ?_
   have eu : (u.gpr .esi).toNat = (s.gpr .esi).toNat + (4 - n) * 2 ^ 30 := by rw [ku.keep.esi]; exact he
@@ -75,13 +74,13 @@ theorem doubleWindow_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (hesi : (s.gp
     exact ru
   have hv16 : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
     fun i hi => by rw [hv.mem, hu i hi, ht i hi]
-  rw [hv.gpr] at ev
+  rw [← hv.gpr] at ev
   by_cases hn : n = 1
   · subst hn
-    refine .inl ⟨by simp only [isa, eval, cv]; rfl, kv, ?_, by simpa using rv, hv16⟩
+    refine .inl ⟨by simp only [eval, cv]; rfl, kv, ?_, by simpa using rv, hv16⟩
     apply BitVec.eq_of_toNat_eq
     rw [ev]; omega
-  · refine .inr ⟨by simp only [isa, eval, cv, hn]; rfl, n - 1, by omega, by omega, by omega,
+  · refine .inr ⟨by simp only [eval, cv, hn]; rfl, n - 1, by omega, by omega, by omega,
       by rw [ev, Nat.mod_eq_of_lt (by omega)], kv, rv, hv16⟩
 
 /-! ## Digits -/
