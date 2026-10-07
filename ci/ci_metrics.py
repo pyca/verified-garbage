@@ -34,6 +34,7 @@ it assembles in leaves that assembly out.)
                                   there
 """
 
+import concurrent.futures
 import datetime
 import io
 import json
@@ -215,8 +216,11 @@ def collect_this_run():
     run = json.loads(gh(f"repos/{repo}/actions/runs/{run_id}")) | {"base_ref": os.environ.get("BASE_REF") or None}
     jobs = [json.loads(line) for line in gh(f"repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100",
                                             "--paginate", "--jq", ".jobs[] | tojson").splitlines()]
-    logs = {j["name"]: gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace")
-            for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"}
+    lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"]
+    # A few MB in all; requests one at a time would wait on each other.
+    with concurrent.futures.ThreadPoolExecutor(8) as pool:
+        texts = pool.map(lambda j: gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace"), lean)
+        logs = {j["name"]: t for j, t in zip(lean, texts)}
     return collect(run, jobs, logs)
 
 
