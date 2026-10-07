@@ -24,7 +24,7 @@ private theorem listLay {M : Mod} {sz : Nat} {xs : List Nat}
   · exact of_decide_eq_true (List.all_eq_true.mp htmp x hx)
 
 macro "window_layout" h:term : tactic => `(tactic|
-  (simp only [Impl.Ecdsa.Verify.X86.Cfg.windowQ, Impl.Ecdsa.X86.Cfg.MP',
+  (simp only [Impl.Ecdsa.Verify.X86.Cfg.windowQ, Impl.Ecdh.X86.Cfg.windowCfg, Impl.Ecdsa.X86.Cfg.MP',
     Impl.Ecdsa.X86.Cfg.rcbSlots, Impl.Ecdsa.X86.Cfg.pt, Impl.Ecdsa.X86.Cfg.sl,
     slot, ($h), winSlots, winRo, winOther, winWs, winTblSlots, rcbW,
     List.map_append, List.map_cons, List.map_nil, List.cons_append, List.nil_append,
