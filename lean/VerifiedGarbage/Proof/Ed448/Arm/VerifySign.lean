@@ -79,12 +79,12 @@ from it. -/
 theorem signTail_ok {s : State} {base : Addr} (hs : Scr s base) {Z : Prop} (h2 : (s.gpr .r2).toNat < 65536)
     (hz : s.gpr .r2 = 0 ↔ Z) {sb : Nat} (hsb : sb < 2) (hsign : word s.mem base SIGN = BitVec.ofNat 32 sb) :
     WP isa (.block [.dp .sub .r2 .r2 (.imm 1), .mov .r2 (.shifted .r2 .lsr 31), ld .r3 SIGN,
-      .dp .and .r2 .r2 (.reg .r3), .dp .orr .r12 .r12 (.reg .r2),
+      .dp .and .r2 .r2 (.reg .r3), .dp .orr .r10 .r10 (.reg .r2),
       ld .r2 X2, .dp .and .r2 .r2 (.imm 1), .dp .eor .r2 .r2 (.reg .r3), .mov .r5 (.imm 0),
       .dp .sub .r5 .r5 (.reg .r2)]) s fun t =>
-      BadUpd (¬(Z ∧ sb = 1)) (s.gpr .r12) (t.gpr .r12) ∧
+      BadUpd (¬(Z ∧ sb = 1)) (s.gpr .r10) (t.gpr .r10) ∧
         t.gpr .r5 = mask (decide (limbs s.mem base X2 0 % 2 ≠ sb)) ∧ t.mem = s.mem ∧
-        Keeps [.r2, .r3, .r5, .r12] s t := by
+        Keeps [.r2, .r3, .r5, .r10] s t := by
   refine wp_dp (op2_imm (by decide)) fun u1 v1 => ?_
   refine wp_mov (op2_lsr (by decide)) fun u2 v2 => ?_
   have s2 := (hs.of_upd v1 (by decide) (by decide)).of_upd v2 (by decide) (by decide)
@@ -105,10 +105,10 @@ theorem signTail_ok {s : State} {base : Addr} (hs : Scr s base) {Z : Prop} (h2 :
       rw [v3.other _ (by decide), e2, v3.gpr, v2.mem, v1.mem, hsign]
     have z := zeroSign (decide (s.gpr .r2 = 0)) sb hsb
     simp only [decide_eq_true_eq] at z
-    have e12 : t.gpr .r12 = s.gpr .r12 ||| u4.gpr .r2 := by
+    have e12 : t.gpr .r10 = s.gpr .r10 ||| u4.gpr .r2 := by
       rw [vt.other _ (by decide), v9.other _ (by decide), v8.other _ (by decide), v7.other _ (by decide),
         v6.other _ (by decide), v5.gpr]
-      change u4.gpr .r12 ||| u4.gpr .r2 = _
+      change u4.gpr .r10 ||| u4.gpr .r2 = _
       rw [v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide), v1.other _ (by decide)]
     refine ⟨u4.gpr .r2, ?_, ?_, e12⟩
     · rw [e4]; exact z.2
@@ -143,7 +143,7 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
     (hneg : E s.mem base 12 = (E s.mem base xo - E s.mem base xo) - E s.mem base xo) :
     WP isa (.block (decodeSign xo.val)) s fun t =>
       CKeep base s t ∧ BoundedEnv t.mem base ∧
-      BadUpd (¬(E s.mem base xo = 0 ∧ sb = 1)) (s.gpr .r12) (t.gpr .r12) ∧
+      BadUpd (¬(E s.mem base xo = 0 ∧ sb = 1)) (s.gpr .r10) (t.gpr .r10) ∧
       E t.mem base xo = (if ((E s.mem base xo).val % 2 == 1) == (sb == 1) then E s.mem base xo
         else (E s.mem base xo - E s.mem base xo) - E s.mem base xo) ∧
       (∀ i : Index, i ≠ 1 → i ≠ 12 → i ≠ xo → E t.mem base i = E s.mem base i) := by
@@ -197,9 +197,9 @@ theorem decodeSign_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedE
   · have e : s4.mem = s2.mem := by rw [m4, m3]
     exact ((outC m1 (by decide) (by decide)).trans (fmC m2 (by decide) (by decide))).trans
       (by rw [← e]; exact kt.mem)
-  · have r12 : s3.gpr .r12 = s.gpr .r12 := by
+  · have r10 : s3.gpr .r10 = s.gpr .r10 := by
       rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    rw [kt.regs.1 _ (by decide), ← r12]
+    rw [kt.regs.1 _ (by decide), ← r10]
     exact b4
   · rw [et]
     simp only [opSwap, Function.update_of_ne hx12, Function.update_self]

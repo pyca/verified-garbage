@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.X448.Arm.Init
-import VerifiedGarbage.Proof.X448.Arm.Row
+import VerifiedGarbage.Proof.X448.Arm.RowF
 
 /-!
 # X448 on ARMv7: the multiplication loop
@@ -19,6 +19,21 @@ theorem mulLoop_ok {b : BitVec 32} {x y : Nat} (hx : Slot x) (hy : Slot y)
     (fun n s' => ∃ i, n = 28 - i ∧ i < 28 ∧ RowInv b x y s0 i s') ?_ 28 s ⟨0, rfl, by decide, hs⟩
   rintro n s' ⟨i, rfl, hi, hr⟩
   refine WP.mono (row_ok hx hy hlx hly hi hr) fun t ⟨ht, hz⟩ => ?_
+  by_cases h28 : i + 1 = 28
+  · refine .inl ⟨by rw [eval_ne, hz]; simp only [h28, decide_true, Bool.not_true], ?_⟩
+    rw [h28] at ht
+    exact ht
+  · exact .inr ⟨by rw [eval_ne, hz]; simp; omega,
+      28 - (i + 1), by omega, i + 1, rfl, by omega, ht⟩
+
+theorem mulLoopF_ok {b : BitVec 32} {x y : Nat} (hx : Slot x) (hy : Slot y)
+    {s0 s : State} (hlx : Bounded s0.mem (State.addr b) x) (hly : Bounded s0.mem (State.addr b) y)
+    (hs : RowInvF b x y s0 0 s) :
+    WP isa (.loop (.block rowF) .ne) s (RowInvF b x y s0 28) := by
+  refine WP.loop (M := isa)
+    (fun n s' => ∃ i, n = 28 - i ∧ i < 28 ∧ RowInvF b x y s0 i s') ?_ 28 s ⟨0, rfl, by decide, hs⟩
+  rintro n s' ⟨i, rfl, hi, hr⟩
+  refine WP.mono (rowF_ok hx hy hlx hly hi hr) fun t ⟨ht, hz⟩ => ?_
   by_cases h28 : i + 1 = 28
   · refine .inl ⟨by rw [eval_ne, hz]; simp only [h28, decide_true, Bool.not_true], ?_⟩
     rw [h28] at ht

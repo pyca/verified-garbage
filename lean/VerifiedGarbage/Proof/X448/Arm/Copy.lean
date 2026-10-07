@@ -13,22 +13,22 @@ open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 theorem copyStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
     (ho : o + 112 ≤ 4096) (ha : a + 112 ≤ 4096) (hi : i < 28) :
     WP isa (.block [ld .r3 (a + 4 * i), st .r3 (o + 4 * i)]) s fun t =>
-      t.mem = s.mem.writeW (off base (o + 4 * i)) (word s.mem base (a + 4 * i)) ∧ Keeps clob s t := by
+      t.mem = s.mem.writeW (off base (o + 4 * i)) (word s.mem base (a + 4 * i)) ∧ Keeps [.r3] s t := by
   refine load_ok hs (by omega) fun t ht => ?_
   refine store_ok (hs.of_upd ht (by decide) (by decide)) (by omega) fun u hu => WP.block_nil ⟨?_, ?_⟩
   · rw [hu.mem, ht.mem, ht.gpr]
   · exact rest_keeps ((ht.rest (by decide)).trans (hu.rest _))
 
-theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
+theorem copy3_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
     (ho : o + 112 ≤ 4096) (ha : a + 112 ≤ 4096)
     (hsep : o = a ∨ o + 112 ≤ a ∨ a + 112 ≤ o) :
     WP isa (.block (copy o a)) s fun t =>
       (∀ i < 28, limbs t.mem base o i = limbs s.mem base a i) ∧
-      Outside base o 112 s.mem t.mem ∧ Keeps clob s t := by
+      Outside base o 112 s.mem t.mem ∧ Keeps [.r3] s t := by
   let inv := fun n (t : State) =>
     (∀ i < n, limbs t.mem base o i = limbs s.mem base a i) ∧
     (∀ i, n ≤ i → i < 28 → limbs t.mem base a i = limbs s.mem base a i) ∧
-    Outside base o 112 s.mem t.mem ∧ Keeps clob s t
+    Outside base o 112 s.mem t.mem ∧ Keeps [.r3] s t
   have st : ∀ n t, n < 28 → inv n t →
       WP isa (.block [ld .r3 (a + 4 * n), st .r3 (o + 4 * n)]) t (inv (n + 1)) := by
     intro n t hn ⟨tf, ta, tm, tk⟩
@@ -49,5 +49,13 @@ theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
   refine WP.mono (wp_range_flatMap (M := isa) (N := 28) inv st 28 (by decide) s ?_)
     fun t ⟨tf, _, tm, tk⟩ => ⟨tf, tm, tk⟩
   exact ⟨fun _ hi => by omega, fun _ _ _ => rfl, Outside.refl _ _ _ _, Keeps.refl _ _⟩
+
+theorem copy_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
+    (ho : o + 112 ≤ 4096) (ha : a + 112 ≤ 4096)
+    (hsep : o = a ∨ o + 112 ≤ a ∨ a + 112 ≤ o) :
+    WP isa (.block (copy o a)) s fun t =>
+      (∀ i < 28, limbs t.mem base o i = limbs s.mem base a i) ∧
+      Outside base o 112 s.mem t.mem ∧ Keeps clob s t :=
+  WP.mono (copy3_ok hs ho ha hsep) fun _ ⟨f, m, k⟩ => ⟨f, m, k.mono (by decide)⟩
 
 end VG.Proof.X448.Arm

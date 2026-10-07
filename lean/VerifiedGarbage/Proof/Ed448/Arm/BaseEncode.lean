@@ -27,18 +27,18 @@ theorem bytesAt_57 (m : Mem) (q : Addr) :
   simp only [bytesAt, Spec.X448.bytesAt, show 57 = 56 + 1 from rfl, List.range_succ, List.map_append,
     List.map_cons, List.map_nil]
 
-/-- `r8 = 128 · (limb 0 of slot 1 mod 2)`. -/
+/-- `r9 = 128 · (limb 0 of slot 1 mod 2)`. -/
 theorem signBit_ok {s : State} {base : Addr} (hs : Scr s base) :
     WP isa (.block signBit) s fun t =>
-      (t.gpr .r8).toNat = 128 * (limbs s.mem base X2 0 % 2) ∧ t.mem = s.mem ∧ Keeps [.r8] s t := by
+      (t.gpr .r9).toNat = 128 * (limbs s.mem base X2 0 % 2) ∧ t.mem = s.mem ∧ Keeps [.r9] s t := by
   unfold signBit
   refine load_ok hs (by decide) fun u hu => ?_
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun v hv => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsl (by decide)) fun t ht =>
     WP.block_nil ⟨?_, by rw [ht.mem, hv.mem, hu.mem], rest_keeps ((hu.rest (by decide)).trans
       ((hv.rest (by decide)).trans (ht.rest (by decide))))⟩
-  have h1 : (v.gpr .r8).toNat = limbs s.mem base X2 0 % 2 := by
-    rw [hv.gpr]; change (u.gpr .r8 &&& 1#32).toNat = _
+  have h1 : (v.gpr .r9).toNat = limbs s.mem base X2 0 % 2 := by
+    rw [hv.gpr]; change (u.gpr .r9 &&& 1#32).toNat = _
     rw [BitVec.toNat_and, show (1#32).toNat = 2 ^ 1 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod, hu.gpr]
     rfl
   rw [ht.gpr, VG.Proof.X25519.Arm.toNat_shl, h1, Nat.mod_eq_of_lt (by omega)]
@@ -88,15 +88,15 @@ theorem far57 {base q : Addr} (hd : (⟨q, 57⟩ : Region).Disjoint ⟨base, 819
   omega
 
 /-- The registers the encoding may change. -/
-def encRegs : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
+def encRegs : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]
 
 theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    (hq : State.addr (s.gpr .r12) = q) (hfit : (s.gpr .r12).toNat + 57 ≤ 2 ^ 32)
+    (hq : State.addr (s.gpr .r8) = q) (hfit : (s.gpr .r8).toNat + 57 ≤ 2 ^ 32)
     (hw : (⟨q, 57⟩ : Region) ∈ s.wr) (hd : (⟨q, 57⟩ : Region).Disjoint ⟨base, 8192⟩)
     {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
     WP isa baseEncode s fun t =>
       bytesAt t.mem q 57 = Spec.Ed448.encodePoint ⟨E s.mem base 0, E s.mem base 1, E s.mem base 2⟩ ∧
-      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ Keeps encRegs s t ∧
+      (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ Keeps encRegs s t ∧ t.gpr .lr = s.gpr .r10 ∧
       Frame [⟨base, 8192⟩, ⟨q, 57⟩] s.mem t.mem := by
   have hfar56 : ∀ j < 8192, 56 ≤ ofs q (off base j) := fun j hj => Nat.le_trans (by decide) (far57 hd hj)
   have hw56 : ∀ j < 57, InRegions s.wr (off q j) 1 := fun j hj =>
@@ -124,7 +124,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   refine VG.Proof.X25519.Arm.WP.append (signBit_ok hs₃) fun s₄ ⟨r₄, m₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
   have hx : (E s₂.mem base 1).val = fe s₂.mem base X2 % Spec.X448.P := Proof.X448.toFe_val _
-  have bit : (s₄.gpr .r8).toNat = 128 * ((E s.mem base 0 * Proof.X448.invert (E s.mem base 2)).val % 2) := by
+  have bit : (s₄.gpr .r9).toNat = 128 * ((E s.mem base 0 * Proof.X448.invert (E s.mem base 2)).val % 2) := by
     rw [r₄, ← fe_mod2, vx₃, ← hx, ex]
   have E₄ : E s₄.mem base = E s₂.mem base := by
     rw [m₄, E_update (o := 1) m₃]
@@ -146,7 +146,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
       rw [e₅]; exact Function.update_self _ _ _
     rw [vy₆, ← hy, h5, E₄, ey]
   -- The output.
-  have r12₆ : s₆.gpr .r12 = s.gpr .r12 := by
+  have r12₆ : s₆.gpr .r8 = s.gpr .r8 := by
     rw [k₆.1 _ (by decide), k₅.regs.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide),
       k₂.regs.1 _ (by decide), k₁.regs.1 _ (by decide)]
   have wr₆ : s₆.wr = s.wr := by
@@ -154,7 +154,7 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
   refine VG.Proof.X25519.Arm.WP.append (output_ok (p := q) hs₆ by₆ (by rw [r12₆]; exact hq)
     (by rw [r12₆]; omega) (fun j hj => by rw [wr₆]; exact hw56 j (by omega)) hfar56)
     fun s₇ ⟨v₇, o₇, k₇⟩ => ?_
-  have r8₇ : s₇.gpr .r8 = s₄.gpr .r8 := by
+  have r8₇ : s₇.gpr .r9 = s₄.gpr .r9 := by
     rw [k₇.1 _ (by decide), k₆.1 _ (by decide), k₅.regs.1 _ (by decide)]
   refine VG.Proof.X25519.Arm.wp_strb (a := q + BitVec.ofNat 64 56) (by decide)
     (by rw [k₇.1 _ (by decide), r12₆]; rw [VG.Arm.addr_add (by omega), hq])
@@ -173,22 +173,28 @@ theorem baseEncode_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : Bounde
       rw [Offset.add_add]
       exact o₈ _ (Or.inr (far57 hd (i := d + i) (by omega)))
   have sv₈ : Saved base g s₈.mem := fun i hi => (w₈ _ (by omega)).trans (sv₆ i hi)
-  have hs₈ : Scr s₈ base := hs₆.of_keeps (k₇.trans (rest_keeps (u₈.rest clob))) (by decide)
-  refine WP.mono (restore_ok hs₈ sv₈) fun t ⟨rt, mt, kt⟩ => ?_
-  refine ⟨?_, rt, ?_, ?_⟩
-  · rw [mt, bytesAt_57, u₈.mem, bytes56_write, byte56_write, v₇, y₆, r8₇, Proof.Ed448.encodePoint_code]
+  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun s₉ u₉ => ?_
+  have hs₉ : Scr s₉ base := (hs₆.of_keeps (k₇.trans (rest_keeps (u₈.rest clob))) (by decide)).of_upd u₉
+    (by decide) (by decide)
+  have sv₉ : Saved base g s₉.mem := by rw [u₉.mem]; exact sv₈
+  refine WP.mono (restore_ok hs₉ sv₉) fun t ⟨rt, mt, kt⟩ => ?_
+  refine ⟨?_, rt, ?_, ?_, ?_⟩
+  · rw [mt, u₉.mem, bytesAt_57, u₈.mem, bytes56_write, byte56_write, v₇, y₆, r8₇, Proof.Ed448.encodePoint_code]
     refine congrArg (fun b => _ ++ [b]) ?_
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, bit]
   · refine (k₁.regs.mono ?_).trans ((k₂.regs.mono ?_).trans ((k₃.mono ?_).trans ((k₄.mono ?_).trans
       ((k₅.regs.mono ?_).trans ((k₆.mono ?_).trans ((k₇.mono ?_).trans
-      ((rest_keeps (u₈.rest encRegs)).trans (kt.mono ?_))))))))
+      ((rest_keeps (u₈.rest encRegs)).trans ((rest_keeps (u₉.rest (ws := encRegs) (by decide))).trans
+        (kt.mono ?_)))))))))
     all_goals intro r hr; revert r; decide
+  · rw [kt.1 _ (by decide), u₉.gpr, u₈.gpr, k₇.1 _ (by decide), k₆.1 _ (by decide), k₅.regs.1 _ (by decide),
+      k₄.1 _ (by decide), k₃.1 _ (by decide), k₂.regs.1 _ (by decide), k₁.regs.1 _ (by decide)]
   · have fw : Outside base 0 8192 s.mem s₆.mem :=
       (((((k₁.mem.whole (by decide) (by decide)).trans (k₂.mem.whole (by decide) (by decide))).trans
         (m₃.whole (by decide))).trans (by rw [m₄]; exact Outside.refl _ _ _ _)).trans
         (k₅.mem.whole (by decide) (by decide))).trans (m₆.whole (by decide))
-    rw [mt]
+    rw [mt, u₉.mem]
     exact ((Outside.frame fw).mono (by simp)).trans ((Outside.frame o₈).mono (by simp))
 
 end VG.Proof.Ed448.Arm

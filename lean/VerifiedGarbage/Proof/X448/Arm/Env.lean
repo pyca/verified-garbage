@@ -1,6 +1,4 @@
-import VerifiedGarbage.Proof.X448.Arm.Mul
-import VerifiedGarbage.Proof.X448.Arm.AddSub
-import VerifiedGarbage.Proof.X448.Arm.Small
+import VerifiedGarbage.Proof.X448.Arm.Call
 import VerifiedGarbage.Proof.X448.Arm.Swap
 import Mathlib.Logic.Function.Basic
 
@@ -82,44 +80,49 @@ def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
 theorem mulE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (Impl.X448.Arm.mul (slot o.val) (slot a.val) (slot b.val)) s fun t =>
+    WP isa (Op.code (.mul (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opMul o a b (E s.mem base) :=
-  WP.mono (mul_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (mulCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem addE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (.block (Impl.X448.Arm.add (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+    WP isa (Op.code (.add (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opAdd o a b (E s.mem base) :=
-  WP.mono (add_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (addCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (.block (Impl.X448.Arm.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+    WP isa (Op.code (.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opSub o a b (E s.mem base) :=
-  WP.mono (sub_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (subCall_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem a24E {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
-    WP isa (.block (mulSmall (slot o.val) (slot a.val))) s fun t =>
+    WP isa (Op.code (.mulSmall (slot o.val) (slot a.val))) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opA24 o a (E s.mem base) :=
-  WP.mono (mulSmall_ok hs (slot_bound o) (slot_bound a) (hb a)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (a24Call_ok hs (slot_bound o) (slot_bound a) (hb a)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
-theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
+theorem copyE3 {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
     WP isa (.block (copy (slot o.val) (slot a.val))) s fun t =>
-      Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opCopy o a (E s.mem base) := by
+      Keep base s t ∧ Keeps [.r3] s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opCopy o a (E s.mem base) := by
   have sep : slot o.val = slot a.val ∨ slot o.val + 112 ≤ slot a.val ∨ slot a.val + 112 ≤ slot o.val := by
     by_cases h : o = a
     · subst o; exact Or.inl rfl
     · exact Or.inr (slot_sep h)
-  refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide))
+  refine WP.mono (copy3_ok hs (Nat.le_trans (slot_bound o) (by decide))
     (Nat.le_trans (slot_bound a) (by decide)) sep) fun t ⟨tf, tm, tk⟩ => ?_
-  have op : Op base (slot o.val) s t := ⟨tk, FieldMem.output tm⟩
-  refine ⟨op.keep, bounded_update op.mem hb (fun i hi => ?_), ?_⟩
+  have op : Op base (slot o.val) s t := ⟨tk.mono (by decide), FieldMem.output tm⟩
+  refine ⟨op.keep, tk, bounded_update op.mem hb (fun i hi => ?_), ?_⟩
   · rw [tf i hi]; exact hb a i hi
   · rw [E_update op.mem, show F t.mem base (slot o.val) = F s.mem base (slot a.val) from
       congrArg toFe (valN_congr tf)]
     rfl
+
+theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
+    WP isa (.block (copy (slot o.val) (slot a.val))) s fun t =>
+      Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opCopy o a (E s.mem base) :=
+  WP.mono (copyE3 hs hb o a) fun _ ⟨k, _, b, e⟩ => ⟨k, b, e⟩
 
 theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
     (x y : Index) (hxy : x ≠ y) {sw : Bool} (hm : s.gpr .r5 = mask sw) :

@@ -12,11 +12,14 @@ for the 456-bit challenge `k`; 0 otherwise.
 Field elements and their arithmetic are X448's on this target, as for
 base-point multiplication (`ScalarBase.lean`): twenty-eight 16-bit limbs in
 the 128-byte slots of the working space, with `r0` the working space and
-`r6` the limb mask. The pointers to the public key and the signature stay in
-`r8` and `r10`, which the field arithmetic preserves.
+`r6` the limb mask; multiplications, additions and subtractions are calls of
+the `vg_gf448_r16_*` functions, which change `r1`–`r3`, `r12` and `lr` (and
+so the link register is kept at `LR`) but keep `r8`, `r10` and `r11`. The
+pointer to the public key stays in `r8`; the one to the signature is in
+`r12`, which is read only before the first call.
 
 Everything is computed whatever the inputs, and the checks are accumulated
-in `r12` (`BAD`), which stays 0 exactly when every one passes: each check
+in `r10` (`BAD`), which stays 0 exactly when every one passes: each check
 ORs into it a word that is 0 if and only if it passes. X448's full reduction
 works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
 
@@ -31,8 +34,8 @@ works on slot 1 alone, which is kept free for it: `Q`'s `Y` is in slot 21.
   `2^223 - 1`, then 223 squarings), the check `v x² = u`, the check that
   `x = 0` comes with the sign bit 0, and `x` swapped with `-x` by a mask if
   its low bit is not the sign bit.
-* `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
-  kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
+* `R` and then `A` are decoded into slots 6–7 (`vdecode`), `R` kept at `RX`
+  and `RY` (`Z = 1` in slot 10). `A` is negated, and
   `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
   (slots 0, 21, 2) doubled, `B` (slots 8–10) added and swapped into `Q` by
   bit `t` of `S`, then `-A` added and swapped in by bit `t` of `k`.
@@ -62,13 +65,13 @@ def RY : Nat := 2992
 /-- The bits of `S` and `k`, one byte per bit. -/
 def VBITS : Nat := 3104
 
-/-- The link register, while the decoding loop counts in it. -/
+/-- The link register, which the calls change. -/
 def LR : Nat := 3560
 
 /-! ## Checks -/
 
 /-- `BAD |= r3`. -/
-def orBad : List Instr := [.dp .orr .r12 .r12 (.reg .r3)]
+def orBad : List Instr := [.dp .orr .r10 .r10 (.reg .r3)]
 
 /-- `BAD |= 0` exactly when limb `i` of slot 1 is that of the slot at `a`. -/
 def diffLimb (a i : Nat) : List Instr :=
@@ -93,15 +96,15 @@ def loadLimbs (p : Reg) (o : Nat) : List Instr :=
 
 /-- Limb `i` of `S`'s low 448 bits plus that of `2^448 - L`, into `TMP`. -/
 def sLimb (i : Nat) : List Instr :=
-  byteLimb .r10 57 i ++
+  byteLimb .r12 57 i ++
     [.movw .r2 (BitVec.ofNat 16 (kLimb i)), .dp .add .r3 .r3 (.reg .r2), st .r3 (TMP + 4 * i)]
 
-/-- `BAD |= 0` exactly when `S` (the signature's last 57 bytes, at `r10 + 57`)
+/-- `BAD |= 0` exactly when `S` (the signature's last 57 bytes, at `r12 + 57`)
 is below `L`: the carry out of 448 bits of its low limbs plus `2^448 - L`,
 ORed with its byte 56. -/
 def sCheck : List Instr :=
   (List.range 28).flatMap sLimb ++ pass TMP TMP ++
-    [.ldrb .r3 .r10 113, .dp .orr .r3 .r3 (.reg .r5)] ++ orBad
+    [.ldrb .r3 .r12 113, .dp .orr .r3 .r3 (.reg .r5)] ++ orBad
 
 /-! ## Decoding a point -/
 
@@ -159,7 +162,7 @@ mask of `x`'s low bit differing from the sign bit. -/
 def decodeSign (xo : Nat) : List Instr :=
   copy X2 (slot xo) ++ freeze ++ orLimbs ++
     [.dp .sub .r2 .r2 (.imm 1), .mov .r2 (.shifted .r2 .lsr 31), ld .r3 SIGN,
-      .dp .and .r2 .r2 (.reg .r3), .dp .orr .r12 .r12 (.reg .r2),
+      .dp .and .r2 .r2 (.reg .r3), .dp .orr .r10 .r10 (.reg .r2),
       ld .r2 X2, .dp .and .r2 .r2 (.imm 1), .dp .eor .r2 .r2 (.reg .r3), .mov .r5 (.imm 0),
       .dp .sub .r5 .r5 (.reg .r2)] ++ cswap (slot xo) (slot 12)
 
@@ -219,10 +222,10 @@ def vbitJ (j : Nat) : List Instr :=
     .mov .r4 (if j = 0 then .reg .r9 else .shifted .r9 .lsr j), .dp .and .r4 .r4 (.imm 1),
     .dp .add .r1 .r1 (.shifted .r4 .lsl 1), .strb .r1 .r7 (VBITS + j)]
 
-/-- Byte `r11` of `S` (at `r10 + 57`) and of `k` (at `r2`) expanded to bytes
+/-- Byte `r11` of `S` (at `r12 + 57`) and of `k` (at `r2`) expanded to bytes
 `VBITS + 8 r11 + j`. -/
 def vbitsBody : List Instr :=
-  [.dp .add .r7 .r10 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
+  [.dp .add .r7 .r12 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
     .dp .add .r7 .r0 (.shifted .r11 .lsl 3)] ++
     (List.range 8).flatMap vbitJ ++ [.dp .add .r11 .r11 (.imm 1), .cmp .r11 (.imm 57)]
 
@@ -230,16 +233,16 @@ def vbitsBody : List Instr :=
 def vbits : Prog isa := .seq (.block [.mov .r11 (.imm 0)]) (.loop (.block vbitsBody) .ne)
 
 /-- The callee-saved registers saved at the working space (`r3`), the
-pointers to `A` and the signature into `r8` and `r10`, the working space into
+pointers to `A` and the signature into `r8` and `r12`, the working space into
 `r0`, the limb mask into `r6`, and the link register saved at `LR`. -/
 def ventry : List Instr :=
   (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
-    [.mov .r12 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535, .mov .r8 (.reg .r12),
-      .mov .r10 (.reg .r1), st .lr LR]
+    [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535,
+      .mov .r12 (.reg .r1), st .lr LR]
 
 /-- `BAD = 0`, the check of `S`, and the slots initialized as for base-point
 multiplication, with `Q`'s `Y` (1) in slot 21. -/
-def vstart : List Instr := [.mov .r12 (.imm 0)] ++ sCheck ++ initSlots ++ copy (slot 21) X2
+def vstart : List Instr := [.mov .r10 (.imm 0)] ++ sCheck ++ initSlots ++ copy (slot 21) X2
 
 /-- `Q` (slots 0, 21 and 2) and `R` (slots 8–10) doubled twice: a loop of two
 iterations, counted by `r11`, each doubling both. -/
@@ -248,15 +251,14 @@ def vdouble : Prog isa :=
     (.loop (.seq (ops (doubleAt 0 21 2 ++ doubleAt 8 9 10))
       (.block [.dp .sub .r11 .r11 (.imm 1), .cmp .r11 (.imm 0)])) .ne)
 
-/-- One decoding, of the point at `r10` into slots 6–7, after slots 6–7 are kept at `RX` and
-`RY`; then `r10 = r8` and the count `lr` moved down. -/
-def vdecodeBody : Prog isa :=
-  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) <| .seq (decode .r10 6 7)
-    (.block [.mov .r10 (.reg .r8), .subs .lr .lr (.imm 1)])
+/-- One decoding, of the point at `p` into slots 6–7, after slots 6–7 are kept at `RX` and
+`RY`. -/
+def vdecodeBody (p : Reg) : Prog isa :=
+  .seq (.block (copy RX (slot 6) ++ copy RY (slot 7))) (decode p 6 7)
 
-/-- `R` (at `r10`) decoded, then `A` (at `r8`): a loop of two iterations, counted by `lr`
-(which the field arithmetic preserves). `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
-def vdecode : Prog isa := .seq (.block [.movw .lr 2]) (.loop vdecodeBody .ne)
+/-- `R` (at `r12`) decoded, then `A` (at `r8`, which the field arithmetic preserves; `r12`
+is read only before the first call). `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
+def vdecode : Prog isa := .seq (vdecodeBody .r12) (vdecodeBody .r8)
 
 /-- `R` into slots 8–9 (`B` is no longer needed). -/
 def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
@@ -269,7 +271,7 @@ def vfinish : Prog isa :=
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
   .seq (ops [.mul (slot 12) (slot 21) (slot 10), .mul (slot 13) (slot 9) (slot 2)]) <|
   .block (eqSlots (slot 12) (slot 13) ++
-    [.dp .sub .r1 .r12 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
+    [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] ++
     (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++ [ld .lr LR, .mov .r0 (.reg .r1)])
 
 /-- `vg_ed448_verify_equation(pk = r0, signature = r1, challenge = r2, scratch = r3) -> r0`. -/

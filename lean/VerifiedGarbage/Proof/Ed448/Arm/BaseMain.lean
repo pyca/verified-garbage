@@ -57,14 +57,16 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
   -- The entry.
   refine WP.seq (VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun u hu => ?_)
   refine VG.Proof.X25519.Arm.WP.append (setupHead_ok (s := u) (base := base) (by rw [hu.gpr, hbase])
-    (by rw [hu.wr]; exact hw₀) (by rw [hu.gpr]; exact h.f2)) fun v ⟨hsv, rv, svv, ov, kv⟩ => ?_
+    (by rw [hu.wr]; exact hw₀) (by rw [hu.gpr]; exact h.f2)) fun v ⟨hsv, rv, rl, svv, ov, kv⟩ => ?_
   refine WP.mono (initSlots_ok hsv) fun w ⟨lw, ow, kw⟩ => ?_
   have hsw : Scr w base := hsv.of_keeps kw (by decide)
-  have kuw : Keeps [.r3, .r12, .r0, .r6, .r4] s w :=
+  have kuw : Keeps [.r3, .r8, .r10, .r0, .r6, .r4] s w :=
     (rest_keeps (hu.rest (by decide))).trans ((kv.mono (by decide)).trans (kw.mono (by decide)))
   have r1w : w.gpr .r1 = s.gpr .r1 := kuw.1 _ (by decide)
-  have r12w : w.gpr .r12 = s.gpr .r0 := by
+  have r12w : w.gpr .r8 = s.gpr .r0 := by
     rw [kw.1 _ (by decide), rv, hu.other _ (by decide)]
+  have r10w : w.gpr .r10 = s.gpr .lr := by
+    rw [kw.1 _ (by decide), rl, hu.other _ (by decide)]
   have mw : ∀ x, 8192 ≤ ofs base x → w.mem x = s.mem x := fun x hx => by
     rw [ow x (Or.inr (by omega)), ov x (Or.inr (by omega)), hu.mem]
   have bw : bytesAt w.mem (State.addr (s.gpr .r1)) 57 = bytesAt s.mem (State.addr (s.gpr .r1)) 57 := by
@@ -113,14 +115,16 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
         Proof.X448.toFe_self, Proof.X448.toFe_self]
     · rw [h3, ex]; exact Proof.X448.toFe_self _
   -- The encoding.
-  have r12y : y.gpr .r12 = s.gpr .r0 := by
+  have r12y : y.gpr .r8 = s.gpr .r0 := by
     rw [hy.regs.1 _ (by decide), gx _ (by decide), r12w]
+  have r10y : y.gpr .r10 = s.gpr .lr := by
+    rw [hy.regs.1 _ (by decide), gx _ (by decide), r10w]
   have wry : y.wr = s.wr := by rw [hy.regs.2.2, wrx, kuw.2.2]
   have svy : Saved base s.gpr y.mem :=
     (svw.outside ox (by decide)).outside2 hy.mem (by decide) (by decide)
   refine WP.mono (baseEncode_ok hy.scr hy.bounded (q := State.addr (s.gpr .r0)) (by rw [r12y])
     (by rw [r12y]; exact h.f0) (by rw [wry, h.wr]; simp) (hbase ▸ h.out_ws) svy)
-    fun t ⟨bt, rt, kt, _⟩ => ?_
+    fun t ⟨bt, rt, _, lt, _⟩ => ?_
   refine ⟨fun r hr => ?_, ?_⟩
   · simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -132,6 +136,6 @@ theorem scalarBase_ladder {s : State} (h : BasePre s) :
     · exact rt 5 (by decide)
     · exact rt 6 (by decide)
     · exact rt 7 (by decide)
-    · rw [kt.1 _ (by decide), hy.regs.1 _ (by decide), gx _ (by decide), kuw.1 _ (by decide)]
+    · exact lt.trans r10y
   · rw [bt]
     exact congrArg Spec.Ed448.encodePoint hy.r

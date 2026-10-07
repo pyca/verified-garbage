@@ -10,11 +10,12 @@ of `[s]B` for the 456-bit little-endian scalar `s`, without pruning.
 Field elements are X448's on this target (twenty-eight 16-bit limbs in the
 128-byte slots of the working space, `Impl/X448/Arm.lean`), and so is the
 field arithmetic: multiplications (and squarings, as multiplications of a
-slot by itself), additions, subtractions, the constant-time swap, the
-inversion, the full reduction of slot 1 and its output. Points are the
-specification's projective coordinates `(X : Y : Z)`. As in X448, `r0`
-holds the working space, `r6` the limb mask and `r12` the output's address;
-the callee-saved registers are saved in the working space's first 32 bytes.
+slot by itself), additions and subtractions (calls of the `vg_gf448_r16_*`
+functions), the constant-time swap, the inversion, the full reduction of
+slot 1 and its output. Points are the specification's projective
+coordinates `(X : Y : Z)`. As in X448, `r0` holds the working space, `r6`
+the limb mask, `r8` the output's address and `r10` the link register; the
+callee-saved registers are saved in the working space's first 32 bytes.
 
 Every slot is initialized: `R` (slots 0–2) to the neutral point
 `(0 : 1 : 1)`, `Q` (slots 8–10) to the base point, slot 11 to `d`, and the
@@ -24,7 +25,7 @@ others to zero. The scalar's bits are expanded into bytes at `BITS` (byte
 into slots 3–5 (§5.2.4's addition), and `T` swapped into `R` with the mask
 of the bit: the same operations for every bit, whatever its value. Finally
 `R` is encoded (§5.2.2): `Z` inverted, `y = Y/Z` and `x = X/Z` (into slot
-1) fully reduced, the low bit of `x` kept in `r8`, and `y` written as the
+1) fully reduced, the low bit of `x` kept in `r9`, and `y` written as the
 output's first 56 bytes and the bit as the top bit of its 57th.
 
 The only branches are on the loop counters, and every address is a pointer
@@ -64,11 +65,11 @@ def initSlot (i : Nat) : List Instr := (List.range 28).flatMap (initStep i)
 def initSlots : List Instr := .mov .r4 (.imm 0) :: (List.range 22).flatMap initSlot
 
 /-- The callee-saved registers saved at the working space (`r2`), the
-output's address into `r12`, the working space into `r0`, the limb mask into
-`r6`, and the slots initialized. -/
+output's address into `r8`, the link register into `r10`, the working space
+into `r0`, the limb mask into `r6`, and the slots initialized. -/
 def baseEntry : List Instr :=
   .mov .r3 (.reg .r2) :: (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
-    [.mov .r12 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535] ++ initSlots
+    [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535] ++ initSlots
 
 /-! ## The scalar's bits -/
 
@@ -131,18 +132,18 @@ def baseLoop : Prog isa := .seq (.block [.movw .r11 456]) (.loop baseStep .ne)
 
 /-! ## The encoding -/
 
-/-- The low bit of the fully reduced `x` (slot 1), as bit 7 of `r8`. -/
+/-- The low bit of the fully reduced `x` (slot 1), as bit 7 of `r9`. -/
 def signBit : List Instr :=
-  [ld .r8 X2, .dp .and .r8 .r8 (.imm 1), .mov .r8 (.shifted .r8 .lsl 7)]
+  [ld .r9 X2, .dp .and .r9 .r9 (.imm 1), .mov .r9 (.shifted .r9 .lsl 7)]
 
 /-- `1/Z` into slot 21, `y = Y/Z` into slot 4 and `x = X/Z` into slot 1; `x`
 fully reduced and its low bit kept; `y` copied into slot 1, fully reduced and
 written to the output's first 56 bytes, and the bit as the top bit of its
-57th; then the callee-saved registers restored. -/
+57th; then the link register and the callee-saved registers restored. -/
 def baseEncode : Prog isa :=
   .seq invert <| .seq (ops [.mul (slot 4) (slot 1) (slot 21), .mul X2 (slot 0) (slot 21)]) <|
     .block (freeze ++ signBit ++ Impl.X448.Arm.copy X2 (slot 4) ++ freeze ++
-      (List.range 28).flatMap packLimb ++ [.strb .r8 .r12 56] ++
+      (List.range 28).flatMap packLimb ++ [.strb .r9 .r8 56, .mov .lr (.reg .r10)] ++
       (List.range 8).map fun i => ld (saved[i]!) (4 * i))
 
 /-- `vg_ed448_scalar_base(out = r0, scalar = r1, scratch = r2)`. -/

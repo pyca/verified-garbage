@@ -69,15 +69,37 @@ theorem ea7 (hfit : b.toNat + 4096 ≤ 2 ^ 32) {i d : Nat} (h : 4 * i + d < 4096
       State.addr b + BitVec.ofNat 64 (4 * i + d) := by
   rw [Offset.add_add]; exact addr_add (by omega)
 
+theorem eaB (hfit : b.toNat + 4096 ≤ 2 ^ 32) {x d : Nat} (h : x + d < 4096) :
+    State.addr (b + BitVec.ofNat 32 x + BitVec.ofNat 32 d) =
+      State.addr b + BitVec.ofNat 64 (x + d) := by
+  rw [Offset.add_add]; exact addr_add (by omega)
+
 end
+
+/-- The registers the rows change. -/
+def rowClob : List Reg := [.r1, .r2, .r3, .r4, .r5, .r7, .r9]
 
 /-- After `i` rows the initialized product limbs represent `a[0..i] * b`. -/
 structure RowInv (b : BitVec 32) (x y : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
   ctx : RowCtx b s
-  rest : Rest clob s0 s
+  rest : Rest rowClob s0 s
   r6 : s.gpr .r6 = mask16
   r7 : s.gpr .r7 = b + BitVec.ofNat 32 (4 * i)
   r9 : s.gpr .r9 = BitVec.ofNat 32 (28 - i)
+  frame : Frame [⟨State.addr b + BitVec.ofNat 64 ACC, 224⟩] s0.mem s.mem
+  lt : ∀ k < i + 28, accw s.mem (State.addr b) k < 65536
+  val : Radix16.valN (accw s.mem (State.addr b)) (i + 28) =
+    Radix16.valN (limbs s0.mem (State.addr b) x) i * fe s0.mem (State.addr b) y
+
+/-- `RowInv` for the rows of the field functions: after `i` rows, for
+the first operand at `x` (`lr` at its limb `i`) and the second at `y` (`r12`). -/
+structure RowInvF (b : BitVec 32) (x y : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
+  ctx : RowCtx b s
+  rest : Rest (.lr :: fclob) s0 s
+  r6 : s.gpr .r6 = mask16
+  r7 : s.gpr .r7 = b + BitVec.ofNat 32 (4 * i)
+  lr : s.gpr .lr = b + BitVec.ofNat 32 (x + 4 * i)
+  r12 : s.gpr .r12 = b + BitVec.ofNat 32 y
   frame : Frame [⟨State.addr b + BitVec.ofNat 64 ACC, 224⟩] s0.mem s.mem
   lt : ∀ k < i + 28, accw s.mem (State.addr b) k < 65536
   val : Radix16.valN (accw s.mem (State.addr b)) (i + 28) =

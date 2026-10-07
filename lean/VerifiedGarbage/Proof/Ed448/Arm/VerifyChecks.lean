@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.X448.Arm.Freeze
 /-!
 # Ed448 verification's equation on ARMv7: accumulating checks
 
-`BAD` (`r12`) accumulates checks: a check of `P` ORs into it a word below
+`BAD` (`r10`) accumulates checks: a check of `P` ORs into it a word below
 `2^16` that is 0 exactly when `P` holds (`BadUpd`). Comparing the limbs of
 slot 1 with those of another slot (`diffSlot_ok`), and two slots' field
 elements, fully reduced (`eqSlots_ok`).
@@ -38,7 +38,7 @@ theorem BadUpd.rfl' {b : BitVec 32} : BadUpd True b b :=
 
 theorem orBad_ok {s : State} {P : Prop} (hc : (s.gpr .r3).toNat < 65536) (hp : s.gpr .r3 = 0 ↔ P) :
     WP isa (.block orBad) s fun t =>
-      BadUpd P (s.gpr .r12) (t.gpr .r12) ∧ t.mem = s.mem ∧ Keeps [.r12] s t := by
+      BadUpd P (s.gpr .r10) (t.gpr .r10) ∧ t.mem = s.mem ∧ Keeps [.r10] s t := by
   unfold orBad
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_reg _ _) fun t ht =>
     WP.block_nil ⟨⟨s.gpr .r3, hc, hp, ht.gpr⟩, ht.mem, rest_keeps (ht.rest (by decide))⟩
@@ -53,8 +53,8 @@ theorem xor_limb {x y : BitVec 32} (hx : x.toNat < radix) (hy : y.toNat < radix)
 theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha : a + 112 ≤ 4096)
     (hi : i < 28) (h1 : limbs s.mem base X2 i < radix) (h2 : limbs s.mem base a i < radix) :
     WP isa (.block (diffLimb a i)) s fun t =>
-      BadUpd (limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r12) (t.gpr .r12) ∧
-        t.mem = s.mem ∧ Keeps [.r3, .r2, .r12] s t := by
+      BadUpd (limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r10) (t.gpr .r10) ∧
+        t.mem = s.mem ∧ Keeps [.r3, .r2, .r10] s t := by
   unfold diffLimb
   refine load_ok hs (by simp only [X2, slot]; omega) fun u hu => ?_
   refine load_ok (hs.of_upd hu (by decide) (by decide)) (by omega) fun v hv => ?_
@@ -66,17 +66,17 @@ theorem diffLimb_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat} (ha 
     fun t ⟨tb, tm, tk⟩ => ⟨?_, ?_, ?_⟩
   · rw [hw.other _ (by decide), hv.other _ (by decide), hu.other _ (by decide)] at tb; exact tb
   · rw [tm, hw.mem, hv.mem, hu.mem]
-  · exact (rest_keeps (ws := [.r3, .r2, .r12]) ((hu.rest (by decide)).trans ((hv.rest (by decide)).trans
+  · exact (rest_keeps (ws := [.r3, .r2, .r10]) ((hu.rest (by decide)).trans ((hv.rest (by decide)).trans
       (hw.rest (by decide))))).trans (tk.mono (by decide))
 
 theorem diffSlot_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha : a + 112 ≤ 4096)
     (h1 : Bounded s.mem base X2) (h2 : Bounded s.mem base a) :
     WP isa (.block (diffSlot a)) s fun t =>
-      BadUpd (∀ i < 28, limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r12) (t.gpr .r12) ∧
-        t.mem = s.mem ∧ Keeps [.r3, .r2, .r12] s t := by
+      BadUpd (∀ i < 28, limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r10) (t.gpr .r10) ∧
+        t.mem = s.mem ∧ Keeps [.r3, .r2, .r10] s t := by
   let inv := fun n (t : State) =>
-    BadUpd (∀ i < n, limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r12) (t.gpr .r12) ∧
-      t.mem = s.mem ∧ Keeps [.r3, .r2, .r12] s t
+    BadUpd (∀ i < n, limbs s.mem base X2 i = limbs s.mem base a i) (s.gpr .r10) (t.gpr .r10) ∧
+      t.mem = s.mem ∧ Keeps [.r3, .r2, .r10] s t
   refine wp_range_flatMap (M := isa) (N := 28) inv (fun n t hn ⟨tb, tm, tk⟩ => ?_) 28 (by decide) s
     ⟨BadUpd.rfl'.congr ⟨fun _ _ h => absurd h (Nat.not_lt_zero _), fun _ => trivial⟩, rfl,
       Keeps.refl _ _⟩
@@ -136,7 +136,7 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     (ha1 : a ≠ 1) (hb1 : b ≠ 1) (hab : a ≠ b) :
     WP isa (.block (eqSlots (slot a.val) (slot b.val))) s fun t =>
       CKeep base s t ∧ BoundedEnv t.mem base ∧ (∀ i : Index, i ≠ 1 → E t.mem base i = E s.mem base i) ∧
-        BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r12) (t.gpr .r12) := by
+        BadUpd (E s.mem base a = E s.mem base b) (s.gpr .r10) (t.gpr .r10) := by
   have sa := slot_range a
   have sb := slot_range b
   have hX2v : X2 = 192 := rfl
@@ -209,10 +209,10 @@ theorem eqSlots_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       rw [tm, fa, Proof.X448.toFe_mod]
     · simp only [E, F]
       exact congrArg Proof.X448.toFe (valN_congr (other i hi ha'))
-  · have r12 : s5.gpr .r12 = s.gpr .r12 := by
+  · have r10 : s5.gpr .r10 = s.gpr .r10 := by
       rw [k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide),
         k1.1 _ (by decide)]
-    rw [r12] at tb
+    rw [r10] at tb
     refine tb.congr ?_
     rw [limbs_eq_iff b5 ba5, fb, fa]
     simp only [E, F, Proof.X448.toFe_eq_iff]

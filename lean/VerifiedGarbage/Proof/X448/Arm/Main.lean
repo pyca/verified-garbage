@@ -106,7 +106,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     fun j hj => far (hbase ▸ hp.scalar_sc) hj (by decide)
   rw [x448]
   refine WP.seq (WP.mono (setup_ok hbase hw₀ hn rfl hp.point_fit hr hd)
-    fun s₁ ⟨hs₁, b₁, savedOut₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ => ?_)
+    fun s₁ ⟨hs₁, b₁, savedOut₁, savedLr₁, k₁, o₁, sv₁, x1₁, x2₁, z2₁, x3₁, z3₁, sw₁⟩ => ?_)
   have kr : ∀ j < 56, InRegions (s₁.rd ++ s₁.wr) (off (State.addr (s₀.gpr .r1)) j) 1 := fun j hj =>
     ⟨scalarR s₀, by rw [k₁.2.1, hp.rd]; simp, Offset.contains_base _ (by omega) (by omega)⟩
   refine WP.seq (WP.mono (bits_ok (k := State.addr (s₀.gpr .r1)) hs₁ (by rw [k₁.1 _ (by decide)])
@@ -147,14 +147,16 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   have k26 := L.regs.then (k₅.regs.then k₆.regs)
   have sv₆ := ((sv₂.outside2 L.mem (by decide) (by decide)).outside2 k₅.mem (by decide)
     (by decide)).outside2 k₆.mem (by decide) (by decide)
-  have out₆ : s₆.gpr .r12 = s₀.gpr .r0 :=
+  have out₆ : s₆.gpr .r8 = s₀.gpr .r0 :=
     (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedOut₁)
+  have lr₆ : s₆.gpr .r10 = s₀.gpr .lr :=
+    (k26.1 _ (by decide)).trans ((g₂ _ (by decide)).trans savedLr₁)
   have k06 := k02.then k26
   have hw₆ : ∀ j < 56, InRegions s₆.wr (off (State.addr (s₀.gpr .r0)) j) 1 := fun j hj =>
     ⟨outR s₀, by rw [k06.2.2, hp.wr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
   refine WP.mono (finish_ok (k₆.scr hs₅) b₆ (congrArg State.addr out₆)
     (by rw [out₆]; exact hp.out_fit) hw₆
-    (fun j hj => far_output (hbase ▸ hp.out_sc) hj) sv₆) fun s' ⟨restored, kf, fm, result⟩ => ?_
+    (fun j hj => far_output (hbase ▸ hp.out_sc) hj) sv₆) fun s' ⟨restored, lr', kf, fm, result⟩ => ?_
   have kall := k06.then kf
   refine ⟨?_, ?_⟩
   · intro r hr
@@ -168,7 +170,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     · exact restored 5 (by decide)
     · exact restored 6 (by decide)
     · exact restored 7 (by decide)
-    · exact kall.1 _ (by decide)
+    · exact lr'.trans lr₆
   · change Spec.X448.bytesAt s'.mem (State.addr (s₀.gpr .r0)) 56 = _
     rw [result, x448_eq]
     apply congrArg Spec.X448.encodeUCoordinate

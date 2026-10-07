@@ -12,12 +12,12 @@ open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.X25519.Arm (wp_mul wp_movw)
 
 theorem smallStep_ok {s : State} {base : Addr} (hs : Scr s base) {a i : Nat}
-    (ha : Slot a) (hi : i < 28) (hc : (s.gpr .r5).toNat = 39081) :
-    WP isa (.block [ld .r3 (a + 4 * i), .mul .r3 .r3 .r5, st .r3 (TMP + 4 * i)]) s fun t =>
+    (hpa : Ptr s .lr a) (ha : Slot a) (hi : i < 28) (hc : (s.gpr .r5).toNat = 39081) :
+    WP isa (.block [.ldr .r3 .lr (4 * i), .mul .r3 .r3 .r5, st .r3 (TMP + 4 * i)]) s fun t =>
       t.mem = s.mem.writeW (off base (TMP + 4 * i)) (BitVec.ofNat 32 (39081 * limbs s.mem base a i)) ∧
       Keeps [.r3, .r2] s t := by
   have ha' : a + 112 ≤ 3584 := ha
-  refine load_ok hs (by omega) fun t ht => ?_
+  refine loadP_ok hs hpa (by omega) (by omega) fun t ht => ?_
   have ts := hs.of_upd ht (by decide) (by decide)
   refine wp_mul fun u hu => ?_
   have us := ts.of_upd hu (by decide) (by decide)
@@ -36,23 +36,25 @@ theorem smallInit_ok (s : State) :
   rfl
 
 theorem mulSmall_ok {s : State} {base : Addr} (hs : Scr s base) {o a : Nat}
-    (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
-    WP isa (.block (mulSmall o a)) s fun t => Op base o s t ∧ Bounded t.mem base o ∧
-      F t.mem base o = Spec.X448.a24 * F s.mem base a := by
+    (hpo : Ptr s .r9 o) (hpa : Ptr s .lr a) (ho : Slot o) (ha : Slot a) (ab : Bounded s.mem base a) :
+    WP isa (.block mulSmall) s fun t =>
+      Keeps fclob s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
+        fe t.mem base o % Spec.X448.P = 39081 * fe s.mem base a % Spec.X448.P := by
   let f := fun i => 39081 * limbs s.mem base a i
   have fb : ∀ i < 28, f i ≤ 2 ^ 32 - radix := by
     intro i hi
     have h := Nat.mul_le_mul_left 39081 (Nat.le_of_lt (ab i hi))
     have hr : 39081 * radix ≤ 2 ^ 32 - radix := by decide
     exact Nat.le_trans h hr
-  refine WP.mono (columns_normalize hs ho fb ?_) fun t ⟨op, tb, tv⟩ => ⟨op, tb, toFe_a24 ?_⟩
+  refine WP.mono (columns_normalize hs hpo ho fb ?_) fun t ⟨tk, tm, tb, tv⟩ => ⟨tk, tm, tb, ?_⟩
   · rw [WP.block_append_iff]
     refine WP.mono (smallInit_ok s) fun t ⟨tc, tm, tk⟩ => ?_
     have ts := hs.of_keeps tk (by decide)
     refine WP.mono (columns_ok ts (by decide : Reg.r0 ∉ [Reg.r3, Reg.r2] ∧ Reg.r6 ∉ [Reg.r3, Reg.r2]) fb ?_) fun u ⟨uf, um, uk⟩ => ?_
     · intro i hi u us um uk
       have uc : (u.gpr .r5).toNat = 39081 := by rw [uk.1 _ (by decide), tc]
-      refine WP.mono (smallStep_ok us ha hi uc) fun v ⟨vm, vk⟩ => ⟨?_, vk⟩
+      refine WP.mono (smallStep_ok us ((hpa.of_keeps tk (by decide) (by decide)).of_keeps uk
+        (by decide) (by decide)) ha hi uc) fun v ⟨vm, vk⟩ => ⟨?_, vk⟩
       rw [input_limb um ha hi, tm] at vm
       exact vm
     · refine ⟨uf, ?_, (tk.mono ?_).trans (uk.mono ?_)⟩

@@ -20,8 +20,8 @@ theorem output_word {m m' : Mem} {base p : Addr} {n d : Nat} (h : Outside p 0 n 
   exact h _ (Or.inr (Nat.le_trans (by omega : 0 + n ≤ 56) (hfar _ (by omega))))
 
 theorem output_ok {s : State} {base p : Addr} (hs : Scr s base) (hb : Bounded s.mem base X2)
-    (hp : State.addr (s.gpr .r12) = p)
-    (hfit : (s.gpr .r12).toNat + 56 ≤ 2 ^ 32) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
+    (hp : State.addr (s.gpr .r8) = p)
+    (hfit : (s.gpr .r8).toNat + 56 ≤ 2 ^ 32) (hw : ∀ j < 56, InRegions s.wr (off p j) 1)
     (hfar : ∀ j < 8192, 56 ≤ ofs p (off base j)) :
     WP isa (.block ((List.range 28).flatMap packLimb)) s fun t =>
       Spec.X448.bytesAt t.mem p 56 = VG.Proof.X25519.leBytes 56 (fe s.mem base X2) ∧

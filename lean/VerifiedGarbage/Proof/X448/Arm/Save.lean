@@ -58,27 +58,32 @@ theorem save_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
 
 def setupHead : List Instr :=
   (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
-    [.mov .r12 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535]
+    [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535]
 
 theorem setupHead_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
     WP isa (.block setupHead) s fun t =>
-      Scr t base ∧ t.gpr .r12 = s.gpr .r0 ∧ Saved base s.gpr t.mem ∧
-      Outside base 0 32 s.mem t.mem ∧ Keeps [.r12, .r0, .r6] s t := by
+      Scr t base ∧ t.gpr .r8 = s.gpr .r0 ∧ t.gpr .r10 = s.gpr .lr ∧ Saved base s.gpr t.mem ∧
+      Outside base 0 32 s.mem t.mem ∧ Keeps [.r8, .r10, .r0, .r6] s t := by
   unfold setupHead
   rw [WP.block_append_iff]
   refine WP.mono (save_ok hc hw hn) fun t ⟨tv, tm, tk⟩ => ?_
+  refine wp_mov (op2_reg _ _) fun u₁ hu₁ => ?_
   refine wp_mov (op2_reg _ _) fun u hu => ?_
   refine wp_mov (op2_reg _ _) fun v hv => ?_
   refine wp_movw fun w hw' => WP.block_nil ?_
-  have kr : Keeps [.r12, .r0, .r6] t w := (rest_keeps (hu.rest (by decide))).trans
-    ((rest_keeps (hv.rest (by decide))).trans (rest_keeps (hw'.rest (by decide))))
-  refine ⟨⟨?_, hw'.gpr, ?_, ?_⟩, ?_, ?_, ?_, (tk.mono (by simp)).trans kr⟩
-  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), tk.1 _ (by decide)]; exact hc
-  · rw [hw'.wr, hv.wr, hu.wr, tk.2.2]; exact hw
-  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), tk.1 _ (by decide)]; exact hn
-  · rw [hw'.other _ (by decide), hv.other _ (by decide), hu.gpr, tk.1 _ (by decide)]
-  · rw [hw'.mem, hv.mem, hu.mem]; exact tv
-  · rw [hw'.mem, hv.mem, hu.mem]; exact tm
+  have kr : Keeps [.r8, .r10, .r0, .r6] t w := (rest_keeps (hu₁.rest (by decide))).trans
+    ((rest_keeps (hu.rest (by decide))).trans
+    ((rest_keeps (hv.rest (by decide))).trans (rest_keeps (hw'.rest (by decide)))))
+  refine ⟨⟨?_, hw'.gpr, ?_, ?_⟩, ?_, ?_, ?_, ?_, (tk.mono (by simp)).trans kr⟩
+  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), hu₁.other _ (by decide), tk.1 _ (by decide)]
+    exact hc
+  · rw [hw'.wr, hv.wr, hu.wr, hu₁.wr, tk.2.2]; exact hw
+  · rw [hw'.other _ (by decide), hv.gpr, hu.other _ (by decide), hu₁.other _ (by decide), tk.1 _ (by decide)]
+    exact hn
+  · rw [hw'.other _ (by decide), hv.other _ (by decide), hu.other _ (by decide), hu₁.gpr, tk.1 _ (by decide)]
+  · rw [hw'.other _ (by decide), hv.other _ (by decide), hu.gpr, hu₁.other _ (by decide), tk.1 _ (by decide)]
+  · rw [hw'.mem, hv.mem, hu.mem, hu₁.mem]; exact tv
+  · rw [hw'.mem, hv.mem, hu.mem, hu₁.mem]; exact tm
 
 end VG.Proof.X448.Arm
