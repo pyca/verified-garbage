@@ -1138,7 +1138,7 @@ pub(crate) unsafe extern "sysv64" fn vg_ghash_vpclmul(h: *const [u8; 16], y: *mu
         "pxor xmm8, xmm11",
         "movdqa xmm6, xmm10",
         "pxor xmm6, xmm8",
-        "cmp rcx, 8",
+        "cmp rcx, 32",
         "jb 22f",
         "pxor xmm8, xmm8",
         "pxor xmm9, xmm9",
