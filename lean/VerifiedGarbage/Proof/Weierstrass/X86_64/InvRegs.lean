@@ -440,4 +440,75 @@ theorem linX4_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   rw [← Divstep.toInt_sgn, ← Divstep.toInt_sgn]
   exact lin_int (s.gpr w).isLt (s.gpr w').isLt rfl rfl e₁ e₂ e₃ e₄
 
+/-! ## The shift by 59 -/
+
+/-- `shrX`'s words in registers. -/
+theorem shl5_word (x : BitVec 64) : (x <<< 5).toNat = x.toNat * 32 % 2 ^ 64 := by
+  simp only [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.reducePow]
+
+abbrev shrRegs : List Instr :=
+  shrWord .rcx .rbp ++ shrWord .rbp .r8 ++ shrWord .r8 .r13 ++ shrWord .r13 .r15 ++
+  [.mov .rax (.reg .r15), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
+    .shift .shl .rdx 5, .shift .shr .r15 59, .alu .add .r15 (.reg .rdx)]
+
+/-- `shrX`'s words: the accumulator `A` (five words, its sign extended) shifted
+right by 59. -/
+theorem shrRegs_ok (s : State) :
+    WP isa (.block shrRegs) s fun t =>
+      aVal t = (aVal s + 2 ^ 320 * (if 2 ^ 319 ≤ aVal s then 2 ^ 64 - 1 else 0)) / 2 ^ 59 % 2 ^ 320 ∧
+      Keeps [.rax, .rcx, .rdx, .rbp, .r8, .r13, .r15] s t := by
+  apply WP.of_runBlock
+  simp only [shrRegs, shrWord, List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil,
+    Nat.reduceLeDiff, Nat.reduceEqDiff, and_self, exec, execAlu, execShift, readSrc, readSrc32,
+    Option.map_some, Option.bind_some, State.setReg32, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
+    RegUpd.gpr_arithFlags, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [aVal, aRegs, regsVal, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, ↓reduceIte,
+      reduceCtorEq]
+    generalize hm : (BitVec.setWidth 64 0 - s.gpr Reg.r15 >>> 63) = m
+    have em : m.toNat = sgnW (s.gpr .r15) := by rw [← hm]; exact smask_toNat _
+    simp only [shr_word _ _ (shl5_word _)]
+    rw [em]
+    have h0 := (s.gpr .rcx).isLt
+    have h1 := (s.gpr .rbp).isLt
+    have h2 := (s.gpr .r8).isLt
+    have h3 := (s.gpr .r13).isLt
+    have h4 := (s.gpr .r15).isLt
+    unfold sgnW
+    generalize (s.gpr .rcx).toNat = a0 at *
+    generalize (s.gpr .rbp).toNat = a1 at *
+    generalize (s.gpr .r8).toNat = a2 at *
+    generalize (s.gpr .r13).toNat = a3 at *
+    generalize (s.gpr .r15).toNat = a4 at *
+    split <;> split <;> omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨ra, rc, rd, rb, r8, r13, r15⟩ := hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, ra, rc, rd, rb, r8, r13, r15, ite_false]
+
+/-- `shrX`: `[dst] = y / 2^59` modulo `2^320`, for `y ≡` the accumulator, `|y| < 2^319` a
+multiple of `2^59`. -/
+theorem shrX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {dst : Nat} (hd : dst + 40 ≤ size)
+    {y z : Int} (hy : (aVal s : Int) % ((2 ^ 320 : Nat) : Int) = y % ((2 ^ 320 : Nat) : Int))
+    (hy1 : -((2 ^ 319 : Nat) : Int) ≤ y) (hy2 : y < ((2 ^ 319 : Nat) : Int)) (hz : y = 2 ^ 59 * z) :
+    WP isa (.block (shrX dst)) s fun t =>
+      (wordsVal t.mem base dst 5 : Int) % ((2 ^ 320 : Nat) : Int) = z % ((2 ^ 320 : Nat) : Int) ∧
+      KeepRegs clobX s t ∧ Outside base dst 40 s.mem t.mem := by
+  rw [shrX, WP.block_append_iff]
+  refine WP.mono (shrRegs_ok s) fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  refine WP.mono (stores_ok aRegs hs₁ (o := dst) (by simp only [aRegs, List.length_cons, List.length_nil]; omega)
+    (by decide)) fun t ⟨e, k, O⟩ => ⟨?_, ((Keeps.regs k₁).mono (by decide)).trans (k.mono (by decide)), ?_⟩
+  · have h2 : (2 ^ 320 : Nat) = 2 * 2 ^ 319 := by rw [← Nat.pow_succ']
+    have hA : aVal s < 2 ^ 320 := by
+      have h0 := (s.gpr .rcx).isLt; have h1 := (s.gpr .rbp).isLt; have h2 := (s.gpr .r8).isLt
+      have h3 := (s.gpr .r13).isLt; have h4 := (s.gpr .r15).isLt
+      simp only [aVal, aRegs, regsVal]; omega
+    rw [h2] at hy e₁ hA ⊢
+    rw [show aRegs.length = 5 from rfl] at e
+    rw [e]
+    have hH : 0 < 2 ^ 319 := by positivity
+    generalize (2 : Nat) ^ 319 = H at *
+    exact Divstep.shr_nat (c := 2 ^ 59) (B := 2 ^ 64) rfl rfl hH hA hy hy1 hy2 hz e₁
+  · rw [k₁.2.1] at O; simpa only [aRegs, List.length_cons, List.length_nil] using O
+
 end VG.Proof.Weierstrass.X86_64
