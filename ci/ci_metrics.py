@@ -217,7 +217,9 @@ def collect_this_run():
     run = json.loads(gh(f"repos/{repo}/actions/runs/{run_id}")) | {"base_ref": os.environ.get("BASE_REF") or None}
     jobs = [json.loads(line) for line in gh(f"repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100",
                                             "--paginate", "--jq", ".jobs[] | tojson").splitlines()]
-    lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"]
+    # A skipped job has no log.
+    lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"
+            and j.get("conclusion") != "skipped"]
 
     def log(j):
         path = f"repos/{repo}/actions/jobs/{j['id']}/logs"
@@ -231,7 +233,7 @@ def collect_this_run():
                     raise
                 return gh(path, "--allow-escape-sequences").decode(errors="replace")
         except subprocess.CalledProcessError as e:
-            # A skipped job has no log: the rest still count.
+            # One job's log missing leaves the rest.
             print(f"No log for {j['name']}: {e.stderr.decode(errors='replace').strip()}", file=sys.stderr)
             return None
 
