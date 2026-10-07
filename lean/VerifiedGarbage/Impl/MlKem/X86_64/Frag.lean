@@ -134,7 +134,7 @@ def Arith.sse : Arith :=
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_multiply_ntts_avx2", multiplyNTTsAvx2, "vg_mlkem_ntt_avx2", nttAvx2, "vg_mlkem_inv_ntt_avx2",
-    nttInvAvx2, "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2,
+    nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
     "vg_mlkem_decode12_avx2", decode12Avx2⟩
 
 def nttAt (A : Arith) (f : Ptr) : Prog isa :=

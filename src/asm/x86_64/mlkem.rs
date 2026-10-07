@@ -1797,6 +1797,93 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const 
     )
 }
 
+/// The CPU features `vg_mlkem_add_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM_ADD_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// Adds the polynomial `*g` to `*f` modulo `q` = 3329, coefficient by coefficient (FIPS 203 (2.3)).
+///
+/// Contract: `VG.Spec.MlKem.addContract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers. It has no multiplications.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `g` must be valid for reads of 1024 bytes.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * Each of the 256 `u32`s of `g` must be less than 3329.
+/// * `f` must not overlap `g` (distinct Rust objects never do).
+/// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem_add_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
+    core::arch::naked_asm!(
+        "mov eax, 3329",
+        "vmovq xmm15, rax",
+        "vpbroadcastd ymm15, xmm15",
+        "mov ecx, 32",
+        "20:",
+        "vmovdqu ymm0, YMMWORD PTR [rdi]",
+        "vmovdqu ymm1, YMMWORD PTR [rsi]",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vpsubd ymm0, ymm0, ymm15",
+        "vpsrad ymm1, ymm0, 31",
+        "vpand ymm1, ymm1, ymm15",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vmovdqu YMMWORD PTR [rdi], ymm0",
+        "add rdi, 32",
+        "add rsi, 32",
+        "sub rcx, 1",
+        "jne 20b",
+        "vzeroupper",
+        "ret",
+        ".p2align 6",
+    )
+}
+
+/// The CPU features `vg_mlkem_sub_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM_SUB_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// Subtracts the polynomial `*g` from `*f` modulo `q` = 3329, coefficient by coefficient.
+///
+/// Contract: `VG.Spec.MlKem.subContract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers. It has no multiplications.
+///
+/// # Safety
+///
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `g` must be valid for reads of 1024 bytes.
+/// * Each of the 256 `u32`s of `f` must be less than 3329.
+/// * Each of the 256 `u32`s of `g` must be less than 3329.
+/// * `f` must not overlap `g` (distinct Rust objects never do).
+/// * Neither `f` nor `g` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem_sub_avx2(f: *mut [u32; 256], g: *const [u32; 256]) {
+    core::arch::naked_asm!(
+        "mov eax, 3329",
+        "vmovq xmm15, rax",
+        "vpbroadcastd ymm15, xmm15",
+        "mov ecx, 32",
+        "20:",
+        "vmovdqu ymm0, YMMWORD PTR [rdi]",
+        "vmovdqu ymm1, YMMWORD PTR [rsi]",
+        "vpsubd ymm0, ymm0, ymm1",
+        "vpsrad ymm1, ymm0, 31",
+        "vpand ymm1, ymm1, ymm15",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vmovdqu YMMWORD PTR [rdi], ymm0",
+        "add rdi, 32",
+        "add rsi, 32",
+        "sub rcx, 1",
+        "jne 20b",
+        "vzeroupper",
+        "ret",
+        ".p2align 6",
+    )
+}
+
 /// The product of two NTT representations, `MultiplyNTTs` (FIPS 203 Algorithm 11): writes the product of `*f` and `*g` to `*h`, each of 256 coefficients less than `q` = 3329.
 ///
 /// Contract: `VG.Spec.MlKem.mulContract`. Constant time: only the pointers may affect timing, not the data.
