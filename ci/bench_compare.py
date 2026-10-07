@@ -187,13 +187,13 @@ def run(binary, home, library, args, checkout, modules, groups=None):
             # those overran it with a warning; faster benchmarks take as
             # long either way, with more iterations per sample.
             "--sample-size",
-            "25",
+            "100",
             # Only the median is used, not the bootstrapped confidence
             # intervals, whose default 100000 resamples cost more than a
             # short measurement.
             "--nresamples",
             "1000",
-            pattern,
+            f"^ecdsa_p256_sha256_verify(?:_rotating256)?/{library}/64$",
         ],
         env={
             **os.environ,
@@ -232,12 +232,12 @@ def main():
     p.add_argument("base", type=pathlib.Path)
     p.add_argument("head", type=pathlib.Path)
     p.add_argument("--summary", type=pathlib.Path)
-    p.add_argument("--rounds", type=int, default=1)
+    p.add_argument("--rounds", type=int, default=2)
     p.add_argument("--confirm", type=int, default=2,
                    help="runs of each side again for the benchmarks over the threshold")
     p.add_argument("--threshold", type=float, default=0.35)
-    p.add_argument("--warm-up-time", type=float, default=0.1)
-    p.add_argument("--measurement-time", type=float, default=0.3)
+    p.add_argument("--warm-up-time", type=float, default=1)
+    p.add_argument("--measurement-time", type=float, default=3)
     p.add_argument("--openssl", action="store_true",
                    help="also run OpenSSL's and aws-lc-rs's benchmarks, for reference")
     p.add_argument("--work-dir", type=pathlib.Path, default=pathlib.Path("bench-compare"))
