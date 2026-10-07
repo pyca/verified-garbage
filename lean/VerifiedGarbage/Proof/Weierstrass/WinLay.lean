@@ -208,6 +208,22 @@ theorem WinLay.rcbApart_D {K : WinCfg} {size : Nat} (hL : WinLay K size) {q : Pt
     · exact hRx x (by simpa using h)
     · exact hEx x (by simpa using h)
 
+/-- `D = E + P`, as the table's construction adds. -/
+theorem WinLay.rcbApart_EP {K : WinCfg} {size : Nat} (hL : WinLay K size) : RcbApart K.S K.E K.P K.D := by
+  obtain ⟨-, -, -, -, -, -, -, hE, -, hD⟩ := hL.other_ne
+  refine ⟨hD, fun x hx h => ?_⟩
+  simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
+  have hro : ∀ y ∈ winRo K, y ∉ rcbW K.S K.D := fun y hy h => hL.ro y hy (List.mem_append_right _ h)
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact hro _ (by simp [winRo]) h
+  · exact hro _ (by simp [winRo]) h
+  · exact hE _ (by simp) (List.mem_cons_of_mem _ h)
+  · exact hE _ (by simp) (List.mem_cons_of_mem _ h)
+  · exact hE _ (by simp) (List.mem_cons_of_mem _ h)
+  · exact hro _ (by simp [winRo]) h
+  · exact hro _ (by simp [winRo]) h
+  · exact hro _ (by simp [winRo]) h
+
 /-- The additions of the table: `[m + 1]P = [m]P + P`. -/
 theorem WinLay.rcbApart_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat}
     (h1 : 1 ≤ m) (h7 : m ≤ 7) : RcbApart K.S (K.tblPt m) (K.tblPt 1) (K.tblPt (m + 1)) := by
