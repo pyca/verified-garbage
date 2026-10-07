@@ -205,11 +205,8 @@ The download (a little over 2 GB) streams through the pipeline and is never
 stored. The labels are in the image config
 (`/v2/$repo/blobs/<config digest>`, under `config.Labels`).
 
-To read the profile alone (`ci/lean_profile.py`), without building,
-extract only the modules' `.trace` and `.ilean` files (about 540 MB): end
-the last `tar` command with `--wildcards --no-anchored
-'.lake/build/lib/lean/*.trace' '.lake/build/lib/lean/*.ilean'`. Without the
-`zstd` command, `pip install zstandard` and replace `zstd -dc` with
+Without the `zstd` command, `pip install zstandard` and replace `zstd -dc`
+with
 `python3 -c 'import sys, zstandard; zstandard.ZstdDecompressor().copy_stream(sys.stdin.buffer, sys.stdout.buffer)'`.
 
 Keep `--no-same-owner`: the archive's files belong to CI's runner user, and
