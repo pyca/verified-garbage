@@ -199,7 +199,7 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
     · simp
     · simp only [ite_true]
       simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at hok0
-      omega
+      omega_using [hok0]
   -- The inverse modulo `M`.
   refine wp_seqs_append (by simp [invFrom]) (by simp) (WP.mono (invFrom_k h₂₀ (j := aM) (by decide) (by decide))
     fun s₂₁ ⟨h₂₁, f₂₁, vV₂₁, vX₁₂₁, vX₂₂₁⟩ => ?_)
@@ -253,9 +253,9 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
     · rintro ⟨d, hd⟩
       by_contra hc
       have : ¬ (L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1) := fun ⟨h1, h2, h3⟩ => by
-        have hok : ok0 = true := by rw [← hok0]; simp [h1]; omega
+        have hok : ok0 = true := by rw [← hok0]; simp [h1]; omega_using [h2]
         have hMe : M = L := by rw [← hM, hok]; rfl
-        have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega
+        have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega_using [h2]
         exact hc (by rw [hok, hMe, hM₁e]; simp [h3])
       rw [inverse_even_none hee this] at hd
       cases hd
@@ -265,8 +265,8 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
       have hL3 : 3 ≤ L ∧ L % 2 = 1 := by
         have := hc.2; rw [← hok0] at this
         simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', decide_eq_false_iff_not] at this
-        omega
-      have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega
+        omega_using [this]
+      have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega_using [hL3]
       have hg1 := hc.1
       rw [hMe, hM₁e] at hg1
       rw [hg₂₂, hMe, hM₁e, hg1] at hdv₂₂
@@ -274,9 +274,9 @@ theorem dEven_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {e L : Nat}
       exact ⟨x, inverse_even hL3.1 (by exact_mod_cast hdv₂₂) hx₂₂⟩
   · intro d hd
     by_cases hc : L % 2 = 1 ∧ 3 ≤ L ∧ Nat.gcd (e % L) L = 1
-    · have hok : ok0 = true := by rw [← hok0]; simp [hc.1]; omega
+    · have hok : ok0 = true := by rw [← hok0]; simp [hc.1]; omega_using [hc.2.1]
       have hMe : M = L := by rw [← hM, hok]; rfl
-      have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega
+      have hM₁e : M₁ = L := by rw [← hM₁]; simp; omega_using [hc.2.1]
       rw [hg₂₂, hMe, hM₁e, hc.2.2] at hdv₂₂
       rw [hMe] at hx₂₂
       rw [inverse_even hc.2.1 (by exact_mod_cast hdv₂₂) hx₂₂] at hd

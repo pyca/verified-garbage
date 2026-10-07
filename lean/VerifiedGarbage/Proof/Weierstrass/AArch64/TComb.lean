@@ -1,3 +1,4 @@
+import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombTbl
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombPublic
 import VerifiedGarbage.Proof.Weierstrass.CombW
@@ -214,7 +215,7 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
   have U₂₃ : Unch base (combW K.toComb) s.mem s₃.mem := (U₂'.trans U₃).mono fun w hw => by
     rcases List.mem_append.mp hw with hw | hw
     · exact hw
-    · exact hEW w (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; grind)
+    · exact hEW w (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢; clear * - hw; grind)
   have hx₃ : s₃.gpr .x19 = BitVec.ofNat 64 i := by
     rw [k₃.gpr _ (x19_not_clob _), k₂.gpr _ (sel_regs hn4 (Or.inr rfl)), hx₁]
   have hbits₃ : ∀ t < K.w * K.J, s₃.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0 :=
@@ -230,12 +231,12 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
   dsimp only [TCombCfg.toComb] at hnd
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons,
     List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
-  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
   have xy := hap.1
   have xz := hap.2.1
   have yz := hap.2.2
-  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
   have hEx := hE K.E.x (by simp)
   have hEy := hE K.E.y (by simp)
   have hEz := hE K.E.z (by simp)
@@ -273,7 +274,7 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
     refine (((((Keeps.regs k₁).mono fun r hr => cl r ?_).trans (k₂.mono fun r hr => cl r ?_)).trans
       ((⟨k₃.gpr, k₃.rd, k₃.wr, k₃.sp⟩ : KeepRegs (clob K.M.n) s₂ s₃).mono c1)).trans
       ((Keeps.regs k₄).mono fun r hr => cl r ?_)).trans (k₅.mono fun r hr => cl r ?_) <;>
-    · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; grind
+    · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; clear * - hr; grind
   -- The point the selected entry represents.
   have hR : Rep C (tmv C K.M.n base s₂ K.E.x) (tmv C K.M.n base s₂ K.E.y) (tmv C K.M.n base s₂ K.E.z)
       (combPtW C K.w i a) := by
@@ -295,6 +296,7 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
   · refine ((U₂.trans (U₃.trans (m₄ ▸ O₅.unch))).mono ?_)
     intro w hw
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+    clear * - hw
     grind
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -319,7 +321,7 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
     by_cases h8 : 2 ^ (K.w - 1) ≤ combWin K.w k i
     · have hy : tmv C K.M.n base s₅ K.E.y = tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = toM _ _ _
-        rw [vy, decide_eq_false (show ¬ combWin K.w k i < 2 ^ (K.w - 1) by omega)]; rfl
+        rw [vy, decide_eq_false (show ¬ combWin K.w k i < 2 ^ (K.w - 1) from Nat.not_lt_of_ge h8)]; rfl
       rw [hy]
       simp only [h8, ↓reduceIte]
       have : a = combWin K.w k i - 2 ^ (K.w - 1) := by rw [← ha, hHd, magH]; simp [h8]
@@ -327,9 +329,10 @@ theorem tentry_after_digit_ok {publicLookup : Bool} {K : TCombCfg} {C : Curve} {
       exact hR
     · have hy : tmv C K.M.n base s₅ K.E.y = -tmv C K.M.n base s₂ K.E.y := by
         show toM _ _ _ = -toM _ _ _
-        rw [vy, decide_eq_true (show combWin K.w k i < 2 ^ (K.w - 1) by omega)]
+        rw [vy, decide_eq_true (show combWin K.w k i < 2 ^ (K.w - 1) from Nat.lt_of_not_ge h8)]
         simp only [↓reduceIte]
-        rw [toM_sub (by omega), toM_zero]
+        rw [toM_sub (by omega_using [hEy₂]), toM_zero]
+        clear * -
         grind
       rw [hy]
       simp only [h8, ↓reduceIte]
