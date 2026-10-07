@@ -14,7 +14,7 @@ def nafWrites (K : WinCfg) : List Nat := winOther K ++ nafTblSlots K
 /-- The five-bit loop has eight odd multiples, one cached double, and
 `64 n + 4` scalar bytes. -/
 structure NafLay (K : WinCfg) (size : Nat) : Prop where
-  n : K.M.n = 4 ∨ K.M.n = 6
+  n : K.M.n = 4 ∨ K.M.n = 6 ∨ K.M.n = 9
   lay : Lay K.M size (· ∈ nafSlots K)
   ro : ∀ x ∈ winRo K, x ∉ winOther K
   nodup : (winOther K).Nodup

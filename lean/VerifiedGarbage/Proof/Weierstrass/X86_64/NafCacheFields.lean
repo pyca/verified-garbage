@@ -74,7 +74,7 @@ theorem Inv.transferCachedFields {M : Mod} {base : Addr} {size m : Nat} [NeZero 
             rw [kp.slot hL hI.scr hD (hI.sl x hv) hnot,hI.val x hv]
 
 theorem nafCachedFields_ok {K : WinCfg} {base : Addr} {size tbl dst a m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv K.M base size m Sl V E s)

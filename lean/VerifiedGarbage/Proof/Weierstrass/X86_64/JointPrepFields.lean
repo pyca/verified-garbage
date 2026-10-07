@@ -7,7 +7,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 structure JointPrepLayout (c : Joint.Cfg) (size u v : Nat) : Prop where
-  n : c.K.M.n=4 ∨ c.K.M.n=6
+  n : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9
   sourceU : u+8*c.K.M.n≤size
   sourceV : v+8*c.K.M.n≤size
   generator : c.gBits+64*c.K.M.n+8≤size

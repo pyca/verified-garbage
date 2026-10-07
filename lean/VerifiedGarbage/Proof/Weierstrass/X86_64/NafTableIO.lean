@@ -7,7 +7,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
 theorem nafPublicEntry_ok {K : WinCfg} {s : State} {base : Addr} {size a : Nat}
     (hs : Scr s base size) (ha : 1≤a) (ha' : a≤15) (h8 : s.gpr .r8=BitVec.ofNat 64 a)
-    (hn : K.M.n=4 ∨ K.M.n=6)
+    (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (ht : K.tbl<2^31) (hT : K.tbl+192*K.M.n≤size) (hE : K.E.x+24*K.M.n≤size)
     (hSep : K.E.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.E.x) :
     WP isa (.block (Naf.publicEntry K)) s fun t =>
@@ -16,27 +16,27 @@ theorem nafPublicEntry_ok {K : WinCfg} {s : State} {base : Addr} {size a : Nat}
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base K.E.x (24*K.M.n) s.mem t.mem := by
   have hi := Nat.mul_le_mul_left (24*K.M.n) (show (a-1)/2+1≤8 by omega)
   rw [Nat.mul_add,Nat.mul_one] at hi
-  have hp : 16*(3*K.M.n/2)=24*K.M.n := by omega
+  have hn0 : 0<K.M.n := by omega
   rw [Naf.publicEntry,List.append_assoc,WP.block_append_iff]
   refine WP.mono (nafIndex_ok s ha ha' h8) fun u ⟨iu,ku⟩ => ?_
   have su := hs.of_keeps ku (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega)) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv (by decide)
-  refine WP.mono (nafCopyPieces_ok (a:=K.tbl+24*K.M.n*((a-1)/2)) (o:=K.E.x) (3*K.M.n/2) v sv
-    (by omega) (by omega) (by omega)
+  refine WP.mono (nafCopyPiecesAt_ok (a:=K.tbl+24*K.M.n*((a-1)/2)) (o:=K.E.x) (L:=24*K.M.n)
+    ((3*K.M.n+1)/2) v sv (by omega) (by omega) (by omega) (fun i _ => pieceOff_ok hn0 i)
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add])
     (fun i _ => by rw [ea_sc,sv.rdi])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun j hj => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
     wt.trans (kv.2.2.2.trans ku.2.2.2)⟩,?_⟩
-  · rw [nafCopy_coord et (by omega) hj,kv.2.1,ku.2.1]
+  · rw [nafCopyAt_coord et hj,kv.2.1,ku.2.1]
   · rw [gt,kv.1 r hr,ku.1 r (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; exact fun he => hr (Or.inl he))]
-  · rw [kv.2.1,ku.2.1,hp] at ot
+  · rw [kv.2.1,ku.2.1] at ot
     exact ot
 
 theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
     (hs : Scr s base size) (hj : j<8) (hc : s.gpr .rbx=BitVec.ofNat 64 j)
-    (hn : K.M.n=4 ∨ K.M.n=6)
+    (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (ht : K.tbl<2^31) (hT : K.tbl+192*K.M.n≤size) (hR : K.R.x+24*K.M.n≤size)
     (hSep : K.R.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.R.x) :
     WP isa (.block (Naf.tableStore K)) s fun t =>
@@ -45,7 +45,7 @@ theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
       KeepRegs [.rax,.rcx,.rdx] s t ∧ Outside base (K.tbl+24*K.M.n*j) (24*K.M.n) s.mem t.mem := by
   have hi := Nat.mul_le_mul_left (24*K.M.n) (show j+1≤8 by omega)
   rw [Nat.mul_add,Nat.mul_one] at hi
-  have hp : 16*(3*K.M.n/2)=24*K.M.n := by omega
+  have hn0 : 0<K.M.n := by omega
   rw [Naf.tableStore,List.append_assoc,WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov .rax (.reg .rbx)]) s (fun u =>
       u.gpr .rax=BitVec.ofNat 64 j ∧ Keeps [.rax] s u) by
@@ -59,15 +59,15 @@ theorem nafTableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
   rw [WP.block_append_iff]
   refine WP.mono (nafAddress_ok u su.rdi iu ht (by omega)) fun v ⟨av,kv⟩ => ?_
   have sv := su.of_keeps kv (by decide)
-  refine WP.mono (nafCopyPieces_ok (a:=K.R.x) (o:=K.tbl+24*K.M.n*j) (3*K.M.n/2) v sv
-    (by omega) (by omega) (by omega)
+  refine WP.mono (nafCopyPiecesAt_ok (a:=K.R.x) (o:=K.tbl+24*K.M.n*j) (L:=24*K.M.n)
+    ((3*K.M.n+1)/2) v sv (by omega) (by omega) (by omega) (fun i _ => pieceOff_ok hn0 i)
     (fun i _ => by rw [ea_sc,sv.rdi])
     (fun i _ => by rw [ea_tblAt,av]; unfold off; rw [Offset.add_add])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun i hi => ?_,⟨fun r hr => ?_,rt.trans (kv.2.2.1.trans ku.2.2.1),
     wt.trans (kv.2.2.2.trans ku.2.2.2)⟩,?_⟩
-  · rw [nafCopy_coord et (by omega) hi,kv.2.1,ku.2.1]
+  · rw [nafCopyAt_coord et hi,kv.2.1,ku.2.1]
   · rw [gt,kv.1 r hr,ku.1 r (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hr ⊢; exact fun he => hr (Or.inl he))]
-  · rw [kv.2.1,ku.2.1,hp] at ot
+  · rw [kv.2.1,ku.2.1] at ot
     exact ot
 
 end VG.Proof.Weierstrass.X86_64

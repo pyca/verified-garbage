@@ -6,12 +6,9 @@ import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P521.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.JointVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.LitAdx
 
 /-!
 # ECDSA over P-521 (FIPS 186-5) on x86-64
@@ -78,24 +75,31 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
   { Spec.Ecdsa.P521.verifyApi with
     name := Spec.Ecdsa.P521.verifyApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
-    doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function is `vg_ecdsa_p521_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
-      field arithmetic and inversions, with `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s checks of the public key and window \
-      method: it \
-      saves its caller's callee-saved registers in `scratch`; field elements and scalars are nine \
-      64-bit words in Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and \
-      modulo `n` by columns too (finely integrated product scanning: each column also adds the \
-      reduction's products by `n`'s words, and each of the first nine computes its multiplier \
-      `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a final conditional subtraction, and the hash's \
-      integer is shifted right by its last 7 bits. The key is checked without branches (its \
-      first byte, both coordinates below `p`, and the curve's equation), and the window method \
-      multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
-      curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is the \
-      signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`), and \
-      `[v]Q` by `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows over the 133 digits of `v`, with the \
-      complete addition formulas of Renes, Costello and Batina, which also add the two. The \
-      result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not \
-      the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the \
-      pointers, although the contract would let every input affect it."])
+    doc := Spec.Ecdsa.P521.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+      registers in `scratch`. Field elements and scalars are nine 64-bit words in Montgomery \
+      form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ", and modulo `n` by columns too (finely \
+      integrated product scanning: each column also adds the reduction's products by `n`'s words, \
+      and each of the first nine computes its multiplier `u = t₀ (-n⁻¹) mod 2⁶⁴`), each with a \
+      final conditional subtraction, and the hash's integer is shifted right by its last 7 bits. \
+      The public key is checked without branches (its first byte, both coordinates below `p`, \
+      and the curve's equation); an invalid key is replaced with `G` for the point operations \
+      and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, then \
+      `u = e/s` and `v = r/s`. Both public scalars are recoded, over the 576 bits of their nine \
+      words (the top 55 bits zero), as 577 non-adjacent signed digits, width seven for `u` and \
+      width five for `v`, the scalar's ten registers including `rbp` and `rsi`. A single \
+      Jacobian accumulator computes `[u]G + [v]Q` with 576 doublings, adding only nonzero \
+      digits. Generator digits directly index odd multiples among the 64 affine entries of the \
+      first row of the existing static `VG_P521_COMB`, added by mixed additions; peer digits \
+      index eight odd multiples of `Q` in `scratch` (216-byte Jacobian entries, copied in \
+      fourteen 16-byte pieces, the last overlapping the one before it by a word), with cached \
+      squares and cubes of their Z coordinates. Complete point operations cover infinity, equal \
+      points and opposite points. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a \
+      direct product, into a temporary point copied back to the accumulator; on nine words no \
+      register values are forwarded between field operations. The final comparison squares the \
+      Jacobian Z coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-521 has \
+      `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
+      conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
+      on the public verification inputs, as permitted by the contract."])
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     contract := Spec.Ecdsa.P521.inst.verifyContract
@@ -107,11 +111,13 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   sign false Impl.Ecdsa.X86_64.signP521
     (Proof.Ecdsa.X86_64.P521.sign_verified h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
-  verify false Impl.Ecdsa.Verify.X86_64.verifyP521
-    (Proof.Ecdsa.Verify.X86_64.P521.verify_verified h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP521
+    (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified h.law (Proof.P521.combOk7 h.law) h.inv)
+    (Code.all_of_allInstrs (by lit_decide)),
   sign true Impl.Ecdsa.X86_64.signP521Adx
     (Proof.Ecdsa.X86_64.P521.sign_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
-  verify true Impl.Ecdsa.Verify.X86_64.verifyP521Adx
-    (Proof.Ecdsa.Verify.X86_64.P521.verify_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
+  verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
+    (Proof.Ecdsa.Verify.X86_64.P521.jointVerify_verified_adx h.law (Proof.P521.combOk7 h.law) h.inv)
+    (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P521.X86_64.EcdsaP521

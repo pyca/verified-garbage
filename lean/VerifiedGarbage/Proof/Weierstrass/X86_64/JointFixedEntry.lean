@@ -21,7 +21,7 @@ private theorem prefix_keep {M : Mod} {base : Addr} {W : List Nat} {s t : State}
 
 theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size x y m : Nat}
     [NeZero m] {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod m (2^(64*K.M.n)))
     (hi : Inv K.M base size m Sl V E s) {b : BitVec 8}
     (ha : 1≤nafMagnitude b) (h8 : s.gpr .r8=b.setWidth 64)
     (hS : FixedSource K.M.n base T tsym size (nafMagnitude b) x y s)

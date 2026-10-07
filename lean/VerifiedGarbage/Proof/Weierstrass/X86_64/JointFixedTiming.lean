@@ -13,7 +13,7 @@ abbrev FixedEntryCT (K : WinCfg) (tsym : String) : Prop :=
 
 theorem jointFixedEntry_relCT {K : WinCfg} {base T : Addr} {size x y m : Nat} [NeZero m]
     {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m} {b : BitVec 8}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod m (2^(64*K.M.n)))
     (ha : 1≤nafMagnitude b) (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     (hD : ∀ v∈jacCoords K.E,Sl v) (hx : x<m) (hyy : y<m) (hOne : K.one<m)
     (hZero : K.zero∈V) (heZero : E K.zero=0) (hApart : K.zero∉jacCoords K.E)

@@ -59,7 +59,7 @@ def fixedLoadEnv (K : WinCfg) (m : Nat) [NeZero m] (E : Nat → Fin m) (x y : Na
 
 theorem jointFixedFields_ok {K : WinCfg} {s : State} {base T : Addr} {size a x y m : Nat}
     [NeZero m] {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hi : Inv K.M base size m Sl V E s)
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hi : Inv K.M base size m Sl V E s)
     (ha : 1≤a) (ha' : a≤2^31) (h8 : s.gpr .r8=BitVec.ofNat 64 a)
     (hS : FixedSource K.M.n base T tsym size a x y s)
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)

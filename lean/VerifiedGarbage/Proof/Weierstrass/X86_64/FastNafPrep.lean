@@ -13,7 +13,7 @@ theorem fastDelta_bounds {w : Nat} (hw : FastNaf.Width w) (k j : Nat) :
   · decide
   · rcases hw with rfl|rfl <;> decide
 
-theorem fastPrep_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6)
+theorem fastPrep_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size) :
     WP isa (Impl.Weierstrass.X86_64.FastNaf.prepN n src bits w) s fun t =>
       (∃ j,64*n+1≤j ∧ j≤64*n+7 ∧ FastPrepState n base size bits w (wordsVal s.mem base src n) j t) ∧
@@ -48,7 +48,7 @@ theorem fastPrep_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=
     · rw [show 64*n+1-(m-fastDelta w k (64*n+1-m))=64*n+1-m+fastDelta w k (64*n+1-m) from by omega]
       exact iu
 
-theorem fastPrepDigits_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6)
+theorem fastPrepDigits_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size) :
     WP isa (Impl.Weierstrass.X86_64.FastNaf.prepN n src bits w) s fun t =>
       (∀ i<64*n+1,t.mem (off base (bits+i))=FastNaf.byte w (wordsVal s.mem base src n) i) ∧
