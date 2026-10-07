@@ -4,14 +4,13 @@ import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 /-!
 # Ed448 verification's equation on ARMv7: the bits of `S` and `k`
 
-`vbits_ok`: byte `t` at `BITS` is bit `t` of `S` (the signature's last 57
+`vbits_ok`: byte `t` at `VBITS` is bit `t` of `S` (the signature's last 57
 bytes) plus twice bit `t` of `k` (the challenge), for `t < 456`.
 -/
 
 namespace VG.Proof.Ed448.Arm
 
 open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
-open VG.Impl.X448.Arm (BITS)
 open VG.Spec.Ed448 (bytesAt decodeLE)
 open VG.Proof.X25519.Arm (wp_mov wp_dp wp_ldrb wp_strb wp_cmp op2_imm op2_reg op2_lsl)
 
@@ -43,7 +42,7 @@ theorem vbitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i <
     (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
     {a b : BitVec 8} (ha : s.gpr .r3 = a.setWidth 32) (hb : s.gpr .r9 = b.setWidth 32) {j : Nat} (hj : j < 8) :
     WP isa (.block (vbitJ j)) s fun t =>
-      t.mem = s.mem.writeW (off base (BITS + (8 * i + j))) (BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+      t.mem = s.mem.writeW (off base (VBITS + (8 * i + j))) (BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
         Keeps [.r1, .r4] s t := by
   unfold vbitJ
   refine wp_mov (shift_eval s .r3 hj) fun t1 v1 => ?_
@@ -54,11 +53,11 @@ theorem vbitJ_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i <
   have r7 : t5.gpr .r7 = s.gpr .r7 := by
     rw [v5.other _ (by decide), v4.other _ (by decide), v3.other _ (by decide), v2.other _ (by decide),
       v1.other _ (by decide)]
-  have ea : State.addr (t5.gpr .r7 + BitVec.ofNat 32 (BITS + j)) = off base (BITS + (8 * i + j)) := by
-    rw [r7, hp, BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [BITS]; omega)]
+  have ea : State.addr (t5.gpr .r7 + BitVec.ofNat 32 (VBITS + j)) = off base (VBITS + (8 * i + j)) := by
+    rw [r7, hp, BitVec.add_assoc, ← BitVec.ofNat_add, hs.ea (by simp only [VBITS]; omega)]
     congr 1; omega
-  refine wp_strb (by simp only [BITS]; omega) ea
-    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hs.write (by simp only [BITS]; omega))
+  refine wp_strb (by simp only [VBITS]; omega) ea
+    (by rw [v5.wr, v4.wr, v3.wr, v2.wr, v1.wr]; exact hs.write (by simp only [VBITS]; omega))
     fun t6 v6 => WP.block_nil ⟨?_, ?_⟩
   · rw [v6.mem, v5.mem, v4.mem, v3.mem, v2.mem, v1.mem, v5.gpr]
     change s.mem.writeW _ ((t4.gpr .r1 + t4.gpr .r4 <<< 1).setWidth 8) = _
@@ -72,11 +71,11 @@ theorem vbyteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi :
     (hp : s.gpr .r7 = s.gpr .r0 + BitVec.ofNat 32 (8 * i))
     {a b : BitVec 8} (ha : s.gpr .r3 = a.setWidth 32) (hb : s.gpr .r9 = b.setWidth 32) :
     WP isa (.block ((List.range 8).flatMap vbitJ)) s fun t =>
-      (∀ j < 8, t.mem (off base (BITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
-      Outside base (BITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t := by
+      (∀ j < 8, t.mem (off base (VBITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+      Outside base (VBITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t := by
   let inv := fun n (t : State) =>
-    (∀ j < n, t.mem (off base (BITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
-    Outside base (BITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t
+    (∀ j < n, t.mem (off base (VBITS + (8 * i + j))) = BitVec.ofNat 8 (pair2 a.toNat b.toNat j)) ∧
+    Outside base (VBITS + 8 * i) 8 s.mem t.mem ∧ Keeps [.r1, .r4] s t
   have step : ∀ n t, n < 8 → inv n t → WP isa (.block (vbitJ n)) t (inv (n + 1)) := by
     intro n t hn ⟨tf, tm, tk⟩
     refine WP.mono (vbitJ_ok (hs.of_keeps tk (by decide)) hi
@@ -85,15 +84,15 @@ theorem vbyteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi :
     refine ⟨?_, tm.trans ?_, tk.trans uk⟩
     · intro j hj
       rw [um, writeW8_apply]
-      have eq : off base (BITS + (8 * i + j)) = off base (BITS + (8 * i + n)) ↔ j = n := by
-        rw [off_eq_iff base (by simp only [BITS]; omega) (by simp only [BITS]; omega)]
+      have eq : off base (VBITS + (8 * i + j)) = off base (VBITS + (8 * i + n)) ↔ j = n := by
+        rw [off_eq_iff base (by simp only [VBITS]; omega) (by simp only [VBITS]; omega)]
         omega
       by_cases he : j = n
       · rw [ite_eq_left (eq.mpr he), he]
       · rw [ite_eq_right (fun h => he (eq.mp h))]; exact tf j (by omega)
     · intro x hx
       rw [um]
-      exact writeW8_outside _ _ _ (by simp only [BITS]; omega) (by omega)
+      exact writeW8_outside _ _ _ (by simp only [VBITS]; omega) (by omega)
   exact wp_range_flatMap (M := isa) (N := 8) inv step 8 (by decide) s
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
@@ -148,9 +147,9 @@ theorem vbitsBody_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
     (hkr : InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 i) 1) :
     WP isa (.block vbitsBody) s fun t =>
       t.gpr .r11 = BitVec.ofNat 32 (i + 1) ∧ t.z = decide (i + 1 = 57) ∧ Keeps vbitRegs s t ∧
-      (∀ j < 8, t.mem (off base (BITS + (8 * i + j))) =
+      (∀ j < 8, t.mem (off base (VBITS + (8 * i + j))) =
         BitVec.ofNat 8 (pair2 (s.mem (sq + BitVec.ofNat 64 i)).toNat (s.mem (kq + BitVec.ofNat 64 i)).toNat j)) ∧
-      Outside base (BITS + 8 * i) 8 s.mem t.mem := by
+      Outside base (VBITS + 8 * i) 8 s.mem t.mem := by
   change WP isa (.block (vbitHead ++ (List.range 8).flatMap vbitJ ++ baseBitTail)) s _
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono (vbitHead_ok hsq hkq hfs hfk hi hb hsr hkr) fun t ⟨ta, tb, tp, tm, tk⟩ => ?_
@@ -174,8 +173,8 @@ structure VBitsInv (base sq kq : Addr) (s₀ s : State) (i : Nat) : Prop where
   gpr : ∀ r, r ∉ vbitRegs → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  mem : Outside base BITS 456 s₀.mem s.mem
-  bits : ∀ t < 8 * i, s.mem (off base (BITS + t)) =
+  mem : Outside base VBITS 456 s₀.mem s.mem
+  bits : ∀ t < 8 * i, s.mem (off base (VBITS + t)) =
     BitVec.ofNat 8 (pair2 (s₀.mem (sq + BitVec.ofNat 64 (t / 8))).toNat
       (s₀.mem (kq + BitVec.ofNat 64 (t / 8))).toNat (t % 8))
 
@@ -197,9 +196,9 @@ theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
     fun s' ⟨b', z', keep', bits', o'⟩ => ?_
   obtain ⟨g', rd', wr'⟩ := keep'
   have hbs : s.mem (sq + BitVec.ofNat 64 i) = s₀.mem (sq + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hsd i hi; simp only [BITS]; omega)
+    hb.mem _ (by have := hsd i hi; simp only [VBITS]; omega)
   have hbk : s.mem (kq + BitVec.ofNat 64 i) = s₀.mem (kq + BitVec.ofNat 64 i) :=
-    hb.mem _ (by have := hkd i hi; simp only [BITS]; omega)
+    hb.mem _ (by have := hkd i hi; simp only [VBITS]; omega)
   have inv : VBitsInv base sq kq s₀ s' (i + 1) := by
     refine ⟨hb.scr.of_keeps ⟨g', rd', wr'⟩ (by decide),
       (by rw [g' _ (by decide)]; exact hb.esq), (by rw [g' _ (by decide)]; exact hb.ekq),
@@ -208,7 +207,7 @@ theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
       rd'.trans hb.rd, wr'.trans hb.wr, hb.mem.trans (o'.mono (by omega) (by omega)),
       fun t ht => ?_⟩
     rcases Nat.lt_or_ge t (8 * i) with h | h
-    · rw [o' _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; omega), hb.bits t h]
+    · rw [o' _ (by rw [ofs_off' base (by simp only [VBITS]; omega)]; omega), hb.bits t h]
     · have e := bits' (t - 8 * i) (by omega)
       rw [show 8 * i + (t - 8 * i) = t by omega, hbs, hbk] at e
       rw [e, show t / 8 = i by omega, show t % 8 = t - 8 * i by omega]
@@ -219,7 +218,7 @@ theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
   · obtain rfl : i = 56 := by omega
     exact .inl ⟨rfl, inv⟩
 
-/-- `vbits`: byte `t` of `BITS` is bit `t` of `S` plus twice bit `t` of `k`, for `t < 456`. -/
+/-- `vbits`: byte `t` of `VBITS` is bit `t` of `S` plus twice bit `t` of `k`, for `t < 456`. -/
 theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
     (hsq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
     (hfs : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32)
@@ -229,8 +228,8 @@ theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
     (hkd : ∀ q < 57, 8192 ≤ ofs base (kq + BitVec.ofNat 64 q)) :
     WP isa vbits s fun s' =>
       (∀ r, r ∉ vbitRegs → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Outside base BITS 456 s.mem s'.mem ∧
-      ∀ t < 456, s'.mem (off base (BITS + t)) =
+      Outside base VBITS 456 s.mem s'.mem ∧
+      ∀ t < 456, s'.mem (off base (VBITS + t)) =
         BitVec.ofNat 8 (pair2 (decodeLE (bytesAt s.mem sq 57)) (decodeLE (bytesAt s.mem kq 57)) t) := by
   unfold vbits
   refine WP.seq (WP.mono (show WP isa (.block [.mov .r11 (.imm 0)]) s
