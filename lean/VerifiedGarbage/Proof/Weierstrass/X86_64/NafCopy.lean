@@ -75,13 +75,18 @@ private theorem words_eq_of_words {m m' : Mem} {base : Addr} : ∀ n a o,
     have he := h (i+1) (by omega)
     simpa only [Nat.mul_add,Nat.mul_one,Nat.add_assoc,Nat.add_comm 8] using he
 
-theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {a o j : Nat}
-    (h : ∀ c<6,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
-    (hj : j<3) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 := by
+theorem nafCopy_field {mem mem' : Mem} {base : Addr} {n a o j : Nat}
+    (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
+    (hj : 2*j+2≤n) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 := by
   apply words_eq_of_words
   intro i hi
   rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,
     show a+32*j+8*i=a+8*(4*j+i) from by omega]
   exact nafCopy_words h _ (by omega)
+
+theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {a o j : Nat}
+    (h : ∀ c<6,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
+    (hj : j<3) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 :=
+  nafCopy_field h (by omega)
 
 end VG.Proof.Weierstrass.X86_64
