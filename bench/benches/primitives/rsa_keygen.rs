@@ -5,17 +5,23 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["rsa_keygen"];
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
+    #[cfg(target_arch = "x86_64")]
     use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
+    #[cfg(target_arch = "x86_64")]
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
+    use verified_garbage::rsa_keygen::generate_prime_from;
+    #[cfg(target_arch = "x86_64")]
+    use verified_garbage::rsa_keygen::{generate_from, key_from_primes};
 
-    use crate::{AWS_LC, OPENSSL, VG};
+    #[cfg(target_arch = "x86_64")]
+    use crate::AWS_LC;
+    use crate::{OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
     // prime's bytes. Each library draws candidates until one is a probable
     // prime (with the public exponent 65537 for verified-garbage, which also
@@ -62,8 +68,11 @@ pub fn bench(c: &mut Criterion) {
     // `RSA_generate_key_ex` draws from its own generator, and so does
     // aws-lc-rs's `KeyPair::generate` (AWS-LC's, which also checks the key
     // with `RSA_check_key`).
+    #[cfg(target_arch = "x86_64")]
     let mut g = c.benchmark_group("rsa_keygen_generate");
+    #[cfg(target_arch = "x86_64")]
     g.sample_size(10);
+    #[cfg(target_arch = "x86_64")]
     for (bits, size) in [
         (2048, KeySize::Rsa2048),
         (3072, KeySize::Rsa3072),
@@ -89,6 +98,7 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| KeyPair::generate(black_box(size)).unwrap())
         });
     }
+    #[cfg(target_arch = "x86_64")]
     g.finish();
 
     // The same sizes: the test of one candidate that is a prime (one OpenSSL
@@ -133,8 +143,11 @@ pub fn bench(c: &mut Criterion) {
     // (verified-garbage's with the checks of `RSA_check_key`; OpenSSL's
     // `RSA_check_key` also tests the primes, so OpenSSL only computes the
     // values, with its own arithmetic).
+    #[cfg(target_arch = "x86_64")]
     let mut g = c.benchmark_group("rsa_keygen_key");
+    #[cfg(target_arch = "x86_64")]
     g.sample_size(10);
+    #[cfg(target_arch = "x86_64")]
     for bits in [1024, 1536, 2048] {
         let prime = || {
             let mut p = BigNum::new().unwrap();
@@ -192,12 +205,13 @@ pub fn bench(c: &mut Criterion) {
             })
         });
     }
+    #[cfg(target_arch = "x86_64")]
     g.finish();
 }
 
 /// The shortest stream of octets from a splitmix64 generator seeded with
 /// `seed`, grown by doubling from `seed / 4` octets, that is `enough`.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     let start = seed / 4;
     let mut seed = seed as u64;
@@ -216,5 +230,5 @@ fn fixed_octets(seed: usize, enough: impl Fn(&[u8]) -> bool) -> Vec<u8> {
     rand
 }
 
-#[cfg(not(target_arch = "x86_64"))]
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 pub fn bench(_: &mut Criterion) {}
