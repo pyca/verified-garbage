@@ -1789,11 +1789,8 @@ mod tests {
                     for (x, y) in msg[..len].chunks(100).zip(out[..len].chunks_mut(100)) {
                         e.update_into(x, y).unwrap();
                     }
-                    assert_eq!(
-                        (&out[..len], e.finalize()),
-                        (&want[..len], want_tag),
-                        "{b:?}"
-                    );
+                    let tag = e.finalize();
+                    assert_eq!((&out[..len], tag), (&want[..len], want_tag), "{b:?}");
                 }
             }
         }
