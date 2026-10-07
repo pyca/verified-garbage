@@ -204,8 +204,8 @@ jobs:
           # built.
           lake build --log-level=warning $(python3 ../ci/lean_shards.py targets "$RUNNER_TEMP/lean-plan.json" "$SHARD") 2>&1 \
             | tee "$RUNNER_TEMP/build.log"
-      # What the shard restored and built, for ci/ci_metrics.py (the run's
-      # `ci-metrics` job), whatever the build's outcome.
+      # What the shard restored and built, for ci/ci_metrics.py (the last
+      # steps of `all-green`), whatever the build's outcome.
       - name: Record the shard's metrics
         if: ${{ !cancelled() }}
         env:
@@ -985,38 +985,37 @@ jobs:
           restored: ${{ steps.prepare.outputs.cache-matched-key }}
           manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
           manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}
-
-  # What the run did and how long it took, kept for later analysis: every
-  # job's and step's times, the Lean build's plan, and what each shard and
-  # assembly restored and built (ci/ci_metrics.py). Its `ci-metrics`
-  # artifact keeps the repository's default retention, unlike the plan and
-  # the shards' outputs. It never fails the run.
-  ci-metrics:
-    if: ${{ always() }}
-    needs: [lean, all-green, cpu-features-times-save]
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    # To read the run's jobs and artifacts.
-    permissions:
-      actions: read
-      contents: read
-    steps:
+      # The run's metrics, last: what it did and how long it took, kept for
+      # later analysis (every job's and step's times, the Lean build's plan,
+      # and what each shard and assembly restored and built; see
+      # ci/ci_metrics.py). The `ci-metrics` artifact keeps the repository's
+      # default retention, unlike the plan and the shards' outputs. Whatever
+      # the run's outcome, and never failing it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ !cancelled() }}
+        continue-on-error: true
         with:
           persist-credentials: false
+          path: .ci-metrics-src
+          sparse-checkout: ci
       # Neither exists in a run without a Lean build.
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: ${{ !cancelled() }}
         continue-on-error: true
         with:
           pattern: ci-metrics-*
           merge-multiple: true
           path: ${{ runner.temp }}/ci-metrics
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        if: ${{ !cancelled() }}
         continue-on-error: true
         with:
           name: lean-plan
           path: ${{ runner.temp }}
       - name: Collect the run's metrics
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        id: metrics
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -1027,10 +1026,12 @@ jobs:
             | jq --arg base "$BASE_REF" '. + {base_ref: $base}' > "$RUNNER_TEMP/run.json"
           gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" \
             --jq '.jobs[]' | jq -s . > "$RUNNER_TEMP/jobs.json"
-          python3 ci/ci_metrics.py collect "$RUNNER_TEMP/run.json" "$RUNNER_TEMP/jobs.json" \
+          python3 .ci-metrics-src/ci/ci_metrics.py collect "$RUNNER_TEMP/run.json" "$RUNNER_TEMP/jobs.json" \
             "$RUNNER_TEMP/lean-plan.json" "$RUNNER_TEMP/ci-metrics" > ci-metrics.json
-          python3 ci/ci_metrics.py summary ci-metrics.json >> "$GITHUB_STEP_SUMMARY"
+          python3 .ci-metrics-src/ci/ci_metrics.py summary ci-metrics.json >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() && steps.metrics.outcome == 'success' }}
+        continue-on-error: true
         with:
           name: ci-metrics
           path: ci-metrics.json

@@ -53,8 +53,8 @@ runs:
         # Warnings and errors only: not the profile every module records
         # (lean/lakefile.toml), which Lake replays for each one it finds built.
         lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
-    # What it restored and built, for ci/ci_metrics.py (the run's
-    # `ci-metrics` job): with every shard's outputs, few modules.
+    # What it restored and built, for ci/ci_metrics.py (the last
+    # steps of `all-green`): with every shard's outputs, few modules.
     - name: Record the assembly's metrics
       if: ${{ !cancelled() }}
       shell: bash

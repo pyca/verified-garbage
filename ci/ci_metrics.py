@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Records what a CI run did and how long it took, for later analysis.
 
-The last job of every run (`ci-metrics` in ci.yml) collects, into one JSON
+The last steps of every run (`all-green`'s, in ci.yml) collect, into one JSON
 file kept as the run's `ci-metrics` artifact (for the repository's default
 retention, unlike the plan and the shards' outputs, which last a day):
 
