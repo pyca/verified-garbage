@@ -168,12 +168,12 @@ theorem setupK_ct : RelCT isa (Two M0) (seqs [.block VG.Impl.Rsa.X86_64.head, lo
     fun _ _ h => h) ?_
   refine RelCT.seq (two_post ?_ fun _ _ h => h.2.2) ?_
   · unfold setWord
-    refine RelCT.seq (two_piece (Ψ := fun a t => RegsAre [(.r8, kb a.kp aOne), (.r12, BitVec.ofNat 64 a.kp.w),
+    refine RelCT.seq (two_piece (Ψ := fun (a : MPub) t => RegsAre [(.r8, kb a.kp aOne), (.r12, BitVec.ofNat 64 a.kp.w),
         (.rcx, BitVec.ofNat 64 0)] t) [.rdi]
       (pins_of (fun a _ => a.kp.B) fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.1 (.rdi, _) (List.mem_cons_self ..))
       (by taint_decide) fun a t h => ?_)
-      (two_taint [.r8, .r12, .rcx] (pins_regsAre (fun a => [(.r8, kb a.kp aOne), (.r12, BitVec.ofNat 64 a.kp.w),
+      (two_taint [.r8, .r12, .rcx] (pins_regsAre (fun (a : MPub) => [(.r8, kb a.kp aOne), (.r12, BitVec.ofNat 64 a.kp.w),
         (.rcx, BitVec.ofNat 64 0)]) (fun _ => rfl) fun _ _ h => h) (by taint_decide))
     exact WP.mono (WP.keep [.r8] h.2.1 rfl) fun t' ⟨h8, k⟩ => regsAre_cons (h8 (.r8, kb a.kp aOne) (by simp))
       (regsAre_cons ((k.gpr (by decide)).trans (h.1 (.r12, BitVec.ofNat 64 a.kp.w) (by simp)))
