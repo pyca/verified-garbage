@@ -114,25 +114,7 @@ jobs:
       - name: Install Rust
         # ci.yml's `rust` job lints the benchmarks, once per architecture.
         run: rustup toolchain install stable --profile minimal
-      # `VG_CPU_FEATURES` only removes features: on a runner lacking one it
-      # names, the job would measure another configuration's implementations
-      # under this one's name. Skip it, with a warning and a line in the
-      # summary, so a reviewer sees what was not measured (another runner,
-      # from a re-run, may have the features).
-      - name: Check the runner has the features named
-        id: features
-        run: |
-          rustc -O --edition 2024 -o "$RUNNER_TEMP/cpu_has" head/ci/cpu_has.rs
-          missing=$("$RUNNER_TEMP/cpu_has" "$VG_CPU_FEATURES")
-          if [ -n "$missing" ]; then
-            model=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2 | sed 's/^ *//')
-            msg="Not measured: VG_CPU_FEATURES=$VG_CPU_FEATURES, as this runner's CPU (${model:-unknown}) lacks $missing; a re-run may get a runner with them."
-            echo "::warning::$msg"
-            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          echo "missing=$missing" >> "$GITHUB_OUTPUT"
       - name: Benchmark base and head
-        if: ${{ steps.features.outputs.missing == '' }}
         env:
           MODULES: ${{ matrix.modules }}
           SHARD: ${{ matrix.shard }}

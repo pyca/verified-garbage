@@ -19,8 +19,8 @@
 //! comma-separated list of the names in [`NAMES`] (e.g. `aes,pclmulqdq`).
 //! Unset or empty, it restricts nothing. It can only remove features, so it
 //! can never choose code the CPU cannot run, and it names only features
-//! this library knows: anything else panics, rather than quietly testing
-//! another configuration. (On AArch64, FEAT_SHA3's Keccak, which is not
+//! this library knows and the CPU has: anything else panics, rather than
+//! quietly testing another configuration. (On AArch64, FEAT_SHA3's Keccak, which is not
 //! faster, is chosen only when it names `sha3`.)
 
 use core::sync::atomic::{AtomicU32, Ordering};
@@ -138,27 +138,63 @@ const DETECTED_INIT: u32 = 1 << 30;
 pub(crate) fn detected() -> Features {
     let mut f = DETECTED.load(Ordering::Relaxed);
     if f & DETECTED_INIT == 0 {
-        f = (runtime() & allowed()) | DETECTED_INIT;
+        let runtime = runtime();
+        f = (runtime & allowed(runtime)) | DETECTED_INIT;
         DETECTED.store(f, Ordering::Relaxed);
     }
     Features(f & !DETECTED_INIT)
 }
 
-/// The features `VG_CPU_FEATURES` allows.
+/// The features `VG_CPU_FEATURES` allows on a CPU with the features
+/// `runtime`.
 ///
 /// # Panics
 ///
-/// If it names a feature not in [`NAMES`].
+/// As [`allowed_by`].
 #[cfg(feature = "cpu-features-env")]
-fn allowed() -> u32 {
-    let names = std::env::var("VG_CPU_FEATURES").unwrap_or_default();
-    parse(&names).expect("VG_CPU_FEATURES names a CPU feature this library does not know")
+fn allowed(runtime: u32) -> u32 {
+    allowed_by(
+        &std::env::var("VG_CPU_FEATURES").unwrap_or_default(),
+        runtime,
+    )
+}
+
+/// The features `names`, a value of `VG_CPU_FEATURES`, allows on a CPU with
+/// the features `runtime`.
+///
+/// # Panics
+///
+/// If it names a feature not in [`NAMES`], or one the CPU does not have:
+/// that would test or benchmark another configuration than the one named
+/// (`ci/bench_compare.py` reports a benchmark run that stops here as not
+/// measured).
+#[cfg(feature = "cpu-features-env")]
+fn allowed_by(names: &str, runtime: u32) -> u32 {
+    let allowed =
+        parse(names).expect("VG_CPU_FEATURES names a CPU feature this library does not know");
+    // Empty, it names none, though it allows every one.
+    let lacking = if names.is_empty() {
+        0
+    } else {
+        allowed & !runtime
+    };
+    if lacking != 0 {
+        let lacking: std::vec::Vec<&str> = (NAMES.iter().enumerate())
+            .filter(|(i, _)| lacking >> i & 1 == 1)
+            .map(|(_, name)| *name)
+            .collect();
+        panic!(
+            "VG_CPU_FEATURES names {}, which this CPU does not have",
+            lacking.join(",")
+        );
+    }
+    allowed
 }
 
 /// Every feature: without the `cpu-features-env` Cargo feature, nothing
 /// restricts them.
 #[cfg(not(feature = "cpu-features-env"))]
-fn allowed() -> u32 {
+fn allowed(_: u32) -> u32 {
     u32::MAX
 }
 
@@ -378,7 +414,24 @@ mod tests {
     /// `VG_CPU_FEATURES` says.
     #[test]
     fn detected_is_allowed() {
-        assert_eq!(detected(), Features(runtime() & allowed()));
+        assert_eq!(detected(), Features(runtime() & allowed(runtime())));
+    }
+
+    #[cfg(feature = "cpu-features-env")]
+    #[test]
+    fn allowed_by_names() {
+        assert_eq!(allowed_by("", 0), u32::MAX);
+        assert_eq!(allowed_by("none", 0), 0);
+        assert_eq!(allowed_by("aes,ssse3", 0b111), 0b101);
+    }
+
+    /// Naming a feature the CPU does not have fails, rather than testing or
+    /// benchmarking another configuration.
+    #[cfg(feature = "cpu-features-env")]
+    #[test]
+    #[should_panic(expected = "VG_CPU_FEATURES names sha,avx, which this CPU does not have")]
+    fn allowed_by_names_the_cpu_lacks() {
+        allowed_by("aes,sha,avx", 0b101);
     }
 
     #[cfg(feature = "cpu-features-env")]

@@ -71,8 +71,8 @@ An architecture with primitives that choose among implementations by CPU
 feature is benchmarked once with every feature the runner has, and once
 more for each restriction in `CPU_FEATURES` (as `VG_CPU_FEATURES`, see
 src/cpu.rs), so that every implementation is measured; a job whose runner
-lacks a feature its restriction names skips it, with a warning
-(ci/cpu_has.rs, in bench.yml). Each entry's
+lacks a feature its restriction names measures nothing, with a warning
+(src/cpu.rs stops it, and bench_compare.py reports it). Each entry's
 `cpu-features` is its restriction, empty for none. With `--base REV`, edits
 consisting only of module/benchmark registrations select their dependencies.
 
