@@ -149,12 +149,19 @@ def run(mod, config, threshold, outdir):
 
 
 def decl_names(path):
-    """Maps each line number of `path` to the declaration it is in."""
-    names, current = {}, None
+    """Maps each line number of `path` to the declaration it is in. A
+    declaration's doc comment and attributes are part of its command, where
+    Lean places its messages without `Elab.async` (with it, at its name)."""
+    names, current, header = {}, None, None
     for n, line in enumerate(path.read_text().splitlines(), 1):
         m = DECL.match(line)
         if m:
             current = m.group(1) or line.split()[0]
+            for k in range(header or n, n):
+                names[k] = current
+            header = None
+        elif header is None and line.startswith(("/--", "@[")):
+            header = n
         names[n] = current
     return names
 
@@ -172,9 +179,13 @@ def attribution(messages, names):
                 continue
             what, n, unit = t.group(1), float(t.group(2)), t.group(3)
             secs = n / 1000 if unit == "ms" else n
-            kind = "kernel" if what == "type checking" else "elab"
+            # `blocked`: an async task waiting for another (e.g. the kernel
+            # checking a lemma it uses), not work of its own.
+            kind = ("kernel" if what == "type checking" else
+                    "blocked" if what.startswith("blocked") else "elab")
             decl = names.get(m["pos"]["line"]) or f"line {m['pos']['line']}"
-            d = decls.setdefault(decl, {"kernel": 0.0, "elab": 0.0})
+            d = decls.setdefault(
+                decl, {"kernel": 0.0, "elab": 0.0, "blocked": 0.0})
             d[kind] += secs
     return decls
 
@@ -239,9 +250,9 @@ def main():
                         coverage[c].append(cov)
                     for d, v in run_decls.items():
                         acc = decls.setdefault(c, {}).setdefault(
-                            d, {"kernel": [], "elab": []})
-                        acc["kernel"].append(v["kernel"])
-                        acc["elab"].append(v["elab"])
+                            d, {k: [] for k in v})
+                        for k in v:
+                            acc[k].append(v[k])
         med = {
             c: {k: statistics.median(s[k] for s in samples[c])
                 for k in ("wall", "cpu", "rss_mb")}
