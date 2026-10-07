@@ -63,6 +63,12 @@ theorem bitSel_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} (hg : Good
   · exact (k.gpr (by decide)).trans ((k₂.gpr (by decide)).trans hbx)
   · exact (k.gpr (by decide)).trans h8
 
+private theorem MrCtx.of_bitFrm {s t : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c bm : Nat}
+    (hc : MrCtx s B Z w mi c bm) (hd : MrDims B Z w) (hf : Frm B (bitRanges w) s.mem t.mem)
+    (hs : Scr t B Z) (hdi : t.gpr .rdi = B) : MrCtx t B Z w mi c bm :=
+  hc.of_frm hd hf hs hdi (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
+    (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
+
 /-- `mrExpBit`. -/
 theorem mrExpBit_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} {c b y : Nat}
     (hd : MrDims B Z w) (hc : MrCtx s B Z w mi c (b * 2 ^ (64 * w) % c)) (hodd : c % 2 = 1) (hc1 : 1 < c)
@@ -96,9 +102,8 @@ theorem mrExpBit_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
   rw [hc.n] at hlt₁ hy₁
   rw [hY] at hy₁
   have hY₁ : wv s₁.mem B (slot w aY) w = y * y % c * 2 ^ (64 * w) % c := mont_val hR hlt₁ hy₁ rfl rfl
-  have hc₁ : MrCtx s₁ B Z w mi c (b * 2 ^ (64 * w) % c) := hc.of_frm hd (Frm.of_arrays ha₁ (by simp [bitRanges]) (rs := bitRanges w))
-    hg₁.scr hg₁.rdi (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
-    (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
+  have hc₁ : MrCtx s₁ B Z w mi c (b * 2 ^ (64 * w) % c) := hc.of_bitFrm hd (Frm.of_arrays ha₁ (by simp [bitRanges]) (rs := bitRanges w))
+    hg₁.scr hg₁.rdi
   have hV₁ : word s₁.mem B (8 * kV) = V := by rw [ha₁.hslot (by decide)]; exact hV
   -- The selection.
   refine WP.seq (WP.mono (bitSel_ok hg₁ hZ hw' hV₁ hbt) fun s₂ ⟨h15, h12, hbx, h8, hsi, hm₂, k₂⟩ => ?_)
@@ -113,9 +118,7 @@ theorem mrExpBit_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
   have hf₃ : Frm B (bitRanges w) s₁.mem s₃.mem := by
     rw [← hm₂]; exact Frm.of_outside (ho₃.mono (o' := slot w aXm) (n' := 8 * (w + 2)) (Nat.le_refl _) (by omega))
       (by simp [bitRanges])
-  have hc₃ : MrCtx s₃ B Z w mi c (b * 2 ^ (64 * w) % c) := hc₁.of_frm hd hf₃ hs₃ hg₃.rdi
-    (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
-    (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
+  have hc₃ : MrCtx s₃ B Z w mi c (b * 2 ^ (64 * w) % c) := hc₁.of_bitFrm hd hf₃ hs₃ hg₃.rdi
   have hY₃ : wv s₃.mem B (slot w aY) w = y * y % c * 2 ^ (64 * w) % c := by
     rw [ho₃.wv (Or.inr (by unfold slot aXm aY; omega)) (by have := slot_le (w := w) (show aY < 8 by decide); omega),
       hm₂, hY₁]
@@ -128,9 +131,8 @@ theorem mrExpBit_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
   rw [hc₃.n] at hlt₄ hy₄
   rw [hY₃, hX₃] at hy₄
   have hY₄ : wv s₄.mem B (slot w aY) w = y * y % c * (if bt then b else 1) % c * 2 ^ (64 * w) % c := mont_val hR hlt₄ hy₄ rfl rfl
-  have hc₄ : MrCtx s₄ B Z w mi c (b * 2 ^ (64 * w) % c) := hc₃.of_frm hd (Frm.of_arrays ha₄ (by simp [bitRanges]) (rs := bitRanges w))
-    hg₄.scr hg₄.rdi (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
-    (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
+  have hc₄ : MrCtx s₄ B Z w mi c (b * 2 ^ (64 * w) % c) := hc₃.of_bitFrm hd (Frm.of_arrays ha₄ (by simp [bitRanges]) (rs := bitRanges w))
+    hg₄.scr hg₄.rdi
   have hlt2 : y * y % c * (if bt then b else 1) % c < c := Nat.mod_lt _ hc0
   have hhd₄ : ∀ i < 32, word s₄.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
     rw [ha₄.hslot hi, ho₃.word (Or.inl (by have := hdr_lt_slot w aXm hi; omega)) (by omega), hm₂, ha₁.hslot hi]
@@ -181,8 +183,7 @@ theorem mrExpBit_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 6
       (Frm.of_outside (writeW_outside _ B _ (d := 8 * kBits) (by unfold kBits kT2 sFn; omega)) (by simp [bitRanges]))
   have hgt : Good t B Z w mi := ⟨hg₇.scr.congr k.2.2, (k.gpr (by decide)).trans hg₇.rdi,
     Hdr.of_frm hg₄.hdr hft (by simp only [bitRanges]; rng_disj)⟩
-  refine ⟨hc₄.of_frm hd hft hgt.scr hgt.rdi (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj)
-      (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj) (by simp only [bitRanges]; rng_disj),
+  refine ⟨hc₄.of_bitFrm hd hft hgt.scr hgt.rdi,
     ?_, ?_, ?_, ?_, hz, ?_, ((((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).trans k₇).trans k |>.mono (by decide)⟩
   · rw [hm', hdrStore_wv _ _ _ (by decide) (by decide) (by omega), hdrStore_wv _ _ _ (by decide) (by decide) (by omega),
       hdrStore_wv _ _ _ (by decide) (by decide) (by omega), hdrStore_wv _ _ _ (by decide) (by decide) (by omega)]

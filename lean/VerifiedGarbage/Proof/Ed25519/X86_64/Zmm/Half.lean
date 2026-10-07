@@ -250,7 +250,7 @@ theorem ZOK.of_keep {b : Addr} {z z' : State} (hz : ZOK b z) (hk : ZKeep b z z')
   nowrap := hz.nowrap
   masks sel hs i hi := by
     rw [← hz.masks sel hs i hi]
-    congr 1
+    refine congrArg (fun (v : BitVec 512) => v.extractLsb' (128 * i) 128) ?_
     refine Mem.readW_congr fun j hj => hk.mem _ ?_
     have hm : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide
     have := hm sel hs
