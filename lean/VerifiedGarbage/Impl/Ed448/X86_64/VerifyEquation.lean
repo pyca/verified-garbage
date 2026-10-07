@@ -187,12 +187,17 @@ def vdecodeA (F : Field) : Prog isa :=
   .seq (.block (consts ++ [.mov .rsi (.mem (sc PPK))])) <| .seq (decode F 6 7) <|
     .block (consts ++ fieldCode F [.sub 6 0 6])
 
+/-- `Q` (slots 0–2) and `R` (slots 8–10) doubled twice: a loop of two
+iterations, counted by `rbx`, each doubling both. -/
+def vdouble (F : Field) : Prog isa :=
+  .seq (.block [.mov32 .rbx (.imm 2)])
+    (.loop (.block (fieldCode F (doubleAt 0 1 2 ++ doubleAt 8 9 10) ++ [.alu .sub .rbx (.imm 1)])) .ne)
+
 /-- `[4]Q` and `[4]R` compared (`BAD |= 0` exactly when they are the same
 point), the result `eax = (BAD == 0)`, and the callee-saved registers
 restored. -/
 def vfinish (F : Field) : Prog isa :=
-  .seq (.block (fieldCode F (doubleAt 0 1 2))) <| .seq (.block (fieldCode F (doubleAt 0 1 2))) <|
-  .seq (.block (fieldCode F (doubleAt 8 9 10))) <| .seq (.block (fieldCode F (doubleAt 8 9 10))) <|
+  .seq (vdouble F) <|
   .block (fieldCode F [.mul 12 0 10, .mul 13 8 2] ++ (eqSlots 12 13 ++
     (fieldCode F [.mul 12 1 10, .mul 13 9 2] ++ (eqSlots 12 13 ++
     ([.mov .rdx (.mem (sc BAD))] ++ (isZero ++ ([.mov .rax (.reg .rdx)] ++
