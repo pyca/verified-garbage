@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
-import VerifiedGarbage.Proof.Weierstrass.X86.TComb
+import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
 
 /-! # Layout and table facts for the x86 fixed-base comb -/
 namespace VG.Proof.Ecdsa.X86
@@ -13,7 +13,8 @@ structure CombOk (c : Cfg) (d : CombData) : Prop where
   n : c.n ≤ 6
 
 def CombTbls (c : Cfg) : Prop :=
-  ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start
+  ∀ d, c.comb = some d → CombOkW c.C d.w (c.combJ d.w) d.tbl d.start ∧
+    BoothOk c.C d.w (c.combJ d.w) (2 ^ (64 * c.n))
 
 variable {c : Cfg}
 

@@ -11,7 +11,7 @@ open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 def p256d : CombData := ⟨7, Impl.P256.p256Comb7, Impl.P256.p256Comb7Start, "VG_P256_COMB"⟩
 abbrev p256K := p256Comb.combCfg p256d
 
-def combStep : Prog isa := p256K.step
+def combStep : Prog isa := p256K.stepJ
 materialize_code combStep
 
 def combRegion (scratchSecond : Bool) : Nat := if scratchSecond then 1 else 0
@@ -81,6 +81,36 @@ theorem combAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSecond) s
   · intro k hlo hhi; have : k < 0 := hhi; omega
 
 
+def combStartτAt (scratchSecond : Bool) : VG.X86.Taint.T :=
+  { combτAt scratchSecond with regs := .ofList [.edi] }
+
+/-- Re-establish the public table word from the functional invariant. -/
+theorem combStartAgree {s t : State} (hs : VG.X86.Taint.Wf (combτAt scratchSecond) s) (ht : VG.X86.Taint.Wf (combτAt scratchSecond) t)
+    (hw : s.wr = t.wr) (hd : s.gpr .edi = t.gpr .edi)
+    (hp : s.mem.readW (VG.X86.Taint.byteAddr s (combRegion scratchSecond) 60) 32 =
+      t.mem.readW (VG.X86.Taint.byteAddr t (combRegion scratchSecond) 60) 32) : VG.X86.Taint.Agree (combStartτAt scratchSecond) s t := by
+  refine ⟨⟨?_, fun h => by cases h⟩, fun _ => hw, ⟨hs.lens, hs.bases, hs.wbases, hs.args, hs.argBases, hs.stk, hs.frames, hs.room⟩,
+    ⟨ht.lens, ht.bases, ht.wbases, ht.args, ht.argBases, ht.stk, ht.frames, ht.room⟩, ?_, ?_, ?_, ?_⟩
+  · intro r hr
+    have : r = .edi := by simpa only [combStartτAt, RegSet.mem_ofList, List.mem_singleton] using hr
+    subst r; exact hd
+  · intro p hp
+    have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hp
+    subst p; cases scratchSecond <;> decide
+  · intro p hmem k hlo hhi
+    have : p = (combRegion scratchSecond, 60, 4) := List.mem_singleton.mp hmem
+    subst p
+    have hk : k < 64 ∧ 60 ≤ k := by exact ⟨hhi, hlo⟩
+    have e : ∀ u : State, VG.X86.Taint.byteAddr u (combRegion scratchSecond) k =
+        VG.X86.Taint.byteAddr u (combRegion scratchSecond) 60 + BitVec.ofNat 64 (k - 60) := by
+      intro u
+      unfold VG.X86.Taint.byteAddr
+      rw [BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_sub_of_le hk.2]
+    rw [e s, e t, Mem.readW_byte s.mem _ (by omega), Mem.readW_byte t.mem _ (by omega), hp]
+  · intro h; cases h
+  · intro k hlo hhi; have : k < 0 := hhi; omega
+
+
 /-- Widening 32-bit words is injective. -/
 theorem widen32_inj {x y : BitVec 32} (h : x.setWidth 64 = y.setWidth 64) : x = y := by
   have h' := congrArg (BitVec.setWidth 32) h
@@ -90,8 +120,8 @@ theorem widen32_inj {x y : BitVec 32} (h : x.setWidth 64 = y.setWidth 64) : x = 
 iteration's taint proof, independently of the two secret scalars. -/
 theorem combInv_agree {base T : Addr} {s₀ t₀ s t : State} {k₁ k₂ j : Nat}
     (wf₁ : VG.X86.Taint.Wf (combτAt scratchSecond) s₀) (wf₂ : VG.X86.Taint.Wf (combτAt scratchSecond) t₀) (hw : s₀.wr = t₀.wr)
-    (h₁ : TCombInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s j)
-    (h₂ : TCombInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t j) :
+    (h₁ : TCombJInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s j)
+    (h₂ : TCombJInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t j) :
     VG.X86.Taint.Agree (combτAt scratchSecond) s t := by
   have w₁ := combWf_keep wf₁ h₁.keep.wr (h₁.keep.gpr _ (by decide))
   have w₂ := combWf_keep wf₂ h₂.keep.wr (h₂.keep.gpr _ (by decide))
@@ -113,43 +143,54 @@ functional invariant re-establishes the public pointer after each step. -/
 theorem combLoop_rel (hL : TCombLay p256K size) (hC : Law p256Comb.C) (ham3 : AM3 p256Comb.C)
     (hG : onCurve p256Comb.C (G p256Comb.C) = true) (hV : TCombVals p256K p256Comb.C p256d.tbl)
     (hpn : p256Comb.C.p < 2 ^ (64 * p256K.M.n))
+    (hB : BoothOk p256Comb.C p256K.w p256K.J (2 ^ 256))
     {base T : Addr} {s₀ t₀ : State} {k₁ k₂ : Nat}
     (hF₁ : TCombFixed p256K p256Comb.C base size s₀ k₁ T (p256Comb.combWords p256d))
     (hF₂ : TCombFixed p256K p256Comb.C base size t₀ k₂ T (p256Comb.combWords p256d))
     (wf₁ : VG.X86.Taint.Wf (combτAt scratchSecond) s₀) (wf₂ : VG.X86.Taint.Wf (combτAt scratchSecond) t₀) (hw : s₀.wr = t₀.wr)
     (n : Nat) :
-    RelCT isa (fun s t => 1 ≤ n ∧ n ≤ p256K.J ∧
-      TCombInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s n ∧
-      TCombInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t n)
-      (.loop p256K.step .ne) (fun _ _ => True) := by
-  let I := fun n s t => 1 ≤ n ∧ n ≤ p256K.J ∧
-      TCombInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s n ∧
-      TCombInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t n
+    RelCT isa (fun s t => 1 ≤ n ∧ n < p256K.J ∧
+      TCombJInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s (p256K.J - n) ∧
+      TCombJInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t (p256K.J - n))
+      (.loop p256K.stepJ .ne) (fun s t => s.gpr .edi = t.gpr .edi) := by
+  let I := fun n s t => 1 ≤ n ∧ n < p256K.J ∧
+      TCombJInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s (p256K.J - n) ∧
+      TCombJInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t (p256K.J - n)
   refine RelCT.loop (M := isa) I (fun j => ?_) n
-  have ct : RelCT isa (I j) p256K.step (fun _ _ => True) :=
+  have ct : RelCT isa (I j) p256K.stepJ (fun _ _ => True) :=
     combStep_rel.mono (fun _ _ h => combInv_agree wf₁ wf₂ hw h.2.2.1 h.2.2.2) (fun _ _ _ => trivial)
   have ct' := ct.wp (F₁ := fun (s : State) =>
-      TCombInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s (j - 1) ∧
-        s.zf = some (decide (j - 1 = 0)))
+      TCombJInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s (p256K.J - j + 1) ∧
+        s.zf = some (decide (p256K.J - j + 1 = p256K.J)))
     (F₂ := fun (t : State) =>
-      TCombInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t (j - 1) ∧
-        t.zf = some (decide (j - 1 = 0)))
-    (fun _ _ h => ⟨tstep_ok hL hC ham3 hG hV hpn hF₁ h.1 h.2.1 h.2.2.1,
-      tstep_ok hL hC ham3 hG hV hpn hF₂ h.1 h.2.1 h.2.2.2⟩)
+      TCombJInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t (p256K.J - j + 1) ∧
+        t.zf = some (decide (p256K.J - j + 1 = p256K.J)))
+    (fun _ _ h => ⟨stepJ_ok hL hC ham3 hG hV hpn (by decide) hB hF₁.k_lt hF₁ (by omega) (by omega) h.2.2.1,
+      stepJ_ok hL hC ham3 hG hV hpn (by decide) hB hF₂.k_lt hF₂ (by omega) (by omega) h.2.2.2⟩)
   intro s t tr₁ tr₂ s' t' h e₁ e₂
   obtain ⟨eqtr, _, ⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩ := ct' _ _ _ _ _ _ h e₁ e₂
-  have ev₁ : isa.eval .ne s' = some !decide (j - 1 = 0) := by change s'.zf.map (!·) = _; rw [z₁]; rfl
-  have ev₂ : isa.eval .ne t' = some !decide (j - 1 = 0) := by change t'.zf.map (!·) = _; rw [z₂]; rfl
-  refine ⟨eqtr, by rw [ev₁, ev₂], fun _ => trivial, fun ht => ?_⟩
-  have hj : 1 ≤ j ∧ j ≤ p256K.J := ⟨h.1, h.2.1⟩
-  have hj' : j - 1 ≠ 0 := by rw [ev₁] at ht; simpa using ht
-  exact ⟨j - 1, by omega, by dsimp only [I]; exact ⟨by omega, by omega, i₁, i₂⟩⟩
+  have ev₁ : isa.eval .ne s' = some !decide (p256K.J - j + 1 = p256K.J) := by change s'.zf.map (!·) = _; rw [z₁]; rfl
+  have ev₂ : isa.eval .ne t' = some !decide (p256K.J - j + 1 = p256K.J) := by change t'.zf.map (!·) = _; rw [z₂]; rfl
+  refine ⟨eqtr, by rw [ev₁, ev₂], fun _ => widen32_inj (i₁.scr.edi.trans i₂.scr.edi.symm), fun ht => ?_⟩
+  have hj : 1 ≤ j ∧ j < p256K.J := ⟨h.1, h.2.1⟩
+  have hj' : j - 1 ≠ 0 := by
+    rw [ev₁] at ht
+    have : p256K.J - j + 1 ≠ p256K.J := by simpa using ht
+    omega
+  exact ⟨j - 1, by omega, by dsimp only [I]; rw [show p256K.J - (j - 1) = p256K.J - j + 1 by omega]; exact ⟨by omega, by omega, i₁, i₂⟩⟩
 
+
+theorem combFirst_rel : RelCT isa (VG.X86.Taint.Agree (combStartτAt scratchSecond)) p256K.first
+    (fun _ _ => True) := by
+  cases scratchSecond <;>
+    exact RelCT.taint (A := sseTaint) _ (fun _ _ h => h)
+      (by taint_decide_weak VG.Proof.Ecdsa.X86.combWeak)
 
 /-- Initialize and run the comb with the same public addresses in both runs. -/
 theorem combCore_rel (hL : TCombLay p256K size) (hC : Law p256Comb.C) (ham3 : AM3 p256Comb.C)
     (hG : onCurve p256Comb.C (G p256Comb.C) = true) (hV : TCombVals p256K p256Comb.C p256d.tbl)
     (hpn : p256Comb.C.p < 2 ^ (64 * p256K.M.n))
+    (hB : BoothOk p256Comb.C p256K.w p256K.J (2 ^ 256))
     {base T : Addr} {s₀ t₀ : State} {k₁ k₂ : Nat}
     (hs₁ : Scr s₀ base size) (hs₂ : Scr t₀ base size)
     (hm₁ : ModOkW p256K.M size p256Comb.C.p s₀.mem base)
@@ -157,23 +198,34 @@ theorem combCore_rel (hL : TCombLay p256K size) (hC : Law p256Comb.C) (ham3 : AM
     (hF₁ : TCombFixed p256K p256Comb.C base size s₀ k₁ T (p256Comb.combWords p256d))
     (hF₂ : TCombFixed p256K p256Comb.C base size t₀ k₂ T (p256Comb.combWords p256d))
     (wf₁ : VG.X86.Taint.Wf (combτAt scratchSecond) s₀) (wf₂ : VG.X86.Taint.Wf (combτAt scratchSecond) t₀) (hw : s₀.wr = t₀.wr) :
-    RelCT isa (fun s t => s = s₀ ∧ t = t₀)
-      (.seq (.block p256K.initCore) (.loop p256K.step .ne)) (fun _ _ => True) := by
-  have init := RelCT.taint (A := taint) (P := fun s t => s = s₀ ∧ t = t₀) (τr [.edi])
-    (fun s t h => by
-      rcases h with ⟨rfl, rfl⟩
-      exact agree_regs fun r hr => by
-        rw [List.mem_singleton.mp hr]
-        exact widen32_inj (hs₁.edi.trans hs₂.edi.symm))
-    (c := .block p256K.initCore) (by taint_decide)
+    RelCT isa (fun s t => s = s₀ ∧ t = t₀) p256K.combJ (fun _ _ => True) := by
+  have initial : VG.X86.Taint.Agree (combStartτAt scratchSecond) s₀ t₀ := by
+    refine combStartAgree wf₁ wf₂ hw (widen32_inj (hs₁.edi.trans hs₂.edi.symm)) ?_
+    have b₁ := wf₁.bases (.edi, combRegion scratchSecond, 0) (List.mem_singleton_self _)
+    have b₂ := wf₂.bases (.edi, combRegion scratchSecond, 0) (List.mem_singleton_self _)
+    change addr (s₀.gpr .edi) 0 = (VG.X86.Taint.region s₀ (combRegion scratchSecond)).base at b₁
+    change addr (t₀.gpr .edi) 0 = (VG.X86.Taint.region t₀ (combRegion scratchSecond)).base at b₂
+    simp only [addr, BitVec.add_zero] at b₁ b₂
+    have b₁' := b₁.symm.trans hs₁.edi
+    have b₂' := b₂.symm.trans hs₂.edi
+    simp only [VG.X86.Taint.byteAddr, b₁', b₂']
+    exact widen32_inj (hF₁.tsym.trans hF₂.tsym.symm)
+  have init : RelCT isa (fun s t => s = s₀ ∧ t = t₀) p256K.first (fun _ _ => True) := combFirst_rel.mono (fun s t h => by
+    rcases h with ⟨rfl, rfl⟩; exact initial) (fun _ _ _ => trivial)
   have ini := init.wp
-    (F₁ := fun s => TCombInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s p256K.J)
-    (F₂ := fun t => TCombInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t p256K.J)
+    (F₁ := fun s => TCombJInv p256K p256Comb.C base size k₁ T (p256Comb.combWords p256d) s₀ s 1)
+    (F₂ := fun t => TCombJInv p256K p256Comb.C base size k₂ T (p256Comb.combWords p256d) t₀ t 1)
     (fun _ _ h => by rcases h with ⟨rfl, rfl⟩; exact
-      ⟨tcombInit_ok hL hV hpn hs₁ hm₁ hF₁, tcombInit_ok hL hV hpn hs₂ hm₂ hF₂⟩)
-  refine ini.seq ((combLoop_rel hL hC ham3 hG hV hpn hF₁ hF₂ wf₁ wf₂ hw p256K.J).mono ?_ (fun _ _ _ => trivial))
+      ⟨firstJ_ok hL hC hG hV hpn (by decide) hs₁ hm₁ hF₁,
+       firstJ_ok hL hC hG hV hpn (by decide) hs₂ hm₂ hF₂⟩)
+  have finish := RelCT.taint (A := taint) (P := fun s t => s.gpr .edi = t.gpr .edi) (τr [.edi])
+    (fun _ _ h => agree_regs fun r hr => by rw [List.mem_singleton.mp hr]; exact h)
+    (c := .seq (.block p256K.outFix) (Impl.Weierstrass.X86.fprog p256K.M p256K.wk p256K.outOps))
+    (by taint_decide)
+  refine ini.seq (((combLoop_rel hL hC ham3 hG hV hpn hB hF₁ hF₂ wf₁ wf₂ hw (p256K.J - 1)).seq
+    (finish.mono (fun _ _ h => h) (fun _ _ _ => trivial))).mono ?_ (fun _ _ _ => trivial))
   intro s t h
-  exact ⟨by decide, Nat.le_refl _, h.2.1, h.2.2⟩
+  exact ⟨by decide, by decide, h.2.1, h.2.2⟩
 
 
 /-- Fixed-base multiplication is constant time for two arbitrary scalars
@@ -215,7 +267,7 @@ theorem gMul_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
   intro s t tr₁ tr₂ s' t' h e₁ e₂
   obtain ⟨_, ⟨K₁, S₁, M₁, T₁⟩, ⟨K₂, S₂, M₂, T₂⟩⟩ := h
   rw [← hg] at T₂
-  exact combCore_rel (tcombLay hc hd) hC ham3 hc.onG (tcombVals hc hC (hT p256d rfl)) hc.p_lt
+  exact combCore_rel (tcombLay hc hd) hC ham3 hc.onG (tcombVals hc hC (hT p256d rfl).1) hc.p_lt (hT p256d rfl).2
     S₁ S₂ M₁ M₂ T₁ T₂
     (combWf_keep wf₁ K₁.wr (K₁.gpr _ (by decide)))
     (combWf_keep wf₂ K₂.wr (K₂.gpr _ (by decide)))
