@@ -145,7 +145,12 @@ def sl (i : Nat) : Nat := slot c.n i
 
 def wk : Nat := wkAt c.n
 
-def MP' : Mod := { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p) }
+def MP' : Mod where
+  n := c.n
+  mo := c.sl MP
+  tmp := c.sl TMP
+  minv := BitVec.ofNat 64 (minv c.C.p)
+  red := Mont.X86.p256RedChoice c.n c.C.p
 def MN' : Mod := { n := c.n, mo := c.sl MN, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.n) }
 
 def pt (x y z : Nat) : Pt := ⟨c.sl x, c.sl y, c.sl z⟩

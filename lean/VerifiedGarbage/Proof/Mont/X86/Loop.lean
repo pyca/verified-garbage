@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86.Row
+import VerifiedGarbage.Proof.Mont.X86.RedRow
 
 /-!
 # Montgomery arithmetic on x86 (32-bit): the loop of the multiplication
@@ -93,7 +93,7 @@ theorem row_ebp (e : BitVec 32) (i : Nat) :
 theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {N acc a b i m : Nat}
     (hNw : words M = N) (hL : MulLay N size acc a b M.mo) (hi : i < N)
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
-    (hm : val32 s.mem base M.mo N = m) (hinv : (m * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
+    (hred : M.ok m = true) (hm : val32 s.mem base M.mo N = m) (hinv : (m * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b N < m)
     (hT : val32 s.mem base (acc + 4 * i) (2 * N + 1 - i) < 2 * m) :
     WP isa (.block (row M acc a b)) s fun u =>
@@ -187,7 +187,9 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     have : m * 2 ^ 32 < 2 ^ (32 * N) * 2 ^ 32 := Nat.mul_lt_mul_of_pos_right hmP (by decide)
     have : 2 ^ (32 * N) * 2 ^ 32 ≤ 2 ^ (32 * N) * 2 ^ 64 := Nat.mul_le_mul_left _ (by decide)
     omega
-  refine WP.block_append (WP.mono (mulRow_ok hs₆ hp₆ hw hL.mo_le (by omega) (by omega) hlt₆)
+  refine WP.block_append (WP.mono (redRow_ok hs₆ hNw hp₆ hw hL.mo_le (by omega) (by omega)
+    (by rw [mem₆]; exact hmo₂) hred
+    (by rw [mem₆]; simpa only [hw, w32] using q₆) hlt₆)
     fun s₇ ⟨O₇, V₇, K₇⟩ => ?_)
   have k₇ : Keeps clob s s₇ := k₆.widen K₇
   have hp₇ : s₇.gpr .ebp = s₇.gpr .edi + BitVec.ofNat 32 (4 * i) := by
@@ -252,7 +254,7 @@ structure LoopInv (base : Addr) (N acc a b m i : Nat) (s t : State) : Prop where
 /-- The loop of `mul`: from the invariant at 0 to the invariant at `N`. -/
 theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {N acc a b m : Nat}
     (hNw : words M = N) (hL : MulLay N size acc a b M.mo) (hN : 0 < N)
-    (hm : val32 s.mem base M.mo N = m) (hinv : (m * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
+    (hred : M.ok m = true) (hm : val32 s.mem base M.mo N = m) (hinv : (m * (minv32 M).toNat + 1) % 2 ^ 32 = 0)
     (hB : val32 s.mem base b N < m) {t : State} (h0 : LoopInv base N acc a b m 0 s t) :
     WP isa (.loop (.block (row M acc a b)) .ne) t fun u => LoopInv base N acc a b m N s u := by
   have := hL.acc_le
@@ -270,7 +272,7 @@ theorem loop_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hm' : val32 t'.mem base M.mo N = m := by rw [I.out.val32 (by omega) (by omega), hm]
   have hb' : val32 t'.mem base b N = val32 s.mem base b N := I.out.val32 (by omega) (by omega)
   have ha' : w32 t'.mem base (a + 4 * i) = w32 s.mem base (a + 4 * i) := I.out.w32 (by omega) (by omega)
-  refine WP.mono (row_ok ht hNw hL hi I.ebp hm' hinv (hb' ▸ hB) I.lt)
+  refine WP.mono (row_ok ht hNw hL hi I.ebp hred hm' hinv (hb' ▸ hB) I.lt)
     fun u ⟨hp, hz, O, ⟨q, hq⟩, hT, K⟩ => ?_
   rw [hb', ha'] at hq
   have I' : LoopInv base N acc a b m (i + 1) s u := by

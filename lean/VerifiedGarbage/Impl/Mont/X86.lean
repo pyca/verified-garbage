@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86.Isa
 import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Impl.Mont.X86.Sparse
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86 (32-bit)
@@ -71,6 +72,10 @@ def redDigit (M : Mod) (acc : Nat) : List Instr :=
   if minv32 M = 1 then [.mov .ecx (.mem (at_ .ebp acc))]
   else [.mov .eax (.mem (at_ .ebp acc)), .mov .ecx (.imm (minv32 M)), .mul .ecx, .mov .ecx (.reg .eax)]
 
+/-- Add the reduction multiple using P-256's sparse identity when certified. -/
+def redRow (M : Mod) (acc : Nat) : List Instr :=
+  if p256RedEnabled M then p256Red acc else mulRow acc M.mo (words M)
+
 /-- An iteration of `mul`: the window `+= a_i [b]`, then `+= u m` with
 `u = t₀ m' mod 2³²`, after which its low word is zero; then the window
 moves up a word, and `ebp` is compared with `edi + 4N` (the end of the
@@ -79,7 +84,7 @@ def row (M : Mod) (acc a b : Nat) : List Instr :=
   let N := words M
   [.mov .ecx (.mem (at_ .ebp a))] ++ mulRow acc b N ++
   redDigit M acc ++
-    mulRow acc M.mo N ++
+    redRow M acc ++
   [.alu .add .ebp (.imm 4), .mov .edx (.reg .edi), .alu .add .edx (.imm (BitVec.ofNat 32 (4 * N))),
     .alu .cmp .ebp (.reg .edx)]
 
