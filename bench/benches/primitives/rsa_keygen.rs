@@ -9,18 +9,13 @@ pub const USES: &[&str] = &["rsa_keygen"];
 pub fn bench(c: &mut Criterion) {
     use std::hint::black_box;
 
-    #[cfg(target_arch = "x86_64")]
     use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::rsa::Rsa;
-    #[cfg(target_arch = "x86_64")]
-    use verified_garbage::rsa_keygen::generate_from;
-    use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
+    use verified_garbage::rsa_keygen::{generate_from, generate_prime_from, key_from_primes};
 
-    #[cfg(target_arch = "x86_64")]
-    use crate::AWS_LC;
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
     // The primes of keys of 2048, 3072 and 4096 bits; the ids' size is the
     // prime's bytes. Each library draws candidates until one is a probable
     // prime (with the public exponent 65537 for verified-garbage, which also
@@ -67,11 +62,8 @@ pub fn bench(c: &mut Criterion) {
     // `RSA_generate_key_ex` draws from its own generator, and so does
     // aws-lc-rs's `KeyPair::generate` (AWS-LC's, which also checks the key
     // with `RSA_check_key`).
-    #[cfg(target_arch = "x86_64")]
     let mut g = c.benchmark_group("rsa_keygen_generate");
-    #[cfg(target_arch = "x86_64")]
     g.sample_size(10);
-    #[cfg(target_arch = "x86_64")]
     for (bits, size) in [
         (2048, KeySize::Rsa2048),
         (3072, KeySize::Rsa3072),
@@ -97,7 +89,6 @@ pub fn bench(c: &mut Criterion) {
             b.iter(|| KeyPair::generate(black_box(size)).unwrap())
         });
     }
-    #[cfg(target_arch = "x86_64")]
     g.finish();
 
     // The same sizes: the test of one candidate that is a prime (one OpenSSL
