@@ -83,15 +83,15 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     WP isa (seqs (montSetup M.mm ++ millerRabin M.mm ++ [mrResult])) s fun t =>
       TestEnd s t B Z op up (8 * w) r c (Spec.RsaKeyGen.primalityTest c (r.drop (8 * w))) := by
   have hnw := hg.scr.nowrap
-  have hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z := by unfold slot aRm1 aTab at *; omega
+  have hXZ : slot w aRm1 + 8 * (w + 2) ≤ Z := by unfold slot aRm1 aTab at *; omega_arith
   have hd : MrDims B Z w := ⟨hZ, hXZ, hw4, hw64⟩
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * w - 1) ≤ c := by
-    have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
-    omega
+    have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
+    omega_arith
   have hc1 : 1 < c := by
-    have : 2 ≤ 2 ^ (64 * w - 1) := Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * w - 1 by omega))
-    omega
+    have : 2 ≤ 2 ^ (64 * w - 1) := Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * w - 1 by omega_arith))
+    omega_arith
   rw [List.append_assoc]
   refine wp_seqs_append (by simp [montSetup]) (by simp) ?_
   refine WP.mono (montSetup_ok M hg hZ hXZ hw4 hw64 hn hodd htop) fun s₁ ⟨mi', hg₁, hinv₁, hr2₁, hr1₁, hrm₁, hch₁,
@@ -102,17 +102,17 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
     have hd : ∀ r ∈ msRanges w, 8 * k + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * k := by
       simp only [msRanges]
       rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> rng_disj
-    exact hf₁.word_eq hd (by omega)
+    exact hf₁.word_eq hd (by omega_arith)
   have hsl₁ : ∀ r ∈ msRanges w, r.1 + r.2 ≤ Z := fun r hr => by
     have : r.1 + r.2 ≤ slot w aRm1 + 8 * (w + 2) := by
       revert r hr; simp only [msRanges]; rng_le
-    omega
+    omega_arith
   have hc₁ : MrCtx s₁ B Z w mi' c (wv s₁.mem B (slot w aB) w) :=
     ⟨hg₁, hinv₁, by rw [hf₁.wv_eq (d := slot w aN) (k := w) (by simp only [msRanges]; rng_disj)
-      (by have := slot_le (w := w) (show aN < 8 by decide); omega)]; exact hn, rfl, hr1₁, hrm₁⟩
+      (by have := slot_le (w := w) (show aN < 8 by decide); omega_arith)]; exact hn, rfl, hr1₁, hrm₁⟩
   have hsrc₁ := hsrc.congrK (InScr.of_frm hf₁ hsl₁) k₁
   have hres : mrRest c (checksW w) r 1 0 (8 * w) = Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
-    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega) hw4]
+    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩, checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
   refine WP.mono (millerRabin_ok M hd hc1 ⟨hodd, hlo, hhi⟩ hrl (by unfold checksW; split <;> (try split) <;>
       (try split) <;> (try split) <;> (try split) <;> (try split) <;> decide) hc₁ hr2₁
@@ -125,12 +125,12 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
       k ≠ kUsed → word s₂.mem B (8 * k) = word s.mem B (8 * k) := fun {k} hk hku => by
     have hk32 : k < 32 := by rcases hk with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     rw [← hw₁ hk]
-    refine hf₂.word_eq ?_ (by omega)
+    refine hf₂.word_eq ?_ (by omega_arith)
     simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
     rcases hk with rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first | exact absurd rfl hku | rng_disj
   have hsl₂ : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => by
-    have := roundRanges_le w r hr; omega
+    have := roundRanges_le w r hr; omega_arith
   have hhi : ∀ x, Z ≤ ofs B x → s₂.mem x = s.mem x := fun x hx =>
     (InScr.of_frm hf₂ hsl₂ x hx).trans (InScr.of_frm hf₁ hsl₁ x hx)
   have hlo : ∀ i < 6, word s₂.mem B (8 * i) = word s.mem B (8 * i) := fun i hi => by
@@ -139,14 +139,14 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64} 
         revert r hr
         simp only [roundRanges, preRanges, witRanges, expRanges, bitRanges, List.cons_append, List.nil_append]
         rng_le
-      omega
+      omega_arith
     have h1' : ∀ r ∈ msRanges w, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := fun r hr => by
       have : 48 ≤ r.1 := by revert r hr; simp only [msRanges]; rng_le
-      omega
-    rw [hf₂.word_eq h2 (by omega), hf₁.word_eq h1' (by omega)]
+      omega_arith
+    rw [hf₂.word_eq h2 (by omega_arith), hf₁.word_eq h1' (by omega_arith)]
   have k12 : Keep mmRegs s s₂ := (k₁.trans k₂).mono (by decide)
   have ho₂ := ho.congr (k12.2.2)
-  refine WP.mono (mrResult_ok (r := r) hc₂.good hZ (by omega) (by omega) hc₂.n ho₂
+  refine WP.mono (mrResult_ok (r := r) hc₂.good hZ (by omega_arith) (by omega_arith) hc₂.n ho₂
     (by rw [hw₂ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))) (by decide)]; exact hO)
     (by rw [hw₂ (Or.inr (Or.inl rfl)) (by decide)]; exact hK)
     (by rw [hw₂ (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))) (by decide)]; exact hU) h0 h1) fun t ht => ?_

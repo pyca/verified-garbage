@@ -1,3 +1,4 @@
+import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacComb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 
@@ -79,15 +80,15 @@ theorem jacOut_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Com
     List.not_mem_nil, or_false, not_or] at hnd
   have le : ∀ x ∈ combWs K, x + 8 * K.M.n ≤ size := fun x hx => hL.lay.le x (combWs_slots K x hx)
   have al : ∀ x ∈ combWs K, x % 8 = 0 := fun x hx => hA.sl x (combWs_slots K x hx)
-  have axd := hL.apart₂ (x := K.A.x) (y := K.E.x) (by comb_mem) (by comb_mem) (by grind)
-  have ayd := hL.apart₂ (x := K.A.y) (y := K.E.y) (by comb_mem) (by comb_mem) (by grind)
-  have azd := hL.apart₂ (x := K.A.z) (y := K.E.z) (by comb_mem) (by comb_mem) (by grind)
-  have axy := hL.apart₂ (x := K.A.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
-  have axz := hL.apart₂ (x := K.A.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have ayz := hL.apart₂ (x := K.A.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have dxay := hL.apart₂ (x := K.E.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
-  have dxaz := hL.apart₂ (x := K.E.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
-  have dyaz := hL.apart₂ (x := K.E.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by grind)
+  have axd := hL.apart₂ (x := K.A.x) (y := K.E.x) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have ayd := hL.apart₂ (x := K.A.y) (y := K.E.y) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have azd := hL.apart₂ (x := K.A.z) (y := K.E.z) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have axy := hL.apart₂ (x := K.A.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have axz := hL.apart₂ (x := K.A.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have ayz := hL.apart₂ (x := K.A.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have dxay := hL.apart₂ (x := K.E.x) (y := K.A.y) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have dxaz := hL.apart₂ (x := K.E.x) (y := K.A.z) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have dyaz := hL.apart₂ (x := K.E.y) (y := K.A.z) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
   have hs₁ := k₁.scr hs
   rw [copyPt, List.append_assoc, WP.block_append_iff]
   have b64 : ∀ x ∈ combWs K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
@@ -107,9 +108,9 @@ theorem jacOut_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Com
     (al _ (by comb_mem)) (o := K.A.z) (a := K.E.z) (azd.imp (fun h => by omega_using [h]) id)
   refine WP.mono W4 fun s₄ h₄ => ?_
   obtain ⟨e₄, k₄, O₄⟩ := h₄
-  have dyax := hL.apart₂ (x := K.E.y) (y := K.A.x) (by comb_mem) (by comb_mem) (by grind)
-  have dzax := hL.apart₂ (x := K.E.z) (y := K.A.x) (by comb_mem) (by comb_mem) (by grind)
-  have dzay := hL.apart₂ (x := K.E.z) (y := K.A.y) (by comb_mem) (by comb_mem) (by grind)
+  have dyax := hL.apart₂ (x := K.E.y) (y := K.A.x) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have dzax := hL.apart₂ (x := K.E.z) (y := K.A.x) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
+  have dzay := hL.apart₂ (x := K.E.z) (y := K.A.y) (by comb_mem) (by comb_mem) (by clear * - hnd; grind)
   have hDx : K.E.x ∈ [K.E.x, K.E.y, K.E.z] ++ rcbR K.S K.A ⟨K.zero,K.zero,K.zero⟩ := by simp
   have hDy : K.E.y ∈ [K.E.x, K.E.y, K.E.z] ++ rcbR K.S K.A ⟨K.zero,K.zero,K.zero⟩ := by simp
   have hDz : K.E.z ∈ [K.E.x, K.E.y, K.E.z] ++ rcbR K.S K.A ⟨K.zero,K.zero,K.zero⟩ := by simp
