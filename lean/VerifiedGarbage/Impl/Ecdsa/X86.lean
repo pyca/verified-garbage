@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
@@ -215,11 +216,14 @@ def gMul : Prog isa :=
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
-/-- Field inversion uses P-256's fixed addition chain when applicable. -/
-def pPow : Prog isa := powField c.powP c.wk c.C.p
+def invP : InvCfg := InvCfg.ofMod c.MP' c.wk (c.sl ACC) (c.sl RZ) (c.wk + 68) c.C.p
+def invN : InvCfg := InvCfg.ofMod c.MN' c.wk (c.sl ACC) (c.sl KM) (c.wk + 68) c.C.n
 
-/-- Scalar inversion reuses the fixed upper half of P-256’s exponent. -/
-def nPow : Prog isa := powScalar c.powN c.wk c.C.n
+/-- Batched divsteps invert 256-bit field elements. -/
+def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invP.inv else powField c.powP c.wk c.C.p
+
+/-- Batched divsteps invert 256-bit scalars. -/
+def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invN.inv else powScalar c.powN c.wk c.C.n
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]

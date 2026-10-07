@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.GMul
@@ -40,31 +41,30 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_gW) U₅
-  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl) ht)]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq, accLen_MP'] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slWk hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_gW hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slWk hi h₁)
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨⟨hs₅.of_keeps K₆ (by decide), by rw [K₆.1 _ (by decide), K₅.1 _ (by decide), hS.esp],
     by rw [K₆.2.1, K₅.2.1, hS.rd], by rw [K₆.2.2, K₅.2.2, hS.wr],
-    F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆,
-    whole_of (whole_of hS.whole U₅ (gW_le h7)) U₆ (slWk_le h7 (by decide))⟩,
+    F₅.unch h7 hn fixedOk_pwW U₆,
+    whole_of (whole_of hS.whole U₅ (gW_le h7)) U₆ (pwW_le h7)⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch_gW U₅ h7 h0 hn, ← flagW, hS.flag],
+    by rw [flagW, flag_unch_pwW U₆ h7 h0 hn, flag_unch_gW U₅ h7 h0 hn, ← flagW, hS.flag],
     ?_, ?_, lt₆, ?_, ?_⟩
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_pwW (by decide) ht),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl) ht)]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _

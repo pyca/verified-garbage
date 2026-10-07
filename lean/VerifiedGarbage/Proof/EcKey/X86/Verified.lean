@@ -53,10 +53,10 @@ theorem post_of {s s' : State} (h : PkPost p256 s s') : pkX86.post s s' := by
   rw [show Spec.EcKey.publicKey p256.C (dk p256 s) = pk s.mem ((arg s 1).setWidth 64) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
-theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : pkX86.pre s) :
+theorem pk_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : pkX86.pre s) :
     ∃ t s', Exec isa publicKeyP256 s t s' ∧ abiPreserved s s' ∧ pkX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok p256_ok hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := publicKey_ok (p256_ok hI) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -176,12 +176,12 @@ theorem pkWide_implies : pkWide.Implies (Spec.EcKey.P256.inst.publicKeyContract 
       sat := by sig_implies_sat [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract, Spec.EcKey.Instance.publicKeySig,
           Spec.P256.curve, Spec.EcKey.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, pkWide, pkX86, pk] [a0, a1, a2, e, esp] using satState }
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     Verified X86.target publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract X86.abi) := by
   have hsat := pkWide_implies.sat_left
   have satLocal : ∃ s, pkX86.pre s := hsat.elim fun s h => ⟨_, pkWide_pre s h⟩
   have verifiedLocal : Verified X86.target publicKeyP256 pkX86 :=
-    Verified.of_correct (pk_x86 hL) pk_ct (.refl satLocal)
+    Verified.of_correct (pk_x86 hL hI) pk_ct (.refl satLocal)
   apply Verified.of_implies (Verified.narrowTo verifiedLocal pkRd pkWr pkWide_pre
     ?_ ?_ ?_ ?_ hsat) pkWide_implies
   · intro s h a n ⟨r, hr, hc⟩

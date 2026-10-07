@@ -55,11 +55,11 @@ theorem ret_keep {s₀ s' : State} (hp : EPre p256 s₀) (K : EKeep p256 s₀ s'
   rw [← keep_of_disjoint' hU' hp.ret_sc (by decide) h4 (by decide),
     ← keep_of_disjoint' hO hp.ret_out (by decide) h4 (by decide)]
 
-theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : ecdhX86.pre s) :
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
   have ham3 : AM3 p256.C := by unfold AM3; decide +kernel
-  obtain ⟨t, s', he, K, hpost⟩ := exchangeWindow_ok p256_ok rfl hL ham3 hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchangeWindow_ok (p256_ok hI) rfl hL ham3 hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -175,12 +175,12 @@ theorem ecdhWide_implies :
     Spec.P256.curve, Spec.EcKey.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, ecdhWide,
     ecdhX86, ex] [a0, a1, a2, a3, e, esp] using satState
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     Verified X86.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi) := by
   have hsat := ecdhWide_implies.sat_left
   have satLocal : ∃ s, ecdhX86.pre s := hsat.elim fun s h => ⟨_, ecdhWide_pre s h⟩
   have verifiedLocal : Verified X86.target exchangeP256 ecdhX86 :=
-    Verified.of_correct (ecdh_x86 hL) ecdh_ct (.refl satLocal)
+    Verified.of_correct (ecdh_x86 hL hI) ecdh_ct (.refl satLocal)
   apply Verified.of_implies (Verified.narrowTo verifiedLocal ecdhRd ecdhWr ecdhWide_pre
     ?_ ?_ ?_ ?_ hsat) ecdhWide_implies
   · intro s h a n ⟨r, hr, hc⟩

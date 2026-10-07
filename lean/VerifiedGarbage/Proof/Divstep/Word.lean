@@ -1,4 +1,7 @@
-import VerifiedGarbage.Proof.Divstep.Batch
+import VerifiedGarbage.Proof.Divstep.BatchBasic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.WordDef
 import Mathlib.Data.BitVec
 

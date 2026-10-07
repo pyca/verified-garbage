@@ -72,18 +72,18 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
   refine windowPow_ok hc hn4 hC ham3 hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt hQ'
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn ((windowW_fixed hn4).append (fixedOk_slWk (l := [ACC, PT, TMP]) (by decide)))
+  have F₅ := F₄.unch h7 hn ((windowW_fixed hn4).append fixedOk_pwW)
     L.unch
   have e₅ : ∀ {i}, i < 45 → i ∉ windowSlots → i ∉ [ACC, PT, TMP] →
       sv c (ptr s₀ 3) s₅ i = sv c (ptr s₀ 3) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (windowW_apart hn4 hi h₁) (apart_slWk hi h₂))
+    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_append (windowW_apart hn4 hi h₁) (apart_pwW hi h₂))
   have hflag₅ : flagW c (ptr s₀ 3) s₅ = mask32 (PeerOk c (ptr s₀ 3) s₃ ((s₀.mem (ptr s₀ 2) = 4 ∧
       sv c (ptr s₀ 3) s₃ E < c.C.p) ∧ sv c (ptr s₀ 3) s₃ QY < c.C.p)) := by
     have hFl := sl_le c h7 (i := FLAG) (by decide)
     have ap : ∀ w ∈ ecWindowW c, c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := by
       intro w hw
       rcases apart_append (windowW_apart (c := c) hn4 (i := FLAG) (by decide) (by decide))
-        (apart_slWk (c := c) (i := FLAG) (l := [ACC, PT, TMP]) (by decide) (by decide)) w hw with h | h
+        (apart_pwW (c := c) (i := FLAG) (by decide) (by decide)) w hw with h | h
       · exact Or.inl (by omega)
       · exact Or.inr h
     rw [flagW, Unch.readW32 L.unch ap (by omega), ← flagW]
@@ -94,7 +94,7 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
     whole_of (whole_of (whole_of S₂.whole U₃ (le_append (slWk_le h7 (l := [R2P, BP, E, QY]) (by decide) |>
       fun h w hw => h w (List.mem_append_left _ hw)) (flag_le h0 h7))) U₄
       (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))) L.unch
-      (le_append (windowW_le hn4) (slWk_le h7 (by decide)))
+      (le_append (windowW_le hn4) (pwW_le h7))
   refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ W₅ hesp₅ (by rw [L.rd, rd₄, k₃.2.1, S₂.rd])
     (by rw [L.wr, wr₄, k₃.2.2, S₂.wr]) ⟨_, by rw [hp.rd]; simp, arg_containsN h4 (by decide)⟩
     (hp.args_sc.sub_left (arg_subN h4 (by decide))) hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)

@@ -38,12 +38,12 @@ theorem vCombSat_spec : vCombSpec.pre vCombSatState := by
     repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-theorem vComb_verified (hL : Law Spec.P256.curve) : Verified X86.target vCombCode vCombSpec := by
+theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : Verified X86.target vCombCode vCombSpec := by
   have hs : ∃ s, vCombSpec.pre s := ⟨vCombSatState, vCombSat_spec⟩
   have sl : ∃ s, vCombLocal.pre s := ⟨_, vComb_pre vCombSat_spec⟩
   have hv : Verified X86.target vCombCode vCombLocal := Verified.of_correct (k := vCombLocal)
-    (fun s h => by obtain ⟨tr, t, e, a, p⟩ := vComb_ok hL h; exact ⟨tr, t, e, a, p⟩)
-    (vComb_ct hL) (.refl sl)
+    (fun s h => by obtain ⟨tr, t, e, a, p⟩ := vComb_ok hL hI h; exact ⟨tr, t, e, a, p⟩)
+    (vComb_ct hL hI) (.refl sl)
   refine Verified.narrowTo hv vCombRd vCombWr (fun _ h => vComb_pre h) ?_ ?_ ?_ ?_ hs
   · intro s h a n ⟨r, hr, hc⟩
     obtain ⟨rd, wr⟩ := vComb_regions h

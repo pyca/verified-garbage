@@ -36,12 +36,12 @@ theorem pkCombSat_spec : pkCombSpec.pre pkCombSatState := by
     repeat' apply And.intro
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
-theorem pkComb_verified (hL : Law Spec.P256.curve) : Verified X86.target pkCombCode pkCombSpec := by
+theorem pkComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : Verified X86.target pkCombCode pkCombSpec := by
   have hs : ∃ s, pkCombSpec.pre s := ⟨pkCombSatState, pkCombSat_spec⟩
   have sl : ∃ s, pkCombLocal.pre s := ⟨_, pkComb_pre pkCombSat_spec⟩
   have hv : Verified X86.target pkCombCode pkCombLocal := Verified.of_correct (k := pkCombLocal)
-    (fun s h => by obtain ⟨tr, t, e, a, p⟩ := pkComb_ok hL h; exact ⟨tr, t, e, a, p⟩)
-    (pkComb_ct hL) (.refl sl)
+    (fun s h => by obtain ⟨tr, t, e, a, p⟩ := pkComb_ok hL hI h; exact ⟨tr, t, e, a, p⟩)
+    (pkComb_ct hL hI) (.refl sl)
   refine Verified.narrowTo hv pkCombRd pkCombWr (fun _ h => pkComb_pre h) ?_ ?_ ?_ ?_ hs
   · intro s h a n ⟨r, hr, hc⟩
     obtain ⟨rd, wr⟩ := pkComb_regions h

@@ -44,10 +44,10 @@ theorem ret_keep {s₀ s' : State} (hp : VPre p256 s₀) (K : VKeep s₀ s') :
   have h4 : i < 4 := by omega
   rw [← keep_of_disjoint' hU' hp.ret_sc (by decide) h4 (by decide)]
 
-theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : verifyX86.pre s) :
+theorem verify_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : verifyX86.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p256_ok hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok (p256_ok hI) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -159,12 +159,12 @@ theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P256.inst.verifyCont
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, verifyWide,
     verifyX86, vf] [a0, a1, a2, a3, e, esp] using satState
 
-theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem verify_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     Verified X86.target verifyP256 (Spec.Ecdsa.P256.inst.verifyContract X86.abi) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyX86.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyP256 verifyX86 :=
-    Verified.of_correct (verify_x86 hL) verify_ct (.refl satLocal)
+    Verified.of_correct (verify_x86 hL hI) verify_ct (.refl satLocal)
   apply Verified.of_implies (Verified.narrowTo verifiedLocal verifyRd verifyWr verifyWide_pre
     ?_ ?_ ?_ ?_ hsat) verifyWide_implies
   · intro s h a n ⟨r, hr, hc⟩

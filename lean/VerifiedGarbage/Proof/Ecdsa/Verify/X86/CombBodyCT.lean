@@ -80,7 +80,7 @@ theorem vCombBody_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
       exact ⟨front_ok hc hp (fun _ h => WP.block_nil h), front_ok hc hq (fun _ h => WP.block_nil h)⟩)
   have mid := vMid_rel.mono
     (P' := fun s t => True ∧ Front p256Comb s₀ (ptr s₀ 3) s ∧ Front p256Comb t₀ (ptr t₀ 3) t)
-    (fun _ _ h => vKeepArgAgree hp hq h.2.1.keep h.2.2.keep he ha) (fun _ _ _ => trivial)
+    (fun _ _ h => vKeepScratchAgree hp hq h.2.1.keep h.2.2.keep he ha) (fun _ _ _ => trivial)
   have mid' := mid.wp (F₁ := Mid p256Comb s₀ (ptr s₀ 3))
     (F₂ := Mid p256Comb t₀ (ptr t₀ 3)) (fun _ _ h =>
       ⟨mid_ok hc h.2.1 (fun _ h => WP.block_nil h), mid_ok hc h.2.2 (fun _ h => WP.block_nil h)⟩)
@@ -92,6 +92,6 @@ theorem vCombBody_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
   have pts' := pts.wp (F₁ := Keep p256Comb s₀ (ptr s₀ 3)) (F₂ := Keep p256Comb t₀ (ptr t₀ 3))
     (fun _ _ h => ⟨vPoints_keep hc hC hT hCo ham3 ht₁ h.2.1, vPoints_keep hc hC hT hCo ham3 ht₂ h.2.2⟩)
   exact front'.seq (mid'.seq (pts'.seq (vFinal_rel.mono
-    (fun _ _ h => vKeepArgAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial))))
+    (fun _ _ h => vKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial))))
 
 end VG.Proof.Ecdsa.Verify.X86

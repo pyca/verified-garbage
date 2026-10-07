@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Front
 
@@ -136,18 +137,17 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have sm₃ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₃ SM') = Fin.ofNat c.C.n (sigS c s₀) := by
     rw [toM_r2 hnR (by rw [e₃, show sv c base s₂ R2N = _ from F₂.r2n]), v₂ (by decide) (by decide), hF.pt]
   -- `w = s^(n-2)`.
-  refine WP.seq (WP.mono (powScalar_ok (P := c.powN) (powLayN hc) (powWkN hc) hnR hs₃ M₃ lt₃
+  refine WP.seq (WP.mono (nPow_ok hc hs₃ M₃ lt₃
     F₃.onen (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch U₃ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
         tbl_unch U₂ h7 (j := 2) (by decide) ht (tbl_apart_flag h0 2 t)]
       exact hF.t₂ t ht)
     (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ => ?_)
-  rw [powWxN_eq, accLen_MN'] at U₄
   have hs₄ := hs₃.of_keeps K₄ (by decide)
-  have F₄ := F₃.unch h7 hn (fixedOk_slWk (by decide)) U₄
+  have F₄ := F₃.unch h7 hn fixedOk_pwW U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
-    sv_unch U₄ h7 hn hi (apart_slWk hi hl)
+    sv_unch U₄ h7 hn hi (apart_pwW hi hl)
   have w₄ : toM c.C.n (2 ^ (64 * c.n)) (sv c base s₄ ACC) = Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2) := by
     rw [← sm₃]; exact v₄
   -- `u` and `v`.
@@ -182,24 +182,28 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     fun s₁₀ ⟨hs₁₀, M₁₀, g₁₀, rd₁₀, wr₁₀, U₁₀, v₁₀, lt₁₀, e₁₀⟩ => h s₁₀ ?_
   have F₁₀ := F₉.unch h7 hn (fixedOk_slWk (by decide)) U₁₀
   -- What changed: the flag and `midW`, and the accumulator.
-  have hsub : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ midW) → ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, 16 * c.n + 4)] →
-      w ∈ slWk c midW := fun hl w hw => by
+  have hsub : ∀ {l : List Nat} {len : Nat}, len ≤ 388 → (∀ i ∈ l, i ∈ midW) →
+      ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, len)] →
+        ∃ w' ∈ pwW c midW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
+    intro l len hlen hl w hw
     rcases hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact List.mem_append_left _ (List.mem_map_of_mem (hl i hi))
-    · exact List.mem_append_right _ hw
-  have U' : Unch base (slWk c midW) s₂.mem s₁₀.mem :=
-    (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans U₁₀))))))).mono fun w hw => by
+      exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
+        Nat.le_refl _, Nat.le_refl _⟩
+    · rw [List.mem_singleton.mp hw]
+      exact ⟨(c.wk, 388), by simp, Nat.le_refl _, by omega⟩
+  have U' : Unch base (pwW c midW) s₂.mem s₁₀.mem :=
+    (U₃.trans (U₄.trans (U₅.trans (U₆.trans (U₇.trans (U₈.trans (U₉.trans U₁₀))))))).cover fun w hw => by
       simp only [List.mem_append] at hw
       rcases hw with hw | hw | hw | hw | hw | hw | hw | hw
-      all_goals exact hsub (by decide) w hw
-  have UW : Unch base ([(c.sl FLAG, 4)] ++ slWk c midW) s.mem s₁₀.mem :=
+      all_goals exact hsub (by omega) (by decide) w hw
+  have UW : Unch base ([(c.sl FLAG, 4)] ++ pwW c midW) s.mem s₁₀.mem :=
     (U₂.trans U').mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · exact List.mem_append_left _ hw
       · exact List.mem_append_right _ hw
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun hi hl hf =>
-    sv_unch UW h7 hn hi (apart_append (apart_flag h0 hf) (apart_slWk hi hl))
+    sv_unch UW h7 hn hi (apart_append (apart_flag h0 hf) (apart_pwW hi hl))
   -- The values.
   have d₄ : sv c base s₄ D = dig c s₀ := by
     rw [e₄ (by decide) (by decide), v₃ (by decide) (by decide) (by decide), v₂ (by decide) (by decide), hF.d]
@@ -240,10 +244,10 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
     by rw [a (i := K) (by decide) (by decide) (by decide)]; exact hF.k⟩
   · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_flag h0 1 t)
-      (tbl_apart_slWk (by decide) (by decide) ht))]
+      (tbl_apart_pwW (by decide) ht (by decide)))]
     exact hF.t₁ t ht
-  · rw [flagW, flag_unch U' h7 h0 hn (by decide), ← flagW]
+  · rw [flagW, flag_unch_pwW U' h7 h0 hn (by decide), ← flagW]
     exact flag₂
-  · exact whole_of hF.unch UW (le_append (flag_le h0 h7) (slWk_le h7 (by decide)))
+  · exact whole_of hF.unch UW (le_append (flag_le h0 h7) (pwW_le h7 midW (by decide)))
 
 end VG.Proof.Ecdsa.Verify.X86

@@ -46,7 +46,7 @@ theorem rfcCombSat_spec (I : Spec.Ecdsa.Rfc6979.Instance)
     repeat' apply And.intro
     all_goals first
       | exact Region.disjoint_of_sep (by decide)
-      | exact Region.disjoint_of_sep (by simp [Region.sep] <;> omega)
+      | exact Region.disjoint_of_sep (by simp [Region.sep]; omega)
       | (change 12288 + I.hashLen ≤ 2 ^ 32; omega)
       | decide
 

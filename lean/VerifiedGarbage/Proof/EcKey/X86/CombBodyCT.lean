@@ -70,6 +70,6 @@ theorem pkCombBody_rel (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
     (F₂ := fun t => Keep p256Comb t₀ (ptr t₀ 2) t)
     (fun _ _ h => ⟨functional ht₁ h.2.1, functional ht₂ h.2.2⟩)
   exact prep'.seq (mult.seq (pkTail_rel.mono
-    (fun _ _ h => pkKeepArgAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial)))
+    (fun _ _ h => pkKeepScratchAgree hp hq h.2.1 h.2.2 he ha) (fun _ _ _ => trivial)))
 
 end VG.Proof.EcKey.X86

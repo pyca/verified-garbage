@@ -25,13 +25,13 @@ materialize_code vFinalCode
 
 theorem vFront_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 4)) vFrontCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vMidCode (fun _ _ => True) :=
+theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 theorem vBits_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vBitsCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 theorem vPointTail_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vPointTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vFinal_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vFinalCode (fun _ _ => True) :=
+theorem vFinal_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vFinalCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
 theorem Front.keep {s₀ s : State} {base : Addr} (h : Front c s₀ base s) : Keep c s₀ base s :=
@@ -102,5 +102,14 @@ theorem vKeepCombWf {s₀ s : State} {extra : List Region} (hp : VPre p256Comb s
   · intro p h; cases h
   · intro h; cases h
   · intro p h; cases h
+
+theorem vKeepScratchAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
+    (hp : VPre p256Comb s₀ extra₁) (hq : VPre p256Comb t₀ extra₂)
+    (ks : Keep p256Comb s₀ (ptr s₀ 3) s) (kt : Keep p256Comb t₀ (ptr t₀ 3) t)
+    (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 4, arg s₀ j = arg t₀ j) :
+    VG.X86.Taint.Agree (scratchArgτ 4 false) s t := by
+  refine scratchArgAgree (vKeepArgAgree hp hq ks kt he ha) (vKeepCombWf hp ks) (vKeepCombWf hq kt) ?_
+  rw [ks.wr, kt.wr, hp.wr, hq.wr]
+  simp only [ptr, ha 3 (by decide)]
 
 end VG.Proof.Ecdsa.Verify.X86

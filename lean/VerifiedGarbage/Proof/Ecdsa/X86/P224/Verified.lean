@@ -55,6 +55,9 @@ theorem p224_ok : CfgOk p224 where
   len_hi := by decide
   sh := by rw [p224_sh]; decide
 
+  inv_p h := False.elim ((by decide : ¬ (p224.n = 4 ∧ p224.C.len = 32)) h)
+  inv_n h := False.elim ((by decide : ¬ (p224.n = 4 ∧ p224.C.len = 32)) h)
+
 theorem pre_of {s : State} (h : signX86.pre s) : Pre p224 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
   exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩

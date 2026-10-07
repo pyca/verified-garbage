@@ -9,9 +9,9 @@ import VerifiedGarbage.Proof.Weierstrass.TCombWords
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
-theorem p256Comb_ok : CfgOk p256Comb := by
-  rcases p256_ok with ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p⟩
-  exact ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p⟩
+theorem p256Comb_ok (hI : Weierstrass.X86.Inv.InvSounds) : CfgOk p256Comb := by
+  rcases p256_ok hI with ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r⟩
+  exact ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r⟩
 
 theorem p256Comb_shape : CombOk p256Comb p256d := ⟨by decide, by decide, by decide⟩
 

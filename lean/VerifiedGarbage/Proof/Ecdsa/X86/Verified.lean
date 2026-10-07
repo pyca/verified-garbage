@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.P256.Prime
+import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
@@ -34,7 +36,7 @@ theorem p256_sh : p256.sh = 0 := by
   have h : 64 * 4 ≤ Spec.Ecdsa.nBits p256.C := p256_nBits
   show 8 * 32 - Spec.Ecdsa.nBits p256.C = 0; omega
 
-theorem p256_ok : CfgOk p256 where
+theorem p256_ok (hI : Weierstrass.X86.Inv.InvSounds) : CfgOk p256 where
   n0 := by decide
   n10 := by decide
   onG := Proof.P256.onCurve_G
@@ -51,6 +53,8 @@ theorem p256_ok : CfgOk p256 where
   len_lo := by decide
   len_hi := by decide
   sh := by rw [p256_sh]; decide
+  inv_p _ := ⟨@hI _ p256.C.p_ne_zero Proof.P256.p_prime, Inv.InvOk.ofMod (by decide +kernel)⟩
+  inv_n _ := ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, Inv.InvOk.ofMod (by decide +kernel)⟩
 
 theorem pre_of {s : State} (h : signX86.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
@@ -67,10 +71,10 @@ theorem ret_keep {s₀ s' : State} (hp : Pre p256 s₀) (K : SignKeep p256 s₀ 
   rw [← keep_of_disjoint' hU' hp.ret_sc (by decide) h4 (by decide),
     ← keep_of_disjoint' hO hp.ret_out (by decide) h4 (by decide)]
 
-theorem sign_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : signX86.pre s) :
+theorem sign_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : signX86.pre s) :
     ∃ t s', Exec isa signP256 s t s' ∧ abiPreserved s s' ∧ signX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p256_ok hL hp
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok (p256_ok hI) hL hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, ?_⟩
   swap
   · simp only [signX86, BitVec.setWidth_append_eq_right]
@@ -83,11 +87,9 @@ theorem sign_x86 (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : signX8
   · exact K.saved (.ebp, 12) (by decide)
   · exact K.esp
 
-/-- The hints of the constant-time checks forget the public slots of memory
-and the words known to hold base addresses (`taint_decide_weak`): no address
-or branch depends on a value loaded from the working space, and the kernel
-evaluates every instruction faster with less to look through. -/
-def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := { τ with slots := [], wbases := [] }
+/-- The constant-time hints retain the public divstep batch counter, while
+forgetting other public scratch slots and stored base addresses. -/
+def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := { τ with slots := τ.slots.filter (fun p => p.2.1 == p256.wk + 384), wbases := [] }
 
 /-- The taint analysis starts with the stack arguments public, and the words
 holding `out` and `scratch` known to be the base addresses of the writable
@@ -199,12 +201,12 @@ theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P256.inst.signContract X
     Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, signWide,
     signX86, sig] [a0, a1, a2, a3, a4, e, esp] using satState
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
     Verified X86.target signP256 (Spec.Ecdsa.P256.inst.signContract X86.abi) := by
   have hsat := signWide_implies.sat_left
   have satLocal : ∃ s, signX86.pre s := hsat.elim fun s h => ⟨_, signWide_pre s h⟩
   have verifiedLocal : Verified X86.target signP256 signX86 :=
-    Verified.of_correct (sign_x86 hL) sign_ct (.refl satLocal)
+    Verified.of_correct (sign_x86 hL hI) sign_ct (.refl satLocal)
   apply Verified.of_implies (Verified.narrowTo verifiedLocal signRd signWr signWide_pre
     ?_ ?_ ?_ ?_ hsat) signWide_implies
   · intro s h a n ⟨r, hr, hc⟩

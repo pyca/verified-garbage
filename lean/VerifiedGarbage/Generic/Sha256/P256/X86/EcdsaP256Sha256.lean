@@ -24,19 +24,19 @@ namespace VG.Generic.Sha256.P256.X86.EcdsaP256Sha256
 open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
 open VG.Proof.Ecdsa.Rfc6979.X86.Sha256 (pack sign_verified)
 
-def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.HasLaw Spec.P256.curve) :
+def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) :
     List Artifact := [
   { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
     name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ v.suffix
     target := X86.target
     doc := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.doc (notes := [signNotes v.F.hiN v.F.H.updN v.F.hfN 32
       Spec.Ecdsa.P256.signApi.name])
-    code := (cfgOf (pack h.law v)).sign
+    code := (cfgOf (pack h.law h.inv v)).sign
     contract := Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     stack := 272
-    verified := sign_verified h.law v
-    spSafe := sign_spSafe (pack h.law v)
+    verified := sign_verified h.law h.inv v
+    spSafe := sign_spSafe (pack h.law h.inv v)
     features := v.features }]
 
 end VG.Generic.Sha256.P256.X86.EcdsaP256Sha256

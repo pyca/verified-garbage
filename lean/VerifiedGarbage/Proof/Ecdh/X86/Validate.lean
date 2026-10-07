@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdh.X86.Peer
 import VerifiedGarbage.Proof.Ecdsa.X86.Lays
@@ -378,7 +379,7 @@ structure LadPost (c : Cfg) (base : Addr) (Q : Nat → Fe c.C → Fe c.C → Fe 
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
   unch : Unch base (slWk c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5,
-    TX, TY, TZ, TMP] ++ slWk c [ACC, PT, TMP]) s.mem s'.mem
+    TX, TY, TZ, TMP] ++ pwW c) s.mem s'.mem
   q : Q 0 (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY)) (tmv c.C c.n base s' (c.sl RZ))
   acc_lt : sv c base s' ACC < c.C.p
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
@@ -429,15 +430,14 @@ theorem ladPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅ rz₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq, accLen_MP'] at U₆
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slWk hi h₁)
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨hs₅.of_keeps K₆ (by decide), fun r hr => by rw [K₆.1 r hr, K₅.1 r hr],
     by rw [K₆.2.1, K₅.2.1], by rw [K₆.2.2, K₅.2.2], U₅.trans U₆, ?_, lt₆, ?_, ?_⟩
   · show Q 0 (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ))

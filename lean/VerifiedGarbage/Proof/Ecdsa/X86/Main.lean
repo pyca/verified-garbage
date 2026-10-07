@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
@@ -120,31 +121,30 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   rw [ladWx_eq, accLen_MP'] at U₅
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
-  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq, accLen_MP'] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slWk hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWk hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_pwW hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWk hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slWk hi h₁)
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨⟨hs₅.of_keeps K₆ (by decide), by rw [K₆.1 _ (by decide), K₅.1 _ (by decide), hS.esp],
     by rw [K₆.2.1, K₅.2.1, hS.rd], by rw [K₆.2.2, K₅.2.2, hS.wr],
-    F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆,
-    whole_of (whole_of hS.whole U₅ (slWk_le h7 (by decide))) U₆ (slWk_le h7 (by decide))⟩,
+    F₅.unch h7 hn fixedOk_pwW U₆,
+    whole_of (whole_of hS.whole U₅ (slWk_le h7 (by decide))) U₆ (pwW_le h7)⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
     by rw [e₆ (by decide) (by decide) (by decide), hS.e],
-    by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
+    by rw [flagW, flag_unch_pwW U₆ h7 h0 hn, flag_unch U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
     ?_, ?_, lt₆, ?_, ?_⟩
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_pwW (by decide) ht),
       tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
@@ -193,7 +193,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     sv_flag O₈ h0 h7 hn hi hf
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
     sv_unch Mp.unch h7 hn hi (apart_slWk hi hl)
-  refine WP.seq (WP.mono (powScalar_ok (P := c.powN) (powLayN hc) (powWkN hc) hnR hs₈
+  refine WP.seq (WP.mono (nPow_ok hc hs₈
     (modN_of hc F₈.mn) (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
@@ -201,9 +201,8 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
         tbl_unch Mp.unch h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht)]
       exact hS.t₂ t ht)
     (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega)) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
-  rw [powWxN_eq, accLen_MN'] at U₉
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
-    sv_unch U₉ h7 hn hi (apart_slWk hi hl)
+    sv_unch U₉ h7 hn hi (apart_pwW hi hl)
   -- The slots `middle` and the power do not write.
   have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
       sv c base s₉ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -218,9 +217,9 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
   refine ⟨⟨hs₈.of_keeps K₉ (by decide), ?_, by rw [K₉.2.1, k₈.2.1, Mp.rd, hS.rd],
-    by rw [K₉.2.2, k₈.2.2, Mp.wr, hS.wr], F₈.unch h7 hn (fixedOk_slWk (by decide)) U₉,
+    by rw [K₉.2.2, k₈.2.2, Mp.wr, hS.wr], F₈.unch h7 hn fixedOk_pwW U₉,
     whole_of (whole_of (whole_of hS.whole Mp.unch (slWk_le h7 (by decide))) O₈.unch (flag_le h0 h7)) U₉
-      (slWk_le h7 (by decide))⟩,
+      (pwW_le h7)⟩,
     by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d],
     by rw [a₉ (i := E) (by decide) (by decide) (by decide) (by decide), hS.e],
     by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact hS.rep,
@@ -228,7 +227,7 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     by rw [x₉, Mp.x, tR RX (by simp), tR RZ (by simp), hS.acc],
     by rw [rr₉, x₉]; exact Mp.rr, ?_, ?_⟩
   · rw [K₉.1 _ (by decide), k₈.1 _ (by decide), Mp.gpr _ (by decide), hS.esp]
-  · rw [flagW, flag_unch U₉ h7 h0 hn (by decide), ← flagW, f₈, flagW, flag_unch Mp.unch h7 h0 hn (by decide),
+  · rw [flagW, flag_unch_pwW U₉ h7 h0 hn, ← flagW, f₈, flagW, flag_unch Mp.unch h7 h0 hn (by decide),
       ← flagW, hS.flag, e₇ (i := D) (by decide) (by decide), e₇ (i := K) (by decide) (by decide), hS.d, hS.k,
       Mp.rr, x₉]
   · refine v₉.trans ?_

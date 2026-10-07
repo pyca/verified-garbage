@@ -13,21 +13,20 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.X86.EcP256
 
-def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) : List Artifact := [
   { Spec.EcKey.P256.publicKeyApi with
     target := X86.target
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["Field elements are eight 32-bit words in \
       Montgomery form. `[d]G` uses a seven-bit signed comb with 37 complete point additions \
       and no doublings, scanning every entry of each static table with SSE2. The function \
       obtains `VG_P256_COMB` with a position-independent four-byte CALL frame and saves \
-      callee-saved registers in `scratch`. `Z⁻¹` uses a fixed addition chain for \
-      `p - 2`, with 255 squares and 18 other multiplications. A mask selects the encoded public key or zeros; only addresses affect timing."])
+      callee-saved registers in `scratch`. `Z⁻¹` uses 20 batches of 30 constant-time divsteps. A mask selects the encoded public key or zeros; only addresses affect timing."])
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     code := Proof.EcKey.X86.pkCombCode
     contract := Spec.EcKey.P256.inst.publicKeyContract
       (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 4
     stack := 4
-    verified := Proof.EcKey.X86.pkComb_verified h.law
+    verified := Proof.EcKey.X86.pkComb_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P256.X86.EcP256

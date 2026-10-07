@@ -42,7 +42,7 @@ private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : Comb
   | 4, _ => exact a4
 
 /-- P-256, with the group law `hL`. -/
-def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
+def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcCurve where
   E := p256Comb
   inst := Spec.Ecdsa.P256.inst
   curve := rfl
@@ -59,7 +59,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
       intro d hd
       have he : p256d = d := Option.some.inj hd
       rw [← he]; exact p256Comb_shape
-    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok p256Comb_ok hL (p256Comb_tables hL) co p256Comb_am3 rfl (core_pre_256 h)
+    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl (core_pre_256 h)
     refine ⟨tr, t, he, ha, ?_⟩
     simp only [coreK, coreSigOf, SignPost, ptr, BitVec.setWidth_append_eq_right] at hp ⊢
     generalize Spec.Ecdsa.signWith p256Comb.C
@@ -69,7 +69,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) : RfcCurve where
     cases r <;> exact hp
   coreCT := by
     intro s t tr₁ tr₂ s' t' hs ht hp
-    exact signComb_ct p256Comb_ok hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3
+    exact signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide

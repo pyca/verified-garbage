@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdh.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowMul
@@ -11,7 +12,7 @@ open VG.Proof.Ecdsa.X86 VG.Proof.Ecdsa.Verify.X86
 open VG.Impl.Ecdh.X86 (PX PY)
 variable {c : Cfg}
 
-abbrev ecWindowW (c : Cfg) : List (Nat × Nat) := windowW c ++ slWk c [ACC, PT, TMP]
+abbrev ecWindowW (c : Cfg) : List (Nat × Nat) := windowW c ++ pwW c
 
 structure WindowPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : State) : Prop where
   scr : Scr s' base size
@@ -43,16 +44,15 @@ theorem windowPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.
   have F₅ := F.unch h7 hn (windowW_fixed h4) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅ rz₅
+  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       change  t < 64 * c.n at ht
       change s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [U₅.byte (windowW_table h4 ht) (by rw [bitsAt_eq, h4]; rw [h4] at ht; omega)]
       exact ht₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq, accLen_MP'] at U₆
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slWk hi h₁)
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨hs₅.of_keeps K₆ (by decide), fun r hr => by rw [K₆.1 r hr, K₅.1 r hr],
     by rw [K₆.2.1, K₅.2.1], by rw [K₆.2.2, K₅.2.2], U₅.trans U₆, ?_, lt₆, ?_, ?_⟩
   · change Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY))
