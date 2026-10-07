@@ -15,6 +15,14 @@ theorem nafVal5_lt (a b c d e : BitVec 64) : nafVal5 a b c d e<2^320 := by
   dsimp only [nafVal5]
   omega
 
+theorem nafVal5_inj {a b c d e f g h i j : BitVec 64}
+    (hv : nafVal5 a b c d e=nafVal5 f g h i j) :
+    a=f ∧ b=g ∧ c=h ∧ d=i ∧ e=j := by
+  have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt; have := e.isLt
+  have := f.isLt; have := g.isLt; have := h.isLt; have := i.isLt; have := j.isLt
+  dsimp only [nafVal5] at hv
+  refine ⟨?_,?_,?_,?_,?_⟩ <;> apply BitVec.eq_of_toNat_eq <;> omega
+
 def nafSub5 (a b c d e x mask : BitVec 64) : BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 :=
   let c0 := decide (a.toNat < x.toNat)
   let c1 := decide (b.toNat < mask.toNat + c0.toNat)
