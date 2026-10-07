@@ -96,4 +96,19 @@ def mulFn (n m : Nat) : Prog isa :=
   .seq (.block zextCode)
     (.block (entryRest n m ++ mulR (mod n m) (ptrs n).1 (ptrs n).2.1 (ptrs n).2.2 0 0 0 ++ restoreCode n))
 
+open Spec.Weierstrass.Mont in
+/-- The moduli whose products are functions on AArch64: P-384's and P-521's
+`p`. A product of four words is short enough inline that calls do not pay,
+and the products modulo `n` are few. -/
+def fns : List Modulus := [p384p, p521p]
+
+/-- The function computing the products of the modulus `M` (its name and its
+modulus), if any: one of `fns` of `M.n` words and `M.minv`, if `M`'s
+temporary area is where the function stores its modulus (`moAt`), which a
+call may then change. -/
+def callOf (M : Mod) : Option (String × Nat) :=
+  if M.tmp = moAt M.n then
+    (fns.find? fun S => S.k == M.n && BitVec.ofNat 64 (minv S.m) == M.minv).map fun S => (S.fn "mul", S.m)
+  else none
+
 end VG.Impl.Weierstrass.AArch64.Mont

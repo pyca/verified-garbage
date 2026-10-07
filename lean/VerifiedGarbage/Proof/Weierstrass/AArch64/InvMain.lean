@@ -176,7 +176,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
     hj1 (by omega) xt) fun u ⟨Iu, xu, Ku, Uu⟩ => ⟨⟨?_, xu, ?_, ?_, Kt.trans Ku, (Ut.trans Uu).mono ?_⟩, xu⟩
   · rw [show P.B - (j - 1) = P.B - j + 1 by omega]; exact Iu
   · exact St.of_keepRegs Ku (by decide)
-  · refine ⟨Mt.n0, Mt.n10, Mt.mo, Mt.tmp, Mt.sep, ?_, Mt.inv, Mt.red⟩
+  · refine ⟨Mt.n0, Mt.n10, Mt.mo, Mt.tmp, Mt.sep, ?_, Mt.inv, Mt.red, Mt.call⟩
     rw [Uu.wordsVal (fun w hw => by
       simp only [batchW, List.mem_cons, List.not_mem_nil, or_false] at hw
       subst hw; dsimp only; omega_using [hmt, n4]) (by omega_using [hmo, hn])]
@@ -261,7 +261,7 @@ theorem finish_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size)
   have m₃ : s₃.mem = s.mem := by rw [k₃.mem, k₂.mem, k₁.mem]
   have hCt : P.tbl ≤ P.sC := by simp only [InvCfg.sC]; omega_using [eNF]
   have M₄ : ModOkA P.M size m s₄.mem base := ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [O₄.wordsVal (by omega) (by omega), m₃]; exact hM.val, hM.inv, hM.red⟩
+    by rw [O₄.wordsVal (by omega) (by omega), m₃]; exact hM.val, hM.inv, hM.red, hM.call⟩
   have hmP : m < 2 ^ (64 * P.M.n) := hM.val ▸ wordsVal_lt _ _ _ _
   have hCs : (if s₃.gpr .x9 = BitVec.allOnes 64 then P.Cn else P.C) < m := by split; exacts [hCn, hC]
   have e₄' : wordsVal s₄.mem base P.sC P.M.n = if s₃.gpr .x9 = BitVec.allOnes 64 then P.Cn else P.C := by
@@ -338,7 +338,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
       rw [U.wordsVal (fun w hw => by
         simp only [batchW, List.mem_cons, List.not_mem_nil, or_false] at hw
         subst hw; dsimp only; omega_using [hmt, n4]) (by omega_using [hmo, hn])]
-      exact hM.val, hM.inv, hM.red⟩
+      exact hM.val, hM.inv, hM.red, hM.call⟩
   rw [InvCfg.inv]
   refine WP.seq (WP.mono (init_ok hL hs hM hC.B16) fun s₁ ⟨I₁, x₁, K₁, U₁⟩ => ?_)
   have hs₁ := hs.of_keepRegs K₁ (by decide)

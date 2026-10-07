@@ -34,7 +34,7 @@ open VG.Proof.Ed25519.AArch64 (Keeps read_x)
     · have he : x∈winRo K ++ winOther K ∨ x∈jacCoords (Naf.twice K) := by
         simp only [rcbR,winRo,winOther,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
       exact he.elim (fun h => List.mem_append_left _ h) (jacTblPt_mem K (by decide) (by decide) x)
-  have ac := jacAdd_relCT (base:=base) (E:=E) hL.lay hAl hm (hL.rcbApart_twice hJ)
+  have ac := jacAdd_relCT (base:=base) (E:=E) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm (hL.rcbApart_twice hJ)
     slots (nafTableLive_read K m) hOne hc.add
   have ak := relCT_keepControls (a:=BitVec.ofNat 64 (8-m)) (b:=off base (K.tbl+96*m)) ac hc.keepAdd
   apply RelCT.seq (ak.mono

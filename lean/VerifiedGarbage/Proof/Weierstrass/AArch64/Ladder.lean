@@ -30,8 +30,14 @@ structure LadA (L : LadderCfg) : Prop where
   sl : ∀ x ∈ ladSlots L, x % 8 = 0
   mod : ModA L.M
   bits : L.bits < 4096
+  call : ∀ f m', Mont.callOf L.M = some (f, m') → Mont.ModOk L.M.n m' ∧
+    ∀ x ∈ ladSlots L, x + 8 * L.M.n ≤ Mont.own L.M.n
 
-theorem LadA.al {L : LadderCfg} (h : LadA L) : Aligned L.M (· ∈ ladSlots L) := ⟨h.sl, h.mod⟩
+theorem LadA.al {L : LadderCfg} (h : LadA L) : Aligned L.M (· ∈ ladSlots L) :=
+  ⟨h.sl, h.mod, fun f m' h' => (h.call f m' h').1⟩
+
+theorem LadA.low {L : LadderCfg} (h : LadA L) {l : List Nat} (hl : ∀ x ∈ l, x ∈ ladSlots L) : Low L.M l :=
+  Low.of_call fun f m' h' x hx => (h.call f m' h').2 x (hl x hx)
 
 /-- That an iteration keeps the invariant `Q`: from `(X : Y : Z)` that
 `Q (j + 1)` accepts, `Q j` accepts `T = D + G` if bit `j` of `k` is set, else
@@ -86,10 +92,10 @@ theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} {size : Nat} (hL : 
     {Q : State → Prop} (h : ∀ s', AddsPost L C base size E s s' → WP isa rest s' Q) :
     WP isa (.seq (fprogB L.M (rcb L.S L.R L.R L.D)) (.seq (fprogB L.M (rcb L.S L.D L.G L.T)) rest))
       s Q := by
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL.lay hA.al hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
-    fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_))
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL.lay hA.al hp hL.a2 (ladR_S₂ L) I₂ (ladR_V₂ L))
-    fun s₃ ⟨k₃, I₃, t₃, n₃⟩ => h s₃ ?_))
+  refine WP.seq (WP.mono (rcb_ok hL.lay hA.al hp hL.a1 (ladR_S₁ L) (hA.low (ladR_S₁ L)) hI (ladR_V₁ L))
+    fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_)
+  refine WP.seq (WP.mono (rcb_ok hL.lay hA.al hp hL.a2 (ladR_S₂ L) (hA.low (ladR_S₂ L)) I₂ (ladR_V₂ L))
+    fun s₃ ⟨k₃, I₃, t₃, n₃⟩ => h s₃ ?_)
   have hro : ∀ x ∈ ladRo L, x ∉ rcbW L.S L.D := fun x hx h =>
     hL.ro x hx (by simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr h))
   have hDT : ∀ x ∈ [L.D.x, L.D.y, L.D.z], x ∉ rcbW L.S L.T := fun x hx =>
@@ -222,7 +228,7 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
   · have hM := A.mod
     have hmo := hL.lay.mo
     have hle := hL.lay.le
-    refine ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩
+    refine ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red, hM.call⟩
     rw [U'.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl

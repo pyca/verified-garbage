@@ -33,7 +33,7 @@ theorem nafAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size e e' : Nat}
     simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> jmem
   apply WP.seq
-  refine WP.mono (jacAdd_ok hL.lay hAl hm hC ha (old.rcbApart_D (Or.inr rfl)) sl hI vr hOne
+  refine WP.mono (jacAdd_ok hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm hC ha (old.rcbApart_D (Or.inr rfl)) sl hI vr hOne
     (hC.onCurve_mul hP _) hQ h.point hE)
     fun s₁ ⟨E₁,k₁,i₁,j₁⟩ => ?_
   have sd : ∀ x ∈ rcbW K.S K.R ++ rcbR K.S K.D K.D, x ∈ jacWinSlots K := by

@@ -88,7 +88,7 @@ theorem modOk_out {M : Mod} {size p : Nat} {mem mem' : Mem} {base : Addr} (hM : 
     (hO : Outside base o len mem mem') (hsep : o + len ≤ M.mo ∨ M.mo + 8 * M.n ≤ o) (hn : base.toNat + size ≤ 2 ^ 64) :
     ModOkA M size p mem' base :=
   ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, by rw [hO.wordsVal (by omega) (by have := hM.mo; omega)]; exact hM.val,
-    hM.inv, hM.red⟩
+    hM.inv, hM.red, hM.call⟩
 
 /-- Half a batch's update of `f`, `g`: `[dst] = (u f + v g) / 2^59` (`L` words, signed). -/
 theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (h12 : s.gpr .x12 = 0)
@@ -388,7 +388,7 @@ theorem abUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
     Unch.wv2 U₁ (Or.inl (show P.sB + 8 * P.M.n ≤ P.sT by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]))
       (Or.inl (show P.sB + 8 * P.M.n ≤ P.sNF by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])) (by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])
   have M₁ : ModOkA P.M size p s₁.mem base := ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [Unch.wv2 U₁ (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])]; exact hM.val, hM.inv, hM.red⟩
+    by rw [Unch.wv2 U₁ (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by dsimp only; omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo]) (by omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, n4, htbl, htbl8, hn, hmt, hmo])]; exact hM.val, hM.inv, hM.red, hM.call⟩
   rw [WP.block_append_iff]
   refine WP.mono (abHalf_ok hs₁ M₁ hL.mo8 (by rw [k₁.gpr _ (by decide), h12]) (w := .x6) (w' := .x7) (by decide)
     (by decide) (by rw [k₁.gpr _ (by decide)]; exact h6) (by rw [k₁.gpr _ (by decide)]; exact h7) hqr
@@ -454,7 +454,7 @@ theorem batch_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
         have hmt := hL.mo_tbl
         rcases hw with rfl | rfl | rfl | rfl | rfl <;> dsimp only <;>
           omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, hmt, n4]) (by have := hM.mo; omega_using [this, hn]), m₃]
-      exact hM.val, hM.inv, hM.red⟩
+      exact hM.val, hM.inv, hM.red, hM.call⟩
   refine WP.mono (abUpd_ok hL hs₄ M₄ (by rw [g₄ _ (by decide), z₃]) (u := _) (v := _) (q := _) (r := _)
     (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hU) (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hV)
     (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hQ) (by rw [g₄ _ (by decide), k₃.gpr _ (by decide)]; exact hR)

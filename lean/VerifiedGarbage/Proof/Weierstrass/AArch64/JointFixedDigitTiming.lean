@@ -18,7 +18,7 @@ theorem jointFixedSum_relCT (certs : Forward.Arithmetic.Cases)
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c := by intro x hx; jslots
-  apply RelCT.seq (jointMixedAdd_relCT certs hL.layout.lay hL.layout.aligned hm hsize hL.addApart sl vr hOne hc.mixed)
+  apply RelCT.seq (jointMixedAdd_relCT certs hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm hsize hL.addApart sl vr hOne hc.mixed)
   apply RelCT.exists_
   intro E'
   have cp := copyPoint_relCT (base:=base) (E:=E') hL.layout.lay hL.layout.aligned

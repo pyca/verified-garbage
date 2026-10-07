@@ -19,7 +19,7 @@ theorem double_ok (certs : Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curv
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (hsize : 8192≤size) (hC : Law C) (ha : AM3 C)
     {S : RcbSlots} {p : Pt} (hA : (rcbW S p).Nodup)
-    (hSl : ∀ x∈rcbW S p,Sl x)
+    (hSl : ∀ x∈rcbW S p,Sl x) (hLow : Low M (rcbW S p))
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
     (hV : ∀ x∈[p.x,p.y,p.z],x∈V) {P : Point C}
     (hP : onCurve C P=true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) P) :
@@ -30,6 +30,7 @@ theorem double_ok (certs : Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curv
         (runOps (dblJMul S p p) E p.z) (Spec.Weierstrass.add P P) := by
   refine WP.mono (field_ok certs hL hAl hm hsize (dblJMul S p p) hI
     (fun op hop x hx => hSl x (inplace_slots S p op hop x hx))
+    (fun op hop => hLow.mono (inplace_slots S p op hop))
     (readsOk_mono (inplace_reads S p) hV)) fun t ⟨hk,hi⟩ => ⟨?_,?_,?_⟩
   · exact hk.mono fun x hx => by
       obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
@@ -41,7 +42,7 @@ theorem double_ok (certs : Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curv
 theorem double_relCT (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod m (2^(64*M.n))) (hsize : 8192≤size) {S : RcbSlots} {p : Pt}
-    (hSl : ∀ x∈rcbW S p,Sl x) {V : List Nat} {E : Nat → Fin m}
+    (hSl : ∀ x∈rcbW S p,Sl x) (hLow : Low M (rcbW S p)) {V : List Nat} {E : Nat → Fin m}
     (hV : ∀ x∈[p.x,p.y,p.z],x∈V)
     (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
       (VG.Impl.P256.VerifyArithmetic.double M S p)) :
@@ -49,6 +50,7 @@ theorem double_relCT (certs : Cases) {M : Mod} {base : Addr} {size m : Nat} [NeZ
       (FieldPair M base size m Sl V (runOps (dblJMul S p p) E)) := by
   exact (field_relCT certs hL hAl hm hsize (dblJMul S p p)
     (fun op hop x hx => hSl x (inplace_slots S p op hop x hx))
+    (fun op hop => hLow.mono (inplace_slots S p op hop))
     (readsOk_mono (inplace_reads S p) hV) hct).mono (fun _ _ h => h)
       (fun _ _ h => h.sub (fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)))
 

@@ -185,7 +185,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
           intro x hx
           have a := pv K.S.a (by simp [rcbR]); have b := pv K.S.b3 (by simp [rcbR])
           simp only [rcbR,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
-        have d := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=e) hL.lay hAl hm
+        have d := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=e) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm
           old.rcbApart_jac.2.1 dslots dv hc.double
         exact d.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (by
           intro x hx
@@ -195,7 +195,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
           (fun u v => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K)
             ([K.E.x,K.E.y,K.E.z,K.D.x,K.D.y,K.D.z]++jacTreeLive K m) E' u v) := by
         intro ho
-        apply (jacAdd_relCT hL.lay hAl hm (hL.rcbApart_RP hJ) aslots pv hOne hc.add).mono (fun _ _ h => h)
+        apply (jacAdd_relCT hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm (hL.rcbApart_RP hJ) aslots pv hOne hc.add).mono (fun _ _ h => h)
         intro u v ⟨e,hp⟩
         refine ⟨e,hp.sub ?_⟩
         intro x hx

@@ -15,7 +15,7 @@ def invAllocatedOuterW : List (Nat × Nat) := invAllocatedW ++ [(7800,32)]
     (hs : Scr s base size) (hM : ModOkA invAllocatedCfg.M size invAllocatedModulus s.mem base)
     (ua : Outside base 7800 32 s.mem a.mem) :
     ModOkA invAllocatedCfg.M size invAllocatedModulus a.mem base := by
-  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red⟩
+  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red, hM.call⟩
   rw [ua.wordsVal (by decide) (by omega_using [hM.mo,hs.nowrap])]
   exact hM.val
 

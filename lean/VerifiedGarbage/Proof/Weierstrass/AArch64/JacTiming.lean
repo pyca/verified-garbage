@@ -28,7 +28,7 @@ theorem FieldPair.public {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 /-- Exact field-program correctness keeps a public environment public. -/
 theorem fprogB_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
     (hm : UnitMod m (2^(64*M.n))) (ops : List FOp)
     (hct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (fprogB M ops))
     {V : List Nat} {E : Nat → Fin m}
@@ -36,8 +36,8 @@ theorem fprogB_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     RelCT isa (FieldPair M base size m Sl V E) (fprogB M ops)
       (FieldPair M base size m Sl (validAfter ops V) (runOps ops E)) := by
   intro s t ts tt s' t' hp es et
-  have hs := (fprogB_wp M ops).mpr (fprog_ok hL hAl hm ops hp.left hS hR)
-  have ht := (fprogB_wp M ops).mpr (fprog_ok hL hAl hm ops hp.right hS hR)
+  have hs := (fprogB_wp M ops hnc).mpr (fprog_ok hL hAl hm ops hp.left hS hR)
+  have ht := (fprogB_wp M ops hnc).mpr (fprog_ok hL hAl hm ops hp.right hS hR)
   obtain ⟨_,_,xs,ks,is⟩ := hs
   obtain ⟨_,_,xt,kt,it⟩ := ht
   obtain ⟨_,rfl⟩ := Exec.det es xs

@@ -29,7 +29,7 @@ theorem nafAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> jmem
-  apply RelCT.seq (jacAdd_relCT hL.lay hAl hm (old.rcbApart_D (Or.inr rfl)) sl vr hOne hc)
+  apply RelCT.seq (jacAdd_relCT hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm (old.rcbApart_D (Or.inr rfl)) sl vr hOne hc)
   apply RelCT.exists_
   intro E'
   rw [←hL.n]
@@ -58,7 +58,7 @@ theorem nafDouble_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [rcbR,nafLive,winRo,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  apply RelCT.seq (Forward.field_relCT Forward.Production.cases hL.lay hAl hm (old.rcbApart_D (Or.inl rfl)) hs hv hd)
+  apply RelCT.seq (Forward.field_relCT Forward.Production.cases hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm (old.rcbApart_D (Or.inl rfl)) hs hv hd)
   rw [←hL.n]
   exact (copyPoint_relCT hL.lay hAl (by
     intro x hx

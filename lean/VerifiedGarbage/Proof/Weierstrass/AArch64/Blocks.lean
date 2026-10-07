@@ -20,10 +20,10 @@ theorem blocks_wp : ∀ (ls : List (List Instr)) {s : State} {Q : State → Prop
     exact ⟨fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mp h',
       fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mpr h'⟩
 
-theorem opProg_none {M : Mod} (hc : M.call = none) (op : FOp) : opProg M op = .block (opCode M op) := by
+theorem opProg_none {M : Mod} (hc : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
   cases op <;> simp [opProg, hc]
 
-theorem fprogB_none {M : Mod} (hc : M.call = none) :
+theorem fprogB_none {M : Mod} (hc : Mont.callOf M = none) :
     ∀ ops : List FOp, fprogB M ops = blocks (ops.map (opCode M))
   | [] => rfl
   | [op] => by simp [fprogB, progs, blocks, opProg_none hc]
@@ -35,7 +35,7 @@ theorem fprogB_none {M : Mod} (hc : M.call = none) :
     · simp
 
 /-- For a modulus whose products are inline, `fprogB` runs as `fprog`. -/
-theorem fprogB_wp (M : Mod) (ops : List FOp) (hc : M.call = none) {s : State} {Q : State → Prop} :
+theorem fprogB_wp (M : Mod) (ops : List FOp) (hc : Mont.callOf M = none) {s : State} {Q : State → Prop} :
     WP isa (fprogB M ops) s Q ↔ WP isa (.block (fprog M ops)) s Q := by
   rw [fprogB_none hc, blocks_wp, fprog, List.flatMap_def]
 

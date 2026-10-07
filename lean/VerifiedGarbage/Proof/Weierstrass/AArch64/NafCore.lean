@@ -44,7 +44,7 @@ theorem nafDoubleCore_ok {K : WinCfg} {C : Curve} {base : Addr} {size e : Nat}
     rcases ho with rfl | rfl <;>
       simp only [rcbW,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢ <;> grind
   apply WP.seq
-  refine WP.mono (Forward.double_multiple_ok Forward.Production.cases (W:=winOther K) hL.lay hAl hm hC ha
+  refine WP.mono (Forward.double_multiple_ok Forward.Production.cases (W:=winOther K) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm hC ha
     (old.rcbApart_D (Or.inl rfl)) (sl _ _ (Or.inl rfl) (Or.inr rfl))
     (ww _ (Or.inr rfl)) h.field (vr _ (Or.inl rfl)) hP h.point) fun t ⟨E,kt,it,jt⟩ => ?_
   rw [←hL.n]

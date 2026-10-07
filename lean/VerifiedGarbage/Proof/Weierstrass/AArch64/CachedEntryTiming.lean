@@ -78,7 +78,7 @@ theorem entry_relCT {C : Curve} {base : Addr} {size u v j : Nat}
   · intro s t ⟨_,s3,t3⟩
     change some (s.read .x .x3 != 0)=some (t.read .x .x3 != 0)
     rw [VG.Proof.Ed25519.AArch64.read_x,VG.Proof.Ed25519.AArch64.read_x,s3,t3]
-  · have op := fprogB_relCT (base:=base) (V:=entryLive (jointLive cfg)) (E:=E') hL.lay hL.aligned hm
+  · have op := fprogB_relCT (base:=base) (V:=entryLive (jointLive cfg)) (E:=E') hL.lay hL.aligned (callOf_small (Nat.le_of_eq hL.n)) hm
       [FOp.sub K.E.y K.zero K.E.y] hc.neg (by decide +kernel) (by decide +kernel)
     exact op.mono (fun _ _ h => h.1.1) (fun _ _ h => ⟨_,h.sub (fun _ hx => List.mem_cons_of_mem _ hx)⟩)
   · intro s t ts tt s' t' ⟨⟨hp,_,_⟩,_⟩ es et

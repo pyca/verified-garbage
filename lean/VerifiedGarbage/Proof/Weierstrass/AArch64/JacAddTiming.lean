@@ -74,7 +74,7 @@ structure JacAddChecks (K : WinCfg) (p q o : Pt) : Prop where
 
 /-- Numbered field arithmetic preserves an exact environment in both runs. -/
 theorem ofN_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
     (hm : UnitMod m (2^(64*M.n))) {N : List FOp} (hN : NumOk N)
     {S : RcbSlots} {p q o : Pt} (hA : RcbApart S p q o)
     (hSl : ∀ x∈rcbW S o ++ rcbR S p q, Sl x)
@@ -84,13 +84,12 @@ theorem ofN_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (ofN N S p q o) E)) := by
   apply fieldWP_relCT hct
   intro s hi
-  apply (fprogB_wp _ _).mpr
-  exact WP.mono (ofN_ok hL hAl hm hN hA hSl hi hV) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
+  exact WP.mono (ofN_ok hL hAl hm hN hA hSl (.inl hnc) hi hV) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
 
 /-- The complete addition's data-dependent branches inspect only field values
 shared by the two executions. No condition on uninitialized scratch is needed. -/
 theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q, x∈V)
@@ -122,7 +121,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
           (FieldPair K.M base size m Sl (validAfter (jacHead K.S p q) V) (runOps (jacHead K.S p q) E)) := by
         apply fieldWP_relCT hc.head
         intro s hi
-        apply (fprogB_wp _ _).mpr
+        apply (fprogB_wp _ _ hnc).mpr
         exact WP.mono (jacHead_ok hL hAl hm hA hSl hi hV) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
       apply RelCT.seq hh
       have oldV : ∀ x∈V, x∈validAfter (jacHead K.S p q) V :=
@@ -146,7 +145,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacHead K.S p q) V :=
             fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hm hdA hdSl hv hc.double
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hnc hm hdA hdSl hv hc.double
           exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
           exact (infinity_relCT hL hAl os hOne hc.infinity).mono
@@ -159,7 +158,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
               (runOps (jacHead K.S p q ++ jacTail K.S p q o) E)) := by
           apply fieldWP_relCT hc.tail
           intro s hi
-          apply (fprogB_wp _ _).mpr
+          apply (fprogB_wp _ _ hnc).mpr
           exact WP.mono (jacTail_ok hL hAl hm hA hSl hi hV) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
         exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 

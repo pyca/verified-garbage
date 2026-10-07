@@ -49,9 +49,9 @@ def mulCall (f : String) (n m o a b : Nat) : Prog isa :=
     .seq (.call f (Mont.mulFn n m)) (.block [.umov .x .x30 .v29 0])
 
 /-- The code of a field operation: a call for a product modulo a modulus
-whose products are calls (`Mod.call`), else `opCode`. -/
+whose products are functions (`Mont.callOf`), else `opCode`. -/
 def opProg (M : Mod) (op : FOp) : Prog isa :=
-  match op, M.call with
+  match op, Mont.callOf M with
   | .mul o a b, some (f, m) => mulCall f M.n m o a b
   | op, _ => .block (opCode M op)
 

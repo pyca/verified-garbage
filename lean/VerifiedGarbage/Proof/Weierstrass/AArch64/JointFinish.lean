@@ -23,7 +23,7 @@ theorem jointFinish_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat
     apply hL.old_slots x
     simp only [combSlots,jacFinishCfg,TCombCfg.toComb,winSlots,winRo,winOther,rcbW,
       List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
-    grind),hAl.mod⟩
+    grind),hAl.mod,fun _ _ h => nomatch (callOf_small (M := c.K.M) (Nat.le_of_eq hL.n)).symm.trans h⟩
   have pn := wordsVal_lt s.mem base c.K.M.mo c.K.M.n
   rw [h.field.mod.val] at pn
   have hl : ∀ x ∈ rcbR c.K.S c.K.R ⟨c.K.zero,c.K.zero,c.K.zero⟩, wordsVal s.mem base x c.K.M.n<C.p := by

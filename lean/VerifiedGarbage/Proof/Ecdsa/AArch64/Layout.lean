@@ -13,7 +13,9 @@ and of its arguments (`Pre`), for any curve of `n` words, and the state
 `setup` leaves (`SetupPost`), as on x86-64 (`Proof/Ecdsa/X86_64/Layout.lean`).
 
 The working space is the `8192` bytes at `scratch`: the saved registers in
-`[0, 56)`, the slots `c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and
+`[0, 64)`, the slots `c.sl i = 64 + 8 n i` of `n` words for `i < nslots` (but
+the temporary area `TMP`, at `Mont.moAt n`, where a call of a Montgomery
+product's function may write: `sl_tmp`), and
 the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`), which are
 slots `nslots + 8 j` to `nslots + 8 j + 7`. Every offset the scalar's table
 (`j = 0`) is read at is below `4096`, as `ldrb` needs.
@@ -159,37 +161,93 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 
 /-! ## Slots -/
 
-theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
+theorem sl_eq (c : Cfg) (i : Nat) (h : i ≠ TMP := by decide) : c.sl i = 64 + 8 * c.n * i := by
+  rw [Cfg.sl, if_neg (fun h' => h h'.1)]; rfl
+
+/-- For six to nine words, the temporary area is where the Montgomery
+products' functions store their modulus. -/
+theorem sl_tmp (c : Cfg) (h5 : 5 < c.n) (hn : c.n < 10) : c.sl TMP = Mont.moAt c.n := by
+  rw [Cfg.sl, if_pos ⟨rfl, h5, hn⟩]
+
+theorem sl_tmp_ge (c : Cfg) : 64 + 8 * c.n * 45 ≤ c.sl TMP ∨ c.sl TMP = 64 + 8 * c.n * TMP := by
+  by_cases hn : 5 < c.n ∧ c.n < 10
+  · rw [sl_tmp c hn.1 hn.2]; left; simp only [Mont.moAt]; omega
+  · rw [Cfg.sl, if_neg (fun h => hn h.2)]; right; rfl
 
 theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + 64 * c.n * j := rfl
 
 theorem sl_mod8 (c : Cfg) (i : Nat) : c.sl i % 8 = 0 := by
-  rw [sl_eq, Nat.mul_assoc]; omega
+  rw [Cfg.sl]; split
+  · simp only [Mont.moAt]; omega
+  · show (64 + 8 * c.n * i) % 8 = 0
+    rw [Nat.mul_assoc]; omega
 
 theorem bitsAt_mod8 (c : Cfg) (j : Nat) : bitsAt c.n j % 8 = 0 := by
   rw [bitsAt_eq, Nat.mul_assoc 8, Nat.mul_assoc 64]; omega
 
 /-- Slots `i < j` are apart. -/
-theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
-  rw [sl_eq, sl_eq]
+theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) (hi : i ≠ TMP := by decide) (hj : j ≠ TMP := by decide) :
+    c.sl i + 8 * c.n ≤ c.sl j := by
+  rw [sl_eq c i hi, sl_eq c j hj]
   have := Nat.mul_le_mul_left (8 * c.n) h
   rw [Nat.mul_succ] at this
   omega
 
-theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
-    c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
-  rcases Nat.lt_or_gt_of_ne h with h | h
-  · exact Or.inl (sl_lt c h)
-  · exact Or.inr (sl_lt c h)
+/-- Unless the temporary area is the functions' (six to nine words), every
+slot is at `64 + 8 n i`. -/
+theorem sl_aff (c : Cfg) (hr : ¬(5 < c.n ∧ c.n < 10)) (i : Nat) : c.sl i = 64 + 8 * c.n * i := by
+  rw [Cfg.sl, if_neg (fun h' => hr h'.2)]; rfl
 
-theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
+theorem sl_eq4 (c : Cfg) (hn : c.n ≤ 4) (i : Nat) : c.sl i = 64 + 8 * c.n * i :=
+  sl_aff c (fun h => by omega) i
+
+/-- A slot below `45` is below the functions' temporary area. -/
+theorem sl_lt_tmp (c : Cfg) (hr : 5 < c.n ∧ c.n < 10) {i : Nat} (h : i < 45) (hi : i ≠ TMP) :
+    c.sl i + 8 * c.n ≤ c.sl TMP := by
+  rw [sl_eq c i hi, sl_tmp c hr.1 hr.2]
+  have := Nat.mul_le_mul_left (8 * c.n) h
+  rw [Nat.mul_succ] at this
+  simp only [Mont.moAt]
+  omega
+
+/-- Slots `i ≠ j` are apart, unless one is the temporary area and the other
+is past slot `45`. -/
+theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) (hi : i ≠ TMP ∨ j < 45 := by decide)
+    (hj : j ≠ TMP ∨ i < 45 := by decide) :
+    c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
+  by_cases hr : 5 < c.n ∧ c.n < 10
+  · by_cases hiT : i = TMP
+    · subst hiT
+      exact Or.inr (sl_lt_tmp c hr (hi.resolve_left (fun h' => h' rfl)) (Ne.symm h))
+    by_cases hjT : j = TMP
+    · subst hjT
+      exact Or.inl (sl_lt_tmp c hr (hj.resolve_left (fun h' => h' rfl)) hiT)
+    rcases Nat.lt_or_gt_of_ne h with h | h
+    · exact Or.inl (sl_lt c h hiT hjT)
+    · exact Or.inr (sl_lt c h hjT hiT)
+  · rw [sl_aff c hr, sl_aff c hr]
+    rcases Nat.lt_or_gt_of_ne h with h | h
+    · have := Nat.mul_le_mul_left (8 * c.n) h
+      rw [Nat.mul_succ] at this
+      omega
+    · have := Nat.mul_le_mul_left (8 * c.n) h
+      rw [Nat.mul_succ] at this
+      omega
+
+theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) (hi : i ≠ TMP ∨ j < 45 := by decide)
+    (hj : j ≠ TMP ∨ i < 45 := by decide) : i = j := by
   by_contra hij
-  have := sl_apart c hij
+  have := sl_apart c hij hi hj
   omega
 
 /-- Every slot is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
-  rw [sl_eq]
+  by_cases hiT : i = TMP
+  · subst hiT
+    rw [Cfg.sl]; split
+    · simp only [Mont.moAt]; show _ ≤ 8192; omega
+    · simp only [slot, TMP]; show _ ≤ 8192; omega
+  rw [sl_eq c i hiT]
   have := Nat.mul_le_mul_left (8 * c.n) hi
   rw [Nat.mul_succ] at this
   have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)

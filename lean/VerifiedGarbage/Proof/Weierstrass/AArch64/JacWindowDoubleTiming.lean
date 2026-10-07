@@ -10,14 +10,14 @@ open VG.Proof.Mont.AArch64 VG.Proof.Mont
 
 /-- Doubling has an exact shared environment transition. -/
 theorem jacDoubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
     (hSl : ∀ x∈rcbW S o ++ rcbR S p p, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p, x∈V)
     (hct : FieldCT (VG.Impl.P256.VerifyDouble.double M S p o)) :
     RelCT isa (FieldPair M base size m Sl V E) (VG.Impl.P256.VerifyDouble.double M S p o)
       (FieldPair M base size m Sl V (runOps (dblJMul S p o) E)) := by
-  exact Forward.field_relCT Forward.Production.cases hL hAl hm hA hSl hV hct
+  exact Forward.field_relCT Forward.Production.cases hL hAl hnc hm hA hSl hV hct
 
 structure JacDoubleChecks (K : WinCfg) : Prop where
   rd : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
@@ -43,9 +43,9 @@ theorem jacFive_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     rcases hp with rfl | rfl <;>
       simp only [rcbR,jacLive,winRo,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢ <;> grind
-  have rd := fun (E : Nat → Fin m) => jacDoubleField_relCT (base := base) (E := E) hL.lay hAl hm
+  have rd := fun (E : Nat → Fin m) => jacDoubleField_relCT (base := base) (E := E) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm
     (old.rcbApart_D (Or.inl rfl)) (hs _ _ (Or.inl rfl) (Or.inr rfl)) (hv _ (Or.inl rfl)) hc.rd
-  have dr := fun (E : Nat → Fin m) => jacDoubleField_relCT (base := base) (E := E) hL.lay hAl hm
+  have dr := fun (E : Nat → Fin m) => jacDoubleField_relCT (base := base) (E := E) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm
     hL.rcbApart_DR (hs _ _ (Or.inr rfl) (Or.inl rfl)) (hv _ (Or.inr rfl)) hc.dr
   change RelCT isa _ (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
     (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)

@@ -50,7 +50,7 @@ structure NafTableChecks (K : WinCfg) : Prop where
     refine ⟨(hL.rcbApart_RP hJ).nodup,?_⟩
     intro x hx hw; exact hL.ro x (dv x hx) (List.mem_append_right _ hw)
   have de := dblJChoice_eq true K.S K.P K.D
-  have d := ofN_relCT (base:=base) (E:=E) hL.lay hAl hm (dblJChoiceN_ok true)
+  have d := ofN_relCT (base:=base) (E:=E) hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm (dblJChoiceN_ok true)
     da ds dv (by rw [←de]; exact hc.double)
   rw [←de] at d
   apply RelCT.seq d

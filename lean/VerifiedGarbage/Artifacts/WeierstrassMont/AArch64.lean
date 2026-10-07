@@ -17,20 +17,6 @@ def notes : List String := ["The function zero-extends the offsets, saves the ca
   final conditional subtraction selected by `csel`."]
 
 def artifacts : List Artifact := [
-  { p224p.mulApi with
-    target := AArch64.target
-    doc := p224p.mulApi.doc (notes := notes)
-    code := mulFn p224p.k p224p.m
-    contract := p224p.mulContract AArch64.abi
-    verified := p224p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p224n.mulApi with
-    target := AArch64.target
-    doc := p224n.mulApi.doc (notes := notes)
-    code := mulFn p224n.k p224n.m
-    contract := p224n.mulContract AArch64.abi
-    verified := p224n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { p384p.mulApi with
     target := AArch64.target
     doc := p384p.mulApi.doc (notes := notes)
@@ -38,26 +24,13 @@ def artifacts : List Artifact := [
     contract := p384p.mulContract AArch64.abi
     verified := p384p_mul_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p384n.mulApi with
-    target := AArch64.target
-    doc := p384n.mulApi.doc (notes := notes)
-    code := mulFn p384n.k p384n.m
-    contract := p384n.mulContract AArch64.abi
-    verified := p384n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { p521p.mulApi with
     target := AArch64.target
     doc := p521p.mulApi.doc (notes := notes)
     code := mulFn p521p.k p521p.m
     contract := p521p.mulContract AArch64.abi
     verified := p521p_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ },
-  { p521n.mulApi with
-    target := AArch64.target
-    doc := p521n.mulApi.doc (notes := notes)
-    code := mulFn p521n.k p521n.m
-    contract := p521n.mulContract AArch64.abi
-    verified := p521n_mul_verified
-    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }
+]
 
 end VG.Artifacts.WeierstrassMont.AArch64

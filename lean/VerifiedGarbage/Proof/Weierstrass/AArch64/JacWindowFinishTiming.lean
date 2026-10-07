@@ -21,7 +21,7 @@ theorem jacFinish_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     apply hL.old_slots x
     simp only [combSlots,jacFinishCfg,TCombCfg.toComb,winSlots,winRo,winOther,rcbW,
       List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
-    grind),hAl.mod⟩
+    grind),hAl.mod,fun _ _ h => nomatch (callOf_small (M := K.M) (Nat.le_of_eq hL.n)).symm.trans h⟩
   have sub : ∀ x∈jacFinishLive (jacFinishCfg K),x∈jacLive K := by
     intro x hx
     simp only [jacFinishLive,jacFinishCfg,TCombCfg.toComb,combRo,jacLive,winRo,

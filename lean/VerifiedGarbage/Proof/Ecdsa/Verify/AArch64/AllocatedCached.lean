@@ -73,7 +73,7 @@ theorem cachedAdd_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
           dsimp only [VG.Impl.Ecdsa.Verify.AArch64.P256Allocated.cachedOps,VG.Impl.Ecdsa.Verify.AArch64.P256Joint.cachedOps]
-          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl (callOf_small (by decide)) hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (PointPost.sub ⟨_,liftProg kt (by decide +kernel),it,jt⟩ oldV).prefix
             (hkeep.trans ((liftProg kd (by simp)).trans (liftProg ke (by simp))))
         · intro e ie ke hrz

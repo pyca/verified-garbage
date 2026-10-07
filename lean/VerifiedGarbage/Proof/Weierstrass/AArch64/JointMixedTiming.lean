@@ -18,7 +18,7 @@ structure JointMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
   infinity : FieldCT (.block (Jacobian.infinity K o))
 
 theorem jointMixedAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod m (2^(64*K.M.n))) (hsize : 8192≤size) {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q, x∈V)
@@ -54,7 +54,7 @@ theorem jointMixedAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
       apply fieldWP_relCT hc.head
       intro s hi
       exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
-        ((fprogB_wp _ _).mpr (jacMixedHead_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
+        ((fprogB_wp _ _ hnc).mpr (jacMixedHead_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
     apply RelCT.seq hh
     have oldV : ∀ x∈V, x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
       fun x hx => (mem_validAfter _ _).mpr (Or.inl (by simp [hx]))
@@ -77,7 +77,7 @@ theorem jointMixedAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hm hdA hdSl hv hc.double
+        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hnc hm hdA hdSl hv hc.double
         exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL hAl os hOne hc.infinity).mono
@@ -91,7 +91,7 @@ theorem jointMixedAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
         apply fieldWP_relCT hc.tail
         intro s hi
         exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
-          ((fprogB_wp _ _).mpr (jacMixedTail_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
+          ((fprogB_wp _ _ hnc).mpr (jacMixedTail_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
       exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
 end VG.Proof.Weierstrass.AArch64

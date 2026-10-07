@@ -41,7 +41,7 @@ def minv (m : Nat) : Nat :=
   let inv := (List.range 6).foldl (fun x _ => x * ((2 + 2 ^ 64 - m * x % 2 ^ 64) % 2 ^ 64) % 2 ^ 64) 1
   (2 ^ 64 - inv) % 2 ^ 64
 
-/-- The working space: the saved registers in bytes `[0, 56)`, then
+/-- The working space: the saved registers in bytes `[0, 64)`, then
 slots of `n` words (`slot n i`) from byte 64, then the tables of bits
 (`bitsAt`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
@@ -138,7 +138,11 @@ def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
-def sl (i : Nat) : Nat := slot c.n i
+/-- Slot `i`; for six to nine words, whose products are calls of a
+function (`Mont.callOf`), the temporary area (`TMP`), which a call may
+change, is where the function stores its modulus (`Mont.moAt`), in its own
+working space. -/
+def sl (i : Nat) : Nat := if i = TMP ∧ 5 < c.n ∧ c.n < 10 then Mont.moAt c.n else slot c.n i
 
 def MP' : Mod where
   n := c.n
@@ -226,7 +230,7 @@ def nPow : Prog isa := if c.fastN then InvCfg.inv c.invN else ChainCfg.pow c.pow
 /-- The callee-saved registers the code uses (`x21`–`x25` by the
 multiplications of more than six words), and where they are saved. -/
 def saved : List (Reg × Nat) :=
-  [(.x19, 0), (.x20, 8), (.x21, 16), (.x22, 24), (.x23, 32), (.x24, 40), (.x25, 48)]
+  [(.x19, 0), (.x20, 8), (.x21, 16), (.x22, 24), (.x23, 32), (.x24, 40), (.x25, 48), (.x30, 56)]
 
 /-- The constants, and `R = (0 : 1 : 0)`: slots and values. -/
 def consts : List (Nat × Nat) :=

@@ -89,12 +89,20 @@ theorem _root_.VG.Proof.Mont.AArch64.ModOkA.unch {M : Mod} {size m : Nat} {base 
     (hW : ∀ w ∈ W, M.mo + 8 * M.n ≤ w.1 ∨ w.1 + w.2 ≤ M.mo) (hn : base.toNat + size ≤ 2 ^ 64) :
     ModOkA M size m mem' base :=
   ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep,
-    by rw [hU.wordsVal hW (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red⟩
+    by rw [hU.wordsVal hW (by have := hM.mo; omega)]; exact hM.val, hM.inv, hM.red, hM.call⟩
 
 /-- The comb's slots and modulus at offsets that loads and stores can encode. -/
 structure CombA (K : CombCfg) : Prop where
   sl : ∀ x ∈ combSlots K, x % 8 = 0
   mod : ModA K.M
+  call : ∀ f m', Mont.callOf K.M = some (f, m') → Mont.ModOk K.M.n m' ∧
+    ∀ x ∈ combSlots K, x + 8 * K.M.n ≤ Mont.own K.M.n
+
+theorem CombA.al {K : CombCfg} (h : CombA K) : Aligned K.M (· ∈ combSlots K) :=
+  ⟨h.sl, h.mod, fun f m' h' => (h.call f m' h').1⟩
+
+theorem CombA.low {K : CombCfg} (h : CombA K) {l : List Nat} (hl : ∀ x ∈ l, x ∈ combSlots K) : Low K.M l :=
+  Low.of_call fun f m' h' x hx => (h.call f m' h').2 x (hl x hx)
 
 /-- After the selection and negation: `E` represents the signed entry of
 digit `i`, and only `E`, `-y` and the temporary area changed. -/
@@ -172,8 +180,9 @@ theorem combSum_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Co
       or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl <;> comb_mem
-  have W := rcb3_ok hL.lay ⟨hA.sl, hA.mod⟩ hp hL.add hSl hI (fun x hx => hx)
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono W fun s₁ h₁ => ?_))
+  have W := rcb3_ok hL.lay ⟨hA.sl, hA.mod, fun f m' h => (hA.call f m' h).1⟩ hp hL.add hSl
+    (Low.of_call fun f m' h x hx => (hA.call f m' h).2 x (hSl x hx)) hI (fun x hx => hx)
+  refine WP.seq (WP.mono W fun s₁ h₁ => ?_)
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   have hnd := hL.nodup
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons, List.mem_cons,

@@ -50,7 +50,7 @@ theorem jointFixedDigit_ok (certs : Forward.Arithmetic.Cases)
       intro x hx; jslots
     have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c := by
       intro x hx; jslots
-    refine WP.mono_syms (jointMixedAdd_ok certs hL.layout.lay hL.layout.aligned hm hsize hC ha hL.addApart sl
+    refine WP.mono_syms (jointMixedAdd_ok certs hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm hsize hC ha hL.addApart sl
       ib vr hOne hA (FastNaf.onCurve_point hC hG 7 u j) cb.point jb zb)
       fun d ⟨Ed,kd,id,jd⟩ sd => ?_
     have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots

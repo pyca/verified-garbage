@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Mont.AArch64
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 import VerifiedGarbage.Proof.Ed25519.AArch64.Step
 import VerifiedGarbage.Proof.Mont.Words
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -208,6 +209,9 @@ structure ModOkA (M : Mod) (size m : Nat) (mem : Mem) (base : Addr) : Prop where
   val : wordsVal mem base M.mo M.n = m
   inv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0
   red : M.ok m = true
+  /-- If the products are calls of a function (`callOf`), it computes them
+  modulo `m`. -/
+  call : ∀ f m', Impl.Weierstrass.AArch64.Mont.callOf M = some (f, m') → m' = m
 
 theorem ModOkA.toW {M : Mod} {size m : Nat} {mem : Mem} {base : Addr}
     (h : ModOkA M size m mem base) : ModOkW M size m mem base :=
