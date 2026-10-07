@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 
 Untrusted: everything here is checked by Lean. `cond` leaves ZF clear iff
 the short path applies: a 12-byte nonce, fewer than 512 bytes of additional
-data and of text, and fewer than 32 blocks of them (`cond_ok`).
+data and of text, fewer than 32 blocks of them, and some text or more than 16
+bytes of additional data (`cond_ok`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -17,7 +18,8 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.S
 open VG.Proof.AesGcm.X86_64
 
 /-- When the short path applies. -/
-abbrev IsShort (nl al n : Nat) : Prop := nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < 32
+abbrev IsShort (nl al n : Nat) : Prop :=
+  nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < 32 ∧ (0 < n ∨ 16 < al)
 
 /-- Both below `512` iff their OR is. -/
 theorem or_lt_512 {a b : Nat} : a ||| b < 512 ↔ a < 512 ∧ b < 512 := by
@@ -124,6 +126,43 @@ theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
     k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
 
+/-- `cond`'s fourth block: `al + 17 n` compared with 17, which it is below
+iff there is no text and at most 16 bytes of additional data. -/
+theorem condB4_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) (hal : al < 512) (hn : n < 512) :
+    WP isa (.block [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx), .shift .shl .rcx 4,
+        .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)]) s fun t =>
+      t.cf = some (decide (al + 17 * n < 17)) ∧ t.gpr .rax = s.gpr .rax ∧ CondKeep s t := by
+  have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 184) 8 := in_left (in_off h.w (by decide) (by decide))
+  have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off h.w (by decide) (by decide))
+  have hal' := h.alen
+  have hn' := h.len
+  have h15 := h.r15
+  have e₁ : BitVec.ofNat 64 n <<< 4 = BitVec.ofNat 64 (16 * n) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+      Nat.shiftLeft_eq, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    omega
+  obtain ⟨s₅, run₅, cx₅, ax₅, k₅⟩ : ∃ s₅, runBlock isa [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx),
+      .shift .shl .rcx 4, .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO))] s = some s₅ ∧
+      s₅.gpr .rcx = BitVec.ofNat 64 (al + 17 * n) ∧ s₅.gpr .rax = s.gpr .rax ∧ CondKeep s s₅ := by
+    refine ⟨_, by xrun [execShift, h15, hal', hn', r₁, r₂, alenO, lenO], ?_, ?_, ?_, ?_, ?_, ?_⟩
+    · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, reduceCtorEq, ite_false, hn', hal', e₁,
+        ofNat_add_ofNat]
+      congr 1
+      omega
+    · simp [gpr_setReg, gpr_arithFlags, gpr_setFlags]
+    · intro r a b c; simp [gpr_setReg, gpr_arithFlags, gpr_setFlags, b, c]
+    all_goals rfl
+  obtain ⟨s₆, run₆, -, cf₆, g₆, m₆, rd₆, wr₆⟩ :=
+    cmpImm_ok s₅ .rcx cx₅ (by omega) (show 17 < 2 ^ 31 by decide)
+  exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
+    k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
+
+theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
+  show s.zf.map _ = _; rw [h]; rfl
+theorem eval_ae {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .ae s = some !b := by
+  show s.cf.map _ = _; rw [h]; rfl
+
 /-- `cond`: ZF clear iff the short path applies, with `rbp` the nonce's length
 and the lengths of the additional data and the text in `W`. -/
 theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (hnl : nl < 2 ^ 64)
@@ -132,31 +171,41 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
   refine WP.seq (WP.mono (condB1_ok h hnl) fun s₂ ⟨zf₂, ax₂, k₂⟩ => ?_)
   -- `rax := 1` iff the short path applies.
   refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsShort nl al n then 1 else 0) ∧
-      CondKeep s s₃) (WP.ite (decide (nl = 12)) (eval_e zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
+      CondKeep s s₃) (WP.ite (!decide (nl = 12)) (eval_ne zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
+  · have h12 : nl ≠ 12 := by simpa using h12
+    refine WP.block_nil ⟨?_, k₂⟩
+    rw [ax₂]
+    simp [IsShort, h12]
   · have h12 : nl = 12 := by simpa using h12
     refine WP.seq (WP.mono (condB2_ok (h.keep k₂) hal hn) fun s₄ ⟨cf₄, ax₄, k₄⟩ => ?_)
     rw [ax₂] at ax₄
-    refine WP.ite (decide (al ||| n < 512)) (eval_b cf₄) (fun h5 => ?_) (fun h5 => ?_)
-    · have h5 : al < 512 ∧ n < 512 := or_lt_512.mp (by simpa using h5)
-      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1 h5.2) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
-      rw [ax₄] at ax₆
-      refine WP.ite (decide (nb16 al + nb16 n < 32)) (eval_b cf₆) (fun h32 => ?_) (fun h32 => ?_)
-      · have h32 : nb16 al + nb16 n < 32 := by simpa using h32
-        refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
-        · simp [gpr_setReg, IsShort, h12, h5, h32]
-        · exact k₂.trans (k₄.trans (k₆.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩))
-      · have h32 : ¬nb16 al + nb16 n < 32 := by simpa using h32
-        exact WP.block_nil ⟨by simp [ax₆, IsShort, h32], k₂.trans (k₄.trans k₆)⟩
-    · have h5 : ¬(al < 512 ∧ n < 512) := fun h => absurd (or_lt_512.mpr h) (by simpa using h5)
+    refine WP.ite (!decide (al ||| n < 512)) (eval_ae cf₄) (fun h5 => ?_) (fun h5 => ?_)
+    · have h5 : ¬(al < 512 ∧ n < 512) := fun h => by simp [or_lt_512.mpr h] at h5
       refine WP.block_nil ⟨?_, k₂.trans k₄⟩
       have h5' : ¬IsShort nl al n := fun ⟨_, a, b, _⟩ => h5 ⟨a, b⟩
       rw [ax₄]
       simp only [h5', ↓reduceIte]
       rfl
-  · have h12 : nl ≠ 12 := by simpa using h12
-    refine WP.block_nil ⟨?_, k₂⟩
-    rw [ax₂]
-    simp [IsShort, h12]
+    · have h5 : al < 512 ∧ n < 512 := or_lt_512.mp (by simpa using h5)
+      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1 h5.2) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
+      rw [ax₄] at ax₆
+      refine WP.ite (!decide (nb16 al + nb16 n < 32)) (eval_ae cf₆) (fun h32 => ?_) (fun h32 => ?_)
+      · have h32 : ¬nb16 al + nb16 n < 32 := fun h => by simp [h] at h32
+        exact WP.block_nil ⟨by simp [ax₆, IsShort, h32], k₂.trans (k₄.trans k₆)⟩
+      · have h32 : nb16 al + nb16 n < 32 := by simpa using h32
+        refine WP.seq (WP.mono (condB4_ok (((h.keep k₂).keep k₄).keep k₆) h5.1 h5.2) fun s₈ ⟨cf₈, ax₈, k₈⟩ => ?_)
+        rw [ax₆] at ax₈
+        refine WP.ite (decide (al + 17 * n < 17)) (eval_b cf₈) (fun h17 => ?_) (fun h17 => ?_)
+        · have h17 : al + 17 * n < 17 := by simpa using h17
+          have hs : ¬IsShort nl al n := fun ⟨_, _, _, _, z⟩ => by omega
+          exact WP.block_nil ⟨by simp [ax₈, hs], k₂.trans (k₄.trans (k₆.trans k₈))⟩
+        · have h17 : ¬al + 17 * n < 17 := by simpa using h17
+          have hs : IsShort nl al n := ⟨h12, h5.1, h5.2, h32, by omega⟩
+          refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
+          · have e : (if IsShort nl al n then 1 else 0) = 1 := ite_eq_left_iff.mpr fun h => absurd hs h
+            rw [e]
+            simp [gpr_setReg]
+          · exact k₂.trans (k₄.trans (k₆.trans (k₈.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩)))
   -- `test rax, rax`.
   refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
   · rw [zf_arithFlags, ax₃]

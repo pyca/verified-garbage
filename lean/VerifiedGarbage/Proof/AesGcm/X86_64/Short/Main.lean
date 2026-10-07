@@ -57,7 +57,7 @@ theorem sealMid_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
   WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
     WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => sealRun_ok v B C X E₂ hNp hnl hal) fun h => by
       have h' := Decidable.not_not.mp (of_decide_eq_false h)
-      exact sealShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2)
+      exact sealShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1)
 
 /-- `vg_aes_gcm_seal` with the short path, for a key context of kind `M`. -/
 theorem sealM_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
@@ -80,7 +80,7 @@ theorem openM_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode}
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
-  refine WP.mono (openShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2 htl hb.1 hb.2 hTa hTar hTr oT oA)
+  refine WP.mono (openShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 htl hb.1 hb.2 hTa hTar hTr oT oA)
     fun s' ⟨he, hsv, f, hax, hD⟩ => ⟨he, hsv, ?_, ?_⟩
   · rw [ret_kept f fun r hr => ?_]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

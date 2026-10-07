@@ -37,7 +37,8 @@ and absorb the whole blocks of the data in one call of the instance of
 combination, which interleaves the two for the implementations that allow
 it (`GcmImpl.stitch`). With the loops on 512-bit registers, `seal` and
 `open` instead take a short path, without calls, for a 12-byte nonce and
-fewer than 32 blocks of additional data and text (`GcmImpl.short`,
+fewer than 32 blocks of additional data and text, with some text or more
+than 16 bytes of additional data (`GcmImpl.short`,
 `Impl/AesGcm/X86_64/Short.lean`).
 
 The code of `init`, `stream_init`, `stream_aad`, `stream_finish` and
@@ -113,9 +114,9 @@ def note (v : GcmImpl) : String :=
 /-- How an instance of `seal` or `open` works, besides `note`. -/
 def shortNote (v : GcmImpl) : List String :=
   if v.short then
-    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, this implementation \
-      computes just the powers of the hash subkey and the keystream they need, on 512-bit registers, \
-      without calls."]
+    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, with some text or \
+      more than 16 bytes of additional data, this implementation computes just the powers of the hash \
+      subkey and the keystream they need, on 512-bit registers, without calls."]
   else []
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/

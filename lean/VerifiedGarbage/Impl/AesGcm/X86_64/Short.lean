@@ -8,8 +8,9 @@ import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 AES-NI, PCLMULQDQ and SSSE3), with a path of their own for the short
 messages of TLS and QUIC: a 12-byte nonce, and at most 32 blocks to hash
 (the additional data and the text, each padded to whole blocks, and the
-lengths block), which needs no call. The others take the path of the other
-instances (`Impl.AesGcm.X86_64.seal`, `open`).
+lengths block), with some text or more than 16 bytes of additional data,
+which needs no call. The others take the path of the other instances
+(`Impl.AesGcm.X86_64.seal`, `open`).
 
 GHASH over the `m` blocks `X₁ … Xₘ` is `Σ Xᵢ · Hᵐ⁺¹⁻ⁱ`, so the short path
 computes the powers `H'` … `H'ᵐ'` once (`H'ᵏ = Hᵏ · x⁻¹`, `m'` the multiple
@@ -57,21 +58,26 @@ def tbO : Nat := 1536
 
 /-! ## The condition -/
 
-/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, and at
-most 32 blocks to hash), `0` otherwise; then `test rax, rax`. The lengths are
-first checked to be below 512, so that the blocks' count does not wrap. -/
+/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, at most 32
+blocks to hash, and some text or more than 16 bytes of additional data),
+`0` otherwise; then `test rax, rax`. The lengths are first checked to be below
+512, so that the blocks' count does not wrap. With neither text nor more
+than 16 bytes of additional data, the other instances' body is faster:
+`al + 17 n` is at least 17 when there is either. Each branch falls through
+while the short path may still apply, and jumps to the end once it cannot. -/
 def cond : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)])
-  (.seq (.ite .e
+  (.seq (.ite .ne (.block [])
       (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
           .alu .cmp .rcx (imm 512)])
-        (.ite .b
+        (.ite .ae (.block [])
           (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
               .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4,
               .alu .add .rcx (.reg .rdx), .alu .cmp .rcx (imm 32)])
-            (.ite .b (.block [.mov32 .rax (imm 1)]) (.block [])))
-          (.block [])))
-      (.block []))
+            (.ite .ae (.block [])
+              (.seq (.block [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx), .shift .shl .rcx 4,
+                  .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)])
+                (.ite .b (.block []) (.block [.mov32 .rax (imm 1)]))))))))
     (.block [.alu .test .rax (.reg .rax)]))
 
 /-! ## The pieces -/
