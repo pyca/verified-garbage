@@ -11,4 +11,8 @@ structure PeerOrder (C : Curve) : Prop where
   zmul_dvd : ∀ {P : Point C}, onCurve C P = true → P ≠ .infinity →
     ∀ {a b : Int}, zmul a P = zmul b P → (C.n : Int) ∣ a - b
 
+/-- A proof interface value for artifact specialization. -/
+structure HasPeerOrder (C : Curve) : Type where
+  order : PeerOrder C
+
 end VG.Proof.Weierstrass

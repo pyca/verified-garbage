@@ -1,9 +1,9 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.SecretIface
+import VerifiedGarbage.Proof.Weierstrass.PeerOrder
 import VerifiedGarbage.Proof.Ecdh.X86_64.Secret.Verified
 
 /-! P-256 ECDH with a persistent Jacobian accumulator and signed five-bit windows. -/
-namespace VG.Generic.P256Secret.X86_64.EcdhP256
+namespace VG.Generic.P256.P256PeerOrder.X86_64.EcdhP256
 
 /-- The function of `Spec.Ecdh.P256.exchangeApi`, multiplying with BMI2 and ADX
 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
@@ -33,10 +33,11 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasSecretLawInv Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve)
+    (o : Proof.Weierstrass.HasPeerOrder Spec.P256.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.Window5.exchangeP256
-    (Proof.Ecdh.X86_64.Secret.baseline_verified h.law h.inv h.peerOrder) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdh.X86_64.Secret.baseline_verified h.law h.inv o.order) (Code.all_of_allInstrs (by lit_decide)),
   exchange true Impl.Ecdh.X86_64.Window5.exchangeP256Adx
-    (Proof.Ecdh.X86_64.Secret.adx_verified h.law h.inv h.peerOrder) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdh.X86_64.Secret.adx_verified h.law h.inv o.order) (Code.all_of_allInstrs (by lit_decide))]
 
-end VG.Generic.P256Secret.X86_64.EcdhP256
+end VG.Generic.P256.P256PeerOrder.X86_64.EcdhP256
