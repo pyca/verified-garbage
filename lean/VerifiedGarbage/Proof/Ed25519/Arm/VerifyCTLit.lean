@@ -7,8 +7,6 @@ import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm
 materialize_code verifyBasePoint := constPoint Spec.Ed25519.basePoint
-materialize_code verifyWriteA := (.block (pointTableWrite 7744) : Prog isa)
-materialize_code verifyWriteR := (.block (pointTableWrite 7872) : Prog isa)
 materialize_code verifyWriteLhs := (.block (pointTableWrite 8000) : Prog isa)
 materialize_code verifyReadA := (.block (pointTableRead 7744) : Prog isa)
 materialize_code verifyCombine
