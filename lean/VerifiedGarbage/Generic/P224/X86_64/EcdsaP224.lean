@@ -39,8 +39,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 590 \
       divsteps in all, enough for 256-bit moduli by Bernstein and Yang's bound (which the proof \
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
-      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is \
-      Fermat's, by square-and-always-multiply over the bits of `n - 2`. The signature (or \
+      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
+      the same divsteps, from `f = n`, `g = k`. The signature (or \
       zeros) is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p224.combConsts
     code := Impl.Ecdsa.X86_64.signP224
@@ -57,8 +57,8 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       Montgomery multiplication (CIOS) with a final conditional subtraction. The key is checked \
       without branches (its first byte, both coordinates below `p`, and the curve's equation), \
       and `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on \
-      a point of the curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and \
-      `Z⁻¹` by the signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of \
+      a point of the curve. `s⁻¹` modulo `n` and \
+      `Z⁻¹` are by the signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of \
       `u` (from the static `VG_P224_COMB`), and `[v]Q` by `vg_ecdh_p224`'s signed 4-bit windows (`v` recoded as \
       `v + 8 Σ_{j<57} 16^j`, a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a \
       complete addition of the entry selected in constant time per digit); the two are added \
