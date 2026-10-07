@@ -13,11 +13,10 @@ pub fn bench(c: &mut Criterion) {
     use aws_lc_rs::rsa::{KeyPair, KeySize};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext};
-    #[cfg(target_arch = "x86_64")]
     use openssl::rsa::Rsa;
-    use verified_garbage::rsa_keygen::generate_prime_from;
     #[cfg(target_arch = "x86_64")]
-    use verified_garbage::rsa_keygen::{generate_from, key_from_primes};
+    use verified_garbage::rsa_keygen::generate_from;
+    use verified_garbage::rsa_keygen::{generate_prime_from, key_from_primes};
 
     #[cfg(target_arch = "x86_64")]
     use crate::AWS_LC;
@@ -143,11 +142,8 @@ pub fn bench(c: &mut Criterion) {
     // (verified-garbage's with the checks of `RSA_check_key`; OpenSSL's
     // `RSA_check_key` also tests the primes, so OpenSSL only computes the
     // values, with its own arithmetic).
-    #[cfg(target_arch = "x86_64")]
     let mut g = c.benchmark_group("rsa_keygen_key");
-    #[cfg(target_arch = "x86_64")]
     g.sample_size(10);
-    #[cfg(target_arch = "x86_64")]
     for bits in [1024, 1536, 2048] {
         let prime = || {
             let mut p = BigNum::new().unwrap();
@@ -205,7 +201,6 @@ pub fn bench(c: &mut Criterion) {
             })
         });
     }
-    #[cfg(target_arch = "x86_64")]
     g.finish();
 }
 
