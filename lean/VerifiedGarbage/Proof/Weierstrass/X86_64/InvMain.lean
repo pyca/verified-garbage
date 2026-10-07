@@ -22,7 +22,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
 /-- The registers the inversion writes. -/
-theorem invClob_sub {n : Nat} (h4 : 4 ≤ n) (h7 : n < 10) : ∀ r ∈ batchRegs, r ∈ invClob n := by
+theorem invClob_sub {n : Nat} (h4 : 4 ≤ n) (h7 : n < 10) : ∀ r ∈ batchRegs n, r ∈ invClob n := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl : n = 4 ∨ n = 5 ∨ n = 6 ∨ n = 7 ∨ n = 8 ∨ n = 9 := by omega
   all_goals decide
 
@@ -188,7 +188,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
     (hI : IInv P base (Divstep.invRun 59 m P.M.minv.toNat X 0) s)
     (hc : s.gpr .r14 = BitVec.ofNat 64 P.B) :
     WP isa (.loop P.batch .ne) s fun t =>
-      IInv P base (Divstep.invRun 59 m P.M.minv.toNat X P.B) t ∧ KeepRegs batchRegs s t ∧
+      IInv P base (Divstep.invRun 59 m P.M.minv.toNat X P.B) t ∧ KeepRegs (batchRegs P.M.n) s t ∧
       Unch base (batchW P) s.mem t.mem := by
   have hn := hs.nowrap
   have hmt := hL.mo_tbl; have hmo := hM.mo; have n4 := hL.n4
@@ -196,7 +196,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
   refine countLoop_ok (n := P.B)
     (Inv := fun j t => IInv P base (Divstep.invRun 59 m P.M.minv.toNat X (P.B - j)) t ∧
       t.gpr .r14 = BitVec.ofNat 64 j ∧ Scr t base size ∧ ModOkW P.M size m t.mem base ∧
-      KeepRegs batchRegs s t ∧ Unch base (batchW P) s.mem t.mem)
+      KeepRegs (batchRegs P.M.n) s t ∧ Unch base (batchW P) s.mem t.mem)
     (fun j t hj1 hjB ⟨It, ct, St, Mt, Kt, Ut⟩ => ?_) (fun t ⟨It, _, _, _, Kt, Ut⟩ => ⟨by simpa using It, Kt, Ut⟩)
     hB1 ⟨by rw [Nat.sub_self]; exact hI, hc, hs, hM, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _⟩
   obtain ⟨bd, bf1, bf, bg, ba0, ba1, bb0, bb1⟩ := Divstep.invRun_bounds (N := 59) (by decide) (p := m)
@@ -208,7 +208,7 @@ theorem loop_ok {P : InvCfg} {base : Addr} {size m : Nat} (hL : InvLay P size) {
       omega) bf1 bf bg (by rw [abs_of_nonneg ba0]; exact ba1.le) (by rw [abs_of_nonneg bb0]; exact bb1.le)
     hj1 (by omega) ct) fun u ⟨⟨Iu, cu, Ku, Uu⟩, zu⟩ => ⟨⟨?_, cu, ?_, ?_, Kt.trans Ku, (Ut.trans Uu).mono ?_⟩, zu⟩
   · rw [show P.B - (j - 1) = P.B - j + 1 by omega]; exact Iu
-  · exact St.of_keepRegs Ku (by decide)
+  · exact St.of_keepRegs Ku (rdi_not_batchRegs _)
   · refine modOk_out Mt Uu (fun w hw => ?_) hn
     simp only [batchW, invTbl, List.mem_cons, List.not_mem_nil, or_false] at hw
     subst hw; unfold invTbl at hmt; dsimp only; omega
@@ -366,15 +366,13 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size m : Nat} [NeZero m] (hpr : m.
   have hs₁ := hs.of_keepRegs K₁ (by decide)
   refine WP.seq (WP.mono (loop_ok hL hs₁ (modU U₁) hX hm2' (by omega) hC.B1 hC.B16 I₁ c₁)
     fun s₂ ⟨I₂, K₂, U₂⟩ => ?_)
-  have hs₂ := hs₁.of_keepRegs K₂ (by decide)
+  have hs₂ := hs₁.of_keepRegs K₂ (rdi_not_batchRegs _)
   have U₁₂ : Unch base (batchW P) s.mem s₂.mem := (U₁.trans U₂).mono fun w hw => by
     simp only [batchW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_self] at hw ⊢; exact hw
   refine WP.mono (finish_ok hL hs₂ (modU U₁₂) I₂ hCm hCnm) fun t ⟨Cs, hf1, hfm1, lt, ev, K₃, U₃⟩ =>
     ⟨?_, ?_, lt, ?_⟩
   · have hsub := invClob_sub n4 n7
-    exact (((K₁.mono fun r h => hsub r (by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
-        rcases h with h | h | h | h <;> simp [h])).trans (K₂.mono hsub)).trans
+    exact (((K₁.mono fun r h => hsub r (sub_batchRegs (by decide) r h)).trans (K₂.mono hsub)).trans
       (K₃.mono fun r h => List.mem_cons_of_mem _ h))
   · intro x hx
     rw [U₃ x hx, U₁₂ x fun w hw => by
