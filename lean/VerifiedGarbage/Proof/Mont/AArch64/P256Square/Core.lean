@@ -47,7 +47,8 @@ theorem core_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   rw [WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun s₀ ⟨z₀,k₀⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (loadsEach_ok bRegs (hs.of_keeps k₀ (by decide)) ha ha8 (by decide) (by decide))
+  rw [loads_eq]
+  refine WP.mono (loadsEach_ok bRegs (hs.of_keeps k₀ (by decide)).ptr ha ha8 (by decide) (by decide))
     fun s₁ ⟨l₁,k₁⟩ => ?_
   have hl := load_value l₁
   rw [k₀.mem] at hl

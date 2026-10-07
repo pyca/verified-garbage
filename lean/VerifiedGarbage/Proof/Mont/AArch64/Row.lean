@@ -123,14 +123,14 @@ theorem const64c_ok (s : State) (r : Reg) (v : BitVec 64) :
   simp only [RegUpd.gpr_write_of_ne _ _ _ h]
 
 /-- The source's word, fetched. -/
-theorem fetch_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {src : Src}
+theorem fetch_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size) {src : Src}
     (h : src.Ok size) :
-    WP isa (.block src.fetch) s fun s' =>
+    WP isa (.block (src.fetch rm)) s fun s' =>
       (s'.gpr src.out).toNat = src.val s base ∧ Keeps [.x3] s s' ∧ s'.c = s.c := by
   cases src with
   | reg r => exact WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
   | mem d =>
-    refine WP.mono (ld_ok hs h.1 h.2 .x3) fun s' ⟨e, k, c⟩ => ⟨?_, k, c⟩
+    refine WP.mono (ldR_ok hs h.1 h.2 .x3) fun s' ⟨e, k, c⟩ => ⟨?_, k, c⟩
     simp only [Src.out, Src.val, e]
   | imm v =>
     refine WP.mono (const64c_ok s .x3 v) fun s' ⟨e, k, c⟩ => ⟨?_, k, c⟩
@@ -143,9 +143,9 @@ theorem _root_.VG.Impl.Mont.AArch64.Src.out_ne {size : Nat} {src : Src} (h : src
   | imm _ => simp only [Src.out]; decide
 
 /-- The piece of the multiplier `x`, into `p.reg x`. -/
-theorem piece_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {x : Reg}
+theorem piece_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size) {x : Reg}
     (hx3 : x ≠ .x3) {p : Piece} (hp : p.Ok size) :
-    WP isa (.block (p.code x)) s fun s' =>
+    WP isa (.block (p.code rm x)) s fun s' =>
       (s'.gpr (p.reg x)).toNat = p.val (s.gpr x).toNat s base ∧ Keeps [.x2, .x3] s s' ∧
         s'.c = s.c := by
   cases p with
@@ -248,10 +248,10 @@ theorem chainVal_congr {s s' : State} {base : Addr} (x : Nat) (hm : s'.mem = s.m
       chainVal_congr x hm fun e he => h e (List.mem_cons_of_mem _ he)]
 
 /-- A word of a chain: `t + 2⁶⁴ c = t + piece + c_in`. -/
-theorem step_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+theorem step_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size)
     (hz : s.gpr .x7 = 0) {x t : Reg} (hx3 : x ≠ .x3) (first : Bool)
     (ht2 : t ≠ .x2) (ht3 : t ≠ .x3) {o : Option Piece} (hok : ∀ p ∈ o, p.Ok size) :
-    WP isa (.block (stepCode x first t o)) s fun s' =>
+    WP isa (.block (stepCode rm x first t o)) s fun s' =>
       (s'.gpr t).toNat + 2 ^ 64 * s'.c.toNat =
         (s.gpr t).toNat + optVal (s.gpr x).toNat s base o + (if first then 0 else s.c.toNat) ∧
       Keeps [.x2, .x3, t] s s' := by
@@ -268,23 +268,25 @@ theorem step_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     rfl
 
 /-- A chain after its first word: `T + 2^(64 k) c = T + V + c_in`. -/
-theorem chainCode_ok {size : Nat} {base : Addr} {x : Reg} (hx2 : x ≠ .x2) (hx3 : x ≠ .x3) :
-    ∀ (L : List (Reg × Option Piece)) {s : State}, Scr s base size → s.gpr .x7 = 0 →
-      ChainOk size x L →
-      WP isa (.block (chainCode x false L)) s fun s' =>
+theorem chainCode_ok {size : Nat} {rm : Reg} {base : Addr} {x : Reg} (hx2 : x ≠ .x2) (hx3 : x ≠ .x3)
+    (hr2 : rm ≠ .x2) (hr3 : rm ≠ .x3) :
+    ∀ (L : List (Reg × Option Piece)) {s : State}, Ptr s rm base size → s.gpr .x7 = 0 →
+      ChainOk size x L → rm ∉ L.map Prod.fst →
+      WP isa (.block (chainCode rm x false L)) s fun s' =>
         regsVal s' (L.map Prod.fst) + 2 ^ (64 * L.length) * s'.c.toNat =
           regsVal s (L.map Prod.fst) + chainVal (s.gpr x).toNat s base L + s.c.toNat ∧
         Keeps (.x2 :: .x3 :: L.map Prod.fst) s s'
-  | [], s, _, _, _ => WP.block_nil ⟨by simp [regsVal, chainVal], fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  | (t, o) :: L, s, hs, hz, hc => by
+  | [], s, _, _, _, _ => WP.block_nil ⟨by simp [regsVal, chainVal], fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  | (t, o) :: L, s, hs, hz, hc, hrL => by
+    simp only [List.map_cons, List.mem_cons, not_or] at hrL
     have ht := hc.regs t (List.mem_cons_self ..)
     have htL : t ∉ L.map Prod.fst := (List.nodup_cons.mp hc.nodup).1
     rw [chainCode, WP.block_append_iff]
     refine WP.mono (step_ok hs hz hx3 false ht.2.1 ht.2.2.1 (hc.ok _ (List.mem_cons_self ..)))
       fun s₁ ⟨e₁, k₁⟩ => ?_
-    have hs₁ := hs.of_keeps k₁ (by simp [Ne.symm ht.1])
+    have hs₁ := hs.of_keeps k₁ (by simp [hr2, hr3, hrL.1])
     have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by simp [Ne.symm ht.2.2.2.1]), hz]
-    refine WP.mono (chainCode_ok hx2 hx3 L hs₁ hz₁ hc.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
+    refine WP.mono (chainCode_ok hx2 hx3 hr2 hr3 L hs₁ hz₁ hc.tail hrL.2) fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht₂ : s₂.gpr t = s₁.gpr t := k₂.gpr t (by simp [ht.2.1, ht.2.2.1, htL])
     have hx₁ : s₁.gpr x = s.gpr x := k₁.gpr x (by simp [hx2, hx3, Ne.symm ht.2.2.2.2])
     have hL₁ : regsVal s₁ (L.map Prod.fst) = regsVal s (L.map Prod.fst) := regsVal_congr fun q hq =>
@@ -308,33 +310,36 @@ theorem chainCode_ok {size : Nat} {base : Addr} {x : Reg} (hx2 : x ≠ .x2) (hx3
 
 /-- A chain, skipping its words before the first piece: `T + 2^(64 k) c = T + V`
 for a carry `c`. -/
-theorem chainSkip_ok {size : Nat} {base : Addr} {x : Reg} (hx2 : x ≠ .x2) (hx3 : x ≠ .x3) :
-    ∀ (L : List (Reg × Option Piece)) {s : State}, Scr s base size → s.gpr .x7 = 0 →
-      ChainOk size x L →
-      WP isa (.block (chainSkip x L)) s fun s' =>
+theorem chainSkip_ok {size : Nat} {rm : Reg} {base : Addr} {x : Reg} (hx2 : x ≠ .x2) (hx3 : x ≠ .x3)
+    (hr2 : rm ≠ .x2) (hr3 : rm ≠ .x3) :
+    ∀ (L : List (Reg × Option Piece)) {s : State}, Ptr s rm base size → s.gpr .x7 = 0 →
+      ChainOk size x L → rm ∉ L.map Prod.fst →
+      WP isa (.block (chainSkip rm x L)) s fun s' =>
         (∃ c ≤ 1, regsVal s' (L.map Prod.fst) + 2 ^ (64 * L.length) * c =
           regsVal s (L.map Prod.fst) + chainVal (s.gpr x).toNat s base L) ∧
         Keeps (.x2 :: .x3 :: L.map Prod.fst) s s'
-  | [], s, _, _, _ => WP.block_nil ⟨⟨0, Nat.zero_le _, by simp [regsVal, chainVal]⟩,
+  | [], s, _, _, _, _ => WP.block_nil ⟨⟨0, Nat.zero_le _, by simp [regsVal, chainVal]⟩,
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  | (t, none) :: L, s, hs, hz, hc => by
+  | (t, none) :: L, s, hs, hz, hc, hrL => by
+    simp only [List.map_cons, List.mem_cons, not_or] at hrL
     have ht := hc.regs t (List.mem_cons_self ..)
     have htL : t ∉ L.map Prod.fst := (List.nodup_cons.mp hc.nodup).1
-    refine WP.mono (chainSkip_ok hx2 hx3 L hs hz hc.tail) fun s₁ ⟨⟨c, hc1, e₁⟩, k₁⟩ =>
+    refine WP.mono (chainSkip_ok hx2 hx3 hr2 hr3 L hs hz hc.tail hrL.2) fun s₁ ⟨⟨c, hc1, e₁⟩, k₁⟩ =>
       ⟨⟨c, hc1, ?_⟩, k₁.mono (by sub_regs)⟩
     have ht₁ : s₁.gpr t = s.gpr t := k₁.gpr t (by simp [ht.2.1, ht.2.2.1, htL])
     simp only [List.map_cons, regsVal, chainVal, List.length_cons, ht₁, pow64_succ, optVal]
     rw [Nat.mul_assoc]
     omega
-  | (t, some p) :: L, s, hs, hz, hc => by
+  | (t, some p) :: L, s, hs, hz, hc, hrL => by
+    simp only [List.map_cons, List.mem_cons, not_or] at hrL
     have ht := hc.regs t (List.mem_cons_self ..)
     have htL : t ∉ L.map Prod.fst := (List.nodup_cons.mp hc.nodup).1
     rw [chainSkip, WP.block_append_iff]
     refine WP.mono (step_ok hs hz hx3 true ht.2.1 ht.2.2.1 (hc.ok _ (List.mem_cons_self ..)))
       fun s₁ ⟨e₁, k₁⟩ => ?_
-    have hs₁ := hs.of_keeps k₁ (by simp [Ne.symm ht.1])
+    have hs₁ := hs.of_keeps k₁ (by simp [hr2, hr3, hrL.1])
     have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr _ (by simp [Ne.symm ht.2.2.2.1]), hz]
-    refine WP.mono (chainCode_ok hx2 hx3 L hs₁ hz₁ hc.tail) fun s₂ ⟨e₂, k₂⟩ => ?_
+    refine WP.mono (chainCode_ok hx2 hx3 hr2 hr3 L hs₁ hz₁ hc.tail hrL.2) fun s₂ ⟨e₂, k₂⟩ => ?_
     have ht₂ : s₂.gpr t = s₁.gpr t := k₂.gpr t (by simp [ht.2.1, ht.2.2.1, htL])
     have hx₁ : s₁.gpr x = s.gpr x := k₁.gpr x (by simp [hx2, hx3, Ne.symm ht.2.2.2.2])
     have hL₁ : regsVal s₁ (L.map Prod.fst) = regsVal s (L.map Prod.fst) := regsVal_congr fun q hq =>
@@ -550,11 +555,12 @@ theorem RowOk.chain {size : Nat} {x : Reg} {ts : List Reg} {ws : List RWord} (h 
     rw [pieces_fst]; exact this
 
 /-- `ts += x · W`, if the sum fits in `ts`. -/
-theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (hz : s.gpr .x7 = 0)
-    {x : Reg} {ts : List Reg} {ws : List RWord} (h : RowOk size x ts ws)
+theorem row_ok {s : State} {rm : Reg} {base : Addr} {size : Nat} (hs : Ptr s rm base size)
+    (hz : s.gpr .x7 = 0) {x : Reg} {ts : List Reg} {ws : List RWord} (h : RowOk size x ts ws)
+    (hr2 : rm ≠ .x2) (hr3 : rm ≠ .x3) (hrt : rm ∉ ts)
     (hlen : ws.length < ts.length)
     (hb : regsVal s ts + (s.gpr x).toNat * rwVal s base ws < 2 ^ (64 * ts.length)) :
-    WP isa (.block (row x ts ws)) s fun s' =>
+    WP isa (.block (row rm x ts ws)) s fun s' =>
       regsVal s' ts = regsVal s ts + (s.gpr x).toNat * rwVal s base ws ∧
       Keeps (.x2 :: .x3 :: ts) s s' := by
   have hsum := pieces_sum (s := s) (base := base) (s.gpr x).toNat h.ok ts 0 (by omega)
@@ -562,17 +568,17 @@ theorem row_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (hz
   rw [row, WP.block_append_iff]
   have cA := h.chain (Or.inl rfl) 0
   have cB := h.chain (Or.inr rfl) 0
-  refine WP.mono (chainSkip_ok h.x2 h.x3 _ hs hz cA) fun s₁ ⟨⟨c₁, hc₁, e₁⟩, k₁⟩ => ?_
+  refine WP.mono (chainSkip_ok h.x2 h.x3 hr2 hr3 _ hs hz cA (by rwa [pieces_fst])) fun s₁ ⟨⟨c₁, hc₁, e₁⟩, k₁⟩ => ?_
   rw [pieces_fst, pieces_length] at e₁
   rw [pieces_fst] at k₁
   have hs₁ := hs.of_keeps k₁ (by
     simp only [List.mem_cons, not_or]
-    exact ⟨by decide, by decide, fun h' => (h.regs _ h').1 rfl⟩)
+    exact ⟨hr2, hr3, hrt⟩)
   have hz₁ : s₁.gpr .x7 = 0 := by
     rw [k₁.gpr _ (by
       simp only [List.mem_cons, not_or]
       exact ⟨by decide, by decide, fun h' => (h.regs _ h').2.2.2.1 rfl⟩), hz]
-  refine WP.mono (chainSkip_ok h.x2 h.x3 _ hs₁ hz₁ cB) fun s₂ ⟨⟨c₂, hc₂, e₂⟩, k₂⟩ => ?_
+  refine WP.mono (chainSkip_ok h.x2 h.x3 hr2 hr3 _ hs₁ hz₁ cB (by rwa [pieces_fst])) fun s₂ ⟨⟨c₂, hc₂, e₂⟩, k₂⟩ => ?_
   rw [pieces_fst, pieces_length] at e₂
   rw [pieces_fst] at k₂
   have hx₁ : s₁.gpr x = s.gpr x := k₁.gpr x (by

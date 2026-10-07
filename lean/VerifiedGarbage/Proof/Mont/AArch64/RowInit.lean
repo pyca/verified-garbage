@@ -153,7 +153,8 @@ theorem rowInit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       subst hq
       rw [hLf]
       exact ⟨fun h => (hts _ (List.mem_cons_of_mem _ h)).2.2.2.2.2 hr, hbs _ hr⟩ }
-  refine WP.mono (chainSkip_ok hx2 hx3 _ hs₁ hz₁ hc) fun s₂ ⟨⟨c, hc1, e₂⟩, k₂⟩ => ?_
+  refine WP.mono (chainSkip_ok hx2 hx3 (by decide) (by decide) _ hs₁.ptr hz₁ hc
+    (by rw [hLf]; exact fun h => (hts _ (List.mem_cons_of_mem _ h)).1 rfl)) fun s₂ ⟨⟨c, hc1, e₂⟩, k₂⟩ => ?_
   rw [hLf] at e₂ k₂
   rw [List.length_map, List.length_zip, hlen, Nat.min_self] at e₂
   rw [chainVal_hi _ s₁ base tl bs (by omega), hb₁, hx₁] at e₂

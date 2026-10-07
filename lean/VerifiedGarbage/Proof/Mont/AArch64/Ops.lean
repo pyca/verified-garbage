@@ -86,17 +86,17 @@ theorem not_mem_of_clob {n : Nat} {r : Reg} (hr : r ∉ clob n) :
   exact hr.1.1
 
 /-- The words at `a`, loaded into the registers `ts`, each its own. -/
-theorem loadsEach_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
-    Scr s base size → a + 8 * ts.length ≤ size → a % 8 = 0 → ts.Nodup → Reg.x0 ∉ ts →
-    WP isa (.block (loads ts a)) s fun s' =>
+theorem loadsEach_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
+    Ptr s rn base size → a + 8 * ts.length ≤ size → a % 8 = 0 → ts.Nodup → rn ∉ ts →
+    WP isa (.block (loadsR rn ts a)) s fun s' =>
       (∀ j (r : Reg), ts[j]? = some r → s'.gpr r = word s.mem base (a + 8 * j)) ∧ Keeps ts s s'
   | [], s, _, _, _, _, _, _, _ => WP.block_nil ⟨fun _ _ h => by simp at h,
       fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
   | t :: ts, s, base, a, hs, ha, ha8, hd, h0 => by
     simp only [List.length_cons] at ha
-    rw [loads, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, _⟩ => ?_
-    have ht0 : t ≠ .x0 := fun h => h0 (h ▸ List.mem_cons_self ..)
+    rw [loadsR, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (ldR_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, _⟩ => ?_
+    have ht0 : t ≠ rn := fun h => h0 (h ▸ List.mem_cons_self ..)
     have hs₁ := hs.of_keeps k₁ (by simpa using Ne.symm ht0)
     refine WP.mono (loadsEach_ok ts hs₁ (a := a + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2
       fun h => h0 (List.mem_cons_of_mem _ h)) fun s₂ ⟨e₂, k₂⟩ => ?_
@@ -116,16 +116,17 @@ theorem bRegs_take_nodup (n : Nat) : (bRegs.take n).Nodup :=
 theorem x0_not_bRegs_take (n : Nat) : Reg.x0 ∉ bRegs.take n :=
   fun h => absurd (List.mem_of_mem_take h) (by decide)
 
-theorem mulSetup_eq (M : Mod) (b : Nat) : mulSetup M b = ([zero7] : List Instr) ++
-    (loads (bRegs.take M.n) b ++ (mulConst M ++ zeros (acc M.n))) := by
+theorem mulSetup_eq (M : Mod) (rb : Reg) (b : Nat) : mulSetup M rb b = ([zero7] : List Instr) ++
+    (loadsR rb (bRegs.take M.n) b ++ (mulConst M ++ zeros (acc M.n))) := by
   simp only [mulSetup, List.cons_append, List.nil_append, List.append_assoc]
 
 /-- `x7 = 0`, `[b]`'s words in `bRegs`, the reduction's constant in `x6`, and
 the accumulator cleared. -/
-theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    (hn : M.n < 10) {b : Nat} (hb : b + 8 * M.n ≤ size) (hb8 : b % 8 = 0) :
-    WP isa (.block (mulSetup M b)) s fun s' =>
-      s'.gpr .x7 = 0 ∧ BRegs s' base b M.n ∧ ConstOk M s' ∧ regsVal s' (wins M.n 0) = 0 ∧
+theorem setup_ok {s : State} {M : Mod}
+    (hn : M.n < 10) {rb : Reg} {pb : Addr} {sb : Nat} (hpb : Ptr s rb pb sb) (hrb : PtrOk M.n rb)
+    {b : Nat} (hb : b + 8 * M.n ≤ sb) (hb8 : b % 8 = 0) :
+    WP isa (.block (mulSetup M rb b)) s fun s' =>
+      s'.gpr .x7 = 0 ∧ BRegs s' pb b M.n ∧ ConstOk M s' ∧ regsVal s' (wins M.n 0) = 0 ∧
         Keeps (.x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: acc M.n) s s' := by
   have hacc := acc_regs_lt _ hn
   have nacc : ∀ r ∈ [Reg.x0, .x4, .x5, .x6, .x7, .x16, .x17], r ∉ acc M.n := fun r hr h => by
@@ -136,15 +137,16 @@ theorem setup_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     fun r hr => bRegs_regs r (List.mem_of_mem_take hr)
   rw [mulSetup_eq, WP.block_append_iff]
   refine WP.mono (zero7_ok s) fun s₀ ⟨z₀, k₀⟩ => ?_
-  have hs₀ := hs.of_keeps k₀ (by decide)
+  have hrbB : rb ∉ bRegs.take M.n := fun h => by
+    rcases htake _ h with e | e | e | e <;> exact hrb.regs (by simp [e])
+  have hs₀ := hpb.of_keeps k₀ (fun h => hrb.regs (by simp at h; simp [h]))
   rw [WP.block_append_iff]
   refine WP.mono (loadsEach_ok _ hs₀ (a := b) (by
       have := List.length_take_le M.n bRegs; omega) hb8 (bRegs_take_nodup M.n)
-      (x0_not_bRegs_take M.n)) fun s₁ ⟨e₁, k₁⟩ => ?_
-  have hs₁ := hs₀.of_keeps k₁ (x0_not_bRegs_take M.n)
+      hrbB) fun s₁ ⟨e₁, k₁⟩ => ?_
   have z₁ : s₁.gpr .x7 = 0 := by
     rw [k₁.gpr _ (fun h => by rcases htake _ h with h | h | h | h <;> exact absurd h (by decide)), z₀]
-  have hBR₁ : BRegs s₁ base b M.n := fun j hj r hr => by
+  have hBR₁ : BRegs s₁ pb b M.n := fun j hj r hr => by
     rw [e₁ j r (by rw [List.getElem?_take_of_lt hj]; exact hr), k₁.mem]
   rw [WP.block_append_iff]
   -- The constant.
@@ -194,24 +196,36 @@ theorem csubR_keep {n : Nat} (h7 : n < 10) {ts : List Reg} (hts : ∀ r ∈ ts, 
   · exact List.mem_append_left _ (List.mem_append_left _ (List.mem_append_right _ (hts r h)))
   · exact dRegs_clob n h7 r h
 
-theorem mul_eq (M : Mod) (o a b : Nat) :
-    mul M o a b = mulSetup M b ++ ((List.range M.n).flatMap (round M a b) ++
+theorem mulR_eq (M : Mod) (ra rb ro : Reg) (o a b : Nat) :
+    mulR M ra rb ro o a b = mulSetup M rb b ++ ((List.range M.n).flatMap (round M ra rb a b) ++
       (csubR M ((List.range M.n).map (win M.n M.n)) (win M.n M.n M.n) ++
-        stores ((List.range M.n).map (win M.n M.n)) o)) := by
-  simp only [mul, List.append_assoc]
+        storesR ro ((List.range M.n).map (win M.n M.n)) o)) := by
+  simp only [mulR, List.append_assoc]
 
-/-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
-    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
-    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
-    (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
-      wordsVal s'.mem base o M.n < m ∧
-      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
-        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+/-- What a multiplication through pointers keeps: the registers but `clob`,
+the regions and the stack pointer, and the memory but `[po + o]`. -/
+structure OpKeepR (n : Nat) (po : Addr) (o : Nat) (s s' : State) : Prop where
+  gpr : ∀ r, r ∉ clob n → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  mem : Outside po o (8 * n) s.mem s'.mem
+
+/-- `[ro + o] = [ra + a] [rb + b] R⁻¹ mod m`, the modulus at `x0`. -/
+theorem mulR_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hA : ModA M)
+    {ra rb ro : Reg} {pa pb po : Addr} {sa sb so : Nat} (hpa : Ptr s ra pa sa) (hpb : Ptr s rb pb sb)
+    (hpo : PtrW s ro po so) (hra : PtrOk M.n ra) (hrb : PtrOk M.n rb) (hro : ro ∉ clob M.n)
+    {o a b : Nat} (ho : o + 8 * M.n ≤ so)
+    (ha : a + 8 * M.n ≤ sa) (hb : b + 8 * M.n ≤ sb) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0) (hB : wordsVal s.mem pb b M.n < m) :
+    WP isa (.block (mulR M ra rb ro o a b)) s fun s' => OpKeepR M.n po o s s' ∧
+      wordsVal s'.mem po o M.n < m ∧
+      wordsVal s'.mem po o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem pa a M.n * wordsVal s.mem pb b M.n % m := by
   have h7 := h10
-  rw [mul_eq, WP.block_append_iff]
-  refine WP.mono (setup_ok hs h7 hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
+  rw [mulR_eq, WP.block_append_iff]
+  refine WP.mono (setup_ok h7 hpb hrb hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
   have hacc := acc_regs_lt _ h7
   have hs₁ := hs.of_keeps k₁ (fun h => by
     simp only [List.mem_cons] at h
@@ -224,8 +238,19 @@ theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · exact absurd h (by decide)
     · exact (hacc _ h) (by simp))
   have hmem₁ : s₁.mem = s.mem := k₁.mem
+  have pk : ∀ r, PtrOk M.n r → r ∉ Reg.x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: acc M.n := fun r hr h => by
+    simp only [List.mem_cons] at h
+    rcases h with h | h | h | h | h | h | h
+    all_goals first | exact hr.acc h | exact hr.regs (by simp [h])
+  have sub1 : ∀ r ∈ Reg.x4 :: .x5 :: .x6 :: .x7 :: .x16 :: .x17 :: acc M.n, r ∈ clob M.n := by
+    intro r hr
+    simp only [List.mem_cons] at hr
+    rcases hr with h | h | h | h | h | h | h <;> simp [clob, h]
+  have hpa₁ := hpa.of_keeps k₁ (pk ra hra)
+  have hpb₁ := hpb.of_keeps k₁ (pk rb hrb)
+  have hpo₁ := hpo.of_keepRegs (Keeps.regs k₁) (fun h => hro (sub1 _ h))
   rw [WP.block_append_iff]
-  refine WP.mono (rounds_ok h7 ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁ z₁
+  refine WP.mono (rounds_ok h7 hra hrb ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁ hpa₁ hpb₁ z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
     fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by
@@ -237,6 +262,9 @@ theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr h
     rcases hr with rfl | rfl <;> simp_all
   have hs₂ := hs₁.of_keeps k₂ (nk .x0 (by simp))
+  have hpo₂ := hpo₁.of_keepRegs (Keeps.regs k₂) (fun h => hro (by
+    simp only [List.mem_cons] at h
+    rcases h with h | h | h | h <;> simp [clob, h]))
   have hz₂ : s₂.gpr .x7 = 0 := by rw [k₂.gpr .x7 (nk .x7 (by simp)), z₁]
   have hmem₂ : s₂.mem = s.mem := by rw [k₂.mem, hmem₁]
   rw [hmem₁] at eU
@@ -264,10 +292,11 @@ theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   refine WP.mono (csubR_ok hs₂ (M := M) (m := m) hlowlen hM.n0 h7 (fresh_low M.n h7) hM.mo
     hA.mo hz₂ (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (fun h => x0_not_clob M.n (csubR_keep h7 hlow_acc _ h))
-  refine WP.mono (stores_ok _ hs₃ (o := o) (by rw [hlowlen]; omega) ho8 (fresh_low' M.n h7).1)
+  have hpo₃ := hpo₂.of_keepRegs (Keeps.regs k₃) (fun h => hro (csubR_keep h7 hlow_acc _ h))
+  refine WP.mono (storesR_ok _ hpo₃ (o := o) (by rw [hlowlen]; omega) ho8 (fresh_low' M.n h7).1)
     fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   rw [hlowlen] at e₄ O₄
-  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_, fun x hx => ?_⟩, ?_, ?_⟩
   · obtain ⟨hr₁, hr₂⟩ := not_mem_of_clob hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr₁
     rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (csubR_keep h7 hlow_acc r h)),
@@ -281,6 +310,22 @@ theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   · rw [e₄, e₃, hV]; exact Nat.mod_lt _ (m_pos hB)
   · rw [e₄, e₃, hV, Nat.mod_mul_mod, Nat.mul_comm, eU]
     simp only [Nat.add_mul_mod_self_right]
+
+theorem mul_eq (M : Mod) (o a b : Nat) : mul M o a b = mulR M .x0 .x0 .x0 o a b := rfl
+
+/-- `[o] = [a] [b] R⁻¹ mod m`. -/
+theorem mul_okW {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) (h10 : M.n < 10) (hA : ModA M) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
+    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (ho8 : o % 8 = 0) (ha8 : a % 8 = 0)
+    (hb8 : b % 8 = 0) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (mul M o a b)) s fun s' => OpKeep M base o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
+  rw [mul_eq]
+  exact WP.mono (mulR_okW hs hM h10 hA hs.ptr hs.ptr hs.ptrW (ptrOk_x0 h10) (ptrOk_x0 h10)
+    (x0_not_clob M.n) ho ha hb ho8 ha8 hb8 hB) fun s' ⟨k, v, e⟩ =>
+      ⟨⟨k.gpr, k.rd, k.wr, k.sp, fun x hx _ => k.mem x hx⟩, v, e⟩
 
 /-! ## Addition and subtraction -/
 

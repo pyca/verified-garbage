@@ -95,10 +95,20 @@ not borrow (the carry is set). -/
 def csubR (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   diffsR true ts (dRegs M.n) M.mo ++ [.sbcs .x .x2 top .x7] ++ selectsR ts (dRegs M.n)
 
+/-- `[rn + o] = ts`. -/
+def storesR (rn : Reg) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, o => .str .x t rn o :: storesR rn ts (o + 8)
+
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr
   | [], _ => []
   | t :: ts, o => st t o :: stores ts (o + 8)
+
+/-- `ts = [rn + a]`. -/
+def loadsR (rn : Reg) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, a => .ldr .x t rn a :: loadsR rn ts (a + 8)
 
 /-- `ts = [a]`. -/
 def loads : List Reg → Nat → List Instr
@@ -128,10 +138,11 @@ inductive Src
   | mem (d : Nat)
   | imm (v : BitVec 64)
 
-/-- The source's word into `x3`, unless it is a register. -/
-def Src.fetch : Src → List Instr
+/-- The source's word into `x3`, unless it is a register; a word of memory
+at `rm + d`. -/
+def Src.fetch (rm : Reg) : Src → List Instr
   | .reg _ => []
-  | .mem d => [ld .x3 d]
+  | .mem d => [.ldr .x .x3 rm d]
   | .imm v => const64 .x3 v
 
 /-- The register holding the source's word once fetched. -/
@@ -155,10 +166,11 @@ inductive Piece
   | shr (k : Nat)
   | self
 
-/-- The piece of the multiplier `x` into `x2` (`self` is `x` itself). -/
-def Piece.code (x : Reg) : Piece → List Instr
-  | .lo s => s.fetch ++ [.mul .x .x2 x s.out]
-  | .hi s => s.fetch ++ [.umulh .x2 x s.out]
+/-- The piece of the multiplier `x` into `x2` (`self` is `x` itself), its
+source's memory at `rm`. -/
+def Piece.code (rm x : Reg) : Piece → List Instr
+  | .lo s => s.fetch rm ++ [.mul .x .x2 x s.out]
+  | .hi s => s.fetch rm ++ [.umulh .x2 x s.out]
   | .shl k => [.lsl .x .x2 x k]
   | .shr k => [.lsr .x .x2 x k]
   | .self => []
@@ -201,20 +213,20 @@ def pieceB (ws : List RWord) (j : Nat) : Option Piece :=
 def addOp (first : Bool) (t r : Reg) : Instr := if first then .adds .x t t r else .adcs .x t t r
 
 /-- A word of a chain: `t += ` its piece (or zero, `x7`), with the carry. -/
-def stepCode (x : Reg) (first : Bool) (t : Reg) : Option Piece → List Instr
-  | some p => p.code x ++ [addOp first t (p.reg x)]
+def stepCode (rm x : Reg) (first : Bool) (t : Reg) : Option Piece → List Instr
+  | some p => p.code rm x ++ [addOp first t (p.reg x)]
   | none => [addOp first t .x7]
 
 /-- A chain from its first word. -/
-def chainCode (x : Reg) : Bool → List (Reg × Option Piece) → List Instr
+def chainCode (rm x : Reg) : Bool → List (Reg × Option Piece) → List Instr
   | _, [] => []
-  | first, (t, o) :: rest => stepCode x first t o ++ chainCode x false rest
+  | first, (t, o) :: rest => stepCode rm x first t o ++ chainCode rm x false rest
 
 /-- A chain, skipping the words before its first piece. -/
-def chainSkip (x : Reg) : List (Reg × Option Piece) → List Instr
+def chainSkip (rm x : Reg) : List (Reg × Option Piece) → List Instr
   | [] => []
-  | (_, none) :: rest => chainSkip x rest
-  | (t, some p) :: rest => stepCode x true t (some p) ++ chainCode x false rest
+  | (_, none) :: rest => chainSkip rm x rest
+  | (t, some p) :: rest => stepCode rm x true t (some p) ++ chainCode rm x false rest
 
 /-- The pieces of a chain over the words `ts`, from word `j` of the row. -/
 def pieces (f : List RWord → Nat → Option Piece) (ws : List RWord) :
@@ -222,9 +234,9 @@ def pieces (f : List RWord → Nat → Option Piece) (ws : List RWord) :
   | [], _ => []
   | t :: ts, j => (t, f ws j) :: pieces f ws ts (j + 1)
 
-/-- `ts += x · W`: both chains. -/
-def row (x : Reg) (ts : List Reg) (ws : List RWord) : List Instr :=
-  chainSkip x (pieces pieceA ws ts 0) ++ chainSkip x (pieces pieceB ws ts 0)
+/-- `ts += x · W`: both chains, `W`'s words in memory at `rm`. -/
+def row (rm x : Reg) (ts : List Reg) (ws : List RWord) : List Instr :=
+  chainSkip rm x (pieces pieceA ws ts 0) ++ chainSkip rm x (pieces pieceB ws ts 0)
 
 /-- The registers holding the words of `[b]`, the multiplicand. -/
 def bRegs : List Reg := [.x4, .x5, .x16, .x17]
@@ -272,7 +284,7 @@ multiplicand's words in the registers `bs`: the low words of `x b_j` straight
 into `ts`, and then a chain of the high words, one word up. -/
 def rowInit (x : Reg) (ts bs : List Reg) : List Instr :=
   (ts.zip bs).map (fun (t, r) => .mul .x t x r) ++
-    chainSkip x ((ts.tail.zip bs).map fun (t, r) => (t, some (.hi (.reg r))))
+    chainSkip .x0 x ((ts.tail.zip bs).map fun (t, r) => (t, some (.hi (.reg r))))
 
 /-- The words a row of products adds to: the window, or its low `n + 1` words
 for a tight modulus, whose sum fits in them. -/
@@ -281,32 +293,37 @@ def prodWins (M : Mod) (i : Nat) : List Reg :=
 
 /-- `T += a_i [b]`: the first row straight into the cleared accumulator when
 `[b]` is in registers, else a row. -/
-def prodRow (M : Mod) (a b i : Nat) : List Instr :=
-  [ld .x1 (a + 8 * i)] ++
+def prodRow (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
+  [.ldr .x .x1 ra (a + 8 * i)] ++
     if i = 0 ∧ M.n ≤ 4 then rowInit .x1 ((wins M.n 0).take (M.n + 1)) (bRegs.take M.n)
-    else row .x1 (prodWins M i) (bWords b 0 M.n)
+    else row rb .x1 (prodWins M i) (bWords b 0 M.n)
 
 /-- Round `i` of `mul o a b`: `T += a_i [b]`, then `T += u m` with
 `u = t₀ m' mod 2⁶⁴`, after which `t₀ = 0`; or, for a friendly modulus,
-`T = ⌊T / 2⁶⁴⌋ + t₀ m'` in the words above `t₀`, and `t₀ = 0`. -/
-def round (M : Mod) (a b i : Nat) : List Instr :=
-  prodRow M a b i ++
+`T = ⌊T / 2⁶⁴⌋ + t₀ m'` in the words above `t₀`, and `t₀ = 0`. `[a]` is at
+`ra + a` and `[b]` at `rb + b`. -/
+def round (M : Mod) (ra rb : Reg) (a b i : Nat) : List Instr :=
+  prodRow M ra rb a b i ++
     match M.red with
-    | .general => .mul .x .x1 (win M.n i 0) .x6 :: row .x1 (wins M.n i) (mWords M.mo 0 M.n)
+    | .general => .mul .x .x1 (win M.n i 0) .x6 :: row .x0 .x1 (wins M.n i) (mWords M.mo 0 M.n)
     | .friendly ws =>
-      row (win M.n i 0) (wins M.n i).tail (ws.map (fWord (firstGen ws))) ++
+      row .x0 (win M.n i 0) (wins M.n i).tail (ws.map (fWord (firstGen ws))) ++
         [.movz .x (win M.n i 0) 0 0]
 
-/-- `x7 = 0`, the words of `[b]` in `bRegs` (all of them for `n ≤ 4`), `x6`
-and the accumulator cleared. -/
-def mulSetup (M : Mod) (b : Nat) : List Instr :=
-  zero7 :: loads (bRegs.take M.n) b ++ mulConst M ++ zeros (acc M.n)
+/-- `x7 = 0`, the words of `[rb + b]` in `bRegs` (all of them for `n ≤ 4`),
+`x6` and the accumulator cleared. -/
+def mulSetup (M : Mod) (rb : Reg) (b : Nat) : List Instr :=
+  zero7 :: loadsR rb (bRegs.take M.n) b ++ mulConst M ++ zeros (acc M.n)
+
+/-- `[ro + o] = [ra + a] [rb + b] R⁻¹ mod m` (`o` may be `a` or `b`); the
+modulus is at `x0 + M.mo`. -/
+def mulR (M : Mod) (ra rb ro : Reg) (o a b : Nat) : List Instr :=
+  let low := (List.range M.n).map (win M.n M.n)
+  mulSetup M rb b ++ (List.range M.n).flatMap (round M ra rb a b) ++
+    csubR M low (win M.n M.n M.n) ++ storesR ro low o
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (o a b : Nat) : List Instr :=
-  let low := (List.range M.n).map (win M.n M.n)
-  mulSetup M b ++ (List.range M.n).flatMap (round M a b) ++
-    csubR M low (win M.n M.n M.n) ++ stores low o
+def mul (M : Mod) (o a b : Nat) : List Instr := mulR M .x0 .x0 .x0 o a b
 
 /-- `ts op= [b]`, word by word through `x2`, with `op` on the first word and
 `op'` on the others (`adds` and `adcs`, `subs` and `sbcs`). -/

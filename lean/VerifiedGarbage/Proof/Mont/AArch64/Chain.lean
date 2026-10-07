@@ -16,27 +16,40 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Proof.Mont
 open VG.Proof.Ed25519.AArch64 (Keeps Keeps.trans Keeps.mono read_x)
 open VG.Proof.Ed25519 (Word64.addCarry Word64.carryOut Word64.addCarry_value)
 
-theorem loads_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
-    Scr s base size → a + 8 * ts.length ≤ size → a % 8 = 0 → Fresh ts →
-    WP isa (.block (loads ts a)) s fun s' =>
+theorem loads_eq : ∀ (ts : List Reg) (a : Nat), loads ts a = loadsR .x0 ts a
+  | [], _ => rfl
+  | t :: ts, a => by rw [loads, loadsR, loads_eq ts (a + 8)]; rfl
+
+theorem stores_eq : ∀ (ts : List Reg) (o : Nat), stores ts o = storesR .x0 ts o
+  | [], _ => rfl
+  | t :: ts, o => by rw [stores, storesR, stores_eq ts (o + 8)]; rfl
+
+theorem loadsR_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {base : Addr} {a : Nat},
+    Ptr s rn base size → a + 8 * ts.length ≤ size → a % 8 = 0 → ts.Nodup → rn ∉ ts →
+    WP isa (.block (loadsR rn ts a)) s fun s' =>
       regsVal s' ts = wordsVal s.mem base a ts.length ∧ Keeps ts s s' ∧ s'.c = s.c
-  | [], s, _, _, _, _, _, _ => WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
-  | t :: ts, s, base, a, hs, ha, ha8, hf => by
+  | [], s, _, _, _, _, _, _, _ => WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
+  | t :: ts, s, base, a, hs, ha, ha8, hf, hr => by
     simp only [List.length_cons] at ha
-    rw [loads, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (ld_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
-    have hs₁ := hs.of_keeps k₁ (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false]
-      exact fun h => hf.head.2 (by simp [← h]))
-    refine WP.mono (loads_ok ts hs₁ (a := a + 8) (by omega) (by omega) hf.tail)
+    simp only [List.mem_cons, not_or] at hr
+    rw [loadsR, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (ldR_ok hs (d := a) (by omega) ha8 t) fun s₁ ⟨e₁, k₁, c₁⟩ => ?_
+    have hs₁ := hs.of_keeps k₁ (by simpa using hr.1)
+    refine WP.mono (loadsR_ok ts hs₁ (a := a + 8) (by omega) (by omega) (List.nodup_cons.mp hf).2 hr.2)
       fun s₂ ⟨e₂, k₂, c₂⟩ => ?_
-    have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t hf.head.1
+    have ht : s₂.gpr t = s₁.gpr t := k₂.gpr t (List.nodup_cons.mp hf).1
     refine ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs)), c₂.trans c₁⟩
     rw [List.length_cons, regsVal, wordsVal, ht, e₁, e₂, k₁.mem]
 
-theorem stores_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {o : Nat},
-    Scr s base size → o + 8 * ts.length ≤ size → o % 8 = 0 → ts.Nodup →
-    WP isa (.block (stores ts o)) s fun s' =>
+theorem loads_ok {size : Nat} (ts : List Reg) {s : State} {base : Addr} {a : Nat}
+    (hs : Scr s base size) (ha : a + 8 * ts.length ≤ size) (ha8 : a % 8 = 0) (hf : Fresh ts) :
+    WP isa (.block (loads ts a)) s fun s' =>
+      regsVal s' ts = wordsVal s.mem base a ts.length ∧ Keeps ts s s' ∧ s'.c = s.c :=
+  loads_eq ts a ▸ loadsR_ok ts hs.ptr ha ha8 hf.1 fun h => (hf.2 _ h) (by simp)
+
+theorem storesR_ok {size : Nat} {rn : Reg} : ∀ (ts : List Reg) {s : State} {base : Addr} {o : Nat},
+    PtrW s rn base size → o + 8 * ts.length ≤ size → o % 8 = 0 → ts.Nodup →
+    WP isa (.block (storesR rn ts o)) s fun s' =>
       wordsVal s'.mem base o ts.length = regsVal s ts ∧ KeepRegs [] s s' ∧
       Outside base o (8 * ts.length) s.mem s'.mem
   | [], s, _, _, _, _, _, _ => WP.block_nil ⟨rfl, ⟨fun _ _ => rfl, rfl, rfl, rfl⟩,
@@ -44,11 +57,11 @@ theorem stores_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {
   | t :: ts, s, base, o, hs, ho, ho8, hd => by
     have hn := hs.nowrap
     simp only [List.length_cons] at ho
-    rw [stores, ← List.singleton_append, WP.block_append_iff]
-    refine WP.mono (st_ok hs (d := o) (by omega) ho8 t) fun s₁ e₁ => ?_
-    have hs₁ : Scr s₁ base size := by subst e₁; exact ⟨hs.x0, hs.wr, hs.nowrap, hs.enc⟩
+    rw [storesR, ← List.singleton_append, WP.block_append_iff]
+    refine WP.mono (stR_ok hs (d := o) (by omega) ho8 t) fun s₁ e₁ => ?_
+    have hs₁ : PtrW s₁ rn base size := by subst e₁; exact ⟨hs.reg, hs.st, hs.enc, hs.nowrap⟩
     have O₁ : Outside base o 8 s.mem s₁.mem := by rw [e₁]; exact writeW_outside _ _ _ (by omega)
-    refine WP.mono (stores_ok ts hs₁ (o := o + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2)
+    refine WP.mono (storesR_ok ts hs₁ (o := o + 8) (by omega) (by omega) (List.nodup_cons.mp hd).2)
       fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
     have k₁ : KeepRegs [] s s₁ := by subst e₁; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
     refine ⟨?_, k₁.trans k₂, fun x hx => ?_⟩
@@ -56,6 +69,13 @@ theorem stores_ok {size : Nat} : ∀ (ts : List Reg) {s : State} {base : Addr} {
         regsVal, regsVal_congr (s := s) (s' := s₁) fun q _ => by rw [e₁]]
     · simp only [List.length_cons] at hx
       rw [O₂ x (by omega), O₁ x (by omega)]
+
+theorem stores_ok {size : Nat} (ts : List Reg) {s : State} {base : Addr} {o : Nat}
+    (hs : Scr s base size) (ho : o + 8 * ts.length ≤ size) (ho8 : o % 8 = 0) (hd : ts.Nodup) :
+    WP isa (.block (stores ts o)) s fun s' =>
+      wordsVal s'.mem base o ts.length = regsVal s ts ∧ KeepRegs [] s s' ∧
+      Outside base o (8 * ts.length) s.mem s'.mem :=
+  stores_eq ts o ▸ storesR_ok ts hs.ptrW ho ho8 hd
 
 /-- `d = n + m + c` (`adds` with `c` false, or `adcs` with the carry flag),
 and its carry out. -/
