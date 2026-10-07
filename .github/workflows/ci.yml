@@ -614,11 +614,9 @@ jobs:
               - | ed25519 rsa_pss message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-          # `sha3` the SHA-3 prototype (and the instances of ML-KEM, ML-DSA and
-          # Ed448 calling it), whose scalar fallback the unrestricted run
-          # takes (FEAT_SHA3's Keccak is chosen only when `sha3` is named),
-          # `none` ML-KEM's and Ed448's choice of it on a CPU without FEAT_SHA3,
-          # deterministic ECDSA with the scalar SHA-256 and SHA-512
+          # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
+          # the instances of ML-KEM, ML-DSA and Ed448 calling each),
+          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
           # and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
           # with the scalar SHA-256 (the unrestricted runs of the plain tests
           # take its `_sha256_sha2` instance), and the unrestricted run and
@@ -635,7 +633,7 @@ jobs:
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
               sha2,sha3 | rsa_oaep
-              none | aes_siv chacha20 mlkem ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
