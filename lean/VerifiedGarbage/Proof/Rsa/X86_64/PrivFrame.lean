@@ -125,7 +125,7 @@ def stkR (s : State) : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 stackBytes, sta
 def outR (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
 def scrR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
 
-theorem fb_eq (s : State) : fb s = off (s.gpr .rsp - BitVec.ofNat 64 stackBytes) 8 :=
+theorem fb_eq (s : State) : fb s = off (s.gpr .rsp - BitVec.ofNat 64 stackBytes) 16 :=
   Offset.sub_ofNat_eq _ (by decide)
 
 /-- Bytes of the frame are in the stack the function uses. -/
@@ -133,11 +133,17 @@ theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Su
   rw [fb_eq, off_off]
   exact Offset.sub_base _ (by unfold frameBytes at h; unfold stackBytes; omega)
 
-/-- The return address of a call from the frame. -/
-theorem ret_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
-  rw [show below (fb s) 8 = ⟨s.gpr .rsp - BitVec.ofNat 64 stackBytes, 8⟩ by
+/-- The return addresses of a call from the frame and of its calls. -/
+theorem ret2_sub (s : State) : Region.Sub (below (fb s) 16) (stkR s) := by
+  rw [show below (fb s) 16 = ⟨s.gpr .rsp - BitVec.ofNat 64 stackBytes, 16⟩ by
     simp only [below, fb, BitVec.sub_sub, ← BitVec.ofNat_add]; rfl]
   exact Region.sub_prefix (by decide)
+
+/-- The return address of a call from the frame. -/
+theorem ret_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
+  rw [show below (fb s) 8 = ⟨s.gpr .rsp - BitVec.ofNat 64 (frameBytes + 8), 8⟩ by
+    simp only [below, fb, BitVec.sub_sub, ← BitVec.ofNat_add]]
+  exact Offset.sub_below _ (by decide) (by decide)
 
 /-- A byte outside the stack the function uses is outside the frame. -/
 theorem outside_frame (s : State) {x : Addr} (hx : ¬ (stkR s).Contains x 1) :

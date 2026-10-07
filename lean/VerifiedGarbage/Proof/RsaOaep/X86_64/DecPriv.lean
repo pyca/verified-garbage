@@ -94,8 +94,8 @@ theorem privD_pre {s t : State} (hp : DPre s) (h : DSet s t) :
   have ⟨r1, r2⟩ := rsaD_toNat hp
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hsl := hp.hsl; have wS := hp.wS
-  have e5 : decStack = 3552 := rfl
-  have e6 : privStack = 3248 := rfl
+  have e5 : decStack = 3560 := rfl
+  have e6 : privStack = 3256 := rfl
   have e7 : frameBytes = 296 := rfl
   have hfb : fb s = off (kbD s) (8 + privStack) := fb_eqD s
   have sK : Region.Sub ⟨kbD s, privStack⟩ (stkD s) := Region.sub_prefix (by omega)
@@ -199,7 +199,7 @@ theorem privD_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : DSet s t) :
         (privOutD s) := by
   obtain ⟨hc, hw⟩ := privD_covers hp h
   have hdp := v.depth
-  have e2 : privStack = 3248 := rfl
+  have e2 : privStack = 3256 := rfl
   have hF := fb_toNatD hp
   refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (privD_pre hp h) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx

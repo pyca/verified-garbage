@@ -51,12 +51,11 @@ theorem check_eq (pcName : String) (pc : Prog isa) (pdName : String) (pd : Prog 
 
 /-- Everything after the CRT, from any state the frame allows: whatever `M`
 holds and the CRT returned. -/
-theorem check_ok (M : Mont) (P : PublicImpl) (pcName pdName : String)
-    (pcMx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pcNosp : NoSp (Precompute.code M.mm))
-    (pcDepth : (Precompute.code M.mm).depth = 0)
+theorem check_ok (pc : Prog isa) (P : PublicImpl) (pcName pdName : String)
+    (pcOk : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
+    (pcNosp : NoSp pc) (pcDepth : pc.depth = 1)
     {s t : State} (hp : PreF s) (he : Env s t) :
-    WP isa (seqs (check pcName (Precompute.code M.mm) pdName (P.code))) t fun t' =>
+    WP isa (seqs (check pcName pc pdName (P.code))) t fun t' =>
       Env s t' ∧
       t'.gpr .rax = checkResult (t.gpr .rax) (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
@@ -78,7 +77,7 @@ theorem check_ok (M : Mont) (P : PublicImpl) (pcName pdName : String)
   rw [check_eq]
   refine WP.seq (WP.mono_mx (by decide +kernel) (WP.keep [.rdi, .rsi, .rdx, .rcx, .r8, .r9] (pcArgs_ok hp he) rfl)
     fun t₁ ⟨⟨he₁, hm₁, hdi, hsi, hdx, hcx, h8, h9⟩, k₁⟩ hmx₁ => ?_)
-  refine WP.seq (WP.mono (pc_call M pcName pcMx pcNosp pcDepth hp he₁ hdi hsi hdx hcx h8 h9)
+  refine WP.seq (WP.mono (pc_call pc pcName pcOk pcNosp pcDepth hp he₁ hdi hsi hdx hcx h8 h9)
     fun t₂ ⟨he₂, hpc, hM₂, hR1₂, hcs₂, hmx₂⟩ => ?_)
   refine WP.seq (WP.mono_mx (by decide +kernel)
     (WP.keep [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9] (pdArgs_ok hp he₂) rfl)

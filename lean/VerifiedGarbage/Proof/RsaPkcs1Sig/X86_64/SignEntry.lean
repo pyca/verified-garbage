@@ -18,11 +18,11 @@ open VG.Impl.RsaPkcs1Sig.X86_64.Verify (sp lea)
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
 open VG.Proof.Rsa.X86_64 (chkContract stackBytes)
 
-theorem fb_kb (s : State) : fb s = off (kb s) 3256 := fb_eq s
+theorem fb_kb (s : State) : fb s = off (kb s) 3264 := fb_eq s
 
 /-- The callee's stack pointer. -/
-theorem fb_sub8 (s : State) : fb s - 8 = off (kb s) 3248 := by
-  rw [fb_kb, off, off, show (3256 : Nat) = 3248 + 8 from rfl, BitVec.ofNat_add, ← BitVec.add_assoc]
+theorem fb_sub8 (s : State) : fb s - 8 = off (kb s) 3256 := by
+  rw [fb_kb, off, off, show (3264 : Nat) = 3256 + 8 from rfl, BitVec.ofNat_add, ← BitVec.add_assoc]
   exact BitVec.add_sub_cancel _ _
 
 theorem ksub (s : State) {d n : Nat} (h : d + n ≤ sigStack) : Region.Sub ⟨off (kb s) d, n⟩ (stkR s) :=
@@ -30,13 +30,13 @@ theorem ksub (s : State) {d n : Nat} (h : d + n ≤ sigStack) : Region.Sub ⟨of
 
 theorem stackArg_entry {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) {i : Nat} (hi : i < 100) :
     stackArg (t.callEntry.withRegions rd wr) i = word t.mem (fb s) (8 * i) := by
-  have hsep := Offset.sep (kb s) (d := 3248 + 8 * (i + 1)) (n := 8) (e := 3248) (k := 8) (by omega) (by omega)
+  have hsep := Offset.sep (kb s) (d := 3256 + 8 * (i + 1)) (n := 8) (e := 3256) (k := 8) (by omega) (by omega)
     (by omega)
   simp only [stackArg, stackArgAddr, State.withRegions_mem, State.withRegions_gpr, State.callEntry_rsp,
     State.callEntry_mem, hsp, fb_sub8]
   rw [off, BitVec.add_assoc, ← BitVec.ofNat_add, Mem.readW_writeW_sep hsep (by decide)]
   show _ = t.mem.readW (off (fb s) (8 * i)) 64
-  rw [fb_kb, off_off, show 3248 + 8 * (i + 1) = 3256 + 8 * i by omega]
+  rw [fb_kb, off_off, show 3256 + 8 * (i + 1) = 3264 + 8 * i by omega]
 
 theorem stackArgAddr_entry {s t : State} (hsp : t.gpr .rsp = fb s) (rd wr : List Region) :
     stackArgAddr (t.callEntry.withRegions rd wr) 0 = fb s := by
@@ -79,33 +79,33 @@ theorem priv_pre {s t : State} (hp : PreS s) (hsp : t.gpr .rsp = fb s)
     (hE2 8 (by decide) : stackArg _ 10 = _), (hE2 9 (by decide) : stackArg _ 11 = _),
     (hE2 10 (by decide) : stackArg _ 12 = _), (hE2 11 (by decide) : stackArg _ 13 = _), fb_sub8]
   have ⟨hK1, hK2⟩ := kb_toNat hp
-  have e1 : sigStack = 4448 := rfl
+  have e1 : sigStack = 4456 := rfl
   have e2 : oEM = 160 := rfl
-  have e3 : stackBytes = 3248 := rfl
+  have e3 : stackBytes = 3256 := rfl
   have hk1 := hp.k1
   have hk2 := hp.k2
-  have hfb : fb s = off (kb s) 3256 := fb_kb s
-  have hem : off (fb s) oEM = off (kb s) 3416 := by rw [hfb, off_off]; rfl
+  have hfb : fb s = off (kb s) 3264 := fb_kb s
+  have hem : off (fb s) oEM = off (kb s) 3424 := by rw [hfb, off_off]; rfl
   have sM : Region.Sub (emR s) (stkR s) := by simp only [emR]; rw [hem]; exact ksub s (by omega)
   have sA : Region.Sub ⟨fb s, 112⟩ (stkR s) := by rw [hfb]; exact ksub s (by decide)
-  have sR : Region.Sub ⟨off (kb s) 3248, 8⟩ (stkR s) := ksub s (by decide)
-  have sK : Region.Sub ⟨off (kb s) 3248 - BitVec.ofNat 64 3248, 3248⟩ (stkR s) := by
-    rw [show off (kb s) 3248 - BitVec.ofNat 64 3248 = kb s from BitVec.add_sub_cancel _ _]
+  have sR : Region.Sub ⟨off (kb s) 3256, 8⟩ (stkR s) := ksub s (by decide)
+  have sK : Region.Sub ⟨off (kb s) 3256 - BitVec.ofNat 64 3256, 3256⟩ (stkR s) := by
+    rw [show off (kb s) 3256 - BitVec.ofNat 64 3256 = kb s from BitVec.add_sub_cancel _ _]
     exact Region.sub_prefix (by decide)
-  have hkk : off (kb s) 3248 - BitVec.ofNat 64 3248 = kb s := BitVec.add_sub_cancel _ _
+  have hkk : off (kb s) 3256 - BitVec.ofNat 64 3256 = kb s := BitVec.add_sub_cancel _ _
   have dMA : (emR s).Disjoint ⟨fb s, 112⟩ := by
     simp only [emR]; rw [hem, hfb]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)
-  have dRM : (⟨off (kb s) 3248, 8⟩ : Region).Disjoint (emR s) := by
+  have dRM : (⟨off (kb s) 3256, 8⟩ : Region).Disjoint (emR s) := by
     simp only [emR]; rw [hem]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  have dRA : (⟨off (kb s) 3248, 8⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
+  have dRA : (⟨off (kb s) 3256, 8⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
     rw [hfb]; exact Offset.disjoint _ (.inl (by omega)) (by omega) (by omega)
-  have dKM : (⟨off (kb s) 3248 - BitVec.ofNat 64 3248, 3248⟩ : Region).Disjoint (emR s) := by
+  have dKM : (⟨off (kb s) 3256 - BitVec.ofNat 64 3256, 3256⟩ : Region).Disjoint (emR s) := by
     simp only [emR]; rw [hkk, hem]; exact Offset.base_disjoint _ (by omega) (by omega)
-  have dKA : (⟨off (kb s) 3248 - BitVec.ofNat 64 3248, 3248⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
+  have dKA : (⟨off (kb s) 3256 - BitVec.ofNat 64 3256, 3256⟩ : Region).Disjoint ⟨fb s, 112⟩ := by
     rw [hkk, hfb]; exact Offset.base_disjoint _ (by omega) (by omega)
   have wM : (off (fb s) oEM).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 := by
     rw [hem, toNat_off (by omega)]; omega
-  have hR : (off (kb s) 3248).toNat = (kb s).toNat + 3248 := toNat_off (by omega)
+  have hR : (off (kb s) 3256).toNat = (kb s).toNat + 3256 := toNat_off (by omega)
   have dK := hp.dKo; have dKn := hp.dKn; have dKe := hp.dKe; have dKp := hp.dKp; have dKq := hp.dKq
   have dKdp := hp.dKdp; have dKdq := hp.dKdq; have dKqi := hp.dKqi; have dKs := hp.dKs
   refine ⟨by omega, by omega, rfl, rfl, hp.dOn, hp.dOe, (dK.sub_left sM).symm, hp.dOp, hp.dOq, hp.dOdp, hp.dOdq,
@@ -147,8 +147,8 @@ theorem priv_covers {s t : State} (hp : PreS s) (he : Env s t) :
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; unfold frameBytes; omega⟩
 
 /-- The callee's stack and the return address, below the frame. -/
-theorem below_kb (s : State) : below (fb s) (3248 + 8) = ⟨kb s, 3256⟩ := by
-  simp only [below]; rw [fb_kb]; exact congrArg (Region.mk · 3256) (BitVec.add_sub_cancel _ _)
+theorem below_kb (s : State) : below (fb s) (3256 + 8) = ⟨kb s, 3264⟩ := by
+  simp only [below]; rw [fb_kb]; exact congrArg (Region.mk · 3264) (BitVec.add_sub_cancel _ _)
 
 /-- Memory changed by a call from the frame, within regions in the stack
 the function uses, `out` or the working space. -/
@@ -163,18 +163,18 @@ theorem frame_call {s : State} {m₁ m₂ m₃ : Mem} (h₁ : Frame [stkR s, out
 
 /-- What the call writes is apart from the frame. -/
 theorem frame_apart {s : State} (hp : PreS s) {d n : Nat} (hd : d + n ≤ frameBytes) :
-    ∀ r ∈ privWr s ++ [below (fb s) (3248 + 8)], (⟨off (fb s) d, n⟩ : Region).Disjoint r := by
+    ∀ r ∈ privWr s ++ [below (fb s) (3256 + 8)], (⟨off (fb s) d, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [privWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
   · exact (hp.dKo.sub_left (frame_sub s hd))
   · exact (hp.dKs.sub_left (frame_sub s hd))
   · rw [below_kb, fb_kb, off_off]
-    exact (Offset.base_disjoint (kb s) (e := 3256 + d) (n := n) (k := 3256) (by omega)
+    exact (Offset.base_disjoint (kb s) (e := 3264 + d) (n := n) (k := 3264) (by omega)
       (by have := (kb_toNat hp).1; unfold frameBytes at hd; unfold sigStack at this; omega)).symm
 
 theorem callEntry_frame {s t : State} (hsp : t.gpr .rsp = fb s) :
-    Frame [below (fb s) (3248 + 8)] t.mem t.callEntry.mem := by
+    Frame [below (fb s) (3256 + 8)] t.mem t.callEntry.mem := by
   rw [State.callEntry_mem, hsp]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
 

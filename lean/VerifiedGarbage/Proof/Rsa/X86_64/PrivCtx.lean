@@ -17,9 +17,10 @@ namespace VG.Proof.Rsa.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-/-- The stack below the stack pointer the function uses: its frame, and the
-return address of its calls (which use none). -/
-def stackBytes : Nat := 3248
+/-- The stack below the stack pointer the function uses: its frame, the
+return address of its calls, and that of their calls of Montgomery
+multiplication (which use none). -/
+def stackBytes : Nat := 3256
 
 theorem stackArgs_fourteen (s : State) :
     List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,

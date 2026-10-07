@@ -1,13 +1,14 @@
 import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.SignEntry
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivCT
 import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 /-!
 # `vg_rsa_pkcs1_sign` on x86-64: the call of `vg_rsa_private_checked`
 
 The private operation, for an implementation `v` of the CRT (`CrtImpl`), is
 `vg_rsa_private_checked`'s code (`privCode v`), which has a frame of its own:
-it uses 3248 bytes of stack (`privCode_depth`). Its arguments
+it uses 3256 bytes of stack (`privCode_depth`). Its arguments
 (`callArgs_ok`) and the call (`priv_call`), which signs `EM` into `out`.
 -/
 
@@ -28,34 +29,13 @@ def pdName (v : CrtImpl) : String := v.pubOp.name
 /-- `vg_rsa_private_checked`'s name and code, for `v`. -/
 def privName (v : CrtImpl) : String := Spec.Rsa.privateCheckedApi.name ++ v.suffix
 def privCode (v : CrtImpl) : Prog isa :=
-  Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) (Impl.Rsa.X86_64.Precompute.code v.mont.mm)
-    (pdName v) v.pubOp.code
+  Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
 
-/-- Code that never writes `rsp` and makes no calls uses no stack. -/
-theorem xdepth_zero {c : Prog isa} (hsp : NoSp c) (hd : c.depth = 0) : c.x86_64Depth = 0 := by
-  induction c with
-  | block _ => rfl
-  | seq a b iha ihb =>
-    simp only [Code.depth, Nat.max_eq_zero_iff] at hd
-    simp only [Code.x86_64Depth, iha (fun i hi => hsp i (by simp [instrs, hi])) hd.1,
-      ihb (fun i hi => hsp i (by simp [instrs, hi])) hd.2, Nat.max_self]
-  | ite _ t e iht ihe =>
-    simp only [Code.depth, Nat.max_eq_zero_iff] at hd
-    simp only [Code.x86_64Depth, iht (fun i hi => hsp i (by simp [instrs, hi])) hd.1,
-      ihe (fun i hi => hsp i (by simp [instrs, hi])) hd.2, Nat.max_self]
-  | loop b _ ih => exact ih (fun i hi => hsp i (by simpa [instrs] using hi)) hd
-  | call _ b _ => simp [Code.depth] at hd
-  | frame i b j ih =>
-    simp only [Code.depth] at hd
-    have hi := hsp i (by simp [instrs])
-    simp only [Code.x86_64Depth, ih (fun x hx => hsp x (by simp [instrs, hx])) hd]
-    cases i <;> simp_all [Taint.clobbers, X86_64.Instr.frameBytes]
-
-theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3248 := by
+theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3256 := by
   simp only [privCode, Impl.Rsa.X86_64.PrivChecked.code, Impl.Rsa.X86_64.PrivChecked.body,
     Impl.Rsa.X86_64.PrivChecked.check, Impl.Rsa.X86_64.PrivChecked.tail, List.cons_append, List.nil_append,
-    Impl.Bignum.X86_64.seqs, Code.x86_64Depth, xdepth_zero v.nosp v.depth, xdepth_zero v.pcNosp v.pcDepth,
-    xdepth_zero v.pubOp.nosp v.pubOp.depth, X86_64.Instr.frameBytes, Impl.Rsa.X86_64.PrivChecked.frameBytes,
+    Impl.Bignum.X86_64.seqs, Code.x86_64Depth, x86_64Depth_noSp v.nosp, v.depth, x86_64Depth_noSp v.pcNosp,
+    v.pcDepth, x86_64Depth_noSp v.pubOp.nosp, v.pubOp.depth, X86_64.Instr.frameBytes, Impl.Rsa.X86_64.PrivChecked.frameBytes,
     Impl.Rsa.X86_64.PrivChecked.cmpLoop, Impl.Rsa.X86_64.PrivChecked.releaseLoop]
   rfl
 
@@ -104,7 +84,7 @@ theorem priv_call (v : CrtImpl) {s t : State} (hp : PreS s) (he : Env s t)
     refine List.map_congr_left fun i hi => (callEntry_frame he.rsp).bytes
       (R := ⟨off (fb s) oEM, (s.gpr .rcx).toNat⟩) (fun r hr => ?_) (by dsimp only; omega) (List.mem_range.mp hi)
     rw [List.mem_singleton.mp hr, below_kb, fb_kb, off_off]
-    exact (Offset.base_disjoint (kb s) (e := 3256 + oEM) (n := (s.gpr .rcx).toNat) (k := 3256) (by omega)
+    exact (Offset.base_disjoint (kb s) (e := 3264 + oEM) (n := (s.gpr .rcx).toNat) (k := 3264) (by omega)
       (by have := (kb_toNat hp).1; unfold oEM; unfold sigStack at this; omega)).symm
   simp only [chkContract, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),

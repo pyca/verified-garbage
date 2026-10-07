@@ -25,7 +25,7 @@ include K in
 theorem code_xd (v : PublicImpl) :
     (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code).x86_64Depth ≤ verifyStack := by
   simp only [Impl.RsaPss.X86_64.Precomputed.pubArgs, Impl.RsaPss.X86_64.Precomputed.code, Impl.RsaPss.X86_64.Precomputed.body, seqs,
-    Impl.RsaPss.X86_64.Precomputed.main, Code.x86_64Depth, mgfXor_xd K, saltBack_xd K, x86_64Depth_zero v.nosp v.depth, verifyFail, emLen,
+    Impl.RsaPss.X86_64.Precomputed.main, Code.x86_64Depth, mgfXor_xd K, saltBack_xd K, (show v.code.x86_64Depth = 8 by rw [x86_64Depth_noSp v.nosp, v.depth]), verifyFail, emLen,
     anyArgs, posScan, posCheck, byteLoop,
     X86_64.Instr.frameBytes]
   unfold verifyStack frameBytes

@@ -16,7 +16,7 @@ and `crt` as tags (e.g. `vg_rsa_pss_sha256_mgf1_sha256_sign_sha256_shani_crt_adx
 and needs both's CPU features.
 
 Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3248 bytes.
+3256 bytes.
 -/
 
 namespace VG.Generic.MdHash.RsaPrivateCrt.X86_64.RsaPss

@@ -16,7 +16,7 @@ the pairs of hash functions `Inst.emitted` says, with each `c`, named by
 features.
 
 Its stack is its frame, a return address and `vg_rsa_private_checked`'s
-3248 bytes, which are more than the hash functions use.
+3256 bytes, which are more than the hash functions use.
 -/
 
 namespace VG.Generic.MdHash.MdHash.RsaPrivateCrt.X86_64.RsaOaep

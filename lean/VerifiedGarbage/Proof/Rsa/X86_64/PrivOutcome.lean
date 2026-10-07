@@ -19,12 +19,11 @@ returned: they release `M` (returning 1) only if `M` is below `n` and
 `M^e mod n` is the input, and write zeros otherwise; `M` is zeroed either
 way. A fault in the CRT's computation (of the result, of its return value,
 or of both) is never released. -/
-theorem check_faultTolerant (M : Mont) (P : PublicImpl) (pcName pdName : String)
-    (pcMx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (pcNosp : NoSp (Precompute.code M.mm))
-    (pcDepth : (Precompute.code M.mm).depth = 0)
+theorem check_faultTolerant (pc : Prog isa) (P : PublicImpl) (pcName pdName : String)
+    (pcOk : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
+    (pcNosp : NoSp pc) (pcDepth : pc.depth = 1)
     {s t : State} (hp : PreF s) (he : Env s t) :
-    WP isa (seqs (PrivChecked.check pcName (Precompute.code M.mm) pdName
+    WP isa (seqs (PrivChecked.check pcName pc pdName
         (P.code))) t fun t' =>
       (t'.gpr .rax = 1 →
         Spec.Rsa.bytesAt t'.mem (s.gpr .rdi) (s.gpr .rcx).toNat =
@@ -39,7 +38,7 @@ theorem check_faultTolerant (M : Mont) (P : PublicImpl) (pcName pdName : String)
         List.replicate (s.gpr .rcx).toNat 0) ∧
       Spec.Rsa.bytesAt t'.mem (off (fb s) PrivChecked.oM) (s.gpr .rcx).toNat =
         List.replicate (s.gpr .rcx).toNat 0 :=
-  WP.mono (check_ok M P pcName pdName pcMx pcNosp pcDepth hp he)
+  WP.mono (check_ok pc P pcName pdName pcOk pcNosp pcDepth hp he)
     fun t' ⟨_, hax, hout, hM, _⟩ => by
       have hx : (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rcx).toNat).length =
           (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat).length := by

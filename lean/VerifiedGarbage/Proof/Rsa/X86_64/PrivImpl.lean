@@ -10,10 +10,13 @@ A `CrtImpl` is what `vg_rsa_private_checked` needs of the implementation of
 each is a variant of the interface `RsaPrivateCrt` on x86-64
 (`Variants/RsaPrivateCrt/X86_64/`), and `vg_rsa_private_checked`
 (`Generic/RsaPrivateCrt/X86_64/Rsa.lean`) is emitted once for each. Every
-implementation is proven against `crtContract`, and makes no calls. It
-comes with the Montgomery multiplication used by `vg_rsa_public_precompute`
-and an independently verified `vg_rsa_public_precomputed_checked` operation
-that checks its result. Both need no more CPU features.
+implementation is proven against `crtContract` for callers that keep its
+buffers off the return address of its calls (`Contract.clear`), and its
+calls (of Montgomery multiplication) make no calls. It comes with the
+`vg_rsa_public_precompute` of its Montgomery multiplication and an
+independently verified `vg_rsa_public_precomputed_checked` operation that
+checks its result, which are proven the same way. Both need no more CPU
+features.
 -/
 
 namespace VG.Proof.Rsa.X86_64

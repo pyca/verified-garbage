@@ -78,8 +78,8 @@ theorem priv_pre {s t : State} (hp : DPre s) (h : Setup s t) :
   have hk2 := hp.k2
   have hsi := hp.hsi
   have hil := hp.hil
-  have e5 : decStack = 3472 := rfl
-  have e6 : privStack = 3248 := rfl
+  have e5 : decStack = 3480 := rfl
+  have e6 : privStack = 3256 := rfl
   have e7 : frameBytes = 216 := rfl
   have hfb : fb s = off (kb s) (8 + privStack) := fb_eq s
   -- The callee's stack, its return address and its stack arguments, in ours.
@@ -193,8 +193,8 @@ theorem callEntry_frame {s t : State} (hsp : t.gpr .rsp = fb s) : Frame [below (
 theorem slot_apart {s : State} (hp : DPre s) {d n : Nat} (hd : d + n ≤ frameBytes) :
     ∀ r ∈ privWr s ++ [below (fb s) (8 + privStack)], (⟨off (fb s) d, n⟩ : Region).Disjoint r := by
   have ⟨hK1, _⟩ := kb_toNat hp
-  have e1 : decStack = 3472 := rfl
-  have e2 : privStack = 3248 := rfl
+  have e1 : decStack = 3480 := rfl
+  have e2 : privStack = 3256 := rfl
   have e3 : frameBytes = 216 := rfl
   have hsi := hp.hsi
   intro r hr
@@ -211,7 +211,7 @@ theorem priv_call (v : PrivImpl) {s t : State} (hp : DPre s) (h : Setup s t) :
       t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   obtain ⟨hc, hw⟩ := priv_covers hp h
   have hdp := v.depth
-  have e2 : privStack = 3248 := rfl
+  have e2 : privStack = 3256 := rfl
   refine WP.call_sp_mx (k := privK) v.ok (SpSafe.of_all v.spSafe) (by omega) (priv_pre hp h) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [h.rsp] at hf

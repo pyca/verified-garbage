@@ -86,6 +86,26 @@ theorem x86_64Depth_zero : ∀ {c : Prog isa}, NoSp c → c.depth = 0 → c.x86_
     simp only [Code.x86_64Depth, hb, Nat.zero_add]
     cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
 
+/-- Code without frames uses the return addresses of its calls: 8 bytes for
+each level. -/
+theorem x86_64Depth_noSp : ∀ {c : Prog isa}, NoSp c → c.x86_64Depth = 8 * c.depth
+  | .block _, _ => rfl
+  | .seq a b, h => by
+    simp only [Code.x86_64Depth, Code.depth, x86_64Depth_noSp (fun i hi => h i (List.mem_append_left _ hi)),
+      x86_64Depth_noSp (fun i hi => h i (List.mem_append_right _ hi)), Nat.mul_max_mul_left]
+  | .ite _ a b, h => by
+    simp only [Code.x86_64Depth, Code.depth, x86_64Depth_noSp (fun i hi => h i (List.mem_append_left _ hi)),
+      x86_64Depth_noSp (fun i hi => h i (List.mem_append_right _ hi)), Nat.mul_max_mul_left]
+  | .loop b _, h => x86_64Depth_noSp (c := b) h
+  | .call _ b, h => by
+    simp only [Code.x86_64Depth, Code.depth, x86_64Depth_noSp (c := b) h, Nat.mul_add, Nat.mul_one]
+  | .frame i b _, h => by
+    have hi := h i (List.mem_cons_self ..)
+    have hb : b.x86_64Depth = 8 * b.depth :=
+      x86_64Depth_noSp (fun j hj => h j (List.mem_cons_of_mem _ (List.mem_append_left _ hj)))
+    simp only [Code.x86_64Depth, Code.depth, hb]
+    cases i <;> simp_all [X86_64.Instr.frameBytes, Taint.clobbers]
+
 /-- What `Exec.stackFrame` adds to a weakest precondition: memory changes
 only within the writable regions and the stack below `rsp` the code uses. -/
 theorem WP.stackFrame {c : Prog isa} (hc : SpSafe c) (hd : c.x86_64Depth < 2 ^ 64) {s : State}

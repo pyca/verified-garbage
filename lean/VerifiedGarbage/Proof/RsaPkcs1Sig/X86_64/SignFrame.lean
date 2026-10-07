@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Call
 # `vg_rsa_pkcs1_sign` on x86-64: the frame
 
 The frame of `frameBytes` bytes at `S = rsp - frameBytes`, below which the
-call of `vg_rsa_private_checked` uses 3256 bytes; its slots, and the
+call of `vg_rsa_private_checked` uses 3264 bytes; its slots, and the
 function's stack arguments, at `S + frameBytes + 8 + 8 j` (`stackArgAddr`).
 -/
 

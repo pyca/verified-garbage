@@ -51,11 +51,11 @@ theorem ret_frame {s : State} (hp : PreF s) {m : Mem} (h : Frame [stkR s, outR s
   · exact hp.dRs
 
 theorem code_correct (v : CrtImpl) (pcName pdName : String) (s : State) (h : chkContract.pre s) :
-    ∃ t s', Exec isa (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
+    ∃ t s', Exec isa (code v.name v.code pcName v.pc pdName
         (v.pubOp.code)) s t s' ∧ abiPreserved s s' ∧ chkContract.post s s' := by
   have hp := preF_of h
   have hk2 := hp.k2
-  suffices hw : WP isa (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
+  suffices hw : WP isa (code v.name v.code pcName v.pc pdName
       (v.pubOp.code)) s fun s' => abiPreserved s s' ∧ chkContract.post s s' by
     obtain ⟨t, s', he, hq⟩ := hw
     exact ⟨t, s', he, hq⟩
@@ -65,7 +65,7 @@ theorem code_correct (v : CrtImpl) (pcName pdName : String) (s : State) (h : chk
     (WP.keep [.rax, .rdi, .rsi, .r8, .r9] (crtArgs_ok hp) (by decide +kernel))
     fun t₁ ⟨⟨he₁, _, hargs, hdi, hsi, hdx, hcx, h8, h9⟩, k₁⟩ hmx₁ => ?_)
   refine WP.seq (WP.mono (crt_call v hp he₁ hargs hdi hsi hdx hcx h8 h9) fun t₂ ⟨he₂, hcrt, hcs₂, hmx₂⟩ => ?_)
-  refine WP.mono (check_ok v.mont v.pubOp pcName pdName v.pcMx v.pcNosp v.pcDepth hp he₂)
+  refine WP.mono (check_ok v.pc v.pubOp pcName pdName v.pcOk v.pcNosp v.pcDepth hp he₂)
     fun t₃ ⟨he₃, hrax, hout, _, hcs₃, hmx₃⟩ => ?_
   refine ⟨he₃.rsp, by rw [he₃.wr]; rfl, ⟨fun r hr => ?_, ret_frame hp he₃.mem, ?_⟩, ?_⟩
   · by_cases hr' : r = .rsp

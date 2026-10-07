@@ -15,9 +15,11 @@ namespace VG.Proof.RsaPss.X86_64
 
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
-/-- The stack below the stack pointer: the frame, and the return address of
-its calls, which use no stack. -/
-def verifyStack : Nat := 392 + 8
+/-- The stack below the stack pointer: the frame, the return address of its
+calls, and that of their calls, which use no stack. (Only
+`vg_rsa_pss_verify_precomputed`'s callee makes calls: the other functions
+use 8 bytes fewer.) -/
+def verifyStack : Nat := 392 + 16
 
 theorem stackArgs_five (s : State) :
     List.map (stackArg s) (List.range 5) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,

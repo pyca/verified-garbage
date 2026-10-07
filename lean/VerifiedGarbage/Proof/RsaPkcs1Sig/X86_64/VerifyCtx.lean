@@ -15,8 +15,12 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64
 open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 
 /-- The stack below the stack pointer `vg_rsa_pkcs1_verify` uses: its
-frame, and the return address of its call (whose callee uses none). -/
-def verStack : Nat := 2144
+frame, the return address of its call, and that of its callee's calls,
+which use none. (`vg_rsa_pkcs1_verify` and `vg_rsa_pkcs1_recover` call
+`vg_rsa_public_checked`, which makes no calls, and so use 8 bytes fewer;
+`vg_rsa_pkcs1_verify_precomputed`'s callee calls Montgomery
+multiplication.) -/
+def verStack : Nat := 2152
 
 theorem stackArgs_five (s : State) :
     List.map (stackArg s) (List.range 5) =

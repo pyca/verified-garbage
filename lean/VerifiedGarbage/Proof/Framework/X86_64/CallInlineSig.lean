@@ -46,6 +46,9 @@ with calls (and so of its inlined form) must also give it. -/
 def _root_.VG.Contract.clear (k : Contract isa) : Contract isa :=
   { k with pre := fun s => k.pre s ∧ Clear (hole (s.gpr .rsp)) s }
 
+/-- `k.clear` makes public what `k` does. -/
+theorem _root_.VG.Contract.clear_pub {k : Contract isa} {s₁ s₂ : State} (h : k.pub s₁ s₂) : k.clear.pub s₁ s₂ := h
+
 /-- Correctness of `c` from that of `c.inline`, for a postcondition that
 does not read the 8 bytes below `rsp`. -/
 theorem ok_of_inline {c : Prog isa} (hc : c.InlineOk = true) {k : Contract isa}

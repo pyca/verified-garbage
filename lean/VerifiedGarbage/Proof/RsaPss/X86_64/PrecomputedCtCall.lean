@@ -117,14 +117,19 @@ theorem call_pub {a s₁ s₂ t₁ t₂ : State} (S₁ : Sib (G := G) a s₁) (h
       g _ _ _ (by decide), g _ _ _ (by decide), r8₁, r8₂, r9₁, r9₂, be₁, be₂]
 
 theorem call_ct (impl : PublicImpl) : RelCT isa (Two (At (G := G) (JC H))) (.call impl.name impl.code) (Two (At (G := G) (JM H fun _ _ _ => True))) := by
-  refine two_post (RelCT.callEx (k := pdChkContract) impl.ok impl.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, h₁⟩, ⟨s₂, S₂, h₂⟩⟩ => ?_)
-    fun a t ⟨s, S, h⟩ => ?_
+  refine two_post (RelCT.callEx (k := pdChkContract.clear) impl.ok impl.ct
+    fun t₁ t₂ ⟨a, ⟨s₁, S₁, h₁⟩, ⟨s₂, S₂, h₂⟩⟩ => ?_) fun a t ⟨s, S, h⟩ => ?_
   · obtain ⟨c₁, w₁⟩ := call_covers S₁.2.2.2.2.1 h₁.2.1 h₁.1.wr
     obtain ⟨c₂, w₂⟩ := call_covers S₂.2.2.2.2.1 h₂.2.1 h₂.1.wr
-    exact ⟨_, _, _, _, call_pre S₁.2.2.2.2.1 h₁.1.L.rsp h₁.2.2.2.1 h₁.2.2.2.2.1 h₁.2.2.2.2.2.1 h₁.2.2.2.2.2.2.1
-      h₁.2.2.2.2.2.2.2.1 h₁.2.2.2.2.2.2.2.2.1 h₁.2.2.2.2.2.2.2.2.2.1,
-      call_pre S₂.2.2.2.2.1 h₂.1.L.rsp h₂.2.2.2.1 h₂.2.2.2.2.1 h₂.2.2.2.2.2.1 h₂.2.2.2.2.2.2.1
-      h₂.2.2.2.2.2.2.2.1 h₂.2.2.2.2.2.2.2.2.1 h₂.2.2.2.2.2.2.2.2.2.1, call_pub S₁ h₁ S₂ h₂, c₁, w₁, c₂, w₂,
+    have q₁ := call_pre S₁.2.2.2.2.1 h₁.1.L.rsp h₁.2.2.2.1 h₁.2.2.2.2.1 h₁.2.2.2.2.2.1 h₁.2.2.2.2.2.2.1
+      h₁.2.2.2.2.2.2.2.1 h₁.2.2.2.2.2.2.2.2.1 h₁.2.2.2.2.2.2.2.2.2.1
+    have q₂ := call_pre S₂.2.2.2.2.1 h₂.1.L.rsp h₂.2.2.2.1 h₂.2.2.2.2.1 h₂.2.2.2.2.2.1 h₂.2.2.2.2.2.2.1
+      h₂.2.2.2.2.2.2.2.1 h₂.2.2.2.2.2.2.2.2.1 h₂.2.2.2.2.2.2.2.2.2.1
+    have p₁ : pdChkContract.clear.pre (t₁.callEntry.withRegions (callRd s₁) (vWr s₁)) :=
+      ⟨q₁, call_clear S₁.2.2.2.2.1 h₁.1.L.rsp⟩
+    have p₂ : pdChkContract.clear.pre (t₂.callEntry.withRegions (callRd s₂) (vWr s₂)) :=
+      ⟨q₂, call_clear S₂.2.2.2.2.1 h₂.1.L.rsp⟩
+    exact ⟨callRd s₁, vWr s₁, callRd s₂, vWr s₂, p₁, p₂, Contract.clear_pub (call_pub S₁ h₁ S₂ h₂), c₁, w₁, c₂, w₂,
       by rw [h₁.1.L.rsp, h₂.1.L.rsp, S₁.fb, S₂.fb]⟩
   · obtain ⟨v, hrd, hM, ha, di, si, dx, cx, r8, r9, hok⟩ := h
     obtain ⟨V, W, R, hw, -⟩ := v.W

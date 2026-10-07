@@ -22,7 +22,7 @@ open VG VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
 /-! ## `vg_rsa_private_checked` -/
 
 /-- The stack `vg_rsa_private_checked` uses below its return address. -/
-def privStack : Nat := 3248
+def privStack : Nat := 3256
 
 theorem stackArgs_fourteen (s : State) :
     List.map (stackArg s) (List.range 14) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
