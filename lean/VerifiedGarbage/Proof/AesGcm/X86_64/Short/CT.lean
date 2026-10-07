@@ -86,11 +86,10 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
   refine RelCT.seq b1 (RelCT.seq (RelCT.ite (fun _ _ h => by
       rw [eval_ne h.1.1, eval_ne h.2.1]) (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
     (last.mono (fun _ _ _ => trivial) fun _ _ h => h))
-  -- The lengths' OR, less 1, compared with 511.
+  -- The lengths' OR compared with 512.
   have w₂ : ∀ s, (s.zf = some (decide (nl = 12)) ∧ CondS W nl al n s) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
-        .alu .sub .rcx (imm 1), .alu .cmp .rcx (imm 511)]) s fun t =>
-        t.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n t :=
+        .alu .cmp .rcx (imm 512)]) s fun t => t.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n t :=
     fun s h => WP.mono (condB2_ok h.2 hal hn) fun _ ⟨c, _, k⟩ => ⟨c, h.2.keep k⟩
   have b2 := rel_next (rel_taint (P := fun s₁ s₂ =>
       (s₁.zf = some (decide (nl = 12)) ∧ CondS W nl al n s₁) ∧ (s₂.zf = some (decide (nl = 12)) ∧ CondS W nl al n s₂))
@@ -100,26 +99,40 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
     (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm)
       (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
   -- The blocks of both lengths compared with 32.
-  have w₃ : ∀ s, ((s.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s) ∧
-      al < 512 ∧ n < 512) →
+  have w₃ : ∀ s, ((s.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s) ∧ al < 512 ∧ n < 512) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
         .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4, .alu .add .rcx (.reg .rdx),
-        .alu .cmp .rcx (imm 32)]) s fun t => t.cf = some (decide (nb16 al + nb16 n < 32)) :=
-    fun s h => WP.mono (condB3_ok h.1.2 h.2.1 h.2.2) fun _ ⟨c, _⟩ => c
+        .alu .cmp .rcx (imm 32)]) s fun t => t.cf = some (decide (nb16 al + nb16 n < 32)) ∧
+          CondS W nl al n t ∧ al < 512 ∧ n < 512 :=
+    fun s h => WP.mono (condB3_ok h.1.2 h.2.1 h.2.2) fun _ ⟨c, _, k⟩ => ⟨c, h.1.2.keep k, h.2⟩
   have b3 := rel_next (rel_taint (P := fun s₁ s₂ =>
-      ((s₁.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₁) ∧ al < 512 ∧ n < 512) ∧
-      ((s₂.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₂) ∧ al < 512 ∧ n < 512))
+      ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧ al < 512 ∧ n < 512) ∧
+      ((s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂) ∧ al < 512 ∧ n < 512))
       [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.r15, h.2.1.2.r15]) ⟨_, by taint_decide⟩) w₃ w₃
-  have h5 : ∀ {s₁ s₂ : State}, ((s₁.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₁) ∧
-      (s₂.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₂)) ∧
-      isa.eval .ae s₁ = some false → al < 512 ∧ n < 512 := fun h => by
+  have h5 : ∀ {s₁ s₂ : State}, ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧
+      (s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂)) ∧ isa.eval .ae s₁ = some false →
+      al < 512 ∧ n < 512 := fun h => by
     have e := (eval_ae h.1.1.1).symm.trans h.2
     simp only [Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at e
-    exact e.1
+    exact or_lt_512.mp e
   refine RelCT.seq (b3.mono (fun _ _ h => ⟨⟨h.1.1, h5 h⟩, ⟨h.1.2, h5 h⟩⟩) fun _ _ h => h)
+    (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm)
+      (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
+  -- `al + 17 n` compared with 17.
+  have w₄ : ∀ s, (s.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s ∧ al < 512 ∧ n < 512) →
+      WP isa (.block [.mov .rdx (.mem (at_ .r15 lenO)), .mov .rcx (.reg .rdx), .shift .shl .rcx 4,
+        .alu .add .rcx (.reg .rdx), .alu .add .rcx (.mem (at_ .r15 alenO)), .alu .cmp .rcx (imm 17)]) s
+        fun t => t.cf = some (decide (al + 17 * n < 17)) :=
+    fun s h => WP.mono (condB4_ok h.2.1 h.2.2.1 h.2.2.2) fun _ ⟨c, _⟩ => c
+  have b4 := rel_next (rel_taint (P := fun s₁ s₂ =>
+      (s₁.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s₁ ∧ al < 512 ∧ n < 512) ∧
+      (s₂.cf = some (decide (nb16 al + nb16 n < 32)) ∧ CondS W nl al n s₂ ∧ al < 512 ∧ n < 512))
+      [.r15] (fun _ _ h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.1.r15, h.2.2.1.r15]) ⟨_, by taint_decide⟩) w₄ w₄
+  refine RelCT.seq (b4.mono (fun _ _ h => h.1) fun _ _ h => h)
     (RelCT.ite (fun _ _ h => (eval_b h.1).trans (eval_b h.2).symm)
-      (one.mono (fun _ _ _ => trivial) fun _ _ h => h) (none.mono (fun _ _ _ => trivial) fun _ _ h => h))
+      (none.mono (fun _ _ _ => trivial) fun _ _ h => h) (one.mono (fun _ _ _ => trivial) fun _ _ h => h))
 
 /-! ## The pieces -/
 
