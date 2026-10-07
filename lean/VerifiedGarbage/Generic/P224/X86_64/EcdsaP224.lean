@@ -5,8 +5,7 @@ import VerifiedGarbage.Impl.Ecdsa.P224.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P224.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P224.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P224.JointVerified
 
 /-!
 # ECDSA over P-224 (FIPS 186-5) on x86-64
@@ -50,27 +49,30 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P224.verifyApi with
     target := X86_64.target
-    doc := Spec.Ecdsa.P224.verifyApi.doc (notes := ["The function is `vg_ecdsa_p224_sign`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p224`'s checks of the public key \
-      and its window method: it saves its caller's callee-saved registers in `scratch`; field \
-      elements and scalars are four 64-bit words in Montgomery form, multiplied by word-by-word \
-      Montgomery multiplication (CIOS) with a final conditional subtraction. The key is checked \
-      without branches (its first byte, both coordinates below `p`, and the curve's equation), \
-      and `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on \
-      a point of the curve. `s⁻¹` modulo `n` and \
-      `Z⁻¹` are by the signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of \
-      `u` (from the static `VG_P224_COMB`), and `[v]Q` by `vg_ecdh_p224`'s signed 4-bit windows (`v` recoded as \
-      `v + 8 Σ_{j<57} 16^j`, a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a \
-      complete addition of the entry selected in constant time per digit); the two are added \
-      by the complete addition formulas of Renes, Costello and Batina. The result is the \
-      conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at \
-      infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the pointers, \
-      although the contract would let every input affect it."])
+    doc := Spec.Ecdsa.P224.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+      registers in `scratch`. Field elements and scalars are four 64-bit words in Montgomery form, \
+      multiplied by word-by-word Montgomery multiplication (CIOS) with a final conditional \
+      subtraction. The public key is checked without branches (its first byte, both coordinates \
+      below `p`, and the curve's equation); an invalid key is replaced with `G` for the point \
+      operations and rejected by the final validity flag. Divsteps computes `s⁻¹` modulo `n`, then \
+      `u = e/s` and `v = r/s`. Both public scalars are recoded, over the 256 bits of their four \
+      words, as non-adjacent signed digits, width seven for `u` and width five for `v`. A single Jacobian \
+      accumulator computes `[u]G + [v]Q` with 256 doublings, adding only nonzero digits. \
+      Generator digits directly index odd multiples among the 64 affine entries of the first row \
+      of the existing static `VG_P224_COMB`, added by mixed additions; peer digits index eight odd \
+      multiples of `Q` in `scratch`, with cached squares and cubes of their Z coordinates. \
+      Complete point operations cover infinity, equal points and opposite points. Doubling is \
+      Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, into a temporary point copied \
+      back to the accumulator. The final comparison squares the Jacobian Z coordinate and checks \
+      `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-224 has `n < p ≤ 2n`), without a field \
+      inversion. It rejects infinity and returns the conjunction of the key, scalar-range and \
+      coordinate checks as 0 or 1. Timing may depend on the public verification inputs, as \
+      permitted by the contract."])
     consts := Impl.Ecdsa.X86_64.p224.combConsts
-    code := Impl.Ecdsa.Verify.X86_64.verifyP224
+    code := Impl.Ecdsa.Verify.X86_64.jointVerifyP224
     contract := Spec.Ecdsa.P224.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p224.combConsts)
-    verified := Proof.Ecdsa.Verify.X86_64.P224.verify_verified h.law (Proof.P224.combOk7 h.law) h.inv
+    verified := Proof.Ecdsa.Verify.X86_64.P224.jointVerify_verified h.law (Proof.P224.combOk7 h.law) h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 
 end VG.Generic.P224.X86_64.EcdsaP224
