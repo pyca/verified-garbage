@@ -538,9 +538,9 @@ jobs:
               pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
           # AVX-512F and AVX512VL (with Argon2's vg_argon2_compress_avx512
           # and BLAKE2b's vg_blake2b_compress_avx512), BMI2 and ADX (with
-          # RSA's ADX functions), and with AVX2 too (P-256's, P-521's and
-          # Ed25519's `_adx` functions, whose combs select their entries with
-          # AVX2, P-521's with SHA-512's baseline code); BMI2 and
+          # RSA's ADX functions), and with AVX2 too (P-256's, P-384's, P-521's
+          # and Ed25519's `_adx` functions, whose combs select their entries
+          # with AVX2, P-384's and P-521's with SHA-512's baseline code); BMI2 and
           # ADX without AVX-512F; AVX-512F without AVX2, for Argon2 with G's
           # AVX-512 code and BLAKE2b's baseline code; and AVX-512F without
           # AVX512VL, for Argon2 with G's AVX-512 code and BLAKE2b's AVX2
@@ -550,17 +550,17 @@ jobs:
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               bmi2,adx | rsa_pkcs1 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,bmi2,adx | p256 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,bmi2,adx | p256 p384 p521 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               avx,avx512f | argon2 rfc9106 cpu
               avx,avx2,avx512f | argon2 rfc9106 mlkem cpu
           # AVX2, but not AVX-512F or ADX; AES-NI and PCLMULQDQ with AVX, but
           # not VAES or VPCLMULQDQ (RSAES-PKCS1-v1_5 decryption and RSASSA-PSS
           # with the hash functions' AVX2 code and RSA's baseline code, and
-          # P-256 and P-521 with their baseline multiplications).
+          # P-256, P-384 and P-521 with their baseline multiplications).
           - chip: hsw
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa_pkcs1 rsa_pss rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Nothing beyond x86-64's baseline, not even CPUID leaf 7.
           - chip: p4p
             arch: x86_64
@@ -568,12 +568,12 @@ jobs:
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
-          # it, and P-256's signatures with SHA-384 and P-521's with SHA-512
-          # using it, with and without ADX).
+          # it, and P-256's and P-384's signatures with SHA-384 and P-521's
+          # with SHA-512 using it, with and without ADX).
           - chip: arl
             runs: |
               - | sha384 sha512 ed25519 rsa_pss rsa_oaep message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
-              avx,avx2,sha512 | ed25519 rsa_oaep p256 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              avx,avx2,sha512 | ed25519 rsa_oaep p256 p384 p521 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Ice Lake server: AVX512_IFMA and AVX512VL, for vg_x25519_ifma
           # and (with AVX512F) vg_x25519_base_ifma, Ed25519's IFMA variants
           # and vg_rsa_private_checked_ifma; VAES,
