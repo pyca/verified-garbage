@@ -54,27 +54,4 @@ theorem decodeInput_ok {s₀ s : State} {i : Nat} (hp : ScratchPre s₀ 3 4)
   refine WP.mono (decodeInput_number_ok hp hi hs hia) fun t ht => ⟨ht.1, ht.2.1, ?_⟩
   with_reducible exact Eq.mp (congrArg (fun p => DecodeResult (arg s₀ 3) p t) (inputPoint_number hi)) ht.2.2
 
-theorem decodedThen_ok {s₀ s : State} {p : Option Spec.Ed25519.Point} {next : Prog isa} {P : State → Prop}
-    (hs : Saved s₀ (arg s₀ 3) s) (hr : DecodeResult (arg s₀ 3) p s)
-    (hn : ∀ t, Saved s₀ (arg s₀ 3) t → t.mem = s.mem → p = none → WP isa recoverInvalid t P)
-    (hy : ∀ t a, Saved s₀ (arg s₀ 3) t → t.mem = s.mem → p = some a →
-      point (env t.mem (arg s₀ 3)) 0 1 2 3 = a → WP isa next t P) :
-    WP isa (decodedThen next) s P := by
-  refine WP.seq (Wp.wp_test fun t ht zt => WP.block_nil ?_)
-  have ht' : Saved s₀ (arg s₀ 3) t := ⟨by rw [ht.gpr]; exact hs.edi,
-    by rw [ht.gpr]; exact hs.esp, ht.rd.trans hs.rd, ht.wr.trans hs.wr,
-    by rw [ht.mem]; exact hs.frame, by rw [ht.mem]; exact hs.saved⟩
-  cases he : p with
-  | none =>
-    rw [he] at hr
-    change s.gpr .eax = 0 at hr
-    apply WP.ite false (by show t.zf.map (!·) = _; rw [zt, BitVec.and_self, hr]; rfl)
-    · intro h; contradiction
-    · intro _; exact hn t ht' ht.mem he
-  | some a =>
-    rw [he] at hr
-    apply WP.ite true (by show t.zf.map (!·) = _; rw [zt, BitVec.and_self, hr.1]; rfl)
-    · intro _; exact hy t a ht' ht.mem he (by rw [ht.mem]; exact hr.2)
-    · intro h; contradiction
-
 end VG.Proof.Ed25519.X86

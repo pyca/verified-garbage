@@ -56,14 +56,14 @@ theorem verifyEquation_result {s : State} (hp : VerifyPre s) :
     cases Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) <;> rfl
 
 theorem verifyBody_ok {s₀ s : State} (hp : VerifyPre s₀) (hs : Saved s₀ (arg s₀ 3) s) :
-    WP isa (.seq (.block verifyScalar) (.ite .e verifyDecodeA recoverInvalid)) s fun t =>
+    WP isa (.seq (.block verifyScalar) (.ite .e verifyDecode recoverInvalid)) s fun t =>
       Saved s₀ (arg s₀ 3) t ∧ t.gpr .eax = signWord
         (decide (verificationScalar s₀ < Spec.Ed25519.L) && decodeResult s₀) := by
   refine WP.seq (WP.mono (verifyScalar_ok hp.scratch hp.scalar hs) fun a ⟨ha, za⟩ => ?_)
   rw [← verificationScalar_num hp] at za
   apply WP.ite (decide (verificationScalar s₀ < Spec.Ed25519.L)) za
   · intro hh
-    refine WP.mono (verifyDecodeA_ok hp ha) fun t ⟨ht, vt⟩ => ⟨ht, ?_⟩
+    refine WP.mono (verifyDecode_ok hp ha) fun t ⟨ht, vt⟩ => ⟨ht, ?_⟩
     rw [hh, Bool.true_and]
     exact vt
   · intro hh
@@ -93,111 +93,16 @@ section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
-theorem inputSliceValue_ok {s₀ s : State} {i : Nat} (hp : ScratchPre s₀ 3 4)
-    (hi : SlicePre s₀ 3 (arg s₀ i + BitVec.ofNat 32 0) 32)
-    (hs : Saved s₀ (arg s₀ 3) s) (hia : i < 4) :
-    WP isa (.block (inputSliceWords i 0 96 8)) s fun t => Saved s₀ (arg s₀ 3) t ∧
-      fe t.mem (arg s₀ 3) 96 = Spec.Ed25519.decodeLE
-        (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i + BitVec.ofNat 32 0).setWidth 64) 32) := by
-  refine WP.mono (inputSliceWords_ok hp hi hs hia (by decide) (by decide) (by decide)) fun t ⟨ht, wt, _⟩ => ?_
-  refine ⟨ht, ?_⟩
-  rw [← addr_zero (arg s₀ i + BitVec.ofNat 32 0), decode_words s₀.mem 8 (by have := hi.fit; omega_using [this])]
-  apply num_congr
-  intro k hk
-  simp only [Nat.zero_add]
-  exact congrArg BitVec.toNat (wt k hk)
+theorem VerifyCTFacts.inputBytes {s t : State} (h : VerifyCTFacts s t) {k : Nat} (hk : k < 2) :
+    Spec.Ed25519.bytesAt s.mem ((arg s k + BitVec.ofNat 32 0).setWidth 64) 32 =
+      Spec.Ed25519.bytesAt t.mem ((arg t k + BitVec.ofNat 32 0).setWidth 64) 32 := by
+  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  exacts [h.pkBytes, h.rBytes]
 
-theorem decodeInput_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (i : Nat) (hi : i ≤ 2)
-    (is : SlicePre s₀ 3 (arg s₀ i + BitVec.ofNat 32 0) 32)
-    (it : SlicePre t₀ 3 (arg t₀ i + BitVec.ofNat 32 0) 32)
-    (hb : Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i + BitVec.ofNat 32 0).setWidth 64) 32 =
-      Spec.Ed25519.bytesAt t₀.mem ((arg t₀ i + BitVec.ofNat 32 0).setWidth 64) 32) :
-    RelCT isa (VerifySaved s₀ t₀) (.seq (.block (inputSliceWords i 0 96 8)) pointDecode) (fun _ _ => True) := by
-  have hh := (inputSlice96_ct h i hi).wp (fun _ _ hp =>
-    ⟨inputSliceValue_ok (verify_pre h.left).scratch is hp.1 (by omega),
-      inputSliceValue_ok (verify_pre h.right).scratch it hp.2 (by omega)⟩)
-  refine VG.RelCT.seq (hh.mono (fun _ _ h => h) ?_)
-    (pointDecode_ct (arg s₀ 3) (Spec.Ed25519.decodeLE
-      (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i + BitVec.ofNat 32 0).setWidth 64) 32)))
-  intro s t hp
-  have hs := hp.2.1
-  have ht := hp.2.2
-  have left : DecodeCTPre (arg s₀ 3) _ s :=
-    ⟨hs.1.ctx (verify_pre h.left).scratch.fit (verify_pre h.left).scratch.wr, hs.2⟩
-  have right : DecodeCTPre (arg t₀ 3) (Spec.Ed25519.decodeLE
-      (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i + BitVec.ofNat 32 0).setWidth 64) 32)) t :=
-    ⟨ht.1.ctx (verify_pre h.right).scratch.fit (verify_pre h.right).scratch.wr,
-      ht.2.trans (congrArg Spec.Ed25519.decodeLE hb.symm)⟩
-  exact ⟨left, Eq.mp (congrArg (fun base => DecodeCTPre base
-    (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i + BitVec.ofNat 32 0).setWidth 64) 32)) t)
-    (h.args 3 (by decide)).symm) right⟩
-
-end VG.Proof.Ed25519.X86
-end
-
-namespace VG.Proof.Ed25519.X86
-open VG VG.X86 VG.Impl.Ed25519.X86
-
-structure TestUnchanged (s t : State) : Prop where
-  gpr : t.gpr = s.gpr
-  mem : t.mem = s.mem
-  rd : t.rd = s.rd
-  wr : t.wr = s.wr
-
-theorem Saved.test {s₀ s t : State} {base : BitVec 32} (h : Saved s₀ base s) (k : TestUnchanged s t) : Saved s₀ base t :=
-  ⟨(congrFun k.gpr _).trans h.edi, (congrFun k.gpr _).trans h.esp, k.rd.trans h.rd, k.wr.trans h.wr,
-    by rw [k.mem]; exact h.frame, by rw [k.mem]; exact h.saved⟩
-
-theorem DecodeResult.test {base : BitVec 32} {p : Option Spec.Ed25519.Point} {s t : State}
-    (h : DecodeResult base p s) (k : TestUnchanged s t) : DecodeResult base p t := by
-  cases p with
-  | none => exact (congrFun k.gpr _).trans h
-  | some p => exact ⟨(congrFun k.gpr _).trans h.1, by rw [k.mem]; exact h.2⟩
-
-theorem decodedThen_ct (base : BitVec 32) (p : Option Spec.Ed25519.Point) (P₁ P₂ : State → Prop) (next : Prog isa)
-    (hP₁ : ∀ s t, TestUnchanged s t → P₁ s → P₁ t)
-    (hP₂ : ∀ s t, TestUnchanged s t → P₂ s → P₂ t)
-    (hn : ∀ a, p = some a → RelCT isa
-      (fun s t => (P₁ s ∧ point (env s.mem base) 0 1 2 3 = a) ∧
-        (P₂ t ∧ point (env t.mem base) 0 1 2 3 = a)) next (fun _ _ => True)) :
-    RelCT isa (fun s t => (P₁ s ∧ DecodeResult base p s) ∧ (P₂ t ∧ DecodeResult base p t))
-      (decodedThen next) (fun _ _ => True) := by
-  have ht : RelCT isa (fun s t => (P₁ s ∧ DecodeResult base p s) ∧ (P₂ t ∧ DecodeResult base p t))
-      (.block [.alu .test .eax (.reg .eax)]) (fun _ _ => True) := by
-    apply VG.RelCT.taint (A := taint) (regsTaint []) _ (by taint_decide)
-    exact fun _ _ _ => regsTaint_agree (by simp)
-  have hw (P : State → Prop) (hP : ∀ s t, TestUnchanged s t → P s → P t) (s : State)
-      (h : P s ∧ DecodeResult base p s) :
-      WP isa (.block [.alu .test .eax (.reg .eax)]) s fun t => P t ∧ DecodeResult base p t ∧ t.zf = some (!p.isSome) := by
-    refine Wp.wp_test fun t kt zt => WP.block_nil ?_
-    have k : TestUnchanged s t := ⟨kt.gpr, kt.mem, kt.rd, kt.wr⟩
-    refine ⟨hP s t k h.1, h.2.test k, ?_⟩
-    rw [zt, BitVec.and_self, decodeResult_flag h.2]
-    cases p <;> rfl
-  have hp := ht.wp (fun s t h => ⟨hw P₁ hP₁ s h.1, hw P₂ hP₂ t h.2⟩)
-  rw [decodedThen]
-  refine VG.RelCT.seq hp (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
-  · intro s t h
-    change s.zf.map Bool.not = t.zf.map Bool.not
-    rw [h.2.1.2.2, h.2.2.2.2]
-  · cases p with
-    | none =>
-      apply VG.RelCT.of_false
-      intro s t h
-      have he := h.2
-      change s.zf.map Bool.not = some true at he
-      rw [h.1.2.1.2.2] at he
-      contradiction
-    | some a =>
-      exact (hn a rfl).mono
-        (fun _ _ h => ⟨⟨h.1.2.1.1, h.1.2.1.2.1.2⟩, ⟨h.1.2.2.1, h.1.2.2.2.1.2⟩⟩) (fun _ _ h => h)
-  · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
-
-end VG.Proof.Ed25519.X86
-end
-
-namespace VG.Proof.Ed25519.X86
-open VG VG.X86 VG.Impl.Ed25519.X86
+theorem VerifyPre.input {s : State} (hp : VerifyPre s) {k : Nat} (hk : k < 2) :
+    SlicePre s 3 (arg s k + BitVec.ofNat 32 0) 32 := by
+  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  exacts [hp.pk, hp.r]
 
 theorem VerifyCTFacts.inputA {s t : State} (h : VerifyCTFacts s t) : inputPoint s 0 = inputPoint t 0 :=
   congrArg Spec.Ed25519.decodePoint h.pkBytes
@@ -205,113 +110,220 @@ theorem VerifyCTFacts.inputA {s t : State} (h : VerifyCTFacts s t) : inputPoint 
 theorem VerifyCTFacts.inputR {s t : State} (h : VerifyCTFacts s t) : inputPoint s 1 = inputPoint t 1 :=
   congrArg Spec.Ed25519.decodePoint h.rBytes
 
-def DecodeRCTPre (s₀ : State) (a : Spec.Ed25519.Point) (s : State) : Prop :=
-  Saved s₀ (arg s₀ 3) s ∧ tablePoint s.mem (arg s₀ 3) 7680 = a
+theorem VerifyCTFacts.decOk {s t : State} (h : VerifyCTFacts s t) : decOk s 2 = decOk t 2 := by
+  rw [decOk_two, decOk_two, h.inputA, h.inputR]
 
-theorem pointTableWrite_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (o : Nat) (ho : o = 7680 ∨ o = 7808) :
-    RelCT isa (VerifySaved s₀ t₀) (.block (pointTableWrite o)) (fun _ _ => True) := by
-  rcases ho with rfl | rfl
-  all_goals
+/-! ## Constant time of the decodings' loop -/
+
+theorem VerifyCTFacts.edi {s₀ t₀ x y : State} (h : VerifyCTFacts s₀ t₀) (hx : Saved s₀ (arg s₀ 3) x)
+    (hy : Saved t₀ (arg t₀ 3) y) : x.gpr .edi = y.gpr .edi :=
+  hx.edi.trans ((h.args 3 (by decide)).trans hy.edi.symm)
+
+theorem decodeStart_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
+    RelCT isa (VerifySaved s₀ t₀) (.block decodeStart) (fun _ _ => True) := by
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .esp]) _ (by taint_decide)
+  intro s t hp
+  apply regsTaint_agree
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.edi hp.1 hp.2
+  · exact hp.1.esp.trans (h.pub.1.trans hp.2.esp.symm)
+
+/-- After the copy of the input `k`: its number in slot 3. -/
+def LoadedAt (u : State) (k : Nat) (x : State) : Prop :=
+  Saved u (arg u 3) x ∧ fe x.mem (arg u 3) 96 = Spec.Ed25519.decodeLE
+      (Spec.Ed25519.bytesAt u.mem ((arg u k + BitVec.ofNat 32 0).setWidth 64) 32) ∧
+    wd x.mem (arg u 3) DTAB = BitVec.ofNat 32 (7680 + 128 * k)
+
+/-- After its decoding. -/
+def DecodedAt (u : State) (k : Nat) (x : State) : Prop :=
+  Saved u (arg u 3) x ∧ wd x.mem (arg u 3) DTAB = BitVec.ofNat 32 (7680 + 128 * k)
+
+theorem decodeLoad_at {u x : State} (hu : VerifyPre u) {k : Nat} (hk : k < 2) (hx : DecAt u k x) :
+    WP isa (.block decodeLoad) x (LoadedAt u k) := by
+  have hi := hu.input hk
+  refine WP.mono (decodeLoad_ok hu hi hx.saved (hx.ptr hk)) fun t ⟨ht, wt, ft⟩ => ⟨ht, ?_, ?_⟩
+  · rw [← addr_zero (arg u k + BitVec.ofNat 32 0), decode_words u.mem 8 (by have := hi.fit; omega_using [this])]
+    apply num_congr
+    intro j hj
+    simp only [Nat.zero_add]
+    exact congrArg BitVec.toNat (wt j hj)
+  · rw [wd_frame1 ft hu.scratch.fit (by decide) (by decide) (Or.inr (by decide))]
+    exact hx.tab
+
+theorem pointDecode_at {u x : State} (hu : VerifyPre u) {k : Nat} (hx : LoadedAt u k x) :
+    WP isa pointDecode x (DecodedAt u k) := by
+  refine WP.mono (pointDecode_ok (hx.1.ctx hu.scratch.fit hu.scratch.wr)) fun t ht => ?_
+  refine ⟨hx.1.mulkeep hu.scratch.fit ht.1, ?_⟩
+  rw [wd_frame1 ht.1.frame hu.scratch.fit (by decide) (by decide) (Or.inr (by decide))]
+  exact hx.2.2
+
+theorem decodeLoad_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat} (hk : k < 2) :
+    RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y) (.block decodeLoad) (fun _ _ => True) := by
+  have hc : RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y)
+      (.block [.mov .esi (.mem (Impl.X25519.X86.sc DPTR))]) (fun _ _ => True) := by
     apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
-  all_goals exact fun _ _ hp => regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸
-    (hp.1.edi.trans ((h.args 3 (by decide)).trans hp.2.edi.symm)))
+    intro x y hp
+    exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.saved hp.2.saved)
+  have hw (u x : State) (hu : VerifyPre u) (hx : DecAt u k x) :
+      WP isa (.block [.mov .esi (.mem (Impl.X25519.X86.sc DPTR))]) x fun z =>
+        z.gpr .edi = arg u 3 ∧ z.gpr .esi = arg u k :=
+    loadWd_ok hu hx.saved (d := DPTR) (by decide) .esi (by decide) fun z hz ez _ _ =>
+      WP.block_nil ⟨hz.edi, ez.trans (hx.ptr hk)⟩
+  have hh := ctWithRuns hc (fun x y hp => ⟨hw s₀ x (verify_pre h.left) hp.1, hw t₀ y (verify_pre h.right) hp.2⟩)
+  have hl : RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y)
+      (.block [.mov .esi (.mem (Impl.X25519.X86.sc DPTR))])
+      (fun x y => x.gpr .edi = y.gpr .edi ∧ x.gpr .esi = y.gpr .esi) :=
+    hh.mono (fun _ _ h => h) fun (x y : State) ⟨_, _, _, _, hx, hy⟩ =>
+      ⟨hx.1.trans ((h.args 3 (by decide)).trans hy.1.symm), hx.2.trans ((h.args k (by omega)).trans hy.2.symm)⟩
+  show RelCT isa _ (.block ([.mov .esi (.mem (Impl.X25519.X86.sc DPTR))] ++ copyWords 96 8)) _
+  exact ctBlockAppend hl copyWords96_ct
 
-theorem verifyStoreR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a r : Spec.Ed25519.Point)
-    {Aa Ra : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa)
-    (hR : VG.Proof.Ed25519.Rep r Ra) :
-    RelCT isa (fun s t => (DecodeRCTPre s₀ a s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = r) ∧
-      (DecodeRCTPre t₀ a t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = r))
-      (.seq (.block (pointTableWrite 7808)) verifyEquationPoints) (fun _ _ => True) := by
-  have hc := (pointTableWrite_ct h 7808 (Or.inr rfl)).mono
-    (P' := fun (s t : State) => (DecodeRCTPre s₀ a s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = r) ∧
-      (DecodeRCTPre t₀ a t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = r))
-    (fun _ _ hp => ⟨hp.1.1.1, hp.2.1.1⟩) (fun _ _ h => h)
-  have hw (u s : State) (hu : VerifyPre u) (hs : DecodeRCTPre u a s)
-      (hr : point (env s.mem (arg u 3)) 0 1 2 3 = r) :
-      WP isa (.block (pointTableWrite 7808)) s (EquationCTPre u a r) := by
-    refine WP.mono (pointTableWrite_ok (hs.1.ctx hu.scratch.fit hu.scratch.wr) 7808 (by decide) (by decide))
-      fun t ⟨kt, ft, pt⟩ => ?_
-    refine ⟨hs.1.of_offset hu.scratch.fit kt ft (by decide) (by decide) (by decide), ?_, pt.trans hr⟩
-    exact (tablePoint_frame hu.scratch.fit ft (by decide) (by decide) (Or.inl (by decide))).trans hs.2
-  have hh := hc.wp (fun s t hp => ⟨hw s₀ s (verify_pre h.left) hp.1.1 hp.1.2,
-    hw t₀ t (verify_pre h.right) hp.2.1 ((h.args 3 (by decide)) ▸ hp.2.2)⟩)
-  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyEquationPoints_ct h a r hA hR)
+theorem decodeNext1_ok {u x : State} (hu : VerifyPre u) {k : Nat} (hx : DecodedAt u k x) :
+    WP isa (.block ([.mov .ecx (.reg .eax), .mov .edx (.mem (Impl.X25519.X86.sc DTAB)),
+      .alu .add .edx (.reg .edi)] : List Instr)) x fun t =>
+      t.gpr .edi = arg u 3 ∧ t.gpr .edx = arg u 3 + BitVec.ofNat 32 (7680 + 128 * k) := by
+  refine Wp.wp_mov fun u1 h1 => ?_
+  have hs1 := hx.1.upd h1
+  refine loadWd_ok hu hs1 (d := DTAB) (by decide) .edx (by decide) fun u2 hs2 e2 g2 _ => ?_
+  refine Wp.wp_add fun u3 h3 _ => WP.block_nil ⟨(hs2.upd h3).edi, ?_⟩
+  rw [h3.gpr, e2, h1.mem, hx.2, hs2.edi, BitVec.add_comm]
 
-theorem verifyDecodeR_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point)
-    {Aa : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa) :
-    RelCT isa (fun s t => DecodeRCTPre s₀ a s ∧ DecodeRCTPre t₀ a t) verifyDecodeR (fun _ _ => True) := by
+theorem decodeNext_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat} :
+    RelCT isa (fun x y => DecodedAt s₀ k x ∧ DecodedAt t₀ k y) (.block decodeNext) (fun _ _ => True) := by
+  rw [decodeNext_eq]
+  have hc : RelCT isa (fun x y => DecodedAt s₀ k x ∧ DecodedAt t₀ k y)
+      (.block ([.mov .ecx (.reg .eax), .mov .edx (.mem (Impl.X25519.X86.sc DTAB)),
+        .alu .add .edx (.reg .edi)] : List Instr)) (fun _ _ => True) := by
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    intro x y hp
+    exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.1 hp.2.1)
+  have hh := ctWithRuns hc (fun x y hp => ⟨decodeNext1_ok (verify_pre h.left) hp.1,
+    decodeNext1_ok (verify_pre h.right) hp.2⟩)
+  have h1 : RelCT isa (fun x y => DecodedAt s₀ k x ∧ DecodedAt t₀ k y)
+      (.block ([.mov .ecx (.reg .eax), .mov .edx (.mem (Impl.X25519.X86.sc DTAB)),
+        .alu .add .edx (.reg .edi)] : List Instr))
+      (fun x y => x.gpr .edi = y.gpr .edi ∧ x.gpr .edx = y.gpr .edx) :=
+    hh.mono (fun _ _ h => h) fun (x y : State) ⟨_, _, _, _, hx, hy⟩ =>
+      ⟨by rw [hx.1, hy.1, h.args 3 (by decide)], by rw [hx.2, hy.2, h.args 3 (by decide)]⟩
+  refine ctBlockAppend h1 ?_
+  apply VG.RelCT.taint (A := taint) (regsTaint [.edi, .edx]) _ (by taint_decide)
+  intro x y hp
+  apply regsTaint_agree
+  intro r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  exacts [hp.1, hp.2]
+
+theorem decodeBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {k : Nat} (hk : k < 2) :
+    RelCT isa (fun x y => DecAt s₀ k x ∧ DecAt t₀ k y) decodeBody (fun _ _ => True) := by
   have ps := verify_pre h.left
   have pt := verify_pre h.right
-  have hc := (decodeInput_ct h 1 (by decide) ps.r pt.r h.rBytes).mono
-    (P' := fun (s t : State) => DecodeRCTPre s₀ a s ∧ DecodeRCTPre t₀ a t)
-    (fun _ _ hp => ⟨hp.1.1, hp.2.1⟩) (fun _ _ h => h)
-  have hw (u s : State) (hu : VerifyPre u) (hs : DecodeRCTPre u a s) :
-      WP isa (.seq (.block (inputSliceWords 1 0 96 8)) pointDecode) s fun t =>
-        DecodeRCTPre u a t ∧ DecodeResult (arg u 3) (inputPoint u 1) t := by
-    refine WP.mono (decodeInput_ok hu.scratch hu.r hs.1 (by decide)) fun t ht => ?_
-    have ha := (tablePoint_frame hu.scratch.fit ht.2.1 (by decide) (by decide) (Or.inr (by decide))).trans hs.2
-    have hpre : DecodeRCTPre u a t := ⟨ht.1, ha⟩
-    with_reducible exact ⟨hpre, ht.2.2⟩
-  have hh := hc.wp (fun s t hp => ⟨hw s₀ s ps hp.1, hw t₀ t pt hp.2⟩)
-  rw [verifyDecodeR]
-  apply VG.RelCT.assoc
-  refine VG.RelCT.seq (hh.mono (fun _ _ h => h) ?_)
-    (decodedThen_ct (arg s₀ 3) (inputPoint s₀ 1) (DecodeRCTPre s₀ a) (DecodeRCTPre t₀ a)
-      (.seq (.block (pointTableWrite 7808)) verifyEquationPoints) ?_ ?_ ?_)
-  · intro s t hp
-    with_reducible refine ⟨hp.2.1, hp.2.2.1, ?_⟩
-    with_reducible exact Eq.mp (congrArg₂ (fun base p => DecodeResult base p t)
-      (h.args 3 (by decide)).symm h.inputR.symm) hp.2.2.2
-  · intro s t k hp
-    exact ⟨hp.1.test k, by rw [k.mem]; exact hp.2⟩
-  · intro s t k hp
-    exact ⟨hp.1.test k, by rw [k.mem]; exact hp.2⟩
-  · intro r hr
-    obtain ⟨Ra, hRa⟩ := VG.Proof.Ed25519.decodePoint_rep hr
-    exact verifyStoreR_ct h a r hA hRa
+  have hb := h.inputBytes hk
+  rw [decodeBody]
+  refine seq_runs (decodeLoad_ct h hk) (fun x hx => decodeLoad_at ps hk hx) (fun y hy => decodeLoad_at pt hk hy) ?_
+  refine seq_runs ?_ (fun x hx => pointDecode_at ps hx) (fun y hy => pointDecode_at pt hy) (decodeNext_ct h)
+  refine (pointDecode_ct (arg s₀ 3) (Spec.Ed25519.decodeLE
+    (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ k + BitVec.ofNat 32 0).setWidth 64) 32))).mono ?_ (fun _ _ h => h)
+  intro x y ⟨hx, hy⟩
+  refine ⟨⟨hx.1.ctx ps.scratch.fit ps.scratch.wr, hx.2.1⟩, ?_⟩
+  have e3 := h.args 3 (by decide)
+  have cy := hy.1.ctx pt.scratch.fit pt.scratch.wr
+  rw [← e3] at cy
+  refine ⟨cy, ?_⟩
+  rw [e3, hy.2.1, hb]
 
-theorem verifyStoreA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) (a : Spec.Ed25519.Point)
-    {Aa : Edwards.EPoint VG.Proof.Ed25519.dZ} (hA : VG.Proof.Ed25519.Rep a Aa) :
-    RelCT isa (fun s t => (Saved s₀ (arg s₀ 3) s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = a) ∧
-      (Saved t₀ (arg t₀ 3) t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = a))
-      (.seq (.block (pointTableWrite 7680)) verifyDecodeR) (fun _ _ => True) := by
-  have hc := (pointTableWrite_ct h 7680 (Or.inl rfl)).mono
-    (P' := fun (s t : State) => (Saved s₀ (arg s₀ 3) s ∧ point (env s.mem (arg s₀ 3)) 0 1 2 3 = a) ∧
-      (Saved t₀ (arg t₀ 3) t ∧ point (env t.mem (arg s₀ 3)) 0 1 2 3 = a))
-    (fun _ _ hp => ⟨hp.1.1, hp.2.1⟩) (fun _ _ h => h)
-  have hw (u s : State) (hu : VerifyPre u) (hs : Saved u (arg u 3) s)
-      (ha : point (env s.mem (arg u 3)) 0 1 2 3 = a) :
-      WP isa (.block (pointTableWrite 7680)) s (DecodeRCTPre u a) := by
-    refine WP.mono (pointTableWrite_ok (hs.ctx hu.scratch.fit hu.scratch.wr) 7680 (by decide) (by decide))
-      fun t ⟨kt, ft, pt⟩ => ?_
-    exact ⟨hs.of_offset hu.scratch.fit kt ft (by decide) (by decide) (by decide), pt.trans ha⟩
-  have hh := hc.wp (fun s t hp => ⟨hw s₀ s (verify_pre h.left) hp.1.1 hp.1.2,
-    hw t₀ t (verify_pre h.right) hp.2.1 ((h.args 3 (by decide)) ▸ hp.2.2)⟩)
-  exact VG.RelCT.seq (hh.mono (fun _ _ h => h) (fun _ _ h => h.2)) (verifyDecodeR_ct h a hA)
-
-theorem verifyDecodeA_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
-    RelCT isa (VerifySaved s₀ t₀) verifyDecodeA (fun _ _ => True) := by
+theorem decodeLoop_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
+    RelCT isa (fun x y => DecAt s₀ 0 x ∧ DecAt t₀ 0 y) (.loop decodeBody .ne)
+      (fun x y => DecAt s₀ 2 x ∧ DecAt t₀ 2 y) := by
   have ps := verify_pre h.left
   have pt := verify_pre h.right
-  have hh := ctWithRuns (decodeInput_ct h 0 (by decide) ps.pk pt.pk h.pkBytes)
-    (fun _ _ hp => ⟨decodeInput_ok ps.scratch ps.pk hp.1 (by decide),
-      decodeInput_ok pt.scratch pt.pk hp.2 (by decide)⟩)
-  rw [verifyDecodeA]
-  apply VG.RelCT.assoc
-  refine VG.RelCT.seq (hh.mono (fun _ _ h => h) ?_)
-    (decodedThen_ct (arg s₀ 3) (inputPoint s₀ 0) (Saved s₀ (arg s₀ 3)) (Saved t₀ (arg t₀ 3))
-      (.seq (.block (pointTableWrite 7680)) verifyDecodeR) ?_ ?_ ?_)
-  · intro s t ⟨_, _, _, _, hs, ht⟩
-    with_reducible refine ⟨⟨hs.1, hs.2.2⟩, ht.1, ?_⟩
-    with_reducible exact Eq.mp (congrArg₂ (fun base p => DecodeResult base p t)
-      (h.args 3 (by decide)).symm h.inputA.symm) ht.2.2
-  · intro s t k hp; exact hp.test k
-  · intro s t k hp; exact hp.test k
-  · intro a ha
-    obtain ⟨Aa, hAa⟩ := VG.Proof.Ed25519.decodePoint_rep ha
-    exact verifyStoreA_ct h a hAa
+  refine (VG.RelCT.loop (I := fun m x y => ∃ k, k + m = 2 ∧ k < 2 ∧ DecAt s₀ k x ∧ DecAt t₀ k y) ?_ 2).mono
+    (fun x y hh => ⟨0, rfl, by decide, hh.1, hh.2⟩) (fun _ _ h => h)
+  intro m
+  have step (k : Nat) (hk : k < 2) := ((decodeBody_ct h hk).wp fun x y hh =>
+    ⟨decodeBody_ok ps hk hh.1, decodeBody_ok pt hk hh.2⟩)
+  rcases m with _ | _ | _ | m
+  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega
+  · refine ((step 1 (by decide)).mono (fun x y ⟨k, hkm, _, hx, hy⟩ => by
+      obtain rfl : k = 1 := by omega
+      exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
+    intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
+    refine ⟨?_, fun _ => ⟨hx, hy⟩, fun he => ?_⟩
+    · show x.zf.map (!·) = y.zf.map (!·); rw [zx, zy]
+    · have : x.zf.map (!·) = some true := he
+      rw [zx] at this; cases this
+  · refine ((step 0 (by decide)).mono (fun x y ⟨k, hkm, _, hx, hy⟩ => by
+      obtain rfl : k = 0 := by omega
+      exact ⟨hx, hy⟩) (fun _ _ h => h)).mono (fun _ _ h => h) ?_
+    intro x y ⟨_, ⟨hx, zx⟩, ⟨hy, zy⟩⟩
+    refine ⟨?_, fun he => ?_, fun _ => ⟨1, by omega, 1, rfl, by decide, hx, hy⟩⟩
+    · show x.zf.map (!·) = y.zf.map (!·); rw [zx, zy]
+    · have : x.zf.map (!·) = some false := he
+      rw [zx] at this; cases this
+  · exact VG.RelCT.of_false fun _ _ ⟨k, hkm, hk, _⟩ => by omega
+
+/-- The test of `DOK`. -/
+theorem okTest_ok {u x : State} (hu : VerifyPre u) (hx : DecAt u 2 x) :
+    WP isa (.block [.mov .eax (.mem (Impl.X25519.X86.sc DOK)), .alu .test .eax (.reg .eax)]) x fun t =>
+      Saved u (arg u 3) t ∧ t.mem = x.mem ∧ t.zf.map (!·) = some (decOk u 2) :=
+  loadWd_ok hu hx.saved (d := DOK) (by decide) .eax (by decide) fun b hb eb _ mb =>
+    Wp.wp_test fun c hc zc => WP.block_nil ⟨⟨by rw [hc.gpr]; exact hb.edi, by rw [hc.gpr]; exact hb.esp,
+      hc.rd.trans hb.rd, hc.wr.trans hb.wr, by rw [hc.mem]; exact hb.frame, by rw [hc.mem]; exact hb.saved⟩,
+      hc.mem.trans mb, by rw [zc, eb, hx.ok, BitVec.and_self]; cases decOk u 2 <;> rfl⟩
+
+theorem verifyDecode_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
+    RelCT isa (VerifySaved s₀ t₀) verifyDecode (fun _ _ => True) := by
+  have ps := verify_pre h.left
+  have pt := verify_pre h.right
+  rw [verifyDecode, decodeBoth]
+  refine VG.RelCT.seq (M := isa) (R := fun (x y : State) => DecAt s₀ 2 x ∧ DecAt t₀ 2 y) ?_ ?_
+  · exact seq_runs (decodeStart_ct h) (fun x hx => decodeStart_ok ps hx) (fun y hy => decodeStart_ok pt hy)
+      (decodeLoop_ct h)
+  have ht : RelCT isa (fun x y => DecAt s₀ 2 x ∧ DecAt t₀ 2 y)
+      (.block [.mov .eax (.mem (Impl.X25519.X86.sc DOK)), .alu .test .eax (.reg .eax)]) (fun _ _ => True) := by
+    apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ (by taint_decide)
+    intro x y hp
+    exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h.edi hp.1.saved hp.2.saved)
+  refine seq_runs ht (F₁ := fun t => ∃ x, DecAt s₀ 2 x ∧ Saved s₀ (arg s₀ 3) t ∧ t.mem = x.mem ∧
+      t.zf.map (!·) = some (decOk s₀ 2))
+    (F₂ := fun t => ∃ y, DecAt t₀ 2 y ∧ Saved t₀ (arg t₀ 3) t ∧ t.mem = y.mem ∧
+      t.zf.map (!·) = some (decOk t₀ 2))
+    (fun x hx => WP.mono (okTest_ok ps hx) fun t ht => ⟨x, hx, ht⟩)
+    (fun y hy => WP.mono (okTest_ok pt hy) fun t ht => ⟨y, hy, ht⟩) ?_
+  refine VG.RelCT.ite (M := isa) ?_ ?_ ?_
+  · intro x y ⟨⟨_, _, _, _, zx⟩, ⟨_, _, _, _, zy⟩⟩
+    show x.zf.map (!·) = y.zf.map (!·)
+    rw [zx, zy, h.decOk]
+  · cases ha : inputPoint s₀ 0 with
+    | none =>
+      exact VG.RelCT.of_false fun x y hh => by
+        obtain ⟨⟨_, _, _, _, zx⟩, _⟩ := hh.1
+        have e := hh.2
+        change x.zf.map (!·) = some true at e
+        rw [zx, decOk_two, ha] at e; cases e
+    | some a =>
+      cases hr : inputPoint s₀ 1 with
+      | none =>
+        exact VG.RelCT.of_false fun x y hh => by
+          obtain ⟨⟨_, _, _, _, zx⟩, _⟩ := hh.1
+          have e := hh.2
+          change x.zf.map (!·) = some true at e
+          rw [zx, decOk_two, ha, hr] at e; cases e
+      | some r =>
+        obtain ⟨Aa, hAa⟩ := VG.Proof.Ed25519.decodePoint_rep ha
+        obtain ⟨Ra, hRa⟩ := VG.Proof.Ed25519.decodePoint_rep hr
+        refine (verifyEquationPoints_ct h a r hAa hRa).mono ?_ (fun _ _ h => h)
+        intro x y ⟨⟨⟨x', hx', sx, mx, _⟩, ⟨y', hy', sy, my, _⟩⟩, _⟩
+        refine ⟨⟨sx, by rw [mx]; exact hx'.pts 0 (by decide) a ha, by rw [mx]; exact hx'.pts 1 (by decide) r hr⟩,
+          ⟨sy, by rw [my]; exact hy'.pts 0 (by decide) a (h.inputA ▸ ha),
+            by rw [my]; exact hy'.pts 1 (by decide) r (h.inputR ▸ hr)⟩⟩
+  · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
 end VG.Proof.Ed25519.X86
+end
+end
 end
 
 /-! Merged from `Proof.Ed25519.X86.VerifyCTSetup`. -/
@@ -365,7 +377,7 @@ namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.Ed25519.X86
 
 theorem verifyBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
-    RelCT isa (VerifySaved s₀ t₀) (.seq (.block verifyScalar) (.ite .e verifyDecodeA recoverInvalid))
+    RelCT isa (VerifySaved s₀ t₀) (.seq (.block verifyScalar) (.ite .e verifyDecode recoverInvalid))
       (fun _ _ => True) := by
   have ps := verify_pre h.left
   have pt := verify_pre h.right
@@ -375,12 +387,12 @@ theorem verifyBody_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
   · intro s t hp
     change s.zf = t.zf
     rw [hp.2.1.2, hp.2.2.2, h.scalarFe]
-  · exact (verifyDecodeA_ct h).mono (fun _ _ hp => ⟨hp.1.2.1.1, hp.1.2.2.1⟩) (fun _ _ h => h)
+  · exact (verifyDecode_ct h).mono (fun _ _ hp => ⟨hp.1.2.1.1, hp.1.2.2.1⟩) (fun _ _ h => h)
   · exact recoverInvalid_ct.mono (fun _ _ _ => trivial) (fun _ _ h => h)
 
 theorem verifyTail_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) :
     RelCT isa (VerifySaved s₀ t₀)
-      (.seq (.seq (.block verifyScalar) (.ite .e verifyDecodeA recoverInvalid)) (.block verifyFinish))
+      (.seq (.seq (.block verifyScalar) (.ite .e verifyDecode recoverInvalid)) (.block verifyFinish))
       (fun _ _ => True) := by
   have hh := (verifyBody_ct h).wp (fun _ _ hp =>
     ⟨verifyBody_ok (verify_pre h.left) hp.1, verifyBody_ok (verify_pre h.right) hp.2⟩)
