@@ -615,4 +615,79 @@ theorem mredRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     obtain ⟨rw, ra, rb, rc, rd, rbp, r8, r13, r15⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, rw, ra, rb, rc, rd, rbp, r8, r13, r15, ite_false]
 
+theorem bit_mul_lt {b x : Nat} (hb : b ≤ 1) (hx : x < 2 ^ 64) : b * x < 2 ^ 64 := by
+  rcases (by omega : b = 0 ∨ b = 1) with rfl | rfl <;> omega
+
+/-- `addPNeg`: `p` added to the five words `rbp`, `r8`, `r13`, `r15`, `w` if `w` is
+negative (modulo `2^320`). -/
+theorem addPNeg_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (M : Mod)
+    (hmo : M.mo + 32 ≤ size) {w : Reg} (hw : w ∉ clobX) :
+    WP isa (.block (addPNeg M w)) s fun t =>
+      regsVal t [.rbp, .r8, .r13, .r15, w] =
+        (regsVal s [.rbp, .r8, .r13, .r15, w] + (s.gpr w).toNat / 2 ^ 63 * wordsVal s.mem base M.mo 4) % 2 ^ 320 ∧
+      Keeps (w :: clobX) s t := by
+  have L : ∀ d, d + 8 ≤ size → s.load64 (off base d) = some (word s.mem base d) := fun d hd => by
+    have := load_sc hs hd; rwa [ea_sc, hs.rdi] at this
+  have L0 := L M.mo (by omega); have L1 := L (M.mo + 8) (by omega); have L2 := L (M.mo + 16) (by omega)
+  have L3 := L (M.mo + 24) (by omega)
+  simp only [clobX, List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨wa, wb, wc, wd, wbp, w8, w13, w15⟩ := hw
+  have bpw : ¬Reg.rbp = w := Ne.symm wbp
+  have r8w : ¬Reg.r8 = w := Ne.symm w8
+  have r13w : ¬Reg.r13 = w := Ne.symm w13
+  have r15w : ¬Reg.r15 = w := Ne.symm w15
+  apply WP.of_runBlock
+  simp only [addPNeg, runBlock_cons, runStep_some, runBlock_nil,
+    exec, execMulx, execAlu, execShift, readSrc, ea_sc, Option.map_some,
+    Option.bind_some, arithFlags, load64_setReg, load64_setFlags,
+    RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.cf_setReg,
+    RegUpd.cf_setFlags, Nat.reduceLeDiff, Nat.reduceEqDiff,
+    and_self, ↓reduceIte, wa, wc, wd, wbp, w8, w13, w15,
+    hs.rdi, L0, L1, L2, L3, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [regsVal, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
+      ↓reduceIte, reduceCtorEq, bpw, r8w, r13w, r15w]
+    have hb : (s.gpr w >>> 63).toNat = (s.gpr w).toNat / 2 ^ 63 := by
+      rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
+    have hb1 : (s.gpr w >>> 63).toNat ≤ 1 := by have := (s.gpr w).isLt; omega
+    rw [← hb]
+    generalize (s.gpr w >>> 63).toNat = b at *
+    have lo : ∀ x : BitVec 64, (BitVec.ofNat 64 (b * x.toNat)).toNat = b * x.toNat := fun x =>
+      by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (bit_mul_lt hb1 x.isLt)]
+    have l0 := lo (Mont.word s.mem base M.mo)
+    have l1 := lo (Mont.word s.mem base (M.mo + 8))
+    have l2 := lo (Mont.word s.mem base (M.mo + 16))
+    have l3 := lo (Mont.word s.mem base (M.mo + 24))
+    generalize BitVec.ofNat 64 (b * (Mont.word s.mem base M.mo).toNat) = q0 at *
+    generalize BitVec.ofNat 64 (b * (Mont.word s.mem base (M.mo + 8)).toNat) = q1 at *
+    generalize BitVec.ofNat 64 (b * (Mont.word s.mem base (M.mo + 16)).toNat) = q2 at *
+    generalize BitVec.ofNat 64 (b * (Mont.word s.mem base (M.mo + 24)).toNat) = q3 at *
+    generalize hz : BitVec.signExtend 64 (0 : BitVec 32) = z at *
+    have z0 : z.toNat = 0 := by rw [← hz]; rfl
+    generalize s.gpr .rbp = a0 at *
+    generalize s.gpr .r8 = a1 at *
+    generalize s.gpr .r13 = a2 at *
+    generalize s.gpr .r15 = a3 at *
+    generalize s.gpr w = a4 at *
+    have e1 := add_carry a0 q0
+    generalize decide (2 ^ 64 ≤ a0.toNat + q0.toNat) = c1 at e1 ⊢
+    have e2 := adc_carry a1 q1 c1
+    generalize decide (2 ^ 64 ≤ a1.toNat + q1.toNat + c1.toNat) = c2 at e2 ⊢
+    have e3 := adc_carry a2 q2 c2
+    generalize decide (2 ^ 64 ≤ a2.toNat + q2.toNat + c2.toNat) = c3 at e3 ⊢
+    have e4 := adc_carry a3 q3 c3
+    generalize decide (2 ^ 64 ≤ a3.toNat + q3.toNat + c3.toNat) = c4 at e4 ⊢
+    have e5 := adc_carry a4 z c4
+    generalize decide (2 ^ 64 ≤ a4.toNat + z.toNat + c4.toNat) = c5 at e5 ⊢
+    simp only [wordsVal, Nat.add_assoc, Nat.reduceAdd, Nat.mul_add, Nat.mul_zero, Nat.add_zero,
+      Nat.mul_left_comm b] at *
+    refine eq_mod_of (c := c5.toNat) ?_ ?_
+    · omega_using [(a0 + q0).isLt, (a1 + q1 + BitVec.setWidth 64 (BitVec.ofBool c1)).isLt,
+        (a2 + q2 + BitVec.setWidth 64 (BitVec.ofBool c2)).isLt, (a3 + q3 + BitVec.setWidth 64 (BitVec.ofBool c3)).isLt,
+        (a4 + z + BitVec.setWidth 64 (BitVec.ofBool c4)).isLt]
+    · omega_using [e1, e2, e3, e4, e5, l0, l1, l2, l3, z0]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨rw, ra, rb, rc, rd, rbp, r8, r13, r15⟩ := hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, rw, ra, rc, rd, rbp, r8, r13, r15, ite_false]
+
 end VG.Proof.Weierstrass.X86_64
