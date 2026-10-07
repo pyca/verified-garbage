@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 # Montgomery arithmetic on x86-64: the conditional subtraction
 
 `csub M ts top` reduces `V = ts + 2^(64 n) top < 2m` below `m`
-(`csub_ok`). Up to four words use the register-only `csubC`; larger
-register accumulators use `csubM`, computing the difference in the
+(`csub_ok`, in `CsubS.lean` with P-384's `csubS`). Up to four words use the
+register-only `csubC`; larger register accumulators use `csubM`, computing the difference in the
 temporary area (`diffs`) and selecting it with conditional moves
 (`selects`). Both use the final borrow directly. The mask lemmas also
 serve the memory-backed reduction for wider moduli.
@@ -521,26 +521,5 @@ theorem csubC_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   · refine ((k₁.mono fun q hq => ?_).trans (k₂.mono (by simp))).trans (k₃.mono fun q hq => by
       simp only [List.mem_cons] at hq ⊢; exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
     rcases hcr q hq with rfl | rfl | rfl | rfl <;> simp
-
-/-- `csub`: `ts + 2^(64 n) top < 2m` reduced modulo `m`. -/
-theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod}
-    {ts : List Reg} {top : Reg} (hlen : ts.length = M.n) (hn : 0 < M.n) (hf : Fresh (top :: ts))
-    (hmo : M.mo + 8 * M.n ≤ size) (htmp : M.tmp + 8 * M.n ≤ size)
-    (hsep : M.mo + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ M.mo) {m : Nat}
-    (hm : wordsVal s.mem base M.mo M.n = m)
-    (hV : regsVal s ts + 2 ^ (64 * M.n) * (s.gpr top).toNat < 2 * m) :
-    WP isa (.block (csub M ts top)) s fun s' =>
-      regsVal s' ts = (regsVal s ts + 2 ^ (64 * M.n) * (s.gpr top).toNat) % m ∧
-      KeepRegs (.rax :: .rcx :: .rdx :: .rbp :: top :: ts) s s' ∧
-      Outside base M.tmp (8 * M.n) s.mem s'.mem := by
-  unfold csub
-  split
-  · exact WP.mono (csubC_ok hs hlen hn (by omega) hf hmo hm hV) fun s' ⟨e, k⟩ =>
-      ⟨e, Keeps.regs k, fun x _ => by rw [k.2.1]⟩
-  · exact WP.mono (csubM_ok hs hlen hn hf hmo htmp hsep hm hV) fun s' ⟨e, k, O⟩ =>
-      ⟨e, k.mono fun r hr => by
-        simp only [List.mem_cons] at hr ⊢
-        rcases hr with h | h | h
-        exacts [Or.inl h, Or.inr (Or.inr (Or.inl h)), Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))], O⟩
 
 end VG.Proof.Mont.X86_64

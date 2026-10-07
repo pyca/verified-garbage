@@ -38,8 +38,11 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
   reduced below `m`: the difference with `m` is computed, and taken if it
   did not borrow. For at most four words it is computed in `rax`, `rcx`,
-  `rdx` and `rbp` and taken by `cmovae` (`csubC`); for more, into the
-  temporary area `[M.tmp]`, and selected by `cmovae` (`csubM`).
+  `rdx` and `rbp` and taken by `cmovae` (`csubC`); for P-384's `p`, in place,
+  with `p` added back under the mask of the borrow, its words `rax`'s low
+  half, `rax ≪ 32`, `rax ≪ 1` and `rax` (`csubS`, and `sub384` for the
+  subtraction); for more, into the temporary area `[M.tmp]`, and selected by
+  `cmovae` (`csubM`).
 
 For `n ≤ 6` the accumulator is in registers (`mulR`, `addR`, `subR`). For
 more words (P-521's 9) it does not fit, and `mulW`, `addW` and `subW` keep
@@ -285,10 +288,34 @@ borrow. -/
 def csubC (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
   diffsC .sub ts cregs M.mo ++ [.alu .sbb top (.imm 0)] ++ cmovs ts cregs
 
+/-- `ts op= [b]`, word by word, with `op` on the first word and `op'` on the
+others (`add` and `adc`, `sub` and `sbb`). -/
+def chain (op op' : AluOp) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, b => .alu op t (.mem (sc b)) :: chain op' op' ts (b + 8)
+
+/-- P-384's `p` masked by `rax` (all ones or zero): its words but the three
+all-ones ones, which are `rax`, in `rcx` (`2³² - 1`), `rdx` (`2⁶⁴ - 2³²`) and
+`rbp` (`2⁶⁴ - 2`). -/
+def p384Mask : List Instr :=
+  [.mov32 .rcx (.reg .rax), .mov .rdx (.reg .rax), .shift .shl .rdx 32, .mov .rbp (.reg .rax),
+    .shift .shl .rbp 1]
+
+/-- `ts += ` the masked P-384 `p` of `p384Mask`. -/
+def p384Add : List Reg → List Instr
+  | [t0, t1, t2, t3, t4, t5] => [.alu .add t0 (.reg .rcx), .alu .adc t1 (.reg .rdx), .alu .adc t2 (.reg .rbp),
+      .alu .adc t3 (.reg .rax), .alu .adc t4 (.reg .rax), .alu .adc t5 (.reg .rax)]
+  | _ => []
+
+/-- `csub` for P-384's `p`, in registers: `ts - p`, and `p` added back under
+the mask of its borrow. -/
+def csubS (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
+  chain .sub .sbb ts M.mo ++ [.alu .sbb top (.imm 0), .alu .sbb .rax (.reg .rax)] ++ p384Mask ++ p384Add ts
+
 /-- `ts` (and the top word `top`), below `2m`, reduced modulo `m`: by `csubC`
-for at most four words, else by `csubM`. -/
+for at most four words, by `csubS` for P-384's `p`, else by `csubM`. -/
 def csub (M : Mod) (ts : List Reg) (top : Reg) : List Instr :=
-  if ts.length ≤ 4 then csubC M ts top else csubM M ts top
+  if ts.length ≤ 4 then csubC M ts top else if M.sparse then csubS M ts top else csubM M ts top
 
 /-- `[o] = ts`. -/
 def stores : List Reg → Nat → List Instr
@@ -347,11 +374,6 @@ def mulR (M : Mod) (o a b : Nat) : List Instr :=
     zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
       csub M low (win M.n M.n M.n) ++ stores low o
 
-/-- `ts op= [b]`, word by word, with `op` on the first word and `op'` on the
-others (`add` and `adc`, `sub` and `sbb`). -/
-def chain (op op' : AluOp) : List Reg → Nat → List Instr
-  | [], _ => []
-  | t :: ts, b => .alu op t (.mem (sc b)) :: chain op' op' ts (b + 8)
 
 /-- The low words and the top word of the sums and differences. -/
 def low (n : Nat) : List Reg := (acc n).take n
@@ -813,10 +835,16 @@ def add (M : Mod) (o a b : Nat) : List Instr :=
   else if M.red = .friendly p521Ws then (if a = b then dblMer o a else addMer o a b)
   else addW M o a b
 
-/-- `[o] = [a] - [b] mod m`. The BMI2/ADX P-256 backend uses the
+/-- `[o] = [a] - [b] mod p` for P-384, the masked `p` in registers. -/
+def sub384 (o a b : Nat) : List Instr :=
+  loads (low 6) a ++ chain .sub .sbb (low 6) b ++ [.alu .sbb .rax (.reg .rax)] ++ p384Mask ++
+    p384Add (low 6) ++ stores (low 6) o
+
+/-- `[o] = [a] - [b] mod m`. The BMI2/ADX P-256 backend and P-384 use the
 register-only masked modulus; other backends retain their existing subtraction. -/
 def sub (M : Mod) (o a b : Nat) : List Instr :=
   if M.adx ∧ M.red = .friendly p256Ws then sub256 o a b
+  else if M.sparse ∧ M.n = 6 then sub384 o a b
   else if M.n < 7 then subR M o a b else if M.red = .friendly p521Ws then subMer o a b else subW M o a b
 
 end VG.Impl.Mont.X86_64
