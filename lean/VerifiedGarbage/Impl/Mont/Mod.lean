@@ -73,8 +73,9 @@ def sparseOk (n m : Nat) : Bool :=
 working space's temporary area (`tmp`, `n` words), `minv = -m⁻¹ mod 2⁶⁴`,
 its reduction (`red`), whether it is `tightOk` (`tight`), which only
 some targets use, whether to multiply with BMI2 and ADX (`adx`, x86-64
-only), and whether it is P-384's `p`, reduced by `2³⁸⁴ - p` (`sparse`, x86-64
-only, which needs `sparseOk`). -/
+only), whether it is P-384's `p`, reduced by `2³⁸⁴ - p` (`sparse`, x86-64
+only, which needs `sparseOk`), and, where products are calls of a function
+(`call`, AArch64 only), its name and the modulus it computes modulo. -/
 structure Mod where
   n : Nat
   mo : Nat
@@ -84,5 +85,6 @@ structure Mod where
   tight : Bool := false
   adx : Bool := false
   sparse : Bool := false
+  call : Option (String × Nat) := none
 
 end VG.Impl.Mont
