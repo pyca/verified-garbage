@@ -165,6 +165,15 @@ GROUPS = {
             "wycheproof::ecdsa_p521::ecdsa_secp521r1_sha512_p1363_test",
         ],
     },
+    "p384": {
+        "lib": ["ec::p384", "ecdsa::p384"],
+        "tests": [
+            "cavp::ecdh_p384",
+            "rfc6979::p384",
+            "wycheproof::ecdh_p384",
+            "wycheproof::ecdsa_p384::ecdsa_secp384r1_sha384_p1363_test",
+        ],
+    },
     "p384_sha": {
         "lib": [],
         "tests": ["rfc6979::p384::p384_sha384"],
