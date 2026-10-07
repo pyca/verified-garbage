@@ -66,31 +66,28 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (hE : Proof.Ed448.VerifyE
 The constants stored in the working space are public, and the analysis keeps
 them as public slots: some fifty, which every store of a secret and every
 comparison of taints goes through. Nothing reads them as an address or a
-condition: only the working space at `rdi` (region 0) and the pointers to `A`
-and the signature saved there (`PPK`, `PSIG`) need to be public. The
-decodings and the loop over the bits are analysed as summaries
-(`taint_summary`) from that alone, so their analyses (and what follows them)
-carry no constants, and the square root, the same code in both decodings, is
-analysed once. -/
+condition: only the working space at `rdi` (region 0), the pointers to `A`
+and the signature saved there (`PPK`, `PSIG`), and the decodings' loop's
+pointer and count (`PCUR`, `CNT`) need to be public. The decoding and the
+loop over the bits are analysed as summaries (`taint_summary`) from that
+alone, so their analyses (and what follows them) carry no constants. -/
 
 /-- What the code needs public after the entry, and the registers `rs` (the
-encoding's address `rsi`, for a decoding). -/
+encoding's address `rsi`, for the decoding). -/
 def verifySumτ (rs : List Reg) : X86_64.Taint.T :=
   { regs := .ofList (rs ++ [.rdi]), flags := false, lens := [8192], bases := [(.rdi, 0, 0)],
-    slots := [(0, PPK, 8), (0, PSIG, 8)] }
+    slots := [(0, PPK, 8), (0, PSIG, 8), (0, PCUR, 8), (0, CNT, 8)] }
 
 taint_summary verifyRootSum : taintS (verifySumτ []) (root Impl.X448.X86_64.baseline 12)
 
 taint_summary verifyDecodeASum : taintS (verifySumτ [.rsi]) (decode Impl.X448.X86_64.baseline 6 7)
-  using verifyRootSum
-taint_summary verifyDecodeRSum : taintS (verifySumτ [.rsi]) (decode Impl.X448.X86_64.baseline 8 9)
   using verifyRootSum
 taint_summary verifyLoopSum : taintS (verifySumτ []) (vloop Impl.X448.X86_64.baseline)
 
 theorem verifyEquation_ct :
     ConstantTime isa verifyEquationLocal.pre verifyEquationLocal.pub verifyEquation := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check verifyEquationτ verifyEquation h).isSome = true := by
-    taint_decide_sum [verifyDecodeASum, verifyDecodeRSum, verifyLoopSum]
+    taint_decide_sum [verifyDecodeASum, verifyLoopSum]
   exact VG.Taint.constantTime (A := taintS) verifyEquationτ
     (fun _ _ h₁ h₂ hp => verifyEquation_agree h₁ h₂ hp) hc
 

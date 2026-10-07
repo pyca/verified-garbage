@@ -20,11 +20,12 @@ passes: each check ORs into it a word that is 0 if and only if it passes.
   `root`, X448's addition chain until `2^223 - 1`, then 223 squarings), the
   check `v x² = u`, the check that `x = 0` comes with the sign bit 0, and `x`
   negated (swapped with `-x` by a mask) if its low bit is not the sign bit.
-* `A` is decoded into slots 6–7 (`Z = 1` in slot 10) and negated, and
+* `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), `R`
+  kept at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated, and
   `Q = [S]B + [k](-A)` computed from the top bit down, as `[s]B` is: `Q`
   doubled, `B` added and swapped into `Q` by bit `t` of `S`, then `-A` added
   and swapped in by bit `t` of `k`.
-* `R` is decoded into slots 8–9 (`B` is no longer needed), `Q` and `R` are
+* `R` is copied into slots 8–9 (`B` is no longer needed), `Q` and `R` are
   doubled twice, and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`,
   fully reduced.
 
@@ -52,6 +53,13 @@ def NEG : Nat := 1704
 def CAN : Nat := 1712
 /-- The bits of `k` (those of `S` are at X448's `BITS`). -/
 def KBITS : Nat := 2560
+/-- `R`, decoded first, kept while `A` is decoded and `Q` computed: its `X` and `Y`, above
+`BAD`'s area, where no field operation writes. -/
+def RX : Nat := 1768
+def RY : Nat := 1824
+/-- The pointer to the point the decoding loop decodes next, and the decodings left. -/
+def PCUR : Nat := 1880
+def CNT : Nat := 1888
 
 /-! ## Checks -/
 
@@ -182,10 +190,28 @@ def vbits : Prog isa :=
 def vstart : List Instr :=
   [.store (sc PPK) .r8, .store (sc PSIG) .r9, .mov32 .rax (.imm 0), .store (sc BAD) .rax] ++ sCheck
 
-/-- `A` decoded and negated into slots 6–7, with the constants. -/
-def vdecodeA (F : Field) : Prog isa :=
-  .seq (.block (consts ++ [.mov .rsi (.mem (sc PPK))])) <| .seq (decode F 6 7) <|
-    .block (consts ++ fieldCode F [.sub 6 0 6])
+/-- The seven words at `a` to `o`. -/
+def copyOut (o a : Nat) : List Instr := loads a W ++ stores o W
+
+/-- One decoding: slots 6–7 kept at `RX` and `RY`, the constants, and the point at `PCUR`
+decoded into slots 6–7; then `PCUR` at `A`, and `CNT` moved down (ZF set at 0). -/
+def vdecodeBody (F : Field) : Prog isa :=
+  .seq (.block (copyOut RX (slot 6) ++ copyOut RY (slot 7) ++ consts ++ [.mov .rsi (.mem (sc PCUR))])) <|
+  .seq (decode F 6 7) <|
+    .block [.mov .rsi (.mem (sc PPK)), .store (sc PCUR) .rsi, .mov .rbx (.mem (sc CNT)),
+      .alu .sub .rbx (.imm 1), .store (sc CNT) .rbx]
+
+/-- `R` (the signature's first half) decoded, then `A`: a loop of two iterations, counted by
+`CNT`. `A` ends in slots 6–7 and `R` at `RX` and `RY`. -/
+def vdecode (F : Field) : Prog isa :=
+  .seq (.block [.mov .rsi (.mem (sc PSIG)), .store (sc PCUR) .rsi, .mov32 .rbx (.imm 2),
+    .store (sc CNT) .rbx]) (.loop (vdecodeBody F) .ne)
+
+/-- `A` negated, with the constants. -/
+def vnegA (F : Field) : List Instr := consts ++ fieldCode F [.sub 6 0 6]
+
+/-- `R` into slots 8–9 (`B` is no longer needed). -/
+def vR : List Instr := copyOut (slot 8) RX ++ copyOut (slot 9) RY
 
 /-- `Q` (slots 0–2) and `R` (slots 8–10) doubled twice: a loop of two
 iterations, counted by `rbx`, each doubling both. -/
@@ -205,8 +231,8 @@ def vfinish (F : Field) : Prog isa :=
 
 /-- `vg_ed448_verify_equation` with the field multiplications `F`. -/
 def verifyEquationWith (F : Field) : Prog isa :=
-  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecodeA F) <| .seq (vloop F) <|
-    .seq (.block [.mov .rsi (.mem (sc PSIG))]) <| .seq (decode F 8 9) (vfinish F)
+  .seq (.block ventry) <| .seq vbits <| .seq (.block vstart) <| .seq (vdecode F) <|
+    .seq (.block (vnegA F)) <| .seq (vloop F) <| .seq (.block vR) (vfinish F)
 
 def verifyEquation : Prog isa := verifyEquationWith Impl.X448.X86_64.baseline
 
