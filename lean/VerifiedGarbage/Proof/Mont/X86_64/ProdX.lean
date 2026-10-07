@@ -174,10 +174,10 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
   generalize (s₁.gpr .r8).toNat + 2 ^ 64 * (s₂.gpr .r9).toNat + 2 ^ 128 * (s₃.gpr .r10).toNat +
     2 ^ 192 * (s₄.gpr .r11).toNat = U at hU
   have hRU : 2 ^ 256 * R = T + U * m ∧ R < 2 * m := by
-    have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
-    have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
-    have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₃ .r10))
-    have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₄ .r11))
+    have b₁ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
+    have b₂ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
+    have b₃ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₃ .r10))
+    have b₄ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₄ .r11))
     simp only [regsVal] at e₂ e₃ e₄
     simp only [sqLow, List.cons_append, List.nil_append, regsVal, z₅, g₅ _ (by decide : Reg.r11 ≠ .r8),
       g₅ _ (by decide : Reg.r12 ≠ .r8), g₅ _ (by decide : Reg.r13 ≠ .r8),
@@ -185,7 +185,7 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
       hz] at e₆
     rw [← hR]
     simp only [sqLow, regsVal]
-    omega
+    omega_using [b₁, b₂, b₃, b₄, e₂, e₃, e₄, e₆, hU, hTm]
   -- Reduced below `m` and stored.
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₆ (M := M) (m := m) (ts := sqLow) (top := .r8) (by rw [hn]; rfl) hM.n0

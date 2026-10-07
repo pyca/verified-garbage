@@ -68,7 +68,16 @@ theorem chain_ok (rs : List Reg) {s : State} {B : Addr} {Z e k : Nat}
         exact ka.gpr (by simp [h.2.1,h.1.1,show r≠col by intro e; subst r; exact nd.1 hr]))
       have colPres : t.gpr col=a.gpr col := kt.gpr (by simp [cs.2.1,cs.2.2.1,cs.1.1,nd.1])
       rw [caPres,ka.2.1,tailPres] at et
-      refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by simp_all)⟩
+      refine ⟨ct,ot,hct,hot,?_,(ka.trans kt).mono (by
+        intro r hr
+        simp only [List.mem_append] at hr ⊢
+        rcases hr with h | h
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+          rcases h with rfl | rfl | rfl <;> simp
+        · rcases h with h | h
+          · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
+            rcases h with rfl | rfl | rfl <;> simp
+          · exact Or.inr (List.mem_cons_of_mem _ h))⟩
       rw [show value t (col::next::rest)=(t.gpr col).toNat+2^64*value t (next::rest) from rfl,
         show value s (col::next::rest)=(s.gpr col).toNat+2^64*value s (next::rest) from rfl,colPres,show 64*(col::next::rest).length=64+64*(next::rest).length by simp; omega,Nat.pow_add]
       have split : wv s.mem B (e+8*k) ((col::next::rest).length-1)=
