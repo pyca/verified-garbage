@@ -61,7 +61,7 @@ theorem sponge_apart {R : Region} (hS : R.Disjoint (ST L.scr)) (hK : R.Disjoint 
 
 theorem len_src (hc : WCtx L.env g vec m₀ t) :
     srcValue L.env.E t.mem (t.gpr .x0) aLen = BitVec.ofNat 64 L.len.toNat := by
-  rw [aLen, srcValue_loc hc.2 (show (fLen, L.len) ∈ L.env.ls by simp [Lay.env]) 0, BitVec.add_zero]
+  rw [aLen, srcValue_loc hc.2.1 (show (fLen, L.len) ∈ L.env.ls by simp [Lay.env]) 0, BitVec.add_zero]
   exact (ofNat_toNat64 L.len).symm
 
 /-- `SHAKE256(seed, 114)`. -/
@@ -137,8 +137,8 @@ theorem domHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx L
     keep_bytes (R := ⟨xp, 57⟩) hf₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact dS)
       (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
   -- The header.
-  have k0 := hc₁.2 (fHdr, sigWord) (by simp [Lay.env])
-  have k8 := hc₁.2 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
+  have k0 := hc₁.2.1 (fHdr, sigWord) (by simp [Lay.env])
+  have k8 := hc₁.2.1 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
   simp only [Lay.env] at k0 k8
   have hb₁ : Spec.Sha3.bytesAt t₁.mem (L.E + BitVec.ofNat 64 fHdr) 10 = hdrBytes L :=
     hdr_bytes _ _ _ hL.cl k0 (by rw [Offset.add_add]; exact k8)
@@ -220,8 +220,8 @@ theorem chalHash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx 
     keep_bytes (R := ⟨L.out, 57⟩) hf₁ (fun r hr => by rw [List.mem_singleton.mp hr]; exact dS)
       (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
   -- The header.
-  have k0 := hc₁.2 (fHdr, sigWord) (by simp [Lay.env])
-  have k8 := hc₁.2 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
+  have k0 := hc₁.2.1 (fHdr, sigWord) (by simp [Lay.env])
+  have k8 := hc₁.2.1 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
   simp only [Lay.env] at k0 k8
   have hb₁ : Spec.Sha3.bytesAt t₁.mem (L.E + BitVec.ofNat 64 fHdr) 10 = hdrBytes L :=
     hdr_bytes _ _ _ hL.cl k0 (by rw [Offset.add_add]; exact k8)

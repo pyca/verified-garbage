@@ -17,8 +17,10 @@ open VG.Proof.Ed25519.AArch64.Whole (Within FR ARGS CK)
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
-/-- The saved arguments. -/
-def Args (L : Lay) (m : Mem) : Prop := ∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.arg j
+/-- The saved arguments, and the comb's words. -/
+def Args (L : Lay) (m : Mem) : Prop :=
+  (∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.arg j) ∧
+    VG.Proof.Ed448.AArch64.Whole.TblWords L.T m
 
 abbrev Ctx0 (L : Lay) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop :=
   VG.Proof.Ed25519.AArch64.Whole.Ctx L.E g vec m₀ L.env.ins L.env.outs t
@@ -37,7 +39,7 @@ theorem args_apart (hL : L.Ok) : ∀ r ∈ L.env.outs ++ [FR L.E, CK L.E], (ARGS
 
 theorem arg_word (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) {j : Nat} (hj : j < 6) :
     t.mem.read (L.E + BitVec.ofNat 64 (256 + 8 * j)) 8 = L.arg j := by
-  rw [← readW_eq_read, ← ha j hj]
+  rw [← readW_eq_read, ← ha.1 j hj]
   exact hc.frame.readW (r := ARGS L.E) (Offset.contains _ (e := 256) (k := 48) (by omega) (by omega)
     (by decide)) (args_apart hL) (by decide)
 
@@ -55,28 +57,28 @@ theorem in_bytes (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) {R : Region} (hR : R ∈
     have := List.mem_range.mp hi; omega)
   simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hR
   simp only [Lay.env, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-  rintro r (rfl | rfl | rfl | rfl) <;> rcases hR with rfl | rfl | rfl | rfl
-  exacts [hL.os.symm, hL.op.symm, hL.ox.symm, hL.om.symm, hL.sc, hL.pc, hL.xc, hL.mc,
+  rintro r (rfl | rfl | rfl | rfl) <;> rcases hR with rfl | rfl | rfl | rfl | rfl
+  exacts [hL.os.symm, hL.op.symm, hL.ox.symm, hL.om.symm, hL.tbo, hL.sc, hL.pc, hL.xc, hL.mc, hL.tbc,
     (hL.ks.sub_left (frame_sub L)).symm, (hL.kp.sub_left (frame_sub L)).symm,
-    (hL.kx.sub_left (frame_sub L)).symm, (hL.km.sub_left (frame_sub L)).symm, hL.cs.symm, hL.cp.symm,
-    hL.cx.symm, hL.cm.symm]
+    (hL.kx.sub_left (frame_sub L)).symm, (hL.km.sub_left (frame_sub L)).symm,
+    hL.tbk.sub_right (frame_sub L), hL.cs.symm, hL.cp.symm, hL.cx.symm, hL.cm.symm, hL.tbck]
 
 /-- `len` and `scratch` kept, and the header of `dom4`. -/
 theorem entry_ok (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.len)
-    (h7 : t.gpr .x7 = L.scr) :
+    (h7 : t.gpr .x7 = L.scr) (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T) :
     WP isa (.block entry) t fun u => WCtx L.env g vec m₀ u := by
   have hfr : (⟨t.sp, 256⟩ : Region) ∈ t.wr := by rw [hc.sp, hc.wr]; exact List.mem_cons_self
   rw [entry, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x6) (d := fLen) (by decide)
-    ⟨_, hfr, Offset.contains_base _ (by decide) (by decide)⟩) fun a ⟨ka, _, am⟩ => ?_
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x6) (d := fLen) (by decide)
+    ⟨_, hfr, Offset.contains_base _ (by decide) (by decide)⟩) fun a ⟨ka, _, am⟩ sa => ?_
   have hfa : (⟨a.sp, 256⟩ : Region) ∈ a.wr := by rw [ka.sp, ka.wr]; exact hfr
-  refine WP.mono (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x7) (d := fScr) (by decide)
-    ⟨_, hfa, Offset.contains_base _ (by decide) (by decide)⟩) fun b ⟨kb, _, bm⟩ => ?_
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.keep_ok (r := .x7) (d := fScr) (by decide)
+    ⟨_, hfa, Offset.contains_base _ (by decide) (by decide)⟩) fun b ⟨kb, _, bm⟩ sb => ?_
   have hfb : (⟨b.sp, 256⟩ : Region) ∈ b.wr := by rw [kb.sp, kb.wr]; exact hfa
-  refine WP.mono (VG.Proof.Ed448.AArch64.Whole.hdr_ok (d := fHdr) (j := 4) (by decide) (by decide) hfb (by
+  refine WP.mono_syms (VG.Proof.Ed448.AArch64.Whole.hdr_ok (d := fHdr) (j := 4) (by decide) (by decide) hfb (by
     rw [kb.rd, kb.wr, ka.rd, ka.wr, kb.sp, ka.sp, hc.rd, hc.wr, hc.sp]
     exact ⟨ARGS L.E, List.mem_append_left _ (by simp [Lay.env]),
-      Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)⟩)) fun u ⟨ku, um⟩ => ?_
+      Offset.contains _ (e := 256) (k := 48) (by omega) (by omega) (by decide)⟩)) fun u ⟨ku, um⟩ su => ?_
   rw [RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x6 ≠ .x15), h6, hc.sp] at am
   rw [RegUpd.gpr_write_of_ne _ _ _ (by decide : Reg.x7 ≠ .x15), ka.regs .x7 (by decide) (by decide), h7,
     ka.sp, hc.sp] at bm
@@ -93,7 +95,8 @@ theorem entry_ok (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 :
     all_goals exact Offset.contains_base _ (by decide) (by decide)
   refine ⟨hc.of_frame (ku.rd.trans (kb.rd.trans ka.rd)) (ku.wr.trans (kb.wr.trans ka.wr))
     (ku.sp.trans (kb.sp.trans ka.sp)) (fun r hr _ => ?_)
-    (fun r _ => by rw [ku.v, kb.v, ka.v]) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl fun _ h => h), ?_⟩
+    (fun r _ => by rw [ku.v, kb.v, ka.v]) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl fun _ h => h),
+    ?_, by rw [su, sb, sa]; exact hsy⟩
   · rw [ku.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr),
       kb.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr),
       ka.regs r (by rintro rfl; simp [preserved] at hr) (by rintro rfl; simp [preserved] at hr)]

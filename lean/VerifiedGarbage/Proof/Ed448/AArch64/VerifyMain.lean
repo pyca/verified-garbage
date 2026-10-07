@@ -47,9 +47,11 @@ theorem bytesAt_len (m : Mem) (p : Addr) (n : Nat) : (bytesAt m p n).length = n 
 theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquationLocal.pre s) :
     WP isa verifyEquation s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧ verifyEquationLocal.post s t := by
-  obtain ⟨hr, hw, hdk, hds, hdc, hn⟩ := hp
+  have htb := hp.2.2.2.2.2.2.tblAt (base := s.gpr .x3)
+    (by rw [hp.1]; simp) (by simp)
+  obtain ⟨hr, hw, hdk, hds, hdc, hn, -⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .x3 = b := ⟨_, rfl⟩
-  rw [hbase] at hdk hds hdc hn hw
+  rw [hbase] at hdk hds hdc hn hw htb
   have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw]; simp
   have rpk : ∀ i < 57, InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 i) 1 :=
     fun i h => ⟨⟨s.gpr .x0, 57⟩, by rw [hr]; simp, Offset.contains_base _ (d := i) (n := 1) (k := 57) h (by omega)⟩
@@ -66,18 +68,25 @@ theorem verifyEquation_correct (hR : RecoverOk) {s : State} (hp : verifyEquation
     rwa [bytesAt_len, hS] at h
   unfold verifyEquation
   -- The entry, the checks and the decodings.
-  refine WP.seq (WP.mono (wfront_ok hR hbase hws hn rpk rsg rch fpk fsg fch) fun s1 F => ?_)
+  refine WP.seq (WP.mono_syms (wfront_ok hR hbase hws hn rpk rsg rch fpk fsg fch) fun s1 F sy1 => ?_)
   have B1 : VG.Proof.X448.AArch64.Base.Bits 57 base S s1.mem := by
     rw [← hS]; exact F.bits
   have P1 : Persist base s.gpr s.v (fun i => s.mem (s.gpr .x2 + BitVec.ofNat 64 i)) s1.mem :=
     ⟨F.saved, F.savedX, F.savedV, F.kb⟩
   -- The table.
-  refine WP.seq (WP.seq (WP.mono (tabInit_ok F.scr F.bnd) fun s2 I =>
-    WP.mono (tabLoop_ok 14 s2 (by decide) (by decide) I.inv) fun s3 T => ?_))
+  refine WP.seq (WP.seq (WP.mono_syms (tabInit_ok F.scr F.bnd) fun s2 I sy2 =>
+    WP.mono_syms (tabLoop_ok 14 s2 (by decide) (by decide) I.inv) fun s3 T sy3 => ?_))
   have P3 := (P1.iframe I.mem).tframe T.mem
   have B3 := Window.Bits.tframe (Window.Bits.iframe B1 I.mem) T.mem
+  -- The comb's tables, untouched: everything so far wrote in the working space.
+  have tb3 : VG.Proof.X448.AArch64.Base.TblAt s3 base (s3.syms Impl.X448.AArch64.Base.combSym) := by
+    rw [sy3, sy2, sy1]
+    refine htb.of_far (by rw [T.rd, T.wr, I.rd, I.wr, F.rd, F.wr]) fun x hx => ?_
+    rw [T.mem x (Or.inr (by omega)) (Or.inr (by simp only [ACC]; omega)) (Or.inr (by simp only [TAB]; omega)),
+      I.mem x (Or.inr (by omega)) (Or.inr (by simp only [RX]; omega)) (Or.inr (by simp only [TAB]; omega)),
+      F.mem x (Or.inr hx)]
   -- `[S]B`.
-  refine WP.seq (WP.mono (sBase_ok T.scr T.env T.zero hSlt B3)
+  refine WP.seq (WP.mono (sBase_ok T.scr T.env T.zero hSlt B3 tb3)
     fun s4 ⟨hs4, b4, z4, rep4, o4, lr4, x4, rd4, wr4⟩ => ?_)
   -- `[k](-A)`, added.
   refine WP.seq (WP.seq (WP.mono (kInit_ok hs4 b4 z4 (T.tab.of_outside2 o4 (by decide)) rfl)

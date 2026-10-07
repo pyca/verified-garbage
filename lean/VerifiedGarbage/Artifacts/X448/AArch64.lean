@@ -29,13 +29,15 @@ def artifacts : List Artifact := [
     doc := Spec.X448.x448BaseApi.doc (notes := ["`X448(k, 5)` is the u-coordinate `y² / x²` of \
       `[k] B` on edwards448, `B` Ed448's base point (RFC 7748 §4.2's 4-isogeny), which the function \
       computes with a comb rather than the ladder: the scalar's 112 signed radix-16 digits select, in \
-      constant time from immediates, entries `[m 256^j] B` (`m ≤ 8`) of 56 tables, added to two \
-      projective accumulators with RFC 8032's complete addition (four pairs of the field products in \
-      AdvSIMD, each interleaved with independent scalar products), then `16 A + B` and `Y² / X²`. Field \
+      constant time (reading every entry), entries `[m 256^j] B` (`m ≤ 8`) of 56 tables in the \
+      static `VG_X448_COMB`, added to two projective accumulators with RFC 8032's complete addition \
+      (four pairs of the field products in AdvSIMD, each interleaved with independent scalar \
+      products), then `16 A + B` and `Y² / X²`. Field \
       elements are eight 56-bit limbs, multiplied as `vg_x448`'s are. The function saves its caller's \
       callee-saved registers in `scratch`."])
+    consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.X448.AArch64.Base.x448Base
-    contract := Spec.X448.x448BaseContract AArch64.abi
+    contract := Spec.X448.x448BaseContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts)
     verified := Proof.X448.AArch64.Base.x448Base_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 

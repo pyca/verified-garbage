@@ -98,13 +98,14 @@ structure StepInv (n : Nat) (s₀ : State) (base : Addr) (k j : Nat) (s : State)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : Outside2 base 64 2816 ACC 1152 s₀.mem s.mem
+  tbl : TblAt s base (s₀.syms combSym)
 
 /-! ## One step -/
 
 open VG.Proof.X448 (addPt addPt_rep basePt negAff baseEntry_ok nib_lt mag_lt sdig)
 
 theorem step_eq (n : Nat) : VG.Impl.X448.AArch64.Base.stepN n =
-    .seq (.block digits) (.seq (selectFrom (List.range n)) (.block (
+    .seq (.block digits) (.seq (.block select) (.block (
       negate (slot (6 : Index).val) (BITS + 4) (slot (10 : Index).val) ++
       (addAffine (slot (0 : Index).val) (slot (1 : Index).val) (slot (2 : Index).val)
         (slot (6 : Index).val) (slot (7 : Index).val) ++
@@ -132,24 +133,32 @@ theorem acc_step (G : ℤ) (S : ℤ) (n j : Nat) :
     (G + S) • baseAff + (((n : ℤ) - 8) * 256 ^ j) • baseAff = (G + (S + ((n : ℤ) - 8) * 256 ^ j)) • baseAff := by
   rw [← add_smul, add_assoc]
 
+/-- The tables survive what keeps the regions and changes only the scalar slots and `ACC`. -/
+theorem TblAt.of_outside2 {s t : State} {base T : Addr} (h : TblAt s base T)
+    (hrw : t.rd ++ t.wr = s.rd ++ s.wr) (hm : Outside2 base 64 2816 ACC 1152 s.mem t.mem) :
+    TblAt t base T :=
+  h.of_far hrw fun x hx => hm x (by omega) (by simp only [ACC]; omega)
+
 theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : Nat}
-    (h : StepInv n s₀ base k j s) (hj : j < n) :
+    (h : StepInv n s₀ base k j s) (hj : j < n) (hsy : s.syms = s₀.syms) :
     WP isa (VG.Impl.X448.AArch64.Base.stepN n) s fun t =>
       (t.gpr .x9 != 0) = decide (j + 1 ≠ n) ∧ StepInv n s₀ base k (j + 1) t := by
-  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem⟩ := h
+  obtain ⟨_, hs, hb, hz, hc, hbits, hodd, heven, hlr, hout, hrd, hwr, hmem, htbl⟩ := h
   have no := nib_lt k (2 * j + 1)
   have ne := nib_lt k (2 * j)
   rw [step_eq n]
   -- The digits.
-  refine WP.seq (WP.mono (digits_ok hs hn hj hc hbits) fun t1 ⟨d1, m1⟩ => ?_)
+  refine WP.seq (WP.mono_syms (digits_ok hs hn hj hc hbits) fun t1 ⟨d1, m1⟩ sy1 => ?_)
   have hs1 : Scr t1 base := hs.of_keeps d1.keeps (by decide)
   have hb1 : BEnv t1.mem base := by rw [m1]; exact hb
   have hm1 : Masks (mag (nib k (2 * j + 1))) (mag (nib k (2 * j))) t1 :=
     ⟨d1.oddMask, d1.evenMask, d1.oddZero, d1.evenZero⟩
   have hc1 : t1.gpr .x19 = BitVec.ofNat 64 j := by rw [d1.keeps.1 _ (by decide)]; exact hc
   -- The selection.
-  refine WP.seq (WP.mono (selectFrom_ok (List.range n) (fun k hk => by have := List.mem_range.mp hk; omega) hs1
-    (mag_lt no) (mag_lt ne) hm1 (List.mem_range.mpr hj) (by omega) hc1) fun t2 h2 => ?_)
+  have tb1 : TblAt t1 base (s₀.syms combSym) :=
+    htbl.of_far (by rw [d1.keeps.2.1, d1.keeps.2.2]) fun x _ => by rw [m1]
+  refine WP.seq (WP.mono (select_ok hs1 tb1 (by rw [sy1, hsy]) (by omega) hc1 (mag_lt no) (mag_lt ne)
+    hm1) fun t2 (h2 : Selected base j _ _ t1 t2) => ?_)
   obtain ⟨b2, s2, v6, v7, v8, v9, bnd2⟩ := selected_env hs1 hb1 h2
   have hs2 : Scr t2 base := hs1.of_keeps h2.2.2 (by decide)
   have hc2 : t2.gpr .x19 = BitVec.ofNat 64 j := by rw [h2.2.2.1 _ (by decide)]; exact hc1
@@ -243,7 +252,7 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
   have p7B : pt (EV t7.mem base) 3 4 5 = pt (EV t6.mem base) 3 4 5 := by simp only [pt, m7]
   refine ⟨by omega, hs7, by rw [m7]; exact b6, by rw [m7]; exact z6, c7,
     by rw [m7]; exact Bits.of_fkeep hn hs5 (Bits.of_fkeep hn hs4 (Bits.of_fkeep hn hs3 (Bits.of_fkeep hn hs2 bits2 k3) k4) k5) k6,
-    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [p7A, pA]
     have := addPt_rep hodd (baseEntry_ok j (nib k (2 * j + 1)) (by omega) no)
     rw [acc_step] at this
@@ -263,6 +272,11 @@ theorem step_ok {n : Nat} (hn : n ≤ 57) {s₀ s : State} {base : Addr} {k j : 
   · rw [m7]
     refine Outside2.trans hmem ?_
     rw [← m1]
+    exact (((h2.outside2.trans k3.mem).trans k4.mem).trans k5.mem).trans k6.mem
+  · refine htbl.of_outside2 (by rw [k7.2.1, k6.regs.2.1, k5.regs.2.1, k4.regs.2.1, k3.regs.2.1,
+      h2.2.2.2.1, d1.keeps.2.1, k7.2.2, k6.regs.2.2, k5.regs.2.2, k4.regs.2.2, k3.regs.2.2,
+      h2.2.2.2.2, d1.keeps.2.2]) ?_
+    rw [m7, ← m1]
     exact (((h2.outside2.trans k3.mem).trans k4.mem).trans k5.mem).trans k6.mem
 
 end VG.Proof.X448.AArch64.Base

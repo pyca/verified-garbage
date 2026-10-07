@@ -1,12 +1,13 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.VerifyErase
-import VerifiedGarbage.Proof.Framework.AArch64.Taint
+import VerifiedGarbage.Impl.Ed448.AArch64.VerifyWindow
+import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
 
 /-!
 # Ed448 verification's equation on AArch64: constant time of the entry, the table and `[S]B`
 
 Untrusted: everything here is checked by Lean. The analysis of each phase of
-`verifyEquationErased` (`VerifyErase.lean`) is evaluated in a declaration of
-its own (here and in `VerifyCT/Windows.lean`), which the modules check in
+`verifyEquation` (with the address of the comb's tables public, `taintS`) is
+evaluated in a declaration of its own (here and in `VerifyCT/Windows.lean`),
+which the modules check in
 parallel, and composed by `seq_ok`: between the phases only the working
 space's pointer, `x3`, is public.
 -/
@@ -26,18 +27,19 @@ theorem seq_ok {M : ISA} {A : VG.Taint M} {τ mid : A.T} {c₁ c₂ : Prog M} {h
     rw [hc, Option.map_some, Option.some.injEq] at e₁
     simp only [VG.Taint.check, hc, Option.bind_some, e₁, ite_true, e₂]
 
-theorem front_ct : ∃ h, (taint.check (Taint.ofRegs [.x0, .x1, .x2, .x3]) (Code.eraseImm wfront) h).map
-    (taint.le (Taint.ofRegs [.x3])) = some true := by
+theorem front_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check
+    (Taint.ofRegs [.x0, .x1, .x2, .x3]) wfront h).map
+    ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   refine ⟨?h, ?g⟩
   case g => taint_decide
 
-theorem table_ct : ∃ h, (taint.check (Taint.ofRegs [.x3]) (Code.eraseImm table) h).map
-    (taint.le (Taint.ofRegs [.x3])) = some true := by
+theorem table_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) table h).map
+    ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   refine ⟨?h, ?g⟩
   case g => taint_decide
 
-theorem sBase_ct : ∃ h, (taint.check (Taint.ofRegs [.x3]) (Code.eraseImm sBase0) h).map
-    (taint.le (Taint.ofRegs [.x3])) = some true := by
+theorem sBase_ct : ∃ h, ((taintS [Impl.X448.AArch64.Base.combSym]).check (Taint.ofRegs [.x3]) sBase h).map
+    ((taintS [Impl.X448.AArch64.Base.combSym]).le (Taint.ofRegs [.x3])) = some true := by
   refine ⟨?h, ?g⟩
   case g => taint_decide
 

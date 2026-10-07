@@ -41,10 +41,13 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
     WP isa scalarBase s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧
       scalarBaseLocal.post s t := by
-  obtain ⟨hr, hw, hdo, hds, hn⟩ := hp
+  have htb := hp.2.2.2.2.2.tblAt (base := s.gpr .x2)
+    (by rw [hp.1]; exact List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+    (by simp)
+  obtain ⟨hr, hw, hdo, hds, hn, -⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .x2 = b := ⟨_, rfl⟩
   have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw, hbase]; simp
-  rw [hbase] at hn hdo hds
+  rw [hbase] at hn hdo hds htb
   have hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 q) 1 := fun q hq =>
     ⟨⟨s.gpr .x1, 57⟩, by rw [hr]; simp, Offset.contains_base _ (by omega) (by omega)⟩
   have hkd : ∀ q < 57, 8192 ≤ ofs base (s.gpr .x1 + BitVec.ofNat 64 q) := fun q hq => far hds hq (by decide)
@@ -52,9 +55,9 @@ theorem scalarBase_correct {s : State} (hp : scalarBaseLocal.pre s) :
   set kb := bytesAt s.mem (s.gpr .x1) 57
   set k := decodeLE kb
   unfold scalarBase
-  refine WP.seq (WP.mono (setup_ok hbase hws hn rfl hkr hkd) fun s1 R => ?_)
+  refine WP.seq (WP.mono (setup_ok hbase hws hn rfl hkr hkd htb) fun s1 R => ?_)
   refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 57 s1 (by decide) le_rfl
-    (by rw [Nat.sub_self]; exact R.inv)) fun s2 h2 => ?_)
+    (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (combine_ok (decodeLE_57_lt kb (by simp [kb, VG.Proof.Ed448.bytesAt_eq, Spec.X25519.bytesAt])) h2)
     fun s3 ⟨f3, r3⟩ => ?_)
   -- The encoding.

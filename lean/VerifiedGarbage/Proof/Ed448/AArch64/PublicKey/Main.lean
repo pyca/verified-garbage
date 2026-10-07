@@ -18,6 +18,8 @@ pointer, and the callee-saved registers are never written.
 namespace VG.Proof.Ed448.AArch64.PublicKey
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64.PublicKey
+open VG.Impl.X448.AArch64.Base (combSym combWords)
+open VG.Proof.X448.AArch64.Base (CombHeld)
 
 /-- `vg_ed448_public_key(out = x0, seed = x1, scratch = x2)`, with 352 bytes of stack. -/
 def pkLocal : Contract isa where
@@ -26,27 +28,33 @@ def pkLocal : Contract isa where
     let seed : Region := ⟨s.gpr .x1, 57⟩
     let scr : Region := ⟨s.gpr .x2, 8192⟩
     let stk : Region := below s.sp 352
-    s.rd = [seed] ∧ s.wr = [out, scr] ∧
+    s.rd = [seed, VG.Proof.Ed448.AArch64.Whole.TBL (s.syms combSym)] ∧ s.wr = [out, scr] ∧
       out.Disjoint seed ∧ out.Disjoint scr ∧ seed.Disjoint scr ∧
       stk.Disjoint out ∧ stk.Disjoint seed ∧ stk.Disjoint scr ∧
       (s.gpr .x0).toNat + 57 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 57 ≤ 2 ^ 64 ∧
-      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat
+      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ 352 ≤ s.sp.toNat ∧ CombHeld s [out, scr, stk]
   post s t := Spec.Ed448.bytesAt t.mem (s.gpr .x0) 57 =
     Spec.Ed448.publicKey (Spec.Ed448.bytesAt s.mem (s.gpr .x1) 57)
-  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2
+  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
+    s.syms combSym = t.syms combSym
 
 /-- The layout of a call from `s`. -/
-def lay (s : State) : Lay := ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, VG.Proof.Ed25519.AArch64.Whole.base s⟩
+def lay (s : State) : Lay :=
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, VG.Proof.Ed25519.AArch64.Whole.base s, s.syms combSym⟩
 
 theorem lay_ok {s : State} (h : pkLocal.pre s) : (lay s).Ok := by
-  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hsp⟩ := h
+  obtain ⟨_, _, os, oc, sc, ko, ks, kc, no, ns, nc, hsp, -, fit, dj⟩ := h
+  have dk := dj (below s.sp 352) (by simp)
   exact ⟨os, oc, sc, ko.sub_left (VG.Proof.Ed25519.AArch64.Whole.stk_sub s),
     ks.sub_left (VG.Proof.Ed25519.AArch64.Whole.stk_sub s),
     kc.sub_left (VG.Proof.Ed25519.AArch64.Whole.stk_sub s), no, ns, nc,
     VG.Proof.Ed25519.AArch64.Whole.base_16 hsp, ko.sub_left (VG.Proof.Ed25519.AArch64.Whole.ck_sub s),
-    ks.sub_left (VG.Proof.Ed25519.AArch64.Whole.ck_sub s), kc.sub_left (VG.Proof.Ed25519.AArch64.Whole.ck_sub s)⟩
+    ks.sub_left (VG.Proof.Ed25519.AArch64.Whole.ck_sub s), kc.sub_left (VG.Proof.Ed25519.AArch64.Whole.ck_sub s),
+    dj ⟨s.gpr .x0, 57⟩ (by simp), dj ⟨s.gpr .x2, 8192⟩ (by simp),
+    dk.sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s),
+    dk.sub_right (VG.Proof.Ed25519.AArch64.Whole.ck_sub s), fit⟩
 
-theorem entry_below {s : State} (h : pkLocal.pre s) : 352 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2
+theorem entry_below {s : State} (h : pkLocal.pre s) : 352 ≤ s.sp.toNat := h.2.2.2.2.2.2.2.2.2.2.2.1
 
 theorem entry_writes {s : State} (h : pkLocal.pre s) :
     ∀ r ∈ s.wr, (below s.sp 352).Disjoint r := by
@@ -63,26 +71,39 @@ theorem entry_ctx {s p : State} (h : pkLocal.pre s)
       (VG.Proof.Ed25519.AArch64.Whole.bodyWr s)) := by
   have hc := VG.Proof.Ed25519.AArch64.Whole.saved_ctx hp
   simpa only [VG.Proof.Ed25519.AArch64.Whole.bodyRd, h.1, VG.Proof.Ed25519.AArch64.Whole.bodyWr, h.2.1,
-    Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, lay, List.cons_append,
+    Ctx, Lay.inputs, Lay.outputs, Lay.SEED, Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, lay, List.cons_append,
     List.nil_append] using hc
 
-theorem entry_args {s p : State}
+theorem entry_args {s p : State} (h : pkLocal.pre s)
     (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (VG.Proof.Ed25519.AArch64.Whole.entered s) 6 p) :
     Arguments (lay s) p.mem := by
-  intro j hj
-  have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp (j := j) (by omega)
-  have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
-  rcases he with rfl | rfl | rfl <;> exact hw
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp (j := j) (by omega)
+    have he : j = 0 ∨ j = 1 ∨ j = 2 := by omega
+    rcases he with rfl | rfl | rfl <;> exact hw
+  · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2
+    have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms combSym))
+      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
+
+theorem entry_syms {s p : State}
+    (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (VG.Proof.Ed25519.AArch64.Whole.entered s) 6 p) :
+    (p.withRegions (VG.Proof.Ed25519.AArch64.Whole.bodyRd s)
+      (VG.Proof.Ed25519.AArch64.Whole.bodyWr s)).syms combSym = (lay s).T :=
+  congrFun hp.step.syms combSym
 
 variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t : State}
 
 theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk)
-    (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) :
+    (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀) (hsy : t.syms combSym = L.T) :
     WP isa (body v.callee) t fun u => Ctx L g vec m₀ u ∧
       Spec.Ed448.bytesAt u.mem L.out 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57) := by
-  refine WP.seq (WP.mono (hash_ok v hc hL ha) fun u ⟨hu, hh⟩ => ?_)
-  refine WP.seq (WP.mono (prune_step hu hh) fun u' ⟨hu', hs⟩ => ?_)
-  refine WP.seq (WP.mono (base_step hb hu' hL ha hs) fun u'' ⟨hu'', hp⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok v hc hL ha) fun u ⟨hu, hh⟩ su => ?_)
+  refine WP.seq (WP.mono_syms (prune_step hu hh) fun u' ⟨hu', hs⟩ su' => ?_)
+  refine WP.seq (WP.mono (base_step hb hu' hL ha hs (by rw [su', su]; exact hsy)) fun u'' ⟨hu'', hp⟩ => ?_)
   exact WP.mono (wipe_step hu'' hL) fun w ⟨hw, hm⟩ => ⟨hw, hm.trans hp⟩
 
 theorem body_depth (v : Proof.Sha3.AArch64.Permutation) : (body v.callee).aarch64Depth ≤ 1 := by
@@ -99,9 +120,10 @@ theorem publicKey_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArc
   have hw := VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) (entry_below h) (entry_writes h)
     (P := fun m m' _ => Spec.Ed448.bytesAt m' (s.gpr .x0) 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt m (s.gpr .x1) 57))
-    (fun p hp => WP.mono (body_ok v hb (entry_ctx h hp) (lay_ok h) (entry_args hp)) fun u ⟨hu, ho⟩ => ⟨by
+    (fun p hp => WP.mono (body_ok v hb (entry_ctx h hp) (lay_ok h) (entry_args h hp) (entry_syms hp))
+      fun u ⟨hu, ho⟩ => ⟨by
       simpa only [VG.Proof.Ed25519.AArch64.Whole.bodyRd, h.1, Ctx, Lay.inputs, Lay.outputs, Lay.SEED,
-        Lay.OUT, Lay.SCR, Lay.ARGS, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
+        Lay.OUT, Lay.SCR, Lay.ARGS, Lay.TB, lay, h.2.1, List.cons_append, List.nil_append] using hu, ho⟩)
   refine WP.mono hw fun u ⟨hu, m, hf, hp⟩ => ⟨hu, ?_⟩
   have hs : Spec.Ed448.bytesAt m (s.gpr .x1) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .x1) 57 := by
     unfold Spec.Ed448.bytesAt

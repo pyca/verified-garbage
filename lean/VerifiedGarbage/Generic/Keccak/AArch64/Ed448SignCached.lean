@@ -33,8 +33,9 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
       S = (r + k s) mod L with `vg_ed448_scalar_mul_add` over r. Clears the frame's hash, k \
       and s; the callees' working values are left in `scratch`. The function saves `x30` and \
       its arguments on the stack, and the functions it calls use 16 bytes below its frame."])
+    consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
-    contract := Spec.Ed448.signCachedContract AArch64.abi 352
+    contract := Spec.Ed448.signCachedContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts) 352
     stack := 352
     verified := Proof.Ed448.AArch64.SignCached.signCached_verified v Proof.Ed448.AArch64.scalarBase_baseOk
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

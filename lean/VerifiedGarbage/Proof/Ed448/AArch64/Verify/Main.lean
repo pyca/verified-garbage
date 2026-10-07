@@ -30,31 +30,32 @@ theorem wp_ite_f {c : isa.Cond} {th el : Prog isa} {s : State} {Q : State → Pr
 /-- What `lsr x9, x2, #8` does. -/
 abbrev LsrPost (s t : State) : Prop :=
   t.gpr .x9 = s.gpr .x2 >>> 8 ∧ (∀ r, r ≠ .x9 → t.gpr r = s.gpr r) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧
-    t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v
+    t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v ∧ t.syms = s.syms
 
 theorem lsr_ok (s : State) : WP isa (.block [.lsr .x .x9 .x2 8]) s (LsrPost s) := by
   apply WP.of_runBlock
   simp only [LsrPost, runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits, Nat.reduceLT,
     ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl, rfl, rfl⟩
+  exact ⟨trivial, fun r hr => RegUpd.gpr_write_of_ne _ _ _ hr, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 theorem lsr_pre {s t : State} (h : vLocal.pre s) (ht : LsrPost s t) : vLocal.pre t := by
-  obtain ⟨_, e, _, trd, twr, tsp, _⟩ := ht
-  simp only [vLocal, e _ (by decide : Reg.x0 ≠ .x9), e _ (by decide : Reg.x1 ≠ .x9),
+  obtain ⟨_, e, tm, trd, twr, tsp, _, tsy⟩ := ht
+  simp only [vLocal, VG.Proof.X448.AArch64.Base.CombHeld, e _ (by decide : Reg.x0 ≠ .x9),
+    e _ (by decide : Reg.x1 ≠ .x9),
     e _ (by decide : Reg.x2 ≠ .x9), e _ (by decide : Reg.x3 ≠ .x9), e _ (by decide : Reg.x4 ≠ .x9),
-    e _ (by decide : Reg.x5 ≠ .x9), e _ (by decide : Reg.x6 ≠ .x9), trd, twr, tsp]
+    e _ (by decide : Reg.x5 ≠ .x9), e _ (by decide : Reg.x6 ≠ .x9), trd, twr, tsp, tm, tsy]
   exact h
 
 theorem lsr_pub {s₁ s₂ t₁ t₂ : State} (h : vLocal.pub s₁ s₂) (h₁ : LsrPost s₁ t₁) (h₂ : LsrPost s₂ t₂) :
     vLocal.pub t₁ t₂ := by
-  obtain ⟨_, e₁, _, _, _, sp₁, _⟩ := h₁
-  obtain ⟨_, e₂, _, _, _, sp₂, _⟩ := h₂
+  obtain ⟨_, e₁, _, _, _, sp₁, _, sy₁⟩ := h₁
+  obtain ⟨_, e₂, _, _, _, sp₂, _, sy₂⟩ := h₂
   simp only [vLocal, e₁ _ (by decide : Reg.x0 ≠ .x9), e₁ _ (by decide : Reg.x1 ≠ .x9),
     e₁ _ (by decide : Reg.x2 ≠ .x9), e₁ _ (by decide : Reg.x3 ≠ .x9), e₁ _ (by decide : Reg.x4 ≠ .x9),
     e₁ _ (by decide : Reg.x5 ≠ .x9), e₁ _ (by decide : Reg.x6 ≠ .x9),
     e₂ _ (by decide : Reg.x0 ≠ .x9), e₂ _ (by decide : Reg.x1 ≠ .x9),
     e₂ _ (by decide : Reg.x2 ≠ .x9), e₂ _ (by decide : Reg.x3 ≠ .x9), e₂ _ (by decide : Reg.x4 ≠ .x9),
-    e₂ _ (by decide : Reg.x5 ≠ .x9), e₂ _ (by decide : Reg.x6 ≠ .x9), sp₁, sp₂]
+    e₂ _ (by decide : Reg.x5 ≠ .x9), e₂ _ (by decide : Reg.x6 ≠ .x9), sp₁, sp₂, sy₁, sy₂]
   exact h
 
 theorem lsr_zero {s t : State} (ht : LsrPost s t) : t.gpr .x9 = 0 ↔ (s.gpr .x2).toNat < 256 := by
@@ -120,12 +121,25 @@ theorem entry_ctx {s p : State} (h : vLocal.pre s) (hp : VG.Proof.Ed25519.AArch6
     Ctx0 (lay s) s.gpr s.v p.mem (p.withRegions (bodyRd s) (bodyWr s)) := by
   have hc := VG.Proof.Ed25519.AArch64.Whole.saved_ctx hp
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.PK, Lay.CTX, Lay.MSG,
-    Lay.SIG, Lay.SCR, lay, List.cons_append, List.nil_append] using hc
+    Lay.SIG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hc
 
-theorem entry_args {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := fun j hj => by
-  have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
-    rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+theorem entry_args {s p : State} (h : vLocal.pre s)
+    (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := by
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
+    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
+      rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+  · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms Impl.X448.AArch64.Base.combSym))
+      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
+
+theorem entry_syms {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    (p.withRegions (bodyRd s) (bodyWr s)).syms Impl.X448.AArch64.Base.combSym = (lay s).T :=
+  congrFun hp.step.syms Impl.X448.AArch64.Base.combSym
 
 theorem entry_x6 {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
     (p.withRegions (bodyRd s) (bodyWr s)).gpr .x6 = (lay s).scr :=
@@ -135,13 +149,13 @@ theorem body_ctx {s p u : State} (h : vLocal.pre s) (hu : Ctx0 (lay s) s.gpr s.v
     VG.Proof.Ed25519.AArch64.Whole.Ctx (VG.Proof.Ed25519.AArch64.Whole.base s) s.gpr s.v p.mem (bodyRd s)
       s.wr u := by
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.PK, Lay.CTX, Lay.MSG,
-    Lay.SIG, Lay.SCR, lay, List.cons_append, List.nil_append] using hu
+    Lay.SIG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hu
 
 theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
     {s : State} (h : vLocal.pre s) :
     WP isa (verifyWith v.callee) s fun u => abiPreserved s u ∧ vLocal.post s u := by
   refine WP.seq (WP.mono (lsr_ok s) fun t ht => ?_)
-  have ⟨_, tg, tm, _, _, tsp, tv⟩ := ht
+  have ⟨_, tg, tm, _, _, tsp, tv, _⟩ := ht
   have e : ∀ r, r ≠ .x9 → t.gpr r = s.gpr r := tg
   have hpre : vLocal.pre t := lsr_pre h ht
   have hpost : ∀ u, vLocal.post t u → vLocal.post s u := fun u hu => by
@@ -159,22 +173,22 @@ theorem verify_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64
     refine wp_ite_t (by simp [eval, State.read, h9]) ?_
     have hc' : (t.gpr .x2).toNat < 256 := hc2 ▸ hc
     have hL := lay_ok hpre hc'
-    refine WP.mono (VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) hpre.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    refine WP.mono (VG.Proof.Ed25519.AArch64.Whole.wrap_ok (body_depth v) hpre.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
       (fun r hr => by
         rw [hpre.2.1] at hr; simp only [List.mem_singleton] at hr; subst hr; exact hpre.2.2.2.2.2.2.2.2.2.2.1)
       (P := fun m _ x0 => x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt m (t.gpr .x0) 57)
         (Spec.Ed448.bytesAt m (t.gpr .x5) 114) (Spec.Ed448.scalarReduce
           (Spec.Sha3.shake256 (hashIn (lay t) m) 114)) then 1 else 0) fun p hp => ?_)
       fun u ⟨hu, m, hf, hx⟩ => ⟨habi u hu, hpost u ?_⟩
-    · refine WP.mono (body_ok v hQ hL (entry_ctx hpre hp) (entry_args hp) (entry_x6 hp))
+    · refine WP.mono (body_ok v hQ hL (entry_ctx hpre hp) (entry_args hpre hp) (entry_x6 hp) (entry_syms hp))
         fun u ⟨hu, hx⟩ => ⟨body_ctx hpre hu, hx⟩
     · have hb : ∀ R ∈ (lay t).inputs, ∀ n ≤ R.len, R.len ≤ 2 ^ 64 →
           Spec.Sha3.bytesAt m R.base n = Spec.Sha3.bytesAt t.mem R.base n := by
         intro R hR n hn hl
         refine frame_bytes hf ?_ hn hl
         simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hR
-        rcases hR with rfl | rfl | rfl | rfl
-        exacts [hL.kp, hL.kx, hL.km, hL.ks]
+        rcases hR with rfl | rfl | rfl | rfl | rfl
+        exacts [hL.kp, hL.kx, hL.km, hL.ks, hL.tbk.symm]
       have hpk := hb (lay t).PK (by simp [Lay.inputs]) 57 (Nat.le_refl _) (by change 57 ≤ 2 ^ 64; decide)
       have hcx := hb (lay t).CTX (by simp [Lay.inputs]) (t.gpr .x2).toNat (Nat.le_refl _) (Nat.le_of_lt (BitVec.isLt _))
       have hms := hb (lay t).MSG (by simp [Lay.inputs]) (t.gpr .x4).toNat (Nat.le_refl _) (Nat.le_of_lt (BitVec.isLt _))

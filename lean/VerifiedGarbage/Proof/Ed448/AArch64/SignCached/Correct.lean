@@ -71,10 +71,10 @@ theorem prune_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) {hb : List Byte}
   have hV := env_ok hL
   have hwrite : (⟨t.sp, 256⟩ : Region) ∈ t.wr := by rw [hc.1.sp, hc.1.wr]; exact List.mem_cons_self
   have hh' : Spec.Sha3.bytesAt t.mem (t.sp + BitVec.ofNat 64 fH) 114 = hb := by rw [hc.1.sp]; exact hh
-  refine WP.mono (prune_run (h := fH) (d := fS) hwrite (by decide) (by decide) (by decide) (by decide)
-    (by decide) hh') fun u ⟨hu, hf, hp⟩ => ?_
+  refine WP.mono_syms (prune_run (h := fH) (d := fS) hwrite (by decide) (by decide) (by decide) (by decide)
+    (by decide) hh') fun u ⟨hu, hf, hp⟩ hsy => ?_
   rw [hc.1.sp] at hf hp
-  refine ⟨hc.of_frame hV hu.rd hu.wr hu.sp (fun r hr _ => ?_) (fun r _ => by rw [hu.v]) hf ?_, hf, hp⟩
+  refine ⟨hc.of_frame hV hu.rd hu.wr hu.sp (fun r hr _ => ?_) (fun r _ => by rw [hu.v]) hf ?_ hsy, hf, hp⟩
   · apply hu.regs r <;> intro h <;> subst r <;> simp [preserved] at hr
   · intro r hr
     rw [List.mem_singleton.mp hr]
@@ -117,7 +117,7 @@ theorem base_step (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok) (hc : WCtx L.env
     rw [hv (.x2, .loc fScr 0) (List.mem_of_getElem? (i := 2) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (base_call hb hV hu h0 h1 h2 (hL.oc.sub_left (outR_within L).sub)
     (hL.oc.sub_left (outS_within L).sub) hL.nc (.inr ⟨L.OUT, by simp [Lay.env], outS_within L⟩)
-    (outR_writable L) (scr_writable L)) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
+    (outR_writable L) (scr_writable L) ha.2) fun w ⟨hw, hf, hk⟩ => ⟨hw, by rw [← hm]; exact hf, by rw [hk, hm]⟩
 
 /-- `k`, over the hash. -/
 theorem reduceK_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
@@ -167,8 +167,9 @@ theorem wipe_step (hL : L.Ok) (hc : WCtx L.env g vec m₀ t) :
     WP isa (.block wipe) t fun u => WCtx L.env g vec m₀ u ∧
       Frame [⟨L.E + BitVec.ofNat 64 16, 184⟩] t.mem u.mem := by
   have hV := env_ok hL
-  refine WP.mono (VG.Proof.Ed25519.AArch64.Whole.Ctx.zeroWords hc.1 (start := 2) (count := 23) (by decide))
-    fun u ⟨hu, hf, _⟩ => ⟨⟨hu, kept_frame hV hc.2 (hf.mono fun r hr => List.mem_append_left _ hr) fun r hr => ?_⟩, hf⟩
+  refine WP.mono_syms (VG.Proof.Ed25519.AArch64.Whole.Ctx.zeroWords hc.1 (start := 2) (count := 23) (by decide))
+    fun u ⟨hu, hf, _⟩ hsy => ⟨⟨hu, kept_frame hV hc.2.1 (hf.mono fun r hr => List.mem_append_left _ hr)
+      fun r hr => ?_, by rw [hsy]; exact hc.2.2⟩, hf⟩
   rw [List.mem_singleton.mp hr]
   exact .inl (fr_apart (by decide) (by decide))
 

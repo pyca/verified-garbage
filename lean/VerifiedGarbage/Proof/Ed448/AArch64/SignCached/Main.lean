@@ -14,6 +14,7 @@ namespace VG.Proof.Ed448.AArch64.SignCached
 
 open VG VG.AArch64 VG.Impl.Ed448.AArch64.SignCached
 open VG.Proof.Ed25519.AArch64.Whole (entered bodyRd bodyWr)
+open VG.Impl.X448.AArch64.Base (combSym)
 
 theorem entry_writes {s : State} (h : scLocal.pre s) : ∀ r ∈ s.wr, (below s.sp 352).Disjoint r := by
   intro r hr
@@ -30,13 +31,25 @@ theorem entry_ctx {s p : State} (h : scLocal.pre s) (hp : VG.Proof.Ed25519.AArch
     Ctx0 (lay s) s.gpr s.v p.mem (p.withRegions (bodyRd s) (bodyWr s)) := by
   have hc := VG.Proof.Ed25519.AArch64.Whole.saved_ctx hp
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.OUT, Lay.SEED, Lay.PK, Lay.CTX,
-    Lay.MSG, Lay.SCR, lay, List.cons_append, List.nil_append] using hc
+    Lay.MSG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hc
 
-theorem entry_args {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
-    Args (lay s) p.mem := fun j hj => by
-  have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
-  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
-    rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+theorem entry_args {s p : State} (h : scLocal.pre s)
+    (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) : Args (lay s) p.mem := by
+  refine ⟨fun j hj => ?_, fun i hi => ?_⟩
+  · have hw := VG.Proof.Ed25519.AArch64.Whole.saved_words hp hj
+    rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5) with
+      rfl | rfl | rfl | rfl | rfl | rfl <;> exact hw
+  · obtain ⟨held, fit, dj⟩ := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+    have hf := VG.Proof.Ed25519.AArch64.Whole.saved_frame hp
+    rw [← held i hi]
+    refine hf.readW (r := VG.Proof.Ed448.AArch64.Whole.TBL (s.syms combSym))
+      (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+    rw [List.mem_singleton.mp hr]
+    exact (dj (below s.sp 352) (by simp)).sub_right (VG.Proof.Ed25519.AArch64.Whole.stk_sub s)
+
+theorem entry_syms {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
+    (p.withRegions (bodyRd s) (bodyWr s)).syms combSym = (lay s).T :=
+  congrFun hp.step.syms combSym
 
 theorem entry_x6 {s p : State} (hp : VG.Proof.Ed25519.AArch64.Whole.Saved (entered s) 6 p) :
     (p.withRegions (bodyRd s) (bodyWr s)).gpr .x6 = (lay s).len :=
@@ -50,7 +63,7 @@ theorem body_ctx {s p u : State} (h : scLocal.pre s) (hu : Ctx0 (lay s) s.gpr s.
     VG.Proof.Ed25519.AArch64.Whole.Ctx (VG.Proof.Ed25519.AArch64.Whole.base s) s.gpr s.v p.mem (bodyRd s)
       s.wr u := by
   simpa only [bodyRd, bodyWr, h.1, h.2.1, Ctx0, Lay.env, Lay.inputs, Lay.OUT, Lay.SEED, Lay.PK, Lay.CTX,
-    Lay.MSG, Lay.SCR, lay, List.cons_append, List.nil_append] using hu
+    Lay.MSG, Lay.SCR, Lay.TB, lay, List.cons_append, List.nil_append] using hu
 
 /-- An input's bytes after the frame's writes, as on entry. -/
 theorem below_bytes {m m' : Mem} {s : State} (hf : Frame [below s.sp 336] m m') {R : Region}
@@ -90,7 +103,8 @@ theorem signCached_ok_body (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed44
       Spec.Ed448.bytesAt u.mem (lay s).out 114 = Spec.Ed448.sign (Spec.Ed448.bytesAt p.mem (lay s).seed 57)
         (Spec.Ed448.bytesAt p.mem (lay s).ctx (lay s).ctxLen.toNat)
         (Spec.Ed448.bytesAt p.mem (lay s).msg (lay s).len.toNat) :=
-  body_ok v hb (lay_ok h) (entry_ctx h hp) (entry_args hp) (entry_x6 hp) (entry_x7 hp) (entry_pk h hp)
+  body_ok v hb (lay_ok h) (entry_ctx h hp) (entry_args h hp) (entry_x6 hp) (entry_x7 hp) (entry_syms hp)
+    (entry_pk h hp)
 
 theorem signCached_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) {s : State}
     (h : scLocal.pre s) :

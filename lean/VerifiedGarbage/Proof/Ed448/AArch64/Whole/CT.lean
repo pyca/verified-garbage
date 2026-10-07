@@ -69,10 +69,11 @@ theorem callS_ct (hV : V.Ok) {M : Mem → Prop} (h₁ : M m₁) (h₂ : M m₂) 
     {k : Contract isa} {c : Prog isa} {name : String}
     (correct : ∀ s, k.pre s → ∃ tr s', Exec isa c s tr s' ∧ abiPreserved s s' ∧ k.post s s')
     (ct : ConstantTime isa k.pre k.pub c) {rd wr : List Region}
-    (pre : ∀ {g vec m₀ t}, WCtx V g vec m₀ t → Regs args val t →
+    (pre : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → Regs args val t →
       k.pre (t.callEntry.withRegions rd wr))
     (hcov : Covers (rd ++ wr) (V.ins ++ FR V.E :: V.outs)) (hw : ∀ r ∈ wr, Writable V r)
     (kp : ∀ a b : State, a.sp = b.sp → (∀ p ∈ args, a.callEntry.gpr p.1 = b.callEntry.gpr p.1) →
+      a.syms Impl.X448.AArch64.Base.combSym = b.syms Impl.X448.AArch64.Base.combSym →
       k.pub (a.callEntry.withRegions rd wr) (b.callEntry.withRegions rd wr))
     {Q : State → Prop}
     (hok : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t →
@@ -81,12 +82,13 @@ theorem callS_ct (hV : V.Ok) {M : Mem → Prop} (h₁ : M m₁) (h₂ : M m₂) 
   refine VG.Proof.Ed25519.AArch64.Whole.rel_wp ?_ (fun _ h => hok h₁ h.1 h.2) (fun _ h => hok h₂ h.1 h.2)
   refine (setupS_ct hV h₁ h₂ hn hv hret hr ht val hval).seq
     (VG.Proof.Ed25519.AArch64.Whole.callEx correct ct fun a b h => ?_)
-  let ready : ∀ {g vec m₀ t}, WCtx V g vec m₀ t → Regs args val t →
-      VG.Proof.Ed25519.AArch64.Whole.CallReady k V.E V.ins V.outs t := fun hc hs =>
-    ⟨rd, wr, pre hc hs, hcov, fun r hr => (hw r hr).imp And.left id⟩
-  obtain ⟨ca, wa⟩ := (ready h.1.1 h.1.2).covers_state h.1.1.1
-  obtain ⟨cb, wb⟩ := (ready h.2.1 h.2.2).covers_state h.2.1.1
-  refine ⟨rd, wr, rd, wr, pre h.1.1 h.1.2, pre h.2.1 h.2.2, kp a b (two_sp h) fun p hp => ?_, ca, wa, cb, wb⟩
+  let ready : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → Regs args val t →
+      VG.Proof.Ed25519.AArch64.Whole.CallReady k V.E V.ins V.outs t := fun hm hc hs =>
+    ⟨rd, wr, pre hm hc hs, hcov, fun r hr => (hw r hr).imp And.left id⟩
+  obtain ⟨ca, wa⟩ := (ready h₁ h.1.1 h.1.2).covers_state h.1.1.1
+  obtain ⟨cb, wb⟩ := (ready h₂ h.2.1 h.2.2).covers_state h.2.1.1
+  refine ⟨rd, wr, rd, wr, pre h₁ h.1.1 h.1.2, pre h₂ h.2.1 h.2.2, kp a b (two_sp h) (fun p hp => ?_)
+    (h.1.1.2.2.trans h.2.1.2.2.symm), ca, wa, cb, wb⟩
   rw [State.callEntry_gpr _ (hl p hp), State.callEntry_gpr _ (hl p hp), h.1.2 p hp, h.2.2 p hp]
 
 end VG.Proof.Ed448.AArch64.Whole

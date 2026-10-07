@@ -66,6 +66,7 @@ theorem hash_eq (L : Lay) (m : Mem) (X : List Byte) :
 
 theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.BaseOk) (hL : L.Ok)
     (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.len) (h7 : t.gpr .x7 = L.scr)
+    (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T)
     (hpk : Spec.Ed448.bytesAt m₀ L.pk 57 = Spec.Ed448.publicKey (Spec.Ed448.bytesAt m₀ L.seed 57)) :
     WP isa (body v.callee) t fun u => Ctx0 L g vec m₀ u ∧
       Spec.Ed448.bytesAt u.mem L.out 114 = Spec.Ed448.sign (Spec.Ed448.bytesAt m₀ L.seed 57)
@@ -73,7 +74,7 @@ theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hb : Proof.Ed448.AArch64.B
   have aR := apart_out hL
   have ar := apart_outS hL
   have as := apart_s hL
-  refine WP.seq (WP.mono (entry_ok hL hc ha h6 h7) fun t₁ hc₁ => ?_)
+  refine WP.seq (WP.mono (entry_ok hL hc ha h6 h7 hsy) fun t₁ hc₁ => ?_)
   refine WP.seq (WP.mono (seedHash_ok v hL hc₁ ha) fun t₂ ⟨hc₂, hH₂⟩ => ?_)
   refine WP.seq (WP.mono (prune_step hL hc₂ hH₂) fun t₃ ⟨hc₃, hf₃, hs₃⟩ => ?_)
   have hp₃ : Spec.Sha3.bytesAt t₃.mem (L.E + BitVec.ofNat 64 (fH + 57)) 57 =
