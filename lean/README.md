@@ -143,11 +143,18 @@ only proven against a spec and TCB that were reviewed and merged beforehand.
 
 ```sh
 lake exe cache get                  # download prebuilt Mathlib
-lake build                          # check every proof, run the axiom audit and golden tests
+lake build --log-level=warning      # check every proof, run the axiom audit and golden tests
 lake env lean --run Emit.lean       # regenerate ../src/asm
 lake env lean --run Emit.lean --check
 lake env lean --run EmitOne.lean [--check] Rc2.AArch64   # one registration file
 ```
+
+Every module records a profile of its build, kept in its `.trace` file
+(`moreLeanArgs` in `lakefile.toml`), which Lake prints again for each module
+it finds already built: `--log-level=warning` (or `-q`) leaves it out and
+shows only warnings and errors. `python3 ../ci/lean_profile.py` reads it, to
+list the declarations the build spends the most on (CLAUDE.md, "Finding what
+to optimize").
 
 ## Restoring the CI build cache
 
@@ -172,8 +179,9 @@ docker rm "$container"
 The container never runs. Install the toolchain in `lean/lean-toolchain`
 separately; the image's `io.pyca.lean.toolchain` and
 `org.opencontainers.image.revision` labels identify the cached build. Lake
-rebuilds outputs that differ from the checkout. Private package access
-requires authenticating to GHCR before pulling.
+rebuilds outputs that differ from the checkout. The modules' `.trace` files
+carry the profile CI's build recorded, which `ci/lean_profile.py` reads.
+Private package access requires authenticating to GHCR before pulling.
 
 Docker is not needed: the image is a single gzipped layer, which `curl` can
 stream straight from the registry API with an anonymous pull token (useful

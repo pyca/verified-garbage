@@ -77,9 +77,12 @@ def main (args : List String) : IO UInt32 := do
       IO.eprintln s!"{n}: no registration file VerifiedGarbage/Artifacts/{n.replace "." "/"}.lean \
         and no generic group {n}"
       return 2
-  -- Build what the driver imports, and the trusted base's shared library.
+  -- Build what the driver imports, and the trusted base's shared library;
+  -- reporting warnings and errors, not the profile every module records
+  -- (`lakefile.toml`), which Lake replays for each one it finds built.
   let mods := regs ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)
-  let code ← runProc "lake" (#["build", "NativeTCB:shared"] ++ (mods.map ("+" ++ ·)).toArray)
+  let code ← runProc "lake"
+    (#["build", "--log-level=warning", "NativeTCB:shared"] ++ (mods.map ("+" ++ ·)).toArray)
   unless code == 0 do return code
   let driver : FilePath := ".lake" / "emit" / "One.lean"
   let out : FilePath := ".lake" / "emit" / "one"

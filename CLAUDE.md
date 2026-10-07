@@ -398,7 +398,41 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   step with a `dsimproc` instead (`Arm.reduceClassify`,
   `Proof/Framework/Arm/Contract.lean`).
 
-To find what is slow, profile one file per declaration (time under
+### Finding what to optimize
+
+Start from the build's own profile, not from a profiling build. Every
+module is built with Lean's `profiler` on (`moreLeanArgs` in
+`lean/lakefile.toml`): each step over a millisecond is recorded, at its
+declaration, in the module's `.trace`, which the CI build cache ships. After
+restoring the cache (`lean/README.md`), from the repository root:
+
+```sh
+python3 ci/lean_profile.py                        # the 30 costliest declarations
+python3 ci/lean_profile.py --sort kernel          # by kernel time alone
+python3 ci/lean_profile.py --by module --top 50   # the costliest modules
+python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
+```
+
+Each declaration's time is `kernel` (the kernel checking it: large proof
+terms, `decide +kernel`, `taint_decide`, `lit_decide`) and `elab`
+(everything else: tactics, `simp`, `omega`, instances, compilation), which
+point at different patterns above (kernel: literals, taint summaries,
+`Nat` data; elaboration: symbolic execution, `omega`, unfolding). `blocked`
+is time its task waited for another, such as the kernel checking a lemma it
+uses: look at that lemma, not at the declaration. The times are wall-clock
+times of one CI build, good for ranking. Pick targets from them, then study
+a declaration with the per-file profiles below, and measure a change by
+instructions or heartbeats, as below, never by this table. Modules you
+rebuild locally record your machine's times in place of CI's.
+
+Lake replays a module's recorded messages, the profile included, whenever
+it finds the module built: build with `lake build --log-level=warning` (or
+`-q`), as every command here does, to see only warnings and errors. A
+module with `#guard_msgs`, which would compare the profile of its command
+with the expected messages, turns the profiler off
+(`set_option profiler false`; `ci/check_lean_speed.py` checks it).
+
+To see where one declaration spends its time, profile its file (time under
 `[Kernel]` is the kernel checking the term):
 
 ```sh
@@ -409,7 +443,8 @@ lake env lean -DElab.async=false -Dtrace.profiler=true -Dtrace.profiler.threshol
 To compare two versions of a file, count its instructions, which (unlike
 time) do not depend on the load of the machine; pass the lakefile's options,
 as `lake build` does (it turns off Mathlib's style and tactic-analysis
-linters, 5–8% of the build: never turn them back on in a module):
+linters, 5–8% of the build: never turn them back on in a module), but not
+its profiler:
 
 ```sh
 opts=$(grep -oE "^weak\.[A-Za-z_.]+ = (true|false)" lakefile.toml | sed -E 's/ = /=/; s/^/-D/' | tr '\n' ' ')
@@ -427,7 +462,7 @@ heartbeat profiler. From `lean/`, build the module first to obtain its setup
 file, which supplies the same options and imports as Lake:
 
 ```sh
-lake build +VerifiedGarbage.Proof.MlKem.Arm.Mul
+lake build --log-level=warning +VerifiedGarbage.Proof.MlKem.Arm.Mul
 lake env lean --setup .lake/build/ir/VerifiedGarbage/Proof/MlKem/Arm/Mul.setup.json \
   -j1 -DElab.async=false -Dtrace.profiler=true \
   -Dtrace.profiler.useHeartbeats=true -Dtrace.profiler.threshold=1000000000 \
@@ -450,12 +485,14 @@ changing them.
 ## Iterating on one proof
 
 While developing, never run a bare `lake build` or the emitter: the default
-targets are every module (over 1,500), and the emitter imports every
+targets are every module (over 8,000), and the emitter imports every
 registration file. From `lean/`, build the module you're working on, which
-builds only it and what it imports, and after that only what changed:
+builds only it and what it imports, and after that only what changed
+(`--log-level=warning` leaves out the profile Lake replays for every module:
+see "Finding what to optimize"):
 
 ```sh
-lake build +VerifiedGarbage.Proof.Md5.X86_64.Compress
+lake build --log-level=warning +VerifiedGarbage.Proof.Md5.X86_64.Compress
 ```
 
 To check the artifact and regenerate its code, run `EmitOne.lean` on its
@@ -478,7 +515,7 @@ before pushing.
 ## Checks to run before pushing
 
 ```sh
-(cd lean && lake build && lake env lean --run Emit.lean --check)
+(cd lean && lake build --log-level=warning && lake env lean --run Emit.lean --check)
 python3 ci/check_lean_imports.py
 python3 ci/check_lean_speed.py
 python3 ci/check_vectors.py

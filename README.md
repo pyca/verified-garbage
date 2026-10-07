@@ -1595,7 +1595,7 @@ WYCHEPROOF_ROOT=$PWD/wycheproof cargo test   # without it, the Wycheproof tests 
 
 cd lean
 lake exe cache get                   # prebuilt Mathlib
-lake build                           # check all proofs
+lake build --log-level=warning       # check all proofs (without each module's recorded profile)
 lake env lean --run Emit.lean        # regenerate src/asm/ after changing lean/VerifiedGarbage/Artifacts/
 ```
 

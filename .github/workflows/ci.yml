@@ -198,7 +198,10 @@ jobs:
         run: |
           set -o pipefail
           touch "$RUNNER_TEMP/before-build"
-          lake build $(python3 ../ci/lean_shards.py targets "$RUNNER_TEMP/lean-plan.json" "$SHARD") 2>&1 \
+          # Warnings and errors only: not the profile every module records
+          # (lean/lakefile.toml), which Lake replays for each one it finds
+          # built.
+          lake build --log-level=warning $(python3 ../ci/lean_shards.py targets "$RUNNER_TEMP/lean-plan.json" "$SHARD") 2>&1 \
             | tee "$RUNNER_TEMP/build.log"
       # What this build wrote for the shard's own modules; Lean's outputs
       # are deterministic, so the shards' outputs agree on the modules they
