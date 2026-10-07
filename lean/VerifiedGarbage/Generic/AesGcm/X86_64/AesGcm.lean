@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -65,6 +66,15 @@ is `init` followed by the powers, computed one at a time with `vg_ghash`
 (`InitP.lean`), and `seal`, `open`, `stream_encrypt`, `stream_decrypt` and
 the whole-blocks functions for that key context, with the same stack and
 frames as theirs.
+
+Every variant also encrypts out of place (`Spec/Gcm/OutOfPlace.lean`):
+`encrypt_blocks_to` with its own out-of-place interleaved loops where the
+variant has them (`StitchPart.toPart`), and otherwise by copying the blocks
+and calling `encrypt_blocks`, in 24 bytes of stack; and `stream_encrypt_to`,
+calling `encrypt_blocks_to` for the whole blocks when the text so far ends a
+block and `stream_encrypt` for the rest, after copying it, in a frame of 2232
+bytes for its 2192 bytes of working space (`StreamTo/Verified.lean`), and
+4856 bytes of stack in all.
 -/
 
 /-! The interleaved loops a variant names, with their proofs (which import the
@@ -364,8 +374,39 @@ def blocksToNote (loops : Bool) (blk : String) : String :=
     "This implementation copies the blocks to `dst` and encrypts them there with `" ++ blk ++
       "`."
 
-/-- `vg_aes_gcm_encrypt_blocks_to` calling the implementations `v`, and the
-`_precomputed` one if its loops read the powers from the key context. -/
+/-- How an instance of `vg_aes_gcm_stream_encrypt_to` works. -/
+def streamToNote (blk enc : String) : String :=
+  "If the text so far ends a block, this implementation encrypts the whole blocks of the input from \
+    `src` to `dst` with `" ++ blk ++ "`; it copies the rest to `dst` and encrypts it there with `" ++
+    enc ++ "`."
+
+/-- The instance of `vg_aes_gcm_encrypt_blocks_to` of a variant. -/
+def blkTo (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBlocks (Spec.Gcm.encryptBlocksToApi.name ++ v.impl.suffix) v.impl.blkB v.stitchTo
+
+/-- The instance of `vg_aes_gcm_encrypt_blocks_to_precomputed` of a variant. -/
+def blkToP (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  .ofBlocks (Spec.Gcm.encryptBlocksToPrecomputedApi.name ++ v.impl.suffix) v.impl.blkP v.stitchToP
+
+/-- The instance of `vg_aes_gcm_stream_encrypt` calling the implementations `v`. -/
+def encFn (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBase ⟨Spec.Gcm.streamEncryptApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.callees)⟩
+    (streamEncrypt_framed v) (X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v))
+    (StreamTo.framed_xdepth (streamEncrypt_xdepth v)) (StreamTo.framed_mx (streamEncrypt_mx v))
+
+/-- The instance of `vg_aes_gcm_stream_encrypt_precomputed` calling the
+implementations `v`. -/
+def encFnP (v : GcmImpl) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  .ofPowers ⟨Spec.Gcm.streamEncryptPrecomputedApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+        (Impl.AesGcm.X86_64.streamEncrypt (v.withBlk v.blkP))⟩
+    (streamEncryptP_framed v) (X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v v.blkP))
+    (StreamTo.framed_xdepth (streamEncryptM_xdepth v v.blkP)) (StreamTo.framed_mx (streamEncryptM_mx v v.blkP))
+
+/-- `vg_aes_gcm_encrypt_blocks_to` and `vg_aes_gcm_stream_encrypt_to` calling
+the implementations `v`, and the `_precomputed` ones if its loops read the
+powers from the key context. -/
 def artifactsTo (v : GcmVariant) : List Artifact :=
   [{ Spec.Gcm.encryptBlocksToApi with
     name := Spec.Gcm.encryptBlocksToApi.name ++ v.impl.suffix
@@ -377,6 +418,18 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
     stack := 24
     verified := encryptBlocksTo_verified v.impl.blkB v.stitchTo
     spSafe := encryptTo_spSafe v.stitchTo v.impl.blkB
+    features := v.impl.features },
+  { Spec.Gcm.streamEncryptToApi with
+    name := Spec.Gcm.streamEncryptToApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.streamEncryptToApi.doc
+      (notes := [streamToNote (blkTo v).fn.name (encFn v.impl).fn.name])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
+      (Impl.AesGcm.X86_64.StreamTo.encrypt (blkTo v).fn (encFn v.impl).fn)
+    contract := Spec.Gcm.streamEncryptToContract X86_64.abi 4856
+    stack := 4856
+    verified := StreamTo.streamEncryptTo_framed (blkTo v) (encFn v.impl)
+    spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkTo v) (encFn v.impl))
     features := v.impl.features }] ++
   if v.impl.stitchP.isSome then
     [{ Spec.Gcm.encryptBlocksToPrecomputedApi with
@@ -389,6 +442,18 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
       stack := 24
       verified := encryptBlocksToP_verified v.impl.blkP v.stitchToP
       spSafe := encryptTo_spSafe v.stitchToP v.impl.blkP
+      features := v.impl.features },
+    { Spec.Gcm.streamEncryptToPrecomputedApi with
+      name := Spec.Gcm.streamEncryptToPrecomputedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.streamEncryptToPrecomputedApi.doc
+        (notes := [streamToNote (blkToP v).fn.name (encFnP v.impl).fn.name])
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
+        (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToP v).fn (encFnP v.impl).fn)
+      contract := Spec.Gcm.streamEncryptToPrecomputedContract X86_64.abi 4856
+      stack := 4856
+      verified := StreamTo.streamEncryptToP_framed (blkToP v) (encFnP v.impl)
+      spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToP v) (encFnP v.impl))
       features := v.impl.features }]
   else []
 
