@@ -15,12 +15,12 @@ open VG VG.X86_64 VG.Impl.X448.X86_64 VG.Proof.X448
 
 /-- The body of `bits`' loop. -/
 def bitsBody : List Instr :=
-  [.movzx8 .rax { base := .rsi, index := some .rbx }] ++
+  ([.movzx8 .rax { base := .rsi, index := some .rbx }] : List Instr) ++
     ((List.range 8).flatMap fun j =>
-      [.mov .rdx (.reg .rax)] ++ (if j = 0 then [] else [.shift .shr .rdx j]) ++
-      [.alu .and .rdx (.imm 1),
-        .store8 (bitAt j) .rdx]) ++
-    [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 56)]
+      ([.mov .rdx (.reg .rax)] : List Instr) ++ (if j = 0 then ([] : List Instr) else ([.shift .shr .rdx j] : List Instr)) ++
+      ([.alu .and .rdx (.imm 1),
+        .store8 (bitAt j) .rdx] : List Instr)) ++
+    ([.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 56)] : List Instr)
 
 theorem bitsBody_eq : bitsBody =
     [.movzx8 .rax { base := .rsi, index := some .rbx },

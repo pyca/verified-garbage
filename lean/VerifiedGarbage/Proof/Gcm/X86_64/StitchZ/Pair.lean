@@ -22,23 +22,23 @@ open VG.Spec.Gcm (Block blockAt)
 
 /-- The SSE block of a pair's lane-wise instructions. -/
 def pairSse (first : Bool) : List Instr :=
-  [.xop (.bin .pshufb .xmm7 .xmm0)] ++ (if first then [.xop (.bin .pxor .xmm7 .xmm2)] else []) ++
-  [.xop (.bin .pshufb .xmm1 .xmm0)] ++
-  [.xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x00),
-   .xop (.bin .movdqa .xmm2 .xmm1), .xop (.pclmulqdq .xmm2 .xmm13 0x00)] ++
-  (if first then [.xop (.bin .movdqa .xmm8 .xmm11)] else [.xop (.bin .pxor .xmm8 .xmm11)]) ++
-  [.xop (.bin .pxor .xmm8 .xmm2),
+  ([.xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ (if first then ([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) else ([] : List Instr)) ++
+  ([.xop (.bin .pshufb .xmm1 .xmm0)] : List Instr) ++
+  ([.xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x00),
+   .xop (.bin .movdqa .xmm2 .xmm1), .xop (.pclmulqdq .xmm2 .xmm13 0x00)] : List Instr) ++
+  (if first then ([.xop (.bin .movdqa .xmm8 .xmm11)] : List Instr) else ([.xop (.bin .pxor .xmm8 .xmm11)] : List Instr)) ++
+  ([.xop (.bin .pxor .xmm8 .xmm2),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x11),
-   .xop (.bin .movdqa .xmm2 .xmm1), .xop (.pclmulqdq .xmm2 .xmm13 0x11)] ++
-  (if first then [.xop (.bin .movdqa .xmm10 .xmm11)] else [.xop (.bin .pxor .xmm10 .xmm11)]) ++
-  [.xop (.bin .pxor .xmm10 .xmm2),
+   .xop (.bin .movdqa .xmm2 .xmm1), .xop (.pclmulqdq .xmm2 .xmm13 0x11)] : List Instr) ++
+  (if first then ([.xop (.bin .movdqa .xmm10 .xmm11)] : List Instr) else ([.xop (.bin .pxor .xmm10 .xmm11)] : List Instr)) ++
+  ([.xop (.bin .pxor .xmm10 .xmm2),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x01),
-   .xop (.bin .movdqa .xmm2 .xmm7), .xop (.pclmulqdq .xmm2 .xmm12 0x10)] ++
-  (if first then [.xop (.bin .movdqa .xmm9 .xmm11)] else [.xop (.bin .pxor .xmm9 .xmm11)]) ++
-  [.xop (.bin .pxor .xmm9 .xmm2),
+   .xop (.bin .movdqa .xmm2 .xmm7), .xop (.pclmulqdq .xmm2 .xmm12 0x10)] : List Instr) ++
+  (if first then ([.xop (.bin .movdqa .xmm9 .xmm11)] : List Instr) else ([.xop (.bin .pxor .xmm9 .xmm11)] : List Instr)) ++
+  ([.xop (.bin .pxor .xmm9 .xmm2),
    .xop (.bin .movdqa .xmm11 .xmm1), .xop (.pclmulqdq .xmm11 .xmm13 0x01),
    .xop (.bin .movdqa .xmm2 .xmm1), .xop (.pclmulqdq .xmm2 .xmm13 0x10),
-   .xop (.bin .pxor .xmm9 .xmm11), .xop (.bin .pxor .xmm9 .xmm2)]
+   .xop (.bin .pxor .xmm9 .xmm11), .xop (.bin .pxor .xmm9 .xmm2)] : List Instr)
 
 theorem lane_pair (first : Bool) : zlaneSseBlock (pairZ first) = some (pairSse first) := by
   cases first <;> rfl
