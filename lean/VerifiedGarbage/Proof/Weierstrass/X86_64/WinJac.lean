@@ -8,7 +8,7 @@ representing `[k]P` in projective coordinates (`winJac_ok`), for `k < n` on a
 curve of prime order `n ≡ 17 (mod 32)` (as P-256's), whose bits plus the
 recoding's offset are the table at `K.bits`, with any doubling `dbl` that
 doubles a Jacobian triple in place (`DblOk`): the table `[1 … 16]P`
-(`build_ok`), `R = O` (`jinit_ok`), `J` iterations `R = 32 R + [d_j]P`
+(`jbuild_ok`), `R = O` (`jinit_ok`), `J` iterations `R = 32 R + [d_j]P`
 (`jstep_ok`), whose additions are never exceptional for `k < n`
 (`Window5.loop_noexc`), and `R = (XZ : Y : Z³)` with `Y = 1` for `O`. For
 `k ≥ n` (whose result the callers do not use) the code runs the same way and
@@ -27,7 +27,7 @@ variable {K : JacWinCfg} {size : Nat} {C : Curve}
 /-- `R = O` and `rbx = J`. -/
 theorem jinit_ok (hL : JacWinLay K size) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     {base : Addr} {P : Point C} {s₀ s : State} {k : Nat} (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J)
-    (hf : JFrame K C base size s₀ s) (hT : TblOk K C base P 16 s) :
+    (hf : JFrame K C base size s₀ s) (hT : JTblOk K C base P 16 s) :
     WP isa (.block K.init) s (JInv K C base size P s₀ k K.J) := by
   have hs := hf.scr
   have hn := hs.nowrap
@@ -104,7 +104,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     rw [h, hF.pz] at this
     exact hC.one_ne_zero this.2.2
   rw [JacWinCfg.window]
-  refine WP.seq (WP.mono (build_ok hL hp hC hM3 hO hD hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
+  refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hD hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (jinit_ok hL hpn hone_lt hkJ F₁ T₁) fun s₂ I₂ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
     (Inv := fun j t => JInv K C base size P s k j t) (n := K.J)

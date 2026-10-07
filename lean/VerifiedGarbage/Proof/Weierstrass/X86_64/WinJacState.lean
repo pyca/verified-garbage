@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 A point with its cached powers in five slots (`JPt`: Jacobian coordinates
 `X`, `Y`, `Z ≠ 0`, then `Z²` and `Z³`), as `T` and each entry of the table
-hold them (`TblOk`); what the method reads at the start (`JacWinFixed`); what
+hold them (`JTblOk`); what the method reads at the start (`JacWinFixed`); what
 the method needs of the doubling it is given (`DblOk`); and the frame of the
 whole method (`JFrame`).
 -/
@@ -46,7 +46,7 @@ abbrev entS (K : JacWinCfg) (m : Nat) : Nat → Nat := fun c => jg K (5 * (m - 1
 abbrev TS (K : JacWinCfg) : Nat → Nat := fun c => jg K (80 + c)
 
 /-- Entries `1 … M` of the table hold `[m]P`. -/
-def TblOk (K : JacWinCfg) (C : Curve) (base : Addr) (P : Point C) (M : Nat) (s : State) : Prop :=
+def JTblOk (K : JacWinCfg) (C : Curve) (base : Addr) (P : Point C) (M : Nat) (s : State) : Prop :=
   ∀ m, 1 ≤ m → m ≤ M → JPt C K.M.n base s (entS K m) (mul m P)
 
 variable {K : JacWinCfg} {size : Nat}
@@ -58,11 +58,11 @@ theorem jgWord_unch (hL : JacWinLay K size) {base : Addr} {W : List (Nat × Nat)
     wordsVal m' base (jg K i) K.M.n = wordsVal m base (jg K i) K.M.n :=
   hU.wordsVal hW (by have := hL.le (jg_mem (K := K) hi); omega)
 
-theorem TblOk.unch (hL : JacWinLay K size) {C : Curve} {base : Addr} {P : Point C} {M : Nat}
-    {s s' : State} (hT : TblOk K C base P M s) {W : List (Nat × Nat)} (hU : Unch base W s.mem s'.mem)
+theorem JTblOk.unch (hL : JacWinLay K size) {C : Curve} {base : Addr} {P : Point C} {M : Nat}
+    {s s' : State} (hT : JTblOk K C base P M s) {W : List (Nat × Nat)} (hU : Unch base W s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) (hM : M ≤ 16)
     (hW : ∀ w ∈ W, ∀ i < 5 * M, jg K i + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ jg K i) :
-    TblOk K C base P M s' := fun m h1 hm =>
+    JTblOk K C base P M s' := fun m h1 hm =>
   (hT m h1 hm).congr fun c hc => jgWord_unch hL hU hn (by omega) fun w hw => hW w hw _ (by omega)
 
 theorem JPt.unchT (hL : JacWinLay K size) {C : Curve} {base : Addr} {Q : Point C} {s s' : State}

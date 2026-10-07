@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacState
 `T = P` with `Z = Z² = Z³ = 1`, stored as entry 1 (`buildInit_ok`); `T = 2 T`
 by the doubling given, its powers, stored as entry 2 (`buildDbl_ok`); then
 `T = T + P` by the mixed addition, which is never exceptional for
-`2 ≤ m ≤ 15` (`tbl_noexc`), stored as entry `m + 1` (`buildStep_ok`), to
-entry 16 (`build_ok`).
+`2 ≤ m ≤ 15` (`tbl_noexc`), stored as entry `m + 1` (`jbuildStep_ok`), to
+entry 16 (`jbuild_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -23,7 +23,7 @@ variable {K : JacWinCfg} {size : Nat} {C : Curve}
 structure JBInv (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State) (m : Nat)
     (s : State) : Prop where
   fr : JFrame K C base size s₀ s
-  tbl : TblOk K C base P m s
+  tbl : JTblOk K C base P m s
   T : JPt C K.M.n base s (TS K) (mul m P)
   rbx : s.gpr .rbx = BitVec.ofNat 64 m
 
@@ -104,7 +104,7 @@ theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : Sta
   rw [WP.block_append_iff]
   refine WP.mono (mov32Rbx_ok s₃ (j := 1) (by decide)) fun s₄ ⟨b₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄ (by decide)
-  refine WP.mono (storeEntry_ok hL hs₄ b₄ (Nat.le_refl _) (by decide)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+  refine WP.mono (jstoreEntry_ok hL hs₄ b₄ (Nat.le_refl _) (by decide)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   -- `P`'s numbers survive.
   have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega
@@ -157,7 +157,7 @@ theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : Sta
     J₄.unchT hL O₅' hn fun w hw c hc => by
       obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hw
       refine jg_sep K ?_; have := List.mem_range.mp hd; omega
-  have hT₅ : TblOk K C base P 1 s₅ := fun m h1 hm => by
+  have hT₅ : JTblOk K C base P 1 s₅ := fun m h1 hm => by
     obtain rfl : m = 1 := by omega
     exact J₄.congr fun c hc => e₅ c hc
   have F₁ := (JFrame.refl (K := K) (C := C) hs hM).next hL hs₁ (k₁.mono (sub_powClob (by decide))) U₁ (by
@@ -233,16 +233,16 @@ theorem JacWinLay.E_ne_z (hL : JacWinLay K size) :
     have := Nat.eq_of_mul_eq_mul_left (show 0 < 8 * K.M.n by omega) (Nat.add_left_cancel e) <;> omega
 
 /-- A program's writes keep entries `1 … M` if the loop may write them. -/
-theorem TblOk.loopW (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
-    (hT : TblOk K C base P M s) (hU : Unch base (jwLoopW K) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
-    (hM : M ≤ 16) : TblOk K C base P M s' :=
+theorem JTblOk.loopW (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
+    (hT : JTblOk K C base P M s) (hU : Unch base (jwLoopW K) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
+    (hM : M ≤ 16) : JTblOk K C base P M s' :=
   hT.unch hL hU hn hM fun w hw i hi => loopW_apart hL (by omega) w hw
 
 /-- Storing entry `M + 1` keeps entries `1 … M`. -/
-theorem TblOk.store (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
-    (hT : TblOk K C base P M s)
+theorem JTblOk.store (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Nat} {s s' : State}
+    (hT : JTblOk K C base P M s)
     (hO : Outside base (jg K (5 * M)) (40 * K.M.n) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
-    (hM : M ≤ 15) : TblOk K C base P M s' :=
+    (hM : M ≤ 15) : JTblOk K C base P M s' :=
   hT.unch hL (outside_grid5 hL hO) hn (by omega) fun w hw i hi => by
     obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
     refine jg_sep K ?_; omega
@@ -312,11 +312,11 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
   have F₂ := (hI.fr.next hL (k₁.scr hs) ((⟨k₁.gpr, k₁.rd, k₁.wr⟩ : KeepRegs (clob K.M.n) s s₁).mono
     clob_powClob) U₁ (jwLoopW_sub K)).next hL (k₂.scr (k₁.scr hs))
     ((⟨k₂.gpr, k₂.rd, k₂.wr⟩ : KeepRegs (clob K.M.n) s₁ s₂).mono clob_powClob) U₂ (jwLoopW_sub K)
-  have T₂ : TblOk K C base P 1 s₂ := (hI.tbl.loopW hL U₁ hn (by decide)).loopW hL U₂ hn (by decide)
+  have T₂ : JTblOk K C base P 1 s₂ := (hI.tbl.loopW hL U₁ hn (by decide)).loopW hL U₂ hn (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mov32Rbx_ok s₂ (j := 2) (by decide)) fun s₃ ⟨b₃, k₃⟩ => ?_
   have hs₃ := F₂.scr.of_keeps k₃ (by decide)
-  refine WP.mono (storeEntry_ok hL hs₃ b₃ (by decide) (by decide)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
+  refine WP.mono (jstoreEntry_ok hL hs₃ b₃ (by decide) (by decide)) fun s₄ ⟨e₄, k₄, O₄⟩ => ?_
   have m₃ : s₃.mem = s₂.mem := k₃.2.1
   have J₃ : JPt C K.M.n base s₃ (TS K) (mul 2 P) := J₂.congr fun c _ => by rw [m₃]
   have F₄ := (F₂.next hL hs₃ ((Keeps.regs k₃).mono (sub_powClob (by decide))) (W := [])
@@ -324,7 +324,7 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     (k₄.mono (sub_powClob (by decide))) (outside_grid5 hL O₄) (grid5_jwW (by decide))
   refine ⟨F₄, fun m h1 hm => ?_, J₃.store hL (b := 5) (by decide) O₄ hn, by rw [k₄.gpr _ (by decide), b₃]⟩
   rcases Nat.lt_or_ge m 2 with h | h
-  · have T₄ : TblOk K C base P 1 s₄ := T₂.store hL (M := 1) (s' := s₄) (by rw [← m₃]; exact O₄) hn (by decide)
+  · have T₄ : JTblOk K C base P 1 s₄ := T₂.store hL (M := 1) (s' := s₄) (by rw [← m₃]; exact O₄) hn (by decide)
     exact T₄ m h1 (by omega)
   · obtain rfl : m = 2 := by omega
     exact J₃.congr fun c hc => e₄ c hc
@@ -365,7 +365,7 @@ theorem madd_H (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P 
   · exact ne2 (h1.opposite hC (hC.onCurve_mul hP m) hP hq hz hC.one_ne_zero hx hy)
 
 /-- An entry of the table: `T = T + P`, its powers, stored as entry `m + 1`. -/
-theorem buildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
+theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {m : Nat}
     (h2 : 2 ≤ m) (h15 : m ≤ 15) {s : State} (hI : JBInv K C base size P s₀ m s) :
@@ -482,7 +482,7 @@ theorem buildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)
     · rw [tz, val _ (by simp)]; exact hz₄
     · rw [t2, tz, val K.z2 (by simp), val K.E.z (by simp), z₄]
     · rw [t3, t2, tz, val (K.z2 + 8 * K.M.n) (by simp), val K.z2 (by simp), val K.E.z (by simp), z₄']
-  have T₄ : TblOk K C base P m s₄ :=
+  have T₄ : JTblOk K C base P m s₄ :=
     ((((hI.tbl.loopW hL (by rw [m₁]; exact Unch.refl _ _ _) hn (by omega)).loopW hL
       (k₂.loopW (other_loopW (by jw_mem))) hn (by omega)).loopW hL (k₃.loopW (other_loopW (by jw_mem))) hn
       (by omega)).loopW hL (k₄.loopW (by
@@ -497,7 +497,7 @@ theorem buildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)
   have hb₄ : s₄.gpr .rbx = BitVec.ofNat 64 (m + 1) := by
     rw [k₄.gpr _ (rbx_not_clob _), k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _), b₁]
   rw [WP.block_append_iff]
-  refine WP.mono (storeEntry_ok hL F₄.scr hb₄ (by omega) (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+  refine WP.mono (jstoreEntry_ok hL F₄.scr hb₄ (by omega) (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [Nat.add_sub_cancel] at e₅ O₅
   have hs₅ := F₄.scr.of_keepRegs k₅ (by decide)
   refine WP.mono (cmpRbxJ_ok s₅ (j := m + 1) (i := 16) (by decide) (by omega)
@@ -514,18 +514,18 @@ theorem buildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)
     exact J₄.congr fun c hc => by rw [m₆]; exact e₅ c hc
 
 /-- The table `[1 … 16]P`. -/
-theorem build_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
+theorem jbuild_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C)
     (hM3 : AM3 C) (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
     (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n) {base : Addr} {s : State}
     (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) {k : Nat}
     (hF : JacWinFixed K C base s P k) :
-    WP isa (K.build dbl) s fun s' => JFrame K C base size s s' ∧ TblOk K C base P 16 s' := by
+    WP isa (K.build dbl) s fun s' => JFrame K C base size s s' ∧ JTblOk K C base P 16 s' := by
   rw [JacWinCfg.build]
   refine WP.seq (WP.mono (buildInit_ok hL hC hs hM hF) fun s₁ I₁ => ?_)
   refine WP.seq (WP.mono (buildDbl_ok hL hp hC hO hD hP hP0 hn17 I₁) fun s₂ h₂ =>
     WP.seq (WP.mono h₂ fun s₃ h₃ => WP.seq (WP.mono h₃ fun s₄ I₄ => ?_)))
   exact countLoop_ok (Inv := fun j t => JBInv K C base size P s (16 - j) t) (n := 14)
-    (fun j t h1 h2 hi => WP.mono (buildStep_ok hL hp hC hM3 hO hP hP0 hn17 hF (m := 16 - j) (by omega)
+    (fun j t h1 h2 hi => WP.mono (jbuildStep_ok hL hp hC hM3 hO hP hP0 hn17 hF (m := 16 - j) (by omega)
       (by omega) hi) fun u ⟨I, z⟩ => ⟨by rw [show 16 - (j - 1) = 16 - j + 1 by omega]; exact I,
         by rw [z]; congr 1; simp only [decide_eq_decide]; omega⟩)
     (fun t hi => ⟨hi.fr, hi.tbl⟩) (by decide) I₄

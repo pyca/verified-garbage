@@ -93,7 +93,7 @@ triple of `Q`. -/
 structure RSt (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State)
     (Q : Point C) (s : State) : Prop where
   fr : JFrame K C base size s₀ s
-  tbl : TblOk K C base P 16 s
+  tbl : JTblOk K C base P 16 s
   lt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p
   rep : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) Q
 

@@ -3,6 +3,8 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.Verified
 import VerifiedGarbage.Proof.P256.X86_64.TaintSums
+import VerifiedGarbage.Proof.Ecdh.X86_64.WinJac
+import VerifiedGarbage.Proof.P256.X86_64.WinJac
 
 /-!
 # ECDH over P-256 on x86-64: `Verified`
@@ -11,8 +13,9 @@ P-256 is a curve the proof supports (`p256_ok`, and `Law` for its group law
 and `InvSounds` for its inversions, which the registration file supplies:
 `Proof.P256.law` and the variant's `inv`), so `exchangeWith_ok`, given the
 `MulOk` of its scalar multiplication (`ecdh_x86_of`), gives the contract's
-postcondition (TODO(WinJac): for the Jacobian window method `exchangeP256`
-uses, not proven yet); the callee-saved registers are restored,
+postcondition: `exchangeP256` multiplies by the Jacobian window method
+(`mulQJ_ok`), which needs P-256's prime order, with the doubling by halving
+(`mulQJP256_ok`); the callee-saved registers are restored,
 `rsp` is never written, and every store is to `out` or `scratch`, which the
 return address is apart from (`abiPreserved`). Constant time by taint
 tracking: the only branches are on loop counters, and every address is an
@@ -79,17 +82,21 @@ theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc :
       · exact hro
       · exact hrs) (by decide)
 
--- TODO(WinJac): `exchangeP256` multiplies by the Jacobian window method
--- (`Cfg.mulQJ`), whose `MulOk` (and `MulW`) is not proven yet; then
--- `ecdh_x86_of (p256_ok hI) hL (mulQJ_ok …) (mulQJ_w …) (fun _ => pre_of)
--- (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs`.
-/-
+/-- The Jacobian window method with the doubling by halving computes `[d]P`
+on P-256, which has prime order. -/
+theorem mulQJP256_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law Spec.P256.curve)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
+    MulOk p256 (Impl.Ecdh.X86_64.Cfg.mulQJ p256 (Impl.P256.X86_64.doubleHalfPublic p256.MP' p256.rcbSlots))
+      (mulQJW p256) :=
+  mulQJ_ok (p256_ok hI) rfl hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
+    (Weierstrass.unitMod_pow_two (p256_ok hI).p_odd _) hL (p256_ok hI).am3) Proof.P256.X86_64.n_mod32
+    Proof.P256.X86_64.n_ge64
+
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256_ok hI) hL (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide)
-    (by lit_decide) (by lit_decide) s hs
--/
+  ecdh_x86_of (p256_ok hI) hL (mulQJP256_ok hI hL hO) (mulQJ_w (p256_ok hI))
+    (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP256 h).isSome = true := by
@@ -104,11 +111,9 @@ theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 :=
   · exact h3
   · exact h4
 
--- TODO(WinJac): needs `ecdh_x86`.
-/-
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
     Verified X86_64.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL hI) ecdh_ct implies
--/
+  Verified.of_correct (ecdh_x86 hL hI hO) ecdh_ct implies
 
 end VG.Proof.Ecdh.X86_64

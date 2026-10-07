@@ -55,7 +55,7 @@ theorem jent_loopW (K : JacWinCfg) : ∀ w ∈ (List.range 5).map (fun c => (jg 
 /-- Digit `j`'s entry into `T`, negated for a negative digit. -/
 theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : State} {k : Nat}
     (hF : JacWinFixed K C base s₀ P k) {s : State} {j : Nat} (hj : j < K.J)
-    (hf : JFrame K C base size s₀ s) (hT : TblOk K C base P 16 s) (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
+    (hf : JFrame K C base size s₀ s) (hT : JTblOk K C base P 16 s) (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
     WP isa (.block (K.tc.digit ++ K.select)) s fun s₂ =>
       WP isa (.block K.tc.negY) s₂ (JEnt K C base size P s₀ (k + JacWinCfg.offset K.J) j s) := by
   have hs := hf.scr

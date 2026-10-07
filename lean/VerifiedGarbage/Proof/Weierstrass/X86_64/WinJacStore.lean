@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacLay
 
 `entryAddr` forms entry `rbx`'s address `rdi + tbl + 40 n (rbx - 1)` with `mul`
 (`entryAddr_ok`), and `storeEntry` copies `T`'s `5 n` words there, word by
-word through `rax` (`storeWords_ok`, `storeEntry_ok`).
+word through `rax` (`storeWords_ok`, `jstoreEntry_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -78,7 +78,7 @@ theorem storeWords_ok {base : Addr} {size A src : Nat} : ∀ (m : Nat) (s : Stat
       exact k₁.gpr r (by simp [hr])
 
 /-- `T`'s five coordinates into entry `m = rbx`, `1 ≤ m ≤ 16`. -/
-theorem storeEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : State} {base : Addr}
+theorem jstoreEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s : State} {base : Addr}
     (hs : Scr s base size) {m : Nat} (hm : s.gpr .rbx = BitVec.ofNat 64 m) (h1 : 1 ≤ m) (h16 : m ≤ 16) :
     WP isa (.block K.storeEntry) s fun t =>
       (∀ c < 5, wordsVal t.mem base (jg K (5 * (m - 1) + c)) K.M.n =

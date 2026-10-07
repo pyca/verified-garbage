@@ -50,8 +50,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.exchangeP256
-    (Proof.Ecdh.X86_64.ecdh_verified h.law h.inv) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdh.X86_64.ecdh_verified h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide)),
   exchange true Impl.Ecdh.X86_64.exchangeP256Adx
-    (Proof.Ecdh.X86_64.ecdh_verified_adx h.law h.inv) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdh.X86_64.ecdh_verified_adx h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P256.X86_64.EcdhP256
