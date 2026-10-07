@@ -14,18 +14,21 @@ on edwards448, whose `y² / x²` is `X448(k, 5)` (`x448_basePoint`).
 
 namespace VG.Proof.X448
 
-open VG VG.AArch64 in
-/-- `vg_x448_base(out = x0, scalar = x1, scratch = x2)`. -/
+open VG VG.AArch64 VG.Impl.X448.AArch64.Base in
+/-- `vg_x448_base(out = x0, scalar = x1, scratch = x2)`, with the comb's tables at the
+static `combSym`. -/
 def x448BaseAArch64 : Contract AArch64.isa where
   pre s :=
     let out : Region := ⟨s.gpr .x0, 56⟩
     let scalar : Region := ⟨s.gpr .x1, 56⟩
     let scratch : Region := ⟨s.gpr .x2, 8192⟩
-    s.rd = [scalar] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧ scalar.Disjoint scratch ∧
-      (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64
+    s.rd = [scalar, ⟨s.syms combSym, 8 * combWords.length⟩] ∧ s.wr = [out, scratch] ∧
+      out.Disjoint scratch ∧ scalar.Disjoint scratch ∧ (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧
+      Proof.X448.AArch64.Base.CombHeld s [out, scratch]
   post s s' := Spec.X448.bytesAt s'.mem (s.gpr .x0) 56 =
     Spec.X448.x448 (Spec.X448.bytesAt s.mem (s.gpr .x1) 56) Spec.X448.basePoint
-  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp
+  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp ∧
+    s₁.syms combSym = s₂.syms combSym
 
 end VG.Proof.X448
 
@@ -40,15 +43,16 @@ local notation "EV" => VG.Proof.X448.AArch64.Weak.E
 
 /-- The precondition, by name. -/
 structure Pre (s : State) : Prop where
-  rd : s.rd = [⟨s.gpr .x1, 56⟩]
+  rd : s.rd = [⟨s.gpr .x1, 56⟩, ⟨s.syms combSym, 8 * combWords.length⟩]
   wr : s.wr = [⟨s.gpr .x0, 56⟩, ⟨s.gpr .x2, 8192⟩]
   out_sc : (⟨s.gpr .x0, 56⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩
   scalar_sc : (⟨s.gpr .x1, 56⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩
   sc_fit : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64
+  held : CombHeld s [⟨s.gpr .x0, 56⟩, ⟨s.gpr .x2, 8192⟩]
 
 theorem Pre.of (s : State) (h : Proof.X448.x448BaseAArch64.pre s) : Pre s := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  exact ⟨h1, h2, h3, h4, h5⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6⟩
 
 /-- A byte of a region disjoint from the working space is beyond it. -/
 theorem far {base p : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) {i : Nat}
@@ -62,6 +66,11 @@ theorem far_output {base p : Addr} (hd : (⟨p, 56⟩ : Region).Disjoint ⟨base
   simp only [Region.Contains]
   change ofs p (off base i) + 1 ≤ 56
   omega
+
+/-- The tables, from the precondition. -/
+theorem Pre.tbl {s : State} (hp : Pre s) : TblAt s (s.gpr .x2) (s.syms combSym) :=
+  hp.held.tblAt (by rw [hp.rd]; exact List.mem_append_left _ (List.mem_cons_of_mem _
+    (List.mem_singleton_self _))) (by simp)
 
 theorem decodeScalar448_lt (kb : List Byte) : Spec.X448.decodeScalar448 kb < 256 ^ 56 := by
   rw [Spec.X448.decodeScalar448, VG.Proof.X448.decodeLittleEndian_eq]
@@ -84,9 +93,9 @@ theorem correct {sE : State} (hp : Pre sE) :
   set kb := Spec.X448.bytesAt sE.mem (sE.gpr .x1) 56
   set k := Spec.X448.decodeScalar448 kb
   unfold x448Base
-  refine WP.seq (WP.mono (setup_ok rfl hw hn rfl kr kd) fun s1 R => ?_)
-  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 56 s1 (by decide) le_rfl (by rw [Nat.sub_self]; exact R.inv))
-    fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (setup_ok rfl hw hn rfl kr kd hp.tbl) fun s1 R => ?_)
+  refine WP.seq (WP.mono (loop_ok (by decide) (s₀ := s1) 56 s1 (by decide) le_rfl
+    (by rw [Nat.sub_self]; exact R.inv) rfl) fun s2 h2 => ?_)
   refine WP.seq (WP.mono (combine_ok (decodeScalar448_lt kb) h2) fun s3 ⟨f3, r3⟩ => ?_)
   unfold VG.Impl.X448.AArch64.Base.finish
   refine WP.seq (WP.mono (squares_ok f3.scr f3.env) fun s4 ⟨k4, b4, e4⟩ => ?_)

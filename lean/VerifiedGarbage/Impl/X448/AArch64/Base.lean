@@ -11,9 +11,10 @@ base point (RFC 7748 §4.2's 4-isogeny; `Proof/X448/Edwards/Ladder.lean`).
 `[k] B` is a comb, as Ed25519's (`Impl/Ed25519/AArch64/Comb.lean`): the
 scalar's 112 nibbles `n_i` give `[k] B = Σ d_i [16^i] B + [17 G] B` for the
 digits `d_i = n_i - 8`, from `-8` to `7`, and `G = 8 Σ_{j < 56} 256^j`. Table
-`j` holds `[m · 256^j] B` for `m ≤ 8` (`baseTable`, affine). Step `j` selects
-from table `j` the entries of `d_{2j+1}` and `d_{2j}`, sharing each
-candidate's immediates between the two, negates them for negative digits
+`j` holds `[m · 256^j] B` for `m ≤ 8` (`baseTable`, affine); the 57 tables are
+the static `combSym` (`combWords`, 1024 bytes a table). Step `j` selects from
+table `j` the entries of `d_{2j+1}` and `d_{2j}`, sharing each candidate's
+load between the two, negates them for negative digits
 (`(x, y) ↦ (-x, y)`), and adds them to two projective accumulators, which start
 at `[G] B`: `A` (slots 0–2) for the odd digits and `B` (slots 3–5) for the even
 ones. At the end, `[k] B = 16 A + B`: four doublings and one addition, with
@@ -38,9 +39,9 @@ The output pointer stays in `x20`, which no field operation writes. The
 digits are secret: their entries are selected in constant time. Their
 masks (all ones exactly for `|d| = m`, `m = 1 … 8`) and the bit of `|d| = 0`
 stay in registers (`oddRegs`, `x5`; `evenRegs`, `x0`) while each candidate
-word is built from immediates and ORed in under each mask. The loop's
-counter `x19`, which is also the table index, is public; the branches are on
-it alone.
+word is loaded from the table and ORed in under each mask: every entry of
+the table is read, at addresses from the static's and the loop's counter
+`x19`, the table index, which is public; the branches are on it alone.
 -/
 
 namespace VG.Impl.X448.AArch64.Base
@@ -150,28 +151,42 @@ def digits : List Instr :=
     nibble (BITS + 4) ++ magnitude ++ masks oddRegs .x5 ++
     nibble BITS ++ magnitude ++ masks evenRegs .x0
 
-/-- Word `w` of the coordinate `vs[|d|]` (`vs[0]` is `1` if `one`, else `0`) for both
-digits, to `o + 8w` (odd) and `e + 8w` (even). -/
-def selectWord (one : Bool) (vs : List Spec.X448.Fe) (o e w : Nat) : List Instr :=
+/-! ## The tables -/
+
+/-- The static holding the comb's tables. -/
+def combSym : String := "VG_X448_COMB"
+
+/-- Word `i` of the tables: table `j = i / 128` takes 1024 bytes, the `x` (`c = 0`) then the
+`y` (`c = 1`) of its entries `m + 1 = 1 … 8`, eight limbs each. -/
+def combWord (i : Nat) : BitVec 64 :=
+  let e := Impl.X448.baseTable (i / 128) (i % 64 / 8 + 1)
+  limb (if i % 128 < 64 then e.1 else e.2) (i % 8)
+
+/-- The words of the 57 tables, as the static `combSym` holds them. -/
+def combWords : List (BitVec 64) := (List.range (57 * 128)).map combWord
+
+/-- The static the comb reads. -/
+def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]
+
+/-- `x9` = the address of table `x19`: the static's, plus 1024 bytes a table. -/
+def tblAddr : List Instr := [.adrSym .x9 combSym, .lsl .x .x8 .x19 10, .add .x .x9 .x9 .x8]
+
+/-- Word `w` of the coordinate (`y` if `one`, else `x`) of entry `|d|` of the table at `x9`
+(entry 0, the identity `(0, 1)`, from the bits of `|d| = 0`) for both digits, to `o + 8w`
+(odd) and `e + 8w` (even). -/
+def selectWord (one : Bool) (o e w : Nat) : List Instr :=
   (if one && w == 0 then [.addImm .x .x1 .x5 0, .addImm .x .x2 .x0 0]
    else [.movz .w .x1 0 0, .movz .w .x2 0 0]) ++
   (List.range 8).flatMap (fun m =>
-    const64 .x6 (limb (vs.getD (m + 1) 0) w) ++
-      [.logic .and .x .x7 .x6 (oddReg (m + 1)), .logic .orr .x .x1 .x1 .x7,
-        .logic .and .x .x7 .x6 (evenReg (m + 1)), .logic .orr .x .x2 .x2 .x7]) ++
+    [.ldr .x .x6 .x9 ((if one then 512 else 0) + 64 * m + 8 * w),
+      .logic .and .x .x7 .x6 (oddReg (m + 1)), .logic .orr .x .x1 .x1 .x7,
+      .logic .and .x .x7 .x6 (evenReg (m + 1)), .logic .orr .x .x2 .x2 .x7]) ++
   [st .x1 (o + 8 * w), st .x2 (e + 8 * w)]
 
-/-- Both digits' entries of table `j`. -/
-def select (j : Nat) : List Instr :=
-  let es := (List.range 9).map (baseTable j)
-  (List.range 8).flatMap (selectWord false (es.map (·.1)) OX EX) ++
-    (List.range 8).flatMap (selectWord true (es.map (·.2)) OY EY)
-
-/-- The selection from table `x19`, for the table indices listed. -/
-def selectFrom : List Nat → Prog isa
-  | [] => .block []
-  | j :: js => .seq (.block [.subImm .x .x9 .x19 j])
-      (.ite (.zero .x .x9) (.block (select j)) (selectFrom js))
+/-- Both digits' entries of table `x19`. -/
+def select : List Instr :=
+  tblAddr ++ (List.range 8).flatMap (selectWord false OX EX) ++
+    (List.range 8).flatMap (selectWord true OY EY)
 
 /-- The entry's `x` at `ox` negated if its digit is negative, that is if the top bit of its
 nibble (at `x3 + 8 x19 + o + 3`) is clear, its mask `bit - 1` all ones; `w` is a
@@ -187,7 +202,7 @@ def negate (ox o w : Nat) : List Instr :=
 negative digits, added to their accumulators. `x9` is nonzero while another step follows. -/
 def stepN (n : Nat) : Prog isa :=
   .seq (.block digits) <|
-  .seq (selectFrom (List.range n)) <|
+  .seq (.block select) <|
   .block (negate OX (BITS + 4) (t 0) ++ addAffine AX AY AZ OX OY ++
     negate EX BITS (t 0) ++ addAffine BX BY BZ EX EY ++
     [.addImm .x .x19 .x19 1, .subImm .x .x9 .x19 n])

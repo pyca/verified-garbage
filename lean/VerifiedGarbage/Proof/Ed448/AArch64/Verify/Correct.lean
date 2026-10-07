@@ -63,7 +63,7 @@ theorem equation_step (hQ : Proof.Ed448.AArch64.EqOk) (hL : L.Ok)
     rw [hv (.x3, .loc fScr 0) (List.mem_of_getElem? (i := 3) rfl), (scrOk hL).loc hc, BitVec.add_zero]
   refine WP.mono (equation_call hQ hV hu h0 h1 h2 h3 hL.pc hL.sc (fr_scr hL (by decide)) hL.nc
     (in_readable L.PK (by simp [Lay.inputs])) (in_readable L.SIG (by simp [Lay.inputs]))
-    (.inl ⟨fK, rfl, show fK + 57 ≤ 256 by decide⟩) (scr_writable L)) fun w ⟨hw, _, hx⟩ => ⟨hw, ?_⟩
+    (.inl ⟨fK, rfl, show fK + 57 ≤ 256 by decide⟩) (scr_writable L) ha.2) fun w ⟨hw, _, hx⟩ => ⟨hw, ?_⟩
   have eP : Spec.Ed448.bytesAt u.mem L.pk 57 = Spec.Ed448.bytesAt m₀ L.pk 57 :=
     in_bytes hL hu.1 (R := L.PK) (by simp [Lay.inputs]) (Nat.le_refl _) (show 57 ≤ 2 ^ 64 by decide)
   have eS : Spec.Ed448.bytesAt u.mem L.sig 114 = Spec.Ed448.bytesAt m₀ L.sig 114 :=
@@ -73,11 +73,12 @@ theorem equation_step (hQ : Proof.Ed448.AArch64.EqOk) (hL : L.Ok)
 /-- The frame's body: `x0` is the verification equation's result for the
 reduced hash. -/
 theorem body_ok (v : Proof.Sha3.AArch64.Permutation) (hQ : Proof.Ed448.AArch64.EqOk)
-    (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.scr) :
+    (hL : L.Ok) (hc : Ctx0 L g vec m₀ t) (ha : Args L m₀) (h6 : t.gpr .x6 = L.scr)
+    (hsy : t.syms Impl.X448.AArch64.Base.combSym = L.T) :
     WP isa (body v.callee) t fun u => Ctx0 L g vec m₀ u ∧
       u.gpr .x0 = if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt m₀ L.pk 57) (Spec.Ed448.bytesAt m₀ L.sig 114)
         (Spec.Ed448.scalarReduce (Spec.Sha3.shake256 (hashIn L m₀) 114)) then 1 else 0 := by
-  refine WP.seq (WP.mono (entry_ok hL hc ha h6) fun t₁ hc₁ => ?_)
+  refine WP.seq (WP.mono (entry_ok hL hc ha h6 hsy) fun t₁ hc₁ => ?_)
   refine WP.seq (WP.mono (hash_ok v hL hc₁ ha) fun t₂ ⟨hc₂, hh₂⟩ => ?_)
   refine WP.seq (WP.mono (reduce_step hL hc₂) fun t₃ ⟨hc₃, hk₃⟩ => ?_)
   refine WP.mono (equation_step hQ hL hc₃ ha) fun u ⟨hu, hx⟩ => ⟨hu.1, ?_⟩

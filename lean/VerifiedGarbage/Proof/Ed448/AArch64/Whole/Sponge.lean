@@ -51,7 +51,7 @@ theorem ScrOk.sponge_writes (h : ScrOk V d scr) :
 
 theorem ScrOk.loc (hc : WCtx V g vec m₀ t) (h : ScrOk V d scr) (x0 : BitVec 64) (o : Nat) :
     srcValue V.E t.mem x0 (.loc d o) = scr + BitVec.ofNat 64 o :=
-  srcValue_loc hc.2 h.kept o
+  srcValue_loc hc.2.1 h.kept o
 
 theorem toNat_ofNat64 {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -70,9 +70,9 @@ theorem zeroSt_ok (hV : V.Ok) (hs : ScrOk V d scr) (hc : WCtx V g vec m₀ t) :
     rw [hvs _ List.mem_cons_self, hs.loc hc, BitVec.add_zero]
   have hw : (⟨scr, 8192⟩ : Region) ∈ u.wr := by
     rw [hu.1.wr]; exact List.mem_cons_of_mem _ hs.out
-  refine WP.mono (zeroStores_run h15 hw) fun x ⟨xrd, xwr, xsp, xv, xg, xf, xz⟩ => ⟨?_, ?_, xz⟩
+  refine WP.mono_syms (zeroStores_run h15 hw) fun x ⟨xrd, xwr, xsp, xv, xg, xf, xz⟩ xsy => ⟨?_, ?_, xz⟩
   · refine hu.of_frame hV xrd xwr xsp (fun r hr _ => xg r (by rintro rfl; simp [preserved] at hr))
-      (fun r _ => by rw [xv]) xf ?_
+      (fun r _ => by rw [xv]) xf ?_ xsy
     intro r hr
     rw [List.mem_singleton.mp hr]
     exact .inr ⟨_, hs.out, st_within scr⟩

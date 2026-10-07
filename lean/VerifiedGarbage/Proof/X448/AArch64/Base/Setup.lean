@@ -240,18 +240,24 @@ structure Ready (sE : State) (base : Addr) (k : Nat) (t : State) : Prop where
 theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨base, 8192⟩ : Region) ∈ s.wr)
     (hn : base.toNat + 8192 ≤ 2 ^ 64) (hk : s.gpr .x1 = kp)
     (hkr : ∀ q < 56, InRegions (s.rd ++ s.wr) (kp + BitVec.ofNat 64 q) 1)
-    (hkd : ∀ q < 56, 8192 ≤ VG.Proof.X448.AArch64.ofs base (kp + BitVec.ofNat 64 q)) :
+    (hkd : ∀ q < 56, 8192 ≤ VG.Proof.X448.AArch64.ofs base (kp + BitVec.ofNat 64 q))
+    (htb : TblAt s base (s.syms combSym)) :
     WP isa VG.Impl.X448.AArch64.Base.setup s
       (Ready s base (Spec.X448.decodeScalar448 (Spec.X448.bytesAt s.mem kp 56))) := by
   unfold VG.Impl.X448.AArch64.Base.setup
-  refine WP.seq (WP.mono (block1_ok hb hw hn) fun a ⟨ha, sa, oa, xa, va, ka, za, outa⟩ => ?_)
-  refine WP.seq (WP.mono (bits_ok ha (by rw [ka.1 _ (by decide)]; exact hk)
-    (by rw [ka.2.1, ka.2.2]; exact hkr) hkd) fun b ⟨gb, rdb, wrb, ob, bitsb⟩ => ?_)
+  refine WP.seq (WP.mono_syms (block1_ok hb hw hn) fun a ⟨ha, sa, oa, xa, va, ka, za, outa⟩ sya => ?_)
+  refine WP.seq (WP.mono_syms (bits_ok ha (by rw [ka.1 _ (by decide)]; exact hk)
+    (by rw [ka.2.1, ka.2.2]; exact hkr) hkd) fun b ⟨gb, rdb, wrb, ob, bitsb⟩ syb => ?_)
   have kb : Keeps bitRegs a b := ⟨gb, rdb, wrb⟩
   have hsb : Scr b base := ha.of_keeps kb (by decide)
   rw [bytesAt_outside outa hkd] at bitsb
-  refine WP.mono (consts_ok hsb _) fun t ⟨tv, tOut, kt, tc⟩ => ?_
+  refine WP.mono_syms (consts_ok hsb _) fun t ⟨tv, tOut, kt, tc⟩ syt => ?_
   have hst : Scr t base := hsb.of_keeps kt (by decide)
+  have mt : Outside base 0 8192 s.mem t.mem :=
+    (outa.trans (ob.mono (by omega) (by simp only [BITS]; omega))).trans (tOut.mono (by omega) (by omega))
+  have htt : TblAt t base (t.syms combSym) := by
+    rw [syt, syb, sya]
+    exact htb.of_far (by rw [kt.2.1, kb.2.1, ka.2.1, kt.2.2, kb.2.2, ka.2.2]) fun x hx => mt x (Or.inr hx)
   -- Every word outside the constant slots and the bits is as `block1` left it.
   have wt : ∀ {d : Nat}, d + 8 ≤ 64 ∨ 832 ≤ d → d + 8 ≤ BITS ∨ BITS + 448 ≤ d → d + 8 ≤ 8192 →
       word t.mem base d = word a.mem base d := fun h1 h2 h3 => by
@@ -283,7 +289,7 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
   have bsaved : ∀ {d : Nat}, d + 8 ≤ 64 ∨ 832 ≤ d → d + 8 ≤ BITS ∨ BITS + 448 ≤ d → d + 8 ≤ 8192 →
       word t.mem base d = word a.mem base d := wt
   refine ⟨⟨by decide, hst, fun i w hw => ?_, fun w hw => ?_, by rw [tc]; rfl, fun q hq => ?_,
-      by rw [pA]; exact hG, by rw [pB]; exact hG, rfl, rfl, rfl, rfl, Outside2.refl _ _ _ _ _ _⟩,
+      by rw [pA]; exact hG, by rw [pB]; exact hG, rfl, rfl, rfl, rfl, Outside2.refl _ _ _ _ _ _, htt⟩,
     ⟨by rw [bsaved (by decide) (by decide) (by decide)]; exact sa.1,
       by rw [bsaved (by decide) (by decide) (by decide)]; exact sa.2⟩,
     by rw [kt.1 _ (by decide), kb.1 _ (by decide)]; exact oa,
@@ -294,8 +300,7 @@ theorem setup_ok {s : State} {base kp : Addr} (hb : s.gpr .x2 = base) (hw : (⟨
     (va.outside ob (by simp only [BITS, Impl.X448.AArch64.Fast.VSAVE]; omega)).outside tOut
       (by simp only [Impl.X448.AArch64.Fast.VSAVE]; omega),
     by rw [kt.1 _ (by decide), kb.1 _ (by decide), ka.1 _ (by decide)],
-    by rw [kt.2.1, kb.2.1, ka.2.1], by rw [kt.2.2, kb.2.2, ka.2.2],
-    (outa.trans (ob.mono (by omega) (by simp only [BITS]; omega))).trans (tOut.mono (by omega) (by omega))⟩
+    by rw [kt.2.1, kb.2.1, ka.2.1], by rw [kt.2.2, kb.2.2, ka.2.2], mt⟩
   · -- Every slot's limbs are below `Ib`.
     by_cases hi : i.val < 6
     · have hi6 : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by

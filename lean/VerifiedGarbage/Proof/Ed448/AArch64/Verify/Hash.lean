@@ -55,8 +55,8 @@ theorem hash_ok (v : Proof.Sha3.AArch64.Permutation) (hL : L.Ok) (hc : WCtx L.en
   -- The state zeroed.
   refine WP.seq (WP.mono (zeroSt_ok hV hs hc) fun t₁ ⟨hc₁, _, hz₁⟩ => ?_)
   -- The header.
-  have k0 := hc₁.2 (fHdr, sigWord) (by simp [Lay.env])
-  have k8 := hc₁.2 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
+  have k0 := hc₁.2.1 (fHdr, sigWord) (by simp [Lay.env])
+  have k8 := hc₁.2.1 (fHdr + 8, L.ctxLen <<< 8) (by simp [Lay.env])
   simp only [Lay.env] at k0 k8
   have hb₁ : Spec.Sha3.bytesAt t₁.mem (L.E + BitVec.ofNat 64 fHdr) 10 = hdrBytes L :=
     hdr_bytes _ _ _ hL.cl k0 (by rw [Offset.add_add]; exact k8)

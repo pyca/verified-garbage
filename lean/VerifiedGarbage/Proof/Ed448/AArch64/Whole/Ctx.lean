@@ -1,13 +1,17 @@
 import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Setup
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
+import VerifiedGarbage.Proof.Framework.AArch64.Syms
+import VerifiedGarbage.Impl.X448.AArch64.Base
 
 /-!
 # Ed448's complete operations on AArch64: the state in the frame's body
 
 An `Env` is where a complete operation's buffers are: the frame's base `E`,
-the regions it reads (`ins`, with the saved arguments) and writes (`outs`),
-and the words kept in its locals (`ls`). `WCtx` is `Whole.Ctx` with the kept
-words in place. A call (`wcall`) or a block (`WCtx.of_frame`) that writes
+the regions it reads (`ins`, with the saved arguments and the comb's tables)
+and writes (`outs`), the words kept in its locals (`ls`), and the address of
+the comb's tables (`T`, the static `combSym`, which `vg_ed448_scalar_base` and
+`vg_ed448_verify_equation` read). `WCtx` is `Whole.Ctx` with the kept words in
+place and the static at `T`. A call (`wcall`) or a block (`WCtx.of_frame`) that writes
 only regions disjoint from the kept words keeps `WCtx`; `wsetup` sets a
 call's arguments.
 -/
@@ -22,6 +26,16 @@ structure Env where
   ins : List Region
   outs : List Region
   ls : List (Nat × BitVec 64)
+  T : Addr
+
+open VG.Impl.X448.AArch64.Base (combSym combWords)
+
+/-- The comb's tables at `T`. -/
+abbrev TBL (T : Addr) : Region := ⟨T, 8 * combWords.length⟩
+
+/-- The comb's words at `T` in `m`. -/
+def TblWords (T : Addr) (m : Mem) : Prop :=
+  ∀ i < combWords.length, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = combWords.getD i 0
 
 /-- A kept word's region. -/
 abbrev slot (E : Addr) (d : Nat) : Region := ⟨E + BitVec.ofNat 64 d, 8⟩
@@ -33,9 +47,15 @@ structure Env.Ok (V : Env) : Prop where
   fo : ∀ R ∈ V.outs, (FR V.E).Disjoint R
   co : ∀ R ∈ V.outs, (CK V.E).Disjoint R
   e16 : 16 ≤ V.E.toNat
+  tin : TBL V.T ∈ V.ins
+  tfr : (TBL V.T).Disjoint (FR V.E)
+  tck : (TBL V.T).Disjoint (CK V.E)
+  tout : ∀ R ∈ V.outs, (TBL V.T).Disjoint R
+  tfit : V.T.toNat + 8 * combWords.length ≤ 2 ^ 64
 
 abbrev WCtx (V : Env) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) : Prop :=
-  VG.Proof.Ed25519.AArch64.Whole.Ctx V.E g vec m₀ V.ins V.outs t ∧ Kept V.E t.mem V.ls
+  VG.Proof.Ed25519.AArch64.Whole.Ctx V.E g vec m₀ V.ins V.outs t ∧ Kept V.E t.mem V.ls ∧
+    t.syms combSym = V.T
 
 variable {V : Env} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {t u : State}
 
@@ -66,9 +86,10 @@ theorem WCtx.of_frame (hV : V.Ok) (h : WCtx V g vec m₀ t)
     (hcs : ∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r)
     (hvs : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (t.v r).extractLsb' 0 64)
     {ws : List Region} (hf : Frame ws t.mem u.mem)
-    (hw : ∀ r ∈ ws, Apart V r ∨ ∃ R ∈ V.outs, Within r R) : WCtx V g vec m₀ u := by
-  refine ⟨h.1.of_frame hrd hwr hsp hcs hvs hf fun r hr => ?_, kept_frame hV h.2
-    (hf.mono fun r hr => List.mem_append_left _ hr) hw⟩
+    (hw : ∀ r ∈ ws, Apart V r ∨ ∃ R ∈ V.outs, Within r R) (hsy : u.syms = t.syms) :
+    WCtx V g vec m₀ u := by
+  refine ⟨h.1.of_frame hrd hwr hsp hcs hvs hf fun r hr => ?_, kept_frame hV h.2.1
+    (hf.mono fun r hr => List.mem_append_left _ hr) hw, by rw [hsy]; exact h.2.2⟩
   rcases hw r hr with ⟨hf, _⟩ | ⟨R, hR, hs⟩
   · exact .inl hf.sub
   · exact .inr ⟨R, hR, hs.sub⟩
@@ -76,8 +97,21 @@ theorem WCtx.of_frame (hV : V.Ok) (h : WCtx V g vec m₀ t)
 theorem WCtx.regs (h : WCtx V g vec m₀ t)
     (hrd : u.rd = t.rd) (hwr : u.wr = t.wr) (hsp : u.sp = t.sp)
     (hcs : ∀ r ∈ preserved, r ≠ .x30 → u.gpr r = t.gpr r)
-    (hvs : u.v = t.v) (hm : u.mem = t.mem) : WCtx V g vec m₀ u :=
-  ⟨h.1.regs hrd hwr hsp hcs hvs hm, hm ▸ h.2⟩
+    (hvs : u.v = t.v) (hm : u.mem = t.mem) (hsy : u.syms = t.syms) : WCtx V g vec m₀ u :=
+  ⟨h.1.regs hrd hwr hsp hcs hvs hm, hm ▸ h.2.1, by rw [hsy]; exact h.2.2⟩
+
+/-- The comb's words, as on entry: no write reaches them. -/
+theorem WCtx.tbl (hV : V.Ok) (h : WCtx V g vec m₀ t) (hm : TblWords V.T m₀) : TblWords V.T t.mem :=
+  fun i hi => by
+    have := hV.tfit
+    rw [← hm i hi]
+    refine h.1.frame.readW (r := TBL V.T) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · exact hV.tout r hr
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [hV.tfr, hV.tck]
 
 /-- A call's arguments, from the saved arguments, the kept words and `x0`. -/
 theorem wsetup_ok (hV : V.Ok) (hc : WCtx V g vec m₀ t) {args : List (Reg × Src)}
@@ -85,7 +119,7 @@ theorem wsetup_ok (hV : V.Ok) (hc : WCtx V g vec m₀ t) {args : List (Reg × Sr
     (hr : ∀ p ∈ args, p.1 ∉ preserved) :
     WP isa (.block (setupS args)) t fun u => WCtx V g vec m₀ u ∧ u.mem = t.mem ∧
       ∀ p ∈ args, u.gpr p.1 = srcValue V.E t.mem (t.gpr .x0) p.2 := by
-  refine WP.mono (setupS_ok hc.1.sp hn hv hret ?_ ?_) fun u ⟨ht, hvals⟩ => ?_
+  refine WP.mono_syms (setupS_ok hc.1.sp hn hv hret ?_ ?_) fun u ⟨ht, hvals⟩ hsy => ?_
   · intro j hj
     rw [hc.1.rd, hc.1.wr]
     refine ⟨ARGS V.E, List.mem_append_left _ hV.args, ?_⟩
@@ -96,7 +130,7 @@ theorem wsetup_ok (hV : V.Ok) (hc : WCtx V g vec m₀ t) {args : List (Reg × Sr
     exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])
   · intro d _ hd
     exact hc.1.readable_frame (Offset.contains_base _ hd (by omega))
-  refine ⟨hc.regs ht.rd ht.wr ht.sp ?_ ht.vec ht.mem, ht.mem, hvals⟩
+  refine ⟨hc.regs ht.rd ht.wr ht.sp ?_ ht.vec ht.mem hsy, ht.mem, hvals⟩
   intro r hpres _
   apply ht.regs
   intro hm
@@ -115,9 +149,10 @@ theorem wcall (hV : V.Ok) (h : WCtx V g vec m₀ t)
     (hQ : ∀ u, WCtx V g vec m₀ u → Frame (wr' ++ [CK V.E]) t.mem u.mem →
       k.post (t.callEntry.withRegions rd' wr') (u.withRegions rd' wr') → Q u) :
     WP isa (.call name c) t Q :=
-  VG.Proof.Ed25519.AArch64.Whole.call_okF h.1 hv hd hpre hcov
+  WP.mono_syms (VG.Proof.Ed25519.AArch64.Whole.call_okF h.1 hv hd hpre hcov
     (fun r hr => (hw r hr).imp And.left id) fun u hu hf hp =>
-      hQ u ⟨hu, kept_frame hV h.2 hf hw⟩ hf hp
+      fun hsy => hQ u ⟨hu, kept_frame hV h.2.1 hf hw, by rw [hsy]; exact h.2.2⟩ hf hp)
+    fun _ hq hsy => hq hsy
 
 theorem covers_of {E : Addr} {ins outs rs : List Region}
     (h : ∀ r ∈ rs, Within r (FR E) ∨ ∃ R ∈ ins ++ outs, Within r R) :

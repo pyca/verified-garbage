@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Ed448.AArch64.PublicKey
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
 import VerifiedGarbage.Spec.Ed448.Contract
+import VerifiedGarbage.Proof.Ed448.AArch64.Whole.Ctx
 
 /-!
 # Ed448 public-key derivation on AArch64: where everything is
@@ -17,6 +18,7 @@ registers.
 namespace VG.Proof.Ed448.AArch64.PublicKey
 
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole
+open VG.Impl.X448.AArch64.Base (combSym combWords)
 
 /-- The buffers and the lowest address of the frame (`sp - 336` on entry). -/
 structure Lay where
@@ -24,6 +26,8 @@ structure Lay where
   seed : Addr
   scr : Addr
   E : Addr
+  /-- The comb's tables (the static `combSym`), which `vg_ed448_scalar_base` reads. -/
+  T : Addr
 
 namespace Lay
 variable (L : Lay)
@@ -35,7 +39,8 @@ abbrev FR : Region := VG.Proof.Ed25519.AArch64.Whole.FR L.E
 abbrev STK : Region := ⟨L.E, 336⟩
 /-- The frame of a callee, below the locals. -/
 abbrev CK : Region := VG.Proof.Ed25519.AArch64.Whole.CK L.E
-def inputs : List Region := [L.SEED, L.ARGS]
+abbrev TB : Region := VG.Proof.Ed448.AArch64.Whole.TBL L.T
+def inputs : List Region := [L.SEED, L.TB, L.ARGS]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : Addr := match j with | 0 => L.out | 1 => L.seed | _ => L.scr
 
@@ -54,14 +59,20 @@ structure Ok : Prop where
   co : L.CK.Disjoint L.OUT
   cs : L.CK.Disjoint L.SEED
   cc : L.CK.Disjoint L.SCR
+  tbo : L.TB.Disjoint L.OUT
+  tbc : L.TB.Disjoint L.SCR
+  tbk : L.TB.Disjoint L.STK
+  tbck : L.TB.Disjoint L.CK
+  tbfit : L.T.toNat + 8 * combWords.length ≤ 2 ^ 64
 end Lay
 
 abbrev Ctx (L : Lay) (g : Reg → Addr) (vec : VReg → BitVec 128) (m₀ : Mem) (t : State) :=
   VG.Proof.Ed25519.AArch64.Whole.Ctx L.E g vec m₀ L.inputs L.outputs t
 
-/-- The saved arguments. -/
+/-- The saved arguments, and the comb's words. -/
 def Arguments (L : Lay) (m : Mem) : Prop :=
-  ∀ j < 3, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j
+  (∀ j < 3, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j) ∧
+    VG.Proof.Ed448.AArch64.Whole.TblWords L.T m
 
 /-- What `setup` moves into a register. -/
 def argValue (L : Lay) : Value → Addr
@@ -73,6 +84,19 @@ variable {L : Lay} {g : Reg → Addr} {vec : VReg → BitVec 128} {m₀ : Mem} {
 
 theorem frame_sub (L : Lay) : Region.Sub L.FR L.STK := Region.sub_prefix (by decide : 256 ≤ 336)
 theorem args_sub (L : Lay) : Region.Sub L.ARGS L.STK := Offset.sub_base _ (by decide : 256 + 48 ≤ 336)
+
+/-- The comb's words, as on entry: no write reaches them. -/
+theorem Ctx.tbl (hc : Ctx L g vec m₀ t) (hL : L.Ok) (hm : VG.Proof.Ed448.AArch64.Whole.TblWords L.T m₀) :
+    VG.Proof.Ed448.AArch64.Whole.TblWords L.T t.mem := fun i hi => by
+  have := hL.tbfit
+  rw [← hm i hi]
+  refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+  simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
+  rintro r (rfl | rfl | rfl | rfl)
+  · exact hL.tbo
+  · exact hL.tbc
+  · exact hL.tbk.sub_right (frame_sub L)
+  · exact hL.tbck
 
 /-- The seed, as on entry. -/
 theorem Ctx.seed_bytes (hc : Ctx L g vec m₀ t) (hL : L.Ok) :
@@ -119,6 +143,6 @@ theorem setup_ok (hc : Ctx L g vec m₀ t) (hL : L.Ok) (ha : Arguments L m₀)
     have hj := hi (r, .caller j d) hp j d rfl
     simp only [VG.Proof.Ed25519.AArch64.Whole.value, argValue]
     change t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 + BitVec.ofNat 64 d = _
-    rw [hc.arg_word hL hj, ha j hj]
+    rw [hc.arg_word hL hj, ha.1 j hj]
 
 end VG.Proof.Ed448.AArch64.PublicKey

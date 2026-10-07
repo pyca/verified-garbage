@@ -90,11 +90,11 @@ theorem kabs_ct (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
     (by simp only [retOk, List.all_cons, List.all_nil, hrs, hrl]; rfl) (by simp [preserved])
     (by simp [linkRegs]) ht (absVal scr dp n q) (fun hm hc hp p hp' => ?_)
     (Proof.Sha3.AArch64.Stream.Absorb.absorb_correct v) (Proof.Sha3.AArch64.Stream.Absorb.absorb_ct v)
-    (fun hc hr => absorb_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
+    (fun _ hc hr => absorb_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
       (hr (.x2, pos) (by simp)) (hr (.x3, src) (by simp)) (hr (.x4, len) (by simp)) (hr (.x5, .loc d 256) (by simp))
       hql hnl dS dK kD)
     (covers_rw (fun r hr => by rw [List.mem_singleton.mp hr]; exact hin) hs.sponge_writes) hs.sponge_writes
-    (fun _ _ hsp hg => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, pos) (by simp),
+    (fun _ _ hsp hg _ => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, pos) (by simp),
       hg (.x3, src) (by simp), hg (.x4, len) (by simp), hg (.x5, .loc d 256) (by simp), hsp⟩)
     (fun hm hc hp => WP.mono (kabs_ok v hV hs hc hvs hvl hvp hrs hrl (hdp hm hc hp) (hn hm hc hp)
       (hq hm hc hp) hql hnl hin dS dK kD) fun _ ⟨hu, _, _, hx⟩ =>
@@ -138,10 +138,10 @@ theorem kpad_ct (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
     (by simp only [retOk, List.all_cons, List.all_nil]; rfl) (by simp [preserved])
     (by simp [linkRegs]) ht (padVal scr q) (fun hm hc hp p hp' => ?_)
     (Proof.Sha3.AArch64.Stream.Pad.pad_correct v) (Proof.Sha3.AArch64.Stream.Pad.pad_ct v)
-    (fun hc hr => pad_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
+    (fun _ hc hr => pad_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
       (hr (.x2, pos) (by simp)) (hr (.x4, .loc d 256) (by simp)) hql)
     (covers_rw (by simp) hs.sponge_writes) hs.sponge_writes
-    (fun _ _ hsp hg => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, pos) (by simp),
+    (fun _ _ hsp hg _ => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, pos) (by simp),
       hg (.x4, .loc d 256) (by simp), hsp⟩)
     (fun hm hc hp => WP.mono (kpad_ok v hV hs hc hvp (hq hm hc hp) hql) fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩)
   simp only [padArgs, List.mem_cons, List.not_mem_nil, or_false] at hp'
@@ -191,11 +191,11 @@ theorem ksqz_ct (v : Proof.Sha3.AArch64.Permutation) (hV : V.Ok) (hs : ScrOk V d
     (by simp only [retOk, List.all_cons, List.all_nil, hro]; rfl) (by simp [preserved])
     (by simp [linkRegs]) ht (sqzVal scr op) (fun hm hc hp p hp' => ?_)
     (Proof.Sha3.AArch64.Stream.Squeeze.squeeze_correct v) (Proof.Sha3.AArch64.Stream.Squeeze.squeeze_ct v)
-    (fun hc hr => squeeze_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
+    (fun _ hc hr => squeeze_pre hV hs hc.1.sp (hr (.x0, .loc d 0) (by simp)) (hr (.x1, .val (.const 136)) (by simp))
       (hr (.x2, .val (.const 0)) (by simp)) (hr (.x3, out) (by simp)) (hr (.x4, .val (.const 114)) (by simp)) (hr (.x5, .loc d 256) (by simp))
       dS dK kD)
     (covers_rw (by simp) hws) hws
-    (fun _ _ hsp hg => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, .val (.const 0)) (by simp),
+    (fun _ _ hsp hg _ => ⟨hg (.x0, .loc d 0) (by simp), hg (.x1, .val (.const 136)) (by simp), hg (.x2, .val (.const 0)) (by simp),
       hg (.x3, out) (by simp), hg (.x4, .val (.const 114)) (by simp), hg (.x5, .loc d 256) (by simp), hsp⟩)
     (fun hm hc hp => WP.mono (ksqz_ok v hV hs hc hvo hro (hop hm hc hp) hw dS dK kD)
       fun _ ⟨hu, _⟩ => ⟨hu, trivial⟩)
@@ -232,10 +232,10 @@ theorem reduce_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     exacts [hwo, hws]
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval Proof.Ed448.AArch64.scalarReduce_ok
     Proof.Ed448.AArch64.scalarReduce_ct
-    (fun _ hs => reduce_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
+    (fun _ _ hs => reduce_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
       (regs_get hs (hm .x2 (by simp))) hd)
     (covers_rw (fun r hr => by rw [List.mem_singleton.mp hr]; exact hrd) hw) hw
-    (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
+    (fun _ _ hsp hg _ => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp))⟩) hok
 
 theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂)
@@ -250,7 +250,8 @@ theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h
     (hm : ∀ r ∈ [Reg.x0, .x1, .x2], r ∈ args.map Prod.fst)
     (hos : Region.Disjoint ⟨val .x0, 57⟩ ⟨val .x2, 8192⟩) (hss : Region.Disjoint ⟨val .x1, 57⟩ ⟨val .x2, 8192⟩)
     (hnc : (val .x2).toNat + 8192 ≤ 2 ^ 64) (hrd : Readable V ⟨val .x1, 57⟩)
-    (hwo : Writable V ⟨val .x0, 57⟩) (hws : Writable V ⟨val .x2, 8192⟩) {Q : State → Prop}
+    (hwo : Writable V ⟨val .x0, 57⟩) (hws : Writable V ⟨val .x2, 8192⟩)
+    (hMT : ∀ {m}, M m → TblWords V.T m) {Q : State → Prop}
     (hok : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t → WP isa
       (callS args "vg_ed448_scalar_base" Impl.Ed448.AArch64.scalarBase) t
       fun u => WCtx V g vec m₀ u ∧ Q u) :
@@ -262,11 +263,14 @@ theorem base_ct (hb : Proof.Ed448.AArch64.BaseOk) (hV : V.Ok) (h₁ : M m₁) (h
     exacts [hwo, hws]
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval hb.ok
     hb.ct
-    (fun _ hs => base_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
-      (regs_get hs (hm .x2 (by simp))) hos hss hnc)
-    (covers_rw (fun r hr => by rw [List.mem_singleton.mp hr]; exact hrd) hw) hw
-    (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
-      entry_eq hg (hm .x2 (by simp))⟩) hok
+    (fun hM hc hs => base_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
+      (regs_get hs (hm .x2 (by simp))) hos hss hnc hc.2.2 (combHeld_of hV hc (hMT hM) hw _ _))
+    (covers_rw (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      exacts [hrd, tbl_readable hV]) hw) hw
+    (fun _ _ hsp hg hsy => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
+      entry_eq hg (hm .x2 (by simp)), hsy⟩) hok
 
 theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg × Src)}
     (hn : (args.map Prod.fst).Nodup) (hv : ∀ p ∈ args, srcValid p.2) (hret : retOk args = true)
@@ -296,11 +300,11 @@ theorem mulAdd_ct (hV : V.Ok) (h₁ : M m₁) (h₂ : M m₂) {args : List (Reg 
     exacts [hrr, hrk, hrs]
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval Proof.Ed448.AArch64.scalarMulAdd_ok
     Proof.Ed448.AArch64.scalarMulAdd_ct
-    (fun _ hs => mulAdd_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
+    (fun _ _ hs => mulAdd_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
       (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) (regs_get hs (hm .x4 (by simp)))
       hdr hdk hds)
     (covers_rw hrd hw) hw
-    (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
+    (fun _ _ hsp hg _ => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
       entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), entry_eq hg (hm .x4 (by simp))⟩) hok
 
 theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
@@ -316,7 +320,7 @@ theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
     (hdp : Region.Disjoint ⟨val .x0, 57⟩ ⟨val .x3, 8192⟩) (hds : Region.Disjoint ⟨val .x1, 114⟩ ⟨val .x3, 8192⟩)
     (hdc : Region.Disjoint ⟨val .x2, 57⟩ ⟨val .x3, 8192⟩) (hnc : (val .x3).toNat + 8192 ≤ 2 ^ 64)
     (hrp : Readable V ⟨val .x0, 57⟩) (hrs : Readable V ⟨val .x1, 114⟩) (hrc : Readable V ⟨val .x2, 57⟩)
-    (hws : Writable V ⟨val .x3, 8192⟩) {Q : State → Prop}
+    (hws : Writable V ⟨val .x3, 8192⟩) (hMT : ∀ {m}, M m → TblWords V.T m) {Q : State → Prop}
     (hok : ∀ {g vec m₀ t}, M m₀ → WCtx V g vec m₀ t → P t → WP isa
       (callS args "vg_ed448_verify_equation" Impl.Ed448.AArch64.verifyEquation) t
       fun u => WCtx V g vec m₀ u ∧ Q u) :
@@ -327,16 +331,17 @@ theorem equation_ct (hQ : Proof.Ed448.AArch64.EqOk) (hV : V.Ok)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl
     exact hws
-  have hrd : ∀ r ∈ [(⟨val .x0, 57⟩ : Region), ⟨val .x1, 114⟩, ⟨val .x2, 57⟩], Readable V r := by
+  have hrd : ∀ r ∈ [(⟨val .x0, 57⟩ : Region), ⟨val .x1, 114⟩, ⟨val .x2, 57⟩, TBL V.T], Readable V r := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl)
-    exacts [hrp, hrs, hrc]
+    rintro r (rfl | rfl | rfl | rfl)
+    exacts [hrp, hrs, hrc, tbl_readable hV]
   exact callS_ct hV h₁ h₂ hn hv hret hr hl ht val hval (hQ.ok)
     hQ.ct
-    (fun _ hs => equation_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
-      (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc)
+    (fun hM hc hs => equation_pre (regs_get hs (hm .x0 (by simp))) (regs_get hs (hm .x1 (by simp)))
+      (regs_get hs (hm .x2 (by simp))) (regs_get hs (hm .x3 (by simp))) hdp hds hdc hnc hc.2.2
+      (combHeld_of hV hc (hMT hM) hw _ _))
     (covers_rw hrd hw) hw
-    (fun _ _ hsp hg => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
-      entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp))⟩) hok
+    (fun _ _ hsp hg hsy => ⟨hsp, entry_eq hg (hm .x0 (by simp)), entry_eq hg (hm .x1 (by simp)),
+      entry_eq hg (hm .x2 (by simp)), entry_eq hg (hm .x3 (by simp)), hsy⟩) hok
 
 end VG.Proof.Ed448.AArch64.Whole

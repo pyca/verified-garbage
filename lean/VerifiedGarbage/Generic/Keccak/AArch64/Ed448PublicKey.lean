@@ -29,8 +29,9 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
       with `vg_ed448_scalar_base`, and clears the frame's scalar and hash. The base-point \
       multiplication's working values are left in `scratch`. The function saves `x30` and its \
       arguments on the stack, and the functions it calls use 16 bytes below its frame."])
+    consts := Impl.X448.AArch64.Base.combConsts
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
-    contract := Spec.Ed448.publicKeyContract AArch64.abi 352
+    contract := Spec.Ed448.publicKeyContract (AArch64.abi.withConsts Impl.X448.AArch64.Base.combConsts) 352
     stack := 352
     verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]

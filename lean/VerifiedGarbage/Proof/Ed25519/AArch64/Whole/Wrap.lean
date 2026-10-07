@@ -16,11 +16,12 @@ structure EntryStep (s t : State) : Prop where
   sp : t.sp = s.sp
   v : t.v = s.v
   regs : ∀ r, r ≠ .x15 → t.gpr r = s.gpr r
+  syms : t.syms = s.syms
 
-theorem EntryStep.refl (s : State) : EntryStep s s := ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
+theorem EntryStep.refl (s : State) : EntryStep s s := ⟨rfl, rfl, rfl, rfl, fun _ _ => rfl, rfl⟩
 theorem EntryStep.trans {s t u : State} (h : EntryStep s t) (h' : EntryStep t u) : EntryStep s u :=
   ⟨h'.rd.trans h.rd, h'.wr.trans h.wr, h'.sp.trans h.sp, h'.v.trans h.v,
-    fun r hn => (h'.regs r hn).trans (h.regs r hn)⟩
+    fun r hn => (h'.regs r hn).trans (h.regs r hn), h'.syms.trans h.syms⟩
 
 theorem argReg_ne15 (j : Nat) : argReg j ≠ .x15 := by
   unfold argReg
@@ -37,7 +38,7 @@ theorem saveWord_ok {s : State} {j : Nat} (hj : j < 6)
     RegUpd.mem_write, RegUpd.sp_write, argReg_ne15, BitVec.setWidth_eq,
     Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, and_self, ite_true, ite_false,
     Option.bind_some, hw, BitVec.add_zero, Mem.writeW, Option.some.injEq, exists_eq_left']
-  refine ⟨⟨rfl, rfl, rfl, rfl, ?_⟩, True.intro⟩
+  refine ⟨⟨rfl, rfl, rfl, rfl, ?_, rfl⟩, True.intro⟩
   intro r hn
   simp only [RegUpd.gpr_write, hn, ite_false]
 

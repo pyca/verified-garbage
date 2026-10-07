@@ -1,4 +1,6 @@
-import VerifiedGarbage.Proof.Ed448.AArch64.Base.Erase
+import VerifiedGarbage.Impl.Ed448.AArch64.ScalarBase
+import VerifiedGarbage.Proof.X448.AArch64.Base.Comb
+import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Spec.Ed448.Contract
 import VerifiedGarbage.TCB.AArch64.Target
 
@@ -19,18 +21,25 @@ namespace VG.Proof.Ed448.AArch64
 open VG VG.AArch64 VG.Impl.Ed448.AArch64
 open VG.Spec.Ed448 (bytesAt)
 
-/-- `vg_ed448_scalar_base(out = x0, scalar = x1, scratch = x2)`. -/
+open VG.Impl.X448.AArch64.Base (combSym combWords)
+open VG.Proof.X448.AArch64.Base (CombHeld)
+
+/-- The region of the comb's tables, the static `combSym`. -/
+abbrev tblRegion (s : State) : Region := ⟨s.syms combSym, 8 * combWords.length⟩
+
+/-- `vg_ed448_scalar_base(out = x0, scalar = x1, scratch = x2)`, with the comb's tables at the
+static `combSym`. -/
 def scalarBaseLocal : Contract isa where
   pre s :=
-    s.rd = [⟨s.gpr .x1, 57⟩] ∧ s.wr = [⟨s.gpr .x0, 57⟩, ⟨s.gpr .x2, 8192⟩] ∧
+    s.rd = [⟨s.gpr .x1, 57⟩, tblRegion s] ∧ s.wr = [⟨s.gpr .x0, 57⟩, ⟨s.gpr .x2, 8192⟩] ∧
     (⟨s.gpr .x0, 57⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
     (⟨s.gpr .x1, 57⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
-    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64
+    (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 57⟩, ⟨s.gpr .x2, 8192⟩]
   post s t := bytesAt t.mem (s.gpr .x0) 57 = Spec.Ed448.scalarBase (bytesAt s.mem (s.gpr .x1) 57)
-  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2
+  pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧ s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧
+    s.syms combSym = t.syms combSym
 
-theorem scalarBase_noFrames : scalarBase.noFrames = true := by
-  rw [← Code.noFrames_eraseImm, scalarBase_eraseImm]; decide +kernel
+theorem scalarBase_noFrames : scalarBase.noFrames = true := by decide +kernel
 
 /-- `vg_ed448_scalar_base` meets `scalarBaseLocal` and the ABI, in constant time. -/
 structure BaseOk : Prop where
