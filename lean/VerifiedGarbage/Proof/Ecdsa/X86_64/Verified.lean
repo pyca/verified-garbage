@@ -57,6 +57,7 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
+  n_len := by decide +kernel
   sh := by rw [p256_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ p256.C.p_ne_zero Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩

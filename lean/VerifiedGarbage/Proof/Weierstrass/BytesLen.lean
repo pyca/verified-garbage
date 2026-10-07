@@ -37,6 +37,12 @@ theorem ofBytes_lt (l : List Byte) : Spec.Weierstrass.ofBytes l < 256 ^ l.length
 theorem pow256 (k : Nat) : (256 : Nat) ^ k = 2 ^ (8 * k) := by
   rw [Nat.pow_mul]
 
+/-- A number of `n` bytes is below `2^(8 n)`. -/
+theorem ofBytes_bytesAt_lt (m : Mem) (p : Addr) (n : Nat) :
+    Spec.Weierstrass.ofBytes (bytesAt m p n) < 2 ^ (8 * n) := by
+  have := ofBytes_lt (bytesAt m p n)
+  rwa [show (bytesAt m p n).length = n by simp [bytesAt], pow256] at this
+
 /-- The first `t ≤ 8` of eight bytes: their reversal shifted right. -/
 theorem top_bytes (m : Mem) (p : Addr) {t : Nat} (ht : t ≤ 8) :
     (byteRev64 (m.readW p 64)).toNat >>> (8 * (8 - t)) = Spec.Weierstrass.ofBytes (bytesAt m p t) := by

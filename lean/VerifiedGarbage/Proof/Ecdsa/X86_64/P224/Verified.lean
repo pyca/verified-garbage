@@ -57,6 +57,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   len8 := by decide
   len_lo := by decide
   len_hi := by decide
+  n_len := by decide +kernel
   sh := by rw [p224_sh]; decide
   comb d h := by cases h
   inv _ := ⟨by decide, @hI _ _ (by

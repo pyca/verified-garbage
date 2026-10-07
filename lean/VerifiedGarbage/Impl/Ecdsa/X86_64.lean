@@ -242,6 +242,11 @@ def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n
 def invP : InvCfg := .ofMod c.MP' (c.sl ACC) (c.sl RZ) (bitsAt c.n 3) c.C.p
 def invN : InvCfg := .ofMod c.MN' (c.sl ACC) (c.sl KM) (bitsAt c.n 3) c.C.n
 
+/-- The window method's digits: two per byte of the scalar (`len` bytes:
+ECDH's `d`, or verification's `v < n`), and one more for the recoding's
+carry. -/
+def winJ : Nat := 2 * c.C.len + 1
+
 /-- The window method's areas. -/
 def winK : Nat := c.sl WK
 def winBits : Nat := c.sl WB
@@ -261,12 +266,12 @@ def winCfg (px py bm : Nat) : WinCfg where
   zero := c.sl ZERO
   bits := c.winBits
   tbl := c.winTbl
-  J := 16 * c.n + 1
+  J := c.winJ
   one := c.mont 1
 
 /-- `k + offset J` and its bits, from the slot at `k`. -/
 def winPrep (k : Nat) : Prog isa :=
-  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset (16 * c.n + 1))))
+  .seq (.block (WinCfg.addConst c.n k c.winK (WinCfg.offset c.winJ)))
     (bits c.winK c.winBits (8 * (c.n + 1)))
 
 /-- `Z^(p-2)` and `k^(n-2)` into `ACC`: by divsteps for up to nine words
