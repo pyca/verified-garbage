@@ -13,9 +13,6 @@ namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Proof.X25519
 
-theorem noImm_mem (m : MemOp) : ∀ n, (Src.mem m) ≠ .imm n := fun _ h => nomatch h
-theorem noImm_reg (r : Reg) : ∀ n, (Src.reg r) ≠ .imm n := fun _ h => nomatch h
-
 /-- A number times four words, word by word. -/
 theorem mul_val4 (v x y z w : Nat) : v * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) =
     v * x + 2 ^ 64 * (v * y) + 2 ^ 128 * (v * z) + 2 ^ 192 * (v * w) := by

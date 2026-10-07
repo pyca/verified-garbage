@@ -17,12 +17,12 @@ open VG VG.X86_64 VG.Impl.X25519.X86_64
 /-- `p + d`. -/
 abbrev off (p : Addr) (d : Nat) : Addr := p + BitVec.ofNat 64 d
 
-/-- The working space: `rdi` holds its base `base`, it is writable and it
-does not wrap around. -/
-structure Scr (s : State) (base : Addr) : Prop where
+/-- The working space: `rdi` holds its base `base`, its `size` bytes (4096 for
+X25519's) are writable and it does not wrap around. -/
+structure Scr (s : State) (base : Addr) (size : Nat := 4096) : Prop where
   rdi : s.gpr .rdi = base
-  wr : (⟨base, 4096⟩ : Region) ∈ s.wr
-  nowrap : base.toNat + 4096 ≤ 2 ^ 64
+  wr : (⟨base, size⟩ : Region) ∈ s.wr
+  nowrap : base.toNat + size ≤ 2 ^ 64
 
 /-- The word at `base + d`. -/
 abbrev word (m : Mem) (base : Addr) (d : Nat) : BitVec 64 := m.readW (off base d) 64
@@ -38,15 +38,16 @@ theorem contains_sc {base : Addr} {d n : Nat} (h : d + n ≤ 4096) :
     (⟨base, 4096⟩ : Region).Contains (off base d) n :=
   Offset.contains_base base h (by omega)
 
-theorem load_sc {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 4096) :
-    s.load64 (s.ea (sc d)) = some (word s.mem base d) := by
-  rw [ea_sc, hs.rdi, State.load64, ite_eq_left ⟨_, List.mem_append_right _ hs.wr, contains_sc hd⟩]
+theorem load_sc {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
+    (hd : d + 8 ≤ size) : s.load64 (s.ea (sc d)) = some (word s.mem base d) := by
+  rw [ea_sc, hs.rdi, State.load64, ite_eq_left ⟨_, List.mem_append_right _ hs.wr,
+    Offset.contains_base base hd (by have := hs.nowrap; omega)⟩]
 
-theorem readSrc_sc {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 4096) :
-    readSrc s (.mem (sc d)) = some (word s.mem base d) := load_sc hs hd
+theorem readSrc_sc {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d : Nat}
+    (hd : d + 8 ≤ size) : readSrc s (.mem (sc d)) = some (word s.mem base d) := load_sc hs hd
 
-theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} (hs : Scr s base)
-    (h : Keeps rs s s') (hr : .rdi ∉ rs) : Scr s' base :=
+theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} {size : Nat}
+    (hs : Scr s base size) (h : Keeps rs s s') (hr : .rdi ∉ rs) : Scr s' base size :=
   ⟨(h.1 _ hr).trans hs.rdi, h.2.2.2 ▸ hs.wr, hs.nowrap⟩
 
 /-! ## Stores and frames -/

@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Impl.Mont.Mod
+import VerifiedGarbage.Impl.X25519.X86_64.Adx
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on x86-64
@@ -24,7 +25,10 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   is `mulx` for each word, its low half added through OF (`adox`) and its
   high half through CF (`adcx`), two carry chains that do not wait for each
   other (`roundX`). The accumulator stays below `2m`, and the result is
-  reduced by `csub`.
+  reduced by `csub`. A square of four words for `p` with BMI2 and ADX
+  (`sqrRX`) is X25519's `sqrX`'s product `a²` instead, each product of two
+  different words computed once and doubled, into eight registers, then the
+  four reductions by `shiftRed`.
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
   subtraction (`csub`) or addition of `m`.
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
@@ -66,7 +70,8 @@ its `n` low words in the temporary area `[M.tmp]` and its two top words in
 it squares). Every multiplication is `mul` or `mulx`, every
 selection a mask or conditional move, and every address `rdi` plus a constant: nothing but `rdi`
 may affect timing. The operations use the registers `rax`, `rcx`, `rdx`,
-`rbp` and `acc n` (`r8`–`r13` for `n = 4`; `r8`–`r15` from `n = 6`), and
+`rbp` and `acc n` (`r8`–`r13` for `n = 4`, and `r14`, `r15` for `sqrRX`;
+`r8`–`r15` from `n = 6`), and
 write only `[o]` and `[M.tmp]`.
 -/
 
@@ -263,12 +268,40 @@ def loads : List Reg → Nat → List Instr
 /-- `ts := 0`. -/
 def zeros (ts : List Reg) : List Instr := ts.map fun t => .mov32 t (.imm 0)
 
+/-- The words of `sqrRX`'s result, `(a² + U m) / 2²⁵⁶`, but its top one, `r8`. -/
+def sqLow : List Reg := [.r12, .r13, .r14, .r15]
+
+/-- `[o] = [a]² R⁻¹ mod m` for four words and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)`
+(P-256's `p`), with BMI2 and ADX: `a²` into `r8`–`r15` as X25519's `sqrX`
+computes it, then `shiftRed` adds `t_i m'` to the words above `t_i`, for each of
+the four low words `t_i` in turn. Only the last can carry out of `r15`, into
+`r8`, cleared by then. -/
+def sqrRX (M : Mod) (k o a : Nat) : List Instr :=
+  Impl.X25519.X86_64.sqrA a ++ Impl.X25519.X86_64.sqrB a ++ Impl.X25519.X86_64.sqrC a ++
+    Impl.X25519.X86_64.sqrD a ++
+    shiftRed true .r8 k [.r9, .r10, .r11, .r12, .r13, .r14, .r15] ++
+    shiftRed true .r9 k [.r10, .r11, .r12, .r13, .r14, .r15] ++
+    shiftRed true .r10 k [.r11, .r12, .r13, .r14, .r15] ++ [.mov32 .r8 (.imm 0)] ++
+    shiftRed true .r11 k (sqLow ++ [.r8]) ++ csub M sqLow .r8 ++ stores sqLow o
+
+/-- `some k` if `mul o a a` is a square that `sqrRX` computes: four words, BMI2
+and ADX, and the friendly reduction by `shiftRed`. -/
+def sqrK? (M : Mod) (a b : Nat) : Option Nat :=
+  if M.adx ∧ M.n = 4 ∧ a = b then
+    match M.red with
+    | .friendly ws => shiftK? ws
+    | .general => none
+  else none
+
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
-registers. -/
+registers; a square by `sqrRX` if it applies. -/
 def mulR (M : Mod) (o a b : Nat) : List Instr :=
-  let low := (List.range M.n).map (win M.n M.n)
-  zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
-    csub M low (win M.n M.n M.n) ++ stores low o
+  match sqrK? M a b with
+  | some k => sqrRX M k o a
+  | none =>
+    let low := (List.range M.n).map (win M.n M.n)
+    zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
+      csub M low (win M.n M.n M.n) ++ stores low o
 
 /-- `ts op= [b]`, word by word, with `op` on the first word and `op'` on the
 others (`add` and `adc`, `sub` and `sbb`). -/
