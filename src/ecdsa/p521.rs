@@ -1,7 +1,8 @@
 //! ECDSA over P-521: deterministic signatures with HMAC-SHA-512
 //! (`vg_ecdsa_p521_sha512_sign`, which calls `vg_ecdsa_p521_sign`), public
 //! keys (`vg_ec_p521_public_key`), and verification (`vg_ecdsa_p521_verify`),
-//! each with BMI2 and ADX where the CPU has them (`_adx`).
+//! each with BMI2 and ADX (and the comb's selection by AVX2) where the CPU
+//! has them (`_adx`).
 
 #![cfg(any(
     target_arch = "x86_64",

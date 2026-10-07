@@ -24,7 +24,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       conditional subtraction. The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
-      signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<65} 16^j`, whose 65 nibbles less 8 are \
+      signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<57} 16^j`, whose 57 nibbles less 8 are \
       digits in `[-8, 7]`; a table of `[1 … 8]P` is built in `scratch` by complete additions; \
       then, from the point at infinity, for each digit from the top, four doublings in Jacobian \
       coordinates (dbl-2001-b, for `a = -3`) and the addition of the digit's entry, selected in \

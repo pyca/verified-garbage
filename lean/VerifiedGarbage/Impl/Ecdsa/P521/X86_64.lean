@@ -19,8 +19,9 @@ def p521 : Cfg where
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
 
-/-- P-521 multiplying modulo `p` with BMI2 and ADX (`Mod.adx`). -/
-def p521x : Cfg := { p521 with adx := true }
+/-- P-521 multiplying modulo `p` with BMI2 and ADX (`Mod.adx`), and selecting
+the comb's entries with AVX2 (`TCombCfg.avx2`). -/
+def p521x : Cfg := { p521 with adx := true, avx2 := true }
 
 /-- `vg_ecdsa_p521_sign_adx`. -/
 def signP521Adx : Prog isa := p521x.sign

@@ -19,7 +19,7 @@ baseline's, and BMI2's and ADX's (`_adx`).
 namespace VG.Generic.P521.X86_64.EcP521
 
 /-- The function of `Spec.EcKey.P521.publicKeyApi`, multiplying modulo `p` with
-BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
+BMI2 and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
 instruction writing `rsp` (`hsp`). -/
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
@@ -33,7 +33,9 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       code up to the inversion of `Z`, with `d` as both the key and the secret number: it \
       saves its caller's callee-saved registers in `scratch`; field elements are nine 64-bit \
       words in Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ "; `[d]G` is the \
-      signature's comb over the 7-bit windows of `d`, from the static `VG_P521_COMB`; and `Z⁻¹` is \
+      signature's comb over the 7-bit windows of `d`, from the static `VG_P521_COMB`, each entry \
+      selected by loading every entry of its table, " ++ Proof.Ecdsa.X86_64.P521.selNote adx ++ " \
+      the one of the digit's magnitude; and `Z⁻¹` is \
       by divsteps (Bernstein and Yang's safegcd, half-delta form): 23 \
       batches of 59 divsteps on the low 64-bit words of `f` and `g` (from `f = p`, `g = Z`), each \
       giving a matrix of 64-bit entries that updates `f`, `g` (divided by 2⁵⁹) and the \
@@ -49,7 +51,7 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
     verified := hv
     spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) : List Artifact := [
   publicKey false Impl.EcKey.X86_64.publicKeyP521

@@ -33,7 +33,7 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       Montgomery form, " ++ Proof.Ecdsa.X86_64.P521.mulNote adx ++ ". The peer's key is checked without branches (its first byte, both \
       coordinates below `p`, and the curve's equation), and `[d]P` is computed for the peer's \
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
-      signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<145} 16^j`, whose 145 nibbles less 8 \
+      signed 4-bit windows: `d` is recoded as `d + 8 Σ_{j<133} 16^j`, whose 133 nibbles less 8 \
       are digits in `[-8, 7]`; a table of `[1 … 8]P` is built in `scratch` by complete \
       additions; then, from the point at infinity, for each digit from the top, four doublings \
       in Jacobian coordinates (dbl-2001-b, for `a = -3`) and the addition of the digit's entry, \

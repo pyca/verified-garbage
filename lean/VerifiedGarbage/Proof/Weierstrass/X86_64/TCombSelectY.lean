@@ -5,11 +5,13 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
 
 `selPassY` (`Impl/Weierstrass/X86_64/TComb.lean`) is `selPassAt` 32 bytes at a
 time: lane `l` of the 256-bit accumulator `c` is the 16-byte accumulator of
-piece `2 c + l`. The mask of entry `m` is `vpcmpeqd` of the broadcasts of `m`
+piece `q c + l`, where `q c` is `2 c` but for an odd number of pieces, whose
+last two 32-byte pieces overlap (`qY`). The mask of entry `m` is `vpcmpeqd` of the broadcasts of `m`
 (a counter, incremented by `vpaddd`) and of the magnitude `a`
 (`pcmpeqd_bcast`), so that after entry `m` each lane holds its piece of entry
 `a` if `1 ≤ a ≤ m`, else zero (`accVal`, as in `TCombSelectPass.lean`), and the
-stored pieces are `selPass_ok`'s (`selPassY_ok`, `selPassV_ok`).
+stored pieces are `selPass_ok`'s (`selPassY_ok`, `selPassV_ok`): overlapping
+stores write the same pieces (`storeAccY_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -106,15 +108,15 @@ theorem selStepY_ok (s : State) {X : Addr} (hx : s.gpr .rdx = X) {d c : Nat} (hc
 
 /-- The pieces `c < k` of entry `m` of the table at `rdx = X` (entries `st`
 bytes apart) kept under the mask `ymm15` in their accumulators: lane `l` of
-accumulator `c`, piece `2 c + l`. -/
-theorem selStepsY_ok {np st m : Nat} (hn : np ≤ 11) {X : Addr} :
+accumulator `c`, piece `q c + l`. -/
+theorem selStepsY_ok {np st m : Nat} {q : Nat → Nat} (hn : np ≤ 11) {X : Addr} :
     ∀ k ≤ np, ∀ (s : State), s.gpr .rdx = X →
-    (∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + 32 * c)) 32) →
+    (∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + 16 * q c)) 32) →
     WP isa (.block ((List.range k).flatMap fun c =>
-        [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 32 * c)),
+        [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 16 * q c)),
           .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)])) s fun t =>
       (∀ c < 11, ∀ l < 2, t.lane (selAcc c) l = if c < k then s.lane (selAcc c) l |||
-          (s.mem.readW (X + BitVec.ofNat 64 (st * (m - 1) + 16 * (2 * c + l))) 128 &&& s.lane .xmm15 l)
+          (s.mem.readW (X + BitVec.ofNat 64 (st * (m - 1) + 16 * (q c + l))) 128 &&& s.lane .xmm15 l)
         else s.lane (selAcc c) l) ∧
       YKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm11) s t
   | 0, _, s, _, _ => WP.block_nil ⟨fun c _ l _ => by simp, YKeep.refl _ _ _⟩
@@ -129,7 +131,7 @@ theorem selStepsY_ok {np st m : Nat} (hn : np ≤ 11) {X : Addr} :
       (by rw [k₁.rd, k₁.wr]; exact hr k (by omega))) fun t ⟨a₂, k₂⟩ => ⟨fun c hc l hl => ?_, ?_⟩
     · by_cases hck : c = k
       · rw [hck, a₂ l hl, a₁ k (by omega) l hl, h15, k₁.mem, BitVec.add_assoc, ← BitVec.ofNat_add,
-          show st * (m - 1) + 32 * k + 16 * l = st * (m - 1) + 16 * (2 * k + l) by omega]
+          show st * (m - 1) + 16 * q k + 16 * l = st * (m - 1) + 16 * (q k + l) by omega]
         simp only [Nat.lt_irrefl, ↓reduceIte, Nat.lt_succ_self]
       · rw [k₂.lane _ (by
           rintro (h | h)
@@ -173,21 +175,21 @@ theorem selMaskY_ok (s : State) {a m : Nat} (ha : a < 2 ^ 31) (hm : m < 2 ^ 31)
     simp only [lane_vbin256, hr.1, hr.2, ↓reduceIte]
 
 /-- The accumulators after entries `1 … m`: lane `l` of accumulator `c` is
-piece `2 c + l` (`accVal`). -/
-def AccY (t : State) (mem : Mem) (X : Addr) (st a m np : Nat) : Prop :=
-  ∀ c < np, ∀ l < 2, t.lane (selAcc c) l = accVal mem X st (16 * ·) a m (2 * c + l)
+piece `q c + l` (`accVal`). -/
+def AccY (t : State) (mem : Mem) (X : Addr) (st a m np : Nat) (q : Nat → Nat) : Prop :=
+  ∀ c < np, ∀ l < 2, t.lane (selAcc c) l = accVal mem X st (16 * ·) a m (q c + l)
 
 /-- Entry `m` of the table at `rdx = X` kept in the accumulators under the
 mask of `a = m`, and the counter incremented. -/
-theorem selEntryY_ok {st np : Nat} {s : State} {X : Addr} {a m : Nat} (hn : np ≤ 11)
+theorem selEntryY_ok {st np : Nat} {q : Nat → Nat} {s : State} {X : Addr} {a m : Nat} (hn : np ≤ 11)
     (hm1 : 1 ≤ m) (hm : m < 2 ^ 31) (ha : a < 2 ^ 31) (hx : s.gpr .rdx = X)
     (h13 : ∀ l < 2, s.lane .xmm13 l = bcast32 (BitVec.ofNat 32 a))
     (h12 : ∀ l < 2, s.lane .xmm12 l = bcast32 (BitVec.ofNat 32 1))
     (h14 : ∀ l < 2, s.lane .xmm14 l = bcast32 (BitVec.ofNat 32 m))
-    (hr : ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + 32 * c)) 32)
-    (hacc : AccY s s.mem X st a (m - 1) np) :
-    WP isa (.block (selEntryY st np m)) s fun t =>
-      AccY t s.mem X st a m np ∧ (∀ l < 2, t.lane .xmm14 l = bcast32 (BitVec.ofNat 32 (m + 1))) ∧
+    (hr : ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * (m - 1) + 16 * q c)) 32)
+    (hacc : AccY s s.mem X st a (m - 1) np q) :
+    WP isa (.block (selEntryY st np q m)) s fun t =>
+      AccY t s.mem X st a m np q ∧ (∀ l < 2, t.lane .xmm14 l = bcast32 (BitVec.ofNat 32 (m + 1))) ∧
       YKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm11 ∨ r = .xmm14 ∨ r = .xmm15) s t := by
   rw [selEntryY, WP.block_append_iff]
   refine WP.mono (selMaskY_ok s ha hm h13 h12 h14) fun s₁ ⟨x₁, c₁, k₁⟩ => ?_
@@ -211,15 +213,15 @@ theorem selEntryY_ok {st np : Nat} {s : State} {X : Addr} {a m : Nat} (hn : np �
 
 /-- The entries `1 … h` of the table at `rdx = X` kept in the cleared
 accumulators under the masks of `a`, the counter from 1. -/
-theorem selEntriesY_ok {st np : Nat} {X : Addr} {a : Nat} (hn : np ≤ 11) (ha : a < 2 ^ 31) :
+theorem selEntriesY_ok {st np : Nat} {q : Nat → Nat} {X : Addr} {a : Nat} (hn : np ≤ 11) (ha : a < 2 ^ 31) :
     ∀ h, h < 2 ^ 31 → ∀ (s : State), s.gpr .rdx = X →
     (∀ l < 2, s.lane .xmm13 l = bcast32 (BitVec.ofNat 32 a)) →
     (∀ l < 2, s.lane .xmm12 l = bcast32 (BitVec.ofNat 32 1)) →
     (∀ l < 2, s.lane .xmm14 l = bcast32 (BitVec.ofNat 32 1)) →
-    (∀ e < h, ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * e + 32 * c)) 32) →
+    (∀ e < h, ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * e + 16 * q c)) 32) →
     (∀ c < np, ∀ l < 2, s.lane (selAcc c) l = 0) →
-    WP isa (.block ((List.range h).flatMap fun m => selEntryY st np (m + 1))) s fun t =>
-      AccY t s.mem X st a h np ∧ (∀ l < 2, t.lane .xmm14 l = bcast32 (BitVec.ofNat 32 (h + 1))) ∧
+    WP isa (.block ((List.range h).flatMap fun m => selEntryY st np q (m + 1))) s fun t =>
+      AccY t s.mem X st a h np q ∧ (∀ l < 2, t.lane .xmm14 l = bcast32 (BitVec.ofNat 32 (h + 1))) ∧
       YKeep [] (fun r => (∃ c < np, r = selAcc c) ∨ r = .xmm11 ∨ r = .xmm14 ∨ r = .xmm15) s t
   | 0, _, s, _, _, _, h14, _, h0 => WP.block_nil ⟨fun c hc l hl => by
       rw [h0 c hc l hl, accVal, ite_eq_right_of_eq_false _ _ (eq_false (by omega))], h14, YKeep.refl _ _ _⟩
@@ -366,39 +368,55 @@ theorem extract_ymm_lane (s : State) (r : XReg) {l : Nat} (hl : l < 2) :
   · simp only [show ¬ 8 * (16 * 1) + j < 128 by omega, ite_false, show (1 : Nat) ≠ 0 by omega]
     exact congrArg _ (by omega)
 
-/-- The 256-bit accumulators `c < k` stored to the 32 bytes at `o + 32 c`:
-lane `l` at `o + 16 (2 c + l)`. -/
-theorem storeAccY_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s base size → o + 32 * k ≤ size →
-    WP isa (.block ((List.range k).map fun c => .vmovdquStore .l256 (sc (o + 32 * c)) (selAcc c))) s fun t =>
-      (∀ c < k, ∀ l < 2, t.mem.readW (off base (o + 16 * (2 * c + l))) 128 = s.lane (selAcc c) l) ∧
-      Outside base o (32 * k) s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+/-- The 256-bit accumulators `c < k` stored to the 32 bytes at `o + 16 q c`,
+where lane `l` of accumulator `c` is `V (q c + l)`: the 16 bytes at
+`o + 16 (q c + l)` are `V (q c + l)`, even where the stores overlap. -/
+theorem storeAccY_ok {base : Addr} {size o n : Nat} {q : Nat → Nat} {V : Nat → BitVec 128}
+    (hon : o + 16 * n ≤ size) : ∀ k, ∀ (s : State), Scr s base size → (∀ c < k, q c + 2 ≤ n) →
+    (∀ c < k, ∀ l < 2, s.lane (selAcc c) l = V (q c + l)) →
+    WP isa (.block ((List.range k).map fun c => .vmovdquStore .l256 (sc (o + 16 * q c)) (selAcc c))) s fun t =>
+      (∀ c < k, ∀ l < 2, t.mem.readW (off base (o + 16 * (q c + l))) 128 = V (q c + l)) ∧
+      Outside base o (16 * n) s.mem t.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r l, t.lane r l = s.lane r l)
-  | 0, s, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, rfl, rfl,
+  | 0, s, _, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, rfl, rfl,
       rfl, fun _ _ => rfl⟩
-  | k + 1, s, hs, hk => by
+  | k + 1, s, hs, hq, hV => by
     have hn := hs.nowrap
+    have hqk := hq k (by omega)
     rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
-    refine WP.mono (storeAccY_ok k s hs (by omega)) fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
-    have hw : InRegions s₁.wr (off base (o + 32 * k)) 32 := by
+    refine WP.mono (storeAccY_ok hon k s hs (fun c hc => hq c (by omega)) (fun c hc => hV c (by omega)))
+      fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
+    have hw : InRegions s₁.wr (off base (o + 16 * q k)) 32 := by
       rw [w₁]; exact ⟨_, hs.wr, hs.contains (by omega) (by decide)⟩
     have hd₁ : s₁.gpr .rdi = base := by rw [g₁]; exact hs.rdi
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, ea_sc, hd₁, State.store256, hw,
       ite_true, Option.some.injEq, exists_eq_left']
-    have O₂ := writeW256_out s₁.mem base (s₁.ymm (selAcc k)) (d := o + 32 * k) (by omega)
-    refine ⟨fun c hc l hl => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
-      g₁, r₁, w₁, fun r l => x₁ r l⟩
-    by_cases hck : c = k
-    · rw [hck]
-      have e : off base (o + 16 * (2 * k + l)) = off base (o + 32 * k) + BitVec.ofNat 64 (16 * l) := by
+    have O₂ := writeW256_out s₁.mem base (s₁.ymm (selAcc k)) (d := o + 16 * q k) (by omega)
+    -- The 16 bytes at piece `j` of the stored accumulator `k`.
+    have inside : ∀ j, q k ≤ j → j < q k + 2 →
+        (s₁.mem.writeW (off base (o + 16 * q k)) (s₁.ymm (selAcc k))).readW (off base (o + 16 * j)) 128 =
+          V j := by
+      intro j hj₁ hj₂
+      have e : off base (o + 16 * j) = off base (o + 16 * q k) + BitVec.ofNat 64 (16 * (j - q k)) := by
         simp only [off]
-        rw [BitVec.add_assoc, ← BitVec.ofNat_add, show o + 32 * k + 16 * l = o + 16 * (2 * k + l) by omega]
-      have h := readW_writeW_inside s₁.mem (off base (o + 32 * k)) (s₁.ymm (selAcc k)) (k := 16 * l) (n := 16)
-        (by omega) (by decide)
-      rw [extract_ymm_lane _ _ hl, x₁] at h
+        rw [BitVec.add_assoc, ← BitVec.ofNat_add, show o + 16 * q k + 16 * (j - q k) = o + 16 * j by omega]
+      have h := readW_writeW_inside s₁.mem (off base (o + 16 * q k)) (s₁.ymm (selAcc k))
+        (k := 16 * (j - q k)) (n := 16) (by omega) (by decide)
+      rw [extract_ymm_lane _ _ (by omega), x₁, hV k (by omega) _ (by omega),
+        show q k + (j - q k) = j by omega] at h
       rw [e]
       exact h
-    · rw [O₂.read128 (by omega) (by omega), a₁ c (by omega) l hl]
+    refine ⟨fun c hc l hl => ?_, (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega)),
+      g₁, r₁, w₁, fun r l => x₁ r l⟩
+    by_cases hin : q k ≤ q c + l ∧ q c + l < q k + 2
+    · exact inside _ hin.1 hin.2
+    · have hck : c < k := by
+        refine Nat.lt_of_le_of_ne (by omega) fun h => hin ?_
+        subst h
+        exact ⟨by omega, by omega⟩
+      have := hq c (by omega)
+      rw [O₂.read128 (by omega) (by omega), a₁ c hck l hl]
 
 theorem vzeroupper_ok (s : State) :
     WP isa (.block [.vop .vzeroupper]) s fun t =>
@@ -408,30 +426,40 @@ theorem vzeroupper_ok (s : State) :
     VOp.exec_mem, VOp.exec_gpr, VOp.exec_rd, VOp.exec_wr]
   exact ⟨trivial, trivial, trivial, trivial⟩
 
-/-- `selPassY`: `selPass_ok`'s postcondition, 32 bytes at a time, for an even
-number of words, from a table in one region. -/
+theorem qY_le {n : Nat} (c : Nat) (hn : 2 ≤ n) : qY n c + 2 ≤ n := by
+  unfold qY; split <;> omega
+
+/-- Every piece of an entry is in one of `qY`'s 32-byte pieces. -/
+theorem qY_cover {n j : Nat} (hn : 2 ≤ n) (hj : j < n) : ∃ c < (n + 1) / 2, ∃ l < 2, qY n c + l = j := by
+  by_cases h : j / 2 + 1 < (n + 1) / 2
+  · exact ⟨j / 2, by omega, j % 2, by omega, by unfold qY; rw [ifT h]; omega⟩
+  · refine ⟨(n + 1) / 2 - 1, by omega, j - (n - 2), by omega, ?_⟩
+    unfold qY; rw [ifF (by omega)]; omega
+
+/-- `selPassY`: `selPass_ok`'s postcondition, 32 bytes at a time, from a
+table in one region. -/
 theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    {X : Addr} {a : Nat} (hn : K.M.n ≤ 14) (he : K.M.n % 2 = 0) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
+    {X : Addr} {a : Nat} (hn : K.M.n ≤ 14) (h2 : 2 ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
     (htb : 16 * K.M.n * K.H < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
     (hreg : InRegions (s.rd ++ s.wr) X (16 * K.M.n * K.H)) (hE : K.E.x + 16 * K.M.n ≤ size) :
-    WP isa (.block (selPassY K.E.x K.H (16 * K.M.n) (K.M.n / 2))) s fun t =>
+    WP isa (.block (selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n))) s fun t =>
       (∀ c < K.M.n, t.mem.readW (off base (K.E.x + 16 * c)) 128 = accVal s.mem X (16 * K.M.n) (16 * ·) a K.H c) ∧
       Outside base K.E.x (16 * K.M.n) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
-  have hnp : K.M.n / 2 ≤ 11 := by omega
+  have hnp : (K.M.n + 1) / 2 ≤ 11 := by omega
   unfold selPassY
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (selSetY_ok s ha h8) fun s₁ ⟨b13, b12, b14, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (clearAccY_ok (K.M.n / 2) hnp s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
-  have n12 : ¬ ∃ c < K.M.n / 2, XReg.xmm12 = selAcc c := fun ⟨c, hc, h⟩ =>
+  refine WP.mono (clearAccY_ok ((K.M.n + 1) / 2) hnp s₁) fun s₂ ⟨z₂, k₂⟩ => ?_
+  have n12 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm12 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.1 h.symm
-  have n13 : ¬ ∃ c < K.M.n / 2, XReg.xmm13 = selAcc c := fun ⟨c, hc, h⟩ =>
+  have n13 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm13 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.2.1 h.symm
-  have n14 : ¬ ∃ c < K.M.n / 2, XReg.xmm14 = selAcc c := fun ⟨c, hc, h⟩ =>
+  have n14 : ¬ ∃ c < (K.M.n + 1) / 2, XReg.xmm14 = selAcc c := fun ⟨c, hc, h⟩ =>
     (selAcc_neY c (by omega)).2.2.2.1 h.symm
   rw [WP.block_append_iff]
-  refine WP.mono (selEntriesY_ok (X := X) (st := 16 * K.M.n) hnp ha K.H hH s₂
+  refine WP.mono (selEntriesY_ok (X := X) (st := 16 * K.M.n) (q := qY K.M.n) hnp ha K.H hH s₂
     (by rw [k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide), hx])
     (fun l hl => by rw [k₂.lane _ n13 l, b13 l hl]) (fun l hl => by rw [k₂.lane _ n12 l, b12 l hl])
     (fun l hl => by rw [k₂.lane _ n14 l, b14 l hl])
@@ -440,21 +468,24 @@ theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
       refine VG.CallLay.inRegions_sub hreg ?_ (by omega)
       have := Nat.mul_le_mul_left (16 * K.M.n) (show e + 1 ≤ K.H by omega)
       rw [Nat.mul_succ] at this
+      have := qY_le c h2
       omega)
     z₂) fun s₃ ⟨a₃, _, k₃⟩ => ?_
   have hs₃ : Scr s₃ base size :=
     ⟨by rw [k₃.gpr _ List.not_mem_nil, k₂.gpr _ List.not_mem_nil, k₁.gpr _ (by decide)]; exact hs.rdi,
       by rw [k₃.wr, k₂.wr, k₁.wr]; exact hs.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
-  refine WP.mono (storeAccY_ok (o := K.E.x) (K.M.n / 2) s₃ hs₃ (by omega))
+  refine WP.mono (storeAccY_ok (o := K.E.x) (n := K.M.n) (q := qY K.M.n)
+    (V := accVal s.mem X (16 * K.M.n) (16 * ·) a K.H) hE ((K.M.n + 1) / 2) s₃ hs₃
+    (fun c hc => qY_le c h2) (fun c hc l hl => by rw [a₃ c hc l hl, k₂.mem, k₁.mem]))
     fun s₄ ⟨a₄, O₄, g₄, r₄, w₄, _⟩ => ?_
-  refine WP.mono (vzeroupper_ok s₄) fun t ⟨m₅, g₅, r₅, w₅⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
-  · have h := a₄ (c / 2) (by omega) (c % 2) (by omega)
-    rw [a₃ (c / 2) (by omega) (c % 2) (by omega), k₂.mem, k₁.mem,
-      show 2 * (c / 2) + c % 2 = c by omega] at h
+  refine WP.mono (vzeroupper_ok s₄) fun t ⟨m₅, g₅, r₅, w₅⟩ => ⟨fun j hj => ?_, ?_, ?_⟩
+  · obtain ⟨c, hc, l, hl, e⟩ := qY_cover h2 hj
+    have h := a₄ c hc l hl
+    rw [e] at h
     rw [m₅]
     exact h
-  · rw [k₃.mem, k₂.mem, k₁.mem, show 32 * (K.M.n / 2) = 16 * K.M.n by omega] at O₄
+  · rw [k₃.mem, k₂.mem, k₁.mem] at O₄
     rw [m₅]
     exact O₄
   · exact ⟨fun r hr => by rw [g₅, g₄, k₃.gpr r List.not_mem_nil, k₂.gpr r List.not_mem_nil, k₁.gpr r hr],
@@ -474,7 +505,7 @@ theorem selPassV_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
   unfold TCombCfg.selPassV
   split
   · next h =>
-    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at h
     exact selPassY_ok K hs hn h.2 hH ha htb h8 hx hreg hE
   · exact selPass_ok K hs hn hH ha h8 hx hr hE
 

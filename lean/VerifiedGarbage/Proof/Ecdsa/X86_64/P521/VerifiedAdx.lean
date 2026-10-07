@@ -5,9 +5,10 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSumsAdx
 /-!
 # ECDSA over P-521 on x86-64 with BMI2 and ADX: `Verified`
 
-`p521x` is `p521` multiplying modulo `p` with BMI2 and ADX (`Mod.adx`), which
-the proof of `sign_ok` covers as it covers any multiplication
-(`Proof/Mont/X86_64/MulPX.lean`): the same curve, so the same facts
+`p521x` is `p521` multiplying modulo `p` with BMI2 and ADX (`Mod.adx`) and
+selecting the comb's entries with AVX2, which the proof of `sign_ok` covers
+as it covers any multiplication (`Proof/Mont/X86_64/MulPX.lean`) and either
+selection (`selPassV_ok`): the same curve, so the same facts
 (`p521x_ok`, from `p521_ok`) and the same precondition.
 -/
 
@@ -35,7 +36,16 @@ def mulNote (adx : Bool) : String :=
     each product of two different words once and adds it twice) with a final conditional \
     subtraction"
 
-/-! `p521x` is `p521` but for `adx`: its other fields, rewritten rather than
+/-- How the comb's entries are selected, for the notes of its functions: with
+AVX2 (`adx`) or not. -/
+def selNote (adx : Bool) : String :=
+  if adx then
+    "32 bytes at a time with AVX2 (the last 32 bytes of each 144-byte entry overlapping the 32 \
+    before), and keeping (`vpand`, `vpor`, under the mask of `vpcmpeqd` of a counter and the \
+    magnitude, broadcast)"
+  else "16 bytes at a time, and keeping (`pand`, `por`)"
+
+/-! `p521x` is `p521` but for `adx` and `avx2`: its other fields, rewritten rather than
 compared by unfolding (which would evaluate the order's bits). -/
 
 theorem p521x_C : p521x.C = p521.C := rfl
