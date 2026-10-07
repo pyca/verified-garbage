@@ -511,4 +511,108 @@ theorem shrX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {d
     exact Divstep.shr_nat (c := 2 ^ 59) (B := 2 ^ 64) rfl rfl hH hA hy hy1 hy2 hz e₁
   · rw [k₁.2.1] at O; simpa only [aRegs, List.length_cons, List.length_nil] using O
 
+/-! ## The reduction of `a`, `b` -/
+
+theorem eq_mod_of {L R c N : Nat} (hL : L < N) (h : L + N * c = R) : L = R % N := by
+  subst h; rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hL]
+
+/-- `mredRow`: `t + k p` (six words, `t` sign-extended), with `k = t₀ m' mod 2^64`. -/
+theorem mredRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) (M : Mod)
+    (hmo : M.mo + 32 ≤ size) {w : Reg} (hw : w ∉ clobX) (hwd : w ≠ .rdi) :
+    WP isa (.block (mredRow M w)) s fun t =>
+      regsVal t [.rcx, .rbp, .r8, .r13, .r15, w] =
+        (aVal s + 2 ^ 320 * sgnW (s.gpr .r15) +
+          (s.gpr .rcx).toNat * M.minv.toNat % 2 ^ 64 * wordsVal s.mem base M.mo 4) % 2 ^ 384 ∧
+      Keeps (w :: clobX) s t := by
+  have L : ∀ d, d + 8 ≤ size → s.load64 (off base d) = some (word s.mem base d) := fun d hd => by
+    have := load_sc hs hd; rwa [ea_sc, hs.rdi] at this
+  have L0 := L M.mo (by omega); have L1 := L (M.mo + 8) (by omega); have L2 := L (M.mo + 16) (by omega)
+  have L3 := L (M.mo + 24) (by omega)
+  simp only [clobX, List.mem_cons, List.not_mem_nil, or_false, not_or] at hw
+  obtain ⟨wa, wb, wc, wd, wbp, w8, w13, w15⟩ := hw
+  have aw : ¬Reg.rax = w := Ne.symm wa
+  have bw : ¬Reg.rbx = w := Ne.symm wb
+  have cw : ¬Reg.rcx = w := Ne.symm wc
+  have dw : ¬Reg.rdx = w := Ne.symm wd
+  have bpw : ¬Reg.rbp = w := Ne.symm wbp
+  have r8w : ¬Reg.r8 = w := Ne.symm w8
+  have r13w : ¬Reg.r13 = w := Ne.symm w13
+  have r15w : ¬Reg.r15 = w := Ne.symm w15
+  have diw : ¬Reg.rdi = w := Ne.symm hwd
+  apply WP.of_runBlock
+  simp only [mredRow, runBlock_cons, runStep_some, runBlock_nil,
+    exec, execMulx, execAdcx, execAdox, execAlu, execAlu32, execShift, readSrc, readSrc32, ea_sc, Option.map_some,
+    Option.bind_some, State.setReg32, arithFlags, BitVec.xor_self, load64_setReg, load64_setFlags,
+    RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.cf_setReg,
+    RegUpd.cf_setFlags, of_setReg', of_setFlags', Nat.reduceLeDiff, Nat.reduceEqDiff,
+    and_self, ↓reduceIte, aw, cw, dw, bpw, r8w, r13w, r15w, diw, wa, wb, wc, wbp, w8, w13, w15,
+    hs.rdi, L0, L1, L2, L3, reduceCtorEq, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp only [aVal, aRegs, regsVal, RegUpd.gpr_setReg_self, RegUpd.gpr_setReg, RegUpd.gpr_setFlags,
+      ↓reduceIte, reduceCtorEq, cw, bpw, r8w, r13w, r15w]
+    have hk : (BitVec.ofNat 64 ((s.gpr .rcx).toNat * M.minv.toNat)).toNat =
+        (s.gpr .rcx).toNat * M.minv.toNat % 2 ^ 64 := BitVec.toNat_ofNat _ _
+    generalize BitVec.ofNat 64 ((s.gpr .rcx).toNat * M.minv.toNat) = k at *
+    rw [← hk]
+    have m0 := mulx_lohi k (Mont.word s.mem base M.mo)
+    have m1 := mulx_lohi k (Mont.word s.mem base (M.mo + 8))
+    have m2 := mulx_lohi k (Mont.word s.mem base (M.mo + 16))
+    have m3 := mulx_lohi k (Mont.word s.mem base (M.mo + 24))
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base M.mo).toNat) = l0 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base M.mo).toNat / 2 ^ 64) = h0 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 8)).toNat) = l1 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 8)).toNat / 2 ^ 64) = h1 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 16)).toNat) = l2 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 16)).toNat / 2 ^ 64) = h2 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 24)).toNat) = l3 at *
+    generalize BitVec.ofNat 64 (k.toNat * (Mont.word s.mem base (M.mo + 24)).toNat / 2 ^ 64) = h3 at *
+    generalize hm : (BitVec.setWidth 64 0 - s.gpr Reg.r15 >>> 63) = m
+    have em : m.toNat = sgnW (s.gpr .r15) := by rw [← hm]; exact smask_toNat _
+    generalize s.gpr .rcx = a0 at *
+    generalize s.gpr .rbp = a1 at *
+    generalize s.gpr .r8 = a2 at *
+    generalize s.gpr .r13 = a3 at *
+    generalize s.gpr .r15 = a4 at *
+    generalize hz : BitVec.setWidth 64 (0 : BitVec 32) = z at *
+    have z0 : z.toNat = 0 := by rw [← hz]; rfl
+    -- The OF chain (low halves) and the CF chain (high halves).
+    have e1 := adc_carry a0 l0 false
+    generalize decide (2 ^ 64 ≤ a0.toNat + l0.toNat + false.toNat) = o1 at e1 ⊢
+    have e2 := adc_carry a1 h0 false
+    generalize decide (2 ^ 64 ≤ a1.toNat + h0.toNat + false.toNat) = c1 at e2 ⊢
+    generalize a1 + h0 + (BitVec.ofBool false).setWidth 64 = b1 at e2 ⊢
+    have e3 := adc_carry b1 l1 o1
+    generalize decide (2 ^ 64 ≤ b1.toNat + l1.toNat + o1.toNat) = o2 at e3 ⊢
+    have e4 := adc_carry a2 h1 c1
+    generalize decide (2 ^ 64 ≤ a2.toNat + h1.toNat + c1.toNat) = c2 at e4 ⊢
+    generalize a2 + h1 + (BitVec.ofBool c1).setWidth 64 = b2 at e4 ⊢
+    have e5 := adc_carry b2 l2 o2
+    generalize decide (2 ^ 64 ≤ b2.toNat + l2.toNat + o2.toNat) = o3 at e5 ⊢
+    have e6 := adc_carry a3 h2 c2
+    generalize decide (2 ^ 64 ≤ a3.toNat + h2.toNat + c2.toNat) = c3 at e6 ⊢
+    generalize a3 + h2 + (BitVec.ofBool c2).setWidth 64 = b3 at e6 ⊢
+    have e7 := adc_carry b3 l3 o3
+    generalize decide (2 ^ 64 ≤ b3.toNat + l3.toNat + o3.toNat) = o4 at e7 ⊢
+    have e8 := adc_carry a4 h3 c3
+    generalize decide (2 ^ 64 ≤ a4.toNat + h3.toNat + c3.toNat) = c4 at e8 ⊢
+    generalize a4 + h3 + (BitVec.ofBool c3).setWidth 64 = b4 at e8 ⊢
+    have e9 := adc_carry b4 z o4
+    generalize decide (2 ^ 64 ≤ b4.toNat + z.toNat + o4.toNat) = o5 at e9 ⊢
+    have e10 := adc_carry m z c4
+    generalize decide (2 ^ 64 ≤ m.toNat + z.toNat + c4.toNat) = c5 at e10 ⊢
+    generalize m + z + (BitVec.ofBool c4).setWidth 64 = b5 at e10 ⊢
+    have e11 := adc_carry b5 z o5
+    generalize decide (2 ^ 64 ≤ b5.toNat + z.toNat + o5.toNat) = o6 at e11 ⊢
+    simp only [wordsVal, Nat.add_assoc, Nat.reduceAdd, Nat.mul_add, Nat.mul_zero, Nat.add_zero,
+      Nat.mul_left_comm k.toNat, Bool.toNat_false] at *
+    refine eq_mod_of (c := c5.toNat + o6.toNat) ?_ ?_
+    · omega_using [(a0 + l0 + BitVec.setWidth 64 (BitVec.ofBool false)).isLt,
+        (b1 + l1 + BitVec.setWidth 64 (BitVec.ofBool o1)).isLt, (b2 + l2 + BitVec.setWidth 64 (BitVec.ofBool o2)).isLt,
+        (b3 + l3 + BitVec.setWidth 64 (BitVec.ofBool o3)).isLt, (b4 + z + BitVec.setWidth 64 (BitVec.ofBool o4)).isLt,
+        (b5 + z + BitVec.setWidth 64 (BitVec.ofBool o5)).isLt]
+    · omega_using [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, m0, m1, m2, m3, em, z0]
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨rw, ra, rb, rc, rd, rbp, r8, r13, r15⟩ := hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, rw, ra, rb, rc, rd, rbp, r8, r13, r15, ite_false]
+
 end VG.Proof.Weierstrass.X86_64

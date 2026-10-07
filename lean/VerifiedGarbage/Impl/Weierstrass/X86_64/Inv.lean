@@ -261,11 +261,9 @@ def shrX (dst : Nat) : List Instr :=
 /-- `[dst] = (u f + v g) / 2^59` (five words, signed), `u` in `w` and `v` in `w'`. -/
 def fHalfX (w w' : Reg) (x y dst : Nat) : List Instr := linX true w w' x y ++ shrX dst
 
-/-- `[dst] = t / 2^64 mod p` in `[0, p)` for `t` in `aRegs` (signed), through
-`w`: `t + k p` for `k = t₀ m' mod 2^64`, whose low word is zero and its sixth
-word in `w` (the sign of `t` and the carries); plus `p` if negative (`p` times
-the sign bit, by `mulx`), less `p` if not below. -/
-def mredX (M : Mod) (dst : Nat) (w : Reg) : List Instr :=
+/-- `t + k p` for `t` in `aRegs` (signed) and `k = t₀ m' mod 2^64`: its words in
+`rcx` (zero), `rbp`, `r8`, `r13`, `r15` and `w` (the sign of `t` and the carries). -/
+def mredRow (M : Mod) (w : Reg) : List Instr :=
   [.mov .rdx (.reg .rcx), .movImm64 .rax M.minv, .mulx .rbx .rdx (.reg .rax),
     .mov .rax (.reg .r15), .shift .shr .rax 63, .mov32 w (.imm 0), .alu .sub w (.reg .rax),
     .alu32 .xor .rax (.reg .rax),
@@ -273,18 +271,31 @@ def mredX (M : Mod) (dst : Nat) (w : Reg) : List Instr :=
     .mulx .rbx .rax (.mem (sc (M.mo + 8))), .adox .rbp (.reg .rax), .adcx .r8 (.reg .rbx),
     .mulx .rbx .rax (.mem (sc (M.mo + 16))), .adox .r8 (.reg .rax), .adcx .r13 (.reg .rbx),
     .mulx .rbx .rax (.mem (sc (M.mo + 24))), .adox .r13 (.reg .rax), .adcx .r15 (.reg .rbx),
-    .mov32 .rax (.imm 0), .adox .r15 (.reg .rax), .adcx w (.reg .rax), .adox w (.reg .rax),
-    .mov .rdx (.reg w), .shift .shr .rdx 63,
+    .mov32 .rax (.imm 0), .adox .r15 (.reg .rax), .adcx w (.reg .rax), .adox w (.reg .rax)]
+
+/-- `p` added to `rbp`, `r8`, `r13`, `r15` and `w` if `w` is negative. -/
+def addPNeg (M : Mod) (w : Reg) : List Instr :=
+  [.mov .rdx (.reg w), .shift .shr .rdx 63,
     .mulx .rcx .rax (.mem (sc M.mo)), .alu .add .rbp (.reg .rax),
     .mulx .rcx .rax (.mem (sc (M.mo + 8))), .alu .adc .r8 (.reg .rax),
     .mulx .rcx .rax (.mem (sc (M.mo + 16))), .alu .adc .r13 (.reg .rax),
     .mulx .rcx .rax (.mem (sc (M.mo + 24))), .alu .adc .r15 (.reg .rax),
-    .alu .adc w (.imm 0),
-    .mov .rax (.reg .rbp), .alu .sub .rax (.mem (sc M.mo)), .mov .rcx (.reg .r8), .alu .sbb .rcx (.mem (sc (M.mo + 8))),
-    .mov .rdx (.reg .r13), .alu .sbb .rdx (.mem (sc (M.mo + 16))),
-    .mov .rbx (.reg .r15), .alu .sbb .rbx (.mem (sc (M.mo + 24))), .alu .sbb w (.imm 0),
-    .cmov .ae .rbp (.reg .rax), .cmov .ae .r8 (.reg .rcx), .cmov .ae .r13 (.reg .rdx), .cmov .ae .r15 (.reg .rbx)] ++
-  stores [.rbp, .r8, .r13, .r15] dst
+    .alu .adc w (.imm 0)]
+
+/-- The words of the reduction's result. -/
+def redRegs : List Reg := [.rbp, .r8, .r13, .r15]
+
+/-- The registers its difference with `p` is computed in. -/
+def redDiff : List Reg := [.rax, .rcx, .rdx, .rbx]
+
+/-- `[dst] = t / 2^64 mod p` in `[0, p)` for `t` in `aRegs` (signed), through
+`w`: `t + k p` for `k = t₀ m' mod 2^64`, whose low word is zero and its sixth
+word in `w` (the sign of `t` and the carries); plus `p` if negative (`p` times
+the sign bit, by `mulx`), less `p` if not below. -/
+def mredX (M : Mod) (dst : Nat) (w : Reg) : List Instr :=
+  mredRow M w ++ addPNeg M w ++
+  diffsC .sub redRegs redDiff M.mo ++ [.alu .sbb w (.imm 0)] ++ cmovs redRegs redDiff ++
+  stores redRegs dst
 
 /-- `[dst] = mred (u a + v b)` (four words), `u` in `w` and `v` in `w'`; `w` is
 written. -/
