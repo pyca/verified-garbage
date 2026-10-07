@@ -70,12 +70,15 @@ def window (K : WinCfg) : Prog isa :=
     .seq (add K) (.block [.alu .test .rbx (.reg .rbx)])) .ne) <|
   fp K.M [.mul K.R.z K.R.z K.R.z]
 
+def cfg (c : Ecdsa.X86_64.Cfg) : WinCfg :=
+  {c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP with
+    J := 52, E := ⟨7360,7392,7424⟩}
+
 def exchange (c : Ecdsa.X86_64.Cfg) : Prog isa :=
-  let j := 52
   let offset := 16*((32^52-1)/31)
   let prep := .seq (.block (WinCfg.addConst 4 (c.sl K) c.winK offset))
     (bits c.winK c.winBits 40)
-  let k := {c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP with J := j, E := ⟨7360,7392,7424⟩}
+  let k := cfg c
   .seq (.block Impl.Ecdh.X86_64.Cfg.args) <| .seq (Impl.Ecdh.X86_64.Cfg.prefix' c none) <|
   .seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) <| .seq (Impl.Ecdh.X86_64.Cfg.validate c) <|
   .seq prep <| .seq (window k) <|
