@@ -172,11 +172,11 @@ theorem ctHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W
 
 
 include K in
-theorem mgfHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+theorem mgfGenericHash_ok {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {msg : List Byte} {nbm : Nat} (hml : msg.length = H.D + 4) (hl : W 27 = BitVec.ofNat 64 msg.length)
     (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : msg.length + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
     (hY : ∀ i < nbm * H.P.B, V (oY + i) = msg.getD i 0) :
-    WP isa (mgfHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+    WP isa (mgfGenericHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
       ∃ V' W', Rep t'.mem F S V' W' ∧ (∀ o < oRsa, ctOut o → V' o = V o) ∧
         (∀ k < nW, k ≠ 29 → k ≠ 30 → W' k = W k) ∧

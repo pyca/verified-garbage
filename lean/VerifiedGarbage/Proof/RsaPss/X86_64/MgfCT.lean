@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.FixedHashCT
+import VerifiedGarbage.Proof.RsaPss.X86_64.MgfDirectCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.Mgf
 

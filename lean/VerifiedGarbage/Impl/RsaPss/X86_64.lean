@@ -238,7 +238,9 @@ def compLoop : Prog isa :=
     (.loop (seqs [.block (compArgs H), .call H.compN H.compC, select H, .block nextBlock]) .ne)
 
 /-- The digest of the selected hash value to `scratch + oDig`. -/
-def digestOut : List Instr := scr .rbx oSel ++ scr .rbp oDig ++ H.P.out
+def digestAt (o : Nat) : List Instr := scr .rbx o ++ scr .rbp oDig ++ H.P.out
+
+def digestOut : List Instr := digestAt H oSel
 
 /-- The shared hash computation, with its padding step supplied by the caller. -/
 def ctHashWith (padding : Prog isa) : Prog isa :=
@@ -253,8 +255,19 @@ def fixedPad80 (ℓ : Nat) : Prog isa :=
   .seq (.block (scr .rcx oY))
     (.block [.movzx8 .rax (at_ .rcx ℓ), .alu .or .rax (.imm 0x80), .store8 (at_ .rcx ℓ) .rax])
 
+/-- For an MGF1 input whose padding fits one block, use the compression
+state directly instead of copying it under a last-block mask. -/
+def mgfDirectHash : Prog isa := seqs [ctInit H, fixedPad80 (H.D + 4),
+  .block (lenField H), lenLoop H,
+  .block [.mov32 .rax (.imm 0), .store (sp sB) .rax],
+  .seq (.block (compArgs H)) (.call H.compN H.compC), .block (digestAt H oSt)]
+
 /-- MGF1's message length is fixed by the hash function. -/
-def mgfHash : Prog isa := ctHashWith H (fixedPad80 (H.D + 4))
+def mgfGenericHash : Prog isa := ctHashWith H (fixedPad80 (H.D + 4))
+
+/-- The one-block case is selected at generation time from the hash dimensions. -/
+def mgfHash : Prog isa :=
+  if H.D + 4 + H.P.L < H.P.B then mgfDirectHash H else mgfGenericHash H
 
 /-! ## MGF1 -/
 
