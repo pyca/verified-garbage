@@ -31,8 +31,8 @@ theorem code_ct (M : Mont)
     refine WP.mono (WP.and (WP.block_append_iff.mp hh) (WP.keep [.r11] (Q := fun t => t.gpr .r11 = stackArg s 2)
       (by xrun [State.ea, e2, c.ha2, hB']) rfl)) fun t ⟨hw', h11, k⟩ =>
         ⟨s, hs, h11.trans hs.2.2.1, (k.gpr (by decide)).trans hs.2.1, hw'⟩
-  refine RelCT.seq (R := Two CL) (two_post (pdLoad_ct.mono (fun _ _ h => two_mono (fun _ _ h => ce2_lh h) h)
-    fun _ _ h => h) fun p t h => ce2_load h) ?_
+  refine RelCT.seq (R := Two CL) (two_post (wordPdLoad_ct.mono (fun _ _ h => two_mono (fun _ _ h => ce2_lh h) h)
+    fun _ _ h => h) fun p t h => ce2_wordLoad h) ?_
   refine two_ite (fun p s₁ s₂ ⟨_, _, _, _, _, _, _, _, z₁, _⟩ ⟨_, _, _, _, _, _, _, _, z₂, _⟩ => by
     simp only [eval, z₁, z₂]) ?_ ?_
   · -- `fail`.

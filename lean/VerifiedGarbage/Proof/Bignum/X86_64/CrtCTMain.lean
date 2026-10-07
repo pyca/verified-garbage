@@ -116,7 +116,7 @@ def RB : StageRel := fun p _ _ _ _ _ _ _ t => ∃ minv, Good t p.B p.Z p.w minv
 theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
   rw [nSetup_eq]
   refine RelCT.seqs_append (by simp [loadSteps]) (by simp [r2Steps]) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
-  · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps])
+  · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
       (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
         setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
           ⟨(⟨p.B, p.Z, p.k, p.np, p.ip, p.nb⟩ : SPub), stage0_sh h₁, stage0_sh h₂⟩) h)

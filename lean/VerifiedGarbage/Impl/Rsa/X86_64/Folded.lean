@@ -1,5 +1,8 @@
 import VerifiedGarbage.Impl.Rsa.X86_64.Checked
 
+import VerifiedGarbage.Impl.Rsa.X86_64.WordIO
+import VerifiedGarbage.Impl.Rsa.X86_64.Compare8
+
 namespace VG.Impl.Rsa.X86_64.Folded
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 
@@ -17,12 +20,11 @@ def exp65537 (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
 /-- The computation, once the values are accepted. -/
 def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block [.mov .rsi (.mem (hdr sIn)), .mov .rcx (.mem (hdr sK)), .mov .rbx (.mem (hdr (sArr aX)))],
-  loadBE,
+  WordIO.load,
   -- The mask of `input < m`.
   .block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
     .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
-    cfToRbp],
+  Compare8.code,
   -- `-m⁻¹`, and the number 1.
   .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
     [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
@@ -31,12 +33,12 @@ def rest (mm : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   mm aXm aX aR2, exp65537 mm,
   .block [.mov .rbx (.mem (hdr (sArr aY))), .mov .rsi (.mem (hdr sOut)), .mov .rcx (.mem (hdr sK)),
     .mov .r15 (.mem (hdr sMask))],
-  storeBE,
+  WordIO.store,
   .block ([.mov .rax (.mem (hdr sMask)), .alu .and .rax (.imm 1)] ++ exit)]
 
 def code (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block Precomputed.entry)
-    (.seq (seqs Precomputed.load) (.ite .e fail (rest mm)))
+    (.seq (seqs (Precomputed.loadWith Compare8.code)) (.ite .e fail (rest mm)))
 
 def dispatch (mm : Nat → Nat → Nat → Prog isa) : Prog isa :=
   .seq (.block [.alu .cmp .r11 (.imm 65537)])

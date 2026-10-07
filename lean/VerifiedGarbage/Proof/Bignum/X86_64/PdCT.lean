@@ -50,7 +50,9 @@ theorem PdPre.mem {s t : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Na
     hb := hm ▸ h.hb, n := hm ▸ h.n, r := hm ▸ h.r, odd := h.odd, n1 := h.n1, rlt := h.rlt,
     x := h.x.congrK (by rw [hm]; exact InScr.refl _ _ _) kp, e := h.e.congrK (by rw [hm]; exact InScr.refl _ _ _) kp,
     xl := h.xl, el := h.el, L1 := h.L1, L2 := h.L2, out := fun j hj => by rw [kp.2.2]; exact h.out j hj,
-    outSep := h.outSep }
+    outSep := h.outSep,
+    inSpan := by rw [kp.2.1, kp.2.2]; exact h.inSpan,
+    outSpan := by rw [kp.2.2]; exact h.outSpan }
 
 theorem DG.step {p : DPub} {xb : List Byte} {σ t t' : State} (h : DG p xb σ t)
     (hf : Frm p.B (pdAll ((p.k + 7) / 8)) t.mem t'.mem) (k : Keep mmRegs t t')
@@ -111,7 +113,7 @@ def DA (q : DPub × BitVec 64) (t : State) : Prop :=
 /-- The setup leaks the same in runs with the same public data. -/
 theorem pdSetup_ct : RelCT isa (Two DRel) (seqs (pdIn ++ restSteps)) (Two DA) := by
   refine two_post (Ψ := fun p t => ∃ mi, DA (p, mi) t)
-    (RelCT.seqs_append (by simp [pdIn]) (by simp [restSteps]) (RelCT.seq pdIn_ct (two_map (fun p : DPub => (⟨p.B, p.Z, ((p.k + 7) / 8)⟩ : RPub)) (fun _ _ h => h) setupRest_ct))) ?_ |>.mono
+    (RelCT.seqs_append (by simp [pdIn]) (by simp [restSteps, restStepsWith]) (RelCT.seq pdIn_ct (two_map (fun p : DPub => (⟨p.B, p.Z, ((p.k + 7) / 8)⟩ : RPub)) (fun _ _ h => h) setupRest_ct))) ?_ |>.mono
       (fun _ _ h => h) fun _ _ h => two_bind (fun p t₁ t₂ H₁ H₂ => ?_) h
   · rintro p s ⟨xb, h⟩
     exact WP.mono (pdSetup_ok h) fun t ⟨mi, so, f, k, hR⟩ => ⟨mi, xb, s, ⟨h, f, k, so.mask⟩, so, hR⟩

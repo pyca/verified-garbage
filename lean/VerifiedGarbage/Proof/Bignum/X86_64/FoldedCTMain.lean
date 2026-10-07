@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedCT
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedMain
-import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIOCT
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -27,13 +27,13 @@ theorem rest_ct (M : Mont)
     (hfinal : RelCT isa (Two GoodL) (M.mm aY aX aY) (fun _ _ => True)) :
     RelCT isa (Two DRel) (Folded.rest M.mm) (fun _ _ => True) := by
   rw [rest_eq]
-  refine RelCT.seqs_append (by simp [pdIn]) (by simp [phases]) (RelCT.seq pdSetup_ct ?_)
-  refine RelCT.seqs_append (by simp [phases]) (by simp [outSteps,outStepsArr])
+  refine RelCT.seqs_append (by simp [wordIn]) (by simp [phases]) (RelCT.seq wordSetup_ct ?_)
+  refine RelCT.seqs_append (by simp [phases]) (by simp [wordOutStepsArr])
     (RelCT.seq (R := Two DD) ?_ ?_)
   · exact RelCT.seq (pdMm_ct (M := M))
       (two_post (two_map publicData (fun _ _ h => db_pre h) (exp65537_ct M hfinal))
         (fun _ _ h => exp_fw M h))
   · exact two_map (fun q => (⟨DPub.L q,q.1.k,q.1.op⟩ : OPub))
-      (fun _ _ h => dd_oPre h) out_ct
+      (fun _ _ h => dd_wordOPre h) wordOut_ct
 
 end VG.Proof.Bignum.X86_64.FoldedPublic
