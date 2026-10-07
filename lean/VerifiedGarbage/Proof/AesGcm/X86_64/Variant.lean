@@ -57,6 +57,13 @@ def decP : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZP.dec
   | n => n.dec
 
+/-- Whether `seal` and `open` calling the loops named `n` take the short path
+for short inputs (`GcmImpl.short`): the loops on 512-bit registers, whose
+CPU features it needs. -/
+def short : StitchName → Bool
+  | .vaesAvx512 => true
+  | _ => false
+
 end StitchName
 
 /-- The facts `Piece` states of the loops named `n` for a key context of

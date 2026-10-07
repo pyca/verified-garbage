@@ -339,14 +339,22 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩]
   wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 2560⟩]
 
-theorem seal_verified (v : GcmImpl) :
-    Verified X86_64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
-  Verified.of_correct (seal_correct v) (seal_ct v) (by
+/-- `vg_aes_gcm_seal`'s contract, for any code that does what it says. -/
+theorem sealCode_verified {c : Prog isa}
+    (hc : ∀ s, Proof.AesGcm.sealX86_64.pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
+    (hct : ConstantTime isa Proof.AesGcm.sealX86_64.pre Proof.AesGcm.sealX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct (by
     sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre, Spec.Gcm.sealPost,
       Proof.AesGcm.sealX86_64, Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [sealSat] using sealSat)
+
+theorem seal_verified (v : GcmImpl) :
+    Verified X86_64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
+  sealCode_verified (seal_correct v) (seal_ct v)
 
 /-- A state satisfying `vg_aes_gcm_open`'s precondition (with no nonce, additional data, data or tag, and
 `work` at 0). -/
@@ -363,9 +371,12 @@ def openSat : State where
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
-theorem open_verified (v : GcmImpl) :
-    Verified X86_64.target («open» v.callees) (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
-  Verified.of_correct (open_correct v) (open_ct v)
+theorem openCode_verified {c : Prog isa}
+    (hc : ∀ s, Proof.AesGcm.openX86_64.pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
+    (hct : ConstantTime isa Proof.AesGcm.openX86_64.pre Proof.AesGcm.openX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct
     { pre := by sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -396,5 +407,9 @@ theorem open_verified (v : GcmImpl) :
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [openSat] using openSat }
+
+theorem open_verified (v : GcmImpl) :
+    Verified X86_64.target («open» v.callees) (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
+  openCode_verified (open_correct v) (open_ct v)
 
 end VG.Proof.AesGcm.X86_64
