@@ -438,7 +438,7 @@ theorem ifmaAny_ct : RelCT isa (Two (Stage (AtLay RAp))) CrtIfma.ifmaAny (Two (S
 theorem ifmaPart_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Public.aXm)
     (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage (AtLay R3I))) (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++ CrtIfma.post M.mm))
+    RelCT isa (Two (Stage (AtLay R3I))) (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++ CrtIfma.post M.mm))
       (Two (Stage R5)) := by
   rw [List.append_assoc]
   refine RelCT.seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp)
@@ -452,7 +452,7 @@ theorem ifmaPart_ct (M : Mont) (hR2 : RedcCT M Public.aR2) (hXm : RedcCT M Publi
 theorem dispatch_ct (M : Mont) (hQ : QPhaseCT M) (hP : PPhaseCT M) (hR2 : RedcCT M Public.aR2)
     (hXm : RedcCT M Public.aXm) (hL : LoadCT aChunk sQinv sPlen)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (Stage R3)) (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++
+    RelCT isa (Two (Stage R3)) (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
       CrtIfma.post M.mm)) (seqs (qPhase M.mm ++ pPhase M.mm)))) (Two (Stage R5)) := by
   refine RelCT.seq anySizes_ct (two_ite (fun p s₁ s₂ h₁ h₂ => ?_) ?_ ?_)
   · obtain ⟨_, _, _, _, _, _, _, _, _, _, z₁⟩ := h₁

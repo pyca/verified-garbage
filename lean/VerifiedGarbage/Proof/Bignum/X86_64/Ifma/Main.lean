@@ -238,7 +238,7 @@ theorem ifmaPart_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
     (hs : SizesOf l ((k + 7) / 8) pl ql)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
     (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    WP isa (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++ CrtIfma.post M.mm)) t₀
+    WP isa (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++ CrtIfma.post M.mm)) t₀
       (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
   obtain ⟨hW1, -⟩ := W_bounds hl
   have hw := hs.1
@@ -254,8 +254,8 @@ theorem ifmaPart_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k :
 
 theorem main_eq (mul : Nat → Nat → Nat → Prog isa) : CrtIfma.main mul =
     seqs ((nSetup mul ++ primesSetup ++ checks) ++
-      ([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ [CrtIfma.ifmaAny] ++ CrtIfma.post mul))
-        (seqs (qPhase mul ++ pPhase mul)))] ++ finish)) := by
+      (([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
+        CrtIfma.post mul)) (seqs (qPhase mul ++ pPhase mul)))] : List (Prog isa)) ++ finish)) := by
   simp only [CrtIfma.main, List.append_assoc]
 
 /-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
@@ -287,7 +287,7 @@ theorem main_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     fun t₁ hr₁ mx₁ => WP.mono_mx hcrt (wp_seqs_append (by simp [qPhase]) (by simp [pPhase])
       (WP.mono (qPart_ok M h hv hr₁ rfl) fun _ hq => pPart_ok M h hv hq rfl)) fun t hp' mxc =>
         ⟨hp', by rw [mxc, mx₁]⟩
-  have hdisp : WP isa (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++
+  have hdisp : WP isa (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ ([CrtIfma.ifmaAny] : List (Prog isa)) ++
       CrtIfma.post M.mm)) (seqs (qPhase M.mm ++ pPhase M.mm)))) t₀
       (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
     refine WP.seq (WP.mono (anySizes_ok h hr) fun t₁ ⟨z₁, r₁, x₁⟩ => ?_)
