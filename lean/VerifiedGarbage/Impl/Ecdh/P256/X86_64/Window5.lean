@@ -1,6 +1,6 @@
 import VerifiedGarbage.Impl.Ecdh.P256.X86_64
 import VerifiedGarbage.Impl.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
+import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJacMasked
 
 /-! Persistent Jacobian ECDH with signed five-bit windows and cached table powers. -/
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
@@ -46,11 +46,8 @@ def window (K : WinCfg) : Prog isa :=
   let doubles := .seq (.block [.alu .add .rbx (.imm (BitVec.ofNat 32 20480))]) <|
     .loop (.seq (dbl K K.R K.R)
       (.block [.alu .sub .rbx (.imm 4096),.alu .cmp .rbx (.imm 4096)])) .ae
-  let head := fp K.M (CachedJac.head K.S K.R K.E (K.E.x+96))
-  let tail := jacTail K.S K.R K.E K.D
-  let add := .seq head <| .seq (fp K.M tail) <|
-    .block (nzMask 4 K.R.z ++ selPt 4 K.D K.E K.D ++
-      nzMask 4 K.E.z ++ selPt 4 K.D K.R K.D ++ copyPt 4 K.R K.D)
+  let add := .seq (CachedJac.maskedAdd K K.R K.E K.D (K.E.x+96))
+    (.block (copyPt 4 K.R K.D))
   .seq build <|
   .seq (.block ([.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J-1)))] ++
     tc.digit ++ select K ++ tc.negY ++ copyPt 4 K.R K.E)) <|
