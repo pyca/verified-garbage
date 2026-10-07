@@ -10,11 +10,12 @@ name: Benchmarks
 # the chosen branch with any earlier commit on every architecture, e.g. to
 # measure the total speedup of a series of pull requests; or, with no
 # commit, measuring the chosen branch alone, next to OpenSSL and aws-lc-rs.
-# A targeted run can name the architectures and the `VG_CPU_FEATURES`
-# configurations to run, e.g. from the command line:
+# A targeted run can name the architectures, the `VG_CPU_FEATURES`
+# configurations and the library modules to run (`python3 ci/bench_arches.py
+# --choices` lists them), e.g. from the command line:
 #
 #   gh workflow run bench.yml --ref BRANCH -f base_commit=SHA \
-#     -f arches=aarch64 -f cpu_features='- neon'
+#     -f arches=aarch64 -f cpu_features='- neon' -f modules=chacha20
 on:
   pull_request:
     paths:
@@ -34,7 +35,10 @@ on:
         description: Space-separated architectures to run (x86_64 aarch64 x86 arm; empty for all)
         required: false
       cpu_features:
-        description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for all of ci/bench_arches.py's)
+        description: Space-separated VG_CPU_FEATURES configurations to run on each, `-` for none (empty for those that choose among the modules' implementations; `python3 ci/bench_arches.py --choices` lists them)
+        required: false
+      modules:
+        description: Space-separated library modules whose benchmarks run, e.g. `chacha20 poly1305` (empty for every benchmark; `python3 ci/bench_arches.py --choices` lists them)
         required: false
 
 permissions:
@@ -67,10 +71,11 @@ jobs:
           BASE_COMMIT: ${{ inputs.base_commit }}
           ARCHES: ${{ inputs.arches }}
           CPU_FEATURES: ${{ inputs.cpu_features }}
+          MODULES: ${{ inputs.modules }}
         run: |
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
             base=$BASE_COMMIT
-            matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES")
+            matrix=$(python3 ci/bench_arches.py --all --arches "$ARCHES" --cpu-features "$CPU_FEATURES" --modules "$MODULES")
           else
             # Not `pull_request.base.sha`: it can be an older commit of the
             # base branch, whose later changes would then count as the pull

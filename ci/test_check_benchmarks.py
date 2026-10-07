@@ -326,6 +326,25 @@ class Selection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unknown architecture'):
             planner.manual('riscv64')
 
+    def test_manual_runs_select_modules_and_their_configurations(self):
+        with mock.patch.object(planner, 'bench_catalog', return_value=self.catalog), \
+                mock.patch.object(planner, 'read', self.read), \
+                mock.patch.object(planner, 'rust_files', lambda root='.': sorted(
+                    p for p in self.files if p.startswith('src/'))):
+            # Neither module has a variant: one configuration each.
+            rows = planner.manual(modules='triple_des_ecb')
+            self.assertEqual([(r['arch'], r['cpu-features'], r['modules']) for r in rows],
+                             [(a, '', 'triple_des_ecb') for a in planner.PLATFORMS])
+            # Configurations named run as named.
+            rows = planner.manual('x86_64', 'none', 'triple_des_ecb')
+            self.assertEqual([(r['arch'], r['cpu-features']) for r in rows], [('x86_64', 'none')])
+            with self.assertRaisesRegex(ValueError, 'no benchmark uses module'):
+                planner.manual(modules='nonexistent')
+            choices = planner.choices()
+        for arch in planner.PLATFORMS:
+            self.assertIn(f'  {arch} (runner: ', choices)
+        self.assertIn('  triple_des_ecb: ', choices)
+
     def test_shards_follow_the_number_of_benchmarks(self):
         shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
         with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):

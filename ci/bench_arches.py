@@ -1,7 +1,8 @@
 """Chooses which architectures' benchmarks a change needs.
 
     git diff --name-only BASE HEAD | python3 ci/bench_arches.py
-    python3 ci/bench_arches.py --all [--arches ARCHES] [--cpu-features CONFIGS]
+    python3 ci/bench_arches.py --all [--arches ARCHES] [--cpu-features CONFIGS] [--modules MODULES]
+    python3 ci/bench_arches.py --choices
 
 Prints a JSON list of platforms (see `PLATFORMS`) for the Benchmarks
 workflow's matrix: an architecture is benchmarked when its own assembly
@@ -82,10 +83,12 @@ that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 
 `--all` (the workflow's manual runs) runs every benchmark in every
 configuration of every architecture, or, for a targeted run, only those of
-`--arches` (space-separated names of `PLATFORMS`) and only the
+`--arches` (space-separated names of `PLATFORMS`); only the benchmarks that
+use `--modules` (space-separated, as in `--base`'s `modules`), in only the
+configurations that choose among their implementations; and only the
 configurations `--cpu-features` lists (space-separated values of
 `VG_CPU_FEATURES`, `-` for the configuration without one), which need not
-be in `CPU_FEATURES`.
+be in `CPU_FEATURES`. `--choices` lists the values these take.
 
 When only some benchmarks run, a configuration runs only if it can choose
 other implementations of them than the configurations before it: one that
@@ -909,26 +912,65 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None, configurations=None
     ]
 
 
-def manual(arch_names="", cpu_features=""):
+def manual(arch_names="", cpu_features="", modules=""):
     """The matrix of `--all`: every platform's, or only those of the
     space-separated `arch_names`, in only the space-separated configurations
-    `cpu_features` (`-` for none), if given."""
+    `cpu_features` (`-` for none), if given; and only the benchmarks that use
+    the space-separated `modules`, if given, in the configurations that
+    choose among their implementations (unless `cpu_features` names them)."""
     chosen = arch_names.split() or list(PLATFORMS)
     if unknown := [a for a in chosen if a not in PLATFORMS]:
-        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: {', '.join(PLATFORMS)}")
+        raise ValueError(f"unknown architecture(s) {', '.join(unknown)}; known: {', '.join(PLATFORMS)}"
+                         " (see --choices)")
+    catalog = bench_catalog()
+    selected = set(modules.split()) or ALL
+    if selected is not ALL and (unknown := sorted(selected - set().union(*(catalog or {}).values()))):
+        raise ValueError(f"no benchmark uses module(s) {', '.join(unknown)} (see --choices)")
     configurations = [("" if c == "-" else c) for c in cpu_features.split()] or None
-    return [p for a in PLATFORMS if a in chosen for p in platforms(a, configurations=configurations)]
+    return [p for a in PLATFORMS if a in chosen
+            for p in platforms(a, selected,
+                               None if configurations else run_requirements(a, selected, [catalog], [None]),
+                               bench_count(selected), configurations)]
 
 
-USAGE = "usage: bench_arches.py [--all [--arches ARCHES] [--cpu-features CONFIGS] | --base REV]"
+def choices():
+    """What `--all` can be given, in words: each architecture's configurations
+    and the CPU features it detects, and each module benchmarks use."""
+    cpu = read("src/cpu.rs") or ""
+    lines = ["Architectures (--arches), each with the VG_CPU_FEATURES configurations a run"
+             " without --cpu-features uses ('-' is none) and the features src/cpu.rs detects"
+             " there, which a configuration may combine (comma-separated; 'none' for the"
+             " baseline):", ""]
+    for arch, platform in PLATFORMS.items():
+        detected = detectable(arch, cpu)
+        lines += [f"  {arch} (runner: {platform['os']}{', in ' + platform['image'] if 'image' in platform else ''})",
+                  f"    configurations: {' '.join(['-', *CPU_FEATURES.get(arch, [])])}",
+                  f"    features: {','.join(sorted(detected)) if detected else '(none)'}"]
+    lines += ["", "A configuration naming a feature the runner's CPU lacks measures nothing, with a"
+              " warning. Modules (--modules), with the benchmarks (bench/benches/primitives/<name>.rs)"
+              " that run for each:", ""]
+    users = {}
+    for name, uses in sorted((bench_catalog() or {}).items()):
+        for m in uses:
+            users.setdefault(m, []).append(name)
+    lines += [f"  {m}: {' '.join(names)}" for m, names in sorted(users.items())]
+    return "\n".join(lines)
+
+
+USAGE = ("usage: bench_arches.py [--all [--arches ARCHES] [--cpu-features CONFIGS] [--modules MODULES]"
+         " | --choices | --base REV]")
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--choices"]:
+        print(choices())
+        sys.exit()
     if sys.argv[1:2] == ["--all"]:
         options = dict(zip(sys.argv[2::2], sys.argv[3::2]))
-        if len(sys.argv) % 2 or set(options) - {"--arches", "--cpu-features"}:
+        if len(sys.argv) % 2 or set(options) - {"--arches", "--cpu-features", "--modules"}:
             sys.exit(USAGE)
         try:
-            matrix = manual(options.get("--arches", ""), options.get("--cpu-features", ""))
+            matrix = manual(options.get("--arches", ""), options.get("--cpu-features", ""),
+                            options.get("--modules", ""))
         except ValueError as e:
             sys.exit(str(e))
     else:
