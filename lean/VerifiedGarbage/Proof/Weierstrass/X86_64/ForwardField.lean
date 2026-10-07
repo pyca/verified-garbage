@@ -98,4 +98,42 @@ theorem program_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
     rw [kt.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) htmp,
       ku.mem x (hx _ (List.mem_cons_self ..)) htmp]
 
+theorem plain_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x)
+    (hR : readsOk ops V=true) :
+    WP isa (blocks (ops.map (code M))) s fun t =>
+      ProgKeep M base (ops.map FOp.out) s t ∧
+      Inv M base size m Sl (validAfter ops V) (runOps ops E) t := by
+  apply (blocks_wp _).mpr
+  induction ops generalizing V E s with
+  | nil => exact WP.block_nil ⟨ProgKeep.refl _ _ _ s,hI⟩
+  | cons op ops ih =>
+    simp only [List.map_cons,List.flatten_cons]
+    apply WP.block_append
+    simp only [readsOk,Bool.and_eq_true,List.all_eq_true,decide_eq_true_eq] at hR
+    refine WP.mono (code_ok hn hL hm hI (hS op (List.mem_cons_self ..)) hR.1)
+      fun u ⟨ku,hu⟩ => ?_
+    refine WP.mono (ih hu (fun op' hop => hS op' (List.mem_cons_of_mem _ hop)) hR.2)
+      fun t ⟨kt,ht⟩ => ?_
+    refine ⟨⟨fun r hr => (kt.gpr r hr).trans (ku.gpr r hr),kt.rd.trans ku.rd,
+      kt.wr.trans ku.wr,fun x hx htmp => ?_⟩,ht⟩
+    rw [kt.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) htmp,
+      ku.mem x (hx _ (List.mem_cons_self ..)) htmp]
+
+theorem programB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x)
+    (hR : readsOk ops V=true) :
+    WP isa (programB M ops) s fun t =>
+      ProgKeep M base (ops.map FOp.out) s t ∧
+      Inv M base size m Sl (validAfter ops V) (runOps ops E) t := by
+  rw [programB]
+  split
+  · exact WP.mono (program_ok hn hL hm ops hI hS hR (fun _ h => by cases h))
+      (fun _ h => ⟨h.1,h.2.1⟩)
+  · exact plain_ok hn hL hm ops hI hS hR
+
 end VG.Proof.Weierstrass.X86_64.ForwardField

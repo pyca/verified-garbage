@@ -30,4 +30,8 @@ def lastCache (M : Mod) : Forward.Cache → List FOp → Forward.Cache
 def program (M : Mod) (cs : Forward.Cache) (ops : List FOp) : Prog isa :=
   blocks (codes M cs ops)
 
+/-- Keep the same field operations on baseline; forward between them on ADX. -/
+def programB (M : Mod) (ops : List FOp) : Prog isa :=
+  if M.adx then program M [] ops else blocks (ops.map (code M))
+
 end VG.Impl.Weierstrass.X86_64.ForwardField

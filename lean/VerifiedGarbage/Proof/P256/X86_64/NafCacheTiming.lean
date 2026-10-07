@@ -20,6 +20,18 @@ theorem nafCachedEntry_adx_ct :
     ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
       (.block (Naf.cachedEntry cacheWinAdx 4000 5408)) := nafCachedEntry_ct
 
+theorem nafSignedCachedEntry_ct :
+    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
+      (Naf.signedCachedEntry cacheWin 4000 5408) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.r8])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+theorem nafSignedCachedEntry_adx_ct :
+    ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.r8]))
+      (Naf.signedCachedEntry cacheWinAdx 4000 5408) :=
+  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.r8])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
 theorem nafCacheTable_ct :
     ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi]))
       (Naf.cacheTable cacheWin.M cacheWin.tbl 4000 8) :=

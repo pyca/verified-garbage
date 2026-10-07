@@ -17,4 +17,10 @@ def cacheRead (tbl dst : Nat) : List Instr :=
 def cachedEntry (K : WinCfg) (tbl dst : Nat) : List Instr :=
   publicEntry K ++ cacheRead tbl dst
 
+def signedCachedEntry (K : WinCfg) (tbl dst : Nat) : Prog isa :=
+  .seq (.block [.alu .cmp .r8 (.imm 128)]) <|
+    .ite .b (.block (cachedEntry K tbl dst)) (.block (
+      [.mov32 .rax (.imm 256),.alu .sub .rax (.reg .r8),.mov .r8 (.reg .rax)] ++
+      cachedEntry K tbl dst ++ VG.Impl.Mont.X86_64.sub K.M K.E.y K.zero K.E.y))
+
 end VG.Impl.Weierstrass.X86_64.Naf
