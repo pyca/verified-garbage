@@ -54,6 +54,11 @@ without building. Exits non-zero on violations.
     regions before each failed match (seconds in a large context). Use
     `with_reducible assumption` or name the hypothesis.
     `BARE_ASSUMPTION_ALLOWED` counts the uses that remain.
+  * A module with `#guard_msgs` turns the profiler off
+    (`set_option profiler false`, on a line of its own): the lakefile turns
+    it on for every module (`ci/lean_profile.py`), and `#guard_msgs` would
+    compare its command's profile, which depends on the machine, with the
+    expected messages.
 """
 
 import pathlib
@@ -80,6 +85,8 @@ META = re.compile(
 META_WORDS = ("elab", "simproc", "CoreM", "MetaM", "SimpM", "TermElabM", "TacticM", "CommandElabM")
 IMPORT = re.compile(r"^import\s+([\w.]+)", re.M)
 TAUTO = re.compile(r"(?<![\w.])tauto(?![\w.])")
+# `set_option profiler false` on a line of its own (for the whole module).
+PROFILER_OFF = re.compile(r"^set_option profiler false[ \t]*$", re.M)
 HEAVY_MATHLIB = (
     "Mathlib.Algebra", "Mathlib.RingTheory", "Mathlib.FieldTheory", "Mathlib.NumberTheory",
     "Mathlib.Data.ZMod", "Mathlib.Data.List.Dedup", "Mathlib.Data.Nat.ModEq",
@@ -362,6 +369,11 @@ def main() -> int:
             elif len(found) < n:
                 errors.append(f"{rel}: {len(found)} uses of `omega` on an unfolded stack depth, fewer than the "
                               f"{n} allowed; lower the count")
+        if "#guard_msgs" in text and not PROFILER_OFF.search(text):
+            errors.append(
+                f"{rel}: uses `#guard_msgs` with the profiler on; add `set_option profiler false` "
+                "so that its expected messages do not include the profile"
+            )
         for m in TAUTO.finditer(code):
             errors.append(f"{rel}:{line_of(code, m.start())}: `tauto` runs interpreted; use `grind`, `simp` or `decide`")
         if uncompiled_meta(module, text, globs):

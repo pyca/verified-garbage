@@ -46,7 +46,9 @@ runs:
       run: |
         set -o pipefail
         touch "$RUNNER_TEMP/before-assembly"
-        lake build 2>&1 | tee "$RUNNER_TEMP/assembly.log"
+        # Warnings and errors only: not the profile every module records
+        # (lean/lakefile.toml), which Lake replays for each one it finds built.
+        lake build --log-level=warning 2>&1 | tee "$RUNNER_TEMP/assembly.log"
     # In the merge queue, what this build built, for the push to main to reuse.
     - name: Collect the outputs of this build
       if: ${{ github.event_name == 'merge_group' }}
