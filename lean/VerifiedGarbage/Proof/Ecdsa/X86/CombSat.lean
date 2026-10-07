@@ -4,8 +4,11 @@ import VerifiedGarbage.Proof.Ecdsa.X86.CombContract
 namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86
 
+/-- The tables at `0x100000`, over `satMem`. The bound, `151552`, is `8 * p256W.length`
+(`p256W_length`) as a literal: as the product, the kernel would evaluate the tables' length
+in every definitional check of the bound. -/
 @[irreducible] def combSatMem : Mem := fun a =>
-  if (a - 0x100000).toNat < 8 * p256W.length then constMem 0x100000 p256W a else satMem a
+  if (a - 0x100000).toNat < 151552 then constMem 0x100000 p256W a else satMem a
 
 theorem combSatMem_held : ∀ i < p256W.length,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0 := by
@@ -18,7 +21,7 @@ theorem combSatMem_held : ∀ i < p256W.length,
     have e : ((0x100000 : Addr) + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 j - 0x100000).toNat = 8 * i + j := by
       rw [Offset.add_add, Offset.add_sub_cancel_left, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
     unfold combSatMem
-    rw [e, ite_eq_left (show 8 * i + j < 8 * p256W.length by omega)]
+    rw [e, ite_eq_left (show 8 * i + j < 151552 by omega)]
   exact hm.trans (constMem_held 0x100000 p256W (by omega) i hi)
 
 def combSatState : State := { satState with
@@ -34,7 +37,7 @@ theorem combSat_arg (j : Nat) (hj : j < 5) : arg combSatState j = arg satState j
   intro b hb
   change combSatMem (argAddr satState j + BitVec.ofNat 64 b) = satMem (argAddr satState j + BitVec.ofNat 64 b)
   unfold combSatMem
-  rw [ite_eq_right (by have := outside j hj b (by omega); rw [p256W_length]; omega)]
+  rw [ite_eq_right (by have := outside j hj b (by omega); omega)]
 
 theorem combSat_spec : combSignSpec.pre combSatState := by
   have a0 : arg combSatState 0 = 0x1000 := (combSat_arg 0 (by decide)).trans (by decide)

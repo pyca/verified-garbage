@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 import VerifiedGarbage.Proof.P256.Comb7
+import VerifiedGarbage.Proof.P256.Comb7Shape
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 
@@ -28,7 +29,6 @@ theorem p256Comb_consts : p256Comb.combConsts = [("VG_P256_COMB", p256W)] := rfl
 
 theorem p256W_length : p256W.length = 18944 :=
   (Proof.Weierstrass.tcombWords_length (n := p256Comb.n) (R := p256Comb.R) (p := p256Comb.C.p)
-    (H := 64) (tbl := Impl.P256.p256Comb7) (show Impl.P256.p256Comb7.length = 37 by decide)
-    (show ∀ j < 37, (Impl.P256.p256Comb7.getD j []).length = 64 by decide)).trans rfl
+    (H := 64) (tbl := Impl.P256.p256Comb7) Proof.P256.p256Comb7_length Proof.P256.p256Comb7_rows).trans rfl
 
 end VG.Proof.Ecdsa.X86
