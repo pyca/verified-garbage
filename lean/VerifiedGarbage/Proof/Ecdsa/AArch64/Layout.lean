@@ -169,7 +169,7 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 
 /-- That a slot is not the temporary area, from the context. -/
 macro "sl_ne" : tactic =>
-  `(tactic| first | decide | assumption | (simp only [TMP] at *; omega) | (intro hT; subst hT; simp only [List.mem_cons, List.mem_append, true_or, or_true, not_true_eq_false] at *))
+  `(tactic| first | decide | with_reducible assumption | (simp only [TMP] at *; omega) | (intro hT; subst hT; simp only [List.mem_cons, List.mem_append, true_or, or_true, not_true_eq_false] at *))
 
 /-- That one of two slots is not the temporary area, or the other is not
 where the temporary area is (slot `54` or `82`). -/
