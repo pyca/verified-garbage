@@ -9,7 +9,11 @@ Lake keeps a module's messages in its `.trace` file, next to its `.olean`,
 and the CI build cache (`lean/README.md`) ships those files: after restoring
 the cache, this reads the profile of every module CI built, attributing each
 step to the declaration whose source range (from the module's `.ilean`, of
-the same build) contains it.
+the same build) contains it. A step outside every declaration (a command
+that generates declarations, such as `materialize_code`, `taint_summary` or
+`run_cmd`, which has no range) is grouped by its command's line, labelled
+with the start of that line of the source file, if it exists:
+`[line 70] taint_summary winBuildSum : taintS τB winBuild`.
 
 Each declaration's time is split into:
 
@@ -25,11 +29,16 @@ Times are wall-clock times of one build on one CI runner: rank by them, but
 measure a change as CLAUDE.md ("Keeping proofs fast") says, not by them.
 
   lean_profile.py [--top N] [--sort kernel|elab|total] [--by decl|module]
-                  [--module PREFIX ...] [--json] [--build DIR]
+                  [--module PREFIX ...] [--tests] [--json] [--build DIR]
+                  [--source DIR]
 
 `--module` keeps the modules whose names start with any PREFIX
 (`VerifiedGarbage.Proof.Sha256`). `--by module` sums each module's
-declarations instead. `--json` prints every row, sorted, with no limit.
+declarations instead. The known-answer tests (`VerifiedGarbageTest`), whose
+cost is evaluating specs rather than checking proofs, are left out (their
+total is printed) unless `--tests` is given or a PREFIX names them. `--json`
+prints every row, sorted, with no limit: a row outside declarations has a
+`line` as well as its label in `decl`; a `--by module` row has no `decl`.
 """
 
 import argparse
@@ -38,7 +47,11 @@ import pathlib
 import re
 import sys
 
-BUILD = pathlib.Path(__file__).resolve().parent.parent / "lean/.lake/build/lib/lean"
+SOURCE = pathlib.Path(__file__).resolve().parent.parent / "lean"
+BUILD = SOURCE / ".lake/build/lib/lean"
+TESTS = "VerifiedGarbageTest"
+# How much of a source line labels a step outside declarations.
+LABEL_WIDTH = 80
 KINDS = ("kernel", "elab", "blocked")
 # A stored message: `<file>:<line>:<column>: <text>`, the text one step per
 # line (`<what> took <n>ms`).
@@ -93,7 +106,8 @@ def module_profile(trace, ilean):
     """Seconds per kind for each declaration of one module, from its
     `.trace` (JSON) and a function reading its `.ilean` (JSON), called only
     if the module has a profile. Steps outside every declaration (`open`,
-    `set_option`, commands such as `#eval`) are counted under `None`."""
+    `set_option`, commands such as `#eval` or `taint_summary`) are counted
+    under their line (an `int`), declarations under their name."""
     found_steps = list(steps(trace.get("log", [])))
     if not found_steps:
         return {}
@@ -102,7 +116,7 @@ def module_profile(trace, ilean):
     for line, col, k, secs in found_steps:
         # A message's steps share its position.
         if (line, col) not in found:
-            found[line, col] = declaration(decls, line, col)
+            found[line, col] = declaration(decls, line, col) or line
         d = out.setdefault(found[line, col], dict.fromkeys(KINDS, 0.0))
         d[k] += secs
     return out
@@ -112,11 +126,36 @@ def module_name(path, build):
     return ".".join(path.relative_to(build).with_suffix("").parts)
 
 
-def collect(build, prefixes):
-    """Rows (module, declaration, seconds per kind) of every built module
-    under `build` whose name starts with a prefix, and the count of modules
-    whose logs held no profile."""
-    rows, unprofiled = [], 0
+def is_test(mod):
+    return mod.split(".")[0] == TESTS
+
+
+def source_lines(source, mod):
+    """The lines of a module's source file under `source`, or `None`."""
+    path = source / pathlib.Path(*mod.split(".")).with_suffix(".lean")
+    try:
+        return path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+
+
+def line_label(lines, line):
+    """`[line N]` and the start of Lean's 1-based `line` of `lines`."""
+    label = f"[line {line}]"
+    text = lines[line - 1].strip() if lines and 0 < line <= len(lines) else ""
+    if len(text) > LABEL_WIDTH:
+        text = text[:LABEL_WIDTH - 1] + "…"
+    return f"{label} {text}" if text else label
+
+
+def collect(build, prefixes, source=SOURCE, tests=False):
+    """Rows (module, declaration or line, seconds per kind) of every built
+    module under `build` whose name starts with a prefix, the count of
+    modules whose logs held no profile, and the count and seconds of the
+    test modules left out (all of them unless `tests` or a prefix names
+    them)."""
+    tests = tests or any(is_test(p) for p in prefixes)
+    rows, unprofiled, skipped = [], 0, [0, 0.0]
     for trace_path in sorted(build.rglob("*.trace")):
         mod = module_name(trace_path, build)
         if prefixes and not mod.startswith(tuple(prefixes)):
@@ -128,15 +167,27 @@ def collect(build, prefixes):
                               lambda: json.loads(ilean_path.read_text()))
         if not prof:
             unprofiled += 1
+        if is_test(mod) and not tests:
+            if prof:
+                skipped[0] += 1
+                skipped[1] += sum(map(total, prof.values()))
+            continue
+        lines = None
         for decl, secs in prof.items():
-            rows.append({"module": mod, "decl": decl, **secs})
-    return rows, unprofiled
+            if isinstance(decl, int):
+                if lines is None:
+                    lines = source_lines(source, mod) or []
+                rows.append({"module": mod, "decl": line_label(lines, decl),
+                             "line": decl, **secs})
+            else:
+                rows.append({"module": mod, "decl": decl, **secs})
+    return rows, unprofiled, tuple(skipped)
 
 
 def by_module(rows):
     mods = {}
     for r in rows:
-        m = mods.setdefault(r["module"], {"module": r["module"], "decl": None,
+        m = mods.setdefault(r["module"], {"module": r["module"],
                                           **dict.fromkeys(KINDS, 0.0)})
         for k in KINDS:
             m[k] += r[k]
@@ -155,18 +206,24 @@ def main(argv=None):
     parser.add_argument("--sort", choices=("kernel", "elab", "total"), default="total")
     parser.add_argument("--by", choices=("decl", "module"), default="decl")
     parser.add_argument("--module", action="append", default=[], metavar="PREFIX")
+    parser.add_argument("--tests", action="store_true")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--build", type=pathlib.Path, default=BUILD)
+    parser.add_argument("--source", type=pathlib.Path, default=SOURCE)
     args = parser.parse_args(argv)
 
-    rows, unprofiled = collect(args.build, args.module)
+    rows, unprofiled, (skipped, skipped_secs) = collect(
+        args.build, args.module, args.source, args.tests)
     if not rows:
         sys.exit(f"no profiles under {args.build}: restore the CI cache, or build "
                  "with the lakefile's `profiler` options")
     if args.by == "module":
         rows = by_module(rows)
     key = total if args.sort == "total" else (lambda r: r[args.sort])
-    rows.sort(key=lambda r: (-key(r), r["module"], r["decl"] or ""))
+    rows.sort(key=lambda r: (-key(r), r["module"], r.get("line", 0), r.get("decl", "")))
+    if skipped:
+        print(f"({skipped} test modules left out, {skipped_secs:.2f}s in all: "
+              f"--tests or --module {TESTS} lists them)", file=sys.stderr)
     if args.json:
         json.dump(rows, sys.stdout, indent=1)
         print()
@@ -174,8 +231,7 @@ def main(argv=None):
     print(f"{'total':>8} {'kernel':>8} {'elab':>8} {'blocked':>8}  "
           + ("module" if args.by == "module" else "declaration (module)"))
     for r in rows[:args.top]:
-        what = r["module"] if args.by == "module" else \
-            f"{r['decl'] or '(outside declarations)'} ({r['module']})"
+        what = r["module"] if args.by == "module" else f"{r['decl']} ({r['module']})"
         print(f"{total(r):8.2f} {r['kernel']:8.2f} {r['elab']:8.2f} "
               f"{r['blocked']:8.2f}  {what}")
     if unprofiled:

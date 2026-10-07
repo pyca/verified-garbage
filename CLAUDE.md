@@ -411,7 +411,15 @@ python3 ci/lean_profile.py                        # the 30 costliest declaration
 python3 ci/lean_profile.py --sort kernel          # by kernel time alone
 python3 ci/lean_profile.py --by module --top 50   # the costliest modules
 python3 ci/lean_profile.py --module VerifiedGarbage.Proof.Sha256 --json
+python3 ci/lean_profile.py --tests                # with the known-answer tests
 ```
+
+A command that generates declarations (`materialize_code`, `taint_summary`,
+`run_cmd`) has no declaration range: its row is its line and the start of
+that line of the source, `[line 70] taint_summary winBuildSum : …`. The
+known-answer tests in `VerifiedGarbageTest`, which cost spec evaluation
+rather than proofs, are left out unless `--tests` (or `--module` naming
+them) is given.
 
 Each declaration's time is `kernel` (the kernel checking it: large proof
 terms, `decide +kernel`, `taint_decide`, `lit_decide`) and `elab`
