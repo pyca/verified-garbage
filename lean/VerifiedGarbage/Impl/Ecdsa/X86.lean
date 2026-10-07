@@ -1,4 +1,4 @@
-import VerifiedGarbage.Impl.Weierstrass.X86.TComb
+import VerifiedGarbage.Impl.Weierstrass.X86.TCombJ
 import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 import VerifiedGarbage.Impl.Weierstrass.X86.ScalarPower
 import VerifiedGarbage.Spec.Weierstrass
@@ -211,7 +211,7 @@ def gMul : Prog isa :=
   match c.comb with
   | none => ladder c.ladderCfg c.wk
   | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
-      (.seq (.block (c.combCfg d).initCore) (.loop (c.combCfg d).step .ne))
+      (c.combCfg d).combJ
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.CombFunctionCT
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
 import VerifiedGarbage.Proof.P256.Comb7
+import VerifiedGarbage.Proof.P256.Order
 import VerifiedGarbage.Proof.P256.Comb7Shape
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
@@ -21,7 +22,7 @@ theorem p256Comb_tables (hL : Law p256Comb.C) : CombTbls p256Comb := by
   intro d hd
   have he : p256d = d := Option.some.inj hd
   subst d
-  exact Proof.P256.combOk7 hL
+  exact ⟨Proof.P256.combOk7 hL, Proof.P256.booth hL⟩
 
 abbrev p256W : List (BitVec 64) := p256Comb.combWords p256d
 

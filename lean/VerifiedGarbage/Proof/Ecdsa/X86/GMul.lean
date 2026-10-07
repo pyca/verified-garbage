@@ -216,7 +216,8 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         · exact lt_of_eq_of_lt F₁.zero (by omega)
       · change (s₁.mem.readW (off base Cfg.combPtr) 32).setWidth 64 = _
         rw [F₁.table (by simp [hcd])]
-    refine WP.mono (tcombCore_ok (tcombLay hc hd) hC ham3 hc.onG (tcombVals hc hC (hT d hcd)) hc.p_lt hs₁
+    refine WP.mono (tcombJ_ok (tcombLay hc hd) hC ham3 hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt
+      (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega) (hT d hcd).2 hkl hs₁
       (modP_of hc F₁.mp) hF) fun s' ⟨K', U', M', L', R'⟩ =>
         ⟨(k₁.mono fun r hr => by rw [List.mem_singleton.mp hr]; simp [powClob, clob]).trans K', ?_, M', L', R'⟩
     change Unch base ((slW c [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP] ++
