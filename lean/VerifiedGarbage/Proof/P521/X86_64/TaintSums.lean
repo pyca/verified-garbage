@@ -27,7 +27,9 @@ ECDH and verification both run ECDH's window method, whose table of `[1 … 8]P`
 along with the rest: they have summaries in `taintS`, with what ECDH has
 public there (`rdi` and `rsi`, and the loop's counter `rbx`, which is set
 after the table) and with what verification's code after its comb has
-(`rdi`, and the counter: `VerifyChecks.after`).
+(`rdi`, and the counter: `VerifyChecks.after`). ECDH runs it in Jacobian
+coordinates (`WinCfg.windowJ`): its table, loop and last iteration have
+summaries too.
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -75,5 +77,19 @@ def τVL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx]
 
 taint_summary winBuildVSum : taintS τV winBuild
 taint_summary winLoopVSum : taintS τVL winLoop
+
+/-- ECDH's window method in Jacobian coordinates: the table, the loop and its
+last iteration. -/
+def winBuildJ : Prog isa := WinCfg.buildJ winK
+def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
+def winLastJ : Prog isa := WinCfg.stepLast winK
+
+materialize_code winBuildJ
+materialize_code winLoopJ
+materialize_code winLastJ
+
+taint_summary winBuildJSum : taintS τB winBuildJ
+taint_summary winLoopJSum : taintS τL winLoopJ
+taint_summary winLastJSum : taintS τL winLastJ
 
 end VG.Proof.P521.X86_64

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdh.X86_64.Validate
 import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJLoop
 import VerifiedGarbage.Proof.Weierstrass.X86_64.AddConst
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
@@ -386,6 +387,113 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
   exact ⟨hs₂.of_keepRegs K₃ (rdi_not_powClob _), ((k₁.mono c₁).trans (k₂.mono c₂)).trans K₃,
     U₂.trans U₃, M₃, L₃, R₃⟩
 
+/-- `winMul_ok` by windows in Jacobian coordinates (`windowJ_ok`), for a curve
+whose points all have order `n` (`OrdN`), with the bound it needs for scalars
+of `nbits` bits. -/
+theorem winMulJ_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) (hO : OrdN c.C)
+    (hbd : 16 * ((2 ^ c.nbits + 135) / 256) + 8 < c.C.n) {base : Addr} {s : State}
+    (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hbp : sv c base s BP = c.mont c.C.b)
+    {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
+    (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
+    (hk8 : sv c base s ks < 2 ^ c.nbits) {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) :
+    WP isa (.seq (.seq (c.winPrep (c.sl ks)) (WinCfg.windowJ (winQ c))) rest) s R := by
+  have h0 := hc.n0
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hsz : size = 8192 := rfl
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  have hp3 := hc.p_ge
+  have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
+  have hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_bits hk8
+  have hJle : c.winJ ≤ 16 * c.n + 1 := by
+    unfold Cfg.winJ; have := hc.len_hi; have := hc.nbits_le; omega
+  have hWK : c.sl WK + 16 * c.n ≤ size := by
+    have := sl_le_win c h9 (i := WK + 1) (by decide)
+    rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+  have hKW := sl_lt c (show ks < WK by unfold WK; omega)
+  have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
+    rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
+    exact Nat.pow_le_pow_right (by decide) (by omega)
+  have hJ : (winQ c).J = c.winJ := rfl
+  have hK : c.winK = c.sl WK := rfl
+  have hB : c.winBits = c.sl WB := rfl
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
+  have h4 := (hc.inv (by omega)).1
+  have hB8 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WB + 80 * c.n := by omega
+  have hBs : c.sl WB + 80 * c.n ≤ size := by
+    have := sl_le_win c h9 (i := WB + 9) (by decide)
+    rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+  rw [Cfg.winPrep]
+  refine WP.seq (WP.seq (WP.seq ?_))
+  rw [hK, offset_eq]
+  refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
+    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega)
+    (Or.inl (by omega)) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  rw [hB]
+  refine WP.mono (bits_ok hs₁ (n := c.n + 1) (src := c.sl WK) (dst := c.sl WB) (by omega) (by omega)
+    (by omega) (by omega) (Or.inl (by omega))) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
+  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  rw [e₁] at b₂
+  have U₂ : Unch base (winX c) s.mem s₂.mem :=
+    ((O₁.mono (o' := c.sl WK) (n' := 16 * c.n) (Nat.le_refl _) (by omega)).unch.trans
+      ((O₂.mono (o' := c.sl WB) (n' := 80 * c.n) (Nat.le_refl _) (by omega)).unch)).mono
+      (by intro w hw; simpa [winX, hK, hB] using hw)
+  have F₂ := F.unch h7 hn fixedOk_winX U₂
+  have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
+    sv_unch U₂ h7 hn hi (apart_winX hi)
+  have hM₂ := modP_of hc F₂.mp
+  have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
+    show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
+  have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ) := by
+    refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
+    · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
+    · show toM _ _ (sv c base s₂ BP) = _; rw [e₂ (by decide), hbp]; exact toM_cmont hc _
+    · simp only [winRo, List.mem_cons, List.not_mem_nil, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+      · exact lt_of_eq_of_lt F₂.ap (hmont _)
+      · exact lt_of_eq_of_lt ((e₂ (i := BP) (by decide)).trans hbp) (hmont _)
+      · exact lt_of_eq_of_lt F₂.zero (by omega)
+      · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
+      · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
+      · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega))
+    · show Rep _ (tmv c.C c.n base s₂ (c.sl PX)) (tmv c.C c.n base s₂ (c.sl PY))
+        (tmv c.C c.n base s₂ (c.sl ONEP)) P
+      rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
+    · rw [hJ] at ht
+      exact b₂ t (by omega)
+  have hJ2 : 2 ≤ c.winJ := by
+    unfold Cfg.winJ
+    have hnb := hc.n_bits
+    by_contra hlt
+    have : 2 ^ c.nbits ≤ 2 ^ 2 := Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+  have hP0 : P ≠ .infinity := by
+    intro e
+    have hz := (hrep.z_eq_zero_iff).mpr e
+    have h1 : tmv c.C c.n base s (c.sl ONEP) = 1 := by
+      show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = 1
+      rw [F.onep]; exact toM_one hpR
+    exact hC.one_ne_zero (h1 ▸ hz)
+  refine WP.mono (windowJ_ok (winLayQ hc h9) (winXQ hc h9) hpR hC hc.am3 hO hP hP0 hc.p_lt (hmont 1)
+    (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
+    (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) (by rw [hJ]; exact hJ2)
+    (by rw [hJ]; exact winE_two_bound hJ2 hk8 hbd)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
+  rw [winW_eq] at U₃
+  rw [hJ, Nat.add_sub_cancel] at R₃
+  have c₁ : ∀ r ∈ [Reg.rax, .r8], r ∈ powClob c.n := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · simp [powClob, clob]
+    · exact List.mem_cons_of_mem _ (r8_mem_clob _)
+  have c₂ : ∀ r ∈ [Reg.rax, .rdx, .rbx], r ∈ powClob c.n := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp [powClob, clob]
+  exact ⟨hs₂.of_keepRegs K₃ (rdi_not_powClob _), ((k₁.mono c₁).trans (k₂.mono c₂)).trans K₃,
+    U₂.trans U₃, M₃, L₃, R₃⟩
+
 /-! ## `[d]P`, by windows or the ladder, and `Z^(p-2)` -/
 
 /-- What `mulQ` (the window method or the ladder) and the power may write. -/
@@ -421,9 +529,17 @@ structure MulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Stat
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s' RZ < c.C.p
 
+/-- What the window method in Jacobian coordinates (`jacWin`) needs of the
+curve: its points all of order `n` (`OrdN`, from the group's order, which
+the variant supplies) and `n` above the multiples of the iterations but the
+last for scalars of `nbits` bits. -/
+def JacOk (c : Cfg) : Prop := c.jacWin = true → OrdN c.C ∧ 16 * ((2 ^ c.nbits + 135) / 256) + 8 < c.C.n
+
+theorem JacOk.of_false {c : Cfg} (h : c.jacWin = false) : JacOk c := fun h' => absurd (h ▸ h') (by decide)
+
 /-- `[k]P`, for `k` at `K` (and its bits in the first table), by windows for
 up to nine words and by the ladder for more, then `Z^(p-2)`. -/
-theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hbp : sv c base s BP = c.mont c.C.b)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
@@ -447,10 +563,20 @@ theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       sv_unch U₁ h7 hn hi (apart_slW (by simpa using hne))
     have tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
       fun hi hne => by show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _); rw [v₁ hi hne]
-    refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ (by rw [v₁ (by decide) (by decide)]; exact hbp) hP
-      (by rw [v₁ (by decide) (by decide)]; exact hpx) (by rw [v₁ (by decide) (by decide)]; exact hpy)
-      (by rw [tv₁ (by decide) (by decide), tv₁ (by decide) (by decide), tv₁ (by decide) (by decide)]; exact hrep)
-      (ks := K) (by decide) (by rw [e₁]; exact Nat.mod_lt _ (Nat.pow_pos (by decide))) fun s₃ W => ?_)
+    have a1 : sv c base s₁ BP = c.mont c.C.b := by rw [v₁ (by decide) (by decide)]; exact hbp
+    have a2 : sv c base s₁ PX < c.C.p := by rw [v₁ (by decide) (by decide)]; exact hpx
+    have a3 : sv c base s₁ PY < c.C.p := by rw [v₁ (by decide) (by decide)]; exact hpy
+    have a4 : Rep c.C (tmv c.C c.n base s₁ (c.sl PX)) (tmv c.C c.n base s₁ (c.sl PY))
+        (tmv c.C c.n base s₁ (c.sl ONEP)) P := by
+      rw [tv₁ (by decide) (by decide), tv₁ (by decide) (by decide), tv₁ (by decide) (by decide)]; exact hrep
+    have a5 : sv c base s₁ K < 2 ^ c.nbits := by rw [e₁]; exact Nat.mod_lt _ (Nat.pow_pos (by decide))
+    suffices hcont : ∀ s₃, WinMulPost c base P (sv c base s₁ K) s₁ s₃ → WP isa (.seq c.pPow rest) s₃ R by
+      split
+      · rename_i hj
+        exact WP.seq_iff.mp (winMulJ_ok hc h9 hC (hJ hj).1 (hJ hj).2 hs₁ F₁ a1 hP a2 a3 a4 (ks := K)
+          (by decide) a5 hcont)
+      · exact WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ a1 hP a2 a3 a4 (ks := K) (by decide) a5 hcont)
+    intro s₃ W
     have F₃ := F₁.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
     have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
     refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃ F₃.onep (fun t ht => by

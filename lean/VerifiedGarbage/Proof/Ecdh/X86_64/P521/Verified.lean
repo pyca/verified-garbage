@@ -49,9 +49,18 @@ theorem ecdh_noCalls : exchangeP521.noCalls = true := by lit_decide
 
 theorem ecdh_mxcsr : exchangeP521.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
-theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : ecdhX86_64.pre s) :
+/-- P-521's window method in Jacobian coordinates: its points all have order
+`n` (`hO`), above the multiples for scalars of 521 bits. -/
+theorem jacOk (hO : Weierstrass.OrdN Spec.P521.curve) : JacOk p521 :=
+  fun _ => ⟨hO, by decide +kernel⟩
+
+theorem jacOkX (hO : Weierstrass.OrdN Spec.P521.curve) : JacOk p521x :=
+  fun _ => ⟨hO, by decide +kernel⟩
+
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.OrdN Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521_ok hI) hL (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521_ok hI) hL (jacOk hO) (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -78,7 +87,7 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.winBuildSum, Proof.P521.X86_64.winLoopSum]
+    taint_decide_sum [Proof.P521.X86_64.winBuildJSum, Proof.P521.X86_64.winLoopJSum, Proof.P521.X86_64.winLastJSum]
   refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
@@ -89,8 +98,9 @@ theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 :=
   · exact h3
   · exact h4
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.OrdN Spec.P521.curve) :
     Verified X86_64.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL hI) ecdh_ct implies
+  Verified.of_correct (ecdh_x86 hL hI hO) ecdh_ct implies
 
 end VG.Proof.Ecdh.X86_64.P521

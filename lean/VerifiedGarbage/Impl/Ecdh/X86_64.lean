@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
 # ECDH on x86-64
@@ -141,9 +142,11 @@ def maskK : List Instr :=
   else []
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to nine words (`d` reduced below `2^nbits` first), else by the ladder. -/
+up to nine words (`d` reduced below `2^nbits` first; in Jacobian coordinates
+for `jacWin`), else by the ladder. -/
 def mulQ : Prog isa :=
-  if c.n ≤ 9 then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
+  if c.n ≤ 9 then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K))
+    (if c.jacWin then WinCfg.windowJ (c.winCfg PX PY BP) else WinCfg.window (c.winCfg PX PY BP)))
   else ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the

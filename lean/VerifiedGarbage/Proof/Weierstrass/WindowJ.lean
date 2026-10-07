@@ -121,6 +121,26 @@ theorem winE_le_of_le {k J : Nat} (hk : 8 * geom J ≤ k) {j : Nat} :
     · obtain ⟨i, rfl⟩ : ∃ i, j' = i + 1 := ⟨j' - 1, by omega⟩
       exact Nat.le_trans (winE_succ_le hk (by omega)) (winE_le_of_le hk (by omega) (by omega))
 
+/-- The multiples of a recoded scalar `d + 8 Σ_{i<J} 16^i`: `⌊(d + 8 Σ_{i<j} 16^i) / 16^j⌋`. -/
+theorem winE_recode {d J j : Nat} (hj : j ≤ J) :
+    winE (d + 8 * geom J) J j = (d + 8 * geom j) / 16 ^ j := by
+  have hg := geom_add j (J - j)
+  rw [Nat.add_sub_cancel' hj] at hg
+  have hpos : 0 < 16 ^ j := Nat.pow_pos (by decide)
+  have e : d + 8 * geom J = (d + 8 * geom j) + 16 ^ j * (8 * geom (J - j)) := by
+    rw [hg]; grind
+  rw [winE, e, Nat.add_mul_div_left _ _ hpos]
+  exact Nat.add_sub_cancel _ _
+
+/-- The bound `windowJ_ok` needs, for scalars below `2^b`. -/
+theorem winE_two_bound {d J b n : Nat} (hJ : 2 ≤ J) (hd : d < 2 ^ b)
+    (hb : 16 * ((2 ^ b + 135) / 256) + 8 < n) : 16 * winE (d + 8 * geom J) J 2 + 8 < n := by
+  rw [winE_recode hJ]
+  have : (d + 8 * geom 2) / 16 ^ 2 ≤ (2 ^ b + 135) / 256 :=
+    Nat.div_le_div_right (show d + 8 * geom 2 ≤ 2 ^ b + 135 by
+      show d + 8 * (0 + 1 + 16) ≤ _; omega)
+  omega
+
 /-! ## The Jacobian sum, selected -/
 
 /-- Where neither is `O`, the Jacobian addition's `H` of points neither equal

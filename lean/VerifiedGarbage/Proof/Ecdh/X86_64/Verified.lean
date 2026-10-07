@@ -43,6 +43,7 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86_64.post s s' := b
 that the proof supports, whose precondition the contract's gives (`hpre`),
 never writing `rsp`, calling or loading MXCSR (which its literal decides). -/
 theorem ecdh_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.Law c.C)
+    (hjw : c.jacWin = false)
     (hpre : ∀ s, ecdhX86_64.pre s → EPre c s) (hpost : ∀ s s', EPost c s s' → ecdhX86_64.post s s')
     (hcode : Impl.Ecdh.X86_64.Cfg.exchange c = code)
     (hsp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true)
@@ -50,7 +51,7 @@ theorem ecdh_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass
     (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := exchange_ok hc hL (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := exchange_ok hc hL (JacOk.of_false hjw) (hpre s hs)
   have hsp : ∀ i ∈ instrs (Impl.Ecdh.X86_64.Cfg.exchange c), Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi
@@ -77,7 +78,7 @@ theorem ecdh_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256_ok hI) hL (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide)
+  ecdh_x86_of (p256_ok hI) hL rfl (fun _ => pre_of) (fun _ _ => post_of) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256 := by

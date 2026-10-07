@@ -37,4 +37,17 @@ taint_summary winLoopXSum : taintS τL winLoopX
 taint_summary winBuildXVSum : taintS τV winBuildX
 taint_summary winLoopXVSum : taintS τVL winLoopX
 
+/-- ECDH's window method in Jacobian coordinates. -/
+def winBuildJX : Prog isa := WinCfg.buildJ winKX
+def winLoopJX : Prog isa := .loop (WinCfg.stepJ winKX) .ne
+def winLastJX : Prog isa := WinCfg.stepLast winKX
+
+materialize_code winBuildJX
+materialize_code winLoopJX
+materialize_code winLastJX
+
+taint_summary winBuildJXSum : taintS τB winBuildJX
+taint_summary winLoopJXSum : taintS τL winLoopJX
+taint_summary winLastJXSum : taintS τL winLastJX
+
 end VG.Proof.P521.X86_64

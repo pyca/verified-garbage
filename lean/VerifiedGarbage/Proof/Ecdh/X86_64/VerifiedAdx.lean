@@ -17,7 +17,7 @@ open VG.Proof.Ecdsa.X86_64
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256x_ok hI) hL (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide)
+  ecdh_x86_of (p256x_ok hI) hL rfl (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide)
     (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256Adx :=
