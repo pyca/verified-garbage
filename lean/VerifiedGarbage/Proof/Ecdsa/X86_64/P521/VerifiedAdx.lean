@@ -78,7 +78,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
       by decide +kernel]
     exact Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
-  inv_n h := absurd h (by decide)
+  inv_n _ _ := ⟨@hI _ p521x.C.n_ne_zero Proof.P521.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
 

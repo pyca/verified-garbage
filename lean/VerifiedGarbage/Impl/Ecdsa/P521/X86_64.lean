@@ -13,6 +13,7 @@ def p521 : Cfg where
   n := 9
   C := Spec.P521.curve
   comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+  fastN := true
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
