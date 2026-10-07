@@ -89,25 +89,25 @@ theorem zsmul_gcd_eq_zero (g : A) : ∀ m n : Nat, (m : Int) • g = 0 → (n : 
     grind
 end
 
-/-- The order of `G` is `n`, prime: integer multiples of `G` agree only for
-integers congruent modulo `n`. -/
-theorem Law.zmul_dvd (hC : Law C) (hG : onCurve C (G C) = true)
-    (hn : mul C.n (G C) = .infinity) (hn0 : 0 < C.n)
+/-- A point `P ≠ O` with `[n]P = O`, for `n` prime, has order `n`: its
+integer multiples agree only for integers congruent modulo `n`. -/
+theorem Law.zmul_dvd_of (hC : Law C) {G : Point C} (hG : onCurve C G = true) (hG0 : G ≠ .infinity)
+    (hn : mul C.n G = .infinity) (hn0 : 0 < C.n)
     (hcop : ∀ m, 0 < m → m < C.n → Nat.gcd m C.n = 1) {a b : Int}
-    (h : zmul a (G C) = zmul b (G C)) : (C.n : Int) ∣ a - b := by
+    (h : zmul a G = zmul b G) : (C.n : Int) ∣ a - b := by
   obtain ⟨A, _, f, hf⟩ := hC.group
   have hinf : f .infinity = 0 := by
     have := hf.mul hG 0
-    rw [show mul 0 (G C) = .infinity by rw [Spec.Weierstrass.mul]; simp,
+    rw [show mul 0 G = .infinity by rw [Spec.Weierstrass.mul]; simp,
       Int.natCast_zero, Lean.Grind.IntModule.zero_zsmul] at this
     exact this
-  have hng : (C.n : Int) • f (G C) = 0 := by rw [← hf.mul hG, hn, hinf]
-  have hab : (a - b) • f (G C) = 0 := by
+  have hng : (C.n : Int) • f G = 0 := by rw [← hf.mul hG, hn, hinf]
+  have hab : (a - b) • f G = 0 := by
     have h' := congrArg f h
     rw [hC.group_zmul hf hG, hC.group_zmul hf hG] at h'
     rw [Int.sub_eq_add_neg, Lean.Grind.IntModule.add_zsmul, Lean.Grind.IntModule.neg_zsmul, h']
     grind
-  have habs : ((a - b).natAbs : Int) • f (G C) = 0 := by
+  have habs : ((a - b).natAbs : Int) • f G = 0 := by
     rcases Int.natAbs_eq (a - b) with e | e
     · rw [← e]; exact hab
     · have : ((a - b).natAbs : Int) = -(a - b) := by omega
@@ -119,10 +119,17 @@ theorem Law.zmul_dvd (hC : Law C) (hG : onCurve C (G C) = true)
   have hg1 : Nat.gcd ((a - b).natAbs) C.n = 1 := by
     rw [Nat.gcd_comm, Nat.gcd_rec]
     exact hcop _ hm (Nat.mod_lt _ hn0)
-  have h1 := zsmul_gcd_eq_zero (f (G C)) _ _ habs hng
+  have h1 := zsmul_gcd_eq_zero (f G) _ _ habs hng
   rw [hg1, Int.natCast_one, Lean.Grind.IntModule.one_zsmul] at h1
-  have := hf.inj (P := G C) (Q := .infinity) hG rfl (h1.trans hinf.symm)
-  exact nomatch this
+  exact hG0 (hf.inj (P := G) (Q := .infinity) hG rfl (h1.trans hinf.symm))
+
+/-- The order of `G` is `n`, prime: integer multiples of `G` agree only for
+integers congruent modulo `n`. -/
+theorem Law.zmul_dvd (hC : Law C) (hG : onCurve C (G C) = true)
+    (hn : mul C.n (G C) = .infinity) (hn0 : 0 < C.n)
+    (hcop : ∀ m, 0 < m → m < C.n → Nat.gcd m C.n = 1) {a b : Int}
+    (h : zmul a (G C) = zmul b (G C)) : (C.n : Int) ∣ a - b :=
+  hC.zmul_dvd_of hG (fun h => nomatch h) hn hn0 hcop h
 
 /-! ## Booth's digits -/
 

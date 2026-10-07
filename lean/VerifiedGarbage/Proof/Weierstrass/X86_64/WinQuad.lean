@@ -33,9 +33,10 @@ theorem loopW_sub (K : WinCfg) : ∀ w ∈ loopW K, w ∈ winW K := by
   · exact Or.inr rfl
 
 /-- The table survives what the loop writes. -/
-theorem TblOk.unch {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
-    {P : Point C} {s s' : State} (hT : TblOk K C base P 8 s) (hU : Unch base (loopW K) s.mem s'.mem)
-    (hn : base.toNat + size ≤ 2 ^ 64) : TblOk K C base P 8 s' := by
+theorem TblOkR.unch {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
+    {Rp : Fe C → Fe C → Fe C → Point C → Prop}
+    {P : Point C} {s s' : State} (hT : TblOkR K C base Rp P 8 s) (hU : Unch base (loopW K) s.mem s'.mem)
+    (hn : base.toNat + size ≤ 2 ^ 64) : TblOkR K C base Rp P 8 s' := by
   intro j h1 h8
   have T := hT j h1 h8
   have e : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
@@ -75,7 +76,7 @@ theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
       · exact hw
       · exact loopW_sub K w hw,
     h.mod.unch hU (fun w hw => winW_mo hL h.mod w (loopW_sub K w hw)) h.scr.nowrap,
-    h.tbl.unch hL hU h.scr.nowrap⟩
+    TblOkR.unch hL h.tbl hU h.scr.nowrap⟩
 
 theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     {P : Point C} {s₀ s : State} (h : WinSt K C base size P s₀ s) (hF : WinFixed K C base s₀ P k) :
