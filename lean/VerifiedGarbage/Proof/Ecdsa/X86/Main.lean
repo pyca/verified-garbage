@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.X86.Stages
 import VerifiedGarbage.Proof.Weierstrass.X86.Rep
 import VerifiedGarbage.Proof.Ecdsa.Sign
@@ -71,7 +72,7 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (ladder c.ladderCfg c.wk) (.seq (pow c.powP c.wk) rest)) s Q := by
+    WP isa (.seq (ladder c.ladderCfg c.wk) (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -118,7 +119,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   rw [ladWx_eq, accLen_MP'] at U₅
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hs₅ M₅
+  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
@@ -329,7 +330,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (ladder c.ladderCfg c.wk) (.seq (pow c.powP c.wk) (.seq c.middle
+    (.seq (ladder c.ladderCfg c.wk) (.seq c.pPow (.seq c.middle
       (.seq (pow c.powN c.wk) c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores

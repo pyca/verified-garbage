@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdh.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowMul
 
@@ -32,7 +33,7 @@ theorem windowPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', WindowPost c base (sv c base s K) P s s' → WP isa rest s' R) :
-    WP isa (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq (pow c.powP c.wk) rest)) s R := by
+    WP isa (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq c.pPow rest)) s R := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -42,7 +43,7 @@ theorem windowPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.
   have F₅ := F.unch h7 hn (windowW_fixed h4) U₅
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hs₅ M₅ rz₅
+  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       change  t < 64 * c.n at ht
       change s₅.mem (off base (bitsAt c.n 1 + t)) = _

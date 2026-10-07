@@ -159,7 +159,7 @@ def projectiveFinal : Prog isa :=
 an affine conversion until the direct path has been benchmarked for them. -/
 def tail : Prog isa :=
   if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
-  else .seq (pow c.powP c.wk) (final c)
+  else .seq c.pPow (final c)
 
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
@@ -193,7 +193,7 @@ def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadde
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
   .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (points c) <|
-  .seq (pow c.powP c.wk) (final c)
+  .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
 def verify : Prog isa :=

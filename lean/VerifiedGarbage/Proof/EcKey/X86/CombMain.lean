@@ -17,7 +17,7 @@ theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
       ∀ i < (c.combWords d).length, ∀ b < 8,
         size ≤ ofs (ptr s₀ 2) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
-    WP isa (.seq (c.prepareWith Args.publicKey) (.seq c.gMul (.seq (pow c.powP c.wk)
+    WP isa (.seq (c.prepareWith Args.publicKey) (.seq c.gMul (.seq c.pPow
       (Impl.EcKey.X86.Cfg.middle c)))) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])

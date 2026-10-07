@@ -8,7 +8,7 @@ open VG.Proof.Ecdsa.X86
 open VG.Impl.EcKey.X86 (Args.publicKey)
 
 def pkPrepCode : Prog isa := p256Comb.prepareWith Args.publicKey
-def pkTailCode : Prog isa := .seq (Impl.Weierstrass.X86.pow p256Comb.powP p256Comb.wk)
+def pkTailCode : Prog isa := .seq p256Comb.pPow
   (Impl.EcKey.X86.Cfg.middle p256Comb)
 materialize_code pkPrepCode
 materialize_code pkTailCode

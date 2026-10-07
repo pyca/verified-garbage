@@ -25,7 +25,7 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       the curve's equation), and the window method multiplies the peer's point if it is valid, else \
       `G`, so it always runs on a point of the curve. `[d]P` uses 65 signed four-bit windows, \
       with Jacobian doublings, complete additions, and constant-time scans of eight projective \
-      points; `Z⁻¹` is Fermat's, by square-and-always-multiply. The \
+      points; `Z⁻¹` uses a fixed chain for `p - 2` (255 squares and 18 other multiplications). The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
       the time depends only on the pointers."])
     code := Impl.Ecdh.X86.exchangeP256

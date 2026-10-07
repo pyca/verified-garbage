@@ -25,7 +25,7 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
       (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
-      (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq (pow c.powP c.wk) (Impl.Ecdh.X86.Cfg.middle c)))))) s₀ _
+      (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq c.pPow (Impl.Ecdh.X86.Cfg.middle c)))))) s₀ _
   refine WP.seq (stage₁ hc hp.setup fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
   have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=

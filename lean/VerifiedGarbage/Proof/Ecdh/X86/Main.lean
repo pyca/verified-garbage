@@ -307,7 +307,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
-    (.seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (.seq (pow c.powP c.wk) (Impl.Ecdh.X86.Cfg.middle c))))) :=
+    (.seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (.seq c.pPow (Impl.Ecdh.X86.Cfg.middle c))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
