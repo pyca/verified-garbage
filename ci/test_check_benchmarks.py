@@ -2,6 +2,12 @@
 
 import contextlib
 import json
+import pathlib
+import platform
+import re
+import shutil
+import subprocess
+import tempfile
 import unittest
 from unittest import mock
 
@@ -468,6 +474,45 @@ class Selection(unittest.TestCase):
             self.assertEqual(bench_compare.selected_modules('base', 'old new'), 'old')
             self.assertIsNone(bench_compare.selected_modules('base', 'new'))
             self.assertEqual(bench_compare.selected_modules('base', ''), '')
+
+
+class CpuHas(unittest.TestCase):
+    """`ci/cpu_has.rs`, with which the Benchmarks workflow skips a
+    configuration naming features its runner lacks."""
+
+    SOURCE = pathlib.Path('ci/cpu_has.rs')
+
+    def listed(self):
+        """The names each `has` lists, by the `target_arch`s of its `cfg`."""
+        found = {}
+        for cfg, body in re.findall(r'#\[cfg\(([^\n]*)\)\]\nfn has\((.*?)\n\}\n', self.SOURCE.read_text(), re.S):
+            if not cfg.startswith('not('):
+                for arch in re.findall(r'target_arch = "([a-z0-9_]+)"', cfg):
+                    found[arch] = set(re.findall(r'^ +"([a-z0-9_]+)" =>', body, re.M))
+        return found
+
+    def test_lists_every_feature_detected(self):
+        cpu = pathlib.Path('src/cpu.rs').read_text()
+        listed = self.listed()
+        for arch in planner.PLATFORMS:
+            with self.subTest(arch=arch):
+                self.assertEqual(listed.get(arch, set()), planner.detectable(arch, cpu) or set())
+
+    @unittest.skipUnless(shutil.which('rustc') and platform.machine() in ('x86_64', 'aarch64'), 'needs rustc')
+    def test_prints_the_missing_features(self):
+        names = self.listed()[platform.machine()]
+        with tempfile.TemporaryDirectory() as tmp:
+            exe = f'{tmp}/cpu_has'
+            subprocess.run(['rustc', '-O', '--edition', '2024', '-o', exe, str(self.SOURCE)], check=True)
+
+            def run(value):
+                return subprocess.run([exe, value], capture_output=True, text=True)
+            for value in ['', 'none']:
+                self.assertEqual(run(value).stdout, '')
+            missing = run(','.join(sorted(names)))
+            self.assertEqual(missing.returncode, 0)
+            self.assertLessEqual(set(missing.stdout.split()), names)
+            self.assertEqual(run('sse2').returncode, 2)
 
 
 if __name__ == '__main__':
