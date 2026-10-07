@@ -2,5 +2,5 @@ name = "X448"
 family = "Key agreement"
 specs = ["X448"]
 modules = ["src/x448.rs"]
-asm = ["x448"]
+asm = ["x448", "gf448_r16"]
 optimized = { aarch64 = "public keys by a fixed-base comb on edwards448" }

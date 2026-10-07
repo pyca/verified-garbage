@@ -2,5 +2,5 @@ name = "Ed448"
 family = "Signatures"
 specs = ["Ed448"]
 modules = ["src/ed448.rs"]
-asm = ["ed448"]
+asm = ["ed448", "gf448_r16"]
 optimized = { aarch64 = "keys and signatures by a fixed-base comb, verification by a comb and 4-bit windows" }
