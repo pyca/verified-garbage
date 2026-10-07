@@ -9,11 +9,11 @@ signed 4-bit windows, as on AArch64 (`Impl/Weierstrass/AArch64/Window.lean`).
 The scalar is recoded as `k' = k + 8 Σ_{j<J} 16^j` (`addConst`, `J = 16 n + 1`
 digits, so `k' < 16^J`), whose nibbles `k'_j` give the digits
 `d_j = k'_j - 8 ∈ [-8, 7]` with `k = Σ_j d_j 16^j`. The table `[m]P` for
-`m = 1 … 8` is built in the working space (`build`: `P`, then seven complete
-additions); then, from `R = O`, for `j = J - 1` down to `0`,
-`R = 16 R + [d_j]P`: four doublings (in Jacobian coordinates, `quad`), the
-entry of `|d_j|` selected in constant time and negated for a negative digit,
-and a complete addition. The formulas are those for `a = -3` (`dblJ`, `rcb3`,
+`m = 1 … 8` is built in the working space (`build`: `P`, then a loop of
+seven complete additions, each copied into its entry); then, from `R = O`,
+for `j = J - 1` down to `0`, `R = 16 R + [d_j]P`: four doublings (in
+Jacobian coordinates, `quad`), the entry of `|d_j|` selected in constant time
+and negated for a negative digit, and a complete addition. The formulas are those for `a = -3` (`dblJ`, `rcb3`,
 with `b` in `S.b3`).
 
 The digits are secret. Their magnitudes and signs are read as the comb's
@@ -44,13 +44,24 @@ def addConst (n src dst c : Nat) : List Instr :=
   setConst (n + 1) dst c ++ chainW .add .adc n dst dst src ++
     [.mov .r8 (.mem (sc (dst + 8 * n))), .alu .adc .r8 (.imm 0), .store (sc (dst + 8 * n)) .r8]
 
-/-- `[m + 1]P = [m]P + P` for `m = 1 … i`. -/
-def adds : Nat → Prog isa
-  | 0 => .block []
-  | i + 1 => .seq (adds i) (fprogB K.M (rcb3 K.S (K.tblPt (i + 1)) (K.tblPt 1) (K.tblPt (i + 2))))
+/-- `D` into entry `8 - rbx` of the table, for `rbx ≤ j`: a chain of
+`cmp rbx, i` and `je` for `i = j, …, 1`, and entry `8` for `rbx = 0`. -/
+def storeEntry : Nat → Prog isa
+  | 0 => .block (copyPt K.M.n (K.tblPt 8) K.D)
+  | j + 1 => .seq (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (j + 1)))])
+      (.ite .e (.block (copyPt K.M.n (K.tblPt (7 - j)) K.D)) (storeEntry j))
 
-/-- The table: `[1]P = P`, then `[m + 1]P = [m]P + P`. -/
-def build : Prog isa := .seq (.block (copyPt K.M.n (K.tblPt 1) K.P)) (adds K 7)
+/-- An entry of the table, with `E = [m]P` and `rbx = 8 - m`: `D = E + P`
+(`[m + 1]P`), then `E = D`, and `D` into entry `m + 1`. -/
+def buildStep : Prog isa :=
+  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (fprogB K.M (rcb3 K.S K.E K.P K.D)) <|
+  .seq (.block (copyPt K.M.n K.E K.D)) <| .seq (storeEntry K 6) (.block [.alu .test .rbx (.reg .rbx)])
+
+/-- The table: `[1]P = P`, then `[m + 1]P = [m]P + P` by a loop of seven
+additions into `D`, each copied into its entry (`storeEntry`). -/
+def build : Prog isa :=
+  .seq (.block (copyPt K.M.n (K.tblPt 1) K.P ++ copyPt K.M.n K.E K.P ++ [.mov32 .rbx (.imm 7)]))
+    (.loop (buildStep K) .ne)
 
 /-- The window method as the comb sees it, for the digits and their
 negation: windows of 4 bits at `bits`. -/

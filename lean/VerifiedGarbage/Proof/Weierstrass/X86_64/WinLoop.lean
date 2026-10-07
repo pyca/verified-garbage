@@ -123,7 +123,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
   rw [WinCfg.window]
   refine WP.seq (WP.mono (build_ok hL hp hC hM3 hP hs hM hF) fun s₁ B => ?_)
   have S₁ : WinSt K C base size P s s₁ :=
-    ⟨B.scr, B.keep.mono clob_powClob, B.unch, B.mod, B.tbl⟩
+    ⟨B.scr, B.keep, B.unch, B.mod, B.tbl⟩
   obtain ⟨rxy, rxz, ryz, -⟩ := hL.other_ne
   have wR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
