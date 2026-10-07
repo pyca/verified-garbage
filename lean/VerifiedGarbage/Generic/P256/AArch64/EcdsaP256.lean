@@ -3,8 +3,8 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
-import VerifiedGarbage.Impl.Ecdsa.Verify.P256.AArch64
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Verified
+import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Joint
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointVerified
 
 /-!
 # ECDSA over P-256 (FIPS 186-5) on AArch64
@@ -45,29 +45,24 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInv Spec.P256.curve) : List A
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.Ecdsa.P256.verifyApi with
     target := AArch64.target
-    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p256`'s checks of the public key: it \
-      saves the callee-saved registers `x19`–`x25` in `scratch`; field elements and \
-      scalars are four 64-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS, with `mul` and `umulh` and the multiplicand's words in registers; \
-      modulo `p`, `p ≡ -1 (mod 2⁶⁴)`, so each step adds `t₀ (p + 1) / 2⁶⁴`, which takes two shifts \
-      and one product) with a final conditional subtraction. The key is checked without branches \
-      (its first byte, both coordinates below `p`, and the curve's equation), and `[v]Q` is \
-      computed for the key's point if it is valid, else `G`, so always on a point of the curve. \
-      `s⁻¹` modulo `n` and the final `Z⁻¹` use divsteps. `[u]G` uses the 7-bit comb \
-      from `VG_P256_COMB` with Jacobian accumulators and mixed affine additions. `[v]Q` \
-      uses 52 signed 5-bit windows and a Jacobian table of `[1 … 16]Q`; even table entries \
-      double an earlier entry, and odd entries add `Q`. Both multiplications retain \
-      Jacobian coordinates until their final conversion to homogeneous coordinates, where \
-      the complete formulas of Renes, Costello and Batina add the two results. Field squares \
-      use a specialized 102-instruction P-256 Montgomery square. Table lookups, skipped zero \
-      digits and exceptional-point branches depend on the public key, digest and signature \
-      already declared public by the contract. The result combines the key and scalar checks, \
-      rejection of infinity, and `x ≡ r` modulo `n` into a mask."])
+    doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function saves the callee-saved registers \
+      `x19`–`x25` in its unchanged 8 KB scratch buffer. Field elements and scalars are four \
+      64-bit words in Montgomery form; field squares use the specialized P-256 Montgomery \
+      square. The key is checked without branches, and multiplication uses the key's point \
+      if valid, else `G`. After computing `s⁻¹` modulo `n` by divsteps, `[u]G + [v]Q` uses one \
+      joint Jacobian accumulator with width-7 and width-5 sparse signed digits, respectively. \
+      Generator digits reuse the odd multiples in the first row of `VG_P256_COMB`. The eight \
+      odd multiples of `Q` cache their Jacobian `Z²` and `Z³` values. The joint loop doubles \
+      its accumulator in place and forwards field values between arithmetic operations, \
+      then converts once to homogeneous coordinates. Verification compares the projective \
+      x-coordinate with `r` and, when in range, `r + n`, without a field inversion. Table \
+      lookups, skipped zero digits and exceptional-point branches depend on the public key, \
+      digest and signature already declared public by the contract. The result combines \
+      the key and scalar checks, rejection of infinity, and `x ≡ r` modulo `n` into a mask."])
     consts := Impl.Ecdsa.AArch64.p256.combConsts
-    code := Impl.Ecdsa.Verify.AArch64.verifyP256
+    code := Impl.Ecdsa.Verify.AArch64.P256Joint.verify
     contract := Spec.Ecdsa.P256.inst.verifyContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p256.combConsts)
-    verified := Proof.Ecdsa.Verify.AArch64.verify_verified h.law h.inv (Proof.P256.combOk7 h.law)
+    verified := Proof.Ecdsa.Verify.AArch64.jointVerify_verified h.law h.inv (Proof.P256.combOk7 h.law)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P256.AArch64.EcdsaP256
