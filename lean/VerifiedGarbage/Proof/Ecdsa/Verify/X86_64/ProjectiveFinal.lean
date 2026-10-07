@@ -8,10 +8,21 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64
 variable {c : VG.Impl.Ecdsa.X86_64.Cfg}
 
+/-- The final public comparison needs the canonical X/Z fields and the saved verifier inputs. -/
+structure ProjectiveInput (c : VG.Impl.Ecdsa.X86_64.Cfg) (s₀ : State) (base : Addr)
+    (g : Reg → BitVec 64) (s : State) : Prop where
+  scr : Scr s base size
+  fixed : Fixed c base g s.mem
+  k : sv c base s K = sigR c s₀
+  flag : word s.mem base (c.sl FLAG) =
+    mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
+  rx_lt : sv c base s RX < c.C.p
+  rz_lt : sv c base s RZ < c.C.p
+
 /-- The inversion-free final check has the same result as affine conversion. -/
-theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
+theorem projectiveFinal_fields_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
-    {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
+    {s : State} (hP : ProjectiveInput c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
@@ -63,6 +74,18 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     · rintro ⟨ha,hz,hm⟩
       exact ⟨ha,hz,(Proof.Ecdsa.projective_matches hC hnp hpn (z.mpr hz) ha.2.1.2).mp hm⟩
   simpa only [iff] using ret
+
+/-- The inversion-free final check has the same result as affine conversion. -/
+theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
+    (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
+    {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
+      (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
+        Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
+        (s'.gpr .rax).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
+          (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
+          Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 :=
+  projectiveFinal_fields_ok hc hC hnp hpn ⟨hP.scr,hP.fixed,hP.k,hP.flag,hP.rx_lt,hP.rz_lt⟩
 
 theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
