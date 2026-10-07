@@ -63,7 +63,7 @@ theorem nafCacheAddress_ok {s : State} {base : Addr} {n tbl a : Nat}
 
 theorem nafCacheRead_ok {s : State} {base : Addr} {size n tbl dst a : Nat}
     (hs : Scr s base size) (h8 : s.gpr .r8=BitVec.ofNat 64 a)
-    (ha : 1≤a) (ha' : a≤15) (hodd : a%2=1) (ht : tbl<2^31) (hn : n=4 ∨ n=6)
+    (ha : 1≤a) (ha' : a≤15) (hodd : a%2=1) (ht : tbl<2^31) (hn : n=4 ∨ n=6 ∨ n=9)
     (hT : tbl+128*n≤size) (hD : dst+16*n≤size)
     (hSep : dst+16*n≤tbl ∨ tbl+128*n≤dst) :
     WP isa (.block (Naf.cacheRead n tbl dst)) s fun t =>
@@ -87,7 +87,7 @@ theorem nafCacheRead_ok {s : State} {base : Addr} {size n tbl dst a : Nat}
 
 theorem nafCachedEntry_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst a : Nat}
     (hs : Scr s base size) (h8 : s.gpr .r8=BitVec.ofNat 64 a)
-    (ha : 1≤a) (ha' : a≤15) (hodd : a%2=1) (hn : K.M.n=4 ∨ K.M.n=6)
+    (ha : 1≤a) (ha' : a≤15) (hodd : a%2=1) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9)
     (hp : K.tbl<2^31) (hc : tbl<2^31)
     (hP : K.tbl+192*K.M.n≤size) (hC : tbl+128*K.M.n≤size)
     (hE : K.E.x+24*K.M.n≤size) (hD : dst+16*K.M.n≤size)

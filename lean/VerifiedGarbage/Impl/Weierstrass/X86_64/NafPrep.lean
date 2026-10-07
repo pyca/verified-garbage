@@ -4,8 +4,10 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.Jacobian
 namespace VG.Impl.Weierstrass.X86_64.Naf
 open VG VG.X86_64 VG.Impl.Mont.X86_64
 
-/-- The scalar's `n` words and a top word: `r8` up. -/
-def sregs (n : Nat) : List Reg := [.r8,.r9,.r10,.r11,.r12,.r13,.r14].take (n+1)
+/-- The scalar's `n` words and a top word: `r8` up, then `rbp` and `rsi` for
+nine words (free while recoding: the prologue saves `rbp`, and `rsi`'s
+argument is read by then). -/
+def sregs (n : Nat) : List Reg := [.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi].take (n+1)
 
 /-- The scalar's top word. -/
 def stop (n : Nat) : Reg := (sregs n).getLastD .r8

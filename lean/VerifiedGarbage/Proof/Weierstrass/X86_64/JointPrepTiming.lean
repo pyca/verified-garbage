@@ -6,7 +6,7 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont
 
-theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K.M.n=4 ∨ c.K.M.n=6)
+theorem jointPrep_relCT {c : Joint.Cfg} {base : Addr} {size u v : Nat} (hn : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9)
     (hu : u+8*c.K.M.n≤size) (hv : v+8*c.K.M.n≤size) (hg : c.gBits+64*c.K.M.n+8≤size)
     (hq : c.K.bits+64*c.K.M.n+8≤size)
     (hvs : v+8*c.K.M.n≤c.gBits ∨ c.gBits+64*c.K.M.n+8≤v)

@@ -8,7 +8,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64
 
 theorem nafSignedCachedEntry_relCT {K : WinCfg} {base : Addr} {size tbl dst m : Nat}
     [NeZero m] {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod m (2^(64*K.M.n)))
     {b : BitVec 8}
     (ha : 1≤nafMagnitude b) (ha' : nafMagnitude b≤15) (hodd : nafMagnitude b%2=1)
     (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)

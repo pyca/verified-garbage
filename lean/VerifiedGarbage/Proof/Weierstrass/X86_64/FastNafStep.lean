@@ -7,7 +7,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
 theorem FastPrepState.of_keeps {s t : State} {base : Addr} {size n bits w k j : Nat}
     (h : FastPrepState n base size bits w k j s) {rs : List Reg} (hk : Keeps rs s t)
-    (hr : ∀ r∈[Reg.rdi,.rbx,.r8,.r9,.r10,.r11,.r12,.r13,.r14],r∉rs) :
+    (hr : ∀ r∈[Reg.rdi,.rbx,.r8,.r9,.r10,.r11,.r12,.r13,.r14,.r15,.rbp,.rsi],r∉rs) :
     FastPrepState n base size bits w k j t := by
   refine ⟨h.scr.of_keeps hk (hr _ (by simp)),?_,?_,?_⟩
   · rw [nafValN_keep hk.1 (fun r hr' => hr r (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr')))]
@@ -18,7 +18,7 @@ theorem FastPrepState.of_keeps {s t : State} {base : Addr} {size n bits w k j : 
 
 def fastDelta (w k j : Nat) : Nat := if FastNaf.residual w k j%2=0 then 1 else w
 
-theorem fastEvenStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6)
+theorem fastEvenStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hI : FastPrepState n base size bits w k j s)
     (ho : FastNaf.residual w k j%2=0) :
     WP isa (.block (Impl.Weierstrass.X86_64.FastNaf.shiftN n 1++Impl.Weierstrass.X86_64.FastNaf.advance 1)) s fun t =>
@@ -53,7 +53,7 @@ theorem fastEvenStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn 
   · rw [mt]
     exact Outside.refl _ _ _ _
 
-theorem fastPrepStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6)
+theorem fastPrepStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hI : FastPrepState n base size bits w k j s)
     (hb : bits+64*n+8≤size) (hj : j<64*n+1) (hv : FastNaf.residual w k j≤2^(64*n)) :
     WP isa (Impl.Weierstrass.X86_64.FastNaf.stepN n bits w) s fun t =>

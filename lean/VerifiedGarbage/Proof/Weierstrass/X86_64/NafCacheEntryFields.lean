@@ -22,7 +22,7 @@ private theorem prefix_keep {M : Mod} {base : Addr} {W : List Nat} {s t : State}
 
 theorem nafSignedCachedFields_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst m : Nat}
     [NeZero m] {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod m (2^(64*K.M.n)))
     (hi : Inv K.M base size m Sl V E s) {b : BitVec 8}
     (ha : 1≤nafMagnitude b) (ha' : nafMagnitude b≤15) (hodd : nafMagnitude b%2=1)
     (h8 : s.gpr .r8=b.setWidth 64)

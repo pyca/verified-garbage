@@ -9,7 +9,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 theorem jointCachedFast_ok {K : WinCfg} {s : State} {base : Addr} {size tbl dst u j : Nat}
     {C : Curve} {P : Point C}
     {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod C.p (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hi : Inv K.M base size C.p Sl V E s)
     (hmag : FastNaf.magnitude 5 u j≠0)
     (h8 : s.gpr .r8=(FastNaf.byte 5 u j).setWidth 64)

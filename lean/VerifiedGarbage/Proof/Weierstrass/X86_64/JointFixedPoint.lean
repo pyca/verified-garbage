@@ -8,7 +8,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 theorem jointFixedFast_ok {K : WinCfg} {s : State} {base T : Addr} {size x y u j : Nat}
     {C : Curve} {G : Point C} {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod C.p (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6 ∨ K.M.n=9) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hi : Inv K.M base size C.p Sl V E s) (hmag : FastNaf.magnitude 7 u j≠0)
     (h8 : s.gpr .r8=(FastNaf.byte 7 u j).setWidth 64)
     (hS : FixedSource K.M.n base T tsym size (FastNaf.magnitude 7 u j) x y s)

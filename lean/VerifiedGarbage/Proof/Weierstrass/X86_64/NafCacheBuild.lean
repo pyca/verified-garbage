@@ -41,7 +41,7 @@ theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   · exact (fprogB_wp _ _).mpr (fprog_ok hL hm _ hI hS hR)
 
 theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
     (hm : UnitMod C.p (2^(64*M.n))) {ptbl tbl i : Nat}
     (hSep : tbl+16*M.n*(i+1)≤ptbl ∨ ptbl+24*M.n*(i+1)≤tbl)
     {V : List Nat} {E : Nat → Fin C.p} {s : State}
@@ -95,7 +95,7 @@ theorem mem_cacheTableSlots {x n tbl k : Nat} :
       · exact Or.inr ⟨i,by omega,h⟩
 
 theorem nafCacheTable_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (k : Nat) {ptbl tbl : Nat}
     (hSep : tbl+16*M.n*k≤ptbl ∨ ptbl+24*M.n*k≤tbl)
     {V : List Nat} {E : Nat → Fin C.p} {s : State}
@@ -159,7 +159,7 @@ theorem nafCacheTable_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstr
 
 /-- Express each cache pair in terms of the source Z still in the resulting state. -/
 theorem nafCacheTable_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
-    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (k : Nat) {ptbl tbl : Nat}
     (hSep : tbl+16*M.n*k≤ptbl ∨ ptbl+24*M.n*k≤tbl)
     {V : List Nat} {E : Nat → Fin C.p} {s : State}

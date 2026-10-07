@@ -131,7 +131,7 @@ theorem JointCore.of_keeps {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v :
 
 structure JointLayout (c : Joint.Cfg) (size : Nat) : Prop where
   lay : Lay c.K.M size (·∈jointSlots c)
-  n : c.K.M.n=4 ∨ c.K.M.n=6
+  n : c.K.M.n=4 ∨ c.K.M.n=6 ∨ c.K.M.n=9
   stableBounds : ∀ r∈jointStableRanges c,r.1+r.2≤size
   stableSep : ∀ r∈jointStableRanges c,∀ w∈(jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)],
     r.1+r.2≤w.1 ∨ w.1+w.2≤r.1

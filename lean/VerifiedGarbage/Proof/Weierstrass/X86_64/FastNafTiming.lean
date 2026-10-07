@@ -31,7 +31,7 @@ theorem FastPrepPair.public {n : Nat} {base : Addr} {size bits w k j : Nat} {s t
     · exact h.1.count.trans h.2.count.symm
   · exact hv r hr
 
-theorem fastPrepStep_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6) (hw : FastNaf.Width w)
+theorem fastPrepStep_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9) (hw : FastNaf.Width w)
     (hc : FastPrepChecks n src bits w)
     {base : Addr} {size k j : Nat} (hb : bits+64*n+8≤size) (hj : j<64*n+1)
     (hv : FastNaf.residual w k j≤2^(64*n)) :
@@ -46,7 +46,7 @@ theorem fastPrepStep_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6) (hw : FastNaf
   obtain ⟨_,rfl⟩ := Exec.det et xt
   exact ⟨hc.step _ _ _ _ _ _ trivial trivial hp.public es et,⟨is,it⟩,fs,ft⟩
 
-theorem fastPrepLoop_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6) (hw : FastNaf.Width w)
+theorem fastPrepLoop_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6 ∨ n=9) (hw : FastNaf.Width w)
     (hc : FastPrepChecks n src bits w)
     {base : Addr} {size k : Nat} (hb : bits+64*n+8≤size) (hk : k<2^(64*n)) :
     RelCT isa (FastPrepPair n base size bits w k 0)
@@ -76,7 +76,7 @@ theorem fastPrepLoop_relCT {n src bits w : Nat} (hn : n=4 ∨ n=6) (hw : FastNaf
   exact (RelCT.loop I step (64*n+1)).mono (fun _ _ h => ⟨by omega,by omega,by simpa only [Nat.sub_self] using h⟩)
     (fun _ _ h => h)
 
-theorem fastPrep_relCT {n src bits w : Nat} {base : Addr} {size : Nat} (hn : n=4 ∨ n=6)
+theorem fastPrep_relCT {n src bits w : Nat} {base : Addr} {size : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size)
     (hc : FastPrepChecks n src bits w) :
     RelCT isa (fun s t => Scr s base size ∧ Scr t base size ∧

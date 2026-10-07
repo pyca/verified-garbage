@@ -5,7 +5,7 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Mont.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
-theorem fastOddStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6)
+theorem fastOddStep_ok {s : State} {base : Addr} {size n bits w k j : Nat} (hn : n=4 ∨ n=6 ∨ n=9)
     (hw : FastNaf.Width w) (hI : FastPrepState n base size bits w k j s)
     (hb : bits+64*n+8≤size) (hj : j<64*n+1) (hv : FastNaf.residual w k j≤2^(64*n))
     (ho : FastNaf.residual w k j%2≠0) :
