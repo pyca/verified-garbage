@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
+import VerifiedGarbage.Proof.Mont.X86_64.SqrS
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -52,6 +53,8 @@ theorem fresh_low' (n : Nat) (hn : n < 7) : Fresh ((List.range n).map (win n n))
 theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOk M size m s.mem base) {o a b : Nat} (ho : o + 8 * M.n ≤ size)
     (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size)
+    (hoT : o + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ o) (haT : a + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ a)
+    (hoM : o + 8 * M.n ≤ M.mo ∨ M.mo + 8 * M.n ≤ o)
     (hB : wordsVal s.mem base b M.n < m) :
     WP isa (.block (mulR M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
@@ -85,6 +88,15 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       · cases hk
     · cases hk
   dsimp only
+  split
+  · -- P-384's squaring with BMI2 and ADX.
+    rename_i hc
+    obtain ⟨-, hsp, -, rfl⟩ := hc
+    obtain ⟨h6, -⟩ := Mod.ok_sparse hM.red hsp
+    rw [h6] at ho ha hoT haT hoM hB ⊢
+    refine WP.mono (sqrS_ok hs hM hsp ho ha hoT haT hoM hB) fun s' ⟨kr, hmem, hlt, he⟩ =>
+      ⟨⟨fun r hr => kr.gpr r (not_mem_of hr (by rw [h6]; decide)), kr.rd, kr.wr,
+        fun x hx hx' => hmem x (by rw [h6] at hx; exact hx) (by rw [h6] at hx'; exact hx')⟩, hlt, he⟩
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (zeros_ok s (acc M.n)) fun s₁ ⟨z₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
@@ -183,17 +195,6 @@ theorem low_ne_nil {n : Nat} (hn : n < 7) (h0 : 0 < n) : ∃ t ts, low n = t :: 
   cases h : low n with
   | nil => rw [h] at this; simp at this; omega
   | cons t ts => exact ⟨t, ts, rfl⟩
-
-theorem adcZero_ok (s : State) (t : Reg) {c : Bool} (hc : s.cf = some c) (h0 : s.gpr t = 0) :
-    WP isa (.block [.alu .adc t (.imm 0)]) s fun s' => (s'.gpr t).toNat = c.toNat ∧ Keeps [t] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-    Option.map_some, hc, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left',
-    VG.Proof.X25519.X86_64.se0, h0]
-  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
-  · cases c <;> rfl
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
 /-- `[o] = [a] + [b] mod m`. -/
 theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}

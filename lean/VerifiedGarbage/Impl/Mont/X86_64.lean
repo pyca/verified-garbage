@@ -364,12 +364,99 @@ def prodK? (M : Mod) : Option Nat :=
     | .general => none
   else none
 
+/-! ## P-384's squaring with BMI2 and ADX
+
+`sqrS` computes `[a]²` in the registers the operations may change, and the
+temporary area: the cross products `a_i a_j` (`i < j`) once, row by row (row 0
+through CF, `accRow`, its two lowest words then stored at `[tmp + 8]`; rows 1
+to 4 through OF and CF, `maddRow`, each row's top word fresh), then those
+words doubled through CF and the squares `a_i²` added through OF
+(`sqrDiag`), words 0 to 2 of the square into `[tmp]`. Then the high half goes
+to `[o]` (the input is read by then), and six reductions of the low half by
+`redSparse`, in the window of `r8–r15` from round 7 (where words 3 to 5 already
+are), leave `(L + U p) / 2³⁸⁴ ≤ p`, to which the high half is added (`< 2p`)
+and `csub` applied. -/
+
+/-- `x :: rs = x + rdx · [d …]` through CF: each word's product, its low half
+added to a register (with the carry), its high half into the next. -/
+def accRow : List Reg → Nat → List Instr
+  | x :: y :: rs, d => Impl.X25519.X86_64.mulAcc x y (.mem (sc d)) ++ accRow (y :: rs) (d + 8)
+  | _, _ => []
+
+/-- `x :: rs += rdx · [d …]`, the last register fresh: the low halves through
+OF and the high halves through CF (`madd`), the last product's high half and
+both carries into the last register (`maddLast`). -/
+def maddRow : List Reg → Nat → List Instr
+  | [x, y], d => Impl.X25519.X86_64.maddLast x y (.mem (sc d))
+  | x :: y :: z :: rs, d => Impl.X25519.X86_64.madd x y (.mem (sc d)) ++ maddRow (y :: z :: rs) (d + 8)
+  | _, _ => []
+
+/-- Row 0 of the cross products of `[a]`: `r8–r13 = a₀ (a₁, …, a₅)`. -/
+def sqrRow0 (a : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc (a + 8)))] ++
+    accRow [.r9, .r10, .r11, .r12, .r13] (a + 16) ++ [.adcx .r13 (.reg .rbp)]
+
+/-- Rows 1 to 4 of the cross products of `[a]`: row `i` adds `a_i (a_{i+1}, …)`
+at the words `2i + 1` to `i + 6`, the last fresh (words 3 to 10 in `r10–r15`,
+`r8`, `r9`). -/
+def sqrRows (a : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc (a + 8))), Impl.X25519.X86_64.clear] ++
+    maddRow [.r10, .r11, .r12, .r13, .r14] (a + 16) ++
+  [.mov .rdx (.mem (sc (a + 16))), Impl.X25519.X86_64.clear] ++ maddRow [.r12, .r13, .r14, .r15] (a + 24) ++
+  [.mov .rdx (.mem (sc (a + 24))), Impl.X25519.X86_64.clear] ++ maddRow [.r14, .r15, .r8] (a + 32) ++
+  [.mov .rdx (.mem (sc (a + 32))), Impl.X25519.X86_64.clear] ++ maddRow [.r8, .r9] (a + 40)
+
+/-- The words `x`, `y` (`2i`, `2i + 1`) doubled through CF, and `a_i² = [d]²`
+added through OF. -/
+def sqrDiag (d : Nat) (x y : Reg) : List Instr :=
+  [.mov .rdx (.mem (sc d)), .mulx .rcx .rax (.reg .rdx)] ++ Impl.X25519.X86_64.dblAdd x .rax ++
+    Impl.X25519.X86_64.dblAdd y .rcx
+
+/-- `sqrDiag` along the pairs of words `ps`, by the words of `[d …]`. -/
+def sqrDiags : List (Reg × Reg) → Nat → List Instr
+  | [], _ => []
+  | (x, y) :: ps, d => sqrDiag d x y ++ sqrDiags ps (d + 8)
+
+/-- The cross products doubled and the squares added, words 0 to 2 (`[tmp + 8]`
+and `[tmp + 16]` doubled, through `rdx`) into `[tmp]`: `w₀` (`rbp`) is cleared
+with the flags, and the last high half and carries make `w₁₁` (`rcx`). -/
+def sqrDbl (t a : Nat) : List Instr :=
+  [Impl.X25519.X86_64.clear, .mov .rdx (.mem (sc a)), .mulx .rcx .rax (.reg .rdx)] ++
+    Impl.X25519.X86_64.dblAdd .rbp .rax ++
+    [.store (sc t) .rbp, .mov .rdx (.mem (sc (t + 8)))] ++ Impl.X25519.X86_64.dblAdd .rdx .rcx ++
+    [.store (sc (t + 8)) .rdx, .mov .rdx (.mem (sc (a + 8))), .mulx .rcx .rax (.reg .rdx),
+      .mov .rdx (.mem (sc (t + 16)))] ++ Impl.X25519.X86_64.dblAdd .rdx .rax ++
+    [.store (sc (t + 16)) .rdx] ++ Impl.X25519.X86_64.dblAdd .r10 .rcx ++
+    sqrDiags [(.r11, .r12), (.r13, .r14), (.r15, .r8)] (a + 16) ++
+    [.mov .rdx (.mem (sc (a + 40))), .mulx .rcx .rax (.reg .rdx)] ++
+    Impl.X25519.X86_64.dblAdd .r9 .rax ++
+    [.mov32 .rdx (.imm 0), .adcx .rcx (.reg .rdx), .adox .rcx (.reg .rdx)]
+
+/-- The words of `sqrS`'s result: the window of round 13 (`wins 6 5`). -/
+def sqLow6 : List Reg := [.r13, .r14, .r15, .r8, .r9, .r10]
+
+/-- The registers of the square's high half, words 6 to 11. -/
+def sqHigh6 : List Reg := [.r13, .r14, .r15, .r8, .r9, .rcx]
+
+/-- Six rounds of P-384's reduction in the window of `r8–r15`, from round 7. -/
+def redsS (k : Nat) : List Instr := (List.range k).flatMap fun i => redSparse (wins 6 (7 + i))
+
+/-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX: the square's
+words 0 to 2 at `[tmp]` and 3 to 11 in `r10–r15`, `r8`, `r9`, `rcx`; its high
+half stored at `[o]`, the low half into the window of round 7 (`r15`, `r8–r12`)
+and reduced by six rounds of `redSparse`, the high half added, and `csub`. -/
+def sqrS (M : Mod) (o a : Nat) : List Instr :=
+  sqrRow0 a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows a ++ sqrDbl M.tmp a ++ stores sqHigh6 o ++
+    loads [.r15, .r8, .r9] M.tmp ++ zeros [.r13, .r14] ++ redsS 6 ++
+    chain .add .adc sqLow6 o ++ [.alu .adc .r11 (.imm 0)] ++ csub M sqLow6 .r11 ++ stores sqLow6 o
+
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
-registers; by `sqrRX` or `mulRX` if they apply. -/
+registers; by `sqrRX`, `mulRX` or `sqrS` if they apply. -/
 def mulR (M : Mod) (o a b : Nat) : List Instr :=
   match prodK? M with
   | some k => if a = b then sqrRX M k o a else mulRX M k o a b
   | none =>
+    if M.adx ∧ M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else
     let low := (List.range M.n).map (win M.n M.n)
     zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
       csub M low (win M.n M.n M.n) ++ stores low o

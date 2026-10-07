@@ -15,7 +15,8 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
   | mul o a b =>
     simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,outputRegs,FOp.out]
     rcases prodK? M with _ | k
-    · exact ⟨_,rfl⟩
+    · simp only [Nat.reduceEqDiff, false_and, and_false, ↓reduceIte]
+      exact ⟨_,rfl⟩
     · dsimp only
       obtain ⟨X, hX⟩ : ∃ X, redRX M k o = X ++ stores sqLow o := ⟨_, rfl⟩
       split
