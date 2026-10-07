@@ -1050,27 +1050,7 @@ impl Stream<'_, false> {
         }
         let aad_len = self.aad_len + pad as u64;
         #[cfg(feature = "alloc")]
-        if src.len() >= POWERS_MIN_LEN
-            && let Some(ctx) = self
-                .key
-                .powers
-                .get(self.key.backend, self.key.rounds, &self.key.ctx)
-        {
-            // SAFETY: as below, with `ctx` the key context with the powers,
-            // as in `update_precomputed`.
-            unsafe {
-                vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512(
-                    ctx,
-                    self.key.rounds,
-                    &mut self.state,
-                    aad_len,
-                    0,
-                    src.as_ptr(),
-                    src.len(),
-                    dst.as_mut_ptr(),
-                    dst.len(),
-                )
-            };
+        if src.len() >= POWERS_MIN_LEN && self.encrypt_to_precomputed(aad_len, src, dst) {
             self.text_len = src.len() as u64;
             return Ok(());
         }
@@ -1091,14 +1071,14 @@ impl Stream<'_, false> {
         // bytes and `dst` for reads and writes of as many (a unique borrow,
         // so it overlaps nothing else, `src` included), and `self.state`
         // representing a message with `aad_len` bytes of additional data and
-        // no text yet.
+        // no text yet (`self.text_len` is 0).
         unsafe {
             f(
                 &self.key.ctx,
                 self.key.rounds,
                 &mut self.state,
                 aad_len,
-                0,
+                self.text_len,
                 src.as_ptr(),
                 src.len(),
                 dst.as_mut_ptr(),
@@ -1107,6 +1087,36 @@ impl Stream<'_, false> {
         };
         self.text_len = src.len() as u64;
         Ok(())
+    }
+
+    /// The call of `encrypt_to` with the key context with the powers, if
+    /// `Powers::get` gives it: whether it did.
+    #[cfg(feature = "alloc")]
+    #[inline(never)]
+    fn encrypt_to_precomputed(&mut self, aad_len: u64, src: &[u8], dst: &mut [u8]) -> bool {
+        let Some(ctx) = self
+            .key
+            .powers
+            .get(self.key.backend, self.key.rounds, &self.key.ctx)
+        else {
+            return false;
+        };
+        // SAFETY: as in `encrypt_to`, with `ctx` the key context with the
+        // powers, as in `update_precomputed`.
+        unsafe {
+            vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512(
+                ctx,
+                self.key.rounds,
+                &mut self.state,
+                aad_len,
+                self.text_len,
+                src.as_ptr(),
+                src.len(),
+                dst.as_mut_ptr(),
+                dst.len(),
+            )
+        };
+        true
     }
 }
 
