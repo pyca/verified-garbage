@@ -249,14 +249,14 @@ def linX (five : Bool) (w w' : Reg) (x y : Nat) : List Instr :=
 
 /-- Word `i` of `aRegs / 2^59` into `lo`, from words `i` (`lo`) and `i + 1` (`hi`). -/
 def shrWord (lo hi : Reg) : List Instr :=
-  [.mov .rax (.reg hi), .shift .shl .rax 5, .shift .shr lo 59, .alu .or lo (.reg .rax)]
+  [.mov .rax (.reg hi), .shift .shl .rax 5, .shift .shr lo 59, .alu .add lo (.reg .rax)]
 
 /-- `[dst] = aRegs / 2^59` (arithmetic, five words): each word from two, the top
 one's high bits the mask of its sign. -/
 def shrX (dst : Nat) : List Instr :=
   shrWord .rcx .rbp ++ shrWord .rbp .r8 ++ shrWord .r8 .r13 ++ shrWord .r13 .r15 ++
   [.mov .rax (.reg .r15), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
-    .shift .shl .rdx 5, .shift .shr .r15 59, .alu .or .r15 (.reg .rdx)] ++ stores aRegs dst
+    .shift .shl .rdx 5, .shift .shr .r15 59, .alu .add .r15 (.reg .rdx)] ++ stores aRegs dst
 
 /-- `[dst] = (u f + v g) / 2^59` (five words, signed), `u` in `w` and `v` in `w'`. -/
 def fHalfX (w w' : Reg) (x y dst : Nat) : List Instr := linX true w w' x y ++ shrX dst
