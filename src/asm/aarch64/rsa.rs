@@ -1502,6 +1502,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_checked(out: *mut u8, out_len: usi
         "movz x0, #0, lsl #0",
         "22:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2379,6 +2380,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_precompute(pre: *mut u64, pre_len:
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3140,6 +3142,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_public_precomputed_checked(out: *mut u8, 
         "movz x0, #0, lsl #0",
         "22:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -9129,6 +9132,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_crt(out: *mut u8, out_len: usize,
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -10615,6 +10619,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_crt_values(dp: *mut u8, dp_len: usize, dq
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -13983,6 +13988,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_recover_primes(p: *mut u8, p_len: usize, 
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -16021,6 +16027,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_check_key(n: *const u8, n_len: usize, e: 
         "movz x0, #0, lsl #0",
         "22:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -16165,6 +16172,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_private_checked(out: *mut u8, out_len: us
         "add sp, sp, #3232",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_rsa_private_crt = sym super::rsa::vg_rsa_private_crt,
         vg_rsa_public_precompute = sym super::rsa::vg_rsa_public_precompute,
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,

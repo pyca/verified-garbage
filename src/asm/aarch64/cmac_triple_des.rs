@@ -4055,6 +4055,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_init(key: *const u8, key_len:
         "str x6, [x2, #8]",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -5298,6 +5299,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_update(schedule: *const [u8; 
         "21:",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -6562,5 +6564,6 @@ pub(crate) unsafe extern "C" fn vg_cmac_triple_des_finalize(key: *const [u8; 400
         "str x5, [x1, #0]",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
     )
 }

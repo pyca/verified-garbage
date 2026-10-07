@@ -93,6 +93,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_encrypt(out: *mut u8, out_len: usiz
         "add sp, sp, #1072",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_rsa_public_checked = sym super::rsa::vg_rsa_public_checked,
     )
 }
@@ -486,6 +487,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt(out: *mut u8, out_len: usiz
         "add sp, sp, #208",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch,
@@ -890,6 +892,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_decrypt_sha256_sha2(out: *mut u8, o
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
         vg_sha256_init = sym super::sha256::vg_sha256_init,
         vg_sha256_update_scratch_sha2 = sym super::sha256::vg_sha256_update_scratch_sha2,

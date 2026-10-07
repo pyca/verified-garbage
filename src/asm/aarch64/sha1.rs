@@ -1530,6 +1530,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_compress(state: *mut [u32; 5], blocks: *
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1560,6 +1561,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
         "movk w9, #50130, lsl #16",
         "str w9, [x0, #16]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1738,6 +1740,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_compress_sha2(state: *mut [u32; 5], bloc
         "21:",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
     )
 }
 
@@ -1907,6 +1910,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_update(state: *mut [u8; 84], count: u64,
         "ldr x30, [sp], #16",
         "add sp, sp, #160",
         "ret",
+        ".p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -2020,6 +2024,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_finalize(state: *mut [u8; 84], count: u6
         "ldr x30, [sp], #16",
         "add sp, sp, #160",
         "ret",
+        ".p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -2189,6 +2194,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_update_scratch(state: *mut [u8; 84], cou
         "ldr x20, [x20, #120]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -2301,6 +2307,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch(state: *mut [u8; 84], c
         "ldr x20, [x20, #120]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha1_compress = sym super::sha1::vg_sha1_compress,
     )
 }
@@ -2477,6 +2484,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_update_sha2(state: *mut [u8; 84], count:
         "add sp, sp, #160",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
     )
 }
@@ -2596,6 +2604,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_finalize_sha2(state: *mut [u8; 84], coun
         "add sp, sp, #160",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
     )
 }
@@ -2771,6 +2780,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_update_scratch_sha2(state: *mut [u8; 84]
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
     )
 }
@@ -2889,6 +2899,7 @@ pub(crate) unsafe extern "C" fn vg_sha1_finalize_scratch_sha2(state: *mut [u8; 8
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha1_compress_sha2 = sym super::sha1::vg_sha1_compress_sha2,
     )
 }

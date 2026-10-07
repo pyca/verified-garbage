@@ -748,6 +748,7 @@ pub(crate) unsafe extern "C" fn vg_md5_compress(state: *mut [u32; 4], blocks: *c
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -775,6 +776,7 @@ pub(crate) unsafe extern "C" fn vg_md5_init(state: *mut [u8; 80]) {
         "movk w9, #4146, lsl #16",
         "str w9, [x0, #12]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -942,6 +944,7 @@ pub(crate) unsafe extern "C" fn vg_md5_update(state: *mut [u8; 80], count: u64, 
         "ldr x30, [sp], #16",
         "add sp, sp, #112",
         "ret",
+        ".p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }
@@ -1045,6 +1048,7 @@ pub(crate) unsafe extern "C" fn vg_md5_finalize(state: *mut [u8; 80], count: u64
         "ldr x30, [sp], #16",
         "add sp, sp, #112",
         "ret",
+        ".p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }
@@ -1212,6 +1216,7 @@ pub(crate) unsafe extern "C" fn vg_md5_update_scratch(state: *mut [u8; 80], coun
         "ldr x20, [x20, #72]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }
@@ -1314,6 +1319,7 @@ pub(crate) unsafe extern "C" fn vg_md5_finalize_scratch(state: *mut [u8; 80], co
         "ldr x20, [x20, #72]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
 }

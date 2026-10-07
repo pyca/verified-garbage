@@ -3498,6 +3498,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_compress(state: *mut [u64; 8], blocks:
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3553,6 +3554,7 @@ pub(crate) unsafe extern "C" fn vg_sha384_init(state: *mut [u8; 192]) {
         "movk x9, #18357, lsl #48",
         "str x9, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3608,6 +3610,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_init(state: *mut [u8; 192]) {
         "movk x9, #23520, lsl #48",
         "str x9, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3663,6 +3666,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_224_init(state: *mut [u8; 192]) {
         "movk x9, #4370, lsl #48",
         "str x9, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3718,6 +3722,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_256_init(state: *mut [u8; 192]) {
         "movk x9, #3767, lsl #48",
         "str x9, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -5292,6 +5297,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_compress_sha3(state: *mut [u64; 8], bl
         "21:",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
     )
 }
 
@@ -5459,6 +5465,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_update(state: *mut [u8; 192], count: u
         "ldr x30, [sp], #16",
         "add sp, sp, #1376",
         "ret",
+        ".p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -5583,6 +5590,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_finalize(state: *mut [u8; 192], count:
         "ldr x30, [sp], #16",
         "add sp, sp, #1376",
         "ret",
+        ".p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -5750,6 +5758,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_update_scratch(state: *mut [u8; 192], 
         "ldr x20, [x20, #648]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -5873,6 +5882,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch(state: *mut [u8; 192]
         "ldr x20, [x20, #648]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_sha512_compress = sym super::sha512::vg_sha512_compress,
     )
 }
@@ -6047,6 +6057,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_update_sha3(state: *mut [u8; 192], cou
         "add sp, sp, #1376",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
@@ -6177,6 +6188,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_finalize_sha3(state: *mut [u8; 192], c
         "add sp, sp, #1376",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
@@ -6350,6 +6362,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_update_scratch_sha3(state: *mut [u8; 1
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }
@@ -6479,6 +6492,7 @@ pub(crate) unsafe extern "C" fn vg_sha512_finalize_scratch_sha3(state: *mut [u8;
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_sha512_compress_sha3 = sym super::sha512::vg_sha512_compress_sha3,
     )
 }

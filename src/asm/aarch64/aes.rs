@@ -1300,6 +1300,7 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize
         "str x17, [x16, #504]",
         "add sp, sp, #512",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2534,6 +2535,7 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch(key: *const u8, key_le
         "ldr x27, [x5, #448]",
         "ldr x28, [x5, #456]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3998,6 +4000,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr32(schedule: *const [u8; 240], rounds:
         "ldr x27, [x5, #448]",
         "ldr x28, [x5, #456]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -4585,6 +4588,7 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key_aes(key: *const u8, key_len: u
         "add sp, sp, #512",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -5105,6 +5109,7 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch_aes(key: *const u8, ke
         "21:",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -5509,6 +5514,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ctr32_aes(schedule: *const [u8; 240], rou
         "str w12, [x2, #12]",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -6935,6 +6941,7 @@ pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks(schedule: *const [u8; 240]
         "ldr x27, [x5, #448]",
         "ldr x28, [x5, #456]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -8503,6 +8510,7 @@ pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks(schedule: *const [u8; 240]
         "ldr x27, [x5, #448]",
         "ldr x28, [x5, #456]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -8855,6 +8863,7 @@ pub(crate) unsafe extern "C" fn vg_aes_encrypt_blocks_aes(schedule: *const [u8; 
         "28:",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -9219,5 +9228,6 @@ pub(crate) unsafe extern "C" fn vg_aes_decrypt_blocks_aes(schedule: *const [u8; 
         "28:",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }

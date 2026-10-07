@@ -3647,6 +3647,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_keygen_candidate(out: *mut u8, out_len: u
         "movz x0, #0, lsl #0",
         "22:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -9468,5 +9469,6 @@ pub(crate) unsafe extern "C" fn vg_rsa_keygen_key(n: *mut u8, n_len: usize, d: *
         "movz x0, #2, lsl #0",
         "2145:",
         "ret",
+        ".p2align 6",
     )
 }

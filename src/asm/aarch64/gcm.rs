@@ -207,6 +207,7 @@ pub(crate) unsafe extern "C" fn vg_ghash(h: *const [u8; 16], y: *mut [u8; 16], d
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -684,6 +685,7 @@ pub(crate) unsafe extern "C" fn vg_ghash_aes(h: *const [u8; 16], y: *mut [u8; 16
         "str q0, [x1, #0]",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -753,6 +755,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init_aes(key: *const u8, key_len: usi
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -1253,6 +1256,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_aes(ctx: *const [u64; 32], round
         "add sp, sp, #2576",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -1865,6 +1869,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aes(ctx: *const [u64; 32], round
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -2007,6 +2012,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_aes(ctx: *const [u64; 32]
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
     )
 }
@@ -2135,6 +2141,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad_aes(ctx: *const [u64; 32],
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
     )
 }
@@ -2397,6 +2404,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt_aes(ctx: *const [u64; 
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -2660,6 +2668,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt_aes(ctx: *const [u64; 
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -2785,6 +2794,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish_aes(ctx: *const [u64; 3
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -3014,6 +3024,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 3
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_ghash_aes = sym super::gcm::vg_ghash_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -3079,6 +3090,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_init(key: *const u8, key_len: usize, 
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -3573,6 +3585,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal(ctx: *const [u64; 32], rounds: u
         "ldr x19, [x19, #128]",
         "add sp, sp, #2576",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -4179,6 +4192,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         "ldr x19, [x19, #128]",
         "add sp, sp, #2592",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -4315,6 +4329,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init(ctx: *const [u64; 32], no
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -4437,6 +4452,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_aad(ctx: *const [u64; 32], sta
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
@@ -4693,6 +4709,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_encrypt(ctx: *const [u64; 32],
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -4950,6 +4967,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_decrypt(ctx: *const [u64; 32],
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -5069,6 +5087,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_finish(ctx: *const [u64; 32], 
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -5292,6 +5311,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         "ldr x19, [x19, #128]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )

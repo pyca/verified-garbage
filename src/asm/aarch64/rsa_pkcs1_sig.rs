@@ -947,6 +947,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: usize, 
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
         vg_rsa_public_checked = sym super::rsa::vg_rsa_public_checked,
     )
 }
@@ -1944,6 +1945,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_recover(out: *mut u8, out_len: usiz
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
         vg_rsa_public_checked = sym super::rsa::vg_rsa_public_checked,
     )
 }
@@ -2898,6 +2900,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, 
         "ldr x30, [x16, #104]",
         "add sp, sp, #1136",
         "ret",
+        ".p2align 6",
         vg_rsa_private_checked = sym super::rsa::vg_rsa_private_checked,
     )
 }
@@ -3856,6 +3859,7 @@ pub(crate) unsafe extern "C" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
         vg_rsa_public_precomputed_checked = sym super::rsa::vg_rsa_public_precomputed_checked,
     )
 }

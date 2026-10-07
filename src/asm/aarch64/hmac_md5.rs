@@ -138,6 +138,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *m
         "ldr x23, [x23, #160]",
         "add sp, sp, #384",
         "ret",
+        ".p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
@@ -234,6 +235,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer
         "ldr x23, [x23, #160]",
         "add sp, sp, #384",
         "ret",
+        ".p2align 6",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
@@ -374,6 +376,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_init_scratch(inner: *mut [u8; 80], o
         "ldr x30, [x23, #152]",
         "ldr x23, [x23, #160]",
         "ret",
+        ".p2align 6",
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )
@@ -469,6 +472,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize_scratch(inner: *mut [u8; 80
         "ldr x30, [x23, #152]",
         "ldr x23, [x23, #160]",
         "ret",
+        ".p2align 6",
         vg_md5_finalize_scratch = sym super::md5::vg_md5_finalize_scratch,
         vg_md5_compress = sym super::md5::vg_md5_compress,
     )

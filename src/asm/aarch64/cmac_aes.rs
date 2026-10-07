@@ -152,6 +152,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aes_cbc(schedule: *const [u8;
         "21:",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
     )
 }
 
@@ -234,6 +235,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys_aes(schedule: *const [u8; 24
         "ldr x20, [x20, #2072]",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -310,6 +312,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_update_aes(schedule: *const [u8; 240
         "ldr x24, [x24, #2112]",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -401,6 +404,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize_aes(key: *const [u8; 272], 
         "ldr x19, [x19, #2064]",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
 }
@@ -457,6 +461,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key:
         "add sp, sp, #2304",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes,
     )
@@ -511,6 +516,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], ro
         "add sp, sp, #2304",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes,
     )
 }
@@ -588,6 +594,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_subkeys(schedule: *const [u8; 240], 
         "ldr x19, [x20, #2064]",
         "ldr x20, [x20, #2072]",
         "ret",
+        ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -658,6 +665,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_update(schedule: *const [u8; 240], r
         "ldr x30, [x24, #2104]",
         "ldr x24, [x24, #2112]",
         "ret",
+        ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -743,6 +751,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize(key: *const [u8; 272], roun
         "ldr x30, [x19, #2072]",
         "ldr x19, [x19, #2064]",
         "ret",
+        ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
@@ -793,6 +802,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *co
         "ldr x20, [x20, #2184]",
         "add sp, sp, #2304",
         "ret",
+        ".p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys,
     )
@@ -841,6 +851,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds
         "ldr x19, [x19, #2176]",
         "add sp, sp, #2304",
         "ret",
+        ".p2align 6",
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize,
     )
 }
@@ -976,6 +987,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes(state: *mut [u64; 38], ro
         "add sp, sp, #2304",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
     )
 }
@@ -1111,6 +1123,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb_aes_cbc(state: *mut [u64; 38]
         "add sp, sp, #2304",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
     )
 }
@@ -1240,6 +1253,7 @@ pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds
         "ldr x23, [x23, #2224]",
         "add sp, sp, #2304",
         "ret",
+        ".p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )
 }

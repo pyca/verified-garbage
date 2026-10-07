@@ -9480,6 +9480,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p224_sign(out: *mut [u8; 56], d: *const
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P224_COMB = sym super::consts::VG_P224_COMB,
     )
 }
@@ -42777,6 +42778,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p224_verify(public: *const [u8; 57], di
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P224_COMB = sym super::consts::VG_P224_COMB,
     )
 }

@@ -1036,6 +1036,7 @@ pub(crate) unsafe extern "C" fn vg_rc4_init(key: *const u8, key_len: usize, ctx:
         "movz w0, #1, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2351,5 +2352,6 @@ pub(crate) unsafe extern "C" fn vg_rc4_apply(ctx: *mut [u8; 258], data: *mut u8,
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }

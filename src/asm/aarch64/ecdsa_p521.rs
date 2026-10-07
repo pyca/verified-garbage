@@ -26124,6 +26124,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p521_sign(out: *mut [u8; 132], d: *cons
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P521_COMB = sym super::consts::VG_P521_COMB,
     )
 }
@@ -112251,6 +112252,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p521_verify(public: *const [u8; 133], d
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P521_COMB = sym super::consts::VG_P521_COMB,
     )
 }

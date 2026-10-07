@@ -1748,6 +1748,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_f1600_sha3(state: *mut [u64; 25], scra
         "ldr q15, [x1, #112]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
     )
 }
 
@@ -5011,6 +5012,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_f1600(state: *mut [u64; 25], scratch: 
         "umov x28, v17.d[0]",
         "umov x30, v18.d[0]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -8549,6 +8551,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb(state: *mut [u64; 25], rate: us
         "ldr x30, [sp], #16",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -12087,6 +12090,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch(state: *mut [u64; 25], 
         "ldr x20, [x20, #520]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -12121,6 +12125,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad(state: *mut [u64; 25], rate: usize
         "ldr x30, [sp], #16",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -12155,6 +12160,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch(state: *mut [u64; 25], rat
         "bl {vg_keccak_f1600}",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -12234,6 +12240,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_squeeze(state: *mut [u64; 25], rate: u
         "ldr x30, [sp], #16",
         "add sp, sp, #640",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -12312,6 +12319,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch(state: *mut [u64; 25],
         "ldr x20, [x20, #520]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_keccak_f1600 = sym super::sha3::vg_keccak_f1600,
     )
 }
@@ -14324,6 +14332,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb_sha3(state: *mut [u64; 25], rat
         "add sp, sp, #640",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -16335,6 +16344,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_absorb_scratch_sha3(state: *mut [u64; 
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -16375,6 +16385,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad_sha3(state: *mut [u64; 25], rate: 
         "add sp, sp, #640",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -16415,6 +16426,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_pad_scratch_sha3(state: *mut [u64; 25]
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -16500,6 +16512,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_squeeze_sha3(state: *mut [u64; 25], ra
         "add sp, sp, #640",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }
@@ -16584,6 +16597,7 @@ pub(crate) unsafe extern "C" fn vg_keccak_squeeze_scratch_sha3(state: *mut [u64;
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_f1600_sha3 = sym super::sha3::vg_keccak_f1600_sha3,
     )
 }

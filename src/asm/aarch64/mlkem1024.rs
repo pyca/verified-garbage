@@ -201,6 +201,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_compress_encode(f: *const [u32; 256
         "cbnz x11, 23b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -402,6 +403,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decode_decompress(b: *const u8, len
         "cbnz x11, 23b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -442,6 +444,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> 
         "sub x0, x10, #1",
         "lsr x0, x0, #63",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1487,6 +1490,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *
         "ldr x27, [x28, #27704]",
         "ldr x28, [x28, #27712]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -2651,6 +2655,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *c
         "ldr x27, [x28, #30424]",
         "ldr x28, [x28, #30432]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -3986,6 +3991,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *
         "ldr x27, [x28, #30424]",
         "ldr x28, [x28, #30432]",
         "ret",
+        ".p2align 6",
         vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
         vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
         vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,
@@ -5052,6 +5058,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen_sha3(seed: *const [u8; 64], 
         "ldr x28, [x28, #27712]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -6222,6 +6229,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_sha3(ek: *const [u8; 1568], 
         "ldr x28, [x28, #30432]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -7563,6 +7571,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps_sha3(dk: *const [u8; 3168], 
         "ldr x28, [x28, #30432]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_mlkem1024_decode_decompress = sym super::mlkem1024::vg_mlkem1024_decode_decompress,
         vg_mlkem_ntt = sym super::mlkem::vg_mlkem_ntt,
         vg_mlkem_decode12 = sym super::mlkem::vg_mlkem_decode12,

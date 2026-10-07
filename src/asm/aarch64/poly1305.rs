@@ -28,6 +28,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_init(state: *mut [u64; 16], key: *co
         "str x2, [x0, #8]",
         "str x2, [x0, #16]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -128,6 +129,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_blocks(state: *mut [u64; 16], blocks
         "str x5, [x0, #8]",
         "str x6, [x0, #16]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -325,6 +327,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update(state: *mut [u64; 16], count:
         "str x6, [x0, #16]",
         "add sp, sp, #128",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1058,6 +1061,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_update_neon(state: *mut [u64; 16], c
         "str x6, [x0, #16]",
         "add sp, sp, #128",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1177,6 +1181,7 @@ pub(crate) unsafe extern "C" fn vg_poly1305_finalize(state: *mut [u64; 16], coun
         "str x5, [x3, #8]",
         "add sp, sp, #128",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1295,5 +1300,6 @@ pub(crate) unsafe extern "C" fn vg_poly1305_finalize_scratch(state: *mut [u64; 1
         "str x4, [x3, #0]",
         "str x5, [x3, #8]",
         "ret",
+        ".p2align 6",
     )
 }

@@ -6291,6 +6291,7 @@ pub(crate) unsafe extern "C" fn vg_argon2_compress(x: *const [u64; 128], y: *con
         "eor x8, x8, x9",
         "str x8, [x2, #1016]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -6459,6 +6460,7 @@ pub(crate) unsafe extern "C" fn vg_argon2_hprime(input: *const u8, input_len: us
         "ldr x30, [x24, #888]",
         "ldr x24, [x24, #880]",
         "ret",
+        ".p2align 6",
         vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch,
@@ -10254,6 +10256,7 @@ pub(crate) unsafe extern "C" fn vg_argon2(kind: u32, password: *const u8, passwo
         "ldr x20, [sp], #16",
         "ldr x19, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_blake2b_init = sym super::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym super::blake2b::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym super::blake2b::vg_blake2b_finalize_scratch,
