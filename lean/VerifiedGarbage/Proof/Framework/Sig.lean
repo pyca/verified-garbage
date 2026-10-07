@@ -237,6 +237,20 @@ theorem Sig.forall_mem_const_cons {b : Addr} {n k : Nat} {W R ts : List Region} 
         ∀ t ∈ ts, t.base.toNat + t.len ≤ 2 ^ k ∧ (∀ r ∈ W, t.Disjoint r) ∧ ∀ r ∈ R, t.Disjoint r :=
   List.forall_mem_cons
 
+/-- `Abi.constRegions`, a table at a time (for proofs that unfold it by hand). -/
+theorem Abi.constRegions_cons {f : String → Addr} {n : String} {w : List (BitVec 64)}
+    {cs : List (String × List (BitVec 64))} :
+    Abi.constRegions f ((n, w) :: cs) = ⟨f n, 8 * w.length⟩ :: Abi.constRegions f cs := (rfl)
+
+theorem Abi.constRegions_nil {f : String → Addr} : Abi.constRegions f [] = [] := (rfl)
+
+/-- A table's region's bound and its separation from the regions `W`, with its
+base and length as they are (see `Sig.map_const_cons`). -/
+theorem Sig.forall_mem_const_single {b : Addr} {n k : Nat} {W : List Region} :
+    (∀ t ∈ [(⟨b, n⟩ : Region)], t.base.toNat + t.len ≤ 2 ^ k ∧ ∀ r ∈ W, t.Disjoint r) ↔
+      b.toNat + n ≤ 2 ^ k ∧ ∀ r ∈ W, Region.Disjoint ⟨b, n⟩ r :=
+  List.forall_mem_singleton
+
 /-! ## Evaluation
 
 The signature and the calling convention are data: evaluating them (the
