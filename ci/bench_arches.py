@@ -82,7 +82,10 @@ that many of the benchmarks it runs (`shard` is `i/n`, empty for one):
 
 When only some benchmarks run, a configuration runs only if it can choose
 other implementations of them than the configurations before it: one that
-allows the same of the feature sets they choose by is left out. A benchmark
+allows the same of the feature sets they choose by is left out, and one
+allowing none of them runs as `none`, which measures the same code (and is
+not in `CPU_FEATURES` where an unrestricted run already measures each
+benchmark's baseline in some configuration). A benchmark
 chooses by the features of each of its `USES` modules' generated variants
 (a `_FEATURES` constant of `src/asm/<arch>/<module>.rs`) and by each feature
 its architecture detects that their Rust code, but its tests, names in quotes
@@ -132,7 +135,11 @@ PLATFORMS = {
 # runner with ADX never chooses; on AArch64,
 # ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
 # runner has the SHA512 extension, whose variants only ci.yml tests, under
-# SDE).
+# SDE). On x86-64 and AArch64 these also choose every benchmark's baseline
+# code (on x86-64, `aes,ssse3` all but AES's, which `avx,avx2,bmi1,bmi2,adx`
+# chooses; on AArch64, `neon` all but ChaCha20's and Poly1305's, which
+# `sha3` chooses), so neither lists `none`; on x86, only `none` chooses
+# AES-GCM's scalar code.
 CPU_FEATURES = {
     "x86_64": [
         "avx,avx2,bmi1,bmi2,adx",
@@ -151,9 +158,8 @@ CPU_FEATURES = {
         "aes,avx,avx2,pclmulqdq,ssse3,vaes,vpclmulqdq",
         "avx,avx512f",
         "avx,avx2,avx512f",
-        "none",
     ],
-    "aarch64": ["neon", "sha3", "none"],
+    "aarch64": ["neon", "sha3"],
     "x86": ["aes", "pclmulqdq,ssse3", "none"],
 }
 
@@ -873,7 +879,8 @@ def run_requirements(arch, modules, catalogs, revisions):
 
 def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
     """The matrix entries of `arch`: one per CPU feature configuration, but
-    with `reqs`, only the first of those allowing the same of them; each in
+    with `reqs`, only the first of those allowing the same of them (as
+    `none` if that is none of them); each in
     as many shards as `benchmarks` (by default, every registered one)
     needs."""
     if benchmarks is None:
@@ -884,10 +891,12 @@ def platforms(arch, modules=ALL, reqs=None, benchmarks=None):
         chosen = {}
         for features in configurations:
             allowed = allows(features, reqs)
-            # One allowing none of them is the one that names none.
-            if allowed not in chosen or (features == "none" and chosen[allowed]):
-                chosen[allowed] = features
-        configurations = [f for f in configurations if f in chosen.values()]
+            # One allowing none of them measures their baseline code, as
+            # `none` does, which (unlike a restriction naming features) no
+            # runner skips for lacking one.
+            chosen.setdefault(allowed, features if allowed or not features else "none")
+        kept = set(chosen.values())
+        configurations = [f for f in configurations if f in kept and f != "none"] + ["none"] * ("none" in kept)
     return [
         {
             "arch": arch,

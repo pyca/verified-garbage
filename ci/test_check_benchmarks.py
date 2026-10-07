@@ -197,6 +197,19 @@ class Selection(unittest.TestCase):
         self.assertEqual(self.configurations(rows, 'x86_64'), ['', 'avx,avx2,bmi1,bmi2', 'none'])
         self.assertEqual({r['modules'] for r in rows}, {'x448'})
 
+    def test_full_runs_measure_every_baseline(self):
+        # An architecture without `none` in `CPU_FEATURES` measures each
+        # benchmark's baseline code in another configuration (of the real
+        # tree, not the fixture's).
+        catalog = planner.bench_catalog()
+        for arch, configurations in planner.CPU_FEATURES.items():
+            if 'none' in configurations:
+                continue
+            for name, uses in catalog.items():
+                with self.subTest(arch=arch, benchmark=name):
+                    reqs = planner.requirements(arch, uses, [None])
+                    self.assertTrue(any(not planner.allows(c, reqs) for c in configurations))
+
     def test_features_listed_by_names_at_base_count(self):
         # Only the base has the variant needing ADX, as a list of names.
         self.files['src/asm/x86_64/x448.rs'] = asm(['bmi2'])

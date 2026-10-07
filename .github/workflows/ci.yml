@@ -505,9 +505,9 @@ jobs:
             # no runner or chip has without the other; AES-NI's and
             # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's,
             # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
-            # blocks in registers among them, and AES-OCB's through
-            # `Backend::AesNi`), which a runner with VAES and VPCLMULQDQ never
-            # chooses; and VAES's and
+            # blocks in registers among them), which a runner with VAES and
+            # VPCLMULQDQ never chooses (AES-OCB, with no VAES instance, takes
+            # its AES-NI one there too); and VAES's and
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
             # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
@@ -515,7 +515,7 @@ jobs:
             # AVX.
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
-              aes,ssse3 | aes_gcm aes_ocb cmac aes_ccm aes_siv zeroize cpu
+              aes,ssse3 | aes_gcm cmac aes_ccm aes_siv zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu
@@ -614,9 +614,11 @@ jobs:
               - | ed25519 rsa_pss message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # The runner has SVE2, so the unrestricted run tests the `_sve2`
           # instances; `neon` and `none` test ChaCha20's NEON and scalar ones,
-          # `sha3` and `none` the SHA-3 prototype and its scalar fallback (and
-          # the instances of ML-KEM, ML-DSA and Ed448 calling each),
-          # `none` deterministic ECDSA with the scalar SHA-256 and SHA-512
+          # `sha3` the SHA-3 prototype (and the instances of ML-KEM, ML-DSA and
+          # Ed448 calling it), whose scalar fallback the unrestricted run
+          # takes (FEAT_SHA3's Keccak is chosen only when `sha3` is named),
+          # `none` ML-KEM's and Ed448's choice of it on a CPU without FEAT_SHA3,
+          # deterministic ECDSA with the scalar SHA-256 and SHA-512
           # and AES-CCM with the scalar AES, and RSAES-PKCS1-v1_5 decryption
           # with the scalar SHA-256 (the unrestricted runs of the plain tests
           # take its `_sha256_sha2` instance), and the unrestricted run and
@@ -633,7 +635,7 @@ jobs:
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
               sha2,sha3 | rsa_oaep
-              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
+              none | aes_siv chacha20 mlkem ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:
