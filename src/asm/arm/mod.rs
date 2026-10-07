@@ -98,6 +98,9 @@ pub(crate) mod ed448;
 pub(crate) mod gcm;
 
 #[rustfmt::skip]
+pub(crate) mod gf448_r16;
+
+#[rustfmt::skip]
 pub(crate) mod hmac_md5;
 
 #[rustfmt::skip]
