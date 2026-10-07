@@ -80,6 +80,7 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p384.combConsts Spec.Ecdsa.Rfc697
     refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
       rw [p384_combConsts, Abi.constRegions_cons, Abi.constRegions_nil]
+      rfl
     · simp only [p384_combConsts, List.mem_singleton] at hc; subst hc; exact hheld
     · rw [p384_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
       refine ⟨hfit, fun r hr => ?_⟩
