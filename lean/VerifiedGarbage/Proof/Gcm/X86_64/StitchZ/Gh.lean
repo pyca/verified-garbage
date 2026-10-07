@@ -46,11 +46,11 @@ def ldInit : List Instr :=
 /-- The SSE block of the other loads' lane-wise instructions (`acc`), with
 `Y` added to the block if `y`. -/
 def ldAcc (y : Bool) : List Instr :=
-  [.xop (.bin .pshufb .xmm7 .xmm0)] ++ (if y then [.xop (.bin .pxor .xmm7 .xmm2)] else []) ++
-  [.xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x00), .xop (.bin .pxor .xmm8 .xmm11),
+  ([.xop (.bin .pshufb .xmm7 .xmm0)] : List Instr) ++ (if y then ([.xop (.bin .pxor .xmm7 .xmm2)] : List Instr) else ([] : List Instr)) ++
+  ([.xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x00), .xop (.bin .pxor .xmm8 .xmm11),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x11), .xop (.bin .pxor .xmm10 .xmm11),
    .xop (.bin .movdqa .xmm11 .xmm7), .xop (.pclmulqdq .xmm11 .xmm12 0x01), .xop (.pclmulqdq .xmm7 .xmm12 0x10),
-   .xop (.bin .pxor .xmm9 .xmm11), .xop (.bin .pxor .xmm9 .xmm7)]
+   .xop (.bin .pxor .xmm9 .xmm11), .xop (.bin .pxor .xmm9 .xmm7)] : List Instr)
 
 theorem ldInit_ok (t : State) :
     WP isa (.block ldInit) t fun t' =>

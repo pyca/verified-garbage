@@ -321,7 +321,7 @@ end Ctx
 /-! ## The frame's push -/
 
 /-- The registers the frame's push stores, with `e` words above the pointers. -/
-abbrev pushRs (e : Nat) : List Reg := List.replicate e .rax ++ [.rdi, .rsi, .rdx, .rcx] ++ List.replicate 23 .rax
+abbrev pushRs (e : Nat) : List Reg := List.replicate e .rax ++ ([.rdi, .rsi, .rdx, .rcx] : List Reg) ++ List.replicate 23 .rax
 
 theorem pushRs_length (e : Nat) : (pushRs e).length = 27 + e := by
   simp only [pushRs, List.length_append, List.length_replicate, List.length_cons, List.length_nil]; omega

@@ -62,10 +62,10 @@ abbrev initTail : List Instr :=
     .mov .edx (.reg .esi), .alu .add .ebp (imm scrO)]
 
 abbrev initMid : List Instr :=
-  unscr ++ [.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
-      .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] ++ zero4 tO ++
-      [.mov .eax (.reg .esi), .mov .ecx (.reg .ebx), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
-        .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1), .alu .add .ebp (imm scrO)]
+  unscr ++ ([.mov .eax (imm 0), .store (at_ .esi 240) .eax, .store (at_ .esi 244) .eax,
+      .store (at_ .esi 248) .eax, .store (at_ .esi 252) .eax] : List Instr) ++ zero4 tO ++
+      ([.mov .eax (.reg .esi), .mov .ecx (.reg .ebx), .mov .edx (.reg .ebp), .alu .add .edx (imm tO),
+        .mov .ebx (.reg .esi), .alu .add .ebx (imm 240), .mov .edi (imm 1), .alu .add .ebp (imm scrO)] : List Instr)
 
 theorem init_eq : init vg.callees = .seq (entry 3 (([.mov .esi (argOp 2)] : List Instr) ++
     (([] : List (Nat × Nat)).flatMap (fun p => keep p.1 p.2) ++ initTail)))

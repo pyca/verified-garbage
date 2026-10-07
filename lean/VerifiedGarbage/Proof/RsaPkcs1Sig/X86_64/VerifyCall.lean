@@ -56,9 +56,9 @@ def slotStores : List Instr :=
     .store (sp oH) .r8, .store (sp oD) .r9]
 
 def callArgs : List Instr :=
-  [.mov .rax (.mem (arg 1)), .mov .r10 (.mem (arg 3)), .mov .r11 (.mem (arg 4)),
+  ([.mov .rax (.mem (arg 1)), .mov .r10 (.mem (arg 3)), .mov .r11 (.mem (arg 4)),
     .store (sp 0) .rax, .store (sp 8) .rsi, .store (sp 16) .r10, .store (sp 24) .r11,
-    .mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx), .mov .rdx (.reg .rdi), .mov .rcx (.reg .rsi)] ++
+    .mov .r8 (.reg .rdx), .mov .r9 (.reg .rcx), .mov .rdx (.reg .rdi), .mov .rcx (.reg .rsi)] : List Instr) ++
   lea .rdi oEM1
 
 theorem pubArgs_eq : pubArgs = slotStores ++ callArgs := rfl
