@@ -279,15 +279,15 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
       WP isa (WinCfg.jacPair K) st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
     intro j st hj hj' ⟨S, b, E, I, J⟩
     simp only [WinCfg.jacPair, WinCfg.double, dblJChoice_eq]
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n == 4)) a2 w2.1 w2.2 I (by
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n == 4 || K.M.n == 9)) a2 w2.1 w2.2 I (by
       dsimp [V]; rcb_sub)) fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
     have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
-    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJChoiceN_run (K.M.n == 4) _))
+    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJChoiceN_run (K.M.n == 4 || K.M.n == 9) _))
     rw [hC.double hP] at J₁'
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n == 4)) a3 w3.1 w3.2 I₁' (by
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n == 4 || K.M.n == 9)) a3 w3.1 w3.2 I₁' (by
       dsimp [V]; rcb_sub)) fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
     have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
-    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJChoiceN_run (K.M.n == 4) _))
+    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJChoiceN_run (K.M.n == 4 || K.M.n == 9) _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
       have hj12 : j = 1 ∨ j = 2 := by omega

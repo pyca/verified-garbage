@@ -123,7 +123,7 @@ def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 /-- For four-limb fields, form `2YZ` directly: squaring and multiplication
 use the same Montgomery kernel, so this saves two field subtractions. -/
 def double (p o : Pt) : List FOp :=
-  if K.M.n == 4 then dblJMul K.S p o else dblJ K.S p o
+  if K.M.n == 4 || K.M.n == 9 then dblJMul K.S p o else dblJ K.S p o
 
 /-- A pair of Jacobian doublings, with a public count in the bits above the
 window index in `rbx`. The window index is less than 4096. -/
