@@ -125,8 +125,8 @@ theorem writeW8_eq (m : Mem) (a : Addr) (b : Byte) : m.writeW a b = writeBytes m
 
 /-- The byte loop's body. -/
 abbrev xor1Body (g : Bool) : List Instr :=
-  [.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] ++
-    (if g then [.store8 dstB .rax] else []) ++ [.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)]
+  ([.movzx8 .rax srcB, .movzx8 .r9 kB, .alu .xor .rax (.reg .r9), .store8 srcB .rax] : List Instr) ++
+    (if g then ([.store8 dstB .rax] : List Instr) else ([] : List Instr)) ++ ([.alu .add .r10 (imm 1), .alu .cmp .r10 (.reg .rcx)] : List Instr)
 
 theorem xor1Step_ok (g : Bool) (s : State) {S K D : Addr} {i n : Nat} (hs : s.gpr .rsi = S)
     (hk : s.gpr .rdx = K) (hd : s.gpr .rdi = D)

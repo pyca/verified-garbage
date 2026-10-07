@@ -98,12 +98,12 @@ theorem tentry_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T :
   dsimp only [TCombCfg.toComb] at hnd
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons,
     List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
-  have xy := hL.comb.apart₂ (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have xz := hL.comb.apart₂ (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have yz := hL.comb.apart₂ (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
+  have xy := hL.comb.apart₂ (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have xz := hL.comb.apart₂ (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have yz := hL.comb.apart₂ (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
+  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)
   dsimp only [TCombCfg.toComb] at xy xz yz yneg xneg zneg
   have hexy := hL.exy
   have hEx := hle K.E.x (by tcomb_mem)
