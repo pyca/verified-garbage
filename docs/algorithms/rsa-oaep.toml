@@ -1,7 +1,7 @@
 name = "RSAES-OAEP"
 family = "RSA"
 specs = ["RsaOaep", "Mgf1"]
-modules = ["src/rsa_oaep.rs"]
+modules = ["src/rsa_oaep/mod.rs"]
 asm = [
   "rsa_oaep_sha1_mgf1_sha1",
   "rsa_oaep_sha224_mgf1_sha1",
