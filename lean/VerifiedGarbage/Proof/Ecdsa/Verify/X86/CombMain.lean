@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
 
 namespace VG.Proof.Ecdsa.Verify.X86
@@ -41,7 +42,7 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (step_rep hC hPc ha hb hQ)
     (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
     fun s₃ hP => ?_
-  refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by

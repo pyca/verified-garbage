@@ -123,6 +123,43 @@ def final : Prog isa :=
     .block (Mont.X86.sub c.MN' c.wk (c.sl W) (c.sl XN) (c.sl RM')),
     .block (c.checkNonzero (c.sl RZ) ++ Impl.Ecdh.X86.Cfg.checkZero c (c.sl W) ++ finish c)]
 
+/-- The conversion factor, the order in field Montgomery form, and the
+upper bound on the signature scalar for its second possible lift. -/
+def projectivePrepare : List Instr :=
+  setConst c.n (c.sl XM) (c.R * c.R % c.C.p) ++
+  setConst c.n (c.sl ACC) (c.mont c.C.n) ++
+  setConst c.n (c.sl MN) (c.C.p - c.C.n)
+
+/-- The two differences, `X - rZ` and `X - (r+n)Z`, in field Montgomery form. -/
+def projectiveOps (sl : Nat → Nat) : List FOp :=
+  [.mul (sl X) (sl XM) (sl RZ), .sub (sl W) (sl RX) (sl X),
+    .add (sl XM) (sl XM) (sl ACC), .mul (sl X) (sl XM) (sl RZ),
+    .sub (sl XN) (sl RX) (sl X)]
+
+/-- Accept the first equality, or the second when `r+n < p`, together with
+all earlier validity checks and `Z ≠ 0`. -/
+def projectiveMatch : List Instr :=
+  c.nonzero (c.sl W) ++ [.alu .xor .edx (.imm (-1)), .mov .ebx (.reg .edx)] ++
+  c.ltN (c.sl K) ++
+  c.nonzero (c.sl XN) ++
+  [.alu .xor .edx (.imm (-1)), .alu .and .edx (.reg .eax), .alu .or .edx (.reg .ebx)]
+
+def projectiveChecks : List Instr :=
+  projectiveMatch c ++ c.andFlag ++ c.checkNonzero (c.sl RZ) ++ finish c
+
+/-- ECDSA's final check using projective coordinates. The caller establishes
+`n < p ≤ 2n`, so `r` and `r+n` exhaust the possible affine coordinates. -/
+def projectiveFinal : Prog isa :=
+  .seq (.seq (.block (projectivePrepare c))
+    (.seq (mul c.MP' c.wk (c.sl XM) (c.sl K) (c.sl XM))
+      (fprog c.MP' c.wk (projectiveOps c.sl)))) (.block (projectiveChecks c))
+
+/-- P-256 compares projective coordinates directly; the other curves retain
+an affine conversion until the direct path has been benchmarked for them. -/
+def tail : Prog isa :=
+  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  else .seq (pow c.powP c.wk) (final c)
+
 /-- `[u]G + [v]Q`, into `R`, from the tables of bits of `u` and `v`. -/
 def points : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (ladder c.ladderCfg c.wk) <|
@@ -157,8 +194,7 @@ def combMid : Prog isa :=
 
 /-- Verification body using the comb for its fixed-base multiplication. -/
 def verifyCombBody : Prog isa :=
-  .seq (combFront c) <| .seq (combMid c) <| .seq (pointsComb c) <|
-  .seq (pow c.powP c.wk) (final c)
+  .seq (combFront c) <| .seq (combMid c) <| .seq (pointsComb c) (tail c)
 
 /-- Acquire the static table before loading the cdecl arguments. -/
 def verifyComb : Prog isa := .seq c.tableAddr (verifyCombBody c)
