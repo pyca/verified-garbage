@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTree
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowLoadTiming
@@ -23,7 +25,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
     .addImm .x .x16 .x0 K.tbl,.add .x .x16 .x16 .x17])
   fetchWords : RegCT [.x0,.x16] (.block ((List.range 12).flatMap fun i =>
     [.ldr .x .x4 .x16 (8*i),st .x4 (K.E.x+8*i)]))
-  double : FieldCT (fprogB K.M (dblJMul K.S K.E K.D))
+  double : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S K.E K.D)
   add : JacAddChecks K K.R K.P K.D
   copyStep : FieldCT (.block (copyPt K.M.n K.R K.D))
   advance : RegCT [.x19,.x20] (.block [.addImm .x .x20 .x20 96,decCounter])
@@ -170,7 +172,7 @@ structure JacTreeChecks (K : WinCfg) : Prop where
       have even : m%2=1 → RelCT isa
           (fun u v => FieldPair K.M base size C.p (·∈jacWinSlots K) (jacTreeLive K m) E u v ∧
             u.gpr .x19=BitVec.ofNat 64 (16-m) ∧ v.gpr .x19=BitVec.ofNat 64 (16-m))
-          (.seq (.block (Jacobian.jacTreeFetch K 16)) (fprogB K.M (dblJMul K.S K.E K.D)))
+          (.seq (.block (Jacobian.jacTreeFetch K 16)) (VG.Impl.P256.VerifyDouble.double K.M K.S K.E K.D))
           (fun u v => ∃ E', FieldPair K.M base size C.p (·∈jacWinSlots K)
             ([K.E.x,K.E.y,K.E.z,K.D.x,K.D.y,K.D.z]++jacTreeLive K m) E' u v) := by
         intro ho
@@ -183,10 +185,8 @@ structure JacTreeChecks (K : WinCfg) : Prop where
           intro x hx
           have a := pv K.S.a (by simp [rcbR]); have b := pv K.S.b3 (by simp [rcbR])
           simp only [rcbR,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
-        have de := dblJChoice_eq true K.S K.E K.D
-        have d := ofN_relCT (base:=base) (E:=e) hL.lay hAl hm (dblJChoiceN_ok true)
-          old.rcbApart_jac.2.1 dslots dv (by rw [←de]; exact hc.double)
-        rw [←de] at d
+        have d := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=e) hL.lay hAl hm
+          old.rcbApart_jac.2.1 dslots dv hc.double
         exact d.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (by
           intro x hx
           simp only [jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind)⟩)

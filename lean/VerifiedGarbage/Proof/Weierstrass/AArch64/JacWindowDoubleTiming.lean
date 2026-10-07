@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
 
@@ -12,17 +14,14 @@ theorem jacDoubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
     (hSl : ∀ x∈rcbW S o ++ rcbR S p p, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p, x∈V)
-    (hct : FieldCT (fprogB M (dblJMul S p o))) :
-    RelCT isa (FieldPair M base size m Sl V E) (fprogB M (dblJMul S p o))
+    (hct : FieldCT (VG.Impl.P256.VerifyDouble.double M S p o)) :
+    RelCT isa (FieldPair M base size m Sl V E) (VG.Impl.P256.VerifyDouble.double M S p o)
       (FieldPair M base size m Sl V (runOps (dblJMul S p o) E)) := by
-  have he : dblJMul S p o = ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
-  rw [he] at hct ⊢
-  exact (ofN_relCT hL hAl hm (dblJChoiceN_ok true) hA hSl hV hct).mono
-    (fun _ _ h => h) (fun _ _ h => h.sub (fun _ hx => List.mem_append_right _ hx))
+  exact Forward.field_relCT Forward.Production.cases hL hAl hm hA hSl hV hct
 
 structure JacDoubleChecks (K : WinCfg) : Prop where
-  rd : FieldCT (fprogB K.M (dblJMul K.S K.R K.D))
-  dr : FieldCT (fprogB K.M (dblJMul K.S K.D K.R))
+  rd : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
+  dr : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)
   copy : FieldCT (.block (copyPt K.M.n K.R K.D))
 
 /-- Five public doubles preserve a common field environment. -/
@@ -48,11 +47,11 @@ theorem jacFive_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     (old.rcbApart_D (Or.inl rfl)) (hs _ _ (Or.inl rfl) (Or.inr rfl)) (hv _ (Or.inl rfl)) hc.rd
   have dr := fun (E : Nat → Fin m) => jacDoubleField_relCT (base := base) (E := E) hL.lay hAl hm
     hL.rcbApart_DR (hs _ _ (Or.inr rfl) (Or.inl rfl)) (hv _ (Or.inr rfl)) hc.dr
-  change RelCT isa _ (.seq (fprogB K.M (dblJMul K.S K.R K.D))
-    (.seq (fprogB K.M (dblJMul K.S K.D K.R))
-    (.seq (fprogB K.M (dblJMul K.S K.R K.D))
-    (.seq (fprogB K.M (dblJMul K.S K.D K.R))
-    (.seq (fprogB K.M (dblJMul K.S K.R K.D))
+  change RelCT isa _ (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
     (.seq (.block (copyPt 4 K.R K.D)) (.block []))))))) _
   apply RelCT.seq (rd E)
   apply RelCT.seq (dr _)

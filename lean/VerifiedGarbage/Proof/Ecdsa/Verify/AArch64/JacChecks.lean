@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowStepTiming
@@ -34,7 +35,7 @@ theorem jacComb_checks : JacCombChecks p256.combCfg where
     init := by jac_field_ct
     head := by jac_field_ct
     tail := by jac_field_ct
-    double := by jac_field_ct
+    double := Forward.rd_ct
     infinity := by jac_field_ct }
   copy := by jac_field_ct
 
@@ -44,6 +45,23 @@ macro "jac_reg_ct" rs:term : tactic => `(tactic|
   exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs $rs)
     (fun _ _ _ _ h => h) (by taint_decide))
 
+private def treeArithmeticCode :=
+  Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16
+materialize_value treeArithmeticCode
+
+private theorem treeArithmetic_keeps : ∀ r∈[Reg.x19,Reg.x20],
+    ∀ i∈instrs (Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16),
+      dstOf i≠some r := by
+  change ∀ r∈[Reg.x19,Reg.x20],∀ i∈instrs treeArithmeticCode,dstOf i≠some r
+  rw [treeArithmeticCode.lit_eq]
+  have h : (instrs treeArithmeticCode.lit).all (fun i => decide (dstOf i≠some .x19 ∧ dstOf i≠some .x20))=true := by decide +kernel
+  intro r hr i hi
+  have hh := of_decide_eq_true (List.all_eq_true.mp h i hi)
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hh.1
+  · exact hh.2
+
 theorem jacTree_checks : JacTreeChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
   copyInit := by jac_field_ct
   pointer := by jac_field_ct
@@ -52,7 +70,7 @@ theorem jacTree_checks : JacTreeChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinC
   parity := by jac_reg_ct [.x19]
   fetchAddress := by jac_reg_ct [.x0,.x19]
   fetchWords := by jac_reg_ct [.x0,.x16]
-  double := by jac_field_ct
+  double := Forward.ed_ct
   add := {
     zero := by
       intro a ha
@@ -62,20 +80,11 @@ theorem jacTree_checks : JacTreeChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinC
     copyQ := by jac_field_ct
     head := by jac_field_ct
     tail := by jac_field_ct
-    double := by jac_field_ct
+    double := Forward.rd_ct
     infinity := by jac_field_ct }
   copyStep := by jac_field_ct
   advance := by jac_reg_ct [.x19,.x20]
-  keepArithmetic := by
-    intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-    rcases hr with rfl | rfl
-    · have h : (instrs (Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16)).all
-          (fun i => decide (dstOf i≠some .x19))=true := by decide +kernel
-      simpa only [decide_eq_true_eq] using List.all_eq_true.mp h
-    · have h : (instrs (Jacobian.jacTreeArithmetic (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) 16)).all
-          (fun i => decide (dstOf i≠some .x20))=true := by decide +kernel
-      simpa only [decide_eq_true_eq] using List.all_eq_true.mp h
+  keepArithmetic := treeArithmetic_keeps
 
 theorem jacTree_copy_preserves : ∀ r∈[Reg.x19,Reg.x20],
     ∀ i∈instrs (.block (VG.Impl.Weierstrass.AArch64.copyPt (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256).M.n
@@ -84,8 +93,8 @@ theorem jacTree_copy_preserves : ∀ r∈[Reg.x19,Reg.x20],
 
 theorem jacStep_checks : JacStepChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinCfg p256) where
   double := {
-    rd := by jac_field_ct
-    dr := by jac_field_ct
+    rd := Forward.rd_ct
+    dr := Forward.dr_ct
     copy := by jac_field_ct }
   digit := {
     entry := {
@@ -100,7 +109,7 @@ theorem jacStep_checks : JacStepChecks (VG.Impl.Ecdsa.Verify.AArch64.Cfg.jacWinC
       copyQ := by jac_field_ct
       head := by jac_field_ct
       tail := by jac_field_ct
-      double := by jac_field_ct
+      double := Forward.rd_ct
       infinity := by jac_field_ct }
     copy := by jac_field_ct
     digit := by jac_reg_ct [.x0,.x19] }

@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTiming
 
 /-! Exceptional branches on public Jacobian coordinates preserve a shared,
@@ -67,7 +69,7 @@ structure JacAddChecks (K : WinCfg) (p q o : Pt) : Prop where
   copyQ : FieldCT (.block (copyPt K.M.n o q))
   head : FieldCT (fprogB K.M (jacHead K.S p q))
   tail : FieldCT (fprogB K.M (jacTail K.S p q o))
-  double : FieldCT (fprogB K.M (dblJMul K.S p o))
+  double : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S p o)
   infinity : FieldCT (.block (Jacobian.infinity K o))
 
 /-- Numbered field arithmetic preserves an exact environment in both runs. -/
@@ -144,9 +146,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacHead K.S p q) V :=
             fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-          have he := dblJChoice_eq true K.S p o
-          have hd := ofN_relCT (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hm (dblJChoiceN_ok true) hdA hdSl hv (by rw [←he]; exact hc.double)
-          rw [←he] at hd
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hm hdA hdSl hv hc.double
           exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
           exact (infinity_relCT hL hAl os hOne hc.infinity).mono

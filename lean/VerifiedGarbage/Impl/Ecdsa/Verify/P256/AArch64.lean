@@ -8,6 +8,6 @@ namespace VG.Impl.Ecdsa.Verify.AArch64
 open VG.AArch64
 
 /-- `vg_ecdsa_p256_verify`. -/
-def verifyP256 : Prog isa := Cfg.jacVerify Impl.Ecdsa.AArch64.p256
+def verifyP256 : Prog isa := Cfg.nafVerify Impl.Ecdsa.AArch64.p256
 
 end VG.Impl.Ecdsa.Verify.AArch64

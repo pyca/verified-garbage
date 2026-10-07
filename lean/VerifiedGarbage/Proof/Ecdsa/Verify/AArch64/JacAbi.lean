@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacMain
+import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafMain
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
@@ -22,7 +22,7 @@ theorem jacVerify_a64 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.A
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (s : State) (hs : verifyAArch64.pre s) :
     ∃ t s', Exec isa verifyP256 s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
-  obtain ⟨t,s',he,hsv,hpost⟩ := jacVerify_ok (p256_ok hI) (by decide) hL hT (jacPre_of hs)
+  obtain ⟨t,s',he,hsv,hpost⟩ := nafVerify_ok (p256_ok hI) (by decide) hL hT (jacPre_of hs)
   exact ⟨t,s',he,abiPreserved_of he jacVerify_noCalls jacVerify_untouched jacVerify_keepsV hsv,hpost⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64

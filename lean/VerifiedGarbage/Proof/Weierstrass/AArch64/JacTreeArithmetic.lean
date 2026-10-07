@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTreeFetch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowInvariant
@@ -84,7 +85,7 @@ theorem jacTreeArithmetic_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
       · exact List.mem_append_right _ (hV _ (by simp [rcbR]))
       · exact List.mem_append_right _ (hV _ (by simp [rcbR]))
       all_goals simp
-    refine WP.mono (jacDouble_ok hL.lay hAl hm hC ha old.rcbApart_jac.2.1 ds iv dv
+    refine WP.mono (Forward.double_ok Forward.Production.cases hL.lay hAl hm hC ha old.rcbApart_jac.2.1 ds iv dv
       (hC.onCurve_mul hP _) jv) fun t ⟨kd,it,jt⟩ => ⟨_,ku.trans ((kf.mono se).trans (kd.mono sw)),it.sub ?_,?_⟩
     · intro x hx
       simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
