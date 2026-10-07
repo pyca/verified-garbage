@@ -24,9 +24,10 @@ is analysed in full.
 
 ECDH and verification both run ECDH's window method, whose table of `[1 … 8]P`
 (seven complete additions) and loop are each more than one check can analyse
-along with the rest: they have summaries in both domains, `taintS` for ECDH
-and `taintSym` for verification. The table's needs only `rdi` and `rsi`
-public (the loop's counter `rbx` is set after it).
+along with the rest: they have summaries in `taintS`, with what ECDH has
+public there (`rdi` and `rsi`, and the loop's counter `rbx`, which is set
+after the table) and with what verification's code after its comb has
+(`rdi`, and the counter: `VerifyChecks.after`).
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -68,7 +69,11 @@ def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi]
 
 taint_summary winBuildSum : taintS τB winBuild
 taint_summary winLoopSum : taintS τL winLoop
-taint_summary winBuildSymSum : (taintSym ["VG_P521_COMB"]) τB winBuild
-taint_summary winLoopSymSum : (taintSym ["VG_P521_COMB"]) τL winLoop
+/-- What is public at the table and the loop in verification. -/
+def τV : VG.X86_64.Taint.T := Taint.ofRegs [.rdi]
+def τVL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx]
+
+taint_summary winBuildVSum : taintS τV winBuild
+taint_summary winLoopVSum : taintS τVL winLoop
 
 end VG.Proof.P521.X86_64

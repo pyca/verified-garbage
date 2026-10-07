@@ -26,12 +26,13 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    up to nine words, with `b R mod p` set again in ECDH's slot of it), or
    its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
    complete addition, into `R`;
-6. for P-256, compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`;
-   other curves invert `Z` and compare the affine x-coordinate modulo `n`.
+6. for a curve with `pubVerify` (P-256 and P-521, where `n < p ≤ 2n`),
+   compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`; other curves
+   invert `Z` and compare the affine x-coordinate modulo `n`.
    Reject `Z = 0` and return the combined validity flag as 0 or 1.
 
-Everything is computed whatever the flag. P-256 directly indexes the fixed-base
-table using the public verification scalar. The shared contract declares
+Everything is computed whatever the flag. A curve with `pubVerify` directly
+indexes the fixed-base table using the public verification scalar. The shared contract declares
 the public key, digest and signature public; secret signing scalars continue
 to use constant-time table scans.
 -/
@@ -144,9 +145,10 @@ def projectiveFinal : Prog isa :=
     (.seq (.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
       (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- P-256 has at most two possible field representatives of `x mod n`. -/
+/-- With `n < p ≤ 2n` (P-256, P-521), `x mod n` has at most two field
+representatives. -/
 def tail : Prog isa :=
-  if c.C.len = 32 ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
+  if c.pubVerify = true ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
   else .seq c.pPow (final c)
 
 /-- `[v]Q`, into `R`: for up to nine words, `b R mod p` to ECDH's `BP` (the
@@ -161,7 +163,7 @@ def mulV : Prog isa :=
 
 /-- `[u]G + [v]Q`, into `R`, from `u` and `v`. -/
 def points : Prog isa :=
-  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul (c.C.len == 32)) <| .seq (.block (save c)) <|
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (c.gMul c.pubVerify) <| .seq (.block (save c)) <|
   .seq (mulV c) (sum c)
 
 /-- Everything after the checks of the key. -/
