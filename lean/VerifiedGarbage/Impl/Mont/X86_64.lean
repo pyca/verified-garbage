@@ -485,15 +485,23 @@ def xWin (k : Nat) : List Reg := (List.range 9).map fun j => xAcc (k + j)
 /-- `mov eax, 0`, `adox t, rax`: the carry OF added into `t`. -/
 def xTail (t : Reg) : List Instr := [.mov32 .rax (.imm 0), .adox t (.reg .rax)]
 
-/-- Row `i` of `mulPX o a b`: `rdx = a_i`, both carries cleared
-(`xor eax, eax`), `t += a_i [b]` with the first product's word `i` stored at
-`[tmp + 8i]` once final and its register cleared for word `i + 9`, then the
-eight other products (`maddSteps`), and the carry OF into word `i + 9`. -/
+/-- The last product of a row, `rdx · src`: its low half added at `x`
+through OF (`adox`), its high half into `y` (`mulx`, whatever `y` held),
+and both carries added into `y` from `rax = 0`. -/
+def xLast (x y : Reg) (src : Src) : List Instr :=
+  [.mulx y .rax src, .adox x (.reg .rax), .mov32 .rax (.imm 0), .adcx y (.reg .rax),
+    .adox y (.reg .rax)]
+
+/-- Row `i ≥ 1` of `mulPX o a b`, both carries clear (as the row before
+leaves them): `rdx = a_i`, `t += a_i [b]` with the first product's word `i`
+stored at `[tmp + 8i]` once final, the seven next products (`maddSteps`),
+and the last (`xLast`), whose high half and the carries go to word `i + 9`
+in the register word `i` left; the carries out are clear. -/
 def xRow (M : Mod) (a b i : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc (a + 8 * i))), .alu32 .xor .rax (.reg .rax)] ++
+  [.mov .rdx (.mem (sc (a + 8 * i)))] ++
     madd (xAcc i) (xAcc (i + 1)) (.mem (sc b)) ++
-    [.store (sc (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0)] ++
-    maddSteps 8 (xWin (i + 1)) (b + 8) ++ xTail (xAcc (i + 9))
+    [.store (sc (M.tmp + 8 * i)) (xAcc i)] ++
+    maddSteps 7 (xWin (i + 1)) (b + 8) ++ xLast (xAcc (i + 8)) (xAcc (i + 9)) (.mem (sc (b + 64)))
 
 /-- `k` products `rdx · [d]`, `rdx · [d + 8]`, … into the words `j … j + k`
 of the accumulator (`xAcc`), whatever those held but word `j`: each
@@ -507,10 +515,10 @@ def mulAccs : Nat → Nat → Nat → List Instr
 /-- Row 0 of `mulPX o a b`, before the accumulator holds anything: `rdx = a_0`,
 CF cleared (`xor eax, eax`), `a_0 b_0`'s low half stored at `[tmp]` and its
 high half into word 1, the eight other products (`mulAccs`), and the carry
-CF into word 9. -/
+CF into word 9 (`adcx` from `rax = 0`), which leaves both carries clear. -/
 def xRow0 (M : Mod) (a b : Nat) : List Instr :=
   [.mov .rdx (.mem (sc a)), .alu32 .xor .rax (.reg .rax), .mulx (xAcc 1) .rax (.mem (sc b)),
-    .store (sc M.tmp) .rax] ++ mulAccs 8 1 (b + 8) ++ [.alu .adc (xAcc 9) (.imm 0)]
+    .store (sc M.tmp) .rax] ++ mulAccs 8 1 (b + 8) ++ [.mov32 .rax (.imm 0), .adcx (xAcc 9) (.reg .rax)]
 
 /-- Row `i` of `mulPX o a b`: `xRow0` for the first, else `xRow`. -/
 def xRowV (M : Mod) (a b i : Nat) : List Instr := if i = 0 then xRow0 M a b else xRow M a b i
@@ -543,8 +551,10 @@ def xCanon (o : Nat) : List Instr :=
 `b`), with BMI2 and ADX: the product `a b` by rows (operand scanning,
 `xRowV`): the first's products into nine registers through one carry chain
 (`xRow0`), each later one's added through the two (`adox`, `adcx`, `xRow`),
-each row's low word stored in the temporary area; then the reduction (`xRed`), which leaves `(a b + U p) / 2⁵⁷⁶ < 2p`, plus
-one, in the registers; then `xCanon`, which reduces it below `p` into `[o]`. -/
+each row's low word stored in the temporary area, every row leaving both
+carries clear for the next; then the reduction (`xRed`), which leaves
+`(a b + U p) / 2⁵⁷⁶ < 2p`, plus one, in the registers; then `xCanon`, which
+reduces it below `p` into `[o]`. -/
 def mulPX (M : Mod) (o a b : Nat) : List Instr :=
   (List.range 9).flatMap (xRowV M a b) ++ xRed M ++ xCanon o
 
@@ -557,21 +567,26 @@ and the squares added in one pass (`sDiag`: CF doubles, OF adds), then
 /-- The registers of row `i < 8` of `sqrPX`'s products: words `2i + 1 … i + 9`. -/
 def sWin (i : Nat) : List Reg := (List.range (9 - i)).map fun j => xAcc (2 * i + 1 + j)
 
-/-- Row `i < 8` of `sqrPX`'s products of two different words: word `i`, final,
-stored at `[tmp + 8i]` and its register cleared for word `i + 9`; `rdx = a_i`,
-both carries cleared, `t += a_i [a + 8 (i + 1)]` (`8 - i` products into words
-`2i + 1 … i + 9`), and the carry OF into word `i + 9`. -/
+/-- Row `1 ≤ i < 8` of `sqrPX`'s products of two different words, both
+carries clear (as the row before leaves them): word `i`, final, stored at
+`[tmp + 8i]`; `rdx = a_i`, `t += a_i [a + 8 (i + 1)]` (`8 - i` products into
+words `2i + 1 … i + 9`, the last by `xLast`, whose high half and the carries
+go to word `i + 9` in the register word `i` left); the carries out are
+clear. -/
 def sRow (M : Mod) (a i : Nat) : List Instr :=
-  [.store (sc (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0), .mov .rdx (.mem (sc (a + 8 * i))),
-    .alu32 .xor .rax (.reg .rax)] ++ maddSteps (8 - i) (sWin i) (a + 8 * (i + 1)) ++ xTail (xAcc (i + 9))
+  [.store (sc (M.tmp + 8 * i)) (xAcc i), .mov .rdx (.mem (sc (a + 8 * i)))] ++
+    maddSteps (7 - i) (sWin i) (a + 8 * (i + 1)) ++
+    xLast (xAcc (i + 8)) (xAcc (i + 9)) (.mem (sc (a + 64)))
 
 /-- Row 0 of `sqrPX`'s products of two different words, before the
 accumulator holds anything: word 0, zero, stored at `[tmp]` (from `rax`,
 cleared with CF), `rdx = a_0`, `a_0 a_1` into words 1 and 2, the seven other
-products (`mulAccs`), and the carry CF into word 9. -/
+products (`mulAccs`), and the carry CF into word 9 (`adcx` from `rax = 0`),
+which leaves both carries clear. -/
 def sRow0 (M : Mod) (a : Nat) : List Instr :=
   [.alu32 .xor .rax (.reg .rax), .store (sc M.tmp) .rax, .mov .rdx (.mem (sc a)),
-    .mulx (xAcc 2) (xAcc 1) (.mem (sc (a + 8)))] ++ mulAccs 7 2 (a + 16) ++ [.alu .adc (xAcc 9) (.imm 0)]
+    .mulx (xAcc 2) (xAcc 1) (.mem (sc (a + 8)))] ++ mulAccs 7 2 (a + 16) ++
+    [.mov32 .rax (.imm 0), .adcx (xAcc 9) (.reg .rax)]
 
 /-- Row `i` of `sqrPX`'s products: `sRow0` for the first, else `sRow`. -/
 def sRowV (M : Mod) (a i : Nat) : List Instr := if i = 0 then sRow0 M a else sRow M a i
