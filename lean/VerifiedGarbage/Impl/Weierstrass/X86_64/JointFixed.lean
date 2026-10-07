@@ -4,15 +4,21 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 namespace VG.Impl.Weierstrass.X86_64.Joint
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 
-/-- The existing affine table has 64-byte entries for consecutive multiples. -/
-def fixedAddress (tsym : String) : List Instr :=
-  [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),.shift .shl .rax 6,
-   .leaSym .rdx tsym,.alu .add .rdx (.reg .rax)]
+/-- `rax = (a - 1) 16 n` for the magnitude `a` in `r8`: a shift for four
+words, else a product through `rcx` and `rdx`. -/
+def fixedOffset (n : Nat) : List Instr :=
+  if n = 4 then [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),.shift .shl .rax 6]
+  else [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),
+    .mov32 .rcx (.imm (BitVec.ofNat 32 (16*n))),.mul .rcx]
+
+/-- The existing affine table has `16 n`-byte entries for consecutive multiples. -/
+def fixedAddress (n : Nat) (tsym : String) : List Instr :=
+  fixedOffset n ++ [.leaSym .rdx tsym,.alu .add .rdx (.reg .rax)]
 
 def fixedLoad (K : WinCfg) (tsym : String) : List Instr :=
-  fixedAddress tsym ++
-  Naf.copyPieces 4 (fun i => tblAt (16*i)) (fun i => sc (K.E.x+16*i)) ++
-  setConst 4 K.E.z K.one
+  fixedAddress K.M.n tsym ++
+  Naf.copyPieces K.M.n (fun i => tblAt (16*i)) (fun i => sc (K.E.x+16*i)) ++
+  setConst K.M.n K.E.z K.one
 
 def fixedEntry (K : WinCfg) (tsym : String) : Prog isa :=
   .seq (.block [.alu .cmp .r8 (.imm 128)]) <|

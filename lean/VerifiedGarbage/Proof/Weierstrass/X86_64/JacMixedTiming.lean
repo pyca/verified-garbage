@@ -18,7 +18,7 @@ structure JacMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem jacMixedForward_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : K.M.n=4) (hL : Lay K.M size Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl)
     (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt}
     (hc : JacMixedChecks K p q o) (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o++rcbR K.S p q,Sl x)
@@ -43,7 +43,7 @@ theorem jacMixedForward_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero 
     apply RelCT.seq (fieldProgram_relCT hc.init (fun s hi =>
       WP.mono (jacMixedInit_ok hL hSl hi hV) (fun _ ht => ht.2)))
     apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
-      WP.mono (jacMixedForwardHead_ok hn hL hm hA hSl hi hV) (fun _ ht => ht.2.1)))
+      WP.mono (jacMixedForwardHead_ok hL hm hA hSl hi hV) (fun _ ht => ht.2.1)))
     have oldV : ∀ x∈V,x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
       fun x hx => (mem_validAfter _ _).mpr (Or.inl (by simp [hx]))
     have subV : ∀ x∈[o.x,o.y,o.z]++V,x∈[o.x,o.y,o.z]++validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) := by
@@ -64,14 +64,14 @@ theorem jacMixedForward_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero 
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        exact (doubleField_relCT hn hL hm hdSl hdV hc.double).mono
+        exact (doubleField_relCT hL hm hdSl hdV hc.double).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL os hOne hc.infinity).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
     · intro _
       exact (fieldProgram_relCT hc.tail (fun s hi =>
-        WP.mono (jacMixedForwardTail_ok hn hL hm hA hSl hi hV) (fun _ ht => ht.2.1))).mono
+        WP.mono (jacMixedForwardTail_ok hL hm hA hSl hi hV) (fun _ ht => ht.2.1))).mono
         (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
 end VG.Proof.Weierstrass.X86_64

@@ -7,7 +7,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
 
-theorem jointSquare_ok {c : Cfg} (hc : CfgOk c) (hn : c.n=4)
+theorem jointSquare_ok {c : Cfg} (hc : CfgOk c)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : ProjectiveInput c s₀ base g s) :
     WP isa (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]) s fun t =>
       ProjectiveInput c s₀ base g t ∧
@@ -21,7 +21,7 @@ theorem jointSquare_ok {c : Cfg} (hc : CfgOk c) (hn : c.n=4)
     rcases hx with rfl|rfl
     · exact h.rx_lt
     · exact h.rz_lt
-  refine WP.mono (ForwardField.programB_ok (show c.MP'.n=4 from hn) lay
+  refine WP.mono (ForwardField.programB_ok lay
     (unitMod_pow_two hc.p_odd _) [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)] hi
     (by intro op hop x hx; simp only [List.mem_singleton] at hop; subst op; simpa only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false,or_self] using Or.inr hx)
     (by simp [readsOk,FOp.ins])) fun t ⟨kt,it⟩ => ?_

@@ -21,16 +21,20 @@ private theorem prefix_keep {M : Mod} {base : Addr} {W : List Nat} {s t : State}
 
 theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size x y m : Nat}
     [NeZero m] {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
     (hi : Inv K.M base size m Sl V E s) {b : BitVec 8}
     (ha : 1≤nafMagnitude b) (h8 : s.gpr .r8=b.setWidth 64)
-    (hS : FixedSource base T tsym size (nafMagnitude b) x y s)
-    (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
+    (hS : FixedSource K.M.n base T tsym size (nafMagnitude b) x y s)
+    (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     (hD : ∀ v∈jacCoords K.E,Sl v) (hx : x<m) (hyy : y<m) (hOne : K.one<m)
     (hZero : K.zero∈V) (heZero : E K.zero=0) (hApart : K.zero∉jacCoords K.E) :
     WP isa (Joint.fixedEntry K tsym) s fun t =>
       ProgKeep K.M base (jacCoords K.E) s t ∧
       Inv K.M base size m Sl (jacCoords K.E++V) (fixedEntryEnv K m E b x y) t := by
+  have ha' : nafMagnitude b≤2^31 := by
+    have := b.isLt
+    unfold nafMagnitude
+    split <;> omega
   rw [Joint.fixedEntry]
   apply WP.seq
   refine WP.mono_syms (nafSign_ok s h8) fun u ⟨hu,ku⟩ su => ?_
@@ -44,7 +48,7 @@ theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size
       rw [hu8,nafMagnitude,ite_eq_left hp]
       apply BitVec.eq_of_toNat_eq
       simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
-    refine WP.mono (jointFixedFields_ok hL hn iu ha hmag us hy hz hD hx hyy hOne)
+    refine WP.mono (jointFixedFields_ok hL hn iu ha ha' hmag us hy hz hD hx hyy hOne)
       fun t ⟨kt,it⟩ => ⟨pu.trans kt,?_⟩
     simpa only [fixedEntryEnv,ite_eq_left hp] using it
   · have hp := of_decide_eq_false hb
@@ -54,9 +58,9 @@ theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size
     have pv : ProgKeep K.M base (jacCoords K.E) u v := prefix_keep kv (by
       intro r hr
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
-      rcases hr with rfl|rfl <;> simp [hn,clob,acc])
+      rcases hr with rfl|rfl <;> simp [clob,acc])
     rw [WP.block_append_iff]
-    refine WP.mono (jointFixedFields_ok hL hn iv ha
+    refine WP.mono (jointFixedFields_ok hL hn iv ha ha'
       (by rw [nafMagnitude,ite_eq_right hp]; exact hv) (us.of_keeps kv sv) hy hz hD hx hyy hOne)
       fun w ⟨kw,iw⟩ => ?_
     have hz0 : fixedLoadEnv K m E x y K.zero=0 := by
@@ -84,13 +88,13 @@ theorem jointFixedEntry_fields_ok {K : WinCfg} {s : State} {base T : Addr} {size
       show (0 : Fin m)-fixedLoadEnv K m E x y K.E.y = -fixedLoadEnv K m E x y K.E.y from by grind] using ie
 
 theorem fixedEntryEnv_point {K : WinCfg} {C : Curve} {E : Nat → Fe C} {x y : Nat} {b : BitVec 8}
-    (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
-    (hOne : toM C.p (2^256) K.one=1) {P : Point C}
-    (hp : InvJ C (toM C.p (2^256) x) (toM C.p (2^256) y) 1 P) :
+    (hn : 0<K.M.n) (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
+    (hOne : toM C.p (2^(64*K.M.n)) K.one=1) {P : Point C}
+    (hp : InvJ C (toM C.p (2^(64*K.M.n)) x) (toM C.p (2^(64*K.M.n)) y) 1 P) :
     InvJ C (fixedEntryEnv K C.p E b x y K.E.x) (fixedEntryEnv K C.p E b x y K.E.y)
       (fixedEntryEnv K C.p E b x y K.E.z) (if b.toNat<128 then P else negPt P) ∧
       fixedEntryEnv K C.p E b x y K.E.z=1 := by
-  have h := fixedLoadEnv_point (E:=E) hy hz hOne hp
+  have h := fixedLoadEnv_point (E:=E) hn hy hz hOne hp
   have hxy : K.E.x≠K.E.y := by omega
   have hzy : K.E.z≠K.E.y := by omega
   unfold fixedEntryEnv

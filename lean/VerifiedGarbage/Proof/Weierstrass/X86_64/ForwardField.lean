@@ -56,7 +56,7 @@ theorem outputRegs_nodup {M : Mod} (hn : M.n=4) (op : FOp) :
   | sub o a b => change ([.r8,.r9,.r10,.r11] : List Reg).Nodup; decide
 
 theorem code_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
-    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
     {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s)
     {op : FOp} (hS : ∀ x∈op.out::op.ins,Sl x) (hR : ∀ x∈op.ins,x∈V) :
     WP isa (.block (code M op)) s fun t =>
@@ -68,7 +68,7 @@ theorem code_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     simp only [code]
     split
     · rename_i hab
-      subst b
+      obtain ⟨rfl,hn⟩ := hab
       exact double4_inv_ok hn hL hI (hS _ (by simp [FOp.out])) (hR _ (by simp [FOp.ins]))
     · exact fop_ok hL hm hI hS hR
 
@@ -82,7 +82,7 @@ theorem step_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
       Forward.Valid (outputCache M op) t := by
   apply Forward.block_wp hc
   obtain ⟨is,he⟩ := code_stores hn op
-  have h := code_ok hn hL hm hI hS hR
+  have h := code_ok hL hm hI hS hR
   rw [he] at h ⊢
   apply Forward.block_stores_valid h (fun _ ht => ht.2.scr)
   · rw [outputRegs_length hn]
@@ -118,7 +118,7 @@ theorem program_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat �
       ku.mem x (hx _ (List.mem_cons_self ..)) htmp]
 
 theorem plain_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
-    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
     (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x)
     (hR : readsOk ops V=true) :
@@ -132,7 +132,7 @@ theorem plain_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     simp only [List.map_cons,List.flatten_cons]
     apply WP.block_append
     simp only [readsOk,Bool.and_eq_true,List.all_eq_true,decide_eq_true_eq] at hR
-    refine WP.mono (code_ok hn hL hm hI (hS op (List.mem_cons_self ..)) hR.1)
+    refine WP.mono (code_ok hL hm hI (hS op (List.mem_cons_self ..)) hR.1)
       fun u ⟨ku,hu⟩ => ?_
     refine WP.mono (ih hu (fun op' hop => hS op' (List.mem_cons_of_mem _ hop)) hR.2)
       fun t ⟨kt,ht⟩ => ?_
@@ -142,7 +142,7 @@ theorem plain_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
       ku.mem x (hx _ (List.mem_cons_self ..)) htmp]
 
 theorem programB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
-    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
+    (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
     (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x)
     (hR : readsOk ops V=true) :
@@ -151,8 +151,9 @@ theorem programB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat 
       Inv M base size m Sl (validAfter ops V) (runOps ops E) t := by
   rw [programB]
   split
-  · exact WP.mono (program_ok hn hL hm ops hI hS hR (fun _ h => by cases h))
+  · rename_i h
+    exact WP.mono (program_ok h.2 hL hm ops hI hS hR (fun _ h => by cases h))
       (fun _ h => ⟨h.1,h.2.1⟩)
-  · exact plain_ok hn hL hm ops hI hS hR
+  · exact plain_ok hL hm ops hI hS hR
 
 end VG.Proof.Weierstrass.X86_64.ForwardField

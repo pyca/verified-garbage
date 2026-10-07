@@ -8,25 +8,25 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64
 
 theorem nafSignedCachedEntry_relCT {K : WinCfg} {base : Addr} {size tbl dst m : Nat}
     [NeZero m] {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4) (hm : UnitMod m (2^(64*K.M.n)))
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
     {b : BitVec 8}
     (ha : 1≤nafMagnitude b) (ha' : nafMagnitude b≤15) (hodd : nafMagnitude b%2=1)
-    (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
+    (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     (hp : K.tbl<2^31) (hc : tbl<2^31)
-    (hP : K.tbl+768≤size) (hC : tbl+512≤size)
-    (hD : ∀ x∈cachedSlots K.E dst,Sl x)
-    (hQ : ∀ x∈cachedSlots (K.tblPt ((nafMagnitude b-1)/2+1))
-      (tbl+64*((nafMagnitude b-1)/2)),x∈V)
-    (hEP : K.E.x+96≤K.tbl ∨ K.tbl+768≤K.E.x)
-    (hEC : K.E.x+96≤tbl ∨ tbl+512≤K.E.x)
-    (hDC : dst+64≤tbl ∨ tbl+512≤dst)
-    (hDE : dst+64≤K.E.x ∨ K.E.x+96≤dst)
-    (hZero : K.zero∈V) (heZero : E K.zero=0) (hApart : K.zero∉cachedSlots K.E dst)
+    (hP : K.tbl+192*K.M.n≤size) (hC : tbl+128*K.M.n≤size)
+    (hD : ∀ x∈cachedSlots K.M.n K.E dst,Sl x)
+    (hQ : ∀ x∈cachedSlots K.M.n (K.tblPt ((nafMagnitude b-1)/2+1))
+      (tbl+16*K.M.n*((nafMagnitude b-1)/2)),x∈V)
+    (hEP : K.E.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.E.x)
+    (hEC : K.E.x+24*K.M.n≤tbl ∨ tbl+128*K.M.n≤K.E.x)
+    (hDC : dst+16*K.M.n≤tbl ∨ tbl+128*K.M.n≤dst)
+    (hDE : dst+16*K.M.n≤K.E.x ∨ K.E.x+24*K.M.n≤dst)
+    (hZero : K.zero∈V) (heZero : E K.zero=0) (hApart : K.zero∉cachedSlots K.M.n K.E dst)
     (hct : RegCT [.rdi,.r8] (Naf.signedCachedEntry K tbl dst)) :
     RelCT isa (fun s t => FieldPair K.M base size m Sl V E s t ∧
       s.gpr .r8=b.setWidth 64 ∧ t.gpr .r8=b.setWidth 64)
       (Naf.signedCachedEntry K tbl dst)
-      (FieldPair K.M base size m Sl (cachedSlots K.E dst++V) (cachedEntryEnv K E tbl dst b)) := by
+      (FieldPair K.M base size m Sl (cachedSlots K.M.n K.E dst++V) (cachedEntryEnv K E tbl dst b)) := by
   have h := regFieldProgram_relCT (M:=K.M) (base:=base) (size:=size) (m:=m)
     (Sl:=Sl) (V:=V) (E:=E) (Pre:=fun s => s.gpr .r8=b.setWidth 64)
     (Post:=fun _ => True) hct (fun s t p ds dt => Taint.agree_ofRegs (by

@@ -13,20 +13,20 @@ structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) : Prop where
   zeroR : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t5))
   copyP : ScratchCT (.block (copyPt K.M.n o p))
   copyQ : ScratchCT (.block (copyPt K.M.n o q))
-  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst))
+  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst))
   tail : ScratchCT (ForwardField.programB K.M (jacTail K.S p q o))
   double : ScratchCT (ForwardField.programB K.M (dblJMul K.S p o))
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : K.M.n=4) (hL : Lay K.M size Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl)
     (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} {dst : Nat}
     (hc : CachedJacChecks K p q o dst) (hA : RcbApart K.S p q o)
-    (h2a : dst∉rcbW K.S o) (h3a : dst+32∉rcbW K.S o)
-    (hSl : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+32],Sl x)
-    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q++[dst,dst+32],x∈V)
+    (h2a : dst∉rcbW K.S o) (h3a : dst+8*K.M.n∉rcbW K.S o)
+    (hSl : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x)
+    {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q++[dst,dst+8*K.M.n],x∈V)
     (hOne : K.one<m)
-    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+32)=E dst*E q.z) :
+    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z) :
     RelCT isa (FieldPair K.M base size m Sl V E)
       (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst) (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
   have hs : ∀ x∈rcbW K.S o++rcbR K.S p q,Sl x := fun x hx => hSl x (List.mem_append_left _ hx)
@@ -56,11 +56,11 @@ theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
       exact (copyPoint_relCT hL os pv hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
     · intro _
       apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
-        WP.mono (CachedJac.head_ok hn hL hm hA h2a h3a hSl hi hV h2 h3)
+        WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSl hi hV h2 h3)
           (fun _ ht => ht.2.1)))
-      have oldV : ∀ x∈V,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) V :=
+      have oldV : ∀ x∈V,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl (by simp [hx]))
-      have subV : ∀ x∈[o.x,o.y,o.z]++V,x∈[o.x,o.y,o.z]++validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) V := by
+      have subV : ∀ x∈[o.x,o.y,o.z]++V,x∈[o.x,o.y,o.z]++validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V := by
         intro x hx
         rcases List.mem_append.mp hx with hx|hx
         · exact List.mem_append_left _ hx
@@ -76,16 +76,16 @@ theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             rcases List.mem_append.mp hx with hx|hx
             · exact hs x (List.mem_append_left _ hx)
             · exact hs x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
-          have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) V :=
+          have hdV : ∀ x∈rcbR K.S p p,x∈validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
             fun x hx => oldV x (hv x (rcbR_self_mem _ _ _ hx))
-          exact (doubleField_relCT hn hL hm hdSl hdV hc.double).mono
+          exact (doubleField_relCT hL hm hdSl hdV hc.double).mono
             (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
           exact (infinity_relCT hL os hOne hc.infinity).mono
             (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (fieldProgram_relCT hc.tail (fun s hi =>
-          WP.mono (CachedJac.tail_ok hn hL hm hA h2a h3a hSl hi hV h2 h3) (fun _ ht => ht.2.1))).mono
+          WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSl hi hV h2 h3) (fun _ ht => ht.2.1))).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
 end VG.Proof.Weierstrass.X86_64

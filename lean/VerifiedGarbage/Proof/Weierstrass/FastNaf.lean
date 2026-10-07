@@ -90,17 +90,25 @@ theorem byte_zero_iff (w k j : Nat) :
   · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.byte_zero_iff k j
   · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.byte_zero_iff k j
 
-theorem residual_bound (w : Nat) {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
-    residual w k j≤2^(256-j) := by
+theorem residual_boundB (w : Nat) {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
+    residual w k j≤2^(B-j) := by
   by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.residual_bound hk hj
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.residual_bound hk hj
+  · simpa only [residual,h7,ite_true] using FastNaf7.residual_boundB hk hj
+  · simpa only [residual,h7,ite_false] using Naf5.residual_boundB hk hj
+
+theorem residual_bound (w : Nat) {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
+    residual w k j≤2^(256-j) :=
+  residual_boundB w hk hj
+
+theorem residual_zero_top (w : Nat) {B k : Nat} (hk : k<2^B) :
+    residual w k (B+1)=0 := by
+  by_cases h7 : w=7
+  · simpa only [residual,h7,ite_true] using FastNaf7.residual_zero_top hk
+  · simpa only [residual,h7,ite_false] using Naf5.residual_zero_top hk
 
 theorem residual_zero257 (w : Nat) {k : Nat} (hk : k<2^256) :
-    residual w k 257=0 := by
-  by_cases h7 : w=7
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using FastNaf7.residual_zero257 hk
-  · simpa only [next,residual,negative,magnitude,digit,byte,point,FastNaf7.point,Naf5.point,h7,ite_true,ite_false] using Naf5.residual_zero257 hk
+    residual w k 257=0 :=
+  residual_zero_top w hk
 
 theorem add_step {C : Curve} (hC : Law C) {P : Point C} (hP : onCurve C P=true) (w k j : Nat) :
     Spec.Weierstrass.add (mul (2*residual w k (j+1)) P) (point C P w k j)=mul (residual w k j) P := by
@@ -178,9 +186,13 @@ theorem residual_of_zero (w k j : Nat) (hz : residual w k j=0) (i : Nat) :
 theorem byte_of_zero (w k j : Nat) (hz : residual w k j=0) : byte w k j=0 := by
   rw [byte_zero_iff,magnitude_zero_iff,hz]
 
-theorem residual_zero_ge {w k j : Nat} (hk : k<2^256) (hj : 257≤j) :
+theorem residual_zero_geB {w B k j : Nat} (hk : k<2^B) (hj : B+1≤j) :
     residual w k j=0 := by
-  rw [show j=257+(j-257) from by omega]
-  exact residual_of_zero w k 257 (residual_zero257 w hk) _
+  rw [show j=(B+1)+(j-(B+1)) from by omega]
+  exact residual_of_zero w k (B+1) (residual_zero_top w hk) _
+
+theorem residual_zero_ge {w k j : Nat} (hk : k<2^256) (hj : 257≤j) :
+    residual w k j=0 :=
+  residual_zero_geB hk hj
 
 end VG.Proof.Weierstrass.FastNaf

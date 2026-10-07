@@ -9,7 +9,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 /-- Build `P, 3P, …, 15P`, retaining the double in the ninth point. -/
 theorem nafTable_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : NafLay K size) (hJ : K.J=65)
+    (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     (ht : K.tbl<2^31) (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)
     {s : State} (hI : Inv K.M base size C.p (·∈nafSlots K) (winRo K) (tmv C K.M.n base s) s)
@@ -37,15 +37,15 @@ theorem nafTable_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
 theorem NafTableInv.digits {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     {P : Point C} {β : Nat → BitVec 8} {s t : State} (hL : NafLay K size)
     (hI : NafTableInv K C base size P s t m)
-    (hb : ∀ i<257, s.mem (off base (K.bits+i))=β i) :
-    ∀ i<257, t.mem (off base (K.bits+i))=β i := by
+    (hb : ∀ i<64*K.M.n+1, s.mem (off base (K.bits+i))=β i) :
+    ∀ i<64*K.M.n+1, t.mem (off base (K.bits+i))=β i := by
   intro i hi
   rw [hI.unch.byte (fun w hw => ?_) (by have := hL.bits; have := hI.field.scr.nowrap; omega),hb i hi]
   simp only [nafTableWrites,List.mem_append,List.mem_map,List.mem_singleton] at hw
   rcases hw with ⟨x,hx,rfl⟩ | rfl
   · have hb' := hL.bits_w x hx
-    dsimp only; rw [hL.n]; omega
+    dsimp only; omega
   · have hb' := hL.bits_tmp
-    dsimp only; rw [hL.n]; omega
+    dsimp only; omega
 
 end VG.Proof.Weierstrass.X86_64

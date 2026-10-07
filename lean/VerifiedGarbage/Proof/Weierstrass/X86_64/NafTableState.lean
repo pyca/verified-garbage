@@ -9,7 +9,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 def nafTableSlots (K : WinCfg) (m : Nat) : List Nat :=
-  (List.range (3*m)).map fun i => K.tbl+32*i
+  (List.range (3*m)).map fun i => K.tbl+8*K.M.n*i
 
 def nafTableLive (K : WinCfg) (m : Nat) : List Nat :=
   winRo K++jacCoords K.R++jacCoords (Naf.twice K)++nafTableSlots K m
@@ -38,7 +38,7 @@ theorem nafTableLive_read (K : WinCfg) (m : Nat) :
   simp only [nafTableLive,jacCoords,winRo,rcbR,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
   grind
 
-theorem nafTableLive_next (K : WinCfg) (hn : K.M.n=4) (m : Nat) :
+theorem nafTableLive_next (K : WinCfg) (m : Nat) :
     ∀ x∈nafTableLive K (m+1),x∈jacCoords (K.tblPt (m+1))++jacCoords K.R++
       (jacCoords K.D++nafTableLive K m) := by
   intro x hx
@@ -48,12 +48,16 @@ theorem nafTableLive_next (K : WinCfg) (hn : K.M.n=4) (m : Nat) :
   obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hx
   have hi' := List.mem_range.mp hi
   by_cases h : i<3*m
-  · have ho : K.tbl+32*i∈nafTableLive K m := List.mem_append_right _
+  · have ho : K.tbl+8*K.M.n*i∈nafTableLive K m := List.mem_append_right _
       (List.mem_map.mpr ⟨i,List.mem_range.mpr h,rfl⟩)
     simp only [List.mem_append]; grind
-  · have hn' : K.tbl+32*i∈jacCoords (K.tblPt (m+1)) := by
-      simp only [jacCoords,WinCfg.tblPt,hn,List.mem_cons,List.not_mem_nil,or_false]
-      omega
+  · have hn' : K.tbl+8*K.M.n*i∈jacCoords (K.tblPt (m+1)) := by
+      simp only [jacCoords,tblPt_x,tblPt_y,tblPt_z,Nat.add_sub_cancel,List.mem_cons,
+        List.not_mem_nil,or_false]
+      obtain rfl|rfl|rfl : i=3*m ∨ i=3*m+1 ∨ i=3*m+2 := by omega
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl rfl)
+      · exact Or.inr (Or.inr rfl)
     simp only [List.mem_append]; grind
 
 theorem nafTable_progUnch {K : WinCfg} {base : Addr} {W : List Nat} {s t : State}

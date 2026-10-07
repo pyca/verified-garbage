@@ -20,19 +20,21 @@ theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
       (Naf.cacheTable c.K.M c.K.tbl c.cache 8)
       (fun s t => ∃ E'',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E'' s t) := by
     intro E'
-    have hz : ∀ i<8,c.K.tbl+96*i+64∈nafTableLive c.K 8 := by
+    have hz : ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by
       intro i hi
       apply List.mem_append_right
-      exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),by omega⟩
-    have sl : ∀ i<8,(c.cache+64*i∈jointSlots c) ∧ (c.cache+64*i+32∈jointSlots c) := by
+      exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),
+        by rw [slot_three_mul_two,Nat.add_assoc]⟩
+    have sl : ∀ i<8,(c.cache+16*c.K.M.n*i∈jointSlots c) ∧
+        (c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointSlots c) := by
       intro i hi
       constructor
       · exact List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩))
       · exact List.mem_append_right _ (joint_cache_mem.mp (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩))
-    exact (nafCacheTable_relCT (E:=E') hL.layout.n hL.layout.lay hm 8 hz sl hc).mono
+    exact (nafCacheTable_relCT (E:=E') hL.layout.lay hm 8 hz sl hc).mono
       (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun x hx => by
         rcases List.mem_append.mp hx with hx|hx
-        · exact List.mem_append_right _ (joint_tableLive hL.layout.n x hx)
+        · exact List.mem_append_right _ (joint_tableLive x hx)
         · exact List.mem_append_left _ (joint_cache_mem.mpr hx))⟩)
   refine (RelCT.exists_ cache).mono ?_ (fun _ _ h => h)
   intro s t ⟨E',hp,_,_⟩
@@ -43,9 +45,11 @@ theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat}
 
 theorem jointSeed_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointLayout c size) (hOne : c.K.one<C.p)
-    (hc : ScratchCT (.block (Jacobian.infinity c.K c.K.R))) :
+    (hc : ScratchCT (.block (Jacobian.infinity c.K c.K.R)))
+    (ctr : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))])) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E)
-      (.block (Jacobian.infinity c.K c.K.R++([.mov32 .rbx (.imm 256)] : List Instr)))
+      (.block (Jacobian.infinity c.K c.K.R++
+        ([.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))] : List Instr)))
       (FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c)
         (infinityEnv c.K.M C.p c.K.one E c.K.R)) := by
   have sl : ∀ x∈jacCoords c.K.R,x∈jointSlots c := by
@@ -55,13 +59,11 @@ theorem jointSeed_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {
     grind
   apply RelCT.block_append
   apply RelCT.seq (infinity_relCT hL.lay sl hOne hc)
-  have ctr : ScratchCT (.block [.mov32 .rbx (.imm 256)]) :=
-    VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
   have step := keepsField_relCT (M:=c.K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈jointSlots c)) (V:=jacCoords c.K.R++jointLive c)
     (E:=infinityEnv c.K.M C.p c.K.one E c.K.R) (Pre:=fun _ => True)
-    (Post:=fun s => s.gpr .rbx=256) (by decide : Reg.rdi∉[Reg.rbx]) ctr
-    (fun _ _ hp _ _ => fieldPair_public hp) (fun s _ _ => jointCounter_ok s)
+    (Post:=fun s => s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n)) (by decide : Reg.rdi∉[Reg.rbx]) ctr
+    (fun _ _ hp _ _ => fieldPair_public hp) (fun s _ _ => jointCounter_ok s (by have := hL.n; omega))
   exact step.mono (fun _ _ h => ⟨h,trivial,trivial⟩)
     (fun _ _ h => h.1.sub (fun _ hx => List.mem_append_right _ hx))
 

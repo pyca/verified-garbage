@@ -40,4 +40,53 @@ theorem fastShift_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
   simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
     hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2.1,hr.2.2.2.2.2,ite_false]
 
+theorem fastShift7_value (a b c d e f g : BitVec 64) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
+    nafVal7 ((a>>>w)|||(b<<<(64-w))) ((b>>>w)|||(c<<<(64-w)))
+      ((c>>>w)|||(d<<<(64-w))) ((d>>>w)|||(e<<<(64-w))) ((e>>>w)|||(f<<<(64-w)))
+      ((f>>>w)|||(g<<<(64-w))) (g>>>w)=nafVal7 a b c d e f g/2^w := by
+  simp only [nafVal7,fastJoin_value _ _ hw,BitVec.toNat_ushiftRight,Nat.shiftRight_eq_div_pow]
+  rcases hw with rfl|rfl|rfl <;> omega
+
+theorem shiftN_four (w : Nat) : FastNaf.shiftN 4 w=FastNaf.shift w := rfl
+
+theorem shiftN_six (w : Nat) : FastNaf.shiftN 6 w=
+    [.shift .shr .r8 w,.mov .rax (.reg .r9),.shift .shl .rax (64-w),.alu .or .r8 (.reg .rax),
+     .shift .shr .r9 w,.mov .rax (.reg .r10),.shift .shl .rax (64-w),.alu .or .r9 (.reg .rax),
+     .shift .shr .r10 w,.mov .rax (.reg .r11),.shift .shl .rax (64-w),.alu .or .r10 (.reg .rax),
+     .shift .shr .r11 w,.mov .rax (.reg .r12),.shift .shl .rax (64-w),.alu .or .r11 (.reg .rax),
+     .shift .shr .r12 w,.mov .rax (.reg .r13),.shift .shl .rax (64-w),.alu .or .r12 (.reg .rax),
+     .shift .shr .r13 w,.mov .rax (.reg .r14),.shift .shl .rax (64-w),.alu .or .r13 (.reg .rax),
+     .shift .shr .r14 w] := rfl
+
+theorem fastShift7_ok (s : State) {w : Nat} (hw : w=1 ∨ w=5 ∨ w=7) :
+    WP isa (.block (FastNaf.shiftN 6 w)) s fun t =>
+      nafVal7 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) (t.gpr .r12) (t.gpr .r13) (t.gpr .r14)=
+        nafVal7 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) (s.gpr .r13)
+          (s.gpr .r14)/2^w ∧
+      Keeps [.rax,.r8,.r9,.r10,.r11,.r12,.r13,.r14] s t := by
+  have hw0 : 1≤w ∧ w≤63 := by omega
+  have hw1 : 1≤64-w ∧ 64-w≤63 := by omega
+  have hw2 : ¬(64-w=1) := by omega
+  apply WP.of_runBlock
+  simp only [shiftN_six,runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,execShift,
+    readSrc,Option.map_some,Option.bind_some,
+    RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
+    ite_true,ite_false,and_self,reduceCtorEq,hw0,hw1,hw2,Option.some.injEq,exists_eq_left']
+  refine ⟨fastShift7_value _ _ _ _ _ _ _ hw,fun r hr => ?_,rfl,rfl,rfl⟩
+  simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+  simp only [RegUpd.gpr_setReg,RegUpd.gpr_setFlags,RegUpd.gpr_arithFlags,
+    hr.1,hr.2.1,hr.2.2.1,hr.2.2.2.1,hr.2.2.2.2.1,hr.2.2.2.2.2.1,hr.2.2.2.2.2.2.1,
+    hr.2.2.2.2.2.2.2,ite_false]
+
+/-- The scalar's registers shifted right by `w` bits. -/
+theorem fastShiftN_ok (s : State) {n w : Nat} (hn : n=4 ∨ n=6) (hw : w=1 ∨ w=5 ∨ w=7) :
+    WP isa (.block (FastNaf.shiftN n w)) s fun t =>
+      nafValN n t=nafValN n s/2^w ∧ Keeps (.rax::Naf.sregs n) s t := by
+  rcases hn with rfl|rfl
+  · rw [shiftN_four]
+    exact WP.mono (fastShift_ok s hw) fun t ⟨vt,kt⟩ =>
+      ⟨by rw [nafValN_four,nafValN_four]; exact vt,kt⟩
+  · exact WP.mono (fastShift7_ok s hw) fun t ⟨vt,kt⟩ =>
+      ⟨by rw [nafValN_six,nafValN_six]; exact vt,kt⟩
+
 end VG.Proof.Weierstrass.X86_64

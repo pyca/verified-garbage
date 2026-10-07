@@ -7,7 +7,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 theorem jacDoubleForward_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)
     {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
     (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
@@ -22,7 +22,7 @@ theorem jacDoubleForward_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
   have he : dblJMul S p o=ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
   rw [he]
   have hN := dblJChoiceN_ok true
-  refine WP.mono (ForwardField.programB_ok hn hL hm _ hI
+  refine WP.mono (ForwardField.programB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op hop x hx))
     (readsOk_mono (ofN_readsOk hN S p p o) hV)) fun t ⟨kt,it⟩ => ⟨kt.mono ?_,it.sub ?_,?_⟩
   · intro x hx

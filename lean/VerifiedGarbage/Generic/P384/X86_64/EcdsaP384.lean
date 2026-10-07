@@ -5,19 +5,17 @@ import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Verified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.Lit
 import VerifiedGarbage.Impl.Ecdsa.Verify.P384.X86_64
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.JointVerified
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.LitAdx
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.VerifiedAdx
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.LitAdx
 
 /-!
 # ECDSA over P-384 (FIPS 186-5) on x86-64
 
 A generic file (see `TCB/Emit.lean`) over P-384's group law and
 inversions `h`, the variant `Variants/P384/X86_64/Law.lean`, for each
-multiplication: the baseline's, and BMI2's and ADX's (`_adx`).
+multiplication: the baseline's, and BMI2's and ADX's, with the comb's
+selection by AVX2 in signing (`_adx`).
 -/
 
 namespace VG.Generic.P384.X86_64.EcdsaP384
@@ -61,8 +59,8 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 /-- The function of `Spec.Ecdsa.P384.verifyApi`, multiplying with BMI2 and ADX
-and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`,
-proven (`hv`), with no instruction writing `rsp` (`hsp`). -/
+(`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction writing
+`rsp` (`hsp`). -/
 def verify (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
       (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)))
@@ -70,37 +68,43 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
   { Spec.Ecdsa.P384.verifyApi with
     name := Spec.Ecdsa.P384.verifyApi.name ++ (if adx then "_adx" else "")
     target := X86_64.target
-    doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function is `vg_ecdsa_p384_sign" ++ (if adx then "_adx" else "") ++ "`'s setup, \
-      field arithmetic, comb and inversions, with `vg_ecdh_p384" ++ (if adx then "_adx" else "") ++ "`'s checks of the public \
-      key and its window method: it saves its caller's callee-saved registers in `scratch`; field elements and scalars \
-      are six 64-bit words in Montgomery form, " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The key is checked without \
-      branches (its first byte, both coordinates below `p`, and the curve's equation), and \
-      `[v]Q` is computed for the key's point if it is valid, else `G`, so it always runs on a \
-      point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the \
-      signature's divsteps; `[u]G` is the signature's comb over the 7-bit windows of `u` (from the static `VG_P384_COMB`), and \
-      `[v]Q` by `vg_ecdh_p384" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows (`v` recoded as `v + 8 Σ_{j<97} 16^j`, \
-      a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a complete addition of \
-      the entry selected in constant time per digit); the two are added by the complete \
-      addition formulas of Renes, Costello and Batina. The result is the conjunction of the \
-      checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at infinity, and `x ≡ r` \
-      modulo `n`) as a mask, so the time depends only on the pointers, although the contract would \
-      let every input affect it."])
+    doc := Spec.Ecdsa.P384.verifyApi.doc (notes := ["The function saves its caller's callee-saved \
+      registers in `scratch`. Field elements and scalars are six 64-bit words in Montgomery form, \
+      " ++ Proof.Ecdsa.X86_64.P384.mulNote adx ++ ". The public key is checked without branches \
+      (its first byte, both coordinates below `p`, and the curve's equation); an invalid key is \
+      replaced with `G` for the point operations and rejected by the final validity flag. \
+      Divsteps computes `s⁻¹` modulo `n`, then `u = e/s` and `v = r/s`. Both public 384-bit \
+      scalars are recoded as non-adjacent signed digits, width seven for `u` and width five for \
+      `v`. A single Jacobian accumulator computes `[u]G + [v]Q` with 384 doublings, adding only \
+      nonzero digits. Generator digits directly index odd multiples among the 64 affine entries \
+      of the first row of the existing static `VG_P384_COMB`, added by mixed additions; peer \
+      digits index eight odd multiples of `Q` in `scratch`, with cached squares and cubes of \
+      their Z coordinates. Complete point operations cover infinity, equal points and opposite \
+      points. Doubling is Jacobian, for `a = -3`, with `Z' = 2YZ` as a direct product, into a \
+      temporary point copied back to the accumulator; on six words no register values are \
+      forwarded between field operations. The final comparison squares the Jacobian Z \
+      coordinate and checks `X = rZ²`, or `X = (r+n)Z²` when `r+n < p` (P-384 has \
+      `n < p ≤ 2n`), without a field inversion. It rejects infinity and returns the \
+      conjunction of the key, scalar-range and coordinate checks as 0 or 1. Timing may depend \
+      on the public verification inputs, as permitted by the contract."])
     consts := Impl.Ecdsa.X86_64.p384.combConsts
     code
     contract := Spec.Ecdsa.P384.inst.verifyContract
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p384.combConsts)
     verified := hv
     spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
+    features := if adx then ["bmi2", "adx"] else [] }
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) : List Artifact := [
   sign false Impl.Ecdsa.X86_64.signP384
     (Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
-  verify false Impl.Ecdsa.Verify.X86_64.verifyP384
-    (Proof.Ecdsa.Verify.X86_64.P384.verify_verified h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
+  verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP384
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified h.law (Proof.P384.combOk7 h.law) h.inv)
+    (Code.all_of_allInstrs (by lit_decide)),
   sign true Impl.Ecdsa.X86_64.signP384Adx
     (Proof.Ecdsa.X86_64.P384.sign_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
-  verify true Impl.Ecdsa.Verify.X86_64.verifyP384Adx
-    (Proof.Ecdsa.Verify.X86_64.P384.verify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide))]
+  verify true Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx
+    (Proof.Ecdsa.Verify.X86_64.P384.jointVerify_verified_adx h.law (Proof.P384.combOk7 h.law) h.inv)
+    (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P384.X86_64.EcdsaP384

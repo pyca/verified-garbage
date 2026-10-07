@@ -127,22 +127,31 @@ theorem next_pow_bound {n e : Nat} (hn : n≤2^(e+1)) : next n≤2^e := by
       rw [hq]
       omega
 
-theorem residual_bound {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
-    residual k j≤2^(256-j) := by
+/-- The residual of a scalar of `B` bits after `j` digits has `B - j` bits. -/
+theorem residual_boundB {B k : Nat} (hk : k≤2^B) {j : Nat} (hj : j≤B) :
+    residual k j≤2^(B-j) := by
   induction j with
   | zero => exact hk
   | succ j ih =>
     have hp := ih (by omega)
-    have he : 256-j=(256-(j+1))+1 := by omega
+    have he : B-j=(B-(j+1))+1 := by omega
     rw [he] at hp
     exact next_pow_bound hp
 
-theorem residual_zero257 {k : Nat} (hk : k<2^256) : residual k 257=0 := by
-  have h := residual_bound (Nat.le_of_lt hk) (j:=256) (by omega)
+theorem residual_bound {k : Nat} (hk : k≤2^256) {j : Nat} (hj : j≤256) :
+    residual k j≤2^(256-j) :=
+  residual_boundB hk hj
+
+/-- A scalar of `B` bits has `B + 1` digits. -/
+theorem residual_zero_top {B k : Nat} (hk : k<2^B) : residual k (B+1)=0 := by
+  have h := residual_boundB (Nat.le_of_lt hk) (j:=B) (by omega)
   simp only [Nat.sub_self,Nat.pow_zero] at h
-  change next (residual k 256)=0
+  change next (residual k B)=0
   unfold next
   split <;> omega
+
+theorem residual_zero257 {k : Nat} (hk : k<2^256) : residual k 257=0 :=
+  residual_zero_top hk
 
 def point (C : Curve) (P : Point C) (k j : Nat) : Point C :=
   if negative k j then negPt (mul (magnitude k j) P) else mul (magnitude k j) P

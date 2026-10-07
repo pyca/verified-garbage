@@ -74,4 +74,13 @@ theorem nafExternalCopy_field {mem mem' : Mem} {base X : Addr} {n o j : Nat}
   rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,show 32*j+8*i=8*(4*j+i) from by omega]
   exact nafExternalCopy_words h _ (by omega)
 
+/-- A field of `w` words at an 8-byte-aligned offset `d` of the copied pieces. -/
+theorem nafExternalCopy_fieldAt {mem mem' : Mem} {base X : Addr} {n o d w : Nat}
+    (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off X (16*c)) 128)
+    (hd : d%8=0) (hj : d+8*w≤16*n) : wordsVal mem' base (o+d) w=wordsVal mem X d w := by
+  apply wordsVal_congr₂
+  intro i hi
+  rw [show o+d+8*i=o+8*(d/8+i) from by omega,show d+8*i=8*(d/8+i) from by omega]
+  exact nafExternalCopy_words h _ (by omega)
+
 end VG.Proof.Weierstrass.X86_64

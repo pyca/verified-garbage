@@ -26,7 +26,7 @@ ECDSA's signature (`Impl/Ecdsa/X86_64.lean`) and of ECDH
    up to nine words, with `b R mod p` set again in ECDH's slot of it), or
    its ladder (from the table of `v`'s bits), and `[u]G + [v]Q` by the
    complete addition, into `R`;
-6. for a curve with `pubVerify` (P-256 and P-521, where `n < p ≤ 2n`),
+6. for a curve with `pubVerify` (P-256, P-384 and P-521, where `n < p ≤ 2n`),
    compare `X` with `r Z` and, when `r + n < p`, `(r + n) Z`; other curves
    invert `Z` and compare the affine x-coordinate modulo `n`.
    Reject `Z = 0` and return the combined validity flag as 0 or 1.
@@ -145,7 +145,7 @@ def projectiveFinal : Prog isa :=
     (.seq (.block (Mont.X86_64.mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
       (fprogB c.MP' (projectiveOps c.sl)))) (.block (projectiveChecks c))
 
-/-- With `n < p ≤ 2n` (P-256, P-521), `x mod n` has at most two field
+/-- With `n < p ≤ 2n` (P-256, P-384, P-521), `x mod n` has at most two field
 representatives. -/
 def tail : Prog isa :=
   if c.pubVerify = true ∧ c.C.n < c.C.p ∧ c.C.p ≤ 2 * c.C.n then projectiveFinal c
