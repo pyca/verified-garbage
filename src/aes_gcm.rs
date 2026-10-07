@@ -22,9 +22,11 @@
 //! place, from plaintext in buffers of the caller's (in pieces, for
 //! `encrypt`) into an output buffer, as a TLS record layer needs. On x86-64
 //! they call `vg_aes_gcm_stream_encrypt_to`, whose whole blocks go from the
-//! input to the output in one pass (`VG.Spec.Gcm.streamEncryptToContract`);
-//! elsewhere they copy the plaintext into the output and encrypt it there
-//! with the in-place functions.
+//! input to the output in one pass (`VG.Spec.Gcm.streamEncryptToContract`),
+//! except that `encrypt` copies a text shorter than `STREAM_MIN_LEN` into
+//! the output and encrypts it there, which costs less; elsewhere they copy
+//! the plaintext into the output and encrypt it there with the in-place
+//! functions.
 //!
 //! # Tags
 //!
@@ -520,9 +522,16 @@ fn total_len(chunks: &[&[u8]]) -> Option<usize> {
         .try_fold(0usize, |n, c| n.checked_add(c.len()))
 }
 
+/// The shortest text [`AesGcm::encrypt`] encrypts by streaming it from the
+/// pieces to the output (`vg_aes_gcm_stream_encrypt_to`, on x86-64): shorter
+/// ones cost less copied into the output and encrypted there in one call,
+/// as the streaming functions' calls (start, additional data, a call or two
+/// per piece, tag) cost more than the copy.
+#[cfg(target_arch = "x86_64")]
+const STREAM_MIN_LEN: usize = 4096;
+
 /// Copies the pieces `chunks` one after the other into `out`, which is
 /// exactly as long as they are in all.
-#[cfg(not(target_arch = "x86_64"))]
 fn gather(chunks: &[&[u8]], out: &mut [u8]) {
     let mut rest = out;
     for c in chunks {
@@ -784,7 +793,7 @@ impl AesGcm {
         add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(target_arch = "x86_64")]
-        {
+        if out.len() >= STREAM_MIN_LEN {
             // Every length is checked: nothing below fails.
             let mut s = Stream::new(self, nonce)?;
             s.update_aad(aad)?;
@@ -794,13 +803,10 @@ impl AesGcm {
                 s.update_into(c, head)?;
                 rest = tail;
             }
-            Ok(s.finish())
+            return Ok(s.finish());
         }
-        #[cfg(not(target_arch = "x86_64"))]
-        {
-            gather(plaintext, out);
-            self.encrypt_in_place(nonce, aad, out)
-        }
+        gather(plaintext, out);
+        self.encrypt_in_place(nonce, aad, out)
     }
 
     /// Starts encrypting a message under this key and `nonce` (of any
@@ -1091,7 +1097,7 @@ impl Stream<'_, false> {
             // message as with the additional data itself (GHASH's input,
             // `VG.Spec.Gcm.ghashInput`, is the same).
             let mut aad_len = self.aad_len;
-            if self.text_len == 0 && src.len() >= 16 && aad_len % 16 != 0 {
+            if self.text_len == 0 && src.len() >= 16 && !aad_len.is_multiple_of(16) {
                 let pad = 16 - (aad_len % 16) as usize;
                 self.absorb_aad(aad_len, &[0; 16][..pad]);
                 aad_len += pad as u64;
@@ -1793,6 +1799,42 @@ mod tests {
         }
     }
 
+    /// Every implementation the CPU can run encrypts a message long enough
+    /// for `encrypt` to stream it (`STREAM_MIN_LEN`) out of place, in pieces
+    /// split on and off block boundaries, after additional data of whole
+    /// blocks, of none and of a partial block, as the baseline one does in
+    /// place.
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn backends_agree_long_out_of_place() {
+        use super::STREAM_MIN_LEN;
+        let msg: [u8; 5000] = core::array::from_fn(|i| (i * 17 + 3) as u8);
+        let nonce = [4u8; 12];
+        let k = AesGcm::new(&[0x77; 16]).unwrap();
+        let base = k.with_backend(Backend::Scalar);
+        for &(b, need) in Backend::ALL {
+            if !detected().contains(need) {
+                continue;
+            }
+            let k = k.with_backend(b);
+            for aad_len in [0, 5, 16] {
+                let aad = &msg[..aad_len];
+                for len in [STREAM_MIN_LEN, 4100, 5000] {
+                    let mut want = msg;
+                    let want_tag = base
+                        .encrypt_in_place(&nonce, aad, &mut want[..len])
+                        .unwrap();
+                    for a in [0, 1, 16, 33, 4095] {
+                        let mut out = [0u8; 5000];
+                        let pieces = [&msg[..a], &msg[a..len]];
+                        let tag = k.encrypt(&nonce, aad, &pieces, &mut out[..len]);
+                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
+                    }
+                }
+            }
+        }
+    }
+
     /// A key whose backend has `_precomputed` instances computes the powers
     /// of its hash subkey after `POWERS_AFTER` calls long enough to use
     /// them, and then encrypts and decrypts, one-shot and streaming, as the
@@ -1871,9 +1913,12 @@ mod tests {
                     .encrypt_in_place(&nonce, &aad, &mut want[..len])
                     .unwrap();
                 let mut out = [0u8; 700];
-                let pieces = [&msg[..a], &msg[a..len]];
-                let tag = k.encrypt(&nonce, &aad, &pieces, &mut out[..len]);
-                assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
+                let mut e = k.encryptor(&nonce).unwrap();
+                e.update_aad(&aad).unwrap();
+                let (o, p) = out[..len].split_at_mut(a);
+                e.update_into(&msg[..a], o).unwrap();
+                e.update_into(&msg[a..len], p).unwrap();
+                assert_eq!((&out[..len], e.finalize()), (&want[..len], want_tag));
             }
             // A clone copies the powers if they are ready, and not otherwise.
             let copy = k.clone();
