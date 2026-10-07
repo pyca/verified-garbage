@@ -205,6 +205,8 @@ def EOp.asm : EOp → String
   | .vmovq d r => s!"vmovq {d.name}, {r.name}"
   | .vmovqx d r => s!"vmovq {d.name}, {r.name}"
   | .vpmadd52 hi d a b => s!"vpmadd52{if hi then "h" else "l"}uq {d.yname}, {a.yname}, {b.yname}"
+  | .vpternlogq d a b n => s!"vpternlogq {d.yname}, {a.yname}, {b.yname}, {n.toNat}"
+  | .vprorq d r n => s!"vprorq {d.yname}, {r.yname}, {n.toNat}"
 
 def Src.str : Src → String
   | .reg r => r.name

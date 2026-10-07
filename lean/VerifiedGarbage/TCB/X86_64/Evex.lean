@@ -101,6 +101,10 @@ inductive EOp
   /-- `vpmadd52luq ymm1, ymm2, ymm3` (`EVEX.256.66.0F38.W1 B4 /r`), or with
   `hi` `vpmadd52huq ymm1, ymm2, ymm3` (`EVEX.256.66.0F38.W1 B5 /r`) -/
   | vpmadd52 (hi : Bool) (dst src1 src2 : VReg)
+  /-- `vpternlogq ymm1, ymm2, ymm3, imm8` (`EVEX.256.66.0F3A.W1 25 /r ib`) -/
+  | vpternlogq (dst src1 src2 : VReg) (imm : BitVec 8)
+  /-- `vprorq ymm1, ymm2, imm8` (`EVEX.256.66.0F.W1 72 /0 ib`) -/
+  | vprorq (dst src : VReg) (count : BitVec 8)
   deriving DecidableEq, Repr
 
 /-- Semantics of the `EVEX.256` instructions (see the module doc for the
@@ -127,7 +131,17 @@ zeroing of the bits above the vector length, `State.setVy`):
   with XMM register source and destination": `DEST[63:0] := SRC[63:0];
   DEST[MAXVL-1:64] := 0`.
 * `vpmadd52`: SDM Vol. 2, "VPMADD52LUQ" and "VPMADD52HUQ" with `(KL, VL) =
-  (4, 256)`, no write mask and a register `SRC3`: `madd52` on each lane. -/
+  (4, 256)`, no write mask and a register `SRC3`: `madd52` on each lane.
+* `vpternlogq`: SDM Vol. 2, "VPTERNLOGD/VPTERNLOGQ—Bitwise Ternary Logic",
+  "VPTERNLOGQ (EVEX encoded versions)" with `(KL, VL) = (4, 256)`, no write
+  mask and a register `SRC2`: `FOR k := 0 TO 63 … DEST[j][k] :=
+  imm[(DEST[i+k] << 2) + (SRC1[ i+k ] << 1) + SRC2[ i+k ]]` for each
+  quadword `j` (`i := j * 64`): bit by bit, as VPTERNLOGD, so `ternlog` on
+  each lane.
+* `vprorq`: SDM Vol. 2, "VPRORD/VPRORVD/VPRORQ/VPRORVQ—Bit Rotate Right",
+  "VPRORQ (EVEX encoded versions, imm8)" with `(KL, VL) = (4, 256)`, no write
+  mask and a register source: `DEST[i+63:i] := RIGHT_ROTATE_QWORDS(SRC1[i+63:i],
+  imm8)` for each quadword, so `rorQwords` on each lane. -/
 def EOp.exec : EOp → State → State
   | .bin op d a b, s => s.setVy d (lanes256 op.sse.eval (s.vy a) (s.vy b))
   | .shift op d a n, s =>
@@ -145,5 +159,12 @@ def EOp.exec : EOp → State → State
     let bv := s.vy b
     s.setVy d (madd52 hi (lane256 dv 1) (lane256 av 1) (lane256 bv 1) ++
       madd52 hi (lane256 dv 0) (lane256 av 0) (lane256 bv 0))
+  | .vpternlogq d a b n, s =>
+    let dv := s.vy d
+    let av := s.vy a
+    let bv := s.vy b
+    s.setVy d (ternlog (lane256 dv 1) (lane256 av 1) (lane256 bv 1) n ++
+      ternlog (lane256 dv 0) (lane256 av 0) (lane256 bv 0) n)
+  | .vprorq d a n, s => s.setVy d (lanes256 (fun x _ => rorQwords x n) (s.vy a) (s.vy a))
 
 end VG.X86_64
