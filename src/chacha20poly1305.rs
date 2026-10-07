@@ -29,6 +29,11 @@
 //! the keystream of short data (up to 960 bytes with AVX-512, 192 with AVX2),
 //! which then takes no second call; every other variant computes it with the
 //! scalar `vg_chacha20_block`.
+//!
+//! [`ChaCha20Poly1305::encrypt`] encrypts out of place, from plaintext in
+//! buffers of the caller's (in pieces) into an output buffer, as a TLS record
+//! layer needs: it gathers the plaintext into the output and encrypts it
+//! there with `vg_chacha20_poly1305_seal`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -95,6 +100,9 @@ pub enum Error {
     /// The tag does not match: the ciphertext, the additional data or the
     /// nonce is not what was authenticated under this key.
     TagMismatch,
+    /// The output buffer of [`ChaCha20Poly1305::encrypt`] is not exactly as
+    /// long as the plaintext.
+    InvalidOutputLength,
 }
 
 /// The AEAD with a key.
@@ -177,6 +185,40 @@ impl ChaCha20Poly1305 {
         Ok(tag)
     }
 
+    /// Encrypts the concatenation of the pieces of `plaintext`, with the
+    /// nonce `nonce` and the additional data `aad`, writes the ciphertext to
+    /// `out`, and returns the tag: encryption out of place, for a caller
+    /// holding the plaintext in buffers it does not own, such as a TLS record
+    /// layer with a record in several pieces and its content type after
+    /// them.
+    ///
+    /// `out` must be exactly as long as the plaintext (the pieces' lengths
+    /// added up), or this returns [`Error::InvalidOutputLength`] and writes
+    /// nothing.
+    pub fn encrypt(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Result<[u8; 16], Error> {
+        // Check the lengths before writing anything.
+        let total = plaintext
+            .iter()
+            .try_fold(0usize, |n, c| n.checked_add(c.len()));
+        if total != Some(out.len()) {
+            return Err(Error::InvalidOutputLength);
+        }
+        check_len(out.len())?;
+        let mut rest = &mut out[..];
+        for c in plaintext {
+            let (head, tail) = rest.split_at_mut(c.len());
+            head.copy_from_slice(c);
+            rest = tail;
+        }
+        self.encrypt_in_place(nonce, aad, out)
+    }
+
     /// Decrypts `data` in place, with the nonce `nonce` and the additional
     /// data `aad`, if `tag` authenticates it; otherwise returns
     /// [`Error::TagMismatch`] and zeroes `data`.
@@ -234,6 +276,33 @@ mod tests {
     #[cfg(target_arch = "x86_64")]
     use crate::cpu::Features;
     use crate::cpu::detected;
+
+    /// Out-of-place encryption matches in-place encryption for every split
+    /// of the plaintext into pieces, empty ones included, and its errors
+    /// write nothing.
+    #[test]
+    fn out_of_place() {
+        let aead = ChaCha20Poly1305::new(&[4; 32]);
+        let nonce = [8; 12];
+        let aad = [2; 9];
+        let msg: [u8; 80] = core::array::from_fn(|i| (i as u8).wrapping_mul(31));
+        let mut ct = msg;
+        let tag = aead.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
+        for a in 0..=msg.len() {
+            for b in (a..=msg.len()).step_by(7) {
+                let mut out = [0u8; 80];
+                let pieces = [&msg[..a], &[][..], &msg[a..b], &msg[b..]];
+                assert_eq!(aead.encrypt(&nonce, &aad, &pieces, &mut out), Ok(tag));
+                assert_eq!(out, ct);
+            }
+        }
+        let mut out = [9u8; 4];
+        assert_eq!(
+            aead.encrypt(&nonce, &aad, &[&[1, 2, 3][..]], &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(out, [9; 4]);
+    }
 
     /// Decryption undoes encryption, and rejects any change to the data, the
     /// additional data, the nonce or the tag, zeroing the data.
