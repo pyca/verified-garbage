@@ -293,11 +293,11 @@ theorem priv_call {privN : String} {privC : Prog isa}
 def cpyArg (j : Nat) : List Instr := [.mov .rax (.mem (arg j)), .store (sp (16 + 8 * j)) .rax]
 
 def privTail : List Instr :=
-  scr .rax oEm ++ [.store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] ++
-  scr .rax oRsa ++ [.store (sp 96) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
-    .store (sp 104) .rax] ++
-  [.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
-    .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))]
+  scr .rax oEm ++ ([.store (sp 0) .rax, .mov .rax (.mem (sp sK)), .store (sp 8) .rax] : List Instr) ++
+  scr .rax oRsa ++ ([.store (sp 96) .rax, .mov .rax (.mem (sp sScrLen)), .alu .sub .rax (.imm 1024),
+    .store (sp 104) .rax] : List Instr) ++
+  ([.mov .rdi (.mem (sp sOut)), .mov .rsi (.mem (sp sK)), .mov .rdx (.mem (sp sN)), .mov .rcx (.mem (sp sK)),
+    .mov .r8 (.mem (sp sE)), .mov .r9 (.mem (sp sEl))] : List Instr)
 
 theorem privArgs_eq : privArgs = (List.range 10).flatMap cpyArg ++ privTail := rfl
 

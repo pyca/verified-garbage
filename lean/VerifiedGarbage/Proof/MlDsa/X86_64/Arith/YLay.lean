@@ -434,12 +434,12 @@ theorem ylay_ok {fP sP : Addr} {len k : Nat} (hlen : len ∈ [8, 16, 32, 64, 128
 
 /-- The body of the layer with `len = 4`. -/
 abbrev ybody4 (bf : List Instr) (o₀ o₁ : BitVec 8) (dz : BitVec 32) : List Instr :=
-  [.vmovdquLoad .l256 .xmm4 (at_ .rdx 0)] ++ ([.vmovdquLoad .l256 .xmm5 (at_ .rdx 32)] ++ (yzetaS o₀ o₁ ++
-    ([.alu .add .r8 (.imm dz)] ++ ([.vop (.vperm2i128 .xmm0 .xmm4 .xmm5 0x20)] ++
-    ([.vop (.vperm2i128 .xmm1 .xmm4 .xmm5 0x31)] ++ (toY bf ++ ([.vop (.vperm2i128 .xmm4 .xmm0 .xmm3 0x20)] ++
-    ([.vop (.vperm2i128 .xmm5 .xmm0 .xmm3 0x31)] ++
-    [.vmovdquStore .l256 (at_ .rdx 0) .xmm4, .vmovdquStore .l256 (at_ .rdx 32) .xmm5, .alu .add .rdx (.imm 64),
-      .alu .sub .rcx (.imm 1)]))))))))
+  ([.vmovdquLoad .l256 .xmm4 (at_ .rdx 0)] : List Instr) ++ (([.vmovdquLoad .l256 .xmm5 (at_ .rdx 32)] : List Instr) ++ (yzetaS o₀ o₁ ++
+    (([.alu .add .r8 (.imm dz)] : List Instr) ++ (([.vop (.vperm2i128 .xmm0 .xmm4 .xmm5 0x20)] : List Instr) ++
+    (([.vop (.vperm2i128 .xmm1 .xmm4 .xmm5 0x31)] : List Instr) ++ (toY bf ++ (([.vop (.vperm2i128 .xmm4 .xmm0 .xmm3 0x20)] : List Instr) ++
+    (([.vop (.vperm2i128 .xmm5 .xmm0 .xmm3 0x31)] : List Instr) ++
+    ([.vmovdquStore .l256 (at_ .rdx 0) .xmm4, .vmovdquStore .l256 (at_ .rdx 32) .xmm5, .alu .add .rdx (.imm 64),
+      .alu .sub .rcx (.imm 1)] : List Instr)))))))))
 
 theorem ystep4 {fP sP : Addr} {m kb : Nat} (hm : m < 16) (o₀ o₁ : BitVec 8) (dz : BitVec 32) (zi : Nat → Nat)
     (hk : kb + 4 ≤ 256) (hsel : ∀ e < 4, kb + sel o₀ e = zi (2 * m) ∧ kb + sel o₁ e = zi (2 * m + 1))
