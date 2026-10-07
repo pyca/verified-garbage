@@ -45,11 +45,13 @@ arguments, with `k` and the hash both `d`. -/
 def args : List Instr := [.addImm .x .x4 .x2 0, .addImm .x .x3 .x1 0, .addImm .x .x2 .x1 0]
 
 /-- The signature's code up to `Z^(p-2)`. -/
-def upToPow : Prog isa :=
+def upToPowWith (comb : Prog isa) : Prog isa :=
   .seq (.block c.setup) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (TCombCfg.comb c.combCfg) <|
+  .seq comb <|
   .seq c.pPow (.block [])
+
+def upToPow : Prog isa := upToPowWith c (TCombCfg.comb c.combCfg)
 
 /-- `04 ‖ x ‖ y` (or zeros, `len` bytes each) to `out`, `x19`–`x25` restored, and the
 flag's low bit to `x0`. -/
@@ -70,8 +72,10 @@ def middle : Prog isa :=
     c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c]
 
 /-- `vg_ec_<curve>_public_key`. -/
-def publicKey : Prog isa :=
-  .seq (.block args) (.seq (upToPow c) (middle c))
+def publicKeyWith (comb : Prog isa) : Prog isa :=
+  .seq (.block args) (.seq (upToPowWith c comb) (middle c))
+
+def publicKey : Prog isa := publicKeyWith c (TCombCfg.comb c.combCfg)
 
 end Cfg
 

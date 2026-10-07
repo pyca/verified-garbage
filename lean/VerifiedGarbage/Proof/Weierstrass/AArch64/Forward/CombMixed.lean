@@ -1,0 +1,90 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombArithmetic
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
+
+namespace VG.Proof.Weierstrass.AArch64.Forward.CombMixed
+open VG VG.AArch64 VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
+open VG.Proof.Weierstrass.AArch64.Forward
+
+def original := CombArithmetic.original .mixed
+def optimized := CombArithmetic.optimized .mixed
+materialize_value leftCode := original
+materialize_value rightCode := optimized
+certificate_value nodes := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
+theorem original_lit : original=leftCode.lit := leftCode.lit_eq
+theorem optimized_lit : optimized=rightCode.lit := rightCode.lit_eq
+
+theorem valid : CertValid nodes := by decide +kernel
+
+theorem inputs : Inputs nodes 8192 := by
+  have h : ∀ i : Fin 1024,nodes.nodes.lookup (i.val+1)=some (.input (8*i.val)) := by decide +kernel
+  intro off ha hb
+  have ho : off=8*(off/8) := by omega
+  simpa only [←ho] using h ⟨off/8,by omega⟩
+
+noncomputable def left : Env Nat := (eval (certDom nodes) 8192 leftCode.lit initialEnv).getD initialEnv
+noncomputable def right : Env Nat := (eval (certDom nodes) 8192 rightCode.lit initialEnv).getD initialEnv
+
+private theorem some_getD {α : Type} {o : Option α} (d : α) (h : o.isSome=true) :
+    o=some (o.getD d) := by cases o <;> simp_all
+
+theorem evalLeft : eval (certDom nodes) 8192 original initialEnv=some left := by
+  rw [original_lit]
+  exact some_getD initialEnv (by decide +kernel)
+
+theorem evalRight : eval (certDom nodes) 8192 optimized initialEnv=some right := by
+  rw [optimized_lit]
+  exact some_getD initialEnv (by decide +kernel)
+
+theorem same : ∀ off,off%8=0 → off+8≤8192 → left.slot off=right.slot off := by
+  have h : ∀ i : Fin 1024,left.slot (8*i.val)=right.slot (8*i.val) := by decide +kernel
+  intro off ha hb
+  have ho : off=8*(off/8) := by omega
+  simpa only [←ho] using h ⟨off/8,by omega⟩
+
+noncomputable def checked : Checked 8192 original optimized where
+  nodes := nodes
+  valid := valid
+  inputs := inputs
+  left := left
+  right := right
+  evalLeft := evalLeft
+  evalRight := evalRight
+  same := same
+  boundLeft := by rw [original_lit]; decide +kernel
+  boundRight := by rw [optimized_lit]; decide +kernel
+
+
+noncomputable def caseProof : CombArithmetic.Case .mixed where
+  checked := checked
+  leftBound := by
+    have h : leftCode.lit.all (fun i => decide (instrBound i≤8192))=true := by decide +kernel
+    rw [show CombArithmetic.original _=leftCode.lit from original_lit]
+    intro i hi
+    exact of_decide_eq_true ((List.all_eq_true.mp h) i hi)
+  rightBound := by
+    have h : rightCode.lit.all (fun i => decide (instrBound i≤8192))=true := by decide +kernel
+    rw [show CombArithmetic.optimized _=rightCode.lit from optimized_lit]
+    intro i hi
+    exact of_decide_eq_true ((List.all_eq_true.mp h) i hi)
+  clob := by
+    have h : (rightCode.lit.flatMap instrClob).all
+        (fun r => decide (r∈VG.Proof.Mont.AArch64.clob 4))=true := by decide +kernel
+    rw [show CombArithmetic.optimized .mixed=rightCode.lit from optimized_lit]
+    intro r hr
+    exact of_decide_eq_true ((List.all_eq_true.mp h) r hr)
+
+
+theorem ct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
+    (VG.Impl.P256.CombArithmetic.program VG.Impl.P256.CombArithmetic.K.M
+      (VG.Impl.P256.CombArithmetic.operations .mixed)) := by
+  have hs : VG.Impl.P256.CombArithmetic.selected VG.Impl.P256.CombArithmetic.K.M
+      (VG.Impl.P256.CombArithmetic.operations .mixed) :=
+    ⟨rfl,List.mem_map.mpr ⟨.mixed,by simp [VG.Impl.P256.CombArithmetic.kinds],rfl⟩⟩
+  rw [VG.Impl.P256.CombArithmetic.program,ite_eq_left hs]
+  change ConstantTime isa _ _ (.block optimized)
+  rw [optimized_lit]
+  exact VG.Taint.constantTime (A:=taint) (hc:=.block (List.replicate 5 (Taint.ofRegs [.x0])))
+    (Taint.ofRegs [.x0]) (fun _ _ _ _ h => h) (by decide +kernel)
+
+end VG.Proof.Weierstrass.AArch64.Forward.CombMixed

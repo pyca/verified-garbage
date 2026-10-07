@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Curve
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Verified
+import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 
 /-!
 # Deterministic ECDSA on AArch64: P-256
@@ -32,9 +32,9 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AArch64.InvSou
   sh := 0
   sh_eq := by show 8 * 32 - Spec.Ecdsa.nBits Spec.P256.curve = 0; rw [p256_nBits]
   coreN := Spec.Ecdsa.P256.signApi.name
-  coreC := Impl.Ecdsa.AArch64.signP256
-  coreX := Proof.Ecdsa.AArch64.sign_a64 hL hI hT
-  coreCT := Proof.Ecdsa.AArch64.sign_ct
+  coreC := Impl.P256.Booth.sign
+  coreX := Proof.Ecdsa.AArch64.booth_sign_a64 hL hI (Proof.Ecdsa.AArch64.booth_comb_correct hL hI hT)
+  coreCT := Proof.Ecdsa.AArch64.booth_sign_ct
   coreNoFrames := by lit_decide
   coreKeepsV := by lit_decide
   reduceT := Function.const _ ⟨_, by taint_decide⟩
