@@ -1,6 +1,6 @@
 //! ECDH over P-256 (`vg_ecdh_p256`), and public keys
-//! (`vg_ec_p256_public_key`), with BMI2 and ADX (and the public keys' comb's
-//! selection by AVX2) where the CPU has them (`_adx`).
+//! (`vg_ec_p256_public_key`), with BMI2, ADX and AVX2 table selection
+//! where the CPU has them (`_adx`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -38,7 +38,9 @@ impl PrivateKey<P256> {
     /// is not a valid public key (SP 800-56A §5.6.2.3.3).
     pub fn diffie_hellman(&self, peer: &[u8; 65]) -> Result<[u8; 32], Error> {
         let mut out = [0; 32];
-        let mut scratch = [0u64; 1024];
+        #[cfg_attr(target_arch = "x86_64", repr(align(64)))]
+        struct Scratch([u64; 1024]);
+        let mut scratch = Scratch([0u64; 1024]);
         let ok = match Mul::select(detected()) {
             // SAFETY: `out` is valid for reads and writes of 32 bytes,
             // `self.d` for reads of 32, `peer` for reads of 65 and `scratch`
@@ -46,13 +48,13 @@ impl PrivateKey<P256> {
             // objects from each other and the others, so none overlaps
             // another or the call's stack frame, and, as Rust objects, none
             // wraps around the address space.
-            Mul::Baseline => unsafe { vg_ecdh_p256(&mut out, &self.d, peer, &mut scratch) },
-            // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2 and ADX
+            Mul::Baseline => unsafe { vg_ecdh_p256(&mut out, &self.d, peer, &mut scratch.0) },
+            // SAFETY: as for `Mul::Baseline`, and the CPU has BMI2, ADX and AVX2
             // (`Mul::select`).
             #[cfg(target_arch = "x86_64")]
-            Mul::Adx => unsafe { vg_ecdh_p256_adx(&mut out, &self.d, peer, &mut scratch) },
+            Mul::Adx => unsafe { vg_ecdh_p256_adx(&mut out, &self.d, peer, &mut scratch.0) },
         };
-        zeroize(&mut scratch);
+        zeroize(&mut scratch.0);
         if ok == 1 {
             Ok(out)
         } else {
