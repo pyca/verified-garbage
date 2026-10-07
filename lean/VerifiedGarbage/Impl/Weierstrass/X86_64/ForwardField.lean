@@ -12,7 +12,9 @@ def code (M : Mod) (op : FOp) : List Instr :=
   | _ => opCode M op
 
 def outputRegs (M : Mod) : FOp → List Reg
-  | .mul _ _ _ => (List.range M.n).map (win M.n M.n)
+  | .mul _ a b => match sqrK? M a b with
+    | some _ => sqLow
+    | none => (List.range M.n).map (win M.n M.n)
   | _ => [.r8,.r9,.r10,.r11]
 
 def outputCache (M : Mod) (op : FOp) : Forward.Cache :=

@@ -56,6 +56,7 @@ theorem double4_ok {M : Mod} {s : State} {base : Addr} {size m a o : Nat}
         (((Keeps.regs kw).mono (by simp)).trans (kt.mono (by simp))))
   refine ⟨⟨fun r hr => kk.gpr r (fun h => hr ?_),kk.rd,kk.wr,?_⟩,?_⟩
   · rw [hn]
+    apply List.mem_append_left
     change r∈[.rax,.rcx,.rdx,.rbp,.r8,.r9,.r10,.r11,.r12,.r13]
     simp only [List.mem_cons,List.not_mem_nil,or_false] at h ⊢
     rcases h with h|h|h|h|h|h|h|h|h <;> simp [h]

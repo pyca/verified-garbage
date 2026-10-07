@@ -14,7 +14,7 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
   cases op with
   | mul o a b =>
     simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,outputRegs,FOp.out]
-    exact ⟨_,rfl⟩
+    cases sqrK? M a b <;> exact ⟨_,rfl⟩
   | add o a b =>
     simp only [code,outputRegs,FOp.out]
     split
@@ -30,11 +30,23 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
 
 theorem outputRegs_length {M : Mod} (hn : M.n=4) (op : FOp) :
     (outputRegs M op).length=4 := by
-  cases op <;> simp [outputRegs,hn]
+  cases op with
+  | mul o a b => simp only [outputRegs]; split <;> simp [hn,sqLow]
+  | add o a b => rfl
+  | sub o a b => rfl
 
 theorem outputRegs_nodup {M : Mod} (hn : M.n=4) (op : FOp) :
     (outputRegs M op).Nodup := by
-  cases op <;> simp only [outputRegs,hn] <;> decide
+  cases op with
+  | mul o a b =>
+    simp only [outputRegs]
+    split
+    · change ([.r12,.r13,.r14,.r15] : List Reg).Nodup
+      decide
+    · rw [hn]
+      decide
+  | add o a b => change ([.r8,.r9,.r10,.r11] : List Reg).Nodup; decide
+  | sub o a b => change ([.r8,.r9,.r10,.r11] : List Reg).Nodup; decide
 
 theorem code_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
     (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))

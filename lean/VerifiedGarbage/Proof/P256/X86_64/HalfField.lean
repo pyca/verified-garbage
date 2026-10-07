@@ -49,6 +49,7 @@ theorem half_inv_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
   have keep : OpKeep M base o s t := by
     refine ⟨fun r hr => hk.gpr r (fun h => hr ?_),hk.rd,hk.wr,?_⟩
     · rw [hn]
+      apply List.mem_append_left
       change r∈[.rax,.rcx,.rdx,.rbp,.r8,.r9,.r10,.r11,.r12,.r13]
       simp only [List.mem_cons,List.not_mem_nil,or_false] at h ⊢
       rcases h with h|h|h|h|h|h|h|h|h <;> simp [h]
