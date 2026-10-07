@@ -65,15 +65,16 @@ def jacPairOn (a b : Pt) : Prog isa :=
 and `D`. -/
 def quadJ : Prog isa := .seq (.block [.alu .add .rbx (.imm 8192)]) (.loop (jacPairOn K K.R K.D) .ae)
 
-/-- The mask `r` of `[z] = 0` (all ones if it is). -/
-def zmask (r : Reg) (z : Nat) : List Instr :=
-  [.mov r (.mem (sc z))] ++ ((List.range (K.M.n - 1)).map fun j => .alu .or r (.mem (sc (z + 8 * (j + 1))))) ++
-  [.alu .cmp r (.imm 1), .alu .sbb r (.reg r)]
+/-- The mask `rdx` of `[z] = 0` (all ones if it is), as `zeroMask`. -/
+def zmask (z : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc z))] ++ ((List.range (K.M.n - 1)).map fun j => .alu .or .rdx (.mem (sc (z + 8 * (j + 1))))) ++
+  [.alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx)]
 
 /-- After the Jacobian addition into `D`: `D = R` where `E` is `O`, then
-`R = E` where `R` is `O`, else `D`. -/
+`R = E` where `R` is `O`, else `D` (the masks in `rcx`). -/
 def selSum : List Instr :=
-  zmask K .rcx K.E.z ++ selPt K.M.n K.D K.D K.R ++ zmask K .rcx K.R.z ++ selPt K.M.n K.R K.D K.E
+  zmask K K.E.z ++ [.mov .rcx (.reg .rdx)] ++ selPt K.M.n K.D K.D K.R ++
+    zmask K K.R.z ++ [.mov .rcx (.reg .rdx)] ++ selPt K.M.n K.R K.D K.E
 
 /-- `R = R + E` in Jacobian coordinates, unless `R` and `E` are equal or
 opposite but not `O`. -/
@@ -94,7 +95,7 @@ def stepJ : Prog isa :=
 `D`), with `Y` Montgomery's one where `Z` (so `Z³`) is zero. -/
 def toProjR : Prog isa :=
   .seq (fprogB K.M (fromJ K.S K.R (zeroPt K) K.D)) <|
-  .block (copyPt K.M.n K.R K.D ++ zmask K .rdx K.R.z ++ (List.range K.M.n).flatMap (ySelWord K))
+  .block (copyPt K.M.n K.R K.D ++ zmask K K.R.z ++ (List.range K.M.n).flatMap (ySelWord K))
 
 /-- `E` from Jacobian into projective coordinates (through `D`). -/
 def toProjE : Prog isa :=

@@ -58,19 +58,24 @@ theorem TblOkR.unch {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Wi
   exact T.2
 
 /-- What holds throughout the loop, from `s₀` (the state before the table). -/
-structure WinSt (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ s : State) :
-    Prop where
+structure WinStR (K : WinCfg) (C : Curve) (base : Addr) (size : Nat)
+    (Rp : Fe C → Fe C → Fe C → Point C → Prop) (P : Point C) (s₀ s : State) : Prop where
   scr : Scr s base size
   keep : KeepRegs (powClob K.M.n) s₀ s
   unch : Unch base (winW K) s₀.mem s.mem
   mod : ModOkW K.M size C.p s.mem base
-  tbl : TblOk K C base P 8 s
+  tbl : TblOkR K C base Rp P 8 s
+
+/-- `WinStR` with the table in projective coordinates. -/
+abbrev WinSt (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ s : State) : Prop :=
+  WinStR K C base size (Rep C) P s₀ s
 
 /-- The state after a change of `loopW` only. -/
-theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
-    {P : Point C} {s₀ s s' : State} (h : WinSt K C base size P s₀ s) (hs' : Scr s' base size)
+theorem WinStR.next {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
+    {Rp : Fe C → Fe C → Fe C → Point C → Prop}
+    {P : Point C} {s₀ s s' : State} (h : WinStR K C base size Rp P s₀ s) (hs' : Scr s' base size)
     (hk : KeepRegs (powClob K.M.n) s s') (hU : Unch base (loopW K) s.mem s'.mem) :
-    WinSt K C base size P s₀ s' :=
+    WinStR K C base size Rp P s₀ s' :=
   ⟨hs', h.keep.trans hk, (h.unch.trans hU).mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · exact hw
@@ -78,8 +83,9 @@ theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     h.mod.unch hU (fun w hw => winW_mo hL h.mod w (loopW_sub K w hw)) h.scr.nowrap,
     TblOkR.unch hL h.tbl hU h.scr.nowrap⟩
 
-theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
-    {P : Point C} {s₀ s : State} (h : WinSt K C base size P s₀ s) (hF : WinFixed K C base s₀ P k) :
+theorem WinStR.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
+    {Rp : Fe C → Fe C → Fe C → Point C → Prop}
+    {P : Point C} {s₀ s : State} (h : WinStR K C base size Rp P s₀ s) (hF : WinFixed K C base s₀ P k) :
     tmv C K.M.n base s K.S.a = Fin.ofNat C.p C.a ∧ tmv C K.M.n base s K.S.b3 = Fin.ofNat C.p C.b ∧
       (∀ x ∈ winRo K, wordsVal s.mem base x K.M.n < C.p) ∧ wordsVal s.mem base K.zero K.M.n = 0 := by
   have hn := h.scr.nowrap
@@ -199,9 +205,10 @@ theorem Inv.rbxKeeps {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat
     by rw [hk.2.1]; exact h.lt, by rw [hk.2.1]; exact h.val⟩
 
 /-- The public counter is among the registers the window loop may change. -/
-theorem WinSt.rbxKeeps {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
-    {P : Point C} {s₀ s s' : State} (h : WinSt K C base size P s₀ s)
-    (hk : Keeps [.rbx] s s') : WinSt K C base size P s₀ s' :=
+theorem WinStR.rbxKeeps {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
+    {Rp : Fe C → Fe C → Fe C → Point C → Prop}
+    {P : Point C} {s₀ s s' : State} (h : WinStR K C base size Rp P s₀ s)
+    (hk : Keeps [.rbx] s s') : WinStR K C base size Rp P s₀ s' :=
   h.next hL (h.scr.of_keeps hk (by decide)) ((Keeps.regs hk).mono (by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [powClob]))
     (by rw [hk.2.1]; exact Unch.refl _ _ _)
