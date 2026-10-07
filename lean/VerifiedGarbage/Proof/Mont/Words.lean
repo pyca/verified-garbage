@@ -133,19 +133,26 @@ def _root_.VG.Impl.Mont.Red.ok : Red → Nat → Nat → Bool
       mwVal ws == (m + 1) / 2 ^ 64 && ws.all MWord.ok
 
 /-- What the arithmetic needs of the modulus `m`: its reduction's (`Red.ok`),
-and `tightOk` if `M.tight`. -/
+`tightOk` if `M.tight`, and `sparseOk` if `M.sparse`. -/
 def _root_.VG.Impl.Mont.Mod.ok (M : Mod) (m : Nat) : Bool :=
-  M.red.ok M.n m && (!M.tight || tightOk M.n m)
+  M.red.ok M.n m && (!M.tight || tightOk M.n m) && (!M.sparse || sparseOk M.n m)
 
 theorem _root_.VG.Impl.Mont.Mod.ok_red {M : Mod} {m : Nat} (h : M.ok m = true) :
     M.red.ok M.n m = true := by
-  simp only [Mod.ok, Bool.and_eq_true] at h; exact h.1
+  simp only [Mod.ok, Bool.and_eq_true] at h; exact h.1.1
+
+theorem _root_.VG.Impl.Mont.Mod.ok_sparse {M : Mod} {m : Nat} (h : M.ok m = true)
+    (hs : M.sparse = true) : M.n = 6 ∧
+      m = 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319 := by
+  simp only [Mod.ok, Bool.and_eq_true, hs, Bool.not_true, Bool.false_or, sparseOk,
+    beq_iff_eq] at h
+  exact h.2
 
 theorem _root_.VG.Impl.Mont.Mod.ok_tight {M : Mod} {m : Nat} (h : M.ok m = true)
     (ht : M.tight = true) : (2 ^ 64 + 1) * m ≤ 2 ^ (64 * (M.n + 1)) := by
   simp only [Mod.ok, Bool.and_eq_true, ht, Bool.not_true, Bool.false_or, tightOk,
     decide_eq_true_eq] at h
-  exact h.2
+  exact h.1.2
 
 /-- The modulus `m`: its `n` words at `M.mo`, the temporary area at `M.tmp`,
 in the working space and apart, `M.minv = -m⁻¹ mod 2⁶⁴`, and what its

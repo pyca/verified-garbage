@@ -201,7 +201,7 @@ theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.s
     ModOkW c.MP' size c.C.p m base :=
   ⟨hc.n0, sl_le c hc.n10 (by decide), sl_le c hc.n10 (by decide), sl_apart c (by decide), h,
     hc.minv_p, by
-      change (VG.Impl.Mont.X86.p256RedChoice c.n c.C.p).ok c.n c.C.p && true = true
+      change (VG.Impl.Mont.X86.p256RedChoice c.n c.C.p).ok c.n c.C.p && true && true = true
       rw [VG.Proof.Mont.X86.p256RedChoice_ok]; rfl⟩
 
 theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :

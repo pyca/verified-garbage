@@ -82,7 +82,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
   have h0 : regsVal s₁ (wins M.n 0) = 0 := regsVal_zero fun r hr => z₁ r (wins_sub_acc hM.n7 0 r hr)
   rw [WP.block_append_iff]
-  refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv (Mod.ok_red hM.red) M.n (Nat.le_refl _) hs₁
+  refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁
     (by rw [k₁.2.1]; exact hM.val) (by rw [k₁.2.1]; exact hB) h0) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
   have hs₂ := hs₁.of_keeps k₂ (by
     intro h

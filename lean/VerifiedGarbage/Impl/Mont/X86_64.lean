@@ -21,7 +21,11 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   `t + t₀ m = (t - t₀) + 2⁶⁴ t₀ m'` with `m' = (m + 1) / 2⁶⁴`, so the words
   above `t₀` get `t₀ m'`, one product per word of `m'` but those of zero
   (`redWords`); for `p`, whose `m'` is `2³² + 2¹²⁸ (2⁶⁴ − 2³² + 1)`, no
-  product at all, but shifts and subtractions (`shiftRed`). With BMI2 and ADX (`M.adx`), a row
+  product at all, but shifts and subtractions (`shiftRed`). For P-384's `p`
+  (`M.sparse`), `u = t₀ (2³² + 1) mod 2⁶⁴` by a shift and an addition, and
+  `t + u m = t - u c + 2³⁸⁴ u` for `c = 2³⁸⁴ - m` of three words: two
+  products of `u` by `c`'s words, the result less `t₀` subtracted from the
+  words above `t₀`, and `u` added at `2³⁸⁴` (`redSparse`). With BMI2 and ADX (`M.adx`), a row
   is `mulx` for each word, its low half added through OF (`adox`) and its
   high half through CF (`adcx`), two carry chains that do not wait for each
   other (`roundX`). The accumulator stays below `2m`, and the result is
@@ -156,11 +160,41 @@ def redFriendly (x : Bool) (t0 : Reg) (ws : List MWord) (ts : List Reg) : List I
   | some k => shiftRed x t0 k ts
   | none => redWords t0 ws ts
 
+/-- The words of `c = 2³⁸⁴ - p = 2¹²⁸ + 2⁹⁶ - 2³² + 1` for P-384's `p` but the
+top one, which is 1. -/
+def sparseC0 : BitVec 64 := BitVec.ofNat 64 0xffffffff00000001
+def sparseC1 : BitVec 32 := BitVec.ofNat 32 0xffffffff
+
+/-- `rcx = u = t₀ (2³² + 1) mod 2⁶⁴`, P-384's `t₀ m' mod 2⁶⁴`. -/
+def uSparse (t0 : Reg) : List Instr := [.mov .rcx (.reg t0), .shift .shl .rcx 32, .alu .add .rcx (.reg t0)]
+
+/-- `rbp + 2⁶⁴ rdx + 2¹²⁸ t₀ = ⌊u c / 2⁶⁴⌋` for `u` in `rcx` (kept), whose low
+word the reduction does not need. -/
+def prodSparse (t0 : Reg) : List Instr :=
+  [.movImm64 .rax sparseC0, .mul .rcx, .mov .rbp (.reg .rdx), .mov32 .rax (.imm sparseC1), .mul .rcx,
+    .alu .add .rbp (.reg .rax), .alu .adc .rdx (.reg .rcx), .mov32 t0 (.imm 0), .alu .adc t0 (.imm 0)]
+
+/-- `t₁ … t₇ += 2³²⁰ u - (rbp + 2⁶⁴ rdx + 2¹²⁸ t₀)`: the subtraction from
+`t₁ … t₅`, its borrow taken from `u`, which is added at `t₆`. -/
+def subSparse (t0 t1 t2 t3 t4 t5 t6 t7 : Reg) : List Instr :=
+  [.alu .sub t1 (.reg .rbp), .alu .sbb t2 (.reg .rdx), .alu .sbb t3 (.reg t0), .alu .sbb t4 (.imm 0),
+    .alu .sbb t5 (.imm 0), .alu .sbb .rcx (.imm 0), .alu .add t6 (.reg .rcx), .alu .adc t7 (.imm 0)]
+
+/-- The reduction of P-384's round on the window `ts`: `t += u p` for
+`u = t₀ (2³² + 1) mod 2⁶⁴`, as `t - u c + 2³⁸⁴ u` with `c = 2³⁸⁴ - p`, whose
+low word is `t₀`: the words above `t₀` get `2³²⁰ u - ⌊u c / 2⁶⁴⌋`; then
+`t₀ = 0`. -/
+def redSparse : List Reg → List Instr
+  | [t0, t1, t2, t3, t4, t5, t6, t7] =>
+    uSparse t0 ++ prodSparse t0 ++ subSparse t0 t1 t2 t3 t4 t5 t6 t7 ++ [.mov32 t0 (.imm 0)]
+  | _ => []
+
 /-- The reduction of round `i`: `t += u m` with `u = t₀ m' mod 2⁶⁴`, after
 which `t₀ = 0`; or, for a friendly modulus, the words above `t₀` get `t₀ m'`
-and `t₀ = 0`. -/
+and `t₀ = 0`; or, for P-384's `p`, `redSparse`. -/
 def redRound (M : Mod) (i : Nat) : List Instr :=
   let t := win M.n i
+  if M.sparse then redSparse (wins M.n i) else
   match M.red with
   | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] ++
       mulRow ((List.range M.n).map t) M.mo ++ carryUp (t M.n) (t (M.n + 1))
@@ -199,10 +233,11 @@ def rowX (n : Nat) (ts : List Reg) (d : Nat) : List Instr :=
 
 /-- Round `i` of `mul o a b` with BMI2 and ADX: `t += a_i [b]` (`rowX`), then
 the reduction: `t += u m` by `rowX`, `u = t₀ m' mod 2⁶⁴` in `rdx`, or as
-`redRound` for a friendly modulus. -/
+`redRound` for a friendly modulus or P-384's `p`. -/
 def roundX (M : Mod) (a b i : Nat) : List Instr :=
   let t := win M.n i
   [.mov .rdx (.mem (sc (a + 8 * i)))] ++ rowX M.n (wins M.n i) b ++
+  if M.sparse then redSparse (wins M.n i) else
   match M.red with
   | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rdx (.reg .rax)] ++
       rowX M.n (wins M.n i) M.mo
