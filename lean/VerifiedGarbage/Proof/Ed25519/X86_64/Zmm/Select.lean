@@ -447,8 +447,12 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
   let u₅ := u₄.setZ (y 14) (w.extractLsb' 0 128) (w.extractLsb' 128 128) (w.extractLsb' 256 128)
     (w.extractLsb' 384 128)
   have e5 : exec (.vmovdqu32Load (y 14) (sc ZK2)) u₄ = some u₅ := by
-    have hea : u₄.ea (sc ZK2) = base + BitVec.ofNat 64 ZK2 := ea_sc' hrdi ZK2
-    have hin : InRegions (u₄.rd ++ u₄.wr) (base + BitVec.ofNat 64 ZK2) 64 := hz2
+    have hea : u₄.ea (sc ZK2) = base + BitVec.ofNat 64 ZK2 := by
+      simp only [u₄, ZOp.exec_ea, u₃, u₂, u₁, VOp.exec_ea]
+      exact ea_sc' hrdi ZK2
+    have hin : InRegions (u₄.rd ++ u₄.wr) (base + BitVec.ofNat 64 ZK2) 64 := by
+      simp only [u₄, ZOp.exec_rd, ZOp.exec_wr, u₃, u₂, u₁, VOp.exec_rd, VOp.exec_wr]
+      exact hz2
     simp only [exec, hea, State.load512, hin, ite_true, Option.map_some]
     rfl
   refine WP.of_runBlock ⟨u₅, ?_, ?_⟩
@@ -515,13 +519,16 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
       Offset.add_ofNat_add_ofNat]
     congr 3; omega
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    show s₆.gpr r = s.gpr r
+    simp only [u₅, State.setZ_gpr, u₄, ZOp.exec_gpr, u₃, u₂, u₁, VOp.exec_gpr]
     rw [k₆.1 r (by simp [hr.1])]
     show s₄.gpr r = s.gpr r
     rw [k₄.1 r (by simp [hr.1]), g₃ r hr.1 hr.2.1 hr.2.2]
-  · exact m₆
-  · show s₆.rd = s.rd; rw [k₆.2.2.1]; show s₄.rd = _; rw [k₄.2.2.1, k₃.rd, k₂.rd, k₁.2.2.1]
-  · show s₆.wr = s.wr; rw [k₆.2.2.2]; show s₄.wr = _; rw [k₄.2.2.2, k₃.wr, k₂.wr, k₁.2.2.2]
+  · simp only [u₅, State.setZ_mem, u₄, ZOp.exec_mem, u₃, u₂, u₁, VOp.exec_mem]
+    exact m₆
+  · simp only [u₅, State.setZ_rd, u₄, ZOp.exec_rd, u₃, u₂, u₁, VOp.exec_rd]
+    rw [k₆.2.2.1]; show s₄.rd = _; rw [k₄.2.2.1, k₃.rd, k₂.rd, k₁.2.2.1]
+  · simp only [u₅, State.setZ_wr, u₄, ZOp.exec_wr, u₃, u₂, u₁, VOp.exec_wr]
+    rw [k₆.2.2.2]; show s₄.wr = _; rw [k₄.2.2.2, k₃.wr, k₂.wr, k₁.2.2.2]
   · simp only [zselRegs, not_or, not_exists, not_and] at hr
     have n9 : r ≠ y 9 := hr.2
     have n10 : r ≠ y 10 := hr.1.1
@@ -532,6 +539,7 @@ theorem zselect_ok {s : State} {base T : Addr} (hs : Scratch s base) (ht : CombT
       l₃ r n9 n10 _ hi]
     rw [k₃.zl r (by simp only [zselRegs, not_or, not_exists, not_and]; exact hr.1) i hi,
       k₂.zl r (by simp only [zselRegs, not_or, not_exists, not_and]; exact hr.1) i hi, z₁]
-  · show s₆.syms = s.syms; rw [y₆]; show s₄.syms = _; rw [y₄, k₃.syms, k₂.syms, y₁]
+  · dsimp only [u₅, State.setZ, u₄, u₃, u₂, ZOp.exec, u₁, VOp.exec, State.setV]
+    rw [y₆]; show s₄.syms = _; rw [y₄, k₃.syms, k₂.syms, y₁]
 
 end VG.Proof.Ed25519.X86_64.Zmm
