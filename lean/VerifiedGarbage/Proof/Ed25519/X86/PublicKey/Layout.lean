@@ -1,11 +1,16 @@
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Layout
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Spec.Ed25519.Contract
+import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
 
 namespace VG.Proof.Ed25519.X86.PublicKey
 open VG VG.X86
+open VG.Impl.Ed25519.X86 (combSym)
 
-def pkRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 32⟩, ⟨argAddr s 0, 12⟩]
+/-- The seed, the arguments and the comb's tables (the static `combSym`, which
+`vg_ed25519_scalar_base` reads). -/
+def pkRd (s : State) : List Region :=
+  [⟨(arg s 1).setWidth 64, 32⟩, ⟨argAddr s 0, 12⟩, TBL ((s.syms combSym).setWidth 64)]
 def pkWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
 
 def pkLocal : Contract isa where
@@ -22,10 +27,11 @@ def pkLocal : Contract isa where
       stack.Disjoint seed ∧ stack.Disjoint scratch ∧
       (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧
       (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧ 280 ≤ (s.gpr .esp).toNat ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ CombHeld s [out, scratch, stack]
   post s t := Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
     Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
-  pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2
+  pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
+    s.syms combSym = t.syms combSym
 
 abbrev esp (s : State) : BitVec 32 := s.gpr .esp - BitVec.ofNat 32 256
 abbrev Ctx (s t : State) : Prop := Whole.Ctx (esp s) s.gpr s.mem (pkRd s) (pkWr s) t
@@ -38,7 +44,7 @@ structure Bounds (s : State) : Prop where
   above : (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
 
 theorem bounds {s : State} (h : pkLocal.pre s) : Bounds s := by
-  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, a, b, c, d, e⟩ := h
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, a, b, c, d, e, _⟩ := h
   exact ⟨a, b, c, d, e⟩
 
 theorem Bounds.frame {s : State} (h : Bounds s) : (esp s).toNat + 272 ≤ 2 ^ 32 := by
@@ -90,11 +96,13 @@ structure Facts (s : State) : Prop extends Bounds s where
   ko : (Whole.STK (esp s)).Disjoint (OUT s)
   ks : (Whole.STK (esp s)).Disjoint (SEED s)
   kc : (Whole.STK (esp s)).Disjoint (SCR s)
+  held : CombHeld s [OUT s, SCR s, Whole.STK (esp s)]
 
 theorem facts {s : State} (h : pkLocal.pre s) : Facts s := by
   have hb := bounds h
-  obtain ⟨_, _, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, _⟩ := h
-  exact ⟨hb, os, oc, sc, ao, ac, ro, rc, stack_eq hb ▸ ko, stack_eq hb ▸ ks, stack_eq hb ▸ kc⟩
+  obtain ⟨_, _, os, oc, sc, ao, ac, ro, rc, ko, ks, kc, _, _, _, _, _, held⟩ := h
+  exact ⟨hb, os, oc, sc, ao, ac, ro, rc, stack_eq hb ▸ ko, stack_eq hb ▸ ks, stack_eq hb ▸ kc,
+    stack_eq hb ▸ held⟩
 
 theorem arg_address (s : State) (j : Nat) : addr (esp s) (260 + 4 * j) = argAddr s j := by
   simp only [addr, esp, argAddr]

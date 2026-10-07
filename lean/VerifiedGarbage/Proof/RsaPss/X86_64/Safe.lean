@@ -63,14 +63,23 @@ theorem ctHashWith_safe {padding : Prog isa} (hp : padding.allInstrs safeI = tru
   have hl : H.P.len.all safeI = true := hH.taints.lenSafe
   have ho : H.P.out.all safeI = true := hH.taints.outSafe
   simp only [ctHashWith, hp, seqs, ctInit, lenLoop, compLoop, select, Code.allInstrs, comp_safe K, init_safe K,
-    rec_all, lenField, digestOut, List.all_append, hl, ho, byteLoop, step, Bool.and_true, Bool.true_and]
+    rec_all, lenField, digestOut, digestAt, List.all_append, hl, ho, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include hH K in
 theorem ctHash_safe : (ctHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
 
 include hH K in
-theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
+theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := by
+  unfold mgfHash
+  split
+  · have hl : H.P.len.all safeI = true := hH.taints.lenSafe
+    have ho : H.P.out.all safeI = true := hH.taints.outSafe
+    simp only [mgfDirectHash, seqs, ctInit, lenLoop, fixedPad80, Code.allInstrs,
+      comp_safe K, init_safe K, rec_all, lenField, digestAt, List.all_append,
+      hl, ho, Bool.and_true]
+    rfl
+  · exact ctHashWith_safe hH K rfl
 
 include hH K in
 theorem mgfXor_safe : (mgfXor H).allInstrs safeI = true := by
@@ -88,7 +97,13 @@ include K in
 theorem ctHash_xd : (ctHash H).x86_64Depth = 8 := ctHashWith_xd K rfl
 
 include K in
-theorem mgfHash_xd : (mgfHash H).x86_64Depth = 8 := ctHashWith_xd K rfl
+theorem mgfHash_xd : (mgfHash H).x86_64Depth = 8 := by
+  unfold mgfHash
+  split
+  · simp only [mgfDirectHash, seqs, ctInit, lenLoop, fixedPad80,
+      Code.x86_64Depth, K.cXD, K.iXD]
+    rfl
+  · exact ctHashWith_xd K rfl
 
 include K in
 theorem mgfXor_xd : (mgfXor H).x86_64Depth = 8 := by

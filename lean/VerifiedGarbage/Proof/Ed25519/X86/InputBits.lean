@@ -170,13 +170,14 @@ theorem inputBytes_same {s₀ s : State} {scidx i n : Nat} (hp : InputPre s₀ s
   intro r hr; rw [List.mem_singleton.mp hr]
   exact hp.sep _ (inputByte_contains hp hk')
 
-theorem inputBits_ok {s₀ s : State} {scidx argc i n : Nat}
+/-- `inputBits`, which writes only the bits' bytes of the workspace. -/
+theorem inputBits_frame {s₀ s : State} {scidx argc i n : Nat}
     (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
     (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) :
     WP isa (.block (inputBits i (4 * n))) s fun t => Saved s₀ (arg s₀ scidx) t ∧
-      (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
+      Frame [sub (arg s₀ scidx) 7168 (8 * (4 * n))] s.mem t.mem ∧ (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
         (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) := by
-  refine WP.block_append (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, _⟩ => ?_)
+  refine WP.block_append (WP.mono (loadArg_ok hp hs hia) fun u ⟨hu, eu, mu⟩ => ?_)
   have cu := hu.ctx hp.fit hp.wr
   have hr : ∀ k < 4 * n, InRegions (u.rd ++ u.wr) (addr (arg s₀ i) k) 1 := by
     intro k hk; refine ⟨_, ?_, inputByte_contains hi hk⟩
@@ -189,7 +190,16 @@ theorem inputBits_ok {s₀ s : State} {scidx argc i n : Nat}
     · rw [scR_eq]; exact sub_sub hp.fit (by decide) (by omega_using [hn]) (by decide)
   refine WP.mono (expandScalarBits_ok cu eu (by omega_using [hn]) hi.fit hr hsep)
     fun t ⟨kt, ft, bt⟩ => ?_
-  refine ⟨hu.of_offset hp.fit (Keep.scalar kt) ft (by decide) (by omega_using [hn]) (by decide), fun k hk => ?_⟩
+  refine ⟨hu.of_offset hp.fit (Keep.scalar kt) ft (by decide) (by omega_using [hn]) (by decide),
+    by rw [← mu]; exact ft, fun k hk => ?_⟩
   rw [bt k (by omega_using [hk]), inputBytes_same hi hu]
+
+theorem inputBits_ok {s₀ s : State} {scidx argc i n : Nat}
+    (hp : ScratchPre s₀ scidx argc) (hi : InputPre s₀ scidx i n)
+    (hs : Saved s₀ (arg s₀ scidx) s) (hia : i < argc) (hn : n ≤ 16) :
+    WP isa (.block (inputBits i (4 * n))) s fun t => Saved s₀ (arg s₀ scidx) t ∧
+      (∀ k < 32 * n, t.mem (addr (arg s₀ scidx) (7168 + k)) = BitVec.ofNat 8
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ i).setWidth 64) (4 * n)) / 2 ^ k % 2)) :=
+  WP.mono (inputBits_frame hp hi hs hia hn) fun _ h => ⟨h.1, h.2.2⟩
 
 end VG.Proof.Ed25519.X86

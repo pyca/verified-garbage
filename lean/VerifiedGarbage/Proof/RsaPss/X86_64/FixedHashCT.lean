@@ -38,9 +38,9 @@ theorem fixedPad_ct (hc : HashChecks H.P H.D n) :
   exact HEFixed.toHE n h'
 
 include hH K in
-theorem mgfHash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
-    RelCT isa (Two (HEFixed H n)) (mgfHash H) fun _ _ => True := by
-  unfold mgfHash ctHashWith seqs seqs seqs seqs seqs
+theorem mgfGenericHash_ct (hc : HashChecks H.P H.D n) (hfx : FixedChecks n) :
+    RelCT isa (Two (HEFixed H n)) (mgfGenericHash H) fun _ _ => True := by
+  unfold mgfGenericHash ctHashWith seqs seqs seqs seqs seqs
   exact (fixedInit_ct hH K n hfx).seq ((fixedPad_ct n hc).seq ((lenField_ct hH n hc).seq
     ((lenLoop_ct hH n hc).seq ((compLoop_ct hH n hc hfx).seq (digestOut_ct n hc)))))
 end VG.Proof.RsaPss.X86_64

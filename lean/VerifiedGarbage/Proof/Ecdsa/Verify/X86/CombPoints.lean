@@ -13,7 +13,7 @@ variable {c : Impl.Ecdsa.X86.Cfg}
 abbrev combPtsW : List Nat :=
   [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, TMP, UX, UY, UZ, PT, EM]
 
-theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
+theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hTb : ∀ d, c.comb = some d → TblMem s ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
@@ -22,7 +22,7 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hstep₂ : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
     (hO₂ : Q₂ (64 * c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) Q₂ s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -32,7 +32,7 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0
-  unfold Impl.Ecdsa.Verify.X86.Cfg.pointsComb
+  unfold Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder
   refine WP.seq ?_
   -- The table of `u`.
   refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)

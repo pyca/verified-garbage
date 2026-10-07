@@ -16,7 +16,9 @@ and `d_v = 5`, which `vg_mlkem1024_compress_encode` and
 (polynomial 16), and the ciphertext of the re-encryption (1568 bytes) is in
 polynomials 33 and 34; the outputs of `PRF₂` are in polynomials 38 and 39,
 and the working space of their computation and of `vg_mlkem_sample_ntt4`
-from polynomial 35. `scratch` is 48 KiB (44 polynomials).
+from polynomial 35; in encryption, `u` and `v` are in polynomials 8–12 and
+the working space of `vg_mlkem1024_encrypt_mul` in 40–43. `scratch` is 48
+KiB (44 polynomials).
 -/
 
 namespace VG.Impl.MlKem1024.X86_64
@@ -31,6 +33,8 @@ def kem1024 : Kem where
   pW := 35
   pPR := 38
   pCT := 33
+  pU := 8
+  pZ := 40
   ceN := "vg_mlkem1024_compress_encode"
   ce := compressEncode1024
   ddN := "vg_mlkem1024_decode_decompress"

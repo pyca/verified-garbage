@@ -102,6 +102,46 @@ def term (B : Bodies) : Prog isa :=
     (.seq B.mul (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 2048)])
       (.seq B.add (.block [.alu .add .r12 (.imm 1024), .alu .add .r13 (.imm 1024), .alu .sub .r14 (.imm 1)]))))))
 
+
+/-! ### `vg_mlkem*_encrypt_mul` -/
+
+/-- A term of sum `o`: `f ×_T ŷ[j]`, with `f` at `rsi` (set by `fs`) and
+`ŷ[j]` at `scratch + 1024`, to `scratch + 2048`, added to `u[o]` (at
+`rbp + 1024 o`). -/
+def prodAdd (B : Bodies) (fs : List Instr) (o : Nat) : Prog isa :=
+  .seq (.block ([.mov .rdi (.reg .rbx), .alu .add .rdi (.imm 2048)] ++ fs ++
+      [.mov .rdx (.reg .rbx), .alu .add .rdx (.imm 1024), .mov .rcx (.reg .rbx)]))
+    (.seq B.mul (.seq (.block [.mov .rdi (.reg .rbp), .alu .add .rdi (.imm (BitVec.ofNat 32 (1024 * o))),
+      .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 2048)]) B.add))
+
+/-- The terms `j` of the sums `i, …, i + n - 1` of `Â^⊺ ∘ ŷ`: `Â[j, i] ×_T ŷ[j]`, with row `j` of `Â`
+at `r12`. -/
+def innerE (B : Bodies) : Nat → Nat → Prog isa
+  | _, 0 => .block []
+  | i, n + 1 => .seq (prodAdd B [.mov .rsi (.reg .r12), .alu .add .rsi (.imm (BitVec.ofNat 32 (1024 * i)))] i)
+    (innerE B (i + 1) n)
+
+/-- The terms `j`: `ŷ[j] = NTT(y[j])` to `scratch + 1024`, those of the `k`
+sums of `Â^⊺ ∘ ŷ`, and that of `t̂^⊺ ∘ ŷ` (`t̂[j]` at `r15`); then the next `j`. -/
+def termE (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbx), .mov .r10 (.reg .rbx), .alu .add .r10 (.imm 1024)])
+    (.seq B.nttO (.seq (innerE B 0 k) (.seq (prodAdd B [.mov .rsi (.reg .r15)] k)
+      (.block [.alu .add .r12 (.imm (BitVec.ofNat 32 (1024 * k))), .alu .add .r13 (.imm 1024),
+        .alu .add .r15 (.imm 1024), .alu .sub .r14 (.imm 1)]))))
+
+/-- `NTT⁻¹` of each of the `k + 1` sums. -/
+def invE (B : Bodies) : Prog isa :=
+  .seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)])
+    (.seq B.inv (.block [.alu .add .rbp (.imm 1024), .alu .sub .r15 (.imm 1)]))
+
+/-- Save the callee-saved registers through `r8` (`scratch`). -/
+def saveE : List Instr := slots.map fun p => .store (at_ .r8 p.2) p.1
+
+/-- The `k + 1` polynomials of `u` (at `rbp`), zeroed, sixteen bytes at a time. -/
+def zeroU (k : Nat) : Prog isa :=
+  .seq (.block [xb .pxor .xmm0 .xmm0, .mov .rdi (.reg .rbp)])
+    (rcxLoop (64 * (k + 1)) [.movdquStore (at_ .rdi 0) .xmm0, .alu .add .rdi (.imm 16)])
+
 end KpkeMul
 
 open KpkeMul in
@@ -111,6 +151,15 @@ def decryptMul (B : Bodies) (k : Nat) : Prog isa :=
       .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
     (.seq (withMxcsr .rbx oMx (.seq zeroW (.seq (.loop (term B) .ne)
       (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) B.inv))))
+    (.block restore))
+
+open KpkeMul in
+/-- `vg_mlkem*_encrypt_mul` of rank `k`, with the code of `B`. -/
+def encryptMul (B : Bodies) (k : Nat) : Prog isa :=
+  .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
+      .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
+    (.seq (withMxcsr .rbx oMx (.seq (zeroU k) (.seq (.loop (termE B k) .ne)
+      (.seq (.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (k + 1)))]) (.loop (invE B) .ne)))))
     (.block restore))
 
 end VG.Impl.MlKem.X86_64

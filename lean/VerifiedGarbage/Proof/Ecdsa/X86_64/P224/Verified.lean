@@ -5,20 +5,22 @@ import VerifiedGarbage.Proof.P224.Point
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.P224.X86_64.TaintSums
+import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.P224.Prime
 
 /-!
 # ECDSA over P-224 on x86-64: `Verified`
 
-P-224 is a curve the proof supports (`p224_ok`, and `Law` for its group law
-and `InvSounds` for its inversions, which the registration file supplies:
-`Proof.P224.law` and the variant's `inv`), so `sign_ok` gives the contract's
-postcondition; the callee-saved registers are restored, `rsp`
-is never written, and every store is to `out` or `scratch`, which the return
-address is apart from (`abiPreserved`). Constant time by taint tracking: the
-only branches are on loop counters, and every address is an argument plus a
-constant or a counter.
+P-224 is a curve the proof supports (`p224_ok`, and `Law` for its group law,
+its comb's tables and `InvSounds` for its inversions, which the
+registration file supplies: `Proof.P224.law`, `Proof.P224.combOk7` and the
+variant's `inv`), so `sign_ok` gives the contract's
+postcondition; the callee-saved registers are restored, `rsp` is never
+written, and every store is to `out` or `scratch`, which the return address
+is apart from (`abiPreserved`). Constant time by taint tracking with the
+address of the comb's static public (`taintSym`): the only branches are on
+loop counters, and every address is an argument or the static's address
+plus a constant or a counter.
 -/
 
 namespace VG.Proof.Ecdsa.X86_64.P224
@@ -62,7 +64,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   nbits_le := by decide
   mask h := absurd h (by decide)
   sh := by rw [p224_sh]; decide
-  comb d h := by cases h
+  comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
     show Nat.Prime Spec.P224.curve.p
     rw [show Spec.P224.curve.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide +kernel]
@@ -72,24 +74,35 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
 
-/-- P-224 has no comb here: `[k]G` is by the ladder, and there are no tables. -/
-theorem p224_tbls : CombTbls p224 := fun d h => by cases h
+theorem p224_tbls (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start) :
+    CombTbls p224 := fun d h => by cases h; exact ⟨hT, fun h => absurd h (by decide)⟩
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p224 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13⟩ := h
-  exact ⟨by rw [h1]; rfl, h2, h3, h4, h5, h6, h7, h8, h9, h12, h13,
-    by simp [TblsHeld, Cfg.combConsts, Abi.constsHeld, Abi.constRegions, p224]⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h
+  refine ⟨by rw [h1, p224_combConsts, show p224.C.len = 28 from rfl]; simp only [Abi.constRegions,
+    List.map_cons, List.map_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h6, h7, h8, h9, h12, h13, ?_⟩
+  rw [TblsHeld, p224_combConsts]
+  refine ⟨fun c hc => ?_, fun t ht => ?_⟩
+  · simp only [List.mem_singleton] at hc; subst hc; exact held
+  · simp only [Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at ht; subst ht
+    refine ⟨fit, fun r hr => hdw r ?_⟩
+    rw [h2] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with h | h <;> simp [h]
 
-theorem sign_x86 (hL : Law Spec.P224.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s) :
+theorem sign_x86 (hL : Law Spec.P224.curve)
+    (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
+    (hI : InvSounds) (s : State)
+    (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL p224_tbls (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP224, Taint.clobbers i .rsp = false := by
     have h : signP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
   have F := (Exec.regions he (by lit_decide)).2.2
-  obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -⟩ := hs
+  obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -107,22 +120,23 @@ theorem sign_x86 (hL : Law Spec.P224.curve) (hI : InvSounds) (s : State) (hs : s
       · exact hro
       · exact hrs) (by decide)
 
-theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP224 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) signP224 h).isSome = true := by
-    taint_decide_sum [Proof.P224.X86_64.ladderGSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_ hc
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4, h5⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact h1
-  · exact h2
-  · exact h3
-  · exact h4
-  · exact h5
+theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP224 :=
+  VG.Taint.constantTime (A := taintSym ["VG_P224_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8])
+    (fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl
+      · exact h1
+      · exact h2
+      · exact h3
+      · exact h4
+      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+    (by taint_decide)
 
-theorem sign_verified (hL : Law Spec.P224.curve) (hI : InvSounds) :
-    Verified X86_64.target signP224 (Spec.Ecdsa.P224.inst.signContract X86_64.abi) :=
-  Verified.of_correct (sign_x86 hL hI) sign_ct implies
+theorem sign_verified (hL : Law Spec.P224.curve)
+    (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
+    (hI : InvSounds) :
+    Verified X86_64.target signP224
+      (Spec.Ecdsa.P224.inst.signContract (X86_64.abi.withConsts p224.combConsts)) :=
+  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
 
 end VG.Proof.Ecdsa.X86_64.P224

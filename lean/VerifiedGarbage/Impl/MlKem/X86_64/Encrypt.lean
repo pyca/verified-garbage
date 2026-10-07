@@ -13,16 +13,16 @@ is the AND of the results of `vg_mlkem_sample_ntt`, as in key generation.
 1. `ρ` (`ek[384k : 384k + 32]`) to `SB`; `Â[i, j] = SampleNTT(ρ ‖ j ‖ i)`.
    If one of them failed (`r15 = 0`), nothing more.
 2. `PRF₂(r, N)` for `N ≤ 2k` (`c.prfs`, to `PR`), and
-   `ŷ[j] = NTT(SamplePolyCBD₂(PRF₂(r, j)))` (polynomial `j`).
-3. `u[i] = NTT⁻¹(Â[0, i] ŷ[0] + ⋯ + Â[k - 1, i] ŷ[k - 1]) + e₁[i]`
-   (polynomial 15), with `e₁[i] = SamplePolyCBD₂(PRF₂(r, k + i))`
-   (polynomial 16), and `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to
-   `CT + 32 d_u i`.
-4. `t̂[i] = ByteDecode₁₂(ek[384i : 384i + 384])` (polynomial `k + i`);
-   `v = NTT⁻¹(t̂[0] ŷ[0] + ⋯ + t̂[k - 1] ŷ[k - 1]) + e₂ + μ` (polynomial 15),
-   with `e₂ = SamplePolyCBD₂(PRF₂(r, 2k))` and
-   `μ = Decompress₁(ByteDecode₁(m))`, and `ByteEncode_{d_v}(Compress_{d_v}(v))`
-   to `CT + 32 d_u k`.
+   `y[j] = SamplePolyCBD₂(PRF₂(r, j))` (polynomial `j`).
+3. `t̂[i] = ByteDecode₁₂(ek[384i : 384i + 384])` (polynomial `k + i`).
+4. `NTT⁻¹(Â^⊺ ∘ ŷ)` and `NTT⁻¹(t̂^⊺ ∘ ŷ)`, with `ŷ = NTT(y)`, to the `k + 1`
+   polynomials from `pU` (`vg_mlkem*_encrypt_mul`).
+5. `u[i] = NTT⁻¹(Â^⊺ ∘ ŷ)[i] + e₁[i]` (polynomial `pU + i`), with
+   `e₁[i] = SamplePolyCBD₂(PRF₂(r, k + i))` (polynomial 15), and
+   `ByteEncode_{d_u}(Compress_{d_u}(u[i]))` to `CT + 32 d_u i`.
+6. `v = NTT⁻¹(t̂^⊺ ∘ ŷ) + e₂ + μ` (polynomial `pU + k`), with
+   `e₂ = SamplePolyCBD₂(PRF₂(r, 2k))` and `μ = Decompress₁(ByteDecode₁(m))`,
+   and `ByteEncode_{d_v}(Compress_{d_v}(v))` to `CT + 32 d_u k`.
 -/
 
 namespace VG.Impl.MlKem.X86_64
@@ -39,26 +39,29 @@ abbrev prfO (N : Nat) : Ptr := sc (L.oPR + 128 * N)
 /-- `ρ` to `SB`, and `Â`. -/
 def mat (c : Callee4) (E : Ptr) : Prog isa := .seq (copy (sc oSB) (E.1, E.2 + 384 * L.k) 32) (L.samples c)
 
-/-- `ŷ[j]`. -/
-def y (A : Arith) (j : Nat) : Prog isa := .seq (cbd2At A (prfO L j) (pS j)) (nttAt A (pS j))
-
-/-- `u[i]`, compressed and encoded to the ciphertext. -/
-def u (A : Arith) (i : Nat) : Prog isa :=
-  .seq (dotN A (fun j => L.aS j i) pS L.k) (.seq (nttInvAt A (pS 15)) (.seq (cbd2At A (prfO L (L.k + i)) (pS 16))
-    (.seq (addAt A (pS 15) (pS 16)) (L.ceAt (pS 15) L.du (sc (L.oCT + 32 * L.du * i))))))
+/-- `y[j]`. -/
+def y (A : Arith) (j : Nat) : Prog isa := cbd2At A (prfO L j) (pS j)
 
 /-- `t̂[i]`. -/
 def t (A : Arith) (E : Ptr) (i : Nat) : Prog isa := dec12At A (E.1, E.2 + 384 * i) (pS (L.k + i))
 
+/-- The products. -/
+def mul (A : Arith) : Prog isa := L.encMulAt A (pS L.pU) (pS L.pA) (pS L.k) (pS 0) (pS L.pZ)
+
+/-- `u[i]`, compressed and encoded to the ciphertext. -/
+def u (A : Arith) (i : Nat) : Prog isa :=
+  .seq (cbd2At A (prfO L (L.k + i)) (pS 15)) (.seq (addAt A (pS (L.pU + i)) (pS 15))
+    (L.ceAt (pS (L.pU + i)) L.du (sc (L.oCT + 32 * L.du * i))))
+
 /-- `v`, compressed and encoded to the ciphertext. -/
 def v (A : Arith) : Prog isa :=
-  .seq (dotN A (fun j => pS (L.k + j)) pS L.k) (.seq (nttInvAt A (pS 15)) (.seq (cbd2At A (prfO L (2 * L.k)) (pS 16))
-    (.seq (addAt A (pS 15) (pS 16)) (.seq (ddAt (sc oM) 1 (pS 16)) (.seq (addAt A (pS 15) (pS 16))
-      (L.ceAt (pS 15) L.dv (sc (L.oCT + 32 * L.du * L.k))))))))
+  .seq (cbd2At A (prfO L (2 * L.k)) (pS 15)) (.seq (addAt A (pS (L.pU + L.k)) (pS 15))
+    (.seq (ddAt (sc oM) 1 (pS 15)) (.seq (addAt A (pS (L.pU + L.k)) (pS 15))
+      (L.ceAt (pS (L.pU + L.k)) L.dv (sc (L.oCT + 32 * L.du * L.k))))))
 
 def rest (c : Callee4) (E : Ptr) : Prog isa :=
-  .seq (c.prfs 0 (2 * L.k + 1) L.oPR L.lPW) (.seq (seqR (y L c.arith) 0 L.k) (.seq (seqR (u L c.arith) 0 L.k)
-    (.seq (seqR (t L c.arith E) 0 L.k) (v L c.arith))))
+  .seq (c.prfs 0 (2 * L.k + 1) L.oPR L.lPW) (.seq (seqR (y L c.arith) 0 L.k) (.seq (seqR (t L c.arith E) 0 L.k)
+    (.seq (mul L c.arith) (.seq (seqR (u L c.arith) 0 L.k) (v L c.arith)))))
 
 end Encrypt
 

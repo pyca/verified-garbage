@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.ProjectiveFinal
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
 
 namespace VG.Proof.Ecdsa.Verify.X86
 
@@ -24,23 +24,20 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   refine WP.seq (WP.mono (front_ok hc hp (rest := .block []) (fun _ h => WP.block_nil h)) fun s₁ hF => ?_)
   refine WP.seq (WP.mono (mid_ok hc hF (rest := .block []) (fun _ h => WP.block_nil h)) fun s₂ hM => ?_)
   have F₂ := hM.fixed
-  obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
-  -- The point the second ladder multiplies.
+  obtain ⟨_, _, h1⟩ := consts_tmv hc F₂
+  -- The point the variable-base method multiplies.
   let P := peerPt c (s₀.mem (ptr s₀ 0) = 4) (keyX c s₀) (keyY c s₀)
   have hPc : onCurve c.C P = true := peerPt_onCurve hc _ _ _
   have hQ : Rep c.C (tmv c.C c.n (ptr s₀ 3) s₂ (c.sl PX)) (tmv c.C c.n (ptr s₀ 3) s₂ (c.sl PY))
       (tmv c.C c.n (ptr s₀ 3) s₂ (c.sl ONEP)) P := by
     rw [h1]
     exact peerPt_rep hC _ _ _ hM.px hM.py
-  have hv : sv c (ptr s₀ 3) s₂ V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   refine pointsComb_ok hc hC hT hCo ham3 hM
-    (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ V >>> j) P))
     (fun d hd => by
       obtain ⟨ht, ho⟩ := hTb d hd
       exact ⟨ht.of_unch (by rw [hM.rd, hM.wr]) hM.unch
         (fun w hw => by rw [List.mem_singleton.mp hw]; exact Nat.le_refl _) ho, ho⟩)
-    (step_rep hC hPc ha hb hQ)
-    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
+    hPc hQ
     fun s₃ hP => ?_
   refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩

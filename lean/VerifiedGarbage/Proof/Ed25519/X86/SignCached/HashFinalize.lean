@@ -62,7 +62,7 @@ theorem finalizeArgs_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀
         exact Offset.contains _ (e := 260) (k := 24) (d := 276) (n := 4) (by decide) (by decide) (by decide)
     have hx : u.mem.readW (addr L.E 276) 32 = L.len := by
       rw [addr_eq (by have := hL.top; omega)]
-      exact (hu.arg_word hL (j := 4) (by decide)).trans (ha 4 (by decide))
+      exact (hu.arg_word hL (j := 4) (by decide)).trans (ha.1 4 (by decide))
     refine WP.mono (Whole.Ctx.count hu (index := 4) (n := n) (by have := hL.top; omega) hr hx)
       fun t ⟨ht, hft, hlo, hhi⟩ => ⟨ht, hf.trans (count_frame hft),
         (count_keep hft (.inl rfl)).trans aa,

@@ -96,7 +96,6 @@ abbrev hW₂ : List (Ptr × Nat) := [(sc 0, 200), (sc 200, 640), (sc oKB, 32)]
 /-- What every piece of decapsulation needs of the layout, evaluated for each parameter set. -/
 structure DcWf : Prop extends KemWf L where
   scr : 888 ≤ L.scr ∧ L.scr < 2 ^ 32
-  k34 : L.k = 3 ∨ L.k = 4
   small : ∀ b ∈ dcB L, b.2 < 2 ^ 32
   -- K-PKE.Decrypt
   u : ∀ i < L.k, uChk L i = true

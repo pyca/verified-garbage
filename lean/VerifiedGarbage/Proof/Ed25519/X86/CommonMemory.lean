@@ -4,8 +4,10 @@ import VerifiedGarbage.Impl.Ed25519.X86.CommonMemory
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86
 
-theorem abiSave_ok {s₀ : State} {scidx argc : Nat} (hp : ScratchPre s₀ scidx argc) :
-    WP isa (.block (abiSave scidx)) s₀ (Saved s₀ (arg s₀ scidx)) := by
+/-- `abiSave`, which writes only the first 16 bytes of the workspace. -/
+theorem abiSave_frame {s₀ : State} {scidx argc : Nat} (hp : ScratchPre s₀ scidx argc) :
+    WP isa (.block (abiSave scidx)) s₀ fun t =>
+      Saved s₀ (arg s₀ scidx) t ∧ Frame [sub (arg s₀ scidx) 0 16] s₀.mem t.mem := by
   have hfit := hp.fit
   rw [show abiSave scidx = .mov .eax (.mem (at_ .esp (4 + 4 * scidx))) :: (Spill.saveCode .eax savedSlots ++
     ([.mov .edi (.reg .eax)] : List Instr)) from rfl]
@@ -18,12 +20,20 @@ theorem abiSave_ok {s₀ : State} {scidx argc : Nat} (hp : ScratchPre s₀ scidx
   have hm : s₆.mem = Spill.saveMem s₀.mem (addr (arg s₀ scidx)) s₀.gpr savedSlots := by
     rw [u₆.mem, u₅.mem, ea, u₁.mem]
     exact Spill.saveMem_congr _ _ (fun _ _ => rfl) fun p h => u₁.other _ (by revert p h; decide)
-  refine ⟨by rw [u₆.gpr, u₅.gpr, ea], by rw [u₆.other _ (by decide), u₅.gpr, u₁.other _ (by decide)],
-    by rw [u₆.rd, u₅.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₁.wr], ?_, ?_⟩
+  refine ⟨⟨by rw [u₆.gpr, u₅.gpr, ea], by rw [u₆.other _ (by decide), u₅.gpr, u₁.other _ (by decide)],
+    by rw [u₆.rd, u₅.rd, u₁.rd], by rw [u₆.wr, u₅.wr, u₁.wr], ?_, ?_⟩, ?_⟩
   · rw [hm]
     exact Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h =>
       scR_contains hfit (by have := savedSlots_bound p h; omega_using [this]) (by decide)
   · rw [hm]; exact Spill.saveMem_saved_addr _ _ (n := 16) (by decide) (by omega_using [hfit])
+  · rw [hm]
+    exact Spill.saveMem_frame List.mem_cons_self _ _ _ _ fun p h => by
+      have := savedSlots_bound p h
+      exact sub_contains (by omega_using [hfit, this]) (Nat.zero_le _) (by omega_using [this]) (by decide)
+
+theorem abiSave_ok {s₀ : State} {scidx argc : Nat} (hp : ScratchPre s₀ scidx argc) :
+    WP isa (.block (abiSave scidx)) s₀ (Saved s₀ (arg s₀ scidx)) :=
+  WP.mono (abiSave_frame hp) fun _ h => h.1
 
 
 structure CopyInv (x p : BitVec 32) (dst : Nat) (s₀ : State) (n : Nat) (s : State) : Prop where
