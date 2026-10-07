@@ -497,6 +497,15 @@ def maddStepsC (c : Nat) : Nat → List Reg → Nat → List Instr
   | k + 1, x :: y :: rest, d => madd x y (.mem (rc c d)) ++ maddStepsC c k (y :: rest) (d + 8)
   | _, _, _ => []
 
+/-- `loads` and `chain` while `rdi` is `c` bytes past its base (`rc`). -/
+def loadsC (c : Nat) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, a => .mov t (.mem (rc c a)) :: loadsC c ts (a + 8)
+
+def chainC (c : Nat) (op op' : AluOp) : List Reg → Nat → List Instr
+  | [], _ => []
+  | t :: ts, b => .alu op t (.mem (rc c b)) :: chainC c op' op' ts (b + 8)
+
 /-- The registers of `mulPX`'s accumulator. -/
 def xRegs : List Reg := [.rbp, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15]
 
@@ -640,13 +649,15 @@ def sqrPX (M : Mod) (o a : Nat) : List Instr :=
 As `p = 2⁵²¹ - 1`, the sum or difference below `2p` is reduced in place by
 `xCanon` (no load of `p`, no temporary area), from the sum or difference
 plus one: `[a] + [b] + 1` with a carry in, and `[a] - [b] + 2⁵²¹`, which is
-`[a] + (p - [b]) + 1`. -/
+`[a] + (p - [b]) + 1`. Each moves `rdi` to the operand it reads or writes
+next (`rc`), so that its nine words are at displacements of a byte. -/
 
 /-- `[o] = [a] + [b] mod p` for P-521's `p = 2⁵²¹ - 1` and `[a] + [b] < 2p`:
 `[a] + [b] + 1` in `xWin 9` (`[a]` loaded, CF set, `[b]` added with `adc`),
 reduced by `xCanon`. -/
 def addMer (o a b : Nat) : List Instr :=
-  loads (xWin 9) a ++ setCF ++ chain .adc .adc (xWin 9) b ++ xCanon 0 o
+  [rdiAdd (cOf a)] ++ loadsC (cOf a) (xWin 9) a ++ [rdiMove (cOf a) (cOf b)] ++ setCF ++
+    chainC (cOf b) .adc .adc (xWin 9) b ++ [rdiMove (cOf b) (cOf o)] ++ xCanon (cOf o) o ++ [rdiSub (cOf o)]
 
 /-- `ts += ts`: each register added to itself, with `op` on the first and
 `adc` on the rest, which doubles the number in them. -/
@@ -658,15 +669,18 @@ def dblChain (op : AluOp) : List Reg → List Instr
 `xWin 9` (`dblChain`), its bit 521 moved into its bit 0, which is clear. That
 is `[a]`'s 521 bits rotated by one, below `p` as `[a]` is. -/
 def dblMer (o a : Nat) : List Instr :=
-  loads (xWin 9) a ++ dblChain .add (xWin 9) ++
+  [rdiAdd (cOf a)] ++ loadsC (cOf a) (xWin 9) a ++ dblChain .add (xWin 9) ++
     [.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9, .alu .add (xAcc 9) (.reg .rax),
-      .alu .and (xAcc 17) (.imm 511)] ++ stores (xWin 9) o
+      .alu .and (xAcc 17) (.imm 511)] ++ [rdiMove (cOf a) (cOf o)] ++ storesC (cOf o) (xWin 9) o ++
+    [rdiSub (cOf o)]
 
 /-- `[o] = [a] - [b] mod p` for P-521's `p` and `[a]`, `[b]` below `p`:
 `[a] - [b] + 2⁵²¹` in `xWin 9` (`[a]` loaded, `[b]` subtracted, 512 added to
 the top word), which is `[a] + (p - [b]) + 1 < 2p + 1`, reduced by `xCanon`. -/
 def subMer (o a b : Nat) : List Instr :=
-  loads (xWin 9) a ++ chain .sub .sbb (xWin 9) b ++ [.alu .add (xAcc 17) (.imm 512)] ++ xCanon 0 o
+  [rdiAdd (cOf a)] ++ loadsC (cOf a) (xWin 9) a ++ [rdiMove (cOf a) (cOf b)] ++
+    chainC (cOf b) .sub .sbb (xWin 9) b ++ [.alu .add (xAcc 17) (.imm 512)] ++ [rdiMove (cOf b) (cOf o)] ++
+    xCanon (cOf o) o ++ [rdiSub (cOf o)]
 
 /-! ## Nine words: the product by columns for any modulus -/
 
