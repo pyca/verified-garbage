@@ -17,17 +17,16 @@ include hH K in
 theorem code_safe (v : PublicImpl) :
     (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code).allInstrs safeI = true := by
   simp only [Impl.RsaPss.X86_64.Precomputed.pubArgs, Impl.RsaPss.X86_64.Precomputed.code, Impl.RsaPss.X86_64.Precomputed.body, seqs,
-    Impl.RsaPss.X86_64.Precomputed.main, Code.allInstrs, mgfXor_safe hH K, ctHash_safe hH K, public_safe v, rec_all,
-    List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass,
-    cmpH, byteLoop, step, Bool.and_true, Bool.true_and]
+    Impl.RsaPss.X86_64.Precomputed.main, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, public_safe v, rec_all,
+    List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include K in
 theorem code_xd (v : PublicImpl) :
     (Impl.RsaPss.X86_64.Precomputed.code H v.name v.code).x86_64Depth ≤ verifyStack := by
   simp only [Impl.RsaPss.X86_64.Precomputed.pubArgs, Impl.RsaPss.X86_64.Precomputed.code, Impl.RsaPss.X86_64.Precomputed.body, seqs,
-    Impl.RsaPss.X86_64.Precomputed.main, Code.x86_64Depth, mgfXor_xd K, ctHash_xd K, x86_64Depth_zero v.nosp v.depth, verifyFail, emLen,
-    anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass, cmpH, byteLoop,
+    Impl.RsaPss.X86_64.Precomputed.main, Code.x86_64Depth, mgfXor_xd K, saltBack_xd K, x86_64Depth_zero v.nosp v.depth, verifyFail, emLen,
+    anyArgs, posScan, posCheck, byteLoop,
     X86_64.Instr.frameBytes]
   unfold verifyStack frameBytes
   decide

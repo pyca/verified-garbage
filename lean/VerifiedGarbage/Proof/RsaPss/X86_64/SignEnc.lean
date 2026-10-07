@@ -96,9 +96,9 @@ theorem copySaltY_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte}
 /-! ## The length of `M'` -/
 
 include hH in
-theorem signLen_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) {sl : Nat} (hsl : W 40 = BitVec.ofNat 64 sl) (hsl' : sl < 2 ^ 32) :
-    WP isa (.block (signLen H)) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+theorem hashSaltLen_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {sl k : Nat} (hk : k < nW) (hsl : W k = BitVec.ofNat 64 sl) (hsl' : sl < 2 ^ 32) :
+    WP isa (.block (hashSaltLen H k)) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
       Rep u'.mem F S V (upd (upd W 27 (BitVec.ofNat 64 (8 + H.D + sl)))
         28 (BitVec.ofNat 64 ((8 + H.D + sl + H.P.L) / H.P.B + 1))) := by
   obtain ⟨hpow, hlg1, hlg2⟩ := lgB_spec hH
@@ -115,12 +115,20 @@ theorem signLen_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {
       ?_ rfl) fun u' ⟨hm, k⟩ => ⟨L.of_rep' R (hm ▸ R2) (by simp [upd]) (k.gpr (by decide)) k.2.2, k, hm ▸ R2⟩
   have hsh : BitVec.ofNat 64 (8 + H.D + sl + H.P.L) >>> lgB H = BitVec.ofNat 64 ((8 + H.D + sl + H.P.L) / H.P.B) := by
     rw [shr_ofNat (lgB H) (by omega), hpow]
-  xrun [signLen, ea_sp, L.rsp, L.ld (d := sSaltLen) (by decide), L.st (d := sL) (by decide),
-    L.st (d := sNb) (by decide), R.rd (d := sSaltLen) 40 rfl (by decide), hsl, BitVec.ofNat_add_ofNat,
+  xrun [hashSaltLen, ea_sp, L.rsp, L.ld (d := 8*k) (by simp only [nW, frameBytes] at hk ⊢; omega), L.st (d := sL) (by decide),
+    L.st (d := sNb) (by decide), R.rd (d := 8*k) k rfl hk, hsl, BitVec.ofNat_add_ofNat,
     VG.Proof.MlKem.X86_64.sx_ofNat (show 8 + H.D < 2 ^ 31 by omega),
     VG.Proof.MlKem.X86_64.sx_ofNat (show H.P.L < 2 ^ 31 by omega), hsh, ofNat_add_lit,
     show sl + (8 + H.D) = 8 + H.D + sl by omega,
     show 1 ≤ lgB H ∧ lgB H ≤ 63 from ⟨by omega, by omega⟩]
+
+include hH in
+theorem signLen_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
+    (R : Rep u.mem F S V W) {sl : Nat} (hsl : W 40 = BitVec.ofNat 64 sl) (hsl' : sl < 2 ^ 32) :
+    WP isa (.block (signLen H)) u fun u' => Lay u' F S ∧ Keep [.rax] u u' ∧
+      Rep u'.mem F S V (upd (upd W 27 (BitVec.ofNat 64 (8 + H.D + sl)))
+        28 (BitVec.ofNat 64 ((8 + H.D + sl + H.P.L) / H.P.B + 1))) :=
+  hashSaltLen_ok hH L R (by decide) hsl hsl'
 
 /-! ## `EM` -/
 

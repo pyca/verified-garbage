@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.RsaPss.X86_64.SaltBackCT
 import VerifiedGarbage.Proof.RsaPss.X86_64.PrecomputedCtCall
 
 namespace VG.Proof.RsaPss.X86_64.Pc
@@ -17,9 +18,8 @@ theorem main_ct :
   unfold Impl.RsaPss.X86_64.Precomputed.main
   simp only [seqs]
   exact RelCT.assoc (dbPub_ct.seq ((call_ct impl).seq (acc0_ct.seq ((mgf_ct hH K lk hc.hash1).seq
-    (clearTop_ct.seq (posScan_ct.seq ((posCheck_ct hH hc.verify).seq (RelCT.assoc ((cyd_ct hH lk hc.verify).seq
-      ((copyDb_ct hH hc.verify).seq ((shift_ct hH hc.verify).seq ((verifyNb_ct hH hc.verify).seq
-        ((mhash_ct hH K hc.hash1).seq (cmpH_ct hH hc.verify))))))))))))))
+    (clearTop_ct.seq (posScan_ct.seq ((posCheck_ct hH hc.verify).seq
+      (saltBack_ct hH K lk hc))))))))
 
 include K hc in
 theorem body_ct : RelCT isa (Two (At (G := lk.G) J0)) (Impl.RsaPss.X86_64.Precomputed.body H impl.name impl.code) fun _ _ => True := by

@@ -46,6 +46,10 @@ structure VerifyChecks (P : Params) (D : Nat) : Prop where
     .alu .sub .rax (.reg .r8)] ++ saltFits (ckH P D))) hc).isSome = true
   posCheck : ∃ hc, (taint.check (pT 1 [24, 35, 36] []) (posCheck (ckH P D)) hc).isSome = true
   copyDigest : ∃ hc, (taint.check (pT 1 [21, 37] []) (.seq clearY (copyDigest (ckH P D))) hc).isSome = true
+  copyFixedSalt : ∃ hc, (taint.check (pT 1 [23, 24, 36] [.rcx])
+    (copyFixedSalt (ckH P D)) hc).isSome = true
+  fixedSaltLen : ∃ hc, (taint.check (pT 1 [36] [])
+    (.block (hashSaltLen (ckH P D) 36)) hc).isSome = true
   copyDb : ∃ hc, (taint.check (pT 1 [23, 24] [.rcx]) (copyDb (ckH P D)) hc).isSome = true
   shiftPass : ∃ hc, (taint.check (pT 1 [21, 24, 46] []) (shiftPass (ckH P D)) hc).isSome = true
   verifyNb : ∃ hc, (taint.check (pT 1 [24] []) (.block (verifyNb (ckH P D))) hc).isSome = true

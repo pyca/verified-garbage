@@ -240,16 +240,15 @@ theorem verify_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : P
 include hH K in
 theorem verify_safe {pubN : String} {pubC : Prog isa} (hC : pubC.allInstrs safeI = true) :
     (verify H pubN pubC).allInstrs safeI = true := by
-  simp only [verify, verifyBody, seqs, verifyMain, Code.allInstrs, mgfXor_safe hH K, ctHash_safe hH K, hC, rec_all,
-    List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass,
-    cmpH, byteLoop, step, Bool.and_true, Bool.true_and]
+  simp only [verify, verifyBody, seqs, verifyMain, Code.allInstrs, mgfXor_safe hH K, saltBack_safe hH K, hC, rec_all,
+    List.all_append, verifyFail, emLen, anyArgs, posScan, posCheck, byteLoop, step, Bool.and_true, Bool.true_and]
   rfl
 
 include K in
 theorem verify_xd {pubN : String} {pubC : Prog isa} (hd : pubC.x86_64Depth = 0) :
     (verify H pubN pubC).x86_64Depth ≤ verifyStack := by
-  simp only [verify, verifyBody, seqs, verifyMain, Code.x86_64Depth, mgfXor_xd K, ctHash_xd K, hd, verifyFail, emLen,
-    anyArgs, posScan, posCheck, clearY, copyDigest, copyDb, shift, shiftPass, cmpH, byteLoop,
+  simp only [verify, verifyBody, seqs, verifyMain, Code.x86_64Depth, mgfXor_xd K, saltBack_xd K, hd, verifyFail, emLen,
+    anyArgs, posScan, posCheck, byteLoop,
     X86_64.Instr.frameBytes]
   unfold verifyStack frameBytes
   decide

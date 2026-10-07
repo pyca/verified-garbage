@@ -37,9 +37,9 @@ theorem vmain_done (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {pubN : String} {pubC : 
   have c1 : oEm = 2560 := rfl
   have c5 : oRsa = 8192 := rfl
   rw [verifyMain, show [Code.block dbSlots, .block pubArgs, .call pubN pubC, .block acc0, mgfXor H, .block clearTop,
-      posScan, posCheck H, clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H] =
+      posScan, posCheck H, saltBack H] =
     [Code.block dbSlots, .block pubArgs, .call pubN pubC] ++ [.block acc0, mgfXor H, .block clearTop, posScan,
-      posCheck H, clearY, copyDigest H, copyDb H, shift H, .block (verifyNb H), ctHash H, cmpH H] from rfl]
+      posCheck H, saltBack H] from rfl]
   -- The public-key operation.
   refine WP.seqs_append (by simp) (by simp) (WP.mono (vfront_ok hv hspC hdC hp L R hw hrd hM h17 h18 h19 h20 h22
     h26 h38 hax) fun u3 ⟨L3, wr3, rd3, cs3, hM3, V1, W1, R1, hW1, h23, h24, hV1, hO1⟩ => ?_)
