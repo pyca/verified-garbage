@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.X25519.AArch64.Lit
 import VerifiedGarbage.Proof.X25519.AArch64.Main
 import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.TCB.AArch64.Target
