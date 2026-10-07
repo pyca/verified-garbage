@@ -228,7 +228,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   rw [mul]; split
-  · exact mulR_ok hs (hM.toModOk ‹_›) ho ha hb hB
+  · exact mulR_ok hs (hM.toModOk ‹_›) ho ha hb hoT haT hoM hB
   · split
     · split
       · split
