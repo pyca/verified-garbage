@@ -811,4 +811,52 @@ theorem mredX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   · rw [show (4 : Nat) = redRegs.length from rfl, e₄, e₃]; exact key.2
   · rw [k₃.2.1, k₂.2.1, k₁.2.1] at O₄; simpa only [redRegs, List.length_cons, List.length_nil] using O₄
 
+/-! ## The halves of an update -/
+
+/-- Half an update of `f`, `g`: `[dst] = (u f + v g) / 2^59` (five words, signed). -/
+theorem fHalfX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
+    (hw : w ∉ clobX) (hw' : w' ∉ clobX) {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u)
+    (hv : s.gpr w' = BitVec.ofInt 64 v) (huv : |u| + |v| ≤ 2 ^ 59) {x y dst : Nat} (hx : x + 40 ≤ size)
+    (hy : y + 40 ≤ size) (hd : dst + 40 ≤ size) {p : Nat} {f g : Int}
+    (hf : (wordsVal s.mem base x 5 : Int) % ((2 ^ 320 : Nat) : Int) = f % ((2 ^ 320 : Nat) : Int))
+    (hg : (wordsVal s.mem base y 5 : Int) % ((2 ^ 320 : Nat) : Int) = g % ((2 ^ 320 : Nat) : Int))
+    (hfb : |f| ≤ p) (hgb : |g| ≤ p) (hp : p < 2 ^ 256) (hdiv : 2 ^ 59 ∣ u * f + v * g) :
+    WP isa (.block (fHalfX w w' x y dst)) s fun t =>
+      (wordsVal t.mem base dst 5 : Int) % ((2 ^ 320 : Nat) : Int) =
+        ((u * f + v * g) / 2 ^ 59) % ((2 ^ 320 : Nat) : Int) ∧
+      KeepRegs clobX s t ∧ Outside base dst 40 s.mem t.mem := by
+  rw [fHalfX, WP.block_append_iff]
+  refine WP.mono (linX5_ok hs hw hw' hx hy) fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
+    Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), Divstep.cong_comb hf hg] at e₁
+  obtain ⟨b1, b2⟩ := Divstep.comb_range (A := 2 ^ 256) huv hfb hgb hp
+  have h319 : (2 : Nat) ^ 256 * 2 ^ 63 = 2 ^ 319 := by rw [show (319 : Nat) = 256 + 63 from rfl, Nat.pow_add]
+  rw [h319] at b1 b2
+  refine WP.mono (shrX_ok hs₁ hd e₁ b1 b2 (Int.mul_ediv_cancel' hdiv).symm) fun t ⟨e, k, O⟩ =>
+    ⟨e, (Keeps.regs k₁).trans k, by rw [k₁.2.1] at O; exact O⟩
+
+/-- Half an update of `a`, `b`: `[dst] = mred (u a + v b)` (four words). -/
+theorem abHalfX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
+    (hM : ModOkW M size p s.mem base) (hn4 : M.n = 4) {w w' : Reg} (hw : w ∉ clobX) (hwd : w ≠ .rdi)
+    (hw' : w' ∉ clobX) {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u) (hv : s.gpr w' = BitVec.ofInt 64 v)
+    (huv : |u| + |v| ≤ 2 ^ 59) {x y dst : Nat} (hx : x + 32 ≤ size) (hy : y + 32 ≤ size) (hd : dst + 32 ≤ size)
+    {a b : Int} (ha : (wordsVal s.mem base x 4 : Int) = a) (hb : (wordsVal s.mem base y 4 : Int) = b)
+    (ha0 : |a| ≤ p) (hb0 : |b| ≤ p) :
+    WP isa (.block (abHalfX M w w' x y dst)) s fun t =>
+      (wordsVal t.mem base dst 4 : Int) = Divstep.mred p M.minv.toNat (u * a + v * b) ∧
+      KeepRegs (w :: clobX) s t ∧ Outside base dst 32 s.mem t.mem := by
+  rw [abHalfX, WP.block_append_iff]
+  refine WP.mono (linX4_ok hs hw hw' hx hy) fun s₁ ⟨e₁, k₁⟩ => ?_
+  have hs₁ := hs.of_keeps k₁ (by decide)
+  rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
+    Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), ha, hb] at e₁
+  have hT : |u * a + v * b| ≤ 2 ^ 63 * (p : Int) := by
+    have := Divstep.comb_le huv ha0 hb0
+    have hp : (0 : Int) ≤ p := Int.natCast_nonneg _
+    nlinarith
+  have hM₁ : ModOkW M size p s₁.mem base := by rw [k₁.2.1]; exact hM
+  refine WP.mono (mredX_ok hs₁ hM₁ hn4 hw hwd hd hT e₁) fun t ⟨e, k, O⟩ =>
+    ⟨e, ((Keeps.regs k₁).mono fun r hr => List.mem_cons_of_mem _ hr).trans k, by rw [k₁.2.1] at O; exact O⟩
+
 end VG.Proof.Weierstrass.X86_64
