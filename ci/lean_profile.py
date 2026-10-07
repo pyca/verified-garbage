@@ -139,10 +139,26 @@ def source_lines(source, mod):
         return None
 
 
+def command_text(lines, line):
+    """The first line of code from Lean's 1-based `line` of `lines` on,
+    past blank lines and comments (a command's doc comment), or `(end of
+    file)` past the last (where Lean reports the module's finalization)."""
+    i, comment = line - 1, False
+    while 0 <= i < len(lines):
+        text = lines[i].strip()
+        if comment or text.startswith("/-"):
+            comment = not text.endswith("-/") or text in ("/-", "/--", "/-!")
+        elif text and not text.startswith("--"):
+            return text
+        i += 1
+    return "(end of file)" if lines and i >= len(lines) else ""
+
+
 def line_label(lines, line):
-    """`[line N]` and the start of Lean's 1-based `line` of `lines`."""
+    """`[line N]` and the start of the command at Lean's 1-based `line` of
+    `lines`."""
     label = f"[line {line}]"
-    text = lines[line - 1].strip() if lines and 0 < line <= len(lines) else ""
+    text = command_text(lines, line) if line > 0 else ""
     if len(text) > LABEL_WIDTH:
         text = text[:LABEL_WIDTH - 1] + "…"
     return f"{label} {text}" if text else label

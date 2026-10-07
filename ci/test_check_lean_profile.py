@@ -108,10 +108,20 @@ class LineLabel(unittest.TestCase):
         label = profile.line_label(["x" * 200], 1)
         self.assertEqual(label, "[line 1] " + "x" * (profile.LABEL_WIDTH - 1) + "…")
 
-    def test_without_the_line(self):
+    def test_past_comments(self):
+        lines = ["/-- A doc comment", "over two lines. -/", "", "-- a comment",
+                 "/-- one line -/", "macro \"crun\" : tactic => x"]
+        self.assertEqual(profile.line_label(lines, 1), '[line 1] macro "crun" : tactic => x')
+        self.assertEqual(profile.line_label(["/--", "doc", "-/", "run_cmd do"], 1),
+                         "[line 1] run_cmd do")
+
+    def test_end_of_file(self):
+        self.assertEqual(profile.line_label(["end VG.A", ""], 2), "[line 2] (end of file)")
+        self.assertEqual(profile.line_label(["a"], 3), "[line 3] (end of file)")
+
+    def test_without_the_source(self):
         self.assertEqual(profile.line_label([], 3), "[line 3]")
-        self.assertEqual(profile.line_label(["a"], 3), "[line 3]")
-        self.assertEqual(profile.line_label(["", "   "], 2), "[line 2]")
+        self.assertEqual(profile.line_label(["a"], 0), "[line 0]")
 
 
 class Main(unittest.TestCase):
@@ -158,7 +168,7 @@ class Main(unittest.TestCase):
             ("VerifiedGarbage.Proof.A", "VG.A.small"),
             ("VerifiedGarbage.Proof.D", "[line 2] materialize_code foo"),
             ("VerifiedGarbage.Proof.B", "VG.B.only"),
-            ("VerifiedGarbage.Proof.D", "[line 3]"),
+            ("VerifiedGarbage.Proof.D", "[line 3] (end of file)"),
         ])
         self.assertEqual(rows[1]["blocked"], 9.0)
         self.assertEqual([r.get("line") for r in rows], [None, None, 2, None, 3])
@@ -175,7 +185,7 @@ class Main(unittest.TestCase):
     def test_sort_by_kernel(self):
         out, _ = self.run_main("--json", "--sort", "kernel")
         self.assertEqual([r["decl"] for r in json.loads(out)], ["VG.A.big", "[line 2] materialize_code foo", "VG.B.only",
-                                                     "[line 3]", "VG.A.small"])
+                                                     "[line 3] (end of file)", "VG.A.small"])
 
     def test_by_module_and_prefix(self):
         out, _ = self.run_main("--json", "--by", "module", "--module", "VerifiedGarbage.Proof.B")
