@@ -115,7 +115,7 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sv_unch U₅ h7 hn (by decide) (apart_slWk (by decide) (by decide))).trans (v₄ (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -168,7 +168,7 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     ⟨_, _, _, _, _, _, by simpa only [Nat.shiftRight_zero] using q₂, q₅, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
-      rfl⟩, ?_⟩
+      rfl⟩, ?_, rx₆, ?_⟩
   · rw [tbl_unch U₆ h7 (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
       tbl_unch U₅ h7 (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
       tbl_unch U₄ h7 (by decide) ht (tbl_apart_tbl (by decide) ht),
@@ -177,5 +177,9 @@ theorem pointsComb_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       tbl_unch U₁ h7 (by decide) ht (tbl_apart_tbl (by decide) ht)]
     exact hM.t₁ t ht
   · exact whole
+
+  · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
+      ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans
+        ((W₃ (by decide) (by decide)).trans hM.k)))
 
 end VG.Proof.Ecdsa.Verify.X86

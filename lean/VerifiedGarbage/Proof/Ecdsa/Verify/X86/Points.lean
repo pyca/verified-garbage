@@ -127,7 +127,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
       (tmv c.C c.n base s' (c.sl RX), tmv c.C c.n base s' (c.sl RY), tmv c.C c.n base s' (c.sl RZ)) =
         rcbAdd (tmv c.C c.n base s (c.sl AP)) (tmv c.C c.n base s (c.sl B3P))
           (tmv c.C c.n base s (c.sl UX)) (tmv c.C c.n base s (c.sl UY)) (tmv c.C c.n base s (c.sl UZ))
-          (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) := by
+          (tmv c.C c.n base s (c.sl RX)) (tmv c.C c.n base s (c.sl RY)) (tmv c.C c.n base s (c.sl RZ)) ∧ sv c base s' RX < c.C.p := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -192,7 +192,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     · simp only [List.mem_append, List.mem_singleton] at hw
       rcases hw with hw | hw | hw <;> (subst hw; simp)
   refine ⟨hs₃.of_keeps k₄ (by decide), fun r hr => ?_, by rw [K₄.2.1, PK.rd], by rw [K₄.2.2, PK.wr],
-    U₄, ?_, ?_, ?_⟩
+    U₄, ?_, ?_, ?_, ?_⟩
   · rw [K₄.1 r (fun h => hr (by simp only [List.mem_singleton] at h; subst h; decide)), PK.gpr r hr]
   · have hM₁ := I₁.mod
     refine ⟨hM₁.n0, hM₁.mo, hM₁.tmp, hM₁.sep, ?_, hM₁.inv, hM₁.red⟩
@@ -206,6 +206,7 @@ theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     show (toM _ _ (sv c base s₄ RX), toM _ _ (sv c base s₄ RY), toM _ _ (sv c base s₄ RZ)) = _
     rw [x₄, y₄, z₄]
     exact (congrArg₂ Prod.mk vx (congrArg₂ Prod.mk vy vz)).trans t₁
+  · rw [x₄]; exact I₁.lt _ (hD DX (by simp))
 
 /-- `Step` depends only on what the slots of `a`, `3b` and `G` stand for. -/
 theorem Step.congr {L : LadderCfg} {C : Curve} {base : Addr} {s s' : State} {k : Nat}
@@ -239,6 +240,8 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr)
     (tmv c.C c.n base s (c.sl RX), tmv c.C c.n base s (c.sl RY), tmv c.C c.n base s (c.sl RZ)) =
       rcbAdd (Fin.ofNat c.C.p c.C.a) (Fin.ofNat c.C.p (3 * c.C.b)) X1 Y1 Z1 X2 Y2 Z2
   unch : Unch base [(0, size)] s₀.mem s.mem
+  rx_lt : sv c base s RX < c.C.p
+  k : sv c base s K = sigR c s₀
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.points c =
     .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (ladder c.ladderCfg c.wk)
@@ -369,7 +372,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sv_unch U₅ h7 hn (by decide) (apart_slWk (by decide) (by decide))).trans (v₄ (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆⟩ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -439,11 +442,14 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
     ⟨_, _, _, _, _, _, q₂, q₅, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
-      rfl⟩, ?_⟩
+      rfl⟩, ?_, rx₆, ?_⟩
   · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_tbl (by decide) ht)
       (tbl_apart_slWk (by decide) (by decide) ht))]
     exact hM.t₁ t ht
   · exact whole_of hM.unch UW (le_append (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7)
       (slWk_le h7 (by decide)))
+
+  · exact (sv_unch UW h7 hn (i := K) (by decide)
+      (apart_append (tb (by decide)) (apart_slWk (by decide) (by decide)))).trans hM.k
 
 end VG.Proof.Ecdsa.Verify.X86

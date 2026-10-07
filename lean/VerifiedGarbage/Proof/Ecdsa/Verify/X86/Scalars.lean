@@ -54,6 +54,7 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
   v : Fin.ofNat c.C.n (sv c base s V) =
     Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
   unch : Unch base [(0, size)] s₀.mem s.mem
+  k : sv c base s K = sigR c s₀
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
@@ -235,7 +236,8 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
       toM_one_mul hnR (by rw [e₉, show sv c base s₈ ONE = 1 from F₈.one]), um₈],
     lt₁₀,
     by rw [toM_one_mul hnR (by rw [e₁₀, show sv c base s₉ ONE = 1 from F₉.one]),
-      v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_⟩
+      v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
+    by rw [a (i := K) (by decide) (by decide) (by decide)]; exact hF.k⟩
   · rw [tbl_unch UW h7 (j := 1) (by decide) ht (apart_append (tbl_apart_flag h0 1 t)
       (tbl_apart_slWk (by decide) (by decide) ht))]
     exact hF.t₁ t ht

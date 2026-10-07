@@ -41,8 +41,9 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       additions, no doublings, and constant-time SSE2 scans of a 148 KiB precomputed table. \
       Its position-independent table address uses a balanced four-byte CALL frame. The \
       variable-base product `[v]Q` uses a double-and-add ladder over all 256 bits, followed \
-      by a complete addition of the two products. Inversions use square-and-always-multiply. \
-      Invalid inputs follow the same path and the result is selected by a mask; timing \
+      by a complete addition of the two products. Scalar inversion uses square-and-always-multiply. \
+      The final check avoids a field inversion: it compares `X = rZ`, or `X = (r+n)Z` when \
+      `r+n < p`, and rejects `Z = 0`. Invalid inputs follow the same path and the result is selected by a mask; timing \
       depends only on pointers and the static table address."])
     code := Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
