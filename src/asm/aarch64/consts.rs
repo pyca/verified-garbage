@@ -2,8 +2,12 @@
 //! The tables of constants of the verified functions for `aarch64` (`Artifact.consts`).
 #![allow(dead_code)]
 
+/// A table of constants, aligned to a cache line.
+#[repr(C, align(64))]
+pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+
 /// The table of constants `VG_ED25519_COMB` (`Artifact.consts`).
-pub(crate) static VG_ED25519_COMB: [u64; 3072] = [
+pub(crate) static VG_ED25519_COMB: Table<3072> = Table([
     11317608560831009086,
     18246790212602609331,
     11943973047390669321,
@@ -3076,10 +3080,10 @@ pub(crate) static VG_ED25519_COMB: [u64; 3072] = [
     16970845493046891646,
     2667153320764020665,
     1148295934650583391,
-];
+]);
 
 /// The table of constants `VG_P224_COMB` (`Artifact.consts`).
-pub(crate) static VG_P224_COMB: [u64; 18944] = [
+pub(crate) static VG_P224_COMB: Table<18944> = Table([
     13587450400768412394,
     9594240840978972586,
     7913862054659484677,
@@ -22024,10 +22028,10 @@ pub(crate) static VG_P224_COMB: [u64; 18944] = [
     10831789646566862633,
     8366656213066851007,
     1728687490,
-];
+]);
 
 /// The table of constants `VG_P256_COMB` (`Artifact.consts`).
-pub(crate) static VG_P256_COMB: [u64; 18944] = [
+pub(crate) static VG_P256_COMB: Table<18944> = Table([
     8784043285714375740,
     8483257759279461889,
     8789745728267363600,
@@ -40972,10 +40976,10 @@ pub(crate) static VG_P256_COMB: [u64; 18944] = [
     17660977736387688798,
     15267800660233016980,
     9425666635197822247,
-];
+]);
 
 /// The table of constants `VG_P384_COMB` (`Artifact.consts`).
-pub(crate) static VG_P384_COMB: [u64; 42240] = [
+pub(crate) static VG_P384_COMB: Table<42240> = Table([
     4454189113653900584,
     2369870743683386936,
     9771750146904378734,
@@ -83216,10 +83220,10 @@ pub(crate) static VG_P384_COMB: [u64; 42240] = [
     13463230527400146278,
     1635587163721051828,
     11867081393805758119,
-];
+]);
 
 /// The table of constants `VG_P521_COMB` (`Artifact.consts`).
-pub(crate) static VG_P521_COMB: [u64; 95616] = [
+pub(crate) static VG_P521_COMB: Table<95616> = Table([
     12912279055397404929,
     5619576712772809438,
     8005610518557668641,
@@ -178836,10 +178840,10 @@ pub(crate) static VG_P521_COMB: [u64; 95616] = [
     1497911798572503407,
     17381266984332146789,
     190,
-];
+]);
 
 /// The table of constants `VG_X448_COMB` (`Artifact.consts`).
-pub(crate) static VG_X448_COMB: [u64; 7296] = [
+pub(crate) static VG_X448_COMB: Table<7296> = Table([
     10880955091566686,
     36276784145337894,
     69571282115576635,
@@ -186136,4 +186140,4 @@ pub(crate) static VG_X448_COMB: [u64; 7296] = [
     29631176205644222,
     14834168537349661,
     27190361828043576,
-];
+]);

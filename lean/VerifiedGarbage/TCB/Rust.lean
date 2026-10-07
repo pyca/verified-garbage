@@ -43,8 +43,18 @@ every artifact of the target with a table of that name gives the same words
 and that the code names only its own tables (`checkConsts`):
 
 ```rust
-pub(crate) static <NAME>: [u64; <n>] = [<word>, …];
+#[repr(C, align(64))]
+pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+
+pub(crate) static <NAME>: Table<<n>> = Table([<word>, …]);
 ```
+
+`Table` holds the words at its start (`repr(C)`, one field), so the
+static's address is that of word 0. It aligns each table to 64 bytes, a
+cache line on every target, so that where a table's entries fall in cache
+lines depends only on the table, not on the size of whatever the linker puts
+before it (a change to one table would otherwise move the others, and their
+functions' timing with them). Its name cannot be a table's (`tableName`).
 
 The code forms a table's address from the static's symbol (a `sym`
 operand), on AArch64 by `adrp` and `add` (`Line.sym`), whose operands
@@ -364,10 +374,12 @@ def tables (arts : List Artifact) : List (String × List (BitVec 64)) :=
 def tablesFile (t : String) (ts : List (String × List (BitVec 64))) : String :=
   header ++ s!"//! The tables of constants of the verified functions for `{t}` (`Artifact.consts`).\n" ++
   "#![allow(dead_code)]\n" ++
+  "\n/// A table of constants, aligned to a cache line.\n" ++
+  "#[repr(C, align(64))]\npub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);\n" ++
   String.join (ts.map fun (n, ws) =>
     s!"\n/// The table of constants `{n}` (`Artifact.consts`).\n" ++
-    s!"pub(crate) static {n}: [u64; {ws.length}] = [\n" ++
-    String.join (ws.map fun w => s!"    {w.toNat},\n") ++ "];\n")
+    s!"pub(crate) static {n}: Table<{ws.length}> = Table([\n" ++
+    String.join (ws.map fun w => s!"    {w.toNat},\n") ++ "]);\n")
 
 /-- `mod` declarations for generated child modules (never reformatted by rustfmt). -/
 def modDecls (ms : List String) (cfg : String → Option String) : String :=
