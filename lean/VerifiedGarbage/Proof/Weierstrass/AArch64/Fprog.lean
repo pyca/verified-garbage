@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Impl.Weierstrass.AArch64
 import VerifiedGarbage.Proof.Mont.AArch64.Ops
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 
 /-!
 # Field programs on AArch64
@@ -24,10 +25,14 @@ namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64 VG.Impl.Weierstrass VG.Proof.Mont.AArch64 VG.Proof.Mont
 
 /-- The slots `Sl`, the modulus and the temporary area are at offsets that
-loads and stores can encode. -/
+loads and stores can encode; and if the products are calls of a function, it
+is one that computes them (`Mont.ModOk`), its modulus is stored in the
+temporary area, and the slots are below its own working space. -/
 structure Aligned (M : Mod) (Sl : Nat → Prop) : Prop where
   sl : ∀ x, Sl x → x % 8 = 0
   mod : ModA M
+  call : ∀ f m', M.call = some (f, m') → M.tmp = Mont.moAt M.n ∧ Mont.ModOk M.n m' ∧
+    ∀ x, Sl x → x + 8 * M.n ≤ Mont.own M.n
 
 /-- The state holds the environment `E` in Montgomery's form in the slots
 `V`, below `m`, with the modulus in place. -/
@@ -198,6 +203,59 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
       k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
 
+/-- One operation, a call for a product modulo a modulus whose products are
+calls. -/
+theorem opProg_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
+    (hR : ∀ x ∈ op.ins, x ∈ V) :
+    WP isa (opProg M op) s fun s' =>
+      OpKeep M base op.out s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
+  cases op with
+  | mul o a b =>
+    cases hc : M.call with
+    | none =>
+      simp only [opProg, hc]
+      exact fop_ok hL hAl hm hI hS hR
+    | some c =>
+      obtain ⟨f, m'⟩ := c
+      simp only [opProg, hc]
+      obtain ⟨ht, hH, hown⟩ := hAl.call f m' hc
+      obtain rfl := Mod.ok_call hI.mod.red hc
+      simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq] at hS hR
+      refine WP.mono (Mont.mulCall_ok hI.scr hI.mod hH ht (hown o hS.1) (hown a hS.2.1) (hown b hS.2.2)
+        (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨hk, hI.update hL hS.1 hk hlt ?_⟩
+      rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
+  | add o a b => exact fop_ok hL hAl hm hI hS hR
+  | sub o a b => exact fop_ok hL hAl hm hI hS hR
+
+/-- A field program, a call for each product modulo a modulus whose products
+are calls. -/
+theorem fprogB_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) :
+    ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
+      Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
+      readsOk ops V = true →
+      WP isa (fprogB M ops) s fun s' => ProgKeep M base (ops.map FOp.out) s s' ∧
+        Inv M base size m Sl (validAfter ops V) (runOps ops E) s'
+  | [], _, _, s, hI, _, _ => WP.block_nil ⟨ProgKeep.refl _ _ _ s, hI⟩
+  | [op], V, E, s, hI, hS, hR => by
+    simp only [readsOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at hR
+    refine WP.mono (opProg_ok hL hAl hm hI (hS op (List.mem_cons_self ..)) hR.1) fun s₁ ⟨k₁, I₁⟩ =>
+      ⟨⟨k₁.gpr, k₁.rd, k₁.wr, k₁.sp, fun x hx ht => k₁.mem x (hx _ (List.mem_cons_self ..)) ht⟩, I₁⟩
+  | op :: op' :: ops, V, E, s, hI, hS, hR => by
+    rw [readsOk, Bool.and_eq_true, List.all_eq_true] at hR
+    simp only [decide_eq_true_eq] at hR
+    show WP isa (.seq (opProg M op) (fprogB M (op' :: ops))) s _
+    refine WP.seq (WP.mono (opProg_ok hL hAl hm hI (hS op (List.mem_cons_self ..)) hR.1) fun s₁ ⟨k₁, I₁⟩ => ?_)
+    refine WP.mono (fprogB_ok (ops := op' :: ops) hL hAl hm I₁ (fun op'' h => hS op'' (List.mem_cons_of_mem _ h)) hR.2)
+      fun s₂ ⟨k₂, I₂⟩ => ⟨⟨fun r hr => (k₂.gpr r hr).trans (k₁.gpr r hr), k₂.rd.trans k₁.rd,
+        k₂.wr.trans k₁.wr, k₂.sp.trans k₁.sp, fun x hx ht => ?_⟩, I₂⟩
+    rw [List.map_cons] at hx
+    rw [k₂.mem x (fun w hw => hx w (List.mem_cons_of_mem _ hw)) ht,
+      k₁.mem x (hx _ (List.mem_cons_self ..)) ht]
+
 /-! ## The complete addition -/
 
 /-- `o = p + q` by `rcb`, on slots of `Sl` that are apart (`RcbApart`; `p` may
@@ -208,7 +266,7 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt} (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (rcb S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (rcb S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl (rcbW S o ++ V) (runOps (rcb S p q o) E) s' ∧
       (runOps (rcb S p q o) E o.x, runOps (rcb S p q o) E o.y, runOps (rcb S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd (E S.a) (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y)
@@ -217,7 +275,7 @@ theorem rcb_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
   have hR : readsOk (rcb S p q o) V = true := by
     rw [rcb_eq_rename]
     exact readsOk_mono (readsOk_rename _ rcbN_reads) hV
-  refine WP.mono (fprog_ok hL hAl hm _ hI (fun op hop x hx => hSl x (rcb_slots op hop x hx)) hR)
+  refine WP.mono (fprogB_ok hL hAl hm _ hI (fun op hop x hx => hSl x (rcb_slots op hop x hx)) hR)
     fun s' ⟨hk, hI'⟩ => ⟨hk.mono fun w hw => ?_, hI'.sub fun x hx => ?_, rcb_run hA E,
       fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ rcb_out op hop)⟩
   · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
@@ -234,13 +292,13 @@ theorem ofN_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp} (hN : NumOk N) {S : RcbSlots}
     {p q o : Pt} (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat}
     {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (ofN N S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (ofN N S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (ofN N S p q o) E) s' ∧
       (runOps (ofN N S p q o) E o.x, runOps (ofN N S p q o) E o.y, runOps (ofN N S p q o) E o.z) =
         (runOps N (fun y => E (rcbσ S p q o y)) 6, runOps N (fun y => E (rcbσ S p q o y)) 7,
           runOps N (fun y => E (rcbσ S p q o y)) 8) := by
   have hR : readsOk (ofN N S p q o) V = true := readsOk_mono (ofN_readsOk hN S p q o) hV
-  refine WP.mono (fprog_ok hL hAl hm _ hI (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
+  refine WP.mono (fprogB_ok hL hAl hm _ hI (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR)
     fun s' ⟨hk, hI'⟩ => ⟨hk.mono fun w hw => ?_, hI'.sub fun x hx => ?_, ?_⟩
   · obtain ⟨op, hop, rfl⟩ := List.mem_map.mp hw
     exact ofN_out hN op hop
@@ -255,7 +313,7 @@ theorem rcb3_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
     {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (rcb3 S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (rcb3 S p q o)) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (rcb3 S p q o) E) s' ∧
       (runOps (rcb3 S p q o) E o.x, runOps (rcb3 S p q o) E o.y, runOps (rcb3 S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd3 (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) (E q.z) := by

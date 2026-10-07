@@ -18,7 +18,7 @@ def FieldCompilerCorrect (arithmetic : Mod → List FOp → Prog isa) (size : Na
 
 theorem fprogB_correct (size : Nat) : FieldCompilerCorrect fprogB size := by
   intro M base m _ Sl hL hAl hm ops V E s hi hS hV
-  exact (fprogB_wp _ _).mpr (fprog_ok hL hAl hm ops hi hS hV)
+  exact fprogB_ok hL hAl hm ops hi hS hV
 
 theorem FieldCompilerCorrect.ofN {arithmetic : Mod → List FOp → Prog isa} {size : Nat}
     (hc : FieldCompilerCorrect arithmetic size) {M : Mod} {base : Addr} {m : Nat} [NeZero m]
@@ -74,7 +74,6 @@ theorem maddJ_values_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
       Inv M base size C.p Sl ([o.x,o.y,o.z]++V) (runOps (maddJ S p q o) E) t ∧
       (runOps (maddJ S p q o) E o.x,runOps (maddJ S p q o) E o.y,
         runOps (maddJ S p q o) E o.z)=maddJF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) := by
-  apply (fprogB_wp _ _).mpr
   rw [maddJ_eq]
   exact WP.mono (ofN_ok hL hAl hm maddJN_ok hA hSl hI hV)
     fun _ ⟨hk,hi,hv⟩ => ⟨hk,hi,hv.trans (maddJN_run _)⟩
