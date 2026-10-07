@@ -119,6 +119,37 @@ theorem JFrame.next (hL : JacWinLay K size) {C : Curve} {base : Addr} {s₀ s s'
       rcases List.mem_append.mp hw with hw | hw <;> exact hw,
     h.mod.unch (hU.mono hW) (hL.w_mo h.mod) h.scr.nowrap⟩
 
+theorem mem_jwW_ws {x : Nat} (h : x ∈ jwWs K) : (x, 8 * K.M.n) ∈ jwW K :=
+  List.mem_append_left _ (List.mem_map.mpr ⟨x, h, rfl⟩)
+
+theorem mem_jwW_tmp : (K.M.tmp, 8 * K.M.n) ∈ jwW K := List.mem_append_right _ (List.mem_singleton_self _)
+
+theorem JFrame.refl {C : Curve} {base : Addr} {s : State} (hs : Scr s base size)
+    (hM : ModOkW K.M size C.p s.mem base) : JFrame K C base size s s :=
+  ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM⟩
+
+/-- A change of entry `b`'s five slots, as one of each. -/
+theorem outside_grid5 (hL : JacWinLay K size) {base : Addr} {m m' : Mem} {b : Nat}
+    (h : Outside base (jg K b) (40 * K.M.n) m m') :
+    Unch base ((List.range 5).map fun c => (jg K (b + c), 8 * K.M.n)) m m' := by
+  intro x hx
+  have h4 := hL.n4
+  have e := fun c (hc : c < 5) => hx (jg K (b + c), 8 * K.M.n) (List.mem_map.mpr ⟨c, List.mem_range.mpr hc, rfl⟩)
+  have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
+  have e3 := e 3 (by decide); have e4 := e 4 (by decide)
+  unfold jg at e0 e1 e2 e3 e4
+  refine h x ?_
+  unfold jg
+  rw [h4] at e0 e1 e2 e3 e4 ⊢
+  dsimp only at e0 e1 e2 e3 e4
+  omega
+
+theorem grid5_jwW {b : Nat} (hb : b + 5 ≤ 85) :
+    ∀ w ∈ (List.range 5).map (fun c => (jg K (b + c), 8 * K.M.n)), w ∈ jwW K := by
+  intro w hw
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
+  exact mem_jwW_ws (jg_ws (by have := List.mem_range.mp hc; omega))
+
 theorem JFrame.ro (hL : JacWinLay K size) {C : Curve} {base : Addr} {s₀ s : State}
     (h : JFrame K C base size s₀ s) {x : Nat} (hx : x ∈ jwRo K) :
     wordsVal s.mem base x K.M.n = wordsVal s₀.mem base x K.M.n :=
@@ -128,11 +159,6 @@ theorem JFrame.ro_tmv (hL : JacWinLay K size) {C : Curve} {base : Addr} {s₀ s 
     (h : JFrame K C base size s₀ s) {x : Nat} (hx : x ∈ jwRo K) :
     tmv C K.M.n base s x = tmv C K.M.n base s₀ x := by
   show toM _ _ _ = toM _ _ _; rw [h.ro hL hx]
-
-theorem mem_jwW_ws {x : Nat} (h : x ∈ jwWs K) : (x, 8 * K.M.n) ∈ jwW K :=
-  List.mem_append_left _ (List.mem_map.mpr ⟨x, h, rfl⟩)
-
-theorem mem_jwW_tmp : (K.M.tmp, 8 * K.M.n) ∈ jwW K := List.mem_append_right _ (List.mem_singleton_self _)
 
 /-- `x ∈ jwSlots`, `jwWs` for the named slots (by `jw_mem`, or a slot of `T`). -/
 theorem JacWinLay.T_mem (hL : JacWinLay K size) :
@@ -156,6 +182,47 @@ theorem other_loopW {x : Nat} (h : x ∈ jwOther K) : (x, 8 * K.M.n) ∈ jwLoopW
   List.mem_append_left _ (List.mem_map.mpr ⟨x, List.mem_append_left _ h, rfl⟩)
 
 theorem tmp_loopW : (K.M.tmp, 8 * K.M.n) ∈ jwLoopW K := List.mem_append_right _ (List.mem_singleton_self _)
+
+/-- What a field program writing slots the loop may write changes. -/
+theorem ProgKeep.loopW {base : Addr} {W : List Nat} {s t : State} (h : ProgKeep K.M base W s t)
+    (hW : ∀ x ∈ W, (x, 8 * K.M.n) ∈ jwLoopW K) : Unch base (jwLoopW K) s.mem t.mem :=
+  (ProgKeep.unch h).mono fun w hw => by
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hw; exact hW x hx
+    · rw [List.mem_singleton.mp hw]; exact tmp_loopW
+
+theorem OpKeep.loopW {base : Addr} {o : Nat} {s t : State} (h : OpKeep K.M base o s t)
+    (ho : (o, 8 * K.M.n) ∈ jwLoopW K) : Unch base (jwLoopW K) s.mem t.mem :=
+  h.unch.mono fun w hw => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl
+    · exact ho
+    · exact tmp_loopW
+
+/-- `T`'s named slots and the temporaries, written by the loop. -/
+theorem JacWinLay.T_lw (hL : JacWinLay K size) :
+    (K.E.x, 8 * K.M.n) ∈ jwLoopW K ∧ (K.E.y, 8 * K.M.n) ∈ jwLoopW K ∧ (K.E.z, 8 * K.M.n) ∈ jwLoopW K ∧
+      (K.z2, 8 * K.M.n) ∈ jwLoopW K ∧ (K.z2 + 8 * K.M.n, 8 * K.M.n) ∈ jwLoopW K := by
+  rw [hL.Tz3, hL.Tx, hL.Ty, hL.Tz, hL.Tz2]
+  exact ⟨T_loopW K (c := 0) (by decide), T_loopW K (c := 1) (by decide), T_loopW K (c := 2) (by decide),
+    T_loopW K (c := 3) (by decide), T_loopW K (c := 4) (by decide)⟩
+
+theorem rcbW_loopW {p : Pt} (hp : ∀ x ∈ [p.x, p.y, p.z], (x, 8 * K.M.n) ∈ jwLoopW K) :
+    ∀ x ∈ rcbW K.S p, (x, 8 * K.M.n) ∈ jwLoopW K := by
+  intro x hx
+  simp only [rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | h | h | h
+  · exact other_loopW (by jw_mem)
+  · exact other_loopW (by jw_mem)
+  · exact other_loopW (by jw_mem)
+  · exact other_loopW (by jw_mem)
+  · exact other_loopW (by jw_mem)
+  · exact other_loopW (by jw_mem)
+  all_goals exact hp _ (by simp [h])
+
+/-- The loop's writes, as the method's. -/
+theorem loopW_jwW {base : Addr} {m m' : Mem} (h : Unch base (jwLoopW K) m m') : Unch base (jwW K) m m' :=
+  h.mono (jwLoopW_sub K)
 
 /-- `T`'s slots as the named ones. -/
 theorem JacWinLay.TS_eq (hL : JacWinLay K size) :
@@ -193,6 +260,19 @@ theorem addRbx_ok (s : State) {j c : Nat} (hc : c < 2 ^ 31) (hb : s.gpr .rbx = B
   refine ⟨by rw [← BitVec.ofNat_add], fun r hr => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
+
+/-- Registers the method may change. -/
+theorem sub_powClob {n : Nat} {rs : List Reg} (h : ∀ r ∈ rs, r ∈ [Reg.rax, .rbx, .rcx, .rdx, .r8]) :
+    ∀ r ∈ rs, r ∈ powClob n := by
+  intro r hr
+  have := h r hr
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at this
+  rcases this with rfl | rfl | rfl | rfl | rfl
+  · simp [powClob, clob]
+  · exact List.mem_cons_self ..
+  · simp [powClob, clob]
+  · simp [powClob, clob]
+  · exact clob_powClob _ (r8_mem_clob _)
 
 theorem keepRegs_of_keeps {rs rs' : List Reg} {s s' : State} (h : Keeps rs s s')
     (hr : ∀ r ∈ rs, r ∈ rs') : KeepRegs rs' s s' := (Keeps.regs h).mono hr

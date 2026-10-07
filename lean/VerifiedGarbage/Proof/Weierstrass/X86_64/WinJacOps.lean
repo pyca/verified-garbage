@@ -37,7 +37,8 @@ theorem cacheOps_ok (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr} {V : Lis
     WP isa (ForwardField.programB K.M K.cacheOps) s fun t =>
       ProgKeep K.M base [K.z2, K.z2 + 8 * K.M.n] s t ∧ ∃ E' : Nat → Fe C,
         Inv K.M base size C.p (· ∈ jwSlots K) ([K.z2, K.z2 + 8 * K.M.n] ++ V) E' t ∧
-        E' K.E.z = E K.E.z ∧ E' K.z2 = E K.E.z * E K.E.z ∧ E' (K.z2 + 8 * K.M.n) = E' K.z2 * E K.E.z := by
+        (∀ x, x ≠ K.z2 → x ≠ K.z2 + 8 * K.M.n → E' x = E x) ∧ E' K.z2 = E K.E.z * E K.E.z ∧
+        E' (K.z2 + 8 * K.M.n) = E' K.z2 * E K.E.z := by
   obtain ⟨-, -, -, h2, h3, h23⟩ := jw_T_ne hL
   have mz : K.E.z ∈ jwSlots K := by rw [hL.Tz]; exact jg_mem (by decide)
   have m2 : K.z2 ∈ jwSlots K := by rw [hL.Tz2]; exact jg_mem (by decide)
@@ -58,8 +59,9 @@ theorem cacheOps_ok (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr} {V : Lis
     · exact Or.inr (by simp [JacWinCfg.cacheOps, FOp.out])
     · exact Or.inr (by simp [JacWinCfg.cacheOps, FOp.out])
     · exact Or.inl hx
-  · simp only [JacWinCfg.cacheOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
-      Ne.symm h2, Ne.symm h3, ite_false]
+  · intro x hx2 hx3
+    simp only [JacWinCfg.cacheOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
+      hx2, hx3, ite_false]
   · simp only [JacWinCfg.cacheOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
       Ne.symm h2, Ne.symm h23, ite_false, ite_true]
   · simp only [JacWinCfg.cacheOps, runOps, List.foldl_cons, List.foldl_nil, FOp.run, Function.update_apply,
