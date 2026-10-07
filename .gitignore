@@ -13,3 +13,5 @@ __pycache__/
 /bench-compare
 /bench-target
 /bench-head
+# CI metrics (ci/ci_metrics.py fetch)
+/.ci-metrics

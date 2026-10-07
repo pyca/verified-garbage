@@ -508,6 +508,20 @@ workers measured in [PR #367](https://github.com/pyca/verified-garbage/pull/367)
 unless a controlled build comparison on the intended runner supports
 changing them.
 
+## Measuring CI
+
+Every CI run keeps a `ci-metrics` artifact (`ci/ci_metrics.py`, the
+`ci-metrics` job), for as long as the repository keeps artifacts: every job's
+and step's queue and run times, the Lean build's plan, and what each shard
+and assembly restored and built (each module and its time). The plan and the
+shards' outputs last a day; these do not. To analyse CI (shard balance,
+duplicate work, failed restores, slow jobs), download them rather than
+scraping logs:
+
+```sh
+python3 ci/ci_metrics.py fetch .ci-metrics 200   # the last 200 runs', as .ci-metrics/<run>.json
+```
+
 ## Iterating on one proof
 
 While developing, never run a bare `lake build` or the emitter: the default
