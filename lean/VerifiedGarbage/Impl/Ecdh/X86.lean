@@ -142,7 +142,7 @@ def middle : Prog isa :=
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (ladder (ladderQ c) c.wk) <| .seq (pow c.powP c.wk) (middle c)
+  .seq (ladder (ladderQ c) c.wk) <| .seq c.pPow (middle c)
 
 end Cfg
 

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
 
 /-!
@@ -69,7 +70,7 @@ abbrev finW : List Nat := [ACC, PT, TMP, XM, X, XN, W]
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s) :
-    WP isa (.seq (pow c.powP c.wk) (Impl.Ecdsa.Verify.X86.Cfg.final c)) s fun s' =>
+    WP isa (.seq c.pPow (Impl.Ecdsa.Verify.X86.Cfg.final c)) s fun s' =>
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.gpr .esp = s₀.gpr .esp ∧
       Unch base [(0, size)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
@@ -86,7 +87,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have F := hP.fixed
   have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hP.scr
+  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hP.scr
     (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega))
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
   rw [powWxP_eq, accLen_MP'] at U₁

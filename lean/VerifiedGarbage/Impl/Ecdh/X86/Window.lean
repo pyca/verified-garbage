@@ -41,7 +41,7 @@ def windowMul (src : Nat) : Prog isa :=
 /-- ECDH with signed windows for the variable-base product. -/
 def exchangeWindow : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (windowMul c (c.sl K)) <| .seq (pow c.powP c.wk) (middle c)
+  .seq (windowMul c (c.sl K)) <| .seq c.pPow (middle c)
 
 end Cfg
 end VG.Impl.Ecdh.X86

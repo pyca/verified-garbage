@@ -1,5 +1,5 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.TComb
-import VerifiedGarbage.Impl.Weierstrass.X86
+import VerifiedGarbage.Impl.Weierstrass.X86.PowChain
 import VerifiedGarbage.Spec.Weierstrass
 import VerifiedGarbage.Spec.Ecdsa
 
@@ -215,6 +215,9 @@ def gMul : Prog isa :=
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
+/-- Field inversion uses P-256's fixed addition chain when applicable. -/
+def pPow : Prog isa := powField c.powP c.wk c.C.p
+
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]
 
@@ -324,7 +327,7 @@ def prepareWith (A : Args) : Prog isa :=
 def signPrep : Prog isa := c.prepareWith .sign
 
 def signTail : Prog isa :=
-  .seq (pow c.powP c.wk) <|
+  .seq c.pPow <|
   .seq c.middle <|
   .seq (pow c.powN c.wk) c.scalar
 

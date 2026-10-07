@@ -24,8 +24,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       with `mul` and the accumulator in `scratch`) with a final conditional subtraction. `[k]G` \
       uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time \
       SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a \
-      balanced four-byte CALL frame. The inversions modulo `p` and `n` use square-and-always-multiply \
-      over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so \
+      balanced four-byte CALL frame. Field inversion uses a fixed chain for `p - 2` (255 squares and 18 other \
+      multiplications); scalar inversion uses square-and-always-multiply over `n - 2`. The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."])
     code := Impl.Ecdsa.X86.signP256Comb
     consts := Impl.Ecdsa.X86.p256Comb.combConsts

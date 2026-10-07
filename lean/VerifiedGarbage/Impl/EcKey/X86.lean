@@ -50,7 +50,7 @@ def upToPow : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (ladder c.ladderCfg c.wk) <|
-  .seq (pow c.powP c.wk) (.block [])
+  .seq c.pPow (.block [])
 
 /-- `04 ‖ x ‖ y` (or zeros) to `out` (through `ebx`), the flag's low bit to
 `eax`, and the callee-saved registers restored. -/
@@ -76,7 +76,7 @@ def publicKey : Prog isa := .seq (upToPow c) (middle c)
 def publicKeyComb : Prog isa := .seq c.tableAddr <|
   .seq (c.prepareWith Args.publicKey) <|
   .seq c.gMul <|
-  .seq (pow c.powP c.wk) (middle c)
+  .seq c.pPow (middle c)
 
 end Cfg
 

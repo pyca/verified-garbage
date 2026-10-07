@@ -20,8 +20,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       Montgomery form. `[d]G` uses a seven-bit signed comb with 37 complete point additions \
       and no doublings, scanning every entry of each static table with SSE2. The function \
       obtains `VG_P256_COMB` with a position-independent four-byte CALL frame and saves \
-      callee-saved registers in `scratch`. `Z⁻¹` uses square-and-always-multiply over \
-      `p - 2`. A mask selects the encoded public key or zeros; only addresses affect timing."])
+      callee-saved registers in `scratch`. `Z⁻¹` uses a fixed addition chain for \
+      `p - 2`, with 255 squares and 18 other multiplications. A mask selects the encoded public key or zeros; only addresses affect timing."])
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     code := Proof.EcKey.X86.pkCombCode
     contract := Spec.EcKey.P256.inst.publicKeyContract

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 
@@ -24,7 +25,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       ∀ i < (c.combWords d).length, ∀ b < 8,
         size ≤ ofs base ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMul (.seq (pow c.powP c.wk) rest)) s Q := by
+    WP isa (.seq c.gMul (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -39,7 +40,7 @@ theorem stage₂Comb (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   have hs₅ := hS.scr.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (fixedOk_gW) U₅
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR hs₅ M₅
+  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
