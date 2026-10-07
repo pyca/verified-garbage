@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Mont.X86_64.ProdX
+import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -122,6 +123,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     rw [this, Nat.mul_zero, Nat.add_zero]
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₂ (M := M) (m := m) hlowlen hM.n0 (fresh_low M.n hM.n7) hM.mo hM.tmp hM.sep
+    (Mod.ok_sparse hM.red)
     (by rw [hmem₂]; exact hM.val) (by rw [hV]; exact hT)) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hs₃ := hs₂.of_keepRegs k₃ (by
     intro h
@@ -238,6 +240,7 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       wordsVal s.mem base a M.n + wordsVal s.mem base b M.n := by rw [hR₄, e₄, e₃, hl]
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₄ (M := M) (m := m) hl hM.n0 hf hM.mo hM.tmp hM.sep
+    (Mod.ok_sparse hM.red)
     (by rw [hmem₄]; exact hM.val) (by rw [hV]; exact hAB)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by
     intro h
@@ -268,16 +271,6 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   · rw [k₆.wr, k₅.wr, k₄.2.2.2, k₃.2.2.2, k₂.2.2.2, k₁.2.2.2]
   · rw [O₆ x hx, O₅ x hx', hmem₄]
   · rw [e₆, e₅, hV]
-
-theorem sbbMask_ok (s : State) {c : Bool} (hc : s.cf = some c) :
-    WP isa (.block [.alu .sbb .rax (.reg .rax)]) s fun s' =>
-      s'.gpr .rax = (if c then BitVec.allOnes 64 else 0) ∧ Keeps [.rax] s s' := by
-  apply WP.of_runBlock
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some,
-    Option.map_some, hc, RegUpd.gpr_setReg, ite_true, Option.some.injEq, exists_eq_left']
-  refine ⟨by cases c <;> simp, fun r hr => ?_, rfl, rfl, rfl⟩
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]
 
 /-- `[tmp] = [mo]` masked with `rax` (all ones if `c`, else zero), `k` words. -/
 theorem masked_ok {size : Nat} : ∀ (k : Nat) {s : State} {base : Addr} {mo tmp : Nat} (c : Bool),

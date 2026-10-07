@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
 import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
 import VerifiedGarbage.Proof.Mont.X86_64.Sub256
+import VerifiedGarbage.Proof.Mont.X86_64.Sub384
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -211,9 +212,9 @@ theorem mul_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : mul M o a b = mulR M o
 theorem add_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : add M o a b = addR M o a b := by
   simp only [add, h, ↓reduceIte]
 
-theorem sub_of_lt {M : Mod} (h : M.n < 7) (hred : M.red ≠ .friendly p256Ws)
+theorem sub_of_lt {M : Mod} (h : M.n < 7) (hred : M.red ≠ .friendly p256Ws) (hsp : M.sparse = false)
     (o a b : Nat) : sub M o a b = subR M o a b := by
-  simp only [sub, hred, and_false, h, ↓reduceIte]
+  simp only [sub, hred, and_false, h, hsp, Bool.false_eq_true, false_and, ↓reduceIte]
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -276,6 +277,9 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   · obtain ⟨hn, hm⟩ := p256_of_red (show M.red = .friendly p256Ws from ‹_ ∧ _›.2) hM.red
     exact sub256_ok hs hn hm ho ha hb hA hB
   · split
+    · obtain ⟨hn, hm⟩ := Mod.ok_sparse hM.red ‹_ ∧ _›.1
+      exact sub384_ok hs hn hm ho ha hb hA hB
+    split
     · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
     · split
       · exact subMer_ok hs hM ‹_› ho ha hb hA hB

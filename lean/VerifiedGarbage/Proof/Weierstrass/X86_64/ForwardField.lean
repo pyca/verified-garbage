@@ -31,7 +31,7 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
     simp only [code,opCode,sub,outputRegs,FOp.out]
     split
     · exact ⟨_,rfl⟩
-    · simp only [hn,show 4<7 from by decide,↓reduceIte,subR]
+    · simp only [hn,show 4<7 from by decide,Nat.reduceEqDiff,and_false,↓reduceIte,subR]
       exact ⟨_,rfl⟩
 
 theorem outputRegs_length {M : Mod} (hn : M.n=4) (op : FOp) :

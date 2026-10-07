@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 
@@ -189,7 +189,7 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
   -- Reduced below `m` and stored.
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₆ (M := M) (m := m) (ts := sqLow) (top := .r8) (by rw [hn]; rfl) hM.n0
-    ⟨by decide, by decide⟩ hM.mo hM.tmp hM.sep (by rw [M₆]; exact hM.val)
+    ⟨by decide, by decide⟩ hM.mo hM.tmp hM.sep (Mod.ok_sparse hM.red) (by rw [M₆]; exact hM.val)
     (by rw [hn]; exact hR ▸ hRU.2)) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
   have hs₇ := hs₆.of_keepRegs k₇ (by decide)
   refine WP.mono (stores_ok sqLow hs₇ (o := o) (by simp only [sqLow, List.length_cons, List.length_nil]; omega)
