@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 
 /-!
 # ECDH on x86-64
@@ -159,6 +160,46 @@ def middle : Prog isa :=
   blocks [Mont.X86_64.mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC),
     Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
     c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c]
+
+/-! ## Windows of 5 bits in Jacobian coordinates, for a curve of prime order -/
+
+/-- The digits of the Jacobian window method, for scalars below `2^nbits`:
+`⌈(nbits + 2) / 5⌉`, enough for the recoding's carry. -/
+def jwinJ : Nat := (c.nbits + 6) / 5
+
+/-- The Jacobian window method's areas: its scalar and bits where the other
+window method's are, its table where that one's starts (16 entries of five
+coordinates), and the selected entry past it. -/
+def jwinCfg : JacWinCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  P := c.pt PX PY ONEP
+  R := c.pt RX RY RZ
+  D := c.pt DX DY DZ
+  T := c.winTbl + 16 * (40 * c.n)
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := c.winBits
+  tbl := c.winTbl
+  J := jwinJ c
+  one := c.mont 1
+  avx2 := c.MP'.adx
+
+/-- `d + offset J` and its bits, from the slot of `d`. -/
+def jwinPrep : Prog isa :=
+  .seq (.block (WinCfg.addConst c.n (c.sl K) c.winK (JacWinCfg.offset (jwinJ c))))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
+
+/-- `[d]P` into `R` by the Jacobian window method, `dbl` doubling a point in
+place. -/
+def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
+
+/-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
+order. -/
+def exchangeJ (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
+  .seq (mulQJ c dbl) <| .seq c.pPow (middle c)
 
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa :=
