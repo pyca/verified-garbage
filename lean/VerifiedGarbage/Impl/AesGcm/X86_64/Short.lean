@@ -8,8 +8,10 @@ import VerifiedGarbage.Impl.Gcm.X86_64.StitchZ
 AES-NI, PCLMULQDQ and SSSE3), with a path of their own for the short
 messages of TLS and QUIC: a 12-byte nonce, and at most 32 blocks to hash
 (the additional data and the text, each padded to whole blocks, and the
-lengths block), which needs no call. The others take the path of the other
-instances (`Impl.AesGcm.X86_64.seal`, `open`).
+lengths block), but more than the lengths block alone, which needs no call.
+The others take the path of the other instances
+(`Impl.AesGcm.X86_64.seal`, `open`), which `cond` places last so that they
+run without a taken branch.
 
 GHASH over the `m` blocks `X₁ … Xₘ` is `Σ Xᵢ · Hᵐ⁺¹⁻ⁱ`, so the short path
 computes the powers `H'` … `H'ᵐ'` once (`H'ᵏ = Hᵏ · x⁻¹`, `m'` the multiple
@@ -57,21 +59,23 @@ def tbO : Nat := 1536
 
 /-! ## The condition -/
 
-/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, and at
-most 32 blocks to hash), `0` otherwise; then `test rax, rax`. The lengths are
-first checked to be below 512, so that the blocks' count does not wrap. -/
+/-- `rax = 1` if the short path applies (a 12-byte nonce in `rbp`, some
+additional data or text, and at most 32 blocks to hash), `0` otherwise; then
+`test rax, rax`. The lengths' OR, less 1, is first checked to be below 511
+(unsigned): neither is above 511, so that the blocks' count does not wrap, and
+not both are 0, which the other instances' body does faster. Each branch
+falls through when the short path may still apply, and jumps to the end when
+it no longer can. -/
 def cond : Prog isa :=
   .seq (.block [.mov32 .rax (imm 0), .alu .cmp .rbp (imm 12)])
-  (.seq (.ite .e
+  (.seq (.ite .ne (.block [])
       (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
-          .alu .cmp .rcx (imm 512)])
-        (.ite .b
+          .alu .sub .rcx (imm 1), .alu .cmp .rcx (imm 511)])
+        (.ite .ae (.block [])
           (.seq (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
               .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4,
               .alu .add .rcx (.reg .rdx), .alu .cmp .rcx (imm 32)])
-            (.ite .b (.block [.mov32 .rax (imm 1)]) (.block [])))
-          (.block [])))
-      (.block []))
+            (.ite .b (.block [.mov32 .rax (imm 1)]) (.block []))))))
     (.block [.alu .test .rax (.reg .rax)]))
 
 /-! ## The pieces -/
@@ -276,8 +280,8 @@ variable (c : Callees)
 /-- `seal` with the short path (`cond`), or else the other instances' body. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 32))
-    (.seq (.seq cond (.ite .e
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (oneTag c 0)))) sealShort))
+    (.seq (.seq cond (.ite .ne sealShort
+        (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (oneTag c 0))))))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 /-- `open` with the short path (`cond`), or else the other instances' body. -/
@@ -285,7 +289,7 @@ def «open» : Prog isa :=
   .seq (.block (oneEntry 40 ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq cond (.ite .e
+      (.seq cond (.ite .ne openShort
         (.seq (oneAad c)
         (.seq (oneBlocks c.dec)
         (.seq (oneTag c uO)
@@ -294,8 +298,7 @@ def «open» : Prog isa :=
         (.seq (cmp uO)
         (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
         (.seq (.ite .e (oneUndo c) (oneCrypt c))
-          (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
-        openShort)))
+          (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short

@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 
 Untrusted: everything here is checked by Lean. `cond` leaves ZF clear iff
 the short path applies: a 12-byte nonce, fewer than 512 bytes of additional
-data and of text, and fewer than 32 blocks of them (`cond_ok`).
+data and of text, but not none of either, and fewer than 32 blocks of them
+(`cond_ok`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -17,7 +18,7 @@ open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.S
 open VG.Proof.AesGcm.X86_64
 
 /-- When the short path applies. -/
-abbrev IsShort (nl al n : Nat) : Prop := nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < 32
+abbrev IsShort (nl al n : Nat) : Prop := nl = 12 ∧ al < 512 ∧ n < 512 ∧ nb16 al + nb16 n < 32 ∧ 0 < al + n
 
 /-- Both below `512` iff their OR is. -/
 theorem or_lt_512 {a b : Nat} : a ||| b < 512 ↔ a < 512 ∧ b < 512 := by
@@ -68,34 +69,64 @@ theorem condB1_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, zf₂, by rw [g₂, ax₁],
     k₁.trans ⟨fun r _ _ _ => by rw [g₂], m₂, rd₂, wr₂⟩⟩⟩)
 
-/-- `cond`'s second block: the OR of the lengths compared with 512. -/
+/-- Both below `512`, not both `0`, iff their OR, less 1 (modulo `2⁶⁴`), is below `511`. -/
+theorem or_sub_lt_511 {a b : Nat} (ha : a < 2 ^ 64) (hb : b < 2 ^ 64) :
+    (2 ^ 64 - 1 + (a ||| b)) % 2 ^ 64 < 511 ↔ (a < 512 ∧ b < 512) ∧ 0 < a + b := by
+  rw [← or_lt_512]
+  have hor : a ||| b < 2 ^ 64 := Nat.or_lt_two_pow ha hb
+  have hz : a ||| b = 0 ↔ a = 0 ∧ b = 0 := Nat.or_eq_zero_iff
+  by_cases h0 : a ||| b = 0
+  · obtain ⟨rfl, rfl⟩ := hz.mp h0
+    decide
+  · have : 0 < a + b := by
+      rcases Nat.eq_zero_or_pos a with rfl | h
+      · rcases Nat.eq_zero_or_pos b with rfl | h'
+        · exact absurd rfl h0
+        · omega
+      · omega
+    rw [show (2 ^ 64 - 1 + (a ||| b)) % 2 ^ 64 = (a ||| b) - 1 by omega]
+    constructor
+    · intro h; exact ⟨by omega, this⟩
+    · intro h; omega
+
+/-- `cond`'s second block: the OR of the lengths, less 1, compared with 511. -/
 theorem condB2_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) (hal : al < 2 ^ 64)
     (hn : n < 2 ^ 64) :
     WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
-        .alu .cmp .rcx (imm 512)]) s fun t =>
-      t.cf = some (decide (al ||| n < 512)) ∧ t.gpr .rax = s.gpr .rax ∧ CondKeep s t := by
+        .alu .sub .rcx (imm 1), .alu .cmp .rcx (imm 511)]) s fun t =>
+      t.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ t.gpr .rax = s.gpr .rax ∧ CondKeep s t := by
   have r₁ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 184) 8 := in_left (in_off h.w (by decide) (by decide))
   have r₂ : InRegions (s.rd ++ s.wr) (W + BitVec.ofNat 64 208) 8 := in_left (in_off h.w (by decide) (by decide))
   have hal' := h.alen
   have hn' := h.len
   have h15 := h.r15
+  have hor' : (al ||| n) < 2 ^ 64 := Nat.or_lt_two_pow hal hn
   have hor : BitVec.ofNat 64 al ||| BitVec.ofNat 64 n = BitVec.ofNat 64 (al ||| n) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_or, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hal,
-      Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt (Nat.or_lt_two_pow hal hn)]
+      Nat.mod_eq_of_lt hn, Nat.mod_eq_of_lt hor']
+  have hsub : BitVec.ofNat 64 (al ||| n) - BitVec.ofNat 64 1 =
+      BitVec.ofNat 64 ((2 ^ 64 - 1 + (al ||| n)) % 2 ^ 64) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hor',
+      Nat.mod_mod]
   obtain ⟨s₃, run₃, cx₃, ax₃, k₃⟩ : ∃ s₃, runBlock isa [.mov .rcx (.mem (at_ .r15 alenO)),
-      .alu .or .rcx (.mem (at_ .r15 lenO))] s = some s₃ ∧ s₃.gpr .rcx = BitVec.ofNat 64 (al ||| n) ∧
+      .alu .or .rcx (.mem (at_ .r15 lenO)), .alu .sub .rcx (imm 1)] s = some s₃ ∧
+      s₃.gpr .rcx = BitVec.ofNat 64 ((2 ^ 64 - 1 + (al ||| n)) % 2 ^ 64) ∧
       s₃.gpr .rax = s.gpr .rax ∧ CondKeep s s₃ := by
     refine ⟨_, by xrun [h15, hal', hn', r₁, r₂, alenO, lenO], ?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [gpr_setReg, gpr_arithFlags, ite_true]
-      exact hor
+      rw [hor]
+      exact hsub
     · simp [gpr_setReg, gpr_arithFlags]
     · intro r a b c; simp [gpr_setReg, gpr_arithFlags, b]
     all_goals rfl
   obtain ⟨s₄, run₄, -, cf₄, g₄, m₄, rd₄, wr₄⟩ :=
-    cmpImm_ok s₃ .rcx cx₃ (Nat.or_lt_two_pow hal hn) (show 512 < 2 ^ 31 by decide)
-  exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₃, run₃, WP.of_runBlock ⟨s₄, run₄, cf₄, by rw [g₄, ax₃],
+    cmpImm_ok s₃ .rcx cx₃ (Nat.mod_lt _ (by decide)) (show 511 < 2 ^ 31 by decide)
+  refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₃, run₃, WP.of_runBlock ⟨s₄, run₄, ?_, by rw [g₄, ax₃],
     k₃.trans ⟨fun r _ _ _ => by rw [g₄], m₄, rd₄, wr₄⟩⟩⟩)
+  rw [cf₄]
+  exact congrArg some (decide_eq_decide.mpr (or_sub_lt_511 hal hn))
 
 /-- `cond`'s third block: the blocks of both lengths compared with 32. -/
 theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s) (hal : al < 512) (hn : n < 512) :
@@ -124,6 +155,11 @@ theorem condB3_ok {W : Addr} {nl al n : Nat} {s : State} (h : CondS W nl al n s)
   exact WP.block_append_iff.mpr (WP.of_runBlock ⟨s₅, run₅, WP.of_runBlock ⟨s₆, run₆, cf₆, by rw [g₆, ax₅],
     k₅.trans ⟨fun r _ _ _ => by rw [g₆], m₆, rd₆, wr₆⟩⟩⟩)
 
+theorem eval_ne {s : State} {b : Bool} (h : s.zf = some b) : isa.eval .ne s = some !b := by
+  show s.zf.map _ = _; rw [h]; rfl
+theorem eval_ae {s : State} {b : Bool} (h : s.cf = some b) : isa.eval .ae s = some !b := by
+  show s.cf.map _ = _; rw [h]; rfl
+
 /-- `cond`: ZF clear iff the short path applies, with `rbp` the nonce's length
 and the lengths of the additional data and the text in `W`. -/
 theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (hnl : nl < 2 ^ 64)
@@ -132,13 +168,23 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
   refine WP.seq (WP.mono (condB1_ok h hnl) fun s₂ ⟨zf₂, ax₂, k₂⟩ => ?_)
   -- `rax := 1` iff the short path applies.
   refine WP.seq (WP.mono (Q := fun (s₃ : State) => s₃.gpr .rax = BitVec.ofNat 64 (if IsShort nl al n then 1 else 0) ∧
-      CondKeep s s₃) (WP.ite (decide (nl = 12)) (eval_e zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
+      CondKeep s s₃) (WP.ite (!decide (nl = 12)) (eval_ne zf₂) (fun h12 => ?_) (fun h12 => ?_)) fun s₃ ⟨ax₃, k₃⟩ => ?_)
+  · have h12 : nl ≠ 12 := by simpa using h12
+    refine WP.block_nil ⟨?_, k₂⟩
+    rw [ax₂]
+    simp [IsShort, h12]
   · have h12 : nl = 12 := by simpa using h12
     refine WP.seq (WP.mono (condB2_ok (h.keep k₂) hal hn) fun s₄ ⟨cf₄, ax₄, k₄⟩ => ?_)
     rw [ax₂] at ax₄
-    refine WP.ite (decide (al ||| n < 512)) (eval_b cf₄) (fun h5 => ?_) (fun h5 => ?_)
-    · have h5 : al < 512 ∧ n < 512 := or_lt_512.mp (by simpa using h5)
-      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1 h5.2) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
+    refine WP.ite (!decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) (eval_ae cf₄) (fun h5 => ?_) (fun h5 => ?_)
+    · have h5 : ¬((al < 512 ∧ n < 512) ∧ 0 < al + n) := fun h => by simp [h] at h5
+      refine WP.block_nil ⟨?_, k₂.trans k₄⟩
+      have h5' : ¬IsShort nl al n := fun ⟨_, a, b, _, z⟩ => h5 ⟨⟨a, b⟩, z⟩
+      rw [ax₄]
+      simp only [h5', ↓reduceIte]
+      rfl
+    · have h5 : (al < 512 ∧ n < 512) ∧ 0 < al + n := by simpa using h5
+      refine WP.seq (WP.mono (condB3_ok ((h.keep k₂).keep k₄) h5.1.1 h5.1.2) fun s₆ ⟨cf₆, ax₆, k₆⟩ => ?_)
       rw [ax₄] at ax₆
       refine WP.ite (decide (nb16 al + nb16 n < 32)) (eval_b cf₆) (fun h32 => ?_) (fun h32 => ?_)
       · have h32 : nb16 al + nb16 n < 32 := by simpa using h32
@@ -147,16 +193,6 @@ theorem cond_ok {s : State} {W : Addr} {nl al n : Nat} (h : CondS W nl al n s) (
         · exact k₂.trans (k₄.trans (k₆.trans ⟨fun r a _ _ => by simp [gpr_setReg, a], rfl, rfl, rfl⟩))
       · have h32 : ¬nb16 al + nb16 n < 32 := by simpa using h32
         exact WP.block_nil ⟨by simp [ax₆, IsShort, h32], k₂.trans (k₄.trans k₆)⟩
-    · have h5 : ¬(al < 512 ∧ n < 512) := fun h => absurd (or_lt_512.mpr h) (by simpa using h5)
-      refine WP.block_nil ⟨?_, k₂.trans k₄⟩
-      have h5' : ¬IsShort nl al n := fun ⟨_, a, b, _⟩ => h5 ⟨a, b⟩
-      rw [ax₄]
-      simp only [h5', ↓reduceIte]
-      rfl
-  · have h12 : nl ≠ 12 := by simpa using h12
-    refine WP.block_nil ⟨?_, k₂⟩
-    rw [ax₂]
-    simp [IsShort, h12]
   -- `test rax, rax`.
   refine WP.of_runBlock ⟨_, by xrun [], ?_, ?_⟩
   · rw [zf_arithFlags, ax₃]

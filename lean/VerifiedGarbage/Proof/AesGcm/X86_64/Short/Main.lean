@@ -50,14 +50,14 @@ theorem sealMid_ok (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMod
     {Ctx W SP Np A D : Addr} {nl al n : Nat} (C : OneCtx s 4 Ctx W SP Np A D nl al n)
     (X : CtxExt M Ctx (W + BitVec.ofNat 64 16) W SP D n s) (E : OneEntry s Ctx W SP A D n s₁)
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = nl) (hal : (s.gpr .r9).toNat = al) :
-    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .e
-        (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (.seq (oneCrypt v.callees) (oneTag v.callees 0))))
-        Impl.AesGcm.X86_64.Short.sealShort)) s₁
-      (SealRunPost s Ctx W SP Np A D nl al n) :=
+    WP isa (.seq Impl.AesGcm.X86_64.Short.cond (.ite .ne Impl.AesGcm.X86_64.Short.sealShort
+        (.seq (oneAad v.callees) (.seq (oneBlocks B.enc) (.seq (oneCrypt v.callees) (oneTag v.callees 0))))))
+      s₁ (SealRunPost s Ctx W SP Np A D nl al n) :=
   WP.seq (WP.mono (condE_ok C E hnl hal) fun _ ⟨hz, E₂, _⟩ =>
-    WP.ite (decide ¬IsShort _ _ _) (eval_e hz) (fun _ => sealRun_ok v B C X E₂ hNp hnl hal) fun h => by
-      have h' := Decidable.not_not.mp (of_decide_eq_false h)
-      exact sealShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2)
+    WP.ite (!decide ¬IsShort nl al n) (eval_ne hz) (fun h => by
+      have h' : IsShort nl al n := Classical.byContradiction fun hc => by simp [hc] at h
+      exact sealShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1)
+      fun _ => sealRun_ok v B C X E₂ hNp hnl hal)
 
 /-- `vg_aes_gcm_seal` with the short path, for a key context of kind `M`. -/
 theorem sealM_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) {s : State}
@@ -74,13 +74,13 @@ theorem openM_wp (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode}
   refine openM_of hp fun {Ctx W SP Np A D T nl al n t _ _} C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok =>
     WP.seq (WP.mono (condE_ok C E hnl hal) fun s₂ ⟨hz, E₂, K⟩ => ?_)
   rw [← K.mem] at htl
-  refine WP.ite (decide ¬IsShort _ _ _) (eval_e hz)
-    (fun _ => openOk_ok v B C X E₂ hNp hnl hal hTa hTar hTr oT oA htl hok) fun h => ?_
-  have h' := Decidable.not_not.mp (of_decide_eq_false h)
+  refine WP.ite (!decide ¬IsShort nl al n) (eval_ne hz) (fun h => ?_)
+    (fun _ => openOk_ok v B C X E₂ hNp hnl hal hTa hTar hTr oT oA htl hok)
+  have h' : IsShort nl al n := Classical.byContradiction fun hc => by simp [hc] at h
   have hb : 1 ≤ t ∧ t ≤ 16 := by
     simp only [Spec.Gcm.tagLenOk, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true, decide_eq_true_eq] at hok
     omega
-  refine WP.mono (openShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2 htl hb.1 hb.2 hTa hTar hTr oT oA)
+  refine WP.mono (openShort_ok hF C E₂ hNp hnl hal h'.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 htl hb.1 hb.2 hTa hTar hTr oT oA)
     fun s' ⟨he, hsv, f, hax, hD⟩ => ⟨he, hsv, ?_, ?_⟩
   · rw [ret_kept f fun r hr => ?_]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

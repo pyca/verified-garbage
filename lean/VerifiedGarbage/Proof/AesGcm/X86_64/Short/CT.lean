@@ -83,37 +83,40 @@ theorem cond_rel {W : Addr} {nl al n : Nat} {F₁ F₂ : State → Prop}
   have none := rel_taint (P := fun _ _ => True) (c := .block []) [] (fun _ _ _ _ hr => by cases hr) ⟨_, by taint_decide⟩
   have one := rel_taint (P := fun _ _ => True) (c := .block [.mov32 .rax (imm 1)]) []
     (fun _ _ _ _ hr => by cases hr) ⟨_, by taint_decide⟩
-  refine RelCT.seq b1 (RelCT.seq (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1]) ?_
-    (none.mono (fun _ _ _ => trivial) fun _ _ h => h)) (last.mono (fun _ _ _ => trivial) fun _ _ h => h))
-  -- The lengths' OR compared with 512.
+  refine RelCT.seq b1 (RelCT.seq (RelCT.ite (fun _ _ h => by
+      rw [eval_ne h.1.1, eval_ne h.2.1]) (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
+    (last.mono (fun _ _ _ => trivial) fun _ _ h => h))
+  -- The lengths' OR, less 1, compared with 511.
   have w₂ : ∀ s, (s.zf = some (decide (nl = 12)) ∧ CondS W nl al n s) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .or .rcx (.mem (at_ .r15 lenO)),
-        .alu .cmp .rcx (imm 512)]) s fun t => t.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n t :=
+        .alu .sub .rcx (imm 1), .alu .cmp .rcx (imm 511)]) s fun t =>
+        t.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n t :=
     fun s h => WP.mono (condB2_ok h.2 hal hn) fun _ ⟨c, _, k⟩ => ⟨c, h.2.keep k⟩
   have b2 := rel_next (rel_taint (P := fun s₁ s₂ =>
       (s₁.zf = some (decide (nl = 12)) ∧ CondS W nl al n s₁) ∧ (s₂.zf = some (decide (nl = 12)) ∧ CondS W nl al n s₂))
       [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.r15, h.2.2.r15]) ⟨_, by taint_decide⟩) w₂ w₂
   refine RelCT.seq (b2.mono (fun _ _ h => h.1) fun _ _ h => h)
-    (RelCT.ite (fun _ _ h => (eval_b h.1.1).trans (eval_b h.2.1).symm) ?_
-      (none.mono (fun _ _ _ => trivial) fun _ _ h => h))
+    (RelCT.ite (fun _ _ h => (eval_ae h.1.1).trans (eval_ae h.2.1).symm)
+      (none.mono (fun _ _ _ => trivial) fun _ _ h => h) ?_)
   -- The blocks of both lengths compared with 32.
-  have w₃ : ∀ s, ((s.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s) ∧ al < 512 ∧ n < 512) →
+  have w₃ : ∀ s, ((s.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s) ∧
+      al < 512 ∧ n < 512) →
       WP isa (.block [.mov .rcx (.mem (at_ .r15 alenO)), .alu .add .rcx (imm 15), .shift .shr .rcx 4,
         .mov .rdx (.mem (at_ .r15 lenO)), .alu .add .rdx (imm 15), .shift .shr .rdx 4, .alu .add .rcx (.reg .rdx),
         .alu .cmp .rcx (imm 32)]) s fun t => t.cf = some (decide (nb16 al + nb16 n < 32)) :=
     fun s h => WP.mono (condB3_ok h.1.2 h.2.1 h.2.2) fun _ ⟨c, _⟩ => c
   have b3 := rel_next (rel_taint (P := fun s₁ s₂ =>
-      ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧ al < 512 ∧ n < 512) ∧
-      ((s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂) ∧ al < 512 ∧ n < 512))
+      ((s₁.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₁) ∧ al < 512 ∧ n < 512) ∧
+      ((s₂.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₂) ∧ al < 512 ∧ n < 512))
       [.r15] (fun _ _ h r hr => by
         simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.r15, h.2.1.2.r15]) ⟨_, by taint_decide⟩) w₃ w₃
-  have h5 : ∀ {s₁ s₂ : State}, ((s₁.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₁) ∧
-      (s₂.cf = some (decide (al ||| n < 512)) ∧ CondS W nl al n s₂)) ∧ isa.eval .b s₁ = some true →
-      al < 512 ∧ n < 512 := fun h => by
-    have e := h.1.1.1.symm.trans h.2
-    simp only [Option.some.injEq, decide_eq_true_eq] at e
-    exact or_lt_512.mp e
+  have h5 : ∀ {s₁ s₂ : State}, ((s₁.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₁) ∧
+      (s₂.cf = some (decide ((al < 512 ∧ n < 512) ∧ 0 < al + n)) ∧ CondS W nl al n s₂)) ∧
+      isa.eval .ae s₁ = some false → al < 512 ∧ n < 512 := fun h => by
+    have e := (eval_ae h.1.1.1).symm.trans h.2
+    simp only [Option.some.injEq, Bool.not_eq_false', decide_eq_true_eq] at e
+    exact e.1
   refine RelCT.seq (b3.mono (fun _ _ h => ⟨⟨h.1.1, h5 h⟩, ⟨h.1.2, h5 h⟩⟩) fun _ _ h => h)
     (RelCT.ite (fun _ _ h => (eval_b h.1).trans (eval_b h.2).symm)
       (one.mono (fun _ _ _ => trivial) fun _ _ h => h) (none.mono (fun _ _ _ => trivial) fun _ _ h => h))
@@ -288,7 +291,7 @@ theorem sealShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D : 
     (hR' : (s₀'.gpr .rsi).toNat = R) (hs : IsShort nl al n) :
     RelCT isa (fun s₁ s₂ => OneEntry s₀ Ctx W SP A D n s₁ ∧ OneEntry s₀' Ctx W SP A D n s₂) sealShort
       fun _ _ => True := by
-  obtain ⟨h12, hal5, hn5, h32⟩ := hs
+  obtain ⟨h12, hal5, hn5, h32, -⟩ := hs
   subst h12
   have hRr : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have b0 := rel_next (rel_env_regs [.r12] (fun _ h => h.env) (fun _ h => h.env) (fun _ _ h₁ h₂ r hr => by
@@ -386,7 +389,7 @@ theorem openShort_rel (hF : ShortFacts) {s₀ s₀' : State} {Ctx W SP Np A D Tp
     (hok : Spec.Gcm.tagLenOk t = true) :
     RelCT isa (fun s₁ s₂ => OpenIn s₀ Ctx W SP A D n t s₁ ∧ OpenIn s₀' Ctx W SP A D n t s₂) openShort
       fun s₁ s₂ => Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ ∧ Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := by
-  obtain ⟨h12, hal5, hn5, h32⟩ := hs
+  obtain ⟨h12, hal5, hn5, h32, -⟩ := hs
   subst h12
   have hRr : R = 10 ∨ R = 12 ∨ R = 14 := hR ▸ C.rounds
   have hb : 1 ≤ t ∧ t ≤ 16 := by
@@ -459,13 +462,14 @@ theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
         (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
-    refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
-      ((sealRun_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
-        (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
+    refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)
+      (RelCT.ite (fun _ _ h => by rw [eval_ne h.1.1, eval_ne h.2.1]) ?_
+        ((sealRun_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
+          (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h))
     by_cases hs : IsShort nl al n
     · exact (sealShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
-    · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+    · exact RelCT.of_false fun _ _ h => by have := (eval_ne h.1.1.1).symm.trans h.2; simp [hs] at this
 
 theorem sealM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
@@ -490,13 +494,13 @@ theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
         (fun _ h => condS_of h.1 hnl hal) (fun _ h => condS_of h.1 hnl' hal')
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
-    refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
+    refine RelCT.seq c (RelCT.ite (fun _ _ h => by rw [eval_ne h.1.1, eval_ne h.2.1]) ?_
       ((openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
-        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h))
     by_cases hs : IsShort nl al n
     · exact (openShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres hok).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
-    · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
+    · exact RelCT.of_false fun _ _ h => by have := (eval_ne h.1.1.1).symm.trans h.2; simp [hs] at this
 
 theorem openM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub
