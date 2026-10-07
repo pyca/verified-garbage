@@ -14,9 +14,9 @@ copy of its field arithmetic instead of repeating it at every use:
 
 * `vg_<curve>_mul_mod_<p|n>`: Montgomery's product, the number below `m`
   congruent to `a b R⁻¹` modulo `m`, with `R = 2^(64 k)` for numbers of `k`
-  64-bit words;
-* `vg_<curve>_add_mod_<p|n>`: `(a + b) mod m`;
-* `vg_<curve>_sub_mod_<p|n>`: `(a - b) mod m`.
+  64-bit words, for `b` below `m` (and any `a`);
+* `vg_<curve>_add_mod_<p|n>`: `(a + b) mod m`, for `a + b` below `2 m`;
+* `vg_<curve>_sub_mod_<p|n>`: `(a - b) mod m`, for `a` and `b` below `m`.
 
 They are not algorithms of a standard but the arithmetic every algorithm on
 the curve is built from: what they compute is stated on integers, and an
@@ -35,7 +35,10 @@ implementation reaches all of them with short offsets from the start of
 intermediate values; every other byte of `ws` keeps its value but the
 result's (`Keeps`).
 
-The operands must be below `m`; the result is. Everything is secret but the
+The result is below `m`. The operands' bounds are those an implementation
+by Montgomery's multiplication and a conditional subtraction needs, which
+let a caller convert a number below `R` to Montgomery's form (by `R² mod m`)
+or reduce one below `2 m` (by adding zero). Everything is secret but the
 pointer and the offsets, which are public, and the functions are constant
 time.
 -/
@@ -90,35 +93,34 @@ variable (M : Modulus)
 /-- `R = 2^(64 k)`. -/
 def R : Nat := 2 ^ (64 * M.k)
 
-/-- What each function requires: the numbers lie below its own working
-space, and the operands are below `m`. -/
-def Pre (ws : Addr) (o a b : BitVec 32) (m : Mem) : Prop :=
-  Fits M.k o ∧ Fits M.k a ∧ Fits M.k b ∧ numAt m ws a M.k < M.m ∧ numAt m ws b M.k < M.m
+/-- What each function requires of the offsets: the numbers lie below its
+own working space. -/
+def Fit (o a b : BitVec 32) : Prop := Fits M.k o ∧ Fits M.k a ∧ Fits M.k b
 
-/-- `mul`: the number at `o` is below `m` and congruent to `a b R⁻¹`, that
-is, its product with `R` is congruent to `a b`. -/
+/-- `mul`: for `b` below `m`, the number at `o` is below `m` and congruent to
+`a b R⁻¹`, that is, its product with `R` is congruent to `a b`. -/
 def mulContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Pre ws o a b m)
+    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws b M.k < M.m)
     (post := fun ws o a b m m' _ =>
       numAt m' ws o M.k < M.m ∧
       numAt m' ws o M.k * M.R % M.m = numAt m ws a M.k * numAt m ws b M.k % M.m ∧
       Keeps M.k ws o m m')
     (stack := stack)
 
-/-- `add`: the number at `o` is `(a + b) mod m`. -/
+/-- `add`: for `a + b` below `2 m`, the number at `o` is `(a + b) mod m`. -/
 def addContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Pre ws o a b m)
+    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k + numAt m ws b M.k < 2 * M.m)
     (post := fun ws o a b m m' _ =>
       numAt m' ws o M.k = (numAt m ws a M.k + numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m')
     (stack := stack)
 
-/-- `sub`: the number at `o` is `(a - b) mod m`, that is, `(a + m - b) mod m`
-for `a` and `b` below `m`. -/
+/-- `sub`: for `a` and `b` below `m`, the number at `o` is `(a - b) mod m`,
+that is, `(a + m - b) mod m`. -/
 def subContract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
   sig.contract A
-    (pre := fun ws o a b m => M.Pre ws o a b m)
+    (pre := fun ws o a b m => M.Fit o a b ∧ numAt m ws a M.k < M.m ∧ numAt m ws b M.k < M.m)
     (post := fun ws o a b m m' _ =>
       numAt m' ws o M.k = (numAt m ws a M.k + M.m - numAt m ws b M.k) % M.m ∧ Keeps M.k ws o m m')
     (stack := stack)
@@ -139,11 +141,12 @@ def common : String :=
     `VG.Spec.Weierstrass.Mont.Modulus`. Constant time: only the pointer and the offsets may \
     affect timing."
 
-/-- The `# Safety` items but for what the signature gives. -/
-def safety : List String :=
+/-- The `# Safety` items but for what the signature gives, after `bound`,
+what the function requires of its operands. -/
+def safety (bound : String) : List String :=
   [s!"`o`, `a` and `b` plus {8 * M.k} must be at most {ownAt M.k}: bytes {ownAt M.k} to 4095 \
       of `ws` are the function's own working space.",
-    s!"The numbers at `a` and `b` must be below {M.desc}.",
+    bound,
     s!"Bytes {ownAt M.k} to 4095 of `ws` are unspecified on return and may hold intermediate \
       values, which the caller must destroy if they are secret."]
 
@@ -155,7 +158,7 @@ def mulApi : Api where
   contracts := some fun A stack => M.mulContract A stack
   summary := s!"Montgomery's product modulo {M.desc}: writes the number below the modulus \
     congruent to `a b 2^-{64 * M.k}` to `o`. " ++ M.common
-  safety := M.safety
+  safety := M.safety s!"The number at `b` must be below {M.desc}."
 
 /-- `vg_<curve>_add_mod_<which>` on every target. -/
 def addApi : Api where
@@ -164,7 +167,7 @@ def addApi : Api where
   sig := sig
   contracts := some fun A stack => M.addContract A stack
   summary := s!"The sum modulo {M.desc}: writes `(a + b) mod` the modulus to `o`. " ++ M.common
-  safety := M.safety
+  safety := M.safety s!"The sum of the numbers at `a` and `b` must be below twice {M.desc}."
 
 /-- `vg_<curve>_sub_mod_<which>` on every target. -/
 def subApi : Api where
@@ -174,7 +177,7 @@ def subApi : Api where
   contracts := some fun A stack => M.subContract A stack
   summary := s!"The difference modulo {M.desc}: writes `(a - b) mod` the modulus to `o`. " ++
     M.common
-  safety := M.safety
+  safety := M.safety s!"The numbers at `a` and `b` must be below {M.desc}."
 
 end Modulus
 
