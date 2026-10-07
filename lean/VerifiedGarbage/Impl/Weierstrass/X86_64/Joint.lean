@@ -3,6 +3,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
 import VerifiedGarbage.Impl.Weierstrass.X86_64.CachedJac
 import VerifiedGarbage.Impl.Weierstrass.X86_64.JacMixedForward
+import VerifiedGarbage.Impl.Weierstrass.X86_64.FastNaf
 
 /-! Interleaved public multiplication with cached peer and fixed-generator digits. -/
 namespace VG.Impl.Weierstrass.X86_64.Joint
@@ -14,6 +15,9 @@ structure Cfg where
   tsym : String
   cache : Nat
   selected : Nat
+
+def prep (c : Cfg) (u v : Nat) : Prog isa :=
+  .seq (FastNaf.prep u c.gBits 7) (FastNaf.prep v c.K.bits 5)
 
 def cachedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
