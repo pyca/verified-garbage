@@ -265,11 +265,11 @@ private theorem doubleRound_sequential (v : Vector Word 16) : Spec.Scrypt.double
 theorem doubleRound_eq (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
     lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := by
   rw [doubleRound_sequential]
+  simp only [sequentialLines, lines, List.foldl_cons, List.foldl_nil]
   apply Vector.ext
   intro i hi
   interval_cases i <;>
-    simp (disch := decide) only [sequentialLines, lines, List.foldl_cons, List.foldl_nil,
-      stepN_get, Nat.reduceEqDiff, ↓reduceIte]
+    simp (disch := decide) only [stepN_get, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem doubleRound_ok {p : Addr} {v : Vector Word 16} {s₀ s : State} (h : RI p v s₀ s)
     (hw : scR p ∈ s₀.wr) : WP isa doubleRound s (RI p (Spec.Scrypt.doubleRound v) s₀) := by
