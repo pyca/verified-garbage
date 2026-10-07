@@ -201,6 +201,95 @@ def mredC (M : Mod) (dst t U : Nat) : List Instr :=
   kOf M t ++ sextTop M t ++ memRow M.n t M.mo ++ carry2 (t + 8 * M.n) ++ zeroTop U M.n ++
   addIfNeg M t U ++ subP M t U ++ addIfNeg M t U ++ copy M.n dst (t + 8)
 
+/-! ## The updates in registers, for four words with BMI2 and ADX
+
+The number `t = u x + v y` (signed, modulo `2^320`) in the five registers
+`aRegs` (`rcx`, `rbp`, `r8`, `r13`, `r15`, low to high): `u [x]` by `mulx`
+(`rowFirst`), `v [y]` added along both carry chains (`rowAcc`), then
+`2^64 [x]` taken away for a negative `u` and `2^64 [y]` for a negative `v`
+(`corr`), through `rax`, `rbx` and `rdx`. -/
+
+/-- The accumulator's registers, low to high. -/
+def aRegs : List Reg := [.rcx, .rbp, .r8, .r13, .r15]
+
+/-- `aRegs = w [x]`: of `x`'s first four words, and modulo `2^320` of all five
+if `five`. -/
+def rowFirst (five : Bool) (w : Reg) (x : Nat) : List Instr :=
+  [.mov .rdx (.reg w), .mulx .rbp .rcx (.mem (sc x)),
+    .mulx .r8 .rax (.mem (sc (x + 8))), .alu .add .rbp (.reg .rax),
+    .mulx .r13 .rax (.mem (sc (x + 16))), .alu .adc .r8 (.reg .rax),
+    .mulx .r15 .rax (.mem (sc (x + 24))), .alu .adc .r13 (.reg .rax)] ++
+  if five then [.mulx .rbx .rax (.mem (sc (x + 32))), .alu .adc .r15 (.reg .rax)]
+  else [.alu .adc .r15 (.imm 0)]
+
+/-- `aRegs += w [y]` modulo `2^320`: of `y`'s first four words, or all five
+if `five`, the low halves through OF and the high halves through CF. -/
+def rowAcc (five : Bool) (w : Reg) (y : Nat) : List Instr :=
+  [.mov .rdx (.reg w), .alu32 .xor .rax (.reg .rax),
+    .mulx .rbx .rax (.mem (sc y)), .adox .rcx (.reg .rax), .adcx .rbp (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (y + 8))), .adox .rbp (.reg .rax), .adcx .r8 (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (y + 16))), .adox .r8 (.reg .rax), .adcx .r13 (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (y + 24))), .adox .r13 (.reg .rax), .adcx .r15 (.reg .rbx)] ++
+  if five then [.mulx .rbx .rax (.mem (sc (y + 32))), .adox .r15 (.reg .rax)]
+  else [.mov32 .rax (.imm 0), .adox .r15 (.reg .rax)]
+
+/-- `aRegs -= 2^64 [x]` modulo `2^320` if `w` is negative: `x`'s first four
+words times `w`'s sign bit, by `mulx` (which keeps the flags, where `and`
+would clear the borrow). -/
+def corr (w : Reg) (x : Nat) : List Instr :=
+  [.mov .rdx (.reg w), .shift .shr .rdx 63,
+    .mulx .rbx .rax (.mem (sc x)), .alu .sub .rbp (.reg .rax),
+    .mulx .rbx .rax (.mem (sc (x + 8))), .alu .sbb .r8 (.reg .rax),
+    .mulx .rbx .rax (.mem (sc (x + 16))), .alu .sbb .r13 (.reg .rax),
+    .mulx .rbx .rax (.mem (sc (x + 24))), .alu .sbb .r15 (.reg .rax)]
+
+/-- `aRegs = u [x] + v [y]` modulo `2^320`, `u` in `w` and `v` in `w'`. -/
+def linX (five : Bool) (w w' : Reg) (x y : Nat) : List Instr :=
+  rowFirst five w x ++ rowAcc five w' y ++ corr w x ++ corr w' y
+
+/-- Word `i` of `aRegs / 2^59` into `lo`, from words `i` (`lo`) and `i + 1` (`hi`). -/
+def shrWord (lo hi : Reg) : List Instr :=
+  [.mov .rax (.reg hi), .shift .shl .rax 5, .shift .shr lo 59, .alu .or lo (.reg .rax)]
+
+/-- `[dst] = aRegs / 2^59` (arithmetic, five words): each word from two, the top
+one's high bits the mask of its sign. -/
+def shrX (dst : Nat) : List Instr :=
+  shrWord .rcx .rbp ++ shrWord .rbp .r8 ++ shrWord .r8 .r13 ++ shrWord .r13 .r15 ++
+  [.mov .rax (.reg .r15), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
+    .shift .shl .rdx 5, .shift .shr .r15 59, .alu .or .r15 (.reg .rdx)] ++ stores aRegs dst
+
+/-- `[dst] = (u f + v g) / 2^59` (five words, signed), `u` in `w` and `v` in `w'`. -/
+def fHalfX (w w' : Reg) (x y dst : Nat) : List Instr := linX true w w' x y ++ shrX dst
+
+/-- `[dst] = t / 2^64 mod p` in `[0, p)` for `t` in `aRegs` (signed), through
+`w`: `t + k p` for `k = t₀ m' mod 2^64`, whose low word is zero and its sixth
+word in `w` (the sign of `t` and the carries); plus `p` if negative (`p` times
+the sign bit, by `mulx`), less `p` if not below. -/
+def mredX (M : Mod) (dst : Nat) (w : Reg) : List Instr :=
+  [.mov .rdx (.reg .rcx), .movImm64 .rax M.minv, .mulx .rbx .rdx (.reg .rax),
+    .mov .rax (.reg .r15), .shift .shr .rax 63, .mov32 w (.imm 0), .alu .sub w (.reg .rax),
+    .alu32 .xor .rax (.reg .rax),
+    .mulx .rbx .rax (.mem (sc M.mo)), .adox .rcx (.reg .rax), .adcx .rbp (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (M.mo + 8))), .adox .rbp (.reg .rax), .adcx .r8 (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (M.mo + 16))), .adox .r8 (.reg .rax), .adcx .r13 (.reg .rbx),
+    .mulx .rbx .rax (.mem (sc (M.mo + 24))), .adox .r13 (.reg .rax), .adcx .r15 (.reg .rbx),
+    .mov32 .rax (.imm 0), .adox .r15 (.reg .rax), .adcx w (.reg .rax), .adox w (.reg .rax),
+    .mov .rdx (.reg w), .shift .shr .rdx 63,
+    .mulx .rcx .rax (.mem (sc M.mo)), .alu .add .rbp (.reg .rax),
+    .mulx .rcx .rax (.mem (sc (M.mo + 8))), .alu .adc .r8 (.reg .rax),
+    .mulx .rcx .rax (.mem (sc (M.mo + 16))), .alu .adc .r13 (.reg .rax),
+    .mulx .rcx .rax (.mem (sc (M.mo + 24))), .alu .adc .r15 (.reg .rax),
+    .alu .adc w (.imm 0),
+    .mov .rax (.reg .rbp), .alu .sub .rax (.mem (sc M.mo)), .mov .rcx (.reg .r8), .alu .sbb .rcx (.mem (sc (M.mo + 8))),
+    .mov .rdx (.reg .r13), .alu .sbb .rdx (.mem (sc (M.mo + 16))),
+    .mov .rbx (.reg .r15), .alu .sbb .rbx (.mem (sc (M.mo + 24))), .alu .sbb w (.imm 0),
+    .cmov .ae .rbp (.reg .rax), .cmov .ae .r8 (.reg .rcx), .cmov .ae .r13 (.reg .rdx), .cmov .ae .r15 (.reg .rbx)] ++
+  stores [.rbp, .r8, .r13, .r15] dst
+
+/-- `[dst] = mred (u a + v b)` (four words), `u` in `w` and `v` in `w'`; `w` is
+written. -/
+def abHalfX (M : Mod) (w w' : Reg) (x y dst : Nat) : List Instr := linX false w w' x y ++ mredX M dst w
+
 /-! ## The configuration -/
 
 /-- Inversion's configuration: the field, the result and input slots, the
@@ -266,8 +355,20 @@ def abUpdate : List Instr :=
 /-- The count of batches less one, its zero flag for the loop. -/
 def batchEnd : List Instr := [.alu .sub .r14 (.imm 1)]
 
+/-- Whether the updates are in registers (`updX`): four words with BMI2 and ADX. -/
+def regs : Bool := P.M.n == 4 && P.M.adx
+
+/-- Both updates in registers: `d` kept at `[U]` meanwhile; `f'` and `a'`
+staged in `[f']`, `g'` and `b'` written in place. -/
+def updX : List Instr :=
+  [.store (sc P.sU) .rbx] ++
+  fHalfX .r9 .r10 P.sF P.sG P.sNF ++ fHalfX .r11 .r12 P.sF P.sG P.sG ++ copy P.L P.sF P.sNF ++
+  abHalfX P.M .r9 .r10 P.sA P.sB P.sNF ++ abHalfX P.M .r11 .r12 P.sA P.sB P.sB ++
+  copy P.M.n P.sA P.sNF ++ [.mov .rbx (.mem (sc P.sU))]
+
 /-- A batch. -/
-def batch : Prog isa := .block (P.words ++ P.fgUpdate ++ P.abUpdate ++ batchEnd)
+def batch : Prog isa :=
+  .block (P.words ++ (if P.regs then P.updX else P.fgUpdate ++ P.abUpdate) ++ batchEnd)
 
 /-- The end: `f = ±1`; `[C] = C` if `f > 0`, else `Cn = p - C`, and `acc = a [C] / R`. -/
 def finish : List Instr :=
