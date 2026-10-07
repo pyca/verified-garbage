@@ -116,7 +116,7 @@ theorem jmask_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : Sta
     (hF : JacWinFixed K C base s₀ P k) {s : State} {i : Nat} (hi : i < K.J)
     (hf : JFrame K C base size s₀ s) (hb : s.gpr .rbx = BitVec.ofNat 64 i) :
     WP isa (.block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++ K.tc.digit ++ eqMask 0 ++
-      selPt K.M.n K.R K.D K.R ++ [.alu .test .rbx (.reg .rbx)])) s fun t =>
+      selPt K.M.n K.R K.D K.R ++ ([.alu .test .rbx (.reg .rbx)] : List Instr))) s fun t =>
       JFrame K C base size s₀ t ∧ Unch base (jwLoopW K) s.mem t.mem ∧ t.gpr .rbx = BitVec.ofNat 64 i ∧
       t.zf = some (decide (i = 0)) ∧
       ∀ c < 3, wordsVal t.mem base ([K.R.x, K.R.y, K.R.z].getD c 0) K.M.n =

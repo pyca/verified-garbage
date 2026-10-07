@@ -46,7 +46,7 @@ theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : Sta
     (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base) {k : Nat}
     (hF : JacWinFixed K C base s P k) :
     WP isa (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
-      [.mov32 .rbx (.imm 1)] ++ K.storeEntry)) s (JBInv K C base size P s 1) := by
+      ([.mov32 .rbx (.imm 1)] : List Instr) ++ K.storeEntry)) s (JBInv K C base size P s 1) := by
   have hn := hs.nowrap
   have h4 := hL.n4
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
@@ -261,7 +261,7 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n) {base : Addr} {s₀ s : State}
     (hI : JBInv K C base size P s₀ 1 s) :
     WP isa (dbl K.E) s fun s₁ => WP isa (ForwardField.programB K.M K.cacheOps) s₁ fun s₂ =>
-      WP isa (.block ([.mov32 .rbx (.imm 2)] ++ K.storeEntry)) s₂ (JBInv K C base size P s₀ 2) := by
+      WP isa (.block (([.mov32 .rbx (.imm 2)] : List Instr) ++ K.storeEntry)) s₂ (JBInv K C base size P s₀ 2) := by
   have hs := hI.fr.scr
   have hn := hs.nowrap
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
@@ -270,7 +270,7 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
   have I0 : Inv K.M base size C.p (· ∈ jwSlots K) [K.E.x, K.E.y, K.E.z] (tmv C K.M.n base s) s := by
     refine ⟨hs, hI.fr.mod, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl <;> assumption
+      rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
       · rw [← tx]; exact hI.T.lt 0 (by decide)
@@ -305,10 +305,10 @@ theorem buildDbl_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
     · rw [t3, t2, tz, e3, e2, ez, z₃]
   have U₁ : Unch base (jwLoopW K) s.mem s₁.mem := k₁.loopW (rcbW_loopW (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> assumption))
+    rcases hx with rfl | rfl | rfl <;> with_reducible assumption))
   have U₂ : Unch base (jwLoopW K) s₁.mem s₂.mem := k₂.loopW (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl <;> assumption)
+    rcases hx with rfl | rfl <;> with_reducible assumption)
   have F₂ := (hI.fr.next hL (k₁.scr hs) ((⟨k₁.gpr, k₁.rd, k₁.wr⟩ : KeepRegs (clob K.M.n) s s₁).mono
     clob_powClob) U₁ (jwLoopW_sub K)).next hL (k₂.scr (k₁.scr hs))
     ((⟨k₂.gpr, k₂.rd, k₂.wr⟩ : KeepRegs (clob K.M.n) s₁ s₂).mono clob_powClob) U₂ (jwLoopW_sub K)
@@ -447,9 +447,9 @@ theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
     rcases List.mem_append.mp hx with hx | hx
     · exact rcbW_loopW (by
         intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-        rcases hy with rfl | rfl | rfl <;> assumption) x hx
+        rcases hy with rfl | rfl | rfl <;> with_reducible assumption) x hx
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> assumption)) (jwLoopW_sub K)
+      rcases hx with rfl | rfl <;> with_reducible assumption)) (jwLoopW_sub K)
   -- The point.
   have J : InvJ C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z)
       (mul m P) := by rw [← tx, ← ty, ← tz]; exact hI.T.jac
@@ -490,9 +490,9 @@ theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
     rcases List.mem_append.mp hx with hx | hx
     · exact rcbW_loopW (by
         intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
-        rcases hy with rfl | rfl | rfl <;> assumption) x hx
+        rcases hy with rfl | rfl | rfl <;> with_reducible assumption) x hx
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl <;> assumption)) hn (by omega))
+      rcases hx with rfl | rfl <;> with_reducible assumption)) hn (by omega))
   -- The entry.
   have hb₄ : s₄.gpr .rbx = BitVec.ofNat 64 (m + 1) := by
     rw [k₄.gpr _ (rbx_not_clob _), k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (rbx_not_clob _), b₁]

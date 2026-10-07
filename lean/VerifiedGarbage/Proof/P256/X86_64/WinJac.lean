@@ -21,17 +21,11 @@ theorem doubleHalfPublic_dblOk {M : Mod} {S : RcbSlots} (hn : M.n = 4)
     (hm : UnitMod Spec.P256.p (2 ^ (64 * M.n))) (hC : Law Spec.P256.curve) (ha : AM3 Spec.P256.curve) :
     DblOk M S Spec.P256.curve (doubleHalfPublic M S) := by
   intro base size Sl hL p hnd hSl E s hI Q hQ hJ
-  have hd : (doubleSlots S p).Nodup := by
-    simp only [rcbW, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
-    simp only [doubleSlots, List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or,
-      List.nodup_nil, and_true]
-    tauto
-  have hs : ∀ x ∈ doubleSlots S p, Sl x := fun x hx => hSl x (by
-    simp only [doubleSlots, rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; tauto)
-  refine WP.mono (doubleHalfPublic_ok hn hL hm hC ha hd hs hI (fun x hx => hx) hQ hJ) fun t ⟨k, I, J⟩ =>
-    ⟨k.mono fun x hx => by
-      simp only [doubleSlots, rcbW, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; tauto,
-      _, I.sub fun x hx => List.mem_append_left _ hx, J⟩
+  have hsub : (doubleSlots S p).Sublist (rcbW S p) :=
+    .cons_cons _ (.cons_cons _ (.cons_cons _ (.cons_cons _ (.cons_cons _ (.cons _ (.refl _))))))
+  refine WP.mono (doubleHalfPublic_ok hn hL hm hC ha (hnd.sublist hsub) (fun x hx => hSl x (hsub.subset hx))
+    hI (fun x hx => hx) hQ hJ) fun t ⟨k, I, J⟩ =>
+    ⟨k.mono fun x hx => hsub.subset hx, _, I.sub fun x hx => List.mem_append_left _ hx, J⟩
 
 /-- P-256's order is `17` modulo `32`. -/
 theorem n_mod32 : Spec.P256.curve.n % 32 = 17 := by decide

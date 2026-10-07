@@ -48,7 +48,7 @@ theorem cacheOps_ok (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr} {V : Lis
     simp only [JacWinCfg.cacheOps, List.mem_cons, List.not_mem_nil, or_false] at hop
     rcases hop with rfl | rfl <;>
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx <;>
-      rcases hx with rfl | rfl | rfl <;> assumption
+      rcases hx with rfl | rfl | rfl <;> with_reducible assumption
   have hR : readsOk K.cacheOps V = true := by
     simp [JacWinCfg.cacheOps, readsOk, FOp.ins, FOp.out, hV]
   refine WP.mono (ForwardField.programB_ok hL.lay hp _ hI hS hR) fun t ⟨kt, it⟩ =>
