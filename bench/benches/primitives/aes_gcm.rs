@@ -5,8 +5,8 @@ use criterion::Criterion;
 pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
 /// One-shot AES-GCM encryption and decryption (setup included), and
-/// streaming encryption, with a 16-byte key, a 12-byte nonce and 16 bytes of
-/// additional data. aws-lc-rs, which has no streaming AES-GCM, is measured
+/// streaming encryption, in place and out of place, with a 16-byte key, a
+/// 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which has no streaming AES-GCM, is measured
 /// one-shot only, in place with a separate tag as this library's is. The
 /// one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
@@ -203,6 +203,36 @@ pub fn bench(c: &mut Criterion) {
             })
         });
         let mut out = vec![0u8; size + cipher.block_size()];
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Encrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                let n = s.update(black_box(&data), &mut out).unwrap();
+                s.finalize(&mut out[n..]).unwrap();
+                s.get_tag(&mut t).unwrap();
+            })
+        });
+        g.finish();
+
+        // Streaming out of place: OpenSSL's `update` always is.
+        let mut g = c.benchmark_group("aes-128-gcm-stream-out-of-place");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                let mut s = k.encryptor(black_box(&nonce)).unwrap();
+                s.update_aad(black_box(&aad)).unwrap();
+                s.update_into(black_box(&data), black_box(&mut buf))
+                    .unwrap();
+                s.finalize()
+            })
+        });
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
                 let mut s = Crypter::new(

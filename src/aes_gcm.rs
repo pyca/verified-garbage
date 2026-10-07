@@ -20,9 +20,11 @@
 //!
 //! [`AesGcm::encrypt`] and [`AesGcmEncryptor::update_into`] encrypt out of
 //! place, from plaintext in buffers of the caller's (in pieces, for
-//! `encrypt`) into an output buffer, as a TLS record layer needs. They gather
-//! the plaintext into the output and encrypt it there with the in-place
-//! functions.
+//! `encrypt`) into an output buffer, as a TLS record layer needs. On x86-64
+//! they call `vg_aes_gcm_stream_encrypt_to`, whose whole blocks go from the
+//! input to the output in one pass (`VG.Spec.Gcm.streamEncryptToContract`);
+//! elsewhere they copy the plaintext into the output and encrypt it there
+//! with the in-place functions.
 //!
 //! # Tags
 //!
@@ -151,6 +153,16 @@ use crate::arch::gcm::{
     vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512,
+};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::gcm::{
+    vg_aes_gcm_stream_encrypt_to, vg_aes_gcm_stream_encrypt_to_aesni,
+    vg_aes_gcm_stream_encrypt_to_aesni_pclmul, vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
+    vg_aes_gcm_stream_encrypt_to_aesni_vpclmul, vg_aes_gcm_stream_encrypt_to_pclmul,
+    vg_aes_gcm_stream_encrypt_to_vaes, vg_aes_gcm_stream_encrypt_to_vaes_pclmul,
+    vg_aes_gcm_stream_encrypt_to_vaes_vpclmul, vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_to_vpclmul,
 };
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
@@ -510,6 +522,7 @@ fn total_len(chunks: &[&[u8]]) -> Option<usize> {
 
 /// Copies the pieces `chunks` one after the other into `out`, which is
 /// exactly as long as they are in all.
+#[cfg(not(target_arch = "x86_64"))]
 fn gather(chunks: &[&[u8]], out: &mut [u8]) {
     let mut rest = out;
     for c in chunks {
@@ -770,8 +783,24 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        gather(plaintext, out);
-        self.encrypt_in_place(nonce, aad, out)
+        #[cfg(target_arch = "x86_64")]
+        {
+            // Every length is checked: nothing below fails.
+            let mut s = Stream::new(self, nonce)?;
+            s.update_aad(aad)?;
+            let mut rest = out;
+            for c in plaintext {
+                let (head, tail) = rest.split_at_mut(c.len());
+                s.update_into(c, head)?;
+                rest = tail;
+            }
+            Ok(s.finish())
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            gather(plaintext, out);
+            self.encrypt_in_place(nonce, aad, out)
+        }
     }
 
     /// Starts encrypting a message under this key and `nonce` (of any
@@ -921,6 +950,14 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         }
         let aad_len =
             add_len(self.aad_len, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        self.absorb_aad(self.aad_len, aad);
+        self.aad_len = aad_len;
+        Ok(())
+    }
+
+    /// Absorbs `aad` into the state, which represents a message with
+    /// `aad_len` bytes of additional data and no text yet.
+    fn absorb_aad(&mut self, aad_len: u64, aad: &[u8]) {
         let f = instance!(self.key.backend, vg_aes_gcm_stream_aad,
             x86_64: [vg_aes_gcm_stream_aad_aesni, vg_aes_gcm_stream_aad_pclmul,
                 vg_aes_gcm_stream_aad_aesni_pclmul],
@@ -931,18 +968,16 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             avx: [vg_aes_gcm_stream_aad_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_stream_aad_aes]);
         // SAFETY: as in `new`; `self.state` represents a message with
-        // `self.aad_len` bytes of additional data and no text yet.
+        // `aad_len` bytes of additional data and no text yet.
         unsafe {
             f(
                 &self.key.ctx,
                 &mut self.state,
-                self.aad_len,
+                aad_len,
                 aad.as_ptr(),
                 aad.len(),
             )
         };
-        self.aad_len = aad_len;
-        Ok(())
     }
 
     /// Encrypts (or, if `DECRYPT`, decrypts) the next `data.len()` bytes of
@@ -1038,6 +1073,123 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
 }
 
 impl Stream<'_, false> {
+    /// Encrypts the next `src.len()` bytes of the text from `src` into
+    /// `dst`, which is as long.
+    fn update_into(&mut self, src: &[u8], dst: &mut [u8]) -> Result<(), Error> {
+        let text_len =
+            add_len(self.text_len, src.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        #[cfg(target_arch = "x86_64")]
+        {
+            self.in_text = true;
+            // `vg_aes_gcm_stream_encrypt_to` takes the whole blocks from `src`
+            // to `dst` in one pass after text that ends a block, or after no
+            // text and additional data of whole blocks; otherwise it copies
+            // them to `dst` and encrypts them there. Before the first block
+            // of text, pad the additional data with zeros to a whole block, as
+            // GHASH does: the state then represents a message with the padded
+            // additional data, which, once it has some text, is the same
+            // message as with the additional data itself (GHASH's input,
+            // `VG.Spec.Gcm.ghashInput`, is the same).
+            let mut aad_len = self.aad_len;
+            if self.text_len == 0 && src.len() >= 16 && aad_len % 16 != 0 {
+                let pad = 16 - (aad_len % 16) as usize;
+                self.absorb_aad(aad_len, &[0; 16][..pad]);
+                aad_len += pad as u64;
+            }
+            // Then the bytes that finish the block the text so far left
+            // partial, and the rest.
+            let head = (16 - (self.text_len % 16) as usize) % 16;
+            let (s0, s1) = src.split_at(head.min(src.len()));
+            let (d0, d1) = dst.split_at_mut(s0.len());
+            if !s0.is_empty() {
+                self.encrypt_to(aad_len, s0, d0);
+                self.text_len += s0.len() as u64;
+            }
+            if !s1.is_empty() {
+                self.encrypt_to(aad_len, s1, d1);
+            }
+            self.text_len = text_len;
+            Ok(())
+        }
+        #[cfg(not(target_arch = "x86_64"))]
+        {
+            let _ = text_len;
+            dst.copy_from_slice(src);
+            self.update(dst)
+        }
+    }
+
+    /// One call of `vg_aes_gcm_stream_encrypt_to`, from `src` to `dst`, as
+    /// long, after `aad_len` bytes of additional data and `self.text_len`
+    /// bytes of text (leaving `self.text_len` to the caller).
+    #[cfg(target_arch = "x86_64")]
+    fn encrypt_to(&mut self, aad_len: u64, src: &[u8], dst: &mut [u8]) {
+        #[cfg(feature = "alloc")]
+        if src.len() >= POWERS_MIN_LEN && self.encrypt_to_precomputed(aad_len, src, dst) {
+            return;
+        }
+        let f = match self.key.backend {
+            Backend::Scalar => vg_aes_gcm_stream_encrypt_to,
+            Backend::AesNi => vg_aes_gcm_stream_encrypt_to_aesni,
+            Backend::Pclmul => vg_aes_gcm_stream_encrypt_to_pclmul,
+            Backend::AesNiPclmul => vg_aes_gcm_stream_encrypt_to_aesni_pclmul,
+            Backend::Vaes => vg_aes_gcm_stream_encrypt_to_vaes,
+            Backend::Vpclmul => vg_aes_gcm_stream_encrypt_to_vpclmul,
+            Backend::VaesPclmul => vg_aes_gcm_stream_encrypt_to_vaes_pclmul,
+            Backend::AesNiVpclmul => vg_aes_gcm_stream_encrypt_to_aesni_vpclmul,
+            Backend::VaesVpclmul => vg_aes_gcm_stream_encrypt_to_vaes_vpclmul,
+            Backend::VaesVpclmulAvx512 => vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
+            Backend::AesNiPclmulAvx => vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
+        };
+        // SAFETY: as in `update`, with `src` valid for reads of `src.len()`
+        // bytes and `dst` for reads and writes of as many (a unique borrow,
+        // so it overlaps nothing else, `src` included), and `self.state`
+        // representing a message with `aad_len` bytes of additional data and
+        // `self.text_len` of text.
+        unsafe {
+            f(
+                &self.key.ctx,
+                self.key.rounds,
+                &mut self.state,
+                aad_len,
+                self.text_len,
+                src.as_ptr(),
+                src.len(),
+                dst.as_mut_ptr(),
+                dst.len(),
+            )
+        };
+    }
+
+    /// `encrypt_to` with the key context with the powers, if `Powers::get`
+    /// gives it: whether it did.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[inline(never)]
+    fn encrypt_to_precomputed(&mut self, aad_len: u64, src: &[u8], dst: &mut [u8]) -> bool {
+        let Some(ctx) = self
+            .key
+            .powers
+            .get(self.key.backend, self.key.rounds, &self.key.ctx)
+        else {
+            return false;
+        };
+        // SAFETY: as in `encrypt_to` and `update_precomputed`.
+        unsafe {
+            vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512(
+                ctx,
+                self.key.rounds,
+                &mut self.state,
+                aad_len,
+                self.text_len,
+                src.as_ptr(),
+                src.len(),
+                dst.as_mut_ptr(),
+                dst.len(),
+            )
+        };
+        true
+    }
+
     /// Finishes the message and returns its 16-byte tag.
     fn finish(mut self) -> Block {
         let f = instance!(self.key.backend, vg_aes_gcm_stream_finish,
@@ -1134,10 +1286,7 @@ impl AesGcmEncryptor<'_> {
         if input.len() != output.len() {
             return Err(Error::InvalidOutputLength);
         }
-        add_len(self.stream.text_len, input.len(), MAX_TEXT)
-            .map_err(|()| Error::InvalidTextLength)?;
-        output.copy_from_slice(input);
-        self.stream.update(output)
+        self.stream.update_into(input, output)
     }
 
     /// Finishes the message and returns its full 16-byte tag. A protocol
@@ -1343,6 +1492,7 @@ mod tests {
                         VG_AES_GCM_INIT_AESNI_FEATURES,
                         VG_AES_GCM_OPEN_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES,
@@ -1355,6 +1505,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES,
@@ -1368,6 +1519,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES,
@@ -1388,6 +1540,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_PCLMUL_AVX_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_AVX_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_AVX_FEATURES,
@@ -1399,6 +1552,7 @@ mod tests {
                         VG_AES_GCM_INIT_VAES_FEATURES,
                         VG_AES_GCM_OPEN_VAES_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES,
@@ -1411,6 +1565,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES,
@@ -1424,6 +1579,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_PCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES,
@@ -1437,6 +1593,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_AESNI_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES,
@@ -1450,6 +1607,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES,
@@ -1463,6 +1621,7 @@ mod tests {
                         VG_AES_GCM_STREAM_INIT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_AAD_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
@@ -1470,6 +1629,7 @@ mod tests {
                         VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_OPEN_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_TO_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
                     ][..],
                 ),
@@ -1609,6 +1769,25 @@ mod tests {
                     k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
                         .unwrap();
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
+                    // Out of place, in two pieces split on and off block
+                    // boundaries, and streaming in pieces of 100 bytes.
+                    for a in [0, 1, 16, 33, len] {
+                        let mut out = [0u8; 1300];
+                        let pieces = [&msg[..a], &msg[a..len]];
+                        let tag = k.encrypt(&nonce, &aad, &pieces, &mut out[..len]);
+                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
+                    }
+                    let mut e = k.encryptor(&nonce).unwrap();
+                    e.update_aad(&aad).unwrap();
+                    let mut out = [0u8; 1300];
+                    for (x, y) in msg[..len].chunks(100).zip(out[..len].chunks_mut(100)) {
+                        e.update_into(x, y).unwrap();
+                    }
+                    assert_eq!(
+                        (&out[..len], e.finalize()),
+                        (&want[..len], want_tag),
+                        "{b:?}"
+                    );
                 }
             }
         }
@@ -1683,6 +1862,18 @@ mod tests {
                 k.decrypt_in_place(&nonce, &aad, &mut ct[..len], &tag)
                     .unwrap();
                 assert_eq!(&ct[..len], &msg[..len]);
+            }
+            // Out of place, with the powers: the second piece, after the
+            // first's partial block, is long enough to use them.
+            for (len, a) in [(300, 16), (700, 17)] {
+                let mut want = msg;
+                let want_tag = base
+                    .encrypt_in_place(&nonce, &aad, &mut want[..len])
+                    .unwrap();
+                let mut out = [0u8; 700];
+                let pieces = [&msg[..a], &msg[a..len]];
+                let tag = k.encrypt(&nonce, &aad, &pieces, &mut out[..len]);
+                assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
             }
             // A clone copies the powers if they are ready, and not otherwise.
             let copy = k.clone();

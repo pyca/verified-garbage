@@ -1,10 +1,10 @@
 //! AES-GCM (`AeadTest` vectors, `aes_gcm_test.json`).
 //!
 //! A valid vector must encrypt to exactly its ciphertext and tag, in place
-//! and out of place, and decrypt back, both at once and streaming. An invalid vector must be
-//! rejected, at once and streaming: by decryption (a modified tag,
-//! ciphertext or additional data), or already by the nonce check (an empty
-//! nonce).
+//! and out of place, and decrypt back, both at once and streaming. An
+//! invalid vector must be rejected, at once and streaming: by decryption (a
+//! modified tag, ciphertext or additional data), or already by the nonce
+//! check (an empty nonce).
 //!
 //! Every vector has a full 16-byte tag; the CAVP vectors
 //! (`tests/cavp/aes_gcm.rs`) test truncated ones.
