@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
 doublings between `R` and `D`), the masks of a point's `Z` being zero
 (`zmask_ok`), and the Jacobian addition of the entry `E` into `D` with the
 selection of `E`, `R` or `D` (`sumJ_ok`), for an iteration but the last
-(`stepJ_ok`).
+(`winStepJ_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -501,7 +501,7 @@ theorem R_apart_entry {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat}
   · exact hL.lay.tmp x (winWs_slots K x hxw)
 
 /-- An iteration but the last, `rbx = j ≥ 2` to `j - 1`: adds digit `j - 1`. -/
-theorem stepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
+theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hX : WinX K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
     (hO : OrdN C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)

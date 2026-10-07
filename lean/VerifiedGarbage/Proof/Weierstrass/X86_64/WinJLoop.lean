@@ -8,7 +8,7 @@ into projective coordinates with `Y = 1` where `Z = 0` (`toProjR_ok`), the
 entry of digit `0` into projective coordinates (`toProjE_ok`), and their sum
 by the complete formulas (`sumStep_ok`). The method (`windowJ_ok`): the table
 in Jacobian coordinates (`buildJ_ok`), then from `R = O` the iterations of
-`stepJ_ok` for the digits `J - 1` down to `1`, and the last.
+`winStepJ_ok` for the digits `J - 1` down to `1`, and the last.
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -409,7 +409,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
       show toM _ _ _ = 0
       rw [vz]; exact toM_zero _ _
   refine WP.seq (countLoop_ok (Inv := fun i t => WinInvJ K C base size k P s t (i + 1)) (n := K.J - 1)
-    (fun i t h1 h2 hi => WP.mono (stepJ_ok hL hX hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8
+    (fun i t h1 h2 hi => WP.mono (winStepJ_ok hL hX hp hC hM3 hO hP hP0 hpn hone_lt hone hF hk8
       (j := i + 1) (by omega) (by omega)
       (Nat.lt_of_le_of_lt (Nat.add_le_add_right (Nat.mul_le_mul_left _
         (winE_le_of_le hk8 (by omega) (by omega))) _) hb) hi)
