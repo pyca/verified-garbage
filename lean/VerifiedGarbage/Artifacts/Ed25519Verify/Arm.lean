@@ -8,7 +8,8 @@ def artifacts : List Artifact := [
   { Spec.Ed25519.verifyEquationApi with
     target := Arm.target
     doc := Spec.Ed25519.verifyEquationApi.doc (notes := ["Uses baseline integer instructions. \
-      Checks canonical point encodings and S < L, then evaluates the uncofactored equation \
+      Checks canonical point encodings (A's, then R's, by one loop running the decoding twice) \
+      and S < L, then evaluates the uncofactored equation \
       using all 512 challenge bits. Point decoding branches depend only on public inputs. \
       Point tables and saved registers reside in `scratch`."])
     code := Impl.Ed25519.Arm.verifyEquation
