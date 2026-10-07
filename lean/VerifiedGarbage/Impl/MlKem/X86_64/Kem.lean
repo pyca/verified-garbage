@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Spec.MlKem
+import VerifiedGarbage.Spec.MlKem.Contract
 
 /-!
 # ML-KEM on x86-64: what a parameter set fixes of the top-level functions
@@ -65,6 +66,13 @@ abbrev aS (i j : Nat) : Ptr := pS (L.pA + L.k * i + j)
 
 /-- `ByteEncode_d(Compress_d(f))` to `out`, for `d = d_u` or `d_v`. -/
 def ceAt (f : Ptr) (d : Nat) (out : Ptr) : Prog isa := ceCall L.ceN L.ce f d out
+
+/-- `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` to `w`, for the `k` polynomials `ŝ` from `s` and
+`u'` from `u`, with the working space `z` (4096 bytes):
+`vg_mlkem*_decrypt_mul`, with the arithmetic of `A`. -/
+def decMulAt (A : Arith) (w s u z : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi w ++ lea .rsi s ++ lea .rdx u ++ lea .rcx z))
+    (.call (L.p.fn "decrypt_mul" ++ A.sfx) (decryptMul A.bodies L.k))
 
 /-- `Decompress_d(ByteDecode_d(b))` to `f`, for `d = d_u` or `d_v`. -/
 def ddAt (b : Ptr) (d : Nat) (f : Ptr) : Prog isa := ddCall L.ddN L.dd b d f

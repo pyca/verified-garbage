@@ -363,7 +363,7 @@ theorem yconsts_ok (s : State) :
 /-- The table `tab` of the zetas `z` at `scratch`, `f` as words in `S`, and the constants. -/
 theorem ypro_ok (tab : Nat → Nat) {z : Nat → Zq} (htab : ∀ k, tab k = (z k).val * 65536 % 3329)
     {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
-    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
+    (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.rd ++ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
     WP isa (ypro tab) s fun s' => S16 s'.mem (spW sP) F ∧ TZ s'.mem sP z ∧ YConsts s' ∧
       Frame [pR sP] s.mem s'.mem ∧ Keep [.rax, .rcx, .rdx, .r9] s s' := by
   simp only [ypro, List.append_assoc]
@@ -390,7 +390,7 @@ theorem ypro_ok (tab : Nat → Nat) {z : Nat → Zq} (htab : ∀ k, tab k = (z k
       rw [List.mem_singleton.mp hr]; exact hd.sub_right (pR_sub_tab sP)) hF
   have hT3 : TZ s3.mem sP z := fun k hk => by rw [og.mem, hm2, hT k hk, htab]
   refine WP.mono (ypack_ok (lanes_gpr (s := s2) (GOnly.lane og hy) (YOnly.refl [] s2) hc2 (by decide) (by decide))
-    hF3 h9 hdx (by rw [k13.2.2]; exact List.mem_append_right _ hwf) (by rw [k13.2.2]; exact hw) hd)
+    hF3 h9 hdx (by rw [k13.2.1, k13.2.2]; exact hwf) (by rw [k13.2.2]; exact hw) hd)
     fun s4 ⟨hS, hf4, hc4, k4, _⟩ => ⟨hS, hT3.frame hf4, hc4, ?_, (k13.trans k4).mono (by simp)⟩
   refine (hf1.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).trans
     ((og.mem.trans hm2) ▸ hf4.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)

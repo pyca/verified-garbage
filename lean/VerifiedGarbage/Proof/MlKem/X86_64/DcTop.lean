@@ -151,7 +151,7 @@ theorem post_of (W : DcWf L) {σ s : State} (h : DEnd L σ s) {s' : State}
 theorem decrypt_ok {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd) {σ : State}
     (hp : (decapsK L).pre σ) {s : State} (h : DC L σ s) (h15 : s.gpr .r15 = 1) : WP isa (decrypt L A) s (DM L σ) := by
   unfold decrypt
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok hA W K hp (by omega) hs) s
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok W K hp (by omega) hs) s
     (DR.zero h h15)) fun s₁ h₁ => ?_)
   rw [Nat.zero_add] at h₁
   refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok hA W hp (by omega) hs) s₁ h₁)
@@ -189,7 +189,7 @@ theorem decrypt_tr {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
     RelCT isa (R L fun σ s => DC L σ s ∧ s.gpr .r15 = 1) (decrypt L A) fun _ _ => True := by
   unfold decrypt
   refine RelCT.seq (RelCT.mono (seqR_tr (R := fun k => R L (DR L k 0)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => u_ok hA W K hp (by omega) hs) (u_tr hA W K (by omega)))
+    fun k _ hk => relInv (fun σ s hp hs => u_ok W K hp (by omega) hs) (u_tr W K (by omega)))
     (fun _ _ ⟨σ₁, σ₂, p₁, p₂, pub, h₁, h₂⟩ => ⟨σ₁, σ₂, p₁, p₂, pub, DR.zero h₁.1 h₁.2, DR.zero h₂.1 h₂.2⟩)
     fun _ _ h => h) ?_
   rw [Nat.zero_add]
