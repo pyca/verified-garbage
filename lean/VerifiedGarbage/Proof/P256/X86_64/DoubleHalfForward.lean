@@ -20,21 +20,16 @@ theorem half_forward_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
   exact Forward.block_stores_valid (half_inv_ok hn hL hI ho ha) (fun _ ht => ht.2.scr)
     (by change o+8*4≤size; have h := hL.le o ho; simpa only [hn] using h) (by decide)
 
-theorem doubleHalfForward_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
+theorem doubleHalfForward_fields_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod Spec.P256.p (2^(64*M.n)))
-    (hC : Law Spec.P256.curve) (ha : AM3 Spec.P256.curve)
-    {S : RcbSlots} {p : Pt} (hd : (doubleSlots S p).Nodup)
+    {S : RcbSlots} {p : Pt}
     (hSl : ∀ x∈doubleSlots S p,Sl x)
     {V : List Nat} {E : Nat → Fin Spec.P256.p} {s : State}
     (hI : Inv M base size Spec.P256.p Sl V E s)
-    (hV : ∀ x∈[p.x,p.y,p.z],x∈V) {P : Point Spec.P256.curve}
-    (hP : onCurve Spec.P256.curve P=true)
-    (hJ : InvJ Spec.P256.curve (E p.x) (E p.y) (E p.z) P) :
+    (hV : ∀ x∈[p.x,p.y,p.z],x∈V) :
     WP isa (doubleHalfForward M S p) s fun t =>
       ProgKeep M base (doubleSlots S p) s t ∧
-      Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t ∧
-      InvJ Spec.P256.curve (doubleHalfEnv S p E p.x) (doubleHalfEnv S p E p.y)
-        (doubleHalfEnv S p E p.z) (Spec.Weierstrass.add P P) := by
+      Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t := by
   rw [doubleHalfForward]
   apply WP.seq
   refine WP.mono (ForwardField.program_ok hn hL hm _ hI (doubleHalf_before_slots hSl)
@@ -56,10 +51,28 @@ theorem doubleHalfForward_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → 
     obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
     exact doubleHalf_after_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..))
   refine ⟨kb.trans ((progKeep_of_op kv (by simp [doubleSlots])).trans ka),
-    ht.sub ?_,InvJ.dbl' hC ha hP hJ (doubleHalfEnv_run S p E hd)⟩
+    ht.sub ?_⟩
   intro x hx
   simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with (rfl|rfl|rfl)|hx <;>
     simp [DoubleHalf.before,DoubleHalf.after,validAfter,FOp.out, *]
+
+theorem doubleHalfForward_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
+    (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod Spec.P256.p (2^(64*M.n)))
+    (hC : Law Spec.P256.curve) (ha : AM3 Spec.P256.curve)
+    {S : RcbSlots} {p : Pt} (hd : (doubleSlots S p).Nodup)
+    (hSl : ∀ x∈doubleSlots S p,Sl x)
+    {V : List Nat} {E : Nat → Fin Spec.P256.p} {s : State}
+    (hI : Inv M base size Spec.P256.p Sl V E s)
+    (hV : ∀ x∈[p.x,p.y,p.z],x∈V) {P : Point Spec.P256.curve}
+    (hP : onCurve Spec.P256.curve P=true)
+    (hJ : InvJ Spec.P256.curve (E p.x) (E p.y) (E p.z) P) :
+    WP isa (doubleHalfForward M S p) s fun t =>
+      ProgKeep M base (doubleSlots S p) s t ∧
+      Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t ∧
+      InvJ Spec.P256.curve (doubleHalfEnv S p E p.x) (doubleHalfEnv S p E p.y)
+        (doubleHalfEnv S p E p.z) (Spec.Weierstrass.add P P) := by
+  refine WP.mono (doubleHalfForward_fields_ok hn hL hm hSl hI hV) fun t ⟨kt,it⟩ =>
+    ⟨kt,it,InvJ.dbl' hC ha hP hJ (doubleHalfEnv_run S p E hd)⟩
 
 end VG.Proof.P256.X86_64
