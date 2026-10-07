@@ -17,6 +17,9 @@ namespace VG.Proof.X25519.X86_64
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64
 
+theorem noImm_mem (m : MemOp) : ∀ n, (Src.mem m) ≠ .imm n := fun _ h => nomatch h
+theorem noImm_reg (r : Reg) : ∀ n, (Src.reg r) ≠ .imm n := fun _ h => nomatch h
+
 theorem of_setReg (s : State) (r : Reg) (v : BitVec 64) : (s.setReg r v).of = s.of := rfl
 theorem of_setFlags (s : State) (a b c d : Option Bool) : (s.setFlags a b c d).of = b := rfl
 

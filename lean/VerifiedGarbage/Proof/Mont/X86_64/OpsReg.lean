@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Chain
+import VerifiedGarbage.Proof.Mont.X86_64.SqrX
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -16,8 +16,12 @@ namespace VG.Proof.Mont.X86_64
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono)
 
-/-- The registers the operations change. -/
-def clob (n : Nat) : List Reg := .rax :: .rcx :: .rdx :: .rbp :: acc n
+/-- The registers the operations change: for four words, also `r14` and `r15`
+(`sqrRX`'s). -/
+def clob (n : Nat) : List Reg := .rax :: .rcx :: .rdx :: .rbp :: acc n ++ if n = 4 then [.r14, .r15] else []
+
+theorem mem_clob {n : Nat} {r : Reg} (h : r ∈ .rax :: .rcx :: .rdx :: .rbp :: acc n) : r ∈ clob n :=
+  List.mem_append_left _ h
 
 /-- What an operation writing `[o]` keeps: the registers but `clob`, the
 regions, and the memory but `[o]` and the temporary area. -/
@@ -53,7 +57,27 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
   have hn := hs.nowrap
-  rw [mulR, List.append_assoc, List.append_assoc, WP.block_append_iff]
+  rw [mulR]
+  split
+  · -- A square by `sqrRX`.
+    rename_i k hk
+    unfold sqrK? at hk
+    split at hk
+    · rename_i hc
+      obtain ⟨-, h4, rfl⟩ := hc
+      split at hk
+      · rename_i ws hr
+        refine WP.mono (sqrRX_ok hs hM h4 hr hk (by omega) (by omega) (h4 ▸ hB))
+          fun s' ⟨kr, hmem, hlt, he⟩ => ?_
+        rw [h4]
+        refine ⟨⟨fun r hr' => kr.gpr r fun h => hr' ?_, kr.rd, kr.wr, fun x hx hx' => hmem x
+          (by rw [h4] at hx; exact hx) (by rw [h4] at hx'; exact hx')⟩, hlt, he⟩
+        rw [h4]
+        exact (by decide : ∀ q ∈ sqrClob, q ∈ clob 4) r h
+      · cases hk
+    · cases hk
+  dsimp only
+  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (zeros_ok s (acc M.n)) fun s₁ ⟨z₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
   have h0 : regsVal s₁ (wins M.n 0) = 0 := regsVal_zero fun r hr => z₁ r (wins_sub_acc hM.n7 0 r hr)
@@ -107,7 +131,8 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   rw [hlowlen] at e₄ O₄
   refine ⟨⟨fun r hr => ?_, ?_, ?_, fun x hx hx' => ?_⟩, ?_, ?_⟩
   · rw [k₄.gpr r (by simp), k₃.gpr r (fun h => hr (by
-      simp only [clob, List.mem_cons] at h ⊢
+      refine mem_clob ?_
+      simp only [List.mem_cons] at h ⊢
       rcases h with h | h | h | h | h | h
       · exact Or.inl h
       · exact Or.inr (Or.inl h)
@@ -117,8 +142,8 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
           rw [hsplit]; simp only [List.mem_append, List.mem_cons]; exact Or.inr (Or.inl h))))))
       · exact Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc hM.n7 M.n r (by
           rw [hsplit]; simp only [List.mem_append]; exact Or.inl h))))))),
-      k₂.1 r (fun h => hr (by simpa [clob] using h)), k₁.1 r (fun h => hr (by
-        simp only [clob, List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr h)))))]
+      k₂.1 r (fun h => hr (mem_clob (by simpa using h))), k₁.1 r (fun h => hr (mem_clob (by
+        simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr h))))))]
   · rw [k₄.rd, k₃.rd, k₂.2.2.1, k₁.2.2.1]
   · rw [k₄.wr, k₃.wr, k₂.2.2.2, k₁.2.2.2]
   · rw [O₄ x hx, O₃ x hx', hmem₂]
@@ -173,7 +198,8 @@ theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hl := low_len_lt M.n hM.n7
   obtain ⟨t, ts, hts⟩ := low_ne_nil hM.n7 hM.n0
   have hsub : ∀ r ∈ top M.n :: low M.n, r ∈ clob M.n := fun r hr => by
-    simp only [clob, List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (low_sub_acc_lt _ hM.n7 r hr))))
+    exact mem_clob (by
+      simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr (low_sub_acc_lt _ hM.n7 r hr)))))
   rw [addR, List.append_assoc, List.append_assoc, List.append_assoc,
     List.append_assoc, WP.block_append_iff]
   refine WP.mono (loads_ok (low M.n) hs (a := a) (by omega) hf.tail) fun s₁ ⟨e₁, k₁⟩ => ?_
@@ -295,7 +321,8 @@ theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have htmp := hM.tmp
   obtain ⟨t, ts, hts⟩ := low_ne_nil hM.n7 hM.n0
   have hsub : ∀ r ∈ low M.n, r ∈ clob M.n := fun r hr => by
-    simp only [clob, List.mem_cons]
+    refine mem_clob ?_
+    simp only [List.mem_cons]
     exact Or.inr (Or.inr (Or.inr (Or.inr (low_sub_acc_lt _ hM.n7 r (List.mem_cons_of_mem _ hr)))))
   rw [subR, List.append_assoc, List.append_assoc, List.append_assoc,
     List.append_assoc, WP.block_append_iff]

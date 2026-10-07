@@ -32,7 +32,8 @@ among `clob n`. -/
 theorem wide_clob {n : Nat} (hn : 0 < n) : ∀ r ∈ [Reg.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10], r ∈ clob n := by
   obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
   intro r hr
-  simp only [clob, acc, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+  refine mem_clob ?_
+  simp only [acc, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
   rw [show n' + 1 + 2 = n' + 3 by omega]
   simp only [List.take_succ_cons, List.mem_cons]
   rcases hr with h | h | h | h | h | h | h <;> simp [h]
