@@ -9,7 +9,7 @@ namespace VG.Impl.Ecdsa.AArch64
 open VG.AArch64
 
 /-- P-521 as the code has it. -/
-def p521 : Cfg := ⟨9, Spec.P521.curve, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+def p521 : Cfg := ⟨9, Spec.P521.curve, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", true⟩
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign
