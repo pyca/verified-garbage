@@ -109,8 +109,8 @@ theorem se_tr {A : Arith} (hA : ArithOk A) {N : Nat} (hN : N < 2 * L.k) :
   unfold se
   refine rel2_of (Q := fun x y => LRel kgR (kgW L) x y ∧ True ∧ True)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS N))) (kgB_bases L)
-      (RelCT.mono (cbd2At_trL rbx_na htw) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx _ => WP.mono (cbd2At_okL Lx rbx_na htw) fun x' ⟨hP, hq⟩ =>
+      (RelCT.mono (cbd2At_trL hA rbx_na htw) (fun _ _ h => h.1) fun _ _ h => h)
+      (fun x Lx _ => WP.mono (cbd2At_okL hA Lx rbx_na htw) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (nttAt_tr hA hic))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc, trivial, trivial⟩
 
@@ -129,8 +129,8 @@ theorem row_tr {A : Arith} (hA : ArithOk A) {i : Nat} (hi : i < L.k) :
       (RelCT.mono (dotN_tr hA (kgB_bases L) W.k.1 (dotChk_spec hdc)) (fun _ _ ⟨e, h₁, h₂⟩ => ⟨e, h₁.1, h₂.1⟩)
         fun _ _ h => h)
       (fun x Lx hx => ?_)
-      (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) (kgB_bases L) (addAt_tr rbx_na hac)
-        (fun x Lx hx => WP.mono (addAt_ok Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
+      (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) (kgB_bases L) (addAt_tr hA rbx_na hac)
+        (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
           ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (enc12At_trL r12_na htw)))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨kc_lrel W p₁ p₂ pub h₁.kc h₂.kc,
       ⟨fun k hk => ⟨(h₁.matIJ hi hk).1, (h₁.se k (by omega)).1⟩, (h₁.se (L.k + i) (by omega)).1⟩,

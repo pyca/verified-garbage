@@ -2509,6 +2509,87 @@ pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12(b: *const [u8; 384], f: *
     )
 }
 
+/// The CPU features `vg_mlkem_decode12_avx2` requires (`Artifact.features`).
+pub(crate) const VG_MLKEM_DECODE12_AVX2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2"]);
+
+/// `ByteDecode₁₂` (FIPS 203 Algorithm 6): writes the 256 12-bit little-endian fields of `*b`, each reduced modulo `q` = 3329, to `*f`.
+///
+/// Contract: `VG.Spec.MlKem.decode12Contract`. Constant time: only the pointers may affect timing, not the data.
+///
+/// The function computes on eight coefficients at a time in AVX2 registers, from 12 bytes loaded 16 at a time (the last 12 from 4 bytes before them, so that it reads only the 384 bytes of `*b`). It has no multiplications.
+///
+/// # Safety
+///
+/// * `b` must be valid for reads of 384 bytes.
+/// * `f` must be valid for reads and writes of 1024 bytes.
+/// * `f` must not overlap `b` (distinct Rust objects never do).
+/// * Neither `b` nor `f` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem_decode12_avx2(b: *const [u8; 384], f: *mut [u32; 256]) {
+    core::arch::naked_asm!(
+        "movabs rax, -9187341034361716480",
+        "vmovq xmm8, rax",
+        "movabs rax, -9187337722941930493",
+        "vmovq xmm0, rax",
+        "vpunpcklqdq xmm8, xmm8, xmm0",
+        "movabs rax, -9187334411522144506",
+        "vmovq xmm0, rax",
+        "movabs rax, -9187331100102358519",
+        "vmovq xmm1, rax",
+        "vpunpcklqdq xmm0, xmm0, xmm1",
+        "vinserti128 ymm8, ymm8, xmm0, 1",
+        "movabs rax, -9187336619135335164",
+        "vmovq xmm12, rax",
+        "movabs rax, -9187333307715549177",
+        "vmovq xmm0, rax",
+        "vpunpcklqdq xmm12, xmm12, xmm0",
+        "movabs rax, -9187329996295763190",
+        "vmovq xmm0, rax",
+        "movabs rax, -9187326684875977203",
+        "vmovq xmm1, rax",
+        "vpunpcklqdq xmm0, xmm0, xmm1",
+        "vinserti128 ymm12, ymm12, xmm0, 1",
+        "movabs rax, 17179869184",
+        "vmovq xmm9, rax",
+        "vpbroadcastq ymm9, xmm9",
+        "mov eax, 4095",
+        "vmovq xmm10, rax",
+        "vpbroadcastd ymm10, xmm10",
+        "mov eax, 3329",
+        "vmovq xmm11, rax",
+        "vpbroadcastd ymm11, xmm11",
+        "mov ecx, 31",
+        "20:",
+        "vbroadcasti128 ymm0, XMMWORD PTR [rdi]",
+        "vpshufb ymm0, ymm0, ymm8",
+        "vpsrlvd ymm0, ymm0, ymm9",
+        "vpand ymm0, ymm0, ymm10",
+        "vpsubd ymm0, ymm0, ymm11",
+        "vpsrad ymm1, ymm0, 31",
+        "vpand ymm1, ymm1, ymm11",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vmovdqu YMMWORD PTR [rsi], ymm0",
+        "add rdi, 12",
+        "add rsi, 32",
+        "sub rcx, 1",
+        "jne 20b",
+        "sub rdi, 4",
+        "vbroadcasti128 ymm0, XMMWORD PTR [rdi]",
+        "vpshufb ymm0, ymm0, ymm12",
+        "vpsrlvd ymm0, ymm0, ymm9",
+        "vpand ymm0, ymm0, ymm10",
+        "vpsubd ymm0, ymm0, ymm11",
+        "vpsrad ymm1, ymm0, 31",
+        "vpand ymm1, ymm1, ymm11",
+        "vpaddd ymm0, ymm0, ymm1",
+        "vmovdqu YMMWORD PTR [rsi], ymm0",
+        "vzeroupper",
+        "ret",
+        ".p2align 6",
+    )
+}
+
 /// `SamplePolyCBD₂` (FIPS 203 Algorithm 8 with `η` = 2): writes the polynomial sampled from the 128 bytes `*b` to `*f` (256 coefficients less than `q` = 3329).
 ///
 /// Contract: `VG.Spec.MlKem.cbd2Contract`. Constant time: only the pointers may affect timing, not the data.

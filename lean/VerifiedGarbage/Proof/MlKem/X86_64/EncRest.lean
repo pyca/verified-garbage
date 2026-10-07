@@ -128,7 +128,7 @@ theorem y_ok {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {N : Nat} (hN : N < 
   obtain ⟨⟨htw, hic⟩, hrc⟩ := hc
   have L₀ := C.lay h.i.out
   unfold y
-  refine WP.seq (WP.mono (cbd2At_okL L₀ rbx_na htw) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
+  refine WP.seq (WP.mono (cbd2At_okL hA L₀ rbx_na htw) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
   have L₁ := L₀.post hP₁.b C.bs
   rw [h.prf N (by omega), ← hP₁.pa rbx_cs] at hp₁
   refine WP.mono (nttAt_ok hA L₁ hic hp₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_
@@ -151,8 +151,8 @@ theorem y_tr {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {N : Nat} (hN : N < 
     WP.mono (y_ok hA hN hc hx) fun _ h => ⟨⟨_, h.1.b⟩, ek, m, r, eρ, h.2⟩
   unfold y
   exact RelCT.mono (RelCT.seqL (I := fun _ => True) (J := fun x => Reduced x.mem (pa x (pS N))) C.bs
-    (RelCT.mono (cbd2At_trL rbx_na htw) (fun _ _ h => h.1) fun _ _ h => h)
-    (fun x Lx _ => WP.mono (cbd2At_okL Lx rbx_na htw) fun x' ⟨hP, hq⟩ =>
+    (RelCT.mono (cbd2At_trL hA rbx_na htw) (fun _ _ h => h.1) fun _ _ h => h)
+    (fun x Lx _ => WP.mono (cbd2At_okL hA Lx rbx_na htw) fun x' ⟨hP, hq⟩ =>
       ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩) (nttAt_tr hA hic)) (fun _ _ h => ⟨h.1, trivial, trivial⟩)
     fun _ _ h => h
 
@@ -189,11 +189,11 @@ theorem u_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have e₂ := e₁.keep hP₂.b hi₂
   have L₂ := C.lay e₂.out
   rw [hp₁.2, ← hP₂.pa rbx_cs] at hp₂
-  refine WP.seq (WP.mono (cbd2At_okL L₂ rbx_na hpc) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
+  refine WP.seq (WP.mono (cbd2At_okL hA L₂ rbx_na hpc) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
   have L₃ := L₂.post hP₃.b C.bs
   rw [L₁.keepBytes hP₂.b kp₂, L₀.keepBytes hP₁.b kp₁, h.prf (L.k + i) (by omega), ← hP₃.pa rbx_cs] at hp₃
   have hq₃ := L₂.keepPoly hP₃.b hk15 hp₂
-  refine WP.seq (WP.mono (addAt_ok L₃ rbx_na hac hq₃.1 hp₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
+  refine WP.seq (WP.mono (addAt_ok hA L₃ rbx_na hac hq₃.1 hp₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
   have L₄ := L₃.post hP₄.b C.bs
   rw [hq₃.2, hp₃.2, ← hP₄.pa rbx_cs] at hp₄
   refine WP.mono (ceCall_okL K.ce L₄ rbx_na htw K.du.1 hp₄.1) fun s₅ ⟨hP₅, hb₅⟩ => ?_
@@ -224,11 +224,11 @@ theorem u_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
       (fun x Lx hx => WP.mono (nttInvAt_ok hA Lx hic hx) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15)) ∧ Reduced x.mem (pa x (pS 16))) C.bs
-      (RelCT.mono (cbd2At_trL rbx_na hpc) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx hx => WP.mono (cbd2At_okL Lx rbx_na hpc) fun x' ⟨hP, hq⟩ =>
+      (RelCT.mono (cbd2At_trL hA rbx_na hpc) (fun _ _ h => h.1) fun _ _ h => h)
+      (fun x Lx hx => WP.mono (cbd2At_okL hA Lx rbx_na hpc) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, Lx.keepRed hP.b hk15 hx, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr rbx_na hac)
-      (fun x Lx hx => WP.mono (addAt_ok Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
+    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr hA rbx_na hac)
+      (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
       (ceCall_trL K.ce rbx_na htw K.du.1))))) (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
         ⟨hl, fun k hk => ⟨(h₁.matIJ hk hi).1, (h₁.y k hk).1⟩, fun k hk => ⟨(h₂.matIJ hk hi).1, (h₂.y k hk).1⟩⟩)
@@ -239,12 +239,12 @@ theorem u_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
 def tChk (L : Kem) (bs wbs : List (Reg × Nat)) (chk : List (Ptr × Nat) → Bool) (E : Ptr) (i : Nat) : Bool :=
   twoChk bs wbs (E.1, E.2 + 384 * i) 384 (pS (L.k + i)) 1024 && erChk L bs chk E L.k L.k i [(pS (L.k + i), 1024)]
 
-theorem t_ok {C : Ctx rbs wbs} {i : Nat} (hi : i < L.k) (hc : tChk L (rbs ++ wbs) wbs C.chk E i = true)
+theorem t_ok {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {i : Nat} (hi : i < L.k) (hc : tChk L (rbs ++ wbs) wbs C.chk E i = true)
     {ek m r : List Byte} {s : State} (h : ER L C E ek m r L.k L.k i s) :
-    WP isa (t L E i) s fun s' => PPost s s' [(pS (L.k + i), 1024)] ∧ ER L C E ek m r L.k L.k (i + 1) s' := by
+    WP isa (t L A E i) s fun s' => PPost s s' [(pS (L.k + i), 1024)] ∧ ER L C E ek m r L.k L.k (i + 1) s' := by
   simp only [tChk, Bool.and_eq_true] at hc
   have L₀ := C.lay h.i.out
-  refine WP.mono (dec12At_okL L₀ rbx_na hc.1) fun s' ⟨hP, hp⟩ => ?_
+  refine WP.mono (dec12At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hp⟩ => ?_
   have hk := h.keep hP hc.2
   refine ⟨hP, hk.ok, hk.i, hk.r15, hk.mat, hk.prf, hk.y, hk.u, fun i' hi' => ?_⟩
   rcases (by omega : i' < i ∨ i' = i) with hi' | rfl
@@ -257,14 +257,14 @@ theorem t_ok {C : Ctx rbs wbs} {i : Nat} (hi : i < L.k) (hc : tChk L (rbs ++ wbs
     rw [e] at hp
     exact hp
 
-theorem t_tr {C : Ctx rbs wbs} {i : Nat} (hi : i < L.k) (hc : tChk L (rbs ++ wbs) wbs C.chk E i = true)
+theorem t_tr {A : Arith} (hA : ArithOk A) {C : Ctx rbs wbs} {i : Nat} (hi : i < L.k) (hc : tChk L (rbs ++ wbs) wbs C.chk E i = true)
     {ρ : List Byte} :
-    RelCT isa (fun x y => LRel rbs wbs x y ∧ ERρ L C E ρ L.k L.k i x ∧ ERρ L C E ρ L.k L.k i y) (t L E i)
+    RelCT isa (fun x y => LRel rbs wbs x y ∧ ERρ L C E ρ L.k L.k i x ∧ ERρ L C E ρ L.k L.k i y) (t L A E i)
       (fun x y => LRel rbs wbs x y ∧ ERρ L C E ρ L.k L.k (i + 1) x ∧ ERρ L C E ρ L.k L.k (i + 1) y) := by
   have hc' := hc
   simp only [tChk, Bool.and_eq_true] at hc'
-  exact RelCT.stepL C.bs (RelCT.mono (dec12At_trL rbx_na hc'.1) (fun _ _ h => h.1) fun _ _ h => h)
-    fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (t_ok hi hc hx) fun _ h => ⟨⟨_, h.1.b⟩, ek, m, r, eρ, h.2⟩
+  exact RelCT.stepL C.bs (RelCT.mono (dec12At_trL hA rbx_na hc'.1) (fun _ _ h => h.1) fun _ _ h => h)
+    fun x ⟨ek, m, r, eρ, hx⟩ => WP.mono (t_ok hA hi hc hx) fun _ h => ⟨⟨_, h.1.b⟩, ek, m, r, eρ, h.2⟩
 
 /-! ## `v` -/
 
@@ -299,12 +299,12 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have e₂ := e₁.keep hP₂.b i₂
   have L₂ := C.lay e₂.out
   rw [hp₁.2, ← hP₂.pa rbx_cs] at hp₂
-  refine WP.seq (WP.mono (cbd2At_okL L₂ rbx_na hpc) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
+  refine WP.seq (WP.mono (cbd2At_okL hA L₂ rbx_na hpc) fun s₃ ⟨hP₃, hp₃⟩ => ?_)
   have e₃ := e₂.keep hP₃.b i₃
   have L₃ := C.lay e₃.out
   rw [L₁.keepBytes hP₂.b kp₂, L₀.keepBytes hP₁.b kp₁, h.prf (2 * L.k) (by omega), ← hP₃.pa rbx_cs] at hp₃
   have hq₃ := L₂.keepPoly hP₃.b hk15 hp₂
-  refine WP.seq (WP.mono (addAt_ok L₃ rbx_na hac hq₃.1 hp₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
+  refine WP.seq (WP.mono (addAt_ok hA L₃ rbx_na hac hq₃.1 hp₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
   have e₄ := e₃.keep hP₄.b i₄
   have L₄ := C.lay e₄.out
   rw [hq₃.2, hp₃.2, ← hP₄.pa rbx_cs] at hp₄
@@ -313,7 +313,7 @@ theorem v_ok {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
   have L₅ := C.lay e₅.out
   rw [e₄.m, ← hP₅.pa rbx_cs] at hp₅
   have hq₅ := L₄.keepPoly hP₅.b hk16 hp₄
-  refine WP.seq (WP.mono (addAt_ok L₅ rbx_na hac hq₅.1 hp₅.1) fun s₆ ⟨hP₆, hp₆⟩ => ?_)
+  refine WP.seq (WP.mono (addAt_ok hA L₅ rbx_na hac hq₅.1 hp₅.1) fun s₆ ⟨hP₆, hp₆⟩ => ?_)
   have e₆ := e₅.keep hP₆.b i₄
   have L₆ := C.lay e₆.out
   rw [hq₅.2, hp₅.2, ← hP₆.pa rbx_cs] at hp₆
@@ -365,18 +365,18 @@ theorem v_tr {A : Arith} (hA : ArithOk A) {wc wd : List Nat} (K : KemCalls L wc 
       (fun x Lx hx => WP.mono (nttInvAt_ok hA Lx hic hx) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15)) ∧ Reduced x.mem (pa x (pS 16))) C.bs
-      (RelCT.mono (cbd2At_trL rbx_na hpc) (fun _ _ h => h.1) fun _ _ h => h)
-      (fun x Lx hx => WP.mono (cbd2At_okL Lx rbx_na hpc) fun x' ⟨hP, hq⟩ =>
+      (RelCT.mono (cbd2At_trL hA rbx_na hpc) (fun _ _ h => h.1) fun _ _ h => h)
+      (fun x Lx hx => WP.mono (cbd2At_okL hA Lx rbx_na hpc) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, Lx.keepRed hP.b hk15 hx, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr rbx_na hac)
-      (fun x Lx hx => WP.mono (addAt_ok Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
+    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr hA rbx_na hac)
+      (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
     (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15)) ∧ Reduced x.mem (pa x (pS 16))) C.bs
       (RelCT.mono (ddCall_trL ddImpl (d := 1) rbx_na hdd (by decide)) (fun _ _ h => h.1) fun _ _ h => h)
       (fun x Lx hx => WP.mono (ddCall_okL ddImpl Lx (d := 1) rbx_na hdd (by decide)) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, Lx.keepRed hP.b hk16 hx, by rw [hP.pa rbx_cs]; exact hq.1⟩)
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr rbx_na hac)
-      (fun x Lx hx => WP.mono (addAt_ok Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
+    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 15))) C.bs (addAt_tr hA rbx_na hac)
+      (fun x Lx hx => WP.mono (addAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
       (ceCall_trL K.ce (d := L.dv) rbx_na htw K.dv.1))))))) (fun x y ⟨hl, ⟨_, _, _, _, h₁⟩, ⟨_, _, _, _, h₂⟩⟩ =>
         ⟨hl, fun k hk => ⟨(h₁.t k hk).1, (h₁.y k hk).1⟩, fun k hk => ⟨(h₂.t k hk).1, (h₂.y k hk).1⟩⟩)

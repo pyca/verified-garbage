@@ -41,11 +41,11 @@ def gRho : Prog isa :=
     (copy (sc oSB) (sc oG) 32))
 
 /-- `ŝ[N]` or `ê[N - k]`, from `PRF₂(σ, N)`. -/
-def se (A : Arith) (N : Nat) : Prog isa := .seq (cbd2At (sc (L.oPR + 128 * N)) (pS N)) (nttAt A (pS N))
+def se (A : Arith) (N : Nat) : Prog isa := .seq (cbd2At A (sc (L.oPR + 128 * N)) (pS N)) (nttAt A (pS N))
 
 /-- `t̂[i]`, encoded to `ek`. -/
 def row (A : Arith) (i : Nat) : Prog isa :=
-  .seq (dotN A (fun j => L.aS i j) pS L.k) (.seq (addAt (pS 15) (pS (L.k + i))) (enc12At (pS 15) (.r12, 384 * i)))
+  .seq (dotN A (fun j => L.aS i j) pS L.k) (.seq (addAt A (pS 15) (pS (L.k + i))) (enc12At (pS 15) (.r12, 384 * i)))
 
 /-- `ŝ[j]`, encoded to `dk`. -/
 def encS (j : Nat) : Prog isa := enc12At (pS j) (.r13, 384 * j)

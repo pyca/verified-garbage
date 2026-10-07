@@ -93,12 +93,12 @@ theorem u_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : List N
 
 /-! ## `ŝ` -/
 
-theorem s_ok {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {i : Nat} (hi : i < L.k) {s : State}
-    (h : DR L L.k i σ s) : WP isa (sHat L i) s (DR L L.k (i + 1) σ) := by
+theorem s_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {i : Nat} (hi : i < L.k) {s : State}
+    (h : DR L L.k i σ s) : WP isa (sHat L A i) s (DR L L.k (i + 1) σ) := by
   have hc := W.s i hi
   simp only [sChk, Bool.and_eq_true] at hc
   have L₀ := h.dc.lay W hp
-  refine WP.mono (dec12At_okL L₀ rbx_na hc.1) fun s' ⟨hP, hq⟩ => ?_
+  refine WP.mono (dec12At_okL hA L₀ rbx_na hc.1) fun s' ⟨hP, hq⟩ => ?_
   have hk := h.keep W hp hP hc.2
   refine ⟨hk.dc, hk.r15, hk.u, fun k hk' => ?_⟩
   rcases (by omega : k < i ∨ k = i) with hk' | rfl
@@ -109,10 +109,11 @@ theorem s_ok {L : Kem} (W : DcWf L) {σ : State} (hp : (decapsK L).pre σ) {i : 
     rw [dcS, KPke.dkPke, slice_take _ (show 384 * k + 384 ≤ 384 * L.p.k by simp only [Kem.k] at hi; omega)]
     exact hq
 
-theorem s_tr {L : Kem} (W : DcWf L) {i : Nat} (hi : i < L.k) : RelCT isa (R L (DR L L.k i)) (sHat L i) fun _ _ => True := by
+theorem s_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {i : Nat} (hi : i < L.k) :
+    RelCT isa (R L (DR L L.k i)) (sHat L A i) fun _ _ => True := by
   have hc := W.s i hi
   simp only [sChk, Bool.and_eq_true] at hc
-  exact rel2_of (dec12At_trL rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.dc h₂.dc
+  exact rel2_of (dec12At_trL hA rbx_na hc.1) fun _ _ _ _ p₁ p₂ pub h₁ h₂ => dc_lrel W p₁ p₂ pub h₁.dc h₂.dc
 
 /-! ## `m'` -/
 
@@ -125,7 +126,7 @@ structure DM (L : Kem) (σ s : State) : Prop where
 /-- The rest of `decrypt`. -/
 abbrev tail (L : Kem) (A : Arith) : Prog isa :=
   .seq (dotN A (fun j => pS (L.k + j)) pS L.k) (.seq (nttInvAt A (pS 15))
-    (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt (pS 16) (pS 15)) (ceAt (pS 16) 1 (sc oM)))))
+    (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15)) (ceAt (pS 16) 1 (sc oM)))))
 
 theorem tail_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : List Nat} (K : KemCalls L wc wd)
     {σ : State} (hp : (decapsK L).pre σ) {s : State} (h : DR L L.k L.k σ s) : WP isa (tail L A) s (DM L σ) := by
@@ -149,7 +150,7 @@ theorem tail_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : Lis
     exact slice_of k₂.c (by simp only [Kem.ctLen, Params.ctLen, Kem.du, Kem.dv, Kem.k]; rw [Nat.mul_add, ← Nat.mul_assoc])
   rw [hc₃, ← hP₃.pa rbx_cs] at hp₃
   have hq₃ := L₂.keepPoly hP₃.b hk15 hp₂
-  refine WP.seq (WP.mono (subAt_ok L₃ rbx_na hac hp₃.1 hq₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
+  refine WP.seq (WP.mono (subAt_ok hA L₃ rbx_na hac hp₃.1 hq₃.1) fun s₄ ⟨hP₄, hp₄⟩ => ?_)
   have L₄ := L₃.post hP₄.b (dcB_bases L)
   rw [hp₃.2, hq₃.2, ← hP₄.pa rbx_cs] at hp₄
   refine WP.mono (ceCall_okL ceImpl L₄ (d := 1) rbx_na htw (by decide) hp₄.1) fun s₅ ⟨hP₅, hb₅⟩ => ?_
@@ -180,8 +181,8 @@ theorem tail_tr {A : Arith} (hA : ArithOk A) {L : Kem} (W : DcWf L) {wc wd : Lis
       (RelCT.mono (ddCall_trL K.dd (d := L.dv) rbx_na hdd K.dv.2) (fun _ _ h => h.1) fun _ _ h => h)
       (fun x Lx hx => WP.mono (ddCall_okL K.dd Lx (d := L.dv) rbx_na hdd K.dv.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1, Lx.keepRed hP.b hk15 hx⟩)
-    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 16))) (dcB_bases L) (subAt_tr rbx_na hac)
-      (fun x Lx hx => WP.mono (subAt_ok Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
+    (RelCT.seqL (J := fun x => Reduced x.mem (pa x (pS 16))) (dcB_bases L) (subAt_tr hA rbx_na hac)
+      (fun x Lx hx => WP.mono (subAt_ok hA Lx rbx_na hac hx.1 hx.2) fun x' ⟨hP, hq⟩ =>
         ⟨⟨_, hP.b⟩, by rw [hP.pa rbx_cs]; exact hq.1⟩)
       (ceCall_trL ceImpl (d := 1) rbx_na htw (by decide))))))
     fun _ _ _ _ p₁ p₂ pub h₁ h₂ => ⟨dc_lrel W p₁ p₂ pub h₁.dc h₂.dc,

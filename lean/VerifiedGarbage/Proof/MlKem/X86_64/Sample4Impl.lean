@@ -130,7 +130,8 @@ kernel but for the calls of `v`. -/
 macro "s4_ctl " v:ident : tactic =>
   `(tactic| repeat' (first | (closed_in $v; decide +kernel) | apply ctlOk_seq | apply ctlOk_ite |
     (apply ctlOk_call; exact ($v).mxcsr) | exact ($v).prfs_ctl _ _ _ _ | exact ($v).arith.mul.ctl |
-    exact ($v).arith.ntt.ctl | exact ($v).arith.nttInv.ctl | rfl))
+    exact ($v).arith.ntt.ctl | exact ($v).arith.nttInv.ctl | exact ($v).arith.add.ctl | exact ($v).arith.sub.ctl |
+    exact ($v).arith.cbd.ctl | exact ($v).arith.dec12.ctl | rfl))
 
 /-- Code that does not call the implementation `v` never writes the stack pointer: by evaluation. -/
 macro "s4_sp_closed " v:ident : tactic =>
@@ -139,6 +140,7 @@ macro "s4_sp_closed " v:ident : tactic =>
 /-- That code that calls the implementation `v` never writes the stack pointer. -/
 macro "s4_sp " v:ident : tactic =>
   `(tactic| repeat' (first | s4_sp_closed $v | apply all_seq | apply all_ite | (apply all_call; exact ($v).spSafe) |
-    exact ($v).prfs_sp _ _ _ _ | exact ($v).arith.mul.sp | exact ($v).arith.ntt.sp | exact ($v).arith.nttInv.sp | rfl))
+    exact ($v).prfs_sp _ _ _ _ | exact ($v).arith.mul.sp | exact ($v).arith.ntt.sp | exact ($v).arith.nttInv.sp |
+    exact ($v).arith.add.sp | exact ($v).arith.sub.sp | exact ($v).arith.cbd.sp | exact ($v).arith.dec12.sp | rfl))
 
 end VG.Proof.MlKem.X86_64

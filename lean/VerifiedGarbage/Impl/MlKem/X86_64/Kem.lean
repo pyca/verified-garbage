@@ -88,7 +88,7 @@ for the products), accumulated left to right. -/
 def dotN (A : Arith) (f g : Nat → Ptr) : Nat → Prog isa
   | 0 => .block []
   | 1 => mulAt A (pS 15) (f 0) (g 0)
-  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt (pS 15) (pS 16)))
+  | n + 2 => .seq (dotN A f g (n + 1)) (.seq (mulAt A (pS 16) (f (n + 1)) (g (n + 1))) (addAt A (pS 15) (pS 16)))
 
 /-- ML-KEM-768: `k = 3`, `d_u = 10`, `d_v = 4`; 28 polynomials in `scratch`:
 `Â` in polynomials 6–14, the working space from 17, the outputs of `PRF₂`
