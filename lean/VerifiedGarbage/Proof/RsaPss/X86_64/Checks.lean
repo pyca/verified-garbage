@@ -37,6 +37,7 @@ structure HashChecks (P : Params) (D : Nat) (n : Nat) : Prop where
   xorOut : ∃ hc, (taint.check (pT n [21, 23, 24, 32] []) (xorOut (ckH P D)) hc).isSome = true
   nextCtr : ∃ hc, (taint.check (pT n [24, 31, 32] []) (.block (nextCtr (ckH P D))) hc).isSome = true
   digestState : ∃ hc, (taint.check (pT n [21] []) (.block (digestAt (ckH P D) oSt)) hc).isSome = true
+  directLen : ∃ hc, (taint.check (pT n [21] []) (directLen (ckH P D)) hc).isSome = true
   fixedPad80 : ∃ hc, (taint.check (pT n [21, 28] []) (fixedPad80 (D + 4)) hc).isSome = true
 
 /-- The pieces of verification. -/

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.RsaPss.X86_64.CtHashOk
+import VerifiedGarbage.Proof.RsaPss.X86_64.DirectLen
 
 /-! One-block MGF1 hashing without masked state selection. -/
 namespace VG.Proof.RsaPss.X86_64
@@ -28,7 +28,7 @@ variable {H : Hash} (hH : HashOK H) (K : Callees H)
 include K in
 theorem mgfDirectHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem F S V W) {ℓ nbm : Nat} (hl : W 27 = BitVec.ofNat 64 ℓ)
-    (hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
+    (_hn : W 28 = BitVec.ofNat 64 nbm) (hfit : ℓ + 1 + H.P.L ≤ nbm * H.P.B) (hnb : nbm * H.P.B ≤ 2048)
     (hℓ : ℓ = H.D + 4) (hone : ℓ + H.P.L < H.P.B) :
     WP isa (mgfDirectHash H) t fun t' => Lay t' F S ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       (∀ r ∈ [Reg.r13, .r14, .r15, .rsp], t'.gpr r = t.gpr r) ∧
@@ -59,45 +59,41 @@ theorem mgfDirectHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → 
   -- The length field.
   refine WP.seq (WP.mono (lenField_ok hH P.L P.R hl (by omega)) fun u3 ⟨L3, k3, R3⟩ => ?_)
   -- Into the last block.
-  refine WP.seq (WP.mono (lenLoop_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
-      simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega), Nat.add_sub_cancel_left])
-    (by simp [upd]) (by simp [upd, hn]) hfb hnb) fun u4 O => ?_)
+  refine WP.seq (WP.mono (directLen_ok hH L3 R3 (len := hH.md.lenBytes ℓ) (fun i hi => by
+      simp only [lenV, hH.md.lenBytes_length]; rw [ifp (by omega), Nat.add_sub_cancel_left]))
+    fun u4 ⟨L4, k4, R4⟩ => ?_)
   -- A single compression suffices; its state is already the output state.
-  refine WP.seq (WP.mono (startZero_ok O.L O.R) fun u0 ⟨L0, k0, R0⟩ => ?_)
+  refine WP.seq (WP.mono (startZero_ok L4 R4) fun u0 ⟨L0, k0, R0⟩ => ?_)
   refine WP.seq (WP.mono (compCall_ok hH L0 R0 (b := 0) (by omega) (by simp [upd]))
     fun u5 ⟨L5, rd5, wr5, cs5, R5, st5⟩ => ?_)
   have iv0 : hH.md.stateAt u0.mem (off S oSt) = hH.iv := by
     rw [← iv1]
     refine stateAt_rep hH R1 R0 (by unfold oSt oRsa; omega) fun i hi => ?_
-    simp only [lenAt, lenV, v80]
+    simp only [cpV, lenV, v80]
     rw [ifn (by unfold oY oSt; omega), ifn (by unfold oLen oSt; omega), ifn (by unfold oY oSt; omega)]
   refine WP.mono (digestAt_ok hH L5 R5 (src := oSt) (by unfold oSt oDig; omega))
     fun u6 ⟨L6, k6, R6⟩ => ?_
-  have hO0 : (if 0 < nbm then H.P.L else 0) = H.P.L := by rw [ifp (by omega)]
-  have hO : (if lastBlk H.P.B H.P.L ℓ < nbm then H.P.L else 0) = H.P.L := by rw [ifp hfb]
   have c1 : oY = 3584 := rfl
   have c2 : oLen = 2368 := rfl
   have c3 : oDig = 2304 := rfl
   have c4 : oSt = 2048 := rfl
   have c5 : oSel = 2240 := rfl
   have hso := hH.hso
-  have hfbB' : H.P.B * lastBlk H.P.B H.P.L ℓ + H.P.B ≤ 2048 := by
-    rw [← Nat.mul_add_one]; omega
-  refine ⟨L6, k6.2.1.trans (rd5.trans (k0.2.1.trans (O.keep.2.1.trans (k3.2.1.trans (P.keep.2.1.trans rd1))))),
-    k6.2.2.trans (wr5.trans (k0.2.2.trans (O.keep.2.2.trans (k3.2.2.trans (P.keep.2.2.trans wr1))))), ?_, _, _, R6, ?_, ?_, ?_⟩
+  refine ⟨L6, k6.2.1.trans (rd5.trans (k0.2.1.trans (k4.2.1.trans (k3.2.1.trans (P.keep.2.1.trans rd1))))),
+    k6.2.2.trans (wr5.trans (k0.2.2.trans (k4.2.2.trans (k3.2.2.trans (P.keep.2.2.trans wr1))))), ?_, _, _, R6, ?_, ?_, ?_⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     have hcs : r ∈ calleeSaved := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h1 : r ∉ [Reg.rbx, .rbp, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    have h2 : r ∉ [Reg.rcx, .rsi, .rdx, .r10, .r8, .r11, .r9, .rax, .rdi] := by
+    have h2 : r ∉ [Reg.rsi, .rcx, .rax, .r8] := by
       rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h3 : r ∉ [Reg.rbx, .r12, .rax] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
     have h4 : r ∉ [Reg.rcx, .rdx, .r10, .r8, .rax, .r9] := by rcases hr with rfl | rfl | rfl | rfl <;> decide
-    rw [k6.gpr h1, cs5 r hcs, k0.gpr (by rcases hr with rfl | rfl | rfl | rfl <;> decide), O.keep.gpr h2, k3.gpr h3, P.keep.gpr h4, cs1 r hcs]
+    rw [k6.gpr h1, cs5 r hcs, k0.gpr (by rcases hr with rfl | rfl | rfl | rfl <;> decide), k4.gpr h2, k3.gpr h3, P.keep.gpr h4, cs1 r hcs]
   · intro o ho ⟨h1, h2⟩
     have hno : ¬ (oDig ≤ o ∧ o < oDig + H.P.N) := by omega
     simp only [hno, ite_false]
-    simp only [lenAt, lenV, v80, inR_cons, inR_nil, or_false]
+    simp only [cpV, lenV, v80, inR_cons, inR_nil, or_false]
     rw [ifn (by omega), ifn (by omega), ifn (by rw [hH.md.lenBytes_length]; omega), ifn (by omega), ifn (by omega)]
   · intro k hk h29 h30
     simp [upd, h29, h30]
@@ -115,9 +111,8 @@ theorem mgfDirectHash_gen {t : State} {F S : Addr} (L : Lay t F S) {V : Nat → 
       Nat.zero_add, Nat.mul_one, Nat.div_self hB0, MdStream.Md.compressList_one]
     refine congrArg (hH.md.compress hH.iv) (hH.md.parse_congr fun j hj => ?_)
     simp only [Nat.mul_zero, Nat.add_zero]
-    rw [RsaPss.pad_getD hH.md msg hB0 (by omega) (by simpa only [fbmsg, Nat.zero_add, Nat.mul_one] using hj), hO0]
-    refine y_padded msg _ fbmsg.symm (by omega) (hH.md.lenBytes_length _) _ (fun j' hj' => ?_) j (by
-      simpa only [fbmsg, Nat.zero_add, Nat.mul_one] using hj)
+    rw [RsaPss.pad_getD hH.md msg hB0 (by omega) (by simpa only [fbmsg, Nat.zero_add, Nat.mul_one] using hj)]
+    refine y_copied msg _ hone (hH.md.lenBytes_length _) _ (fun j' hj' => ?_) j hj
     simp only [lenV, v80, inR_cons, inR_nil, or_false, hH.md.lenBytes_length]
     rw [ifn (by omega), ifp (by omega), ifn (by omega), Nat.add_sub_cancel_left, hY j' (by omega)]
 

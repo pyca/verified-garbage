@@ -69,22 +69,68 @@ theorem ctHashWith_safe {padding : Prog isa} (hp : padding.allInstrs safeI = tru
 include hH K in
 theorem ctHash_safe : (ctHash H).allInstrs safeI = true := ctHashWith_safe hH K rfl
 
+theorem copyWords64_safe (src dst : Reg) (so doff n : Nat) :
+    (copyWords64 src dst so doff n).all safeI = true := by
+  simp only [copyWords64, List.all_flatMap]
+  apply List.all_eq_true.mpr
+  intro j _
+  rfl
+
+theorem directLen_safe : (directLen H).allInstrs safeI = true := by
+  unfold directLen
+  split
+  · simp only [Code.allInstrs, rec_all, copyWords64_safe, Bool.and_true]
+    rfl
+  · rfl
+
+theorem directLen_xd : (directLen H).x86_64Depth = 0 := by
+  unfold directLen
+  split <;> rfl
+
 include hH K in
 theorem mgfHash_safe : (mgfHash H).allInstrs safeI = true := by
   unfold mgfHash
   split
   · have hl : H.P.len.all safeI = true := hH.taints.lenSafe
     have ho : H.P.out.all safeI = true := hH.taints.outSafe
-    simp only [mgfDirectHash, seqs, ctInit, lenLoop, fixedPad80, Code.allInstrs,
+    simp only [mgfDirectHash, seqs, ctInit, directLen_safe (H := H), fixedPad80, Code.allInstrs,
       comp_safe K, init_safe K, rec_all, lenField, digestAt, List.all_append,
       hl, ho, Bool.and_true]
     rfl
   · exact ctHashWith_safe hH K rfl
 
+theorem copyH_safe : (copyH H).allInstrs safeI = true := by
+  unfold copyH
+  split
+  · simp only [Code.allInstrs, rec_all, copyWords64_safe, Bool.and_true]
+    rfl
+  · rfl
+
+theorem copyH_xd : (copyH H).x86_64Depth = 0 := by
+  unfold copyH
+  split <;> rfl
+
+theorem xorWords64_safe (n : Nat) : (xorWords64 n).all safeI = true := by
+  simp only [xorWords64, List.all_flatMap]
+  apply List.all_eq_true.mpr
+  intro j _
+  rfl
+
+theorem xorOut_safe : (xorOut H).allInstrs safeI = true := by
+  unfold xorOut
+  split
+  · simp only [Code.allInstrs, rec_all, xorWords64_safe, Bool.and_true]
+    rfl
+  · rfl
+
+theorem xorOut_xd : (xorOut H).x86_64Depth = 0 := by
+  unfold xorOut
+  split <;> rfl
+
 include hH K in
 theorem mgfXor_safe : (mgfXor H).allInstrs safeI = true := by
-  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, Code.allInstrs, mgfHash_safe hH K, rec_all, List.all_append,
-    byteLoop, step, Bool.and_true, Bool.true_and]
+  simp only [mgfXor, seqs, clearBlock, copyH_safe (H := H), xorOut_safe (H := H), Code.allInstrs, mgfHash_safe hH K, rec_all, List.all_append,
+    Bool.and_true, Bool.true_and]
   rfl
 
 include K in
@@ -100,14 +146,14 @@ include K in
 theorem mgfHash_xd : (mgfHash H).x86_64Depth = 8 := by
   unfold mgfHash
   split
-  · simp only [mgfDirectHash, seqs, ctInit, lenLoop, fixedPad80,
+  · simp only [mgfDirectHash, seqs, ctInit, directLen_xd (H := H), fixedPad80,
       Code.x86_64Depth, K.cXD, K.iXD]
     rfl
   · exact ctHashWith_xd K rfl
 
 include K in
 theorem mgfXor_xd : (mgfXor H).x86_64Depth = 8 := by
-  simp only [mgfXor, seqs, clearBlock, copyH, xorOut, byteLoop, Code.x86_64Depth, mgfHash_xd K]
+  simp only [mgfXor, seqs, clearBlock, copyH_xd, xorOut_xd (H := H), Code.x86_64Depth, mgfHash_xd K]
   rfl
 
 include hH K in
