@@ -312,6 +312,20 @@ class Selection(unittest.TestCase):
         self.files['bench/benches/primitives/x448.rs'] = ''
         self.assertEqual(len(self.rows(['bench/benches/primitives/kem.rs'])), self.full_matrix())
 
+    def test_manual_runs_select_architectures_and_configurations(self):
+        rows = planner.manual()
+        self.assertEqual(len(rows), self.full_matrix())
+        self.assertTrue(all(r['modules'] == '' for r in rows))
+        self.assertEqual(self.configurations(planner.manual('aarch64'), 'aarch64'),
+                         ['', *planner.CPU_FEATURES['aarch64']])
+        # `-` is the configuration without a restriction, and others need
+        # not be in `CPU_FEATURES`; the platforms keep their order.
+        rows = planner.manual('arm x86_64', '- avx2,avx')
+        self.assertEqual([(r['arch'], r['cpu-features']) for r in rows],
+                         [('x86_64', ''), ('x86_64', 'avx2,avx'), ('arm', ''), ('arm', 'avx2,avx')])
+        with self.assertRaisesRegex(ValueError, 'unknown architecture'):
+            planner.manual('riscv64')
+
     def test_shards_follow_the_number_of_benchmarks(self):
         shards = lambda n: [r['shard'] for r in planner.platforms('arm', benchmarks=n)]
         with mock.patch.object(planner, 'BENCHMARKS_PER_JOB', None):
