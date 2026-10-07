@@ -26,9 +26,13 @@ def artifacts : List Artifact := [
       entry of a table read and masked), for the clamped scalar `k`, then `u = (Z + Y) / (Z - Y)` \
       with one inversion: RFC 7748 §4.1's birational map, which takes edwards25519's base point to \
       `u = 9` and its group law to the ladder's (`VG.Proof.X25519.Edwards.x25519_basePoint`). \
+      The tables are the static `VG_ED25519_COMB`, whose address the function obtains with a \
+      position-independent four-byte CALL frame and keeps in `scratch`. \
       Callee-saved registers are saved in the first 16 bytes of `scratch`."])
+    consts := Impl.Ed25519.X86.combConsts
     code := Impl.X25519.X86.Base.x25519Base
-    contract := Spec.X25519.x25519BaseContract X86.abi
+    contract := Spec.X25519.x25519BaseContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 4
+    stack := 4
     verified := Proof.X25519.X86.Base.x25519Base_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

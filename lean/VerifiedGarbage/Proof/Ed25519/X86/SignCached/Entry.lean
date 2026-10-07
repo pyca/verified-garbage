@@ -4,10 +4,11 @@ import VerifiedGarbage.Spec.Ed25519.CachedSign
 
 namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86
+open VG.Impl.Ed25519.X86 (combSym)
 
 def signRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 32⟩, ⟨(arg s 2).setWidth 64, 32⟩,
-    ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩, ⟨argAddr s 0, 24⟩]
+    ⟨(arg s 3).setWidth 64, (arg s 4).toNat⟩, ⟨argAddr s 0, 24⟩, TBL ((s.syms combSym).setWidth 64)]
 def signWr (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 5).setWidth 64, 8192⟩]
 
@@ -32,15 +33,18 @@ def signCachedLocal : Contract isa where
       (arg s 5).toNat + 8192 ≤ 2 ^ 32 ∧
       280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       Spec.Ed25519.bytesAt s.mem ((arg s 2).setWidth 64) 32 =
-        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
+        Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) ∧
+      CombHeld s [out, scr, stk, ret]
   post s t := Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 64 = Spec.Ed25519.sign
     (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
     (Spec.Ed25519.bytesAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat)
   pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧
-    arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5
+    arg s 2 = arg t 2 ∧ arg s 3 = arg t 3 ∧ arg s 4 = arg t 4 ∧ arg s 5 = arg t 5 ∧
+    s.syms combSym = t.syms combSym
 
 def lay (s : State) : Lay :=
-  ⟨arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, s.gpr .esp - BitVec.ofNat 32 256⟩
+  ⟨arg s 0, arg s 1, arg s 2, arg s 3, arg s 4, arg s 5, s.gpr .esp - BitVec.ofNat 32 256,
+    s.syms combSym⟩
 
 theorem entry_bounds {s : State} (h : signCachedLocal.pre s) :
     280 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 := by
@@ -50,8 +54,14 @@ theorem entry_bounds {s : State} (h : signCachedLocal.pre s) :
 theorem entry_key {s : State} (h : signCachedLocal.pre s) :
     Spec.Ed25519.bytesAt s.mem ((lay s).pk.setWidth 64) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((lay s).seed.setWidth 64) 32) := by
-  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk⟩ := h
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, hk, _⟩ := h
   exact hk
+
+theorem entry_held {s : State} (h : signCachedLocal.pre s) :
+    CombHeld s [⟨(arg s 0).setWidth 64, 64⟩, ⟨(arg s 5).setWidth 64, 8192⟩,
+      ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 280, 280⟩, ⟨(s.gpr .esp).setWidth 64, 4⟩] := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, ht⟩ := h
+  exact ht
 
 theorem lay_base {s : State} (h : signCachedLocal.pre s) :
     (lay s).E.setWidth 64 = (s.gpr .esp).setWidth 64 - BitVec.ofNat 64 256 :=
@@ -79,6 +89,7 @@ theorem lay_stack {s : State} (h : signCachedLocal.pre s) :
   rfl
 
 theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
+  have held := entry_held h
   have h₀ := h
   obtain ⟨_, _, os, op, om, oa, oc, ko, ro, sc, pc, mc, ac, rs, rp, rm, rc,
     ks, kp, km, kc, no, ns, np, nm, nc, nb, na, _⟩ := h₀
@@ -86,30 +97,32 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
     change (s.gpr .esp - BitVec.ofNat 32 256).toNat + 284 ≤ _
     rw [sub_toNat (by omega)]
     omega
-  refine ⟨?_, top, ?_, oc, ?_, ?_, no, ?_, ?_, ?_, ?_, ?_, np, nm, ns, nc⟩
+  refine ⟨?_, top, ?_, oc, ?_, ?_, no, ?_, ?_, ?_, ?_, ?_, np, nm, ns, nc, held.2.1⟩
   · change 24 ≤ (s.gpr .esp - BitVec.ofNat 32 256).toNat
     rw [sub_toNat (by omega)]
     omega
   · intro r hr
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact os
     · exact op
     · exact om
     · rw [lay_args h]; exact oa
+    · exact (held.2.2 _ List.mem_cons_self).symm
   · rw [lay_stack h]; exact ko
   · rw [lay_ret h]; exact ro
   · intro r hr
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact sc
     · exact pc
     · exact mc
     · rw [lay_args h]; exact ac
+    · exact held.2.2 _ (List.mem_cons_of_mem _ List.mem_cons_self)
   · intro r hr
     rw [lay_stack h]
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact ks
     · exact kp
     · exact km
@@ -120,10 +133,11 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
         rw [show (260#64) = 256#64 + 4#64 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
       rw [e]
       exact Offset.disjoint_below_above _ (by decide)
+    · exact (held.2.2 _ (by simp)).symm
   · intro r hr
     rw [lay_ret h]
     simp only [Lay.inputs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl | rfl | rfl
     · exact rs
     · exact rp
     · exact rm
@@ -134,11 +148,12 @@ theorem lay_ok {s : State} (h : signCachedLocal.pre s) : (lay s).Ok := by
         rw [show (260#64) = 256#64 + 4#64 from rfl, ← BitVec.add_assoc, BitVec.sub_add_cancel]
       rw [e]
       exact (Offset.disjoint_base _ (by decide) (by decide)).symm
+    · exact (held.2.2 _ (by simp)).symm
   · rw [lay_stack h]; exact kc
   · rw [lay_ret h]; exact rc
 
 theorem lay_arguments {s : State} (h : signCachedLocal.pre s) : Arguments (lay s) s.mem := by
-  intro j hj
+  refine ⟨fun j hj => ?_, (entry_held h).1⟩
   have hb := lay_ok h
   have e : (lay s).E.setWidth 64 + BitVec.ofNat 64 (260 + 4 * j) = argAddr s j := by
     rw [← addr_eq (by have := hb.top; omega)]

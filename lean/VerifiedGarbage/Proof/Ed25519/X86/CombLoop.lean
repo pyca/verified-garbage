@@ -40,6 +40,13 @@ theorem MulKeep.of_sel {x : BitVec 32} {s t : State} (hc : Ctx x s) (k : Keep s 
 theorem MulKeep.of_keepMem {x : BitVec 32} {s t : State} (k : Keep s t) (h : t.mem = s.mem) :
     MulKeep x s t := ⟨k.edi, k.esp, k.rd, k.wr, by rw [h]; exact Frame.refl _ _⟩
 
+/-- The tables survive the comb's writes, all to the workspace. -/
+theorem TblAt.mulkeep {x P : BitVec 32} {s t : State} (h : TblAt x P s) (hc : Ctx x s)
+    (k : MulKeep x s t) : TblAt x P t :=
+  h.of_frame k.rd k.frame fun r hr => by
+    rw [List.mem_singleton.mp hr, scR_eq]
+    exact sub_sub hc.fit (by decide) (by decide) (by decide)
+
 /-! ## The mixed additions -/
 
 /-- What `addOddOps` and `addEvenOps` compute, from the accumulator's coordinates and the cached
@@ -214,11 +221,13 @@ theorem combNext_ok {s : State} {j : Nat} (hj : j < 32) (h : s.gpr .esi = BitVec
   rw [zt, e, show (32 : BitVec 32) = BitVec.ofNat 32 32 from rfl, Wp.sub_beq (by omega) (by omega)]
   rfl
 
-/-- The loop's invariant, after `j` steps. -/
-structure CombInv (x : BitVec 32) (s₀ : State) (S j : Nat) (s : State) : Prop where
+/-- The loop's invariant, after `j` steps, with the tables' address `P`. -/
+structure CombInv (x : BitVec 32) (s₀ : State) (S : Nat) (P : BitVec 32) (j : Nat) (s : State) :
+    Prop where
   bound : j ≤ 32
   keep : MulKeep x s₀ s
   counter : s.gpr .esi = BitVec.ofNat 32 j
+  ptr : wd s.mem x combTbl = P
   zero : env s.mem x 21 = 0
   d : env s.mem x 16 = Spec.Ed25519.d
   odd : Rep (point (env s.mem x) 0 1 2 3) ((combGVal + oddSumZ S j) • baseAff)
@@ -232,11 +241,11 @@ private theorem dis_even : ∀ ab ∈ [((13 : Slot), (14 : Slot)), (15, 8)], ab.
   intro ab hab; simp only [List.mem_cons, List.not_mem_nil, or_false] at hab
   rcases hab with rfl | rfl <;> decide
 
-theorem combStep_ok {x : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j : Nat}
+theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j : Nat}
     (hb : ∀ q < 256, s₀.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (h : CombInv x s₀ S j s) (hj : j < 32) :
+    (ht₀ : TblAt x P s₀) (h : CombInv x s₀ S P j s) (hj : j < 32) :
     WP isa combStep s fun t => isa.eval .ne t = some (!decide (j + 1 = 32)) ∧
-      CombInv x s₀ S (j + 1) t := by
+      CombInv x s₀ S P (j + 1) t := by
   have hc := h.keep.ctx hc₀
   have hfit := hc.fit
   have bits : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) :=
@@ -248,10 +257,12 @@ theorem combStep_ok {x : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j :
   refine WP.seq (WP.mono (combDigits_ok hc hj h.counter bits) fun a ⟨ka, ma⟩ => ?_)
   have ca := ka.keep.ctx hc
   have ea : env a.mem x = env s.mem x := digit_env ka.frame hfit
+  have pa : wd a.mem x combTbl = P :=
+    (wd_frame1 ka.frame hfit (by decide) (by decide) (Or.inr (by decide))).trans h.ptr
+  have ta : TblAt x P a := ht₀.mulkeep hc₀ (h.keep.trans (MulKeep.of_digit hc ka))
   -- Both entries.
-  refine WP.seq (WP.mono (combSelectFrom_ok (List.range 32) (fun k hk => List.mem_range.mp hk) ca
-    (mag_lt no) (mag_lt ne) ⟨ma.oddMask, ma.evenMask⟩ (List.mem_range.mpr hj) hj
-    (ka.keep.esi.trans h.counter)) fun b ⟨bo, be, kb, fb⟩ => ?_)
+  refine WP.seq (WP.mono (combSelect_ok ca (mag_lt no) (mag_lt ne) ⟨ma.oddMask, ma.evenMask⟩ hj
+    (ka.keep.esi.trans h.counter) pa ta) fun b ⟨bo, be, kb, fb⟩ => ?_)
   have cb := kb.ctx ca
   have eb : ∀ i : Slot, (i.val < 4 ∨ (7 ≤ i.val ∧ i.val < 13) ∨ 16 ≤ i.val) →
       env b.mem x i = env s.mem x i := fun i hi => by rw [sel_env fb hfit i hi, ea]
@@ -323,7 +334,14 @@ theorem combStep_ok {x : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j :
     simp only [point, ef 17 (by decide), ef 18 (by decide), ef 19 (by decide), ef 20 (by decide),
       ed 17 (by decide), ed 18 (by decide), ed 19 (by decide), ed 20 (by decide),
       eb 17 (by decide), eb 18 (by decide), eb 19 (by decide), eb 20 (by decide)]
-  refine ⟨by omega, h.keep.trans kst, t19, ?_, ?_, ?_, ?_⟩
+  have pt : wd t.mem x combTbl = P := by
+    rw [tmem, wd_frame1 kg.frame hfit (by decide) (by decide) (Or.inr (by decide)),
+      wd_frame1 kf.frame hfit (by decide) (by decide) (Or.inr (by decide)),
+      wd_frame1 kd.frame hfit (by decide) (by decide) (Or.inr (by decide)),
+      wd_frame1 kc.frame hfit (by decide) (by decide) (Or.inr (by decide)),
+      sb _ (by decide) (by decide)]
+    exact pa
+  refine ⟨by omega, h.keep.trans kst, t19, pt, ?_, ?_, ?_, ?_⟩
   · rw [tmem, gh 21 (Or.inr (Or.inr (by decide))), ef 21 (by decide), ed 21 (by decide)]
     exact b21
   · rw [tmem, gh 16 (Or.inr (Or.inl (by decide))), ef 16 (by decide), ed 16 (by decide),
@@ -339,7 +357,8 @@ theorem combStep_ok {x : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j :
 /-! ## The start and the end -/
 
 theorem combInit_ok {s : State} {x : BitVec 32} (hc : Ctx x s) :
-    WP isa (.block combInit) s fun t => MulKeep x s t ∧ env t.mem x 21 = 0 ∧
+    WP isa (.block combInit) s fun t => MulKeep x s t ∧
+      wd t.mem x combTbl = wd s.mem x combTbl ∧ env t.mem x 21 = 0 ∧
       env t.mem x 16 = env s.mem x 16 ∧
       point (env t.mem x) 0 1 2 3 = combG ∧ point (env t.mem x) 17 18 19 20 = combG ∧
       t.gpr .esi = BitVec.ofNat 32 0 := by
@@ -347,7 +366,9 @@ theorem combInit_ok {s : State} {x : BitVec 32} (hc : Ctx x s) :
   refine WP.mono (fieldCode_ok _ hc) fun a ⟨ka, va⟩ => ?_
   refine Wp.wp_movi fun t ht => WP.block_nil ?_
   refine ⟨(MulKeep.of_field hc ka).trans ⟨ht.other .edi (by decide), ht.other .esp (by decide), ht.rd,
-      ht.wr, by rw [ht.mem]; exact Frame.refl _ _⟩, ?_, ?_, ?_, ?_, ht.gpr⟩ <;> rw [ht.mem, va] <;> rfl
+      ht.wr, by rw [ht.mem]; exact Frame.refl _ _⟩,
+    by rw [ht.mem]; exact wd_frame1 ka.frame hc.fit (by decide) (by decide) (Or.inr (by decide)),
+    ?_, ?_, ?_, ?_, ht.gpr⟩ <;> rw [ht.mem, va] <;> rfl
 
 theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
     (hd : env s.mem x 16 = Spec.Ed25519.d)
@@ -377,22 +398,22 @@ theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
   rw [show (2 ^ 4 : Nat) = 16 from rfl] at h4
   exact pointAdd_rep h4 hb
 
-theorem combMultiply_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {S : Nat} (hS : S < 2 ^ 256)
+theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (hS : S < 2 ^ 256)
     (hb : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2))
-    (hd : env s.mem x 16 = Spec.Ed25519.d) :
+    (hd : env s.mem x 16 = Spec.Ed25519.d) (hp : wd s.mem x combTbl = P) (ht : TblAt x P s) :
     WP isa combMultiply s fun t =>
       Rep (point (env t.mem x) 0 1 2 3) (S • baseAff) ∧ MulKeep x s t := by
   rw [combMultiply]
-  refine WP.seq (WP.mono (combInit_ok hc) fun b ⟨kb, bz, bd, bp, bq, b19⟩ => ?_)
+  refine WP.seq (WP.mono (combInit_ok hc) fun b ⟨kb, bt, bz, bd, bp, bq, b19⟩ => ?_)
   have hg : Rep combG (((combGVal : ℤ) + 0) • baseAff) := by
     rw [add_zero, natCast_zsmul]; exact combG_ok
-  have init : CombInv x s S 0 b :=
-    ⟨by decide, kb, b19, bz, bd.trans hd, by rw [bp]; exact hg, by rw [bq]; exact hg⟩
-  have hl : WP isa (.loop combStep .ne) b fun t => CombInv x s S 32 t := by
-    apply WP.loop (fun n t => CombInv x s S (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
-    · intro n t ⟨ht, hn0, hn⟩
+  have init : CombInv x s S P 0 b :=
+    ⟨by decide, kb, b19, bt.trans hp, bz, bd.trans hd, by rw [bp]; exact hg, by rw [bq]; exact hg⟩
+  have hl : WP isa (.loop combStep .ne) b fun t => CombInv x s S P 32 t := by
+    apply WP.loop (fun n t => CombInv x s S P (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
+    · intro n t ⟨hi, hn0, hn⟩
       obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-      refine WP.mono (combStep_ok hc hb ht (by omega)) fun u ⟨u8, hu⟩ => ?_
+      refine WP.mono (combStep_ok hc hb ht hi (by omega)) fun u ⟨u8, hu⟩ => ?_
       by_cases hk : k = 0
       · subst hk
         exact Or.inl ⟨by rw [u8]; rfl, hu⟩
@@ -400,9 +421,9 @@ theorem combMultiply_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {S : Nat} (hS
           decide_eq_false (show 32 - k ≠ 32 by omega)]; rfl, k, by omega, ?_, by omega, by omega⟩
         rw [show 32 - k = 32 - (k + 1) + 1 by omega]; exact hu
     · exact ⟨init, by decide, by decide⟩
-  refine WP.seq (WP.mono hl fun t ht => ?_)
-  refine WP.mono (combFinish_ok (ht.keep.ctx hc) ht.d ht.odd ht.even) fun u ⟨hu, ku⟩ =>
-    ⟨?_, ht.keep.trans ku⟩
+  refine WP.seq (WP.mono hl fun t hi => ?_)
+  refine WP.mono (combFinish_ok (hi.keep.ctx hc) hi.d hi.odd hi.even) fun u ⟨hu, ku⟩ =>
+    ⟨?_, hi.keep.trans ku⟩
   rw [comb_total hS, natCast_zsmul] at hu
   exact hu
 

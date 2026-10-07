@@ -4,29 +4,45 @@ import VerifiedGarbage.Proof.Ed25519.X86.PointEncodeSign
 import VerifiedGarbage.Impl.Ed25519.X86.ScalarBase
 import VerifiedGarbage.Proof.Ed25519.X86.InputBits
 import VerifiedGarbage.Proof.Ed25519.X86.PointMul
+import VerifiedGarbage.Proof.Ed25519.X86.CombTbl
+import VerifiedGarbage.Proof.Framework.X86.Call
 
 /-! Merged from `Proof.Ed25519.X86.ScalarBaseContract`. -/
 section
 namespace VG.Proof.Ed25519.X86
 open VG VG.X86 VG.Impl.X25519.X86
+open VG.Impl.Ed25519.X86 (combSym)
 
+/-- The regions and arguments of `vg_ed25519_scalar_base` (and `vg_x25519_base`): the tables
+are readable, after the arguments. -/
+def BaseRegions (s : State) : Prop :=
+  let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
+  let input : Region := ⟨(arg s 1).setWidth 64, 32⟩
+  let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
+  let args : Region := ⟨argAddr s 0, 12⟩
+  let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+  s.rd = [input, args, TBL ((s.syms combSym).setWidth 64)] ∧ s.wr = [out, scratch] ∧
+    out.Disjoint scratch ∧ input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+    ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
+    (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
+    (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+
+/-- The contract the proof is written against: the regions, the four bytes below `esp` (the
+static's address's frame) apart from the buffers, and the tables. -/
 def scalarBaseLocal : Contract isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 32⟩
     let input : Region := ⟨(arg s 1).setWidth 64, 32⟩
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
-    let args : Region := ⟨argAddr s 0, 12⟩
-    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-    s.rd = [input, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
-      input.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
-      ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 32 ≤ 2 ^ 32 ∧
-      (arg s 1).toNat + 32 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32
+    let stk : Region := below (s.gpr .esp) 4
+    BaseRegions s ∧ 4 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧ stk.Disjoint input ∧
+      stk.Disjoint scratch ∧ CombHeld s [out, scratch, stk]
   post s t := Spec.Ed25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
     Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
-  pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2
+  pub s t := s.gpr .esp = t.gpr .esp ∧ arg s 0 = arg t 0 ∧ arg s 1 = arg t 1 ∧ arg s 2 = arg t 2 ∧
+    s.syms combSym = t.syms combSym
 
-theorem scalarBase_pre {s : State} (h : scalarBaseLocal.pre s) :
+theorem scalarBase_pre {s : State} (h : BaseRegions s) :
     ScratchPre s 2 3 ∧ InputPre s 2 1 8 ∧ OutputPre s 2 := by
   obtain ⟨rd, wr, os, ins, _, ars, ro, rs, ofit, ifit, sfit, spfit⟩ := h
   refine ⟨⟨by decide, ?_, sfit, ?_, by omega_using [spfit], ars, rs⟩,

@@ -8,10 +8,14 @@ def artifacts : List Artifact := [
     target := X86.target
     doc := Spec.Ed25519.scalarBaseApi.doc (notes := ["Multiplies with a comb of precomputed multiples of \
       the base point (64 signed radix-16 digits, 32 tables of 8 points, every entry of a table read \
-      and masked), then writes a canonical compressed point. \
+      and masked), then writes a canonical compressed point. The tables are the static \
+      `VG_ED25519_COMB`, whose address the function obtains with a position-independent four-byte \
+      CALL frame and keeps in `scratch`. \
       Callee-saved registers are saved in the first 16 bytes of `scratch`."])
+    consts := Impl.Ed25519.X86.combConsts
     code := Impl.Ed25519.X86.scalarBase
-    contract := Spec.Ed25519.scalarBaseContract X86.abi
+    contract := Spec.Ed25519.scalarBaseContract (X86.abi.withConsts Impl.Ed25519.X86.combConsts) 4
+    stack := 4
     verified := Proof.Ed25519.X86.scalarBase_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 end VG.Artifacts.Ed25519ScalarBase.X86

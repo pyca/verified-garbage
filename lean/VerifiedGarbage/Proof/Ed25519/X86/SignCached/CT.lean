@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Prefix
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.X86.SignCached.Entry
+import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-! Merged from `Proof.Ed25519.X86.SignCached.CTCommon`. -/
 section
@@ -72,6 +73,19 @@ theorem call_ct (hL : L.Ok) {P : State → Prop} {k : Contract isa} {c : Prog is
     exact WP.mono ((ready hc hs).wp hc correct sp stack hL.below) fun _ hu => ⟨hu, trivial⟩
   · intro t hc hs
     exact WP.mono ((ready hc hs).wp hc correct sp stack hL.below) fun _ hu => ⟨hu, trivial⟩
+
+/-- The states name the comb's tables at `L.T`. -/
+abbrev Named (L : Lay) (t : State) : Prop := t.syms Impl.Ed25519.X86.combSym = L.T
+
+/-- Every run keeps the addresses of statics. -/
+theorem two_syms {P Q : State → Prop} {c : Prog isa}
+    (h : RelCT isa (Two L g₁ g₂ m₁ m₂ P) c (Two L g₁ g₂ m₁ m₂ Q)) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => P t ∧ Named L t) c
+      (Two L g₁ g₂ m₁ m₂ fun t => Q t ∧ Named L t) := by
+  intro a b ta tb a' b' ⟨ha, hb, ⟨pa, ya⟩, ⟨pb, yb⟩⟩ ea eb
+  obtain ⟨e, ha', hb', qa, qb⟩ := h _ _ _ _ _ _ ⟨ha, hb, pa, pb⟩ ea eb
+  exact ⟨e, ha', hb', ⟨qa, (congrFun (Exec.syms ea) _).trans ya⟩,
+    ⟨qb, (congrFun (Exec.syms eb) _).trans yb⟩⟩
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -442,15 +456,18 @@ structure NonceReady (L : Lay) (m : Mem) (t : State) : Prop where
   nonce : Spec.Ed25519.bytesAt t.mem ((fp L 96).setWidth 64) 32 = nonce L m
   point : Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 32 = Spec.Ed25519.scalarBase (SignCached.nonce L m)
 
-theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s) :
+theorem nonce_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀) (hs : SecretReady L m₀ s)
+    (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
     WP isa nonceCode s fun t => Ctx L g m₀ t ∧ NonceReady L m₀ t := by
-  refine WP.seq (WP.mono (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hashNonce_ok hc hL ha) fun u ⟨hu, fu, du⟩ yu => ?_)
   rw [hs.prefixBytes] at du
   have su := (hash_field_bytes hL fu (d := 32) (by decide) (by decide)).trans hs.scalar
-  refine WP.seq (WP.mono (reduce_step hu hL ha 96 (by decide) (by decide)) fun v ⟨hv, fv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (reduce_step hu hL ha 96 (by decide) (by decide))
+    fun v ⟨hv, fv, nv⟩ yv => ?_)
   rw [du] at nv
   have sv := (reduce_field_bytes hL fv (d := 32) (by decide) (by decide) (by decide) (by decide)).trans su
-  refine WP.mono (base_step hv hL ha) fun t ⟨ht, ft, pt⟩ => ⟨ht, ?_, ?_, ?_⟩
+  refine WP.mono (base_step hv hL ha (by rw [yv, yu]; exact hy)) fun t ⟨ht, ft, pt⟩ =>
+    ⟨ht, ?_, ?_, ?_⟩
   · exact (base_field_bytes hL ft (d := 32) (by decide) (by decide)).trans sv
   · exact (base_field_bytes hL ft (d := 96) (by decide) (by decide)).trans nv
   · rw [nv] at pt
@@ -493,13 +510,14 @@ theorem wipe_ok (hc : Ctx L g m₀ s) (hL : L.Ok) :
 
 theorem body_ok (hc : Ctx L g m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
     (hk : Spec.Ed25519.bytesAt m₀ (L.pk.setWidth 64) 32 =
-      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)) :
+      Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32))
+    (hy : s.syms Impl.Ed25519.X86.combSym = L.T) :
     WP isa body s fun t => Ctx L g m₀ t ∧
       Spec.Ed25519.bytesAt t.mem (L.out.setWidth 64) 64 = Spec.Ed25519.sign
         (Spec.Ed25519.bytesAt m₀ (L.seed.setWidth 64) 32)
         (Spec.Ed25519.bytesAt m₀ (L.msg.setWidth 64) L.len.toNat) := by
-  refine WP.seq (WP.mono (secret_ok hc hL ha) fun u ⟨hu, su⟩ => ?_)
-  refine WP.seq (WP.mono (nonce_ok hu hL ha su) fun v ⟨hv, nv⟩ => ?_)
+  refine WP.seq (WP.mono_syms (secret_ok hc hL ha) fun u ⟨hu, su⟩ yu => ?_)
+  refine WP.seq (WP.mono (nonce_ok hu hL ha su (by rw [yu]; exact hy)) fun v ⟨hv, nv⟩ => ?_)
   refine WP.seq (WP.mono (challenge_ok hv hL ha nv hk) fun w ⟨hw, sw⟩ => ?_)
   exact WP.mono (wipe_ok hw hL) fun t ⟨ht, same⟩ => ⟨ht, same.trans sw⟩
 
@@ -527,18 +545,36 @@ theorem reduce_call_ct (hL : L.Ok) (d : Nat) (hd : 24 ≤ d) (hd' : d + 32 ≤ 2
     exact ⟨congrArg (· - 4) (two_esp h), call_args_eq hL (by simp) h (by decide : 0 < 3),
       call_args_eq hL (by simp) h (by decide : 1 < 3), call_args_eq hL (by simp) h (by decide : 2 < 3)⟩
 
-theorem base_call_ct (hL : L.Ok) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ (OutArgs L [.caller 0 0, .frame 96, .caller 5 0]))
+theorem base_call_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => OutArgs L [.caller 0 0, .frame 96, .caller 5 0] t ∧ Named L t)
       (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase)
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
-  apply call_ct hL scalarBase_ok scalarBase_ct base_nosp (by rw [base_stack]; decide)
-  · intro g m t hc hs
-    exact base_ready hc hL ⟨((hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)),
+      (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
+  have args : ∀ {t : State}, OutArgs L [.caller 0 0, .frame 96, .caller 5 0] t → BaseArgs L t :=
+    fun hs => ⟨((hs.slot hL (j := 0) (by decide) (by decide)).trans (BitVec.add_zero _)),
       hs.slot hL (j := 1) (by decide) (by decide),
       ((hs.slot hL (j := 2) (by decide) (by decide)).trans (BitVec.add_zero _))⟩
-  · intro a b ar aw br bw h
-    exact ⟨congrArg (· - 4) (two_esp h), call_args_eq hL (by decide) h (by decide : 0 < 3),
-      call_args_eq hL (by decide) h (by decide : 1 < 3), call_args_eq hL (by decide) h (by decide : 2 < 3)⟩
+  have hct : RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => OutArgs L [.caller 0 0, .frame 96, .caller 5 0] t ∧
+      Named L t) (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) fun _ _ => True := by
+    refine Whole.callEx scalarBase_ok scalarBase_ct fun a b h => ?_
+    let ra := base_ready h.1 hL (args h.2.2.1.1) h.2.2.1.2 (h.1.tbl hL ha)
+    let rb := base_ready h.2.1 hL (args h.2.2.2.1) h.2.2.2.2 (h.2.1.tbl hL hb)
+    obtain ⟨ca, wa⟩ := ra.covers_state h.1
+    obtain ⟨cb, wb⟩ := rb.covers_state h.2.1
+    have h' : Two L g₁ g₂ m₁ m₂ (OutArgs L [.caller 0 0, .frame 96, .caller 5 0]) a b :=
+      ⟨h.1, h.2.1, h.2.2.1.1, h.2.2.2.1⟩
+    refine ⟨ra.reads, ra.writes, rb.reads, rb.writes, ra.pre, rb.pre, ⟨congrArg (· - 4) (two_esp h),
+      call_args_eq hL (by decide) h' (by decide : 0 < 3), call_args_eq hL (by decide) h' (by decide : 1 < 3),
+      call_args_eq hL (by decide) h' (by decide : 2 < 3), ?_⟩, ca, wa, cb, wb, two_esp h⟩
+    change a.syms _ = b.syms _
+    rw [h.2.2.1.2, h.2.2.2.2]
+  have fw : ∀ {g : Reg → BitVec 32} {m : Mem}, Arguments L m → ∀ u, Ctx L g m u →
+      OutArgs L [.caller 0 0, .frame 96, .caller 5 0] u ∧ Named L u →
+      WP isa (.call "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) u
+        (fun v => Ctx L g m v ∧ True ∧ Named L v) := fun hm u hc hs =>
+    WP.mono_syms ((base_ready hc hL (args hs.1) hs.2 (hc.tbl hL hm)).wp hc scalarBase_ok base_nosp
+      (by rw [base_stack]; decide) hL.below) fun _ hv yv => ⟨hv, trivial, by
+        rw [Named, yv]; exact hs.2⟩
+  exact two_wp hct (fw ha) (fw hb)
 
 theorem mul_call_ct (hL : L.Ok) :
     RelCT isa (Two L g₁ g₂ m₁ m₂ (OutArgs L [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]))
@@ -742,21 +778,21 @@ open VG.Impl.Ed25519.X86.SignCached
 variable {L : Lay} {g₁ g₂ : Reg → BitVec 32} {m₁ m₂ : Mem}
 
 theorem body_ct (hL : L.Ok) (ha : Arguments L m₁) (hb : Arguments L m₂) :
-    RelCT isa (Two L g₁ g₂ m₁ m₂ fun _ => True) body
-      (Two L g₁ g₂ m₁ m₂ fun _ => True) := by
+    RelCT isa (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) body
+      (Two L g₁ g₂ m₁ m₂ fun t => True ∧ Named L t) := by
   have r96 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 96, .frame 192, .caller 5 0]
     (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
     (reduce_call_ct hL 96 (by decide) (by decide))
   have r128 := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.frame 128, .frame 192, .caller 5 0]
     (by decide) (by simp [Whole.valid]) (by taint_decide)).seq
     (reduce_call_ct hL 128 (by decide) (by decide))
-  have b := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 0, .frame 96, .caller 5 0]
-    (by decide) (by simp [Whole.valid]) (by taint_decide)).seq (base_call_ct hL)
+  have b := (two_syms (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 0, .frame 96, .caller 5 0]
+    (by decide) (by simp [Whole.valid]) (by taint_decide))).seq (base_call_ct hL ha hb)
   have m := (setup_ct (g₁ := g₁) (g₂ := g₂) hL ha hb [.caller 0 32, .frame 96, .frame 128, .frame 32, .caller 5 0]
     (by decide) (by simp [Whole.valid]) (by taint_decide)).seq (mul_call_ct hL)
-  exact ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL)).seq
-    (((hashNonce_ct hL ha hb).seq (r96.seq b)).seq
-      (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL)))
+  exact (two_syms ((hashSeed_ct hL ha hb).seq (saveSecret_ct hL))).seq
+    (((two_syms (hashNonce_ct hL ha hb)).seq ((two_syms r96).seq b)).seq
+      (two_syms (((hashChallenge_ct hL ha hb).seq (r128.seq m)).seq (wipe_ct hL))))
 
 end VG.Proof.Ed25519.X86.SignCached
 end
@@ -807,7 +843,7 @@ theorem signCached_ok {s : State} (h : signCachedLocal.pre s) :
   have hb := entry_bounds h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; omega) body_nosp
-    (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_key h)) fun u ⟨hu, ho⟩ => ?_)
+    (WP.mono (body_ok (push_ctx h) hL (lay_arguments h) (entry_key h) rfl) fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases he : r = .esp
     · subst r
@@ -836,8 +872,8 @@ namespace VG.Proof.Ed25519.X86.SignCached
 open VG VG.X86 VG.Impl.Ed25519.X86.SignCached
 
 theorem lay_eq {s t : State} (h : signCachedLocal.pub s t) : lay s = lay t := by
-  obtain ⟨sp, a0, a1, a2, a3, a4, a5⟩ := h
-  simp only [lay, sp, a0, a1, a2, a3, a4, a5]
+  obtain ⟨sp, a0, a1, a2, a3, a4, a5, sy⟩ := h
+  simp only [lay, sp, a0, a1, a2, a3, a4, a5, sy]
 
 theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub code := by
   apply RelCT.constantTime
@@ -847,7 +883,9 @@ theorem signCached_ct : ConstantTime isa signCachedLocal.pre signCachedLocal.pub
   have h₂ : Ctx (lay s₁) s₂.gpr s₂.mem (pushed (List.replicate 64 .eax) s₂) :=
     he ▸ push_ctx p₂
   have ha₂ : Arguments (lay s₁) s₂.mem := he ▸ lay_arguments p₂
+  have y₂ : Named (lay s₁) (pushed (List.replicate 64 .eax) s₂) := by
+    rw [he]; rfl
   exact ⟨(body_ct (lay_ok p₁) (lay_arguments p₁) ha₂ _ _ _ _ _ _
-    ⟨push_ctx p₁, h₂, trivial, trivial⟩ ea eb).1, trivial⟩
+    ⟨push_ctx p₁, h₂, ⟨trivial, rfl⟩, ⟨trivial, y₂⟩⟩ ea eb).1, trivial⟩
 
 end VG.Proof.Ed25519.X86.SignCached

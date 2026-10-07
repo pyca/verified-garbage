@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.HashPre
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.Wipe
 import VerifiedGarbage.Proof.Ed25519.X86.Whole.CallCT
+import VerifiedGarbage.Proof.Framework.X86.Syms
 
 /-! Merged from `Proof.Ed25519.X86.PublicKey.Setup`. -/
 section
@@ -65,13 +66,15 @@ theorem scalarPtr_addr {s : State} (h : Bounds s) :
   addr_eq (by have := h.frame; omega)
 
 theorem base_nosp : NoSp scalarBase := NoSp.of_all (by lit_decide)
-theorem base_stack : stackUse scalarBase = 0 := by lit_decide
+theorem base_stack : stackUse scalarBase = 4 := by lit_decide
 
 def BaseArgs (s t : State) : Prop :=
   Whole.slots (esp s) t 0 = arg s 0 ∧ Whole.slots (esp s) t 1 = scalarPtr s ∧
     Whole.slots (esp s) t 2 = arg s 2
 
-def baseRd (s : State) : List Region := [⟨(scalarPtr s).setWidth 64, 32⟩, ⟨(esp s).setWidth 64, 12⟩]
+def baseRd (s : State) : List Region :=
+  [⟨(scalarPtr s).setWidth 64, 32⟩, ⟨(esp s).setWidth 64, 12⟩,
+    TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64)]
 
 /-- The three cdecl argument slots of the base-point multiplication. -/
 theorem base_args {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t) :
@@ -81,7 +84,8 @@ theorem base_args {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
   exact ⟨(e 0 (by decide)).trans ha.1, (e 1 (by decide)).trans ha.2.1,
     (e 2 (by decide)).trans ha.2.2⟩
 
-theorem base_pre {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t) :
+theorem base_pre {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
+    (hy : t.syms = s.syms) :
     scalarBaseLocal.pre (t.callEntry.withRegions (baseRd s) (pkWr s)) := by
   obtain ⟨a0, a1, a2⟩ := base_args h hc ha
   have ae : argAddr t.callEntry 0 = (esp s).setWidth 64 := by
@@ -96,18 +100,47 @@ theorem base_pre {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t) 
   have scalar : Region.Sub ⟨(scalarPtr s).setWidth 64, 32⟩ (Whole.STK (esp s)) := by
     rw [scalarPtr_addr h.toBounds]
     exact fun p hp => Whole.frame_sub (esp s) p (Offset.sub_base _ (by decide : 32 + 32 ≤ 256) p hp)
-  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr, arg_withRegions,
-    argAddr_withRegions, State.withRegions_gpr, State.callEntry_esp, hc.esp, a0, a1, a2, ae]
-  refine ⟨rfl, rfl, h.oc, h.kc.sub_left scalar, h.ko.sub_left args, h.kc.sub_left args,
-    h.ko.sub_left ret, h.kc.sub_left ret, h.out, ?_, h.scratch, ?_⟩
+  have stk8 : Region.Sub (below (esp s - BitVec.ofNat 32 4) 4) (below (esp s) 8) :=
+    below_inner (by decide) (by omega)
+  have stk : Region.Sub (below (esp s - BitVec.ofNat 32 4) 4) (Whole.STK (esp s)) :=
+    fun p hp => Whole.below_sub_stack be (by decide) p (stk8 p hp)
+  have stkScalar : (below (esp s - BitVec.ofNat 32 4) 4).Disjoint ⟨(scalarPtr s).setWidth 64, 32⟩ := by
+    refine Region.Disjoint.sub_left ?_ stk8
+    rw [scalarPtr_addr h.toBounds]
+    change Region.Disjoint ⟨(esp s - BitVec.ofNat 32 8).setWidth 64, 8⟩ _
+    rw [Taint.sub_setWidth (by omega)]
+    exact Offset.disjoint_below_above _ (by decide)
+  have tw : TblWords ((s.syms Impl.Ed25519.X86.combSym).setWidth 64) t.callEntry.mem := by
+    refine (h.held.1.frame hc.frame fun r hr => ?_).frame (Whole.callEntry_frame t) fun r hr => ?_
+    · simp only [pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+        or_false] at hr
+      rcases hr with rfl | rfl | rfl <;> exact h.held.2.2 _ (by simp)
+    · rw [List.mem_singleton.mp hr, hc.esp]
+      exact (h.held.2.2 _ (by simp)).sub_right (Whole.below_sub_stack be (by decide))
+  have cy : (t.callEntry.withRegions (baseRd s) (pkWr s)).syms = s.syms := hy
+  simp only [scalarBaseLocal, BaseRegions, CombHeld, cy, State.withRegions_rd, State.withRegions_wr,
+    arg_withRegions, argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_esp, hc.esp, a0, a1, a2, ae]
+  refine ⟨⟨rfl, rfl, h.oc, h.kc.sub_left scalar, h.ko.sub_left args, h.kc.sub_left args,
+    h.ko.sub_left ret, h.kc.sub_left ret, h.out, ?_, h.scratch, ?_⟩, ?_, h.ko.sub_left stk,
+    stkScalar, h.kc.sub_left stk, tw, h.held.2.1, ?_⟩
   · change (esp s + BitVec.ofNat 32 32).toNat + 32 ≤ 2 ^ 32
     rw [BitVec.toNat_add, show (BitVec.ofNat 32 32).toNat = 32 from rfl, Nat.mod_eq_of_lt (by omega)]
     omega
   · change (esp s - BitVec.ofNat 32 4).toNat + 16 ≤ 2 ^ 32
     rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
     omega
+  · change 4 ≤ (esp s - BitVec.ofNat 32 4).toNat
+    rw [sub_toNat (by omega : 4 ≤ (esp s).toNat)]
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl | rfl)
+    · exact h.held.2.2 _ (by simp)
+    · exact h.held.2.2 _ (by simp)
+    · exact (h.held.2.2 _ (by simp)).sub_right stk
 
-theorem base_call {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t) :
+theorem base_call {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
+    (hy : t.syms = s.syms) :
     WP isa (.call "vg_ed25519_scalar_base" scalarBase) t fun u => Ctx s u ∧
       Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt t.mem ((scalarPtr s).setWidth 64) 32) := by
@@ -116,16 +149,17 @@ theorem base_call {s t : State} (h : Facts s) (hc : Ctx s t) (ha : BaseArgs s t)
   have cov : Covers (baseRd s ++ pkWr s) (pkRd s ++ Whole.FR (esp s) :: pkWr s) := by
     refine Covers.of_sub ?_
     simp only [baseRd, pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact ⟨Whole.FR (esp s), by simp, scalarWithin⟩
     · exact ⟨Whole.FR (esp s), by simp, 0, by simp, by change 0 + 12 ≤ 256; decide⟩
+    · exact ⟨TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64), by simp [pkRd], 0, by simp, by simp⟩
     · exact ⟨OUT s, by simp, 0, by simp, by change 0 + 32 ≤ 32; decide⟩
     · exact ⟨SCR s, by simp, 0, by simp, by change 0 + 8192 ≤ 8192; decide⟩
   have ws : ∀ r ∈ pkWr s, Whole.Within r (Whole.FR (esp s)) ∨ ∃ R ∈ pkWr s, Whole.Within r R :=
     fun r hr => .inr ⟨r, hr, 0, by simp, by simp⟩
   with_reducible
     refine Whole.call_ok hc h.toBounds.call scalarBase_ok base_nosp (by rw [base_stack]; decide)
-      (base_pre h hc ha) cov ws fun u hu _ _ post => ⟨hu, ?_⟩
+      (base_pre h hc ha hy) cov ws fun u hu _ _ post => ⟨hu, ?_⟩
   obtain ⟨s₂, hm, hg, hp⟩ := post
   obtain ⟨a0, a1, _⟩ := base_args h hc ha
   change Spec.Ed25519.bytesAt s₂.mem ((arg t.callEntry 0).setWidth 64) 32 =
@@ -372,13 +406,13 @@ theorem prune_step {s t : State} (h : Facts s) (hc : Ctx s t) {digest : List Byt
   · rw [scalarPtr_addr h.toBounds]
     exact hs
 
-theorem base_step {s t : State} (h : Facts s) (hc : Ctx s t) {n : Nat}
+theorem base_step {s t : State} (h : Facts s) (hc : Ctx s t) (hy : t.syms = s.syms) {n : Nat}
     (hn : Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt t.mem ((scalarPtr s).setWidth 64) 32) = n) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" Impl.Ed25519.X86.scalarBase) t
       fun u => Ctx s u ∧ Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
         Spec.Ed25519.encodePoint (Spec.Ed25519.pointMul n Spec.Ed25519.basePoint) := by
-  refine WP.seq (WP.mono (setup_ok h hc (vs := [.caller 0 0, .frame 32, .caller 2 0])
-    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ => ?_)
+  refine WP.seq (WP.mono_syms (setup_ok h hc (vs := [.caller 0 0, .frame 32, .caller 2 0])
+    (by decide) (by simp [Whole.valid])) fun u ⟨hu, hf, hs⟩ yu => ?_)
   have a0 := hs 0 (by decide)
   have a1 := hs 1 (by decide)
   have a2 := hs 2 (by decide)
@@ -390,15 +424,15 @@ theorem base_step {s t : State} (h : Facts s) (hc : Ctx s t) {n : Nat}
     exact hf.bytes (R := ⟨(scalarPtr s).setWidth 64, 32⟩) (by
       rintro r hr; rw [List.mem_singleton.mp hr, scalarPtr_addr h.toBounds]
       exact Offset.disjoint_base _ (by decide) (by decide)) (by change 32 ≤ 2 ^ 64; decide) (List.mem_range.mp hi)
-  refine WP.mono (base_call h hu ⟨a0, a1, a2⟩) fun v ⟨hv, ho⟩ => ⟨hv, ?_⟩
+  refine WP.mono (base_call h hu ⟨a0, a1, a2⟩ (yu.trans hy)) fun v ⟨hv, ho⟩ => ⟨hv, ?_⟩
   rw [ho, he, Spec.Ed25519.scalarBase, hn]
 
-theorem body_ok {s t : State} (h : Facts s) (hc : Ctx s t) :
+theorem body_ok {s t : State} (h : Facts s) (hc : Ctx s t) (hy : t.syms = s.syms) :
     WP isa body t fun u => Ctx s u ∧ Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
       Spec.Ed25519.publicKey (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) := by
-  refine WP.seq (WP.mono (hash_ok h hc) fun t₁ ⟨hc₁, hh⟩ => ?_)
-  refine WP.seq (WP.mono (prune_step h hc₁ hh) fun t₂ ⟨hc₂, hn⟩ => ?_)
-  refine WP.seq (WP.mono (base_step h hc₂ hn) fun t₃ ⟨hc₃, ho⟩ => ?_)
+  refine WP.seq (WP.mono_syms (hash_ok h hc) fun t₁ ⟨hc₁, hh⟩ y₁ => ?_)
+  refine WP.seq (WP.mono_syms (prune_step h hc₁ hh) fun t₂ ⟨hc₂, hn⟩ y₂ => ?_)
+  refine WP.seq (WP.mono (base_step h hc₂ (y₂.trans (y₁.trans hy)) hn) fun t₃ ⟨hc₃, ho⟩ => ?_)
   refine WP.mono (Whole.Ctx.zeroWords hc₃ (start := 8) (count := 56)
     (by have := h.toBounds.frame; omega) (by decide)) fun u ⟨hu, hf, _⟩ => ⟨hu, ?_⟩
   have he : Spec.Ed25519.bytesAt u.mem ((arg s 0).setWidth 64) 32 =
@@ -436,7 +470,7 @@ theorem publicKey_ok {s : State} (h : pkLocal.pre s) :
   have hf := facts h
   refine WP.frame (rs := List.replicate 64 .eax) (by simp) (by simp) (by decide)
     (by simp only [List.length_replicate]; have := hf.below; omega) body_nosp
-    (WP.mono (body_ok hf (push_ctx h)) fun u ⟨hu, ho⟩ => ?_)
+    (WP.mono (body_ok hf (push_ctx h) rfl) fun u ⟨hu, ho⟩ => ?_)
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩
   · by_cases he : r = .esp
     · subst r
@@ -571,7 +605,8 @@ def finalize_ready {s t : State} (h : Facts s) (hc : Ctx s t) (hs : Slots finali
     · exact .inr (workWithin h))
   exact ⟨Whole.finalizeRd (esp s), Whole.finalizeWr (arg s 2) (digestPtr s), hp, cov, ws⟩
 
-def base_ready {s t : State} (h : Facts s) (hc : Ctx s t) (hs : Slots baseValues s t) :
+def base_ready {s t : State} (h : Facts s) (hc : Ctx s t) (hy : t.syms = s.syms)
+    (hs : Slots baseValues s t) :
     Whole.CallReady scalarBaseLocal (esp s) (pkRd s) (pkWr s) t := by
   unfold Slots baseValues at hs
   have a0 := hs 0 (by decide)
@@ -584,13 +619,14 @@ def base_ready {s t : State} (h : Facts s) (hc : Ctx s t) (hs : Slots baseValues
   have cov : Covers (baseRd s ++ pkWr s) (pkRd s ++ Whole.FR (esp s) :: pkWr s) := by
     refine Covers.of_sub ?_
     simp only [baseRd, pkWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl | rfl)
     · exact ⟨Whole.FR (esp s), by simp, scalarWithin⟩
     · exact ⟨Whole.FR (esp s), by simp, 0, by simp, by change 0 + 12 ≤ 256; decide⟩
+    · exact ⟨TBL ((s.syms Impl.Ed25519.X86.combSym).setWidth 64), by simp [pkRd], 0, by simp, by simp⟩
     · exact ⟨OUT s, by simp, 0, by simp, by change 0 + 32 ≤ 32; decide⟩
     · exact ⟨SCR s, by simp, 0, by simp, by change 0 + 8192 ≤ 8192; decide⟩
   have ws : ∀ r ∈ pkWr s, Whole.Within r (Whole.FR (esp s)) ∨ ∃ R ∈ pkWr s, Whole.Within r R :=
     fun r hr => .inr ⟨r, hr, 0, by simp, by simp⟩
-  exact ⟨baseRd s, pkWr s, base_pre h hc ha, cov, ws⟩
+  exact ⟨baseRd s, pkWr s, base_pre h hc ha hy, cov, ws⟩
 
 end VG.Proof.Ed25519.X86.PublicKey
