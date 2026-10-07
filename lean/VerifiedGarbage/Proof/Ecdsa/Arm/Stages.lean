@@ -39,7 +39,7 @@ theorem dv_eq {s₀ : State} (h : shAt c A.hs D = 0) :
 /-- The registers the stages may change. -/
 abbrev work : List Reg := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
 
-theorem clob_work : ∀ r ∈ clob, r ∈ work := by decide
+theorem callClob_work : ∀ r ∈ Mont.callClob, r ∈ work := by decide
 theorem powClob_work : ∀ r ∈ powClob, r ∈ work := by decide
 
 /-- What the stages keep: the working space and `scratch`, `sp`, the
@@ -94,7 +94,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have hf₂ := P.far.of_rest k₂
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₂ i = sv c (scBase A s₀) s₁ i := fun hi =>
-    sv_unch u₂ h7 hn hi (apart_tbl hi 0)
+    sv_unch u₂ h7 hn hi (apart_tbl h7 hi 0)
   -- The table of `p - 2`.
   refine WP.seq (WP.mono (tbl_bits_ok hc hs₂ hf₂ (i := EXPP) (j := 1) (by decide) (by decide))
     fun s₃ ⟨b₃, k₃, O₃⟩ => ?_)
@@ -102,13 +102,13 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
   have hf₃ := hf₂.of_rest k₃
   have u₃ := O₃.unch
   have v₃ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₃ i = sv c (scBase A s₀) s₁ i := fun hi =>
-    (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
+    (sv_unch u₃ h7 hn hi (apart_tbl h7 hi 1)).trans (v₂ hi)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono (tbl_bits_ok hc hs₃ hf₃ (i := EXPN) (j := 2) (by decide) (by decide))
     fun s₄ ⟨b₄, k₄, O₄⟩ => h s₄ ?_)
   have u₄ := O₄.unch
   have v₄ : ∀ {i}, i < 45 → sv c (scBase A s₀) s₄ i = sv c (scBase A s₀) s₁ i := fun hi =>
-    (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
+    (sv_unch u₄ h7 hn hi (apart_tbl h7 hi 2)).trans (v₃ hi)
   have hk : (kv c A s₀) = sv c (scBase A s₀) s₁ K := P.k.symm
   have hp2 : c.C.p - 2 = sv c (scBase A s₀) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
   have hn2 : c.C.n - 2 = sv c (scBase A s₀) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
@@ -121,7 +121,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
     by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_⟩
-  · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
+  · exact (fx.unch h7 hn (fixedOk_tbl h7 0) u₂ |>.unch h7 hn (fixedOk_tbl h7 1) u₃).unch h7 hn (fixedOk_tbl h7 2) u₄
   · intro x hx
     have hx' : 8192 ≤ ofs (scBase A s₀) x := by have := hx _ (List.mem_singleton_self _); omega
     rw [O₄ x (Or.inr (by have := bitsAt_le c h7 (j := 2) (by decide); omega)),
@@ -132,7 +132,7 @@ theorem stage₁ (hc : CfgOk c) {s₀ : State} (hp : SetupPre c A s₀) {rest : 
     have ap : ∀ j, ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl FLAG + 4 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG :=
       fun j w hw => by
         rw [List.mem_singleton.mp hw]
-        have := sl_below_bits c (i := FLAG) (by decide) j 0
+        have := sl_below_bits c hc.n10 (i := FLAG) (by decide) j 0
         exact Or.inl (by dsimp only; omega)
     rw [flagW, Unch.readW32 u₄ (ap 2) (by omega), Unch.readW32 u₃ (ap 1) (by omega),
       Unch.readW32 u₂ (ap 0) (by omega), ← flagW, P.flag]
@@ -156,17 +156,15 @@ theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by
   rw [Spec.Weierstrass.mul]; simp
 
 theorem ladWx_eq (c : Cfg) : ladWx c.ladderCfg c.wk = slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ,
-    T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ [(c.wk, accLen c.MP')] := rfl
+    T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] ++ [(c.wk, 64 * c.n)] := rfl
 
-theorem powWxP_eq (c : Cfg) : powWx c.powP c.wk = slW c [ACC, PT, TMP] ++ [(c.wk, accLen c.MP')] := rfl
-theorem powWxN_eq (c : Cfg) : powWx c.powN c.wk = slW c [ACC, PT, TMP] ++ [(c.wk, accLen c.MN')] := rfl
+theorem powWxP_eq (c : Cfg) : powWx c.powP c.wk = slW c [ACC, PT, TMP] ++ [(c.wk, 64 * c.n)] := rfl
+theorem powWxN_eq (c : Cfg) : powWx c.powN c.wk = slW c [ACC, PT, TMP] ++ [(c.wk, 64 * c.n)] := rfl
 
-theorem accLen_MP' (c : Cfg) : accLen c.MP' = 32 * c.n + 8 := accLen_eq _
-theorem accLen_MN' (c : Cfg) : accLen c.MN' = 32 * c.n + 8 := accLen_eq _
 
 /-- The flag word apart from numbered slots and the accumulator. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
-    (hu : Unch base (slW c l ++ [(c.wk, 32 * c.n + 8)]) m m')
+    (hu : Unch base (slW c l ++ [(c.wk, 64 * c.n)]) m m')
     (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 32) (hl : FLAG ∉ l) :
     m'.readW (off base (c.sl FLAG)) 32 = m.readW (off base (c.sl FLAG)) 32 := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
@@ -175,7 +173,7 @@ theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem}
   · rcases apart_slW (c := c) hl w hw with h | h
     · exact Or.inl (by omega)
     · exact Or.inr h
-  · rcases apart_wk (c := c) (i := FLAG) (by decide) w hw with h | h
+  · rcases apart_wk (c := c) h7 (i := FLAG) (by decide) w hw with h | h
     · exact Or.inl (by omega)
     · exact Or.inr h
 

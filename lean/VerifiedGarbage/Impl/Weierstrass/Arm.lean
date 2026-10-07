@@ -1,13 +1,14 @@
-import VerifiedGarbage.Impl.Mont.Arm
+import VerifiedGarbage.Impl.Weierstrass.Arm.Mont
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
 # Short Weierstrass curves on 32-bit ARM: points, scalar multiplication, powers
 
 Code for any curve `y² = x³ + ax + b` over a prime field of `n` 64-bit
-words (`2n` 32-bit words), with the Montgomery arithmetic of
-`Impl/Mont/Arm.lean`, whose operations use an accumulator of
-`4 (8n + 2)` bytes at `wk` in the working space. Field elements are in
+words (`2n` 32-bit words), whose Montgomery arithmetic is calls of the
+functions of a modulus (`Spec/Weierstrass/Mont.lean`,
+`Impl/Weierstrass/Arm/Mont.lean`), which use the `64 n` bytes of the working
+space below byte 4096 for themselves. Field elements are in
 Montgomery form (`x R mod p`, `R = 2^(64 n)`) in slots of the working space,
 whose base is in `r12`; a point is three slots, projective coordinates
 `(X : Y : Z)`. As on x86 (`Impl/Weierstrass/X86.lean`):
@@ -22,8 +23,8 @@ whose base is in `r12`; a point is three slots, projective coordinates
   every exponent.
 * `bits`: the bits of a little-endian number in a slot, one byte each.
 
-The loops count down in `r11`, which the arithmetic does not use. The only
-branches are on it and on the multiplications' counter `r9`, and every
+The loops count down in `r11`, which the arithmetic keeps. The only
+branches are on it and on the multiplications' counter, and every
 address is `r12` plus a constant, or plus a counter: nothing but `r12` may
 affect timing.
 -/
@@ -32,11 +33,11 @@ namespace VG.Impl.Weierstrass.Arm
 
 open VG.Arm VG.Impl.Mont VG.Impl.Mont.Arm VG.Impl.Weierstrass
 
-/-- The code of a field operation, with the accumulator at `wk`. -/
-def opCode (M : Mod) (wk : Nat) : FOp → Prog isa
-  | .mul o a b => Mont.Arm.mul M wk o a b
-  | .add o a b => .block (Mont.Arm.add M wk o a b)
-  | .sub o a b => .block (Mont.Arm.sub M wk o a b)
+/-- The code of a field operation modulo `S`: a call of its function. -/
+def opCode (S : Spec.Weierstrass.Mont.Modulus) : FOp → Prog isa
+  | .mul o a b => Mont.mulCall S o a b
+  | .add o a b => Mont.addCall S o a b
+  | .sub o a b => Mont.subCall S o a b
 
 /-- Programs one after the other. -/
 def progs : List (Prog isa) → Prog isa
@@ -45,7 +46,7 @@ def progs : List (Prog isa) → Prog isa
   | p :: ps => .seq p (progs ps)
 
 /-- A straight-line sequence of field operations. -/
-def fprog (M : Mod) (wk : Nat) (ops : List FOp) : Prog isa := progs (ops.map (opCode M wk))
+def fprog (S : Spec.Weierstrass.Mont.Modulus) (ops : List FOp) : Prog isa := progs (ops.map (opCode S))
 
 /-- `[o] = [a]` if the mask `r10` is zero, `[b]` if it is all ones, `k`
 32-bit words, through `r4` and `r5`. -/
@@ -80,28 +81,28 @@ def decCounter : Instr := .dp .sub .r11 .r11 (.imm 1)
 def testCounter : Instr := .cmp .r11 (.imm 0)
 
 /-- One iteration of the ladder, for the bit `t = r11 - 1`: `D = R + R`,
-`T = D + G`, then `R = T` if bit `t` is set, else `D`. -/
-def ladderBody (L : LadderCfg) (wk : Nat) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (fprog L.M wk (rcb L.S L.R L.R L.D)) <|
-    .seq (fprog L.M wk (rcb L.S L.D L.G L.T)) <|
+`T = D + G`, then `R = T` if bit `t` is set, else `D`, modulo `S`. -/
+def ladderBody (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (fprog S (rcb L.S L.R L.R L.D)) <|
+    .seq (fprog S (rcb L.S L.D L.G L.T)) <|
     .block (bitMask L.bits ++ selPt L.M.n L.R L.D L.T ++ [testCounter])
 
 /-- The ladder over the bits `nbits - 1` down to 0, from `R` as set up by the
 caller (the point at infinity). -/
-def ladder (L : LadderCfg) (wk : Nat) : Prog isa :=
-  .seq (.block [.mov .r11 (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L wk) .ne)
+def ladder (L : LadderCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+  .seq (.block [.mov .r11 (.imm (BitVec.ofNat 32 L.nbits))]) (.loop (ladderBody L S) .ne)
 
 /-- One iteration: `acc = acc²`, `tmp = acc · base`, and `acc = tmp` if the
-exponent's bit `r11 - 1` is set. -/
-def powBody (P : PowCfg) (wk : Nat) : Prog isa :=
-  .seq (.block [decCounter]) <| .seq (Mont.Arm.mul P.M wk P.acc P.acc P.acc) <|
-  .seq (Mont.Arm.mul P.M wk P.tmp P.acc P.base) <|
+exponent's bit `r11 - 1` is set, modulo `S`. -/
+def powBody (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
+  .seq (.block [decCounter]) <| .seq (Mont.mulCall S P.acc P.acc P.acc) <|
+  .seq (Mont.mulCall S P.tmp P.acc P.base) <|
     .block (bitMask P.bits ++ sel (2 * P.M.n) P.acc P.acc P.tmp ++ [testCounter])
 
 /-- `[acc] = [base]^e` (in Montgomery form), from the top bit of `e`. -/
-def pow (P : PowCfg) (wk : Nat) : Prog isa :=
+def pow (P : PowCfg) (S : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.one ++ [.mov .r11 (.imm (BitVec.ofNat 32 P.nbits))]))
-    (.loop (powBody P wk) .ne)
+    (.loop (powBody P S) .ne)
 
 /-- Byte `j` of the table for byte `r11` of the number: bit `j` of `r4`,
 stored at `[r5 + dst + j]`, where `r5 = r12 + 8 r11`, through `r7`. -/
@@ -160,13 +161,5 @@ def storeBytes (len n : Nat) (dst : Reg) (d a : Nat) : List Instr :=
         if len - 4 * j - 1 - i = 0 then [.strb .r4 dst (d + i)]
         else [.mov .r5 (.shifted .r4 .lsr (8 * (len - 4 * j - 1 - i))), .strb .r5 dst (d + i)]
     else []
-
-/-- `r4 = x mod 2³²`. -/
-def movImm (x : Nat) : List Instr :=
-  [.movw .r4 (BitVec.ofNat 16 x), .movt .r4 (BitVec.ofNat 16 (x >>> 16))]
-
-/-- `[r12 + o] = x`, `n` words, through `r4`. -/
-def setConst (n : Nat) (o x : Nat) : List Instr :=
-  (List.range (2 * n)).flatMap fun j => movImm (x >>> (32 * j)) ++ [.str .r4 wb (o + 4 * j)]
 
 end VG.Impl.Weierstrass.Arm

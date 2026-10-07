@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Arm.Flags
 import VerifiedGarbage.Proof.Weierstrass.Arm.Ladder
+import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 import VerifiedGarbage.TCB.Arm.Target
 
 /-!
@@ -13,10 +14,11 @@ The arguments are `out`, `d`, `digest` and `k` in `r0`–`r3` and `scratch`
 on the stack (AAPCS). The working space is the first `4096` bytes of the
 `8192` at `scratch` (every offset in it is an immediate offset of `ldr` and
 `str`): the saved registers in `[0, 36)`, the slots
-`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and the
-multiplications' accumulator at `c.wk = c.sl nslots`. The tables of bits
-`bitsAt n j` (`64 n` bytes each, `j < 3`) follow it, in `scratch` but past
-the working space for the largest curves (`Far`).
+`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, and the field
+arithmetic's own working space at `c.wk = 4096 - 64 n` (`CfgOk.fp`,
+`CfgOk.fn`: the functions of `p` and `n`). The tables of bits `bitsAt n j`
+(`64 n` bytes each, `j < 3`) follow it, in `scratch` past the working space
+(`Far`).
 -/
 
 namespace VG.Proof.Ecdsa.Arm
@@ -59,6 +61,8 @@ structure CfgOk (c : Cfg) : Prop where
   len_lo : 8 * c.n < c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   sh : c.sh < 32
+  fp : FnOk c.MP' c.wk c.SP c.C.p
+  fn : FnOk c.MN' c.wk c.SN c.C.n
 
 section
 variable (c : Cfg) (s : State)
@@ -190,12 +194,9 @@ structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State
 
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
-theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 := rfl
+theorem wk_eq (c : Cfg) : c.wk = 4096 - 64 * c.n := rfl
 
-theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (32 * c.n + 8) + 64 * c.n * j := rfl
-
-theorem accLen_eq (M : Mod) : accLen M = 32 * M.n + 8 := by
-  simp only [accLen, digits]; omega
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 4096 + 64 * c.n * j := rfl
 
 /-- Slots `i < j` are apart. -/
 theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
@@ -215,35 +216,35 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
   have := sl_apart c hij
   omega
 
-/-- A slot is below the accumulator. -/
-theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
+/-- A slot is below the functions' own working space. -/
+theorem sl_below_wk (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
   rw [wk_eq]
   omega
 
-/-- The accumulator is below the tables. -/
-theorem wk_below_bits (c : Cfg) {M : Mod} (hM : M.n = c.n) (j : Nat) :
-    c.wk + accLen M ≤ bitsAt c.n j := by
-  rw [wk_eq, bitsAt_eq, accLen_eq, hM]
+/-- The functions' own working space is below the tables. -/
+theorem wk_below_bits (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) (j : Nat) :
+    c.wk + 64 * M.n ≤ bitsAt c.n j := by
+  rw [wk_eq, bitsAt_eq, hM]
   omega
 
 /-- A slot is below the tables. -/
-theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) :
+theorem sl_below_bits (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) (j t : Nat) :
     c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
-  have := sl_below_wk c hi
-  have := wk_below_bits c (M := c.MP') rfl j
+  have := sl_below_wk c hn hi
+  have := wk_below_bits c hn (M := c.MP') rfl j
   omega
 
-/-- The accumulator is in the working space. -/
-theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
-  rw [wk_eq, accLen_eq, hM]
+/-- The functions' own working space is in the working space. -/
+theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + 64 * M.n ≤ size := by
+  rw [wk_eq, hM]
   show _ ≤ 4096
   omega
 
 /-- Every slot is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
-  have := sl_below_wk c hi
+  have := sl_below_wk c hn hi
   have := wk_le c hn (M := c.MP') rfl
   omega
 
@@ -283,6 +284,6 @@ theorem tbl_bits_ok {c : Cfg} (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr
   have hb := bitsAt_le c hc.n10 hj
   have := hc.n0
   exact bits_ok hs hf hc.n0 (sl_le c hc.n10 hi) hb (by omega) (bitsAt_al c j)
-    (Or.inl (sl_below_bits c hi j 0)) (enc8n hc.n10)
+    (Or.inl (sl_below_bits c hc.n10 hi j 0)) (enc8n hc.n10)
 
 end VG.Proof.Ecdsa.Arm

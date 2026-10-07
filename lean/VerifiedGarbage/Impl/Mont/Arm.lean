@@ -64,14 +64,14 @@ def minv16 (M : Mod) : BitVec 16 := M.minv.setWidth 16
 def half (d w : Reg) (h : Nat) : Instr :=
   if h = 0 then .dp .and d w (.reg .r6) else .mov d (.shifted w .lsr 16)
 
-/-- `r7 = ` digit `j` of the number at `[r12 + src]`. -/
-def digitAt (src j : Nat) : List Instr := [.ldr .r7 wb (src + 4 * (j / 2)), half .r7 .r7 (j % 2)]
+/-- `r7 = ` digit `j` of the number at `[rb + src]`. -/
+def digitAt (rb : Reg) (src j : Nat) : List Instr := [.ldr .r7 rb (src + 4 * (j / 2)), half .r7 .r7 (j % 2)]
 
 /-- `[r0 + acc + 4j] += r2 · d_j + r3`, its digit kept and its carry to `r3`,
-for digit `j` of the number at `[r12 + src]` (a multiply-accumulate step,
+for digit `j` of the number at `[rb + src]` (a multiply-accumulate step,
 which never overflows). -/
-def mulStep (acc src j : Nat) : List Instr :=
-  digitAt src j ++
+def mulStep (acc : Nat) (rb : Reg) (src j : Nat) : List Instr :=
+  digitAt rb src j ++
   [.mul .r7 .r2 .r7, .ldr .r5 .r0 (acc + 4 * j), .dp .add .r5 .r5 (.reg .r7), .dp .add .r5 .r5 (.reg .r3),
     .dp .and .r7 .r5 (.reg .r6), .str .r7 .r0 (acc + 4 * j), .mov .r3 (.shifted .r5 .lsr 16)]
 
@@ -81,24 +81,24 @@ def carryUp (acc D : Nat) : List Instr :=
     .str .r7 .r0 (acc + 4 * D), .ldr .r7 .r0 (acc + 4 * D + 4), .dp .add .r7 .r7 (.shifted .r5 .lsr 16),
     .str .r7 .r0 (acc + 4 * D + 4)]
 
-/-- The window `+= r2 · [src]`, `D` digits, with its carry. -/
-def mulRow (acc src D : Nat) : List Instr :=
-  .mov .r3 (.imm 0) :: (List.range D).flatMap (mulStep acc src) ++ carryUp acc D
+/-- The window `+= r2 · [rb + src]`, `D` digits, with its carry. -/
+def mulRow (acc : Nat) (rb : Reg) (src D : Nat) : List Instr :=
+  .mov .r3 (.imm 0) :: (List.range D).flatMap (mulStep acc rb src) ++ carryUp acc D
 
 /-- A row for the digit `h` of `r8` (a word of `[a]`): the window
 `+= u [b]`, then `+= q m` with `q = t₀ m' mod 2¹⁶`, after which its low
-digit is zero; then the window moves up a digit. -/
-def digitRow (M : Mod) (acc b h : Nat) : List Instr :=
+digit is zero; then the window moves up a digit. `[b]` is at `[rb + b]`. -/
+def digitRow (M : Mod) (acc : Nat) (rb : Reg) (b h : Nat) : List Instr :=
   let D := digits M
-  [half .r2 .r8 h] ++ mulRow acc b D ++
+  [half .r2 .r8 h] ++ mulRow acc rb b D ++
   [.ldr .r2 .r0 acc, .movw .r7 (minv16 M), .mul .r2 .r2 .r7, .dp .and .r2 .r2 (.reg .r6)] ++
-    mulRow acc M.mo D ++
+    mulRow acc wb M.mo D ++
   [.dp .add .r0 .r0 (.imm 4)]
 
 /-- An iteration of `mul`: the rows of both digits of word `r1` of `[a]`,
 then the next word, and the count. -/
-def row (M : Mod) (acc a b : Nat) : List Instr :=
-  [.ldr .r8 .r1 a] ++ digitRow M acc b 0 ++ digitRow M acc b 1 ++
+def row (M : Mod) (acc a : Nat) (rb : Reg) (b : Nat) : List Instr :=
+  [.ldr .r8 .r1 a] ++ digitRow M acc rb b 0 ++ digitRow M acc rb b 1 ++
   [.dp .add .r1 .r1 (.imm 4), .subs .r9 .r9 (.imm 1)]
 
 /-- `[acc]`, `k` words, cleared (through `r7`). -/
@@ -120,27 +120,30 @@ def diffWord (M : Mod) (src k : Nat) : List Instr :=
     diffDigit src (2 * k + 1) ++ [.dp .orr .r8 .r8 (.shifted .r5 .lsl 16), .str .r8 wb (M.tmp + 4 * k)]
 
 /-- Word `k` of the digits at `[src]`, packed, or of `[tmp]` where the mask
-`r3` is all ones, into `[o]`. -/
-def selWord (M : Mod) (src o k : Nat) : List Instr :=
+`r3` is all ones, into `[ro + o]`. -/
+def selWord (M : Mod) (src : Nat) (ro : Reg) (o k : Nat) : List Instr :=
   [.ldr .r5 wb (src + 8 * k), .ldr .r7 wb (src + 8 * k + 4), .dp .orr .r5 .r5 (.shifted .r7 .lsl 16),
     .ldr .r7 wb (M.tmp + 4 * k), .dp .eor .r7 .r7 (.reg .r5), .dp .and .r7 .r7 (.reg .r3),
-    .dp .eor .r5 .r5 (.reg .r7), .str .r5 wb (o + 4 * k)]
+    .dp .eor .r5 .r5 (.reg .r7), .str .r5 ro (o + 4 * k)]
 
 /-- The number at `[src]` (`D` digits, then a top digit 0 or 1), below `2m`,
-reduced modulo `m` into `[o]`: the difference with `m` is packed into
+reduced modulo `m` into `[ro + o]`: the difference with `m` is packed into
 `[tmp]`; `r3` is 1 if it did not borrow, and its negation selects it. -/
-def csub (M : Mod) (src o : Nat) : List Instr :=
+def csub (M : Mod) (src : Nat) (ro : Reg) (o : Nat) : List Instr :=
   [mask16, .mov .r3 (.imm 1)] ++ (List.range (words M)).flatMap (diffWord M src) ++
   [.ldr .r5 wb (src + 4 * digits M), .dp .add .r3 .r3 (.reg .r5), .mov .r4 (.imm 0),
     .dp .sub .r3 .r4 (.reg .r3)] ++
-  (List.range (words M)).flatMap (selWord M src o)
+  (List.range (words M)).flatMap (selWord M src ro o)
+
+/-- `[ro + o] = [ra + a] [rb + b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
+def mulR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : Prog isa :=
+  .seq (.block (zeros acc (2 * digits M + 2) ++
+    [mask16, .mov .r0 (.reg wb), .mov .r1 (.reg ra), .mov .r9 (.imm (BitVec.ofNat 32 (words M)))])) <|
+  .seq (.loop (.block (row M acc a rb b)) .ne) <|
+    .block (csub M (acc + 4 * digits M) ro o)
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`). -/
-def mul (M : Mod) (acc o a b : Nat) : Prog isa :=
-  .seq (.block (zeros acc (2 * digits M + 2) ++
-    [mask16, .mov .r0 (.reg wb), .mov .r1 (.reg wb), .mov .r9 (.imm (BitVec.ofNat 32 (words M)))])) <|
-  .seq (.loop (.block (row M acc a b)) .ne) <|
-    .block (csub M (acc + 4 * digits M) o)
+def mul (M : Mod) (acc o a b : Nat) : Prog isa := mulR M acc o a b wb wb wb
 
 /-- Digit `j` of `[a] + [b]` (`r7`, `r8` hold their words `j / 2`), from the
 carry `r3`, to `[acc]`, its carry to `r3`. -/
@@ -148,12 +151,15 @@ def addDigit (acc j : Nat) : List Instr :=
   [half .r4 .r7 (j % 2), half .r5 .r8 (j % 2), .dp .add .r4 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r3),
     .dp .and .r5 .r4 (.reg .r6), .str .r5 wb (acc + 4 * j), .mov .r3 (.shifted .r4 .lsr 16)]
 
-/-- `[o] = [a] + [b] mod m`. -/
-def add (M : Mod) (acc o a b : Nat) : List Instr :=
+/-- `[ro + o] = [ra + a] + [rb + b] mod m`. -/
+def addR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : List Instr :=
   [mask16, .mov .r3 (.imm 0)] ++
   (List.range (words M)).flatMap (fun k =>
-    [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (b + 4 * k)] ++ addDigit acc (2 * k) ++ addDigit acc (2 * k + 1)) ++
-  [.str .r3 wb (acc + 4 * digits M)] ++ csub M acc o
+    [.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k)] ++ addDigit acc (2 * k) ++ addDigit acc (2 * k + 1)) ++
+  [.str .r3 wb (acc + 4 * digits M)] ++ csub M acc ro o
+
+/-- `[o] = [a] + [b] mod m`. -/
+def add (M : Mod) (acc o a b : Nat) : List Instr := addR M acc o a b wb wb wb
 
 /-- Digit `j` of `[a] + m - [b]` (`r7`, `r8`, `r9` hold the words `j / 2` of
 `[a]`, `[b]` and `m`), from the carry `r3`, to `[acc]`, its carry to `r3`. -/
@@ -162,12 +168,23 @@ def subDigit (acc j : Nat) : List Instr :=
     half .r5 .r8 (j % 2), .dp .sub .r4 .r4 (.reg .r5), .dp .add .r4 .r4 (.reg .r3),
     .dp .and .r5 .r4 (.reg .r6), .str .r5 wb (acc + 4 * j), .mov .r3 (.shifted .r4 .lsr 16)]
 
-/-- `[o] = [a] - [b] mod m`, as `[a] + m - [b]` reduced. -/
-def sub (M : Mod) (acc o a b : Nat) : List Instr :=
+/-- `[ro + o] = [ra + a] - [rb + b] mod m`, as `[a] + m - [b]` reduced. -/
+def subR (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : List Instr :=
   [mask16, .mov .r3 (.imm 1)] ++
   (List.range (words M)).flatMap (fun k =>
-    [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (b + 4 * k), .ldr .r9 wb (M.mo + 4 * k)] ++
+    [.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k), .ldr .r9 wb (M.mo + 4 * k)] ++
       subDigit acc (2 * k) ++ subDigit acc (2 * k + 1)) ++
-  [.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] ++ csub M acc o
+  [.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] ++ csub M acc ro o
+
+/-- `[o] = [a] - [b] mod m`, as `[a] + m - [b]` reduced. -/
+def sub (M : Mod) (acc o a b : Nat) : List Instr := subR M acc o a b wb wb wb
+
+/-- `r4 = x mod 2³²`. -/
+def movImm (x : Nat) : List Instr :=
+  [.movw .r4 (BitVec.ofNat 16 x), .movt .r4 (BitVec.ofNat 16 (x >>> 16))]
+
+/-- `[r12 + o] = x`, `n` words, through `r4`. -/
+def setConst (n : Nat) (o x : Nat) : List Instr :=
+  (List.range (2 * n)).flatMap fun j => movImm (x >>> (32 * j)) ++ [.str .r4 wb (o + 4 * j)]
 
 end VG.Impl.Mont.Arm

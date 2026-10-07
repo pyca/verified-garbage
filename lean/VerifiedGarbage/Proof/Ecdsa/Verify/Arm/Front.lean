@@ -187,22 +187,22 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
     rw [f₄, flagW, flag_unch (U₃.mono fun w hw => List.mem_append_left _ hw) h7 h0 hn (l := [PT])
       (by decide), ← flagW, S₂.flag, BitVec.allOnes_and, mask32_and, mask32_and]
     simp only [hq0]
-  refine WP.seq (WP.mono (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
+  refine WP.seq (WP.mono (validate_ok hc hs₄ ((S₂.far.of_rest K₃).of_rest k₄) F₄ r2₄ bp₄ hf₄)
     fun s₅ ⟨hs₅, g₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₅ ?_)
-  have F₅ := F₄.unch h7 hn ((fixedOk_slWk (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
+  have F₅ := F₄.unch h7 hn ((fixedOk_slWk h7 (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₅
   have e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
       sv c (ptr s₀ .r3) s₅ i = sv c (ptr s₀ .r3) s₄ i := fun hi hl hf =>
-    sv_unch U₅ h7 hn hi (apart_append (apart_slWk hi hl) (apart_flag h0 hf))
+    sv_unch U₅ h7 hn hi (apart_append (apart_slWk h7 hi hl) (apart_flag h0 hf))
   have a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, E, QY] → i ≠ FLAG →
       i ≠ PT → sv c (ptr s₀ .r3) s₅ i = sv c (ptr s₀ .r3) s₂ i := fun hi h₁ h₂ hf hp =>
     ((e₅ hi h₁ hf).trans (e₄ hi h₂ hf)).trans (v₃ hi hp)
   have t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
       s₅.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) = s₂.mem (off (ptr s₀ .r3) (bitsAt c.n j + t)) :=
     fun hj t ht => by
-      rw [tbl_unch U₅ h7 hj ht (apart_append (tbl_apart_slWk (by decide)) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hj ht (tbl_apart_slW (by decide) _ t)]
+      rw [tbl_unch U₅ h7 hj ht (apart_append (tbl_apart_slWk h7 (by decide)) (tbl_apart_flag h7 h0 _ t)),
+        tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW h7 (by decide) _ t) (tbl_apart_flag h7 h0 _ t)),
+        tbl_unch U₃ h7 hj ht (tbl_apart_slW h7 (by decide) _ t)]
   have hok : PeerOk c (ptr s₀ .r3) s₄ ((s₀.mem (ptr s₀ .r0) = 4 ∧ sv c (ptr s₀ .r3) s₄ E < c.C.p) ∧
       sv c (ptr s₀ .r3) s₄ QY < c.C.p) = KeyOk c s₀ := by
     rw [PeerOk, x₄', y₄']

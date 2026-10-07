@@ -17,19 +17,23 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_ldr wp_str wp_dp wp_mov wp_mul o
   op2_imm dpVal toNat_add_lt toNat_shr)
 
 /-- The first `k` steps of a row. -/
-def steps (acc src k : Nat) : List Instr := (List.range k).flatMap (mulStep acc src)
+def steps (acc : Nat) (rb : Reg) (d k : Nat) : List Instr := (List.range k).flatMap (mulStep acc rb d)
 
-theorem steps_succ (acc src k : Nat) : steps acc src (k + 1) = steps acc src k ++ mulStep acc src k := by
+theorem steps_succ (acc : Nat) (rb : Reg) (d k : Nat) :
+    steps acc rb d (k + 1) = steps acc rb d k ++ mulStep acc rb d k := by
   simp only [steps, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
     List.append_nil]
 
-/-- The window's low `k` digits `+= r2 · [src] + r3`, the carry to `r3`. -/
+/-- The window's low `k` digits `+= r2 · [src] + r3`, the carry to `r3`
+(`[src]` read at `[rb + d]`, `rb = r12 + K`). -/
 theorem steps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc src i w W : Nat}
+    {rb : Reg} {K d : Nat} (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = src)
+    (hrb : rb ∉ [.r3, .r5, .r7])
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hp : s.gpr .r0 = s.gpr .r12 + BitVec.ofNat 32 (4 * i))
     (hw : 4 * i + acc = w) (hsrc : src + 4 * W ≤ size)
     (hu : (s.gpr .r2).toNat < 2 ^ 16) (hc : (s.gpr .r3).toNat < 2 ^ 16) :
     ∀ {k : Nat}, k ≤ 2 * W → w + 4 * k ≤ size → (src + 4 * W ≤ w ∨ w + 4 * k ≤ src) → Digs s.mem base w k →
-    WP isa (.block (steps acc src k)) s fun u =>
+    WP isa (.block (steps acc rb d k)) s fun u =>
       Outside base w (4 * k) s.mem u.mem ∧
       dval u.mem base w k + 2 ^ (16 * k) * (u.gpr .r3).toNat =
         dval s.mem base w k + (s.gpr .r2).toNat * pval s.mem base src k + (s.gpr .r3).toNat ∧
@@ -40,8 +44,10 @@ theorem steps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
   | k + 1, hk, hwk, hsep, hd => by
     have hn := hs.nowrap
     rw [steps_succ]
-    refine VG.Proof.X25519.Arm.WP.append (steps_ok hs h6 hp hw hsrc hu hc (k := k) (by omega_arith) (by omega_arith)
-      (by omega_arith) (hd.mono (by omega_arith))) fun s₁ ⟨O₁, V₁, C₁, D₁, K₁⟩ => ?_
+    refine VG.Proof.X25519.Arm.WP.append (steps_ok hs hb hK hrb h6 hp hw hsrc hu hc (k := k) (by omega_arith)
+      (by omega_arith) (by omega_arith) (hd.mono (by omega_arith))) fun s₁ ⟨O₁, V₁, C₁, D₁, K₁⟩ => ?_
+    have hb₁ : s₁.gpr rb = s₁.gpr .r12 + BitVec.ofNat 32 K := by
+      rw [K₁.gpr _ hrb, K₁.gpr _ (by decide)]; exact hb
     have hs₁ := hs.of_rest K₁ (by decide)
     have h6₁ : s₁.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by rw [K₁.gpr _ (by decide)]; exact h6
     have hp₁ : s₁.gpr .r0 = s₁.gpr .r12 + BitVec.ofNat 32 (4 * i) := by
@@ -49,7 +55,7 @@ theorem steps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     have e : 4 * i + (acc + 4 * k) = w + 4 * k := by omega_arith
     have tk : w32 s₁.mem base (w + 4 * k) = w32 s.mem base (w + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
     have tkd : w32 s₁.mem base (4 * i + (acc + 4 * k)) < 2 ^ 16 := by rw [e, tk]; exact hd k (by omega_arith)
-    refine WP.mono (mulStep_ok hs₁ h6₁ hp₁ (j := k) (by omega_arith) (by omega_arith)
+    refine WP.mono (mulStep_ok hs₁ hb₁ hK h6₁ hp₁ (j := k) (by omega_arith) (by omega_arith)
       (by rw [K₁.gpr _ (by decide)]; exact hu) C₁ tkd) fun u ⟨m₂, b₂, K₂⟩ => ?_
     rw [e] at m₂ b₂
     have r2₁ : s₁.gpr .r2 = s.gpr .r2 := K₁.gpr _ (by decide)
@@ -158,15 +164,17 @@ theorem carryUp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · simp only [Nat.mul_zero, Nat.add_zero]; rw [v0]; exact Nat.mod_lt _ (by decide)
     · simp only [Nat.mul_one]; rw [v1]; omega_arith
 
-/-- The window `+= r2 · [src]` (`D ≤ 2W` digits of its `W` words), when the
-sum fits the window's `D + 2` digits. -/
+/-- The window `+= r2 · [src]` (`D ≤ 2W` digits of its `W` words, read at
+`[rb + d]`, `rb = r12 + K`), when the sum fits the window's `D + 2` digits. -/
 theorem mulRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc src i w W D : Nat}
+    {rb : Reg} {K d : Nat} (hb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = src)
+    (hrb : rb ∉ [.r3, .r5, .r7])
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hp : s.gpr .r0 = s.gpr .r12 + BitVec.ofNat 32 (4 * i))
     (hw : 4 * i + acc = w) (hsrc : src + 4 * W ≤ size) (hDW : D ≤ 2 * W) (hwD : w + 4 * D + 8 ≤ size)
     (hsep : src + 4 * W ≤ w ∨ w + 4 * D + 8 ≤ src) (hu : (s.gpr .r2).toNat < 2 ^ 16)
     (hd : Digs s.mem base w (D + 2))
     (hlt : dval s.mem base w (D + 2) + (s.gpr .r2).toNat * pval s.mem base src D < 2 ^ (16 * (D + 2))) :
-    WP isa (.block (mulRow acc src D)) s fun u =>
+    WP isa (.block (mulRow acc rb d D)) s fun u =>
       Outside base w (4 * D + 8) s.mem u.mem ∧
       dval u.mem base w (D + 2) = dval s.mem base w (D + 2) + (s.gpr .r2).toNat * pval s.mem base src D ∧
       Digs u.mem base w (D + 2) ∧ Rest [.r3, .r5, .r7] s u := by
@@ -181,7 +189,9 @@ theorem mulRow_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have z : (s₀.gpr .r3).toNat = 0 := by rw [u₀.gpr]; rfl
   have hu₀ : (s₀.gpr .r2).toNat < 2 ^ 16 := by rw [K₀.gpr _ (by decide)]; exact hu
   rw [← u₀.mem] at hd hlt
-  refine VG.Proof.X25519.Arm.WP.append (steps_ok hs₀ h6₀ hp₀ hw hsrc hu₀ (by rw [z]; decide) (k := D) hDW
+  have hb₀ : s₀.gpr rb = s₀.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [K₀.gpr _ hrb, K₀.gpr _ (by decide)]; exact hb
+  refine VG.Proof.X25519.Arm.WP.append (steps_ok hs₀ hb₀ hK hrb h6₀ hp₀ hw hsrc hu₀ (by rw [z]; decide) (k := D) hDW
     (by omega_arith) (by omega_arith) (hd.mono (by omega_arith))) fun s₁ ⟨O₁, V₁, C₁, D₁, K₁⟩ => ?_
   have K₀₁ := K₀.trans K₁
   have hs₁ := hs.of_rest K₀₁ (by decide)

@@ -51,22 +51,11 @@ theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base siz
       ⟨by rw [m', u₂.mem, u₁.mem], by rw [K'.gpr _ (by decide), r0₂],
         fun rd hrd => by rw [V' rd hrd, u₂.mem, u₁.mem, hsv rd hrd], by rw [K'.sp, u₂.sp, u₁.sp]⟩
 
-/-- `[o] = ([a] - [b]) mod m`, on slots. -/
-theorem slSub_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (hmo : M.mo = c.sl MP ∨ M.mo = c.sl MN)
-    (hMt : M.tmp = c.sl TMP) (h7 : c.n < 10) {base : Addr} {s : State}
-    (hs : Scr s base size) (hM : ModOkW M size m s.mem base) {o a b : Nat} (ho : o < 45)
-    (ha : a < 45) (hb : b < 45) (hot : o ≠ TMP) (hA : sv c base s a < m) (hB : sv c base s b < m) :
-    WP isa (.block (sub M c.wk (c.sl o) (c.sl a) (c.sl b))) s fun s' => OpKeep M base c.wk (c.sl o) s s' ∧
-      sv c base s' o = (sv c base s a + m - sv c base s b) % m := by
-  have := sub_ok hs hM (slLay hMn hmo hMt h7 ho ha hb hot) (by rw [hMn]; exact hA) (by rw [hMn]; exact hB)
-  rw [hMn] at this
-  exact this
-
 theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.Arm.Cfg.final c =
-    .seq (mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE))
-    (.seq (mul c.MN' c.wk (c.sl XN) (c.sl X) (c.sl R2N))
-    (.seq (.block (sub c.MN' c.wk (c.sl W) (c.sl XN) (c.sl RM')))
+    .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+    (.seq (Mont.mulCall c.SN (c.sl XN) (c.sl X) (c.sl R2N))
+    (.seq (Mont.subCall c.SN (c.sl W) (c.sl XN) (c.sl RM'))
       (.block (c.checkNonzero (c.sl RZ) ++ (Impl.Ecdh.Arm.Cfg.checkZero c (c.sl W) ++
         Impl.Ecdsa.Verify.Arm.Cfg.finish c)))))) := by
   simp only [Impl.Ecdsa.Verify.Arm.Cfg.final, progs, List.append_assoc]
@@ -77,7 +66,7 @@ abbrev finW : List Nat := [ACC, PT, TMP, XM, X, XN, W]
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     {Q₁ Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop} {s : State} (hP : Pts c s₀ base Q₁ Q₂ s) :
-    WP isa (.seq (pow c.powP c.wk) (Impl.Ecdsa.Verify.Arm.Cfg.final c)) s fun s' =>
+    WP isa (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.Arm.Cfg.final c)) s fun s' =>
       (∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1) ∧ s'.sp = s₀.sp ∧
       Unch base [(0, 8192)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
@@ -97,28 +86,29 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR
+  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hP.scr hP.far (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc)
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [powWxP_eq, accLen_MP'] at U₁
+  rw [powWxP_eq] at U₁
   have hs₁ := hP.scr.of_rest K₁ (by decide)
-  have F₁ := F.unch h7 hn (fixedOk_slWk (by decide)) U₁
+  have hf₁ := hP.far.of_rest K₁
+  have F₁ := F.unch h7 hn (fixedOk_slWk h7 (by decide)) U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>
-    sv_unch U₁ h7 hn hi (apart_slWk hi hl)
+    sv_unch U₁ h7 hn hi (apart_slWk h7 hi hl)
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs₁ hM₁ (o := XM) (a := RX) (b := ACC)
-    (by decide) (by decide) (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₁ hf₁ (o := XM) (a := RX) (b := ACC) (by decide) (by decide) (by decide) lt₁) fun s₂ ⟨k₂, _, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
+  have hf₂ := hf₁.of_rest k₂.rest
   have M₂ := hM₁.keepArm (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₂ hi h₁ h₂
   -- `X = XM · 1`.
   have one₂ : sv c base s₂ ONE = 1 := (v₂ (by decide) (by decide) (by decide)).trans F₁.one
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs₂ M₂ (o := X) (a := XM) (b := ONE)
-    (by decide) (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok hc.fp (MP'_n c) h7 hs₂ hf₂ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by rw [one₂]; omega)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
+  have hf₃ := hf₂.of_rest k₃.rest
   have v₃ : ∀ {i}, i < 45 → i ≠ X → i ≠ TMP → sv c base s₃ i = sv c base s₂ i := fun hi h₁ h₂ =>
     sv_keep (MP'_n c) rfl h7 hn k₃ hi h₁ h₂
   have x₃ : Fin.ofNat c.C.p (sv c base s₃ X) =
@@ -135,19 +125,19 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n :=
     (v₃ (by decide) (by decide) (by decide)).trans ((v₂ (by decide) (by decide) (by decide)).trans
       ((e₁ (by decide) (by decide)).trans F.r2n))
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (.inr rfl) rfl h7 hs₃ hMN₃ (o := XN) (a := X) (b := R2N)
-    (by decide) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (slMul_ok hc.fn (MN'_n c) h7 hs₃ hf₃ (o := XN) (a := X) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega)))
     fun s₄ ⟨k₄, lt₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
+  have hf₄ := hf₃.of_rest k₄.rest
   have M₄ := hMN₃.keepArm (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₄ (by decide) (by decide)
   have v₄ : ∀ {i}, i < 45 → i ≠ XN → i ≠ TMP → sv c base s₄ i = sv c base s₃ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₄ hi h₁ h₂
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide) (by decide), v₃ (by decide) (by decide) (by decide),
       v₂ (by decide) (by decide) (by decide), e₁ (by decide) (by decide)]
-  refine WP.seq (WP.mono (slSub_ok (MN'_n c) (.inr rfl) rfl h7 hs₄ M₄ (o := W) (a := XN) (b := RM')
-    (by decide) (by decide) (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, e₅⟩ => ?_)
+  refine WP.seq (WP.mono (slSub_ok hc.fn (MN'_n c) h7 hs₄ hf₄ (o := W) (a := XN) (b := RM') (by decide) (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, e₅⟩ => ?_)
   have hs₅ := k₅.scr hs₄
+  have hf₅ := hf₄.of_rest k₅.rest
   have v₅ : ∀ {i}, i < 45 → i ≠ W → i ≠ TMP → sv c base s₅ i = sv c base s₄ i := fun hi h₁ h₂ =>
     sv_keep (MN'_n c) rfl h7 hn k₅ hi h₁ h₂
   have w₅ : sv c base s₅ W = 0 ↔ Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀) := by
@@ -156,17 +146,17 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- What changed: `finW` and the accumulator.
-  have hsub : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ finW) → ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, 32 * c.n + 8)] →
+  have hsub : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ finW) → ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, 64 * c.n)] →
       w ∈ slWk c finW := fun hl w hw => by
     rcases hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       exact List.mem_append_left _ (List.mem_map_of_mem (hl i hi))
     · exact List.mem_append_right _ hw
   have U₅ : Unch base (slWk c finW) s.mem s₅.mem :=
-    (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
-      ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
-      ((unch_slots (MN'_n c) rfl k₄.unch (l := [XN, TMP]) (by simp) (by simp)).trans
-      (unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)))))).mono fun w hw => by
+    (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unchOne (l := [XM, TMP]) (by simp) (by simp)).trans
+      ((unch_slots (MP'_n c) rfl k₃.unchOne (l := [X, TMP]) (by simp) (by simp)).trans
+      ((unch_slots (MN'_n c) rfl k₄.unchOne (l := [XN, TMP]) (by simp) (by simp)).trans
+      (unch_slots (MN'_n c) rfl k₅.unchOne (l := [W, TMP]) (by simp) (by simp)))))).mono fun w hw => by
       simp only [List.mem_append] at hw
       rcases hw with hw | hw | hw | hw | hw
       all_goals exact hsub (by decide) w hw
@@ -185,7 +175,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_right _ hw
         · exact List.mem_append_right _ hw
-  have F₇ := F.unch h7 hn ((fixedOk_slWk (by decide)).append fixedOk_flag) UW
+  have F₇ := F.unch h7 hn ((fixedOk_slWk h7 (by decide)).append fixedOk_flag) UW
   have z₅ : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := by
     show sv c base s₅ RZ = _
     rw [v₅ (by decide) (by decide) (by decide), v₄ (by decide) (by decide) (by decide),

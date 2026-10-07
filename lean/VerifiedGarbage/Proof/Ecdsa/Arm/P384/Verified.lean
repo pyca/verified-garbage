@@ -49,6 +49,8 @@ theorem p384_ok : CfgOk p384 where
   len_lo := by decide
   len_hi := by decide
   sh := by rw [p384_sh]; decide
+  fp := ⟨rfl, rfl, Mont.p384p_ok, rfl⟩
+  fn := ⟨rfl, rfl, Mont.p384n_ok, rfl⟩
 
 theorem pre_of {s : State} (h : signArm.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h

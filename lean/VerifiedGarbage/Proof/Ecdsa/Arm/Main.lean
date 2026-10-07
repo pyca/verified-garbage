@@ -26,18 +26,18 @@ open VG.Proof.X25519.Arm (Rest)
 variable {c : Cfg} {A : Args}
 
 /-- The ranges of numbered slots and of the accumulator. -/
-abbrev slWk (c : Cfg) (l : List Nat) : List (Nat × Nat) := slW c l ++ [(c.wk, 32 * c.n + 8)]
+abbrev slWk (c : Cfg) (l : List Nat) : List (Nat × Nat) := slW c l ++ [(c.wk, 64 * c.n)]
 
-theorem apart_slWk {l : List Nat} {i : Nat} (hi : i < 45) (hl : i ∉ l) :
+theorem apart_slWk (h7 : c.n < 10) {l : List Nat} {i : Nat} (hi : i < 45) (hl : i ∉ l) :
     ∀ w ∈ slWk c l, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-  apart_append (apart_slW hl) (apart_wk hi)
+  apart_append (apart_slW hl) (apart_wk h7 hi)
 
-theorem tbl_apart_slWk {l : List Nat} (hl : ∀ i ∈ l, i < 45) {j t : Nat} :
+theorem tbl_apart_slWk (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) {j t : Nat} :
     ∀ w ∈ slWk c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t :=
-  apart_append (tbl_apart_slW hl j t) (tbl_apart_wk j t)
+  apart_append (tbl_apart_slW h7 hl j t) (tbl_apart_wk h7 j t)
 
-theorem fixedOk_slWk {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : FixedOk c (slWk c l) :=
-  (fixedOk_slW hl).append fixedOk_wk
+theorem fixedOk_slWk (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : FixedOk c (slWk c l) :=
+  (fixedOk_slW hl).append (fixedOk_wk h7)
 
 theorem slWk_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slWk c l, w.1 + w.2 ≤ size := by
   intro w hw
@@ -45,9 +45,7 @@ theorem slWk_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ 
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     exact sl_le c h7 (hl i hi)
   · rw [List.mem_singleton.mp hw]
-    have := wk_le c h7 (M := c.MP') rfl
-    rw [accLen_MP'] at this
-    exact this
+    exact wk_le c h7 (M := c.MP') rfl
 
 theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 4)], w.1 + w.2 ≤ size := by
   intro w hw
@@ -72,7 +70,7 @@ structure St₂ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- `[k]G`, then `Z^(p-2)`. -/
 theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s : State} (hS : St₁ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (ladder c.ladderCfg c.wk) (.seq (pow c.powP c.wk) rest)) s Q := by
+    WP isa (.seq (ladder c.ladderCfg c.SP) (.seq (pow c.powP c.SP) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -116,32 +114,32 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
   have henc : encodable (BitVec.ofNat 32 (64 * c.n)) = true := by
     have : ∀ n < 10, encodable (BitVec.ofNat 32 (64 * n)) = true := by decide
     exact this _ h7
-  refine WP.seq (WP.mono (ladder_ok (ladLay hc) (ladWk hc) hpR (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far
+  refine WP.seq (WP.mono (ladder_ok (ladLay hc) (ladWk hc) hc.fp hpR (bitsAt_lt hc (j := 0) (by decide)) hS.scr hS.far
     (modP_of hc F.mp) hlt hstep hR hS.t₀ henc)
     fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
   rw [Nat.shiftRight_zero] at R₅
-  rw [ladWx_eq, accLen_MP'] at U₅
+  rw [ladWx_eq] at U₅
   have hs₅ := hS.scr.of_rest K₅ (by decide)
   have hf₅ := hS.far.of_rest K₅
-  have F₅ := F.unch h7 hn (fixedOk_slWk (by decide)) U₅
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hpR
+  have F₅ := F.unch h7 hn (fixedOk_slWk h7 (by decide)) U₅
+  refine WP.seq (WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) (powWkP hc) hc.fp hpR
     (bitsAt_lt hc (j := 1) (by decide)) hs₅ hf₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
     (fun t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk (by decide))]
+      rw [tbl_unch U₅ h7 (j := 1) (by decide) ht (tbl_apart_slWk h7 (by decide))]
       exact hS.t₁ t ht)
     (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega) henc) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
-  rw [powWxP_eq, accLen_MP'] at U₆
+  rw [powWxP_eq] at U₆
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] →
       sv c base s₆ i = sv c base s i := fun hi h₁ h₂ =>
-    (sv_unch U₆ h7 hn hi (apart_slWk hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWk hi h₂))
+    (sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)).trans (sv_unch U₅ h7 hn hi (apart_slWk h7 hi h₂))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
-    sv_unch U₆ h7 hn hi (apart_slWk hi h₁)
+    sv_unch U₆ h7 hn hi (apart_slWk h7 hi h₁)
   have K₅₆ : Rest work s s₆ := (K₅.mono powClob_work).trans (K₆.mono powClob_work)
   refine ⟨⟨hs₅.of_rest K₆ (by decide), hf₅.of_rest K₆, hS.rest.trans (K₅₆.mono (by simp)), by rw [K₅₆.gpr _ (by decide), hS.lr],
-    F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆,
+    F₅.unch h7 hn (fixedOk_slWk h7 (by decide)) U₆,
     whole_of (whole_of hS.whole U₅ (slWk_le h7 (by decide))) U₆ (slWk_le h7 (by decide))⟩,
     by rw [e₆ (by decide) (by decide) (by decide), hS.k],
     by rw [e₆ (by decide) (by decide) (by decide), hS.d],
@@ -149,8 +147,8 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {s :
     by rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide), ← flagW, hS.flag],
     ?_, ?_, lt₆, ?_, ?_⟩
   · intro t ht
-    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide)),
-      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide))]
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide)),
+      tbl_unch U₅ h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide))]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY)) (toM _ _ (sv c base s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
@@ -180,7 +178,7 @@ structure St₃ (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State) : 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
 theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c A s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c A s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.middle (.seq (pow c.powN c.wk) rest)) s Q := by
+    WP isa (.seq c.middle (.seq (pow c.powN c.SN) rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -191,9 +189,9 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     exact this _ h7
   refine WP.seq ?_
   rw [middle_eq]
-  refine midOps_ok hc hS.scr (modP_of hc F.mp) (modN_of hc F.mn) hS.acc_lt F.one F.zero F.r2n
+  refine midOps_ok hc hS.scr hS.far (modP_of hc F.mp) (modN_of hc F.mn) hS.acc_lt F.one F.zero F.r2n
     fun s₇ Mp => ?_
-  have F₇ := F.unch h7 hn (fixedOk_slWk (l := [XM, X, RR, KM, TMP]) (by decide)) Mp.unch
+  have F₇ := F.unch h7 hn (fixedOk_slWk h7 (l := [XM, X, RR, KM, TMP]) (by decide)) Mp.unch
   refine WP.mono (checks_ok hc Mp.scr F₇.mn) fun s₈ ⟨f₈, k₈, O₈⟩ => ?_
   have hs₈ := Mp.scr.of_rest k₈ (by decide)
   have hf₈ := (hS.far.of_rest Mp.rest).of_rest k₈
@@ -201,19 +199,19 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
   have e₈ : ∀ {i}, i < 45 → i ≠ FLAG → sv c base s₈ i = sv c base s₇ i := fun hi hf =>
     sv_flag O₈ h0 h7 hn hi hf
   have e₇ : ∀ {i}, i < 45 → i ∉ [XM, X, RR, KM, TMP] → sv c base s₇ i = sv c base s i := fun hi hl =>
-    sv_unch Mp.unch h7 hn hi (apart_slWk hi hl)
-  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) (powWkN hc) hnR
+    sv_unch Mp.unch h7 hn hi (apart_slWk h7 hi hl)
+  refine WP.seq (WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) (powWkN hc) hc.fn hnR
     (bitsAt_lt hc (j := 2) (by decide)) hs₈ hf₈
     (modN_of hc F₈.mn) (lt_of_eq_of_lt (e₈ (i := KM) (by decide) (by decide)) Mp.km_lt) F₈.onen
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
-      rw [tbl_unch O₈.unch h7 (j := 2) (by decide) ht (tbl_apart_flag h0 2 t),
-        tbl_unch Mp.unch h7 (j := 2) (by decide) ht (tbl_apart_slWk (by decide))]
+      rw [tbl_unch O₈.unch h7 (j := 2) (by decide) ht (tbl_apart_flag h7 h0 2 t),
+        tbl_unch Mp.unch h7 (j := 2) (by decide) ht (tbl_apart_slWk h7 (by decide))]
       exact hS.t₂ t ht)
     (show c.C.n - 2 < 2 ^ (64 * c.n) by have := hc.n_lt; omega) henc) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
-  rw [powWxN_eq, accLen_MN'] at U₉
+  rw [powWxN_eq] at U₉
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
-    sv_unch U₉ h7 hn hi (apart_slWk hi hl)
+    sv_unch U₉ h7 hn hi (apart_slWk h7 hi hl)
   -- The slots `middle` and the power do not write.
   have a₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → i ≠ FLAG → i ∉ [XM, X, RR, KM, TMP] →
       sv c base s₉ i = sv c base s i := fun hi h₁ h₂ h₃ =>
@@ -227,9 +225,9 @@ theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : S
     show toM _ _ (sv c base s₉ i) = toM _ _ (sv c base s i)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;> rw [a₉ (by decide) (by decide) (by decide) (by decide)]
-  have K₇₉ : Rest work s s₉ := (Mp.rest.mono clob_work).trans ((k₈.mono (by decide)).trans (K₉.mono powClob_work))
+  have K₇₉ : Rest work s s₉ := (Mp.rest.mono callClob_work).trans ((k₈.mono (by decide)).trans (K₉.mono powClob_work))
   refine ⟨⟨hs₈.of_rest K₉ (by decide), hf₈.of_rest K₉, hS.rest.trans (K₇₉.mono (by simp)), by rw [K₇₉.gpr _ (by decide), hS.lr],
-    F₈.unch h7 hn (fixedOk_slWk (by decide)) U₉,
+    F₈.unch h7 hn (fixedOk_slWk h7 (by decide)) U₉,
     whole_of (whole_of (whole_of hS.whole Mp.unch (slWk_le h7 (by decide))) O₈.unch (flag_le h0 h7)) U₉
       (slWk_le h7 (by decide))⟩,
     by rw [a₉ (i := D) (by decide) (by decide) (by decide) (by decide), hS.d],
@@ -273,26 +271,26 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
   have hnR := unitMod_pow_two hc.n_odd (64 * c.n)
   have F := hS.fixed
   rw [scalar_eq]
-  refine scalarIn_ok hc hS.scr (modN_of hc F.mn) F.r2n
+  refine scalarIn_ok hc hS.scr hS.far (modN_of hc F.mn) F.r2n
     fun s₁₀ hs₁₀ hM₁₀ K₁₀ U₁₀ _ dm em trm tdm tem => ?_
-  have F₁₀ := F.unch h7 hn (fixedOk_slWk (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
-  refine scalarOut_ok hc hs₁₀ hM₁₀ F₁₀.one dm em
+  have F₁₀ := F.unch h7 hn (fixedOk_slWk h7 (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₀
+  refine scalarOut_ok hc hs₁₀ (hS.far.of_rest K₁₀) hM₁₀ F₁₀.one dm em
     fun s₁₁ hs₁₁ K₁₁ U₁₁ ss_lt ss => ?_
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine VG.Proof.X25519.Arm.WP.append (checkNonzero_ok c hs₁₁ h0 (sl_le c h7 (i := SS) (by decide)) (by omega))
     fun s₁₂ ⟨f₁₂, k₁₂, O₁₂⟩ => ?_
   have hs₁₂ := hs₁₁.of_rest k₁₂ (by decide)
-  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slWk (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
+  have F₁₂ := (F₁₀.unch h7 hn (fixedOk_slWk h7 (l := [RM, DM, EM, TT, SM, SS, TMP]) (by decide)) U₁₁).unch
     h7 hn fixedOk_flag O₁₂.unch
   have W₁₂ : Unch base [(0, 8192)] s₀.mem s₁₂.mem :=
     whole_of (whole_of (whole_of hS.whole U₁₀ (slWk_le h7 (by decide))) U₁₁ (slWk_le h7 (by decide)))
       O₁₂.unch (flag_le h0 h7)
   have acc₁₀ : sv c base s₁₀ ACC = sv c base s ACC :=
-    sv_unch U₁₀ h7 hn (by decide) (apart_slWk (by decide) (by decide))
+    sv_unch U₁₀ h7 hn (by decide) (apart_slWk h7 (by decide) (by decide))
   have rr₁₂ : sv c base s₁₂ RR = sv c base s RR :=
     ((sv_flag O₁₂ h0 h7 hn (i := RR) (by decide) (by decide)).trans
-      (sv_unch U₁₁ h7 hn (by decide) (apart_slWk (by decide) (by decide)))).trans
-      (sv_unch U₁₀ h7 hn (by decide) (apart_slWk (by decide) (by decide)))
+      (sv_unch U₁₁ h7 hn (by decide) (apart_slWk h7 (by decide) (by decide)))).trans
+      (sv_unch U₁₀ h7 hn (by decide) (apart_slWk h7 (by decide) (by decide)))
   have ss₁₂ : sv c base s₁₂ SS = sv c base s₁₁ SS := sv_flag O₁₂ h0 h7 hn (by decide) (by decide)
   -- The flag.
   have hflag : flagW c base s₁₂ =
@@ -301,7 +299,7 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
     rw [f₁₂, flagW, flag_unch U₁₁ h7 h0 hn (by decide), flag_unch U₁₀ h7 h0 hn (by decide), ← flagW, hS.flag,
       BitVec.allOnes_and, mask32_and, mask32_and, mask32_and]
     simp only [mask32, decide_eq_true_eq]
-  have K₁₂' : Rest work s s₁₂ := (K₁₀.mono clob_work).trans ((K₁₁.mono clob_work).trans (k₁₂.mono (by decide)))
+  have K₁₂' : Rest work s s₁₂ := (K₁₀.mono callClob_work).trans ((K₁₁.mono callClob_work).trans (k₁₂.mono (by decide)))
   have K₁₂ : Rest (.lr :: work) s₀ s₁₂ := hS.rest.trans (K₁₂'.mono (by simp))
   have lr₁₂ : s₁₂.gpr .lr = s₀.gpr .r0 := by rw [K₁₂'.gpr _ (by decide), hS.lr]
   have hw : (⟨State.addr (s₀.gpr .r0), 2 * c.C.len⟩ : Region) ∈ s₁₂.wr := by
@@ -335,8 +333,8 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (ladder c.ladderCfg c.wk) (.seq (pow c.powP c.wk) (.seq c.middle
-      (.seq (pow c.powN c.wk) c.scalar))))))) := rfl
+    (.seq (ladder c.ladderCfg c.SP) (.seq (pow c.powP c.SP) (.seq c.middle
+      (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and changes only the working space and `out`. -/

@@ -143,22 +143,36 @@ theorem addDigit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     (K₅.trans ((m₆.rest _).trans (u₇.rest (by simp))))
   rw [u₇.mem, m₆.mem, mem₅]; exact writeW32_outside _ _ _ (by omega_arith)
 
-/-- Word `k` of `[a] + [b]`. -/
-def addWord (acc a b k : Nat) : List Instr :=
-  [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (b + 4 * k)] ++ addDigit acc (2 * k) ++ addDigit acc (2 * k + 1)
+/-- A register outside a list is outside any of its sublists. -/
+theorem not_mem_sub {r : Reg} {l l' : List Reg} (h : r ∉ l') (hl : ∀ x ∈ l, x ∈ l' := by decide) : r ∉ l :=
+  fun hr => h (hl r hr)
 
-/-- The first `k` words of `[a] + [b]`. -/
-def addK (acc a b k : Nat) : List Instr := (List.range k).flatMap (addWord acc a b)
+/-- A register outside a list is none of its members. -/
+theorem ne_of_not_mem {r x : Reg} {l : List Reg} (h : r ∉ l) (hx : x ∈ l := by decide) : r ≠ x :=
+  fun e => h (e ▸ hx)
 
-theorem addK_succ (acc a b k : Nat) : addK acc a b (k + 1) = addK acc a b k ++ addWord acc a b k := by
+/-- Word `k` of `[ra + a] + [rb + b]`. -/
+def addWord (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b k : Nat) : List Instr :=
+  [.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k)] ++ addDigit acc (2 * k) ++ addDigit acc (2 * k + 1)
+
+/-- The first `k` words of `[ra + a] + [rb + b]`. -/
+def addK (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b k : Nat) : List Instr :=
+  (List.range k).flatMap (addWord acc ra a rb b)
+
+theorem addK_succ (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b k : Nat) :
+    addK acc ra a rb b (k + 1) = addK acc ra a rb b k ++ addWord acc ra a rb b k := by
   simp only [addK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
-/-- The digits of the first `k` words of `[a] + [b]`, from the carry `c`. -/
+/-- The digits of the first `k` words of `[a] + [b]`, from the carry `c`
+(read at `[ra + da]` and `[rb + db]`, `ra = r12 + ka`, `rb = r12 + kb`). -/
 theorem addK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc a b : Nat}
+    {ra rb : Reg} {ka da kb db : Nat} (hra : s.gpr ra = s.gpr .r12 + BitVec.ofNat 32 ka) (hka : ka + da = a)
+    (hrb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 kb) (hkb : kb + db = b)
+    (hra' : ra ∉ [.r3, .r4, .r5, .r7, .r8]) (hrb' : rb ∉ [.r3, .r4, .r5, .r7, .r8])
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hc : (s.gpr .r3).toNat ≤ 1) :
     ∀ {k : Nat}, acc + 4 * (2 * k) ≤ size → a + 4 * k ≤ size → b + 4 * k ≤ size →
     (acc + 4 * (2 * k) ≤ a ∨ a + 4 * k ≤ acc) → (acc + 4 * (2 * k) ≤ b ∨ b + 4 * k ≤ acc) →
-    WP isa (.block (addK acc a b k)) s fun u =>
+    WP isa (.block (addK acc ra da rb db k)) s fun u =>
       Outside base acc (4 * (2 * k)) s.mem u.mem ∧ Digs u.mem base acc (2 * k) ∧ (u.gpr .r3).toNat ≤ 1 ∧
       dval u.mem base acc (2 * k) + 2 ^ (32 * k) * (u.gpr .r3).toNat =
         val32 s.mem base a k + val32 s.mem base b k + (s.gpr .r3).toNat ∧
@@ -168,14 +182,23 @@ theorem addK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   | k + 1, hacc, ha, hb, hsa, hsb => by
     have hn := hs.nowrap
     rw [addK_succ]
-    refine VG.Proof.X25519.Arm.WP.append (addK_ok hs h6 hc (k := k) (by omega_arith) (by omega_arith) (by omega_arith)
-      (by omega_arith) (by omega_arith)) fun s₁ ⟨O₁, D₁, C₁, V₁, K₁⟩ => ?_
+    refine VG.Proof.X25519.Arm.WP.append (addK_ok hs hra hka hrb hkb hra' hrb' h6 hc (k := k) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₁ ⟨O₁, D₁, C₁, V₁, K₁⟩ => ?_
     have hs₁ := hs.of_rest K₁ (by decide)
     simp only [addWord, List.cons_append, List.append_assoc]
-    refine wp_ldr (hs.off_lt (by omega_arith)) (hs₁.ea (by omega_arith)) (hs₁.read (d := a + 4 * k) (n := 4) (by omega_arith))
+    have ea₁ : State.addr (s₁.gpr ra + BitVec.ofNat 32 (da + 4 * k)) = off base (a + 4 * k) := by
+      rw [← hka, Nat.add_assoc]
+      exact hs₁.ea_off (by rw [K₁.gpr _ hra', K₁.gpr _ (by decide)]; exact hra) (by omega_arith)
+    refine wp_ldr (hs.off_lt (d := da + 4 * k) (by omega_arith)) ea₁ (hs₁.read (d := a + 4 * k) (n := 4) (by omega_arith))
       fun s₂ u₂ => ?_
-    refine wp_ldr (hs.off_lt (by omega_arith)) ((hs₁.of_rest (u₂.rest (ws := [.r7]) (by simp)) (by decide)).ea
-      (by omega_arith)) (by rw [u₂.wr, u₂.rd]; exact hs₁.read (d := b + 4 * k) (n := 4) (by omega_arith)) fun s₃ u₃ => ?_
+    have ea₂ : State.addr (s₂.gpr rb + BitVec.ofNat 32 (db + 4 * k)) = off base (b + 4 * k) := by
+      rw [← hkb, Nat.add_assoc]
+      refine (hs₁.of_rest (u₂.rest (ws := [.r7]) (by simp)) (by decide)).ea_off ?_ (by omega_arith)
+      rw [u₂.other _ (ne_of_not_mem hrb'), u₂.other _ (by decide), K₁.gpr _ hrb',
+        K₁.gpr _ (by decide)]
+      exact hrb
+    refine wp_ldr (hs.off_lt (d := db + 4 * k) (by omega_arith)) ea₂
+      (by rw [u₂.wr, u₂.rd]; exact hs₁.read (d := b + 4 * k) (n := 4) (by omega_arith)) fun s₃ u₃ => ?_
     have K₃ : Rest [.r3, .r4, .r5, .r7, .r8] s s₃ := K₁.trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
     have hs₃ := hs.of_rest K₃ (by decide)
     refine addDigit_ok hs₃ (j := 2 * k) (by rw [K₃.gpr _ (by decide)]; exact h6) (by omega_arith)
@@ -295,26 +318,31 @@ theorem subDigit_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     (K₈.trans ((m₉.rest _).trans (u₁₀.rest (by simp))))
   rw [u₁₀.mem, m₉.mem, mem₈]; exact writeW32_outside _ _ _ (by omega_arith)
 
-/-- Word `k` of `[a] + m - [b]`. -/
-def subWord (acc a b mo k : Nat) : List Instr :=
-  [.ldr .r7 wb (a + 4 * k), .ldr .r8 wb (b + 4 * k), .ldr .r9 wb (mo + 4 * k)] ++ subDigit acc (2 * k) ++
+/-- Word `k` of `[ra + a] + m - [rb + b]`. -/
+def subWord (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b mo k : Nat) : List Instr :=
+  [.ldr .r7 ra (a + 4 * k), .ldr .r8 rb (b + 4 * k), .ldr .r9 wb (mo + 4 * k)] ++ subDigit acc (2 * k) ++
     subDigit acc (2 * k + 1)
 
-/-- The first `k` words of `[a] + m - [b]`. -/
-def subK (acc a b mo k : Nat) : List Instr := (List.range k).flatMap (subWord acc a b mo)
+/-- The first `k` words of `[ra + a] + m - [rb + b]`. -/
+def subK (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b mo k : Nat) : List Instr :=
+  (List.range k).flatMap (subWord acc ra a rb b mo)
 
-theorem subK_succ (acc a b mo k : Nat) :
-    subK acc a b mo (k + 1) = subK acc a b mo k ++ subWord acc a b mo k := by
+theorem subK_succ (acc : Nat) (ra : Reg) (a : Nat) (rb : Reg) (b mo k : Nat) :
+    subK acc ra a rb b mo (k + 1) = subK acc ra a rb b mo k ++ subWord acc ra a rb b mo k := by
   simp only [subK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- The digits of the first `k` words of `[a] + m - [b]`, from the carry `c`:
-`T + 2^(32k) c' + B + 1 = A + M + 2^(32k) + c`. -/
+`T + 2^(32k) c' + B + 1 = A + M + 2^(32k) + c` (`[a]` and `[b]` read at
+`[ra + da]` and `[rb + db]`, `ra = r12 + ka`, `rb = r12 + kb`). -/
 theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {acc a b mo : Nat}
+    {ra rb : Reg} {ka da kb db : Nat} (hra : s.gpr ra = s.gpr .r12 + BitVec.ofNat 32 ka) (hka : ka + da = a)
+    (hrb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 kb) (hkb : kb + db = b)
+    (hra' : ra ∉ [.r3, .r4, .r5, .r7, .r8, .r9]) (hrb' : rb ∉ [.r3, .r4, .r5, .r7, .r8, .r9])
     (h6 : s.gpr .r6 = VG.Proof.X25519.Arm.mask16) (hc : (s.gpr .r3).toNat ≤ 2) :
     ∀ {k : Nat}, acc + 4 * (2 * k) ≤ size → a + 4 * k ≤ size → b + 4 * k ≤ size → mo + 4 * k ≤ size →
     (acc + 4 * (2 * k) ≤ a ∨ a + 4 * k ≤ acc) → (acc + 4 * (2 * k) ≤ b ∨ b + 4 * k ≤ acc) →
     (acc + 4 * (2 * k) ≤ mo ∨ mo + 4 * k ≤ acc) →
-    WP isa (.block (subK acc a b mo k)) s fun u =>
+    WP isa (.block (subK acc ra da rb db mo k)) s fun u =>
       Outside base acc (4 * (2 * k)) s.mem u.mem ∧ Digs u.mem base acc (2 * k) ∧ (u.gpr .r3).toNat ≤ 2 ∧
       dval u.mem base acc (2 * k) + 2 ^ (32 * k) * (u.gpr .r3).toNat + val32 s.mem base b k + 1 =
         val32 s.mem base a k + val32 s.mem base mo k + 2 ^ (32 * k) + (s.gpr .r3).toNat ∧
@@ -325,14 +353,24 @@ theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
   | k + 1, hacc, ha, hb, hmo, hsa, hsb, hsm => by
     have hn := hs.nowrap
     rw [subK_succ]
-    refine VG.Proof.X25519.Arm.WP.append (subK_ok hs h6 hc (k := k) (by omega_arith) (by omega_arith) (by omega_arith)
-      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₁ ⟨O₁, D₁, C₁, V₁, K₁⟩ => ?_
+    refine VG.Proof.X25519.Arm.WP.append (subK_ok hs hra hka hrb hkb hra' hrb' h6 hc (k := k) (by omega_arith)
+      (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
+      fun s₁ ⟨O₁, D₁, C₁, V₁, K₁⟩ => ?_
     have hs₁ := hs.of_rest K₁ (by decide)
     simp only [subWord, List.cons_append, List.append_assoc]
-    refine wp_ldr (hs.off_lt (by omega_arith)) (hs₁.ea (by omega_arith)) (hs₁.read (d := a + 4 * k) (n := 4) (by omega_arith))
+    have ea₁ : State.addr (s₁.gpr ra + BitVec.ofNat 32 (da + 4 * k)) = off base (a + 4 * k) := by
+      rw [← hka, Nat.add_assoc]
+      exact hs₁.ea_off (by rw [K₁.gpr _ hra', K₁.gpr _ (by decide)]; exact hra) (by omega_arith)
+    refine wp_ldr (hs.off_lt (d := da + 4 * k) (by omega_arith)) ea₁ (hs₁.read (d := a + 4 * k) (n := 4) (by omega_arith))
       fun s₂ u₂ => ?_
     have hs₂ := hs₁.of_rest (u₂.rest (ws := [.r7]) (by simp)) (by decide)
-    refine wp_ldr (hs.off_lt (by omega_arith)) (hs₂.ea (by omega_arith)) (hs₂.read (d := b + 4 * k) (n := 4) (by omega_arith))
+    have ea₂ : State.addr (s₂.gpr rb + BitVec.ofNat 32 (db + 4 * k)) = off base (b + 4 * k) := by
+      rw [← hkb, Nat.add_assoc]
+      refine hs₂.ea_off ?_ (by omega_arith)
+      rw [u₂.other _ (ne_of_not_mem hrb'), u₂.other _ (by decide), K₁.gpr _ hrb',
+        K₁.gpr _ (by decide)]
+      exact hrb
+    refine wp_ldr (hs.off_lt (d := db + 4 * k) (by omega_arith)) ea₂ (hs₂.read (d := b + 4 * k) (n := 4) (by omega_arith))
       fun s₃ u₃ => ?_
     have hs₃' := hs₂.of_rest (u₃.rest (ws := [.r8]) (by simp)) (by decide)
     refine wp_ldr (hs.off_lt (by omega_arith)) (hs₃'.ea (by omega_arith)) (hs₃'.read (d := mo + 4 * k) (n := 4) (by omega_arith))
@@ -402,21 +440,42 @@ theorem subK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a
 
 /-! ## The operations -/
 
-theorem add_eq (M : Mod) (acc o a b : Nat) : add M acc o a b =
-    ([mask16, .mov .r3 (.imm 0)] : List Instr) ++ addK acc a b (words M) ++
-      ([.str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc o :=
+theorem addR_eq (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : addR M acc o a b ra rb ro =
+    ([mask16, .mov .r3 (.imm 0)] : List Instr) ++ addK acc ra a rb b (words M) ++
+      ([.str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc ro o :=
   rfl
 
-theorem sub_eq (M : Mod) (acc o a b : Nat) : sub M acc o a b =
-    ([mask16, .mov .r3 (.imm 1)] : List Instr) ++ subK acc a b M.mo (words M) ++
-      ([.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc o :=
+theorem subR_eq (M : Mod) (acc o a b : Nat) (ra rb ro : Reg) : subR M acc o a b ra rb ro =
+    ([mask16, .mov .r3 (.imm 1)] : List Instr) ++ subK acc ra a rb b M.mo (words M) ++
+      ([.dp .sub .r3 .r3 (.imm 1), .str .r3 wb (acc + 4 * digits M)] : List Instr) ++ csub M acc ro o :=
   rfl
 
-/-- `[o] = [a] [b] R⁻¹ mod m`. -/
-theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+/-- Where an operation's numbers are read and written: `[ra + ia]`,
+`[rb + ib]` and `[ro + io]`, with each register `k` bytes into the working
+space, so that the numbers are `a`, `b` and `o` bytes into it. -/
+structure Ptrs (s : State) (ra rb ro : Reg) (ia ib io a b o : Nat) where
+  ka : Nat
+  kb : Nat
+  ko : Nat
+  ra : s.gpr ra = s.gpr .r12 + BitVec.ofNat 32 ka
+  rb : s.gpr rb = s.gpr .r12 + BitVec.ofNat 32 kb
+  ro : s.gpr ro = s.gpr .r12 + BitVec.ofNat 32 ko
+  a : ka + ia = a
+  b : kb + ib = b
+  o : ko + io = o
+
+/-- The numbers read and written through `r12` itself. -/
+def Ptrs.base (s : State) (a b o : Nat) : Ptrs s .r12 .r12 .r12 a b o a b o :=
+  ⟨0, 0, 0, by simp, by simp, by simp, Nat.zero_add _, Nat.zero_add _, Nat.zero_add _⟩
+
+/-- `[o] = [a] [b] R⁻¹ mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
+`[rb + ib]` and `[ro + io]`. -/
+theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    {ra rb ro : Reg} {ia ib io : Nat} (hP : Ptrs s ra rb ro ia ib io a b o) (hra : ra ∉ [.r0, .r6, .r7])
+    (hrb : rb ∉ rowClob) (hro : ro ∉ clob)
     (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (mul M acc o a b) s fun s' => OpKeep M base acc o s s' ∧
+    WP isa (mulR M acc io ia ib ra rb ro) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n < m ∧
       wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m := by
@@ -434,14 +493,14 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hML : MulLay W size acc a b M.mo :=
     ⟨by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith, by omega_arith⟩
   have himm : encodable (BitVec.ofNat 32 W) = true := hW ▸ words_encodable (by omega_arith)
-  simp only [mul, hW, hD]
+  simp only [mulR, hW, hD]
   refine WP.seq (zeros_ok hs (k := 2 * (2 * W) + 2) (by omega_arith) fun s₁ O₁ Z₁ K₁ => ?_)
   refine wp_movw fun s₂ u₂ => ?_
   refine wp_mov (op2_reg _ _) fun s₃ u₃ => ?_
   refine wp_mov (op2_reg _ _) fun s₄ u₄ => ?_
   refine wp_mov (op2_imm himm) fun s₅ u₅ => WP.block_nil ?_
-  have K₅ : Rest clob s s₅ := (K₁.mono (by simp [clob])).trans ((u₂.rest (by simp [clob])).trans
-    ((u₃.rest (by simp [clob])).trans ((u₄.rest (by simp [clob])).trans (u₅.rest (by simp [clob])))))
+  have K₅ : Rest rowClob s s₅ := (K₁.mono (by simp [rowClob])).trans ((u₂.rest (by simp [rowClob])).trans
+    ((u₃.rest (by simp [rowClob])).trans ((u₄.rest (by simp [rowClob])).trans (u₅.rest (by simp [rowClob])))))
   have hs₅ := hs.of_rest K₅ (by decide)
   have mem₅ : s₅.mem = s₁.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem]
   have O₅ : Outside base acc (4 * (4 * W + 2)) s.mem s₅.mem := by
@@ -455,17 +514,22 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     u₃.other _ (by decide)]
   have hz : dval s₅.mem base (acc + 4 * (2 * 0)) (2 * W + 2) = 0 := dval_zero fun j hj => by
     rw [show acc + 4 * (2 * 0) + 4 * j = acc + 4 * j by omega_arith]; exact Z₅ j (by omega_arith)
-  have I₀ : LoopInv base W acc a b m 0 s₅ s₅ := by
+  have I₀ : LoopInv base W acc hP.ka a b m 0 s₅ s₅ := by
     refine ⟨?_, ?_, ?_, ?_, VG.Proof.Mont.Outside.refl _ _ _ _, Rest.refl _ _, fun j hj => ?_, fun l h₁ h₂ => ?_,
       by rw [hz]; omega_arith, ⟨0, by rw [hz]; simp only [Nat.mul_zero, pval, Nat.zero_mul, Nat.add_zero]⟩⟩
     · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, r12₅]; exact (BitVec.add_zero _).symm
-    · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide), r12₅]; exact (BitVec.add_zero _).symm
+    · rw [u₅.other _ (by decide), u₄.gpr, u₃.other _ (fun h => hra (by simp [h])), u₂.other _ (fun h => hra (by simp [h])),
+        K₁.gpr _ (fun h => hra (by simp at h; simp [h])), hP.ra, K₅.gpr .r12 (by decide), Nat.mul_zero, Nat.add_zero]
     · rw [u₅.gpr, Nat.sub_zero]
     · rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr]
     · rw [show acc + 4 * (2 * 0) + 4 * j = acc + 4 * j by omega_arith, Z₅ j (by omega_arith)]; decide
     · exact Z₅ l h₂
-  refine WP.seq (WP.mono (loop_ok hs₅ hW hD hML (by omega_arith) (by omega_arith) hm₅ (minv16_inv hM.inv) hB₅ I₀)
-    fun t I => ?_)
+  have hb₅ : s₅.gpr rb = s₅.gpr .r12 + BitVec.ofNat 32 hP.kb := by
+    rw [K₅.gpr _ hrb, K₅.gpr _ (by decide)]; exact hP.rb
+  refine WP.seq (WP.mono (loop_ok hs₅ hP.a hb₅ hP.b hrb hW hD hML (by omega_arith) (by omega_arith) hm₅
+    (minv16_inv hM.inv) hB₅ I₀) fun t I => ?_)
+  have hot : t.gpr ro = t.gpr .r12 + BitVec.ofNat 32 hP.ko := by
+    rw [(K₅.trans I.rest).gpr _ (not_mem_rowClob hro), (K₅.trans I.rest).gpr _ (by decide)]; exact hP.ro
   have ht := hs₅.of_rest I.rest (by decide)
   have hmt : val32 t.mem base M.mo W = m := by rw [I.out.val32 (by omega_arith) (by omega_arith), hm₅]
   -- The window's top digit is zero.
@@ -481,7 +545,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · have := Nat.mul_le_mul_right (2 ^ (16 * (2 * W + 1))) h
       omega_arith
   have hV : dval t.mem base (acc + 4 * (2 * W)) (2 * W + 1) < 2 * m := htop ▸ I.lt
-  refine WP.mono (csub_ok ht hW hD (src := acc + 4 * (2 * W)) (o := o)
+  refine WP.mono (csub_ok ht hot hP.o hro hW hD (src := acc + 4 * (2 * W)) (o := o)
     (by omega_using [hacc, hL.acc_le])
     (by omega_using [hW2, hL.o_le])
     (by omega_using [hW2, hM.tmp])
@@ -490,7 +554,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     (by omega_using [hW2, hM.sep])
     (by omega_using [hW2, hacc, hL.acc_o])
     (by omega_using [hW2, hL.o_tmp]) hmt hm0 (I.digs.mono (by omega_arith)) hV)
-    fun u ⟨O, V, K⟩ => ⟨⟨(K₅.trans I.rest).trans (K.mono (by simp [clob])), ?_⟩, ?_, ?_⟩
+    fun u ⟨O, V, K⟩ => ⟨⟨((K₅.trans I.rest).mono (by simp [rowClob, clob])).trans (K.mono (by simp [clob])), ?_⟩, ?_, ?_⟩
   · have O₅' : Outside base acc (accLen M) s.mem s₅.mem := by rw [hacc]; exact O₅
     have Ot : Outside base acc (accLen M) s₅.mem t.mem := by rw [hacc]; exact I.out
     refine ((Outs.of_outside O₅' (by simp)).trans (Outs.of_outside Ot (by simp))).trans ?_
@@ -503,11 +567,25 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
       show 64 * M.n = 32 * W by omega_arith, ← O₅.val32 (d := a) (by omega_arith) (by omega_arith),
       ← O₅.val32 (d := b) (by omega_arith) (by omega_arith), Nat.mod_mul_mod, Nat.mul_comm, hU, Nat.add_mul_mod_self_right]
 
-/-- `[o] = [a] + [b] mod m`. -/
-theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+/-- `[o] = [a] [b] R⁻¹ mod m`. -/
+theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (mul M acc o a b) s fun s' => OpKeep M base acc o s s' ∧
+      wordsVal s'.mem base o M.n < m ∧
+      wordsVal s'.mem base o M.n * 2 ^ (64 * M.n) % m =
+        wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % m :=
+  mulR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hB
+
+/-- `[o] = [a] + [b] mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
+`[rb + ib]` and `[ro + io]`. -/
+theorem addR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    {ra rb ro : Reg} {ia ib io : Nat} (hP : Ptrs s ra rb ro ia ib io a b o)
+    (hra : ra ∉ [.r3, .r4, .r5, .r6, .r7, .r8, .r9]) (hrb : rb ∉ [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
+    (hro : ro ∉ clob)
     (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
-    WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+    WP isa (.block (addR M acc io ia ib ra rb ro)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
   obtain ⟨W, hW⟩ : ∃ W, words M = W := ⟨_, rfl⟩
@@ -518,7 +596,7 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have := hL.acc_b; have := hL.acc_mo; have := hL.acc_tmp; have := hL.o_tmp
   have := hM.mo; have := hM.tmp; have := hM.sep; have := hM.n0
   have hm0 := m_pos_of_inv hM.inv
-  rw [add_eq, hW, hD]
+  rw [addR_eq, hW, hD]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movw fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
@@ -527,7 +605,13 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have h6₂ : s₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by rw [u₂.other _ (by decide), u₁.gpr]
   have mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have c₂ : (s₂.gpr .r3).toNat = 0 := by rw [u₂.gpr]; rfl
-  refine VG.Proof.X25519.Arm.WP.append (addK_ok hs₂ (a := a) (b := b) (acc := acc) h6₂ (by omega_arith) (k := W)
+  have r12₂ : s₂.gpr .r12 = s.gpr .r12 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  have hra₂ : s₂.gpr ra = s₂.gpr .r12 + BitVec.ofNat 32 hP.ka := by
+    rw [u₂.other _ (ne_of_not_mem hra), u₁.other _ (ne_of_not_mem hra), r12₂]; exact hP.ra
+  have hrb₂ : s₂.gpr rb = s₂.gpr .r12 + BitVec.ofNat 32 hP.kb := by
+    rw [u₂.other _ (ne_of_not_mem hrb), u₁.other _ (ne_of_not_mem hrb), r12₂]; exact hP.rb
+  refine VG.Proof.X25519.Arm.WP.append (addK_ok hs₂ (a := a) (b := b) (acc := acc) hra₂ hP.a hrb₂ hP.b
+    (not_mem_sub hra) (not_mem_sub hrb) h6₂ (by omega_arith) (k := W)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) fun s₃ ⟨O₃, D₃, C₃, V₃, K₃⟩ => ?_
   have K₂₃ := K₂.trans (K₃.mono (by simp [clob]))
   have hs₃ := hs.of_rest K₂₃ (by decide)
@@ -552,7 +636,9 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [hW2, ← wordsVal_eq_val32, ← wordsVal_eq_val32]; exact hAB
   have hm₄ : val32 s₄.mem base M.mo W = m := by
     rw [O₄.val32 (by omega_arith) (by omega_arith), hW2, ← wordsVal_eq_val32]; exact hM.val
-  refine WP.mono (csub_ok hs₄ hW hD (src := acc) (o := o)
+  have hro₄ : s₄.gpr ro = s₄.gpr .r12 + BitVec.ofNat 32 hP.ko := by
+    rw [(K₂₃.trans (m₄.rest _)).gpr _ hro, (K₂₃.trans (m₄.rest _)).gpr _ (by decide)]; exact hP.ro
+  refine WP.mono (csub_ok hs₄ hro₄ hP.o hro hW hD (src := acc) (o := o)
     (by omega_using [hacc, hL.acc_le])
     (by omega_using [hW2, hL.o_le])
     (by omega_using [hW2, hM.tmp])
@@ -568,11 +654,23 @@ theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, ← hW2, V, hsum]
 
-/-- `[o] = [a] - [b] mod m`. -/
-theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+/-- `[o] = [a] + [b] mod m`. -/
+theorem add_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
     (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hAB : wordsVal s.mem base a M.n + wordsVal s.mem base b M.n < 2 * m) :
+    WP isa (.block (add M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + wordsVal s.mem base b M.n) % m :=
+  addR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hAB
+
+/-- `[o] = [a] - [b] mod m`, with `[a]`, `[b]` and `[o]` at `[ra + ia]`,
+`[rb + ib]` and `[ro + io]`. -/
+theorem subR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    {ra rb ro : Reg} {ia ib io : Nat} (hP : Ptrs s ra rb ro ia ib io a b o)
+    (hra : ra ∉ [.r3, .r4, .r5, .r6, .r7, .r8, .r9]) (hrb : rb ∉ [.r3, .r4, .r5, .r6, .r7, .r8, .r9])
+    (hro : ro ∉ clob)
     (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
-    WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+    WP isa (.block (subR M acc io ia ib ra rb ro)) s fun s' => OpKeep M base acc o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   have hn := hs.nowrap
   obtain ⟨W, hW⟩ : ∃ W, words M = W := ⟨_, rfl⟩
@@ -587,7 +685,7 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have hAv : val32 s.mem base a W < m := by rw [hW2, ← wordsVal_eq_val32]; exact hA
   have hBv : val32 s.mem base b W < m := by rw [hW2, ← wordsVal_eq_val32]; exact hB
   have hmP : m < 2 ^ (32 * W) := by rw [← hmv]; exact val32_lt _ _ _ _
-  rw [sub_eq, hW, hD]
+  rw [subR_eq, hW, hD]
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_movw fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
@@ -596,7 +694,13 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
   have h6₂ : s₂.gpr .r6 = VG.Proof.X25519.Arm.mask16 := by rw [u₂.other _ (by decide), u₁.gpr]
   have mem₂ : s₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   have c₂ : (s₂.gpr .r3).toNat = 1 := by rw [u₂.gpr]; rfl
-  refine VG.Proof.X25519.Arm.WP.append (subK_ok hs₂ (a := a) (b := b) (mo := M.mo) (acc := acc) h6₂ (by omega_arith)
+  have r12₂ : s₂.gpr .r12 = s.gpr .r12 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  have hra₂ : s₂.gpr ra = s₂.gpr .r12 + BitVec.ofNat 32 hP.ka := by
+    rw [u₂.other _ (ne_of_not_mem hra), u₁.other _ (ne_of_not_mem hra), r12₂]; exact hP.ra
+  have hrb₂ : s₂.gpr rb = s₂.gpr .r12 + BitVec.ofNat 32 hP.kb := by
+    rw [u₂.other _ (ne_of_not_mem hrb), u₁.other _ (ne_of_not_mem hrb), r12₂]; exact hP.rb
+  refine VG.Proof.X25519.Arm.WP.append (subK_ok hs₂ (a := a) (b := b) (mo := M.mo) (acc := acc) hra₂ hP.a hrb₂ hP.b
+    (not_mem_sub hra) (not_mem_sub hrb) h6₂ (by omega_arith)
     (k := W) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith))
     fun s₃ ⟨O₃, D₃, C₃, V₃, K₃⟩ => ?_
   rw [mem₂, c₂, hmv] at V₃
@@ -633,7 +737,9 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · rw [low j h]; exact D₃ j h
     · rw [show j = 2 * W by omega_arith, top]; omega_arith
   have hm₅ : val32 s₅.mem base M.mo W = m := by rw [O₅.val32 (by omega_arith) (by omega_arith), hmv]
-  refine WP.mono (csub_ok hs₅ hW hD (src := acc) (o := o)
+  have hro₅ : s₅.gpr ro = s₅.gpr .r12 + BitVec.ofNat 32 hP.ko := by
+    rw [(K₂₄.trans (m₅.rest _)).gpr _ hro, (K₂₄.trans (m₅.rest _)).gpr _ (by decide)]; exact hP.ro
+  refine WP.mono (csub_ok hs₅ hro₅ hP.o hro hW hD (src := acc) (o := o)
     (by omega_using [hacc, hL.acc_le])
     (by omega_using [hW2, hL.o_le])
     (by omega_using [hW2, hM.tmp])
@@ -648,5 +754,13 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     rw [show 4 * W = 8 * M.n by omega_arith] at O
     exact O.mono (by simp)
   · rw [wordsVal_eq_val32, wordsVal_eq_val32, wordsVal_eq_val32, ← hW2, V, hdiff]
+
+/-- `[o] = [a] - [b] mod m`. -/
+theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkW M size m s.mem base) {acc o a b : Nat} (hL : OpLay M size acc o a b)
+    (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (sub M acc o a b)) s fun s' => OpKeep M base acc o s s' ∧
+      wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m :=
+  subR_ok hs hM hL (Ptrs.base s a b o) (by decide) (by decide) (by decide) hA hB
 
 end VG.Proof.Mont.Arm

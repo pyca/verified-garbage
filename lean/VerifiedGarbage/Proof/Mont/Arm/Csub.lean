@@ -181,12 +181,14 @@ theorem select_val (x t : BitVec 32) (b : Bool) :
     simp only [BitVec.getElem_xor, BitVec.getElem_and, BitVec.getElem_allOnes, ite_true, Bool.and_true]
     cases x[i] <;> cases t[i] <;> rfl
 
-/-- Word `k` of `[o]`: of `[tmp]` under the mask, else the packed digits. -/
+/-- Word `k` of `[o]` (written at `[ro + d]`, `ro = r12 + K`): of `[tmp]`
+under the mask, else the packed digits. -/
 theorem selWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {src o k : Nat}
+    {ro : Reg} {K d : Nat} (hro : s.gpr ro = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = o) (hrc : ro ∉ clob)
     (b : Bool) (h3 : s.gpr .r3 = if b then BitVec.allOnes 32 else 0)
     (hsrc : src + 8 * k + 8 ≤ size) (htmp : M.tmp + 4 * k + 4 ≤ size) (ho : o + 4 * k + 4 ≤ size)
     (hx0 : w32 s.mem base (src + 8 * k) < 2 ^ 16) (hx1 : w32 s.mem base (src + 8 * k + 4) < 2 ^ 16) :
-    WP isa (.block (selWord M src o k)) s fun u =>
+    WP isa (.block (selWord M src ro d k)) s fun u =>
       Outside base (o + 4 * k) 4 s.mem u.mem ∧
       w32 u.mem base (o + 4 * k) = (if b then w32 s.mem base (M.tmp + 4 * k) else
         w32 s.mem base (src + 8 * k) + 2 ^ 16 * w32 s.mem base (src + 8 * k + 4)) ∧
@@ -206,7 +208,11 @@ theorem selWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   have K₇ : Rest [.r5, .r7] s s₇ := K₃.trans (((u₄.rest (by simp)).trans (u₅.rest (by simp))).trans
     ((u₆.rest (by simp)).trans (u₇.rest (by simp))))
   have hs₇ := hs.of_rest K₇ (by decide)
-  refine wp_str (hs.off_lt (by omega_arith)) (hs₇.ea (by omega_arith)) (hs₇.write (by omega_arith)) fun s₈ m₈ => WP.block_nil ?_
+  have hro₇ : s₇.gpr ro = s₇.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [K₇.gpr _ (not_mem_of_clob hrc), K₇.gpr _ (by decide)]; exact hro
+  have ea : State.addr (s₇.gpr ro + BitVec.ofNat 32 (d + 4 * k)) = off base (o + 4 * k) := by
+    rw [← hK, Nat.add_assoc]; exact hs₇.ea_off hro₇ (by omega_arith)
+  refine wp_str (hs.off_lt (d := d + 4 * k) (by omega_arith)) ea (hs₇.write (by omega_arith)) fun s₈ m₈ => WP.block_nil ?_
   have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   -- r5 = x₀ | x₁ << 16
@@ -232,19 +238,21 @@ theorem selWord_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · simp only [ite_true]; rw [r7₄]
 
 /-- The first `k` words of the selection. -/
-def selK (M : Mod) (src o k : Nat) : List Instr := (List.range k).flatMap (selWord M src o)
+def selK (M : Mod) (src : Nat) (ro : Reg) (o k : Nat) : List Instr := (List.range k).flatMap (selWord M src ro o)
 
-theorem selK_succ (M : Mod) (src o k : Nat) : selK M src o (k + 1) = selK M src o k ++ selWord M src o k := by
+theorem selK_succ (M : Mod) (src : Nat) (ro : Reg) (o k : Nat) :
+    selK M src ro o (k + 1) = selK M src ro o k ++ selWord M src ro o k := by
   simp only [selK, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- The first `k` words of `[o]`: of `[tmp]` under the mask, else the digits
 of `[src]`, packed. -/
 theorem selK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {src o : Nat}
+    {ro : Reg} {K d : Nat} (hro : s.gpr ro = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = o) (hrc : ro ∉ clob)
     (b : Bool) (h3 : s.gpr .r3 = if b then BitVec.allOnes 32 else 0) :
     ∀ {k : Nat}, src + 8 * k ≤ size → M.tmp + 4 * k ≤ size → o + 4 * k ≤ size →
     (o + 4 * k ≤ src ∨ src + 8 * k ≤ o) → (o + 4 * k ≤ M.tmp ∨ M.tmp + 4 * k ≤ o) →
     Digs s.mem base src (2 * k) →
-    WP isa (.block (selK M src o k)) s fun u =>
+    WP isa (.block (selK M src ro d k)) s fun u =>
       Outside base o (4 * k) s.mem u.mem ∧
       val32 u.mem base o k = (if b then val32 s.mem base M.tmp k else dval s.mem base src (2 * k)) ∧
       Rest [.r5, .r7] s u
@@ -252,7 +260,7 @@ theorem selK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   | k + 1, hsrc, htmp, ho, hos, hot, hd => by
     have hn := hs.nowrap
     rw [selK_succ]
-    refine VG.Proof.X25519.Arm.WP.append (selK_ok hs b h3 (k := k) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    refine VG.Proof.X25519.Arm.WP.append (selK_ok hs hro hK hrc b h3 (k := k) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
       (by omega_arith) (hd.mono (by omega_arith))) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_
     have hs₁ := hs.of_rest K₁ (by decide)
     have x0 : w32 s₁.mem base (src + 8 * k) = w32 s.mem base (src + 4 * (2 * k)) := by
@@ -260,7 +268,9 @@ theorem selK_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     have x1 : w32 s₁.mem base (src + 8 * k + 4) = w32 s.mem base (src + 4 * (2 * k + 1)) := by
       rw [O₁.w32 (by omega_arith) (by omega_arith)]; congr 1; omega_arith
     have tk : w32 s₁.mem base (M.tmp + 4 * k) = w32 s.mem base (M.tmp + 4 * k) := O₁.w32 (by omega_arith) (by omega_arith)
-    refine WP.mono (selWord_ok hs₁ (k := k) b (by rw [K₁.gpr _ (by decide)]; exact h3) (by omega_arith) (by omega_arith)
+    have hro₁ : s₁.gpr ro = s₁.gpr .r12 + BitVec.ofNat 32 K := by
+      rw [K₁.gpr _ (not_mem_of_clob hrc), K₁.gpr _ (by decide)]; exact hro
+    refine WP.mono (selWord_ok hs₁ hro₁ hK hrc (k := k) b (by rw [K₁.gpr _ (by decide)]; exact h3) (by omega_arith) (by omega_arith)
       (by omega_arith) (by rw [x0]; exact hd _ (by omega_arith)) (by rw [x1]; exact hd _ (by omega_arith)))
       fun u ⟨O₂, V₂, K₂⟩ => ⟨(O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith)), ?_,
         K₁.trans K₂⟩
@@ -294,20 +304,21 @@ theorem csub_arith {X t T c m P : Nat} (hP : m < P) (hm : 0 < m) (hV : X + P * t
 /-- `[o] = V mod m` for the number `V < 2m` at `[src]` (`D = 2W` digits and
 the top digit), through `[tmp]`. -/
 theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {W src o m : Nat}
+    {ro : Reg} {K d : Nat} (hro : s.gpr ro = s.gpr .r12 + BitVec.ofNat 32 K) (hK : K + d = o) (hrc : ro ∉ clob)
     (hW : words M = W) (hD : digits M = 2 * W) (hsrc : src + 4 * (2 * W + 1) ≤ size) (ho : o + 4 * W ≤ size)
     (htmp : M.tmp + 4 * W ≤ size) (hmo : M.mo + 4 * W ≤ size)
     (hts : M.tmp + 4 * W ≤ src ∨ src + 4 * (2 * W + 1) ≤ M.tmp) (htm : M.tmp + 4 * W ≤ M.mo ∨ M.mo + 4 * W ≤ M.tmp)
     (hos : o + 4 * W ≤ src ∨ src + 4 * (2 * W + 1) ≤ o) (hot : o + 4 * W ≤ M.tmp ∨ M.tmp + 4 * W ≤ o)
     (hm : val32 s.mem base M.mo W = m) (hm0 : 0 < m) (hd : Digs s.mem base src (2 * W + 1))
     (hV : dval s.mem base src (2 * W + 1) < 2 * m) :
-    WP isa (.block (csub M src o)) s fun u =>
+    WP isa (.block (csub M src ro d)) s fun u =>
       Outs base [(M.tmp, 4 * W), (o, 4 * W)] s.mem u.mem ∧
       val32 u.mem base o W = dval s.mem base src (2 * W + 1) % m ∧
       Rest [.r3, .r4, .r5, .r6, .r7, .r8] s u := by
   have hn := hs.nowrap
   simp only [csub, hW, hD, List.cons_append, List.nil_append, List.append_assoc]
   rw [show (List.range W).flatMap (diffWord M src) = diffK M src W from rfl,
-    show (List.range W).flatMap (selWord M src o) = selK M src o W from rfl]
+    show (List.range W).flatMap (selWord M src ro d) = selK M src ro d W from rfl]
   refine wp_movw fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   have K₂ : Rest [.r3, .r4, .r5, .r6, .r7, .r8] s s₂ := (u₁.rest (by simp)).trans (u₂.rest (by simp))
@@ -365,7 +376,9 @@ theorem csub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have m₇ : s₇.mem = s₃.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem]
   have b3' : s₇.gpr .r3 = if decide ((s₃.gpr .r3).toNat + w32 s.mem base (src + 4 * (2 * W)) = 1) = true then
       BitVec.allOnes 32 else 0 := by simp only [decide_eq_true_eq]; exact b3
-  refine WP.mono (selK_ok hs₇ (k := W) _ b3' (by omega_arith) htmp ho (by omega_arith) hot
+  have hro₇ : s₇.gpr ro = s₇.gpr .r12 + BitVec.ofNat 32 K := by
+    rw [K₇.gpr _ (not_mem_of_clob hrc), K₇.gpr _ (by decide)]; exact hro
+  refine WP.mono (selK_ok hs₇ hro₇ hK hrc (k := W) _ b3' (by omega_arith) htmp ho (by omega_arith) hot
     (by rw [m₇]; exact (O₃.digs (by omega_arith) (by omega_arith) hd).mono (by omega_arith))) fun u ⟨O₈, V₈, K₈⟩ => ⟨?_, ?_, ?_⟩
   · rw [m₇] at O₈
     exact (Outs.of_outside O₃ (by simp)).trans (Outs.of_outside O₈ (by simp))

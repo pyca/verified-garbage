@@ -27,8 +27,10 @@ words; `n = 4` for the 256-bit curves), from the code of
 5. the flag: `d` and `k` in `[1, n-1]`, `r ≠ 0` and `s ≠ 0`, as a mask, which
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
-The multiplications accumulate at `wk`, after the tables; every offset in
-the working space is below 4096, which `ldr` and `str` reach from `r12`.
+The field arithmetic is calls of the functions of `p` and `n`
+(`Spec/Weierstrass/Mont.lean`), which use the `64 n` bytes below byte 4096
+for themselves (`wk`); every offset of a slot is below them, which `ldr`
+and `str` reach from `r12`, and the tables of bits are past byte 4096.
 `R = O` (impossible for `k` in `[1, n-1]`) gives `Z = 0`, so `x = 0` and
 `r = 0`, as the specification says. Everything is computed whatever the
 flag, and only the pointers may affect timing.
@@ -44,10 +46,11 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The working space: the saved registers in bytes `[0, 36)`, then
-slots of `n` words (`slot n i`) from byte 64, then the multiplications'
-accumulator (`wkAt`), then the tables of bits (`bitsAt`). Everything but the
-tables is within the 4096 bytes a `ldr` or `str` reaches from `r12`; a
-table is reached from a register (`bitMask`, `bits`). -/
+slots of `n` words (`slot n i`) from byte 64, then the field arithmetic's
+own working space (`wkAt`, its `64 n` bytes below byte 4096), then the tables
+of bits (`bitsAt`). Everything but the tables is within the 4096 bytes a
+`ldr` or `str` reaches from `r12`; a table is reached from a register
+(`bitMask`, `bits`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
 
 /-! Slot numbers. -/
@@ -99,12 +102,13 @@ def FLAG := 44
 /-- The number of slots. -/
 def nslots := 45
 
-/-- The multiplications' accumulator: after the slots. -/
-def wkAt (n : Nat) : Nat := slot n nslots
+/-- The field arithmetic's own working space (`Spec.Weierstrass.Mont.ownAt`):
+the `64 n` bytes below byte 4096, after the slots. -/
+def wkAt (n : Nat) : Nat := Mont.own n
 
-/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2):
-after the accumulator's `32 n + 8` bytes (`Mont.Arm.accLen`). -/
-def bitsAt (n j : Nat) : Nat := wkAt n + (32 * n + 8) + 64 * n * j
+/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2), of
+`64 n` bytes each: after the field arithmetic's own working space. -/
+def bitsAt (n j : Nat) : Nat := 4096 + 64 * n * j
 
 /-- The registers holding the arguments the setup reads: `k`, `d` and the
 hash (the functions built on the signature's code read some of them from the
@@ -121,10 +125,13 @@ structure Args where
 shifting the hash in `E`. -/
 abbrev Args.sign : Args := ⟨.r3, .r1, .r2, none, some E⟩
 
-/-- A curve as the code has it: `n` words, and its parameters. -/
+/-- A curve as the code has it: `n` words, its parameters, and the
+functions of its arithmetic modulo `p` and `n` (`SP`, `SN`). -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
+  SP : Spec.Weierstrass.Mont.Modulus
+  SN : Spec.Weierstrass.Mont.Modulus
 
 namespace Cfg
 
@@ -243,10 +250,10 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [Mont.Arm.mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.Arm.mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE),
-    .block (Mont.Arm.add c.MN' c.wk (c.sl RR) (c.sl X) (c.sl ZERO)),
-    Mont.Arm.mul c.MN' c.wk (c.sl KM) (c.sl K) (c.sl R2N),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+    Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO),
+    Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N),
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
 
 /-- The callee-saved registers restored. -/
@@ -261,13 +268,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  progs [Mont.Arm.mul c.MN' c.wk (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.Arm.mul c.MN' c.wk (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.Arm.mul c.MN' c.wk (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.Arm.mul c.MN' c.wk (c.sl TT) (c.sl RM) (c.sl DM),
-    .block (Mont.Arm.add c.MN' c.wk (c.sl TT) (c.sl TT) (c.sl EM)),
-    Mont.Arm.mul c.MN' c.wk (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.Arm.mul c.MN' c.wk (c.sl SS) (c.sl SM) (c.sl ONE),
+  progs [Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM),
+    Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM),
+    Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT),
+    Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE),
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
@@ -276,10 +283,10 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.wk) <|
-  .seq (pow c.powP c.wk) <|
+  .seq (ladder c.ladderCfg c.SP) <|
+  .seq (pow c.powP c.SP) <|
   .seq c.middle <|
-  .seq (pow c.powN c.wk) c.scalar
+  .seq (pow c.powN c.SN) c.scalar
 
 end Cfg
 

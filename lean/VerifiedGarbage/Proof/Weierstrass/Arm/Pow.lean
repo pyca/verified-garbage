@@ -5,12 +5,12 @@ import VerifiedGarbage.Proof.Weierstrass.Pow
 /-!
 # Short Weierstrass curves on 32-bit ARM: powers
 
-`pow P wk` leaves `[acc]` reading (in Montgomery form) as `[base]^e`, for
+`pow P S` leaves `[acc]` reading (in Montgomery form) as `[base]^e`, for
 the exponent `e` whose bits are the table at `P.bits` (`pow_ok`): an
 iteration squares the accumulator, multiplies it by the base into `[tmp]`
-and keeps that product if the exponent's bit is set (`powBody_ok`). The
-multiplications' accumulator at `wk` is above everything the power uses
-(`PowWk`).
+and keeps that product if the exponent's bit is set (`powBody_ok`), by
+calls of the functions of `S`. Their own working space at `wk` is above
+everything the power uses (`PowWk`).
 -/
 
 namespace VG.Proof.Weierstrass.Arm
@@ -22,24 +22,24 @@ open VG.Proof.X25519.Arm (Rest Upd Mupd Fupd wp_mov op2_imm)
 /-- The registers a power or the ladder changes. -/
 def powClob : List Reg := .r10 :: .r11 :: clob
 
-theorem r11_not_clob : Reg.r11 ∉ clob := by decide
+theorem r11_not_clob : Reg.r11 ∉ Mont.callClob := by decide
 
-theorem clob_powClob : ∀ r ∈ clob, r ∈ powClob := fun _ h => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+theorem clob_powClob : ∀ r ∈ Mont.callClob, r ∈ powClob := by decide
 
-/-- What a power writes: `powW` and the multiplications' accumulator. -/
-def powWx (P : PowCfg) (wk : Nat) : List (Nat × Nat) := powW P ++ [(wk, accLen P.M)]
+/-- What a power writes: `powW` and the functions' own working space. -/
+def powWx (P : PowCfg) (wk : Nat) : List (Nat × Nat) := powW P ++ [(wk, 64 * P.M.n)]
 
-/-- The multiplications' accumulator at `wk`, in the working space above a
+/-- The functions' own working space at `wk`, in the working space above a
 power's slots and modulus, and below its table; and the power's temporary
 apart from the modulus's. -/
 structure PowWk (P : PowCfg) (size wk : Nat) : Prop where
-  le : wk + accLen P.M ≤ size
+  le : wk + 64 * P.M.n ≤ size
   acc : P.acc + 8 * P.M.n ≤ wk
   tmp : P.tmp + 8 * P.M.n ≤ wk
   base : P.base + 8 * P.M.n ≤ wk
   mo : P.M.mo + 8 * P.M.n ≤ wk
   mtmp : P.M.tmp + 8 * P.M.n ≤ wk
-  bits : wk + accLen P.M ≤ P.bits
+  bits : wk + 64 * P.M.n ≤ P.bits
   tmp_mtmp : P.tmp + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ P.tmp
 
 /-- The loop's invariant at `r11 = j`: the accumulator reads as
@@ -55,13 +55,14 @@ structure PowInv (P : PowCfg) (wk : Nat) (base : Addr) (size m e : Nat) [NeZero 
     toM m (2 ^ (64 * P.M.n)) (wordsVal s₀.mem base P.base P.M.n) ^ (e >>> j)
 
 /-- An iteration. -/
-theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [NeZero m] (hL : PowLay P size len)
-    (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s₀ : State}
-    (hf₀ : Far s₀ base len)
+theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m]
+    (hL : PowLay P size 8192) (hW : PowWk P size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
+    (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s₀ : State}
+    (hf₀ : Far s₀ base 8192)
     (hM₀ : ModOkW P.M size m s₀.mem base) (hB : wordsVal s₀.mem base P.base P.M.n < m)
     (hbits : ∀ t < P.nbits, s₀.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ P.nbits) (hI : PowInv P wk base size m e s₀ s j) :
-    WP isa (powBody P wk) s fun s' =>
+    WP isa (powBody P S) s fun s' =>
       PowInv P wk base size m e s₀ s' (j - 1) ∧ s'.z = decide (j - 1 = 0) := by
   have hn := hI.scr.nowrap
   have hnb := hL.nbits
@@ -91,20 +92,19 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [N
       by rw [hI.unch.wordsVal hmo (by omega)]; exact hM₀.val, hM₀.inv, hM₀.red⟩
   have hBs : wordsVal s.mem base P.base P.M.n = wordsVal s₀.mem base P.base P.M.n :=
     hI.unch.wordsVal hbw (by omega)
-  have hlay : ∀ {o a b : Nat}, o + 8 * P.M.n ≤ wk → a + 8 * P.M.n ≤ wk → b + 8 * P.M.n ≤ wk →
-      o + 8 * P.M.n ≤ size → a + 8 * P.M.n ≤ size → b + 8 * P.M.n ≤ size →
-      (o + 8 * P.M.n ≤ P.M.tmp ∨ P.M.tmp + 8 * P.M.n ≤ o) → OpLay P.M size wk o a b :=
-    fun h1 h2 h3 h4 h5 h6 h7 => ⟨hW.le, h4, h5, h6, .inr h1, .inr h2, .inr h3, .inr hW.mo, .inr hW.mtmp, h7⟩
   -- `r11 -= 1` and `acc = acc²`.
   rw [powBody]
   refine WP.seq (wp_decCounter hj hI.r11 fun s₁ u₁ => WP.block_nil ?_)
   have b₁ := u₁.gpr
   have hm₁ := u₁.mem
   have hs₁ := hI.scr.of_rest (u₁.rest (ws := [.r11]) (by simp)) (by decide)
-  refine WP.seq (WP.mono (mul_ok hs₁ (hm₁ ▸ hM) (hlay hW.acc hW.acc hW.acc hacc hacc hacc ham)
-    (by rw [hm₁]; exact hI.lt)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
+  have hf₁ : Far s₁ base 8192 := (hf₀.of_rest hI.keep).of_rest (u₁.rest (ws := [.r11]) (by simp))
+  refine WP.seq (WP.mono (Mont.mulCall_ok hF.ok hs₁ hf₁ (hF.fits hW.acc) (hF.fits hW.acc) (hF.fits hW.acc)
+    (by rw [hF.k, hF.m, hm₁]; exact hI.lt)) fun s₂ ⟨K₂, lt₂, e₂⟩ => ?_)
+  rw [hF.k, hF.m] at lt₂ e₂
+  have k₂ : ProgKeep P.M base wk [P.acc] s₁ s₂ := .of_call hF K₂
   have hs₂ := k₂.scr hs₁
-  have hU₂ := k₂.unch
+  have hU₂ := k₂.unchOne
   have hM₂ : ModOkW P.M size m s₂.mem base :=
     ⟨hM.n0, hM.mo, hM.tmp, hM.sep, by
       rw [hU₂.wordsVal (fun w hw => by
@@ -124,11 +124,14 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [N
       · exact hbw _ (by simp [powWx, powW])
       · exact hbw _ (by simp [powWx])) (by omega), hm₁, hBs]
   -- `tmp = acc · base`.
-  refine WP.seq (WP.mono (mul_ok hs₂ hM₂ (hlay hW.tmp hW.acc hW.base htmp hacc hbase hW.tmp_mtmp)
-    (by rw [hB₂]; exact hB)) fun s₃ ⟨k₃, lt₃, e₃⟩ => ?_)
+  have hf₂ : Far s₂ base 8192 := hf₁.of_rest k₂.rest
+  refine WP.seq (WP.mono (Mont.mulCall_ok hF.ok hs₂ hf₂ (hF.fits hW.tmp) (hF.fits hW.acc) (hF.fits hW.base)
+    (by rw [hF.k, hF.m, hB₂]; exact hB)) fun s₃ ⟨K₃, lt₃, e₃⟩ => ?_)
+  rw [hF.k, hF.m] at lt₃ e₃
+  have k₃ : ProgKeep P.M base wk [P.tmp] s₂ s₃ := .of_call hF K₃
   have hs₃ := k₃.scr hs₂
   have hA₃ : wordsVal s₃.mem base P.acc P.M.n = wordsVal s₂.mem base P.acc P.M.n :=
-    k₃.unch.wordsVal (fun w hw => by
+    k₃.unchOne.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
       · exact hat
@@ -140,7 +143,7 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [N
     rw [toM_mul hm e₃, hB₂]
   -- The mask of bit `j - 1`, and the selection.
   have hU₃ : Unch base (powWx P wk) s₀.mem s₃.mem := by
-    refine ((hI.unch.trans (by rw [← hm₁]; exact hU₂)).trans k₃.unch).mono fun w hw => ?_
+    refine ((hI.unch.trans (by rw [← hm₁]; exact hU₂)).trans k₃.unchOne).mono fun w hw => ?_
     simp only [powWx, powW, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     grind
   have hbyte : s₃.mem (off base (P.bits + (j - 1))) = if e.testBit (j - 1) then 1 else 0 := by
@@ -182,14 +185,15 @@ theorem powBody_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [N
 
 /-- `[acc] = [base]^e` in Montgomery form, for the exponent `e < 2^nbits`
 whose bits are the table at `P.bits`; only `powClob` and `powWx` change. -/
-theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [NeZero m] (hL : PowLay P size len)
-    (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s : State}
-    (hs : Scr s base size) (hf : Far s base len)
+theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size m e : Nat} [NeZero m] (hL : PowLay P size 8192)
+    (hW : PowWk P size wk) {S : Spec.Weierstrass.Mont.Modulus} (hF : FnOk P.M wk S m)
+    (hm : UnitMod m (2 ^ (64 * P.M.n))) (hb8 : P.bits < 8192) {s : State}
+    (hs : Scr s base size) (hf : Far s base 8192)
     (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m)
     (hO : wordsVal s.mem base P.one P.M.n = 2 ^ (64 * P.M.n) % m)
     (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if e.testBit t then 1 else 0)
     (he : e < 2 ^ P.nbits) (henc : encodable (BitVec.ofNat 32 P.nbits) = true) :
-    WP isa (pow P wk) s fun s' => Rest powClob s s' ∧ Unch base (powWx P wk) s.mem s'.mem ∧
+    WP isa (pow P S) s fun s' => Rest powClob s s' ∧ Unch base (powWx P wk) s.mem s'.mem ∧
       wordsVal s'.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal s'.mem base P.acc P.M.n) =
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ e := by
@@ -203,7 +207,7 @@ theorem pow_ok {P : PowCfg} {wk : Nat} {base : Addr} {size len m e : Nat} [NeZer
     (by omega) (by have := hL.acc_one; omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
   refine wp_mov (op2_imm henc) fun s₂ u₂ => WP.block_nil ?_
   refine countLoop_ok (Inv := fun j s' => PowInv P wk base size m e s s' j) (n := P.nbits)
-    (fun j s' h1 h2 hi => powBody_ok hL hW hm hb8 hf hM hB hbits h1 h2 hi)
+    (fun j s' h1 h2 hi => powBody_ok hL hW hF hm hb8 hf hM hB hbits h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by rw [hi.val, Nat.shiftRight_zero]⟩) hnb.1 ?_
   have hm₂ : s₂.mem = s₁.mem := u₂.mem
   have hv : wordsVal s₂.mem base P.acc P.M.n = wordsVal s.mem base P.one P.M.n := by

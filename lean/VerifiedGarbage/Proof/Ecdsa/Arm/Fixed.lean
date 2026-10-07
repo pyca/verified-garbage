@@ -54,20 +54,20 @@ theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : Fi
     · rw [h]
     · exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c h)
 
-theorem fixedOk_tbl (j : Nat) : FixedOk c [(bitsAt c.n j, 64 * c.n)] := by
+theorem fixedOk_tbl (h7 : c.n < 10) (j : Nat) : FixedOk c [(bitsAt c.n j, 64 * c.n)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (by decide) j 0))
+  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c h7 (by decide) j 0))
 
 theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 4)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_wk : FixedOk c [(c.wk, 32 * c.n + 8)] := by
+theorem fixedOk_wk (h7 : c.n < 10) : FixedOk c [(c.wk, 64 * c.n)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_wk c (i := 12) (by decide)))
+  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_wk c h7 (i := 12) (by decide)))
 
 theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   intro w hw
@@ -109,17 +109,17 @@ theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hw
   exact sl_apart c fun h => hi (h ▸ hj)
 
-theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) :
+theorem apart_tbl (h7 : c.n < 10) {i : Nat} (hi : i < 45) (j : Nat) :
     ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (by have := sl_below_bits c hi j 0; omega)
+  exact Or.inl (by have := sl_below_bits c h7 hi j 0; omega)
 
-theorem apart_wk {i : Nat} (hi : i < 45) :
-    ∀ w ∈ [(c.wk, 32 * c.n + 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+theorem apart_wk (h7 : c.n < 10) {i : Nat} (hi : i < 45) :
+    ∀ w ∈ [(c.wk, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_wk c hi)
+  exact Or.inl (sl_below_wk c h7 hi)
 
 theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
     ∀ w ∈ [(c.sl FLAG, 4)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -148,25 +148,25 @@ theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch b
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
   hu.byte hW (by have := bitsAt_le c h7 hj; omega)
 
-theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
+theorem tbl_apart_slW (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-  exact Or.inr (sl_below_bits c (hl i hi) j t)
+  exact Or.inr (sl_below_bits c h7 (hl i hi) j t)
 
-theorem tbl_apart_wk (j t : Nat) :
-    ∀ w ∈ [(c.wk, 32 * c.n + 8)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+theorem tbl_apart_wk (h7 : c.n < 10) (j t : Nat) :
+    ∀ w ∈ [(c.wk, 64 * c.n)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  have := wk_below_bits c (M := c.MP') rfl j
-  have : accLen c.MP' = 32 * c.n + 8 := accLen_eq _
+  have := wk_below_bits c h7 (M := c.MP') rfl j
+  have : c.MP'.n = c.n := rfl
   exact Or.inr (by dsimp only; omega)
 
-theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) :
+theorem tbl_apart_flag (h7 : c.n < 10) (h0 : 0 < c.n) (j t : Nat) :
     ∀ w ∈ [(c.sl FLAG, 4)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  have := sl_below_bits c (i := FLAG) (by decide) j t
+  have := sl_below_bits c h7 (i := FLAG) (by decide) j t
   exact Or.inr (by dsimp only; omega)
 
 /-- Tables `j ≠ j'` are apart. -/
