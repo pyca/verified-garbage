@@ -188,39 +188,30 @@ theorem rotr63 (v : BitVec 64) : v <<< 1 ||| v >>> 63 = v.rotateRight 63 := by
   rwa [BitVec.or_comm] at this
 
 theorem dcol_ok (x : Nat) (_hx : x < 5) (s : State) (A : Nat → KState)
-    (hc : ∀ x' < 5, ∀ k < 4, q4 s (creg x') k = C (A k) x') (fast : Bool := false) :
-    WP isa (.block (dcol x fast)) s fun s' =>
+    (hc : ∀ x' < 5, ∀ k < 4, q4 s (creg x') k = C (A k) x') :
+    WP isa (.block (dcol x)) s fun s' =>
       VW s s' [T, U, dreg x] ∧ ∀ k < 4, q4 s' (dreg x) k = D (A k) x := by
   have h1 : (x + 1) % 5 < 5 := Nat.mod_lt _ (by omega)
   have h4 : (x + 4) % 5 < 5 := Nat.mod_lt _ (by omega)
   have w₀ := VW.refl s [T, U, dreg x]
   unfold dcol
-  cases fast with
-  | true =>
-    simp only [ite_true, List.cons_append, List.nil_append]
-    refine wp_vror (by decide) fun s₁ u₁ => wp_vxor fun s₂ u₂ =>
-      wp_nil ⟨(w₀.upd u₁ (by simp)).upd u₂ (by simp), fun k hk => ?_⟩
-    simp only [u₂.val k hk, u₁.val k hk, u₁.other _ (T_creg _ h4).symm k hk, hc _ h1 k hk, hc _ h4 k hk]
-    rfl
-  | false =>
-    simp only [Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
-    refine wp_vshl (by decide) fun s₁ u₁ => wp_vshr (by decide) fun s₂ u₂ => wp_vor fun s₃ u₃ =>
-      wp_vxor fun s₄ u₄ => wp_nil ⟨(((w₀.upd u₁ (by simp)).upd u₂ (by simp)).upd u₃ (by simp)).upd u₄ (by simp),
-        fun k hk => ?_⟩
-    simp only [u₄.val k hk, u₃.val k hk, u₃.other _ (T_creg _ h4).symm k hk, u₂.other _ T_U k hk,
-      u₂.val k hk, u₂.other _ (U_creg _ h4).symm k hk, u₁.val k hk, u₁.other _ (T_creg _ h1).symm k hk,
-      u₁.other _ (T_creg _ h4).symm k hk, hc _ h1 k hk, hc _ h4 k hk, rotr63]
-    rfl
+  refine wp_vshl (by decide) fun s₁ u₁ => wp_vshr (by decide) fun s₂ u₂ => wp_vor fun s₃ u₃ =>
+    wp_vxor fun s₄ u₄ => wp_nil ⟨(((w₀.upd u₁ (by simp)).upd u₂ (by simp)).upd u₃ (by simp)).upd u₄ (by simp),
+      fun k hk => ?_⟩
+  simp only [u₄.val k hk, u₃.val k hk, u₃.other _ (T_creg _ h4).symm k hk, u₂.other _ T_U k hk,
+    u₂.val k hk, u₂.other _ (U_creg _ h4).symm k hk, u₁.val k hk, u₁.other _ (T_creg _ h1).symm k hk,
+    u₁.other _ (T_creg _ h4).symm k hk, hc _ h1 k hk, hc _ h4 k hk, rotr63]
+  rfl
 
 /-- After the first `n` of the `D[x]`. -/
 def DInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
   Same s₀ s ∧ (∀ x < 5, ∀ k < 4, q4 s (creg x) k = C (A k) x) ∧ ∀ x < n, ∀ k < 4, q4 s (dreg x) k = D (A k) x
 
-theorem dcols_ok (s₀ : State) (A : Nat → KState) (hc : ∀ x < 5, ∀ k < 4, q4 s₀ (creg x) k = C (A k) x) (fast : Bool := false) :
-    WP isa (.block ((List.range 5).flatMap (fun x => dcol x fast))) s₀ (DInv s₀ A 5) := by
+theorem dcols_ok (s₀ : State) (A : Nat → KState) (hc : ∀ x < 5, ∀ k < 4, q4 s₀ (creg x) k = C (A k) x) :
+    WP isa (.block ((List.range 5).flatMap dcol)) s₀ (DInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (DInv s₀ A) (fun x s hx ⟨hw, hcs, hd⟩ => ?_) 5 (Nat.le_refl _) s₀
     ⟨Same.refl _, hc, fun _ h => absurd h (by omega)⟩
-  refine WP.mono (dcol_ok (fast := fast) x hx s A hcs) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_⟩
+  refine WP.mono (dcol_ok x hx s A hcs) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_⟩
   · rw [h.other _ (by simpa using ⟨(T_creg x' hx').symm, (U_creg x' hx').symm, creg_dreg x' hx' x hx⟩) k hk,
       hcs x' hx' k hk]
   · by_cases e : x' = x
@@ -232,8 +223,8 @@ theorem dcols_ok (s₀ : State) (A : Nat → KState) (hc : ∀ x < 5, ∀ k < 4,
 /-! ## A plane -/
 
 theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) (s : State) (src : Addr) (A : Nat → KState)
-    (hs : Src s src A) (hd : ∀ x' < 5, ∀ k < 4, q4 s (dreg x') k = D (A k) x') (fast : Bool := false) :
-    WP isa (.block (laneB x y fast)) s fun s' =>
+    (hs : Src s src A) (hd : ∀ x' < 5, ∀ k < 4, q4 s (dreg x') k = D (A k) x') :
+    WP isa (.block (laneB x y)) s fun s' =>
       VW s s' [creg x, T] ∧ ∀ k < 4, q4 s' (creg x) k = B (A k) x y := by
   have hj : piSrc x y < 25 := by simp only [piSrc]; omega
   have hk5 : (x + 3 * y) % 5 < 5 := Nat.mod_lt _ (by omega)
@@ -252,28 +243,21 @@ theorem laneB_ok (x y : Nat) (hx : x < 5) (_hy : y < 5) (s : State) (src : Addr)
     rw [hv k hk, B, rotl, h0, ite_eq_left rfl]
   · rename_i h0
     have hr := Proof.Sha3.rhoOff_lt _ hj
-    cases fast with
-    | true =>
-      simp only [ite_true]
-      refine wp_vror (by omega) fun s₃ u₃ => wp_nil ⟨w₂.upd u₃ (by simp), fun k hk => ?_⟩
-      rw [u₃.val k hk, hv k hk, B, rotl, ite_eq_right h0]
-    | false =>
-      simp only [Bool.false_eq_true, ite_false]
-      refine wp_vshl hr fun s₃ u₃ => wp_vshr (by omega) fun s₄ u₄ => wp_vor fun s₅ u₅ =>
-        wp_nil ⟨((w₂.upd u₃ (by simp)).upd u₄ (by simp)).upd u₅ (by simp), fun k hk => ?_⟩
-      simp only [u₅.val k hk, u₄.val k hk, u₄.other _ cT.symm k hk, u₃.val k hk, u₃.other _ cT k hk, hv k hk]
-      rw [shr_or_shl _ (by omega) hr, B, rotl, ite_eq_right h0]
+    refine wp_vshl hr fun s₃ u₃ => wp_vshr (by omega) fun s₄ u₄ => wp_vor fun s₅ u₅ =>
+      wp_nil ⟨((w₂.upd u₃ (by simp)).upd u₄ (by simp)).upd u₅ (by simp), fun k hk => ?_⟩
+    simp only [u₅.val k hk, u₄.val k hk, u₄.other _ cT.symm k hk, u₃.val k hk, u₃.other _ cT k hk, hv k hk]
+    rw [shr_or_shl _ (by omega) hr, B, rotl, ite_eq_right h0]
 
 /-- After the first `n` lanes `B[x]` of plane `y`. -/
 def BInv (s₀ : State) (A : Nat → KState) (y n : Nat) (s : State) : Prop :=
   Same s₀ s ∧ (∀ x < 5, ∀ k < 4, q4 s (dreg x) k = D (A k) x) ∧ ∀ x < n, ∀ k < 4, q4 s (creg x) k = B (A k) x y
 
 theorem laneBs_ok (y : Nat) (hy : y < 5) (s₀ : State) (src : Addr) (A : Nat → KState) (hs : Src s₀ src A)
-    (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) (fast : Bool := false) :
-    WP isa (.block ((List.range 5).flatMap fun x => laneB x y fast)) s₀ (BInv s₀ A y 5) := by
+    (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) :
+    WP isa (.block ((List.range 5).flatMap fun x => laneB x y)) s₀ (BInv s₀ A y 5) := by
   refine wp_range_flatMap (M := isa) (BInv s₀ A y) (fun x s hx ⟨hw, hds, hb⟩ => ?_) 5 (Nat.le_refl _) s₀
     ⟨Same.refl _, hd, fun _ h => absurd h (by omega)⟩
-  refine WP.mono (laneB_ok (fast := fast) x y hx hy s src A (hs.same hw) hds) fun s' ⟨h, hv⟩ =>
+  refine WP.mono (laneB_ok x y hx hy s src A (hs.same hw) hds) fun s' ⟨h, hv⟩ =>
     ⟨hw.trans h.same, fun x' hx' k hk => ?_, fun x' hx' k hk => ?_⟩
   · rw [h.other _ (by simpa using ⟨(creg_dreg x hx x' hx').symm, (T_dreg x' hx').symm⟩) k hk, hds x' hx' k hk]
   · by_cases e : x' = x
@@ -380,15 +364,15 @@ structure PInv (s₀ : State) (A : Nat → KState) (rc : Lane) (dst : Addr) (y :
 theorem planes_ok (s₀ : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lane)
     (he : Env s₀.rd s₀.wr src dst rcp) (hrdi : s₀.gpr .rdi = src) (hrsi : s₀.gpr .rsi = dst)
     (hrdx : s₀.gpr .rdx = rcp) (hA : Lanes4 s₀.mem src A) (hrc : ∀ k < 4, s₀.mem.readW (la rcp 0 k) 64 = rc)
-    (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) (fast : Bool := false) :
-    WP isa (.block ((List.range 5).flatMap (fun y => plane y fast))) s₀ (PInv s₀ A rc dst 5) := by
+    (hd : ∀ x < 5, ∀ k < 4, q4 s₀ (dreg x) k = D (A k) x) :
+    WP isa (.block ((List.range 5).flatMap plane)) s₀ (PInv s₀ A rc dst 5) := by
   refine wp_range_flatMap (M := isa) (PInv s₀ A rc dst) (fun y s hy hi => ?_) 5 (Nat.le_refl _) s₀
     ⟨rfl, rfl, rfl, Frame.refl _ _, hd, fun _ h => absurd h (by omega)⟩
   unfold plane
   rw [WP.block_append_iff]
   have hs : Src s src A := ⟨by rw [hi.gpr, hrdi], by rw [hi.rd, hi.wr]; exact he.src_in,
     fun i hi' k hk => by rw [he.src_frame hi.frame hi' hk, hA i hi' k hk]⟩
-  refine WP.mono (laneBs_ok (fast := fast) y hy s src A hs hi.dregs) fun s₁ ⟨hw, hds, hb⟩ => ?_
+  refine WP.mono (laneBs_ok y hy s src A hs hi.dregs) fun s₁ ⟨hw, hds, hb⟩ => ?_
   refine WP.mono (chis_ok y hy s₀ src dst rcp A rc he hrsi hrdx hrc s₁
     ⟨hw.gpr.trans hi.gpr, hw.rd.trans hi.rd, hw.wr.trans hi.wr, by rw [hw.mem]; exact hi.frame, hds, hb,
       fun j hj k hk => by rw [hw.mem]; exact hi.lanes j hj k hk⟩)
@@ -417,8 +401,8 @@ theorem tail_ok (s : State) :
 
 theorem round_ok (s : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lane)
     (he : Env s.rd s.wr src dst rcp) (hrdi : s.gpr .rdi = src) (hrsi : s.gpr .rsi = dst)
-    (hrdx : s.gpr .rdx = rcp) (hA : Lanes4 s.mem src A) (hrc : ∀ k < 4, s.mem.readW (la rcp 0 k) 64 = rc) (fast : Bool := false) :
-    WP isa (.block (round fast)) s fun s' =>
+    (hrdx : s.gpr .rdx = rcp) (hA : Lanes4 s.mem src A) (hrc : ∀ k < 4, s.mem.readW (la rcp 0 k) 64 = rc) :
+    WP isa (.block round) s fun s' =>
       Lanes4 s'.mem dst (fun k => outState (A k) rc) ∧ Frame [⟨dst, 800⟩] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.gpr .rdi = dst ∧ s'.gpr .rsi = src ∧ s'.gpr .rdx = rcp + 32 ∧
       (∀ r, r ≠ .rax → r ≠ .rdi → r ≠ .rsi → r ≠ .rdx → s'.gpr r = s.gpr r) ∧
@@ -426,9 +410,9 @@ theorem round_ok (s : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lan
   unfold round
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (columns_ok s src A ⟨hrdi, he.src_in, hA⟩) fun s₁ ⟨k₁, c₁⟩ => ?_
-  refine WP.mono (dcols_ok (fast := fast) s₁ A c₁) fun s₂ ⟨k₂, _, d₂⟩ => ?_
+  refine WP.mono (dcols_ok s₁ A c₁) fun s₂ ⟨k₂, _, d₂⟩ => ?_
   have k₁₂ := k₁.trans k₂
-  refine WP.mono (planes_ok (fast := fast) s₂ src dst rcp A rc (by rw [k₁₂.rd, k₁₂.wr]; exact he)
+  refine WP.mono (planes_ok s₂ src dst rcp A rc (by rw [k₁₂.rd, k₁₂.wr]; exact he)
     (by rw [k₁₂.gpr, hrdi]) (by rw [k₁₂.gpr, hrsi]) (by rw [k₁₂.gpr, hrdx]) (by rw [k₁₂.mem]; exact hA)
     (by rw [k₁₂.mem]; exact hrc) d₂) fun s₃ h₃ => ?_
   refine WP.mono (tail_ok s₃) fun s₄ ⟨e₁, e₂, e₃, e₄, e₆, e₇, e₈, e₉⟩ => ?_
