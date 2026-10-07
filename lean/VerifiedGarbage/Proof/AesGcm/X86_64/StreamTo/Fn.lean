@@ -20,7 +20,8 @@ theorem encrypt_wp {M : CtxMode} (T : BlkToFn M) (E : EncFn M) {s : State}
   have M₁ := mid_entry hp (hg _ (by decide) (by decide) (by decide))
     (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr)) hk hf hrd hwr
-  exact WP.seq (WP.mono (blocks_ok hp T M₁ h11 (hg _ (by decide) (by decide) (by decide)))
+  exact WP.seq (WP.mono (blocks_ok hp T M₁ h11 (hg _ (by decide) (by decide) (by decide))
+      (hg _ (by decide) (by decide) (by decide)))
     fun _ ⟨_, M⟩ => rest_ok hp E M)
 
 end VG.Proof.AesGcm.X86_64.StreamTo

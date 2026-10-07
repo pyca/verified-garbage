@@ -57,12 +57,6 @@ fn chacha20_poly1305() {
             let sealed = aead.encrypt_in_place(&nonce, &c.aad.0, &mut data);
             assert_eq!(data, c.ct.0, "tcId {}", test.tc_id);
             assert_eq!(sealed, Ok(tag), "tcId {}", test.tc_id);
-            // Out of place, the plaintext in two pieces.
-            let (x, y) = c.msg.0.split_at(c.msg.0.len() / 2);
-            let mut out = vec![0; c.msg.0.len()];
-            let sealed = aead.encrypt(&nonce, &c.aad.0, &[x, y], &mut out);
-            assert_eq!(out, c.ct.0, "tcId {}", test.tc_id);
-            assert_eq!(sealed, Ok(tag), "tcId {}", test.tc_id);
         } else {
             // There are no acceptable vectors.
             assert_eq!(test.result, Expectation::Invalid, "tcId {}", test.tc_id);

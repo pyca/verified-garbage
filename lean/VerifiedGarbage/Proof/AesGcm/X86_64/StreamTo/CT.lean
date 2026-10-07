@@ -86,8 +86,14 @@ theorem rel_w {P : State → State → Prop} {l₀ l : List Instr}
 
 /-! ## What each run holds -/
 
-/-- Before `blocks`: nothing done, `work` in `r11`, the text so far in `r8`. -/
+/-- Nothing done, `work` in `r11`, the text so far in `r8`. -/
 def B0 (s : State) (st : State) : Prop := Mid s 0 st ∧ st.gpr .r11 = W s ∧ st.gpr .r8 = TL s
+
+/-- Before `blocks`: `B0`, with `aad_len` in `rcx`. -/
+def B0c (s : State) (st : State) : Prop := B0 s st ∧ st.gpr .rcx = AL s
+
+/-- `B0`, with `Sel` in `rax`. -/
+def B1 (s : State) (st : State) : Prop := B0 s st ∧ st.gpr .rax = Sel s
 
 /-- Before the call of the whole blocks. -/
 def C5 (s : State) (q : Nat) (st : State) : Prop :=
@@ -119,17 +125,29 @@ theorem notCs {r : Reg} (hr : r ∈ calleeSaved) :
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 omit hp in
-theorem b1_wp {st : State} (h : B0 s st) :
+theorem b1_wp {st : State} (h : B0c s st) :
     WP isa (.block [.mov .rax (.reg .r8), .alu .test .rax (.reg .rax)]) st fun st' =>
-      B0 s st' ∧ st'.gpr .rax = TL s ∧ st'.zf = some (TL s == 0) :=
+      B0c s st' ∧ st'.gpr .rax = TL s ∧ st'.zf = some (TL s == 0) :=
   WP.mono hd1_ok fun _ ⟨ax, z, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.2.1],
-      by rw [g _ (by decide), h.2.2]⟩, by rw [ax, h.2.2], by rw [z, h.2.2]⟩
+    ⟨⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
+      by rw [g _ (by decide), h.1.2.2]⟩, by rw [g _ (by decide), h.2]⟩, by rw [ax, h.1.2.2], by rw [z, h.1.2.2]⟩
 
 omit hp in
-theorem b2_wp {st : State} (h : B0 s st ∧ st.gpr .rax = TL s) :
+/-- After no text, `aad_len` into `rax`. -/
+theorem bsel_wp {st : State} (h : B0c s st) (hz : TL s = 0) : WP isa (.block [.mov .rax (.reg .rcx)]) st (B1 s) :=
+  WP.mono mvc_ok fun _ ⟨ax, g, m, rd, wr⟩ =>
+    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
+      by rw [g _ (by decide), h.1.2.2]⟩, by rw [ax, h.2]; simp only [Sel, hz, ite_true]⟩
+
+omit hp in
+/-- After some text, `text_len` is in `rax` already. -/
+theorem bsel_of {st : State} (h : B0c s st ∧ st.gpr .rax = TL s) (hz : TL s ≠ 0) : B1 s st :=
+  ⟨h.1.1, by rw [h.2]; simp only [Sel, hz, ite_false]⟩
+
+omit hp in
+theorem b2_wp {st : State} (h : B1 s st) :
     WP isa (.block [.alu .and .rax (imm 15)]) st fun st' =>
-      B0 s st' ∧ st'.zf = some (BitVec.ofNat 64 ((TL s).toNat % 16) == 0) :=
+      B0 s st' ∧ st'.zf = some (BitVec.ofNat 64 ((Sel s).toNat % 16) == 0) :=
   WP.mono (hd2_ok h.2) fun _ ⟨z, g, m, rd, wr⟩ =>
     ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
       by rw [g _ (by decide), h.1.2.2]⟩, z⟩
@@ -169,7 +187,7 @@ theorem b5_wp {q : Nat} {st : State}
         r10, ax⟩
 
 theorem b6_wp (T : BlkToFn M) {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).toNat + 16 * q < 2 ^ 64)
-    (ht0 : TL s ≠ 0) (ht16 : (TL s).toNat % 16 = 0) {st : State} (h : C5 s q st) :
+    (ht0 : TL s ≠ 0 ∨ (AL s).toNat % 16 = 0) (ht16 : (TL s).toNat % 16 = 0) {st : State} (h : C5 s q st) :
     WP isa (.frame (.push [.rax, .r9, .r10]) (.call T.fn.name T.fn.code) (.pop .rax 3)) st (Mid s (16 * q)) := by
   obtain ⟨f, sem, k, sp, cs, rd, wr, di, si, dx, cx, r8, r9, r10, ax⟩ := h
   exact WP.mono (blkCall_ok hp T hq sp rd wr f di si dx cx r8 r9 r10 ax) fun _ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ =>
@@ -239,6 +257,8 @@ theorem entry_check : ∃ hc, (taint.check (Taint.ofRegs (.r11 :: args)) (.block
   ⟨_, by taint_decide⟩
 theorem hd1_check : ∃ hc, (taint.check (Taint.ofRegs [.r8])
     (.block [.mov .rax (.reg .r8), .alu .test .rax (.reg .rax)]) hc).isSome = true := ⟨_, by taint_decide⟩
+theorem mvc_check : ∃ hc, (taint.check (Taint.ofRegs [.rcx]) (.block [.mov .rax (.reg .rcx)]) hc).isSome = true :=
+  ⟨_, by taint_decide⟩
 theorem and_check : ∃ hc, (taint.check (Taint.ofRegs [.rax]) (.block [.alu .and .rax (imm 15)]) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 theorem hd3_check : ∃ hc, (taint.check (Taint.ofRegs [.r11])
@@ -276,7 +296,7 @@ theorem mid_hW {o o' : Nat} {s₁ s₂ : State} (h₁ : Mid s₀ o s₁) (h₂ :
 
 /-- The entry, in two runs. -/
 theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.block entry) fun s₁ s₂ =>
-    B0 s₀ s₁ ∧ B0 s₀' s₂ := by
+    B0c s₀ s₁ ∧ B0c s₀' s₂ := by
   have ea : ∀ r ∈ args, s₀.gpr r = s₀'.gpr r := by
     intro r hr
     simp only [args, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -284,14 +304,15 @@ theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.
     exacts [pb.k.symm, pb.rsi.symm, pb.st.symm, pb.al.symm, pb.tl.symm, pb.src.symm, pb.sp.symm]
   have toB0 : ∀ {s s₁ : State}, SP' M s → (s₁.gpr .r11 = W s ∧
       (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧ Kept s 0 s₁.mem ∧ Frame [kR' s] s.mem s₁.mem ∧
-      s₁.rd = s.rd ∧ s₁.wr = s.wr) → B0 s s₁ := fun hp ⟨h11, hg, hk, hf, hrd, hwr⟩ =>
-    ⟨mid_entry hp (hg _ (by decide) (by decide) (by decide)) (fun r hr => hg r (notCs hr).2.2.2.2.2.2.2.2
-      (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) hk hf hrd hwr, h11, hg _ (by decide) (by decide) (by decide)⟩
+      s₁.rd = s.rd ∧ s₁.wr = s.wr) → B0c s s₁ := fun hp ⟨h11, hg, hk, hf, hrd, hwr⟩ =>
+    ⟨⟨mid_entry hp (hg _ (by decide) (by decide) (by decide)) (fun r hr => hg r (notCs hr).2.2.2.2.2.2.2.2
+      (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) hk hf hrd hwr, h11, hg _ (by decide) (by decide) (by decide)⟩,
+      hg _ (by decide) (by decide) (by decide)⟩
   refine (rel_wp (rel_w (l₀ := entry) (l := entry.tail) rfl args (by simp [args])
     (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; exact ea) (fun _ _ h => by
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨pb.w.symm, a_in hp (i := 3) (by decide), a_in hp' (i := 3) (by decide)⟩) entry_check)
-    (fun _ _ h => h) (G₁ := B0 s₀) (G₂ := B0 s₀')
+    (fun _ _ h => h) (G₁ := B0c s₀) (G₂ := B0c s₀')
     (fun s h => by subst h; exact WP.mono (entry_ok hp) fun _ h => toB0 hp h)
     (fun s h => by subst h; exact WP.mono (entry_ok hp') fun _ h => toB0 hp' h)).mono (fun _ _ h => h)
     fun _ _ h => h.2
@@ -321,27 +342,37 @@ theorem blkCall_rel (T : BlkToFn M) {q : Nat} (hq : 16 * q ≤ L s₀) :
 
 /-- `blocks`, in two runs: the same bytes done. -/
 theorem blocks_rel (T : BlkToFn M) :
-    RelCT isa (fun s₁ s₂ => B0 s₀ s₁ ∧ B0 s₀' s₂) (blocks T.fn) fun s₁ s₂ => ∃ o, Mid s₀ o s₁ ∧ Mid s₀' o s₂ := by
+    RelCT isa (fun s₁ s₂ => B0c s₀ s₁ ∧ B0c s₀' s₂) (blocks T.fn) fun s₁ s₂ => ∃ o, Mid s₀ o s₁ ∧ Mid s₀' o s₂ := by
   have hL : L s₀ < 2 ^ 64 := (stackArg s₀ 0).isLt
   have none : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → B0 s₀ s₁ ∧ B0 s₀' s₂) →
       RelCT isa P (.block []) fun s₁ s₂ => ∃ o, Mid s₀ o s₁ ∧ Mid s₀' o s₂ :=
     fun h => skip_rel fun _ _ hP => ⟨0, (h _ _ hP).1.1, (h _ _ hP).2.1⟩
+  have esel : Sel s₀' = Sel s₀ := by simp only [Sel, pb.tl, pb.al]
   unfold blocks
   refine RelCT.seq (step [.r8] hd1_check (fun _ _ h r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.2, h.2.2.2, pb.tl])
+      simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.2, h.2.1.2.2, pb.tl])
     (fun _ _ h => h) (fun _ => b1_wp) (fun _ => b1_wp)) ?_
-  refine RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.tl]) (none fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_
-  refine RelCT.of_imp (TL s₀ ≠ 0) (fun _ _ h => by
-    have e := h.2; simp only [eval, h.1.1.2.2] at e; simpa using e) fun ht0 => ?_
+  -- `Sel` into `rax`.
+  refine RelCT.seq (R := fun s₁ s₂ => B1 s₀ s₁ ∧ B1 s₀' s₂)
+    (RelCT.ite (fun _ _ h => by simp only [eval, h.1.2.2, h.2.2.2, pb.tl]) ?_ ?_) ?_
+  · refine RelCT.of_imp (TL s₀ = 0) (fun _ _ h => by
+      have e := h.2; simp only [eval, h.1.1.2.2] at e; simpa using e) fun hz => ?_
+    exact step [.rcx] mvc_check (fun _ _ h r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.1.2, h.1.2.1.2, pb.al])
+      (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ h => bsel_wp h hz) (fun _ h => bsel_wp h (by rw [pb.tl]; exact hz))
+  · refine RelCT.of_imp (TL s₀ ≠ 0) (fun _ _ h => by
+      have e := h.2; simp only [eval, h.1.1.2.2] at e; simpa using e) fun hz => ?_
+    exact skip_rel fun _ _ h => ⟨bsel_of ⟨h.1.1.1, h.1.1.2.1⟩ hz, bsel_of ⟨h.1.2.1, h.1.2.2.1⟩ (by rw [pb.tl]; exact hz)⟩
   refine RelCT.seq (step [.rax] and_check (fun _ _ h r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.2.1, h.1.2.2.1, pb.tl])
-    (fun _ _ h => ⟨⟨h.1.1.1, h.1.1.2.1⟩, ⟨h.1.2.1, h.1.2.2.1⟩⟩) (fun _ => b2_wp) (fun _ => b2_wp)) ?_
-  refine RelCT.ite (fun _ _ h => by simp only [eval, h.1.2, h.2.2, pb.tl]) (none fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_
-  refine RelCT.of_imp ((TL s₀).toNat % 16 = 0) (fun _ _ h => by
+      simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2, h.2.2, esel])
+    (fun _ _ h => h) (fun _ => b2_wp) (fun _ => b2_wp)) ?_
+  refine RelCT.ite (fun _ _ h => by simp only [eval, h.1.2, h.2.2, esel]) (none fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) ?_
+  refine RelCT.of_imp ((Sel s₀).toNat % 16 = 0) (fun _ _ h => by
     have e := h.2; simp only [eval, h.1.1.2, Option.map_some, Option.some.injEq, Bool.not_eq_false',
       beq_iff_eq] at e
     have := congrArg BitVec.toNat e
-    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this) fun ht16 => ?_
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this) fun hsel => ?_
+  obtain ⟨ht16, ht0⟩ := sel_mod hsel
   refine RelCT.seq (step [.r11] hd3_check (fun _ _ h r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.1.2.1, h.1.2.1.2.1, pb.w])
     (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) (fun _ => b3_wp hp) (fun _ => b3_wp hp')) ?_
@@ -369,7 +400,7 @@ theorem blocks_rel (T : BlkToFn M) :
   have hq : 16 * (L s₀ / 16) ≤ L s₀ := by omega
   refine (rel_wp (blkCall_rel hp hp' pb T hq) (fun _ _ h => h)
     (fun _ => b6_wp hp T hq0 hq htl ht0 ht16) (fun _ => b6_wp hp' T hq0
-      (by rw [pb.eL]; exact hq) (by rw [pb.tl]; exact htl) (by rw [pb.tl]; exact ht0)
+      (by rw [pb.eL]; exact hq) (by rw [pb.tl]; exact htl) (by rw [pb.tl, pb.al]; exact ht0)
       (by rw [pb.tl]; exact ht16))).mono
     (fun _ _ h => h) fun _ _ h => ⟨16 * (L s₀ / 16), h.2.1, h.2.2⟩
 

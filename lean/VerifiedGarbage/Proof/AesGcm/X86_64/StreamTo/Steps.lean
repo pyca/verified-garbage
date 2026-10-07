@@ -44,6 +44,17 @@ theorem hd1_ok {st : State} :
   · intro r hr; simp [gpr_setReg, gpr_arithFlags, hr]
   all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
 
+/-- `mov rax, rcx`: `aad_len`, after no text. -/
+theorem mvc_ok {st : State} :
+    WP isa (.block [.mov .rax (.reg .rcx)]) st fun st' =>
+      st'.gpr .rax = st.gpr .rcx ∧ (∀ r, r ≠ .rax → st'.gpr r = st.gpr r) ∧ st'.mem = st.mem ∧
+        st'.rd = st.rd ∧ st'.wr = st.wr := by
+  apply WP.of_runBlock
+  refine ⟨_, by xrun [], ?_, ?_, ?_, ?_, ?_⟩
+  · simp [gpr_setReg]
+  · intro r hr; simp [gpr_setReg, hr]
+  all_goals simp [mem_setReg, rd_setReg, wr_setReg]
+
 /-- `and rax, 15`: whether the text so far ends a block. -/
 theorem hd2_ok {st : State} {T : BitVec 64} (hax : st.gpr .rax = T) :
     WP isa (.block [.alu .and .rax (imm 15)]) st fun st' =>

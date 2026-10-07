@@ -4,7 +4,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.BlkCall
 # AES-GCM streaming encryption out of place, x86-64: the whole blocks
 
 Untrusted: everything here is checked by Lean. `blocks` from `Mid s 0`: if
-the text so far is not empty and ends a block, and there are `q ≥ 1` whole
+the text so far ends a block, and is not empty or follows additional data of
+whole blocks (`Sel`, the length the code tests), and there are `q ≥ 1` whole
 blocks of plaintext (and the text so far and they do not exceed 2⁶⁴ bytes),
 the call of `vg_aes_gcm_encrypt_blocks_to` leaves `Mid s (16 q)`
 (`call_mid`, from `Proof.Gcm.streamRepr_blocksTo`); otherwise nothing is
@@ -60,10 +61,24 @@ theorem j0_blk {q : Nat} (hq : 16 * q ≤ L s) : ∀ r ∈ blkWr s q ++ [tR s], 
   · exact (hp.st_w.sub_left hs).sub_right scR_sub
   · exact hp.b_st.symm.sub_left hs
 
+omit hp in
+/-- The length whose remainder modulo 16 decides whether the whole blocks
+can be taken: `aad_len` after no text, and `text_len` otherwise. -/
+abbrev Sel (s : State) : BitVec 64 := if TL s = 0 then AL s else TL s
+
+omit hp in
+/-- Whether `Sel` is a multiple of 16: the text so far ends a block, and is
+not empty or follows additional data of whole blocks. -/
+theorem sel_mod {s : State} (h : (Sel s).toNat % 16 = 0) :
+    (TL s).toNat % 16 = 0 ∧ (TL s ≠ 0 ∨ (AL s).toNat % 16 = 0) := by
+  by_cases ht : TL s = 0
+  · simp only [Sel, ht, ite_true] at h; exact ⟨by rw [ht]; rfl, Or.inr h⟩
+  · simp only [Sel, ht, ite_false] at h; exact ⟨h, Or.inl ht⟩
+
 /-- What the call of the whole blocks leaves: `Mid s (16 q)`, from the
 state `st₄` it starts from (with nothing done but the bytes done kept). -/
 theorem call_mid {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).toNat + 16 * q < 2 ^ 64)
-    (ht0 : TL s ≠ 0) (ht16 : (TL s).toNat % 16 = 0) {st₄ st' : State}
+    (ht0 : TL s ≠ 0 ∨ (AL s).toNat % 16 = 0) (ht16 : (TL s).toNat % 16 = 0) {st₄ st' : State}
     (f₄ : Frame (wR s ++ [tR s]) s.mem st₄.mem) (sem₄ : Sem s 0 st₄.mem) (hk₄ : Kept s (16 * q) st₄.mem)
     (hsp₄ : st₄.gpr .rsp = SP s) (hcs₄ : ∀ r ∈ calleeSaved, st₄.gpr r = s.gpr r) (hrd₄ : st₄.rd = s.rd)
     (hwr₄ : st₄.wr = s.wr)
@@ -84,10 +99,14 @@ theorem call_mid {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).t
   have hr₄ := (sem₄ iv a p hr hal hpl).1
   have z : pt s 0 = [] := rfl
   rw [z, List.append_nil] at hr₄
-  have hc : gctr (ciph s) (inc32 (j0 (hk s) iv)) p ≠ [] := by
-    intro e; have := congrArg List.length e
-    rw [Proof.Gcm.length_gctr] at this; simp at this
-    exact ht0 (by apply BitVec.eq_of_toNat_eq; rw [hpl, this]; rfl)
+  have hc : gctr (ciph s) (inc32 (j0 (hk s) iv)) p ≠ [] ∨ a.length % 16 = 0 := by
+    rcases ht0 with ht0 | ha
+    · refine Or.inl fun e => ?_
+      have := congrArg List.length e
+      rw [Proof.Gcm.length_gctr] at this; simp at this
+      exact ht0 (by apply BitVec.eq_of_toNat_eq; rw [hpl, this]; rfl)
+    · rw [hal, BitVec.toNat_ofNat, Nat.mod_mod_of_dvd _ (by decide : 16 ∣ 2 ^ 64)] at ha
+      exact Or.inr ha
   have hc0 : (gctr (ciph s) (inc32 (j0 (hk s) iv)) p).length % 16 = 0 := by
     rw [Proof.Gcm.length_gctr, ← hpl]; exact ht16
   obtain ⟨e₁, hr'⟩ := Proof.Gcm.streamRepr_blocksTo hr₄ hc hc0 hq0
@@ -103,28 +122,40 @@ theorem call_mid {q : Nat} (hq0 : q ≠ 0) (hq : 16 * q ≤ L s) (htl : (TL s).t
 /-- `blocks`, from `Mid s 0` with the arguments in their registers and
 `work` in `r11`: some bytes done. -/
 theorem blocks_ok (T : BlkToFn M) {st : State} (h : Mid s 0 st) (h11 : st.gpr .r11 = W s)
-    (h8 : st.gpr .r8 = TL s) :
+    (h8 : st.gpr .r8 = TL s) (hcx : st.gpr .rcx = AL s) :
     WP isa (blocks T.fn) st fun st' => ∃ o, Mid s o st' := by
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   unfold blocks
   refine WP.seq (WP.mono hd1_ok fun s₁ ⟨ax₁, z₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
   have M₁ : Mid s 0 s₁ := h.regs m₁ (fun r hr => g₁ r (by rintro rfl; simp [calleeSaved] at hr)) rd₁ wr₁
-  refine WP.ite (st.gpr .r8 == 0) (by simp only [eval, z₁]) (fun _ => WP.block_nil ⟨0, M₁⟩) (fun e₁ => ?_)
-  have ht0 : TL s ≠ 0 := by rw [← h8]; simpa using e₁
-  refine WP.seq (WP.mono (hd2_ok (T := TL s) (by rw [ax₁, h8])) fun s₂ ⟨z₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-  have M₂ : Mid s 0 s₂ := M₁.regs m₂ (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂
-  refine WP.ite (!(BitVec.ofNat 64 ((TL s).toNat % 16) == 0)) (by simp only [eval, z₂, Option.map_some])
+  -- `rax`: `aad_len` after no text, and `text_len` otherwise.
+  have hsel : WP isa (.ite .e (.block [.mov .rax (.reg .rcx)]) (.block [])) s₁ fun s₂ =>
+      s₂.gpr .rax = Sel s ∧ (∀ r, r ≠ .rax → s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧
+        s₂.wr = s₁.wr := by
+    refine WP.ite (st.gpr .r8 == 0) (by simp only [eval, z₁]) (fun e => WP.mono mvc_ok fun _ ⟨ax, g, m, rd, wr⟩ =>
+      ⟨by
+        have hz : TL s = 0 := by rw [← h8]; simpa using e
+        rw [ax, g₁ _ (by decide), hcx]; simp only [Sel, hz, ite_true], g, m, rd, wr⟩)
+      (fun e => WP.block_nil ⟨by
+        have hz : TL s ≠ 0 := by rw [← h8]; simpa using e
+        rw [ax₁, h8]; simp only [Sel, hz, ite_false], fun _ _ => rfl, rfl, rfl, rfl⟩)
+  refine WP.seq (WP.mono hsel fun s₁' ⟨ax₁', g₁', m₁', rd₁', wr₁'⟩ => ?_)
+  have M₁' : Mid s 0 s₁' := M₁.regs m₁' (fun r hr => g₁' r (by rintro rfl; simp [calleeSaved] at hr)) rd₁' wr₁'
+  refine WP.seq (WP.mono (hd2_ok (T := Sel s) ax₁') fun s₂ ⟨z₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
+  have M₂ : Mid s 0 s₂ := M₁'.regs m₂ (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂
+  refine WP.ite (!(BitVec.ofNat 64 ((Sel s).toNat % 16) == 0)) (by simp only [eval, z₂, Option.map_some])
     (fun _ => WP.block_nil ⟨0, M₂⟩) (fun e₂ => ?_)
-  have ht16 : (TL s).toNat % 16 = 0 := by
+  obtain ⟨ht16, ht0⟩ := sel_mod (s := s) (by
     simp only [Bool.not_eq_false', beq_iff_eq] at e₂
     have := congrArg BitVec.toNat e₂
-    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
-  have h11₂ : s₂.gpr .r11 = W s := by rw [g₂ _ (by decide), g₁ _ (by decide), h11]
+    rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this)
+  have h11₂ : s₂.gpr .r11 = W s := by rw [g₂ _ (by decide), g₁' _ (by decide), g₁ _ (by decide), h11]
   refine WP.seq (WP.mono (hd3_ok hp h11₂ M₂.kept M₂.rd M₂.wr) fun s₃ ⟨ax₃, z₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
   have M₃ : Mid s 0 s₃ := M₂.regs m₃ (fun r hr => g₃ r (by rintro rfl; simp [calleeSaved] at hr)) rd₃ wr₃
   refine WP.ite (decide (L s / 16 = 0)) (by simp only [eval, z₃]) (fun _ => WP.block_nil ⟨0, M₃⟩) (fun e₃ => ?_)
   have hq0 : L s / 16 ≠ 0 := by simpa using e₃
-  have h8₃ : s₃.gpr .r8 = TL s := by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), h8]
+  have h8₃ : s₃.gpr .r8 = TL s := by
+    rw [g₃ _ (by decide), g₂ _ (by decide), g₁' _ (by decide), g₁ _ (by decide), h8]
   refine WP.seq (WP.mono (len_ok ax₃ h8₃) fun s₄ ⟨r9₄, ax₄, cf₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
   have M₄ : Mid s 0 s₄ := M₃.regs m₄ (fun r hr => g₄ r (by rintro rfl; simp [calleeSaved] at hr)
     (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₄ wr₄

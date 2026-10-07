@@ -12,11 +12,13 @@ generic over the implementations of `vg_aes_gcm_encrypt_blocks_to` and
 
 The entry keeps the arguments in `work` (`ctx`, `rounds`, `state`, `aad_len`,
 `text_len`, `src`, `len` and `dst` at `work` … `work + 56`, and the number of
-bytes done, 0, at `work + 64`). If the text so far is not empty and ends at
-the end of a block (`text_len` a multiple of 16, not 0), the `16 ⌊len / 16⌋`
-bytes of whole blocks, if any (and if `text_len` and they do not exceed 2⁶⁴
-bytes, so that the text so far stays exact in 64 bits), are encrypted from `src` to `dst` and absorbed
-by a call of `vg_aes_gcm_encrypt_blocks_to` on the state's counter block
+bytes done, 0, at `work + 64`). If the text so far ends at the end of a
+block (`text_len` a multiple of 16), and is not empty or follows additional
+data of whole blocks (`aad_len` a multiple of 16; GHASH has then absorbed
+all of its input so far, with no padding to come), the `16 ⌊len / 16⌋` bytes
+of whole blocks, if any (and if `text_len` and they do not exceed 2⁶⁴ bytes,
+so that the text so far stays exact in 64 bits), are encrypted from `src` to
+`dst` and absorbed by a call of `vg_aes_gcm_encrypt_blocks_to` on the state's counter block
 (`state + 48`) and GHASH accumulator (`state + 16`), with `work + 80` for its
 working space (`blocks`). What is left, if anything, is copied from `src` to
 `dst` and encrypted there by a call of `vg_aes_gcm_stream_encrypt`, as the
@@ -62,13 +64,14 @@ def blocksArgs : List Instr :=
     .alu .add .rcx (imm 16), .alu .add .rdx (imm 48), .mov .r8 (.mem (at_ .r11 wSrc)),
     .mov .r10 (.mem (at_ .r11 wDst)), .mov .rax (.reg .r11), .alu .add .rax (imm wScr)]
 
-/-- If the text so far is not empty and ends a block, the whole blocks, if
-any (and if the text so far and they do not exceed 2⁶⁴ bytes), by `blk`
-(`vg_aes_gcm_encrypt_blocks_to`), with `dst`, the number of blocks and the
-working space passed on the stack. -/
+/-- If the text so far ends a block, and is not empty or follows additional
+data of whole blocks (GHASH has then absorbed all of its input so far, with
+no padding to come), the whole blocks, if any (and if the text so far and
+they do not exceed 2⁶⁴ bytes), by `blk` (`vg_aes_gcm_encrypt_blocks_to`),
+with `dst`, the number of blocks and the working space passed on the stack. -/
 def blocks (blk : Fn) : Prog isa :=
   .seq (.block [.mov .rax (.reg .r8), .alu .test .rax (.reg .rax)])
-    (.ite .e (.block [])
+    (.seq (.ite .e (.block [.mov .rax (.reg .rcx)]) (.block []))
       (.seq (.block [.alu .and .rax (imm 15)])
         (.ite .ne (.block [])
           (.seq (.block [.mov .rax (.mem (at_ .r11 wLen)), .shift .shr .rax 4, .alu .test .rax (.reg .rax)])
