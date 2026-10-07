@@ -622,7 +622,7 @@ def RC (n : Nat) (st : State) : Prop := ∀ j < n, st.xmm (rcReg j) = bc (rc (j 
 theorem RC.keep {n : Nat} {st st' : State} (h : RC n st) {d : XReg} (hd : d = .xmm1 ∨ d = .xmm2)
     (hx : ∀ x, x ≠ d → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x) : RC n st' := fun j hj => by
   obtain ⟨n1, n2, n3, n4, -⟩ := rcReg_ne j
-  rw [hx _ (by rcases hd with rfl | rfl <;> assumption) n3 n4]
+  rw [hx _ (by rcases hd with rfl | rfl <;> with_reducible assumption) n3 n4]
   exact h j hj
 
 theorem RC.frame {n : Nat} {rs : List XReg} {st st' : State} (h : RC n st) (hf : XFrame rs st st')
