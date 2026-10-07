@@ -50,9 +50,9 @@ theorem dec19_ok (s : State) {j : Nat} (hj : 0 < j) (hj' : j < 58) (hc : s.gpr .
 
 theorem kByte_ok {s₀ s : State} {base : Addr} {P : Point} {S : Point} {j : Nat}
     (h : KInv s₀ base P S j s) (hj : 0 < j) :
-    WP isa (.block kByte) s fun t => (t.gpr .x19 != 0) = decide (j - 1 ≠ 0) ∧ KInv s₀ base P S (j - 1) t := by
-  rw [kByte, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (dec19_ok s hj (by have := h.bound; omega) h.counter) fun a ⟨a19, ka, ma⟩ => ?_
+    WP isa kByte s fun t => (t.gpr .x19 != 0) = decide (j - 1 ≠ 0) ∧ KInv s₀ base P S (j - 1) t := by
+  unfold kByte
+  refine WP.seq (WP.mono (dec19_ok s hj (by have := h.bound; omega) h.counter) fun a ⟨a19, ka, ma⟩ => ?_)
   have ha : WCtx s₀ base P a :=
     ⟨h.ctx.scr.of_keeps ka (by decide), by rw [ma]; exact h.ctx.env, by rw [ma]; exact h.ctx.zero,
       by rw [ma]; exact h.ctx.one, by rw [ma]; exact h.ctx.z5, by rw [ma]; exact h.ctx.tab,
@@ -60,9 +60,8 @@ theorem kByte_ok {s₀ s : State} {base : Addr} {P : Point} {S : Point} {j : Nat
       by rw [ka.1 _ (by decide)]; exact h.ctx.chk, by rw [ka.2.1]; exact h.ctx.rd,
       by rw [ka.2.2]; exact h.ctx.wr, by rw [ma]; exact h.ctx.mem⟩
   have hb := h.bound
-  rw [WP.block_append_iff]
-  refine WP.mono (window_ok ha (by omega) a19 (Or.inr rfl))
-    fun b ⟨hb', qb, sb, cb⟩ => ?_
+  refine WP.seq (WP.mono (window_ok ha (by omega) a19 (Or.inr rfl))
+    fun b ⟨hb', qb, sb, cb⟩ => ?_)
   refine WP.mono (window_ok hb' (by omega) (cb.trans a19) (Or.inl rfl))
     fun t ⟨ht, qt, st, ct⟩ => ⟨?_, ⟨by omega, ht, ct.trans (cb.trans a19), ?_, ?_⟩⟩
   · rw [ct, cb, a19]
@@ -79,9 +78,9 @@ theorem kByte_ok {s₀ s : State} {base : Addr} {P : Point} {S : Point} {j : Nat
 
 theorem kLoop_ok {s₀ : State} {base : Addr} {P : Point} {S : Point} :
     ∀ m, ∀ s, 1 ≤ m → m ≤ 57 → KInv s₀ base P S m s →
-      WP isa (.loop (.block kByte) (.nonzero .x .x19)) s fun t => KInv s₀ base P S 0 t := by
+      WP isa (.loop kByte (.nonzero .x .x19)) s fun t => KInv s₀ base P S 0 t := by
   intro m s h1 h2 hi
-  refine WP.loop (M := isa) (body := .block kByte) (c := .nonzero .x .x19)
+  refine WP.loop (M := isa) (body := kByte) (c := .nonzero .x .x19)
     (Q := fun t => KInv s₀ base P S 0 t)
     (fun m (s : State) => 1 ≤ m ∧ m ≤ 57 ∧ KInv s₀ base P S m s) ?_ m s ⟨h1, h2, hi⟩
   intro m s ⟨h1, h2, hi⟩

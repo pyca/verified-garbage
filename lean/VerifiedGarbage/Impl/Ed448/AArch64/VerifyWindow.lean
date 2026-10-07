@@ -130,15 +130,19 @@ def digitOf (sh : Nat) : List Instr :=
   [.add .x .x2 .x3 .x19, .ldrb .x11 .x2 KB, .movz .x .x10 15 0] ++
   (if sh = 0 then [] else [.lsr .x .x11 .x11 sh]) ++ [.logic .and .x .x11 .x11 .x10]
 
+/-- `Q` (slots 3–5) doubled four times: a loop counted by `x1`, which the field code keeps. -/
+def dbl4Loop : Prog isa :=
+  .seq (.block [.movz .w .x1 4 0])
+    (.loop (.block (codeOf (dblOps (slot 3) (slot 4) (slot 5)) ++ [.subImm .x .x1 .x1 1])) (.nonzero .x .x1))
+
 /-- A window: `Q` (slots 3–5) doubled four times, and the entry of the digit
 (`digitOf sh`) added. -/
-def window (sh : Nat) : List Instr :=
-  codeOf (dblOps (slot 3) (slot 4) (slot 5) ++ dblOps (slot 3) (slot 4) (slot 5) ++
-    dblOps (slot 3) (slot 4) (slot 5) ++ dblOps (slot 3) (slot 4) (slot 5)) ++
-  digitOf sh ++ selectEntry ++ codeOf (Impl.X448.AArch64.Base.addOps (slot 3) (slot 4) (slot 5) (slot 6) (slot 7) (slot 8))
+def window (sh : Nat) : Prog isa :=
+  .seq dbl4Loop (.block (digitOf sh ++ selectEntry ++
+    codeOf (Impl.X448.AArch64.Base.addOps (slot 3) (slot 4) (slot 5) (slot 6) (slot 7) (slot 8))))
 
 /-- Byte `x19 - 1` of `k` (`x19` counts down to it): its high and its low digit. -/
-def kByte : List Instr := [.subImm .x .x19 .x19 1] ++ window 4 ++ window 0
+def kByte : Prog isa := .seq (.block [.subImm .x .x19 .x19 1]) (.seq (window 4) (window 0))
 
 /-- `Q` the neutral point, 1 in slot 20 (for `dblOps`), and the counter at 57. -/
 def kInit : List Instr :=
@@ -146,7 +150,7 @@ def kInit : List Instr :=
     [.movz .x .x19 57 0]
 
 /-- `kInit`, then the 57 bytes of `k`, from the top. -/
-def kWindows : Prog isa := .seq (.block kInit) (.loop (.block kByte) (.nonzero .x .x19))
+def kWindows : Prog isa := .seq (.block kInit) (.loop kByte (.nonzero .x .x19))
 
 /-! ## The comparison -/
 

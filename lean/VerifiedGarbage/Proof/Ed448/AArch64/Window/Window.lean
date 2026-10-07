@@ -87,25 +87,75 @@ theorem Kept.env {base : Addr} {m m' : Mem} (h : Kept base m m') {i : Index} (hi
 theorem dbl_step {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) :
     WP isa (ops (Impl.Ed448.AArch64.dblOps (slot (3 : Index).val) (slot (4 : Index).val) (slot (5 : Index).val))) s
       fun t => WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = VG.Proof.Ed448.double (pt (EV s.mem base) 3 4 5) ∧
-        Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 := by
+        Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 ∧ t.gpr .x1 = s.gpr .x1 := by
   refine WP.mono (dblOps_ok 3 4 5 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h.scr
     h.env h.z5) fun t ⟨k, b, sm, _, _, mz, e⟩ => ?_
   refine ⟨h.of_fkeep k b (fun w hw => by rw [sm 19 (by decide) w hw]; exact h.zero w hw)
     (by rw [Same.env sm (i := 20) (by decide)]; exact h.one) mz, ?_,
-    Kept.of_same sm (by decide), k.regs.1 _ (by decide)⟩
+    Kept.of_same sm (by decide), k.regs.1 _ (by decide), k.regs.1 _ (by decide)⟩
   rw [e, dblEnv_345, h.one, dblPt_eq]
 
+theorem setX1_ok (s : State) :
+    WP isa (.block [.movz .w .x1 4 0]) s fun t => t.gpr .x1 = BitVec.ofNat 64 4 ∧ Keeps [.x1] s t ∧ t.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
+    show 16 * 0 < Size.w.bits from by decide, ite_true, Option.some.injEq, exists_eq_left']
+  refine ⟨?_, ⟨fun r' hr => ?_, rfl, rfl⟩, rfl⟩
+  · rw [RegUpd.gpr_write_self]; rfl
+  · exact RegUpd.gpr_write_of_ne _ _ _ (by simpa only [List.mem_singleton] using hr)
+
+private theorem dec_x1 : ∀ n < 4, BitVec.ofNat 64 (n + 1) - BitVec.ofNat 64 1 = BitVec.ofNat 64 n ∧
+    (BitVec.ofNat 64 n != 0) = decide (n ≠ 0) := by decide
+
+theorem decX1_ok (s : State) {n : Nat} (hn : n < 4) (hc : s.gpr .x1 = BitVec.ofNat 64 (n + 1)) :
+    WP isa (.block [.subImm .x .x1 .x1 1]) s fun t =>
+      t.gpr .x1 = BitVec.ofNat 64 n ∧ Keeps [.x1] s t ∧ t.mem = s.mem := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.read, Size.bits,
+    show (1 : Nat) < 4096 from by decide, ite_true, RegUpd.gpr_write_self, BitVec.setWidth_eq, hc,
+    (dec_x1 n hn).1, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ _ (by simpa using hr), rfl, rfl⟩, rfl⟩
+
+/-- `Q` doubled `n` times. -/
+def dblN (Q : Point) : Nat → Point
+  | 0 => Q
+  | n + 1 => VG.Proof.Ed448.double (dblN Q n)
+
 theorem dbl4_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) :
-    WP isa (.block (codeOf (Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++
-        Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++ Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++
-        Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5)))) s
+    WP isa dbl4Loop s
       fun t => WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = dbl4 (pt (EV s.mem base) 3 4 5) ∧
         Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19 := by
-  refine block_codeOf (ops_append _ _ (ops_append _ _ (ops_append _ _
-    (WP.mono (dbl_step h) fun t1 ⟨h1, p1, k1, c1⟩ => WP.mono (dbl_step h1) fun t2 ⟨h2, p2, k2, c2⟩ =>
-      WP.mono (dbl_step h2) fun t3 ⟨h3, p3, k3, c3⟩ => WP.mono (dbl_step h3) fun t4 ⟨h4, p4, k4, c4⟩ =>
-        ⟨h4, ?_, k1.trans (k2.trans (k3.trans k4)), c4.trans (c3.trans (c2.trans c1))⟩))))
-  rw [p4, p3, p2, p1]; rfl
+  unfold dbl4Loop
+  refine WP.seq (WP.mono (setX1_ok s) fun s₁ ⟨c₁, k₁, m₁⟩ => ?_)
+  have h₁ : WCtx s₀ base P s₁ :=
+    ⟨h.scr.of_keeps k₁ (by decide), by rw [m₁]; exact h.env, by rw [m₁]; exact h.zero,
+      by rw [m₁]; exact h.one, by rw [m₁]; exact h.z5, by rw [m₁]; exact h.tab,
+      by rw [k₁.1 _ (by decide)]; exact h.lr, by rw [k₁.1 _ (by decide)]; exact h.chk,
+      by rw [k₁.2.1]; exact h.rd, by rw [k₁.2.2]; exact h.wr, by rw [m₁]; exact h.mem⟩
+  refine WP.loop (M := isa) (fun n (t : State) => 1 ≤ n ∧ n ≤ 4 ∧ t.gpr .x1 = BitVec.ofNat 64 n ∧
+      WCtx s₀ base P t ∧ pt (EV t.mem base) 3 4 5 = dblN (pt (EV s.mem base) 3 4 5) (4 - n) ∧
+      Kept base s.mem t.mem ∧ t.gpr .x19 = s.gpr .x19) ?_ 4 s₁
+    ⟨by decide, by decide, c₁, h₁, by rw [m₁]; rfl, fun _ _ _ _ => by rw [m₁],
+      k₁.1 _ (by decide)⟩
+  intro n t ⟨n1, n4, ct, ht, qt, kt, xt⟩
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (block_codeOf (dbl_step ht)) fun u ⟨hu, qu, ku, xu, x1u⟩ => ?_
+  have cu : u.gpr .x1 = BitVec.ofNat 64 (k + 1) := x1u.trans ct
+  refine WP.mono (decX1_ok u (by omega) cu) fun v ⟨cv, kv, mv⟩ => ?_
+  have hv : WCtx s₀ base P v :=
+    ⟨hu.scr.of_keeps kv (by decide), by rw [mv]; exact hu.env, by rw [mv]; exact hu.zero,
+      by rw [mv]; exact hu.one, by rw [mv]; exact hu.z5, by rw [mv]; exact hu.tab,
+      by rw [kv.1 _ (by decide)]; exact hu.lr, by rw [kv.1 _ (by decide)]; exact hu.chk,
+      by rw [kv.2.1]; exact hu.rd, by rw [kv.2.2]; exact hu.wr, by rw [mv]; exact hu.mem⟩
+  have qv : pt (EV v.mem base) 3 4 5 = dblN (pt (EV s.mem base) 3 4 5) (4 - k) := by
+    rw [mv, qu, qt, show 4 - k = (4 - (k + 1)) + 1 by omega]; rfl
+  have kv' : Kept base s.mem v.mem := kt.trans (by rw [mv]; exact ku)
+  have xv : v.gpr .x19 = s.gpr .x19 := by rw [kv.1 _ (by decide), xu, xt]
+  simp only [eval, State.read, BitVec.setWidth_eq, cv, (dec_x1 k (by omega)).2]
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact .inl ⟨rfl, hv, by rw [qv]; rfl, kv', xv⟩
+  · exact .inr ⟨congrArg some (decide_eq_true (by omega)), k, by omega, by omega, by omega, rfl, hv, qv, kv', xv⟩
 
 /-! ## The selected entry -/
 
@@ -145,22 +195,16 @@ theorem select_env {s t : State} {base : Addr} {P : Point} {n : Nat} (hn : n < 1
 
 /-! ## A window -/
 
-theorem window_eq (sh : Nat) : window sh =
-    codeOf (Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++ Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++
-      Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5) ++ Impl.Ed448.AArch64.dblOps (slot 3) (slot 4) (slot 5)) ++
-    (digitOf sh ++ (selectEntry ++ codeOf (Impl.X448.AArch64.Base.addOps (slot (3 : Index).val) (slot (4 : Index).val)
-      (slot (5 : Index).val) (slot (6 : Index).val) (slot (7 : Index).val) (slot (8 : Index).val)))) := by
-  simp only [window, List.append_assoc]; rfl
-
 /-- **A window**, for byte `j` of the challenge's copy at `KB` (`x19 = j`), at shift `sh`. -/
 theorem window_ok {s₀ s : State} {base : Addr} {P : Point} (h : WCtx s₀ base P s) {j : Nat} (hj : j < 57)
     (hc : s.gpr .x19 = BitVec.ofNat 64 j) {sh : Nat} (hsh : sh = 0 ∨ sh = 4) :
-    WP isa (.block (window sh)) s fun t =>
+    WP isa (window sh) s fun t =>
       WCtx s₀ base P t ∧
       pt (EV t.mem base) 3 4 5 = wstep P (pt (EV s.mem base) 3 4 5) (nibOf (s₀.mem (off base (KB + j))) sh) ∧
       pt (EV t.mem base) 0 1 2 = pt (EV s.mem base) 0 1 2 ∧ t.gpr .x19 = s.gpr .x19 := by
-  rw [window_eq, WP.block_append_iff]
-  refine WP.mono (dbl4_ok h) fun t1 ⟨h1, q1, k1, c1⟩ => ?_
+  unfold window
+  refine WP.seq (WP.mono (dbl4_ok h) fun t1 ⟨h1, q1, k1, c1⟩ => ?_)
+  simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (digitOf_ok h1.scr hj (c1.trans hc) hsh) fun t2 ⟨d2, k2, m2⟩ => ?_
   have hs2 : Scr t2 base := h1.scr.of_keeps k2 (by decide)
