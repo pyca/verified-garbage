@@ -137,6 +137,7 @@ end KeyGen
 `η₁ = η₂ = 2`, and the constant time of the indices of the seeds of `Â`. -/
 structure KemWf (L : Kem) : Prop where
   k : 0 < L.k ∧ L.k ≤ 4
+  k34 : L.k = 3 ∨ L.k = 4
   eta : L.p.η₁ = 2 ∧ L.p.η₂ = 2
   ijT : ∀ e < L.k * L.k, (taint.check (X86_64.Taint.ofRegs [.rbx])
     (.block (setB (sc (oSB + 32)) (e % L.k) ++ setB (sc (oSB + 33)) (e / L.k))) (.block [])).isSome = true
