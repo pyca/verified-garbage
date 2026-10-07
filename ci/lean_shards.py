@@ -6,7 +6,7 @@ whose sources changed since, and the modules importing them. The build is
 limited mostly by throughput, so the modules to rebuild are split into
 shards that build in parallel on separate runners, as many as the work
 needs: none when one would do (the `lean` job builds it), up to `MAX_SHARDS`
-when everything changed.
+when everything changed, but no more than make the build faster.
 
 `main` saves a manifest next to its build: the hash of every module's source,
 of the build's inputs, and how long each module took to build (from the shards' build logs, kept
@@ -80,6 +80,9 @@ MODULE_LISTS = ("globs", "roots")
 # so the `lean` job builds that much itself.
 WORK_PER_SHARD = 800.0
 MAX_SHARDS = 16
+# How much slower than the fastest plan's slowest shard a plan with fewer
+# shards may be.
+SLACK = 0.05
 # How many modules a runner's build runs at once (about five, as above): a
 # shard's time is at least its work divided by this.
 PARALLELISM = 5.0
@@ -201,6 +204,35 @@ def read_json(path: str) -> dict:
     return json.loads(p.read_text()) if p.is_file() else {}
 
 
+def pack(
+    count: int,
+    sinks: list[str],
+    closure: dict[str, frozenset[str]],
+    cost: dict[str, float],
+    path: dict[str, float],
+) -> tuple[list[float], list[list[str]], list[set[str]]]:
+    """`sinks` (largest first) packed into `count` shards: each shard's
+    estimated time, its sinks, and the modules it builds."""
+    shards: list[set[str]] = [set() for _ in range(count)]
+    loads = [0.0] * count
+    longest = [0.0] * count
+    targets: list[list[str]] = [[] for _ in range(count)]
+    for s in sinks:
+        added = [sum(cost[x] for x in closure[s] - shard) for shard in shards]
+        # The work a sink adds counts on its own too, not only through the
+        # estimate: a shard whose chain hides it would otherwise take sinks
+        # whose imports another shard builds already, and build them again.
+        best = min(
+            range(count),
+            key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + added[i] / PARALLELISM, i),
+        )
+        shards[best] |= closure[s]
+        loads[best] += added[best]
+        longest[best] = max(longest[best], path[s])
+        targets[best].append(s)
+    return [estimate(w, p) for w, p in zip(loads, longest)], targets, shards
+
+
 def plan(manifest: dict) -> dict:
     mods = modules()
     imps = imports(mods)
@@ -221,10 +253,11 @@ def plan(manifest: dict) -> dict:
     default = sorted(times.values())[len(times) // 2] if times else DEFAULT_TIME
     cost = {m: (times.get(m, default) if m in stale else UP_TO_DATE) for m in mods}
     work = sum(cost[m] for m in stale)
-    count = min(MAX_SHARDS, math.ceil(work / WORK_PER_SHARD))
-    if count == 1:
-        count = 0
-
+    # At most a shard per `WORK_PER_SHARD`; but a sink's closure is built on
+    # one runner, so the largest (or the longest chain) may set the time
+    # whatever the count. Then more shards only build what they share again:
+    # take the fewest whose slowest is within `SLACK` of the fastest plan's.
+    most = min(MAX_SHARDS, math.ceil(work / WORK_PER_SHARD))
     # A shard is closed under imports (it builds its sinks' closures), so its
     # critical path is the longest of its sinks'.
     path = paths(imps, cost)
@@ -233,23 +266,10 @@ def plan(manifest: dict) -> dict:
     # Largest first by work, not by estimate: taking long chains first spreads
     # what they import over more shards, which then build it more than once.
     sinks = sorted(total, key=lambda m: (-total[m], m))
-    shards: list[set[str]] = [set() for _ in range(count)]
-    loads = [0.0] * count
-    longest = [0.0] * count
-    targets: list[list[str]] = [[] for _ in range(count)]
-    for s in sinks if count else []:
-        added = [sum(cost[x] for x in closure[s] - shard) for shard in shards]
-        # The work a sink adds counts on its own too, not only through the
-        # estimate: a shard whose chain hides it would otherwise take sinks
-        # whose imports another shard builds already, and build them again.
-        best = min(
-            range(count),
-            key=lambda i: (estimate(loads[i] + added[i], max(longest[i], path[s])) + added[i] / PARALLELISM, i),
-        )
-        shards[best] |= closure[s]
-        loads[best] += added[best]
-        longest[best] = max(longest[best], path[s])
-        targets[best].append(s)
+    packs = {n: pack(n, sinks, closure, cost, path) for n in range(2, most + 1)}
+    best = min((max(p[0]) for p in packs.values()), default=0.0)
+    count = min((n for n, p in packs.items() if max(p[0]) <= best * (1 + SLACK)), default=0)
+    loads, targets, shards = packs[count] if count else ([], [], [])
     owner = {}
     for i, shard in enumerate(shards):
         for m in sorted(shard):
@@ -257,7 +277,7 @@ def plan(manifest: dict) -> dict:
     return {
         "stale": len(stale),
         "work": round(work),
-        "loads": [round(estimate(w, p)) for w, p in zip(loads, longest)],
+        "loads": [round(t) for t in loads],
         "targets": [sorted(t) for t in targets],
         "owner": owner,
     }
