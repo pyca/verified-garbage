@@ -244,13 +244,10 @@ impl AesCcm {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut k = AesCcm {
-            schedule: [0; 240],
-            rounds: key.len() / 4 + 6,
-            backend: select(detected()),
-        };
+        let backend = select(detected());
+        let mut schedule = [0; 240];
         // `_vaes` calls `vg_aes_expand_key_aesni`'s schedule.
-        let expand = match k.backend {
+        let expand = match backend {
             Backend::Scalar => vg_aes_expand_key,
             #[cfg(target_arch = "x86")]
             Backend::AesNi => vg_aes_expand_key_aesni,
@@ -260,13 +257,17 @@ impl AesCcm {
             Backend::Aes => vg_aes_expand_key_aes,
         };
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32, and `k.schedule` for reads and writes of 240 bytes. They
+        // 24 or 32, and `schedule` for reads and writes of 240 bytes. They
         // are distinct objects, so they do not overlap, nor do they overlap
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The CPU has the
         // features of the implementation selected.
-        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
-        Ok(k)
+        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        Ok(AesCcm {
+            schedule,
+            rounds: key.len() / 4 + 6,
+            backend,
+        })
     }
 
     /// Generation-encryption (§6.1) with a tag of `T` bytes: encrypts `data`

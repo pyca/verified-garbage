@@ -228,26 +228,27 @@ impl AesSiv {
         if !matches!(key.len(), 32 | 48 | 64) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut k = AesSiv {
-            ctx: [0; 64],
-            rounds: key.len() / 8 + 6,
-            backend: select(detected()),
-        };
+        let backend = select(detected());
+        let mut ctx = [0; 64];
         let init = instance!(
-            k.backend,
+            backend,
             false,
             vg_aes_siv_init,
             x86_64: [vg_aes_siv_init_aesni, vg_aes_siv_init_vaes, vg_aes_siv_init_aesni],
             aarch64: [vg_aes_siv_init_aes, vg_aes_siv_init_aes]
         );
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
-        // 48 or 64, and `k.ctx` for reads and writes of 512 bytes. They are
+        // 48 or 64, and `ctx` for reads and writes of 512 bytes. They are
         // distinct objects, so they do not overlap each other, the return
         // addresses on the stack (on x86 and x86-64) or the stack below them that
         // the function uses, and neither wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
-        Ok(k)
+        unsafe { init(key.as_ptr(), key.len(), &mut ctx) };
+        Ok(AesSiv {
+            ctx,
+            rounds: key.len() / 8 + 6,
+            backend,
+        })
     }
 
     /// Writes the descriptors of the associated-data components `ads` to the

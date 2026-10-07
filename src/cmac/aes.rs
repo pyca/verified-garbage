@@ -158,13 +158,9 @@ impl AesCmac {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
-        let mut c = AesCmac {
-            state: [0; STATE],
-            rounds: key.len() / 4 + 6,
-            count: 0,
-            backend: select(detected()),
-        };
-        let f = match c.backend {
+        let backend = select(detected());
+        let mut state = [0; STATE];
+        let f = match backend {
             Backend::Scalar => vg_cmac_aes_init,
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
             Backend::AesNi => vg_cmac_aes_init_aesni,
@@ -173,15 +169,20 @@ impl AesCmac {
             #[cfg(target_arch = "aarch64")]
             Backend::Aes => vg_cmac_aes_init_aes,
         };
-        // SAFETY: `c.state` is valid for reads and writes of 304 bytes,
+        // SAFETY: `state` is valid for reads and writes of 304 bytes,
         // and `key` for reads of `key.len()` bytes, which is 16, 24 or 32.
-        // `c.state` is a local and `key` a borrow, so neither overlaps the
+        // `state` is a local and `key` a borrow, so neither overlaps the
         // other, the return address (on x86-64 and x86), the arguments on the
         // stack (on 32-bit ARM and x86) or the stack below them that the
         // function uses, and neither wraps around the end of the address
         // space. The CPU has the features of the implementation selected.
-        unsafe { f(&mut c.state, key.as_ptr(), key.len()) };
-        Ok(c)
+        unsafe { f(&mut state, key.as_ptr(), key.len()) };
+        Ok(AesCmac {
+            state,
+            rounds: key.len() / 4 + 6,
+            count: 0,
+            backend,
+        })
     }
 
     /// Absorbs `data`.

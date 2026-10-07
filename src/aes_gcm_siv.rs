@@ -104,27 +104,28 @@ impl AesGcmSiv {
         if !matches!(key.len(), 16 | 32) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut k = AesGcmSiv {
-            schedule: [0; 240],
-            rounds: key.len() / 4 + 6,
-            backend: select(detected()),
-        };
+        let backend = select(detected());
+        let mut schedule = [0; 240];
         // The instances with AES-NI or VAES call `vg_aes_expand_key_aesni`,
         // those with the AArch64 AES instructions `vg_aes_expand_key_aes`.
-        let expand = instance!(k.backend, vg_aes_expand_key,
+        let expand = instance!(backend, vg_aes_expand_key,
             x86_64: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni],
             vaes: [vg_aes_expand_key_aesni, vg_aes_expand_key, vg_aes_expand_key_aesni,
                 vg_aes_expand_key_aesni, vg_aes_expand_key_aesni, vg_aes_expand_key_aesni],
             avx: [vg_aes_expand_key_aesni],
             aarch64: [vg_aes_expand_key_aes]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16
-        // or 32, and `k.schedule` for reads and writes of 240 bytes. They are
+        // or 32, and `schedule` for reads and writes of 240 bytes. They are
         // distinct objects, so they do not overlap, nor do they overlap the
         // return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The CPU has the
         // features of the implementation selected.
-        unsafe { expand(key.as_ptr(), key.len(), &mut k.schedule) };
-        Ok(k)
+        unsafe { expand(key.as_ptr(), key.len(), &mut schedule) };
+        Ok(AesGcmSiv {
+            schedule,
+            rounds: key.len() / 4 + 6,
+            backend,
+        })
     }
 
     /// Encryption (§4): encrypts `data` in place under the 12-byte `nonce`,

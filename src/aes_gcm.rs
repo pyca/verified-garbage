@@ -558,14 +558,9 @@ impl AesGcm {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut k = AesGcm {
-            ctx: [0; 32],
-            rounds: key.len() / 4 + 6,
-            backend: select(detected()),
-            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-            powers: Powers::new(),
-        };
-        let init = instance!(k.backend, vg_aes_gcm_init,
+        let backend = select(detected());
+        let mut ctx = [0; 32];
+        let init = instance!(backend, vg_aes_gcm_init,
             x86_64: [vg_aes_gcm_init_aesni, vg_aes_gcm_init_pclmul, vg_aes_gcm_init_aesni_pclmul],
             vaes: [vg_aes_gcm_init_vaes, vg_aes_gcm_init_vpclmul, vg_aes_gcm_init_vaes_pclmul,
                 vg_aes_gcm_init_aesni_vpclmul, vg_aes_gcm_init_vaes_vpclmul,
@@ -573,12 +568,18 @@ impl AesGcm {
             avx: [vg_aes_gcm_init_aesni_pclmul_avx],
             aarch64: [vg_aes_gcm_init_aes]);
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
+        // 24 or 32; `ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space. The CPU
         // has the features of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
-        Ok(k)
+        unsafe { init(key.as_ptr(), key.len(), &mut ctx) };
+        Ok(AesGcm {
+            ctx,
+            rounds: key.len() / 4 + 6,
+            backend,
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+            powers: Powers::new(),
+        })
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -832,13 +833,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
     /// Starts a message under `key` and `nonce`.
     fn new(key: &'a AesGcm, nonce: &[u8]) -> Result<Self, Error> {
         check_nonce(nonce)?;
-        let mut s = Stream {
-            key,
-            state: [0; 10],
-            aad_len: 0,
-            text_len: 0,
-            in_text: false,
-        };
+        let mut state = [0; 10];
         let init = instance!(key.backend, vg_aes_gcm_stream_init,
             x86_64: [vg_aes_gcm_stream_init_aesni, vg_aes_gcm_stream_init_pclmul,
                 vg_aes_gcm_stream_init_aesni_pclmul],
@@ -850,12 +845,18 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             aarch64: [vg_aes_gcm_stream_init_aes]);
         // SAFETY: `key.ctx` is a key context (as in
         // `AesGcm::encrypt_in_place`), valid for reads of 256 bytes, `nonce`
-        // for reads of `nonce.len()`, and `s.state` for reads and writes of
+        // for reads of `nonce.len()`, and `state` for reads and writes of
         // 80. They are distinct objects, so the writable one overlaps nothing
         // else, nor anything on the stack, and none wraps around. The CPU has
         // the features of the implementation selected.
-        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
-        Ok(s)
+        unsafe { init(&key.ctx, nonce.as_ptr(), nonce.len(), &mut state) };
+        Ok(Stream {
+            key,
+            state,
+            aad_len: 0,
+            text_len: 0,
+            in_text: false,
+        })
     }
 
     /// Absorbs more additional data, which must all come before the text.

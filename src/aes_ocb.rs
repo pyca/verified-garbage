@@ -162,25 +162,26 @@ impl AesOcb {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(Error::InvalidKeyLength);
         }
-        let mut k = AesOcb {
-            ctx: [0; 32],
-            rounds: key.len() / 4 + 6,
-            backend: select(detected()),
-        };
+        let backend = select(detected());
+        let mut ctx = [0; 32];
         let init = instance!(
-            k.backend,
+            backend,
             vg_aes_ocb_init,
             vg_aes_ocb_init_aesni,
             vg_aes_ocb_init_aes
         );
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
-        // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
+        // 24 or 32; `ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap, nor do they overlap
         // the return address on the stack or the stack below it, and neither
         // wraps around the end of the address space. The CPU has the features
         // of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), &mut k.ctx) };
-        Ok(k)
+        unsafe { init(key.as_ptr(), key.len(), &mut ctx) };
+        Ok(AesOcb {
+            ctx,
+            rounds: key.len() / 4 + 6,
+            backend,
+        })
     }
 
     /// `OCB-ENCRYPT` (§4.2) with a tag of `T` bytes: encrypts `data` in
