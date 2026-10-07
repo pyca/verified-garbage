@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.Verified
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Tables
+import VerifiedGarbage.Proof.Framework.KernelAux
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P521
 import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Hashes.Sha512
 import VerifiedGarbage.Spec.Ecdsa.Rfc6979.P521Sha512
@@ -38,13 +39,15 @@ theorem spec_pre {s : State}
     (ng : (s.gpr .x2).toNat + 64 ≤ 2 ^ 64) (nc : (s.gpr .x3).toNat + 8192 ≤ 2 ^ 64) (hsp : 400 ≤ s.sp.toNat)
     (ht : TblHeld s [⟨s.gpr .x0, 132⟩, ⟨s.gpr .x3, 8192⟩, ⟨s.sp - BitVec.ofNat 64 400, 400⟩]) :
     (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 400).pre s := by
-  sig_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-    Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-    AArch64.abi, AArch64.argRegs, p521_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-    stackBelow, below]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (List.mem_append_left _ hr),
-    hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩
+  rw [p521_combConsts]
+  generalize Impl.Ecdsa.AArch64.p521.combWords = ws at hrd held fit hdw ⊢
+  kernel_aux =>
+    sig_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
+      Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
+      AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow, below]
+    exact ⟨hsp, by rw [hrd]; rfl, held, fit, by rw [hw]; exact fun r hr => hdw r (List.mem_append_left _ hr),
+      hdw _ (by simp), by rw [hrd]; rfl, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩
 
 theorem sat_spec :
     (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 400).pre
@@ -67,18 +70,22 @@ theorem implies :
     (rfcAArch64 Impl.Ecdsa.AArch64.p521 Spec.Ecdsa.Rfc6979.P521Sha512.inst 400).Implies
       (Spec.Ecdsa.Rfc6979.P521Sha512.inst.signContract (AArch64.abi.withConsts Impl.Ecdsa.AArch64.p521.combConsts) 400) where
   pre s h := by
-    sig_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
-      Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
-      AArch64.abi, AArch64.argRegs, p521_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-      stackBelow, below] at h
-    obtain ⟨hsp, hd, hheld, hfit, hdw, hstk, ht, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩ := h
-    refine ⟨?_, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, hheld, hfit, ?_⟩
-    · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
-    · simp only [List.mem_cons, List.not_mem_nil, or_false]
-      rintro r (rfl | rfl | rfl)
-      · exact hdw _ (by rw [hw]; simp [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.P521.inst, Spec.P521.curve])
-      · exact hdw _ (by rw [hw]; simp)
-      · exact hstk
+    rw [p521_combConsts] at h
+    unfold rfcAArch64 TblOk
+    generalize Impl.Ecdsa.AArch64.p521.combWords = ws at h ⊢
+    kernel_aux =>
+      sig_pre [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
+        Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,
+        AArch64.abi, AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow,
+        below] at h
+      obtain ⟨hsp, hd, hheld, hfit, hdw, hstk, ht, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc⟩ := h
+      refine ⟨?_, hw, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, hheld, hfit, ?_⟩
+      · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+      · simp only [List.mem_cons, List.not_mem_nil, or_false]
+        rintro r (rfl | rfl | rfl)
+        · exact hdw _ (by rw [hw]; simp [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.P521.inst, Spec.P521.curve])
+        · exact hdw _ (by rw [hw]; simp)
+        · exact hstk
   post := by
     sig_implies_post [Spec.Ecdsa.Rfc6979.P521Sha512.inst, Spec.Ecdsa.Rfc6979.Instance.signContract,
       Spec.Ecdsa.Rfc6979.Instance.signSig, Spec.Ecdsa.P521.inst, Spec.P521.curve, Spec.Ecdsa.scratchWords,

@@ -45,11 +45,15 @@ theorem spec_pre {s : State}
     (f0 : (s.gpr .x0).toNat + 133 ≤ 2 ^ 64) (f1 : (s.gpr .x1).toNat + 66 ≤ 2 ^ 64)
     (f2 : (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64) (ht : TblHeld s [⟨s.gpr .x0, 133⟩, ⟨s.gpr .x2, 8192⟩]) :
     (Spec.EcKey.P521.inst.publicKeyContract (AArch64.abi.withConsts p521.combConsts)).pre s := by
-  sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract,
-    Spec.EcKey.Instance.publicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, AArch64.abi,
-    AArch64.argRegs, p521_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
-  exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1, f2⟩
+  rw [p521_combConsts]
+  generalize p521.combWords = ws at hrd held fit hdw ⊢
+  kernel_aux =>
+    sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract,
+      Spec.EcKey.Instance.publicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, AArch64.abi,
+      AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    exact ⟨by rw [hrd]; rfl, held, fit, by rw [hw]; exact hdw, by rw [hrd]; rfl, hw, h1, h2, h3, f0, f1,
+      f2⟩
 
 /-- A state satisfying the precondition: the tables at `0x100000`. -/
 def satState : State where
@@ -77,13 +81,16 @@ theorem sat_spec :
 theorem implies : pkAArch64.Implies
     (Spec.EcKey.P521.inst.publicKeyContract (AArch64.abi.withConsts p521.combConsts)) where
   pre s h := by
-    sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract,
-      Spec.EcKey.Instance.publicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, AArch64.abi,
-      AArch64.argRegs, p521_combConsts, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
-      stackBelow] at h
-    obtain ⟨hd, hheld, hfit, hdw, ht, hw, h1, h2, h3, h4, -, h5⟩ := h
-    refine ⟨?_, hw, h2, h1, h3, h4, h5, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
-    rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
+    rw [p521_combConsts] at h
+    unfold pkAArch64 TblHeld
+    generalize p521.combWords = ws at h ⊢
+    kernel_aux =>
+      sig_pre [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract,
+        Spec.EcKey.Instance.publicKeySig, Spec.P521.curve, Spec.EcKey.scratchWords, AArch64.abi,
+        AArch64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
+      obtain ⟨hd, hheld, hfit, hdw, ht, hw, h1, h2, h3, h4, -, h5⟩ := h
+      refine ⟨?_, hw, h2, h1, h3, h4, h5, hheld, hfit, by rw [hw] at hdw; exact hdw⟩
+      rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
     intro s s' _ h
     sig_post [Spec.EcKey.P521.inst, Spec.EcKey.Instance.publicKeyContract,

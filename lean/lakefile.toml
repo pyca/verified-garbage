@@ -116,7 +116,8 @@ name = "NativeTactics"
 roots = []
 globs = ["VerifiedGarbage.Proof.Framework.SigEval", "VerifiedGarbage.Proof.Framework.Lit",
   "VerifiedGarbage.Proof.Framework.Omega", "VerifiedGarbage.Proof.Framework.OmegaLit",
-  "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.Sig"]
+  "VerifiedGarbage.Proof.Framework.KernelRfl", "VerifiedGarbage.Proof.Framework.KernelAux",
+  "VerifiedGarbage.Proof.Framework.Sig"]
 precompileModules = true
 
 # The trusted base, which imports only Lean core: the code the emitter
