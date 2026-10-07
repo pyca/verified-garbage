@@ -7,15 +7,15 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Impl.P256.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Spec.Weierstrass
 
-private theorem before_reads (S : RcbSlots) (p : Pt) :
+theorem doubleHalf_before_reads (S : RcbSlots) (p : Pt) :
     readsOk (DoubleHalf.before S p) [p.x,p.y,p.z]=true := by
   simp [DoubleHalf.before,readsOk,FOp.ins,FOp.out]
 
-private theorem after_reads (S : RcbSlots) (p : Pt) (V : List Nat) :
+theorem doubleHalf_after_reads (S : RcbSlots) (p : Pt) (V : List Nat) :
     readsOk (DoubleHalf.after S p) (S.t1 :: validAfter (DoubleHalf.before S p) V)=true := by
   simp [DoubleHalf.before,DoubleHalf.after,readsOk,validAfter,FOp.ins,FOp.out]
 
-private theorem before_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
+theorem doubleHalf_before_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
     (h : ∀ x∈doubleSlots S p,Sl x) :
     ∀ op∈DoubleHalf.before S p,∀ x∈op.out::op.ins,Sl x := by
   intro op hop x hx
@@ -25,7 +25,7 @@ private theorem before_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
     simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx <;>
     simp only [doubleSlots,List.mem_cons,List.not_mem_nil,or_false] <;> grind
 
-private theorem after_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
+theorem doubleHalf_after_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
     (h : ∀ x∈doubleSlots S p,Sl x) :
     ∀ op∈DoubleHalf.after S p,∀ x∈op.out::op.ins,Sl x := by
   intro op hop x hx
@@ -53,7 +53,8 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
   rw [DoubleHalf.code]
   apply WP.seq
   apply (fprogB_wp _ _).mpr
-  refine WP.mono (fprog_ok hL hm _ hI (before_slots hSl) (readsOk_mono (before_reads S p) hV))
+  refine WP.mono (fprog_ok hL hm _ hI (doubleHalf_before_slots hSl)
+    (readsOk_mono (doubleHalf_before_reads S p) hV))
     fun u ⟨ku,hu⟩ => ?_
   apply WP.seq
   have hs1 : Sl S.t1 := hSl _ (by simp [doubleSlots])
@@ -61,15 +62,16 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     simp [DoubleHalf.before,validAfter,FOp.out]
   refine WP.mono (half_inv_ok hn hL hu hs1 hv1) fun v ⟨kv,hv⟩ => ?_
   apply (fprogB_wp _ _).mpr
-  refine WP.mono (fprog_ok hL hm _ hv (after_slots hSl) (after_reads S p V)) fun t ⟨kt,ht⟩ => ?_
+  refine WP.mono (fprog_ok hL hm _ hv (doubleHalf_after_slots hSl) (doubleHalf_after_reads S p V))
+    fun t ⟨kt,ht⟩ => ?_
   have kb : ProgKeep M base (doubleSlots S p) s u := ku.mono (by
     intro x hx
     obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
-    exact before_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..))
+    exact doubleHalf_before_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..))
   have ka : ProgKeep M base (doubleSlots S p) v t := kt.mono (by
     intro x hx
     obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
-    exact after_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..))
+    exact doubleHalf_after_slots (fun _ h => h) op hop op.out (List.mem_cons_self ..))
   refine ⟨kb.trans ((progKeep_of_op kv (by simp [doubleSlots])).trans ka),
     ht.sub ?_,InvJ.dbl' hC ha hP hJ (doubleHalfEnv_run S p E hd)⟩
   intro x hx
