@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -94,6 +95,27 @@ theorem StitchName.okP : (n : StitchName) →
 with their proof, if they read the powers of the hash subkey from it. -/
 def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
   p.pieceP.map fun q => ⟨p.name.encP, p.name.decP, p.name.okP, q.enc, q.dec⟩
+
+/-- The out-of-place loops named `n` interleave counter mode and GHASH
+correctly. -/
+theorem StitchToName.ok : (n : StitchToName) → (M : Proof.Gcm.X86_64.Stitch.CtxMode) →
+    Proof.Gcm.X86_64.Stitch.StitchToOkM M n.enc
+  | .vaesAvx512, M => Proof.Gcm.X86_64.StitchZTo.stitchTo_ok M
+
+/-- The out-of-place loops named `n` for a key context of
+`vg_aes_gcm_init_precomputed` interleave counter mode and GHASH correctly. -/
+theorem StitchToName.okP : (n : StitchToName) →
+    Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZTo.stitchToP_ok
+
+/-- The out-of-place loops a variant names, with their proof. -/
+def GcmVariant.stitchTo (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.base) :=
+  (v.stitch.bind (·.toPart)).map fun p => ⟨p.name.enc, p.name.ok _, p.piece⟩
+
+/-- The out-of-place loops a variant names for a key context of
+`vg_aes_gcm_init_precomputed`, with their proof. -/
+def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.powers) :=
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceP.map fun q => ⟨p.name.encP, p.name.okP, q.enc⟩
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
@@ -331,9 +353,48 @@ def artifactsP (v : GcmImpl) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v v.blkP)
     features := v.features }]
 
+/-- How an instance of `vg_aes_gcm_encrypt_blocks_to` works. -/
+def blocksToNote (loops : Bool) (blk : String) : String :=
+  if loops then
+    "This implementation encrypts the first `16 ⌊n / 16⌋` blocks from `src` to `dst` with \
+      AES rounds of 16 blocks at a time interleaved with GHASH's multiplications of the 16 \
+      blocks before them, from the powers of the hash subkey it computes in `scratch`; it \
+      copies the rest to `dst` and encrypts them there with `" ++ blk ++ "`."
+  else
+    "This implementation copies the blocks to `dst` and encrypts them there with `" ++ blk ++
+      "`."
+
+/-- `vg_aes_gcm_encrypt_blocks_to` calling the implementations `v`, and the
+`_precomputed` one if its loops read the powers from the key context. -/
+def artifactsTo (v : GcmVariant) : List Artifact :=
+  [{ Spec.Gcm.encryptBlocksToApi with
+    name := Spec.Gcm.encryptBlocksToApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.encryptBlocksToApi.doc
+      (notes := [blocksToNote v.stitchTo.isSome v.impl.blkB.enc.name])
+    code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkB.enc (v.stitchTo.map (·.enc))
+    contract := Spec.Gcm.encryptBlocksToContract X86_64.abi 24
+    stack := 24
+    verified := encryptBlocksTo_verified v.impl.blkB v.stitchTo
+    spSafe := encryptTo_spSafe v.stitchTo v.impl.blkB
+    features := v.impl.features }] ++
+  if v.impl.stitchP.isSome then
+    [{ Spec.Gcm.encryptBlocksToPrecomputedApi with
+      name := Spec.Gcm.encryptBlocksToPrecomputedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.encryptBlocksToPrecomputedApi.doc
+        (notes := [blocksToNote v.stitchToP.isSome v.impl.blkP.enc.name])
+      code := Impl.AesGcm.X86_64.BlocksTo.encrypt v.impl.blkP.enc (v.stitchToP.map (·.enc))
+      contract := Spec.Gcm.encryptBlocksToPrecomputedContract X86_64.abi 24
+      stack := 24
+      verified := encryptBlocksToP_verified v.impl.blkP v.stitchToP
+      spSafe := encryptTo_spSafe v.stitchToP v.impl.blkP
+      features := v.impl.features }]
+  else []
+
 /-- The artifacts of a variant, from the implementations it names: the
 `_precomputed` ones too if its loops read the powers from the key context. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ if v.impl.stitchP.isSome then artifactsP v.impl else []
+  artifactsOf v.impl ++ (if v.impl.stitchP.isSome then artifactsP v.impl else []) ++ artifactsTo v
 
 end VG.Generic.AesGcm.X86_64.AesGcm
