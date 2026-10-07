@@ -16,16 +16,30 @@ inputs:
 outputs:
   cache-hit:
     description: Whether the build was restored from exactly `key`.
-    value: ${{ steps.lean-build.outputs.cache-hit }}
+    value: ${{ steps.lean-build.outputs.cache-hit == 'true' || steps.lean-build-again.outputs.cache-hit == 'true' }}
   cache-primary-key:
     description: The key to save the build under (`key`).
     value: ${{ steps.lean-build.outputs.cache-primary-key }}
+  cache-matched-key:
+    description: The key of the build restored, if any (empty if none was).
+    value: ${{ steps.lean-build.outputs.cache-matched-key || steps.lean-build-again.outputs.cache-matched-key }}
 
 runs:
   using: composite
   steps:
     - name: Restore this project's build
       id: lean-build
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: lean/.lake/build
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+    # A download that fails partway (a stalled connection, aborted) is only
+    # a warning, and looks like a miss: without a second try the job would
+    # build every module from nothing.
+    - name: Restore this project's build again
+      id: lean-build-again
+      if: ${{ steps.lean-build.outputs.cache-matched-key == '' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: lean/.lake/build

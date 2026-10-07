@@ -226,14 +226,24 @@ jobs:
           retention-days: 1
           if-no-files-found: error
       # Only after this shard's upload, so that the last shard to list finds
-      # every shard's.
+      # every shard's. A shard that restored another build than the plan's (or
+      # none: a download that failed) never assembles: the shards upload only
+      # what they rebuilt, so it would build every other module again, on one
+      # runner. `all-green` assembles instead.
       - name: Find out whether every shard's outputs are uploaded
         id: all-uploaded
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           SHARDS: ${{ needs.lean.outputs.shards }}
+          PLANNED: ${{ needs.lean.outputs.build-key }}
+          EXACT: ${{ needs.lean.outputs.build-cache }}
+          RESTORED: ${{ steps.prepare.outputs.cache-matched-key }}
         run: |
+          if [ -n "$PLANNED" ] && [ "$RESTORED" != "$PLANNED" ] && [ "$RESTORED" != "$EXACT" ]; then
+            echo "::warning::This shard restored ${RESTORED:-no build}, not the plan's $PLANNED: another job assembles the build."
+            exit 0
+          fi
           # An error here only leaves the assembly to another job.
           names=$(gh api --paginate "repos/$GH_REPO/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
             --jq '.artifacts[].name' || true)
