@@ -117,9 +117,9 @@ theorem verifyPrefix_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
   refine WP.seq (WP.mono h fun s₃ h₃ => WP.seq (WP.mono h₃ fun _ h₄ => WP.block_nil h₄))
 
 private theorem gMul_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : List Leak}
-    (he : Exec isa (c.gMul (c.C.len == 32)) s t s') :
+    (he : Exec isa (c.gMul c.pubVerify) s t s') :
     ∃ a tp tc, Exec isa (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) s tp a ∧
-      Exec isa ((c.combCfg d).comb (c.C.len == 32)) a tc s' ∧ t = tp ++ tc := by
+      Exec isa ((c.combCfg d).comb c.pubVerify) a tc s' ∧ t = tp ++ tc := by
   rw [Cfg.gMul,hcd] at he
   cases he with
   | seq ep ec => exact ⟨_,_,_,ep,ec,rfl⟩
@@ -127,7 +127,7 @@ private theorem gMul_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {
 theorem verify_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : List Leak}
     (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) s t s') :
     ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
-      Exec isa ((c.combCfg d).comb (c.C.len == 32)) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
+      Exec isa ((c.combCfg d).comb c.pubVerify) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
       t = tp ++ tc ++ ts := by
   cases he with
   | seq e0 h => cases h with
@@ -160,7 +160,7 @@ structure VerifyChecks (c : Cfg) (d : CombData) : Prop where
   after : ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi])) (verifySuffix c)
 
 theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
-    {d : CombData} (hcd : c.comb = some d) (hLookup : (c.C.len == 32) = true)
+    {d : CombData} (hcd : c.comb = some d) (hLookup : c.pubVerify = true)
     (checks : VerifyChecks c d) :
     ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub,sym,scalar⟩ e₁ e₂

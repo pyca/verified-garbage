@@ -396,7 +396,7 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   unch : Unch base [(0, size)] s₀.mem s.mem
 
 theorem points_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.points c =
-    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (c.gMul (c.C.len == 32))
+    .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) (.seq (c.gMul c.pubVerify)
       (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c)) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)))) := rfl
 
@@ -445,7 +445,7 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
       rcases hw with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Nat.le_refl _, Nat.le_refl _⟩
       · exact ⟨_, List.mem_singleton_self _, Nat.zero_le _, by dsimp only; omega⟩
-  refine WP.seq (WP.mono (gMul_ok' (publicLookup := c.C.len == 32) hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
+  refine WP.seq (WP.mono (gMul_ok' (publicLookup := c.pubVerify) hc hC hT hs₁ F₁ (k := sv c base s U) (wordsVal_lt _ _ _ _)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry]) (by rw [v₁ (by decide), hM.rz])
     (fun t ht => b₁ t ht) hTb)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)

@@ -34,7 +34,7 @@ materialize_code winLoopX
 
 taint_summary winBuildXSum : taintS τB winBuildX
 taint_summary winLoopXSum : taintS τL winLoopX
-taint_summary winBuildXSymSum : (taintSym ["VG_P521_COMB"]) τB winBuildX
-taint_summary winLoopXSymSum : (taintSym ["VG_P521_COMB"]) τL winLoopX
+taint_summary winBuildXVSum : taintS τV winBuildX
+taint_summary winLoopXVSum : taintS τVL winLoopX
 
 end VG.Proof.P521.X86_64

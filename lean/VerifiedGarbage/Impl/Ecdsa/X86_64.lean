@@ -141,6 +141,10 @@ structure Cfg where
   /-- Whether the comb selects its entries 32 bytes at a time, with AVX2
   (`TCombCfg.avx2`). -/
   avx2 : Bool := false
+  /-- Whether verification reads the comb's entries for `[u]G` by direct,
+  public lookups (`u` is public) and compares `x mod n` with `r` in
+  projective coordinates, without inverting `Z` (which needs `n < p ≤ 2n`). -/
+  pubVerify : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat

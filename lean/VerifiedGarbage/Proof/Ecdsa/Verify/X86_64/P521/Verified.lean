@@ -1,8 +1,9 @@
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Main
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.Timing
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 
 /-!
 # ECDSA verification over P-521 on x86-64: `Verified`
@@ -13,11 +14,11 @@ file supplies: `Proof.P521.law`, `Proof.P521.combOk7` and the variant's
 `inv`), so `verify_ok` gives the
 contract's postcondition; the callee-saved registers are restored, `rsp` is never
 written, and every store is to `scratch`, which the return address is apart
-from (`abiPreserved`). Constant time by taint tracking with the address of
-the comb's static public (`taintSym`): the only branches are on loop
-counters, and every address is an argument or the static's address plus a
-constant or a counter, so only the pointers affect timing (the contract would
-let the key, the hash and the signature affect it too).
+from (`abiPreserved`). The comb reads its table directly at `u`, which the
+public digest and signature determine (`pubVerify`), and the projective
+comparison needs no inversion of `Z`: `verify_public_ct` relates those
+lookups, and taint tracking checks the code before and after the comb
+(`verify_checks`, the window method by its summaries).
 -/
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
@@ -75,24 +76,66 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P521.curve)
       rintro r rfl
       exact hrs) (by decide)
 
-theorem verify_ct : ConstantTime isa verifyX86_64.pre verifyX86_64.pub verifyP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) verifyP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum,
-      Proof.P521.X86_64.winBuildSymSum, Proof.P521.X86_64.winLoopSymSum]
-  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
-  exact fun _ _ _ _ ⟨_, h1, h2, h3, h4, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl
-      · exact h1
-      · exact h2
-      · exact h3
-      · exact h4, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
+/-- P-521's comb, as `p521`'s `comb`. -/
+abbrev p521Table : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
+
+/-- The taint checks around the comb's public lookups: the comb's own parts,
+the code before it and the code after it, whose window method (its table and
+loop) is checked by its summaries. -/
+theorem verify_checks : VerifyChecks p521 p521Table where
+  comb := {
+    init := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi])
+      (fun _ _ _ _ h => h) (by taint_decide)
+    head := VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rbx])
+      (fun _ _ _ _ h => h) (by taint_decide)
+    tail := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rbx, .rdx])
+      (fun _ _ _ _ h => h) (by taint_decide) }
+  before := VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx])
+    (fun _ _ _ _ h => h) (by taint_decide)
+  after := by
+    obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi]) (verifySuffix p521) h).isSome = true := by
+      taint_decide_sum [Proof.P521.X86_64.winBuildVSum, Proof.P521.X86_64.winLoopVSum]
+    exact VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) hc
+
+/-- The shared contract declares all verification input buffers public. -/
+theorem verify_public_of_spec {s₁ s₂ : State}
+    (pub : (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub s₁ s₂) :
+    VerifyPublic p521 p521Table s₁ s₂ := by
+  sig_pub [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
+    Spec.P521.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p521_combConsts,
+    Abi.withConsts] at pub
+  obtain ⟨_, hsy, inputs, h0, h1, h2, h3⟩ := pub
+  refine ⟨Taint.agree_ofRegs ?_, hsy, ?_⟩
+  · intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact h0
+    · exact h1
+    · exact h2
+    · exact h3
+  · have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+    have parts := List.append_inj eqBytes (by simp only [List.length_append, Weierstrass.length_bytesAt])
+    have digest := (List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])).2
+    exact publicU_congr digest parts.2
+
+theorem verify_ct (hL : Weierstrass.Law Spec.P521.curve)
+    (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : Weierstrass.X86_64.InvSounds) :
+    ConstantTime isa
+      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pre
+      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)).pub verifyP521 := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  exact verify_public_ct (p521_ok hI) hL (p521_tbls hT) rfl (by decide) verify_checks
+    _ _ _ _ _ _ (pre_of (implies.pre _ pre₁)) (pre_of (implies.pre _ pre₂))
+    (verify_public_of_spec pub) e₁ e₂
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target verifyP521
-      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (verify_x86 hL hT hI) verify_ct implies
+      (Spec.Ecdsa.P521.inst.verifyContract (X86_64.abi.withConsts p521.combConsts)) := by
+  refine ⟨fun s hs => ?_, verify_ct hL hT hI, implies.sat⟩
+  obtain ⟨t, s', he, ha, hp⟩ := verify_x86 hL hT hI s (implies.pre _ hs)
+  exact ⟨t, s', he, ha, implies.post s s' hs hp⟩
 
 end VG.Proof.Ecdsa.Verify.X86_64.P521

@@ -40,7 +40,7 @@ theorem pre_of {s : State} (h : pkX86_64.pre s) : PkPre p256 s := by
 /-- The postcondition, for any configuration of P-256 (either multiplication). -/
 theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPost c s s') :
     pkX86_64.post s s' := by
-  obtain ⟨n, C, comb, fastN, adx, avx2⟩ := c
+  obtain ⟨n, C, comb, fastN, adx, avx2, pubVerify⟩ := c
   subst hC
   unfold PkPost at h
   show match pk s.mem (s.gpr .rsi) with
@@ -50,7 +50,7 @@ theorem post_of {c : Cfg} (hC : c.C = Spec.P256.curve) {s s' : State} (h : PkPos
         Spec.EcKey.bytesAt s'.mem (s.gpr .rdi) 65 = List.replicate 65 0
   revert h
   generalize hq : pk s.mem (s.gpr .rsi) = q
-  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, fastN, adx, avx2⟩ s) =
+  rw [show Spec.EcKey.publicKey Spec.P256.curve (dk ⟨n, Spec.P256.curve, comb, fastN, adx, avx2, pubVerify⟩ s) =
     pk s.mem (s.gpr .rsi) from rfl, hq]
   rcases q with _ | _ | ⟨x, y⟩ <;> exact id
 
