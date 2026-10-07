@@ -62,17 +62,18 @@ theorem setB_okL {s : State} (L : Lay rbs wbs s) {p : Ptr} {v : Nat} (hr : p.1 �
 /-! ## A copy -/
 
 def copyChk (bs wbs : List (Reg × Nat)) (dst src : Ptr) (n : Nat) : Bool :=
-  wrOk bs wbs dst n && rdOk bs src n && sepB bs src n dst n && decide (0 < n) && decide (n < 2 ^ 31)
+  wrOk bs wbs dst n && rdOk bs src n && sepB bs src n dst n && decide (0 < n) && decide (n % 8 = 0) &&
+    decide (n < 2 ^ 31)
 
 theorem copy_okL {s : State} (L : Lay rbs wbs s) {dst src : Ptr} {n : Nat} (hsr : src.1 ≠ .rdi)
     (hc : copyChk (rbs ++ wbs) wbs dst src n = true) :
     WP isa (copy dst src n) s fun s' => PPost s s' [(dst, n)] ∧
       bytesAt s'.mem (pa s dst) n = bytesAt s.mem (pa s src) n := by
   simp only [copyChk, wrOk, rdOk, Bool.and_eq_true, decide_eq_true_eq] at hc
-  obtain ⟨⟨⟨⟨⟨⟨hod, hid⟩, hwd⟩, hos, his⟩, hs⟩, hn0⟩, hn⟩ := hc
+  obtain ⟨⟨⟨⟨⟨⟨⟨hod, hid⟩, hwd⟩, hos, his⟩, hs⟩, hn0⟩, h8⟩, hn⟩ := hc
   have hrd : InRegions (s.rd ++ s.wr) (pa s src) n := L.cR his _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   have hwr : InRegions s.wr (pa s dst) n := L.cW hwd _ _ ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
-  exact WP.mono (copy_ok dst src n hn0 hn hod hos hsr s hrd hwr (L.disj hs))
+  exact WP.mono (copy_ok dst src n hn0 h8 hn hod hos hsr s hrd hwr (L.disj hs))
     fun s' ⟨hb, hf, k⟩ => ⟨post_of_keep k (by decide) hf, hb⟩
 
 end

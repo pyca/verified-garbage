@@ -5,7 +5,7 @@ import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 # ML-KEM on x86-64: decapsulation, the choice of the key
 
 The comparison of the ciphertexts of `N` bytes (`cmp_ok`: the OR of the XORs
-of their bytes), the mask (`mid_ok`), and the choice of each byte of the key
+of their words, 0 exactly when they are equal), the mask (`mid_ok`), and the choice of each byte of the key
 (`sel_ok`).
 -/
 
@@ -18,12 +18,12 @@ namespace Decaps
 
 open VG.Impl.MlKem.X86_64.Decaps
 
-theorem cmpBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 1)
-    (h1 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 1) :
+theorem cmpBody_ok (s : State) (h0 : InRegions (s.rd ++ s.wr) (s.gpr .rsi) 8)
+    (h1 : InRegions (s.rd ++ s.wr) (s.gpr .rdi) 8) :
     WP isa cmpBody s fun s' =>
-      (s'.mem = s.mem ∧ s'.gpr .rdx = s.gpr .rdx ||| (BitVec.setWidth 64 (s.mem (s.gpr .rsi)) ^^^
-          BitVec.setWidth 64 (s.mem (s.gpr .rdi))) ∧ s'.gpr .rsi = s.gpr .rsi + 1 ∧
-        s'.gpr .rdi = s.gpr .rdi + 1 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧ s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
+      (s'.mem = s.mem ∧ s'.gpr .rdx = s.gpr .rdx ||| (s.mem.readW (s.gpr .rsi) 64 ^^^ s.mem.readW (s.gpr .rdi) 64) ∧
+        s'.gpr .rsi = s.gpr .rsi + 8 ∧ s'.gpr .rdi = s.gpr .rdi + 8 ∧ s'.gpr .rcx = s.gpr .rcx - 1 ∧
+        s'.zf = some (s.gpr .rcx - 1 == 0)) ∧
       Keep [.rax, .r8, .rdx, .rsi, .rdi, .rcx] s s' := by
   refine WP.keep _ ?_ (by decide)
   unfold cmpBody
@@ -67,17 +67,9 @@ theorem mid_ok (s : State) :
 
 /-! ## The loops -/
 
-/-- The OR of the XORs of the bytes of `xs` and `ys`. -/
-def accX (xs ys : List Byte) : Byte := (List.zipWith (· ^^^ ·) xs ys).foldl (· ||| ·) 0
-
 theorem bytesAt_succ (m : Mem) (p : Addr) (k : Nat) :
     bytesAt m p (k + 1) = bytesAt m p k ++ [m (p + BitVec.ofNat 64 k)] := by
   rw [bytesAt_add, bytesAt_one]
-
-theorem accX_snoc {xs ys : List Byte} (h : xs.length = ys.length) (x y : Byte) :
-    accX (xs ++ [x]) (ys ++ [y]) = accX xs ys ||| (x ^^^ y) := by
-  simp only [accX, List.zipWith_append h, List.zipWith_cons_cons, List.zipWith_nil_left, List.foldl_append,
-    List.foldl_cons, List.foldl_nil]
 
 theorem zx_or_xor (a x y : Byte) :
     BitVec.setWidth 64 a ||| (BitVec.setWidth 64 x ^^^ BitVec.setWidth 64 y) = BitVec.setWidth 64 (a ||| (x ^^^ y)) := by
@@ -92,25 +84,70 @@ theorem sel_byte (x y : Byte) (e : Bool) :
   · rw [ifp rfl, ifp rfl, BitVec.and_allOnes, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
     exact b8b x
 
-theorem cmp_ok (s : State) {N : Nat} (hN : N < 2 ^ 32) (hN0 : 0 < N) {a b : Addr}
+theorem or_xor_eq_zero (d x y : BitVec 64) : d ||| (x ^^^ y) = 0 ↔ d = 0 ∧ x = y := by
+  have bit : ∀ i, (d ||| (x ^^^ y)).getLsbD i = (d.getLsbD i || (x.getLsbD i ^^ y.getLsbD i)) := fun i => by
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_xor]
+  constructor
+  · intro h
+    have hb : ∀ i, d.getLsbD i = false ∧ x.getLsbD i = y.getLsbD i := fun i => by
+      have := congrArg (BitVec.getLsbD · i) h
+      simp only [bit] at this
+      cases hd : d.getLsbD i <;> cases hx : x.getLsbD i <;> cases hy : y.getLsbD i <;> simp_all
+    exact ⟨BitVec.eq_of_getLsbD_eq fun i _ => by rw [(hb i).1]; simp,
+      BitVec.eq_of_getLsbD_eq fun i _ => (hb i).2⟩
+  · rintro ⟨rfl, rfl⟩
+    apply BitVec.eq_of_getLsbD_eq; intro i _
+    simp
+
+/-- Two words of memory are equal exactly when their eight bytes are. -/
+theorem readW64_eq_iff (m : Mem) (a b : Addr) : m.readW a 64 = m.readW b 64 ↔ bytesAt m a 8 = bytesAt m b 8 := by
+  constructor
+  · intro h
+    simp only [bytesAt]
+    refine List.map_congr_left fun i hi => ?_
+    have hi := List.mem_range.mp hi
+    rw [← byte_readW m a (show 8 * (i + 1) ≤ 64 by omega), h, byte_readW m b (show 8 * (i + 1) ≤ 64 by omega)]
+  · intro h
+    apply BitVec.eq_of_getLsbD_eq; intro j hj
+    have e : ∀ c : Addr, (m.readW c 64).getLsbD j = ((m.readW c 64).extractLsb' (8 * (j / 8)) 8).getLsbD (j % 8) := by
+      intro c; simp only [BitVec.getLsbD_extractLsb', show j % 8 < 8 from Nat.mod_lt _ (by decide), decide_true,
+        Bool.true_and]; congr 1; omega
+    have hb := congrArg (fun l => l.getD (j / 8) 0) h
+    simp only [bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range (show j / 8 < 8 by omega),
+      Option.map_some, Option.getD_some] at hb
+    rw [e a, e b, byte_readW m a (show 8 * (j / 8 + 1) ≤ 64 by omega),
+      byte_readW m b (show 8 * (j / 8 + 1) ≤ 64 by omega), hb]
+
+theorem bytesAt_eq_succ8 (m : Mem) (a b : Addr) (k : Nat) :
+    bytesAt m a (8 * k + 8) = bytesAt m b (8 * k + 8) ↔
+      bytesAt m a (8 * k) = bytesAt m b (8 * k) ∧
+        m.readW (a + BitVec.ofNat 64 (8 * k)) 64 = m.readW (b + BitVec.ofNat 64 (8 * k)) 64 := by
+  rw [bytesAt_add, bytesAt_add, readW64_eq_iff]
+  exact ⟨fun h => List.append_inj h (by rw [bytesAt_length, bytesAt_length]), fun ⟨h₁, h₂⟩ => by rw [h₁, h₂]⟩
+
+theorem cmp_ok (s : State) {N : Nat} (hN : N < 2 ^ 32) (hN0 : 0 < N) (h8 : N % 8 = 0) {a b : Addr}
     (ha : InRegions (s.rd ++ s.wr) a N) (hb : InRegions (s.rd ++ s.wr) b N)
-    (hsi : s.gpr .rsi = a) (hdi : s.gpr .rdi = b) (hdx : s.gpr .rdx = 0) (hcx : s.gpr .rcx = BitVec.ofNat 64 N) :
+    (hsi : s.gpr .rsi = a) (hdi : s.gpr .rdi = b) (hdx : s.gpr .rdx = 0) (hcx : s.gpr .rcx = BitVec.ofNat 64 (N / 8)) :
     WP isa (.loop cmpBody .ne) s fun s' => s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.gpr .rdx = BitVec.setWidth 64 (accX (bytesAt s.mem a N) (bytesAt s.mem b N)) ∧
+      (s'.gpr .rdx = 0 ↔ bytesAt s.mem a N = bytesAt s.mem b N) ∧
       Keep [.rax, .r8, .rdx, .rsi, .rdi, .rcx] s s' := by
-  refine wp_countdown (cnt := .rcx) (N := N) (by omega) hN0 (fun k s' =>
-      s'.gpr .rsi = a + BitVec.ofNat 64 k ∧ s'.gpr .rdi = b + BitVec.ofNat 64 k ∧
-      s'.gpr .rdx = BitVec.setWidth 64 (accX (bytesAt s.mem a k) (bytesAt s.mem b k)) ∧
+  have in8 : ∀ {p : Addr}, InRegions (s.rd ++ s.wr) p N → ∀ k < N / 8,
+      InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (8 * k)) 8 := fun h k hk => by
+    obtain ⟨r, hr, hc⟩ := h
+    exact ⟨r, hr, CallLay.contains_trans hc (by omega) (by omega)⟩
+  refine wp_countdown (cnt := .rcx) (N := N / 8) (by omega) (by omega) (fun k s' =>
+      s'.gpr .rsi = a + BitVec.ofNat 64 (8 * k) ∧ s'.gpr .rdi = b + BitVec.ofNat 64 (8 * k) ∧
+      (s'.gpr .rdx = 0 ↔ bytesAt s.mem a (8 * k) = bytesAt s.mem b (8 * k)) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Keep [.rax, .r8, .rdx, .rsi, .rdi, .rcx] s s')
-    (fun k hk s' ⟨hsi', hdi', hdx', hm', hrd', hwr', kk⟩ _ => ?_) (fun _ ⟨_, _, h1, h2, h3, h4, h5⟩ => ⟨h2, h3, h4, h1, h5⟩)
-    ⟨by rw [hsi]; simp, by rw [hdi]; simp, by rw [hdx]; rfl, rfl, rfl, rfl, Keep.refl _ _⟩ hcx
-  refine WP.mono (cmpBody_ok s' (by rw [hrd', hwr', hsi']; exact inRegions_byte ha hk (by omega))
-    (by rw [hrd', hwr', hdi']; exact inRegions_byte hb hk (by omega))) fun s'' ⟨⟨hm, hdx, hsi'', hdi'', hcx, hz⟩, k'⟩ =>
-      ⟨⟨by rw [hsi'', hsi', show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, off_add],
-        by rw [hdi'', hdi', show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, off_add], ?_, hm.trans hm',
+    (fun k hk s' ⟨hsi', hdi', hdx', hm', hrd', hwr', kk⟩ _ => ?_)
+    (fun _ ⟨_, _, h1, h2, h3, h4, h5⟩ => ⟨h2, h3, h4, by rwa [show 8 * (N / 8) = N by omega] at h1, h5⟩)
+    ⟨by rw [hsi]; simp, by rw [hdi]; simp, by rw [hdx]; simp [bytesAt], rfl, rfl, rfl, Keep.refl _ _⟩ hcx
+  refine WP.mono (cmpBody_ok s' (by rw [hrd', hwr', hsi']; exact in8 ha k hk)
+    (by rw [hrd', hwr', hdi']; exact in8 hb k hk)) fun s'' ⟨⟨hm, hdx, hsi'', hdi'', hcx, hz⟩, k'⟩ =>
+      ⟨⟨by rw [hsi'', hsi', show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add]; rfl,
+        by rw [hdi'', hdi', show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, off_add]; rfl, ?_, hm.trans hm',
         k'.2.1.trans hrd', k'.2.2.trans hwr', (kk.trans k').mono (by decide)⟩, hcx, hz⟩
-  rw [hdx, hdx', hsi', hdi', hm', zx_or_xor, bytesAt_succ, bytesAt_succ,
-    accX_snoc (by rw [bytesAt_length, bytesAt_length])]
+  rw [hdx, or_xor_eq_zero, hdx', hsi', hdi', hm', show 8 * (k + 1) = 8 * k + 8 by omega, bytesAt_eq_succ8]
 
 theorem sel_ok (s : State) {g kb key : Addr} (e : Bool) (hg : InRegions (s.rd ++ s.wr) g 32)
     (hkb : InRegions (s.rd ++ s.wr) kb 32) (hkey : InRegions s.wr key 32)
@@ -158,25 +195,19 @@ theorem sel_ok (s : State) {g kb key : Addr} (e : Bool) (hg : InRegions (s.rd ++
 /-! ## The choice -/
 
 abbrev setupB (L : Kem) : List Instr := [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx),
-  .alu .add .rdi (.imm (BitVec.ofNat 32 L.oCT)), .mov32 .rcx (.imm (BitVec.ofNat 32 L.ctLen)), .mov32 .rdx (.imm 0)]
+  .alu .add .rdi (.imm (BitVec.ofNat 32 L.oCT)), .mov32 .rcx (.imm (BitVec.ofNat 32 (L.ctLen / 8))), .mov32 .rdx (.imm 0)]
 
 theorem setup_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (s : State) :
     WP isa (.block (setupB L)) s fun s' =>
       (s'.mem = s.mem ∧ s'.gpr .rsi = pa s (.r14, 0) ∧ s'.gpr .rdi = pa s (sc L.oCT) ∧
-        s'.gpr .rcx = BitVec.ofNat 64 L.ctLen ∧ s'.gpr .rdx = 0) ∧
+        s'.gpr .rcx = BitVec.ofNat 64 (L.ctLen / 8) ∧ s'.gpr .rdx = 0) ∧
       Keep [.rsi, .rdi, .rcx, .rdx] s s' := by
   refine WP.keep _ ?_ (by rfl)
-  xrun [sx_ofNat ho, sw_ofNat hn]
+  xrun [sx_ofNat ho, sw_ofNat (show L.ctLen / 8 < 2 ^ 32 by omega)]
   rw [pa, add_ofNat_zero]
 
-theorem zx_eq_zero {x : Byte} : BitVec.setWidth 64 x = 0 ↔ x = 0 := by
-  constructor
-  · intro h
-    have := congrArg (BitVec.setWidth 8) h
-    rwa [b8b] at this
-  · intro h; rw [h]; rfl
-
-theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 : 0 < L.ctLen) {s : State}
+theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 : 0 < L.ctLen) (h8 : L.ctLen % 8 = 0)
+    {s : State}
     (hc : InRegions (s.rd ++ s.wr) (pa s (.r14, 0)) L.ctLen)
     (hct : InRegions (s.rd ++ s.wr) (pa s (sc L.oCT)) L.ctLen) (hg : InRegions (s.rd ++ s.wr) (pa s (sc oG)) 32)
     (hkb : InRegions (s.rd ++ s.wr) (pa s (sc oKB)) 32) (hkey : InRegions s.wr (pa s (.r12, 0)) 32)
@@ -188,7 +219,7 @@ theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 :
           bytesAt s.mem (pa s (sc oG)) 32 else bytesAt s.mem (pa s (sc oKB)) 32 := by
   unfold select
   refine WP.seq (WP.mono (setup_ok ho hn s) fun s₁ ⟨⟨hm₁, hsi₁, hdi₁, hcx₁, hdx₁⟩, k₁⟩ => ?_)
-  refine WP.seq (WP.mono (cmp_ok s₁ hn hn0 (by rw [k₁.2.1, k₁.2.2]; exact hc) (by rw [k₁.2.1, k₁.2.2]; exact hct) hsi₁ hdi₁
+  refine WP.seq (WP.mono (cmp_ok s₁ hn hn0 h8 (by rw [k₁.2.1, k₁.2.2]; exact hc) (by rw [k₁.2.1, k₁.2.2]; exact hct) hsi₁ hdi₁
     hdx₁ hcx₁) fun s₂ ⟨hm₂, hrd₂, hwr₂, hdx₂, k₂⟩ => ?_)
   refine WP.seq (WP.mono (mid_ok s₂) fun s₃ ⟨⟨hm₃, hax₃, hsi₃, hdi₃, h8₃, hcx₃⟩, k₃⟩ => ?_)
   have e12 : ∀ r ∈ [Reg.rbx, Reg.r12], s₂.gpr r = s.gpr r := fun r hr => by
@@ -203,10 +234,9 @@ theorem select_ok {L : Kem} (ho : L.oCT < 2 ^ 31) (hn : L.ctLen < 2 ^ 32) (hn0 :
   have hwr : s₃.wr = s.wr := by rw [k₃.2.2, hwr₂, k₁.2.2]
   have hax : s₃.gpr .rax = if decide (bytesAt s.mem (pa s (.r14, 0)) L.ctLen = bytesAt s.mem (pa s (sc L.oCT)) L.ctLen) then
       BitVec.allOnes 64 else 0 := by
-    rw [hax₃, hdx₂, hm₁, ← hsi₁, ← hdi₁, hsi₁, hdi₁]
-    exact ite_congr (propext (zx_eq_zero.trans ((eq_iff_foldl_or_xor
-      (by rw [bytesAt_length, bytesAt_length])).symm.trans decide_eq_true_iff.symm)))
-      (fun _ => rfl) (fun _ => rfl)
+    rw [hax₃]
+    rw [hm₁] at hdx₂
+    exact ite_congr (propext (hdx₂.trans decide_eq_true_iff.symm)) (fun _ => rfl) (fun _ => rfl)
   refine WP.mono (sel_ok s₃ _ (by rw [hrd]; exact hg) (by rw [hrd]; exact hkb) (by rw [hwr]; exact hkey) dg dkb hsi₃
     hdi₃ h8₃ hax hcx₃) fun s₄ ⟨hb, hf, k₄⟩ => ⟨?_, ?_⟩
   · refine post_of_keep ((((k₁.trans k₂).trans k₃).trans k₄).mono (rs' := [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10])

@@ -20,7 +20,7 @@ import VerifiedGarbage.Impl.MlKem.X86_64.Encrypt
 3. `c' = K-PKE.Encrypt(ek, m', r')` to `CT` (`Encrypt.lean`), with `ek` at
    `dk + 384k`.
 4. The key `K'` if `c = c'`, and `K̄` otherwise, to `key`, without a branch:
-   `rdx` is the OR of the XORs of the bytes of `c` and `c'`, so 0 exactly
+   `rdx` is the OR of the XORs of the words (8 bytes) of `c` and `c'`, so 0 exactly
    when they are equal (`sub rdx, 1` borrows then), and `rax` the mask
    `-borrow`; each byte of `key` is `((K' ⊕ K̄) ∧ mask) ⊕ K̄`.
 
@@ -55,10 +55,10 @@ def hashes : Prog isa :=
   .seq (hashAt [(sc oM, 32), ((.rbp, 768 * L.k + 32), 32)] 72 6 (sc oG) 64)
     (hashAt [((.rbp, 768 * L.k + 64), 32), ((.r14, 0), L.ctLen)] 136 0x1f (sc oKB) 32)
 
-/-- The OR of the XORs of the bytes of `c` and `c'`, to `rdx`. -/
+/-- The OR of the XORs of the words of `c` and `c'`, to `rdx`. -/
 def cmpBody : Prog isa :=
-  .block [.movzx8 .rax (at_ .rsi 0), .movzx8 .r8 (at_ .rdi 0), .alu .xor .rax (.reg .r8), .alu .or .rdx (.reg .rax),
-    .alu .add .rsi (.imm 1), .alu .add .rdi (.imm 1), .alu .sub .rcx (.imm 1)]
+  .block [.mov .rax (.mem (at_ .rsi 0)), .mov .r8 (.mem (at_ .rdi 0)), .alu .xor .rax (.reg .r8),
+    .alu .or .rdx (.reg .rax), .alu .add .rsi (.imm 8), .alu .add .rdi (.imm 8), .alu .sub .rcx (.imm 1)]
 
 /-- A byte of the key, `((K' ⊕ K̄) ∧ mask) ⊕ K̄`. -/
 def selBody : Prog isa :=
@@ -69,7 +69,7 @@ def selBody : Prog isa :=
 /-- The key `K'` if `c = c'`, and `K̄` otherwise. -/
 def select : Prog isa :=
   .seq (.block [.mov .rsi (.reg .r14), .mov .rdi (.reg .rbx), .alu .add .rdi (.imm (BitVec.ofNat 32 L.oCT)),
-      .mov32 .rcx (.imm (BitVec.ofNat 32 L.ctLen)), .mov32 .rdx (.imm 0)])
+      .mov32 .rcx (.imm (BitVec.ofNat 32 (L.ctLen / 8))), .mov32 .rdx (.imm 0)])
     (.seq (.loop cmpBody .ne)
       (.seq (.block [.alu .sub .rdx (.imm 1), .alu .sbb .rax (.reg .rax), .mov .rsi (.reg .rbx),
           .alu .add .rsi (.imm (BitVec.ofNat 32 oG)), .mov .rdi (.reg .rbx), .alu .add .rdi (.imm (BitVec.ofNat 32 oKB)),
