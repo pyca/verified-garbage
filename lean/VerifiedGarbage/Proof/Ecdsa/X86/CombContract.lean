@@ -33,8 +33,9 @@ theorem combSign_pre {s : State} (h : combSignSpec.pre s) :
     ro, rs, fo, fd, fh, fk, fs, sp⟩, ?_, lo, ?_, ?_, ?_⟩
   · change TblsHeld p256Comb (s.withRegions (combSignRd s) (combSignWr s))
       (below (s.gpr .esp) 4 :: combSignWr s)
-    simp only [TblsHeld, p256Comb_consts, Abi.constRegions, Abi.constsHeld,
-      List.map_cons, List.map_nil, List.mem_singleton, forall_eq, State.withRegions_mem]
+    simp only [TblsHeld, p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
+      Sig.forall_mem_const_single]
+    simp only [Abi.constsHeld, List.mem_singleton, forall_eq, State.withRegions_mem]
     change (∀ i < p256W.length, s.mem.readW ((s.syms "VG_P256_COMB").setWidth 64 +
       BitVec.ofNat 64 (8 * i)) 64 = p256W.getD i 0) ∧
       ((s.syms "VG_P256_COMB").setWidth 64).toNat + 8 * p256W.length ≤ 2 ^ 32 ∧

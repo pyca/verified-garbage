@@ -221,13 +221,15 @@ words, in each declaration that does so). Rewritten by these lemmas, proven
 for any table and not by unfolding, the length is never compared with
 another form of itself. -/
 
-/-- `Abi.constRegions` (unfolded) on a list of tables, a table at a time. -/
-theorem Sig.map_const_cons {f : String → Addr} {n : String} {w : List (BitVec 64)}
-    {cs : List (String × List (BitVec 64))} :
-    List.map (fun c : String × List (BitVec 64) => ({ base := f c.1, len := 8 * c.2.length } : Region))
+/-- `Abi.constRegions` (unfolded) on a list of tables, a table at a time. The
+base is any function `F` of the table (`f c.1`, or on x86 `(f c.1).setWidth 64`),
+which `simp` matches as a pattern. -/
+theorem Sig.map_const_cons {F : String × List (BitVec 64) → Addr} {n : String}
+    {w : List (BitVec 64)} {cs : List (String × List (BitVec 64))} :
+    List.map (fun c : String × List (BitVec 64) => ({ base := F c, len := 8 * c.2.length } : Region))
         ((n, w) :: cs) =
-      ⟨f n, 8 * w.length⟩ :: List.map (fun c : String × List (BitVec 64) =>
-        ({ base := f c.1, len := 8 * c.2.length } : Region)) cs := (rfl)
+      ⟨F (n, w), 8 * w.length⟩ :: List.map (fun c : String × List (BitVec 64) =>
+        ({ base := F c, len := 8 * c.2.length } : Region)) cs := (rfl)
 
 /-- The facts of `Abi.withConsts` about the tables' regions, a region at a time. -/
 theorem Sig.forall_mem_const_cons {b : Addr} {n k : Nat} {W R ts : List Region} :

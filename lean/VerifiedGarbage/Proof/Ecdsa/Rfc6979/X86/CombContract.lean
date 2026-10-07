@@ -70,14 +70,14 @@ theorem comb_implies (I : Spec.Ecdsa.Rfc6979.Instance)
     refine ⟨lo, sp, ?_, wr, od, og, oc, dc, gc, oa.symm, ca.symm, ro, rc,
       ko, kd, kg, kc, no, nd, ng, nc, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
-      simp only [p256Comb_consts, Abi.constRegions, List.map_cons, List.map_nil]
+      simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil]
     · refine ⟨?_, ?_⟩
       · intro c hc
         simp only [p256Comb_consts, List.mem_singleton] at hc
         subst c
         exact held
       · intro T hT
-        simp only [p256Comb_consts, Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at hT
+        simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil, List.mem_singleton] at hT
         subst T
         refine ⟨by simp only [BitVec.toNat_setWidth]; omega, ?_⟩
         intro r hr

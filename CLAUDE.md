@@ -392,6 +392,18 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **Tables of constants:** the kernel evaluates a table's whole length
+  (seconds for a comb's tables) when it compares `8 * words.length` with
+  another form of it, such as a `Region`'s `len` projection. Never unfold
+  `Abi.constRegions` with `List.map_cons` or substitute a table's region
+  into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
+  and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
+  `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
+  take the region apart.
+* **Code without its literal:** `lit_decide` and `taint_decide` read the
+  literal of code only if the module imports the module that materializes
+  it; otherwise the kernel builds the code again (seconds for unrolled
+  code). Import the code's `Lit` module wherever its code is evaluated.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one
