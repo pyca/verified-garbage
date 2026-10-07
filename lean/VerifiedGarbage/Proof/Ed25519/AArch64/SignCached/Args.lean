@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Ed25519.AArch64.SignCached
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Layout
 import VerifiedGarbage.Proof.Ed25519.Bytes
 import VerifiedGarbage.Proof.Ed25519.AArch64.Whole.Setup
+import VerifiedGarbage.Proof.Ed25519.AArch64.CombTbl
 
 /-! Merged from `Proof.Ed25519.AArch64.SignCached.Layout`. -/
 section
@@ -16,6 +17,8 @@ structure Lay where
   len : BitVec 64
   scr : BitVec 64
   E : BitVec 64
+  /-- The comb's tables (the static `combSym`), which `vg_ed25519_scalar_base` reads. -/
+  T : BitVec 64
 
 namespace Lay
 variable (L : Lay)
@@ -27,7 +30,8 @@ abbrev SCR : Region := ⟨L.scr, 8192⟩
 abbrev ARGS : Region := ⟨L.E + BitVec.ofNat 64 256, 48⟩
 abbrev FR : Region := Whole.FR L.E
 abbrev CK : Region := Whole.CK L.E
-def inputs : List Region := [L.SEED, L.PK, L.MSG, L.ARGS]
+abbrev TB : Region := TBL L.T
+def inputs : List Region := [L.SEED, L.PK, L.MSG, L.TB, L.ARGS]
 def outputs : List Region := [L.OUT, L.SCR]
 def value (j : Nat) : BitVec 64 :=
   match j with | 0 => L.out | 1 => L.seed | 2 => L.pk | 3 => L.msg | 4 => L.len | _ => L.scr
@@ -49,6 +53,7 @@ structure Ok : Prop where
   ck : ∀ r ∈ L.inputs, L.CK.Disjoint r
   co : L.CK.Disjoint L.OUT
   cc : L.CK.Disjoint L.SCR
+  tbfit : L.T.toNat + 8 * Impl.Ed25519.AArch64.combWords.length ≤ 2 ^ 64
 end Lay
 
 /-- The disjoint scratch allocation leaves room for the hash's 64-byte prefix. -/
@@ -94,6 +99,22 @@ theorem input_bytes (hc : Ctx L g v m₀ t) (hL : L.Ok)
   · exact (hL.ks r hr).symm
   · exact (hL.ck r hr).symm
 
+/-- The comb's words, as on entry: no write reaches them. -/
+theorem tbl (hc : Ctx L g v m₀ t) (hL : L.Ok) (hm : TblWords L.T m₀) : TblWords L.T t.mem :=
+  fun i hi => by
+    have := hL.tbfit
+    have ht : L.TB ∈ L.inputs := by simp [Lay.inputs]
+    rw [← hm i hi]
+    refine hc.frame.readW (r := L.TB) (Offset.contains_base _ (by omega) (by omega)) ?_ (by decide)
+    intro R hR
+    simp only [Lay.outputs, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at hR
+    rcases hR with rfl | rfl | rfl | rfl
+    · exact (hL.os _ ht).symm
+    · exact hL.sc _ ht
+    · exact (hL.ks _ ht).symm
+    · exact (hL.ck _ ht).symm
+
 theorem arg_word (hc : Ctx L g v m₀ t) (hL : L.Ok) {j : Nat} (hj : j < 6) :
     t.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 =
       m₀.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 := by
@@ -116,8 +137,9 @@ end
 namespace VG.Proof.Ed25519.AArch64.SignCached
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64.Whole
 
+/-- The saved arguments, and the comb's words. -/
 def Arguments (L : Lay) (m : Mem) : Prop :=
-  ∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j
+  (∀ j < 6, m.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 = L.value j) ∧ TblWords L.T m
 
 def value (L : Lay) : Value → BitVec 64
   | .const n => BitVec.ofNat 64 n
@@ -136,7 +158,7 @@ theorem Ctx.value (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
   | frame d => rfl
   | caller j d =>
     change s.mem.readW (L.E + BitVec.ofNat 64 (256 + 8 * j)) 64 + BitVec.ofNat 64 d = _
-    rw [hc.arg_word hL hx.1, ha j hx.1]
+    rw [hc.arg_word hL hx.1, ha.1 j hx.1]
     rfl
 
 theorem args_ok (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)

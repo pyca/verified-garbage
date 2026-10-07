@@ -50,16 +50,19 @@ theorem scalarBasePrepare_ok {s : State} {base k : Addr} (hs : Scr s base) (hp :
     exact h
   exact ⟨kap, abits, hscalar⟩
 
-theorem scalarBaseEngine_ok {s : State} {base k : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
+theorem scalarBaseEngine_ok {s : State} {base k T : Addr} (hs : Scr s base) (hp : s.gpr .x1 = k)
     (hr : ∀ q < 32, InRegions (s.rd ++ s.wr) (off k q) 1)
-    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) :
+    (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
     WP isa scalarBaseEngine s fun t => PowersKeep base 56 7368 s t ∧
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) =
         encodedValue (Spec.Ed25519.pointMul (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem k 32))
           Spec.Ed25519.basePoint) := by
   rw [scalarBaseEngine]
-  refine WP.seq (WP.mono (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, bbits, hscalar⟩ => ?_)
-  refine WP.seq (WP.mono (combMultiply_ok (kab.scratch hs) (by simpa using hscalar) bbits)
+  refine WP.seq (WP.mono_syms (scalarBasePrepare_ok hs hp hr hd) fun b ⟨kab, bbits, hscalar⟩ syb => ?_)
+  have hbt : TblAt b base T := htb.of_far (by rw [kab.rd, kab.wr])
+    (fun x hx => (powersKeep_outside kab) x (Or.inr (by omega)))
+  refine WP.seq (WP.mono (combMultiply_ok (kab.scratch hs) hbt (by rw [syb]; exact hT)
+    (by simpa using hscalar) bbits)
     fun c ⟨cp, kc⟩ => ?_)
   refine WP.mono (pointEncode_ok (kc.scr (kab.scratch hs))) fun t ⟨kt, tv⟩ => ?_
   refine ⟨(kab.trans kc.powers).trans

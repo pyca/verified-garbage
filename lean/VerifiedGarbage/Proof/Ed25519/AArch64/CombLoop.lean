@@ -323,15 +323,15 @@ private theorem dis_even : ∀ ab ∈ [((13 : Slot), (14 : Slot)), (15, 8)], ab.
   intro ab hab; simp only [List.mem_cons, List.not_mem_nil, or_false] at hab
   rcases hab with rfl | rfl <;> decide
 
-theorem combStep_ok {s₀ s : State} {base : Addr} {S j : Nat} (h : CombInv s₀ base S j s)
-    (hj : j < 32) :
+theorem combStep_ok {s₀ s : State} {base T : Addr} {S j : Nat} (h : CombInv s₀ base S j s)
+    (htb : TblAt s₀ base T) (hT : s.syms combSym = T) (hj : j < 32) :
     WP isa combStep s fun t => (t.gpr .x8 != 0) = decide (j + 1 ≠ 32) ∧
       CombInv s₀ base S (j + 1) t := by
   rw [combStep]
   have no := nib_lt S (2 * j + 1)
   have ne := nib_lt S (2 * j)
   -- Both digits' masks.
-  refine WP.seq (WP.mono (combDigits_ok h.scratch hj h.counter h.bits) fun a ha => ?_)
+  refine WP.seq (WP.mono_syms (combDigits_ok h.scratch hj h.counter h.bits) fun a ha sya => ?_)
   have hsa : Scr a base := h.scratch.of_keeps ha.keeps (by decide)
   have a19 : a.gpr .x19 = BitVec.ofNat 64 j := (ha.keeps.gpr _ (by decide)).trans h.counter
   have hm : Masks (mag (nib S (2 * j + 1))) (mag (nib S (2 * j))) a :=
@@ -343,8 +343,10 @@ theorem combStep_ok {s₀ s : State} {base : Addr} {S j : Nat} (h : CombInv s₀
     · exact Or.inr (Or.inr hr)
     · exact Or.inr (Or.inl hr))
   -- Both entries.
-  refine WP.seq (WP.mono (combSelectFrom_ok (List.range 32) (fun k hk => List.mem_range.mp hk) hsa
-    (mag_lt no) (mag_lt ne) hm (List.mem_range.mpr hj) hj a19) fun b ⟨bo, be, bf, kb⟩ => ?_)
+  have hta : TblAt a base T := htb.of_far (by rw [ha.keeps.rd, ha.keeps.wr, h.keep.rd, h.keep.wr])
+    (fun x hx => by rw [ha.keeps.mem]; exact h.keep.mem x (Or.inr (by omega)))
+  refine WP.seq (WP.mono (combSelect_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt no) (mag_lt ne)
+    hm) fun b ⟨bo, be, bf, kb⟩ => ?_)
   have hsb : Scr b base := ⟨(kb.1 _ (by decide)).trans hsa.x0, kb.2.2.1 ▸ hsa.wr, hsa.nowrap⟩
   have b19 : b.gpr .x19 = BitVec.ofNat 64 j := (kb.1 _ (by decide)).trans a19
   have kab : CombKeep base a b := ⟨fun r _ _ hc => kb.1 r (fun hm => hc (by
@@ -482,30 +484,32 @@ theorem combFinish_ok {s : State} {base : Addr} (hs : Scr s base) {v w : ℤ}
   rw [show (2 ^ 4 : Nat) = 16 from rfl] at h4
   exact pointAdd_rep h4 hb
 
-theorem combMultiply_ok {s : State} {base : Addr} (hs : Scr s base) {S : Nat} (hS : S < 2 ^ 256)
+theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : TblAt s base T)
+    (hT : s.syms combSym = T) {S : Nat} (hS : S < 2 ^ 256)
     (hb : ∀ q < 256, s.mem (off base (768 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2)) :
     WP isa combMultiply s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ CombKeep base s t := by
   rw [combMultiply]
-  refine WP.seq (WP.mono (combInit_ok hs) fun b ⟨kb, bz, bp, bq, b19⟩ => ?_)
+  refine WP.seq (WP.mono_syms (combInit_ok hs) fun b ⟨kb, bz, bp, bq, b19⟩ syb => ?_)
   have hg : Rep combG (((combGVal : ℤ) + 0) • baseAff) := by
     rw [add_zero, natCast_zsmul]; exact combG_ok
   have init : CombInv s base S 0 b :=
     ⟨by decide, kb.scr hs, b19, bz, fun q hq => by rw [kb.bit hq]; exact hb q hq,
       by rw [bp]; exact hg, by rw [bq]; exact hg, kb⟩
   have hl : WP isa (.loop combStep (.nonzero .x .x8)) b fun t => CombInv s base S 32 t := by
-    apply WP.loop (fun n t => CombInv s base S (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
-    · intro n t ⟨ht, hn0, hn⟩
+    apply WP.loop (fun n (t : State) => (CombInv s base S (32 - n) t ∧ t.syms combSym = T) ∧ 0 < n ∧ n ≤ 32)
+      (n := 32)
+    · intro n t ⟨⟨ht, hty⟩, hn0, hn⟩
       obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-      refine WP.mono (combStep_ok ht (by omega)) fun u ⟨u8, hu⟩ => ?_
+      refine WP.mono_syms (combStep_ok ht htb hty (by omega)) fun u ⟨u8, hu⟩ suy => ?_
       by_cases hk : k = 0
       · subst hk
         exact Or.inl ⟨by simp only [eval, read_x, u8, show 32 - (0 + 1) + 1 = 32 from rfl, ne_eq,
           not_true_eq_false, decide_false], hu⟩
       · refine Or.inr ⟨by simp only [eval, read_x, u8, show 32 - (k + 1) + 1 ≠ 32 by omega, ne_eq,
-          not_false_eq_true, decide_true], k, by omega, ?_, by omega, by omega⟩
+          not_false_eq_true, decide_true], k, by omega, ⟨?_, by rw [suy]; exact hty⟩, by omega, by omega⟩
         rw [show 32 - k = 32 - (k + 1) + 1 by omega]; exact hu
-    · exact ⟨init, by decide, by decide⟩
+    · exact ⟨⟨init, by rw [syb]; exact hT⟩, by decide, by decide⟩
   refine WP.seq (WP.mono hl fun t ht => ?_)
   refine WP.mono (combFinish_ok ht.scratch ht.odd ht.even) fun u ⟨hu, ku⟩ => ⟨?_, ht.keep.trans ku⟩
   rw [comb_total hS, natCast_zsmul] at hu

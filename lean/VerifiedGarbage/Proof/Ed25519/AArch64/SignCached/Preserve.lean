@@ -497,7 +497,7 @@ open VG VG.AArch64 VG.Impl.Ed25519.AArch64.SignCached
 open VG.Impl.Ed25519.AArch64 (scalarBase)
 open VG.Impl.Ed25519.AArch64.Whole (callWith)
 
-def baseRd (L : Lay) : List Region := [field L 96]
+def baseRd (L : Lay) : List Region := [field L 96, L.TB]
 def baseWr (L : Lay) : List Region := [baseOut L, L.SCR]
 def BaseArgs (L : Lay) (s : State) : Prop :=
   s.gpr .x0 = L.out ∧ s.gpr .x1 = L.E + 96 ∧ s.gpr .x2 = L.scr
@@ -506,15 +506,28 @@ theorem base_noFrames : scalarBase.noFrames = true := by lit_decide
 
 variable {L : Lay} {g : Reg → BitVec 64} {v : VReg → BitVec 128} {m₀ : Mem} {s : State}
 
-theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) :
+theorem base_pre (hL : L.Ok) (ha : BaseArgs L s) (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T)
+    (hm : TblWords L.T s.mem) :
     scalarBaseLocal.pre (s.callEntry.withRegions (baseRd L) (baseWr L)) := by
-  simp only [scalarBaseLocal, State.withRegions_rd, State.withRegions_wr,
+  have ht : L.TB ∈ L.inputs := by simp [Lay.inputs]
+  have hT : (s.callEntry.withRegions (baseRd L) (baseWr L)).syms Impl.Ed25519.AArch64.combSym = L.T := hsy
+  have hC : CombHeld (s.callEntry.withRegions (baseRd L) (baseWr L)) [⟨L.out, 32⟩, ⟨L.scr, 8192⟩] := by
+    refine ⟨fun i hi => ?_, ?_, fun r hr => ?_⟩
+    · rw [hT]; exact hm i hi
+    · rw [hT]; exact hL.tbfit
+    · rw [hT]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (hL.os _ ht).symm.sub_right (Region.sub_prefix (by decide))
+      · exact hL.sc _ ht
+  simp only [scalarBaseLocal, tblRegion, State.withRegions_rd, State.withRegions_wr,
     State.withRegions_gpr, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs),
-    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2]
-  exact ⟨rfl, rfl, field_scr hL (by decide), hL.nc⟩
+    State.callEntry_gpr _ (by decide : Reg.x2 ∉ linkRegs), ha.1, ha.2.1, ha.2.2, hT]
+  exact ⟨rfl, rfl, field_scr hL (by decide), hL.nc, hC⟩
 
-theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s) :
+theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s)
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) (hm : TblWords L.T s.mem) :
     WP isa (.call "vg_ed25519_scalar_base" scalarBase) s fun t => Ctx L g v m₀ t ∧
       Frame (baseWr L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem L.out 32 =
@@ -523,8 +536,9 @@ theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s) :
     apply covers
     simp only [baseRd, baseWr, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
-    rintro r (rfl | rfl | rfl)
+    rintro r (rfl | rfl | rfl | rfl)
     · exact .inl (fieldWithin L (by decide))
+    · exact .inr ⟨L.TB, by simp [Lay.inputs], 0, (BitVec.add_zero _).symm, by simp⟩
     · exact .inr (output_covered (baseWithin L))
     · exact .inr (scratch_covered L)
   have ws : ∀ r ∈ baseWr L, Whole.Within r L.FR ∨ ∃ R ∈ L.outputs, Whole.Within r R := by
@@ -533,27 +547,29 @@ theorem base_call (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : BaseArgs L s) :
     rintro r (rfl | rfl)
     · exact .inr (.inl (baseWithin L))
     · exact .inr (.inr (scratchWithin L))
-  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha) cov ws
+  refine Whole.call_ok hc scalarBase_ok base_noFrames (base_pre hL ha hsy hm) cov ws
     fun t ht hf hp => ⟨ht, hf, ?_⟩
   simpa only [scalarBaseLocal, State.withRegions_mem, State.withRegions_gpr,
     State.callEntry_mem, State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs),
     State.callEntry_gpr _ (by decide : Reg.x1 ∉ linkRegs), ha.1, ha.2.1] using hp
 
-theorem base_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀) :
+theorem base_step (hc : Ctx L g v m₀ s) (hL : L.Ok) (ha : Arguments L m₀)
+    (hsy : s.syms Impl.Ed25519.AArch64.combSym = L.T) :
     WP isa (callWith baseArgs "vg_ed25519_scalar_base" scalarBase) s fun t =>
       Ctx L g v m₀ t ∧ Frame (baseWr L) s.mem t.mem ∧
       Spec.Ed25519.bytesAt t.mem L.out 32 =
         Spec.Ed25519.scalarBase (Spec.Ed25519.bytesAt s.mem (L.E + 96) 32) := by
-  refine WP.seq (WP.mono (args_ok hc hL ha
+  refine WP.seq (WP.mono_syms (args_ok hc hL ha
     (args := [(.x0, .caller 0 0), (.x1, .frame 96), (.x2, .caller 5 0)])
-    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ => ?_)
+    (by decide) (by simp [Whole.valid]) (by simp [preserved])) fun u ⟨hu, hm, hs⟩ sy => ?_)
   have a0 := hs (.x0, .caller 0 0) (by simp)
   have a1 := hs (.x1, .frame 96) (by simp)
   have a2 := hs (.x2, .caller 5 0) (by simp)
   change u.gpr .x0 = L.out + 0#64 at a0
   change u.gpr .x2 = L.scr + 0#64 at a2
   rw [BitVec.add_zero] at a0 a2
-  refine WP.mono (base_call hu hL ⟨a0, a1, a2⟩) fun t ⟨ht, hf, hp⟩ => ⟨ht, ?_, ?_⟩
+  refine WP.mono (base_call hu hL ⟨a0, a1, a2⟩ (by rw [sy]; exact hsy) (hu.tbl hL ha.2))
+    fun t ⟨ht, hf, hp⟩ => ⟨ht, ?_, ?_⟩
   · rw [hm] at hf; exact hf
   · rw [hm] at hp; exact hp
 
