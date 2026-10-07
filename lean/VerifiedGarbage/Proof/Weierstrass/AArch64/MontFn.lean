@@ -161,34 +161,40 @@ theorem ptrs_ok (s : State) {ra rb ro : Reg} (ha : ra ∉ [Reg.x0, .x1, .x2, .x3
   all_goals simp only [RegUpd.gpr_write]
   all_goals simp_all
 
-/-- One word of `setConst`. -/
-def constStep (o x j : Nat) : List Instr :=
-  const64 .x1 (BitVec.ofNat 64 (x >>> (64 * j))) ++ [st .x1 (o + 8 * j)]
-
 theorem setConst_eq (n o x : Nat) : setConst n o x = (List.range n).flatMap (constStep o x) := rfl
+
+/-- Word `k` of `x` in `x1`: loaded, or already there as word `k - 1`. -/
+theorem constLoad_ok {s : State} {x k : Nat} (h : 0 < k → s.gpr .x1 = wordOf x (k - 1)) :
+    WP isa (.block (if 0 < k ∧ wordOf x k = wordOf x (k - 1) then [] else const64 .x1 (wordOf x k))) s
+      fun t => t.gpr .x1 = wordOf x k ∧ Keeps [.x1] s t := by
+  split
+  · rename_i e
+    exact WP.block_nil ⟨(h e.1).trans e.2.symm, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+  · exact const64_ok s .x1 _
 
 theorem constSteps_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {o x : Nat}
     (ho8 : o % 8 = 0) : ∀ k, o + 8 * k ≤ size →
     WP isa (.block ((List.range k).flatMap (constStep o x))) s fun s' =>
-      (∀ j < k, word s'.mem base (o + 8 * j) = BitVec.ofNat 64 (x >>> (64 * j))) ∧
+      (∀ j < k, word s'.mem base (o + 8 * j) = wordOf x j) ∧ (0 < k → s'.gpr .x1 = wordOf x (k - 1)) ∧
       KeepRegs [.x1] s s' ∧ Outside base o (8 * k) s.mem s'.mem
-  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), ⟨fun _ _ => rfl, rfl, rfl, rfl⟩,
-      Outside.refl _ _ _ _⟩
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun h => absurd h (Nat.lt_irrefl _),
+      ⟨fun _ _ => rfl, rfl, rfl, rfl⟩, Outside.refl _ _ _ _⟩
   | k + 1, hk => by
     have hn := hs.nowrap
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (constSteps_ok hs ho8 k (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+    refine WP.mono (constSteps_ok hs ho8 k (by omega)) fun s₁ ⟨e₁, x₁, k₁, O₁⟩ => ?_
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     rw [constStep, WP.block_append_iff]
-    refine WP.mono (const64_ok s₁ .x1 _) fun s₂ ⟨v₂, k₂⟩ => ?_
+    refine WP.mono (constLoad_ok x₁) fun s₂ ⟨v₂, k₂⟩ => ?_
     have hs₂ := hs₁.of_keeps k₂ (by decide)
     refine WP.mono (st_ok hs₂ (d := o + 8 * k) (by omega) (by omega) .x1) fun s₃ e₃ => ?_
     have m₃ : s₃.mem = s₂.mem.writeW (off base (o + 8 * k)) (s₂.gpr .x1) := by rw [e₃]
     have k₃ : KeepRegs [] s₂ s₃ := by subst e₃; exact ⟨fun _ _ => rfl, rfl, rfl, rfl⟩
+    have g₃ : s₃.gpr .x1 = s₂.gpr .x1 := k₃.gpr .x1 (by simp)
     rw [v₂, k₂.mem] at m₃
     have O₂ : Outside base (o + 8 * k) 8 s₁.mem s₃.mem := by
       rw [m₃]; exact writeW_outside _ _ _ (by omega)
-    refine ⟨fun j hj => ?_, (k₁.trans ((Keeps.regs k₂).trans (k₃.mono (by simp)))),
+    refine ⟨fun j hj => ?_, fun _ => g₃.trans v₂, (k₁.trans ((Keeps.regs k₂).trans (k₃.mono (by simp)))),
       (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
     rcases Nat.lt_or_ge j k with h | h
     · rw [O₂.word (by omega) (by omega), e₁ j h]
@@ -201,7 +207,7 @@ theorem setConst_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     WP isa (.block (setConst n o x)) s fun s' =>
       wordsVal s'.mem base o n = x ∧ KeepRegs [.x1] s s' ∧ Outside base o (8 * n) s.mem s'.mem := by
   rw [setConst_eq]
-  exact WP.mono (constSteps_ok hs ho8 n ho) fun s' ⟨e, k, O⟩ =>
+  exact WP.mono (constSteps_ok hs ho8 n ho) fun s' ⟨e, _, k, O⟩ =>
     ⟨VG.Proof.Weierstrass.wordsVal_of_shifts _ _ o n x hx e, k, O⟩
 
 /-- What the entry leaves: the working space, the modulus, the pointers to

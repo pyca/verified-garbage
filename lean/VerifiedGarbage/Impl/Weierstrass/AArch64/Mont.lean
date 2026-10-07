@@ -73,9 +73,17 @@ def saveCode (n : Nat) : List Instr :=
 def restoreCode (n : Nat) : List Instr :=
   (saved n).zipIdx.map fun (r, i) => .umov .x r (slot i).1 (slot i).2
 
+/-- Word `j` of `x`. -/
+abbrev wordOf (x j : Nat) : BitVec 64 := BitVec.ofNat 64 (x >>> (64 * j))
+
+/-- `[x0 + o + 8 j] =` word `j` of `x`, through `x1`, which already holds it
+if it equals word `j - 1` (most of P-521's are all ones). -/
+def constStep (o x j : Nat) : List Instr :=
+  (if 0 < j ∧ wordOf x j = wordOf x (j - 1) then [] else const64 .x1 (wordOf x j)) ++
+    [st .x1 (o + 8 * j)]
+
 /-- `[x0 + o] = x`, `n` words, through `x1`. -/
-def setConst (n : Nat) (o x : Nat) : List Instr :=
-  (List.range n).flatMap fun j => const64 .x1 (BitVec.ofNat 64 (x >>> (64 * j))) ++ [st .x1 (o + 8 * j)]
+def setConst (n : Nat) (o x : Nat) : List Instr := (List.range n).flatMap (constStep o x)
 
 /-- The offsets zero-extended (as 32-bit additions of zero). -/
 def zextCode : List Instr := [.addImm .w .x1 .x1 0, .addImm .w .x2 .x2 0, .addImm .w .x3 .x3 0]
