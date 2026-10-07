@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ecdh.X86
+import VerifiedGarbage.Impl.Weierstrass.X86.Window
 
 /-!
 # ECDSA signature verification on x86 (32-bit)
@@ -166,11 +167,49 @@ def points : Prog isa :=
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (sum c)
 
+/-- The eight projective points and recoding buffers fit in the existing scratch area.
+The exponent tables and saved fixed-base result remain intact. -/
+def windowQ : WinCfg where
+  M := c.MP'
+  S := { c.rcbSlots with b3 := c.sl EM }
+  P := c.pt Impl.Ecdh.X86.PX Impl.Ecdh.X86.PY ONEP
+  R := c.pt RX RY RZ
+  E := c.pt TX TY TZ
+  D := c.pt DX DY DZ
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := 3700
+  tbl := 2640
+  J := 65
+  one := c.mont 1
+
+/-- Pad `v` to 320 bits, add the signed-window bias, then expand its bits.
+The extra high word retains the carry from the original 256-bit scalar. -/
+def windowPrep : Prog isa :=
+  .seq (.block (copy 8 3520 (c.sl V) ++ setConst 1 3552 0 ++
+    setConst 5 3560 (WinCfg.offset 65) ++
+    chain { c.MP' with n := 5 } .add .adc 3600 3520 3560))
+    (bits 3600 3700 40)
+
+/-- Variable-base multiplication for P-256; `b` is initialized independently
+of the fixed-base comb's choice of implementation. -/
+def windowMulQ : Prog isa :=
+  .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) <|
+  .seq (windowPrep c) (WinCfg.window (windowQ c) 4040)
+
 /-- Fixed-base comb for `[u]G`, followed by the existing variable-base ladder. -/
-def pointsComb : Prog isa :=
+def pointsCombLadder : Prog isa :=
   .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
   .seq (.block (save c)) <| .seq (bits (c.sl V) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (ladder (Impl.Ecdh.X86.Cfg.ladderQ c) c.wk) (sum c)
+
+/-- Fixed-base comb and signed-window variable-base multiplication. -/
+def pointsWindow : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq c.gMul <|
+  .seq (.block (save c)) <| .seq (windowMulQ c) (sum c)
+
+/-- Use signed windows for the 256-bit field; retain the ladder for other sizes. -/
+def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadder c
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

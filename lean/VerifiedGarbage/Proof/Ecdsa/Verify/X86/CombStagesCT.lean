@@ -14,8 +14,7 @@ def vMidCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.combMid p256Comb
 def vBitsCode : Prog isa := Impl.Weierstrass.X86.bits (p256Comb.sl U) (bitsAt p256Comb.n 0) (8 * p256Comb.n)
 def vPointTailCode : Prog isa :=
   .seq (.block (Impl.Ecdsa.Verify.X86.Cfg.save p256Comb)) <|
-  .seq (Impl.Weierstrass.X86.bits (p256Comb.sl V) (bitsAt p256Comb.n 0) (8 * p256Comb.n)) <|
-  .seq (Impl.Weierstrass.X86.ladder (Impl.Ecdh.X86.Cfg.ladderQ p256Comb) p256Comb.wk)
+  .seq (Impl.Ecdsa.Verify.X86.Cfg.windowMulQ p256Comb)
     (Impl.Ecdsa.Verify.X86.Cfg.sum p256Comb)
 def vFinalCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.tail p256Comb
 materialize_code vFrontCode
