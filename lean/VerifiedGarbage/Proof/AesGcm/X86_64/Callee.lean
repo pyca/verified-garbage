@@ -432,6 +432,10 @@ structure GcmImpl where
   stitch : Option StitchImpl := none
   /-- The loops for a key context of `vg_aes_gcm_init_precomputed`, if any. -/
   stitchP : Option (StitchCode Gcm.X86_64.Stitch.CtxMode.powers) := none
+  /-- Whether `seal` and `open` take the short path for short inputs
+  (`Impl/AesGcm/X86_64/Short.lean`), which needs the CPU features of the
+  loops on 512-bit registers. -/
+  short : Bool := false
 
 namespace GcmImpl
 

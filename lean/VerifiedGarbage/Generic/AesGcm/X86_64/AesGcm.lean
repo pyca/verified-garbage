@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86-64
@@ -33,7 +35,10 @@ interleaved loops, whose features `GcmImpl.features` adds).
 and absorb the whole blocks of the data in one call of the instance of
 `vg_aes_gcm_encrypt_blocks` or `vg_aes_gcm_decrypt_blocks` for the same
 combination, which interleaves the two for the implementations that allow
-it (`GcmImpl.stitch`).
+it (`GcmImpl.stitch`). With the loops on 512-bit registers, `seal` and
+`open` instead take a short path, without calls, for a 12-byte nonce and
+fewer than 32 blocks of additional data and text (`GcmImpl.short`,
+`Impl/AesGcm/X86_64/Short.lean`).
 
 The code of `init`, `stream_init`, `stream_aad`, `stream_finish` and
 `stream_verify` uses 8 bytes of stack: the return address of a call of
@@ -91,7 +96,8 @@ def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stit
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
-  ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP⟩
+  ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
+    v.stitch.any (·.name.short)⟩
 
 end VG.Proof.AesGcm.X86_64
 
@@ -103,6 +109,14 @@ open VG.Proof.AesGcm.X86_64
 def note (v : GcmImpl) : String :=
   "This implementation encrypts with `" ++ v.ctr.callee.name ++ "` (and expands keys with `" ++
     v.key.fn.name ++ "`) and hashes with `" ++ v.gh.fn.name ++ "`."
+
+/-- How an instance of `seal` or `open` works, besides `note`. -/
+def shortNote (v : GcmImpl) : List String :=
+  if v.short then
+    ["For a 12-byte nonce and fewer than 32 blocks of additional data and text, this implementation \
+      computes just the powers of the hash subkey and the keystream they need, on 512-bit registers, \
+      without calls."]
+  else []
 
 /-- How an instance of `vg_aes_gcm_encrypt_blocks` or `_decrypt_blocks` works. -/
 def blocksNote (v : GcmImpl) : String :=
@@ -149,22 +163,22 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.sealApi with
     name := Spec.Gcm.sealApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.«seal» v.callees)
+    doc := Spec.Gcm.sealApi.doc (notes := note v :: shortNote v)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)
     contract := Spec.Gcm.sealContract X86_64.abi 2624
     stack := 2624
-    verified := seal_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
+    verified := sealSel_framed v Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB)
     features := v.features },
   { Spec.Gcm.openApi with
     name := Spec.Gcm.openApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.«open» v.callees)
+    doc := Spec.Gcm.openApi.doc (notes := note v :: shortNote v)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode v.callees)
     contract := Spec.Gcm.openContract X86_64.abi 2632
     stack := 2632
-    verified := open_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
+    verified := openSel_framed v Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkB)
     features := v.features },
   { Spec.Gcm.streamInitApi with
     name := Spec.Gcm.streamInitApi.name ++ v.suffix
@@ -276,22 +290,22 @@ def artifactsP (v : GcmImpl) : List Artifact := [
   { Spec.Gcm.sealPrecomputedApi with
     name := Spec.Gcm.sealPrecomputedApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (Impl.AesGcm.X86_64.«seal» (v.withBlk v.blkP))
+    doc := Spec.Gcm.sealPrecomputedApi.doc (notes := note v :: shortNote v)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))
     contract := Spec.Gcm.sealPrecomputedContract X86_64.abi 2624
     stack := 2624
-    verified := sealP_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (sealM_spSafe v v.blkP)
+    verified := sealSelP_framed v Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP)
     features := v.features },
   { Spec.Gcm.openPrecomputedApi with
     name := Spec.Gcm.openPrecomputedApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.Gcm.openPrecomputedApi.doc (notes := [note v])
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (Impl.AesGcm.X86_64.«open» (v.withBlk v.blkP))
+    doc := Spec.Gcm.openPrecomputedApi.doc (notes := note v :: shortNote v)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.openCode (v.withBlk v.blkP))
     contract := Spec.Gcm.openPrecomputedContract X86_64.abi 2632
     stack := 2632
-    verified := openP_framed v
-    spSafe := X86_64.withStackArgScratch_spSafe (openM_spSafe v v.blkP)
+    verified := openSelP_framed v Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v v.blkP)
     features := v.features },
   { Spec.Gcm.streamEncryptPrecomputedApi with
     name := Spec.Gcm.streamEncryptPrecomputedApi.name ++ v.suffix

@@ -139,9 +139,14 @@ theorem powersRepr_of_zero {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, m (p + Bit
 def sealSatP : State :=
   { sealSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩] }
 
-theorem sealP_verified :
-    Verified X86_64.target («seal» (v.withBlk v.blkP)) (Proof.AesGcm.sealPrecomputedScratchContract X86_64.abi 24) :=
-  Verified.of_correct (sealM_correct v v.blkP) (sealM_ct v v.blkP)
+/-- `vg_aes_gcm_seal_precomputed`'s contract, for any code that does what
+it says. -/
+theorem sealPCode_verified {c : Prog isa}
+    (hc : ∀ s, (Proof.AesGcm.sealX86_64M CtxMode.powers).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
+    (hct : ConstantTime isa (Proof.AesGcm.sealX86_64M CtxMode.powers).pre Proof.AesGcm.sealX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.sealPrecomputedScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPrecomputedScratchContract, Proof.AesGcm.sealPrecomputedScratchSig,
           Spec.Gcm.sealPrecomputedPre, Spec.Gcm.sealPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
@@ -176,15 +181,23 @@ theorem sealP_verified :
              · next h => exfalso; bv_omega
              · rfl)⟩ }
 
+theorem sealP_verified :
+    Verified X86_64.target («seal» (v.withBlk v.blkP)) (Proof.AesGcm.sealPrecomputedScratchContract X86_64.abi 24) :=
+  sealPCode_verified (sealM_correct v v.blkP) (sealM_ct v v.blkP)
 
 /-- A state satisfying `vg_aes_gcm_open_precomputed`'s precondition:
 `openSat`, with a key context of 1024 bytes. -/
 def openSatP : State :=
   { openSat with rd := [⟨0x1000, 1024⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0, 0⟩, ⟨0x8008, 40⟩] }
 
-theorem openP_verified :
-    Verified X86_64.target («open» (v.withBlk v.blkP)) (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
-  Verified.of_correct (openM_correct v v.blkP) (openM_ct v v.blkP)
+/-- `vg_aes_gcm_open_precomputed`'s contract, for any code that does what
+it says. -/
+theorem openPCode_verified {c : Prog isa}
+    (hc : ∀ s, (Proof.AesGcm.openX86_64M CtxMode.powers).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
+    (hct : ConstantTime isa (Proof.AesGcm.openX86_64M CtxMode.powers).pre Proof.AesGcm.openX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct
     { pre := by sig_implies_pre [Proof.AesGcm.openPrecomputedScratchContract, Proof.AesGcm.openPrecomputedScratchSig,
           Spec.Gcm.openPrecomputedPre, Spec.Gcm.openPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
@@ -230,6 +243,10 @@ theorem openP_verified :
           | decide
           | exact Region.disjoint_of_sep (by decide)
           | exact powersRepr_of_zero fun _ _ => rfl⟩ }
+
+theorem openP_verified :
+    Verified X86_64.target («open» (v.withBlk v.blkP)) (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24) :=
+  openPCode_verified (openM_correct v v.blkP) (openM_ct v v.blkP)
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt_precomputed`
 and `_decrypt_precomputed`: `crSat`, with a key context of 1024 bytes. -/
@@ -320,16 +337,25 @@ theorem sealFrameSatP_pre : ∃ s, (Spec.Gcm.sealPrecomputedContract X86_64.abi 
        · next h => exfalso; bv_omega
        · rfl)
 
-theorem sealP_framed :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» (v.withBlk v.blkP)))
+/-- `vg_aes_gcm_seal_precomputed` in its frame, for any code that meets the
+contract within it. -/
+theorem sealPCode_framed {c : Prog isa}
+    (hv : Verified X86_64.target c (Proof.AesGcm.sealPrecomputedScratchContract X86_64.abi 24))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 c)
       (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.sealPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.sealPrecomputedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (bytes := 2600) (sealP_verified v) (by decide) (by decide) (by decide)
-    (sealM_spSafe v v.blkP) (sealM_xdepth v v.blkP) (Proof.AesGcm.sealPrecomputedPre_local _)
+    (bytes := 2600) hv (by decide) (by decide) (by decide)
+    hsp hxd (Proof.AesGcm.sealPrecomputedPre_local _)
     (Proof.AesGcm.sealPrecomputedPost_local _) sealFrameSatP_pre
+
+theorem sealP_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («seal» (v.withBlk v.blkP)))
+      (Spec.Gcm.sealPrecomputedContract X86_64.abi 2624) :=
+  sealPCode_framed (sealP_verified v) (sealM_spSafe v v.blkP) (sealM_xdepth v v.blkP)
 
 /-- A state satisfying `vg_aes_gcm_open_precomputed`'s precondition, without
 the working space. -/
@@ -347,17 +373,26 @@ theorem openFrameSatP_pre : ∃ s, (Spec.Gcm.openPrecomputedContract X86_64.abi 
     | exact Region.disjoint_of_sep (by decide)
     | exact powersRepr_of_zero fun _ _ => rfl
 
-theorem openP_framed :
-    Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk v.blkP)))
+/-- `vg_aes_gcm_open_precomputed` in its frame, for any code that meets the
+contract within it. -/
+theorem openPCode_framed {c : Prog isa}
+    (hv : Verified X86_64.target c (Proof.AesGcm.openPrecomputedScratchContract X86_64.abi 24))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 c)
       (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
     (n := 320) (pre := Spec.Gcm.openPrecomputedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.openPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
-    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) (openP_verified v)
-    (by decide) (by decide) (by decide) (openM_spSafe v v.blkP) (openM_xdepth v v.blkP)
+    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
+    (by decide) (by decide) (by decide) hsp hxd
     (Proof.AesGcm.openPrecomputedPre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatP_pre
     (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
+
+theorem openP_framed :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2608 4 («open» (v.withBlk v.blkP)))
+      (Spec.Gcm.openPrecomputedContract X86_64.abi 2632) :=
+  openPCode_framed (openP_verified v) (openM_spSafe v v.blkP) (openM_xdepth v v.blkP)
 
 /-- A state satisfying the preconditions of `vg_aes_gcm_stream_encrypt_precomputed`
 and `_decrypt_precomputed`, without the working space. -/
