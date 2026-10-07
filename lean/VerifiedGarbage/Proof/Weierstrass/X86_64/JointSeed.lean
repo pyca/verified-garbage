@@ -6,21 +6,27 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
-theorem jointCounter_ok (s : State) :
-    WP isa (.block [.mov32 .rbx (.imm 256)]) s fun t => t.gpr .rbx=256 ∧ Keeps [.rbx] s t := by
+theorem jointCounter_ok (s : State) {n : Nat} (hn : 64*n<2^32) :
+    WP isa (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*n)))]) s fun t =>
+      t.gpr .rbx=BitVec.ofNat 64 (64*n) ∧ Keeps [.rbx] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
     Option.map_some,RegUpd.gpr_setReg,ite_true,Option.some.injEq,exists_eq_left']
-  exact ⟨rfl,fun r hr => by simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg,hr,ite_false],rfl,rfl,rfl⟩
+  refine ⟨?_,fun r hr => by simp only [List.mem_singleton] at hr; simp only [RegUpd.gpr_setReg,hr,ite_false],rfl,rfl,rfl⟩
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt hn,Nat.mod_eq_of_lt (by omega)]
 
 theorem jointSeed_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
     (hL : JointLayout c size) (hOne : c.K.one<C.p)
     (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base s) s)
     (hs : JointStable c C base Q u v s) (he : JointGenerator c C base T size row s) :
-    WP isa (.block (Jacobian.infinity c.K c.K.R++([.mov32 .rbx (.imm 256)] : List Instr))) s fun t =>
+    WP isa (.block (Jacobian.infinity c.K c.K.R++
+      ([.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))] : List Instr))) s fun t =>
       JointLoopKeep c.K.M base (jointWork c) s t ∧
-      JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity t ∧ t.gpr .rbx=256 := by
+      JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity t ∧
+      t.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n) := by
   rw [WP.block_append_iff]
   have hR : ∀ x∈jacCoords c.K.R,x∈jointSlots c := fun x hx => hi.sl x (jointLive_R c x hx)
   refine WP.mono_syms (infinityPoint_ok hL.lay hR hi hOne) fun a ⟨ea,ka,ia,pa⟩ sa => ?_
@@ -30,11 +36,11 @@ theorem jointSeed_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat
     grind)
   have ca : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity a :=
     ⟨(ia.sub (fun _ hx => List.mem_append_right _ hx)).to_tmv,
-      hs.keep hL.n kw (fun r hr => by
+      hs.keep kw (fun r hr => by
         have := hL.stableBounds r hr; have := hi.scr.nowrap; omega) hL.stableSep,
       JointGenerator.workKeep hL hi.mod.tmp s a kw sa he,
       ia.point_tmv (fun _ hx => List.mem_append_left _ hx) pa⟩
-  refine WP.mono_syms (jointCounter_ok a) fun t ⟨tb,kt⟩ st => ?_
+  refine WP.mono_syms (jointCounter_ok a (by have := hL.n; omega)) fun t ⟨tb,kt⟩ st => ?_
   exact ⟨(JointLoopKeep.of_prog kw).trans (JointLoopKeep.of_keeps kt),
     ca.of_keeps kt (by decide) (fun n hn hn' ho => (ca.external n hn hn' ho).of_keeps kt st),tb⟩
 

@@ -21,21 +21,21 @@ theorem NafTableInv.readonly {K : WinCfg} {C : Curve} {base : Addr} {size m : Na
     · have hs := hL.tbl x (List.mem_append_left _ hx)
       obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hy
       have hi' := List.mem_range.mp hi
+      have := entry_end_le (8*K.M.n) hi'
       dsimp only
-      rw [hL.n]
       omega
   · exact hL.lay.tmp x hxs
 
 theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
-    {G Q : Point C} {row : JointGeneratorRow C G} {s : State}
+    {G Q : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p) (hQ : onCurve C Q=true)
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
     (hp : InvJ C (tmv C c.K.M.n base s c.K.P.x) (tmv C c.K.M.n base s c.K.P.y)
       (tmv C c.K.M.n base s c.K.P.z) Q)
     (hz : tmv C c.K.M.n base s c.K.zero=0)
-    (hv : ∀ i<257,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
-    (hu : ∀ i<257,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
+    (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
+    (hu : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
     (he : JointGenerator c C base T size row s) :
     WP isa (.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)) s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
@@ -47,13 +47,15 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
   have ii : Inv c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) (tmv C c.K.M.n base a) a :=
     ⟨ia.field.scr,ia.field.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (ia.field.sl x hx)),
       ia.field.lt,ia.field.val⟩
-  have hcsl : ∀ x∈cacheTableSlots c.cache 8,x∈jointSlots c := fun _ hx =>
+  have hcsl : ∀ x∈cacheTableSlots c.K.M.n c.cache 8,x∈jointSlots c := fun _ hx =>
     List.mem_append_right _ (joint_cache_mem.mp hx)
-  have hZ : ∀ i<8,c.K.tbl+96*i+64∈nafTableLive c.K 8 := by
+  have hZ : ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by
     intro i hi
     apply List.mem_append_right
-    exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),by omega⟩
-  have csl : ∀ i<8,(c.cache+64*i∈jointSlots c) ∧ (c.cache+64*i+32∈jointSlots c) := by
+    exact List.mem_map.mpr ⟨3*i+2,List.mem_range.mpr (by omega),
+      by rw [slot_three_mul_two,Nat.add_assoc]⟩
+  have csl : ∀ i<8,(c.cache+16*c.K.M.n*i∈jointSlots c) ∧
+      (c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointSlots c) := by
     intro i hi
     exact ⟨hcsl _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inl rfl⟩),
       hcsl _ (mem_cacheTableSlots.mpr ⟨i,hi,Or.inr rfl⟩)⟩
@@ -80,7 +82,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
   have iv : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t :=
     it.sub (fun x hx => by
       rcases List.mem_append.mp hx with hx|hx
-      · exact List.mem_append_right _ (joint_tableLive hL.layout.n x hx)
+      · exact List.mem_append_right _ (joint_tableLive x hx)
       · exact List.mem_append_left _ (joint_cache_mem.mpr hx))
   have zero : tmv C c.K.M.n base t c.K.zero=0 := by
     unfold tmv
@@ -92,19 +94,22 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     intro n hn hn'
     apply kt.invJ hL.layout.lay ii.scr hcsl
       (fun x hx => List.mem_append_left _ (List.mem_append_left _
-        (nafTblPt_mem c.K hL.layout.n hn (by omega) x hx))) ?_ (ia.table n hn hn')
+        (nafTblPt_mem c.K hn (by omega) x hx))) ?_ (ia.table n hn hn')
     intro x hx hc
     obtain ⟨i,hi,hx'⟩ := mem_cacheTableSlots.mp hc
     have hs := hL.cacheSep
-    simp only [jacCoords,WinCfg.tblPt,hL.layout.n,List.mem_cons,List.not_mem_nil,or_false] at hx
+    have := hL.layout.n
+    have := entry_end_le (16*c.K.M.n) hi
+    have := entry_le (24*c.K.M.n) (show n-1≤7 by omega)
+    simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
     omega
   refine ⟨⟨ka.trans kr,ut⟩,iv,⟨zero,table,
     jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hv,
     jointInit_digits hL (by have := hi.scr.nowrap; omega) ut (by simp) hu,?_,?_⟩,
     ea.keep_init hL.layout ii.mod.tmp kr ub st⟩
   · intro i hi
-    simpa only [WinCfg.tblPt,hL.layout.n,Nat.add_sub_cancel] using (ht i hi).1
+    simpa only [WinCfg.tblPt,Nat.add_sub_cancel] using (ht i hi).1
   · intro i hi
-    simpa only [WinCfg.tblPt,hL.layout.n,Nat.add_sub_cancel] using (ht i hi).2
+    simpa only [WinCfg.tblPt,Nat.add_sub_cancel] using (ht i hi).2
 
 end VG.Proof.Weierstrass.X86_64

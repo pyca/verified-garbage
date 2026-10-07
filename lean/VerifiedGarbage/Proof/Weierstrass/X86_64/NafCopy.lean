@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Naf
 import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectPass
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 
 /-! Direct copies of public Jacobian table entries. -/
 namespace VG.Proof.Weierstrass.X86_64
@@ -75,18 +76,20 @@ private theorem words_eq_of_words {m m' : Mem} {base : Addr} : ∀ n a o,
     have he := h (i+1) (by omega)
     simpa only [Nat.mul_add,Nat.mul_one,Nat.add_assoc,Nat.add_comm 8] using he
 
-theorem nafCopy_field {mem mem' : Mem} {base : Addr} {n a o j : Nat}
+/-- A field of `w` words at an 8-byte-aligned offset `d` of the copied pieces. -/
+theorem nafCopy_fieldAt {mem mem' : Mem} {base : Addr} {n a o d w : Nat}
     (h : ∀ c<n,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
-    (hj : 2*j+2≤n) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 := by
+    (hd : d%8=0) (hj : d+8*w≤16*n) : wordsVal mem' base (o+d) w=wordsVal mem base (a+d) w := by
   apply words_eq_of_words
   intro i hi
-  rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,
-    show a+32*j+8*i=a+8*(4*j+i) from by omega]
+  rw [show o+d+8*i=o+8*(d/8+i) from by omega,show a+d+8*i=a+8*(d/8+i) from by omega]
   exact nafCopy_words h _ (by omega)
 
-theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {a o j : Nat}
-    (h : ∀ c<6,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
-    (hj : j<3) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 :=
-  nafCopy_field h (by omega)
+/-- Coordinate `j` of a Jacobian point of `n` words, copied in `3 n / 2` pieces. -/
+theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {n a o j : Nat}
+    (h : ∀ c<3*n/2,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
+    (hn : n%2=0) (hj : j<3) : wordsVal mem' base (o+8*n*j) n=wordsVal mem base (a+8*n*j) n := by
+  obtain rfl|rfl|rfl : j=0∨j=1∨j=2 := by omega
+  all_goals exact nafCopy_fieldAt h (by omega) (by omega)
 
 end VG.Proof.Weierstrass.X86_64

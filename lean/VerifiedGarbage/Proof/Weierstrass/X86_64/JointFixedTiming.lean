@@ -13,20 +13,20 @@ abbrev FixedEntryCT (K : WinCfg) (tsym : String) : Prop :=
 
 theorem jointFixedEntry_relCT {K : WinCfg} {base T : Addr} {size x y m : Nat} [NeZero m]
     {tsym : String} {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fin m} {b : BitVec 8}
-    (hL : Lay K.M size Sl) (hn : K.M.n=4) (hm : UnitMod m (2^(64*K.M.n)))
-    (ha : 1≤nafMagnitude b) (hy : K.E.y=K.E.x+32) (hz : K.E.z=K.E.x+64)
+    (hL : Lay K.M size Sl) (hn : K.M.n=4 ∨ K.M.n=6) (hm : UnitMod m (2^(64*K.M.n)))
+    (ha : 1≤nafMagnitude b) (hy : K.E.y=K.E.x+8*K.M.n) (hz : K.E.z=K.E.x+16*K.M.n)
     (hD : ∀ v∈jacCoords K.E,Sl v) (hx : x<m) (hyy : y<m) (hOne : K.one<m)
     (hZero : K.zero∈V) (heZero : E K.zero=0) (hApart : K.zero∉jacCoords K.E)
     (hc : FixedEntryCT K tsym) :
     RelCT isa (fun s t => FieldPair K.M base size m Sl V E s t ∧
-      FixedSource base T tsym size (nafMagnitude b) x y s ∧
-      FixedSource base T tsym size (nafMagnitude b) x y t ∧
+      FixedSource K.M.n base T tsym size (nafMagnitude b) x y s ∧
+      FixedSource K.M.n base T tsym size (nafMagnitude b) x y t ∧
       s.gpr .r8=b.setWidth 64 ∧ t.gpr .r8=b.setWidth 64)
       (Joint.fixedEntry K tsym)
       (FieldPair K.M base size m Sl (jacCoords K.E++V) (fixedEntryEnv K m E b x y)) := by
   let P := fun s t => FieldPair K.M base size m Sl V E s t ∧
-    FixedSource base T tsym size (nafMagnitude b) x y s ∧
-    FixedSource base T tsym size (nafMagnitude b) x y t ∧
+    FixedSource K.M.n base T tsym size (nafMagnitude b) x y s ∧
+    FixedSource K.M.n base T tsym size (nafMagnitude b) x y t ∧
     s.gpr .r8=b.setWidth 64 ∧ t.gpr .r8=b.setWidth 64
   have hct : RelCT isa P (Joint.fixedEntry K tsym) (fun _ _ => True) := by
     intro s t _ _ _ _ ⟨p,ss,st,ds,dt⟩ es et

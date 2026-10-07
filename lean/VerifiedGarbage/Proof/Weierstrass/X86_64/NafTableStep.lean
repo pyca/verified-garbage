@@ -6,7 +6,7 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
 theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
-    (hL : NafLay K size) (hJ : K.J=65)
+    (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     (ht : K.tbl<2^31) (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)
     (hm1 : 1≤m) (hm7 : m≤7) {s₀ s : State} (hI : NafTableInv K C base size P s₀ s m) :
@@ -22,7 +22,7 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
         grind
       rcases he with he | he
       · exact List.mem_append_left _ he
-      · exact nafTblPt_mem K hL.n (by decide) (by decide) x he
+      · exact nafTblPt_mem K (by decide) (by decide) x he
   unfold Naf.tableStep
   apply WP.seq
   refine WP.mono (jacAdd_ok hL.lay hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
@@ -32,7 +32,7 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     exact ju
   have ka := ka.mono (W' := winOther K) (fun _ hx => List.mem_append_right _ hx)
   have cm : u.gpr .rbx=BitVec.ofNat 64 m := by
-    rw [ka.gpr _ (by rw [hL.n]; decide),hI.counter]
+    rw [ka.gpr _ (rbx_not_clob _),hI.counter]
   rw [WP.block_append_iff]
   refine WP.mono (nafCopyStore_ok hL (by omega) ht iu
     (fun _ hx => List.mem_append_left _ hx) cm jw) fun v ⟨ks,iv,jr,jnew⟩ => ?_
@@ -45,14 +45,14 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       grind
     · exact List.mem_append_right _ hx))
   have cb : v.gpr .rbx=BitVec.ofNat 64 m := by
-    rw [kas.gpr _ (by rw [hL.n]; decide),hI.counter]
+    rw [kas.gpr _ (rbx_not_clob _),hI.counter]
   refine WP.mono (nafTable_advance_ok (by omega) cb) fun t ⟨hc,cf,kc⟩ => ?_
-  have it := (iv.of_keeps kc (by decide)).to_tmv.sub (nafTableLive_next K hL.n m)
+  have it := (iv.of_keeps kc (by decide)).to_tmv.sub (nafTableLive_next K m)
   have slots : ∀ x∈W, x∈nafSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact List.mem_append_left _ (List.mem_append_right _ hx)
-    · exact nafTblPt_mem K hL.n (by omega) (by omega) x hx
+    · exact nafTblPt_mem K (by omega) (by omega) x hx
   have kct : KeepRegs (nafTableClob K) v t := (VG.Proof.Mont.X86_64.Keeps.regs kc).mono (fun _ hx => List.mem_append_right _ hx)
   have kst : KeepRegs (nafTableClob K) s t :=
     (KeepRegs.mono ⟨kas.gpr,kas.rd,kas.wr⟩ (fun _ hx => List.mem_append_left _ hx)).trans kct
@@ -66,21 +66,24 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       rcases List.mem_append.mp hx with hx | hx
       · exact Or.inl hx
       · apply Or.inr
-        simp only [WinCfg.tblPt,hL.n,jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
+        simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl
-        · exact nafTbl_mem K (by omega) (by omega) (c:=0) (by decide)
-        · exact nafTbl_mem K (by omega) (by omega) (c:=1) (by decide)
-        · exact nafTbl_mem K (by omega) (by omega) (c:=2) (by decide)
+        · rw [tblPt_x]; exact nafTbl_slot K (by omega)
+        · rw [tblPt_y]; exact nafTbl_slot K (by omega)
+        · rw [tblPt_z]; exact nafTbl_slot K (by omega)
     · exact Or.inr rfl
   have beq (x : Nat) (hx : x∈jacCoords (Naf.twice K)) : tmv C K.M.n base t x=tmv C K.M.n base s x := by
     unfold tmv; rw [kc.2.1]
-    rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K hL.n (by decide) (by decide) x hx) ?_]
+    rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K (by decide) (by decide) x hx) ?_]
     intro hw
+    have := hL.n
+    have := entry_end_le (24*K.M.n) (show m<8 by omega)
     rcases List.mem_append.mp hw with hw | hw
     · have sep := hL.tbl x (List.mem_append_right _ hw)
-      simp only [jacCoords,Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx
+      simp only [jacCoords,Naf.twice,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
       omega
-    · simp only [jacCoords,Naf.twice,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hw
+    · simp only [jacCoords,Naf.twice,WinCfg.tblPt,Nat.add_sub_cancel,List.mem_cons,
+        List.not_mem_nil,or_false] at hx hw
       omega
   refine ⟨⟨it,?_,?_,?_,hc,hI.keep.trans kst,?_⟩,cf⟩
   · simpa only [tmv,kc.2.1] using jr
@@ -93,13 +96,17 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       have teq (x : Nat) (hx : x∈jacCoords (K.tblPt a)) :
           tmv C K.M.n base t x=tmv C K.M.n base s x := by
         unfold tmv; rw [kc.2.1]
-        rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K hL.n ha1 (by omega) x hx) ?_]
+        rw [kas.slot hL.lay hf.scr slots (nafTblPt_mem K ha1 (by omega) x hx) ?_]
         intro hw
+        have := hL.n
+        have := entry_end_le (24*K.M.n) (show m<8 by omega)
+        have := entry_end_le (24*K.M.n) (show a-1<m by omega)
         rcases List.mem_append.mp hw with hw | hw
         · have sep := hL.tbl x (List.mem_append_right _ hw)
-          simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx
+          simp only [jacCoords,WinCfg.tblPt,List.mem_cons,List.not_mem_nil,or_false] at hx
           omega
-        · simp only [jacCoords,WinCfg.tblPt,hL.n,List.mem_cons,List.not_mem_nil,or_false] at hx hw
+        · simp only [jacCoords,WinCfg.tblPt,Nat.add_sub_cancel,List.mem_cons,List.not_mem_nil,
+            or_false] at hx hw
           omega
       rw [teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords]),teq _ (by simp [jacCoords])]
       exact hI.table a ha1 ham'

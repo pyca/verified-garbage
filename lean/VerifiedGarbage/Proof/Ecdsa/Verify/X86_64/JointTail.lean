@@ -9,7 +9,7 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdsa.Verify.X86_64 (U V)
 
-theorem jointTail_ok {c : Cfg} (hc : CfgOk c) (hC : Law c.C) (hn : c.n=4)
+theorem jointTail_ok {c : Cfg} (hc : CfgOk c) (hC : Law c.C)
     (hpub : c.pubVerify=true) (hnp : c.C.n<c.C.p) (hpn : c.C.p≤2*c.C.n)
     {s₀ sM s : State} {g : Reg → BitVec 64} (hM : Mid c s₀ (s₀.gpr .rcx) g sM)
     (hInput : ProjectiveInput c s₀ (s₀.gpr .rcx) g s)
@@ -22,7 +22,7 @@ theorem jointTail_ok {c : Cfg} (hc : CfgOk c) (hC : Law c.C) (hn : c.n=4)
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=g r) ∧ VPost c s₀ t := by
   have hpR := unitMod_pow_two hc.p_odd (64*c.n)
   apply WP.seq
-  refine WP.mono (jointSquare_ok hc hn hInput) fun a ⟨ha,ax,az⟩ => ?_
+  refine WP.mono (jointSquare_ok hc hInput) fun a ⟨ha,ax,az⟩ => ?_
   rw [Impl.Ecdsa.Verify.X86_64.Cfg.tail,ite_eq_left (show c.pubVerify=true ∧ c.C.n<c.C.p ∧ c.C.p≤2*c.C.n from ⟨hpub,hnp,hpn⟩)]
   refine WP.mono (projectiveFinal_fields_ok hc hC hnp hpn ha) fun t ⟨saved,xo,hxo,hx,rax⟩ => ⟨saved,?_⟩
   rw [ax,az] at hx

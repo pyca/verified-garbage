@@ -5,7 +5,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
-    (hL : NafLay K size) (hJ : K.J=65) (hm : UnitMod C.p (2^(64*K.M.n)))
+    (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
     (ht : K.tbl<2^31) (hOne : K.one<C.p) (hm8 : m<8) (hc : NafTableChecks K) :
     RelCT isa (NafTablePair K C base size m) (Naf.tableStep K)
       (fun s t => NafTablePair K C base size (m+1) s t ∧
@@ -16,7 +16,7 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
     apply List.mem_append_right
     simp only [jacCoords,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  have sep : K.R.x+96≤K.tbl ∨ K.tbl+768≤K.R.x := by
+  have sep : K.R.x+24*K.M.n≤K.tbl ∨ K.tbl+192*K.M.n≤K.R.x := by
     have hx := hL.tbl K.R.x (by simp [winOther])
     have hz := hL.tbl K.R.z (by simp [winOther])
     rw [hL.rxz] at hz
@@ -28,7 +28,7 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
     · have he : x∈winRo K++winOther K ∨ x∈jacCoords (Naf.twice K) := by
         simp only [rcbR,winRo,winOther,jacCoords,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
         grind
-      exact he.elim (List.mem_append_left _) (nafTblPt_mem K hL.n (by decide) (by decide) x)
+      exact he.elim (List.mem_append_left _) (nafTblPt_mem K (by decide) (by decide) x)
   unfold NafTablePair
   apply RelCT.exists_
   intro E
@@ -42,7 +42,7 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
     (fun _ _ h => h) (fun _ _ ⟨⟨e,p⟩,rest⟩ => ⟨e,p,rest⟩))
   apply RelCT.exists_
   intro e
-  rw [List.append_assoc,←hL.n]
+  rw [List.append_assoc]
   apply RelCT.block_append
   have cp := copyPoint_relCT (base:=base) (E:=e) hL.lay rs
     (V:=jacCoords K.D++nafTableLive K m) (fun _ hx => List.mem_append_left _ hx) hc.copyStep
@@ -50,7 +50,7 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
   apply RelCT.block_append
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) (E:=copyPointEnv e K.R K.D)
     hL.lay hL.n hL.rxy hL.rxz hm8 ht (by have := hL.table_le; omega)
-    (nafTblPt_mem K hL.n (by omega) (by omega)) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
+    (nafTblPt_mem K (by omega) (by omega)) (fun _ hx => List.mem_append_left _ hx) sep hc.store)
   have adv := keepsField_relCT (M:=K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈nafSlots K))
     (V:=jacCoords (K.tblPt (m+1))++(jacCoords K.R++(jacCoords K.D++nafTableLive K m)))
@@ -67,6 +67,6 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
   exact adv.mono (fun _ _ h => h) (fun _ _ ⟨p,ps,pt⟩ =>
     ⟨⟨_,p.sub (by
       intro x hx
-      simpa only [List.append_assoc] using nafTableLive_next K hL.n m x hx),ps.1,pt.1⟩,ps.2,pt.2⟩)
+      simpa only [List.append_assoc] using nafTableLive_next K m x hx),ps.1,pt.1⟩,ps.2,pt.2⟩)
 
 end VG.Proof.Weierstrass.X86_64

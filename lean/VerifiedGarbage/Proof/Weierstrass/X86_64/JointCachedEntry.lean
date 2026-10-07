@@ -14,18 +14,18 @@ local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,join
 
 structure JointLookupLayout (c : Joint.Cfg) (size : Nat) : Prop where
   layout : JointLayout c size
-  exy : c.K.E.y=c.K.E.x+32
-  exz : c.K.E.z=c.K.E.x+64
+  exy : c.K.E.y=c.K.E.x+8*c.K.M.n
+  exz : c.K.E.z=c.K.E.x+16*c.K.M.n
   tableSmall : c.K.tbl<2^31
   cacheSmall : c.cache<2^31
-  tableBound : c.K.tbl+768≤size
-  cacheBound : c.cache+512≤size
-  entryTable : c.K.E.x+96≤c.K.tbl ∨ c.K.tbl+768≤c.K.E.x
-  entryCache : c.K.E.x+96≤c.cache ∨ c.cache+512≤c.K.E.x
-  selectedCache : c.selected+64≤c.cache ∨ c.cache+512≤c.selected
-  selectedEntry : c.selected+64≤c.K.E.x ∨ c.K.E.x+96≤c.selected
-  zeroApart : c.K.zero∉cachedSlots c.K.E c.selected
-  accumApart : ∀ x∈jacCoords c.K.R,x∉cachedSlots c.K.E c.selected
+  tableBound : c.K.tbl+192*c.K.M.n≤size
+  cacheBound : c.cache+128*c.K.M.n≤size
+  entryTable : c.K.E.x+24*c.K.M.n≤c.K.tbl ∨ c.K.tbl+192*c.K.M.n≤c.K.E.x
+  entryCache : c.K.E.x+24*c.K.M.n≤c.cache ∨ c.cache+128*c.K.M.n≤c.K.E.x
+  selectedCache : c.selected+16*c.K.M.n≤c.cache ∨ c.cache+128*c.K.M.n≤c.selected
+  selectedEntry : c.selected+16*c.K.M.n≤c.K.E.x ∨ c.K.E.x+24*c.K.M.n≤c.selected
+  zeroApart : c.K.zero∉cachedSlots c.K.M.n c.K.E c.selected
+  accumApart : ∀ x∈jacCoords c.K.R,x∉cachedSlots c.K.M.n c.K.E c.selected
 
 theorem jointStable_live (c : Joint.Cfg) : ∀ x∈jointStableFields c,x∈jointLive c := by
   intro x hx
@@ -49,28 +49,28 @@ theorem jointCachedEntry_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v External A t ∧
       Inv c.K.M base size C.p (·∈jointSlots c)
-        (cachedSlots c.K.E c.selected++jointLive c) (tmv C c.K.M.n base t) t ∧
-      CachedPoint C (tmv C c.K.M.n base t) c.K.E c.selected (FastNaf.point C Q 5 v j) := by
+        (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) (tmv C c.K.M.n base t) t ∧
+      CachedPoint c.K.M.n C (tmv C c.K.M.n base t) c.K.E c.selected (FastNaf.point C Q 5 v j) := by
   have hl := FastNaf.magnitude_le (Or.inl rfl) v j
   have ho := (FastNaf.magnitude_odd_or_zero 5 v j).resolve_left hmag
   have ha : 1≤(FastNaf.magnitude 5 v j-1)/2+1 := by omega
   have hb : (FastNaf.magnitude 5 v j-1)/2+1≤8 := by omega
   have hi : (FastNaf.magnitude 5 v j-1)/2<8 := by omega
   have he : 2*((FastNaf.magnitude 5 v j-1)/2+1)-1=FastNaf.magnitude 5 v j := by omega
-  have hd : ∀ x∈cachedSlots c.K.E c.selected,x∈jointSlots c := by intro x hx; jslots
-  have hw : ∀ x∈cachedSlots c.K.E c.selected,x∈jointWork c := by intro x hx; jslots
-  have hq : ∀ x∈cachedSlots (c.K.tblPt ((FastNaf.magnitude 5 v j-1)/2+1))
-      (c.cache+64*((FastNaf.magnitude 5 v j-1)/2)),x∈jointLive c := by
+  have hd : ∀ x∈cachedSlots c.K.M.n c.K.E c.selected,x∈jointSlots c := by intro x hx; jslots
+  have hw : ∀ x∈cachedSlots c.K.M.n c.K.E c.selected,x∈jointWork c := by intro x hx; jslots
+  have hq : ∀ x∈cachedSlots c.K.M.n (c.K.tblPt ((FastNaf.magnitude 5 v j-1)/2+1))
+      (c.cache+16*c.K.M.n*((FastNaf.magnitude 5 v j-1)/2)),x∈jointLive c := by
     intro x hx
     apply jointStable_live c
     rcases List.mem_append.mp hx with hx|hx
-    · exact jointStable_table c hL.layout.n ha (by omega) hx
+    · exact jointStable_table c ha (by omega) hx
     · simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
       rcases hx with rfl|rfl
       · exact jointStable_cache2 c hi
       · exact jointStable_cache3 c hi
-  have hp : CachedPoint C (tmv C c.K.M.n base s)
-      (c.K.tblPt ((FastNaf.magnitude 5 v j-1)/2+1)) (c.cache+64*((FastNaf.magnitude 5 v j-1)/2))
+  have hp : CachedPoint c.K.M.n C (tmv C c.K.M.n base s)
+      (c.K.tblPt ((FastNaf.magnitude 5 v j-1)/2+1)) (c.cache+16*c.K.M.n*((FastNaf.magnitude 5 v j-1)/2))
       (mul (FastNaf.magnitude 5 v j) Q) := by
     refine ⟨?_,h.stable.cache2 _ hi,h.stable.cache3 _ hi⟩
     have ht := h.stable.table _ ha hb

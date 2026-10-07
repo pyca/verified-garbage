@@ -8,21 +8,21 @@ open VG.Impl.Weierstrass VG.Proof.Mont.X86_64 VG.Proof.Mont Spec.Weierstrass
 
 /-- Complete Jacobian addition on public data, including all exceptional cases. -/
 theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hn : K.M.n=4) (hL : Lay K.M size Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     {p q o : Pt} {dst : Nat} (hA : RcbApart K.S p q o)
-    (h2a : dst∉rcbW K.S o) (h3a : dst+32∉rcbW K.S o)
-    (hCacheSl : Sl dst ∧ Sl (dst+32))
+    (h2a : dst∉rcbW K.S o) (h3a : dst+8*K.M.n∉rcbW K.S o)
+    (hCacheSl : Sl dst ∧ Sl (dst+8*K.M.n))
     (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
-    (hCacheV : dst∈V ∧ dst+32∈V)
-    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+32)=E dst*E q.z)
+    (hCacheV : dst∈V ∧ dst+8*K.M.n∈V)
+    (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) :
     WP isa (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst) s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
-  have hSlC : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+32],Sl x := by
+  have hSlC : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
     · exact hSl x hx
@@ -30,7 +30,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
       rcases hx with rfl|rfl
       · exact hCacheSl.1
       · exact hCacheSl.2
-  have hVC : ∀ x∈rcbR K.S p q++[dst,dst+32],x∈V := by
+  have hVC : ∀ x∈rcbR K.S p q++[dst,dst+8*K.M.n],x∈V := by
     intro x hx
     rcases List.mem_append.mp hx with hx|hx
     · exact hV x hx
@@ -60,17 +60,17 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
         (fun t ht => (ht.prefix (kb.mono (by simp))).prefix (ka.mono (by simp)))
     · intro b ib kb hqz
       apply WP.seq
-      refine WP.mono (CachedJac.head_ok hn hL hm hA h2a h3a hSlC ib hVC h2 h3) fun c ⟨kc,ic,eh,er⟩ => ?_
-      let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) E
+      refine WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSlC ib hVC h2 h3) fun c ⟨kc,ic,eh,er⟩ => ?_
+      let EH := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) E
       have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
         ((kb.mono (by simp)).trans kc)
       have hpkeep : ∀ x ∈ rcbR K.S p q, EH x = E x := fun x hx => CachedJac.head_readonly hA E hx
       have jp : InvJ C (EH p.x) (EH p.y) (EH p.z) P := by
         rw [hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR]),hpkeep _ (by simp [rcbR])]
         exact hJP
-      have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) V :=
+      have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
-      have hv : ∀ x ∈ rcbR K.S p p, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst) V :=
+      have hv : ∀ x ∈ rcbR K.S p p, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst) V :=
         fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
       apply fieldBranch_ok hL hm ic (a := K.S.t3) (by
         rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head,FOp.out])
@@ -88,7 +88,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             · exact hSl x (List.mem_append_left _ hx)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
-          refine WP.mono (jacDoubleForward_ok hn hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (jacDoubleForward_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
         · intro e ie ke hrz
@@ -103,7 +103,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
-        refine WP.mono (CachedJac.tail_ok hn hL hm hA h2a h3a hSlC id hVC h2 h3) fun t ⟨kt,it,ht⟩ => ?_
+        refine WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSlC id hVC h2 h3) fun t ⟨kt,it,ht⟩ => ?_
         have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
         dsimp only at jt
         rw [←ht] at jt

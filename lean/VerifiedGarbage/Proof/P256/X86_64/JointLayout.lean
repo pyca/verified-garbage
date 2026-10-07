@@ -13,7 +13,7 @@ private theorem joint_lay : Lay publicJoint.K.M 8192 (·∈jointSlots publicJoin
   exact fun x y hx hy => h x hx y hy
 
 theorem joint_layout : JointLayout publicJoint 8192 :=
-  ⟨joint_lay,rfl,by decide +kernel,by decide +kernel⟩
+  ⟨joint_lay,Or.inl rfl,by decide +kernel,by decide +kernel⟩
 
 theorem joint_lookup_layout : JointLookupLayout publicJoint 8192 :=
   ⟨joint_layout,rfl,rfl,by decide,by decide,by decide,by decide,by decide,by decide,
@@ -24,7 +24,7 @@ theorem joint_add_layout : JointAddLayout publicJoint 8192 := by
   constructor <;> decide +kernel
 
 theorem joint_adx_layout : JointLayout publicJointAdx 8192 :=
-  ⟨⟨joint_lay.le,joint_lay.apart,joint_lay.mo,joint_lay.tmp⟩,rfl,
+  ⟨⟨joint_lay.le,joint_lay.apart,joint_lay.mo,joint_lay.tmp⟩,Or.inl rfl,
     joint_layout.stableBounds,joint_layout.stableSep⟩
 
 theorem joint_adx_lookup_layout : JointLookupLayout publicJointAdx 8192 :=

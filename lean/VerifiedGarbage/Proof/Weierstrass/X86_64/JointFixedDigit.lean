@@ -12,19 +12,19 @@ local macro "jslots" : tactic => `(tactic| (simp only [jointSlots,jointLive,join
   List.not_mem_nil,or_false] at * <;> grind))
 
 theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
-    {G Q A : Point C} {row : JointGeneratorRow C G} {s : State}
+    {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hC : Law C) (ha : AM3 C) (hOne : c.K.one<C.p)
-    (hOneVal : toM C.p (2^256) c.K.one=1)
+    (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (hG : onCurve C G=true) (hA : onCurve C A=true)
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
-    (hj : j<257) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
+    (hj : j<64*c.K.M.n+1) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
     WP isa (Joint.fixedDigit c) s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add A (FastNaf.point C G 7 u j)) t := by
   have hExternal := JointGenerator.workKeep (base:=base) (row:=row) (T:=T) hL.lookup.layout h.field.mod.tmp
   have hbytes : c.gBits+j<size := by
-    have hh := hL.lookup.layout.stableBounds (c.gBits,257) (by simp [jointStableRanges])
+    have hh := hL.lookup.layout.stableBounds (c.gBits,64*c.K.M.n+1) (by simp [jointStableRanges])
     dsimp only at hh
     omega
   rw [Joint.fixedDigit]
@@ -34,7 +34,7 @@ theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    simp [clob,VG.Impl.Mont.X86_64.acc,hL.lookup.layout.n])
+    simp [clob,VG.Impl.Mont.X86_64.acc])
   have ca := h.of_keeps ka (by decide) (hExternal s a kp sa h.external)
   refine WP.ite (decide (FastNaf.byte 7 u j=0)) az (fun hz => ?_) (fun hn => ?_)
   · have hz' := (FastNaf.byte_zero_iff 7 u j).mp (of_decide_eq_true hz)
@@ -56,13 +56,12 @@ theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
       intro x hx; jslots
     have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by
       intro x hx; jslots
-    refine WP.mono_syms (jacMixedForward_ok hL.lookup.layout.n hL.lookup.layout.lay hm hC ha
+    refine WP.mono_syms (jacMixedForward_ok hL.lookup.layout.lay hm hC ha
       hL.addApart sl ib vr hOne hA (FastNaf.onCurve_point hC hG 7 u j) cb.point jb zb)
       fun d ⟨ed,kd,id,jd⟩ sd => ?_
     have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
     have edExt := hExternal b d (kd.mono wd) sd cb.external
     have rs : ∀ x∈jacCoords c.K.R,x∈jointSlots c := by intro x hx; jslots
-    rw [←hL.lookup.layout.n]
     refine WP.mono_syms (copyPointFields_ok hL.lookup.layout.lay hL.accumNodup hL.copyApart rs id
       (fun _ hx => List.mem_append_left _ hx)) fun t ⟨et,kt,it,jt⟩ st => ?_
     have wr : ∀ x∈jacCoords c.K.R,x∈jointWork c := by intro x hx; jslots

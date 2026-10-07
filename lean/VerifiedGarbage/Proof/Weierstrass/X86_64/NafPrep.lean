@@ -9,6 +9,30 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
 def nafPrepClob : List Reg := [.rax,.rbx,.rcx,.rdx,.r8,.r9,.r10,.r11,.r12]
 
+/-- What recoding a scalar of `n` words clobbers: the scalar's registers too. -/
+def nafPrepClobN (n : Nat) : List Reg := [.rax,.rbx,.rcx,.rdx]++Naf.sregs n
+
+theorem notin_sregs {n : Nat} {r : Reg} (h : r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14]) :
+    r∉Naf.sregs n :=
+  fun hm => h (List.mem_of_mem_take hm)
+
+/-- Clobbering registers outside the scalar's keeps its value. -/
+theorem nafValN_keep {n : Nat} {rs : List Reg} {s t : State} (hk : ∀ r,r∉rs → t.gpr r=s.gpr r)
+    (hd : ∀ r∈[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14],r∉rs) : nafValN n t=nafValN n s :=
+  regsVal_congr fun r hr => hk r (hd r (List.mem_of_mem_take hr))
+
+theorem notin_clobN {n : Nat} {r : Reg} (h₁ : r∉[Reg.rax,.rbx,.rcx,.rdx])
+    (h₂ : r∉[Reg.r8,.r9,.r10,.r11,.r12,.r13,.r14]) : r∉nafPrepClobN n := fun h => by
+  rcases List.mem_append.mp h with h|h
+  · exact h₁ h
+  · exact notin_sregs h₂ h
+
+theorem mem_clobN {n : Nat} {r : Reg} {pre : List Reg} (hpre : ∀ q∈pre,q∈[Reg.rax,.rbx,.rcx,.rdx])
+    (h : r∈pre++Naf.sregs n) : r∈nafPrepClobN n := by
+  rcases List.mem_append.mp h with h|h
+  · exact List.mem_append_left _ (hpre r h)
+  · exact List.mem_append_right _ h
+
 structure NafPrepState (base : Addr) (size bits k j : Nat) (s : State) : Prop where
   scr : Scr s base size
   value : nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)=Naf5.residual k j

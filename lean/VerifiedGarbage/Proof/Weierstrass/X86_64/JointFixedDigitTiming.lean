@@ -16,31 +16,30 @@ structure JointFixedChecks (c : Joint.Cfg) : Prop where
   read : RegCT [.rdi,.rbx] (.block (Naf.digitRead {c.K with bits:=c.gBits}))
   entry : FixedEntryCT c.K c.tsym
   add : JacMixedChecks c.K c.K.R c.K.E c.K.D
-  copy : ScratchCT (.block (copyPt 4 c.K.R c.K.D))
+  copy : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))
 
 theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (hc : JointFixedChecks c) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jacCoords c.K.E++jointLive c) E)
-      (.seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D) (.block (copyPt 4 c.K.R c.K.D)))
+      (.seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D) (.block (copyPt c.K.M.n c.K.R c.K.D)))
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by intro x hx; jslots
-  apply RelCT.seq (jacMixedForward_relCT hL.lookup.layout.n hL.lookup.layout.lay hm hc.add hL.addApart sl vr hOne)
+  apply RelCT.seq (jacMixedForward_relCT hL.lookup.layout.lay hm hc.add hL.addApart sl vr hOne)
   apply RelCT.exists_
   intro E'
   have cp := copyPoint_relCT (base:=base) (E:=E') hL.lookup.layout.lay
     (o:=c.K.R) (q:=c.K.D) (by intro x hx; jslots)
     (V:=jacCoords c.K.D++(jacCoords c.K.E++jointLive c))
-    (by intro x hx; exact List.mem_append_left _ hx) (by rw [hL.lookup.layout.n]; exact hc.copy)
-  rw [hL.lookup.layout.n] at cp
+    (by intro x hx; exact List.mem_append_left _ hx) hc.copy
   exact cp.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub (fun _ hx =>
     List.mem_append_right _ (List.mem_append_right _ (List.mem_append_right _ hx)))⟩)
 
 theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
-    {G Q A : Point C} {row : JointGeneratorRow C G} {E : Nat → Fe C}
+    {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G} {E : Nat → Fe C}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hj : j<257) (hc : JointFixedChecks c) :
+    (hOne : c.K.one<C.p) (hj : j<64*c.K.M.n+1) (hc : JointFixedChecks c) :
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) A s ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) A t ∧
@@ -48,7 +47,7 @@ theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size 
       (Joint.fixedDigit c)
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have hbytes : c.gBits+j<size := by
-    have hh := hL.lookup.layout.stableBounds (c.gBits,257) (by simp [jointStableRanges])
+    have hh := hL.lookup.layout.stableBounds (c.gBits,64*c.K.M.n+1) (by simp [jointStableRanges])
     dsimp only at hh
     omega
   apply nafDigitBranch_relCT (K:={c.K with bits:=c.gBits}) hbytes hc.read

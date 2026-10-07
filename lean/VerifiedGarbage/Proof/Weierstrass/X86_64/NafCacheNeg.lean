@@ -6,20 +6,20 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
-def CachedPoint (C : Curve) (E : Nat → Fe C) (p : Pt) (dst : Nat) (P : Point C) : Prop :=
-  InvJ C (E p.x) (E p.y) (E p.z) P ∧ E dst=E p.z*E p.z ∧ E (dst+32)=E dst*E p.z
+def CachedPoint (n : Nat) (C : Curve) (E : Nat → Fe C) (p : Pt) (dst : Nat) (P : Point C) : Prop :=
+  InvJ C (E p.x) (E p.y) (E p.z) P ∧ E dst=E p.z*E p.z ∧ E (dst+8*n)=E dst*E p.z
 
 def CachedPost (M : Mod) (base : Addr) (size : Nat) (C : Curve) (Sl : Nat → Prop)
     (V : List Nat) (p : Pt) (dst : Nat) (P : Point C) (s t : State) : Prop :=
-  ProgKeep M base (cachedSlots p dst) s t ∧
-  Inv M base size C.p Sl (cachedSlots p dst++V) (tmv C M.n base t) t ∧
-  CachedPoint C (tmv C M.n base t) p dst P
+  ProgKeep M base (cachedSlots M.n p dst) s t ∧
+  Inv M base size C.p Sl (cachedSlots M.n p dst++V) (tmv C M.n base t) t ∧
+  CachedPoint M.n C (tmv C M.n base t) p dst P
 
 theorem CachedPoint.to_tmv {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv M base size C.p Sl V E s) {p : Pt} {dst : Nat} {P : Point C}
-    (hV : ∀ x∈cachedSlots p dst,x∈V) (hP : CachedPoint C E p dst P) :
-    CachedPoint C (tmv C M.n base s) p dst P := by
+    (hV : ∀ x∈cachedSlots M.n p dst,x∈V) (hP : CachedPoint M.n C E p dst P) :
+    CachedPoint M.n C (tmv C M.n base s) p dst P := by
   unfold CachedPoint tmv
   rw [hI.val _ (hV _ (by simp [cachedSlots,jacCoords])),
     hI.val _ (hV _ (by simp [cachedSlots,jacCoords])),
@@ -30,20 +30,20 @@ theorem CachedPoint.to_tmv {M : Mod} {base : Addr} {size : Nat} {C : Curve}
 theorem CachedPost.prefix {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} {V : List Nat} {p : Pt} {dst : Nat} {P : Point C} {s t u : State}
     (h : CachedPost M base size C Sl V p dst P t u)
-    (hk : ProgKeep M base (cachedSlots p dst) s t) : CachedPost M base size C Sl V p dst P s u :=
+    (hk : ProgKeep M base (cachedSlots M.n p dst) s t) : CachedPost M base size C Sl V p dst P s u :=
   ⟨hk.trans h.1,h.2⟩
 
 theorem negCachedPoint_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod C.p (2^(64*M.n)))
     {p : Pt} {dst zslot : Nat} (hxy : p.x≠p.y) (hzy : p.z≠p.y)
-    (hd2 : dst≠p.y) (hd3 : dst+32≠p.y)
+    (hd2 : dst≠p.y) (hd3 : dst+8*M.n≠p.y)
     {V : List Nat} {E : Nat → Fe C} {s : State}
-    (hI : Inv M base size C.p Sl (cachedSlots p dst++V) E s)
-    (hz : zslot∈cachedSlots p dst++V) (he0 : E zslot=0)
-    {P : Point C} (hP : CachedPoint C E p dst P) :
+    (hI : Inv M base size C.p Sl (cachedSlots M.n p dst++V) E s)
+    (hz : zslot∈cachedSlots M.n p dst++V) (he0 : E zslot=0)
+    {P : Point C} (hP : CachedPoint M.n C E p dst P) :
     WP isa (.block (VG.Impl.Mont.X86_64.sub M p.y zslot p.y)) s
       (CachedPost M base size C Sl V p dst (negPt P) s) := by
-  have hyp : p.y∈cachedSlots p dst++V := by simp [cachedSlots,jacCoords]
+  have hyp : p.y∈cachedSlots M.n p dst++V := by simp [cachedSlots,jacCoords]
   have hS : ∀ x∈(FOp.sub p.y zslot p.y).out::(FOp.sub p.y zslot p.y).ins,Sl x := by
     intro x hx
     simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
@@ -51,7 +51,7 @@ theorem negCachedPoint_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     · exact hI.sl _ hyp
     · exact hI.sl _ hz
     · exact hI.sl _ hyp
-  have hR : ∀ x∈(FOp.sub p.y zslot p.y).ins,x∈cachedSlots p dst++V := by
+  have hR : ∀ x∈(FOp.sub p.y zslot p.y).ins,x∈cachedSlots M.n p dst++V := by
     intro x hx
     simp only [FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl|rfl

@@ -6,7 +6,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
-    (hL : NafLay K size) (hJ : K.J=65) (hm : UnitMod C.p (2^(64*K.M.n)))
+    (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
     (ht : K.tbl<2^31) (hOne : K.one<C.p) (hc : NafTableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
       (Naf.table K) (NafTablePair K C base size 8) := by

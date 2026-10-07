@@ -9,15 +9,15 @@ def pointTransferEnv {F : Type _} (E : Nat → F) (o q : Pt) (x : Nat) : F :=
   if x=o.x then E q.x else if x=o.y then E q.y else if x=o.z then E q.z else E x
 
 theorem Inv.transferPointFields {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hn : M.n=4)
-    {o q : Pt} (hy : o.y=o.x+32) (hz : o.z=o.x+64)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
+    {o q : Pt} (hy : o.y=o.x+8*M.n) (hz : o.z=o.x+16*M.n)
     {V : List Nat} {E : Nat → Fin m} {s t : State}
     (hI : Inv M base size m Sl V E s)
     (hD : ∀ x∈jacCoords o, Sl x) (hQ : ∀ x∈jacCoords q, x∈V)
     (vx : wordsVal t.mem base o.x M.n=wordsVal s.mem base q.x M.n)
     (vy : wordsVal t.mem base o.y M.n=wordsVal s.mem base q.y M.n)
     (vz : wordsVal t.mem base o.z M.n=wordsVal s.mem base q.z M.n)
-    (hk : KeepRegs [.rax,.rcx,.rdx] s t) (ho : Outside base o.x 96 s.mem t.mem) :
+    (hk : KeepRegs [.rax,.rcx,.rdx] s t) (ho : Outside base o.x (24*M.n) s.mem t.mem) :
     ProgKeep M base (jacCoords o) s t ∧
     Inv M base size m Sl (jacCoords o++V) (pointTransferEnv E o q) t := by
   have kp : ProgKeep M base (jacCoords o) s t := by
@@ -27,7 +27,6 @@ theorem Inv.transferPointFields {M : Mod} {base : Addr} {size m : Nat} [NeZero m
     · have hx₀ := hx o.x (by simp [jacCoords])
       have hx₁ := hx o.y (by simp [jacCoords])
       have hx₂ := hx o.z (by simp [jacCoords])
-      rw [hn] at hx₀ hx₁ hx₂
       rw [hy] at hx₁
       rw [hz] at hx₂
       omega

@@ -28,7 +28,7 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hc : NafTableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
       (.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
-        (.block (copyPt 4 (K.tblPt 1) K.P++copyPt 4 K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr))))
+        (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr))))
       (NafTablePair K C base size 1) := by
   have rs : ∀ x∈jacCoords K.R,x∈nafSlots K := by
     intro x hx
@@ -49,11 +49,11 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     have he : x∈winRo K++winOther K ∨ x∈jacCoords (Naf.twice K) := by
       simp only [rcbW,rcbR,jacCoords,winRo,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
       grind
-    exact he.elim (List.mem_append_left _) (nafTblPt_mem K hL.n (by decide) (by decide) x)
+    exact he.elim (List.mem_append_left _) (nafTblPt_mem K (by decide) (by decide) x)
   apply RelCT.seq (doubleFieldPlain_relCT hL.lay hm ds dv hc.double)
-  rw [List.append_assoc,←hL.n]
+  rw [List.append_assoc]
   apply RelCT.block_append
-  apply RelCT.seq (copyPoint_relCT hL.lay (nafTblPt_mem K hL.n (by decide) (by decide))
+  apply RelCT.seq (copyPoint_relCT hL.lay (nafTblPt_mem K (by decide) (by decide))
     (fun x hx => List.mem_append_right _ (pv x hx)) hc.copyFirst)
   apply RelCT.block_append
   apply RelCT.seq (copyPoint_relCT hL.lay rs
@@ -67,9 +67,9 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (fun s _ _ => nafTable_initCounter_ok s)
   exact ctr.mono (fun _ _ hp => ⟨hp,trivial,trivial⟩) (fun _ _ ⟨hp,hs,ht⟩ => ⟨_,hp.sub (by
     intro x hx
-    simp only [nafTableLive,jacCoords,nafTableSlots,Naf.twice,WinCfg.tblPt,hL.n,List.range_succ,List.range_zero,
+    simp only [nafTableLive,jacCoords,nafTableSlots,Naf.twice,WinCfg.tblPt,List.range_succ,List.range_zero,
       List.map_append,List.map_cons,List.map_nil,List.nil_append,Nat.mul_one,Nat.sub_self,Nat.mul_zero,Nat.add_zero,
-      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 32*2=64 from rfl] at hx ⊢
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false,show 8*K.M.n*2=16*K.M.n by omega] at hx ⊢
     grind),hs,ht⟩)
 
 end VG.Proof.Weierstrass.X86_64

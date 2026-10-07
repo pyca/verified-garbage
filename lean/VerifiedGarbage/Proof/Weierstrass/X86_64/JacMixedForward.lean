@@ -7,7 +7,7 @@ open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont VG.Impl.Weierstrass.X86_64 VG
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass Spec.Weierstrass
 
 theorem ofN_forward_partial_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2 ^ (64 * M.n))) {N : List FOp}
     (hN : ∀ op ∈ N, op.out < 9) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
@@ -20,7 +20,7 @@ theorem ofN_forward_partial_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
         (runOps (ofN N S p q o) E) s' ∧
       ∀ i, runOps (ofN N S p q o) E (rcbσ S p q o i) =
         runOps N (fun j => E (rcbσ S p q o j)) i := by
-  refine WP.mono (ForwardField.programB_ok hn hL hm _ hI
+  refine WP.mono (ForwardField.programB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR) fun s' ⟨hk,hi⟩ =>
       ⟨hk.mono ?_,hi,?_⟩
   · intro w hw
@@ -34,7 +34,7 @@ theorem ofN_forward_partial_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 /-- The mixed header's field operations and its two exceptional-case values. -/
 theorem jacMixedForwardHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} {s : State}
@@ -58,7 +58,7 @@ theorem jacMixedForwardHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       · exact Or.inl h
       · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr (hV x h)))
-  refine WP.mono (ofN_forward_partial_ok hn hL hm
+  refine WP.mono (ofN_forward_partial_ok hL hm
     (show ∀ op ∈ jacMixedHeadN, op.out<9 by decide) hA hSl hI hr')
     fun t ⟨kt,it,he⟩ => ⟨kt,it,?_,?_⟩
   · have h := he 3
@@ -70,7 +70,7 @@ theorem jacMixedForwardHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 
 /-- The nonexceptional mixed tail returns Jacobian addition with affine z=1. -/
 theorem jacMixedForwardTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} {s : State}
@@ -111,7 +111,7 @@ theorem jacMixedForwardTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [jacMixedTail,jacTail,FOp.out]
-  refine WP.mono (ForwardField.programB_ok hn hL hm _ hI
+  refine WP.mono (ForwardField.programB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op (he ▸ List.mem_append_right _ hop) x hx)) hr'.2)
     fun t ⟨kt,it⟩ => ⟨kt.mono ?_,?_,?_⟩
   · intro w hw'
@@ -133,7 +133,7 @@ theorem jacMixedForwardTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       (jacMixedN_run (fun i => E (rcbσ S p q o i)))
 
 theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hn : K.M.n=4) (hL : Lay K.M size Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, Sl x)
@@ -155,7 +155,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     apply WP.seq
     refine WP.mono (jacMixedInit_ok hL hSl ia hV) fun b ⟨kb,ib⟩ => ?_
     apply WP.seq
-    refine WP.mono (jacMixedForwardHead_ok hn hL hm hA hSl ib hV) fun c ⟨kc,ic,eh,er⟩ => ?_
+    refine WP.mono (jacMixedForwardHead_ok hL hm hA hSl ib hV) fun c ⟨kc,ic,eh,er⟩ => ?_
     let EH := runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)
     have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
       ((kb.mono (by simp)).trans kc)
@@ -183,7 +183,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
           · exact hSl x (List.mem_append_left _ hx)
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         rw [←hpq]
-        refine WP.mono (jacDoubleForward_ok hn hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+        refine WP.mono (jacDoubleForward_ok hL hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
         exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
           (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
       · intro e ie ke hrz
@@ -206,7 +206,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
         apply hz
         rw [eh]
         simpa only [hAff,Lean.Grind.Semiring.mul_one] using he
-      refine WP.mono (jacMixedForwardTail_ok hn hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
+      refine WP.mono (jacMixedForwardTail_ok hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
       have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
       dsimp only at jt
       rw [hAff,←ht] at jt

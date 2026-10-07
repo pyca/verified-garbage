@@ -6,25 +6,26 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
-structure JointGeneratorRow (C : Curve) (G : Point C) where
+/-- The affine odd multiples `[a]G`, `a < 64`, in Montgomery form for `n` words. -/
+structure JointGeneratorRow (n : Nat) (C : Curve) (G : Point C) where
   x : Nat → Nat
   y : Nat → Nat
   canonical : ∀ a,1≤a → a≤63 → a%2=1 → x a<C.p ∧ y a<C.p
   point : ∀ a,1≤a → a≤63 → a%2=1 →
-    InvJ C (toM C.p (2^256) (x a)) (toM C.p (2^256) (y a)) 1 (mul a G)
+    InvJ C (toM C.p (2^(64*n)) (x a)) (toM C.p (2^(64*n)) (y a)) 1 (mul a G)
 
 def JointGenerator (c : Joint.Cfg) (C : Curve) (base T : Addr) (size : Nat)
-    {G : Point C} (row : JointGeneratorRow C G) (s : State) : Prop :=
-  ∀ a,1≤a → a≤63 → a%2=1 → FixedSource base T c.tsym size a (row.x a) (row.y a) s
+    {G : Point C} (row : JointGeneratorRow c.K.M.n C G) (s : State) : Prop :=
+  ∀ a,1≤a → a≤63 → a%2=1 → FixedSource c.K.M.n base T c.tsym size a (row.x a) (row.y a) s
 
 theorem JointGenerator.keep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : Nat}
-    {G : Point C} {row : JointGeneratorRow C G} {s t : State} {W : List Nat}
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G} {s t : State} {W : List Nat}
     (h : JointGenerator c C base T size row s) (hk : ProgKeep c.K.M base W s t)
     (hs : t.syms=s.syms) (hw : ∀ w∈W,w+8*c.K.M.n≤size) (htmp : c.K.M.tmp+8*c.K.M.n≤size) :
     JointGenerator c C base T size row t := fun a ha hb ho => (h a ha hb ho).keep hk hs hw htmp
 
 theorem JointGenerator.workKeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {size : Nat}
-    {G : Point C} {row : JointGeneratorRow C G} (hL : JointLayout c size)
+    {G : Point C} {row : JointGeneratorRow c.K.M.n C G} (hL : JointLayout c size)
     (htmp : c.K.M.tmp+8*c.K.M.n≤size) :
     ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms →
       JointGenerator c C base T size row s → JointGenerator c C base T size row t := by
@@ -36,9 +37,9 @@ theorem JointGenerator.workKeep {c : Joint.Cfg} {C : Curve} {base T : Addr} {siz
   grind
 
 theorem jointFixedEntry_core_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v j : Nat}
-    {G Q A : Point C} {row : JointGeneratorRow C G} {s : State}
+    {G Q A : Point C} {row : JointGeneratorRow c.K.M.n C G} {s : State}
     (hL : JointLookupLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
-    (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^256) c.K.one=1)
+    (hOne : c.K.one<C.p) (hOneVal : toM C.p (2^(64*c.K.M.n)) c.K.one=1)
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
     (hmag : FastNaf.magnitude 7 u j≠0) (h8 : s.gpr .r8=(FastNaf.byte 7 u j).setWidth 64) :
     WP isa (Joint.fixedEntry c.K c.tsym) s fun t =>

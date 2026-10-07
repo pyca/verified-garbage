@@ -6,18 +6,18 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 
-theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa}
+theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     (R : Nat → State → State → Prop)
-    (step : ∀ j,j<256 → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
+    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
       R j s t ∧ s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0)))) :
-    RelCT isa (R 256) (.loop (Joint.step c double) .ne) (R 0) := by
-  let I := fun j s t => 1≤j ∧ j≤256 ∧ R j s t
+    RelCT isa (R (64*c.K.M.n)) (.loop (Joint.step c double) .ne) (R 0) := by
+  let I := fun j s t => 1≤j ∧ j≤64*c.K.M.n ∧ R j s t
   have hs : ∀ j,RelCT isa (I j) (Joint.step c double) (fun s t =>
       eval .ne s=eval .ne t ∧ (eval .ne s=some false → R 0 s t) ∧
       (eval .ne s=some true → ∃ n<j,I n s t)) := by
     intro j
     by_cases hj : 1≤j
-    · by_cases hb : j≤256
+    · by_cases hb : j≤64*c.K.M.n
       · refine (step (j-1) (by omega)).mono
           (P':=I j) (fun _ _ h => by simpa only [Nat.sub_add_cancel hj] using h.2.2) ?_
         intro s t ⟨hp,sz,tz⟩
@@ -38,14 +38,14 @@ theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa}
           exact ⟨j-1,by omega,by omega,by omega,hp⟩
       · exact RelCT.of_false (fun _ _ h => hb h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
-  exact (RelCT.loop I hs 256).mono (fun _ _ h => ⟨by decide,by decide,h⟩) (fun _ _ h => h)
+  exact (RelCT.loop I hs (64*c.K.M.n)).mono (fun _ _ h => ⟨by omega,by omega,h⟩) (fun _ _ h => h)
 
-theorem jointRun_relCT {c : Joint.Cfg} {double : Prog isa}
+theorem jointRun_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     {Pre : State → State → Prop} (R : Nat → State → State → Prop)
-    (seed : RelCT isa Pre (Joint.digits c) (R 256))
-    (step : ∀ j,j<256 → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
+    (seed : RelCT isa Pre (Joint.digits c) (R (64*c.K.M.n)))
+    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
       R j s t ∧ s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0)))) :
     RelCT isa Pre (Joint.run c double) (R 0) :=
-  RelCT.seq seed (jointLoop_relCT R step)
+  RelCT.seq seed (jointLoop_relCT hn R step)
 
 end VG.Proof.Weierstrass.X86_64

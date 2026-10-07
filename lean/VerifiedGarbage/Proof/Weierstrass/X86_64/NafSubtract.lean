@@ -1,8 +1,10 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.NafPrep
 import VerifiedGarbage.Proof.Weierstrass.Naf5
 import VerifiedGarbage.Proof.X25519.X86_64.Step
+import VerifiedGarbage.Proof.Mont.X86_64.Words
 
-/-! The five-word subtraction used by signed scalar recoding. -/
+/-! The five- and seven-word subtractions used by signed scalar recoding, and the value of the
+scalar's registers (`nafValN`). -/
 namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.X25519.X86_64
@@ -46,6 +48,77 @@ theorem nafSub5_value (a b c d e x mask : BitVec 64) :
   have hb := nafVal5_lt a b c d e
   dsimp only [nafSub5,nafVal5] at hb ⊢
   omega
+
+/-- Seven words: a scalar of six words and its top word (with no numeral
+exponent above 256, which Lean would not evaluate). -/
+abbrev nafVal7 (a b c d e f g : BitVec 64) : Nat :=
+  a.toNat+2^64*(b.toNat+2^64*(c.toNat+2^64*(d.toNat+2^64*(e.toNat+2^64*(f.toNat+2^64*g.toNat)))))
+
+theorem nafVal7_lt (a b c d e f g : BitVec 64) : nafVal7 a b c d e f g<2^256*2^192 := by
+  have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt; have := e.isLt
+  have := f.isLt; have := g.isLt
+  dsimp only [nafVal7]
+  omega
+
+/-- `nafSub5` for seven words. -/
+def nafSub7 (a b c d e f g x mask : BitVec 64) :
+    BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 × BitVec 64 :=
+  let c0 := decide (a.toNat < x.toNat)
+  let c1 := decide (b.toNat < mask.toNat + c0.toNat)
+  let c2 := decide (c.toNat < mask.toNat + c1.toNat)
+  let c3 := decide (d.toNat < mask.toNat + c2.toNat)
+  let c4 := decide (e.toNat < mask.toNat + c3.toNat)
+  let c5 := decide (f.toNat < mask.toNat + c4.toNat)
+  (a-x,b-mask-(BitVec.ofBool c0).setWidth 64,c-mask-(BitVec.ofBool c1).setWidth 64,
+   d-mask-(BitVec.ofBool c2).setWidth 64,e-mask-(BitVec.ofBool c3).setWidth 64,
+   f-mask-(BitVec.ofBool c4).setWidth 64,g-mask-(BitVec.ofBool c5).setWidth 64)
+
+theorem nafSub7_value (a b c d e f g x mask : BitVec 64) :
+    let out := nafSub7 a b c d e f g x mask
+    (nafVal7 out.1 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 out.2.2.2.2.2.1 out.2.2.2.2.2.2 +
+      nafVal7 x mask mask mask mask mask mask)%(2^256*2^192) = nafVal7 a b c d e f g := by
+  have h0 := sub_borrow a x
+  have h1 := sbb_borrow b mask (decide (a.toNat < x.toNat))
+  have h2 := sbb_borrow c mask (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat))
+  have h3 := sbb_borrow d mask (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat))
+  have h4 := sbb_borrow e mask (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat))
+  have h5 := sbb_borrow f mask (decide (e.toNat < mask.toNat + (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat)).toNat))
+  have h6 := sbb_borrow g mask (decide (f.toNat < mask.toNat + (decide (e.toNat < mask.toNat + (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat)).toNat)).toNat))
+  have hb := nafVal7_lt a b c d e f g
+  dsimp only [nafSub7,nafVal7] at hb ⊢
+  omega
+
+/-- The scalar's registers (`Naf.sregs n`: `n` words and a top word) as a number. -/
+abbrev nafValN (n : Nat) (s : State) : Nat := VG.Proof.Mont.X86_64.regsVal s (Naf.sregs n)
+
+theorem nafValN_four (s : State) :
+    nafValN 4 s=nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12) := by
+  simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,nafVal5]
+  omega
+
+theorem nafValN_six (s : State) :
+    nafValN 6 s=nafVal7 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)
+      (s.gpr .r13) (s.gpr .r14) := by
+  simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,nafVal7]
+  omega
+
+/-- The low word of the scalar's registers. -/
+theorem nafValN_r8 (n : Nat) (s : State) :
+    nafValN n s=(s.gpr .r8).toNat+2^64*VG.Proof.Mont.X86_64.regsVal s
+      ([Reg.r9,.r10,.r11,.r12,.r13,.r14].take n) := rfl
+
+/-- Equal values of the scalar's registers are equal registers. -/
+theorem regsVal_inj {s t : State} : ∀ {rs : List Reg},
+    VG.Proof.Mont.X86_64.regsVal s rs=VG.Proof.Mont.X86_64.regsVal t rs →
+      ∀ r∈rs,s.gpr r=t.gpr r
+  | [],_,r,hr => absurd hr List.not_mem_nil
+  | q::qs,h,r,hr => by
+    simp only [VG.Proof.Mont.X86_64.regsVal] at h
+    have := (s.gpr q).isLt; have := (t.gpr q).isLt
+    have hq : s.gpr q=t.gpr q := BitVec.eq_of_toNat_eq (by omega)
+    rcases List.mem_cons.mp hr with rfl|hr
+    · exact hq
+    · exact regsVal_inj (by omega) r hr
 
 theorem nafWord_toNat (k j : Nat) :
     (BitVec.ofInt 64 (Naf5.digit k j)).toNat =

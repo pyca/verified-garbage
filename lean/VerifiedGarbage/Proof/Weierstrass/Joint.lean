@@ -52,11 +52,15 @@ theorem jointPoint_zero (P Q : Point C) (u v : Nat) :
     jointPoint P Q u v 0=add (mul u P) (mul v Q) := by
   simp only [jointPoint,FastNaf.residual_zero]
 
-theorem jointPoint_top (P Q : Point C) {u v : Nat}
-    (hu : u<2^256) (hv : v<2^256) : jointPoint P Q u v 257=.infinity := by
-  rw [jointPoint,FastNaf.residual_zero257 7 hu,FastNaf.residual_zero257 5 hv]
+theorem jointPoint_topB (P Q : Point C) {B u v : Nat}
+    (hu : u<2^B) (hv : v<2^B) : jointPoint P Q u v (B+1)=.infinity := by
+  rw [jointPoint,FastNaf.residual_zero_top 7 hu,FastNaf.residual_zero_top 5 hv]
   have h0 (X : Point C) : mul 0 X=.infinity := by rw [Spec.Weierstrass.mul]; rfl
   rw [h0 P,h0 Q]; rfl
+
+theorem jointPoint_top (P Q : Point C) {u v : Nat}
+    (hu : u<2^256) (hv : v<2^256) : jointPoint P Q u v 257=.infinity :=
+  jointPoint_topB P Q hu hv
 
 /-- The shared double followed by the peer digit and then generator digit is one Horner step. -/
 theorem jointPoint_step (hC : Law C) {P Q : Point C}

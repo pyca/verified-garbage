@@ -14,7 +14,7 @@ structure JointAddLayout (c : Joint.Cfg) (size : Nat) : Prop where
   lookup : JointLookupLayout c size
   addApart : RcbApart c.K.S c.K.R c.K.E c.K.D
   cache2Apart : c.selected∉rcbW c.K.S c.K.D
-  cache3Apart : c.selected+32∉rcbW c.K.S c.K.D
+  cache3Apart : c.selected+8*c.K.M.n∉rcbW c.K.S c.K.D
   accumNodup : (jacCoords c.K.R).Nodup
   copyApart : ∀ x∈jacCoords c.K.D,∀ y∈jacCoords c.K.R,x≠y
 
@@ -25,12 +25,12 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     (hQ : onCurve C Q=true) (hA : onCurve C A=true)
     (h : JointCore c C base size Q u v External A s)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
-    (hj : j<257) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
+    (hj : j<64*c.K.M.n+1) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
     WP isa (Joint.cachedDigit c) s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v External (add A (FastNaf.point C Q 5 v j)) t := by
   have hbytes : c.K.bits+j<size := by
-    have hh := hL.lookup.layout.stableBounds (c.K.bits,257) (by simp [jointStableRanges])
+    have hh := hL.lookup.layout.stableBounds (c.K.bits,64*c.K.M.n+1) (by simp [jointStableRanges])
     dsimp only at hh
     omega
   rw [Joint.cachedDigit]
@@ -40,7 +40,7 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     intro r hr
     rw [List.mem_singleton] at hr
     subst r
-    simp [clob,VG.Impl.Mont.X86_64.acc,hL.lookup.layout.n])
+    simp [clob,VG.Impl.Mont.X86_64.acc])
   have ca := h.of_keeps ka (by decide) (hExternal s a kp sa h.external)
   refine WP.ite (decide (FastNaf.byte 5 v j=0)) az (fun hz => ?_) (fun hn => ?_)
   · have hz' := (FastNaf.byte_zero_iff 5 v j).mp (of_decide_eq_true hz)
@@ -60,16 +60,15 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     apply WP.seq
     have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by
       intro x hx; jslots
-    have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈cachedSlots c.K.E c.selected++jointLive c := by
+    have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by
       intro x hx; jslots
-    refine WP.mono_syms (cachedJacAdd_ok hL.lookup.layout.n hL.lookup.layout.lay hm hC ha
+    refine WP.mono_syms (cachedJacAdd_ok hL.lookup.layout.lay hm hC ha
       hL.addApart hL.cache2Apart hL.cache3Apart (by constructor <;> simp [jointSlots])
       sl ib vr (by constructor <;> simp [cachedSlots]) jb.2.1 jb.2.2 hOne hA
       (FastNaf.onCurve_point hC hQ 5 v j) cb.point jb.1) fun d ⟨ed,kd,id,jd⟩ sd => ?_
     have wd : ∀ x∈rcbW c.K.S c.K.D,x∈jointWork c := by intro x hx; jslots
     have edExt := hExternal b d (kd.mono wd) sd cb.external
     have rs : ∀ x∈jacCoords c.K.R,x∈jointSlots c := by intro x hx; jslots
-    rw [←hL.lookup.layout.n]
     refine WP.mono_syms (copyPointFields_ok hL.lookup.layout.lay hL.accumNodup hL.copyApart rs id
       (fun _ hx => List.mem_append_left _ hx)) fun t ⟨et,kt,it,jt⟩ st => ?_
     have wr : ∀ x∈jacCoords c.K.R,x∈jointWork c := by intro x hx; jslots

@@ -17,19 +17,19 @@ structure Cfg where
   selected : Nat
 
 def prep (c : Cfg) (u v : Nat) : Prog isa :=
-  .seq (FastNaf.prep u c.gBits 7) (FastNaf.prep v c.K.bits 5)
+  .seq (FastNaf.prepN c.K.M.n u c.gBits 7) (FastNaf.prepN c.K.M.n v c.K.bits 5)
 
 def cachedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead c.K)) <|
     .ite .e (.block []) (.seq (Naf.signedCachedEntry c.K c.cache c.selected) <|
       .seq (CachedJac.add c.K c.K.R c.K.E c.K.D c.selected)
-        (.block (copyPt 4 c.K.R c.K.D)))
+        (.block (copyPt c.K.M.n c.K.R c.K.D)))
 
 def fixedDigit (c : Cfg) : Prog isa :=
   .seq (.block (Naf.digitRead {c.K with bits := c.gBits})) <|
     .ite .e (.block []) (.seq (fixedEntry c.K c.tsym) <|
       .seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D)
-        (.block (copyPt 4 c.K.R c.K.D)))
+        (.block (copyPt c.K.M.n c.K.R c.K.D)))
 
 def digits (c : Cfg) : Prog isa := .seq (cachedDigit c) (fixedDigit c)
 
@@ -42,6 +42,6 @@ def run (c : Cfg) (double : Prog isa) : Prog isa :=
 
 def window (c : Cfg) (double : Prog isa) : Prog isa :=
   .seq (Naf.table c.K) <| .seq (Naf.cacheTable c.K.M c.K.tbl c.cache 8) <|
-    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm 256)])) (run c double)
+    .seq (.block (Jacobian.infinity c.K c.K.R ++ [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*c.K.M.n)))])) (run c double)
 
 end VG.Impl.Weierstrass.X86_64.Joint

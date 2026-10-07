@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.NafLayout
 import VerifiedGarbage.Proof.Weierstrass.X86_64.NafState
 import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
 import VerifiedGarbage.Proof.Weierstrass.FastNaf
+import VerifiedGarbage.Proof.Weierstrass.X86_64.NafArith
 
 /-! Stable tables and public digits around the shared Jacobian accumulator. -/
 namespace VG.Proof.Weierstrass.X86_64
@@ -10,30 +11,31 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 open VG.Proof.X25519.X86_64 (Keeps)
 
-def jointCacheSlots (c : Joint.Cfg) : List Nat := (List.range 16).map fun i => c.cache+32*i
+def jointCacheSlots (c : Joint.Cfg) : List Nat := (List.range 16).map fun i => c.cache+8*c.K.M.n*i
 
-def jointSlots (c : Joint.Cfg) : List Nat := nafSlots c.K++[c.selected,c.selected+32]++jointCacheSlots c
+def jointSlots (c : Joint.Cfg) : List Nat :=
+  nafSlots c.K++[c.selected,c.selected+8*c.K.M.n]++jointCacheSlots c
 
 def jointLive (c : Joint.Cfg) : List Nat := winRo c.K++jacCoords c.K.R++nafTblSlots c.K++jointCacheSlots c
 
-def jointWork (c : Joint.Cfg) : List Nat := winOther c.K++[c.selected,c.selected+32]
+def jointWork (c : Joint.Cfg) : List Nat := winOther c.K++[c.selected,c.selected+8*c.K.M.n]
 
 def jointStableFields (c : Joint.Cfg) : List Nat := winRo c.K++nafTblSlots c.K++jointCacheSlots c
 
 def jointStableRanges (c : Joint.Cfg) : List (Nat×Nat) :=
-  (jointStableFields c).map (·,8*c.K.M.n)++[(c.K.bits,257),(c.gBits,257)]
+  (jointStableFields c).map (·,8*c.K.M.n)++[(c.K.bits,64*c.K.M.n+1),(c.gBits,64*c.K.M.n+1)]
 
 structure JointStable (c : Joint.Cfg) (C : Curve) (base : Addr)
     (Q : Point C) (u v : Nat) (s : State) : Prop where
   zero : tmv C c.K.M.n base s c.K.zero=0
   table : ∀ a,1≤a → a≤8 → InvJ C (tmv C c.K.M.n base s (c.K.tblPt a).x)
     (tmv C c.K.M.n base s (c.K.tblPt a).y) (tmv C c.K.M.n base s (c.K.tblPt a).z) (mul (2*a-1) Q)
-  peer : ∀ j<257,s.mem (off base (c.K.bits+j))=FastNaf.byte 5 v j
-  generator : ∀ j<257,s.mem (off base (c.gBits+j))=FastNaf.byte 7 u j
-  cache2 : ∀ i<8,tmv C c.K.M.n base s (c.cache+64*i)=
+  peer : ∀ j<64*c.K.M.n+1,s.mem (off base (c.K.bits+j))=FastNaf.byte 5 v j
+  generator : ∀ j<64*c.K.M.n+1,s.mem (off base (c.gBits+j))=FastNaf.byte 7 u j
+  cache2 : ∀ i<8,tmv C c.K.M.n base s (c.cache+16*c.K.M.n*i)=
     tmv C c.K.M.n base s (c.K.tblPt (i+1)).z*tmv C c.K.M.n base s (c.K.tblPt (i+1)).z
-  cache3 : ∀ i<8,tmv C c.K.M.n base s (c.cache+64*i+32)=
-    tmv C c.K.M.n base s (c.cache+64*i)*tmv C c.K.M.n base s (c.K.tblPt (i+1)).z
+  cache3 : ∀ i<8,tmv C c.K.M.n base s (c.cache+16*c.K.M.n*i+8*c.K.M.n)=
+    tmv C c.K.M.n base s (c.cache+16*c.K.M.n*i)*tmv C c.K.M.n base s (c.K.tblPt (i+1)).z
 
 structure JointCore (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat)
     (Q : Point C) (u v : Nat) (External : State → Prop) (A : Point C) (s : State) : Prop where
@@ -43,26 +45,28 @@ structure JointCore (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat)
   point : InvJ C (tmv C c.K.M.n base s c.K.R.x) (tmv C c.K.M.n base s c.K.R.y)
     (tmv C c.K.M.n base s c.K.R.z) A
 
-theorem jointStable_table (c : Joint.Cfg) (hn : c.K.M.n=4) {a : Nat} (ha : 1≤a) (hb : a≤9)
+theorem jointStable_table (c : Joint.Cfg) {a : Nat} (ha : 1≤a) (hb : a≤9)
     {x : Nat} (hx : x∈jacCoords (c.K.tblPt a)) : x∈jointStableFields c := by
   apply List.mem_append_left
   apply List.mem_append_right
-  simp only [jacCoords,WinCfg.tblPt,hn,List.mem_cons,List.not_mem_nil,or_false] at hx
+  simp only [jacCoords,List.mem_cons,List.not_mem_nil,or_false] at hx
   rcases hx with rfl|rfl|rfl
-  · exact nafTbl_mem c.K ha hb (c:=0) (by decide)
-  · exact nafTbl_mem c.K ha hb (c:=1) (by decide)
-  · exact nafTbl_mem c.K ha hb (c:=2) (by decide)
+  · rw [tblPt_x]; exact nafTbl_slot c.K (by omega)
+  · rw [tblPt_y]; exact nafTbl_slot c.K (by omega)
+  · rw [tblPt_z]; exact nafTbl_slot c.K (by omega)
 
 theorem jointStable_cache2 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
-    c.cache+64*i∈jointStableFields c :=
-  List.mem_append_right _ (List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega),by omega⟩)
+    c.cache+16*c.K.M.n*i∈jointStableFields c :=
+  List.mem_append_right _ (List.mem_map.mpr ⟨2*i,List.mem_range.mpr (by omega),
+    by rw [slot_two_mul]⟩)
 
 theorem jointStable_cache3 (c : Joint.Cfg) {i : Nat} (hi : i<8) :
-    c.cache+64*i+32∈jointStableFields c :=
-  List.mem_append_right _ (List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega),by omega⟩)
+    c.cache+16*c.K.M.n*i+8*c.K.M.n∈jointStableFields c :=
+  List.mem_append_right _ (List.mem_map.mpr ⟨2*i+1,List.mem_range.mpr (by omega),
+    by rw [slot_two_mul_add,Nat.add_assoc]⟩)
 
 theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
-    {s t : State} {W : List Nat} (h : JointStable c C base Q u v s) (hn : c.K.M.n=4)
+    {s t : State} {W : List Nat} (h : JointStable c C base Q u v s)
     (hk : ProgKeep c.K.M base W s t)
     (hb : ∀ r∈jointStableRanges c,r.1+r.2≤2^64)
     (hsep : ∀ r∈jointStableRanges c,∀ w∈W.map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)],
@@ -73,7 +77,7 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
       tmv C c.K.M.n base t x=tmv C c.K.M.n base s x := by
     unfold tmv
     rw [hk.unch.wordsVal (hsep _ (hrange x hx)) (hb _ (hrange x hx))]
-  have hbits (d : Nat) (ho : (d,257)∈jointStableRanges c) (j : Nat) (hj : j<257) :
+  have hbits (d : Nat) (ho : (d,64*c.K.M.n+1)∈jointStableRanges c) (j : Nat) (hj : j<64*c.K.M.n+1) :
       t.mem (off base (d+j))=s.mem (off base (d+j)) := by
     apply hk.unch.byte
     · intro w hw
@@ -83,9 +87,9 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
   refine ⟨?_,?_,?_,?_,?_,?_⟩
   · rw [hf c.K.zero (by simp [jointStableFields,winRo]),h.zero]
   · intro a ha hb
-    rw [hf _ (jointStable_table c hn ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c hn ha (by omega) (by simp [jacCoords])),
-      hf _ (jointStable_table c hn ha (by omega) (by simp [jacCoords]))]
+    rw [hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
+      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords])),
+      hf _ (jointStable_table c ha (by omega) (by simp [jacCoords]))]
     exact h.table a ha hb
   · intro j hj
     rw [hbits c.K.bits (by simp [jointStableRanges]) j hj]
@@ -94,11 +98,11 @@ theorem JointStable.keep {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C}
     rw [hbits c.gBits (by simp [jointStableRanges]) j hj]
     exact h.generator j hj
   · intro i hi
-    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c hn (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
+    rw [hf _ (jointStable_cache2 c hi),hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
     exact h.cache2 i hi
   · intro i hi
     rw [hf _ (jointStable_cache3 c hi),hf _ (jointStable_cache2 c hi),
-      hf _ (jointStable_table c hn (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
+      hf _ (jointStable_table c (a:=i+1) (by omega) (by omega) (by simp [jacCoords]))]
     exact h.cache3 i hi
 
 theorem JointStable.of_mem {c : Joint.Cfg} {C : Curve} {base : Addr} {Q : Point C} {u v : Nat}
@@ -127,7 +131,7 @@ theorem JointCore.of_keeps {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v :
 
 structure JointLayout (c : Joint.Cfg) (size : Nat) : Prop where
   lay : Lay c.K.M size (·∈jointSlots c)
-  n : c.K.M.n=4
+  n : c.K.M.n=4 ∨ c.K.M.n=6
   stableBounds : ∀ r∈jointStableRanges c,r.1+r.2≤size
   stableSep : ∀ r∈jointStableRanges c,∀ w∈(jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)],
     r.1+r.2≤w.1 ∨ w.1+w.2≤r.1
@@ -143,7 +147,7 @@ theorem JointCore.next {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v : Nat
     (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) E t)
     (hp : InvJ C (E c.K.R.x) (E c.K.R.y) (E c.K.R.z) B) (ht : External t) :
     JointCore c C base size Q u v External B t :=
-  ⟨hi.to_tmv,h.stable.keep hL.n hk (fun r hr => by
+  ⟨hi.to_tmv,h.stable.keep hk (fun r hr => by
     have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,
     ht,hi.point_tmv (jointLive_R c) hp⟩
 
@@ -155,7 +159,7 @@ theorem JointCore.of_write {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v :
     (hn : ∀ x∈jacCoords c.K.R,x∉W)
     (hi : Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) E t) (ht : External t) :
     JointCore c C base size Q u v External A t :=
-  ⟨hi.to_tmv,h.stable.keep hL.n (hk.mono hw) (fun r hr => by
+  ⟨hi.to_tmv,h.stable.keep (hk.mono hw) (fun r hr => by
     have := hL.stableBounds r hr; have := h.field.scr.nowrap; omega) hL.stableSep,ht,
     hk.invJ hL.lay h.field.scr hsl (fun x hx => h.field.sl x (jointLive_R c x hx)) hn h.point⟩
 

@@ -59,7 +59,7 @@ theorem infinity_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
   grind
 
 theorem ofN_forward_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2^(64*M.n))) {N : List FOp} (hN : NumOk N)
     {S : RcbSlots} {p q o : Pt}
     (hSl : ∀ x∈rcbW S o++rcbR S p q,Sl x)
@@ -69,7 +69,7 @@ theorem ofN_forward_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (ofN N S p q o) E)) := by
   apply fieldProgram_relCT hc
   intro s hi
-  refine WP.mono (ForwardField.programB_ok hn hL hm _ hi
+  refine WP.mono (ForwardField.programB_ok hL hm _ hi
     (fun op hop x hx => hSl x (ofN_slots op hop x hx))
     (readsOk_mono (ofN_readsOk hN S p q o) hV)) fun _ ht => ht.2.sub ?_
   intro x hx
@@ -79,7 +79,7 @@ theorem ofN_forward_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
   · exact Or.inl hx
 
 theorem doubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : M.n=4) (hL : Lay M size Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p o : Pt}
     (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V)
@@ -88,6 +88,6 @@ theorem doubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E)) := by
   have he : dblJMul S p o=ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
   rw [he] at hc ⊢
-  exact ofN_forward_relCT hn hL hm (dblJChoiceN_ok true) hSl hV hc
+  exact ofN_forward_relCT hL hm (dblJChoiceN_ok true) hSl hV hc
 
 end VG.Proof.Weierstrass.X86_64

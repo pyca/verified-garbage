@@ -8,7 +8,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64
 
 def code (M : Mod) (op : FOp) : List Instr :=
   match op with
-  | .add o a b => if a=b then double4 M o a else opCode M op
+  | .add o a b => if a=b ∧ M.n=4 then double4 M o a else opCode M op
   | _ => opCode M op
 
 def outputRegs (M : Mod) : FOp → List Reg
@@ -34,6 +34,6 @@ def program (M : Mod) (cs : Forward.Cache) (ops : List FOp) : Prog isa :=
 
 /-- Keep the same field operations on baseline; forward between them on ADX. -/
 def programB (M : Mod) (ops : List FOp) : Prog isa :=
-  if M.adx then program M [] ops else blocks (ops.map (code M))
+  if M.adx ∧ M.n=4 then program M [] ops else blocks (ops.map (code M))
 
 end VG.Impl.Weierstrass.X86_64.ForwardField

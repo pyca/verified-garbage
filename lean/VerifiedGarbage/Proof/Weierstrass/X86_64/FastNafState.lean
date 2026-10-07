@@ -7,11 +7,14 @@ namespace VG.Proof.Weierstrass.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Mont.X86_64
 open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.X25519.X86_64
 
-structure FastPrepState (base : Addr) (size bits w k j : Nat) (s : State) : Prop where
+/-- The recoder of a scalar `k` of `n` words after `j` digits: the residual in
+the scalar's registers, the index in `rbx`, and the digits so far (the rest of
+the `64 n + 1` bytes zero). -/
+structure FastPrepState (n : Nat) (base : Addr) (size bits w k j : Nat) (s : State) : Prop where
   scr : Scr s base size
-  value : nafVal5 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)=FastNaf.residual w k j
+  value : nafValN n s=FastNaf.residual w k j
   count : s.gpr .rbx=BitVec.ofNat 64 j
-  digits : ∀ i<257,s.mem (off base (bits+i))=if i<j then FastNaf.byte w k i else 0
+  digits : ∀ i<64*n+1,s.mem (off base (bits+i))=if i<j then FastNaf.byte w k i else 0
 
 theorem fastByte_word (w k j : Nat) :
     (BitVec.ofInt 64 (FastNaf.digit w k j)).setWidth 8=FastNaf.byte w k j := by
@@ -24,7 +27,7 @@ theorem fastByte_word (w k j : Nat) :
     simp only [ite_true]; omega
 
 theorem fastStore_ok {s : State} {base : Addr} {size bits w k j : Nat}
-    (hs : Scr s base size) (hb : bits+264≤size) (hj : j<257)
+    (hs : Scr s base size) (hb : bits+j<size)
     (hc : s.gpr .rbx=BitVec.ofNat 64 j)
     (hd : s.gpr .rcx=BitVec.ofInt 64 (FastNaf.digit w k j)) :
     WP isa (.block [.store8 (tbl bits) .rcx]) s fun t =>
@@ -50,16 +53,23 @@ theorem fastAdvance_ok (s : State) {j d : Nat} (hd : d=1 ∨ d=5 ∨ d=7)
   · simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_arithFlags,RegUpd.gpr_setReg,hr,ite_false]
 
-theorem fastCompare_ok (s : State) {j : Nat} (hj : j≤263)
+private theorem cmp_sext {v : Nat} (hv : v<2^31) :
+    (BitVec.ofNat 32 v).signExtend 64=BitVec.ofNat 64 v := by
+  rw [BitVec.signExtend_eq_setWidth_of_msb_false (BitVec.msb_eq_false_iff_two_mul_lt.mpr (by
+      rw [BitVec.toNat_ofNat]; omega))]
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_setWidth,BitVec.toNat_ofNat]
+  rw [Nat.mod_eq_of_lt (by omega : v<2^32),Nat.mod_eq_of_lt (by omega : v<2^64)]
+
+theorem fastCompare_ok (s : State) {n j : Nat} (hn : 64*n+1<2^31) (hj : j<2^64)
     (hc : s.gpr .rbx=BitVec.ofNat 64 j) :
-    WP isa (.block [.alu .cmp .rbx (.imm 257)]) s fun t =>
-      t.cf=some (decide (j<257)) ∧ Keeps [] s t := by
+    WP isa (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (64*n+1)))]) s fun t =>
+      t.cf=some (decide (j<64*n+1)) ∧ Keeps [] s t := by
   apply WP.of_runBlock
   simp only [runBlock_cons,runStep_some,runBlock_nil,exec,execAlu,readSrc,
-    Option.bind_some,RegUpd.cf_arithFlags,Option.some.injEq,exists_eq_left']
+    Option.bind_some,RegUpd.cf_arithFlags,Option.some.injEq,exists_eq_left',cmp_sext hn]
   refine ⟨?_,fun _ _ => rfl,rfl,rfl,rfl⟩
-  simp only [hc,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (show j<2^64 from by omega)]
-  rfl
+  simp only [hc,BitVec.toNat_ofNat,Nat.mod_eq_of_lt hj,Nat.mod_eq_of_lt (show 64*n+1<2^64 by omega)]
 
 private theorem clearWords_ok {s : State} {base : Addr} {size bits n : Nat}
     (hs : Scr s base size) (hb : bits+8*n≤size) :
@@ -67,30 +77,82 @@ private theorem clearWords_ok {s : State} {base : Addr} {size bits n : Nat}
       wordsVal t.mem base bits n=0 ∧ KeepRegs [.rax] s t ∧ Outside base bits (8*n) s.mem t.mem :=
   setConst_ok hs hb (Nat.two_pow_pos _)
 
-theorem fastClear_ok {s : State} {base : Addr} {size bits : Nat}
-    (hs : Scr s base size) (hb : bits+264≤size) :
-    WP isa (.block (setConst 33 bits 0)) s fun t =>
-      (∀ i<264,t.mem (off base (bits+i))=0) ∧ KeepRegs [.rax] s t ∧ Outside base bits 264 s.mem t.mem := by
-  refine WP.mono (clearWords_ok (n:=33) hs hb) fun t ⟨ht,kt,ot⟩ => ⟨?_,kt,ot⟩
-  intro i hi
-  apply BitVec.eq_of_getLsbD_eq
-  intro b hb
-  rw [testBit_byte t.mem base (n:=33) (by omega) hb,ht]
-  simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
+theorem fastClear_ok {s : State} {base : Addr} {size n bits : Nat}
+    (hs : Scr s base size) (hb : bits+64*n+8≤size) :
+    WP isa (.block (setConst (8*n+1) bits 0)) s fun t =>
+      (∀ i<64*n+8,t.mem (off base (bits+i))=0) ∧ KeepRegs [.rax] s t ∧
+        Outside base bits (64*n+8) s.mem t.mem := by
+  refine WP.mono (clearWords_ok (n:=8*n+1) hs (by omega)) fun t ⟨ht,kt,ot⟩ => ⟨?_,kt,?_⟩
+  · intro i hi
+    apply BitVec.eq_of_getLsbD_eq
+    intro b hb
+    rw [testBit_byte t.mem base (n:=8*n+1) (by omega) hb,ht]
+    simp only [BitVec.ofNat_eq_ofNat,Nat.zero_testBit,BitVec.getLsbD_zero]
+  · rwa [show 8*(8*n+1)=64*n+8 by omega] at ot
 
-theorem fastPrepInit_ok {s : State} {base : Addr} {size src bits w : Nat}
-    (hs : Scr s base size) (hsrc : src+32≤size) (hb : bits+264≤size) :
-    WP isa (.block (Naf.init src++setConst 33 bits 0)) s fun t =>
-      FastPrepState base size bits w (wordsVal s.mem base src 4) 0 t ∧
-      KeepRegs nafPrepClob s t ∧ Outside base bits 264 s.mem t.mem := by
+theorem initN_four (src : Nat) : Naf.initN 4 src=Naf.init src := rfl
+
+theorem initN_six (src : Nat) : Naf.initN 6 src=
+    loads [.r8,.r9,.r10,.r11,.r12,.r13] src++
+      ([.mov32 .r14 (.imm 0),.mov32 .rbx (.imm 0)] : List Instr) := rfl
+
+/-- Load a scalar of `n` words, a zero top word and a zero index. -/
+theorem nafPrepInitN_ok {s : State} {base : Addr} {size n src : Nat} (hn : n=4 ∨ n=6)
+    (hs : Scr s base size) (hsrc : src+8*n≤size) :
+    WP isa (.block (Naf.initN n src)) s fun t =>
+      nafValN n t=wordsVal s.mem base src n ∧ t.gpr .rbx=BitVec.ofNat 64 0 ∧
+      KeepRegs (nafPrepClobN n) s t ∧ t.mem=s.mem ∧ Scr t base size := by
+  rcases hn with rfl|rfl
+  · rw [initN_four,Naf.init,WP.block_append_iff]
+    refine WP.mono (loads_ok [.r8,.r9,.r10,.r11] hs hsrc (by simp [Fresh])) fun a ⟨va,ka⟩ => ?_
+    have sa := hs.of_keeps ka (by decide)
+    apply WP.of_runBlock
+    simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
+      Option.map_some,Option.some.injEq,exists_eq_left']
+    refine ⟨?_,rfl,?_,ka.2.1,⟨sa.rdi,sa.wr,sa.nowrap⟩⟩
+    · simp only [nafValN_four,nafVal5,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
+      change _+2^256*0=wordsVal s.mem base src 4
+      simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
+      omega
+    · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
+      have h12 : r≠.r12 := fun h => hr (h ▸ (by decide))
+      have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
+      simp only [RegUpd.gpr_setReg,h12,hbx,ite_false]
+      exact ka.1 r (fun h => hr ((by decide : ∀ q∈[Reg.r8,.r9,.r10,.r11],q∈nafPrepClobN 4) r h))
+  · rw [initN_six,WP.block_append_iff]
+    refine WP.mono (loads_ok [.r8,.r9,.r10,.r11,.r12,.r13] hs hsrc (by simp [Fresh]))
+      fun a ⟨va,ka⟩ => ?_
+    have sa := hs.of_keeps ka (by decide)
+    apply WP.of_runBlock
+    simp only [runBlock_cons,runStep_some,runBlock_nil,exec,readSrc32,State.setReg32,
+      Option.map_some,Option.some.injEq,exists_eq_left']
+    refine ⟨?_,rfl,?_,ka.2.1,⟨sa.rdi,sa.wr,sa.nowrap⟩⟩
+    · simp only [nafValN_six,nafVal7,RegUpd.gpr_setReg,ite_true,ite_false,reduceCtorEq]
+      change _+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*(_+2^64*0)))))=wordsVal s.mem base src 6
+      simp only [regsVal,List.length_cons,List.length_nil,Nat.reduceAdd] at va
+      omega
+    · refine ⟨fun r hr => ?_,ka.2.2.1,ka.2.2.2⟩
+      have h14 : r≠.r14 := fun h => hr (h ▸ (by decide))
+      have hbx : r≠.rbx := fun h => hr (h ▸ (by decide))
+      simp only [RegUpd.gpr_setReg,h14,hbx,ite_false]
+      exact ka.1 r (fun h => hr ((by decide : ∀ q∈[Reg.r8,.r9,.r10,.r11,.r12,.r13],
+        q∈nafPrepClobN 6) r h))
+
+theorem fastPrepInit_ok {s : State} {base : Addr} {size n src bits w : Nat} (hn : n=4 ∨ n=6)
+    (hs : Scr s base size) (hsrc : src+8*n≤size) (hb : bits+64*n+8≤size) :
+    WP isa (.block (Naf.initN n src++setConst (8*n+1) bits 0)) s fun t =>
+      FastPrepState n base size bits w (wordsVal s.mem base src n) 0 t ∧
+      KeepRegs (nafPrepClobN n) s t ∧ Outside base bits (64*n+8) s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (nafPrepInit_ok (bits:=bits) hs hsrc) fun a ⟨ia,ka,ma⟩ => ?_
-  refine WP.mono (fastClear_ok ia.scr hb) fun t ⟨zt,kt,ot⟩ => ?_
-  refine ⟨⟨ia.scr.of_keepRegs kt (by decide),?_,?_,?_⟩,ka.trans (kt.mono (by decide)),?_⟩
-  · rw [kt.gpr .r8 (by decide),kt.gpr .r9 (by decide),kt.gpr .r10 (by decide),
-      kt.gpr .r11 (by decide),kt.gpr .r12 (by decide),ia.value,FastNaf.residual_zero]
-    rfl
-  · exact (kt.gpr .rbx (by decide)).trans ia.count
+  refine WP.mono (nafPrepInitN_ok hn hs hsrc) fun a ⟨va,ca,ka,ma,sa⟩ => ?_
+  refine WP.mono (fastClear_ok sa hb) fun t ⟨zt,kt,ot⟩ => ?_
+  have hv : nafValN n t=nafValN n a :=
+    VG.Proof.Mont.X86_64.regsVal_congr fun r hr => kt.gpr r (by
+      rcases hn with rfl|rfl <;> revert r <;> decide)
+  refine ⟨⟨sa.of_keepRegs kt (by decide),?_,?_,?_⟩,ka.trans (kt.mono (by
+    rcases hn with rfl|rfl <;> decide)),?_⟩
+  · rw [hv,va,FastNaf.residual_zero]
+  · exact (kt.gpr .rbx (by decide)).trans ca
   · intro i hi
     simpa only [Nat.not_lt_zero,ite_false] using zt i (by omega)
   · rw [ma] at ot

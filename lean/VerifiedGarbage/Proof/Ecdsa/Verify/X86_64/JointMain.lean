@@ -8,16 +8,16 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdh.X86_64 (PX PY)
 
-theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg}
-    (hc : CfgOk c) (hC : Law c.C) (hn : c.n=4)
+theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg} {double : Prog isa}
+    (hc : CfgOk c) (hC : Law c.C)
     (hpub : c.pubVerify=true) (hnp : c.C.n<c.C.p) (hpn : c.C.p≤2*c.C.n)
     {s₀ : State} (hp : VPre c s₀)
     (hpoints : ∀ {s : State} {g : Reg → BitVec 64} (_h : Mid c s₀ (s₀.gpr .rcx) g s)
       {Q : Point c.C}, onCurve c.C Q=true →
       Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
         (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PY)) (tmv c.C c.n (s₀.gpr .rcx) s (c.sl ONEP)) Q →
-      WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j) s (JointPointsPost c s₀ s g Q)) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j) s₀ fun t =>
+      WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double) s (JointPointsPost c s₀ s g Q)) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double) s₀ fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s₀.gpr r) ∧ VPost c s₀ t := by
   unfold Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
@@ -30,7 +30,7 @@ theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg}
     exact peerPt_rep hC _ _ _ hM.px hM.py
   apply WP.seq
   refine WP.mono (hpoints hM hQ hRep) fun s₃ hP => ?_
-  refine WP.mono (jointTail_ok hc hC hn hpub hnp hpn hM hP.input hP.point) fun t ⟨saved,post⟩ => ?_
+  refine WP.mono (jointTail_ok hc hC hpub hnp hpn hM hP.input hP.point) fun t ⟨saved,post⟩ => ?_
   exact ⟨fun r hr => (saved r hr).trans (hg r hr),post⟩
 
 end VG.Proof.Ecdsa.Verify.X86_64
