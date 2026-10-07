@@ -66,8 +66,8 @@ theorem p224_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p224 where
       by decide +kernel]
     exact Proof.P224.prime_26959946667150639794667015087019630673557916260026308143510066298881)
   inv_p := InvOk.ofMod (by decide +kernel) (by decide)
-  inv_n := fun h => absurd h (by decide)
-  chain_n := fun _ => by decide +kernel
+  inv_n := fun _ => ⟨hI Proof.P224.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p224 s := by
