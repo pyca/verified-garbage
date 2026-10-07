@@ -25,7 +25,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time \
       SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a \
       balanced four-byte CALL frame. Field inversion uses a fixed chain for `p - 2` (255 squares and 18 other \
-      multiplications); scalar inversion uses square-and-always-multiply over `n - 2`. The signature (or zeros) is selected by a mask, so \
+      multiplications); scalar inversion uses a fixed chain for the upper 128 bits of `n - 2` \
+      and square-and-always-multiply for the lower 128 bits (390 multiplications total). The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."])
     code := Impl.Ecdsa.X86.signP256Comb
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
@@ -42,7 +43,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P256.curve) : List Artifact := 
       Its position-independent table address uses a balanced four-byte CALL frame. The \
       variable-base product `[v]Q` uses 65 signed four-bit windows with Jacobian doublings \
       and constant-time scans of eight projective points, followed by a complete addition of the \
-      two products. Scalar inversion uses square-and-always-multiply. \
+      two products. Scalar inversion uses a fixed chain for the upper 128 bits of `n - 2` \
+      and square-and-always-multiply for the lower 128 bits (390 multiplications total). \
       The final check avoids a field inversion: it compares `X = rZ`, or `X = (r+n)Z` when \
       `r+n < p`, and rejects `Z = 0`. Invalid inputs follow the same path and the result is selected by a mask; timing \
       depends only on pointers and the static table address."])

@@ -192,7 +192,7 @@ def pointsComb : Prog isa := if c.n = 4 then pointsWindow c else pointsCombLadde
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) <| .seq (points c) <|
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) <| .seq (points c) <|
   .seq c.pPow (final c)
 
 /-- `vg_ecdsa_<curve>_verify`. -/
@@ -208,7 +208,7 @@ def combFront : Prog isa :=
 
 /-- Scalar arithmetic before multiplying the two points. -/
 def combMid : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN c.wk) <| .seq (uv c) (.block [])
+  .seq (scalars c) <| .seq c.nPow <| .seq (uv c) (.block [])
 
 /-- Verification body using the comb for its fixed-base multiplication. -/
 def verifyCombBody : Prog isa :=
