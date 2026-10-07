@@ -217,10 +217,18 @@ def collect_this_run():
     jobs = [json.loads(line) for line in gh(f"repos/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs?per_page=100",
                                             "--paginate", "--jq", ".jobs[] | tojson").splitlines()]
     lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"]
+
+    def log(j):
+        # A job just cancelled may have no log yet: the rest still count.
+        try:
+            return gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace")
+        except subprocess.CalledProcessError:
+            print(f"No log for {j['name']}", file=sys.stderr)
+            return None
+
     # A few MB in all; requests one at a time would wait on each other.
     with concurrent.futures.ThreadPoolExecutor(8) as pool:
-        texts = pool.map(lambda j: gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace"), lean)
-        logs = {j["name"]: t for j, t in zip(lean, texts)}
+        logs = {j["name"]: t for j, t in zip(lean, pool.map(log, lean)) if t is not None}
     return collect(run, jobs, logs)
 
 

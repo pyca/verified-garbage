@@ -1,6 +1,10 @@
 """The run's metrics (ci_metrics.py) from its jobs and their logs; no API."""
 
+import json
+import os
+import subprocess
 import unittest
+from unittest import mock
 
 import ci_metrics
 
@@ -87,6 +91,29 @@ class Collect(unittest.TestCase):
         m = ci_metrics.collect({"id": 7}, [api_job("Coverage", "00:10", "01:00")], {})
         self.assertIsNone(m["lean"]["plan"])
         self.assertIn("No plan", ci_metrics.summary(m))
+
+
+class CollectThisRun(unittest.TestCase):
+    def test_a_missing_log(self):
+        # The plan's log comes; a cancelled shard's does not.
+        def gh(path, *args):
+            if path.endswith("/jobs/2/logs"):
+                raise subprocess.CalledProcessError(1, "gh")
+            if path.endswith("/jobs/1/logs"):
+                return PLAN_LOG.encode()
+            if "/jobs?" in path:
+                return "\n".join(json.dumps(dict(j, id=i, status="completed")) for i, j in enumerate(
+                    [api_job("Lean: plan and build", "00:10", "00:40"), api_job("Lean: shard (1)", "01:00", "02:00")],
+                    1)).encode()
+            return json.dumps({"id": 7}).encode()
+
+        env = {"GH_REPO": "o/r", "GITHUB_RUN_ID": "7", "GITHUB_RUN_ATTEMPT": "1", "BASE_REF": ""}
+        with mock.patch.object(ci_metrics, "gh", gh), mock.patch.dict(os.environ, env), \
+                mock.patch("sys.stderr"):
+            m = ci_metrics.collect_this_run()
+        self.assertEqual(m["lean"]["plan"]["stale"], 1168)
+        self.assertEqual([j["name"] for j in m["lean"]["jobs"]], ["Lean: plan and build"])
+        self.assertEqual(len(m["jobs"]), 2)
 
 
 if __name__ == "__main__":
