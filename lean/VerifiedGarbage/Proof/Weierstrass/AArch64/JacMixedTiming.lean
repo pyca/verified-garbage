@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Timing
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAddTiming
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAdd
 
@@ -12,7 +14,7 @@ structure JacMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
   init : FieldCT (.block (copy K.M.n K.S.t2 p.x ++ copy K.M.n K.S.t4 p.y))
   head : FieldCT (fprogB K.M (jacMixedHead K.S p q))
   tail : FieldCT (fprogB K.M (jacMixedTail K.S p q o))
-  double : FieldCT (fprogB K.M (dblJMul K.S p o))
+  double : FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S p o)
   infinity : FieldCT (.block (Jacobian.infinity K o))
 
 theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
@@ -75,9 +77,7 @@ theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        have he := dblJChoice_eq true K.S p o
-        have hd := ofN_relCT (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hm (dblJChoiceN_ok true) hdA hdSl hv (by rw [←he]; exact hc.double)
-        rw [←he] at hd
+        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hm hdA hdSl hv hc.double
         exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL hAl os hOne hc.infinity).mono

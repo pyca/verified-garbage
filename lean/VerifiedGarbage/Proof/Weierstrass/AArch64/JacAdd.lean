@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
@@ -427,7 +428,7 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             · exact hSl x (List.mem_append_left _ hx)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
-          refine WP.mono (jacDouble_ok hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
         · intro e ie ke hrz

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Production
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacAdd
 import VerifiedGarbage.Proof.Weierstrass.Comb
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Jacobian
@@ -17,10 +18,10 @@ theorem jacDoubleMultiple_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
     (hV : ∀ x ∈ rcbR S p p, x ∈ V) {P : Point C} {e : Nat}
     (hP : onCurve C P = true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) (mul e P)) :
-    WP isa (fprogB M (dblJMul S p o)) s fun t =>
+    WP isa (VG.Impl.P256.VerifyDouble.double M S p o) s fun t =>
       ∃ E', ProgKeep M base W s t ∧ Inv M base size C.p Sl V E' t ∧
       InvJ C (E' o.x) (E' o.y) (E' o.z) (mul (2*e) P) := by
-  refine WP.mono (jacDouble_ok hL hAl hm hC ha hA hSl hI hV (hC.onCurve_mul hP e) hJ)
+  refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hA hSl hI hV (hC.onCurve_mul hP e) hJ)
     fun t ⟨hk,hi,hj⟩ => ⟨_,hk.mono hW,hi.sub (fun _ hx => List.mem_append_right _ hx),?_⟩
   rw [hC.add_mul_mul hP,show e+e=2*e by omega] at hj
   exact hj
@@ -55,11 +56,11 @@ theorem jacFive_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     intro x hx; apply hV x
     simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
     grind
-  change WP isa (.seq (fprogB K.M (dblJMul K.S K.R K.D))
-    (.seq (fprogB K.M (dblJMul K.S K.D K.R))
-    (.seq (fprogB K.M (dblJMul K.S K.R K.D))
-    (.seq (fprogB K.M (dblJMul K.S K.D K.R))
-    (.seq (fprogB K.M (dblJMul K.S K.R K.D))
+  change WP isa (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R)
+    (.seq (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
     (.seq (.block (copyPt 4 K.R K.D)) (.block []))))))) s _
   apply WP.seq
   refine WP.mono (jacDoubleMultiple_ok (W := rcbW K.S K.D ++ rcbW K.S K.R) hL hAl hm hC ha hRD hsr

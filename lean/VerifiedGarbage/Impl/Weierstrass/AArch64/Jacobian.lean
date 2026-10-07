@@ -1,3 +1,4 @@
+import VerifiedGarbage.Impl.P256.VerifyDouble
 import VerifiedGarbage.Impl.Weierstrass.JacAdd
 import VerifiedGarbage.Impl.Weierstrass.AArch64.Window
 import VerifiedGarbage.Impl.Weierstrass.AArch64.TComb
@@ -26,7 +27,7 @@ def jacAdd (K : WinCfg) (p q o : Pt) : Prog isa :=
   .seq (.block (zeroMask K.M.n K.S.t3)) <|
   .ite (.nonzero .x .x2)
     (.seq (.block (zeroMask K.M.n K.S.t5)) <|
-      .ite (.nonzero .x .x2) (fprogB K.M (dblJMul K.S p o)) (.block (infinity K o)))
+      .ite (.nonzero .x .x2) (VG.Impl.P256.VerifyDouble.double K.M K.S p o) (.block (infinity K o)))
     (fprogB K.M (jacTail K.S p q o))
 
 def tablePt (K : WinCfg) (i : Nat) : Pt :=
@@ -43,7 +44,7 @@ def jacTreeFetch (K : WinCfg) (h : Nat) : List Instr := [.movz .x .x17 (BitVec.o
 def jacTreeArithmetic (K : WinCfg) (h : Nat) : Prog isa :=
   .seq (.block [.movz .x .x5 1 0, .logic .and .x .x2 .x19 .x5]) <|
     .ite (.nonzero .x .x2)
-      (.seq (.block (jacTreeFetch K h)) (fprogB K.M (dblJMul K.S K.E K.D)))
+      (.seq (.block (jacTreeFetch K h)) (VG.Impl.P256.VerifyDouble.double K.M K.S K.E K.D))
       (jacAdd K K.R K.P K.D)
 
 def jacTreeStep (K : WinCfg) (h : Nat) : Prog isa :=
@@ -63,7 +64,7 @@ def publicEntry (K : WinCfg) : List Instr :=
 
 def jacDoubles (K : WinCfg) (w : Nat) : Prog isa :=
   let ds := (List.range w).map fun i =>
-    if i%2==0 then fprogB K.M (dblJMul K.S K.R K.D) else fprogB K.M (dblJMul K.S K.D K.R)
+    if i%2==0 then VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D else VG.Impl.P256.VerifyDouble.double K.M K.S K.D K.R
   seqs (ds ++ if w%2==1 then [.block (copyPt 4 K.R K.D)] else [])
 
 def jacSignedAdd (K : WinCfg) (w : Nat) : Prog isa :=
@@ -98,7 +99,7 @@ def jacMixedAdd (K : WinCfg) (p q o : Pt) : Prog isa :=
   .seq (.block (zeroMask K.M.n K.S.t3)) <|
   .ite (.nonzero .x .x2)
     (.seq (.block (zeroMask K.M.n K.S.t5)) <|
-      .ite (.nonzero .x .x2) (fprogB K.M (dblJMul K.S p o)) (.block (infinity K o)))
+      .ite (.nonzero .x .x2) (VG.Impl.P256.VerifyDouble.double K.M K.S p o) (.block (infinity K o)))
     (fprogB K.M tail)
 
 /-- The comb uses the same scratch layout as the public Jacobian window. -/
