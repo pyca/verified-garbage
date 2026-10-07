@@ -15,7 +15,7 @@ theorem combSign_regions {s : State} (h : combSignSpec.pre s) :
   obtain ⟨_, _, hd, _, _, _, _, _, ht, hw, _⟩ := h
   refine ⟨?_, hw⟩
   rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
-  simp only [p256Comb_consts, Abi.constRegions, List.map_cons, List.map_nil,
+  simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
     dR, digestR, kR, ptr, show p256Comb.C.len = 32 from rfl]
 
 theorem signComb_verified (hL : Law Spec.P256.curve) : Verified X86.target signP256Comb combSignSpec := by

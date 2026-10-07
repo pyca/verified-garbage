@@ -554,8 +554,28 @@ open Elab Tactic Lit in
 elab "rw_lit" : tactic => withMainContext do
   -- Only code whose head constant the goal mentions can occur in it.
   let used := (← instantiateMVars (← getMainTarget)).getUsedConstantsAsSet
-  for N in litNames (← getEnv) do
+  let env ← getEnv
+  for N in litNames env do
     let lhs ← lhsOf N
+    -- A constant's code as the goal may have it unfolded: a generic proof's
+    -- `Cfg.verify p384` for `verifyP384 := Cfg.verify p384`. Rewritten as a whole
+    -- (`N.lit_eq` at `value = N.lit`, which the kernel checks by delta), rather than
+    -- unfolded below, where the kernel would build the code again from the
+    -- functions it is made of (e.g. 30 s rather than 2 s for P-384's verification).
+    if let .const c [] := lhs then
+      if let some (.defnInfo d) := env.find? c then
+        let v := d.value
+        if d.levelParams.isEmpty && v.isApp && v.getAppFn.isConst && !v.hasLooseBVars &&
+            used.contains v.getAppFn.constName! then
+          let tgt ← instantiateMVars (← getMainTarget)
+          if (tgt.find? (· == v)).isSome then
+            let ty ← inferType lhs
+            let prf ← mkExpectedTypeHint (mkConst (N ++ `lit_eq))
+              (mkApp3 (mkConst ``Eq [← getLevel ty]) ty v (mkConst (N ++ `lit)))
+            let g ← getMainGoal
+            let r ← g.rewrite tgt prf
+            let g' ← g.replaceTargetEq r.eNew r.eqProof
+            replaceMainGoal (g' :: r.mvarIds)
     unless lhs.getAppFn.isConst && used.contains lhs.getAppFn.constName! do continue
     let tgt ← instantiateMVars (← getMainTarget)
     if (tgt.find? (· == lhs)).isNone then continue

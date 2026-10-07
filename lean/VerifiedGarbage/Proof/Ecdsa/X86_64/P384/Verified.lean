@@ -75,14 +75,12 @@ theorem p384_tbls (hT : CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P3
 
 theorem pre_of {s : State} (h : signX86_64.pre s) : Pre p384 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, -, -, h12, h13, held, fit, hdw⟩ := h
-  refine ⟨by rw [h1, p384_combConsts, show p384.C.len = 48 from rfl]; simp only [Abi.constRegions,
-    List.map_cons, List.map_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h6, h7, h8, h9, h12, h13, ?_⟩
-  rw [TblsHeld, p384_combConsts]
-  refine ⟨fun c hc => ?_, fun t ht => ?_⟩
+  refine ⟨by rw [h1, p384_combConsts, show p384.C.len = 48 from rfl]; simp only [Abi.constRegions_cons,
+    Abi.constRegions_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h6, h7, h8, h9, h12, h13, ?_⟩
+  rw [TblsHeld, p384_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
+  refine ⟨fun c hc => ?_, fit, fun r hr => hdw r ?_⟩
   · simp only [List.mem_singleton] at hc; subst hc; exact held
-  · simp only [Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at ht; subst ht
-    refine ⟨fit, fun r hr => hdw r ?_⟩
-    rw [h2] at hr
+  · rw [h2] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 

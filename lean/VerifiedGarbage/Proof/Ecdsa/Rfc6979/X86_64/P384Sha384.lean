@@ -77,14 +77,12 @@ theorem implies : (rfcX86_64 Impl.Ecdsa.X86_64.p384.combConsts Spec.Ecdsa.Rfc697
       Abi.constsHeld, stackBelow] at h
     obtain ⟨hsp, hd, hheld, hfit, hdw, hdr, hds, ht, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd,
       ng, nc⟩ := h
-    refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_,
-      fun T hT => ?_⟩
+    refine ⟨hsp, ?_, hw, od, og, oc, dc, gc, ro, rd, rg, rc, ko, kd, kg, kc, no, nd, ng, nc, fun c hc => ?_, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]
-      simp only [p384_combConsts, Abi.constRegions, List.map_cons, List.map_nil]
+      rw [p384_combConsts, Abi.constRegions_cons, Abi.constRegions_nil]
       rfl
     · simp only [p384_combConsts, List.mem_singleton] at hc; subst hc; exact hheld
-    · simp only [p384_combConsts, Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at hT
-      subst hT
+    · rw [p384_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
       refine ⟨hfit, fun r hr => ?_⟩
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

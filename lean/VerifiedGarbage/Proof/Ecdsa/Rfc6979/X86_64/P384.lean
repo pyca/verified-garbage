@@ -23,8 +23,9 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
 /-- `coreK` at P-384's sizes is `Proof.Ecdsa.X86_64.P384.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p384 : coreK Impl.Ecdsa.X86_64.p384 = Proof.Ecdsa.X86_64.P384.signX86_64 := by
-  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P384.p384_combConsts, Abi.constRegions, Abi.constsHeld,
-    List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P384.p384_combConsts, Abi.constRegions_cons,
+    Abi.constRegions_nil, Sig.forall_mem_const_single]
+  simp only [Abi.constsHeld, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P384.signX86_64, Proof.Ecdsa.X86_64.P384.TblHeld]
   rfl
 

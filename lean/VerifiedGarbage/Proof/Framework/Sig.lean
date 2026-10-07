@@ -208,6 +208,51 @@ theorem Sig.contract_pub_iff {M : ISA} {A : Abi M} {sig : Sig}
   | none => exact Iff.rfl
   | some vals => simp only [Sig.forall_pubs_iff, Sig.conj_map]; exact Iff.rfl
 
+/-! ## Tables of constants
+
+`Abi.withConsts` states each table's region `⟨f name, 8 * words.length⟩`
+(`Abi.constRegions`) and facts about its base and length. Evaluated by
+unfolding `List.map` and by `forall_eq`, these leave the projections of a
+`Region` and of a pair, which `simp` reduces definitionally: the kernel then
+compares the region's length `8 * words.length` with the projection of it,
+unfolds the two sides in step until one is `Nat.mul` on a closed term, and
+evaluates `words.length`, the whole table (16 s for P-384's comb, 42240
+words, in each declaration that does so). Rewritten by these lemmas, proven
+for any table and not by unfolding, the length is never compared with
+another form of itself. -/
+
+/-- `Abi.constRegions` (unfolded) on a list of tables, a table at a time. The
+base is any function `F` of the table (`f c.1`, or on x86 `(f c.1).setWidth 64`),
+which `simp` matches as a pattern. -/
+theorem Sig.map_const_cons {F : String × List (BitVec 64) → Addr} {n : String}
+    {w : List (BitVec 64)} {cs : List (String × List (BitVec 64))} :
+    List.map (fun c : String × List (BitVec 64) => ({ base := F c, len := 8 * c.2.length } : Region))
+        ((n, w) :: cs) =
+      ⟨F (n, w), 8 * w.length⟩ :: List.map (fun c : String × List (BitVec 64) =>
+        ({ base := F c, len := 8 * c.2.length } : Region)) cs := (rfl)
+
+/-- The facts of `Abi.withConsts` about the tables' regions, a region at a time. -/
+theorem Sig.forall_mem_const_cons {b : Addr} {n k : Nat} {W R ts : List Region} :
+    (∀ t ∈ (⟨b, n⟩ : Region) :: ts,
+        t.base.toNat + t.len ≤ 2 ^ k ∧ (∀ r ∈ W, t.Disjoint r) ∧ ∀ r ∈ R, t.Disjoint r) ↔
+      (b.toNat + n ≤ 2 ^ k ∧ (∀ r ∈ W, Region.Disjoint ⟨b, n⟩ r) ∧ ∀ r ∈ R, Region.Disjoint ⟨b, n⟩ r) ∧
+        ∀ t ∈ ts, t.base.toNat + t.len ≤ 2 ^ k ∧ (∀ r ∈ W, t.Disjoint r) ∧ ∀ r ∈ R, t.Disjoint r :=
+  List.forall_mem_cons
+
+/-- `Abi.constRegions`, a table at a time (for proofs that unfold it by hand). -/
+theorem Abi.constRegions_cons {f : String → Addr} {n : String} {w : List (BitVec 64)}
+    {cs : List (String × List (BitVec 64))} :
+    Abi.constRegions f ((n, w) :: cs) = ⟨f n, 8 * w.length⟩ :: Abi.constRegions f cs := (rfl)
+
+theorem Abi.constRegions_nil {f : String → Addr} : Abi.constRegions f [] = [] := (rfl)
+
+/-- A table's region's bound and its separation from the regions `W`, with its
+base and length as they are (see `Sig.map_const_cons`). -/
+theorem Sig.forall_mem_const_single {b : Addr} {n k : Nat} {W : List Region} :
+    (∀ t ∈ [(⟨b, n⟩ : Region)], t.base.toNat + t.len ≤ 2 ^ k ∧ ∀ r ∈ W, t.Disjoint r) ↔
+      b.toNat + n ≤ 2 ^ k ∧ ∀ r ∈ W, Region.Disjoint ⟨b, n⟩ r :=
+  List.forall_mem_singleton
+
 /-! ## Evaluation
 
 The signature and the calling convention are data: evaluating them (the
@@ -254,6 +299,8 @@ macro_rules
            try simp only [Sig.pairwise_iff, Sig.forall_mem_disjoint_iff, Sig.forall_mem_bound_iff,
              Sig.forall_pubs_iff] $[$loc]?
            try sig_reduce [] $[$loc]?)
+      -- The tables' regions first, before `List.map` and `forall_eq` take them apart.
+      sig_simp [$ls,*] [Sig.map_const_cons, List.map_nil, Sig.forall_mem_const_cons] $[$loc]?
       sig_simp [$ls,*] [Sig.bufs, Sig.lists, Sig.descs, List.append_nil, List.map_nil, Sig.conj, Curry.apply, Curry.const, Curry.apply_const, ArgWord.ofRaw, Elem.size, List.filter, List.map, List.cons_append, List.nil_append, List.all_cons, List.all_nil, Bool.not_true, Bool.not_false, Bool.and_true, Bool.and_false, Bool.true_and, Bool.false_and, Bool.and_self, Bool.or_true, Bool.true_or, Bool.or_false, Bool.false_or, Bool.false_eq_true, decide_true, decide_false, Nat.mul_one, Nat.one_mul, List.pairwise_cons, List.forall_mem_cons, List.not_mem_nil, List.Pairwise.nil, List.mem_cons, List.mem_nil_iff, forall_eq_or_imp, forall_eq, forall_false, implies_true, true_implies, false_implies, and_true, true_and, and_self, or_self, or_true, true_or, false_or, or_false, and_assoc, Nat.add_zero, List.zip_cons_cons, List.zip_nil_left, List.zip_nil_right, List.sum_cons, List.sum_nil, BitVec.setWidth_eq, BitVec.setWidth_32_64_32, BitVec.toNat_setWidth_32_64, BitVec.setWidth_setWidth_of_le, Sig.forall_pubs_cons, Sig.forall_pubs_nil, Nat.reduceAdd, Nat.reduceSub, Nat.reduceMul, Nat.reduceDiv,
         Nat.reduceLeDiff, Nat.reduceEqDiff, ↓reduceIte] $[$loc]?))
 

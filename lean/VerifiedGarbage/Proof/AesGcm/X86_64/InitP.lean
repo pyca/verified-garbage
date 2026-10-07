@@ -39,7 +39,10 @@ theorem mul_one_left (y : Block) : mul Spec.Gcm.one y = y := by
     have : ∀ j < 127, Spec.Gcm.one.getMsbD (j + 1) = false := by decide
     exact this j (List.mem_range.mp hj)
 
-theorem hpow_one (h : Block) : hpow h 1 = h := mul_one_left h
+/-- Unfolded by rewriting: as a definitional check, the kernel would evaluate
+`mul` on the literal `one` rather than unfold `Nat.repeat` once (a minute). -/
+theorem hpow_one (h : Block) : hpow h 1 = h := by
+  rw [hpow, Nat.repeat, Nat.repeat]; exact mul_one_left h
 
 /-- The regions of `vg_aes_gcm_init_precomputed`: the key context of 1024
 bytes at `Ctx`, the working space at `W`, the return address at `SP` and the
