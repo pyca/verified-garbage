@@ -505,6 +505,49 @@ the registers; then `xCanon`, which reduces it below `p` into `[o]`. -/
 def mulPX (M : Mod) (o a b : Nat) : List Instr :=
   zeros xRegs ++ (List.range 9).flatMap (xRow M a b) ++ xRed M ++ xCanon o
 
+/-! ## P-521's modulus with BMI2 and ADX: the square
+
+The products of two different words by rows (`sRow`, 36 products), doubled
+and the squares added in one pass (`sDiag`: CF doubles, OF adds), then
+`mulPX`'s reduction and final reduction. -/
+
+/-- The registers of row `i < 8` of `sqrPX`'s products: words `2i + 1 … i + 9`. -/
+def sWin (i : Nat) : List Reg := (List.range (9 - i)).map fun j => xAcc (2 * i + 1 + j)
+
+/-- Row `i < 8` of `sqrPX`'s products of two different words: word `i`, final,
+stored at `[tmp + 8i]` and its register cleared for word `i + 9`; `rdx = a_i`,
+both carries cleared, `t += a_i [a + 8 (i + 1)]` (`8 - i` products into words
+`2i + 1 … i + 9`), and the carry OF into word `i + 9`. -/
+def sRow (M : Mod) (a i : Nat) : List Instr :=
+  [.store (sc (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0), .mov .rdx (.mem (sc (a + 8 * i))),
+    .alu32 .xor .rax (.reg .rax)] ++ maddSteps (8 - i) (sWin i) (a + 8 * (i + 1)) ++ xTail (xAcc (i + 9))
+
+/-- Word `w` of the square: `t_w = 2 t_w + d` (`adcx t, t`, `adox t, d`), in
+the temporary area for `w ≤ 8` (through `rdx`), else in its register. -/
+def sDbl (M : Mod) (w : Nat) (d : Reg) : List Instr :=
+  if w ≤ 8 then
+    [.mov .rdx (.mem (sc (M.tmp + 8 * w))), .adcx .rdx (.reg .rdx), .adox .rdx (.reg d),
+      .store (sc (M.tmp + 8 * w)) .rdx]
+  else [.adcx (xAcc w) (.reg (xAcc w)), .adox (xAcc w) (.reg d)]
+
+/-- Step `k` of the squares: `a_k²` into `rcx:rax`, added to words `2k` and
+`2k + 1` of twice the products (CF doubles, OF adds). -/
+def sDiagK (M : Mod) (a k : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc (a + 8 * k))), .mulx .rcx .rax (.reg .rdx)] ++ sDbl M (2 * k) .rax ++
+    sDbl M (2 * k + 1) .rcx
+
+/-- Word 8 stored and its register cleared for word 17, both carries cleared,
+then the squares. -/
+def sDiag (M : Mod) (a : Nat) : List Instr :=
+  [.store (sc (M.tmp + 64)) (xAcc 8), .mov32 (xAcc 17) (.imm 0), .alu32 .xor .rax (.reg .rax)] ++
+    (List.range 9).flatMap (sDiagK M a)
+
+/-- `[o] = [a]² R⁻¹ mod p` for P-521's `p`, with BMI2 and ADX: the products
+of two different words by rows (`sRow`), doubled and the squares added
+(`sDiag`), then `mulPX`'s reduction and final reduction. -/
+def sqrPX (M : Mod) (o a : Nat) : List Instr :=
+  zeros xRegs ++ (List.range 8).flatMap (sRow M a) ++ sDiag M a ++ xRed M ++ xCanon o
+
 /-! ## P-521's modulus: the sum and the difference in registers
 
 As `p = 2⁵²¹ - 1`, the sum or difference below `2p` is reduced in place by
@@ -575,7 +618,8 @@ def mulF (M : Mod) (o a b : Nat) : List Instr :=
 def mul (M : Mod) (o a b : Nat) : List Instr :=
   if M.n < 7 then mulR M o a b
   else if M.red = .friendly p521Ws then
-    (if M.adx then mulPX M o a b else if a = b then sqrP M o a else mulP M o a b)
+    (if M.adx then (if a = b then sqrPX M o a else mulPX M o a b)
+      else if a = b then sqrP M o a else mulP M o a b)
   else if M.n = 9 then mulF M o a b else mulW M o a b
 
 /-- `[o] = [a] + [b] mod m`. -/
