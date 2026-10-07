@@ -124,24 +124,31 @@ def shiftK? : List MWord → Option Nat
   | [.pow2 k, .zero, .gen v, .zero] => if 0 < k ∧ k < 64 ∧ v = 2 ^ 64 - 2 ^ k + 1 then some k else none
   | _ => none
 
-/-- `ts += t₀ m'` for `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)`, without `mul`:
-`t₀ 2ᵏ` is `rdx:rax` (`t₀ << k`, `t₀ >> (64 − k)`), and
-`t₀ (2⁶⁴ − 2ᵏ + 1) = 2⁶⁴ t₀ + t₀ − t₀ 2ᵏ` is `rbp:rcx` (`t₀ − rax`, then
-`t₀ − rdx` less the borrow); the four words are added to the first four of
-`ts` in one carry chain, its carry up the others. -/
-def shiftRed (t0 : Reg) (k : Nat) : List Reg → List Instr
-  | w1 :: w2 :: w3 :: w4 :: rest =>
+/-- `rdx:rax = t₀ 2ᵏ` (`t₀ << k`, `t₀ >> (64 − k)`) and `rbp:rcx = t₀ (2⁶⁴ − 2ᵏ + 1)`:
+without BMI2, as `2⁶⁴ t₀ + t₀ − t₀ 2ᵏ` (`t₀ − rax`, then `t₀ − rdx` less
+the borrow); with it (`x`), by `mulx`, which waits on no borrow. -/
+def shiftProd (x : Bool) (t0 : Reg) (k : Nat) : List Instr :=
+  if x then
+    [.mov .rdx (.reg t0), .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)), .mulx .rbp .rcx (.reg .rcx),
+      .mov .rax (.reg t0), .shift .shl .rax k, .shift .shr .rdx (64 - k)]
+  else
     [.mov .rax (.reg t0), .shift .shl .rax k, .mov .rdx (.reg t0), .shift .shr .rdx (64 - k),
-      .mov .rcx (.reg t0), .alu .sub .rcx (.reg .rax), .mov .rbp (.reg t0), .alu .sbb .rbp (.reg .rdx),
-      .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rdx), .alu .adc w3 (.reg .rcx),
+      .mov .rcx (.reg t0), .alu .sub .rcx (.reg .rax), .mov .rbp (.reg t0), .alu .sbb .rbp (.reg .rdx)]
+
+/-- `ts += t₀ m'` for `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)`, without `mul`
+(`shiftProd`); the four words are added to the first four of `ts` in one
+carry chain, its carry up the others. -/
+def shiftRed (x : Bool) (t0 : Reg) (k : Nat) : List Reg → List Instr
+  | w1 :: w2 :: w3 :: w4 :: rest =>
+    shiftProd x t0 k ++ [.alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rdx), .alu .adc w3 (.reg .rcx),
       .alu .adc w4 (.reg .rbp)] ++ rest.map fun r => .alu .adc r (.imm 0)
   | _ => []
 
 /-- `ts += t₀ m'` for the words `ws` of `m'`: by `shiftRed` if it applies, else
 by `redWords`. -/
-def redFriendly (t0 : Reg) (ws : List MWord) (ts : List Reg) : List Instr :=
+def redFriendly (x : Bool) (t0 : Reg) (ws : List MWord) (ts : List Reg) : List Instr :=
   match shiftK? ws with
-  | some k => shiftRed t0 k ts
+  | some k => shiftRed x t0 k ts
   | none => redWords t0 ws ts
 
 /-- The reduction of round `i`: `t += u m` with `u = t₀ m' mod 2⁶⁴`, after
@@ -152,7 +159,7 @@ def redRound (M : Mod) (i : Nat) : List Instr :=
   match M.red with
   | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rcx (.reg .rax)] ++
       mulRow ((List.range M.n).map t) M.mo ++ carryUp (t M.n) (t (M.n + 1))
-  | .friendly ws => redFriendly (t 0) ws (wins M.n i).tail ++ [.mov32 (t 0) (.imm 0)]
+  | .friendly ws => redFriendly false (t 0) ws (wins M.n i).tail ++ [.mov32 (t 0) (.imm 0)]
 
 /-- Round `i` of `mul o a b` by `mul`: `t += a_i [b]`, then the reduction. -/
 def roundM (M : Mod) (a b i : Nat) : List Instr :=
@@ -194,7 +201,7 @@ def roundX (M : Mod) (a b i : Nat) : List Instr :=
   match M.red with
   | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rdx (.reg .rax)] ++
       rowX M.n (wins M.n i) M.mo
-  | .friendly ws => redFriendly (t 0) ws (wins M.n i).tail ++ [.mov32 (t 0) (.imm 0)]
+  | .friendly ws => redFriendly true (t 0) ws (wins M.n i).tail ++ [.mov32 (t 0) (.imm 0)]
 
 /-- Round `i` of `mul o a b`. -/
 def round (M : Mod) (a b i : Nat) : List Instr := if M.adx then roundX M a b i else roundM M a b i

@@ -291,7 +291,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     rw [hf] at hred
     have ht0 := (s₂.gpr (win M.n i 0)).isLt
     have hum : (s₂.gpr (win M.n i 0)).toNat * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by omega) (Nat.le_refl _)
-    refine WP.mono (redF_ok hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
+    refine WP.mono (redF_ok true hn hred hm' (by rw [e₂]; omega)) fun s' ⟨e, k⟩ =>
       ⟨(fin _ ht0 e).1, (fin _ ht0 e).2, k₁₂.trans (k.mono (by sub_regs))⟩
 
 /-- Round `i` of the multiplication, by `mul` or with BMI2 and ADX:
