@@ -1,5 +1,4 @@
 import VerifiedGarbage.Proof.Ed25519.Arm.VerifyHeaders
-import VerifiedGarbage.Proof.Ed25519.Arm.DecodedThen
 import VerifiedGarbage.Proof.Ed25519.Arm.PointDecode
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarCodec
 import VerifiedGarbage.Proof.Ed25519.Arm.InitFields
@@ -183,59 +182,6 @@ theorem DecodeKeep.table {b : BitVec 32} {s t : State} (h : DecodeKeep b s t) {d
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact Offset.disjoint _ (.inr (by omega)) (by omega) (by decide)
 
-theorem verifyDecodeR_ok {b pk sig challenge : BitVec 32} {s : State}
-    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
-    WP isa verifyDecodeR s fun t => VerifyKeep b s t ∧
-      t.gpr .r9 = BitVec.ofNat 32 (equationWithR s.mem sig challenge (tablePoint s.mem b 7744)).toNat := by
-  refine WP.seq (WP.mono (loadHeader_ok hc.ctx 8132 (by decide)) fun u ⟨ur, um, up⟩ => ?_)
-  have ku : VerifyKeep b s u := VerifyKeep.of_rest ur (by decide) um
-  have uc := hc.keep ku
-  have ui := uc.sigInput.prefix (n := 32) (by decide)
-  refine WP.seq (WP.mono (pointDecode_ok uc.ctx (um ▸ hl) (up.trans hc.sigHeader)
-    ui.fit ui.readable ui.separate) fun v hv => ?_)
-  have vk := hv.1
-  have vl := hv.2.1
-  have kv := ku.trans (VerifyKeep.of_decode vk)
-  have va : tablePoint v.mem b 7744 = tablePoint s.mem b 7744 :=
-    (vk.table (by decide) (by decide)).trans (congrArg (fun m => tablePoint m b 7744) um)
-  cases dec : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr sig) 32) with
-  | none =>
-    have vr : v.gpr .r9 = 0 := by
-      change DecodeResult b none v
-      with_reducible exact Eq.mp (congrArg (fun q => DecodeResult b q v)
-        ((congrArg (fun m => Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr sig) 32)) um).trans dec)) hv.2.2
-    refine decodedThen_ok false vr ?_ ?_
-    · intro h; exact Bool.noConfusion h
-    · intro _ w wr wm
-      have kw := kv.trans (VerifyKeep.of_rest wr (by decide) wm)
-      refine WP.mono (recoverInvalid_ok w b) fun t ⟨tk, _, tv⟩ => ?_
-      refine ⟨kw.trans (VerifyKeep.of_keep tk), ?_⟩
-      simp only [equationWithR, dec, Bool.toNat_false]
-      exact tv
-  | some r =>
-    have result : v.gpr .r9 = 1 ∧ point (env v.mem b) 0 1 2 3 = r := by
-      change DecodeResult b (some r) v
-      with_reducible exact Eq.mp (congrArg (fun q => DecodeResult b q v)
-        ((congrArg (fun m => Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr sig) 32)) um).trans dec)) hv.2.2
-    rcases result with ⟨vr, vp⟩
-    refine decodedThen_ok true vr ?_ ?_
-    · intro _ w wr wm
-      have kw := kv.trans (VerifyKeep.of_rest wr (by decide) wm)
-      refine WP.seq (WP.mono (pointTableWrite_ok (kw.ctx hc.ctx) (wm ▸ vl) 7872 (by decide) (by decide))
-        fun x ⟨xk, xl, _, xp⟩ => ?_)
-      have kx := kw.trans (VerifyKeep.of_powers xk (by decide) (by decide))
-      have xr : tablePoint x.mem b 7872 = r :=
-        xp.trans ((congrArg (fun m => point (env m b) 0 1 2 3) wm).trans vp)
-      have xa : tablePoint x.mem b 7744 = tablePoint s.mem b 7744 :=
-        (xk.frame.point (by decide) (.inl (by decide)) (by decide) (by decide)).trans
-          ((congrArg (fun m => tablePoint m b 7744) wm).trans va)
-      refine WP.mono (verifyEquationPoints_ok (hc.keep kx) xl) fun t ⟨tk, _, tv⟩ => ?_
-      refine ⟨kx.trans tk, ?_⟩
-      rw [xa, xr, equationResult_keep hc kx] at tv
-      simp only [equationWithR, dec]
-      exact tv
-    · intro h; exact Bool.noConfusion h
-
 end VG.Proof.Ed25519.Arm
 end
 
@@ -268,52 +214,349 @@ theorem decodedEquation_keep {b pk sig challenge : BitVec 32} {s t : State}
   · rfl
   · exact equationWithR_keep hc hk _
 
-theorem verifyDecodeA_ok {b pk sig challenge : BitVec 32} {s : State}
+/-! ### `A` and `R` decoded by one loop
+
+`decodeBoth` decodes `A`, then `R`, with one copy of the decoding: the encoding's pointer, the
+table entry's offset and the AND of the results are words of the working space (`DPTR`,
+`DTAB`, `DOK`, `DecAt`). -/
+
+/-- The pointer of input `k`: `A`'s, then `R`'s. -/
+def inPtr (pk sig : BitVec 32) (k : Nat) : BitVec 32 := if k = 0 then pk else sig
+
+/-- The decoding of input `k`. -/
+def inPoint (m : Mem) (pk sig : BitVec 32) (k : Nat) : Option Spec.Ed25519.Point :=
+  Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr (inPtr pk sig k)) 32)
+
+/-- The AND of the first `k` decodings' successes. -/
+def decOk (m : Mem) (pk sig : BitVec 32) : Nat → Bool
+  | 0 => true
+  | k + 1 => decOk m pk sig k && (inPoint m pk sig k).isSome
+
+theorem decOk_succ (m : Mem) (pk sig : BitVec 32) (k : Nat) :
+    decOk m pk sig (k + 1) = (decOk m pk sig k && (inPoint m pk sig k).isSome) := rfl
+
+theorem decOk_two (m : Mem) (pk sig : BitVec 32) :
+    decOk m pk sig 2 = ((inPoint m pk sig 0).isSome && (inPoint m pk sig 1).isSome) := by
+  simp only [decOk, Bool.true_and]
+
+/-- A word of the working space. -/
+abbrev lw (m : Mem) (b : BitVec 32) (d : Nat) : BitVec 32 := m.readW (State.addr b + BitVec.ofNat 64 d) 32
+
+/-- Before the decoding `k` (`A`'s, then `R`'s), from the state `s₀` before the loop. -/
+structure DecAt (s₀ : State) (b pk sig : BitVec 32) (k : Nat) (s : State) : Prop where
+  keep : VerifyKeep b s₀ s
+  lim : AllLim s.mem b
+  ptr : k < 2 → lw s.mem b DPTR = inPtr pk sig k
+  tab : lw s.mem b DTAB = BitVec.ofNat 32 (7744 + 128 * k)
+  ok : lw s.mem b DOK = BitVec.ofNat 32 (decOk s₀.mem pk sig k).toNat
+  pts : ∀ j < k, ∀ p, inPoint s₀.mem pk sig j = some p → tablePoint s.mem b (7744 + 128 * j) = p
+
+theorem flag_and (x y : Bool) :
+    BitVec.ofNat 32 x.toNat &&& BitVec.ofNat 32 y.toNat = BitVec.ofNat 32 (x && y).toNat := by
+  cases x <;> cases y <;> rfl
+
+theorem ldrLow_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {d : Nat} (hd : d + 4 ≤ 64) (r : Reg)
+    {is : List Instr} {Q : State → Prop} (k : ∀ t, Upd s t r (lw s.mem b d) → WP isa (.block is) t Q) :
+    WP isa (.block (.ldr r .r0 d :: is)) s Q :=
+  wp_ldr (a := State.addr b + BitVec.ofNat 64 d) (by omega) (by rw [hc.r0]; exact hc.ptr_addr (by omega))
+    (in_base (List.mem_append_right _ hc.wr) (by omega) (by omega)) k
+
+theorem strLow_ok {b : BitVec 32} {s : State} (hc : Ctx b s) {d : Nat} (hd : d + 4 ≤ 64) (r : Reg)
+    {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Mupd s t (s.mem.writeW (State.addr b + BitVec.ofNat 64 d) (s.gpr r)) → WP isa (.block is) t Q) :
+    WP isa (.block (.str r .r0 d :: is)) s Q :=
+  wp_str (a := State.addr b + BitVec.ofNat 64 d) (by omega) (by rw [hc.r0]; exact hc.ptr_addr (by omega))
+    (in_base hc.wr (by omega) (by omega)) k
+
+/-- A word after a store to another word, or to it. -/
+theorem lw_write (m : Mem) (b : BitVec 32) (w : BitVec 32) {d e : Nat} (hd : d + 4 ≤ 8192) (he : e + 4 ≤ 8192)
+    (h : d = e ∨ d + 4 ≤ e ∨ e + 4 ≤ d) :
+    lw (m.writeW (State.addr b + BitVec.ofNat 64 e) w) b d = if d = e then w else lw m b d := by
+  rcases h with rfl | h
+  · rw [ite_eq_left rfl]; exact Mem.readW_writeW_self32 _ _ _
+  · rw [ite_eq_right (by omega)]
+    exact Mem.readW_writeW_sep (Offset.sep _ h (by omega) (by omega)) (by decide)
+
+/-- A word outside a frame of one range. -/
+theorem lw_frame {m m' : Mem} {b : BitVec 32} {o n d : Nat}
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, n⟩] m m') (h : d + 4 ≤ o ∨ o + n ≤ d)
+    (hn : o + n ≤ 8192) (hd : d + 4 ≤ 8192) : lw m' b d = lw m b d :=
+  hf.readW (Region.contains_self _ _) (fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ h (by omega) (by omega)) (by decide)
+
+/-- The stores of the loop's words, between bytes 32 and 44. -/
+theorem loopFrame_write {m m' : Mem} {b : BitVec 32} (hf : Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] m m')
+    {d : Nat} (hd : 32 ≤ d) (hd' : d + 4 ≤ 44) (w : BitVec 32) :
+    Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] m (m'.writeW (State.addr b + BitVec.ofNat 64 d) w) :=
+  hf.writeW (List.mem_singleton_self _) _ (Offset.contains _ hd hd' (by decide))
+
+/-- The input `k`'s place, from the context. -/
+theorem VerifyContext.input {b pk sig challenge : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) {k : Nat} (hk : k < 2) : VerifyInput b (inPtr pk sig k) 32 s := by
+  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  · exact hc.pkInput
+  · exact hc.sigInput.prefix (by decide)
+
+theorem decodeStart_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
-    WP isa verifyDecodeA s fun t => VerifyKeep b s t ∧
-      t.gpr .r9 = BitVec.ofNat 32 (decodedEquation s.mem pk sig challenge).toNat := by
-  refine WP.seq (WP.mono (loadHeader_ok hc.ctx 8128 (by decide)) fun u ⟨ur, um, up⟩ => ?_)
-  have ku : VerifyKeep b s u := VerifyKeep.of_rest ur (by decide) um
-  have uc := hc.keep ku
-  refine WP.seq (WP.mono (pointDecode_ok uc.ctx (um ▸ hl) (up.trans hc.pkHeader)
-    uc.pkInput.fit uc.pkInput.readable uc.pkInput.separate) fun v hv => ?_)
+    WP isa (.block decodeStart) s (DecAt s b pk sig 0) := by
+  unfold decodeStart
+  rw [WP.block_append_iff]
+  refine WP.mono (loadHeader_ok hc.ctx 8128 (by decide)) fun u ⟨ur, um, up⟩ => ?_
+  have cu : Ctx b u := hc.ctx.of_rest ur (by decide)
+  refine strLow_ok cu (d := DPTR) (by decide) .r12 fun u1 h1 => ?_
+  have c1 : Ctx b u1 := cu.of_rest (h1.rest []) (by decide)
+  refine wp_movw fun u2 h2 => ?_
+  have c2 : Ctx b u2 := c1.of_rest (h2.rest (ws := [.r3]) (by decide)) (by decide)
+  refine strLow_ok c2 (d := DTAB) (by decide) .r3 fun u3 h3 => ?_
+  have c3 : Ctx b u3 := c2.of_rest (h3.rest []) (by decide)
+  refine wp_mov (op2_imm (by decide)) fun u4 h4 => ?_
+  have c4 : Ctx b u4 := c3.of_rest (h4.rest (ws := [.r3]) (by decide)) (by decide)
+  refine strLow_ok c4 (d := DOK) (by decide) .r3 fun t ht => WP.block_nil ?_
+  have pk' : u.gpr .r12 = pk := up.trans hc.pkHeader
+  have mt : t.mem = ((s.mem.writeW (State.addr b + BitVec.ofNat 64 DPTR) pk).writeW
+      (State.addr b + BitVec.ofNat 64 DTAB) ((7744 : BitVec 16).setWidth 32)).writeW
+      (State.addr b + BitVec.ofNat 64 DOK) (1 : BitVec 32) := by
+    rw [ht.mem, h4.gpr, h4.mem, h3.mem, h2.gpr, h2.mem, h1.mem, pk', um]
+  have hf : Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] s.mem t.mem := by
+    rw [mt]
+    exact loopFrame_write (loopFrame_write (loopFrame_write (Frame.refl _ _) (by decide) (by decide) _)
+      (by decide) (by decide) _) (by decide) (by decide) _
+  have rt : Rest [.r12, .r3] s t :=
+    (((((ur.mono (by decide)).trans (h1.rest _)).trans (h2.rest (by decide))).trans (h3.rest _)).trans
+      (h4.rest (by decide))).trans (ht.rest _)
+  refine ⟨VerifyKeep.of_small rt (by decide) hf (by decide) (by decide), smallFrame_lim hf (by decide) hl,
+    fun _ => ?_, ?_, ?_, fun j hj => absurd hj (Nat.not_lt_zero _)⟩
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+    rfl
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+    decide
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+    rfl
+
+theorem decodeNext_eq : decodeNext = ([.ldr .r3 .r0 DOK, .dp .and .r3 .r3 (.reg .r9), .str .r3 .r0 DOK,
+    .ldr .r12 .r0 DTAB, .dp .add .r12 .r0 (.reg .r12)] : List Instr) ++ (pointToTable ++ (loadHeader 8132 ++
+    ([.str .r12 .r0 DPTR, .ldr .r3 .r0 DTAB, .dp .add .r3 .r3 (.imm 128), .str .r3 .r0 DTAB,
+      .cmp .r3 (.imm 8000)] : List Instr))) := by
+  simp only [decodeNext, List.append_assoc]
+
+/-- The result ANDed into `DOK`, the point to the table at `[DTAB]` (`o = 7744 + 128 k`), `R`'s
+pointer and the next entry. -/
+theorem decodeNext_ok {b pk sig challenge : BitVec 32} {s : State} (hc : VerifyContext b pk sig challenge s)
+    (hl : AllLim s.mem b) {k : Nat} (hk : k < 2) {p : Option Spec.Ed25519.Point}
+    (hflag : s.gpr .r9 = BitVec.ofNat 32 p.isSome.toNat)
+    (hpt : ∀ q, p = some q → point (env s.mem b) 0 1 2 3 = q)
+    (htab : lw s.mem b DTAB = BitVec.ofNat 32 (7744 + 128 * k)) :
+    WP isa (.block decodeNext) s fun t => VerifyKeep b s t ∧ AllLim t.mem b ∧
+      lw t.mem b DOK = (lw s.mem b DOK &&& BitVec.ofNat 32 p.isSome.toNat) ∧
+      lw t.mem b DPTR = sig ∧
+      lw t.mem b DTAB = BitVec.ofNat 32 (7744 + 128 * (k + 1)) ∧
+      (∀ q, p = some q → tablePoint t.mem b (7744 + 128 * k) = q) ∧
+      (∀ o, 1600 ≤ o → o + 128 ≤ 7744 + 128 * k → tablePoint t.mem b o = tablePoint s.mem b o) ∧
+      t.z = decide (k = 1) := by
+  have cs := hc.ctx
+  have ho : 1600 ≤ 7744 + 128 * k := by omega
+  have hn : 7744 + 128 * k + 128 ≤ 8192 := by omega
+  rw [decodeNext_eq, WP.block_append_iff]
+  refine ldrLow_ok cs (d := DOK) (by decide) .r3 fun u1 h1 => ?_
+  have c1 : Ctx b u1 := cs.of_rest (h1.rest (ws := [.r3]) (by decide)) (by decide)
+  refine wp_dp (op2_reg _ _) fun u2 h2 => ?_
+  have c2 : Ctx b u2 := c1.of_rest (h2.rest (ws := [.r3]) (by decide)) (by decide)
+  refine strLow_ok c2 (d := DOK) (by decide) .r3 fun u3 h3 => ?_
+  have c3 : Ctx b u3 := c2.of_rest (h3.rest []) (by decide)
+  refine ldrLow_ok c3 (d := DTAB) (by decide) .r12 fun u4 h4 => ?_
+  have c4 : Ctx b u4 := c3.of_rest (h4.rest (ws := [.r12]) (by decide)) (by decide)
+  refine wp_dp (op2_reg _ _) fun u5 h5 => WP.block_nil ?_
+  have c5 : Ctx b u5 := c4.of_rest (h5.rest (ws := [.r12]) (by decide)) (by decide)
+  have dok : u2.gpr .r3 = lw s.mem b DOK &&& BitVec.ofNat 32 p.isSome.toNat := by
+    rw [h2.gpr]
+    change u1.gpr .r3 &&& u1.gpr .r9 = _
+    rw [h1.gpr, h1.other _ (by decide), hflag]
+  have m3 : u3.mem = s.mem.writeW (State.addr b + BitVec.ofNat 64 DOK) (lw s.mem b DOK &&& BitVec.ofNat 32 p.isSome.toNat) := by
+    rw [h3.mem, h2.mem, h1.mem, dok]
+  have m5 : u5.mem = u3.mem := by rw [h5.mem, h4.mem]
+  have f5 : Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] s.mem u5.mem := by
+    rw [m5, m3]; exact loopFrame_write (Frame.refl _ _) (by decide) (by decide) _
+  have l5 : AllLim u5.mem b := smallFrame_lim f5 (by decide) hl
+  have e5 : env u5.mem b = env s.mem b := smallFrame_env f5 (by decide)
+  have r5 : u5.gpr .r12 = b + BitVec.ofNat 32 (7744 + 128 * k) := by
+    rw [h5.gpr]
+    change u4.gpr .r0 + u4.gpr .r12 = _
+    rw [h4.gpr, h4.other _ (by decide), c3.r0, m3, lw_write _ _ _ (by decide) (by decide) (by decide),
+      ite_eq_right (by decide), htab]
+  rw [WP.block_append_iff]
+  refine WP.mono (pointToTable_ok c5 l5 r5 ho hn) fun x ⟨xp, xk⟩ => ?_
+  have cx : Ctx b x := xk.ctx c5
+  have lx : AllLim x.mem b := xk.lim ho hn l5
+  have kx : VerifyKeep b s x :=
+    (VerifyKeep.of_small (((((h1.rest (ws := [.r3, .r12]) (by decide)).trans (h2.rest (by decide))).trans
+      (h3.rest _)).trans (h4.rest (by decide))).trans (h5.rest (by decide))) (by decide) f5 (by decide) (by decide)).trans
+      (VerifyKeep.of_powers ⟨xk.rest.mono (by decide), TableFrame.table xk.frame⟩ (by omega) (by omega))
+  rw [WP.block_append_iff]
+  refine WP.mono (loadHeader_ok cx 8132 (by decide)) fun y ⟨yr, ym, yp⟩ => ?_
+  have cy : Ctx b y := cx.of_rest yr (by decide)
+  have sig' : y.gpr .r12 = sig := by rw [yp, kx.header 8132 (by decide) (by decide)]; exact hc.sigHeader
+  refine strLow_ok cy (d := DPTR) (by decide) .r12 fun y1 g1 => ?_
+  have d1 : Ctx b y1 := cy.of_rest (g1.rest []) (by decide)
+  refine ldrLow_ok d1 (d := DTAB) (by decide) .r3 fun y2 g2 => ?_
+  have d2 : Ctx b y2 := d1.of_rest (g2.rest (ws := [.r3]) (by decide)) (by decide)
+  refine wp_dp (op2_imm (by decide)) fun y3 g3 => ?_
+  have d3 : Ctx b y3 := d2.of_rest (g3.rest (ws := [.r3]) (by decide)) (by decide)
+  refine strLow_ok d3 (d := DTAB) (by decide) .r3 fun y4 g4 => ?_
+  have d4 : Ctx b y4 := d3.of_rest (g4.rest []) (by decide)
+  refine wp_cmp (op2_imm (by decide)) fun t ht hz => WP.block_nil ?_
+  -- What the stores leave.
+  have lwx : ∀ d, d + 4 ≤ 64 → lw x.mem b d = lw u5.mem b d := fun d hd =>
+    lw_frame xk.frame (Or.inl (by omega)) hn (by omega)
+  have tab3 : y3.gpr .r3 = BitVec.ofNat 32 (7744 + 128 * (k + 1)) := by
+    rw [g3.gpr]
+    change y2.gpr .r3 + (128 : BitVec 32) = _
+    rw [g2.gpr, g1.mem, ym, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lwx DTAB (by decide), m5, m3, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), htab]
+    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+  have mt : t.mem = (x.mem.writeW (State.addr b + BitVec.ofNat 64 DPTR) sig).writeW
+      (State.addr b + BitVec.ofNat 64 DTAB) (BitVec.ofNat 32 (7744 + 128 * (k + 1))) := by
+    rw [ht.mem, g4.mem, tab3, g3.mem, g2.mem, g1.mem, sig', ym]
+  have ft : Frame [⟨State.addr b + BitVec.ofNat 64 32, 12⟩] x.mem t.mem := by
+    rw [mt]; exact loopFrame_write (loopFrame_write (Frame.refl _ _) (by decide) (by decide) _) (by decide) (by decide) _
+  have rt : Rest [.r12, .r3] x t :=
+    (((((yr.mono (by decide)).trans (g1.rest _)).trans (g2.rest (by decide))).trans (g3.rest (by decide))).trans
+      (g4.rest _)).trans (ht.rest _)
+  have tpt : ∀ o, o + 128 ≤ 8192 → 1600 ≤ o → tablePoint t.mem b o = tablePoint x.mem b o := fun o h1 h2 =>
+    tablePoint_frame ft fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+  refine ⟨kx.trans (VerifyKeep.of_small rt (by decide) ft (by decide) (by decide)), smallFrame_lim ft (by decide) lx,
+    ?_, ?_, ?_, fun q hq => ?_, fun o h1 h2 => ?_, ?_⟩
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide), lwx DOK (by decide), m5, m3,
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_right (by decide),
+      lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+  · rw [mt, lw_write _ _ _ (by decide) (by decide) (by decide), ite_eq_left rfl]
+  · rw [tpt _ hn ho, xp, e5]; exact hpt q hq
+  · rw [tpt _ (by omega) h1]
+    refine (tablePoint_frame xk.frame fun r hr => ?_).trans ?_
+    · rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inl h2) (by omega) (by omega)
+    · exact tablePoint_frame f5 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (Or.inr (by omega)) (by omega) (by omega)
+  · rw [hz, g4.gpr, tab3]
+    rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl <;> decide
+
+theorem decodeFlagA {b : BitVec 32} {p p' : Option Spec.Ed25519.Point} {s : State}
+    (h : DecodeResult b p s) (he : p = p') : s.gpr .r9 = BitVec.ofNat 32 p'.isSome.toNat := by
+  subst he
+  cases p with
+  | none => exact h
+  | some q => exact h.1
+
+theorem decodePtA {b : BitVec 32} {p p' : Option Spec.Ed25519.Point} {s : State}
+    (h : DecodeResult b p s) (he : p = p') : ∀ q, p' = some q → point (env s.mem b) 0 1 2 3 = q := by
+  subst he
+  intro q hq
+  subst hq
+  exact h.2
+
+/-- One iteration: the input `k` decoded, its result ANDed into `DOK`, and its point in the
+table. -/
+theorem decodeBody_ok {s₀ : State} {b pk sig challenge : BitVec 32}
+    (hc : VerifyContext b pk sig challenge s₀) {k : Nat} (hk : k < 2) {s : State}
+    (hs : DecAt s₀ b pk sig k s) :
+    WP isa decodeBody s fun t => DecAt s₀ b pk sig (k + 1) t ∧ t.z = decide (k = 1) := by
+  have cs := (hc.keep hs.keep).ctx
+  refine WP.seq (ldrLow_ok cs (d := DPTR) (by decide) .r12 fun u hu => WP.block_nil ?_)
+  have ku : VerifyKeep b s₀ u := hs.keep.trans (VerifyKeep.of_rest (hu.rest (ws := [.r12]) (by decide)) (by decide) hu.mem)
+  have hcu := hc.keep ku
+  have hi := hcu.input hk
+  have up : u.gpr .r12 = inPtr pk sig k := by rw [hu.gpr]; exact hs.ptr hk
+  refine WP.seq (WP.mono (pointDecode_ok hcu.ctx (hu.mem ▸ hs.lim) up hi.fit hi.readable hi.separate) fun v hv => ?_)
   have vk := hv.1
-  have vl := hv.2.1
   have kv := ku.trans (VerifyKeep.of_decode vk)
-  cases dec : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32) with
-  | none =>
-    have vr : v.gpr .r9 = 0 := by
-      change DecodeResult b none v
-      with_reducible exact Eq.mp (congrArg (fun q => DecodeResult b q v)
-        ((congrArg (fun m => Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr pk) 32)) um).trans dec)) hv.2.2
-    refine decodedThen_ok false vr ?_ ?_
-    · intro h; exact Bool.noConfusion h
-    · intro _ w wr wm
-      have kw := kv.trans (VerifyKeep.of_rest wr (by decide) wm)
-      refine WP.mono (recoverInvalid_ok w b) fun t ⟨tk, _, tv⟩ => ?_
-      refine ⟨kw.trans (VerifyKeep.of_keep tk), ?_⟩
-      simp only [decodedEquation, dec, Bool.toNat_false]
-      exact tv
-  | some a =>
-    have result : v.gpr .r9 = 1 ∧ point (env v.mem b) 0 1 2 3 = a := by
-      change DecodeResult b (some a) v
-      with_reducible exact Eq.mp (congrArg (fun q => DecodeResult b q v)
-        ((congrArg (fun m => Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt m (State.addr pk) 32)) um).trans dec)) hv.2.2
-    rcases result with ⟨vr, vp⟩
-    refine decodedThen_ok true vr ?_ ?_
-    · intro _ w wr wm
-      have kw := kv.trans (VerifyKeep.of_rest wr (by decide) wm)
-      refine WP.seq (WP.mono (pointTableWrite_ok (kw.ctx hc.ctx) (wm ▸ vl) 7744 (by decide) (by decide))
-        fun x ⟨xk, xl, _, xp⟩ => ?_)
-      have kx := kw.trans (VerifyKeep.of_powers xk (by decide) (by decide))
-      have xa : tablePoint x.mem b 7744 = a :=
-        xp.trans ((congrArg (fun m => point (env m b) 0 1 2 3) wm).trans vp)
-      refine WP.mono (verifyDecodeR_ok (hc.keep kx) xl) fun t ⟨tk, tv⟩ => ?_
-      refine ⟨kx.trans tk, ?_⟩
-      rw [xa, equationWithR_keep hc kx] at tv
-      simp only [decodedEquation, dec]
-      exact tv
-    · intro h; exact Bool.noConfusion h
+  have hbytes : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt u.mem (State.addr (inPtr pk sig k)) 32) =
+      inPoint s₀.mem pk sig k := congrArg Spec.Ed25519.decodePoint ((hc.input hk).bytes ku)
+  have vt : lw v.mem b DTAB = BitVec.ofNat 32 (7744 + 128 * k) := by
+    rw [show lw v.mem b DTAB = lw u.mem b DTAB from (vk.frame.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) (by decide)),
+      hu.mem]
+    exact hs.tab
+  -- `with_reducible`: unfolding `DecodeResult` would evaluate the decoding.
+  have vflag : v.gpr .r9 = BitVec.ofNat 32 (inPoint s₀.mem pk sig k).isSome.toNat := by
+    with_reducible exact decodeFlagA hv.2.2 hbytes
+  have vpt : ∀ q, inPoint s₀.mem pk sig k = some q → point (env v.mem b) 0 1 2 3 = q := by
+    with_reducible exact decodePtA hv.2.2 hbytes
+  refine WP.mono (decodeNext_ok (hc.keep kv) hv.2.1 hk vflag vpt vt)
+    fun t hn => ⟨⟨kv.trans hn.1, hn.2.1, fun hk1 => ?_, hn.2.2.2.2.1, ?_, fun j hj q hq => ?_⟩, hn.2.2.2.2.2.2.2⟩
+  · obtain rfl : k = 0 := by omega
+    exact hn.2.2.2.1
+  · have vok : lw v.mem b DOK = lw s.mem b DOK := by
+      rw [show lw v.mem b DOK = lw u.mem b DOK from (vk.frame.readW (Region.contains_self _ _) (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact Offset.disjoint _ (Or.inl (by decide)) (by decide) (by decide)) (by decide)),
+        hu.mem]
+    rw [hn.2.2.1, vok, hs.ok, flag_and, decOk_succ]
+  · rcases (by omega : j = k ∨ j < k) with rfl | hj'
+    · exact hn.2.2.2.2.2.1 q hq
+    · rw [hn.2.2.2.2.2.2.1 _ (by omega) (by omega), vk.table (by omega) (by omega), hu.mem]
+      exact hs.pts j hj' q hq
+
+/-- `A` and `R` decoded, by the loop. -/
+theorem decodeBoth_ok {b pk sig challenge : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
+    WP isa decodeBoth s (DecAt s b pk sig 2) := by
+  refine WP.seq (WP.mono (decodeStart_ok hc hl) fun a ha => ?_)
+  refine WP.loop (M := isa) (Inv := fun m t => ∃ k, k + m = 2 ∧ k < 2 ∧ DecAt s b pk sig k t) ?_ 2 a
+    ⟨0, rfl, by decide, ha⟩
+  intro m u ⟨k, hkm, hk, hu⟩
+  refine WP.mono (decodeBody_ok hc hk hu) fun t ⟨ht, zt⟩ => ?_
+  rcases (by omega : k = 0 ∨ k = 1) with rfl | rfl
+  · exact .inr ⟨by show some (!t.z) = _; rw [zt]; rfl, 1, by omega, 1, rfl, by decide, ht⟩
+  · exact .inl ⟨by show some (!t.z) = _; rw [zt]; rfl, ht⟩
+
+/-- Both decoded, and the equation if both are points. -/
+theorem verifyDecode_ok {b pk sig challenge : BitVec 32} {s : State}
+    (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
+    WP isa verifyDecode s fun t => VerifyKeep b s t ∧
+      t.gpr .r9 = BitVec.ofNat 32 (decodedEquation s.mem pk sig challenge).toNat := by
+  refine WP.seq (WP.mono (decodeBoth_ok hc hl) fun a ha => ?_)
+  have ca := (hc.keep ha.keep).ctx
+  refine WP.seq (ldrLow_ok ca (d := DOK) (by decide) .r9 fun c hc' => wp_cmp (op2_imm (by decide)) fun d hd hz =>
+    WP.block_nil ?_)
+  have kd : VerifyKeep b s d := ha.keep.trans (VerifyKeep.of_rest ((hc'.rest (ws := [.r9]) (by decide)).trans
+    (hd.rest _)) (by decide) (by rw [hd.mem, hc'.mem]))
+  have md : d.mem = a.mem := by rw [hd.mem, hc'.mem]
+  apply WP.ite (decOk s.mem pk sig 2) (by
+    show some (!d.z) = _
+    rw [hz]
+    rw [hc'.gpr, ha.ok]
+    cases decOk s.mem pk sig 2 <;> rfl)
+  · intro hok
+    rw [decOk_two, Bool.and_eq_true] at hok
+    obtain ⟨a0, ha0⟩ := Option.isSome_iff_exists.mp hok.1
+    obtain ⟨r0, hr0⟩ := Option.isSome_iff_exists.mp hok.2
+    have tA : tablePoint d.mem b 7744 = a0 := by rw [md]; exact ha.pts 0 (by decide) a0 ha0
+    have tR : tablePoint d.mem b 7872 = r0 := by rw [md]; exact ha.pts 1 (by decide) r0 hr0
+    refine WP.mono (verifyEquationPoints_ok (hc.keep kd) (by rw [md]; exact ha.lim)) fun t ⟨tk, _, tv⟩ =>
+      ⟨kd.trans tk, ?_⟩
+    rw [tv, tA, tR, equationResult_keep hc kd]
+    have h0 : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32) = some a0 := ha0
+    have h1 : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr sig) 32) = some r0 := hr0
+    simp only [decodedEquation, equationWithR, h0, h1]
+  · intro hok
+    refine WP.mono (recoverInvalid_ok d b) fun t ⟨tk, _, tv⟩ => ⟨kd.trans (VerifyKeep.of_keep tk), ?_⟩
+    rw [decOk_two] at hok
+    change t.gpr .r9 = 0 at tv
+    rw [tv]
+    have h0 : inPoint s.mem pk sig 0 = Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32) := rfl
+    have h1 : inPoint s.mem pk sig 1 = Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr sig) 32) := rfl
+    cases e0 : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr pk) 32) with
+    | none => simp only [decodedEquation, e0]; rfl
+    | some a0 =>
+      cases e1 : Spec.Ed25519.decodePoint (Spec.Ed25519.bytesAt s.mem (State.addr sig) 32) with
+      | none => simp only [decodedEquation, equationWithR, e0, e1]; rfl
+      | some r0 => rw [h0, h1, e0, e1] at hok; simp at hok
 
 end VG.Proof.Ed25519.Arm
 end
@@ -395,7 +638,7 @@ theorem verifyBody_ok {b pk sig challenge : BitVec 32} {s : State}
   · intro hy
     refine WP.seq (WP.mono (initFields_ok (uk.ctx hc.ctx)) fun v ⟨vk, vl, _⟩ => ?_)
     have kv := uk.trans (VerifyKeep.of_keep vk)
-    refine WP.mono (verifyDecodeA_ok (hc.keep kv) vl) fun t ⟨tk, tv⟩ => ?_
+    refine WP.mono (verifyDecode_ok (hc.keep kv) vl) fun t ⟨tk, tv⟩ => ?_
     refine ⟨kv.trans tk, ?_⟩
     rw [decodedEquation_keep hc kv] at tv
     rw [verifyEquation_bytes _ _ _ _ hc.sigInput.fit, hy, Bool.true_and]
