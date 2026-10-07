@@ -111,17 +111,19 @@ def entry : List Instr :=
 /-- `m` and `R² mod m` from `pre` into their arrays, then ZF set unless `m`
 is odd, its top word is not zero and `R² mod m < m`: the values of no
 modulus are refused before any arithmetic on them. -/
-def load : List (Prog isa) := [
+def loadWith (cmp : Prog isa) : List (Prog isa) := [
   .block head,
   copyWords,
   .block (eightW ++ [.alu .add .rsi (.reg .rax), .mov .rbx (.mem (hdr (sArr aR2)))]),
   copyWords,
   .block [.mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
-  wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
-    cfToRbp],
+  cmp,
   .block [.mov .rax (.mem (at0 .r10)), .alu .and .rax (.imm 1), .alu .and .rax (.reg .rbp),
     .mov .rdx (.mem (ix .r10 .r12 (-8))), .alu .cmp .rdx (.imm 1), .alu .sbb .rdx (.reg .rdx),
     .alu .add .rdx (.imm 1), .alu .and .rax (.reg .rdx), .alu .test .rax (.reg .rax)]]
+
+def load : List (Prog isa) := loadWith (wordLoop 0
+  [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)), cfToRbp])
 
 /-- Whether the exponentiation has started, into ZF (clear if it has). -/
 def startedTest : List Instr := [.mov .rax (.mem (hdr sStarted)), .alu .test .rax (.reg .rax)]

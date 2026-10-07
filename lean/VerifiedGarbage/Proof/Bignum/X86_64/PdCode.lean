@@ -148,6 +148,8 @@ structure PdCtx (s : State) : Prop where
     (Spec.Rsa.bytesAt s.mem (stackArg s 0) (s.gpr .rsi).toNat)
   hout : ∀ j < (s.gpr .rsi).toNat, InRegions s.wr (s.gpr .rdi + BitVec.ofNat 64 j) 1
   houts : ∀ j < (s.gpr .rsi).toNat, (stackArg s 3).toNat * 8 ≤ ofs (stackArg s 2) (s.gpr .rdi + BitVec.ofNat 64 j)
+  inSpan : InRegions (s.rd ++ s.wr) (stackArg s 0) (s.gpr .rsi).toNat
+  outSpan : InRegions s.wr (s.gpr .rdi) (s.gpr .rsi).toNat
   hret : ∀ b < 8, (stackArg s 3).toNat * 8 ≤ ofs (stackArg s 2) (s.gpr .rsp + BitVec.ofNat 64 b) ∧
     ∀ j < (s.gpr .rsi).toNat, s.gpr .rsp + BitVec.ofNat 64 b ≠ s.gpr .rdi + BitVec.ofNat 64 j
 
@@ -172,7 +174,12 @@ theorem pdCtx_of {s : State} (h : pdContract.pre s) : PdCtx s := by
     src_of_region (by rw [hrd]; simp) (by omega) des,
     src_of_region (by rw [hrd, ← hil]; simp) (by omega) (by rw [← hil]; exact dis),
     fun j hj => ⟨_, by rw [hwr]; exact List.mem_cons_self .., contains_byte _ (by omega) (by omega)⟩,
-    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)), fun b hb => ?_⟩
+    fun j hj => out_scr dOs (contains_byte _ (by omega) (by omega)),
+    ⟨⟨stackArg s 0, (stackArg s 1).toNat⟩, by rw [hrd]; simp,
+      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
+    ⟨⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, by rw [hwr]; simp,
+      by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega⟩,
+    fun b hb => ?_⟩
   have hc := contains_byte (s.gpr .rsp) (i := b) (len := 8) (by omega) (by omega)
   exact ⟨out_scr dRs hc, fun j hj he => dRo _ hc (by rw [he]; exact contains_byte _ (by omega) (by omega))⟩
 
@@ -219,7 +226,9 @@ theorem pdPre_of {s t₁ t₂ : State} (c : PdCtx s) (hdi : t₁.gpr .rdi = stac
       hIn := by rw [x₂ sIn (by decide)]; exact hIn, hW := hW₂, hb := hb₂, n := rfl, r := rfl, odd := hodd,
       n1 := hN1, rlt := hRN, x := c.hxb.congrK i₂ kk, e := c.heb.congrK i₂ kk, xl := bytesAt_length _ _ _,
       el := bytesAt_length _ _ _, L1 := c.hL1, L2 := c.hL2, out := fun j hj => by rw [kk.2.2]; exact c.hout j hj,
-      outSep := c.houts }
+      outSep := c.houts,
+      inSpan := by rw [kk.2.1, kk.2.2]; exact c.inSpan,
+      outSpan := by rw [kk.2.2]; exact c.outSpan }
 
 theorem pdCode_correct (M : Mont)
     (hmx : (Precomputed.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) (s : State) (h : pdContract.pre s) :

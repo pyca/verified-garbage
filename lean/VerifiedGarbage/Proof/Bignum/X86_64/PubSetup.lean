@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Bignum.X86_64.CompareContract
 import VerifiedGarbage.Proof.Bignum.X86_64.Valid
 import VerifiedGarbage.Proof.Bignum.X86_64.Cmp
 
@@ -125,13 +126,14 @@ def loadSteps : List (Prog isa) := [.block ([.mov .rcx (.mem (hdr sK)), .mov .r1
       loadBE]
 
 /-- The mask of `input < m`, `-m⁻¹` and the number 1. -/
-def restSteps : List (Prog isa) := [.block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
+def restStepsWith (cmp : Prog isa) : List (Prog isa) := [.block [.mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (hdr (sArr aX))),
         .mov .r10 (.mem (hdr (sArr aN))), .mov32 .rbp (.imm 0)],
-      wordLoop 0 [cfFromRbp, .mov .rax (.mem (ix .rbx .r14)), .alu .sbb .rax (.mem (ix .r10 .r14)),
-        cfToRbp],
+      cmp,
       .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
         [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
       setWord aOne .rcx]
+
+def restSteps : List (Prog isa) := restStepsWith (wordLoop 0 cmpBody)
 
 /-- `w`, the bases, `m` into array `aN` and the input into `aX`. -/
 theorem setupLoad_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : List Byte} (hs : Scr s B Z)
@@ -213,12 +215,12 @@ structure SetupOut (t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N X : 
   r10 : t.gpr .r10 = off B (slot w aN)
 
 /-- The mask of `X < N`, `-N⁻¹` and the number 1. -/
-theorem setupRest_ok {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s B Z)
+theorem setupRestWith_ok (cmp : Prog isa) (hc : CompareCorrect cmp) {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
     (hW : word s.mem B (8 * sW) = BitVec.ofNat 64 w)
     (hb : ∀ j < 8, word s.mem B (8 * sArr j) = off B (slot w j))
     (hN : wv s.mem B (slot w aN) w = N) (hX : wv s.mem B (slot w aX) w = X) (hodd : N % 2 = 1) :
-    WP isa (seqs restSteps) s fun t => ∃ minv, SetupOut t B Z w minv N X ∧
+    WP isa (seqs (restStepsWith cmp)) s fun t => ∃ minv, SetupOut t B Z w minv N X ∧
       Frm B [(8 * sMinv, 8), (8 * sMask, 8), (slot w aOne, 8 * (w + 2))] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
   have h0 := slot_le (w := w) (show 0 < 8 by decide)
@@ -229,14 +231,14 @@ theorem setupRest_ok {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s 
   have eAX : sArr aX = 9 := rfl
   have eAN : sArr aN = 8 := rfl
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi => hs.ld (by omega)
-  unfold restSteps
+  unfold restStepsWith
   refine WP.seq (WP.mono (WP.keep [.r12, .rbx, .r10, .rbp] (Q := fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .rbx = off B (slot w aX) ∧ t.gpr .r10 = off B (slot w aN) ∧ t.gpr .rbp = mask false ∧
       t.mem = s.mem) (by
     xrun [State.ea, hdr, hdi, hdrOff, hl sW (by omega), hl (sArr aX) (by omega), hl (sArr aN) (by omega),
       hW, hb aX (by decide), hb aN (by decide)]) rfl) fun t₁ ⟨⟨h12, hbx, h10, hbp, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
-  refine WP.seq (WP.mono (cmpLoop_ok hs₁ hbx h10 h12 hbp (by omega) hw'
+  refine WP.seq (WP.mono (hc hs₁ hbx h10 h12 hbp (by omega) hw'
     (by have := slot_le (w := w) (show aX < 8 by decide); omega)
     (by have := slot_le (w := w) (show aN < 8 by decide); omega)) fun t₂ ⟨hbp₂, hm₂, k₂⟩ => ?_)
   rw [hm₁, hN, hX] at hbp₂
@@ -310,6 +312,15 @@ theorem setupRest_ok {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s 
       (Frm.of_outside (writeW_outside _ B _ (by omega)) (by simp))).trans (Frm.of_outside ho (by simp))
   · exact (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
 
+theorem setupRest_ok {s : State} {B : Addr} {Z w : Nat} {N X : Nat} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 31)
+    (hW : word s.mem B (8 * sW) = BitVec.ofNat 64 w)
+    (hb : ∀ j < 8, word s.mem B (8 * sArr j) = off B (slot w j))
+    (hN : wv s.mem B (slot w aN) w = N) (hX : wv s.mem B (slot w aX) w = X) (hodd : N % 2 = 1) :
+    WP isa (seqs restSteps) s fun t => ∃ minv, SetupOut t B Z w minv N X ∧
+      Frm B [(8 * sMinv, 8), (8 * sMask, 8), (slot w aOne, 8 * (w + 2))] s.mem t.mem ∧ Keep mmRegs s t :=
+  setupRestWith_ok _ @cmpLoop_ok hs hdi hZ hw hw' hW hb hN hX hodd
+
 /-- The setup, for a valid modulus. -/
 theorem setup_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : List Byte} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
@@ -319,12 +330,14 @@ theorem setup_ok {s : State} {B : Addr} {Z k : Nat} {np ip : Addr} {nb xb : List
     WP isa (seqs (loadSteps ++ restSteps)) s fun t => ∃ minv,
       SetupOut t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) ∧
       Frm B (setupRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine wp_seqs_append (by simp [loadSteps]) (by simp [restSteps])
+  refine wp_seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
     (WP.mono (setupLoad_ok hs hdi hZ (by omega) hk hK hN hIn hnb hxb hnl hxl)
       fun t₁ ⟨hN₁, hX₁, hW₁, hb₁, hf₁, k₁⟩ => ?_)
   refine WP.mono (setupRest_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hZ (by omega) (by omega)
     hW₁ hb₁ hN₁ hX₁ hodd) fun t ⟨minv, ho, hf, k₂⟩ => ⟨minv, ho, ?_, (k₁.trans k₂).mono (by decide)⟩
   exact (hf₁.mono fun r hr => List.mem_append_left _ hr).trans
     (hf.mono fun r hr => List.mem_append_right _ hr)
+
+
 
 end VG.Proof.Bignum.X86_64

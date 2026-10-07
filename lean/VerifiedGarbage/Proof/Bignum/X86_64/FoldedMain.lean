@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedExp
-import VerifiedGarbage.Proof.Bignum.X86_64.PdMain
+import VerifiedGarbage.Proof.Bignum.X86_64.FoldedIO
 
 namespace VG.Proof.Bignum.X86_64.FoldedPublic
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -10,7 +10,7 @@ open VG.Proof.MlKem.X86_64
 def phases (M : Mont) : List (Prog isa) := [M.mm aXm aX aR2,Folded.exp65537 M.mm]
 
 theorem rest_eq (M : Mont) :
-    Folded.rest M.mm = seqs ((pdIn ++ restSteps) ++ (phases M ++ outSteps)) := rfl
+    Folded.rest M.mm = seqs ((wordIn ++ restStepsWith VG.Impl.Rsa.X86_64.Compare8.code) ++ (phases M ++ wordOutStepsArr aY)) := rfl
 
 /-- Execution is safe for every accepted cache. A valid cache additionally
 establishes the numerical result for exponent 65537. -/
@@ -32,9 +32,9 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
   have hle : ∀ r ∈ pdAll ((k+7)/8), r.1+r.2 ≤ Z :=
     fun r hr => (pdAll_le _ r hr).trans hZ
   rw [rest_eq]
-  refine wp_seqs_append (by simp [pdIn]) (by simp [phases])
-    (WP.mono (pdSetup_ok h) fun a ⟨mi,so,fa,ka,rra⟩ => ?_)
-  refine wp_seqs_append (by simp [phases]) (by simp [outSteps,outStepsArr]) ?_
+  refine wp_seqs_append (by simp [wordIn]) (by simp [phases])
+    (WP.mono (wordSetup_ok h) fun a ⟨mi,so,fa,ka,rra⟩ => ?_)
+  refine wp_seqs_append (by simp [phases]) (by simp [wordOutStepsArr]) ?_
   unfold phases
   refine WP.seq (WP.mono (mmN_ok M (o := aXm) (a := aX) (b := aR2) so.good hZ hw
     (by omega) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -56,10 +56,10 @@ theorem rest_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr}
     rw [fc.word_eq (pExpRanges_hdr _ (by decide) (by decide) (by decide) (by decide) (by decide))
       (by unfold sMask sFn; omega),ab.hslot (by decide)]
     exact so.mask
-  refine WP.mono (outPhase_ok gc hZ (by omega) (by omega) yc
+  refine WP.mono (wordOutPhase_ok gc hZ (by omega) (by omega) yc
     (by rw [fixed sOut (by decide)]; exact h.hO)
     (by rw [fixed sK (by decide)]; exact h.hK) maskC
-    (fun j hj => by rw [keep.2.2]; exact h.out j hj) h.outSep)
+    (by rw [keep.2.2]; exact h.outSpan) h.outSep)
     fun t ⟨bytes,rax,saved,frame,kt⟩ => ⟨x^65536 * Spec.Rsa.os2ip xb % N,?_,⟨?_,rax,
       fun i hi => by rw [saved i hi]; exact fixed i (by omega),
       fun y hy hy' => by rw [frame y hy',InScr.of_frm fac hle y hy],

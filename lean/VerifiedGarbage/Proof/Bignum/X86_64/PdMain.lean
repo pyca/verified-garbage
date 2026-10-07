@@ -61,12 +61,12 @@ theorem checkBlk_ok {t : State} {B : Addr} {Z w : Nat} (hs : Scr t B Z) (h10 : t
 /-- The load: `w`, the bases, `m` and `R² mod m` from `pre` (at `pp`, the
 `2 w` words outside the working space), and ZF clear iff they pass the
 checks. -/
-theorem pdLoad_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
+theorem pdLoadWith_ok (cmp : Prog isa) (hc : CompareCorrect cmp) {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
     (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
     (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = pp)
     (hpr : ∀ i < 2 * ((k + 7) / 8), InRegions (s.rd ++ s.wr) (off pp (8 * i)) 8)
     (hps : ∀ j < 16 * ((k + 7) / 8), Z ≤ ofs B (pp + BitVec.ofNat 64 j)) :
-    WP isa (seqs Precomputed.load) s fun t =>
+    WP isa (seqs (Precomputed.loadWith cmp)) s fun t =>
       wv t.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = wv s.mem pp 0 ((k + 7) / 8) ∧
       wv t.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) = wv s.mem pp (8 * ((k + 7) / 8)) ((k + 7) / 8) ∧
       word t.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) ∧
@@ -91,7 +91,7 @@ theorem pdLoad_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z
       Z ≤ ofs B (off pp (e + 8 * j) + BitVec.ofNat 64 b) := fun e he j hj b hb => by
     have := hps (e + 8 * j + b) (by omega)
     rwa [off, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
-  unfold Precomputed.load
+  unfold Precomputed.loadWith
   refine WP.seq (WP.mono (setupHead_ok hs hdi hZ (by omega) hK hN)
     fun t₁ ⟨h12, _, hsi, hbx, hW₁, hb₁, hf₁, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
@@ -156,7 +156,7 @@ theorem pdLoad_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z
     xrun [State.ea, hdr, hdi₄, hdrOff, hs₄.ld (d := 8 * sArr aN) (by unfold sArr aN; omega), hb₄ aN (by decide)])
     rfl) fun t₅ ⟨⟨h10₅, hbp₅, hm₅⟩, k₅⟩ => ?_)
   have hs₅ := hs₄.congr k₅.2.2
-  refine WP.seq (WP.mono (cmpLoop_ok hs₅ ((k₅.gpr (by decide)).trans hbx₄) h10₅ ((k₅.gpr (by decide)).trans h12₄)
+  refine WP.seq (WP.mono (hc hs₅ ((k₅.gpr (by decide)).trans hbx₄) h10₅ ((k₅.gpr (by decide)).trans h12₄)
     hbp₅ (by omega) (by omega) (by omega) (by omega)) fun t₆ ⟨hbp₆, hm₆, k₆⟩ => ?_)
   rw [hm₅] at hbp₆
   have hs₆ := hs₅.congr k₆.2.2
@@ -178,6 +178,23 @@ theorem pdLoad_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z
   exact (hf₁'.trans f₂).trans f₄
 
 /-! ## The computation -/
+
+
+theorem pdLoad_ok {s : State} {B : Addr} {Z k : Nat} {pp : Addr} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
+    (hZ : slot ((k + 7) / 8) 8 ≤ Z) (hk1 : 9 ≤ k) (hk : k < 2 ^ 31)
+    (hK : word s.mem B (8 * sK) = BitVec.ofNat 64 k) (hN : word s.mem B (8 * sN) = pp)
+    (hpr : ∀ i < 2 * ((k + 7) / 8), InRegions (s.rd ++ s.wr) (off pp (8 * i)) 8)
+    (hps : ∀ j < 16 * ((k + 7) / 8), Z ≤ ofs B (pp + BitVec.ofNat 64 j)) :
+    WP isa (seqs Precomputed.load) s fun t =>
+      wv t.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8) = wv s.mem pp 0 ((k + 7) / 8) ∧
+      wv t.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) = wv s.mem pp (8 * ((k + 7) / 8)) ((k + 7) / 8) ∧
+      word t.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) ∧
+      (∀ j < 8, word t.mem B (8 * sArr j) = off B (slot ((k + 7) / 8) j)) ∧
+      t.zf = some (!(decide ((word t.mem B (slot ((k + 7) / 8) aN)).toNat % 2 = 1) &&
+        decide (wv t.mem B (slot ((k + 7) / 8) aR2) ((k + 7) / 8) < wv t.mem B (slot ((k + 7) / 8) aN) ((k + 7) / 8)) &&
+        decide (word t.mem B (slot ((k + 7) / 8) aN + 8 * ((k + 7) / 8 - 1)) ≠ 0))) ∧
+      Frm B (pdLoadRanges ((k + 7) / 8)) s.mem t.mem ∧ Keep mmRegs s t :=
+  pdLoadWith_ok _ @cmpLoop_ok hs hdi hZ hk1 hk hK hN hpr hps
 
 /-- The input's load. -/
 def pdIn : List (Prog isa) :=
@@ -217,6 +234,9 @@ structure PdPre (s : State) (B : Addr) (Z k : Nat) (op ep ip : Addr) (L : Nat) (
   L2 : L ≤ k
   out : ∀ j < k, InRegions s.wr (op + BitVec.ofNat 64 j) 1
   outSep : ∀ j < k, Z ≤ ofs B (op + BitVec.ofNat 64 j)
+  /-- The public contract provides whole buffers, also permitting word loads. -/
+  inSpan : InRegions (s.rd ++ s.wr) ip k
+  outSpan : InRegions s.wr op k
 
 /-- `x` with `x R ≡ X`, for `R` invertible modulo `N > 1`. -/
 theorem exists_mont {R N : Nat} (hR : Nat.Coprime R N) (hN1 : 1 < N) (X : Nat) :
@@ -263,7 +283,7 @@ theorem pdSetup_ok {s : State} {B : Addr} {Z k : Nat} {op ep ip : Addr} {L : Nat
   have hn := hs.nowrap
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
   -- The input.
-  refine wp_seqs_append (by simp [pdIn]) (by simp [restSteps])
+  refine wp_seqs_append (by simp [pdIn]) (by simp [restSteps, restStepsWith])
     (WP.mono (pdIn_ok hs h.rdi hZ (by omega) (by omega) h.hK h.hIn h.hb h.x h.xl) fun t₁ ⟨hX₁, ha₁, k₁⟩ => ?_)
   have f₁ : Frm B (pdAll ((k + 7) / 8)) s.mem t₁.mem := Frm.of_arrays ha₁ (by simp [pdAll])
   -- The mask, `-m⁻¹` and 1.
