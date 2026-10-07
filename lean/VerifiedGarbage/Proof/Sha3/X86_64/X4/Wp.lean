@@ -130,6 +130,62 @@ theorem wp_vror {d a : XReg} {n : Nat} (hn : n < 64)
       simp [q4, VOp.exec, State.lane_setV256, rorQwords]
   · simp only [q4, VOp.exec, State.lane_setV256, ite_eq_right hr]
 
+theorem ternlog_xor3 (a b c : BitVec 128) : ternlog a b c 0x96 = a ^^^ b ^^^ c := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [ternlog, List.range, List.range.loop, List.foldl, BitVec.reduceGetLsb, Bool.false_eq_true, ↓reduceIte]
+  simp only [Nat.testBit_eq_decide_div_mod_eq, Nat.reducePow, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
+    decide_true, decide_false, ↓reduceIte, Bool.false_eq_true]
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_xor,
+    hi, decide_true, Bool.true_and, BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.false_or]
+  cases a.getLsbD i <;> cases b.getLsbD i <;> cases c.getLsbD i <;> rfl
+
+theorem ternlog_chi (a b c : BitVec 128) : ternlog a b c 0xD2 = a ^^^ (~~~b &&& c) := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [ternlog, List.range, List.range.loop, List.foldl, BitVec.reduceGetLsb, Bool.false_eq_true, ↓reduceIte]
+  simp only [Nat.testBit_eq_decide_div_mod_eq, Nat.reducePow, Nat.reduceDiv, Nat.reduceMod, Nat.reduceEqDiff,
+    decide_true, decide_false, ↓reduceIte, Bool.false_eq_true]
+  simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_xor,
+    hi, decide_true, Bool.true_and, BitVec.ofNat_eq_ofNat, BitVec.getLsbD_zero, Bool.false_or]
+  cases a.getLsbD i <;> cases b.getLsbD i <;> cases c.getLsbD i <;> rfl
+
+theorem q4_vtern (s : State) (d a b r : XReg) (n : BitVec 8) (k : Nat) :
+    q4 ((VOp.vpternlogd .l256 d a b n).exec s) r k =
+      if r = d then qword (ternlog (s.lane d (k / 2)) (s.lane a (k / 2)) (s.lane b (k / 2)) n) (k % 2)
+      else q4 s r k := by
+  simp only [q4, VOp.exec, State.lane_setV256]
+  split
+  · rcases (by omega : k / 2 = 0 ∨ k / 2 ≠ 0) with h | h <;> simp [h, State.lane]
+  · rfl
+
+theorem VUpd.vtern (s : State) (d a b : XReg) (n : BitVec 8) {v : Nat → BitVec 64}
+    (hv : ∀ k < 4, qword (ternlog (s.lane d (k / 2)) (s.lane a (k / 2)) (s.lane b (k / 2)) n) (k % 2) = v k) :
+    VUpd s ((VOp.vpternlogd .l256 d a b n).exec s) d v :=
+  ⟨fun k hk => by rw [q4_vtern, ite_eq_left rfl]; exact hv k hk,
+    fun r hr k _ => by rw [q4_vtern, ite_eq_right hr], VOp.exec_gpr _ _, VOp.exec_mem _ _,
+    VOp.exec_rd _ _, VOp.exec_wr _ _⟩
+
+/-- A three-input XOR (`vpternlogd` with `0x96`). -/
+theorem wp_vxor3 {d a b : XReg}
+    (k : ∀ s', VUpd s s' d (fun i => q4 s d i ^^^ q4 s a i ^^^ q4 s b i) → WP isa (.block is) s' Q) :
+    WP isa (.block (xor3 d a b :: is)) s Q :=
+  WP.cons rfl (k _ (VUpd.vtern _ _ _ _ _ fun _ _ => by simp only [ternlog_xor3, qword_xor]; rfl))
+
+/-- `d ⊕ (¬a ∧ b)` (`vpternlogd` with `0xD2`). -/
+theorem wp_vchi {d a b : XReg}
+    (k : ∀ s', VUpd s s' d (fun i => q4 s d i ^^^ (~~~q4 s a i &&& q4 s b i)) → WP isa (.block is) s' Q) :
+    WP isa (.block (.vop (.vpternlogd .l256 d a b 0xD2) :: is)) s Q :=
+  WP.cons rfl (k _ (VUpd.vtern _ _ _ _ _ fun _ hk => by
+    rw [ternlog_chi, qword_xor, qword_andn _ _ (mod2_lt _)]; rfl))
+
+/-- A 256-bit register move. -/
+theorem wp_vmov {d a : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i) → WP isa (.block is) s' Q) :
+    WP isa (.block (.vop (.vmovdqa .l256 d a) :: is)) s Q := by
+  refine WP.cons rfl (k _ ⟨fun j hj => ?_, fun r hr j hj => ?_, VOp.exec_gpr _ _, VOp.exec_mem _ _,
+    VOp.exec_rd _ _, VOp.exec_wr _ _⟩)
+  · simp only [q4, VOp.exec, State.lane_setV256, ite_true]
+    rcases (by omega : j / 2 = 0 ∨ j / 2 = 1) with h | h <;> simp [h, State.lane]
+  · simp only [q4, VOp.exec, State.lane_setV256, ite_eq_right hr]
+
 theorem wp_vxor {d a b : XReg} (k : ∀ s', VUpd s s' d (fun i => q4 s a i ^^^ q4 s b i) → WP isa (.block is) s' Q) :
     WP isa (.block (vb .vpxor d a b :: is)) s Q :=
   WP.cons rfl (k _ (VUpd.vbin _ _ _ _ _ fun _ _ => by simp only [VBinOp.sse, XBinOp.eval, qword_xor]; rfl))

@@ -118,36 +118,62 @@ theorem Src.vw {s s' : State} {src : Addr} {A : Nat → KState} (h : Src s src A
     (hw : VW s s' ws) : Src s' src A :=
   ⟨by rw [hw.gpr, h.rdi], by rw [hw.rd, hw.wr]; exact h.src_in, by rw [hw.mem]; exact h.lanes⟩
 
-theorem column_ok (x : Nat) (hx : x < 5) (s : State) (src : Addr) (A : Nat → KState) (hs : Src s src A) :
-    WP isa (.block (column x)) s fun s' =>
-      VW s s' [creg x, T] ∧ ∀ k < 4, q4 s' (creg x) k = C (A k) x := by
+theorem column_ok (x : Nat) (hx : x < 5) (s : State) (src : Addr) (A : Nat → KState) (hs : Src s src A)
+    (fast : Bool := false) :
+    WP isa (.block (column x fast)) s fun s' =>
+      VW s s' [creg x, T, U] ∧ ∀ k < 4, q4 s' (creg x) k = C (A k) x := by
   have cT : creg x ≠ T := (T_creg x hx).symm
-  have m₁ : creg x ∈ [creg x, T] := by simp
-  have m₂ : T ∈ [creg x, T] := by simp
-  have w₀ := VW.refl s [creg x, T]
+  have cU : creg x ≠ U := (U_creg x hx).symm
+  have m₁ : creg x ∈ [creg x, T, U] := by simp
+  have m₂ : T ∈ [creg x, T, U] := by simp
+  have m₃ : U ∈ [creg x, T, U] := by simp
+  have w₀ := VW.refl s [creg x, T, U]
   unfold column
-  refine wp_ld w₀ hs.rdi (hs.src_in _ (by omega)) fun s₁ u₁ => ?_
-  have w₁ := w₀.upd u₁ m₁
-  refine wp_ld w₁ hs.rdi (hs.src_in _ (by omega)) fun s₂ u₂ => ?_
-  have w₂ := w₁.upd u₂ m₂
-  refine wp_vxor fun s₃ u₃ => ?_
-  have w₃ := w₂.upd u₃ m₁
-  refine wp_ld w₃ hs.rdi (hs.src_in _ (by omega)) fun s₄ u₄ => ?_
-  have w₄ := w₃.upd u₄ m₂
-  refine wp_vxor fun s₅ u₅ => ?_
-  have w₅ := w₄.upd u₅ m₁
-  refine wp_ld w₅ hs.rdi (hs.src_in _ (by omega)) fun s₆ u₆ => ?_
-  have w₆ := w₅.upd u₆ m₂
-  refine wp_vxor fun s₇ u₇ => ?_
-  have w₇ := w₆.upd u₇ m₁
-  refine wp_ld w₇ hs.rdi (hs.src_in _ (by omega)) fun s₈ u₈ => ?_
-  have w₈ := w₇.upd u₈ m₂
-  refine wp_vxor fun s₉ u₉ => wp_nil ⟨w₈.upd u₉ m₁, fun k hk => ?_⟩
-  simp only [u₉.val k hk, u₈.val k hk, u₈.other _ cT k hk, u₇.val k hk, u₆.val k hk, u₆.other _ cT k hk,
-    u₅.val k hk, u₄.val k hk, u₄.other _ cT k hk, u₃.val k hk, u₂.val k hk, u₂.other _ cT k hk,
-    u₁.val k hk, hs.lanes x (by omega) k hk, hs.lanes (x + 5) (by omega) k hk,
-    hs.lanes (x + 10) (by omega) k hk, hs.lanes (x + 15) (by omega) k hk, hs.lanes (x + 20) (by omega) k hk]
-  rfl
+  cases fast with
+  | true =>
+    simp only [ite_true]
+    refine wp_ld w₀ hs.rdi (hs.src_in _ (by omega)) fun s₁ u₁ => ?_
+    have w₁ := w₀.upd u₁ m₁
+    refine wp_ld w₁ hs.rdi (hs.src_in _ (by omega)) fun s₂ u₂ => ?_
+    have w₂ := w₁.upd u₂ m₂
+    refine wp_ld w₂ hs.rdi (hs.src_in _ (by omega)) fun s₃ u₃ => ?_
+    have w₃ := w₂.upd u₃ m₃
+    refine wp_vxor3 fun s₄ u₄ => ?_
+    have w₄ := w₃.upd u₄ m₁
+    refine wp_ld w₄ hs.rdi (hs.src_in _ (by omega)) fun s₅ u₅ => ?_
+    have w₅ := w₄.upd u₅ m₂
+    refine wp_ld w₅ hs.rdi (hs.src_in _ (by omega)) fun s₆ u₆ => ?_
+    have w₆ := w₅.upd u₆ m₃
+    refine wp_vxor3 fun s₇ u₇ => wp_nil ⟨w₆.upd u₇ m₁, fun k hk => ?_⟩
+    simp only [u₇.val k hk, u₆.val k hk, u₆.other _ cU k hk, u₆.other _ T_U k hk, u₅.val k hk,
+      u₅.other _ cT k hk, u₄.val k hk, u₃.val k hk, u₃.other _ cU k hk, u₃.other _ T_U k hk, u₂.val k hk,
+      u₂.other _ cT k hk, u₁.val k hk, hs.lanes x (by omega) k hk, hs.lanes (x + 5) (by omega) k hk,
+      hs.lanes (x + 10) (by omega) k hk, hs.lanes (x + 15) (by omega) k hk, hs.lanes (x + 20) (by omega) k hk]
+    rfl
+  | false =>
+    simp only [Bool.false_eq_true, ite_false]
+    refine wp_ld w₀ hs.rdi (hs.src_in _ (by omega)) fun s₁ u₁ => ?_
+    have w₁ := w₀.upd u₁ m₁
+    refine wp_ld w₁ hs.rdi (hs.src_in _ (by omega)) fun s₂ u₂ => ?_
+    have w₂ := w₁.upd u₂ m₂
+    refine wp_vxor fun s₃ u₃ => ?_
+    have w₃ := w₂.upd u₃ m₁
+    refine wp_ld w₃ hs.rdi (hs.src_in _ (by omega)) fun s₄ u₄ => ?_
+    have w₄ := w₃.upd u₄ m₂
+    refine wp_vxor fun s₅ u₅ => ?_
+    have w₅ := w₄.upd u₅ m₁
+    refine wp_ld w₅ hs.rdi (hs.src_in _ (by omega)) fun s₆ u₆ => ?_
+    have w₆ := w₅.upd u₆ m₂
+    refine wp_vxor fun s₇ u₇ => ?_
+    have w₇ := w₆.upd u₇ m₁
+    refine wp_ld w₇ hs.rdi (hs.src_in _ (by omega)) fun s₈ u₈ => ?_
+    have w₈ := w₇.upd u₈ m₂
+    refine wp_vxor fun s₉ u₉ => wp_nil ⟨w₈.upd u₉ m₁, fun k hk => ?_⟩
+    simp only [u₉.val k hk, u₈.val k hk, u₈.other _ cT k hk, u₇.val k hk, u₆.val k hk, u₆.other _ cT k hk,
+      u₅.val k hk, u₄.val k hk, u₄.other _ cT k hk, u₃.val k hk, u₂.val k hk, u₂.other _ cT k hk,
+      u₁.val k hk, hs.lanes x (by omega) k hk, hs.lanes (x + 5) (by omega) k hk,
+      hs.lanes (x + 10) (by omega) k hk, hs.lanes (x + 15) (by omega) k hk, hs.lanes (x + 20) (by omega) k hk]
+    rfl
 
 /-- `s'` agrees with `s` but for the vector registers and the flags. -/
 structure Same (s s' : State) : Prop where
@@ -171,15 +197,15 @@ theorem Src.same {s s' : State} {src : Addr} {A : Nat → KState} (h : Src s src
 def ColInv (s₀ : State) (A : Nat → KState) (n : Nat) (s : State) : Prop :=
   Same s₀ s ∧ ∀ x < n, ∀ k < 4, q4 s (creg x) k = C (A k) x
 
-theorem columns_ok (s₀ : State) (src : Addr) (A : Nat → KState) (hs : Src s₀ src A) :
-    WP isa (.block ((List.range 5).flatMap column)) s₀ (ColInv s₀ A 5) := by
+theorem columns_ok (s₀ : State) (src : Addr) (A : Nat → KState) (hs : Src s₀ src A) (fast : Bool := false) :
+    WP isa (.block ((List.range 5).flatMap fun x => column x fast)) s₀ (ColInv s₀ A 5) := by
   refine wp_range_flatMap (M := isa) (ColInv s₀ A) (fun x s hx ⟨hw, hc⟩ => ?_) 5 (Nat.le_refl _) s₀
     ⟨Same.refl _, fun _ h => absurd h (by omega)⟩
-  refine WP.mono (column_ok x hx s src A (hs.same hw)) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_⟩
+  refine WP.mono (column_ok x hx s src A (hs.same hw) fast) fun s' ⟨h, hv⟩ => ⟨hw.trans h.same, fun x' hx' k hk => ?_⟩
   by_cases e : x' = x
   · subst e; exact hv k hk
-  · rw [h.other _ (by simpa using ⟨creg_ne hx (by omega) e, (T_creg x' (by omega)).symm⟩) k hk,
-      hc x' (by omega) k hk]
+  · rw [h.other _ (by simpa using ⟨creg_ne hx (by omega) e, (T_creg x' (by omega)).symm,
+      (U_creg x' (by omega)).symm⟩) k hk, hc x' (by omega) k hk]
 
 /-! ## D -/
 
@@ -296,8 +322,8 @@ theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) (s : State) (dst rcp : Addr
     (hout : InRegions s.wr (dst + BitVec.ofNat 64 (32 * (x + 5 * y))) 32)
     (hrc_in : InRegions (s.rd ++ s.wr) (rcp + BitVec.ofNat 64 (32 * 0)) 32)
     (hrc : ∀ k < 4, s.mem.readW (la rcp 0 k) 64 = rc)
-    (hb : ∀ x' < 5, ∀ k < 4, q4 s (creg x') k = B (A k) x' y) :
-    WP isa (.block (chi x y)) s fun s' =>
+    (hb : ∀ x' < 5, ∀ k < 4, q4 s (creg x') k = B (A k) x' y) (fast : Bool := false) :
+    WP isa (.block (chi x y fast)) s fun s' =>
       s'.gpr = s.gpr ∧ (∀ r, r ≠ T → r ≠ U → ∀ k < 4, q4 s' r k = q4 s r k) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ∃ v : BitVec 256, s'.mem = s.mem.writeW (dst + BitVec.ofNat 64 (32 * (x + 5 * y))) v ∧
         ∀ k < 4, v.extractLsb' (64 * k) 64 = out (A k) rc x y := by
@@ -305,13 +331,27 @@ theorem chi_ok (x y : Nat) (hx : x < 5) (hy : y < 5) (s : State) (dst rcp : Addr
   have h2 : (x + 2) % 5 < 5 := Nat.mod_lt _ (by omega)
   have w₀ := VW.refl s [T, U]
   unfold chi
-  simp only [List.cons_append, List.nil_append]
-  refine wp_vandn fun s₁ u₁ => wp_vxor fun s₂ u₂ => ?_
-  have w₂ := (w₀.upd u₁ (by simp)).upd u₂ (by simp)
-  have ht : ∀ k < 4, q4 s₂ T k = (B (A k) ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&& B (A k) ((x + 2) % 5) y ^^^
-      B (A k) x y := fun k hk => by
-    simp only [u₂.val k hk, u₁.val k hk, u₁.other _ (T_creg _ hx).symm k hk, hb _ h1 k hk, hb _ h2 k hk,
-      hb _ hx k hk, not_eq_xor]
+  -- The first two instructions: `T = B[x] ⊕ (¬B[x+1] ∧ B[x+2])`.
+  have front : ∀ {Q : State → Prop} {is : List Instr},
+      (∀ s₂ : State, VW s s₂ [T, U] → (∀ k < 4, q4 s₂ T k = (B (A k) ((x + 1) % 5) y ^^^ 0xffffffffffffffff) &&&
+        B (A k) ((x + 2) % 5) y ^^^ B (A k) x y) → WP isa (.block is) s₂ Q) →
+      WP isa (.block ((if fast then
+        [.vop (.vmovdqa .l256 T (creg x)), .vop (.vpternlogd .l256 T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)) 0xD2)]
+      else [vb .vpandn T (creg ((x + 1) % 5)) (creg ((x + 2) % 5)), vb .vpxor T T (creg x)]) ++ is)) s Q := by
+    intro Q is k
+    cases fast with
+    | true =>
+      simp only [ite_true, List.cons_append, List.nil_append]
+      refine wp_vmov fun s₁ u₁ => wp_vchi fun s₂ u₂ => k s₂ ((w₀.upd u₁ (by simp)).upd u₂ (by simp)) fun j hj => ?_
+      simp only [u₂.val j hj, u₁.val j hj, u₁.other _ (T_creg _ h1).symm j hj, u₁.other _ (T_creg _ h2).symm j hj,
+        hb _ h1 j hj, hb _ h2 j hj, hb _ hx j hj, not_eq_xor, BitVec.xor_comm (B (A j) x y)]
+    | false =>
+      simp only [Bool.false_eq_true, ite_false, List.cons_append, List.nil_append]
+      refine wp_vandn fun s₁ u₁ => wp_vxor fun s₂ u₂ => k s₂ ((w₀.upd u₁ (by simp)).upd u₂ (by simp)) fun j hj => ?_
+      simp only [u₂.val j hj, u₁.val j hj, u₁.other _ (T_creg _ hx).symm j hj, hb _ h1 j hj, hb _ h2 j hj,
+        hb _ hx j hj, not_eq_xor]
+  rw [List.append_assoc]
+  refine front fun s₂ w₂ ht => ?_
   -- The store, from a state that differs from `s` only in `T` and `U`.
   have fin : ∀ s₅ : State, VW s s₅ [T, U] → (∀ k < 4, q4 s₅ T k = out (A k) rc x y) →
       WP isa (.block [Impl.Sha3.X86_64.X4.st .rsi (x + 5 * y) T]) s₅ fun s' =>
@@ -345,13 +385,14 @@ structure ChiInv (s₀ : State) (A : Nat → KState) (rc : Lane) (dst : Addr) (y
 
 theorem chis_ok (y : Nat) (hy : y < 5) (s₀ : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lane)
     (he : Env s₀.rd s₀.wr src dst rcp) (hrsi : s₀.gpr .rsi = dst) (hrdx : s₀.gpr .rdx = rcp)
-    (hrc : ∀ k < 4, s₀.mem.readW (la rcp 0 k) 64 = rc) (s : State) (hs : ChiInv s₀ A rc dst y 0 s) :
-    WP isa (.block ((List.range 5).flatMap fun x => chi x y)) s (ChiInv s₀ A rc dst y 5) := by
+    (hrc : ∀ k < 4, s₀.mem.readW (la rcp 0 k) 64 = rc) (s : State) (hs : ChiInv s₀ A rc dst y 0 s)
+    (fast : Bool := false) :
+    WP isa (.block ((List.range 5).flatMap fun x => chi x y fast)) s (ChiInv s₀ A rc dst y 5) := by
   refine wp_range_flatMap (M := isa) (ChiInv s₀ A rc dst y) (fun x s hx hi => ?_) 5 (Nat.le_refl _) s hs
   have hj : x + 5 * y < 25 := by omega
   refine WP.mono (chi_ok x y hx hy s dst rcp A rc (by rw [hi.gpr, hrsi]) (by rw [hi.gpr, hrdx])
     (by rw [hi.wr]; exact he.dst_out _ hj) (by rw [hi.rd, hi.wr]; simpa using he.rc_in)
-    (fun k hk => by rw [he.rc_frame hi.frame hk, hrc k hk]) hi.bregs)
+    (fun k hk => by rw [he.rc_frame hi.frame hk, hrc k hk]) hi.bregs fast)
     fun s' ⟨hg, hq, hrd, hwr, v, hm, hv⟩ => ?_
   refine ⟨hg.trans hi.gpr, hrd.trans hi.rd, hwr.trans hi.wr, ?_,
     fun x' hx' k hk => by rw [hq _ (T_dreg x' hx').symm (U_dreg x' hx').symm k hk, hi.dregs x' hx' k hk],
@@ -391,7 +432,7 @@ theorem planes_ok (s₀ : State) (src dst rcp : Addr) (A : Nat → KState) (rc :
   refine WP.mono (laneBs_ok (fast := fast) y hy s src A hs hi.dregs) fun s₁ ⟨hw, hds, hb⟩ => ?_
   refine WP.mono (chis_ok y hy s₀ src dst rcp A rc he hrsi hrdx hrc s₁
     ⟨hw.gpr.trans hi.gpr, hw.rd.trans hi.rd, hw.wr.trans hi.wr, by rw [hw.mem]; exact hi.frame, hds, hb,
-      fun j hj k hk => by rw [hw.mem]; exact hi.lanes j hj k hk⟩)
+      fun j hj k hk => by rw [hw.mem]; exact hi.lanes j hj k hk⟩ fast)
     fun s₂ h₂ => ⟨h₂.gpr, h₂.rd, h₂.wr, h₂.frame, h₂.dregs, fun j hj => h₂.lanes j (by omega)⟩
 
 /-! ## The round -/
@@ -425,7 +466,7 @@ theorem round_ok (s : State) (src dst rcp : Addr) (A : Nat → KState) (rc : Lan
       s'.zf = some (rcp + 32 - s.gpr .rcx == 0) := by
   unfold round
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (columns_ok s src A ⟨hrdi, he.src_in, hA⟩) fun s₁ ⟨k₁, c₁⟩ => ?_
+  refine WP.mono (columns_ok s src A ⟨hrdi, he.src_in, hA⟩ fast) fun s₁ ⟨k₁, c₁⟩ => ?_
   refine WP.mono (dcols_ok (fast := fast) s₁ A c₁) fun s₂ ⟨k₂, _, d₂⟩ => ?_
   have k₁₂ := k₁.trans k₂
   refine WP.mono (planes_ok (fast := fast) s₂ src dst rcp A rc (by rw [k₁₂.rd, k₁₂.wr]; exact he)
