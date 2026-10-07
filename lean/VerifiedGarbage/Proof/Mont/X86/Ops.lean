@@ -115,7 +115,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · rw [u₂.gpr, u₂.other _ (by decide), K₁.1 _ (by decide), Nat.mul_zero]; exact (BitVec.add_zero _).symm
     · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; omega
     · rw [Nat.mul_zero, Nat.add_zero, Nat.sub_zero, mem₂, V₁]; simp [val32]
-  refine WP.seq (WP.mono (loop_ok hs₂ hNw hML (by omega) hm₂ (minv32_inv hM.inv) hB₂ I₀) fun t I => ?_)
+  refine WP.seq (WP.mono (loop_ok hs₂ hNw hML (by omega) hM.red hm₂ (minv32_inv hM.inv) hB₂ I₀) fun t I => ?_)
   have ht := hs₂.of_keeps I.keeps (by decide)
   have hmt : val32 t.mem base M.mo N = m := by rw [I.out.val32 (by omega) (by omega), hm₂]
   have hlt := I.lt
