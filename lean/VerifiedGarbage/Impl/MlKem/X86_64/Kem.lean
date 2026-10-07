@@ -5,7 +5,7 @@ import VerifiedGarbage.Spec.MlKem
 # ML-KEM on x86-64: what a parameter set fixes of the top-level functions
 
 The key generation, encapsulation and decapsulation of ML-KEM-768 and
-ML-KEM-1024 are the same code (`KeyGen.lean`, `Encrypt.lean`, `Encaps.lean`,
+ML-KEM-1024 are the same code (`KeyGen.lean`, `Encrypt.lean`, `EncapsH.lean`,
 `Decaps.lean`) for a `Kem`: the rank `k` and the widths `d_u` and `d_v` of
 the parameter set, the size of `scratch`, where the matrix, the outputs of
 `PRF₂`, the working space of their computation and the ciphertext of the

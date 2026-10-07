@@ -1,11 +1,11 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.KeyGen
-import VerifiedGarbage.Impl.MlKem.X86_64.Encaps
+import VerifiedGarbage.Impl.MlKem.X86_64.EncapsH
 import VerifiedGarbage.Impl.MlKem.X86_64.Decaps
 import VerifiedGarbage.Impl.MlKem.X86_64.CheckEk
 import VerifiedGarbage.Impl.MlKem1024.X86_64.Compress
 
 /-!
-# ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps`, `vg_mlkem1024_decaps` and `vg_mlkem1024_check_ek`
+# ML-KEM-1024 on x86-64: `vg_mlkem1024_keygen`, `vg_mlkem1024_encaps_h`, `vg_mlkem1024_decaps` and `vg_mlkem1024_check_ek`
 
 The key generation, encapsulation and decapsulation of ML-KEM
 (`Impl/MlKem/X86_64/`) for ML-KEM-1024 (`kem1024`): `k = 4`, `d_u = 11`
@@ -37,7 +37,7 @@ def kem1024 : Kem where
   dd := decodeDecompress1024
 
 abbrev keyGen1024 (c : Callee4) : Prog isa := kemKeyGen kem1024 c
-abbrev encaps1024 (c : Callee4) : Prog isa := kemEncaps kem1024 c
+abbrev encapsH1024 (c : Callee4) : Prog isa := kemEncapsH kem1024 c
 abbrev decaps1024 (c : Callee4) : Prog isa := kemDecaps kem1024 c
 abbrev checkEk1024 : Prog isa := checkEkK 4
 

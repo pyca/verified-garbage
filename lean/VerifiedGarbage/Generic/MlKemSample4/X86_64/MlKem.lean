@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Top768
 import VerifiedGarbage.Proof.MlKem1024.X86_64.Top
 
 /-!
-# ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation and decapsulation
+# ML-KEM-768 and ML-KEM-1024 (FIPS 203) on x86-64: key generation, encapsulation (with `H(ek)` given) and decapsulation
 
 A generic file (see `TCB/Emit.lean`): the artifacts it lists, which sample the
 matrix `Â` four entries at a time with an implementation `v` of
@@ -35,14 +35,14 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     verified := Proof.MlKem.X86_64.keyGen_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem.encapsApi with
-    name := Spec.MlKem.encapsApi.name ++ v.suffix
+  { Spec.MlKem.encapsHApi with
+    name := Spec.MlKem.encapsHApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.MlKem.encapsApi.doc (notes := notes v)
-    code := Impl.MlKem.X86_64.encaps v.callee
-    contract := Spec.MlKem.encapsContract X86_64.abi 32
+    doc := Spec.MlKem.encapsHApi.doc (notes := notes v)
+    code := Impl.MlKem.X86_64.encapsH v.callee
+    contract := Spec.MlKem.encapsHContract X86_64.abi 32
     stack := 32
-    verified := Proof.MlKem.X86_64.encaps_verified v
+    verified := Proof.MlKem.X86_64.encapsH_verified v
     spSafe := by s4_sp v
     features := v.features },
   { Spec.MlKem.decapsApi with
@@ -65,14 +65,14 @@ def artifacts (v : Sample4Impl) : List Artifact := [
     verified := Proof.MlKem1024.X86_64.keyGen1024_verified v
     spSafe := by s4_sp v
     features := v.features },
-  { Spec.MlKem1024.encapsApi with
-    name := Spec.MlKem1024.encapsApi.name ++ v.suffix
+  { Spec.MlKem1024.encapsHApi with
+    name := Spec.MlKem1024.encapsHApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.MlKem1024.encapsApi.doc (notes := notes v)
-    code := Impl.MlKem1024.X86_64.encaps1024 v.callee
-    contract := Spec.MlKem1024.encapsContract X86_64.abi 32
+    doc := Spec.MlKem1024.encapsHApi.doc (notes := notes v)
+    code := Impl.MlKem1024.X86_64.encapsH1024 v.callee
+    contract := Spec.MlKem1024.encapsHContract X86_64.abi 32
     stack := 32
-    verified := Proof.MlKem1024.X86_64.encaps1024_verified v
+    verified := Proof.MlKem1024.X86_64.encapsH1024_verified v
     spSafe := by s4_sp v
     features := v.features },
   { Spec.MlKem1024.decapsApi with
