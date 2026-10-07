@@ -20,7 +20,7 @@ it that the calls use (`vg_ecdsa_p521_sign` only its return address).
 It reads the comb's tables of `vg_ecdsa_p521_sign`, the static `VG_P521_COMB`.
 It is generic over P-521's group law and inversions `h` too, the variant
 `Variants/P521/X86_64/Law.lean`; and is emitted for each multiplication of
-`vg_ecdsa_p521_sign`: the baseline's, and BMI2's and ADX's
+`vg_ecdsa_p521_sign`: the baseline's, and BMI2's and ADX's with AVX2's selection
 (`vg_ecdsa_p521_sign_adx`, which the instance with the suffix `_adx` calls).
 -/
 
@@ -47,7 +47,7 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) (c : Proof.
     stack := 384
     verified := sign_verified adx h.law (Proof.P521.combOk7 h.law) h.inv c
     spSafe := sign_spSafe (pack adx h.law (Proof.P521.combOk7 h.law) h.inv c)
-    features := c.features ++ (if adx then ["bmi2", "adx"] else []).filter (!c.features.contains ·) }
+    features := c.features ++ (if adx then ["bmi2", "adx", "avx", "avx2"] else []).filter (!c.features.contains ·) }
 
 def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P521.curve) :
     List Artifact :=

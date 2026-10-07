@@ -51,7 +51,7 @@ def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P224.curve) : List Ar
       a point of the curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and \
       `Z⁻¹` by the signature's divsteps; `[u]G` is the signature's ladder over all 256 bits of \
       `u`, and `[v]Q` by `vg_ecdh_p224`'s signed 4-bit windows (`v` recoded as \
-      `v + 8 Σ_{j<65} 16^j`, a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a \
+      `v + 8 Σ_{j<57} 16^j`, a table of `[1 … 8]Q` in `scratch`, four Jacobian doublings and a \
       complete addition of the entry selected in constant time per digit); the two are added \
       by the complete addition formulas of Renes, Costello and Batina. The result is the \
       conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not the point at \

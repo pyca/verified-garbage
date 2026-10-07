@@ -24,7 +24,7 @@ baseline's, and BMI2's and ADX's (`_adx`).
 namespace VG.Generic.P521.X86_64.EcdsaP521
 
 /-- The function of `Spec.Ecdsa.P521.signApi`, multiplying modulo `p` with BMI2
-and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction
+and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no instruction
 writing `rsp` (`hsp`). -/
 def sign (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
@@ -45,7 +45,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       `-64` to `63`, `[k]G = [64 Σ 2^(7j)]G + Σ [(k_j - 64) 2^(7j)]G`, from 83 tables of \
       `[m 2^(7j)]G` (`m = 1 … 64`, affine, in Montgomery form) in the static `VG_P521_COMB` \
       (747 KB), with no doublings: each entry is selected in constant time by loading every \
-      entry of its table, 16 bytes at a time, and keeping (`pand`, `por`) the one of the digit's \
+      entry of its table, " ++ Proof.Ecdsa.X86_64.P521.selNote adx ++ " the one of the digit's \
       magnitude (or the point at infinity for a zero digit), negated by a mask of its sign, and \
       added by the mixed complete addition formulas of Renes, Costello and Batina \
       for `a = -3` (Algorithm 5: the entry's `Z` is 1), the sum replacing the accumulator \
@@ -56,8 +56,8 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       coefficients `a`, `b` (divided by 2⁶⁴ modulo `p`, as in Montgomery reduction), 1357 \
       divsteps in all, enough for 576-bit moduli by Bernstein and Yang's bound (which the proof \
       checks); then `f = ±1`, and `Z⁻¹` is `a` times a constant or its negation by `f`'s sign. \
-      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is Fermat's, by \
-      square-and-always-multiply over the bits of `n - 2`. The signature (or \
+      The number of steps is fixed, so the time does not depend on `Z`. `k⁻¹` modulo `n` is by \
+      the same divsteps, from `f = n`, `g = k`. The signature (or \
       zeros) is selected by a mask, so the time depends only on the pointers."])
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
@@ -65,7 +65,7 @@ def sign (adx : Bool) (code : Prog X86_64.isa)
       (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
     verified := hv
     spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
 /-- The function of `Spec.Ecdsa.P521.verifyApi`, multiplying modulo `p` with
 BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
@@ -88,10 +88,9 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
       integer is shifted right by its last 7 bits. The key is checked without branches (its \
       first byte, both coordinates below `p`, and the curve's equation), and the window method \
       multiplies the key's point if it is valid, else `G`, so it always runs on a point of the \
-      curve. `s⁻¹` modulo `n` is Fermat's, by square-and-always-multiply, and `Z⁻¹` by the \
-      signature's divsteps; `[u]G` is the \
+      curve. `s⁻¹` modulo `n` and `Z⁻¹` are by the signature's divsteps; `[u]G` is the \
       signature's comb over the 7-bit windows of `u` (from the static `VG_P521_COMB`), and \
-      `[v]Q` by `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows over the 145 digits of `v`, with the \
+      `[v]Q` by `vg_ecdh_p521" ++ (if adx then "_adx" else "") ++ "`'s signed 4-bit windows over the 133 digits of `v`, with the \
       complete addition formulas of Renes, Costello and Batina, which also add the two. The \
       result is the conjunction of the checks (the key, `r` and `s` in `[1, n-1]`, the sum not \
       the point at infinity, and `x ≡ r` modulo `n`) as a mask, so the time depends only on the \

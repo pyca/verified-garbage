@@ -122,28 +122,35 @@ def selPassAt (o H st np : Nat) (po : Nat → Nat) : List Instr :=
   (List.range H).flatMap (fun m => selEntryAt st np po (m + 1)) ++
   (List.range np).map fun c => .movdquStore (sc (o + po c)) (selAcc c)
 
+/-- The 16-byte piece where 32-byte piece `c` of an entry of `n` 16-byte
+pieces starts: `2 c`, and for the last of the `(n + 1) / 2`, `n - 2`, so
+that for an odd `n` it overlaps the one before rather than reading past the
+entry. -/
+def qY (n c : Nat) : Nat := if c + 1 < (n + 1) / 2 then 2 * c else n - 2
+
 /-- Entry `m` (from 1) of a table at `rdx` whose entries are `st` bytes
 apart, with AVX2: the mask of `ymm14 = ymm13` (both broadcasts of a
 doubleword: `m` and the magnitude) in `ymm15`, `ymm14` incremented by
-`ymm12` (one in every doubleword), and the entry's `np` 32-byte pieces kept
-in the 256-bit accumulators under the mask, through `ymm11`. -/
-def selEntryY (st np m : Nat) : List Instr :=
+`ymm12` (one in every doubleword), and the entry's `np` 32-byte pieces,
+piece `c` at `16 q c` bytes into the entry, kept in the 256-bit
+accumulators under the mask, through `ymm11`. -/
+def selEntryY (st np : Nat) (q : Nat → Nat) (m : Nat) : List Instr :=
   [.vop (.vbin .vpcmpeqd .l256 .xmm15 .xmm14 .xmm13), .vop (.vbin .vpaddd .l256 .xmm14 .xmm14 .xmm12)] ++
   (List.range np).flatMap fun c =>
-    [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 32 * c)),
+    [.vbinLoad .vpand .l256 .xmm11 .xmm15 (tblAt (st * (m - 1) + 16 * q c)),
       .vop (.vbin .vpor .l256 (selAcc c) (selAcc c) .xmm11)]
 
-/-- `selPassAt` with AVX2, for entries of `np` 32-byte pieces: the magnitude
-in `r8` and the counter (from 1) broadcast, the 256-bit accumulators cleared,
-every entry kept under its mask (`selEntryY`), the accumulators stored to `o`,
-and the upper halves of the `ymm` registers cleared (`vzeroupper`), through
-`rcx`. -/
-def selPassY (o H st np : Nat) : List Instr :=
+/-- `selPassAt` with AVX2, for entries of `np` 32-byte pieces, piece `c` at
+`16 q c` bytes into the entry: the magnitude in `r8` and the counter (from
+1) broadcast, the 256-bit accumulators cleared, every entry kept under its
+mask (`selEntryY`), the accumulators stored to `o + 16 q c`, and the upper
+halves of the `ymm` registers cleared (`vzeroupper`), through `rcx`. -/
+def selPassY (o H st np : Nat) (q : Nat → Nat) : List Instr :=
   [.vop (.vmovq .xmm13 .r8), .vop (.vpbroadcastd .l256 .xmm13 .xmm13), .mov32 .rcx (.imm 1),
     .vop (.vmovq .xmm12 .rcx), .vop (.vpbroadcastd .l256 .xmm12 .xmm12), .vop (.vmovdqa .l256 .xmm14 .xmm12)] ++
   (List.range np).map (fun c => .vop (.vbin .vpxor .l256 (selAcc c) (selAcc c) (selAcc c))) ++
-  (List.range H).flatMap (fun m => selEntryY st np (m + 1)) ++
-  (List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 32 * c)) (selAcc c)) ++ [.vop .vzeroupper]
+  (List.range H).flatMap (fun m => selEntryY st np q (m + 1)) ++
+  (List.range np).map (fun c => .vmovdquStore .l256 (sc (o + 16 * q c)) (selAcc c)) ++ [.vop .vzeroupper]
 
 namespace TCombCfg
 
@@ -169,10 +176,11 @@ def selSetup : List Instr :=
 `y`: the accumulators cleared, every entry kept under its mask, and stored. -/
 def selPass : List Instr := selPassAt K.E.x K.H (16 * K.M.n) K.M.n (16 * ·)
 
-/-- `selPass`, with AVX2 (`selPassY`, 32 bytes at a time) if the comb uses it
-and an entry is a whole number of 32-byte pieces. -/
+/-- `selPass`, with AVX2 (`selPassY`, 32 bytes at a time) if the comb uses
+it: for an odd number of words, the last two 32-byte pieces of an entry
+overlap (`qY`). -/
 def selPassV : List Instr :=
-  if K.avx2 && K.M.n % 2 == 0 then selPassY K.E.x K.H (16 * K.M.n) (K.M.n / 2) else K.selPass
+  if K.avx2 && 2 ≤ K.M.n then selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n) else K.selPass
 
 /-- `y = R` if the magnitude in `r8` is zero (when the selected `y` is zero),
 and `Z = R` unless it is, through `rax`, `rcx` and `rdx`. -/
