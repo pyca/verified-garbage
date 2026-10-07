@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
@@ -47,6 +48,7 @@ structure ArithOk (A : Arith) : Prop where
   sub : CalleeOk (accK Spec.MlKem.sub) A.sub
   cbd : CalleeOk cbd2K A.cbd
   dec12 : CalleeOk decode12K A.dec12
+  dm : ∀ k, k = 3 ∨ k = 4 → CalleeOk (decMulK k) (decryptMul A.bodies k)
 
 theorem ArithOk.sse : ArithOk .sse where
   mul := ⟨mul_correct, mul_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
@@ -63,6 +65,12 @@ theorem ArithOk.sse : ArithOk .sse where
     Code.all_of_allInstrs (by decide +kernel)⟩
   dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
+  dm k hk := by
+    rcases hk with rfl | rfl
+    · exact ⟨decMulSse3_correct, decMulSse3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨decMulSse4_correct, decMulSse4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+        Code.all_of_allInstrs (by decide +kernel)⟩
 
 theorem ArithOk.avx2 : ArithOk .avx2 where
   mul := ⟨mulY_correct, mulY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
@@ -79,5 +87,19 @@ theorem ArithOk.avx2 : ArithOk .avx2 where
     Code.all_of_allInstrs (by decide +kernel)⟩
   dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
+  dm k hk := by
+    rcases hk with rfl | rfl
+    · exact ⟨decMulAvx3_correct, decMulAvx3_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+        Code.all_of_allInstrs (by decide +kernel)⟩
+    · exact ⟨decMulAvx4_correct, decMulAvx4_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+        Code.all_of_allInstrs (by decide +kernel)⟩
+
+/-- A call of `vg_mlkem*_decrypt_mul` keeps MXCSR's control bits. -/
+theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
+    ctlOk (.call n (decryptMul A.bodies k)) = true := (hA.dm k hk).ctl
+
+/-- A call of `vg_mlkem*_decrypt_mul` never writes the stack pointer. -/
+theorem ArithOk.dm_sp {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :
+    (Code.call n (decryptMul A.bodies k) : Prog isa).all (fun i => !isa.writesSp i) = true := (hA.dm k hk).sp
 
 end VG.Proof.MlKem.X86_64

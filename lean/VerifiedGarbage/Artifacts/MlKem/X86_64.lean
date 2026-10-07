@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.DecMulV
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 
@@ -19,6 +20,31 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 namespace VG.Artifacts.MlKem.X86_64
 
 def artifacts : List Artifact := [
+  { Spec.MlKem.decryptMulApi with
+    target := X86_64.target
+    doc := Spec.MlKem.decryptMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, \
+        `vg_mlkem_add` and `vg_mlkem_inv_ntt` inlined, on SSE2 registers. It sets MXCSR to `0x1FBF` once \
+        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
+        loads the caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.decryptMul .sse 3
+    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.decMulSse3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.MlKem.decryptMulApi with
+    name := Spec.MlKem.decryptMulApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.decryptMulApi.doc
+      (notes := ["The function computes with the code of `vg_mlkem_ntt_avx2`, \
+        `vg_mlkem_multiply_ntts_avx2`, `vg_mlkem_add_avx2` and `vg_mlkem_inv_ntt_avx2` inlined, on AVX2 \
+        registers. It sets MXCSR to `0x1FBF` once \
+        around all its multiplications (Intel's mitigation of MXCSR-configuration-dependent timing) and \
+        loads the caller's MXCSR back before returning."])
+    code := Impl.MlKem.X86_64.decryptMul .avx2 3
+    contract := Spec.MlKem.decryptMulContract 3 X86_64.abi
+    verified := Proof.MlKem.X86_64.decMulAvx3_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.nttApi with
     target := X86_64.target
     doc := Spec.MlKem.nttApi.doc

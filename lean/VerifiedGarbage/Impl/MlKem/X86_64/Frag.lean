@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Arith
+import VerifiedGarbage.Impl.MlKem.X86_64.KpkeMul
 import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
 import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
@@ -127,15 +128,19 @@ structure Arith where
   cbd : Prog isa
   dec12N : String
   dec12 : Prog isa
+  /-- The code `vg_mlkem*_decrypt_mul` inlines, and the suffix of its name. -/
+  bodies : Bodies
+  sfx : String
 
 def Arith.sse : Arith :=
   ⟨"vg_mlkem_multiply_ntts", multiplyNTTs, "vg_mlkem_ntt", X86_64.ntt, "vg_mlkem_inv_ntt", X86_64.nttInv,
-    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12⟩
+    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12,
+    .sse, ""⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_multiply_ntts_avx2", multiplyNTTsAvx2, "vg_mlkem_ntt_avx2", nttAvx2, "vg_mlkem_inv_ntt_avx2",
     nttInvAvx2, "vg_mlkem_add_avx2", addAvx2, "vg_mlkem_sub_avx2", subAvx2, "vg_mlkem_cbd2", cbd2,
-    "vg_mlkem_decode12_avx2", decode12Avx2⟩
+    "vg_mlkem_decode12_avx2", decode12Avx2, .avx2, "_avx2"⟩
 
 def nttAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttN A.ntt)
