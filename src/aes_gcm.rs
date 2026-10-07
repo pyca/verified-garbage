@@ -18,6 +18,12 @@
 //! fits in memory, [`AesGcm::decrypt_in_place`] checks the tag before it
 //! decrypts.
 //!
+//! [`AesGcm::encrypt`] and [`AesGcmEncryptor::update_into`] encrypt out of
+//! place, from plaintext in buffers of the caller's (in pieces, for
+//! `encrypt`) into an output buffer, as a TLS record layer needs. They gather
+//! the plaintext into the output and encrypt it there with the in-place
+//! functions.
+//!
 //! # Tags
 //!
 //! Encryption returns the full 16-byte tag; a protocol that sends a shorter
@@ -490,6 +496,27 @@ pub enum Error {
     /// was called after `update`: GCM authenticates all of the additional
     /// data before the text.
     AadAfterText,
+    /// The output buffer of [`AesGcm::encrypt`] or
+    /// [`AesGcmEncryptor::update_into`] is not exactly as long as the input.
+    InvalidOutputLength,
+}
+
+/// The total length of the pieces `chunks`, if it fits in a `usize`.
+fn total_len(chunks: &[&[u8]]) -> Option<usize> {
+    chunks
+        .iter()
+        .try_fold(0usize, |n, c| n.checked_add(c.len()))
+}
+
+/// Copies the pieces `chunks` one after the other into `out`, which is
+/// exactly as long as they are in all.
+fn gather(chunks: &[&[u8]], out: &mut [u8]) {
+    let mut rest = out;
+    for c in chunks {
+        let (head, tail) = rest.split_at_mut(c.len());
+        head.copy_from_slice(c);
+        rest = tail;
+    }
 }
 
 /// `len + n`, if it is at most `max`.
@@ -716,6 +743,35 @@ impl AesGcm {
         } else {
             Err(Error::TagMismatch)
         }
+    }
+
+    /// GCM-AE (§7.1), out of place: encrypts the concatenation of the pieces
+    /// of `plaintext` under `nonce`, writes the ciphertext to `out`, and
+    /// returns the 16-byte tag authenticating it and `aad`. A caller holding
+    /// the plaintext in buffers it does not own, such as a TLS record layer
+    /// with a record in several pieces and its content type after them,
+    /// encrypts it without first gathering it into `out` itself.
+    ///
+    /// `out` must be exactly as long as the plaintext (the pieces' lengths
+    /// added up), or this returns [`Error::InvalidOutputLength`] and writes
+    /// nothing. The nonce is as for
+    /// [`encrypt_in_place`](Self::encrypt_in_place).
+    pub fn encrypt(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Result<Block, Error> {
+        // Check every length before writing anything.
+        if total_len(plaintext) != Some(out.len()) {
+            return Err(Error::InvalidOutputLength);
+        }
+        check_nonce(nonce)?;
+        add_len(0, out.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
+        add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        gather(plaintext, out);
+        self.encrypt_in_place(nonce, aad, out)
     }
 
     /// Starts encrypting a message under this key and `nonce` (of any
@@ -1071,6 +1127,19 @@ impl AesGcmEncryptor<'_> {
         self.stream.update(data)
     }
 
+    /// Encrypts the next `input.len()` bytes of the plaintext, from `input`,
+    /// into `output`, which must be exactly as long (or this returns
+    /// [`Error::InvalidOutputLength`] and writes nothing).
+    pub fn update_into(&mut self, input: &[u8], output: &mut [u8]) -> Result<(), Error> {
+        if input.len() != output.len() {
+            return Err(Error::InvalidOutputLength);
+        }
+        add_len(self.stream.text_len, input.len(), MAX_TEXT)
+            .map_err(|()| Error::InvalidTextLength)?;
+        output.copy_from_slice(input);
+        self.stream.update(output)
+    }
+
     /// Finishes the message and returns its full 16-byte tag. A protocol
     /// that sends a shorter tag sends its first bytes. GCM leaves no
     /// buffered text to return.
@@ -1139,7 +1208,7 @@ impl AesGcmDecryptor<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select};
+    use super::{AesGcm, Backend, Error, MAX_AAD, MAX_TEXT, add_len, select, total_len};
     use crate::cpu::{Features, detected};
 
     /// The implementation chosen for each set of features: AES's and
@@ -1813,6 +1882,59 @@ mod tests {
         truncated::<14>();
         truncated::<15>();
         truncated::<16>();
+    }
+
+    /// Out-of-place encryption matches in-place encryption for every split
+    /// of the plaintext into pieces, empty ones included, and its errors
+    /// write nothing.
+    #[test]
+    fn out_of_place() {
+        let k = AesGcm::new(&[3; 16]).unwrap();
+        let nonce = [5u8; 12];
+        let aad = [6u8; 20];
+        let msg: [u8; 70] = core::array::from_fn(|i| (i as u8).wrapping_mul(29));
+        let mut ct = msg;
+        let tag = k.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
+        for a in 0..=msg.len() {
+            for b in a..=msg.len() {
+                let mut out = [0u8; 70];
+                let pieces = [&msg[..a], &[][..], &msg[a..b], &msg[b..]];
+                assert_eq!(k.encrypt(&nonce, &aad, &pieces, &mut out), Ok(tag));
+                assert_eq!(out, ct);
+            }
+        }
+        // A short piece at a time, as `update_into`.
+        let mut e = k.encryptor(&nonce).unwrap();
+        e.update_aad(&aad).unwrap();
+        let mut out = [0u8; 70];
+        for (x, y) in msg.chunks(3).zip(out.chunks_mut(3)) {
+            e.update_into(x, y).unwrap();
+        }
+        assert_eq!(out, ct);
+        assert_eq!(e.finalize(), tag);
+
+        let mut out = [9u8; 4];
+        let three = [1u8; 3];
+        assert_eq!(
+            k.encrypt(&nonce, &aad, &[&three[..]], &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        assert_eq!(
+            k.encrypt(&[], &aad, &[&three[..], &[2][..]], &mut out),
+            Err(Error::InvalidNonceLength)
+        );
+        let mut e = k.encryptor(&nonce).unwrap();
+        assert_eq!(
+            e.update_into(&three, &mut out),
+            Err(Error::InvalidOutputLength)
+        );
+        e.stream.text_len = MAX_TEXT;
+        assert_eq!(
+            e.update_into(&three, &mut out[..3]),
+            Err(Error::InvalidTextLength)
+        );
+        assert_eq!(out, [9; 4]);
+        assert_eq!(total_len(&[&three[..], &three[..2]]), Some(5));
     }
 
     #[test]

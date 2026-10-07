@@ -91,6 +91,60 @@ pub fn bench(c: &mut Criterion) {
         });
         g.finish();
 
+        // Out of place, shaped as a TLS 1.3 record: the plaintext and the
+        // content-type byte after it encrypted into a separate buffer, as
+        // rustls's record layer asks of its provider (aws-lc-rs's
+        // `seal_out_of_place_scatter` with the byte as `extra_in`).
+        let typ = [0x17u8];
+        let mut out = vec![0u8; size + 1];
+        let mut extra = [0u8; 17];
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-out-of-place");
+        g.throughput(Throughput::Bytes(size as u64));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                k.encrypt(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    &[black_box(&data[..]), &typ],
+                    black_box(&mut out),
+                )
+                .unwrap()
+            })
+        });
+        let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Encrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                let n = s.update(black_box(&data), &mut ossl_out).unwrap();
+                let n = n + s.update(&typ, &mut ossl_out[n..]).unwrap();
+                s.finalize(&mut ossl_out[n..]).unwrap();
+                s.get_tag(&mut t).unwrap();
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut out[..size]),
+                        &typ,
+                        &mut extra,
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
         let mut g = c.benchmark_group("aes-128-gcm-decrypt");
         g.throughput(Throughput::Bytes(size as u64));
         g.bench_function(BenchmarkId::new(VG, size), |b| {
