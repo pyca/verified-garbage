@@ -615,6 +615,20 @@ reduced by `xCanon`. -/
 def addMer (o a b : Nat) : List Instr :=
   loads (xWin 9) a ++ setCF ++ chain .adc .adc (xWin 9) b ++ xCanon o
 
+/-- `ts += ts`: each register added to itself, with `op` on the first and
+`adc` on the rest, which doubles the number in them. -/
+def dblChain (op : AluOp) : List Reg → List Instr
+  | [] => []
+  | t :: ts => .alu op t (.reg t) :: dblChain .adc ts
+
+/-- `[o] = 2 [a] mod p` for P-521's `p` and `[a] < p`: `2 [a] < 2⁵²²` in
+`xWin 9` (`dblChain`), its bit 521 moved into its bit 0, which is clear. That
+is `[a]`'s 521 bits rotated by one, below `p` as `[a]` is. -/
+def dblMer (o a : Nat) : List Instr :=
+  loads (xWin 9) a ++ dblChain .add (xWin 9) ++
+    [.mov .rax (.reg (xAcc 17)), .shift .shr .rax 9, .alu .add (xAcc 9) (.reg .rax),
+      .alu .and (xAcc 17) (.imm 511)] ++ stores (xWin 9) o
+
 /-- `[o] = [a] - [b] mod p` for P-521's `p` and `[a]`, `[b]` below `p`:
 `[a] - [b] + 2⁵²¹` in `xWin 9` (`[a]` loaded, `[b]` subtracted, 512 added to
 the top word), which is `[a] + (p - [b]) + 1 < 2p + 1`, reduced by `xCanon`. -/
@@ -671,7 +685,9 @@ def mul (M : Mod) (o a b : Nat) : List Instr :=
 
 /-- `[o] = [a] + [b] mod m`. -/
 def add (M : Mod) (o a b : Nat) : List Instr :=
-  if M.n < 7 then addR M o a b else if M.red = .friendly p521Ws then addMer o a b else addW M o a b
+  if M.n < 7 then addR M o a b
+  else if M.red = .friendly p521Ws then (if a = b then dblMer o a else addMer o a b)
+  else addW M o a b
 
 /-- `[o] = [a] - [b] mod m`. The BMI2/ADX P-256 backend uses the
 register-only masked modulus; other backends retain their existing subtraction. -/
