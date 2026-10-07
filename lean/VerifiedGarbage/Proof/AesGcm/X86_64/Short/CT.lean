@@ -475,14 +475,13 @@ theorem sealM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
         (fun _ h => condS_of h hnl hal) (fun _ h => condS_of h hnl' hal')
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
-    refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)
-      (RelCT.ite (fun _ _ h => by rw [eval_ne h.1.1, eval_ne h.2.1]) ?_
-        ((sealRun_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
-          (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h))
+    refine RelCT.seq (c.mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h) (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
+      ((sealRun_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR').mono
+        (fun _ _ h => ⟨trivial, h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
     · exact (sealShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
-    · exact RelCT.of_false fun _ _ h => by have := (eval_ne h.1.1.1).symm.trans h.2; simp [hs] at this
+    · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
 theorem sealM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.sealX86_64M M).pre Proof.AesGcm.sealX86_64.pub
@@ -507,13 +506,13 @@ theorem openM_rel (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode
         (fun _ h => condS_of h.1 hnl hal) (fun _ h => condS_of h.1 hnl' hal')
         (by rw [← hnl]; exact BitVec.isLt _) (by rw [← hal]; exact BitVec.isLt _) (by omega)))
       (hw C hnl hal) (hw C' hnl' hal')
-    refine RelCT.seq c (RelCT.ite (fun _ _ h => by rw [eval_ne h.1.1, eval_ne h.2.1]) ?_
+    refine RelCT.seq c (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1])
       ((openOk_rel v B C C' X X' hNp hnl hal hR hNp' hnl' hal' hR' hT hT' hTr hTr' oT hres hok).mono
-        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h))
+        (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h) ?_)
     by_cases hs : IsShort nl al n
     · exact (openShort_rel hF C C' hNp hnl hal hR hNp' hnl' hal' hR' hs hT hT' hTr hTr' oT hres hok).mono
         (fun _ _ h => ⟨h.1.1.2, h.1.2.2⟩) fun _ _ h => h
-    · exact RelCT.of_false fun _ _ h => by have := (eval_ne h.1.1.1).symm.trans h.2; simp [hs] at this
+    · exact RelCT.of_false fun _ _ h => by have := h.1.1.1.symm.trans h.2; simp [hs] at this
 
 theorem openM_ct (hF : ShortFacts) (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.openX86_64M M).pre Proof.AesGcm.openX86_64.pub

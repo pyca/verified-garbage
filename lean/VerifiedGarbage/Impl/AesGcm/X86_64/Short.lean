@@ -9,10 +9,8 @@ AES-NI, PCLMULQDQ and SSSE3), with a path of their own for the short
 messages of TLS and QUIC: a 12-byte nonce, and at most 32 blocks to hash
 (the additional data and the text, each padded to whole blocks, and the
 lengths block), with some text or more than 16 bytes of additional data,
-which needs no call.
-The others take the path of the other instances
-(`Impl.AesGcm.X86_64.seal`, `open`), which `cond` places last so that they
-run without a taken branch.
+which needs no call. The others take the path of the other instances
+(`Impl.AesGcm.X86_64.seal`, `open`).
 
 GHASH over the `m` blocks `X₁ … Xₘ` is `Σ Xᵢ · Hᵐ⁺¹⁻ⁱ`, so the short path
 computes the powers `H'` … `H'ᵐ'` once (`H'ᵏ = Hᵏ · x⁻¹`, `m'` the multiple
@@ -284,8 +282,8 @@ variable (c : Callees)
 /-- `seal` with the short path (`cond`), or else the other instances' body. -/
 def «seal» : Prog isa :=
   .seq (.block (oneEntry 32))
-    (.seq (.seq cond (.ite .ne sealShort
-        (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (oneTag c 0))))))
+    (.seq (.seq cond (.ite .e
+        (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c) (oneTag c 0)))) sealShort))
       (.seq (.block (tagOut (at_ .rsp 24))) (.block restore)))
 
 /-- `open` with the short path (`cond`), or else the other instances' body. -/
@@ -293,7 +291,7 @@ def «open» : Prog isa :=
   .seq (.block (oneEntry 40 ++ [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq cond (.ite .ne openShort
+      (.seq cond (.ite .e
         (.seq (oneAad c)
         (.seq (oneBlocks c.dec)
         (.seq (oneTag c uO)
@@ -302,7 +300,8 @@ def «open» : Prog isa :=
         (.seq (cmp uO)
         (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
         (.seq (.ite .e (oneUndo c) (oneCrypt c))
-          (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))))))
+          (.block [.mov .rax (.mem (at_ .r15 auxO))])))))))))
+        openShort)))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.Short
