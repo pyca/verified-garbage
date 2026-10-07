@@ -126,6 +126,11 @@ theorem JacWinLay.ap (hL : JacWinLay K size) {x y : Nat} (hx : x ∈ jwSlots K) 
 theorem JacWinLay.oth_ne (hL : JacWinLay K size) {i j : Nat} (hi : i < 13) (hj : j < 13) (h : i ≠ j) :
     (jwOther K)[i]'hi ≠ (jwOther K)[j]'hj := fun e => h (hL.nodup.getElem_inj.mp e)
 
+/-- The other slots at distinct positions are apart. -/
+theorem JacWinLay.ap_oth (hL : JacWinLay K size) {i j : Nat} (hi : i < 13) (hj : j < 13) (h : i ≠ j) :
+    (jwOther K)[i]'hi + 8 * K.M.n ≤ (jwOther K)[j]'hj ∨ (jwOther K)[j]'hj + 8 * K.M.n ≤ (jwOther K)[i]'hi :=
+  hL.ap (other_mem (List.getElem_mem hi)) (other_mem (List.getElem_mem hj)) (hL.oth_ne hi hj h)
+
 theorem JacWinLay.le (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwSlots K) : x + 8 * K.M.n ≤ size :=
   hL.lay.le x hx
 
