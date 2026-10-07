@@ -60,8 +60,9 @@ def encRegs : List Reg := [.eax, .ebx, .ecx, .edx, .ebp, .esi, .edi]
 
 theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 0 < n)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hwr : s.wr = s₀.wr)
-    {base : Addr} (hbase : (arg s₀ sc).setWidth 64 = base)
-    (hm : Outside base 0 8192 s₀.mem s.mem) (hs : Scr s base) (hb : BoundedEnv s.mem base)
+    {base : Addr} (hm : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s₀.mem s.mem)
+    (hawr : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r)
+    (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
     (hout : (⟨(arg s₀ 0).setWidth 64, 57⟩ : Region) ∈ s₀.wr) (hofit : (arg s₀ 0).toNat + 57 ≤ 2 ^ 32)
     (hd : (⟨(arg s₀ 0).setWidth 64, 57⟩ : Region).Disjoint ⟨base, 8192⟩)
     {g : Reg → BitVec 32} (sv : Saved base g s.mem) :
@@ -69,17 +70,33 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
       bytesAt t.mem ((arg s₀ 0).setWidth 64) 57 =
         Spec.Ed448.encodePoint ⟨E s.mem base 0, E s.mem base 1, E s.mem base 2⟩ ∧
       (∀ p ∈ savedSlots, t.gpr p.1 = g p.1) ∧ Keeps encRegs s t ∧
-      Frame [⟨base, 8192⟩, ⟨(arg s₀ 0).setWidth 64, 57⟩] s.mem t.mem := by
+      Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem t.mem := by
   have hfar : ∀ j < 8192, 57 ≤ ofs ((arg s₀ 0).setWidth 64) (off base j) := fun j hj => far_out hd hj
   have hfar56 : ∀ j < 8192, 56 ≤ ofs ((arg s₀ 0).setWidth 64) (off base j) :=
     fun j hj => Nat.le_trans (by decide) (hfar j hj)
   have hw57 : ∀ j < 57, InRegions s₀.wr (off ((arg s₀ 0).setWidth 64) j) 1 := fun j hj =>
     ⟨_, hout, Offset.contains_base _ (by omega) (by omega)⟩
+  have ws : (⟨base, 8192⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] :=
+    List.mem_append_left _ (hwr ▸ hs.wr)
+  -- What code writing the working space and the call stack keeps.
+  have wf : ∀ {u : State}, u.gpr .esp = s₀.gpr .esp → u.wr = s₀.wr →
+      ∀ {m : Mem}, Frame (u.wr ++ [below (u.gpr .esp) 20]) u.mem m →
+        Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) u.mem m := by
+    intro u hu hw m hf; rw [hu, hw] at hf; exact hf
+  have ws1 : ∀ {m m' : Mem}, Outside base 0 8192 m m' → Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) m m' :=
+    fun h => (Outside.frame h).mono fun r hr => by rw [List.mem_singleton.mp hr]; exact ws
   unfold baseEncode
-  refine WP.seq (WP.mono (invert_ok hs hb) fun s₁ ⟨k₁, b₁, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
+    (by rw [show stackUse Impl.X448.X86.invert = 20 by decide +kernel]; exact hc.sp)
+    (invert_ok hs hc hb)) fun s₁ ⟨⟨k₁, b₁, e₁⟩, f₁⟩ => ?_)
   have hs₁ := k₁.scr hs
+  have hc₁ := k₁.ctx hc
+  have sp₁ : s₁.gpr .esp = s₀.gpr .esp := (k₁.regs.1 _ (by decide)).trans hsp
   rw [encodeFields_impl]
-  refine WP.seq (WP.mono (ops_ok hs₁ b₁ encodeFields) fun s₂ ⟨k₂, b₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (WP.withFrame (NoSp.of_all (by decide +kernel))
+    (Nat.le_trans (by decide +kernel :
+      stackUse (Impl.X448.X86.ops (encodeFields.map FieldOp.impl)) ≤ 20) hc₁.sp)
+    (ops_ok hs₁ hc₁ b₁ encodeFields)) fun s₂ ⟨⟨k₂, b₂, e₂⟩, f₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have ex : E s₂.mem base 1 = E s.mem base 0 * Proof.X448.invert (E s.mem base 2) := by
     rw [e₂, e₁]
@@ -96,15 +113,16 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs₂ (b₂ 1)) fun s₃ ⟨bx₃, vx₃, m₃, k₃⟩ => ?_
   have hs₃ := hs₂.of_keeps k₃ (by decide)
-  have m03 : Outside base 0 8192 s.mem s₃.mem :=
-    ((k₁.mem.whole (by decide) (by decide)).trans (k₂.mem.whole (by decide) (by decide))).trans
-      (m₃.whole (by decide))
+  have f03 : Frame (s₀.wr ++ [below (s₀.gpr .esp) 20]) s.mem s₃.mem :=
+    ((wf hsp hwr (by rwa [show stackUse Impl.X448.X86.invert = 20 by decide +kernel] at f₁)).trans
+      (wf sp₁ (k₁.regs.2.2.trans hwr) (Frame.below_mono f₂ (by decide +kernel) hc₁.sp))).trans
+      (ws1 (m₃.whole (by decide)))
   have kk : Keeps (.esi :: workRegs) s s₃ :=
     k₁.regs.trans ((k₂.regs.mono (by decide)).trans (k₃.mono (by decide)))
   -- Its bit, to the output's byte 56.
   rw [Impl.Ed448.X86.signBit, List.cons_append]
-  refine hA.load (kk.1 _ (by decide) |>.trans hsp) (kk.2.1.trans hr) (kk.2.2.trans hwr)
-    (hbase ▸ hm.trans m03) h0 fun s₄ u₄ => ?_
+  refine hA.loadF (kk.1 _ (by decide) |>.trans hsp) (kk.2.1.trans hr) (kk.2.2.trans hwr)
+    (hm.trans f03) hawr h0 fun s₄ u₄ => ?_
   refine load_ok (hs₃.of_upd u₄ (by decide)) (by decide) fun s₅ u₅ => ?_
   refine wp_alu (Or.inr (Or.inr (Or.inl rfl))) rfl fun s₆ u₆ _ => ?_
   refine wp_shift (by decide) fun s₇ u₇ => ?_
@@ -136,21 +154,22 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     exact congrArg Proof.X448.toFe (valN_congr fun j hj =>
       congrArg BitVec.toNat (w₈ _ (by have := i.isLt; simp only [slot]; omega)))
   have E₃ : E s₃.mem base = E s₂.mem base := by
-    rw [E_update (o := 1) m₃]
+    rw [E_update (o := 1) (m₃.ws (by decide))]
     funext i
     by_cases hi : i = 1
     · subst hi; rw [Function.update_self]
       change Proof.X448.toFe (fe s₃.mem base X2) = Proof.X448.toFe (fe s₂.mem base X2)
       rw [vx₃]; exact Proof.X448.toFe_mod _
     · rw [Function.update_of_ne hi]
-  have b₃ : BoundedEnv s₃.mem base := bounded_update (o := 1) m₃ b₂ bx₃
+  have b₃ : BoundedEnv s₃.mem base := bounded_update (o := 1) (m₃.ws (by decide)) b₂ bx₃
   have b₈ : BoundedEnv s₈.mem base := fun i j hj => by
     change (word s₈.mem base (slot i.val + 4 * j)).toNat < _
     rw [w₈ _ (by have := i.isLt; simp only [slot]; omega)]; exact b₃ i j hj
   -- `y` into slot 1, fully reduced.
   change WP isa (.block (Impl.X448.X86.copy X2 (slot 4) ++ _)) s₈ _
   rw [WP.block_append_iff]
-  refine WP.mono (copyE hs₈ b₈ 1 4) fun s₉ ⟨k₉, b₉, e₉⟩ => ?_
+  refine WP.mono (WP.and (copyE hs₈ b₈ 1 4) (copy_ok hs₈ (o := X2) (a := slot 4) (by decide) (by decide)
+    (by decide))) fun s₉ ⟨⟨k₉, b₉, e₉⟩, _, m₉, _⟩ => ?_
   have hs₉ := k₉.scr hs₈
   rw [WP.block_append_iff]
   refine WP.mono (freeze_ok hs₉ (b₉ 1)) fun s₁₀ ⟨by₁₀, vy₁₀, m₁₀, k₁₀⟩ => ?_
@@ -171,19 +190,19 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
     fun s₁₁ ⟨v₁₁, o₁₁, k₁₁⟩ => ?_
   -- The saved registers.
   have sv₃ : Saved base g s₃.mem :=
-    ((sv.outside2 k₁.mem (by decide) (by decide)).outside2 k₂.mem (by decide) (by decide)).field m₃
+    ((sv.wsout2 k₁.mem (by decide) (by decide)).wsout2 k₂.mem (by decide) (by decide)).field m₃
       (by decide)
   have sv₈ : Saved base g s₈.mem := sv₃.of_readW fun q hq => by
     have := savedSlots_bound q hq; exact w₈ _ (by omega)
   have sv₁₀ : Saved base g s₁₀.mem :=
-    (sv₈.outside2 k₉.mem (by decide) (by decide)).field m₁₀ (by decide)
+    (sv₈.wsout2 k₉.mem (by decide) (by decide)).field m₁₀ (by decide)
   have sv₁₁ : Saved base g s₁₁.mem := sv₁₀.of_readW fun q hq => by
     have := savedSlots_bound q hq
     exact out_word o₁₁ (by omega) fun j hj => Nat.le_trans (by decide) (hfar j hj)
   have hs₁₁ : Scr s₁₁ base := hs₁₀.of_keeps k₁₁ (by decide)
   refine WP.mono (restore_ok hs₁₁ sv₁₁) fun t ⟨rt, mt, kt⟩ => ?_
   have f810 : Outside base 0 8192 s₈.mem s₁₀.mem :=
-    (k₉.mem.whole (by decide) (by decide)).trans (m₁₀.whole (by decide))
+    Outside.trans (fun p hp => m₉ p (Or.inr (by simp only [X2, slot]; omega))) (m₁₀.whole (by decide))
   refine ⟨?_, rt, ?_, ?_⟩
   · have b56 : s₁₁.mem ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56) =
         s₈.mem ((arg s₀ 0).setWidth 64 + BitVec.ofNat 64 56) := by
@@ -196,13 +215,11 @@ theorem baseEncode_ok {s₀ s : State} {n sc : Nat} (hA : Args s₀ n sc) (h0 : 
       (kt.mono ?_)))))))))))
     all_goals first | decide | (intro r hr; revert r; decide)
   · rw [mt]
-    have ws : ∀ r ∈ [(⟨base, 8192⟩ : Region)], r ∈ [(⟨base, 8192⟩ : Region),
-        ⟨(arg s₀ 0).setWidth 64, 57⟩] := by simp
-    have os : ∀ r ∈ [(⟨(arg s₀ 0).setWidth 64, 57⟩ : Region)], r ∈ [(⟨base, 8192⟩ : Region),
-        ⟨(arg s₀ 0).setWidth 64, 57⟩] := by simp
-    refine ((Outside.frame m03).mono ws).trans (((Outside.frame o₈).mono os).trans
-      (((Outside.frame f810).mono ws).trans (((Outside.frame o₁₁).sub fun r hr => ?_))))
-    refine ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩
+    have os : ∀ r ∈ [(⟨(arg s₀ 0).setWidth 64, 57⟩ : Region)], r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20] := by
+      intro r hr; rw [List.mem_singleton.mp hr]; exact List.mem_append_left _ hout
+    refine f03.trans (((Outside.frame o₈).mono os).trans
+      ((ws1 f810).trans (((Outside.frame o₁₁).sub fun r hr => ?_))))
+    refine ⟨_, List.mem_append_left _ hout, ?_⟩
     rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)
 
 end VG.Proof.Ed448.X86

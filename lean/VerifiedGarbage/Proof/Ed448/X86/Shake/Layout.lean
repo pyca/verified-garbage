@@ -99,6 +99,28 @@ theorem scr_stk : (Whole.STK E).Disjoint (SCR scr) := hk.ko _ hk.so
 
 theorem lo_scr : (Lo E).Disjoint (SCR scr) := hk.scr_stk.sub_left (lo_sub E)
 
+/-- A callee entered from `esp = E` has 20 bytes of stack below its return address, in the
+stack below the frame. -/
+theorem callee_room : 20 ≤ (E - 4).toNat := by
+  have := hk.below
+  rw [BitVec.toNat_sub_of_le (by change (4 : BitVec 32).toNat ≤ E.toNat; simp; omega)]
+  simp; omega
+
+theorem callee_lo : Region.Sub ⟨(E - 4).setWidth 64 - 20#64, 20⟩ (Lo E) := by
+  have h4 : 4 ≤ E.toNat := by have := hk.below; omega
+  have e : (E - 4).setWidth 64 - 20#64 = E.setWidth 64 - 24 := by
+    rw [show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, VG.X86.Taint.sub_setWidth h4, BitVec.sub_sub]
+    rfl
+  rw [e]
+  exact Region.sub_prefix (by decide)
+
+theorem callee_stk : ∀ R ∈ outs, Region.Disjoint ⟨(E - 4).setWidth 64 - 20#64, 20⟩ R := fun R hR =>
+  ((hk.ko R hR).sub_left (lo_sub E)).sub_left hk.callee_lo
+
+theorem callee_in : ∀ r ∈ ins, Region.Disjoint ⟨(E - 4).setWidth 64 - 20#64, 20⟩ r := fun r hr =>
+  ((hk.io r hr _ (List.mem_append_right _ (List.mem_singleton_self _))).symm.sub_left (lo_sub E)).sub_left
+    hk.callee_lo
+
 theorem fr_scr {d l : Nat} (h : d + l ≤ 256) : (fr E d l).Disjoint (SCR scr) :=
   hk.scr_stk.sub_left (frame_sub_stk E h)
 

@@ -24,10 +24,12 @@ def artifacts : List Artifact := [
       negates A; computes [S]B + [k](-A) with one \
       chain of doublings, adding B and -A for every bit of S and k and swapping each sum in \
       with a mask of the bit; then compares [4] of it with [4]R projectively. Field elements \
-      are X448's twenty-eight 16-bit limbs, multiplied with `mul`. Callee-saved registers \
-      are saved in the first 16 bytes of `scratch`."])
+      are X448's twenty-eight 16-bit limbs in `scratch`, and the field arithmetic is by calls \
+      of `vg_gf448_r16_mul`, `vg_gf448_r16_add` and `vg_gf448_r16_sub`. Callee-saved \
+      registers are saved in the first 16 bytes of `scratch`."])
     code := Impl.Ed448.X86.verifyEquation
-    contract := Spec.Ed448.verifyEquationContract X86.abi
+    contract := Spec.Ed448.verifyEquationContract X86.abi 20
+    stack := 20
     verified := Proof.Ed448.X86.verifyEquation_verified Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

@@ -1,14 +1,11 @@
-import VerifiedGarbage.Proof.Ed448.X86.BaseMain
-import VerifiedGarbage.Proof.Ed448.X86.BaseLit
-import VerifiedGarbage.Proof.Ed448.X86.RestCT
-import VerifiedGarbage.Proof.Ed448.X86.ScalarVerified
+import VerifiedGarbage.Proof.Ed448.X86.BaseCT
 
 /-!
 # Ed448 base-point multiplication on x86 (32-bit): `Verified`
 
-Constant time (by taint tracking: the only branches are on the loop counters,
-and every address is an argument plus a constant or a counter),
-satisfiability, and the shared contract of `Spec/`, given that the ladder the
+Correctness (`BaseMain.lean`), constant time (`BaseCT.lean`),
+satisfiability, and the shared contract of `Spec/` with the 20 bytes of stack
+below the return address that the calls of the field functions use, given that the ladder the
 code computes encodes as `[k]B` (`Proof.Ed448.BaseLadderOk`, proven with the
 group law in `Proof/Ed448/Facts.lean`, which only the registration file
 imports). The local contract only reads the arguments; the shared one lets
@@ -21,29 +18,6 @@ namespace VG.Proof.Ed448.X86
 open VG VG.X86 VG.Proof.X448.X86
 open VG.Proof.Ed448 (BaseLadderOk decodeLE_below)
 open VG.Impl.Ed448.X86 (scalarBase)
-
-theorem scalarBase_wf {s : State} (h : scalarBaseLocal.pre s) :
-    VG.X86.Taint.Wf (scalarTaint 2 3) s := by
-  have hp := BasePre.of h
-  exact scalarTaint_wf hp.args hp.wr hp.out_sc hp.out_fit hp.ret_out hp.args_out
-
-theorem scalarBase_agree {s t : State} (hs : scalarBaseLocal.pre s) (ht : scalarBaseLocal.pre t)
-    (hp : scalarBaseLocal.pub s t) : VG.X86.Taint.Agree (scalarTaint 2 3) s t := by
-  obtain ⟨sp, a0, a1, a2⟩ := hp
-  have ps := BasePre.of hs
-  have pt := BasePre.of ht
-  refine scalarTaint_agree (scalarBase_wf hs) (scalarBase_wf ht) sp ?_ (by decide)
-    ps.wr pt.wr ps.args.sp_fit pt.args.sp_fit
-  intro i hi
-  rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl
-  exacts [a0, a1, a2]
-
-/-- Constant time: the entry block from `scalarTaint 2 3`, and the rest from
-`fieldτ`, in one check with verification's (`RestCT.lean`). -/
-theorem scalarBase_ct :
-    ConstantTime isa scalarBaseLocal.pre scalarBaseLocal.pub scalarBase :=
-  RelCT.constantTime (relCT_split rfl (scalarTaint 2 3) (fun _ _ h => scalarBase_agree h.1 h.2.1 h.2.2)
-    (by taint_decide) baseRest_ct)
 
 theorem scalarBase_ok (hl : BaseLadderOk) (s : State) (h : scalarBaseLocal.pre s) :
     ∃ tr t, Exec isa scalarBase s tr t ∧ abiPreserved s t ∧ scalarBaseLocal.post s t := by
@@ -77,11 +51,13 @@ def scalarBaseWide : Contract isa :=
     let scratch : Region := ⟨(arg s 2).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 12⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩
     s.rd = [scalar] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 57 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 57 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 }
+      (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧
+      stk.Disjoint scratch }
 
 def scalarBaseRd (s : State) : List Region := [⟨(arg s 1).setWidth 64, 57⟩, ⟨argAddr s 0, 12⟩]
 def scalarBaseWr (s : State) : List Region := [⟨(arg s 0).setWidth 64, 57⟩, ⟨(arg s 2).setWidth 64, 8192⟩]
@@ -93,7 +69,7 @@ theorem scalarBaseWide_pre (s : State) (h : scalarBaseWide.pre s) :
   exact ⟨True.intro, True.intro, h.2.2⟩
 
 theorem scalarBaseWide_implies :
-    scalarBaseWide.Implies (Spec.Ed448.scalarBaseContract X86.abi) := by
+    scalarBaseWide.Implies (Spec.Ed448.scalarBaseContract X86.abi 20) := by
   have a0 : arg scalarBaseSat 0 = 0x1000 := by decide
   have a1 : arg scalarBaseSat 1 = 0x2000 := by decide
   have a2 : arg scalarBaseSat 2 = 0x4000 := by decide
@@ -105,7 +81,7 @@ theorem scalarBaseWide_implies :
     [a0, a1, a2, e, esp] using scalarBaseSat
 
 theorem scalarBase_verified (hl : BaseLadderOk) :
-    Verified X86.target scalarBase (Spec.Ed448.scalarBaseContract X86.abi) := by
+    Verified X86.target scalarBase (Spec.Ed448.scalarBaseContract X86.abi 20) := by
   have hsat := scalarBaseWide_implies.sat_left
   have satLocal : ∃ s, scalarBaseLocal.pre s := hsat.elim fun s h => ⟨_, scalarBaseWide_pre s h⟩
   have verifiedLocal : Verified X86.target scalarBase scalarBaseLocal :=

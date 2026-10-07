@@ -48,30 +48,32 @@ theorem BadUpd.zero {P : Prop} {b : BitVec 32} (h : BadUpd P 0 b) : (b = 0 ↔ P
   rw [e]
   exact ⟨hp, hc⟩
 
-/-- The working space changes only at `BAD`, in the slots and from `ACC`. -/
+/-- The working space changes only at `BAD`, in the slots and from `ACC`
+(and the calls of the field functions change the stack below it). -/
 def BMem (base : Addr) (m m' : Mem) : Prop :=
-  ∀ p, (ofs base p < BAD ∨ BAD + 4 ≤ ofs base p) → (ofs base p < 64 ∨ 2880 ≤ ofs base p) →
-    (ofs base p < ACC ∨ ACC + 512 ≤ ofs base p) → m' p = m p
+  ∀ p, ofs base p < 8192 → (ofs base p < BAD ∨ BAD + 4 ≤ ofs base p) →
+    (ofs base p < 64 ∨ 2880 ≤ ofs base p) → (ofs base p < ACC ∨ ACC + 512 ≤ ofs base p) → m' p = m p
 
-theorem BMem.refl (base : Addr) (m : Mem) : BMem base m m := fun _ _ _ _ => rfl
+theorem BMem.refl (base : Addr) (m : Mem) : BMem base m m := fun _ _ _ _ _ => rfl
 
 theorem BMem.trans {base : Addr} {m₁ m₂ m₃ : Mem} (h₁ : BMem base m₁ m₂) (h₂ : BMem base m₂ m₃) :
-    BMem base m₁ m₃ := fun p a b c => (h₂ p a b c).trans (h₁ p a b c)
+    BMem base m₁ m₃ := fun p w a b c => (h₂ p w a b c).trans (h₁ p w a b c)
 
-theorem BMem.of_outside2 {base : Addr} {m m' : Mem} (h : Outside2 base 64 2816 ACC 512 m m') :
-    BMem base m m' := fun p _ hb hc => h p hb hc
+theorem BMem.of_outside2 {base : Addr} {m m' : Mem} (h : WsOut2 base 64 2816 ACC 512 m m') :
+    BMem base m m' := fun p w _ hb hc => h p w hb hc
 
 theorem BMem.of_bad {base : Addr} {m m' : Mem} (h : Outside base BAD 4 m m') : BMem base m m' :=
-  fun p ha _ _ => h p ha
+  fun p _ ha _ _ => h p ha
 
-theorem BMem.widen {base : Addr} {m m' : Mem} (h : BMem base m m') : Outside2 base 16 2864 ACC 512 m m' :=
-  fun p ha hc => h p (by simp only [BAD]; omega) (by omega) hc
+theorem BMem.widen {base : Addr} {m m' : Mem} (h : BMem base m m') : WsOut2 base 16 2864 ACC 512 m m' :=
+  fun p w ha hc => h p w (by simp only [BAD]; omega) (by omega) hc
 
 theorem BMem.word {base : Addr} {m m' : Mem} (h : BMem base m m') {d : Nat}
     (hb : d + 4 ≤ BAD ∨ BAD + 4 ≤ d) (hs : d + 4 ≤ 64 ∨ 2880 ≤ d) (ha : d + 4 ≤ ACC ∨ ACC + 512 ≤ d)
     (hd : d + 4 ≤ 8192) : word m' base d = word m base d :=
   (Mem.readW_congr fun i hi => (h _ (by rw [ofs_off base (by omega)]; omega)
-    (by rw [ofs_off base (by omega)]; omega) (by rw [ofs_off base (by omega)]; omega)).symm).symm
+    (by rw [ofs_off base (by omega)]; omega) (by rw [ofs_off base (by omega)]; omega)
+    (by rw [ofs_off base (by omega)]; omega)).symm).symm
 
 /-- What comparisons and field programs may change. -/
 structure CKeep (base : Addr) (s t : State) : Prop where
@@ -88,6 +90,10 @@ theorem CKeep.toV {base : Addr} {s t : State} (h : CKeep base s t) : VKeep base 
 
 theorem CKeep.scr {base : Addr} {s t : State} (h : CKeep base s t) (hs : Scr s base) : Scr t base :=
   hs.of_keeps h.regs (by decide)
+
+theorem CKeep.ctx {base : Addr} {s t : State} (h : CKeep base s t) (hc : CallCtx s base) :
+    CallCtx t base :=
+  hc.keep (h.regs.1 _ (by decide))
 
 theorem IKeep.toC {base : Addr} {s t : State} (h : IKeep base s t) : CKeep base s t :=
   ⟨h.regs, BMem.of_outside2 h.mem⟩
@@ -207,10 +213,10 @@ theorem limbs_eq_iff {m : Mem} {base : Addr} {a b : Nat} (ha : Bounded m base a)
   ⟨fun h => valN_congr h, fun h => valN_inj ha hb h⟩
 
 theorem outB {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 64 ≤ o)
-    (h2 : o + n ≤ 2880) : BMem base m m' := fun p _ hp _ => h p (by omega)
+    (h2 : o + n ≤ 2880) : BMem base m m' := fun p _ _ hp _ => h p (by omega)
 
 theorem fmB {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') (h1 : 64 ≤ o)
-    (h2 : o + 112 ≤ 2880) : BMem base m m' := fun p _ hp hq => h p (by omega) hq
+    (h2 : o + 112 ≤ 2880) : BMem base m m' := fun p _ _ hp hq => h p (by omega) hq
 
 /-- Slots `a` and `b` compared: `BAD |= 0` exactly when they hold the same field
 element; slot `a` holds the same element, fully reduced, and slot 1 is

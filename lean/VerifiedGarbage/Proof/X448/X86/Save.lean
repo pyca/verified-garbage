@@ -29,8 +29,19 @@ theorem Saved.outside2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : S
   h.of_readW fun p hp => have := savedSlots_bound p hp
     ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by omega)
 
+theorem Saved.wsout2 {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
+    {x nx y ny : Nat} (ho : WsOut2 base x nx y ny m m') (hx : 16 ≤ x) (hy : 16 ≤ y) :
+    Saved base g m' :=
+  h.of_readW fun p hp => have := savedSlots_bound p hp
+    ho.word (Or.inl (by omega)) (Or.inl (by omega)) (by omega)
+
 theorem Saved.field {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
     {o : Nat} (hm : FieldMem base o m m') (ho : 16 ≤ o) : Saved base g m' :=
+  h.of_readW fun p hp => have := savedSlots_bound p hp
+    hm.word (Or.inl (by omega)) (by simp only [ACC]; omega)
+
+theorem Saved.wsfield {base : Addr} {g : Reg → BitVec 32} {m m' : Mem} (h : Saved base g m)
+    {o : Nat} (hm : WsField base o m m') (ho : 16 ≤ o) : Saved base g m' :=
   h.of_readW fun p hp => have := savedSlots_bound p hp
     hm.word (Or.inl (by omega)) (by simp only [ACC]; omega)
 
@@ -49,7 +60,7 @@ theorem save_ok {s : State} (hp : Pre s) :
       Outside ((arg s 3).setWidth 64) 0 16 s.mem t.mem ∧ Keeps [.eax, .edi] s t := by
   change WP isa (.block (.mov .eax (.mem (at_ .esp 16)) ::
     (Spill.saveCode .eax savedSlots ++ [.mov .edi (.reg .eax)]))) s _
-  refine loadArg_ok hp rfl rfl rfl (Outside.refl _ _ _ _) (by decide : 3 < 4) fun t ht => ?_
+  refine loadArg_ok hp rfl rfl rfl (Frame.refl _ _) (by decide : 3 < 4) fun t ht => ?_
   have hfit := hp.sc_fit
   refine Spill.save_ofNat_ok savedSlots (n := 16) (by decide) (by rw [ht.gpr]; omega)
     (fun p h => by rw [ht.gpr, ht.wr]; exact ⟨_, hp.sc_in, contains_sc (by have := savedSlots_bound p h; omega)⟩)

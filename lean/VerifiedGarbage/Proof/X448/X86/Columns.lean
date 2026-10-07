@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.X448.X86.Field
+import VerifiedGarbage.Proof.X448.X86.FnCtx
 
 /-!
 # X448 on x86 (32-bit): pointwise field operations
@@ -40,20 +40,21 @@ theorem input_limb {s t : State} {base : Addr} {a i : Nat} (h : Outside base TMP
     (ha : Slot a) (hi : i < 28) : limbs t.mem base a i = limbs s.mem base a i :=
   h.limbs (Or.inl (Nat.le_trans ha (by decide))) (Nat.le_trans ha (by decide)) hi
 
-/-- Carry propagation after a pointwise operation, with the common frame. -/
-theorem columns_normalize {s : State} {base : Addr} (hs : Scr s base) {code : List Instr}
-    {o : Nat} (ho : Slot o) {f : Nat → Nat} (hb : ∀ i < 28, f i ≤ 2 ^ 32 - radix)
+/-- Carry propagation after a pointwise operation, into the element at `o`,
+with the common frame. -/
+theorem columns_normalize {s : State} {base : Addr} {n o a : Nat} (hc : FnCtx s base n o a)
+    {code : List Instr} {f : Nat → Nat} (hb : ∀ i < 28, f i ≤ 2 ^ 32 - radix)
     (hcode : WP isa (.block code) s fun t =>
       (∀ i < 28, limbs t.mem base TMP i = f i) ∧ Outside base TMP 112 s.mem t.mem ∧ Keeps clob s t) :
-    WP isa (.block (code ++ normalize o)) s fun t =>
-      Op base o s t ∧ Bounded t.mem base o ∧ fe t.mem base o % Spec.X448.P = valN f 28 % Spec.X448.P := by
+    WP isa (.block (code ++ normalize)) s fun t =>
+      (Keeps clob s t ∧ FieldMem base o s.mem t.mem WORK) ∧ Bounded t.mem base o ∧
+        fe t.mem base o % Spec.X448.P = valN f 28 % Spec.X448.P := by
   rw [WP.block_append_iff]
   refine WP.mono hcode fun t ⟨tf, tm, tk⟩ => ?_
-  refine WP.mono (normalize_ok (hs.of_keeps tk (by decide)) ho tf hb) fun u ⟨uf, um, uk⟩ => ?_
-  refine ⟨⟨tk.trans (uk.mono ?_), (FieldMem.work tm (by decide) (by decide)).trans um⟩, ?_, ?_⟩
-  · intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide
+  have tc := hc.keep tk (by decide) (by decide) (tm.mono (by decide) (by decide))
+  refine WP.mono (normalize_ok tc.scr tc.args (by have := tc.n3; omega) tc.slotO tc.argO tf hb)
+    fun u ⟨uf, um, uk⟩ => ?_
+  refine ⟨⟨tk.trans (uk.mono (by decide)), (FieldMem.work tm (by decide) (by decide)).trans um⟩, ?_, ?_⟩
   · intro i hi; rw [uf i hi]; exact digit_lt _ _
   · rw [show fe u.mem base o = valN (normalized f) 28 from valN_congr uf, normalized_mod hb]
 

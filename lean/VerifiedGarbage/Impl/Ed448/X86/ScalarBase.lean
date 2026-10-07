@@ -12,8 +12,10 @@ pruning.
 Field elements are X448's on this target (twenty-eight 16-bit limbs in the
 128-byte slots of the working space, `Impl/X448/X86.lean`), and so is the
 field arithmetic: multiplications (and squarings, as multiplications of a
-slot by itself), additions, subtractions, the constant-time swap, the
-inversion, the full reduction of slot 1 and its output. Points are the
+slot by itself), additions and subtractions, which are calls of the field
+functions `vg_gf448_r16_*` (their arguments in the 20 bytes of stack below
+the return address), the constant-time swap, the inversion, the full
+reduction of slot 1 and its output. Points are the
 specification's projective coordinates `(X : Y : Z)`. As in X448, `edi`
 holds the working space and `esi` the loop counter; the callee-saved
 registers are saved in the working space's first 16 bytes

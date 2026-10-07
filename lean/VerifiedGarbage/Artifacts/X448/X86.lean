@@ -11,10 +11,12 @@ def artifacts : List Artifact := [
   { Spec.X448.x448Api with
     target := X86.target
     doc := Spec.X448.x448Api.doc (notes := ["The function saves its caller's callee-saved \
-      registers in `scratch`. Field elements are twenty-eight 16-bit limbs, multiplied with `mul` and \
-      reduced with `2^448 = 2^224 + 1` (mod p). Inversion uses an addition chain for `p - 2`."])
+      registers in `scratch`. Field elements are twenty-eight 16-bit limbs in `scratch`; the field \
+      arithmetic is by calls of `vg_gf448_r16_mul`, `vg_gf448_r16_add`, `vg_gf448_r16_sub` and \
+      `vg_gf448_r16_mul_a24`. Inversion uses an addition chain for `p - 2`."])
     code := Impl.X448.X86.x448
-    contract := Spec.X448.x448Contract X86.abi
+    contract := Spec.X448.x448Contract X86.abi 20
+    stack := 20
     verified := Proof.X448.X86.x448_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

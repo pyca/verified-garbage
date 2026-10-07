@@ -87,9 +87,10 @@ theorem invEnv_x2 (e : Env) : invEnv e 1 = e 1 := by
   simp (config := {decide := true}) only [invEnv, applyOps, FieldOp.apply, opMul, opCopy, opSqn,
     Function.update_apply, ite_true, ite_false]
 
-theorem invert_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
+theorem invert_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base) :
     WP isa Impl.X448.X86.invert s fun t =>
       IKeep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = invEnv (E s.mem base) :=
-  invert_spec base s hs hb
+  invert_spec base s hs hc hb
 
 end VG.Proof.X448.X86

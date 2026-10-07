@@ -11,19 +11,15 @@ namespace VG.Proof.X448.X86
 
 open VG VG.X86 VG.Impl.X448.X86 VG.Proof.X448.Radix16
 
-def rowTail : List Instr :=
-  [.store (at_ .ebp (ACC + 112)) .ebx, .alu .add .ebp (.imm 4),
-    .mov .edx (.reg .edi), .alu .add .edx (.imm 112), .alu .cmp .ebp (.reg .edx)]
-
 theorem rowTail_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi : i < 28)
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i)) :
-    WP isa (.block rowTail) s fun t =>
+    WP isa (.block rowEnd) s fun t =>
       t.gpr .ebp = t.gpr .edi + BitVec.ofNat 32 (4 * (i + 1)) ∧
       t.zf = some (decide (i + 1 = 28)) ∧
       t.mem = s.mem.writeW (off base (ACC + 4 * (i + 28))) (s.gpr .ebx) ∧ Keeps clob s t := by
   have ea : s.ea (at_ .ebp (ACC + 112)) = off base (ACC + 4 * (i + 28)) := by
     rw [rowEa hs hp (by simp only [ACC]; omega), show 4 * i + (ACC + 112) = ACC + 4 * (i + 28) by omega]
-  unfold rowTail
+  unfold rowEnd
   refine wp_store ea (hs.write (by simp only [ACC]; omega)) fun t ht => ?_
   refine wp_alu (Or.inl rfl) rfl fun u hu _ => ?_
   refine wp_mov rfl fun v hv => ?_

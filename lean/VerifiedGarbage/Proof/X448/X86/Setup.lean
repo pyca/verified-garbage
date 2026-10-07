@@ -29,7 +29,7 @@ theorem setup_ok {s : State} (hp : Pre s) {base p : Addr}
   rw [WP.block_append_iff]
   refine WP.mono (save_ok hp) fun t ⟨ts, tv, tm, tk⟩ => ?_
   refine loadArg_ok hp (tk.1 _ (by decide)) tk.2.1 tk.2.2
-    (tm.mono (by decide) (by decide)) (by decide : 2 < 4) fun t' ht => ?_
+    (XFrame.of_outside (tm.mono (by decide) (by decide))) (by decide : 2 < 4) fun t' ht => ?_
   rw [hc] at ts tv tm
   have ts' := ts.of_upd ht (by decide)
   have tm' : Outside base 0 16 s.mem t'.mem := by rw [ht.mem]; exact tm
