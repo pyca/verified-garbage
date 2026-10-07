@@ -183,9 +183,10 @@ rebuilds outputs that differ from the checkout. The modules' `.trace` files
 carry the profile CI's build recorded, which `ci/lean_profile.py` reads.
 Private package access requires authenticating to GHCR before pulling.
 
-Docker is not needed: the image is a single gzipped layer, which `curl` can
-stream straight from the registry API with an anonymous pull token (useful
-in containers and sandboxes without Docker). With `curl`, `python3` and
+Docker is not needed: the image is a single uncompressed layer (a tar
+holding the archive), which `curl` can stream straight from the registry API
+with an anonymous pull token (useful in containers and sandboxes without
+Docker). With `curl`, `python3` and
 `zstd` installed, from the repository root:
 
 ```sh
@@ -198,7 +199,7 @@ layer=$(curl -fsS -H "Authorization: Bearer $token" \
   "https://ghcr.io/v2/$repo/manifests/latest" |
   python3 -c 'import json, sys; [l] = json.load(sys.stdin)["layers"]; print(l["digest"])')
 curl -fsSL -H "Authorization: Bearer $token" "https://ghcr.io/v2/$repo/blobs/$layer" |
-  gzip -dc | tar -xOf - lean-cache.tar.zst | zstd -dc | tar --no-same-owner -xf - -C lean
+  tar -xOf - lean-cache.tar.zst | zstd -dc | tar --no-same-owner -xf - -C lean
 ```
 
 The download (a little over 2 GB) streams through the pipeline and is never

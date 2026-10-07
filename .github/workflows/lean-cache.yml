@@ -41,7 +41,7 @@ jobs:
       # The commit CI checked (GITHUB_SHA is main's head when this started).
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
       # Bump if the archive format or compression settings change.
-      CACHE_FORMAT: zstd5-v1
+      CACHE_FORMAT: zstd5-uncompressed-v2
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,6 +97,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lean-cache-image"
           tar -C lean -cf - .lake/build .lake/packages \
             | zstd -T0 -5 -o "$RUNNER_TEMP/lean-cache-image/lean-cache.tar.zst"
+      # `docker build` with the default driver cannot choose a layer's
+      # compression.
+      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+        if: ${{ steps.publish.outputs.needed == 'true' }}
+        with:
+          cache-binary: false
       - name: Upload the cache image
         id: upload
         if: ${{ steps.publish.outputs.needed == 'true' }}
@@ -113,14 +119,17 @@ jobs:
           printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           trap 'docker logout ghcr.io' EXIT
           # One plain manifest: with attestations, the push would be an index
-          # whose untagged children the cleanup below would delete.
-          docker build -f ci/lean-cache.Dockerfile --provenance=false --sbom=false \
+          # whose untagged children the cleanup below would delete. The layer
+          # holds the zstd archive uncompressed: gzip cannot shrink it, and
+          # gzipping it again doubled the time to publish and cost every
+          # restore a pass over 2.5 GB.
+          docker buildx build -f ci/lean-cache.Dockerfile --provenance=false --sbom=false \
             --label "org.opencontainers.image.source=https://github.com/$GH_REPO" \
             --label "org.opencontainers.image.revision=$HEAD_SHA" \
             --label "io.pyca.lean.toolchain=$(cat lean/lean-toolchain)" \
             --label "io.pyca.lean.cache-key=$CACHE_KEY" \
-            -t "$IMAGE" "$RUNNER_TEMP/lean-cache-image"
-          docker push "$IMAGE"
+            --output "type=image,name=$IMAGE,push=true,compression=uncompressed,force-compression=true" \
+            "$RUNNER_TEMP/lean-cache-image"
           echo "published=true" >> "$GITHUB_OUTPUT"
       # Only `latest` is published, so replacing it leaves old images untagged.
       - name: Delete old cache versions
