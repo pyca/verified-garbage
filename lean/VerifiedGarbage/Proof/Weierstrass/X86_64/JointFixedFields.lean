@@ -21,11 +21,11 @@ theorem FixedSource.of_keeps {base T : Addr} {tsym : String} {size a x y : Nat} 
   · rw [hk.2.1]; exact h.xval
   · rw [hk.2.1]; exact h.yval
 
-/-- Any bounded scratch write preserves the external affine coordinates. -/
-theorem FixedSource.keep {M : Mod} {base T : Addr} {tsym : String} {size a x y : Nat}
-    {s t : State} {W : List Nat} (h : FixedSource base T tsym size a x y s)
-    (hk : ProgKeep M base W s t) (hs : t.syms=s.syms)
-    (hw : ∀ w∈W,w+8*M.n≤size) (htmp : M.tmp+8*M.n≤size) :
+/-- The external row survives any write confined to scratch, regardless of register clobbers. -/
+theorem FixedSource.keep_of_mem {base T : Addr} {tsym : String} {size a x y : Nat}
+    {s t : State} (h : FixedSource base T tsym size a x y s)
+    (hs : t.syms=s.syms) (hr : t.rd=s.rd) (hw : t.wr=s.wr)
+    (hmem : ∀ z,size≤ofs base z → t.mem z=s.mem z) :
     FixedSource base T tsym size a x y t := by
   have ep : ∀ i<4,t.mem.readW (off (off T (64*(a-1))) (16*i)) 128=
       s.mem.readW (off (off T (64*(a-1))) (16*i)) 128 := by
@@ -33,9 +33,7 @@ theorem FixedSource.keep {M : Mod} {base T : Addr} {tsym : String} {size a x y :
     apply Mem.readW_congr
     intro b hb
     have ho := h.outside i hi b (by omega)
-    apply hk.mem
-    · intro w hm; have := hw w hm; exact Or.inr (by omega)
-    · exact Or.inr (by omega)
+    exact hmem _ ho
   have ef (j : Nat) (hj : j<2) :
       wordsVal t.mem (off T (64*(a-1))) (32*j) 4=wordsVal s.mem (off T (64*(a-1))) (32*j) 4 := by
     have e := nafExternalCopy_field (mem:=s.mem) (mem':=t.mem)
@@ -43,9 +41,18 @@ theorem FixedSource.keep {M : Mod} {base T : Addr} {tsym : String} {size a x y :
       (by simpa only [Nat.zero_add] using ep) (by omega)
     simpa only [Nat.zero_add] using e
   refine ⟨by rw [hs]; exact h.symbol,?_,h.outside,?_,?_⟩
-  · intro i hi; rw [hk.rd,hk.wr]; exact h.read i hi
+  · intro i hi; rw [hr,hw]; exact h.read i hi
   · rw [ef 0 (by decide)]; exact h.xval
   · rw [ef 1 (by decide)]; exact h.yval
+
+/-- Any bounded scratch write preserves the external affine coordinates. -/
+theorem FixedSource.keep {M : Mod} {base T : Addr} {tsym : String} {size a x y : Nat}
+    {s t : State} {W : List Nat} (h : FixedSource base T tsym size a x y s)
+    (hk : ProgKeep M base W s t) (hs : t.syms=s.syms)
+    (hw : ∀ w∈W,w+8*M.n≤size) (htmp : M.tmp+8*M.n≤size) :
+    FixedSource base T tsym size a x y t :=
+  h.keep_of_mem hs hk.rd hk.wr (fun z hz => hk.mem z
+    (fun w hm => Or.inr (Nat.le_trans (hw w hm) hz)) (Or.inr (Nat.le_trans htmp hz)))
 
 def fixedLoadEnv (K : WinCfg) (m : Nat) [NeZero m] (E : Nat → Fin m) (x y : Nat) (a : Nat) : Fin m :=
   if a=K.E.x then toM m (2^256) x else if a=K.E.y then toM m (2^256) y
