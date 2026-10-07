@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.SqrP
 import VerifiedGarbage.Proof.Mont.X86_64.MulPX
 import VerifiedGarbage.Proof.Mont.X86_64.AddSubP
 import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
+import VerifiedGarbage.Proof.Mont.X86_64.Sub256
 
 /-!
 # Montgomery arithmetic on x86-64: the operations
@@ -209,8 +210,9 @@ theorem mul_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : mul M o a b = mulR M o
 theorem add_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : add M o a b = addR M o a b := by
   simp only [add, h, ↓reduceIte]
 
-theorem sub_of_lt {M : Mod} (h : M.n < 7) (o a b : Nat) : sub M o a b = subR M o a b := by
-  simp only [sub, h, ↓reduceIte]
+theorem sub_of_lt {M : Mod} (h : M.n < 7) (hred : M.red ≠ .friendly p256Ws)
+    (o a b : Nat) : sub M o a b = subR M o a b := by
+  simp only [sub, hred, and_false, h, ↓reduceIte]
 
 /-- `[o] = [a] [b] R⁻¹ mod m`. -/
 theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
@@ -266,9 +268,12 @@ theorem sub_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     WP isa (.block (sub M o a b)) s fun s' => OpKeep M base o s s' ∧
       wordsVal s'.mem base o M.n = (wordsVal s.mem base a M.n + m - wordsVal s.mem base b M.n) % m := by
   rw [sub]; split
-  · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
+  · obtain ⟨hn, hm⟩ := p256_of_red (show M.red = .friendly p256Ws from ‹_ ∧ _›.2) hM.red
+    exact sub256_ok hs hn hm ho ha hb hA hB
   · split
-    · exact subMer_ok hs hM ‹_› ho ha hb hA hB
-    · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
+    · exact subR_ok hs (hM.toModOk ‹_›) ho ha hb hA hB
+    · split
+      · exact subMer_ok hs hM ‹_› ho ha hb hA hB
+      · exact subW_ok hs hM ho ha hb hoT haT hbT hoM hA hB
 
 end VG.Proof.Mont.X86_64
