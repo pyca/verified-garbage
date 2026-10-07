@@ -18,7 +18,7 @@ theorem combSign_regions {s : State} (h : combSignSpec.pre s) :
   simp only [p256Comb_consts, Abi.constRegions_cons, Abi.constRegions_nil,
     dR, digestR, kR, ptr, show p256Comb.C.len = 32 from rfl]
 
-theorem signComb_verified (hL : Law Spec.P256.curve) : Verified X86.target signP256Comb combSignSpec := by
+theorem signComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : Verified X86.target signP256Comb combSignSpec := by
   have hs : ∃ s, combSignSpec.pre s := ⟨combSatState, combSat_spec⟩
   have sl : ∃ s, combSignLocal.pre s := ⟨_, combSign_pre combSat_spec⟩
   have co : ∀ d, p256Comb.comb = some d → CombOk p256Comb d := by
@@ -27,9 +27,9 @@ theorem signComb_verified (hL : Law Spec.P256.curve) : Verified X86.target signP
     rw [← e]; exact p256Comb_shape
   have hv : Verified X86.target signP256Comb combSignLocal := Verified.of_correct (k := combSignLocal)
     (fun s h => by
-      obtain ⟨tr, t, e, a, p⟩ := signComb_ok p256Comb_ok hL (p256Comb_tables hL) co p256Comb_am3 rfl h
+      obtain ⟨tr, t, e, a, p⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl h
       exact ⟨tr, t, e, a, p⟩)
-    (signComb_ct p256Comb_ok hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3) (.refl sl)
+    (signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3) (.refl sl)
   refine Verified.narrowTo hv combSignRd combSignWr (fun _ h => combSign_pre h) ?_ ?_ ?_ ?_ hs
   · intro s h a n ⟨r, hr, hc⟩
     obtain ⟨rd, wr⟩ := combSign_regions h

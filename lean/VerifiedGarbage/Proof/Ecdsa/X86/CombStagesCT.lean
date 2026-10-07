@@ -9,6 +9,10 @@ open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 def argτ (rs : List Reg) (n : Nat := 5) : VG.X86.Taint.T :=
   { regs := .ofList rs, flags := false, argLen := 4 + 4 * n }
 
+/-- Public scratch addresses let fixed loop counters survive memory stores. -/
+def scratchArgτ (n : Nat) (second : Bool := true) : VG.X86.Taint.T :=
+  { argτ [.esp, .edi] n with lens := (combτAt second).lens, bases := (combτAt second).bases }
+
 def signPrepCode : Prog isa := p256Comb.signPrep
 def signTailCode : Prog isa := p256Comb.signTail
 materialize_code signPrepCode
@@ -18,7 +22,7 @@ theorem signPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp]))
     signPrepCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
-theorem signTail_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi]))
+theorem signTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 5))
     signTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
@@ -72,6 +76,17 @@ theorem argAgree {rs : List Reg} {n : Nat} {s t : State}
     Mem.readW_byte t.mem _ (Nat.mod_lt _ (by decide))]
   exact congrArg _ (ha ((k - 4) / 4) (by omega))
 
+theorem scratchArgWf {n : Nat} {second : Bool} {s : State}
+    (a : VG.X86.Taint.Wf (argτ [.esp, .edi] n) s) (b : VG.X86.Taint.Wf (combτAt second) s) :
+    VG.X86.Taint.Wf (scratchArgτ n second) s :=
+  ⟨b.lens, b.bases, fun _ h => (List.not_mem_nil h).elim, a.args, a.argBases, a.stk, a.frames, a.room⟩
+
+theorem scratchArgAgree {n : Nat} {second : Bool} {s t : State}
+    (a : VG.X86.Taint.Agree (argτ [.esp, .edi] n) s t)
+    (ws : VG.X86.Taint.Wf (combτAt second) s) (wt : VG.X86.Taint.Wf (combτAt second) t)
+    (hw : s.wr = t.wr) : VG.X86.Taint.Agree (scratchArgτ n second) s t :=
+  ⟨a.rf, fun _ => hw, scratchArgWf a.wf₁ ws, scratchArgWf a.wf₂ wt, (fun _ h => (List.not_mem_nil h).elim), a.slots, a.sp, a.argMem⟩
+
 /-- The functional stage invariant restores public cdecl arguments. -/
 theorem keepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
     (hp : Pre c s₀ extra₁) (hq : Pre c t₀ extra₂)
@@ -111,5 +126,14 @@ theorem keepCombWf {s₀ s : State} {extra : List Region} (hp : Pre p256Comb s�
   · intro p h; cases h
   · intro h; cases h
   · intro p h; cases h
+
+theorem keepScratchAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
+    (hp : Pre p256Comb s₀ extra₁) (hq : Pre p256Comb t₀ extra₂)
+    (ks : Keep p256Comb s₀ (ptr s₀ 4) s) (kt : Keep p256Comb t₀ (ptr t₀ 4) t)
+    (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 5, arg s₀ j = arg t₀ j) :
+    VG.X86.Taint.Agree (scratchArgτ 5 true) s t := by
+  refine scratchArgAgree (keepArgAgree hp hq ks kt he ha) (keepCombWf hp ks) (keepCombWf hq kt) ?_
+  rw [ks.wr, kt.wr, hp.wr, hq.wr]
+  simp only [outR, scR, ptr, ha 4 (by decide), ha 0 (by decide)]
 
 end VG.Proof.Ecdsa.X86

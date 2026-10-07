@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.InvSpec
 import VerifiedGarbage.Proof.Ecdsa.X86.Flags
 import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 import VerifiedGarbage.TCB.X86.Target
@@ -53,6 +54,8 @@ structure CfgOk (c : Cfg) : Prop where
   len_lo : 8 * c.n < c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   sh : c.sh < 32
+  inv_p : c.n = 4 ∧ c.C.len = 32 → Inv.InvSound c.C.p ∧ Inv.InvOk c.invP c.C.p
+  inv_n : c.n = 4 ∧ c.C.len = 32 → Inv.InvSound c.C.n ∧ Inv.InvOk c.invN c.C.n
 
 section
 variable (c : Cfg) (s : State)

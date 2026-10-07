@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.InvMain
+import VerifiedGarbage.Proof.Weierstrass.InvArith
 import VerifiedGarbage.Proof.P256.Curve
 
 /-!
@@ -13,6 +15,7 @@ imports that algebra.
 
 namespace VG.Variants.P256.X86.Law
 
-def variant : Proof.Weierstrass.HasLaw Spec.P256.curve := ⟨Proof.P256.law⟩
+def variant : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve :=
+  ⟨Proof.P256.law, fun hp => Proof.Weierstrass.X86.Inv.invSound_of_toM hp (Proof.Weierstrass.invToM_of_prime hp)⟩
 
 end VG.Variants.P256.X86.Law

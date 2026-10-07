@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Word
 
 /-!

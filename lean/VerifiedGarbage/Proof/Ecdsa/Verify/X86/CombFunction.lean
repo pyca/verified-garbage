@@ -64,14 +64,14 @@ theorem vPrefixTables {s t : State} (hp : VCombPre p256Comb s) (P : SymAddrPost 
 def vCombCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.verifyComb p256Comb
 materialize_code vCombCode
 
-theorem vComb_ok (hC : Law p256Comb.C) {s₀ : State} (hp : VCombPre p256Comb s₀) :
+theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) {s₀ : State} (hp : VCombPre p256Comb s₀) :
     WP isa vCombCode s₀ fun s' => abiPreserved s₀ s' ∧ VPost p256Comb s₀ s' := by
   have hCo : ∀ d, p256Comb.comb = some d → CombOk p256Comb d := by
     intro d h; have e : p256d = d := Option.some.inj h; rw [← e]; exact p256Comb_shape
   refine WP.seq (WP.mono (symFrame_ok p256d.tsym s₀ hp.sp_lo) fun s₁ P => ?_)
   have hp₁ := hp.toVPre.symAddr P hp.sp_lo
   have ht := vPrefixTables hp P
-  refine WP.mono (verifyCombBody_ok p256Comb_ok hC (p256Comb_tables hC) hCo p256Comb_am3 hp₁
+  refine WP.mono (verifyCombBody_ok (p256Comb_ok hI) hC (p256Comb_tables hC) hCo p256Comb_am3 hp₁
     (fun d hd => by have e : p256d = d := Option.some.inj hd; subst d; exact ht)) fun s₂ ⟨K, post⟩ => ?_
   have ha := K.abi hp₁
   have he := P.gpr .esp (by decide)
@@ -90,7 +90,7 @@ theorem vComb_ok (hC : Law p256Comb.C) {s₀ : State} (hp : VCombPre p256Comb s�
 def VCombPub (s t : State) : Prop :=
   s.gpr .esp = t.gpr .esp ∧ (∀ j < 4, arg s j = arg t j) ∧ s.syms p256d.tsym = t.syms p256d.tsym
 
-theorem vComb_ct (hC : Law p256Comb.C) : ConstantTime isa (VCombPre p256Comb) VCombPub vCombCode := by
+theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : ConstantTime isa (VCombPre p256Comb) VCombPub vCombCode := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   have preCT : RelCT isa (fun s t => VCombPre p256Comb s ∧ VCombPre p256Comb t ∧ VCombPub s t)
       p256Comb.tableAddr (fun _ _ => True) := by
@@ -109,7 +109,7 @@ theorem vComb_ct (hC : Law p256Comb.C) : ConstantTime isa (VCombPre p256Comb) VC
   have ha' : ∀ j < 4, arg s j = arg t j := by
     intro j hj
     rw [P.arg hp.sp_lo (by have := hp.sp_fit; omega), Q.arg hq.sp_lo (by have := hq.sp_fit; omega), ha j hj]
-  exact vCombBody_rel p256Comb_ok hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
+  exact vCombBody_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
     (hp.toVPre.symAddr P hp.sp_lo) (hq.toVPre.symAddr Q hq.sp_lo)
     (vPrefixTables hp P) (vPrefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg])
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
 import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Points
 
@@ -87,14 +88,13 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have F := hP.fixed
   have hf : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (powField_ok (P := c.powP) (powLayP hc) (powWkP hc) hpR hP.scr
+  refine WP.seq (WP.mono (pPow_ok hc hP.scr
     (modP_of hc F.mp) hP.rz_lt F.onep hP.t₁ (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega))
     fun s₁ ⟨K₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [powWxP_eq, accLen_MP'] at U₁
   have hs₁ := hP.scr.of_keeps K₁ (by decide)
-  have F₁ := F.unch h7 hn (fixedOk_slWk (by decide)) U₁
+  have F₁ := F.unch h7 hn fixedOk_pwW U₁
   have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₁ i = sv c base s i := fun hi hl =>
-    sv_unch U₁ h7 hn hi (apart_slWk hi hl)
+    sv_unch U₁ h7 hn hi (apart_pwW hi hl)
   rw [final_eq]
   -- `XM = X · ACC`.
   have hM₁ := modP_of hc F₁.mp
@@ -146,20 +146,24 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
       toM_r2 hnR (by rw [e₄, r2₃])]
     constructor <;> intro h <;> grind
   -- What changed: `finW` and the accumulator.
-  have hsub : ∀ {l : List Nat}, (∀ i ∈ l, i ∈ finW) → ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, 16 * c.n + 4)] →
-      w ∈ slWk c finW := fun hl w hw => by
+  have hsub : ∀ {l : List Nat} {len : Nat}, len ≤ 388 → (∀ i ∈ l, i ∈ finW) →
+      ∀ w, w ∈ slW c l ∨ w ∈ [(c.wk, len)] →
+        ∃ w' ∈ pwW c finW, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
+    intro l len hlen hl w hw
     rcases hw with hw | hw
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      exact List.mem_append_left _ (List.mem_map_of_mem (hl i hi))
-    · exact List.mem_append_right _ hw
-  have U₅ : Unch base (slWk c finW) s.mem s₅.mem :=
+      exact ⟨(c.sl i, 8 * c.n), List.mem_append_left _ (List.mem_map_of_mem (hl i hi)),
+        Nat.le_refl _, Nat.le_refl _⟩
+    · rw [List.mem_singleton.mp hw]
+      exact ⟨(c.wk, 388), by simp, Nat.le_refl _, by omega⟩
+  have U₅ : Unch base (pwW c finW) s.mem s₅.mem :=
     (U₁.trans ((unch_slots (MP'_n c) rfl k₂.unch (l := [XM, TMP]) (by simp) (by simp)).trans
       ((unch_slots (MP'_n c) rfl k₃.unch (l := [X, TMP]) (by simp) (by simp)).trans
       ((unch_slots (MN'_n c) rfl k₄.unch (l := [XN, TMP]) (by simp) (by simp)).trans
-      (unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)))))).mono fun w hw => by
+      (unch_slots (MN'_n c) rfl k₅.unch (l := [W, TMP]) (by simp) (by simp)))))).cover fun w hw => by
       simp only [List.mem_append] at hw
       rcases hw with hw | hw | hw | hw | hw
-      all_goals exact hsub (by decide) w hw
+      all_goals exact hsub (by omega) (by decide) w hw
   -- The checks and the result.
   rw [WP.block_append_iff]
   refine WP.mono (checkNonzero_ok c hs₅ h0 (sl_le c h7 (i := RZ) (by decide)) hf) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
@@ -167,7 +171,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   rw [WP.block_append_iff]
   refine WP.mono (checkZero_ok c hs₆ h0 (sl_le c h7 (i := W) (by decide)) hf) fun s₇ ⟨f₇, k₇, O₇⟩ => ?_
   have hs₇ := hs₆.of_keeps k₇ (by decide)
-  have UW : Unch base (slWk c finW ++ [(c.sl FLAG, 4)]) s.mem s₇.mem := by
+  have UW : Unch base (pwW c finW ++ [(c.sl FLAG, 4)]) s.mem s₇.mem := by
     have := U₅.trans (O₆.unch.trans O₇.unch)
     exact this.mono fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
@@ -175,7 +179,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
       · rcases List.mem_append.mp hw with hw | hw
         · exact List.mem_append_right _ hw
         · exact List.mem_append_right _ hw
-  have F₇ := F.unch h7 hn ((fixedOk_slWk (by decide)).append fixedOk_flag) UW
+  have F₇ := F.unch h7 hn ((fixedOk_pwW (by decide)).append fixedOk_flag) UW
   have z₅ : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := by
     show sv c base s₅ RZ = _
     rw [v₅ (by decide) (by decide) (by decide), v₄ (by decide) (by decide) (by decide),
@@ -186,14 +190,14 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr}
   have hflag : flagW c base s₇ = mask32 (decide ((KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
       (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n)) ∧ sv c base s RZ ≠ 0 ∧
       Fin.ofNat c.C.n (sv c base s₃ X) = Fin.ofNat c.C.n (sigR c s₀)) = true) := by
-    rw [f₇, f₆, hW₆, flagW, flag_unch U₅ h7 h0 hn (by decide), ← flagW, hP.flag, z₅, mask32_and, mask32_and]
+    rw [f₇, f₆, hW₆, flagW, flag_unch_pwW U₅ h7 h0 hn (by decide), ← flagW, hP.flag, z₅, mask32_and, mask32_and]
     simp only [w₅, decide_eq_true_eq, and_assoc]
   refine WP.mono (vfinish_ok hc hs₇ F₇.saved _ hflag) fun s' ⟨hm, ret, saved, esp⟩ =>
     ⟨saved, ?_, ?_, _, lt₃, x₃, ?_⟩
   · rw [esp, k₇.1 _ (by decide), k₆.1 _ (by decide), k₅.gpr _ (by decide), k₄.gpr _ (by decide),
       k₃.gpr _ (by decide), k₂.gpr _ (by decide), K₁.1 _ (by decide), hP.esp]
   · rw [hm]
-    exact whole_of hP.unch UW (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))
+    exact whole_of hP.unch UW (le_append (pwW_le h7 finW (by decide)) (flag_le h0 h7))
   · rw [ret]
     simp only [decide_eq_true_eq]
 

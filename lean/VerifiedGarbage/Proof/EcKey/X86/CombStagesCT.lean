@@ -16,7 +16,7 @@ materialize_code pkTailCode
 theorem pkPrep_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp] 3)) pkPrepCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
-theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 3)) pkTailCode (fun _ _ => True) :=
+theorem pkTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 3 true)) pkTailCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 
 /-- Writes within scratch leave all cdecl argument words unchanged. -/
@@ -87,5 +87,14 @@ theorem pkKeepCombWf {s₀ s : State} {extra : List Region} (hp : PkPre p256Comb
   · intro h; cases h
   · intro p h; cases h
 
+
+theorem pkKeepScratchAgree {s₀ t₀ s t : State} {extra₁ extra₂ : List Region}
+    (hp : PkPre p256Comb s₀ extra₁) (hq : PkPre p256Comb t₀ extra₂)
+    (ks : Keep p256Comb s₀ (ptr s₀ 2) s) (kt : Keep p256Comb t₀ (ptr t₀ 2) t)
+    (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 3, arg s₀ j = arg t₀ j) :
+    VG.X86.Taint.Agree (scratchArgτ 3 true) s t := by
+  refine scratchArgAgree (pkKeepArgAgree hp hq ks kt he ha) (pkKeepCombWf hp ks) (pkKeepCombWf hq kt) ?_
+  rw [ks.wr, kt.wr, hp.wr, hq.wr]
+  simp only [ptr, ha 2 (by decide), ha 0 (by decide)]
 
 end VG.Proof.EcKey.X86

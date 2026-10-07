@@ -66,6 +66,8 @@ theorem windowPrepAt_ok (h4 : c.n = 4) {i : Nat} (hi : i < 45) {s : State} {base
     rw [wordsVal_eq_val32]
     have hsum : sv c base s i + WinCfg.offset 65 < 2 ^ (32 * (9 + 1)) :=
       Nat.lt_of_lt_of_le (Nat.add_lt_add hvlt hoff) (by decide +kernel)
+    have radix : (2 : Nat) ^ (32 * (9 + 1)) = 2 ^ 256 * 2 ^ 64 := by decide +kernel
+    simp only [radix] at v₅ hsum
     cases carry with
     | false => simpa only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] using v₅
     | true =>

@@ -26,8 +26,8 @@ theorem implies :
 open VG.Proof.Sha256.X86.Variants (Backend)
 
 /-- SHA-256 with the backend `v`, for P-256's group law `hL`. -/
-def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Backend) : RfcHash where
-  R := p256 hL
+def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (v : Backend) : RfcHash where
+  R := p256 hL hI
   I := Spec.Ecdsa.Rfc6979.P256Sha256.inst
   F := v.F
   ok := Proof.Pbkdf2.Whole.X86.sha256OKF v
@@ -44,8 +44,8 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) (v : Backend) : RfcHash where
   hWf := show 104 * 8 ≤ 1872 by decide
   hQ := Nat.le_of_ble_eq_true rfl
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (v : Backend) :
-    Verified X86.target (cfgOf (pack hL v)).sign (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
-  X86.sign_verified (pack hL v) implies
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (v : Backend) :
+    Verified X86.target (cfgOf (pack hL hI v)).sign (Spec.Ecdsa.Rfc6979.P256Sha256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
+  X86.sign_verified (pack hL hI v) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86.Sha256

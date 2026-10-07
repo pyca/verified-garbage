@@ -23,8 +23,8 @@ theorem implies :
   comb_implies _ rfl (by decide)
 
 /-- SHA-384, for P-256's group law `hL`. -/
-def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
-  R := p256 hL
+def pack (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : RfcHash where
+  R := p256 hL hI
   I := Spec.Ecdsa.Rfc6979.P256Sha384.inst
   F := Proof.Pbkdf2.Whole.X86.sha384F
   ok := Proof.Pbkdf2.Whole.X86.sha384OKF
@@ -41,8 +41,8 @@ def pack (hL : Weierstrass.Law Spec.P256.curve) : RfcHash where
   hWf := Nat.le_of_ble_eq_true rfl
   hQ := Nat.le_of_ble_eq_true rfl
 
-theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified X86.target (cfgOf (pack hL)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
-  X86.sign_verified (pack hL) implies
+theorem sign_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
+    Verified X86.target (cfgOf (pack hL hI)).sign (Spec.Ecdsa.Rfc6979.P256Sha384.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 272) :=
+  X86.sign_verified (pack hL hI) implies
 
 end VG.Proof.Ecdsa.Rfc6979.X86.Sha384
