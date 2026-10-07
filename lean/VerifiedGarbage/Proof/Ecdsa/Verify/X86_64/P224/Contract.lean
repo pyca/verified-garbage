@@ -10,9 +10,9 @@ The facts of `Spec.Ecdsa.P224.inst.verifyContract` for x86-64, under the
 calling convention with the comb's tables (`Abi.withConsts p224.combConsts`),
 by name: `vg_ecdsa_p224_verify(public = rdi, digest = rsi, sig = rdx,
 scratch = rcx)`, the result in `eax`, and the tables at the address of the
-static `VG_P224_COMB`. Only the pointers (and the tables' address) are public
-here: the proof shows that nothing else affects timing, although the
-contract would let the contents of the three buffers.
+static `VG_P224_COMB`. This adapter supplies the correctness precondition and
+postcondition. The timing proof uses the shared contract directly, including
+its public input buffers.
 -/
 
 namespace VG.Proof.Ecdsa.Verify.X86_64.P224

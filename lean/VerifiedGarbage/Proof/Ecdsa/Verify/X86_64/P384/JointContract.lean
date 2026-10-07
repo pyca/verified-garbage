@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointPublic
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.PubVerify
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P384.VerifiedAdx
 import VerifiedGarbage.Impl.P384.X86_64.Joint
 
@@ -41,10 +42,6 @@ theorem p384vx_combConsts : p384vx.combConsts = [("VG_P384_COMB", p384W)] := by
   unfold Cfg.combConsts Cfg.combWords Cfg.R
   rw [p384vx_comb, p384vx_C, p384vx_n]
   rfl
-
-/-- `pubVerify` is none of `CfgOk`'s business. -/
-theorem cfgOk_pubVerify {c : Cfg} (h : CfgOk c) (b : Bool) : CfgOk { c with pubVerify := b } :=
-  { h with comb := fun d hd => ⟨(h.comb d hd).w,(h.comb d hd).cover⟩ }
 
 theorem p384v_ok (hI : InvSounds) : CfgOk p384v := cfgOk_pubVerify (p384_ok hI) true
 
