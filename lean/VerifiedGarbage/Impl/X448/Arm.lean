@@ -57,13 +57,18 @@ def copy (o a : Nat) : List Instr :=
   (List.range 28).flatMap fun i => [ld .r3 (a + 4 * i), st .r3 (o + 4 * i)]
 
 /-- Carry the sum in `r3` and the incoming carry in `r5`. -/
-def carryStep (rb : Reg) (o : Nat) : List Instr :=
-  [.dp .add .r3 .r3 (.reg .r5), .dp .and .r4 .r3 (.reg .r6), .str .r4 rb o,
+def carryStepT (t rb : Reg) (o : Nat) : List Instr :=
+  [.dp .add .r3 .r3 (.reg .r5), .dp .and t .r3 (.reg .r6), .str t rb o,
     .mov .r5 (.shifted .r3 .lsr 16)]
 
+abbrev carryStep (rb : Reg) (o : Nat) : List Instr := carryStepT .r4 rb o
+
+/-- Carry twenty-eight sums supplied by `src`, through `t`. -/
+def carryPassT (t rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr :=
+  (List.range 28).flatMap fun i => src i ++ carryStepT t rb (o + 4 * i)
+
 /-- Carry twenty-eight sums supplied by `src`. -/
-def carryPass (rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr :=
-  (List.range 28).flatMap fun i => src i ++ carryStep rb (o + 4 * i)
+abbrev carryPass (rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr := carryPassT .r4 rb o src
 
 /-- Carry the twenty-eight limbs at `a` into those at `o` from `rb`. -/
 def passR (rb : Reg) (o a : Nat) : List Instr :=
@@ -88,18 +93,17 @@ def row (a b : Nat) : List Instr :=
   [.str .r5 .r7 (ACC + 112), .dp .add .r7 .r7 (.imm 4), .subs .r9 .r9 (.imm 1)]
 
 /-- One word of a multiplication row of the field functions, for the second
-operand at `r12`. -/
+operand at `r12`; the carry goes through `r2`, so that `r4` can count. -/
 def rowStepF (j : Nat) : List Instr :=
   [.ldr .r2 .r12 (4 * j), .mul .r2 .r1 .r2, .ldr .r3 .r7 (ACC + 4 * j),
-    .dp .add .r3 .r3 (.reg .r2)] ++ carryStep .r7 (ACC + 4 * j)
+    .dp .add .r3 .r3 (.reg .r2)] ++ carryStepT .r2 .r7 (ACC + 4 * j)
 
 /-- The row of the limb of the first operand at `lr`; both `r7` and `lr`
-move up a word, and the flags are those of `r7 - r0` against 112 (the last
-row). -/
+move up a word, and `r4` counts the rows down. -/
 def rowF : List Instr :=
   [.ldr .r1 .lr 0, .mov .r5 (.imm 0)] ++ (List.range 28).flatMap rowStepF ++
   [.str .r5 .r7 (ACC + 112), .dp .add .r7 .r7 (.imm 4), .dp .add .lr .lr (.imm 4),
-    .dp .sub .r2 .r7 (.reg .r0), .cmp .r2 (.imm 112)]
+    .subs .r4 .r4 (.imm 1)]
 
 def reduceCol (k : Nat) : List Instr :=
   [ld .r3 (ACC + 4 * k), ld .r2 (ACC + 4 * (k + 28)), .dp .add .r3 .r3 (.reg .r2)] ++
@@ -113,7 +117,7 @@ def zeroAcc : List Instr :=
 
 def mulPre : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r9 (.imm 28)]
 
-def mulPreF : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0)]
+def mulPreF : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r4 (.imm 28)]
 
 /-- `[r9] = [lr] [r12]` (`lr` moves past the first operand). -/
 def mul : Prog isa :=

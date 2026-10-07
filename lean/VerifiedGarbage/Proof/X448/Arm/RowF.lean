@@ -10,18 +10,6 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X25519.Arm
 
-theorem sub_beq_zero {a c : Nat} (ha : a < 2 ^ 32) (hc : c < 2 ^ 32) :
-    (BitVec.ofNat 32 a - BitVec.ofNat 32 c == 0) = decide (a = c) := by
-  by_cases h : a = c
-  · subst h; simp
-  · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
-    intro he
-    have := congrArg BitVec.toNat he
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat] at this
-    rw [Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hc] at this
-    change _ = 0 at this
-    omega
-
 variable {b : BitVec 32}
 
 theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : State}
@@ -51,9 +39,9 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
   have hlt : ∀ j < 28, Radix16.rowC (accw s.mem (State.addr b)) (limbs s0.mem (State.addr b) x)
       (limbs s0.mem (State.addr b) y) i j + 65536 ≤ 2 ^ 32 := fun j hj =>
     VG.Proof.X25519.Arm.rowC_le (hlx i hi) (hly j hj) (h.lt (i + j) (by omega))
-  refine WP.append (carryPass_ok (rb := .r7) (o := ACC) (s0 := s2)
+  refine WP.append (carryPassT_ok (t := .r2) (rb := .r7) (o := ACC) (s0 := s2)
     (c := Radix16.rowC (accw s.mem (State.addr b)) (limbs s0.mem (State.addr b) x) (limbs s0.mem (State.addr b) y) i)
-    (cin := 0) (by decide) (by omega) (by rw [e7, toNat7 hfit (by omega)]; omega)
+    (cin := 0) (.inl rfl) (by decide) (by omega) (by rw [e7, toNat7 hfit (by omega)]; omega)
     (fun k hk => by rw [P7, Offset.add_add]; exact hc2.inW (by omega))
     (by rw [hr2.gpr _ (by decide), h.r6]) (by rw [u2.gpr]; rfl) hlt (by decide) ?_) fun s3 hp => ?_
   · -- The sums of the row.
@@ -102,28 +90,29 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
     refine wp_str (a := State.addr b + BitVec.ofNat 64 (4 * i + (ACC + 112))) (by omega)
       (by rw [e7', ea7 hfit (by omega)]) (hc3.inW (by omega)) fun s4 u4 => ?_
     refine wp_dp (op2_imm (by decide)) fun s5 u5 => wp_dp (op2_imm (by decide)) fun s6 u6 => ?_
-    refine wp_dp (op2_reg _ _) fun s7 u7 => wp_cmp (op2_imm (by decide)) fun s8 u8 hz => ?_
+    refine wp_subs (op2_imm (by decide)) fun s7 u7 hz => ?_
     refine WP.block_nil ?_
-    have hr6 : Rest (.lr :: fclob) s s8 :=
+    have hr6 : Rest (.lr :: fclob) s s7 :=
       (hr2.mono (by decide)).trans ((hp.rest.mono (by decide)).trans ((u4.rest _).trans
-        ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans ((u7.rest (by decide)).trans
-          (u8.rest _))))))
-    have hm6 : s8.mem = s3.mem.writeW (State.addr b + BitVec.ofNat 64 (4 * i + (ACC + 112))) (s3.gpr .r5) := by
-      rw [u8.mem, u7.mem, u6.mem, u5.mem, u4.mem]
+        ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans (u7.rest (by decide))))))
+    have hm6 : s7.mem = s3.mem.writeW (State.addr b + BitVec.ofNat 64 (4 * i + (ACC + 112))) (s3.gpr .r5) := by
+      rw [u7.mem, u6.mem, u5.mem, u4.mem]
     have hpf : Frame [⟨State.addr b + BitVec.ofNat 64 (4 * i + ACC), 112⟩] s.mem s3.mem := by
       have := hp.frame; rw [P7, Offset.add_add] at this; rw [← hm2]; exact this
-    have e7'' : s8.gpr .r7 = b + BitVec.ofNat 32 (4 * (i + 1)) := by
-      rw [u8.gpr, u7.other _ (by decide), u6.other _ (by decide), u5.gpr, u4.gpr, e7']
+    have e7'' : s7.gpr .r7 = b + BitVec.ofNat 32 (4 * (i + 1)) := by
+      rw [u7.other _ (by decide), u6.other _ (by decide), u5.gpr, u4.gpr, e7']
       show b + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 4 = _
       rw [Offset.add_add, Nat.mul_succ]
-    have e0 : s6.gpr .r0 = b := by
-      rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, hc3.r0]
-    have e2 : s7.gpr .r2 = BitVec.ofNat 32 (4 * (i + 1)) := by
-      rw [u7.gpr, u6.other _ (by decide), u5.gpr, u4.gpr, e7', e0]
-      show b + BitVec.ofNat 32 (4 * i) + BitVec.ofNat 32 4 - b = _
-      rw [Offset.add_add, Nat.mul_succ, BitVec.add_comm, BitVec.add_sub_cancel]
+    have hr4 : s7.gpr .r4 = BitVec.ofNat 32 (28 - (i + 1)) := by
+      rw [u7.gpr, u6.other _ (by decide), u5.other _ (by decide), u4.gpr, hp.rest.gpr _ (by decide),
+        hr2.gpr _ (by decide), h.r4]
+      have t1 : (1 : BitVec 32).toNat = 1 := rfl
+      apply BitVec.eq_of_toNat_eq
+      rw [toNat_sub_le (by rw [toNat_imm (by omega), t1]; omega), toNat_imm (by omega), toNat_imm (by omega),
+        t1]
+      omega
     -- The limbs of `ACC` after the row.
-    have hacc : ∀ k < i + 29, accw s8.mem (State.addr b) k =
+    have hacc : ∀ k < i + 29, accw s7.mem (State.addr b) k =
         Radix16.rowAcc (accw s.mem (State.addr b)) (limbs s0.mem (State.addr b) x) (limbs s0.mem (State.addr b) y) i k := by
       intro k hk
       rw [accw, hm6]
@@ -139,10 +128,10 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
           simp only [Radix16.rowAcc, show ¬ k < i by omega, hk', ite_false, ite_true]
       · rw [show ACC + 4 * k = 4 * i + (ACC + 112) by omega, wd_write_self, hp.r5, chain_zero]
         simp only [Radix16.rowAcc, show ¬ k < i by omega, show ¬ k < i + 28 by omega, ite_false]
-    refine ⟨⟨hc3.of_rest ((u4.rest [.r7, .lr, .r2]).trans ((u5.rest (by decide)).trans
-        ((u6.rest (by decide)).trans ((u7.rest (by decide)).trans (u8.rest _))))) (by decide),
-      h.rest.trans hr6, by rw [hr6.gpr _ (by decide), h.r6], e7'', ?_, ?_, ?_, fun k hk => ?_, ?_⟩, ?_⟩
-    · rw [u8.gpr, u7.other _ (by decide), u6.gpr, u5.other _ (by decide), u4.gpr,
+    refine ⟨⟨hc3.of_rest ((u4.rest [.r7, .lr, .r4]).trans ((u5.rest (by decide)).trans
+        ((u6.rest (by decide)).trans (u7.rest (by decide))))) (by decide),
+      h.rest.trans hr6, by rw [hr6.gpr _ (by decide), h.r6], e7'', ?_, hr4, ?_, ?_, fun k hk => ?_, ?_⟩, ?_⟩
+    · rw [u7.other _ (by decide), u6.gpr, u5.other _ (by decide), u4.gpr,
         hp.rest.gpr _ (by decide), hr2.gpr _ (by decide), h.lr]
       show b + BitVec.ofNat 32 (x + 4 * i) + BitVec.ofNat 32 4 = _
       rw [Offset.add_add, Nat.mul_succ, Nat.add_assoc]
@@ -154,7 +143,6 @@ theorem rowF_ok {x y : Nat} (hx : x + 112 ≤ ACC) (hy : y + 112 ≤ ACC) {s0 : 
     · rw [hacc k hk]
       exact Radix16.rowAcc_lt (fun k hk => h.lt k (by omega)) (fun j hj => by have := hlt j hj; change _ ≤ 2 ^ 32 - 65536; omega) k hk
     · rw [Radix16.valN_congr hacc]; exact Radix16.row_val h.val
-    · rw [hz, e2, show (112 : BitVec 32) = BitVec.ofNat 32 112 from rfl, sub_beq_zero (by omega) (by omega)]
-      exact decide_eq_decide.mpr (by omega)
+    · rw [hz, ← u7.gpr, hr4, ofNat_beq_zero (by omega)]
 
 end VG.Proof.X448.Arm

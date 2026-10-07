@@ -99,6 +99,7 @@ structure RowInvF (b : BitVec 32) (x y : Nat) (s0 : State) (i : Nat) (s : State)
   r6 : s.gpr .r6 = mask16
   r7 : s.gpr .r7 = b + BitVec.ofNat 32 (4 * i)
   lr : s.gpr .lr = b + BitVec.ofNat 32 (x + 4 * i)
+  r4 : s.gpr .r4 = BitVec.ofNat 32 (28 - i)
   r12 : s.gpr .r12 = b + BitVec.ofNat 32 y
   frame : Frame [⟨State.addr b + BitVec.ofNat 64 ACC, 224⟩] s0.mem s.mem
   lt : ∀ k < i + 28, accw s.mem (State.addr b) k < 65536
