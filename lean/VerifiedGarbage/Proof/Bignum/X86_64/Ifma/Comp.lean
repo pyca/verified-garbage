@@ -77,7 +77,7 @@ theorem ifmaR_le {op oq a : Nat} (hpq : op + slot l.W 8 + tabBytes l.W ≤ oq)
     List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false, sCtr, sFn, hs,
     Public.aAcc, Public.aTmp, Public.aY, aT] at hpq hqa ⊢
   rintro _ (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
-    simp only <;> omega
+    simp only <;> omega_arith
 
 theorem IPre.of_frm (hl : LayOk l) {m m' : Mem} {B : Addr} {w op oq : Nat} {minv mp mq mk : BitVec 64} {P Q : Nat}
     {ep eq : Addr} {lp lq : Nat} (h : IPre l m B w op oq minv mp mq mk P Q ep eq lp lq) {rs : List (Nat × Nat)}
