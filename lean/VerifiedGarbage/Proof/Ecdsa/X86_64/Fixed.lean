@@ -177,7 +177,10 @@ theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.s
 
 theorem rsi_not_clob (n : Nat) : Reg.rsi ∉ clob n := by
   intro h
-  simp only [clob, List.mem_cons] at h
+  rcases List.mem_append.mp h with h | h
+  swap
+  · split at h <;> simp at h
+  simp only [List.mem_cons] at h
   rcases h with h | h | h | h | h
   · exact absurd h (by decide)
   · exact absurd h (by decide)

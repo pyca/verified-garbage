@@ -132,6 +132,15 @@ theorem sbb_borrow (a b : BitVec 64) (c : Bool) :
 abbrev val4 (a0 a1 a2 a3 : BitVec 64) : Nat :=
   a0.toNat + 2 ^ 64 * a1.toNat + 2 ^ 128 * a2.toNat + 2 ^ 192 * a3.toNat
 
+/-- The square of four words, by the products of their words (with no
+power of two above `2²⁵⁶`, which would exceed the threshold of exponents Lean evaluates). -/
+theorem sq_words (x y z w : Nat) :
+    (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) * (x + 2 ^ 64 * y + 2 ^ 128 * z + 2 ^ 192 * w) =
+      x * x + 2 ^ 128 * (y * y) + 2 ^ 256 * (z * z) + 2 ^ 256 * (2 ^ 128 * (w * w)) +
+        2 * (2 ^ 64 * (x * y) + 2 ^ 128 * (x * z) + 2 ^ 192 * (x * w) + 2 ^ 192 * (y * z) +
+          2 ^ 256 * (y * w) + 2 ^ 256 * (2 ^ 64 * (z * w))) := by
+  grind
+
 /-- `add`, then three `adc`: the sum of two four-word numbers and the carry
 out. -/
 theorem chain_add (a0 a1 a2 a3 b0 b1 b2 b3 : BitVec 64) :
