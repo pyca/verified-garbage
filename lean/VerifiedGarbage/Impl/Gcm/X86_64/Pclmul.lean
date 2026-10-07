@@ -22,11 +22,14 @@ the field element. In this bit-reflected representation:
   which is `H` shifted left by one bit, XORed with
   `0xc2000000000000000000000000000001` (`x⁻¹`) if the bit shifted out was 1
   (a mask, not a branch);
-* `H'ᵏ⁺¹ = mul(H'ᵏ, H') = Hᵏ⁺¹ · x⁻¹` for `k = 1, 2, 3` are computed once
-  per call and kept in `xmm3`–`xmm6`, and four blocks at a time
+* with four blocks or more, `H'² = mul(H', H')`, then `H'³ = mul(H'², H')`
+  and `H'⁴ = mul(H'², H'²)` (`mul(H'ʲ, H'ᵏ) = Hʲ⁺ᵏ · x⁻¹`), which do not
+  wait for each other, are computed once per call and kept, with `H'`, in
+  `xmm3`–`xmm6`, and four blocks at a time
   `Y ← mul(Y ⊕ X₁, H'⁴) ⊕ mul(X₂, H'³) ⊕ mul(X₃, H'²) ⊕ mul(X₄, H')`,
   reducing the sum of the four products once; the remaining blocks go one
-  at a time.
+  at a time, with `H'` alone, which is all that fewer than four blocks
+  (such as the single blocks AES-GCM hashes for its lengths) compute.
 
 `pmuludq` is not used. `scratch` is not used, and no callee-saved register
 is written. Every branch and every address depends only on the pointers and
@@ -97,11 +100,19 @@ def hInv : List Instr :=
    .xop (.pshufd .xmm11 .xmm7 0xff), .xop (.shift .psrld .xmm11 31), .xop (.bin .paddd .xmm11 .xmm14),
    .xop (.bin .pandn .xmm11 .xmm13), .xop (.bin .pxor .xmm3 .xmm11)]
 
+/-- The constants, `H'` into `xmm3`, `Y` into `xmm2`, and `cmp rcx, 4`. -/
 def prologue : List Instr :=
   const .xmm0 revMask ++ const .xmm1 poly ++
   [.movdquLoad .xmm7 (at_ .rdi 0), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
-  mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm5 .xmm3 ++
   [.movdquLoad .xmm2 (at_ .rsi 0), .xop (.bin .pshufb .xmm2 .xmm0), .alu .cmp .rcx (.imm 4)]
+
+/-- `H'²`, then `H'³` and `H'⁴`, both from `H'²`, into `xmm4`–`xmm6`. -/
+def pows : List Instr := mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm4 .xmm4
+
+/-- After `cmp rcx, 4`: unless there are fewer than four blocks, `H'²`–`H'⁴`,
+then `rest`. -/
+def withPows (rest : Prog isa) : Prog isa :=
+  .ite .b (.block []) (.seq (.block pows) rest)
 
 /-- Four blocks. -/
 def body4 : List Instr :=
@@ -124,6 +135,7 @@ def ghashTail : Prog isa :=
     (.seq (.block [.alu .test .rcx (.reg .rcx)])
       (.seq (.ite .e (.block []) (.loop (.block body1) .ne)) (.block epilogue)))
 
-def ghash : Prog isa := .seq (.block prologue) ghashTail
+def ghash : Prog isa :=
+  .seq (.block prologue) (.seq (withPows (.block [])) (.seq (.block [.alu .cmp .rcx (.imm 4)]) ghashTail))
 
 end VG.Impl.Gcm.X86_64.Pclmul

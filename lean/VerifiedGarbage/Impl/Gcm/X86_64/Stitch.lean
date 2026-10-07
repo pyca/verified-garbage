@@ -53,7 +53,7 @@ computes them, in `ymm3`–`ymm6` and `ymm12`–`ymm15`. -/
 def setupG : List Instr :=
   Pclmul.const .xmm0 revMask ++ Pclmul.const .xmm1 poly ++
   [.movdquLoad .xmm7 (at_ .rdi 240), .xop (.bin .pshufb .xmm7 .xmm0)] ++ hInv ++
-  mul .xmm4 .xmm3 .xmm3 ++ mul .xmm5 .xmm4 .xmm3 ++ mul .xmm6 .xmm5 .xmm3 ++ powers ++ powers16
+  Pclmul.pows ++ powers ++ powers16
 
 /-- `Y`, the counter pair, the increment, the last round key's address, and
 the pointers of the loop. -/
