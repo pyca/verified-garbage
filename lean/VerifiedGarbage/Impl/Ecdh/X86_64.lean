@@ -130,10 +130,21 @@ def validate : Prog isa :=
 /-- The ladder of the signature, from the point at `PX`, `PY`, `ONEP`. -/
 def ladderQ : LadderCfg := { c.ladderCfg with G := c.pt PX PY ONEP }
 
+/-- `d` at `K` below `2^nbits` (`Cfg.nbits`), where its `len` bytes hold
+more bits: the bits of its top word from `nbits - 64 (n - 1)` cleared,
+through `r8`. -/
+def maskK : List Instr :=
+  if c.nbits < 8 * c.C.len then
+    [.mov .r8 (.mem (sc (c.sl K + 8 * (c.n - 1)))),
+      .alu .and .r8 (.imm (BitVec.ofNat 32 (2 ^ (c.nbits - 64 * (c.n - 1)) - 1))),
+      .store (sc (c.sl K + 8 * (c.n - 1))) .r8]
+  else []
+
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to nine words, else by the ladder. -/
+up to nine words (`d` reduced below `2^nbits` first), else by the ladder. -/
 def mulQ : Prog isa :=
-  if c.n ≤ 9 then .seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)) else ladder (ladderQ c)
+  if c.n ≤ 9 then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
+  else ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
 callee-saved registers restored. -/

@@ -80,6 +80,9 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   len_lo := by decide
   len_hi := by decide
   n_len := by decide +kernel
+  n_bits := by decide +kernel
+  nbits_le := by decide
+  mask _ := ⟨by decide, by decide⟩
   sh := by rw [p521x_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by

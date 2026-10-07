@@ -15,6 +15,7 @@ def p521 : Cfg where
   comb := some ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
   fastN := true
   pubVerify := true
+  nbits := 521
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

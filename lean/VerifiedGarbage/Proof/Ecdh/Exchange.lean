@@ -87,4 +87,19 @@ theorem exchange_eq (hC : Law C) {d : Nat} {bs : List Byte} (hlen : bs.length = 
     · simp only [hd, hV, and_self, ite_true, dite_false, false_and, and_false, ite_false]
   · simp only [hd, false_and, ite_false]
 
+/-- `exchange_eq`, for `R` that represents `[d]P` only for `d < n`. -/
+theorem exchange_eq_of_lt (hC : Law C) {d : Nat} {bs : List Byte} (hlen : bs.length = 2 * C.len + 1)
+    {b0 : Byte} (hb0 : bs.head? = some b0) {x y : Nat} (hxv : ofBytes ((bs.drop 1).take C.len) = x)
+    (hyv : ofBytes (bs.drop (C.len + 1)) = y) {P : Point C}
+    (hP : ∀ h : Valid C b0 x y, P = .affine ⟨x, h.2.1⟩ ⟨y, h.2.2.1⟩)
+    {X Y Z : Fe C} (hR : d < C.n → Rep C X Y Z (mul d P)) {xo : Nat} (hxo : xo < C.p)
+    (hxoX : Fin.ofNat C.p xo = X * Z ^ (C.p - 2)) :
+    Spec.Ecdh.exchange C d bs =
+      if (1 ≤ d ∧ d < C.n) ∧ Valid C b0 x y ∧ Z ≠ 0 then some (toBytes C.len xo) else none := by
+  by_cases hd : d < C.n
+  · exact exchange_eq hC hlen hb0 hxv hyv hP (hR hd) hxo hxoX
+  · unfold Spec.Ecdh.exchange
+    rw [decode_eq hlen hb0 hxv hyv]
+    simp only [hd, and_false, false_and, ite_false]
+
 end VG.Proof.Ecdh

@@ -57,6 +57,9 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   len_lo := by decide
   len_hi := by decide
   n_len := by decide +kernel
+  n_bits := by decide +kernel
+  nbits_le := by decide
+  mask h := absurd h (by decide)
   sh := by rw [p384_sh]; decide
   comb d h := by cases h; exact ⟨by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
