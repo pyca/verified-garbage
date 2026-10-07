@@ -52,6 +52,8 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
     Fin.ofNat c.C.n (sigR c s₀) * Fin.ofNat c.C.n (sigS c s₀) ^ (c.C.n - 2)
   unch : Unch base [(0, size)] s₀.mem s.mem
   syms : s.syms = s₀.syms
+  em_lt : sv c base s EM' < c.C.n
+  em : toM c.C.n (2 ^ (64 * c.n)) (sv c base s EM') = Fin.ofNat c.C.n (dig c s₀)
 
 theorem scalars_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.scalars c =
     .seq (.block (c.checkRange (c.sl K) ++ c.checkRange (c.sl PT)))
@@ -231,7 +233,12 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 6
     lt₁₀,
     by rw [toM_one_mul hnR (by rw [e₁₀, show sv c base s₉ ONE = 1 from F₉.one]),
       v₉ (i := VM) (by decide) (by decide) (by decide), vm₈], ?_,
-    by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms]⟩
+    by rw [sy₁₀, sy₉, sy₈, sy₇, sy₆, sy₅, sy₄, sy₃, sy₂, sy₁, hF.syms],
+    by rw [v₁₀ (by decide) (by decide) (by decide), v₉ (by decide) (by decide) (by decide),
+      v₈ (by decide) (by decide) (by decide), v₇ (by decide) (by decide) (by decide),
+      v₆ (by decide) (by decide) (by decide)]; exact lt₅,
+    by rw [v₁₀ (by decide) (by decide) (by decide), v₉ (by decide) (by decide) (by decide),
+      v₈ (by decide) (by decide) (by decide), v₇ (by decide) (by decide) (by decide)]; exact em₆⟩
   · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_flag h0 1 t)
       (tbl_apart_slW (by decide) 1 t)) (tbl_apart_pwA (by decide) ht))]
     exact hF.t₁ t ht
