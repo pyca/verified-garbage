@@ -12,10 +12,14 @@ def twice (K : WinCfg) : Pt := K.tblPt 9
 def copyPieces (n : Nat) (src dst : Nat → MemOp) : List Instr :=
   (List.range n).flatMap fun i => [.movdquLoad (selAcc i) (src i),.movdquStore (dst i) (selAcc i)]
 
+/-- Address of entry `rax`, indexed from zero, in `rdx`. -/
+def tableAddress (tbl : Nat) : List Instr :=
+  [.mov32 .rcx (.imm 96),.mul .rcx,.mov .rdx (.reg .rdi),
+   .alu .add .rdx (.imm (BitVec.ofNat 32 tbl)),.alu .add .rdx (.reg .rax)]
+
 /-- Store `R` in entry `rbx`, indexed from zero. -/
 def tableStore (K : WinCfg) : List Instr :=
-  [.mov .rax (.reg .rbx),.mov32 .rcx (.imm 96),.mul .rcx,
-   .mov .rdx (.reg .rdi),.alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl)),.alu .add .rdx (.reg .rax)] ++
+  [.mov .rax (.reg .rbx)] ++ tableAddress K.tbl ++
   copyPieces 6 (fun i => sc (K.R.x+16*i)) (fun i => tblAt (16*i))
 
 def tableStep (K : WinCfg) : Prog isa :=
@@ -33,9 +37,7 @@ def digitRead (K : WinCfg) : List Instr :=
 
 /-- Read the odd multiple whose nonzero magnitude is in `r8`. -/
 def publicEntry (K : WinCfg) : List Instr :=
-  [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),.shift .shr .rax 1,
-   .mov32 .rcx (.imm 96),.mul .rcx,
-   .mov .rdx (.reg .rdi),.alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl)),.alu .add .rdx (.reg .rax)] ++
+  [.mov .rax (.reg .r8),.alu .sub .rax (.imm 1),.shift .shr .rax 1] ++ tableAddress K.tbl ++
   copyPieces 6 (fun i => tblAt (16*i)) (fun i => sc (K.E.x+16*i))
 
 def signedEntry (K : WinCfg) : Prog isa :=

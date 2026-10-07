@@ -64,4 +64,24 @@ theorem nafCopy_words {mem mem' : Mem} {base : Addr} {n a o : Nat}
   rw [show 8*8=64 from rfl,off,Offset.add_add] at e2
   rw [e2,VG.Proof.Mont.word,off,show a+16*c+8*q=a+8*(2*c+q) from by omega]
 
+private theorem words_eq_of_words {m m' : Mem} {base : Addr} : ∀ n a o,
+    (∀ i<n,word m' base (o+8*i)=word m base (a+8*i)) →
+    wordsVal m' base o n=wordsVal m base a n
+  | 0,_,_,_ => rfl
+  | n+1,a,o,h => by
+    have h0 := h 0 (by omega)
+    simp only [Nat.mul_zero,Nat.add_zero] at h0
+    rw [wordsVal,wordsVal,h0,words_eq_of_words n (a+8) (o+8) (fun i hi => ?_)]
+    have he := h (i+1) (by omega)
+    simpa only [Nat.mul_add,Nat.mul_one,Nat.add_assoc,Nat.add_comm 8] using he
+
+theorem nafCopy_coord {mem mem' : Mem} {base : Addr} {a o j : Nat}
+    (h : ∀ c<6,mem'.readW (off base (o+16*c)) 128=mem.readW (off base (a+16*c)) 128)
+    (hj : j<3) : wordsVal mem' base (o+32*j) 4=wordsVal mem base (a+32*j) 4 := by
+  apply words_eq_of_words
+  intro i hi
+  rw [show o+32*j+8*i=o+8*(4*j+i) from by omega,
+    show a+32*j+8*i=a+8*(4*j+i) from by omega]
+  exact nafCopy_words h _ (by omega)
+
 end VG.Proof.Weierstrass.X86_64
