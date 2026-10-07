@@ -220,10 +220,18 @@ def collect_this_run():
     lean = [j for j in jobs if j["name"].startswith("Lean:") and j["status"] == "completed"]
 
     def log(j):
-        # A job just cancelled may have no log yet: the rest still count.
+        path = f"repos/{repo}/actions/jobs/{j['id']}/logs"
         try:
-            return gh(f"repos/{repo}/actions/jobs/{j['id']}/logs").decode(errors="replace")
+            try:
+                return gh(path).decode(errors="replace")
+            except subprocess.CalledProcessError as e:
+                # Newer `gh` refuses to print Lake's colors without this flag,
+                # which older versions reject.
+                if b"--allow-escape-sequences" not in e.stderr:
+                    raise
+                return gh(path, "--allow-escape-sequences").decode(errors="replace")
         except subprocess.CalledProcessError as e:
+            # A skipped job has no log: the rest still count.
             print(f"No log for {j['name']}: {e.stderr.decode(errors='replace').strip()}", file=sys.stderr)
             return None
 

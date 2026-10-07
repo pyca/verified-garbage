@@ -102,11 +102,15 @@ class Standalone(unittest.TestCase):
 
 class CollectThisRun(unittest.TestCase):
     def test_a_missing_log(self):
-        # The plan's log comes; a cancelled shard's does not.
+        # The plan's log comes (after asking again); a skipped shard's does not.
         def gh(path, *args):
             if path.endswith("/jobs/2/logs"):
                 raise subprocess.CalledProcessError(1, "gh", stderr=b"HTTP 404")
             if path.endswith("/jobs/1/logs"):
+                # As newer `gh` does for a log with terminal colors.
+                if "--allow-escape-sequences" not in args:
+                    raise subprocess.CalledProcessError(1, "gh", stderr=b"the response contains terminal escape "
+                                                        b"sequences; pass --allow-escape-sequences to output it anyway")
                 return PLAN_LOG.encode()
             if "/jobs?" in path:
                 return "\n".join(json.dumps(dict(j, id=i, status="completed")) for i, j in enumerate(
