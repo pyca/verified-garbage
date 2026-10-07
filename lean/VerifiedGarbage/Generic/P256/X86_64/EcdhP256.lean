@@ -35,8 +35,9 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
       point if it is valid, else `G`, so it always runs on a point of the curve. `[d]P` is by \
       signed 5-bit windows in Jacobian coordinates, P-256 having prime order: `d` is recoded as \
       `d + 16 Σ_{j<52} 32^j`, whose 52 5-bit windows less 16 are digits in `[-16, 15]`; a table \
-      of `[1 … 16]P`, each entry with its `Z²` and `Z³`, is built in `scratch` by a doubling and \
-      mixed additions; then, from the point at infinity, for each digit from the top, five \
+      of `[1 … 16]P`, each entry with its `Z²` and `Z³`, is built in `scratch` by a co-Z \
+      doubling and co-Z additions (each keeping `P` with the new entry's `Z`); then, from the \
+      top digit's entry (the point at infinity for the digit zero), for each further digit, five \
       doublings in Jacobian coordinates for `a = -3` (with a halving modulo `p` in place of \
       multiplications by small constants) and the addition of the digit's entry, selected in \
       constant time by loading all sixteen entries, " ++

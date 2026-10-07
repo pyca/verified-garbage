@@ -16,13 +16,16 @@ windows `k'_j` give the digits `d_j = k'_j - 16 ∈ [-16, 15]` with
 
 The table holds `[m]P` for `m = 1 … 16`, entry `m` at `tbl + 40 n (m - 1)`:
 `X`, `Y`, `Z` in Jacobian coordinates and the powers `Z²` and `Z³` the
-additions use (`build`). `[1]P` is `P` (`Z = 1`); `[2]P` is its doubling; and
-`[m + 1]P = [m]P + P` by the mixed addition (`jacMixedHead`, `jacMixedTail`),
-which is right since `[m]P ≠ ±P` for `2 ≤ m ≤ 15 < n - 1`. The entry is
-stored at an address computed from the public counter `rbx` (`entryAddr`).
+additions use (`build`). `[1]P` is `P` (`Z = 1`); `[2]P` is its co-Z doubling
+(DBLU, Meloni–Goundar, `dbluOps`), which also leaves `D = P` with the same
+`Z`; and `[m + 1]P = P + [m]P` by the co-Z addition (ZADDU, `zadduOps`) of
+`D` and `T`, which leaves `D = P` with the sum's `Z` for the next one. It is
+right since `[m]P ≠ ±P` for `2 ≤ m ≤ 15 < n - 1`. The entry is stored at an
+address computed from the public counter `rbx` (`entryAddr`).
 
-Then, from `R = O` (`Z = 0`), for `j = J - 1` down to `0`,
-`R = 32 R + [d_j]P` (`step`): five doublings in place (`dbl`, a loop whose
+The top digit's entry, selected as below, is `R` (`first`: zeros, i.e. `O`,
+for the digit zero); then, for `j = J - 2` down to `0`, `R = 32 R + [d_j]P`
+(`step`): five doublings in place (`dbl`, a loop whose
 count is in the bits of `rbx` above the window index); the entry of `|d_j|`
 selected in constant time into `T` (all five coordinates: every entry is
 loaded, 16 bytes at a time, or 32 with AVX2, and kept under the mask of its
@@ -45,10 +48,11 @@ open VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 
 /-- What the window method needs: the field, the slots of the additions, the
 point `P` (affine: `P.z` holds Montgomery's one), the accumulator `R`, the
-sum `D`, the selected entry's five coordinates at `T`, `T + 8 n`, … (`X`,
-`Y`, `Z`, `Z²`, `Z³`), a slot for `-y` and one holding zero, the table of
-the scalar's bits, the table of points, the number of digits `J`, Montgomery's
-one, and whether the selection loads 32 bytes at a time with AVX2. -/
+sum `D` (while the table is built, `P` sharing `T`'s `Z`), the selected
+entry's five coordinates at `T`, `T + 8 n`, … (`X`, `Y`, `Z`, `Z²`, `Z³`), a
+slot for `-y` and one holding zero, the table of the scalar's bits, the table
+of points, the number of digits `J` (at least 2), Montgomery's one, and
+whether the selection loads 32 bytes at a time with AVX2. -/
 structure JacWinCfg where
   M : Mod
   S : RcbSlots
@@ -122,27 +126,51 @@ def storeEntry : List Instr :=
   K.entryAddr ++ (List.range (5 * K.M.n)).flatMap fun i =>
     [.mov .rax (.mem (sc (K.T + 8 * i))), .store (tblAt (8 * i)) .rax]
 
-/-- `T`'s `Z²` and `Z³`. -/
-def cacheOps : List FOp := [.mul K.z2 K.E.z K.E.z, .mul (K.z2 + 8 * K.M.n) K.z2 K.E.z]
+/-- `T`'s `Z³`, after its `Z²`. -/
+def zz : Nat := K.z2 + 8 * K.M.n
 
-/-- `T = T + P` by the mixed addition (`P` affine), in place. -/
-def maddOps : List FOp := jacMixedHead K.S K.E K.P ++ jacMixedTail K.S K.E K.P K.E
+/-- Co-Z doubling (DBLU) of the affine `P` (`Z = 1`) for `a = -3`: `B = x²`,
+`E = y²`, `L = E²`, `S = 4 x E` (in `t3`), `M = 3 (B - 1)`, then
+`T = (M² - 2 S, M (S - X) - 8 L, 2 y) = 2 P` and its `Z²`, `Z³`, with `8 L` in
+`t2`: `(S, 8 L)` is `P` with `T`'s `Z`. -/
+def dbluOps : List FOp :=
+  [.mul K.S.t0 K.P.x K.P.x, .mul K.S.t1 K.P.y K.P.y, .mul K.S.t2 K.S.t1 K.S.t1,
+   .mul K.S.t3 K.P.x K.S.t1, .add K.S.t3 K.S.t3 K.S.t3, .add K.S.t3 K.S.t3 K.S.t3,
+   .sub K.S.t4 K.S.t0 K.P.z, .add K.S.t5 K.S.t4 K.S.t4, .add K.S.t4 K.S.t5 K.S.t4,
+   .mul K.E.x K.S.t4 K.S.t4, .sub K.E.x K.E.x K.S.t3, .sub K.E.x K.E.x K.S.t3,
+   .sub K.S.t5 K.S.t3 K.E.x, .mul K.E.y K.S.t4 K.S.t5,
+   .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2,
+   .sub K.E.y K.E.y K.S.t2, .add K.E.z K.P.y K.P.y,
+   .mul K.z2 K.E.z K.E.z, .mul K.zz K.z2 K.E.z]
 
-/-- Entry `rbx` from entry `rbx - 1` in `T`: `T = T + P`, its powers, stored;
-then `rbx + 1`, compared with 16. -/
+/-- Co-Z addition (ZADDU) of `D = (X1, Y1)` and `T = (X2, Y2)`, sharing `Z`:
+`C = (X1 - X2)²`, `W1 = X1 C`, `W2 = X2 C`, `A1 = Y1 (W1 - W2)`; `T` becomes
+`((Y1 - Y2)² - W1 - W2, (Y1 - Y2) (W1 - X3) - A1, Z (X1 - X2)) = D + T`, with
+its `Z² = Z² C` and `Z³`, and `D` becomes `(W1, A1)`, the same point with
+`T`'s new `Z`. -/
+def zadduOps : List FOp :=
+  [.sub K.S.t0 K.D.x K.E.x, .mul K.S.t1 K.S.t0 K.S.t0, .mul K.E.z K.E.z K.S.t0,
+   .mul K.D.x K.D.x K.S.t1, .mul K.S.t3 K.E.x K.S.t1, .sub K.S.t4 K.D.y K.E.y,
+   .mul K.S.t5 K.S.t4 K.S.t4, .sub K.S.t2 K.D.x K.S.t3, .mul K.D.y K.D.y K.S.t2,
+   .sub K.E.x K.S.t5 K.D.x, .sub K.E.x K.E.x K.S.t3, .sub K.E.y K.D.x K.E.x,
+   .mul K.E.y K.S.t4 K.E.y, .sub K.E.y K.E.y K.D.y,
+   .mul K.z2 K.z2 K.S.t1, .mul K.zz K.z2 K.E.z]
+
+/-- Entry `rbx` from entry `rbx - 1` in `T`, `D = P` sharing its `Z`:
+`T = T + D` by ZADDU, stored; then `rbx + 1`, compared with 16. -/
 def buildStep : Prog isa :=
-  .seq (.block ([.alu .add .rbx (.imm 1)] ++ copy K.M.n K.S.t2 K.E.x ++ copy K.M.n K.S.t4 K.E.y)) <|
-  .seq (ForwardField.programB K.M (K.maddOps ++ K.cacheOps)) <|
+  .seq (.block [.alu .add .rbx (.imm 1)]) <|
+  .seq (ForwardField.programB K.M K.zadduOps) <|
   .block (K.storeEntry ++ [.alu .cmp .rbx (.imm 16)])
 
-/-- The table: `T = P` (`Z = 1`) into entry 1, then `T = 2 T` into entry 2, then
-`T = T + P` into entries 3 to 16. -/
-def build (dbl : Pt → Prog isa) : Prog isa :=
+/-- The table: `T = P` (`Z = 1`) into entry 1; `T = 2 P` and `D = P` sharing
+its `Z` by DBLU, into entry 2; then `T = T + D` by ZADDU into entries 3 to 16. -/
+def build : Prog isa :=
   .seq (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
     [.mov32 .rbx (.imm 1)] ++ K.storeEntry)) <|
-  .seq (dbl K.E) <|
-  .seq (ForwardField.programB K.M K.cacheOps) <|
-  .seq (.block ([.mov32 .rbx (.imm 2)] ++ K.storeEntry)) <|
+  .seq (ForwardField.programB K.M K.dbluOps) <|
+  .seq (.block (copy K.M.n K.D.x K.S.t3 ++ copy K.M.n K.D.y K.S.t2 ++ [.mov32 .rbx (.imm 2)] ++
+    K.storeEntry)) <|
   .loop K.buildStep .ne
 
 /-- One doubling of `R`, counted in the bits of `rbx` above the window index
@@ -157,7 +185,7 @@ def dbls (dbl : Pt → Prog isa) : Prog isa :=
 /-- `D = R + T`, with `T`'s cached powers. -/
 def addOps : List FOp := CachedJac.head K.M.n K.S K.R K.E K.z2 ++ jacTail K.S K.R K.E K.D
 
-/-- Iteration `j = rbx - 1` (with `rbx` counting down from `J`):
+/-- Iteration `j = rbx - 1` (with `rbx` counting down from `J - 1`):
 `R = 32 R + [d_j]P`. -/
 def step (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
@@ -168,60 +196,16 @@ def step (dbl : Pt → Prog isa) : Prog isa :=
   .block (nzMask K.M.n K.R.z ++ selPt K.M.n K.D K.E K.D ++
     K.tc.digit ++ eqMask 0 ++ selPt K.M.n K.R K.D K.R ++ [.alu .test .rbx (.reg .rbx)])
 
-/-- `R = O` and the counter. -/
-def init : List Instr :=
-  setConst K.M.n K.R.x 0 ++ setConst K.M.n K.R.y K.one ++ setConst K.M.n K.R.z 0 ++
-    [.mov32 .rbx (.imm (BitVec.ofNat 32 K.J))]
-
-/-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
-`k + offset J` at `K.bits`. -/
-def window (dbl : Pt → Prog isa) : Prog isa :=
-  .seq (K.build dbl) <| .seq (.block K.init) <| .seq (.loop (K.step dbl) .ne) <|
-  .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
-
-/-! PROTOTYPE (unverified): co-Z table and the first window from the top digit. -/
-
-def zz : Nat := K.z2 + 8 * K.M.n
-
-/-- Co-Z doubling: `T = 2P` and `D = P` with `T`'s `Z`, and `T`'s powers. -/
-def dbluOps : List FOp :=
-  [.mul K.S.t0 K.P.x K.P.x, .mul K.S.t1 K.P.y K.P.y, .mul K.S.t2 K.S.t1 K.S.t1,
-   .mul K.S.t3 K.P.x K.S.t1, .add K.S.t3 K.S.t3 K.S.t3, .add K.S.t3 K.S.t3 K.S.t3,
-   .sub K.S.t4 K.S.t0 K.P.z, .add K.S.t5 K.S.t4 K.S.t4, .add K.S.t4 K.S.t5 K.S.t4,
-   .mul K.E.x K.S.t4 K.S.t4, .sub K.E.x K.E.x K.S.t3, .sub K.E.x K.E.x K.S.t3,
-   .sub K.S.t5 K.S.t3 K.E.x, .mul K.E.y K.S.t4 K.S.t5,
-   .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2, .add K.S.t2 K.S.t2 K.S.t2,
-   .sub K.E.y K.E.y K.S.t2, .add K.E.z K.P.y K.P.y,
-   .mul K.z2 K.E.z K.E.z, .mul K.zz K.z2 K.E.z]
-
-/-- Co-Z addition: `T = T + D`, `D` to `T`'s new `Z`, and `T`'s powers. -/
-def zadduOps : List FOp :=
-  [.sub K.S.t0 K.D.x K.E.x, .mul K.S.t1 K.S.t0 K.S.t0, .mul K.E.z K.E.z K.S.t0,
-   .mul K.D.x K.D.x K.S.t1, .mul K.S.t3 K.E.x K.S.t1, .sub K.S.t4 K.D.y K.E.y,
-   .mul K.S.t5 K.S.t4 K.S.t4, .sub K.S.t2 K.D.x K.S.t3, .mul K.D.y K.D.y K.S.t2,
-   .sub K.E.x K.S.t5 K.D.x, .sub K.E.x K.E.x K.S.t3, .sub K.E.y K.D.x K.E.x,
-   .mul K.E.y K.S.t4 K.E.y, .sub K.E.y K.E.y K.D.y,
-   .mul K.z2 K.z2 K.S.t1, .mul K.zz K.z2 K.E.z]
-
-def buildStepZ : Prog isa :=
-  .seq (.block [.alu .add .rbx (.imm 1)]) <|
-  .seq (ForwardField.programB K.M K.zadduOps) <|
-  .block (K.storeEntry ++ [.alu .cmp .rbx (.imm 16)])
-
-def buildZ : Prog isa :=
-  .seq (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
-    [.mov32 .rbx (.imm 1)] ++ K.storeEntry)) <|
-  .seq (ForwardField.programB K.M K.dbluOps) <|
-  .seq (.block (copy K.M.n K.D.x K.S.t3 ++ copy K.M.n K.D.y K.S.t2 ++ [.mov32 .rbx (.imm 2)] ++ K.storeEntry)) <|
-  .loop K.buildStepZ .ne
-
-/-- The top digit's entry into `R`, and `rbx = J - 1`. -/
+/-- `rbx = J - 1` and the top digit's entry into `R` (zeros, `O`, for the
+digit zero). -/
 def first : List Instr :=
   [.mov32 .rbx (.imm (BitVec.ofNat 32 (K.J - 1)))] ++ K.tc.digit ++ K.select ++ K.tc.negY ++
     copyPt K.M.n K.R K.E
 
-def windowZ (dbl : Pt → Prog isa) : Prog isa :=
-  .seq K.buildZ <| .seq (.block K.first) <| .seq (.loop (K.step dbl) .ne) <|
+/-- `[k]P` into `R`, in projective coordinates, for the table of the bits of
+`k + offset J` at `K.bits`. -/
+def window (dbl : Pt → Prog isa) : Prog isa :=
+  .seq K.build <| .seq (.block K.first) <| .seq (.loop (K.step dbl) .ne) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)
 
 end JacWinCfg

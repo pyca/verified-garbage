@@ -7,7 +7,7 @@ Digit `j = rbx` as the comb reads it (`digit_ok`, windows of 5 bits of
 `k' = k + offset J`): its magnitude `a = |k'_j - 16|` selects entry `a` of the
 table into `T` (`jselect_ok`, zeros for `a = 0`), whose `Y` is negated for a
 negative digit (`negY`, as the comb's), so that `T` holds digit `j`'s point
-`winPt` with its powers (`jentry_ok`).
+`winPt` with its powers, or `Z = 0` for the digit zero (`jentry_ok`).
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -41,6 +41,7 @@ structure JEnt (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point
   z2 : tmv C K.M.n base t (TS K 3) = tmv C K.M.n base t (TS K 2) * tmv C K.M.n base t (TS K 2)
   z3 : tmv C K.M.n base t (TS K 4) = tmv C K.M.n base t (TS K 3) * tmv C K.M.n base t (TS K 2)
   ent : 1 ≤ magH 16 (Window5.nib k' j) → JPt C K.M.n base t (TS K) (Window5.winPt C P k' j)
+  zero : magH 16 (Window5.nib k' j) = 0 → tmv C K.M.n base t (TS K 2) = 0
 
 theorem jent_loopW (K : JacWinCfg) : ∀ w ∈ (List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
     [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)], w ∈ jwLoopW K := by
@@ -185,7 +186,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   have tz : ∀ c < 5, c ≠ 1 → tmv C K.M.n base s₅ (TS K c) = tmv C K.M.n base s₂ (TS K c) :=
     fun c hc h1 => tv (keepT c hc h1)
   refine ⟨hf.next hL hs₅ (kk.mono clob_powClob) hU (fun w hw => jwLoopW_sub K w (jent_loopW K w hw)), hU,
-    kk, fun c hc => ?_, ?_, ?_, fun h => ?_⟩
+    kk, fun c hc => ?_, ?_, ?_, fun h => ?_, fun h => ?_⟩
   · by_cases h1 : c = 1
     · subst h1; rw [keepY]; split
       · exact Nat.mod_lt _ hp0
@@ -226,5 +227,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
         by_cases h1 : c = 1
         · subst h1; exact keepY
         · exact keepT c hc h1
+  · rw [tz 2 (by decide) (by decide)]
+    exact T₂z 2 (by decide) (by rw [ha] at h; omega)
 
 end VG.Proof.Weierstrass.X86_64
