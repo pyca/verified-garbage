@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 
 /-! The final conditional subtraction, shared with the ADX multiplier. -/
 
@@ -9,13 +10,14 @@ open VG.Proof.Bignum.X86_64
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 
 /-- Reduce the result below `2 m` by the existing constant-time subtraction
-and selection. -/
-theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+and selection, for the slot `sArr co` holding the base of `o`. -/
+theorem finishV_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z)
     (hw1 : 2 ≤ w) (hw : w < 2 ^ 31) (h10 : s.gpr .r10 = off B (slot w aN))
-    {o : Nat} (ho : o < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {co o : Nat} (po : (co, o) ∈ ps)
+    (ho : o < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
     (hTlt : wv s.mem B (slot w aTmp) (w + 2) < 2 * wv s.mem B (slot w aN) w) :
-    WP isa (Adx.finish o) s fun t =>
+    WP isa (Adx.finish co) s fun t =>
       wv t.mem B (slot w o) w = wv s.mem B (slot w aTmp) (w + 2) % wv s.mem B (slot w aN) w ∧
       Arrays B w [aAcc, o] s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hs.nowrap
@@ -26,7 +28,7 @@ theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have soX : slot w o + 8 * (w + 2) ≤ slot w aAcc ∨ slot w aTmp + 8 * (w + 2) ≤ slot w o := by
     have := slot_sep (w := w) ho1; have := slot_sep (w := w) ho2; unfold slot aAcc aTmp at *; omega
   unfold Adx.finish
-  refine WP.seq (WP.mono (finishBases_ok hs hdi hH hZ ho) fun s₁ ⟨h12, h8, hsi, hbx, hm₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (finishBasesV_ok hs hdi hH hZ (hv.at po) (hv.lt po)) fun s₁ ⟨h12, h8, hsi, hbx, hm₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (subMod_ok (hs.congr k₁.2.2) h8 ((k₁.gpr (by decide)).trans h10) hsi h12 (by omega) hw
     (by omega) (by have := sl aN (by decide); omega) (by omega) (by omega) (by omega))
     fun s₂ ⟨c, lt, hbp, hlt, hD, ho₂, k₂⟩ => ?_)
@@ -50,5 +52,18 @@ theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
     have h1 := hx aAcc (by simp)
     have h2 := hx o (by simp)
     exact (hot x (by omega)).trans (ho₂ x (by omega))
+
+/-- Reduce the result below `2 m` by the existing constant-time subtraction
+and selection. -/
+theorem finish_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
+    (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z)
+    (hw1 : 2 ≤ w) (hw : w < 2 ^ 31) (h10 : s.gpr .r10 = off B (slot w aN))
+    {o : Nat} (ho : o < 8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
+    (hTlt : wv s.mem B (slot w aTmp) (w + 2) < 2 * wv s.mem B (slot w aN) w) :
+    WP isa (Adx.finish o) s fun t =>
+      wv t.mem B (slot w o) w = wv s.mem B (slot w aTmp) (w + 2) % wv s.mem B (slot w aN) w ∧
+      Arrays B w [aAcc, o] s.mem t.mem ∧ Keep mmRegs s t :=
+  finishV_ok hs hdi hH hZ hw1 hw h10 (hH.ops (ps := [(o, o)]) (by simp; omega)) (List.mem_singleton_self _)
+    ho ho1 ho2 hTlt
 
 end VG.Proof.Bignum.X86_64.AdxSquare

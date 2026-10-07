@@ -12,9 +12,10 @@ open VG.Proof.Bignum.X86_64.AdxHeader (highPad)
 
 theorem rawCross_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hvs : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hn : 0<n)
     (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
-    WP isa (AdxTiledSquare.rawCross a) s fun t =>
+    WP isa (AdxTiledSquare.rawCross ca) s fun t =>
       wv t.mem B (rawBase w) (2*w+2)=AdxSquare.crossValue s.mem B (slot w a) w ∧
       wv t.mem B (rawBase w) (2*w)=AdxSquare.crossValue s.mem B (slot w a) w ∧
       Outside B (slot w aAcc) (16*w+32) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -23,7 +24,7 @@ theorem rawCross_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have rawZ : rawBase w+8*(2*w+2) ≤ Z := by unfold rawBase highPad at *; omega
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   unfold AdxTiledSquare.rawCross
-  refine WP.seq (WP.mono (adxSetup_ok hs hd hh hZ ha) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
+  refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pa) (hvs.lt pa)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
   refine WP.seq (WP.mono (zeroWin_ok (hs.congr ku.2.2) pu wu (by omega) rawZ)
     fun v ⟨zv,ov,kv⟩ => ?_)
   rw [mu] at ov
@@ -47,9 +48,9 @@ theorem rawCross_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
       rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,highPad] <;> omega) (by omega)]
     exact zv j (by omega)
   have kuvx := kuv.trans kx
-  change WP isa (.seq (.seq (AdxTri8.blocks a) (AdxTiledSquare.rowsChoice a)) AdxHeader.restore) x _
+  change WP isa (.seq (.seq (AdxTri8.blocks ca) (AdxTiledSquare.rowsChoice ca)) AdxHeader.restore) x _
   refine WP.seq (WP.mono (crossBody_ok (hs.congr kuvx.2.2) ((kuvx.gpr (by decide)).trans hd)
-    hx hZ hw hwN hn ha ha1 ha2 zx) fun y ⟨vy,hy,fy,ky⟩ => ?_)
+    hx hZ (hvs.of_outside (ov'.trans ox) (by unfold slot sFn hdrBytes; omega)) pa hw hwN hn ha ha1 ha2 zx) fun y ⟨vy,hy,fy,ky⟩ => ?_)
   have kuvxy := kuvx.trans ky
   refine WP.mono (AdxHeader.restore_ok (hs.congr kuvxy.2.2) ((kuvxy.gpr (by decide)).trans hd) hy hZ)
     fun t ⟨lot,hit,zt,ft,kt⟩ => ?_

@@ -16,11 +16,13 @@ operand is reduced; the left operand may be any word-width value. -/
 theorem montMul_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
     (hZ : slot w 8 ≤ Z) (hwN : w=8*n) (hnN : 0<n) (hw : w < 2 ^ 31)
-    {o a b : Nat} (ho : o < 8) (ha : a < 8) (hb : b<8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {co ca cb o a b : Nat} (po : (co, o) ∈ ps)
+    (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ho : o < 8) (ha : a < 8) (hb : b<8) (ho1 : o ≠ aAcc) (ho2 : o ≠ aTmp)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)
     (hinv : ((word s.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0)
     (hB : wv s.mem B (slot w b) w < wv s.mem B (slot w aN) w) :
-    WP isa (AdxTiledProduct.montMul o a b) s fun t =>
+    WP isa (AdxTiledProduct.montMul co ca cb) s fun t =>
       wv t.mem B (slot w o) w < wv s.mem B (slot w aN) w ∧
       wv t.mem B (slot w o) w * 2 ^ (64 * w) % wv s.mem B (slot w aN) w =
         wv s.mem B (slot w a) w * wv s.mem B (slot w b) w % wv s.mem B (slot w aN) w ∧
@@ -32,7 +34,7 @@ theorem montMul_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
   have hsep : slot w aN + 8 * (w + 2) ≤ slot w aAcc := by unfold slot aN aAcc; omega
   have hmpos : 0 < wv s.mem B (slot w aN) w := by omega
   unfold AdxTiledProduct.montMul
-  refine WP.seq (WP.mono (rawProduct_ok hs hdi hH hZ hw hwN hnN ha hb ha1 ha2 hb1 hb2) fun s₁ ⟨_, hv₁, ho₁, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (rawProduct_ok hs hdi hH hv pa pb hZ hw hwN hnN ha hb ha1 ha2 hb1 hb2) fun s₁ ⟨_, hv₁, ho₁, k₁⟩ => ?_)
   have hH₁ := hH.of_outside ho₁ hg
   have hn₁ : word s₁.mem B (slot w aN) = word s.mem B (slot w aN) := ho₁.word (by omega) (by omega)
   refine WP.seq (WP.mono (AdxRotate8.redc_ok (hs.congr k₁.2.2) ((k₁.gpr (by decide)).trans hdi) hH₁ hZ hwN hnN)
@@ -56,8 +58,9 @@ theorem montMul_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
       (by have := hdr_lt_slot w 8 (show sArr aN < 32 by decide); omega), hH₂.harr aN (by decide)]
   refine WP.seq (WP.mono (movMem_ok s₂ (dst := .r10) hsrc) fun s₃ ⟨h10, _, _, k₃⟩ => ?_)
   have k123 := k12.trans k₃.keep
-  refine WP.mono (AdxSquare.finish_ok (hs.congr k123.2.2) ((k123.gpr (by decide)).trans hdi)
-    (k₃.2.1 ▸ hH₂) hZ hw1 hw h10 ho ho1 ho2 (by rw [k₃.2.1, hN₂]; exact hTlt))
+  have hv₂ : Ops s₂.mem B w ps := hv.of_outside ho12 (by unfold slot sFn hdrBytes; omega)
+  refine WP.mono (AdxSquare.finishV_ok (hs.congr k123.2.2) ((k123.gpr (by decide)).trans hdi)
+    (k₃.2.1 ▸ hH₂) hZ hw1 hw h10 (k₃.2.1 ▸ hv₂) po ho ho1 ho2 (by rw [k₃.2.1, hN₂]; exact hTlt))
     fun t ⟨hv, hf, kt⟩ => ?_
   rw [k₃.2.1, hN₂] at hv
   refine ⟨?_, ?_, ?_, (k123.trans kt).mono (by decide)⟩

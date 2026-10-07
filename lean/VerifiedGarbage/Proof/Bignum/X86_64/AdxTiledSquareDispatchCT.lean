@@ -17,7 +17,8 @@ theorem aligned_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a�
   have hw := sz.lt
   have hp := sz.2.1
   let R : AdxTiledProduct.Layout := ⟨L.B,L.Z,L.w,L.w/8,hZ,hw,by omega,by omega⟩
-  exact montSquare_ct ho ha ha1 ha2 hS hR hF hT _ _ _ _ _ _ ⟨R,⟨mi,gs⟩,mj,gt⟩ es et
+  exact montSquare_ct (ps := [(o,o),(a,a),(a,a)]) (.head _) (.tail _ (.head _)) ha ha1 ha2 hS hR hF hT
+    _ _ _ _ _ _ ⟨R,⟨⟨mi,gs⟩,gs.hdr.ops3 ho ha ha⟩,⟨mj,gt⟩,gt.hdr.ops3 ho ha ha⟩ es et
 
 theorem alignedChoice_ct {o a : Nat} (ho : o<8) (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     {h₁ h₂ h₃ h₄ : VG.Taint.Hint VG.X86_64.Taint.T}

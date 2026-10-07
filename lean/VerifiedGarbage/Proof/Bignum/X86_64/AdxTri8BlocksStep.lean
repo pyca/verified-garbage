@@ -7,11 +7,12 @@ open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 
 theorem blockStep_ok {s₀ s : State} {B : Addr} {Z w a k n : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hZ : slot w 8≤Z) (hw : w<2^31) (hwN : w=8*n) (hk : k<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     (hz : ∀ j<2*w, word s₀.mem B (rawBase w+8*j)=0)
     (h : BlocksInv s₀ B Z w a k mi s) :
-    WP isa (.seq (AdxTri8.block a) (.block AdxTri8.nextBlock)) s fun t =>
+    WP isa (.seq (AdxTri8.block ca) (.block AdxTri8.nextBlock)) s fun t =>
       t.zf=some (decide (k+1=n)) ∧ BlocksInv s₀ B Z w a (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8≤(2 : Nat)^64 := by omega
@@ -25,7 +26,7 @@ theorem blockStep_ok {s₀ s : State} {B : Addr} {Z w a k n : Nat} {mi : BitVec 
       (by unfold rawBase at *; omega)]
     rw [show rawBase w+128*k+8*q=rawBase w+8*(16*k+q) by omega]
     exact hz (16*k+q) (by omega)
-  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ ha ha1 ha2 (by omega) h.indexI
+  refine WP.seq (WP.mono (fullBlock_ok h.scr h.rdi h.hdr hZ (diagonal_ops hv h.frame) pa ha ha1 ha2 (by omega) h.indexI
     (by simpa only [rawBase,Nat.mul_zero,Nat.add_zero,show 16*(8*k)=128*k by omega] using zero 0 (by decide))
     (by simpa only [rawBase,show 16*(8*k)=128*k by omega,show 8*15=120 from rfl] using zero 15 (by decide)))
     fun u ⟨vu,ou,ku⟩ => ?_)

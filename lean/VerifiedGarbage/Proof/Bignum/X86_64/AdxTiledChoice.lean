@@ -33,7 +33,7 @@ theorem alignedChoice_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (
     fun t ⟨h1, h2, h3, k⟩ => ⟨h1, h2, h3, (k₁.trans k).mono (by decide)⟩
   by_cases h8 : w%8=0
   · refine WP.ite true (by simp [eval,hz,h8]) (fun _ => WP.mono
-      (montMul_ok hs₁ hdi₁ hH hZ (by omega : w=8*(w/8)) (by omega) hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
+      (montMul_ok hs₁ hdi₁ hH hZ (by omega : w=8*(w/8)) (by omega) hw' (hH.ops3 ho ha hb) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post) (by simp)
   · refine WP.ite false (by simp [eval,hz,h8]) (by simp) (fun _ =>
       WP.mono (montMulAdx_ok hs₁ hdi₁ hH hZ hw hw' ho ha hb ho1 ho2 ha1 ha2 hb1 hb2 hinv hB) post)
 

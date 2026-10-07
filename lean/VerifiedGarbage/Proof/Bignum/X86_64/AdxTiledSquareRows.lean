@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareMath
 namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum VG.Proof.Bignum.X86_64
-open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr input_preserved)
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr frame_ops input_preserved)
 open VG.Proof.Bignum.X86_64.AdxTri8 (chunks)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 open VG.Proof.MlKem.X86_64 (Keep WP.keep)
@@ -23,12 +23,13 @@ private theorem advance {W W' R C D S S' T A : Nat}
     (prev : W+R*C+S=T) (step : W'+R*D=W+A) (rest : S=A+S') : W'+R*(C+D)+S'=T := by grind
 
 theorem step_inv {s₀ s : State} {B : Addr} {Z w a n k : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hZ : slot w 8≤Z) (hw : w<2^31) (hwN : w=8*n) (hk : k<n-1)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (h : Inv s₀ B Z w a n k mi s) :
-    WP isa (AdxTiledSquare.row a) s fun t => t.zf=some (decide (k+1=n-1)) ∧ Inv s₀ B Z w a n (k+1) mi t := by
+    WP isa (AdxTiledSquare.row ca) s fun t => t.zf=some (decide (k+1=n-1)) ∧ Inv s₀ B Z w a n (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8≤(2 : Nat)^64 := by omega
-  refine WP.mono (row_ok h.scr h.rdi h.hdr hZ hw (by omega : w=8*k+8+8*(n-k-1))
+  refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa hZ hw (by omega : w=8*k+8+8*(n-k-1))
     (by omega) ha ha1 ha2 h.indexI) fun t ⟨zt,it,⟨d,eq⟩,ht,ft,kt⟩ => ?_
   rw [input_preserved ha ha1 ha2 (by omega : 8*k+8≤w) Z64 h.frame,
     input_preserved ha ha1 ha2 (by omega : (8*k+8)+8*(n-k-1)≤w) Z64 h.frame] at eq
@@ -44,9 +45,10 @@ theorem step_inv {s₀ s : State} {B : Addr} {Z w a n k : Nat} {mi : BitVec 64}
 
 theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 1<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) :
-    WP isa (AdxTiledSquare.rows a) s fun t =>
+    WP isa (AdxTiledSquare.rows ca) s fun t =>
       (∃ c, wv t.mem B (rawBase w) (2*w)+2^(128*w)*c=
         wv s.mem B (rawBase w) (2*w)+Square.cross (2^512) (chunks s.mem B (slot w a)) n) ∧
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -68,7 +70,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
       ku.mono (by decide),fu,0,by
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega),Nat.mul_zero,Nat.add_zero]⟩
   apply wp_upto (a := 0) (N := n-1) (by omega) (Inv s B Z w a n · mi)
-    (fun _ _ hk _ h => step_inv hZ hw hwN hk ha ha1 ha2 h) ?_ h0
+    (fun _ _ hk _ h => step_inv hv pa hZ hw hwN hk ha ha1 ha2 h) ?_ h0
   intro t h
   obtain ⟨c,eq⟩ := h.val
   rw [remaining_end s.mem B (slot w a) n (by omega),Nat.add_zero] at eq

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Tile
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxFused
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 
 /-! Tile addresses depend only on the public word indices and array layout. -/
 namespace VG.Proof.Bignum.X86_64.AdxRect8
@@ -14,10 +15,11 @@ theorem shift3 (n : Nat) : (BitVec.ofNat 64 n) <<< (3 : Nat) = BitVec.ofNat 64 (
 
 theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
-    (hZ : slot w 8 ≤ Z) {a b : Nat} (ha : a < 8) (hb : b < 8)
+    (hZ : slot w 8 ≤ Z) {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb a b : Nat}
+    (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (hi : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
     (hj : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
-    WP isa (.block (AdxRect8.setup a b)) s fun t =>
+    WP isa (.block (AdxRect8.setup ca cb)) s fun t =>
       t.gpr .rcx = off B (slot w a+8*i) ∧
       t.gpr .rbp = off B (slot w b+8*j) ∧
       t.gpr .rsi = off B (slot w aAcc+16+8*(i+j)) ∧
@@ -31,8 +33,9 @@ theorem setup_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     fun t ⟨⟨hc,hp,ho,hm⟩,k⟩ => ⟨hc,hp,ho,hm,k⟩
   unfold AdxRect8.setup
   xrun [State.ea,hdr,hd,hdrOff,hl (sFn 12) (by decide),hl (sFn 13) (by decide),
-    hl (sArr a) (by unfold sArr; omega),hl (sArr b) (by unfold sArr; omega),
-    hl (sArr aAcc) (by decide),hi,hj,hh.harr a ha,hh.harr b hb,hh.harr aAcc (by decide),
+    hl (sArr ca) (by have := hv.lt pa; unfold sArr; omega),hl (sArr cb) (by have := hv.lt pb; unfold sArr; omega),
+    hl (sArr aAcc) (by decide),hi,hj,show word s.mem B (8*sArr ca) = _ from hv.at pa,
+    show word s.mem B (8*sArr cb) = _ from hv.at pb,hh.harr aAcc (by decide),
     shift3,show (16 : BitVec 32).signExtend 64 = 16 from rfl]
   simp only [off,BitVec.ofNat_add,Nat.mul_add,BitVec.add_assoc, true_and]
   have commute (x y z : BitVec 64) : x+(y+z)=z+(x+y) := by

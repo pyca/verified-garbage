@@ -10,12 +10,13 @@ open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
 theorem rowStep_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hi : i+8 ≤ w) (hj : j+8 ≤ w)
-    {a b : Nat} (ha : a < 8) (hb : b < 8)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb a b : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
+    (ha : a < 8) (hb : b < 8)
     (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i)
     (hjdx : word s.mem B (8*sFn 13) = BitVec.ofNat 64 j) :
     let e := slot w aAcc+16+8*(i+j)
-    WP isa (AdxRect8.rowStep a b) s fun t =>
+    WP isa (AdxRect8.rowStep ca cb) s fun t =>
       t.zf = some (decide (j+8=w)) ∧
       word t.mem B (8*sFn 13) = BitVec.ofNat 64 (j+8) ∧
       wv t.mem B e 16 + 2^1024 * (word t.mem B carryOffset).toNat =
@@ -35,7 +36,7 @@ theorem rowStep_ok {s : State} {B : Addr} {Z w i j : Nat} {mi : BitVec 64}
   have idxZ : 8*sFn 13+8 ≤ Z := by
     have := hdr_lt_slot w 8 (show sFn 13 < 32 by decide); omega
   have eH : hdrBytes ≤ e := by unfold e slot; omega
-  refine WP.seq (WP.mono (tileAt_ok hs hd hh hZ hi hj ha hb ha1 ha2 hb1 hb2 hidx hjdx)
+  refine WP.seq (WP.mono (tileAt_ok hs hd hh hZ hi hj hv pa pb ha hb ha1 ha2 hb1 hb2 hidx hjdx)
     fun u ⟨eq,bd,one,hu,fr,ptr,ku⟩ => ?_)
   have ju : word u.mem B (8*sFn 13) = BitVec.ofNat 64 j := by
     rw [fr.word_eq (by
