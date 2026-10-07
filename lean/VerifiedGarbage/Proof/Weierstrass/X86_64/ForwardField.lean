@@ -14,7 +14,13 @@ theorem code_stores {M : Mod} (hn : M.n=4) (op : FOp) :
   cases op with
   | mul o a b =>
     simp only [code,opCode,mul,hn,show 4<7 from by decide,↓reduceIte,mulR,outputRegs,FOp.out]
-    cases sqrK? M a b <;> exact ⟨_,rfl⟩
+    rcases prodK? M with _ | k
+    · exact ⟨_,rfl⟩
+    · dsimp only
+      obtain ⟨X, hX⟩ : ∃ X, redRX M k o = X ++ stores sqLow o := ⟨_, rfl⟩
+      split
+      · exact ⟨_, by rw [sqrRX, hX, ← List.append_assoc]⟩
+      · exact ⟨_, by rw [mulRX, hX, ← List.append_assoc]⟩
   | add o a b =>
     simp only [code,outputRegs,FOp.out]
     split

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.SqrX
+import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -59,21 +59,28 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   have hn := hs.nowrap
   rw [mulR]
   split
-  · -- A square by `sqrRX`.
+  · -- A product by `mulRX` or `sqrRX`.
     rename_i k hk
-    unfold sqrK? at hk
+    unfold prodK? at hk
     split at hk
     · rename_i hc
-      obtain ⟨-, h4, rfl⟩ := hc
+      obtain ⟨-, h4⟩ := hc
       split at hk
       · rename_i ws hr
-        refine WP.mono (sqrRX_ok hs hM h4 hr hk (by omega) (by omega) (h4 ▸ hB))
-          fun s' ⟨kr, hmem, hlt, he⟩ => ?_
+        have fin : ∀ s', KeepRegs sqrClob s s' →
+            (∀ x, (ofs base x < o ∨ o + 32 ≤ ofs base x) →
+              (ofs base x < M.tmp ∨ M.tmp + 32 ≤ ofs base x) → s'.mem x = s.mem x) →
+            OpKeep M base o s s' := fun s' kr hmem =>
+          ⟨fun r hr' => kr.gpr r fun h => hr' (h4 ▸ (by decide : ∀ q ∈ sqrClob, q ∈ clob 4) r h),
+            kr.rd, kr.wr, fun x hx hx' => hmem x (by rw [h4] at hx; exact hx) (by rw [h4] at hx'; exact hx')⟩
         rw [h4]
-        refine ⟨⟨fun r hr' => kr.gpr r fun h => hr' ?_, kr.rd, kr.wr, fun x hx hx' => hmem x
-          (by rw [h4] at hx; exact hx) (by rw [h4] at hx'; exact hx')⟩, hlt, he⟩
-        rw [h4]
-        exact (by decide : ∀ q ∈ sqrClob, q ∈ clob 4) r h
+        split
+        · rename_i hab
+          subst hab
+          exact WP.mono (sqrRX_ok hs hM h4 hr hk (by omega) (by omega) (h4 ▸ hB))
+            fun s' ⟨kr, hmem, hlt, he⟩ => ⟨fin s' kr hmem, hlt, he⟩
+        · exact WP.mono (mulRX_ok hs hM h4 hr hk (by omega) (by omega) (by omega) (h4 ▸ hB))
+            fun s' ⟨kr, hmem, hlt, he⟩ => ⟨fin s' kr hmem, hlt, he⟩
       · cases hk
     · cases hk
   dsimp only
