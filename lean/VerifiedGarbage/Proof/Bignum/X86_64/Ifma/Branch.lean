@@ -163,8 +163,8 @@ theorem branchA2_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat} 
   · have := pv (hMK hm); simp only [hm, ↓reduceIte] at this; exact this
 
 
-/-- `pre` and `ifma`, from the checks. -/
-theorem branchA_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
+/-- `pre`, from the checks, for the layout `l` of the key's sizes. -/
+theorem branchA1_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}
     {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte} {minv mp mq : BitVec 64} {Mk : Bool}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
@@ -173,14 +173,11 @@ theorem branchA_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : 
     (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
       (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
     (hw32 : (k + 7) / 8 = 2 * l.W) (hpl : wsWords pl = l.W) (hql : wsWords ql = l.W)
-    (hZa : offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W + 2 * l.D + 8 ≤ Z)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
-    WP isa (seqs (CrtIfma.pre M.mm ++ ifma l)) t₀ fun t =>
-      IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
-        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
-      t.mxcsr = t₀.mxcsr &&& 0xFFFF := by
-  have hA2 := fun s₁ => branchA2_ok hl (s₁ := s₁) h hv hr hMk hw32 hpl hql hZa
+    WP isa (seqs (CrtIfma.pre M.mm)) t₀ fun s₁ =>
+      APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
+        (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
+        (Spec.Rsa.os2ip xb) ∧ s₁.mxcsr = t₀.mxcsr := by
   obtain ⟨hodd, hN1, hPN, hQN⟩ := crt_bounds h hv
   have hk1 := h.k1
   have hpl1 := h.pl1
@@ -213,12 +210,10 @@ theorem branchA_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : 
   rw [hpl] at pws pxv
   rw [hql] at qws qxv
   have hh₀ : ∀ i < 32, hFixed i = true → word t₀.mem B (8 * i) = word s.mem B (8 * i) := hr.hfix
-  -- `pre`.
-  refine wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [ifma]) (WP.mono_mx hpre
+  exact WP.mono_mx hpre
     (pre_ok M (wp := l.W) hr.good (by omega) (le_refl _) (by rw [hoq]) (by omega) (by omega)
       (by omega) hr.wsP hr.wsQ pws qws hr.nv hr.xm pxv hP'.1 hP'.2 qxv hQ'.1 hQ'.2)
-    fun s₁ hA mx₁ => WP.mono (hA2 s₁ hA) fun t ⟨hd, mx⟩ =>
-      ⟨hd, by rw [mx, mx₁]⟩)
+    fun s₁ hA mx₁ => ⟨hA, mx₁⟩
 
 /-- `post`, after `pre` and `ifma`: what `pPart` leaves. -/
 theorem branchB_ok (hl : LayOk l) (M : Mont) {s t₁ : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr}

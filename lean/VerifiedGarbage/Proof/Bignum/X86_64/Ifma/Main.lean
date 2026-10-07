@@ -16,7 +16,7 @@ namespace VG.Proof.Bignum.X86_64.Ifma
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt
 open VG.Proof.MlKem.X86_64
 open VG.Impl.Bignum.X86_64.Public
-open VG.Impl.Rsa.X86_64.CrtIfma (Lay lay2048 lay3072 lay4096 sizes branch)
+open VG.Impl.Rsa.X86_64.CrtIfma (Lay lay2048 lay3072 lay4096 sizes ifma)
 open VG.Proof.Bignum.X86_64 (ofNat_eq_iff mx_ffff CrtReady.of_regs)
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
@@ -79,10 +79,155 @@ abbrev MainQ (s : State) (B : Addr) (Z k pl ql : Nat) (minv mp mq : BitVec 64) (
 theorem sizes_mx (hl : LayOk l) : ((.block (sizes l)) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
   rcases hl with rfl | rfl | rfl <;> decide
 
-/-- `branch l els`: the IFMA branch for the sizes `l`, `els` otherwise. -/
-theorem branch_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}
+/-- The key's sizes are those of the layout `l`. -/
+abbrev SizesOf (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) (w pl ql : Nat) : Prop :=
+  w = 2 * l.W ∧ (pl + 7) / 8 = l.W ∧ (ql + 7) / 8 = l.W
+
+/-- At most one layout has given sizes. -/
+theorem sizesOf_eq {l l' : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : LayOk l) (hl' : LayOk l') {w pl ql : Nat}
+    (h : SizesOf l w pl ql) (h' : SizesOf l' w pl ql) : l = l' := by
+  have e := h.1.symm.trans h'.1
+  rcases hl with rfl | rfl | rfl <;> rcases hl' with rfl | rfl | rfl <;> first | rfl | exact absurd e (by decide)
+
+/-- `sizes l` after the checks: ZF says whether the key has `l`'s sizes. -/
+theorem sizesR_ok (hl : LayOk l) {s t₀ : State} {B : Addr} {Z k : Nat}
     {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
-    {minv mp mq : BitVec 64} {els : Prog isa}
+    {minv mp mq : BitVec 64} {N C P Q : Nat} {Mk : Bool}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq N C P Q Mk) :
+    WP isa (.block (sizes l)) t₀ fun t₁ => t₁.zf = some (decide (SizesOf l ((k + 7) / 8) pl ql)) ∧
+      CrtReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq N C P Q Mk ∧ t₁.mxcsr = t₀.mxcsr := by
+  have hn := hr.good.scr.nowrap
+  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
+  have hZq := h.z
+  have hk2 := h.k2
+  have hpl2 := h.pl2
+  have hql2 := h.ql2
+  exact WP.mono_mx (sizes_mx hl) (sizes_ok hl (pl := pl) (ql := ql) hr.good
+    (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hPl) (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hQl)
+    (by unfold offQ at hZq; omega) (by omega) (by omega) (by omega))
+    fun t₁ ⟨zf, me, k₁⟩ mx₁ => ⟨zf, hr.of_regs me k₁, mx₁⟩
+
+/-- `anySizes`: ZF says whether the key has the sizes of one of the layouts. -/
+theorem anySizes_ok {s t₀ : State} {B : Addr} {Z k : Nat}
+    {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    {minv mp mq : BitVec 64} {N C P Q : Nat} {Mk : Bool}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq N C P Q Mk) :
+    WP isa CrtIfma.anySizes t₀ fun t₁ => t₁.zf = some (decide (SizesOf lay2048 ((k + 7) / 8) pl ql ∨
+        SizesOf lay3072 ((k + 7) / 8) pl ql ∨ SizesOf lay4096 ((k + 7) / 8) pl ql)) ∧
+      CrtReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq N C P Q Mk ∧ t₁.mxcsr = t₀.mxcsr := by
+  unfold CrtIfma.anySizes
+  refine WP.seq (WP.mono (sizesR_ok (Or.inl rfl) h hr) fun t₁ ⟨z₁, r₁, x₁⟩ => ?_)
+  refine WP.ite _ z₁ (fun hb => WP.block_nil
+    ⟨by rw [z₁, hb, decide_eq_true (Or.inl (of_decide_eq_true hb))], r₁, x₁⟩) (fun hb => ?_)
+  simp only [decide_eq_false_iff_not] at hb
+  refine WP.seq (WP.mono (sizesR_ok (Or.inr (Or.inl rfl)) h r₁) fun t₂ ⟨z₂, r₂, x₂⟩ => ?_)
+  refine WP.ite _ z₂ (fun hb' => WP.block_nil
+    ⟨by rw [z₂, hb', decide_eq_true (Or.inr (Or.inl (of_decide_eq_true hb')))], r₂, x₂.trans x₁⟩) (fun hb' => ?_)
+  simp only [decide_eq_false_iff_not] at hb'
+  refine WP.mono (sizesR_ok (Or.inr (Or.inr rfl)) h r₂) fun t₃ ⟨z₃, r₃, x₃⟩ => ⟨?_, r₃, x₃.trans (x₂.trans x₁)⟩
+  rw [z₃]
+  congr 1
+  exact decide_eq_decide.mpr ⟨fun h => .inr (.inr h), fun h => h.resolve_left hb |>.resolve_left hb'⟩
+
+/-- `APost` after an instruction that changes only `rax`, `rdx` and the flags. -/
+theorem APost.of_regs {s t t' : State} {B : Addr} {Z w op oq wp : Nat} {minv mp mq : BitVec 64} {N P Q C : Nat}
+    (h : APost s t B Z w op oq wp minv mp mq N P Q C) (hm : t'.mem = t.mem) (k : Keep [.rax, .rdx] t t') :
+    APost s t' B Z w op oq wp minv mp mq N P Q C := by
+  obtain ⟨hg, hN, hp, hq, hf, hk, hw⟩ := h
+  have hx : ∀ {X : Nat} {o wx : Nat} {mx : BitVec 64}, XVals t B o wx mx X → XVals t' B o wx mx X :=
+    fun hx => by rw [show t' = { t' with mem := t.mem } by rw [← hm]]; exact ⟨hx.n, hx.inv, hx.one⟩
+  have hpr : ∀ {o wx : Nat} {mx : BitVec 64} {X : Nat}, PrimeRdy t B o wx mx N X C → PrimeRdy t' B o wx mx N X C :=
+    fun hp => ⟨hm ▸ hp.ws, hx hp.x, hm ▸ hp.ylt, hm ▸ hp.yv, hm ▸ hp.clt, hm ▸ hp.cv⟩
+  refine ⟨⟨hg.scr.congr k.2.2, (k.gpr (by decide)).trans hg.rdi, hm ▸ hg.hdr⟩, ?_, hpr hp, hpr hq, hm ▸ hf,
+    (hk.trans k).mono (by simp [mmRegs]), hm ▸ hw⟩
+  rw [show t' = { t' with mem := t.mem } by rw [← hm]]
+  exact ⟨hN.n, hN.inv, hN.r2, hN.r2lt, hN.one⟩
+
+/-- `sizes l'` after `pre`: ZF says whether the key has `l'`'s sizes. -/
+theorem sizesA_ok (hl' : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
+    {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    {minv mp mq : BitVec 64} {N C P Q : Nat} {Mk : Bool} {wp : Nat} {N' P' Q' C' : Nat}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq N C P Q Mk)
+    (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) wp minv mp mq N' P' Q' C') :
+    WP isa (.block (sizes l)) s₁ fun s₂ => s₂.zf = some (decide (SizesOf l ((k + 7) / 8) pl ql)) ∧
+      APost t₀ s₂ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) wp minv mp mq N' P' Q' C' ∧
+      s₂.mxcsr = s₁.mxcsr := by
+  have hn := hr.good.scr.nowrap
+  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
+  have hZq := h.z
+  have hk2 := h.k2
+  have hpl2 := h.pl2
+  have hql2 := h.ql2
+  have hns := preRanges_nsafe (w := (k + 7) / 8) (wp := wp) (wq := wp) (op := offP ((k + 7) / 8))
+    (oq := offQ ((k + 7) / 8) pl) (le_refl _) (by unfold offQ; omega)
+  have hpw : word s₁.mem B (8 * sPlen) = BitVec.ofNat 64 pl := by
+    rw [nsafe_word hA.2.2.2.2.1 hns (by decide) (by decide) (by decide), hr.hfix _ (by decide) (by decide)]
+    exact h.hPl
+  have hqw : word s₁.mem B (8 * sQlen) = BitVec.ofNat 64 ql := by
+    rw [nsafe_word hA.2.2.2.2.1 hns (by decide) (by decide) (by decide), hr.hfix _ (by decide) (by decide)]
+    exact h.hQl
+  exact WP.mono_mx (sizes_mx hl') (sizes_ok hl' (pl := pl) (ql := ql) hA.1 hpw hqw
+    (by unfold offQ at hZq; omega) (by omega) (by omega) (by omega))
+    fun s₂ ⟨zf, me, k₂⟩ mx₂ => ⟨zf, APost.of_regs hA me k₂, mx₂⟩
+
+/-- `ifmaAny` after `pre`, for the layout `l` of the key's sizes: `ifma l`. -/
+theorem ifmaAny_ok (hl : LayOk l) {s t₀ s₁ : State} {B : Addr} {Z k : Nat}
+    {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    {minv mp mq : BitVec 64} {Mk : Bool}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
+    (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) Mk)
+    (hMk : Mk = keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+      (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib))
+    (hs : SizesOf l ((k + 7) / 8) pl ql)
+    (hA : APost t₀ s₁ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
+      (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
+      (Spec.Rsa.os2ip xb)) :
+    WP isa CrtIfma.ifmaAny s₁ fun t =>
+      IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+        (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
+      t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
+  obtain ⟨hW1, -⟩ := W_bounds hl
+  have hw := hs.1
+  have hp : wsWords pl = l.W := by unfold wsWords; omega
+  have hq : wsWords ql = l.W := by unfold wsWords; omega
+  -- The vector code of the layout `l'` that the tests choose, which is `l`.
+  have last : ∀ {l' : VG.Impl.Rsa.X86_64.CrtIfma.Lay} {s₂ : State}, LayOk l' → l = l' →
+      APost t₀ s₂ B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl) l.W minv mp mq
+        (Spec.Rsa.os2ip nb) (if Mk then Spec.Rsa.os2ip pb else 3) (if Mk then Spec.Rsa.os2ip qb else 3)
+        (Spec.Rsa.os2ip xb) → s₂.mxcsr = s₁.mxcsr →
+      WP isa (seqs (ifma l')) s₂ fun t =>
+        IDone l s t B Z ((k + 7) / 8) (offP ((k + 7) / 8)) (offQ ((k + 7) / 8) pl)
+          (offQ ((k + 7) / 8) pl + slot l.W 8 + tabBytes l.W) minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+          (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb) dpp dqp qip pl ql dpb dqb Mk ∧
+        t.mxcsr = s₁.mxcsr &&& 0xFFFF := by
+    intro l' s₂ _ e a₂ x₂
+    subst e
+    exact WP.mono (branchA2_ok hl h hv hr hMk hw hp hq (ifmaZ_of hl h.zk hw hp) a₂) fun t ⟨hd, mx⟩ =>
+      ⟨hd, by rw [mx, x₂]⟩
+  unfold CrtIfma.ifmaAny
+  refine WP.seq (WP.mono (sizesA_ok (l := lay2048) (Or.inl rfl) h hr hA) fun s₂ ⟨z₂, a₂, x₂⟩ => ?_)
+  refine WP.ite _ z₂ (fun hb => last (Or.inl rfl) (sizesOf_eq hl (Or.inl rfl) hs (of_decide_eq_true hb)) a₂ x₂)
+    (fun hb => ?_)
+  refine WP.seq (WP.mono (sizesA_ok (l := lay3072) (Or.inr (Or.inl rfl)) h hr a₂) fun s₃ ⟨z₃, a₃, x₃⟩ => ?_)
+  refine WP.ite _ z₃ (fun hb' => last (Or.inr (Or.inl rfl))
+    (sizesOf_eq hl (Or.inr (Or.inl rfl)) hs (of_decide_eq_true hb')) a₃ (x₃.trans x₂)) (fun hb' => ?_)
+  refine last (Or.inr (Or.inr rfl)) ?_ a₃ (x₃.trans x₂)
+  rcases hl with rfl | rfl | rfl
+  · exact absurd hs (of_decide_eq_false hb)
+  · exact absurd hs (of_decide_eq_false hb')
+  · rfl
+
+/-- The IFMA computation, for the layout `l` of the key's sizes: `pre`,
+`ifmaAny` and `post`. -/
+theorem ifmaPart_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}
+    {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat} {nb xb pb qb dpb dqb qib : List Byte}
+    {minv mp mq : BitVec 64}
     (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
     (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true)
     (hr : CrtReady s t₀ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
@@ -90,42 +235,27 @@ theorem branch_ok (hl : LayOk l) (M : Mont) {s t₀ : State} {B : Addr} {Z k : N
       (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
         (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)))
     (mx₀ : t₀.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10)
+    (hs : SizesOf l ((k + 7) / 8) pl ql)
     (hpre : (seqs (CrtIfma.pre M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hels : ∀ t₁, CrtReady s t₁ B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
-      (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
-      (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
-        (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) →
-      t₁.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 →
-      WP isa els t₁ (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb)) :
-    WP isa (branch l M.mm els) t₀ (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
-  have hn := hr.good.scr.nowrap
-  have h8 := hdr_lt_slot ((k + 7) / 8) 8 (show 31 < 32 by decide)
-  have hZq := h.z
-  have hk2 := h.k2
-  have hpl2 := h.pl2
-  have hql2 := h.ql2
-  have hql8 := hdr_lt_slot (wsWords ql) 8 (show 31 < 32 by decide)
-  refine WP.seq (WP.mono_mx (sizes_mx hl) (sizes_ok hl (pl := pl) (ql := ql) hr.good
-    (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hPl) (by rw [hr.hfix _ (by decide) (by decide)]; exact h.hQl)
-    (by unfold offQ at hZq; omega) (by omega) (by omega) (by omega))
-    fun t₁ ⟨zf, me, k₁⟩ mx₁ => ?_)
-  have hr₁ := hr.of_regs me k₁
-  refine WP.ite _ zf (fun hb => ?_) (fun _ => hels t₁ hr₁ (by rw [mx₁, mx₀]))
-  simp only [decide_eq_true_eq] at hb
-  obtain ⟨hw, hp, hq⟩ := hb
+    (hpost : (seqs (CrtIfma.post M.mm)).allInstrs (fun i => !loadsMxcsr i) = true) :
+    WP isa (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++ CrtIfma.post M.mm)) t₀
+      (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
   obtain ⟨hW1, -⟩ := W_bounds hl
-  replace hp : wsWords pl = l.W := by unfold wsWords; omega
-  replace hq : wsWords ql = l.W := by unfold wsWords; omega
-  exact wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp [CrtIfma.post])
-    (WP.mono (branchA_ok hl M h hv hr₁ rfl hw hp hq (ifmaZ_of hl h.zk hw hp) hpre) fun t ⟨hd, mxa⟩ =>
-      WP.mono (branchB_ok hl M h hv hd rfl hw hp hq hpost) fun t' ⟨hd', mxb⟩ =>
-        ⟨hd', by rw [mxb, mxa, mx_ffff, mx₁, mx₀]⟩)
+  have hw := hs.1
+  have hp : wsWords pl = l.W := by unfold wsWords; omega
+  have hq : wsWords ql = l.W := by unfold wsWords; omega
+  rw [List.append_assoc]
+  exact wp_seqs_append (by simp [CrtIfma.pre, CrtIfma.prep]) (by simp)
+    (WP.mono (branchA1_ok hl M h hv hr rfl hw hp hq hpre) fun s₁ ⟨hA, mx₁⟩ =>
+      wp_seqs_append (by simp) (by simp [CrtIfma.post])
+        (WP.mono (ifmaAny_ok hl h hv hr rfl hs hA) fun t ⟨hd, mxa⟩ =>
+          WP.mono (branchB_ok hl M h hv hd rfl hw hp hq hpost) fun t' ⟨hd', mxb⟩ =>
+            ⟨hd', by rw [mxb, mxa, mx_ffff, mx₁, mx₀]⟩))
 
 theorem main_eq (mul : Nat → Nat → Nat → Prog isa) : CrtIfma.main mul =
     seqs ((nSetup mul ++ primesSetup ++ checks) ++
-      ([branch lay2048 mul (branch lay3072 mul (branch lay4096 mul (seqs (qPhase mul ++ pPhase mul))))] ++
-        finish)) := by
+      ([.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre mul ++ [CrtIfma.ifmaAny] ++ CrtIfma.post mul))
+        (seqs (qPhase mul ++ pPhase mul)))] ++ finish)) := by
   simp only [CrtIfma.main, List.append_assoc]
 
 /-- `main`, for a valid modulus: `privateCrt`'s result as `vg_rsa_private_crt`
@@ -157,9 +287,17 @@ theorem main_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dp
     fun t₁ hr₁ mx₁ => WP.mono_mx hcrt (wp_seqs_append (by simp [qPhase]) (by simp [pPhase])
       (WP.mono (qPart_ok M h hv hr₁ rfl) fun _ hq => pPart_ok M h hv hq rfl)) fun t hp' mxc =>
         ⟨hp', by rw [mxc, mx₁]⟩
-  refine WP.mono (branch_ok (Or.inl rfl) M h hv hr (by rw [mx₀]) hpre hpost fun t₁ hr₁ mx₁ =>
-    branch_ok (Or.inr (Or.inl rfl)) M h hv hr₁ mx₁ hpre hpost fun t₂ hr₂ mx₂ =>
-      branch_ok (Or.inr (Or.inr rfl)) M h hv hr₂ mx₂ hpre hpost hcrtB) fun t₂ ⟨hp, mx₂⟩ => ?_
+  have hdisp : WP isa (.seq CrtIfma.anySizes (.ite .e (seqs (CrtIfma.pre M.mm ++ [CrtIfma.ifmaAny] ++
+      CrtIfma.post M.mm)) (seqs (qPhase M.mm ++ pPhase M.mm)))) t₀
+      (MainQ s B Z k pl ql minv mp mq nb xb pb qb qib dpb dqb) := by
+    refine WP.seq (WP.mono (anySizes_ok h hr) fun t₁ ⟨z₁, r₁, x₁⟩ => ?_)
+    refine WP.ite _ z₁ (fun hb => ?_) (fun _ => hcrtB t₁ r₁ (by rw [x₁, mx₀]))
+    have mx₁ : t₁.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by rw [x₁, mx₀]
+    rcases of_decide_eq_true hb with hs | hs | hs
+    · exact ifmaPart_ok (Or.inl rfl) M h hv r₁ mx₁ hs hpre hpost
+    · exact ifmaPart_ok (Or.inr (Or.inl rfl)) M h hv r₁ mx₁ hs hpre hpost
+    · exact ifmaPart_ok (Or.inr (Or.inr rfl)) M h hv r₁ mx₁ hs hpre hpost
+  refine WP.mono hdisp fun t₂ ⟨hp, mx₂⟩ => ?_
   refine WP.mono_mx (by decide +kernel) (finPart_ok h hv hp rfl) fun t ht mxf => ⟨⟨_, ht, ?_⟩, by rw [mxf, mx₂]⟩
   simp only [keyMask, Bool.and_eq_true, decide_eq_true_eq, and_assoc]
 

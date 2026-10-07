@@ -382,9 +382,6 @@ def sizes : List Instr :=
     .alu .add .rdx (.imm 7), .shift .shr .rdx 3, .alu .xor .rdx (.imm (BitVec.ofNat 32 l.W)),
     .alu .or .rax (.reg .rdx)]
 
-/-- The IFMA computation for the sizes `l` if the key has them, else `els`. -/
-def branch (mul : Nat → Nat → Nat → Prog isa) (els : Prog isa) : Prog isa :=
-  .seq (.block (sizes l)) (.ite .e (seqs (pre mul ++ ifma l ++ post mul)) els)
 
 end VG.Impl.Rsa.X86_64.CrtIfma
 
@@ -392,11 +389,24 @@ namespace VG.Impl.Rsa.X86_64.CrtIfma
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public VG.Impl.Rsa.X86_64
   VG.Impl.Rsa.X86_64.Crt
 
+/-- ZF: whether the key has the sizes of one of the layouts. -/
+def anySizes : Prog isa :=
+  .seq (.block (sizes lay2048)) (.ite .e (.block [])
+    (.seq (.block (sizes lay3072)) (.ite .e (.block []) (.block (sizes lay4096)))))
+
+/-- The vector code of the layout whose sizes the key has (one of them, by
+`anySizes`). -/
+def ifmaAny : Prog isa :=
+  .seq (.block (sizes lay2048)) (.ite .e (seqs (ifma lay2048))
+    (.seq (.block (sizes lay3072)) (.ite .e (seqs (ifma lay3072)) (seqs (ifma lay4096)))))
+
 /-- The IFMA computation for 2048-, 3072- and 4096-bit keys, the CRT one
-otherwise. -/
+otherwise: `pre` and `post` do not depend on the layout, so only the vector
+code is chosen by it. -/
 def main (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
   seqs (nSetup mul ++ primesSetup ++ checks ++
-    [branch lay2048 mul (branch lay3072 mul (branch lay4096 mul (seqs (qPhase mul ++ pPhase mul))))] ++ finish)
+    [.seq anySizes (.ite .e (seqs (pre mul ++ [ifmaAny] ++ post mul)) (seqs (qPhase mul ++ pPhase mul)))] ++
+    finish)
 
 /-- `vg_rsa_private_crt_ifma`. -/
 def code (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
