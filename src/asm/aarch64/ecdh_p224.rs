@@ -21694,5 +21694,6 @@ pub(crate) unsafe extern "C" fn vg_ecdh_p224(out: *mut [u8; 28], d: *const [u8; 
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
     )
 }

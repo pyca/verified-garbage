@@ -17880,6 +17880,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p384_sign(out: *mut [u8; 96], d: *const
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }
@@ -85625,6 +85626,7 @@ pub(crate) unsafe extern "C" fn vg_ecdsa_p384_verify(public: *const [u8; 97], di
         "movz x1, #1, lsl #0",
         "and x0, x3, x1",
         "ret",
+        ".p2align 6",
         VG_P384_COMB = sym super::consts::VG_P384_COMB,
     )
 }

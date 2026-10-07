@@ -1079,6 +1079,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_ntt(f: *mut [u32; 256], scratch: *mut [
         "sub x5, x5, #1",
         "cbnz x5, 213b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2160,6 +2161,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_inv_ntt(f: *mut [u32; 256], scratch: *m
         "sub x5, x5, #1",
         "cbnz x5, 214b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2208,6 +2210,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt(h: *mut [u32; 256], f: *co
         "sub x12, x12, #1",
         "cbnz x12, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2259,6 +2262,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_multiply_add_ntt(h: *mut [u32; 256], f:
         "sub x12, x12, #1",
         "cbnz x12, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2293,6 +2297,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_add(f: *mut [u32; 256], g: *const [u32;
         "sub x10, x10, #1",
         "cbnz x10, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2328,6 +2333,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_sub(f: *mut [u32; 256], g: *const [u32;
         "sub x10, x10, #1",
         "cbnz x10, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2423,6 +2429,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack(f: *const [u32; 256], b
         "cbnz x11, 26b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -2724,6 +2731,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_bit_pack(f: *const [u32; 256], a: u32, 
         "cbnz x11, 212b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3073,6 +3081,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack(v: *const u8, len: usize, a:
         "cbnz x11, 212b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3132,6 +3141,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1(v: *const [u8; 320], f: *mut 
         "sub x11, x11, #1",
         "cbnz x11, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3183,6 +3193,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack(h: *const u32, hlen: usiz
         "sub x12, x12, #1",
         "cbnz x12, 21b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3276,6 +3287,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack(y: *const u8, len: usiz
         "lsr x10, x10, #63",
         "eor x0, x10, x15",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3314,6 +3326,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_power2round(t: *const [u32; 256], t1: *
         "sub x10, x10, #1",
         "cbnz x10, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3377,6 +3390,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_high_bits(r: *const [u32; 256], gamma2:
         "cbnz x6, 23b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3456,6 +3470,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_low_bits(r: *const [u32; 256], gamma2: 
         "cbnz x6, 23b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3489,6 +3504,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt(f: *const [u32; 256], bound: u3
         "cbnz x11, 20b",
         "lsr x0, x10, #63",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3597,6 +3613,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_make_hint(z: *const [u32; 256], r: *con
         "21:",
         "add x0, x8, #0",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3699,6 +3716,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_use_hint(h: *const [u32; 256], r: *cons
         "cbnz x8, 23b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -15684,6 +15702,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4(seeds: *const [u8; 136], 
         "ldr x28, [x19, #8040]",
         "ldr x19, [x19, #7968]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -15801,6 +15820,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly(seed: *const [u8; 34], a: 
         "ldr x27, [x25, #2032]",
         "ldr x25, [x25, #2016]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -15992,6 +16012,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly(seed: *const [u8; 66],
         "ldr x27, [x25, #2032]",
         "ldr x25, [x25, #2016]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -16158,6 +16179,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly(seed: *const [u8; 66],
         "ldr x27, [x25, #2032]",
         "ldr x25, [x25, #2016]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -16286,6 +16308,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball(ctilde: *const u8, len: 
         "ldr x27, [x25, #2032]",
         "ldr x25, [x25, #2016]",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -20264,6 +20287,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly4_sha3(seeds: *const [u8; 1
         "ldr x19, [x19, #7968]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
     )
 }
 
@@ -20387,6 +20411,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly_sha3(seed: *const [u8; 34]
         "ldr x25, [x25, #2016]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -20584,6 +20609,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_bounded_poly_sha3(seed: *const [u8;
         "ldr x25, [x25, #2016]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -20756,6 +20782,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_expand_mask_poly_sha3(seed: *const [u8;
         "ldr x25, [x25, #2016]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -20890,6 +20917,7 @@ pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball_sha3(ctilde: *const u8, 
         "ldr x25, [x25, #2016]",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,

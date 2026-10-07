@@ -1409,6 +1409,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_compress(state: *mut [u32; 8], blocks
         "ldr x26, [x5, #8]",
         "ldr x27, [x5, #16]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1491,6 +1492,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_init(state: *mut [u8; 96], outlen: us
         "20:",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1624,6 +1626,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_update(state: *mut [u8; 96], count: u
         "ldr x30, [sp], #16",
         "add sp, sp, #576",
         "ret",
+        ".p2align 6",
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
     )
 }
@@ -1702,6 +1705,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_finalize(state: *mut [u8; 96], count:
         "ldr x30, [sp], #16",
         "add sp, sp, #576",
         "ret",
+        ".p2align 6",
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
     )
 }
@@ -1835,6 +1839,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_update_scratch(state: *mut [u8; 96], 
         "ldr x20, [x20, #520]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
     )
 }
@@ -1912,6 +1917,7 @@ pub(crate) unsafe extern "C" fn vg_blake2s_finalize_scratch(state: *mut [u8; 96]
         "ldr x20, [x20, #520]",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_blake2s_compress = sym super::blake2s::vg_blake2s_compress,
     )
 }

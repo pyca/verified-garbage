@@ -358,6 +358,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes(schedule: *const [u8; 240], 
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -763,6 +764,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes(schedule: *const [u8; 240], 
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
         vg_cmac_aes_update_aes = sym super::cmac_aes::vg_cmac_aes_update_aes,
     )
@@ -1124,6 +1126,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal_aes_cbc(schedule: *const [u8; 24
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
     )
@@ -1529,6 +1532,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open_aes_cbc(schedule: *const [u8; 24
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_ctr32_aes = sym super::aes::vg_aes_ctr32_aes,
         vg_cmac_aes_update_aes_cbc = sym super::cmac_aes::vg_cmac_aes_update_aes_cbc,
     )
@@ -1884,6 +1888,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_seal(schedule: *const [u8; 240], roun
         "ldr x19, [x19, #128]",
         "add sp, sp, #2592",
         "ret",
+        ".p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
@@ -2283,6 +2288,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ccm_open(schedule: *const [u8; 240], roun
         "ldr x19, [x19, #128]",
         "add sp, sp, #2592",
         "ret",
+        ".p2align 6",
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update,
     )

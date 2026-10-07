@@ -14570,6 +14570,7 @@ pub(crate) unsafe extern "C" fn vg_x448(out: *mut [u8; 56], scalar: *const [u8; 
         "ldr q14, [x3, #4832]",
         "ldr q15, [x3, #4848]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -102034,5 +102035,6 @@ pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const 
         "ldr q14, [x3, #4832]",
         "ldr q15, [x3, #4848]",
         "ret",
+        ".p2align 6",
     )
 }

@@ -65,6 +65,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init_aes(key: *const u8, key_len: usi
         "add sp, sp, #2560",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes,
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
@@ -1166,6 +1167,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal_aes(ctx: *const [u64; 32], round
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
     )
 }
@@ -2341,6 +2343,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open_aes(ctx: *const [u64; 32], round
         "add sp, sp, #2592",
         "ret",
         ".arch_extension noaes",
+        ".p2align 6",
         vg_aes_encrypt_blocks_aes = sym super::aes::vg_aes_encrypt_blocks_aes,
         vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
     )
@@ -2403,6 +2406,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_init(key: *const u8, key_len: usize, 
         "ldr x19, [x19, #160]",
         "add sp, sp, #2560",
         "ret",
+        ".p2align 6",
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
@@ -3498,6 +3502,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_seal(ctx: *const [u64; 32], rounds: u
         "ldr x19, [x19, #160]",
         "add sp, sp, #2592",
         "ret",
+        ".p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
@@ -4667,6 +4672,7 @@ pub(crate) unsafe extern "C" fn vg_aes_ocb_open(ctx: *const [u64; 32], rounds: u
         "ldr x19, [x19, #160]",
         "add sp, sp, #2592",
         "ret",
+        ".p2align 6",
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
     )

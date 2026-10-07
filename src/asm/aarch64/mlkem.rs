@@ -32,6 +32,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_add(f: *mut [u32; 256], g: *const [u32;
         "sub x10, x10, #1",
         "cbnz x10, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -65,6 +66,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_sub(f: *mut [u32; 256], g: *const [u32;
         "sub x10, x10, #1",
         "cbnz x10, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -98,6 +100,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_encode12(f: *const [u32; 256], out: *mu
         "sub x13, x13, #1",
         "cbnz x13, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -140,6 +143,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_decode12(b: *const [u8; 384], f: *mut [
         "sub x16, x16, #1",
         "cbnz x16, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -189,6 +193,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_cbd2(b: *const [u8; 128], f: *mut [u32;
         "sub x16, x16, #1",
         "cbnz x16, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -388,6 +393,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_compress_encode(f: *const [u32; 256], d
         "cbnz x11, 26b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -579,6 +585,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_decode_decompress(b: *const u8, len: us
         "cbnz x11, 26b",
         "21:",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -900,6 +907,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_multiply_ntts(h: *mut [u32; 256], f: *c
         "sub x11, x11, #1",
         "cbnz x11, 20b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1252,6 +1260,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_ntt(f: *mut [u32; 256], scratch: *mut [
         "sub x5, x5, #1",
         "cbnz x5, 23b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1621,6 +1630,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_inv_ntt(f: *mut [u32; 256], scratch: *m
         "sub x5, x5, #1",
         "cbnz x5, 24b",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1868,6 +1878,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt(seed: *const [u8; 34], a: *m
         "ldr x26, [x26, #1688]",
         "27:",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -2124,6 +2135,7 @@ pub(crate) unsafe extern "C" fn vg_mlkem_sample_ntt_sha3(seed: *const [u8; 34], 
         "27:",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,

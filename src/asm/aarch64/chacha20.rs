@@ -1043,6 +1043,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_block(state: *const [u32; 16], buf: 
         "add w2, w3, w2",
         "str w2, [x1, #0]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1089,6 +1090,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_init(state: *mut [u64; 96], key: *co
         "lsl x13, x13, #6",
         "str x13, [x0, #128]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -1125,6 +1127,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_set_nonce(state: *mut [u64; 96], non
         "lsl x13, x13, #6",
         "str x13, [x0, #128]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -3341,6 +3344,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_xor_neon(state: *mut [u32; 16], data
         "218:",
         "26:",
         "ret",
+        ".p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
@@ -3469,6 +3473,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_apply_neon(state: *mut [u64; 96], da
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
         vg_chacha20_xor_neon = sym super::chacha20::vg_chacha20_xor_neon,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
@@ -3530,6 +3535,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_xor(state: *mut [u32; 16], data: *mu
         "ldr x20, [x1, #264]",
         "ldr x30, [x1, #272]",
         "ret",
+        ".p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
@@ -3658,6 +3664,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_apply(state: *mut [u64; 96], data: *
         "movz x0, #0, lsl #0",
         "21:",
         "ret",
+        ".p2align 6",
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
@@ -5738,6 +5745,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_xor_sve2(state: *mut [u32; 16], data
         "26:",
         "ret",
         ".arch_extension nosve2",
+        ".p2align 6",
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )
 }
@@ -5872,6 +5880,7 @@ pub(crate) unsafe extern "C" fn vg_chacha20_apply_sve2(state: *mut [u64; 96], da
         "21:",
         "ret",
         ".arch_extension nosve2",
+        ".p2align 6",
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block,
     )

@@ -128,6 +128,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_scalar_reduce(out: *mut [u8; 57], wide:
         "movz x12, #0, lsl #0",
         "strb w12, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -848,6 +849,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_scalar_mul_add(out: *mut [u8; 57], r: *
         "movz x12, #0, lsl #0",
         "strb w12, [x0, #56]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -89782,6 +89784,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_scalar_base(out: *mut [u8; 57], scalar:
         "ldr q14, [x3, #4832]",
         "ldr q15, [x3, #4848]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -253923,6 +253926,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_verify_equation(pk: *const [u8; 57], si
         "ldr q14, [x3, #4832]",
         "ldr q15, [x3, #4848]",
         "ret",
+        ".p2align 6",
     )
 }
 
@@ -254147,6 +254151,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key(out: *mut [u8; 57], seed: *c
         "add sp, sp, #320",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -254569,6 +254574,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_sign_cached(out: *mut [u8; 114], seed: 
         "add sp, sp, #320",
         "ldr x30, [sp], #16",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -254739,6 +254745,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *c
         "ldr x30, [sp], #16",
         "21:",
         "ret",
+        ".p2align 6",
         vg_keccak_absorb_scratch = sym super::sha3::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym super::sha3::vg_keccak_pad_scratch,
         vg_keccak_squeeze_scratch = sym super::sha3::vg_keccak_squeeze_scratch,
@@ -254974,6 +254981,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], see
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -255402,6 +255410,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_sign_cached_sha3(out: *mut [u8; 114], s
         "ldr x30, [sp], #16",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,
@@ -255578,6 +255587,7 @@ pub(crate) unsafe extern "C" fn vg_ed448_verify_sha3(pk: *const [u8; 57], contex
         "21:",
         "ret",
         ".arch_extension nosha3",
+        ".p2align 6",
         vg_keccak_absorb_scratch_sha3 = sym super::sha3::vg_keccak_absorb_scratch_sha3,
         vg_keccak_pad_scratch_sha3 = sym super::sha3::vg_keccak_pad_scratch_sha3,
         vg_keccak_squeeze_scratch_sha3 = sym super::sha3::vg_keccak_squeeze_scratch_sha3,

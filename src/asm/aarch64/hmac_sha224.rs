@@ -138,6 +138,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer:
         "ldr x23, [x23, #208]",
         "add sp, sp, #832",
         "ret",
+        ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
@@ -275,6 +276,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], ou
         "ldr x23, [x23, #208]",
         "add sp, sp, #832",
         "ret",
+        ".p2align 6",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
@@ -415,6 +417,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch(inner: *mut [u8; 96]
         "ldr x30, [x23, #200]",
         "ldr x23, [x23, #208]",
         "ret",
+        ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
@@ -551,6 +554,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch(inner: *mut [u8;
         "ldr x30, [x23, #200]",
         "ldr x23, [x23, #208]",
         "ret",
+        ".p2align 6",
         vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress,
     )
@@ -698,6 +702,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_sha2(inner: *mut [u8; 96], o
         "add sp, sp, #832",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )
@@ -841,6 +846,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_sha2(inner: *mut [u8; 96
         "add sp, sp, #832",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )
@@ -987,6 +993,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_init_scratch_sha2(inner: *mut [u8
         "ldr x23, [x23, #208]",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha224_init = sym super::sha256::vg_sha224_init,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )
@@ -1129,6 +1136,7 @@ pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize_scratch_sha2(inner: *mut
         "ldr x23, [x23, #208]",
         "ret",
         ".arch_extension nosha2",
+        ".p2align 6",
         vg_sha256_finalize_scratch_sha2 = sym super::sha256::vg_sha256_finalize_scratch_sha2,
         vg_sha256_compress_sha2 = sym super::sha256::vg_sha256_compress_sha2,
     )

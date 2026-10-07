@@ -207,5 +207,13 @@ def printer : Printer isa where
   -- rest of the module, so each function disables what it enabled.
   enableFeature f := [s!".arch_extension {f}"]
   disableFeature f := [s!".arch_extension no{f}"]
+  /- Every function starts on a 64-byte boundary, a cache line, and so on
+  the 32-byte boundaries the Arm Neoverse N1 Software Optimization Guide
+  (§4.8, "Branch instruction alignment") recommends for subroutine entry
+  points, for the fetch after the branch to them. So where a function's
+  code, and its loops, lie relative to the fetch blocks and cache lines is
+  fixed by the function alone: a change to other code cannot move them,
+  and with them its performance. -/
+  funcAlign := [".p2align 6"]
 
 end VG.AArch64
