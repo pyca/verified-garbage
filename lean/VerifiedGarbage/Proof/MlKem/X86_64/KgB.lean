@@ -103,7 +103,7 @@ theorem se_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} (
   obtain ⟨⟨htw, hic⟩, hrc⟩ := hc
   have L₀ := h.kc.lay W hp
   unfold se
-  refine WP.seq (WP.mono (cbd2At_okL L₀ rbx_na htw) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
+  refine WP.seq (WP.mono (cbd2At_okL hA L₀ rbx_na htw) fun s₁ ⟨hP₁, hp₁⟩ => ?_)
   have L₁ := L₀.post hP₁.b (kgB_bases L)
   rw [h.prf N hN, ← hP₁.pa rbx_cs] at hp₁
   refine WP.mono (nttAt_ok hA L₁ hic hp₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_
@@ -133,7 +133,7 @@ theorem row_ok {A : Arith} (hA : ArithOk A) {L : Kem} (W : KgWf L) {σ : State} 
   have L₁ := L₀.post hP₁.b (kgB_bases L)
   rw [← hP₁.pa rbx_cs] at hp₁
   have he₁ := L₀.keepPoly hP₁.b hk3 (h.se (L.k + i) (by omega))
-  refine WP.seq (WP.mono (addAt_ok L₁ rbx_na hac hp₁.1 he₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
+  refine WP.seq (WP.mono (addAt_ok hA L₁ rbx_na hac hp₁.1 he₁.1) fun s₂ ⟨hP₂, hp₂⟩ => ?_)
   have L₂ := L₁.post hP₂.b (kgB_bases L)
   rw [hp₁.2, he₁.2, ← hP₂.pa rbx_cs] at hp₂
   refine WP.mono (enc12At_okL L₂ r12_na htw hp₂.1) fun s₃ ⟨hP₃, hb₃⟩ => ?_

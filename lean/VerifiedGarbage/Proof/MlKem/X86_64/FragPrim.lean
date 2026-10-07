@@ -302,11 +302,11 @@ theorem cbdPre {p q : Ptr} {s s1 : State} (h : TwoH p q 128 1024 s) (hv : s1.gpr
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hv.1, hv.2]
   exact ⟨trivial, trivial, h.d, ret_disj s1 (by rw [hsp]; exact h.kP), ret_disj s1 (by rw [hsp]; exact h.kQ)⟩
 
-theorem cbd2At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 128 1024 s) :
-    WP isa (cbd2At p q) s fun s' => Post s s' [pR (pa s q)] ∧
+theorem cbd2At_ok {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 128 1024 s) :
+    WP isa (cbd2At A p q) s fun s' => Post s s' [pR (pa s q)] ∧
       PolyIs s'.mem (pa s q) (samplePolyCBD 2 (bytesAt s.mem (pa s p) 128)) := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  refine WP.mono (glueCall_ok cbd2_correct cbd2_nosp (by rw [cbd2_depth]; decide)
+  refine WP.mono (glueCall_ok hA.cbd.ok hA.cbd.nosp (by rw [hA.cbd.depth]; decide)
     (accGlue_ok p q h.off.1 h.off.2 hq1 s) (fun s1 hv _ k => cbdPre h hv k) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -315,11 +315,11 @@ theorem cbd2At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 128 1024 s) 
     ce_bytesAt s1 (n := 128) (by decide) (by rw [hsp]; exact h.kP), hm] at hq
   exact hq
 
-theorem cbd2At_tr {p q : Ptr} (hq : NA q) :
+theorem cbd2At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
     RelCT isa (fun x y => TwoH p q 128 1024 x ∧ TwoH p q 128 1024 y ∧ x.gpr p.1 = y.gpr p.1 ∧
-      x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp) (cbd2At p q) fun _ _ => True := by
+      x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp) (cbd2At A p q) fun _ _ => True := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  exact glueCall_tr cbd2_correct cbd2_ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
+  exact glueCall_tr hA.cbd.ok hA.cbd.ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
       x1.mem = x.mem) ∧ Keep argRegs x x1)
     (block_nomem_tr (nomem_append (lea_nomem _ _) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨accGlue_ok p q hx.off.1 hx.off.2 hq1 x, accGlue_ok p q hy.off.1 hy.off.2 hq1 y⟩)
@@ -376,11 +376,11 @@ theorem decPre {p q : Ptr} {s s1 : State} (h : TwoH p q 384 1024 s) (hv : s1.gpr
     ce_gpr' s1 (by decide : Reg.rdi ≠ .rsp), ce_gpr' s1 (by decide : Reg.rsi ≠ .rsp), hv.1, hv.2]
   exact ⟨trivial, trivial, h.d, ret_disj s1 (by rw [hsp]; exact h.kP), ret_disj s1 (by rw [hsp]; exact h.kQ)⟩
 
-theorem dec12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 384 1024 s) :
-    WP isa (dec12At p q) s fun s' => Post s s' [pR (pa s q)] ∧
+theorem dec12At_ok {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 384 1024 s) :
+    WP isa (dec12At A p q) s fun s' => Post s s' [pR (pa s q)] ∧
       PolyIs s'.mem (pa s q) (decode12 (bytesAt s.mem (pa s p) 384)) := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  refine WP.mono (glueCall_ok decode12_correct decode12_nosp (by rw [decode12_depth]; decide)
+  refine WP.mono (glueCall_ok hA.dec12.ok hA.dec12.nosp (by rw [hA.dec12.depth]; decide)
     (accGlue_ok p q h.off.1 h.off.2 hq1 s) (fun s1 hv _ k => decPre h hv k) h.c h.w)
     fun s' ⟨hpost, s1, hV, hm, k, s₂, hm₂, _, hq⟩ => ⟨hpost, ?_⟩
   have hsp : s1.gpr .rsp = s.gpr .rsp := k.gpr (by decide)
@@ -389,11 +389,11 @@ theorem dec12At_ok {p q : Ptr} (hq : NA q) {s : State} (h : TwoH p q 384 1024 s)
     ce_bytesAt s1 (n := 384) (by decide) (by rw [hsp]; exact h.kP), hm] at hq
   exact hq
 
-theorem dec12At_tr {p q : Ptr} (hq : NA q) :
+theorem dec12At_tr {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) :
     RelCT isa (fun x y => TwoH p q 384 1024 x ∧ TwoH p q 384 1024 y ∧ x.gpr p.1 = y.gpr p.1 ∧
-      x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp) (dec12At p q) fun _ _ => True := by
+      x.gpr q.1 = y.gpr q.1 ∧ x.gpr .rsp = y.gpr .rsp) (dec12At A p q) fun _ _ => True := by
   have hq1 : q.1 ≠ .rdi := fun e => hq (by rw [e]; decide)
-  exact glueCall_tr decode12_correct decode12_ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
+  exact glueCall_tr hA.dec12.ok hA.dec12.ct (V := fun x x1 => ((x1.gpr .rdi = pa x p ∧ x1.gpr .rsi = pa x q) ∧
       x1.mem = x.mem) ∧ Keep argRegs x x1)
     (block_nomem_tr (nomem_append (lea_nomem _ _) (lea_nomem _ _)))
     (fun x y ⟨hx, hy, _⟩ => ⟨accGlue_ok p q hx.off.1 hx.off.2 hq1 x, accGlue_ok p q hy.off.1 hy.off.2 hq1 y⟩)

@@ -1,15 +1,17 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 import VerifiedGarbage.Proof.Framework.X86_64.Call
 
 /-!
 # The polynomial arithmetic a top-level function of ML-KEM calls on x86-64
 
-What the top-level functions need of the implementations of
-`vg_mlkem_multiply_ntts`, `vg_mlkem_ntt` and `vg_mlkem_inv_ntt` they call
-(`Impl.MlKem.X86_64.Arith`): each meets its contract, is constant time, never
+What the top-level functions need of the implementations of the
+polynomial primitives they call (`Impl.MlKem.X86_64.Arith`): each meets its contract, is constant time, never
 writes the stack pointer, makes no calls, and keeps MXCSR's control bits
 (`ArithOk`). Both `Arith.sse` and `Arith.avx2` do (`ArithOk.sse`,
 `ArithOk.avx2`); the top-level functions call the one that goes with their
@@ -41,6 +43,10 @@ structure ArithOk (A : Arith) : Prop where
   mul : CalleeOk mulK A.mul
   ntt : CalleeOk (inPlaceK ntt) A.ntt
   nttInv : CalleeOk (inPlaceK nttInv) A.nttInv
+  add : CalleeOk (accK Spec.MlKem.add) A.add
+  sub : CalleeOk (accK Spec.MlKem.sub) A.sub
+  cbd : CalleeOk cbd2K A.cbd
+  dec12 : CalleeOk decode12K A.dec12
 
 theorem ArithOk.sse : ArithOk .sse where
   mul := ⟨mul_correct, mul_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
@@ -49,6 +55,14 @@ theorem ArithOk.sse : ArithOk .sse where
     Code.all_of_allInstrs (by decide +kernel)⟩
   nttInv := ⟨nttInv_correct, nttInv_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
+  add := ⟨add_correct, add_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  sub := ⟨sub_correct, sub_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
 
 theorem ArithOk.avx2 : ArithOk .avx2 where
   mul := ⟨mulY_correct, mulY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
@@ -56,6 +70,14 @@ theorem ArithOk.avx2 : ArithOk .avx2 where
   ntt := ⟨nttY_correct, nttY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
   nttInv := ⟨nttInvY_correct, nttInvY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  add := ⟨add_correct, add_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  sub := ⟨sub_correct, sub_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+    Code.all_of_allInstrs (by decide +kernel)⟩
+  dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
 
 end VG.Proof.MlKem.X86_64

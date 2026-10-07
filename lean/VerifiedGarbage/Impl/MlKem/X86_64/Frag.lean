@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.MlKem.X86_64.Arith
 import VerifiedGarbage.Impl.MlKem.X86_64.Encode12
+import VerifiedGarbage.Impl.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Cbd
 import VerifiedGarbage.Impl.MlKem.X86_64.Compress
 import VerifiedGarbage.Impl.MlKem.X86_64.MulAvx2
@@ -107,9 +108,10 @@ def hashAt (ps : List (Ptr × Nat)) (rate suffix : Nat) (out : Ptr) (len : Nat) 
 
 /-! ## The polynomial primitives -/
 
-/-- The implementations (symbols and code) of `vg_mlkem_multiply_ntts`,
-`vg_mlkem_ntt` and `vg_mlkem_inv_ntt` that a top-level function calls:
-those in SSE2 registers (`sse`), or those in AVX2 registers (`avx2`). -/
+/-- The implementations (symbols and code) of the polynomial primitives that
+a top-level function calls: `vg_mlkem_multiply_ntts`, `vg_mlkem_ntt`,
+`vg_mlkem_inv_ntt`, `vg_mlkem_add`, `vg_mlkem_sub`, `vg_mlkem_cbd2` and
+`vg_mlkem_decode12`; the baseline ones (`sse`), or those with AVX2 (`avx2`). -/
 structure Arith where
   mulN : String
   mul : Prog isa
@@ -117,13 +119,23 @@ structure Arith where
   ntt : Prog isa
   nttInvN : String
   nttInv : Prog isa
+  addN : String
+  add : Prog isa
+  subN : String
+  sub : Prog isa
+  cbdN : String
+  cbd : Prog isa
+  dec12N : String
+  dec12 : Prog isa
 
 def Arith.sse : Arith :=
-  ⟨"vg_mlkem_multiply_ntts", multiplyNTTs, "vg_mlkem_ntt", X86_64.ntt, "vg_mlkem_inv_ntt", X86_64.nttInv⟩
+  ⟨"vg_mlkem_multiply_ntts", multiplyNTTs, "vg_mlkem_ntt", X86_64.ntt, "vg_mlkem_inv_ntt", X86_64.nttInv,
+    "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2, "vg_mlkem_decode12", decode12⟩
 
 def Arith.avx2 : Arith :=
   ⟨"vg_mlkem_multiply_ntts_avx2", multiplyNTTsAvx2, "vg_mlkem_ntt_avx2", nttAvx2, "vg_mlkem_inv_ntt_avx2",
-    nttInvAvx2⟩
+    nttInvAvx2, "vg_mlkem_add", X86_64.add, "vg_mlkem_sub", X86_64.sub, "vg_mlkem_cbd2", cbd2,
+    "vg_mlkem_decode12_avx2", decode12Avx2⟩
 
 def nttAt (A : Arith) (f : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi (sc oSS))) (.call A.nttN A.ntt)
@@ -134,17 +146,17 @@ def nttInvAt (A : Arith) (f : Ptr) : Prog isa :=
 def mulAt (A : Arith) (h f g : Ptr) : Prog isa :=
   .seq (.block (lea .rdi h ++ lea .rsi f ++ lea .rdx g ++ lea .rcx (sc oSS))) (.call A.mulN A.mul)
 
-def addAt (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call "vg_mlkem_add" add)
+def addAt (A : Arith) (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call A.addN A.add)
 
-def subAt (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call "vg_mlkem_sub" sub)
+def subAt (A : Arith) (f g : Ptr) : Prog isa := .seq (.block (lea .rdi f ++ lea .rsi g)) (.call A.subN A.sub)
 
-def cbd2At (b f : Ptr) : Prog isa := .seq (.block (lea .rdi b ++ lea .rsi f)) (.call "vg_mlkem_cbd2" cbd2)
+def cbd2At (A : Arith) (b f : Ptr) : Prog isa := .seq (.block (lea .rdi b ++ lea .rsi f)) (.call A.cbdN A.cbd)
 
 def enc12At (f out : Ptr) : Prog isa :=
   .seq (.block (lea .rdi f ++ lea .rsi out)) (.call "vg_mlkem_encode12" encode12)
 
-def dec12At (b f : Ptr) : Prog isa :=
-  .seq (.block (lea .rdi b ++ lea .rsi f)) (.call "vg_mlkem_decode12" decode12)
+def dec12At (A : Arith) (b f : Ptr) : Prog isa :=
+  .seq (.block (lea .rdi b ++ lea .rsi f)) (.call A.dec12N A.dec12)
 
 /-- A call of the compression `n` (code `c`, with the signature of
 `vg_mlkem_compress_encode`) of `f` to width `d`, to `out`. -/

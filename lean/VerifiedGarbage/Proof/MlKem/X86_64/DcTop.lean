@@ -154,7 +154,7 @@ theorem decrypt_ok {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
   refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L k 0 σ) L.k 0 (fun k _ hk s hs => u_ok hA W K hp (by omega) hs) s
     (DR.zero h h15)) fun s₁ h₁ => ?_)
   rw [Nat.zero_add] at h₁
-  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok W hp (by omega) hs) s₁ h₁)
+  refine WP.seq (WP.mono (seqR_ok (I := fun k => DR L L.k k σ) L.k 0 (fun k _ hk s hs => s_ok hA W hp (by omega) hs) s₁ h₁)
     fun s₂ h₂ => ?_)
   rw [Nat.zero_add] at h₂
   exact tail_ok hA W K hp h₂
@@ -194,7 +194,7 @@ theorem decrypt_tr {A : Arith} (hA : ArithOk A) (W : DcWf L) {wc wd : List Nat} 
     fun _ _ h => h) ?_
   rw [Nat.zero_add]
   refine RelCT.seq (seqR_tr (R := fun k => R L (DR L L.k k)) L.k 0
-    fun k _ hk => relInv (fun σ s hp hs => s_ok W hp (by omega) hs) (s_tr W (by omega))) ?_
+    fun k _ hk => relInv (fun σ s hp hs => s_ok hA W hp (by omega) hs) (s_tr hA W (by omega))) ?_
   rw [Nat.zero_add]
   exact tail_tr hA W K
 

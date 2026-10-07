@@ -60,29 +60,29 @@ theorem accChk_in {bs wbs : List (Reg × Nat)} {f g : Ptr} (hc : accChk bs wbs f
     inB bs f 1024 = true ∧ inB bs g 1024 = true := by
   simp only [accChk, Bool.and_eq_true] at hc; exact ⟨wrOk_in hc.1.1, rdOk_in hc.1.2⟩
 
-theorem addAt_ok {s : State} (L : Lay rbs wbs s) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true)
+theorem addAt_ok {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (addAt f g) s fun s' => PPost s s' [(f, 1024)] ∧
+    WP isa (addAt A f g) s fun s' => PPost s s' [(f, 1024)] ∧
       PolyIs s'.mem (pa s f) (add (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok add_correct add_nosp (by rw [add_depth]; decide) (fun e => hg (by rw [e]; decide)) (AccH.of L hc rf rg)
+  accAt_ok hA.add.ok hA.add.nosp (by rw [hA.add.depth]; decide) (fun e => hg (by rw [e]; decide)) (AccH.of L hc rf rg)
 
-theorem subAt_ok {s : State} (L : Lay rbs wbs s) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true)
+theorem subAt_ok {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true)
     (rf : Reduced s.mem (pa s f)) (rg : Reduced s.mem (pa s g)) :
-    WP isa (subAt f g) s fun s' => PPost s s' [(f, 1024)] ∧
+    WP isa (subAt A f g) s fun s' => PPost s s' [(f, 1024)] ∧
       PolyIs s'.mem (pa s f) (sub (polyAt s.mem (pa s f)) (polyAt s.mem (pa s g))) :=
-  accAt_ok sub_correct sub_nosp (by rw [sub_depth]; decide) (fun e => hg (by rw [e]; decide)) (AccH.of L hc rf rg)
+  accAt_ok hA.sub.ok hA.sub.nosp (by rw [hA.sub.depth]; decide) (fun e => hg (by rw [e]; decide)) (AccH.of L hc rf rg)
 
-theorem addAt_tr {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true) :
+theorem addAt_tr {A : Arith} (hA : ArithOk A) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true) :
     RelCT isa (fun x y => LRel rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (addAt f g) fun _ _ => True :=
-  RelCT.mono (accAt_tr add_correct add_ct (fun e => hg (by rw [e]; decide)))
+      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (addAt A f g) fun _ _ => True :=
+  RelCT.mono (accAt_tr hA.add.ok hA.add.ct (fun e => hg (by rw [e]; decide)))
     (fun _ _ ⟨h, ⟨r1, r2⟩, r3, r4⟩ => ⟨AccH.of h.1 hc r1 r2, AccH.of h.2.1 hc r3 r4, h.eq (accChk_in hc).1,
       h.eq (accChk_in hc).2, h.2.2.2⟩) fun _ _ _ => trivial
 
-theorem subAt_tr {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true) :
+theorem subAt_tr {A : Arith} (hA : ArithOk A) {f g : Ptr} (hg : NA g) (hc : accChk (rbs ++ wbs) wbs f g = true) :
     RelCT isa (fun x y => LRel rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
-      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (subAt f g) fun _ _ => True :=
-  RelCT.mono (accAt_tr sub_correct sub_ct (fun e => hg (by rw [e]; decide)))
+      (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (subAt A f g) fun _ _ => True :=
+  RelCT.mono (accAt_tr hA.sub.ok hA.sub.ct (fun e => hg (by rw [e]; decide)))
     (fun _ _ ⟨h, ⟨r1, r2⟩, r3, r4⟩ => ⟨AccH.of h.1 hc r1 r2, AccH.of h.2.1 hc r3 r4, h.eq (accChk_in hc).1,
       h.eq (accChk_in hc).2, h.2.2.2⟩) fun _ _ _ => trivial
 
@@ -115,15 +115,15 @@ theorem twoChk_in {bs wbs : List (Reg × Nat)} {p q : Ptr} {n m : Nat} (hc : two
     inB bs p n = true ∧ inB bs q m = true := by
   simp only [twoChk, Bool.and_eq_true] at hc; exact ⟨rdOk_in hc.1.1, wrOk_in hc.1.2⟩
 
-theorem cbd2At_okL {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
+theorem cbd2At_okL {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
     (hc : twoChk (rbs ++ wbs) wbs p 128 q 1024 = true) :
-    WP isa (cbd2At p q) s fun s' => PPost s s' [(q, 1024)] ∧
+    WP isa (cbd2At A p q) s fun s' => PPost s s' [(q, 1024)] ∧
       PolyIs s'.mem (pa s q) (samplePolyCBD 2 (bytesAt s.mem (pa s p) 128)) :=
-  cbd2At_ok hq (TwoH.of L hc)
+  cbd2At_ok hA hq (TwoH.of L hc)
 
-theorem cbd2At_trL {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 128 q 1024 = true) :
-    RelCT isa (LRel rbs wbs) (cbd2At p q) fun _ _ => True :=
-  RelCT.mono (cbd2At_tr hq) (fun _ _ e => ⟨TwoH.of e.1 hc, TwoH.of e.2.1 hc, e.eq (twoChk_in hc).1,
+theorem cbd2At_trL {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 128 q 1024 = true) :
+    RelCT isa (LRel rbs wbs) (cbd2At A p q) fun _ _ => True :=
+  RelCT.mono (cbd2At_tr hA hq) (fun _ _ e => ⟨TwoH.of e.1 hc, TwoH.of e.2.1 hc, e.eq (twoChk_in hc).1,
     e.eq (twoChk_in hc).2, e.2.2.2⟩) fun _ _ _ => trivial
 
 theorem enc12At_okL {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
@@ -138,15 +138,15 @@ theorem enc12At_trL {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 1024
   RelCT.mono (enc12At_tr hq) (fun _ _ ⟨e, r1, r2⟩ => ⟨⟨TwoH.of e.1 hc, r1⟩, ⟨TwoH.of e.2.1 hc, r2⟩,
     e.eq (twoChk_in hc).1, e.eq (twoChk_in hc).2, e.2.2.2⟩) fun _ _ _ => trivial
 
-theorem dec12At_okL {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
+theorem dec12At_okL {A : Arith} (hA : ArithOk A) {s : State} (L : Lay rbs wbs s) {p q : Ptr} (hq : NA q)
     (hc : twoChk (rbs ++ wbs) wbs p 384 q 1024 = true) :
-    WP isa (dec12At p q) s fun s' => PPost s s' [(q, 1024)] ∧
+    WP isa (dec12At A p q) s fun s' => PPost s s' [(q, 1024)] ∧
       PolyIs s'.mem (pa s q) (decode12 (bytesAt s.mem (pa s p) 384)) :=
-  dec12At_ok hq (TwoH.of L hc)
+  dec12At_ok hA hq (TwoH.of L hc)
 
-theorem dec12At_trL {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 384 q 1024 = true) :
-    RelCT isa (LRel rbs wbs) (dec12At p q) fun _ _ => True :=
-  RelCT.mono (dec12At_tr hq) (fun _ _ e => ⟨TwoH.of e.1 hc, TwoH.of e.2.1 hc, e.eq (twoChk_in hc).1,
+theorem dec12At_trL {A : Arith} (hA : ArithOk A) {p q : Ptr} (hq : NA q) (hc : twoChk (rbs ++ wbs) wbs p 384 q 1024 = true) :
+    RelCT isa (LRel rbs wbs) (dec12At A p q) fun _ _ => True :=
+  RelCT.mono (dec12At_tr hA hq) (fun _ _ e => ⟨TwoH.of e.1 hc, TwoH.of e.2.1 hc, e.eq (twoChk_in hc).1,
     e.eq (twoChk_in hc).2, e.2.2.2⟩) fun _ _ _ => trivial
 
 theorem ceCall_okL {n : String} {c : Prog isa} {ws : List Nat} (I : CEImpl n c ws) {s : State} (L : Lay rbs wbs s)

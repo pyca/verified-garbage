@@ -42,12 +42,12 @@ def pro : List Instr := topPro .rcx [(.rbp, .rdi), (.r14, .rsi), (.r12, .rdx)]
 def uHat (A : Arith) (i : Nat) : Prog isa := .seq (L.ddAt (.r14, 32 * L.du * i) L.du (pS i)) (nttAt A (pS i))
 
 /-- `ŝ[i]`. -/
-def sHat (i : Nat) : Prog isa := dec12At (.rbp, 384 * i) (pS (L.k + i))
+def sHat (A : Arith) (i : Nat) : Prog isa := dec12At A (.rbp, 384 * i) (pS (L.k + i))
 
 /-- `m'` to `M`. -/
 def decrypt (A : Arith) : Prog isa :=
-  .seq (seqR (uHat L A) 0 L.k) (.seq (seqR (sHat L) 0 L.k) (.seq (dotN A (fun j => pS (L.k + j)) pS L.k)
-    (.seq (nttInvAt A (pS 15)) (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt (pS 16) (pS 15))
+  .seq (seqR (uHat L A) 0 L.k) (.seq (seqR (sHat L A) 0 L.k) (.seq (dotN A (fun j => pS (L.k + j)) pS L.k)
+    (.seq (nttInvAt A (pS 15)) (.seq (L.ddAt (.r14, 32 * L.du * L.k) L.dv (pS 16)) (.seq (subAt A (pS 16) (pS 15))
       (ceAt (pS 16) 1 (sc oM)))))))
 
 /-- `G(m' ‖ h)` and `J(z ‖ c)`. -/

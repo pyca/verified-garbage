@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Encode12
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
+import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.CompressEncode
 import VerifiedGarbage.Proof.MlKem.X86_64.DecodeDecompress
@@ -123,6 +124,18 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.decode12Contract X86_64.abi
     verified := Proof.MlKem.X86_64.decode12_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.MlKem.decode12Api with
+    name := Spec.MlKem.decode12Api.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.decode12Api.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers, from 12 bytes \
+        loaded 16 at a time (the last 12 from 4 bytes before them, so that it reads only the 384 bytes of \
+        `*b`). It has no multiplications."])
+    code := Impl.MlKem.X86_64.decode12Avx2
+    contract := Spec.MlKem.decode12Contract X86_64.abi
+    verified := Proof.MlKem.X86_64.decode12Y_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.cbd2Api with
     target := X86_64.target
     doc := Spec.MlKem.cbd2Api.doc
