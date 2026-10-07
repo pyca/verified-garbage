@@ -24,20 +24,21 @@ reduction works on slot 1 alone, which comparisons and decoding use.
 * The bits: byte `t` at `BITS` is bit `t` of `S` plus twice bit `t` of `k`.
 * `S < L`: its byte 56 is 0 and its low 448 bits plus `2^448 - L` (the
   limbs `kLimb` of scalar reduction) do not carry out of 448 bits.
-* Decoding a point (RFC 8032 §5.2.3) at the argument `[esp + d]` into the
-  slots `xo` and `yo`: the twenty-eight limbs of `y`, which must be below `p`
+* Decoding a point (RFC 8032 §5.2.3) at `esi` into the slots `xo` and `yo`: the twenty-eight limbs of `y`, which must be below `p`
   (they are equal to their full reduction) with bits 448–454 of the encoding
   0; the sign bit to `SIGN`; `u = y² - 1`, `v = d y² - 1` (`decodeUV`), the
   candidate root `x = u³v (u⁵v³)^((p-3)/4)` (by `root`, X448's addition chain
   until `2^223 - 1`, then 223 squarings), the check `v x² = u`, the check
   that `x = 0` comes with the sign bit 0, and `x` swapped with `-x` by a mask
   if its low bit is not the sign bit.
-* `A` is decoded into slots 6–7 (`Z = 1` in slot 10) and negated; slot 1,
-  `Q`'s `Y`, is set to 1 again, and `Q = [S]B + [k](-A)` computed from the
+* `R` and then `A` are decoded into slots 6–7 by one loop (`vdecode`), whose
+  pointer and count are words of the working space (`PCUR`, `CNT`), `R` kept
+  at `RX` and `RY` (`Z = 1` in slot 10). `A` is negated; slot 1, `Q`'s `Y`, is
+  set to 1 again, and `Q = [S]B + [k](-A)` computed from the
   top bit down, as `[s]B` is: `Q` (slots 0–2) doubled, `B` (slots 8–10) added
   and swapped into `Q` by bit `t` of `S`, then `-A` added and swapped in by
   bit `t` of `k`.
-* `Q`'s `Y` is moved to slot 6 (slot 1 is used to compare), `R` decoded
+* `Q`'s `Y` is moved to slot 6 (slot 1 is used to compare), `R` copied
   into slots 8–9 (`B` is no longer needed), `Q` and `R` doubled twice (a
   loop, `vdouble`), and compared: `X_Q Z_R = X_R Z_Q` and `Y_Q Z_R = Y_R Z_Q`, fully reduced.
 
@@ -57,6 +58,13 @@ open VG.Impl.X448.X86 (at_ sc ld st slot BITS TMP X2 Op ops cswap freeze copy pa
 def BAD : Nat := 16
 /-- The sign bit of the point being decoded. -/
 def SIGN : Nat := 20
+/-- `R`, decoded first, kept while `A` is decoded and `Q` computed: its `X` and `Y`, above
+the field arithmetic's working space. -/
+def RX : Nat := 4096
+def RY : Nat := 4224
+/-- The pointer to the point the decoding loop decodes next, and the decodings left. -/
+def PCUR : Nat := 4352
+def CNT : Nat := 4356
 
 /-! ## Checks -/
 
@@ -125,12 +133,10 @@ def signByte : List Instr :=
   [.movzx8 .eax (at_ .esi 56), .mov .edx (.reg .eax), .shift .shr .edx 7, st .edx SIGN,
     .alu .and .eax (.imm 0x7f)]
 
-/-- The 57 bytes at the argument `[esp + d]`: `y`'s limbs into slot `yo`, the
-sign bit to `SIGN`, and `BAD |= 0` exactly when bits 448–454 are 0 and
-`y < p`. -/
-def decodeY (d yo : Nat) : List Instr :=
-  .mov .esi (.mem (at_ .esp d)) :: loadLimbs (slot yo) ++ signByte ++ orBad .eax ++
-    copy X2 (slot yo) ++ freeze ++ diffSlot (slot yo)
+/-- The 57 bytes at `esi`: `y`'s limbs into slot `yo`, the sign bit to `SIGN`, and `BAD |= 0`
+exactly when bits 448–454 are 0 and `y < p`. -/
+def decodeY (yo : Nat) : List Instr :=
+  loadLimbs (slot yo) ++ signByte ++ orBad .eax ++ copy X2 (slot yo) ++ freeze ++ diffSlot (slot yo)
 
 /-- `edx = ⋁` the limbs of slot 1. -/
 def orLimbs : List Instr :=
@@ -145,12 +151,33 @@ def decodeSign (xo : Nat) : List Instr :=
     [ld .eax X2, .alu .and .eax (.imm 1), .alu .xor .eax (.mem (sc SIGN)), .mov .ebx (.imm 0),
       .alu .sub .ebx (.reg .eax)] ++ cswap (slot xo) (slot 12)
 
-/-- Decode the 57 bytes at the argument `[esp + d]` into slots `xo` and `yo`. -/
-def decode (d xo yo : Nat) : Prog isa :=
-  .seq (.block (decodeY d yo)) <| .seq (field (decodeUV yo xo)) <| .seq root <|
+/-- Decode the 57 bytes at `esi` into slots `xo` and `yo`. -/
+def decode (xo yo : Nat) : Prog isa :=
+  .seq (.block (decodeY yo)) <| .seq (field (decodeUV yo xo)) <| .seq root <|
   .seq (field [.mul xo xo 21, .sqr 12 xo, .mul 12 3 12]) <|
   .seq (.block (eqSlots (slot 12) (slot 13))) <|
   .seq (field [.sub 12 xo xo, .sub 12 12 xo]) (.block (decodeSign xo))
+
+/-- After a decoding: `PCUR` at `A` (the first argument), and `CNT` moved down (ZF set at 0). -/
+def vnext : List Instr :=
+  [.mov .esi (.mem (at_ .esp 4)), st .esi PCUR, ld .ebx CNT, .alu .sub .ebx (.imm 1), st .ebx CNT]
+
+/-- Slots 6–7 kept at `RX` and `RY`, and the pointer at `PCUR` into `esi`. -/
+def vbodyA : List Instr := copy RX (slot 6) ++ copy RY (slot 7) ++ [ld .esi PCUR]
+
+/-- One decoding: `vbodyA`, the point at `esi` decoded into slots 6–7, then `vnext`. -/
+def vdecodeBody : Prog isa := .seq (.block vbodyA) (.seq (decode 6 7) (.block vnext))
+
+/-- The loop's pointer at `R` (the signature's first half, the second argument), and its count 2. -/
+def vdecodeInit : List Instr :=
+  [.mov .esi (.mem (at_ .esp 8)), st .esi PCUR, .mov .ebx (.imm 2), st .ebx CNT]
+
+/-- `R` decoded, then `A`: a loop of two iterations, counted by `CNT`. `A` ends in slots 6–7
+and `R` at `RX` and `RY`. -/
+def vdecode : Prog isa := .seq (.block vdecodeInit) (.loop vdecodeBody .ne)
+
+/-- `R` into slots 8–9 (`B` is no longer needed). -/
+def vR : List Instr := copy (slot 8) RX ++ copy (slot 9) RY
 
 /-! ## `[S]B + [k](-A)` -/
 
@@ -213,11 +240,13 @@ def vfinish : Prog isa :=
   .block (eqSlots (slot 12) (slot 13) ++
     [ld .ecx BAD, .alu .sub .ecx (.imm 1), .shift .shr .ecx 31] ++ restore ++ [.mov .eax (.reg .ecx)])
 
+/-- After the decodings: `A` negated, `Q`, `R` copied back, and the comparison. -/
+def vafter : Prog isa :=
+  .seq (field [.sub 6 0 6]) <| .seq (ops [.copy X2 (slot 10)]) <| .seq vloop <|
+  .seq (ops [.copy (slot 6) X2]) <| .seq (.block vR) vfinish
+
 /-- `vg_ed448_verify_equation(pk = [esp + 4], signature = [esp + 8],
 challenge = [esp + 12], scratch = [esp + 16]) -> eax`. -/
-def verifyEquation : Prog isa :=
-  .seq (.block ventry) <| .seq (decode 4 6 7) <| .seq (field [.sub 6 0 6]) <|
-  .seq (ops [.copy X2 (slot 10)]) <| .seq vloop <| .seq (ops [.copy (slot 6) X2]) <|
-  .seq (decode 8 8 9) vfinish
+def verifyEquation : Prog isa := .seq (.block ventry) (.seq vdecode vafter)
 
 end VG.Impl.Ed448.X86

@@ -79,13 +79,12 @@ theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) (hq : (s.gpr .
   · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans ((hw.rest (by simp)).trans
       ((hx.rest _).trans (hy.rest (by simp)))))
 
-/-- `decodeY d yo`, for the pointer `p` at `[esp + d]`. -/
+/-- `decodeY yo`, for the pointer `p` in `esi`. -/
 theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {d : Nat} {a : Addr} (ha : s.ea (at_ .esp d) = a) (har : InRegions (s.rd ++ s.wr) a 4)
-    {p : BitVec 32} (hp : s.mem.readW a 32 = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
+    {p : BitVec 32} (hp : s.gpr .esi = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 j)) (yo : Index) (hyo : yo ≠ 1) :
-    WP isa (.block (decodeY d yo.val)) s fun t =>
+    WP isa (.block (decodeY yo.val)) s fun t =>
       VKeep base s t ∧ BoundedEnv t.mem base ∧
       word t.mem base SIGN = BitVec.ofNat 32 ((s.mem (p.setWidth 64 + BitVec.ofNat 64 56)).toNat / 128) ∧
       BadUpd ((s.mem (p.setWidth 64 + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧
@@ -100,22 +99,16 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   have s1y : slot yo.val + 112 ≤ X2 ∨ X2 + 112 ≤ slot yo.val := by rw [hX2]; exact slot_sep hyo
   unfold decodeY
   simp only [List.append_assoc]
-  refine wp_load ha har fun s0 h0 => ?_
-  rw [hp] at h0
-  have hs0 := hs.of_upd h0 (by decide)
-  have hrr : s0.rd ++ s0.wr = s.rd ++ s.wr := by rw [h0.rd, h0.wr]
-  simp only [List.append_eq]
   rw [WP.block_append_iff]
-  refine WP.mono (loadLimbs_ok hs0 (by rw [h0.gpr, hq]) (by rw [h0.gpr]; exact hfit)
-    (fun j hj => by rw [hrr]; exact hr j (by omega)) (fun j hj => hd j (by omega))
+  refine WP.mono (loadLimbs_ok hs (by rw [hp, hq]) (by rw [hp]; exact hfit)
+    (fun j hj => hr j (by omega)) (fun j hj => hd j (by omega))
     (o := slot yo.val) ⟨by omega, by omega⟩) fun s1 ⟨f1, m1, k1⟩ => ?_
-  rw [h0.mem] at f1 m1
-  have hs1 := hs0.of_keeps k1 (by decide)
+  have hs1 := hs.of_keeps k1 (by decide)
   have b56 : s1.mem (q + BitVec.ofNat 64 56) = s.mem (q + BitVec.ofNat 64 56) :=
     m1 _ (Or.inr (by have := hd 56 (by decide); omega))
   rw [WP.block_append_iff]
-  refine WP.mono (signByte_ok hs1 (q := q) (by rw [k1.1 _ (by decide), h0.gpr, hq])
-    (by rw [k1.1 _ (by decide), h0.gpr]; exact hfit) (by rw [k1.2.1, k1.2.2, hrr]; exact hr 56 (by decide)))
+  refine WP.mono (signByte_ok hs1 (q := q) (by rw [k1.1 _ (by decide), hp, hq])
+    (by rw [k1.1 _ (by decide), hp]; exact hfit) (by rw [k1.2.1, k1.2.2]; exact hr 56 (by decide)))
     fun s2 ⟨r2, m2, k2⟩ => ?_
   rw [b56] at r2 m2
   have hs2 := hs1.of_keeps k2 (by decide)
@@ -162,8 +155,8 @@ theorem decodeY_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   have bad2 : word s2.mem base BAD = word s.mem base BAD := by
     rw [o2.word (Or.inl (by decide)) (by decide), m1.word (Or.inl (by simp only [BAD]; omega)) (by decide)]
   refine ⟨⟨?_, ?_⟩, fun i j hj => ?_, ?_, ?_, ?_, fun i h1 hy => ?_⟩
-  · refine (h0.rest (rs := .esi :: workRegs) (by decide)).trans (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans
-      ((k4.mono ?_).trans (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
+  · refine ((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans
+      ((k4.mono ?_).trans (k5.mono ?_))))).trans (tk.mono ?_) <;> intro r hr <;> revert r <;> decide
   · exact (((((outV m1 (by omega) (by omega)).trans (outV o2 (by decide) (by decide))).trans
       (outV m3 (by decide) (by decide))).trans (outV m4 (by decide) (by decide))).trans
       (fmV m5 (by decide) (by decide))).trans (outV tm (by decide) (by decide))

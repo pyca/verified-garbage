@@ -21,6 +21,13 @@ the arguments' first 12 bytes (`fieldτ`): the rest of both functions needs
 nothing else public, as every store and load is at a public register plus a
 constant, and the only loads that must be public are of the arguments.
 
+Verification's loop decoding `R` and `A` loads the pointer to the point it
+decodes from the working space, which the analysis does not know public: its
+first block (`vbodyA`, ending with that load) is analysed from `fieldτ` to a
+taint public but for `esi` (`weakOkEsi`), and the proof of `Verified` shows
+`esi` the same in both runs (`agree_fieldτ_esi`); the rest of an iteration,
+the block before the loop and the code after it are analysed from `fieldτ`.
+
 Knowing no region, the analysis of the rest does not read the displacements
 of its memory operands (but at `esp`) or its immediates
 (`Framework/X86/TaintErase.lean`): the code without them (`Code.erase`), in
@@ -80,6 +87,30 @@ def tail : Prog isa → Prog isa
   | .seq _ b => b
   | _ => .block []
 
+/-- A taint with what `fieldτ` has public but `esi`, and no stack frames. -/
+def weakOkEsi (τ : VG.X86.Taint.T) : Bool :=
+  (RegSet.ofList [.esp, .edi]).subset τ.regs && τ.stk == [] && Nat.ble 12 τ.argLen
+
+/-- Two states that agree on what `τ` says is public, and on `esi`, agree on
+what `fieldτ` says, if `weakOkEsi τ`. -/
+theorem agree_fieldτ_esi {τ : VG.X86.Taint.T} {s t : State} (hw : weakOkEsi τ = true)
+    (h : VG.X86.Taint.Agree τ s t) (he : s.gpr .esi = t.gpr .esi) : VG.X86.Taint.Agree fieldτ s t := by
+  simp only [weakOkEsi, Bool.and_eq_true, beq_iff_eq] at hw
+  obtain ⟨⟨hr, hstk⟩, hl⟩ := hw
+  have hl := Nat.le_of_ble_eq_true hl
+  refine ⟨⟨fun r hr' => ?_, fun h => absurd h (by decide)⟩,
+    fun h => absurd rfl h, wf_fieldτ hstk hl h.wf₁, wf_fieldτ hstk hl h.wf₂,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
+    fun _ => h.sp (by omega), fun k h4 hk => ?_⟩
+  · simp only [fieldτ, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr'
+    rcases hr' with rfl | rfl | rfl
+    · exact h.rf.1 _ (RegSet.mem_of_subset hr (by simp only [RegSet.mem_ofList]; decide))
+    · exact he
+    · exact h.rf.1 _ (RegSet.mem_of_subset hr (by simp only [RegSet.mem_ofList]; decide))
+  · have := h.argMem k h4 (by change k < 12 at hk; omega)
+    rw [hstk] at this
+    exact this
+
 /-- Constant time of the entry block `head c` from `τ`, ending with at least
 what `fieldτ` has public, and of the rest from `fieldτ`. -/
 theorem relCT_split {P : State → State → Prop} {c : Prog isa} (hc : c = .seq (head c) (tail c))
@@ -121,31 +152,69 @@ elab "taint_decide_all" : tactic => do
 
 /-- The code after the entry of both functions, without its displacements and
 immediates (`Code.erase`): the field arithmetic on different slots is then
-the same code. -/
-def verifyRest : Prog isa := Code.erase (tail Impl.Ed448.X86.verifyEquation)
+the same code. Verification's is in pieces: the block before the decoding
+loop, the two parts of an iteration, and the code after the loop. -/
+def verifyInit : Prog isa := Code.erase (.block Impl.Ed448.X86.vdecodeInit)
+def verifyBodyA : Prog isa := Code.erase (.block Impl.Ed448.X86.vbodyA)
+def verifyBodyB : Prog isa := Code.erase (.seq (Impl.Ed448.X86.decode 6 7) (.block Impl.Ed448.X86.vnext))
+def verifyRest : Prog isa := Code.erase Impl.Ed448.X86.vafter
 def baseRest : Prog isa := Code.erase (tail Impl.Ed448.X86.scalarBase)
 
+materialize_code verifyInit
+materialize_code verifyBodyA
+materialize_code verifyBodyB
 materialize_code verifyRest
 materialize_code baseRest
 
 /-- The code after the entry of both functions, analysed from `fieldτ` in one
 check. -/
-theorem rest_ct : ∃ h₁ h₂, (Taint.hintNoBases h₁ && (taint.check fieldτ verifyRest h₁).isSome &&
-    Taint.hintNoBases h₂ && (taint.check fieldτ baseRest h₂).isSome) = true := by
-  refine ⟨?_, ?_, ?_⟩
+theorem rest_ct : ∃ h₁ h₂ h₃ h₄ h₅,
+    (Taint.hintNoBases h₁ && (taint.check fieldτ verifyInit h₁).any weakOk &&
+    Taint.hintNoBases h₂ && (taint.check fieldτ verifyBodyA h₂).any weakOkEsi &&
+    Taint.hintNoBases h₃ && (taint.check fieldτ verifyBodyB h₃).any weakOk &&
+    Taint.hintNoBases h₄ && (taint.check fieldτ verifyRest h₄).isSome &&
+    Taint.hintNoBases h₅ && (taint.check fieldτ baseRest h₅).isSome) = true := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   taint_decide_all
 
-theorem verifyRest_ct : ∃ h, (taint.check fieldτ (tail Impl.Ed448.X86.verifyEquation) h).isSome = true := by
-  obtain ⟨h₁, _, h⟩ := rest_ct
+/-- A check of erased code is the check of the code. -/
+theorem of_erase {c : Prog isa} {h : VG.Taint.Hint VG.X86.Taint.T} (hh : Taint.hintNoBases h = true)
+    {p : VG.X86.Taint.T → Bool} (hc : (taint.check fieldτ (Code.erase c) h).any p = true) :
+    ∃ τ', taint.check fieldτ c h = some τ' ∧ p τ' = true := by
+  rw [Taint.check_erase _ _ _ rfl hh] at hc
+  cases e : taint.check fieldτ c h with
+  | none => rw [e] at hc; cases hc
+  | some τ' => rw [e] at hc; exact ⟨τ', rfl, hc⟩
+
+theorem verifyInit_ct : ∃ h τ', taint.check fieldτ (.block Impl.Ed448.X86.vdecodeInit) h = some τ' ∧
+    weakOk τ' = true := by
+  obtain ⟨h₁, _, _, _, _, h⟩ := rest_ct
   simp only [Bool.and_eq_true] at h
-  refine ⟨h₁, ?_⟩
-  rw [← Taint.check_erase _ _ _ rfl h.1.1.1]
+  exact ⟨h₁, of_erase h.1.1.1.1.1.1.1.1.1 h.1.1.1.1.1.1.1.1.2⟩
+
+theorem verifyBodyA_ct : ∃ h τ', taint.check fieldτ (.block Impl.Ed448.X86.vbodyA) h = some τ' ∧
+    weakOkEsi τ' = true := by
+  obtain ⟨_, h₂, _, _, _, h⟩ := rest_ct
+  simp only [Bool.and_eq_true] at h
+  exact ⟨h₂, of_erase h.1.1.1.1.1.1.1.2 h.1.1.1.1.1.1.2⟩
+
+theorem verifyBodyB_ct : ∃ h τ', taint.check fieldτ (.seq (Impl.Ed448.X86.decode 6 7)
+    (.block Impl.Ed448.X86.vnext)) h = some τ' ∧ weakOk τ' = true := by
+  obtain ⟨_, _, h₃, _, _, h⟩ := rest_ct
+  simp only [Bool.and_eq_true] at h
+  exact ⟨h₃, of_erase h.1.1.1.1.1.2 h.1.1.1.1.2⟩
+
+theorem verifyRest_ct : ∃ h, (taint.check fieldτ Impl.Ed448.X86.vafter h).isSome = true := by
+  obtain ⟨_, _, _, h₄, _, h⟩ := rest_ct
+  simp only [Bool.and_eq_true] at h
+  refine ⟨h₄, ?_⟩
+  rw [← Taint.check_erase _ _ _ rfl h.1.1.1.2]
   exact h.1.1.2
 
 theorem baseRest_ct : ∃ h, (taint.check fieldτ (tail Impl.Ed448.X86.scalarBase) h).isSome = true := by
-  obtain ⟨_, h₂, h⟩ := rest_ct
+  obtain ⟨_, _, _, _, h₅, h⟩ := rest_ct
   simp only [Bool.and_eq_true] at h
-  refine ⟨h₂, ?_⟩
+  refine ⟨h₅, ?_⟩
   rw [← Taint.check_erase _ _ _ rfl h.1.2]
   exact h.2
 

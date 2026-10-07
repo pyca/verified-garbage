@@ -20,7 +20,7 @@ open VG.X86
 theorem equation_ok :
     Proof.Ed448.X86.CalleeOk Proof.Ed448.X86.verifyEquationLocal Impl.Ed448.X86.verifyEquation :=
   ⟨Proof.Ed448.X86.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok,
-    Proof.Ed448.X86.verifyEquation_ct, NoSp.of_all (by lit_decide), by lit_decide⟩
+    Proof.Ed448.X86.verifyEquation_ct Proof.Ed448.recover_ok, NoSp.of_all (by lit_decide), by lit_decide⟩
 
 def artifacts : List Artifact := [
   { Spec.Ed448.verifyApi with
