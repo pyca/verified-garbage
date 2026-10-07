@@ -131,9 +131,10 @@ class Plan(Project):
         self.assertEqual(self.stale(), 5)
 
     def test_shard_count(self):
-        # Every module is stale; the work is 5 times each module's time.
+        # Every module is stale; the work is 5 times each module's time. The
+        # project has two sinks: a third shard would have nothing to build.
         self.manifest["inputs"] = {}
-        for each, count in [(50, 0), (160, 0), (161, 2), (300, 2), (330, 3), (4000, 16)]:
+        for each, count in [(50, 0), (160, 0), (161, 2), (300, 2), (330, 2), (4000, 2)]:
             with self.subTest(work=5 * each):
                 self.manifest["times"] = {m: each for m in self.manifest["sources"]}
                 self.assertEqual(len(shards.plan(self.manifest)["targets"]), count)
@@ -195,6 +196,32 @@ class Chain(Project):
         for targets, load in zip(p["targets"], p["loads"]):
             built = set().union(*(closure[t] for t in targets))
             self.assertEqual(load, round(shards.wall_time(imps, {m: self.manifest["times"][m] for m in built})))
+
+
+class Many(Project):
+    """`plan` with many modules that nothing imports, of equal times."""
+
+    SINKS = [f"VerifiedGarbage.Sink{i}" for i in range(40)]
+
+    def setUp(self):
+        super().setUp()
+        for m in self.SINKS:
+            (self.lean / f"{m.replace('.', '/')}.lean").write_text("\n")
+        self.manifest["inputs"] = {}
+
+    def count(self, each):
+        self.manifest["times"] = {m: (each if m in self.SINKS else 0.0) for m in shards.modules()}
+        return len(shards.plan(self.manifest)["targets"])
+
+    def test_a_shard_per_work(self):
+        # 2000 s of work: three shards (two would be slower).
+        self.assertEqual(self.count(50), 3)
+
+    def test_no_shard_that_is_no_faster(self):
+        # 16000 s of work would take 16 shards; but each sink takes 400 s
+        # however many a runner builds at once, as long as 5 or fewer: 8
+        # shards are as fast.
+        self.assertEqual(self.count(400), 8)
 
 
 class Prune(Project):
