@@ -35,11 +35,33 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s RZ < c.C.p
 
+/-- The existing scalar-multiplication result and frame, independent of its implementation. -/
+def CombCorrect (c : Cfg) (code : Prog isa) : Prop :=
+  ∀ {base : Addr} {k : Nat} {T : Addr} {s : State},
+    Scr s base size → ModOkA c.combCfg.M size c.C.p s.mem base →
+    TCombFixed c.combCfg c.C base size s k T c.combWords →
+    WP isa code s fun s' =>
+      KeepRegs (tcombClob c.combCfg.M.n) s s' ∧
+      Unch base (tcombW c.combCfg) s.mem s'.mem ∧
+      ModOkA c.combCfg.M size c.C.p s'.mem base ∧
+      (∀ x ∈ [c.combCfg.A.x,c.combCfg.A.y,c.combCfg.A.z],
+        wordsVal s'.mem base x c.combCfg.M.n < c.C.p) ∧
+      Rep c.C (tmv c.C c.combCfg.M.n base s' c.combCfg.A.x)
+        (tmv c.C c.combCfg.M.n base s' c.combCfg.A.y)
+        (tmv c.C c.combCfg.M.n base s' c.combCfg.A.z) (mul k (G c.C))
+
+theorem combCorrect (hc : CfgOk c) (hC : Law c.C)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
+    CombCorrect c (TCombCfg.comb c.combCfg) := by
+  intro base k T s hs hm hf
+  exact tcomb_ok (publicLookup := false) (tcombLay hc) (combA c) hC hc.am3 hc.onG
+    (tcombVals hc hC hT) hc.p_lt hs hm hf
+
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
-theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+theorem stage₂_with (hc : CfgOk c) (comb : Prog isa) (hcomb : CombCorrect c comb)
     {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q := by
+    WP isa (.seq comb (.seq c.pPow rest)) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hS.scr.nowrap
@@ -59,8 +81,7 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
       · show wordsVal s.mem base (c.sl AP) c.n < _; rw [F.ap]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl BM) c.n < _; rw [F.bm]; exact mont_lt hc _
       · show wordsVal s.mem base (c.sl ZERO) c.n < _; rw [F.zero]; omega
-  have W := tcomb_ok (publicLookup := false) (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT) hc.p_lt hS.scr
-    (modP_of hc F.mp) hF
+  have W := hcomb hS.scr (modP_of hc F.mp) hF
   refine WP.seq (WP.mono W fun s₅ h₅ => ?_)
   obtain ⟨K₅, U₅, M₅, L₅, R₅⟩ := h₅
   have hs₅ := hS.scr.of_keepRegs K₅ (x0_not_tcombClob hc.n10)
@@ -91,6 +112,12 @@ theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.
     exact v₆
   · rw [r₆ (i := RZ) (by decide) (by decide)]
     exact L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+
+theorem stage₂ (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start)
+    {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
+    {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
+    WP isa (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow rest)) s Q :=
+  stage₂_with hc _ (combCorrect hc hC hT) hTP hS h
 
 /-- After `x`, `r`, the checks and `k^(n-2)`. -/
 structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extends Keep c s₀ base s where
@@ -239,6 +266,14 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) 
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
+
+theorem signWith_ok (hc : CfgOk c) (hC : Law c.C) (comb : Prog isa)
+    (hcomb : CombCorrect c comb) {s₀ : State} (hp : Pre c s₀) :
+    WP isa (c.signWith comb) s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
+  exact stage₁ hc (.inr (.inr rfl)) (hp.setup hc) fun _ S₁ =>
+    stage₂_with hc comb hcomb hp.tbl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
+      stage₄ hc hC hp rfl S₃
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/

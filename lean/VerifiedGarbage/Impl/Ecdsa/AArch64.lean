@@ -311,13 +311,16 @@ def scalar : Prog isa :=
     c.checkNonzero (c.sl SS) ++ c.finish]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
-def sign : Prog isa :=
+def signWith (comb : Prog isa) : Prog isa :=
   .seq (.block (c.setupWith (some E))) <|
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
-  .seq (TCombCfg.comb c.combCfg) <|
+  .seq comb <|
   .seq c.pPow <|
   .seq c.middle <|
   .seq c.nPow c.scalar
+
+/-- Signing with the original complete-addition comb. -/
+def sign : Prog isa := c.signWith (TCombCfg.comb c.combCfg)
 
 end Cfg
 

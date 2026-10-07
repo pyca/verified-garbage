@@ -421,9 +421,9 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
-    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) {s₀ : State} (hp : PkPre c s₀) :
-    WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
+theorem publicKeyWith_ok (hc : CfgOk c) (hC : Law c.C) (comb : Prog isa)
+    (hcomb : CombCorrect c comb) {s₀ : State} (hp : PkPre c s₀) :
+    WP isa (Impl.EcKey.AArch64.Cfg.publicKeyWith c comb) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -461,8 +461,8 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
     · exact hp.tbl.sc
   have hb : sN.gpr .x4 = s₀.gpr .x2 := by rw [g, x4₁]
   obtain ⟨t, s₂N, ex, S₂⟩ := stage₁ hc (.inl rfl) (hpN.setup hc)
-    (rest := .seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.block [])))
-    (Q := St₂ c none sN (sN.gpr .x4)) fun _ S₁ => stage₂ hc hC hT hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
+    (rest := .seq comb (.seq c.pPow (.block [])))
+    (Q := St₂ c none sN (sN.gpr .x4)) fun _ S₁ => stage₂_with hc comb hcomb hpN.tbl S₁ fun _ S₂ => WP.block_nil S₂
   rw [hb] at S₂
   -- The same run, with the public key's regions.
   have hrd₁ : s₁.rd = [⟨s₀.gpr .x1, c.C.len⟩, ⟨s₀.syms c.tsym, 8 * c.combWords.length⟩] := by rw [k₁.rd, hp.rd]
@@ -537,5 +537,11 @@ theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
   · have hok : ok c (s₀.gpr .x2) s₂ = false := decide_eq_false (by rw [hD]; omega)
     rw [ite_eq_right_of_eq_false _ _ (eq_false hd)]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C)
+    (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) {s₀ : State} (hp : PkPre c s₀) :
+    WP isa (Impl.EcKey.AArch64.Cfg.publicKey c) s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' :=
+  publicKeyWith_ok hc hC _ (combCorrect hc hC hT) hp
 
 end VG.Proof.EcKey.AArch64
