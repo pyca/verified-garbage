@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
-import VerifiedGarbage.Proof.MlKem.X86_64.AddSub
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.Cbd
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12Avx2
 import VerifiedGarbage.Impl.MlKem.X86_64.Frag
@@ -71,9 +71,9 @@ theorem ArithOk.avx2 : ArithOk .avx2 where
     Code.all_of_allInstrs (by decide +kernel)⟩
   nttInv := ⟨nttInvY_correct, nttInvY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
-  add := ⟨add_correct, add_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+  add := ⟨addY_correct, addY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
-  sub := ⟨sub_correct, sub_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
+  sub := ⟨subY_correct, subY_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩
   cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by decide +kernel), by decide +kernel, by decide +kernel,
     Code.all_of_allInstrs (by decide +kernel)⟩

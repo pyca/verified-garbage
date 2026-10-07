@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.CheckEk
 import VerifiedGarbage.Proof.MlKem.X86_64.Mul
 import VerifiedGarbage.Proof.MlKem.X86_64.MulAvx2
 import VerifiedGarbage.Proof.MlKem.X86_64.NttAvx2
+import VerifiedGarbage.Proof.MlKem.X86_64.YAddSub
 import VerifiedGarbage.Proof.MlKem.X86_64.SampleCT
 import VerifiedGarbage.Proof.MlKem.X86_64.Sample4Impl
 
@@ -80,6 +81,28 @@ def artifacts : List Artifact := [
     contract := Spec.MlKem.subContract X86_64.abi
     verified := Proof.MlKem.X86_64.sub_verified
     spSafe := Code.all_of_allInstrs (by lit_decide) },
+  { Spec.MlKem.addApi with
+    name := Spec.MlKem.addApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.addApi.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."])
+    code := Impl.MlKem.X86_64.addAvx2
+    contract := Spec.MlKem.addContract X86_64.abi
+    verified := Proof.MlKem.X86_64.addY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
+  { Spec.MlKem.subApi with
+    name := Spec.MlKem.subApi.name ++ "_avx2"
+    target := X86_64.target
+    doc := Spec.MlKem.subApi.doc
+      (notes := ["The function computes on eight coefficients at a time in AVX2 registers. It has no \
+        multiplications."])
+    code := Impl.MlKem.X86_64.subAvx2
+    contract := Spec.MlKem.subContract X86_64.abi
+    verified := Proof.MlKem.X86_64.subY_verified
+    spSafe := Code.all_of_allInstrs (by decide +kernel)
+    features := ["avx", "avx2"] },
   { Spec.MlKem.mulApi with
     target := X86_64.target
     doc := Spec.MlKem.mulApi.doc
