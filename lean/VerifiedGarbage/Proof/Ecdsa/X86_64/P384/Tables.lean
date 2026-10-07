@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P384.Comb7Shape
 
 /-!
 # ECDSA over P-384 on x86-64: the comb's tables in a static
@@ -34,9 +35,11 @@ def TblHeld (s : State) (wr : List Region) : Prop :=
   (s.syms "VG_P384_COMB").toNat + 8 * p384W.length ≤ 2 ^ 64 ∧
   ∀ r ∈ wr, Region.Disjoint ⟨s.syms "VG_P384_COMB", 8 * p384W.length⟩ r
 
-theorem p384_tbl_len : Impl.P384.p384Comb7.length = 55 := by decide
+theorem p384_tbl_len : Impl.P384.p384Comb7.length = 55 :=
+  Proof.P384.p384Comb7_length
 
-theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 := by decide
+theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 :=
+  Proof.P384.p384Comb7_rows
 
 /-- `p384W` has `55 · 64 · 12` words. -/
 theorem p384W_length : p384W.length = 42240 :=

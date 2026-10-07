@@ -41,7 +41,8 @@ theorem tileStep_ok {s₀ s : State} {B : Addr} {Z w n i : Nat} {mi : BitVec 64}
     (kt.gpr (by decide)).trans h.rdi, ?_, (h.keep.trans kt).mono (by decide),
     h.out.trans (ot.mono (by omega) (by omega)), ?_⟩⟩
   · rw [zt]; exact congrArg some (decide_eq_decide.mpr (by omega))
-  · rw [ct]; congr 1
+  · rw [ct]
+    exact congrArg (off B) (by omega)
   · intro hinv
     obtain ⟨q, hq, eq⟩ := h.val hinv
     obtain ⟨u, hu, eu⟩ := vt (by rw [mn0]; exact hinv)

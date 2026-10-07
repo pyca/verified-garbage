@@ -59,7 +59,7 @@ class LeanCachePublishingTests(unittest.TestCase):
                 GH_TOKEN="test-token",
                 GITHUB_ACTOR="test-actor",
                 IMAGE="ghcr.io/pyca/vg-lean-cache:latest",
-                CACHE_KEY="checked-cache-zstd5-v1",
+                CACHE_KEY="checked-cache-zstd5-uncompressed-v2",
                 CALLS=str(calls),
                 HEAD=head,
                 FAIL=fail,
@@ -80,7 +80,7 @@ class LeanCachePublishingTests(unittest.TestCase):
 
     def test_matching_cache_skips_publication(self):
         result, output, _ = self.check_publication(
-            {"io.pyca.lean.cache-key": "checked-cache-zstd5-v1"}
+            {"io.pyca.lean.cache-key": "checked-cache-zstd5-uncompressed-v2"}
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(output, "")

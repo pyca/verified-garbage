@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P521.Comb7Shape
 
 /-!
 # ECDSA over P-521 on AArch64: the comb's tables in a static
@@ -29,9 +30,11 @@ theorem p521_combConsts : p521.combConsts = [(p521.tsym, p521.combWords)] := rfl
 
 theorem p521_tsym : p521.tsym = "VG_P521_COMB" := rfl
 
-theorem p521_tbl_len : Impl.P521.p521Comb7.length = 83 := by decide
+theorem p521_tbl_len : Impl.P521.p521Comb7.length = 83 :=
+  Proof.P521.p521Comb7_length
 
-theorem p521_tbl_lenH : ∀ j < 83, (Impl.P521.p521Comb7.getD j []).length = 64 := by decide +kernel
+theorem p521_tbl_lenH : ∀ j < 83, (Impl.P521.p521Comb7.getD j []).length = 64 :=
+  Proof.P521.p521Comb7_rows
 
 /-- `p521.combWords` has `83 · 64 · 18` words. -/
 theorem p521_combWords_length : p521.combWords.length = 95616 :=

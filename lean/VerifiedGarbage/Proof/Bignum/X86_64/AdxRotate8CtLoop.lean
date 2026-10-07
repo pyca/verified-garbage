@@ -42,7 +42,7 @@ theorem outer_fw (L : W8) (i : Nat) (s : State) (hi : i < L.n) (h : RW L i s) :
   have hr : RW L (i + 1) t := ⟨⟨mi, ⟨hg.scr.congr kt.2.2,
     (kt.gpr (by decide)).trans hg.rdi, hg.hdr.of_outside ot (by
       have := T.he; change hdrBytes + 16 ≤ slot L.ws.w aAcc + 16 + 64 * i at this; omega)⟩, hZ⟩,
-    by rw [ct]; congr 1⟩
+    by rw [ct]; exact congrArg (off L.ws.B) (by omega)⟩
   refine ⟨?_, fun _ => hr, fun he => he ▸ hr⟩
   simp only [eval, zt, Option.map_some]
   have he : (slot L.ws.w aAcc + 16 + 64 * i + 64 = slot L.ws.w aTmp) ↔ i + 1 = L.n := by

@@ -2,8 +2,12 @@
 //! The tables of constants of the verified functions for `x86` (`Artifact.consts`).
 #![allow(dead_code)]
 
+/// A table of constants, aligned to a cache line.
+#[repr(C, align(64))]
+pub(crate) struct Table<const N: usize>(pub(crate) [u64; N]);
+
 /// The table of constants `VG_ED25519_COMB` (`Artifact.consts`).
-pub(crate) static VG_ED25519_COMB: [u64; 3072] = [
+pub(crate) static VG_ED25519_COMB: Table<3072> = Table([
     11317608560831009086,
     18246790212602609331,
     11943973047390669321,
@@ -3076,10 +3080,10 @@ pub(crate) static VG_ED25519_COMB: [u64; 3072] = [
     16970845493046891646,
     2667153320764020665,
     1148295934650583391,
-];
+]);
 
 /// The table of constants `VG_P256_COMB` (`Artifact.consts`).
-pub(crate) static VG_P256_COMB: [u64; 18944] = [
+pub(crate) static VG_P256_COMB: Table<18944> = Table([
     8784043285714375740,
     8483257759279461889,
     8789745728267363600,
@@ -22024,4 +22028,4 @@ pub(crate) static VG_P256_COMB: [u64; 18944] = [
     17660977736387688798,
     15267800660233016980,
     9425666635197822247,
-];
+]);

@@ -13,6 +13,7 @@ def p224 : Cfg where
   n := 4
   C := Spec.P224.curve
   comb := some ⟨7, Impl.P224.p224Comb7, Impl.P224.p224Comb7Start, "VG_P224_COMB", false⟩
+  fastN := true
 
 /-- `vg_ecdsa_p224_sign`. -/
 def signP224 : Prog isa := p224.sign

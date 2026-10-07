@@ -23,8 +23,9 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
 /-- `coreK` at P-256's sizes is `Proof.Ecdsa.X86_64.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p256 : coreK Impl.Ecdsa.X86_64.p256 = Proof.Ecdsa.X86_64.signX86_64 := by
-  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.p256_combConsts, Abi.constRegions, Abi.constsHeld,
-    List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.p256_combConsts, Abi.constRegions_cons,
+    Abi.constRegions_nil, Sig.forall_mem_const_single]
+  simp only [Abi.constsHeld, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.signX86_64, Proof.Ecdsa.X86_64.TblHeld]
   rfl
 

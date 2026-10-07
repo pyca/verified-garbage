@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P384.Comb7Shape
 
 /-!
 # ECDSA over P-384 on AArch64: the comb's tables in a static
@@ -29,9 +30,11 @@ theorem p384_combConsts : p384.combConsts = [(p384.tsym, p384.combWords)] := rfl
 
 theorem p384_tsym : p384.tsym = "VG_P384_COMB" := rfl
 
-theorem p384_tbl_len : Impl.P384.p384Comb7.length = 55 := by decide
+theorem p384_tbl_len : Impl.P384.p384Comb7.length = 55 :=
+  Proof.P384.p384Comb7_length
 
-theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 := by decide
+theorem p384_tbl_lenH : ∀ j < 55, (Impl.P384.p384Comb7.getD j []).length = 64 :=
+  Proof.P384.p384Comb7_rows
 
 /-- `p384.combWords` has `55 · 64 · 12` words. -/
 theorem p384_combWords_length : p384.combWords.length = 42240 :=

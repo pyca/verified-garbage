@@ -70,7 +70,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
     rw [show Spec.P224.curve.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide +kernel]
     exact Proof.P224.prime_26959946667150639794667015087019630673557916260026308143510066298881),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
-  inv_n h := absurd h (by decide)
+  inv_n _ _ := ⟨@hI _ p224.C.n_ne_zero Proof.P224.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
 

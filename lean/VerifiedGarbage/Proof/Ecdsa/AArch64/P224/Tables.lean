@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
+import VerifiedGarbage.Proof.P224.Comb7Shape
 
 /-!
 # ECDSA over P-224 on AArch64: the comb's tables in a static
@@ -29,9 +30,11 @@ theorem p224_combConsts : p224.combConsts = [(p224.tsym, p224.combWords)] := rfl
 
 theorem p224_tsym : p224.tsym = "VG_P224_COMB" := rfl
 
-theorem p224_tbl_len : Impl.P224.p224Comb7.length = 37 := by decide
+theorem p224_tbl_len : Impl.P224.p224Comb7.length = 37 :=
+  Proof.P224.p224Comb7_length
 
-theorem p224_tbl_lenH : ∀ j < 37, (Impl.P224.p224Comb7.getD j []).length = 64 := by decide +kernel
+theorem p224_tbl_lenH : ∀ j < 37, (Impl.P224.p224Comb7.getD j []).length = 64 :=
+  Proof.P224.p224Comb7_rows
 
 /-- `p224.combWords` has `37 · 64 · 8` words. -/
 theorem p224_combWords_length : p224.combWords.length = 18944 :=
