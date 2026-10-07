@@ -93,6 +93,13 @@ class Collect(unittest.TestCase):
         self.assertIn("No plan", ci_metrics.summary(m))
 
 
+class Standalone(unittest.TestCase):
+    def test_built_is_lean_shards(self):
+        # CI fetches ci_metrics.py alone: it keeps its own copy.
+        import lean_shards
+        self.assertEqual(ci_metrics.BUILT.pattern, lean_shards.BUILT.pattern)
+
+
 class CollectThisRun(unittest.TestCase):
     def test_a_missing_log(self):
         # The plan's log comes; a cancelled shard's does not.

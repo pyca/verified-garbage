@@ -962,14 +962,8 @@ jobs:
           manifest-cache: ${{ needs.lean.outputs.manifest-cache }}
           manifest-cache-prefix: ${{ needs.lean.outputs.manifest-cache-prefix }}
       # Last, whatever the run's outcome and never failing it: what the run
-      # did and how long it took, kept for later analysis (ci/ci_metrics.py).
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        with:
-          persist-credentials: false
-          path: .ci-metrics-src
-          sparse-checkout: ci
+      # did and how long it took, kept for later analysis (ci/ci_metrics.py,
+      # fetched alone: this job has no checkout).
       - name: Collect the run's metrics
         id: metrics
         if: ${{ !cancelled() }}
@@ -979,11 +973,13 @@ jobs:
           GH_REPO: ${{ github.repository }}
           BASE_REF: ${{ github.base_ref }}
         run: |
-          python3 .ci-metrics-src/ci/ci_metrics.py collect > ci-metrics.json
-          python3 .ci-metrics-src/ci/ci_metrics.py summary ci-metrics.json >> "$GITHUB_STEP_SUMMARY"
+          gh api -H "Accept: application/vnd.github.raw" \
+            "repos/$GH_REPO/contents/ci/ci_metrics.py?ref=$GITHUB_SHA" > "$RUNNER_TEMP/ci_metrics.py"
+          python3 "$RUNNER_TEMP/ci_metrics.py" collect > "$RUNNER_TEMP/ci-metrics.json"
+          python3 "$RUNNER_TEMP/ci_metrics.py" summary "$RUNNER_TEMP/ci-metrics.json" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: ${{ !cancelled() && steps.metrics.outcome == 'success' }}
         continue-on-error: true
         with:
           name: ci-metrics
-          path: ci-metrics.json
+          path: ${{ runner.temp }}/ci-metrics.json

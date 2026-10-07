@@ -45,12 +45,13 @@ import subprocess
 import sys
 import zipfile
 
-import lean_shards
-
 VERSION = 1
 PLAN_JOB = "Lean: plan and build"
 SHARD = re.compile(r"Lean: shard \((\d+)\)")
 SHARD_BUILD = "Check the shard's proofs"
+# Lake's line for a module it built, as lean_shards.py's BUILT (this file
+# stands alone: CI fetches it without the repository).
+BUILT = re.compile(r"\bBuilt (\S+) \((\d+(?:\.\d+)?)(ms|s)\)")
 # Lines of a job's log, each after its timestamp.
 LINE = re.compile(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?)Z (.*)$", re.M)
 PLAN = re.compile(r"(\d+) modules to build, about (\d+) s; shards' estimated times: \[([^\]]*)\]")
@@ -104,7 +105,7 @@ def built_by_step(log, steps):
              for s in steps if s.get("started_at") and s.get("completed_at")]
     out = {}
     for stamp, text in LINE.findall(log):
-        m = lean_shards.BUILT.search(text)
+        m = BUILT.search(text)
         if not m or ":" in m.group(1):
             continue
         t = parse_time(stamp)
