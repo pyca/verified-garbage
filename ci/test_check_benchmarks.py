@@ -1,7 +1,13 @@
 """Focused regressions for benchmark selection; no builds or measurements."""
 
 import contextlib
+import io
 import json
+import os
+import pathlib
+import re
+import subprocess
+import tempfile
 import unittest
 from unittest import mock
 
@@ -468,6 +474,38 @@ class Selection(unittest.TestCase):
             self.assertEqual(bench_compare.selected_modules('base', 'old new'), 'old')
             self.assertIsNone(bench_compare.selected_modules('base', 'new'))
             self.assertEqual(bench_compare.selected_modules('base', ''), '')
+
+
+class Lacking(unittest.TestCase):
+    """A benchmark run that src/cpu.rs stops for naming features the CPU
+    does not have."""
+
+    def test_matches_the_library_panic(self):
+        # The message src/cpu.rs's own test expects.
+        panic = re.search(r'should_panic\(expected = "(VG_CPU_FEATURES names [^"]*)"\)',
+                          pathlib.Path('src/cpu.rs').read_text())[1]
+        self.assertEqual(bench_compare.LACKING.search(panic)[1], 'sha,avx')
+
+    def test_run_raises_it_and_other_failures_stay_failures(self):
+        args = mock.Mock(warm_up_time=0.1, measurement_time=0.3)
+        with tempfile.TemporaryDirectory() as tmp:
+            for stderr, error in [("VG_CPU_FEATURES names avx512f, which this CPU does not have", bench_compare.Lacking),
+                                  ("some other panic", subprocess.CalledProcessError)]:
+                binary = pathlib.Path(tmp, 'bench')
+                binary.write_text(f'#!/bin/sh\necho "{stderr}" >&2\nexit 101\n')
+                os.chmod(binary, 0o755)
+                with self.subTest(stderr=stderr), contextlib.redirect_stderr(io.StringIO()), \
+                        mock.patch.object(bench_compare, 'cpu_features', return_value='avx512f'), \
+                        self.assertRaises(error) as raised:
+                    bench_compare.run(str(binary), pathlib.Path(tmp), bench_compare.VG, args, None, '')
+                if error is bench_compare.Lacking:
+                    self.assertEqual(raised.exception.args, ('avx512f',))
+
+    def test_report_names_what_was_not_measured(self):
+        report = bench_compare.not_measured('avx,avx512f', 'avx512f', 'AMD EPYC 7763')
+        self.assertIn('VG_CPU_FEATURES=avx,avx512f', report)
+        self.assertIn('(AMD EPYC 7763) does not have avx512f', report)
+        self.assertNotIn('()', bench_compare.not_measured('avx', 'avx', None))
 
 
 if __name__ == '__main__':

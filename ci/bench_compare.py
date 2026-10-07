@@ -33,7 +33,11 @@ their code either. aws-lc-rs has no benchmark where it lacks the primitive.
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
 features both sides use, and is named in the report. Each side is passed
 only the features its own src/cpu.rs knows (base may predate one), since it
-cannot use the others anyway.
+cannot use the others anyway. If it names a feature this runner's CPU does
+not have, the library stops the benchmarks (they would measure another
+configuration's code under its name): the report then says what was not
+measured, with a warning, and the exit status is 0, since another runner,
+from a re-run, may have the feature.
 
 `--modules` runs only the benchmarks of those library modules (see
 `bench_arches.py`), and `--shard i/n` only the i-th of n shares of them,
@@ -63,6 +67,14 @@ REFERENCES = {"openssl": "OpenSSL", "aws-lc-rs": "aws-lc-rs"}
 # rust-openssl, aws-lc-rs), which are the same on both sides, are compiled
 # only once.
 TARGET = pathlib.Path("bench-target").resolve()
+
+# How src/cpu.rs stops a run whose `VG_CPU_FEATURES` names features this CPU
+# does not have.
+LACKING = re.compile(r"VG_CPU_FEATURES names (\S+), which this CPU does not have")
+
+
+class Lacking(Exception):
+    """A run stopped by `LACKING`, with the features the CPU lacks."""
 
 
 def build(bench):
@@ -172,7 +184,7 @@ def run(binary, home, library, args, checkout, modules, groups=None):
     pattern = f"/{library}/"
     if groups is not None:
         pattern = f"^(?:{'|'.join(map(re.escape, groups))})/{library}/"
-    subprocess.run(
+    proc = subprocess.run(
         [
             binary,
             "--bench",
@@ -201,14 +213,38 @@ def run(binary, home, library, args, checkout, modules, groups=None):
             "VG_BENCH_MODULES": modules,
             "VG_CPU_FEATURES": cpu_features(checkout),
         },
-        check=True,
         stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
     )
+    sys.stderr.write(proc.stderr)
+    if proc.returncode:
+        if m := LACKING.search(proc.stderr):
+            raise Lacking(m[1])
+        raise subprocess.CalledProcessError(proc.returncode, binary)
     times = {}
     for est in home.glob(f"*/{library}/*/new/estimates.json"):
         primitive, _, size = est.relative_to(home).parts[:3]
         times[primitive, int(size)] = json.loads(est.read_text())["median"]["point_estimate"]
     return times
+
+
+def cpu_model():
+    """This machine's CPU model, from /proc/cpuinfo, or None."""
+    try:
+        cpuinfo = pathlib.Path("/proc/cpuinfo").read_text()
+    except OSError:
+        return None
+    m = re.search(r"^model name\s*:\s*(.+)$", cpuinfo, re.M)
+    return m[1].strip() if m else None
+
+
+def not_measured(cpu_features, lacking, model):
+    """The report of a run that this CPU, without the features `lacking`,
+    cannot measure."""
+    return (f"## Benchmarks (VG_CPU_FEATURES={cpu_features})\n\n"
+            f"Not measured: this runner's CPU{f' ({model})' if model else ''} does not have {lacking},"
+            " which this configuration names; a re-run may get a runner with them.\n")
 
 
 def vs_reference(ours, theirs):
@@ -268,17 +304,27 @@ def main():
 
     shutil.rmtree(args.work_dir, ignore_errors=True)
     best = {"base": {}, "head": {}}
-    for r in range(args.rounds):
-        # Alternate which side goes first, so neither always runs warmer.
-        for side in ("base", "head") if r % 2 == 0 else ("head", "base"):
-            if binaries[side] is None:
-                continue
-            print(f"round {r + 1}/{args.rounds}: {side}", file=sys.stderr)
-            checkout = base if side == "base" else head
-            times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout, modules[side],
-                        groups)
-            for bench_id, t in times.items():
-                best[side][bench_id] = min(t, best[side].get(bench_id, t))
+    try:
+        for r in range(args.rounds):
+            # Alternate which side goes first, so neither always runs warmer.
+            for side in ("base", "head") if r % 2 == 0 else ("head", "base"):
+                if binaries[side] is None:
+                    continue
+                print(f"round {r + 1}/{args.rounds}: {side}", file=sys.stderr)
+                checkout = base if side == "base" else head
+                times = run(binaries[side], args.work_dir.resolve() / f"{side}-{r}", VG, args, checkout,
+                            modules[side], groups)
+                for bench_id, t in times.items():
+                    best[side][bench_id] = min(t, best[side].get(bench_id, t))
+    except Lacking as e:
+        # The first run of either side stops, before any other.
+        report = not_measured(os.environ.get("VG_CPU_FEATURES", ""), e.args[0], cpu_model())
+        print(f"::warning::{report.splitlines()[-1]}")
+        print(report)
+        if args.summary:
+            with args.summary.open("a") as f:
+                f.write(report)
+        return 0
 
     def suspects():
         """The groups (`<primitive>`s) of the benchmarks over the threshold."""
