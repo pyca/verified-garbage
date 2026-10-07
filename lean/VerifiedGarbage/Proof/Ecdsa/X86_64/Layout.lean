@@ -78,6 +78,7 @@ structure CfgOk (c : Cfg) : Prop where
   len8 : 8 ≤ c.C.len
   len_lo : 8 * c.n < c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
+  n_len : c.C.n ≤ 2 ^ (8 * c.C.len)
   sh : c.sh < 32
   /-- The comb, if the curve has one. -/
   comb : ∀ d, c.comb = some d → CombOk c d

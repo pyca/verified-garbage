@@ -289,6 +289,7 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     {rest : Prog isa} {R : State → Prop}
+    (hv8 : sv c base s V < 2 ^ (8 * c.C.len))
     (h : ∀ s', VMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c) rest) s R := by
   have h0 := hc.n0
@@ -311,7 +312,8 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide)]
       exact hrep
     refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
-      (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide) fun s₂ W => h s₂ ?_)
+      (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide)
+      (by rw [v₁ (by decide) (by decide)]; exact hv8) fun s₂ W => h s₂ ?_)
     rw [v₁ (by decide) (by decide)] at W
     refine ⟨W.scr, (k₁.mono fun r hr => ?_).trans W.keep, ?_, W.mod, W.lt, W.q⟩
     · rw [List.mem_singleton.mp hr]; simp [powClob, clob]
@@ -466,7 +468,8 @@ theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
   refine mulV_ok hc hC hs₃ F₃ hP (by rw [W₃ (by decide) (by decide)]; exact hM.px_lt)
     (by rw [W₃ (by decide) (by decide)]; exact hM.py_lt)
     (by rw [tv₃ (by decide) (by decide), tv₃ (by decide) (by decide), tv₃ (by decide) (by decide)]; exact hrep)
-    rx₃ ry₃ rz₃ fun s₅ V₅ => ?_
+    rx₃ ry₃ rz₃ (by rw [W₃ (by decide) (by decide)]; exact Nat.lt_of_lt_of_le hM.v_lt hc.n_len)
+    fun s₅ V₅ => ?_
   rw [show sv c base s₃ V = sv c base s V from W₃ (by decide) (by decide)] at V₅
   have hs₅ := V₅.scr
   have F₅ := F₃.unch h7 hn fixedOk_vW V₅.unch

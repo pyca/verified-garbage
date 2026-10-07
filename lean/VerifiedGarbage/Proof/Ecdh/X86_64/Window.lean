@@ -83,7 +83,9 @@ theorem winW_eq (c : Cfg) : winW (winQ c) = slW c (otherI ++ tblI ++ [TMP]) := b
 
 theorem winLayQ (hc : CfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
   have hn := hc.n0
-  have hJ : (winQ c).J = 16 * c.n + 1 := rfl
+  have hJ : (winQ c).J = c.winJ := rfl
+  have hJle : c.winJ ≤ 16 * c.n + 1 := by unfold Cfg.winJ; have := hc.len_hi; omega
+  have hJ1 : 1 ≤ c.winJ := by unfold Cfg.winJ; omega
   have hb : (winQ c).bits = c.sl WB := rfl
   have hK : (winQ c).tbl = c.sl WT := rfl
   have hMn : (winQ c).M.n = c.n := rfl
@@ -111,7 +113,7 @@ theorem winLayQ (hc : CfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
       have := Nat.mul_le_mul_left (8 * c.n) h
       dsimp only
       rw [sl_eq, sl_eq]
-      show 64 + 8 * c.n * 73 + 4 * (16 * c.n + 1) ≤ 64 + 8 * c.n * i
+      show 64 + 8 * c.n * 73 + 4 * c.winJ ≤ 64 + 8 * c.n * i
       have : 8 * c.n * 83 ≤ 8 * c.n * i := this
       have : 8 * c.n * 83 = 8 * c.n * 73 + 80 * c.n := by omega
       omega
@@ -197,7 +199,7 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
-    {rest : Prog isa} {R : State → Prop}
+    (hk8 : sv c base s ks < 2 ^ (8 * c.C.len)) {rest : Prog isa} {R : State → Prop}
     (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) :
     WP isa (.seq (.seq (c.winPrep (c.sl ks)) (WinCfg.window (winQ c))) rest) s R := by
   have h0 := hc.n0
@@ -207,16 +209,16 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hk : wordsVal s.mem base (c.sl ks) c.n < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
-  have hrec := recode_lt hk
+  have hrec : wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ < 16 ^ c.winJ := recode_lt_len hk8
+  have hJle : c.winJ ≤ 16 * c.n + 1 := by unfold Cfg.winJ; have := hc.len_hi; omega
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le_win c h9 (i := WK + 1) (by decide)
     rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
   have hKW := sl_lt c (show ks < WK by unfold WK; omega)
-  have h16 : (16 : Nat) ^ (16 * c.n + 1) ≤ 2 ^ (64 * (c.n + 1)) := by
+  have h16 : (16 : Nat) ^ c.winJ ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
-  have hJ : (winQ c).J = 16 * c.n + 1 := rfl
+  have hJ : (winQ c).J = c.winJ := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
   have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
@@ -229,7 +231,7 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
   refine WP.seq (WP.seq (WP.seq ?_))
   rw [hK, offset_eq]
   refine WP.mono (addConst_ok hs (n := c.n) (src := c.sl ks) (dst := c.sl WK)
-    (c := 8 * geom (16 * c.n + 1)) h0 (sl_le c h7 hks) (by omega)
+    (c := 8 * geom c.winJ) h0 (sl_le c h7 hks) (by omega)
     (Or.inl (by omega)) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hB]
@@ -247,7 +249,7 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
   have hM₂ := modP_of hc F₂.mp
   have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
-  have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom (16 * c.n + 1)) := by
+  have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom c.winJ) := by
     refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
     · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
     · show toM _ _ (sv c base s₂ BP) = _; rw [e₂ (by decide), hbp]; exact toM_cmont hc _
@@ -317,7 +319,7 @@ theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
-    {k : Nat} (hk : sv c base s K = k)
+    {k : Nat} (hk : sv c base s K = k) (hk8 : k < 2 ^ (8 * c.C.len))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', MulPost c base P k s s' → WP isa rest s' R) :
@@ -329,7 +331,7 @@ theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   unfold Impl.Ecdh.X86_64.Cfg.mulQ
   split
   · rename_i h9
-    refine winMul_ok hc h9 hC hs F hbp hP hpx hpy hrep (ks := K) (by decide) fun s₃ W => ?_
+    refine winMul_ok hc h9 hC hs F hbp hP hpx hpy hrep (ks := K) (by decide) (hk ▸ hk8) fun s₃ W => ?_
     have F₃ := F.unch h7 hn (fixedOk_winX.append (fixedOk_slW (by decide))) W.unch
     have rz₃ : wordsVal s₃.mem base (c.sl RZ) c.n < c.C.p := W.lt _ (by simp)
     refine WP.seq (WP.mono (pPow_ok hc W.scr W.mod rz₃ F₃.onep (fun t ht => by
