@@ -165,66 +165,66 @@ theorem hTail_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {mx : BitVec 64} 
   have hhi := hc.hi
   have hlo := hc.lo
   have h8 := hdr_lt_slot w 8 (show 31 < 32 by decide)
-  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega
-  have ho64 : o < 2 ^ 64 := by have := hc.scr.nowrap; omega
-  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by have := hc.scr.nowrap; omega
+  have hX8 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  have ho64 : o < 2 ^ 64 := by have := hc.scr.nowrap; omega_arith
+  have hoL : o + slot wx 8 ≤ 2 ^ 64 := by have := hc.scr.nowrap; omega_arith
   simp only [List.append_assoc]
   -- `T = (m_p - m_q) R_p mod p`.
   refine wp_seqs_append (by simp [subModArr]) (by simp [loadArr]) ?_
-  refine WP.mono (subModArr_ok hc.good.scr hc.x0 hc.hdr (Nat.le_refl _) hwx2 (by omega)
+  refine WP.mono (subModArr_ok hc.good.scr hc.x0 hc.hdr (Nat.le_refl _) hwx2 (by omega_arith)
     (o := aT) (a := Public.aY) (b := aXc) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [hX.n]; exact hyl) (by rw [hX.n]; exact hlt))
     fun s₃ ⟨hT₃, ha₃, k₃⟩ => ?_
   rw [hX.n] at hT₃
   obtain ⟨hc₃, hX₃, fx₃⟩ := hc.of_arrays hX ha₃ (by
     intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl <;> decide) k₃.wr (k₃.gpr .x0 (by decide)) (by omega)
+    rcases hj with rfl | rfl <;> decide) k₃.wr (k₃.gpr .x0 (by decide)) (by omega_arith)
   have hb₃ : ∀ d, d + 8 ≤ o → word s₃.mem B d = word s.mem B d := fun d hd => fx₃.x_below hd ho64
   have i03 : InScr B Z s.mem s₃.mem :=
-    InScr.of_frm fx₃ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega
+    InScr.of_frm fx₃ fun r hr => by rw [List.mem_singleton.mp hr]; simp only [xRange]; omega_arith
   have hM₃ : word s₃.mem (off B o) (8 * sMaskX) = mask c := by
     rw [ha₃.hslot (by decide)]; exact hmask
   -- `qInv`, masked.
   refine wp_seqs_append (by simp [loadArr]) (by simp [maskArr]) ?_
-  refine WP.mono (primeLoad_ok hc₃ hwx2 hwx (by omega) (j := aChunk) (by decide) (sp := sQinv) (sl := sPlen)
-    (by decide) (by decide) (by rw [hb₃ _ (by unfold sQinv sFn; omega)]; exact hqp)
-    (by rw [hb₃ _ (by unfold sPlen sFn; omega)]; exact hql) (hqs.congrK i03 k₃) hq1 hq2 hqw)
+  refine WP.mono (primeLoad_ok hc₃ hwx2 hwx (by omega_arith) (j := aChunk) (by decide) (sp := sQinv) (sl := sPlen)
+    (by decide) (by decide) (by rw [hb₃ _ (by unfold sQinv sFn; omega_arith)]; exact hqp)
+    (by rw [hb₃ _ (by unfold sPlen sFn; omega_arith)]; exact hql) (hqs.congrK i03 k₃) hq1 hq2 hqw)
     fun s₄ ⟨hc₄, hq₄, ho₄, k₄⟩ => ?_
-  have hz₄ : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₄.good.scr.nowrap; omega
+  have hz₄ : (off B o).toNat + slot wx 8 ≤ 2 ^ 64 := by have := hc₄.good.scr.nowrap; omega_arith
   have hX₄ := hX₃.of_outside ho₄ (by decide) (by decide) (by decide) (Nat.le_refl _) hz₄
   have fx₄ : Frm B [xRange o wx] s₃.mem s₄.mem := ho₄.to_x (by decide) hoL (List.mem_singleton_self _)
   have hM₄ : word s₄.mem (off B o) (8 * sMaskX) = mask c := by
-    rw [ho₄.word (Or.inl (by have := hdr_lt_slot wx aChunk (show sMaskX < 32 by decide); omega))
-      (by unfold sMaskX sFn; omega)]; exact hM₃
+    rw [ho₄.word (Or.inl (by have := hdr_lt_slot wx aChunk (show sMaskX < 32 by decide); omega_arith))
+      (by unfold sMaskX sFn; omega_arith)]; exact hM₃
   refine wp_seqs_append (by simp [maskArr]) (by simp) ?_
-  refine WP.mono (maskArr_ok hc₄.good (Nat.le_refl _) (by omega) (by omega) (j := aChunk) (by decide) hM₄)
+  refine WP.mono (maskArr_ok hc₄.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (j := aChunk) (by decide) hM₄)
     fun s₅ ⟨_, hq₅, ho₅, _, k₅⟩ => ?_
   have ho₅' : Outside (off B o) (slot wx aChunk) (8 * (wx + 2)) s₄.mem s₅.mem :=
-    ho₅.mono (Nat.le_refl _) (by omega)
+    ho₅.mono (Nat.le_refl _) (by omega_arith)
   have hc₅ := hc₄.of_frm (rs := [(slot wx aChunk, 8 * (wx + 2))]) (Frm.of_outside ho₅' (by simp)) (fun r hr => by
     rw [List.mem_singleton.mp hr]
     have := slot_le (w := wx) (show aChunk < 8 by decide)
     have := hdr_lt_slot wx aChunk (show 31 < 32 by decide)
-    simp only; omega) k₅.wr (k₅.gpr .x0 (by decide))
+    simp only; omega_arith) k₅.wr (k₅.gpr .x0 (by decide))
   have hX₅ := hX₄.of_outside ho₅' (by decide) (by decide) (by decide) (Nat.le_refl _) hz₄
   have fx₅ : Frm B [xRange o wx] s₄.mem s₅.mem := ho₅'.to_x (by decide) hoL (List.mem_singleton_self _)
   have hch : wv s₅.mem (off B o) (slot wx aChunk) wx < X := by
     rw [hq₅, hq₄]
     cases c
-    · simp only [Bool.false_eq_true, ↓reduceIte]; omega
+    · simp only [Bool.false_eq_true, ↓reduceIte]; omega_arith
     · simp only [↓reduceIte]; exact hqi rfl
   have hT₅ : wv s₅.mem (off B o) (slot wx aT) wx = wv s₃.mem (off B o) (slot wx aT) wx := by
     have := slot_sep (w := wx) (show aT ≠ aChunk by decide)
     have := slot_le (w := wx) (show aT < 8 by decide)
-    rw [ho₅'.wv (by omega) (by omega), ho₄.wv (by omega) (by omega)]
+    rw [ho₅'.wv (by omega_arith) (by omega_arith), ho₄.wv (by omega_arith) (by omega_arith)]
   -- `h = T qInv R_p⁻¹`.
   refine WP.mono (M.mm_ok (o := Public.aY) (a := aT) (b := aChunk) hc₅.good (Nat.le_refl _) hwx2
-    (by omega) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hX₅.inv
+    (by omega_arith) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) hX₅.inv
     (by rw [hX₅.n]; exact hch)) fun s₆ ⟨_, hlt₆, hm₆, ha₆, k₆⟩ => ?_
   rw [hX₅.n] at hlt₆ hm₆
   obtain ⟨hc₆, hX₆, fx₆⟩ := hc₅.of_arrays hX₅ ha₆ (by
     intro j hj; simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
-    rcases hj with rfl | rfl | rfl <;> decide) k₆.wr (k₆.gpr .x0 (by decide)) (by omega)
+    rcases hj with rfl | rfl | rfl <;> decide) k₆.wr (k₆.gpr .x0 (by decide)) (by omega_arith)
   have kall := (((k₃.trans k₄).trans k₅).trans k₆)
   refine ⟨hc₆, hX₆, hlt₆, fun hct => ?_, ((fx₃.trans fx₄).trans fx₅).trans fx₆, kall.mono (by simp [mmRegs]),
     (k₆.gpr .x0 (by decide)).trans ((k₅.gpr .x0 (by decide)).trans ((k₄.gpr .x0 (by decide)).trans (k₃.gpr .x0 (by decide))))⟩

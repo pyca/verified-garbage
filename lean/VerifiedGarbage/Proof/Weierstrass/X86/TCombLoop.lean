@@ -1,3 +1,4 @@
+import Mathlib.Tactic.ClearExcept
 import VerifiedGarbage.Proof.Weierstrass.X86.TCombInv
 namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
@@ -70,10 +71,10 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hw with rfl | rfl | rfl | rfl | rfl | rfl
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
-        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by grind)
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
+        · exact hL.comb.apart₂ hxs (by tcomb_mem) (by clear * - hnd hx; grind)
         · exact hL.comb.lay.tmp x (combWs_slots _ x hxs)
         · exact .inl (hL.wk.sl x (combWs_slots _ x hxs)))
         (by have := hle x (combWs_slots _ x hxs); omega), hm₁]
@@ -162,8 +163,9 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
       rcases hy with rfl | rfl | rfl | rfl | rfl | rfl <;> tcomb_mem) hxy)
     (fun x hx hx' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hx'
+      clear * - hnd hx hx'
       grind)
-    (by grind)) fun s₅ ⟨ex₅, ey₅, ez₅, k₅, U₅⟩ => ?_
+    (by clear * - hnd; grind)) fun s₅ ⟨ex₅, ey₅, ez₅, k₅, U₅⟩ => ?_
   have hs₅ := hs₄.of_keepRegs k₅ (by decide)
   have hb₅ : s₅.gpr .esi = BitVec.ofNat 32 (j - 1) := by rw [k₅.gpr _ (by decide), hb₄]
   refine WP.mono (testEsi_ok s₅ (by omega) hb₅) fun s₆ ⟨z₆, k₆⟩ => ?_

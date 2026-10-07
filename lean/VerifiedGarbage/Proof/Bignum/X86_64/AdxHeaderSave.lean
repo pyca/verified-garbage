@@ -32,7 +32,7 @@ theorem bases_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
     hh.harr aAcc (by decide),hh.hw,sh,show (16 : BitVec 32).signExtend 64 = 16 from rfl]
   simp only [highPad,off,BitVec.ofNat_add]
   rw [BitVec.add_comm (BitVec.ofNat 64 (16*w)),BitVec.add_assoc,BitVec.add_assoc]
-  congr 1
+  refine congrArg (fun x : BitVec 64 => B + x) ?_
   rw [BitVec.add_comm (BitVec.ofNat 64 (16*w))]
   simp only [BitVec.add_assoc]
   rfl

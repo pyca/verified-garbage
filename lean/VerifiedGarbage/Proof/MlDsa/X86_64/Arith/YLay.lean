@@ -329,12 +329,12 @@ theorem ystep {fP : Addr} {len st u k : Nat} (hl : 8 ≤ len) (hs : st + 2 * len
 
 /-- The code of a block of a layer with `len ≥ 8`. -/
 abbrev yblk (bf : List Instr) (len : Nat) (dz : BitVec 32) : Prog isa :=
-  .seq (.block (yzeta1 ++ [.alu .add .r8 (.imm dz)]))
-    (.seq (rcxLoop (len / 8) ([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0),
-        .vmovdquLoad .l256 .xmm1 (at_ .rdx (4 * len))] ++ toY bf ++
-        [.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx (4 * len)) .xmm3,
-          .alu .add .rdx (.imm 32)]))
-      (.block [.alu .add .rdx (.imm (BitVec.ofNat 32 (4 * len))), .alu .sub .rax (.imm 1)]))
+  .seq (.block (yzeta1 ++ ([.alu .add .r8 (.imm dz)] : List Instr)))
+    (.seq (rcxLoop (len / 8) (([.vmovdquLoad .l256 .xmm0 (at_ .rdx 0),
+        .vmovdquLoad .l256 .xmm1 (at_ .rdx (4 * len))] : List Instr) ++ toY bf ++
+        ([.vmovdquStore .l256 (at_ .rdx 0) .xmm0, .vmovdquStore .l256 (at_ .rdx (4 * len)) .xmm3,
+          .alu .add .rdx (.imm 32)] : List Instr)))
+      (.block ([.alu .add .rdx (.imm (BitVec.ofNat 32 (4 * len))), .alu .sub .rax (.imm 1)] : List Instr)))
 
 theorem yblock_ok {fP sP : Addr} {len st kz : Nat} (h8 : 8 ≤ len) (hl8 : len % 8 = 0) (hl : len ≤ 128)
     (hs : st + 2 * len ≤ 256) (hkz : kz + 4 ≤ 256) (dz : BitVec 32) {G : Poly} {s : State} (hc : YConsts s)

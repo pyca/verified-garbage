@@ -45,14 +45,14 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Add
   have hZ := h.hZ
   obtain ⟨hodd, hlo, hhi⟩ := hsh
   have htop : 2 ^ (64 * w - 1) ≤ c := by
-    have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega
-    omega
+    have : 2 ^ (64 * w - 1) = 2 ^ (64 * w - 2) * 2 := by rw [← Nat.pow_succ]; congr 1; omega_arith
+    omega_arith
   have hc1 : 1 < c := by
-    have : 2 ≤ 2 ^ (64 * w - 1) := Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * w - 1 by omega))
-    omega
+    have : 2 ≤ 2 ^ (64 * w - 1) := Nat.le_trans (by decide) (Nat.pow_le_pow_right (by decide) (show 1 ≤ 64 * w - 1 by omega_arith))
+    omega_arith
   have hW : ∀ {rs : List (Nat × Nat)} {m m' : Mem}, Frm B rs m m' → ∀ {i : Nat}, i < 32 →
       (∀ r ∈ rs, 8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i) → word m' B (8 * i) = word m B (8 * i) :=
-    fun f _ hi hd => f.word_eq hd (by have := h.h256; omega)
+    fun f _ hi hd => f.word_eq hd (by have := h.h256; omega_arith)
   rw [List.append_assoc]
   refine wp_seqs_append (by simp [montSetup]) (by simp [millerRabin]) ?_
   refine WP.mono (montSetup_ok M h hw4 hw64 hn hodd htop) fun s₁ ⟨h₁, hinv₁, hn₁, hr2₁, hr1₁, hrm₁, hch₁, f₁, k₁⟩ => ?_
@@ -60,12 +60,12 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Add
   have hZ' : 256 + 16 * (8 * (w + 2)) ≤ Z := by simpa only [slot, hdrBytes] using hZ
   have hsl₁ : ∀ r ∈ msRanges w, r.1 + r.2 ≤ Z := by kt_disj
   have hin₁ : InScr B Z s.mem s₁.mem := InScr.of_frm f₁ (fun r hr => by
-    have := hsl₁ r hr; omega)
+    have := hsl₁ r hr; omega_arith)
   have hsrc₁ := hsrc.congrK hin₁ k₁
   have hres : mrRest c (VG.Proof.RsaKeyGen.checksW w) r 1 0 (8 * w) =
       Spec.RsaKeyGen.primalityTest c (r.drop (8 * w)) := by
-    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega) ⟨hodd, hlo, hhi⟩,
-      VG.Proof.RsaKeyGen.checksW_eq w (by omega) hw4]
+    rw [VG.Proof.RsaKeyGen.primalityTest_cand (by omega_arith) ⟨hodd, hlo, hhi⟩,
+      VG.Proof.RsaKeyGen.checksW_eq w (by omega_arith) hw4]
   refine wp_seqs_append (by simp [millerRabin]) (by simp) ?_
   refine WP.mono (millerRabin_ok M hw4 hw64 hc1 ⟨hodd, hlo, hhi⟩ hrl (by
       unfold VG.Proof.RsaKeyGen.checksW; split <;> (try split) <;> (try split) <;> (try split) <;> (try split) <;>
@@ -76,7 +76,7 @@ theorem kTail_ok (M : Mont) {s : State} {B : Addr} {Z w c : Nat} {op up rp : Add
     ((hW f₁ (by decide) (by kt_disj)).trans hus) (Nat.le_refl _) hrk)
     fun s₂ ⟨⟨bm, hc₂⟩, h0, h1, f₂, k₂⟩ => ?_
   rw [hres] at h0 h1
-  have hsl₂ : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => by have := roundRanges_le w r hr; omega
+  have hsl₂ : ∀ r ∈ roundRanges w, r.1 + r.2 ≤ Z := fun r hr => by have := roundRanges_le w r hr; omega_arith
   have hin₂ : InScr B Z s.mem s₂.mem := hin₁.trans (InScr.of_frm f₂ hsl₂)
   have k12 : Keep mmRegs s s₂ := (k₁.trans k₂).mono (by decide)
   have ho₂ := ho.congr k12.wr
