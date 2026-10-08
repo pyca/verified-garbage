@@ -10,13 +10,13 @@ use alloc::vec::Vec;
 use core::fmt;
 
 use super::{Backend, Error, MAX_MODULUS_LEN, MIN_MODULUS_LEN, exponent, scratch_words, trim};
-use crate::arch::rsa::{
-    vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked, vg_rsa_recover_primes,
-};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     vg_rsa_check_crt_key, vg_rsa_private_checked_adx, vg_rsa_private_checked_ifma,
     vg_rsa_recover_primes_adx,
+};
+use crate::arch::rsa::{
+    vg_rsa_check_key, vg_rsa_crt_values, vg_rsa_private_checked, vg_rsa_recover_primes,
 };
 use crate::cpu::detected;
 
@@ -500,7 +500,9 @@ mod tests {
         // Leading zeros on the values and on `e`.
         let [n, p, q, dp, dq, qinv] = composite(32, false);
         let z = |x: &[u8]| [&[0, 0][..], x].concat();
-        assert!(PrivateKey::from_crt(&n, &[0, 3], &[], &z(&p), &q, &z(&dp), &dq, &z(&qinv)).is_ok());
+        assert!(
+            PrivateKey::from_crt(&n, &[0, 3], &[], &z(&p), &q, &z(&dp), &dq, &z(&qinv)).is_ok()
+        );
         assert!(PrivateKey::from_crt(&n, &[3], &[], &p, &z(&q), &dp, &z(&dq), &qinv).is_ok());
     }
 
@@ -557,7 +559,11 @@ mod tests {
         pm1[31] = 0xfe;
         let mut dq2 = dq.clone();
         dq2.insert(0, 1);
-        let checked = if cfg!(target_arch = "x86_64") { bad } else { Ok(()) };
+        let checked = if cfg!(target_arch = "x86_64") {
+            bad
+        } else {
+            Ok(())
+        };
         for r in [
             new(&n, &[3], &p, &q, &flip(&dp), &dq, &qi),
             new(&n, &[3], &p, &q, &dp, &flip(&dq), &qi),
