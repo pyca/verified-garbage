@@ -64,7 +64,9 @@
 //! ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read
 //! encoded pairs of powers `H¹ … H⁴⁸` from a larger key context, which
 //! `vg_aes_gcm_init_prepared` writes, instead of computing them on every
-//! call. A key computes it once, after it has encrypted or decrypted
+//! call. These loops also load the AES round keys into `zmm16`–`zmm31`
+//! once per block call and reuse them across batches. A key computes the
+//! prepared context once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
 //! it, so that one used for a few messages never pays for it.
 

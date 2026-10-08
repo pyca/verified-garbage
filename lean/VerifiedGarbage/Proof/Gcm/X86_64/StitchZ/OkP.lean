@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.PreparedTo
+import VerifiedGarbage.Proof.Gcm.X86_64.Cached.Prepared
 import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.OutOfPlace
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
@@ -247,3 +249,42 @@ theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZRTo.en
     encTailGTo_ok hp (finZ (finP hpw))
       (fun _ h256 hI => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI) hR)
 end VG.Proof.Gcm.X86_64.StitchZRTo
+
+/-! ## Prepared powers and cached AES keys -/
+
+namespace VG.Proof.Gcm.X86_64.StitchZH
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (SPrePrepared StitchOkM CtxMode EPost DPost hk)
+open VG.Proof.Gcm.X86_64.StitchZ (finZ)
+open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
+
+theorem enc_ok {s₀ : State} (hp : SPrePrepared s₀) :
+    WP isa Impl.Gcm.X86_64.StitchZH.enc s₀ (EPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    encTailG_ok hp.base (finZ (finP hpw))
+      (fun _ h256 hI hC => bigP_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+theorem dec_ok {s₀ : State} (hp : SPrePrepared s₀) :
+    WP isa Impl.Gcm.X86_64.StitchZH.dec s₀ (DPost s₀) :=
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    decTailG_ok hp.base (finZ (finP hpw))
+      (fun _ h256 hI hC => bigDP_ok hp hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+theorem stitch_ok : StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZH.enc Impl.Gcm.X86_64.StitchZH.dec :=
+  ⟨fun _ hp => enc_ok hp.toPrepared, fun _ hp => dec_ok hp.toPrepared⟩
+
+end VG.Proof.Gcm.X86_64.StitchZH
+
+namespace VG.Proof.Gcm.X86_64.StitchZHTo
+open VG VG.X86_64
+open VG.Proof.Gcm.X86_64.Stitch (StitchToOkM CtxMode hk)
+open VG.Proof.Gcm.X86_64.StitchZ (finZ)
+open VG.Proof.Gcm.X86_64.StitchZP (finP fin48P)
+
+/-- Prepared powers and cached AES keys, with separate input and output buffers. -/
+theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.encP := fun s₀ hp =>
+  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw, hK⟩ =>
+    encTailGTo_ok hp (finZ (finP hpw))
+      (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
+
+end VG.Proof.Gcm.X86_64.StitchZHTo

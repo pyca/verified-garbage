@@ -151,7 +151,7 @@ def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
 theorem StitchName.okR : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
-  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZR.stitch_ok
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitch_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
 
 def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
@@ -159,7 +159,7 @@ def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.St
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
-  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZRTo.stitchTo_ok
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchTo_ok
 
 def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.okR, q.enc⟩

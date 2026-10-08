@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchZR
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
@@ -62,12 +62,12 @@ def decP : StitchName → Prog isa
 
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZR.enc
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.enc
   | n => n.enc
 
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZR.dec
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
   | n => n.dec
 
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
@@ -109,7 +109,7 @@ def encP : StitchToName → Prog isa
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZRTo.encP
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encP
 
 end StitchToName
 
