@@ -169,7 +169,8 @@ def exVal (st : XZ) (a b c d : Pos) : Nat → Spec.Cast5.Word
 theorem exVal_sbox (st : XZ) (ls : List Impl.Cast5.Line) {e : Nat} (h5 : 5 ≤ e) (h8 : e ≤ 8) :
     exVal st (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8) (8 - e) =
       sbox e (st.get (extraOf ls e)) := by
-  rcases (show e = 5 ∨ e = 6 ∨ e = 7 ∨ e = 8 by omega) with rfl | rfl | rfl | rfl <;> rfl
+  rcases (show e = 5 ∨ e = 6 ∨ e = 7 ∨ e = 8 by omega) with rfl | rfl | rfl | rfl <;>
+    simp only [exVal, sbox, Nat.reduceSub]
 
 /-- The first `k` lines of a group storing into `a`. -/
 def runQ (a : Arr) (ls : List Impl.Cast5.Line) (k : Nat) (st : XZ) : XZ :=
@@ -215,6 +216,15 @@ theorem halves_length (st : XZ) (h : Nat) : (halves st h).2.length = 16 * h := b
   | succ h ih =>
     simp only [halves, List.length_append, ih, halfImpl, keys4, List.length_cons, List.length_nil]
     omega
+
+theorem halves_succ (st : XZ) (h : Nat) :
+    halves st (h + 1) = ((halfImpl (halves st h).1).2, (halves st h).2 ++ (halfImpl (halves st h).1).1) :=
+  (rfl)
+
+theorem halves_two (st : XZ) :
+    (halves st 2).2 = (halfImpl st).1 ++ (halfImpl (halfImpl st).2).1 := by
+  rw [halves_succ, halves_succ]
+  exact congrArg (· ++ _) (List.nil_append _)
 
 theorem bytesAt_getD (m : Mem) (p : Addr) (n i : Nat) :
     (Spec.Cast5.bytesAt m p n).getD i 0 = if i < n then m (p + BitVec.ofNat 64 i) else 0 := by

@@ -206,8 +206,7 @@ theorem expandKey_ok (s : State) (h : KPre s) :
         Keep.refl _ _⟩ si1
     rw [hK, hkey, hn, hc]
     refine ⟨?_, ⟨fun r hr => ?_, by rw [kpv.2.1, rd1, rdu], by rw [kpv.2.2, wr1, wru]⟩, ?_⟩
-    · rw [scheduleAt_keys kv.mem.keys (halves_length st0 2), Proof.Cast5.expandKey_eq _ st0.z]
-      rfl
+    · rw [scheduleAt_keys kv.mem.keys (halves_length st0 2), Proof.Cast5.expandKey_eq _ st0.z, halves_two]
     · simp only [keyAll, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       rw [kpv.1 r (by simp only [keyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact
         ⟨hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1⟩)]
