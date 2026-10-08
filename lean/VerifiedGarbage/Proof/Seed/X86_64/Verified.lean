@@ -64,7 +64,7 @@ theorem ecbTaint_wf (d : Spec.Seed.Direction) (s : State) (hs : (contract d).pre
 theorem ecbTaint_agree (d : Spec.Seed.Direction) (s t : State)
     (hs : (contract d).pre s) (ht : (contract d).pre t)
     (hp : (contract d).pub s t) : X86_64.Taint.Agree ecbTaint s t := by
-  refine ⟨?_, ?_, ecbTaint_wf d s hs, ecbTaint_wf d t ht, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ecbTaint_wf d s hs, ecbTaint_wf d t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · constructor
     · intro r hr
       exact hp r (by simpa only [ecbTaint, RegSet.mem_ofList] using hr)
