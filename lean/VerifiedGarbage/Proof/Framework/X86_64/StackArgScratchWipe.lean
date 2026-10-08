@@ -109,7 +109,7 @@ theorem wipeAtX_run (R : Region) (u : State) (off n : Nat) (hR : R ∈ u.wr)
   obtain ⟨m', he, hf⟩ := wipeStoresAtX_run R (u.setXmm .xmm0 0) off (by simpa [State.setXmm]) n
     (by simpa [State.setXmm] using hc)
   refine ⟨m', ?_, by simpa [State.setXmm] using hf⟩
-  simp only [wipeAtX, execBlock, isa, exec, Option.map_some, hx]
+  simp only [wipeAtX, execBlock, isa, exec, hx]
   rw [he]
   simp [addrs, State.setXmm]
 
