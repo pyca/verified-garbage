@@ -1,4 +1,3 @@
-import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
 import VerifiedGarbage.Proof.Weierstrass.X86.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Contract
@@ -6,6 +5,7 @@ import VerifiedGarbage.Proof.Ecdsa.X86.P521.Lit
 import VerifiedGarbage.Proof.P521.Point
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDSA over P-521 on x86 (32-bit): `Verified`
@@ -147,9 +147,24 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.p
     · exact congrArg _ a3
     · exact congrArg _ a4
 
-theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P521.weak)
+/-- What is public on entry to every call of the multiplications: the stack
+pointer and the four words of its arguments' frame, below the return
+address. Their calls are entered from several taints (with more public:
+registers, the flags, or the slots of a table in the working space), each
+analysing the body again in full; the summaries analyse each once. -/
+def τMul : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := [16, 132, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
+    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 24,
+    argBases := [(4, 1), (20, 2)], stk := [none, some 16], room := 20 }
+
+taint_summary mulPSum : taint τMul
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
+taint_summary mulNSum : taint τMul
+  (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521n.k Spec.Weierstrass.Mont.p521n.m)
+
+theorem sign_ct : ConstantTime isa signX86.pre signX86.pub signP521 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ signP521 h).isSome = true := by taint_decide_sum [mulPSum, mulNSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
@@ -222,8 +237,9 @@ theorem sign_verified (hL : Weierstrass.Law Spec.P521.curve) :
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [signRd, signWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [signRd, signWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩

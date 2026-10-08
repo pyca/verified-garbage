@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdh.X86.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.P521.Verified
 import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.X86.Inline
+import VerifiedGarbage.Proof.Framework.X86.TaintMono
 
 /-!
 # ECDH over P-521 on x86 (32-bit): `Verified`
@@ -111,9 +112,21 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a2
     · exact congrArg _ a3
 
-theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP521 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by native_taint_decide_weak VG.Proof.Ecdsa.X86.P521.weak)
+/-- What is public on entry to every call of the multiplication modulo `p`:
+the stack pointer and the four words of its arguments' frame, below the
+return address. Its calls are entered from three taints (with more public:
+registers, the flags, or the slots of a table in the working space), each
+analysing its body again in full; the summary analyses it once. -/
+def τMul : VG.X86.Taint.T :=
+  { regs := ⟨215⟩, flags := false, lens := [16, 66, 8192], bases := [(.edi, 2, 0), (.esp, 0, 4)],
+    slots := [(0, 12, 4), (0, 8, 4), (0, 4, 4), (0, 0, 4)], wbases := [(0, 0, 2)], argLen := 20,
+    argBases := [(4, 1), (16, 2)], stk := [none, some 16], room := 20 }
+
+taint_summary mulSum : taint τMul (Impl.Weierstrass.X86.Mont.mulFn Spec.Weierstrass.Mont.p521p.k Spec.Weierstrass.Mont.p521p.m)
+
+theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP521 := by
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check τ₀ exchangeP521 h).isSome = true := by taint_decide_sum [mulSum]
+  exact VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp) hc
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
@@ -184,8 +197,9 @@ theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) :
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.1, h.2.1]
     refine ⟨r, ?_, hc⟩
-    simpa only [ecdhRd, ecdhWr, List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_assoc, or_left_comm, or_comm] using hr
+    simp only [ecdhRd, ecdhWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
+      or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp
   · intro s h a n ⟨r, hr, hc⟩
     rw [h.2.1]
     refine ⟨r, ?_, hc⟩
