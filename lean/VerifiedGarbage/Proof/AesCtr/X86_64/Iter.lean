@@ -43,10 +43,9 @@ structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
   ivw : AesCtr.lo32 (next (iv0 s₀) k) + mOf s₀ k = 2 ^ 32 →
     bytesAt s.mem (Iv s₀) 16 = ofNat (toNat (next (iv0 s₀) k) + mOf s₀ k - 2 ^ 32) 16
 
-/-- The code before the call and the call. -/
-theorem call_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
-    WP isa (.seq (.block (count ++ args)) (.call v.callee.name v.callee.code)) s (Mid s₀ k) := by
-  refine WP.seq (WP.mono (pre_wp hp hk h) fun s₁ a => ?_)
+/-- The call, after the code before it. -/
+theorem mid_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s s₁ : State} (h : LInv AesCtr.ctrMode s₀ k s)
+    (a : Pre s₀ k s s₁) : WP isa (.call v.callee.name v.callee.code) s₁ (Mid s₀ k) := by
   refine WP.mono (ctr_call v a.call) fun s₂ c => ?_
   have g (r : Reg) (hr : r ∈ calleeSaved) : s₂.gpr r = s.gpr r := by rw [c.saved r hr, a.saved r hr]
   have hm0 := mOf_pos hk
@@ -289,6 +288,37 @@ theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
     · rw [mem₄, m₂, h.iv (by have := lo32_mOf s₀ k; omega)]
     · rw [zf₄, zfEnd s₂ r14₂]
 
+/-- One iteration. -/
+theorem iter_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
+    WP isa (body v.callee) s
+      fun s' => LInv AesCtr.ctrMode s₀ (k + mOf s₀ k) s' ∧ s'.zf = some (decide (k + mOf s₀ k = N s₀)) :=
+  WP.seq (WP.mono (pre_wp hp hk h) fun _ a =>
+    WP.seq (WP.mono (mid_wp hp v hk h a) fun _ hm => tail_wp hp hk hm))
+
+/-- The loop, from `k` blocks to all of them. -/
+theorem loop_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
+    WP isa (.loop (body v.callee) .ne) s (LInv AesCtr.ctrMode s₀ (N s₀)) := by
+  refine WP.loop (M := isa) (body := body v.callee) (c := .ne) (Q := LInv AesCtr.ctrMode s₀ (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv AesCtr.ctrMode s₀ j t) ?_ (N s₀ - k) s
+    ⟨k, rfl, hk, h⟩
+  rintro n s ⟨j, rfl, hj, h⟩
+  refine WP.mono (iter_wp hp v hj h) fun s' ⟨h', hz⟩ => ?_
+  have hm0 := mOf_pos hj
+  have hle := mOf_le s₀ j
+  have ev : isa.eval .ne s' = some !decide (j + mOf s₀ j = N s₀) := by
+    show VG.X86_64.eval .ne s' = _; simp [VG.X86_64.eval, hz]
+  by_cases hz' : j + mOf s₀ j = N s₀
+  · left
+    refine ⟨by rw [ev]; simp [hz'], ?_⟩
+    rwa [← hz']
+  · right
+    refine ⟨by rw [ev]; simp [hz'], N s₀ - (j + mOf s₀ j), by omega, j + mOf s₀ j, rfl, by omega, h'⟩
+
 end
+
+/-- The whole function. -/
+theorem crypt_wp (v : Ctr32Impl) {s₀ : State} (h0 : (modeX86_64 AesCtr.ctrMode).pre s₀) :
+    WP isa (crypt v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ (modeX86_64 AesCtr.ctrMode).post s₀ s' :=
+  ends_wp h0 fun hp hN _ h => loop_wp hp v hN h
 
 end VG.Proof.AesCtr.X86_64
