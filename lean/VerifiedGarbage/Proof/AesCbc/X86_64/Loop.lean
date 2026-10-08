@@ -331,15 +331,22 @@ theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
             iv := by rw [mem₁, ivS, chainK, List.take_zero, M.chain_nil] }
   · rw [zf₁, r8_ofNat, beq_zero hN]
 
-theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+/-- No blocks, or `mid` on all of them. -/
+theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
+    (hm : 0 < N s₀ → WP isa mid s₁ (LInv M s₀ (N s₀)))
     (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) := by
+    WP isa (.ite .e (.block []) mid) s₁ (LInv M s₀ (N s₀)) := by
   have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := hz
   by_cases hn : N s₀ = 0
   · refine WP.ite true (by rw [ev, hn]; rfl) (fun _ => WP.block_nil ?_) (fun h => by cases h)
     rw [hn]; exact h
   · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
-    exact loop_ok hb hp (by omega) h
+    exact hm (by omega)
+
+theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+    (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
+    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) :=
+  ends_mid_wp (fun hn => loop_ok hb hp hn h) h hz
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
     ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, stkR s₀], (⟨S s₀ + BitVec.ofNat 64 2064, 48⟩ : Region).Disjoint r := by
@@ -385,10 +392,19 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s₂ : State} (h
   · show bytesAt s₃.mem (Iv s₀) 16 = _
     rw [mem₃, h₂.iv]; simp only [chainK, hall]
 
-theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeX86_64 M).pre s₀) :
-    WP isa (whole body) s₀ fun s' => gprPreserved s₀ s' ∧ (modeX86_64 M).post s₀ s' := by
+/-- The registers saved and the arguments set up, `mid` run unless there are
+no blocks, and the registers restored, when `mid` takes the invariant from no
+blocks to all of them (as `body`'s loop does, `whole_wp`). -/
+theorem ends_wp {M : Mode} {mid : Prog isa} {s₀ : State} (h0 : (modeX86_64 M).pre s₀)
+    (hm : UPre s₀ → 0 < N s₀ → ∀ {s₁ : State}, LInv M s₀ 0 s₁ → WP isa mid s₁ (LInv M s₀ (N s₀))) :
+    WP isa (.seq (.block (save ++ setup)) (.seq (.ite .e (.block []) mid) (.block restore))) s₀
+      fun s' => gprPreserved s₀ s' ∧ (modeX86_64 M).post s₀ s' := by
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, z₁⟩ =>
-    WP.seq (WP.mono (mid_wp hb hp h₁ z₁) fun _ h₂ => epilogue_wp hp h₂))
+    WP.seq (WP.mono (ends_mid_wp (fun hn => hm hp hn h₁) h₁ z₁) fun _ h₂ => epilogue_wp hp h₂))
+
+theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeX86_64 M).pre s₀) :
+    WP isa (whole body) s₀ fun s' => gprPreserved s₀ s' ∧ (modeX86_64 M).post s₀ s' :=
+  ends_wp h0 fun hp hn _ h => loop_ok hb hp hn h
 
 end VG.Proof.AesCbc.X86_64
