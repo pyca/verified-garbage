@@ -156,4 +156,69 @@ theorem lo32_next {t : List Byte} (ht : t.length = 16) (k : Nat) : lo32 (next t 
   rw [lo32, next_eq ht, toNat_ofNat]
   omega
 
+theorem blocksAt_take (m : Mem) (p : Addr) {n k : Nat} (hk : k ≤ n) :
+    (Spec.Cbc.blocksAt m p n).take k = Spec.Cbc.blocksAt m p k := by
+  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega⟩
+  rw [blocksAt_add, List.take_left' (Proof.AesCbc.length_blocksAt _ _ _)]
+
+theorem blocksAt_drop (m : Mem) (p : Addr) {n k : Nat} (hk : k ≤ n) :
+    (Spec.Cbc.blocksAt m p n).drop k = Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * k)) (n - k) := by
+  obtain ⟨j, rfl⟩ : ∃ j, n = k + j := ⟨n - k, by omega⟩
+  rw [blocksAt_add, List.drop_left' (Proof.AesCbc.length_blocksAt _ _ _), Nat.add_sub_cancel_left]
+
+/-- The blocks after a frame outside them. -/
+theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ j < n, ∀ r ∈ rs, (⟨p + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint r) :
+    Spec.Cbc.blocksAt m' p n = Spec.Cbc.blocksAt m p n := by
+  simp only [Spec.Cbc.blocksAt]
+  exact List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame hf (hd j (List.mem_range.mp hj)) (by decide)
+
+/-- CTR's output on the first `k + m` blocks, from that on the first `k`, on
+the next `m` from the counter block the first `k` leave, and the rest. -/
+theorem crypt_step (ciph : Spec.Cbc.Cipher) (t : List Byte) (ys : List (List Byte)) {k m : Nat}
+    (hl : k + m ≤ ys.length) :
+    crypt ciph t (ys.take k) ++ crypt ciph (next t k) ((ys.drop k).take m) ++ ys.drop (k + m) =
+      crypt ciph t (ys.take (k + m)) ++ ys.drop (k + m) := by
+  rw [List.take_add, crypt_append, List.length_take, Nat.min_eq_left (by omega)]
+
+theorem next_add (t : List Byte) (a : Nat) : ∀ b, next t (a + b) = next (next t a) b
+  | 0 => rfl
+  | b + 1 => by rw [← Nat.add_assoc, next_succ, next_add t a b, next_succ]
+
+/-- The counter block after a wrap and the carry: CTR's. -/
+theorem carry_next {t : List Byte} (ht : t.length = 16) {k m : Nat} (hw : lo32 (next t k) + m = 2 ^ 32) :
+    ofNat (toNat (ofNat (toNat (next t k) + m - 2 ^ 32) 16) + 2 ^ 32) 16 = next t (k + m) := by
+  have hn : (next t k).length = 16 := by rw [next_eq ht]; exact length_ofNat _ _
+  have hb := toNat_lt hn
+  rw [toNat_ofNat, next_add, next_eq hn]
+  apply ofNat_congr
+  unfold lo32 at hw
+  have : 2 ^ 32 ≤ toNat (next t k) + m := by omega
+  rw [Nat.mod_eq_of_lt (a := toNat (next t k) + m - 2 ^ 32) (by omega), Nat.sub_add_cancel this]
+
+/-- The blocks split in three: the first `a`, the next `b`, and the rest. -/
+theorem blocksAt_three (m : Mem) (p : Addr) {n a b : Nat} (h : a + b ≤ n) :
+    Spec.Cbc.blocksAt m p n = Spec.Cbc.blocksAt m p a ++ Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * a)) b ++
+      Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * (a + b))) (n - (a + b)) := by
+  obtain ⟨c, rfl⟩ : ∃ c, n = a + b + c := ⟨n - (a + b), by omega⟩
+  rw [blocksAt_add m p (a + b) c, blocksAt_add m p a b, Nat.add_sub_cancel_left]
+
+/-- A 32-bit word is zero when its bytes reversed are. -/
+theorem rv32_eq_zero {a : BitVec 32} : rv32 a = 0 ↔ a = 0 := by
+  have ha := a.isLt
+  have hr := (rv32 a).isLt
+  have d0 := rv32_digit a (i := 0) (by decide)
+  have d1 := rv32_digit a (i := 1) (by decide)
+  have d2 := rv32_digit a (i := 2) (by decide)
+  have d3 := rv32_digit a (i := 3) (by decide)
+  simp only [Nat.reduceSub, Nat.reducePow, Nat.pow_zero, Nat.div_one] at d0 d1 d2 d3 ha hr
+  constructor
+  · intro h
+    apply BitVec.eq_of_toNat_eq
+    rw [h] at d0 d1 d2 d3
+    simp at d0 d1 d2 d3 ⊢
+    omega
+  · rintro rfl
+    decide
+
 end VG.Proof.AesCtr

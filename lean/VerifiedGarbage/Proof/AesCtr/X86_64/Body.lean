@@ -147,8 +147,10 @@ theorem pre_wp {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode 
     rw [e, hl, hlo]
     have hcl := c.isLt
     by_cases hlt : N s₀ - k < 2 ^ 32 - c.toNat
-    · rw [if_pos hlt, Nat.min_eq_left (by omega)]
-    · rw [if_neg hlt, Nat.min_eq_right (by omega)]
+    · simp only [hlt, ↓reduceIte]
+      rw [Nat.min_eq_left (by omega)]
+    · simp only [hlt, ↓reduceIte]
+      rw [Nat.min_eq_right (by omega)]
       apply BitVec.eq_of_toNat_eq
       rw [e, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   have keep (r : Reg) (hr : r ∈ calleeSaved) : s₅.gpr r = s.gpr r := by
