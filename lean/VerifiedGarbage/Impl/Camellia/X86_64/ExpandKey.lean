@@ -34,19 +34,6 @@ def wSlot : Nat := tailSlot + 4
 def kaSlot : Nat := tailSlot + 6
 def kbSlot : Nat := tailSlot + 8
 
-/-- The byte of a half that position `c` of a plane holds (as `toBs` lays out a half). -/
-def bytePos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
-
-/-- Plane `j` of the subkey `x` in every lane, as the table holds it: bit
-`8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first. -/
-def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 :=
-  (BitVec.ofBoolListLE ((List.range 64).map fun p => x.getLsbD (56 - 8 * bytePos (p / 8) + j))).setWidth 64
-
-/-- The subkeys of the pairs. -/
-def sigmas : List (BitVec 64) :=
-  [Spec.Camellia.sigma1, Spec.Camellia.sigma2, Spec.Camellia.sigma3, Spec.Camellia.sigma4,
-    Spec.Camellia.sigma5, Spec.Camellia.sigma6]
-
 /-- The planes of the constant `x` to the entry at `rsi`, and on to the next. -/
 def sigmaOne (x : BitVec 64) : List Instr :=
   (List.range 8).flatMap (fun j => [.movImm64 .rax (keyPlane x j), .store (slotAt .rsi j) .rax]) ++

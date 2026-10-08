@@ -51,19 +51,6 @@ theorem Ctx.data {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Ke
   rw [slotW_of_data hp hc (hg _ (by decide)) hf hlt]
   exact hc.masks kv hkv
 
-theorem Halves.xor_key {Q K Q' : Nat → BitVec 64} {d k : Nat → BitVec 64} (hq : HalfRel Q d)
-    (hk : HalfRel K k) (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = ((Q j).getLsbD p ^^ (K j).getLsbD p)) :
-    HalfRel Q' (fun b => d b ^^^ k b) := fun b hb c hc j hj => by
-  rw [h j hj _ (by omega), hq b hb c hc j hj, hk b hb c hc j hj, Camellia.byteOf_xor,
-    BitVec.getLsbD_xor]
-
-/-- Bit `8 i + j` of a little-endian word is bit `j` of its byte `i`. -/
-theorem readW64_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) :
-    (m.readW a 64).getLsbD (8 * i + j) = (m (a + BitVec.ofNat 64 i)).getLsbD j := by
-  rw [← Mem.extractLsb'_read m a (n := 8) hi, BitVec.getLsbD_extractLsb']
-  simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
-  simp only [show 8 * i + j < 64 by omega, decide_true, Bool.true_and]
-
 /-! ## The steps -/
 
 /-- `loadWords h`. -/
@@ -308,9 +295,9 @@ theorem head_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s
   · refine c₇.step rd₈ wr₈ (fun r _ h2 _ => o₈ r h2) (by rw [m₈]; exact Frame.refl _ _) fun kv hkv => ?_
     rw [hs₈]; exact c₇.masks kv hkv
   · rw [AtEntry, kp₈, k₇, show s₆.gpr kp = _ from hk₆, addr_add]
-  · exact (Halves.xor_key hD1 hK0 wq).congr fun j hj => o₈ _ (q_ne_kp j hj)
-  · exact (Halves.xor_key hD1 hK0 w1).congr fun j _ => hs₈ _
-  · exact (Halves.xor_key hS₆ hK1 w2).congr fun j _ => hs₈ _
+  · exact (HalfRel.xor_key hD1 hK0 wq).congr fun j hj => o₈ _ (q_ne_kp j hj)
+  · exact (HalfRel.xor_key hD1 hK0 w1).congr fun j _ => hs₈ _
+  · exact (HalfRel.xor_key hS₆ hK1 w2).congr fun j _ => hs₈ _
 
 /-! ## The tail -/
 
@@ -337,7 +324,7 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   obtain ⟨s₂, e₂, c₂, k₂, -, q₂, h₂, -⟩ := lin_step hp.toKeyCtx c₁ hk₁ (by omega) fromBs_check (by decide +kernel)
   have hk₂ : AtEntry s₂ b (8 * g) := by rw [AtEntry, k₂]; exact hk₁
   have hW1 : WordRel (Qs s₂) (fun b => (S b).1 ^^^ E (8 * g + 1)) :=
-    fromBs_rel q₂ (Halves.xor_key hq hK1 (keyXor_bits q₁))
+    fromBs_rel q₂ (HalfRel.xor_key hq hK1 (keyXor_bits q₁))
   obtain ⟨s₃, e₃, c₃, g₃, w₃, -, sl₃⟩ := storeWords_step hp.toKeyCtx c₂ (Or.inr rfl) storeWords1_check
   have hk₃ : AtEntry s₃ b (8 * g) := by rw [AtEntry, g₃]; exact hk₂
   -- The left halves.
@@ -357,7 +344,7 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   simp only [Nat.mul_zero, Nat.add_zero] at hK0'
   obtain ⟨s₆, e₆, c₆, -, -, q₆, -, d₆⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega) fromBs_check (by decide +kernel)
   have hW0 : WordRel (Qs s₆) (fun b => (S b).2 ^^^ E (8 * g)) :=
-    fromBs_rel q₆ (Halves.xor_key hD2 hK0' (by simpa only [Nat.zero_add] using keyXor_bits q₅))
+    fromBs_rel q₆ (HalfRel.xor_key hD2 hK0' (by simpa only [Nat.zero_add] using keyXor_bits q₅))
   obtain ⟨s₇, e₇, c₇, -, w₇, o₇, -⟩ := storeWords_step hp.toKeyCtx c₆ (Or.inl rfl) storeWords0_check
   refine ⟨s₇, ?_, c₇, fun b' hb i hi j hj => ?_, fun b' hb i hi j hj => ?_⟩
   · rw [tail, runBlock_append', runBlock_append', runBlock_append', runBlock_append', runBlock_append',
@@ -373,14 +360,6 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
     exact hW1 b' hb i hi j hj
 
 /-! ## The groups -/
-
-/-- The first `i` groups. -/
-def groupsN (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 × BitVec 64) : BitVec 64 × BitVec 64 :=
-  (List.range i).foldl (group g E) d
-
-theorem groupsN_succ (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 × BitVec 64) :
-    groupsN g E (i + 1) d = group g E (groupsN g E i d) i := by
-  simp [groupsN, List.range_succ, List.foldl_append]
 
 theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
     (hk : AtEntry s (s₀.gpr sb) 2) {S : Nat → BitVec 64 × BitVec 64} (hS : Halves s S) :

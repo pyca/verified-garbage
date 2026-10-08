@@ -13,16 +13,6 @@ namespace VG.Proof.Camellia.X86_64
 open VG VG.X86_64 VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (at_)
 
-/-- A byte of a little-endian word stored from a load. -/
-theorem writeW_readW_apply (m m' : Mem) (a c x : Addr) :
-    m.writeW a (m'.readW c 64) x =
-      if (x - a).toNat < 8 then m' (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
-  simp only [Mem.writeW, Mem.write, Mem.readW, BitVec.setWidth_eq]
-  split
-  · rename_i h
-    exact Mem.extractLsb'_read m' c (n := 8) h
-  · rfl
-
 /-- `mov rbp, [rax + d]; mov [rbx + d], rbp`. -/
 theorem copyWord_ok (s : State) (d : Nat) (hr : InRegions (s.rd ++ s.wr) (s.gpr .rax + BitVec.ofNat 64 d) 8)
     (hw : InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 d) 8) :
@@ -36,20 +26,6 @@ theorem copyWord_ok (s : State) (d : Nat) (hr : InRegions (s.rd ++ s.wr) (s.gpr 
     State.ea, ofInt_nat, hr, ite_true, Option.map_some, RegUpd.gpr_setReg_self,
     RegUpd.gpr_setReg_of_ne _ _ (show Reg.rbx ≠ .rbp by decide), RegUpd.wr_setReg, hw]
   rfl
-
-theorem off_sub_toNat (B : Addr) {t e : Nat} (h : e ≤ t) (ht : t < 2 ^ 64) :
-    (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat = t - e := by
-  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega
-
-theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
-    (he : e + n ≤ 2 ^ 64) : ¬ (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < n := by
-  rw [VG.Offset.add_sub_add_left]; exact VG.Offset.not_lt_sub_ofNat h ht hn he
-
-/-- A byte of `A`'s area is not among the 8 at `B + e`. -/
-theorem not_in_of_disjoint {A B : Addr} {n t e : Nat} (hsep : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) (ht : t < n)
-    (he : e + 8 ≤ n) (hn : n < 2 ^ 64) : ¬ (A + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < 8 :=
-  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega) (by omega))
-    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
 
 /-- Copying, after `j` of `c` blocks. -/
 structure CopyInv (A B : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where

@@ -13,39 +13,14 @@ import VerifiedGarbage.Proof.Camellia.Scratch
 
 namespace VG.Proof.Camellia.X86_64
 
+open VG.Impl.Camellia (bytePos keyPlane sigmas)
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st)
 open VG.Proof.Camellia (hiW loW)
 
-/-- The stored subkeys' bytes are their words'. -/
-theorem schedule_of_stores {m : Mem} {S : Addr} {ks : List (Nat × Nat × Bool)} {vs : List (BitVec 128)}
-    {g : Reg → BitVec 64} (hv : ∀ k ∈ ks, k.1 < 4)
-    (hg : ∀ v < 4, g (hiReg v) = hiW (vs.getD v 0) ∧ g (loReg v) = loW (vs.getD v 0))
-    (hm : ∀ i < ks.length, ∀ j < 8, m (S + BitVec.ofNat 64 (8 * (0 + i) + j)) =
-      Proof.Camellia.byteOf (Proof.Camellia.rotHalf (g (hiReg (ks.getD i (0, 0, true)).1))
-        (g (loReg (ks.getD i (0, 0, true)).1)) (ks.getD i (0, 0, true)).2.1 (ks.getD i (0, 0, true)).2.2) j) :
-    Spec.Camellia.bytesAt m S (8 * ks.length) =
-      (Proof.Camellia.subkeyWords vs ks).flatMap Spec.Camellia.wordBytes := by
-  have hl : (Proof.Camellia.subkeyWords vs ks).length = ks.length := by simp [Proof.Camellia.subkeyWords]
-  rw [← hl]
-  refine bytesAt_words m _ S fun i hi j hj => ?_
-  rw [hl] at hi
-  rw [show 8 * i + j = 8 * (0 + i) + j by omega, hm i hi j hj]
-  have hk : ks.getD i (0, 0, true) = ks[i] := by simp [List.getD_eq_getElem?_getD, hi]
-  have h4 := hg ks[i].1 (hv _ (List.getElem_mem hi))
-  rw [hk, h4.1, h4.2]
-  simp only [Proof.Camellia.subkeyWords, List.getD_eq_getElem?_getD, List.getElem?_map,
-    List.getElem?_eq_getElem hi, Option.map_some, Option.getD_some]
-
 theorem entryW_slot (s : State) (i j : Nat) : entryW s.mem (s.gpr sb) i j = slotW s (keySlot + 8 * i + j) := by
   simp only [entryW, slotW, wordAddr]
   rw [show 8 * (keySlot + 8 * i + j) = 8 * keySlot + 64 * i + 8 * j by omega]
-
-theorem subkeys_lt4 : (∀ k ∈ Impl.Camellia.subkeys128, k.1 < 4) ∧ (∀ k ∈ Impl.Camellia.subkeys256, k.1 < 4) := by
-  decide
-
-theorem subkeys_length : Impl.Camellia.subkeys128.length = 26 ∧ Impl.Camellia.subkeys256.length = 34 := by
-  decide
 
 /-- What the subkeys' stores leave: the schedule's bytes. -/
 structure StoresPost (s₈ : State) (S : Addr) (len : Nat) (key : List Byte) (s : State) : Prop where
@@ -72,7 +47,7 @@ theorem stores_wp {s₈ : State} {S : Addr} {len : Nat} {key : List Byte} {ks : 
   obtain ⟨s₉, e₉, b₉, f₉, g₉, rd₉, wr₉⟩ := storeSubkeys_ok ks hv 0 s₈ (fun i hi => ⟨_, hw, by
     rw [hS]; exact VG.Offset.contains_base _ (by omega) (by omega)⟩) (by omega)
   refine WP.of_runBlock ⟨s₉, e₉, ⟨?_, ?_, g₉, rd₉, wr₉⟩⟩
-  · rw [hlen, schedule_of_stores (g := s₈.gpr) hv hg (by rw [← hS]; exact b₉), Spec.Camellia.scheduleBytes,
+  · rw [hlen, schedule_of_stores (H := fun v => s₈.gpr (hiReg v)) (L := fun v => s₈.gpr (loReg v)) hv hg (by rw [← hS]; exact b₉), Spec.Camellia.scheduleBytes,
       Proof.Camellia.scheduleWords_expandKey, ← hks']
   · rw [hS] at f₉
     exact f₉.sub fun r hr => ⟨_, List.mem_singleton_self _, by

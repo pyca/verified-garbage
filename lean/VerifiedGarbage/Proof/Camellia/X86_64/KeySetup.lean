@@ -14,6 +14,7 @@ registers.
 
 namespace VG.Proof.Camellia.X86_64
 
+open VG.Impl.Camellia (bytePos keyPlane sigmas)
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st at_ slotAt setMasks)
 open VG.Proof.Camellia (HalfRel pair hiW loW)
@@ -59,14 +60,6 @@ theorem notRax_ok (s : State) :
   · simp only [RegUpd.gpr_setReg_self]
     rw [show (0xFFFFFFFF : BitVec 32).signExtend 64 = BitVec.allOnes 64 by decide, BitVec.xor_allOnes]
   · simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
-
-theorem WordOf.zero : WordOf 0 0 := fun i hi j hj => by
-  rw [Camellia.getLsbD_byteOf _ hi hj]; simp
-
-theorem WordOf.not {w h : BitVec 64} (hw : WordOf w h) : WordOf (~~~ w) (~~~ h) := fun i hi j hj => by
-  rw [Camellia.getLsbD_byteOf _ hi hj, BitVec.getLsbD_not, BitVec.getLsbD_not, hw i hi j hj,
-    Camellia.getLsbD_byteOf _ hi hj]
-  simp only [show 8 * i + j < 64 by omega, show 56 - 8 * i + j < 64 by omega, decide_true, Bool.true_and]
 
 /-! ## The table of `Sigma1 … Sigma6` -/
 
@@ -359,33 +352,6 @@ theorem loadKey_wp {s : State} {len : Nat} (hscr : (⟨s.gpr sb, 8 * slots⟩ : 
       by rw [h.rd, rd₅'], by rw [h.wr, wr₅']⟩
 
 /-! ## The schedule's bytes -/
-
-theorem bytesAt_add (m : Mem) (p : Addr) (a n : Nat) :
-    Spec.Camellia.bytesAt m p (a + n) =
-      Spec.Camellia.bytesAt m p a ++ Spec.Camellia.bytesAt m (p + BitVec.ofNat 64 a) n := by
-  simp only [Spec.Camellia.bytesAt, List.range_add, List.map_append, List.map_map]
-  refine congrArg (_ ++ ·) (List.map_congr_left fun i _ => ?_)
-  show m (p + BitVec.ofNat 64 (a + i)) = m (p + BitVec.ofNat 64 a + BitVec.ofNat 64 i)
-  rw [addr_add]
-
-/-- Words stored with their most significant byte first are their `wordBytes`. -/
-theorem bytesAt_words (m : Mem) : ∀ (ws : List (BitVec 64)) (p : Addr),
-    (∀ i < ws.length, ∀ j < 8, m (p + BitVec.ofNat 64 (8 * i + j)) = Camellia.byteOf (ws.getD i 0) j) →
-    Spec.Camellia.bytesAt m p (8 * ws.length) = ws.flatMap Spec.Camellia.wordBytes
-  | [], _, _ => rfl
-  | w :: ws, p, h => by
-    rw [List.length_cons, Nat.mul_succ, Nat.add_comm, bytesAt_add, List.flatMap_cons]
-    have h1 : Spec.Camellia.bytesAt m p 8 = Spec.Camellia.wordBytes w := by
-      simp only [Spec.Camellia.bytesAt, Spec.Camellia.wordBytes]
-      refine List.map_congr_left fun j hj => ?_
-      have := h 0 (by simp) j (List.mem_range.mp hj)
-      simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at this
-      exact this
-    rw [h1, bytesAt_words m ws _ fun i hi j hj => ?_]
-    rw [addr_add, show 8 + (8 * i + j) = 8 * (i + 1) + j by omega]
-    have := h (i + 1) (by simp only [List.length_cons]; omega) j hj
-    simp only [List.getD_cons_succ] at this
-    exact this
 
 /-! ## Loading the values -/
 
