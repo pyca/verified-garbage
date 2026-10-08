@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Proof.P256.Curve
+import VerifiedGarbage.Proof.P256.PrimeOrder
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
 import VerifiedGarbage.Proof.Weierstrass.InvArith
 
@@ -20,8 +21,8 @@ namespace VG.Variants.P256.AArch64.Law
 
 open Proof.Weierstrass Proof.Weierstrass.AArch64
 
-def variant : HasLawInvToM Spec.P256.curve :=
-  ⟨⟨Proof.P256.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩,
-    invToM_of_prime Proof.P256.n_prime⟩
+def variant : HasLawInvToMOrd Spec.P256.curve :=
+  ⟨⟨⟨Proof.P256.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩,
+    invToM_of_prime Proof.P256.n_prime⟩, Proof.P256.primeOrder⟩
 
 end VG.Variants.P256.AArch64.Law

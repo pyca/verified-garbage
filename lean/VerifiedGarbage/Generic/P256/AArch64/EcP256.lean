@@ -13,7 +13,7 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.AArch64.EcP256
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToM Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   { Spec.EcKey.P256.publicKeyApi with
     target := AArch64.target
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["Public-key derivation shares signing's \
