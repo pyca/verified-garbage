@@ -7,8 +7,11 @@
 //! (contract `VG.Spec.Aes.expandKeyContract`) writes the key schedule, and
 //! `vg_aes_ctr` (`VG.Spec.Ctr.aesContract`) XORs whole blocks with the
 //! output blocks `Oⱼ = CIPH_K(Tⱼ)` from the counter block at `ctr`, which it
-//! replaces with the counter block to continue from, in constant time. It
-//! calls `vg_aes_encrypt_blocks` on one block at a time. This module holds
+//! replaces with the counter block to continue from, in constant time:
+//! its timing may depend on the last four bytes of the counter block (the
+//! 32-bit counter, public in OpenSSL, BoringSSL and aws-lc, which split the
+//! blocks where it wraps), but not on the rest of it, the key or the data.
+//! It calls `vg_aes_encrypt_blocks` on one block at a time. This module holds
 //! the key schedule and handles a partial last block (§6.5,
 //! `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`): CTR of the last bytes padded to a block XORs
 //! them with the first bytes of the next output block.

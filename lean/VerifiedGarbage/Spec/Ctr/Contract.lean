@@ -9,7 +9,11 @@ terms of `Spec/Ctr.lean`, for any target: `A` is the target's calling
 convention. The signature fixes where the arguments are, the memory the
 function may access, disjointness, and that the pointers, the number of
 rounds and the number of blocks are public (see `TCB/Sig.lean`). The key
-schedule, the counter block and the data are secret.
+schedule and the data are secret, and so is the counter block but for its
+last four bytes (`ctrLeak`): the 32-bit counter, whose wrap OpenSSL
+(`CRYPTO_ctr128_encrypt_ctr32`), BoringSSL and AWS-LC branch on to split the
+blocks into calls of a 32-bit counter function, and which those libraries
+treat as public (the whole counter block is an IV, sent in the clear).
 
 It reads the AES key schedule that `vg_aes_expand_key`
 (`VG.Spec.Aes.expandKeyContract`) writes, `16 (rounds + 1)` bytes, at the
@@ -35,6 +39,12 @@ def aesSig : Sig where
     ("ctr", .array true .u8 16), ("data", .slice true (.array .u8 16) "n"),
     ("scratch", .array true .u64 272)]
 
+/-- What the timing of `vg_aes_ctr` may depend on besides the signature's
+public arguments: the counter block's last four bytes, the 32-bit counter
+(big-endian, `inc32`'s, NIST SP 800-38D §6.2). -/
+def ctrLeak (m : Mem) (ctr : Addr) : List Nat :=
+  ((Aes.bytesAt m ctr 16).drop 12).map (·.toNat)
+
 /-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
 `16 (rounds + 1)` bytes at `schedule`: replaces the `n` blocks at `data`
 with their CTR encryption or decryption (§6.5) by AES with `w`, from the
@@ -48,6 +58,7 @@ def aesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let ciph := Cbc.aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
       Cbc.blocksAt m' data n.toNat = crypt ciph (Aes.bytesAt m ctr 16) (Cbc.blocksAt m data n.toNat) ∧
         Aes.bytesAt m' ctr 16 = next (Aes.bytesAt m ctr 16) n.toNat)
+    (leak := some fun _schedule _rounds ctr _data _n _scratch m => ctrLeak m ctr)
     (stack := stack)
 
 /-- `vg_aes_ctr` on every target. -/
@@ -63,8 +74,10 @@ def aesApi : Api where
     `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues \
     the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the \
     first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.\n\n\
-    Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds` and `n` \
-    may affect timing, not the key schedule, the counter block or the data."
+    Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and \
+    the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and \
+    AWS-LC, which split the blocks where it wraps) may affect timing, not the key \
+    schedule, the rest of the counter block or the data."
   safety := Cbc.aesSafety
 
 end VG.Spec.Ctr
