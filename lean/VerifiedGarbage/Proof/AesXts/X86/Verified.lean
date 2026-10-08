@@ -1,31 +1,32 @@
 import VerifiedGarbage.Proof.AesCbc.X86.Verified
-import VerifiedGarbage.Proof.AesXts.X86.Body
+import VerifiedGarbage.Proof.AesXts.X86.CT
 
 /-!
 # XTS-AES on x86: `Verified`
 
 Correctness and constant time (for any implementation `v` of the block
-functions), from the loop AES-CBC's proofs share, a state satisfying the
+functions), from `crypt_wp` and `crypt_ct`, a state satisfying the
 precondition, and the shared contracts of `Spec/Xts/Contract.lean`, with 24
-bytes of stack: each call of a block function pushes its five arguments and
+bytes of stack: the call of the block function pushes its five arguments and
 the return address.
 -/
 
 namespace VG.Proof.AesXts.X86
 
 open VG VG.X86 VG.Impl.AesXts.X86
-open VG.Impl.AesCbc.X86 (whole blkCall)
-open VG.Proof.AesCbc (ciphOf)
+open VG.Proof.AesCbc (ciphOf aesWith_state aesInvWith_state)
 open VG.Proof.AesCbc.X86
 open VG.Proof.Aes.X86 (BlocksImpl)
 
 theorem encrypt_spSafe (v : BlocksImpl) : (encrypt v.enc).all (fun i => !isa.writesSp i) = true := by
-  simp only [encrypt, whole, body, blkCall, Code.all, v.encSpSafe]
+  simp only [encrypt, crypt, batch, pass, Impl.AesOcb.X86.blocksFrame, Code.all, v.encSpSafe]
   decide +kernel
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified X86.target (encrypt v.enc) (Spec.Xts.aesEncryptContract X86.abi 24) :=
-  Verified.of_correct (fun _ hs => whole_wp (encBody_ok v) hs) (whole_ct (encBody_ok v) (encBody_ct v))
+  Verified.of_correct
+    (fun _ hs => crypt_wp true v.encOk v.encNosp v.encStack (fun R w m p => (aesWith_state R w m p).symm) hs)
+    (crypt_ct true v.encOk v.encCt v.encNosp v.encStack fun R w m p => (aesWith_state R w m p).symm)
     { pre := by sig_implies_pre [Spec.Xts.aesEncryptContract, Spec.Xts.aesSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, modeX86]
       -- `xtsMode.chain` counts the blocks, which are `n`.
@@ -53,12 +54,14 @@ theorem encrypt_verified (v : BlocksImpl) :
           X86.argVal, X86.argBytes, modeX86] [a0, a1, a2, a3, a4, a5, e, esp] using sat }
 
 theorem decrypt_spSafe (v : BlocksImpl) : (decrypt v.dec).all (fun i => !isa.writesSp i) = true := by
-  simp only [decrypt, whole, body, blkCall, Code.all, v.decSpSafe]
+  simp only [decrypt, crypt, batch, pass, Impl.AesOcb.X86.blocksFrame, Code.all, v.decSpSafe]
   decide +kernel
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified X86.target (decrypt v.dec) (Spec.Xts.aesDecryptContract X86.abi 24) :=
-  Verified.of_correct (fun _ hs => whole_wp (decBody_ok v) hs) (whole_ct (decBody_ok v) (decBody_ct v))
+  Verified.of_correct
+    (fun _ hs => crypt_wp false v.decOk v.decNosp v.decStack (fun R w m p => (aesInvWith_state R w m p).symm) hs)
+    (crypt_ct false v.decOk v.decCt v.decNosp v.decStack fun R w m p => (aesInvWith_state R w m p).symm)
     { pre := by sig_implies_pre [Spec.Xts.aesDecryptContract, Spec.Xts.aesSig, X86.abi, X86.argSlots,
         X86.argVal, X86.argBytes, modeX86]
       -- `xtsMode.chain` counts the blocks, which are `n`.
