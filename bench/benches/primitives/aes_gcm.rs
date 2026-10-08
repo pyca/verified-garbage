@@ -4,12 +4,12 @@ use criterion::Criterion;
 
 pub const USES: &[&str] = &["aes_gcm", "aes", "gcm"];
 
-/// One-shot AES-GCM encryption (in place and out of place) and decryption
-/// (setup included), and streaming encryption, with a 16-byte key, a 12-byte
-/// nonce and 16 bytes of additional data. aws-lc-rs, which has no streaming
-/// AES-GCM, is measured one-shot only, with a separate tag as this
-/// library's is. The
-/// one-shot functions are also measured at `RECORD_SIZES`, the short
+/// One-shot AES-GCM encryption (in place, and out of place from one piece
+/// and from two: a TLS 1.3 record's payload and its content type byte) and
+/// decryption (setup included), and streaming encryption, with a 16-byte
+/// key, a 12-byte nonce and 16 bytes of additional data. aws-lc-rs, which
+/// has no streaming AES-GCM, is measured one-shot only, with a separate tag
+/// as this library's is. The one-shot functions are also measured at `RECORD_SIZES`, the short
 /// messages of protocols such as TLS and QUIC, where the fixed costs of a
 /// call (the hash subkey's powers, the tag) weigh the most.
 #[cfg(any(
@@ -135,6 +135,80 @@ pub fn bench(c: &mut Criterion) {
                         black_box(&mut out),
                         &[],
                         &mut aws_lc_tag,
+                    )
+                    .unwrap()
+            })
+        });
+        g.finish();
+
+        // Out of place from two pieces, `data` and one more byte: a TLS 1.3
+        // record, whose payload is followed by its content type.
+        let ty = [0x17u8];
+        let mut out = vec![0u8; size + 1];
+        let mut aws_lc_out = vec![0u8; size];
+        let mut aws_lc_extra = [0u8; 1 + 16];
+        let pieces_tag = AesGcm::new(&key)
+            .unwrap()
+            .encrypt(&nonce, &aad, &[&data, &ty], &mut out)
+            .unwrap();
+        aws_lc_key(&key)
+            .seal_out_of_place_scatter(
+                Nonce::assume_unique_for_key(nonce),
+                Aad::from(aad),
+                &data,
+                &mut aws_lc_out,
+                &ty,
+                &mut aws_lc_extra,
+            )
+            .unwrap();
+        assert_eq!(
+            (
+                [&aws_lc_out[..], &aws_lc_extra[..1]].concat(),
+                &aws_lc_extra[1..]
+            ),
+            (out.clone(), &pieces_tag[..])
+        );
+        let mut g = c.benchmark_group("aes-128-gcm-encrypt-two-pieces");
+        g.throughput(Throughput::Bytes(size as u64 + 1));
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let k = AesGcm::new(black_box(&key)).unwrap();
+                k.encrypt(
+                    black_box(&nonce),
+                    black_box(&aad),
+                    &[black_box(&data[..]), black_box(&ty[..])],
+                    black_box(&mut out),
+                )
+                .unwrap()
+            })
+        });
+        let mut ossl_out = vec![0u8; size + 1 + cipher.block_size()];
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                let mut s = Crypter::new(
+                    cipher,
+                    Mode::Encrypt,
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                )
+                .unwrap();
+                s.aad_update(black_box(&aad)).unwrap();
+                let n = s.update(black_box(&data), &mut ossl_out).unwrap();
+                let n = n + s.update(black_box(&ty), &mut ossl_out[n..]).unwrap();
+                s.finalize(&mut ossl_out[n..]).unwrap();
+                s.get_tag(&mut t).unwrap();
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut aws_lc_out),
+                        black_box(&ty),
+                        &mut aws_lc_extra,
                     )
                     .unwrap()
             })
