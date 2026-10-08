@@ -259,6 +259,7 @@ def Instr.asm : Instr → List String
   | .leaSym d name => [s!"lea {d.name}, [rip + {name}]"]
   | .movdquLoad d m => [s!"movdqu {d.name}, {m.str128}"]
   | .movdquStore m r => [s!"movdqu {m.str128}, {r.name}"]
+  | .movqR d r => [s!"movq {d.name}, {r.name}"]
   | .xop op => [op.asm]
   | .vop op => [op.asm]
   | .vmovdquLoad l d m => [s!"vmovdqu {d.vname l}, {m.strV l}"]
@@ -318,7 +319,7 @@ def Instr.memOps : Instr → List MemOp
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _
-  | .shift .. | .movImm64 .. | .leaSym .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
+  | .shift .. | .movImm64 .. | .leaSym .. | .movqR .. | .xop _ | .vop _ | .vpmovmskb .. | .zop _ | .eop _
   | .lfence | .mul _
   | .push _ | .pop .. | .alloc _ | .free _ => []
 

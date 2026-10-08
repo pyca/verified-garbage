@@ -241,9 +241,9 @@ def step (τ : T) : Instr → Option T
   | .movzx8 d m =>
     if memPub τ m then some { τ with regs := set τ d false, bases := kill τ d, lo := .empty } else none
   -- The SSE registers are not tracked: their values are always secret, so
-  -- what `vpmovmskb` moves from one into a general-purpose register is
-  -- secret, and no modelled instruction moves them into the flags.
-  | .vpmovmskb _ d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
+  -- what `vpmovmskb` and `movq` move from one into a general-purpose
+  -- register is secret, and no modelled instruction moves them into the flags.
+  | .vpmovmskb _ d _ | .movqR d _ => some { τ with regs := set τ d false, bases := kill τ d, lo := .empty }
   | .movdquLoad _ m => if memPub τ m then some τ else none
   | .movdquStore m _ => storeStep τ m 16 false
   | .xop _ | .vop _ => some τ
@@ -723,7 +723,8 @@ write two). -/
 def dstOf : Instr → Option Reg
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
-  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _ => some d
+  | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _
+  | .movqR d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
   | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
@@ -895,6 +896,9 @@ theorem exec_nonstore {i : Instr} {d : Reg} (hd : dstOf i = some d) {s s' : Stat
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case vpmovmskb len r =>
+    simp only [exec, Option.some.injEq] at h
+    subst h; exact ⟨rfl, rfl, rfl, fun r h => setReg_ne h⟩
+  case movqR r =>
     simp only [exec, Option.some.injEq] at h
     subst h; exact ⟨rfl, rfl, rfl, fun r h => setReg_ne h⟩
   case adcx src =>
@@ -1521,6 +1525,14 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     subst e₁ e₂
     exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
                                                            setReg_sf, setReg_of] using ha.rf.2⟩
+  | movqR d r =>
+    simp only [step, Option.some.injEq] at hs
+    subst hs
+    refine ⟨rfl, ha.write rfl e₁ e₂ ?_ rfl rfl (fun _ h => h) rfl⟩
+    simp only [exec, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    exact ⟨regs_set (p := false) ha.rf.1 (fun h => by cases h), by simpa only [setReg_cf, setReg_zf,
+                                                           setReg_sf, setReg_of] using ha.rf.2⟩
   | mul r =>
     simp only [step, Option.some.injEq] at hs
     subst hs
@@ -1781,7 +1793,7 @@ def stepK (τ : T) : Instr → Option T
   | .leaSym d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movzx8 d m =>
     bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none
-  | .vpmovmskb _ d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
+  | .vpmovmskb _ d _ | .movqR d _ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }
   | .movdquLoad _ m => bif memPub τ m then some τ else none
   | .movdquStore m _ => storeStepK τ m 16 false
   | .xop _ | .vop _ => some τ
@@ -2004,7 +2016,7 @@ def stepKDFn : Instr → Step
   | .leaSym d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
   | .movzx8 d m => ⟨fun τ =>
     bif memPub τ m then some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty } else none⟩
-  | .vpmovmskb _ d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
+  | .vpmovmskb _ d _ | .movqR d _ => ⟨fun τ => some { τ with regs := setK τ d false, bases := killK τ d, lo := .empty }⟩
   | .movdquLoad _ m => ⟨fun τ => bif memPub τ m then some τ else none⟩
   | .movdquStore m _ => ⟨fun τ => storeStepK τ m 16 false⟩
   | .xop _ | .vop _ => ⟨fun τ => some τ⟩

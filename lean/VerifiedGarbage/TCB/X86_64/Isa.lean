@@ -218,6 +218,8 @@ inductive Instr
   | movdquLoad (dst : XReg) (src : MemOp)
   /-- `movdqu XMMWORD PTR [dst], xmm` (`F3 0F 7F /r`) -/
   | movdquStore (dst : MemOp) (src : XReg)
+  /-- `movq r64, xmm` (`66 REX.W 0F 7E /r`, SSE2): the low quadword of `src`. -/
+  | movqR (dst : Reg) (src : XReg)
   /-- An SSE instruction that writes only an SSE register. -/
   | xop (op : XOp)
   /-- An AVX instruction that writes only vector registers. -/
@@ -482,6 +484,10 @@ def exec : Instr → State → Option State
   -- and no flags are affected.
   | .movdquLoad d m, s => (s.load128 (s.ea m)).map fun v => s.setXmm d v
   | .movdquStore m r, s => s.store128 (s.ea m) (s.xmm r)
+  -- SDM Vol. 2, "MOVQ—Move Quadword", `MOVQ r/m64, xmm` (66 REX.W 0F 7E /r),
+  -- "MOVQ instruction when destination operand is r/m64": `DEST[63:0] :=
+  -- SRC[63:0]`; "Flags Affected: None".
+  | .movqR d r, s => some (s.setReg d ((s.xmm r).extractLsb' 0 64))
   | .xop op, s => some (op.exec s)
   | .vop op, s => some (op.exec s)
   -- SDM Vol. 2, "MOVDQU" (VEX.128 and VEX.256 versions): `DEST[127:0] :=
@@ -590,6 +596,7 @@ def addrs : Instr → State → List Addr
   | .leaSym .., _ => []
   | .movdquLoad _ m, s => [s.ea m]
   | .movdquStore m _, s => [s.ea m]
+  | .movqR .., _ => []
   | .xop _, _ => []
   | .vop _, _ => []
   | .vmovdquLoad _ _ m, s => [s.ea m]
@@ -714,7 +721,7 @@ def Instr.dst : Instr → Option Reg
   | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .bswap d | .shift _ d _
   | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .pop d _
-  | .vpmovmskb _ d _ => some d
+  | .vpmovmskb _ d _ | .movqR d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
   | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
