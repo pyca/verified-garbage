@@ -337,7 +337,18 @@ pub fn decrypt(key: &PrivateKey, ciphertext: &[u8]) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
+
+    /// With `composite_key`'s key, whose factors are not prime, the result
+    /// for 2 fails its check against `e`.
+    #[test]
+    fn decrypt_fault() {
+        let (private, _) = composite_key();
+        let mut two = vec![0; 64];
+        two[63] = 2;
+        assert_eq!(decrypt(&private, &two), Err(Error::Fault));
+    }
 
     #[test]
     fn nonzero_padding() {

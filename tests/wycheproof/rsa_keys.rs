@@ -7,7 +7,8 @@
 //! On a few inputs, RSAEP of each key's result gives back the input, and the
 //! keys loaded from `(n, e, d, p, q)` and from the CRT values the file gives
 //! agree with it. Every key passes `check_key`, and fails it with `d`, `dP`,
-//! `dQ` or `qInv` changed by one. (Every key's public exponent, 3 or 65537,
+//! `dQ` or `qInv` changed by one; with `dP`, `dQ` or `qInv` changed it does
+//! not load (on x86-64, where loading checks them). (Every key's public exponent, 3 or 65537,
 //! is within BoringSSL's limits.)
 
 #![cfg(all(
@@ -117,6 +118,10 @@ fn check_key(name: &str, k: &Key) -> bool {
         let mut v = [d.clone(), dp.0.clone(), dq.0.clone(), qi.0.clone()];
         v[i] = flip(&v[i]);
         let key = PrivateKey::from_crt(n, e, &v[0], &p.0, &q.0, &v[1], &v[2], &v[3]);
+        // Loading checks the CRT values (on x86-64), not `d`.
+        if cfg!(target_arch = "x86_64") {
+            assert_eq!(key.is_ok(), i == 0, "{name}: {how}");
+        }
         assert!(!key.is_ok_and(|key| key.check_key()), "{name}: {how}");
     }
     true

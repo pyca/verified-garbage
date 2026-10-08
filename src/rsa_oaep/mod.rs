@@ -440,6 +440,7 @@ fn decrypt_impl(hash: Hash, mgf1_hash: Hash, f: Features) -> Option<DecryptFn> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
     /// Every implementation of every pair is distinct (each is tested end
@@ -496,36 +497,9 @@ mod tests {
         assert_eq!(n, 13);
     }
 
-    /// The product of the big-endian numbers `a` and `b`, big-endian.
-    fn mul(a: &[u8], b: &[u8]) -> Vec<u8> {
-        let mut r = vec![0u32; a.len() + b.len()];
-        for (i, &x) in a.iter().rev().enumerate() {
-            for (j, &y) in b.iter().rev().enumerate() {
-                r[i + j] += u32::from(x) * u32::from(y);
-            }
-            for t in i..r.len() - 1 {
-                r[t + 1] += r[t] >> 8;
-                r[t] &= 0xff;
-            }
-        }
-        r.iter().rev().map(|&x| x as u8).collect()
-    }
-
-    /// A 64-byte key `p q = n` of two odd numbers with `e = 3`,
-    /// `dP = dQ = 1` and `qInv = 0`, which `PrivateKey::from_crt` accepts
-    /// but whose private-key operation fails the check for 2.
-    fn key() -> (PrivateKey, PublicKey) {
-        let p = vec![0xff; 32];
-        let mut q = vec![0xff; 32];
-        q[31] = 0xfd;
-        let n = mul(&p, &q);
-        let private = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &[1], &[1], &[0]).unwrap();
-        (private, PublicKey::new(&n, &[3]).unwrap())
-    }
-
     #[test]
     fn refused() {
-        let (private, public) = key();
+        let (private, public) = composite_key();
         assert_eq!(
             encrypt(&public, b"", Hash::Md5, Hash::Md5, b""),
             Err(Error::UnsupportedHash)

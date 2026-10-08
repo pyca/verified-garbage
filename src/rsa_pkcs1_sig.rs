@@ -253,35 +253,8 @@ pub fn recover(key: &PublicKey, signature: &[u8], hash: Hash) -> Result<Vec<u8>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
-
-    /// `a b`, big-endian, in `a.len() + b.len()` bytes.
-    fn mul(a: &[u8], b: &[u8]) -> Vec<u8> {
-        let mut r = vec![0u32; a.len() + b.len()];
-        for (i, &x) in a.iter().rev().enumerate() {
-            for (j, &y) in b.iter().rev().enumerate() {
-                r[i + j] += u32::from(x) * u32::from(y);
-            }
-            for t in i..r.len() - 1 {
-                r[t + 1] += r[t] >> 8;
-                r[t] &= 0xff;
-            }
-        }
-        r.iter().rev().map(|&x| x as u8).collect()
-    }
-
-    /// A 64-byte key `p q = n` of two odd numbers with `e = 3`,
-    /// `dP = dQ = 1` and `qInv = 0`, which `PrivateKey::from_crt` accepts
-    /// (its result for 0 passes the check) but whose result for an encoding
-    /// fails the check.
-    fn key() -> (PrivateKey, PublicKey) {
-        let p = vec![0xff; 32];
-        let mut q = vec![0xff; 32];
-        q[31] = 0xfd;
-        let n = mul(&p, &q);
-        let private = PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &[1], &[1], &[0]).unwrap();
-        (private, PublicKey::new(&n, &[3]).unwrap())
-    }
 
     const HASHES: [Hash; 12] = [
         Hash::Md5,
@@ -307,12 +280,12 @@ mod tests {
         }
     }
 
-    /// With `key`'s 64-byte modulus: a hash value of the wrong length, an
+    /// With `composite_key`'s 64-byte modulus: a hash value of the wrong length, an
     /// encoding longer than the modulus (SHA-512's `DigestInfo` is 83
     /// bytes), and a signature that fails the check.
     #[test]
     fn sign_refused() {
-        let (private, public) = key();
+        let (private, public) = composite_key();
         assert_eq!(
             sign(&private, &[0; 31], Hash::Sha256),
             Err(Error::InvalidDigestLength)
