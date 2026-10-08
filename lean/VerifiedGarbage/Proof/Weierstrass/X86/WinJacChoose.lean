@@ -35,4 +35,13 @@ theorem keep_of_ckeeps {M : Mod} {base : Addr} {wk : Nat} {s t : State}
     (hk : CKeeps clob s t) : ProgKeep M base wk [] s t :=
   ⟨hk.1,hk.2.2.1,hk.2.2.2,fun _ _ => congrFun hk.2.1 _⟩
 
+theorem value_after {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr}
+    {size wk m : Nat} [NeZero m] {Sl : Nat → Prop}
+    (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
+    {V V' W : List Nat} {E E' : Nat → Fin m} {s t : State}
+    (hi : Inv M base size m Sl V E s) (ht : Inv M base size m Sl V' E' t)
+    (hk : ProgKeep M base wk W s t) (hw : ∀ x∈W,Sl x)
+    {x : Nat} (hx : x∈V) (hx' : x∈V') (hn : x∉W) : E' x=E x := by
+  rw [←ht.val x hx',hk.slot hL hW hi.scr hw (hi.sl x hx) hn,hi.val x hx]
+
 end VG.Proof.Weierstrass.X86.JWin

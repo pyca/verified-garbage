@@ -33,7 +33,9 @@ def jwinPrep : Prog isa :=
     chain { c.MP' with n := 5 } .add .adc 3600 3520 3560))
     (bits 3600 windowBits 40)
 
-def jwinMul : Prog isa := .seq (jwinPrep c) (jwinCfg c).window
+def jwinMul : Prog isa :=
+  .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) <|
+  .seq (jwinPrep c) (jwinCfg c).window
 
 def exchangeJacWindow : Prog isa :=
   .seq (prefix' c) <| .seq (.block (peer c)) <| .seq (validate c) <|

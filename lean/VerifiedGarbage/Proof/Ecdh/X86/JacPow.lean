@@ -1,0 +1,76 @@
+import VerifiedGarbage.Proof.Ecdsa.X86.Inv
+import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
+import VerifiedGarbage.Proof.Ecdh.X86.Main
+import VerifiedGarbage.Proof.Ecdh.X86.JacMul
+
+/-! # Signed-window multiplication followed by affine conversion for x86 ECDH -/
+namespace VG.Proof.Ecdh.X86
+open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
+open VG.Impl.Ecdsa.X86
+open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
+open VG.Proof.Ecdsa.X86 VG.Proof.Ecdsa.Verify.X86
+open VG.Impl.Ecdh.X86 (PX PY)
+variable {c : Cfg}
+
+abbrev ecJacW (c : Cfg) : List (Nat × Nat) := jwinW c ++ pwW c
+
+structure JacPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : State) : Prop where
+  scr : Scr s' base size
+  gpr : ∀ r, r ∉ powClob → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  unch : Unch base (ecJacW c) s.mem s'.mem
+  q : k < c.C.n → Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
+    (tmv c.C c.n base s' (c.sl RZ)) (mul k P)
+  acc_lt : sv c base s' ACC < c.C.p
+  acc : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' ACC) = tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
+  rz_lt : sv c base s' RZ < c.C.p
+
+theorem jwinPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
+    (hO : PrimeOrder c.C) (hn17 : c.C.n%32=17) (hn64 : 64≤c.C.n)
+    {s₀ : State} {base : Addr} {s : State} (Kp : Keep c s₀ base s)
+    (hsp₁ : SpOk (Impl.Ecdh.X86.Cfg.jwinMul c) c.stk) (hsp₂ : SpOk c.pPow c.stk)
+    {P : Point c.C} (hP : onCurve c.C P = true) (hP0 : P≠.infinity)
+    (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
+    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
+      (tmv c.C c.n base s (c.sl ONEP)) P)
+    (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', JacPost c base (sv c base s K) P s s' →
+      Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem → WP isa rest s' R) :
+    WP isa (.seq (Impl.Ecdh.X86.Cfg.jwinMul c) (.seq c.pPow rest)) s R := by
+  have hs := Kp.scr
+  have F := Kp.fixed
+  have h7 := hc.n10
+  have hn := hs.nowrap
+  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  refine WP.seq (Kp.withSp hsp₁ (WP.mono (jwinMul_ok hc h4 hC ham3 hO hn17 hn64 hs F hP hP0 hpx hpy hQ) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ f₅ => ?_))
+  have hs₅ := hs.of_keeps K₅ (by decide)
+  have F₅ := F.unch h7 hn (jwinW_fixed h4) U₅
+  have k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), Kp.esp], by rw [K₅.2.1, Kp.rd],
+    by rw [K₅.2.2, Kp.wr], F₅, f₅, Kp.sp_lo⟩
+  have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
+    L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
+    F₅.onep (fun t ht => by
+      change  t < 64 * c.n at ht
+      change s₅.mem (off base (bitsAt c.n 1 + t)) = _
+      rw [U₅.byte (jwinW_table h4 ht) (by rw [bitsAt_eq, h4]; rw [h4] at ht; omega)]
+      exact ht₁ t ht)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
+  have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
+    sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
+  refine ⟨hs₅.of_keeps K₆ (by decide), fun r hr => by rw [K₆.1 r hr, K₅.1 r hr],
+    by rw [K₆.2.1, K₅.2.1], by rw [K₆.2.2, K₅.2.2], U₅.trans U₆, ?_, lt₆, ?_, ?_⟩
+  · intro hk
+    change Rep c.C (toM _ _ (sv c base s₆ RX)) (toM _ _ (sv c base s₆ RY))
+      (toM _ _ (sv c base s₆ RZ)) _
+    rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
+      r₆ (i := RZ) (by decide) (by decide)]
+    exact R₅ hk
+  · change _ = toM _ _ (sv c base s₆ RZ) ^ _
+    rw [r₆ (i := RZ) (by decide) (by decide)]
+    exact v₆
+  · rw [r₆ (i := RZ) (by decide) (by decide)]; exact rz₅
+
+end VG.Proof.Ecdh.X86

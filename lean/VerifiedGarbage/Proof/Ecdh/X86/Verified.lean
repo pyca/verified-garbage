@@ -1,8 +1,8 @@
-import VerifiedGarbage.Proof.Ecdh.X86.WindowMain
+import VerifiedGarbage.Proof.Ecdh.X86.JacMain
 import VerifiedGarbage.Proof.Ecdh.X86.Contract
 import VerifiedGarbage.Proof.Ecdh.X86.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86.Verified
-import VerifiedGarbage.Proof.Framework.X86.Taint
+import VerifiedGarbage.Proof.Framework.X86.SseTaint
 import VerifiedGarbage.Proof.Framework.X86.Inline
 
 /-!
@@ -47,11 +47,11 @@ theorem post_of {s s' : State} (h : EPost p256 s s') : ecdhX86.post s s' := by
 /-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
 theorem ecdh_sp : SpOk exchangeP256 p256.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
-theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (s : State) (hs : ecdhX86.pre s) :
+theorem ecdh_x86 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hO : PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86.pre s) :
     ∃ t s', Exec isa exchangeP256 s t s' ∧ abiPreserved s s' ∧ ecdhX86.post s s' := by
   have hp := pre_of hs
   have ham3 : AM3 p256.C := by unfold AM3; decide +kernel
-  obtain ⟨t, s', he, K, hpost⟩ := exchangeWindow_ok (p256_ok hI) rfl hL ham3 ecdh_sp hp
+  obtain ⟨t, s', he, K, hpost⟩ := exchangeJacWindow_ok (p256_ok hI) rfl hL ham3 hO (by decide) (by decide) ecdh_sp hp
   refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -113,7 +113,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : ecdhX86.pre s₁) (h₂ : ecdhX86.p
     · exact congrArg _ a3
 
 theorem ecdh_ct : ConstantTime isa ecdhX86.pre ecdhX86.pub exchangeP256 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
+  VG.Taint.constantTime (A := sseTaint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
     (by taint_decide_weak VG.Proof.Ecdsa.X86.weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
@@ -174,12 +174,12 @@ theorem ecdhWide_implies :
     Spec.P256.curve, Spec.EcKey.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, ecdhWide,
     ecdhX86, ex] [a0, a1, a2, a3, e, esp] using satState
 
-theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) :
+theorem ecdh_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) (hO : PrimeOrder Spec.P256.curve) :
     Verified X86.target exchangeP256 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86.abi 20) := by
   have hsat := ecdhWide_implies.sat_left
   have satLocal : ∃ s, ecdhX86.pre s := hsat.elim fun s h => ⟨_, ecdhWide_pre s h⟩
   have verifiedLocal : Verified X86.target exchangeP256 ecdhX86 :=
-    Verified.of_correct (ecdh_x86 hL hI) ecdh_ct (.refl satLocal)
+    Verified.of_correct (ecdh_x86 hL hI hO) ecdh_ct (.refl satLocal)
   apply Verified.of_implies (Verified.narrowTo verifiedLocal ecdhRd ecdhWr ecdhWide_pre
     ?_ ?_ ?_ ?_ hsat) ecdhWide_implies
   · intro s h a n ⟨r, hr, hc⟩

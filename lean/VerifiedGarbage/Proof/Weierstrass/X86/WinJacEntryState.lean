@@ -36,4 +36,19 @@ theorem Accum.inv_entry {K : JacWinCfg} {C : Curve} {base : Addr} {size wk k e :
     · exact hi.lt x hx
     · exact he.lt x hx
 
+theorem Frame.inv_entry {K : JacWinCfg} {C : Curve} {base : Addr} {size wk : Nat}
+    {Q : Point C} {s₀ s : State} (h : Frame K C base size wk s₀ s)
+    (hL : Layout K size wk) (hW : WkOk K.F K.M C.p size wk (·∈slots K))
+    (hro : ∀ x∈JWin.ro K,wordsVal s₀.mem base x K.M.n<C.p) (he : Entry K C base Q s) :
+    Inv K.M base size C.p (·∈slots K) (JWin.ro K++coords K) (tmv C K.M.n base s) s := by
+  refine ⟨h.scr,h.mod,?_,?_,fun _ _ => rfl⟩
+  · intro x hx
+    rcases List.mem_append.mp hx with hx|hx
+    · exact List.mem_append_left _ hx
+    · exact List.mem_append_right _ (coords_work K x hx)
+  · intro x hx
+    rcases List.mem_append.mp hx with hx|hx
+    · rw [h.ro hL hW hx]; exact hro x hx
+    · exact he.lt x hx
+
 end VG.Proof.Weierstrass.X86.JWin
