@@ -349,6 +349,7 @@ theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec
       fit := by rw [base₄, slots_eq]; exact hfit
       fitD := by rw [rdx₄, toNat_off b (by rw [tailSlot_eq]; omega), tailSlot_eq]; omega
       hg := hp.hg
+      nk34 := by rcases hp.hg with h | h <;> omega
       masks := sc₄.masks.ok base₄
       bound := by rw [slot₄ _ hes, ite_eq_left rfl, base₄, hi.rdi]
       keys := fun i hi' => by rw [base₄]; exact sc₄.keys i hi' }

@@ -15,7 +15,7 @@ open VG VG.X86_64 VG.X86_64.Straight VG.Bitslice VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR)
 open VG.Proof.Camellia (HalfRel WordRel pair group groups cryptWords toBsG fromBsG pos cpos)
 
-theorem ok_data {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s) :
+theorem ok_data {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s) :
     Ok dataCfg s where
   slotIn k hk := by
     simp only [dataCfg] at hk ⊢
@@ -25,7 +25,7 @@ theorem ok_data {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   sep k _ j hj := by simp [dataCfg] at hj
 
 /-- A frame of the blocks keeps the scratch buffer. -/
-theorem slotW_of_data {s₀ s s' : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E)
+theorem slotW_of_data {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E)
     (hc : Ctx s₀ s) (hb : s'.gpr sb = s.gpr sb) (hf : Frame [⟨s.gpr .rdx, 128⟩] s.mem s'.mem)
     {k : Nat} (hk : k < tailSlot) : slotW s' k = slotW s k := by
   have hfit := hp.fit
@@ -40,7 +40,7 @@ theorem slotW_of_data {s₀ s s' : State} {g : Nat} {E : Nat → BitVec 64} (hp 
   rw [tailSlot_eq]; omega
 
 /-- A step that writes the blocks only. -/
-theorem Ctx.data {s₀ s s' : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+theorem Ctx.data {s₀ s s' : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hg : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r)
     (hf : Frame [⟨s.gpr .rdx, 128⟩] s.mem s'.mem) : Ctx s₀ s' := by
   refine hc.step hrd hwr (fun r h1 _ _ => hg r h1) (hf.mono fun r hr => by
@@ -67,7 +67,7 @@ theorem readW64_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) :
 /-! ## The steps -/
 
 /-- `loadWords h`. -/
-theorem loadWords_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E)
+theorem loadWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E)
     (hc : Ctx s₀ s) {h : Nat} (hh : h = 0 ∨ h = 1)
     (hchk : check (lanes 64 10) dataCfg (linExt 0) (loadWords h) dataEnv
       (linPostG 10 (qOuts (loadG h)) [] (dataIns.map (·.1)) dataEnv) = true) :
@@ -105,7 +105,7 @@ theorem mask_lt {kv : Nat × BitVec 64} (hkv : kv ∈ layerMasks) : kv.1 < keySl
     simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot]
 
 /-- A layer on the state registers over `bothEnv`, keeping the masks and both halves. -/
-theorem lin_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+theorem lin_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
     {m : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hm34 : m + 2 ≤ 34) {is : List Instr} {G : Nat → Nat → List Nat}
     (hchk : check (lanes 64 12) layerCfg (linExt 24) is bothEnv
       (linPostG 12 (qOuts G) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true)
@@ -127,7 +127,7 @@ theorem lin_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePr
   exact hc.masks kv hkv
 
 /-- `storeWords h`. -/
-theorem storeWords_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E)
+theorem storeWords_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E)
     (hc : Ctx s₀ s) {h : Nat} (hh : h = 0 ∨ h = 1)
     (hchk : check (lanes 64 11) dataCfg (linExt 0) (storeWords h) storeEnv
       (linPostG 11 [] (storeOuts h) (otherWords h) storeEnv) = true) :
@@ -221,7 +221,7 @@ theorem setKp_ok (s : State) :
   · simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
 
 /-- The whitening. -/
-theorem whiten_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+theorem whiten_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx s₀ nk E) (hc : Ctx s₀ s)
     {m : Nat} (hk : AtEntry s (s₀.gpr sb) m) (hm34 : m + 2 ≤ 34) :
     ∃ s', runBlock isa whiten s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       (∀ j < 8, ∀ p < 64, (Qs s' j).getLsbD p = ((Qs s j).getLsbD p ^^ (keyW s j).getLsbD p)) ∧
@@ -259,7 +259,7 @@ def headHalves (s : State) (E : Nat → BitVec 64) (b : Nat) : BitVec 64 × BitV
 theorem head_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) :
     ∃ s', runBlock isa head s₀ = some s' ∧ Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) 2 ∧
       Halves s' (headHalves s₀ E) := by
-  have hg : 8 * g + 2 ≤ 34 := by rcases hp.hg with h | h <;> omega
+  have hg : 8 * g + 2 ≤ 34 := hp.nk34
   have hc₀ : Ctx s₀ s₀ := Ctx.refl hp.masks
   let b := s₀.gpr sb
   obtain ⟨s₁, e₁, k₁, o₁, m₁, rd₁, wr₁⟩ := setKp_ok s₀
@@ -270,19 +270,19 @@ theorem head_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s
     show s₁.mem.readW (wordAddr (s₁.gpr .rdx) k) 64 = _
     rw [m₁, o₁ .rdx (by decide)]
   -- `D2`.
-  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, -, d₂⟩ := loadWords_step hp hc₁ (Or.inr rfl) loadWords1_check
+  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, -, d₂⟩ := loadWords_step hp.toKeyCtx hc₁ (Or.inr rfl) loadWords1_check
   have hk₂ : AtEntry s₂ b 0 := by rw [AtEntry, k₂]; exact hk₁
-  obtain ⟨s₃, e₃, c₃, k₃, -, q₃, -, d₃⟩ := lin_step hp c₂ hk₂ (by omega) toBs_check (by decide +kernel)
+  obtain ⟨s₃, e₃, c₃, k₃, -, q₃, -, d₃⟩ := lin_step hp.toKeyCtx c₂ hk₂ (by omega) toBs_check (by decide +kernel)
   have hk₃ : AtEntry s₃ b 0 := by rw [AtEntry, k₃]; exact hk₂
   have hD2 : HalfRel (Qs s₃) (fun b => (Spec.Camellia.decodeBlock (blk s₀ b)).setWidth 64) :=
     toBs_rel q₃ fun b' hb i hi j hj => by rw [q₂ b' hb, hd₁]; exact data_lo s₀ b' hb i hi j hj
   obtain ⟨s₄, e₄, c₄, k₄, -, -, sl₄, hh₄, d₄⟩ :=
-    storeHalf_step hp c₃ (Or.inr rfl) storeHalf2_check hk₃ (by omega)
+    storeHalf_step hp.toKeyCtx c₃ (Or.inr rfl) storeHalf2_check hk₃ (by omega)
   have hk₄ : AtEntry s₄ b 0 := by rw [AtEntry, k₄]; exact hk₃
   -- `D1`.
-  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, sw₅, -⟩ := loadWords_step hp c₄ (Or.inl rfl) loadWords0_check
+  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, sw₅, -⟩ := loadWords_step hp.toKeyCtx c₄ (Or.inl rfl) loadWords0_check
   have hk₅ : AtEntry s₅ b 0 := by rw [AtEntry, k₅]; exact hk₄
-  obtain ⟨s₆, e₆, c₆, k₆, -, q₆, h₆, -⟩ := lin_step hp c₅ hk₅ (by omega) toBs_check (by decide +kernel)
+  obtain ⟨s₆, e₆, c₆, k₆, -, q₆, h₆, -⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega) toBs_check (by decide +kernel)
   have hk₆ : AtEntry s₆ b 0 := by rw [AtEntry, k₆]; exact hk₅
   have hD1 : HalfRel (Qs s₆) (fun b => (Spec.Camellia.decodeBlock (blk s₀ b) >>> 64).setWidth 64) :=
     toBs_rel q₆ fun b' hb i hi j hj => by
@@ -294,9 +294,9 @@ theorem head_ok {s₀ : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s
       rw [show d1Slot + (8 + j) = d2Slot + j by simp only [d1Slot, d2Slot]; omega] at h1
       rw [h1, sw₅ _ (by simp only [tailSlot_eq, d2Slot]; omega), sl₄ j hj]
   -- The whitening.
-  obtain ⟨s₇, e₇, c₇, k₇, wq, w1, w2⟩ := whiten_step hp c₆ hk₆ (by omega)
-  have hK0 := c₆.keyRel hp hk₆ (e := 0) (by omega)
-  have hK1 := c₆.keyRel hp hk₆ (e := 1) (by omega)
+  obtain ⟨s₇, e₇, c₇, k₇, wq, w1, w2⟩ := whiten_step hp.toKeyCtx c₆ hk₆ (by omega)
+  have hK0 := c₆.keyRel hp.toKeyCtx hk₆ (e := 0) (by omega)
+  have hK1 := c₆.keyRel hp.toKeyCtx hk₆ (e := 1) (by omega)
   simp only [Nat.mul_zero, Nat.zero_add, Nat.mul_one] at hK0 hK1
   obtain ⟨s₈, e₈, kp₈, o₈, m₈, rd₈, wr₈⟩ := addKp_ok s₇ 128 (by decide)
   have hs₈ : ∀ k, slotW s₈ k = slotW s₇ k := fun k => by simp only [slotW, m₈, o₈ sb (by decide)]
@@ -326,22 +326,22 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
     ∃ s', runBlock isa tail s = some s' ∧ Ctx s₀ s' ∧
       WordRel (fun b => dataW s' (2 * b + 0)) (fun b => (S b).2 ^^^ E (8 * g)) ∧
       WordRel (fun b => dataW s' (2 * b + 1)) (fun b => (S b).1 ^^^ E (8 * g + 1)) := by
-  have hg : 8 * g + 2 ≤ 34 := by rcases hp.hg with h | h <;> omega
+  have hg : 8 * g + 2 ≤ 34 := hp.nk34
   let b := s₀.gpr sb
   obtain ⟨hq, -, h2⟩ := hS
-  have hK1 := hc.keyRel hp hk (e := 1) (by omega)
+  have hK1 := hc.keyRel hp.toKeyCtx hk (e := 1) (by omega)
   simp only [Nat.mul_one] at hK1
   -- The right halves.
-  obtain ⟨s₁, e₁, c₁, k₁, -, q₁, h₁, -⟩ := lin_step hp hc hk (by omega) keyXor8_check (by decide +kernel)
+  obtain ⟨s₁, e₁, c₁, k₁, -, q₁, h₁, -⟩ := lin_step hp.toKeyCtx hc hk (by omega) keyXor8_check (by decide +kernel)
   have hk₁ : AtEntry s₁ b (8 * g) := by rw [AtEntry, k₁]; exact hk
-  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, h₂, -⟩ := lin_step hp c₁ hk₁ (by omega) fromBs_check (by decide +kernel)
+  obtain ⟨s₂, e₂, c₂, k₂, -, q₂, h₂, -⟩ := lin_step hp.toKeyCtx c₁ hk₁ (by omega) fromBs_check (by decide +kernel)
   have hk₂ : AtEntry s₂ b (8 * g) := by rw [AtEntry, k₂]; exact hk₁
   have hW1 : WordRel (Qs s₂) (fun b => (S b).1 ^^^ E (8 * g + 1)) :=
     fromBs_rel q₂ (Halves.xor_key hq hK1 (keyXor_bits q₁))
-  obtain ⟨s₃, e₃, c₃, g₃, w₃, -, sl₃⟩ := storeWords_step hp c₂ (Or.inr rfl) storeWords1_check
+  obtain ⟨s₃, e₃, c₃, g₃, w₃, -, sl₃⟩ := storeWords_step hp.toKeyCtx c₂ (Or.inr rfl) storeWords1_check
   have hk₃ : AtEntry s₃ b (8 * g) := by rw [AtEntry, g₃]; exact hk₂
   -- The left halves.
-  obtain ⟨s₄, e₄, c₄, k₄, -, q₄, -, d₄⟩ := lin_step hp c₃ hk₃ (by omega) loadHalf2_check (by decide +kernel)
+  obtain ⟨s₄, e₄, c₄, k₄, -, q₄, -, d₄⟩ := lin_step hp.toKeyCtx c₃ hk₃ (by omega) loadHalf2_check (by decide +kernel)
   have hk₄ : AtEntry s₄ b (8 * g) := by rw [AtEntry, k₄]; exact hk₃
   have hD2 : HalfRel (Qs s₄) (fun b => (S b).2) := h2.congr fun j hj =>
     BitVec.eq_of_getLsbD_eq fun p hp => by
@@ -351,14 +351,14 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
       rw [q₄ j hj p hp, loadHalfG, xorBits_cons, xorBits_nil,
         Bool.xor_false, bitOf_word _ _ _ hp, bothW_half s₃ (Or.inr rfl) hj,
         sl₃ _ (by simp only [tailSlot_eq, d2Slot]; omega), e₂, e₁]
-  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, -, d₅⟩ := lin_step hp c₄ hk₄ (by omega) keyXor0_check (by decide +kernel)
+  obtain ⟨s₅, e₅, c₅, k₅, -, q₅, -, d₅⟩ := lin_step hp.toKeyCtx c₄ hk₄ (by omega) keyXor0_check (by decide +kernel)
   have hk₅ : AtEntry s₅ b (8 * g) := by rw [AtEntry, k₅]; exact hk₄
-  have hK0' := c₄.keyRel hp hk₄ (e := 0) (by omega)
+  have hK0' := c₄.keyRel hp.toKeyCtx hk₄ (e := 0) (by omega)
   simp only [Nat.mul_zero, Nat.add_zero] at hK0'
-  obtain ⟨s₆, e₆, c₆, -, -, q₆, -, d₆⟩ := lin_step hp c₅ hk₅ (by omega) fromBs_check (by decide +kernel)
+  obtain ⟨s₆, e₆, c₆, -, -, q₆, -, d₆⟩ := lin_step hp.toKeyCtx c₅ hk₅ (by omega) fromBs_check (by decide +kernel)
   have hW0 : WordRel (Qs s₆) (fun b => (S b).2 ^^^ E (8 * g)) :=
     fromBs_rel q₆ (Halves.xor_key hD2 hK0' (by simpa only [Nat.zero_add] using keyXor_bits q₅))
-  obtain ⟨s₇, e₇, c₇, -, w₇, o₇, -⟩ := storeWords_step hp c₆ (Or.inl rfl) storeWords0_check
+  obtain ⟨s₇, e₇, c₇, -, w₇, o₇, -⟩ := storeWords_step hp.toKeyCtx c₆ (Or.inl rfl) storeWords0_check
   refine ⟨s₇, ?_, c₇, fun b' hb i hi j hj => ?_, fun b' hb i hi j hj => ?_⟩
   · rw [tail, runBlock_append', runBlock_append', runBlock_append', runBlock_append', runBlock_append',
       runBlock_append', e₁, Option.bind_some, e₂, Option.bind_some, e₃, Option.bind_some, e₄,
