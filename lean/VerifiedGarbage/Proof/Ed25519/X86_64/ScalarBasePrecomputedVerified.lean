@@ -38,13 +38,13 @@ def baseSatStateT : State where
   sf := none
   of := none
   mem := combSatMem
-  rd := [⟨0x2000, 32⟩, ⟨0x100000, 39936⟩]
+  rd := [⟨0x2000, 32⟩, ⟨0x100000, 40448⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 8192⟩]
   syms _ := 0x100000
 
 /-- The shared contract's precondition, from its facts. -/
 theorem scalarBase_spec_pre {s : State}
-    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 39936⟩])
+    (hrd : s.rd = [⟨s.gpr .rsi, 32⟩, ⟨s.syms combSym, 40448⟩])
     (hw : s.wr = [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩])
     (h1 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rsi, 32⟩)
     (h2 : Region.Disjoint ⟨s.gpr .rdi, 32⟩ ⟨s.gpr .rdx, 8192⟩)

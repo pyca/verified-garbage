@@ -220,11 +220,28 @@ theorem combRow_length {row : List (Spec.X25519.Fe × Spec.X25519.Fe × Spec.X25
     (h : row ∈ combTable) : row.length = 16 :=
   beq_iff_eq.mp (List.all_eq_true.mp tables_length.2 _ h)
 
-theorem combWords_length : combWords.length = combWordCount := by
-  rw [combWords, length_flatMap_const _ 192 _ (fun row hrow => by
+theorem combTblWords_length : combTblWords.length = 4992 := by
+  rw [combTblWords, length_flatMap_const _ 192 _ (fun row hrow => by
     rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow]),
     tables_length.1]
+
+theorem combMagWords_length : combMagWords.length = 64 := by
+  rw [combMagWords, length_flatMap_const _ 4 _ (fun _ _ => List.length_replicate ..), List.length_range]
+
+theorem combWords_length : combWords.length = combWordCount := by
+  rw [combWords, List.length_append, combTblWords_length, combMagWords_length]
   rfl
+
+/-- Word `k < 4` of the magnitude `m` (from 1), after the tables: `m` in both doublewords. -/
+theorem combWords_mag {m k : Nat} (hm1 : 1 ≤ m) (hm : m ≤ 16) (hk : k < 4) :
+    combWords.getD (4992 + (4 * (m - 1) + k)) 0 = BitVec.ofNat 32 m ++ BitVec.ofNat 32 m := by
+  rw [combWords, List.getD_eq_getElem?_getD, List.getElem?_append_right (by rw [combTblWords_length]; omega),
+    combTblWords_length, Nat.add_sub_cancel_left, ← List.getD_eq_getElem?_getD, Nat.mul_comm,
+    combMagWords, getD_flatMap_const _ 4 0 _ 0 (fun _ _ => List.length_replicate ..) (m - 1)
+      (by rw [List.length_range]; omega) k hk,
+    show (List.range 16).getD (m - 1) 0 = m - 1 by
+      rw [List.getD_eq_getElem?_getD, List.getElem?_range (by omega), Option.getD_some],
+    Nat.sub_add_cancel hm1, List.getD_eq_getElem?_getD, List.getElem?_replicate_of_lt hk, Option.getD_some]
 
 /-- Word `i < 12` of entry `k < 16` of table `j < 26`. -/
 theorem combWords_getD {j k i : Nat} (hj : j < 26) (hk : k < 16) (hi : i < 12) :
@@ -233,7 +250,8 @@ theorem combWords_getD {j k i : Nat} (hj : j < 26) (hk : k < 16) (hi : i < 12) :
   have hrow : (combTable.getD j []) ∈ combTable := by
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by rw [tables_length.1]; exact hj)]
     exact List.getElem_mem _
-  rw [combWords, getD_flatMap_const _ 192 0 combTable [] (fun row hrow => by
+  rw [combWords, List.getD_eq_getElem?_getD, List.getElem?_append_left (by rw [combTblWords_length]; omega),
+    ← List.getD_eq_getElem?_getD, combTblWords, getD_flatMap_const _ 192 0 combTable [] (fun row hrow => by
       rw [length_flatMap_const _ 12 _ (fun e _ => entryWords_length e), combRow_length hrow])
       j (by rw [tables_length.1]; exact hj) _ (by omega),
     getD_flatMap_const _ 12 0 _ (1, 1, 0) (fun e _ => entryWords_length e) k

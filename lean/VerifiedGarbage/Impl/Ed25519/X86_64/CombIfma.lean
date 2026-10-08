@@ -16,7 +16,8 @@ arithmetic (`mul4`):
    step, as `vdbl`'s).
 
 The entry is selected as `combSelect` does but 32 bytes at a time
-(`vselect`, into `ymm11–ymm13`, from the static `combSym`), the identity's
+(`vselect`, into `ymm11–ymm13`, from the static `combSym`), each entry's mask
+one `vpcmpeqd` of the magnitude with the static's copy of the entry's, the identity's
 `1`s or'd in for a zero magnitude, and its words split into the limbs of the
 lanes `(y - x, y + x, 2dt, 2)` (`eload`, with the slot `K2` holding `2`);
 for a negative digit (the mask in `rcx`) the lanes `y - x` and
@@ -24,8 +25,8 @@ for a negative digit (the mask in `rcx`) the lanes `y - x` and
 doublings are `vdbl`'s, and `[G]B`'s entry is in slots 9–11, stored before the loop.
 
 The loop runs between Intel's MXCSR prologue and epilogue (`withMx`, which
-keeps MXCSR in `r11`; nothing in the loop writes `r11`). The digits, the
-selection's masks and the sign are computed as `combMultiply` computes them,
+keeps MXCSR in `r11`; nothing in the loop writes `r11`). The digits and the
+sign are computed as `combMultiply` computes them,
 and every address is the scratch or the static plus a public offset.
 -/
 
@@ -35,7 +36,7 @@ open VG.X86_64
 open VG.Impl.X25519.X86_64 (sc)
 open VG.Impl.X25519.X86_64.Ifma (y ld st v srl sll perm blend zero lanes ord carry mul4 kb
   KM K19 KB0 KB1 OPL OPV)
-open VG.Impl.Ed25519.X86_64 (offset combSym combEntryBytes combTblAt combEqMask combSelSetup combSignMask
+open VG.Impl.Ed25519.X86_64 (offset combSym combEntryBytes combTblAt combMagBytes combEqMask combSelSetup combSignMask
   combIndex combChunk combSign constPointOps combG combGCached FieldOp fieldCode)
 
 /-- The slot holding `2`, the entries' `2Z`. -/
@@ -111,18 +112,26 @@ def ventry : List Instr := eload ++ vneg ++ carry (5 + ·) ++ vadd
 
 /-! ## The selection -/
 
+/-- `[rax + combMagBytes + 32 (m - 1)]`: the magnitude `m` (from 1) in the static at `rax`. -/
+def combMagAt (m : Nat) : MemOp := { base := .rax, disp := (combMagBytes + 32 * (m - 1) : Nat) }
+
 /-- Entry `m` (from 1) of the table at `rdx`, its three 32-byte pieces kept in `ymm11–ymm13`
-under the mask of `r8 = m`. -/
+under the mask of `r8 = m`: `ymm14`, the magnitude in every doubleword, compared with `m`'s
+(`vpcmpeqd`, all ones exactly in every doubleword for `r8 = m`). -/
 def vselEntry (m : Nat) : List Instr :=
-  combEqMask m ++ [.vop (.vmovq (y 15) .rcx), .vop (.vpbroadcastq .l256 (y 15) (y 15))] ++
+  [.vbinLoad .vpcmpeqd .l256 (y 15) (y 14) (combMagAt m)] ++
   (List.range 3).flatMap fun c =>
     [.vmovdquLoad .l256 (y 10) (combTblAt (combEntryBytes * (m - 1) + 32 * c)),
       v .vpand 10 10 15, v .vpor (11 + c) (11 + c) 10]
 
+/-- The static's address into `rax`, and the magnitude `r8` into every doubleword of `ymm14`. -/
+def vselMag : List Instr :=
+  [.leaSym .rax combSym, .vop (.vmovq (y 14) .r8), .vop (.vpbroadcastd .l256 (y 14) (y 14))]
+
 /-- The entry of table `rdx = j` for the magnitude `r8` into `ymm11–ymm13` (zero for a zero
 magnitude). -/
 def vselect : List Instr :=
-  combSelSetup ++ [zero 11, zero 12, zero 13] ++ (List.range 16).flatMap fun m => vselEntry (m + 1)
+  combSelSetup ++ vselMag ++ [zero 11, zero 12, zero 13] ++ (List.range 16).flatMap fun m => vselEntry (m + 1)
 
 /-- `rax = 1` if the magnitude `r8` is zero (else `0`), and the sign's mask into `rcx`. -/
 def combFlags : List Instr :=
