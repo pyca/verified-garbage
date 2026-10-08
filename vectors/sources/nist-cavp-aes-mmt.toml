@@ -1,0 +1,5 @@
+name = "NIST CAVP AES Multiblock Message Test (MMT) vectors"
+directories = ["nist-cavp-aes-mmt"]
+url = "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/aes/aesmmt.zip"
+sha256 = "12d1616f7a713e807714055973f04efc402f46a14e3d81869717c7ace4ecbaf0"
+retrieved = 2026-10-08

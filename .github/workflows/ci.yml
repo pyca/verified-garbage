@@ -516,15 +516,15 @@ jobs:
             # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's,
             # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
             # blocks in registers among them), which a runner with VAES and
-            # VPCLMULQDQ never chooses (AES-OCB, with no VAES instance, takes
-            # its AES-NI one there too); and VAES's and
+            # VPCLMULQDQ never chooses (AES-OCB and AES-ECB, with no VAES
+            # instance, take their AES-NI ones there too); and VAES's and
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
             # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
             # baseline code; and `vg_zeroize_avx`, and `vg_zeroize` without
             # AVX.
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
               aes,ssse3 | aes_gcm cmac aes_ccm aes_siv zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
@@ -542,7 +542,7 @@ jobs:
               image: ghcr.io/pyca/verified-garbage-runner:i686
               options: --platform linux/386
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
+              - | sha1 sha224 sha256 sha384 sha512 aes_ccm aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_siv cmac chacha20 mlkem scrypt x25519 ed25519 ecdsa p256_sha cpu
               none | all
               aes | aes_gcm aes_gcm_siv cpu
               pclmulqdq,ssse3 | aes_gcm aes_gcm_siv cpu
@@ -575,7 +575,7 @@ jobs:
           - chip: p4p
             arch: x86_64
             runs: |
-              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
           # Arrow Lake: the SHA512 extension, which no runner has (and
           # RSASSA-PSS and RSAES-OAEP with SHA-384's and SHA-512's code using
           # it, and P-256's and P-384's signatures with SHA-384 and P-521's
@@ -639,11 +639,11 @@ jobs:
             arch: aarch64
             os: ubuntu-24.04-arm
             runs: |
-              - | aes_gcm aes_gcm_siv aes_ocb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
+              - | aes_gcm aes_gcm_siv aes_ocb aes_ecb aes_siv aes_ccm cmac sha1 sha224 sha256 sha384 sha512 sha3 shake mlkem mldsa ed448 scrypt chacha20 ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs cpu
               neon | chacha20
               sha3 | sha3 shake mlkem mldsa ed448 rsa_oaep
               sha2,sha3 | rsa_oaep
-              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb rsa_pkcs1 rsa_oaep
+              none | aes_siv chacha20 sha3 shake mlkem mldsa ecdsa p224_sha p256_sha p384_sha ed448 aes_gcm_siv aes_ccm aes_ocb aes_ecb rsa_pkcs1 rsa_oaep
     name: Rust (${{ matrix.os && format('native, {0}', matrix.os) || matrix.chip == 'native' && 'native' || format('sde -{0}', matrix.chip) }}${{ matrix.arch && format(', {0}', matrix.arch) || '' }}${{ matrix.shard && format(', {0}', matrix.shard) || '' }})
     runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     container:

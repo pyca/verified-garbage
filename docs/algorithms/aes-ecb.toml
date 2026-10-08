@@ -1,0 +1,8 @@
+name = "AES-ECB (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Aes"]
+modules = ["src/aes_ecb.rs"]
+# No `asm`: `aes`'s features include those of its counter mode (VAES,
+# PMULL), which ECB does not use. Whole blocks have these implementations.
+asm = []
+optimized = { x86_64 = "AES-NI", x86 = "AES-NI", aarch64 = "AES" }

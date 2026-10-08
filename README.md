@@ -474,6 +474,22 @@ yours to keep:
 
 <tr>
 
+<td>AES-ECB (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>✅ AES-NI</td>
+
+<td>✅ AES</td>
+
+<td>✅</td>
+
+<td>✅ AES-NI</td>
+
+</tr>
+
+<tr>
+
 <td>ChaCha20</td>
 
 <td>✅</td>

@@ -14,6 +14,7 @@
 ))]
 
 mod aes_ccm;
+mod aes_ecb;
 mod aes_gcm;
 mod cmac_aes;
 mod cmac_triple_des;
