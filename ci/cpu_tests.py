@@ -66,6 +66,10 @@ GROUPS = {
         "lib": ["aes_ocb"],
         "tests": ["rfc7253::aes_ocb_iterative", "rfc7253::aes_ocb_sample_results"],
     },
+    "aes_ofb": {
+        "lib": ["aes_ofb"],
+        "tests": ["cavp::aes_ofb"],
+    },
     "aes_siv": {
         "lib": ["aes_siv"],
         "tests": ["wycheproof::aes_siv"],

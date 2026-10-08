@@ -74,44 +74,47 @@ structure After (s₀ : State) (k : Nat) (s : State) : Prop where
   r10 : s.gpr .r10 = S s₀
   sp : s.sp = s₀.sp
 
-/-- What is known between the code before the call and the call. -/
-structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
-  pre : BlkCall s (W s₀) (D32 s₀ k) (S s₀) (R s₀) 1
+/-- What is known between the code before the call and the call, on the
+block at `D`. -/
+structure Mid (s₀ : State) (k : Nat) (D : BitVec 32) (s : State) : Prop where
+  pre : BlkCall s (W s₀) D (S s₀) (R s₀) 1
   after : After s₀ k s
 
 theorem Mid.of {M : Mode} {s₀ : State} {k : Nat} {s s₁ : State} {m : Mem} (h : LInv M s₀ k s)
-    (a : PreA s₀ k s m s₁) : Mid s₀ k s₁ :=
+    (a : PreA s₀ k s m s₁) : Mid s₀ k (D32 s₀ k) s₁ :=
   ⟨a.pre, ⟨by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r8],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r10],
     by rw [a.sp, h.sp]⟩⟩
 
-theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {s s' : State} (h : Mid s₀ k s)
-    (c : BlkPost F s (W s₀) (D32 s₀ k) (S s₀) (R s₀) 1 s') : After s₀ k s' :=
+theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {D : BitVec 32} {s s' : State} (h : Mid s₀ k D s)
+    (c : BlkPost F s (W s₀) D (S s₀) (R s₀) 1 s') : After s₀ k s' :=
   ⟨by rw [c.saved .r6 (by simp [preserved]) (by decide), h.after.r6],
     by rw [c.saved .r7 (by simp [preserved]) (by decide), h.after.r7],
     by rw [c.saved .r8 (by simp [preserved]) (by decide), h.after.r8],
     by rw [c.saved .r10 (by simp [preserved]) (by decide), h.after.r10], by rw [c.sp, h.after.sp]⟩
 
-/-- A body: code before the call (`pre`), the call of `F` in its frame, and code after it (`post`),
-constant time when `pre`'s addresses and branches
-depend only on the registers the invariant pins and `post`'s on `r6`, `r7`, `r8` and `r10`. -/
-theorem body_ct {M : Mode} (F : BlkFn) {pre post : List Instr}
+/-- A body: code before the call (`pre`), the call of `F` in its frame on the
+block at `D s₀ k` (public), and code after it (`post`), constant time when
+`pre`'s addresses and branches depend only on the registers the invariant
+pins and `post`'s on `r6`, `r7`, `r8` and `r10`. -/
+theorem body_ct {M : Mode} (F : BlkFn) {pre post : List Instr} {D : State → Nat → BitVec 32}
+    (pubD : ∀ {s₀ s₀' : State}, (modeArm M).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
     (hA : ∃ h, (taint.check (Taint.ofRegs vars) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h).isSome = true)
     (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
-      WP isa (.block pre) s (Mid s₀ k))
+      WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
     RelCT isa (BRel M s₀ s₀' k) (.seq (.block pre) (.seq (blkFrame F) (.block post))) fun _ _ => True := by
   obtain ⟨_, hB⟩ := hB
   have a := rel_agree (F := fun s => k < N s₀ ∧ LInv M s₀ k s) (F' := fun s => k < N s₀' ∧ LInv M s₀' k s)
-    (G := Mid s₀ k) (G' := Mid s₀' k) (Taint.ofRegs vars)
+    (G := Mid s₀ k (D s₀ k)) (G' := Mid s₀' k (D s₀' k)) (Taint.ofRegs vars)
     (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2 h'.2)) hA
     (fun _ h => wpA hp h.1 h.2) (fun _ h => wpA hp' h.1 h.2)
-  have c := rel_wp (F := Mid s₀ k) (F' := Mid s₀' k) (G := After s₀ k) (G' := After s₀' k)
-    (blk_rel F fun s₁ s₂ h => ⟨W s₀, D32 s₀ k, S s₀, R s₀, 1, h.1.pre,
-      by rw [pub_W hq, pub_D32 hq, pub_S hq, pub_R hq]; exact h.2.pre,
+  have c := rel_wp (F := Mid s₀ k (D s₀ k)) (F' := Mid s₀' k (D s₀' k)) (G := After s₀ k) (G' := After s₀' k)
+    (blk_rel F fun s₁ s₂ h => ⟨W s₀, D s₀ k, S s₀, R s₀, 1, h.1.pre,
+      by rw [pub_W hq, pubD hq k, pub_S hq, pub_R hq]; exact h.2.pre,
       by rw [h.1.after.sp, h.2.after.sp, pub_sp hq]⟩)
     (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
     (fun _ h => WP.mono (blk_call F h.pre) fun _ hc => After.of h hc)
@@ -140,12 +143,12 @@ theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block decP
 
 theorem encBody_ct : BodyCt (cbcMode true) encBody := fun hp hp' hq k => by
   rw [encBody, encFrame_eq]
-  exact body_ct encF encPre_taint encPost_taint
+  exact body_ct encF (fun hq k => pub_D32 hq k) encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
 
 theorem decBody_ct : BodyCt (cbcMode false) decBody := fun hp hp' hq k => by
   rw [decBody, decFrame_eq]
-  exact body_ct decF decPre_taint decPost_taint
+  exact body_ct decF (fun hq k => pub_D32 hq k) decPre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
 
 /-! ## The loop -/

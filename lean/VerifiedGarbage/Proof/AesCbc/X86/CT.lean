@@ -77,10 +77,12 @@ def BodyCt (M : Mode) (body : Prog isa) : Prop :=
 
 /-! ## One block -/
 
-/-- What is known between the code before the call and the call. -/
-structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
+/-- What is known between the code before the call and the call, on the
+block at `D`, within the regions the function writes. -/
+structure Mid (s₀ : State) (k : Nat) (D : BitVec 32) (s : State) : Prop where
   lt : k < N s₀
-  pre : BlkPre s (W s₀) (D32 s₀ k) (S s₀) (R s₀)
+  pre : BlkPre s (W s₀) D (S s₀) (R s₀)
+  dIn : ∃ r ∈ Big s₀, Region.Sub ⟨D.setWidth 64, 16⟩ r
   esi : s.gpr .esi = D32 s₀ k
   pt : Pt s₀ s
   big : Frame (Big s₀) s₀.mem s.mem
@@ -94,26 +96,28 @@ theorem call_after {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
     (nosp : NoSp b.code) (stack : stackUse b.code = 0)
-    {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : Mid s₀ k s) :
+    {s₀ : State} (hp : UPre s₀) {k : Nat} {D : BitVec 32} {s : State} (h : Mid s₀ k D s) :
     WP isa (blkCall b) s (After s₀ k) :=
   WP.mono (blk_call ok nosp stack h.pre) fun s' hc => by
     have hk := h.lt
     have hb : below (s.gpr .esp) 24 = stkR s₀ := by rw [h.pt.esp]; exact hp.below_eq
     have fr := hc.frame
-    rw [hb, hp.d32 hk] at fr
+    rw [hb] at fr
     have big : Frame (Big s₀) s₀.mem s'.mem := h.big.trans (fr.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
+      · exact h.dIn
       · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨stkR s₀, by simp, fun _ h => h⟩)
     exact ⟨by rw [hc.saved .esi (by simp [calleeSaved]), h.esi],
       ⟨by rw [hc.saved .esp (by simp [calleeSaved]), h.pt.esp], by rw [hc.wr, h.pt.wr],
         fun _ hi => hp.arg_keep big hi⟩⟩
 
-/-- A body: code before the call (`pre`), the call of `b`, and code after it (`post`), whose
-addresses and branches depend only on `esp`, the stack arguments and `esi`. -/
-theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+/-- A body: code before the call (`pre`), the call of `b` on the block at
+`D s₀ k` (public), and code after it (`post`), whose addresses and branches
+depend only on `esp`, the stack arguments and `esi`. -/
+theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {D : State → Nat → BitVec 32}
+    (pubD : ∀ {s₀ s₀' : State}, (modeX86 M).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
     {b : Impl.Aes.X86.Blocks} {pre post : List Instr}
     (ok : ∀ s, (Proof.Aes.blocksX86 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksX86 f).post s s')
@@ -122,7 +126,7 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
     (hA : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block post) h).isSome = true)
     (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
-      WP isa (.block pre) s (Mid s₀ k))
+      WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeX86 M).pub s₀ s₀') (k : Nat) :
     RelCT isa (fun s₁ s₂ => (k < N s₀ ∧ LInv M s₀ k s₁) ∧ (k < N s₀' ∧ LInv M s₀' k s₂))
       (.seq (.block pre) (.seq (blkCall b) (.block post))) fun _ _ => True := by
@@ -133,10 +137,11 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
     (argTaint [.esi] (4 + 4 * 6))
     (fun _ _ h => Pt.agree hq hp hp' (h.1.2.pt hp) (h.2.2.pt hp') fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.2.esi, h.2.2.esi, pub_Dp hq]) hA).wp
-    (F₁ := Mid s₀ k) (F₂ := Mid s₀' k)
+    (F₁ := Mid s₀ k (D s₀ k)) (F₂ := Mid s₀' k (D s₀' k))
       fun _ _ h => ⟨wpA hp h.1.1 h.1.2, wpA hp' h.2.1 h.2.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  have c := ((blk_rel ok ct (E := E s₀) (P := fun s₁ s₂ => Mid s₀ k s₁ ∧ Mid s₀' k s₂) fun s₁ s₂ h =>
-      ⟨h.1.pre, by rw [pub_W hq, pub_D32 hq, pub_S hq, pub_R hq]; exact h.2.pre, h.1.pt.esp,
+  have c := ((blk_rel ok ct (E := E s₀) (P := fun s₁ s₂ => Mid s₀ k (D s₀ k) s₁ ∧ Mid s₀' k (D s₀' k) s₂)
+      fun s₁ s₂ h =>
+      ⟨h.1.pre, by rw [pub_W hq, pubD hq k, pub_S hq, pub_R hq]; exact h.2.pre, h.1.pt.esp,
         h.2.pt.esp.trans (pub_E hq).symm⟩).wp (F₁ := After s₀ k) (F₂ := After s₀' k)
       fun _ _ h => ⟨call_after ok nosp stack hp h.1, call_after ok nosp stack hp' h.2⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
@@ -149,7 +154,7 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
 /-- What the code before the call leaves, as `Mid`. -/
 theorem Mid.of {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ : State} {m : Mem}
     (h : LInv M s₀ k s) (a : PreA s₀ k s m s₁) (hm : Frame [⟨blk s₀ k, 16⟩, ⟨Sv s₀, 16⟩] s.mem m) :
-    Mid s₀ k s₁ := by
+    Mid s₀ k (D32 s₀ k) s₁ := by
   have big : Frame (Big s₀) s₀.mem s₁.mem := (UPre.big_of h.frame).trans (by
     rw [a.mem]
     exact hm.sub fun r hr => by
@@ -157,7 +162,7 @@ theorem Mid.of {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N 
       rcases hr with rfl | rfl
       · exact ⟨dataR s₀, by simp, UPre.data_sub hk⟩
       · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩)
-  exact ⟨hk, a.pre, by rw [a.esi, h.esi], ⟨by rw [a.esp, h.esp], by rw [a.wr, h.wr],
+  exact ⟨hk, a.pre, ⟨dataR s₀, by simp, by rw [hp.d32 hk]; exact UPre.data_sub hk⟩, by rw [a.esi, h.esi], ⟨by rw [a.esp, h.esp], by rw [a.wr, h.wr],
     fun _ hi => hp.arg_keep big hi⟩, big⟩
 
 theorem encPre_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block encPre) h).isSome = true :=
@@ -173,13 +178,13 @@ theorem decPost_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.bloc
   ⟨_, by taint_decide⟩
 
 theorem encBody_ct (v : BlocksImpl) : BodyCt (cbcMode true) (encBody v.enc) :=
-  fun hp hp' hq k => body_ct v.encOk v.encCt v.encNosp v.encStack encPre_taint encPost_taint
+  fun hp hp' hq k => body_ct (fun hq k => pub_D32 hq k) v.encOk v.encCt v.encNosp v.encStack encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of hp hk h a
       ((Proof.Cmac.xor4Mem_frame _ _ _ _).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)) hp hp' hq k
 
 theorem decBody_ct (v : BlocksImpl) : BodyCt (cbcMode false) (decBody v.dec) :=
-  fun hp hp' hq k => body_ct v.decOk v.decCt v.decNosp v.decStack decPre_taint decPost_taint
+  fun hp hp' hq k => body_ct (fun hq k => pub_D32 hq k) v.decOk v.decCt v.decNosp v.decStack decPre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of hp hk h a
       ((copy4Mem_frame _ _ _).sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)) hp hp' hq k

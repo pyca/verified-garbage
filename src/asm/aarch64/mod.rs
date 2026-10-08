@@ -17,6 +17,9 @@ pub(crate) mod aes_gcm_siv;
 pub(crate) mod aes_ocb;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ofb;
+
+#[rustfmt::skip]
 pub(crate) mod aes_siv;
 
 #[rustfmt::skip]
