@@ -79,7 +79,7 @@ theorem expandKeyTaint_wf (s : State) (hs : expandKeyX86_64.pre s) : Taint.Wf ex
 theorem expandKeyTaint_agree (s t : State) (hs : expandKeyX86_64.pre s) (ht : expandKeyX86_64.pre t)
     (hp : expandKeyX86_64.pub s t) : X86_64.Taint.Agree expandKeyTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5⟩ := hp
-  refine ⟨?_, ?_, expandKeyTaint_wf s hs, expandKeyTaint_wf t ht, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, expandKeyTaint_wf s hs, expandKeyTaint_wf t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · constructor
     · intro r hr
       simp only [expandKeyTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr

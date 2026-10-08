@@ -51,7 +51,7 @@ theorem ecbTaint_wf (dir : Dir) (s : State) (hs : (ecbX86_64 dir).pre s) : Taint
 theorem ecbTaint_agree (dir : Dir) (s t : State) (hs : (ecbX86_64 dir).pre s) (ht : (ecbX86_64 dir).pre t)
     (hp : (ecbX86_64 dir).pub s t) : X86_64.Taint.Agree ecbTaint s t := by
   obtain ⟨p1, p2, p3, p4, p5, p6⟩ := hp
-  refine ⟨?_, ?_, ecbTaint_wf dir s hs, ecbTaint_wf dir t ht, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ecbTaint_wf dir s hs, ecbTaint_wf dir t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · constructor
     · intro r hr
       simp only [ecbTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
