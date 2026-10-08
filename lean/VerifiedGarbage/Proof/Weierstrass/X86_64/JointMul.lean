@@ -34,7 +34,7 @@ theorem jointMulRun_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base T :
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) .infinity s)
     (hb : s.gpr .rbx=BitVec.ofNat 64 (64*c.K.M.n)) :
-    WP isa (Joint.run c double) s fun t =>
+    WP isa (Joint.run c double).inline s fun t =>
       JointLoopKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧
       t.gpr .rbx=0 :=
@@ -50,11 +50,12 @@ theorem jointMulWindow_ok {c : Joint.Cfg} {C : Curve} {double : Prog isa} {base 
     (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n))
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) (tmv C c.K.M.n base s) s)
     (hw : JointWindowInput c C base T size u v Q row s) :
-    WP isa (Joint.window c double) s fun t =>
+    WP isa (Joint.window c double).inline s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c++jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add (mul u G) (mul v Q)) t ∧
       t.gpr .rbx=0 := by
   rw [Joint.window]
+  simp only [Code.inline]
   apply WP.assoc
   apply WP.seq
   refine WP.mono (jointTables_ok hInit hm hC ha hOne hQ hi hw.point hw.zero hw.peer hw.generator hw.external)
@@ -102,7 +103,7 @@ theorem jointMul_ok {C : Curve} {c : Joint.Cfg} {double : Prog isa} {base T : Ad
     (hi : Inv c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E s)
     (he : JointGenerator c C base T size row s)
     (hU : wordsVal s.mem base srcU c.K.M.n=u) (hV : wordsVal s.mem base srcV c.K.M.n=v) :
-    WP isa (.seq (Joint.prep c srcU srcV) (Joint.window c double)) s fun t =>
+    WP isa (Code.seq (Joint.prep c srcU srcV) (Joint.window c double)).inline s fun t =>
       JointCore c C base size Q u v (JointGenerator c C base T size row)
         (add (mul u G) (mul v Q)) t ∧ t.gpr .rbx=0 ∧ t.rd=s.rd ∧ t.wr=s.wr ∧
       Unch base (jointPrepRanges c++((jointInitWork c++jointWork c).map (·,8*c.K.M.n)++[(c.K.M.tmp,8*c.K.M.n)]))

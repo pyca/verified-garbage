@@ -6,13 +6,14 @@ import VerifiedGarbage.Impl.Ecdh.X86_64
 namespace VG.Impl.P521.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 
-/-- The joint loop's working space, in the window method's digit bytes
-(`3304 … 5640`), which the joint method does not use: the generator's digits
-at `3304`, the cached `Z²`, `Z³` of the eight entries at `3888`, and the
-selected pair at `5040`. `p521` already has `pubVerify`. -/
+/-- The joint loop's working space, where the window method works but the
+joint method does not: the generator's digits at `3304`, the cached `Z²`,
+`Z³` of the eight entries at `4096` (past the products' temporary area,
+`Mont.fnTmp`), and the selected pair at `7984`, past the table of odd
+multiples. `p521` already has `pubVerify`. -/
 def publicJoint : Joint.Cfg :=
   ⟨p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP,
-    3304,"VG_P521_COMB",3888,5040⟩
+    3304,"VG_P521_COMB",4096,7984⟩
 
 def publicJointAdx : Joint.Cfg :=
   {publicJoint with K := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP}

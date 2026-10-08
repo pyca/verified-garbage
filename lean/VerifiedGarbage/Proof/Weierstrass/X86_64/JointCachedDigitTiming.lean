@@ -24,7 +24,7 @@ theorem jointCachedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : N
     (h2 : E c.selected=E c.K.E.z*E c.K.E.z)
     (h3 : E (c.selected+8*c.K.M.n)=E c.selected*E c.K.E.z) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (cachedSlots c.K.M.n c.K.E c.selected++jointLive c) E)
-      (.seq (CachedJac.add c.K c.K.R c.K.E c.K.D c.selected) (.block (copyPt c.K.M.n c.K.R c.K.D)))
+      (Code.seq (CachedJac.add c.K c.K.R c.K.E c.K.D c.selected) (.block (copyPt c.K.M.n c.K.R c.K.D))).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have sl : ∀ x∈(rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E)++[c.selected,c.selected+8*c.K.M.n],x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E++[c.selected,c.selected+8*c.K.M.n],x∈cachedSlots c.K.M.n c.K.E c.selected++jointLive c := by intro x hx; jslots
@@ -47,7 +47,7 @@ theorem jointCachedDigit_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u
     RelCT isa (fun s t => FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       JointCore c C base size Q u v External A s ∧ JointCore c C base size Q u v External A t ∧
       s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-      (Joint.cachedDigit c)
+      (Joint.cachedDigit c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have hbytes : c.K.bits+j<size := by
     have hh := hL.lookup.layout.stableBounds (c.K.bits,64*c.K.M.n+1) (by simp [jointStableRanges])

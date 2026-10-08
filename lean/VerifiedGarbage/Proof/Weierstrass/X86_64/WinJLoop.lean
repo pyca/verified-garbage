@@ -27,7 +27,7 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hS : WinStR K C base size Rp P s₀ s) {Q : Point C}
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) Q) :
-    WP isa (WinCfg.toProjR K) s fun s' =>
+    WP isa (WinCfg.toProjR K).inline s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z) Q := by
@@ -52,6 +52,7 @@ theorem toProjR_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
   have I₀ : Inv K.M base size C.p (· ∈ winSlots K) V (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
   rw [WinCfg.toProjR, fromJ_eq]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (winN_ok hL hp fromJN_ok aRD w1.1 w1.2 I₀ (by
       intro x hx
       simp only [rcbR, V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
@@ -156,13 +157,14 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {s : State} (hI : WinInvJ K C base size k P s₀ s 1) :
-    WP isa (WinCfg.stepLast K) s fun s' =>
+    WP isa (WinCfg.stepLast K).inline s fun s' =>
       WinStR K C base size (RepA C) P s₀ s' ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
         (mul (winE k K.J 0) P) := by
   have hJ := hL.J
   rw [WinCfg.stepLast]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s (by omega) (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hS₁ := hI.st.rbxKeeps hL k₁
   have lt₁ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₁.mem base x K.M.n < C.p := by
@@ -234,7 +236,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hI : InvSpecW K C base size inv IW) {s₀ : State} (hs : Scr s₀ base size)
     (hM : ModOkW K.M size C.p s₀.mem base) (hF₀ : WinFixed K C base s₀ P k) (hk : k < 16 ^ K.J)
     (hk8 : 8 * geom K.J ≤ k) (hJ2 : 2 ≤ K.J) (hb : 16 * winE k K.J 2 + 8 < C.n) :
-    WP isa (WinCfg.windowJ K inv) s₀ fun s' => KeepRegs (invClob K.M.n) s₀ s' ∧
+    WP isa (WinCfg.windowJ K inv).inline s₀ fun s' => KeepRegs (invClob K.M.n) s₀ s' ∧
       Unch base (winW K ++ IW) s₀.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -250,6 +252,7 @@ theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     omega
   have pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
   rw [WinCfg.windowJ]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (build_ok hL hp hC hM3 hP hs hM hF₀) fun sb B => ?_)
   refine WP.seq (WP.mono (normTbl_ok hL hp hC hpn hone_lt hone hne hI B.scr B.mod B.tbl)
     fun s ⟨hs', Kn, Un, hM', T⟩ => ?_)

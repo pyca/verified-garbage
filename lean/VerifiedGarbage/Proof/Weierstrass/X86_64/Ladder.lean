@@ -72,12 +72,12 @@ structure AddsPost (L : LadderCfg) (C : Curve) (base : Addr) (size : Nat) (E : N
 theorem ladAdds_ok {L : LadderCfg} {C : Curve} {base : Addr} {size : Nat} (hL : LadLay L size)
     (hp : UnitMod C.p (2 ^ (64 * L.M.n))) {E : Nat → Fe C} {s : State}
     (hI : Inv L.M base size C.p (· ∈ ladSlots L) (ladR L) E s) {rest : Prog isa}
-    {Q : State → Prop} (h : ∀ s', AddsPost L C base size E s s' → WP isa rest s' Q) :
-    WP isa (.seq (fprogB L.M (rcb L.S L.R L.R L.D)) (.seq (fprogB L.M (rcb L.S L.D L.G L.T)) rest))
+    {Q : State → Prop} (h : ∀ s', AddsPost L C base size E s s' → WP isa rest.inline s' Q) :
+    WP isa (Code.seq (fprogB L.M (rcb L.S L.R L.R L.D)) (.seq (fprogB L.M (rcb L.S L.D L.G L.T)) rest)).inline
       s Q := by
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL.lay hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
+  refine WP.seq ((WP.mono (rcb_ok hL.lay hp hL.a1 (ladR_S₁ L) hI (ladR_V₁ L))
     fun s₂ ⟨k₂, I₂, t₂, n₂⟩ => ?_))
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL.lay hp hL.a2 (ladR_S₂ L) I₂ (ladR_V₂ L))
+  refine WP.seq ((WP.mono (rcb_ok hL.lay hp hL.a2 (ladR_S₂ L) I₂ (ladR_V₂ L))
     fun s₃ ⟨k₃, I₃, t₃, n₃⟩ => h s₃ ?_))
   have hro : ∀ x ∈ ladRo L, x ∉ rcbW L.S L.D := fun x hx h =>
     hL.ro x hx (by simp only [ladWs, List.mem_append]; exact Or.inl (Or.inr h))
@@ -158,7 +158,7 @@ theorem ladderBody_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
     (hstep : Step L C base s₀ k Q)
     (hbits : ∀ t < L.nbits, s₀.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0)
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ L.nbits) (hI : LadInv L C base size Q s₀ s j) :
-    WP isa (ladderBody L) s fun s' =>
+    WP isa (ladderBody L).inline s fun s' =>
       LadInv L C base size Q s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
   have hn := hI.scr.nowrap
   have hnb := hL.nbits
@@ -261,7 +261,7 @@ theorem ladder_ok {L : LadderCfg} {C : Curve} {base : Addr} {size k : Nat}
     (hlt : ∀ x ∈ ladR L, wordsVal s.mem base x L.M.n < C.p) (hstep : Step L C base s k Q)
     (hR : Q L.nbits (tmv C L.M.n base s L.R.x) (tmv C L.M.n base s L.R.y) (tmv C L.M.n base s L.R.z))
     (hbits : ∀ t < L.nbits, s.mem (off base (L.bits + t)) = if k.testBit t then 1 else 0) :
-    WP isa (ladder L) s fun s' => KeepRegs (powClob L.M.n) s s' ∧ Unch base (ladW L) s.mem s'.mem ∧
+    WP isa (ladder L).inline s fun s' => KeepRegs (powClob L.M.n) s s' ∧ Unch base (ladW L) s.mem s'.mem ∧
       ModOkW L.M size C.p s'.mem base ∧
       (∀ x ∈ [L.R.x, L.R.y, L.R.z], wordsVal s'.mem base x L.M.n < C.p) ∧
       Q 0 (tmv C L.M.n base s' L.R.x) (tmv C L.M.n base s' L.R.y) (tmv C L.M.n base s' L.R.z) := by

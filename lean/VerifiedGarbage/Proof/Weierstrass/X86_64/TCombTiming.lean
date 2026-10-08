@@ -89,12 +89,12 @@ structure PublicChecks (K : TCombCfg) : Prop where
   head : ConstantTime isa (fun _ => True) (Taint.AgreeS [K.tsym] (Taint.ofRegs [.rdi,.rbx]))
     (.block (publicHead K))
   tail : ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rbx,.rdx]))
-    (.seq (.block (publicLoads K)) (publicRest K))
+    (Code.seq (.block (publicLoads K)) (publicRest K)).inline
 
 theorem publicStep_ct {K : TCombCfg} {base T : Addr} {size k j : Nat}
     (hL : TCombLay K size) (hj : 1 ≤ j) (hjn : j ≤ K.J) (hc : PublicChecks K) :
     RelCT isa (fun s₁ s₂ => PublicStepPre K base T size k j s₁ ∧
-      PublicStepPre K base T size k j s₂) (K.step true) (fun _ _ => True) := by
+      PublicStepPre K base T size k j s₂) (K.step true).inline (fun _ _ => True) := by
   have hh : RelCT isa (fun s₁ s₂ => PublicStepPre K base T size k j s₁ ∧
       PublicStepPre K base T size k j s₂) (.block (publicHead K)) (fun _ _ => True) := by
     intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨p₁,p₂⟩ e₁ e₂
@@ -114,8 +114,9 @@ theorem publicStep_ct {K : TCombCfg} {base T : Addr} {size k j : Nat}
     (fun s₁ s₂ ⟨p₁,p₂⟩ =>
       ⟨publicHead_ok hL p₁.1 hj hjn p₁.2.1 p₁.2.2.1 p₁.2.2.2,
        publicHead_ok hL p₂.1 hj hjn p₂.2.1 p₂.2.2.1 p₂.2.2.2⟩)
-  have e : K.step true = .seq (.block (publicHead K ++ publicLoads K)) (publicRest K) := by
-    simp only [TCombCfg.step,TCombCfg.selectPublic,publicHead,publicLoads,publicRest,
+  have e : (K.step true).inline =
+      .seq (.block (publicHead K ++ publicLoads K)) (publicRest K).inline := by
+    simp only [TCombCfg.step,TCombCfg.selectPublic,publicHead,publicLoads,publicRest,Code.inline,
       ite_true,List.append_assoc,List.cons_append,List.nil_append]
   rw [e]
   apply block_append_seq_ct
@@ -139,11 +140,11 @@ theorem publicLoop_ct {K : TCombCfg} {C : Spec.Weierstrass.Curve} {base T : Addr
     RelCT isa (fun a b => TCombInv K C base size k T
       (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) a₀ a K.J ∧
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) b₀ b K.J)
-      (.loop (K.step true) .ne) (fun _ _ => True) := by
+      (Code.loop (K.step true) .ne).inline (fun _ _ => True) := by
   let I := fun j a b => 1 ≤ j ∧ j ≤ K.J ∧
     TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) a₀ a j ∧
     TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) b₀ b j
-  have hstep : ∀ j, RelCT isa (I j) (K.step true) fun a b =>
+  have hstep : ∀ j, RelCT isa (I j) (K.step true).inline fun a b =>
       eval .ne a = eval .ne b ∧ (eval .ne a = some false → True) ∧
       (eval .ne a = some true → ∃ m < j, I m a b) := by
     intro j
@@ -176,11 +177,12 @@ theorem publicComb_ct {K : TCombCfg} {C : Spec.Weierstrass.Curve} {base T : Addr
       ModOkW K.M size C.p a.mem base ∧ ModOkW K.M size C.p b.mem base ∧
       TCombFixed K C base size a k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) ∧
       TCombFixed K C base size b k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
-      (K.comb true) (fun _ _ => True) := by
+      (K.comb true).inline (fun _ _ => True) := by
   intro a b ta tb a' b' hp ea eb
   obtain ⟨ha,hb,ma,mb,fa,fb⟩ := hp
   obtain ⟨_,ia,eia,hia⟩ := tcomb_init_ok hL hV hpn ha ma fa
   obtain ⟨_,ib,eib,hib⟩ := tcomb_init_ok hL hV hpn hb mb fb
+  change Exec isa (.seq (.block K.init) (.loop (K.step true).inline .ne)) _ _ _ at ea eb
   cases ea with
   | seq ea₁ ea₂ =>
     cases eb with

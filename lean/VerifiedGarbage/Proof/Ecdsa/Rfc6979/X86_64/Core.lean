@@ -38,7 +38,7 @@ def CoreOk (P : RfcHash) {dn : Nat} (L : Lay dn) : Prop :=
 `scratch` and the return address of a call from the frame. -/
 theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L ∨ x = kArg P L) :
     (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R) ∧ Region.Disjoint ⟨x, P.Q⟩ L.OUT ∧
-      Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 16, 8⟩ := by
+      Region.Disjoint ⟨x, P.Q⟩ L.SCR ∧ Region.Disjoint ⟨x, P.Q⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
   have hQ := P.sizes
   cases hw : P.R.wide
   · obtain ⟨hQ8, h6, hQD⟩ := P.sizesA hw
@@ -46,7 +46,7 @@ theorem coreArg_ok (hL : L.Ok) (hk : CoreOk P L) {x : Addr} (hx : x = dgArg P L 
     simp only [dgArg, kArg, hw, Bool.false_eq_true, ite_false] at hx
     rcases hx with rfl | rfl
     · exact ⟨⟨L.DG, by simp, within_base _ hn⟩, hL.og.symm.sub_left (Region.sub_prefix hn),
-        hL.gc.sub_left (Region.sub_prefix hn), ((hL.stk_DG (d := 16) (n := 8) (by omega)).symm.sub_left
+        hL.gc.sub_left (Region.sub_prefix hn), ((hL.stk_DG (d := 8) (n := 16) (by omega)).symm.sub_left
           (Region.sub_prefix hn))⟩
     · exact ⟨⟨L.FR, by simp, within_fr _ (by omega) (by omega)⟩, (hL.stk_OUT (by omega)),
         hL.stk_SCR (by omega), Offset.disjoint _ (by omega) (by omega) (by omega)⟩
@@ -140,6 +140,30 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     hL.od, gO.symm, kO.symm, hL.dc, gS, kS, (hL.stk_OUT (by omega)).symm.symm, hL.stk_SCR (by omega), no, hL.nc,
     tbl_held hL hk hc, hT⟩
 
+/-- Nothing `core` reads or writes is in the 8 bytes below its `rsp`,
+where its own calls store their return addresses. -/
+theorem core_clear (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) :
+    Clear (hole ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp))
+      (t.callEntry.withRegions (coreRd P L) (coreWr P L)) := by
+  have hq : L.q = P.Q := hk.1
+  have hh : hole ((t.callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .rsp) =
+      ⟨L.B + BitVec.ofNat 64 8, 8⟩ := by
+    rw [State.withRegions_gpr, State.callEntry_rsp, hc.rsp]
+    show (⟨L.B + BitVec.ofNat 64 24 - 8 - 8, 8⟩ : Region) = _
+    congr 1; bv_omega
+  have hs : Region.Sub ⟨L.B + BitVec.ofNat 64 8, 8⟩ ⟨L.B + BitVec.ofNat 64 8, 16⟩ := Region.sub_prefix (by omega)
+  rw [hh]
+  intro r hr
+  simp only [State.withRegions_rd, State.withRegions_wr, coreRd, coreWr, List.cons_append, List.nil_append,
+    List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | hr | rfl | rfl
+  · rw [← hq]; exact (hL.stk_d (by omega)).symm
+  · exact (coreArg_ok hL hk (.inl rfl)).2.2.2.sub_right hs
+  · exact (coreArg_ok hL hk (.inr rfl)).2.2.2.sub_right hs
+  · exact (hL.tbl r hr).2.2.2.sub_right (Offset.sub_base _ (by omega))
+  · rw [show (⟨L.out, 2 * P.Q⟩ : Region) = L.OUT by simp only [Lay.OUT, hq]]; exact (hL.stk_OUT (by omega)).symm
+  · exact (hL.stk_SCR (by omega)).symm
+
 theorem core_covers (hk : CoreOk P L) (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     Covers (coreRd P L ++ coreWr P L) (t.rd ++ t.wr) :=
   covers_of fun r hr => by
@@ -168,26 +192,40 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     (hdi : t.gpr .rdi = L.out) (hsi : t.gpr .rsi = L.d) (hdx : t.gpr .rdx = dgArg P L) (hcx : t.gpr .rcx = kArg P L)
     (h8 : t.gpr .r8 = L.scr) :
     WP isa (.call (cfgOf P).coreN (cfgOf P).coreC) t fun t' => Ctx L g m₀ t' ∧
-      Frame [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 16, 8⟩] t.mem t'.mem ∧
+      Frame [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩] t.mem t'.mem ∧
       match coreSig P L t.mem with
       | some rs => (t'.gpr .rax).setWidth 32 = 1 ∧
           Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = Spec.Ecdsa.encode P.R.E.C rs
       | none => (t'.gpr .rax).setWidth 32 = 0 ∧
           Spec.Sha256.bytesAt t'.mem L.out (2 * P.Q) = List.replicate (2 * P.Q) 0 := by
   have hq : L.q = P.Q := hk.1
-  have hsp : below (t.gpr .rsp) (8 * (P.R.coreC.depth + 1)) = ⟨L.B + BitVec.ofNat 64 16, 8⟩ := by
-    rw [P.R.coreD, hc.rsp]
-    show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 8, 8⟩ : Region) = _
-    congr 1; bv_omega
+  have hD := P.R.coreD
+  have hsp : Region.Sub (below (t.gpr .rsp) (8 * (P.R.coreC.depth + 1))) ⟨L.B + BitVec.ofNat 64 8, 16⟩ := by
+    rw [hc.rsp]
+    rcases (show P.R.coreC.depth = 0 ∨ P.R.coreC.depth = 1 by omega) with h | h <;> rw [h]
+    · rw [show below (L.B + BitVec.ofNat 64 24) (8 * (0 + 1)) = ⟨L.B + BitVec.ofNat 64 16, 8⟩ by
+        show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 8, 8⟩ : Region) = _
+        congr 1; bv_omega]
+      exact Offset.sub _ (by omega) (by omega)
+    · rw [show below (L.B + BitVec.ofNat 64 24) (8 * (1 + 1)) = ⟨L.B + BitVec.ofNat 64 8, 16⟩ by
+        show (⟨L.B + BitVec.ofNat 64 24 - BitVec.ofNat 64 16, 16⟩ : Region) = _
+        congr 1; bv_omega]
+      exact sub_refl _
   have eW : coreWr P L = [L.OUT, L.SCR] := by
     simp only [coreWr, Lay.OUT, hq]
-  refine WP.of_syms (WP.call (k := coreK P.R.E) P.R.coreX (core_nosp P)
-    (by rw [P.R.coreD]; decide) (core_pre hL hk hc hdi hsi hdx hcx h8)
+  refine WP.of_syms (WP.call (k := (coreK P.R.E).clear) (fun s h => P.R.coreX s h.1 h.2) (core_nosp P)
+    (by omega) ⟨core_pre hL hk hc hdi hsi hdx hcx h8, core_clear hL hk hc⟩
     (core_covers hk hL hc) (core_coversW hq hc) fun t' hrd hwr hcs hf _ ⟨s₂, hm, hg₂, hpost⟩ hsy => ?_)
-  rw [hsp, eW] at hf
+  rw [eW] at hf
+  replace hf : Frame [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩] t.mem t'.mem := hf.sub fun r hr => by
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact ⟨_, by simp, sub_refl _⟩
+    · exact ⟨_, by simp, sub_refl _⟩
+    · exact ⟨_, by simp, hsp⟩
   refine ⟨hc.keep hL hrd hwr (hcs .rsp (by decide)) (fun r hr _ => hcs r hr) hf (hsy := hsy) fun r hr => ?_, hf,
     ?_⟩
-  · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl (sub_refl _)
     · exact .inr (.inl (sub_refl _))
@@ -200,8 +238,9 @@ theorem core_ok (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
       simp only [coreSigOf, coreSig, ecdsa_bytesAt]
       rw [ce_bytesAt hc ((hL.stk_D (d := 16) (n := 8) (by omega)).symm.sub_left
           (Region.sub_prefix (by rw [hq]))) (by omega),
-        ce_bytesAt hc gR (by omega), ce_bytesAt hc kR (by omega)]
-    have hp := hpost
+        ce_bytesAt hc (gR.sub_right (Offset.sub _ (by omega) (by omega))) (by omega),
+        ce_bytesAt hc (kR.sub_right (Offset.sub _ (by omega) (by omega))) (by omega)]
+    have hp : (coreK P.R.E).post (t.callEntry.withRegions (coreRd P L) (coreWr P L)) s₂ := hpost
     simp only [coreK, ce_gpr _ _ _ (by decide : Reg.rdi ≠ .rsp),
       ce_gpr _ _ _ (by decide : Reg.rsi ≠ .rsp), ce_gpr _ _ _ (by decide : Reg.rdx ≠ .rsp),
       ce_gpr _ _ _ (by decide : Reg.rcx ≠ .rsp), hdi, hsi, hdx, hcx, State.withRegions_mem, hk', hm,

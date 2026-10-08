@@ -27,7 +27,7 @@ def mulNote (adx : Bool) : String :=
 theorem p256x_ok (hI : InvSounds) : CfgOk p256x :=
   have h := p256_ok hI
   { h with
-    comb := fun d h => by cases h; exact ⟨by decide, by decide⟩
+    comb := fun d h => by cases h; exact ⟨by decide, by decide, by decide⟩
     inv := fun _ => ⟨by decide, @hI _ p256.C.p_ne_zero Proof.P256.p_prime,
       InvOk.ofMod (by decide +kernel) (by decide)⟩
     inv_n := fun _ _ => ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩ }

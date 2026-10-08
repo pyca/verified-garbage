@@ -33,7 +33,10 @@ structure Mid (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (s 
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
+  /-- The bits of `p - 2`, which only the power for more than nine words reads
+  (for nine, the second table holds the products' temporary area). -/
+  t₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
+    if (c.C.p - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) =
     mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
   px_lt : sv c base s PX < c.C.p
@@ -137,7 +140,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
   refine WP.seq (WP.mono_syms (nPow_ok hc hs₃ M₃ lt₃ F₃.onen
     (fun t ht => by
       show s₃.mem (off base (bitsAt c.n 2 + t)) = _
-      rw [tbl_unch U₃ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t),
+      rw [tbl_unch U₃ h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t ht),
         tbl_unch U₂ h7 hn (j := 2) (by decide) ht (tbl_apart_flag h0 2 t)]
       exact hF.t₂ t ht)) fun s₄ ⟨K₄, U₄, lt₄, v₄⟩ sy₄ => ?_)
   have hs₄ := hs₃.of_keepRegs K₄ (rdi_not_invClob _)
@@ -218,7 +221,7 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     by rw [a (i := K) (by decide) (by decide) (by decide), hF.k],
     by rw [a (i := RX) (by decide) (by decide) (by decide), hF.rx],
     by rw [a (i := RY) (by decide) (by decide) (by decide), hF.ry],
-    by rw [a (i := RZ) (by decide) (by decide) (by decide), hF.rz], fun t ht => ?_, ?_,
+    by rw [a (i := RZ) (by decide) (by decide) (by decide), hF.rz], fun h9 t ht => ?_, ?_,
     by rw [a (i := PX) (by decide) (by decide) (by decide)]; exact hF.px_lt,
     by rw [a (i := PY) (by decide) (by decide) (by decide)]; exact hF.py_lt,
     by rw [a (i := PX) (by decide) (by decide) (by decide)]; exact hF.px,
@@ -240,8 +243,8 @@ theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitV
     by rw [v₁₀ (by decide) (by decide) (by decide), v₉ (by decide) (by decide) (by decide),
       v₈ (by decide) (by decide) (by decide), v₇ (by decide) (by decide) (by decide)]; exact em₆⟩
   · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (apart_append (tbl_apart_flag h0 1 t)
-      (tbl_apart_slW (by decide) 1 t)) (tbl_apart_pwA (by decide) ht))]
-    exact hF.t₁ t ht
+      (tbl_apart_slW (by decide) 1 t ht)) (tbl_apart_pwA (by decide) ht))]
+    exact hF.t₁ h9 t ht
   · rw [flag_unch_of U' h7 h0 hn (apart_append (apart_slW (by decide)) (apart_pwA (by decide)))]
     exact flag₂
   · refine unch_whole (hF.unch.trans UW) fun w hw => ?_

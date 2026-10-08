@@ -28,7 +28,7 @@ theorem projectiveOps_run (hc : BaseCfgOk c) (e : Nat → Fe c.C) :
 theorem projectiveOps_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hM : ModOkW c.MP' size c.C.p s.mem base)
     (hlt : ∀ i ∈ projectiveReads, sv c base s i < c.C.p) :
-    WP isa (fprogB c.MP' (projectiveOps c.sl)) s fun t =>
+    WP isa (fprogB c.MP' (projectiveOps c.sl)).inline s fun t =>
       Scr t base size ∧ Unch base (slW c projectiveWrites) s.mem t.mem ∧
       sv c base t W < c.C.p ∧ sv c base t XN < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (sv c base t W) =
@@ -50,7 +50,7 @@ theorem projectiveOps_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
   have reads : readsOk (projectiveOps c.sl) (projectiveReads.map c.sl) = true := by
     rw [projectiveOps_rename]
     exact readsOk_rename c.sl (by decide)
-  refine (fprogB_wp _ _).mpr (WP.mono (fprog_ok hL (unitMod_pow_two hc.p_odd _) _ I ?_ reads)
+  refine (WP.mono (fprogB_ok hL (unitMod_pow_two hc.p_odd _) _ I ?_ reads)
     fun t ⟨keep, It⟩ => ?_)
   · intro op hop x hx
     simp only [projectiveOps, List.mem_cons, List.not_mem_nil, or_false] at hop
@@ -98,9 +98,9 @@ theorem projectivePrepare_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : 
 theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hmp : sv c base s MP = c.C.p)
     (hrx : sv c base s RX < c.C.p) (hrz : sv c base s RZ < c.C.p) :
-    WP isa (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.projectivePrepare c))
+    WP isa (Code.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.projectivePrepare c))
       (.seq (.block (mul c.MP' (c.sl XM) (c.sl K) (c.sl XM)))
-        (fprogB c.MP' (projectiveOps c.sl)))) s fun t =>
+        (fprogB c.MP' (projectiveOps c.sl)))).inline s fun t =>
       Scr t base size ∧ Unch base (slW c projectiveAllW) s.mem t.mem ∧
       sv c base t MN = c.C.p - c.C.n ∧ sv c base t W < c.C.p ∧ sv c base t XN < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (sv c base t W) =

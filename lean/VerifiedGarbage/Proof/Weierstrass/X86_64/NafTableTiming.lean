@@ -9,9 +9,9 @@ theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
     (ht : K.tbl<2^31) (hOne : K.one<C.p) (hc : NafTableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
-      (Naf.table K) (NafTablePair K C base size 8) := by
+      (Naf.table K).inline (NafTablePair K C base size 8) := by
   let I := fun j s t => 1≤j ∧ j≤7 ∧ NafTablePair K C base size (8-j) s t
-  have step : ∀ j, RelCT isa (I j) (Naf.tableStep K) (fun s t =>
+  have step : ∀ j, RelCT isa (I j) (Naf.tableStep K).inline (fun s t =>
       eval .b s=eval .b t ∧
       (eval .b s=some false → NafTablePair K C base size 8 s t) ∧
       (eval .b s=some true → ∃ n<j, I n s t)) := by
@@ -35,6 +35,7 @@ theorem nafTable_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
   unfold Naf.table
+  simp only [Code.inline]
   apply RelCT.assoc
   apply RelCT.seq (nafTable_init_relCT hL hm hc)
   exact (RelCT.loop I step 7).mono (fun _ _ hp => ⟨by decide,by decide,hp⟩) (fun _ _ h => h)

@@ -64,8 +64,8 @@ theorem ofN_forward_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {S : RcbSlots} {p q o : Pt}
     (hSl : ∀ x∈rcbW S o++rcbR S p q,Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p q,x∈V)
-    (hc : ScratchCT (ForwardField.programB M (ofN N S p q o))) :
-    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (ofN N S p q o))
+    (hc : ScratchCT (ForwardField.programB M (ofN N S p q o)).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (ofN N S p q o)).inline
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (ofN N S p q o) E)) := by
   apply fieldProgram_relCT hc
   intro s hi
@@ -83,8 +83,8 @@ theorem doubleField_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hm : UnitMod m (2^(64*M.n))) {S : RcbSlots} {p o : Pt}
     (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V)
-    (hc : ScratchCT (ForwardField.programB M (dblJMul S p o))) :
-    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (dblJMul S p o))
+    (hc : ScratchCT (ForwardField.programB M (dblJMul S p o)).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (ForwardField.programB M (dblJMul S p o)).inline
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E)) := by
   have he : dblJMul S p o=ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
   rw [he] at hc ⊢

@@ -23,7 +23,7 @@ structure ProjectiveInput (c : VG.Impl.Ecdsa.X86_64.Cfg) (s₀ : State) (base : 
 theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hP : ProjectiveInput c s₀ base g s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c).inline s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         (s'.gpr .rax).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
@@ -46,7 +46,7 @@ theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n
   have saved := Saved.unch hP.fixed.saved (fun w hw => by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     show 48 ≤ c.sl i
-    rw [sl_eq]; omega) U
+    rw [sl_eq']; omega) U
   have flag : word t.mem base (c.sl FLAG) = mask A := by
     rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hP.flag
@@ -79,7 +79,7 @@ theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n
 theorem projectiveFinal_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c).inline s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         (s'.gpr .rax).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
@@ -89,7 +89,7 @@ theorem projectiveFinal_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.
 
 theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.tail c) s fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
         (s'.gpr .rax).setWidth 32 = if (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
@@ -99,6 +99,8 @@ theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base 
   split
   · rename_i h
     exact projectiveFinal_ok hc hC h.2.1 h.2.2 hP
-  · exact tail_ok hc hP
+  · show WP isa (Code.seq c.pPow.inline (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline) s _
+    rw [pPow_inline, show (Impl.Ecdsa.Verify.X86_64.Cfg.final c).inline = _ from blocks_inline _]
+    exact tail_ok hc hP
 
 end VG.Proof.Ecdsa.Verify.X86_64

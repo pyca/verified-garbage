@@ -285,6 +285,7 @@ def Instr.rspFree : Instr → Bool
   | .movImm64 d _ => d != .rsp
   | .xop (.movq _ r) => r != .rsp
   | .xop _ => true
+  | .movqR d _ => d != .rsp
   | .movdquLoad _ m | .movdquStore m _ => m.noRsp
   | _ => false
 
@@ -425,6 +426,9 @@ theorem exec_setRsp {i : Instr} (hi : i.rspFree = true) :
       simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
       simp only [XOp.exec, setRsp_gpr hi]; rfl
     | _ => rfl
+  | movqR d r =>
+    simp only [Instr.rspFree, bne_iff_ne, ne_eq] at hi
+    simp only [exec, Option.map_some, setReg_setRsp hi]; rfl
   | movdquLoad d m =>
     simp only [Instr.rspFree] at hi
     simp only [exec, Option.map_map]; rw [ea_setRsp hi]; rfl
@@ -495,6 +499,43 @@ def _root_.VG.Code.InlineOk : Prog isa → Bool
   | .loop b _ => b.InlineOk
   | .call _ b => b.noCalls && b.allInstrs Instr.rspFree
   | .frame .. => false
+
+/-- Inlined code whose calls call none calls none. -/
+theorem _root_.VG.Code.noCalls_inline {c : Prog isa} (h : c.InlineOk = true) : c.inline.noCalls = true := by
+  induction c with
+  | block _ => rfl
+  | seq a b iha ihb =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, Code.noCalls, Bool.and_eq_true]
+    exact ⟨iha h.1, ihb h.2⟩
+  | ite _ t e iht ihe =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    simp only [Code.inline, Code.noCalls, Bool.and_eq_true]
+    exact ⟨iht h.1, ihe h.2⟩
+  | loop b _ ih =>
+    simp only [Code.InlineOk] at h
+    simp only [Code.inline, Code.noCalls]
+    exact ih h
+  | call _ b _ =>
+    simp only [Code.InlineOk, Bool.and_eq_true] at h
+    exact h.1
+  | frame _ _ _ _ => simp only [Code.InlineOk, Bool.false_eq_true] at h
+
+/-- Code without calls is its own inlined form. -/
+theorem _root_.VG.Code.inline_of_noCalls {c : Prog isa} (h : c.noCalls = true) : c.inline = c := by
+  induction c with
+  | block _ => rfl
+  | seq a b iha ihb =>
+    simp only [Code.noCalls, Bool.and_eq_true] at h
+    simp only [Code.inline, iha h.1, ihb h.2]
+  | ite _ t e iht ihe =>
+    simp only [Code.noCalls, Bool.and_eq_true] at h
+    simp only [Code.inline, iht h.1, ihe h.2]
+  | loop b _ ih =>
+    simp only [Code.noCalls] at h
+    simp only [Code.inline, ih h]
+  | call _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
+  | frame _ _ _ _ => simp only [Code.noCalls, Bool.false_eq_true] at h
 
 /-- The leakage of a run of `c`, from that of `c.inline` (a prefix of
 `t`): each call adds the address of its return address `h` before and after

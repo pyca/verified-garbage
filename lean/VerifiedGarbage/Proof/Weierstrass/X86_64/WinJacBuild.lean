@@ -287,7 +287,7 @@ theorem jbuildDblu_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {s : State}
     (hI : JBInv K C base size P s₀ 1 s) :
-    WP isa (ForwardField.programB K.M K.dbluOps) s fun s₁ =>
+    WP isa (ForwardField.programB K.M K.dbluOps).inline s fun s₁ =>
       WP isa (.block (copy K.M.n K.D.x K.S.t3 ++ copy K.M.n K.D.y K.S.t2 ++
         ([.mov32 .rbx (.imm 2)] : List Instr) ++ K.storeEntry)) s₁ (JBInvZ K C base size P s₀ 2) := by
   have hs := hI.fr.scr
@@ -434,13 +434,14 @@ theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hn17 : 17 ≤ C.n) {base : Addr} {s₀ : State} {m : Nat} (h2 : 2 ≤ m) (h15 : m ≤ 15) {s : State}
     (hI : JBInvZ K C base size P s₀ m s) :
-    WP isa K.buildStep s fun s' =>
+    WP isa K.buildStep.inline s fun s' =>
       JBInvZ K C base size P s₀ (m + 1) s' ∧ s'.zf = some (decide (m + 1 = 16)) := by
   have hs := hI.inv.fr.scr
   have hn := hs.nowrap
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
   obtain ⟨σ0, σ1, -, -, -, -, -, -, σ8, σ9, σ10, σ11, σ12, -⟩ := tblσ_eq K
   rw [JacWinCfg.buildStep]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (addRbx_ok s (c := 1) (by decide) hI.inv.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hs₁ := hs.of_keeps k₁ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
@@ -549,8 +550,9 @@ theorem jbuild_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hn17 : 17 ≤ C.n) {base : Addr} {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
     {k : Nat} (hF : JacWinFixed K C base s P k) :
-    WP isa K.build s fun s' => JFrame K C base size s s' ∧ JTblOk K C base P 16 s' := by
+    WP isa K.build.inline s fun s' => JFrame K C base size s s' ∧ JTblOk K C base P 16 s' := by
   rw [JacWinCfg.build]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (buildInit_ok hL hC hs hM hF) fun s₁ I₁ => ?_)
   refine WP.seq (WP.mono (jbuildDblu_ok hL hp hC hM3 hO hP hP0 hn17 hF I₁) fun s₂ h₂ =>
     WP.seq (WP.mono h₂ fun s₃ I₃ => ?_))

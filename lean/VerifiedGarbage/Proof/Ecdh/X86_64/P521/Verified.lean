@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDH over P-521 on x86-64: `Verified`
@@ -46,18 +47,22 @@ theorem post_of {s s' : State} (h : EPost p521 s s') : ecdhX86_64.post s s' := b
 large enough that the three in one would leave `ecdh_x86` little of its
 budget. -/
 
-theorem ecdh_rsp : exchangeP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+theorem ecdh_rsp : exchangeP521.inline.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rw [Code.allInstrs_inline]; lit_decide
 
-theorem ecdh_noCalls : exchangeP521.noCalls = true := by lit_decide
+theorem ecdh_inlineOk : exchangeP521.InlineOk = true := by lit_decide
 
-theorem ecdh_mxcsr : exchangeP521.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+theorem ecdh_noCalls : exchangeP521.inline.noCalls = true := Code.noCalls_inline ecdh_inlineOk
+
+theorem ecdh_mxcsr : exchangeP521.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_inline]; lit_decide
 
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+    ∃ t s', Exec isa exchangeP521.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521) (p521_ok hI).toBaseCfgOk hL
     (mulQJ4_ok (p521_ok hI) (by decide) hL hO (by decide +kernel)) (mulQJ4_w (p521_ok hI)) (pre_of hs)
-  have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs exchangeP521.inline, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
@@ -82,22 +87,41 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64
       · exact hrs) (by decide)
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521 h).isSome = true := by
+  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) exchangeP521 h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.winBuildJSum, Proof.P521.X86_64.winNormJSum,
       Proof.P521.X86_64.winLoopJSum, Proof.P521.X86_64.winLastJSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) ?_ hc
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    ecdhX86_64.Implies (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8) :=
+  implies.stack8_abi (by
+    sig_implies_sat [Spec.EcKey.P521.inst, Spec.Ecdh.Instance.exchangeContract,
+      Spec.Ecdh.Instance.exchangeSig, Spec.P521.curve, Spec.EcKey.scratchWords, X86_64.abi,
+      X86_64.argRegs, satState] [satState] using satState)
+
+/-- The output is apart from the calls' return address. -/
+theorem ecdh_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8).pre s)
+    (hp : ecdhX86_64.post s b) : ecdhX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  obtain ⟨-, hwr, -⟩ := implies8.pre s hs
+  have hb := Clear.wr_bytes (Sig.clear_of_pre hs) (p := s.gpr .rdi) (n := 66)
+    (by rw [hwr]; simp) (by decide)
+  simpa only [ecdhX86_64, State.patch_gpr, EcKey.bytesAt_patch hb] using hp
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
-    Verified X86_64.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86 hL hI hO) ecdh_ct implies
+    Verified X86_64.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8) :=
+  Verified.of_inline_ct ecdh_inlineOk (ecdh_x86 hL hI hO) ecdh_ct implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P521

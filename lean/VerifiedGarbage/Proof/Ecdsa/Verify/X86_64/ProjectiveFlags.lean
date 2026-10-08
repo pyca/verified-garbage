@@ -78,7 +78,7 @@ theorem projectiveChecks_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : S
     fun s₃ ⟨f₃,k₃,O₃⟩ => ?_
   have U : Unch base [(c.sl FLAG,8)] s.mem s₃.mem := by
     rw [← k₁.2.1]; exact (O₂.unch.trans O₃.unch).mono (by simp)
-  have saved₃ := Saved.unch saved (fun w hw => by rw [List.mem_singleton.mp hw]; rw [sl_eq]; omega) U
+  have saved₃ := Saved.unch saved (fun w hw => by rw [List.mem_singleton.mp hw]; simp (disch := sl_ne) only [sl_eq]; omega) U
   have hz : sv c base s₂ RZ = sv c base s RZ := by
     rw [sv, O₂.wordsVal (by have := sl_apart c (i := RZ) (j := FLAG) (by decide); have := hc.n0; omega)
       (by have := sl_le c hc.n10 (i := RZ) (by decide); have := hs.nowrap; omega), k₁.2.1]

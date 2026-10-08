@@ -19,7 +19,7 @@ theorem maddJ_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat →
     (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
     {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (maddJ S p q o))) s fun s' => ProgKeep M base (rcbW S o) s s' ∧
+    WP isa (fprogB M (maddJ S p q o)).inline s fun s' => ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (maddJ S p q o) E) s' ∧
       (runOps (maddJ S p q o) E o.x, runOps (maddJ S p q o) E o.y, runOps (maddJ S p q o) E o.z) =
         maddJF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) := by

@@ -22,7 +22,7 @@ theorem jointFixedSum_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Na
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (hc : JointFixedChecks c) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jacCoords c.K.E++jointLive c) E)
-      (.seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D) (.block (copyPt c.K.M.n c.K.R c.K.D)))
+      (Code.seq (Jacobian.jacMixedForward c.K c.K.R c.K.E c.K.D) (.block (copyPt c.K.M.n c.K.R c.K.D))).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have sl : ∀ x∈rcbW c.K.S c.K.D++rcbR c.K.S c.K.R c.K.E,x∈jointSlots c := by intro x hx; jslots
   have vr : ∀ x∈rcbR c.K.S c.K.R c.K.E,x∈jacCoords c.K.E++jointLive c := by intro x hx; jslots
@@ -44,7 +44,7 @@ theorem jointFixedDigit_relCT {c : Joint.Cfg} {C : Curve} {base T : Addr} {size 
       JointCore c C base size Q u v (JointGenerator c C base T size row) A s ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) A t ∧
       s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-      (Joint.fixedDigit c)
+      (Joint.fixedDigit c).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   have hbytes : c.gBits+j<size := by
     have hh := hL.lookup.layout.stableBounds (c.gBits,64*c.K.M.n+1) (by simp [jointStableRanges])

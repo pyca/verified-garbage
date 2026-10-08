@@ -14,7 +14,7 @@ variable (hL : Law Spec.P384.curve)
 include hL hT hI
 
 theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)) s
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384v s t := by
   have hc := p384v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
@@ -25,7 +25,7 @@ theorem jointVerify_p384_ok {s : State} (hp : VPre p384v s) :
 
 theorem jointVerify_p384_adx_ok {s : State} (hp : VPre p384vx s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-      (Joint.jacDouble publicJointAdx.K)) s
+      (Joint.jacDouble publicJointAdx.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p384vx s t := by
   have hc := p384vx_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_

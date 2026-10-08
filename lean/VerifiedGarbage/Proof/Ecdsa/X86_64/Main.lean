@@ -41,7 +41,7 @@ structure St₂ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
 theorem stage₂ (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀) {base : Addr}
     (hb : base = s₀.gpr .r8) {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
-    WP isa (.seq c.gMulK (.seq c.pPow rest)) s Q := by
+    WP isa (.seq c.gMulK.inline (.seq c.pPow rest)) s Q := by
   subst hb
   have h0 := hc.n0
   have h7 := hc.n10
@@ -53,10 +53,10 @@ theorem stage₂ (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Optio
   have F₅ := F.unch h7 hn fixedOk_gW U₅
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅
     (L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))) F₅.onep
-    (fun t ht => by
+    (fun h9 t ht => by
       show s₅.mem (off (s₀.gpr .r8) (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl))]
-      exact hS.t₁ t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_gW (Or.inl rfl) ht)]
+      exact hS.t₁ h9 t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have e₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] →
       i ∉ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP, EM] →
       sv c (s₀.gpr .r8) s₆ i = sv c (s₀.gpr .r8) s i := fun hi h₁ h₂ =>
@@ -73,7 +73,7 @@ theorem stage₂ (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Optio
   · rw [K₆.gpr _ (rsi_not_invClob _), K₅.gpr _ (rsi_not_powClob _), hS.rsi]
   · intro t ht
     rw [tbl_unch U₆ h7 hn (j := 2) (by decide) ht (tbl_apart_pwW (by decide) ht),
-      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl))]
+      tbl_unch U₅ h7 hn (j := 2) (by decide) ht (tbl_apart_gW (Or.inr rfl) ht)]
     exact hS.t₂ t ht
   · show Rep c.C (toM _ _ (sv c (s₀.gpr .r8) s₆ RX)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RY)) (toM _ _ (sv c (s₀.gpr .r8) s₆ RZ)) _
     rw [r₆ (i := RX) (by decide) (by decide), r₆ (i := RY) (by decide) (by decide),
@@ -128,7 +128,7 @@ theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS
     (fun t ht => by
       show s₈.mem (off base (bitsAt c.n 2 + t)) = _
       rw [tbl_unch O₈.unch h7 hn (j := 2) (by decide) ht (tbl_apart_flag h0 2 t),
-        tbl_unch Mp.unch h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t)]
+        tbl_unch Mp.unch h7 hn (j := 2) (by decide) ht (tbl_apart_slW (by decide) 2 t ht)]
       exact hS.t₂ t ht)) fun s₉ ⟨K₉, U₉, lt₉, v₉⟩ => h s₉ ?_)
   have e₉ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₉ i = sv c base s₈ i := fun hi hl =>
     sv_unch U₉ h7 hn hi (apart_pwW hi hl)
@@ -237,11 +237,21 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block c.setup) (.seq (bits (c.sl K) 
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
     (.seq c.gMulK (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := rfl
 
+/-- The signature inlined: only `[k]G` calls functions. -/
+theorem sign_inline (c : Cfg) : c.sign.inline = .seq (.block c.setup) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
+    (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
+    (.seq c.gMulK.inline (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))))) := by
+  rw [sign_eq]
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _
+    (Code.seq c.pPow.inline (Code.seq c.middle.inline (Code.seq c.nPow.inline c.scalar.inline))))))) = _
+  rw [pPow_inline c, nPow_inline c]
+  rfl
+
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature and
 restores the callee-saved registers. -/
 theorem sign_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : Pre c s₀) :
-    WP isa c.sign s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
-  rw [sign_eq]
+    WP isa c.sign.inline s₀ fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
+  rw [sign_inline]
   exact stage₁ hc (Or.inr (Or.inr rfl)) hp.setup fun _ S₁ => stage₂ hc hC hT hp rfl S₁ fun _ S₂ => stage₃ hc S₂ fun _ S₃ =>
     stage₄ hc hC hp rfl S₃
 

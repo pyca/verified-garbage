@@ -27,11 +27,11 @@ variable {c : Cfg}
 
 theorem invJA_acc (c : Cfg) : (Impl.Ecdh.X86_64.Cfg.invJA c).acc = c.sl (WT + 80) := by
   show c.sl WT + 16 * (40 * c.n) = _
-  rw [sl_eq, sl_eq]; unfold WT; omega
+  simp (disch := sl_ne) only [sl_eq]; unfold WT; omega
 
 /-- The working area ends below the window's table of bits. -/
 theorem invTbl_below (h4 : 4 ≤ c.n) : bitsAt c.n 2 + invTbl c.n ≤ c.sl WB := by
-  rw [bitsAt_eq, sl_eq]; simp only [invTbl]; unfold WB; omega
+  rw [bitsAt_eq]; simp (disch := sl_ne) only [sl_eq]; simp only [invTbl]; unfold WB; omega
 
 /-- The inversion of the window method with an affine table: its slots and
 working area. -/
@@ -82,7 +82,8 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
         show bitsAt c.n 2 + invTbl c.n ≤ c.sl i
         have := invTbl_below h4
         have := sl_lt c (show WB < WT by decide)
-        have : c.sl WT ≤ c.sl i := by rw [sl_eq, sl_eq]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ h) _
+        have : c.sl WT ≤ c.sl i := by
+          simp (disch := sl_ne) only [sl_eq]; exact Nat.add_le_add_left (Nat.mul_le_mul_left _ h) _
         omega
     · exact Or.inr (Or.inl rfl)
   · simp only [invW, List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -92,7 +93,7 @@ theorem invSpecJA (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) {base : Addr} :
     rcases hw with rfl | rfl | rfl
     · refine Or.inl ?_
       show c.sl WB + 5 * Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ (Impl.Ecdh.X86_64.Cfg.invJA c).acc
-      rw [invJA_acc, sl_eq, sl_eq]; unfold WB WT; omega
+      rw [invJA_acc]; simp (disch := sl_ne) only [sl_eq]; unfold WB WT; omega
     · exact Or.inr (invTbl_below h4)
     · exact Or.inr (sl_lt c (show TMP < WB by decide))
 
@@ -152,13 +153,15 @@ theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   have hJ : (jwQ c).J = Impl.Ecdh.X86_64.Cfg.jwinJ c := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have hWK : c.sl WK + 16 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WK <;> omega
+  have hWK : c.sl WK + 16 * c.n ≤ size := by
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WK <;> omega
   have hKW := sl_lt c (show K < WK by decide)
   have h32 : (32 : Nat) ^ Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
-  have hBs : c.sl WB + 80 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WB <;> omega
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega
+  have hBs : c.sl WB + 80 * c.n ≤ size := by
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WB <;> omega
   rw [Impl.Ecdh.X86_64.Cfg.jwinPrep]
   refine WP.seq (WP.seq ?_)
   rw [hK]
@@ -205,12 +208,12 @@ theorem mulQJA_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO 
   have F₄ := F₃.unch h7 hn (fixedOk_winXJ.append (fixedOk_slW (by decide))) U₄
   have rz₄ : wordsVal s₄.mem base (c.sl RZ) c.n < c.C.p :=
     L₄ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pPow_ok hc hs₄ M₄ rz₄ F₄.onep (fun t ht => by
+  refine WP.seq (WP.mono (pPow_ok hc hs₄ M₄ rz₄ F₄.onep (fun h9 t ht => by
       rw [tbl_unch U₄ h7 hn (j := 1) (by decide) ht (apart_append (tbl_apart_winXJ (by decide) ht)
           (tbl_apart_slW' (by decide) (by decide) ht)),
         tbl_unch U₃ h7 hn (j := 1) (by decide) ht (tbl_apart_winX (by decide) ht),
         tbl_unch U₁ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht)]
-      exact ht₁ t ht)) fun s₅ ⟨K₅, U₅, lt₅, v₅⟩ => h s₅ ?_)
+      exact ht₁ h9 t ht)) fun s₅ ⟨K₅, U₅, lt₅, v₅⟩ => h s₅ ?_)
   have r₅ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₅ i = sv c base s₄ i := fun hi h₁ =>
     sv_unch U₅ h7 hn hi (apart_pwW hi h₁)
   have c₂ : ∀ r ∈ [Reg.rax, .r8], r ∈ invClob c.n := by

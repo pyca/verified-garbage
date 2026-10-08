@@ -15,7 +15,7 @@ variable (hL : Law Spec.P256.curve)
 include hL hT hI
 
 theorem jointVerify_p256_ok {s : State} (hp : VPre p256 s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256 publicJoint (jointDouble publicJoint.K)) s fun t =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256 publicJoint (jointDouble publicJoint.K)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256 s t := by
   have hc := p256_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
@@ -24,7 +24,7 @@ theorem jointVerify_p256_ok {s : State} (hp : VPre p256 s) :
     joint_add_layout joint_init_layout joint_prep_layout joint_frame_layout (joint_doubler hc hL) hp hM hQ hRep
 
 theorem jointVerify_p256_adx_ok {s : State} (hp : VPre p256x s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256x publicJointAdx (jointDouble publicJointAdx.K)) s fun t =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p256x publicJointAdx (jointDouble publicJointAdx.K)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p256x s t := by
   have hc := p256x_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_

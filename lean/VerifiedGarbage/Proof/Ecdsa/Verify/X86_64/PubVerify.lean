@@ -8,6 +8,6 @@ open VG.Impl.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64
 
 /-- `pubVerify` is none of `CfgOk`'s business. -/
 theorem cfgOk_pubVerify {c : Cfg} (h : CfgOk c) (b : Bool) : CfgOk { c with pubVerify := b } :=
-  { h with comb := fun d hd => ⟨(h.comb d hd).w,(h.comb d hd).cover⟩ }
+  { h with comb := fun d hd => ⟨(h.comb d hd).w,(h.comb d hd).cover,(h.comb d hd).w9⟩ }
 
 end VG.Proof.Ecdsa.Verify.X86_64

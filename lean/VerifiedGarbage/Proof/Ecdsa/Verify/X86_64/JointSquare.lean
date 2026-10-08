@@ -9,7 +9,7 @@ open VG.Proof.Ecdsa.X86_64 Spec.Weierstrass
 
 theorem jointSquare_ok {c : Cfg} (hc : CfgOk c)
     {s₀ s : State} {base : Addr} {g : Reg → BitVec 64} (h : ProjectiveInput c s₀ base g s) :
-    WP isa (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]) s fun t =>
+    WP isa (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)]).inline s fun t =>
       ProjectiveInput c s₀ base g t ∧
       tmv c.C c.n base t (c.sl RX)=tmv c.C c.n base s (c.sl RX) ∧
       tmv c.C c.n base t (c.sl RZ)=tmv c.C c.n base s (c.sl RZ)*tmv c.C c.n base s (c.sl RZ) := by

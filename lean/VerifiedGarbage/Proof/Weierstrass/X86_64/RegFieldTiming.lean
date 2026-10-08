@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86_64.FieldTiming
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
+import VerifiedGarbage.Proof.Framework.X86_64.KeepReg
 
 /-! Public control registers alongside paired field environments. -/
 namespace VG.Proof.Weierstrass.X86_64
@@ -51,5 +51,15 @@ theorem relCT_keepGpr {P Q : State → State → Prop} {c : Prog isa} {r : Reg} 
   intro s t ts tt s' t' ⟨hp,hs,ht⟩ es et
   obtain ⟨tr,hq⟩ := h _ _ _ _ _ _ hp es et
   exact ⟨tr,hq,(Exec.gpr hk es).trans hs,(Exec.gpr hk et).trans ht⟩
+
+/-- `relCT_keepGpr`, for a register the code may write if it restores it
+from an SSE register that holds it (`KeepReg.keeps`). -/
+theorem relCT_keepGprS {P Q : State → State → Prop} {c : Prog isa} {r : Reg} {v : BitVec 64}
+    (h : RelCT isa P c Q) (hk : KeepReg.keeps r c = true) :
+    RelCT isa (fun s t => P s t ∧ s.gpr r=v ∧ t.gpr r=v) c
+      (fun s t => Q s t ∧ s.gpr r=v ∧ t.gpr r=v) := by
+  intro s t ts tt s' t' ⟨hp,hs,ht⟩ es et
+  obtain ⟨tr,hq⟩ := h _ _ _ _ _ _ hp es et
+  exact ⟨tr,hq,(Exec.gpr_keeps hk es).trans hs,(Exec.gpr_keeps hk et).trans ht⟩
 
 end VG.Proof.Weierstrass.X86_64

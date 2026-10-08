@@ -14,7 +14,7 @@ theorem jacDoubleForward_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
     (hV : ∀ x∈rcbR S p p,x∈V) {P : Point C}
     (hP : onCurve C P=true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) P) :
-    WP isa (ForwardField.programB M (dblJMul S p o)) s fun t =>
+    WP isa (ForwardField.programB M (dblJMul S p o)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size C.p Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E) t ∧
       InvJ C (runOps (dblJMul S p o) E o.x) (runOps (dblJMul S p o) E o.y)

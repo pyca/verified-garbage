@@ -16,7 +16,7 @@ theorem nafCacheTable_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
     (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cacheTable M ptbl tbl k) s fun t =>
+    WP isa (Naf.cacheTable M ptbl tbl k).inline s fun t =>
       Inv M base size m Sl (cacheTableSlots M.n tbl k++V) (cacheTableEnv M.n ptbl tbl E k) t := by
   induction k with
   | zero => exact WP.block_nil hI
@@ -37,8 +37,8 @@ theorem nafCacheTable_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hm : UnitMod m (2^(64*M.n))) (k : Nat) {ptbl tbl : Nat}
     {V : List Nat} {E : Nat → Fin m} (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
     (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n))
-    (hc : ScratchCT (Naf.cacheTable M ptbl tbl k)) :
-    RelCT isa (FieldPair M base size m Sl V E) (Naf.cacheTable M ptbl tbl k)
+    (hc : ScratchCT (Naf.cacheTable M ptbl tbl k).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (Naf.cacheTable M ptbl tbl k).inline
       (FieldPair M base size m Sl (cacheTableSlots M.n tbl k++V) (cacheTableEnv M.n ptbl tbl E k)) :=
   fieldProgram_relCT hc (fun _ hi => nafCacheTable_fields_ok hL hm k hi hZ hSl)
 

@@ -25,15 +25,15 @@ structure JointDoubler (c : Joint.Cfg) (C : Curve) (size : Nat) (double : Prog i
   ok : ∀ {base : Addr} {u v : Nat} {Q A : Point C} {External : State → Prop} {s : State},
     (∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t) →
     onCurve C A=true → JointCore c C base size Q u v External A s →
-    WP isa double s fun t => ProgKeep c.K.M base (jointWork c) s t ∧
+    WP isa double.inline s fun t => ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v External (add A A) t
   ct : ∀ {base : Addr} {E : Nat → Fe C},
-    RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E) double
+    RelCT isa (FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E) double.inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
 
 theorem jacDouble_doubler {c : Joint.Cfg} {C : Curve} {size : Nat}
     (hL : JointAddLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n))) (hC : Law C) (ha : AM3 C)
-    (hd : ScratchCT (fprogB c.K.M (dblJMul c.K.S c.K.R c.K.D)))
+    (hd : ScratchCT (fprogB c.K.M (dblJMul c.K.S c.K.R c.K.D)).inline)
     (hcp : ScratchCT (.block (copyPt c.K.M.n c.K.R c.K.D))) :
     JointDoubler c C size (Joint.jacDouble c.K) := by
   have apart : RcbApart c.K.S c.K.R c.K.R c.K.D :=

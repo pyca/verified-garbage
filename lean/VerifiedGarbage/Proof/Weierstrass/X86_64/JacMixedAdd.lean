@@ -29,7 +29,7 @@ theorem jacMixedHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl (S.t4::S.t2::V) (jacMixedInit S p E) s)
     (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (jacMixedHead S p q))) s fun t =>
+    WP isa (fprogB M (jacMixedHead S p q)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl (validAfter (jacMixedHead S p q) (S.t4::S.t2::V))
         (runOps (jacMixedHead S p q) (jacMixedInit S p E)) t ∧
@@ -83,7 +83,7 @@ theorem jacMixedTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hI : Inv M base size m Sl (validAfter (jacMixedHead S p q) (S.t4::S.t2::V))
       (runOps (jacMixedHead S p q) (jacMixedInit S p E)) s)
     (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (jacMixedTail S p q o))) s fun t =>
+    WP isa (fprogB M (jacMixedTail S p q o)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl ([o.x,o.y,o.z]++V)
         (runOps (jacMixedHead S p q ++ jacMixedTail S p q o) (jacMixedInit S p E)) t ∧
@@ -117,7 +117,7 @@ theorem jacMixedTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [jacMixedTail,jacTail,FOp.out]
-  refine WP.mono (fprog_ok hL hm _ hI
+  refine WP.mono (fprogB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op (he ▸ List.mem_append_right _ hop) x hx)) hr'.2)
     fun t ⟨kt,it⟩ => ⟨kt.mono ?_,?_,?_⟩
   · intro w hw'
@@ -147,7 +147,7 @@ theorem jacMixedAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) (hAff : E q.z=1) :
-    WP isa (Jacobian.jacMixedAdd K p q o) s
+    WP isa (Jacobian.jacMixedAdd K p q o).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   rw [Jacobian.jacMixedAdd]
   apply fieldBranch_ok hL hm hI (hV p.z (by simp [rcbR]))
@@ -161,7 +161,6 @@ theorem jacMixedAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     apply WP.seq
     refine WP.mono (jacMixedInit_ok hL hSl ia hV) fun b ⟨kb,ib⟩ => ?_
     apply WP.seq
-    apply (fprogB_wp _ _).mpr
     refine WP.mono (jacMixedHead_ok hL hm hA hSl ib hV) fun c ⟨kc,ic,eh,er⟩ => ?_
     let EH := runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)
     have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
@@ -213,7 +212,6 @@ theorem jacMixedAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
         apply hz
         rw [eh]
         simpa only [hAff,Lean.Grind.Semiring.mul_one] using he
-      apply (fprogB_wp _ _).mpr
       refine WP.mono (jacMixedTail_ok hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
       have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
       dsimp only at jt

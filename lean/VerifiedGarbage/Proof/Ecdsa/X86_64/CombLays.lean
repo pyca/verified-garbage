@@ -44,6 +44,18 @@ theorem combJ_bounds {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) :
   refine ⟨Nat.pos_of_ne_zero fun h => ?_, by omega⟩
   rw [h, Nat.mul_zero] at hc'; omega
 
+/-- The comb's bits end below the temporary area, or start above it. -/
+theorem tmp_apart_comb {d : CombData} (hd : CombOk c d) :
+    bitsAt c.n 0 + 4 * c.combJ d.w ≤ c.sl TMP ∨ c.sl TMP + 8 * c.n ≤ bitsAt c.n 0 := by
+  rw [bitsAt_eq, sl_eq']
+  by_cases h9 : c.n = 9
+  · left
+    have hw := Nat.mul_le_mul_right (c.combJ d.w) (hd.w9 h9)
+    have := hd.cover
+    rw [ix_tmp c h9, h9] at *
+    omega
+  · right; rw [ix_of_ne c (.inr h9)]; simp only [TMP]; omega
+
 theorem combLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : CombLay (c.combCfg d).toComb size := by
   have hn := hc.n0
   have h7 := hc.n10
@@ -64,7 +76,9 @@ theorem combLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : CombLay (c
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by
       decide
-    exact Or.inr (sl_below_bits c (hl i hi) 0 0)
+    by_cases hT : i = TMP
+    · subst hT; rw [hJ]; exact tmp_apart_comb hd
+    · exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl hT))
 
 theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay (c.combCfg d) size := by
   have hn := hc.n0
@@ -83,7 +97,13 @@ theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay 
   · intro w hw
     rw [combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-    exact Or.inr (by rw [hbits]; exact sl_below_bits c (hl i hi) 0 0)
+    rw [hbits, hk]
+    by_cases hT : i = TMP
+    · subst hT
+      rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
+      · exact Or.inr (by dsimp only; omega)
+      · exact Or.inl (by dsimp only; omega)
+    · exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl hT))
   · intro x hx
     rw [hbits, hk]
     simp only [List.mem_cons] at hx
@@ -93,8 +113,9 @@ theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay 
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       have : ∀ i ∈ [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
         i < 45 := by decide
-      exact Or.inr (sl_below_bits c (this i hi) 0 _)
-  · show 64 + 8 * c.n * 21 = 64 + 8 * c.n * 20 + 8 * c.n; rw [Nat.mul_succ]; omega
+      exact Or.inr (sl_below_bits c (this i hi) 0 _ (.inl fun h => by subst h; exact absurd hi (by decide)))
+  · show c.sl 21 = c.sl 20 + 8 * c.n
+    simp (disch := sl_ne) only [sl_eq]; rw [Nat.mul_succ]; omega
   · show 16 * c.n * 2 ^ (d.w - 1) < 2 ^ 31
     have : 2 ^ (d.w - 1) ≤ 2 ^ 7 := Nat.pow_le_pow_right (by decide) (by omega)
     have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 9 * 2 ^ 7 := Nat.mul_le_mul (by omega) this
@@ -165,11 +186,17 @@ theorem tbl_of {d : CombData} (hcd : c.comb = some d) {s₀ s : State} (hp : Pre
   tbl_of_held hcd hp.tbls (by rw [hp.wr]; simp) (fun r hr => by rw [hrd, hp.rd]; simp [hr]) hu
 
 /-- The cleared word of the table of bits is apart from the slots. -/
-theorem apart_zw (d : CombData) {i : Nat} (hi : i < 45) :
+theorem apart_zw {d : CombData} (hd : CombOk c d) {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8 * (c.combCfg d).zw)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_bits c hi 0 _)
+  by_cases hT : i = TMP
+  · subst hT
+    have := zw_le hd
+    rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n + 8 * (c.combCfg d).zw) (by omega) with h | h
+    · exact Or.inl (by dsimp only; omega)
+    · exact Or.inr (by dsimp only; omega)
+  · exact Or.inl (sl_below_bits c hi 0 _ (.inl hT))
 
 theorem fixedOk_tcombW (d : CombData) : FixedOk c (tcombW (c.combCfg d)) := by
   rw [tcombW_eq]

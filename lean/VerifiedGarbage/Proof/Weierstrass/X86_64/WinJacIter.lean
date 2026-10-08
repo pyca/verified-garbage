@@ -100,7 +100,7 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
     {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
     (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInv K C base size P s₀ k j s) :
-    WP isa (K.step dbl) s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧
+    WP isa (K.step dbl).inline s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧
       s'.zf = some (decide (j - 1 = 0)) := by
   obtain ⟨Q, hQ, hQe, R₀⟩ := hI.st
   have hn := R₀.fr.scr.nowrap
@@ -108,6 +108,7 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   obtain ⟨tx, ty, tz, t2, t3⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   rw [JacWinCfg.step]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have R₁ := R₀.rbxKeeps hL k₁
   rw [← mul_one_pt Q] at R₁

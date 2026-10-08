@@ -41,7 +41,7 @@ theorem winJacP256_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) (h4 :
     (hP : onCurve Spec.P256.curve P = true) {k : Nat}
     (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size Spec.P256.p s.mem base) (hF : JacWinFixed K Spec.P256.curve base s P k) :
-    WP isa (K.window (doubleHalfPublic K.M K.S)) s fun s' => KeepRegs (powClob K.M.n) s s' ∧
+    WP isa (K.window (doubleHalfPublic K.M K.S)).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (jwW K) s.mem s'.mem ∧ ModOkW K.M size Spec.P256.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < Spec.P256.p) ∧
       (k < Spec.P256.curve.n → Rep Spec.P256.curve (tmv Spec.P256.curve K.M.n base s' K.R.x)

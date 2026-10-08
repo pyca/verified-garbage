@@ -17,12 +17,11 @@ theorem jacDouble_ok {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
     (hV : ∀ x ∈ rcbR S p p, x ∈ V) {P : Point C}
     (hP : onCurve C P = true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) P) :
-    WP isa (fprogB M (dblJMul S p o)) s fun t =>
+    WP isa (fprogB M (dblJMul S p o)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size C.p Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E) t ∧
       InvJ C (runOps (dblJMul S p o) E o.x) (runOps (dblJMul S p o) E o.y)
         (runOps (dblJMul S p o) E o.z) (Spec.Weierstrass.add P P) := by
-  apply (fprogB_wp _ _).mpr
   have he : dblJMul S p o = ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
   rw [he]
   refine WP.mono (ofN_ok hL hm (dblJChoiceN_ok true) hA hSl hI hV)

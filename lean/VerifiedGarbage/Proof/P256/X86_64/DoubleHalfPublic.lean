@@ -15,7 +15,7 @@ theorem doubleHalfPublic_fields_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Na
     {V : List Nat} {E : Nat → Fin Spec.P256.p} {s : State}
     (hI : Inv M base size Spec.P256.p Sl V E s)
     (hV : ∀ x∈[p.x,p.y,p.z],x∈V) :
-    WP isa (doubleHalfPublic M S p) s fun t =>
+    WP isa (doubleHalfPublic M S p).inline s fun t =>
       ProgKeep M base (doubleSlots S p) s t ∧
       Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t := by
   rw [doubleHalfPublic]
@@ -57,7 +57,7 @@ theorem doubleHalfPublic_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → P
     (hV : ∀ x∈[p.x,p.y,p.z],x∈V) {P : Point Spec.P256.curve}
     (hP : onCurve Spec.P256.curve P=true)
     (hJ : InvJ Spec.P256.curve (E p.x) (E p.y) (E p.z) P) :
-    WP isa (doubleHalfPublic M S p) s fun t =>
+    WP isa (doubleHalfPublic M S p).inline s fun t =>
       ProgKeep M base (doubleSlots S p) s t ∧
       Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t ∧
       InvJ Spec.P256.curve (doubleHalfEnv S p E p.x) (doubleHalfEnv S p E p.y)
@@ -69,8 +69,8 @@ theorem doubleHalfPublic_relCT {M : Mod} {base : Addr} {size : Nat} {Sl : Nat �
     (hn : M.n=4) (hL : Lay M size Sl) (hm : UnitMod Spec.P256.p (2^(64*M.n)))
     {S : RcbSlots} {p : Pt} (hSl : ∀ x∈doubleSlots S p,Sl x)
     {V : List Nat} {E : Nat → Fin Spec.P256.p} (hV : ∀ x∈[p.x,p.y,p.z],x∈V)
-    (hc : ScratchCT (doubleHalfPublic M S p)) :
-    RelCT isa (FieldPair M base size Spec.P256.p Sl V E) (doubleHalfPublic M S p)
+    (hc : ScratchCT (doubleHalfPublic M S p).inline) :
+    RelCT isa (FieldPair M base size Spec.P256.p Sl V E) (doubleHalfPublic M S p).inline
       (FieldPair M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E)) :=
   fieldProgram_relCT hc (fun _ hi => WP.mono (doubleHalfPublic_fields_ok hn hL hm hSl hi hV)
     (fun _ ht => ht.2))

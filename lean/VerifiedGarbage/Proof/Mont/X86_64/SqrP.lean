@@ -213,7 +213,7 @@ theorem colSum_s (A : Nat → Nat) (hA : ∀ i, A i < 2 ^ 64) : ColSum (sColSum 
 theorem sCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a : Nat}
     (htmp : M.tmp + 72 ≤ size) (ha : a + 72 ≤ size) (haT : a + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ a) :
     ColOk M base size m₀ (sCol M a) (sColSum fun i => (word m₀ base (a + 8 * i)).toNat) :=
-  fun c hc s l hsS O hacc hL => by
+  fun c hc s l hsS _ O hacc hL => by
     have hnw := hsS.nowrap
     have hA : ∀ i < 9, (word s.mem base (a + 8 * i)).toNat = (word m₀ base (a + 8 * i)).toNat :=
       fun i hi => by rw [O.word (by omega) (by omega)]

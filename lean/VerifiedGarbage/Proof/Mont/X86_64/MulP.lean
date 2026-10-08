@@ -338,8 +338,8 @@ whose memory differs from `m₀` only in the temporary area, which holds the
 reduction's `u_{c-8}` (`l`): it adds its sum `S l c` to the accumulator
 (below `2¹²⁸`) and stores its low word at `[tmp + 8 (c mod 9)]`. -/
 def ColOk (M : Mod) (base : Addr) (size : Nat) (m₀ : Mem) (col : Nat → List Instr)
-    (S : (Nat → Nat) → Nat → Nat) : Prop :=
-  ∀ c < 18, ∀ (s : State) (l : Nat → Nat), Scr s base size → Outside base M.tmp 72 m₀ s.mem →
+    (S : (Nat → Nat) → Nat → Nat) (P : State → Prop := fun _ => True) : Prop :=
+  ∀ c < 18, ∀ (s : State) (l : Nat → Nat), Scr s base size → P s → Outside base M.tmp 72 m₀ s.mem →
     regsVal s (pAccs c) < 2 ^ 128 →
     (8 ≤ c → c ≤ 16 → (word s.mem base (M.tmp + 8 * (c - 8))).toNat = l (c - 8)) →
     WP isa (.block (col c)) s fun s' =>
@@ -352,8 +352,10 @@ def ColOk (M : Mod) (base : Addr) (size : Nat) (m₀ : Mem) (col : Nat → List 
 the temporary area, and the accumulator, `hval (S l) 0 n =
 hval l 0 n + 2^(64 n) acc`. -/
 theorem cols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base size) {M : Mod}
-    {col : Nat → List Instr} {S : (Nat → Nat) → Nat → Nat} (htmp : M.tmp + 72 ≤ size) (hS : ColSum S)
-    (hcol : ColOk M base size s₀.mem col S) (h0 : regsVal s₀ (pAccs 0) = 0) :
+    {col : Nat → List Instr} {S : (Nat → Nat) → Nat → Nat} {P : State → Prop} (htmp : M.tmp + 72 ≤ size)
+    (hS : ColSum S) (hcol : ColOk M base size s₀.mem col S P) (hP₀ : P s₀)
+    (hP : ∀ s s', P s → KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s s' → P s')
+    (h0 : regsVal s₀ (pAccs 0) = 0) :
     ∀ n ≤ 18, WP isa (.block ((List.range n).flatMap col)) s₀ fun s =>
       KeepRegs [.rax, .rcx, .rdx, .r9, .r10, .r11] s₀ s ∧ Outside base M.tmp 72 s₀.mem s.mem ∧
       regsVal s (pAccs n) < 2 ^ 128 ∧
@@ -365,7 +367,7 @@ theorem cols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base si
       by simp [hval, h0]⟩
   | n + 1, hn => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (cols_ok hs htmp hS hcol h0 n (by omega))
+    refine WP.mono (cols_ok hs htmp hS hcol hP₀ hP h0 n (by omega))
       fun s ⟨k, O, hacc, l, hl64, hlm, e⟩ => ?_
     have hnw := hs.nowrap
     have hsS : Scr s base size := hs.of_keepRegs k (by decide)
@@ -375,7 +377,7 @@ theorem cols_ok {s₀ : State} {base : Addr} {size : Nat} (hs : Scr s₀ base si
         rwa [Nat.mod_eq_of_lt (show n - 8 < 9 by omega)] at this
     have hcl := hS.lt l n fun h1 h2 => hl64 _ (by omega)
     have hn9 := Nat.mod_lt n (show 0 < 9 by decide)
-    refine WP.mono (hcol n (by omega) s l hsS O hacc hL) fun s' ⟨e', k', O'⟩ => ?_
+    refine WP.mono (hcol n (by omega) s l hsS (hP _ _ hP₀ k) O hacc hL) fun s' ⟨e', k', O'⟩ => ?_
     refine ⟨k.trans k', O.trans (O'.mono (by omega) (by omega)), by omega,
       fun c => if c = n then (word s'.mem base (M.tmp + 8 * (n % 9))).toNat else l c, ?_, ?_, ?_⟩
     · intro c hc
@@ -419,7 +421,7 @@ theorem pCol_colOk {base : Addr} {size : Nat} {m₀ : Mem} {M : Mod} {a b : Nat}
     (haT : a + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ a) (hbT : b + 72 ≤ M.tmp ∨ M.tmp + 72 ≤ b) :
     ColOk M base size m₀ (pCol M a b)
       (pColSum (fun i => (word m₀ base (a + 8 * i)).toNat) (fun j => (word m₀ base (b + 8 * j)).toNat)) :=
-  fun c hc s l hsS O hacc hL => by
+  fun c hc s l hsS _ O hacc hL => by
     have hnw := hsS.nowrap
     have hA : ∀ i < 9, (word s.mem base (a + 8 * i)).toNat = (word m₀ base (a + 8 * i)).toNat :=
       fun i hi => by rw [O.word (by omega) (by omega)]
@@ -524,7 +526,8 @@ theorem prodCols_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
     rfl
   have hm₁ : s₁.mem = s.mem := k₁.2.1
   rw [WP.block_append_iff]
-  refine WP.mono (cols_ok hs₁ (M := M) (by omega) hS (by rw [hm₁]; exact hcol) h0 18 (Nat.le_refl _))
+  refine WP.mono (cols_ok hs₁ (M := M) (by omega) hS (by rw [hm₁]; exact hcol) trivial (fun _ _ _ _ => trivial)
+    h0 18 (Nat.le_refl _))
     fun s₂ ⟨k₂, O₂, _, l, hl64, hlm, e₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   -- The value of the columns.

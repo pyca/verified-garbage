@@ -28,7 +28,7 @@ theorem jointPoints_ok {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Prog i
     {Q : Point c.C} (hQ : onCurve c.C Q=true)
     (hq : Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
       (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PY)) (tmv c.C c.n (s₀.gpr .rcx) s (c.sl ONEP)) Q) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double) s (JointPointsPost c s₀ s g Q) := by
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline s (JointPointsPost c s₀ s g Q) := by
   have field := jointMid_field hc hK hnp h
   have point := jointMid_point hc hC hK h hq
   have zero := jointMid_zero hK h

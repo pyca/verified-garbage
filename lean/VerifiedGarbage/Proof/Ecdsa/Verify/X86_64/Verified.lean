@@ -45,7 +45,7 @@ theorem verify_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstra
     (hs : verifyX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := verify_ok hc hL hT (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| verify_ok hc hL hT (hpre s hs)
   have hsp : ∀ i ∈ instrs (Impl.Ecdsa.Verify.X86_64.Cfg.verify c), Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi

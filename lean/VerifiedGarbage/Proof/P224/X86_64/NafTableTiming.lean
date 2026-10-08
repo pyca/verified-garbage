@@ -23,7 +23,7 @@ theorem nafTable_checks : NafTableChecks nafJacWin := by
       (fun _ _ _ _ h => h) (by taint_decide)
   · exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rbx])
       (fun _ _ _ _ h => h) (by taint_decide)
-  · exact instrs_noClobber (by decide +kernel)
+  · decide +kernel
   · exact instrs_noClobber (by decide +kernel)
 
 end VG.Proof.P224.X86_64

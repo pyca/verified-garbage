@@ -2,6 +2,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCache
 import VerifiedGarbage.Impl.Weierstrass.X86_64.NafCacheBuild
 import VerifiedGarbage.Impl.Ecdsa.Verify.P256.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-! Building the cache uses fixed addresses; lookup depends only on the public digit. -/
 namespace VG.Proof.P256.X86_64
@@ -34,13 +35,13 @@ theorem nafSignedCachedEntry_adx_ct :
 
 theorem nafCacheTable_ct :
     ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi]))
-      (Naf.cacheTable cacheWin.M cacheWin.tbl 4000 8) :=
+      (Naf.cacheTable cacheWin.M cacheWin.tbl 4000 8).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem nafCacheTable_adx_ct :
     ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi]))
-      (Naf.cacheTable cacheWinAdx.M cacheWinAdx.tbl 4000 8) :=
+      (Naf.cacheTable cacheWinAdx.M cacheWinAdx.tbl 4000 8).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 

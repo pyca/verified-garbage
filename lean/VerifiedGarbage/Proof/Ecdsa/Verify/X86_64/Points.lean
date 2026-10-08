@@ -118,7 +118,7 @@ theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.sum c =
 /-- `R = U + R`, by the complete addition. -/
 theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c) s fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c).inline s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       sv c base s' RX < c.C.p ∧ sv c base s' RZ < c.C.p ∧
@@ -143,7 +143,8 @@ theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base siz
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       exact hlt i hi
   rw [sum_eq]
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb_ok hL hpR hA (fun x hx => ?_) hI (fun x hx => hx))
+  simp only [Code.inline]
+  refine WP.seq ((WP.mono (rcb_ok hL hpR hA (fun x hx => ?_) hI (fun x hx => hx))
     fun s₁ ⟨k₁, I₁, t₁, _⟩ => ?_))
   · rw [show rcbW c.rcbSlots (c.pt DX DY DZ) ++ rcbR c.rcbSlots (c.pt UX UY UZ) (c.pt RX RY RZ) =
       ([T0, T1, T2, T3, T4, T5, DX, DY, DZ] ++ sumR).map c.sl from rfl] at hx
@@ -238,14 +239,14 @@ theorem apart_vW {i : Nat} (hi : i < 45) (hl : i ∉ vI) :
   · exact apart_append (apart_winX hi) (apart_slW hl)
   · have sub : ∀ j ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ,
         TMP], j ∈ vI := by decide
-    exact apart_append (apart_tbl hi 0) (apart_slW fun h => hl (sub _ h))
+    exact apart_append (apart_tbl hi 0 (.inl fun h => hl (h ▸ by decide))) (apart_slW fun h => hl (sub _ h))
 
 /-- The table of the bits of `p - 2` is apart from what `mulV` writes. -/
-theorem tbl₁_apart_vW {t : Nat} (ht : t < 64 * c.n) :
+theorem tbl₁_apart_vW (h9 : ¬ c.n ≤ 9) {t : Nat} (ht : t < 64 * c.n) :
     ∀ w ∈ vW c, bitsAt c.n 1 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n 1 + t := by
   unfold vW; split
-  · exact apart_append (tbl_apart_winX (by decide) ht) (tbl_apart_slW' (by decide) (by decide) ht)
-  · refine apart_append (fun w hw => ?_) (tbl_apart_slW (by decide) 1 t)
+  · rename_i h; exact absurd h.1 h9
+  · refine apart_append (fun w hw => ?_) (tbl_apart_slW (by decide) 1 t ht)
     rw [List.mem_singleton.mp hw]; simp only [bitsAt_eq]; exact Or.inr (by omega)
 
 /-- What `mulV` writes is in the working space. -/
@@ -258,10 +259,10 @@ theorem vW_le (h7 : c.n < 10) : ∀ w ∈ vW c, w.1 + w.2 ≤ size := by
       rcases hw with rfl | rfl
       · show c.sl WK + 16 * c.n ≤ size
         have := sl_le_win c h9.1 (i := WK + 1) (by decide)
-        rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+        simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
       · show c.sl WB + 80 * c.n ≤ size
         have := sl_le_win c h9.1 (i := WB + 9) (by decide)
-        rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+        simp (disch := sl_ne) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have lt : ∀ i ∈ vI, i < 107 := by decide
       exact sl_le_win c h9.1 (lt i hi)
@@ -291,7 +292,7 @@ theorem mulV_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs 
     {rest : Prog isa} {R : State → Prop}
     (hv8 : sv c base s V < 2 ^ c.nbits)
     (h : ∀ s', VMulPost c base P (sv c base s V) s s' → WP isa rest s' R) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c) rest) s R := by
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c).inline rest) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -331,7 +332,8 @@ theorem mulV_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs 
     have hs₁ := hs.of_keepRegs k₁ (by decide)
     have U₁ : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem s₁.mem := O₁.unch
     have F₁ := F.unch h7 hn (fixedOk_tbl 0) U₁
-    have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi (apart_tbl hi 0)
+    have v₁ : ∀ {i}, i < 45 → sv c base s₁ i = sv c base s i := fun hi => sv_unch U₁ h7 hn hi fun w hw => by
+      rw [List.mem_singleton.mp hw]; exact sl_apart_bits c hi (.inr (.inl (by decide))) _ (by omega)
     have hk : sv c base s V < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
     have hstep := step_rep (L := Impl.Ecdh.X86_64.Cfg.ladderQ c) (s := s₁) (k := sv c base s V) hC hP
       (by
@@ -383,7 +385,10 @@ structure Pts (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (u 
   rd : s.rd = s₀.rd
   fixed : Fixed c base g s.mem
   k : sv c base s K = sigR c s₀
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
+  /-- The bits of `p - 2`, which only the power for more than nine words reads
+  (for nine, the second table holds the products' temporary area). -/
+  t₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
+    if (c.C.p - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) =
     mask (KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧ (0 < sigS c s₀ ∧ sigS c s₀ < c.C.n))
   rm_lt : sv c base s RM' < c.C.n
@@ -413,7 +418,7 @@ theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base g (sv c base s U) (sv c base s V) P s' → WP isa rest s' Q) :
-    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c) rest) s Q := by
+    WP isa (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c).inline rest) s Q := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hM.scr.nowrap
@@ -422,7 +427,8 @@ theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
   have F := hM.fixed
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-    fun hi => apart_tbl hi 0
+    fun hi w hw => by
+      rw [List.mem_singleton.mp hw]; exact sl_apart_bits c hi (.inr (.inl (by decide))) _ (by omega)
   rw [points_eq]
   refine WP.seq ?_
   -- The table of `u`.
@@ -532,7 +538,7 @@ theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
     rw [F.b3p]; exact toM_cmont hc _
   refine ⟨hs₆, by rw [wr₆, V₅.keep.wr, k₃.wr, K₂.wr, k₁.wr, hM.wr],
     by rw [rd₆, V₅.keep.rd, k₃.rd, K₂.rd, k₁.rd, hM.rd], F₆,
-    by rw [v₆ (i := K) (by decide) (by decide) (by decide), hM.k], fun t ht => ?_, ?_,
+    by rw [v₆ (i := K) (by decide) (by decide) (by decide), hM.k], fun h9 t ht => ?_, ?_,
     by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm_lt,
     by rw [v₆ (by decide) (by decide) (by decide)]; exact hM.rm, rx₆, rz₆,
     ⟨_, _, _, _, _, _, q₂, V₅.q, by
@@ -540,8 +546,8 @@ theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : St
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]⟩, ?_⟩
   · rw [tbl_unch UW h7 hn (j := 1) (by decide) ht (apart_append (fun w hw => by
       rw [List.mem_singleton.mp hw]; simp only [bitsAt_eq]; exact Or.inr (by omega))
-      (apart_append (tbl_apart_slW (by decide) 1 t) (tbl₁_apart_vW ht)))]
-    exact hM.t₁ t ht
+      (apart_append (tbl_apart_slW (by decide) 1 t ht) (tbl₁_apart_vW h9 ht)))]
+    exact hM.t₁ h9 t ht
   · rw [UW.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hM.flag
     · rcases List.mem_append.mp hw with hw | hw

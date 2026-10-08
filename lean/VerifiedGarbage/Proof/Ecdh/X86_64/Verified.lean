@@ -58,7 +58,7 @@ theorem ecdh_x86_of {c : Cfg} {mq code : Prog isa} {W : List (Nat × Nat)} (hc :
     (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := exchangeWith_ok hc hL hmq hW (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| exchangeWith_ok hc hL hmq hW (hpre s hs)
   have hsp : ∀ i ∈ instrs (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq), Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi

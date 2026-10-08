@@ -17,8 +17,8 @@ theorem jointTail_ok {c : Cfg} (hc : CfgOk c) (hC : Law c.C)
       (tmv c.C c.n (s₀.gpr .rcx) s (c.sl RY)) (tmv c.C c.n (s₀.gpr .rcx) s (c.sl RZ))
       (add (mul (sv c (s₀.gpr .rcx) sM U) (G c.C))
         (mul (sv c (s₀.gpr .rcx) sM V) (peerPt c (s₀.mem (s₀.gpr .rdi)=4) (keyX c s₀) (keyY c s₀))))) :
-    WP isa (.seq (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)])
-      (Impl.Ecdsa.Verify.X86_64.Cfg.tail c)) s fun t =>
+    WP isa (Code.seq (ForwardField.programB c.MP' [.mul (c.sl RZ) (c.sl RZ) (c.sl RZ)])
+      (Impl.Ecdsa.Verify.X86_64.Cfg.tail c)).inline s fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=g r) ∧ VPost c s₀ t := by
   have hpR := unitMod_pow_two hc.p_odd (64*c.n)
   apply WP.seq

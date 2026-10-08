@@ -42,16 +42,17 @@ theorem post_of_x {s s' : State} (h : PkPost p521x s s') : pkX86_64.post s s' :=
 theorem pk_x86_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
-    ∃ t s', Exec isa publicKeyP521Adx s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
+    ∃ t s', Exec isa publicKeyP521Adx.inline s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs publicKeyP521Adx, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs publicKeyP521Adx.inline, Taint.clobbers i .rsp = false := by
     have h : publicKeyP521Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, post_of_x hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -69,21 +70,24 @@ theorem pk_x86_adx (hL : Weierstrass.Law Spec.P521.curve)
       · exact hrs) (by decide)
 
 theorem pk_ct_adx : ConstantTime isa pkX86_64.pre pkX86_64.pub publicKeyP521Adx := by
-  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx]) publicKeyP521Adx h).isSome = true := by
+  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check
+      (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) publicKeyP521Adx h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.combGXSum, Proof.P521.X86_64.invPXSum]
-  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx]) ?_ hc
-  exact fun _ _ _ _ ⟨_, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_ hc
+  exact fun _ _ _ _ ⟨h0, h1, h2, h3, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
-      · exact h3, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
+      · exact h3
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
 theorem pk_verified_adx (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) :
     Verified X86_64.target publicKeyP521Adx
-      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (pk_x86_adx hL hT hI) pk_ct_adx implies
+      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (pk_x86_adx hL hT hI) pk_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre_consts h) pk_patch
 
 end VG.Proof.EcKey.X86_64.P521

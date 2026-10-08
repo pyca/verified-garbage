@@ -101,7 +101,7 @@ def DblOk (M : Mod) (S : RcbSlots) (C : Curve) (dbl : Pt → Prog isa) : Prop :=
     (∀ x ∈ rcbW S p, Sl x) → ∀ {E : Nat → Fe C} {s : State},
     Inv M base size C.p Sl [p.x, p.y, p.z] E s → ∀ {Q : Point C}, onCurve C Q = true →
     InvJ C (E p.x) (E p.y) (E p.z) Q →
-    WP isa (dbl p) s fun t => ProgKeep M base (rcbW S p) s t ∧ ∃ E' : Nat → Fe C,
+    WP isa (dbl p).inline s fun t => ProgKeep M base (rcbW S p) s t ∧ ∃ E' : Nat → Fe C,
       Inv M base size C.p Sl [p.x, p.y, p.z] E' t ∧ InvJ C (E' p.x) (E' p.y) (E' p.z) (add Q Q)
 
 /-- The method's frame from `s₀`. -/

@@ -13,7 +13,7 @@ include hL hT hI
 
 theorem jointVerify_p384_public_ct :
     ConstantTime isa (VPre p384v) (JointPublic p384v p384Table)
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)) := by
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384v publicJoint (Joint.jacDouble publicJoint.K)).inline := by
   have hc := p384v_ok hI
   refine jointVerify_ct_of_points hc joint_before_ct ?_ joint_after_ct
   intro s₀ t₀ ps pt pub
@@ -23,7 +23,7 @@ theorem jointVerify_p384_public_ct :
 theorem jointVerify_p384_adx_public_ct :
     ConstantTime isa (VPre p384vx) (JointPublic p384vx p384Table)
       (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p384vx publicJointAdx
-        (Joint.jacDouble publicJointAdx.K)) := by
+        (Joint.jacDouble publicJointAdx.K)).inline := by
   have hc := p384vx_ok hI
   refine jointVerify_ct_of_points hc joint_adx_before_ct ?_ joint_adx_after_ct
   intro s₀ t₀ ps pt pub
@@ -37,6 +37,7 @@ theorem jointVerify_ct :
       (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384 := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  rw [← Code.inline_of_noCalls (c := Impl.Ecdsa.Verify.X86_64.jointVerifyP384) (by lit_decide)] at e₁ e₂
   exact jointVerify_p384_public_ct hL hT hI _ _ _ _ _ _ (pre_of (implies.pre _ pre₁))
     (pre_of (implies.pre _ pre₂)) (jointPublic_of_spec pub) e₁ e₂
 
@@ -46,6 +47,7 @@ theorem jointVerify_adx_ct :
       (Spec.Ecdsa.P384.inst.verifyContract (X86_64.abi.withConsts p384.combConsts)).pub
       Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ pub e₁ e₂
+  rw [← Code.inline_of_noCalls (c := Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx) (by lit_decide)] at e₁ e₂
   exact jointVerify_p384_adx_public_ct hL hT hI _ _ _ _ _ _
     (pre_of_x (implies.pre _ pre₁)) (pre_of_x (implies.pre _ pre₂))
     (show JointPublic p384vx p384Table s₁ s₂ from { jointPublic_of_spec pub with }) e₁ e₂

@@ -19,7 +19,7 @@ theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
     (hG : onCurve C G=true) (hA : onCurve C A=true)
     (h : JointCore c C base size Q u v (JointGenerator c C base T size row) A s)
     (hj : j<64*c.K.M.n+1) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
-    WP isa (Joint.fixedDigit c) s fun t =>
+    WP isa (Joint.fixedDigit c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v (JointGenerator c C base T size row) (add A (FastNaf.point C G 7 u j)) t := by
   have hExternal := JointGenerator.workKeep (base:=base) (row:=row) (T:=T) hL.lookup.layout h.field.mod.tmp
@@ -28,6 +28,7 @@ theorem jointFixedDigit_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v
     dsimp only at hh
     omega
   rw [Joint.fixedDigit]
+  simp only [Code.inline]
   apply WP.seq
   refine WP.mono_syms (nafRead_ok (K:={c.K with bits:=c.gBits}) h.field.scr hbytes hb (h.stable.generator j hj)) fun a ⟨a8,az,ka⟩ sa => ?_
   have kp : ProgKeep c.K.M base (jointWork c) s a := jointKeeps_prog ka (by

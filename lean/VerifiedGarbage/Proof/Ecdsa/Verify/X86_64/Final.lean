@@ -185,11 +185,11 @@ theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → Bit
       rcases List.mem_append.mp hw with hw | hw
       · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
         show 48 ≤ c.sl i
-        rw [sl_eq]; omega
+        rw [sl_eq']; omega
       · rcases List.mem_append.mp hw with hw | hw
         · rw [List.mem_singleton.mp hw]
           show 48 ≤ c.sl FLAG
-          rw [sl_eq]; omega
+          simp (disch := sl_ne) only [sl_eq]; omega
         · rw [List.mem_singleton.mp hw]
           show 48 ≤ bitsAt c.n 3
           rw [bitsAt_eq]; omega)
