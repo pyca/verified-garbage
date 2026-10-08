@@ -34,3 +34,5 @@ micro_binary = '/tmp/vg-mldsa-keccak-mix'
 subprocess.run(['rustc', '--edition=2024', '-O', '-Awarnings', str(micro_source), '-o', micro_binary], check=True)
 print('N2 paired Keccak instruction-mix sweep (nanoseconds per permutation)', flush=True)
 subprocess.run([micro_binary, '500000'], check=True)
+
+subprocess.run([sys.executable, str(Path(__file__).with_name('compare_mldsa_resident.py')), str(binary)], check=True)
