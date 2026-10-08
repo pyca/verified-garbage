@@ -8,10 +8,10 @@ import VerifiedGarbage.Impl.AesCbc.X86
 
 The artifacts' contracts are the shared ones of `Spec/Cbc/Contract.lean`,
 which imply these (`Verified.lean`): `cbcX86 enc`, for encryption
-(`enc = true`) and decryption. The arguments are on the stack, from
-`[esp + 4]` (cdecl). Each call of a block function pushes its five arguments
-and the return address in the 24 bytes below `esp`, which may not overlap
-any buffer.
+(`enc = true`) and decryption, `modeX86` for CBC (`cbcMode`). The arguments
+are on the stack, from `[esp + 4]` (cdecl). Each call of a block function
+pushes its five arguments and the return address in the 24 bytes below
+`esp`, which may not overlap any buffer.
 
 `blk_call`: the frame that pushes the five arguments of an implementation of
 `vg_aes_encrypt_blocks` or `vg_aes_decrypt_blocks` (`f` being
@@ -27,9 +27,8 @@ namespace VG.Proof.AesCbc.X86
 open VG VG.X86
 open VG.Spec.Aes (bytesAt)
 
-/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`
-`(schedule, rounds, iv, data, n, scratch)`. -/
-def cbcX86 (enc : Bool) : Contract isa where
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt` `(schedule, rounds, iv, data, n, scratch)`. -/
+def modeX86 (M : Mode) : Contract isa where
   pre s :=
     let sched : Region := ⟨(arg s 0).setWidth 64, 240⟩
     let iv : Region := ⟨(arg s 2).setWidth 64, 16⟩
@@ -48,13 +47,15 @@ def cbcX86 (enc : Bool) : Contract isa where
       24 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 28 ≤ 2 ^ 32 ∧
       ((arg s 1).toNat = 10 ∨ (arg s 1).toNat = 12 ∨ (arg s 1).toNat = 14)
   post s s' :=
-    let ciph := ciphOf enc (arg s 1).toNat (bytesAt s.mem ((arg s 0).setWidth 64) (16 * ((arg s 1).toNat + 1)))
+    let w := bytesAt s.mem ((arg s 0).setWidth 64) (16 * ((arg s 1).toNat + 1))
     let iv := bytesAt s.mem ((arg s 2).setWidth 64) 16
     let xs := Spec.Cbc.blocksAt s.mem ((arg s 3).setWidth 64) (arg s 4).toNat
-    let ys := cbc enc ciph iv xs
-    Spec.Cbc.blocksAt s'.mem ((arg s 3).setWidth 64) (arg s 4).toNat = ys ∧
-      bytesAt s'.mem ((arg s 2).setWidth 64) 16 = Spec.Cbc.next iv (cts enc xs ys)
+    Spec.Cbc.blocksAt s'.mem ((arg s 3).setWidth 64) (arg s 4).toNat = M.out (arg s 1).toNat w iv xs ∧
+      bytesAt s'.mem ((arg s 2).setWidth 64) 16 = M.chain (arg s 1).toNat w iv xs
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 6, arg s₁ i = arg s₂ i
+
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
+abbrev cbcX86 (enc : Bool) : Contract isa := modeX86 (cbcMode enc)
 
 /-! ## A call of a block function -/
 

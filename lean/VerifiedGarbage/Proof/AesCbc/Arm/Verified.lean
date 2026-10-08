@@ -30,13 +30,15 @@ def sat : State where
 
 theorem encrypt_verified : Verified Arm.target encrypt (Spec.Cbc.aesEncryptContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp encBody_ok hs) (whole_ct encBody_ok encBody_ct) (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcArm, ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
+    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
+      ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)
 
 theorem decrypt_verified : Verified Arm.target decrypt (Spec.Cbc.aesDecryptContract Arm.abi 8) :=
   Verified.of_correct (fun _ hs => whole_wp decBody_ok hs) (whole_ct decBody_ok decBody_ct) (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcArm, ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
+    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcArm, modeArm, cbcMode,
+      ciphOf, cbc, cts, Arm.abi, Arm.argRegs,
       Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [sat, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using sat)
 

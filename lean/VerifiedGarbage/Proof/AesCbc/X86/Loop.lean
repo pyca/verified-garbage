@@ -3,15 +3,16 @@ import VerifiedGarbage.Proof.AesCbc.Mem32
 import VerifiedGarbage.Proof.CmacAes.X86.UpdateLoop
 
 /-!
-# AES-CBC on x86: the loop, for either direction
+# AES-CBC on x86: the loop, for any mode on whole blocks
 
-The invariant after `k` blocks (`LInv`): `esi` points at the next block, `esp`
-is unchanged, only the chaining value, the data, the first 2064 bytes of the
-scratch buffer and the 24 bytes below `esp` have changed since the registers
-were saved, the first `k` blocks are CBC of the first `k` blocks on entry and
-the rest are unchanged, and the chaining value is the one to continue from
-after the first `k`. Everything else is reloaded from the stack arguments,
-which nothing writes.
+The invariant after `k` blocks (`LInv`): `esi` points at the next block,
+`esp` is unchanged, only the chaining value, the data, the first 2064 bytes
+of the scratch buffer and the 24 bytes below `esp` have changed since the
+registers were saved, the first `k` blocks are the mode's (`Mode.out`) of
+the first `k` blocks on entry and the rest are unchanged, and the chaining
+value is the mode's after them (`Mode.chain`). CBC is `cbcMode`; other
+modes' functions with the same arguments reuse the loop. Everything else is
+reloaded from the stack arguments, which nothing writes.
 
 `whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
 blocks and sets ZF when none are left (`BodyOk`), `whole body` meets the
@@ -92,24 +93,30 @@ structure UPre (s₀ : State) : Prop where
   esp_fit : (E s₀).toNat + 28 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
-theorem UPre.of {enc : Bool} {s₀ : State} (h : (cbcX86 enc).pre s₀) : UPre s₀ :=
+theorem UPre.of {M : Mode} {s₀ : State} (h : (modeX86 M).pre s₀) : UPre s₀ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩ := h
   ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w, x, y, z⟩
 
-/-- CBC of the first `k` blocks. -/
-abbrev outK (enc : Bool) (s₀ : State) (k : Nat) : List (List Byte) :=
-  cbc enc (ciph s₀ enc) (iv0 s₀) ((blks s₀).take k)
+/-- The key schedule as the mode uses it. -/
+abbrev wK (s₀ : State) : List Byte := bytesAt s₀.mem ((W s₀).setWidth 64) (16 * (R s₀ + 1))
+
+/-- The first `k` blocks after the mode. -/
+abbrev outK (M : Mode) (s₀ : State) (k : Nat) : List (List Byte) :=
+  M.out (R s₀) (wK s₀) (iv0 s₀) ((blks s₀).take k)
+
+/-- The chaining value after the first `k` blocks. -/
+abbrev chainK (M : Mode) (s₀ : State) (k : Nat) : List Byte :=
+  M.chain (R s₀) (wK s₀) (iv0 s₀) ((blks s₀).take k)
 
 /-- The loop invariant, after `k` blocks. -/
-structure LInv (enc : Bool) (s₀ : State) (k : Nat) (s : State) : Prop where
+structure LInv (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where
   esi : s.gpr .esi = Dp s₀ + BitVec.ofNat 32 (16 * k)
   esp : s.gpr .esp = E s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, 2064⟩, stkR s₀] (savedMem s₀) s.mem
-  data : Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK enc s₀ k ++ (blks s₀).drop k
-  iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 =
-    Spec.Cbc.next (iv0 s₀) (cts enc ((blks s₀).take k) (outK enc s₀ k))
+  data : Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀) = outK M s₀ k ++ (blks s₀).drop k
+  iv : bytesAt s.mem ((Iv s₀).setWidth 64) 16 = chainK M s₀ k
 
 /-! ## Addresses and regions -/
 
@@ -239,14 +246,14 @@ theorem UPre.blocksAt_step {m m' : Mem} {k : Nat} (hk : k < N s₀)
 
 omit hp in
 /-- Block `k` before the step, from the invariant. -/
-theorem LInv.block {enc : Bool} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hk : k < N s₀) :
+theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
     bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
-  have hl : (outK enc s₀ k).length = k := by
-    cases enc <;> simp [cbc, length_encrypt, length_decrypt, Spec.Cbc.blocksAt] <;> omega
+  have hl : (outK M s₀ k).length = k := by
+    rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega
   have := congrArg (·[k]?) h.data
   simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt s.mem ((Dp s₀).setWidth 64) (N s₀)).length by
       rw [length_blocksAt]; exact hk),
-    List.getElem?_append_right (show (outK enc s₀ k).length ≤ k by omega), hl, Nat.sub_self,
+    List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero,
     List.getElem?_eq_getElem (show k < (blks s₀).length by simp [Spec.Cbc.blocksAt]; exact hk)] at this
   show bytesAt s.mem ((Dp s₀).setWidth 64 + BitVec.ofNat 64 (16 * k)) 16 = _
@@ -262,8 +269,8 @@ theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
 
 /-! ## The prologue -/
 
-theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
-    WP isa (.block setup) s₀ fun s => LInv enc s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)) := by
+theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
+    WP isa (.block setup) s₀ fun s => LInv M s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)) := by
   have hsc := hp.scr_fit
   rw [setup_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
@@ -298,9 +305,9 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   · rw [f₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
   · rw [f₅.mem, u₄.mem, u₃.mem, hm₂]; exact Frame.refl _ _
   · rw [f₅.mem, u₄.mem, u₃.mem, hm₂, dataS]
-    cases enc <;> simp [cbc, Spec.Cbc.encrypt, Spec.Cbc.decrypt]
+    rw [outK, List.take_zero, M.out_nil, List.drop_zero, List.nil_append]
   · rw [f₅.mem, u₄.mem, u₃.mem, hm₂, ivS]
-    cases enc <;> simp [cbc, cts, Spec.Cbc.encrypt, Spec.Cbc.next]
+    rw [chainK, List.take_zero, M.chain_nil]
   · rw [z₅, u₄.gpr, arg_ofNat s₀ 4, ofNat_and_self_beq (arg s₀ 4).isLt]
 
 /-! ## The end of a block -/
@@ -341,14 +348,14 @@ theorem advance_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {
 
 /-- One run of `body` takes the invariant from `k` blocks to `k + 1`, and sets
 ZF if no blocks are left. -/
-def BodyOk (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
-    WP isa body s fun s' => LInv enc s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))
+def BodyOk (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
+    WP isa body s fun s' => LInv M s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))
 
-theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : LInv enc s₀ k s) : WP isa (.loop body .ne) s (LInv enc s₀ (N s₀)) := by
-  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv enc s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv enc s₀ j t) ?_ (N s₀ - k) s
+theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) : WP isa (.loop body .ne) s (LInv M s₀ (N s₀)) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv M s₀ (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv M s₀ j t) ?_ (N s₀ - k) s
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (hb hp hk h) fun s' ⟨h', hz⟩ => ?_
@@ -361,9 +368,9 @@ theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : St
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
 
-theorem mid_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (h : LInv enc s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
-    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv enc s₀ (N s₀)) := by
+theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+    (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
+    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) := by
   have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
     show VG.X86.eval .e s₁ = _; rw [eval_e, hz]
   by_cases hn : N s₀ = 0
@@ -404,8 +411,8 @@ theorem ret_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     · exact hp.ret_scr
     · exact hp.ret_stk) (by decide)
 
-theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv enc s₀ (N s₀) s) :
-    WP isa (.block (restore 5)) s fun s' => abiPreserved s₀ s' ∧ (cbcX86 enc).post s₀ s' := by
+theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv M s₀ (N s₀) s) :
+    WP isa (.block (restore 5)) s fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' := by
   have hsc : (arg s₀ 5).toNat + 2176 ≤ 2 ^ 32 := hp.scr_fit
   have rdwr : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
@@ -429,10 +436,10 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h 
   · show Spec.Cbc.blocksAt s₂.mem ((Dp s₀).setWidth 64) (N s₀) = _
     rw [r₂.mem, u₁.mem, h.data]; simp only [outK, hall, hnil, List.append_nil]
   · show bytesAt s₂.mem ((Iv s₀).setWidth 64) 16 = _
-    rw [r₂.mem, u₁.mem, h.iv]; simp only [outK, hall]
+    rw [r₂.mem, u₁.mem, h.iv]; simp only [chainK, hall]
 
-theorem whole_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (h0 : (cbcX86 enc).pre s₀) :
-    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (cbcX86 enc).post s₀ s' := by
+theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeX86 M).pre s₀) :
+    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' := by
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
     WP.seq (WP.mono (mid_wp hb hp h₁ hz) fun _ h₂ => epilogue_wp hp h₂))

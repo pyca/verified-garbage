@@ -49,7 +49,7 @@ theorem encrypt_verified (v : BlocksImpl) :
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
     sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, cbcX86, ciphOf, cbc, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
+      X86.argVal, X86.argBytes, cbcX86, modeX86, cbcMode, ciphOf, cbc, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified X86.target (decrypt v.dec) (Spec.Cbc.aesDecryptContract X86.abi 24) :=
@@ -63,6 +63,6 @@ theorem decrypt_verified (v : BlocksImpl) :
     have e : argAddr sat 0 = 0x8004 := by decide
     have esp : sat.gpr .esp = 0x8000 := rfl
     sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, X86.abi, X86.argSlots,
-      X86.argVal, X86.argBytes, cbcX86, ciphOf, cbc, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
+      X86.argVal, X86.argBytes, cbcX86, modeX86, cbcMode, ciphOf, cbc, cts] [a0, a1, a2, a3, a4, a5, e, esp] using sat)
 
 end VG.Proof.AesCbc.X86

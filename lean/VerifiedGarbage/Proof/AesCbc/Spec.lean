@@ -133,4 +133,37 @@ theorem bytesAt_of_statesAt {m m' : Mem} {D : Addr} {g : Spec.Aes.State → Spec
     BitVec.add_zero, List.getElem?_cons_zero, Option.some.injEq] at this
   rw [bytesAt_toList, this]
 
+/-! ## Modes on whole blocks
+
+The loop, prologue and epilogue of each target are proven once for any mode
+that transforms whole blocks in place and keeps a 16-byte chaining value
+(`Mode`): what the first blocks become (`out`) and the chaining value after
+them (`chain`), for `R` rounds and the key schedule `w`, from the chaining
+value `iv`. Each mode's own proofs show that one block extends both. -/
+
+/-- A mode on whole blocks, as the functions implemented in assembly
+compute it. -/
+structure Mode where
+  /-- The blocks `xs` become `out R w iv xs`. -/
+  out : Nat → List Byte → List Byte → List (List Byte) → List (List Byte)
+  /-- The chaining value after `xs`. -/
+  chain : Nat → List Byte → List Byte → List (List Byte) → List Byte
+  length_out : ∀ R w iv xs, (out R w iv xs).length = xs.length
+  out_nil : ∀ R w iv, out R w iv [] = []
+  chain_nil : ∀ R w iv, chain R w iv [] = iv
+
+/-- CBC in a direction, as a `Mode`. -/
+def cbcMode (enc : Bool) : Mode where
+  out R w iv xs := cbc enc (ciphOf enc R w) iv xs
+  chain R w iv xs := Spec.Cbc.next iv (cts enc xs (cbc enc (ciphOf enc R w) iv xs))
+  length_out R w iv xs := by cases enc <;> simp [cbc, length_encrypt, length_decrypt]
+  out_nil R w iv := by cases enc <;> rfl
+  chain_nil R w iv := by cases enc <;> rfl
+
+theorem cbcMode_out (enc : Bool) (R : Nat) (w iv : List Byte) (xs : List (List Byte)) :
+    (cbcMode enc).out R w iv xs = cbc enc (ciphOf enc R w) iv xs := rfl
+
+theorem cbcMode_chain (enc : Bool) (R : Nat) (w iv : List Byte) (xs : List (List Byte)) :
+    (cbcMode enc).chain R w iv xs = Spec.Cbc.next iv (cts enc xs ((cbcMode enc).out R w iv xs)) := rfl
+
 end VG.Proof.AesCbc

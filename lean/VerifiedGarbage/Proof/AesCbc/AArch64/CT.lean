@@ -22,7 +22,7 @@ theorem agree_of {rs : List Reg} {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp)
   ⟨hsp, fun r hr => h r (VG.AArch64.Taint.mem_ofRegs.mp hr)⟩
 
 section
-variable {enc : Bool} {s₀ s₀' : State} (hq : (cbcAArch64 enc).pub s₀ s₀')
+variable {M : Mode} {s₀ s₀' : State} (hq : (modeAArch64 M).pub s₀ s₀')
 include hq
 
 theorem pub_W : W s₀ = W s₀' := hq.1
@@ -36,7 +36,7 @@ theorem pub_sp : s₀.sp = s₀'.sp := hq.2.2.2.2.2.2
 theorem pub_blk (k : Nat) : blk s₀ k = blk s₀' k := by rw [blk, blk, pub_Dp hq]
 
 /-- The registers the invariant pins agree in both runs. -/
-theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv enc s₀ k s₁) (h₂ : LInv enc s₀' k s₂) :
+theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv M s₀ k s₁) (h₂ : LInv M s₀' k s₂) :
     VG.AArch64.Taint.Agree (Taint.ofRegs [.x19, .x20, .x21, .x22, .x23, .x24]) s₁ s₂ := by
   refine agree_of (by rw [h₁.sp, h₂.sp, pub_sp hq]) fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -51,9 +51,9 @@ theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv enc s₀ k s₁) (
 end
 
 /-- One run of `body` from `k` blocks is constant time. -/
-def BodyCt (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (cbcAArch64 enc).pub s₀ s₀' → ∀ k : Nat,
-    RelCT isa (fun s₁ s₂ => k < N s₀ ∧ LInv enc s₀ k s₁ ∧ LInv enc s₀' k s₂) body fun _ _ => True
+def BodyCt (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (modeAArch64 M).pub s₀ s₀' → ∀ k : Nat,
+    RelCT isa (fun s₁ s₂ => k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂) body fun _ _ => True
 
 /-! ## One block -/
 
@@ -74,7 +74,7 @@ structure After (s₀ : State) (k : Nat) (s : State) : Prop where
   x24 : s.gpr .x24 = S s₀
   sp : s.sp = s₀.sp
 
-theorem Mid.of {s₀ : State} {k : Nat} {s s₁ : State} {enc : Bool} (h : LInv enc s₀ k s)
+theorem Mid.of {s₀ : State} {k : Nat} {s s₁ : State} {M : Mode} (h : LInv M s₀ k s)
     (pre : CallPre s₁ (W s₀) (blk s₀ k) (S s₀) (R s₀)) (saved : ∀ r ∈ preserved, s₁.gpr r = s.gpr r)
     (sp : s₁.sp = s.sp) : Mid s₀ k s₁ :=
   ⟨pre, by rw [saved .x21 (by simp [preserved]), h.x21], by rw [saved .x22 (by simp [preserved]), h.x22],
@@ -91,7 +91,7 @@ theorem After.of {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {
 /-- A body: code before the call (`pre`), the call of `b`, and code after it
 (`post`), constant time when `pre`'s addresses and branches depend only on
 the registers the invariant pins and `post`'s on `x21` to `x24`. -/
-theorem body_ct {enc : Bool} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
     {b : Impl.Aes.AArch64.Blocks} {pre post : List Instr}
     (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
@@ -99,14 +99,15 @@ theorem body_ct {enc : Bool} {f : Nat → List Byte → Spec.Aes.State → Spec.
     (nf : b.code.noFrames = true)
     (hA : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21, .x22, .x23, .x24]) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (Taint.ofRegs [.x21, .x22, .x23, .x24]) (.block post) h).isSome = true)
-    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
+    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
       WP isa (.block pre) s (Mid s₀ k))
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cbcAArch64 enc).pub s₀ s₀') (k : Nat) :
-    RelCT isa (fun s₁ s₂ => k < N s₀ ∧ LInv enc s₀ k s₁ ∧ LInv enc s₀' k s₂)
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeAArch64 M).pub s₀ s₀') (k : Nat) :
+    RelCT isa (fun s₁ s₂ => k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂)
       (.seq (.block pre) (.seq (.call b.name b.code) (.block post))) fun _ _ => True := by
   obtain ⟨_, hA⟩ := hA
   obtain ⟨_, hB⟩ := hB
-  have a := (RelCT.taint (A := taint) (P := fun s₁ s₂ => k < N s₀ ∧ LInv enc s₀ k s₁ ∧ LInv enc s₀' k s₂) _
+  have a := (RelCT.taint (A := taint)
+    (P := fun s₁ s₂ => k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂) _
     (fun _ _ h => LInv.agree hq h.2.1 h.2.2) hA).wp
     (F₁ := Mid s₀ k) (F₂ := Mid s₀' k) fun _ _ h =>
       ⟨wpA hp h.1 h.2.1, wpA hp' (by rw [← pub_N hq]; exact h.1) h.2.2⟩
@@ -139,27 +140,27 @@ theorem decPre_taint : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21, .x22
 theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs [.x21, .x22, .x23, .x24])
     (.block (xorInto ++ copy .x21 0 .x24 cOff ++ advance)) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem encBody_ct (v : BlocksImpl) : BodyCt true (encBody v.enc) :=
+theorem encBody_ct (v : BlocksImpl) : BodyCt (cbcMode true) (encBody v.enc) :=
   fun hp hp' hq k => body_ct v.encOk v.encCt v.encNoFrames encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of h a.pre a.saved a.sp) hp hp' hq k
 
-theorem decBody_ct (v : BlocksImpl) : BodyCt false (decBody v.dec) :=
+theorem decBody_ct (v : BlocksImpl) : BodyCt (cbcMode false) (decBody v.dec) :=
   fun hp hp' hq k => body_ct v.decOk v.decCt v.decNoFrames decPre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of h a.pre a.saved a.sp) hp hp' hq k
 
 /-! ## The loop -/
 
 /-- The loop's relation, with the number of iterations left. -/
-def LRel (enc : Bool) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ k, n = N s₀ - k ∧ k < N s₀ ∧ LInv enc s₀ k s₁ ∧ LInv enc s₀' k s₂
+def LRel (M : Mode) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
+  ∃ k, n = N s₀ - k ∧ k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂
 
-theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cbcAArch64 enc).pub s₀ s₀') (n : Nat) :
-    RelCT isa (LRel enc s₀ s₀' n) (.loop body (.nonzero .x .x23))
-      fun s₁ s₂ => LInv enc s₀ (N s₀) s₁ ∧ LInv enc s₀' (N s₀') s₂ := by
-  refine RelCT.loop (M := isa) (LRel enc s₀ s₀') (fun n => ?_) n
+theorem loop_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeAArch64 M).pub s₀ s₀') (n : Nat) :
+    RelCT isa (LRel M s₀ s₀' n) (.loop body (.nonzero .x .x23))
+      fun s₁ s₂ => LInv M s₀ (N s₀) s₁ ∧ LInv M s₀' (N s₀') s₂ := by
+  refine RelCT.loop (M := isa) (LRel M s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel enc s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
+  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel M s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
   by_cases hn : n = N s₀ - k
   swap
   · exact RelCT.of_false fun _ _ h => hn h.1
@@ -168,7 +169,7 @@ theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Body
   swap
   · exact RelCT.of_false fun _ _ h => hk h.2.1
   have ct := (hc hp hp' hq k).wp
-    (F₁ := LInv enc s₀ (k + 1)) (F₂ := LInv enc s₀' (k + 1))
+    (F₁ := LInv M s₀ (k + 1)) (F₂ := LInv M s₀' (k + 1))
     fun _ _ h => ⟨hb hp h.1 h.2.1, hb hp' (by rw [← hN]; exact h.1) h.2.2⟩
   refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, l₁, l₂⟩ => ?_
   have hbd : N s₀ < 2 ^ 64 := (s₀.gpr .x4).isLt
@@ -186,9 +187,9 @@ theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Body
 
 /-! ## The whole function -/
 
-theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (h0 : (cbcAArch64 enc).pre s₀) (h0' : (cbcAArch64 enc).pre s₀')
-    (hq : (cbcAArch64 enc).pub s₀ s₀') :
+theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (h0 : (modeAArch64 M).pre s₀) (h0' : (modeAArch64 M).pre s₀')
+    (hq : (modeAArch64 M).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
@@ -207,20 +208,20 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
       refine agree_of h7 fun r hr => ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption) hpro).wp
-    (F₁ := LInv enc s₀ 0) (F₂ := LInv enc s₀' 0)
+    (F₁ := LInv M s₀ 0) (F₂ := LInv M s₀' 0)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨prologue_wp hp, prologue_wp hp'⟩
-  have ev {s : State} (h : LInv enc s₀ 0 s) : isa.eval (.zero .x .x23) s = some (decide (N s₀ = 0)) :=
+  have ev {s : State} (h : LInv M s₀ 0 s) : isa.eval (.zero .x .x23) s = some (decide (N s₀ = 0)) :=
     eval_zero_x23 hbd (by rw [h.x23]; rfl)
-  have ev' {s : State} (h : LInv enc s₀' 0 s) : isa.eval (.zero .x .x23) s = some (decide (N s₀ = 0)) :=
+  have ev' {s : State} (h : LInv M s₀' 0 s) : isa.eval (.zero .x .x23) s = some (decide (N s₀ = 0)) :=
     eval_zero_x23 hbd (by rw [h.x23, ← hN]; rfl)
   have nil := RelCT.taint (A := taint)
-    (P := fun a b => (LInv enc s₀ 0 a ∧ LInv enc s₀' 0 b) ∧ isa.eval (.zero .x .x23) a = some true) _
+    (P := fun a b => (LInv M s₀ 0 a ∧ LInv M s₀' 0 b) ∧ isa.eval (.zero .x .x23) a = some true) _
     (fun a b h => agree_of (by rw [h.1.1.sp, h.1.2.sp, pub_sp hq]) fun r hr => by simp at hr) hnil
-  have mid : RelCT isa (fun a b => LInv enc s₀ 0 a ∧ LInv enc s₀' 0 b)
+  have mid : RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b)
       (.ite (.zero .x .x23) (.block []) (.loop body (.nonzero .x .x23)))
-      (fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) := by
+      (fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) := by
     refine RelCT.ite (fun a b h => by rw [ev h.1, ev' h.2]) ?_ ?_
-    · refine (nil.wp (F₁ := LInv enc s₀ (N s₀)) (F₂ := LInv enc s₀' (N s₀')) fun a b h => ?_).mono
+    · refine (nil.wp (F₁ := LInv M s₀ (N s₀)) (F₂ := LInv M s₀' (N s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
       have h0 : N s₀ = 0 := by
         have := h.2; rw [ev h.1.1] at this; simpa using this
@@ -230,14 +231,14 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
       have := h.2; rw [ev h.1.1] at this
       have : N s₀ ≠ 0 := by simpa using this
       omega
-  have epi := RelCT.taint (A := taint) (P := fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) _
+  have epi := RelCT.taint (A := taint) (P := fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) _
     (fun a b h => agree_of (by rw [h.1.sp, h.2.sp, pub_sp hq]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; rw [h.1.x24, h.2.x24, pub_S hq]) hepi
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h.2).seq (mid.seq epi)
 
-theorem whole_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body) :
-    ConstantTime isa (cbcAArch64 enc).pre (cbcAArch64 enc).pub (whole body) :=
+theorem whole_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
+    ConstantTime isa (modeAArch64 M).pre (modeAArch64 M).pub (whole body) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCbc.AArch64

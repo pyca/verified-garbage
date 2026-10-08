@@ -10,8 +10,8 @@ import VerifiedGarbage.Impl.AesCbc.AArch64
 
 The artifacts' contracts are the shared ones of `Spec/Cbc/Contract.lean`,
 which imply these (`Verified.lean`): `cbcAArch64 enc`, for encryption
-(`enc = true`) and decryption. A call (`bl`) stores nothing in memory, so no
-stack is used.
+(`enc = true`) and decryption, `modeAArch64` for CBC (`cbcMode`). A call
+(`bl`) stores nothing in memory, so no stack is used.
 
 `blk_call`: a call of any implementation of `vg_aes_encrypt_blocks` or
 `vg_aes_decrypt_blocks` (`f` being `Spec.Aes.cipher` or
@@ -28,7 +28,7 @@ open VG.Spec.Aes (bytesAt)
 
 /-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`
 `(schedule = x0, rounds = x1, iv = x2, data = x3, n = x4, scratch = x5)`. -/
-def cbcAArch64 (enc : Bool) : Contract isa where
+def modeAArch64 (M : Mode) : Contract isa where
   pre s :=
     let sched : Region := ⟨s.gpr .x0, 240⟩
     let iv : Region := ⟨s.gpr .x2, 16⟩
@@ -41,15 +41,17 @@ def cbcAArch64 (enc : Bool) : Contract isa where
       (s.gpr .x5).toNat + 2176 ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14)
   post s s' :=
-    let ciph := ciphOf enc (s.gpr .x1).toNat (bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1)))
+    let w := bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1))
     let iv := bytesAt s.mem (s.gpr .x2) 16
     let xs := Spec.Cbc.blocksAt s.mem (s.gpr .x3) (s.gpr .x4).toNat
-    let ys := cbc enc ciph iv xs
-    Spec.Cbc.blocksAt s'.mem (s.gpr .x3) (s.gpr .x4).toNat = ys ∧
-      bytesAt s'.mem (s.gpr .x2) 16 = Spec.Cbc.next iv (cts enc xs ys)
+    Spec.Cbc.blocksAt s'.mem (s.gpr .x3) (s.gpr .x4).toNat = M.out (s.gpr .x1).toNat w iv xs ∧
+      bytesAt s'.mem (s.gpr .x2) 16 = M.chain (s.gpr .x1).toNat w iv xs
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.sp = s₂.sp
+
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
+abbrev cbcAArch64 (enc : Bool) : Contract isa := modeAArch64 (cbcMode enc)
 
 /-! ## A call of a block function -/
 

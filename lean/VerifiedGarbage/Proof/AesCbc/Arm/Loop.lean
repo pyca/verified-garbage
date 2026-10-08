@@ -3,13 +3,13 @@ import VerifiedGarbage.Proof.CmacAes.Arm.UpdateCorrect
 import VerifiedGarbage.Impl.AesCbc.Arm
 
 /-!
-# AES-CBC on ARMv7: the contracts, and the loop for either direction
+# AES-CBC on ARMv7: the contracts, and the loop for any mode on whole blocks
 
 The artifacts' contracts are the shared ones of `Spec/Cbc/Contract.lean`,
 which imply these (`Verified.lean`): `cbcArm enc`, for encryption
-(`enc = true`) and decryption. Each call of a block function pushes its stack
-argument in the 8 bytes below the stack pointer, which may not overlap any
-buffer.
+(`enc = true`) and decryption, `modeArm` for CBC (`cbcMode`). Each call of a
+block function pushes its stack argument in the 8 bytes below the stack
+pointer, which may not overlap any buffer.
 
 The registers are saved, and the arguments kept, as by AES-CMAC's
 `vg_cmac_aes_update` (`Proof/CmacAes/Arm/UpdateLoop.lean`), whose names for
@@ -18,10 +18,11 @@ them (`W`, `R`, `Dp`, `N`, `S`) and saved memory (`savedMem`) this reuses.
 The invariant after `k` blocks (`LInv`): the registers hold the arguments
 (`r7` the next block, `r8` the blocks left), `r11` and the stack pointer are
 unchanged, only the chaining value, the data, the first 2064 bytes of the
-scratch buffer and the 8 bytes below the stack pointer have changed since the
-registers were saved, the first `k` blocks are CBC of the first `k` blocks on
-entry and the rest are unchanged, and the chaining value is the one to
-continue from after the first `k`.
+scratch buffer and the 8 bytes below the stack pointer have changed since
+the registers were saved, the first `k` blocks are the mode's (`Mode.out`)
+of the first `k` blocks on entry and the rest are unchanged, and the
+chaining value is the mode's after them (`Mode.chain`). CBC is `cbcMode`;
+other modes' functions with the same arguments reuse the loop.
 
 `whole_wp`: if one run of `body` takes the invariant from `k` to `k + 1`
 blocks and sets Z when none are left (`BodyOk`), `whole body` meets the
@@ -39,7 +40,7 @@ open VG.Spec.Aes (bytesAt)
 
 /-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`
 `(schedule = r0, rounds = r1, iv = r2, data = r3, n = [sp], scratch = [sp + 4])`. -/
-def cbcArm (enc : Bool) : Contract isa where
+def modeArm (M : Mode) : Contract isa where
   pre s :=
     let sched : Region := ⟨State.addr (s.gpr .r0), 240⟩
     let iv : Region := ⟨State.addr (s.gpr .r2), 16⟩
@@ -56,15 +57,17 @@ def cbcArm (enc : Bool) : Contract isa where
       8 ≤ s.sp.toNat ∧ s.sp.toNat + 8 ≤ 2 ^ 32 ∧
       ((s.gpr .r1).toNat = 10 ∨ (s.gpr .r1).toNat = 12 ∨ (s.gpr .r1).toNat = 14)
   post s s' :=
-    let ciph := ciphOf enc (s.gpr .r1).toNat (bytesAt s.mem (State.addr (s.gpr .r0)) (16 * ((s.gpr .r1).toNat + 1)))
+    let w := bytesAt s.mem (State.addr (s.gpr .r0)) (16 * ((s.gpr .r1).toNat + 1))
     let iv := bytesAt s.mem (State.addr (s.gpr .r2)) 16
     let xs := Spec.Cbc.blocksAt s.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat
-    let ys := cbc enc ciph iv xs
-    Spec.Cbc.blocksAt s'.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat = ys ∧
-      bytesAt s'.mem (State.addr (s.gpr .r2)) 16 = Spec.Cbc.next iv (cts enc xs ys)
+    Spec.Cbc.blocksAt s'.mem (State.addr (s.gpr .r3)) (stackArg s 0).toNat = M.out (s.gpr .r1).toNat w iv xs ∧
+      bytesAt s'.mem (State.addr (s.gpr .r2)) 16 = M.chain (s.gpr .r1).toNat w iv xs
   pub s₁ s₂ :=
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧
       s₁.gpr .r3 = s₂.gpr .r3 ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
+
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
+abbrev cbcArm (enc : Bool) : Contract isa := modeArm (cbcMode enc)
 
 section
 variable (s₀ : State)
@@ -113,16 +116,23 @@ structure UPre (s₀ : State) : Prop where
   sp_fit : s₀.sp.toNat + 8 ≤ 2 ^ 32
   rounds : R s₀ = 10 ∨ R s₀ = 12 ∨ R s₀ = 14
 
-theorem UPre.of {enc : Bool} {s₀ : State} (h : (cbcArm enc).pre s₀) : UPre s₀ :=
+theorem UPre.of {M : Mode} {s₀ : State} (h : (modeArm M).pre s₀) : UPre s₀ :=
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w⟩ := h
   ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, t, u, v, w⟩
 
-/-- CBC of the first `k` blocks. -/
-abbrev outK (enc : Bool) (s₀ : State) (k : Nat) : List (List Byte) :=
-  cbc enc (ciph s₀ enc) (iv0 s₀) ((blks s₀).take k)
+/-- The key schedule as the mode uses it. -/
+abbrev wK (s₀ : State) : List Byte := bytesAt s₀.mem (State.addr (W s₀)) (16 * (R s₀ + 1))
+
+/-- The first `k` blocks after the mode. -/
+abbrev outK (M : Mode) (s₀ : State) (k : Nat) : List (List Byte) :=
+  M.out (R s₀) (wK s₀) (iv0 s₀) ((blks s₀).take k)
+
+/-- The chaining value after the first `k` blocks. -/
+abbrev chainK (M : Mode) (s₀ : State) (k : Nat) : List Byte :=
+  M.chain (R s₀) (wK s₀) (iv0 s₀) ((blks s₀).take k)
 
 /-- The loop invariant, after `k` blocks. -/
-structure LInv (enc : Bool) (s₀ : State) (k : Nat) (s : State) : Prop where
+structure LInv (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where
   r4 : s.gpr .r4 = W s₀
   r5 : s.gpr .r5 = s₀.gpr .r1
   r6 : s.gpr .r6 = Iv s₀
@@ -134,9 +144,8 @@ structure LInv (enc : Bool) (s₀ : State) (k : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [ivR s₀, dataR s₀, ⟨State.addr (S s₀), 2064⟩, belowR s₀] (savedMem s₀) s.mem
-  data : Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀) = outK enc s₀ k ++ (blks s₀).drop k
-  iv : bytesAt s.mem (State.addr (Iv s₀)) 16 =
-    Spec.Cbc.next (iv0 s₀) (cts enc ((blks s₀).take k) (outK enc s₀ k))
+  data : Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀) = outK M s₀ k ++ (blks s₀).drop k
+  iv : bytesAt s.mem (State.addr (Iv s₀)) 16 = chainK M s₀ k
 
 /-! ## Addresses and regions -/
 
@@ -235,14 +244,14 @@ theorem UPre.blocksAt_step {m m' : Mem} {k : Nat} (hk : k < N s₀)
 
 omit hp in
 /-- Block `k` before the step, from the invariant. -/
-theorem LInv.block {enc : Bool} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hk : k < N s₀) :
+theorem LInv.block {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hk : k < N s₀) :
     bytesAt s.mem (blk s₀ k) 16 = (blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk) := by
-  have hl : (outK enc s₀ k).length = k := by
-    cases enc <;> simp [cbc, length_encrypt, length_decrypt, Spec.Cbc.blocksAt] <;> omega
+  have hl : (outK M s₀ k).length = k := by
+    rw [outK, M.length_out]; simp [Spec.Cbc.blocksAt]; omega
   have := congrArg (·[k]?) h.data
   simp only [List.getElem?_eq_getElem (show k < (Spec.Cbc.blocksAt s.mem (State.addr (Dp s₀)) (N s₀)).length by
       rw [length_blocksAt]; exact hk),
-    List.getElem?_append_right (show (outK enc s₀ k).length ≤ k by omega), hl, Nat.sub_self,
+    List.getElem?_append_right (show (outK M s₀ k).length ≤ k by omega), hl, Nat.sub_self,
     List.getElem?_drop, Nat.add_zero,
     List.getElem?_eq_getElem (show k < (blks s₀).length by simp [Spec.Cbc.blocksAt]; exact hk)] at this
   show bytesAt s.mem (State.addr (Dp s₀) + BitVec.ofNat 64 (16 * k)) 16 = _
@@ -258,8 +267,8 @@ theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
 
 /-! ## The prologue -/
 
-theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
-    WP isa (.block (save ++ setup)) s₀ fun s => LInv enc s₀ 0 s ∧ s.z = decide (N s₀ = 0) := by
+theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
+    WP isa (.block (save ++ setup)) s₀ fun s => LInv M s₀ 0 s ∧ s.z = decide (N s₀ = 0) := by
   have hsc := hp.scr_fit
   rw [show save ++ setup = .ldrSp .r12 4 :: (saved.map (fun p => Instr.str p.1 .r12 p.2) ++ setup) from rfl]
   refine wp_ldrSp (a := stackArgAddr s₀ 1) (by decide) rfl (hp.arg_in (by decide)) fun s₁ u₁ => ?_
@@ -313,9 +322,9 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
   · rw [f₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂, u₁.wr]
   · rw [mm]; exact Frame.refl _ _
   · rw [mm, dataS]
-    cases enc <;> simp [cbc, Spec.Cbc.encrypt, Spec.Cbc.decrypt]
+    rw [outK, List.take_zero, M.out_nil, List.drop_zero, List.nil_append]
   · rw [mm, ivS]
-    cases enc <;> simp [cbc, cts, Spec.Cbc.encrypt, Spec.Cbc.next]
+    rw [chainK, List.take_zero, M.chain_nil]
   · rw [z₉, show s₈.gpr .r8 = s₉.gpr .r8 from (congrFun f₉.gpr _).symm, r8, a0]
     exact cmp0 (stackArg s₀ 0).isLt
 
@@ -323,14 +332,14 @@ theorem prologue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) :
 
 /-- One run of `body` takes the invariant from `k` blocks to `k + 1`, and sets
 Z if no blocks are left. -/
-def BodyOk (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
-    WP isa body s fun s' => LInv enc s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)
+def BodyOk (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
+    WP isa body s fun s' => LInv M s₀ (k + 1) s' ∧ s'.z = decide (N s₀ - (k + 1) = 0)
 
-theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {k : Nat}
-    (hk : k < N s₀) {s : State} (h : LInv enc s₀ k s) : WP isa (.loop body .ne) s (LInv enc s₀ (N s₀)) := by
-  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv enc s₀ (N s₀))
-    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv enc s₀ j t) ?_ (N s₀ - k) s
+theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {k : Nat}
+    (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) : WP isa (.loop body .ne) s (LInv M s₀ (N s₀)) := by
+  refine WP.loop (M := isa) (body := body) (c := .ne) (Q := LInv M s₀ (N s₀))
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv M s₀ j t) ?_ (N s₀ - k) s
     ⟨k, rfl, hk, h⟩
   rintro n s ⟨k, rfl, hk, h⟩
   refine WP.mono (hb hp hk h) fun s' ⟨h', hz⟩ => ?_
@@ -343,9 +352,9 @@ theorem loop_ok {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : St
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
 
-theorem mid_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
-    (h : LInv enc s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
-    WP isa (.ite .eq (.block []) (.loop body .ne)) s₁ (LInv enc s₀ (N s₀)) := by
+theorem mid_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (hp : UPre s₀) {s₁ : State}
+    (h : LInv M s₀ 0 s₁) (hz : s₁.z = decide (N s₀ = 0)) :
+    WP isa (.ite .eq (.block []) (.loop body .ne)) s₁ (LInv M s₀ (N s₀)) := by
   have ev : isa.eval .eq s₁ = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s₁ = _; rw [eval_eq, hz]
   by_cases hn : N s₀ = 0
@@ -369,8 +378,8 @@ theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     · exact Offset.disjoint_base _ h₁ (by have := hp.scr_fit; omega)
     · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega))) (by decide)
 
-theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv enc s₀ (N s₀) s) :
-    WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ (cbcArm enc).post s₀ s' := by
+theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv M s₀ (N s₀) s) :
+    WP isa (.block restore) s fun s' => abiPreserved s₀ s' ∧ (modeArm M).post s₀ s' := by
   have hsc := hp.scr_fit
   have rdwr : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
@@ -396,10 +405,10 @@ theorem epilogue_wp {enc : Bool} {s₀ : State} (hp : UPre s₀) {s : State} (h 
   · show Spec.Cbc.blocksAt s₂.mem (State.addr (Dp s₀)) (N s₀) = _
     rw [m₁, h.data]; simp only [outK, hall, hnil, List.append_nil]
   · show bytesAt s₂.mem (State.addr (Iv s₀)) 16 = _
-    rw [m₁, h.iv]; simp only [outK, hall]
+    rw [m₁, h.iv]; simp only [chainK, hall]
 
-theorem whole_wp {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) {s₀ : State} (h0 : (cbcArm enc).pre s₀) :
-    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (cbcArm enc).post s₀ s' := by
+theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeArm M).pre s₀) :
+    WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeArm M).post s₀ s' := by
   have hp := UPre.of h0
   exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
     WP.seq (WP.mono (mid_wp hb hp h₁ hz) fun _ h₂ => epilogue_wp hp h₂))

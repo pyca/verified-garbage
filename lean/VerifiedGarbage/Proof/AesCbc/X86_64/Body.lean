@@ -46,12 +46,12 @@ theorem UPre.blk_wrap {k : Nat} (hk : k < N s₀) : (blk s₀ k).toNat + 16 ≤ 
   rw [hp.blk_toNat hk]; omega
 
 /-- The regions the code reads and writes, from the invariant. -/
-theorem LInv.regs {enc : Bool} {k : Nat} {s : State} (h : LInv enc s₀ k s) :
+theorem LInv.regs {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) :
     s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
   rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
 
 omit hp in
-theorem LInv.wrs {enc : Bool} {k : Nat} {s : State} (h : LInv enc s₀ k s) (hp : UPre s₀) :
+theorem LInv.wrs {M : Mode} {k : Nat} {s : State} (h : LInv M s₀ k s) (hp : UPre s₀) :
     s.wr = [ivR s₀, dataR s₀, scrR s₀] := by
   rw [h.wr, hp.wr]
 
@@ -161,7 +161,8 @@ structure EncA (s₀ : State) (k : Nat) (s s₁ : State) : Prop where
   rd : s₁.rd = s.rd
   wr : s₁.wr = s.wr
 
-theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv true s₀ k s) :
+theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
+    {s : State} (h : LInv (cbcMode true) s₀ k s) :
     WP isa (.block (xorInto .r13 .r12 ++ callArgs)) s (EncA s₀ k s) := by
   have hR := h.regs hp
   have hW := h.wrs hp
@@ -180,7 +181,7 @@ theorem encA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
     (by rw [keep .rsp (by simp [calleeSaved]), h.rsp]) (by rw [rd₂, rd₁, h.rd]) (by rw [wr₂, wr₁, h.wr]),
     keep, by rw [mem₂, mem₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
-theorem encBody_ok (v : BlocksImpl) : BodyOk true (encBody v.enc) := by
+theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := by
   intro s₀ hp k hk s h
   refine WP.seq (WP.mono (encA_wp hp hk h) fun s₁ a => ?_)
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [a.saved .rsp (by simp [calleeSaved]), h.rsp]
@@ -232,7 +233,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk true (encBody v.enc) := by
   have newBlk : bytesAt s₄.mem (blk s₀ k) 16 =
       Spec.Cbc.aesWith (R s₀) (bytesAt s₀.mem (W s₀) (16 * (R s₀ + 1)))
         (Spec.Cbc.xor ((blks s₀)[k]'(by simp [Spec.Cbc.blocksAt]; exact hk))
-          (Spec.Cbc.next (iv0 s₀) (outK true s₀ k))) := by
+          (Spec.Cbc.next (iv0 s₀) (outK (cbcMode true) s₀ k))) := by
     rw [mem₄, mem₃, bytesAt_frame (copyMem_frame s₂.mem (Iv s₀) (blk s₀ k)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.blk_iv hk) (by decide),
       c.out, ← UPre.sched_bytes hp big₁,
@@ -242,11 +243,12 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk true (encBody v.enc) := by
     rw [mem₄, mem₃, copyMem_bytes _ ((hp.blk_iv hk).symm),
       bytesAt_frame (copyMem_frame s₂.mem (Iv s₀) (blk s₀ k)) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact hp.blk_iv hk) (by decide)]
-  have hl : (outK true s₀ k).length = k := by
-    simp [cbc, length_encrypt, Spec.Cbc.blocksAt]; omega
-  have outSucc : outK true s₀ (k + 1) = outK true s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
+  have hl : (outK (cbcMode true) s₀ k).length = k := by
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+  have outSucc :
+      outK (cbcMode true) s₀ (k + 1) = outK (cbcMode true) s₀ k ++ [bytesAt s₄.mem (blk s₀ k) 16] := by
     rw [newBlk]
-    simp only [outK, cbc, ciph, ciphOf, ite_true, take_succ_blks s₀ hk, encrypt_snoc]
+    simp only [outK, cbcMode_out, cbc, ciphOf, ite_true, take_succ_blks s₀ hk, encrypt_snoc]
   refine ⟨⟨?_, ?_, ?_, r13₄, r14₄, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, zf₄⟩
   · rw [g .rbx (by simp [calleeSaved]) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by simp [calleeSaved]) (by decide) (by decide), h.rbp]
@@ -259,7 +261,7 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk true (encBody v.enc) := by
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
-    simp only [cts, ite_true, outSucc, next_snoc]
+    simp only [chainK, cbcMode_chain, cts, ite_true, outSucc, next_snoc]
 
 /-! ## Decryption -/
 
@@ -274,7 +276,8 @@ structure DecA (s₀ : State) (k : Nat) (s s₁ : State) : Prop where
   rd : s₁.rd = s.rd
   wr : s₁.wr = s.wr
 
-theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv false s₀ k s) :
+theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀)
+    {s : State} (h : LInv (cbcMode false) s₀ k s) :
     WP isa (.block (copy .r15 cOff .r13 0 ++ callArgs)) s (DecA s₀ k s) := by
   have hR := h.regs hp
   have hW := h.wrs hp
@@ -295,7 +298,7 @@ theorem decA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s :
     (by rw [keep .rsp (by simp [calleeSaved]), h.rsp]) (by rw [rd₂, rd₁, h.rd]) (by rw [wr₂, wr₁, h.wr]),
     keep, by rw [mem₂, mem₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩
 
-theorem decBody_ok (v : BlocksImpl) : BodyOk false (decBody v.dec) := by
+theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := by
   intro s₀ hp k hk s h
   refine WP.seq (WP.mono (decA_wp hp hk h) fun s₁ a => ?_)
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [a.saved .rsp (by simp [calleeSaved]), h.rsp]
@@ -392,11 +395,12 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk false (decBody v.dec) := by
     rw [mem₅, mem₄, copyMem_bytes _ hp.iv_sv, mem₃,
       bytesAt_frame (xorMem_frame _ _ _) (one _ _ (hp.blk_sv hk).symm) (by decide),
       bytesAt_frame c.frame callSv (by decide), a.mem, copyMem_bytes _ (hp.blk_sv hk).symm, hblk]
-  have hl : (outK false s₀ k).length = k := by
-    simp [cbc, length_decrypt, Spec.Cbc.blocksAt]; omega
-  have outSucc : outK false s₀ (k + 1) = outK false s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
+  have hl : (outK (cbcMode false) s₀ k).length = k := by
+    rw [outK, Mode.length_out]; simp [Spec.Cbc.blocksAt]; omega
+  have outSucc :
+      outK (cbcMode false) s₀ (k + 1) = outK (cbcMode false) s₀ k ++ [bytesAt s₅.mem (blk s₀ k) 16] := by
     rw [newBlk]
-    simp only [outK, cbc, ciph, ciphOf, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, decrypt_snoc]
+    simp only [outK, cbcMode_out, cbc, ciphOf, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, decrypt_snoc]
   refine ⟨⟨?_, ?_, ?_, r13₅, r14₅, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, zf₅⟩
   · rw [g .rbx (by simp [calleeSaved]) (by decide) (by decide), h.rbx]
   · rw [g .rbp (by simp [calleeSaved]) (by decide) (by decide), h.rbp]
@@ -409,6 +413,6 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk false (decBody v.dec) := by
   · rw [hp.blocksAt_step hk fStep, h.data, outSucc,
       set_prefix _ _ _ hl (by simp [Spec.Cbc.blocksAt]; exact hk)]
   · rw [newIv]
-    simp only [cts, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, next_snoc]
+    simp only [chainK, cbcMode_chain, cts, Bool.false_eq_true, ite_false, take_succ_blks s₀ hk, next_snoc]
 
 end VG.Proof.AesCbc.X86_64

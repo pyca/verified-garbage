@@ -12,9 +12,9 @@ import VerifiedGarbage.Impl.AesCbc.X86_64
 
 The artifacts' contracts are the shared ones of `Spec/Cbc/Contract.lean`,
 which imply these (`Verified.lean`): `cbcX86_64 enc`, for encryption
-(`enc = true`) and decryption. Each function calls a block function, whose
-return address is in the 8 bytes below the stack pointer, which may not
-overlap any buffer.
+(`enc = true`) and decryption, `modeX86_64` for CBC (`cbcMode`). Each
+function calls a block function, whose return address is in the 8 bytes
+below the stack pointer, which may not overlap any buffer.
 
 `blk_call`: a call of any implementation of `vg_aes_encrypt_blocks` or
 `vg_aes_decrypt_blocks` (`f` being `Spec.Aes.cipher` or
@@ -29,9 +29,9 @@ namespace VG.Proof.AesCbc.X86_64
 open VG VG.X86_64
 open VG.Spec.Aes (bytesAt)
 
-/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`
+/-- A function of `M` with the arguments of `vg_aes_cbc_encrypt`
 `(schedule = rdi, rounds = rsi, iv = rdx, data = rcx, n = r8, scratch = r9)`. -/
-def cbcX86_64 (enc : Bool) : Contract isa where
+def modeX86_64 (M : Mode) : Contract isa where
   pre s :=
     let sched : Region := ⟨s.gpr .rdi, 240⟩
     let iv : Region := ⟨s.gpr .rdx, 16⟩
@@ -47,16 +47,18 @@ def cbcX86_64 (enc : Bool) : Contract isa where
       (s.gpr .r9).toNat + 2176 ≤ 2 ^ 64 ∧
       ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
   post s s' :=
-    let ciph := ciphOf enc (s.gpr .rsi).toNat (bytesAt s.mem (s.gpr .rdi) (16 * ((s.gpr .rsi).toNat + 1)))
+    let w := bytesAt s.mem (s.gpr .rdi) (16 * ((s.gpr .rsi).toNat + 1))
     let iv := bytesAt s.mem (s.gpr .rdx) 16
     let xs := Spec.Cbc.blocksAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat
-    let ys := cbc enc ciph iv xs
-    Spec.Cbc.blocksAt s'.mem (s.gpr .rcx) (s.gpr .r8).toNat = ys ∧
-      bytesAt s'.mem (s.gpr .rdx) 16 = Spec.Cbc.next iv (cts enc xs ys)
+    Spec.Cbc.blocksAt s'.mem (s.gpr .rcx) (s.gpr .r8).toNat = M.out (s.gpr .rsi).toNat w iv xs ∧
+      bytesAt s'.mem (s.gpr .rdx) 16 = M.chain (s.gpr .rsi).toNat w iv xs
   pub s₁ s₂ :=
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
       s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
       s₁.gpr .rsp = s₂.gpr .rsp
+
+/-- `vg_aes_cbc_encrypt` (`enc`) or `vg_aes_cbc_decrypt`. -/
+abbrev cbcX86_64 (enc : Bool) : Contract isa := modeX86_64 (cbcMode enc)
 
 /-! ## A call of a block function -/
 

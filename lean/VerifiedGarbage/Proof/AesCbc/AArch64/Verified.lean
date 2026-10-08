@@ -41,13 +41,15 @@ def sat : State where
 theorem encrypt_verified (v : BlocksImpl) :
     Verified AArch64.target (encrypt v.enc) (Spec.Cbc.aesEncryptContract AArch64.abi) :=
   Verified.of_correct (encrypt_correct v) (whole_ct (encBody_ok v) (encBody_ct v)) (by
-    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcAArch64, ciphOf, cbc, cts, AArch64.abi,
+    sig_implies [Spec.Cbc.aesEncryptContract, Spec.Cbc.aesSig, cbcAArch64, modeAArch64, cbcMode,
+      ciphOf, cbc, cts, AArch64.abi,
       AArch64.argRegs] [sat] using sat)
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified AArch64.target (decrypt v.dec) (Spec.Cbc.aesDecryptContract AArch64.abi) :=
   Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
-    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcAArch64, ciphOf, cbc, cts, AArch64.abi,
+    sig_implies [Spec.Cbc.aesDecryptContract, Spec.Cbc.aesSig, cbcAArch64, modeAArch64, cbcMode,
+      ciphOf, cbc, cts, AArch64.abi,
       AArch64.argRegs] [sat] using sat)
 
 end VG.Proof.AesCbc.AArch64

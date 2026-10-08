@@ -27,7 +27,7 @@ abbrev vars : List Reg := [.r4, .r5, .r6, .r7, .r8, .r10]
 abbrev postVars : List Reg := [.r6, .r7, .r8, .r10]
 
 section
-variable {enc : Bool} {s₀ s₀' : State} (hq : (cbcArm enc).pub s₀ s₀')
+variable {M : Mode} {s₀ s₀' : State} (hq : (modeArm M).pub s₀ s₀')
 include hq
 
 theorem pub_sp : s₀.sp = s₀'.sp := hq.1
@@ -41,7 +41,7 @@ theorem pub_S : S s₀ = S s₀' := hq.2.2.2.2.2.2
 theorem pub_D32 (k : Nat) : D32 s₀ k = D32 s₀' k := by rw [D32, D32, pub_Dp hq]
 
 /-- The registers the invariant pins agree in both runs. -/
-theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv enc s₀ k s₁) (h₂ : LInv enc s₀' k s₂) :
+theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv M s₀ k s₁) (h₂ : LInv M s₀' k s₂) :
     ∀ r ∈ vars, s₁.gpr r = s₂.gpr r := by
   intro r hr
   simp only [vars, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -56,13 +56,13 @@ theorem LInv.agree {k : Nat} {s₁ s₂ : State} (h₁ : LInv enc s₀ k s₁) (
 end
 
 /-- The relation before a block, in two runs. -/
-def BRel (enc : Bool) (s₀ s₀' : State) (k : Nat) (s₁ s₂ : State) : Prop :=
-  (k < N s₀ ∧ LInv enc s₀ k s₁) ∧ (k < N s₀' ∧ LInv enc s₀' k s₂)
+def BRel (M : Mode) (s₀ s₀' : State) (k : Nat) (s₁ s₂ : State) : Prop :=
+  (k < N s₀ ∧ LInv M s₀ k s₁) ∧ (k < N s₀' ∧ LInv M s₀' k s₂)
 
 /-- One run of `body` from `k` blocks is constant time. -/
-def BodyCt (enc : Bool) (body : Prog isa) : Prop :=
-  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (cbcArm enc).pub s₀ s₀' → ∀ k : Nat,
-    RelCT isa (BRel enc s₀ s₀' k) body fun _ _ => True
+def BodyCt (M : Mode) (body : Prog isa) : Prop :=
+  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (modeArm M).pub s₀ s₀' → ∀ k : Nat,
+    RelCT isa (BRel M s₀ s₀' k) body fun _ _ => True
 
 /-! ## One block -/
 
@@ -79,7 +79,7 @@ structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
   pre : BlkCall s (W s₀) (D32 s₀ k) (S s₀) (R s₀) 1
   after : After s₀ k s
 
-theorem Mid.of {enc : Bool} {s₀ : State} {k : Nat} {s s₁ : State} {m : Mem} (h : LInv enc s₀ k s)
+theorem Mid.of {M : Mode} {s₀ : State} {k : Nat} {s s₁ : State} {m : Mem} (h : LInv M s₀ k s)
     (a : PreA s₀ k s m s₁) : Mid s₀ k s₁ :=
   ⟨a.pre, ⟨by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7],
@@ -94,19 +94,18 @@ theorem After.of {F : BlkFn} {s₀ : State} {k : Nat} {s s' : State} (h : Mid s�
     by rw [c.saved .r8 (by simp [preserved]) (by decide), h.after.r8],
     by rw [c.saved .r10 (by simp [preserved]) (by decide), h.after.r10], by rw [c.sp, h.after.sp]⟩
 
-/-- A body: code before the call (`pre`), the call of `F` in its frame, and
-code after it (`post`), constant time when `pre`'s addresses and branches
-depend only on the registers the invariant pins and `post`'s on `r6`, `r7`,
-`r8` and `r10`. -/
-theorem body_ct {enc : Bool} (F : BlkFn) {pre post : List Instr}
+/-- A body: code before the call (`pre`), the call of `F` in its frame, and code after it (`post`),
+constant time when `pre`'s addresses and branches
+depend only on the registers the invariant pins and `post`'s on `r6`, `r7`, `r8` and `r10`. -/
+theorem body_ct {M : Mode} (F : BlkFn) {pre post : List Instr}
     (hA : ∃ h, (taint.check (Taint.ofRegs vars) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h).isSome = true)
-    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv enc s₀ k s →
+    (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
       WP isa (.block pre) s (Mid s₀ k))
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cbcArm enc).pub s₀ s₀') (k : Nat) :
-    RelCT isa (BRel enc s₀ s₀' k) (.seq (.block pre) (.seq (blkFrame F) (.block post))) fun _ _ => True := by
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (k : Nat) :
+    RelCT isa (BRel M s₀ s₀' k) (.seq (.block pre) (.seq (blkFrame F) (.block post))) fun _ _ => True := by
   obtain ⟨_, hB⟩ := hB
-  have a := rel_agree (F := fun s => k < N s₀ ∧ LInv enc s₀ k s) (F' := fun s => k < N s₀' ∧ LInv enc s₀' k s)
+  have a := rel_agree (F := fun s => k < N s₀ ∧ LInv M s₀ k s) (F' := fun s => k < N s₀' ∧ LInv M s₀' k s)
     (G := Mid s₀ k) (G' := Mid s₀' k) (Taint.ofRegs vars)
     (fun _ _ h h' => Taint.agree_ofRegs (LInv.agree hq h.2 h'.2)) hA
     (fun _ h => wpA hp h.1 h.2) (fun _ h => wpA hp' h.1 h.2)
@@ -139,12 +138,12 @@ theorem decPre_taint : ∃ h, (taint.check (Taint.ofRegs vars) (.block decPre) h
 theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block decPost) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem encBody_ct : BodyCt true encBody := fun hp hp' hq k => by
+theorem encBody_ct : BodyCt (cbcMode true) encBody := fun hp hp' hq k => by
   rw [encBody, encFrame_eq]
   exact body_ct encF encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
 
-theorem decBody_ct : BodyCt false decBody := fun hp hp' hq k => by
+theorem decBody_ct : BodyCt (cbcMode false) decBody := fun hp hp' hq k => by
   rw [decBody, decFrame_eq]
   exact body_ct decF decPre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of h a) hp hp' hq k
@@ -152,23 +151,23 @@ theorem decBody_ct : BodyCt false decBody := fun hp hp' hq k => by
 /-! ## The loop -/
 
 /-- The loop's relation, with the number of iterations left. -/
-def LRel (enc : Bool) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ k, n = N s₀ - k ∧ BRel enc s₀ s₀' k s₁ s₂
+def LRel (M : Mode) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
+  ∃ k, n = N s₀ - k ∧ BRel M s₀ s₀' k s₁ s₂
 
-theorem loop_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (cbcArm enc).pub s₀ s₀') (n : Nat) :
-    RelCT isa (LRel enc s₀ s₀' n) (.loop body .ne)
-      fun s₁ s₂ => LInv enc s₀ (N s₀) s₁ ∧ LInv enc s₀' (N s₀') s₂ := by
-  refine RelCT.loop (M := isa) (LRel enc s₀ s₀') (fun n => ?_) n
+theorem loop_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeArm M).pub s₀ s₀') (n : Nat) :
+    RelCT isa (LRel M s₀ s₀' n) (.loop body .ne)
+      fun s₁ s₂ => LInv M s₀ (N s₀) s₁ ∧ LInv M s₀' (N s₀') s₂ := by
+  refine RelCT.loop (M := isa) (LRel M s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel enc s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
+  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : LRel M s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
   by_cases hn : n = N s₀ - k
   swap
   · exact RelCT.of_false fun _ _ h => hn h.1
   subst hn
   have ct := (hc hp hp' hq k).wp
-    (F₁ := fun (s : State) => (LInv enc s₀ (k + 1) s ∧ s.z = decide (N s₀ - (k + 1) = 0)) ∧ k < N s₀)
-    (F₂ := fun (s : State) => LInv enc s₀' (k + 1) s ∧ s.z = decide (N s₀' - (k + 1) = 0))
+    (F₁ := fun (s : State) => (LInv M s₀ (k + 1) s ∧ s.z = decide (N s₀ - (k + 1) = 0)) ∧ k < N s₀)
+    (F₂ := fun (s : State) => LInv M s₀' (k + 1) s ∧ s.z = decide (N s₀' - (k + 1) = 0))
     fun _ _ h => ⟨WP.mono (hb hp h.1.1 h.1.2) fun _ r => ⟨r, h.1.1⟩, hb hp' h.2.1 h.2.2⟩
   refine ct.mono (fun _ _ h => h.2) fun s₁ s₂ ⟨_, ⟨⟨l₁, z₁⟩, hk⟩, ⟨l₂, z₂⟩⟩ => ?_
   have e₁ : isa.eval .ne s₁ = some !decide (N s₀ - (k + 1) = 0) := by
@@ -195,9 +194,9 @@ theorem epilogue_taint : ∃ h, (taint.check (Taint.ofRegs [.r10]) (.block resto
 
 theorem nil_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body)
-    {s₀ s₀' : State} (h0 : (cbcArm enc).pre s₀) (h0' : (cbcArm enc).pre s₀')
-    (hq : (cbcArm enc).pub s₀ s₀') :
+theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (h0 : (modeArm M).pre s₀) (h0' : (modeArm M).pre s₀')
+    (hq : (modeArm M).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (whole body) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
@@ -216,8 +215,8 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
     · exact h.data_args.symm
     · exact h.scr_args.symm
   have pro := rel_agree (F := fun s => s = s₀) (F' := fun s => s = s₀')
-    (G := fun s => LInv enc s₀ 0 s ∧ s.z = decide (N s₀ = 0))
-    (G' := fun s => LInv enc s₀' 0 s ∧ s.z = decide (N s₀' = 0))
+    (G := fun s => LInv M s₀ 0 s ∧ s.z = decide (N s₀ = 0))
+    (G' := fun s => LInv M s₀' 0 s ∧ s.z = decide (N s₀' = 0))
     (argTaint [.r0, .r1, .r2, .r3] 8)
     (fun s s' e e' => by
       subst e e'
@@ -238,14 +237,14 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
   have ev' {s : State} (h : s.z = decide (N s₀' = 0)) : isa.eval .eq s = some (decide (N s₀ = 0)) := by
     show VG.Arm.eval .eq s = _; rw [eval_eq, h, hN]
   have nil := RelCT.taint (A := taint)
-    (P := fun a b => ((LInv enc s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
-      (LInv enc s₀' 0 b ∧ b.z = decide (N s₀' = 0))) ∧ isa.eval .eq a = some true)
+    (P := fun a b => ((LInv M s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
+      (LInv M s₀' 0 b ∧ b.z = decide (N s₀' = 0))) ∧ isa.eval .eq a = some true)
     (Taint.ofRegs []) (fun _ _ _ => Taint.agree_ofRegs fun r hr => by simp at hr) hnil
-  have mid : RelCT isa (fun a b => (LInv enc s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
-      (LInv enc s₀' 0 b ∧ b.z = decide (N s₀' = 0)))
-      (.ite .eq (.block []) (.loop body .ne)) (fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b) := by
+  have mid : RelCT isa (fun a b => (LInv M s₀ 0 a ∧ a.z = decide (N s₀ = 0)) ∧
+      (LInv M s₀' 0 b ∧ b.z = decide (N s₀' = 0)))
+      (.ite .eq (.block []) (.loop body .ne)) (fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) := by
     refine RelCT.ite (fun a b h => by rw [ev h.1.2, ev' h.2.2]) ?_ ?_
-    · refine (nil.wp (F₁ := LInv enc s₀ (N s₀)) (F₂ := LInv enc s₀' (N s₀')) fun a b h => ?_).mono
+    · refine (nil.wp (F₁ := LInv M s₀ (N s₀)) (F₂ := LInv M s₀' (N s₀')) fun a b h => ?_).mono
         (fun _ _ h => h) fun _ _ h => h.2
       have h0 : N s₀ = 0 := by
         have := h.2; rw [ev h.1.1.2] at this; simpa using this
@@ -256,14 +255,14 @@ theorem whole_rel {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : Bo
         have := h.2; rw [ev h.1.1.2] at this
         have : N s₀ ≠ 0 := by simpa using this
         omega
-  have epi := RelCT.taint (A := taint) (P := fun a b => LInv enc s₀ (N s₀) a ∧ LInv enc s₀' (N s₀') b)
+  have epi := RelCT.taint (A := taint) (P := fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b)
     (Taint.ofRegs [.r10]) (fun a b h => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; rw [h.1.r10, h.2.r10, pub_S hq]) hepi
   exact (pro.mono (fun _ _ h => h) fun _ _ h => h).seq (mid.seq epi)
 
-theorem whole_ct {enc : Bool} {body : Prog isa} (hb : BodyOk enc body) (hc : BodyCt enc body) :
-    ConstantTime isa (cbcArm enc).pre (cbcArm enc).pub (whole body) :=
+theorem whole_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
+    ConstantTime isa (modeArm M).pre (modeArm M).pub (whole body) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_rel hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesCbc.Arm
