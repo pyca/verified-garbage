@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
 # AES-GCM one-shot encryption out of place, from a list of slices, AArch64: the function
@@ -148,6 +149,7 @@ structure Lay (s : State) : Prop where
   w₁ : 2592 ≤ s.sp.toNat
   hR : (s.gpr .x1).toNat = 10 ∨ (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 14
   hgl : gl s (Cnt s) = L s
+  ods : (Src s).toNat + Cnt s * 16 ≤ 2 ^ 64
 
 theorem lay {s : State} (hs : gatherPre s) : Lay s := by
   obtain ⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
@@ -160,7 +162,7 @@ theorem lay {s : State} (hs : gatherPre s) : Lay s := by
     omega
   exact ⟨⟨rd, wr, kd, kt, nd, nt, ad, at_, dsd, dst, lsdt, dt, darg, targ, bk, bn, ba, bds, bl, barg, bd, bt,
     ok, on, oa, ods, ol, od, ot, w₁, w₂, hR, hgl⟩, hB, hBn, bk, bn, ba, bds, bl, bd, bt,
-    by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hR, hgl⟩
+    by simp only [argR, stackArgAddr_eq s hB, Nat.mul_zero, Nat.add_zero], w₁, hR, hgl, ods⟩
 
 /-- Parts of the stack below the stack pointer. -/
 theorem stk_sub (s : State) (d n : Nat) (h' : d + n ≤ 2592) :
@@ -226,7 +228,7 @@ theorem gArg (i : Nat) (hi : i < 3) : (gMem s).read (Bs s + BitVec.ofNat 64 (259
   refine Frame.read h.frame_gMem (contains_off _ (Nat.le_refl _) (Nat.le_refl _) (by omega)) (fun r hr => ?_)
     (by decide)
   simp only [List.mem_singleton] at hr; subst hr
-  have darg := h.pre.2.2.2.2.2.2.2.2.2.2.2.2.1
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, darg, -⟩ := h.pre
   rw [h.hargR] at darg
   exact (darg.sub_right (Offset.sub _ (show 2592 ≤ 2592 + 8 * i by omega) (by omega))).symm
 
@@ -264,7 +266,7 @@ theorem entered_wp {s : State} (h : Lay s) : WP isa (.block entry) (allocated 16
       ⟨_, by rw [awr]; exact List.mem_cons_self .., Offset.contains_base _ (by decide) (by decide)⟩
       ⟨_, by rw [awr]; exact List.mem_cons_self .., by simp [Region.Contains]⟩
       (by rw [Offset.add_ofNat_add_ofNat]; exact h.inArg 2608 (by decide) (by decide) _)
-      (by rw [Offset.add_ofNat_add_ofNat]; exact h.inArg 2592 (by decide) (by decide) _)) (by decide +kernel))
+      (by rw [Offset.add_ofNat_add_ofNat]; exact h.inArg 2592 (by decide) (by decide) _)) (by lit_decide))
     fun e ⟨⟨me, x11e, ge, spe, rde, wre⟩, ve⟩ => ?_
   simp only [Offset.add_ofNat_add_ofNat, Nat.reduceAdd] at me x11e
   change e.mem = (s.mem.write _ 8 (s.gpr .x30)).write _ 8 ((s.mem.write _ 8 (s.gpr .x30)).read _ 8) at me
@@ -303,7 +305,7 @@ structure Gathered (s g : State) : Prop where
   v : ∀ r ∈ preservedV, (g.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
 
 theorem gathered_wp {s e : State} (h : Lay s) (he : Entered s e) : WP isa gather e (Gathered s) := by
-  refine WP.mono (WP.preservedV (gather_wp e (gatherPre_of h he)) (by decide +kernel)) fun g ⟨⟨mg, kg⟩, vg⟩ => ?_
+  refine WP.mono (WP.preservedV (gather_wp e (gatherPre_of h he)) (by lit_decide)) fun g ⟨⟨mg, kg⟩, vg⟩ => ?_
   rw [he.mem, h.hpt] at mg
   exact ⟨mg, fun r hg h₁₁ h₁₆ h₁₇ => (kg.gpr r hg).trans (he.gpr r h₁₁ h₁₆ h₁₇), kg.sp.trans he.sp,
     kg.rd.trans he.rd, kg.wr.trans he.wr, fun r hr => (vg r hr).trans (he.v r hr)⟩

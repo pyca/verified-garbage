@@ -120,7 +120,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
   have hd : ∀ j < Cnt σ₁ * 16, e₁.mem (Src σ₁ + BitVec.ofNat 64 j) = e₂.mem (Src σ₁ + BitVec.ofNat 64 j) := by
     intro j hj
     have hx : (dsR σ₁).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 :=
-      Offset.contains_base _ hj (by have := h₁.pre.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1; omega)
+      Offset.contains_base _ hj (by have := h₁.ods; omega)
     have hx₂ : (dsR σ₂).Contains (Src σ₁ + BitVec.ofNat 64 j) 1 := by
       simp only [dsR, Src, Cnt, ← q6, ← q7]; exact hx
     rw [he₁.mem, he₂.mem, Lay.keepE h₁.bds.symm hx, Lay.keepE h₂.bds.symm hx₂]

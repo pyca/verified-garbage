@@ -77,6 +77,8 @@
     target_arch = "x86"
 ))]
 
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AES_FEATURES, vg_aes_gcm_init_aes, vg_aes_gcm_open_aes, vg_aes_gcm_seal_aes,
@@ -155,8 +157,6 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512,
 };
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
     vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_aesni_pclmul,
