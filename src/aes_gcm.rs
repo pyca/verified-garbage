@@ -26,6 +26,9 @@
 //! slice followed by at most one byte, Rust instead composes the verified
 //! CTR, GHASH and interleaved block primitives directly. This composition,
 //! like the incremental API's Rust bookkeeping, is outside the Lean proof.
+//! Otherwise, on x86-64, a text shorter than its backend's `copy_below` is copied into
+//! the output and encrypted there in place, which costs less than the
+//! gathering call for short texts.
 //!
 //! # Tags
 //!
@@ -360,6 +363,37 @@ impl Backend {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
+impl Backend {
+    /// Below how many bytes [`AesGcm::encrypt`] copies the plaintext into
+    /// its output and encrypts it there in place, rather than calling
+    /// `vg_aes_gcm_seal_gather`, whose call costs more than a copy for short
+    /// texts: when every piece but the last ends on a block boundary, and
+    /// when one does not. With out-of-place interleaved loops, the gathering
+    /// saves the copy, and pays for its call from about 3 KiB on; a piece
+    /// ending within a block costs it about 100 ns more (the streaming
+    /// functions buffer the block), which it makes up from about 16 KiB on
+    /// (measured on a VAES and AVX-512 Xeon). Without them, it copies the
+    /// text too, so copying here costs less at any length; 64 KiB, above the
+    /// largest TLS record, keeps it in use for longer texts, where the
+    /// difference is negligible.
+    const fn copy_below(self) -> (usize, usize) {
+        match self {
+            Backend::VaesVpclmulAvx512 => (3072, 1 << 14),
+            Backend::Scalar
+            | Backend::AesNi
+            | Backend::Pclmul
+            | Backend::AesNiPclmul
+            | Backend::Vaes
+            | Backend::Vpclmul
+            | Backend::VaesPclmul
+            | Backend::AesNiVpclmul
+            | Backend::VaesVpclmul
+            | Backend::AesNiPclmulAvx => (1 << 16, 1 << 16),
+        }
+    }
+}
+
 /// The shortest text, in bytes, that reaches the interleaved loops (16
 /// blocks at a time), and so gains from the powers of the hash subkey.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
@@ -626,11 +660,16 @@ impl AesGcm {
         check_nonce(nonce)?;
         add_len(0, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        Ok(self.seal(nonce, aad, data))
+    }
+
+    /// GCM-AE in place, for lengths `encrypt_in_place` has checked.
+    fn seal(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Block {
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if data.len() >= POWERS_MIN_LEN
             && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
-            return Ok(tag);
+            return tag;
         }
         let seal = instance!(self.backend, vg_aes_gcm_seal,
             x86_64: [vg_aes_gcm_seal_aesni, vg_aes_gcm_seal_pclmul, vg_aes_gcm_seal_aesni_pclmul],
@@ -662,7 +701,7 @@ impl AesGcm {
                 &mut tag,
             )
         };
-        Ok(tag)
+        tag
     }
 
     /// GCM-AD (§7.2): if the 16-byte `tag` authenticates the ciphertext in
@@ -907,6 +946,24 @@ impl AesGcm {
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if let Some(tag) = self.seal_two_slices_prepared(nonce, aad, plaintext, out) {
             return Ok(tag);
+        }
+        #[cfg(target_arch = "x86_64")]
+        if out.len() < {
+            let (whole, partial) = self.backend.copy_below();
+            let pieces = plaintext.split_last().map_or(&[][..], |(_, init)| init);
+            if pieces.iter().all(|p| p.len() % 16 == 0) {
+                whole
+            } else {
+                partial
+            }
+        } {
+            let mut rest = &mut *out;
+            for p in plaintext {
+                let (head, tail) = rest.split_at_mut(p.len());
+                head.copy_from_slice(p);
+                rest = tail;
+            }
+            return Ok(self.seal(nonce, aad, out));
         }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
@@ -1901,6 +1958,39 @@ mod tests {
                             assert_eq!((&actual, actual_tag), (&expected, tag));
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /// Out-of-place encryption copies the text and encrypts it in place
+    /// below each backend's `copy_below`, and gathers it from there on:
+    /// both agree with the baseline's in-place encryption, around the
+    /// threshold for pieces ending on block boundaries (one piece, or a
+    /// block and the rest) and the one for pieces that do not (a byte and
+    /// the rest).
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[test]
+    fn copy_below() {
+        let nonce = [4u8; 12];
+        let aad = [6u8; 5];
+        let k = AesGcm::new(&[0x77; 16]).unwrap();
+        let base = k.with_backend(Backend::Scalar);
+        for &(b, need) in Backend::ALL {
+            if !detected().contains(need) {
+                continue;
+            }
+            let k = k.with_backend(b);
+            let (whole, partial) = b.copy_below();
+            for (t, split) in [(whole, 0), (whole, 16), (partial, 1)] {
+                let msg: alloc::vec::Vec<u8> = (0..t + 1).map(|i| (i * 7 + 3) as u8).collect();
+                for len in [t - 1, t, t + 1] {
+                    let mut want = msg[..len].to_vec();
+                    let want_tag = base.encrypt_in_place(&nonce, &aad, &mut want).unwrap();
+                    let (h, r) = msg[..len].split_at(split);
+                    let mut out = alloc::vec![0u8; len];
+                    let tag = k.encrypt(&nonce, &aad, &[h, r], &mut out);
+                    assert_eq!((&out, tag), (&want, Ok(want_tag)), "{b:?} {len} {split}");
                 }
             }
         }
