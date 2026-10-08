@@ -46,7 +46,7 @@ fn check(
     mut dec: impl FnMut() -> Box<dyn RecordDecrypter>,
 ) {
     let plain: Vec<u8> = (0..1000u32).map(|i| i as u8).collect();
-    for len in [0, 1, 15, 16, 17, 100, 1000] {
+    for len in [0, 1, 15, 16, 17, 100, 510, 511, 512, 1000] {
         let plain = &plain[..len];
         let whole = seal(&mut *enc(), version, OutboundPlain::from(plain), 0x00);
         for n in [2, 3, 63, 64, 65, 200] {
