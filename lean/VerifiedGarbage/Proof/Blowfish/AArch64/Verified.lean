@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 import VerifiedGarbage.Proof.Blowfish.AArch64.ConstantTime
-import VerifiedGarbage.Proof.Blowfish.EcbScratch
+import VerifiedGarbage.Proof.Blowfish.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Contract
 

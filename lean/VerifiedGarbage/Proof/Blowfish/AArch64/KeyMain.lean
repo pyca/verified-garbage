@@ -17,52 +17,6 @@ open VG.AArch64.Tbl (VOnly)
 
 /-! ## The table -/
 
-theorem readW64_byte (m : Mem) (a : Addr) {b : Nat} (hb : b < 8) :
-    m (a + BitVec.ofNat 64 b) = (m.readW a 64).extractLsb' (8 * b) 8 := by
-  rw [← Mem.extractLsb'_read m a (n := 8) hb]
-  simp only [Mem.readW]
-  rfl
-
-theorem initWords_getD {i : Nat} (hi : i < 521) : Impl.Blowfish.initWords.getD i 0 = Impl.Blowfish.initWord i := by
-  simp [Impl.Blowfish.initWords, hi]
-
-/-- The table's bytes are the initial schedule's. -/
-theorem table_byte {m : Mem} {T : Addr}
-    (held : ∀ i < 521, m.readW (T + BitVec.ofNat 64 (8 * i)) 64 = Impl.Blowfish.initWords.getD i 0)
-    {o : Nat} (ho : o < 4168) : m (T + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o := by
-  have e := initWord_byte (o / 8) (b := o % 8) (Nat.mod_lt _ (by decide))
-  rw [show 8 * (o / 8) + o % 8 = o by omega] at e
-  rw [← e, ← initWords_getD (by omega), ← held _ (by omega),
-    ← readW64_byte _ _ (Nat.mod_lt _ (by decide)), Offset.add_add, show 8 * (o / 8) + o % 8 = o by omega]
-
-/-- The initial P-array's words. -/
-theorem table_P {m : Mem} {T : Addr}
-    (hT : ∀ o < 4168, m (T + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o) {i : Nat} (hi : i < 18) :
-    m.readW (T + BitVec.ofNat 64 (4096 + 4 * i)) 32 = initial.getD i 0 := by
-  refine word_ext fun b hb => ?_
-  rw [← Mem.readW_byte m _ hb, Offset.add_add, hT _ (by omega),
-    show 4096 + 4 * i + b = entryOff i b by simp [entryOff, hi], initByte_entry (by omega) hb]
-
-theorem keyed_getD (key : List Byte) {i : Nat} (hi : i < 1042) :
-    (keyed key).getD i 0 =
-      if i < 18 then initial.getD i 0 ^^^ keyWord key i else initial.getD i 0 := by
-  rw [keyed, getD_ofFn _ hi]
-
-/-- Memory holding the initial S-boxes and the keyed P-array holds `keyed key`. -/
-theorem keyed_of_mem {m : Mem} {S : Addr} {key : List Byte}
-    (hS : ∀ o < 4096, m (S + BitVec.ofNat 64 o) = Impl.Blowfish.initByte o)
-    (hP : ∀ i < 18, m.readW (S + BitVec.ofNat 64 (4096 + 4 * i)) 32 = initial.getD i 0 ^^^ keyWord key i) :
-    scheduleAt m S = keyed key := by
-  refine scheduleAt_of_bytes fun i hi b hb => ?_
-  rw [keyed_getD _ hi]
-  by_cases h : i < 18
-  · simp only [h, ite_true]
-    rw [show entryOff i b = 4096 + 4 * i + b by simp [entryOff, h], ← Offset.add_add,
-      Mem.readW_byte m (S + BitVec.ofNat 64 (4096 + 4 * i)) hb, hP i h]
-  · simp only [h, ite_false]
-    have := entryOff_lt hi hb
-    rw [hS _ (by unfold entryOff at this ⊢; simp only [h, ite_false] at this ⊢; omega), initByte_entry hi hb]
-
 /-! ## Keeping `d8`–`d15` -/
 
 /-- The low half of a vector register. -/
