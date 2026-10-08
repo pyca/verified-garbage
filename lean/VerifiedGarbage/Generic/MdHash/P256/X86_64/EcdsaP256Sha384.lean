@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Sha384
 
@@ -17,7 +18,7 @@ The stack is 240 bytes: a 216-byte frame, and the 24 bytes below it that the
 calls use (`vg_ecdsa_p256_sign` only its return address).
 
 It reads the comb's tables of `vg_ecdsa_p256_sign`, the static `VG_P256_COMB`.
-It is generic over P-256's group law and inversions `h` too, the variant
+It is generic over P-256's group law, inversions and prime order `h` too, the variant
 `Variants/P256/X86_64/Law.lean`; and is emitted for each multiplication of
 `vg_ecdsa_p256_sign`: the baseline's, and BMI2's and ADX's
 (`vg_ecdsa_p256_sign_adx`, which the instance with the suffix `_adx` calls).
@@ -31,7 +32,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64.Sha384 (pack sign_verified)
 /-- The signature with the hash's compression function `c`, and P-256's
 multiplication with BMI2 and ADX (`adx`, `_adx`, calling `vg_ecdsa_p256_sign_adx`)
 or not. -/
-def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) (c : Proof.Sha512.X86_64.Compress)
+def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) (c : Proof.Sha512.X86_64.Compress)
     (adx : Bool) :
     Artifact :=
   { Spec.Ecdsa.Rfc6979.P256Sha384.signApi with
@@ -49,7 +50,7 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) (c : Proof.
     spSafe := sign_spSafe (pack adx h.law (Proof.P256.combOk7 h.law) h.inv c)
     features := c.features ++ (if adx then ["bmi2", "adx", "avx", "avx2"] else []).filter (!c.features.contains ·) }
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []

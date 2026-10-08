@@ -14,11 +14,19 @@ namespace VG.Proof.Ecdh.X86_64
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.Ecdh.X86_64
 open VG.Proof.Ecdsa.X86_64
 
+theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law Spec.P256.curve)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
+    MulOk p256x (Impl.Ecdh.X86_64.Cfg.mulQJ p256x (Impl.P256.X86_64.doubleHalfPublic p256x.MP' p256x.rcbSlots))
+      (mulQJW p256x) :=
+  mulQJ_ok (p256x_ok hI) rfl hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
+    (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) Proof.P256.X86_64.n_mod32
+    Proof.P256.X86_64.n_ge64
+
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP256Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' :=
-  ecdh_x86_of (p256x_ok hI) hL (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide)
-    (by lit_decide) (by lit_decide) s hs
+  ecdh_x86_of (p256x_ok hI) hL (mulQJP256x_ok hI hL hO) (mulQJ_w (p256x_ok hI))
+    (fun _ h => { pre_of h with }) (fun _ _ => post_of) rfl (by lit_decide) (by lit_decide) (by lit_decide) s hs
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP256Adx :=
   VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx])
@@ -31,9 +39,10 @@ theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP25
       · exact h4)
     (by taint_decide)
 
-theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds) :
+theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)
+    (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
     Verified X86_64.target exchangeP256Adx
       (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86_adx hL hI) ecdh_ct_adx implies
+  Verified.of_correct (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies
 
 end VG.Proof.Ecdh.X86_64
