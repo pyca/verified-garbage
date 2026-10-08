@@ -19,12 +19,14 @@ compute is stated on integers, modulo `p`.
 
 An element is 32 bytes, a little-endian number below `2^256` (`valAt`), not
 necessarily below `p`: any 32 bytes are an element. The elements live in a
-working space `ws` of 768 bytes (`[u64; 96]`, the start of X25519's and
-Ed25519's working spaces), each at a byte offset: `o` for the result, `a`
-and `b` for the operands (`Fits`). The offsets are arguments, so that the
-result may be an operand and the caller keeps its elements where it likes.
-The functions have no working space of their own in `ws`: every byte of
-`ws` keeps its value but the result's (`Keeps`).
+working space `ws` of 4096 bytes (`[u64; 512]`, X25519's working space and
+the start of Ed25519's), each at a byte offset: `o` for the result, `a` and
+`b` for the operands. The offsets are arguments, so that the result may
+be an operand and the caller keeps its elements where it likes. Bytes 3584
+to 4095 of `ws` are the functions' own working space (`ownAt`), and the
+elements lie below them (`Fits`). On return the function's own bytes are
+unspecified and may hold intermediate values; every other byte of `ws` keeps
+its value but the result's (`Keeps`).
 
 Everything is secret but the pointer and the offsets, which are public, and
 the functions are constant time.
@@ -33,27 +35,32 @@ the functions are constant time.
 namespace VG.Spec.X25519.Field64
 
 /-- The bytes of the working space. -/
-def wsBytes : Nat := 768
+def wsBytes : Nat := 4096
 
 /-- The bytes of an element. -/
 def elemBytes : Nat := 32
+
+/-- Where the functions' own working space starts; it ends at byte
+`wsBytes`. -/
+def ownAt : Nat := 3584
 
 /-- The value of the element at byte offset `o` of the working space `ws`:
 its 32 bytes, little-endian. -/
 def valAt (m : Mem) (ws : Addr) (o : BitVec 32) : Nat :=
   (m.read (ws + BitVec.ofNat 64 o.toNat) elemBytes).toNat
 
-/-- The element at `o` lies in the working space. -/
-abbrev Fits (o : BitVec 32) : Prop := o.toNat + elemBytes ≤ wsBytes
+/-- The element at `o` lies below the functions' own working space. -/
+abbrev Fits (o : BitVec 32) : Prop := o.toNat + elemBytes ≤ ownAt
 
-/-- Every byte of `ws` but those of the result at `o` keeps its value. -/
+/-- Every byte of `ws` but those of the functions' own working space and of
+the result at `o` keeps its value. -/
 def Keeps (ws : Addr) (o : BitVec 32) (m m' : Mem) : Prop :=
-  ∀ i < wsBytes, (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
+  ∀ i < ownAt, (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- `ws: *mut [u64; 96], o: u32, a: u32, b: u32`, the offsets public. -/
+/-- `ws: *mut [u64; 512], o: u32, a: u32, b: u32`, the offsets public. -/
 def sig : Sig where
-  params := [("ws", .array true .u64 96), ("o", .int .u32 true), ("a", .int .u32 true),
+  params := [("ws", .array true .u64 512), ("o", .int .u32 true), ("a", .int .u32 true),
     ("b", .int .u32 true)]
 
 /-- A product `f` of the values: for elements that fit, `r` (the relation of
@@ -81,13 +88,17 @@ def module : String := "gf25519_r64"
 def common : String :=
   "An element is 32 bytes, a little-endian number below `2^256`, not necessarily below `p`. The \
     elements are at the byte offsets `o`, `a` and `b` of the working space `ws`; `o` may be `a` \
-    or `b`. Every byte of `ws` but the result's keeps its value.\n\n\
+    or `b`. Every byte of `ws` but the result's and the function's own working space (bytes \
+    3584 to 4095) keeps its value.\n\n\
     Contract: `mulContract` or `mul2Contract` of `VG.Spec.X25519.Field64`. Constant time: only \
     the pointer and the offsets may affect timing."
 
 /-- The `# Safety` items but for what the signature gives. -/
 def safety : List String :=
-  ["`o`, `a` and `b` plus 32 must be at most 768: the elements lie in `ws`."]
+  ["`o`, `a` and `b` plus 32 must be at most 3584: bytes 3584 to 4095 of `ws` are the \
+      function's own working space.",
+    "Bytes 3584 to 4095 of `ws` are unspecified on return and may hold intermediate values, \
+      which the caller must destroy if they are secret."]
 
 /-- `vg_gf25519_r64_mul` on every target. -/
 def mulApi : Api where

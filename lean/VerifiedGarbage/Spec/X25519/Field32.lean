@@ -20,7 +20,7 @@ necessarily below `p`: any 32 bytes are an element. The elements live in a
 working space `ws` of 1024 bytes (`[u64; 128]`, the start of X25519's and
 Ed25519's working spaces), each at a byte offset: `o` for the result, `a`
 and `b` for the operands. The offsets are arguments, so that the result may
-be an operand and the caller keeps its elements where it likes. Bytes 864 to
+be an operand and the caller keeps its elements where it likes. Bytes 768 to
 1023 of `ws` are the function's own working space (`ownAt`), and the
 elements lie below them (`Fits`). On return the function's own bytes are
 unspecified and may hold intermediate values; every other byte of `ws` keeps
@@ -40,7 +40,7 @@ def elemBytes : Nat := 32
 
 /-- Where the function's own working space starts; it ends at byte
 `wsBytes`. -/
-def ownAt : Nat := 864
+def ownAt : Nat := 768
 
 /-- The value of the element at byte offset `o` of the working space `ws`:
 its 32 bytes, little-endian. -/
@@ -80,13 +80,13 @@ def mulApi : Api where
     `p = 2^255 - 19` to `o`. An element is 32 bytes, a little-endian number below `2^256`, not \
     necessarily below `p`. The elements are at the byte offsets `o`, `a` and `b` of the working \
     space `ws`; `o` may be `a` or `b`. Every byte of `ws` but the result's and the function's \
-    own working space (bytes 864 to 1023) keeps its value.\n\n\
+    own working space (bytes 768 to 1023) keeps its value.\n\n\
     Contract: `mulContract` of `VG.Spec.X25519.Field32`. Constant time: only the pointer and \
     the offsets may affect timing."
   safety :=
-    ["`o`, `a` and `b` plus 32 must be at most 864: bytes 864 to 1023 of `ws` are the \
+    ["`o`, `a` and `b` plus 32 must be at most 768: bytes 768 to 1023 of `ws` are the \
         function's own working space.",
-      "Bytes 864 to 1023 of `ws` are unspecified on return and may hold intermediate values, \
+      "Bytes 768 to 1023 of `ws` are unspecified on return and may hold intermediate values, \
         which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field32
