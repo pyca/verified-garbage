@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledTail
 namespace VG.Proof.Bignum.X86_64.AdxTiledSquare
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 open VG.Proof.Bignum.X86_64
-open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr input_preserved)
+open VG.Proof.Bignum.X86_64.AdxTiledProduct (ranges frame_hdr frame_ops input_preserved)
 open VG.Proof.MlKem.X86_64 (Keep)
 open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 open VG.Impl.Bignum.X86_64.AdxRect8 (carryOffset)
@@ -15,10 +15,11 @@ private theorem combine {X Y Z P C Q D : Nat}
 
 theorem row_ok {s : State} {B : Addr} {Z w a i n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hTail : w=i+8+8*n) (hn : 0<n)
     (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i) :
-    WP isa (AdxTiledSquare.row a) s fun t =>
+    WP isa (AdxTiledSquare.row ca) s fun t =>
       t.zf = some (decide (i+8=w-8)) ∧ word t.mem B (8*sFn 12) = BitVec.ofNat 64 (i+8) ∧
       (∃ c, wv t.mem B (rawBase w) (2*w)+(2 : Nat)^(128*w)*c =
         wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*(i+(i+8)))*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w a+8*(i+8)) (8*n)) ∧
@@ -38,7 +39,7 @@ theorem row_ok {s : State} {B : Addr} {Z w a i n : Nat} {mi : BitVec 64}
   have rawU : wv u.mem B (rawBase w) (2*w) = wv s.mem B (rawBase w) (2*w) :=
     ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by omega)
   refine WP.seq (WP.mono (AdxRect8.row_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd)
-    (frame_hdr hh fu) hZ hw (by omega) ha ha ha1 ha2 ha1 ha2
+    (frame_hdr hh fu) (frame_ops hv fu) pa pa hZ hw (by omega) ha ha ha1 ha2 ha1 ha2
     hTail hn iu ju (by rw [cu]; rfl)) fun v hv => ?_)
   have fv : Frm B (ranges w) u.mem v.mem := by
     intro x hx

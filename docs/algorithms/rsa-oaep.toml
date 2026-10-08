@@ -17,4 +17,5 @@ asm = [
   "rsa_oaep_sha512_256_mgf1_sha1",
   "rsa_oaep_sha512_256_mgf1_sha512_256",
   "rsa",
+  "rsa_mont",
 ]

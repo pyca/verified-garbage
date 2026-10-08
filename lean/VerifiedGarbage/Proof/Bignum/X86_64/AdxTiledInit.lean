@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledCounter
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -19,6 +20,12 @@ theorem frame_hdr {m m' : Mem} {B : Addr} {w : Nat} {mi : BitVec 64}
     · omega
   exact ⟨(low sW (by decide)).trans hh.hw,(low sMinv (by decide)).trans hh.hminv,
     fun k hk => (low (sArr k) (by unfold sArr; omega)).trans (hh.harr k hk)⟩
+
+theorem frame_ops {m m' : Mem} {B : Addr} {w : Nat} {ps : List (Nat × Nat)}
+    (hv : Ops m B w ps) (hf : Frm B (ranges w) m m') : Ops m' B w ps :=
+  hv.of_frm hf fun r hr => by
+    simp only [ranges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega
 
 theorem input_preserved {m m' : Mem} {B : Addr} {w a i n : Nat}
     (ha : a < 8) (h1 : a ≠ aAcc) (h2 : a ≠ aTmp) (hi : i+n ≤ w)

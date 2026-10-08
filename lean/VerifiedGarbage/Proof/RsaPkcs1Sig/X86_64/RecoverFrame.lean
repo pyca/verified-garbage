@@ -14,7 +14,7 @@ namespace VG.Proof.RsaPkcs1Sig.X86_64.Rec
 open VG VG.X86_64 VG.Impl.RsaPkcs1Sig.X86_64.Recover
 open VG.Impl.RsaPkcs1Sig.X86_64.Verify (frameBytes oEM1 oEM2 sp arg arg0 lea)
 open VG.Proof.MlKem.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.RsaPkcs1Sig.X86_64
-open VG.Proof.RsaPkcs1Sig.X86_64.Ver (fb kb stkR scrR fb_eq fb_sub8 toNat_off frame_sub below_sub
+open VG.Proof.RsaPkcs1Sig.X86_64.Ver (fb kb stkR scrR fb_eq fb_sub8 toNat_off frame_sub below_sub kb_sub
   ret_disjoint outside_frame stackArgAddr_fb stackArgAddr_eq ea_sp word_wo allocState_gpr arg_ea)
 
 /-! ## The precondition, by name -/
@@ -73,16 +73,16 @@ theorem PreR.ol {s : State} (hp : PreR s) : 16 ≤ (s.gpr .rsi).toNat ∧ (s.gpr
 
 def outR (s : State) : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
 
-theorem kb_toNat {s : State} (hp : PreR s) : (kb s).toNat + verStack + 48 ≤ 2 ^ 64 ∧
-    (kb s).toNat + verStack = (s.gpr .rsp).toNat := by
+theorem kb_toNat {s : State} (hp : PreR s) : (kb s).toNat + (frameBytes + 8) + 48 ≤ 2 ^ 64 ∧
+    (kb s).toNat + (frameBytes + 8) = (s.gpr .rsp).toNat ∧ 8 ≤ (kb s).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack frameBytes at *; omega
 
 theorem fb_toNat {s : State} (hp : PreR s) : (fb s).toNat + frameBytes + 8 + 40 ≤ 2 ^ 64 ∧
     (fb s).toNat = (kb s).toNat + 8 := by
-  have ⟨h1, h2⟩ := kb_toNat hp
-  rw [fb_eq, toNat_off (by unfold verStack at *; omega)]
-  unfold frameBytes verStack at *; omega
+  have ⟨h1, h2, _⟩ := kb_toNat hp
+  rw [fb_eq, toNat_off (by unfold frameBytes at *; omega)]
+  unfold frameBytes at *; omega
 
 /-- In the frame, from the entry state `s`: with the arguments kept in
 their slots, memory changed only where the function may write. -/

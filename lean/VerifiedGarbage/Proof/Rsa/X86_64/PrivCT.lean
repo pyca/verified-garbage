@@ -146,17 +146,17 @@ theorem crt_view {a s t : State} (S : Sib a s) (h : J1 s t) :
     rw [he.entryBytes _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega), S.n]
 
 theorem crt_ct (v : CrtImpl) : RelCT isa (Two (At J1)) (.call v.name v.code) fun _ _ => True := by
-  refine RelCT.callEx (k := crtContract) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
+  refine RelCT.callEx (k := crtContract.clear) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, g₁, n₁⟩ := crt_view S₁ j₁
   obtain ⟨r₂, g₂, n₂⟩ := crt_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := crt_covers (preF_of S₁.1) j₁.1
   obtain ⟨c₂, w₂⟩ := crt_covers (preF_of S₂.1) j₂.1
   obtain ⟨he₁, hargs₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁⟩ := j₁
   obtain ⟨he₂, hargs₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
-  have p₁ : crtContract.pre ((t₁.callEntry).withRegions (crtRd s₁) (crtWr s₁)) :=
-    crt_pre (preF_of S₁.1) he₁ hargs₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
-  have p₂ : crtContract.pre ((t₂.callEntry).withRegions (crtRd s₂) (crtWr s₂)) :=
-    crt_pre (preF_of S₂.1) he₂ hargs₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
+  have p₁ : crtContract.clear.pre ((t₁.callEntry).withRegions (crtRd s₁) (crtWr s₁)) :=
+    ⟨crt_pre (preF_of S₁.1) he₁ hargs₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁, crt_clear (preF_of S₁.1) he₁⟩
+  have p₂ : crtContract.clear.pre ((t₂.callEntry).withRegions (crtRd s₂) (crtWr s₂)) :=
+    ⟨crt_pre (preF_of S₂.1) he₂ hargs₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂, crt_clear (preF_of S₂.1) he₂⟩
   have ga : ∀ i < 12, stackArg ((t₁.callEntry).withRegions (crtRd s₁) (crtWr s₁)) i =
       stackArg ((t₂.callEntry).withRegions (crtRd s₂) (crtWr s₂)) i := fun i hi => (g₁ i hi).trans (g₂ i hi).symm
   have hpub : crtContract.pub ((t₁.callEntry).withRegions (crtRd s₁) (crtWr s₁))
@@ -186,9 +186,11 @@ theorem pc_view {a s t : State} (S : Sib a s) (h : J3 s t) :
       State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide), hdx, hcx]
     rw [he.entryBytes _ _ hp.dKn hp.dOn hp.dns.symm (by have := hp.wN; omega), S.n]
 
-theorem pc_ct (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true) :
-    RelCT isa (Two (At J3)) (.call name (Precompute.code M.mm)) fun _ _ => True := by
-  refine RelCT.callEx (k := pcContract) (pcCode_correct M hmx) (pcCode_constantTime M)
+theorem pc_ct (pc : Prog isa) (name : String)
+    (hok : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
+    (hct : ConstantTime isa pcContract.clear.pre pcContract.pub pc) :
+    RelCT isa (Two (At J3)) (.call name pc) fun _ _ => True := by
+  refine RelCT.callEx (k := pcContract.clear) hok hct
     fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, n₁⟩ := pc_view S₁ j₁
   obtain ⟨r₂, n₂⟩ := pc_view S₂ j₂
@@ -242,21 +244,19 @@ theorem pd_view {a s t : State} (S : Sib a s) (h : J5 s t) :
 
 theorem pd_ct (P : PublicImpl) (name : String) :
     RelCT isa (Two (At J5)) (.call name (P.code)) fun _ _ => True := by
-  have hct : ConstantTime isa (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
-      (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pub (P.code) :=
-    P.ct
-  refine RelCT.callEx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩)
-    P.ok hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
+  refine RelCT.callEx (k := pdChkContract.clear) P.ok P.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, w₁', e₁⟩ := pd_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, w₂', e₂⟩ := pd_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := pd_covers (preF_of S₁.1) j₁.1.1
   obtain ⟨c₂, w₂⟩ := pd_covers (preF_of S₂.1) j₂.1.1
   obtain ⟨⟨he₁, -⟩, hw0₁, hw1₁, hw2₁, hw3₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁⟩ := j₁
   obtain ⟨⟨he₂, -⟩, hw0₂, hw1₂, hw2₂, hw3₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
-  have p₁ : pdContract.pre (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁)) :=
-    pd_pre (preF_of S₁.1) he₁ hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
-  have p₂ : pdContract.pre (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
-    pd_pre (preF_of S₂.1) he₂ hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
+  have q₁ := pd_pre (preF_of S₁.1) he₁ hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
+  have p₁ : pdChkContract.clear.pre (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁)) :=
+    ⟨q₁, pd_clear (preF_of S₁.1) he₁⟩
+  have q₂ := pd_pre (preF_of S₂.1) he₂ hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
+  have p₂ : pdChkContract.clear.pre (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
+    ⟨q₂, pd_clear (preF_of S₂.1) he₂⟩
   have hpub : pdContract.pub (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁))
       (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
     ⟨regs_eq (r₁.trans r₂.symm), a0₁.trans a0₂.symm, a1₁.trans a1₂.symm, a2₁.trans a2₂.symm,
@@ -284,11 +284,12 @@ theorem pcArgs_two : RelCT isa (Two (At J2)) (.block pcArgs) (Two (At J3)) :=
     fun _ _ ⟨s, S, he⟩ => WP.mono (pcArgs_ok (preF_of S.1) he) fun _ ⟨he', _, hdi, hsi, hdx, hcx, h8, h9⟩ =>
       ⟨s, S, he', hdi, hsi, hdx, hcx, h8, h9⟩
 
-theorem pcCall_two (M : Mont) (name : String) (hmx : (Precompute.code M.mm).allInstrs (fun i => !loadsMxcsr i) = true)
-    (hsp : NoSp (Precompute.code M.mm)) (hd : (Precompute.code M.mm).depth = 0) :
-    RelCT isa (Two (At J3)) (.call name (Precompute.code M.mm)) (Two (At J4)) :=
-  two_post (pc_ct M name hmx) fun _ _ ⟨s, S, he, hdi, hsi, hdx, hcx, h8, h9⟩ =>
-    WP.mono (pc_call M name hmx hsp hd (preF_of S.1) he hdi hsi hdx hcx h8 h9) fun _ ⟨he', hpc, _⟩ =>
+theorem pcCall_two (pc : Prog isa) (name : String)
+    (hok : ∀ s, pcContract.clear.pre s → ∃ t s', Exec isa pc s t s' ∧ abiPreserved s s' ∧ pcContract.post s s')
+    (hct : ConstantTime isa pcContract.clear.pre pcContract.pub pc) (hsp : NoSp pc) (hd : pc.depth = 1) :
+    RelCT isa (Two (At J3)) (.call name pc) (Two (At J4)) :=
+  two_post (pc_ct pc name hok hct) fun _ _ ⟨s, S, he, hdi, hsi, hdx, hcx, h8, h9⟩ =>
+    WP.mono (pc_call pc name hok hsp hd (preF_of S.1) he hdi hsi hdx hcx h8 h9) fun _ ⟨he', hpc, _⟩ =>
       ⟨s, S, he', by
         cases hq : Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat) <;>
           simp only [hq] at hpc <;> simp only [preVal, hq] <;> exact hpc.2⟩
@@ -342,11 +343,11 @@ theorem rest_ct : RelCT isa (Two (At J7))
     · exact pin fb (fun _ _ h => h.1) (fun _ _ S => S.fb) h₁ h₂) (by taint_decide)
 
 theorem body_ct (v : CrtImpl) (pcName pdName : String) :
-    RelCT isa (Two (At J0)) (body v.name v.code pcName (Precompute.code v.mont.mm) pdName
+    RelCT isa (Two (At J0)) (body v.name v.code pcName v.pc pdName
       (v.pubOp.code)) fun _ _ => True := by
   rw [body_eq, check_eq, tail_eq]
   exact RelCT.seq crtArgs_two (RelCT.seq (crtCall_two v) (RelCT.seq pcArgs_two
-    (RelCT.seq (pcCall_two v.mont pcName v.pcMx v.pcNosp v.pcDepth) (RelCT.seq pdArgs_two
+    (RelCT.seq (pcCall_two v.pc pcName v.pcOk v.pcCt v.pcNosp v.pcDepth) (RelCT.seq pdArgs_two
       (RelCT.seq (pdCall_two v.pubOp pdName) (RelCT.seq cmpArgs_two rest_ct))))))
 
 /-! ## The frame -/
@@ -373,7 +374,7 @@ theorem relCT_alloc {body : Prog isa} {P R : State → State → Prop}
       exact ⟨rfl, trivial⟩
 
 theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
-    ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
+    ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName v.pc pdName
       (v.pubOp.code)) :=
   RelCT.constantTime (relCT_alloc ((body_ct v pcName pdName).mono
     (fun _ _ ⟨s₁, s₂, ⟨h₁, h₂, hpub⟩, e₁, e₂⟩ => ⟨s₁, ⟨s₁, ⟨h₁, pub_refl s₁⟩, e₁⟩, ⟨s₂, ⟨h₂, hpub⟩, e₂⟩⟩)
@@ -385,15 +386,15 @@ theorem code_constantTime (v : CrtImpl) (pcName pdName : String) :
 its independently verified public operation, meets the shared
 contract. -/
 theorem code_verified (v : CrtImpl) (pcName pdName : String) :
-    Verified target (code v.name v.code pcName (Precompute.code v.mont.mm) pdName
+    Verified target (code v.name v.code pcName v.pc pdName
       (v.pubOp.code)) (Spec.Rsa.privateCheckedContract abi stackBytes) :=
   have hct : ConstantTime isa chkContract.pre chkContract.pub (code v.name v.code pcName
-      (Precompute.code v.mont.mm) pdName (v.pubOp.code)) := code_constantTime v pcName pdName
+      v.pc pdName (v.pubOp.code)) := code_constantTime v pcName pdName
   Verified.of_correct (k := chkContract) (code_correct v pcName pdName) hct private_checked_implies
 
 /-- It writes `rsp` only in its frame's push and pop. -/
 theorem code_spSafe (v : CrtImpl) (pcName pdName : String) :
-    (code v.name v.code pcName (Precompute.code v.mont.mm) pdName (v.pubOp.code)).all
+    (code v.name v.code pcName v.pc pdName (v.pubOp.code)).all
       (fun i => !isa.writesSp i) = true := by
   simp only [code, body_eq, check_eq, tail_eq, Code.all, v.spSafe, v.pcSpSafe, v.pubOp.spSafe,
     Bool.true_and]

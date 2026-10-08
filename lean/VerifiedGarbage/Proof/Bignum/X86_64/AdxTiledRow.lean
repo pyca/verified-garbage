@@ -14,11 +14,12 @@ private theorem combine {X Y Z P C Q D : Nat}
 
 theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hn : 0<n) (hTail : w=i+8+8*q)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     (hidx : word s.mem B (8*sFn 12) = BitVec.ofNat 64 i) :
-    WP isa (AdxTiledProduct.row a b) s fun t =>
+    WP isa (AdxTiledProduct.row ca cb) s fun t =>
       t.zf = some (decide (i+8=w)) ∧ word t.mem B (8*sFn 12) = BitVec.ofNat 64 (i+8) ∧
       (∃ c, wv t.mem B (rawBase w) (2*w)+(2 : Nat)^(128*w)*c =
         wv s.mem B (rawBase w) (2*w)+(2 : Nat)^(64*i)*wv s.mem B (slot w a+8*i) 8*wv s.mem B (slot w b) w) ∧
@@ -38,7 +39,7 @@ theorem row_ok {s : State} {B : Addr} {Z w a b i n q : Nat} {mi : BitVec 64}
   have rawU : wv u.mem B (rawBase w) (2*w) = wv s.mem B (rawBase w) (2*w) :=
     ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by omega)
   refine WP.seq (WP.mono (AdxRect8.row_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd)
-    (frame_hdr hh fu) hZ hw (by omega) ha hb ha1 ha2 hb1 hb2
+    (frame_hdr hh fu) (frame_ops hv fu) pa pb hZ hw (by omega) ha hb ha1 ha2 hb1 hb2
     (by omega : w=0+8*n) hn iu ju (by rw [cu]; rfl)) fun v hv => ?_)
   have fv : Frm B (ranges w) u.mem v.mem := by
     intro x hx

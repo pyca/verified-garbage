@@ -149,7 +149,7 @@ theorem signPro_ok {s : State} (hp : SPre G s) :
       (k := 40) (by decide) (stackArg s 12)).wf G' (k := 21) (by decide) (stackArg s 13)).wf G' (k := 22) (by decide)
       (stackArg s 14)
   have h392 : frameBytes = 392 := rfl
-  have hss : signStack = 3648 := rfl
+  have hss : signStack = 3656 := rfl
   have := hp.sp1
   refine ⟨k16, ⟨(k16.gpr (by decide)).trans hsp, k16.2.2 ▸ hfr, by omega, by omega, ?_, ?_, G'.dFS, G'.dRS⟩, R6, f6⟩
   · have hsl := hp.hsl

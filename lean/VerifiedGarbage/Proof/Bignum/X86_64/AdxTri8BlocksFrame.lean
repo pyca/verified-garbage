@@ -33,6 +33,12 @@ theorem diagonal_hdr {m m' : Mem} {B : Addr} {w k : Nat} {mi : BitVec 64}
   exact ⟨(low sW (by decide)).trans hh.hw,(low sMinv (by decide)).trans hh.hminv,
     fun j hj => (low (sArr j) (by unfold sArr; omega)).trans (hh.harr j hj)⟩
 
+theorem diagonal_ops {m m' : Mem} {B : Addr} {w k : Nat} {ps : List (Nat × Nat)}
+    (hv : Ops m B w ps) (hf : Frm B (diagonalRanges w k) m m') : Ops m' B w ps :=
+  hv.of_frm hf fun r hr => by
+    simp only [diagonalRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl <;> simp only [] <;> simp only [rawBase,slot,hdrBytes,sFn] <;> omega
+
 theorem diagonal_input {m m' : Mem} {B : Addr} {w a k I : Nat}
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hk : 8*k≤w) (hi : I+8≤w)
     (hZ : slot w 8≤2^64) (hf : Frm B (diagonalRanges w k) m m') :

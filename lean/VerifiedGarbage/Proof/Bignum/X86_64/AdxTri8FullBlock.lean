@@ -15,17 +15,18 @@ theorem zero_ends {m : Mem} {B : Addr} {e n : Nat}
 
 theorem fullBlock_ok {s : State} {B : Addr} {Z w a I : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hIndex : I+8≤w)
     (hI : word s.mem B (8*sFn 12)=BitVec.ofNat 64 I)
     (lo : word s.mem B (slot w aAcc+16+16*I)=0)
     (hi : word s.mem B (slot w aAcc+16+16*I+120)=0) :
-    WP isa (AdxTri8.block a) s fun t =>
+    WP isa (AdxTri8.block ca) s fun t =>
       wv t.mem B (slot w aAcc+16+16*I) 16=AdxSquare.crossValue s.mem B (slot w a+8*I) 8 ∧
       Outside B (slot w aAcc+16+16*I) 128 s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
   have ar := AdxRect8.tile_ranges hIndex hIndex ha ha1 ha2
   have endBound : slot w aAcc+16+16*I+128≤Z := by omega
-  refine WP.mono (block_ok hs hd hh hZ ha ha1 ha2 hIndex hI) fun t ⟨vt,ot,kt⟩ => ?_
+  refine WP.mono (block_ok hs hd hh hZ hv pa ha ha1 ha2 hIndex hI) fun t ⟨vt,ot,kt⟩ => ?_
   have low : word t.mem B (slot w aAcc+16+16*I)=0 := by
     rw [ot.word (by unfold output; omega) (by omega)]; exact lo
   have high : word t.mem B (slot w aAcc+16+16*I+8*(14+1))=0 := by

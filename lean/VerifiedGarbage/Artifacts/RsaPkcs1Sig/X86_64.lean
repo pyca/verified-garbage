@@ -19,9 +19,11 @@ def artifacts : List Artifact := [
     doc := Spec.RsaPkcs1Sig.verifyApi.doc
       (notes := ["This implementation computes `s^e mod n` with `vg_rsa_public_checked` into its frame, \
         writes EMSA-PKCS1-v1_5's encoding of `digest` beside it, and compares the two: RFC 8017 \
-        §8.2.2 as written, which accepts exactly when BoringSSL's check does. It uses 2144 bytes of \
+        §8.2.2 as written, which accepts exactly when BoringSSL's check does. It uses at most 2152 bytes of \
         stack: a frame of 2136 bytes, which holds both encodings and the stack arguments of the call, \
-        and the call's return address."])
+        and the call's return address (its proof shares the layout of \
+        `vg_rsa_pkcs1_verify_precomputed`, which also has room for the return address of its \
+        callee's calls)."])
     code := Impl.RsaPkcs1Sig.X86_64.Verify.code pubChecked.name pubChecked.code
     contract := Spec.RsaPkcs1Sig.verifyContract X86_64.abi verStack
     stack := verStack
@@ -33,7 +35,7 @@ def artifacts : List Artifact := [
       (notes := ["This implementation computes `EM = s^e mod n` with `vg_rsa_public_checked` into its \
         frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of `EM` beside it, and \
         releases those bytes if the two are equal, as OpenSSL's `ossl_rsa_verify` recovers: the same \
-        result as BoringSSL's. It uses 2144 bytes of stack, as `vg_rsa_pkcs1_verify` does."])
+        result as BoringSSL's. It uses at most 2152 bytes of stack, as `vg_rsa_pkcs1_verify` does."])
     code := Impl.RsaPkcs1Sig.X86_64.Recover.code pubChecked.name pubChecked.code
     contract := Spec.RsaPkcs1Sig.recoverContract X86_64.abi verStack
     stack := verStack

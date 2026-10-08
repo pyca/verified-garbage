@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRect8Counter
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 
 namespace VG.Proof.Bignum.X86_64.AdxRect8
 open VG VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
@@ -18,6 +19,14 @@ theorem frame_hdr {m m' : Mem} {B : Addr} {w e n : Nat} {mi : BitVec 64}
     · omega
   exact ⟨(low sW (by decide)).trans hh.hw,(low sMinv (by decide)).trans hh.hminv,
     fun k hk => (low (sArr k) (by unfold sArr; omega)).trans (hh.harr k hk)⟩
+
+/-- Nor the slots of the operands' bases. -/
+theorem frame_ops {m m' : Mem} {B : Addr} {w e n : Nat} {ps : List (Nat × Nat)}
+    (hv : Ops m B w ps) (he : hdrBytes ≤ e)
+    (hf : Frm B [(e,n),(carryOffset,8),(8*sFn 13,8)] m m') : Ops m' B w ps :=
+  hv.of_frm hf fun r hr => by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;> unfold carryOffset sFn hdrBytes at * <;> omega
 
 /-- Two adjacent scratch arrays contain every rectangular tile. -/
 theorem tile_ranges {w i j a : Nat} (hi : i+8 ≤ w) (hj : j+8 ≤ w)

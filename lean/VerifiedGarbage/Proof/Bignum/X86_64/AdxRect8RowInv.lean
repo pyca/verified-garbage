@@ -44,17 +44,22 @@ theorem input_preserved {m m' : Mem} {B : Addr} {w a i n : Nat}
   · omega
 
 theorem rowStep_inv {s₀ s : State} {B : Addr} {Z w a b i j₀ k n : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < (2 : Nat)^31) (hi : i+8 ≤ w)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (hn : w = j₀+8*n) (hk : k < n)
     (h : RowInv s₀ B Z w a b i j₀ k mi s) :
-    WP isa (AdxRect8.rowStep a b) s fun t =>
+    WP isa (AdxRect8.rowStep ca cb) s fun t =>
       t.zf = some (decide (k+1=n)) ∧ RowInv s₀ B Z w a b i j₀ (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   have rt := slot_le (w := w) (show aTmp < 8 by decide)
   have rawZ : rawBase w+8*(2*w) ≤ Z := by unfold rawBase slot aAcc aTmp at *; omega
-  refine WP.mono (rowStep_ok h.scr h.rdi h.hdr hZ hw hi (by omega)
+  have hv' : Ops s.mem B w ps := hv.of_frm h.frame fun r hr => by
+    simp only [rowRanges,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> simp only [] <;>
+      simp only [rawBase,carryOffset,sFn,slot,hdrBytes,aAcc] at * <;> omega
+  refine WP.mono (rowStep_ok h.scr h.rdi h.hdr hZ hw hi (by omega) hv' pa pb
     ha hb ha1 ha2 hb1 hb2 h.indexI h.indexJ)
     fun t ⟨zt,jt,eq,_,carry,ht,ft,ptr,kt⟩ => ?_
   have localFrame : Frm B ((rawBase w+8*(i+(j₀+8*k)),128)::[(carryOffset,8),(8*sFn 13,8)]) s.mem t.mem := ft

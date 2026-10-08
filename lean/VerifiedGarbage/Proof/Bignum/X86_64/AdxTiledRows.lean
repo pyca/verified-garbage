@@ -27,14 +27,15 @@ private theorem drop_carry {L Q C V : Nat} (h : L+Q*C=V) (hb : V<Q) : L=V := by
   simpa only [hc,Nat.mul_zero,Nat.add_zero] using h
 
 theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
+    {ps : List (Nat × Nat)} (hv : Ops s₀.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hk : k<n)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp) (h : Inv s₀ B Z w a b k mi s) :
-    WP isa (AdxTiledProduct.row a b) s fun t =>
+    WP isa (AdxTiledProduct.row ca cb) s fun t =>
       t.zf = some (decide (k+1=n)) ∧ Inv s₀ B Z w a b (k+1) mi t := by
   have nowrap := h.scr.nowrap
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
-  refine WP.mono (row_ok h.scr h.rdi h.hdr hZ hw hwN (by omega)
+  refine WP.mono (row_ok h.scr h.rdi h.hdr (frame_ops hv h.frame) pa pb hZ hw hwN (by omega)
     (by omega : w=8*k+8+8*(n-k-1)) ha hb ha1 ha2 hb1 hb2 h.indexI)
     fun t ⟨zt,it,⟨c,eq⟩,ht,ft,kt⟩ => ?_
   have va := input_preserved ha ha1 ha2 (by omega : 8*k+8 ≤ w) Z64 h.frame
@@ -57,11 +58,12 @@ theorem row_inv {s₀ s : State} {B : Addr} {Z w a b k n : Nat} {mi : BitVec 64}
 
 theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi = B) (hh : Hdr s.mem B w mi)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca cb : Nat} (pa : (ca, a) ∈ ps) (pb : (cb, b) ∈ ps)
     (hZ : slot w 8 ≤ Z) (hw : w < 2^31) (hwN : w=8*n) (hn : 0<n)
     (ha : a < 8) (hb : b < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp)
     (hb1 : b ≠ aAcc) (hb2 : b ≠ aTmp)
     (hz : wv s.mem B (rawBase w) (2*w)=0) :
-    WP isa (AdxTiledProduct.rows a b) s fun t =>
+    WP isa (AdxTiledProduct.rows ca cb) s fun t =>
       wv t.mem B (rawBase w) (2*w)=wv s.mem B (slot w a) w*wv s.mem B (slot w b) w ∧
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have nowrap := hs.nowrap
@@ -85,7 +87,7 @@ theorem rows_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
         rw [ou.wv (by unfold rawBase slot hdrBytes sFn; omega) (by unfold rawBase slot aAcc at *; omega)]
         simpa only [Nat.mul_zero,wv,Nat.zero_mul] using hz⟩
   exact wp_upto (a := 0) (N := n) hn (Inv s B Z w a b · mi)
-    (fun _ _ hk _ h => row_inv hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)
+    (fun _ _ hk _ h => row_inv hv pa pb hZ hw hwN hk ha hb ha1 ha2 hb1 hb2 h)
     (fun _ h => ⟨by simpa only [← hwN] using h.val,h.hdr,h.frame,h.keep⟩) h0
 
 end VG.Proof.Bignum.X86_64.AdxTiledProduct

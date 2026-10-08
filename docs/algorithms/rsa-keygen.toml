@@ -2,4 +2,4 @@ name = "RSA key generation"
 family = "RSA"
 specs = ["RsaKeyGen"]
 modules = ["src/rsa_keygen.rs"]
-asm = ["rsa_keygen"]
+asm = ["rsa_keygen", "rsa_mont"]

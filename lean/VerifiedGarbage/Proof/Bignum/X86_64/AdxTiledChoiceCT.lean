@@ -16,7 +16,8 @@ theorem aligned_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
   have hw := sz.lt
   have hp := sz.2.1
   let R : Layout := ⟨L.B,L.Z,L.w,L.w/8,hZ,hw,by omega,by omega⟩
-  exact montMul_ct ho ha hb ha1 ha2 hb1 hb2 hS hR hF _ _ _ _ _ _ ⟨R,⟨mi,gs⟩,mj,gt⟩ es et
+  exact montMul_ct (ps := [(o,o),(a,a),(b,b)]) (.head _) (.tail _ (.head _)) (.tail _ (.tail _ (.head _))) ha hb ha1 ha2 hb1 hb2 hS hR hF
+    _ _ _ _ _ _ ⟨R,⟨⟨mi,gs⟩,gs.hdr.ops3 ho ha hb⟩,⟨mj,gt⟩,gt.hdr.ops3 ho ha hb⟩ es et
 
 theorem alignedChoice_ct {o a b : Nat} (ho : o<8) (ha : a<8) (hb : b<8)
     (ha1 : a≠aAcc) (ha2 : a≠aTmp) (hb1 : b≠aAcc) (hb2 : b≠aTmp)

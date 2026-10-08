@@ -23,9 +23,10 @@ theorem rowsTest_ok {s : State} {B : Addr} {Z w : Nat} {mi : BitVec 64}
 
 theorem rowsChoice_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 0<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp) :
-    WP isa (AdxTiledSquare.rowsChoice a) s fun t =>
+    WP isa (AdxTiledSquare.rowsChoice ca) s fun t =>
       (∃ c, wv t.mem B (rawBase w) (2*w)+2^(128*w)*c=
         wv s.mem B (rawBase w) (2*w)+Square.cross (2^512) (chunks s.mem B (slot w a)) n) ∧
       Hdr t.mem B w mi ∧ Frm B (ranges w) s.mem t.mem ∧ Keep mmRegs s t := by
@@ -42,7 +43,7 @@ theorem rowsChoice_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     rw [mu,n1]
     simp only [cross_one,Nat.mul_zero,Nat.add_zero]
   · refine WP.ite false (by simp [eval,zu,h8]) (by intro h; cases h) (fun _ => ?_)
-    refine WP.mono (rows_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (mu ▸ hh) hZ hw hwN
+    refine WP.mono (rows_ok (hs.congr ku.2.2) ((ku.gpr (by decide)).trans hd) (mu ▸ hh) hZ (mu ▸ hv) pa hw hwN
       (by omega) ha ha1 ha2) fun t ⟨vt,ht,ft,kt⟩ => ?_
     rw [mu] at vt ft
     exact ⟨vt,ht,ft,(ku.trans kt).mono (by decide)⟩

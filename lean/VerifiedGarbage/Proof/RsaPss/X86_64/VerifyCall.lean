@@ -82,7 +82,7 @@ theorem pub_pre {s t : State} (hp : VPre G s) (hsp : t.gpr .rsp = fb s)
   have hk1 := hp.k1; have hk2 := hp.k2
   have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 408 := rfl
   have c1 : oEm = 2560 := rfl
   have c2 : oRsa = 8192 := rfl
   have h8' := vfb_sub8 hp
@@ -170,7 +170,7 @@ theorem pub_call {pubN : String} {pubC : Prog isa}
   have := hp.sp1; have := hp.sp2
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 408 := rfl
   have c2 : oRsa = 8192 := rfl
   have c1 : oEm = 2560 := rfl
   have hsc := vsc_sub hp

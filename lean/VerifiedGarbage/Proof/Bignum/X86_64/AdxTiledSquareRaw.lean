@@ -9,8 +9,9 @@ open VG.Proof.MlKem.X86_64 (Keep WP.keep)
 theorem rawSquare_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     (hs : Scr s B Z) (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv)
     (hZ : slot w 8 ≤ Z) (hwN : w=8*n) (hnN : 0<n) (hw : w < 2 ^ 31)
-    {a : Nat} (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
-    WP isa (AdxTiledSquare.rawSquare a) s fun t =>
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca a : Nat} (pa : (ca, a) ∈ ps)
+    (ha : a < 8) (ha1 : a ≠ aAcc) (ha2 : a ≠ aTmp) :
+    WP isa (AdxTiledSquare.rawSquare ca) s fun t =>
       wv t.mem B (slot w aAcc + 16) (2 * w + 2) =
         wv s.mem B (slot w a) w * wv s.mem B (slot w a) w ∧
       wv t.mem B (slot w aAcc + 16) (2 * w) =
@@ -31,7 +32,7 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
     omega
   have hg : hdrBytes ≤ A := by unfold A slot; omega
   unfold AdxTiledSquare.rawSquare
-  refine WP.seq (WP.mono (rawCross_ok hs hdi hH hZ hw hwN hnN ha ha1 ha2)
+  refine WP.seq (WP.mono (rawCross_ok hs hdi hH hv pa hZ hw hwN hnN ha ha1 ha2)
     fun s₂ ⟨full₂,lo₂,ho₂,k12⟩ => ?_)
   dsimp only [AdxRect8.rawBase] at full₂ lo₂
   have hs₂ := hs.congr k12.2.2
@@ -48,7 +49,8 @@ theorem rawSquare_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
       dsimp only [A]
       omega
     exact (Nat.mul_eq_zero.mp zero).resolve_left (by omega)
-  refine WP.seq (WP.mono (adxSetup_ok hs₂ ((k12.gpr (by decide)).trans hdi) hH₂ hZ ha)
+  have hv₂ : Ops s₂.mem B w ps := hv.of_outside ho₂ (by unfold slot sFn hdrBytes; omega)
+  refine WP.seq (WP.mono (adxSetupV_ok hs₂ ((k12.gpr (by decide)).trans hdi) hH₂ hZ (hv₂.at pa) (hv₂.lt pa))
     fun s₃ ⟨h9₃, _, h8₃, hbx₃, hm₃, k₃⟩ => ?_)
   have mov : WP isa (.block [.mov .r10 (.reg .rbx)]) s₃ fun t =>
       t.gpr .r10 = BitVec.ofNat 64 w ∧ t.mem = s₃.mem ∧ Keep [.r10] s₃ t := by

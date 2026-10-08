@@ -32,7 +32,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_CRT_ADX_FEATURES: crate::cpu
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -557,7 +557,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_crt_adx(
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1084,7 +1084,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_CRT_IFMA_FEATURES: crate::cp
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -1612,7 +1612,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_AVX2_CRT_ADX_FEATURES
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_avx2_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -2140,7 +2140,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_AVX2_FEATURES: crate:
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_avx2(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -2668,7 +2668,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_AVX2_CRT_IFMA_FEATURE
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2`, `avx512f`, `avx512ifma`, `avx512vl` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_avx2_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -3196,7 +3196,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_SHANI_CRT_ADX_FEATURE
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_shani_crt_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -3724,7 +3724,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_SHANI_FEATURES: crate
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_shani(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -4252,7 +4252,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_SIGN_SHA224_SHANI_CRT_IFMA_FEATUR
 /// * `scratch_len` must be at least `16 * n_len + 1024`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3648 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt` and `scratch` may overlap the return address on the stack or the 3656 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_sign_sha224_shani_crt_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const [u8; 28], salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -4779,7 +4779,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -5737,7 +5737,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precom
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -6697,7 +6697,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_SHA224_AVX2_RS
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed_sha224_avx2_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -7658,7 +7658,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_SHA224_AVX2_FE
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed_sha224_avx2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -8619,7 +8619,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_SHA224_SHANI_R
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha`, `ssse3`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed_sha224_shani_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -9580,7 +9580,7 @@ pub(crate) const VG_RSA_PSS_SHA224_MGF1_SHA224_VERIFY_PRECOMPUTED_SHA224_SHANI_F
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sha` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha224_mgf1_sha224_verify_precomputed_sha224_shani(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 28], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {

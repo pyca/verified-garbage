@@ -9,9 +9,10 @@ implementation `v` of `vg_rsa_private_crt`, is emitted once for each
 implementation (`Variants/RsaPrivateCrt/X86_64/`), named with its suffix
 (e.g. `vg_rsa_private_checked_adx`), and needs its CPU features.
 
-It uses 3248 bytes of stack: a frame of 3240 bytes, which holds the CRT's
+It uses 3256 bytes of stack: a frame of 3240 bytes, which holds the CRT's
 result, the precomputed values of `n` and the stack arguments of its calls,
-and the return address of its calls, whose callees use no stack.
+the return address of its calls, and that of their calls of Montgomery
+multiplication, which uses no stack.
 -/
 
 namespace VG.Generic.RsaPrivateCrt.X86_64.Rsa
@@ -32,9 +33,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
       under a mask, which is clear unless the CRT and the public operation succeeded and the two match. \
       The result, 1, 2 or 0, is computed from the mask without a branch. Then it overwrites the frame's \
       copy of `m` with zeros."])
-    code := Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v)
-      (Impl.Rsa.X86_64.Precompute.code v.mont.mm) (pdName v)
-      (v.pubOp.code)
+    code := Impl.Rsa.X86_64.PrivChecked.code v.name v.code (pcName v) v.pc (pdName v) v.pubOp.code
     contract := Spec.Rsa.privateCheckedContract X86_64.abi stackBytes
     stack := stackBytes
     verified := code_verified v _ _

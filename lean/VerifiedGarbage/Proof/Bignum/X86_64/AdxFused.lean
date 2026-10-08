@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxRow
+import VerifiedGarbage.Proof.Bignum.X86_64.OpAt
 
 /-!
 # Multiword arithmetic on x86-64: the BMI2/ADX Montgomery multiplication
@@ -136,10 +137,11 @@ theorem rows_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr 
 
 /-! ## The multiplication -/
 
-/-- `setup b`: `b`, `m`, the first window and `w` from the header. -/
-theorem adxSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
-    (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {b : Nat} (hb : b < 8) :
-    WP isa (.block (setup b)) s fun t => t.gpr .r9 = off B (slot w b) ∧
+/-- `setup cb`: `b`, `m`, the first window and `w` from the header, for the
+slot `sArr cb` holding the base of `b`. -/
+theorem adxSetupV_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
+    (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {cb b : Nat} (pb : OpAt s.mem B w cb b) (qb : cb < 20) :
+    WP isa (.block (setup cb)) s fun t => t.gpr .r9 = off B (slot w b) ∧
       t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc + 16) ∧ t.gpr .rbx = BitVec.ofNat 64 w ∧
       t.mem = s.mem ∧ Keep [.r9, .r10, .r8, .rbx] s t := by
   have hn := hs.nowrap
@@ -149,14 +151,24 @@ theorem adxSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : 
       t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc + 16) ∧ t.gpr .rbx = BitVec.ofNat 64 w ∧
       t.mem = s.mem) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
   unfold setup
-  xrun [State.ea, hdr, hdi, hdrOff, hl (sArr b) (by unfold sArr; omega), hl (sArr aN) (by decide),
-    hl (sArr aAcc) (by decide), hl sW (by decide), hH.harr b hb, hH.harr aN (by decide), hH.harr aAcc (by decide),
-    hH.hw, off_add16]
+  xrun [State.ea, hdr, hdi, hdrOff, hl (sArr cb) (by unfold sArr; omega), hl (sArr aN) (by decide),
+    hl (sArr aAcc) (by decide), hl sW (by decide), show word s.mem B (8 * sArr cb) = _ from pb,
+    hH.harr aN (by decide), hH.harr aAcc (by decide), hH.hw, off_add16]
 
-/-- `finishBases o`: `w`, the result `aTmp`, `aAcc` and `o` from the header. -/
-theorem finishBases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
-    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {o : Nat} (ho : o < 8) :
-    WP isa (.block (finishBases o)) s fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
+/-- `setup b`: `b`, `m`, the first window and `w` from the header. -/
+theorem adxSetup_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z) (hdi : s.gpr .rdi = B)
+    (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {b : Nat} (hb : b < 8) :
+    WP isa (.block (setup b)) s fun t => t.gpr .r9 = off B (slot w b) ∧
+      t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r8 = off B (slot w aAcc + 16) ∧ t.gpr .rbx = BitVec.ofNat 64 w ∧
+      t.mem = s.mem ∧ Keep [.r9, .r10, .r8, .rbx] s t :=
+  adxSetupV_ok hs hdi hH hZ (hH.opAt hb) (by omega)
+
+/-- `finishBases co`: `w`, the result `aTmp`, `aAcc` and `o` from the header,
+for the slot `sArr co` holding the base of `o`. -/
+theorem finishBasesV_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {co o : Nat} (po : OpAt s.mem B w co o)
+    (qo : co < 20) :
+    WP isa (.block (finishBases co)) s fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
       t.gpr .r8 = off B (slot w aTmp) ∧ t.gpr .rsi = off B (slot w aAcc) ∧ t.gpr .rbx = off B (slot w o) ∧
       t.mem = s.mem ∧ Keep [.r12, .r8, .rsi, .rbx] s t := by
   have hn := hs.nowrap
@@ -167,7 +179,16 @@ theorem finishBases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs
       t.mem = s.mem) ?_ rfl) fun t ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
   unfold finishBases
   xrun [State.ea, hdr, hdi, hdrOff, hl sW (by decide), hl (sArr aTmp) (by decide), hl (sArr aAcc) (by decide),
-    hl (sArr o) (by unfold sArr; omega), hH.hw, hH.harr aTmp (by decide), hH.harr aAcc (by decide), hH.harr o ho]
+    hl (sArr co) (by unfold sArr; omega), hH.hw, hH.harr aTmp (by decide), hH.harr aAcc (by decide),
+    show word s.mem B (8 * sArr co) = _ from po]
+
+/-- `finishBases o`: `w`, the result `aTmp`, `aAcc` and `o` from the header. -/
+theorem finishBases_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
+    (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {o : Nat} (ho : o < 8) :
+    WP isa (.block (finishBases o)) s fun t => t.gpr .r12 = BitVec.ofNat 64 w ∧
+      t.gpr .r8 = off B (slot w aTmp) ∧ t.gpr .rsi = off B (slot w aAcc) ∧ t.gpr .rbx = off B (slot w o) ∧
+      t.mem = s.mem ∧ Keep [.r12, .r8, .rsi, .rbx] s t :=
+  finishBasesV_ok hs hdi hH hZ (hH.opAt ho) (by omega)
 
 /-- `fused o a b`, for `w` a multiple of 4: what `montMul_ok` says of `montMul`. -/
 theorem fused_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)

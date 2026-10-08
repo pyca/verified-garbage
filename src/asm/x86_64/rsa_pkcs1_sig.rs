@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e`, `digest` and `sig`.
 ///
-/// This implementation computes `s^e mod n` with `vg_rsa_public_checked` into its frame, writes EMSA-PKCS1-v1_5's encoding of `digest` beside it, and compares the two: RFC 8017 §8.2.2 as written, which accepts exactly when BoringSSL's check does. It uses 2144 bytes of stack: a frame of 2136 bytes, which holds both encodings and the stack arguments of the call, and the call's return address.
+/// This implementation computes `s^e mod n` with `vg_rsa_public_checked` into its frame, writes EMSA-PKCS1-v1_5's encoding of `digest` beside it, and compares the two: RFC 8017 §8.2.2 as written, which accepts exactly when BoringSSL's check does. It uses at most 2152 bytes of stack: a frame of 2136 bytes, which holds both encodings and the stack arguments of the call, and the call's return address (its proof shares the layout of `vg_rsa_pkcs1_verify_precomputed`, which also has room for the return address of its callee's calls).
 ///
 /// # Safety
 ///
@@ -20,7 +20,7 @@
 /// * `scratch_len` must be at least `16 * n_len`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig` and `scratch` may overlap the return address on the stack or the 2152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -956,7 +956,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: us
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverContract`. Not constant time: timing may depend on the pointers, the lengths, `hash` and the contents of `n`, `e` and `sig`.
 ///
-/// This implementation computes `EM = s^e mod n` with `vg_rsa_public_checked` into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of `EM` beside it, and releases those bytes if the two are equal, as OpenSSL's `ossl_rsa_verify` recovers: the same result as BoringSSL's. It uses 2144 bytes of stack, as `vg_rsa_pkcs1_verify` does.
+/// This implementation computes `EM = s^e mod n` with `vg_rsa_public_checked` into its frame, writes EMSA-PKCS1-v1_5's encoding of the last `out_len` bytes of `EM` beside it, and releases those bytes if the two are equal, as OpenSSL's `ossl_rsa_verify` recovers: the same result as BoringSSL's. It uses at most 2152 bytes of stack, as `vg_rsa_pkcs1_verify` does.
 ///
 /// # Safety
 ///
@@ -971,7 +971,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify(n: *const u8, n_len: us
 /// * `scratch_len` must be at least `16 * n_len`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `sig` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `sig` and `scratch` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `sig` and `scratch` may overlap the return address on the stack or the 2152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_recover(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -1962,7 +1962,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_ADX_FEATURES: crate::cpu::Features = crate::c
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked_adx`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4448 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3248 bytes its callee uses.
+/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked_adx`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4456 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3256 bytes its callee uses.
 ///
 /// # Safety
 ///
@@ -1984,7 +1984,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_ADX_FEATURES: crate::cpu::Features = crate::c
 /// * `scratch_len` must be at least `16 * n_len`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -2929,7 +2929,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4448 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3248 bytes its callee uses.
+/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4456 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3256 bytes its callee uses.
 ///
 /// # Safety
 ///
@@ -2951,7 +2951,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_adx(out: *mut u8, out_len
 /// * `scratch_len` must be at least `16 * n_len`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -3898,7 +3898,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: crate::cpu::Features = crate::
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.signContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `hash` and the contents of `n` and `e`, not on `digest` or the private key.
 ///
-/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked_ifma`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4448 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3248 bytes its callee uses.
+/// This implementation writes EMSA-PKCS1-v1_5's encoding of `digest` into its frame, signs it with `vg_rsa_private_checked_ifma`, which checks the signature against `e`, and then overwrites the encoding with zeros. Only the lengths, `hash` and the public key decide a branch or an address. It uses 4456 bytes of stack: a frame of 1192 bytes, which holds the encoding and the stack arguments of the call, the call's return address, and the 3256 bytes its callee uses.
 ///
 /// # Safety
 ///
@@ -3920,7 +3920,7 @@ pub(crate) const VG_RSA_PKCS1_SIGN_IFMA_FEATURES: crate::cpu::Features = crate::
 /// * `scratch_len` must be at least `16 * n_len`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4448 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `out`, `n`, `e`, `digest`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may overlap the return address on the stack or the 4456 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_sign_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
@@ -4872,7 +4872,7 @@ pub(crate) const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES: crate::cpu::Featu
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked_adx` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2144 bytes of stack, including the call's return address.
+/// This implementation calls `vg_rsa_public_precomputed_checked_adx` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2152 bytes of stack, including the call's return address and that of its calls of Montgomery multiplication.
 ///
 /// # Safety
 ///
@@ -4889,7 +4889,7 @@ pub(crate) const VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES: crate::cpu::Featu
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -5836,7 +5836,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *con
 ///
 /// Contract: `VG.Spec.RsaPkcs1Sig.verifyPrecomputedContract`.
 ///
-/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2144 bytes of stack, including the call's return address.
+/// This implementation calls `vg_rsa_public_precomputed_checked` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's encoding of `digest`. It combines the padding result with the public operation's status without branching on that status. It uses 2152 bytes of stack, including the call's return address and that of its calls of Montgomery multiplication.
 ///
 /// # Safety
 ///
@@ -5853,7 +5853,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed_adx(n: *con
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2144 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 2152 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pkcs1_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, hash: u32, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(

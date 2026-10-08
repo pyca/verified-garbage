@@ -51,7 +51,7 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
   have hk1 := hp.k1; have hk2 := hp.k2
   have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 408 := rfl
   have c1 : oEm = 2560 := rfl
   have c2 : oRsa = 8192 := rfl
   have h8' := vfb_sub8 hp.toVPre
@@ -83,6 +83,47 @@ theorem call_pre {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s)
     (hp.dKs.sub_left sRet).sub_right sR, dRA,
     by rw [toNat_off (by omega)]; omega, hp.preWrap, hp.wE, wSg, by rw [toNat_off (by omega), hsc]; omega,
     ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1, hp.L2, by unfold Spec.Rsa.scratchWords; rw [hsc]; omega⟩
+
+/-- The return addresses of the call and of its calls. -/
+theorem vret2_sub (s : State) : Region.Sub (below (fb s) 16) (vstkR s) := by
+  simp only [below, fb, sub_sub']
+  exact Offset.sub_below _ (by decide) (by decide)
+
+theorem vhole_sub (s : State) : Region.Sub (hole (fb s - 8)) (vstkR s) := by
+  have h : Region.Sub (hole (fb s - 8)) (below (fb s) 16) := by
+    simp only [hole, below, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
+    exact Region.sub_prefix (by decide)
+  exact fun a ha => vret2_sub s a (h a ha)
+
+/-- The call's buffers are apart from the return address of its calls. -/
+theorem call_clear {s t : State} (hp : Pre G s) (hsp : t.gpr .rsp = fb s) :
+    Clear (hole ((t.callEntry.withRegions (callRd s) (vWr s)).gpr .rsp))
+      (t.callEntry.withRegions (callRd s) (vWr s)) := by
+  simp only [State.withRegions_gpr, State.callEntry_rsp, hsp]
+  have sH := vhole_sub s
+  have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
+  have c1 : oEm = 2560 := rfl
+  have c2 : oRsa = 8192 := rfl
+  have hsc := vsc_sub hp.toVPre
+  have hF := vfb_toNat hp.toVPre
+  have h392 : frameBytes = 392 := rfl
+  have sI : Region.Sub ⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ :=
+    Offset.sub_base _ (by omega)
+  have sR : Region.Sub ⟨off (stackArg s 3) oRsa, (stackArg s 4 - 1024#64).toNat * 8⟩
+      ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩ := Offset.sub_base _ (by rw [hsc]; omega)
+  intro r hr
+  simp only [State.withRegions_rd, State.withRegions_wr, callRd, vWr, List.cons_append, List.nil_append,
+    List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact hp.preStack.sub_right sH
+  · exact (hp.dKe.sub_left sH).symm
+  · exact ((show (vstkR s).Disjoint ⟨s.gpr .r9, (s.gpr .rsi).toNat⟩ by rw [← hp.hsg]; exact hp.dKsg).sub_left
+      sH).symm
+  · refine Region.Disjoint.sub_right (Offset.base_disjoint_below (fb s) (n := 16) (k := 32) (by omega)) ?_
+    simp only [hole, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
+    exact Region.sub_prefix (by decide)
+  · exact ((hp.dKs.sub_left sH).symm).sub_left sI
+  · exact ((hp.dKs.sub_left sH).symm).sub_left sR
 
 theorem call_covers {s t : State} (hp : Pre G s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr) :
     Covers (callRd s ++ vWr s) (t.rd ++ t.wr) ∧ Covers (vWr s) t.wr := by
@@ -131,22 +172,24 @@ theorem call_ok (v : PublicImpl)
           (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (s.gpr .rsi).toNat))) := by
   obtain ⟨hc, hw⟩ := call_covers hp hrd hwr
   have hpre := Pc.call_pre hp hst hargs hdi hsi hdx hcx h8 h9
-  have hd : v.code.x86_64Depth = 0 := x86_64Depth_zero v.nosp v.depth
-  refine X86_64.WP.callF (s := t) (k := pdChkContract) v.ok (SpSafe.of_all v.spSafe) (by omega) hpre hc hw ?_
+  have hd : v.code.x86_64Depth = 8 := by rw [x86_64Depth_noSp v.nosp, v.depth]
+  refine X86_64.WP.callF (s := t) (k := pdChkContract.clear) v.ok (SpSafe.of_all v.spSafe) (by omega)
+    ⟨hpre, call_clear hp hst⟩ hc hw ?_
   intro t' hrd' hwr' hcs hf ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   have hF := vfb_toNat hp.toVPre
   have := hp.sp1; have := hp.sp2
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 400 := rfl
+  have hvs : verifyStack = 408 := rfl
   have c2 : oRsa = 8192 := rfl
   have c1 : oEm = 2560 := rfl
   have hsc := vsc_sub hp.toVPre
   rw [hst, hd] at hf
+  simp only [Nat.reduceAdd] at hf
   have sEm : Region.Sub ⟨off (stackArg s 3) oEm, (s.gpr .rsi).toNat⟩ (vscrR s) := Offset.sub_base _ (by omega)
   have sScr : Region.Sub ⟨off (stackArg s 3) oRsa, (stackArg s 4 - 1024#64).toNat * 8⟩ (vscrR s) :=
     Offset.sub_base _ (by rw [hsc]; omega)
-  have sBel : Region.Sub (below (fb s) (0 + 8)) (vstkR s) := vret_sub s
+  have sBel : Region.Sub (below (fb s) 16) (vstkR s) := vret2_sub s
   refine ⟨hrd', hwr', hcs, hmx, hM.trans (hf.sub fun r hr => ?_), fun x hx => hf x fun r hr hc => ?_, ?_⟩
   · simp only [vWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -154,7 +197,7 @@ theorem call_ok (v : PublicImpl)
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), sScr⟩
     · exact ⟨_, List.mem_cons_self .., sBel⟩
   · simp only [vWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have dFb : (frR s).Disjoint (below (fb s) (0 + 8)) := Offset.base_disjoint_below (fb s) (by omega)
+    have dFb : (frR s).Disjoint (below (fb s) 16) := Offset.base_disjoint_below (fb s) (by omega)
     rcases hx with hx | ⟨hx, hnx⟩ <;> rcases hr with rfl | rfl | rfl
     · exact (hp.dKs.sub_left (vframe_sub s)) x hx (sEm x hc)
     · exact (hp.dKs.sub_left (vframe_sub s)) x hx (sScr x hc)
@@ -173,7 +216,7 @@ theorem call_ok (v : PublicImpl)
     have b : ∀ {R : Region}, (vstkR s).Disjoint R → R.Disjoint (vscrR s) → R.len ≤ 2 ^ 64 →
         Spec.Rsa.bytesAt t.callEntry.mem R.base R.len = Spec.Rsa.bytesAt s.mem R.base R.len :=
       fun hK hS hl => bytesAt_frame fSE (vin_apart hK hS) hl
-    simp only [pdChkContract, State.withRegions_gpr, State.withRegions_mem,
+    simp only [Contract.clear, pdChkContract, State.withRegions_gpr, State.withRegions_mem,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),

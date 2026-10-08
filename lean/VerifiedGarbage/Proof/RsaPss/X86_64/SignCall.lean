@@ -92,8 +92,8 @@ theorem priv_pre {s t : State} (hp : SPre G s) (hsp : t.gpr .rsp = fb s)
   have hk1 := hp.k1; have hk2 := hp.k2
   have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hss : signStack = 3648 := rfl
-  have hsb : Rsa.X86_64.stackBytes = 3248 := rfl
+  have hss : signStack = 3656 := rfl
+  have hsb : Rsa.X86_64.stackBytes = 3256 := rfl
   have c1 : oEm = 2560 := rfl
   have c2 : oRsa = 8192 := rfl
   have hsi := hp.hsi
@@ -120,7 +120,7 @@ theorem priv_pre {s t : State} (hp : SPre G s) (hsp : t.gpr .rsp = fb s)
     (Offset.base_disjoint_below (fb s) (n := 8) (k := 112) (by omega)).symm
   have dKA : (⟨fb s - 8 - BitVec.ofNat 64 Rsa.X86_64.stackBytes, Rsa.X86_64.stackBytes⟩ : Region).Disjoint
       ⟨fb s, 112⟩ := by
-    refine Region.Disjoint.sub_left (Offset.base_disjoint_below (fb s) (n := 3256) (k := 112) (by omega)).symm ?_
+    refine Region.Disjoint.sub_left (Offset.base_disjoint_below (fb s) (n := 3264) (k := 112) (by omega)).symm ?_
     simp only [show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
     exact Offset.sub_below _ (by decide) (by decide)
   have dIR : (⟨off (stackArg s 13) oEm, (s.gpr .rcx).toNat⟩ : Region).Disjoint
@@ -214,14 +214,14 @@ theorem priv_call {privN : String} {privC : Prog isa}
           (Spec.Rsa.bytesAt s.mem (stackArg s 6) (stackArg s 3).toNat)
           (Spec.Rsa.bytesAt s.mem (stackArg s 8) (stackArg s 1).toNat)) := by
   obtain ⟨hc, hw⟩ := priv_covers hp hrd hwr
-  have hsb : Rsa.X86_64.stackBytes = 3248 := rfl
+  have hsb : Rsa.X86_64.stackBytes = 3256 := rfl
   refine X86_64.WP.callF hv hsp (by omega) (priv_pre hp hst hargs hdi hsi hdx hcx h8 h9) hc hw ?_
   intro t' hrd' hwr' hcs hf ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   have hF := fb_toNat hp
   have := hp.sp1; have := hp.sp2
   have hk1 := hp.k1; have hk2 := hp.k2; have hsl := hp.hsl; have wS := hp.wS
   have h392 : frameBytes = 392 := rfl
-  have hss : signStack = 3648 := rfl
+  have hss : signStack = 3656 := rfl
   have c2 : oRsa = 8192 := rfl
   have c1 : oEm = 2560 := rfl
   have hsc : (stackArg s 14 - 1024#64).toNat = (stackArg s 14).toNat - 1024 := by

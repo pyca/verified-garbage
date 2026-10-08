@@ -8,10 +8,11 @@ open VG.Proof.Bignum.X86_64.AdxRect8 (rawBase)
 
 theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     (hs : Scr s B Z) (hd : s.gpr .rdi=B) (hh : Hdr s.mem B w mi) (hZ : slot w 8≤Z)
+    {ps : List (Nat × Nat)} (hv : Ops s.mem B w ps) {ca : Nat} (pa : (ca, a) ∈ ps)
     (hw : w<2^31) (hwN : w=8*n) (hn : 0<n)
     (ha : a<8) (ha1 : a≠aAcc) (ha2 : a≠aTmp)
     (hz : ∀ j<2*w, word s.mem B (rawBase w+8*j)=0) :
-    WP isa (AdxTri8.blocks a) s (BlocksInv s B Z w a n mi) := by
+    WP isa (AdxTri8.blocks ca) s (BlocksInv s B Z w a n mi) := by
   have nowrap := hs.nowrap
   have iZ : 8*sFn 12+8≤Z := by
     have := hdr_lt_slot w 8 (show sFn 12<32 by decide); omega
@@ -27,6 +28,6 @@ theorem blocks_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
     ⟨hs.congr ku.2.2,diagonal_hdr hh fu,(ku.gpr (by decide)).trans hd,by rw [mu,word_writeW_self]; rfl,
       ku.mono (by decide),fu,rfl⟩
   exact wp_upto (a := 0) (N := n) hn (BlocksInv s B Z w a · mi)
-    (fun _ _ hk _ h => blockStep_ok hZ hw hwN hk ha ha1 ha2 hz h) (fun _ h => h) h0
+    (fun _ _ hk _ h => blockStep_ok hv pa hZ hw hwN hk ha ha1 ha2 hz h) (fun _ h => h) h0
 
 end VG.Proof.Bignum.X86_64.AdxTri8

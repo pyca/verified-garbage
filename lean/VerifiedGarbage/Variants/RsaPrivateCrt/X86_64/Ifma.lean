@@ -1,7 +1,6 @@
 import VerifiedGarbage.Variants.RsaPublicPrecomputed.X86_64.Adx
 import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
-import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
-import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
+import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 
 /-!
 # `vg_rsa_private_crt` on x86-64: with AVX512_IFMA
@@ -9,26 +8,30 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareBackend
 A variant of `RsaPrivateCrt` on x86-64 (see `TCB/Emit.lean`):
 `vg_rsa_private_crt_ifma`, checked with `vg_rsa_public_precompute_adx` and
 `vg_rsa_public_precomputed_checked_adx` (there is no public operation with
-AVX512_IFMA), which need AVX512_IFMA, AVX512F, AVX512VL, AVX, BMI2 and ADX.
+AVX512_IFMA), which need AVX512_IFMA, AVX512F, AVX512VL, AVX, BMI2 and ADX;
+its Montgomery multiplications outside the vector code are calls of
+`vg_rsa_mont_mul_adx`.
 -/
 
 namespace VG.Variants.RsaPrivateCrt.X86_64.Ifma
 
-open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64
+open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
-def variant : Proof.Rsa.X86_64.CrtImpl where
+def variant : CrtImpl where
   name := Spec.Rsa.privateCrtApi.name ++ "_ifma"
-  code := Impl.Rsa.X86_64.CrtIfma.code Mont.adxSquare.mm
+  code := Impl.Rsa.X86_64.CrtIfma.code CallMont.adx.mm
   depth := by decide +kernel
-  ok := Ifma.code_correct _ (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
-  ct := Ifma.code_constantTime _ (by decide +kernel)
-  nosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
+  ok := crt_call_ok (by decide +kernel) (Ifma.code_correct Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
+  ct := crt_call_ct (by decide +kernel) (Ifma.code_correct Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.code_constantTime Mont.fnAdx (by decide +kernel))
+  nosp := noSp_of (by decide +kernel)
   spSafe := Code.all_of_allInstrs (by decide +kernel)
-  mont := Mont.adxSquare
   montSuffix := "_adx"
+  pc := Impl.Rsa.X86_64.Precompute.code CallMont.adx.mm
+  pcOk := pc_call_ok Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
+  pcCt := pc_call_ct Mont.fnAdx (by decide +kernel) rfl (by decide +kernel)
   pcMx := by decide +kernel
   pubOp := VG.Variants.RsaPublicPrecomputed.X86_64.Adx.variant
-  pcNosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
+  pcNosp := noSp_of (by decide +kernel)
   pcDepth := by decide +kernel
   pcSpSafe := Code.all_of_allInstrs (by decide +kernel)
   suffix := "_ifma"
