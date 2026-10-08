@@ -1,7 +1,7 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildArith
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacFrame
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
-/-! The public counter and repeated table-construction step. -/
+/-! Public counters used by the cached-point table loop. -/
 namespace VG.Proof.Weierstrass.X86.JWin
 open VG VG.X86 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86 VG.Impl.Mont
 open VG.Proof.Mont VG.Proof.Mont.X86 Spec.Weierstrass
@@ -39,34 +39,5 @@ theorem cmp_counter_ok {s : State} {m : Nat} (hm : m≤16) (hc : s.gpr .esi=BitV
     Option.some.injEq,exists_eq_left']
   refine ⟨?_,⟨fun _ _ => rfl,rfl,rfl,rfl⟩,trivial⟩
   exact he
-
-theorem build_step_ok {K : JacWinCfg} {C : Curve} {base : Addr} {size wk m : Nat}
-    (hL : Layout K size wk) (hW : WkOk K.F K.M C.p size wk (·∈slots K))
-    (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
-    (hn : 17≤C.n) {P : Point C} (hP : onCurve C P=true) (hP0 : P≠.infinity)
-    (h2 : 2≤m) (h15 : m≤15) {s₀ s : State} (h : BuildInv K C base size wk P s₀ m s)
-    (hro : ∀ x∈ro K,wordsVal s₀.mem base x K.M.n<C.p)
-    (hJP : InvJ C (tmv C K.M.n base s₀ K.P.x) (tmv C K.M.n base s₀ K.P.y) 1 P) :
-    WP isa K.buildStep s fun t => BuildInv K C base size wk P s₀ (m+1) t ∧
-      t.zf=some (decide (m+1=16)) := by
-  unfold JacWinCfg.buildStep
-  apply WP.seq
-  rw [List.append_assoc,WP.block_append_iff]
-  refine WP.mono (inc_counter_ok h.counter) fun a ⟨ca,ka⟩ => ?_
-  apply WP.mono (WP.seq_iff.mp (build_arith_ok hL hW hm hC ha hO hn hP hP0 h2 h15
-    (h.frame.keeps ka) (fun m h1 hm => (h.table m h1 hm).congr fun _ _ => by rw [ka.2.1])
-    (h.point.congr fun _ _ => by rw [ka.2.1]) hro hJP))
-  intro b hb
-  apply WP.seq
-  apply WP.mono hb
-  intro c ⟨pc,fc,tc,kc⟩
-  rw [WP.block_append_iff]
-  refine WP.mono (build_store_ok hL hW fc (by omega) ((kc.gpr _ (by decide)).trans ca) tc pc)
-    fun d hd => ?_
-  refine WP.mono (cmp_counter_ok (by omega) hd.counter) fun t ⟨zt,kt,ct⟩ => ?_
-  refine ⟨⟨hd.frame.keeps kt,?_,?_,ct⟩,zt⟩
-  · intro m h1 hm
-    exact (hd.table m h1 hm).congr fun _ _ => by rw [kt.2.1]
-  · exact hd.point.congr fun _ _ => by rw [kt.2.1]
 
 end VG.Proof.Weierstrass.X86.JWin
