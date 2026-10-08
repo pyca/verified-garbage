@@ -1,10 +1,14 @@
+import VerifiedGarbage.Spec.Camellia
+
 /-!
 # The order of Camellia's subkeys
 
 The subkeys as `vg_camellia_expand_key` stores them, in the order of
 `Spec.Camellia.scheduleWords`: each the high or low half of one of `KL`,
 `KR`, `KA` and `KB` (`0 … 3`) rotated left by some bits (RFC 3713 §2.2).
-Every target's key schedule computes and stores them in this order.
+Every target's key schedule computes and stores them in this order. And
+the planes of the constants `Sigma1 … Sigma6`, which every target's key
+schedule stores as a table of subkeys for its bitsliced rounds.
 -/
 
 namespace VG.Impl.Camellia
@@ -36,5 +40,18 @@ def subkeys256 : List (Nat × Nat × Bool) :=
    (KA, 77, true), (KA, 77, false),
    (KR, 94, true), (KR, 94, false), (KA, 94, true), (KA, 94, false), (KL, 111, true), (KL, 111, false),
    (KB, 111, true), (KB, 111, false)]
+
+/-- The byte of a half that position `c` of a plane holds (as `toBs` lays out a half). -/
+def bytePos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
+
+/-- Plane `j` of the subkey `x` in every lane, as the table holds it: bit
+`8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first. -/
+def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 :=
+  (BitVec.ofBoolListLE ((List.range 64).map fun p => x.getLsbD (56 - 8 * bytePos (p / 8) + j))).setWidth 64
+
+/-- The subkeys of the pairs. -/
+def sigmas : List (BitVec 64) :=
+  [Spec.Camellia.sigma1, Spec.Camellia.sigma2, Spec.Camellia.sigma3, Spec.Camellia.sigma4,
+    Spec.Camellia.sigma5, Spec.Camellia.sigma6]
 
 end VG.Impl.Camellia

@@ -12,6 +12,7 @@ halves of `KA` and `KB` in theirs (`Spec.Camellia.kakb`, by `kakb_halves`).
 
 namespace VG.Proof.Camellia.X86_64
 
+open VG.Impl.Camellia (bytePos keyPlane sigmas)
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st xorS)
 open VG.Proof.Camellia (HalfRel WordRel pair hiW loW)

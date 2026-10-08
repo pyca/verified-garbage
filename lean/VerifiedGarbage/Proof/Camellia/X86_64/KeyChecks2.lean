@@ -12,6 +12,7 @@ slots (`spread0_check`, `spread8_check`).
 
 namespace VG.Proof.Camellia.X86_64
 
+open VG.Impl.Camellia (bytePos keyPlane sigmas)
 open VG VG.X86_64 VG.X86_64.Straight VG.Bitslice VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR at_ slotAt)
 open VG.Proof.Camellia (HalfRel pos)

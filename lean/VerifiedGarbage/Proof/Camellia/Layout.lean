@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Camellia.Bitsliced
+import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
 # Bitsliced Camellia: words, bytes and blocks
@@ -101,5 +102,19 @@ theorem encodeBlock_getElem (hi lo : BitVec 64) {i : Nat} (h : i < 16) :
     congr 1; omega
   · simp only [hi8, ↓reduceIte, show 8 * (15 - i) + j < 64 by omega, getLsbD_byteOf _ (show i - 8 < 8 by omega) hj]
     congr 1; omega
+
+/-- XORing a subkey into the planes of a half. -/
+theorem HalfRel.xor_key {Q K Q' : Nat → BitVec 64} {d k : Nat → BitVec 64} (hq : HalfRel Q d)
+    (hk : HalfRel K k) (h : ∀ j < 8, ∀ p < 64, (Q' j).getLsbD p = ((Q j).getLsbD p ^^ (K j).getLsbD p)) :
+    HalfRel Q' (fun b => d b ^^^ k b) := fun b hb c hc j hj => by
+  rw [h j hj _ (by omega), hq b hb c hc j hj, hk b hb c hc j hj, byteOf_xor,
+    BitVec.getLsbD_xor]
+
+/-- Bit `8 i + j` of a little-endian word is bit `j` of its byte `i`. -/
+theorem readW64_bit (m : Mem) (a : Addr) {i j : Nat} (hi : i < 8) (hj : j < 8) :
+    (m.readW a 64).getLsbD (8 * i + j) = (m (a + BitVec.ofNat 64 i)).getLsbD j := by
+  rw [← Mem.extractLsb'_read m a (n := 8) hi, BitVec.getLsbD_extractLsb']
+  simp only [Mem.readW, BitVec.getLsbD_setWidth, hj, decide_true, Bool.true_and]
+  simp only [show 8 * i + j < 64 by omega, decide_true, Bool.true_and]
 
 end VG.Proof.Camellia
