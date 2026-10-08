@@ -37,6 +37,9 @@ operations will check instead of the above:
   release a value that reveals the key.
 * `checkKey`: BoringSSL's `RSA_check_key` of a private key
   `(n, e, d, p, q, dP, dQ, qInv)`.
+* `checkCrtKey`: the checks of `checkKey` on the CRT form
+  `(n, e, p, q, dP, dQ, qInv)` alone, without `d`, which the private-key
+  operations do not use: for loading a key.
 
 Integers are naturals, converted from and to octet strings by OS2IP and
 I2OSP (§4), most significant octet first. The modulus `n` is given as its
@@ -339,5 +342,31 @@ given; the private-key operations do not use it. -/
 def checkKey (nB eB dB pB qB dPB dQB qInvB : List Byte) : Bool :=
   keyValid nB.length (os2ip nB) (os2ip eB) (os2ip dB) (os2ip pB) (os2ip qB) (os2ip dPB)
     (os2ip dQB) (os2ip qInvB)
+
+/-- `keyValid` without the checks of the private exponent `d`, which the
+private-key operations do not use: the checks of the CRT form
+`(n, e, p, q, dP, dQ, qInv)`, for a modulus of `k` octets.
+
+* `rsa_check_public_key`: the modulus and the exponent are valid
+  (`modulusValid`, `exponentValid`);
+* `p q = n`;
+* `dP < p - 1` and `e dP ≡ 1 (mod p - 1)`; `dQ < q - 1` and
+  `e dQ ≡ 1 (mod q - 1)`; `qInv < p` and `q qInv ≡ 1 (mod p)`.
+
+`keyValid`'s `p < n` and `q < n` are left out: they follow from `p q = n`
+when neither is 0 (as the congruences modulo `p - 1` and `q - 1` require).
+Like `keyValid`, this does not check that `p` and `q` are prime. -/
+def crtKeyValid (k n e p q dP dQ qInv : Nat) : Bool :=
+  modulusValid n k && exponentValid e &&
+  p * q == n &&
+  dP < p - 1 && e * dP % (p - 1) == 1 &&
+  dQ < q - 1 && e * dQ % (q - 1) == 1 &&
+  qInv < p && q * qInv % p == 1
+
+/-- `crtKeyValid` of the private key `(nB, eB, pB, qB, dPB, dQB, qInvB)`,
+the modulus of `k = nB.length` octets. -/
+def checkCrtKey (nB eB pB qB dPB dQB qInvB : List Byte) : Bool :=
+  crtKeyValid nB.length (os2ip nB) (os2ip eB) (os2ip pB) (os2ip qB) (os2ip dPB) (os2ip dQB)
+    (os2ip qInvB)
 
 end VG.Spec.Rsa
