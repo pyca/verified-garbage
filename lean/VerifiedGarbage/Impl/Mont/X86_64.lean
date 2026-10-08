@@ -238,6 +238,19 @@ def redShortX : List Reg → List Instr
       .alu .sbb d5 (.imm 0), .mov d0 (.reg .rdx), .alu .sbb d0 (.imm 0)]
   | _ => []
 
+/-- `redShortX` without BMI2: `u` by `uSparse` (in `rcx`), its products by
+`prodSparse` (through `d₀`, which `u` less the borrow then replaces). -/
+def redShortM : List Reg → List Instr
+  | [d0, d1, d2, d3, d4, d5] =>
+    uSparse d0 ++ prodSparse d0 ++
+    [.alu .sub d1 (.reg .rbp), .alu .sbb d2 (.reg .rdx), .alu .sbb d3 (.reg d0), .alu .sbb d4 (.imm 0),
+      .alu .sbb d5 (.imm 0), .mov d0 (.reg .rcx), .alu .sbb d0 (.imm 0)]
+  | _ => []
+
+/-- A round of P-384's reduction on six words: `redShortX` with BMI2 (`x`),
+else `redShortM`. -/
+def redShort (x : Bool) (ds : List Reg) : List Instr := if x then redShortX ds else redShortM ds
+
 /-- The reduction of round `i`: `t += u m` with `u = t₀ m' mod 2⁶⁴`, after
 which `t₀ = 0`; or, for a friendly modulus, the words above `t₀` get `t₀ m'`
 and `t₀ = 0`; or, for P-384's `p`, `redSparse`. -/
@@ -455,15 +468,30 @@ def sqrRow0 (a : Nat) : List Instr :=
   [.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc (a + 8)))] ++
     accRow [.r9, .r10, .r11, .r12, .r13] (a + 16) ++ [.adcx .r13 (.reg .rbp)]
 
+/-- `sqrRow0` without BMI2 and ADX: `r8–r12` cleared and `a₀ (a₁, …, a₅)`
+added by `mulRow`, its carry word into `r13`. -/
+def sqrRow0M (a : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc a))] ++ zeros [.r8, .r9, .r10, .r11, .r12] ++ mulRow [.r8, .r9, .r10, .r11, .r12] (a + 8) ++
+    [.mov .r13 (.reg .rbp)]
+
+/-- Row 0 of the cross products: `sqrRow0` with BMI2 and ADX (`x`), else
+`sqrRow0M`. -/
+def sqrRow0' (x : Bool) (a : Nat) : List Instr := if x then sqrRow0 a else sqrRow0M a
+
+/-- A row of the cross products: `ts ++ [y] = ts + [d₀] · [d …]`, the last
+register `y` fresh; with BMI2 and ADX (`x`) by `maddRow`, else by `mulRow`,
+its carry word into `y`. -/
+def crossRow (x : Bool) (d₀ : Nat) (ts : List Reg) (y : Reg) (d : Nat) : List Instr :=
+  if x then [.mov .rdx (.mem (sc d₀)), Impl.X25519.X86_64.clear] ++ maddRow (ts ++ [y]) d
+  else [.mov .rcx (.mem (sc d₀))] ++ mulRow ts d ++ [.mov y (.reg .rbp)]
+
 /-- Rows 1 to 4 of the cross products of `[a]`: row `i` adds `a_i (a_{i+1}, …)`
 at the words `2i + 1` to `i + 6`, the last fresh (words 3 to 10 in `r10–r15`,
 `r8`, `r9`). -/
-def sqrRows (a : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc (a + 8))), Impl.X25519.X86_64.clear] ++
-    maddRow [.r10, .r11, .r12, .r13, .r14] (a + 16) ++
-  [.mov .rdx (.mem (sc (a + 16))), Impl.X25519.X86_64.clear] ++ maddRow [.r12, .r13, .r14, .r15] (a + 24) ++
-  [.mov .rdx (.mem (sc (a + 24))), Impl.X25519.X86_64.clear] ++ maddRow [.r14, .r15, .r8] (a + 32) ++
-  [.mov .rdx (.mem (sc (a + 32))), Impl.X25519.X86_64.clear] ++ maddRow [.r8, .r9] (a + 40)
+def sqrRows (x : Bool) (a : Nat) : List Instr :=
+  crossRow x (a + 8) [.r10, .r11, .r12, .r13] .r14 (a + 16) ++
+    crossRow x (a + 16) [.r12, .r13, .r14] .r15 (a + 24) ++
+    crossRow x (a + 24) [.r14, .r15] .r8 (a + 32) ++ crossRow x (a + 32) [.r8] .r9 (a + 40)
 
 /-- The words `x`, `y` (`2i`, `2i + 1`) doubled through CF, and `a_i² = [d]²`
 added through OF. -/
@@ -491,6 +519,51 @@ def sqrDbl (t a : Nat) : List Instr :=
     Impl.X25519.X86_64.dblAdd .r9 .rax ++
     [.mov32 .rdx (.imm 0), .adcx .rcx (.reg .rdx), .adox .rcx (.reg .rdx)]
 
+/-- `ts += ts`: each register added to itself, with `op` on the first and
+`adc` on the rest, which doubles the number in them. -/
+def dblChain (op : AluOp) : List Reg → List Instr
+  | [] => []
+  | t :: ts => .alu op t (.reg t) :: dblChain .adc ts
+
+/-- A square added at two words without BMI2 and ADX: `[d]²` plus the
+carry word `rbp` (which never overflows its high half) added at `lo`, `hi`,
+the carry out into `rbp`. -/
+def sqStepM (d : Nat) (lo hi : Reg) : List Instr :=
+  [.mov .rax (.mem (sc d)), .mul .rax, .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0),
+    .alu .add lo (.reg .rax), .alu .adc hi (.reg .rdx), .mov32 .rbp (.imm 0), .alu .adc .rbp (.imm 0)]
+
+/-- The cross products doubled in one carry chain without BMI2 and ADX: words 1
+and 2 at `[t + 8]` through `rax`, words 3 to 10 in registers, the carry out
+into `rcx` (word 11). -/
+def dblHalfM (t : Nat) : List Instr :=
+  [.mov .rax (.mem (sc (t + 8))), .alu .add .rax (.reg .rax), .store (sc (t + 8)) .rax,
+    .mov .rax (.mem (sc (t + 16))), .alu .adc .rax (.reg .rax), .store (sc (t + 16)) .rax] ++
+  dblChain .adc [.r10, .r11, .r12, .r13, .r14, .r15, .r8, .r9] ++ [.mov32 .rcx (.imm 0), .alu .adc .rcx (.reg .rcx)]
+
+/-- `a₀²` and `a₁²` added at words 0 to 3 (words 0 to 2 at `[t]`, word 3 in
+`r10`) without BMI2 and ADX, the carry word out in `rbp`. -/
+def sq01M (t a : Nat) : List Instr :=
+  [.mov .rax (.mem (sc a)), .mul .rax, .store (sc t) .rax, .alu .add .rdx (.mem (sc (t + 8))),
+    .store (sc (t + 8)) .rdx, .mov32 .rbp (.imm 0), .alu .adc .rbp (.imm 0),
+    .mov .rax (.mem (sc (a + 8))), .mul .rax, .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0),
+    .alu .add .rax (.mem (sc (t + 16))), .store (sc (t + 16)) .rax, .alu .adc .r10 (.reg .rdx),
+    .mov32 .rbp (.imm 0), .alu .adc .rbp (.imm 0)]
+
+/-- `a₂²` to `a₅²` added at words 4 to 11 by `sqStepM`. -/
+def sqStepsM (a : Nat) : List Instr :=
+  sqStepM (a + 16) .r11 .r12 ++ sqStepM (a + 24) .r13 .r14 ++ sqStepM (a + 32) .r15 .r8 ++
+    sqStepM (a + 40) .r9 .rcx
+
+/-- `sqrDbl` without BMI2 and ADX: the cross products doubled in one carry
+chain (words 1 and 2 at `[t + 8]` through `rax`, the carry out into `rcx`,
+word 11), then the squares `a_i²` added at words `2i`, `2i + 1`, each with
+the carry word of the one before (`sqStepM`; words 0 to 2 at `[t]`). -/
+def sqrDblM (t a : Nat) : List Instr := dblHalfM t ++ sq01M t a ++ sqStepsM a
+
+/-- The cross products doubled and the squares added: `sqrDbl` with BMI2
+and ADX (`x`), else `sqrDblM`. -/
+def sqrDbl' (x : Bool) (t a : Nat) : List Instr := if x then sqrDbl t a else sqrDblM t a
+
 /-- The registers of the square's high half, words 6 to 11. -/
 def sqHigh6 : List Reg := [.r13, .r14, .r15, .r8, .r9, .rcx]
 
@@ -505,17 +578,17 @@ def sqW (i j : Nat) : Reg := sqWin6.getD ((i + j) % 6) .r13
 /-- The window of round `i`. -/
 def sqWins (i : Nat) : List Reg := (List.range 6).map (sqW i)
 
-/-- `k` rounds of `redShortX` from the window `sqWin6`. -/
-def redsShortX (k : Nat) : List Instr := (List.range k).flatMap fun i => redShortX (sqWins i)
+/-- `k` rounds of `redShort` from the window `sqWin6`. -/
+def redsShort (x : Bool) (k : Nat) : List Instr := (List.range k).flatMap fun i => redShort x (sqWins i)
 
-/-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX: the square's
-words 0 to 2 at `[tmp]` and 3 to 11 in `r10–r15`, `r8`, `r9`, `rcx`; its high
-half stored at `[o]`, the low half into the six words `sqWin6` and reduced by
-six rounds of `redShortX`, the high half added (its carry into `r8`), and
-`csub`. -/
+/-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX or without (the
+parts chosen by `M.adx`): the square's words 0 to 2 at `[tmp]` and 3 to 11 in
+`r10–r15`, `r8`, `r9`, `rcx`; its high half stored at `[o]`, the low half into
+the six words `sqWin6` and reduced by six rounds of `redShort`, the high half
+added (its carry into `r8`), and `csub`. -/
 def sqrS (M : Mod) (o a : Nat) : List Instr :=
-  sqrRow0 a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows a ++ sqrDbl M.tmp a ++ stores sqHigh6 o ++
-    loads [.r13, .r14, .r15] M.tmp ++ redsShortX 6 ++ [.mov32 .r8 (.imm 0)] ++
+  sqrRow0' M.adx a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows M.adx a ++ sqrDbl' M.adx M.tmp a ++
+    stores sqHigh6 o ++ loads [.r13, .r14, .r15] M.tmp ++ redsShort M.adx 6 ++ [.mov32 .r8 (.imm 0)] ++
     chain .add .adc sqWin6 o ++ [.alu .adc .r8 (.imm 0)] ++ csub M sqWin6 .r8 ++ stores sqWin6 o
 
 /-- `r8 … r14 = rdx · [b]` in one carry chain (`r15 = 0`), with no
@@ -537,12 +610,12 @@ def mulRounds (M : Mod) (a b : Nat) : List Instr :=
   else zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b)
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
-registers; by `sqrRX`, `mulRX` or `sqrS` if they apply. -/
+registers; by `sqrRX`, `mulRX` or (P-384's square) `sqrS` if they apply. -/
 def mulR (M : Mod) (o a b : Nat) : List Instr :=
   match prodK? M with
   | some k => if a = b then sqrRX M k o a else mulRX M k o a b
   | none =>
-    if M.adx ∧ M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else
+    if M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else
     let low := (List.range M.n).map (win M.n M.n)
     mulRounds M a b ++ csub M low (win M.n M.n M.n) ++ stores low o
 
@@ -937,12 +1010,6 @@ reduced by `xCanon`. -/
 def addMer (o a b : Nat) : List Instr :=
   [rdiAdd (cOf a)] ++ loadsC (cOf a) (xWin 9) a ++ [rdiMove (cOf a) (cOf b)] ++ setCF ++
     chainC (cOf b) .adc .adc (xWin 9) b ++ [rdiMove (cOf b) (cOf o)] ++ xCanon (cOf o) o ++ [rdiSub (cOf o)]
-
-/-- `ts += ts`: each register added to itself, with `op` on the first and
-`adc` on the rest, which doubles the number in them. -/
-def dblChain (op : AluOp) : List Reg → List Instr
-  | [] => []
-  | t :: ts => .alu op t (.reg t) :: dblChain .adc ts
 
 /-- `[o] = 2 [a] mod p` for P-521's `p` and `[a] < p`: `2 [a] < 2⁵²²` in
 `xWin 9` (`dblChain`), its bit 521 moved into its bit 0, which is clear. That
