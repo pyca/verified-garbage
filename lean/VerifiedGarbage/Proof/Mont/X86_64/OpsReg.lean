@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.MulS
+import VerifiedGarbage.Proof.Mont.X86_64.SqrM
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -89,9 +90,9 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · cases hk
   dsimp only
   split
-  · -- P-384's squaring with BMI2 and ADX.
+  · -- P-384's squaring.
     rename_i hc
-    obtain ⟨-, hsp, -, rfl⟩ := hc
+    obtain ⟨hsp, -, rfl⟩ := hc
     obtain ⟨h6, -⟩ := Mod.ok_sparse hM.red hsp
     rw [h6] at ho ha hoT haT hoM hB ⊢
     refine WP.mono (sqrS_ok hs hM hsp ho ha hoT haT hoM hB) fun s' ⟨kr, hmem, hlt, he⟩ =>
