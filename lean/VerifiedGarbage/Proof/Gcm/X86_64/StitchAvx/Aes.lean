@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Aes
 
@@ -78,33 +79,28 @@ theorem ctrs_ok : ∀ (regs : List XReg) (s : State) (X : Block) (j : Nat), regs
 
 /-! ## The data -/
 
-/-- XOR `b` into the block at `rdx + d`. -/
-theorem xor1_ok (b : XReg) (d : Nat) (s : State) (hb : b ≠ .xmm13)
+/-- XOR `b` into the block at `rdx + d` with a memory operand. -/
+theorem xor1_ok (b : XReg) (d : Nat) (s : State) (_hb : b ≠ .xmm13)
     (hin : InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 (d : Int)) 16) :
-    WP isa (.block [.vmovdquLoad .l128 .xmm13 (at_ .rdx d), .vop (.vbin .vpxor .l128 b b .xmm13),
+    WP isa (.block [.vbinLoad .vpxor .l128 b b (at_ .rdx d),
         .vmovdquStore .l128 (at_ .rdx d) b]) s fun s' =>
       s'.mem = s.mem.writeW (s.gpr .rdx + BitVec.ofInt 64 (d : Int))
         (XBinOp.eval .pxor (s.lane b 0) (s.mem.readW (s.gpr .rdx + BitVec.ofInt 64 (d : Int)) 128)) ∧
       s'.gpr = s.gpr ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, r ≠ b → r ≠ .xmm13 → ∀ l < 2, s'.lane r l = s.lane r l) := by
   have hin' := inRegions_wr hin
-  let a := s.gpr .rdx + BitVec.ofInt 64 (d : Int)
-  let s₁ := s.setV .l128 .xmm13 (s.mem.readW a 128) 0
-  let s₂ := (VOp.vbin .vpxor .l128 b b .xmm13).exec s₁
-  rw [WP.block_cons_iff]
-  refine ⟨s₁, by simp only [isa, exec, State.load128, ea_at, hin', ite_true, Option.map_some]; rfl, ?_⟩
-  rw [WP.block_cons_iff]; refine ⟨s₂, rfl, ?_⟩
-  rw [WP.block_cons_iff]
-  have hst : isa.exec (.vmovdquStore .l128 (at_ .rdx d) b) s₂ =
-      some (s₂.setMem (s.mem.writeW a (s₂.lane b 0))) := by
-    simp only [isa, exec, State.store128_eq, ea_at, s₂, s₁, VOp.exec_gpr, State.setV_gpr, VOp.exec_wr,
-      State.setV_wr, VOp.exec_mem, State.setV_mem, hin, ite_true, a, State.lane, ite_true]
-  refine ⟨_, hst, WP.block_nil ⟨?_, by simp [s₂, s₁], by simp [s₂, s₁], by simp [s₂, s₁],
-    fun r h1 h2 l hl => ?_⟩⟩
-  · simp only [State.setMem_mem]
-    refine congrArg _ ?_
-    simp only [s₂, s₁, lane_vbin128, ite_true, State.lane_setV128, hb, ite_false, VBinOp.sse, a]
-  · simp [s₂, s₁, lane_vbin128, State.lane_setV128, h1, h2]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, State.load128,
+    ea_at, hin', ite_true, Option.map_some, VBinOp.sse, XBinOp.eval,
+    State.store128_eq, State.setV_gpr, State.setV_wr, hin,
+    VG.X86_64.RegUpd.xmm_setV, ite_true, State.setV_mem,
+    Option.some.injEq, exists_eq_left']
+  refine ⟨rfl, ?_, ?_, ?_, fun r hr _ l _ => ?_⟩
+  · simp only [State.setMem_gpr, State.setV_gpr]
+  · simp only [State.setMem_rd, State.setV_rd]
+  · simp only [State.setMem_wr, State.setV_wr]
+  · simp only [State.lane, State.setMem_xmm, State.setMem_ymmHi,
+      VG.X86_64.RegUpd.xmm_setV, VG.X86_64.RegUpd.ymmHi_setV_128, hr, ite_false]
 
 theorem xorData_ok : ∀ (regs : List XReg) (j : Nat) (s : State), regs.Nodup → .xmm13 ∉ regs →
     (∀ k < regs.length, InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 ((16 * (j + k) : Nat) : Int)) 16) →

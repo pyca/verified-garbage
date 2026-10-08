@@ -150,7 +150,7 @@ def ctrs : List XReg → List Instr
 /-- XOR block register `i` into the data block `rdx + 16 (j + i)`. -/
 def xorData : List XReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => [.vmovdquLoad .l128 .xmm13 (at_ .rdx (16 * j)), .vop (.vbin .vpxor .l128 b b .xmm13),
+  | b :: bs, j => [.vbinLoad .vpxor .l128 b b (at_ .rdx (16 * j)),
       .vmovdquStore .l128 (at_ .rdx (16 * j)) b] ++ xorData bs (j + 1)
 
 /-- Four blocks encrypted into the data blocks `j`… at `rdx + 16 j`, the
