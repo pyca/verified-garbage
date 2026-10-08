@@ -42,27 +42,29 @@ def keyOne (d : Nat) : List Instr :=
   toBs ++ (List.range 8).map (fun j => .store (slotAt .rsi j) (q j)) ++
   [.alu .add .rsi (.imm 64)]
 
-/-- `rsi := ` the table, and the address of the postwhitening's entry
-(`8 g` entries on, `g` the number of groups of six rounds) to `endSlot`. -/
-def tableSetup (g : Nat) : List Instr :=
-  [movR .rsi sb, .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * keySlot))),
-   movR t0 .rsi, .alu .add t0 (.imm (BitVec.ofNat 32 (512 * g))), st endSlot t0]
+/-- `rsi := ` the table. -/
+def tableSetup : List Instr := [movR .rsi sb, .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * keySlot)))]
+
+/-- `rdi := ` the address of the postwhitening's entry, `8 g` entries into
+the table (`g` the number of groups of six rounds). -/
+def endAddr (g : Nat) : List Instr :=
+  [movR .rdi sb, .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * keySlot + 512 * g)))]
 
 /-- Encryption's table, for `g` groups: the `8 g + 2` subkeys in order. -/
 def encKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup g ++ [.movImm64 t1 (BitVec.ofNat 64 (8 * g + 2))]))
+  .seq (.block (tableSetup ++ [.movImm64 t1 (BitVec.ofNat 64 (8 * g + 2))]))
     (.loop (.block (keyOne 0 ++ [.alu .add .rdi (.imm 8), .alu .sub t1 (.imm 1)])) .ne)
 
 /-- Decryption's table, for `g` groups: `kw3, kw4` (words `8 g`, `8 g + 1`),
 words `8 g - 1` down to 2, then `kw1, kw2`. -/
 def decKeys (g : Nat) : Prog isa :=
-  .seq (.block (tableSetup g ++ [.alu .add .rdi (.imm (BitVec.ofNat 32 (64 * g)))] ++
+  .seq (.block (tableSetup ++ [.alu .add .rdi (.imm (BitVec.ofNat 32 (64 * g)))] ++
       keyOne 0 ++ keyOne 8 ++ [.alu .sub .rdi (.imm 8), .movImm64 t1 (BitVec.ofNat 64 (8 * g - 2))]))
     (.seq (.loop (.block (keyOne 0 ++ [.alu .sub .rdi (.imm 8), .alu .sub t1 (.imm 1)])) .ne)
       (.block ([.alu .sub .rdi (.imm 8)] ++ keyOne 0 ++ keyOne 8)))
 
 def keys (dir : Dir) (g : Nat) : Prog isa :=
-  match dir with | .encrypt => encKeys g | .decrypt => decKeys g
+  .seq (match dir with | .encrypt => encKeys g | .decrypt => decKeys g) (.block (endAddr g))
 
 /-! ## Eight blocks -/
 
@@ -95,9 +97,9 @@ def pairBody : List Instr :=
 def groupBody : Prog isa :=
   .seq (.block [movR .rdi kp, .alu .add .rdi (.imm 384)])
     (.seq (.loop (.block pairBody) .ne)
-      (.seq (.block [.alu .cmp kp (.mem (slotAt sb endSlot))])
+      (.seq (.block [movS t0 endSlot, .alu .cmp kp (.reg t0)])
         (.seq (.ite .ne (.block flLayer) (.block []))
-          (.block [.alu .cmp kp (.mem (slotAt sb endSlot))]))))
+          (.block [movS t0 endSlot, .alu .cmp kp (.reg t0)]))))
 
 /-- The postwhitening, and the halves back to the blocks, swapped: `D2`
 to the left halves, `D1` to the right. -/
@@ -107,7 +109,14 @@ def tail : List Instr :=
 /-- The eight blocks at `rdx`, in place. -/
 def crypt8 : Prog isa := .seq (.block head) (.seq (.loop groupBody .ne) (.block tail))
 
-/-! ## The groups -/
+/-! ## The groups
+
+Each group of eight blocks, or the last one to seven, is copied to the tail
+buffer, transformed there and copied back. The data pointer, the blocks left
+and the postwhitening's address stay in slots while `crypt8` runs: its
+stores are all at known offsets of the scratch buffer, so the taint analysis
+keeps them public; the copies' are not, so they run with those values in
+registers. -/
 
 /-- The tail buffer's address, in `r`. -/
 def tailAddr (r : Reg) : List Instr := [movR r sb, .alu .add r (.imm (BitVec.ofNat 32 (8 * tailSlot)))]
@@ -118,24 +127,30 @@ def copyBlocks : Prog isa :=
       .mov .rbp (.mem (at_ .rax 8)), .store (at_ .rbx 8) .rbp,
       .alu .add .rax (.imm 16), .alu .add .rbx (.imm 16), .alu .sub .rcx (.imm 1)]) .ne
 
-/-- The last `r8 < 8` blocks to the tail buffer, which `rdx` then points to. -/
-def copyIn : Prog isa :=
-  .seq (.block ([st dataSlot .rdx, movR .rax .rdx] ++ tailAddr .rbx ++ [movR .rcx .r8]))
-    (.seq copyBlocks (.block (tailAddr .rdx)))
+/-- `rcx := min(r8, 8)`, the blocks of this group. -/
+def groupCount : Prog isa :=
+  .seq (.block [.movImm64 .rcx 8, .alu .cmp .r8 (.imm 8)]) (.ite .b (.block [movR .rcx .r8]) (.block []))
 
-/-- And back to the data. -/
-def copyOut : Prog isa :=
-  .seq (.block (tailAddr .rax ++ [movS .rbx dataSlot, movR .rcx .r8]))
-    (.seq copyBlocks (.block [movS .rdx dataSlot]))
+/-- The group's blocks to the tail buffer. -/
+def copyIn : Prog isa := .seq groupCount (.seq (.block ([movR .rax .rdx] ++ tailAddr .rbx)) copyBlocks)
+
+/-- The tail buffer back to the group's blocks. -/
+def copyOut : Prog isa := .seq groupCount (.seq (.block (tailAddr .rax ++ [movR .rbx .rdx])) copyBlocks)
+
+/-- The data pointer, the blocks left and the postwhitening's address to
+their slots, and `rdx := ` the tail buffer. -/
+def saveState : List Instr := [st dataSlot .rdx, st countSlot .r8, st endSlot .rdi] ++ tailAddr .rdx
+
+def loadState : List Instr := [movS .rdx dataSlot, movS .r8 countSlot, movS .rdi endSlot]
+
+/-- On to the next group, or none left (ZF set). -/
+def advance : Prog isa :=
+  .seq (.block [.alu .cmp .r8 (.imm 8)])
+    (.ite .b (.block [.alu .sub .r8 (.reg .r8)]) (.block [.alu .add .rdx (.imm 128), .alu .sub .r8 (.imm 8)]))
 
 /-- Eight blocks, or the last one to seven (and none left: ZF set). -/
 def group : Prog isa :=
-  .seq (.block [.alu .cmp .r8 (.imm 8)])
-    (.seq (.ite .b copyIn (.block []))
-      (.seq crypt8
-        (.seq (.block [.alu .cmp .r8 (.imm 8)])
-          (.ite .b (.seq copyOut (.block [.alu .sub .r8 (.reg .r8)]))
-            (.block [.alu .add .rdx (.imm 128), .alu .sub .r8 (.imm 8)])))))
+  .seq copyIn (.seq (.block saveState) (.seq crypt8 (.seq (.block loadState) (.seq copyOut advance))))
 
 /-- The whole function: the table for 18 or 24 rounds, then the groups. -/
 def ecb (dir : Dir) : Prog isa :=

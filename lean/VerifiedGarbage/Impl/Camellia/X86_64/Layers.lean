@@ -50,8 +50,9 @@ def keySlot : Nat := 96
 /-- After the table of 34 subkeys. -/
 def endSlot : Nat := keySlot + 8 * 34
 def dataSlot : Nat := endSlot + 1
-def savedSlot : Nat := endSlot + 2
-def tailSlot : Nat := endSlot + 8
+def countSlot : Nat := endSlot + 2
+def savedSlot : Nat := endSlot + 3
+def tailSlot : Nat := endSlot + 9
 
 /-- The number of slots: the tail buffer is the last 16. -/
 def slots : Nat := tailSlot + 16
