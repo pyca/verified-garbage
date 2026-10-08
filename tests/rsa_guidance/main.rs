@@ -234,9 +234,18 @@ fn rsa_pkcs1_bad_keys() {
     let mut d = vec![0, 0];
     d.extend_from_slice(v[3]);
     assert!(decrypt(&with_d(&d), ct).is_ok());
-    // A `dP` that does not match: the result fails its check.
+    // A `dP` that does not match `e`: on x86-64 the key is refused, and on
+    // AArch64, which does not check it when loading, the result fails its
+    // check.
     let mut dp = v[6].to_vec();
     *dp.last_mut().unwrap() ^= 2;
-    let key = PrivateKey::from_crt(v[1], v[2], v[3], v[4], v[5], &dp, v[7], v[8]).unwrap();
-    assert_eq!(decrypt(&key, ct), Err(Error::Fault));
+    let key = PrivateKey::from_crt(v[1], v[2], v[3], v[4], v[5], &dp, v[7], v[8]);
+    if cfg!(target_arch = "x86_64") {
+        assert_eq!(
+            key.map(|_| ()),
+            Err(verified_garbage::rsa::Error::InvalidPrivateKey)
+        );
+    } else {
+        assert_eq!(decrypt(&key.unwrap(), ct), Err(Error::Fault));
+    }
 }

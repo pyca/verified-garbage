@@ -306,9 +306,45 @@ mod privatekey;
 pub use privatekey::PrivateKey;
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use alloc::string::ToString;
+
+    /// The CRT form `[n, p, q, dP, dQ, qInv]` of a key whose values match
+    /// each other for `e = 3`, but whose factors are not prime: `p = 2^(8a) - 1`
+    /// (`a` bytes of `0xff`, `3 | p`) and `q = 2^(8a) + 1` (`a + 1` bytes),
+    /// `n = 2^(16a) - 1`, `dP = p / 3` (`3 dP = (p - 1) + 1`),
+    /// `dQ = (2^(8a + 1) + 1) / 3` (`3 dQ = 2 (q - 1) + 1`) and
+    /// `qInv = 2^(8a - 1)` (`q ≡ 2 (mod p)`). With `swap`, `p` and `q` are
+    /// the other way round, and still `qInv = 2^(8a - 1)` (`q ≡ -2`). Every
+    /// check of `PrivateKey::from_crt` passes; the private-key operation's
+    /// result for most inputs does not pass its check against `e`.
+    pub(crate) fn composite(a: usize, swap: bool) -> [Vec<u8>; 6] {
+        let ones = vec![0xff; a];
+        let mut plus = vec![0; a + 1];
+        plus[0] = 1;
+        plus[a] = 1;
+        let third = vec![0x55; a];
+        let mut two_thirds = vec![0xaa; a];
+        two_thirds[a - 1] = 0xab;
+        let mut half = vec![0; a];
+        half[0] = 0x80;
+        let n = vec![0xff; 2 * a];
+        if swap {
+            [n, plus, ones, two_thirds, third, half]
+        } else {
+            [n, ones, plus, third, two_thirds, half]
+        }
+    }
+
+    /// `composite(32, false)` loaded, with `d = 1`, and its public key.
+    pub(crate) fn composite_key() -> (PrivateKey, PublicKey) {
+        let [n, p, q, dp, dq, qinv] = composite(32, false);
+        (
+            PrivateKey::from_crt(&n, &[3], &[1], &p, &q, &dp, &dq, &qinv).unwrap(),
+            PublicKey::new(&n, &[3]).unwrap(),
+        )
+    }
 
     /// An odd `k`-byte modulus with its top bit set, with bytes from a
     /// simple generator so that no word is all ones.

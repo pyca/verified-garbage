@@ -106,7 +106,7 @@ theorem RedRegs.keep {B : Addr} {w eo em eA eT eS : Nat} {t t' : State} (h : Red
 
 /-- After `b` bits of the word `V`, from `r = P mod M` (`M` the number at
 `em`, unchanged). -/
-structure BitInv (s₁ : State) (B : Addr) (Z w eo em eA eT eS : Nat) (P : Nat) (V : BitVec 64) (b : Nat)
+structure BitInv (Q : Prop) (s₁ : State) (B : Addr) (Z w eo em eA eT eS : Nat) (P : Nat) (V : BitVec 64) (b : Nat)
     (t : State) : Prop where
   scr : Scr t B Z
   regs : RedRegs B w eo em eA eT eS t
@@ -114,14 +114,14 @@ structure BitInv (s₁ : State) (B : Addr) (Z w eo em eA eT eS : Nat) (P : Nat) 
   r15 : t.gpr .r15 = V <<< b
   r11 : t.gpr .r11 = BitVec.ofNat 64 (64 - b)
   frm : Frm B (redRs eA eT eo w) s₁.mem t.mem
-  val : 0 < wv s₁.mem B em w →
+  val : Q → 0 < wv s₁.mem B em w →
     wv t.mem B eo w = (P * 2 ^ b + V.toNat / 2 ^ (64 - b)) % wv s₁.mem B em w
 
-theorem bitStep_ok {s₁ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat} {P : Nat} {V : BitVec 64}
+theorem bitStep_ok {Q : Prop} {s₁ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat} {P : Nat} {V : BitVec 64}
     (hL : RedLay B Z w eo em eA eT eS cnt) {b : Nat} (hb : b < 64) {t : State}
-    (hI : BitInv s₁ B Z w eo em eA eT eS P V b t) :
+    (hI : BitInv Q s₁ B Z w eo em eA eT eS P V b t) :
     WP isa bitStep t fun t' => t'.zf = some (decide (b + 1 = 64)) ∧
-      BitInv s₁ B Z w eo em eA eT eS P V (b + 1) t' := by
+      BitInv Q s₁ B Z w eo em eA eT eS P V (b + 1) t' := by
   have hn := hI.scr.nowrap
   obtain ⟨w1, w2, -, -, ho, hm, hA, hT, -, sAo, sAm, sAT, sTm, sTo, som, -, -, -⟩ := hL
   have hM : wv t.mem B em w = wv s₁.mem B em w :=
@@ -148,12 +148,12 @@ theorem bitStep_ok {s₁ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat} {P :
     fun t' ⟨⟨hz, h11', hm'⟩, k'⟩ => ⟨hz, ?_⟩
   have k12 := (k₁.trans k₂).trans k'
   refine ⟨hs₂.congr k'.2.2, rg₂.keep k' (by decide), (hI.keep.trans k12).mono (by decide),
-    (k'.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h15), h11', ?_, fun hM0 => ?_⟩
+    (k'.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h15), h11', ?_, fun hq hM0 => ?_⟩
   · rw [hm']
     exact hI.frm.trans (by rw [← hm₁]; exact hf₂)
   · rw [hm']
     have hR : wv t₁.mem B eo w = (P * 2 ^ b + V.toNat / 2 ^ (64 - b)) % wv s₁.mem B em w := by
-      rw [hm₁]; exact hI.val hM0
+      rw [hm₁]; exact hI.val hq hM0
     have hM₁ : wv t₁.mem B em w = wv s₁.mem B em w := by rw [hm₁]; exact hM
     rw [hM₁] at hv₂
     rw [hv₂ (by rw [hR]; exact Nat.mod_lt _ hM0), hR, dbl_mod]
@@ -168,13 +168,13 @@ theorem bitStep_ok {s₁ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat} {P :
 
 /-- After the top `i` words of `x` (`cnt` words at `eS`): `r` their number
 modulo `M`. -/
-structure WInv (s₀ : State) (B : Addr) (Z w eo em eA eT eS cnt : Nat) (i : Nat) (t : State) : Prop where
+structure WInv (Q : Prop) (s₀ : State) (B : Addr) (Z w eo em eA eT eS cnt : Nat) (i : Nat) (t : State) : Prop where
   scr : Scr t B Z
   regs : RedRegs B w eo em eA eT eS t
   keep : Keep [.rax, .rbp, .r14, .rdx, .r11, .r15, .r13] s₀ t
   r13 : t.gpr .r13 = BitVec.ofNat 64 (cnt - i)
   frm : Frm B (redRs eA eT eo w) s₀.mem t.mem
-  val : 0 < wv s₀.mem B em w →
+  val : Q → 0 < wv s₀.mem B em w →
     wv t.mem B eo w = wv s₀.mem B (eS + 8 * (cnt - i)) i % wv s₀.mem B em w
 
 theorem frm_word {B : Addr} {Z w eo eA eT d : Nat} {m m' : Mem} (h : Frm B (redRs eA eT eo w) m m')
@@ -191,11 +191,11 @@ theorem frm_wv {B : Addr} {Z w eo eA eT d k : Nat} {m m' : Mem} (h : Frm B (redR
     simp only [redRs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega) (by omega)
 
-theorem wordStep_ok {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
+theorem wordStep_ok {Q : Prop} {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
     (hL : RedLay B Z w eo em eA eT eS cnt) {i : Nat} (hi : i < cnt) {t : State}
-    (hI : WInv s₀ B Z w eo em eA eT eS cnt i t) :
+    (hI : WInv Q s₀ B Z w eo em eA eT eS cnt i t) :
     WP isa wordStep t fun t' => t'.zf = some (decide (i + 1 = cnt)) ∧
-      WInv s₀ B Z w eo em eA eT eS cnt (i + 1) t' := by
+      WInv Q s₀ B Z w eo em eA eT eS cnt (i + 1) t' := by
   have hn := hI.scr.nowrap
   have hL' := hL
   obtain ⟨w1, w2, c1, c2, ho, hm, hA, hT, hS, sAo, sAm, sAT, sTm, sTo, som, sSA, sST, sSo⟩ := hL'
@@ -211,15 +211,15 @@ theorem wordStep_ok {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
       addr0 hI.regs.r9 rfl, hI.scr.ld (show eS + 8 * (cnt - i - 1) + 8 ≤ Z by omega), hV]) rfl) fun t₁ ⟨⟨h13, h15, h11, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hI.scr.congr k₁.2.2
   have rg₁ := hI.regs.keep k₁ (by decide)
-  have hb0 : BitInv t₁ B Z w eo em eA eT eS (wv s₀.mem B (eS + 8 * (cnt - i)) i)
+  have hb0 : BitInv Q t₁ B Z w eo em eA eT eS (wv s₀.mem B (eS + 8 * (cnt - i)) i)
       (word s₀.mem B (eS + 8 * (cnt - i - 1))) 0 t₁ :=
-    ⟨hs₁, rg₁, Keep.refl _ _, by rw [h15, BitVec.shiftLeft_zero], h11, Frm.refl _ _ _, fun hM0 => by
+    ⟨hs₁, rg₁, Keep.refl _ _, by rw [h15, BitVec.shiftLeft_zero], h11, Frm.refl _ _ _, fun hq hM0 => by
       rw [hm₁] at hM0 ⊢
       rw [hM] at hM0 ⊢
-      rw [hI.val hM0, Nat.pow_zero, Nat.mul_one, Nat.sub_zero,
+      rw [hI.val hq hM0, Nat.pow_zero, Nat.mul_one, Nat.sub_zero,
         Nat.div_eq_of_lt (word s₀.mem B (eS + 8 * (cnt - i - 1))).isLt, Nat.add_zero]⟩
   refine WP.seq (wp_upto (a := 0) (N := 64) (by decide)
-    (BitInv t₁ B Z w eo em eA eT eS (wv s₀.mem B (eS + 8 * (cnt - i)) i) (word s₀.mem B (eS + 8 * (cnt - i - 1))))
+    (BitInv Q t₁ B Z w eo em eA eT eS (wv s₀.mem B (eS + 8 * (cnt - i)) i) (word s₀.mem B (eS + 8 * (cnt - i - 1))))
     (fun b _ hb t hb' => bitStep_ok hL hb hb') (fun t₂ hB => ?_) hb0)
   have h13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (cnt - i - 1) := (hB.keep.gpr (by decide)).trans h13
   refine WP.mono (WP.keep [.r13] (Q := fun t' => t'.zf = some (decide (i + 1 = cnt)) ∧ t'.mem = t₂.mem ∧
@@ -228,11 +228,11 @@ theorem wordStep_ok {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
     congr 1; apply propext; omega) rfl) fun t' ⟨⟨hz, hm', h13'⟩, k'⟩ => ⟨hz, ?_⟩
   have k2 := hB.keep.trans k'
   refine ⟨hB.scr.congr k'.2.2, hB.regs.keep k' (by decide), ((hI.keep.trans k₁).trans k2).mono (by decide),
-    by rw [h13', show cnt - (i + 1) = cnt - i - 1 by omega], ?_, fun hM0 => ?_⟩
+    by rw [h13', show cnt - (i + 1) = cnt - i - 1 by omega], ?_, fun hq hM0 => ?_⟩
   · rw [hm']
     exact hI.frm.trans (by rw [← hm₁]; exact hB.frm)
   · have hM₁ : wv t₁.mem B em w = wv s₀.mem B em w := by rw [hm₁, hM]
-    rw [hm', hB.val (by rw [hM₁]; exact hM0), hM₁, Nat.sub_self, Nat.pow_zero, Nat.div_one,
+    rw [hm', hB.val hq (by rw [hM₁]; exact hM0), hM₁, Nat.sub_self, Nat.pow_zero, Nat.div_one,
       show cnt - (i + 1) = cnt - i - 1 by omega, show i + 1 = 1 + i by omega, wv_add,
       show eS + 8 * (cnt - i - 1) + 8 * 1 = eS + 8 * (cnt - i) by omega]
     simp only [wv, Nat.mul_zero, Nat.pow_zero, Nat.one_mul, Nat.zero_add, Nat.add_zero,
@@ -245,10 +245,10 @@ theorem reduceLoop_ok {s₀ : State} {B : Addr} {Z w eo em eA eT eS cnt : Nat}
     WP isa (.loop wordStep .ne) s₀ fun t => Scr t B Z ∧
       Keep [.rax, .rbp, .r14, .rdx, .r11, .r15, .r13] s₀ t ∧ Frm B (redRs eA eT eo w) s₀.mem t.mem ∧
       (0 < wv s₀.mem B em w → wv t.mem B eo w = wv s₀.mem B eS cnt % wv s₀.mem B em w) := by
-  refine wp_upto (a := 0) (N := cnt) (by have := hL.cnt1; omega) (WInv s₀ B Z w eo em eA eT eS cnt)
+  refine wp_upto (a := 0) (N := cnt) (by have := hL.cnt1; omega) (WInv True s₀ B Z w eo em eA eT eS cnt)
     (fun i _ hi t hI => wordStep_ok hL hi hI) (fun t hI => ⟨hI.scr, hI.keep, hI.frm, fun hM0 => ?_⟩)
-    ⟨hs, hr, Keep.refl _ _, by rw [h13, Nat.sub_zero], Frm.refl _ _ _, fun _ => by rw [hR]; simp [wv]⟩
-  rw [hI.val hM0, Nat.sub_self, Nat.mul_zero, Nat.add_zero]
+    ⟨hs, hr, Keep.refl _ _, by rw [h13, Nat.sub_zero], Frm.refl _ _ _, fun _ _ => by rw [hR]; simp [wv]⟩
+  rw [hI.val trivial hM0, Nat.sub_self, Nat.mul_zero, Nat.add_zero]
 
 /-- `reduce cnt`: `[aR] := x mod [aM]` for the number `x` of the `N` words
 of the accumulator, `N` the count the instructions `cnt` compute from `w`,

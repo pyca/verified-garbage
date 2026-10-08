@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.Verified
 import VerifiedGarbage.Proof.Rsa.X86_64.CvVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.RpVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
+import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
 
@@ -190,6 +191,20 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.CheckKey.code
     contract := Spec.Rsa.checkKeyContract X86_64.abi
     verified := Proof.Rsa.X86_64.Key.key_verified (by decide +kernel)
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Rsa.checkCrtKeyApi with
+    target := X86_64.target
+    doc := Spec.Rsa.checkCrtKeyApi.doc
+      (notes := ["Baseline x86-64: `vg_rsa_check_key`'s code without the checks of `d`. `e` and `n` \
+        are checked first, which are the only branches on the key; then every check of the private key is \
+        computed whatever its outcome and and'ed into a mask. Each remainder (`e dP mod (p - 1)`, \
+        `e dQ mod (q - 1)`, `q qInv mod p`) is computed by restoring division over numbers as long as the \
+        divisor, starting from the product's words above its low `c` (`c = 1`, or `⌈q_len / 8⌉` for \
+        `q qInv`), which are below the divisor when the comparison before it holds: `64 c` doublings \
+        modulo the divisor rather than one per bit of the product."])
+    code := Impl.Rsa.X86_64.CheckCrtKey.code
+    contract := Spec.Rsa.checkCrtKeyContract X86_64.abi
+    verified := Proof.Rsa.X86_64.Key.ck_verified (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Rsa.X86_64
