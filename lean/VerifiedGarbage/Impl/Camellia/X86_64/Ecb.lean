@@ -81,8 +81,8 @@ def whiten : List Instr :=
 /-- Bitslice both halves, `D2` to its slots and `D1` into the state, and
 whiten them with the first two entries; `kp` is left at the first round's. -/
 def head : List Instr :=
-  loadWords 1 ++ toBs ++ storeHalf d2Slot ++ loadWords 0 ++ toBs ++
-  [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++ whiten ++
+  [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++
+  loadWords 1 ++ toBs ++ storeHalf d2Slot ++ loadWords 0 ++ toBs ++ whiten ++
   [.alu .add kp (.imm 128)]
 
 /-- Two rounds: `D2 ^= F(D1, k)`, `D1 ^= F(D2, k')`, with the state holding

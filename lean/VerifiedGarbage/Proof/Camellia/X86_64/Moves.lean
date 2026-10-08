@@ -45,14 +45,22 @@ theorem loadWords1_check :
 /-- `storeWords h`: word `2 b + h` of the blocks is `q b`. -/
 def storeOuts (h : Nat) : List (Nat × (Nat → List Nat)) := (List.range 8).map fun b => (2 * b + h, idG b)
 
+/-- The blocks' words are input words `8 … 23`, after the state's. -/
+def storeIns : List (Nat × Nat) := (List.range 16).map fun k => (k, 8 + k)
+
+def storeEnv : Env (Nat × Nat) := linEnvG qIns storeIns []
+
+/-- The other half's words. -/
+def otherWords (h : Nat) : List Nat := (List.range 8).map fun b => 2 * b + (1 - h)
+
 theorem storeWords0_check :
-    check (lanes 64 9) dataCfg (linExt 0) (storeWords 0) (linEnvG qIns [] [])
-      (linPostG 9 [] (storeOuts 0) [] (linEnvG qIns [] [])) = true := by
+    check (lanes 64 11) dataCfg (linExt 0) (storeWords 0) storeEnv
+      (linPostG 11 [] (storeOuts 0) (otherWords 0) storeEnv) = true := by
   decide +kernel
 
 theorem storeWords1_check :
-    check (lanes 64 9) dataCfg (linExt 0) (storeWords 1) (linEnvG qIns [] [])
-      (linPostG 9 [] (storeOuts 1) [] (linEnvG qIns [] [])) = true := by
+    check (lanes 64 11) dataCfg (linExt 0) (storeWords 1) storeEnv
+      (linPostG 11 [] (storeOuts 1) (otherWords 1) storeEnv) = true := by
   decide +kernel
 
 /-! ## The halves -/

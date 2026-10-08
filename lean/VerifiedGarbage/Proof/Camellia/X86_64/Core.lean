@@ -305,6 +305,23 @@ theorem loadHalf_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : C
         simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot])]
   exact hc.masks kv hkv
 
+/-- Word `k` of the eight blocks. -/
+abbrev dataW (s : State) (k : Nat) : BitVec 64 := s.mem.readW (wordAddr (s.gpr .rdx) k) 64
+
+/-- A frame of the scratch buffer's slots below the table keeps the blocks. -/
+theorem dataW_of_scr {s₀ s s' : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E)
+    (hc : Ctx s₀ s) (hd : s'.gpr .rdx = s.gpr .rdx) (hf : Frame [⟨s₀.gpr sb, 8 * keySlot⟩] s.mem s'.mem)
+    {k : Nat} (hk : k < 16) : dataW s' k = dataW s k := by
+  have hfit := hp.fitD
+  simp only [dataW, wordAddr, hd, hc.rdx]
+  refine hf.readW (r := ⟨s₀.gpr .rdx + BitVec.ofNat 64 (8 * k), 8⟩) (Region.contains_self _ _)
+    (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  have hsub : Region.Sub ⟨s₀.gpr sb, 8 * keySlot⟩ ⟨s₀.gpr sb, 8 * slots⟩ := fun x hx => by
+    simp only [Region.Contains] at hx ⊢
+    rw [slots_eq]; rw [keySlot_eq] at hx; omega
+  exact (hp.sep.sub_left (VG.Offset.sub_base _ (by omega))).sub_right hsub
+
 /-- `storeHalf d`, under `Ctx`. -/
 theorem storeHalf_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
     {m d : Nat} (hd : d = d1Slot ∨ d = d2Slot)
@@ -313,7 +330,8 @@ theorem storeHalf_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : 
     (hk : AtEntry s (s₀.gpr sb) m) (hm34 : m + 2 ≤ 34) :
     ∃ s', runBlock isa (storeHalf d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       s'.gpr .rdi = s.gpr .rdi ∧ (∀ j < 8, Qs s' j = Qs s j) ∧ (∀ j < 8, slotW s' (d + j) = Qs s j) ∧
-      (∀ j < 16, d1Slot + j < d ∨ d + 8 ≤ d1Slot + j → slotW s' (d1Slot + j) = slotW s (d1Slot + j)) := by
+      (∀ j < 16, d1Slot + j < d ∨ d + 8 ≤ d1Slot + j → slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧
+      (∀ k < 16, dataW s' k = dataW s k) := by
   obtain ⟨s', h', ho, hso, hkp, rd', wr', o', f'⟩ := both_ok hp hc hk hm34 hchk
   have hq : ∀ j < 8, Qs s' j = Qs s j := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by
     rw [Qs, ho (q j) (idG j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
@@ -334,7 +352,8 @@ theorem storeHalf_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : 
   have hkeep : ∀ r, r ∉ sboxWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_sboxWrites r hr))
   refine ⟨s', h', hc.step rd' wr' (fun r hr _ _ => hkeep r hr) (f'.mono fun r hr => by simp at hr; simp [hr])
-    (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hs, hh⟩
+    (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hs, hh,
+    fun k hk => dataW_of_scr hp hc (hkeep _ (by decide)) f' hk⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
       simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
         simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot])]
@@ -426,7 +445,7 @@ theorem fl_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   have hk₁ : AtEntry s₁ (s₀.gpr sb) m := by rw [AtEntry, k₁]; exact hk
   obtain ⟨s₂, e₂, c₂, k₂, r₂, m₂, hq₂⟩ := (flCode_step hp c₁ hk₁ (off := 8) (Or.inr rfl) (by omega) hm34 hq₁).2
   have hk₂ : AtEntry s₂ (s₀.gpr sb) m := by rw [AtEntry, k₂]; exact hk₁
-  obtain ⟨s₃, e₃, c₃, k₃, r₃, q₃, sl₃, hh₃⟩ := storeHalf_step hp c₂ (Or.inr rfl) storeHalf2_check hk₂ hm34
+  obtain ⟨s₃, e₃, c₃, k₃, r₃, q₃, sl₃, hh₃, -⟩ := storeHalf_step hp c₂ (Or.inr rfl) storeHalf2_check hk₂ hm34
   have hk₃ : AtEntry s₃ (s₀.gpr sb) m := by rw [AtEntry, k₃]; exact hk₂
   have d1₃ : ∀ j < 8, slotW s₃ (d1Slot + j) = slotW s (d1Slot + j) := fun j hj => by
     rw [hh₃ j (by omega) (Or.inl (by simp only [d1Slot, d2Slot]; omega)), slotW_congr c₁ c₂ m₂,
@@ -439,7 +458,7 @@ theorem fl_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   have hk₄ : AtEntry s₄ (s₀.gpr sb) m := by rw [AtEntry, k₄]; exact hk₃
   obtain ⟨s₅, e₅, c₅, k₅, r₅, m₅, hq₅⟩ := (flCode_step hp c₄ hk₄ (off := 0) (Or.inl rfl) (by omega) hm34 hq₄).1
   have hk₅ : AtEntry s₅ (s₀.gpr sb) m := by rw [AtEntry, k₅]; exact hk₄
-  obtain ⟨s₆, e₆, c₆, k₆, r₆, q₆, sl₆, hh₆⟩ := storeHalf_step hp c₅ (Or.inl rfl) storeHalf1_check hk₅ hm34
+  obtain ⟨s₆, e₆, c₆, k₆, r₆, q₆, sl₆, hh₆, -⟩ := storeHalf_step hp c₅ (Or.inl rfl) storeHalf1_check hk₅ hm34
   have d2₆ : HalfRel (fun j => slotW s₆ (d2Slot + j))
       (fun b => Spec.Camellia.flinv (S b).2 (E (m + 8 / 8))) := d2₃.congr fun j hj => by
     have := hh₆ (8 + j) (by omega) (Or.inr (by simp only [d1Slot]; omega))
