@@ -1,0 +1,5 @@
+name = "pyca/cryptography IDEA-ECB vectors (the NESSIE IDEA test vectors, Idea-128-64.verified.test-vectors, reformatted like NIST's)"
+directories = ["cryptography-idea"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/dd22989f9594704bfef2ea3a8b08b40774a06a23/vectors/cryptography_vectors/ciphers/IDEA/idea-ecb.txt"
+sha256 = "3a51d8295eb40ce1f0d474ff17d0642fb163a452a629b70bef3ff64e2d9e36e2"
+retrieved = 2026-10-08
