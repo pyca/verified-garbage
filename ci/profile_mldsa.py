@@ -27,3 +27,10 @@ subprocess.run([
     'sudo', perf, 'report', '-i', data, '--stdio', '--no-children',
     '--percent-limit', '0.5', '--sort', 'symbol',
 ], check=True)
+
+# Experimental instruction-mix sweep, compiled and measured only on the N2 runner.
+micro_source = Path(__file__).with_name('mldsa_keccak_mix.rs')
+micro_binary = '/tmp/vg-mldsa-keccak-mix'
+subprocess.run(['rustc', '--edition=2024', '-O', '-Awarnings', str(micro_source), '-o', micro_binary], check=True)
+print('N2 paired Keccak instruction-mix sweep (nanoseconds per permutation)', flush=True)
+subprocess.run([micro_binary, '500000'], check=True)
