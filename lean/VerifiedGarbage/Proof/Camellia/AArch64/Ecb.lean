@@ -37,17 +37,6 @@ def ecbAArch64 (dir : Dir) : Contract isa where
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
-/-- `cbz r`: whether `r` is zero. -/
-theorem eval_zero (s : State) (r : Reg) : isa.eval (.zero .x r) s = some (s.gpr r == 0) := by
-  show VG.AArch64.eval (.zero .x r) s = _
-  simp only [VG.AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq]
-
-theorem ofNat_beq_zero {v : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v == 0) = decide (v = 0) := by
-  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-  constructor
-  · intro h; have := congrArg BitVec.toNat h; rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv] at this
-  · intro h; rw [h]; rfl
-
 /-- The order of the subkeys in the table, for each direction. -/
 def permOf : Dir → Nat → Nat → Nat
   | .encrypt => fun _ i => i

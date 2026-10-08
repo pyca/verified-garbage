@@ -159,17 +159,20 @@ theorem round_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : Key
       s'.gpr .x0 = s.gpr .x0 ∧
       HalfRel (Qs s') (fun b => Y b ^^^ Spec.Camellia.f (X b) (E (m + off / 8))) ∧
       HalfRel (fun j => slotW s' (d + j)) (fun b => Y b ^^^ Spec.Camellia.f (X b) (E (m + off / 8))) ∧
-      (∀ j < 16, d1Slot + j < d ∨ d + 8 ≤ d1Slot + j → slotW s' (d1Slot + j) = slotW s (d1Slot + j)) := by
+      (∀ j < 16, d1Slot + j < d ∨ d + 8 ≤ d1Slot + j → slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧
+      (∀ k, keySlot ≤ k → k < 2 ^ 58 → slotW s' k = slotW s k) := by
   have hK : HalfRel (fun j => keyW s (off + j)) fun _ => E (m + off / 8) := by
     have := hc.keyRel hp hk (e := off / 8) hme
     rcases hoff with rfl | rfl <;> exact this
   obtain ⟨s', h', hq', hs', hm', hh', rd', wr', -, o', f'⟩ :=
     round_ok hkc hfc hoff hd (hc.ok hp hk hm34) hc.masks hQ hK hR
-  refine ⟨s', h', hc.step rd' wr' (fun r hr _ _ => o' r hr) ?_ hm', o' _ (by decide),
-    o' _ (by decide), hq', hs', hh'⟩
-  refine f'.mono fun r hr => ?_
-  simp only [List.mem_singleton] at hr; subst hr
-  simp only [slotRegion, layerCfg, hc.base]; simp
+  have f'' : Frame [⟨s₀.gpr sb, 8 * keySlot⟩] s.mem s'.mem := by
+    refine f'.mono fun r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    simp only [slotRegion, layerCfg, hc.base]; simp
+  refine ⟨s', h', hc.step rd' wr' (fun r hr _ _ => o' r hr) f'' hm', o' _ (by decide),
+    o' _ (by decide), hq', hs', hh', fun k hk hk' => ?_⟩
+  simp only [slotW, o' sb (by decide), hc.base]; exact slot_above f'' hk hk'
 
 /-! ## Pairs of rounds -/
 
@@ -206,11 +209,11 @@ theorem pair_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyC
       s'.gpr .x0 = s.gpr .x0 ∧ Halves s' (fun b => pair (E m) (E (m + 1)) (S b)) ∧
       s'.gpr t0 = s'.gpr kp - s.gpr .x0 := by
   obtain ⟨hq, h1, h2⟩ := hS
-  obtain ⟨s₁, e₁, c₁, k₁, r₁, q₁, d₁, o₁⟩ := round_step hp hc (off := 0) (d := d2Slot) keyIn0_check
+  obtain ⟨s₁, e₁, c₁, k₁, r₁, q₁, d₁, o₁, -⟩ := round_step hp hc (off := 0) (d := d2Slot) keyIn0_check
     feistel2_check (by decide) (by decide) hk (by omega) hm34 hq h2
   have h1' : HalfRel (fun j => slotW s₁ (d1Slot + j)) (fun b => (S b).1) :=
     h1.congr fun j hj => o₁ j (by omega) (Or.inl (by simp [d1Slot, d2Slot]; omega))
-  obtain ⟨s₂, e₂, c₂, k₂, r₂, q₂, d₂, o₂⟩ := round_step hp c₁ (off := 8) (d := d1Slot) keyIn8_check
+  obtain ⟨s₂, e₂, c₂, k₂, r₂, q₂, d₂, o₂, -⟩ := round_step hp c₁ (off := 8) (d := d1Slot) keyIn8_check
     feistel1_check (by decide) (by decide) (by rw [AtEntry, k₁]; exact hk) (by omega) hm34 q₁ h1'
   have d₂' : HalfRel (fun j => slotW s₂ (d2Slot + j))
       (fun b => (S b).2 ^^^ Spec.Camellia.f (S b).1 (E (m + 0 / 8))) :=
@@ -302,7 +305,8 @@ theorem loadHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : 
     (hk : AtEntry s (s₀.gpr sb) m) (hm34 : m + 2 ≤ 34) :
     ∃ s', runBlock isa (loadHalf d) s = some s' ∧ Ctx s₀ s' ∧ s'.gpr kp = s.gpr kp ∧
       s'.gpr .x0 = s.gpr .x0 ∧ (∀ j < 8, Qs s' j = slotW s (d + j)) ∧
-      (∀ j < 16, slotW s' (d1Slot + j) = slotW s (d1Slot + j)) := by
+      (∀ j < 16, slotW s' (d1Slot + j) = slotW s (d1Slot + j)) ∧
+      (∀ k, keySlot ≤ k → k < 2 ^ 58 → slotW s' k = slotW s k) := by
   obtain ⟨s', h', ho, -, hkp, rd', wr', o', f'⟩ := both_ok hp hc hk hm34 hchk
   have hq : ∀ j < 8, Qs s' j = slotW s (d + j) := fun j hj => BitVec.eq_of_getLsbD_eq fun p hp => by
     rw [Qs, ho (q j) (loadHalfG d j) (by simp only [qOuts, List.mem_map, List.mem_range]; exact ⟨j, hj, rfl⟩)
@@ -316,7 +320,8 @@ theorem loadHalf_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : 
   have hkeep : ∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r := fun r hr =>
     o' r (List.all_eq_true.mp hall r (not_layerWrites r hr))
   refine ⟨s', h', hc.step rd' wr' (fun r hr _ _ => hkeep r hr) (f'.mono fun r hr => by simp at hr; simp [hr])
-    (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hh⟩
+    (fun kv hkv => ?_), hkeep _ (by decide), hkeep _ (by decide), hq, hh, fun k hk hk' => by
+      simp only [slotW, hkeep sb (by decide), hc.base]; exact slot_above f' hk hk'⟩
   rw [hkp kv.1 (List.mem_append_left _ (List.mem_map_of_mem hkv)) (by
       simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
         simp [keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot])]
@@ -446,7 +451,7 @@ theorem fl_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
       Halves s' (fun b => (Spec.Camellia.fl (S b).1 (E m), Spec.Camellia.flinv (S b).2 (E (m + 1)))) := by
   obtain ⟨-, h1, h2⟩ := hS
   -- FLINV on `D2`.
-  obtain ⟨s₁, e₁, c₁, k₁, r₁, q₁, hh₁⟩ := loadHalf_step hp hc (Or.inr rfl) loadHalf2_check hk hm34
+  obtain ⟨s₁, e₁, c₁, k₁, r₁, q₁, hh₁, -⟩ := loadHalf_step hp hc (Or.inr rfl) loadHalf2_check hk hm34
   have hq₁ : HalfRel (Qs s₁) (fun b => (S b).2) := h2.congr fun j hj => q₁ j hj
   have hk₁ : AtEntry s₁ (s₀.gpr sb) m := by rw [AtEntry, k₁]; exact hk
   obtain ⟨s₂, e₂, c₂, k₂, r₂, m₂, hq₂⟩ := (flCode_step hp c₁ hk₁ (off := 8) (Or.inr rfl) (by omega) hm34 hq₁).2
@@ -459,7 +464,7 @@ theorem fl_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   have d2₃ : HalfRel (fun j => slotW s₃ (d2Slot + j))
       (fun b => Spec.Camellia.flinv (S b).2 (E (m + 8 / 8))) := hq₂.congr fun j hj => sl₃ j hj
   -- FL on `D1`.
-  obtain ⟨s₄, e₄, c₄, k₄, r₄, q₄, hh₄⟩ := loadHalf_step hp c₃ (Or.inl rfl) loadHalf1_check hk₃ hm34
+  obtain ⟨s₄, e₄, c₄, k₄, r₄, q₄, hh₄, -⟩ := loadHalf_step hp c₃ (Or.inl rfl) loadHalf1_check hk₃ hm34
   have hq₄ : HalfRel (Qs s₄) (fun b => (S b).1) := h1.congr fun j hj => by rw [q₄ j hj, d1₃ j hj]
   have hk₄ : AtEntry s₄ (s₀.gpr sb) m := by rw [AtEntry, k₄]; exact hk₃
   obtain ⟨s₅, e₅, c₅, k₅, r₅, m₅, hq₅⟩ := (flCode_step hp c₄ hk₄ (off := 0) (Or.inl rfl) (by omega) hm34 hq₄).1
@@ -526,6 +531,17 @@ theorem entry_beq (b : Addr) {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
 theorem eval_nonzero (s : State) (r : Reg) : isa.eval (.nonzero .x r) s = some !(s.gpr r == 0) := by
   show VG.AArch64.eval (.nonzero .x r) s = _
   simp only [VG.AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq, bne]
+
+/-- `cbz r`: whether `r` is zero. -/
+theorem eval_zero (s : State) (r : Reg) : isa.eval (.zero .x r) s = some (s.gpr r == 0) := by
+  show VG.AArch64.eval (.zero .x r) s = _
+  simp only [VG.AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq]
+
+theorem ofNat_beq_zero {v : Nat} (hv : v < 2 ^ 64) : (BitVec.ofNat 64 v == 0) = decide (v = 0) := by
+  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
+  constructor
+  · intro h; have := congrArg BitVec.toNat h; rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hv] at this
+  · intro h; rw [h]; rfl
 
 /-- `add x0, kp, #384`. -/
 theorem setBound_ok (s : State) :
