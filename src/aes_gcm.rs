@@ -936,11 +936,12 @@ impl AesGcm {
     ) -> Option<Block> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
+        let seal = vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512;
         // SAFETY: as in `encrypt`, with `src` the `count` descriptors it
         // wrote, and with `ctx` the key context with the powers, as in
         // `seal_precomputed`.
         unsafe {
-            vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512(
+            seal(
                 ctx,
                 self.rounds,
                 nonce.as_ptr(),
