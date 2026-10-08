@@ -61,7 +61,7 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
   nbits_le := by decide
   mask h := absurd h (by decide)
   sh := by rw [p384_sh]; decide
-  comb d h := by cases h; exact ⟨by decide, by decide⟩
+  comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
     show Nat.Prime Spec.P384.curve.p
     rw [show Spec.P384.curve.p =
@@ -94,7 +94,7 @@ theorem sign_x86 (hL : Law Spec.P384.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| sign_ok (p384_ok hI) hL (p384_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP384, Taint.clobbers i .rsp = false := by
     have h : signP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

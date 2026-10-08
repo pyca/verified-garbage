@@ -10,14 +10,14 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 theorem jointTables_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size : Nat} {E : Nat → Fe C}
     (hL : JointInitLayout c size) (hm : UnitMod C.p (2^(64*c.K.M.n)))
     (hOne : c.K.one<C.p) (ht : NafTableChecks c.K)
-    (hc : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache 8)) :
+    (hc : ScratchCT (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline) :
     RelCT isa (FieldPair c.K.M base size C.p (·∈nafSlots c.K) (winRo c.K) E)
-      (.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8))
+      (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)).inline
       (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t) := by
   apply RelCT.seq (nafTable_relCT hL.naf hL.count hm hL.tableSmall hOne ht)
   have cache : ∀ E',RelCT isa
       (FieldPair c.K.M base size C.p (·∈jointSlots c) (nafTableLive c.K 8) E')
-      (Naf.cacheTable c.K.M c.K.tbl c.cache 8)
+      (Naf.cacheTable c.K.M c.K.tbl c.cache 8).inline
       (fun s t => ∃ E'',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E'' s t) := by
     intro E'
     have hz : ∀ i<8,c.K.tbl+24*c.K.M.n*i+16*c.K.M.n∈nafTableLive c.K 8 := by

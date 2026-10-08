@@ -13,9 +13,9 @@ structure CachedJacChecks (K : WinCfg) (p q o : Pt) (dst : Nat) : Prop where
   zeroR : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t5))
   copyP : ScratchCT (.block (copyPt K.M.n o p))
   copyQ : ScratchCT (.block (copyPt K.M.n o q))
-  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst))
-  tail : ScratchCT (ForwardField.programB K.M (jacTail K.S p q o))
-  double : ScratchCT (ForwardField.programB K.M (dblJMul K.S p o))
+  head : ScratchCT (ForwardField.programB K.M (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst)).inline
+  tail : ScratchCT (ForwardField.programB K.M (jacTail K.S p q o)).inline
+  double : ScratchCT (ForwardField.programB K.M (dblJMul K.S p o)).inline
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
@@ -28,7 +28,7 @@ theorem cachedJacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     (hOne : K.one<m)
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z) :
     RelCT isa (FieldPair K.M base size m Sl V E)
-      (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst) (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
+      (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
   have hs : ∀ x∈rcbW K.S o++rcbR K.S p q,Sl x := fun x hx => hSl x (List.mem_append_left _ hx)
   have hv : ∀ x∈rcbR K.S p q,x∈V := fun x hx => hV x (List.mem_append_left _ hx)
   have os : ∀ x∈[o.x,o.y,o.z],Sl x := by

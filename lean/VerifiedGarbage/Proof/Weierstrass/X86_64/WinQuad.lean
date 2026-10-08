@@ -105,7 +105,7 @@ theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hltq : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) PR)
     (hQ : Rep C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) PQ) :
-    WP isa (.seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s fun s' =>
+    WP isa (Code.seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))).inline s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -146,13 +146,13 @@ theorem winN_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay
     (hAp : RcbApart K.S p q o) (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winSlots K)
     (hW : ∀ x ∈ rcbW K.S o, x ∈ winOther K) {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p (· ∈ winSlots K) V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V) :
-    WP isa (fprogB K.M (ofN N K.S p q o)) s fun s' => KeepRegs (clob K.M.n) s s' ∧
+    WP isa (fprogB K.M (ofN N K.S p q o)).inline s fun s' => KeepRegs (clob K.M.n) s s' ∧
       Unch base (loopW K) s.mem s'.mem ∧ ∃ E' : Nat → Fe C,
       Inv K.M base size C.p (· ∈ winSlots K) ([o.x, o.y, o.z] ++ V) E' s' ∧
       (∀ x, x ∉ rcbW K.S o → E' x = E x) ∧
       (E' o.x, E' o.y, E' o.z) = (runOps N (fun y => E (rcbσ K.S p q o y)) 6,
         runOps N (fun y => E (rcbσ K.S p q o y)) 7, runOps N (fun y => E (rcbσ K.S p q o y)) 8) := by
-  refine (fprogB_wp _ _).mpr (WP.mono (ofN_ok hL.lay hp hN hAp hSl hI hV)
+  refine (WP.mono (ofN_ok hL.lay hp hN hAp hSl hI hV)
     fun s' ⟨k, I, v⟩ => ⟨⟨k.gpr, k.rd, k.wr⟩, k.unch.mono fun w hw => ?_, _, I,
       fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out hN op hop), v⟩)
   simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton] at hw ⊢
@@ -224,7 +224,7 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
-    WP isa (WinCfg.jac K) s fun s' =>
+    WP isa (WinCfg.jac K).inline s fun s' =>
       WinSt K C base size P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       ∃ X Y Z : Fe C, InvJ C X Y Z (mul (16 * e) P) ∧ tmv C K.M.n base s' K.R.x = X * Z ∧
@@ -285,7 +285,7 @@ theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLa
     InvJ C (E K.E.x) (E K.E.y) (E K.E.z) (mul (4 ^ (2 - j) * e) P)
   have start : LI 2 s₂ := ⟨S₁.rbxKeeps hL kc₂, b₂, E₁, I₁'.rbxKeeps kc₂, by simpa using J₁⟩
   have body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
-      WP isa (WinCfg.jacPair K) st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
+      WP isa (WinCfg.jacPair K).inline st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
     intro j st hj hj' ⟨S, b, E, I, J⟩
     simp only [WinCfg.jacPair, WinCfg.double, dblJSChoice_eq]
     refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) a2 w2.1 w2.2 I (by
@@ -485,7 +485,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
-    WP isa (WinCfg.quad K) s fun s' =>
+    WP isa (WinCfg.quad K).inline s fun s' =>
       WinSt K C base size P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)

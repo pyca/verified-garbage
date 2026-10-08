@@ -17,9 +17,10 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hC : Law C) (ha : AM3 C) {P : Point C} (hP : onCurve C P=true) {s : State}
     (hI : Inv K.M base size C.p (·∈nafSlots K) (winRo K) (tmv C K.M.n base s) s)
     (hp : InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y) (tmv C K.M.n base s K.P.z) P) :
-    WP isa (.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
-      (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr)))) s
+    WP isa (Code.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
+      (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr)))).inline s
       (fun t => NafTableInv K C base size P s t 1) := by
+  simp only [Code.inline]
   have rr : ∀ x∈jacCoords K.R,x∈winOther K := by
     intro x hx; simp only [jacCoords,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind
   have pr : ∀ x∈jacCoords K.P,x∈winRo K := by

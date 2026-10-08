@@ -41,6 +41,8 @@ proofs of the results take with the group law. -/
 structure CombOk (c : Cfg) (d : CombData) : Prop where
   w : 1 ≤ d.w ∧ d.w < 9
   cover : 64 * c.n ≤ d.w * c.combJ d.w ∧ d.w * c.combJ d.w ≤ 64 * c.n + 8
+  /-- For nine words, the comb's bits end below the temporary area (`tmp_apart_comb`). -/
+  w9 : c.n = 9 → 4 ≤ d.w
 
 /-- The comb's tables, if the curve has one, are right (`CombOkW`, which a
 curve's own facts prove, with its group law), and for the comb with Booth's
@@ -191,22 +193,92 @@ structure SetupPost (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s 
 
 /-! ## Slots -/
 
-theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
+/-- That a slot is neither the temporary area nor `55` (which for nine words
+trade places), or that one of two slots is not. -/
+macro "sl_ne" : tactic =>
+  `(tactic| first | decide | omega | (simp only [TMP, WK, WB, WT] at *; omega))
+
+/-- That one of two facts `sl_ne` proves holds. -/
+macro "sl_or" : tactic =>
+  `(tactic| first | decide | exact .inl (by sl_ne) | exact .inr (by sl_ne))
+
+/-- The index of slot `i`'s place: for nine words, the temporary area's and
+slot `55`'s traded. -/
+def ix (c : Cfg) (i : Nat) : Nat := if c.n = 9 then (if i = TMP then 55 else if i = 55 then TMP else i) else i
+
+theorem sl_eq' (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * ix c i := rfl
+
+theorem ix_of_ne (c : Cfg) {i : Nat} (h : i ≠ TMP ∧ i ≠ 55 ∨ c.n ≠ 9) : ix c i = i := by
+  unfold ix
+  by_cases h9 : c.n = 9
+  · have h' := h.resolve_right fun e => e h9
+    rw [ite_eq_left h9, ite_eq_right h'.1, ite_eq_right h'.2]
+  · rw [ite_eq_right h9]
+
+theorem ix_tmp (c : Cfg) (h9 : c.n = 9) : ix c TMP = 55 := by
+  unfold ix; rw [ite_eq_left h9, ite_eq_left rfl]
+
+theorem ix_55 (c : Cfg) (h9 : c.n = 9) : ix c 55 = TMP := by
+  unfold ix; rw [ite_eq_left h9, ite_eq_right (by decide), ite_eq_left rfl]
+
+/-- What `ix` is, by cases. -/
+theorem ix_cases (c : Cfg) (i : Nat) :
+    (c.n = 9 ∧ i = TMP ∧ ix c i = 55) ∨ (c.n = 9 ∧ i = 55 ∧ ix c i = TMP) ∨ ix c i = i := by
+  by_cases h9 : c.n = 9
+  · by_cases ht : i = TMP
+    · subst ht; exact .inl ⟨h9, rfl, ix_tmp c h9⟩
+    · by_cases h5 : i = 55
+      · subst h5; exact .inr (.inl ⟨h9, rfl, ix_55 c h9⟩)
+      · exact .inr (.inr (ix_of_ne c (.inl ⟨ht, h5⟩)))
+  · exact .inr (.inr (ix_of_ne c (.inr h9)))
+
+theorem ix_ix (c : Cfg) (i : Nat) : ix c (ix c i) = i := by
+  rcases ix_cases c i with ⟨h9, rfl, hx⟩ | ⟨h9, rfl, hx⟩ | hx
+  · rw [hx, ix_55 c h9]
+  · rw [hx, ix_tmp c h9]
+  · rw [hx, hx]
+
+theorem ix_inj (c : Cfg) {i j : Nat} (h : ix c i = ix c j) : i = j := by
+  have := congrArg (ix c) h
+  rwa [ix_ix, ix_ix] at this
+
+/-- Slot `i`, at `64 + 8 n i`, but the temporary area and slot `55`. -/
+theorem sl_eq (c : Cfg) (i : Nat) (h : i ≠ TMP ∧ i ≠ 55 := by sl_ne) : c.sl i = 64 + 8 * c.n * i := by
+  rw [sl_eq']; unfold ix; split
+  · rw [ite_eq_right h.1, ite_eq_right h.2]
+  · rfl
 
 theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (64 * c.n + 8) * j := rfl
 
-/-- Slots `i < j` are apart. -/
-theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) : c.sl i + 8 * c.n ≤ c.sl j := by
-  rw [sl_eq, sl_eq]
-  have := Nat.mul_le_mul_left (8 * c.n) h
+/-- Slots `i < j` are apart (the temporary area, for nine words, below slots past `55` only). -/
+theorem sl_lt (c : Cfg) {i j : Nat} (h : i < j) (hi : i ≠ TMP ∨ 55 < j := by sl_or)
+    (hj : j ≠ 55 := by sl_ne) : c.sl i + 8 * c.n ≤ c.sl j := by
+  have key : ix c i < ix c j := by
+    have hT : TMP = 2 := rfl
+    rcases ix_cases c i with ⟨h9, rfl, hx⟩ | ⟨h9, rfl, hx⟩ | hx
+    · have hj' : 55 < j := hi.resolve_left fun e => e rfl
+      rw [hx, ix_of_ne c (.inl ⟨by omega, hj⟩)]; exact hj'
+    · rw [hx, ix_of_ne c (.inl ⟨by omega, hj⟩)]; omega
+    · rw [hx]
+      rcases ix_cases c j with ⟨_, rfl, hy⟩ | ⟨_, rfl, hy⟩ | hy
+      · rw [hy]; omega
+      · exact absurd rfl hj
+      · rw [hy]; exact h
+  rw [sl_eq' c i, sl_eq' c j]
+  have := Nat.mul_le_mul_left (8 * c.n) key
   rw [Nat.mul_succ] at this
   omega
 
+/-- Distinct slots are apart. -/
 theorem sl_apart (c : Cfg) {i j : Nat} (h : i ≠ j) :
     c.sl i + 8 * c.n ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := by
-  rcases Nat.lt_or_gt_of_ne h with h | h
-  · exact Or.inl (sl_lt c h)
-  · exact Or.inr (sl_lt c h)
+  rw [sl_eq', sl_eq']
+  have hne : ix c i ≠ ix c j := fun e => h (ix_inj c e)
+  rcases Nat.lt_or_gt_of_ne hne with h' | h'
+  · have := Nat.mul_le_mul_left (8 * c.n) h'
+    rw [Nat.mul_succ] at this; omega
+  · have := Nat.mul_le_mul_left (8 * c.n) h'
+    rw [Nat.mul_succ] at this; omega
 
 theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = j := by
   by_contra hij
@@ -215,7 +287,11 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
 
 /-- Every slot and table is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
-  rw [sl_eq]
+  rw [sl_eq']
+  rcases ix_cases c i with ⟨h9, -, hx⟩ | ⟨h9, -, hx⟩ | hx
+  · rw [hx, h9]; decide
+  · rw [hx, h9]; decide
+  rw [hx]
   have := Nat.mul_le_mul_left (8 * c.n) hi
   rw [Nat.mul_succ] at this
   have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)

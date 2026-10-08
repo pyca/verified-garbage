@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Mont.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.Mont
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
@@ -44,8 +45,26 @@ def blocks : List (List Instr) → Prog isa
   | [b] => .block b
   | b :: bs => .seq (.block b) (blocks bs)
 
-/-- `fprog`, a block per operation. -/
-def fprogB (M : Mod) (ops : List FOp) : Prog isa := blocks (ops.map (opCode M))
+/-- A product by a call of a function (`Mont.callOf`), for operands it can
+take, else none. -/
+def opCall? (M : Mod) : FOp → Option (Prog isa)
+  | .mul o a b => match Mont.callOf M with
+    | some (f, body) => if Mont.lowArgs o a b then some (Mont.mulCall f body o a b) else none
+    | none => none
+  | _ => none
+
+/-- A field operation: a call (`opCall?`), else its code as a block. -/
+def opProg (M : Mod) (op : FOp) : Prog isa := (opCall? M op).getD (.block (opCode M op))
+
+/-- Programs one after the other. -/
+def progs : List (Prog isa) → Prog isa
+  | [] => .block []
+  | [p] => p
+  | p :: ps => .seq p (progs ps)
+
+/-- `fprog`, an operation at a time, its products calls where they can be
+(`opProg`); without calls, a block per operation. -/
+def fprogB (M : Mod) (ops : List FOp) : Prog isa := progs (ops.map (opProg M))
 
 /-- `[o] = [a]` if the mask `rcx` is zero, `[b]` if it is all ones, `n`
 words, through `rax` and `rdx`. -/

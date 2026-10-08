@@ -8,7 +8,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Mont.X86_64 VG.Impl.Weierstrass
 open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstrass
 
 structure NafTableChecks (K : WinCfg) : Prop where
-  double : ScratchCT (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
+  double : ScratchCT (fprogB K.M (dblJMul K.S K.P (Naf.twice K))).inline
   copyFirst : ScratchCT (.block (copyPt K.M.n (K.tblPt 1) K.P))
   copyInit : ScratchCT (.block (copyPt K.M.n K.R K.P))
   initCounter : ScratchCT (.block [.mov32 .rbx (.imm 1)])
@@ -16,7 +16,7 @@ structure NafTableChecks (K : WinCfg) : Prop where
   copyStep : ScratchCT (.block (copyPt K.M.n K.R K.D))
   store : RegCT [.rdi,.rbx] (.block (Naf.tableStore K))
   advance : RegCT [.rbx] (.block [.alu .add .rbx (.imm 1),.alu .cmp .rbx (.imm 8)])
-  keepAdd : ∀ i∈instrs (Jacobian.jacAdd K K.R (Naf.twice K) K.D), Taint.clobbers i .rbx=false
+  keepAdd : KeepReg.keeps .rbx (Jacobian.jacAdd K K.R (Naf.twice K) K.D).inline = true
   keepCopy : ∀ i∈instrs (.block (copyPt K.M.n K.R K.D) : Prog isa), Taint.clobbers i .rbx=false
 
 def NafTablePair (K : WinCfg) (C : Curve) (base : Addr) (size m : Nat) (s t : State) : Prop :=
@@ -27,8 +27,8 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     (hL : NafLay K size) (hm : UnitMod C.p (2^(64*K.M.n)))
     (hc : NafTableChecks K) {E : Nat → Fe C} :
     RelCT isa (FieldPair K.M base size C.p (·∈nafSlots K) (winRo K) E)
-      (.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
-        (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr))))
+      (Code.seq (fprogB K.M (dblJMul K.S K.P (Naf.twice K)))
+        (.block (copyPt K.M.n (K.tblPt 1) K.P++copyPt K.M.n K.R K.P++([.mov32 .rbx (.imm 1)] : List Instr)))).inline
       (NafTablePair K C base size 1) := by
   have rs : ∀ x∈jacCoords K.R,x∈nafSlots K := by
     intro x hx
@@ -50,6 +50,7 @@ theorem nafTable_init_relCT {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
       simp only [rcbW,rcbR,jacCoords,winRo,winOther,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
       grind
     exact he.elim (List.mem_append_left _) (nafTblPt_mem K (by decide) (by decide) x)
+  simp only [Code.inline]
   apply RelCT.seq (doubleFieldPlain_relCT hL.lay hm ds dv hc.double)
   rw [List.append_assoc]
   apply RelCT.block_append

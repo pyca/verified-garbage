@@ -11,12 +11,12 @@ open VG.Proof.Weierstrass.X86_64
 def nafJacWin := publicJoint.K
 def nafJacWinAdx := publicJointAdx.K
 
-theorem nafCachedJac_checks : CachedJacChecks nafJacWin nafJacWin.R nafJacWin.E nafJacWin.D 5040 := by
+theorem nafCachedJac_checks : CachedJacChecks nafJacWin nafJacWin.R nafJacWin.E nafJacWin.D 7984 := by
   constructor <;> exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem nafCachedJac_adx_checks :
-    CachedJacChecks nafJacWinAdx nafJacWinAdx.R nafJacWinAdx.E nafJacWinAdx.D 5040 := by
+    CachedJacChecks nafJacWinAdx nafJacWinAdx.R nafJacWinAdx.E nafJacWinAdx.D 7984 := by
   constructor <;> exact VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 

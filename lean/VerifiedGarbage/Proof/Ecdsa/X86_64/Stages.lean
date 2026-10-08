@@ -43,7 +43,10 @@ structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rz : sv c base s RZ = 0
   flag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64
   t₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if (kv c s₀).testBit t then 1 else 0
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
+  /-- The bits of `p - 2`, which only the power for more than nine words reads
+  (for nine, the second table holds the products' temporary area). -/
+  t₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
+    if (c.C.p - 2).testBit t then 1 else 0
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   gpr : ∀ r, r ∉ [.rax, .rdi, .r14, .rsi, .rdx, .rbx] → s.gpr r = s₀.gpr r
   unch : Unch base [(0, size)] s₀.mem s.mem
@@ -70,37 +73,38 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
       hc' (GX, c.mont c.C.gx) (by simp [Cfg.consts]), hc' (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved⟩
-  have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
-    fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
+  have hsep : ∀ {i : Nat}, i < 45 → i ≠ TMP → ∀ j,
+      c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
+    fun hi hit j => Or.inl (by have := sl_below_bits c hi j 0 (.inl hit); omega)
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
   -- The table of `k`.
   refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
+    (by decide)) (hsep (i := K) (by decide) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => ?_)
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have u₂ := O₂.unch
-  have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
-    sv_unch u₂ h7 hn hi (apart_tbl hi 0)
+  have v₂ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₂ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+    sv_unch u₂ h7 hn hi (apart_tbl hi 0 (.inl hit))
   -- The table of `p - 2`.
   refine WP.seq (WP.mono_syms (bits_ok hs₂ h0 (by omega) (sl_le c h7 (i := EXPP) (by decide)) (hsz (j := 1)
-    (by decide)) (hsep (i := EXPP) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ sy₃ => ?_)
+    (by decide)) (hsep (i := EXPP) (by decide) (by decide) 1)) fun s₃ ⟨b₃, k₃, O₃⟩ sy₃ => ?_)
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   have u₃ := O₃.unch
-  have v₃ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
-    (sv_unch u₃ h7 hn hi (apart_tbl hi 1)).trans (v₂ hi)
+  have v₃ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₃ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+    (sv_unch u₃ h7 hn hi (apart_tbl hi 1 (.inl hit))).trans (v₂ hi hit)
   -- The table of `n - 2`.
   refine WP.seq (WP.mono_syms (bits_ok hs₃ h0 (by omega) (sl_le c h7 (i := EXPN) (by decide)) (hsz (j := 2)
-    (by decide)) (hsep (i := EXPN) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ sy₄ => h s₄ ?_)
+    (by decide)) (hsep (i := EXPN) (by decide) (by decide) 2)) fun s₄ ⟨b₄, k₄, O₄⟩ sy₄ => h s₄ ?_)
   have u₄ := O₄.unch
-  have v₄ : ∀ {i}, i < 45 → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi =>
-    (sv_unch u₄ h7 hn hi (apart_tbl hi 2)).trans (v₃ hi)
+  have v₄ : ∀ {i}, i < 45 → i ≠ TMP → sv c (s₀.gpr .r8) s₄ i = sv c (s₀.gpr .r8) s₁ i := fun hi hit =>
+    (sv_unch u₄ h7 hn hi (apart_tbl hi 2 (.inl hit))).trans (v₃ hi hit)
   have hk : (kv c s₀) = sv c (s₀.gpr .r8) s₁ K := P.k.symm
   have hp2 : c.C.p - 2 = sv c (s₀.gpr .r8) s₁ EXPP := (hc' (EXPP, c.C.p - 2) (by simp [Cfg.consts])).symm
   have hn2 : c.C.n - 2 = sv c (s₀.gpr .r8) s₁ EXPN := (hc' (EXPN, c.C.n - 2) (by simp [Cfg.consts])).symm
   refine ⟨⟨hs₃.of_keepRegs k₄ (by decide), ?_, by rw [k₄.wr, k₃.wr, k₂.wr, P.keep.wr], ?_⟩,
-    by rw [v₄ (by decide), P.k], by rw [v₄ (by decide), P.d], by rw [v₄ (by decide), P.e],
-    by rw [v₄ (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
-    by rw [v₄ (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_, ?_,
+    by rw [v₄ (by decide) (by decide), P.k], by rw [v₄ (by decide) (by decide), P.d], by rw [v₄ (by decide) (by decide), P.e],
+    by rw [v₄ (by decide) (by decide)]; exact hc' (RX, 0) (by simp [Cfg.consts]),
+    by rw [v₄ (by decide) (by decide)]; exact hc' (RY, c.mont 1) (by simp [Cfg.consts]),
+    by rw [v₄ (by decide) (by decide)]; exact hc' (RZ, 0) (by simp [Cfg.consts]), ?_, ?_, ?_, ?_, ?_, ?_,
     by rw [k₄.rd, k₃.rd, k₂.rd, P.keep.rd], by rw [sy₄, sy₃, sy₂, sy₁]⟩
   · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide), P.rsi]
   · exact (fx.unch h7 hn (fixedOk_tbl 0) u₂ |>.unch h7 hn (fixedOk_tbl 1) u₃).unch h7 hn (fixedOk_tbl 2) u₄
@@ -114,11 +118,11 @@ theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ :
   · intro t ht
     rw [tbl_unch u₄ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht),
       tbl_unch u₃ h7 hn (j := 0) (by decide) ht (tbl_apart_tbl (by decide) ht), b₂ t ht, hk]
-  · intro t ht
+  · intro _ t ht
     rw [tbl_unch u₄ h7 hn (j := 1) (by decide) ht (tbl_apart_tbl (by decide) ht), b₃ t ht, hp2,
-      ← v₂ (by decide)]
+      ← v₂ (by decide) (by decide)]
   · intro t ht
-    rw [b₄ t ht, hn2, ← v₃ (by decide)]
+    rw [b₄ t ht, hn2, ← v₃ (by decide) (by decide)]
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [k₄.gpr r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2]),

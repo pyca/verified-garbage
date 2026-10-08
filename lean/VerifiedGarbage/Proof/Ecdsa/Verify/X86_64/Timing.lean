@@ -72,7 +72,7 @@ theorem bits_combReady (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d)
   have ht₂ : ∀ t < 64*c.n, s₂.mem (off base (bitsAt c.n 0+t)) =
       if (sv c base s U).testBit t then 1 else 0 := fun t ht => by
     rw [tbl_unch (W := slW c [EM]) O₂.unch h7 hn (j := 0) (by decide) ht
-      (tbl_apart_slW (by decide) 0 t)]
+      (tbl_apart_slW (by decide) 0 t ht)]
     exact b₁ t ht
   have hTM₂ : TblMem s₂ (s₁.syms d.tsym) (c.combWords d) :=
     hTM.of_unch (by rw [k₂.rd,k₂.wr]) O₂.unch (fun w hw => by
@@ -117,18 +117,20 @@ theorem verifyPrefix_ok (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d
   refine WP.seq (WP.mono h fun s₃ h₃ => WP.seq (WP.mono h₃ fun _ h₄ => WP.block_nil h₄))
 
 private theorem gMul_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : List Leak}
-    (he : Exec isa (c.gMul c.pubVerify) s t s') :
+    (he : Exec isa (c.gMul c.pubVerify).inline s t s') :
     ∃ a tp tc, Exec isa (.block (setConst c.n (c.sl EM) (c.mont c.C.b))) s tp a ∧
-      Exec isa ((c.combCfg d).comb c.pubVerify) a tc s' ∧ t = tp ++ tc := by
+      Exec isa ((c.combCfg d).comb c.pubVerify).inline a tc s' ∧ t = tp ++ tc := by
   rw [Cfg.gMul,hcd] at he
+  change Exec isa (.seq (.block _) ((c.combCfg d).comb c.pubVerify).inline) _ _ _ at he
   cases he with
   | seq ep ec => exact ⟨_,_,_,ep,ec,rfl⟩
 
 theorem verify_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : List Leak}
-    (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) s t s') :
+    (he : Exec isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s t s') :
     ∃ a b tp tc ts, Exec isa (verifyPrefix c) s tp a ∧
-      Exec isa ((c.combCfg d).comb c.pubVerify) a tc b ∧ Exec isa (verifySuffix c) b ts s' ∧
+      Exec isa ((c.combCfg d).comb c.pubVerify).inline a tc b ∧ Exec isa (verifySuffix c).inline b ts s' ∧
       t = tp ++ tc ++ ts := by
+  rw [verify_inline] at he
   cases he with
   | seq e0 h => cases h with
     | seq e1 h => cases h with
@@ -139,6 +141,10 @@ theorem verify_cut {d : CombData} (hcd : c.comb = some d) {s s' : State} {t : Li
               | seq e6 h => cases h with
                 | seq e7 h => cases h with
                   | seq ep h =>
+                    change Exec isa (.seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n))
+                      (.seq (c.gMul c.pubVerify).inline (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c))
+                        (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c).inline
+                          (Impl.Ecdsa.Verify.X86_64.Cfg.sum c).inline)))) _ _ _ at ep
                     cases ep with
                     | seq eb h' => cases h' with
                       | seq eg er =>
@@ -157,12 +163,12 @@ structure VerifyChecks (c : Cfg) (d : CombData) : Prop where
   comb : PublicChecks (c.combCfg d)
   before : ConstantTime isa (fun _ => True)
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (verifyPrefix c)
-  after : ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi])) (verifySuffix c)
+  after : ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi])) (verifySuffix c).inline
 
 theorem verify_public_ct (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c)
     {d : CombData} (hcd : c.comb = some d) (hLookup : c.pubVerify = true)
     (checks : VerifyChecks c d) :
-    ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) := by
+    ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' pre₁ pre₂ ⟨pub,sym,scalar⟩ e₁ e₂
   obtain ⟨a₁,b₁,tp₁,tc₁,ts₁,ep₁,ec₁,es₁,et₁⟩ := verify_cut hcd e₁
   obtain ⟨a₂,b₂,tp₂,tc₂,ts₂,ep₂,ec₂,es₂,et₂⟩ := verify_cut hcd e₂

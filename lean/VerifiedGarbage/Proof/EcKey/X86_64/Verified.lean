@@ -63,7 +63,7 @@ theorem pk_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Weierstrass.L
     (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := publicKey_ok hc hL hT (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| publicKey_ok hc hL hT (hpre s hs)
   have hsp : ∀ i ∈ instrs (Impl.EcKey.X86_64.Cfg.publicKey c), Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi

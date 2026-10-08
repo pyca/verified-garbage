@@ -56,7 +56,7 @@ include hL hT hI
 
 theorem jointVerify_x86 (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP224 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p224_ok hL hT hI (pre_of hs))
+  verify_abi_of_wp hs (wp_of_inline (by lit_decide) <| jointVerify_p224_ok hL hT hI (pre_of hs))
     (by lit_decide) (by lit_decide) (by lit_decide)
 
 theorem jointVerify_verified : Verified X86_64.target jointVerifyP224

@@ -75,9 +75,9 @@ theorem flag_unch_of {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Un
   · exact Or.inr h
 
 /-- The tables of bits are apart from what the powers write. -/
-theorem tbl_apart_pwW {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
+theorem tbl_apart_pwW {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hj1 : j ≠ 1 ∨ c.n ≠ 9 := by sl_or) :
     ∀ w ∈ pwW c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t :=
-  apart_append (tbl_apart_slW (by decide) j t) (tbl_apart_pwA hj ht)
+  apart_append (tbl_apart_slW (by decide) j t ht (.inr hj1)) (tbl_apart_pwA hj ht)
 
 /-- The flag word apart from what the powers write. -/
 theorem flag_unch_pwW {base : Addr} {m m' : Mem} (hu : Unch base (pwW c) m m')
@@ -140,7 +140,8 @@ from the table of the bits of `p - 2`. -/
 theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
     (hO : wordsVal s.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p)
-    (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0) :
+    (hbits : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
+      if (c.C.p - 2).testBit t then 1 else 0) :
     WP isa c.pPow s fun s' => KeepRegs (invClob c.n) s s' ∧ Unch base (pwW c) s.mem s'.mem ∧
       wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (wordsVal s'.mem base (c.sl ACC) c.n) =
@@ -153,7 +154,8 @@ theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
     exact WP.mono (sp (invLay_of hc h6 h4 (M := c.MP') rfl (jm := MP) rfl (Or.inl rfl) rfl (base := RZ) (Or.inl rfl) c.C.p)
       (by have := hc.p_ge; omega) hpR hs hM hB ip)
       fun s' ⟨K, U, lt, v⟩ => ⟨K, Unch.cover U (invW_pwW rfl rfl), lt, v⟩
-  · exact WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc) hpR hs hM hB hO hbits
+  · rename_i h9
+    exact WP.mono (pow_ok (P := c.powP) (e := c.C.p - 2) (powLayP hc (by omega)) hpR hs hM hB hO (hbits h9)
       (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega))
       fun s' ⟨K, U, lt, v⟩ => ⟨K.mono fun r h => List.mem_cons_of_mem _ h, Unch.cover U (powW_pwW (powWP_eq c)), lt, v⟩
 
@@ -180,5 +182,12 @@ theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   · exact WP.mono (pow_ok (P := c.powN) (e := c.C.n - 2) (powLayN hc) hnR hs hM hB hO
       (fun t ht => hbits t (Nat.lt_of_lt_of_le ht (nbitsN_ok hc).2.1)) (nbitsN_ok hc).2.2)
       fun s' ⟨K, U, lt, v⟩ => ⟨K.mono fun r h => List.mem_cons_of_mem _ h, Unch.cover U (powW_pwW (powWN_eq c)), lt, v⟩
+
+/-- The powers call nothing. -/
+theorem pPow_inline (c : Cfg) : c.pPow.inline = c.pPow := by
+  unfold Cfg.pPow; split <;> rfl
+
+theorem nPow_inline (c : Cfg) : c.nPow.inline = c.nPow := by
+  unfold Cfg.nPow; split <;> rfl
 
 end VG.Proof.Ecdsa.X86_64

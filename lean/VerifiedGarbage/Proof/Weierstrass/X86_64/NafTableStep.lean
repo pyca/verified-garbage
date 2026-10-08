@@ -10,7 +10,7 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     (hm : UnitMod C.p (2^(64*K.M.n))) (hC : Law C) (ha : AM3 C)
     (ht : K.tbl<2^31) (hOne : K.one<C.p) {P : Point C} (hP : onCurve C P=true)
     (hm1 : 1≤m) (hm7 : m≤7) {s₀ s : State} (hI : NafTableInv K C base size P s₀ s m) :
-    WP isa (Naf.tableStep K) s fun t => NafTableInv K C base size P s₀ t (m+1) ∧ t.cf=some (decide (m+1<8)) := by
+    WP isa (Naf.tableStep K).inline s fun t => NafTableInv K C base size P s₀ t (m+1) ∧ t.cf=some (decide (m+1<8)) := by
   have hf := hI.field
   have hv := nafTableLive_read K m
   have ds : ∀ x∈rcbW K.S K.D ++ rcbR K.S K.R (Naf.twice K), x∈nafSlots K := by
@@ -24,6 +24,7 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       · exact List.mem_append_left _ he
       · exact nafTblPt_mem K (by decide) (by decide) x he
   unfold Naf.tableStep
+  simp only [Code.inline]
   apply WP.seq
   refine WP.mono (jacAdd_ok hL.lay hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
     (hC.onCurve_mul hP _) (hC.onCurve_mul hP _) hI.point hI.twice) fun u ⟨eu,ka,iu,ju⟩ => ?_

@@ -417,7 +417,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
     (hI : TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j) (publicLookup : Bool := false) :
-    WP isa (K.step publicLookup) s fun s' =>
+    WP isa (K.step publicLookup).inline s fun s' =>
       TCombInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j - 1) ∧
         s'.zf = some (decide (j - 1 = 0)) := by
   have hn := hI.scr.nowrap
@@ -430,6 +430,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     List.not_mem_nil, or_false, not_or] at hnd
   refine WP.of_syms ?_
   unfold TCombCfg.step
+  simp only [Code.inline]
   refine WP.seq ?_
   rw [List.append_assoc, WP.block_append_iff]
   refine WP.mono_syms (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ sy₁ => ?_
@@ -504,7 +505,7 @@ theorem tstep_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     rcases List.mem_append.mp hx with hx | hx
     · simp only [combSlots, List.mem_append, TCombCfg.toComb]; exact Or.inr hx
     · exact hSl x hx
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (rcb3m_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
+  refine WP.seq ((WP.mono (rcb3m_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
     (fun _ h => h)) fun s₄ ⟨P₄, I₄, t₄⟩ => ?_))
   dsimp only [TCombCfg.toComb] at P₄ I₄ t₄
   -- The sum.
@@ -863,7 +864,7 @@ theorem tcomb_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     (hpn : C.p < 2 ^ (64 * K.M.n)) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) (publicLookup : Bool := false) :
-    WP isa (K.comb publicLookup) s fun s' => KeepRegs (powClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
+    WP isa (K.comb publicLookup).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
       ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)

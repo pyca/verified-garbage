@@ -113,8 +113,8 @@ theorem cw_cnt (hL : L.Ok) : ∀ r ∈ CW P L, Region.Disjoint ⟨L.B + BitVec.o
     · exact Offset.disjoint_base _ (by nums) (by nums)
     · exact Offset.disjoint _ (by nums) (by nums) (by nums)
 
-/-- What `core` changes: `out`, `scratch` and its return address. -/
-abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 16, 8⟩]
+/-- What `core` changes: `out`, `scratch` and the return addresses of it and its calls. -/
+abbrev CoreW {dn : Nat} (L : Lay dn) : List Region := [L.OUT, L.SCR, ⟨L.B + BitVec.ofNat 64 8, 16⟩]
 
 theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 240 + 8 * L.e) :
     ∀ r ∈ CoreW L, Region.Disjoint ⟨L.B + BitVec.ofNat 64 d, n⟩ r := by
@@ -128,7 +128,7 @@ theorem corew_disj (hL : L.Ok) {d n : Nat} (h₁ : 24 ≤ d) (h₂ : d + n ≤ 2
 /-- The regions the loop writes, which are apart from `core`'s digest. -/
 def DgApart (P : RfcHash) {dn : Nat} (L : Lay dn) (r : Region) : Prop :=
   r = L.SCR ∨ r = L.OUT ∨ r = ⟨L.B, 152⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 16, 8⟩ ∨ r = ⟨L.B + BitVec.ofNat 64 200, 8⟩ ∨
-    (P.R.wide = true ∧ r = ⟨L.B + BitVec.ofNat 64 312, 72⟩)
+    (P.R.wide = true ∧ r = ⟨L.B + BitVec.ofNat 64 312, 72⟩) ∨ r = ⟨L.B + BitVec.ofNat 64 8, 16⟩
 
 theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) :
     Region.Disjoint ⟨dgArg P L, P.Q⟩ r := by
@@ -137,20 +137,22 @@ theorem dg_apart (hL : L.Ok) (hk : CoreOk P L) {r : Region} (h : DgApart P L r) 
   · have hn := hk.2.1 hw
     simp only [dgArg, hw, Bool.false_eq_true, ite_false]
     have hD : Region.Sub ⟨L.dg, P.Q⟩ L.DG := Region.sub_prefix hn
-    rcases h with rfl | rfl | rfl | rfl | rfl | ⟨h, -⟩
+    rcases h with rfl | rfl | rfl | rfl | rfl | ⟨h, -⟩ | rfl
     · exact hL.gc.sub_left hD
     · exact hL.og.symm.sub_left hD
     · exact (hL.kg.symm.sub_left hD).sub_right (Region.sub_prefix (by omega))
     · exact (hL.stk_DG (by omega)).symm.sub_left hD
     · exact (hL.stk_DG (by omega)).symm.sub_left hD
     · rw [hw] at h; exact absurd h (by decide)
+    · exact (hL.stk_DG (by omega)).symm.sub_left hD
   · obtain ⟨hw9, hQ66, -, -⟩ := P.sizesW hw
     have he : L.e = 18 := by rw [hk.2.2.1]; simp only [RfcHash.e, hw, ite_true]
     simp only [dgArg, hw, ite_true]
-    rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩
+    rcases h with rfl | rfl | rfl | rfl | rfl | ⟨-, rfl⟩ | rfl
     · exact hL.stk_SCR (by omega)
     · exact hL.stk_OUT (by omega)
     · exact Offset.disjoint_base _ (by omega) (by omega)
+    · exact Offset.disjoint _ (by omega) (by omega) (by omega)
     · exact Offset.disjoint _ (by omega) (by omega) (by omega)
     · exact Offset.disjoint _ (by omega) (by omega) (by omega)
     · exact Offset.disjoint _ (by omega) (by omega) (by omega)

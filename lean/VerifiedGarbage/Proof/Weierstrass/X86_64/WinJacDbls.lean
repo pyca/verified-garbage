@@ -110,7 +110,7 @@ theorem RSt.rbxKeeps (hL : JacWinLay K size) {base : Addr} {P Q : Point C} {s₀
 theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State}
     (h : RSt K C base size P s₀ Q s) :
-    WP isa (dbl K.R) s fun t => RSt K C base size P s₀ (Spec.Weierstrass.add Q Q) t ∧
+    WP isa (dbl K.R).inline s fun t => RSt K C base size P s₀ (Spec.Weierstrass.add Q Q) t ∧
       t.gpr .rbx = s.gpr .rbx ∧ Unch base (jwLoopW K) s.mem t.mem := by
   have hs := h.fr.scr
   have hn := hs.nowrap
@@ -136,9 +136,10 @@ theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M 
 theorem dbls_ok (hL : JacWinLay K size) (hC : Law C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl)
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State} {e j : Nat} (hj : j < 4096)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h : RSt K C base size P s₀ (mul e Q) s) :
-    WP isa (K.dbls dbl) s fun t => RSt K C base size P s₀ (mul (32 * e) Q) t ∧
+    WP isa (K.dbls dbl).inline s fun t => RSt K C base size P s₀ (mul (32 * e) Q) t ∧
       t.gpr .rbx = BitVec.ofNat 64 j ∧ Unch base (jwLoopW K) s.mem t.mem := by
   rw [JacWinCfg.dbls]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (addRbx_ok s (c := 5 * 4096) (by decide) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have m₁ : s₁.mem = s.mem := k₁.2.1
   refine aeLoop_ok (n := 5) (Inv := fun i t => RSt K C base size P s₀ (mul (2 ^ (5 - i) * e) Q) t ∧

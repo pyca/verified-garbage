@@ -45,14 +45,14 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
     (hV : ∀ x∈[p.x,p.y,p.z],x∈V) {P : Point Spec.P256.curve}
     (hP : onCurve Spec.P256.curve P=true)
     (hJ : InvJ Spec.P256.curve (E p.x) (E p.y) (E p.z) P) :
-    WP isa (DoubleHalf.code M S p) s fun t =>
+    WP isa (DoubleHalf.code M S p).inline s fun t =>
       ProgKeep M base (doubleSlots S p) s t ∧
       Inv M base size Spec.P256.p Sl ([p.x,p.y,p.z]++V) (doubleHalfEnv S p E) t ∧
       InvJ Spec.P256.curve (doubleHalfEnv S p E p.x) (doubleHalfEnv S p E p.y)
         (doubleHalfEnv S p E p.z) (Spec.Weierstrass.add P P) := by
   rw [DoubleHalf.code]
   apply WP.seq
-  apply (fprogB_wp _ _).mpr
+  apply (fprogB_wp (callOf_of_ne (by omega)) _).mpr
   refine WP.mono (fprog_ok hL hm _ hI (doubleHalf_before_slots hSl)
     (readsOk_mono (doubleHalf_before_reads S p) hV))
     fun u ⟨ku,hu⟩ => ?_
@@ -61,7 +61,7 @@ theorem doubleHalf_ok {M : Mod} {base : Addr} {size : Nat} {Sl : Nat → Prop}
   have hv1 : S.t1∈validAfter (DoubleHalf.before S p) V := by
     simp [DoubleHalf.before,validAfter,FOp.out]
   refine WP.mono (half_inv_ok hn hL hu hs1 hv1) fun v ⟨kv,hv⟩ => ?_
-  apply (fprogB_wp _ _).mpr
+  apply (fprogB_wp (callOf_of_ne (by omega)) _).mpr
   refine WP.mono (fprog_ok hL hm _ hv (doubleHalf_after_slots hSl) (doubleHalf_after_reads S p V))
     fun t ⟨kt,ht⟩ => ?_
   have kb : ProgKeep M base (doubleSlots S p) s u := ku.mono (by

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.X86_64.Joint
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-! Paired countdown loops use the final `test rbx, rbx` in each step. -/
 namespace VG.Proof.Weierstrass.X86_64
@@ -8,11 +9,11 @@ open VG VG.X86_64 VG.Impl.Weierstrass.X86_64
 
 theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     (R : Nat → State → State → Prop)
-    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
+    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double).inline (fun s t =>
       R j s t ∧ s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0)))) :
-    RelCT isa (R (64*c.K.M.n)) (.loop (Joint.step c double) .ne) (R 0) := by
+    RelCT isa (R (64*c.K.M.n)) (Code.loop (Joint.step c double) .ne).inline (R 0) := by
   let I := fun j s t => 1≤j ∧ j≤64*c.K.M.n ∧ R j s t
-  have hs : ∀ j,RelCT isa (I j) (Joint.step c double) (fun s t =>
+  have hs : ∀ j,RelCT isa (I j) (Joint.step c double).inline (fun s t =>
       eval .ne s=eval .ne t ∧ (eval .ne s=some false → R 0 s t) ∧
       (eval .ne s=some true → ∃ n<j,I n s t)) := by
     intro j
@@ -42,10 +43,10 @@ theorem jointLoop_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
 
 theorem jointRun_relCT {c : Joint.Cfg} {double : Prog isa} (hn : 0<c.K.M.n)
     {Pre : State → State → Prop} (R : Nat → State → State → Prop)
-    (seed : RelCT isa Pre (Joint.digits c) (R (64*c.K.M.n)))
-    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double) (fun s t =>
+    (seed : RelCT isa Pre (Joint.digits c).inline (R (64*c.K.M.n)))
+    (step : ∀ j,j<64*c.K.M.n → RelCT isa (R (j+1)) (Joint.step c double).inline (fun s t =>
       R j s t ∧ s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0)))) :
-    RelCT isa Pre (Joint.run c double) (R 0) :=
+    RelCT isa Pre (Joint.run c double).inline (R 0) :=
   RelCT.seq seed (jointLoop_relCT hn R step)
 
 end VG.Proof.Weierstrass.X86_64

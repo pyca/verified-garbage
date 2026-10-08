@@ -101,7 +101,7 @@ theorem setupShift_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : Shif
   have h7 := hc.n10
   have hDl := sl_le c h7 (i := D) (by decide)
   have hEl := sl_le c h7 (i := E) (by decide)
-  have hDE : c.sl E = c.sl D + 8 * c.n := by rw [sl_eq, sl_eq]; show _ = _ + 8 * c.n; simp only [D, E]; omega
+  have hDE : c.sl E = c.sl D + 8 * c.n := by simp (disch := sl_ne) only [sl_eq]; show _ = _ + 8 * c.n; simp only [D, E]; omega
   have nil : WP isa (.block ([] : List Instr)) t fun t' =>
       wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> 0 ∧
       wordsVal t'.mem base (c.sl E) c.n = wordsVal t.mem base (c.sl E) c.n >>> 0 ∧
@@ -160,6 +160,12 @@ theorem consts_fst (c : Cfg) :
 
 theorem consts_nodup (c : Cfg) : (c.consts.map Prod.fst).Nodup := by
   rw [consts_fst]; decide
+
+theorem consts_ne_tmp (c : Cfg) : ∀ ix ∈ c.consts, ix.1 ≠ TMP := by
+  intro ix hix
+  have : ix.1 ∈ c.consts.map Prod.fst := List.mem_map_of_mem hix
+  rw [consts_fst] at this
+  revert this; generalize ix.1 = i; decide +revert
 
 theorem consts_bounds {c : Cfg} (hc : BaseCfgOk c) :
     ∀ ix ∈ c.consts, ix.1 < 17 ∧ ix.2 < 2 ^ (64 * c.n) := by
@@ -238,11 +244,11 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
   have RD₂ : s₂.rd ++ s₂.wr = s.rd ++ s.wr := by rw [k₂.rd, k₂.wr, rd₁, wr₁]
   have O₂ : Outside (s.gpr .r8) 0 size s.mem s₂.mem := by
     rw [m₂]; exact O₁.mono (Nat.le_refl _) (by omega)
-  have hK : c.sl K = 64 + 8 * c.n * 31 := rfl
-  have hD : c.sl D = 64 + 8 * c.n * 32 := rfl
-  have hE : c.sl E = 64 + 8 * c.n * 33 := rfl
-  have hF : c.sl FLAG = 64 + 8 * c.n * 44 := rfl
-  have h17 : c.sl 17 = 64 + 8 * c.n * 17 := rfl
+  have hK : c.sl K = 64 + 8 * c.n * 31 := sl_eq c K
+  have hD : c.sl D = 64 + 8 * c.n * 32 := sl_eq c D
+  have hE : c.sl E = 64 + 8 * c.n * 33 := sl_eq c E
+  have hF : c.sl FLAG = 64 + 8 * c.n * 44 := sl_eq c FLAG
+  have h17 : c.sl 17 = 64 + 8 * c.n * 17 := sl_eq c 17
   -- `k`
   rw [WP.block_append_iff]
   refine WP.mono (setupLoad_ok hc (s := s) hs₂ (by decide) (i := K) (by decide)
@@ -275,11 +281,12 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
   have hs₆ := hs₅'.of_keepRegs k₆ (by decide)
   have O₆ : Outside (s.gpr .r8) (c.sl 0) (8 * c.n * 17) s₅'.mem s₆.mem := U₆.outside fun w hw => by
     obtain ⟨ix, hix, rfl⟩ := List.mem_map.mp hw
-    have := sl_lt c (consts_bounds hc ix hix).1
-    have h0' : c.sl 0 = 64 := by rw [sl_eq]; omega
-    have : c.sl 0 ≤ c.sl ix.1 := by rw [h0', sl_eq]; omega
+    have := sl_lt c (consts_bounds hc ix hix).1 (.inl (consts_ne_tmp c ix hix))
+    have h0' : c.sl 0 = 64 := by simp (disch := sl_ne) only [sl_eq]; omega
+    have : c.sl 0 ≤ c.sl ix.1 := by
+      rw [h0', sl_eq c ix.1 ⟨consts_ne_tmp c ix hix, by have := (consts_bounds hc ix hix).1; omega⟩]; omega
     exact ⟨this, by omega⟩
-  have hsl0 : c.sl 0 = 64 := by rw [sl_eq]; omega
+  have hsl0 : c.sl 0 = 64 := by simp (disch := sl_ne) only [sl_eq]; omega
   -- the flag
   rw [WP.block_append_iff]
   refine WP.mono (setupFlag_ok hc hs₆) fun s₇ ⟨f₇, k₇, O'⟩ => ?_
@@ -314,7 +321,7 @@ theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk h
       eSD, O₅.wordsVal (by omega) (by omega), e₄]
   · show wordsVal s'.mem _ _ _ = _
     rw [m', O'.wordsVal (by omega) (by omega), O₆.wordsVal (by omega) (by omega), eS, e₅]
-  · have := sl_lt c (consts_bounds hc ix hix).1
+  · have := sl_lt c (consts_bounds hc ix hix).1 (.inl (consts_ne_tmp c ix hix))
     have := sl_le c hc.n10 (i := 17) (by decide)
     show wordsVal s'.mem _ _ _ = _
     rw [m', O'.wordsVal (by omega) (by omega), e₆ ix hix]

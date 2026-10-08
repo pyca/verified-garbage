@@ -34,18 +34,22 @@ theorem post_of_x {s s' : State} (h : EPost p521x s s') : ecdhX86_64.post s s' :
 large enough that the three in one would leave `ecdh_x86` little of its
 budget. -/
 
-theorem ecdh_rsp_adx : exchangeP521Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
+theorem ecdh_rsp_adx : exchangeP521Adx.inline.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  rw [Code.allInstrs_inline]; lit_decide
 
-theorem ecdh_noCalls_adx : exchangeP521Adx.noCalls = true := by lit_decide
+theorem ecdh_inlineOk_adx : exchangeP521Adx.InlineOk = true := by lit_decide
 
-theorem ecdh_mxcsr_adx : exchangeP521Adx.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
+theorem ecdh_noCalls_adx : exchangeP521Adx.inline.noCalls = true := Code.noCalls_inline ecdh_inlineOk_adx
+
+theorem ecdh_mxcsr_adx : exchangeP521Adx.inline.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_inline]; lit_decide
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
-    ∃ t s', Exec isa exchangeP521Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
+    ∃ t s', Exec isa exchangeP521Adx.inline s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL
     (mulQJ4_ok (p521x_ok hI) (by decide) hL hO (by decide +kernel)) (mulQJ4_w (p521x_ok hI)) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs exchangeP521Adx, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs exchangeP521Adx.inline, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp_adx
     rw [Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
@@ -70,22 +74,24 @@ theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X8
       · exact hrs) (by decide)
 
 theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521Adx := by
-  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521Adx h).isSome = true := by
+  obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) exchangeP521Adx h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.winBuildJXSum, Proof.P521.X86_64.winNormJXSum,
       Proof.P521.X86_64.winLoopJXSum, Proof.P521.X86_64.winLastJXSum]
-  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
-  intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
+  refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .rsp]) ?_ hc
+  intro s₁ s₂ _ _ ⟨h0, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact h1
   · exact h2
   · exact h3
   · exact h4
+  · exact h0
 
 theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
-    Verified X86_64.target exchangeP521Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi) :=
-  Verified.of_correct (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies
+    Verified X86_64.target exchangeP521Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi 8) :=
+  Verified.of_inline_ct ecdh_inlineOk_adx (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre h) ecdh_patch
 
 end VG.Proof.Ecdh.X86_64.P521

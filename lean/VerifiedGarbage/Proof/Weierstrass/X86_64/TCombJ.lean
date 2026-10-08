@@ -312,7 +312,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     (hF : TCombFixed K C base size s₀ k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
     {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j < K.J)
     (hI : TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s j) :
-    WP isa K.stepJ s fun s' =>
+    WP isa K.stepJ.inline s fun s' =>
       TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s₀ s' (j + 1) ∧
         s'.zf = some (decide (j + 1 = K.J)) := by
   have hn := hI.scr.nowrap
@@ -327,6 +327,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
   have hNZ : NeZero C.p := ⟨by omega⟩
   refine WP.of_syms ?_
   unfold TCombCfg.stepJ
+  simp only [Code.inline]
   refine WP.seq ?_
   have hz : wordsVal s.mem base K.zero K.M.n = 0 := by
     rw [hI.unch.wordsVal (tcombW_ro hL (x := K.zero) (by simp [combRo, TCombCfg.toComb]))
@@ -390,7 +391,7 @@ theorem stepJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : Ad
     rcases List.mem_append.mp hx with hx | hx
     · simp only [combSlots, List.mem_append, TCombCfg.toComb]; exact Or.inr hx
     · exact hSl x hx
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono (maddJ_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
+  refine WP.seq ((WP.mono (maddJ_ok hL.comb.lay hV.unit hL.comb.add hSl' I₃
     (fun _ h => h)) fun s₄ ⟨P₄, I₄, t₄⟩ => ?_))
   dsimp only [TCombCfg.toComb] at P₄ I₄ t₄
   have hs₄ := I₄.scr
@@ -662,7 +663,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
-    WP isa K.first s fun s' =>
+    WP isa K.first.inline s fun s' =>
       TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' 1 := by
   have hn := hs.nowrap
   have hJ := hL.comb.J
@@ -684,6 +685,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hmo := tcombW_mo hL hM
   refine WP.of_syms ?_
   unfold TCombCfg.first
+  simp only [Code.inline]
   refine WP.seq ?_
   have e : K.clearBits ++ [.mov32 .rbx (.imm 0)] ++ K.bdigit false ++ K.select = [.mov32 .rax (.imm 0)] ++
       ((List.range K.zw).map (fun i => .store (sc (K.bits + K.kbytes + 8 * i)) .rax) ++
@@ -801,7 +803,7 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s : State}
     (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
     (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
-    WP isa K.combJ s fun s' => KeepRegs (powClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
+    WP isa K.combJ.inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
       ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.A.x) (tmv C K.M.n base s' K.A.y) (tmv C K.M.n base s' K.A.z)
@@ -880,7 +882,7 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       rcases hx with rfl | rfl | rfl <;> tcomb_mem
   have hR : readsOk K.outOps [K.A.x, K.A.y, K.A.z] = true := by
     simp [readsOk, TCombCfg.outOps, FOp.ins, FOp.out]
-  refine (fprogB_wp _ _).mpr (WP.mono (fprog_ok hL.comb.lay hV.unit K.outOps I₃ hS hR)
+  refine (WP.mono (fprogB_ok hL.comb.lay hV.unit K.outOps I₃ hS hR)
     fun s₄ ⟨P₄, I₄⟩ => ?_)
   have hval : ∀ x ∈ [K.A.x, K.A.y, K.A.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
       runOps K.outOps (tmv C K.M.n base s₃) x ∧ wordsVal s₄.mem base x K.M.n < C.p := fun x hx => by

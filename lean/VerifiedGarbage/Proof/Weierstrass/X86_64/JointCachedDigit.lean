@@ -26,7 +26,7 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     (h : JointCore c C base size Q u v External A s)
     (hExternal : ∀ s t,ProgKeep c.K.M base (jointWork c) s t → t.syms=s.syms → External s → External t)
     (hj : j<64*c.K.M.n+1) (hb : s.gpr .rbx=BitVec.ofNat 64 j) :
-    WP isa (Joint.cachedDigit c) s fun t =>
+    WP isa (Joint.cachedDigit c).inline s fun t =>
       ProgKeep c.K.M base (jointWork c) s t ∧
       JointCore c C base size Q u v External (add A (FastNaf.point C Q 5 v j)) t := by
   have hbytes : c.K.bits+j<size := by
@@ -34,6 +34,7 @@ theorem jointCachedDigit_ok {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v 
     dsimp only at hh
     omega
   rw [Joint.cachedDigit]
+  simp only [Code.inline]
   apply WP.seq
   refine WP.mono_syms (nafRead_ok h.field.scr hbytes hb (h.stable.peer j hj)) fun a ⟨a8,az,ka⟩ sa => ?_
   have kp : ProgKeep c.K.M base (jointWork c) s a := jointKeeps_prog ka (by

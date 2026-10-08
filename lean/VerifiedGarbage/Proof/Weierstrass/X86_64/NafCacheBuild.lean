@@ -14,7 +14,7 @@ theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hZ : ptbl+24*M.n*i+16*M.n∈V)
     (h2 : Sl (tbl+16*M.n*i)) (h3 : Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cachePair M ptbl tbl i) s fun t =>
+    WP isa (Naf.cachePair M ptbl tbl i).inline s fun t =>
       ProgKeep M base ((Naf.cachePairOps M.n ptbl tbl i).map FOp.out) s t ∧
       Inv M base size m Sl (validAfter (Naf.cachePairOps M.n ptbl tbl i) V)
         (runOps (Naf.cachePairOps M.n ptbl tbl i) E) t := by
@@ -35,10 +35,11 @@ theorem nafCachePair_fields_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     simp [Naf.cachePairOps,readsOk,FOp.ins,FOp.out,hZ]
   rw [Naf.cachePair]
   split
-  · exact WP.mono (ForwardField.program_ok (by assumption : M.adx ∧ M.n=4).2 hL hm _ hI hS hR
+  · rw [ForwardField.program_inline]
+    exact WP.mono (ForwardField.program_ok (by assumption : M.adx ∧ M.n=4).2 hL hm _ hI hS hR
       (fun _ h => by cases h))
       (fun _ h => ⟨h.1,h.2.1⟩)
-  · exact (fprogB_wp _ _).mpr (fprog_ok hL hm _ hI hS hR)
+  · exact (fprogB_ok hL hm _ hI hS hR)
 
 theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstrass.Curve}
     {Sl : Nat → Prop} (hn : M.n=4 ∨ M.n=6 ∨ M.n=9) (hL : Lay M size Sl)
@@ -47,7 +48,7 @@ theorem nafCachePair_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstra
     {V : List Nat} {E : Nat → Fin C.p} {s : State}
     (hI : Inv M base size C.p Sl V E s) (hZ : ptbl+24*M.n*i+16*M.n∈V)
     (h2 : Sl (tbl+16*M.n*i)) (h3 : Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cachePair M ptbl tbl i) s fun t =>
+    WP isa (Naf.cachePair M ptbl tbl i).inline s fun t =>
       ProgKeep M base [tbl+16*M.n*i,tbl+16*M.n*i+8*M.n] s t ∧
       Inv M base size C.p Sl ([tbl+16*M.n*i,tbl+16*M.n*i+8*M.n]++V) (tmv C M.n base t) t ∧
       tmv C M.n base t (tbl+16*M.n*i)=E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) ∧
@@ -101,7 +102,7 @@ theorem nafCacheTable_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.Weierstr
     {V : List Nat} {E : Nat → Fin C.p} {s : State}
     (hI : Inv M base size C.p Sl V E s) (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
     (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cacheTable M ptbl tbl k) s fun t =>
+    WP isa (Naf.cacheTable M ptbl tbl k).inline s fun t =>
       ProgKeep M base (cacheTableSlots M.n tbl k) s t ∧
       Inv M base size C.p Sl (cacheTableSlots M.n tbl k++V) (tmv C M.n base t) t ∧
       ∀ i<k,tmv C M.n base t (tbl+16*M.n*i)=E (ptbl+24*M.n*i+16*M.n)*E (ptbl+24*M.n*i+16*M.n) ∧
@@ -165,7 +166,7 @@ theorem nafCacheTable_current_ok {M : Mod} {base : Addr} {size : Nat} {C : Spec.
     {V : List Nat} {E : Nat → Fin C.p} {s : State}
     (hI : Inv M base size C.p Sl V E s) (hZ : ∀ i<k,ptbl+24*M.n*i+16*M.n∈V)
     (hSl : ∀ i<k,Sl (tbl+16*M.n*i) ∧ Sl (tbl+16*M.n*i+8*M.n)) :
-    WP isa (Naf.cacheTable M ptbl tbl k) s fun t =>
+    WP isa (Naf.cacheTable M ptbl tbl k).inline s fun t =>
       ProgKeep M base (cacheTableSlots M.n tbl k) s t ∧
       Inv M base size C.p Sl (cacheTableSlots M.n tbl k++V) (tmv C M.n base t) t ∧
       ∀ i<k,tmv C M.n base t (tbl+16*M.n*i)=

@@ -20,8 +20,9 @@ open VG.Proof.Mont.X86_64 VG.Proof.Mont VG.Proof.Weierstrass.X86_64 VG.Proof.Wei
 /-- How P-521's field elements are multiplied modulo `p`, for the notes of its
 functions: with BMI2 and ADX (`adx`) or not. -/
 def mulNote (adx : Bool) : String :=
+  "multiplied modulo `p` by calls of `vg_p521_mul_mod_p" ++ (if adx then "_adx" else "") ++ "`, " ++
   if adx then
-    "multiplied modulo `p` by Montgomery multiplication by rows (operand scanning) of BMI2's \
+    "Montgomery multiplication by rows (operand scanning) of BMI2's \
     `mulx`, each product's low half added through OF (`adox`) and its high half through CF \
     (`adcx`), two carry chains that do not wait for each other, into nine registers, each row's \
     low word stored once final; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, the reduction's multipliers \
@@ -30,7 +31,7 @@ def mulNote (adx : Bool) : String :=
     reduced below `p` by adding 1, whose bit 521 is whether it is at least `p`, subtracting 1 \
     less that bit, and clearing the bits from 521 up"
   else
-    "multiplied modulo `p` by Montgomery multiplication by columns (product scanning, the \
+    "Montgomery multiplication by columns (product scanning, the \
     accumulator in three registers; as `p = 2⁵²¹ - 1 ≡ -1 (mod 2⁶⁴)`, each reduction's \
     multiplier is its column's low word, added 512 times eight columns up; a square computes \
     each product of two different words once and adds it twice) with a final conditional \
@@ -84,7 +85,7 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
   nbits_le := by decide
   mask _ := ⟨by decide, by decide⟩
   sh := by rw [p521x_sh]; decide
-  comb d h := by cases h; exact ⟨by decide, by decide⟩
+  comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
     show Nat.Prime Spec.P521.curve.p
     rw [show Spec.P521.curve.p =
@@ -118,16 +119,17 @@ theorem sign_x86_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP521Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa signP521Adx.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
-  have hsp : ∀ i ∈ instrs signP521Adx, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs signP521Adx.inline, Taint.clobbers i .rsp = false := by
     have h : signP521Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -145,23 +147,35 @@ theorem sign_x86_adx (hL : Law Spec.P521.curve)
       · exact hrs) (by decide)
 
 theorem sign_ct_adx : ConstantTime isa signX86_64.pre signX86_64.pub signP521Adx := by
-  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) signP521Adx h).isSome = true := by
+  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check
+      (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) signP521Adx h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.combGXSum, Proof.P521.X86_64.invPXSum]
-  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_ hc
-  exact fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) ?_ hc
+  exact fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
+      · exact h5
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
 
 theorem sign_verified_adx (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP521Adx
-      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (sign_x86_adx hL hT hI) sign_ct_adx implies
+      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86_adx hL hT hI) sign_ct_adx implies8
+    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
+
+/-- `sign_call_x86` with BMI2 and ADX. -/
+theorem sign_call_x86_adx (hL : Law Spec.P521.curve)
+    (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP521Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86_adx hL hT hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.P521

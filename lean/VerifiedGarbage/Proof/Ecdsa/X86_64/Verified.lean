@@ -62,7 +62,7 @@ theorem p256_ok (hI : InvSounds) : CfgOk p256 where
   nbits_le := by decide
   mask h := absurd h (by decide)
   sh := by rw [p256_sh]; decide
-  comb d h := by cases h; exact ⟨by decide, by decide⟩
+  comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ p256.C.p_ne_zero Proof.P256.p_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ p256.C.n_ne_zero Proof.P256.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
   window_am3 := fun _ => by unfold AM3; decide +kernel
@@ -95,7 +95,7 @@ theorem sign_x86_of {c : Cfg} {code : Prog isa} (hc : CfgOk c) (hL : Law c.C) (h
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   subst hcode
-  obtain ⟨t, s', he, hsv, hpost'⟩ := sign_ok hc hL hT (hpre s hs)
+  obtain ⟨t, s', he, hsv, hpost'⟩ := wp_of_inline hnc <| sign_ok hc hL hT (hpre s hs)
   have hsp : ∀ i ∈ instrs c.sign, Taint.clobbers i .rsp = false := by
     rw [Code.allInstrs_eq, List.all_eq_true] at hsp
     intro i hi

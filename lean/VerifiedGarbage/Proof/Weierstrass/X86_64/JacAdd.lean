@@ -32,13 +32,13 @@ theorem ofN_partial_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s)
     (hR : readsOk (ofN N S p q o) V = true) :
-    WP isa (.block (fprog M (ofN N S p q o))) s fun s' =>
+    WP isa (fprogB M (ofN N S p q o)).inline s fun s' =>
       ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl (validAfter (ofN N S p q o) V)
         (runOps (ofN N S p q o) E) s' ∧
       ∀ i, runOps (ofN N S p q o) E (rcbσ S p q o i) =
         runOps N (fun j => E (rcbσ S p q o j)) i := by
-  refine WP.mono (fprog_ok hL hm _ hI
+  refine WP.mono (fprogB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op hop x hx)) hR) fun s' ⟨hk,hi⟩ =>
       ⟨hk.mono ?_,hi,?_⟩
   · intro w hw
@@ -58,7 +58,7 @@ theorem jacHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (jacHead S p q))) s fun s' =>
+    WP isa (fprogB M (jacHead S p q)).inline s fun s' =>
       ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl (validAfter (jacHead S p q) V)
         (runOps (jacHead S p q) E) s' ∧
@@ -95,7 +95,7 @@ theorem jacTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl (validAfter (jacHead S p q) V)
       (runOps (jacHead S p q) E) s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (.block (fprog M (jacTail S p q o))) s fun s' =>
+    WP isa (fprogB M (jacTail S p q o)).inline s fun s' =>
       ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x,o.y,o.z] ++ V)
         (runOps (jacHead S p q ++ jacTail S p q o) E) s' ∧
@@ -115,7 +115,7 @@ theorem jacTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     simp only [jacTail,List.map_cons,List.map_nil,FOp.out,List.mem_cons,List.not_mem_nil,or_false]
     intro x hx
     rcases hx with rfl | rfl | rfl <;> simp
-  refine WP.mono (fprog_ok hL hm _ hI
+  refine WP.mono (fprogB_ok hL hm _ hI
     (fun op hop x hx => hSl x (ofN_slots op (he ▸ List.mem_append_right _ hop) x hx)) hr.2)
     fun s' ⟨hk,hi⟩ => ⟨hk.mono ?_,?_,?_⟩
   · intro w hw'
@@ -190,7 +190,7 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) :
-    WP isa (Jacobian.jacAdd K p q o) s
+    WP isa (Jacobian.jacAdd K p q o).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   rw [Jacobian.jacAdd]
   apply fieldBranch_ok hL hm hI (hV p.z (by simp [rcbR]))
@@ -214,7 +214,6 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
         (fun t ht => (ht.prefix (kb.mono (by simp))).prefix (ka.mono (by simp)))
     · intro b ib kb hqz
       apply WP.seq
-      apply (fprogB_wp _ _).mpr
       refine WP.mono (jacHead_ok hL hm hA hSl ib hV) fun c ⟨kc,ic,eh,er⟩ => ?_
       let EH := runOps (jacHead K.S p q) E
       have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
@@ -258,7 +257,6 @@ theorem jacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
-        apply (fprogB_wp _ _).mpr
         refine WP.mono (jacTail_ok hL hm hA hSl id hV) fun t ⟨kt,it,ht⟩ => ?_
         have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
         dsimp only at jt

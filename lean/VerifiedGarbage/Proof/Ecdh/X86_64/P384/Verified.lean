@@ -61,7 +61,7 @@ theorem mulQJP384_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p384_ok hI) hL
+  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| exchangeWith_ok (p384_ok hI) hL
     (mulQJP384_ok (p384_ok hI) rfl rfl hL hO) (mulQJA_w (p384_ok hI)) (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP384, Taint.clobbers i .rsp = false := by
     have h : exchangeP384.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide

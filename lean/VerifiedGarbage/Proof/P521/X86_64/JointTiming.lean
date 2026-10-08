@@ -45,11 +45,11 @@ theorem joint_adx_fixed_checks : JointFixedChecks publicJointAdx := by
   · exact VG.Taint.constantTime (A:=taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi,.r8])
       (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem nafCacheTable_ct : ScratchCT (Naf.cacheTable publicJoint.K.M publicJoint.K.tbl publicJoint.cache 8) :=
+theorem nafCacheTable_ct : ScratchCT (Naf.cacheTable publicJoint.K.M publicJoint.K.tbl publicJoint.cache 8).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem nafCacheTable_adx_ct :
-    ScratchCT (Naf.cacheTable publicJointAdx.K.M publicJointAdx.K.tbl publicJointAdx.cache 8) :=
+    ScratchCT (Naf.cacheTable publicJointAdx.K.M publicJointAdx.K.tbl publicJointAdx.cache 8).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem joint_infinity_ct : ScratchCT (.block (Jacobian.infinity publicJoint.K publicJoint.K.R)) :=
@@ -84,11 +84,11 @@ theorem fastPeer_adx_checks : FastPrepChecks 9 (p521x.sl V) p521x.winBits 5 := f
 
 theorem fastGenerator_adx_checks : FastPrepChecks 9 (p521x.sl U) 3304 7 := fastGenerator_checks
 
-theorem jointDouble_ct : ScratchCT (fprogB publicJoint.K.M (dblJMul publicJoint.K.S publicJoint.K.R publicJoint.K.D)) :=
+theorem jointDouble_ct : ScratchCT (fprogB publicJoint.K.M (dblJMul publicJoint.K.S publicJoint.K.R publicJoint.K.D)).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 theorem jointDouble_adx_ct :
-    ScratchCT (fprogB publicJointAdx.K.M (dblJMul publicJointAdx.K.S publicJointAdx.K.R publicJointAdx.K.D)) :=
+    ScratchCT (fprogB publicJointAdx.K.M (dblJMul publicJointAdx.K.S publicJointAdx.K.R publicJointAdx.K.D)).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
 
 end VG.Proof.P521.X86_64

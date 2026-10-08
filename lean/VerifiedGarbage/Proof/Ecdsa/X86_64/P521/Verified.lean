@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Inline
 import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 import VerifiedGarbage.Proof.P521.Prime
+import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
 # ECDSA over P-521 on x86-64: `Verified`
@@ -64,7 +65,7 @@ theorem p521_ok (hI : InvSounds) : CfgOk p521 where
   nbits_le := by decide
   mask _ := ⟨by decide, by decide⟩
   sh := by rw [p521_sh]; decide
-  comb d h := by cases h; exact ⟨by decide, by decide⟩
+  comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
     show Nat.Prime Spec.P521.curve.p
     rw [show Spec.P521.curve.p =
@@ -98,16 +99,17 @@ theorem sign_x86 (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
-    ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
+    ∃ t s', Exec isa signP521.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521) (p521_ok hI).toBaseCfgOk hL (p521_tbls hT) (pre_of hs)
-  have hsp : ∀ i ∈ instrs signP521, Taint.clobbers i .rsp = false := by
+  have hsp : ∀ i ∈ instrs signP521.inline, Taint.clobbers i .rsp = false := by
     have h : signP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
-    rw [Code.allInstrs_eq, List.all_eq_true] at h
+    rw [← Code.allInstrs_inline, Code.allInstrs_eq, List.all_eq_true] at h
     intro i hi
     simpa using h i hi
-  have F := (Exec.regions he (by lit_decide)).2.2
+  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
-  refine ⟨t, s', he, abiPreserved_of_exec (by lit_decide) he ⟨fun r hr => ?_, ?_⟩, hpost⟩
+  refine ⟨t, s', he, abiPreserved_of_exec (by rw [Code.allInstrs_inline]; lit_decide) he
+    ⟨fun r hr => ?_, ?_⟩, hpost⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hsv _ (by decide)
@@ -124,24 +126,66 @@ theorem sign_x86 (hL : Law Spec.P521.curve)
       · exact hro
       · exact hrs) (by decide)
 
+/-- Constant time by taint tracking, which follows the calls: `rsp` is
+public, as the return addresses they store are. -/
 theorem sign_ct : ConstantTime isa signX86_64.pre signX86_64.pub signP521 := by
-  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) signP521 h).isSome = true := by
+  obtain ⟨_, hc⟩ : ∃ h, ((taintSym ["VG_P521_COMB"]).check
+      (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) signP521 h).isSome = true := by
     taint_decide_sum [Proof.P521.X86_64.combGSum, Proof.P521.X86_64.invPSum]
-  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"]) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8]) ?_ hc
-  exact fun _ _ _ _ ⟨_, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
+  refine VG.Taint.constantTime (A := taintSym ["VG_P521_COMB"])
+    (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx, .r8, .rsp]) ?_ hc
+  exact fun _ _ _ _ ⟨h0, h1, h2, h3, h4, h5, hsy⟩ => ⟨Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
       · exact h1
       · exact h2
       · exact h3
       · exact h4
-      · exact h5, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
+      · exact h5
+      · exact h0, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩
+
+theorem sat_spec8 :
+    (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8).pre satState := by
+  have held : ∀ i < p521W.length, satState.mem.readW (satState.syms "VG_P521_COMB" +
+      BitVec.ofNat 64 (8 * i)) 64 = p521W.getD i 0 := satMem_held
+  sig_pre [Spec.Ecdsa.P521.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
+    Spec.P521.curve, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs, p521_combConsts,
+    Abi.withConsts, p521_constRegions, Abi.constsHeld, stackBelow]
+  sig_and_intros
+  all_goals first | exact Region.disjoint_of_sep (by decide) | rfl | exact held | decide
+
+/-- The contract with 8 bytes of stack, for the calls' return address. -/
+theorem implies8 :
+    signX86_64.Implies (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+  implies.stack8 ⟨satState, sat_spec8⟩
+
+/-- The output is apart from the calls' return address. -/
+theorem post_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : signX86_64.pre s)
+    (hc : Clear (hole (s.gpr .rsp)) s) (hp : signX86_64.post s b) :
+    signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
+  have hb := Clear.wr_bytes hc (p := s.gpr .rdi) (n := 132) (by rw [hs.2.1]; simp) (by decide)
+  simpa only [signX86_64, State.patch_gpr, bytesAt_patch hb] using hp
+
+theorem sign_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64)
+    (hs : (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8).pre s)
+    (hp : signX86_64.post s b) : signX86_64.post s (b.patch (hole (s.gpr .rsp)) hv u) :=
+  post_patch s b hv u (implies8.pre s hs) (Sig.clear_of_pre_consts hs) hp
+
+/-- The function with its calls, for a caller (RFC 6979's) that keeps its
+buffers off the 8 bytes below `rsp`. -/
+theorem sign_call_x86 (hL : Law Spec.P521.curve)
+    (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
+    (hI : InvSounds) (s : State) (hs : signX86_64.pre s) (hc : Clear (hole (s.gpr .rsp)) s) :
+    ∃ t s', Exec isa signP521 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
+  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hT hI)
+    (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 theorem sign_verified (hL : Law Spec.P521.curve)
     (hT : CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : InvSounds) :
     Verified X86_64.target signP521
-      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts)) :=
-  Verified.of_correct (sign_x86 hL hT hI) sign_ct implies
+      (Spec.Ecdsa.P521.inst.signContract (X86_64.abi.withConsts p521.combConsts) 8) :=
+  Verified.of_inline_ct (by lit_decide) (sign_x86 hL hT hI) sign_ct implies8
+    (fun _ h => Sig.clear_of_pre_consts h) sign_patch
 
 end VG.Proof.Ecdsa.X86_64.P521

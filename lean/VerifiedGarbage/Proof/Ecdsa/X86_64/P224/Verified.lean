@@ -64,7 +64,7 @@ theorem p224_ok (hI : InvSounds) : CfgOk p224 where
   nbits_le := by decide
   mask h := absurd h (by decide)
   sh := by rw [p224_sh]; decide
-  comb d h := by cases h; exact ⟨by decide, by decide⟩
+  comb d h := by cases h; exact ⟨by decide, by decide, by decide⟩
   inv _ := ⟨by decide, @hI _ _ (by
     show Nat.Prime Spec.P224.curve.p
     rw [show Spec.P224.curve.p = 26959946667150639794667015087019630673557916260026308143510066298881 by decide +kernel]
@@ -97,7 +97,7 @@ theorem sign_x86 (hL : Law Spec.P224.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP224 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := wp_of_inline (by lit_decide) <| sign_ok (p224_ok hI) hL (p224_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs signP224, Taint.clobbers i .rsp = false := by
     have h : signP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

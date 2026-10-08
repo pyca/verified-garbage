@@ -282,12 +282,26 @@ theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchan
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
     (.seq mq (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
+/-- The exchange inlined: only `mq` calls functions. -/
+theorem exchangeWith_inline (c : Cfg) (mq : Prog isa) : (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq).inline =
+    .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+    (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
+    (.seq mq.inline (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := by
+  rw [exchangeWith_eq']
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+    (Code.seq _ (Code.seq c.pPow.inline (Impl.Ecdh.X86_64.Cfg.middle c).inline))))) = _
+  rw [pPow_inline c, show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
+    show (Impl.Ecdh.X86_64.Cfg.middle c).inline = _ from blocks_inline _]
+  rfl
+
 /-- `vg_ecdh_<curve>`, with a scalar multiplication `mq` computing `[d]P`
 (`MulOk`) and writing only `W` (`MulW`), computes the specification's shared
 secret and restores the callee-saved registers. -/
 theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : List (Nat × Nat)}
     (hmq : MulOk c mq W) (hW : MulW c W) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq) s₀ fun s' =>
+    WP isa (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -295,7 +309,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  rw [exchangeWith_eq']
+  rw [exchangeWith_inline]
   refine WP.seq (WP.mono (args_ok s₀) fun s₁ ⟨r8₁, r9₁, rcx₁, rdx₁, k₁⟩ => ?_)
   have rsi₁ : s₁.gpr .rsi = s₀.gpr .rsi := k₁.1 _ (by decide)
   have rdi₁ : s₁.gpr .rdi = s₀.gpr .rdi := k₁.1 _ (by decide)
@@ -345,11 +359,13 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
   have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
       sv c (s₀.gpr .rcx) s₄ i = sv c (s₀.gpr .rcx) s₃ i := fun hi hl hf =>
     sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
+  have t₄ : ∀ {j}, j < 3 → (j ≠ 1 ∨ c.n ≠ 9) → ∀ t < 64 * c.n,
       s₄.mem (off (s₀.gpr .rcx) (bitsAt c.n j + t)) = s₂.mem (off (s₀.gpr .rcx) (bitsAt c.n j + t)) :=
-    fun hj t ht => by
-      rw [tbl_unch U₄ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
+    fun hj hj9 t ht => by
+      rw [tbl_unch U₄ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t ht (.inr hj9))
+          (tbl_apart_flag h0 _ t)),
+        tbl_unch U₃ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t ht (.inr hj9))
+          (tbl_apart_flag h0 _ t))]
   have hpk : sv c (s₀.gpr .rcx) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
   have hk₄ : sv c (s₀.gpr .rcx) s₄ K = sv c (s₀.gpr .rcx) s₂ K := by
     rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]
@@ -367,8 +383,8 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
     hk₄
     (by rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _)
-    (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
-    (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
+    (fun t ht => by rw [t₄ (j := 0) (by decide) (.inl (by decide)) t ht, S₂.t₀ t ht, S₂.k])
+    (fun h9 t ht => by rw [t₄ (j := 1) (by decide) (.inr (by omega)) t ht, S₂.t₁ h9 t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
   have F₅ := F₄.unch h7 hn hW.fixed L.unch
   have d₅ : sv c (s₀.gpr .rcx) s₅ D = sv c (s₀.gpr .rcx) s₄ D := sv_unch L.unch h7 hn (by decide) hW.d
@@ -436,7 +452,7 @@ theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : L
 
 /-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`). -/
 theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.X86_64.Cfg.exchange c) s₀ fun s' =>
+    WP isa (Impl.Ecdh.X86_64.Cfg.exchange c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
   exchangeWith_ok hc hC (mulQ_ok hc hC) (mulQ_w hc) hp
 

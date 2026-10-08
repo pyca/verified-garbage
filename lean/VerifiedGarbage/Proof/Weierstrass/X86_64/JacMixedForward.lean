@@ -14,7 +14,7 @@ theorem ofN_forward_partial_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s)
     (hR : readsOk (ofN N S p q o) V = true) :
-    WP isa (ForwardField.programB M (ofN N S p q o)) s fun s' =>
+    WP isa (ForwardField.programB M (ofN N S p q o)).inline s fun s' =>
       ProgKeep M base (rcbW S o) s s' ∧
       Inv M base size m Sl (validAfter (ofN N S p q o) V)
         (runOps (ofN N S p q o) E) s' ∧
@@ -40,7 +40,7 @@ theorem jacMixedForwardHead_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl (S.t4::S.t2::V) (jacMixedInit S p E) s)
     (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (ForwardField.programB M (jacMixedHead S p q)) s fun t =>
+    WP isa (ForwardField.programB M (jacMixedHead S p q)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl (validAfter (jacMixedHead S p q) (S.t4::S.t2::V))
         (runOps (jacMixedHead S p q) (jacMixedInit S p E)) t ∧
@@ -77,7 +77,7 @@ theorem jacMixedForwardTail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     (hI : Inv M base size m Sl (validAfter (jacMixedHead S p q) (S.t4::S.t2::V))
       (runOps (jacMixedHead S p q) (jacMixedInit S p E)) s)
     (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (ForwardField.programB M (jacMixedTail S p q o)) s fun t =>
+    WP isa (ForwardField.programB M (jacMixedTail S p q o)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl ([o.x,o.y,o.z]++V)
         (runOps (jacMixedHead S p q ++ jacMixedTail S p q o) (jacMixedInit S p E)) t ∧
@@ -141,7 +141,7 @@ theorem jacMixedForward_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     (hI : Inv K.M base size C.p Sl V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) (hAff : E q.z=1) :
-    WP isa (Jacobian.jacMixedForward K p q o) s
+    WP isa (Jacobian.jacMixedForward K p q o).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   rw [Jacobian.jacMixedForward]
   apply fieldBranch_ok hL hm hI (hV p.z (by simp [rcbR]))

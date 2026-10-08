@@ -20,7 +20,7 @@ theorem cachedJacAdd_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*K.M.n)=E dst*E q.z)
     (hOne : K.one < C.p) {P Q : Point C} (hP : onCurve C P = true) (hQ : onCurve C Q = true)
     (hJP : InvJ C (E p.x) (E p.y) (E p.z) P) (hJQ : InvJ C (E q.x) (E q.y) (E q.z) Q) :
-    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst) s
+    WP isa (Impl.Weierstrass.X86_64.CachedJac.add K p q o dst).inline s
       (JacPost K.M K.S base size C Sl V o (Spec.Weierstrass.add P Q) s) := by
   have hSlC : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x := by
     intro x hx

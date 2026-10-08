@@ -14,7 +14,7 @@ structure JointMulChecks (c : Cfg) (j : Joint.Cfg) : Prop where
   cached : JointCachedChecks j
   fixed : JointFixedChecks j
   table : NafTableChecks j.K
-  cache : ScratchCT (Naf.cacheTable j.K.M j.K.tbl j.cache 8)
+  cache : ScratchCT (Naf.cacheTable j.K.M j.K.tbl j.cache 8).inline
   seed : ScratchCT (.block (Jacobian.infinity j.K j.K.R))
   counter : ScratchCT (.block [.mov32 .rbx (.imm (BitVec.ofNat 32 (64*j.K.M.n)))])
   prepG : FastPrepChecks j.K.M.n (c.sl U) j.gBits 7
@@ -29,7 +29,7 @@ theorem jointPoints_relCT {c : Cfg} {j : Joint.Cfg} {d : CombData} {double : Pro
     (checks : JointMulChecks c j)
     {s₀ t₀ : State} (ps : VPre c s₀) (pt : VPre c t₀) (pub : JointPublic c d s₀ t₀) :
     RelCT isa (fun s t => (∃ g,Mid c s₀ (s₀.gpr .rcx) g s) ∧ (∃ h,Mid c t₀ (t₀.gpr .rcx) h t))
-      (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double)
+      (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
       (fun s t => X86_64.Taint.Agree (Taint.ofRegs [.rdi]) s t) := by
   intro s t ls lt s' t' ⟨⟨g,hs⟩,⟨h,ht⟩⟩ es et
   have base : s₀.gpr .rcx=t₀.gpr .rcx := pub.regs.rf.1 .rcx (by decide)

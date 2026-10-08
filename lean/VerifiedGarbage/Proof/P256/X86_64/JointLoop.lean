@@ -11,7 +11,7 @@ open Spec.Weierstrass
 theorem p256_doubler {c : Joint.Cfg} {size : Nat}
     (hL : JointLayout c size) (hn : c.K.M.n=4) (hm : UnitMod Spec.P256.p (2^(64*c.K.M.n)))
     (hC : Law Spec.P256.curve) (ha : AM3 Spec.P256.curve)
-    (hd : (doubleSlots c.K.S c.K.R).Nodup) (hct : ScratchCT (jointDouble c.K)) :
+    (hd : (doubleSlots c.K.S c.K.R).Nodup) (hct : ScratchCT (jointDouble c.K).inline) :
     JointDoubler c Spec.P256.curve size (jointDouble c.K) := by
   have hw : ∀ x∈doubleSlots c.K.S c.K.R,x∈jointWork c := by
     intro x hx

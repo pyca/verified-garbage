@@ -24,7 +24,7 @@ BMI2 and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: 
 instruction writing `rsp` (`hsp`). -/
 def publicKey (adx : Bool) (code : Prog X86_64.isa)
     (hv : Verified X86_64.target code
-      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)))
+      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
     (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true) : Artifact :=
   { Spec.EcKey.P521.publicKeyApi with
     name := Spec.EcKey.P521.publicKeyApi.name ++ (if adx then "_adx" else "")
@@ -49,7 +49,8 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     consts := Impl.Ecdsa.X86_64.p521.combConsts
     code
     contract := Spec.EcKey.P521.inst.publicKeyContract
-      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts)
+      (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8
+    stack := 8
     verified := hv
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }

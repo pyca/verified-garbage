@@ -14,7 +14,7 @@ theorem head_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv M base size m Sl V E s)
     (hV : ∀ x∈rcbR S p q++[dst,dst+8*M.n],x∈V)
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*M.n)=E dst*E q.z) :
-    WP isa (ForwardField.programB M (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst)) s fun t =>
+    WP isa (ForwardField.programB M (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl (validAfter (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst) V)
         (runOps (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst) E) t ∧
@@ -46,7 +46,7 @@ theorem tail_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
       (runOps (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst) E) s)
     (hV : ∀ x∈rcbR S p q++[dst,dst+8*M.n],x∈V)
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+8*M.n)=E dst*E q.z) :
-    WP isa (ForwardField.programB M (jacTail S p q o)) s fun t =>
+    WP isa (ForwardField.programB M (jacTail S p q o)).inline s fun t =>
       ProgKeep M base (rcbW S o) s t ∧
       Inv M base size m Sl ([o.x,o.y,o.z]++V)
         (runOps (Impl.Weierstrass.X86_64.CachedJac.head M.n S p q dst++jacTail S p q o) E) t ∧

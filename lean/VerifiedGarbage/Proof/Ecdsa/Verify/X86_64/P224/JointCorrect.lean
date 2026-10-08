@@ -9,7 +9,7 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.P224.X86_64 VG.Proof.Weierstrass VG.Proof.We
 theorem jointVerify_p224_ok (hL : Law Spec.P224.curve)
     (hT : CombOkW Spec.P224.curve 7 37 Impl.P224.p224Comb7 Impl.P224.p224Comb7Start)
     (hI : InvSounds) {s : State} (hp : VPre p224v s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJoint (Joint.jacDouble publicJoint.K)) s
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p224v publicJoint (Joint.jacDouble publicJoint.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p224v s t := by
   have hc := p224v_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_

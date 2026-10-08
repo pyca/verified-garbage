@@ -208,7 +208,7 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
     (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInvA K C base size P s₀ k j s) :
-    WP isa (K.stepA dbl) s fun s' => JInvA K C base size P s₀ k (j - 1) s' ∧
+    WP isa (K.stepA dbl).inline s fun s' => JInvA K C base size P s₀ k (j - 1) s' ∧
       s'.zf = some (decide (j - 1 = 0)) := by
   obtain ⟨hI, hO1⟩ := hI
   obtain ⟨Q, hQ, hQe, R₀⟩ := hI.st
@@ -217,6 +217,7 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, -, -⟩ := hL.T_mem
   rw [JacWinCfg.stepA]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have R₁ := R₀.rbxKeeps hL k₁
   have m₁ : s₁.mem = s.mem := k₁.2.1
@@ -417,7 +418,7 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) {inv : Prog isa} {IW : List (Nat × Nat)} {base : Addr}
     (hI : InvSpecJ K C base size inv IW) {s₀ : State}
     (hs₀ : Scr s₀ base size) (hM₀ : ModOkW K.M size C.p s₀.mem base) (hF₀ : JacWinFixed K C base s₀ P k) :
-    WP isa (K.windowA inv dbl) s₀ fun s' => KeepRegs (invClob K.M.n) s₀ s' ∧
+    WP isa (K.windowA inv dbl).inline s₀ fun s' => KeepRegs (invClob K.M.n) s₀ s' ∧
       Unch base (jwW K ++ IW) s₀.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       (k < C.n → Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y)
@@ -431,6 +432,7 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     exact hC.one_ne_zero this.2.2
   have pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
   rw [JacWinCfg.windowA]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs₀ hM₀ hF₀) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (normA_ok hL hp hC hpn hone_lt hone hI F₁.scr F₁.mod T₁)
     fun s ⟨hs, Kn, Un, hM, T₂, O₂⟩ => ?_)

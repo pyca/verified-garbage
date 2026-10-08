@@ -39,7 +39,7 @@ theorem jwGrid_eq (c : Cfg) : jwGrid (jwQ c) = gridJ.map c.sl := by
   simp only [jwGrid, gridJ, List.map_map]
   refine List.map_congr_left fun i _ => ?_
   show c.sl WT + 8 * c.n * i = c.sl (WT + i)
-  rw [sl_eq, sl_eq, Nat.mul_add, Nat.add_assoc]
+  simp (disch := sl_ne) only [sl_eq]; rw [Nat.mul_add, Nat.add_assoc]
 
 theorem jwSlots_eq (c : Cfg) : jwSlots (jwQ c) = (roJ ++ otherJ ++ gridJ).map c.sl := by
   rw [jwSlots, jwGrid_eq, List.map_append, List.map_append]; rfl
@@ -51,7 +51,8 @@ theorem jwIdx_lt : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 168 ∧ i ≠ MP ∧ i 
 
 /-- Every slot below `168` is in the working space, for four or six words. -/
 theorem sl_le_jw (c : Cfg) (h46 : c.n = 4 ∨ c.n = 6) {i : Nat} (hi : i < 168) : c.sl i + 8 * c.n ≤ size := by
-  rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> show _ ≤ 8192 <;> omega
+  simp only [sl_eq', ix, show ¬ c.n = 9 by omega, ↓reduceIte]
+  rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> omega
 
 theorem lay_jw (h46 : c.n = 4 ∨ c.n = 6) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
     (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 168 ∧ i ≠ MP ∧ i ≠ TMP) :
@@ -92,8 +93,9 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     have key : ∀ i ∈ roJ ++ otherJ, i < WT := by decide
     rw [hK, hMn]; exact Or.inl (sl_lt c (key i hi))
-  · rcases h46 with h4 | h4 <;> rw [hK, sl_eq, h4] <;> unfold WT <;> omega
-  · rcases h46 with h4 | h4 <;> rw [hb, hJ, sl_eq, h4] <;> show _ ≤ 8192 <;> unfold WB <;> omega
+  · rw [hK]; simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WT <;> omega
+  · rw [hb, hJ]; simp (disch := sl_ne) only [sl_eq]
+    rcases h46 with h4 | h4 <;> rw [h4] <;> show _ ≤ 8192 <;> unfold WB <;> omega
   · intro w hw
     rw [jwW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -103,8 +105,9 @@ theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) si
     · exact Or.inr (sl_lt c h)
     · refine Or.inl ?_
       dsimp only
-      unfold WT at h
-      rcases h46 with h4 | h4 <;> rw [sl_eq, sl_eq, h4] <;> unfold WB <;> omega
+      simp (disch := sl_ne) only [sl_eq]
+      unfold WB; unfold WT at h
+      rcases h46 with h4 | h4 <;> rw [h4] <;> omega
 
 /-! ## The recoded scalar -/
 
@@ -167,13 +170,15 @@ theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO :
   have hJ : (jwQ c).J = Impl.Ecdh.X86_64.Cfg.jwinJ c := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have hWK : c.sl WK + 16 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WK <;> omega
+  have hWK : c.sl WK + 16 * c.n ≤ size := by
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WK <;> omega
   have hKW := sl_lt c (show K < WK by decide)
   have h32 : (32 : Nat) ^ Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
-  have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
-  have hBs : c.sl WB + 80 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WB <;> omega
+  have e82 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := sl_ne) only [sl_eq]; unfold WK WB; omega
+  have hBs : c.sl WB + 80 * c.n ≤ size := by
+    simp (disch := sl_ne) only [sl_eq]; rcases h46 with h4 | h4 <;> rw [h4] <;> unfold WB <;> omega
   rw [Impl.Ecdh.X86_64.Cfg.jwinPrep]
   refine WP.seq (WP.seq ?_)
   rw [hK]
@@ -219,11 +224,11 @@ theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO :
   have F₄ := F₃.unch h7 hn (fixedOk_slW (by decide)) U₄
   have rz₄ : wordsVal s₄.mem base (c.sl RZ) c.n < c.C.p :=
     L₄ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pPow_ok hc hs₄ M₄ rz₄ F₄.onep (fun t ht => by
+  refine WP.seq (WP.mono (pPow_ok hc hs₄ M₄ rz₄ F₄.onep (fun h9 t ht => by
       rw [tbl_unch U₄ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht),
         tbl_unch U₃ h7 hn (j := 1) (by decide) ht (tbl_apart_winX (by decide) ht),
         tbl_unch U₁ h7 hn (j := 1) (by decide) ht (tbl_apart_slW' (by decide) (by decide) ht)]
-      exact ht₁ t ht)) fun s₅ ⟨K₅, U₅, lt₅, v₅⟩ => h s₅ ?_)
+      exact ht₁ h9 t ht)) fun s₅ ⟨K₅, U₅, lt₅, v₅⟩ => h s₅ ?_)
   have r₅ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₅ i = sv c base s₄ i := fun hi h₁ =>
     sv_unch U₅ h7 hn hi (apart_pwW hi h₁)
   have c₂ : ∀ r ∈ [Reg.rax, .r8], r ∈ powClob c.n := by

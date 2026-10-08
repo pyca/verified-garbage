@@ -15,8 +15,9 @@ theorem nafTable_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     {s : State} (hI : Inv K.M base size C.p (·∈nafSlots K) (winRo K) (tmv C K.M.n base s) s)
     (hJP : InvJ C (tmv C K.M.n base s K.P.x) (tmv C K.M.n base s K.P.y)
       (tmv C K.M.n base s K.P.z) P) :
-    WP isa (Naf.table K) s (fun t => NafTableInv K C base size P s t 8) := by
+    WP isa (Naf.table K).inline s (fun t => NafTableInv K C base size P s t 8) := by
   unfold Naf.table
+  simp only [Code.inline]
   apply WP.assoc
   refine WP.seq (WP.mono (nafTable_init_ok hL hJ hm hC ha hP hI hJP) fun a ia => ?_)
   refine WP.loop (M:=isa)

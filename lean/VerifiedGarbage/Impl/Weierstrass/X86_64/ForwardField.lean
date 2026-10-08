@@ -34,6 +34,6 @@ def program (M : Mod) (cs : Forward.Cache) (ops : List FOp) : Prog isa :=
 
 /-- Keep the same field operations on baseline; forward between them on ADX. -/
 def programB (M : Mod) (ops : List FOp) : Prog isa :=
-  if M.adx ∧ M.n=4 then program M [] ops else blocks (ops.map (code M))
+  if M.adx ∧ M.n=4 then program M [] ops else progs (ops.map fun op => (opCall? M op).getD (.block (code M op)))
 
 end VG.Impl.Weierstrass.X86_64.ForwardField

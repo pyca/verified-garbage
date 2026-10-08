@@ -41,6 +41,25 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
       (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c)
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c))))))))) := rfl
 
+/-- Verification inlined: only the points and the tail call functions. -/
+theorem verify_inline (c : Cfg) : (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline =
+    .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (.seq (.block (c.setupWith (some D)))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+      (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
+      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
+      (.seq c.nPow (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.points c).inline
+        (Impl.Ecdsa.Verify.X86_64.Cfg.tail c).inline)))))))) := by
+  rw [verify_eq'']
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+    (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
+    (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
+  rw [nPow_inline, show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
+    show (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline = _ from blocks_inline _,
+    show (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline = _ from blocks_inline _]
+  rfl
+
 /-- What the slots of `a`, `3b` and `G` stand for. -/
 theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
     (F : Fixed c base g s.mem) :
@@ -59,10 +78,10 @@ theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s :
 verification holds, and restores the callee-saved registers. -/
 theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     (hp : VPre c s₀) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) s₀ fun s' =>
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c).inline s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  rw [verify_eq'']
+  rw [verify_inline]
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have F₂ := hM.fixed
   obtain ⟨-, -, h1⟩ := consts_tmv hc F₂

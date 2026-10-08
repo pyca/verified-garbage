@@ -151,7 +151,7 @@ values are the numbered program's. -/
 theorem tblProg_ok (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {N : List FOp} (hout : ∀ op ∈ N, op.out < 13)
     {Rd : List Nat} (hR : readsOk N Rd = true) {base : Addr} {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p (· ∈ jwSlots K) V E s) (hV : ∀ i ∈ Rd, tblσ K i ∈ V) :
-    WP isa (ForwardField.programB K.M (N.map (FOp.rename (tblσ K)))) s fun t =>
+    WP isa (ForwardField.programB K.M (N.map (FOp.rename (tblσ K)))).inline s fun t =>
       ProgKeep K.M base (tblW K) s t ∧
       Inv K.M base size C.p (· ∈ jwSlots K) (validAfter (N.map (FOp.rename (tblσ K))) V)
         (runOps (N.map (FOp.rename (tblσ K))) E) t ∧
@@ -198,7 +198,7 @@ theorem cadd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {b
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv K.M base size C.p (· ∈ jwSlots K) V E s)
     (hV : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z, K.z2, K.z2 + 8 * K.M.n], x ∈ V)
     (h2 : E K.z2 = E K.E.z * E K.E.z) (h3 : E (K.z2 + 8 * K.M.n) = E K.z2 * E K.E.z) :
-    WP isa (ForwardField.programB K.M K.addOps) s fun t =>
+    WP isa (ForwardField.programB K.M K.addOps).inline s fun t =>
       ProgKeep K.M base (rcbW K.S K.D) s t ∧ ∃ E' : Nat → Fe C,
         Inv K.M base size C.p (· ∈ jwSlots K) ([K.D.x, K.D.y, K.D.z] ++ V) E' t ∧
         (E' K.D.x, E' K.D.y, E' K.D.z) =

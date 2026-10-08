@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Core
 import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Impl.Ecdsa.Rfc6979.X86_64
 import VerifiedGarbage.Impl.Sha256.X86_64.Stream
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.Contract
@@ -94,16 +95,20 @@ structure RfcCurve where
   /-- The bits the signature drops from its digest, `8 len - nBits`. -/
   sh : Nat
   sh_eq : E.sh = sh
-  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct and constant time. -/
+  /-- `vg_ecdsa_<curve>_sign`, its name, and that it is correct (with the 8
+  bytes below `rsp` apart from its buffers, for the return addresses of its
+  own calls) and constant time. -/
   coreN : String
   coreC : Prog isa
-  coreX : ∀ s, (coreK E).pre s → ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
+  coreX : ∀ s, (coreK E).pre s → Clear (hole (s.gpr .rsp)) s →
+    ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
-  /-- Its instructions: none writes `rsp` (or loads MXCSR), and it calls nothing. -/
+  /-- Its instructions: none writes `rsp` (or loads MXCSR), and the functions
+  it calls call nothing. -/
   coreNs : coreC.allInstrs (fun i => !Taint.clobbers i .rsp) = true
   coreSp : coreC.allInstrs (fun i => !isa.writesSp i) = true
   coreMx : coreC.allInstrs (fun i => !loadsMxcsr i) = true
-  coreD : coreC.depth = 0
+  coreD : coreC.depth ≤ 1
   /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
   memory only from `rsp` and `rsi` (the taint analysis, of the block for
   `n`'s words). -/

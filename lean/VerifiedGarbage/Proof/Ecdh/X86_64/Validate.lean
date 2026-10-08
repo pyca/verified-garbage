@@ -322,9 +322,9 @@ theorem ladLayQ (hc : BaseCfgOk c) : LadLay (Impl.Ecdh.X86_64.Cfg.ladderQ c) siz
       (lr := [AP, B3P, RX, RY, RZ, RX, RY, RZ]) rfl rfl (by decide) (by decide),
     rcbApart_of hn (lw := [T0, T1, T2, T3, T4, T5, TX, TY, TZ])
       (lr := [AP, B3P, DX, DY, DZ, PX, PY, ONEP]) rfl rfl (by decide) (by decide), ?_,
-    ⟨fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide),
-      fun h => by have := sl_inj c hn h; exact absurd this (by decide)⟩, ?_,
+    ⟨fun h => by have := sl_inj c hn (i := RX) (j := RY) h; exact absurd this (by decide),
+      fun h => by have := sl_inj c hn (i := RX) (j := RZ) h; exact absurd this (by decide),
+      fun h => by have := sl_inj c hn (i := RY) (j := RZ) h; exact absurd this (by decide)⟩, ?_,
     ⟨show 1 ≤ 64 * c.n by omega, show 64 * c.n < 2 ^ 16 by omega⟩, bitsAt_le c h7 (by decide), ?_⟩
   · exact lay_map hc rfl rfl rfl (l := [AP, B3P, PX, PY, ONEP, RX, RY, RZ, T0, T1, T2, T3, T4, T5,
       DX, DY, DZ, TX, TY, TZ]) (by decide)
@@ -340,8 +340,10 @@ theorem ladLayQ (hc : BaseCfgOk c) : LadLay (Impl.Ecdh.X86_64.Cfg.ladderQ c) siz
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hy'
       have hl : ∀ i ∈ [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX,
           TY, TZ], i < 45 := by decide
-      exact Or.inr (sl_below_bits c (hl i hi) 0 0)
-    · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
+      exact Or.inr (sl_below_bits c (hl i hi) 0 0 (.inl fun h => by subst h; exact absurd hi (by decide)))
+    · rcases tmp_apart_bits c (j := 0) (.inl (by decide)) (64 * c.n) (by omega) with h | h
+      · exact Or.inr (by show c.sl TMP + 8 * c.n ≤ bitsAt c.n 0; exact h)
+      · exact Or.inl (by show bitsAt c.n 0 + 64 * c.n ≤ c.sl TMP; exact h)
 
 theorem ladWQ_eq (c : Cfg) : ladW (Impl.Ecdh.X86_64.Cfg.ladderQ c) = slW c [RX, RY, RZ, T0, T1, T2, T3,
     T4, T5, DX, DY, DZ, T0, T1, T2, T3, T4, T5, TX, TY, TZ, TMP] := rfl
@@ -368,9 +370,9 @@ theorem ladPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
-    (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
+    (ht₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
     {rest : Prog isa} {R : State → Prop} (h : ∀ s', LadPost c base Q s s' → WP isa rest s' R) :
-    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)) (.seq c.pPow rest)) s R := by
+    WP isa (.seq (ladder (Impl.Ecdh.X86_64.Cfg.ladderQ c)).inline (.seq c.pPow rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
@@ -406,10 +408,10 @@ theorem ladPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base 
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅ rz₅ F₅.onep
-    (fun t ht => by
+    (fun h9 t ht => by
       show s₅.mem (off base (bitsAt c.n 1 + t)) = _
-      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_slW (by decide) 1 t)]
-      exact ht₁ t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+      rw [tbl_unch U₅ h7 hn (j := 1) (by decide) ht (tbl_apart_slW (by decide) 1 t ht)]
+      exact ht₁ h9 t ht)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨hs₅.of_keepRegs K₆ (rdi_not_invClob _), fun r hr => by

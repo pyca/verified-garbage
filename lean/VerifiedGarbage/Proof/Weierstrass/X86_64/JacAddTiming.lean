@@ -9,15 +9,14 @@ theorem doubleFieldPlain_relCT {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hm : UnitMod m (2^(64*M.n)))
     {S : RcbSlots} {p o : Pt} (hSl : ∀ x∈rcbW S o++rcbR S p p,Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR S p p,x∈V)
-    (hc : ScratchCT (fprogB M (dblJMul S p o))) :
-    RelCT isa (FieldPair M base size m Sl V E) (fprogB M (dblJMul S p o))
+    (hc : ScratchCT (fprogB M (dblJMul S p o)).inline) :
+    RelCT isa (FieldPair M base size m Sl V E) (fprogB M (dblJMul S p o)).inline
       (FieldPair M base size m Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E)) := by
   have he : dblJMul S p o=ofN (dblJChoiceN true) S p p o := dblJChoice_eq true S p o
   rw [he] at hc ⊢
   apply fieldProgram_relCT hc
   intro s hi
-  apply (fprogB_wp _ _).mpr
-  refine WP.mono (fprog_ok hL hm _ hi
+  refine WP.mono (fprogB_ok hL hm _ hi
     (fun op hop x hx => hSl x (ofN_slots op hop x hx))
     (readsOk_mono (ofN_readsOk (dblJChoiceN_ok true) S p p o) hV)) fun _ ht => ht.2.sub ?_
   intro x hx
@@ -33,9 +32,9 @@ structure JacAddChecks (K : WinCfg) (p q o : Pt) : Prop where
   zeroR : ScratchCT (.block (Jacobian.zeroTest K.M.n K.S.t5))
   copyP : ScratchCT (.block (copyPt K.M.n o p))
   copyQ : ScratchCT (.block (copyPt K.M.n o q))
-  head : ScratchCT (fprogB K.M (jacHead K.S p q))
-  tail : ScratchCT (fprogB K.M (jacTail K.S p q o))
-  double : ScratchCT (fprogB K.M (dblJMul K.S p o))
+  head : ScratchCT (fprogB K.M (jacHead K.S p q)).inline
+  tail : ScratchCT (fprogB K.M (jacTail K.S p q o)).inline
+  double : ScratchCT (fprogB K.M (dblJMul K.S p o)).inline
   infinity : ScratchCT (.block (Jacobian.infinity K o))
 
 theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
@@ -46,7 +45,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q,x∈V)
     (hOne : K.one<m) :
     RelCT isa (FieldPair K.M base size m Sl V E)
-      (Jacobian.jacAdd K p q o) (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
+      (Jacobian.jacAdd K p q o).inline (fun s t => ∃ E',FieldPair K.M base size m Sl ([o.x,o.y,o.z]++V) E' s t) := by
   have hs := hSl
   have hv := hV
   have os : ∀ x∈[o.x,o.y,o.z],Sl x := by
@@ -74,7 +73,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
       exact (copyPoint_relCT hL os pv hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
     · intro _
       apply RelCT.seq (fieldProgram_relCT hc.head (fun s hi =>
-        (fprogB_wp _ _).mpr (WP.mono (jacHead_ok hL hm hA hSl hi hV)
+        (WP.mono (jacHead_ok hL hm hA hSl hi hV)
           (fun _ ht => ht.2.1))))
       have oldV : ∀ x∈V,x∈validAfter (jacHead K.S p q) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl (by simp [hx]))
@@ -103,7 +102,7 @@ theorem jacAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (fieldProgram_relCT hc.tail (fun s hi =>
-          (fprogB_wp _ _).mpr (WP.mono (jacTail_ok hL hm hA hSl hi hV) (fun _ ht => ht.2.1)))).mono
+          (WP.mono (jacTail_ok hL hm hA hSl hi hV) (fun _ ht => ht.2.1)))).mono
           (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
 end VG.Proof.Weierstrass.X86_64

@@ -7,7 +7,7 @@ open VG.Impl.Weierstrass.X86_64 VG.Proof.Mont VG.Proof.Mont.X86_64 Spec.Weierstr
 theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
     (hL : NafLay K size) (hJ : 1≤K.J ∧ 4*K.J≤64*K.M.n+4) (hm : UnitMod C.p (2^(64*K.M.n)))
     (ht : K.tbl<2^31) (hOne : K.one<C.p) (hm8 : m<8) (hc : NafTableChecks K) :
-    RelCT isa (NafTablePair K C base size m) (Naf.tableStep K)
+    RelCT isa (NafTablePair K C base size m) (Naf.tableStep K).inline
       (fun s t => NafTablePair K C base size (m+1) s t ∧
         s.cf=some (decide (m+1<8)) ∧ t.cf=some (decide (m+1<8))) := by
   have rs : ∀ x∈jacCoords K.R,x∈nafSlots K := by
@@ -33,9 +33,10 @@ theorem nafTable_step_relCT {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat
   apply RelCT.exists_
   intro E
   unfold Naf.tableStep
+  simp only [Code.inline]
   have ac := jacAdd_relCT (base:=base) (E:=E) hL.lay hm hc.add (hL.rcbApart_twice hJ)
     slots (nafTableLive_read K m) hOne
-  apply RelCT.seq ((relCT_keepGpr (v:=BitVec.ofNat 64 m) ac hc.keepAdd).mono
+  apply RelCT.seq ((relCT_keepGprS (v:=BitVec.ofNat 64 m) ac hc.keepAdd).mono
     (Q':=fun (s t : State) => ∃ e, FieldPair K.M base size C.p (·∈nafSlots K)
       (jacCoords K.D++nafTableLive K m) e s t ∧
       s.gpr .rbx=BitVec.ofNat 64 m ∧ t.gpr .rbx=BitVec.ofNat 64 m)

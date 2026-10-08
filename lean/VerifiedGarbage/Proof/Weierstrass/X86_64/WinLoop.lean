@@ -25,10 +25,11 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : W
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
     (hI : WinInv K C base size k P s₀ s j) :
-    WP isa (WinCfg.step K) s fun s' =>
+    WP isa (WinCfg.step K).inline s fun s' =>
       WinInv K C base size k P s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
   have hJ := hL.J
   rw [WinCfg.step]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s hj (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have hS₁ : WinSt K C base size P s₀ s₁ := hI.st.next hL (hI.st.scr.of_keeps k₁ (by decide))
     ((Keeps.regs k₁).mono (by intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [powClob]))
@@ -113,7 +114,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)
     (hk8 : 8 * geom K.J ≤ k) :
-    WP isa (WinCfg.window K) s fun s' => KeepRegs (powClob K.M.n) s s' ∧
+    WP isa (WinCfg.window K).inline s fun s' => KeepRegs (powClob K.M.n) s s' ∧
       Unch base (winW K) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -121,6 +122,7 @@ theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Wi
   have hn := hs.nowrap
   have hJ := hL.J
   rw [WinCfg.window]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (build_ok hL hp hC hM3 hP hs hM hF) fun s₁ B => ?_)
   have S₁ : WinSt K C base size P s s₁ :=
     ⟨B.scr, B.keep, B.unch, B.mod, B.tbl⟩

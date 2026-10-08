@@ -44,7 +44,8 @@ abbrev slW (c : Cfg) (l : List Nat) : List (Nat × Nat) := l.map fun i => (c.sl 
 theorem FixedOk.append {W W' : List (Nat × Nat)} (h : FixedOk c W) (h' : FixedOk c W') :
     FixedOk c (W ++ W') := fun w hw => (List.mem_append.mp hw).elim (h w) (h' w)
 
-theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : FixedOk c (slW c l) := by
+theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) (h55 : 55 ∉ l := by decide) :
+    FixedOk c (slW c l) := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   rcases hl i hi with h | h
@@ -52,7 +53,7 @@ theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : Fi
   · refine Or.inr ?_
     rcases Nat.eq_or_lt_of_le h with h | h
     · rw [h]
-    · exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c h)
+    · exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c h (.inl (by decide)) fun e => h55 (e ▸ hi))
 
 theorem fixedOk_tbl (j : Nat) : FixedOk c [(bitsAt c.n j, 64 * c.n)] := by
   intro w hw
@@ -94,8 +95,8 @@ theorem Fixed.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem} (h : Fixed
   have := setupSaved_lt p hp
   refine (hu.word (d := p.2) (fun w hw => Or.inl ?_) (by omega)).trans (h.saved p hp)
   rcases hW w hw with ⟨h1, -⟩ | h
-  · rw [h1, sl_eq]; omega
-  · rw [sl_eq] at h; omega
+  · rw [h1, sl_eq']; exact Nat.le_trans this (Nat.le_trans (by decide) (Nat.le_add_right 64 _))
+  · simp (disch := sl_ne) only [sl_eq] at h; omega
 
 /-- A slot apart from the ranges of other numbered slots. -/
 theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
@@ -104,11 +105,11 @@ theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hw
   exact sl_apart c fun h => hi (h ▸ hj)
 
-theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) :
+theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) (hT : i ≠ TMP ∨ 2 ≤ j := by sl_or) :
     ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (by have := sl_below_bits c hi j 0; omega)
+  exact Or.inl (by have := sl_below_bits c hi j 0 hT; omega)
 
 theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
     ∀ w ∈ [(c.sl FLAG, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -137,11 +138,16 @@ theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch b
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
   hu.byte hW (by have := bitsAt_le c h7 hj; omega)
 
-theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
+theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) (ht : t < 64 * c.n)
+    (hT : TMP ∉ l ∨ j ≠ 1 ∨ c.n ≠ 9 := by
+      first | exact .inl (by decide) | exact .inr (.inl (by decide)) | exact .inr (.inr (by omega))) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-  exact Or.inr (sl_below_bits c (hl i hi) j t)
+  rcases sl_apart_bits c (hl i hi) (hT.elim (fun h => .inl fun e => h (e ▸ hi)) .inr) (t + 1) (by omega)
+    with h | h
+  · exact Or.inr (by dsimp only; omega)
+  · exact Or.inl h
 
 theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) :
     ∀ w ∈ [(c.sl FLAG, 8)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by

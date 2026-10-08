@@ -880,6 +880,13 @@ def xRow (M : Mod) (ra rb : Reg) (c a b i : Nat) : List Instr :=
     [.store (rc c (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0)] ++
     maddStepsC rb c 8 (xWin (i + 1)) (b + 8) ++ xTail (xAcc (i + 9))
 
+/-- `xRow` but its first instruction: the row once `rdx = a_i`. -/
+def xRowR (M : Mod) (rb : Reg) (c b i : Nat) : List Instr :=
+  [.alu32 .xor .rax (.reg .rax)] ++
+    madd (xAcc i) (xAcc (i + 1)) (.mem (rcR rb c b)) ++
+    [.store (rc c (M.tmp + 8 * i)) (xAcc i), .mov32 (xAcc i) (.imm 0)] ++
+    maddStepsC rb c 8 (xWin (i + 1)) (b + 8) ++ xTail (xAcc (i + 9))
+
 /-- `k` products `rdx · [d]`, `rdx · [d + 8]`, … into the words `j … j + k`
 of the accumulator (`xAcc`), whatever those held but word `j`: each
 product's high half into the next word (`mulx`), its low half added through

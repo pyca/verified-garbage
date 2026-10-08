@@ -16,12 +16,12 @@ def JointPair (c : Joint.Cfg) (C : Curve) (base : Addr) (size : Nat)
 theorem jointPair_stage {c : Joint.Cfg} {C : Curve} {base : Addr} {size j : Nat}
     {Core : Point C → State → Prop} {A B : Point C} {code : Prog isa} {W : List Nat}
     (hw : ∀ s,Core A s → s.gpr .rbx=BitVec.ofNat 64 j →
-      WP isa code s fun t => ProgKeep c.K.M base W s t ∧ Core B t)
+      WP isa code.inline s fun t => ProgKeep c.K.M base W s t ∧ Core B t)
     (ht : ∀ E,RelCT isa (fun s t =>
       FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
       Core A s ∧ Core A t ∧ s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-      code (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)) :
-    RelCT isa (JointPair c C base size Core A j) code (JointPair c C base size Core B j) := by
+      code.inline (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)) :
+    RelCT isa (JointPair c C base size Core A j) code.inline (JointPair c C base size Core B j) := by
   intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,ps,pt⟩ es et
   obtain ⟨he,hp'⟩ := ht E _ _ _ _ _ _ ⟨hp,cs,ct,ps,pt⟩ es et
   obtain ⟨_,_,xs,ks,cs'⟩ := hw s cs ps
@@ -36,15 +36,15 @@ structure JointOpsTiming (c : Joint.Cfg) (double : Prog isa) (C : Curve) (base :
   double : ∀ A j E,RelCT isa (fun s t =>
     FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
     Core A s ∧ Core A t ∧ s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-    double (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
+    double.inline (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
   peer : ∀ A j,j<64*c.K.M.n+1 → ∀ E,RelCT isa (fun s t =>
     FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
     Core A s ∧ Core A t ∧ s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-    (Joint.cachedDigit c) (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
+    (Joint.cachedDigit c).inline (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
   generator : ∀ A j,j<64*c.K.M.n+1 → ∀ E,RelCT isa (fun s t =>
     FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E s t ∧
     Core A s ∧ Core A t ∧ s.gpr .rbx=BitVec.ofNat 64 j ∧ t.gpr .rbx=BitVec.ofNat 64 j)
-    (Joint.fixedDigit c) (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
+    (Joint.fixedDigit c).inline (fun s t => ∃ E',FieldPair c.K.M base size C.p (·∈jointSlots c) (jointLive c) E' s t)
 
 theorem jointCounterCT : RegCT [.rbx] (.block [.alu .sub .rbx (.imm 1)]) :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rbx])
@@ -107,12 +107,12 @@ variable {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : Nat}
 
 variable (ht : JointOpsTiming c double C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)))
     (hdouble : ∀ A s,onCurve C A=true → (JointCore c C base size Q u v (JointGenerator c C base T size row)) A s →
-      WP isa double s fun t => ProgKeep c.K.M base (jointWork c) s t ∧ (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add A A) t)
+      WP isa double.inline s fun t => ProgKeep c.K.M base (jointWork c) s t ∧ (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add A A) t)
 
 include hL hm hC ha hOne hOneVal hG hQ ht
 
 theorem jointPair_digits {j : Nat} {A : Point C} (hA : onCurve C A=true) (hj : j<64*c.K.M.n+1) :
-    RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) A j) (Joint.digits c)
+    RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) A j) (Joint.digits c).inline
       (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
         (add (add A (FastNaf.point C Q 5 v j)) (FastNaf.point C G 7 u j)) j) := by
   apply RelCT.seq (jointPair_stage (fun s hs hb => jointCachedDigit_ok hL hm hC ha hOne hQ hA hs
@@ -124,7 +124,7 @@ include hdouble
 
 theorem jointPair_step {j : Nat} (hj : j<64*c.K.M.n) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v (j+1)) (j+1))
-      (Joint.step c double) (fun s t => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j s t ∧
+      (Joint.step c double).inline (fun s t => JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (jointPoint G Q u v j) j s t ∧
         s.zf=some (decide (j=0)) ∧ t.zf=some (decide (j=0))) := by
   have hk (rs : List Reg) (hr : Reg.rdi∉rs) (A : Point C) (s t : State)
       (ks : Keeps rs s t) (st : t.syms=s.syms) (cs : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A s) : (JointCore c C base size Q u v (JointGenerator c C base T size row)) A t :=
@@ -141,7 +141,7 @@ theorem jointPair_step {j : Nat} (hj : j<64*c.K.M.n) :
 
 theorem jointPair_run (hu : u<2^(64*c.K.M.n)) (hv : v<2^(64*c.K.M.n)) :
     RelCT isa (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row))
-      .infinity (64*c.K.M.n)) (Joint.run c double)
+      .infinity (64*c.K.M.n)) (Joint.run c double).inline
       (JointPair c C base size (JointCore c C base size Q u v (JointGenerator c C base T size row)) (add (mul u G) (mul v Q)) 0) := by
   have seed := jointPair_digits (base:=base) (T:=T) (u:=u) (v:=v) (row:=row) (j:=64*c.K.M.n)
     (A:=.infinity) hL hm hC ha hOne hOneVal hG hQ ht rfl (by omega)

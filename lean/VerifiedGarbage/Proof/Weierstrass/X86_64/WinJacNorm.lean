@@ -221,8 +221,8 @@ structure PreInvJ (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (s₀ :
 theorem prodJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {base : Addr} {P : Point C}
     {s₀ : State} (hs : Scr s₀ base size) (hM : ModOkW K.M size C.p s₀.mem base)
     (hT : JTblOk K C base P 16 s₀) :
-    WP isa (fprogB K.M K.prodOps) s₀ (PreInvJ K C base size s₀ 15) := by
-  rw [fprogB_wp, JacWinCfg.prodOps, fprog, List.flatMap_map]
+    WP isa (fprogB K.M K.prodOps).inline s₀ (PreInvJ K C base size s₀ 15) := by
+  rw [fprogB_wp (callOf_of_ne (by rcases hL.n46 with h | h <;> omega)), JacWinCfg.prodOps, fprog, List.flatMap_map]
   have I₀ : PreInvJ K C base size s₀ 0 s₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, fun j h2 h1 => absurd h2 (by omega),
       fun j h2 h1 => absurd h2 (by omega), fun _ _ _ => rfl⟩
@@ -472,10 +472,10 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     {u₀ : State} {X Y Z : Nat → Fe C} (B : BackStartJ K C base u₀ X Y Z) (hs : Scr u₀ base size)
     (hM : ModOkW K.M size C.p u₀.mem base) (hel : wordsVal u₀.mem base K.E.x K.M.n < C.p)
     (hev : tmv C K.M.n base u₀ K.E.x = cprod Z 16 ^ (C.p - 2)) :
-    WP isa (fprogB K.M K.normOps) u₀ fun t => Scr t base size ∧
+    WP isa (fprogB K.M K.normOps).inline u₀ fun t => Scr t base size ∧
       KeepRegs (clob K.M.n) u₀ t ∧ Unch base (jwW K) u₀.mem t.mem ∧ ModOkW K.M size C.p t.mem base ∧
       ∀ j, 1 ≤ j → j ≤ 16 → DoneJ K C base X Y Z t j := by
-  rw [fprogB_wp, JacWinCfg.normOps, fprog_append, fprog_flatMapJ, WP.block_append_iff]
+  rw [fprogB_wp (callOf_of_ne (by rcases hL.n46 with h | h <;> omega)), JacWinCfg.normOps, fprog_append, fprog_flatMapJ, WP.block_append_iff]
   have I₀ : BackInvJ K C base size u₀ X Y Z 0 u₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hel, hev, fun j hj hj' => absurd hj' (by omega),
       fun _ _ _ _ => rfl⟩
@@ -599,7 +599,7 @@ table of bits. -/
 structure InvSpecJ (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (inv : Prog isa)
     (IW : List (Nat × Nat)) : Prop where
   ok : ∀ t : State, Scr t base size → ModOkW K.M size C.p t.mem base →
-    wordsVal t.mem base K.R.z K.M.n < C.p → WP isa inv t fun t' =>
+    wordsVal t.mem base K.R.z K.M.n < C.p → WP isa inv.inline t fun t' =>
       KeepRegs (invClob K.M.n) t t' ∧ Unch base IW t.mem t'.mem ∧
       wordsVal t'.mem base K.E.x K.M.n < C.p ∧
       tmv C K.M.n base t' K.E.x = tmv C K.M.n base t K.R.z ^ (C.p - 2)
@@ -637,12 +637,13 @@ theorem normA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p) (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1)
     {inv : Prog isa} {IW : List (Nat × Nat)} {base : Addr} (hI : InvSpecJ K C base size inv IW) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base) (hT : JTblOk K C base P 16 s) :
-    WP isa (K.normA inv) s fun s' => Scr s' base size ∧ KeepRegs (invClob K.M.n) s s' ∧
+    WP isa (K.normA inv).inline s fun s' => Scr s' base size ∧ KeepRegs (invClob K.M.n) s s' ∧
       Unch base (jwW K ++ IW) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       JTblOk K C base P 16 s' ∧ JTblOne K base s' := by
   have hn := hs.nowrap
   have h1p : (1 : Fe C) ≠ 0 := hC.one_ne_zero
   rw [JacWinCfg.normA]
+  simp only [Code.inline]
   refine WP.seq (WP.mono (prodJ_ok hL hp hs hM hT) fun t I => ?_)
   refine WP.seq (WP.mono (hI.ok t I.scr I.mod (I.lt 16 (by decide) (by decide)))
     fun u₀ ⟨Ku, Uu, lu, vu⟩ => ?_)

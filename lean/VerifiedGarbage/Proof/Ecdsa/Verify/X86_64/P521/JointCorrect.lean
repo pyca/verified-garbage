@@ -15,7 +15,7 @@ variable (hL : Law Spec.P521.curve)
 include hL hT hI
 
 theorem jointVerify_p521_ok {s : State} (hp : VPre p521 s) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521 publicJoint (Joint.jacDouble publicJoint.K)) s
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521 publicJoint (Joint.jacDouble publicJoint.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521 s t := by
   have hc := p521_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_
@@ -26,7 +26,7 @@ theorem jointVerify_p521_ok {s : State} (hp : VPre p521 s) :
 
 theorem jointVerify_p521_adx_ok {s : State} (hp : VPre p521x s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify p521x publicJointAdx
-      (Joint.jacDouble publicJointAdx.K)) s
+      (Joint.jacDouble publicJointAdx.K)).inline s
       fun t => (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s.gpr r) ∧ VPost p521x s t := by
   have hc := p521x_ok hI
   refine jointVerify_ok hc hL rfl (by decide +kernel) (by decide +kernel) hp ?_

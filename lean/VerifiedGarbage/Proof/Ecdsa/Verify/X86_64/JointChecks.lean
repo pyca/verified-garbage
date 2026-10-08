@@ -46,11 +46,11 @@ theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
     (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256) :=
+theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 
-theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x) :=
+theorem joint_adx_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p256x).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
     (fun _ _ _ _ h => h) (by taint_decide)
 

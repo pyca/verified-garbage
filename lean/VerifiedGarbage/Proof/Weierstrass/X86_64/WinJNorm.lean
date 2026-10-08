@@ -27,7 +27,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     (hM : ModOkW K.M size C.p s.mem base) {o a b : Nat} (ho : o ∈ winWs K) (ha : a ∈ winSlots K)
     (hb : b ∈ winSlots K) (hla : wordsVal s.mem base a K.M.n < C.p)
     (hlb : wordsVal s.mem base b K.M.n < C.p) :
-    WP isa (.block (opCode K.M (.mul o a b))) s fun s' => Scr s' base size ∧
+    WP isa (opProg K.M (.mul o a b)).inline s fun s' => Scr s' base size ∧
       KeepRegs (clob K.M.n) s s' ∧ Unch base (winW K) s.mem s'.mem ∧
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base o K.M.n < C.p ∧
       tmv C K.M.n base s' o = tmv C K.M.n base s a * tmv C K.M.n base s b ∧
@@ -43,7 +43,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
       · exact hla
       · exact hlb
   have hSo : o ∈ winSlots K := winWs_slots K o ho
-  refine WP.mono (fop_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
+  refine WP.mono (opProg_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
       · exact hSo
@@ -198,12 +198,12 @@ theorem tz_same {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} (h1 : 1
 theorem prod_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {P : Point C} {s₀ : State} (hs : Scr s₀ base size)
     (hM : ModOkW K.M size C.p s₀.mem base) (hT : TblOk K C base P 8 s₀) :
-    WP isa (fprogB K.M (WinCfg.prodOps K)) s₀ (PreInv K C base size s₀ 7) := by
-  rw [fprogB_wp, WinCfg.prodOps, fprog, List.flatMap_map]
+    WP isa (fprogB K.M (WinCfg.prodOps K)).inline s₀ (PreInv K C base size s₀ 7) := by
+  rw [WinCfg.prodOps, List.map_eq_flatMap]
   have I₀ : PreInv K C base size s₀ 0 s₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, fun j h2 h1 => absurd h2 (by omega),
       fun j h2 h1 => absurd h2 (by omega), fun _ _ _ => rfl⟩
-  refine block_range_ok (N := 7) (fun i hi t I => ?_) 7 (Nat.le_refl _) s₀ I₀
+  refine fprogB_range_ok (N := 7) (fun i hi t I => ?_) 7 (Nat.le_refl _) s₀ I₀
   have hsa := tz_same hL (m := i + 2) (by omega) (by omega) (i := i + 1)
   have ltb : wordsVal t.mem base (K.tblPt (i + 2)).z K.M.n < C.p := by
     rw [I.same _ hsa.1 fun j h2 hj => hsa.2 j h2 hj (by omega)]
@@ -338,7 +338,7 @@ theorem back_step {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) {u₀ : State} {X Y Z : Nat → Fe C}
     (B : BackStart K C base u₀ X Y Z) {i : Nat} (hi : i < 7) {t : State}
     (I : BackInv K C base size u₀ X Y Z i t) :
-    WP isa (.block (fprog K.M (WinCfg.backOps K (8 - i)))) t (BackInv K C base size u₀ X Y Z (i + 1)) := by
+    WP isa (fprogB K.M (WinCfg.backOps K (8 - i))).inline t (BackInv K C base size u₀ X Y Z (i + 1)) := by
   generalize hm : 8 - i = m
   have hm2 : 2 ≤ m := by omega
   have hm8 : m ≤ 8 := by omega
@@ -372,17 +372,17 @@ theorem back_step {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
   have nz := cprod_ne_zero hC B.nz (m - 1) (by omega) (by omega)
   obtain ⟨tr1, tr2⟩ := trick_step hC nz (B.nz m (by omega) hm8)
   rw [← hcm] at tr1 tr2
-  rw [WinCfg.backOps, fprog_cons, WP.block_append_iff]
+  rw [WinCfg.backOps, fprogB_cons_iff]
   -- `D.x = E.x c_{m-1}`.
   refine WP.mono (slotMul_ok hL hp I.scr I.mod Dw (winWs_slots K _ Ew) cS I.ex_lt
     (by rw [ec]; exact (B.c _ (by omega) (by omega)).1)) fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have ex₁ := e₁ _ (winWs_slots K _ Ew) (Ne.symm dDE)
   -- `E.x = E.x Z_m`.
   refine WP.mono (slotMul_ok hL hp s₁ M₁ Ew (winWs_slots K _ Ew) zS (by rw [ex₁]; exact I.ex_lt)
     (by rw [e₁ _ zS (tm _ (by simp)).1.symm, ez]; exact (B.z m (by omega) hm8).1))
     fun t₂ ⟨s₂, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   have dx₂ := e₂ _ (winWs_slots K _ Dw) dDE
   have xx₂ : wordsVal t₂.mem base (K.tblPt m).x K.M.n = wordsVal u₀.mem base (K.tblPt m).x K.M.n := by
     rw [e₂ _ (winWs_slots K _ xw) (tm _ (by simp)).2.symm, e₁ _ (winWs_slots K _ xw) (tm _ (by simp)).1.symm, ex0]
@@ -390,7 +390,6 @@ theorem back_step {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
   refine WP.mono (slotMul_ok hL hp s₂ M₂ xw (winWs_slots K _ xw) (winWs_slots K _ Dw)
     (by rw [xx₂]; exact (B.x m (by omega) hm8).1) (by rw [dx₂]; exact l₁))
     fun t₃ ⟨s₃, k₃, U₃, M₃, l₃, v₃, e₃⟩ => ?_
-  rw [fprog_cons, fprog, List.flatMap_nil, List.append_nil]
   have dx₃ := e₃ _ (winWs_slots K _ Dw) (tm _ (by simp)).1
   have yy₃ : wordsVal t₃.mem base (K.tblPt m).y K.M.n = wordsVal u₀.mem base (K.tblPt m).y K.M.n := by
     rw [e₃ _ (winWs_slots K _ yw) (tyx hL), e₂ _ (winWs_slots K _ yw) (tm _ (by simp)).2.symm,
@@ -445,17 +444,17 @@ theorem back_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay
     (B : BackStart K C base u₀ X Y Z) (hs : Scr u₀ base size) (hM : ModOkW K.M size C.p u₀.mem base)
     (hel : wordsVal u₀.mem base K.E.x K.M.n < C.p)
     (hev : tmv C K.M.n base u₀ K.E.x = cprod Z 8 ^ (C.p - 2)) :
-    WP isa (fprogB K.M (WinCfg.normOps K)) u₀ fun t => Scr t base size ∧
+    WP isa (fprogB K.M (WinCfg.normOps K)).inline u₀ fun t => Scr t base size ∧
       KeepRegs (clob K.M.n) u₀ t ∧ Unch base (winW K) u₀.mem t.mem ∧ ModOkW K.M size C.p t.mem base ∧
       ∀ j, 1 ≤ j → j ≤ 8 →
         wordsVal t.mem base (K.tblPt j).x K.M.n < C.p ∧ wordsVal t.mem base (K.tblPt j).y K.M.n < C.p ∧
         tmv C K.M.n base t (K.tblPt j).x = X j * Z j ^ (C.p - 2) ∧
         tmv C K.M.n base t (K.tblPt j).y = Y j * Z j ^ (C.p - 2) := by
-  rw [fprogB_wp, WinCfg.normOps, fprog_append, fprog_flatMap, WP.block_append_iff]
+  rw [WinCfg.normOps, fprogB_append_iff]
   have I₀ : BackInv K C base size u₀ X Y Z 0 u₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hel, hev, fun j hj hj' => absurd hj' (by omega),
       fun _ _ _ _ _ => rfl⟩
-  refine WP.mono (block_range_ok (N := 7) (fun i hi t I => back_step hL hp hC B hi I) 7 (Nat.le_refl _) u₀ I₀)
+  refine WP.mono (fprogB_range_ok (N := 7) (fun i hi t I => back_step hL hp hC B hi I) 7 (Nat.le_refl _) u₀ I₀)
     fun t I => ?_
   have Ew : K.E.x ∈ winWs K := winOther_ws K _ (by win_mem)
   have st := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega)
@@ -468,11 +467,10 @@ theorem back_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay
   have ey1 : wordsVal t.mem base (K.tblPt 1).y K.M.n = wordsVal u₀.mem base (K.tblPt 1).y K.M.n :=
     I.same _ (winWs_slots K _ yw) (t1 _ (by simp)).1.symm (t1 _ (by simp)).2.symm fun j hj _ =>
       ⟨tyx hL, tyy hL (by omega) (by omega) (by omega)⟩
-  rw [fprog_cons, WP.block_append_iff]
+  rw [fprogB_cons_iff]
   refine WP.mono (slotMul_ok hL hp I.scr I.mod xw (winWs_slots K _ xw) (winWs_slots K _ Ew)
     (by rw [ex1]; exact (B.x 1 (Nat.le_refl _) (by omega)).1) I.ex_lt)
     fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_
-  rw [fprog_cons, fprog, List.flatMap_nil, List.append_nil]
   have ee₁ := e₁ _ (winWs_slots K _ Ew) (t1 _ (by simp)).2
   refine WP.mono (slotMul_ok hL hp s₁ M₁ yw (winWs_slots K _ yw) (winWs_slots K _ Ew)
     (by rw [e₁ _ (winWs_slots K _ yw) (tyx hL), ey1]; exact (B.y 1 (Nat.le_refl _) (by omega)).1)
@@ -552,7 +550,7 @@ temporary area, and areas apart from the modulus and the window's slots. -/
 structure InvSpecW (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (inv : Prog isa)
     (IW : List (Nat × Nat)) : Prop where
   ok : ∀ t : State, Scr t base size → ModOkW K.M size C.p t.mem base →
-    wordsVal t.mem base K.R.z K.M.n < C.p → WP isa inv t fun t' =>
+    wordsVal t.mem base K.R.z K.M.n < C.p → WP isa inv.inline t fun t' =>
       KeepRegs (invClob K.M.n) t t' ∧ Unch base IW t.mem t'.mem ∧
       wordsVal t'.mem base K.E.x K.M.n < C.p ∧
       tmv C K.M.n base t' K.E.x = tmv C K.M.n base t K.R.z ^ (C.p - 2)
@@ -587,7 +585,7 @@ theorem normTbl_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
     (hne : ∀ m, 1 ≤ m → m ≤ 8 → mul m P ≠ .infinity) {inv : Prog isa} {IW : List (Nat × Nat)}
     (hI : InvSpecW K C base size inv IW) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base) (hT : TblOk K C base P 8 s) :
-    WP isa (WinCfg.normTbl K inv) s fun s' => Scr s' base size ∧ KeepRegs (invClob K.M.n) s s' ∧
+    WP isa (WinCfg.normTbl K inv).inline s fun s' => Scr s' base size ∧ KeepRegs (invClob K.M.n) s s' ∧
       Unch base (winW K ++ IW) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       TblOkR K C base (RepA C) P 8 s' := by
   have hn := hs.nowrap

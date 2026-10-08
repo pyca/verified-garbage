@@ -8,6 +8,23 @@ open VG.Proof.Mont VG.Proof.Mont.X86_64 VG.Proof.Weierstrass VG.Proof.Weierstras
 open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdh.X86_64 Spec.Weierstrass
 open VG.Impl.Ecdh.X86_64 (PX PY)
 
+/-- Joint verification inlined: only the points and the tail call functions. -/
+theorem jointVerify_inline (c : Cfg) (j : Joint.Cfg) (double : Prog isa) :
+    (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline =
+    .seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.args c)) (.seq (Impl.Ecdh.X86_64.Cfg.prefix' c (some D))
+      (.seq (.block (Impl.Ecdsa.Verify.X86_64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c))
+      (.seq (Impl.Ecdh.X86_64.Cfg.validate c) (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c)
+      (.seq c.nPow (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c)
+      (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline
+        (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail c).inline)))))))) := by
+  show Code.seq _ (Code.seq _ (Code.seq _ (Code.seq _ (Code.seq (Impl.Ecdh.X86_64.Cfg.validate c).inline
+    (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline (Code.seq c.nPow.inline
+    (Code.seq (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline _))))))) = _
+  rw [nPow_inline, show (Impl.Ecdh.X86_64.Cfg.validate c).inline = _ from blocks_inline _,
+    show (Impl.Ecdsa.Verify.X86_64.Cfg.scalars c).inline = _ from blocks_inline _,
+    show (Impl.Ecdsa.Verify.X86_64.Cfg.uv c).inline = _ from blocks_inline _]
+  rfl
+
 theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg} {double : Prog isa}
     (hc : CfgOk c) (hC : Law c.C)
     (hpub : c.pubVerify=true) (hnp : c.C.n<c.C.p) (hpn : c.C.p≤2*c.C.n)
@@ -16,10 +33,10 @@ theorem jointVerify_ok {c : Cfg} {j : Joint.Cfg} {double : Prog isa}
       {Q : Point c.C}, onCurve c.C Q=true →
       Rep c.C (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PX))
         (tmv c.C c.n (s₀.gpr .rcx) s (c.sl PY)) (tmv c.C c.n (s₀.gpr .rcx) s (c.sl ONEP)) Q →
-      WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double) s (JointPointsPost c s₀ s g Q)) :
-    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double) s₀ fun t =>
+      WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointPoints c j double).inline s (JointPointsPost c s₀ s g Q)) :
+    WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify c j double).inline s₀ fun t =>
       (∀ r∈Cfg.saved.map Prod.fst,t.gpr r=s₀.gpr r) ∧ VPost c s₀ t := by
-  unfold Impl.Ecdsa.Verify.X86_64.Cfg.jointVerify
+  rw [jointVerify_inline]
   refine front_ok hc hp fun g s₁ hg hF => mid_ok hc hF fun s₂ hM => ?_
   have one := (consts_tmv hc hM.fixed).2.2
   let Q := peerPt c (s₀.mem (s₀.gpr .rdi)=4) (keyX c s₀) (keyY c s₀)

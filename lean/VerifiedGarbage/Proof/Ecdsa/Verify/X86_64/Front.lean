@@ -65,7 +65,10 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (g : Reg → BitVec 64) (
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
-  t₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0
+  /-- The bits of `p - 2`, which only the power for more than nine words reads
+  (for nine, the second table holds the products' temporary area). -/
+  t₁ : ¬ c.n ≤ 9 → ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) =
+    if (c.C.p - 2).testBit t then 1 else 0
   t₂ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0
   flag : word s.mem base (c.sl FLAG) = mask (KeyOk c s₀)
   px_lt : sv c base s PX < c.C.p
@@ -208,12 +211,14 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
   have a₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ∉ [R2P, BP, QY] → i ≠ FLAG →
       i ≠ PT → sv c (s₀.gpr .rcx) s₅ i = sv c (s₀.gpr .rcx) s₂ i := fun hi h₁ h₂ hf hp =>
     ((e₅ hi h₁ hf).trans (e₄ hi h₂ hf)).trans (v₃ hi hp)
-  have t₅ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
+  have t₅ : ∀ {j}, j < 3 → j ≠ 1 ∨ c.n ≠ 9 → ∀ t < 64 * c.n,
       s₅.mem (off (s₀.gpr .rcx) (bitsAt c.n j + t)) = s₂.mem (off (s₀.gpr .rcx) (bitsAt c.n j + t)) :=
-    fun hj t ht => by
-      rw [tbl_unch U₅ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₄ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hn hj ht (tbl_apart_slW (by decide) _ t)]
+    fun hj hj1 t ht => by
+      rw [tbl_unch U₅ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t ht (.inr hj1))
+          (tbl_apart_flag h0 _ t)),
+        tbl_unch U₄ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t ht (.inr hj1))
+          (tbl_apart_flag h0 _ t)),
+        tbl_unch U₃ h7 hn hj ht (tbl_apart_slW (by decide) _ t ht (.inr hj1))]
   have hok : PeerOk c (s₀.gpr .rcx) s₄ ((s₀.mem (s₀.gpr .rdi) = 4 ∧ sv c (s₀.gpr .rcx) s₄ E < c.C.p) ∧
       sv c (s₀.gpr .rcx) s₄ QY < c.C.p) = KeyOk c s₀ := by
     rw [PeerOk, e₄ (i := E) (by decide) (by decide) (by decide), x₄, y₄']
@@ -229,8 +234,8 @@ theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Pr
     by rw [a₅ (i := RX) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rx],
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],
     by rw [a₅ (i := RZ) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rz],
-    fun t ht => by rw [t₅ (j := 1) (by decide) t ht, S₂.t₁ t ht],
-    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, ?_,
+    fun h9 t ht => by rw [t₅ (j := 1) (by decide) (.inr (by omega)) t ht, S₂.t₁ h9 t ht],
+    fun t ht => by rw [t₅ (j := 2) (by decide) (.inl (by decide)) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, ?_,
     by rw [sy₅, sy₄, sy₃, S₂.syms, sy₁]⟩
   have U := ((S₂.unch.trans U₃).trans U₄).trans U₅
   rw [k₁.2.1] at U

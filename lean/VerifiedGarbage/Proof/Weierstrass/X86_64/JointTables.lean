@@ -37,7 +37,7 @@ theorem jointTables_ok {c : Joint.Cfg} {C : Curve} {base T : Addr} {size u v : N
     (hv : ∀ i<64*c.K.M.n+1,s.mem (off base (c.K.bits+i))=FastNaf.byte 5 v i)
     (hu : ∀ i<64*c.K.M.n+1,s.mem (off base (c.gBits+i))=FastNaf.byte 7 u i)
     (he : JointGenerator c C base T size row s) :
-    WP isa (.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)) s fun t =>
+    WP isa (Code.seq (Naf.table c.K) (Naf.cacheTable c.K.M c.K.tbl c.cache 8)).inline s fun t =>
       JointLoopKeep c.K.M base (jointInitWork c) s t ∧
       Inv c.K.M base size C.p (·∈jointSlots c) (jointLive c) (tmv C c.K.M.n base t) t ∧
       JointStable c C base Q u v t ∧ JointGenerator c C base T size row t := by

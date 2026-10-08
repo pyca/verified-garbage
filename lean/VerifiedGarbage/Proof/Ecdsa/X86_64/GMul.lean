@@ -30,7 +30,7 @@ theorem apart_pad {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_bits c hi 0 _)
+  exact sl_apart_pad c hi
 
 /-- A slot apart from what `[k]G` writes. -/
 theorem apart_gW {i : Nat} (hi : i < 45)
@@ -44,9 +44,10 @@ theorem fixedOk_gW : FixedOk c (gW c) := by
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (by decide) 0 _))
 
 /-- Tables `1` and `2` are apart from what `[k]G` writes. -/
-theorem tbl_apart_gW {j t : Nat} (hj : j = 1 ∨ j = 2) :
+theorem tbl_apart_gW {j t : Nat} (hj : j = 1 ∨ j = 2) (ht : t < 64 * c.n)
+    (hj1 : j ≠ 1 ∨ c.n ≠ 9 := by sl_or) :
     ∀ w ∈ gW c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
-  refine apart_append (tbl_apart_slW (by decide) j t) fun w hw => ?_
+  refine apart_append (tbl_apart_slW (by decide) j t ht (.inr hj1)) fun w hw => ?_
   rw [List.mem_singleton.mp hw]
   simp only [bitsAt_eq]
   rcases hj with rfl | rfl <;> exact Or.inr (by omega)
@@ -100,7 +101,7 @@ theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {
   have F₁ := F.unch h7 hn (fixedOk_slW (l := [EM]) (by decide)) O₁.unch
   have ht₁ : ∀ t < 64 * c.n, s₁.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0 :=
     fun t ht => by
-      rw [tbl_unch (W := slW c [EM]) O₁.unch h7 hn (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t)]
+      rw [tbl_unch (W := slW c [EM]) O₁.unch h7 hn (j := 0) (by decide) ht (tbl_apart_slW (by decide) 0 t ht)]
       exact ht₀ t ht
   have hTM₁ : TblMem s₁ (s.syms d.tsym) (c.combWords d) :=
     hTM.of_unch (by rw [k₁.rd, k₁.wr]) O₁.unch (fun w hw => by
@@ -147,7 +148,7 @@ theorem gMul_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Add
     (hTb : ∀ d, c.comb = some d → TblMem s (s.syms d.tsym) (c.combWords d) ∧
       ∀ i < (c.combWords d).length, ∀ b < 8,
         size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) (publicLookup : Bool := false) :
-    WP isa (c.gMul publicLookup) s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
+    WP isa (c.gMul publicLookup).inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -208,7 +209,7 @@ theorem gMul_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Add
 /-- `R = [k]G`, by the comb or the ladder, after the setup and the tables. -/
 theorem gMul_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
     {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s) :
-    WP isa c.gMul s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
+    WP isa c.gMul.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))
@@ -225,7 +226,7 @@ theorem gMulK_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Ad
     (hTb : ∀ d, c.comb = some d → TblMem s (s.syms d.tsym) (c.combWords d) ∧
       ∀ i < (c.combWords d).length, ∀ b < 8,
         size ≤ ofs base (s.syms d.tsym + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
-    WP isa c.gMulK s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
+    WP isa c.gMulK.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem base ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem base x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n base s' (c.sl RX)) (tmv c.C c.n base s' (c.sl RY))
@@ -246,7 +247,7 @@ theorem gMulK_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Ad
 /-- `R = [k]G` for a secret `k`, after the setup and the tables. -/
 theorem gMulK_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
     {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s) :
-    WP isa c.gMulK s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
+    WP isa c.gMulK.inline s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
       (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal s'.mem (s₀.gpr .r8) x c.n < c.C.p) ∧
       Rep c.C (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RX)) (tmv c.C c.n (s₀.gpr .r8) s' (c.sl RY))

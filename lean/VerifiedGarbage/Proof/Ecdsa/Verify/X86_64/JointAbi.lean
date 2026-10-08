@@ -40,14 +40,14 @@ theorem jointVerify_x86 (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP256 s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p256_ok hL hT hI (pre_of hs))
+  verify_abi_of_wp hs (wp_of_inline (by lit_decide) <| jointVerify_p256_ok hL hT hI (pre_of hs))
     (by lit_decide) (by lit_decide) (by lit_decide)
 
 theorem jointVerify_x86_adx (hL : Weierstrass.Law Spec.P256.curve)
     (hT : Weierstrass.CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : verifyX86_64.pre s) :
     ∃ t s',Exec isa jointVerifyP256Adx s t s' ∧ abiPreserved s s' ∧ verifyX86_64.post s s' :=
-  verify_abi_of_wp hs (jointVerify_p256_adx_ok hL hT hI (show VPre p256x s from {pre_of hs with}))
+  verify_abi_of_wp hs (wp_of_inline (by lit_decide) <| jointVerify_p256_adx_ok hL hT hI (show VPre p256x s from {pre_of hs with}))
     (by lit_decide) (by lit_decide) (by lit_decide)
 
 end VG.Proof.Ecdsa.Verify.X86_64

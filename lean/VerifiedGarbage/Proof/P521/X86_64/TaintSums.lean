@@ -13,8 +13,9 @@ divsteps. Their constant-time checks
 `taintSym`) use these summaries (`taint_summary`), analysed once here, in
 place of analysing the loops again in each check. Only the registers matter
 (the analysis knows nothing about memory): the working space `rdi`, the
-loop counter (`rbx` for the comb, `r14` for the batches) and `out` in `rsi`,
-which every caller has public there and needs afterwards.
+loop counter (`rbx` for the comb, `r14` for the batches), `out` in `rsi`
+and `rsp` (for the calls of the field products), which every caller has
+public there and needs afterwards.
 
 ECDH runs the inversion too, but without the comb's static its check is by
 `taintS`, and the power mod `n` is run by only two of the functions: a
@@ -26,8 +27,8 @@ ECDH runs the window method in Jacobian coordinates (`WinCfg.windowJ`), whose
 table of `[1 … 8]P` (seven complete additions), its normalization (an
 inversion, by divsteps), loop and last iteration are each more than one check
 can analyse along with the rest: they have summaries in `taintS`, with what
-ECDH has public there (`rdi` and `rsi`, and the loop's counter `rbx`, which
-is set after the table).
+ECDH has public there (`rdi`, `rsi` and `rsp`, and the loop's counter `rbx`,
+which is set after the table).
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -44,10 +45,10 @@ def combG : Prog isa := .loop (p521.combCfg p521d).step .ne
 def invP : Prog isa := .loop p521.invP.batch .ne
 
 /-- What is public at the comb's loop. -/
-def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi]
+def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi, .rsp]
 
 /-- What is public at the batches' loop. -/
-def τI : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .r14, .rsi]
+def τI : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .r14, .rsi, .rsp]
 
 taint_summary combGSum : (taintSym ["VG_P521_COMB"]) τL combG
 taint_summary invPSum : (taintSym ["VG_P521_COMB"]) τI invP
@@ -56,7 +57,7 @@ taint_summary invPSum : (taintSym ["VG_P521_COMB"]) τI invP
 abbrev winK : WinCfg := p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
 
 /-- What is public at the table. -/
-def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi]
+def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rsp]
 
 /-- ECDH's window method in Jacobian coordinates: the table, its
 normalization, the loop and its last iteration. -/

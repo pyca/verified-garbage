@@ -174,7 +174,14 @@ def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 /-- `x R mod p`. -/
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
-def sl (i : Nat) : Nat := slot c.n i
+/-- Slot `i`; for nine words (P-521), whose products modulo `p` are calls of
+a function (`Mont.callOf`), the temporary area (`TMP`) is in that function's
+own working space, which a call changes: in slot `55`'s place
+(`Mont.fnTmp`), over the table of the bits of `p - 2` (`bitsAt 1`), which
+only the power `pow` reads, for more than nine words; slot `55` (which
+nothing uses) is in its place, so that distinct slots stay apart. -/
+def sl (i : Nat) : Nat :=
+  slot c.n (if c.n = 9 then (if i = TMP then 55 else if i = 55 then TMP else i) else i)
 
 def MP' : Mod :=
   { n := c.n, mo := c.sl MP, tmp := c.sl TMP, minv := BitVec.ofNat 64 (minv c.C.p), red := Red.ofModulus c.n c.C.p,
