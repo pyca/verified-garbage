@@ -51,7 +51,7 @@ GROUPS = {
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
     },
     "aes_ecb": {
-        "lib": ["aes_ecb"],
+        "lib": ["aes_ecb", "aes_blocks_tests"],
         "tests": ["cavp::aes_ecb"],
     },
     "aes_gcm": {

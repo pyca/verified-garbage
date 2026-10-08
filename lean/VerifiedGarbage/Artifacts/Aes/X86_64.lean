@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
 import VerifiedGarbage.Proof.Aes.X86_64.Blocks
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 import VerifiedGarbage.Proof.Aes.X86_64.Frame
 
 /-! # AES on x86-64 -/
@@ -126,6 +127,30 @@ def artifacts : List Artifact := [
     contract := Spec.Aes.decryptBlocksContract X86_64.abi
     verified := Proof.Aes.X86_64.AesNi.decryptBlocks_verified
     features := ["aes"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.encryptBlocksApi with
+    name := "vg_aes_encrypt_blocks_vaes"
+    target := X86_64.target
+    doc := Spec.Aes.encryptBlocksApi.doc
+      (notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register; the blocks \
+        left go eight and then one at a time with AES-NI, as in `vg_aes_encrypt_blocks_aesni`."])
+    code := Impl.Aes.X86_64.VaesBlocks.encryptBlocks
+    contract := Spec.Aes.encryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.VaesBlocks.encryptBlocks_verified
+    features := ["aes", "avx", "avx2", "vaes"]
+    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+  { Spec.Aes.decryptBlocksApi with
+    name := "vg_aes_decrypt_blocks_vaes"
+    target := X86_64.target
+    doc := Spec.Aes.decryptBlocksApi.doc
+      (notes := ["Uses VAES: sixteen blocks at a time, two in each 256-bit register, with the \
+        Equivalent Inverse Cipher (FIPS 197 §5.3.5): the middle round keys go through AESIMC into \
+        the working space first; the blocks left go eight and then one at a time with AES-NI, as \
+        in `vg_aes_decrypt_blocks_aesni`."])
+    code := Impl.Aes.X86_64.VaesBlocks.decryptBlocks
+    contract := Spec.Aes.decryptBlocksContract X86_64.abi
+    verified := Proof.Aes.X86_64.VaesBlocks.decryptBlocks_verified
+    features := ["aes", "avx", "avx2", "vaes"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) }]
 
 end VG.Artifacts.Aes.X86_64

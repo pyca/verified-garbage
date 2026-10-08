@@ -297,3 +297,155 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_cfb8_decrypt(schedule: *const [u8; 2
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
     )
 }
+
+/// The CPU features `vg_aes_cfb8_encrypt_vaes` requires (`Artifact.features`).
+pub(crate) const VG_AES_CFB8_ENCRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
+
+/// AES-CFB8 encryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `P#₁ … P#ₙ` at `data` with `C#ⱼ = P#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb8.aesEncryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
+///
+/// This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks_vaes`.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_cfb8_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        "mov QWORD PTR [r9+2064], rbx",
+        "mov QWORD PTR [r9+2072], rbp",
+        "mov QWORD PTR [r9+2080], r12",
+        "mov QWORD PTR [r9+2088], r13",
+        "mov QWORD PTR [r9+2096], r14",
+        "mov QWORD PTR [r9+2104], r15",
+        "mov rbx, rdi",
+        "mov rbp, rsi",
+        "mov r12, rdx",
+        "mov r13, rcx",
+        "mov r14, r8",
+        "mov r15, r9",
+        "test r14, r14",
+        "je 20f",
+        "22:",
+        "mov rax, QWORD PTR [r12]",
+        "mov QWORD PTR [r15+2048], rax",
+        "mov rax, QWORD PTR [r12+8]",
+        "mov QWORD PTR [r15+2056], rax",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, r15",
+        "add rdx, 2048",
+        "mov ecx, 1",
+        "mov r8, r15",
+        "call {vg_aes_encrypt_blocks_vaes}",
+        "movzx eax, BYTE PTR [r13]",
+        "movzx ecx, BYTE PTR [r15+2048]",
+        "xor rax, rcx",
+        "mov BYTE PTR [r13], al",
+        "mov rcx, QWORD PTR [r12+1]",
+        "mov rdx, QWORD PTR [r12+8]",
+        "mov QWORD PTR [r12], rcx",
+        "mov QWORD PTR [r12+7], rdx",
+        "mov BYTE PTR [r12+15], al",
+        "add r13, 1",
+        "sub r14, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov rbx, QWORD PTR [r15+2064]",
+        "mov rbp, QWORD PTR [r15+2072]",
+        "mov r12, QWORD PTR [r15+2080]",
+        "mov r13, QWORD PTR [r15+2088]",
+        "mov r14, QWORD PTR [r15+2096]",
+        "mov r15, QWORD PTR [r15+2104]",
+        "ret",
+        ".p2align 6",
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_cfb8_decrypt_vaes` requires (`Artifact.features`).
+pub(crate) const VG_AES_CFB8_DECRYPT_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
+
+/// AES-CFB8 decryption (NIST SP 800-38A §6.3, with 8-bit segments), in place: replaces the `len` bytes `C#₁ … C#ₙ` at `data` with `P#ⱼ = C#ⱼ ⊕ MSB₈(CIPH_K(Iⱼ))`, where `I₁` is the block at `*iv` and `Iⱼ₊₁` is `Iⱼ` without its first byte, followed by `C#ⱼ`, and `*iv` with `Iₙ₊₁` (leaving it unchanged if `len = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb8.aesDecryptContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the input block or the data.
+///
+/// This implementation enciphers one block for each byte with `vg_aes_encrypt_blocks_vaes`.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_cfb8_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        "mov QWORD PTR [r9+2064], rbx",
+        "mov QWORD PTR [r9+2072], rbp",
+        "mov QWORD PTR [r9+2080], r12",
+        "mov QWORD PTR [r9+2088], r13",
+        "mov QWORD PTR [r9+2096], r14",
+        "mov QWORD PTR [r9+2104], r15",
+        "mov rbx, rdi",
+        "mov rbp, rsi",
+        "mov r12, rdx",
+        "mov r13, rcx",
+        "mov r14, r8",
+        "mov r15, r9",
+        "test r14, r14",
+        "je 20f",
+        "22:",
+        "mov rax, QWORD PTR [r12]",
+        "mov QWORD PTR [r15+2048], rax",
+        "mov rax, QWORD PTR [r12+8]",
+        "mov QWORD PTR [r15+2056], rax",
+        "mov rdi, rbx",
+        "mov rsi, rbp",
+        "mov rdx, r15",
+        "add rdx, 2048",
+        "mov ecx, 1",
+        "mov r8, r15",
+        "call {vg_aes_encrypt_blocks_vaes}",
+        "movzx eax, BYTE PTR [r13]",
+        "movzx ecx, BYTE PTR [r15+2048]",
+        "xor rcx, rax",
+        "mov BYTE PTR [r13], cl",
+        "mov rcx, QWORD PTR [r12+1]",
+        "mov rdx, QWORD PTR [r12+8]",
+        "mov QWORD PTR [r12], rcx",
+        "mov QWORD PTR [r12+7], rdx",
+        "mov BYTE PTR [r12+15], al",
+        "add r13, 1",
+        "sub r14, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov rbx, QWORD PTR [r15+2064]",
+        "mov rbp, QWORD PTR [r15+2072]",
+        "mov r12, QWORD PTR [r15+2080]",
+        "mov r13, QWORD PTR [r15+2088]",
+        "mov r14, QWORD PTR [r15+2096]",
+        "mov r15, QWORD PTR [r15+2104]",
+        "ret",
+        ".p2align 6",
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+    )
+}

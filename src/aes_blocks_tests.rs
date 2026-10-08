@@ -19,6 +19,11 @@ use crate::arch::aes::{
     VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES, VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES,
     vg_aes_decrypt_blocks_aesni, vg_aes_encrypt_blocks_aesni,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes::{
+    VG_AES_DECRYPT_BLOCKS_VAES_FEATURES, VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES,
+    vg_aes_decrypt_blocks_vaes, vg_aes_encrypt_blocks_vaes,
+};
 use crate::arch::aes::{vg_aes_decrypt_blocks, vg_aes_encrypt_blocks, vg_aes_expand_key};
 use crate::cpu::Features;
 
@@ -37,7 +42,33 @@ const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 1] = [(
 )];
 
 /// Each implementation, encryption and decryption, with the features it needs.
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(target_arch = "x86_64")]
+const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 3] = [
+    (
+        vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks,
+        Features::of(&[]),
+    ),
+    (
+        vg_aes_encrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni,
+        Features::all(&[
+            VG_AES_ENCRYPT_BLOCKS_AESNI_FEATURES,
+            VG_AES_DECRYPT_BLOCKS_AESNI_FEATURES,
+        ]),
+    ),
+    (
+        vg_aes_encrypt_blocks_vaes,
+        vg_aes_decrypt_blocks_vaes,
+        Features::all(&[
+            VG_AES_ENCRYPT_BLOCKS_VAES_FEATURES,
+            VG_AES_DECRYPT_BLOCKS_VAES_FEATURES,
+        ]),
+    ),
+];
+
+/// Each implementation, encryption and decryption, with the features it needs.
+#[cfg(target_arch = "x86")]
 const IMPLEMENTATIONS: [(Blocks, Blocks, Features); 2] = [
     (
         vg_aes_encrypt_blocks,
@@ -111,8 +142,8 @@ struct Run {
 impl Run {
     /// Transforms the first `m` inputs, in one call, with each
     /// implementation, and checks them and that the block after them is
-    /// untouched; for every `m` up to 17 (two groups of eight and one
-    /// more), and all of them.
+    /// untouched; for every `m` up to 41 (two groups of sixteen, one of
+    /// eight and one more), and all of them.
     fn check(&self) {
         let (key, key_len) = self.key;
         let mut schedule = [0; 240];
@@ -125,7 +156,7 @@ impl Run {
             .filter(|(_, _, features)| crate::cpu::detected().contains(*features));
         for (encrypt, decrypt, _) in runnable {
             let f = if self.encrypt { encrypt } else { decrypt };
-            for m in (0..=self.n.min(17)).chain([self.n]) {
+            for m in (0..=self.n.min(41)).chain([self.n]) {
                 let mut data = [[0xa5; 16]; MAX + 1];
                 data[..self.n].copy_from_slice(&self.input[..self.n]);
                 let mut scratch = [0; 256];

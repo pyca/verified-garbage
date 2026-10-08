@@ -29,9 +29,11 @@ open VG.Proof.Aes.X86_64 (BlocksImpl)
 
 /-- The implementation of `vg_aes_encrypt_blocks` that goes with `v`'s
 `vg_aes_ctr32`, needing no more CPU features: the baseline one with the
-baseline, and AES-NI's, which needs only `aes`, with every other (each
+baseline, VAES's with VAES's (which needs `aes`, `avx`, `avx2` and `vaes`,
+as it does), and AES-NI's, which needs only `aes`, with every other (each
 needs AES-NI; the emitter checks the features of every instance). -/
-def ecbOf (v : GcmImpl) : BlocksImpl := if v.ctr.features = [] then .scalar else .aesni
+def ecbOf (v : GcmImpl) : BlocksImpl :=
+  if v.ctr.features = [] then .scalar else if v.ctr.features.contains "vaes" then .vaes else .aesni
 
 /-- The CPU features of `seal` and `open`: those of the four functions they
 call (here, to keep `List.dedup`'s imports out of the proofs). -/
