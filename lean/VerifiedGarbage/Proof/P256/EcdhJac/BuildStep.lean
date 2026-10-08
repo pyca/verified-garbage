@@ -52,7 +52,7 @@ theorem buildStep_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
   have la : ∀x∈[K.D.x,K.D.y],wordsVal a.mem base x 4<C.p := by simpa only [ka.mem] using hi.lt
   have da : InvJ C (tmv C 4 base a K.D.x) (tmv C 4 base a K.D.y) (tmv C 4 base a K.E.z) P := by
     simpa only [tmv,ka.mem] using hi.d
-  refine WP.seq (WP.mono (zaddu_ok hC ha hO hP hm2 hm15 fa pa la da) fun b ⟨kb,fb,pb,lb,db,cb⟩ => ?_)
+  refine WP.seq (WP.mono (EcdhTable.zaddu_ok hC ha hO hP hm2 hm15 fa pa la da) fun b ⟨kb,fb,pb,lb,db,cb⟩ => ?_)
   have ta : TblOk base P m a := by
     intro j hj hjm; apply (hi.inv.table j hj hjm).congr; intro i hi; rw [ka.mem]
   have tb := table_keep ta (by omega) kb

@@ -1,10 +1,5 @@
 import VerifiedGarbage.Proof.Divstep.BatchBasic
 import Mathlib.Data.Int.ModEq
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
 
 /-!
 # Divsteps in batches
@@ -34,21 +29,21 @@ theorem mstep_rel {t : MSt} {k : Nat} {f₀ g₀ : Int} (hf : t.f % 2 = 1) (h : 
     simp only
     have e : 2 * ((t.g - t.f) / 2) = t.g - t.f := Int.mul_ediv_cancel' (by omega)
     constructor
-    · rw [pow_succ]; linear_combination 2 * h2
-    · rw [pow_succ, mul_assoc, e]; linear_combination h2 - h1
+    · rw [pow_succ]; rw [mul_right_comm, h2, add_mul]; simp only [mul_assoc, mul_comm]
+    · rw [pow_succ, mul_assoc, e]; rw [mul_sub, h2, h1]; simp only [sub_mul]; omega
   · rename_i hc
     simp only
     rcases Int.emod_two_eq_zero_or_one t.g with hg | hg
     · rw [hg]
       have e : 2 * ((t.g + 0 * t.f) / 2) = t.g := by rw [zero_mul, add_zero]; exact Int.mul_ediv_cancel' (by omega)
       constructor
-      · rw [pow_succ]; linear_combination 2 * h1
-      · rw [pow_succ, mul_assoc, e]; linear_combination h2
+      · rw [pow_succ]; rw [mul_right_comm, h1, add_mul]; simp only [mul_assoc, mul_comm]
+      · rw [pow_succ, mul_assoc, e]; simpa using h2
     · rw [hg]
       have e : 2 * ((t.g + 1 * t.f) / 2) = t.g + t.f := by rw [one_mul]; exact Int.mul_ediv_cancel' (by omega)
       constructor
-      · rw [pow_succ]; linear_combination 2 * h1
-      · rw [pow_succ, mul_assoc, e]; linear_combination h2 + h1
+      · rw [pow_succ]; rw [mul_right_comm, h1, add_mul]; simp only [mul_assoc, mul_comm]
+      · rw [pow_succ, mul_assoc, e]; rw [mul_add, h2, h1]; simp only [add_mul, one_mul]; omega
 
 /-- `n` steps from the identity: `2^n f_n = u f + v g`, `2^n g_n = q f + r g`. -/
 theorem msteps_mat {d f g : Int} (hf : f % 2 = 1) (n : Nat) :
@@ -67,22 +62,27 @@ theorem mstep_bnd {t : MSt} {n : Nat} (h : t.bnd n) : (mstep t).bnd (n + 1) := b
   obtain ⟨h1, h2⟩ := h
   have hb : ∀ b : Int, (b = 0 ∨ b = 1) → ∀ x : Int, |b * x| ≤ |x| := fun b hb x => by
     rcases hb with rfl | rfl <;> simp
+  have twice (x : Int) : |2*x| = 2*|x| := by
+    by_cases hx : 0 ≤ x
+    · rw [abs_of_nonneg hx, abs_of_nonneg (by omega)]
+    · rw [abs_of_neg (by omega : x < 0), abs_of_neg (by omega : 2*x < 0)]; omega
   have hg := Int.emod_two_eq_zero_or_one t.g
   unfold mstep MSt.bnd
   rw [pow_succ]
   split
   · simp only
     refine ⟨?_, ?_⟩
-    · rw [abs_mul, abs_mul]; norm_num; linarith
-    · have := abs_sub t.q t.u; have := abs_sub t.r t.v; linarith
+    · rw [twice, twice]; omega
+    · have hq := abs_add_le t.q (-t.u); have hr := abs_add_le t.r (-t.v)
+      simp only [← sub_eq_add_neg, abs_neg] at hq hr; omega
   · simp only
     refine ⟨?_, ?_⟩
-    · rw [abs_mul, abs_mul]; norm_num; linarith
+    · rw [twice, twice]; omega
     · have := abs_add_le t.q (t.g % 2 * t.u); have := abs_add_le t.r (t.g % 2 * t.v)
-      have := hb _ hg t.u; have := hb _ hg t.v; linarith
+      have := hb _ hg t.u; have := hb _ hg t.v; omega
 
 theorem msteps_bnd (d f g : Int) : ∀ n, (msteps n (MSt.init d f g)).bnd n
-  | 0 => by simp [MSt.bnd, MSt.init, msteps]
+  | 0 => by simp only [MSt.bnd, MSt.init, msteps]; decide
   | n + 1 => by rw [msteps_succ]; exact mstep_bnd (msteps_bnd d f g n)
 
 /-- States with the same `d` and matrix, and `f`, `g` congruent modulo `2^k`. -/

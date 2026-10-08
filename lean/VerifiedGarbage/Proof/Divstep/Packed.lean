@@ -1,3 +1,7 @@
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Word
 import VerifiedGarbage.Proof.Divstep.PackedDef
@@ -90,10 +94,6 @@ theorem osub (a b : Int) : BitVec.ofInt 64 a - BitVec.ofInt 64 b = BitVec.ofInt 
 
 theorem otwo : (2 : BitVec 64) = BitVec.ofInt 64 2 := by decide
 theorem omtwo : (-2 : BitVec 64) = BitVec.ofInt 64 (-2) := by decide
-
-/-- A word's value as an integer, modulo `2^64`. -/
-theorem toNat_ofInt64 (X : Int) : (((BitVec.ofInt 64 X).toNat : Nat) : Int) = X % 2 ^ 64 := by
-  rw [BitVec.toNat_ofInt]; push_cast; exact Int.toNat_of_nonneg (Int.emod_nonneg _ (by norm_num))
 
 /-- A word congruent to `2^j b` modulo `2^(j + 1)`, shifted left by `63 - j`: `2^63 b`. -/
 theorem shl_bit {X b : Int} {j : Nat} (hj : j ≤ 62) (hb : b = 0 ∨ b = 1)

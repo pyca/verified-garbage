@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
+import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
 import VerifiedGarbage.Proof.P256.EcdhJac.BuildStore
 
 namespace VG.Proof.P256.EcdhJac
@@ -9,11 +9,11 @@ open Spec.Weierstrass
 theorem buildDblu_ok (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
     {base : Addr} {P : Point C} {k : Nat} {s : State} (hP : onCurve C P=true)
     (hi : BuildInv base P k 1 s) :
-    WP isa (.seq (Impl.P256.EcdhJac.arithmetic Impl.P256.EcdhJac.dbluOps)
+    WP isa (.seq (Impl.P256.EcdhTable.program true)
       (.block (copy 4 K.D.x K.S.t3++copy 4 K.D.y K.S.t2++
         ([.movz .x .x19 2 0] : List Instr)++Impl.P256.EcdhJac.storeEntry))) s fun t =>
       Frame base buildWork s t ∧ CoZInv base P k 2 t := by
-  refine WP.seq (WP.mono (dblu_ok hC ha hO hP hi.fixed) fun a ⟨ka,fa,pa,da,xa,ya⟩ => ?_)
+  refine WP.seq (WP.mono (EcdhTable.dblu_ok hC ha hO hP hi.fixed) fun a ⟨ka,fa,pa,da,xa,ya⟩ => ?_)
   have ta := table_keep hi.table (by decide) ka
   rw [List.append_assoc,WP.block_append_iff]
   refine WP.mono (copyD_ok fa pa da xa ya) fun b ⟨kb,pb,lb,db⟩ => ?_

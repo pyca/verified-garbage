@@ -31,7 +31,7 @@ def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : 
       the pointers; the public contract and 8192-byte scratch requirement are unchanged."])
     code := Impl.P256.EcdhJac.exchange
     contract := Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P256.inst AArch64.abi
-    verified := Proof.P256.EcdhJac.verified h.law h.inv h.prime
+    verified := Proof.P256.EcdhJac.verified h.law h.inv h.prime h.invToMP
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.P256.AArch64.EcdhP256

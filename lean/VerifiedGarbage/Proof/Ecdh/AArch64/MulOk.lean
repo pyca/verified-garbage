@@ -26,7 +26,7 @@ structure MulPost (c : Cfg) (base : Addr) (g : Reg → BitVec 64)
     tmv c.C c.n base s' (c.sl RZ) ^ (c.C.p - 2)
   rz_lt : sv c base s' RZ < c.C.p
 
-def MulOk (c : Cfg) (mq : Prog isa) : Prop :=
+def MulWithInverseOk (c : Cfg) (mq inverse : Prog isa) : Prop :=
   ∀ {base : Addr} {s : State}, Scr s base size →
     ∀ {g : Reg → BitVec 64}, Fixed c base g s.mem →
     ∀ {P : Point c.C}, onCurve c.C P = true → sv c base s PX < c.C.p → sv c base s PY < c.C.p →
@@ -34,6 +34,9 @@ def MulOk (c : Cfg) (mq : Prog isa) : Prop :=
       (tmv c.C c.n base s (c.sl ONEP)) P →
     ∀ {rest : Prog isa} {R : State → Prop},
     (∀ s', MulPost c base g P (sv c base s K) s s' → WP isa rest s' R) →
-    WP isa (.seq mq (.seq c.pPow rest)) s R
+    WP isa (.seq mq (.seq inverse rest)) s R
+
+/-- The default inversion paired with a scalar multiplication. -/
+abbrev MulOk (c : Cfg) (mq : Prog isa) : Prop := MulWithInverseOk c mq c.pPow
 
 end VG.Proof.Ecdh.AArch64

@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.P256.EcdhJac.Frame
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRaw
+import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
 
 namespace VG.Proof.P256.EcdhJac
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64
@@ -85,9 +86,6 @@ theorem hotField_all_ok {k : Kind} (cert : VerifyAllocated.Case k) (hk : k≠.do
       AllocatedFrame allocatedRegs base work s t ∧ Inv M base 8192 C.p Sl live (runOps (operations .doubleRR) E) t ∧
       InvJ C (runOps (operations .doubleRR) E K.R.x) (runOps (operations .doubleRR) E K.R.y)
         (runOps (operations .doubleRR) E K.R.z) (add P P) := by
-  refine WP.mono (hotField_ok VerifyAllocated.Double.caseProof hi (by decide +kernel)
-    (by decide +kernel) (fun _ hx => (mem_validAfter _ _).mpr (Or.inl hx)) (by decide +kernel))
-    fun _ ⟨hk,it⟩ => ⟨hk,it,?_⟩
-  exact InvJ.dbl' hC ha hp hj (dblJMul_inplace_run (by decide +kernel) E)
+  exact EcdhDouble.Verified.double_ok hC ha hi hp hj
 
 end VG.Proof.P256.EcdhJac
