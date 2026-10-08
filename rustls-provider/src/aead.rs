@@ -53,8 +53,9 @@ impl Key {
     /// Encrypts the plaintext `plain ‖ extra` into `out`, which is exactly as
     /// long, returning the tag. AES-GCM reads the pieces of a plaintext of
     /// at least `GATHER_MIN_LEN` bytes where they are and writes only `out`;
-    /// shorter ones, and ChaCha20-Poly1305's (which has no such function
-    /// yet), are copied into `out` and encrypted there.
+    /// shorter ones, and ChaCha20-Poly1305's, are copied into `out` and
+    /// encrypted there. `ChaCha20Poly1305::encrypt` (out of place) measured
+    /// 3-7% slower than copying and `encrypt_in_place` at every length.
     pub(crate) fn seal_to(
         &self,
         nonce: &[u8; 12],

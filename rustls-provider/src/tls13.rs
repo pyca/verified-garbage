@@ -53,9 +53,13 @@ pub static TLS13_AES_256_GCM_SHA384: &Tls13CipherSuite = &Tls13CipherSuite {
     protocol_version: TLS13_VERSION,
     hkdf_provider: &HkdfUsingHmac(&super::hmac::HMAC_SHA384),
     aead_alg: &Tls13Aead(aead::Algorithm::Aes256Gcm),
-    // QUIC's header protection for AES suites is AES-ECB of one block
-    // (RFC 9001 §5.4.3), which verified-garbage does not expose.
-    quic: None,
+    quic: Some(&super::quic::KeyBuilder {
+        packet_alg: aead::Algorithm::Aes256Gcm,
+        // ref: <https://datatracker.ietf.org/doc/html/rfc9001#section-b.1.1>
+        confidentiality_limit: 1 << 23,
+        // ref: <https://datatracker.ietf.org/doc/html/rfc9001#section-b.1.2>
+        integrity_limit: 1 << 52,
+    }),
 };
 
 /// The TLS1.3 ciphersuite TLS_AES_128_GCM_SHA256
@@ -68,9 +72,13 @@ pub static TLS13_AES_128_GCM_SHA256: &Tls13CipherSuite = &Tls13CipherSuite {
     protocol_version: TLS13_VERSION,
     hkdf_provider: &HkdfUsingHmac(&super::hmac::HMAC_SHA256),
     aead_alg: &Tls13Aead(aead::Algorithm::Aes128Gcm),
-    // QUIC's header protection for AES suites is AES-ECB of one block
-    // (RFC 9001 §5.4.3), which verified-garbage does not expose.
-    quic: None,
+    quic: Some(&super::quic::KeyBuilder {
+        packet_alg: aead::Algorithm::Aes128Gcm,
+        // ref: <https://datatracker.ietf.org/doc/html/rfc9001#section-b.1.1>
+        confidentiality_limit: 1 << 23,
+        // ref: <https://datatracker.ietf.org/doc/html/rfc9001#section-b.1.2>
+        integrity_limit: 1 << 52,
+    }),
 };
 
 struct Tls13Aead(aead::Algorithm);

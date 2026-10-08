@@ -5,9 +5,8 @@
 //! AES-GCM and ChaCha20-Poly1305; X25519, P-256, P-384, ML-KEM and the
 //! X25519MLKEM768 and SECP256R1MLKEM768 hybrids; signatures with RSA
 //! (PKCS #1 v1.5 and PSS), ECDSA (P-256, P-384, P-521), Ed25519 and ML-DSA;
-//! and session tickets. Keys are read with rust-asn1. QUIC is supported
-//! only with ChaCha20-Poly1305 (see `quic`), and HPKE (for ECH) is not
-//! provided.
+//! session tickets; and QUIC's packet and header protection. Keys are read
+//! with rust-asn1. HPKE (for ECH) is not provided.
 
 #![no_std]
 #![warn(missing_docs)]
