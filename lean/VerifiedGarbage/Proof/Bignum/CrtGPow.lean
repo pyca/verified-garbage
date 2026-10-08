@@ -23,8 +23,27 @@ theorem kBounds {w wx : Nat} (hwx : 1 ≤ wx) :
   rw [Nat.mul_comm] at h1
   omega
 
+/-- `D / 64 = (K + 1) w_X - w`. -/
+def gC (w wx : Nat) : Nat := (w + wx - 1) / wx * wx + wx - w
+
 /-- `D = 64 ((K + 1) w_X - w)`. -/
-def gD (w wx : Nat) : Nat := 64 * ((w + wx - 1) / wx * wx + wx - w)
+def gD (w wx : Nat) : Nat := 64 * gC w wx
+
+/-- The top word of `m`'s `w` words is `m / 2^(64 (w - 1))`. -/
+theorem wv_top (m : Mem) (B : Addr) (o w : Nat) (hw : 1 ≤ w) :
+    (word m B (o + 8 * (w - 1))).toNat = wv m B o w / 2 ^ (64 * (w - 1)) := by
+  obtain ⟨k, rfl⟩ : ∃ k, w = k + 1 := ⟨w - 1, by omega⟩
+  rw [Nat.add_sub_cancel, wv, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),
+    Nat.div_eq_of_lt (wv_lt m B o k), Nat.zero_add]
+
+/-- A nonzero top word bounds the number below. -/
+theorem le_of_top {N k : Nat} (h : N / 2 ^ k ≠ 0) : 2 ^ k ≤ N :=
+  Nat.le_of_not_lt fun h' => h (Nat.div_eq_of_lt h')
+
+/-- `2^D` is below `m` when `D / 64 < w - 1` and `m`'s top word is not 0:
+`gPow`'s fast path. -/
+theorem gFast_lt {N w c : Nat} (hc : c < w - 1) (h : N / 2 ^ (64 * (w - 1)) ≠ 0) : 2 ^ (64 * c) < N :=
+  Nat.lt_of_lt_of_le (Nat.pow_lt_pow_right (by decide) (by omega)) (le_of_top h)
 
 theorem and_pow_beq (D k : Nat) (hk : k < 64) :
     (BitVec.ofNat 64 D &&& BitVec.ofNat 64 (2 ^ k) == 0) = decide (D / 2 ^ k % 2 = 0) := by
@@ -53,7 +72,7 @@ theorem gD_bounds {w wx : Nat} (hwx : 1 ≤ wx) (hwx' : wx ≤ w) (hw30 : w < 2 
     0 < gD w wx ∧ gD w wx < 2 ^ 62 ∧
       gD w wx + 64 * w = 64 * wx * ((w + wx - 1) / wx + 1) := by
   obtain ⟨hK1, hK2⟩ := kBounds (w := w) hwx
-  unfold gD
+  unfold gD gC
   rw [Nat.mul_succ, Nat.mul_assoc 64 wx, Nat.mul_comm wx]
   omega
 
