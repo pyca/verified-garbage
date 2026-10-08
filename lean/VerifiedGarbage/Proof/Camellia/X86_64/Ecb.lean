@@ -44,13 +44,6 @@ namespace VG.Proof.Camellia.X86_64
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st setMasks)
 
-theorem cmpImmZ_ok (s : State) (r : Reg) (k : BitVec 32) :
-    ∃ s', runBlock isa [.alu .cmp r (.imm k)] s = some s' ∧ s'.zf = some (s.gpr r - k.signExtend 64 == 0) ∧
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  refine ⟨arithFlags s (s.gpr r - k.signExtend 64) (decide ((s.gpr r).toNat < (k.signExtend 64).toNat))
-    (subOverflow (s.gpr r) (k.signExtend 64) (s.gpr r - k.signExtend 64)), ?_, rfl, rfl, rfl, rfl, rfl⟩
-  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, Option.bind_some]
-
 theorem testSelf_ok (s : State) (r : Reg) :
     ∃ s', runBlock isa [.alu .test r (.reg r)] s = some s' ∧ s'.zf = some (s.gpr r == 0) ∧
       s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by

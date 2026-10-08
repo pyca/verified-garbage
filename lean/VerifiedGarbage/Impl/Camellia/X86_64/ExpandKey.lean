@@ -40,8 +40,7 @@ def bytePos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
 /-- Plane `j` of the subkey `x` in every lane, as the table holds it: bit
 `8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first. -/
 def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 :=
-  BitVec.ofNat 64 ((List.range 64).foldl
-    (fun acc p => acc + if x.getLsbD (56 - 8 * bytePos (p / 8) + j) then 2 ^ p else 0) 0)
+  (BitVec.ofBoolListLE ((List.range 64).map fun p => x.getLsbD (56 - 8 * bytePos (p / 8) + j))).setWidth 64
 
 /-- The subkeys of the pairs. -/
 def sigmas : List (BitVec 64) :=
@@ -62,9 +61,9 @@ def loadKey : Prog isa :=
         (.ite .e (.block [.alu .xor .rax (.imm 0xFFFFFFFF), st (krSlot + 1) .rax])
           (.block [.mov .rax (.mem (at_ .rdi 24)), st (krSlot + 1) .rax]))))
 
-/-- The word at slot `k` in all eight lanes, bitsliced. -/
-def spread (k : Nat) : List Instr :=
-  [movS (q 0) k] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
+/-- The word at `[rdi + d]` in all eight lanes, bitsliced. -/
+def spread (d : Nat) : List Instr :=
+  [.mov (q 0) (.mem (at_ .rdi d))] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++ toBs
 
 /-- `w := w ^ x`, for the two words at slots `w` and `x`. -/
 def xorWords (w x : Nat) : List Instr :=
@@ -74,9 +73,9 @@ def xorWords (w x : Nat) : List Instr :=
 def copyWords (w x : Nat) : List Instr :=
   [movS .rax x, st w .rax, movS .rax (x + 1), st (w + 1) .rax]
 
-/-- Two rounds on the running value, with the next two entries of the table. -/
+/-- Two rounds on the running value (at `rdi`), with the next two entries of the table. -/
 def pairPlain : List Instr :=
-  spread (wSlot + 1) ++ storeHalf d2Slot ++ spread wSlot ++ storeHalf d1Slot ++
+  spread 8 ++ storeHalf d2Slot ++ spread 0 ++ storeHalf d1Slot ++
   round 0 d2Slot ++ round 8 d1Slot ++ fromBs ++ [st wSlot (q 0)] ++
   loadHalf d2Slot ++ fromBs ++ [st (wSlot + 1) (q 0), .alu .add kp (.imm 128)]
 
@@ -84,7 +83,8 @@ def pairPlain : List Instr :=
 pair `KL` is XORed in, after the second it is `KA`, and `KA ^ KR` goes on;
 after the third it is `KB`. `r8` counts the pairs down from 3. -/
 def kaKb : Prog isa :=
-  .seq (.block (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ [.movImm64 .r8 3]))
+  .seq (.block (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ [.movImm64 .r8 3, movR .rdi sb,
+      .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * wSlot)))]))
     (.loop (.seq (.block pairPlain)
       (.seq (.block [.alu .cmp .r8 (.imm 2)])
         (.seq (.ite .ae

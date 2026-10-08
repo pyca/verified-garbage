@@ -4,10 +4,10 @@ import VerifiedGarbage.Impl.Camellia.X86_64.ExpandKey
 /-!
 # The key schedule's evaluated facts on x86-64
 
-The planes of `Sigma1 … Sigma6` that `sigmaOne` stores (`sigma_planes`),
-and `spread k`, which bitslices the word in slot `k` into all eight lanes
-as `toBs` bitslices eight words, keeping the masks and both halves'
-slots (`spread_check`).
+The planes of a constant that `sigmaOne` stores (`sigma_planes`),
+and `spread d`, which bitslices the word at `[rdi + d]` into all eight
+lanes as `toBs` bitslices eight words, keeping the masks and both halves'
+slots (`spread0_check`, `spread8_check`).
 -/
 
 namespace VG.Proof.Camellia.X86_64
@@ -18,28 +18,33 @@ open VG.Proof.Camellia (HalfRel pos)
 
 theorem bytePos_eq : bytePos = pos := rfl
 
+theorem keyPlane_bit (x : BitVec 64) (j : Nat) {p : Nat} (hp : p < 64) :
+    (keyPlane x j).getLsbD p = x.getLsbD (56 - 8 * bytePos (p / 8) + j) := by
+  rw [keyPlane, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
+    List.getElem?_map, List.getElem?_range hp]
+  simp [hp]
+
 /-- The planes `sigmaOne` stores hold the constant in every lane. -/
-theorem sigma_planes : ∀ x ∈ sigmas, ∀ b < 8, ∀ c < 8, ∀ j < 8,
+theorem sigma_planes (x : BitVec 64) {b c j : Nat} (hb : b < 8) (hc : c < 8) (hj : j < 8) :
     (keyPlane x j).getLsbD (8 * c + b) = (Camellia.byteOf x (pos c)).getLsbD j := by
+  rw [keyPlane_bit x j (by omega), Camellia.getLsbD_byteOf x (Camellia.pos_lt hc) hj, bytePos_eq,
+    show (8 * c + b) / 8 = c by omega]
+
+/-- The halves' slots are input words 2–17, after the running value's two at `rdi`. -/
+def kaIns : List (Nat × Nat) := (List.range 16).map fun j => (d1Slot + j, 2 + j)
+
+def kaEnv : Env (Nat × Nat) := linEnvG [] kaIns layerMasks
+
+/-- `spread d`: the running value's word at `[rdi + d]` in all lanes,
+keeping the masks and both halves' slots. -/
+theorem spread0_check :
+    check (lanes 64 11) (keyCfg 2) (linExt 0) (spread 0) kaEnv
+      (linPostG 11 (qOuts (keyBsG 0)) [] (maskSlots ++ kaIns.map (·.1)) kaEnv) = true := by
   decide +kernel
 
-/-- All the slots of the scratch buffer, from `sb`. -/
-def scrCfg : Cfg := { base := sb, slots := slots, ext := sb, exts := 0 }
-
-/-- Slot `k` is input word 0, both halves' slots words `1 … 16`. -/
-def spreadIns (k : Nat) : List (Nat × Nat) := (k, 0) :: (List.range 16).map fun j => (d1Slot + j, 1 + j)
-
-def spreadEnv (k : Nat) : Env (Nat × Nat) := linEnvG [] (spreadIns k) layerMasks
-
-theorem spread_checkW :
-    check (lanes 64 11) scrCfg (linExt 0) (spread wSlot) (spreadEnv wSlot)
-      (linPostG 11 (qOuts (keyBsG 0)) [] (maskSlots ++ (spreadIns wSlot).map (·.1)) (spreadEnv wSlot)) = true := by
-  decide +kernel
-
-theorem spread_checkW1 :
-    check (lanes 64 11) scrCfg (linExt 0) (spread (wSlot + 1)) (spreadEnv (wSlot + 1))
-      (linPostG 11 (qOuts (keyBsG 0)) [] (maskSlots ++ (spreadIns (wSlot + 1)).map (·.1))
-        (spreadEnv (wSlot + 1))) = true := by
+theorem spread8_check :
+    check (lanes 64 11) (keyCfg 2) (linExt 0) (spread 8) kaEnv
+      (linPostG 11 (qOuts (keyBsG 8)) [] (maskSlots ++ kaIns.map (·.1)) kaEnv) = true := by
   decide +kernel
 
 end VG.Proof.Camellia.X86_64
