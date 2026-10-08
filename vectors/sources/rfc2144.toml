@@ -1,0 +1,5 @@
+name = "RFC 2144, The CAST-128 Encryption Algorithm (Appendix A S-boxes and Appendix B.1 vectors)"
+directories = ["rfc2144"]
+url = "https://www.rfc-editor.org/rfc/rfc2144.txt"
+sha256 = "05f382eb588517d8c34624d4425838805d420abe94ab41b9fb9cb520eb6f51c7"
+retrieved = 2026-10-08

@@ -618,6 +618,22 @@ yours to keep:
 
 <tr>
 
+<td>CAST5-ECB (CAST-128, 40- to 128-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ChaCha20</td>
 
 <td>✅</td>

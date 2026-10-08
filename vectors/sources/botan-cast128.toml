@@ -1,0 +1,5 @@
+name = "Botan CAST-128 block cipher vectors (keys of 11 to 16 bytes)"
+directories = ["botan-cast128"]
+url = "https://raw.githubusercontent.com/randombit/botan/e596954f1f0759d9b735393f9243ea0ac6d07c33/src/tests/data/block/cast128.vec"
+sha256 = "e0f27442ce57c2ba56e2d8d33e36f8ec192b10bf79b372c26ac045b1503b5260"
+retrieved = 2026-10-08
