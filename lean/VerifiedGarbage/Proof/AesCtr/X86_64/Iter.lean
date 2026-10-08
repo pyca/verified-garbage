@@ -200,11 +200,18 @@ omit hp in
 theorem adv_eq : adv = [.mov .rax (.mem (at_ .r15 cOff)), .alu .sub .r14 (.reg .rax), .shift .shl .rax 4,
     .alu .add .r13 (.reg .rax)] ++ [.mov32 .rax (.mem (at_ .r12 12)), .alu32 .test .rax (.reg .rax)] := rfl
 
-/-- On past the call's blocks, the carry if the counter wrapped around, and
-ZF set if no blocks are left. -/
-theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
-    WP isa (.seq (.block adv) (.seq (.ite .e (.block carry) (.block [])) (.block [.alu .test .r14 (.reg .r14)]))) s
-      fun s' => LInv AesCtr.ctrMode s₀ (k + mOf s₀ k) s' ∧ s'.zf = some (decide (k + mOf s₀ k = N s₀)) := by
+/-- What `adv` leaves. -/
+structure After (s₀ : State) (k : Nat) (s s₂ : State) : Prop where
+  gpr : ∀ r, r ≠ .rax → r ≠ .r13 → r ≠ .r14 → s₂.gpr r = s.gpr r
+  r13 : s₂.gpr .r13 = blk s₀ (k + mOf s₀ k)
+  r14 : s₂.gpr .r14 = BitVec.ofNat 64 (N s₀ - (k + mOf s₀ k))
+  mem : s₂.mem = s.mem
+  rd : s₂.rd = s.rd
+  wr : s₂.wr = s.wr
+  zf : s₂.zf = some (decide (AesCtr.lo32 (next (iv0 s₀) k) + mOf s₀ k = 2 ^ 32))
+
+/-- On past the call's blocks, and ZF set if the counter wrapped around. -/
+theorem adv_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) : WP isa (.block adv) s (After s₀ k s) := by
   have hm0 := mOf_pos hk
   have hle := mOf_le s₀ k
   have hlo := lo32_mOf s₀ k
@@ -216,9 +223,7 @@ theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
   obtain ⟨s₂, run₂, zf₂, g₂, mem₂, rd₂, wr₂⟩ := advB_ok s₁ (Q := Iv s₀)
     (by rw [g₁ _ (by decide) (by decide) (by decide), h.r12])
     (by rw [rd₁, wr₁, hR]; exact in_rw (r := ivR s₀) (by simp) (Offset.contains_base _ (by decide) (by decide)))
-  rw [adv_eq]
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
+  rw [adv_eq, WP.block_append_iff]
   refine WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩
   have g (r : Reg) (h1 : r ≠ .rax) (h13 : r ≠ .r13) (h14 : r ≠ .r14) : s₂.gpr r = s.gpr r := by
     rw [g₂ r h1, g₁ r h1 h13 h14]
@@ -247,10 +252,27 @@ theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
       rw [AesCtr.lo32_next (length_iv0 s₀)]
       simp only [hw, decide_false, Option.some.injEq, beq_eq_false_iff_ne]
       exact h0
+  exact ⟨g, r13₂, r14₂, m₂, by rw [rd₂, rd₁], by rw [wr₂, wr₁], zfE⟩
+
+/-- The carry if the counter wrapped around, and ZF set if no blocks are
+left. -/
+theorem fin_wp {k : Nat} (hk : k < N s₀) {s s₂ : State} (h : Mid s₀ k s) (a : After s₀ k s s₂) :
+    WP isa (.seq (.ite .e (.block carry) (.block [])) (.block [.alu .test .r14 (.reg .r14)])) s₂
+      fun s' => LInv AesCtr.ctrMode s₀ (k + mOf s₀ k) s' ∧ s'.zf = some (decide (k + mOf s₀ k = N s₀)) := by
+  have hm0 := mOf_pos hk
+  have hle := mOf_le s₀ k
+  have hdw := hp.data_wrap
+  have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [h.wr, hp.wr]
+  have g := a.gpr
+  have r13₂ := a.r13
+  have r14₂ := a.r14
+  have m₂ := a.mem
+  have zfE := a.zf
   have hNb : N s₀ < 2 ^ 64 := (s₀.gpr .r8).isLt
   have r12₂ : s₂.gpr .r12 = Iv s₀ := by rw [g _ (by decide) (by decide) (by decide), h.r12]
-  have rd₂' : s₂.rd = s.rd := by rw [rd₂, rd₁]
-  have wr₂' : s₂.wr = s.wr := by rw [wr₂, wr₁]
+  have rd₂' : s₂.rd = s.rd := a.rd
+  have wr₂' : s₂.wr = s.wr := a.wr
   have zfEnd (t : State) (h14 : t.gpr .r14 = BitVec.ofNat 64 (N s₀ - (k + mOf s₀ k))) :
       some (t.gpr .r14 == 0) = some (decide (k + mOf s₀ k = N s₀)) := by
     rw [h14, AesCbc.X86_64.beq_zero (by omega)]
@@ -287,6 +309,13 @@ theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
       (by rw [mem₄, m₂]; exact Frame.refl _ _) ?_, ?_⟩
     · rw [mem₄, m₂, h.iv (by have := lo32_mOf s₀ k; omega)]
     · rw [zf₄, zfEnd s₂ r14₂]
+
+/-- On past the call's blocks, the carry if the counter wrapped around, and
+ZF set if no blocks are left. -/
+theorem tail_wp {k : Nat} (hk : k < N s₀) {s : State} (h : Mid s₀ k s) :
+    WP isa (.seq (.block adv) (.seq (.ite .e (.block carry) (.block [])) (.block [.alu .test .r14 (.reg .r14)]))) s
+      fun s' => LInv AesCtr.ctrMode s₀ (k + mOf s₀ k) s' ∧ s'.zf = some (decide (k + mOf s₀ k = N s₀)) :=
+  WP.seq (WP.mono (adv_wp hp hk h) fun _ a => fin_wp hp hk h a)
 
 /-- One iteration. -/
 theorem iter_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
