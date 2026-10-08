@@ -1,6 +1,6 @@
 //! AES-GCM (NIST SP 800-38D) with 128-, 192- and 256-bit AES keys.
 //!
-//! The whole AEAD is verified assembly: `vg_aes_gcm_init` (contract
+//! Key setup, in-place AEAD and the streaming operations are verified assembly: `vg_aes_gcm_init` (contract
 //! `VG.Spec.Gcm.initContract`) writes the key context (the AES key schedule
 //! and the hash subkey `H`), `vg_aes_gcm_seal` and `vg_aes_gcm_open`
 //! (`sealContract`, `openContract`) are GCM-AE and GCM-AD (§7), and
@@ -20,8 +20,12 @@
 //!
 //! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
 //! list of slices, such as a record's header and payload, or a single one)
-//! into one output buffer: one call of `vg_aes_gcm_seal_gather`
+//! into one output buffer. Usually this is one call of `vg_aes_gcm_seal_gather`
 //! (`VG.Spec.Gcm.sealGatherContract`), which reads each piece where it is.
+//! With a prepared key, a 96-bit nonce, at most 16 bytes of AAD, and a long
+//! slice followed by at most one byte, Rust instead composes the verified
+//! CTR, GHASH and interleaved block primitives directly. This composition,
+//! like the incremental API's Rust bookkeeping, is outside the Lean proof.
 //!
 //! # Tags
 //!
@@ -742,6 +746,135 @@ impl AesGcm {
         }
     }
 
+    /// Encrypts a long first slice and at most one trailing byte without
+    /// constructing a streaming state. A prepared key, a 96-bit nonce and
+    /// at most one AAD block let the verified CTR, GHASH and interleaved
+    /// block primitives handle the record directly. The ordinary gather
+    /// implementation handles every other shape.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    fn seal_two_slices_prepared(
+        &self,
+        nonce: &[u8],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Option<Block> {
+        use crate::arch::aes::{vg_aes_ctr32, vg_aes_ctr32_aesni, vg_aes_ctr32_vaes};
+        use crate::arch::gcm::{
+            vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512, vg_ghash, vg_ghash_pclmul,
+            vg_ghash_vpclmul,
+        };
+        if nonce.len() != 12
+            || aad.len() > 16
+            || plaintext.len() != 2
+            || plaintext[1].len() > 1
+            || plaintext[0].len() < 256
+        {
+            return None;
+        }
+        // Follow the same exhaustive backend mapping as the generic
+        // assembly callers. New AES/GHASH combinations must be handled here.
+        let ctr = instance!(self.backend, vg_aes_ctr32,
+            x86_64: [vg_aes_ctr32_aesni, vg_aes_ctr32, vg_aes_ctr32_aesni],
+            vaes: [vg_aes_ctr32_vaes, vg_aes_ctr32, vg_aes_ctr32_vaes,
+                vg_aes_ctr32_aesni, vg_aes_ctr32_vaes, vg_aes_ctr32_vaes],
+            avx: [vg_aes_ctr32_aesni], aarch64: [vg_aes_ctr32_aes]);
+        let gh = instance!(self.backend, vg_ghash,
+            x86_64: [vg_ghash, vg_ghash_pclmul, vg_ghash_pclmul],
+            vaes: [vg_ghash, vg_ghash_vpclmul, vg_ghash_pclmul,
+                vg_ghash_vpclmul, vg_ghash_vpclmul, vg_ghash_vpclmul],
+            avx: [vg_ghash_pclmul], aarch64: [vg_ghash_aes]);
+        let blocks = match self.backend {
+            Backend::VaesVpclmulAvx512 => vg_aes_gcm_encrypt_blocks_to_prepared_vaes_vpclmul_avx512,
+            Backend::Scalar
+            | Backend::AesNi
+            | Backend::Pclmul
+            | Backend::AesNiPclmul
+            | Backend::Vaes
+            | Backend::Vpclmul
+            | Backend::VaesPclmul
+            | Backend::AesNiVpclmul
+            | Backend::VaesVpclmul
+            | Backend::AesNiPclmulAvx => return None,
+        };
+        let ctx = self.powers.ctx.load(Ordering::Acquire);
+        if ctx.is_null() {
+            return None;
+        }
+        let mut scratch = MaybeUninit::<[u64; 264]>::uninit();
+        let work = scratch.as_mut_ptr();
+        let mut counter = [0u8; 16];
+        counter[..12].copy_from_slice(nonce);
+        counter[15] = 1;
+        let mut tag = [0u8; 16];
+        let mut y = [0u8; 16];
+        let mut padded_aad = [0u8; 16];
+        padded_aad[..aad.len()].copy_from_slice(aad);
+        let head = plaintext[0].len() & !15;
+        let count = head / 16;
+        let mut finish = [[0u8; 16]; 2];
+        let rem = plaintext[0].len() - head;
+        let tail = rem + plaintext[1].len();
+        finish[0][..rem].copy_from_slice(&plaintext[0][head..]);
+        finish[0][rem..tail].copy_from_slice(plaintext[1]);
+        finish[1][..8].copy_from_slice(&((aad.len() as u64) * 8).to_be_bytes());
+        finish[1][8..].copy_from_slice(&((out.len() as u64) * 8).to_be_bytes());
+        // SAFETY: the exhaustive dispatch above selects the key's CPU
+        // features. The acquired context was initialized for this key and
+        // lives as long as `self`; its first 256 bytes contain the ordinary
+        // schedule and H. The caller checked nonce, AAD, text and output
+        // lengths. The nonce forms J0 = nonce || 1; CTR first computes
+        // E(K, J0), leaving inc32(J0) for the text. `head` is a whole-block
+        // prefix; `rem + suffix.len() <= 16`. Each call gets separate
+        // readable inputs and writable buffers of its specified size,
+        // including 2112 scratch bytes. The final ciphertext is zero-padded
+        // before GHASH, followed by the big-endian bit lengths (§7.1).
+        unsafe {
+            ctr(
+                ctx.cast(),
+                self.rounds,
+                &mut counter,
+                &mut tag,
+                1,
+                work.cast(),
+            );
+            let h = ctx.cast::<u8>().add(240).cast::<[u8; 16]>();
+            if !aad.is_empty() {
+                gh(h, &mut y, &padded_aad, 1, work.cast());
+            }
+            blocks(
+                ctx,
+                self.rounds,
+                &mut counter,
+                &mut y,
+                plaintext[0].as_ptr().cast(),
+                count,
+                out.as_mut_ptr().cast(),
+                count,
+                work,
+            );
+            if tail != 0 {
+                ctr(
+                    ctx.cast(),
+                    self.rounds,
+                    &mut counter,
+                    &mut finish[0],
+                    1,
+                    work.cast(),
+                );
+                out[head..].copy_from_slice(&finish[0][..tail]);
+                finish[0][tail..].fill(0);
+                gh(h, &mut y, finish.as_ptr(), 2, work.cast());
+            } else {
+                gh(h, &mut y, &finish[1], 1, work.cast());
+            }
+        }
+        for i in 0..16 {
+            tag[i] ^= y[i];
+        }
+        Some(tag)
+    }
+
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
     pub const MAX_PIECES: usize = 64;
 
@@ -771,6 +904,10 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
+        #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+        if let Some(tag) = self.seal_two_slices_prepared(nonce, aad, plaintext, out) {
+            return Ok(tag);
+        }
         // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
         // them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -1713,6 +1850,56 @@ mod tests {
                         let mut out = [0u8; 1300];
                         let tag = k.encrypt(&nonce, &aad, pieces, &mut out[..len]);
                         assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
+                    }
+                }
+            }
+        }
+    }
+
+    /// All partial tails, including no tail and a suffix completing a
+    /// block, agree with the existing in-place AEAD on every backend.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[test]
+    fn prepared_gather_tails() {
+        for key_len in [16, 24, 32] {
+            let key = &[0x39; 32][..key_len];
+            let reference = AesGcm::new(key).unwrap();
+            for &(backend, features) in Backend::ALL {
+                if !detected().contains(features) {
+                    continue;
+                }
+                let cipher = AesGcm::new(key).unwrap().with_backend(backend);
+                // Exercise the cold gather fallback before warming the key.
+                let nonce = [0x71; 12];
+                let mut cold = [0; 257];
+                cipher
+                    .encrypt(&nonce, &[5; 5], &[&[0; 256], &[1]], &mut cold)
+                    .unwrap();
+                for _ in 0..super::POWERS_AFTER {
+                    cipher.encrypt_in_place(&nonce, &[], &mut [0; 256]).unwrap();
+                }
+                for len in (256..272).chain([511, 512, 767, 768, 4097, 9995, 10000, 16384]) {
+                    let plain: alloc::vec::Vec<u8> =
+                        (0..len).map(|i| (i * 37 + 11) as u8).collect();
+                    for aad_len in [0, 5, 16, 17] {
+                        let aad = &[0x49; 17][..aad_len];
+                        for suffix_len in [0, 1, 2] {
+                            let suffix = &[0x17; 2][..suffix_len];
+                            let mut expected = plain.clone();
+                            expected.extend_from_slice(suffix);
+                            let tag = reference
+                                .encrypt_in_place(&nonce, aad, &mut expected)
+                                .unwrap();
+                            let mut actual = alloc::vec![0x99; expected.len()];
+                            let pieces = [&plain[..], suffix];
+                            let actual_tag =
+                                cipher.encrypt(&nonce, aad, &pieces, &mut actual).unwrap();
+                            assert_eq!(
+                                (&actual, actual_tag),
+                                (&expected, tag),
+                                "{backend:?} {key_len} {len} {aad_len} {suffix_len}"
+                            );
+                        }
                     }
                 }
             }
