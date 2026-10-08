@@ -95,20 +95,23 @@ def restoreLoads : List Instr :=
 context's address into `r15` (`anchor`), and the loads. -/
 def restore : List Instr := anchor .rdi 448 ++ restoreLoads
 
-/-- Where word `k` of the ChaCha20 state for counter 0 comes from: a constant
-(0–3), the key (4–11, at `rdi`), the counter (12) or the nonce (13–15, at
-`rsi`). -/
-def stSrc (k : Nat) : Src :=
-  if k < 4 then .imm ([0x61707865, 0x3320646e, 0x79622d32, 0x6b206574].getD k 0)
-  else if k < 12 then .mem (at_ .rdi (4 * (k - 4)))
-  else if k = 12 then .imm 0
-  else .mem (at_ .rsi (4 * (k - 13)))
+/-- Quadword `j` of the ChaCha20 state for counter 0 (words `2j` and
+`2j + 1`) into `rax`: two constants (0–1), the key (2–5, at `rdi`), the
+counter and the first word of the nonce (6, at `rsi`), and the rest of the
+nonce (7, at `rsi + 4`). -/
+def stQSrc (j : Nat) : List Instr :=
+  if j = 0 then [.movImm64 .rax 0x3320646e61707865]
+  else if j = 1 then [.movImm64 .rax 0x6b20657479622d32]
+  else if j < 6 then [.mov .rax (.mem (at_ .rdi (8 * (j - 2))))]
+  else if j = 6 then [.mov32 .rax (.mem (at_ .rsi 0)), .shift .shl .rax 32]
+  else [.mov .rax (.mem (at_ .rsi 4))]
 
-/-- Word `k` of the ChaCha20 state, at `r15 + o + 4k`. -/
-def stW (o k : Nat) : List Instr := [.mov32 .rax (stSrc k), .store32 (at_ .r15 (o + 4 * k)) .rax]
+/-- Quadword `j` of the ChaCha20 state, at `r15 + o + 8j`. -/
+def stQ (o j : Nat) : List Instr := stQSrc j ++ [.store (at_ .r15 (o + 8 * j)) .rax]
 
-/-- The ChaCha20 state for counter 0, at `r15 + o`. -/
-def initState (o : Nat) : List Instr := (List.range 16).flatMap (stW o)
+/-- The ChaCha20 state for counter 0, at `r15 + o`, a quadword at a time:
+half as many stores as `initState`. -/
+def initStateQ (o : Nat) : List Instr := (List.range 8).flatMap (stQ o)
 
 /-- The arguments moved to where they are kept. -/
 def moves : List Instr :=
@@ -124,18 +127,18 @@ def foldM (fold : Nat) : Prog isa :=
 /-- `[r15 + rcx + 672]`. -/
 def zeroQ : MemOp := { base := .r15, index := some .rcx, disp := 672 }
 
-/-- Zeros the quadwords of `ctx[672, 1696)` from the first, while fewer
-than `rdx` bytes are zeroed (at least one). -/
+/-- Zeros the 16-byte words of `ctx[672, 1696)` from the first, while fewer
+than `rdx` bytes are zeroed (at least one), through `xmm0`. -/
 def zeroKs : Prog isa :=
-  .seq (.block [.mov32 .rax (.imm 0), .mov32 .rcx (.imm 0)])
-    (.loop (.block [.store zeroQ .rax, .alu .add .rcx (.imm 8), .alu .cmp .rcx (.reg .rdx)]) .b)
+  .seq (.block [.xop (.bin .pxor .xmm0 .xmm0), .mov32 .rcx (.imm 0)])
+    (.loop (.block [.movdquStore zeroQ .xmm0, .alu .add .rcx (.imm 16), .alu .cmp .rcx (.reg .rdx)]) .b)
 
 /-- The prologue up to the call of `vg_chacha20_xor`: saves the registers,
 moves the arguments, builds the ChaCha20 state twice (the copy for the call), zeros the first
 `64 + m` bytes of `ctx[672, 1696)` (rounded up to quadwords) and sets up the
 call's arguments, the copy of the state and those bytes. -/
 def prologueA (fold : Nat) : Prog isa :=
-  .seq (.block (save ++ moves ++ initState 64 ++ initState 608))
+  .seq (.block (save ++ moves ++ initStateQ 64 ++ initStateQ 608))
   (.seq (foldM fold)
   (.seq (.block [.alu .add .rdx (.imm 64)])
   (.seq zeroKs
@@ -158,29 +161,70 @@ def prologue (x : ChaCha20.X86_64.Callee) : Prog isa :=
 def tailByte : MemOp := { base := .rsi, index := some .rcx }
 def padByte : MemOp := { base := .r15, index := some .rcx, disp := 576 }
 
-/-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed. -/
-def padTail (b : Poly1305.X86_64.Blocks) : Prog isa :=
+/-- The last `rdx` bytes (1 to 15) at `rsi`, padded with zeros, absorbed,
+with the `k - 1` blocks after the padded block in `ctx` (the lengths block,
+for `k = 2`). -/
+def padTail (b : Poly1305.X86_64.Blocks) (k : Nat) : Prog isa :=
   .seq (.block [.mov32 .rax (.imm 0), .store (at_ .r15 576) .rax, .store (at_ .r15 584) .rax,
     .mov32 .rcx (.imm 0)])
   (.seq (.loop (.block [.movzx8 .rax tailByte, .store8 padByte .rax, .alu .add .rcx (.imm 1),
     .alu .cmp .rcx (.reg .rdx)]) .ne)
-  (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++ [.mov32 .rdx (.imm 1)]))
+  (.seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 576 ++ [.mov32 .rdx (.imm (BitVec.ofNat 32 k))]))
   (.seq (.call b.name b.code)
     (.block (anchor .rdi 448)))))
 
+/-- The whole blocks of the `n` bytes at `p` absorbed, with no call if there
+are none (`shr` sets ZF). -/
+def wholeBlocks (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
+  .seq (.block (ptr .rdi .r15 448 ++ [.mov .rsi (.reg p), .mov .rdx (.reg n), .shift .shr .rdx 4]))
+    (.ite .e (.block []) (.seq (.call b.name b.code) (.block (anchor .rdi 448))))
+
+/-- `rsi` at the last `rdx` bytes of the `n` bytes at `p`. -/
+def tailPtr (p n : Reg) : List Instr := [.mov .rsi (.reg n), .alu .sub .rsi (.reg .rdx), .alu .add .rsi (.reg p)]
+
 /-- The `n` bytes at `p`, padded with zeros to a multiple of 16, absorbed. -/
 def macPad (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
-  .seq (.block (ptr .rdi .r15 448 ++ [.mov .rsi (.reg p), .mov .rdx (.reg n), .shift .shr .rdx 4]))
+  .seq (wholeBlocks b p n)
+  (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
+    (.ite .e (.block []) (.seq (.block (tailPtr p n)) (padTail b 1))))
+
+/-- The lengths block absorbed. -/
+def absorbLengths (b : Poly1305.X86_64.Blocks) : Prog isa :=
+  .seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 592 ++ [.mov32 .rdx (.imm 1)]))
   (.seq (.call b.name b.code)
-  (.seq (.block (anchor .rdi 448 ++ [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)]))
-    (.ite .e (.block []) (.seq (.block [.mov .rsi (.reg n), .alu .sub .rsi (.reg .rdx),
-      .alu .add .rsi (.reg p)]) (padTail b)))))
+    (.block (anchor .rdi 448)))
+
+/-- The `n` bytes at `p`, padded with zeros to a multiple of 16, then the
+lengths block (stored after the padded block, at `ctx + 592`), absorbed: a
+padded last block and the lengths block in one call. -/
+def macPadLengths (b : Poly1305.X86_64.Blocks) (p n : Reg) : Prog isa :=
+  .seq (wholeBlocks b p n)
+  (.seq (.block [.mov .rdx (.reg n), .alu .and .rdx (.imm 15)])
+    (.ite .e (absorbLengths b) (.seq (.block (tailPtr p n)) (padTail b 2))))
 
 /-- The arguments of the second call of `vg_chacha20_xor`: the ChaCha20
 state with the counter set to 1, and the data. -/
 def cryptArgs : List Instr :=
   [.mov32 .rax (.imm 1), .store32 (at_ .r15 112) .rax] ++ ptr .rdi .r15 64 ++
     [.mov .rsi (.reg .r14), .mov .rdx (.reg .r13)] ++ ptr .rcx .r15 128
+
+/-- XOR the 16 bytes at `rsi + rcx` into those at `d + rcx`, through `xmm0`
+and `xmm1`. -/
+def xBody (d : Reg) : List Instr :=
+  [.movdquLoad .xmm0 (ChaCha20.X86_64.XorBuf.idx d), .movdquLoad .xmm1 (ChaCha20.X86_64.XorBuf.idx .rsi),
+   .xop (.bin .pxor .xmm0 .xmm1), .movdquStore (ChaCha20.X86_64.XorBuf.idx d) .xmm0,
+   .alu .add .rcx (.imm 16), .alu .sub .rax (.imm 1)]
+
+/-- XORs the `rdx` bytes at `rsi` into the `rdx` bytes at `d`: 16 at a time
+while at least 16 remain (`rcx` counting the bytes done, `rax` the 16-byte
+words left), then the rest by `XorBuf.xorBuf` from `rdi = d + rcx` and
+`rsi + rcx`. -/
+def xorBufX (d : Reg) : Prog isa :=
+  .seq (.block [.mov32 .rcx (.imm 0), .mov .rax (.reg .rdx), .shift .shr .rax 4])
+  (.seq (.ite .e (.block []) (.loop (.block (xBody d)) .ne))
+  (.seq (.block [.mov .rdi (.reg d), .alu .add .rdi (.reg .rcx), .alu .add .rsi (.reg .rcx),
+    .alu .sub .rdx (.reg .rcx)])
+    (ChaCha20.X86_64.XorBuf.xorBuf .rdi .rsi)))
 
 /-- The data encrypted or decrypted, then the keystream wiped. If its length
 is at most `fold`, by XORing the keystream in `ctx[736, 736 + len)` into it;
@@ -190,7 +234,7 @@ def crypt (x : ChaCha20.X86_64.Callee) : Prog isa :=
   .seq (.block [.alu .cmp .r13 (.imm (BitVec.ofNat 32 (x.fold + 1)))])
   (.seq (.ite .b
     (.seq (.block (ptr .rsi .r15 736 ++ [.mov .rdx (.reg .r13)]))
-      (.seq (ChaCha20.X86_64.XorBuf.xorBuf .r14 .rsi) (.block (ptr .rsi .r15 128))))
+      (.seq (xorBufX .r14) (.block (ptr .rsi .r15 128))))
     (.seq (.block cryptArgs) (.call x.name x.code)))
   (.seq (.block (anchor .rsi 128))
   (.seq (foldM x.fold)
@@ -198,12 +242,6 @@ def crypt (x : ChaCha20.X86_64.Callee) : Prog isa :=
 
 /-- The lengths block. -/
 def lengths : List Instr := [.store (at_ .r15 592) .rbp, .store (at_ .r15 600) .r13]
-
-/-- The lengths block absorbed. -/
-def absorbLengths (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  .seq (.block (ptr .rdi .r15 448 ++ ptr .rsi .r15 592 ++ [.mov32 .rdx (.imm 1)]))
-  (.seq (.call b.name b.code)
-    (.block (anchor .rdi 448)))
 
 /-- The tag written to `out`, whose address `outPtr` puts in `rdx`: the
 message is whole blocks, so its length (`count`) is 0 modulo 16, and nothing
@@ -224,10 +262,9 @@ def «seal» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog is
   (.seq (macPad b .rbx .rbp)
   (.seq (.block lengths)
   (.seq (crypt x)
-  (.seq (macPad b .r14 .r13)
-  (.seq (absorbLengths b)
+  (.seq (macPadLengths b .r14 .r13)
   (.seq finalizeTag
-    (.block restore))))))))
+    (.block restore)))))))
 
 /-- `eax = 1` if the computed tag (at `rcx`) is the received one (at `r12`),
 else 0, without a branch. -/
@@ -240,11 +277,10 @@ def «open» (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog is
   .seq (.block entry)
   (.seq (prologue x)
   (.seq (macPad b .rbx .rbp)
-  (.seq (macPad b .r14 .r13)
   (.seq (.block lengths)
-  (.seq (absorbLengths b)
+  (.seq (macPadLengths b .r14 .r13)
   (.seq (crypt x)
   (.seq (finalizeTo 48)
-    (.block (compare ++ restore)))))))))
+    (.block (compare ++ restore))))))))
 
 end VG.Impl.ChaCha20Poly1305.X86_64

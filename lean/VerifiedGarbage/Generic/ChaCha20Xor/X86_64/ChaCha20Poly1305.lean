@@ -19,9 +19,10 @@ adds the `# Safety` items that depend on the target (`Sig.layoutDoc`), from
 
 Each function keeps its working space (1696 bytes, `work`) in a frame of
 1720 bytes on the stack, which also holds a copy of `tag` and the address of
-`work` (`withStackArgScratchWiped`). The first 672 bytes of `work`, which hold
+`work` (`withStackArgScratchWipedX`). The first 672 bytes of `work`, which hold
 the key, the one-time Poly1305 key and the keystream of the call of
-`vg_chacha20_xor`, are zeroed after the code; the code zeroes the keystream it
+`vg_chacha20_xor`, are zeroed after the code, 16 bytes at a time with SSE2;
+the code zeroes the keystream it
 keeps after them itself. The code below the frame uses 24 bytes of stack for
 every implementation: the return address of the call of `vg_chacha20_xor`,
 and up to 16 bytes for its own calls; 1744 bytes in all. `seal_gather`
@@ -59,23 +60,23 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := [xorNote v])
-    code := Impl.StackScratch.X86_64.withStackArgScratchWiped 1720 1 84
+    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.«seal» v.callee v.poly)
     contract := Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744
     stack := 1744
     verified := seal_framed v
-    spSafe := X86_64.withStackArgScratchWiped_spSafe (seal_spSafe v)
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (seal_spSafe v)
     features := features v },
   { Spec.ChaCha20Poly1305.openApi with
     name := Spec.ChaCha20Poly1305.openApi.name ++ v.suffix
     target := X86_64.target
     doc := Spec.ChaCha20Poly1305.openApi.doc (notes := [xorNote v])
-    code := Impl.StackScratch.X86_64.withStackArgScratchWiped 1720 1 84
+    code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
       (Impl.ChaCha20Poly1305.X86_64.«open» v.callee v.poly)
     contract := Spec.ChaCha20Poly1305.openContract X86_64.abi 1744
     stack := 1744
     verified := open_framed v
-    spSafe := X86_64.withStackArgScratchWiped_spSafe (open_spSafe v)
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (open_spSafe v)
     features := features v },
   { Spec.ChaCha20Poly1305.sealGatherApi with
     name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
