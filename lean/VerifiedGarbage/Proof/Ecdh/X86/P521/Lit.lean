@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.MontLit.P521
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Impl.Ecdh.P521.X86
 
