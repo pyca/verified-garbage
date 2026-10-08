@@ -1,0 +1,5 @@
+name = "NTT's Camellia 128-bit key ECB known-answer tests (t_camelia.txt), as pyca/cryptography vendors them"
+directories = ["cryptography-camellia-128"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/Camellia/camellia-128-ecb.txt"
+sha256 = "2c57235f09d0f1e25a49985bdb0ba607ef28bdf43e35e96be3f036e5abec4a3d"
+retrieved = 2026-10-08
