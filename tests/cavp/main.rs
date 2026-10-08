@@ -13,6 +13,7 @@
     target_arch = "x86"
 ))]
 
+mod aes_cbc;
 mod aes_ccm;
 mod aes_ecb;
 mod aes_gcm;
