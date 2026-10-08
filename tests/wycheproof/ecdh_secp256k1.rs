@@ -72,12 +72,9 @@ fn ecdh_secp256k1_webcrypto_test() {
         let result = key.diffie_hellman(&peer);
         match test.result {
             Expectation::Valid => {
-                assert_eq!(
-                    result.map(|z| z.to_vec()),
-                    Ok(test.case.shared.0.clone()),
-                    "tcId {}",
-                    test.tc_id
-                );
+                let shared = result.map(|z| z.to_vec());
+                let expected = Ok(test.case.shared.0.clone());
+                assert_eq!(shared, expected, "tcId {}", test.tc_id);
                 assert_eq!(
                     key.public_key().unwrap().as_slice(),
                     public(&test.case.private.public)
