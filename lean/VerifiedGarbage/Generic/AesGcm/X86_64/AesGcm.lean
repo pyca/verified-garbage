@@ -85,7 +85,9 @@ and calling `encrypt_blocks`, in 24 bytes of stack; and `stream_encrypt_to`,
 calling `encrypt_blocks_to` for the whole blocks when the text so far ends a
 block and `stream_encrypt` for the rest, after copying it, in a frame of 2232
 bytes for its 2192 bytes of working space (`StreamTo/Verified.lean`), and
-4856 bytes of stack in all; and `seal_gather`, from a list of slices, by
+4856 bytes of stack in all; and `seal_gather`, from a list of slices: for a
+text shorter than `copyBelow` bytes, by copying the slices to the output
+and calling `seal` there (with the same key context), and otherwise by
 calling `stream_init`, `stream_aad`, `stream_encrypt_to` once for each slice
 and `stream_finish` (`Impl/AesGcm/X86_64/SealGather.lean`), in a frame of
 240 bytes for its 184 bytes of working space (`Gather/Verified.lean`), and
@@ -490,11 +492,51 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
   else []
 
 
-/-- How an instance of `vg_aes_gcm_seal_gather` works. -/
-def gatherNote (enc : String) : String :=
-  "This implementation runs the streaming functions on a state of its own: it absorbs the additional \
-    data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts \
-    each slice from where it is to the output with `" ++ enc ++ "`."
+/-- How an instance of `vg_aes_gcm_seal_gather` works: below `t` bytes it
+calls `sealName`, and otherwise `enc`. -/
+def gatherNote (t : Nat) (sealName enc : String) : String :=
+  "For a text shorter than " ++ toString t ++ " bytes, this implementation copies the slices to the \
+    output and encrypts them there with `" ++ sealName ++ "`. For a longer one, it runs the streaming \
+    functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block \
+    (as GHASH pads it), and encrypts each slice from where it is to the output with `" ++ enc ++ "`."
+
+/-- Below how many bytes `vg_aes_gcm_seal_gather` copies the text to the
+output and calls `vg_aes_gcm_seal`, rather than the streaming functions:
+with out-of-place interleaved loops (`GcmVariant.stitchTo`), below 48
+blocks, where the streaming functions' calls cost more than the copy saves
+(measured on a VAES and AVX-512 Xeon); without them, the streaming path
+copies the blocks too, so all texts but those of 2 GiB or more (where the
+cost of its calls is negligible) take the copy. -/
+def copyBelow (v : GcmVariant) : Nat := if v.stitchTo.isSome then 768 else 2 ^ 31 - 1
+
+theorem copyBelow_lt (v : GcmVariant) : copyBelow v < 2 ^ 31 := by
+  unfold copyBelow; split <;> decide
+
+theorem sealCode_xdepth (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCode (v.withBlk B)).x86_64Depth ≤ 24 := by
+  unfold GcmImpl.sealCode; split
+  · exact Short.sealM_xdepth v B
+  · exact sealM_xdepth v B
+
+theorem sealCode_mx (v : GcmImpl) {M : Proof.Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
+    (v.sealCode (v.withBlk B)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold GcmImpl.sealCode; split
+  · exact Short.sealM_mx v B
+  · exact sealM_mx v B
+
+/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
+def sealFn (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
+  .ofBase ⟨Spec.Gcm.sealApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode v.callees)⟩
+    (sealSel_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkB))
+    (StreamTo.framed_xdepth (sealCode_xdepth v v.blkB)) (StreamTo.framed_mx (sealCode_mx v v.blkB))
+
+/-- The instance of `vg_aes_gcm_seal_precomputed` calling the implementations `v`. -/
+def sealFnP (v : GcmImpl) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.powers :=
+  .ofPowers ⟨Spec.Gcm.sealPrecomputedApi.name ++ v.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.sealCode (v.withBlk v.blkP))⟩
+    (sealSelP_framed v Short.shortFacts) (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v v.blkP))
+    (StreamTo.framed_xdepth (sealCode_xdepth v v.blkP)) (StreamTo.framed_mx (sealCode_mx v v.blkP))
 
 /-- The instance of `vg_aes_gcm_stream_init` calling the implementations `v`. -/
 def initFn (v : GcmImpl) : Gather.InitFn :=
@@ -543,29 +585,35 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
   [{ Spec.Gcm.sealGatherApi with
     name := Spec.Gcm.sealGatherApi.name ++ v.impl.suffix
     target := X86_64.target
-    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (toFn v).fn.name])
+    doc := Spec.Gcm.sealGatherApi.doc
+      (notes := [gatherNote (copyBelow v) (sealFn v.impl).fn.name (toFn v).fn.name])
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-      (Impl.AesGcm.X86_64.SealGather.sealGather (initFn v.impl).fn (aadFn v.impl).fn (toFn v).fn
-        (finFn v.impl).fn)
+      (Impl.AesGcm.X86_64.SealGather.sealGather (sealFn v.impl).fn (copyBelow v) (initFn v.impl).fn
+        (aadFn v.impl).fn (toFn v).fn (finFn v.impl).fn)
     contract := Spec.Gcm.sealGatherContract X86_64.abi 5128
     stack := 5128
-    verified := Gather.sealGather_framed (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)
+    verified := Gather.sealGather_framed (sealFn v.impl) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl) (toFn v)
+      (finFn v.impl)
     spSafe := X86_64.withStackArgScratch_spSafe
-      (Gather.sealGather_spAll (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
+      (Gather.sealGather_spAll (sealFn v.impl) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFn v)
+        (finFn v.impl))
     features := v.impl.features }] ++
   if v.impl.stitchP.isSome && v.stitchR.isNone then
     [{ Spec.Gcm.sealGatherPrecomputedApi with
       name := Spec.Gcm.sealGatherPrecomputedApi.name ++ v.impl.suffix
       target := X86_64.target
-      doc := Spec.Gcm.sealGatherPrecomputedApi.doc (notes := [gatherNote (toFnP v).fn.name])
+      doc := Spec.Gcm.sealGatherPrecomputedApi.doc
+        (notes := [gatherNote (copyBelow v) (sealFnP v.impl).fn.name (toFnP v).fn.name])
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (initFn v.impl).fn (aadFn v.impl).fn (toFnP v).fn
-          (finFn v.impl).fn)
+        (Impl.AesGcm.X86_64.SealGather.sealGather (sealFnP v.impl).fn (copyBelow v) (initFn v.impl).fn
+          (aadFn v.impl).fn (toFnP v).fn (finFn v.impl).fn)
       contract := Spec.Gcm.sealGatherPrecomputedContract X86_64.abi 5128
       stack := 5128
-      verified := Gather.sealGatherP_framed (initFn v.impl) (aadFn v.impl) (toFnP v) (finFn v.impl)
+      verified := Gather.sealGatherP_framed (sealFnP v.impl) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl)
+        (toFnP v) (finFn v.impl)
       spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (initFn v.impl) (aadFn v.impl) (toFnP v) (finFn v.impl))
+        (Gather.sealGather_spAll (sealFnP v.impl) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFnP v)
+          (finFn v.impl))
       features := v.impl.features }]
   else []
 
@@ -696,19 +744,30 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
       spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToR v) (encFnR v))
       features := v.impl.features }]
 
+/-- The instance of `vg_aes_gcm_seal_prepared` of a variant. -/
+def sealFnR (v : GcmVariant) : Gather.SealFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))⟩
+    (sealSelPrepared_framed v.impl (blkR v) Short.shortFacts)
+    (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v)))
+    (StreamTo.framed_xdepth (sealCode_xdepth v.impl (blkR v))) (StreamTo.framed_mx (sealCode_mx v.impl (blkR v)))
+
 def artifactsGatherR (v : GcmVariant) : List Artifact :=
   [{ Spec.Gcm.sealGatherPreparedApi with
       name := Spec.Gcm.sealGatherPreparedApi.name ++ v.impl.suffix
       target := X86_64.target
-      doc := Spec.Gcm.sealGatherPreparedApi.doc (notes := [gatherNote (toFnR v).fn.name])
+      doc := Spec.Gcm.sealGatherPreparedApi.doc
+        (notes := [gatherNote (copyBelow v) (sealFnR v).fn.name (toFnR v).fn.name])
       code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
-        (Impl.AesGcm.X86_64.SealGather.sealGather (initFn v.impl).fn (aadFn v.impl).fn (toFnR v).fn
-          (finFn v.impl).fn)
+        (Impl.AesGcm.X86_64.SealGather.sealGather (sealFnR v).fn (copyBelow v) (initFn v.impl).fn
+          (aadFn v.impl).fn (toFnR v).fn (finFn v.impl).fn)
       contract := Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128
       stack := 5128
-      verified := Gather.sealGatherPrepared_framed (initFn v.impl) (aadFn v.impl) (toFnR v) (finFn v.impl)
+      verified := Gather.sealGatherPrepared_framed (sealFnR v) (copyBelow_lt v) (initFn v.impl) (aadFn v.impl)
+        (toFnR v) (finFn v.impl)
       spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (initFn v.impl) (aadFn v.impl) (toFnR v) (finFn v.impl))
+        (Gather.sealGather_spAll (sealFnR v) (copyBelow v) (initFn v.impl) (aadFn v.impl) (toFnR v)
+          (finFn v.impl))
       features := v.impl.features }]
 
 /-- Artifacts propagate the context format supported by each variant: prepared
