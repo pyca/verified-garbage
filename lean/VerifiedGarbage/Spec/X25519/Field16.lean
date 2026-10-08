@@ -18,12 +18,12 @@ stated on integers, modulo `p`.
 An element is sixteen limbs, each a 32-bit little-endian word below `2^16`,
 least significant first (`Limbs`): the element `Σ lᵢ 2^(16 i)` (`valAt`),
 any number below `2^256` (so not necessarily below `p`). The elements live
-in a working space `ws` of 1600 bytes (`[u64; 200]`, the start of Ed25519's
+in a working space `ws` of 4096 bytes (`[u64; 512]`, the start of Ed25519's
 working space), each at a byte offset: `o` for the result, `a` and `b` for
 the operands. The offsets are arguments, so that the result may be an
 operand and the caller keeps its elements where it likes. Bytes 1472 to 1599
-of `ws` are the function's own working space (`ownAt`), and the elements lie
-below them (`Fits`). On return the function's own bytes are unspecified and
+of `ws` are the function's own working space (`ownAt` to `ownEnd`), and the
+elements lie below them (`Fits`). On return the function's own bytes are unspecified and
 may hold intermediate values; every other byte of `ws` keeps its value but
 the result's (`Keeps`).
 
@@ -41,11 +41,13 @@ def limbs : Nat := 16
 def elemBytes : Nat := 4 * limbs
 
 /-- The bytes of the working space. -/
-def wsBytes : Nat := 1600
+def wsBytes : Nat := 4096
 
-/-- Where the function's own working space starts; it ends at byte
-`wsBytes`. -/
+/-- Where the function's own working space starts. -/
 def ownAt : Nat := 1472
+
+/-- Where it ends. -/
+def ownEnd : Nat := 1600
 
 /-- Limb `i` of the element at byte offset `o` of the working space `ws`. -/
 def limbAt (m : Mem) (ws : Addr) (o : BitVec 32) (i : Nat) : Nat :=
@@ -68,12 +70,12 @@ abbrev Fits (o : BitVec 32) : Prop := o.toNat + elemBytes ≤ ownAt
 /-- Every byte of `ws` but those of the function's own working space and of
 the result at `o` keeps its value. -/
 def Keeps (ws : Addr) (o : BitVec 32) (m m' : Mem) : Prop :=
-  ∀ i < ownAt, (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
+  ∀ i < wsBytes, (i < ownAt ∨ ownEnd ≤ i) → (i < o.toNat ∨ o.toNat + elemBytes ≤ i) →
     m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
 
-/-- `ws: *mut [u64; 200], o: u32, a: u32, b: u32`, the offsets public. -/
+/-- `ws: *mut [u64; 512], o: u32, a: u32, b: u32`, the offsets public. -/
 def sig : Sig where
-  params := [("ws", .array true .u64 200), ("o", .int .u32 true), ("a", .int .u32 true),
+  params := [("ws", .array true .u64 512), ("o", .int .u32 true), ("a", .int .u32 true),
     ("b", .int .u32 true)]
 
 /-- `mul`: for operands that fit, with limbs below `2^16`, the result at `o`
