@@ -338,10 +338,13 @@ words and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)` (P-256's `p`): `shiftRed
 `t_i m'` to the words above `t_i`, for each of the four low words `t_i` in
 turn. Only the last can carry out of `r15`, into `r8`, cleared by then. -/
 def redRX (M : Mod) (k o : Nat) : List Instr :=
-  shiftRed true .r8 k [.r9, .r10, .r11, .r12, .r13, .r14, .r15] ++
-    shiftRed true .r9 k [.r10, .r11, .r12, .r13, .r14, .r15] ++
-    shiftRed true .r10 k [.r11, .r12, .r13, .r14, .r15] ++ [.mov32 .r8 (.imm 0)] ++
-    shiftRed true .r11 k (sqLow ++ [.r8]) ++ csub M sqLow .r8 ++ stores sqLow o
+  let rr (t w1 w2 w3 : Reg) : List Instr :=
+    [.mov .rdx (.reg t), .movImm64 .rax (BitVec.ofNat 64 (2 ^ k)), .mulx .rbp .rax (.reg .rax),
+      .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)), .mulx t .rcx (.reg .rcx),
+      .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rbp), .alu .adc w3 (.reg .rcx), .alu .adc t (.imm 0)]
+  rr .r8 .r9 .r10 .r11 ++ rr .r9 .r10 .r11 .r8 ++ rr .r10 .r11 .r8 .r9 ++ rr .r11 .r8 .r9 .r10 ++
+    [.alu .add .r12 (.reg .r8), .alu .adc .r13 (.reg .r9), .alu .adc .r14 (.reg .r10), .alu .adc .r15 (.reg .r11),
+      .mov32 .r8 (.imm 0), .alu .adc .r8 (.imm 0)] ++ csub M sqLow .r8 ++ stores sqLow o
 
 /-- `[o] = [a]² R⁻¹ mod m` with BMI2 and ADX: `a²` into `r8`–`r15` as X25519's
 `sqrX` computes it, then `redRX`. -/
