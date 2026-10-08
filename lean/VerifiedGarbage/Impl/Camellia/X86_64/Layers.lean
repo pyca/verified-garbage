@@ -142,20 +142,30 @@ def andK (d : Reg) (k : Nat) : Instr := .alu .and d (.mem (keyAt k))
 def flRotStep (j : Nat) (src : Reg) (kw s : Nat) : List Instr :=
   [movR t0 src, andK t0 kw, rorI t0 s, andS t0 oddSlot, xorR (q j) t0]
 
+/-- Planes `n` down to 1 of `flRot`, each from plane `j - 1` below it. -/
+def flRotDesc (off : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => flRotStep (n + 1) (q n) (off + n) 56 ++ flRotDesc off n
+
 /-- `x2 ^= (x1 & k1) <<< 1`, with the subkey's planes at word `off` of
 `kp`: plane `j` of the right half (odd bytes) takes plane `j - 1` of the
 left (even bytes) one byte up, and plane 0 takes plane 7 one byte down,
 which rotates the left half's bytes by one. Plane 7 is saved first, and the
 planes are updated from 7 down, so that each step reads planes as they were. -/
 def flRot (off : Nat) : List Instr :=
-  [movR t1 (q 7)] ++
-  ((List.range 7).reverse.flatMap fun i => flRotStep (i + 1) (q i) (off + i) 56) ++
-  flRotStep 0 t1 (off + 7) 8
+  [movR t1 (q 7)] ++ flRotDesc off 7 ++ flRotStep 0 t1 (off + 7) 8
+
+/-- One plane of `flOr`: `q j ^= ((q j | k) ⋙ 8) & even`, `k` word `kw` at `kp`. -/
+def flOrStep (j kw : Nat) : List Instr :=
+  [movR t0 (q j), orK t0 kw, rorI t0 8, andS t0 evenSlot, xorR (q j) t0]
+
+/-- Planes `n - 1` down to 0 of `flOr`. -/
+def flOrDesc (off : Nat) : Nat → List Instr
+  | 0 => []
+  | n + 1 => flOrStep n (off + n) ++ flOrDesc off n
 
 /-- `x1 ^= x2 | k2`, with the subkey's planes at word `off` of `kp`. -/
-def flOr (off : Nat) : List Instr :=
-  (List.range 8).flatMap fun j =>
-    [movR t0 (q j), orK t0 (off + j), rorI t0 8, andS t0 evenSlot, xorR (q j) t0]
+def flOr (off : Nat) : List Instr := flOrDesc off 8
 
 /-- FL on the state. -/
 def flCode (off : Nat) : List Instr := flRot off ++ flOr off
