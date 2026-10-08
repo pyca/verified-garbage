@@ -8,6 +8,9 @@ import VerifiedGarbage.TCB.Artifact
 function and of streaming SHA-384, SHA-512, SHA-512/224 and SHA-512/256
 (`init`/`update`/`finalize`, on the representation `Repr`), in terms of
 `Spec/Sha512.lean`, for any target: `A` is the target's calling convention.
+`finalize` writes the final hash value, from any initial hash value; the
+`finalize` of SHA-384, SHA-512/224 and SHA-512/256 (`finalizeDigestApi`)
+writes the algorithm's digest, the whole result of FIPS 180-4.
 The signatures fix where the arguments are, the memory each function may
 access, disjointness, and that the pointers and lengths are public (see
 `TCB/Sig.lean`); the contracts add the postconditions and which other
@@ -174,6 +177,57 @@ def finalizeApi : Api where
     "`count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not \
       supported.",
     "The contents of `state` on return are unspecified."]
+
+/-- `vg_<alg>_finalize(state: *mut [u8; 192], count: u64, out: *mut [u8; D])`,
+for a member of the family with a `D`-byte digest. `count` is public;
+`state` is left unspecified. -/
+def finalizeDigestSig (D : Nat) : Sig where
+  params := [("state", .array true .u8 192), ("count", .int .u64 true),
+    ("out", .array true .u8 D)]
+
+/-- If the streaming state at `state` represents a message `msg` of `count`
+bytes, fewer than 2⁶⁴, hashed from the initial hash value `iv`, writes
+`digest msg` (`D` bytes) to `out`: for `<alg>`'s initial hash value, its
+digest. -/
+def finalizeDigestPost (iv : HashValue) (D : Nat) (digest : List Byte → List Byte) (pb : Nat) :
+    (finalizeDigestSig D).Post pb := fun state count out m m' _ =>
+  ∀ msg, Repr iv m state msg → msg.length < 2 ^ 64 → count = BitVec.ofNat 64 msg.length →
+    bytesAt m' out D = digest msg
+
+/-- `finalizeDigestPost`. The state is secret. -/
+def finalizeDigestContract {M : ISA} (A : Abi M) (iv : HashValue) (D : Nat) (digest : List Byte → List Byte)
+    (stack : Nat := 0) : Contract M :=
+  (finalizeDigestSig D).contract A (post := finalizeDigestPost iv D digest A.ptrBits) (stack := stack)
+
+/-- `name`, which finishes an `alg` computation started by `initName` from
+its initial hash value `iv` (named `ivName`) with its digest `digest` (`D`
+bytes, named `digestName`), on every target. -/
+def finalizeDigestApi (alg name initName ivName digestName : String) (iv : HashValue) (D : Nat)
+    (digest : List Byte → List Byte) : Api where
+  module := "sha512"
+  name := name
+  sig := finalizeDigestSig D
+  contracts := some fun A stack => finalizeDigestContract A iv D digest stack
+  summary := s!"Finishes a {alg} computation: if the streaming state `*state` represents a message \
+    of `count` bytes, hashed from the initial hash value of {alg} (as `{initName}` starts it), \
+    writes the {alg} digest of that message ({D} bytes, `VG.Spec.Sha512.{digestName}`) to \
+    `*out`.\n\n\
+    Contract: `VG.Spec.Sha512.finalizeDigestContract` for `VG.Spec.Sha512.{ivName}` and \
+    `VG.Spec.Sha512.{digestName}`. Constant time: only the pointers and `count` may affect timing, \
+    not the state."
+  safety := [
+    "`count` must be the exact length of the message: messages of 2⁶⁴ bytes or more are not \
+      supported.",
+    "The contents of `state` on return are unspecified."]
+
+def finalize384Api : Api :=
+  finalizeDigestApi "SHA-384" "vg_sha384_finalize" "vg_sha384_init" "H0_384" "sha384" H0_384 48 sha384
+def finalize512_224Api : Api :=
+  finalizeDigestApi "SHA-512/224" "vg_sha512_224_finalize" "vg_sha512_224_init" "H0_512_224" "sha512_224"
+    H0_512_224 28 sha512_224
+def finalize512_256Api : Api :=
+  finalizeDigestApi "SHA-512/256" "vg_sha512_256_finalize" "vg_sha512_256_init" "H0_512_256" "sha512_256"
+    H0_512_256 32 sha512_256
 
 /-- `vg_sha512_finalize_scratch(state: *mut [u8; 192], count: u64, out: *mut [u8; 64], scratch: *mut [u64; 172])`:
 `vg_sha512_finalize` with its working space passed in `scratch` (1376 bytes,
