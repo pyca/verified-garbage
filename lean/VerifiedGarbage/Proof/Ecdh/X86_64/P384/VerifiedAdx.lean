@@ -33,19 +33,19 @@ theorem post_of_x {s s' : State} (h : EPost p384x s s') : ecdhX86_64.post s s' :
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .rdx) (1 + 2 * p384x.C.len)) = ex s.mem (s.gpr .rsi) (s.gpr .rdx) from rfl, hq]
   rcases q with _ | z <;> exact id
 
-/-- The Jacobian window method with the doubling `doubleCms` computes `[d]P` on
-P-384, whose field `cms` needs. -/
+/-- The Jacobian window method with an affine table and the doubling
+`doubleCms` computes `[d]P` on P-384, whose field `cms` needs. -/
 theorem mulQJP384Cms_ok {c : Cfg} (hc : CfgOk c) (h6 : c.n = 6) (hcC : c.C = Spec.P384.curve)
     (hsp : c.MP'.sparse = true) (hL : Weierstrass.Law c.C) (hO : Weierstrass.PrimeOrder c.C) :
-    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJ c (Impl.Weierstrass.X86_64.doubleCms c.MP' c.rcbSlots)) (mulQJW c) :=
-  mulQJ_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleCms_dblOk hsp
+    MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJA c (Impl.Weierstrass.X86_64.doubleCms c.MP' c.rcbSlots)) (mulQJAW c) :=
+  mulQJA_ok hc (Or.inr h6) hL hO (Weierstrass.X86_64.doubleCms_dblOk hsp
     (Weierstrass.unitMod_pow_two hc.p_odd _) hL hc.am3) (hcC ▸ n_mod32) (hcC ▸ n_ge64)
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P384.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP384Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p384x_ok hI) hL
-    (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJ_w (p384x_ok hI)) (pre_of_x hs)
+    (mulQJP384Cms_ok (p384x_ok hI) rfl rfl (by decide +kernel) hL hO) (mulQJA_w (p384x_ok hI)) (pre_of_x hs)
   have hsp : ∀ i ∈ instrs exchangeP384Adx, Taint.clobbers i .rsp = false := by
     have h : exchangeP384Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

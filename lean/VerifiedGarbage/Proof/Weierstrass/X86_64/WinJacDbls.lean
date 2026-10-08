@@ -111,7 +111,7 @@ theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M 
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State}
     (h : RSt K C base size P s₀ Q s) :
     WP isa (dbl K.R) s fun t => RSt K C base size P s₀ (Spec.Weierstrass.add Q Q) t ∧
-      t.gpr .rbx = s.gpr .rbx := by
+      t.gpr .rbx = s.gpr .rbx ∧ Unch base (jwLoopW K) s.mem t.mem := by
   have hs := h.fr.scr
   have hn := hs.nowrap
   have hRo : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ jwOther K := by
@@ -127,7 +127,7 @@ theorem dblR_ok (hL : JacWinLay K size) {dbl : Pt → Prog isa} (hD : DblOk K.M 
   have U : Unch base (jwLoopW K) s.mem t.mem :=
     k.loopW (rcbW_loopW fun x hx => other_loopW (hRo x hx))
   refine ⟨⟨h.fr.next hL (k.scr hs) k.regs U (jwLoopW_sub K), h.tbl.loopW hL U hn (by decide),
-    fun x hx => I.lt x hx, ?_⟩, k.gpr _ (rbx_not_clob _)⟩
+    fun x hx => I.lt x hx, ?_⟩, k.gpr _ (rbx_not_clob _), U⟩
   have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base t x = E x := fun x hx => I.val x hx
   rw [e _ (by simp), e _ (by simp), e _ (by simp)]
   exact J
@@ -137,16 +137,18 @@ theorem dbls_ok (hL : JacWinLay K size) (hC : Law C) {dbl : Pt → Prog isa} (hD
     {base : Addr} {P Q : Point C} (hQ : onCurve C Q = true) {s₀ s : State} {e j : Nat} (hj : j < 4096)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) (h : RSt K C base size P s₀ (mul e Q) s) :
     WP isa (K.dbls dbl) s fun t => RSt K C base size P s₀ (mul (32 * e) Q) t ∧
-      t.gpr .rbx = BitVec.ofNat 64 j := by
+      t.gpr .rbx = BitVec.ofNat 64 j ∧ Unch base (jwLoopW K) s.mem t.mem := by
   rw [JacWinCfg.dbls]
   refine WP.seq (WP.mono (addRbx_ok s (c := 5 * 4096) (by decide) hb) fun s₁ ⟨b₁, k₁⟩ => ?_)
+  have m₁ : s₁.mem = s.mem := k₁.2.1
   refine aeLoop_ok (n := 5) (Inv := fun i t => RSt K C base size P s₀ (mul (2 ^ (5 - i) * e) Q) t ∧
-      t.gpr .rbx = BitVec.ofNat 64 (j + 4096 * i))
-    (fun i t h1 h5 ⟨R, b⟩ => ?_) (fun t ⟨R, b⟩ => ⟨by simpa using R, by simpa using b⟩) (by decide)
-    ⟨by simpa using h.rbxKeeps hL k₁, by rw [b₁]⟩
+      t.gpr .rbx = BitVec.ofNat 64 (j + 4096 * i) ∧ Unch base (jwLoopW K) s.mem t.mem)
+    (fun i t h1 h5 ⟨R, b, U⟩ => ?_) (fun t ⟨R, b, U⟩ => ⟨by simpa using R, by simpa using b, U⟩) (by decide)
+    ⟨by simpa using h.rbxKeeps hL k₁, by rw [b₁], by rw [m₁]; exact Unch.refl _ _ _⟩
   rw [JacWinCfg.dblStep]
-  refine WP.seq (WP.mono (dblR_ok hL hD (hC.onCurve_mul hQ _) R) fun t₁ ⟨R₁, b₁'⟩ => ?_)
-  refine WP.mono (dblCount_ok t₁ hj h1 h5 (by rw [b₁', b])) fun t₂ ⟨b₂, c₂, k₂⟩ => ⟨⟨?_, b₂⟩, c₂⟩
+  refine WP.seq (WP.mono (dblR_ok hL hD (hC.onCurve_mul hQ _) R) fun t₁ ⟨R₁, b₁', U₁⟩ => ?_)
+  refine WP.mono (dblCount_ok t₁ hj h1 h5 (by rw [b₁', b])) fun t₂ ⟨b₂, c₂, k₂⟩ =>
+    ⟨⟨?_, b₂, by rw [k₂.2.1]; exact (U.trans U₁).mono fun w hw => (List.mem_append.mp hw).elim id id⟩, c₂⟩
   have := R₁.rbxKeeps hL k₂
   rwa [hC.add_mul_mul hQ, show 2 ^ (5 - i) * e + 2 ^ (5 - i) * e = 2 ^ (5 - (i - 1)) * e by
     rw [show 5 - (i - 1) = 5 - i + 1 by omega, Nat.pow_succ]; grind] at this

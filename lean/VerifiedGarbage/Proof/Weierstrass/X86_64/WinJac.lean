@@ -30,7 +30,8 @@ variable {K : JacWinCfg} {size : Nat} {C : Curve}
 theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point C}
     (hP : onCurve C P = true) {s₀ s : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k)
     (hkJ : k + JacWinCfg.offset K.J < 32 ^ K.J) (hf : JFrame K C base size s₀ s) (hT : JTblOk K C base P 16 s) :
-    WP isa (.block K.first) s (JInv K C base size P s₀ k (K.J - 1)) := by
+    WP isa (.block K.first) s fun t => JInv K C base size P s₀ k (K.J - 1) t ∧
+      Unch base (jwLoopW K) s.mem t.mem := by
   have hn := hf.scr.nowrap
   have hJ := hL.J
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
@@ -87,9 +88,10 @@ theorem jfirst_ok (hL : JacWinLay K size) (hC : Law C) {base : Addr} {P : Point 
   rw [offset_eq] at ent zer
   have tv : ∀ {x y : Nat}, wordsVal s₄.mem base x K.M.n = wordsVal s₃.mem base y K.M.n →
       tmv C K.M.n base s₄ x = tmv C K.M.n base s₃ y := fun h => by show toM _ _ _ = toM _ _ _; rw [h]
-  refine ⟨⟨Window5.winPt C P (k + 16 * Window5.geom K.J) (K.J - 1), Window5.onCurve_winPt hC hP _ _,
+  refine ⟨⟨⟨Window5.winPt C P (k + 16 * Window5.geom K.J) (K.J - 1), Window5.onCurve_winPt hC hP _ _,
     fun _ => hadd, F₄, (T₁.loopW hL (E₃.unch.mono (jent_loopW K)) hn (by decide)).loopW hL UL hn (by decide),
-    fun x hx => ?_, ?_⟩, ?_⟩
+    fun x hx => ?_, ?_⟩, ?_⟩, by
+      rw [← m₁]; exact ((E₃.unch.mono (jent_loopW K)).trans UL).mono fun w hw => (List.mem_append.mp hw).elim id id⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · rw [ex, ← tx]; exact E₃.lt 0 (by decide)
@@ -127,7 +129,7 @@ theorem winJac_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     exact hC.one_ne_zero this.2.2
   rw [JacWinCfg.window]
   refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega) hs hM hF) fun s₁ ⟨F₁, T₁⟩ => ?_)
-  refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ I₂ => ?_)
+  refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ F₁ T₁) fun s₂ ⟨I₂, _⟩ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInv K C base size P s k 0 t)
     (Inv := fun j t => JInv K C base size P s k j t) (n := K.J - 1)
     (fun j t h1 h2 hi => jstep_ok hL hp hC hM3 hO hD hP hP0 hn17 hn64 hF h1 (by omega) hi)

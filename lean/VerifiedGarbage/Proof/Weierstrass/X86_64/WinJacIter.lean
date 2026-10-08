@@ -111,7 +111,7 @@ theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
   have R₁ := R₀.rbxKeeps hL k₁
   rw [← mul_one_pt Q] at R₁
-  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂⟩ => ?_)
+  refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega) b₁ R₁) fun s₂ ⟨R₂, b₂, _⟩ => ?_)
   refine WP.seq (WP.mono (jentry_ok hL hF (j := j - 1) (by omega) R₂.fr R₂.tbl b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
