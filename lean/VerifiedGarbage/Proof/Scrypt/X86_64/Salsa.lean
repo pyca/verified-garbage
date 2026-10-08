@@ -1,4 +1,3 @@
-import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Impl.Scrypt.X86_64.Salsa
@@ -262,14 +261,80 @@ private def sequentialLines : List (Nat × Nat × Nat × Nat) := [
 private theorem doubleRound_sequential (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
     sequentialLines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := rfl
 
+/-! The code's lines are the specification's, reordered: each line moves
+before lines that neither write a word it reads or writes nor read the word it
+writes (`pull`), checked by `decide` on the indices. -/
+
+/-- A line as a function of a tuple. -/
+private def stepL (x : Vector Word 16) (a : Nat × Nat × Nat × Nat) : Vector Word 16 :=
+  stepN x a.1 a.2.1 a.2.2.1 a.2.2.2
+
+/-- Lines `a` and `b` commute: neither writes a word the other reads or writes. -/
+private def indep (a b : Nat × Nat × Nat × Nat) : Bool :=
+  a.1 % 16 != b.1 % 16 && a.1 % 16 != b.2.1 % 16 && a.1 % 16 != b.2.2.1 % 16 &&
+    b.1 % 16 != a.2.1 % 16 && b.1 % 16 != a.2.2.1 % 16
+
+private theorem stepL_comm {a b : Nat × Nat × Nat × Nat} (h : indep a b = true)
+    (x : Vector Word 16) : stepL (stepL x a) b = stepL (stepL x b) a := by
+  obtain ⟨i, j, k, n⟩ := a
+  obtain ⟨i', j', k', n'⟩ := b
+  simp only [indep, Bool.and_eq_true, bne_iff_ne, ne_eq] at h
+  obtain ⟨⟨⟨⟨e₁, e₂⟩, e₃⟩, e₄⟩, e₅⟩ := h
+  apply Vector.ext
+  intro m hm
+  simp only [stepL, stepN, Spec.Scrypt.step, fin, Fin.getElem_fin, Vector.getElem_set, e₁, e₂, e₃, e₄, e₅,
+    Ne.symm e₁, ite_false]
+  by_cases a : i % 16 = m <;> by_cases b : i' % 16 = m <;> simp only [a, b, ite_true, ite_false]
+  exact absurd (a.trans b.symm) e₁
+
+/-- `l` with `b` removed, if every line before `b` commutes with it. -/
+private def pull (b : Nat × Nat × Nat × Nat) : List (Nat × Nat × Nat × Nat) →
+    Option (List (Nat × Nat × Nat × Nat))
+  | [] => none
+  | a :: l => if a = b then some l else if indep a b then (pull b l).map (a :: ·) else none
+
+/-- `r` is `l` reordered by moving lines over lines they commute with. -/
+private def reorder : List (Nat × Nat × Nat × Nat) → List (Nat × Nat × Nat × Nat) → Bool
+  | l, [] => l.isEmpty
+  | l, b :: r => match pull b l with
+    | some l' => reorder l' r
+    | none => false
+
+private theorem pull_foldl {b : Nat × Nat × Nat × Nat} :
+    ∀ {l l' : List (Nat × Nat × Nat × Nat)}, pull b l = some l' → ∀ x : Vector Word 16,
+      l.foldl stepL x = l'.foldl stepL (stepL x b)
+  | [], _, h, _ => nomatch h
+  | a :: l, l', h, x => by
+    simp only [pull] at h
+    by_cases e : a = b
+    · rw [ite_eq_left e] at h
+      cases h; subst e; rfl
+    · rw [ite_eq_right e] at h
+      by_cases hi : indep a b = true
+      · rw [ite_eq_left hi] at h
+        cases hp : pull b l with
+        | none => rw [hp] at h; nomatch h
+        | some l₀ =>
+          rw [hp] at h
+          cases h
+          rw [List.foldl_cons, pull_foldl hp, stepL_comm hi, List.foldl_cons]
+      · rw [ite_eq_right hi] at h; nomatch h
+
+private theorem reorder_foldl :
+    ∀ {l r : List (Nat × Nat × Nat × Nat)}, reorder l r = true → ∀ x : Vector Word 16,
+      l.foldl stepL x = r.foldl stepL x
+  | l, [], h, x => by
+    simp only [reorder, List.isEmpty_iff] at h; subst h; rfl
+  | l, b :: r, h, x => by
+    simp only [reorder] at h
+    split at h
+    · next l' hp => rw [pull_foldl hp, reorder_foldl h, List.foldl_cons]
+    · nomatch h
+
 theorem doubleRound_eq (v : Vector Word 16) : Spec.Scrypt.doubleRound v =
     lines.foldl (fun x (i, j, k, n) => stepN x i j k n) v := by
   rw [doubleRound_sequential]
-  simp only [sequentialLines, lines, List.foldl_cons, List.foldl_nil]
-  apply Vector.ext
-  intro i hi
-  interval_cases i <;>
-    simp (disch := decide) only [stepN_get, Nat.reduceEqDiff, ↓reduceIte]
+  exact reorder_foldl (l := sequentialLines) (r := lines) (by decide +kernel) v
 
 theorem doubleRound_ok {p : Addr} {v : Vector Word 16} {s₀ s : State} (h : RI p v s₀ s)
     (hw : scR p ∈ s₀.wr) : WP isa doubleRound s (RI p (Spec.Scrypt.doubleRound v) s₀) := by
