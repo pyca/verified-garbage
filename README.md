@@ -570,6 +570,22 @@ yours to keep:
 
 <tr>
 
+<td>XTS-AES (256- and 512-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ChaCha20</td>
 
 <td>✅</td>
