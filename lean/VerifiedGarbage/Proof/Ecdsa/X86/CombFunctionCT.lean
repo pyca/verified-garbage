@@ -13,35 +13,36 @@ def CombSignPub (s t : State) : Prop :=
 /-- After the balanced prefix, the comb table is available to the body. -/
 theorem prefixTables {s t : State} (hp : CombSignPre p256Comb s) (P : SymAddrPost p256d.tsym s t) :
     CombTables t := by
-  have hp' := hp.toPre.symAddr P hp.sp_lo
-  have held := hp.tbls.symAddr P
+  have hp' := hp.toPre.symAddr P hp.sp4
+  have held := hp.tbls.symAddr (Nat.le_trans (by decide) (Cfg.stk_ge _)) hp.toPre.sp_lo P
   have ht := tbl_of_held (c := p256Comb) (d := p256d) (base := ptr t 4) rfl held
     (by rw [hp'.wr]; simp) (fun r hr => by rw [hp'.rd]; simp only [P.syms] at hr; simp [hr]) (Unch.refl _ _ _)
   simpa only [CombTables, P.addr, P.syms] using ht
 
 theorem signComb_ct (hc : CfgOk p256Comb) (hC : Law p256Comb.C)
-    (hT : CombTbls p256Comb) (hd : CombOk p256Comb p256d) (ham3 : AM3 p256Comb.C) :
+    (hT : CombTbls p256Comb) (hd : CombOk p256Comb p256d) (ham3 : AM3 p256Comb.C)
+    (hsp : SpOk (p256Comb.signWithMul p256Comb.gMul) 20) :
     ConstantTime isa (CombSignPre p256Comb) CombSignPub signP256Comb := by
   apply RelCT.constantTime (Q := fun _ _ => True)
   have preCT : RelCT isa (fun s t => CombSignPre p256Comb s ∧ CombSignPre p256Comb t ∧ CombSignPub s t)
       p256Comb.tableAddr (fun _ _ => True) := by
     intro s t tr₁ tr₂ s' t' h e₁ e₂
-    exact ⟨by rw [symFrame_trace h.1.sp_lo e₁, symFrame_trace h.2.1.sp_lo e₂, h.2.2.1], trivial⟩
+    exact ⟨by rw [symFrame_trace h.1.sp4 e₁, symFrame_trace h.2.1.sp4 e₂, h.2.2.1], trivial⟩
   have pre := preCT.wpDep (F := fun s t => SymAddrPost p256d.tsym s t) (by
     intro s t h
     change WP isa (.frame (.symPush .eax p256d.tsym) (.block []) (.pop .ecx 1)) s
       (SymAddrPost p256d.tsym s) ∧ WP isa (.frame (.symPush .eax p256d.tsym) (.block []) (.pop .ecx 1)) t
       (SymAddrPost p256d.tsym t)
-    exact ⟨symFrame_ok p256d.tsym s h.1.sp_lo, symFrame_ok p256d.tsym t h.2.1.sp_lo⟩)
+    exact ⟨symFrame_ok p256d.tsym s h.1.sp4, symFrame_ok p256d.tsym t h.2.1.sp4⟩)
   refine pre.seq ?_
   intro s t tr₁ tr₂ s' t' h e₁ e₂
   obtain ⟨_, a, b, ⟨hp, hq, he, ha, hg⟩, P, Q⟩ := h
   have he' : s.gpr .esp = t.gpr .esp := by rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), he]
   have ha' : ∀ j < 5, arg s j = arg t j := by
     intro j hj
-    rw [P.arg hp.sp_lo (by have := hp.sp_fit; omega), Q.arg hq.sp_lo (by have := hq.sp_fit; omega), ha j hj]
-  exact signCombBody_rel hc hC hT hd ham3 (hp.toPre.symAddr P hp.sp_lo) (hq.toPre.symAddr Q hq.sp_lo)
-    (prefixTables hp P) (prefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg])
+    rw [P.arg hp.sp4 (by have := hp.sp_fit; omega), Q.arg hq.sp4 (by have := hq.sp_fit; omega), ha j hj]
+  exact signCombBody_rel hc hC hT hd ham3 (hp.toPre.symAddr P hp.sp4) (hq.toPre.symAddr Q hq.sp4)
+    (prefixTables hp P) (prefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg]) hsp
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
 
 end VG.Proof.Ecdsa.X86

@@ -6,8 +6,8 @@ open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
 open VG.Proof.Weierstrass.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
 /-- The scalar stages use public scratch and argument addresses. -/
-def argτ (rs : List Reg) (n : Nat := 5) : VG.X86.Taint.T :=
-  { regs := .ofList rs, flags := false, argLen := 4 + 4 * n }
+def argτ (rs : List Reg) (n : Nat := 5) (room : Nat := p256Comb.stk) : VG.X86.Taint.T :=
+  { regs := .ofList rs, flags := false, argLen := 4 + 4 * n, room := room }
 
 /-- Public scratch addresses let fixed loop counters survive memory stores. -/
 def scratchArgτ (n : Nat) (second : Bool := true) : VG.X86.Taint.T :=
@@ -33,15 +33,22 @@ theorem Keep.arg {c : Cfg} {s₀ s : State} {extra : List Region}
   have he : argAddr s j = argAddr s₀ j := by simp only [argAddr, h.esp]
   change s.mem.readW (argAddr s j) 32 = _
   rw [he]
-  apply arg_keep (h.whole.outside (fun w hw => by
-    rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩))
-  exact hp.args_sc.sub_left (arg_sub hp.sp_fit hj)
+  exact hp.frame_readW h.whole (hp.args_out.sub_left (arg_sub hp.sp_fit hj))
+    (hp.args_sc.sub_left (arg_sub hp.sp_fit hj))
+    ((below_disjoint_args hp.sp_lo (k := 20) (by have := hp.sp_fit; omega) (by decide)).symm.sub_left
+      (arg_sub hp.sp_fit hj))
 
 /-- The public argument area is disjoint from every writable buffer. -/
 theorem argWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
     (hp : Pre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
-    VG.X86.Taint.Wf (argτ rs) s := by
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨?_, ?_, ?_, ?_, ?_⟩
+    VG.X86.Taint.Wf (argτ rs 5 c.stk) s := by
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨by rw [he]; exact hp.sp_lo, ?_⟩
+  rotate_right
+  · rw [he, hw, hp.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
   · intro h; cases h rfl
   · intro p h; cases h
   · intro p h; cases h
@@ -55,10 +62,10 @@ theorem argWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
   · intro p h; cases h
 
 /-- Equal pointers and stack arguments establish a taint agreement. -/
-theorem argAgree {rs : List Reg} {n : Nat} {s t : State}
-    (ws : VG.X86.Taint.Wf (argτ rs n) s) (wt : VG.X86.Taint.Wf (argτ rs n) t)
+theorem argAgree {rs : List Reg} {n room : Nat} {s t : State}
+    (ws : VG.X86.Taint.Wf (argτ rs n room) s) (wt : VG.X86.Taint.Wf (argτ rs n room) t)
     (hr : ∀ r ∈ rs, s.gpr r = t.gpr r) (he : s.gpr .esp = t.gpr .esp)
-    (ha : ∀ j < n, arg s j = arg t j) : VG.X86.Taint.Agree (argτ rs n) s t := by
+    (ha : ∀ j < n, arg s j = arg t j) : VG.X86.Taint.Agree (argτ rs n room) s t := by
   refine ⟨⟨fun r h => hr r (by simpa only [argτ, RegSet.mem_ofList] using h),
     fun h => by cases h⟩, fun h => False.elim (h rfl), ws, wt,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => he, ?_⟩
@@ -67,7 +74,7 @@ theorem argAgree {rs : List Reg} {n : Nat} {s t : State}
   have ht := (wt.args (show 0 < 4 + 4 * n by omega)).1
   change 4 ≤ k at hlo
   change k < 4 + 4 * n at hhi
-  rw [show VG.X86.Taint.depth (argτ rs n).stk = 0 from rfl, Nat.zero_add]
+  rw [show VG.X86.Taint.depth (argτ rs n room).stk = 0 from rfl, Nat.zero_add]
   change (s.gpr .esp).toNat + 0 + (4 + 4 * n) ≤ 2 ^ 32 at hs
   change (t.gpr .esp).toNat + 0 + (4 + 4 * n) ≤ 2 ^ 32 at ht
   rw [VG.X86.Taint.argByte_eq (by omega) hlo hhi,
@@ -92,7 +99,7 @@ theorem keepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : List
     (hp : Pre c s₀ extra₁) (hq : Pre c t₀ extra₂)
     (ks : Keep c s₀ (ptr s₀ 4) s) (kt : Keep c t₀ (ptr t₀ 4) t)
     (he : s₀.gpr .esp = t₀.gpr .esp) (ha : ∀ j < 5, arg s₀ j = arg t₀ j) :
-    VG.X86.Taint.Agree (argτ [.esp, .edi]) s t := by
+    VG.X86.Taint.Agree (argτ [.esp, .edi] 5 c.stk) s t := by
   have esp : s.gpr .esp = t.gpr .esp := ks.esp.trans (he.trans kt.esp.symm)
   have edi : s.gpr .edi = t.gpr .edi := widen32_inj (ks.scr.edi.trans
     ((congrArg (BitVec.setWidth 64) (ha 4 (by decide))).trans kt.scr.edi.symm))
@@ -108,7 +115,14 @@ theorem keepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : List
 /-- The static-table scan's scratch region is the second writable argument. -/
 theorem keepCombWf {s₀ s : State} {extra : List Region} (hp : Pre p256Comb s₀ extra)
     (ks : Keep p256Comb s₀ (ptr s₀ 4) s) : VG.X86.Taint.Wf combτ s := by
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨?_, ?_⟩
+  rotate_right 2
+  · rw [ks.esp]; exact hp.sp_lo
+  · rw [ks.esp, ks.wr, hp.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
   · intro _
     rw [ks.wr, hp.wr]
     refine ⟨by simp [combτ, combτAt, outR, scR, size], ?_, ?_⟩

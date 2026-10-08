@@ -45,8 +45,8 @@ digits' width `w` and number `J`, the name of the static holding the tables,
 the start `[c]G` and `R mod p`, both in Montgomery form. -/
 structure TCombCfg where
   M : Mod
-  /-- Multiplication accumulator in the working space. -/
-  wk : Nat
+  /-- The functions of the field arithmetic. -/
+  F : Spec.Weierstrass.Mont.Modulus
   /-- Four-byte scratch slot retaining the public table pointer. -/
   ptr : Nat
   S : RcbSlots
@@ -153,14 +153,14 @@ def signMask : List Instr :=
 
 /-- `[y] = -[y]` (through `[neg]`, with zero at `zero`) if digit `esi` is
 negative. -/
-def negY : List Instr := Mont.X86.sub K.M K.wk K.neg K.zero K.E.y ++ K.signMask ++ sel (2 * K.M.n) K.E.y K.E.y K.neg
+def negY : Prog isa := .seq (Mont.subCall K.F K.neg K.zero K.E.y) (.block (K.signMask ++ sel (2 * K.M.n) K.E.y K.E.y K.neg))
 
 /-- Iteration `j = esi - 1` (with `esi` counting down from `J`): the entry,
 negated for a negative digit, added to `A`. -/
 def step : Prog isa :=
   .seq (.block ([.alu .sub .esi (.imm 1)] ++ K.digit ++ K.select)) <|
-  .seq (.block K.negY) <|
-  .seq (fprog K.M K.wk (rcb3 K.S K.A K.E K.D)) <|
+  .seq K.negY <|
+  .seq (fprog K.F (rcb3 K.S K.A K.E K.D)) <|
   .block (copyPt K.M.n K.A K.D ++ [.alu .test .esi (.reg .esi)])
 
 /-- The words of the table of bits the comb clears, past the scalar's

@@ -26,9 +26,12 @@ curves), from the code of `Impl/Weierstrass/X86.lean`, as on x86-64
 5. the flag: `d` and `k` in `[1, n-1]`, `r ≠ 0` and `s ≠ 0`, as a mask, which
    selects `r ‖ s` or zeros for `out` (big-endian), and is returned as 0 or 1.
 
-The multiplications accumulate at `wk`, after the tables. `R = O`
-(impossible for `k` in `[1, n-1]`) gives `Z = 0`, so `x = 0` and `r = 0`, as
-the specification says. Everything is computed whatever the flag, and only
+The field arithmetic is calls of the functions of `p` and `n`
+(`Spec/Weierstrass/Mont.lean`, `Impl/Weierstrass/X86/Mont.lean`), which use
+the `64 n` bytes below byte 4096 for themselves; every slot is below them,
+and the tables of bits are past byte 4096. `R = O` (impossible for `k` in
+`[1, n-1]`) gives `Z = 0`, so `x = 0` and `r = 0`, as the specification
+says. Everything is computed whatever the flag, and only
 the pointers may affect timing.
 -/
 
@@ -42,8 +45,9 @@ def minv (m : Nat) : Nat :=
   (2 ^ 64 - inv) % 2 ^ 64
 
 /-- The working space: the saved registers in bytes `[0, 16)`, then
-slots of `n` words (`slot n i`) from byte 64, then the tables of bits
-(`bitsAt`), then the multiplications' accumulator (`wkAt`). -/
+slots of `n` words (`slot n i`) from byte 64, then the inversions' table
+(`invAt`), then the field arithmetic's own working space (its `64 n` bytes
+below byte 4096), then the tables of bits (`bitsAt`). -/
 def slot (n i : Nat) : Nat := 64 + 8 * n * i
 
 /-! Slot numbers. -/
@@ -95,11 +99,12 @@ def FLAG := 44
 /-- The number of slots. -/
 def nslots := 45
 
-/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2). -/
-def bitsAt (n j : Nat) : Nat := slot n nslots + (64 * n + 4) * j
+/-- The table of the bits of `k` (`j = 0`), `p - 2` (1) and `n - 2` (2):
+past byte 4096, after the field arithmetic's own working space. -/
+def bitsAt (n j : Nat) : Nat := 4096 + (64 * n + 4) * j
 
-/-- The multiplications' accumulator: after the tables. -/
-def wkAt (n : Nat) : Nat := bitsAt n 3
+/-- The batched inversions' table (320 bytes): after the slots. -/
+def invAt (n : Nat) : Nat := slot n nslots
 
 /-- The arguments the setup reads: the working space, `k`, `d` and the hash
 (the functions built on the signature's code read some of them from the same
@@ -122,10 +127,14 @@ structure CombData where
   start : Nat × Nat
   tsym : String
 
-/-- A curve as the code has it, and an optional fixed-base comb. -/
+/-- A curve as the code has it: `n` words, its parameters, the functions
+of its arithmetic modulo `p` and `n` (`SP`, `SN`), and an optional
+fixed-base comb. -/
 structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
+  SP : Spec.Weierstrass.Mont.Modulus
+  SN : Spec.Weierstrass.Mont.Modulus
   comb : Option CombData := none
 
 namespace Cfg
@@ -143,8 +152,6 @@ def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
 def sl (i : Nat) : Nat := slot c.n i
-
-def wk : Nat := wkAt c.n
 
 def MP' : Mod where
   n := c.n
@@ -189,7 +196,7 @@ def combCfg (d : CombData) : TCombCfg where
   J := c.combJ d.w
   start := (c.mont d.start.1, c.mont d.start.2)
   one := c.mont 1
-  wk := c.wk
+  F := c.SP
   ptr := combPtr
 
 def combWords (d : CombData) : List (BitVec 64) := tcombWords c.n c.R c.C.p d.tbl
@@ -209,21 +216,21 @@ def tableAddr : Prog isa :=
 /-- The fixed-base multiplication, after setup saved the table pointer. -/
 def gMul : Prog isa :=
   match c.comb with
-  | none => ladder c.ladderCfg c.wk
+  | none => ladder c.ladderCfg c.SP
   | some d => .seq (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))
       (c.combCfg d).combJ
 
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
-def invP : InvCfg := InvCfg.ofMod c.MP' c.wk (c.sl ACC) (c.sl RZ) (c.wk + 68) c.C.p
-def invN : InvCfg := InvCfg.ofMod c.MN' c.wk (c.sl ACC) (c.sl KM) (c.wk + 68) c.C.n
+def invP : InvCfg := InvCfg.ofMod c.MP' c.SP (c.sl ACC) (c.sl RZ) (invAt c.n) c.C.p
+def invN : InvCfg := InvCfg.ofMod c.MN' c.SN (c.sl ACC) (c.sl KM) (invAt c.n) c.C.n
 
 /-- Batched divsteps invert 256-bit field elements. -/
-def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invP.inv else powField c.powP c.wk c.C.p
+def pPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invP.inv else powField c.powP c.SP c.C.p
 
 /-- Batched divsteps invert 256-bit scalars. -/
-def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invN.inv else powScalar c.powN c.wk c.C.n
+def nPow : Prog isa := if c.n = 4 ∧ c.C.len = 32 then c.invN.inv else powScalar c.powN c.SN c.C.n
 
 /-- The callee-saved registers, and where they are saved. -/
 def saved : List (Reg × Nat) := [(.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)]
@@ -295,10 +302,10 @@ def checkNonzero (a : Nat) : List Instr := c.nonzero a ++ c.andFlag
 
 /-- `x = X Z⁻¹`, `r = x mod n`, `k R mod n`, and the checks of `d`, `k`, `r`. -/
 def middle : Prog isa :=
-  progs [Mont.X86.mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC),
-    Mont.X86.mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE),
-    .block (Mont.X86.add c.MN' c.wk (c.sl RR) (c.sl X) (c.sl ZERO)),
-    Mont.X86.mul c.MN' c.wk (c.sl KM) (c.sl K) (c.sl R2N),
+  progs [Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC),
+    Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE),
+    Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO),
+    Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N),
     .block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))]
 
 /-- The callee-saved registers restored, through `edx`, `edi` last. -/
@@ -315,13 +322,13 @@ def finish : List Instr :=
 
 /-- `s = k⁻¹ (e + r d) mod n`, with `k⁻¹ R` in `ACC`, and its check. -/
 def scalar : Prog isa :=
-  progs [Mont.X86.mul c.MN' c.wk (c.sl RM) (c.sl RR) (c.sl R2N),
-    Mont.X86.mul c.MN' c.wk (c.sl DM) (c.sl D) (c.sl R2N),
-    Mont.X86.mul c.MN' c.wk (c.sl EM) (c.sl E) (c.sl R2N),
-    Mont.X86.mul c.MN' c.wk (c.sl TT) (c.sl RM) (c.sl DM),
-    .block (Mont.X86.add c.MN' c.wk (c.sl TT) (c.sl TT) (c.sl EM)),
-    Mont.X86.mul c.MN' c.wk (c.sl SM) (c.sl ACC) (c.sl TT),
-    Mont.X86.mul c.MN' c.wk (c.sl SS) (c.sl SM) (c.sl ONE),
+  progs [Mont.mulCall c.SN (c.sl RM) (c.sl RR) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl DM) (c.sl D) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl EM) (c.sl E) (c.sl R2N),
+    Mont.mulCall c.SN (c.sl TT) (c.sl RM) (c.sl DM),
+    Mont.addCall c.SN (c.sl TT) (c.sl TT) (c.sl EM),
+    Mont.mulCall c.SN (c.sl SM) (c.sl ACC) (c.sl TT),
+    Mont.mulCall c.SN (c.sl SS) (c.sl SM) (c.sl ONE),
     .block (c.checkNonzero (c.sl SS) ++ c.finish)]
 
 /-- `vg_ecdsa_<curve>_sign`. -/
@@ -347,7 +354,7 @@ def sign : Prog isa :=
   .seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) <|
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
-  .seq (ladder c.ladderCfg c.wk) c.signTail
+  .seq (ladder c.ladderCfg c.SP) c.signTail
 
 /-- The table address is obtained before reading the cdecl arguments. -/
 def signComb : Prog isa := .seq c.tableAddr (c.signWithMul c.gMul)

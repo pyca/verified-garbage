@@ -24,8 +24,8 @@ theorem p384_nBits : Spec.Ecdsa.nBits Spec.P384.curve = 384 := by
 
 private theorem core_pre_384 {s : State} (h : (coreK Impl.Ecdsa.X86.p384).pre s) :
     Proof.Ecdsa.X86.P384.signX86.pre s := by
-  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, _⟩ := h
-  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp⟩
+  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
+  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
 
 /-- P-384, with the group law `hL`. -/
 def p384 (hL : Weierstrass.Law Spec.P384.curve) : RfcCurve where

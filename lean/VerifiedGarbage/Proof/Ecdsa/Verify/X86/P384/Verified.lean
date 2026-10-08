@@ -27,28 +27,22 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstra
 open VG.Proof.Ecdsa.X86 VG.Proof.Ecdsa.X86.P384
 
 theorem pre_of {s : State} (h : verifyX86.pre s) : VPre p384 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
 
 theorem post_of {s s' : State} (h : VPost p384 s s') : verifyX86.post s s' := by
   show BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = _
   rw [BitVec.setWidth_append_eq_right]
   exact h
 
-/-- The return address is kept. -/
-theorem ret_keep {s₀ s' : State} (hp : VPre p384 s₀) (K : VKeep s₀ s') :
-    s'.mem.readW ((s₀.gpr .esp).setWidth 64) 32 = s₀.mem.readW ((s₀.gpr .esp).setWidth 64) 32 := by
-  have hU' : Outside (ptr s₀ 3) 0 size s₀.mem s'.mem :=
-    K.frame.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
-  refine Mem.readW_congr fun i hi => ?_
-  have h4 : i < 4 := by omega
-  rw [← keep_of_disjoint' hU' hp.ret_sc (by decide) h4 (by decide)]
+/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+theorem verify_sp : SpOk verifyP384 p384.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem verify_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : verifyX86.pre s) :
     ∃ t s', Exec isa verifyP384 s t s' ∧ abiPreserved s s' ∧ verifyX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p384_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, post_of hpost⟩
+  obtain ⟨t, s', he, K, hpost⟩ := verify_ok p384_ok hL verify_sp hp
+  refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, post_of hpost⟩
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
   · exact K.saved (.ebx, 0) (by decide)
@@ -57,16 +51,22 @@ theorem verify_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : veri
   · exact K.saved (.ebp, 12) (by decide)
   · exact K.esp
 
+/-- The hints forget the words known to hold base addresses outside the calls,
+as the signature's do (`Proof/Ecdsa/X86/P384/Verified.lean`), but keep the
+public slots, which the checks of the key read back. -/
+def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with wbases := [] } else τ
+
 /-- The taint analysis starts with the stack arguments public, and the word
 holding `scratch` known to be the base address of the writable region. -/
 def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(16, 0)] }
+  { regs := .ofList [.esp], flags := false, lens := [8192], argLen := 20, argBases := [(16, 0)],
+    room := 20 }
 
 theorem wf₀ {s : State} (hp : VPre p384 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have hs := hp.sp_fit
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simp [hp.wr], ?_⟩,
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀], by simp [hp.wr], ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r rfl; simp only [BitVec.toNat_setWidth]; omega_using [hsc]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -77,6 +77,9 @@ theorem wf₀ {s : State} (hp : VPre p384 s) : VG.X86.Taint.Wf τ₀ s := by
     subst hp'
     refine ⟨by decide, ?_⟩
     simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r rfl
+    exact hp.stk_sc
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX86.pre s₂)
     (hpub : verifyX86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
@@ -102,7 +105,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
 
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP384 :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide_weak VG.Proof.Ecdsa.X86.P384.weak)
+    (by taint_decide_weak weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
@@ -115,10 +118,12 @@ def verifyWide : Contract isa :=
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
     s.rd = [pk, digest, sig] ∧ s.wr = [scratch, args] ∧ pk.Disjoint scratch ∧ digest.Disjoint scratch ∧
       sig.Disjoint scratch ∧ args.Disjoint scratch ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 97 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 48 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 96 ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 }
+      (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧
+      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint scratch }
 
 def verifyRd (s : State) : List Region :=
   [⟨(arg s 0).setWidth 64, 97⟩, ⟨(arg s 1).setWidth 64, 48⟩, ⟨(arg s 2).setWidth 64, 96⟩, ⟨argAddr s 0, 16⟩]
@@ -148,7 +153,7 @@ def satState : State where
   rd := [⟨0x1000, 97⟩, ⟨0x2000, 48⟩, ⟨0x3000, 96⟩]
   wr := [⟨0x8000, 8192⟩, ⟨0x20004, 16⟩]
 
-theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P384.inst.verifyContract X86.abi) := by
+theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P384.inst.verifyContract X86.abi 20) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -156,11 +161,11 @@ theorem verifyWide_implies : verifyWide.Implies (Spec.Ecdsa.P384.inst.verifyCont
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
   sig_implies [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.verifyContract, Spec.Ecdsa.Instance.verifySig,
-    Spec.P384.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, verifyWide,
+    Spec.P384.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, verifyWide,
     verifyX86, vf] [a0, a1, a2, a3, e, esp] using satState
 
 theorem verify_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified X86.target verifyP384 (Spec.Ecdsa.P384.inst.verifyContract X86.abi) := by
+    Verified X86.target verifyP384 (Spec.Ecdsa.P384.inst.verifyContract X86.abi 20) := by
   have hsat := verifyWide_implies.sat_left
   have satLocal : ∃ s, verifyX86.pre s := hsat.elim fun s h => ⟨_, verifyWide_pre s h⟩
   have verifiedLocal : Verified X86.target verifyP384 verifyX86 :=

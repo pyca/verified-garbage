@@ -46,7 +46,8 @@ theorem _root_.VG.Proof.Mont.X86.Keeps.gpr {rs : List Reg} {s t : State} (h : Ke
     (r : Reg) (hr : r ∉ rs) : t.gpr r = s.gpr r := h.1 r hr
 
 theorem _root_.VG.Proof.Mont.X86.Scr.of_keepRegs {rs : List Reg} {s t : State} {base : Addr} {size : Nat}
-    (h : Scr s base size) (k : KeepRegs rs s t) (hr : .edi ∉ rs) : Scr t base size := h.of_keeps k hr
+    (h : Scr s base size) (k : KeepRegs rs s t) (hr : .edi ∉ rs) (hsp : .esp ∉ rs := by decide) :
+    Scr t base size := h.of_keeps k hr hsp
 
 theorem _root_.VG.Proof.Mont.X86.Keeps.rd {rs : List Reg} {s t : State} (h : KeepRegs rs s t) : t.rd = s.rd := h.2.1
 
@@ -247,7 +248,7 @@ theorem storeAcc_ok {base : Addr} {size o : Nat} : ∀ k, ∀ (s : State), Scr s
     refine WP.mono (storeAcc_ok k s hs (by omega)) fun s₁ ⟨a₁, O₁, g₁, r₁, w₁, x₁⟩ => ?_
     have hw : InRegions s₁.wr (off base (o + 16 * k)) 16 := by
       rw [w₁]; exact ⟨_, hs.wr, Scr.contains hs.nowrap (by omega)⟩
-    have hs₁ : Scr s₁ base size := ⟨by rw [g₁]; exact hs.edi, w₁ ▸ hs.wr, hs.nowrap⟩
+    have hs₁ : Scr s₁ base size := hs.of_eq (by rw [g₁]) (by rw [g₁]) w₁
     have hea : s₁.ea (sc (o + 16 * k)) = off base (o + 16 * k) := hs₁.ea (by omega)
     apply WP.of_runBlock
     simp only [runBlock_cons, runStep_some, runBlock_nil, exec, hea, State.store128, hw,
@@ -277,8 +278,8 @@ theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
   refine WP.mono (selEntries_ok K (X := X) hn ha K.H hH s₁ (by rw [k₁.gpr _ List.not_mem_nil, h8])
     (by rw [k₁.gpr _ List.not_mem_nil, hx]) (by rw [k₁.rd, k₁.wr]; exact hr) hX a₁) fun s₂ ⟨a₂, k₂⟩ => ?_
   have hs₂ : Scr s₂ base size :=
-    ⟨by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil, hs.edi], by rw [k₂.wr, k₁.wr]; exact hs.wr,
-      hs.nowrap⟩
+    hs.of_eq (by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil])
+      (by rw [k₂.gpr _ (by decide), k₁.gpr _ List.not_mem_nil]) (by rw [k₂.wr, k₁.wr])
   refine WP.mono (storeAcc_ok (o := K.E.x) K.M.n s₂ hs₂ hE) fun t ⟨a₃, O₃, g₃, r₃, w₃, _⟩ =>
     ⟨fun c hc => by rw [a₃ c hc, a₂ c hc, k₁.mem], by rw [k₂.mem, k₁.mem] at O₃; exact O₃,
       ⟨fun r hr => by rw [g₃, k₂.gpr r hr, k₁.gpr r List.not_mem_nil], by rw [r₃, k₂.rd, k₁.rd],

@@ -2,20 +2,22 @@ import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Impl.Weierstrass.X86
 import VerifiedGarbage.Proof.Mont.X86.Ops
 import VerifiedGarbage.Proof.Weierstrass.Unch
+import VerifiedGarbage.Proof.Weierstrass.X86.CallOps
 
 /-!
 # Field programs on x86 (32-bit)
 
-`fprog M wk ops` runs the field operations `ops` on slots of the working
-space (`fprog_ok`), one by one with `mul_ok`, `add_ok` and `sub_ok`: on
-slots that are apart from each other, from the modulus and from the
-temporary area (`Proof.Mont.Lay`), and below the multiplications'
-accumulator at `wk` (`WkOk`), what the slots stand for (`toM`) follows
-`runOps ops`, the program on environments (`Inv`). A slot is read only once
-it holds a number below `m`: either it did at the start (`V`) or an earlier
-operation wrote it (`Proof.Weierstrass.readsOk`). Only the registers
-`clob`, the slots written, the temporary area and the accumulator change
-(`ProgKeep`).
+`fprog F ops` runs the field operations `ops` on slots of the working
+space (`fprog_ok`), one by one with calls of the functions of the modulus
+`F` (`mulCall_ok`, `addCall_ok` and `subCall_ok`): on slots that are apart
+from each other, from the modulus and from the temporary area
+(`Proof.Mont.Lay`), and below the functions' own working space at `wk`
+(`WkOk`), what the slots stand for (`toM`) follows `runOps ops`, the
+program on environments (`Inv`). A slot is read only once it holds a number
+below `m`: either it did at the start (`V`) or an earlier operation wrote it
+(`Proof.Weierstrass.readsOk`). Only the registers `clob`, the slots written,
+the temporary area, the functions' own working space and memory past the
+working space (the calls' stack) change (`ProgKeep`).
 
 The complete addition `rcb` is such a program, and computes `rcbAdd`
 (`rcb_ok`).
@@ -26,10 +28,10 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass VG.Proof.Mont.X86
   VG.Proof.Mont
 
-/-- The accumulator of the multiplications at `wk`, in the working space
+/-- The functions of `F` (`CallCfg`), with their own working space at `wk`
 above the slots `Sl`, the modulus and the temporary area. -/
-structure WkOk (M : Mod) (size wk : Nat) (Sl : Nat → Prop) : Prop where
-  le : wk + accLen M ≤ size
+structure WkOk (F : Spec.Weierstrass.Mont.Modulus) (M : Mod) (m size wk : Nat) (Sl : Nat → Prop) : Prop
+    extends CallCfg F M m size wk where
   sl : ∀ x, Sl x → x + 8 * M.n ≤ wk
   mo : M.mo + 8 * M.n ≤ wk
   tmp : M.tmp + 8 * M.n ≤ wk
@@ -51,13 +53,13 @@ theorem Inv.sub {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → 
     fun x hx => h.val x (hV x hx)⟩
 
 /-- The ranges a program writing the slots `W` may change: those slots, the
-temporary area and the accumulator. -/
+temporary area, the functions' own working space, and memory past the
+working space. -/
 def progW (M : Mod) (wk : Nat) (W : List Nat) : List (Nat × Nat) :=
-  W.map (·, 8 * M.n) ++ [(M.tmp, 8 * M.n), (wk, accLen M)]
+  W.map (·, 8 * M.n) ++ [(M.tmp, 8 * M.n), (wk, 64 * M.n), Mont.outW]
 
 /-- What a program writing the slots `W` keeps: the registers but `clob`,
-the regions, and the memory but the slots `W`, the temporary area and the
-accumulator. -/
+the regions, and the memory but `progW`. -/
 structure ProgKeep (M : Mod) (base : Addr) (wk : Nat) (W : List Nat) (s s' : State) : Prop where
   gpr : ∀ r, r ∉ clob → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
@@ -88,14 +90,14 @@ theorem edi_not_clob : Reg.edi ∉ clob := by decide
 
 theorem ProgKeep.scr {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : State} {size : Nat}
     (h : ProgKeep M base wk W s s') (hs : Scr s base size) : Scr s' base size :=
-  ⟨(congrArg (BitVec.setWidth 64) (h.gpr _ edi_not_clob)).trans hs.edi, h.wr ▸ hs.wr, hs.nowrap⟩
+  hs.of_eq (h.gpr _ edi_not_clob) (h.gpr _ (by decide)) h.wr
 
 theorem Outs.unch {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m') :
     VG.Proof.Weierstrass.Unch base rs m m' := h
 
 theorem _root_.VG.Proof.Mont.X86.OpKeep.scr {M : Mod} {base : Addr} {wk o size : Nat} {s s' : State}
     (h : OpKeep M base wk o s s') (hs : Scr s base size) : Scr s' base size :=
-  ⟨(congrArg (BitVec.setWidth 64) (h.gpr _ edi_not_clob)).trans hs.edi, h.wr ▸ hs.wr, hs.nowrap⟩
+  hs.of_eq (h.gpr _ edi_not_clob) (h.gpr _ (by decide)) h.wr
 
 theorem _root_.VG.Proof.Mont.X86.OpKeep.unch {M : Mod} {base : Addr} {wk o : Nat} {s s' : State}
     (h : OpKeep M base wk o s s') :
@@ -105,14 +107,14 @@ theorem ProgKeep.unch {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : 
     (h : ProgKeep M base wk W s s') : VG.Proof.Weierstrass.Unch base (progW M wk W) s.mem s'.mem := h.mem
 
 /-- An operation's frame, as a program's. -/
-theorem ProgKeep.of_op {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h : OpKeep M base wk o s s') :
+theorem ProgKeep.of_op {M : Mod} {base : Addr} {wk o : Nat} {s s' : State} (h : CKeep M base wk o s s') :
     ProgKeep M base wk [o] s s' :=
   ⟨h.gpr, h.rd, h.wr, h.mem.mono (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     simp only [progW, List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.mem_cons,
       List.not_mem_nil, or_false]
-    rcases hr with rfl | rfl | rfl <;> simp)⟩
+    rcases hr with rfl | rfl | rfl | rfl <;> simp)⟩
 
 /-- A number apart from every range that changed. -/
 theorem Outs.wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Outs base rs m m')
@@ -123,20 +125,21 @@ theorem Outs.wordsVal {base : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : O
 
 /-- A slot apart from what a program writes keeps its number. -/
 theorem ProgKeep.wordsVal {M : Mod} {base : Addr} {wk : Nat} {W : List Nat} {s s' : State} {size : Nat}
-    (h : ProgKeep M base wk W s s') (hn : base.toNat + size ≤ 2 ^ 32) {y : Nat} (hy : y + 8 * M.n ≤ size)
+    (h : ProgKeep M base wk W s s') (_hn : base.toNat + size ≤ 2 ^ 32) {y : Nat} (_hy : y + 8 * M.n ≤ size)
     (hW : ∀ w ∈ W, y + 8 * M.n ≤ w ∨ w + 8 * M.n ≤ y) (ht : y + 8 * M.n ≤ M.tmp ∨ M.tmp + 8 * M.n ≤ y)
-    (hk : y + 8 * M.n ≤ wk) :
+    (hk : y + 8 * M.n ≤ wk) (hz : y + 8 * M.n ≤ 8192) :
     VG.Proof.Mont.wordsVal s'.mem base y M.n = VG.Proof.Mont.wordsVal s.mem base y M.n := by
   refine Outs.wordsVal h.mem (fun r hr => ?_) (by omega)
   simp only [progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with ⟨w, hw, rfl⟩ | rfl | rfl
+  rcases hr with ⟨w, hw, rfl⟩ | rfl | rfl | rfl
   · exact hW w hw
   · exact ht
   · exact .inl hk
+  · exact .inl hz
 
 /-- An operation writing `o`, which then holds `v`, keeps the invariant. -/
-theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop}
-    (hL : Lay M size Sl) (hW : WkOk M size wk Sl)
+theorem Inv.update {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl)
     {V : List Nat} {E : Nat → Fin m} {s s' : State} (hI : Inv M base size m Sl V E s) {o : Nat}
     (ho : Sl o) (hk : ProgKeep M base wk [o] s s') (hr : wordsVal s'.mem base o M.n < m) {v : Fin m}
     (hv : toM m (2 ^ (64 * M.n)) (wordsVal s'.mem base o M.n) = v) :
@@ -148,12 +151,13 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
       (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         subst hw; exact hL.apart x w hx ho hxo)
-      (hL.tmp x hx) (hW.sl x hx)
+      (hL.tmp x hx) (hW.sl x hx) (by have := hW.sl x hx; have := hW.toCallCfg.own_le; omega)
   refine ⟨hk.scr hI.scr, ⟨hM.n0, hM.mo, hM.tmp, hM.sep, ?_, hM.inv, hM.red⟩, ?_, ?_, ?_⟩
   · have := hW.mo
+    have := hW.toCallCfg.own_le
     rw [hk.wordsVal hn hM.mo (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        subst hw; have := hL.mo w ho; omega) hM.sep hW.mo]
+        subst hw; have := hL.mo w ho; omega) hM.sep hW.mo (by omega)]
     exact hM.val
   · intro x hx
     rcases List.mem_cons.mp hx with rfl | hx
@@ -171,33 +175,28 @@ theorem Inv.update {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Na
       rw [heq x (hI.sl x hx') hxo, Function.update_of_ne hxo]
       exact hI.val x hx'
 
-theorem opLay {M : Mod} {size wk : Nat} {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk M size wk Sl)
-    {o a b : Nat} (ho : Sl o) (ha : Sl a) (hb : Sl b) : OpLay M size wk o a b := by
-  have := hW.sl o ho; have := hW.sl a ha; have := hW.sl b hb; have := hW.mo; have := hW.tmp
-  exact ⟨hW.le, hL.le o ho, hL.le a ha, hL.le b hb, .inr (by omega), .inr (by omega), .inr (by omega),
-    .inr (by omega), .inr (by omega), hL.tmp o ho⟩
-
 /-- One operation. -/
-theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+theorem fop_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n)))
+    {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {op : FOp} (hS : ∀ x ∈ op.out :: op.ins, Sl x)
     (hR : ∀ x ∈ op.ins, x ∈ V) :
-    WP isa (opCode M wk op) s fun s' =>
+    WP isa (opCode F op) s fun s' =>
       ProgKeep M base wk [op.out] s s' ∧ Inv M base size m Sl (op.out :: V) (op.run E) s' := by
   cases op with
   | mul o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
-    refine WP.mono (mul_ok hI.scr hI.mod (opLay hL hW hS.1 hS.2.1 hS.2.2) (hI.lt b hR.2))
-      fun s' ⟨hk, hlt, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) hlt ?_⟩
+    refine WP.mono (mulC_ok hW.toCallCfg hI.scr (hW.sl o hS.1) (hW.sl a hS.2.1) (hW.sl b hS.2.2)
+      (hI.lt b hR.2)) fun s' ⟨hk, hlt, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) hlt ?_⟩
     rw [toM_mul hm heq, hI.val a hR.1, hI.val b hR.2]
   | add o a b =>
     simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (add_ok hI.scr hI.mod (opLay hL hW hS.1 hS.2.1 hS.2.2) (by omega))
-      fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
+    refine WP.mono (addC_ok hW.toCallCfg hI.scr (hW.sl o hS.1) (hW.sl a hS.2.1) (hW.sl b hS.2.2)
+      (by omega)) fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
   | sub o a b =>
@@ -205,7 +204,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat �
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (sub_ok hI.scr hI.mod (opLay hL hW hS.1 hS.2.1 hS.2.2) hA hB)
+    refine WP.mono (subC_ok hW.toCallCfg hI.scr (hW.sl o hS.1) (hW.sl a hS.2.1) (hW.sl b hS.2.2) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨.of_op hk, hI.update hL hW hS.1 (.of_op hk) ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega)
     · rw [heq, toM_sub (by omega), hI.val a hR.1, hI.val b hR.2]
@@ -217,12 +216,12 @@ theorem progs_wp (p : Prog isa) (ps : List (Prog isa)) {s : State} {Q : State �
   | cons p' ps' => exact WP.seq h
 
 /-- A field program. -/
-theorem fprog_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) :
+theorem fprog_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) :
     ∀ (ops : List FOp) {V : List Nat} {E : Nat → Fin m} {s : State},
       Inv M base size m Sl V E s → (∀ op ∈ ops, ∀ x ∈ op.out :: op.ins, Sl x) →
       readsOk ops V = true →
-      WP isa (fprog M wk ops) s fun s' => ProgKeep M base wk (ops.map FOp.out) s s' ∧
+      WP isa (fprog F ops) s fun s' => ProgKeep M base wk (ops.map FOp.out) s s' ∧
         Inv M base size m Sl (validAfter ops V) (runOps ops E) s'
   | [], _, _, s, hI, _, _ => WP.block_nil ⟨ProgKeep.refl _ _ _ _ s, hI⟩
   | op :: ops, V, E, s, hI, hS, hR => by
@@ -241,12 +240,13 @@ theorem fprog_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat 
 be `q`), from a state holding `E`, in particular `p`, `q`, `a` and `3b`
 (`rcbR`): `o` holds `rcbAdd` of their values, and the slots but those `rcb`
 writes (`rcbW`) keep theirs. -/
-theorem rcb_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+theorem rcb_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m]
+    {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprog M wk (rcb S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
+    WP isa (fprog F (rcb S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
       Inv M base size m Sl (rcbW S o ++ V) (runOps (rcb S p q o) E) s' ∧
       (runOps (rcb S p q o) E o.x, runOps (rcb S p q o) E o.y, runOps (rcb S p q o) E o.z) =
         VG.Proof.Weierstrass.rcbAdd (E S.a) (E S.b3) (E p.x) (E p.y) (E p.z) (E q.x) (E q.y)

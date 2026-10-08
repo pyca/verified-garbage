@@ -13,16 +13,37 @@ open VG.Impl.Ecdsa.Verify.X86 (U V)
 
 variable {c : Cfg}
 
+/-- The stack the parts of `verifyCombBody` use. -/
+structure VCSp (c : Cfg) : Prop where
+  validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
+  scalars : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk
+  nPow : SpOk c.nPow c.stk
+  uv : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk
+  points : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb c) c.stk
+  tail : SpOk (Impl.Ecdsa.Verify.X86.Cfg.tail c) c.stk
+
+theorem VCSp.of (h : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) : VCSp c := by
+  have h₁ := h.left.right.right.right.left
+  have h₂ := h.right.left
+  have h₃ := h.right.right
+  exact ⟨h₁, h₂.left, h₂.right.left, h₂.right.right.left, h₃.left, h₃.right⟩
+
 theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C)
     {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
-      ∀ i < (c.combWords d).length, ∀ b < 8,
-        size ≤ ofs (ptr s₀ 3) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
-    WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
+      (∀ i < (c.combWords d).length, ∀ b < 8,
+        size ≤ ofs (ptr s₀ 3) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
+      ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
+        Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
+    (hspG : SpOk c.gMul 20) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) c.stk) :
+    WP isa (Impl.Ecdsa.Verify.X86.Cfg.verifyCombBody c) s₀ fun s' => VKeep c s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine WP.seq (WP.mono (front_ok hc hp (rest := .block []) (fun _ h => WP.block_nil h)) fun s₁ hF => ?_)
-  refine WP.seq (WP.mono (mid_ok hc hF (rest := .block []) (fun _ h => WP.block_nil h)) fun s₂ hM => ?_)
+  have H := VCSp.of hsp
+  refine WP.seq (WP.mono (front_ok hc hp H.validate (rest := .block []) (fun _ h => WP.block_nil h))
+    fun s₁ hF => ?_)
+  refine WP.seq (WP.mono (mid_ok hc hF H.scalars H.nPow H.uv (rest := .block []) (fun _ h => WP.block_nil h))
+    fun s₂ hM => ?_)
   have F₂ := hM.fixed
   obtain ⟨_, _, h1⟩ := consts_tmv hc F₂
   -- The point the variable-base method multiplies.
@@ -34,12 +55,11 @@ theorem verifyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     exact peerPt_rep hC _ _ _ hM.px hM.py
   refine pointsComb_ok hc hC hT hCo ham3 hM
     (fun d hd => by
-      obtain ⟨ht, ho⟩ := hTb d hd
-      exact ⟨ht.of_unch (by rw [hM.rd, hM.wr]) hM.unch
-        (fun w hw => by rw [List.mem_singleton.mp hw]; exact Nat.le_refl _) ho, ho⟩)
-    hPc hQ
+      obtain ⟨ht, ho, hap⟩ := hTb d hd
+      exact ⟨ht.of_frame (by rw [hM.rd, hM.wr]) hM.whole hap, ho, hap⟩)
+    hPc hQ hspG H.points
     fun s₃ hP => ?_
-  refine WP.mono (tail_dispatch_ok hc hC hP) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (tail_dispatch_ok hc hC hP H.tail) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by

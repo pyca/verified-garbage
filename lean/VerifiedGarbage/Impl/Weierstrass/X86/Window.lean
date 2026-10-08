@@ -16,7 +16,7 @@ open VG.X86 VG.Impl.Mont VG.Impl.Mont.X86 VG.Impl.Weierstrass
 
 namespace WinCfg
 
-variable (K : WinCfg) (wk : Nat)
+variable (K : WinCfg) (F : Spec.Weierstrass.Mont.Modulus)
 
 /--`8 Σ_{j<J} 16^j`, the recoding's offset. -/
 def offset (J : Nat) : Nat := 8 * ((16 ^ J - 1) / 15)
@@ -24,16 +24,16 @@ def offset (J : Nat) : Nat := 8 * ((16 ^ J - 1) / 15)
 /-- `[m + 1]P = [m]P + P` for `m = 1 … i`. -/
 def adds : Nat → Prog isa
   | 0 => .block []
-  | i + 1 => .seq (adds i) (fprog K.M wk (rcb3 K.S (K.tblPt (i + 1)) (K.tblPt 1) (K.tblPt (i + 2))))
+  | i + 1 => .seq (adds i) (fprog F (rcb3 K.S (K.tblPt (i + 1)) (K.tblPt 1) (K.tblPt (i + 2))))
 
 /-- The table: `[1]P = P`, then `[m + 1]P = [m]P + P`. -/
-def build : Prog isa := .seq (.block (copyPt K.M.n (K.tblPt 1) K.P)) (adds K wk 7)
+def build : Prog isa := .seq (.block (copyPt K.M.n (K.tblPt 1) K.P)) (adds K F 7)
 
 /-- The window method as the comb sees it, for the digits and their
 negation: windows of 4 bits at `bits`. -/
 def tc : TCombCfg where
   M := K.M
-  wk := wk
+  F := F
   ptr := 0
   S := K.S
   A := K.R
@@ -84,24 +84,24 @@ def double (p o : Pt) : List FOp :=
 
 /-- Four Jacobiandoublings between E and D, bracketed by coordinate conversions. -/
 def jac : Prog isa :=
-  .seq (fprog K.M wk (toJ K.S K.R (zeroPt K) K.E)) <|
-  .seq (fprog K.M wk (double K K.E K.D)) <|
-  .seq (fprog K.M wk (double K K.D K.E)) <|
-  .seq (fprog K.M wk (double K K.E K.D)) <|
-  .seq (fprog K.M wk (double K K.D K.E)) <|
-  fprog K.M wk (fromJ K.S K.E (zeroPt K) K.R)
+  .seq (fprog F (toJ K.S K.R (zeroPt K) K.E)) <|
+  .seq (fprog F (double K K.E K.D)) <|
+  .seq (fprog F (double K K.D K.E)) <|
+  .seq (fprog F (double K K.E K.D)) <|
+  .seq (fprog F (double K K.D K.E)) <|
+  fprog F (fromJ K.S K.E (zeroPt K) K.R)
 
 /-- `R = 16 R`. -/
-def quad : Prog isa := .seq (jac K wk) (.block (ySel K))
+def quad : Prog isa := .seq (jac K F) (.block (ySel K))
 
 /-- Iteration `j = esi - 1` (with `esi` counting down from `J`):
 `R = 16 R + [d_j]P`. -/
 def step : Prog isa :=
   .seq (.block [.alu .sub .esi (.imm 1)]) <|
-  .seq (quad K wk) <|
-  .seq (.block ((tc K wk).digit ++ select K)) <|
-  .seq (.block (tc K wk).negY) <|
-  .seq (.seq (fprog K.M wk (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) <|
+  .seq (quad K F) <|
+  .seq (.block ((tc K F).digit ++ select K)) <|
+  .seq (tc K F).negY <|
+  .seq (.seq (fprog F (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) <|
   .block [.alu .test .esi (.reg .esi)]
 
 /-- `R = O` and the counter. -/
@@ -110,7 +110,7 @@ def init : List Instr :=
     [.mov .esi (.imm (BitVec.ofNat 32 K.J))]
 
 /-- `[k]P` into `R`, for the table of the bits of `k + offset J` at `K.bits`. -/
-def window : Prog isa := .seq (build K wk) (.seq (.block (init K)) (.loop (step K wk) .ne))
+def window : Prog isa := .seq (build K F) (.seq (.block (init K)) (.loop (step K F) .ne))
 
 end WinCfg
 

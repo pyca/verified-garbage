@@ -11,7 +11,8 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     {tbl : List (List (Nat × Nat))} (hL : TCombLay K size) (hC : Law C)
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
-    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
+    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hsp : SpOk K.first 20) :
     WP isa K.first s fun s' =>
       TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' 1 := by
   have hn := hs.nowrap
@@ -32,6 +33,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hk : k < 2 ^ (K.w * K.J) :=
     Nat.lt_of_lt_of_le hF.k_lt (Nat.pow_le_pow_right (by decide) hL.kbytes)
   have hmo := tcombW_mo hL hM
+  refine WP.withSp hsp hF.sp_lo ?_
   unfold TCombCfg.first
   refine WP.seq ?_
   have e : K.clearBits ++ [.mov .esi (.imm 0)] ++ K.bdigit false ++ K.select = [.mov .eax (.imm 0)] ++
@@ -75,8 +77,8 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       have := hL.ptr_bits; dsimp only; omega)]
     exact hF.tsym
   have hTM₃ : TblMem s₃ T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) :=
-    TblMem.of_unch hF.tbl (by rw [k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) U₃'
-      (tcombW_size hL hM) hF.out
+    TblMem.of_unch hF.tbl (by rw [k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) U₃
+      (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; exact hL.bits) hF.out
   refine WP.mono (tentryJ_ok hL hC hV hpn hs₃ hM₃ (i := 0) (by omega) b₃ hb1 (c := false)
     (Or.inr ⟨rfl, rfl⟩) hbits₃ hz₃ hT₃ hTM₃) fun s₄ h₄ => WP.seq (WP.mono h₄ fun s₅ E₅ => ?_)
   rw [WP.block_append_iff]
@@ -93,15 +95,15 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with rfl | rfl | rfl <;> grind)
     ⟨by grind, by grind, by grind⟩) fun s₆ ⟨ex₆, ey₆, ez₆, k₆, U₆⟩ => ?_
-  refine WP.mono (movEsi_ok s₆ (j := 1) (by decide)) fun s₇ ⟨b₇, k₇⟩ => ?_
+  refine WP.mono (movEsi_ok s₆ (j := 1) (by decide)) fun s₇ ⟨b₇, k₇⟩ fr => ?_
   have m₇ : s₇.mem = s₆.mem := k₇.2.1
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
-      (K.M.tmp, 8 * K.M.n), (K.wk, accLen K.M)], w ∈ combWx K := by
+      (K.M.tmp, 8 * K.M.n), (K.wk, 64 * K.M.n), Mont.outW], w ∈ combWx K := by
     intro w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [combWx, combW, combWs, List.mem_append, List.mem_map, List.mem_cons,
       List.not_mem_nil, or_false, TCombCfg.toComb]
-    rcases hw with h | h | h | h | h | h <;> subst h <;> simp
+    rcases hw with h | h | h | h | h | h | h <;> subst h <;> simp
   have hAW : ∀ w ∈ [(K.A.x, 8 * K.M.n), (K.A.y, 8 * K.M.n), (K.A.z, 8 * K.M.n)], w ∈ combWx K := by
     intro w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -145,7 +147,7 @@ theorem firstJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     · exact Or.inr rfl
   · rw [U.byte (combW_bits hL ht) (by omega_using [hbz, hzw, ht, hn])]
     exact hbits₃ t ht
-  · exact TblMem.of_unch hF.tbl (by rw [k₇.2.2.1, k₇.2.2.2, k₆.rd, k₆.wr, E₅.keep.rd, E₅.keep.wr,
-      k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) UT (tcombW_size hL hM) hF.out
+  · exact TblMem.of_frame hF.tbl (by rw [k₇.2.2.1, k₇.2.2.2, k₆.rd, k₆.wr, E₅.keep.rd, E₅.keep.wr,
+      k₃.2.2.1, k₃.2.2.2, k₂.rd, k₂.wr, k₁.2.2.1, k₁.2.2.2]) fr hF.apart
 
 end VG.Proof.Weierstrass.X86

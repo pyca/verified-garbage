@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.X86.Main
+import VerifiedGarbage.Proof.Weierstrass.X86.MontModuli
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.X86.P384.Lit
 import VerifiedGarbage.Proof.P384.Point
@@ -54,27 +55,21 @@ theorem p384_ok : CfgOk p384 where
 
   inv_p h := False.elim ((by decide : ¬ (p384.n = 4 ∧ p384.C.len = 32)) h)
   inv_n h := False.elim ((by decide : ¬ (p384.n = 4 ∧ p384.C.len = 32)) h)
+  fp := ⟨rfl, rfl, Mont.p384p_ok⟩
+  fn := ⟨rfl, rfl, Mont.p384n_ok⟩
 
 theorem pre_of {s : State} (h : signX86.pre s) : Pre p384 s := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22⟩
 
-/-- The return address is kept. -/
-theorem ret_keep {s₀ s' : State} (hp : Pre p384 s₀) (K : SignKeep p384 s₀ s') :
-    s'.mem.readW ((s₀.gpr .esp).setWidth 64) 32 = s₀.mem.readW ((s₀.gpr .esp).setWidth 64) 32 := by
-  obtain ⟨m, hU, hO⟩ := K.frame
-  have hU' : Outside (ptr s₀ 4) 0 size s₀.mem m :=
-    hU.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
-  refine Mem.readW_congr fun i hi => ?_
-  have h4 : i < 4 := by omega
-  rw [← keep_of_disjoint' hU' hp.ret_sc (by decide) h4 (by decide),
-    ← keep_of_disjoint' hO hp.ret_out (by decide) h4 (by decide)]
+/-- No instruction writes `esp`, and the calls use 20 bytes of stack. -/
+theorem sign_sp : SpOk signP384 p384.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
 
 theorem sign_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : signX86.pre s) :
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signX86.post s s' := by
   have hp := pre_of hs
-  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p384_ok hL hp
-  refine ⟨t, s', he, ⟨fun r hr => ?_, ret_keep hp K⟩, ?_⟩
+  obtain ⟨t, s', he, K, hpost⟩ := sign_ok p384_ok hL sign_sp hp
+  refine ⟨t, s', he, ⟨fun r hr => ?_, K.ret hp⟩, ?_⟩
   swap
   · simp only [signX86, BitVec.setWidth_append_eq_right]
     exact hpost
@@ -90,21 +85,22 @@ theorem sign_x86 (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : signX8
 and the words known to hold base addresses (`taint_decide_weak`): no address
 or branch depends on a value loaded from the working space, and the kernel
 evaluates every instruction faster with less to look through. -/
-def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := { τ with slots := [], wbases := [] }
+def weak (τ : VG.X86.Taint.T) : VG.X86.Taint.T := if τ.stk = [] then { τ with slots := [], wbases := [] } else τ
 
 /-- The taint analysis starts with the stack arguments public, and the words
 holding `out` and `scratch` known to be the base addresses of the writable
 regions. -/
 def τ₀ : VG.X86.Taint.T :=
-  { regs := .ofList [.esp], flags := false, lens := [96, 8192], argLen := 24, argBases := [(4, 0), (20, 1)] }
+  { regs := .ofList [.esp], flags := false, lens := [96, 8192], argLen := 24, argBases := [(4, 0), (20, 1)],
+    room := 20 }
 
 theorem wf₀ {s : State} (hp : Pre p384 s) : VG.X86.Taint.Wf τ₀ s := by
   have hsc := hp.sc_fit; have ho := hp.out_fit; have hs := hp.sp_fit
   have hn6 : p384.C.len = 48 := rfl
   rw [hn6] at ho
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn6], by simpa [hp.wr, hn6] using hp.out_sc, ?_⟩,
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨fun _ => ⟨by simp [hp.wr, τ₀, hn6], by simpa [hp.wr, hn6] using hp.out_sc, ?_⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
-    fun _ => ⟨hs, ?_⟩, ?_⟩
+    fun _ => ⟨hs, ?_⟩, ?_⟩ fun _ => ⟨hp.sp_lo, ?_⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl) <;> simp only [BitVec.toNat_setWidth, hn6] <;> omega_using [hsc, ho]
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
@@ -115,6 +111,10 @@ theorem wf₀ {s : State} (hp : Pre p384 s) : VG.X86.Taint.Wf τ₀ s := by
     simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp'
     rcases hp' with rfl | rfl <;> refine ⟨by decide, ?_⟩ <;>
       simp [VG.X86.Taint.region, hp.wr, addr, arg, argAddr]
+  · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : signX86.pre s₁) (h₂ : signX86.pre s₂)
     (hpub : signX86.pub s₁ s₂) : VG.X86.Taint.Agree τ₀ s₁ s₂ := by
@@ -156,12 +156,14 @@ def signWide : Contract isa :=
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
     s.rd = [d, digest, k] ∧ s.wr = [out, scratch, args] ∧ out.Disjoint scratch ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       args.Disjoint out ∧ args.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (arg s 0).toNat + 96 ≤ 2 ^ 32 ∧ (arg s 1).toNat + 48 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 48 ≤ 2 ^ 32 ∧
-      (arg s 3).toNat + 48 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 }
+      (arg s 3).toNat + 48 ≤ 2 ^ 32 ∧ (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
+      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch }
 
 def signRd (s : State) : List Region :=
   [⟨(arg s 1).setWidth 64, 48⟩, ⟨(arg s 2).setWidth 64, 48⟩, ⟨(arg s 3).setWidth 64, 48⟩, ⟨argAddr s 0, 20⟩]
@@ -190,7 +192,7 @@ def satState : State where
   rd := [⟨0x2000, 48⟩, ⟨0x3000, 48⟩, ⟨0x4000, 48⟩]
   wr := [⟨0x1000, 96⟩, ⟨0x8000, 8192⟩, ⟨0x20004, 20⟩]
 
-theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P384.inst.signContract X86.abi) := by
+theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P384.inst.signContract X86.abi 20) := by
   have a0 : arg satState 0 = 0x1000 := by decide
   have a1 : arg satState 1 = 0x2000 := by decide
   have a2 : arg satState 2 = 0x3000 := by decide
@@ -199,11 +201,11 @@ theorem signWide_implies : signWide.Implies (Spec.Ecdsa.P384.inst.signContract X
   have e : argAddr satState 0 = 0x20004 := by decide
   have esp : satState.gpr .esp = 0x20000 := rfl
   sig_implies [Spec.Ecdsa.P384.inst, Spec.Ecdsa.Instance.signContract, Spec.Ecdsa.Instance.signSig,
-    Spec.P384.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, signWide,
+    Spec.P384.curve, Spec.Ecdsa.scratchWords, X86.abi, X86.argSlots, X86.argVal, X86.argBytes, stackBelow, signWide,
     signX86, sig] [a0, a1, a2, a3, a4, e, esp] using satState
 
 theorem sign_verified (hL : Weierstrass.Law Spec.P384.curve) :
-    Verified X86.target signP384 (Spec.Ecdsa.P384.inst.signContract X86.abi) := by
+    Verified X86.target signP384 (Spec.Ecdsa.P384.inst.signContract X86.abi 20) := by
   have hsat := signWide_implies.sat_left
   have satLocal : ∃ s, signX86.pre s := hsat.elim fun s h => ⟨_, signWide_pre s h⟩
   have verifiedLocal : Verified X86.target signP384 signX86 :=

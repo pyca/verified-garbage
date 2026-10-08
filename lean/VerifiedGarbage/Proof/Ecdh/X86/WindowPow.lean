@@ -27,30 +27,37 @@ structure WindowPost (c : Cfg) (base : Addr) (k : Nat) (P : Point c.C) (s s' : S
   rz_lt : sv c base s' RZ < c.C.p
 
 theorem windowPow_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
-    {base : Addr} {s : State} (hs : Scr s base size) {g : Reg → BitVec 32}
-    (F : Fixed c base g s.mem) {P : Point c.C} (hP : onCurve c.C P = true)
+    {s₀ : State} {base : Addr} {s : State} (Kp : Keep c s₀ base s)
+    (hsp₁ : SpOk (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) c.stk) (hsp₂ : SpOk c.pPow c.stk)
+    {P : Point c.C} (hP : onCurve c.C P = true)
     (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P)
     (ht₁ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0)
-    {rest : Prog isa} {R : State → Prop} (h : ∀ s', WindowPost c base (sv c base s K) P s s' → WP isa rest s' R) :
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ s', WindowPost c base (sv c base s K) P s s' →
+      Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem → WP isa rest s' R) :
     WP isa (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq c.pPow rest)) s R := by
+  have hs := Kp.scr
+  have F := Kp.fixed
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine WP.seq (WP.mono (windowMulAt_ok hc h4 (i := K) (by decide) (by decide)
-    hC ham3 hs F hP hpx hpy hQ) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ => ?_)
+  refine WP.seq (Kp.withSp hsp₁ (WP.mono (windowMulAt_ok hc h4 (i := K) (by decide) (by decide)
+    hC ham3 hs F hP hpx hpy hQ) fun s₅ ⟨K₅, U₅, M₅, L₅, R₅⟩ f₅ => ?_))
   have hs₅ := hs.of_keeps K₅ (by decide)
   have F₅ := F.unch h7 hn (windowW_fixed h4) U₅
+  have k₅ : Keep c s₀ base s₅ := ⟨hs₅, by rw [K₅.1 _ (by decide), Kp.esp], by rw [K₅.2.1, Kp.rd],
+    by rw [K₅.2.2, Kp.wr], F₅, f₅, Kp.sp_lo⟩
   have rz₅ : wordsVal s₅.mem base (c.sl RZ) c.n < c.C.p :=
     L₅ (c.sl RZ) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
-  refine WP.seq (WP.mono (pPow_ok hc hs₅ M₅ rz₅
+  refine WP.seq (k₅.withSp hsp₂ (WP.mono (pPow_ok hc hs₅ M₅ rz₅
     F₅.onep (fun t ht => by
       change  t < 64 * c.n at ht
       change s₅.mem (off base (bitsAt c.n 1 + t)) = _
       rw [U₅.byte (windowW_table h4 ht) (by rw [bitsAt_eq, h4]; rw [h4] at ht; omega)]
       exact ht₁ t ht)
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega)) fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ f₆ => h s₆ ?_ f₆))
   have r₆ : ∀ {i}, i < 45 → i ∉ [ACC, PT, TMP] → sv c base s₆ i = sv c base s₅ i := fun hi h₁ =>
     sv_unch U₆ h7 hn hi (apart_pwW hi h₁)
   refine ⟨hs₅.of_keeps K₆ (by decide), fun r hr => by rw [K₆.1 r hr, K₅.1 r hr],

@@ -24,26 +24,33 @@ theorem vBits_ok (hc : CfgOk c) {s₀ s : State} {base : Addr} (h : Mid c s₀ b
   have unch : Unch base [(bitsAt c.n 0, 64 * c.n)] s.mem t.mem := o.unch
   have v : ∀ {i}, i < 45 → sv c base t i = sv c base s i := fun hi =>
     sv_unch unch h7 h.scr.nowrap hi (apart_tbl hi 0)
+  have hsc : (⟨base, size⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk] :=
+    List.mem_append_left _ (by rw [← h.wr]; exact h.scr.wr)
   exact ⟨⟨h.scr.of_keeps k (by decide), (k.gpr _ (by decide)).trans h.esp,
     k.rd.trans h.rd, k.wr.trans h.wr, h.fixed.unch h7 h.scr.nowrap (fixedOk_tbl 0) unch,
-    whole_of h.unch unch (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7)⟩,
+    h.whole.trans (frame_of_unch unch (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) hsc),
+    h.sp_lo⟩,
     ⟨sv c base s U, wordsVal_lt _ _ _ _, b⟩,
     (v (by decide)).trans h.rx, (v (by decide)).trans h.ry, (v (by decide)).trans h.rz⟩
 
 /-- Read-only comb tables outside the working space. -/
 def VCombTables (s : State) : Prop :=
   TblMem s ((s.gpr .eax).setWidth 64) (p256Comb.combWords p256d) ∧
-  ∀ i < (p256Comb.combWords p256d).length, ∀ b < 8,
-    size ≤ ofs (ptr s 3) ((s.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)
+  (∀ i < (p256Comb.combWords p256d).length, ∀ b < 8,
+    size ≤ ofs (ptr s 3) ((s.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
+  ∀ r ∈ s.wr ++ [below (s.gpr .esp) p256Comb.stk],
+    Region.Disjoint ⟨(s.gpr .eax).setWidth 64, 8 * (p256Comb.combWords p256d).length⟩ r
 
 theorem vTables_keep {s₀ s : State} (ht : VCombTables s₀) (K : Keep p256Comb s₀ (ptr s₀ 3) s) :
-    TblMem s ((s₀.gpr .eax).setWidth 64) (p256Comb.combWords p256d) :=
-  ht.1.of_unch (by rw [K.rd, K.wr]) K.whole
-    (fun w hw => by rw [List.mem_singleton.mp hw]; exact Nat.le_refl _) ht.2
+    TblMem s ((s₀.gpr .eax).setWidth 64) (p256Comb.combWords p256d) ∧
+      ∀ r ∈ s.wr ++ [below (s.gpr .esp) 20],
+        Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (p256Comb.combWords p256d).length⟩ r :=
+  K.tbls ht.1 ht.2.2
 
 theorem vPoints_keep (hc : CfgOk p256Comb) (hC : Law p256Comb.C) (hT : CombTbls p256Comb)
     (hCo : ∀ d, p256Comb.comb = some d → CombOk p256Comb d) (ham3 : AM3 p256Comb.C)
-    {s₀ s : State} (ht : VCombTables s₀) (h : Mid p256Comb s₀ (ptr s₀ 3) s) :
+    {s₀ s : State} (ht : VCombTables s₀) (h : Mid p256Comb s₀ (ptr s₀ 3) s)
+    (hspG : SpOk p256Comb.gMul 20) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsComb p256Comb) p256Comb.stk) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.pointsComb p256Comb) s (Keep p256Comb s₀ (ptr s₀ 3)) := by
   let P := Ecdh.X86.peerPt p256Comb (s₀.mem (ptr s₀ 0) = 4)
     (keyX p256Comb s₀) (keyY p256Comb s₀)
@@ -58,8 +65,8 @@ theorem vPoints_keep (hc : CfgOk p256Comb) (hC : Law p256Comb.C) (hT : CombTbls 
     (fun d hd => by
       have e : p256d = d := Option.some.inj hd
       subst d
-      exact ⟨vTables_keep ht h.keep, ht.2⟩)
-    hPc hQ
+      exact ⟨(vTables_keep ht h.keep).1, ht.2.1, ht.2.2⟩)
+    hPc hQ hspG hsp
     (rest := .block []) (fun _ P => WP.block_nil P.keep)
   exact WP.mono (WP.seq_iff.mp H) (fun _ q => WP.block_nil_iff.mp q)
 

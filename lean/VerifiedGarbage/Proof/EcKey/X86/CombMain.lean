@@ -15,17 +15,20 @@ theorem publicKeyCombBody_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C)
     {s₀ : State} {extra : List Region} (hp : PkPre c s₀ extra)
     (hTb : ∀ d, c.comb = some d → TblMem s₀ ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
-      ∀ i < (c.combWords d).length, ∀ b < 8,
-        size ≤ ofs (ptr s₀ 2) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) :
+      (∀ i < (c.combWords d).length, ∀ b < 8,
+        size ≤ ofs (ptr s₀ 2) ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
+      ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
+        Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
+    (hsp₁ : SpOk c.gMul 20) (hsp₂ : SpOk c.pPow c.stk) (hsp₃ : SpOk (pkOps c) c.stk) :
     WP isa (.seq (c.prepareWith Args.publicKey) (.seq c.gMul (.seq c.pPow
       (Impl.EcKey.X86.Cfg.middle c)))) s₀ fun s' => PkKeep c s₀ s' ∧ PkPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   refine WP.seq (WP.mono (stage₁ hc hp.setup (rest := .block [])
     (Q := St₁ c Args.publicKey s₀ (ptr s₀ 2)) (fun _ h => WP.block_nil h)) fun s₁ S₁ => ?_)
-  refine stage₂Comb hc hC hT hCo ham3 S₁ hTb fun s₂ S₂ => ?_
+  refine stage₂Comb hc hC hT hCo ham3 S₁ hTb hsp₁ hsp₂ fun s₂ S₂ => ?_
   have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
-  refine WP.mono (middle_ok hc S₂.scr S₂.fixed S₂.acc_lt S₂.flag S₂.whole S₂.esp S₂.rd S₂.wr
-    ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (hp.args_sc.sub_left (arg_subN h3 (by decide)))
+  refine WP.mono (middle_ok hc S₂.toKeep S₂.acc_lt S₂.flag hsp₃
+    ⟨_, by rw [hp.rd]; simp, arg_containsN h3 (by decide)⟩ (pkArgs_disj hp)
     hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
     fun s' ⟨xv, yv, hxl, hx, hyl, hy, bytes, rax, saved, esp, frame⟩ => ⟨⟨saved, esp, frame⟩, ?_⟩
   -- The specification.

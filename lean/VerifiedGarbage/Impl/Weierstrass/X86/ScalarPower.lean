@@ -19,12 +19,12 @@ def p256ScalarPrefixOps : List PowerOp :=
 /-- Use the prefix chain, then the existing loop for the lower 128 bits.
 The prefix takes 127 squarings and 7 other products; the suffix takes
 256 multiplications, for 390 total instead of 512. -/
-def p256ScalarPower (P : PowCfg) (wk : Nat) : Prog isa :=
+def p256ScalarPower (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base)) <|
-  .seq (powerChain P wk p256ScalarPrefixOps) <|
-  .seq (.block [.mov .esi (.imm 128)]) (.loop (powBody P wk) .ne)
+  .seq (powerChain P F p256ScalarPrefixOps) <|
+  .seq (.block [.mov .esi (.imm 128)]) (.loop (powBody P F) .ne)
 
-def powScalar (P : PowCfg) (wk m : Nat) : Prog isa :=
-  if m = p256Order ∧ 128 ≤ P.nbits then p256ScalarPower P wk else pow P wk
+def powScalar (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) (m : Nat) : Prog isa :=
+  if m = p256Order ∧ 128 ≤ P.nbits then p256ScalarPower P F else pow P F
 
 end VG.Impl.Weierstrass.X86

@@ -15,11 +15,11 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 /-- `o = p + q` by the mixed Jacobian addition (`q` affine: `q.z` is not
 read). -/
-theorem maddJ_ok {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
-    (hW : WkOk M size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
+theorem maddJ_ok {F : Spec.Weierstrass.Mont.Modulus} {M : Mod} {base : Addr} {size m wk : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
+    (hW : WkOk F M m size wk Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {S : RcbSlots} {p q o : Pt}
     (hA : RcbApart S p q o) (hSl : ∀ x ∈ rcbW S o ++ rcbR S p q, Sl x) {V : List Nat} {E : Nat → Fin m}
     {s : State} (hI : Inv M base size m Sl V E s) (hV : ∀ x ∈ rcbR S p q, x ∈ V) :
-    WP isa (fprog M wk (maddJ S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
+    WP isa (fprog F (maddJ S p q o)) s fun s' => ProgKeep M base wk (rcbW S o) s s' ∧
       Inv M base size m Sl ([o.x, o.y, o.z] ++ V) (runOps (maddJ S p q o) E) s' ∧
       (runOps (maddJ S p q o) E o.x, runOps (maddJ S p q o) E o.y, runOps (maddJ S p q o) E o.z) =
         maddJF (E p.x) (E p.y) (E p.z) (E q.x) (E q.y) := by

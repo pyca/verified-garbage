@@ -16,18 +16,21 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 open Spec.Weierstrass
 
+variable {F : Spec.Weierstrass.Mont.Modulus}
+
 /-! ## The loop -/
 
 theorem loopW_sub (K : WinCfg) (wk : Nat) : ∀ w ∈ loopWX K wk, w ∈ winWX K wk := by
   intro w hw
   simp only [loopWX, winWX, winWs, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
   · exact Or.inl ⟨y, Or.inl hy, rfl⟩
   · exact Or.inr (Or.inl rfl)
-  · exact Or.inr (Or.inr rfl)
+  · exact Or.inr (Or.inr (Or.inl rfl))
+  · exact Or.inr (Or.inr (Or.inr rfl))
 
 /-- The table survives what the loop writes. -/
-theorem TblOk.unch {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem TblOk.unch {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {P : Point C} {s s' : State} (hT : TblOk K C base P 8 s) (hU : Unch base (loopWX K wk) s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 32) : TblOk K C base P 8 s' := by
   intro j h1 h8
@@ -40,10 +43,12 @@ theorem TblOk.unch {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : 
       simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi)
     refine hU.wordsVal (fun w hw => ?_) (by have := hL.lay.le _ hs; omega)
     simp only [loopWX, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+    rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
     · exact (hL.tbl_apart (List.mem_append_right _ hy) hi).symm
     · exact hL.lay.tmp _ hs
     · exact Or.inl (hAcc.acc.sl _ hs)
+    · have := hAcc.acc.sl _ hs; have := hAcc.wk_le
+      exact Or.inl (by dsimp only [Mont.outW]; omega)
   refine ⟨fun x hx => by rw [e x hx]; exact T.1 x hx, ?_⟩
   have ex : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
       tmv C K.M.n base s' x = tmv C K.M.n base s x := fun x hx => by
@@ -61,7 +66,7 @@ structure WinSt (K : WinCfg) (wk : Nat) (C : Curve) (base : Addr) (size : Nat) (
   tbl : TblOk K C base P 8 s
 
 /-- The state after a change of `loopW` only. -/
-theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {P : Point C} {s₀ s s' : State} (h : WinSt K wk C base size P s₀ s) (hs' : Scr s' base size)
     (hk : KeepRegs powClob s s') (hU : Unch base (loopWX K wk) s.mem s'.mem) :
     WinSt K wk C base size P s₀ s' :=
@@ -72,7 +77,7 @@ theorem WinSt.next {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : 
     h.mod.unch hU (fun w hw => winW_mo hL hAcc h.mod w (loopW_sub K wk w hw)) (by have := h.scr.nowrap; omega),
     h.tbl.unch hL hAcc hU h.scr.nowrap⟩
 
-theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {P : Point C} {s₀ s : State} (h : WinSt K wk C base size P s₀ s) (hF : WinFixed K C base s₀ P k) :
     tmv C K.M.n base s K.S.a = Fin.ofNat C.p C.a ∧ tmv C K.M.n base s K.S.b3 = Fin.ofNat C.p C.b ∧
       (∀ x ∈ winRo K, wordsVal s.mem base x K.M.n < C.p) ∧ wordsVal s.mem base K.zero K.M.n = 0 := by
@@ -84,7 +89,7 @@ theorem WinSt.ro_tmv {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (h
   · rw [winRo_val hL hAcc h.unch hn (by simp [winRo])]; exact hF.zero
 
 /-- `R = R + E`, for `R` representing `PR` and `E` `PQ`. -/
-theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     {s₀ s : State} (hF : WinFixed K C base s₀ P k) (hS : WinSt K wk C base size P s₀ s)
     {PR PQ : Point C} (hPR : onCurve C PR = true) (hPQ : onCurve C PQ = true)
@@ -92,7 +97,7 @@ theorem sumStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
     (hltq : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) PR)
     (hQ : Rep C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) PQ) :
-    WP isa (.seq (fprog K.M wk (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s fun s' =>
+    WP isa (.seq (fprog F (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s fun s' =>
       WinSt K wk C base size P s₀ s' ∧ s'.gpr .esi = s.gpr .esi ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
@@ -128,12 +133,12 @@ structure WinInv (K : WinCfg) (wk : Nat) (C : Curve) (base : Addr) (size k : Nat
 /-! ## Four doublings in Jacobian coordinates -/
 
 /-- A field program on numbered slots, writing slots of `winOther`: the loop's frame. -/
-theorem winN_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem winN_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {N : List FOp} (hN : NumOk N) {p q o : Pt}
     (hAp : RcbApart K.S p q o) (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, x ∈ winSlots K)
     (hW : ∀ x ∈ rcbW K.S o, x ∈ winOther K) {V : List Nat} {E : Nat → Fe C} {s : State}
     (hI : Inv K.M base size C.p (· ∈ winSlots K) V E s) (hV : ∀ x ∈ rcbR K.S p q, x ∈ V) :
-    WP isa (fprog K.M wk (ofN N K.S p q o)) s fun s' => KeepRegs clob s s' ∧
+    WP isa (fprog F (ofN N K.S p q o)) s fun s' => KeepRegs clob s s' ∧
       Unch base (loopWX K wk) s.mem s'.mem ∧ ∃ E' : Nat → Fe C,
       Inv K.M base size C.p (· ∈ winSlots K) ([o.x, o.y, o.z] ++ V) E' s' ∧
       (∀ x, x ∉ rcbW K.S o → E' x = E x) ∧
@@ -143,10 +148,11 @@ theorem winN_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : Win
     fun s' ⟨k, I, v⟩ => ⟨⟨k.gpr, k.rd, k.wr⟩, k.unch.mono fun w hw => ?_, _, I,
       fun x hx => runOps_of_not_out _ _ fun op hop h => hx (h ▸ ofN_out hN op hop), v⟩)
   simp only [loopWX, progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
   · exact Or.inl ⟨y, hW y hy, rfl⟩
   · exact Or.inr (Or.inl rfl)
-  · exact Or.inr (Or.inr rfl)
+  · exact Or.inr (Or.inr (Or.inl rfl))
+  · exact Or.inr (Or.inr (Or.inr rfl))
 
 /-- The slots of a numbered program from `p` and `q` into `o`, a point written. -/
 theorem winJ_sl {K : WinCfg} {o p q : Pt} (ho : ∀ x ∈ [o.x, o.y, o.z], x ∈ winOther K)
@@ -188,14 +194,14 @@ local macro "rcb_sub" : tactic => `(tactic| (
 
 /-- `R = 16 R` in Jacobian coordinates, but `Y`: the triple `(X : Y : Z)` stands for
 `[16 e]P` (or `Z = 0`), `R` is `(XZ : Y : Z³)` and `E.z` is `Z`. -/
-theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem jac_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
     (hS : WinSt K wk C base size P s₀ s) {e : Nat}
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
-    WP isa (WinCfg.jac K wk) s fun s' =>
+    WP isa (WinCfg.jac K F) s fun s' =>
       WinSt K wk C base size P s₀ s' ∧ s'.gpr .esi = s.gpr .esi ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       ∃ X Y Z : Fe C, InvJ C X Y Z (mul (16 * e) P) ∧ tmv C K.M.n base s' K.R.x = X * Z ∧

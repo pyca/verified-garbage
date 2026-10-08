@@ -28,7 +28,7 @@ theorem projectiveOps_run (hc : CfgOk c) (e : Nat → Fe c.C) :
 theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hM : ModOkW c.MP' size c.C.p s.mem base)
     (hlt : ∀ i ∈ projectiveReads, sv c base s i < c.C.p) :
-    WP isa (fprog c.MP' c.wk (projectiveOps c.sl)) s fun t =>
+    WP isa (fprog c.SP (projectiveOps c.sl)) s fun t =>
       Scr t base size ∧ t.gpr .esp = s.gpr .esp ∧ Unch base (slWk c projectiveWrites) s.mem t.mem ∧
       sv c base t W < c.C.p ∧ sv c base t XN < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (sv c base t W) =
@@ -37,11 +37,8 @@ theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
         tmv c.C c.n base s (c.sl RX) -
           (tmv c.C c.n base s (c.sl XM) + tmv c.C c.n base s (c.sl ACC)) * tmv c.C c.n base s (c.sl RZ) := by
   have hL : Lay c.MP' size (· ∈ projectiveSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
-  have hW : WkOk c.MP' size c.wk (· ∈ projectiveSlots.map c.sl) := ⟨wk_le c hc.n10 rfl, fun x hx => by
-      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-      have : ∀ i ∈ projectiveSlots, i < 45 := by decide
-      exact sl_below_wk c (this i hi),
-    sl_below_wk c (i := MP) (by decide), sl_below_wk c (i := TMP) (by decide)⟩
+  have hW : WkOk c.SP c.MP' c.C.p size c.wk (· ∈ projectiveSlots.map c.sl) :=
+    wkOk_map hc hc.fp (MP'_n c) (jm := MP) (by decide) rfl rfl (by decide)
   have I : Inv c.MP' base size c.C.p (· ∈ projectiveSlots.map c.sl) (projectiveReads.map c.sl)
       (tmv c.C c.n base s) s := by
     refine ⟨hs, hM, ?_, ?_, fun _ _ => rfl⟩
@@ -104,8 +101,8 @@ theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hmp : sv c base s MP = c.C.p)
     (hrx : sv c base s RX < c.C.p) (hrz : sv c base s RZ < c.C.p) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.projectivePrepare c))
-      (.seq (mul c.MP' c.wk (c.sl XM) (c.sl K) (c.sl XM))
-        (fprog c.MP' c.wk (projectiveOps c.sl)))) s fun t =>
+      (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl K) (c.sl XM))
+        (fprog c.SP (projectiveOps c.sl)))) s fun t =>
       Scr t base size ∧ t.gpr .esp = s.gpr .esp ∧ Unch base (slWk c projectiveAllW) s.mem t.mem ∧
       sv c base t MN = c.C.p - c.C.n ∧ sv c base t W < c.C.p ∧ sv c base t XN < c.C.p ∧
       toM c.C.p (2 ^ (64 * c.n)) (sv c base t W) =
@@ -122,8 +119,8 @@ theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}
     fun hi hl => sv_unch U₁ h7 hn hi (apart_slW hl)
   have M₁ : ModOkW c.MP' size c.C.p s₁.mem base := modP_of hc
     ((v₁ (i := MP) (by decide) (by decide)).trans hmp)
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs₁ M₁ (o := XM) (a := K) (b := XM)
-    (by decide) (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
+  refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs₁ (o := XM) (a := K) (b := XM)
+    (by decide) (by decide) (by decide) (by rw [xm₁]; exact Nat.mod_lt _ (by omega)))
     fun s₂ ⟨k₂,lt₂,e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have v₂ : ∀ {i}, i < 45 → i ≠ XM → i ≠ TMP → sv c base s₂ i = sv c base s₁ i :=

@@ -6,7 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.Lays
 After `setup`, the slots below `12` but the temporary area's hold constants
 the code only reads, and `[0, 16)` the saved registers (`Fixed`); every
 later phase writes only slots from `12` on, the temporary area, the flag,
-the tables and the multiplications' accumulator (`FixedOk`), so it keeps them (`Fixed.unch`). A slot or a
+the tables, the field arithmetic's own working space and memory past the
+working space (`FixedOk`, `wkW`), so it keeps them (`Fixed.unch`). A slot or a
 table byte apart from what a phase writes keeps its value too (`sv_unch`,
 `tbl_unch`).
 -/
@@ -62,7 +63,12 @@ theorem fixedOk_slW {l : List Nat} (hl : ∀ i ∈ l, i = TMP ∨ 12 ≤ i) : Fi
     · rw [h]
     · exact Nat.le_trans (Nat.le_add_right _ _) (sl_lt c h)
 
-theorem fixedOk_tbl (j : Nat) : FixedOk c [(bitsAt c.n j, 64 * c.n)] := by
+/-- What the field arithmetic's calls write besides their results: the
+functions' own working space and memory past the working space (the calls'
+stack). -/
+abbrev wkW (c : Cfg) : List (Nat × Nat) := [(c.wk, 64 * c.n), Mont.outW]
+
+theorem fixedOk_tbl (j : Nat) (hn : c.n < 10 := by n10) : FixedOk c [(bitsAt c.n j, 64 * c.n)] := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (by decide) j 0))
@@ -72,10 +78,12 @@ theorem fixedOk_flag : FixedOk c [(c.sl FLAG, 4)] := by
   rw [List.mem_singleton.mp hw]
   exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (by decide)))
 
-theorem fixedOk_wk : FixedOk c [(c.wk, 16 * c.n + 4)] := by
+theorem fixedOk_wk (hn : c.n < 10 := by n10) : FixedOk c (wkW c) := by
+  have := sl_below_wk c (i := 12) (by decide)
+  have := wk_own c
   intro w hw
-  rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_wk c (i := 12) (by decide)))
+  simp only [wkW, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl <;> exact Or.inr (by simp only; omega)
 
 theorem fixedOk_whole (h7 : c.n < 10) : FixedOk c [(size, 2 ^ 64)] := by
   intro w hw
@@ -123,17 +131,19 @@ theorem apart_slW {l : List Nat} {i : Nat} (hi : i ∉ l) :
   obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hw
   exact sl_apart c fun h => hi (h ▸ hj)
 
-theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) :
+theorem apart_tbl {i : Nat} (hi : i < 45) (j : Nat) (hn : c.n < 10 := by n10) :
     ∀ w ∈ [(bitsAt c.n j, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
   exact Or.inl (by have := sl_below_bits c hi j 0; omega)
 
-theorem apart_wk {i : Nat} (hi : i < 45) :
-    ∀ w ∈ [(c.wk, 16 * c.n + 4)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+theorem apart_wk {i : Nat} (hi : i < 45) (hn : c.n < 10 := by n10) :
+    ∀ w ∈ wkW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  have := sl_below_wk c hi
+  have := wk_own c
   intro w hw
-  rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_wk c hi)
+  simp only [wkW, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl <;> exact Or.inl (by simp only; omega)
 
 theorem apart_flag (h0 : 0 < c.n) {i : Nat} (hi : i ≠ FLAG) :
     ∀ w ∈ [(c.sl FLAG, 4)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
@@ -162,20 +172,24 @@ theorem tbl_unch {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (hu : Unch b
     m' (off base (bitsAt c.n j + t)) = m (off base (bitsAt c.n j + t)) :=
   hu.byte hW (by have := bitsAt_le c h7 hj; have : size = 8192 := rfl; omega)
 
-theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) :
+theorem tbl_apart_slW {l : List Nat} (hl : ∀ i ∈ l, i < 45) (j t : Nat) (hn : c.n < 10 := by n10) :
     ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
   exact Or.inr (sl_below_bits c (hl i hi) j t)
 
-theorem tbl_apart_wk {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) :
-    ∀ w ∈ [(c.wk, 16 * c.n + 4)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+theorem tbl_apart_wk {j t : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hn : c.n < 10 := by n10) :
+    ∀ w ∈ wkW c, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  have := wk_below_bits c j
+  have := bitsAt_le c hn hj
+  have : size = 8192 := rfl
   intro w hw
-  rw [List.mem_singleton.mp hw]
-  have := bitsAt_below_wk c hj
-  exact Or.inl (by dsimp only; omega)
+  simp only [wkW, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl
+  · exact Or.inr (by simp only; omega)
+  · exact Or.inl (by simp only; omega)
 
-theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) :
+theorem tbl_apart_flag (h0 : 0 < c.n) (j t : Nat) (hn : c.n < 10 := by n10) :
     ∀ w ∈ [(c.sl FLAG, 4)], bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
   intro w hw
   rw [List.mem_singleton.mp hw]

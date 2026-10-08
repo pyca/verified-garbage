@@ -21,22 +21,25 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) : List A
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves the callee-saved registers \
       `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit \
       words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
-      with `mul` and the accumulator in `scratch`) with a final conditional subtraction. `[k]G` \
+      with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p`, \
+      `vg_p256_mul_mod_n` and the other functions of `p256_mont`) with a final conditional \
+      subtraction. `[k]G` \
       uses a seven-bit signed comb: 37 complete additions, no doublings, and constant-time \
       SSE2 scans of a shared 148 KiB table. Its position-independent table address uses a \
       balanced four-byte CALL frame. Field and scalar inversion each use 20 batches of 30 constant-time divsteps. The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."])
     code := Impl.Ecdsa.X86.signP256Comb
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
-    stack := 4
-    contract := Spec.Ecdsa.P256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 4
+    stack := 20
+    contract := Spec.Ecdsa.P256.inst.signContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 20
     verified := Proof.Ecdsa.X86.signComb_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P256.verifyApi with
     target := X86.target
     doc := Spec.Ecdsa.P256.verifyApi.doc (notes := ["The function validates the public key and \
       signature without branches. Field elements and scalars are eight 32-bit words in \
-      Montgomery form. The fixed-base product `[u]G` uses a seven-bit signed comb: 37 complete \
+      Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p`, \
+      `vg_p256_mul_mod_n` and the other functions of `p256_mont`. The fixed-base product `[u]G` uses a seven-bit signed comb: 37 complete \
       additions, no doublings, and constant-time SSE2 scans of a 148 KiB precomputed table. \
       Its position-independent table address uses a balanced four-byte CALL frame. The \
       variable-base product `[v]Q` uses 65 signed four-bit windows with Jacobian doublings \
@@ -47,8 +50,8 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) : List A
       depends only on pointers and the static table address."])
     code := Proof.Ecdsa.Verify.X86.vCombCode
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
-    stack := 4
-    contract := Spec.Ecdsa.P256.inst.verifyContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 4
+    stack := 20
+    contract := Spec.Ecdsa.P256.inst.verifyContract (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 20
     verified := Proof.Ecdsa.Verify.X86.vComb_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

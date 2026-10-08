@@ -41,6 +41,8 @@ structure VPre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   sig_fit : (arg s 2).toNat + 2 * c.C.len ≤ 2 ^ 32
   sc_fit : (arg s 3).toNat + size ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+  sp_lo : c.stk ≤ (s.gpr .esp).toNat
+  stk_sc : (stkR c s).Disjoint ⟨ptr s 3, size⟩
 
 /-- The key's `x` and `y`, the hash's `e`, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
@@ -80,8 +82,12 @@ structure Front (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop where
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyX c s₀) else Fin.ofNat c.C.p c.C.gx
   py : toM c.C.p (2 ^ (64 * c.n)) (sv c base s PY) =
     if KeyOk c s₀ then Fin.ofNat c.C.p (keyY c s₀) else Fin.ofNat c.C.p c.C.gy
-  /-- Memory outside the working space is unchanged. -/
-  unch : Unch base [(0, size)] s₀.mem s.mem
+  /-- Memory changed only in the working space and the stack the calls use. -/
+  whole : Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s.mem
+  sp_lo : c.stk ≤ (s₀.gpr .esp).toNat
+
+theorem Front.keep {s₀ : State} {base : Addr} {s : State} (h : Front c s₀ base s) : Keep c s₀ base s :=
+  ⟨h.scr, h.esp, h.rd, h.wr, h.fixed, h.whole, h.sp_lo⟩
 
 theorem idx_verify {i : Nat} (hi : i ∈ Args.verify.idx) : i < 4 := by
   simp only [Args.idx, List.mem_cons, List.not_mem_nil, or_false] at hi
@@ -105,16 +111,15 @@ theorem VPre.setup {s : State} {extra : List Region} (hp : VPre c s extra) : Set
   d_fit := hp.dg_fit
   e_fit := hp.dg_fit
   sc_fit := hp.sc_fit
+  stk := stkOk_of (Cfg.stk_ge c) hp.sp_lo
+    (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega)]; exact hp.sc_fit)
+    (by decide) hp.stk_sc
+  sp_lo := hp.sp_lo
 
 /-- Ranges of the working space, as one. -/
 theorem unch_whole {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     (hW : ∀ w ∈ W, w.1 + w.2 ≤ size) : Unch base [(0, size)] m m' :=
   (h.outside fun w hw => ⟨Nat.zero_le _, by have := hW w hw; omega⟩).unch
-
-theorem slW_le (h7 : c.n < 10) {l : List Nat} (hl : ∀ i ∈ l, i < 45) : ∀ w ∈ slW c l, w.1 + w.2 ≤ size := by
-  intro w hw
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-  exact sl_le c h7 (hl i hi)
 
 theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
     .mov .ebx (.mem (Cfg.argOp 2)) :: .alu .add .ebx (.imm (BitVec.ofNat 32 c.C.len)) ::
@@ -122,7 +127,8 @@ theorem loadS_eq (c : Cfg) : Impl.Ecdsa.Verify.X86.Cfg.loadS c =
   simp only [Impl.Ecdsa.Verify.X86.Cfg.loadS, List.cons_append, List.nil_append]
 
 /-- The setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra) {rest : Prog isa} {Q : State → Prop}
+theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre c s₀ extra)
+    (hsp : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, Front c s₀ (ptr s₀ 3) s → WP isa rest s Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.X86.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.X86.Cfg.peerAt c 0)) (.seq (Impl.Ecdh.X86.Cfg.validate c) rest)))) s₀ Q := by
@@ -134,8 +140,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
   have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
   refine WP.seq (stage₁ hc hp.setup fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
-  have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=
-    S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
+  have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem := S₂.ws
   have hrw₂ : s₂.rd ++ s₂.wr = s₀.rd ++ s₀.wr := by rw [S₂.rd, S₂.wr]
   have hload : ∀ {i}, i < 4 → ∀ t : State, t.gpr .esp = s₂.gpr .esp → t.rd ++ t.wr = s₂.rd ++ s₂.wr →
       Outside (ptr s₀ 3) 0 size s₂.mem t.mem → readSrc t (.mem (Cfg.argOp i)) = some (arg s₀ i) :=
@@ -199,8 +204,16 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
     rw [f₄, flagW, flag_unch (U₃.mono fun w hw => List.mem_append_left _ hw) h7 h0 hn (l := [PT])
       (by decide), ← flagW, S₂.flag, BitVec.allOnes_and, mask32_and, mask32_and]
     simp only [hq0]
-  refine WP.seq (WP.mono (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
-    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ => h s₅ ?_)
+  have hsc : (⟨ptr s₀ 3, size⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk] :=
+    List.mem_append_left _ (by rw [hp.wr]; simp)
+  have hW4 : ∀ w ∈ slW c [R2P, BP, E, QY] ++ [(c.sl FLAG, 4)], w.1 + w.2 ≤ size :=
+    le_append (slW_le h7 (by decide)) (flag_le h0 h7)
+  have K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [k₄.1 _ (by decide), K₃.1 _ (by decide), S₂.esp],
+    by rw [k₄.2.1, K₃.2.1, S₂.rd], by rw [k₄.2.2, K₃.2.2, S₂.wr], F₄,
+    (S₂.whole.trans (frame_of_unch U₃ (slW_le h7 (by decide)) hsc)).trans (frame_of_unch U₄ hW4 hsc),
+    S₂.sp_lo⟩
+  refine WP.seq (K₄.withSp hsp (WP.mono (validate_ok hc hs₄ F₄ r2₄ bp₄ hf₄)
+    fun s₅ ⟨hs₅, g₅, rd₅, wr₅, U₅, f₅, px_lt, py_lt, px, py⟩ w₅ => h s₅ ?_))
   have F₅ := F₄.unch h7 hn ((fixedOk_slWk (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₅
   have e₅ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
@@ -221,10 +234,6 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
   simp only [hok] at f₅ px py
   rw [x₄'] at px
   rw [y₄'] at py
-  have hW4 : ∀ w ∈ slW c [R2P, BP, E, QY] ++ [(c.sl FLAG, 4)], w.1 + w.2 ≤ size :=
-    le_append (slW_le h7 (by decide)) (flag_le h0 h7)
-  have hW5 : ∀ w ∈ slWk c [QXM, QYM, TMP, W0, W1, W2, W3, PY] ++ [(c.sl FLAG, 4)], w.1 + w.2 ≤ size :=
-    le_append (slWk_le h7 (by decide)) (flag_le h0 h7)
   refine ⟨hs₅, by rw [wr₅, k₄.2.2, K₃.2.2, S₂.wr], by rw [rd₅, k₄.2.1, K₃.2.1, S₂.rd],
     by rw [g₅ _ (by decide), k₄.1 _ (by decide), K₃.1 _ (by decide), S₂.esp], F₅,
     by rw [a₅ (i := K) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.k, kv_eq (A := Args.verify) rfl],
@@ -235,7 +244,6 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} {extra : List Region} (hp : VPre 
     by rw [a₅ (i := RY) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.ry],
     by rw [a₅ (i := RZ) (by decide) (by decide) (by decide) (by decide) (by decide), S₂.rz],
     fun t ht => by rw [t₅ (j := 1) (by decide) t ht, S₂.t₁ t ht],
-    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py,
-    whole_of (whole_of (whole_of S₂.whole U₃ (slW_le h7 (by decide))) U₄ hW4) U₅ hW5⟩
+    fun t ht => by rw [t₅ (j := 2) (by decide) t ht, S₂.t₂ t ht], f₅, px_lt, py_lt, px, py, w₅, S₂.sp_lo⟩
 
 end VG.Proof.Ecdsa.Verify.X86

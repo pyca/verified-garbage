@@ -9,10 +9,34 @@ open VG.Proof.Ecdsa.X86 VG.Proof.Ecdsa.Verify.X86
 open VG.Impl.Ecdh.X86 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY Args.ecdh)
 variable {c : Cfg}
 
+theorem exchangeWindow_eq (c : Cfg) : Impl.Ecdh.X86.Cfg.exchangeWindow c =
+    .seq (.seq (.block (c.setupWith Args.ecdh))
+      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
+      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
+      (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
+      (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq c.pPow (Impl.Ecdh.X86.Cfg.middle c))))) :=
+  rfl
+
+/-- The stack the parts of `exchangeWindow` use. -/
+structure EWSp (c : Cfg) : Prop where
+  validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
+  window : SpOk (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) c.stk
+  pPow : SpOk c.pPow c.stk
+  ops : SpOk (ecOps c) c.stk
+
+theorem EWSp.of (h : SpOk (Impl.Ecdh.X86.Cfg.exchangeWindow c) c.stk) : EWSp c := by
+  rw [exchangeWindow_eq] at h
+  have h₁ := h.right.right
+  have h₂ := h₁.right.right.right
+  rw [middle_split] at h₂
+  exact ⟨h₁.left, h₁.right.left, h₁.right.right.left, (SpOk.split _ _ _ h₂).1⟩
+
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
 the callee-saved registers. -/
-theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : AM3 c.C)
+    (hsp : SpOk (Impl.Ecdh.X86.Cfg.exchangeWindow c) c.stk) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86.Cfg.exchangeWindow c) s₀ fun s' => EKeep c s₀ s' ∧ EPost c s₀ s' := by
+  have H := EWSp.of hsp
   have h0 := hc.n0
   have h7 := hc.n10
   have hlhi := hc.len_hi
@@ -21,15 +45,10 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have h4 : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
-  change WP isa (.seq (.seq (.block (c.setupWith Args.ecdh))
-      (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
-      (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
-      (.seq (.block (Impl.Ecdh.X86.Cfg.peer c)) (.seq (Impl.Ecdh.X86.Cfg.validate c)
-      (.seq (Impl.Ecdh.X86.Cfg.windowMul c (c.sl K)) (.seq c.pPow (Impl.Ecdh.X86.Cfg.middle c)))))) s₀ _
+  rw [exchangeWindow_eq]
   refine WP.seq (stage₁ hc hp.setup fun s₂ S₂ => WP.block_nil ?_)
   have hn := S₂.scr.nowrap
-  have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem :=
-    S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
+  have W₂ : Outside (ptr s₀ 3) 0 size s₀.mem s₂.mem := S₂.ws
   have hq : ∀ t : State, t.gpr .esp = s₂.gpr .esp → t.rd ++ t.wr = s₂.rd ++ s₂.wr →
       Outside (ptr s₀ 3) 0 size s₂.mem t.mem → readSrc t (.mem (Cfg.argOp 2)) = some (arg s₀ 2) :=
     fun t he hrw ho => argLoad_ok (i := 2) ⟨_, by rw [hp.rd]; simp, arg_containsN h4 (by decide)⟩
@@ -50,8 +69,13 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
       sv c (ptr s₀ 3) s₃ E < c.C.p) ∧ sv c (ptr s₀ 3) s₃ QY < c.C.p)) := by
     rw [f₃, S₂.flag, BitVec.allOnes_and, mask32_and, mask32_and]
     simp only [hq0]
-  refine WP.seq (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
-    fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ => ?_)
+  have hsc : (⟨ptr s₀ 3, size⟩ : Region) ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk] :=
+    List.mem_append_left _ (by rw [hp.wr]; simp)
+  have K₃ : Keep c s₀ (ptr s₀ 3) s₃ := ⟨hs₃, by rw [k₃.1 _ (by decide), S₂.esp], by rw [k₃.2.1, S₂.rd],
+    by rw [k₃.2.2, S₂.wr], F₃,
+    S₂.whole.trans (frame_of_unch U₃ (le_append (slW_le h7 (by decide)) (flag_le h0 h7)) hsc), S₂.sp_lo⟩
+  refine WP.seq (K₃.withSp H.validate (WP.mono (validate_ok hc hs₃ F₃ r2₃ bp₃ hf₃)
+    fun s₄ ⟨hs₄, g₄, rd₄, wr₄, U₄, f₄, px_lt, py_lt, px, py⟩ w₄ => ?_))
   have F₄ := F₃.unch h7 hn ((fixedOk_slWk (l := [QXM, QYM, TMP, W0, W1, W2, W3, PY]) (by decide)).append
     fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
@@ -69,8 +93,10 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
       (peerPt c (s₀.mem (ptr s₀ 2) = 4) (sv c (ptr s₀ 3) s₃ E) (sv c (ptr s₀ 3) s₃ QY)) := by
     change Rep c.C _ _ (toM _ _ (wordsVal s₄.mem (ptr s₀ 3) (c.sl ONEP) c.n)) _
     rw [F₄.onep, toM_one hpR]; exact hQ
-  refine windowPow_ok hc hn4 hC ham3 hs₄ F₄ (peerPt_onCurve hc _ _ _) px_lt py_lt hQ'
-    (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
+  have K₄ : Keep c s₀ (ptr s₀ 3) s₄ := ⟨hs₄, by rw [g₄ _ (by decide), K₃.esp], by rw [rd₄, K₃.rd],
+    by rw [wr₄, K₃.wr], F₄, w₄, S₂.sp_lo⟩
+  refine windowPow_ok hc hn4 hC ham3 K₄ H.window H.pPow (peerPt_onCurve hc _ _ _) px_lt py_lt hQ'
+    (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L w₅ => ?_
   have hs₅ := L.scr
   have F₅ := F₄.unch h7 hn ((windowW_fixed hn4).append fixedOk_pwW)
     L.unch
@@ -88,17 +114,11 @@ theorem exchangeWindow_ok (hc : CfgOk c) (hn4 : c.n = 4) (hC : Law c.C) (ham3 : 
       · exact Or.inr h
     rw [flagW, Unch.readW32 L.unch ap (by omega), ← flagW]
     exact f₄
-  have hesp₅ : s₅.gpr .esp = s₀.gpr .esp := by
-    rw [L.gpr _ (by decide), g₄ _ (by decide), k₃.1 _ (by decide), S₂.esp]
-  have W₅ : Unch (ptr s₀ 3) [(0, size)] s₀.mem s₅.mem :=
-    whole_of (whole_of (whole_of S₂.whole U₃ (le_append (slWk_le h7 (l := [R2P, BP, E, QY]) (by decide) |>
-      fun h w hw => h w (List.mem_append_left _ hw)) (flag_le h0 h7))) U₄
-      (le_append (slWk_le h7 (by decide)) (flag_le h0 h7))) L.unch
-      (le_append (windowW_le hn4) (pwW_le h7))
-  refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ W₅ hesp₅ (by rw [L.rd, rd₄, k₃.2.1, S₂.rd])
-    (by rw [L.wr, wr₄, k₃.2.2, S₂.wr]) ⟨_, by rw [hp.rd]; simp, arg_containsN h4 (by decide)⟩
-    (hp.args_sc.sub_left (arg_subN h4 (by decide))) hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
-    fun s' ⟨xv, hxl, hxv, bytes, ret, saved, esp, m, Wm, Om⟩ => ⟨⟨saved, esp, m, Wm, Om⟩, ?_⟩
+  have K₅ : Keep c s₀ (ptr s₀ 3) s₅ := ⟨hs₅, by rw [L.gpr _ (by decide), K₄.esp], by rw [L.rd, K₄.rd],
+    by rw [L.wr, K₄.wr], F₅, w₅, S₂.sp_lo⟩
+  refine WP.mono (middle_ok hc K₅ L.acc_lt hflag₅ H.ops ⟨_, by rw [hp.rd]; simp, arg_containsN h4 (by decide)⟩
+    (eArgs_disj hp) hp.out_fit (by rw [hp.wr]; simp) hp.out_sc)
+    fun s' ⟨xv, hxl, hxv, bytes, ret, saved, esp, fr⟩ => ⟨⟨saved, esp, fr⟩, ?_⟩
   -- The specification.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]; omega

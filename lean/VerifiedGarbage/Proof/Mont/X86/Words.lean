@@ -20,12 +20,19 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Proof.Mont
 
 /-! ## The working space -/
 
+/-- The 20 bytes of stack below `sp`, where a call pushes its arguments and
+its return address (`Impl/Weierstrass/X86/Mont.lean`'s `callOp`), are above
+address 0 and apart from the `size` bytes at `base`. -/
+def StkOk (sp : BitVec 32) (base : Addr) (size : Nat) : Prop :=
+  20 ≤ sp.toNat ∧ (sp.toNat ≤ base.toNat ∨ base.toNat + size + 20 ≤ sp.toNat)
+
 /-- The working space: `edi` holds its base `base`, it is writable and it
-lies below `2³²`. -/
+lies below `2³²`, apart from the stack the calls use. -/
 structure Scr (s : State) (base : Addr) (size : Nat) : Prop where
   edi : (s.gpr .edi).setWidth 64 = base
   wr : (⟨base, size⟩ : Region) ∈ s.wr
   nowrap : base.toNat + size ≤ 2 ^ 32
+  stk : StkOk (s.gpr .esp) base size
 
 theorem Scr.edi_toNat {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) :
     (s.gpr .edi).toNat = base.toNat := by
@@ -71,7 +78,13 @@ theorem Keeps.mono {rs rs' : List Reg} {s s' : State} (h : Keeps rs s s') (hs : 
     Keeps rs' s s' := ⟨fun r hr => h.1 r fun h' => hr (hs r h'), h.2⟩
 
 theorem Scr.of_keeps {rs : List Reg} {s s' : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    (h : Keeps rs s s') (hr : .edi ∉ rs) : Scr s' base size :=
-  ⟨by rw [h.1 _ hr]; exact hs.edi, h.2.2 ▸ hs.wr, hs.nowrap⟩
+    (h : Keeps rs s s') (hr : .edi ∉ rs) (hsp : .esp ∉ rs := by decide) : Scr s' base size :=
+  ⟨by rw [h.1 _ hr]; exact hs.edi, h.2.2 ▸ hs.wr, hs.nowrap, by rw [h.1 _ hsp]; exact hs.stk⟩
+
+/-- `Scr` from the registers `edi` and `esp` and the writable regions. -/
+theorem Scr.of_eq {s s' : State} {base : Addr} {size : Nat} (hs : Scr s base size)
+    (hdi : s'.gpr .edi = s.gpr .edi) (hsp : s'.gpr .esp = s.gpr .esp) (hwr : s'.wr = s.wr) :
+    Scr s' base size :=
+  ⟨by rw [hdi]; exact hs.edi, hwr ▸ hs.wr, hs.nowrap, by rw [hsp]; exact hs.stk⟩
 
 end VG.Proof.Mont.X86

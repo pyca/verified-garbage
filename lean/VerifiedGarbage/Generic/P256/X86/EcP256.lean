@@ -17,15 +17,16 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) : List A
   { Spec.EcKey.P256.publicKeyApi with
     target := X86.target
     doc := Spec.EcKey.P256.publicKeyApi.doc (notes := ["Field elements are eight 32-bit words in \
-      Montgomery form. `[d]G` uses a seven-bit signed comb with 37 complete point additions \
+      Montgomery form, multiplied, added and subtracted in calls of `vg_p256_mul_mod_p` and the \
+      other functions of `p256_mont`. `[d]G` uses a seven-bit signed comb with 37 complete point additions \
       and no doublings, scanning every entry of each static table with SSE2. The function \
       obtains `VG_P256_COMB` with a position-independent four-byte CALL frame and saves \
       callee-saved registers in `scratch`. `Z⁻¹` uses 20 batches of 30 constant-time divsteps. A mask selects the encoded public key or zeros; only addresses affect timing."])
     consts := Impl.Ecdsa.X86.p256Comb.combConsts
     code := Proof.EcKey.X86.pkCombCode
     contract := Spec.EcKey.P256.inst.publicKeyContract
-      (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 4
-    stack := 4
+      (X86.abi.withConsts Impl.Ecdsa.X86.p256Comb.combConsts) 20
+    stack := 20
     verified := Proof.EcKey.X86.pkComb_verified h.law h.inv
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

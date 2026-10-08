@@ -13,9 +13,10 @@ of its arguments (`Pre`), for any curve of `n` 64-bit words, and the state
 The arguments are on the stack (cdecl): `out`, `d`, `digest`, `k` and
 `scratch` at `[esp + 4]` to `[esp + 20]` (`ptr s i`). The working space is
 the `8192` bytes at `scratch`: the saved registers in `[0, 16)`, the slots
-`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, the tables of bits
-`bitsAt n j` (`64 n` bytes each, `j < 3`), and the multiplications'
-accumulator at `c.wk = bitsAt n 3`.
+`c.sl i = 64 + 8 n i` of `n` words for `i < nslots`, the field arithmetic's
+functions' own working space at `c.wk`, the `64 n` bytes below byte 4096,
+and the tables of bits `bitsAt n j` (`64 n` bytes each, `j < 3`) past byte
+4096.
 -/
 
 namespace VG.Proof.Ecdsa.X86
@@ -56,6 +57,22 @@ structure CfgOk (c : Cfg) : Prop where
   sh : c.sh < 32
   inv_p : c.n = 4 ∧ c.C.len = 32 → Inv.InvSound c.C.p ∧ Inv.InvOk c.invP c.C.p
   inv_n : c.n = 4 ∧ c.C.len = 32 → Inv.InvSound c.C.n ∧ Inv.InvOk c.invN c.C.n
+  /-- The functions of the arithmetic modulo `p` and `n`. -/
+  fp : c.SP.k = c.n ∧ c.SP.m = c.C.p ∧ Mont.FnOk c.SP
+  fn : c.SN.k = c.n ∧ c.SN.m = c.C.n ∧ Mont.FnOk c.SN
+
+/-- Where the field arithmetic's functions keep their own working space. -/
+abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.wk (c : Cfg) : Nat := Mont.own c.n
+
+/-- The bytes of stack below the return address that the code uses: the
+calls' 20 (the arguments and the return address; a fixed-base comb's
+four-byte frame, which reads the table's address, holds no call). -/
+abbrev _root_.VG.Impl.Ecdsa.X86.Cfg.stk (_ : Cfg) : Nat := 20
+
+theorem Cfg.stk_ge (c : Cfg) : 20 ≤ c.stk := Nat.le_refl _
+
+/-- Finds `c.n < 10` among the hypotheses, or in `CfgOk c`. -/
+macro "n10" : tactic => `(tactic| first | with_reducible assumption | exact CfgOk.n10 (by with_reducible assumption))
 
 section
 variable (c : Cfg) (s : State)
@@ -67,6 +84,9 @@ abbrev kR : Region := ⟨ptr s 3, c.C.len⟩
 abbrev scR : Region := ⟨ptr s 4, size⟩
 abbrev argsR : Region := ⟨argAddr s 0, 20⟩
 abbrev retR : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+/-- The stack below the return address that the calls (and a comb's frame)
+use. -/
+abbrev stkR : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 c.stk, c.stk⟩
 end
 
 /-- The arguments, readable and writable as the contract says and apart from
@@ -91,6 +111,9 @@ structure Pre (c : Cfg) (s : State) (extra : List Region := []) : Prop where
   k_fit : (arg s 3).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (arg s 4).toNat + size ≤ 2 ^ 32
   sp_fit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+  sp_lo : c.stk ≤ (s.gpr .esp).toNat
+  stk_out : (stkR c s).Disjoint (outR c s)
+  stk_sc : (stkR c s).Disjoint (scR s)
 
 theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 
@@ -104,6 +127,31 @@ theorem arg_contains {s : State} (hfit : (s.gpr .esp).toNat + 24 ≤ 2 ^ 32) {i 
   show Region.Contains ⟨argAddr s 0, 20⟩ (argAddr s i) 4
   rw [e0, ei]
   exact Offset.contains_base _ (show 4 * i + 4 ≤ 20 by omega) (by omega)
+
+/-- The stack the calls use is below the return address and the arguments. -/
+theorem below_disjoint_args {s : State} {n k : Nat} (hn : n ≤ (s.gpr .esp).toNat)
+    (hk : (s.gpr .esp).toNat + 4 + k ≤ 2 ^ 32) (hk0 : 0 < k) :
+    (below (s.gpr .esp) n).Disjoint ⟨argAddr s 0, k⟩ := by
+  have he := (s.gpr .esp).isLt
+  refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> simp only [argAddr]
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega), Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [BitVec.toNat_setWidth, BitVec.toNat_add, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (a := 4 + 4 * 0) (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+    omega
+
+theorem below_disjoint_ret {s : State} {n : Nat} (hn : n ≤ (s.gpr .esp).toNat) :
+    (below (s.gpr .esp) n).Disjoint ⟨(s.gpr .esp).setWidth 64, 4⟩ := by
+  have he := (s.gpr .esp).isLt
+  refine Region.disjoint_of_le (.inl ?_) ?_ ?_ <;> dsimp only [below]
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+  · rw [BitVec.toNat_setWidth, sub_toNat hn, Nat.mod_eq_of_lt (by omega)]; omega
+  · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; omega
 
 /-- The arguments `A` names. -/
 def _root_.VG.Impl.Ecdsa.X86.Args.idx (A : Args) : List Nat := [A.sc, A.k, A.d, A.e]
@@ -161,6 +209,8 @@ structure SetupPre (c : Cfg) (A : Args) (s : State) : Prop where
   d_fit : (arg s A.d).toNat + c.C.len ≤ 2 ^ 32
   e_fit : (arg s A.e).toNat + c.C.len ≤ 2 ^ 32
   sc_fit : (arg s A.sc).toNat + size ≤ 2 ^ 32
+  stk : StkOk (s.gpr .esp) (ptr s A.sc) size
+  sp_lo : c.stk ≤ (s.gpr .esp).toNat
 
 /-- The words of a region are accessible. -/
 theorem inRegions_words {rs : List Region} {p : Addr} {len : Nat} (h : (⟨p, len⟩ : Region) ∈ rs)
@@ -187,6 +237,10 @@ theorem Pre.setup {c : Cfg} {s : State} {extra : List Region} (hp : Pre c s extr
   d_fit := hp.d_fit
   e_fit := hp.digest_fit
   sc_fit := hp.sc_fit
+  stk := stkOk_of (Cfg.stk_ge c) hp.sp_lo
+    (by rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := hp.sc_fit; omega)]; exact hp.sc_fit)
+    (by decide) hp.stk_sc
+  sp_lo := hp.sp_lo
 
 /-- The number in slot `i`. -/
 abbrev sv (c : Cfg) (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (c.sl i) c.n
@@ -223,9 +277,9 @@ structure SetupPost (c : Cfg) (A : Args) (s₀ : State) (base : Addr) (s : State
 
 theorem sl_eq (c : Cfg) (i : Nat) : c.sl i = 64 + 8 * c.n * i := rfl
 
-theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 64 + 8 * c.n * 45 + (64 * c.n + 4) * j := rfl
+theorem bitsAt_eq (c : Cfg) (j : Nat) : bitsAt c.n j = 4096 + (64 * c.n + 4) * j := rfl
 
-theorem wk_eq (c : Cfg) : c.wk = 64 + 8 * c.n * 45 + (64 * c.n + 4) * 3 := rfl
+theorem wk_eq (c : Cfg) : c.wk = 4096 - 64 * c.n := rfl
 
 theorem accLen_eq (M : Mod) : accLen M = 16 * M.n + 4 := by
   simp only [accLen, words]; omega
@@ -248,44 +302,52 @@ theorem sl_inj (c : Cfg) (hn : 0 < c.n) {i j : Nat} (h : c.sl i = c.sl j) : i = 
   have := sl_apart c hij
   omega
 
-/-- A slot is below the tables. -/
-theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) :
-    c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
+/-- A slot is below the field arithmetic's own working space. -/
+theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) (hn : c.n < 10 := by n10) : c.sl i + 8 * c.n ≤ c.wk := by
   have := sl_lt c hi
   rw [sl_eq c 45] at this
+  rw [wk_eq]
+  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
+  omega
+
+/-- The field arithmetic's own working space ends at byte 4096. -/
+theorem wk_own (c : Cfg) (hn : c.n < 10 := by n10) : c.wk + 64 * c.n = 4096 := by
+  rw [wk_eq]; omega
+
+/-- A slot is below the tables. -/
+theorem sl_below_bits (c : Cfg) {i : Nat} (hi : i < 45) (j t : Nat) (hn : c.n < 10 := by n10) :
+    c.sl i + 8 * c.n ≤ bitsAt c.n j + t := by
+  have := sl_below_wk c hi
+  have := wk_own c
   rw [bitsAt_eq]
   omega
 
-/-- A slot is below the accumulator. -/
-theorem sl_below_wk (c : Cfg) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ c.wk := by
-  have := sl_below_bits c hi 3 0
-  rw [wk_eq]; rw [bitsAt_eq] at this; omega
-
-/-- The tables are below the accumulator. -/
-theorem bitsAt_below_wk (c : Cfg) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ c.wk := by
-  rw [bitsAt_eq, wk_eq]
-  have := Nat.mul_le_mul_left (64 * c.n + 4) hj
-  rw [Nat.mul_succ] at this
+/-- The tables are above the field arithmetic's own working space. -/
+theorem wk_below_bits (c : Cfg) (j : Nat) (hn : c.n < 10 := by n10) : c.wk + 64 * c.n ≤ bitsAt c.n j := by
+  have := wk_own c
+  rw [bitsAt_eq]
   omega
 
 /-- The accumulator is in the working space. -/
 theorem wk_le (c : Cfg) (hn : c.n < 10) {M : Mod} (hM : M.n = c.n) : c.wk + accLen M ≤ size := by
-  rw [wk_eq, accLen_eq, hM]
-  have : 8 * c.n * 45 ≤ 8 * 9 * 45 := Nat.mul_le_mul_right _ (by omega)
-  have : 64 * c.n * 3 ≤ 64 * 9 * 3 := Nat.mul_le_mul_right _ (by omega)
+  have := wk_own c
+  rw [accLen_eq, hM]
   show _ ≤ 8192
   omega
 
 /-- Every slot is in the working space. -/
 theorem sl_le (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 45) : c.sl i + 8 * c.n ≤ size := by
   have := sl_below_wk c hi
-  have := wk_le c hn (M := c.MP') rfl
+  have := wk_own c
+  show _ ≤ 8192
   omega
 
 /-- Every table is in the working space. -/
 theorem bitsAt_le (c : Cfg) (hn : c.n < 10) {j : Nat} (hj : j < 3) : bitsAt c.n j + 64 * c.n ≤ size := by
-  have := bitsAt_below_wk c hj
-  have := wk_le c hn (M := c.MP') rfl
+  rw [bitsAt_eq]
+  have := Nat.mul_le_mul_left (64 * c.n + 4) (show j ≤ 2 by omega)
+  have : (64 * c.n + 4) * 2 ≤ (64 * 9 + 4) * 2 := Nat.mul_le_mul_right _ (by omega)
+  show _ ≤ 8192
   omega
 
 end VG.Proof.Ecdsa.X86

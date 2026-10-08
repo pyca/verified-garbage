@@ -11,8 +11,21 @@ namespace VG.Proof.Ecdsa.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Weierstrass Spec.Weierstrass
 
 theorem p256Comb_ok (hI : Weierstrass.X86.Inv.InvSounds) : CfgOk p256Comb := by
-  rcases p256_ok hI with ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r⟩
-  exact ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r⟩
+  rcases p256_ok hI with ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t⟩
+  exact ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t⟩
+
+/-- No instruction of the comb signature writes `esp`, and its calls use 20
+bytes of stack. -/
+theorem signComb_sp : X86.SpOk signP256Comb p256Comb.stk := ⟨NoSp.of_all (by lit_decide), by lit_decide⟩
+
+theorem signComb_spMul : X86.SpOk (p256Comb.signWithMul p256Comb.gMul) 20 :=
+  X86.SpOk.right (a := p256Comb.tableAddr) signComb_sp
+
+theorem signComb_spG : X86.SpOk p256Comb.gMul 20 :=
+  X86.SpOk.left (X86.SpOk.right (a := p256Comb.signPrep) signComb_spMul)
+
+theorem signComb_spTail : X86.SpOk p256Comb.signTail p256Comb.stk :=
+  X86.SpOk.right (X86.SpOk.right (a := p256Comb.signPrep) signComb_spMul)
 
 theorem p256Comb_shape : CombOk p256Comb p256d := ⟨by decide, by decide, by decide⟩
 

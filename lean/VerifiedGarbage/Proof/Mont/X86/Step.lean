@@ -65,16 +65,18 @@ theorem mulStep_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   refine wp_mul fun s₂ m₂ => ?_
   refine wp_addS rfl fun s₃ u₃ c₃ => ?_
   refine wp_adcS rfl c₃ fun s₄ u₄ c₄ => ?_
-  have hs₄ : Scr s₄ base size := ⟨by rw [u₄.other _ (by decide), u₃.other _ (by decide), m₂.other _ (by decide)
-    (by decide), u₁.other _ (by decide)]; exact hs.edi, by rw [u₄.wr, u₃.wr, m₂.wr, u₁.wr]; exact hs.wr, hs.nowrap⟩
+  have hs₄ : Scr s₄ base size := hs.of_eq (by rw [u₄.other _ (by decide), u₃.other _ (by decide),
+    m₂.other _ (by decide) (by decide), u₁.other _ (by decide)]) (by rw [u₄.other _ (by decide),
+    u₃.other _ (by decide), m₂.other _ (by decide) (by decide), u₁.other _ (by decide)])
+    (by rw [u₄.wr, u₃.wr, m₂.wr, u₁.wr])
   have hp₄ : s₄.gpr .ebp = s₄.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), m₂.other _ (by decide) (by decide), u₁.other _ (by decide),
       u₄.other _ (by decide), u₃.other _ (by decide), m₂.other _ (by decide) (by decide), u₁.other _ (by decide)]
     exact hp
   refine wp_addS (readSrc_at hs₄ hp₄ ht) fun s₅ u₅ c₅ => ?_
   refine wp_adcS rfl c₅ fun s₆ u₆ c₆ => ?_
-  have hs₆ : Scr s₆ base size := ⟨by rw [u₆.other _ (by decide), u₅.other _ (by decide)]; exact hs₄.edi,
-    by rw [u₆.wr, u₅.wr]; exact hs₄.wr, hs.nowrap⟩
+  have hs₆ : Scr s₆ base size := hs₄.of_eq (by rw [u₆.other _ (by decide), u₅.other _ (by decide)])
+    (by rw [u₆.other _ (by decide), u₅.other _ (by decide)]) (by rw [u₆.wr, u₅.wr])
   have hp₆ : s₆.gpr .ebp = s₆.gpr .edi + BitVec.ofNat 32 (4 * i) := by
     rw [u₆.other _ (by decide), u₅.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide)]
     exact hp₄

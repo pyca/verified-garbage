@@ -52,26 +52,24 @@ theorem combLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : CombLay (c.com
       T4, T5, DX, DY, DZ]) (by decide)
   · exact map_sl_disj hn (l₁ := [AP, EM, ZERO])
       (l₂ := [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ]) (by decide)
-  · rw [hJ]; show bitsAt c.n 0 + 4 * c.combJ d.w ≤ 8192; rw [bitsAt_eq]; omega
-  · show bitsAt c.n 0 + 3 < 4096; rw [bitsAt_eq]; omega
+  · rw [hJ]; show c.wk + 4 * c.combJ d.w ≤ 8192; rw [wk_eq]; omega
+  · show c.wk + 3 < 4096; rw [wk_eq]; omega
   · intro w hw
     rw [combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by
       decide
-    exact Or.inr (sl_below_bits c (hl i hi) 0 0)
+    exact Or.inr (sl_below_wk c (hl i hi))
 
-theorem combWk (hc : CfgOk c) (d : CombData) :
-    WkOk (c.combCfg d).M size (c.combCfg d).wk (· ∈ combSlots (c.combCfg d).toComb) where
-  le := wk_le c hc.n10 rfl
-  mo := sl_below_wk c (i := MP) (by decide)
-  tmp := sl_below_wk c (i := TMP) (by decide)
-  sl := by
-    rw [combSlots_eq]
-    intro x hx
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    have : ∀ i ∈ [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ], i < 45 := by decide
-    exact sl_below_wk c (this i hi)
+/-- The comb's slots are below the functions' own working space. -/
+theorem combWsl (hc : CfgOk c) (d : CombData) :
+    ∀ x, x ∈ combSlots (c.combCfg d).toComb → x + 8 * (c.combCfg d).M.n ≤ (c.combCfg d).wk := by
+  have h7 := hc.n10
+  rw [combSlots_eq]
+  intro x hx
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+  have : ∀ i ∈ [AP, EM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ], i < 45 := by decide
+  exact sl_below_wk c (this i hi)
 
 theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.combCfg d) size := by
   have hn := hc.n0
@@ -80,10 +78,9 @@ theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.c
   have hbits : (c.combCfg d).bits = bitsAt c.n 0 := rfl
   have hk : (c.combCfg d).kbytes = 64 * c.n := rfl
   have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by decide
-  refine ⟨combLay hc hd, combWk hc d, ?_, (by change 64 ≤ 8192; decide),
+  refine ⟨combLay hc hd, rfl, combWsl hc d, sl_below_wk c (i := MP) (by decide),
+    sl_below_wk c (i := TMP) (by decide), .inr (wk_below_bits c 0), (by change 64 ≤ 8192; decide),
     ?_, ?_, ?_, hd.w, hd.cover.1, ?_, ?_, ?_, ?_, ⟨hn, hd.n⟩, ?_, ?_⟩
-  · change bitsAt c.n 0 + 64 * c.n + 4 * (c.combCfg d).zw ≤ c.wk
-    rw [bitsAt_eq, wk_eq]; omega
   · intro x hx
     simp only [List.mem_cons] at hx
     rcases hx with rfl | rfl | hx
@@ -138,6 +135,7 @@ theorem tcombVals {d : CombData} (hc : CfgOk c) (hC : Law c.C)
     rw [toM_cmont hc, toM_cmont hc, show (c.combCfg d).H = 2 ^ (d.w - 1) from rfl,
       show (c.combCfg d).w = d.w from rfl, show (c.combCfg d).J = c.combJ d.w from rfl, hd.start]
     exact rep_affine' hC _ _
+  fn := hc.fp
 
 
 end VG.Proof.Ecdsa.X86
