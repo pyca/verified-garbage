@@ -12,10 +12,10 @@ data and of the key schedule's intermediate blocks.
 The schedule is 4168 bytes (`scheduleAt`): the S-boxes S₁…S₄ in byte
 planes (byte `b` of S_{j+1}[x] at `1024 j + 256 b + x`), then the P-array
 P₁…P₁₈ as little-endian 32-bit words at 4096. The planes are the layout
-vector table lookups read; no target-specific layout is exposed. Key
-expansion and ECB keep their working space on the stack; `stack` accounts
-for their frames and calls. ECB permits writes to ABI argument areas, to
-call primitives of its own.
+vector table lookups read; no target-specific layout is exposed. Any
+working space an implementation needs is on its own stack; `stack`
+accounts for its frames and calls. ECB permits writes to ABI argument
+areas, to call primitives of its own.
 
 The Rust wrapper buffers partial blocks, rejects invalid key lengths
 before key expansion, and rejects incomplete input at finalization. It
