@@ -294,4 +294,15 @@ theorem gather_wp (t : State) {Src Dst : BitVec 32} {cnt L : Nat} (h : GatherPre
       ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, a₁₃⟩
     exact WP.mono (gatherLoop_wp _ h' (by omega)) fun t' ⟨m, k⟩ => ⟨m, ⟨k.gpr, k.sp, k.rd, k.wr⟩⟩
 
+/-! ## Blocks -/
+
+theorem WP.run {is : List Instr} {s : State} {Q R : State → Prop}
+    (h : ∃ s', runBlock isa is s = some s' ∧ Q s') (hq : ∀ s', Q s' → R s') : WP isa (.block is) s R := by
+  obtain ⟨s', h₁, h₂⟩ := h; exact WP.of_runBlock ⟨s', h₁, hq _ h₂⟩
+
+/-- A block run as two. -/
+theorem WP.split {l₁ l₂ : List Instr} {s : State} {Q : State → Prop} (h : WP isa (.block (l₁ ++ l₂)) s Q) :
+    WP isa (.seq (.block l₁) (.block l₂)) s Q :=
+  WP.seq (WP.block_append_iff.mp h)
+
 end VG.Proof.AesGcm.Arm.Gather
