@@ -91,15 +91,18 @@ structure RowInv (b : BitVec 32) (x y : Nat) (s0 : State) (i : Nat) (s : State) 
   val : Radix16.valN (accw s.mem (State.addr b)) (i + 28) =
     Radix16.valN (limbs s0.mem (State.addr b) x) i * fe s0.mem (State.addr b) y
 
-/-- `RowInv` for the rows of the field functions: after `i` rows, for
-the first operand at `x` (`lr` at its limb `i`) and the second at `y` (`r12`). -/
-structure RowInvF (b : BitVec 32) (x y : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
+/-- `RowInv` for the rows of the field functions: after `i` rows, for the
+first operand at `x` and the second at `y` (`r12`), with `r7` and `lr` `q`
+rows behind (at the start of the pair of rows) and `r4` counting the pairs of
+rows left. -/
+structure RowInvF (b : BitVec 32) (x y : Nat) (s0 : State) (i q : Nat) (s : State) : Prop where
+  le : q ≤ i
   ctx : RowCtx b s
   rest : Rest (.lr :: fclob) s0 s
   r6 : s.gpr .r6 = mask16
-  r7 : s.gpr .r7 = b + BitVec.ofNat 32 (4 * i)
-  lr : s.gpr .lr = b + BitVec.ofNat 32 (x + 4 * i)
-  r4 : s.gpr .r4 = BitVec.ofNat 32 (28 - i)
+  r7 : s.gpr .r7 = b + BitVec.ofNat 32 (4 * (i - q))
+  lr : s.gpr .lr = b + BitVec.ofNat 32 (x + 4 * (i - q))
+  r4 : s.gpr .r4 = BitVec.ofNat 32 (14 - (i - q) / 2)
   r12 : s.gpr .r12 = b + BitVec.ofNat 32 y
   frame : Frame [⟨State.addr b + BitVec.ofNat 64 ACC, 224⟩] s0.mem s.mem
   lt : ∀ k < i + 28, accw s.mem (State.addr b) k < 65536

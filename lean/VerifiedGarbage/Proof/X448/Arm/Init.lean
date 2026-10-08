@@ -64,7 +64,7 @@ theorem mulPre_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = ma
 
 theorem mulPreF_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = mask16)
     (hlr : s.gpr .lr = b + BitVec.ofNat 32 x) (h12 : s.gpr .r12 = b + BitVec.ofNat 32 y) :
-    WP isa (.block mulPreF) s (RowInvF b x y s 0) := by
+    WP isa (.block mulPreF) s (RowInvF b x y s 0 0) := by
   unfold mulPreF
   refine WP.append (zeroAcc_ok hc) fun s1 ⟨hz, hf, hr⟩ => ?_
   have hc1 := hc.of_rest hr (by decide)
@@ -72,7 +72,7 @@ theorem mulPreF_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = m
   have hr3 : Rest (.lr :: fclob) s s3 :=
     (hr.mono (by decide)).trans ((h2.rest (by decide)).trans (h3.rest (by decide)))
   have hm3 : s3.mem = s1.mem := by rw [h3.mem, h2.mem]
-  refine ⟨hc.of_rest hr3 (by decide), hr3, (hr3.gpr _ (by decide)).trans h6,
+  refine ⟨Nat.le_refl _, hc.of_rest hr3 (by decide), hr3, (hr3.gpr _ (by decide)).trans h6,
     ?_, ?_, h3.gpr, ?_, ?_, fun k hk => ?_, ?_⟩
   · rw [h3.other _ (by decide), h2.gpr, hc1.r0]
     exact (BitVec.add_zero b).symm

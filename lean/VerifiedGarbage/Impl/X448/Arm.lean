@@ -93,17 +93,23 @@ def row (a b : Nat) : List Instr :=
   [.str .r5 .r7 (ACC + 112), .dp .add .r7 .r7 (.imm 4), .subs .r9 .r9 (.imm 1)]
 
 /-- One word of a multiplication row of the field functions, for the second
-operand at `r12`; the carry goes through `r2`, so that `r4` can count. -/
-def rowStepF (j : Nat) : List Instr :=
-  [.ldr .r2 .r12 (4 * j), .mul .r2 .r1 .r2, .ldr .r3 .r7 (ACC + 4 * j),
-    .dp .add .r3 .r3 (.reg .r2)] ++ carryStepT .r2 .r7 (ACC + 4 * j)
+operand at `r12`, in the row `q` (0 or 1) words above `r7`; the carry goes
+through `r2`, so that `r4` can count. -/
+def rowStepF (q j : Nat) : List Instr :=
+  [.ldr .r2 .r12 (4 * j), .mul .r2 .r1 .r2, .ldr .r3 .r7 (ACC + 4 * q + 4 * j),
+    .dp .add .r3 .r3 (.reg .r2)] ++ carryStepT .r2 .r7 (ACC + 4 * q + 4 * j)
 
-/-- The row of the limb of the first operand at `lr`; both `r7` and `lr`
-move up a word, and `r4` counts the rows down. -/
+/-- The row of the limb of the first operand `q` words above `lr`, into the
+accumulator `q` words above `r7`. -/
+def rowHalfF (q : Nat) : List Instr :=
+  [.ldr .r1 .lr (4 * q), .mov .r5 (.imm 0)] ++ (List.range 28).flatMap (rowStepF q) ++
+    [.str .r5 .r7 (ACC + 4 * q + 112)]
+
+/-- Two rows; then `r7` and `lr` move up two words, and `r4` counts the pairs
+of rows down. -/
 def rowF : List Instr :=
-  [.ldr .r1 .lr 0, .mov .r5 (.imm 0)] ++ (List.range 28).flatMap rowStepF ++
-  [.str .r5 .r7 (ACC + 112), .dp .add .r7 .r7 (.imm 4), .dp .add .lr .lr (.imm 4),
-    .subs .r4 .r4 (.imm 1)]
+  rowHalfF 0 ++ rowHalfF 1 ++
+    [.dp .add .r7 .r7 (.imm 8), .dp .add .lr .lr (.imm 8), .subs .r4 .r4 (.imm 1)]
 
 def reduceCol (k : Nat) : List Instr :=
   [ld .r3 (ACC + 4 * k), ld .r2 (ACC + 4 * (k + 28)), .dp .add .r3 .r3 (.reg .r2)] ++
@@ -117,7 +123,7 @@ def zeroAcc : List Instr :=
 
 def mulPre : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r9 (.imm 28)]
 
-def mulPreF : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r4 (.imm 28)]
+def mulPreF : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r4 (.imm 14)]
 
 /-- `[r9] = [lr] [r12]` (`lr` moves past the first operand). -/
 def mul : Prog isa :=
