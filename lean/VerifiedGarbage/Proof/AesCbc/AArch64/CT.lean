@@ -57,9 +57,10 @@ def BodyCt (M : Mode) (body : Prog isa) : Prop :=
 
 /-! ## One block -/
 
-/-- What is known between the code before the call and the call. -/
-structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
-  pre : CallPre s (W s₀) (blk s₀ k) (S s₀) (R s₀)
+/-- What is known between the code before the call and the call, on the
+block at `D`. -/
+structure Mid (s₀ : State) (k : Nat) (D : Addr) (s : State) : Prop where
+  pre : CallPre s (W s₀) D (S s₀) (R s₀)
   x21 : s.gpr .x21 = Iv s₀
   x22 : s.gpr .x22 = blk s₀ k
   x23 : s.gpr .x23 = BitVec.ofNat 64 (N s₀ - k)
@@ -74,24 +75,26 @@ structure After (s₀ : State) (k : Nat) (s : State) : Prop where
   x24 : s.gpr .x24 = S s₀
   sp : s.sp = s₀.sp
 
-theorem Mid.of {s₀ : State} {k : Nat} {s s₁ : State} {M : Mode} (h : LInv M s₀ k s)
-    (pre : CallPre s₁ (W s₀) (blk s₀ k) (S s₀) (R s₀)) (saved : ∀ r ∈ preserved, s₁.gpr r = s.gpr r)
-    (sp : s₁.sp = s.sp) : Mid s₀ k s₁ :=
+theorem Mid.of {s₀ : State} {k : Nat} {D : Addr} {s s₁ : State} {M : Mode} (h : LInv M s₀ k s)
+    (pre : CallPre s₁ (W s₀) D (S s₀) (R s₀)) (saved : ∀ r ∈ preserved, s₁.gpr r = s.gpr r)
+    (sp : s₁.sp = s.sp) : Mid s₀ k D s₁ :=
   ⟨pre, by rw [saved .x21 (by simp [preserved]), h.x21], by rw [saved .x22 (by simp [preserved]), h.x22],
     by rw [saved .x23 (by simp [preserved]), h.x23], by rw [saved .x24 (by simp [preserved]), h.x24],
     by rw [sp, h.sp]⟩
 
-theorem After.of {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ : State} {k : Nat} {s s' : State}
-    (h : Mid s₀ k s) (hc : CallPost f s (W s₀) (blk s₀ k) (S s₀) (R s₀) s') : After s₀ k s' :=
+theorem After.of {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s₀ : State} {k : Nat} {D : Addr}
+    {s s' : State} (h : Mid s₀ k D s) (hc : CallPost f s (W s₀) D (S s₀) (R s₀) s') : After s₀ k s' :=
   ⟨by rw [hc.saved .x21 (by simp [preserved]) (by decide), h.x21],
     by rw [hc.saved .x22 (by simp [preserved]) (by decide), h.x22],
     by rw [hc.saved .x23 (by simp [preserved]) (by decide), h.x23],
     by rw [hc.saved .x24 (by simp [preserved]) (by decide), h.x24], by rw [hc.sp, h.sp]⟩
 
-/-- A body: code before the call (`pre`), the call of `b`, and code after it
-(`post`), constant time when `pre`'s addresses and branches depend only on
-the registers the invariant pins and `post`'s on `x21` to `x24`. -/
-theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+/-- A body: code before the call (`pre`), the call of `b` on the block at
+`D s₀ k` (public), and code after it (`post`), constant time when `pre`'s
+addresses and branches depend only on the registers the invariant pins and
+`post`'s on `x21` to `x24`. -/
+theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {D : State → Nat → Addr}
+    (pubD : ∀ {s₀ s₀' : State}, (modeAArch64 M).pub s₀ s₀' → ∀ k, D s₀ k = D s₀' k)
     {b : Impl.Aes.AArch64.Blocks} {pre post : List Instr}
     (ok : ∀ s, (Proof.Aes.blocksAArch64 f).pre s →
       ∃ t s', Exec isa b.code s t s' ∧ abiPreserved s s' ∧ (Proof.Aes.blocksAArch64 f).post s s')
@@ -100,7 +103,7 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
     (hA : ∃ h, (taint.check (Taint.ofRegs [.x19, .x20, .x21, .x22, .x23, .x24]) (.block pre) h).isSome = true)
     (hB : ∃ h, (taint.check (Taint.ofRegs [.x21, .x22, .x23, .x24]) (.block post) h).isSome = true)
     (wpA : ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
-      WP isa (.block pre) s (Mid s₀ k))
+      WP isa (.block pre) s (Mid s₀ k (D s₀ k)))
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modeAArch64 M).pub s₀ s₀') (k : Nat) :
     RelCT isa (fun s₁ s₂ => k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂)
       (.seq (.block pre) (.seq (.call b.name b.code) (.block post))) fun _ _ => True := by
@@ -109,10 +112,10 @@ theorem body_ct {M : Mode} {f : Nat → List Byte → Spec.Aes.State → Spec.Ae
   have a := (RelCT.taint (A := taint)
     (P := fun s₁ s₂ => k < N s₀ ∧ LInv M s₀ k s₁ ∧ LInv M s₀' k s₂) _
     (fun _ _ h => LInv.agree hq h.2.1 h.2.2) hA).wp
-    (F₁ := Mid s₀ k) (F₂ := Mid s₀' k) fun _ _ h =>
+    (F₁ := Mid s₀ k (D s₀ k)) (F₂ := Mid s₀' k (D s₀' k)) fun _ _ h =>
       ⟨wpA hp h.1 h.2.1, wpA hp' (by rw [← pub_N hq]; exact h.1) h.2.2⟩
-  have c := (blk_rel ok ct (P := fun s₁ s₂ => Mid s₀ k s₁ ∧ Mid s₀' k s₂) fun s₁ s₂ h =>
-      ⟨h.1.pre, by rw [pub_W hq, pub_S hq, pub_blk hq, pub_R hq]; exact h.2.pre,
+  have c := (blk_rel ok ct (P := fun s₁ s₂ => Mid s₀ k (D s₀ k) s₁ ∧ Mid s₀' k (D s₀' k) s₂) fun s₁ s₂ h =>
+      ⟨h.1.pre, by rw [pub_W hq, pub_S hq, pubD hq k, pub_R hq]; exact h.2.pre,
         by rw [h.1.sp, h.2.sp, pub_sp hq]⟩).wp
     (F₁ := After s₀ k) (F₂ := After s₀' k) fun s₁ s₂ h =>
       ⟨WP.mono (blk_call ok nf h.1.pre) fun _ hc => After.of h.1 hc,
@@ -141,11 +144,11 @@ theorem decPost_taint : ∃ h, (taint.check (Taint.ofRegs [.x21, .x22, .x23, .x2
     (.block (xorInto ++ copy .x21 0 .x24 cOff ++ advance)) h).isSome = true := ⟨_, by taint_decide⟩
 
 theorem encBody_ct (v : BlocksImpl) : BodyCt (cbcMode true) (encBody v.enc) :=
-  fun hp hp' hq k => body_ct v.encOk v.encCt v.encNoFrames encPre_taint encPost_taint
+  fun hp hp' hq k => body_ct (fun hq k => pub_blk hq k) v.encOk v.encCt v.encNoFrames encPre_taint encPost_taint
     (@fun _ hp _ hk _ h => WP.mono (encA_wp hp hk h) fun _ a => Mid.of h a.pre a.saved a.sp) hp hp' hq k
 
 theorem decBody_ct (v : BlocksImpl) : BodyCt (cbcMode false) (decBody v.dec) :=
-  fun hp hp' hq k => body_ct v.decOk v.decCt v.decNoFrames decPre_taint decPost_taint
+  fun hp hp' hq k => body_ct (fun hq k => pub_blk hq k) v.decOk v.decCt v.decNoFrames decPre_taint decPost_taint
     (@fun _ hp _ hk _ h => WP.mono (decA_wp hp hk h) fun _ a => Mid.of h a.pre a.saved a.sp) hp hp' hq k
 
 /-! ## The loop -/

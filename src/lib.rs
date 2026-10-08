@@ -85,6 +85,7 @@ pub mod aes_ecb;
 pub mod aes_gcm;
 pub mod aes_gcm_siv;
 pub mod aes_ocb;
+pub mod aes_ofb;
 pub mod aes_siv;
 pub mod argon2;
 pub mod chacha20;

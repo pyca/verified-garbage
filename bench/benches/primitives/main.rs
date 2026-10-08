@@ -23,6 +23,7 @@ mod aes_ecb;
 mod aes_gcm;
 mod aes_gcm_siv;
 mod aes_ocb;
+mod aes_ofb;
 mod aes_siv;
 mod argon2;
 mod blake2b;
@@ -318,6 +319,7 @@ const BENCHES: &[Bench] = &[
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
     (aes_ocb::USES, aes_ocb::bench),
+    (aes_ofb::USES, aes_ofb::bench),
     (aes_siv::USES, aes_siv::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
