@@ -712,6 +712,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>SM4-ECB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 </table>
 
 ### AEADs

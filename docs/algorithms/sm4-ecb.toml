@@ -1,0 +1,5 @@
+name = "SM4-ECB"
+family = "Ciphers"
+specs = ["Sm4"]
+modules = ["src/sm4_ecb.rs"]
+asm = ["sm4"]
