@@ -14,6 +14,9 @@ pub(crate) mod aes_ccm;
 pub(crate) mod aes_cfb;
 
 #[rustfmt::skip]
+pub(crate) mod aes_cfb8;
+
+#[rustfmt::skip]
 pub(crate) mod aes_gcm_siv;
 
 #[rustfmt::skip]
