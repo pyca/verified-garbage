@@ -111,6 +111,30 @@ fn main() {
             });
             row(&format!("{name} seal in place {len} B"), a, v);
         }
+        // Out of place, as the provider seals a TLS 1.3 record: the payload
+        // and its content type byte, two pieces, into a separate buffer
+        // (against aws-lc-rs sealing as many bytes in place).
+        let Some(g) = &gcm else { continue };
+        for &len in sizes {
+            let payload = vec![0x41u8; len];
+            let mut out = vec![0u8; len + 1];
+            let mut buf = vec![0x41u8; len + 1];
+            let aad = [1u8; 5];
+            let a = time(|| {
+                let n = aead::Nonce::assume_unique_for_key([3u8; 12]);
+                let _ = black_box(
+                    aws.seal_in_place_separate_tag(n, aead::Aad::from(&aad), &mut buf)
+                        .unwrap(),
+                );
+            });
+            let v = time(|| {
+                black_box(
+                    g.encrypt(&[3u8; 12], &aad, &[&payload, &[0x17]], &mut out)
+                        .unwrap(),
+                );
+            });
+            row(&format!("{name} seal out of place {len}+1 B"), a, v);
+        }
     }
     let src = vec![0x41u8; 16384];
     let mut dst = vec![0u8; 16384];
