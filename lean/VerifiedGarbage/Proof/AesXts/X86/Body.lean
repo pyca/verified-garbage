@@ -232,8 +232,8 @@ theorem UPre.bcall {s : State} (eax : s.gpr .eax = W s₀) (ecx : s.gpr .ecx = a
 
 omit hp in
 theorem callArgs_eq : callArgs = .mov .ebx (argOp 2) :: .mov .ebp (argOp 5) ::
-    (zero4 .ebx 0 ++ (xor4 .ebx .ebp .ebx 0 cOff 0 ++ [.mov .esi (argOp 3), .mov .eax (argOp 0),
-      .mov .ecx (argOp 1), .mov .edx (.reg .esi), .mov .ebx (argOp 4)])) := by
+    (zero4 .ebx 0 ++ (xor4 .ebx .ebp .ebx 0 cOff 0 ++ ([.mov .esi (argOp 3), .mov .eax (argOp 0),
+      .mov .ecx (argOp 1), .mov .edx (.reg .esi), .mov .ebx (argOp 4)] : List Instr))) := by
   simp only [callArgs, List.append_assoc]; rfl
 
 /-- The tweak restored, `esi` back at the first block, and the arguments of
