@@ -126,4 +126,22 @@ theorem ctr32_wrap {m m' : Mem} {C : Addr} {k : Nat} (hk : lo32 (bytesAt m C 16)
   rw [e, Nat.mod_eq_of_lt (a := toNat (bytesAt m C 16) + j) (by unfold lo32 at hk; omega), hl, Nat.mod_self]
   omega
 
+/-- The block at `P` plus `d` as two 64-bit words: the reversed words
+`rv64 hi` at `P` and `rv64 lo` at `P + 8`, with `lo` the low word plus `d`
+and `hi` the high word plus the carry. -/
+theorem add_words64 (m : Mem) (P : Addr) (hi lo : BitVec 64) (d : Nat)
+    (hlo : lo.toNat = ((rv64 (m.readW (P + BitVec.ofNat 64 8) 64)).toNat + d) % 2 ^ 64)
+    (hhi : hi.toNat = ((rv64 (m.readW P 64)).toNat +
+      ((rv64 (m.readW (P + BitVec.ofNat 64 8) 64)).toNat + d) / 2 ^ 64) % 2 ^ 64) :
+    bytesAt ((m.writeW (P + BitVec.ofNat 64 8) (rv64 lo)).writeW P (rv64 hi)) P 16 =
+      ofNat (toNat (bytesAt m P 16) + d) 16 := by
+  rw [show (16 : Nat) = 8 + 8 from rfl, bytesAt_append, bytesAt_append m, bytesAt_writeW_rv64,
+    bytesAt_writeW_sep _ _ _ (by decide) (by decide), bytesAt_writeW_rv64,
+    show 8 + 8 = (bytesAt m P 8).length + (bytesAt m (P + BitVec.ofNat 64 8) 8).length by simp [bytesAt],
+    ofNat_toNat_append_add, bytesAt_rv64 m P, bytesAt_rv64 m (P + BitVec.ofNat 64 8), toNat_ofNat, toNat_ofNat,
+    length_ofNat, length_ofNat, Nat.mod_eq_of_lt (BitVec.isLt _), Nat.mod_eq_of_lt (BitVec.isLt _)]
+  congr 1
+  · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega)
+  · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega)
+
 end VG.Proof.AesCtr
