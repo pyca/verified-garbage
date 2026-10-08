@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Camellia.Layout
 import VerifiedGarbage.Proof.Camellia.Words
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Impl.Camellia.KeyOrder
 
 /-!
 # The key schedule on 64-bit halves
@@ -172,5 +173,39 @@ theorem lo_eq (H L : BitVec 64) {r : Nat} (hr : r < 128) : lo (H ++ L) r = rotHa
     split <;> rename_i h1 <;>
     (try rw [BitVec.getLsbD_of_ge _ (64 - r % 64 + t) (by omega), Bool.or_false]) <;>
     first | omega | (congr 1; omega))
+
+
+theorem split128 (x : BitVec 128) : x = hiW x ++ loW x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  change _ = (hiW x ++ loW x : BitVec (64 + 64)).getLsbD i
+  rw [BitVec.getLsbD_append]
+  simp only [hiW, loW, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight]
+  split
+  · simp [*]
+  · simp only [show i - 64 < 64 by omega, decide_true, Bool.true_and]; congr 1; omega
+
+theorem hi_split (x : BitVec 128) {r : Nat} (hr : r < 128) : hi x r = rotHalf (hiW x) (loW x) r true := by
+  rw [← hi_eq _ _ hr, ← split128]
+
+theorem lo_split (x : BitVec 128) {r : Nat} (hr : r < 128) : lo x r = rotHalf (hiW x) (loW x) r false := by
+  rw [← lo_eq _ _ hr, ← split128]
+
+/-- The stored subkeys, from the four values: `[KL, KR, KA, KB]`. -/
+def subkeyWords (vs : List (BitVec 128)) (ks : List (Nat × Nat × Bool)) : List (BitVec 64) :=
+  ks.map fun (v, r, h) => rotHalf (hiW (vs.getD v 0)) (loW (vs.getD v 0)) r h
+
+theorem scheduleWords_expandKey (key : List Byte) :
+    scheduleWords (expandKey key) = subkeyWords
+      [(klkr key).1, (klkr key).2, (kakb (klkr key).1 (klkr key).2).1, (kakb (klkr key).1 (klkr key).2).2]
+      (if key.length = 16 then Impl.Camellia.subkeys128 else Impl.Camellia.subkeys256) := by
+  by_cases h : key.length = 16
+  · simp only [expandKey, h, ↓reduceIte, scheduleWords, subkeyWords, Impl.Camellia.subkeys128,
+      Impl.Camellia.KL, Impl.Camellia.KA]
+    simp (disch := decide) only [hi_split, lo_split]
+    simp [List.range_succ, List.flatMap_cons]
+  · simp only [expandKey, h, ↓reduceIte, scheduleWords, subkeyWords, Impl.Camellia.subkeys256,
+      Impl.Camellia.KL, Impl.Camellia.KR, Impl.Camellia.KA, Impl.Camellia.KB]
+    simp (disch := decide) only [hi_split, lo_split]
+    simp [List.range_succ, List.flatMap_cons]
 
 end VG.Proof.Camellia

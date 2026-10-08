@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Camellia.X86_64.Ecb
 import VerifiedGarbage.Spec.Camellia
+import VerifiedGarbage.Impl.Camellia.KeyOrder
 
 /-!
 # The Camellia key schedule on x86-64
@@ -110,34 +111,6 @@ def subkey (i v r : Nat) (hi : Bool) : List Instr :=
   [movR t0 a] ++
   (if r' = 0 then [] else [.shift .shl t0 r', movR t1 b, .shift .shr t1 (64 - r'), .alu .or t0 (.reg t1)]) ++
   [.bswap t0, .store (at_ .rdx (8 * i)) t0]
-
-def KL : Nat := 0
-def KR : Nat := 1
-def KA : Nat := 2
-def KB : Nat := 3
-
-/-- The subkeys of a key of 16 bytes (RFC 3713 §2.2), in the stored order:
-value, rotation and half of each. -/
-def subkeys128 : List (Nat × Nat × Bool) :=
-  [(KL, 0, true), (KL, 0, false),
-   (KA, 0, true), (KA, 0, false), (KL, 15, true), (KL, 15, false), (KA, 15, true), (KA, 15, false),
-   (KA, 30, true), (KA, 30, false),
-   (KL, 45, true), (KL, 45, false), (KA, 45, true), (KL, 60, false), (KA, 60, true), (KA, 60, false),
-   (KL, 77, true), (KL, 77, false),
-   (KL, 94, true), (KL, 94, false), (KA, 94, true), (KA, 94, false), (KL, 111, true), (KL, 111, false),
-   (KA, 111, true), (KA, 111, false)]
-
-/-- The subkeys of a key of 24 or 32 bytes, in the stored order. -/
-def subkeys256 : List (Nat × Nat × Bool) :=
-  [(KL, 0, true), (KL, 0, false),
-   (KB, 0, true), (KB, 0, false), (KR, 15, true), (KR, 15, false), (KA, 15, true), (KA, 15, false),
-   (KR, 30, true), (KR, 30, false),
-   (KB, 30, true), (KB, 30, false), (KL, 45, true), (KL, 45, false), (KA, 45, true), (KA, 45, false),
-   (KL, 60, true), (KL, 60, false),
-   (KR, 60, true), (KR, 60, false), (KB, 60, true), (KB, 60, false), (KL, 77, true), (KL, 77, false),
-   (KA, 77, true), (KA, 77, false),
-   (KR, 94, true), (KR, 94, false), (KA, 94, true), (KA, 94, false), (KL, 111, true), (KL, 111, false),
-   (KB, 111, true), (KB, 111, false)]
 
 def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
   ks.zipIdx.flatMap fun ((v, r, hi), i) => subkey i v r hi
