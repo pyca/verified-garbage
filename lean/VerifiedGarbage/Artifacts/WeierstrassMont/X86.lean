@@ -61,7 +61,8 @@ def artifacts : List Artifact := [
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { p256p.mulApi with
     target := X86.target
-    doc := p256p.mulApi.doc (notes := notes)
+    doc := p256p.mulApi.doc (notes := notes ++ ["Equal public operand offsets select a \
+      dedicated Comba square with 36 word products and eight full-product sparse REDC rounds."])
     code := mulFn p256p.k p256p.m
     contract := p256p.mulContract X86.abi
     verified := p256p_mul_verified
