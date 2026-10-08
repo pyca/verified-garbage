@@ -60,10 +60,10 @@
 //! `aes` feature stands for together) run the `_aes` ones (with
 //! `vg_aes_ctr32_aes` and `vg_ghash_aes`).
 //!
-//! On x86-64, the `_vaes_vpclmul_avx512` instances also have `_precomputed`
-//! ones (`VG.Spec.Gcm.PowersRepr`), whose interleaved loops read the powers
-//! `H¹ … H⁴⁸` of the hash subkey from a larger key context, which
-//! `vg_aes_gcm_init_precomputed` writes, instead of computing them on every
+//! On x86-64, the `_vaes_vpclmul_avx512` instances also have `_prepared`
+//! ones (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read
+//! encoded pairs of powers `H¹ … H⁴⁸` from a larger key context, which
+//! `vg_aes_gcm_init_prepared` writes, instead of computing them on every
 //! call. A key computes it once, after it has encrypted or decrypted
 //! `POWERS_AFTER` messages (or streaming updates) long enough to gain from
 //! it, so that one used for a few messages never pays for it.
@@ -149,12 +149,11 @@ use crate::arch::gcm::{
 };
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use crate::arch::gcm::{
-    vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512,
-    vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512,
-    vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512,
-    vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512,
+    vg_aes_gcm_init_prepared_vaes_vpclmul_avx512, vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512,
+    vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512,
 };
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
@@ -334,11 +333,11 @@ pub(crate) fn select(f: Features) -> Backend {
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl Backend {
-    /// Whether its instances include the `_precomputed` ones
-    /// (`VG.Spec.Gcm.PowersRepr`), whose interleaved loops read the powers
+    /// Whether its instances include the `_prepared` ones
+    /// (`VG.Spec.Gcm.PreparedPowersRepr`), whose interleaved loops read the powers
     /// of the hash subkey from the key context instead of computing them on
     /// every call.
-    const fn precomputed(self) -> bool {
+    const fn prepared(self) -> bool {
         match self {
             Backend::VaesVpclmulAvx512 => true,
             Backend::Scalar
@@ -362,15 +361,15 @@ const POWERS_MIN_LEN: usize = 256;
 
 /// How many calls of at least `POWERS_MIN_LEN` bytes a key makes with the
 /// key context of `vg_aes_gcm_init` before it computes the powers of its
-/// hash subkey (`Powers::get`): `vg_aes_gcm_init_precomputed` costs about as
+/// hash subkey (`Powers::get`): `vg_aes_gcm_init_prepared` costs about as
 /// much as reading the powers saves over this many calls, so a key used for
 /// a few messages never pays for them.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 const POWERS_AFTER: u32 = 32;
 
-/// The key context `vg_aes_gcm_init_precomputed` writes for a key (that of
-/// `vg_aes_gcm_init`, then the powers `H¹ … H⁴⁸` of the hash subkey:
-/// `VG.Spec.Gcm.PowersRepr`), which the `_precomputed` instances read,
+/// The key context `vg_aes_gcm_init_prepared` writes for a key (that of
+/// `vg_aes_gcm_init`, then 24 encoded pairs of powers of the hash subkey:
+/// `VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read,
 /// computed once the key has been used enough ([`Powers::get`]).
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 struct Powers {
@@ -395,11 +394,11 @@ impl Powers {
     /// The key context with the powers, for a call (long enough to gain from
     /// them) with `backend`'s instances for `rounds` rounds and the key
     /// context `key` of `vg_aes_gcm_init`: none if `backend` has no
-    /// `_precomputed` instances; otherwise the powers, computed by this call
+    /// `_prepared` instances; otherwise the powers, computed by this call
     /// if the key has made `POWERS_AFTER` such calls and they are not ready
     /// yet.
     fn get(&self, backend: Backend, rounds: usize, key: &[u64; 32]) -> Option<&[u64; 128]> {
-        if !backend.precomputed() {
+        if !backend.prepared() {
             return None;
         }
         let p = self.ctx.load(Ordering::Acquire);
@@ -412,7 +411,7 @@ impl Powers {
             return None;
         }
         let mut ctx = Box::new([0; 128]);
-        let init = vg_aes_gcm_init_precomputed_vaes_vpclmul_avx512;
+        let init = vg_aes_gcm_init_prepared_vaes_vpclmul_avx512;
         // SAFETY: the key is the first `key_len` bytes (16, 24 or 32, from
         // `rounds`) of its key context `key` (`VG.Spec.Gcm.KeyRepr`: the key
         // schedule, whose first `Nk` words are the key, FIPS 197 §5.2,
@@ -420,7 +419,7 @@ impl Powers {
         // allocation) is valid for reads and writes of 1024. They do not
         // overlap each other or anything on the stack, or wrap around. The
         // CPU has the features of `backend`, the only one with
-        // `_precomputed` instances.
+        // `_prepared` instances.
         unsafe { init(key.as_ptr().cast(), (rounds - 6) * 4, &mut *ctx) };
         Some(self.publish(ctx))
     }
@@ -623,7 +622,7 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if data.len() >= POWERS_MIN_LEN
-            && let Some(tag) = self.seal_precomputed(nonce, aad, data)
+            && let Some(tag) = self.seal_prepared(nonce, aad, data)
         {
             return Ok(tag);
         }
@@ -706,7 +705,7 @@ impl AesGcm {
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if data.len() >= POWERS_MIN_LEN
-            && let Some(r) = self.open_precomputed(nonce, aad, data, tag)
+            && let Some(r) = self.open_prepared(nonce, aad, data, tag)
         {
             return r;
         }
@@ -780,7 +779,7 @@ impl AesGcm {
         let src: *const [usize; 2] = descs.as_ptr().cast();
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if out.len() >= POWERS_MIN_LEN
-            && let Some(tag) = self.seal_gather_precomputed(nonce, aad, src, plaintext.len(), out)
+            && let Some(tag) = self.seal_gather_prepared(nonce, aad, src, plaintext.len(), out)
         {
             return Ok(tag);
         }
@@ -855,21 +854,21 @@ impl AesGcm {
     }
 }
 
-/// The calls of the `_precomputed` instances, out of line so that the
+/// The calls of the `_prepared` instances, out of line so that the
 /// shorter calls, which never make them, stay as fast as before.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 impl AesGcm {
     /// `encrypt_in_place` with the key context with the powers, if
     /// `Powers::get` gives it.
     #[inline(never)]
-    fn seal_precomputed(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
+    fn seal_prepared(&self, nonce: &[u8], aad: &[u8], data: &mut [u8]) -> Option<Block> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
-        let seal = vg_aes_gcm_seal_precomputed_vaes_vpclmul_avx512;
+        let seal = vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512;
         // SAFETY: as in `encrypt_in_place`, with `ctx` the key context
-        // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+        // `vg_aes_gcm_init_prepared` wrote for the same key, valid for
         // reads of 1024 bytes, and the CPU has the features of
-        // `self.backend`, whose `_precomputed` instance this is.
+        // `self.backend`, whose `_prepared` instance this is.
         unsafe {
             seal(
                 ctx,
@@ -889,7 +888,7 @@ impl AesGcm {
     /// `open` with the key context with the powers, if `Powers::get` gives
     /// it.
     #[inline(never)]
-    fn open_precomputed(
+    fn open_prepared(
         &self,
         nonce: &[u8],
         aad: &[u8],
@@ -897,8 +896,8 @@ impl AesGcm {
         tag: &[u8],
     ) -> Option<Result<(), Error>> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
-        let open = vg_aes_gcm_open_precomputed_vaes_vpclmul_avx512;
-        // SAFETY: as in `seal_precomputed`, with the received tag `tag`
+        let open = vg_aes_gcm_open_prepared_vaes_vpclmul_avx512;
+        // SAFETY: as in `seal_prepared`, with the received tag `tag`
         // valid for reads of its length.
         let ok = unsafe {
             open(
@@ -925,7 +924,7 @@ impl AesGcm {
     /// `encrypt`'s call with the key context with the powers, if
     /// `Powers::get` gives it.
     #[inline(never)]
-    fn seal_gather_precomputed(
+    fn seal_gather_prepared(
         &self,
         nonce: &[u8],
         aad: &[u8],
@@ -935,10 +934,10 @@ impl AesGcm {
     ) -> Option<Block> {
         let ctx = self.powers.get(self.backend, self.rounds, &self.ctx)?;
         let mut tag: Block = [0; 16];
-        let seal = vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512;
+        let seal = vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512;
         // SAFETY: as in `encrypt`, with `src` the `count` descriptors it
         // wrote, and with `ctx` the key context with the powers, as in
-        // `seal_precomputed`.
+        // `seal_prepared`.
         unsafe {
             seal(
                 ctx,
@@ -1048,7 +1047,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             add_len(self.text_len, data.len(), MAX_TEXT).map_err(|()| Error::InvalidTextLength)?;
         self.in_text = true;
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-        if data.len() >= POWERS_MIN_LEN && self.update_precomputed(data) {
+        if data.len() >= POWERS_MIN_LEN && self.update_prepared(data) {
             self.text_len = text_len;
             return Ok(());
         }
@@ -1098,7 +1097,7 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
     /// `update` with the key context with the powers, if `Powers::get`
     /// gives it: whether it did (leaving `self.text_len` to the caller).
     #[inline(never)]
-    fn update_precomputed(&mut self, data: &mut [u8]) -> bool {
+    fn update_prepared(&mut self, data: &mut [u8]) -> bool {
         let Some(ctx) = self
             .key
             .powers
@@ -1107,17 +1106,17 @@ impl<const DECRYPT: bool> Stream<'_, DECRYPT> {
             return false;
         };
         let f = if DECRYPT {
-            vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512
+            vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512
         } else {
-            vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512
+            vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512
         };
         // SAFETY: as in `update`, with `ctx` the key context
-        // `vg_aes_gcm_init_precomputed` wrote for the same key, valid for
+        // `vg_aes_gcm_init_prepared` wrote for the same key, valid for
         // reads of 1024 bytes (the other streaming functions read the key
         // context of `vg_aes_gcm_init` for it, whose hash subkey and key
         // schedule are the same: `VG.Spec.Gcm.StreamRepr` depends on those
         // alone), and the CPU has the features of `self.key.backend`, whose
-        // `_precomputed` instances these are.
+        // `_prepared` instances these are.
         unsafe {
             f(
                 ctx,
@@ -1562,12 +1561,12 @@ mod tests {
                         VG_AES_GCM_STREAM_DECRYPT_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_AVX512_FEATURES,
                         VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_INIT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_SEAL_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_OPEN_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_ENCRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_SEAL_GATHER_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
-                        VG_AES_GCM_STREAM_DECRYPT_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_INIT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
+                        VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES,
                     ][..],
                 ),
             ];
@@ -1718,7 +1717,58 @@ mod tests {
         }
     }
 
-    /// A key whose backend has `_precomputed` instances computes the powers
+    /// Prepared contexts agree with fresh contexts around both interleaved
+    /// loop widths, including partial blocks and multi-slice input.
+    #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+    #[test]
+    fn prepared_boundaries() {
+        use super::POWERS_AFTER;
+        if !detected().contains(Backend::VaesVpclmulAvx512.features()) {
+            return;
+        }
+        for key_len in [16, 24, 32] {
+            let key = &[0x63; 32][..key_len];
+            let warm = AesGcm::new(key)
+                .unwrap()
+                .with_backend(Backend::VaesVpclmulAvx512);
+            for _ in 0..POWERS_AFTER {
+                warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
+            }
+            for len in [
+                255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 4097, 10000,
+            ] {
+                let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
+                for nonce_len in [12, 13] {
+                    let nonce = &[0x41; 13][..nonce_len];
+                    for aad_len in [0, 5, 16, 17] {
+                        let aad = &[0x23; 17][..aad_len];
+                        let fresh = AesGcm::new(key)
+                            .unwrap()
+                            .with_backend(Backend::VaesVpclmulAvx512);
+                        let mut want = plain.clone();
+                        let want_tag = fresh.encrypt_in_place(nonce, aad, &mut want).unwrap();
+                        let mut actual = plain.clone();
+                        let tag = warm.encrypt_in_place(nonce, aad, &mut actual).unwrap();
+                        assert_eq!((&actual, tag), (&want, want_tag));
+                        warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
+                            .unwrap();
+                        assert_eq!(actual, plain);
+                        let tag = warm
+                            .encrypt(
+                                nonce,
+                                aad,
+                                &[&plain[..len - 1], &plain[len - 1..]],
+                                &mut actual,
+                            )
+                            .unwrap();
+                        assert_eq!((&actual, tag), (&want, want_tag));
+                    }
+                }
+            }
+        }
+    }
+
+    /// A key whose backend has `_prepared` instances computes the powers
     /// of its hash subkey after `POWERS_AFTER` calls long enough to use
     /// them, and then encrypts and decrypts, one-shot and streaming, as the
     /// baseline does; shorter calls never count, and a key whose backend has
