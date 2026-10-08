@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 
 /-!
@@ -288,7 +288,7 @@ theorem roundX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   split
   · rename_i hsp
     obtain ⟨hn6, hm6⟩ := Mod.ok_sparse hok hsp
-    refine WP.mono (redS_ok hn6 hm6 (by rw [e₂]; omega))
+    refine WP.mono (redSX_ok hn6 hm6 (by rw [e₂]; omega))
       fun s' ⟨⟨u, hu, eu⟩, k⟩ => ⟨(fin u hu eu).1, (fin u hu eu).2, k₁₂.trans k⟩
   have hred := Mod.ok_red hok
   split

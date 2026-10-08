@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.Mont.X86_64.Rounds
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
+import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.Steps
 
 /-!
@@ -16,8 +16,9 @@ its low half and the high half added (`sqrS_ok`).
   overflow, which the rows' partial sums bound (`sqCross_ok`).
 * `C` doubled and the squares `a_i²` added (`sqrDbl_ok`), which makes `[a]²`
   (`sq_eq`).
-* The reductions (`redsS_ok`, `redS_ok` in turn) leave `(L + U p) / 2³⁸⁴ ≤ p`
-  for the low half `L`, and with the high half `H < p` added, below `2p`.
+* The reductions (`redsShortX_ok`, `redShortX_ok` in turn), on six words
+  rotating through `sqWin6`, leave `(L + U p) / 2³⁸⁴ ≤ p` for the low half
+  `L`, and with the high half `H < p` added, below `2p`.
 
 The powers of two above `2²⁵⁶` are never evaluated: they are split into
 factors `2⁶⁴` as soon as they appear (`pow_split`, `pow64x6`, …), or kept
@@ -879,43 +880,82 @@ theorem p384_bounds {m : Nat}
   rw [pow_split 2 (64 * 3) (64 * 3) (64 * 6) rfl]
   subst hm; omega
 
-/-- `k` of P-384's reductions in the window `r8–r15`, from `T < 2³⁸⁴`:
-`2^(64k) T' = T + U p` with `U < 2^(64k)`, and `T' < 2³⁸⁴ + p`. -/
-theorem redsS_ok {m : Nat}
+/-- The window of round `i`, word by word. -/
+theorem sqWins_eq (i : Nat) : sqWins i = [sqW i 0, sqW i 1, sqW i 2, sqW i 3, sqW i 4, sqW i 5] := rfl
+
+/-- The next round's window: the words rotated by one. -/
+theorem sqWins_succ (i : Nat) : sqWins (i + 1) = [sqW i 1, sqW i 2, sqW i 3, sqW i 4, sqW i 5, sqW i 0] := by
+  simp only [sqWins_eq, sqW]
+  have e : ∀ j, (i + 1 + j) % 6 = (i + (j + 1)) % 6 := fun j => by rw [Nat.add_right_comm, Nat.add_assoc]
+  rw [e 0, e 1, e 2, e 3, e 4, show (i + 1 + 5) % 6 = (i + 0) % 6 by omega]
+
+theorem sqW_mod (i j : Nat) : sqW i j = sqW (i % 6) j := by
+  unfold sqW; rw [show (i + j) % 6 = (i % 6 + j) % 6 by omega]
+
+theorem sqWins_mod (i : Nat) : sqWins i = sqWins (i % 6) := by
+  rw [sqWins_eq, sqWins_eq, sqW_mod i 0, sqW_mod i 1, sqW_mod i 2, sqW_mod i 3, sqW_mod i 4, sqW_mod i 5]
+
+theorem six_cases {k : Nat} (h : k < 6) : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega
+
+theorem fresh_sqWins (i : Nat) : Fresh (sqWins i) := by
+  rw [sqWins_mod]
+  rcases six_cases (Nat.mod_lt i (by decide : 6 > 0)) with h | h | h | h | h | h <;> rw [h] <;>
+    exact ⟨by decide, by decide⟩
+
+/-- Every window is `sqWin6`'s registers. -/
+theorem sqWins_sub (i : Nat) : ∀ q ∈ sqWins i, q ∈ sqWin6 := by
+  rw [sqWins_mod]
+  rcases six_cases (Nat.mod_lt i (by decide : 6 > 0)) with h | h | h | h | h | h <;> rw [h] <;> decide
+
+/-- `k` of P-384's reductions on six words from `sqWin6`, from `T < 2³⁸⁴`:
+`2^(64k) T' = T + U p` with `U < 2^(64k)`, and `T' < 2³⁸⁴`. -/
+theorem redsShortX_ok {m : Nat}
     (hm : m = 39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319) :
-    ∀ k {s : State}, regsVal s (wins 6 7) < 2 ^ (64 * 6) →
-      WP isa (.block (redsS k)) s fun s' =>
-        (∃ U, U < 2 ^ (64 * k) ∧ 2 ^ (64 * k) * regsVal s' (wins 6 (7 + k)) = regsVal s (wins 6 7) + U * m) ∧
-        regsVal s' (wins 6 (7 + k)) < 2 ^ (64 * 6) + m ∧
-        Keeps (.rax :: .rcx :: .rdx :: .rbp :: acc 6) s s'
-  | 0, s, h0 => WP.block_nil ⟨⟨0, by simp⟩, by rw [Nat.add_zero]; omega, fun _ _ => rfl, rfl, rfl, rfl⟩
+    ∀ k {s : State}, regsVal s (sqWins 0) < 2 ^ (64 * 6) →
+      WP isa (.block (redsShortX k)) s fun s' =>
+        (∃ U, U < 2 ^ (64 * k) ∧ 2 ^ (64 * k) * regsVal s' (sqWins k) = regsVal s (sqWins 0) + U * m) ∧
+        regsVal s' (sqWins k) < 2 ^ (64 * 6) ∧
+        Keeps (.rax :: .rcx :: .rdx :: .rbp :: sqWin6) s s'
+  | 0, s, h0 => WP.block_nil ⟨⟨0, by simp⟩, h0, fun _ _ => rfl, rfl, rfl, rfl⟩
   | k + 1, s, h0 => by
-    rw [show 7 + (k + 1) = 7 + k + 1 from rfl]
     obtain ⟨hm1, hm2⟩ := p384_bounds hm
-    rw [redsS, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (redsS_ok hm k h0) fun s₁ h₁ => ?_
+    rw [redsShortX, List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
+    refine WP.mono (redsShortX_ok hm k h0) fun s₁ h₁ => ?_
     obtain ⟨⟨U, hU, eU⟩, hT, k₁⟩ := h₁
-    refine WP.mono (redS_ok (n := 6) (i := 7 + k) rfl hm (by omega)) fun s₂ h₂ => ?_
+    have hf := fresh_sqWins k
+    rw [sqWins_eq] at hf hT
+    rw [sqWins_eq]
+    refine WP.mono (redShortX_ok hf hm) fun s₂ h₂ => ?_
     obtain ⟨⟨u, hu, eu⟩, k₂⟩ := h₂
-    have hum : u * m ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul_right m (by omega)
-    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_, ?_⟩, by omega, k₁.trans (k₂.mono fun q hq => ?_)⟩
+    rw [← sqWins_succ] at eu
+    rw [← sqWins_eq] at hT eu
+    refine ⟨⟨U + 2 ^ (64 * k) * u, ?_, ?_⟩, ?_, k₁.trans (k₂.mono fun q hq => ?_)⟩
     · have : 2 ^ (64 * k) * u ≤ 2 ^ (64 * k) * (2 ^ 64 - 1) := Nat.mul_le_mul_left _ (by omega)
       rw [Nat.mul_succ, Nat.pow_add]
       rw [Nat.mul_sub_one] at this
       omega
-    · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (wins 6 (7 + k + 1))
-          = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (wins 6 (7 + k + 1))) := by
+    · calc 2 ^ (64 * (k + 1)) * regsVal s₂ (sqWins (k + 1))
+          = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (sqWins (k + 1))) := by
             rw [Nat.mul_succ, Nat.pow_add, Nat.mul_assoc]
-        _ = 2 ^ (64 * k) * regsVal s₁ (wins 6 (7 + k)) + 2 ^ (64 * k) * u * m := by
+        _ = 2 ^ (64 * k) * regsVal s₁ (sqWins k) + 2 ^ (64 * k) * u * m := by
             rw [eu, Nat.mul_add, Nat.mul_assoc]
         _ = _ := by rw [eU, Nat.add_mul]; omega
+    · have hm1' := hm1
+      refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_
+      rw [eu]
+      generalize (2 : Nat) ^ (64 * 6) = Q at hT hm1' ⊢
+      generalize (2 : Nat) ^ 64 = B at hu ⊢
+      have h1 : u * m ≤ (B - 1) * Q := Nat.mul_le_mul (by omega) (Nat.le_of_lt hm1')
+      have h2 : (B - 1) * Q + Q = B * Q := by
+        rw [Nat.sub_one_mul]; have : Q ≤ B * Q := Nat.le_mul_of_pos_left Q (by omega); omega
+      omega
     · simp only [List.mem_cons] at hq ⊢
       rcases hq with h | h | h | h | h
       · exact Or.inl h
       · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr (Or.inl h))
       · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
-      · exact Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc (by decide) (7 + k) q h))))
+      · exact Or.inr (Or.inr (Or.inr (Or.inr (sqWins_sub k q (by rw [sqWins_eq]; simp only [List.mem_cons]; exact h)))))
 
 /-! ## The squaring -/
 
@@ -962,9 +1002,9 @@ theorem final_arith {Q L U V H AA m : Nat} (hQ : 0 < Q) (eV : Q * V = L + U * m)
 
 theorem sqrS_eq (M : Mod) (o a : Nat) : sqrS M o a =
     (sqrRow0 a ++ (stores ([.r8, .r9] : List Reg) (M.tmp + 8) ++ sqrRows a)) ++ (sqrDbl M.tmp a ++
-    (stores sqHigh6 o ++ (loads ([.r15, .r8, .r9] : List Reg) M.tmp ++ (zeros ([.r13, .r14] : List Reg) ++
-    (redsS 6 ++ (chain .add .adc sqLow6 o ++ (([.alu .adc .r11 (.imm 0)] : List Instr) ++
-    (csub M sqLow6 .r11 ++ stores sqLow6 o)))))))) := by
+    (stores sqHigh6 o ++ (loads ([.r13, .r14, .r15] : List Reg) M.tmp ++ (redsShortX 6 ++
+    (([.mov32 .r8 (.imm 0)] : List Instr) ++ (chain .add .adc sqWin6 o ++
+    (([.alu .adc .r8 (.imm 0)] : List Instr) ++ (csub M sqWin6 .r8 ++ stores sqWin6 o)))))))) := by
   simp only [sqrS, List.append_assoc]
 
 /-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX. -/
@@ -1009,115 +1049,96 @@ theorem sqrS_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
   obtain ⟨e₃, k₃, O₃⟩ := h₃
   have hs₃ := hs₂.of_keepRegs k₃ (by decide)
   simp only [show sqHigh6.length = 6 from rfl, Nat.reduceMul] at e₃ O₃
-  -- The low words into the window of round 7, `r13 = r14 = 0`.
+  -- The low words into the window `sqWin6`.
   rw [WP.block_append_iff]
-  refine WP.mono (loads_ok [.r15, .r8, .r9] hs₃ (a := M.tmp) (by simp only [List.length_cons, List.length_nil]; omega)
+  refine WP.mono (loads_ok [.r13, .r14, .r15] hs₃ (a := M.tmp) (by simp only [List.length_cons, List.length_nil]; omega)
     ⟨by decide, by decide⟩) fun s₄ h₄ => ?_
   obtain ⟨e₄, k₄⟩ := h₄
   have hs₄ := hs₃.of_keeps k₄ (by decide)
-  rw [WP.block_append_iff]
-  refine WP.mono (zeros_ok s₄ [.r13, .r14]) fun s₅ h₅ => ?_
-  obtain ⟨z₅, k₅⟩ := h₅
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
-  have g₅ : ∀ r, r ∉ ([.r15, .r8, .r9, .r13, .r14] : List Reg) → s₅.gpr r = s₂.gpr r := fun r hr => by
-    rw [k₅.1 r (not_mem_of hr (by decide)), k₄.1 r (not_mem_of hr (by decide)), k₃.gpr r (by simp)]
-  have m₅ : s₅.mem = s₃.mem := by rw [k₅.2.1, k₄.2.1]
+  have m₄ : s₄.mem = s₃.mem := k₄.2.1
   -- `[a]² = L + 2³⁸⁴ H` for the low half `L` in the window and the high half `H` at `[o]`.
-  have hL : regsVal s₅ (wins 6 7) = wordsVal s₂.mem base M.tmp 3 + 2 ^ (64 * 3) *
+  have hL : regsVal s₄ (sqWins 0) = wordsVal s₂.mem base M.tmp 3 + 2 ^ (64 * 3) *
       regsVal s₂ [.r10, .r11, .r12] := by
-    have hz : regsVal s₅ [.r13, .r14] = 0 := by
-      simp only [regsVal, Nat.mul_zero, Nat.add_zero]
-      rw [z₅ .r13 (by decide), z₅ .r14 (by decide)]; rfl
-    have h3 : regsVal s₅ [.r10, .r11, .r12] = regsVal s₂ [.r10, .r11, .r12] :=
-      regsVal_congr fun q hq => g₅ q (by
-        intro h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h hq
-        rcases hq with rfl | rfl | rfl <;> rcases h with h | h | h | h | h <;> cases h)
-    have hw : regsVal s₅ [.r15, .r8, .r9] = wordsVal s₂.mem base M.tmp 3 := by
-      rw [regsVal_congr (s := s₄) fun q hq => k₅.1 q (by
+    have h3 : regsVal s₄ [.r10, .r11, .r12] = regsVal s₂ [.r10, .r11, .r12] :=
+      regsVal_congr fun q hq => by
+        rw [k₄.1 q (by
           intro h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h hq
-          rcases hq with rfl | rfl | rfl <;> rcases h with h | h <;> cases h), e₄]
+          rcases hq with rfl | rfl | rfl <;> rcases h with h | h | h <;> cases h), k₃.gpr q (by simp)]
+    have hw : regsVal s₄ [.r13, .r14, .r15] = wordsVal s₂.mem base M.tmp 3 := by
+      rw [e₄]
       simp only [List.length_cons, List.length_nil, Nat.reduceAdd]
       exact O₃.wordsVal (by omega) (by omega)
-    rw [show wins 6 7 = [.r15, .r8, .r9] ++ ([.r10, .r11, .r12] ++ [.r13, .r14]) from rfl, regsVal_append,
-      regsVal_append, hz, hw, h3, show ([Reg.r15, .r8, .r9] : List Reg).length = 3 from rfl]
-    rw [Nat.mul_zero, Nat.add_zero]
+    rw [show sqWins 0 = [.r13, .r14, .r15] ++ [.r10, .r11, .r12] from rfl, regsVal_append, hw, h3,
+      show ([Reg.r13, .r14, .r15] : List Reg).length = 3 from rfl]
   have hAH : wordsVal s.mem base a 6 * wordsVal s.mem base a 6 =
-      regsVal s₅ (wins 6 7) + 2 ^ (64 * 3) * 2 ^ (64 * 3) * wordsVal s₃.mem base o 6 := by
+      regsVal s₄ (sqWins 0) + 2 ^ (64 * 3) * 2 ^ (64 * 3) * wordsVal s₃.mem base o 6 := by
     rw [← e₂, hL, e₃, show ([.r10, .r11, .r12, .r13, .r14, .r15, .r8, .r9, .rcx] : List Reg) =
       [.r10, .r11, .r12] ++ sqHigh6 from rfl, regsVal_append,
       show ([Reg.r10, .r11, .r12] : List Reg).length = 3 from rfl, Nat.mul_add, ← Nat.mul_assoc, Nat.add_assoc]
   rw [← pow_split 2 (64 * 3) (64 * 3) (64 * 6) rfl] at hAH
-  have hLt : regsVal s₅ (wins 6 7) < 2 ^ (64 * 6) := by
-    have hz : regsVal s₅ [.r13, .r14] = 0 := by
-      simp only [regsVal, Nat.mul_zero, Nat.add_zero]
-      rw [z₅ .r13 (by decide), z₅ .r14 (by decide)]; rfl
-    have := regsVal_lt s₅ [.r15, .r8, .r9, .r10, .r11, .r12]
-    rw [show ([Reg.r15, .r8, .r9, .r10, .r11, .r12] : List Reg).length = 6 from rfl] at this
-    rw [show wins 6 7 = [.r15, .r8, .r9, .r10, .r11, .r12] ++ [.r13, .r14] from rfl, regsVal_append, hz,
-      Nat.mul_zero, Nat.add_zero]
+  have hLt : regsVal s₄ (sqWins 0) < 2 ^ (64 * 6) := by
+    have := regsVal_lt s₄ (sqWins 0)
+    rw [show (sqWins 0).length = 6 from rfl] at this
     exact this
   -- The reductions.
   rw [WP.block_append_iff]
-  refine WP.mono (redsS_ok hmP 6 hLt) fun s₆ h₆ => ?_
+  refine WP.mono (redsShortX_ok hmP 6 hLt) fun s₆ h₆ => ?_
   obtain ⟨⟨U, hU, eU⟩, -, k₆⟩ := h₆
-  have hs₆ := hs₅.of_keeps k₆ (by decide)
+  have hs₆ := hs₄.of_keeps k₆ (by decide)
   have hAA' := Nat.mul_lt_mul'' hA hA
   generalize hQd : 2 ^ (64 * 6) = Q at eU hU hLt hAH hm1
   have hQ : 0 < Q := by omega
   obtain ⟨hV6, hH, hres⟩ := final_arith hQ eU hU hLt hAH hAA' hm1
-  -- The window's top words are zero.
-  have hw6 : regsVal s₆ (wins 6 (7 + 6)) = regsVal s₆ sqLow6 + Q * regsVal s₆ [.r11, .r12] := by
-    rw [show wins 6 (7 + 6) = sqLow6 ++ [.r11, .r12] from rfl, regsVal_append,
-      show sqLow6.length = 6 from rfl, hQd]
-  have htop : regsVal s₆ [.r11, .r12] = 0 := by
-    by_contra hne
-    have : Q ≤ Q * regsVal s₆ [.r11, .r12] := Nat.le_mul_of_pos_right _ (by omega)
-    omega
-  have r11₆ : s₆.gpr .r11 = 0 := by
-    simp only [regsVal, Nat.mul_zero, Nat.add_zero] at htop
-    exact BitVec.eq_of_toNat_eq (by rw [show (0 : BitVec 64).toNat = 0 from rfl]; omega)
-  replace hw6 : regsVal s₆ (wins 6 (7 + 6)) = regsVal s₆ sqLow6 := by
-    rw [hw6, htop, Nat.mul_zero, Nat.add_zero]
+  rw [show sqWins 6 = sqWin6 from rfl] at hV6 hres
+  -- The carry word.
+  rw [WP.block_append_iff]
+  refine WP.mono (mov32zero_ok s₆ .r8) fun s₇ h₇ => ?_
+  obtain ⟨z₇, -, k₇⟩ := h₇
+  have hs₇ := hs₆.of_keeps k₇ (by decide)
+  have hlow₇ : regsVal s₇ sqWin6 = regsVal s₆ sqWin6 := regsVal_congr fun q hq => k₇.1 q (by
+    intro h; simp only [sqWin6, List.mem_cons, List.not_mem_nil, or_false] at h hq
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> cases h)
   -- The high half added.
   rw [WP.block_append_iff]
-  refine WP.mono (chainAdd_ok hs₆ (t := .r13) (ts := [.r14, .r15, .r8, .r9, .r10]) (b := o)
-    (by simp only [List.length_cons, List.length_nil]; omega) ⟨by decide, by decide⟩) fun s₇ h₇ => ?_
-  obtain ⟨c₇, cf₇, e₇, k₇⟩ := h₇
-  have hs₇ := hs₆.of_keeps k₇ (by decide)
-  rw [show (Reg.r13 :: [.r14, .r15, .r8, .r9, .r10] : List Reg) = sqLow6 from rfl, k₆.2.1, m₅] at e₇
-  simp only [show sqLow6.length = 6 from rfl, hQd] at e₇
-  rw [WP.block_append_iff]
-  refine WP.mono (adcZero_ok s₇ .r11 cf₇ (by rw [k₇.1 _ (by decide), r11₆])) fun s₈ h₈ => ?_
-  obtain ⟨e₈, k₈⟩ := h₈
+  refine WP.mono (chainAdd_ok hs₇ (t := .r13) (ts := [.r14, .r15, .r10, .r11, .r12]) (b := o)
+    (by simp only [List.length_cons, List.length_nil]; omega) ⟨by decide, by decide⟩) fun s₈ h₈ => ?_
+  obtain ⟨c₈, cf₈, e₈, k₈⟩ := h₈
   have hs₈ := hs₇.of_keeps k₈ (by decide)
-  have hlow₈ : regsVal s₈ sqLow6 = regsVal s₇ sqLow6 := regsVal_congr fun q hq => k₈.1 q (by
-    intro h; simp only [sqLow6, List.mem_cons, List.not_mem_nil, or_false] at h hq
+  rw [show (Reg.r13 :: [.r14, .r15, .r10, .r11, .r12] : List Reg) = sqWin6 from rfl, k₇.2.1, k₆.2.1, m₄,
+    hlow₇] at e₈
+  simp only [show sqWin6.length = 6 from rfl, hQd] at e₈
+  rw [WP.block_append_iff]
+  refine WP.mono (adcZero_ok s₈ .r8 cf₈ (by rw [k₈.1 _ (by decide), z₇])) fun s₉ h₉ => ?_
+  obtain ⟨e₉, k₉⟩ := h₉
+  have hs₉ := hs₈.of_keeps k₉ (by decide)
+  have hlow₉ : regsVal s₉ sqWin6 = regsVal s₈ sqWin6 := regsVal_congr fun q hq => k₉.1 q (by
+    intro h; simp only [sqWin6, List.mem_cons, List.not_mem_nil, or_false] at h hq
     rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> cases h)
-  have m₈ : s₈.mem = s₃.mem := by rw [k₈.2.1, k₇.2.1, k₆.2.1, m₅]
-  have hmo₈ : wordsVal s₈.mem base M.mo M.n = m := by
-    rw [m₈, O₃.wordsVal (by rw [hn]; omega) (by rw [hn]; omega), O₂.wordsVal (by rw [hn]; omega) (by rw [hn]; omega),
+  have m₉ : s₉.mem = s₃.mem := by rw [k₉.2.1, k₈.2.1, k₇.2.1, k₆.2.1, m₄]
+  have hmo₉ : wordsVal s₉.mem base M.mo M.n = m := by
+    rw [m₉, O₃.wordsVal (by rw [hn]; omega) (by rw [hn]; omega), O₂.wordsVal (by rw [hn]; omega) (by rw [hn]; omega),
       O₁.wordsVal (by rw [hn]; omega) (by rw [hn]; omega), hM.val]
   -- `csub` and the result.
   rw [WP.block_append_iff]
-  refine WP.mono (csub_ok hs₈ (ts := sqLow6) (top := .r11) (by rw [hn]; rfl) (by rw [hn]; decide)
-    ⟨by decide, by decide⟩ hM.mo hM.tmp hM.sep (Mod.ok_sparse hM.red) hmo₈
-    (by rw [hlow₈, e₈, hn, hQd]; rw [hw6] at hV6; omega)) fun s₉ h₉ => ?_
-  obtain ⟨e₉, k₉, O₉⟩ := h₉
-  have hs₉ := hs₈.of_keepRegs k₉ (by decide)
-  refine WP.mono (stores_ok sqLow6 hs₉ (o := o) (by simp only [sqLow6, List.length_cons, List.length_nil]; omega)
-    (by decide)) fun s₁₀ h₁₀ => ?_
+  refine WP.mono (csub_ok hs₉ (ts := sqWin6) (top := .r8) (by rw [hn]; rfl) (by rw [hn]; decide)
+    ⟨by decide, by decide⟩ hM.mo hM.tmp hM.sep (Mod.ok_sparse hM.red) hmo₉
+    (by rw [hlow₉, e₉, hn, hQd]; omega)) fun s₁₀ h₁₀ => ?_
   obtain ⟨e₁₀, k₁₀, O₁₀⟩ := h₁₀
-  simp only [show sqLow6.length = 6 from rfl, Nat.reduceMul] at e₁₀ O₁₀
-  have hval : wordsVal s₁₀.mem base o 6 = (regsVal s₆ (wins 6 (7 + 6)) + wordsVal s₃.mem base o 6) % m := by
-    rw [e₁₀, e₉, hlow₈, e₈, hn, hQd, hw6, e₇]
+  have hs₁₀ := hs₉.of_keepRegs k₁₀ (by decide)
+  refine WP.mono (stores_ok sqWin6 hs₁₀ (o := o) (by simp only [sqWin6, List.length_cons, List.length_nil]; omega)
+    (by decide)) fun s₁₁ h₁₁ => ?_
+  obtain ⟨e₁₁, k₁₁, O₁₁⟩ := h₁₁
+  simp only [show sqWin6.length = 6 from rfl, Nat.reduceMul] at e₁₁ O₁₁
+  have hval : wordsVal s₁₁.mem base o 6 = (regsVal s₆ sqWin6 + wordsVal s₃.mem base o 6) % m := by
+    rw [e₁₁, e₁₀, hlow₉, e₉, hn, hQd, e₈]
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, fun x hx hx' => ?_, ?_, ?_⟩
-  · rw [k₁₀.gpr r (by simp), k₉.gpr r (not_mem_of hr (by decide)), k₈.1 r (not_mem_of hr (by decide)),
-      k₇.1 r (not_mem_of hr (by decide)), k₆.1 r (not_mem_of hr (by decide)),
-      k₅.1 r (not_mem_of hr (by decide)), k₄.1 r (not_mem_of hr (by decide)), k₃.gpr r (by simp),
+  · rw [k₁₁.gpr r (by simp), k₁₀.gpr r (not_mem_of hr (by decide)), k₉.1 r (not_mem_of hr (by decide)),
+      k₈.1 r (not_mem_of hr (by decide)), k₇.1 r (not_mem_of hr (by decide)), k₆.1 r (not_mem_of hr (by decide)),
+      k₄.1 r (not_mem_of hr (by decide)), k₃.gpr r (by simp),
       k₂.gpr r (not_mem_of hr (by decide)), k₁.gpr r (not_mem_of hr (by decide))]
-  · rw [k₁₀.rd, k₉.rd, k₈.2.2.1, k₇.2.2.1, k₆.2.2.1, k₅.2.2.1, k₄.2.2.1, k₃.rd, k₂.rd, k₁.rd]
-  · rw [k₁₀.wr, k₉.wr, k₈.2.2.2, k₇.2.2.2, k₆.2.2.2, k₅.2.2.2, k₄.2.2.2, k₃.wr, k₂.wr, k₁.wr]
-  · rw [O₁₀ x (by omega), O₉ x (by rw [hn]; omega), m₈, O₃ x (by omega), O₂ x (by omega), O₁ x (by omega)]
+  · rw [k₁₁.rd, k₁₀.rd, k₉.2.2.1, k₈.2.2.1, k₇.2.2.1, k₆.2.2.1, k₄.2.2.1, k₃.rd, k₂.rd, k₁.rd]
+  · rw [k₁₁.wr, k₁₀.wr, k₉.2.2.2, k₈.2.2.2, k₇.2.2.2, k₆.2.2.2, k₄.2.2.2, k₃.wr, k₂.wr, k₁.wr]
+  · rw [O₁₁ x (by omega), O₁₀ x (by rw [hn]; omega), m₉, O₃ x (by omega), O₂ x (by omega), O₁ x (by omega)]
   · rw [hval]; exact Nat.mod_lt _ (by omega)
   · rw [hval]; exact hres
 
