@@ -32,7 +32,9 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   reduced by `csub`. Four words for `p` with BMI2 and ADX are X25519's
   `mulX`'s product `a b` instead (`mulRX`), or for a square its `sqrX`'s,
   each product of two different words computed once and doubled (`sqrRX`),
-  into eight registers, then the four reductions by `shiftRed` (`redRX`).
+  into eight registers, then four reductions of its low half in a window of
+  four registers, each by two `mulx` and one carry chain (`redRoundX`), and
+  its high half added (`redRX`).
 * `add o a b`, `sub o a b`: `[a] ± [b] mod m`, with a conditional
   subtraction (`csub`) or addition of `m`.
 * `csub`: a number below `2m` in `n` registers and a top word (0 or 1)
@@ -333,16 +335,26 @@ def zeros (ts : List Reg) : List Instr := ts.map fun t => .mov32 t (.imm 0)
 /-- The words of `redRX`'s result, `(t + U m) / 2²⁵⁶`, but its top one, `r8`. -/
 def sqLow : List Reg := [.r12, .r13, .r14, .r15]
 
-/-- `[o] = t R⁻¹ mod m` for the product `t` in `r8`–`r15` (below `m²`), four
-words and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)` (P-256's `p`): `shiftRed` adds
-`t_i m'` to the words above `t_i`, for each of the four low words `t_i` in
-turn. Only the last can carry out of `r15`, into `r8`, cleared by then. -/
+/-- A round of `redRX`'s reduction, in the window `t, w₁, w₂, w₃` of four
+words `W`, for `m + 1 = 2⁶⁴ m'` and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)`: the
+window becomes `w₁, w₂, w₃, t` with the value `(W + t m) / 2⁶⁴`, as
+`W + t m = W − t + 2⁶⁴ t m'`. `t 2ᵏ` (`rbp:rax`) and `t (2⁶⁴ − 2ᵏ + 1)`
+(`t:rcx`) by `mulx`, and added in one carry chain, which ends in the new top
+word `t`. -/
+def redRoundX (k : Nat) (t w1 w2 w3 : Reg) : List Instr :=
+  [.mov .rdx (.reg t), .movImm64 .rax (BitVec.ofNat 64 (2 ^ k)), .mulx .rbp .rax (.reg .rax),
+    .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)), .mulx t .rcx (.reg .rcx),
+    .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rbp), .alu .adc w3 (.reg .rcx), .alu .adc t (.imm 0)]
+
+/-- `[o] = t R⁻¹ mod m` for the product `t = L + 2²⁵⁶ H` in `r8`–`r15` (below
+`2²⁵⁶ m`), four words and `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)` (P-256's `p`): four
+rounds of `redRoundX` reduce the low half `L` in a window of four words that
+rotates through `r8`–`r11`, which leaves `(L + U m) / 2²⁵⁶ ≤ m` there (for the
+words `U` of the rounds); the high half `H < m` is added to it into
+`r12`–`r15`, the carry into `r8`, and `csub` reduces the sum, below `2m`. -/
 def redRX (M : Mod) (k o : Nat) : List Instr :=
-  let rr (t w1 w2 w3 : Reg) : List Instr :=
-    [.mov .rdx (.reg t), .movImm64 .rax (BitVec.ofNat 64 (2 ^ k)), .mulx .rbp .rax (.reg .rax),
-      .movImm64 .rcx (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)), .mulx t .rcx (.reg .rcx),
-      .alu .add w1 (.reg .rax), .alu .adc w2 (.reg .rbp), .alu .adc w3 (.reg .rcx), .alu .adc t (.imm 0)]
-  rr .r8 .r9 .r10 .r11 ++ rr .r9 .r10 .r11 .r8 ++ rr .r10 .r11 .r8 .r9 ++ rr .r11 .r8 .r9 .r10 ++
+  redRoundX k .r8 .r9 .r10 .r11 ++ redRoundX k .r9 .r10 .r11 .r8 ++ redRoundX k .r10 .r11 .r8 .r9 ++
+    redRoundX k .r11 .r8 .r9 .r10 ++
     [.alu .add .r12 (.reg .r8), .alu .adc .r13 (.reg .r9), .alu .adc .r14 (.reg .r10), .alu .adc .r15 (.reg .r11),
       .mov32 .r8 (.imm 0), .alu .adc .r8 (.imm 0)] ++ csub M sqLow .r8 ++ stores sqLow o
 
@@ -359,7 +371,7 @@ def mulRX (M : Mod) (k o a b : Nat) : List Instr :=
     Impl.X25519.X86_64.rowX b a 3 ++ redRX M k o
 
 /-- `some k` if `mul o a b` is one that `mulRX` or `sqrRX` computes: four words,
-BMI2 and ADX, and the friendly reduction by `shiftRed`. -/
+BMI2 and ADX, and a friendly modulus whose `m'` is `shiftK?`'s. -/
 def prodK? (M : Mod) : Option Nat :=
   if M.adx ∧ M.n = 4 then
     match M.red with
