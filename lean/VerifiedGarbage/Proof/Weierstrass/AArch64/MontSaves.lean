@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 # Montgomery products as functions on AArch64: registers saved in vector lanes
 
 The functions save the callee-saved registers they write in the 64-bit lanes
-of `v16`–`v19` (`slot i`: the `i`-th register in lane `i % 2` of the
+of `v16`–`v20` (`slot i`: the `i`-th register in lane `i % 2` of the
 `i / 2`-th): `saves_ok` puts each register in its lane and leaves the other
 lanes and every general-purpose register, and `restores_ok` writes each
 register back from its lane.
@@ -40,7 +40,7 @@ theorem extract_setLane (x : BitVec 128) (v : BitVec 64) {i j : Nat} (hi : i < 2
 
 theorem slot_lt (i : Nat) : (slot i).2 < 2 := Nat.mod_lt _ (by decide)
 
-theorem slot_eq_lt : ∀ i < 8, ∀ j < 8, (slot i).1 = (slot j).1 → (slot i).2 = (slot j).2 → i = j := by
+theorem slot_eq_lt : ∀ i < 10, ∀ j < 10, (slot i).1 = (slot j).1 → (slot i).2 = (slot j).2 → i = j := by
   decide
 
 /-- A block that writes no vector register keeps them. -/
@@ -53,7 +53,7 @@ theorem WP.block_novec {is : List Instr} {s : State} {Q : State → Prop}
   | block hb => exact funext fun r => execBlock_vec (fun i hi => by rw [hc i hi]; simp) hb
 
 /-- A lane after the `i`-th register is saved. -/
-theorem lane_set (s : State) (x : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
+theorem lane_set (s : State) (x : BitVec 64) {i j : Nat} (hi : i < 10) (hj : j < 10) :
     lane (s.setV (slot i).1 (setLane (s.v (slot i).1) 64 (slot i).2 x)).v j =
       if i = j then x else lane s.v j := by
   unfold lane
@@ -100,11 +100,11 @@ structure VKeeps (s s' : State) : Prop where
 
 /-- Saving `rs` from the `k`-th lane on puts each in its lane and leaves the
 lanes before `k` and the vector registers other than the lanes'. -/
-theorem saves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 8 →
+theorem saves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 10 →
     WP isa (.block (insCode rs k)) s fun s' => VKeeps s s' ∧
       (∀ i (h : i < rs.length), lane s'.v (k + i) = s.gpr rs[i]) ∧
       (∀ j < k, lane s'.v j = lane s.v j) ∧
-      (∀ d, (∀ i < 8, d ≠ (slot i).1) → s'.v d = s.v d)
+      (∀ d, (∀ i < 10, d ≠ (slot i).1) → s'.v d = s.v d)
   | [], _, s, _ => WP.block_nil ⟨⟨rfl, rfl, rfl, rfl, rfl, rfl⟩, fun _ h => absurd h (by simp),
       fun _ _ => rfl, fun _ _ => rfl⟩
   | r :: rs, k, s, hk => by
@@ -132,7 +132,7 @@ theorem saves_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 
 
 /-- Restoring `rs` from the `k`-th lane on writes each from its lane and
 keeps the rest. -/
-theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 8 → rs.Nodup →
+theorem restores_ok : ∀ (rs : List Reg) (k : Nat) {s : State}, k + rs.length ≤ 10 → rs.Nodup →
     WP isa (.block (umovCode rs k)) s fun s' => Keeps rs s s' ∧ s'.v = s.v ∧
       ∀ i (h : i < rs.length), s'.gpr rs[i] = lane s.v (k + i)
   | [], _, s, _, _ => WP.block_nil ⟨⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, rfl,

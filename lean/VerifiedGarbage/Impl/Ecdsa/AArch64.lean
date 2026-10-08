@@ -139,9 +139,9 @@ def sh : Nat := 8 * c.C.len - Spec.Ecdsa.nBits c.C
 def mont (x : Nat) : Nat := x * c.R % c.C.p
 
 /-- Slot `i`; for six or nine words (P-384 and P-521), whose products are
-calls of a function (`Mont.callOf`), the temporary area (`TMP`), which a
-call may change, is where the function stores its modulus (`Mont.moAt`), in
-its own working space: slot `82` or `54`'s place, which nothing else uses. -/
+calls of a function (`Mont.callOf`), the temporary area (`TMP`) is in the
+function's own working space (at `Mont.moAt`), which a call may change: slot
+`82` or `54`'s place, which nothing else uses. -/
 def sl (i : Nat) : Nat := if i = TMP ∧ (c.n = 6 ∨ c.n = 9) then Mont.moAt c.n else slot c.n i
 
 def MP' : Mod where

@@ -8,8 +8,8 @@ import VerifiedGarbage.Impl.Weierstrass.AArch64
 `mulCall f n m o a b` (`Impl/Weierstrass/AArch64.lean`) calls the function
 `f`, whose code is `Mont.mulFn n m`, on the working space at `x0` and the
 offsets `o`, `a` and `b`, keeping `x30` in `v29` (`mulCall_ok`): for a
-modulus whose products are calls (`Mod.call`), with the temporary area where
-the function stores the modulus (`moAt`), it does what the inline product
+modulus whose products are calls (`callOf`), with the temporary area in the
+function's own working space (`moAt`), it does what the inline product
 does (`Proof/Mont/AArch64/Ops.lean`'s `mul_ok`): it changes only the
 registers `clob`, the number at `o` and the temporary area (`OpKeep`).
 -/
@@ -34,7 +34,7 @@ theorem not_clob {n : Nat} (hn : n = 4 ∨ n = 6 ∨ n = 9) {r : Reg} (h : r ∉
     intro n hn; rcases hn with rfl | rfl | rfl <;> decide
   exact this n hn r (mem_allRegs r) h
 
-theorem v29_not_slot : ∀ i < 8, VReg.v29 ≠ (slot i).1 := by decide
+theorem v29_not_slot : ∀ i < 10, VReg.v29 ≠ (slot i).1 := by decide
 
 /-- The arguments: `x30` into lane 0 of `v29`, the offsets into `x1`–`x3`. -/
 theorem args_ok (s : State) {o a b : Nat} (ho : o < 2 ^ 16) (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) :
@@ -82,7 +82,7 @@ def callK (n m W : Nat) (base : Addr) (o a b : Nat) (mem : Mem) : Contract isa w
   post t t' := abiPreserved t t' ∧ Kept n base o t.mem t'.mem ∧
     (wordsVal t'.mem base o n < m ∧
       wordsVal t'.mem base o n * 2 ^ (64 * n) % m = wordsVal t.mem base a n * wordsVal t.mem base b n % m) ∧
-    t'.gpr .x0 = t.gpr .x0 ∧ ∀ d, (∀ i < 8, d ≠ (slot i).1) → t'.v d = t.v d
+    t'.gpr .x0 = t.gpr .x0 ∧ ∀ d, (∀ i < 10, d ≠ (slot i).1) → t'.v d = t.v d
   pub _ _ := True
 
 theorem arg_of {v : BitVec 64} {x : Nat} (h : v.toNat = x) : (v.setWidth 32).toNat = x % 2 ^ 32 := by
@@ -140,7 +140,7 @@ theorem mulCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     · simp only [arg]; rw [c3, a3]
   · intro s₂ r₂ w₂ p₂ _ hpres _ _ ⟨_, K, ⟨V, C⟩, R0, Vv⟩
     simp only [State.withRegions_mem, State.callEntry_mem, State.withRegions_gpr] at K V C R0
-    have Vv' : ∀ d, (∀ i < 8, d ≠ (slot i).1) → s₂.v d = s₁.v d := Vv
+    have Vv' : ∀ d, (∀ i < 10, d ≠ (slot i).1) → s₂.v d = s₁.v d := Vv
     rw [K₁.mem] at K C
     refine WP.mono (lr_ok s₂) fun s₃ ⟨l₃, k₃⟩ => ?_
     have x0₂ : s₂.gpr .x0 = s.gpr .x0 := by
@@ -149,7 +149,7 @@ theorem mulCall_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       fun x hx hx' => ?_⟩, by rw [k₃.mem]; exact V, by rw [k₃.mem]; exact C⟩
     · by_cases h30 : r = .x30
       · subst h30; rw [l₃, Vv' _ v29_not_slot, L₁]
-      rcases not_clob hH.hn hr with rfl | rfl | hp
+      rcases not_clob hH.hn' hr with rfl | rfl | hp
       · rw [k₃.gpr _ (by decide), x0₂]
       · exact absurd rfl h30
       · rw [k₃.gpr r (by simpa using h30), hpres r hp h30, K₁.gpr r (by

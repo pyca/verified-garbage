@@ -15,6 +15,10 @@ theorem p384p_ok : ModOk p384p.k p384p.m where
   m_lt := by decide +kernel
   inv := by decide +kernel
   red := by decide +kernel
+  gen := by decide +kernel
+  x6 := by decide +kernel
+  loads := by decide +kernel
+  lnd := by decide +kernel
   novec := by decide +kernel
 
 theorem p521p_ok : ModOk p521p.k p521p.m where
@@ -22,6 +26,10 @@ theorem p521p_ok : ModOk p521p.k p521p.m where
   m_lt := by decide +kernel
   inv := by decide +kernel
   red := by decide +kernel
+  gen := by decide +kernel
+  x6 := by decide +kernel
+  loads := by decide +kernel
+  lnd := by decide +kernel
   novec := by decide +kernel
 
 end VG.Proof.Weierstrass.AArch64.Mont
