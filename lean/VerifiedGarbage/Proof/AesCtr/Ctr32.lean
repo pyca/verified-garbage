@@ -243,4 +243,20 @@ theorem lo32_of_leak {t t' : List Byte} (ht : t.length = 16) (ht' : t'.length = 
     omega
   rw [split t ht, split t' ht', toNat_eq_of_map h]
 
+/-- The last 32 bits of the counter block at `Q`, as read and byte-reversed. -/
+theorem lo32_bytesAt (m : Mem) (Q : Addr) :
+    lo32 (bytesAt m Q 16) = (rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).toNat := by
+  rw [lo32, show (16 : Nat) = 12 + 4 from rfl, bytesAt_append, toNat_append,
+    bytesAt_rv32, toNat_ofNat, length_ofNat]
+  have := (rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).isLt
+  simp only [Nat.reducePow] at this ⊢
+  omega
+
+theorem sub32_toNat (c : BitVec 32) : (0x100000000 - c.setWidth 64 : BitVec 64).toNat = 2 ^ 32 - c.toNat := by
+  have hc := c.isLt
+  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega
+  have h2 : (0x100000000 : BitVec 64).toNat = 2 ^ 32 := rfl
+  rw [BitVec.toNat_sub, h1, h2]
+  omega
+
 end VG.Proof.AesCtr

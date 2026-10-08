@@ -19,15 +19,6 @@ open VG.Impl.AesCbc.X86_64 (at_ cOff)
 open VG.Proof.AesCbc.X86_64 (offset_nat)
 open VG.Spec.Aes (bytesAt)
 
-/-- The last 32 bits of the counter block at `Q`, as read and byte-reversed. -/
-theorem lo32_bytesAt (m : Mem) (Q : Addr) :
-    AesCtr.lo32 (bytesAt m Q 16) = (rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).toNat := by
-  rw [AesCtr.lo32, show (16 : Nat) = 12 + 4 from rfl, AesCtr.bytesAt_append, AesCtr.toNat_append,
-    AesCtr.bytesAt_rv32, AesCtr.toNat_ofNat, AesCtr.length_ofNat]
-  have := (rv32 (m.readW (Q + BitVec.ofNat 64 12) 32)).isLt
-  simp only [Nat.reducePow] at this ⊢
-  omega
-
 theorem countA_ok (s : State) {Q : Addr} (hq : s.gpr .r12 = Q)
     (rq : InRegions (s.rd ++ s.wr) (Q + BitVec.ofNat 64 12) 4) :
     ∃ s', runBlock isa [.mov32 .rax (.mem (at_ .r12 12)), .bswap32 .rax] s = some s' ∧
@@ -40,13 +31,6 @@ theorem countA_ok (s : State) {Q : Addr} (hq : s.gpr .r12 = Q)
   simp only [gpr_setReg, ite_true, State.setReg32]
   rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
   rfl
-
-theorem sub32_toNat (c : BitVec 32) : (0x100000000 - c.setWidth 64 : BitVec 64).toNat = 2 ^ 32 - c.toNat := by
-  have hc := c.isLt
-  have h1 : (c.setWidth 64).toNat = c.toNat := by simp [BitVec.toNat_setWidth]; omega
-  have h2 : (0x100000000 : BitVec 64).toNat = 2 ^ 32 := rfl
-  rw [BitVec.toNat_sub, h1, h2]
-  omega
 
 theorem countB1_ok (s : State) {c : BitVec 32} (ha : s.gpr .rax = c.setWidth 64) :
     ∃ s', runBlock isa [.movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .rax)] s = some s' ∧
