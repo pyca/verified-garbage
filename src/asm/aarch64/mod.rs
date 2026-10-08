@@ -309,3 +309,6 @@ pub(crate) mod x448;
 
 #[rustfmt::skip]
 pub(crate) mod zeroize;
+
+#[rustfmt::skip]
+pub(crate) mod resident;
