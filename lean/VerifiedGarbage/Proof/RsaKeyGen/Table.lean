@@ -26,9 +26,45 @@ theorem primes_length : primes.length = 1024 := by rw [primes.lit_eq]; decide +k
 
 theorem three_mem : 3 ∈ (primes.take 512).drop 1 := by rw [primes.lit_eq]; decide +kernel
 
-theorem slots_length : slots.length = 1024 := by
-  simp only [slots, List.length_append, List.length_drop, List.length_take, primes_length, List.length_singleton]
+/-! The facts about the table's layout are proven for any list of 1024
+entries: about `primes` itself, the kernel would evaluate it (and the sieve)
+to check the rewrites. -/
+
+theorem slots_length_of {P : List Nat} (hlen : P.length = 1024) :
+    ((P.take 512).drop 1 ++ [3] ++ P.drop 512).length = 1024 := by
+  simp only [List.length_append, List.length_drop, List.length_take, hlen, List.length_singleton]
   omega
+
+theorem slots_length : slots.length = 1024 := slots_length_of primes_length
+
+theorem mem_slots_of {P : List Nat} (hlen : P.length = 1024) (h3 : 3 ∈ (P.take 512).drop 1) (x : Nat) :
+    x ∈ (P.take 512).drop 1 ++ [3] ++ P.drop 512 ↔ x ∈ (P.take 1024).drop 1 := by
+  have hsplit : (P.take 1024).drop 1 = (P.take 512).drop 1 ++ P.drop 512 := by
+    rw [List.take_of_length_le (Nat.le_of_eq hlen), ← List.drop_append_of_le_length (by
+      simp [hlen]), List.take_append_drop]
+  rw [hsplit]
+  simp only [List.mem_append, List.mem_singleton]
+  constructor
+  · rintro ((h | rfl) | h)
+    · exact .inl h
+    · exact .inl h3
+    · exact .inr h
+  · rintro (h | h)
+    · exact .inl (.inl h)
+    · exact .inr h
+
+theorem mem_slots_take_of {P : List Nat} (hlen : P.length = 1024) (h3 : 3 ∈ (P.take 512).drop 1)
+    (x : Nat) : x ∈ ((P.take 512).drop 1 ++ [3] ++ P.drop 512).take 512 ↔ x ∈ (P.take 512).drop 1 := by
+  have hl : ((P.take 512).drop 1 ++ [3]).length = 512 := by
+    simp only [List.length_append, List.length_drop, List.length_take, hlen, List.length_singleton]
+    omega
+  simp only [List.take_append_of_le_length (Nat.le_of_eq hl.symm), List.take_of_length_le (Nat.le_of_eq hl),
+    List.mem_append, List.mem_singleton]
+  constructor
+  · rintro (h | rfl)
+    · exact h
+    · exact h3
+  · exact .inl
 
 theorem getD_of_lt {l : List Nat} {i : Nat} (h : i < l.length) : l.getD i 0 = l[i] := by
   rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h, Option.getD_some]
@@ -81,36 +117,9 @@ theorem trialAny_eq {w c : Nat} (hc : 8161 < c) :
   · simp only [hw, ↓reduceIte, show 1024 < 64 * w by omega]
     rw [range_map_tabEntry _ (by decide), show 4 * 256 = 1024 from rfl,
       List.take_of_length_le (Nat.le_of_eq slots_length)]
-    apply any_mem_congr
-    intro x
-    unfold slots
-    have hsplit : (primes.take 1024).drop 1 = (primes.take 512).drop 1 ++ primes.drop 512 := by
-      rw [List.take_of_length_le (Nat.le_of_eq primes_length), ← List.drop_append_of_le_length (by
-        simp [primes_length]), List.take_append_drop]
-    rw [hsplit]
-    simp only [List.mem_append, List.mem_singleton]
-    constructor
-    · rintro ((h | rfl) | h)
-      · exact .inl h
-      · exact .inl three_mem
-      · exact .inr h
-    · rintro (h | h)
-      · exact .inl (.inl h)
-      · exact .inr h
+    exact any_mem_congr _ (mem_slots_of primes_length three_mem)
   · simp only [hw, ↓reduceIte, show ¬ 1024 < 64 * w by omega]
     rw [range_map_tabEntry _ (by decide), show 4 * 128 = 512 from rfl]
-    apply any_mem_congr
-    intro x
-    unfold slots
-    have hl : ((primes.take 512).drop 1 ++ [3]).length = 512 := by
-      simp only [List.length_append, List.length_drop, List.length_take, primes_length, List.length_singleton]
-      omega
-    simp only [List.take_append_of_le_length (Nat.le_of_eq hl.symm), List.take_of_length_le (Nat.le_of_eq hl),
-      List.mem_append, List.mem_singleton]
-    constructor
-    · rintro (h | rfl)
-      · exact h
-      · exact three_mem
-    · exact .inl
+    exact any_mem_congr _ (mem_slots_take_of primes_length three_mem)
 
 end VG.Proof.RsaKeyGen

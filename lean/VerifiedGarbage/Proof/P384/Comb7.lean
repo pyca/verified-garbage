@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Impl.P384.CombTable7
 
 /-!
@@ -8,8 +8,8 @@ import VerifiedGarbage.Impl.P384.CombTable7
 `combChecksW` (`Proof/Weierstrass/CombCheckW.lean`) checks every entry of
 `p384Comb7` against the specification's group law, without inverses, and the
 start `p384Comb7Start` through the partial sums below; the kernel evaluates
-it once (`combChecks7_p384`), which gives the facts the comb's proof needs
-(`combOk7`).
+it once (`combChecks7_p384`, by walking the lists: `combChecksF`), which gives
+the facts the comb's proof needs (`combOk7`).
 -/
 
 namespace VG.Proof.P384
@@ -76,8 +76,9 @@ def p384Comb7Sums : List (Nat × Nat) := [
 
 theorem combChecks7_p384 : combChecksW Spec.P384.curve.p Spec.P384.curve.a
     (Spec.P384.curve.gx, Spec.P384.curve.gy) (2 ^ (7 - 1)) 55 Impl.P384.p384Comb7 p384Comb7Sums
-    Impl.P384.p384Comb7Start = true := by
-  decide +kernel
+    Impl.P384.p384Comb7Start = true :=
+  -- By walking the tables (`combChecksF`) rather than indexing them.
+  combChecksW_of_fast (by decide +kernel)
 
 theorem combOk7 (hL : Law Spec.P384.curve) :
     CombOkW Spec.P384.curve 7 55 Impl.P384.p384Comb7 Impl.P384.p384Comb7Start :=

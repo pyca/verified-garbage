@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Impl.P521.CombTable7
 
 /-!
@@ -8,8 +8,8 @@ import VerifiedGarbage.Impl.P521.CombTable7
 `combChecksW` (`Proof/Weierstrass/CombCheckW.lean`) checks every entry of
 `p521Comb7` against the specification's group law, without inverses, and the
 start `p521Comb7Start` through the partial sums below; the kernel evaluates
-it once (`combChecks7_p521`), which gives the facts the comb's proof needs
-(`combOk7`).
+it once (`combChecks7_p521`, by walking the lists: `combChecksF`), which gives
+the facts the comb's proof needs (`combOk7`).
 -/
 
 namespace VG.Proof.P521
@@ -104,8 +104,9 @@ def p521Comb7Sums : List (Nat × Nat) := [
 
 theorem combChecks7_p521 : combChecksW Spec.P521.curve.p Spec.P521.curve.a
     (Spec.P521.curve.gx, Spec.P521.curve.gy) (2 ^ (7 - 1)) 83 Impl.P521.p521Comb7 p521Comb7Sums
-    Impl.P521.p521Comb7Start = true := by
-  decide +kernel
+    Impl.P521.p521Comb7Start = true :=
+  -- By walking the tables (`combChecksF`) rather than indexing them.
+  combChecksW_of_fast (by decide +kernel)
 
 theorem combOk7 (hL : Law Spec.P521.curve) :
     CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start :=
