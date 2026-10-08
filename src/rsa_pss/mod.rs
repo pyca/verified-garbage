@@ -409,13 +409,14 @@ fn call_verify<const N: usize>(
 ) -> u32 {
     let digest: &[u8; N] = digest.try_into().unwrap();
     assert!(signature.len() == key.n.len() && scratch.len() == scratch_words(key.n.len()));
+    let pre = key.pre(scratch);
     // SAFETY: each pointer is valid for its length (`scratch` for writes,
     // `digest` for the hash function's values), and none overlaps another or
     // wraps around, as they are distinct Rust allocations; `PublicKey::new`
     // gives `64 ≤ n_len ≤ 1024` and `1 ≤ e_len ≤ 5 ≤ n_len`; `sig_len = n_len`
     // and `scratch_len = 16 n_len + 1024`; and the CPU has the features of
-    // the function `functions` chose. `PublicKey::new` supplies the matching
-    // precomputed values and their required length.
+    // the function `functions` chose. `pre` holds the verified precomputed
+    // values for `key.n`, with their required length.
     unsafe {
         f(
             key.n.as_ptr(),
@@ -429,8 +430,8 @@ fn call_verify<const N: usize>(
             any,
             scratch.as_mut_ptr(),
             scratch.len(),
-            key.pre.as_ptr(),
-            key.pre.len(),
+            pre.as_ptr(),
+            pre.len(),
         )
     }
 }
