@@ -2,6 +2,8 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 
 /-!
 # AES-GCM on x86-64: the variants
@@ -72,6 +74,38 @@ structure PieceP (n : StitchName) : Type where
   enc : Piece n.encP
   dec : Piece n.decP
 
+/-- Interleaved loops that encrypt out of place, for
+`vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic
+file, gives their proof. -/
+inductive StitchToName where
+  /-- `Impl.Gcm.X86_64.StitchZTo`: VAES and VPCLMULQDQ on 512-bit registers. -/
+  | vaesAvx512
+
+namespace StitchToName
+
+/-- The loop named `n`. -/
+def enc : StitchToName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.enc
+
+/-- The loop named `n`, for a key context of `vg_aes_gcm_init_precomputed`. -/
+def encP : StitchToName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.encP
+
+end StitchToName
+
+/-- The facts `PieceTo` states of the loop named `n` for a key context of
+`vg_aes_gcm_init_precomputed`. -/
+structure PieceToP (n : StitchToName) : Type where
+  enc : PieceTo n.encP
+
+/-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
+of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
+the powers of the hash subkey from it). -/
+structure StitchToPart where
+  name : StitchToName
+  piece : PieceTo name.enc
+  pieceP : Option (PieceToP name) := none
+
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/
 structure StitchPart where
@@ -88,6 +122,10 @@ structure StitchPart where
   hash subkey from it (`none`: the `_precomputed` functions are not built
   for this variant). -/
   pieceP : Option (PieceP name) := none
+  /-- The loops that encrypt out of place for `vg_aes_gcm_encrypt_blocks_to`,
+  with the same CPU features (`none`: it copies the blocks to the output and
+  encrypts them there). -/
+  toPart : Option StitchToPart := none
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` (`GhashName`) and its interleaved loops
