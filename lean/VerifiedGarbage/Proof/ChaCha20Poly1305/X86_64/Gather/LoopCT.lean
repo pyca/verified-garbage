@@ -21,7 +21,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64
-open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (copyBytes next advance gatherLoop gather)
+open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width copyBytes next advance gatherLoop gather)
 open VG.Proof.AesGcm.X86_64 (rel_taint)
 open VG.Spec.Gcm (gathered gatheredLen)
 
@@ -115,7 +115,7 @@ end
 /-! ## Gathering -/
 
 section
-variable {t₁ t₂ : State} {Src Dst : Addr} {cnt L : Nat}
+variable (w : Width) {t₁ t₂ : State} {Src Dst : Addr} {cnt L : Nat}
   (hd : ∀ j < cnt * 16, t₁.mem (Src + BitVec.ofNat 64 j) = t₂.mem (Src + BitVec.ofNat 64 j))
   (h₁ : GatherPre t₁ Src Dst cnt L) (h₂ : GatherPre t₂ Src Dst cnt L)
 include hd h₁ h₂
@@ -123,11 +123,11 @@ include hd h₁ h₂
 /-- One iteration of the loop, in two runs. -/
 theorem body_rel {i : Nat} (hi : i < cnt) :
     RelCT isa (fun u₁ u₂ => GInv t₁ u₁ Src Dst cnt i ∧ GInv t₂ u₂ Src Dst cnt i)
-      (.seq (.block next) (.seq copyBytes (.block advance)))
+      (.seq (.block next) (.seq (copyBytes w) (.block advance)))
       (fun u₁ u₂ => (GInv t₁ u₁ Src Dst cnt (i + 1) ∧ u₁.zf = some (decide (i + 1 = cnt))) ∧
         (GInv t₂ u₂ Src Dst cnt (i + 1) ∧ u₂.zf = some (decide (i + 1 = cnt)))) := by
   have hT : RelCT isa (fun u₁ u₂ => GInv t₁ u₁ Src Dst cnt i ∧ GInv t₂ u₂ Src Dst cnt i)
-      (.seq (.block next) (.seq copyBytes (.block advance))) TT := by
+      (.seq (.block next) (.seq (copyBytes w) (.block advance))) TT := by
     intro σ₁ σ₂ x₁ x₂ σ₁' σ₂' ⟨g₁, g₂⟩ e₁ e₂
     refine rel_seq (rel_regs [.r11] (by simp [g₁.r11, g₂.r11]) ⟨_, by taint_decide⟩)
       (next_wp h₁ hi g₁) (next_wp h₂ hi g₂) (fun τ₁ τ₂ n₁ n₂ => ?_) σ₁ σ₂ x₁ x₂ σ₁' σ₂' ⟨rfl, rfl⟩ e₁ e₂
@@ -135,25 +135,25 @@ theorem body_rel {i : Nat} (hi : i < cnt) :
     have p₂ := copyPre_of h₂ hi n₂
     rw [← sb_agree hd hi, ← sl_agree hd hi, ← gl_agree hd (Nat.le_of_lt hi)] at p₂
     refine rel_seq (rel_regs [.rsi, .rdi, .rcx] (by simp [p₁.rsi, p₂.rsi, p₁.rdi, p₂.rdi, p₁.rcx, p₂.rcx])
-      ⟨_, by taint_decide⟩) (copyBytes_ok τ₁ p₁) (copyBytes_ok τ₂ p₂) fun v₁ v₂ c₁ c₂ => ?_
+      (by cases w <;> exact ⟨_, by taint_decide⟩)) (copyBytes_ok p₁ w) (copyBytes_ok p₂ w) fun v₁ v₂ c₁ c₂ => ?_
     refine rel_regs [.rdi, .rcx, .r9] ?_ ⟨_, by taint_decide⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     refine ⟨by rw [c₁.2.1 _ (by decide) (by decide) (by decide), c₂.2.1 _ (by decide) (by decide) (by decide),
         p₁.rdi, p₂.rdi], by rw [c₁.2.1 _ (by decide) (by decide) (by decide),
         c₂.2.1 _ (by decide) (by decide) (by decide), p₁.rcx, p₂.rcx], ?_⟩
     rw [c₁.2.1 _ (by decide) (by decide) (by decide), c₂.2.1 _ (by decide) (by decide) (by decide), n₁.r9, n₂.r9]
-  exact (hT.wp fun u₁ u₂ ⟨g₁, g₂⟩ => ⟨body_wp h₁ hi g₁, body_wp h₂ hi g₂⟩).mono (fun _ _ h => h)
+  exact (hT.wp fun u₁ u₂ ⟨g₁, g₂⟩ => ⟨body_wp w h₁ hi g₁, body_wp w h₂ hi g₂⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
 
 /-- `gatherLoop`, in two runs. -/
-theorem gatherLoop_rel (hpos : cnt ≠ 0) : RelCT isa (Eq2 t₁ t₂) gatherLoop TT := by
+theorem gatherLoop_rel (hpos : cnt ≠ 0) : RelCT isa (Eq2 t₁ t₂) (gatherLoop w) TT := by
   refine (RelCT.loop (Q := TT) (fun n u₁ u₂ => ∃ i, n = cnt - i ∧ i < cnt ∧
       GInv t₁ u₁ Src Dst cnt i ∧ GInv t₂ u₂ Src Dst cnt i) (fun n => ?_) (cnt - 0)).mono
     (fun a b ⟨ha, hb⟩ => by subst ha hb; exact ⟨0, rfl, by omega, GInv.init h₁, GInv.init h₂⟩) fun _ _ h => h
   refine RelCT.exists_ fun i => ?_
   by_cases hin : n = cnt - i ∧ i < cnt
   · obtain ⟨rfl, hi⟩ := hin
-    refine (body_rel hd h₁ h₂ hi).mono (fun _ _ h => h.2.2) ?_
+    refine (body_rel w hd h₁ h₂ hi).mono (fun _ _ h => h.2.2) ?_
     rintro u₁ u₂ ⟨⟨g₁, z₁⟩, ⟨g₂, z₂⟩⟩
     have ev₁ : isa.eval .ne u₁ = some !decide (i + 1 = cnt) := by show u₁.zf.map (!·) = _; rw [z₁]; rfl
     have ev₂ : isa.eval .ne u₂ = some !decide (i + 1 = cnt) := by show u₂.zf.map (!·) = _; rw [z₂]; rfl
@@ -164,11 +164,11 @@ theorem gatherLoop_rel (hpos : cnt ≠ 0) : RelCT isa (Eq2 t₁ t₂) gatherLoop
   · exact RelCT.of_false fun _ _ h => hin ⟨h.1, h.2.1⟩
 
 /-- `gather`, in two runs. -/
-theorem gather_rel : RelCT isa (Eq2 t₁ t₂) gather TT := by
+theorem gather_rel : RelCT isa (Eq2 t₁ t₂) (gather w) TT := by
   refine rel_seq (rel_regs [.r9] (by simp [h₁.r9, h₂.r9]) ⟨_, by taint_decide⟩)
     (cmp_ok t₁ h₁.r9 h₁.hcnt) (cmp_ok t₂ h₂.r9 h₂.hcnt) fun τ₁ τ₂ ⟨z₁, g₁, m₁, rd₁, wr₁⟩ ⟨z₂, g₂, m₂, rd₂, wr₂⟩ => ?_
   refine rel_ite (b := decide (cnt = 0)) z₁ z₂ (fun _ => rel_skip) fun hf => ?_
-  exact gatherLoop_rel (by rw [m₁, m₂]; exact hd) (h₁.of_eq g₁ m₁ rd₁ wr₁) (h₂.of_eq g₂ m₂ rd₂ wr₂)
+  exact gatherLoop_rel w (by rw [m₁, m₂]; exact hd) (h₁.of_eq g₁ m₁ rd₁ wr₁) (h₂.of_eq g₂ m₂ rd₂ wr₂)
     (by simpa using hf)
 
 end

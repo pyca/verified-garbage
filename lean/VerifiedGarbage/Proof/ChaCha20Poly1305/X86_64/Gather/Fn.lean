@@ -24,7 +24,7 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.WriteBytes
 open VG.Impl.AesGcm.X86_64 (at_ imm)
-open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (entry gather callArgs sealGather)
+open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width entry gather callArgs sealGather)
 open VG.Proof.AesGcm.X86_64 (offset_nat)
 open VG.Spec.Poly1305 (bytesAt)
 open VG.Spec.ChaCha20Poly1305 (encrypt gathered gatheredLen pMax)
@@ -269,8 +269,8 @@ structure Gathered (s g : State) : Prop where
   wr : g.wr = FR s :: s.wr
   mx : g.mxcsr = s.mxcsr
 
-theorem gathered_wp {s e : State} (h : Lay s) (he : Entered s e) : WP isa gather e (Gathered s) := by
-  refine WP.mono_mx (by decide +kernel) (gather_wp e (gatherPre_of h he)) fun g ⟨mg, kg⟩ mxg => ?_
+theorem gathered_wp (w : Width) {s e : State} (h : Lay s) (he : Entered s e) : WP isa (gather w) e (Gathered s) := by
+  refine WP.mono_mx (by cases w <;> decide +kernel) (gather_wp w e (gatherPre_of h he)) fun g ⟨mg, kg⟩ mxg => ?_
   rw [he.mem, h.hpt] at mg
   exact ⟨mg, fun r hr hsp => (kg.gpr r hr).trans (he.gpr r (fun e => hr (by simp [e]))
       (fun e => hr (by simp [e])) hsp),
@@ -532,19 +532,19 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   · rw [popped_mxcsr, mx', pushed_mxcsr, hc.mx]
 
 /-- The body of our frame. -/
-theorem frameBody_wp (F : SealFn) {s : State} (h : Lay s) :
-    WP isa (.seq (.block entry) (.seq gather (.seq (.block callArgs)
+theorem frameBody_wp (w : Width) (F : SealFn) {s : State} (h : Lay s) :
+    WP isa (.seq (.block entry) (.seq (gather w) (.seq (.block callArgs)
       (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1))))) (pushed saved s) (Called s) := by
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
-  refine WP.seq (WP.mono (gathered_wp h he) fun g hg => ?_)
+  refine WP.seq (WP.mono (gathered_wp w h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
   exact called_wp F h hc
 
-theorem sealGather_wp (F : SealFn) {s : State} (hs : gatherPre s) :
-    WP isa (sealGather F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
+theorem sealGather_wp (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
+    WP isa (sealGather w F.name F.code) s fun z => abiPreserved s z ∧ gatherPost s z := by
   have h := lay hs
   have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega
-  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp F h) fun z hz => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz => ?_)
   refine ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · by_cases hsp : r = .rsp
     · subst hsp
