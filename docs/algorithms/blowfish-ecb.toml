@@ -1,0 +1,5 @@
+name = "Blowfish-ECB"
+family = "Ciphers"
+specs = ["Blowfish"]
+modules = ["src/blowfish_ecb.rs"]
+asm = ["blowfish"]

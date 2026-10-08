@@ -586,6 +586,22 @@ yours to keep:
 
 <tr>
 
+<td>Blowfish-ECB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>ChaCha20</td>
 
 <td>✅</td>

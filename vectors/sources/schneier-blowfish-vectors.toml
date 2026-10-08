@@ -1,0 +1,5 @@
+name = "Blowfish test vectors by Eric Young, as published on Bruce Schneier's Blowfish page (ECB, set-key and chaining-mode data)"
+directories = ["schneier-blowfish-vectors"]
+url = "https://www.schneier.com/wp-content/uploads/2015/12/vectors-2.txt"
+sha256 = "d61b2748f239e1366cb3ad32e572788900eae157897b52a52bfd00a99a9da9f1"
+retrieved = 2026-10-08

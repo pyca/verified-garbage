@@ -1,0 +1,5 @@
+name = "Blowfish's initial P-array and S-boxes (the hexadecimal digits of pi), as published on Bruce Schneier's Blowfish page"
+directories = ["schneier-blowfish-constants"]
+url = "https://www.schneier.com/wp-content/uploads/2015/12/constants.txt"
+sha256 = "ab6368f5f8f8648dcc2be58a2806c804959e4963b733e7b76dacad85a82c8bfb"
+retrieved = 2026-10-08
