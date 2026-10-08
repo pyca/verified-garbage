@@ -5,12 +5,13 @@
 //! `VG.Spec.Sha512.initContract` for `VG.Spec.Sha512.H0_384`) makes a SHA-512
 //! streaming state represent the empty message, hashed from SHA-384's
 //! initial hash value (`VG.Spec.Sha512.Repr`); SHA-512's `vg_sha512_update`
-//! and `vg_sha512_finalize` (`updateContract` and `finalizeContract`, which
-//! hold for any initial hash value) then absorb the message and output the
-//! final hash value.
+//! (`updateContract`, which holds for any initial hash value) then absorbs
+//! the message, and `vg_sha384_finalize` (`finalizeDigestContract` for
+//! `VG.Spec.Sha512.H0_384` and `VG.Spec.Sha512.sha384`) outputs its digest, the
+//! result of the whole algorithm.
 //!
-//! The implementations of `update` and `finalize` are SHA-512's, chosen the
-//! same way (see `super::sha512`).
+//! The implementations of `update` and `finalize` are chosen as SHA-512's
+//! (see `super::sha512`).
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -22,19 +23,19 @@
 use crate::arch::sha512::vg_sha384_init;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha512::{
-    VG_SHA512_FINALIZE_AVX2_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES,
+    VG_SHA384_FINALIZE_AVX2_FEATURES, VG_SHA384_FINALIZE_SHANI_FEATURES,
     VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_UPDATE_SHANI_FEATURES,
 };
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{VG_SHA512_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
-use crate::arch::sha512::{vg_sha512_finalize, vg_sha512_update};
+use crate::arch::sha512::{VG_SHA384_FINALIZE_SHA3_FEATURES, VG_SHA512_UPDATE_SHA3_FEATURES};
+use crate::arch::sha512::{vg_sha384_finalize, vg_sha512_update};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::sha512::{
-    vg_sha512_finalize_avx2, vg_sha512_finalize_shani, vg_sha512_update_avx2,
+    vg_sha384_finalize_avx2, vg_sha384_finalize_shani, vg_sha512_update_avx2,
     vg_sha512_update_shani,
 };
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha512::{vg_sha512_finalize_sha3, vg_sha512_update_sha3};
+use crate::arch::sha512::{vg_sha384_finalize_sha3, vg_sha512_update_sha3};
 
 super::streaming_hash!(
     /// An incremental SHA-384 computation (FIPS 180-4 §6.5).
@@ -42,19 +43,18 @@ super::streaming_hash!(
         state: 192,
         block: 128,
         output: 48,
-        final_hash: 64,
         init: vg_sha384_init,
         backends: Sha384Backend {
-            Scalar => (vg_sha512_update, vg_sha512_finalize),
+            Scalar => (vg_sha512_update, vg_sha384_finalize),
             #[cfg(target_arch = "aarch64")]
-            Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA512_FINALIZE_SHA3_FEATURES] =>
-                (vg_sha512_update_sha3, vg_sha512_finalize_sha3),
+            Sha3 if [VG_SHA512_UPDATE_SHA3_FEATURES, VG_SHA384_FINALIZE_SHA3_FEATURES] =>
+                (vg_sha512_update_sha3, vg_sha384_finalize_sha3),
             #[cfg(target_arch = "x86_64")]
-            ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA512_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha512_update_shani, vg_sha512_finalize_shani),
+            ShaNi if [VG_SHA512_UPDATE_SHANI_FEATURES, VG_SHA384_FINALIZE_SHANI_FEATURES] =>
+                (vg_sha512_update_shani, vg_sha384_finalize_shani),
             #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA512_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha512_update_avx2, vg_sha512_finalize_avx2),
+            Avx2 if [VG_SHA512_UPDATE_AVX2_FEATURES, VG_SHA384_FINALIZE_AVX2_FEATURES] =>
+                (vg_sha512_update_avx2, vg_sha384_finalize_avx2),
         },
     }
 );

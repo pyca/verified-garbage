@@ -10,6 +10,6 @@ A variant of `MdHash` on x86-64 (see `TCB/Emit.lean`): SHA-512/224, with
 namespace VG.Variants.MdHash.X86_64.Sha512_224ShaNi
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
-  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .shani
+  Proof.Pbkdf2.Md.X86_64.Sha512.sha512_224 .shani (Proof.Pbkdf2.Md.X86_64.Sha512.stream512_224 .shani)
 
 end VG.Variants.MdHash.X86_64.Sha512_224ShaNi

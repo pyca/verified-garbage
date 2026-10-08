@@ -50,4 +50,23 @@ def updateWith (suffix : String) (code : Prog isa) : Prog isa :=
 def finalizeWith (suffix : String) (code : Prog isa) : Prog isa :=
   MdStream.AArch64.finalize params (compressName suffix) code
 
+/-! ## The truncated digests
+
+SHA-384, SHA-512/256 and SHA-512/224 output the first 48, 32 and 28 bytes of
+the final hash value: `params` with a digest of 6 or 4 words, or of 3 words
+and the high half of the fourth (`outHi`). -/
+
+/-- The high half of word `k` of the hash value at `x19`, big-endian, written
+to `x21 + 8 k`. -/
+def outHi (k : Nat) : List Instr :=
+  [.ldr .w .x9 .x19 (8 * k + 4), .rev32 .x9 .x9, .str .w .x9 .x21 (8 * k)]
+
+def params384 : Params := { params with out := out64 6 }
+def params512_256 : Params := { params with out := out64 4 }
+def params512_224 : Params := { params with out := out64 3 ++ outHi 3 }
+
+/-- `finalizeWith`, writing the digest `P.out` writes (`params384`, …). -/
+def finalizeDigestWith (P : Params) (suffix : String) (code : Prog isa) : Prog isa :=
+  MdStream.AArch64.finalize P (compressName suffix) code
+
 end VG.Impl.Sha512.AArch64.Stream

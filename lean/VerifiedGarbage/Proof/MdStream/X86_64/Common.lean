@@ -284,6 +284,26 @@ def finK : Contract isa where
     s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
 
+/-- The contract of a `finalize` writing the first `D` bytes of the final
+hash value (a truncated digest, such as SHA-384's): `finK`, with `D` bytes
+at `rdx`. -/
+def finKD (D : Nat) : Contract isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, P.N + P.B⟩
+    let out : Region := ⟨s.gpr .rdx, D⟩
+    let scratch : Region := ⟨s.gpr .rcx, P.so + 48⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack : Region := ⟨s.gpr .rsp - 8, 8⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, H.Repr iv s.mem (s.gpr .rdi) m → H.lenOk m.length →
+    s.gpr .rsi = BitVec.ofNat 64 m.length → bytesAt s'.mem (s.gpr .rdx) D = (H.hash iv m).take D
+  pub s₁ s₂ :=
+    s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .rsp = s₂.gpr .rsp
+
 end
 
 /-! ## What each hash function's own code must do -/
@@ -300,6 +320,25 @@ structure Shape {P : Params} (H : Md P.B P.N P.L) : Prop where
     Region.Disjoint ⟨s.gpr .rbx, P.N⟩ ⟨s.gpr .rbp, P.N⟩ →
     WP isa (.block P.out) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.mem = writeBytes s.mem (s.gpr .rbp) (H.digest (H.stateAt s.mem (s.gpr .rbx)))
+
+/-- `Shape` for a `P.out` that writes only the first `D` bytes of the digest
+(a truncated digest, such as SHA-384's). -/
+structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
+  le : D ≤ P.N
+  len : ∀ s : State, InRegions s.wr (s.gpr .rbx + BitVec.ofNat 64 (P.N + P.B - P.L)) P.L →
+    WP isa (.block P.len) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧
+      s'.mem = writeBytes s.mem (s.gpr .rbx + BitVec.ofNat 64 (P.N + P.B - P.L)) (H.lenOf (s.gpr .r12))
+  out : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr .rbx) P.N → InRegions s.wr (s.gpr .rbp) D →
+    Region.Disjoint ⟨s.gpr .rbx, P.N⟩ ⟨s.gpr .rbp, D⟩ →
+    WP isa (.block P.out) s fun s' => (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧
+      s'.mem = writeBytes s.mem (s.gpr .rbp) ((H.digest (H.stateAt s.mem (s.gpr .rbx))).take D)
+
+/-- The whole digest is its first `N` bytes. -/
+theorem Shape.toD {P : Params} {H : Md P.B P.N P.L} (hs : Shape H) : ShapeD H P.N :=
+  ⟨Nat.le_refl _, hs.len, fun s hin hout hd => (hs.out s hin hout hd).mono fun _ ⟨g, rd, wr, m⟩ =>
+    ⟨g, rd, wr, by rw [m, List.take_of_length_le (by rw [H.digest_length])]⟩⟩
 
 /-- The initial taint of `update`: the arguments and `rsp` are public, and
 `rdi` and `r8` point at the writable regions. -/
@@ -344,6 +383,11 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
   depth : code.depth = 0
   keeps_rdi : ∀ i ∈ instrs code, Taint.clobbers i .rdi = false
   keeps_rcx : ∀ i ∈ instrs code, Taint.clobbers i .rcx = false
+
+/-- `CalleeOk` does not depend on the length field or the digest. -/
+theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
+    (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=
+  ⟨hf.verified, hf.ct, hf.nosp, hf.depth, hf.keeps_rdi, hf.keeps_rcx⟩
 
 /-- The facts about the instructions of `code`, from one kernel check each. -/
 theorem CalleeOk.of_verified {P : Params} {H : Md P.B P.N P.L} {code : Prog isa}

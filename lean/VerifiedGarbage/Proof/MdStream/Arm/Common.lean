@@ -494,6 +494,27 @@ def finK : Contract isa where
     s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧
     stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
 
+/-- The contract of a `finalize` writing the first `D` bytes of the final
+hash value (a truncated digest, such as SHA-384's): `finK`, with `D` bytes
+at `out`. -/
+def finKD (D : Nat) : Contract isa where
+  pre s :=
+    let state : Region := ⟨State.addr (s.gpr .r0), P.N + P.B⟩
+    let out : Region := ⟨State.addr (stackArg s 0), D⟩
+    let scratch : Region := ⟨State.addr (stackArg s 1), P.so + 48⟩
+    let args : Region := ⟨stackArgAddr s 0, 8⟩
+    s.rd = [args] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    args.Disjoint state ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+    (s.gpr .r0).toNat + (P.N + P.B) ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + D ≤ 2 ^ 32 ∧
+    (stackArg s 1).toNat + (P.so + 48) ≤ 2 ^ 32 ∧ s.sp.toNat + 8 ≤ 2 ^ 32
+  post s s' := ∀ iv m, H.Repr iv s.mem (State.addr (s.gpr .r0)) m → H.lenOk m.length →
+    count s = BitVec.ofNat 64 m.length →
+      bytesAt s'.mem (State.addr (stackArg s 0)) D = (H.hash iv m).take D
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
+
 end
 
 /-! ## What each hash function's own code must do -/
@@ -516,6 +537,29 @@ structure Shape {P : Params} (H : Md P.B P.N P.L) : Prop where
       s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = writeBytes s.mem (State.addr (s.gpr .r6)) (H.digest (H.stateAt s.mem (State.addr (s.gpr .r0))))
 
+/-- `Shape` for a `P.out` that writes only the first `D` bytes of the digest
+(a truncated digest, such as SHA-384's). -/
+structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
+  le : D ≤ P.N
+  len : ∀ s : State, (s.gpr .r0).toNat + (P.N + P.B) ≤ 2 ^ 32 →
+    InRegions s.wr (State.addr (s.gpr .r0) + BitVec.ofNat 64 (P.N + (P.B - P.L))) P.L →
+    WP isa (.block P.len) s fun s' => (∀ r, r ≠ .r9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = writeBytes s.mem (State.addr (s.gpr .r0) + BitVec.ofNat 64 (P.N + (P.B - P.L)))
+        (H.lenOf (s.gpr .r5 ++ s.gpr .r4))
+  out : ∀ s : State, (s.gpr .r0).toNat + P.N ≤ 2 ^ 32 → (s.gpr .r6).toNat + D ≤ 2 ^ 32 →
+    InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0)) P.N → InRegions s.wr (State.addr (s.gpr .r6)) D →
+    Region.Disjoint ⟨State.addr (s.gpr .r0), P.N⟩ ⟨State.addr (s.gpr .r6), D⟩ →
+    WP isa (.block P.out) s fun s' => (∀ r, r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = writeBytes s.mem (State.addr (s.gpr .r6))
+        ((H.digest (H.stateAt s.mem (State.addr (s.gpr .r0)))).take D)
+
+/-- The whole digest is its first `N` bytes. -/
+theorem Shape.toD {P : Params} {H : Md P.B P.N P.L} (hs : Shape H) : ShapeD H P.N :=
+  ⟨Nat.le_refl _, hs.len, fun s hb ha hin hout hd => (hs.out s hb ha hin hout hd).mono
+    fun _ ⟨g, rd, wr, sp, m⟩ => ⟨g, rd, wr, sp, by rw [m, List.take_of_length_le (by rw [H.digest_length])]⟩⟩
+
 /-- What `compressAt` needs of the compression function it calls: that it is
 correct, makes no calls, and never writes `r0` or `r3`. -/
 structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop where
@@ -523,6 +567,11 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compressK H).post s s'
   noCalls : code.noCalls = true
   keeps : ((instrs code).all fun i => dstOf i != some .r0 && dstOf i != some .r3) = true
+
+/-- `CalleeOk` does not depend on the length field or the digest. -/
+theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
+    (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=
+  ⟨hf.verified, hf.noCalls, hf.keeps⟩
 
 /-! ## The compression function -/
 

@@ -16,7 +16,8 @@ The streaming state (192 bytes at `state`) is the hash value followed by a
   compressing it once it is full.
 * `finalize(state = rdi, count = rsi, out = rdx, scratch = rcx)` pads the
   buffered bytes (one or two blocks), compresses them and writes the final
-  hash value.
+  hash value; `finalizeDigest` writes only the first 48, 32 or 28 bytes of
+  it, the digest of SHA-384, SHA-512/256 or SHA-512/224.
 
 `update` and `finalize` are the generic streaming code of
 `Impl/MdStream/X86_64.lean`. They take the compression function they call (a
@@ -61,5 +62,23 @@ def params : Params where
 def update (f : Callee) : Prog isa := MdStream.X86_64.update params f.name f.code
 
 def finalize (f : Callee) : Prog isa := MdStream.X86_64.finalize params f.name f.code
+
+/-! ## The truncated digests
+
+SHA-384, SHA-512/256 and SHA-512/224 output the first 48, 32 and 28 bytes of
+the final hash value: `params` with a digest of 6 or 4 words, or of 3 words
+and the high half of the fourth (`outHi`). -/
+
+/-- The high half of word `k` of the hash value at `rbx`, big-endian, written
+to `rbp + 8 k`. -/
+def outHi (k : Nat) : List Instr :=
+  [.mov32 .rax (.mem (at_ .rbx (8 * k + 4))), .bswap32 .rax, .store32 (at_ .rbp (8 * k)) .rax]
+
+def params384 : Params := { params with out := out64 6 }
+def params512_256 : Params := { params with out := out64 4 }
+def params512_224 : Params := { params with out := out64 3 ++ outHi 3 }
+
+/-- `finalize`, writing the digest `P.out` writes (`params384`, …). -/
+def finalizeDigest (P : Params) (f : Callee) : Prog isa := MdStream.X86_64.finalize P f.name f.code
 
 end VG.Impl.Sha512.X86_64.Stream

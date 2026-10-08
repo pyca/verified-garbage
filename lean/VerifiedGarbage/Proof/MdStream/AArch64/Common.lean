@@ -624,6 +624,24 @@ def finK : Contract isa where
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
 
+/-- The contract of a `finalize` writing the first `D` bytes of the final
+hash value (a truncated digest, such as SHA-384's): `finK`, with `D` bytes
+at `x2`. -/
+def finKD (D : Nat) : Contract isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .x0, P.N + P.B⟩
+    let out : Region := ⟨s.gpr .x2, D⟩
+    let scratch : Region := ⟨s.gpr .x3, P.so + 48⟩
+    let stack : Region := ⟨s.sp - 16, 16⟩
+    s.rd = [] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    16 ≤ s.sp.toNat ∧ stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch
+  post s s' := ∀ iv m, H.Repr iv s.mem (s.gpr .x0) m → H.lenOk m.length →
+    s.gpr .x1 = BitVec.ofNat 64 m.length → bytesAt s'.mem (s.gpr .x2) D = (H.hash iv m).take D
+  pub s₁ s₂ :=
+    s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
+
 end
 
 /-! ## What each hash function's own code must do -/
@@ -645,6 +663,28 @@ structure Shape {P : Params} (H : Md P.B P.N P.L) : Prop where
       s'.wr = s.wr ∧ s'.sp = s.sp ∧
       s'.mem = writeBytes s.mem (s.gpr .x21) (H.digest (H.stateAt s.mem (s.gpr .x19)))
 
+/-- `Shape` for a `P.out` that writes only the first `D` bytes of the digest
+(a truncated digest, such as SHA-384's). -/
+structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
+  le : D ≤ P.N
+  lenKeepsV : P.len.all VG.AArch64.keepsV = true
+  outKeepsV : P.out.all VG.AArch64.keepsV = true
+  len : ∀ s : State, InRegions s.wr (s.gpr .x19 + BitVec.ofNat 64 (P.N + P.B - P.L)) P.L →
+    WP isa (.block P.len) s fun s' => (∀ r, r ≠ .x9 → r ≠ .x12 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = writeBytes s.mem (s.gpr .x19 + BitVec.ofNat 64 (P.N + P.B - P.L)) (H.lenOf (s.gpr .x22))
+  out : ∀ s : State, InRegions (s.rd ++ s.wr) (s.gpr .x19) P.N → InRegions s.wr (s.gpr .x21) D →
+    Region.Disjoint ⟨s.gpr .x19, P.N⟩ ⟨s.gpr .x21, D⟩ →
+    WP isa (.block P.out) s fun s' => (∀ r, r ≠ .x9 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr ∧ s'.sp = s.sp ∧
+      s'.mem = writeBytes s.mem (s.gpr .x21) ((H.digest (H.stateAt s.mem (s.gpr .x19))).take D)
+
+/-- The whole digest is its first `N` bytes. -/
+theorem Shape.toD {P : Params} {H : Md P.B P.N P.L} (hs : Shape H) : ShapeD H P.N :=
+  ⟨Nat.le_refl _, hs.lenKeepsV, hs.outKeepsV, hs.len, fun s hin hout hd =>
+    (hs.out s hin hout hd).mono fun _ ⟨g, rd, wr, sp, m⟩ =>
+      ⟨g, rd, wr, sp, by rw [m, List.take_of_length_le (by rw [H.digest_length])]⟩⟩
+
 /-- What `compressAt` needs of the compression function it calls: that it is
 correct, and pushes no frames. -/
 structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop where
@@ -655,6 +695,11 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
 
 theorem storeWord_keepsV (P : Params) : (storeWord P).all VG.AArch64.keepsV = true := by
   unfold storeWord; split <;> rfl
+
+/-- `CalleeOk` does not depend on the length field or the digest. -/
+theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
+    (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=
+  ⟨hf.verified, hf.noFrames, hf.keepsV⟩
 
 /-- The stream wrapper itself writes no vector registers. -/
 theorem update_keepsV {P : Params} {name : String} {code : Prog isa}
@@ -668,8 +713,8 @@ theorem update_keepsV {P : Params} {name : String} {code : Prog isa}
   exact ⟨fun x hx => hw x hx, fun x hx => hc x hx⟩
 
 /-- The finalizer adds only the parameterized length and digest stores. -/
-theorem finalize_keepsV {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
-    (hs : Shape H) (h : code.allInstrs VG.AArch64.keepsV = true) :
+theorem finalize_keepsVD {P : Params} {H : Md P.B P.N P.L} {D : Nat} {name : String} {code : Prog isa}
+    (hs : ShapeD H D) (h : code.allInstrs VG.AArch64.keepsV = true) :
     (finalize P name code).allInstrs VG.AArch64.keepsV = true := by
   have hw := List.all_eq_true.mp (storeWord_keepsV P)
   rw [Code.allInstrs_eq] at h ⊢
@@ -677,6 +722,11 @@ theorem finalize_keepsV {P : Params} {H : Md P.B P.N P.L} {name : String} {code 
     compressAt, compressWith, save, saved, restore, mov, instrs, lg,
     VG.AArch64.keepsV, vdstOf, h, hs.lenKeepsV, hs.outKeepsV]
   exact fun x hx => hw x hx
+
+theorem finalize_keepsV {P : Params} {H : Md P.B P.N P.L} {name : String} {code : Prog isa}
+    (hs : Shape H) (h : code.allInstrs VG.AArch64.keepsV = true) :
+    (finalize P name code).allInstrs VG.AArch64.keepsV = true :=
+  finalize_keepsVD hs.toD h
 
 /-! ## The compression function -/
 
