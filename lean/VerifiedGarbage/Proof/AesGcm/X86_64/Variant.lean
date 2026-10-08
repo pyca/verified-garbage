@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
-import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 
@@ -29,7 +29,7 @@ inductive StitchName where
   | vaes
   /-- `Impl.Gcm.X86_64.StitchZ`: VAES and VPCLMULQDQ on 512-bit registers. -/
   | vaesAvx512
-  /-- `Impl.Gcm.X86_64.StitchAvx`: AES-NI and PCLMULQDQ in `VEX.128`. -/
+  /-- `Impl.Gcm.X86_64.StitchAvx8`: AES-NI and PCLMULQDQ in `VEX.128`. -/
   | aesniAvx
 
 namespace StitchName
@@ -38,13 +38,13 @@ namespace StitchName
 def enc : StitchName → Prog isa
   | .vaes => Impl.Gcm.X86_64.Stitch.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZ.enc
-  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx.enc
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.enc
 
 /-- The decryption loop named `n`. -/
 def dec : StitchName → Prog isa
   | .vaes => Impl.Gcm.X86_64.Stitch.dec
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZ.dec
-  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx.dec
+  | .aesniAvx => Impl.Gcm.X86_64.StitchAvx8.dec
 
 /-- The encryption loop named `n`, for a key context of
 `vg_aes_gcm_init_precomputed`: those that read the powers of the hash subkey

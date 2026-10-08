@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.GhashImpls
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Field
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Verified
@@ -92,7 +92,7 @@ namespace VG.Proof.AesGcm.X86_64
 theorem StitchName.ok : (n : StitchName) → Proof.Gcm.X86_64.Stitch.StitchOk n.enc n.dec
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZ.stitch_ok
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx.stitch_ok
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok
 
 /-- The loops `p` names, with their proof. -/
 def StitchPart.impl (p : StitchPart) : StitchImpl :=
@@ -104,7 +104,7 @@ theorem StitchName.okP : (n : StitchName) →
     Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP n.decP
   | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZP.stitchP_ok.toM
-  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx.stitch_ok.toM _
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
 
 /-- The loops `p` names for a key context of `vg_aes_gcm_init_precomputed`,
 with their proof, if they read the powers of the hash subkey from it. -/
