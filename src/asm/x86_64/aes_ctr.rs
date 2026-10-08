@@ -3,13 +3,13 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_ctr_aesni` requires (`Artifact.features`).
-pub(crate) const VG_AES_CTR_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+pub(crate) const VG_AES_CTR_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks_aesni`.
+/// This implementation enciphers the counter blocks with `vg_aes_ctr32_aesni`, as many at once as its 32-bit counter allows.
 ///
 /// # Safety
 ///
@@ -21,7 +21,7 @@ pub(crate) const VG_AES_CTR_AESNI_FEATURES: crate::cpu::Features = crate::cpu::F
 /// * The contents of `scratch` on return are unspecified.
 /// * `ctr`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
+/// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_aesni(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
@@ -40,35 +40,42 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_aesni(schedule: *const [u8; 240]
         "test r14, r14",
         "je 20f",
         "22:",
-        "mov rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r15+2056], rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "bswap eax",
+        "movabs rcx, 4294967296",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "cmovb rcx, r14",
+        "mov QWORD PTR [r15+2048], rcx",
         "mov rdi, rbx",
         "mov rsi, rbp",
-        "mov rdx, r15",
-        "add rdx, 2048",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks_aesni}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r13+8], rax",
+        "mov rdx, r12",
+        "mov r8, rcx",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_aes_ctr32_aesni}",
+        "mov rax, QWORD PTR [r15+2048]",
+        "sub r14, rax",
+        "shl rax, 4",
+        "add r13, rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "test eax, eax",
+        "je 23f",
+        "jmp 24f",
+        "23:",
         "mov rax, QWORD PTR [r12+8]",
         "bswap rax",
         "mov rcx, QWORD PTR [r12]",
         "bswap rcx",
-        "add rax, 1",
+        "movabs rdx, 4294967296",
+        "add rax, rdx",
         "adc rcx, 0",
         "bswap rax",
         "bswap rcx",
         "mov QWORD PTR [r12+8], rax",
         "mov QWORD PTR [r12], rcx",
-        "add r13, 16",
-        "sub r14, 1",
+        "24:",
+        "test r14, r14",
         "jne 22b",
         "jmp 21f",
         "20:",
@@ -81,7 +88,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_aesni(schedule: *const [u8; 240]
         "mov r15, QWORD PTR [r15+2104]",
         "ret",
         ".p2align 6",
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni,
     )
 }
 
@@ -89,7 +96,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_aesni(schedule: *const [u8; 240]
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks`.
+/// This implementation enciphers the counter blocks with `vg_aes_ctr32`, as many at once as its 32-bit counter allows.
 ///
 /// # Safety
 ///
@@ -119,35 +126,42 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr(schedule: *const [u8; 240], roun
         "test r14, r14",
         "je 20f",
         "22:",
-        "mov rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r15+2056], rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "bswap eax",
+        "movabs rcx, 4294967296",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "cmovb rcx, r14",
+        "mov QWORD PTR [r15+2048], rcx",
         "mov rdi, rbx",
         "mov rsi, rbp",
-        "mov rdx, r15",
-        "add rdx, 2048",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r13+8], rax",
+        "mov rdx, r12",
+        "mov r8, rcx",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_aes_ctr32}",
+        "mov rax, QWORD PTR [r15+2048]",
+        "sub r14, rax",
+        "shl rax, 4",
+        "add r13, rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "test eax, eax",
+        "je 23f",
+        "jmp 24f",
+        "23:",
         "mov rax, QWORD PTR [r12+8]",
         "bswap rax",
         "mov rcx, QWORD PTR [r12]",
         "bswap rcx",
-        "add rax, 1",
+        "movabs rdx, 4294967296",
+        "add rax, rdx",
         "adc rcx, 0",
         "bswap rax",
         "bswap rcx",
         "mov QWORD PTR [r12+8], rax",
         "mov QWORD PTR [r12], rcx",
-        "add r13, 16",
-        "sub r14, 1",
+        "24:",
+        "test r14, r14",
         "jne 22b",
         "jmp 21f",
         "20:",
@@ -160,18 +174,18 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr(schedule: *const [u8; 240], roun
         "mov r15, QWORD PTR [r15+2104]",
         "ret",
         ".p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
     )
 }
 
 /// The CPU features `vg_aes_ctr_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_CTR_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes"]);
+pub(crate) const VG_AES_CTR_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
 
 /// AES-CTR encryption or decryption (NIST SP 800-38A §6.5) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
 ///
 /// Contract: `VG.Spec.Ctr.aesContract`. Constant time: only the pointers, `rounds`, `n` and the last four bytes of `*ctr` (the 32-bit counter, public in OpenSSL, BoringSSL and AWS-LC, which split the blocks where it wraps) may affect timing, not the key schedule, the rest of the counter block or the data.
 ///
-/// This implementation enciphers one block at a time with `vg_aes_encrypt_blocks_vaes`.
+/// This implementation enciphers the counter blocks with `vg_aes_ctr32_vaes`, as many at once as its 32-bit counter allows.
 ///
 /// # Safety
 ///
@@ -183,7 +197,7 @@ pub(crate) const VG_AES_CTR_VAES_FEATURES: crate::cpu::Features = crate::cpu::Fe
 /// * The contents of `scratch` on return are unspecified.
 /// * `ctr`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `ctr`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_vaes(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
@@ -202,35 +216,42 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_vaes(schedule: *const [u8; 240],
         "test r14, r14",
         "je 20f",
         "22:",
-        "mov rax, QWORD PTR [r12]",
-        "mov QWORD PTR [r15+2048], rax",
-        "mov rax, QWORD PTR [r12+8]",
-        "mov QWORD PTR [r15+2056], rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "bswap eax",
+        "movabs rcx, 4294967296",
+        "sub rcx, rax",
+        "cmp r14, rcx",
+        "cmovb rcx, r14",
+        "mov QWORD PTR [r15+2048], rcx",
         "mov rdi, rbx",
         "mov rsi, rbp",
-        "mov rdx, r15",
-        "add rdx, 2048",
-        "mov ecx, 1",
-        "mov r8, r15",
-        "call {vg_aes_encrypt_blocks_vaes}",
-        "mov rax, QWORD PTR [r13]",
-        "xor rax, QWORD PTR [r15+2048]",
-        "mov QWORD PTR [r13], rax",
-        "mov rax, QWORD PTR [r13+8]",
-        "xor rax, QWORD PTR [r15+2056]",
-        "mov QWORD PTR [r13+8], rax",
+        "mov rdx, r12",
+        "mov r8, rcx",
+        "mov rcx, r13",
+        "mov r9, r15",
+        "call {vg_aes_ctr32_vaes}",
+        "mov rax, QWORD PTR [r15+2048]",
+        "sub r14, rax",
+        "shl rax, 4",
+        "add r13, rax",
+        "mov eax, DWORD PTR [r12+12]",
+        "test eax, eax",
+        "je 23f",
+        "jmp 24f",
+        "23:",
         "mov rax, QWORD PTR [r12+8]",
         "bswap rax",
         "mov rcx, QWORD PTR [r12]",
         "bswap rcx",
-        "add rax, 1",
+        "movabs rdx, 4294967296",
+        "add rax, rdx",
         "adc rcx, 0",
         "bswap rax",
         "bswap rcx",
         "mov QWORD PTR [r12+8], rax",
         "mov QWORD PTR [r12], rcx",
-        "add r13, 16",
-        "sub r14, 1",
+        "24:",
+        "test r14, r14",
         "jne 22b",
         "jmp 21f",
         "20:",
@@ -243,6 +264,6 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_ctr_vaes(schedule: *const [u8; 240],
         "mov r15, QWORD PTR [r15+2104]",
         "ret",
         ".p2align 6",
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
     )
 }
