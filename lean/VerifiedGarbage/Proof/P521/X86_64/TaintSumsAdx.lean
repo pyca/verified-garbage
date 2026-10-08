@@ -24,15 +24,18 @@ taint_summary invPXSum : (taintSym ["VG_P521_COMB"]) τI invPX
 abbrev winKX : WinCfg := p521x.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
 
 /-- ECDH's window method in Jacobian coordinates. -/
-def winBuildJX : Prog isa := WinCfg.buildJ winKX
+def winBuildJX : Prog isa := WinCfg.build winKX
+def winNormJX : Prog isa := WinCfg.normTbl winKX (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521x))
 def winLoopJX : Prog isa := .loop (WinCfg.stepJ winKX) .ne
 def winLastJX : Prog isa := WinCfg.stepLast winKX
 
 materialize_code winBuildJX
+materialize_code winNormJX
 materialize_code winLoopJX
 materialize_code winLastJX
 
 taint_summary winBuildJXSum : taintS τB winBuildJX
+taint_summary winNormJXSum : taintS τB winNormJX
 taint_summary winLoopJXSum : taintS τL winLoopJX
 taint_summary winLastJXSum : taintS τL winLastJX
 

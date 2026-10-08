@@ -1,12 +1,12 @@
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJBuild
+import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJNorm
 
 /-!
 # Windows in Jacobian coordinates on x86-64: an iteration
 
 `R = 16 R` in place in Jacobian coordinates (`quadJ_ok`: two pairs of
 doublings between `R` and `D`), the masks of a point's `Z` being zero
-(`zmask_ok`), and the Jacobian addition of the entry `E` into `D` with the
-selection of `E`, `R` or `D` (`sumJ_ok`), for an iteration but the last
+(`zmask_ok`), and the mixed addition of the affine entry `E` into `D` with
+the selection of `E`, `R` or `D` (`sumJ_ok`), for an iteration but the last
 (`winStepJ_ok`).
 -/
 
@@ -33,7 +33,7 @@ theorem quadJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
       InvJ C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)
         (mul (16 * e) P) := by
   obtain ⟨-, -, ro_lt, -⟩ := hS.ro_tmv hL hF
-  obtain ⟨-, -, aRD, aDR, -, -⟩ := hL.rcbApart_winJ
+  obtain ⟨aRD, aDR, -⟩ := hL.rcbApart_winJ
   have oR := pt_other (K := K) (p := K.R) (Or.inl rfl)
   have oD := pt_other (K := K) (p := K.D) (Or.inr (Or.inr rfl))
   have sl := fun (P : Pt) (h : ∀ x ∈ [P.x, P.y, P.z], x ∈ winOther K) x (hx : x ∈ [P.x, P.y, P.z]) =>
@@ -348,9 +348,9 @@ theorem toM_selVal {C : Curve} {K : WinCfg} {m : Mem} {base : Addr} (hp : UnitMo
   rw [toM_ite, toM_ite, ha, hb, hc]
   simp only [i1, i2]
 
-/-- `R = R + E` in Jacobian coordinates (into `D`), with `R = E` where `R` is
-`O` and `R` kept where `E` is `O`: for `R` and `E` standing for points neither
-equal nor opposite unless one is `O`. -/
+/-- `R = R + E` for `R` in Jacobian coordinates and `E` affine (or `O`), by
+the mixed addition into `D`, with `R = E` where `R` is `O` and `R` kept where
+`E` is `O`: for `R` and `E` standing for points not equal unless one is `O`. -/
 theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     {Rp : Fe C → Fe C → Fe C → Point C → Prop} {s₀ s : State} (hF : WinFixed K C base s₀ P k)
@@ -359,8 +359,8 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     (hltR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hltE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z) QR)
-    (hE : InvJ C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) QE)
-    (hsep : QR ≠ .infinity → QE ≠ .infinity → QR ≠ QE ∧ Spec.Weierstrass.add QR QE ≠ .infinity) :
+    (hE : RepA C (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) QE)
+    (hsep : QR ≠ .infinity → QE ≠ .infinity → QR ≠ QE) :
     WP isa (WinCfg.sumJ K) s fun s' =>
       WinStR K C base size Rp P s₀ s' ∧ s'.gpr .rbx = s.gpr .rbx ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -387,8 +387,8 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     · exact ⟨winOther_mem (oE _ (by simp)), hltE _ (by simp)⟩
   have I₀ : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
-  rw [WinCfg.sumJ, jacAddS_eq]
-  refine WP.seq (WP.mono (winN_ok hL hp jacAddSN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2 I₀
+  rw [WinCfg.sumJ, maddJ_eq]
+  refine WP.seq (WP.mono (winN_ok hL hp maddJN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2 I₀
     (fun x hx => hx)) fun s₁ ⟨k₁, U₁, E₁, I₁, o₁, v₁⟩ => ?_)
   have S₁ := hS.next hL I₁.scr (k₁.mono clob_powClob) U₁
   -- `R` and `E` kept, `D` the sum.
@@ -420,9 +420,9 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
   have vD : (toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.x K.M.n),
       toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.y K.M.n),
       toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.z K.M.n)) =
-      jacAddF (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
-        (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) := by
-    refine Eq.trans ?_ (v₁.trans (jacAddSN_run _))
+      maddJF (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
+        (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) := by
+    refine Eq.trans ?_ (v₁.trans (maddJN_run _))
     rw [I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp))]
   have jx := congrArg Prod.fst vD
   have jy := congrArg (fun t => t.2.1) vD
@@ -453,15 +453,15 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     rw [r2x, r2y, r2z, toM_selVal hp tz1 l1 tz2 l2 (v₁' _ (by simp)) (v₁' _ (by simp)) jx,
       toM_selVal hp tz1 l1 tz2 l2 (v₁' _ (by simp)) (v₁' _ (by simp)) jy,
       toM_selVal hp tz1 l1 tz2 l2 (v₁' _ (by simp)) (v₁' _ (by simp)) jz]
-    exact InvJ.sumSel hC hM3 hQR hQE hR hE hsep
+    exact InvJ.sumSelM hC hM3 hQR hQE hR hE hsep
 
 /-! ## An iteration but the last -/
 
 /-- The Jacobian loop's invariant at `rbx = j`: `R` stands for `[winE k J j]P`
-in Jacobian coordinates, the table in Jacobian coordinates. -/
+in Jacobian coordinates, the table affine. -/
 structure WinInvJ (K : WinCfg) (C : Curve) (base : Addr) (size k : Nat) (P : Point C) (s₀ s : State)
     (j : Nat) : Prop where
-  st : WinStR K C base size (RepJ C) P s₀ s
+  st : WinStR K C base size (RepA C) P s₀ s
   rbx : s.gpr .rbx = BitVec.ofNat 64 j
   lt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p
   rep : InvJ C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
@@ -529,7 +529,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
       have := hL.bits
       rw [S₅.unch.byte (fun w hw => by have := hL.bits_w w hw; omega) (by have := S₅.scr.nowrap; omega)]
       exact hF.bits t ht
-  refine WP.seq (WP.mono (winEntryR_ok hL hX (RepJ.infinity hC) RepJ.negY (P := P) hpn hone_lt hone
+  refine WP.seq (WP.mono (winEntryR_ok hL hX (RepA.infinity hC) RepA.negY (P := P) hpn hone_lt hone
     S₅.scr S₅.mod (i := j - 1) (by omega) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆
       fun s₇ E₇ => ?_))
   have hn := S₅.scr.nowrap
@@ -548,7 +548,7 @@ theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
     (by rw [Nat.sub_add_cancel (by omega : 1 ≤ j)]; exact hb)
   rw [Nat.sub_add_cancel (by omega : 1 ≤ j)] at hsep
   refine WP.seq (WP.mono (sumJ_ok hL hp hC hM3 hF S₇ (hC.onCurve_mul hP _)
-    (onCurve_winPt hC hP k (j - 1)) lt₇ E₇.lt rep₇ E₇.rep.invJ (fun h1 _ => hsep h1))
+    (onCurve_winPt hC hP k (j - 1)) lt₇ E₇.lt rep₇ E₇.rep (fun h1 _ => (hsep h1).1))
     fun s₈ ⟨S₈, x₈, l₈, r₈⟩ => ?_)
   have hadd := win_add hC hP (k := k) (J := K.J) (j := j - 1) hk8 (by omega)
   rw [Nat.sub_add_cancel (by omega : 1 ≤ j)] at hadd

@@ -56,7 +56,7 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p521_ok hI) hL
-    (mulQJ4_ok (p521_ok hI) (by decide) hL hO (by decide +kernel)) (mulQ_w (p521_ok hI)) (pre_of hs)
+    (mulQJ4_ok (p521_ok hI) (by decide) hL hO (by decide +kernel)) (mulQJ4_w (p521_ok hI)) (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -83,7 +83,8 @@ theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64
 
 theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 := by
   obtain ⟨_, hc⟩ : ∃ h, (taintS.check (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) exchangeP521 h).isSome = true := by
-    taint_decide_sum [Proof.P521.X86_64.winBuildJSum, Proof.P521.X86_64.winLoopJSum, Proof.P521.X86_64.winLastJSum]
+    taint_decide_sum [Proof.P521.X86_64.winBuildJSum, Proof.P521.X86_64.winNormJSum,
+      Proof.P521.X86_64.winLoopJSum, Proof.P521.X86_64.winLastJSum]
   refine VG.Taint.constantTime (A := taintS) (Taint.ofRegs [.rdi, .rsi, .rdx, .rcx]) ?_ hc
   intro s₁ s₂ _ _ ⟨_, h1, h2, h3, h4⟩
   refine Taint.agree_ofRegs fun r hr => ?_

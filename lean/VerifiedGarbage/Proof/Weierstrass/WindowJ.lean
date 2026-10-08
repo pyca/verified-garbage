@@ -1,16 +1,13 @@
 import VerifiedGarbage.Proof.Weierstrass.Window
 import VerifiedGarbage.Proof.Weierstrass.Booth
 import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
 # Signed windows in Jacobian coordinates, on any target
 
 The window method of `Window.lean` with `R` in Jacobian coordinates and the
-entries added by the Jacobian addition, which fails for equal or opposite
-points. The table's entries are Jacobian triples whose projective
-`(XZ : Y : Z³)` represents the point (`RepJ`), as `toJ` makes them of a
-projective representative of a point other than `O` (`RepJ.of_toJ`).
+entries added by an addition that fails for equal points (and, but for the
+mixed addition, opposite ones).
 
 When the curve has prime order `n` (`PrimeOrder`), a point `P ≠ O`'s integer
 multiples agree only for integers congruent modulo `n`
@@ -18,9 +15,7 @@ multiples agree only for integers congruent modulo `n`
 `[16 e]P` with `e = winE k J (j + 1)`, so as long as `16 e + 8 < n` its
 operands are neither equal nor opposite unless `[16 e]P = O` (`win_sep`); the
 multiples `winE` only shrink as `j` grows (`winE_le_of_le`), so one bound
-for `j = 1` serves every iteration but the last. The Jacobian sum then
-represents the sum (`InvJ.sumSel`), taking `E` where `R` is `O` and `R`
-where `E` is `O`.
+for `j = 1` serves every iteration but the last.
 -/
 
 namespace VG.Proof.Weierstrass
@@ -28,35 +23,6 @@ namespace VG.Proof.Weierstrass
 open Spec.Weierstrass
 
 variable {C : Curve}
-
-/-! ## The table's representatives -/
-
-/-- A Jacobian triple whose projective `(XZ : Y : Z³)` represents `Q`. -/
-def RepJ (C : Curve) (X Y Z : Fe C) (Q : Point C) : Prop := Rep C (X * Z) Y (Z * Z * Z) Q
-
-theorem RepJ.invJ {X Y Z : Fe C} {Q : Point C} (h : RepJ C X Y Z Q) : InvJ C X Y Z Q := Or.inr h
-
-theorem RepJ.infinity (hC : Law C) : RepJ C 0 1 0 .infinity := by
-  refine ⟨?_, hC.one_ne_zero, ?_⟩ <;> grind
-
-theorem RepJ.negY {X Y Z : Fe C} {Q : Point C} (h : RepJ C X Y Z Q) : RepJ C X (-Y) Z (negPt Q) :=
-  Rep.negY h
-
-/-- `toJ` of a projective representative of a point other than `O`. -/
-theorem RepJ.of_toJ (hC : Law C) {X Y Z z X' Y' Z' : Fe C} {Q : Point C} (h : Rep C X Y Z Q)
-    (hQ : Q ≠ .infinity) (hz : z = 0) (hv : (X', Y', Z') = (X * Z, Y * (Z * Z), Z + z)) :
-    RepJ C X' Y' Z' Q := by
-  rcases InvJ.of_toJ hC h hz hv with ⟨h0, -⟩ | h'
-  · exact absurd h0 hQ
-  · exact h'
-
-/-- `fromJ` of a representative: a projective representative. -/
-theorem RepJ.fromJ {X Y Z z X' Y' Z' : Fe C} {Q : Point C} (h : RepJ C X Y Z Q) (hz : z = 0)
-    (hv : (X', Y', Z') = (X * Z, Y + z, Z * Z * Z)) : Rep C X' Y' Z' Q := by
-  simp only [Prod.mk.injEq] at hv
-  obtain ⟨rfl, rfl, rfl⟩ := hv
-  rw [hz, show Y + 0 = Y by grind]
-  exact h
 
 /-! ## Multiples of a point of prime order -/
 
@@ -134,43 +100,5 @@ theorem winE_two_bound {d J b n : Nat} (hJ : 2 ≤ J) (hd : d < 2 ^ b)
     Nat.div_le_div_right (show d + 8 * geom 2 ≤ 2 ^ b + 135 by
       show d + 8 * (0 + 1 + 16) ≤ _; omega)
   omega
-
-/-! ## The Jacobian sum, selected -/
-
-/-- Where neither is `O`, the Jacobian addition's `H` of points neither equal
-nor opposite is not zero. -/
-theorem InvJ.h_ne (hC : Law C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : Point C}
-    (hP : onCurve C P = true) (hQ : onCurve C Q = true)
-    (h1 : InvJ C X1 Y1 Z1 P) (h2 : InvJ C X2 Y2 Z2 Q) (hz1 : Z1 ≠ 0) (hz2 : Z2 ≠ 0)
-    (hne : P ≠ Q) (hadd : Spec.Weierstrass.add P Q ≠ .infinity) :
-    X2 * (Z1 * Z1) - X1 * (Z2 * Z2) ≠ 0 := by
-  intro hx
-  by_cases hy : Y2 * Z1 * (Z1 * Z1) - Y1 * Z2 * (Z2 * Z2) = 0
-  · exact hne (h1.same hC h2 hz1 hz2 hx hy)
-  · exact hadd (h1.opposite hC hP hQ h2 hz1 hz2 hx hy)
-
-/-- The sum `selSum` keeps: `E` where `Z₁ = 0`, `R` where `Z₂ = 0`, else the
-Jacobian addition's, which represents the sum where its operands are neither
-equal nor opposite. -/
-theorem InvJ.sumSel (hC : Law C) (ha : AM3 C) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {P Q : Point C}
-    (hP : onCurve C P = true) (hQ : onCurve C Q = true)
-    (h1 : InvJ C X1 Y1 Z1 P) (h2 : InvJ C X2 Y2 Z2 Q)
-    (hsep : P ≠ .infinity → Q ≠ .infinity → P ≠ Q ∧ Spec.Weierstrass.add P Q ≠ .infinity) :
-    InvJ C (if Z1 = 0 then X2 else if Z2 = 0 then X1 else (jacAddF X1 Y1 Z1 X2 Y2 Z2).1)
-      (if Z1 = 0 then Y2 else if Z2 = 0 then Y1 else (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.1)
-      (if Z1 = 0 then Z2 else if Z2 = 0 then Z1 else (jacAddF X1 Y1 Z1 X2 Y2 Z2).2.2)
-      (Spec.Weierstrass.add P Q) := by
-  by_cases hz1 : Z1 = 0
-  · simp only [hz1, ↓reduceIte]
-    rw [(h1.z_zero_iff hC).mp hz1]
-    exact h2
-  · by_cases hz2 : Z2 = 0
-    · simp only [hz1, hz2, ↓reduceIte]
-      rw [(h2.z_zero_iff hC).mp hz2]
-      cases P <;> exact h1
-    · simp only [hz1, hz2, ↓reduceIte]
-      obtain ⟨hne, hadd⟩ := hsep (fun h => hz1 ((h1.z_zero_iff hC).mpr h))
-        (fun h => hz2 ((h2.z_zero_iff hC).mpr h))
-      exact h1.add_ne hC ha hP hQ h2 hz1 hz2 (h1.h_ne hC hP hQ h2 hz1 hz2 hne hadd)
 
 end VG.Proof.Weierstrass

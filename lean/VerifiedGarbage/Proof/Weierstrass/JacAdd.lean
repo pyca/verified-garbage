@@ -187,21 +187,6 @@ def jacTailN : List FOp := jacTail ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13⟩ ⟨14,1
 
 theorem jacAddN_ok : NumOk (jacHeadN ++ jacTailN) := ⟨by decide,by decide,by decide⟩
 
-def jacAddSN : List FOp := jacAddS ⟨9,10,0,1,2,3,4,5⟩ ⟨11,12,13⟩ ⟨14,15,16⟩ ⟨6,7,8⟩
-
-theorem jacAddSN_ok : NumOk jacAddSN := ⟨by decide,by decide,by decide⟩
-
-theorem jacAddS_eq (S : RcbSlots) (p q o : Pt) : jacAddS S p q o = ofN jacAddSN S p q o := rfl
-
-theorem jacAddSN_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
-    let r := runOps jacAddSN e
-    (r 6,r 7,r 8) = jacAddF (e 11) (e 12) (e 13) (e 14) (e 15) (e 16) := by
-  dsimp only [jacAddSN, jacAddS, runOps, List.foldl, FOp.run, Function.update]
-  simp only [jacAddF, Prod.mk.injEq]
-  constructor
-  · grind
-  constructor <;> grind
-
 theorem jacHead_eq (S : RcbSlots) (p q o : Pt) :
     jacHead S p q = ofN jacHeadN S p q o := rfl
 
