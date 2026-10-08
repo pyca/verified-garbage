@@ -16,7 +16,7 @@ theorem cacheEnv_readonly {F : Type} [Mul F] (K : WinCfg) (E : Nat → F) {x : N
   simp only [cacheEnv,Function.update_of_ne hx.1,Function.update_of_ne hx.2]
 
 theorem cache_fields_ok {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hn : K.M.n=4) (hL : Lay K.M size Sl)
+    {Sl : Nat → Prop} (_hn : K.M.n=4) (hL : Lay K.M size Sl)
     (hm : UnitMod m (2^(64*K.M.n)))
     (hz : K.R.z∉[K.E.x+96,K.E.x+128])
     (hSl : Sl (K.E.x+96) ∧ Sl (K.E.x+128))
@@ -47,7 +47,7 @@ theorem cache_fields_ok {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     simp only [ops,runOps,List.foldl_cons,List.foldl_nil,FOp.run,Function.update_self,
       Function.update_of_ne hz1,cacheEnv]
   change WP isa (ForwardField.programB K.M ops) s _
-  refine WP.mono (ForwardField.programB_ok hn hL hm _ hI hs hr) fun t ⟨kt,it⟩ => ?_
+  refine WP.mono (ForwardField.programB_ok hL hm _ hI hs hr) fun t ⟨kt,it⟩ => ?_
   rw [he] at it
   refine ⟨kt.mono ?_,it.sub ?_,?_,?_⟩
   · intro x hx

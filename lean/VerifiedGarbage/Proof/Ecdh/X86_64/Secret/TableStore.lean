@@ -37,8 +37,8 @@ theorem tableStore_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
     fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun i hi => ?_,fun i hi => ?_,⟨fun r hr => ?_,
     rt.trans (rw'.trans (kv.2.2.1.trans ku.2.2.1)),wt.trans (ww.trans (kv.2.2.2.trans ku.2.2.2))⟩,?_⟩
-  · rw [ot.wordsVal (by omega) (by have := hs.nowrap; omega),nafCopy_coord ew hi,kv.2.1,ku.2.1]
-  · rw [nafCopy_field et (by omega),ow.wordsVal (by omega) (by have := hs.nowrap; omega),kv.2.1,ku.2.1]
+  · rw [ot.wordsVal (by omega) (by have := hs.nowrap; omega),nafCopy_fieldAt (d:=32*i) ew (by omega) (by omega),kv.2.1,ku.2.1]
+  · rw [nafCopy_fieldAt (d:=32*i) et (by omega) (by omega),ow.wordsVal (by omega) (by have := hs.nowrap; omega),kv.2.1,ku.2.1]
   · rw [gt,gw,kv.1 r hr,ku.1 r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
       exact fun he => hr (Or.inl he))]

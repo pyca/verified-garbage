@@ -24,7 +24,7 @@ theorem square_z_fields_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     exact hI.sl _ hz
   have hr : readsOk ops V=true := by simp [ops,readsOk,FOp.ins,hz]
   change WP isa (ForwardField.programB K.M ops) s _
-  refine WP.mono (ForwardField.programB_ok hL.n hL.lay hm ops hI hs hr) fun t ⟨kt,it⟩ => ?_
+  refine WP.mono (ForwardField.programB_ok hL.lay hm ops hI hs hr) fun t ⟨kt,it⟩ => ?_
   refine ⟨by simpa only [ops,List.map_cons,List.map_nil,FOp.out] using kt,?_⟩
   have iv := it.sub (V':=V) (fun x hx => (mem_validAfter ops V).mpr (Or.inl hx))
   simpa only [ops,runOps,List.foldl_cons,List.foldl_nil,FOp.run] using iv

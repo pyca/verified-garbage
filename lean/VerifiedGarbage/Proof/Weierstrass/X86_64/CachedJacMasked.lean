@@ -62,12 +62,12 @@ theorem infinityMaskEnv_values {F : Type} [Zero F] [DecidableEq F]
   · exact pointMaskEnv_values E o q p.z hy hz
 
 theorem CachedJac.full_readonly {F : Type _} [Lean.Grind.CommRing F]
-    {S : RcbSlots} {p q o : Pt} {dst : Nat} (hA : RcbApart S p q o)
+    {n : Nat} {S : RcbSlots} {p q o : Pt} {dst : Nat} (hA : RcbApart S p q o)
     (E : Nat → F) {x : Nat} (hx : x∈rcbR S p q) :
-    runOps (Impl.Weierstrass.X86_64.CachedJac.head S p q dst++jacTail S p q o) E x=E x := by
+    runOps (Impl.Weierstrass.X86_64.CachedJac.head n S p q dst++jacTail S p q o) E x=E x := by
   apply runOps_of_not_out
   intro op hop he
-  rw [CachedJac.head_eq S p q o dst,CachedJac.tail_eq S p q o dst,←List.map_append] at hop
+  rw [CachedJac.head_eq n S p q o dst,CachedJac.tail_eq n S p q o dst,←List.map_append] at hop
   exact hA.apart x hx (he ▸ CachedJac.out
     (show ∀ op∈CachedJac.headN++jacTailN,op.out<9 by decide) hop)
 
@@ -84,7 +84,7 @@ theorem cachedJacMaskedField_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Cur
     (hV : ∀ x∈rcbR K.S p q++[dst,dst+32],x∈V)
     (h2 : E dst=E q.z*E q.z) (h3 : E (dst+32)=E dst*E q.z) :
     WP isa (Impl.Weierstrass.X86_64.CachedJac.maskedAdd K p q o dst) s fun t =>
-      let EF := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst++jacTail K.S p q o) E
+      let EF := runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst++jacTail K.S p q o) E
       let EM := infinityMaskEnv EF p q o
       ProgKeep K.M base (rcbW K.S o) s t ∧
       Inv K.M base size C.p Sl (jacCoords o++V) EM t ∧
@@ -100,11 +100,16 @@ theorem cachedJacMaskedField_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Cur
   have hap : ∀ x∈jacCoords o,∀ y∈jacCoords p++jacCoords q,x≠y := by
     intro x hx y hy he
     exact hA.apart y (hr y hy) (he ▸ hw x hx)
+  have h3a : dst+8*K.M.n∉rcbW K.S o := by simpa only [hn] using h3a
+  have hSl : ∀ x∈(rcbW K.S o++rcbR K.S p q)++[dst,dst+8*K.M.n],Sl x := by
+    simpa only [hn] using hSl
+  have hV : ∀ x∈rcbR K.S p q++[dst,dst+8*K.M.n],x∈V := by simpa only [hn] using hV
+  have h3 : E (dst+8*K.M.n)=E dst*E q.z := by simpa only [hn] using h3
   rw [Impl.Weierstrass.X86_64.CachedJac.maskedAdd]
   apply WP.seq
-  refine WP.mono (CachedJac.head_ok hn hL hm hA h2a h3a hSl hI hV h2 h3) fun u ⟨ku,iu,_,_⟩ => ?_
+  refine WP.mono (CachedJac.head_ok hL hm hA h2a h3a hSl hI hV h2 h3) fun u ⟨ku,iu,_,_⟩ => ?_
   apply WP.seq
-  refine WP.mono (CachedJac.tail_ok hn hL hm hA h2a h3a hSl iu hV h2 h3) fun v ⟨kv,iv,hf⟩ => ?_
+  refine WP.mono (CachedJac.tail_ok hL hm hA h2a h3a hSl iu hV h2 h3) fun v ⟨kv,iv,hf⟩ => ?_
   have hv : ∀ x∈jacCoords o++jacCoords p++jacCoords q,x∈jacCoords o++V := by
     intro x hx
     rw [List.append_assoc] at hx
@@ -116,7 +121,7 @@ theorem cachedJacMaskedField_ok {K : WinCfg} {base : Addr} {size : Nat} {C : Cur
   · exact fun x hx => List.mem_append_right _ hx
   · rw [infinityMaskEnv_values _ p q o hy hz (fun x hx ho => hA.apart x (hr x hx) (hw x ho))]
     have he : ∀ x∈rcbR K.S p q,
-        runOps (Impl.Weierstrass.X86_64.CachedJac.head K.S p q dst++jacTail K.S p q o) E x=E x :=
+        runOps (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S p q dst++jacTail K.S p q o) E x=E x :=
       fun x hx => CachedJac.full_readonly hA E hx
     rw [he _ (by simp [rcbR]),he _ (by simp [rcbR]),he _ (by simp [rcbR]),
       he _ (by simp [rcbR]),he _ (by simp [rcbR]),he _ (by simp [rcbR]),hf]

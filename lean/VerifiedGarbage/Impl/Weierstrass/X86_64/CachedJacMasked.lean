@@ -11,7 +11,7 @@ def infinityMasks (K : WinCfg) (p q o : Pt) : List Instr :=
 
 /-- Equal nonzero inputs are excluded by the secret-window scalar bounds. -/
 def maskedAdd (K : WinCfg) (p q o : Pt) (dst : Nat) : Prog isa :=
-  .seq (ForwardField.programB K.M (head K.S p q dst)) <|
+  .seq (ForwardField.programB K.M (head K.M.n K.S p q dst)) <|
   .seq (ForwardField.programB K.M (jacTail K.S p q o)) <|
   .block (infinityMasks K p q o)
 

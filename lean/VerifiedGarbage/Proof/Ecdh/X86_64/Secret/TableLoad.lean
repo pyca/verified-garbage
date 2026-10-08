@@ -31,7 +31,7 @@ theorem tableLoad_ok {K : WinCfg} {s : State} {base : Addr} {size j : Nat}
     (fun i _ => by rw [ea_sc,sw.rdi])) fun t ⟨et,ot,gt,rt,wt⟩ => ?_
   refine ⟨fun i hi => ?_,⟨fun r hr => ?_,rt.trans (kw.2.2.1.trans kvu.2.2.1),
     wt.trans (kw.2.2.2.trans kvu.2.2.2)⟩,?_⟩
-  · rw [nafCopy_coord et hi,kw.2.1,kvu.2.1]
+  · rw [nafCopy_fieldAt (d:=32*i) et (by omega) (by omega),kw.2.1,kvu.2.1]
   · rw [gt,kw.1 r hr,kvu.1 r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
       exact fun he => hr (Or.inl he))]

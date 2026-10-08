@@ -39,7 +39,7 @@ theorem mixed_fields_ok {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
     · exact Or.inr (Or.inr (hV x h)))
   change WP isa (ForwardField.programB K.M _) u _
   rw [he]
-  refine WP.mono (ofN_forward_partial_ok hn hL hm hN hA hSl iu hr') fun t ⟨kt,it,hval⟩ => ?_
+  refine WP.mono (ofN_forward_partial_ok hL hm hN hA hSl iu hr') fun t ⟨kt,it,hval⟩ => ?_
   refine ⟨ku.trans kt,it.sub ?_,?_⟩
   · intro x hx
     rw [mem_validAfter]

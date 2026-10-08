@@ -53,17 +53,19 @@ theorem selectPointKeep_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     intro r hr
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hr ⊢
     rcases hr with rfl | rfl <;> simp)
-  have hout : Outside base o.x 96 s.mem t.mem := by
+  have hout : Outside base o.x (24*M.n) s.mem t.mem := by
     intro x hx
     exact ho x (by rw [hn]; omega) (by rw [hn,hy]; omega) (by rw [hn,hz]; omega)
   cases c with
   | false =>
     simp only [Bool.false_eq_true,ite_false] at vx vy vz ⊢
-    exact hI.transferPointFields hL hn hy hz hO
+    exact hI.transferPointFields hL (by simpa only [hn] using hy)
+      (by simpa only [hn] using hz) hO
       (fun x hx => hV x (List.mem_append_right _ hx)) vx vy vz hkr hout
   | true =>
     simp only [ite_true] at vx vy vz ⊢
-    exact hI.transferPointFields hL hn hy hz hO
+    exact hI.transferPointFields hL (by simpa only [hn] using hy)
+      (by simpa only [hn] using hz) hO
       (fun x hx => hV x (List.mem_append_left _ hx)) vx vy vz hkr hout
 
 def pointMaskEnv {F : Type} [Zero F] [DecidableEq F] (E : Nat → F) (o a : Pt) (z : Nat) : Nat → F :=

@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.PeerOrder
 import VerifiedGarbage.Proof.Ecdh.X86_64.Secret.Verified
 
@@ -33,7 +34,7 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve)
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve)
     (o : Proof.Weierstrass.HasPeerOrder Spec.P256.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.Window5.exchangeP256
     (Proof.Ecdh.X86_64.Secret.baseline_verified h.law h.inv o.order) (Code.all_of_allInstrs (by lit_decide)),
