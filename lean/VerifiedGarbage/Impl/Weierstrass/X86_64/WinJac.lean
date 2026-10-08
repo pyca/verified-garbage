@@ -111,10 +111,14 @@ def po (c : Nat) : Nat := if c + 1 < K.np16 then 16 * c else K.st - 16
 def np32 : Nat := (K.np16 + 1) / 2
 
 /-- The entry of the magnitude in `r8` (from 1; none for 0) into `T`, from the
-table at `rdx = rdi + tbl`. -/
+table at `rdx = rdi + tbl`: without AVX2, in one pass if its pieces fit the 14
+accumulators, else in two, its first 8 pieces then the others (for six
+words, 15 pieces). -/
 def select : List Instr :=
   [.mov .rdx (.reg .rdi), .alu .add .rdx (.imm (BitVec.ofNat 32 K.tbl))] ++
-  if K.avx2 then selPassY K.T 16 K.st K.np32 (qY K.np16) else selPassAt K.T 16 K.st K.np16 K.po
+  if K.avx2 then selPassY K.T 16 K.st K.np32 (qY K.np16)
+  else if K.np16 ≤ 14 then selPassAt K.T 16 K.st K.np16 K.po
+  else selPassAt K.T 16 K.st 8 (16 * ·) ++ selPassAt K.T 16 K.st (K.np16 - 8) (fun c => 16 * (8 + c))
 
 /-- `rdx = rdi + tbl + st (rbx - 1)`: entry `rbx`'s address, through `rax` and `rcx`. -/
 def entryAddr : List Instr :=

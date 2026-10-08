@@ -129,19 +129,18 @@ theorem JFrame.refl {C : Curve} {base : Addr} {s : State} (hs : Scr s base size)
   ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM⟩
 
 /-- A change of entry `b`'s five slots, as one of each. -/
-theorem outside_grid5 (hL : JacWinLay K size) {base : Addr} {m m' : Mem} {b : Nat}
+theorem outside_grid5 {base : Addr} {m m' : Mem} {b : Nat}
     (h : Outside base (jg K b) (40 * K.M.n) m m') :
     Unch base ((List.range 5).map fun c => (jg K (b + c), 8 * K.M.n)) m m' := by
   intro x hx
-  have h4 := hL.n4
   have e := fun c (hc : c < 5) => hx (jg K (b + c), 8 * K.M.n) (List.mem_map.mpr ⟨c, List.mem_range.mpr hc, rfl⟩)
   have e0 := e 0 (by decide); have e1 := e 1 (by decide); have e2 := e 2 (by decide)
   have e3 := e 3 (by decide); have e4 := e 4 (by decide)
   unfold jg at e0 e1 e2 e3 e4
   refine h x ?_
   unfold jg
-  rw [h4] at e0 e1 e2 e3 e4 ⊢
   dsimp only at e0 e1 e2 e3 e4
+  simp only [Nat.mul_add, Nat.add_zero] at e0 e1 e2 e3 e4
   omega
 
 theorem grid5_jwW {b : Nat} (hb : b + 5 ≤ 85) :

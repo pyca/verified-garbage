@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
 
 The doubling by halving (`doubleHalfPublic`, `doubleHalfPublic_ok`) is a
 doubling the Jacobian window method can use (`doubleHalfPublic_dblOk`), and
-P-256's order is `17 (mod 32)` (`n_mod32`), so `winJac_ok` gives `[k]P` for
+P-256's order is `17 (mod 32)` (`n_mod32`), at least `17`, so `winJac_ok` gives `[k]P` for
 `k < n` (`winJacP256_ok`).
 -/
 
@@ -34,7 +34,7 @@ theorem n_ge64 : 64 ≤ Spec.P256.curve.n := by decide
 
 /-- `[k]P` into `R` by the Jacobian window method with the doubling by halving,
 if `k < n`, on P-256. -/
-theorem winJacP256_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size)
+theorem winJacP256_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) (h4 : K.M.n = 4)
     (hp : UnitMod Spec.P256.p (2 ^ (64 * K.M.n))) (hC : Law Spec.P256.curve) (hM3 : AM3 Spec.P256.curve)
     (hO : PrimeOrder Spec.P256.curve) (hpn : Spec.P256.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < Spec.P256.p)
     (hone : toM Spec.P256.p (2 ^ (64 * K.M.n)) K.one = 1) {P : Point Spec.P256.curve}
@@ -46,7 +46,7 @@ theorem winJacP256_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size)
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < Spec.P256.p) ∧
       (k < Spec.P256.curve.n → Rep Spec.P256.curve (tmv Spec.P256.curve K.M.n base s' K.R.x)
         (tmv Spec.P256.curve K.M.n base s' K.R.y) (tmv Spec.P256.curve K.M.n base s' K.R.z) (mul k P)) :=
-  winJac_ok hL hp hC hM3 hO (doubleHalfPublic_dblOk hL.n4 hp hC hM3) hpn hone_lt hone n_mod32 n_ge64 hP hkJ
+  winJac_ok hL hp hC hM3 hO (doubleHalfPublic_dblOk h4 hp hC hM3) hpn hone_lt hone (Nat.le_of_eq n_mod32.symm) n_ge64 hP hkJ
     hs hM hF
 
 end VG.Proof.P256.X86_64

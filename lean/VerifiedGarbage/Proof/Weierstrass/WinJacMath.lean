@@ -17,7 +17,7 @@ With `k' = k + 16 Σ_{j<J} 32^j`, the accumulator before digit `j` is
 `e ≥ 1` and `d ≠ 0` is never exceptional (`loop_noexc`): `32 e ≡ d` would
 need `0 < 32 e - d < n`, and `32 e ≡ -d` would need `winE k' J j = n - 2|d|`,
 which only `j = 0`, `k = n - 2 |d|` allows, and then the digit `d_0` is
-`((n + 16) mod 32) - 16 - 2 |d| ≠ -|d|` for `n ≡ 17 (mod 32)`, as P-256's.
+`((n + 16) mod 32) - 16 - 2 |d| ≠ -|d|` for `n mod 32 ≥ 17`, as P-256's and P-384's.
 The table's mixed additions `[m]P + P`, `2 ≤ m ≤ 15`, are not either
 (`tbl_noexc`).
 -/
@@ -153,7 +153,7 @@ theorem winPt_zmul (P : Point C) (k j : Nat) :
 /-- The loop's addition of digit `j`'s point to `[32 e]P`, `e ≥ 1`: the
 points differ and are not opposite. -/
 theorem loop_noexc (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
-    (hP0 : P ≠ .infinity) (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n) {k J j : Nat} (hk : k < C.n)
+    (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n) {k J j : Nat} (hk : k < C.n)
     (hj : j < J) (he : 1 ≤ winE (k + 16 * geom J) J (j + 1)) :
     mul (32 * winE (k + 16 * geom J) J (j + 1)) P ≠ winPt C P (k + 16 * geom J) j ∧
       Spec.Weierstrass.add (mul (32 * winE (k + 16 * geom J) J (j + 1)) P)

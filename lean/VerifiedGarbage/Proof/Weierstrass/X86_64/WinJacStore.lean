@@ -85,7 +85,7 @@ theorem jstoreEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s :
         wordsVal s.mem base (jg K (80 + c)) K.M.n) ∧
       KeepRegs [.rax, .rcx, .rdx] s t ∧ Outside base (jg K (5 * (m - 1))) (40 * K.M.n) s.mem t.mem := by
   have hn := hs.nowrap
-  have h4 := hL.n4
+  have h6 := hL.n6
   have hg := hL.grid_le
   have ht := hL.tbl31
   rw [JacWinCfg.storeEntry, WP.block_append_iff]
@@ -98,18 +98,20 @@ theorem jstoreEntry_ok {K : JacWinCfg} {size : Nat} (hL : JacWinLay K size) {s :
   have hT : K.T = jg K 80 := hL.T80
   have hgl : jg K (5 * (m - 1)) + 8 * (5 * K.M.n) ≤ jg K 80 := by
     unfold jg; have := Nat.mul_le_mul_left (8 * K.M.n) (show 5 * (m - 1) + 5 ≤ 80 by omega)
-    rw [Nat.mul_add] at this; rw [h4] at this ⊢; omega
-  have hTl : jg K 80 + 8 * (5 * K.M.n) ≤ size := by unfold jg; rw [h4] at hg ⊢; omega
+    rw [Nat.mul_add] at this; omega
+  have hTl : jg K 80 + 8 * (5 * K.M.n) ≤ size := by unfold jg; omega
   rw [hT]
   refine WP.mono (storeWords_ok (A := jg K (5 * (m - 1))) (src := jg K 80) (5 * K.M.n) s₁ hs₁ x₁
     (by omega) hTl (Or.inl hgl)) fun t ⟨e, k₂, O⟩ => ⟨fun c hc => ?_, ?_, ?_⟩
   · rw [← k₁.2.1]
     refine wordsVal_congr₂ _ _ _ fun i hi => ?_
     have e1 : jg K (5 * (m - 1) + c) + 8 * i = jg K (5 * (m - 1)) + 8 * (K.M.n * c + i) := by
-      unfold jg; rw [Nat.mul_add, Nat.mul_add]; rw [h4]; omega
+      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega
     have e2 : jg K (80 + c) + 8 * i = jg K 80 + 8 * (K.M.n * c + i) := by
-      unfold jg; rw [Nat.mul_add, Nat.mul_add]; rw [h4]; omega
-    rw [e1, e2, e _ (by rw [h4] at hi ⊢; omega)]
+      unfold jg; rw [Nat.mul_add, Nat.mul_add, Nat.mul_assoc 8 K.M.n c]; omega
+    have hc5 := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 5 by omega)
+    rw [Nat.mul_add] at hc5
+    rw [e1, e2, e _ (by omega)]
   · exact ((Keeps.regs k₁).mono (by decide)).trans (k₂.mono (by decide))
   · rw [k₁.2.1] at O
     rw [show 40 * K.M.n = 8 * (5 * K.M.n) by omega]

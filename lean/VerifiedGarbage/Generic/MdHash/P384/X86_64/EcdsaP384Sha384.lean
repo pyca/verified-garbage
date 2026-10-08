@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384Sha384
@@ -31,7 +32,7 @@ open VG.Proof.Ecdsa.Rfc6979.X86_64.P384Sha384 (pack sign_verified)
 /-- The signature with the hash's compression function `c`, and P-384's
 multiplication with BMI2 and ADX (`adx`, `_adx`, calling
 `vg_ecdsa_p384_sign_adx`) or not. -/
-def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) (c : Proof.Sha512.X86_64.Compress)
+def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) (c : Proof.Sha512.X86_64.Compress)
     (adx : Bool) : Artifact :=
   { Spec.Ecdsa.Rfc6979.P384Sha384.signApi with
     name := Spec.Ecdsa.Rfc6979.P384Sha384.signApi.name ++ c.suffix ++ (if adx then "_adx" else "")
@@ -48,7 +49,7 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) (c : Proof.
     spSafe := sign_spSafe (pack adx h.law (Proof.P384.combOk7 h.law) h.inv c)
     features := c.features ++ (if adx then ["bmi2", "adx", "avx", "avx2"] else []).filter (!c.features.contains ·) }
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) :
     List Artifact :=
   match v.sha384 with
   | none => []

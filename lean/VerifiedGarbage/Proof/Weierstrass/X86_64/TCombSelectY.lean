@@ -439,7 +439,7 @@ theorem qY_cover {n j : Nat} (hn : 2 ≤ n) (hj : j < n) : ∃ c < (n + 1) / 2, 
 /-- `selPassY`: `selPass_ok`'s postcondition, 32 bytes at a time, from a
 table in one region. -/
 theorem selPassY_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
-    {X : Addr} {a : Nat} (hn : K.M.n ≤ 14) (h2 : 2 ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
+    {X : Addr} {a : Nat} (hn : K.M.n ≤ 22) (h2 : 2 ≤ K.M.n) (hH : K.H < 2 ^ 31) (ha : a < 2 ^ 31)
     (htb : 16 * K.M.n * K.H < 2 ^ 31) (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X)
     (hreg : InRegions (s.rd ++ s.wr) X (16 * K.M.n * K.H)) (hE : K.E.x + 16 * K.M.n ≤ size) :
     WP isa (.block (selPassY K.E.x K.H (16 * K.M.n) ((K.M.n + 1) / 2) (qY K.M.n))) s fun t =>
@@ -506,7 +506,7 @@ theorem selPassV_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : 
   split
   · next h =>
     simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-    exact selPassY_ok K hs hn h.2 hH ha htb h8 hx hreg hE
+    exact selPassY_ok K hs (by omega) h.2 hH ha htb h8 hx hreg hE
   · exact selPass_ok K hs hn hH ha h8 hx hr hE
 
 end VG.Proof.Weierstrass.X86_64

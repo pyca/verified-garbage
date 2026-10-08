@@ -33,14 +33,15 @@ theorem jg_sep (K : JacWinCfg) {i j : Nat} (h : i ≠ j) :
     jg K i + 8 * K.M.n ≤ jg K j ∨ jg K j + 8 * K.M.n ≤ jg K i := jg_apart K h
 
 /-- The region of entry `m` (`1 ≤ m ≤ 16`) misses `T` and the other entries. -/
-theorem entry_sep (hL : JacWinLay K size) {m i : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16)
+theorem entry_sep {m i : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16)
     (hi : i < 5 * (m - 1) ∨ 5 * m ≤ i) :
     jg K i + 8 * K.M.n ≤ jg K (5 * (m - 1)) ∨ jg K (5 * (m - 1)) + 40 * K.M.n ≤ jg K i := by
-  have h4 := hL.n4
-  unfold jg; rw [h4]
+  unfold jg
   rcases hi with hi | hi
-  · left; have := Nat.mul_le_mul_left 32 (show i + 1 ≤ 5 * (m - 1) by omega); omega
-  · right; have := Nat.mul_le_mul_left 32 (show 5 * (m - 1) + 5 ≤ i by omega); omega
+  · left; have := Nat.mul_le_mul_left (8 * K.M.n) (show i + 1 ≤ 5 * (m - 1) by omega)
+    rw [Nat.mul_add] at this; omega
+  · right; have := Nat.mul_le_mul_left (8 * K.M.n) (show 5 * (m - 1) + 5 ≤ i by omega)
+    rw [Nat.mul_add] at this; omega
 
 /-- `T = P` and entry 1. -/
 theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : State} {base : Addr}
@@ -49,7 +50,6 @@ theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : Sta
     WP isa (.block (copyPt K.M.n K.E K.P ++ copy K.M.n K.z2 K.P.z ++ copy K.M.n (K.z2 + 8 * K.M.n) K.P.z ++
       ([.mov32 .rbx (.imm 1)] : List Instr) ++ K.storeEntry)) s (JBInv K C base size P s 1) := by
   have hn := hs.nowrap
-  have h4 := hL.n4
   obtain ⟨mx, my, mz, m2, m3⟩ := hL.T_mem
   have hPro : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ jwRo K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -153,7 +153,7 @@ theorem buildInit_ok (hL : JacWinLay K size) (hC : Law C) {P : Point C} {s : Sta
     · rw [tv t3, tv t2, hF.pz]; exact (Lean.Grind.Semiring.mul_one 1).symm
     · rw [tv t4, tv t3, tv t2, hF.pz]; exact (Lean.Grind.Semiring.mul_one 1).symm
   -- Entry 1, and `T` kept.
-  have O₅' := outside_grid5 hL (b := 0) O₅
+  have O₅' := outside_grid5 (b := 0) O₅
   have J₅ : JPt C K.M.n base s₅ (TS K) (mul 1 P) :=
     J₄.unchT hL O₅' hn fun w hw c hc => by
       obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hw
@@ -189,7 +189,7 @@ theorem JTblOk.store (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Na
     (hT : JTblOk K C base P M s)
     (hO : Outside base (jg K (5 * M)) (40 * K.M.n) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 64)
     (hM : M ≤ 15) : JTblOk K C base P M s' :=
-  hT.unch hL (outside_grid5 hL hO) hn (by omega) fun w hw i hi => by
+  hT.unch hL (outside_grid5 hO) hn (by omega) fun w hw i hi => by
     obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw
     refine jg_sep K ?_; omega
 
@@ -197,7 +197,7 @@ theorem JTblOk.store (hL : JacWinLay K size) {base : Addr} {P : Point C} {M : Na
 theorem JPt.store (hL : JacWinLay K size) {base : Addr} {Q : Point C} {s s' : State} {b : Nat} (hb : b + 5 ≤ 80)
     (hT : JPt C K.M.n base s (TS K) Q) (hO : Outside base (jg K b) (40 * K.M.n) s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) : JPt C K.M.n base s' (TS K) Q :=
-  hT.unchT hL (outside_grid5 hL hO) hn fun w hw c hc => by
+  hT.unchT hL (outside_grid5 hO) hn fun w hw c hc => by
     obtain ⟨d, hd, rfl⟩ := List.mem_map.mp hw
     refine jg_sep K ?_; have := List.mem_range.mp hd; omega
 
@@ -246,9 +246,8 @@ structure JBInvZ (K : JacWinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Poi
 theorem other_entry (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwOther K) {m : Nat} (hm : m ≤ 16) :
     x + 8 * K.M.n ≤ jg K (5 * (m - 1)) ∨ jg K (5 * (m - 1)) + 40 * K.M.n ≤ x := by
   have := hL.tbl x (List.mem_append_right _ hx)
-  have h4 := hL.n4
-  unfold jg; rw [h4] at this ⊢
-  omega
+  have h75 := Nat.mul_le_mul_left (8 * K.M.n) (show 5 * (m - 1) ≤ 75 by omega)
+  unfold jg; omega
 
 /-- Storing entry `e` keeps `D` and `T`'s `Z`. -/
 theorem dz_store (hL : JacWinLay K size) {base : Addr} {m m' : Mem} {e : Nat} (h1 : 1 ≤ e) (h16 : e ≤ 16)
@@ -262,7 +261,7 @@ theorem dz_store (hL : JacWinLay K size) {base : Addr} {m m' : Mem} {e : Nat} (h
   · exact hO.wordsVal (other_entry hL (by jw_mem) h16)
       (by have := hL.le (other_mem (by jw_mem : K.D.y ∈ jwOther K)); omega)
   · rw [hL.Tz]
-    exact hO.wordsVal (entry_sep hL h1 h16 (Or.inr (by omega)))
+    exact hO.wordsVal (entry_sep (K := K) h1 h16 (Or.inr (by omega)))
       (by have := hL.le (jg_mem (K := K) (i := 82) (by decide)); omega)
 
 /-- The table's slots `tblσ K i`. -/
@@ -396,7 +395,7 @@ theorem jbuildDblu_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
   have J₄ : JPt C K.M.n base s₄ (TS K) (mul 2 P) := J₃.congr fun c _ => by rw [m₄]
   have F₅ := (F₃.next hL hs₄ ((Keeps.regs k₄).mono (sub_powClob (by decide))) (W := [])
     (by rw [m₄]; exact Unch.refl _ _ _) (by simp)).next hL (hs₄.of_keepRegs k₅ (by decide))
-    (k₅.mono (sub_powClob (by decide))) (outside_grid5 hL O₅) (grid5_jwW (by decide))
+    (k₅.mono (sub_powClob (by decide))) (outside_grid5 O₅) (grid5_jwW (by decide))
   rw [m₄] at O₅
   have K₅ := dz_store hL (e := 2) (by decide) (by decide) O₅ hn
   have tv₅ : ∀ x ∈ [K.D.x, K.D.y, K.E.z], tmv C K.M.n base s₅ x = tmv C K.M.n base s₃ x := fun x hx => by
@@ -527,7 +526,7 @@ theorem jbuildStep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n
   refine WP.mono (cmpRbxJ_ok s₃ (j := m + 1) (i := 16) (by decide) (by omega)
     (by rw [k₃.gpr _ (by decide), hb₂])) fun s₄ ⟨z₄, k₄⟩ => ?_
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
-  have F₄ := (F₂.next hL hs₃ (k₃.mono (sub_powClob (by decide))) (outside_grid5 hL O₃)
+  have F₄ := (F₂.next hL hs₃ (k₃.mono (sub_powClob (by decide))) (outside_grid5 O₃)
     (grid5_jwW (by omega))).next hL (hs₃.of_keeps k₄ (by decide)) ((Keeps.regs k₄).mono (by simp))
     (W := []) (by rw [m₄]; exact Unch.refl _ _ _) (by simp)
   have tv₄ : ∀ x ∈ [K.D.x, K.D.y, K.E.z], tmv C K.M.n base s₄ x = tmv C K.M.n base s₂ x := fun x hx => by

@@ -10,7 +10,7 @@ variable {C : Curve}
 /-- The iteration's result: `R` for a zero digit, else `T` where `R = O`, else
 the Jacobian sum, a triple of `[winE k' J i]P`. -/
 theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
-    (hP0 : P ≠ .infinity) (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n) {k J i : Nat} (hk : k < C.n)
+    (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n) {k J i : Nat} (hk : k < C.n)
     (hi : i < J) {X1 Y1 Z1 X2 Y2 Z2 : Fe C}
     (h1 : InvJ C X1 Y1 Z1 (mul (32 * Window5.winE (k + 16 * Window5.geom J) J (i + 1)) P))
     (h2 : 1 ≤ magH 16 (Window5.nib (k + 16 * Window5.geom J) i) →
@@ -58,7 +58,7 @@ theorem jstep_point (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C}
 is `[winE k' J i]P` for `k < n` (`jstep_point`). Beyond `n` an addition may be
 exceptional: then `Z = 0`, a triple of `O`. -/
 theorem jstep_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
-    (hP0 : P ≠ .infinity) (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n) {k J i : Nat}
+    (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n) {k J i : Nat}
     (hi : i < J) {X1 Y1 Z1 X2 Y2 Z2 : Fe C} {Q1 : Point C} (hQ1 : onCurve C Q1 = true)
     (hQ1e : k < C.n → Q1 = mul (32 * Window5.winE (k + 16 * Window5.geom J) J (i + 1)) P)
     (h1 : InvJ C X1 Y1 Z1 Q1)

@@ -97,7 +97,7 @@ theorem tmv_sel {m0 : Prop} [Decidable m0] {n : Nat} {wz a b c : Nat}
 /-- An iteration, `1 ≤ j ≤ J`: `R = 32 R + [d_{j-1}]P`. -/
 theorem jstep_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
     (hO : PrimeOrder C) {dbl : Pt → Prog isa} (hD : DblOk K.M K.S C dbl) {P : Point C}
-    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : C.n % 32 = 17) (hn64 : 64 ≤ C.n)
+    (hP : onCurve C P = true) (hP0 : P ≠ .infinity) (hn17 : 17 ≤ C.n % 32) (hn64 : 64 ≤ C.n)
     {base : Addr} {s₀ : State} {k : Nat} (hF : JacWinFixed K C base s₀ P k) {j : Nat}
     (hj1 : 1 ≤ j) (hjJ : j ≤ K.J) {s : State} (hI : JInv K C base size P s₀ k j s) :
     WP isa (K.step dbl) s fun s' => JInv K C base size P s₀ k (j - 1) s' ∧

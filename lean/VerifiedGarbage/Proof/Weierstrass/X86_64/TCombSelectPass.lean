@@ -305,4 +305,26 @@ theorem selPass_ok (K : TCombCfg) {s : State} {base : Addr} {size : Nat} (hs : S
     ⟨fun c hc => by rw [a₃ c hc, a₂ c hc], by rw [m₂] at O₃; exact O₃,
       ⟨fun r hr => by rw [g₃, k₂.gpr r hr], by rw [r₃, k₂.rd], by rw [w₃, k₂.wr]⟩⟩
 
+/-- `selPassAt` whose pieces are `16` bytes apart from `d` (`po c = d + 16 c`):
+entries `1 … H` of the table at `rdx = X` kept under the masks of `r8 = a`,
+and stored to the `16 np` bytes at `o + d`. -/
+theorem selPassAt_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {X : Addr}
+    {a o st np d H : Nat} {po : Nat → Nat} (hn : np ≤ 14) (hH : H < 2 ^ 31) (ha : a < 2 ^ 31)
+    (h8 : s.gpr .r8 = BitVec.ofNat 64 a) (hx : s.gpr .rdx = X) (hpo : ∀ c < np, po c = d + 16 * c)
+    (hr : ∀ e < H, ∀ c < np, InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (st * e + po c)) 16)
+    (hE : o + d + 16 * np ≤ size) :
+    WP isa (.block (selPassAt o H st np po)) s fun t =>
+      (∀ c < np, t.mem.readW (off base (o + d + 16 * c)) 128 = accVal s.mem X st po a H c) ∧
+      Outside base (o + d) (16 * np) s.mem t.mem ∧ KeepRegs [.rcx] s t := by
+  have e : ((List.range np).map fun c => Instr.movdquStore (sc (o + po c)) (selAcc c)) =
+      (List.range np).map fun c => .movdquStore (sc (o + d + 16 * c)) (selAcc c) :=
+    List.map_congr_left fun c hc => by rw [hpo c (List.mem_range.mp hc), Nat.add_assoc]
+  unfold selPassAt
+  rw [e, WP.block_append_iff]
+  refine WP.mono (selLoad_ok (st := st) (po := po) hn hH ha h8 hx hr) fun s₂ ⟨a₂, k₂, m₂⟩ => ?_
+  have hs₂ : Scr s₂ base size := hs.of_keepRegs k₂ (by decide)
+  refine WP.mono (storeAcc_ok (o := o + d) np s₂ hs₂ hE) fun t ⟨a₃, O₃, g₃, r₃, w₃, _⟩ =>
+    ⟨fun c hc => by rw [a₃ c hc, a₂ c hc], by rw [m₂] at O₃; exact O₃,
+      ⟨fun r hr => by rw [g₃, k₂.gpr r hr], by rw [r₃, k₂.rd], by rw [w₃, k₂.wr]⟩⟩
+
 end VG.Proof.Weierstrass.X86_64
