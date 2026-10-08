@@ -20,7 +20,7 @@ inductive VBinOp
   | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddw | vpsubw | vpsubd | vpmullw | vpmulhw | vpackssdw | vpunpcklwd | vpunpckhwd
   | vpsubq
-  | vaesenc | vaesenclast
+  | vaesenc | vaesenclast | vaesdec | vaesdeclast
   | vpcmpeqd
   deriving DecidableEq, Repr
 
@@ -129,15 +129,23 @@ def VBinOp.sse : VBinOp → XBinOp
   | .vpaddw => .paddw | .vpsubw => .psubw | .vpsubd => .psubd | .vpmullw => .pmullw
   | .vpmulhw => .pmulhw | .vpackssdw => .packssdw | .vpunpcklwd => .punpcklwd
   | .vpunpckhwd => .punpckhwd | .vpsubq => .psubq
-  | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vpcmpeqd => .pcmpeqd
+  | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vaesdec => .aesdec
+  | .vaesdeclast => .aesdeclast | .vpcmpeqd => .pcmpeqd
 
 /-! ### Vector AES and carry-less multiplication
 
-Intel SDM Vol. 2, "AESENC", "AESENCLAST" and "PCLMULQDQ"
+Intel SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC", "AESDECLAST" and
+"PCLMULQDQ"
 (https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html):
 VAESENC/VAESENCLAST apply the AES round to `SRC1.xmm[i]` with round key
 `SRC2.xmm[i]` independently for each 128-bit lane, then zero
 `DEST[MAXVL-1:VL]`. These are `XBinOp.aesenc`/`aesenclast` in `VBinOp.sse`.
+VAESDEC/VAESDECLAST likewise apply the equivalent inverse cipher's round
+(`AESDEC`'s and `AESDECLAST`'s "VEX.256 Encoded Version" pseudocode: for
+each lane `i`, `STATE := SRC1.xmm[i]; RoundKey := SRC2.xmm[i]; STATE :=
+InvShiftRows(STATE); STATE := InvSubBytes(STATE); STATE :=
+InvMixColumns(STATE)` (not in the last round); `DEST.xmm[i] := STATE XOR
+RoundKey`, then `DEST[MAXVL-1:256] := 0`): `XBinOp.aesdec`/`aesdeclast`.
 VPCLMULQDQ likewise applies the legacy carry-less multiplication to each
 pair of lanes: imm8 bit 0 selects the quadword of SRC1, bit 4 that of
 SRC2, and all other immediate bits are ignored (`pclmul` in `Sse.lean`).

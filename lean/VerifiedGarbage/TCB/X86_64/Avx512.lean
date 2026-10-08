@@ -18,7 +18,7 @@ each 128-bit lane as the legacy SSE instruction does on its destination
 inductive ZBinOp
   | vpaddd | vpxord | vpunpckldq | vpunpckhdq | vpunpcklqdq | vpunpckhqdq
   | vpaddq | vpmuludq | vpandq | vporq | vpandnq
-  | vaesenc | vaesenclast | vpshufb
+  | vaesenc | vaesenclast | vaesdec | vaesdeclast | vpshufb
   | vpsubq
   deriving DecidableEq, Repr
 
@@ -92,12 +92,15 @@ def ZBinOp.sse : ZBinOp → XBinOp
   | .vpunpcklqdq => .punpcklqdq | .vpunpckhqdq => .punpckhqdq
   | .vpaddq => .paddq | .vpmuludq => .pmuludq | .vpandq => .pand | .vporq => .por
   | .vpandnq => .pandn
-  | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vpshufb => .pshufb
+  | .vaesenc => .aesenc | .vaesenclast => .aesenclast | .vaesdec => .aesdec
+  | .vaesdeclast => .aesdeclast | .vpshufb => .pshufb
   | .vpsubq => .psubq
 
-/-! Intel SDM Vol. 2, "AESENC", "AESENCLAST" and "PCLMULQDQ":
-EVEX.512 VAESENC/VAESENCLAST and VPCLMULQDQ apply the same operation as
-VEX to all four 128-bit lanes (see `Avx.lean`), without masking.
+/-! Intel SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC", "AESDECLAST" and
+"PCLMULQDQ": EVEX.512 VAESENC/VAESENCLAST, VAESDEC/VAESDECLAST
+(`EVEX.512.66.0F38.WIG DE /r`, `DF /r`) and VPCLMULQDQ apply the same
+operation as VEX to all four 128-bit lanes (see `Avx.lean`), without
+masking.
 "PSHUFB" (EVEX.512) selects bytes within each 128-bit lane, zeroing an
 output byte if the corresponding selector's bit 7 is set (`XBinOp.pshufb`).
 "PSLLDQ"/"PSRLDQ" (EVEX.512) shift each 128-bit lane by imm8 bytes,

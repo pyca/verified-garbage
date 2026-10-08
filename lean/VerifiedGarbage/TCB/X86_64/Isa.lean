@@ -373,13 +373,15 @@ VPBROADCASTQ `EVEX.256.66.0F38.W1 59 /r`, VMOVDQU64 `EVEX.256.F3.0F.W1 6F
 (`EVEX.128.66.0F.W1 6E /r`) and VMOVQ xmm1, xmm2 (`EVEX.128.F3.0F.W1 7E /r`), and AVX512_IFMA and AVX512VL for the EVEX.256
 VPMADD52LUQ and VPMADD52HUQ of any register.
 
-Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "PCLMULQDQ",
-"PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables' "CPUID Feature Flag":
-VEX.128 VAESENC/VAESENCLAST (`VEX.128.66.0F38.WIG DC/DD /r`) require AES
-and AVX; VEX.256 (`VEX.256.66.0F38.WIG DC/DD /r`) require VAES and AVX.
-VEX.128 VPCLMULQDQ (`VEX.128.66.0F3A.WIG 44 /r ib`) requires PCLMULQDQ
+Vector AES/GCM additions: SDM Vol. 2, "AESENC", "AESENCLAST", "AESDEC",
+"AESDECLAST", "PCLMULQDQ", "PSHUFB", "PSLLDQ" and "PSRLDQ", opcode tables'
+"CPUID Feature Flag": VEX.128 VAESENC/VAESENCLAST (`VEX.128.66.0F38.WIG
+DC/DD /r`) and VAESDEC/VAESDECLAST (`VEX.128.66.0F38.WIG DE/DF /r`) require
+AES and AVX; VEX.256 (`VEX.256.66.0F38.WIG DC/DD/DE/DF /r`) require VAES and
+AVX. VEX.128 VPCLMULQDQ (`VEX.128.66.0F3A.WIG 44 /r ib`) requires PCLMULQDQ
 and AVX; VEX.256 requires VPCLMULQDQ and AVX. EVEX.512 VAESENC/VAESENCLAST
-(`EVEX.512.66.0F38.WIG DC/DD /r`) require VAES and AVX512F; EVEX.512
+and VAESDEC/VAESDECLAST (`EVEX.512.66.0F38.WIG DC/DD/DE/DF /r`) require
+VAES and AVX512F; EVEX.512
 VPCLMULQDQ (`EVEX.512.66.0F3A.WIG 44 /r ib`) requires VPCLMULQDQ and
 AVX512F. EVEX.512 VPSHUFB (`EVEX.512.66.0F38.WIG 00 /r`), VPSLLDQ and
 VPSRLDQ (`EVEX.512.66.0F.WIG 73 /7 ib`, `/3 ib`) require AVX512BW.
@@ -394,9 +396,13 @@ def Instr.requires : Instr → List String
   | .xop (.bin .aesdeclast ..) | .xop (.bin .aesimc ..) | .xop (.aeskeygenassist ..) => ["aes"]
   | .xop (.pclmulqdq ..) => ["pclmulqdq"]
   | .vop (.vbin .vaesenc .l128 ..) | .vop (.vbin .vaesenclast .l128 ..)
-  | .vbinLoad .vaesenc .l128 .. | .vbinLoad .vaesenclast .l128 .. => ["aes", "avx"]
+  | .vbinLoad .vaesenc .l128 .. | .vbinLoad .vaesenclast .l128 ..
+  | .vop (.vbin .vaesdec .l128 ..) | .vop (.vbin .vaesdeclast .l128 ..)
+  | .vbinLoad .vaesdec .l128 .. | .vbinLoad .vaesdeclast .l128 .. => ["aes", "avx"]
   | .vop (.vbin .vaesenc .l256 ..) | .vop (.vbin .vaesenclast .l256 ..)
-  | .vbinLoad .vaesenc .l256 .. | .vbinLoad .vaesenclast .l256 .. => ["vaes", "avx"]
+  | .vbinLoad .vaesenc .l256 .. | .vbinLoad .vaesenclast .l256 ..
+  | .vop (.vbin .vaesdec .l256 ..) | .vop (.vbin .vaesdeclast .l256 ..)
+  | .vbinLoad .vaesdec .l256 .. | .vbinLoad .vaesdeclast .l256 .. => ["vaes", "avx"]
   | .vop (.vpclmulqdq .l128 ..) => ["pclmulqdq", "avx"]
   | .vop (.vpclmulqdq .l256 ..) => ["vpclmulqdq", "avx"]
   | .vop (.vbin _ .l256 ..) | .vbinLoad _ .l256 .. | .vop (.vshift _ .l256 ..)
@@ -412,7 +418,8 @@ def Instr.requires : Instr → List String
   | .rorx32 .. | .rorx .. | .mulx .. => ["bmi2"]
   | .adcx .. | .adox .. => ["adx"]
   | .andn32 .. | .andn .. => ["bmi1"]
-  | .zop (.zbin .vaesenc ..) | .zop (.zbin .vaesenclast ..) => ["vaes", "avx512f"]
+  | .zop (.zbin .vaesenc ..) | .zop (.zbin .vaesenclast ..)
+  | .zop (.zbin .vaesdec ..) | .zop (.zbin .vaesdeclast ..) => ["vaes", "avx512f"]
   | .zop (.vpclmulqdq ..) => ["vpclmulqdq", "avx512f"]
   | .zop (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
   | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) =>
