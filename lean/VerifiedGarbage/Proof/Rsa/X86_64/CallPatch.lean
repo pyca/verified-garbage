@@ -35,16 +35,6 @@ theorem pc_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pcContra
   rw [patch_mem, wordsAt_overlay fun i hi => hm i (by omega)]
   exact hp
 
-theorem pdChk_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : pdChkContract.pre s)
-    (hc : Clear (hole (s.gpr .rsp)) s) (hp : pdChkContract.post s b) :
-    pdChkContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by
-  obtain ⟨-, -, hwr, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hn, -⟩ := hs
-  have hm := Clear.miss_wr hc (by rw [hwr]; simp) hn (Nat.le_refl _)
-  simp only [pdChkContract, State.patch_gpr] at hp ⊢
-  intro nB hl he
-  rw [patch_mem, written_overlay hm]
-  exact hp nB hl he
-
 theorem crt_patch (s b : State) (hv : Mem) (u : Nat → BitVec 64) (hs : crtContract.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) (hp : crtContract.post s b) :
     crtContract.post s (b.patch (hole (s.gpr .rsp)) hv u) := by

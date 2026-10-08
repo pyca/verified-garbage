@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Rsa.X86_64.PublicImpl
+import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtContract
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 

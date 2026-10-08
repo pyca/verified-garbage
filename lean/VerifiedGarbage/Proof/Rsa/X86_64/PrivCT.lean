@@ -244,19 +244,21 @@ theorem pd_view {a s t : State} (S : Sib a s) (h : J5 s t) :
 
 theorem pd_ct (P : PublicImpl) (name : String) :
     RelCT isa (Two (At J5)) (.call name (P.code)) fun _ _ => True := by
-  refine RelCT.callEx (k := pdChkContract.clear) P.ok P.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
+  have hct : ConstantTime isa (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pre
+      (⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩ : Contract isa).pub (P.code) :=
+    P.ct
+  refine RelCT.callEx (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩)
+    P.ok hct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, w₁', e₁⟩ := pd_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, w₂', e₂⟩ := pd_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := pd_covers (preF_of S₁.1) j₁.1.1
   obtain ⟨c₂, w₂⟩ := pd_covers (preF_of S₂.1) j₂.1.1
   obtain ⟨⟨he₁, -⟩, hw0₁, hw1₁, hw2₁, hw3₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁⟩ := j₁
   obtain ⟨⟨he₂, -⟩, hw0₂, hw1₂, hw2₂, hw3₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂⟩ := j₂
-  have q₁ := pd_pre (preF_of S₁.1) he₁ hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
-  have p₁ : pdChkContract.clear.pre (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁)) :=
-    ⟨q₁, pd_clear (preF_of S₁.1) he₁⟩
-  have q₂ := pd_pre (preF_of S₂.1) he₂ hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
-  have p₂ : pdChkContract.clear.pre (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
-    ⟨q₂, pd_clear (preF_of S₂.1) he₂⟩
+  have p₁ : pdContract.pre (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁)) :=
+    pd_pre (preF_of S₁.1) he₁ hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
+  have p₂ : pdContract.pre (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
+    pd_pre (preF_of S₂.1) he₂ hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
   have hpub : pdContract.pub (t₁.callEntry.withRegions (pdRd s₁) (pdWr s₁))
       (t₂.callEntry.withRegions (pdRd s₂) (pdWr s₂)) :=
     ⟨regs_eq (r₁.trans r₂.symm), a0₁.trans a0₂.symm, a1₁.trans a1₂.symm, a2₁.trans a2₂.symm,

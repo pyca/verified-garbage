@@ -171,8 +171,8 @@ theorem pub_pre {s t : State} (hp : PreV s) (hsig : stackArg s 2 = s.gpr .rsi) (
     State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hsi, hdx, hcx, h8, h9, hsp,
     stackArgAddr_entry hsp, hE 0 (by decide), hE 1 (by decide), hE 2 (by decide), hE 3 (by decide),
     Nat.reduceMul, hw0, hw1, hw2, hw3, fb_sub8]
-  have ⟨hK1, hK2, _⟩ := kb_toNat hp
-  have e1 : verStack = 2152 := rfl
+  have ⟨hK1, hK2⟩ := kb_toNat hp
+  have e1 : verStack = 2144 := rfl
   have e2 : oEM1 = 80 := rfl
   have e3 : frameBytes = 2136 := rfl
   have hk1 := hp.k1
@@ -180,7 +180,7 @@ theorem pub_pre {s t : State} (hp : PreV s) (hsig : stackArg s 2 = s.gpr .rsi) (
   have sM : Region.Sub (em1R s) (stkR s) := frame_sub s (by unfold oEM1 frameBytes; omega)
   have sA : Region.Sub ⟨fb s, 32⟩ (stkR s) := by
     have := frame_sub s (d := 0) (n := 32) (by decide); simpa only [off, BitVec.add_zero] using this
-  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := kb_sub s
+  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := Region.sub_prefix (by decide)
   have hfb : fb s = kb s + BitVec.ofNat 64 8 := fb_eq s
   have dMA : (em1R s).Disjoint ⟨fb s, 32⟩ := Offset.disjoint_base _ (by decide) (by omega)
   have dRM : (⟨kb s, 8⟩ : Region).Disjoint (em1R s) := by

@@ -35,8 +35,9 @@ theorem privCode_depth (v : CrtImpl) : (privCode v).x86_64Depth = 3256 := by
   simp only [privCode, Impl.Rsa.X86_64.PrivChecked.code, Impl.Rsa.X86_64.PrivChecked.body,
     Impl.Rsa.X86_64.PrivChecked.check, Impl.Rsa.X86_64.PrivChecked.tail, List.cons_append, List.nil_append,
     Impl.Bignum.X86_64.seqs, Code.x86_64Depth, x86_64Depth_noSp v.nosp, v.depth, x86_64Depth_noSp v.pcNosp,
-    v.pcDepth, x86_64Depth_noSp v.pubOp.nosp, v.pubOp.depth, X86_64.Instr.frameBytes, Impl.Rsa.X86_64.PrivChecked.frameBytes,
-    Impl.Rsa.X86_64.PrivChecked.cmpLoop, Impl.Rsa.X86_64.PrivChecked.releaseLoop]
+    v.pcDepth, x86_64Depth_noSp v.pubOp.nosp, v.pubOp.depth, X86_64.Instr.frameBytes,
+    Impl.Rsa.X86_64.PrivChecked.frameBytes, Impl.Rsa.X86_64.PrivChecked.cmpLoop,
+    Impl.Rsa.X86_64.PrivChecked.releaseLoop]
   rfl
 
 /-- The call of `vg_rsa_private_checked`: `out` holds the signature of
