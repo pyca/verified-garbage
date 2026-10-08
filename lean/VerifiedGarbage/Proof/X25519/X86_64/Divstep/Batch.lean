@@ -71,9 +71,9 @@ theorem dbatch_eq : dbatch = .seq dsteps (.block (fRow dsU dsV dsNF ++ (fRow dsQ
     (aRow dsU dsV dsNA ++ (aRow dsQ dsR dsB ++ (copy4 dsA dsNA ++ batchEnd))))))) := by
   simp only [dbatch, List.append_assoc]
 
-theorem wOf_eq {m : Mem} {base : Addr} {t : DSt} (h : DMem m base t) :
-    wOf m base = Divstep.wsteps 59 ⟨t.D, BitVec.ofNat 64 t.f, BitVec.ofNat 64 t.g, 1, 0, 0, 1⟩ := by
-  rw [wOf, ← ofNat_fe m base dsF, ← ofNat_fe m base dsG, h.D, h.f, h.g]
+theorem pkW_eq {m : Mem} {base : Addr} {t : DSt} (h : DMem m base t) :
+    pkW m base = pkBatchV t.D (BitVec.ofNat 64 t.f) (BitVec.ofNat 64 t.g) := by
+  rw [pkW, ← ofNat_fe m base dsF, ← ofNat_fe m base dsG, h.D, h.f, h.g]
 
 /-- Writes within the working area. -/
 theorem Outside.wide {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') (h1 : 512 ≤ o)
@@ -88,9 +88,9 @@ theorem dbatch_ok {s : State} {base : Addr} (hs : Scr s base) {t₀ : DSt} (hm :
       (∀ r, r ∉ dsClob → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr := by
   have hn := hs.nowrap
   rw [dbatch_eq]
-  refine WP.seq (WP.mono (dsteps_ok hs hj10 hc) fun s₁ ⟨eD, eU, eV, eQ, eR, O1, b1, g1, r1, w1⟩ => ?_)
+  refine WP.seq (WP.mono (dsteps_ok hs) fun s₁ ⟨eD, eU, eV, eQ, eR, O1, b1, g1, r1, w1⟩ => ?_)
   have hs₁ : Scr s₁ base := ⟨(g1 _ (by decide)).trans hs.rdi, w1 ▸ hs.wr, hs.nowrap⟩
-  rw [wOf_eq hm] at eD eU eV eQ eR
+  rw [pkW_eq hm] at eD eU eV eQ eR
   rw [WP.block_append_iff]
   refine WP.mono (fRow_ok hs₁ (by decide) (by decide) (by decide)) fun s₂ ⟨f2, O2, g2, r2, w2⟩ => ?_
   have hs₂ : Scr s₂ base := ⟨(g2 _ (by decide)).trans hs₁.rdi, w2 ▸ hs₁.wr, hs.nowrap⟩
@@ -111,7 +111,7 @@ theorem dbatch_ok {s : State} {base : Addr} (hs : Scr s base) {t₀ : DSt} (hm :
   have hs₇ : Scr s₇ base := ⟨(g7 _ (by decide)).trans hs₆.rdi, w7 ▸ hs₆.wr, hs.nowrap⟩
   have nb : Reg.rbp ∉ rowClob := by decide
   have c7 : s₇.gpr .rbp = BitVec.ofNat 64 (256 * j) := by
-    rw [g7 _ (by decide), g6 _ nb, g5 _ nb, g4 _ (by decide), g3 _ nb, g2 _ nb, b1]
+    rw [g7 _ (by decide), g6 _ nb, g5 _ nb, g4 _ (by decide), g3 _ nb, g2 _ nb, b1, hc]
   refine WP.mono (batchEnd_ok s₇ hj hj10 c7) fun u ⟨cu, zu, ku⟩ =>
     ⟨⟨?_, ?_, ?_, ?_, ?_⟩, cu, zu, ?_, fun r hr => ?_, ?_, ?_⟩
   all_goals try rw [ku.2.1]
