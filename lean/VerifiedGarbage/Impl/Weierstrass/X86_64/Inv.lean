@@ -147,6 +147,59 @@ def lin (w w' : Reg) (t x y U k K : Nat) : List Instr :=
   maskOf .r13 w ++ maskCopy .r13 U x (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U ++
   maskOf .r13 w' ++ maskCopy .r13 U y (K - 1) ++ chainW .sub .sbb (K - 1) (t + 8) (t + 8) U
 
+/-! ### In registers, for numbers of up to five words
+
+`linR`, the same combination as `lin` column by column: with `|w|` in `rcx`,
+`|w'|` in `rbp` and their signs' masks at `[U]`, `[U + 8]`, `w x ≡ |w| (x ⊕ mask) +
+(|w| & mask)` modulo `2^(64 K)` (`x ⊕ mask` word by word, `x`'s words past `k`
+zero); each column's two products are added to the accumulator `r8`, `r13`,
+whose low word is the column's. -/
+
+/-- `a = |w|` and `[sl]` the mask of `w`'s sign, through `rax` and `rdx`. -/
+def absMask (w a : Reg) (sl : Nat) : List Instr :=
+  [.mov .rax (.reg w), .shift .shr .rax 63, .mov32 .rdx (.imm 0), .alu .sub .rdx (.reg .rax),
+    .store (sc sl) .rdx, .mov a (.reg w), .alu .xor a (.reg .rdx), .alu .sub a (.reg .rdx)]
+
+/-- The accumulator's start: `r8 = (|w| & [U]) + (|w'| & [U + 8])`, `r13 = 0`. -/
+def linInit (U : Nat) : List Instr :=
+  [.mov .r8 (.reg .rcx), .alu .and .r8 (.mem (sc U)), .mov .rax (.reg .rbp), .alu .and .rax (.mem (sc (U + 8))),
+    .alu .add .r8 (.reg .rax), .mov32 .r13 (.imm 0)]
+
+/-- `r8, r13 += m · ([x] ⊕ [sl])`. -/
+def linTerm (m : Reg) (x sl : Nat) : List Instr :=
+  [.mov .rax (.mem (sc x)), .alu .xor .rax (.mem (sc sl)), .mul m, .alu .add .r8 (.reg .rax),
+    .alu .adc .r13 (.reg .rdx)]
+
+/-- `r8, r13 += m · [sl]`: a word past the number's, zero, `⊕` the mask. -/
+def linTermTop (m : Reg) (sl : Nat) : List Instr :=
+  [.mov .rax (.mem (sc sl)), .mul m, .alu .add .r8 (.reg .rax), .alu .adc .r13 (.reg .rdx)]
+
+/-- `[T] = r8`, and the accumulator shifted down a word. -/
+def linOut (T : Nat) : List Instr := [.store (sc T) .r8, .mov .r8 (.reg .r13), .mov32 .r13 (.imm 0)]
+
+/-- Column `i`. -/
+def linCol (T x y U i : Nat) : List Instr :=
+  linTerm .rcx (x + 8 * i) U ++ linTerm .rbp (y + 8 * i) (U + 8) ++ linOut (T + 8 * i)
+
+/-- Column `k`, past the numbers' words. -/
+def linColTop (T U k : Nat) : List Instr :=
+  linTermTop .rcx U ++ linTermTop .rbp (U + 8) ++ linOut (T + 8 * k)
+
+/-- Columns `0 … i - 1`. -/
+def linCols (T x y U : Nat) : Nat → List Instr
+  | 0 => []
+  | i + 1 => linCols T x y U i ++ linCol T x y U i
+
+/-- `lin`'s result in registers (`k ≤ K ≤ k + 1`, `3 ≤ K`), through `rax`, `rcx`,
+`rdx`, `rbp`, `r8`, `r13` and `[U]`, `[U + 8]`. -/
+def linR (w w' : Reg) (T x y U k K : Nat) : List Instr :=
+  absMask w .rcx U ++ absMask w' .rbp (U + 8) ++ linInit U ++ linCols T x y U k ++
+    (if k < K then linColTop T U k else [])
+
+/-- `lin`, or `linR` for numbers of up to five words. -/
+def linC (w w' : Reg) (T x y U k K : Nat) : List Instr :=
+  if K ≤ 5 then linR w w' T x y U k K else lin w w' T x y U k K
+
 /-- `r8 *= 32`, by a left shift. -/
 def shl5 : List Instr := [.shift .shl .r8 5]
 
@@ -253,14 +306,14 @@ def words : List Instr :=
 
 /-- `(f, g) := (u f + v g, q f + r g) / 2^59`. -/
 def fgUpdate : List Instr :=
-  lin .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L ++
-  lin .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L ++
+  linC .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L ++
+  linC .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L ++
   copy P.L P.sF P.sNF ++ copy P.L P.sG P.sNG
 
 /-- `(a, b) := (u a + v b, q a + r b) / 2^64 mod p`; `a` staged in `f'`. -/
 def abUpdate : List Instr :=
-  lin .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU ++
-  lin .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU ++
+  linC .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU ++
+  linC .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU ++
   copy P.M.n P.sA P.sNF
 
 /-- The count of batches less one, its zero flag for the loop. -/

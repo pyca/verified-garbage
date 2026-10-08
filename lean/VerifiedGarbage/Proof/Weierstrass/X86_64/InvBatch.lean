@@ -42,6 +42,32 @@ theorem linM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w
   · have := shifted_cong s.mem base y (k := k) (K := K) (by omega) (by omega); push_cast at this; exact this
   · push_cast; convert e' using 3
 
+/-- `linM_ok` for `linC`: `lin`, or `linR` for up to five words, whose
+coefficients are below `2^62` in magnitude. -/
+theorem linCM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
+    (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
+    {T x y U k K : Nat} (hkK : k ≤ K) (hK : 3 ≤ K) (hk' : K ≤ k + 1)
+    (hx : x + 8 * k ≤ size) (hy : y + 8 * k ≤ size) (hT : T + 8 * K ≤ size) (hU : U + 8 * (K - 1) ≤ size)
+    (hTx : T + 8 * K ≤ x ∨ x + 8 * k ≤ T) (hTy : T + 8 * K ≤ y ∨ y + 8 * k ≤ T)
+    (hUT : U + 8 * (K - 1) ≤ T ∨ T + 8 * K ≤ U) (hUx : U + 8 * (K - 1) ≤ x ∨ x + 8 * k ≤ U)
+    (hUy : U + 8 * (K - 1) ≤ y ∨ y + 8 * k ≤ U)
+    (hu : (s.gpr w).toInt.natAbs ≤ 2 ^ 62) (hv : (s.gpr w').toInt.natAbs ≤ 2 ^ 62) :
+    WP isa (.block (linC w w' T x y U k K)) s fun t =>
+      (wordsVal t.mem base T K : Int) % ((2 ^ (64 * K) : Nat) : Int) =
+        ((s.gpr w).toInt * wordsVal s.mem base x k + (s.gpr w').toInt * wordsVal s.mem base y k) %
+          ((2 ^ (64 * K) : Nat) : Int) ∧
+      KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧ Unch base [(T, 8 * K), (U, 8 * (K - 1))] s.mem t.mem := by
+  unfold linC
+  split
+  · exact linR_ok hs hw hw' hkK hK hk' hx hy hT hU hTx hTy hUT hUx hUy hu hv
+  · exact linM_ok hs hw hw' hkK (by omega) hk' hx hy hT hU hTx hTy hUT hUx hUy
+
+/-- A coefficient of a batch's matrix is below `2^62` in magnitude. -/
+theorem coef_natAbs {u : Int} (h : |u| ≤ 2 ^ 59) : (BitVec.ofInt 64 u).toInt.natAbs ≤ 2 ^ 62 := by
+  rw [Divstep.toInt_small h]
+  have := Int.natCast_natAbs u
+  omega
+
 /-- `[dst] = y / 2^59` modulo `2^(64 L)`, for `[src] ≡ y` with `|y| < 2^(64 L - 1)`
 a multiple of `2^59`. -/
 theorem shrM_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {dst src L : Nat} (hL : 1 ≤ L)
@@ -76,7 +102,7 @@ local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_me
 theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
     (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
     {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u) (hv : s.gpr w' = BitVec.ofInt 64 v) (huv : |u| + |v| ≤ 2 ^ 59)
-    {T x y U dst L : Nat} (hL : 2 ≤ L) (hx : x + 8 * L ≤ size) (hy : y + 8 * L ≤ size) (hT : T + 8 * L ≤ size)
+    {T x y U dst L : Nat} (hL : 3 ≤ L) (hx : x + 8 * L ≤ size) (hy : y + 8 * L ≤ size) (hT : T + 8 * L ≤ size)
     (hU : U + 8 * (L - 1) ≤ size) (hd : dst + 8 * L ≤ size)
     (hTx : T + 8 * L ≤ x ∨ x + 8 * L ≤ T) (hTy : T + 8 * L ≤ y ∨ y + 8 * L ≤ T)
     (hUT : U + 8 * (L - 1) ≤ T ∨ T + 8 * L ≤ U) (hUx : U + 8 * (L - 1) ≤ x ∨ x + 8 * L ≤ U)
@@ -84,13 +110,15 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     (hf : (wordsVal s.mem base x L : Int) % ((2 ^ (64 * L) : Nat) : Int) = f % ((2 ^ (64 * L) : Nat) : Int))
     (hg : (wordsVal s.mem base y L : Int) % ((2 ^ (64 * L) : Nat) : Int) = g % ((2 ^ (64 * L) : Nat) : Int))
     (hfb : |f| ≤ p) (hgb : |g| ≤ p) (hp : p < 2 ^ (64 * (L - 1))) (hdiv : 2 ^ 59 ∣ u * f + v * g) :
-    WP isa (.block (lin w w' T x y U L L ++ shr59 dst T L)) s fun t =>
+    WP isa (.block (linC w w' T x y U L L ++ shr59 dst T L)) s fun t =>
       (wordsVal t.mem base dst L : Int) % ((2 ^ (64 * L) : Nat) : Int) =
         ((u * f + v * g) / 2 ^ 59) % ((2 ^ (64 * L) : Nat) : Int) ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧
       Unch base [(T, 8 * L), (U, 8 * (L - 1)), (dst, 8 * L)] s.mem t.mem := by
   rw [WP.block_append_iff]
-  refine WP.mono (linM_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega) hx hy hT hU hTx hTy hUT hUx hUy)
+  refine WP.mono (linCM_ok hs hw hw' (k := L) (K := L) (Nat.le_refl _) hL (by omega) hx hy hT hU hTx hTy hUT hUx hUy
+    (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
+    (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv)))
     fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
@@ -103,7 +131,7 @@ theorem fHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 
 /-- Half a batch's update of `a`, `b`: `[dst] = mred (u a + v b)` (`n` words). -/
 theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {p : Nat}
-    (hM : ModOkW M size p s.mem base) {w w' : Reg}
+    (hM : ModOkW M size p s.mem base) (hn2 : 2 ≤ M.n) {w w' : Reg}
     (hw : w ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13]) (hw' : w' ∉ [Reg.rax, .rcx, .rdx, .rbp, .r8, .rdi, .r13])
     {u v : Int} (hu : s.gpr w = BitVec.ofInt 64 u) (hv : s.gpr w' = BitVec.ofInt 64 v) (huv : |u| + |v| ≤ 2 ^ 59)
     {T x y U dst : Nat} (hx : x + 8 * M.n ≤ size) (hy : y + 8 * M.n ≤ size) (hT : T + 8 * (M.n + 2) ≤ size)
@@ -114,15 +142,17 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     (hTm : T + 8 * (M.n + 2) ≤ M.mo ∨ M.mo + 8 * M.n ≤ T) (hUm : U + 8 * (M.n + 1) ≤ M.mo ∨ M.mo + 8 * M.n ≤ U)
     {a b : Int} (ha : (wordsVal s.mem base x M.n : Int) = a) (hb : (wordsVal s.mem base y M.n : Int) = b)
     (ha0 : |a| ≤ p) (hb0 : |b| ≤ p) :
-    WP isa (.block (lin w w' T x y U M.n (M.n + 1) ++ mredC M dst T U)) s fun t =>
+    WP isa (.block (linC w w' T x y U M.n (M.n + 1) ++ mredC M dst T U)) s fun t =>
       (wordsVal t.mem base dst M.n : Int) = Divstep.mred p M.minv.toNat (u * a + v * b) ∧
       KeepRegs [.rax, .rcx, .rdx, .rbp, .r8, .r13] s t ∧
       Unch base [(T, 8 * (M.n + 2)), (U, 8 * (M.n + 1)), (dst, 8 * M.n)] s.mem t.mem := by
   have hn := hs.nowrap
   have hn0 := hM.n0
   rw [WP.block_append_iff]
-  refine WP.mono (linM_ok hs hw hw' (k := M.n) (K := M.n + 1) (by omega) (by omega) (by omega) hx hy (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
+  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (by omega) (by omega) (by omega) hx hy (by omega)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
+    (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv))) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [hu, hv, Divstep.toInt_small (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv),
     Divstep.toInt_small (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv), ha, hb] at e₁
@@ -307,8 +337,8 @@ local macro "cover_omega" : tactic =>
 
 /-- Both halves of the update of `f`, `g` into `f'`, `g'`. -/
 abbrev fgHalves (P : InvCfg) : List Instr :=
-  (lin .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L) ++
-  (lin .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L)
+  (linC .r9 .r10 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNF P.sT P.L) ++
+  (linC .r11 .r12 P.sT P.sF P.sG P.sU P.L P.L ++ shr59 P.sNG P.sT P.L)
 
 /-- The update of `f`, `g`. -/
 abbrev fgCode (P : InvCfg) : List Instr :=
@@ -395,8 +425,8 @@ local macro "slotm_omega" : tactic =>
 
 /-- Both halves of the update of `a`, `b`, into `a'` and `b`. -/
 abbrev abHalves (P : InvCfg) : List Instr :=
-  (lin .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU) ++
-  (lin .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU)
+  (linC .r9 .r10 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sNF P.sT P.sU) ++
+  (linC .r11 .r12 P.sT P.sA P.sB P.sU P.M.n P.L ++ mredC P.M P.sB P.sT P.sU)
 
 /-- The update of `a`, `b`. -/
 abbrev abCode (P : InvCfg) : List Instr := abHalves P ++ copy P.M.n P.sA P.sNF
@@ -419,7 +449,7 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
   have n4 := hL.n4; have htbl := hL.tbl; unfold invTbl at htbl; have hmt := hL.mo_tbl; unfold invTbl at hmt
   have hmo := hM.mo
   rw [WP.block_append_iff]
-  refine WP.mono (abHalf_ok hs hM (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
+  refine WP.mono (abHalf_ok hs hM (by omega) (w := .r9) (w' := .r10) (by decide) (by decide) h9 h10 huv
     (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sNF) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) hA hB ha hb)
@@ -432,7 +462,7 @@ theorem abHalves_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P siz
     U₁.wordsVal (by cover_omega) (by slot_omega)
   have M₁ := modOk_out hM U₁' (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; slotm_omega) hn
-  refine WP.mono (abHalf_ok hs₁ M₁ (w := .r11) (w' := .r12) (by decide) (by decide)
+  refine WP.mono (abHalf_ok hs₁ M₁ (by omega) (w := .r11) (w' := .r12) (by decide) (by decide)
     (by rw [k₁.gpr _ (by decide)]; exact h11) (by rw [k₁.gpr _ (by decide)]; exact h12) hqr
     (T := P.sT) (x := P.sA) (y := P.sB) (U := P.sU) (dst := P.sB) (by slotm_omega) (by slotm_omega)
     (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega) (by slotm_omega)
