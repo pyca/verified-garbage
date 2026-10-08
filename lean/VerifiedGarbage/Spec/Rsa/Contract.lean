@@ -22,7 +22,9 @@ import VerifiedGarbage.TCB.Artifact
   too, releasing a result only if it passes BoringSSL's check against it
   (`Rsa.privateChecked`);
 * `vg_rsa_check_key`: BoringSSL's `RSA_check_key` of the private key
-  `(n, e, d, p, q, dP, dQ, qInv)` (`Rsa.checkKey`).
+  `(n, e, d, p, q, dP, dQ, qInv)` (`Rsa.checkKey`);
+* `vg_rsa_check_crt_key`: the same checks of the CRT form
+  `(n, e, p, q, dP, dQ, qInv)` alone (`Rsa.checkCrtKey`), for loading a key.
 
 A private key is brought to the CRT form once, when it is loaded, and every
 operation is `vg_rsa_private_checked`.
@@ -36,7 +38,8 @@ octets; `p` and its values (`dP`, `qInv`) are `p_len` octets, and `q` and
 public lengths; everything about the values is checked: the function returns
 1 and writes its results, or returns 0 and writes zeros (but
 `vg_rsa_private_checked`, which returns 2 and writes zeros on its internal
-error, and `vg_rsa_check_key`, which writes nothing).
+error, and `vg_rsa_check_key` and `vg_rsa_check_crt_key`, which write
+nothing).
 
 The signature determines memory validity, separation and that the pointers
 and lengths are public, through `Sig.contract`. The public key, `n` and `e`,
@@ -327,8 +330,8 @@ def recoverPrimesApi : Api where
 /-! ## BoringSSL's checks
 
 The functions below check what BoringSSL checks (`Rsa.publicOpChecked`,
-`Rsa.privateChecked`, `Rsa.checkKey`). The public-key operations without
-the check of `e` are retired; `vg_rsa_private_crt` remains, as the
+`Rsa.privateChecked`, `Rsa.checkKey`, `Rsa.checkCrtKey`). The public-key
+operations without the check of `e` are retired; `vg_rsa_private_crt` remains, as the
 operation that `vg_rsa_private_checked` checks. -/
 
 /-- The public exponent and its limits, in the summaries. -/
@@ -546,6 +549,64 @@ def checkKeyApi : Api where
     may depend on the pointers, the lengths and the contents of `n` and `e`, not on the \
     private key."
   safety := ["`n_len` must be in 64..=1024.", "`e_len` and `d_len` must be in 1..=`n_len`.",
+    "`p_len` and `q_len` must be in 1..`n_len`.",
+    "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
+
+/-! ### `vg_rsa_check_crt_key` -/
+
+/-- `vg_rsa_check_crt_key(n: *const u8, n_len: usize, e: *const u8,
+e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize,
+dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize,
+qinv: *const u8, qinv_len: usize, scratch: *mut u64,
+scratch_len: usize) -> u32`. -/
+def checkCrtKeySig : Sig where
+  params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
+    ("p", .slice false .u8 "p_len"), ("q", .slice false .u8 "q_len"),
+    ("dp", .slice false .u8 "dp_len"), ("dq", .slice false .u8 "dq_len"),
+    ("qinv", .slice false .u8 "qinv_len"), ("scratch", .slice true .u64 "scratch_len")]
+  ret := some .u32
+
+/-- The checks of BoringSSL's `RSA_check_key` on the CRT form
+`(n, e, p, q, dP, dQ, qInv)` of a private key (`checkCrtKey`): 1 if they
+accept the key, 0 if not. Constant time but for the public key. -/
+def checkCrtKeyContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  checkCrtKeySig.contract A
+    (pre := fun _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen _scratch
+        scratchLen _ =>
+      lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
+        1 ≤ pLen.toNat ∧ pLen.toNat < nLen.toNat ∧ 1 ≤ qLen.toNat ∧ qLen.toNat < nLen.toNat ∧
+        dpLen.toNat = pLen.toNat ∧ qinvLen.toNat = pLen.toNat ∧ dqLen.toNat = qLen.toNat ∧
+        scratchWords nLen.toNat ≤ scratchLen.toNat)
+    (post := fun n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen _scratch
+        _scratchLen m _m' r =>
+      r = if checkCrtKey (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
+          (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
+          (bytesAt m dq qLen.toNat) (bytesAt m qinv pLen.toNat) then 1 else 0)
+    (writeArgs := true) (stack := stack)
+    (leak := some fun n nLen e eLen _p _pLen _q _qLen _dp _dpLen _dq _dqLen _qinv _qinvLen
+        _scratch _scratchLen m =>
+      (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
+
+def checkCrtKeyApi : Api where
+  module := "rsa"
+  name := "vg_rsa_check_crt_key"
+  sig := checkCrtKeySig
+  writeArgs := true
+  contracts := some fun A stack => checkCrtKeyContract A stack
+  summary := "Checks the CRT form `(n, e, p, q, dP, dQ, qInv)` of an RSA private key as \
+    BoringSSL's `RSA_check_key` checks it, without the private exponent `d`, which the \
+    private-key operations do not use. With the modulus `n` (`n_len` bytes), the public \
+    exponent `e` (`e_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` \
+    (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 \
+    bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `p q = n`, \
+    `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, \
+    `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. It does not check that `p` and `q` \
+    are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a \
+    key it accepts.\n\n\
+    Contract: `VG.Spec.Rsa.checkCrtKeyContract`. Constant time but for the public key: timing \
+    may depend on the pointers, the lengths and the contents of `n` and `e`, not on the \
+    private key."
+  safety := ["`n_len` must be in 64..=1024.", "`e_len` must be in 1..=`n_len`.",
     "`p_len` and `q_len` must be in 1..`n_len`.",
     "`dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`."] ++ scratchSafety
 

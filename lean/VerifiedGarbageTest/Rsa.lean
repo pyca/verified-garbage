@@ -23,8 +23,9 @@ failure for `c ≥ n`; no vector values are embedded in this test. For each:
   `publicOpChecked`, `privateChecked` and `checkKey` refuse them. The same
   factors with `e = 65537` and `d = e⁻¹ mod λ(n)` (computed, when it exists)
   make a key `checkKey` accepts, with `p` and `q` either way round and with
-  leading zeros, and refuses when any one of its checks fails; with it
-  `privateChecked` gives `c^d mod n`, which `publicOpChecked` takes back to
+  leading zeros, and refuses when any one of its checks fails, and so does
+  `checkCrtKey` (but for those of `d`); with it `privateChecked` gives 0
+  for 0, and `c^d mod n` for `c`, which `publicOpChecked` takes back to
   `c`, and faults for a wrong `dP`, `dQ` or `e`.
 * `publicPrecompute` gives `w = ⌈k / 8⌉` words of `n`, which make up `n`,
   then `w` words of `R² mod n`, which equal `(R mod n)² mod n`, with
@@ -198,6 +199,29 @@ def check (v : Vector) : Except String Nat := do
     let some (dQ'', dP'', pInv) := crtValues q p d' | throw "no CRT values, swapped"
     unless checkKey nB eB' dB' qB pB (i2osp dQ'' qLen) (i2osp dP'' pLen) (i2osp pInv qLen) do
       throw "checkKey rejected the key with p and q swapped"
+    -- `checkCrtKey`: the same checks without `d`.
+    unless checkCrtKey nB eB' pB qB dPB' dQB' qInvB' do throw "checkCrtKey rejected a valid key"
+    unless checkCrtKey nB eB' (0 :: pB) qB (0 :: dPB') dQB' (0 :: qInvB') do
+      throw "checkCrtKey rejected a valid key with leading zeros"
+    unless checkCrtKey nB eB' qB pB (i2osp dQ'' qLen) (i2osp dP'' pLen) (i2osp pInv qLen) do
+      throw "checkCrtKey rejected the key with p and q swapped"
+    let crtRejects : List (String × Bool) := [
+      ("an even modulus", checkCrtKey (i2osp (n + 1) len) eB' pB qB dPB' dQB' qInvB'),
+      ("e = 65536", checkCrtKey nB (bytes 65536) pB qB dPB' dQB' qInvB'),
+      ("e = 2^33 + 1", checkCrtKey nB (bytes (2 ^ 33 + 1)) pB qB dPB' dQB' qInvB'),
+      ("p q ≠ n", checkCrtKey nB eB' pB (bytes (q + 2)) dPB' dQB' qInvB'),
+      ("dP ≥ p - 1", checkCrtKey nB eB' pB qB (i2osp (dP' + (p - 1)) (pLen + 1)) dQB' qInvB'),
+      ("e dP ≢ 1", checkCrtKey nB eB' pB qB (i2osp (dP' + 1) pLen) dQB' qInvB'),
+      ("dQ ≥ q - 1", checkCrtKey nB eB' pB qB dPB' (i2osp (dQ' + (q - 1)) (qLen + 1)) qInvB'),
+      ("e dQ ≢ 1", checkCrtKey nB eB' pB qB dPB' (i2osp (dQ' + 1) qLen) qInvB'),
+      ("qInv ≥ p", checkCrtKey nB eB' pB qB dPB' dQB' (i2osp (qInv' + p) (pLen + 1))),
+      ("q qInv ≢ 1", checkCrtKey nB eB' pB qB dPB' dQB' (i2osp (qInv' + 1) pLen)),
+      ("p = 1", checkCrtKey nB eB' [1] nB [0] (i2osp 0 len) [0])]
+    for (what, accepted) in crtRejects do
+      if accepted then throw s!"checkCrtKey accepted {what}"
+    -- A key it accepts gives a result for 0, which is 0.
+    unless privateChecked nB eB' (i2osp 0 len) pB qB dPB' dQB' qInvB' == .ok (i2osp 0 len) do
+      throw "privateChecked refused 0 with a key checkCrtKey accepts"
     if v.pass then
       let m := powMod v.c d' n
       unless privateChecked nB eB' cB pB qB dPB' dQB' qInvB' == .ok (i2osp m len) do
