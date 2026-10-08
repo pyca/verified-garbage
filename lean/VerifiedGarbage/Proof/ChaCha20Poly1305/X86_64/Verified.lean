@@ -129,7 +129,7 @@ theorem open_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
 
 /-! ## The frame -/
 
-theorem xorBuf_xdepth : (Impl.ChaCha20.X86_64.XorBuf.xorBuf .r14 .rsi).x86_64Depth = 0 := by decide
+theorem xorBuf_xdepth : (xorBufX .r14).x86_64Depth = 0 := by decide
 theorem init_xdepth : Impl.Poly1305.X86_64.init.x86_64Depth = 0 := by lit_decide
 theorem finalize_xdepth : Impl.Poly1305.X86_64.finalize.x86_64Depth = 0 := by lit_decide
 
@@ -139,14 +139,14 @@ theorem blocks_xdepth (b : Impl.Poly1305.X86_64.Blocks) : b.code.x86_64Depth ≤
 theorem seal_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («seal» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«seal», prologue, prologueA, prologueB, foldM, zeroKs, macPad, padTail, crypt, absorbLengths, finalizeTag, finalizeWith,
+  simp only [«seal», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, absorbLengths, finalizeTag, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
 theorem open_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) : («open» v.callee v.poly).x86_64Depth ≤ 24 := by
   have hx := v.xdepth
   have hb := blocks_xdepth v.poly
-  simp only [«open», prologue, prologueA, prologueB, foldM, zeroKs, macPad, padTail, crypt, absorbLengths, finalizeTo, finalizeWith,
+  simp only [«open», prologue, prologueA, prologueB, foldM, zeroKs, macPad, macPadLengths, wholeBlocks, padTail, crypt, absorbLengths, finalizeTo, finalizeWith,
     Code.x86_64Depth, xorBuf_xdepth, init_xdepth, finalize_xdepth, Nat.max_le]
   omega
 
