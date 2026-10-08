@@ -785,3 +785,92 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
     )
 }
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 696 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #32",
+        "add r12, sp, #0",
+        "str lr, [r12, #12]",
+        "str r0, [r12, #16]",
+        "str r1, [r12, #20]",
+        "str r2, [r12, #24]",
+        "str r3, [r12, #28]",
+        "ldr lr, [r12, #40]",
+        "str lr, [r12, #0]",
+        "ldr lr, [r12, #44]",
+        "str lr, [r12, #4]",
+        "ldr lr, [r12, #48]",
+        "str lr, [r12, #8]",
+        "ldr r0, [r12, #32]",
+        "ldr r2, [r12, #40]",
+        "ldr lr, [r12, #36]",
+        "cmp lr, #0",
+        "beq 20f",
+        "22:",
+        "ldr r1, [r0, #0]",
+        "ldr r3, [r0, #4]",
+        "lsr r3, r3, #2",
+        "cmp r3, #0",
+        "beq 23f",
+        "25:",
+        "ldr r12, [r1, #0]",
+        "str r12, [r2, #0]",
+        "add r1, r1, #4",
+        "add r2, r2, #4",
+        "subs r3, r3, #1",
+        "bne 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "ldr r3, [r0, #4]",
+        "and r3, r3, #3",
+        "cmp r3, #0",
+        "beq 26f",
+        "28:",
+        "ldrb r12, [r1, #0]",
+        "strb r12, [r2, #0]",
+        "add r1, r1, #1",
+        "add r2, r2, #1",
+        "subs r3, r3, #1",
+        "bne 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "add r0, r0, #8",
+        "subs lr, lr, #1",
+        "bne 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "add r12, sp, #0",
+        "ldr r0, [r12, #16]",
+        "ldr r1, [r12, #20]",
+        "ldr r2, [r12, #24]",
+        "ldr r3, [r12, #28]",
+        "bl {vg_chacha20_poly1305_seal}",
+        "add r12, sp, #0",
+        "ldr lr, [r12, #12]",
+        "add sp, sp, #32",
+        "bx lr",
+        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+    )
+}

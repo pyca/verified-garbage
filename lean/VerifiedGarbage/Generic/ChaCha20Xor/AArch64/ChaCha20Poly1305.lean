@@ -2,6 +2,7 @@ import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.ChaCha20Poly1305.AArch64
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Lit
+import VerifiedGarbage.Proof.ChaCha20Poly1305.AArch64.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on AArch64
@@ -15,7 +16,8 @@ bytes, `work`) in a frame of 768 bytes on the stack
 Poly1305 key and keystream. With the eight-block stream
 (`XorImpl.stitched`), the integer units absorb the data's whole chunks of 512
 bytes into Poly1305 while the stream computes their keystream
-(`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`).
+(`Impl/ChaCha20Poly1305/AArch64/Stitched.lean`). `seal_gather` gathers its
+slices to its output and calls this `seal` on them there.
 -/
 
 namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
@@ -24,6 +26,19 @@ namespace VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305
 def notes (v : Proof.ChaCha20.AArch64.XorImpl) : List String :=
   if v.stitched then ["Absorbs each 512 bytes into Poly1305 with integer instructions while " ++
     "computing the keystream of the next with the eight-block ChaCha20 kernel."] else []
+
+/-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
+def gatherNote (fn : String) : String :=
+  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
+    encrypts them there in place with `" ++ fn ++ "`."
+
+/-- The instance of `vg_chacha20_poly1305_seal` calling the backend `v`. -/
+def sealFn (v : Proof.ChaCha20.AArch64.XorImpl) : Proof.ChaCha20Poly1305.AArch64.Gather.SealFn where
+  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.callee.suffix
+  code := Impl.StackScratch.AArch64.withStackScratchWiped 768 .x7 95
+    (Impl.ChaCha20Poly1305.AArch64.sealCode v.callee v.stitched)
+  verified := Proof.ChaCha20Poly1305.AArch64.seal_framed v
+  depth := Proof.ChaCha20Poly1305.AArch64.Gather.seal_depth v
 
 def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   { Spec.ChaCha20Poly1305.sealApi with
@@ -47,6 +62,16 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
     contract := Spec.ChaCha20Poly1305.openContract AArch64.abi 768
     stack := 768
     verified := Proof.ChaCha20Poly1305.AArch64.open_framed v
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.ChaCha20Poly1305.sealGatherApi with
+    name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.callee.suffix
+    features := v.features
+    target := AArch64.target
+    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote (sealFn v).name])
+    code := Impl.ChaCha20Poly1305.AArch64.SealGather.sealGather (sealFn v).name (sealFn v).code
+    contract := Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 784
+    stack := 784
+    verified := Proof.ChaCha20Poly1305.AArch64.Gather.sealGather_verified (sealFn v)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.ChaCha20Xor.AArch64.ChaCha20Poly1305

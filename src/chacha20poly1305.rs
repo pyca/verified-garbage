@@ -29,6 +29,14 @@
 //! the keystream of short data (up to 960 bytes with AVX-512, 192 with AVX2),
 //! which then takes no second call; every other variant computes it with the
 //! scalar `vg_chacha20_block`.
+//!
+//! [`ChaCha20Poly1305::encrypt`] encrypts out of place, from a plaintext in
+//! pieces (a list of slices, such as a record's payload and TLS 1.3's
+//! content type, or a single one) into one output buffer: one call of
+//! `vg_chacha20_poly1305_seal_gather`
+//! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), which copies the pieces
+//! to the output and encrypts them there with the same implementation's
+//! `vg_chacha20_poly1305_seal`.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -37,21 +45,28 @@
     target_arch = "x86"
 ))]
 
+use core::mem::MaybeUninit;
+
 #[cfg(target_arch = "x86_64")]
 use crate::arch::chacha20poly1305::{
     VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
     vg_chacha20_poly1305_open_avx2, vg_chacha20_poly1305_open_avx512,
     vg_chacha20_poly1305_seal_avx2, vg_chacha20_poly1305_seal_avx512,
+    vg_chacha20_poly1305_seal_gather_avx2, vg_chacha20_poly1305_seal_gather_avx512,
 };
-use crate::arch::chacha20poly1305::{vg_chacha20_poly1305_open, vg_chacha20_poly1305_seal};
+use crate::arch::chacha20poly1305::{
+    vg_chacha20_poly1305_open, vg_chacha20_poly1305_seal, vg_chacha20_poly1305_seal_gather,
+};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::chacha20poly1305::{
-    vg_chacha20_poly1305_open_neon, vg_chacha20_poly1305_open_sve2, vg_chacha20_poly1305_seal_neon,
-    vg_chacha20_poly1305_seal_sve2,
+    vg_chacha20_poly1305_open_neon, vg_chacha20_poly1305_open_sve2,
+    vg_chacha20_poly1305_seal_gather_neon, vg_chacha20_poly1305_seal_gather_sve2,
+    vg_chacha20_poly1305_seal_neon, vg_chacha20_poly1305_seal_sve2,
 };
 #[cfg(target_arch = "x86")]
 use crate::arch::chacha20poly1305::{
-    vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_ssse3,
+    vg_chacha20_poly1305_open_ssse3, vg_chacha20_poly1305_seal_gather_ssse3,
+    vg_chacha20_poly1305_seal_ssse3,
 };
 use crate::chacha20::Backend;
 use crate::cpu::{Features, detected};
@@ -78,12 +93,16 @@ fn select(f: Features) -> Backend {
 /// 64 bytes, as the block counter starts at 1.
 const P_MAX: u64 = (1 << 38) - 64;
 
+/// `len + n`, if it is at most `P_MAX`.
+fn add_len(len: u64, n: usize) -> Result<u64, Error> {
+    len.checked_add(n as u64)
+        .filter(|&sum| sum <= P_MAX)
+        .ok_or(Error::InvalidTextLength)
+}
+
 /// Checks that a text of `len` bytes is at most `P_MAX` long.
 fn check_len(len: usize) -> Result<(), Error> {
-    if len as u64 > P_MAX {
-        return Err(Error::InvalidTextLength);
-    }
-    Ok(())
+    add_len(0, len).map(|_| ())
 }
 
 /// Why a ChaCha20-Poly1305 operation failed.
@@ -95,6 +114,12 @@ pub enum Error {
     /// The tag does not match: the ciphertext, the additional data or the
     /// nonce is not what was authenticated under this key.
     TagMismatch,
+    /// The output of [`ChaCha20Poly1305::encrypt`] is not as long as the
+    /// plaintext.
+    InvalidOutputLength,
+    /// More than [`ChaCha20Poly1305::MAX_PIECES`] pieces of plaintext for
+    /// [`ChaCha20Poly1305::encrypt`].
+    TooManyPieces,
 }
 
 /// The AEAD with a key.
@@ -177,6 +202,75 @@ impl ChaCha20Poly1305 {
         Ok(tag)
     }
 
+    /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
+    pub const MAX_PIECES: usize = 64;
+
+    /// Encrypts the plaintext made of the pieces `plaintext`, in order, with
+    /// the nonce `nonce` and the additional data `aad`, into `out`, which
+    /// must be exactly as long as they are in all, and returns the tag. A
+    /// plaintext in one buffer is one piece (`&[buf]`); there may be at most
+    /// [`MAX_PIECES`](Self::MAX_PIECES).
+    pub fn encrypt(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        plaintext: &[&[u8]],
+        out: &mut [u8],
+    ) -> Result<[u8; 16], Error> {
+        if plaintext.len() > Self::MAX_PIECES {
+            return Err(Error::TooManyPieces);
+        }
+        let mut len = 0;
+        for p in plaintext {
+            len = add_len(len, p.len())?;
+        }
+        if len != out.len() as u64 {
+            return Err(Error::InvalidOutputLength);
+        }
+        // The descriptors of the pieces, as `vg_chacha20_poly1305_seal_gather`
+        // takes them: each its address and its length. Only the first
+        // `plaintext.len()` are written, and the function reads only those.
+        let mut descs = [const { MaybeUninit::<[usize; 2]>::uninit() }; Self::MAX_PIECES];
+        for (d, p) in descs.iter_mut().zip(plaintext) {
+            d.write([p.as_ptr() as usize, p.len()]);
+        }
+        let seal = match self.backend {
+            Backend::Scalar => vg_chacha20_poly1305_seal_gather,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Neon => vg_chacha20_poly1305_seal_gather_neon,
+            #[cfg(target_arch = "aarch64")]
+            Backend::Sve2 => vg_chacha20_poly1305_seal_gather_sve2,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx2 => vg_chacha20_poly1305_seal_gather_avx2,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Avx512 => vg_chacha20_poly1305_seal_gather_avx512,
+            #[cfg(target_arch = "x86")]
+            Backend::Ssse3 => vg_chacha20_poly1305_seal_gather_ssse3,
+        };
+        let mut tag = [0; 16];
+        // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
+        // writes of `out.len()` bytes; `descs` holds `plaintext.len()`
+        // initialized descriptors (a local), each the address and the length
+        // of a piece valid for reads, which are `out.len()` bytes in all, at
+        // most `P_MAX`. The pieces and the descriptors are read only, and
+        // overlap neither `out` (a unique borrow) nor `tag`, nor anything on
+        // the stack the function uses.
+        unsafe {
+            seal(
+                &self.key,
+                nonce,
+                aad.as_ptr(),
+                aad.len(),
+                descs.as_ptr().cast(),
+                plaintext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                &mut tag,
+            )
+        };
+        Ok(tag)
+    }
+
     /// Decrypts `data` in place, with the nonce `nonce` and the additional
     /// data `aad`, if `tag` authenticates it; otherwise returns
     /// [`Error::TagMismatch`] and zeroes `data`.
@@ -230,7 +324,7 @@ impl ChaCha20Poly1305 {
 
 #[cfg(test)]
 mod tests {
-    use super::{Backend, ChaCha20Poly1305, Error, P_MAX, check_len, select};
+    use super::{Backend, ChaCha20Poly1305, Error, P_MAX, add_len, check_len, select};
     #[cfg(target_arch = "x86_64")]
     use crate::cpu::Features;
     use crate::cpu::detected;
@@ -293,6 +387,64 @@ mod tests {
         if let Ok(len) = usize::try_from(P_MAX + 1) {
             assert_eq!(check_len(len), Err(Error::InvalidTextLength));
         }
+        assert_eq!(add_len(P_MAX - 1, 1), Ok(P_MAX));
+        assert_eq!(add_len(P_MAX, 1), Err(Error::InvalidTextLength));
+        assert_eq!(add_len(u64::MAX, 1), Err(Error::InvalidTextLength));
+    }
+
+    /// Out of place, from pieces: the ciphertext and the tag of the
+    /// concatenation of the pieces encrypted in place, for any split, with
+    /// every implementation; and the errors.
+    #[test]
+    fn encrypt_pieces() {
+        let key = core::array::from_fn(|i| (i * 5) as u8);
+        let mut scalar = ChaCha20Poly1305::new(&key);
+        scalar.backend = Backend::Scalar;
+        let best = ChaCha20Poly1305::new(&key);
+        let nonce = [3; 12];
+        let msg: [u8; 600] = core::array::from_fn(|i| (i * 11) as u8);
+        for aead in [&scalar, &best] {
+            for len in [0, 1, 15, 16, 17, 31, 64, 129, 513, 600] {
+                for aad in [&[][..], &[5; 20]] {
+                    let mut want = msg;
+                    let want_tag = aead
+                        .encrypt_in_place(&nonce, aad, &mut want[..len])
+                        .unwrap();
+                    let m = &msg[..len];
+                    let (h, q) = (len / 2, len * 3 / 4);
+                    let one: [&[u8]; 1] = [m];
+                    let two: [&[u8]; 2] = [&m[..h], &m[h..]];
+                    let five: [&[u8]; 5] = [&[], &m[..h], &m[h..h], &m[h..q], &m[q..]];
+                    for pieces in [&one[..], &two, &five] {
+                        let mut out = [0u8; 600];
+                        let tag = aead.encrypt(&nonce, aad, pieces, &mut out[..len]);
+                        assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)));
+                    }
+                }
+            }
+            let n = ChaCha20Poly1305::MAX_PIECES;
+            let mut want = msg;
+            let want_tag = aead.encrypt_in_place(&nonce, &[], &mut want[..n]).unwrap();
+            let bytes: [&[u8]; ChaCha20Poly1305::MAX_PIECES] =
+                core::array::from_fn(|i| &msg[i..i + 1]);
+            let mut out = [0u8; ChaCha20Poly1305::MAX_PIECES];
+            let tag = aead.encrypt(&nonce, &[], &bytes, &mut out);
+            assert_eq!((&out[..], tag), (&want[..n], Ok(want_tag)));
+        }
+        let empty = [&msg[..0]; ChaCha20Poly1305::MAX_PIECES + 1];
+        assert_eq!(
+            best.encrypt(&nonce, &[], &empty, &mut []),
+            Err(Error::TooManyPieces)
+        );
+        assert_eq!(
+            best.encrypt(&nonce, &[], &[], &mut []),
+            best.encrypt(&nonce, &[], &[&[]], &mut [])
+        );
+        let mut out = [0u8; 4];
+        assert_eq!(
+            best.encrypt(&nonce, &[], &[&msg[..1], &msg[1..3]], &mut out),
+            Err(Error::InvalidOutputLength)
+        );
     }
 
     /// Every implementation gives the same ciphertext and tag as the scalar
@@ -332,7 +484,8 @@ mod tests {
 
     /// The functions called for each implementation need the features of
     /// both `vg_chacha20_xor`'s and `vg_poly1305_blocks`'s for the same CPUs,
-    /// `open`'s the same as `seal`'s, and `select` chooses by them.
+    /// `open`'s and `seal_gather`'s the same as `seal`'s, and `select`
+    /// chooses by them.
     #[cfg(target_arch = "x86_64")]
     #[test]
     fn features() {
@@ -342,6 +495,8 @@ mod tests {
         use crate::arch::chacha20poly1305::{
             VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES,
             VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES,
         };
         use crate::arch::poly1305::{
             VG_POLY1305_BLOCKS_AVX2_FEATURES, VG_POLY1305_BLOCKS_AVX512_FEATURES,
@@ -356,8 +511,10 @@ mod tests {
         ]);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES, avx2);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES, avx2);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES, avx512);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES, avx512);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES, avx512);
         assert_eq!(select(avx2), Backend::Avx2);
         assert_eq!(select(avx512), Backend::Avx512);
         // AVX-512F alone is not enough: the AVX-512 instances' Poly1305
@@ -366,9 +523,10 @@ mod tests {
         assert_eq!(select(Features::of(&["avx"])), Backend::Scalar);
     }
 
-    /// On x86, the SSSE3 instances need the features of
-    /// `vg_chacha20_xor_ssse3` (and of `vg_chacha20_apply_ssse3`, which
-    /// `select` checks), and `select` chooses them with SSSE3.
+    /// On x86, the SSSE3 instances (`seal`, `open` and `seal_gather`) need
+    /// the features of `vg_chacha20_xor_ssse3` (and of
+    /// `vg_chacha20_apply_ssse3`, which `select` checks), and `select`
+    /// chooses them with SSSE3.
     #[cfg(target_arch = "x86")]
     #[test]
     fn features() {
@@ -376,31 +534,38 @@ mod tests {
             VG_CHACHA20_APPLY_SSSE3_FEATURES, VG_CHACHA20_XOR_SSSE3_FEATURES,
         };
         use crate::arch::chacha20poly1305::{
-            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES,
         };
         use crate::cpu::Features;
         let ssse3 = VG_CHACHA20_XOR_SSSE3_FEATURES;
         assert_eq!(VG_CHACHA20_APPLY_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES, ssse3);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES, ssse3);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES, ssse3);
         assert_eq!(select(ssse3), Backend::Ssse3);
         assert_eq!(select(Features::of(&[])), Backend::Scalar);
     }
 
     /// On AArch64, the SVE2 instances need the features of
-    /// `vg_chacha20_xor_sve2`, `open`'s the same as `seal`'s, and `select`
-    /// chooses them with SVE2 (and the NEON ones without).
+    /// `vg_chacha20_xor_sve2`, `open`'s and `seal_gather`'s the same as
+    /// `seal`'s, and `select` chooses them with SVE2 (and the NEON ones
+    /// without).
     #[cfg(target_arch = "aarch64")]
     #[test]
     fn features() {
         use crate::arch::chacha20::VG_CHACHA20_XOR_SVE2_FEATURES;
         use crate::arch::chacha20poly1305::{
-            VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES, VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES,
+            VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES,
+            VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES,
         };
         use crate::cpu::Features;
         let sve2 = VG_CHACHA20_XOR_SVE2_FEATURES;
         assert_eq!(VG_CHACHA20_POLY1305_SEAL_SVE2_FEATURES, sve2);
         assert_eq!(VG_CHACHA20_POLY1305_OPEN_SVE2_FEATURES, sve2);
+        assert_eq!(VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES, sve2);
         assert_eq!(
             select(Features::all(&[
                 Features::of(&["neon"]),

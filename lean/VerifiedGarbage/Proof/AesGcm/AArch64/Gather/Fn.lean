@@ -26,10 +26,6 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (ctxCiph ctxH encryptWith gathered gatheredLen)
 open VG.Proof.AesGcm.AArch64 (bytesAt_frame blockAt_frame covers_of_mem covers_cons covers_append covers_prefix)
 
-theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
-    B + BitVec.ofNat 64 a - BitVec.ofNat 64 b = B + BitVec.ofNat 64 (a - b) := by
-  rw [← Offset.ofNat_sub_ofNat h, BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]
-
 /-- The entry, in the frame at `P`: our return address at `P + 8`, the
 stack argument at `P + 32` (`tag`) at `P`, and the one at `P + 16` (`dst`)
 in `x11`. -/
@@ -53,17 +49,6 @@ theorem entry_ok (a : State) {P : Addr} (hsp : a.sp = P)
   subst he
   exact ⟨rfl, by simp [State.write], fun r h₁ h₂ h₃ => by simp [State.write, h₁, h₂, h₃], rfl, rfl, rfl⟩
 
-/-- `ldrSp t k`: the doubleword at `sp + k` into `t`. -/
-theorem ldrSp_ok (a : State) {t : Reg} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
-    (r : InRegions (a.rd ++ a.wr) (a.sp + BitVec.ofNat 64 k) 8) :
-    WP isa (.block [.ldrSp t k]) a fun e => e.gpr t = a.mem.read (a.sp + BitVec.ofNat 64 k) 8 ∧
-      (∀ r, r ≠ t → e.gpr r = a.gpr r) ∧ e.mem = a.mem ∧ e.sp = a.sp ∧ e.rd = a.rd ∧ e.wr = a.wr ∧ e.v = a.v := by
-  refine Proof.AesGcm.AArch64.WP.run ⟨_, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load, Size.bits, Option.map_some,
-      BitVec.setWidth_eq, hk, r, and_self, ite_true]; rfl, rfl⟩ fun e he => ?_
-  subst he
-  exact ⟨by simp [State.write], fun r h => by simp [State.write, h], rfl, rfl, rfl, rfl, rfl⟩
-
 /-- `callArgs`: the stack arguments at `sp + 16` and `sp + 24` into `x6` and `x7`. -/
 theorem callArgs_ok (a : State) (r₁₆ : InRegions (a.rd ++ a.wr) (a.sp + BitVec.ofNat 64 16) 8)
     (r₂₄ : InRegions (a.rd ++ a.wr) (a.sp + BitVec.ofNat 64 24) 8) :
@@ -77,13 +62,6 @@ theorem callArgs_ok (a : State) (r₁₆ : InRegions (a.rd ++ a.wr) (a.sp + BitV
     fun e' ⟨g₇, g', m', sp', rd', wr', v'⟩ => ?_
   refine ⟨by rw [g' _ (by decide), g₆], by rw [g₇, m, sp], fun r h₁ h₂ => by rw [g' r h₂, g r h₁], by rw [m', m],
     by rw [sp', sp], by rw [rd', rd], by rw [wr', wr], by rw [v', v]⟩
-
-/-- The `n` bytes at `p + d` are within the `k` bytes at `p + e`. -/
-theorem contains_off (p : Addr) {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ e + k) (hd : d - e < 2 ^ 64) :
-    (⟨p + BitVec.ofNat 64 e, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := by
-  rw [show p + BitVec.ofNat 64 d = p + BitVec.ofNat 64 e + BitVec.ofNat 64 (d - e) by
-    rw [Offset.add_ofNat_add_ofNat, Nat.add_sub_cancel' h₁]]
-  exact Offset.contains_base _ (by omega) hd
 
 theorem stackArgAddr_eq (s : State) {B : Addr} (hB : s.sp = B + BitVec.ofNat 64 2592) (i : Nat) :
     stackArgAddr s i = B + BitVec.ofNat 64 (2592 + 8 * i) := by

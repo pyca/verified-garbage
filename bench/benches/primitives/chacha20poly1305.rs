@@ -6,7 +6,8 @@ pub const USES: &[&str] = &["chacha20poly1305", "chacha20", "poly1305"];
 
 /// One-shot ChaCha20-Poly1305 encryption and decryption (key setup included),
 /// with a 12-byte nonce and 16 bytes of associated data. This library's and
-/// aws-lc-rs's run in place with a separate tag, OpenSSL's out of place.
+/// aws-lc-rs's run in place with a separate tag, OpenSSL's out of place; and
+/// encryption out of place for all three.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -120,6 +121,55 @@ pub fn bench(c: &mut Criterion) {
                         black_box(&mut data),
                     )
                     .unwrap();
+            })
+        });
+    }
+    g.finish();
+
+    // Out of place: from `data` into a separate buffer.
+    let mut g = c.benchmark_group("chacha20poly1305-encrypt-out-of-place");
+    for size in SIZES {
+        g.throughput(Throughput::Bytes(size as u64));
+        let data = vec![0u8; size];
+        let mut out = vec![0u8; size];
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                ChaCha20Poly1305::new(black_box(&key))
+                    .encrypt(
+                        black_box(&nonce),
+                        black_box(&aad),
+                        &[black_box(&data[..])],
+                        black_box(&mut out),
+                    )
+                    .unwrap()
+            })
+        });
+        let mut tag = [0u8; 16];
+        g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
+            b.iter(|| {
+                encrypt_aead(
+                    Cipher::chacha20_poly1305(),
+                    black_box(&key),
+                    Some(black_box(&nonce)),
+                    black_box(&aad),
+                    black_box(&data),
+                    &mut tag,
+                )
+                .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
+            b.iter(|| {
+                aws_lc_key(black_box(&key))
+                    .seal_out_of_place_scatter(
+                        Nonce::assume_unique_for_key(*black_box(&nonce)),
+                        Aad::from(black_box(&aad)),
+                        black_box(&data),
+                        black_box(&mut out),
+                        &[],
+                        &mut tag,
+                    )
+                    .unwrap()
             })
         });
     }

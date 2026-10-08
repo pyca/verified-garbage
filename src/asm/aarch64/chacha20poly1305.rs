@@ -4795,6 +4795,83 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_neon(key: *const [u8; 
     )
 }
 
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_neon`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 784 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_neon(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #16",
+        "add x16, sp, #0",
+        "str x30, [x16, #8]",
+        "ldr x10, [sp, #16]",
+        "add x8, x6, #0",
+        "add x9, x7, #0",
+        "add x11, x6, #0",
+        "add x6, x4, #0",
+        "add x7, x5, #0",
+        "cbz x7, 20f",
+        "22:",
+        "ldr x12, [x6, #0]",
+        "ldr x13, [x6, #8]",
+        "add x6, x6, #16",
+        "lsr x14, x13, #4",
+        "cbz x14, 23f",
+        "25:",
+        "ldr q0, [x12, #0]",
+        "str q0, [x11, #0]",
+        "add x12, x12, #16",
+        "add x11, x11, #16",
+        "sub x14, x14, #1",
+        "cbnz x14, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "movz x15, #15, lsl #0",
+        "and x13, x13, x15",
+        "cbz x13, 26f",
+        "28:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "sub x7, x7, #1",
+        "cbnz x7, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "add x4, x8, #0",
+        "add x5, x9, #0",
+        "add x6, x10, #0",
+        "bl {vg_chacha20_poly1305_seal_neon}",
+        "ldr x30, [sp, #8]",
+        "add sp, sp, #16",
+        "ret",
+        ".p2align 6",
+        vg_chacha20_poly1305_seal_neon = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_neon,
+    )
+}
+
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. Composed of calls of `vg_chacha20_block`, `vg_chacha20_xor` and the Poly1305 functions.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
@@ -5324,6 +5401,83 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open(key: *const [u8; 32], 
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
+    )
+}
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 784 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #16",
+        "add x16, sp, #0",
+        "str x30, [x16, #8]",
+        "ldr x10, [sp, #16]",
+        "add x8, x6, #0",
+        "add x9, x7, #0",
+        "add x11, x6, #0",
+        "add x6, x4, #0",
+        "add x7, x5, #0",
+        "cbz x7, 20f",
+        "22:",
+        "ldr x12, [x6, #0]",
+        "ldr x13, [x6, #8]",
+        "add x6, x6, #16",
+        "lsr x14, x13, #4",
+        "cbz x14, 23f",
+        "25:",
+        "ldr q0, [x12, #0]",
+        "str q0, [x11, #0]",
+        "add x12, x12, #16",
+        "add x11, x11, #16",
+        "sub x14, x14, #1",
+        "cbnz x14, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "movz x15, #15, lsl #0",
+        "and x13, x13, x15",
+        "cbz x13, 26f",
+        "28:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "sub x7, x7, #1",
+        "cbnz x7, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "add x4, x8, #0",
+        "add x5, x9, #0",
+        "add x6, x10, #0",
+        "bl {vg_chacha20_poly1305_seal}",
+        "ldr x30, [sp, #8]",
+        "add sp, sp, #16",
+        "ret",
+        ".p2align 6",
+        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )
 }
 
@@ -9697,5 +9851,88 @@ pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_open_sve2(key: *const [u8; 
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks,
         vg_chacha20_xor_sve2 = sym super::chacha20::vg_chacha20_xor_sve2,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch,
+    )
+}
+
+/// The CPU features `vg_chacha20_poly1305_seal_gather_sve2` requires (`Artifact.features`).
+pub(crate) const VG_CHACHA20_POLY1305_SEAL_GATHER_SVE2_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["sve2"]);
+
+/// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
+///
+/// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_chacha20_poly1305_seal_sve2`.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 32 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `len` must be at most `P_MAX`, 2³² − 1 blocks of 64 bytes (RFC 8439 §2.8).
+/// * `dst` and `tag` must not overlap each other, `key`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `key`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 784 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sve2` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_chacha20_poly1305_seal_gather_sve2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        ".arch_extension sve2",
+        "sub sp, sp, #16",
+        "add x16, sp, #0",
+        "str x30, [x16, #8]",
+        "ldr x10, [sp, #16]",
+        "add x8, x6, #0",
+        "add x9, x7, #0",
+        "add x11, x6, #0",
+        "add x6, x4, #0",
+        "add x7, x5, #0",
+        "cbz x7, 20f",
+        "22:",
+        "ldr x12, [x6, #0]",
+        "ldr x13, [x6, #8]",
+        "add x6, x6, #16",
+        "lsr x14, x13, #4",
+        "cbz x14, 23f",
+        "25:",
+        "ldr q0, [x12, #0]",
+        "str q0, [x11, #0]",
+        "add x12, x12, #16",
+        "add x11, x11, #16",
+        "sub x14, x14, #1",
+        "cbnz x14, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "movz x15, #15, lsl #0",
+        "and x13, x13, x15",
+        "cbz x13, 26f",
+        "28:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "sub x7, x7, #1",
+        "cbnz x7, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "add x4, x8, #0",
+        "add x5, x9, #0",
+        "add x6, x10, #0",
+        "bl {vg_chacha20_poly1305_seal_sve2}",
+        "ldr x30, [sp, #8]",
+        "add sp, sp, #16",
+        "ret",
+        ".arch_extension nosve2",
+        ".p2align 6",
+        vg_chacha20_poly1305_seal_sve2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_sve2,
     )
 }

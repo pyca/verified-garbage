@@ -246,4 +246,30 @@ theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Sr
   · have h0 : cnt ≠ 0 := by simpa using hf
     exact gatherLoop_wp t h (by omega)
 
+/-! ## Frames
+
+Steps of the functions that gather the slices in a frame of their own. -/
+
+theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
+    B + BitVec.ofNat 64 a - BitVec.ofNat 64 b = B + BitVec.ofNat 64 (a - b) := by
+  rw [← Offset.ofNat_sub_ofNat h, BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]
+
+/-- The `n` bytes at `p + d` are within the `k` bytes at `p + e`. -/
+theorem contains_off (p : Addr) {d n e k : Nat} (h₁ : e ≤ d) (h₂ : d + n ≤ e + k) (hd : d - e < 2 ^ 64) :
+    (⟨p + BitVec.ofNat 64 e, k⟩ : Region).Contains (p + BitVec.ofNat 64 d) n := by
+  rw [show p + BitVec.ofNat 64 d = p + BitVec.ofNat 64 e + BitVec.ofNat 64 (d - e) by
+    rw [Offset.add_ofNat_add_ofNat, Nat.add_sub_cancel' h₁]]
+  exact Offset.contains_base _ (by omega) hd
+
+/-- `ldrSp t k`: the doubleword at `sp + k` into `t`. -/
+theorem ldrSp_ok (a : State) {t : Reg} {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
+    (r : InRegions (a.rd ++ a.wr) (a.sp + BitVec.ofNat 64 k) 8) :
+    WP isa (.block [.ldrSp t k]) a fun e => e.gpr t = a.mem.read (a.sp + BitVec.ofNat 64 k) 8 ∧
+      (∀ r, r ≠ t → e.gpr r = a.gpr r) ∧ e.mem = a.mem ∧ e.sp = a.sp ∧ e.rd = a.rd ∧ e.wr = a.wr ∧ e.v = a.v := by
+  refine Proof.AesGcm.AArch64.WP.run ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, State.load, Size.bits, Option.map_some,
+      BitVec.setWidth_eq, hk, r, and_self, ite_true]; rfl, rfl⟩ fun e he => ?_
+  subst he
+  exact ⟨by simp [State.write], fun r h => by simp [State.write, h], rfl, rfl, rfl, rfl, rfl⟩
+
 end VG.Proof.AesGcm.AArch64.Gather

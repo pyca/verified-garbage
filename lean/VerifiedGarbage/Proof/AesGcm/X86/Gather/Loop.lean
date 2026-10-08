@@ -5,13 +5,14 @@ import VerifiedGarbage.Proof.Gcm.SealGather
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: gathering the slices
 
 Untrusted: everything here is checked by Lean. `gather` copies the `cnt`
-slices that the descriptors at `r0` list, one after the other, to `r2`
-(`gather_wp`): with `i` of them copied (`GInv`), `r0` is at descriptor `i`,
-`lr` holds `cnt - i`, `r2` is `gatheredLen` of the first `i` past `dst`, and
+slices that the descriptors at `esi` list, one after the other, to `edx`
+(`gather_wp`): with `i` of them copied (`GInv`), `esi` is at descriptor `i`,
+`ebx` holds `cnt - i`, `edx` is `gatheredLen` of the first `i` past `dst`, and
 the memory is the one on entry with their concatenation (`gathered`) written
 at `dst`. The descriptors and the slices are apart from `dst`, so they are
 what they were on entry. Descriptor `i` is at `Src + 8i`: the slice's address
-(`sb`), then its length (`sl`).
+(`sb`), then its length (`sl`). A function gathering the slices runs in a
+frame of stack of its own (`WP.alloc`).
 -/
 
 set_option linter.unusedSimpArgs false
@@ -302,5 +303,42 @@ theorem gather_wp (t : State) {Src Dst : BitVec 32} {cnt L : Nat} (h : GatherPre
     refine WP.mono (gatherLoop_wp t₁ (h.of_eq g₁ m₁ rd₁ wr₁) (by omega)) fun t' ⟨m, k⟩ => ⟨?_, ?_⟩
     · rw [m, m₁]
     · exact ⟨fun r hr => by rw [k.gpr r hr, g₁], k.rd.trans rd₁, k.wr.trans wr₁⟩
+
+/-! ## A frame of stack -/
+
+/-- The state after reserving `bytes` bytes of stack. -/
+def allocated (bytes : Nat) (s : State) : State :=
+  { s.setReg .esp (s.gpr .esp - BitVec.ofNat 32 bytes) with
+    wr := ⟨w64 (s.gpr .esp - BitVec.ofNat 32 bytes), bytes⟩ :: s.wr }
+
+/-- The state after releasing them. -/
+def freed (bytes : Nat) (s : State) : State :=
+  { s.setReg .esp (s.gpr .esp + BitVec.ofNat 32 bytes) with wr := s.wr.tail }
+
+/-- A frame of `bytes` bytes of stack around a body that never writes `esp`. -/
+theorem WP.alloc {bytes : Nat} {body : Prog isa} {s : State} {Q : State → Prop}
+    (hn : 0 < bytes ∧ bytes < 4096 ∧ bytes % 4 = 0) (hsp : bytes ≤ (s.gpr .esp).toNat) (hb : NoSp body)
+    (h : WP isa body (allocated bytes s) fun s₂ => Q (freed bytes s₂)) :
+    WP isa (.frame (.alloc bytes) body (.free bytes)) s Q := by
+  obtain ⟨t, s₂, he, hq⟩ := h
+  obtain ⟨-, hw⟩ := Exec.rdwr he
+  have hp := Exec.gpr hb he
+  have ha : isa.push (.alloc bytes) s = some (allocated bytes s) := by
+    simp only [isa, push, hn.1, hn.2.1, hn.2.2, hsp, and_self, ite_true]
+    rfl
+  have hf : isa.pop (.free bytes) (allocated bytes s) s₂ = some (freed bytes s₂) := by
+    simp only [isa, pop]
+    refine ite_eq_left ⟨hn.1, hn.2.1, hn.2.2, hp, hw, ?_⟩
+    rfl
+  exact ⟨_, _, Exec.frame ha he hf, hq⟩
+
+@[simp] theorem allocated_esp (n : Nat) (s : State) : (allocated n s).gpr .esp = s.gpr .esp - BitVec.ofNat 32 n := by
+  simp [allocated, gpr_setReg]
+theorem allocated_gpr (n : Nat) (s : State) {r : Reg} (h : r ≠ .esp) : (allocated n s).gpr r = s.gpr r := by
+  simp [allocated, gpr_setReg, h]
+@[simp] theorem allocated_mem (n : Nat) (s : State) : (allocated n s).mem = s.mem := rfl
+@[simp] theorem allocated_rd (n : Nat) (s : State) : (allocated n s).rd = s.rd := rfl
+@[simp] theorem allocated_wr (n : Nat) (s : State) :
+    (allocated n s).wr = ⟨w64 (s.gpr .esp - BitVec.ofNat 32 n), n⟩ :: s.wr := rfl
 
 end VG.Proof.AesGcm.X86.Gather

@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Verified
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86.Gather.Verified
 
 /-!
 # ChaCha20-Poly1305 (RFC 8439 §2.8) on x86
@@ -19,7 +20,9 @@ The code uses 32 bytes of stack for every implementation. Each function
 keeps its working space (704 bytes, `work`) in a frame of 740 bytes on the
 stack (`withStackScratchWiped`, with a copy of the seven other arguments),
 zeroed after the code, as it holds the one-time Poly1305 key and keystream:
-772 bytes in all.
+772 bytes in all. `seal_gather` gathers its slices to its output and calls
+the instance of `seal` on them there, in a frame of 48 bytes: 824 bytes in
+all.
 -/
 
 namespace VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
@@ -27,6 +30,11 @@ namespace VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
 /-- Which implementation of `vg_chacha20_xor` an instance calls. -/
 def xorNote (v : Proof.ChaCha20.X86.XorImpl) : String :=
   "This implementation encrypts with `" ++ v.callee.name ++ "`."
+
+/-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
+def gatherNote (fn : String) : String :=
+  "This implementation copies the slices, a word at a time, one after the other to `dst`, and \
+    encrypts them there in place with `" ++ fn ++ "`."
 
 def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
   { Spec.ChaCha20Poly1305.sealApi with
@@ -50,6 +58,18 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     verified := Proof.ChaCha20Poly1305.X86.open_framed v
     spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe (by decide +kernel)
       (Proof.ChaCha20Poly1305.X86.open_spSafe v)
+    features := v.features },
+  { Spec.ChaCha20Poly1305.sealGatherApi with
+    name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
+    target := X86.target
+    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc
+      (notes := [gatherNote (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name])
+    code := Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name
+      (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).code
+    contract := Spec.ChaCha20Poly1305.sealGatherContract X86.abi 824
+    stack := 824
+    verified := Proof.ChaCha20Poly1305.X86.Gather.sealGather_verified (Proof.ChaCha20Poly1305.X86.Gather.sealFn v)
+    spSafe := Proof.ChaCha20Poly1305.X86.Gather.sealGather_spSafe v
     features := v.features }]
 
 end VG.Generic.ChaCha20Xor.X86.ChaCha20Poly1305
