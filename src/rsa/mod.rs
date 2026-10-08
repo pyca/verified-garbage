@@ -3,10 +3,12 @@
 //! operation: RSADP (§5.1.2), which is also the signature primitive RSASP1
 //! (§5.2.1), without any padding.
 //!
-//! A key is made by the verified `vg_rsa_public_precompute` (contract
-//! `VG.Spec.Rsa.publicPrecomputeContract`), which checks the modulus and
-//! computes what Montgomery multiplication needs of it once; the operation is
-//! the verified `vg_rsa_public_precomputed_checked` (contract
+//! A key's first operation runs the verified `vg_rsa_public_precompute`
+//! (contract `VG.Spec.Rsa.publicPrecomputeContract`), which checks the
+//! modulus and computes what Montgomery multiplication needs of it, once for
+//! the key, as OpenSSL and AWS-LC set up their Montgomery values at a key's
+//! first operation: loading the key only checks the modulus as it does. The
+//! operation is the verified `vg_rsa_public_precomputed_checked` (contract
 //! `VG.Spec.Rsa.publicPrecomputedCheckedContract`), which checks the public
 //! exponent within BoringSSL's limits (odd, from 3 to `2^33 - 1`) and the
 //! input, computes `input^e mod n` by Montgomery multiplication, and writes it
@@ -48,8 +50,8 @@
 //! lengths of the private values, but not on their values. Loading a key does
 //! not run it.
 //!
-//! This module only checks the lengths and the public exponent, and
-//! allocates the memory they work in.
+//! This module only checks the lengths, the form of the modulus and the
+//! public exponent, and allocates the memory they work in.
 //!
 //! This is a primitive for building padding schemes (OAEP, PSS, PKCS #1
 //! v1.5) on: raw RSA on its own is not a secure encryption or signature
@@ -60,6 +62,8 @@
     feature = "alloc"
 ))]
 
+mod precomputed;
+use precomputed::{Precomputed, modulus_valid};
 mod scratch;
 pub(crate) use scratch::Scratch;
 use scratch::VerifyScratch;
@@ -68,14 +72,13 @@ use alloc::vec;
 use alloc::vec::Vec;
 use core::fmt;
 
+use crate::arch::rsa::vg_rsa_public_precomputed_checked;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa::{
     VG_RSA_PRIVATE_CHECKED_ADX_FEATURES, VG_RSA_PRIVATE_CHECKED_IFMA_FEATURES,
     VG_RSA_PUBLIC_PRECOMPUTE_ADX_FEATURES, VG_RSA_PUBLIC_PRECOMPUTED_CHECKED_ADX_FEATURES,
-    VG_RSA_RECOVER_PRIMES_ADX_FEATURES, vg_rsa_public_precompute_adx,
-    vg_rsa_public_precomputed_checked_adx,
+    VG_RSA_RECOVER_PRIMES_ADX_FEATURES, vg_rsa_public_precomputed_checked_adx,
 };
-use crate::arch::rsa::{vg_rsa_public_precompute, vg_rsa_public_precomputed_checked};
 #[cfg(target_arch = "x86_64")]
 use crate::arch::rsa_keygen::VG_RSA_KEYGEN_CANDIDATE_ADX_FEATURES;
 #[cfg(target_arch = "x86_64")]
@@ -183,12 +186,6 @@ pub(crate) fn scratch_words(n_len: usize) -> usize {
     16 * n_len
 }
 
-/// The words of a modulus' precomputed values for an `n_len`-byte modulus
-/// (`VG.Spec.Rsa.precomputedWords`).
-fn precomputed_words(n_len: usize) -> usize {
-    2 * n_len.div_ceil(8)
-}
-
 /// `x` without its leading zero bytes.
 pub(crate) fn trim(x: &[u8]) -> &[u8] {
     let z = x.iter().take_while(|&&b| b == 0).count();
@@ -209,16 +206,17 @@ fn exponent(e: &[u8]) -> Result<&[u8], Error> {
 }
 
 /// An RSA public key `(n, e)`, with the values of `n` that the operation
-/// needs (`VG.Spec.Rsa.publicPrecompute`).
+/// needs (`VG.Spec.Rsa.publicPrecompute`), once its first operation has
+/// computed them.
 ///
 /// After PSS verification, retains one wiped working buffer for reuse.
 /// Concurrent verifications use independent buffers; cloning a key starts with an
-/// empty cache.
+/// empty cache, and with the values of `n` if they are computed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     pub(crate) n: Vec<u8>,
     pub(crate) e: Vec<u8>,
-    pub(crate) pre: Vec<u64>,
+    pre: Precomputed,
     pub(crate) verify_scratch: VerifyScratch,
 }
 
@@ -228,47 +226,23 @@ impl PublicKey {
     /// leading zero byte; `e` must be odd, from 3 to `2^33 - 1` (with any
     /// number of leading zero bytes), as BoringSSL requires.
     pub fn new(n: &[u8], e: &[u8]) -> Result<Self, Error> {
-        let k = n.len();
-        if !(MIN_MODULUS_LEN..=MAX_MODULUS_LEN).contains(&k) {
+        if !modulus_valid(n) {
             return Err(Error::InvalidModulus);
         }
         let e = exponent(e)?;
-        let mut pre = vec![0u64; precomputed_words(k)];
-        let mut scratch = vec![0u64; scratch_words(k)];
-        let f = match Backend::select(detected()) {
-            Backend::Baseline => vg_rsa_public_precompute,
-            // `select` chose it because the CPU has the features it needs.
-            #[cfg(target_arch = "x86_64")]
-            Backend::Adx | Backend::Ifma => vg_rsa_public_precompute_adx,
-        };
-        // SAFETY: each pointer is valid for its length (`pre` and `scratch`
-        // for writes), and none overlaps another or wraps around, as they are
-        // distinct Rust allocations; the check above gives
-        // `64 ≤ n_len ≤ 1024`, and `pre_len = 2 ⌈n_len / 8⌉` and
-        // `scratch_len = 16 n_len`; and the CPU has the features of the
-        // function `select` chose.
-        let r = unsafe {
-            f(
-                pre.as_mut_ptr(),
-                pre.len(),
-                n.as_ptr(),
-                k,
-                scratch.as_mut_ptr(),
-                scratch.len(),
-            )
-        };
-        // The working space holds only values of the public modulus, so it is
-        // not destroyed. `vg_rsa_public_precompute` refuses a modulus that is
-        // not valid (`VG.Spec.Rsa.modulusValid`).
-        if r != 1 {
-            return Err(Error::InvalidModulus);
-        }
         Ok(PublicKey {
             n: n.to_vec(),
             e: e.to_vec(),
-            pre,
+            pre: Precomputed::new(),
             verify_scratch: VerifyScratch::new(),
         })
+    }
+
+    /// The values of `n` (`VG.Spec.Rsa.publicPrecompute`), computed in
+    /// `scratch` (at least `scratch_words(n_len)` words, left holding only
+    /// values of `n`) at the key's first operation.
+    pub(crate) fn pre(&self, scratch: &mut [u64]) -> &[u64] {
+        self.pre.get(&self.n, scratch)
     }
 
     /// The length of the modulus in bytes, which is that of every input and
@@ -286,6 +260,7 @@ impl PublicKey {
             return Err(Error::InvalidLength);
         }
         let mut scratch = vec![0u64; scratch_words(k)];
+        let pre = self.pre(&mut scratch);
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_public_precomputed_checked,
             // `select` chose it because the CPU has the features it needs.
@@ -305,8 +280,8 @@ impl PublicKey {
             f(
                 out.as_mut_ptr(),
                 k,
-                self.pre.as_ptr(),
-                self.pre.len(),
+                pre.as_ptr(),
+                pre.len(),
                 self.e.as_ptr(),
                 self.e.len(),
                 input.as_ptr(),
