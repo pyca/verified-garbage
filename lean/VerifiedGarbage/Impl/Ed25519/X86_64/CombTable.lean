@@ -10,7 +10,8 @@ is `[G]B` for the constant `G` those digits are offset by.
 The proof checks every entry against the specification's addition.
 
 The code reads the entries `k ≥ 1`, without their `2Z`, from the static
-`combSym`, whose words are `combWords`: 26 tables of sixteen entries of 96 bytes.
+`combSym`, whose words are `combWords`: 26 tables of sixteen entries of 96 bytes,
+then the magnitudes `1 … 16` that the AVX2 selection compares with.
 -/
 
 namespace VG.Impl.Ed25519.X86_64
@@ -464,14 +465,25 @@ def combEntryBytes : Nat := 96
 /-- The bytes of a table, sixteen entries. -/
 def combTblBytes : Nat := 1536
 
-/-- The words of the tables, as the static `combSym` holds them: table after table, entry
-`k = 1 … 16` after entry, `Y - X`, `Y + X` and `2dT` of `[k 1024^j]B` (`Z = 1`), four words
-each, little-endian. -/
-def combWords : List (BitVec 64) :=
+/-- The words of the tables: table after table, entry `k = 1 … 16` after entry, `Y - X`,
+`Y + X` and `2dT` of `[k 1024^j]B` (`Z = 1`), four words each, little-endian. -/
+def combTblWords : List (BitVec 64) :=
   combTable.flatMap fun row => row.flatMap fun e => feWords e.1 ++ feWords e.2.1 ++ feWords e.2.2
 
-/-- The number of words of the tables: 26 tables of sixteen entries of twelve words. -/
-def combWordCount : Nat := 4992
+/-- The magnitudes `m = 1 … 16`, each in all eight doublewords of 32 bytes, for the AVX2
+selection to compare with the magnitude in every doubleword of a register (`vpcmpeqd`). -/
+def combMagWords : List (BitVec 64) :=
+  (List.range 16).flatMap fun m => List.replicate 4 (BitVec.ofNat 32 (m + 1) ++ BitVec.ofNat 32 (m + 1))
+
+/-- The byte of the static where the magnitudes begin: after the 26 tables. -/
+def combMagBytes : Nat := 39936
+
+/-- The words of the static `combSym`: the tables, then the magnitudes. -/
+def combWords : List (BitVec 64) := combTblWords ++ combMagWords
+
+/-- The number of words of the static: 26 tables of sixteen entries of twelve words, and
+sixteen magnitudes of four words. -/
+def combWordCount : Nat := 5056
 
 /-- The static the comb reads. -/
 def combConsts : List (String × List (BitVec 64)) := [(combSym, combWords)]

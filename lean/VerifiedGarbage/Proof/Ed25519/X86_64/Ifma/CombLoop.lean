@@ -405,8 +405,8 @@ theorem vstepD_ok {s₀ b : State} {base T : Addr} {S c : Nat} {v : ℤ} (hp : L
   have l₁ := lanes0_vec ex ey; have l₂ := lanes0_vec fx fy; have l₃ := lanes0_vec f'x f'y
   have l₄ := lanes0_vec gxx gyy; have l₆ := lanes0_vec u'x u'y
   have l₅ : ∀ r < 5, ∀ l < 4, qw u (xr r) l = qw g (xr r) l := fun r hr l hl => ku.qw _ (by
-    simp only [selRegs, not_or, not_exists, not_and]
-    refine ⟨fun e => ?_, fun c' hc' e => ?_, fun e => ?_⟩ <;>
+    simp only [selRegs, entryRegs, not_or, not_exists, not_and]
+    refine ⟨⟨fun e => ?_, fun c' hc' e => ?_, fun e => ?_⟩, fun e => ?_⟩ <;>
     · have := congrArg VG.Proof.Poly1305.X86_64.Avx2.xi e
       rw [VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega), VG.Proof.X25519.X86_64.Ifma.xi_xr _ (by omega)] at this
       omega) l hl
