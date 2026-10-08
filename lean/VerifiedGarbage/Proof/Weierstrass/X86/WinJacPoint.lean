@@ -26,6 +26,28 @@ theorem Cached.congr {C : Curve} {base : Addr} {s t : State} {o p : Nat → Nat}
   · rw [e 3 (by decide),e 2 (by decide)]; exact h.z2
   · rw [e 4 (by decide),e 3 (by decide),e 2 (by decide)]; exact h.z3
 
+
+/-- Turn an arithmetic environment into the memory predicate used by table IO. -/
+theorem Cached.of_inv {K : JacWinCfg} {C : Curve} {base : Addr} {size : Nat}
+    {Sl : Nat → Prop} {V : List Nat} {E : Nat → Fe C} {s : State}
+    (hn : K.M.n=4) (hI : Inv K.M base size C.p Sl V E s)
+    (hv : ∀ c<5,K.T+32*c∈V)
+    {Q : Point C} (hJ : InvJ C (E K.E.x) (E K.E.y) (E K.E.z) Q)
+    (hz : E K.E.z≠0) (h2 : E K.z2=E K.E.z*E K.E.z)
+    (h3 : E K.z3=E K.z2*E K.E.z) :
+    Cached C base s (fun c => K.T+32*c) Q := by
+  have ev (c : Nat) (hc : c<5) : tmv C 4 base s (K.T+32*c)=E (K.T+32*c) := by
+    simpa only [tmv,hn] using hI.val _ (hv c hc)
+  refine ⟨fun c hc => by simpa only [hn] using hI.lt _ (hv c hc),?_,?_,?_,?_⟩
+  · rw [ev 0 (by decide),ev 1 (by decide),ev 2 (by decide)]
+    exact hJ
+  · rw [ev 2 (by decide)]
+    exact hz
+  · rw [ev 3 (by decide),ev 2 (by decide)]
+    exact h2
+  · rw [ev 4 (by decide),ev 3 (by decide),ev 2 (by decide)]
+    exact h3
+
 def Table (K : JacWinCfg) (C : Curve) (base : Addr) (P : Point C) (M : Nat) (s : State) : Prop :=
   ∀ m,1≤m → m≤M → Cached C base s (K.entry (m-1)) (mul m P)
 
