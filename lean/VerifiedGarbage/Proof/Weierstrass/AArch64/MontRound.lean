@@ -91,7 +91,34 @@ abbrev sparseVal : Nat := 394020061963944792122790401001436138050797392704654466
 theorem p384_eq : p384 + 2 ^ 128 + 2 ^ 64 * 2 ^ 32 + 1 = sparseVal := by decide +kernel
 
 /-- `2^512`. -/
-theorem pow512 : 2 ^ (64 * 8) = 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by decide +kernel
+theorem pow512 : 2 ^ (64 * (6 + 2)) = 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by decide +kernel
+
+/-- The sum after the sparse reduction's subtraction, which does not borrow:
+`T + u (2^384 + 2^32) - u (2^128 + 2^96 + 1) = T + u p`. -/
+theorem sparse_val {V u R b x2 x3 x23 : Nat} (hu : u < 2 ^ 64) (hR : R < 2 ^ (64 * (6 + 2))) (hb : b ≤ 1)
+    (hx2 : x2 = u * 2 ^ 32 % 2 ^ 64) (hx3 : x3 + 2 ^ 64 * x23 = u / 2 ^ 32 + u)
+    (he : R + (u + 2 ^ 64 * x2 + 2 ^ 128 * (x3 + 2 ^ 64 * x23)) = V + u * sparseVal + 2 ^ (64 * (6 + 2)) * b) :
+    R = V + u * p384 := by
+  rw [pow512] at hR he
+  unfold sparseVal at he
+  unfold p384
+  have hs : u * 2 ^ 32 = u * 2 ^ 32 % 2 ^ 64 + 2 ^ 64 * (u / 2 ^ 32) := by omega
+  omega
+
+/-- The sum before the subtraction fits in eight words. -/
+theorem sparse_bound {V u : Nat} (hV : V < 2 * p384 + (2 ^ 64 - 1) * p384) (hu : u < 2 ^ 64) :
+    V + u * sparseVal < 2 ^ (64 * (6 + 2)) := by
+  rw [pow512]; unfold sparseVal; unfold p384 at hV; omega
+
+theorem sparse_low {V t0 u : Nat} (ht : V % 2 ^ 64 = t0) (h : (t0 + u * p384) % 2 ^ 64 = 0) :
+    (V + u * p384) % 2 ^ 64 = 0 := by
+  have ht0 : t0 % 2 ^ 64 = t0 := by rw [← ht, Nat.mod_mod]
+  have h2 := Nat.add_mod t0 (u * p384) (2 ^ 64)
+  rw [h, ht0] at h2
+  rw [Nat.add_mod V, ht]; exact h2.symm
+
+theorem round_bound {T x y p : Nat} (hT : T < 2 * p) (hx : x ≤ (2 ^ 64 - 1) * p) (hy : y ≤ (2 ^ 64 - 1) * p) :
+    T + x + y < 2 ^ 64 * (2 * p) := by omega
 
 theorem sparseOk_eq {n m : Nat} (h : sparseOk n m = true) : n = 6 ∧ m = p384 := by
   simp only [sparseOk, Bool.and_eq_true, beq_iff_eq] at h
@@ -128,10 +155,12 @@ theorem nWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have x1₂ : s₂.gpr .x1 = s.gpr .x1 := by rw [k₂.gpr _ (by decide), x1₁]
   have z₃ : s₃.gpr .x7 = 0 := by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), k₁.gpr _ (by decide), hz]
   have v₃ := VG.Proof.Ed25519.Word64.addCarry_value (s₂.gpr .x3) (s₂.gpr .x1) false
+  rw [← e₃, ← c₃, x1₂, e₂, x1₁] at v₃
   have v₄ := VG.Proof.Ed25519.Word64.addCarry_value (s₃.gpr .x7) (s₃.gpr .x7) s₃.c
-  rw [← e₃, ← c₃] at v₃
   rw [← e₄, z₃] at v₄
-  simp only [BitVec.toNat_zero, Nat.zero_add, Bool.toNat_false, Nat.add_zero] at v₃ v₄
+  have c0 : (VG.Proof.Ed25519.Word64.carryOut 0 0 s₃.c).toNat = 0 := by cases s₃.c <;> rfl
+  rw [c0] at v₄
+  simp only [Bool.toNat_false] at v₃
   refine ⟨?_, ?_, ((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans
     ((k₃.mono (by sub_regs)).trans (k₄.mono (by sub_regs)))⟩
   · rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), k₂.gpr _ (by decide)]
@@ -140,9 +169,10 @@ theorem nWords_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     have hc : (s₄.gpr .x23).toNat = s₃.c.toNat := by
       have := (s₄.gpr .x23).isLt
       have := Bool.toNat_le s₃.c
-      have : (VG.Proof.Ed25519.Word64.carryOut 0 0 s₃.c).toNat = 0 := by cases s₃.c <;> rfl
+      have h0 : (0 : BitVec 64).toNat = 0 := rfl
+      rw [h0] at v₄
       omega
-    rw [hx3, hc, ← x1₂]
+    rw [hx3, hc]
     omega
 
 /-- One word of the difference: `d = t - r - b` with the borrow `b = !c` in,
@@ -330,15 +360,19 @@ theorem roundG_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
           rcases hw' with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [RWord.reads] at hr
         x2 := by decide
         x3 := by decide }
+    have hlen8 : M.n + 2 = 6 + 2 := by rw [hn6]
     have hRS : rwVal s₃ base sparseWords = sparseVal := by
-      simp only [sparseWords, rwVal, RWord.val, Nat.mul_zero, Nat.add_zero, Nat.zero_add]; decide +kernel
-    have hV₂ : regsVal s₂ (wins M.n i) < 2 * p384 + (2 ^ 64 - 1) * p384 := by rw [e₂]; omega
+      simp only [sparseWords, rwVal, RWord.val, Nat.mul_zero, Nat.add_zero, Nat.zero_add]
+    have hV₂ : regsVal s₂ (wins M.n i) < 2 * p384 + (2 ^ 64 - 1) * p384 := by
+      rw [e₂]; exact Nat.add_lt_add_of_lt_of_le hT hAB
     refine WP.mono (row_ok hs₃.ptr hz₃ hRO (by decide) (by decide) n0
-        (by rw [hlen, hn6]; decide) (by rw [hT₃, hRS, hlen, hn6, pow512]; omega)) fun s₄ ⟨e₄, k₄⟩ => ?_
+        (by rw [hlen, hn6]; decide) (by rw [hT₃, hRS, hlen, hlen8]; exact sparse_bound hV₂ hu))
+      fun s₄ ⟨e₄, k₄⟩ => ?_
     rw [hT₃, hRS] at e₄
     have hs₄ := hs₃.of_keeps k₄ (by simp [n0])
     have hz₄ : s₄.gpr .x7 = 0 := by rw [k₄.gpr _ (by simp [n7]), hz₃]
-    have x1₄ : s₄.gpr .x1 = s₃.gpr .x1 := k₄.gpr _ (by simp [(hw .x1)])
+    have x1₄ : s₄.gpr .x1 = s₃.gpr .x1 := k₄.gpr _ (by
+      simp only [List.mem_cons, not_or]; exact ⟨by decide, by decide, fun h => (hw _ h).2.1 rfl⟩)
     rw [WP.block_append_iff]
     refine WP.mono (nWords_ok hs₄ hz₄) fun s₅ ⟨n₂, n₃, k₅⟩ => ?_
     have n23 : Reg.x23 ∉ wins M.n i := fun h => by
@@ -365,26 +399,26 @@ theorem roundG_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     refine WP.mono (subsIn_ok true (wins M.n i) ([.x1, .x2, .x3, .x23] ++ List.replicate (M.n - 2) .x7)
         (.inr (by rw [hcons]; exact List.cons_ne_nil _ _)) (by rw [hlen]; simp; omega) (fresh_wins hn i).1 hrs)
       fun s₆ ⟨e₆, k₆⟩ => ?_
+    have hK : Keeps (.x1 :: .x2 :: .x3 :: .x23 :: wins M.n i) s s₆ :=
+      (((k₂.mono hkw).trans (k₃.mono (by sub_regs))).trans ((k₄.mono (by sub_regs)).trans
+        (k₅.mono (by sub_regs)))).trans (k₆.mono (by sub_regs))
+    have h0 : (0 : BitVec 64).toNat = 0 := rfl
     have hN : regsVal s₅ ([.x1, .x2, .x3, .x23] ++ List.replicate (M.n - 2) .x7) =
-        (s₃.gpr .x1).toNat + 2 ^ 64 * ((s₃.gpr .x1).toNat * 2 ^ 32 % 2 ^ 64) +
-          2 ^ 128 * ((s₃.gpr .x1).toNat / 2 ^ 32 + (s₃.gpr .x1).toNat) := by
+        (s₃.gpr .x1).toNat + 2 ^ 64 * (s₅.gpr .x2).toNat +
+          2 ^ 128 * ((s₅.gpr .x3).toNat + 2 ^ 64 * (s₅.gpr .x23).toNat) := by
       rw [hn6]
       simp only [show 6 - 2 = 4 from rfl, List.replicate, List.cons_append, List.nil_append, regsVal,
-        z₅, BitVec.toNat_zero, x1₅, n₂, Nat.mul_zero, Nat.add_zero]
-      rw [← n₃, ← x1₄]
+        z₅, h0, x1₅, Nat.mul_zero, Nat.add_zero]
       omega
-    rw [hT₅, hN, e₄, hlen, hn6, pow512] at e₆
+    rw [hT₅, hN, e₄, hlen, hlen8] at e₆
     simp only [ite_true, Bool.not_true, Bool.toNat_false, Nat.add_zero] at e₆
     have hRl := regsVal_lt s₆ (wins M.n i)
-    rw [hlen, hn6, pow512] at hRl
-    have hpe := p384_eq
+    rw [hlen, hlen8] at hRl
     -- The sum: `T + u p`, without a borrow.
-    have hsplit : (s₃.gpr .x1).toNat * 2 ^ 32 = (s₃.gpr .x1).toNat * 2 ^ 32 % 2 ^ 64 +
-        2 ^ 64 * ((s₃.gpr .x1).toNat / 2 ^ 32) := by omega
-    have hval : regsVal s₆ (wins M.n i) = regsVal s₂ (wins M.n i) + (s₃.gpr .x1).toNat * p384 := by
-      rcases Bool.eq_false_or_eq_true (!s₆.c) with hb | hb <;> rw [hb] at e₆ <;>
-        simp only [Bool.toNat_true, Bool.toNat_false, Nat.mul_one, Nat.mul_zero, Nat.add_zero] at e₆ <;>
-        omega
+    have hval : regsVal s₆ (wins M.n i) = regsVal s₂ (wins M.n i) + (s₃.gpr .x1).toNat * p384 :=
+      sparse_val (V := regsVal s₂ (wins M.n i)) (u := (s₃.gpr .x1).toNat) (R := regsVal s₆ (wins M.n i))
+        (b := (!s₆.c).toNat) (x2 := (s₅.gpr .x2).toNat) (x3 := (s₅.gpr .x3).toNat) (x23 := (s₅.gpr .x23).toNat)
+        hu hRl (Bool.toNat_le _) (by rw [n₂, x1₄]) (by rw [n₃, x1₄]) e₆
     have h₆ : (regsVal s₆ (wins M.n i)) % 2 ^ 64 = (s₆.gpr (win M.n i 0)).toNat := by
       rw [hcons, regsVal]; omega
     have hlow : (s₆.gpr (win M.n i 0)).toNat = 0 := by
@@ -394,14 +428,13 @@ theorem roundG_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
       rw [h6₂] at u₃
       rw [← u₃] at h
       rw [← h₆, hval]
-      omega
+      exact sparse_low ht0₂ h
     have hum : (s₃.gpr .x1).toNat * p384 ≤ (2 ^ 64 - 1) * p384 := Nat.mul_le_mul (by omega) (Nat.le_refl _)
     refine ⟨⟨(s₃.gpr .x1).toNat, by rw [hrot s₆ hlow, hval, e₂]⟩, ?_, ?_⟩
     · have : 2 ^ 64 * regsVal s₆ (wins M.n (i + 1)) < 2 ^ 64 * (2 * p384) := by
-        rw [hrot s₆ hlow, hval, e₂]; omega
+        rw [hrot s₆ hlow, hval, e₂]; exact round_bound hT hAB hum
       exact Nat.lt_of_mul_lt_mul_left this
-    · exact (((k₂.mono hkw).trans (k₃.mono (by sub_regs))).trans ((k₄.mono (by sub_regs)).trans
-        (k₅.mono (by sub_regs)))).trans (k₆.mono (by sub_regs))
+    · exact hK
   | false =>
     obtain ⟨ws, hr⟩ := hfr hspv
     have hcode : roundG M ra bs false i = ([.ldr .x .x1 ra (8 * i)] ++ row .x0 .x1 (prodWins M i) (regWords bs)) ++

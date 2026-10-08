@@ -32,24 +32,34 @@ abbrev arg (s : State) (r : Reg) : Nat := ((s.gpr r).setWidth 32).toNat
 abbrev own (n : Nat) : Nat := Spec.Weierstrass.Mont.ownAt n
 
 /-- The registers the body writes. -/
-def bodyW (n : Nat) : List Reg := [.x1, .x2, .x3, .x6, .x7] ++ bRegsF n ++ mPool n ++ acc n ++ dRegs n
+def bodyW (n : Nat) : List Reg := [.x1, .x2, .x3, .x6, .x7, .x23] ++ bRegsF n ++ mPool n ++ acc n ++ dRegs n
 
 /-- The pointer additions. -/
 def ptrsCode (n : Nat) : List Instr := [.add .x (roF n) .x0 .x1, .add .x (raF n) .x0 .x2, .add .x .x3 .x0 .x3]
 
-/-- What follows the pointers: `[b]` and a general modulus into registers, the
-reduction's constant, `x7` and the accumulator cleared, the rounds, the
+/-- What follows the pointers: `[b]` into registers, the reduction's constant,
+`x7` and the accumulator cleared, the rounds, the modulus into registers, the
 reduction and the store. -/
 def bodyCode (n m : Nat) : List Instr :=
-  loadsR .x3 (bRegsF n) 0 ++ ((if general n m then mLoadCode n m else []) ++ (mulConst (mod n m) ++
+  loadsR .x3 (bRegsF n) 0 ++ (mulConst (mod n m) ++
     ((zero7 :: zeros (acc n)) ++ ((List.range n).flatMap (roundF n m) ++
-      ((if general n m then [] else mLoadCode n m) ++ (csubM n (lowF n) (win n n n) (mRegs n m) ++
-        storesR (roF n) (lowF n) 0))))))
+      (mLoadCode n m ++ (csubM n (lowF n) (win n n n) (mRegs n m) ++
+        storesR (roF n) (lowF n) 0)))))
+
+/-- Whether a reduction is a friendly modulus's. -/
+def isFriendly : Red → Bool
+  | .friendly _ => true
+  | .general => false
+
+theorem friendly_of {r : Red} (h : isFriendly r = true) : ∃ ws, r = .friendly ws := by
+  cases r with
+  | friendly ws => exact ⟨ws, rfl⟩
+  | general => exact absurd h (by decide)
 
 /-- What the function needs of the modulus `m` of `n` words: six or nine
 words, `m` below `2^(64 n)`, `minv m` its inverse's negation, what the
-multiplication needs of it, a general modulus only of six words (whose
-registers leave its words a pool), `x6` free for `[b]` only where the
+multiplication needs of it, P-384's sparse `p` (reduced as a general one's
+constant says) or a friendly modulus, `x6` free for `[b]` only where the
 reduction needs no constant, each word of `m` in the register `mReg` once
 `mLoadCode` builds them (in distinct registers), and code that writes no
 vector register but the lanes'. -/
@@ -58,7 +68,8 @@ structure ModOk (n m : Nat) : Prop where
   m_lt : m < 2 ^ (64 * n)
   inv : (m * minv m + 1) % 2 ^ 64 = 0
   red : (mod n m).ok m = true
-  gen : general n m = true → n = 6
+  kind : (sparseOk n m = true ∧ (mod n m).red = .general) ∨
+    (sparseOk n m = false ∧ ∃ ws, (mod n m).red = .friendly ws)
   x6 : Reg.x6 ∈ bRegsF n → mulConst (mod n m) = []
   loads : ∀ j < n, (mReg n m j, mWord m j) ∈ mLoads n m
   lnd : ((mLoads n m).map Prod.fst).Nodup
@@ -95,9 +106,9 @@ theorem minv_lt (m : Nat) : minv m < 2 ^ 64 := Nat.mod_lt _ (by decide)
 structure Regs (n : Nat) : Prop where
   n10 : n < 10
   bsafe : RoundSafe n (bRegsF n)
-  msafe : RoundSafe n (mPool n)
-  ra : raF n ∉ Reg.x1 :: .x2 :: .x3 :: acc n
-  ro : roF n ∉ Reg.x1 :: .x2 :: .x3 :: acc n
+  macc : ∀ r ∈ mPool n, r ∉ acc n
+  ra : raF n ∉ Reg.x1 :: .x2 :: .x3 :: .x23 :: acc n
+  ro : roF n ∉ Reg.x1 :: .x2 :: .x3 :: .x23 :: acc n
   blen : (bRegsF n).length = n
   bnd : (bRegsF n).Nodup
   b3 : Reg.x3 ∉ bRegsF n
@@ -106,10 +117,8 @@ structure Regs (n : Nat) : Prop where
   b7 : Reg.x7 ∉ bRegsF n
   md : ∀ r ∈ mPool n, r ∉ dRegs n
   m2 : ∀ r ∈ mPool n, r ≠ .x2 ∧ r ≠ .x7 ∧ r ≠ roF n
-  m6 : n = 6 → ∀ r ∈ mPool n, r ∉ bRegsF n ∧ r ≠ raF n ∧ r ≠ .x6 ∧ r ≠ .x3
   rod : roF n ∉ dRegs n
   r67 : raF n ≠ .x6 ∧ raF n ≠ .x7 ∧ roF n ≠ .x6 ∧ roF n ≠ .x7
-  ram : n = 6 → raF n ∉ mPool n
   rom : roF n ∉ mPool n
   ra3 : raF n ≠ .x3 ∧ roF n ≠ .x3 ∧ raF n ≠ roF n ∧ raF n ≠ .x0 ∧ roF n ≠ .x0 ∧ raF n ≠ .x1 ∧
     raF n ≠ .x2 ∧ roF n ≠ .x1 ∧ roF n ≠ .x2
@@ -122,11 +131,7 @@ structure Regs (n : Nat) : Prop where
 
 theorem regs_ok : ∀ n, (n = 6 ∨ n = 9) → Regs n := by
   intro n hn
-  rcases hn with rfl | rfl <;>
-    exact ⟨by decide, by unfold RoundSafe; decide, by unfold RoundSafe; decide, by decide, by decide,
-      by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-      by decide, by decide, by decide, by decide, by decide, by decide, by decide, by decide,
-      by decide, by decide, by decide, by decide⟩
+  rcases hn with rfl | rfl <;> constructor <;> first | decide | (unfold RoundSafe; decide)
 
 /-! ## Words through pointers -/
 
@@ -264,7 +269,7 @@ theorem constOk_of_nil {M : Mod} (h : mulConst M = []) (s : State) : ConstOk M s
     | none => simp only [ConstOk, hr]; intro v hv; rw [hg] at hv; exact absurd hv (by simp)
     | some v => simp only [mulConst, hr, hg, const64] at h; exact absurd h (by simp)
 
-theorem mem_bodyW_fixed {n : Nat} : ∀ r ∈ [Reg.x1, .x2, .x3, .x6, .x7], r ∈ bodyW n := by
+theorem mem_bodyW_fixed {n : Nat} : ∀ r ∈ [Reg.x1, .x2, .x3, .x6, .x7, .x23], r ∈ bodyW n := by
   intro r hr; simp only [bodyW, List.mem_append]; exact Or.inl (Or.inl (Or.inl (Or.inl hr)))
 
 theorem mem_bodyW_b {n : Nat} {r : Reg} (h : r ∈ bRegsF n) : r ∈ bodyW n := by
@@ -279,16 +284,15 @@ theorem mem_bodyW_acc {n : Nat} {r : Reg} (h : r ∈ acc n) : r ∈ bodyW n := b
 theorem mem_bodyW_d {n : Nat} {r : Reg} (h : r ∈ dRegs n) : r ∈ bodyW n := by
   simp only [bodyW, List.mem_append]; exact Or.inr h
 
-theorem mem_bodyW_round {n : Nat} {r : Reg} (h : r ∈ Reg.x1 :: .x2 :: .x3 :: acc n) : r ∈ bodyW n := by
+theorem mem_bodyW_round {n : Nat} {r : Reg} (h : r ∈ Reg.x1 :: .x2 :: .x3 :: .x23 :: acc n) :
+    r ∈ bodyW n := by
   simp only [List.mem_cons] at h
-  rcases h with rfl | rfl | rfl | h
+  rcases h with rfl | rfl | rfl | rfl | h
+  · exact mem_bodyW_fixed _ (by simp)
   · exact mem_bodyW_fixed _ (by simp)
   · exact mem_bodyW_fixed _ (by simp)
   · exact mem_bodyW_fixed _ (by simp)
   · exact mem_bodyW_acc h
-
-theorem general_iff {n m : Nat} : general n m = true ↔ (mod n m).red = .general := by
-  simp only [general, beq_iff_eq]
 
 /-- The body: `[po] = [pa] [pb] R⁻¹ mod m`, changing only the registers
 `bodyW` and the memory at `[po]`. -/
@@ -302,13 +306,11 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
   have R := regs_ok n hM.hn
   have hn := R.n10
   have hacc := acc_regs_lt _ hn
-  have hms : RoundSafe n (mRegs n m) := fun r hr => R.msafe r (mRegs_sub hM r hr)
   have hmX := hM.m_lt
   -- How each step's changes keep a register outside `bodyW`.
   have kw : ∀ {rs : List Reg} {t t' : State}, Keeps rs t t' → (∀ q ∈ rs, q ∈ bodyW n) →
       ∀ r, r ∉ bodyW n → t'.gpr r = t.gpr r := fun k h r hr => k.gpr r fun h' => hr (h _ h')
   have x0W : Reg.x0 ∉ bodyW n := (R.keep0 .x0 (by simp)).1
-  have x0r : Reg.x0 ∉ Reg.x1 :: .x2 :: .x3 :: acc n := fun h => x0W (mem_bodyW_round h)
   rw [bodyCode, WP.block_append_iff]
   -- `[b]` into its registers.
   refine WP.mono (loadsEach_ok (bRegsF n) hpb (a := 0) (by rw [R.blen]; omega) rfl R.bnd R.b3)
@@ -316,44 +318,26 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
   have hB₁ : regsVal s₁ (bRegsF n) = wordsVal s.mem pb 0 n := by
     rw [regsVal_of_loads _ 0 e₁, R.blen]
   have w₁ := kw k₁ fun q hq => mem_bodyW_b hq
-  -- A general modulus into its registers.
-  rw [WP.block_append_iff]
-  have hML : WP isa (.block (if general n m then mLoadCode n m else [])) s₁ fun s₂ =>
-      (general n m = true → regsVal s₂ (mRegs n m) = m) ∧
-        Keeps (if general n m then mPool n else []) s₁ s₂ := by
-    split
-    · exact WP.mono (mLoad_ok hM s₁) fun s₂ ⟨e, k⟩ => ⟨fun _ => e, k⟩
-    · rename_i hg
-      exact WP.block_nil ⟨fun h => absurd h hg, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-  refine WP.mono hML fun s₂ ⟨e₂, k₂⟩ => ?_
-  have w₂ := kw k₂ fun q hq => by split at hq; exacts [mem_bodyW_m hq, absurd hq List.not_mem_nil]
-  -- What the general load keeps: `[b]` and the pointers.
-  have g₂ : ∀ r, (n = 6 → r ∉ mPool n) → s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by
-    split
-    · rename_i hg; exact hr (hM.gen hg)
-    · exact List.not_mem_nil)
-  have hB₂ : regsVal s₂ (bRegsF n) = wordsVal s.mem pb 0 n := by
-    rw [← hB₁]; exact regsVal_congr fun r hr => g₂ r fun h6 hm => (R.m6 h6 r hm).1 hr
   -- The reduction's constant.
   rw [WP.block_append_iff]
-  have hC : WP isa (.block (mulConst (mod n m))) s₂ fun s₃ => ConstOk (mod n m) s₃ ∧
-      Keeps (if mulConst (mod n m) = [] then [] else [.x6]) s₂ s₃ := by
+  have hC : WP isa (.block (mulConst (mod n m))) s₁ fun s₃ => ConstOk (mod n m) s₃ ∧
+      Keeps (if mulConst (mod n m) = [] then [] else [.x6]) s₁ s₃ := by
     by_cases hc : mulConst (mod n m) = []
     · rw [hc]
       simp only [↓reduceIte]
-      exact WP.block_nil ⟨constOk_of_nil hc s₂, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-    · exact WP.mono (mulConst_ok _ s₂) fun s₃ ⟨c, k⟩ => ⟨c, by simp only [hc, ↓reduceIte]; exact k⟩
+      exact WP.block_nil ⟨constOk_of_nil hc s₁, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
+    · exact WP.mono (mulConst_ok _ s₁) fun s₃ ⟨c, k⟩ => ⟨c, by simp only [hc, ↓reduceIte]; exact k⟩
   refine WP.mono hC fun s₃ ⟨c₃, k₃⟩ => ?_
   have w₃ := kw k₃ fun q hq => by
     split at hq
     · exact absurd hq List.not_mem_nil
     · exact mem_bodyW_fixed q (by simp at hq; simp [hq])
-  have g₃ : ∀ r, r ≠ .x6 → s₃.gpr r = s₂.gpr r := fun r hr => k₃.gpr r (by
+  have g₃ : ∀ r, r ≠ .x6 → s₃.gpr r = s₁.gpr r := fun r hr => k₃.gpr r (by
     split
     · exact List.not_mem_nil
     · simp only [List.mem_singleton]; exact hr)
   have hB₃ : regsVal s₃ (bRegsF n) = wordsVal s.mem pb 0 n := by
-    rw [← hB₂]
+    rw [← hB₁]
     refine regsVal_congr fun r hr => k₃.gpr r ?_
     split
     · exact List.not_mem_nil
@@ -374,27 +358,19 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
   have hB₅ : regsVal s₅ (bRegsF n) = wordsVal s.mem pb 0 n := by
     rw [← hB₃, regsVal_congr fun r hr => k₅.gpr r (R.bsafe.acc hr),
       regsVal_congr fun r hr => k₄.gpr r (by simp only [List.mem_singleton]; rintro rfl; exact R.b7 hr)]
-  have hM₅ : (mod n m).red = .general → regsVal s₅ (mRegs n m) = m := fun hg => by
-    have hg' := general_iff.mpr hg
-    refine (regsVal_congr fun r hr => ?_).trans (e₂ hg')
-    have hp := mRegs_sub hM r hr
-    rw [k₅.gpr r (R.msafe.acc hp), k₄.gpr r (by simp only [List.mem_singleton]; exact (R.m2 r hp).2.1),
-      g₃ r (R.m6 (hM.gen hg') r hp).2.2.1]
   have h0 : regsVal s₅ (wins n 0) = 0 := regsVal_zero fun r hr => z₅ r (wins_sub_acc hn 0 r hr)
   -- The pointers so far.
-  have kp : ∀ r, r ∉ bodyW n → (n = 6 → r ∉ mPool n) → s₅.gpr r = s.gpr r := fun r hr h6 => by
-    rw [w₅ r hr, w₄ r hr, w₃ r hr, g₂ r h6, w₁ r hr]
+  have kp : ∀ r, r ∉ bodyW n → s₅.gpr r = s.gpr r := fun r hr => by
+    rw [w₅ r hr, w₄ r hr, w₃ r hr, w₁ r hr]
   have nro : roF n ∉ bodyW n := R.nro
   have ra₅ : s₅.gpr (raF n) = s.gpr (raF n) := by
     have hra := R.ra
     simp only [List.mem_cons, not_or] at hra
-    rw [k₅.gpr _ hra.2.2.2, k₄.gpr _ (by simp [R.r67.2.1]), g₃ _ R.r67.1, g₂ _ R.ram,
-      k₁.gpr _ R.bra]
-  have hmem₅ : s₅.mem = s.mem := by rw [k₅.mem, k₄.mem, k₃.mem, k₂.mem, k₁.mem]
-  have hrd₅ : s₅.rd = s.rd := by rw [k₅.rd, k₄.rd, k₃.rd, k₂.rd, k₁.rd]
-  have hwr₅ : s₅.wr = s.wr := by rw [k₅.wr, k₄.wr, k₃.wr, k₂.wr, k₁.wr]
-  have hs₅ : Scr s₅ base size :=
-    ⟨(kp _ x0W fun _ h => x0W (mem_bodyW_m h)).trans hs.x0, hwr₅ ▸ hs.wr, hs.nowrap, hs.enc⟩
+    rw [k₅.gpr _ hra.2.2.2.2, k₄.gpr _ (by simp [R.r67.2.1]), g₃ _ R.r67.1, k₁.gpr _ R.bra]
+  have hmem₅ : s₅.mem = s.mem := by rw [k₅.mem, k₄.mem, k₃.mem, k₁.mem]
+  have hrd₅ : s₅.rd = s.rd := by rw [k₅.rd, k₄.rd, k₃.rd, k₁.rd]
+  have hwr₅ : s₅.wr = s.wr := by rw [k₅.wr, k₄.wr, k₃.wr, k₁.wr]
+  have hs₅ : Scr s₅ base size := ⟨(kp _ x0W).trans hs.x0, hwr₅ ▸ hs.wr, hs.nowrap, hs.enc⟩
   have hpa₅ : Ptr s₅ (raF n) pa (8 * n) :=
     ⟨ra₅.trans hpa.reg, by rw [hrd₅, hwr₅]; exact hpa.ld, hpa.enc⟩
   -- The rounds.
@@ -402,35 +378,35 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
   have hinv : (m * (mod n m).minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat,
       Nat.mod_eq_of_lt (minv_lt m)]; exact hM.inv
-  have hR := roundsG_ok (M := mod n m) (size := size) hn R.ra R.bsafe hms R.blen (mRegs_length n m)
-    (pa := pa) (sa := 8 * n) (Nat.le_refl _) hmX hinv hM.red n (Nat.le_refl _) hs₅ hpa₅ z₇ hM₅ c₅
+  have hsp : sparseOk n m = true → (mod n m).n = 6 ∧ m = p384 ∧ (mod n m).red = .general := fun h => by
+    obtain ⟨h6, hp⟩ := sparseOk_eq h
+    rcases hM.kind with ⟨_, hg⟩ | ⟨hf, _⟩
+    · exact ⟨h6, hp, hg⟩
+    · rw [h] at hf; exact absurd hf (by decide)
+  have hfr : sparseOk n m = false → ∃ ws, (mod n m).red = .friendly ws := fun h => by
+    rcases hM.kind with ⟨ht, _⟩ | ⟨_, hw⟩
+    · rw [h] at ht; exact absurd ht (by decide)
+    · exact hw
+  have hR := roundsG_ok (M := mod n m) (size := size) (sp := sparseOk n m) hn R.ra R.bsafe R.blen hsp hfr
+    (pa := pa) (sa := 8 * n) (Nat.le_refl _) hmX hinv hM.red n (Nat.le_refl _) hs₅ hpa₅ z₇ c₅
     (by rw [hB₅]; exact hB) h0
   rw [show (List.range n).flatMap (roundF n m) =
-      (List.range n).flatMap (roundG (mod n m) (raF n) (bRegsF n) (mRegs n m)) from rfl]
+      (List.range n).flatMap (roundG (mod n m) (raF n) (bRegsF n) (sparseOk n m)) from rfl]
   refine WP.mono hR fun s₆ ⟨⟨U, eU⟩, hT, k₆⟩ => ?_
   replace hT : regsVal s₆ (wins n n) < 2 * m := hT
   replace eU : 2 ^ (64 * n) * regsVal s₆ (wins n n) =
       wordsVal s₅.mem pa 0 n * regsVal s₅ (bRegsF n) + U * m := eU
   have w₆ := kw k₆ fun q hq => mem_bodyW_round hq
   rw [hmem₅, hB₅] at eU
-  -- A friendly modulus into its registers.
+  -- The modulus into its registers.
   rw [WP.block_append_iff]
-  have hML' : WP isa (.block (if general n m then [] else mLoadCode n m)) s₆ fun s₇ =>
-      regsVal s₇ (mRegs n m) = m ∧ Keeps (if general n m then [] else mPool n) s₆ s₇ := by
-    split
-    · rename_i hg
-      refine WP.block_nil ⟨?_, fun _ _ => rfl, rfl, rfl, rfl, rfl⟩
-      rw [regsVal_keep hms k₆ (fun _ h => h)]
-      exact hM₅ (general_iff.mp hg)
-    · exact WP.mono (mLoad_ok hM s₆) fun s₇ ⟨e, k⟩ => ⟨e, k⟩
-  refine WP.mono hML' fun s₇ ⟨e₇, k₇⟩ => ?_
-  have w₇ := kw k₇ fun q hq => by split at hq; exacts [absurd hq List.not_mem_nil, mem_bodyW_m hq]
-  have g₇ : ∀ r, r ∉ mPool n → s₇.gpr r = s₆.gpr r := fun r hr => k₇.gpr r (by
-    split; exacts [List.not_mem_nil, hr])
+  refine WP.mono (mLoad_ok hM s₆) fun s₇ ⟨e₇, k₇⟩ => ?_
+  have g₇ : ∀ r, r ∉ mPool n → s₇.gpr r = s₆.gpr r := fun r hr => k₇.gpr r hr
   have hz₇ : s₇.gpr .x7 = 0 := by
     rw [g₇ _ (fun h => (R.m2 _ h).2.1 rfl), k₆.gpr _ (fun h => by
       simp only [List.mem_cons] at h
-      rcases h with h | h | h | h
+      rcases h with h | h | h | h | h
+      · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact absurd h (by decide)
       · exact absurd h (by decide)
@@ -441,7 +417,7 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
   have hlow_acc : ∀ r ∈ lowF n, r ∈ acc n := fun r hr =>
     wins_sub_acc hn n r (by rw [hsplit]; exact List.mem_append_left _ hr)
   have hT₇ : ∀ r ∈ wins n n, s₇.gpr r = s₆.gpr r := fun r hr =>
-    g₇ r fun h => R.msafe.acc h (wins_sub_acc hn n r hr)
+    g₇ r fun h => R.macc _ h (wins_sub_acc hn n r hr)
   have hV : regsVal s₇ (lowF n) + 2 ^ (64 * n) * (s₇.gpr (win n n n)).toNat = regsVal s₆ (wins n n) := by
     have hw' := regsVal_congr (rs := wins n n) hT₇
     rw [← hw', hsplit, regsVal_append, show ((List.range n).map (win n n)).length = n by simp]
@@ -471,21 +447,20 @@ theorem bodyF_ok {n m : Nat} (hM : ModOk n m) {s : State} {base : Addr} {size : 
     · exact mem_bodyW_acc (hlow_acc _ h)
     · exact mem_bodyW_d h
   -- The store.
-  have kr : ∀ r, r ∉ bodyW n → (n = 6 → r ∉ mPool n) → r ∉ mPool n → s₈.gpr r = s.gpr r :=
-    fun r hr h6 hm => by rw [w₈ r hr, g₇ r hm, w₆ r hr, kp r hr h6]
+  have kr : ∀ r, r ∉ bodyW n → s₈.gpr r = s.gpr r :=
+    fun r hr => by rw [w₈ r hr, g₇ r (fun h => hr (mem_bodyW_m h)), w₆ r hr, kp r hr]
   have hmem₈ : s₈.mem = s.mem := by rw [k₈.mem, k₇.mem, k₆.mem, hmem₅]
   have hpo₈ : PtrW s₈ (roF n) po (8 * n) :=
-    ⟨(kr _ nro (fun _ => R.rom) R.rom).trans hpo.reg, by rw [k₈.wr, k₇.wr, k₆.wr, hwr₅]; exact hpo.st,
+    ⟨(kr _ nro).trans hpo.reg, by rw [k₈.wr, k₇.wr, k₆.wr, hwr₅]; exact hpo.st,
       hpo.enc, hpo.nowrap⟩
   refine WP.mono (storesR_ok _ hpo₈ (o := 0) (by rw [hlowlen]; omega) rfl (fresh_low' n hn).1)
     fun s₉ ⟨e₉, k₉, O₉⟩ => ?_
   rw [hlowlen] at e₉ O₉
   refine ⟨fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [k₉.gpr r (by simp), w₈ r hr, g₇ r (fun h => hr (mem_bodyW_m h)), w₆ r hr,
-      kp r hr (fun _ h => hr (mem_bodyW_m h))]
+  · rw [k₉.gpr r (by simp), kr r hr]
   · rw [k₉.rd, k₈.rd, k₇.rd, k₆.rd, hrd₅]
   · rw [k₉.wr, k₈.wr, k₇.wr, k₆.wr, hwr₅]
-  · rw [k₉.sp, k₈.sp, k₇.sp, k₆.sp, k₅.sp, k₄.sp, k₃.sp, k₂.sp, k₁.sp]
+  · rw [k₉.sp, k₈.sp, k₇.sp, k₆.sp, k₅.sp, k₄.sp, k₃.sp, k₁.sp]
   · intro x hx; rw [O₉ x hx, hmem₈]
   · rw [e₉, e₈, hV]; exact Nat.mod_lt _ (m_pos hB)
   · rw [e₉, e₈, hV, Nat.mod_mul_mod, Nat.mul_comm, eU]

@@ -11,10 +11,12 @@ open VG.Spec.Weierstrass.Mont VG.Impl.Weierstrass.AArch64.Mont VG.Proof.Weierstr
 /-- How the functions work. -/
 def notes : List String := ["The function zero-extends the offsets, saves the callee-saved \
   registers it writes in lanes of `v16`–`v20`, and keeps every word it multiplies by in a register: \
-  all of `[b]`, and the modulus's distinct words (built with `movz`/`movk`). The product is \
-  word-by-word Montgomery multiplication (CIOS, with `mul` and `umulh`, the accumulator in \
-  registers, one word of `[a]` loaded per round; P-521's reduction by shifts), with a final \
-  conditional subtraction against the modulus in registers, selected by `csel`."]
+  all of `[b]`. The product is word-by-word Montgomery multiplication (CIOS, with `mul` and \
+  `umulh`, the accumulator in registers, one word of `[a]` loaded per round), whose reductions \
+  multiply by no word of the modulus: P-384's `p` is sparse (`u p` is `u (2^384 + 2^32)`, by \
+  shifts, less `u (2^128 + 2^96 + 1)`, by a subtraction), P-521's reduced by shifts. A final \
+  conditional subtraction against the modulus, built in registers (`movz`/`movk`), is selected by \
+  `csel`."]
 
 def artifacts : List Artifact := [
   { p384p.mulApi with
