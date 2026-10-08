@@ -1755,14 +1755,8 @@ mod tests {
                         warm.decrypt_in_place(nonce, aad, &mut actual, &tag)
                             .unwrap();
                         assert_eq!(actual, plain);
-                        let tag = warm
-                            .encrypt(
-                                nonce,
-                                aad,
-                                &[&plain[..len - 1], &plain[len - 1..]],
-                                &mut actual,
-                            )
-                            .unwrap();
+                        let pieces = [&plain[..len - 1], &plain[len - 1..]];
+                        let tag = warm.encrypt(nonce, aad, &pieces, &mut actual).unwrap();
                         assert_eq!((&actual, tag), (&want, want_tag));
                     }
                 }
