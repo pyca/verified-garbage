@@ -466,4 +466,177 @@ theorem fl_step {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
   · exact hq₅.congr fun j hj => by rw [hs₇, sl₆ j hj]
   · exact d2₆.congr fun j hj => hs₇ _
 
+/-! ## Groups of six rounds -/
+
+/-- `p` pairs of rounds of group `i`. -/
+def pairsN (E : Nat → BitVec 64) (i p : Nat) (d : BitVec 64 × BitVec 64) : BitVec 64 × BitVec 64 :=
+  (List.range p).foldl (fun d k => pair (E (2 + 8 * i + 2 * k)) (E (3 + 8 * i + 2 * k)) d) d
+
+theorem pairsN_succ (E : Nat → BitVec 64) (i p : Nat) (d : BitVec 64 × BitVec 64) :
+    pairsN E i (p + 1) d = pair (E (2 + 8 * i + 2 * p)) (E (3 + 8 * i + 2 * p)) (pairsN E i p d) := by
+  simp [pairsN, List.range_succ, List.foldl_append]
+
+theorem group_eq (g : Nat) (E : Nat → BitVec 64) (d : BitVec 64 × BitVec 64) (i : Nat) :
+    group g E d i = if i + 1 < g then
+      (Spec.Camellia.fl (pairsN E i 3 d).1 (E (8 + 8 * i)), Spec.Camellia.flinv (pairsN E i 3 d).2 (E (9 + 8 * i)))
+      else pairsN E i 3 d := by
+  simp only [group, pairsN, List.range_succ, List.range_zero, List.foldl_append, List.foldl_cons,
+    List.foldl_nil, List.nil_append, show 2 + 8 * i + 2 * 0 = 2 + 8 * i by omega,
+    show 3 + 8 * i + 2 * 0 = 3 + 8 * i by omega, show 2 + 8 * i + 2 * 1 = 4 + 8 * i by omega,
+    show 3 + 8 * i + 2 * 1 = 5 + 8 * i by omega, show 2 + 8 * i + 2 * 2 = 6 + 8 * i by omega,
+    show 3 + 8 * i + 2 * 2 = 7 + 8 * i by omega]
+
+/-- `cmp kp, [endSlot]`, keeping all else. -/
+theorem cmpEnd_ok {s : State} (hr : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * endSlot)) 8) :
+    ∃ s', runBlock isa [.alu .cmp kp (.mem (Impl.Aes.X86_64.slotAt sb endSlot))] s = some s' ∧
+      s'.zf = some (s.gpr kp - slotW s endSlot == 0) ∧ s'.gpr = s.gpr ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hr' : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofInt 64 ((8 * endSlot : Nat) : Int)) 8 := by
+    rw [ofInt_nat]; exact hr
+  refine ⟨_, by simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    State.load64, State.ea, Impl.Aes.X86_64.slotAt, hr', ite_true, Option.bind_some]; rfl,
+    ?_, by rfl, by rfl, by rfl, by rfl⟩
+  simp only [RegUpd.zf_arithFlags, slotW, wordAddr, ofInt_nat]
+
+theorem entry_beq (b : Addr) {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
+    (b + BitVec.ofNat 64 x - (b + BitVec.ofNat 64 y) == 0) = decide (x = y) := by
+  rw [VG.Offset.add_sub_add_left, VG.Offset.ofNat_sub_ofNat_beq hx hy]
+
+/-- `mov rdi, kp; add rdi, 384`. -/
+theorem setBound_ok (s : State) :
+    ∃ s', runBlock isa [movR .rdi kp, .alu .add .rdi (.imm 384)] s = some s' ∧
+      s'.gpr .rdi = s.gpr kp + BitVec.ofNat 64 384 ∧ (∀ r, r ≠ .rdi → s'.gpr r = s.gpr r) ∧
+      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by simp only [movR, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc,
+    Option.bind_some, Option.map_some]; rfl, ?_, fun r hr => ?_, by rfl, by rfl, by rfl⟩
+  · simp only [RegUpd.gpr_setReg_self]; rfl
+  · simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
+
+/-- The address of the postwhitening's entry is kept. -/
+theorem Ctx.endW {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s) :
+    slotW s endSlot = slotW s₀ endSlot := by
+  have hfit := hp.fit
+  rw [slots_eq] at hfit
+  simp only [slotW, wordAddr, hc.base]
+  refine hc.frame.readW (r := ⟨s₀.gpr sb + BitVec.ofNat 64 (8 * endSlot), 8⟩)
+    (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact VG.Offset.disjoint_base _ (by rw [keySlot_eq, endSlot_eq]; omega) (by rw [endSlot_eq]; omega)
+  · refine (hp.sep.sub_right (VG.Offset.sub_base _ ?_)).symm
+    rw [slots_eq, endSlot_eq]; omega
+
+theorem Ctx.endIn {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s) :
+    InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * endSlot)) 8 := by
+  have hfit := hp.fit
+  rw [slots_eq] at hfit
+  refine ⟨_, List.mem_append_right _ (by rw [hc.wr]; exact hp.scr), ?_⟩
+  rw [hc.base]
+  exact VG.Offset.contains_base _ (by rw [slots_eq, endSlot_eq]; omega) (by rw [endSlot_eq]; omega)
+
+theorem Halves.congr {s s' : State} {S : Nat → BitVec 64 × BitVec 64} (h : Halves s S)
+    (hq : ∀ j < 8, Qs s' j = Qs s j) (hs : ∀ k, slotW s' k = slotW s k) : Halves s' S :=
+  ⟨h.1.congr hq, h.2.1.congr fun _ _ => hs _, h.2.2.congr fun _ _ => hs _⟩
+
+/-- A step that changes only the flags (and `rdi`) keeps everything. -/
+theorem Ctx.flags {s₀ s s' : State} (hc : Ctx s₀ s) (hg : ∀ r, r ≠ .rdi → s'.gpr r = s.gpr r)
+    (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Ctx s₀ s' :=
+  hc.step hrd hwr (fun r _ _ h3 => hg r h3) (by rw [hm]; exact Frame.refl _ _) fun kv hkv => by
+    simp only [slotW, hm, hg sb (by decide)]; exact hc.masks kv hkv
+
+theorem entry_lt {g i : Nat} (hg : g ≤ 4) (hi : i ≤ 8 * g + 2) : 8 * keySlot + 64 * i < 2 ^ 64 := by
+  rw [keySlot_eq]; omega
+
+/-- A group of six rounds, then FL and FLINV unless it is the last. -/
+theorem group_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
+    {i : Nat} (hi : i < g) (hk : AtEntry s (s₀.gpr sb) (2 + 8 * i)) {S : Nat → BitVec 64 × BitVec 64}
+    (hS : Halves s S) :
+    WP isa groupBody s fun s' => Ctx s₀ s' ∧ Halves s' (fun b => group g E (S b) i) ∧
+      AtEntry s' (s₀.gpr sb) (if i + 1 < g then 2 + 8 * (i + 1) else 8 * g) ∧
+      s'.zf = some (decide (i + 1 = g)) := by
+  have hg4 : g ≤ 4 := by rcases hp.hg with h | h <;> omega
+  let b := s₀.gpr sb
+  -- The bound of the pairs.
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := setBound_ok s
+  have hc₁ : Ctx s₀ s₁ := hc.flags (fun r hr => o₁ r hr) m₁ rd₁ wr₁
+  have hk₁ : AtEntry s₁ b (2 + 8 * i) := by rw [AtEntry, o₁ kp (by decide)]; exact hk
+  have hrdi₁ : s₁.gpr .rdi = b + BitVec.ofNat 64 (8 * keySlot + 64 * (8 + 8 * i)) := by
+    rw [r₁, show s.gpr kp = _ from hk, addr_add,
+      show 8 * keySlot + 64 * (2 + 8 * i) + 384 = 8 * keySlot + 64 * (8 + 8 * i) by omega]
+  have hS₁ : Halves s₁ S := hS.congr (fun j hj => o₁ _ (fun h => by revert j; decide))
+    (fun k => by simp only [slotW, m₁, o₁ sb (by decide)])
+  unfold groupBody
+  refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
+  -- The pairs.
+  let Inv : Nat → State → Prop := fun n s' => ∃ p, n = 3 - p ∧ p < 3 ∧ Ctx s₀ s' ∧
+    AtEntry s' b (2 + 8 * i + 2 * p) ∧ s'.gpr .rdi = s₁.gpr .rdi ∧
+    Halves s' (fun b => pairsN E i p (S b))
+  let Mid : State → Prop := fun s' => Ctx s₀ s' ∧ AtEntry s' b (8 + 8 * i) ∧
+    Halves s' (fun b => pairsN E i 3 (S b))
+  refine WP.seq (WP.mono (Q := Mid) (WP.loop Inv (fun n s' hs' => ?_) 3 s₁
+    ⟨0, rfl, by omega, hc₁, by simpa using hk₁, rfl, by simpa [pairsN] using hS₁⟩) fun s₂ h₂ => ?_)
+  · obtain ⟨p, rfl, hp3, hc', hk', hr', hS'⟩ := hs'
+    obtain ⟨s'', e'', c'', k'', r'', S'', z''⟩ := pair_step hp hc' hk' (by omega) (by omega) hS'
+    refine WP.of_runBlock ⟨s'', e'', ?_⟩
+    have hz : s''.zf = some (decide (p + 1 = 3)) := by
+      rw [z'', show s''.gpr kp = _ from k'', hr', hrdi₁, entry_beq b (entry_lt hg4 (by omega))
+        (entry_lt hg4 (by omega))]
+      simp only [Option.some.injEq, decide_eq_decide]; omega
+    have hS'' : Halves s'' (fun b => pairsN E i (p + 1) (S b)) := by
+      simpa only [pairsN_succ, show 2 + 8 * i + 2 * p + 1 = 3 + 8 * i + 2 * p by omega] using S''
+    by_cases hp2 : p + 1 = 3
+    · refine .inl ⟨by simp [X86_64.eval, hz, hp2], c'', ?_, by rw [← hp2]; exact hS''⟩
+      rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 8 + 8 * i by omega]
+    · refine .inr ⟨by simp [X86_64.eval, hz, hp2], 3 - (p + 1), by omega, p + 1, rfl, by omega, c'',
+        by rw [AtEntry, show s''.gpr kp = _ from k'', show 2 + 8 * i + 2 * p + 2 = 2 + 8 * i + 2 * (p + 1) by omega],
+        by rw [r'', hr'], hS''⟩
+  · obtain ⟨hc₂, hk₂, hS₂⟩ := h₂
+    have hbnd : slotW s₂ endSlot = b + BitVec.ofNat 64 (8 * keySlot + 64 * (8 * g)) := by
+      rw [hc₂.endW hp, hp.bound, show 512 * g = 64 * (8 * g) by omega]
+    obtain ⟨s₃, e₃, z₃, g₃, m₃, rd₃, wr₃⟩ := cmpEnd_ok (hc₂.endIn hp)
+    have hc₃ : Ctx s₀ s₃ := hc₂.flags (fun r _ => by rw [g₃]) m₃ rd₃ wr₃
+    have hz₃ : s₃.zf = some (decide (i + 1 = g)) := by
+      rw [z₃, show s₂.gpr kp = _ from hk₂, hbnd,
+        entry_beq b (entry_lt hg4 (by omega)) (entry_lt hg4 (by omega))]
+      simp only [Option.some.injEq, decide_eq_decide]; omega
+    have hk₃ : AtEntry s₃ b (8 + 8 * i) := by rw [AtEntry, g₃]; exact hk₂
+    have hS₃ : Halves s₃ (fun b => pairsN E i 3 (S b)) :=
+      hS₂.congr (fun j _ => by simp only [Qs, g₃]) (fun k => by simp only [slotW, g₃, m₃])
+    refine WP.seq (WP.of_runBlock ⟨s₃, e₃, ?_⟩)
+    refine WP.seq (WP.ite (!decide (i + 1 = g)) (by simp [X86_64.eval, hz₃]) (fun ht => ?_) (fun hf => ?_))
+    · have hlt : i + 1 < g := by
+        simp only [Bool.not_eq_eq_eq_not, Bool.not_true, decide_eq_false_iff_not] at ht; omega
+      obtain ⟨s₄, e₄, c₄, k₄, -, S₄⟩ := fl_step hp hc₃ hk₃ (by omega) (by omega) hS₃
+      refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
+      have hk₄ : AtEntry s₄ b (2 + 8 * (i + 1)) := by
+        rw [AtEntry, show s₄.gpr kp = _ from k₄, show 8 + 8 * i + 2 = 2 + 8 * (i + 1) by omega]
+      obtain ⟨s₅, e₅, z₅, g₅, m₅, rd₅, wr₅⟩ := cmpEnd_ok (c₄.endIn hp)
+      refine WP.of_runBlock ⟨s₅, e₅, c₄.flags (fun r _ => by rw [g₅]) m₅ rd₅ wr₅, ?_, ?_, ?_⟩
+      · have hG : (fun b => group g E (S b) i) = fun b =>
+            (Spec.Camellia.fl (pairsN E i 3 (S b)).1 (E (8 + 8 * i)),
+              Spec.Camellia.flinv (pairsN E i 3 (S b)).2 (E (8 + 8 * i + 1))) :=
+          funext fun b => by
+            rw [group_eq, show 8 + 8 * i + 1 = 9 + 8 * i by omega]; simp only [hlt, ↓reduceIte]
+        rw [hG]
+        exact S₄.congr (fun j _ => by simp only [Qs, g₅]) (fun k => by simp only [slotW, g₅, m₅])
+      · simp only [hlt, ↓reduceIte]; rw [AtEntry, g₅]; exact hk₄
+      · rw [z₅, show s₄.gpr kp = _ from hk₄, c₄.endW hp, hp.bound, show 512 * g = 64 * (8 * g) by omega,
+          entry_beq b (entry_lt hg4 (by omega)) (entry_lt hg4 (by omega))]
+        simp only [Option.some.injEq, decide_eq_decide]; omega
+    · have heq : i + 1 = g := by
+        simp only [Bool.not_eq_eq_eq_not, Bool.not_false, decide_eq_true_eq] at hf; exact hf
+      refine WP.of_runBlock ⟨s₃, rfl, ?_⟩
+      obtain ⟨s₅, e₅, z₅, g₅, m₅, rd₅, wr₅⟩ := cmpEnd_ok (hc₃.endIn hp)
+      refine WP.of_runBlock ⟨s₅, e₅, hc₃.flags (fun r _ => by rw [g₅]) m₅ rd₅ wr₅, ?_, ?_, ?_⟩
+      · have hG : (fun b => group g E (S b) i) = fun b => pairsN E i 3 (S b) :=
+          funext fun b => by rw [group_eq]; simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
+        rw [hG]
+        exact hS₃.congr (fun j _ => by simp only [Qs, g₅]) (fun k => by simp only [slotW, g₅, m₅])
+      · simp only [show ¬ i + 1 < g by omega, ↓reduceIte]
+        rw [AtEntry, g₅, show s₃.gpr kp = _ from hk₃, show 8 + 8 * i = 8 * g by omega]
+      · rw [z₅, show s₃.gpr kp = _ from hk₃, hc₃.endW hp, hp.bound,
+          show 512 * g = 64 * (8 * g) by omega,
+          entry_beq b (entry_lt hg4 (by omega)) (entry_lt hg4 (by omega))]
+        simp only [Option.some.injEq, decide_eq_decide]; omega
+
 end VG.Proof.Camellia.X86_64
