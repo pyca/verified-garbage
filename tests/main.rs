@@ -13,6 +13,8 @@ mod acvp;
 mod blake2_kat;
 #[path = "cavp/main.rs"]
 mod cavp;
+#[path = "nessie/main.rs"]
+mod nessie;
 #[path = "pbkdf2/main.rs"]
 mod pbkdf2;
 #[path = "rfc1321/main.rs"]
