@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Camellia.X86_64.Moves
 import VerifiedGarbage.Proof.Camellia.X86_64.Fl
 import VerifiedGarbage.Proof.Camellia.Layout
 import VerifiedGarbage.Proof.Camellia.Words
+import VerifiedGarbage.Proof.Camellia.Common
 import VerifiedGarbage.Proof.Framework.Block
 
 /-!
@@ -71,9 +72,6 @@ theorem Ctx.step {s₀ s s' : State} (hc : Ctx s₀ s) (hrd : s'.rd = s.rd) (hwr
     hc.frame.trans hf, hm⟩
 
 /-! ## Addresses -/
-
-theorem addr_add (b : Addr) (x y : Nat) :
-    b + BitVec.ofNat 64 x + BitVec.ofNat 64 y = b + BitVec.ofNat 64 (x + y) := VG.Offset.add_add b x y
 
 /-- `kp` at entry `m` of the table. -/
 def AtEntry (s : State) (b : Addr) (m : Nat) : Prop := s.gpr kp = b + BitVec.ofNat 64 (8 * keySlot + 64 * m)
@@ -491,24 +489,6 @@ theorem fl_step {s₀ s : State} {nk : Nat} {E : Nat → BitVec 64} (hp : KeyCtx
   · exact d2₆.congr fun j hj => hs₇ _
 
 /-! ## Groups of six rounds -/
-
-/-- `p` pairs of rounds of group `i`. -/
-def pairsN (E : Nat → BitVec 64) (i p : Nat) (d : BitVec 64 × BitVec 64) : BitVec 64 × BitVec 64 :=
-  (List.range p).foldl (fun d k => pair (E (2 + 8 * i + 2 * k)) (E (3 + 8 * i + 2 * k)) d) d
-
-theorem pairsN_succ (E : Nat → BitVec 64) (i p : Nat) (d : BitVec 64 × BitVec 64) :
-    pairsN E i (p + 1) d = pair (E (2 + 8 * i + 2 * p)) (E (3 + 8 * i + 2 * p)) (pairsN E i p d) := by
-  simp [pairsN, List.range_succ, List.foldl_append]
-
-theorem group_eq (g : Nat) (E : Nat → BitVec 64) (d : BitVec 64 × BitVec 64) (i : Nat) :
-    group g E d i = if i + 1 < g then
-      (Spec.Camellia.fl (pairsN E i 3 d).1 (E (8 + 8 * i)), Spec.Camellia.flinv (pairsN E i 3 d).2 (E (9 + 8 * i)))
-      else pairsN E i 3 d := by
-  simp only [group, pairsN, List.range_succ, List.range_zero, List.foldl_append, List.foldl_cons,
-    List.foldl_nil, List.nil_append, show 2 + 8 * i + 2 * 0 = 2 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 0 = 3 + 8 * i by omega, show 2 + 8 * i + 2 * 1 = 4 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 1 = 5 + 8 * i by omega, show 2 + 8 * i + 2 * 2 = 6 + 8 * i by omega,
-    show 3 + 8 * i + 2 * 2 = 7 + 8 * i by omega]
 
 /-- `mov t0, [endSlot]; cmp kp, t0`, keeping all else. -/
 theorem cmpEnd_ok {s : State} (hr : InRegions (s.rd ++ s.wr) (s.gpr sb + BitVec.ofNat 64 (8 * endSlot)) 8) :

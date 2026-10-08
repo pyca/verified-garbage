@@ -54,10 +54,6 @@ theorem subSelf_ok (s : State) (r : Reg) :
   · simp only [RegUpd.zf_setReg, RegUpd.zf_arithFlags, BitVec.sub_self]; rfl
   · simp only [RegUpd.gpr_setReg_of_ne _ _ hr, RegUpd.gpr_arithFlags]
 
-theorem not_contains_off (b : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
-    (he : e + n ≤ 2 ^ 64) : ¬ (⟨b + BitVec.ofNat 64 e, n⟩ : Region).Contains (b + BitVec.ofNat 64 t) 1 := by
-  simp only [Region.Contains]; intro hc; exact off_sub_not b h ht hn he (by omega)
-
 /-- `rcx := min(r8, 8)`. -/
 theorem groupCount_wp {s : State} {v : Nat} (hr : s.gpr .r8 = BitVec.ofNat 64 v) (hv : v < 2 ^ 64) :
     WP isa groupCount s fun s' => s'.gpr .rcx = BitVec.ofNat 64 (min v 8) ∧
@@ -172,11 +168,6 @@ theorem ScrOk.frame2 {s₀ : State} {b : Addr} {g : Nat} {E : Nat → BitVec 64}
 
 /-! ## The data loop -/
 
-/-- The first `k` blocks are `F`'s, the others still `m₀`'s. -/
-def DInv (m₀ m : Mem) (D : Addr) (n k : Nat) (F : Nat → Spec.Camellia.Block) : Prop :=
-  ∀ i < 16 * n, m (D + BitVec.ofNat 64 i) =
-    if i < 16 * k then (F (i / 16)).getD (i % 16) 0 else m₀ (D + BitVec.ofNat 64 i)
-
 /-- The scratch buffer at `b` and the `n` blocks at `D`. -/
 structure GPre (s₀ : State) (b D : Addr) (n g : Nat) : Prop where
   scr : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr
@@ -198,11 +189,6 @@ theorem copy_wp {s : State} {X Y : Addr} {c : Nat} (hc : 0 < c) (hc8 : c ≤ 8)
   WP.mono (copyBlocks_wp hc hc8 hX hY hsep ⟨by rw [hx]; simp, by rw [hy]; simp, by rw [hcx, Nat.sub_zero],
     fun t ht => by omega, Frame.refl _ _, fun _ _ _ _ _ => rfl, rfl, rfl⟩)
     fun s' h => ⟨h.copied, h.frame, h.regs, h.rd, h.wr⟩
-
-/-- Each block, transformed. -/
-def outF (m₀ : Mem) (D : Addr) (g : Nat) (E : Nat → BitVec 64) (j : Nat) : Spec.Camellia.Block :=
-  Spec.Camellia.encodeBlock (cryptWords g E (Spec.Camellia.decodeBlock
-    (Spec.Camellia.blockAt m₀ (D + BitVec.ofNat 64 (16 * j)))))
 
 /-- The data loop, before group `k`. -/
 structure GInv (s₀ : State) (b D : Addr) (n g : Nat) (E : Nat → BitVec 64) (k : Nat) (s : State) : Prop where
@@ -228,21 +214,8 @@ structure GDone (s₀ : State) (b D : Addr) (n g : Nat) (E : Nat → BitVec 64) 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- A word written inside `R`. -/
-theorem frame_writeW {m : Mem} {a : Addr} {R : Region} (v : BitVec 64) (hs : Region.Sub ⟨a, 8⟩ R) :
-    Frame [R] m (m.writeW a v) := fun x hx => by
-  simp only [Mem.writeW, Mem.write]
-  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega))
-
-theorem blockAt_getD (m : Mem) (p : Addr) {i : Nat} (hi : i < 16) :
-    (Spec.Camellia.blockAt m p).getD i 0 = m (p + BitVec.ofNat 64 i) := by
-  simp [Spec.Camellia.blockAt, Vector.getD, hi]
-
 theorem inRd {s : State} {a : Addr} {n : Nat} (h : InRegions s.wr a n) : InRegions (s.rd ++ s.wr) a n :=
   let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
-
-theorem toNat_off (b : Addr) {d : Nat} (h : b.toNat + d < 2 ^ 64) : (b + BitVec.ofNat 64 d).toNat = b.toNat + d := by
-  rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : d < 2 ^ 64), Nat.mod_eq_of_lt h]
 
 theorem dataGroup_wp {s₀ : State} {b D : Addr} {n g : Nat} {E : Nat → BitVec 64} (hp : GPre s₀ b D n g)
     {k : Nat} {s : State} (hi : GInv s₀ b D n g E k s) :

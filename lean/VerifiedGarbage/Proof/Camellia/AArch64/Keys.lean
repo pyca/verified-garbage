@@ -55,22 +55,6 @@ theorem movz_ok (s : State) (d : Reg) {v : Nat} (hv : v < 65536) :
 
 /-! ## One subkey -/
 
-/-- Byte `i` of a word read most significant byte first is the byte at `i`. -/
-theorem byteOf_wordAt (m : Mem) (a : Addr) {i : Nat} (hi : i < 8) :
-    Camellia.byteOf (Spec.Camellia.wordAt m a) i = m (a + BitVec.ofNat 64 i) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro j hj
-  rw [Camellia.getLsbD_byteOf _ hi hj, Spec.Camellia.wordAt,
-    Camellia.getLsbD_ofBytes 64 _ (by omega) (by simp [Spec.Camellia.bytesAt])]
-  simp only [Spec.Camellia.bytesAt, List.length_map, List.length_range]
-  rw [show 8 - 1 - (56 - 8 * i + j) / 8 = i by omega, show (56 - 8 * i + j) % 8 = j by omega]
-  simp [hi]
-
-/-- The subkey's word, little-endian, read as the halves are. -/
-theorem wordRel_key (m : Mem) (a : Addr) :
-    WordRel (fun _ => m.readW a 64) (fun _ => Spec.Camellia.wordAt m a) := fun _ _ i hi j hj => by
-  rw [Camellia.readW64_bit m a hi hj, byteOf_wordAt m a hi]
-
 /-- The table's entry `e` holds `k` for every block. -/
 abbrev EntryOk (m : Mem) (b : Addr) (e : Nat) (k : BitVec 64) : Prop := HalfRel (entryW m b e) fun _ => k
 
@@ -205,14 +189,6 @@ theorem KeyPre.wsep {s : State} {b sched : Addr} (h : KeyPre s b sched) {w j : N
   rw [slots_eq] at hf hk
   refine h.sep.symm.sep (VG.Offset.contains_base b (by rw [slots_eq]; omega) (by omega)) ?_
   rw [wordAddr, addr_add]; exact VG.Offset.contains_base sched (by omega) (by omega)
-
-/-- A word of a region the frame keeps. -/
-theorem wordAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {a : Addr}
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨a, 8⟩ r) : Spec.Camellia.wordAt m' a = Spec.Camellia.wordAt m a := by
-  simp only [Spec.Camellia.wordAt, Spec.Camellia.bytesAt]
-  congr 1
-  refine List.map_congr_left fun i hi => ?_
-  exact hf.bytes (R := ⟨a, 8⟩) hd (by show (8 : Nat) ≤ 2 ^ 64; decide) (by simpa using hi)
 
 /-- The schedule is outside the scratch buffer. -/
 theorem KeyPre.wordAt_eq {s : State} {b sched : Addr} (h : KeyPre s b sched) {m m' : Mem} {n : Nat}

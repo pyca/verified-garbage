@@ -38,7 +38,7 @@ theorem spread8_check :
 def sigmaStores (x : BitVec 64) : List Instr :=
   (List.range 8).flatMap fun j => imm t0 (keyPlane x j) ++ [.str .x t0 kp (8 * j)]
 
-theorem sigmaOne_eq (x : BitVec 64) : sigmaOne x = sigmaStores x ++ [.addImm .x kp kp 64] := rfl
+theorem sigmaOne_eq (x : BitVec 64) : sigmaOne x = sigmaStores x ++ ([.addImm .x kp kp 64] : List Instr) := rfl
 
 /-- The entry at `kp`, as slots. -/
 def sigCfg : Cfg := { base := kp, slots := 8, ext := kp, exts := 0 }

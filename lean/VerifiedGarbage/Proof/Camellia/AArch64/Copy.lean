@@ -13,16 +13,6 @@ namespace VG.Proof.Camellia.AArch64
 open VG VG.AArch64 VG.Impl.Camellia.AArch64
 open VG.Impl.Aes.AArch64 (t0)
 
-/-- A byte of a little-endian word stored from a load. -/
-theorem writeW_readW_apply (m m' : Mem) (a c x : Addr) :
-    m.writeW a (m'.readW c 64) x =
-      if (x - a).toNat < 8 then m' (c + BitVec.ofNat 64 (x - a).toNat) else m x := by
-  simp only [Mem.writeW, Mem.write, Mem.readW, BitVec.setWidth_eq]
-  split
-  · rename_i h
-    exact Mem.extractLsb'_read m' c (n := 8) h
-  · rfl
-
 /-- `ldr t0, [x14, #d]; str t0, [x15, #d]`. -/
 theorem copyWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
     (hr : InRegions (s.rd ++ s.wr) (s.gpr .x14 + BitVec.ofNat 64 d) 8)
@@ -45,20 +35,6 @@ theorem copyWord_ok (s : State) {d : Nat} (hd : d % 8 = 0 ∧ d < 32768)
       [.ldr .x t0 .x14 d] ++ [.str .x t0 .x15 d] from rfl, runBlock_append', e1, Option.bind_some, e2]
   · show s.mem.writeW (s₁.gpr .x15 + BitVec.ofNat 64 d) (s₁.gpr t0) = _
     rw [h15, ht]
-
-theorem off_sub_toNat (B : Addr) {t e : Nat} (h : e ≤ t) (ht : t < 2 ^ 64) :
-    (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat = t - e := by
-  rw [VG.Offset.add_sub_add _ h, BitVec.toNat_ofNat]; omega
-
-theorem off_sub_not (B : Addr) {t e n : Nat} (h : t < e ∨ e + n ≤ t) (ht : t < 2 ^ 64) (hn : 0 < n)
-    (he : e + n ≤ 2 ^ 64) : ¬ (B + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < n := by
-  rw [VG.Offset.add_sub_add_left]; exact VG.Offset.not_lt_sub_ofNat h ht hn he
-
-/-- A byte of `A`'s area is not among the 8 at `B + e`. -/
-theorem not_in_of_disjoint {A B : Addr} {n t e : Nat} (hsep : Region.Disjoint ⟨A, n⟩ ⟨B, n⟩) (ht : t < n)
-    (he : e + 8 ≤ n) (hn : n < 2 ^ 64) : ¬ (A + BitVec.ofNat 64 t - (B + BitVec.ofNat 64 e)).toNat < 8 :=
-  fun h => hsep (A + BitVec.ofNat 64 t) (VG.Offset.contains_base A (by omega) (by omega))
-    (VG.Offset.sub_base B he _ (by simp only [Region.Contains]; omega))
 
 /-- Copying, after `j` of `c` blocks. -/
 structure CopyInv (A B : Addr) (c : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where

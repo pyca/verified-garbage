@@ -42,10 +42,6 @@ theorem frame_slot {m : Mem} {b : Addr} {k : Nat} (v : BitVec 64) (hk : k < slot
     Frame [⟨b, 8 * slots⟩] m (m.writeW (wordAddr b k) v) :=
   frame_writeW v (by rw [wordAddr]; rw [slots_eq] at hk; exact VG.Offset.sub_base _ (by rw [slots_eq]; omega))
 
-theorem ite_swap2 {α : Type} {k w : Nat} (A B C : α) :
-    (if k = w + 1 then A else if k = w then B else C) = if k = w then B else if k = w + 1 then A else C := by
-  by_cases h1 : k = w <;> by_cases h2 : k = w + 1 <;> simp [h1, h2] <;> omega
-
 /-- `copyWords w x`: the two words at slot `x` to slot `w`. -/
 theorem copyWords_ok {s : State} {b : Addr} {w x : Nat} (hb : s.gpr sb = b)
     (hscr : (⟨b, 8 * slots⟩ : Region) ∈ s.wr) (hw : w + 1 < slots) (hx : x + 1 < slots) (hxw : x + 1 ≠ w) :
@@ -122,24 +118,6 @@ theorem xorWords_ok {s : State} {b : Addr} {w x : Nat} (hb : s.gpr sb = b)
 
 /-! ## The values -/
 
-/-- The subkeys of the pairs, `Sigma1 … Sigma6`. -/
-def sigE (i : Nat) : BitVec 64 := sigmas.getD i 0
-
-section
-variable (KL KR : BitVec 64 × BitVec 64)
-
-/-- The value after each pair: `KA` after the second, `KB` after the third. -/
-def kaD1 : BitVec 64 × BitVec 64 := pair (sigE 0) (sigE 1) (KL.1 ^^^ KR.1, KL.2 ^^^ KR.2)
-def kaD2 : BitVec 64 × BitVec 64 := pair (sigE 2) (sigE 3) ((kaD1 KL KR).1 ^^^ KL.1, (kaD1 KL KR).2 ^^^ KL.2)
-def kaD3 : BitVec 64 × BitVec 64 := pair (sigE 4) (sigE 5) ((kaD2 KL KR).1 ^^^ KR.1, (kaD2 KL KR).2 ^^^ KR.2)
-
-/-- The running value before pair `i`, and `KB` after the last. -/
-def kaW : Nat → BitVec 64 × BitVec 64
-  | 0 => (KL.1 ^^^ KR.1, KL.2 ^^^ KR.2)
-  | 1 => ((kaD1 KL KR).1 ^^^ KL.1, (kaD1 KL KR).2 ^^^ KL.2)
-  | 2 => ((kaD2 KL KR).1 ^^^ KR.1, (kaD2 KL KR).2 ^^^ KR.2)
-  | _ => kaD3 KL KR
-end
 
 /-- The words at slots `k` and `k + 1` hold the halves `v`. -/
 def WordsAt (s : State) (k : Nat) (v : BitVec 64 × BitVec 64) : Prop :=
@@ -403,13 +381,5 @@ theorem kaKb_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KaPre s₀
       exact .inl ⟨by simp [X86_64.eval, hz], h₄⟩
     · exact .inr ⟨by simp [X86_64.eval, hz]; omega, 3 - (i + 1), by omega, i + 1, rfl, by omega,
         by rw [Nat.mul_add, Nat.mul_one]; exact h₄⟩
-
-/-- The values are the specification's `KA` and `KB` (`Spec.Camellia.kakb`). -/
-theorem kaD_eq (kl kr : BitVec 128) :
-    kaD2 (hiW kl, loW kl) (hiW kr, loW kr) = (hiW (Spec.Camellia.kakb kl kr).1, loW (Spec.Camellia.kakb kl kr).1) ∧
-    kaD3 (hiW kl, loW kl) (hiW kr, loW kr) = (hiW (Spec.Camellia.kakb kl kr).2, loW (Spec.Camellia.kakb kl kr).2) := by
-  obtain ⟨h1, h2, h3, h4⟩ := Proof.Camellia.kakb_halves kl kr
-  rw [h1, h2, h3, h4]
-  exact ⟨rfl, rfl⟩
 
 end VG.Proof.Camellia.X86_64

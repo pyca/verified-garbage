@@ -361,14 +361,6 @@ theorem tail_ok {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre
 
 /-! ## The groups -/
 
-/-- The first `i` groups. -/
-def groupsN (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 × BitVec 64) : BitVec 64 × BitVec 64 :=
-  (List.range i).foldl (group g E) d
-
-theorem groupsN_succ (g : Nat) (E : Nat → BitVec 64) (i : Nat) (d : BitVec 64 × BitVec 64) :
-    groupsN g E (i + 1) d = group g E (groupsN g E i d) i := by
-  simp [groupsN, List.range_succ, List.foldl_append]
-
 theorem groups_wp {s₀ s : State} {g : Nat} {E : Nat → BitVec 64} (hp : CorePre s₀ g E) (hc : Ctx s₀ s)
     (hk : AtEntry s (s₀.gpr sb) 2) {S : Nat → BitVec 64 × BitVec 64} (hS : Halves s S) :
     WP isa (.loop groupBody .ne) s fun s' => Ctx s₀ s' ∧ AtEntry s' (s₀.gpr sb) (8 * g) ∧

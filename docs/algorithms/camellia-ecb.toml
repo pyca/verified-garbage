@@ -3,4 +3,4 @@ family = "Ciphers"
 specs = ["Camellia"]
 modules = ["src/camellia_ecb.rs"]
 asm = ["camellia"]
-optimized = { x86_64 = "bitsliced, 8 blocks at a time" }
+optimized = { x86_64 = "bitsliced, 8 blocks at a time", aarch64 = "bitsliced, 8 blocks at a time" }

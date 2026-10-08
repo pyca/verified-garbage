@@ -42,29 +42,7 @@ theorem ldAt_ok (s : State) (d r : Reg) {k : Nat} (hk : k % 8 = 0 ∧ k < 32768)
     (RegUpd.gpr_write_self _ _ _ _).trans (BitVec.setWidth_eq _),
     fun r' h => RegUpd.gpr_write_of_ne _ _ _ h, rfl, rfl, rfl⟩
 
-theorem WordOf.zero : WordOf 0 0 := fun i hi j hj => by
-  rw [Camellia.getLsbD_byteOf _ hi hj]; simp
-
-theorem WordOf.not {w h : BitVec 64} (hw : WordOf w h) : WordOf (~~~ w) (~~~ h) := fun i hi j hj => by
-  rw [Camellia.getLsbD_byteOf _ hi hj, BitVec.getLsbD_not, BitVec.getLsbD_not, hw i hi j hj,
-    Camellia.getLsbD_byteOf _ hi hj]
-  simp only [show 8 * i + j < 64 by omega, show 56 - 8 * i + j < 64 by omega, decide_true, Bool.true_and]
-
 /-! ## The table of `Sigma1 … Sigma6` -/
-
-theorem bytePos_eq : bytePos = pos := rfl
-
-theorem keyPlane_bit (x : BitVec 64) (j : Nat) {p : Nat} (hp : p < 64) :
-    (keyPlane x j).getLsbD p = x.getLsbD (56 - 8 * bytePos (p / 8) + j) := by
-  rw [keyPlane, BitVec.getLsbD_setWidth, BitVec.getLsbD_ofBoolListLE, List.getD_eq_getElem?_getD,
-    List.getElem?_map, List.getElem?_range hp]
-  simp [hp]
-
-/-- The planes `sigmaOne` stores hold the constant in every lane. -/
-theorem sigma_planes (x : BitVec 64) {b c j : Nat} (hb : b < 8) (hc : c < 8) (hj : j < 8) :
-    (keyPlane x j).getLsbD (8 * c + b) = (Camellia.byteOf x (pos c)).getLsbD j := by
-  rw [keyPlane_bit x j (by omega), Camellia.getLsbD_byteOf x (Camellia.pos_lt hc) hj, bytePos_eq,
-    show (8 * c + b) / 8 = c by omega]
 
 theorem sigmaStores_dst :
     (sigmas.all fun x => (sigmaStores x).all fun i => dstOf i == some t0 || dstOf i == none) = true := by
@@ -177,7 +155,7 @@ theorem Pure.trans {s₁ s₂ s₃ : State} (h₁ : Pure s₁ s₂) (h₂ : Pure
 
 theorem Pure.of1 {s s' : State} {d : Reg} (hd : d = t0 ∨ d = t1 ∨ d = u7) (hm : s'.mem = s.mem)
     (hg : ∀ r, r ≠ d → s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : Pure s s' :=
-  ⟨hm, fun r h0 h1 h2 => hg r (by rcases hd with rfl | rfl | rfl <;> assumption), hrd, hwr⟩
+  ⟨hm, fun r h0 h1 h2 => hg r (by rcases hd with rfl | rfl | rfl <;> with_reducible assumption), hrd, hwr⟩
 
 /-- A store of `t0` to slot `k`. -/
 structure StOk (s s' : State) (k : Nat) : Prop where
@@ -379,33 +357,6 @@ theorem loadKey_wp {s : State} {len : Nat} (hscr : (⟨s.gpr sb, 8 * slots⟩ : 
       by rw [h.rd, rd₅'], by rw [h.wr, wr₅']⟩
 
 /-! ## The schedule's bytes -/
-
-theorem bytesAt_add (m : Mem) (p : Addr) (a n : Nat) :
-    Spec.Camellia.bytesAt m p (a + n) =
-      Spec.Camellia.bytesAt m p a ++ Spec.Camellia.bytesAt m (p + BitVec.ofNat 64 a) n := by
-  simp only [Spec.Camellia.bytesAt, List.range_add, List.map_append, List.map_map]
-  refine congrArg (_ ++ ·) (List.map_congr_left fun i _ => ?_)
-  show m (p + BitVec.ofNat 64 (a + i)) = m (p + BitVec.ofNat 64 a + BitVec.ofNat 64 i)
-  rw [addr_add]
-
-/-- Words stored with their most significant byte first are their `wordBytes`. -/
-theorem bytesAt_words (m : Mem) : ∀ (ws : List (BitVec 64)) (p : Addr),
-    (∀ i < ws.length, ∀ j < 8, m (p + BitVec.ofNat 64 (8 * i + j)) = Camellia.byteOf (ws.getD i 0) j) →
-    Spec.Camellia.bytesAt m p (8 * ws.length) = ws.flatMap Spec.Camellia.wordBytes
-  | [], _, _ => rfl
-  | w :: ws, p, h => by
-    rw [List.length_cons, Nat.mul_succ, Nat.add_comm, bytesAt_add, List.flatMap_cons]
-    have h1 : Spec.Camellia.bytesAt m p 8 = Spec.Camellia.wordBytes w := by
-      simp only [Spec.Camellia.bytesAt, Spec.Camellia.wordBytes]
-      refine List.map_congr_left fun j hj => ?_
-      have := h 0 (by simp) j (List.mem_range.mp hj)
-      simp only [Nat.mul_zero, Nat.zero_add, List.getD_cons_zero] at this
-      exact this
-    rw [h1, bytesAt_words m ws _ fun i hi j hj => ?_]
-    rw [addr_add, show 8 + (8 * i + j) = 8 * (i + 1) + j by omega]
-    have := h (i + 1) (by simp only [List.length_cons]; omega) j hj
-    simp only [List.getD_cons_succ] at this
-    exact this
 
 /-! ## Loading the values -/
 

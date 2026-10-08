@@ -22,22 +22,6 @@ open VG.Impl.Aes.AArch64 (q sb t0 t1 movR orrR)
 
 /-! ## Halves as little-endian words -/
 
-/-- The little-endian word `w` holds the bytes of `h`, the most significant first. -/
-def WordOf (w h : BitVec 64) : Prop :=
-  ∀ i < 8, ∀ j < 8, w.getLsbD (8 * i + j) = (Camellia.byteOf h i).getLsbD j
-
-theorem WordOf.xor {w x h k : BitVec 64} (hw : WordOf w h) (hx : WordOf x k) : WordOf (w ^^^ x) (h ^^^ k) :=
-  fun i hi j hj => by
-    rw [BitVec.getLsbD_xor, hw i hi j hj, hx i hi j hj, Camellia.byteOf_xor, BitVec.getLsbD_xor]
-
-theorem WordOf.congr {w w' h : BitVec 64} (hw : WordOf w h) (he : w' = w) : WordOf w' h := he ▸ hw
-
-theorem wordOf_readW (m : Mem) (a : Addr) : WordOf (m.readW a 64) (Spec.Camellia.wordAt m a) :=
-  fun i hi j hj => by rw [Camellia.readW64_bit m a hi hj, byteOf_wordAt m a hi]
-
-theorem wordOf_iff_rel {w h : BitVec 64} : WordOf w h ↔ Camellia.WordRel (fun _ => w) (fun _ => h) :=
-  ⟨fun hw _ _ i hi j hj => hw i hi j hj, fun hw i hi j hj => hw 0 (by decide) i hi j hj⟩
-
 theorem rev64_bit (a : BitVec 64) {i j : Nat} (hi : i < 8) (hj : j < 8) :
     (rev64 a).getLsbD (56 - 8 * i + j) = a.getLsbD (8 * i + j) := by
   unfold rev64
@@ -160,12 +144,6 @@ theorem subkey_ok (s : State) {i v r : Nat} {hi : Bool} (hv : v < 4) (hi34 : i <
 
 theorem regs_ne_t (x : Nat) : hiReg x ≠ t0 ∧ hiReg x ≠ t1 ∧ loReg x ≠ t0 ∧ loReg x ≠ t1 := by
   unfold hiReg loReg; split <;> decide
-
-/-- A word written inside `R`. -/
-theorem frame_writeW {m : Mem} {a : Addr} {R : Region} (v : BitVec 64) (hs : Region.Sub ⟨a, 8⟩ R) :
-    Frame [R] m (m.writeW a v) := fun x hx => by
-  simp only [Mem.writeW, Mem.write]
-  exact ite_eq_right fun h => hx R (List.mem_singleton_self _) (hs x (by simp only [Region.Contains]; omega))
 
 /-- Byte `j` of a byte-swapped word stored little-endian is byte `j` of the word, the most significant first. -/
 theorem writeW_rev_byte (m : Mem) (a : Addr) (w : BitVec 64) {j : Nat} (hj : j < 8) :

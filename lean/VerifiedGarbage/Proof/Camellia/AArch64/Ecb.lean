@@ -38,9 +38,7 @@ def ecbAArch64 (dir : Dir) : Contract isa where
       s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
 
 /-- The order of the subkeys in the table, for each direction. -/
-def permOf : Dir → Nat → Nat → Nat
-  | .encrypt => fun _ i => i
-  | .decrypt => Camellia.decPerm
+def permOf (dir : Dir) : Nat → Nat → Nat := Proof.Camellia.dirPerm (specDir dir)
 
 theorem endAddr_post {s₀ s : State} {b sched : Addr} {g : Nat} {perm : Nat → Nat} (hg : g = 3 ∨ g = 4)
     (h : KeysPost s₀ b sched g perm s) :
@@ -122,47 +120,6 @@ theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .x4 = b) (hw : (⟨
 
 /-! ## The specification -/
 
-theorem blocksAt_of_dinv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec.Camellia.Block}
-    (h : DInv m₀ m D n n F) : Spec.Camellia.blocksAt m D n = (List.range n).map F := by
-  simp only [Spec.Camellia.blocksAt]
-  refine List.map_congr_left fun j hj => ?_
-  have hj := List.mem_range.mp hj
-  apply Vector.ext; intro t ht
-  simp only [Spec.Camellia.blockAt, Vector.getElem_ofFn]
-  rw [addr_add, h _ (by omega), ite_eq_left (by omega), show (16 * j + t) / 16 = j by omega,
-    show (16 * j + t) % 16 = t by omega]
-  simp [Vector.getD, ht]
-
-/-- The schedule's words, as `subkeysAt` reads them. -/
-abbrev schedWords (m : Mem) (sched : Addr) (R : Nat) : List (BitVec 64) :=
-  (List.range (Spec.Camellia.scheduleLength R)).map fun i => Spec.Camellia.wordAt m (sched + BitVec.ofNat 64 (8 * i))
-
-/-- The block function of each direction. -/
-def blockFn (sk : Spec.Camellia.Subkeys) : Spec.Camellia.Direction → Spec.Camellia.Block → Spec.Camellia.Block
-  | .encrypt => Spec.Camellia.encryptBlock sk
-  | .decrypt => Spec.Camellia.decryptBlock sk
-
-theorem ecb_eq (sk : Spec.Camellia.Subkeys) (d : Spec.Camellia.Direction) (l : List Spec.Camellia.Block) :
-    Spec.Camellia.ecb sk d l = l.map (blockFn sk d) := by
-  cases d <;> rfl
-
-theorem outF_spec (dir : Dir) (m : Mem) (sched D : Addr) {R : Nat} (hR : R = 18 ∨ R = 24) (j : Nat) :
-    outF m D (R / 6) (fun i => (schedWords m sched R).getD (permOf dir (R / 6) i) 0) j =
-      blockFn (Spec.Camellia.subkeysAt m sched R) (specDir dir)
-        (Spec.Camellia.blockAt m (D + BitVec.ofNat 64 (16 * j))) := by
-  cases dir
-  · simp only [outF, specDir, blockFn, Spec.Camellia.encryptBlock, Spec.Camellia.subkeysAt,
-      Camellia.encryptWith_eq hR, permOf]
-  · simp only [outF, specDir, blockFn, Spec.Camellia.decryptBlock, Spec.Camellia.subkeysAt,
-      Camellia.decryptWith_eq hR, permOf]
-
-theorem schedWords_getD (m : Mem) (sched : Addr) {R i : Nat} (hi : i < Spec.Camellia.scheduleLength R) :
-    (schedWords m sched R).getD i 0 = Spec.Camellia.wordAt m (sched + BitVec.ofNat 64 (8 * i)) := by
-  simp [schedWords, List.getD_eq_getElem?_getD, hi]
-
-theorem permOf_lt (dir : Dir) {g i : Nat} (hi : i < 8 * g + 2) : permOf dir g i < 8 * g + 2 := by
-  cases dir <;> simp only [permOf, Camellia.decPerm] <;> (try split) <;> (try split) <;> omega
-
 /-! ## The whole function -/
 
 theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
@@ -216,7 +173,7 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
   have base₂ : s₂.gpr sb = b := k₂.pre.base
   have hE : ∀ i < 8 * g + 2,
       Spec.Camellia.wordAt s₁.mem (sched + BitVec.ofNat 64 (8 * permOf dir g i)) = E i := fun i hi => by
-    have hp := permOf_lt dir hi
+    have hp : permOf dir g i < 8 * g + 2 := dirPerm_lt (specDir dir) hi
     rw [show E i = _ from schedWords_getD s₀.mem sched (R := R) (by simp only [Spec.Camellia.scheduleLength]; omega)]
     refine wordAt_frame f₁ fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -266,6 +223,6 @@ theorem ecb_wp (dir : Dir) {s₀ : State} (hp : (ecbAArch64 dir).pre s₀) :
   simp only [Spec.Camellia.blocksAt, List.map_map]
   refine List.map_congr_left fun j _ => ?_
   subst hgR
-  exact outF_spec dir s₀.mem sched D hR j
+  exact outF_spec (specDir dir) s₀.mem sched D hR j
 
 end VG.Proof.Camellia.AArch64

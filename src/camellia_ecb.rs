@@ -5,7 +5,7 @@
 //! On x86-64, ECB is bitsliced, eight blocks at a time in general-purpose
 //! registers, with the S-boxes as Boolean circuits: no table lookups.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::camellia::{
     vg_camellia_ecb_decrypt, vg_camellia_ecb_encrypt, vg_camellia_expand_key,
