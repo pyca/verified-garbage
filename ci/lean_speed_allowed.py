@@ -76,7 +76,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/ChaCha20Poly1305/AArch64/Poly.lean": 7,
     "VerifiedGarbage/Proof/ChaCha20Poly1305/AArch64/Stitched/Parts.lean": 1,
     "VerifiedGarbage/Proof/ChaCha20Poly1305/X86/Stages.lean": 10,
-    "VerifiedGarbage/Proof/ChaCha20Poly1305/X86_64/CT.lean": 19,
+    "VerifiedGarbage/Proof/ChaCha20Poly1305/X86_64/CT.lean": 18,
     "VerifiedGarbage/Proof/CmacAes/AArch64/Finalize.lean": 2,
     "VerifiedGarbage/Proof/CmacAes/AArch64/Subkeys.lean": 2,
     "VerifiedGarbage/Proof/CmacAes/AArch64/UpdateLoop.lean": 2,
