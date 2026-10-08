@@ -21,7 +21,7 @@ theorem doubleHalf_before_slots {S : RcbSlots} {p : Pt} {Sl : Nat → Prop}
   intro op hop x hx
   apply h x
   simp only [DoubleHalf.before,List.mem_cons,List.not_mem_nil,or_false] at hop
-  rcases hop with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
+  rcases hop with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx <;>
     simp only [doubleSlots,List.mem_cons,List.not_mem_nil,or_false] <;> grind
 
