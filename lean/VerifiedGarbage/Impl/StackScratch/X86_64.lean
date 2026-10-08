@@ -23,7 +23,9 @@ above `rsp` on entry: a quadword standing for the return address, a copy of
 the `m` stack arguments, and the address of the buffer, which is the rest of
 the frame. It passes them through `rax`, which no argument is in.
 `withStackArgScratchWiped bytes m words c` is the same, zeroing the first
-`words` quadwords of the buffer after the code (`wipeAt`).
+`words` quadwords of the buffer after the code (`wipeAt`), and
+`withStackArgScratchWipedX bytes m n c` zeroes its first `n` 16-byte words,
+with half as many stores (`wipeAtX`, SSE2's `pxor` and `movdqu`).
 -/
 
 namespace VG.Impl.StackScratch.X86_64
@@ -76,5 +78,17 @@ def wipeAt (off words : Nat) : List Instr := .mov32 .r11 (.imm 0) :: wipeStoresA
 (at `rsp + 16 + 8m`) after the code. -/
 def withStackArgScratchWiped (bytes m words : Nat) (c : Prog isa) : Prog isa :=
   withStackArgScratch bytes m (.seq c (.block (wipeAt (16 + 8 * m) words)))
+
+/-- `movdqu xmmword [rsp + off + 16k], xmm0` for each `k < n`. -/
+def wipeStoresAtX (off n : Nat) : List Instr :=
+  (List.range n).map fun k => .movdquStore { base := .rsp, disp := ((off + 16 * k : Nat) : Int) } .xmm0
+
+/-- Zeroes the `n` 16-byte words at `rsp + off`, through `xmm0`. -/
+def wipeAtX (off n : Nat) : List Instr := .xop (.bin .pxor .xmm0 .xmm0) :: wipeStoresAtX off n
+
+/-- `withStackArgScratch`, zeroing the first `n` 16-byte words of the buffer
+(at `rsp + 16 + 8m`) after the code. -/
+def withStackArgScratchWipedX (bytes m n : Nat) (c : Prog isa) : Prog isa :=
+  withStackArgScratch bytes m (.seq c (.block (wipeAtX (16 + 8 * m) n)))
 
 end VG.Impl.StackScratch.X86_64
