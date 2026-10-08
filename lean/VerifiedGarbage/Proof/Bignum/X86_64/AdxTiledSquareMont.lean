@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledSquareRaw
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareMont
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareRedcChoice
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxSquareFinish
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 
 /-! Correctness of Montgomery squaring with BMI2 and ADX. -/
 
@@ -56,8 +57,8 @@ theorem montSquare_ok {s : State} {B : Addr} {Z w n : Nat} {minv : BitVec 64}
   refine WP.seq (WP.mono (movMem_ok s₂ (dst := .r10) hsrc) fun s₃ ⟨h10, _, _, k₃⟩ => ?_)
   have k123 := k12.trans k₃.keep
   have hv₂ : Ops s₂.mem B w ps := hv.of_outside ho12 (by unfold slot sFn hdrBytes; omega)
-  refine WP.mono (AdxSquare.finishV_ok (hs.congr k123.2.2) ((k123.gpr (by decide)).trans hdi)
-    (k₃.2.1 ▸ hH₂) hZ hw1 hw h10 (k₃.2.1 ▸ hv₂) po ho ho1 ho2 (by rw [k₃.2.1, hN₂]; exact hTlt))
+  refine WP.mono (finish8V_ok (hs.congr k123.2.2) ((k123.gpr (by decide)).trans hdi)
+    (k₃.2.1 ▸ hH₂) hZ hwN hnN hw h10 (k₃.2.1 ▸ hv₂) po ho ho1 ho2 (by rw [k₃.2.1, hN₂]; exact hTlt))
     fun t ⟨hv, hf, kt⟩ => ?_
   rw [k₃.2.1, hN₂] at hv
   refine ⟨?_, ?_, ?_, (k123.trans kt).mono (by decide)⟩

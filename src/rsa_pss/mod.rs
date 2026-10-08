@@ -292,7 +292,7 @@ pub fn sign(
 fn sign_with(key: &PrivateKey, digest: &[u8], hash: Hash, salt: &[u8]) -> Result<Vec<u8>, Error> {
     let k = key.n.len();
     let mut out = vec![0; k];
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
     let r = with_functions!(hash, |fns| call_sign(
         fns.0,
         &mut out,

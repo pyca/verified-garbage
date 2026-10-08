@@ -126,7 +126,7 @@ pub fn sign(key: &PrivateKey, digest: &[u8], hash: Hash) -> Result<Vec<u8>, Erro
     }
     let k = key.n.len();
     let mut out = vec![0; k];
-    let mut scratch = vec![0u64; scratch_words(k)];
+    let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
     let f = match Backend::select(detected()) {
         Backend::Baseline => vg_rsa_pkcs1_sign,
         // `select` chose them because the CPU has the features they need.

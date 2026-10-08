@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxHeader
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxCarry8
 import VerifiedGarbage.Impl.Bignum.X86_64.AdxSquare
+import VerifiedGarbage.Impl.Bignum.X86_64.AdxFinish8
 
 /-! Full raw multiplication from eight-word rectangular rows. -/
 namespace VG.Impl.Bignum.X86_64.AdxTiledProduct
@@ -32,12 +33,12 @@ def rows (a b : Nat) : Prog isa :=
 
 /-- The borrowed header is saved only after the scratch window is cleared. -/
 def rawProduct (a b : Nat) : Prog isa :=
-  .seq (.block (Adx.setup b)) (.seq Adx.zeroWin
+  .seq (.block (Adx.setup b)) (.seq Adx.zeroWin8
     (.seq AdxHeader.save (.seq (rows a b) AdxHeader.restore)))
 
 def montMul (o a b : Nat) : Prog isa :=
   .seq (rawProduct a b) (.seq AdxRotate8.redc
-    (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish o)))
+    (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o)))
 
 def alignedChoice (o a b : Nat) : Prog isa :=
   .seq (.block AdxSquare.redcTest) (.ite .e (montMul o a b) (Adx.montMulAdx o a b))

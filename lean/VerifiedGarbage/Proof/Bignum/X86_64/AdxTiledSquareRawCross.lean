@@ -25,7 +25,7 @@ theorem rawCross_ok {s : State} {B : Addr} {Z w a n : Nat} {mi : BitVec 64}
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   unfold AdxTiledSquare.rawCross
   refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pa) (hvs.lt pa)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin_ok (hs.congr ku.2.2) pu wu (by omega) rawZ)
+  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega) rawZ)
     fun v ⟨zv,ov,kv⟩ => ?_)
   rw [mu] at ov
   have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega) (by omega)

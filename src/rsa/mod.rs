@@ -61,6 +61,7 @@
 ))]
 
 mod scratch;
+pub(crate) use scratch::Scratch;
 use scratch::VerifyScratch;
 
 use alloc::vec;

@@ -335,7 +335,7 @@ impl PrivateKey {
         if input.len() != k || out.len() != k {
             return Err(Error::InvalidLength);
         }
-        let mut scratch = vec![0u64; scratch_words(k)];
+        let mut scratch = crate::rsa::Scratch::new(scratch_words(k));
         let f = match Backend::select(detected()) {
             Backend::Baseline => vg_rsa_private_checked,
             // `select` chose them because the CPU has the features they need.

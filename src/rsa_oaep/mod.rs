@@ -298,7 +298,7 @@ pub fn decrypt(
     }
     let mut out = vec![0u8; k];
     let mut len = [0u64; 1];
-    let mut scratch = vec![0u64; oaep_scratch_words(k)];
+    let mut scratch = crate::rsa::Scratch::new(oaep_scratch_words(k));
     // SAFETY: each pointer is valid for its length (`out`, `len` and
     // `scratch` for writes), and none overlaps another or wraps around, as
     // they are distinct Rust allocations; `PrivateKey::from_crt` and the
