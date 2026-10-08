@@ -7,6 +7,9 @@ use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
 pub(crate) const TAG_LEN: usize = 16;
 
+/// The shortest plaintext AES-GCM encrypts out of place (see `Key::seal_to`).
+const GATHER_MIN_LEN: usize = 512;
+
 /// An AEAD key: AES-GCM (128- or 256-bit) or ChaCha20-Poly1305. Each lives
 /// in a boxed record encrypter or decrypter, so its size does not matter.
 #[allow(clippy::large_enum_variant)]
@@ -46,9 +49,10 @@ impl Algorithm {
 
 impl Key {
     /// Encrypts the plaintext `plain ‖ extra` into `out`, which is exactly as
-    /// long, returning the tag. AES-GCM reads the pieces where they are and
-    /// writes only `out`; ChaCha20-Poly1305, which has no such function yet,
-    /// copies them into `out` and encrypts it in place.
+    /// long, returning the tag. AES-GCM reads the pieces of a plaintext of
+    /// at least `GATHER_MIN_LEN` bytes where they are and writes only `out`;
+    /// shorter ones, and ChaCha20-Poly1305's (which has no such function
+    /// yet), are copied into `out` and encrypted there.
     pub(crate) fn seal_to(
         &self,
         nonce: &[u8; 12],
@@ -60,7 +64,10 @@ impl Key {
         debug_assert_eq!(out.len(), plain.len() + extra.len());
         if let Self::AesGcm(k) = self {
             // `encrypt` takes at most `MAX_PIECES` pieces; gather more below.
-            if plain.chunks().count() < AesGcm::MAX_PIECES {
+            // Shorter plaintexts, too, are copied and encrypted in place,
+            // which has a path for short inputs that `encrypt` lacks: under
+            // 512 bytes it takes about half the time.
+            if out.len() >= GATHER_MIN_LEN && plain.chunks().count() < AesGcm::MAX_PIECES {
                 let mut pieces: [&[u8]; AesGcm::MAX_PIECES] = [&[]; AesGcm::MAX_PIECES];
                 let mut n = 0;
                 for piece in plain.chunks().chain([extra]) {
