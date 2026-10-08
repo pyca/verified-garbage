@@ -62,6 +62,7 @@ macro_rules! ml_dsa {
         verify: $verify:path,
         sign_message: $sign_message:path,
         verify_message: $verify_message:path,
+        verify_message_cached_sha3: $verify_message_cached_sha3:path,
         keygen_sha3: ($keygen_sha3:path, $keygen_sha3_features:path),
         sign_sha3: ($sign_sha3:path, $sign_sha3_features:path),
         verify_sha3: ($verify_sha3:path, $verify_sha3_features:path),
@@ -145,6 +146,8 @@ macro_rules! ml_dsa {
         #[derive(Clone, PartialEq, Eq)]
         pub struct $VerifyingKey {
             bytes: [u8; $pk],
+            #[cfg(target_arch = "aarch64")]
+            tr: [u8; 64],
         }
 
         impl core::fmt::Debug for $VerifyingKey {
@@ -162,7 +165,10 @@ macro_rules! ml_dsa {
             /// The public key `bytes` (every byte string of this size is
             /// one).
             pub fn from_bytes(bytes: &[u8; $pk]) -> Self {
-                $VerifyingKey { bytes: *bytes }
+                $VerifyingKey { bytes: *bytes,
+                    #[cfg(target_arch = "aarch64")]
+                    tr: { let mut tr = [0; 64]; $crate::hashes::sha3::Shake256::digest(bytes, &mut tr); tr },
+                }
             }
 
             /// The bytes of the key.
@@ -189,7 +195,9 @@ macro_rules! ml_dsa {
                     match backend() {
                         Backend::Scalar => $verify_message(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
                         #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
-                        Backend::Sha3 => $verify_message_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
+                        // Experiment: immutable constructors establish tr = H(pk).
+                        // This is a separate private cached-entry obligation.
+                        Backend::Sha3 => $verify_message_cached_sha3(&self.bytes, m, m_len, c, c_len, sig, &mut scratch, &self.tr),
                         #[cfg(target_arch = "x86_64")]
                         Backend::Avx2 => $verify_message_avx2(&self.bytes, m, m_len, c, c_len, sig, &mut scratch),
                     }
@@ -261,7 +269,10 @@ macro_rules! ml_dsa {
             pub fn from_seed(seed: &[u8; 32]) -> Result<Self, Error> {
                 let mut key = $SigningKey {
                     seed: *seed,
-                    vk: $VerifyingKey { bytes: [0; $pk] },
+                    vk: $VerifyingKey { bytes: [0; $pk],
+                        #[cfg(target_arch = "aarch64")]
+                        tr: [0; 64],
+                    },
                     sk: [0; $sk],
                 };
                 let mut scratch: Scratch = [0; $scratch];
@@ -289,6 +300,10 @@ macro_rules! ml_dsa {
                     return Err(Error::LoopBound);
                     // NO-COVERAGE-END
                 }
+                // Experiment: keygen's tr is SHAKE256(pk, 64). The private
+                // cached entry requires this relation; its proof is pending.
+                #[cfg(target_arch = "aarch64")]
+                key.vk.tr.copy_from_slice(&key.sk[64..128]);
                 Ok(key)
             }
 

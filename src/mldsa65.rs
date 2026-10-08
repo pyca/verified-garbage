@@ -38,6 +38,7 @@ crate::mldsa_common::ml_dsa! {
     verify: crate::arch::mldsa65::vg_mldsa65_verify,
     sign_message: crate::arch::mldsa65::vg_mldsa65_sign_message,
     verify_message: crate::arch::mldsa65::vg_mldsa65_verify_message,
+    verify_message_cached_sha3: crate::arch::mldsa65::vg_mldsa65_verify_message_cached_sha3,
     keygen_sha3: (crate::arch::mldsa65::vg_mldsa65_keygen_sha3, crate::arch::mldsa65::VG_MLDSA65_KEYGEN_SHA3_FEATURES),
     sign_sha3: (crate::arch::mldsa65::vg_mldsa65_sign_sha3, crate::arch::mldsa65::VG_MLDSA65_SIGN_SHA3_FEATURES),
     verify_sha3: (crate::arch::mldsa65::vg_mldsa65_verify_sha3, crate::arch::mldsa65::VG_MLDSA65_VERIFY_SHA3_FEATURES),

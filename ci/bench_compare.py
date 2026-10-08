@@ -280,6 +280,14 @@ def main():
     p.add_argument("--modules", default="", help="space-separated; only benchmark these modules")
     p.add_argument("--shard", default="", help="i/n: only the i-th of n shares of the benchmarks")
     args = p.parse_args()
+    # Experimental branch only: longer N2 ML-DSA measurements and a
+    # sampling profile, through the existing benchmark entry point.
+    profile_mldsa = (os.environ.get("GITHUB_ACTIONS") == "true"
+                     and os.uname().machine == "aarch64" and args.openssl
+                     and set(args.modules.split()) == {"mldsa44", "mldsa65", "mldsa87"})
+    if profile_mldsa:
+        args.warm_up_time = 0.5
+        args.measurement_time = 3.0
     shard, shards = map(int, (args.shard or "1/1").split("/"))
     if not 1 <= shard <= shards:
         p.error("--shard must be i/n with 1 <= i <= n")
@@ -412,6 +420,8 @@ def main():
     if args.summary:
         with args.summary.open("a") as f:
             f.write(report)
+    if profile_mldsa:
+        subprocess.run([sys.executable, str(head / "ci/profile_mldsa.py"), binaries["head"]], check=True)
     return 1 if regressions else 0
 
 

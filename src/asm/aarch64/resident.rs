@@ -1661,7 +1661,7 @@ core::arch::global_asm!(".arch_extension sha3", ".text", ".p2align 6", ".globl _
 ".arch_extension nosha3",
 );
 #[cfg(target_os="linux")]
-core::arch::global_asm!(".arch_extension sha3", ".text", ".p2align 6", ".globl vg_keccak_resident_sha3_internal", ".hidden vg_keccak_resident_sha3_internal", "vg_keccak_resident_sha3_internal:",
+core::arch::global_asm!(".arch_extension sha3", ".text", ".p2align 6", ".globl vg_keccak_resident_sha3_internal", ".hidden vg_keccak_resident_sha3_internal", ".type vg_keccak_resident_sha3_internal, %function", "vg_keccak_resident_sha3_internal:",
         "movz x16, #1, lsl #0",
         "eor3 v25.16b, v20.16b, v15.16b, v10.16b",
         "eor3 v26.16b, v21.16b, v16.16b, v11.16b",
@@ -3318,6 +3318,7 @@ core::arch::global_asm!(".arch_extension sha3", ".text", ".p2align 6", ".globl v
         "dup v26.2d, x16",
         "eor v0.16b, v0.16b, v26.16b",
         "ret",
+".size vg_keccak_resident_sha3_internal, .-vg_keccak_resident_sha3_internal",
 ".arch_extension nosha3",
 );
 unsafe extern "C" {pub(crate) static vg_keccak_resident_sha3_internal: u8;}
