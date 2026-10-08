@@ -15,8 +15,7 @@ def artifacts (v : PublicImpl) : List Artifact := [
     doc := Spec.RsaPkcs1Sig.verifyPrecomputedApi.doc (notes := ["This implementation calls `" ++ v.name ++
       "` with the cached modulus values, then compares the recovered encoding with EMSA-PKCS1-v1_5's \
       encoding of `digest`. It combines the padding result with the public operation's status without \
-      branching on that status. It uses 2152 bytes of stack, including the call's return address and that of its \
-      calls of Montgomery multiplication."])
+      branching on that status. It uses 2144 bytes of stack, including the call's return address."])
     code := Impl.RsaPkcs1Sig.X86_64.Precomputed.code v.name v.code
     contract := Spec.RsaPkcs1Sig.verifyPrecomputedContract X86_64.abi verStack
     stack := verStack

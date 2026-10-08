@@ -9,14 +9,16 @@ import VerifiedGarbage.Proof.Bignum.X86_64.MontFnAdxMont
 /-!
 # The x86-64 RSA functions, with Montgomery multiplication by calls
 
-Each of `vg_rsa_public_precompute`, `vg_rsa_public_precomputed_checked`,
-`vg_rsa_private_crt` and `vg_rsa_recover_primes` (and their variants) calls
+Each of `vg_rsa_public_precompute`, `vg_rsa_private_crt` and
+`vg_rsa_recover_primes` (and their variants) calls
 `vg_rsa_mont_mul` or `vg_rsa_mont_mul_adx` where it used to run their code
 inlined. Its code `c` has the inlined code proven before as `c.inline`
 (`hin`, which the registration evaluates); `Verified.of_inline` gives it
 the contract with 8 bytes of stack, and `ok_of_inline`, `ct_of_inline` the
 shared contract with the return address's slot clear (`Contract.clear`),
-for its callers.
+for its callers. (`vg_rsa_public_precomputed_checked` keeps its
+multiplication inline: with a small public exponent it makes few
+multiplications, and the calls' cost showed in its benchmarks.)
 -/
 
 namespace VG.Proof.Rsa.X86_64
@@ -38,10 +40,6 @@ def CallMont.base : CallMont := ⟨"vg_rsa_mont_mul", Impl.Bignum.X86_64.MontFn.
 
 /-- By calls of `vg_rsa_mont_mul_adx`. -/
 def CallMont.adx : CallMont := ⟨"vg_rsa_mont_mul_adx", Impl.Bignum.X86_64.MontFn.mulAdx, Mont.fnAdx⟩
-
-/-- `Mont.fnAdx` for the final multiplication of the folded public operation. -/
-theorem fnAdx_final_ct : RelCT isa (Two GoodL) (Mont.fnAdx.mm Impl.Bignum.X86_64.Public.aY Impl.Bignum.X86_64.Public.aX Impl.Bignum.X86_64.Public.aY) (fun _ _ => True) :=
-  RelCT.ofW (mmFnAdx_ct (by unfold Opnds; decide) (by taint_decide))
 
 /-- `Verified.of_inline` for a contract `Sig.contract` builds with 8 bytes
 of stack, from the shared contract `k₀` it implies. -/
@@ -73,26 +71,6 @@ theorem pc_call_ct (M : Mont) {c : Prog isa} (hc : c.InlineOk = true) (hin : c.i
     ConstantTime isa pcContract.clear.pre pcContract.pub c :=
   ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := (hin ▸ pcCode_correct M hmx) s h; ⟨t, s', e⟩)
     (fun _ _ h => h.1 .rsp (by simp)) (hin ▸ pcCode_constantTime M)
-
-/-! ## `vg_rsa_public_precomputed_checked` -/
-
-theorem pd_call_verified {c : Prog isa} (hc : c.InlineOk = true)
-    (hcor : ∀ s, pdChkContract.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s')
-    (hct : ConstantTime isa pdChkContract.pre pdChkContract.pub c.inline) :
-    Verified target c (Spec.Rsa.publicPrecomputedCheckedContract abi 8) :=
-  Verified.of_inline_sig hc hcor hct precomputedChecked_implies8 (fun _ h => Sig.clear_of_pre h)
-    (fun _ _ _ _ h => Sig.rsp_of_pub h) pdChk_patch
-
-theorem pd_call_ok {c : Prog isa} (hc : c.InlineOk = true)
-    (hcor : ∀ s, pdChkContract.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s') :
-    ∀ s, pdChkContract.clear.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s' :=
-  ok_of_inline hc hcor pdChk_patch
-
-theorem pd_call_ct {c : Prog isa} (hc : c.InlineOk = true)
-    (hcor : ∀ s, pdChkContract.pre s → ∃ t s', Exec isa c.inline s t s' ∧ abiPreserved s s' ∧ pdChkContract.post s s')
-    (hct : ConstantTime isa pdChkContract.pre pdChkContract.pub c.inline) :
-    ConstantTime isa pdChkContract.clear.pre pdChkContract.pub c :=
-  ct_of_inline hc (fun s h => let ⟨t, s', e, _⟩ := hcor s h; ⟨t, s', e⟩) (fun _ _ h => h.1 .rsp (by simp)) hct
 
 /-! ## `vg_rsa_private_crt` -/
 

@@ -55,8 +55,8 @@ theorem call_pre {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (
     State.callEntry_gpr _ (show Reg.r9 ≠ .rsp by decide), hdi, hsi, hdx, hcx, h8, h9, hsp,
     stackArgAddr_entry hsp, hE 0 (by decide), hE 1 (by decide), hE 2 (by decide), hE 3 (by decide),
     Nat.reduceMul, hw0, hw1, hw2, hw3, fb_sub8]
-  have ⟨hK1, hK2, _⟩ := kb_toNat hp.toPreV
-  have e1 : verStack = 2152 := rfl
+  have ⟨hK1, hK2⟩ := kb_toNat hp.toPreV
+  have e1 : verStack = 2144 := rfl
   have e2 : oEM1 = 80 := rfl
   have e3 : frameBytes = 2136 := rfl
   have hk1 := hp.k1
@@ -64,7 +64,7 @@ theorem call_pre {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (
   have sM : Region.Sub (em1R s) (stkR s) := frame_sub s (by unfold oEM1 frameBytes; omega)
   have sA : Region.Sub ⟨fb s, 32⟩ (stkR s) := by
     have := frame_sub s (d := 0) (n := 32) (by decide); simpa only [off, BitVec.add_zero] using this
-  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := kb_sub s
+  have sR : Region.Sub ⟨kb s, 8⟩ (stkR s) := Region.sub_prefix (by decide)
   have hfb : fb s = kb s + BitVec.ofNat 64 8 := fb_eq s
   have dMA : (em1R s).Disjoint ⟨fb s, 32⟩ := Offset.disjoint_base _ (by decide) (by omega)
   have dRM : (⟨kb s, 8⟩ : Region).Disjoint (em1R s) := by
@@ -83,37 +83,6 @@ theorem call_pre {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (
     dKg.sub_left sR, hp.dKs.sub_left sR, dRA, wM, hp.preWrap, hp.wE, wG, hp.wS, ⟨hk1, hk2⟩, hp.preLen, trivial, hp.L1,
     hp.L2, hp.hsl⟩
 
-/-- The call's buffers are apart from the return address of its calls. -/
-theorem call_clear {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (hsp : t.gpr .rsp = fb s) :
-    Clear (hole ((t.callEntry.withRegions (callRd s) (pubWr s)).gpr .rsp))
-      (t.callEntry.withRegions (callRd s) (pubWr s)) := by
-  simp only [State.withRegions_gpr, State.callEntry_rsp, hsp, fb_sub8]
-  have hk2 := hp.k2
-  have sH := hole_sub s
-  intro r hr
-  simp only [State.withRegions_rd, State.withRegions_wr, callRd, pubWr, em1R, List.cons_append,
-    List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact hp.preStack.sub_right sH
-  · exact (hp.dKe.sub_left sH).symm
-  · exact ((show (stkR s).Disjoint ⟨stackArg s 1, (s.gpr .rsi).toNat⟩ by rw [← hsig]; exact hp.dKg).sub_left
-      sH).symm
-  · have := frame_hole hp.toPreV (s := s) (d := 0) (n := 32) (by decide)
-    simpa only [off, BitVec.add_zero] using this
-  · exact frame_hole hp.toPreV (by unfold oEM1 frameBytes; omega)
-  · exact (hp.dKs.sub_left sH).symm
-
-/-- The slots are apart from `EM₁`, the working space and the return
-addresses. -/
-theorem slot_apart2 {s : State} (hp : PreV s) {d : Nat} (hd : 32 ≤ d) (hd' : d + 8 ≤ oEM1) :
-    ∀ r ∈ pubWr s ++ [below (fb s) 16], (⟨off (fb s) d, 8⟩ : Region).Disjoint r := by
-  have hk2 := hp.k2
-  intro r hr
-  simp only [pubWr, em1R, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · exact Offset.disjoint _ (.inl (by omega)) (by unfold oEM1 at *; omega) (by unfold oEM1 at *; omega)
-  · exact (hp.dKs.sub_left (frame_sub s (by unfold oEM1 frameBytes at *; omega)))
-  · exact Offset.disjoint_below (fb s) (n := 16) (by unfold oEM1 at *; omega)
 
 theorem call_covers {s t : State} (hp : Pre s) (hsig : stackArg s 2 = s.gpr .rsi) (he : Env s t) :
     Covers (callRd s ++ pubWr s) (t.rd ++ t.wr) ∧ Covers (pubWr s) t.wr := by
@@ -171,12 +140,10 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : Pre s) (hsig : stackArg s 2
           (Spec.Rsa.bytesAt s.mem (stackArg s 1) (s.gpr .rsi).toNat))) ∧
       (∀ r ∈ calleeSaved, t'.gpr r = t.gpr r) ∧ t'.mxcsr.extractLsb' 6 10 = t.mxcsr.extractLsb' 6 10 := by
   obtain ⟨hc, hw⟩ := call_covers hp hsig he
-  have q := Pc.call_pre (s := s) (t := t) hp hsig he.rsp hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9
-  refine WP.call_mx (s := t) (k := pdChkContract.clear) (rd := callRd s) (wr := pubWr s) v.ok v.nosp
-    (by rw [v.depth]; decide) ⟨q, call_clear hp hsig he.rsp⟩ hc hw ?_
+  refine WP.call_mx (s := t) (k := ⟨pdContract.pre, pdChkContract.post, pdContract.pub⟩) (rd := callRd s) (wr := pubWr s) v.ok v.nosp (by rw [v.depth]; decide)
+    (Pc.call_pre (s := s) (t := t) hp hsig he.rsp hw0 hw1 hw2 hw3 hdi hsi hdx hcx h8 h9) hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, hg₂, hpost⟩ hmx
   rw [v.depth, he.rsp] at hf
-  simp only [Nat.reduceAdd, Nat.reduceMul] at hf
   have hE : stackArg (t.callEntry.withRegions (callRd s) (pubWr s)) 0 = stackArg s 1 :=
     (stackArg_entry he.rsp _ _ (by omega)).trans hw0
   have hfE : Frame [stkR s, scrR s] s.mem t.callEntry.mem :=
@@ -186,7 +153,7 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : Pre s) (hsig : stackArg s 2
   have b : ∀ {p : Addr} {len : Nat}, (stkR s).Disjoint ⟨p, len⟩ → (scrR s).Disjoint ⟨p, len⟩ → len ≤ 2 ^ 64 →
       Spec.Rsa.bytesAt t.callEntry.mem p len = Spec.Rsa.bytesAt s.mem p len := fun hk hs hl =>
     bytes_of_frame hfE hk hs hl
-  simp only [Contract.clear, pdChkContract, State.withRegions_gpr, State.withRegions_mem,
+  simp only [pdChkContract, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rcx ≠ .rsp by decide),
     State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.r8 ≠ .rsp by decide),
@@ -200,12 +167,12 @@ theorem call_ok (v : PublicImpl) {s t : State} (hp : Pre s) (hsig : stackArg s 2
     rcases hr with rfl | rfl | rfl
     · exact .inl (frame_sub s (by unfold oEM1 frameBytes; omega))
     · exact .inr (sub_refl _)
-    · exact .inl (ret2_sub s)
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sN
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sK
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sE
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sEl
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sH
-  · rw [slot_keep hf (slot_apart2 hp.toPreV (by decide) (by decide))]; exact he.sD
+    · exact .inl (below_sub s)
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sN
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sK
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sE
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sEl
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sH
+  · rw [slot_keep hf (slot_apart hp.toPreV (by decide) (by decide))]; exact he.sD
 
 end VG.Proof.RsaPkcs1Sig.X86_64.Pc
