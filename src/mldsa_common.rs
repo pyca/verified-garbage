@@ -107,7 +107,14 @@ macro_rules! ml_dsa {
             #[cfg(not(target_arch = "x86_64"))]
             const AVX2: &[$crate::cpu::Features] = &[];
             Backend::select(
-                $crate::hashes::sha3::Backend::detected(),
+                {
+                    // Experiment: select the ML-DSA SHA3 path when the above
+                    // generated feature check succeeds, independently of hash dispatch.
+                    #[cfg(all(target_arch = "aarch64", feature = "cpu-features-env"))]
+                    { $crate::hashes::sha3::Backend::Sha3 }
+                    #[cfg(not(all(target_arch = "aarch64", feature = "cpu-features-env")))]
+                    { $crate::hashes::sha3::Backend::detected() }
+                },
                 $crate::cpu::detected(),
                 const { $crate::cpu::Features::all(AVX2) },
             )

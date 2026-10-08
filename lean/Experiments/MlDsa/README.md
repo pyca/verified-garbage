@@ -5,3 +5,5 @@ This branch exists only to measure the prototype on N2 CI. It is not a productio
 Candidate: fused3 NTT, scaled products, vector rounding, adaptive five-block/four-candidate vector matrix sampler, adaptive bounded sampler, four-way ExpandMask, wide copies, vector keygen masks, and wide zeroize. The default and forced-SHA3 paths remain selectable through the existing test override. No specification or TCB changes.
 
 Local known-answer/Wycheproof tests passed, including the forced-SHA3 path. Additional external differential tests compare arithmetic and sampler outputs against main and check buffer canaries. Proofs and production dispatch follow only after the performance target is met. Measurements remain outside the repository.
+
+Second screen adds grouped bounded sampling, vector packing/unpacking and verification masks, strict-schedule hint reuse, and fused dot products. In benchmark builds, ML-DSA now selects SHA3 automatically after checking its generated requirements, allowing an unrestricted same-job AWS-LC comparison. Early-rejection experiments are excluded.

@@ -1,0 +1,269 @@
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
+import VerifiedGarbage.Impl.Sha3.AArch64.Sha3.Vector.Boundary
+import VerifiedGarbage.TCB.Rust
+import VerifiedGarbage.TCB.AArch64.Print
+import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.KeyGen
+import VerifiedGarbage.Variants.Keccak.AArch64.Sha3
+open VG VG.AArch64
+namespace WindowMask
+open VG.Impl.MlDsa.AArch64.Call
+-- Fixed-address four-vector mask per iteration. The sampler returns w0 in {0,1}.
+def maskN (a : Ptr) (count : Nat) : Prog isa :=
+ .seq (.block ([.movz .x .x8 0 0,.sub .w .x8 .x8 .x0,.vop (.dup .s4 .v0 .x8)] ++
+  lea .x1 a.1 a.2 ++ [.movz .x .x2 (BitVec.ofNat 16 (count/16)) 0])) <|
+ .loop (.block ((List.range 4).flatMap (fun i =>
+  [.ldrq .v1 .x1 (16*i),.vop (.logic .and .v1 .v1 .v0),.strq .v1 .x1 (16*i)]) ++
+  [.addImm .x .x1 .x1 64,.subImm .x .x2 .x2 1])) (.nonzero .x .x2)
+def mask4 (a : Ptr) : Prog isa := maskN a 1024
+def sampled (call : Prog isa) (a : Ptr) : Prog isa :=
+ .seq call (.seq (.block and24) (maskN a 256))
+end WindowMask
+
+
+/-!
+# ML-DSA on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
+
+`keyGen P p (seed = x0, pk = x1, sk = x2, scratch = x3) -> w0`:
+`ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6) of the parameter set
+`p`, with `ξ` at `seed`, as calls of the primitives `P` and of the SHA-3
+sponge functions (`Frag.lean`). It keeps `seed` in `x25`, `pk` in `x26`,
+`sk` in `x27` and `scratch` in `x28`, and the AND of the results of the
+samplers in `x24`.
+
+The layout of `scratch` (in bytes): the Keccak state at 0 and the sponge
+functions' working space at 200, the saved registers at 840; `k` and `ℓ`
+at 896 (`oKL`); `(ρ, ρ′, K)` at 1024 (`oHX`, 128 bytes); the seed of
+`RejNTTPoly` at 1152 (`oSA`, 34 bytes) and of `RejBoundedPoly` at 1216
+(`oSB`, 66 bytes); the working space of the primitives at 2048 (2048 bytes);
+and polynomials of 1024 bytes from 4096 (`oP j`): `Â[r, s]` is polynomial
+`rℓ + s`, `s₁[j]` (then `ŝ₁[j]`) polynomial `kℓ + j`, `s₂[i]` polynomial
+`kℓ + ℓ + i`, and `t`, `t₁` and `t₀` the three after them.
+
+1. `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ, 128)`, and `ρ` and `ρ′` to the seeds.
+2. `Â[r, s] = RejNTTPoly(ρ ‖ s ‖ r)` and `s₁ ‖ s₂ = RejBoundedPoly(ρ′ ‖ r ‖ 0)`
+   (`ExpandA`, `ExpandS`). After each, `x24 ← x24 ∧ result`, and the
+   polynomial is ANDed with `-result` (`mask`): it is zero if the sampler
+   failed, so that every polynomial is reduced, and small, whatever the
+   samplers return, without a branch.
+3. `ρ` and `K` to `sk`; `s₁` and `s₂`, `BitPack`ed, to `sk`; `ŝ₁ = NTT(s₁)`.
+4. For each row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, `Power2Round`, and
+   `t₁` `SimpleBitPack`ed to `pk`, `t₀` `BitPack`ed to `sk`; `ρ` to `pk`.
+5. `tr = H(pk, 64)` to `sk`; return `x24`.
+
+Every address and branch depends only on the pointers, but for what the
+samplers leak (`ρ` and which half-bytes `RejBoundedPoly` rejects).
+-/
+
+namespace WindowKeygen
+open VG.Impl.MlDsa.AArch64.KeyGen
+
+variable (c : Impl.Sha3.AArch64.Callee)
+
+open VG.AArch64 VG.Impl.MlDsa.AArch64.Call
+open VG.Impl.MlKem.AArch64 (copy32)
+open VG.Spec.MlDsa (Params bitlen)
+
+/-! ## The layout of the working space -/
+
+def oKL : Nat := 896
+def oHX : Nat := 1024
+def oSA : Nat := 1152
+def oSA4 : Nat := 1408
+def oSB : Nat := 1216
+def oSS : Nat := 2048
+/-- Polynomial `j`. -/
+def oP (j : Nat) : Nat := 4096 + 1024 * j
+
+/-- `Â[r, s]`, entry `e = rℓ + s`. -/
+abbrev aP (e : Nat) : Ptr := sc (oP e)
+/-- `s₁ ‖ s₂`, entry `r`. -/
+abbrev sP (p : Params) (r : Nat) : Ptr := sc (oP (p.k * p.ℓ + r))
+abbrev tP (p : Params) : Ptr := sc (oP (p.k * p.ℓ + p.ℓ + p.k))
+abbrev t1P (p : Params) : Ptr := sc (oP (p.k * p.ℓ + p.ℓ + p.k + 1))
+abbrev t0P (p : Params) : Ptr := sc (oP (p.k * p.ℓ + p.ℓ + p.k + 2))
+
+/-- The eight KiB four-way sampler scratch follows the live polynomials. -/
+def oR4 (p : Params) : Nat := oP (p.k*p.ℓ+p.ℓ+p.k+3)
+
+/-- The length of a packed polynomial of `s₁` or `s₂`, `32 · bitlen (2η)`. -/
+def lenS (p : Params) : Nat := 32 * bitlen (2 * p.η)
+/-- Where `t₀` starts in `sk`. -/
+def oT0 (p : Params) : Nat := 128 + lenS p * (p.ℓ + p.k)
+
+/-! ## The pieces -/
+
+/-- `(ρ, ρ′, K) = H(ξ ‖ k ‖ ℓ, 128)`, `ρ` to the seed of `RejNTTPoly`, and
+`ρ′ ‖ 0` to that of `RejBoundedPoly`. -/
+def seedsWith (p : Params) : Prog isa :=
+  .seq (.block (setB (sc oKL) p.k ++ setB (sc (oKL + 1)) p.ℓ))
+    (.seq ((shake256With c) [⟨.x25, 0, 32⟩, ⟨.x28, oKL, 2⟩] [⟨.x28, oHX, 128⟩])
+      (.block (copy32 .x28 oHX .x28 oSA ++ copy32 .x28 (oHX + 32) .x28 oSB ++
+        copy32 .x28 (oHX + 64) .x28 (oSB + 32) ++ setB (sc (oSB + 65)) 0)))
+
+/-- `Â[e / ℓ, e % ℓ] = RejNTTPoly(ρ ‖ e % ℓ ‖ e / ℓ)`. -/
+def expA (P : Prims) (p : Params) (e : Nat) : Prog isa :=
+  .seq (.block (setB (sc (oSA + 32)) (e % p.ℓ) ++ setB (sc (oSA + 33)) (e / p.ℓ)))
+    (WindowMask.sampled (rejNttAt P (sc oSS) (sc oSA) (aP e)) (aP e))
+
+/-- Copy rho to one 34-byte seed, allowing the unaligned seed stride. -/
+def copySeed4 (j : Nat) : List Instr :=
+  lea .x10 .x28 (oSA4+34*j) ++ Impl.MlKem.AArch64.copy32 .x28 oSA .x10 0
+
+def setSR (p : Params) (e j : Nat) : List Instr :=
+  setB (sc (oSA4+34*j+32)) ((e+j)%p.ℓ) ++ setB (sc (oSA4+34*j+33)) ((e+j)/p.ℓ)
+
+def seedSlot4 (p : Params) (e j : Nat) : Prog isa :=
+  .seq (.block (copySeed4 j)) (.block (setSR p e j))
+
+def expA4 (P : Prims) (p : Params) (g : Nat) : Prog isa :=
+  .seq (seqR (seedSlot4 p (4*g)) 0 4)
+    (.seq (rej4At P (sc (oR4 p)) (sc oSA4) (aP (4*g)))
+      (.seq (.block and24) (WindowMask.mask4 (aP (4*g)))))
+
+def expAll (P : Prims) (p : Params) : Prog isa :=
+  .seq (seqR (expA4 P p) 0 (p.k*p.ℓ/4))
+    (seqR (expA P p) (4*(p.k*p.ℓ/4)) (p.k*p.ℓ%4))
+
+/-- Entry `r` of `s₁ ‖ s₂`: `RejBoundedPoly(ρ′ ‖ r ‖ 0)`. -/
+def expS (P : Prims) (p : Params) (r : Nat) : Prog isa :=
+  .seq (.block (setB (sc (oSB + 64)) r))
+    (WindowMask.sampled (rejBoundedAt P (sc oSS) (sc oSB) p.η (sP p r)) (sP p r))
+
+/-- `ρ` to `pk` and `sk`, and `K` to `sk`. -/
+def copies : List Instr :=
+  copy32 .x28 oHX .x26 0 ++ copy32 .x28 oHX .x27 0 ++ copy32 .x28 (oHX + 96) .x27 32
+
+/-- Entry `r` of `s₁ ‖ s₂`, packed to `sk`. -/
+def packS (P : Prims) (p : Params) (r : Nat) : Prog isa :=
+  bitPackAt P (sP p r) p.η p.η (.x27, 128 + lenS p * r) (lenS p)
+
+/-- `ŝ₁[j] = NTT(s₁[j])`. -/
+def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P (sc oSS) (sP p j)
+
+/-- Row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, and its `t₁` to `pk` and `t₀` to `sk`. -/
+def row (P : Prims) (p : Params) (i : Nat) : Prog isa :=
+  .seq (mulAt P (tP p) (aP (p.ℓ * i)) (sP p 0))
+    (.seq (seqR (fun j => mulAddAt P (tP p) (aP (p.ℓ * i + j)) (sP p j)) 1 (p.ℓ - 1))
+    (.seq (invNttAt P (sc oSS) (tP p)) (.seq (addAt P (tP p) (sP p (p.ℓ + i)))
+    (.seq (power2RoundAt P (tP p) (t1P p) (t0P p))
+    (.seq (simpleBitPackAt P (t1P p) 1023 (.x26, 32 + 320 * i) 320)
+      (bitPackAt P (t0P p) 4095 4096 (.x27, oT0 p + 416 * i) 416))))))
+
+/-- `tr = H(pk, 64)` to `sk`. -/
+def trHashWith (p : Params) : Prog isa := (shake256With c) [⟨.x26, 0, p.pkLen⟩] [⟨.x27, 64, 64⟩]
+
+/-- Everything after the samplers. -/
+def restWith (P : Prims) (p : Params) : Prog isa :=
+  .seq (.block copies) (.seq (seqR (packS P p) 0 (p.ℓ + p.k)) (.seq (seqR (nttS P p) 0 p.ℓ)
+    (.seq (seqR (row P p) 0 p.k) ((trHashWith c) p))))
+
+/-- `vg_mldsa*_keygen` for the parameter set `p`, calling the primitives `P`. -/
+def keyGenWith (P : Prims) (p : Params) : Prog isa :=
+  .seq (.block pro) (.seq ((seedsWith c) p) (.seq (expAll P p)
+    (.seq (seqR (expS P p) 0 (p.ℓ + p.k)) (.seq ((restWith c) P p) (.block epi)))))
+
+def seeds := seedsWith .scalar
+def trHash := trHashWith .scalar
+def rest := restWith .scalar
+def keyGen := keyGenWith .scalar
+
+end WindowKeygen
+
+open VG VG.AArch64
+open VG.Impl.MlKem.AArch64 (mov copy32)
+open VG.Impl.MlDsa.AArch64.Sample
+namespace ExpBoundedFour
+open VG.Impl.Sha3.AArch64.Neon.Pair (load store roundsProg)
+open VG.Impl.Sha3.AArch64.Sha3.Vector (vreg)
+
+def counts : Nat := 7904
+def initCounts : List Instr := [.movz .x .x4 256 0] ++
+ (List.range 4).map (fun k => .str .x .x4 .x19 (counts+8*k))
+def absorbPair (p : Nat) : List Instr :=
+ [.addImm .x .x2 .x19 (400*p),.addImm .x .x3 .x20 (132*p),.addImm .x .x4 .x3 66] ++
+ (List.range 8).flatMap Rej4.seedWord ++
+ [.ldrb .x6 .x3 64,.ldrb .x8 .x3 65,.lsl .x .x8 .x8 8,.add .x .x6 .x6 .x8,
+  .ldrb .x7 .x4 64,.ldrb .x8 .x4 65,.lsl .x .x8 .x8 8,.add .x .x7 .x7 .x8] ++
+ Rej4.tailAdd ++ [.vop (.dup .d2 .v0 .x6),.vop (.ins .d2 .v0 1 .x7),.strq .v0 .x2 128,
+ .movz .x .x9 0x8000 3,.vop (.dup .d2 .v0 .x9),.strq .v0 .x2 256]
+def squeeze (a b : Reg) : List Instr := (List.range 17).flatMap (fun i =>
+ [.umov .x .x6 (vreg i) 0,.umov .x .x7 (vreg i) 1,.str .x .x6 a (8*i),.str .x .x7 b (8*i)])
+def pair (sha3 : Bool) (p a b : Reg) : Prog isa :=
+ .seq (.block (load p)) <| .seq (roundsProg sha3 24) (.block (store p++squeeze a b))
+def squeezeStep (sha3 : Bool) : Prog isa :=
+ .seq (pair sha3 .x22 .x24 .x25) <| .seq (pair sha3 .x23 .x26 .x27) <|
+ .block [.addImm .x .x24 .x24 136,.addImm .x .x25 .x25 136,
+ .addImm .x .x26 .x26 136,.addImm .x .x27 .x27 136,.subImm .x .x28 .x28 1]
+def squeezeTwo (sha3 : Bool) (off : Nat) : Prog isa :=
+ .seq (.block ([mov .x22 .x19,.addImm .x .x23 .x19 400,
+ .addImm .x .x24 .x19 (840+off),.addImm .x .x25 .x19 (1384+off),
+ .addImm .x .x26 .x19 (1928+off),.addImm .x .x27 .x19 (2472+off),
+ .movz .x .x28 2 0])) (.loop (squeezeStep sha3) (.nonzero .x .x28))
+def parse (eta k off : Nat) : Prog isa :=
+ .seq (.block ([.addImm .x .x2 .x19 (840+544*k+off),
+ .addImm .x .x3 .x21 (1024*k),.ldr .x .x4 .x19 (counts+8*k),
+ .movz .x .x6 256 0,.sub .x .x6 .x6 .x4,.lsl .x .x6 .x6 2,.add .x .x3 .x3 .x6,
+ .movz .x .x5 272 0]++movQ .x9++[.movz .x .x10 (BitVec.ofNat 16 eta) 0,
+ .movz .x .x11 15 0,.movz .x .x15 (BitVec.ofNat 16 (rbBound eta)) 0,
+ .movz .x .x16 10 0,.movz .x .x17 5 0])) <|
+ .seq (.ite (.zero .x .x4) (.block [])
+ (.loop (.seq (rbBody eta) (.block [.mul .x .x8 .x4 .x5])) (.nonzero .x .x8))) <|
+ .block [.str .x .x4 .x19 (counts+8*k)]
+def batch (eta off : Nat) : Prog isa :=
+ .seq (parse eta 0 off) <| .seq (parse eta 1 off) <|
+ .seq (parse eta 2 off) (parse eta 3 off)
+def flags : List Instr := [.ldr .x .x27 .x19 counts] ++
+ (List.range 3).flatMap (fun k => [.ldr .x .x6 .x19 (counts+8*(k+1)),
+ .logic .orr .x .x27 .x27 .x6])
+def maskOne (k : Nat) : Prog isa :=
+ .seq (.block [.ldr .x .x4 .x19 (counts+8*k),.subImm .x .x4 .x4 1,
+ .lsr .x .x4 .x4 63,.movz .x .x6 0 0,.sub .w .x4 .x6 .x4,
+ .vop (.dup .s4 .v0 .x4),.addImm .x .x3 .x21 (1024*k),.movz .x .x5 64 0]) <|
+ .loop (.block [.ldrq .v1 .x3 0,.vop (.logic .and .v1 .v1 .v0),.strq .v1 .x3 0,
+ .addImm .x .x3 .x3 16,.subImm .x .x5 .x5 1]) (.nonzero .x .x5)
+def sampler (sha3 mask : Bool) (eta : Nat) : Prog isa :=
+ .seq (.block (Rej4.pro++Rej4.zeroStates++absorbPair 0++absorbPair 1++initCounts)) <|
+ .seq (squeezeTwo sha3 0) <| .seq (batch eta 0) <| .seq (.block flags) <|
+ .seq (.ite (.zero .x .x27) (.block [])
+   (.seq (squeezeTwo sha3 272) <| .seq (batch eta 272) (.block flags))) <|
+ .seq (if mask then .seq (maskOne 0) <| .seq (maskOne 1) <| .seq (maskOne 2) (maskOne 3) else .block []) <|
+ .block ([.subImm .x .x27 .x27 1,.lsr .x .x27 .x27 63]++Rej4.epi)
+
+open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Call
+open VG.Spec.MlDsa (Params)
+def seedSlot (r k : Nat) : List Instr :=
+ lea .x10 .x28 (1408+66*k) ++ copy32 .x28 oSB .x10 0 ++
+ copy32 .x28 (oSB+32) .x10 32 ++ setB (sc (1408+66*k+64)) (r+k) ++ setB (sc (1408+66*k+65)) 0
+
+def symbol (c : Impl.Sha3.AArch64.Callee) (eta : Nat) : String :=
+ "vg_mldsa_rej_bounded_poly4_eta"++toString eta++c.suffix
+
+def group (c : Impl.Sha3.AArch64.Callee) (p : Params) (g : Nat) : Prog isa :=
+ .seq (.block ((List.range 4).flatMap (seedSlot (4*g)))) <|
+ .seq (callAt (symbol c p.η) (sampler c.pairedSha3 true p.η)
+ [(.x0,.ptr (sc 1408)),(.x1,.ptr (sP p (4*g))),(.x2,.ptr (sc (oR4 p)))]) (.block and24)
+
+def expAllS (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
+ .seq (seqR (group c p) 0 ((p.ℓ+p.k)/4))
+ (seqR (WindowKeygen.expS P p) (4*((p.ℓ+p.k)/4)) ((p.ℓ+p.k)%4))
+
+def keygen (c : Impl.Sha3.AArch64.Callee) (p : Params) : Prog isa :=
+ let P := primsWith c
+ .seq (.block VG.Impl.MlDsa.AArch64.KeyGen.pro) <| .seq (seedsWith c p) <| .seq (WindowKeygen.expAll P p) <|
+ .seq (expAllS c P p) <| .seq (restWith c P p) (.block VG.Impl.MlDsa.AArch64.KeyGen.epi)
+end ExpBoundedFour
+
+def main : IO Unit := do
+ let sha3 : Impl.Sha3.AArch64.Callee := {
+  name := "vg_keccak_f1600_sha3"
+  code := Impl.Sha3.AArch64.Sha3.Vector.permute
+  suffix := "_sha3"
+  pairedSha3 := true }
+ for (arch,c) in [("baseline",Impl.Sha3.AArch64.Callee.scalar),("sha3",sha3)] do
+  for eta in [2,4] do
+   for (tag,mask) in [("raw",false),("masked",true)] do
+    IO.FS.writeFile ("/tmp/vg-mldsa-bounded4-"++toString eta++"-"++tag++"-"++arch++".body")
+     (String.join ((printer.function (ExpBoundedFour.sampler c.pairedSha3 mask eta)).map (Rust.line printer.call)))
+  for (name,p) in [("44",Spec.MlDsa.mlDsa44),("65",Spec.MlDsa.mlDsa65),("87",Spec.MlDsa.mlDsa87)] do
+   IO.FS.writeFile ("/tmp/vg-mldsa-bounded4-vmask-keygen"++name++"-"++arch++".body")
+    (String.join ((printer.function (ExpBoundedFour.keygen c p)).map (Rust.line printer.call)))
