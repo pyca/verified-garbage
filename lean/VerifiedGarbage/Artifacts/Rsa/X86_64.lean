@@ -41,13 +41,11 @@ def artifacts : List Artifact := [
     target := X86_64.target
     name := Spec.Rsa.publicPrecomputeApi.name ++ "_adx"
     doc := Spec.Rsa.publicPrecomputeApi.doc
-      (notes := ["`vg_rsa_public_precompute`'s code, with Montgomery multiplication by calls of \
-        `vg_rsa_mont_mul_adx`."])
-    code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.adx.mm
-    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Rsa.X86_64.pc_call_verified Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) rfl
-      (by decide +kernel)
+      (notes := ["`vg_rsa_public_precompute`'s code, with the Montgomery squaring of \
+        `vg_rsa_public_precomputed_checked_adx`."])
+    code := Impl.Rsa.X86_64.Precompute.code Proof.Bignum.X86_64.Mont.adxSquare.mm
+    contract := Spec.Rsa.publicPrecomputeContract X86_64.abi
+    verified := Proof.Bignum.X86_64.precompute_verified Proof.Bignum.X86_64.Mont.adxSquare (by decide +kernel)
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputedCheckedApi with
