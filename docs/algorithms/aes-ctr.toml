@@ -1,0 +1,5 @@
+name = "AES-CTR (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Aes", "Ctr"]
+modules = ["src/aes_ctr.rs"]
+asm = ["aes_ctr"]

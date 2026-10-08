@@ -1,0 +1,5 @@
+name = "RFC 3686, Using Advanced Encryption Standard (AES) Counter Mode With IPsec Encapsulating Security Payload (ESP) (the AES-CTR test vectors in Section 6)"
+directories = ["rfc3686"]
+url = "https://www.rfc-editor.org/rfc/rfc3686.txt"
+sha256 = "c8759b088f1db8bf4c1077336c9de0521c34b3e895b9742000b6044e55f7a7c1"
+retrieved = 2026-10-08
