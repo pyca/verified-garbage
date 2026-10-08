@@ -2,12 +2,14 @@
 //! (`vg_ecdsa_secp256k1_sha256_sign`, which calls `vg_ecdsa_secp256k1_sign`), public
 //! keys (`vg_ec_secp256k1_public_key`), and verification (`vg_ecdsa_secp256k1_verify`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{Error, Secp256k1, SignatureHash, SigningKey, sealed};
 use crate::arch::ec_secp256k1::vg_ec_secp256k1_public_key;
 use crate::arch::ecdsa_secp256k1::vg_ecdsa_secp256k1_verify;
 use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign;
+#[cfg(target_arch = "aarch64")]
+use crate::arch::ecdsa_secp256k1_sha256::vg_ecdsa_secp256k1_sha256_sign_sha2;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::ecdsa_secp256k1_sha256::{
     vg_ecdsa_secp256k1_sha256_sign_avx2, vg_ecdsa_secp256k1_sha256_sign_shani,
@@ -44,6 +46,8 @@ impl sealed::Functions<Secp256k1> for Sha256 {
     fn sign(d: &[u8; 32], digest: &[u8; 32]) -> Result<[u8; 64], Error> {
         let sign = match Sha256Backend::select(crate::cpu::detected()) {
             Sha256Backend::Scalar => vg_ecdsa_secp256k1_sha256_sign,
+            #[cfg(target_arch = "aarch64")]
+            Sha256Backend::Sha2 => vg_ecdsa_secp256k1_sha256_sign_sha2,
             #[cfg(target_arch = "x86_64")]
             Sha256Backend::ShaNi => vg_ecdsa_secp256k1_sha256_sign_shani,
             #[cfg(target_arch = "x86_64")]

@@ -118,14 +118,14 @@ impl Curve for P521 {
 }
 
 /// The curve secp256k1 (SEC 2 version 2.0, §2.4.1).
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Secp256k1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl sealed::Sealed for Secp256k1 {}
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 impl Curve for Secp256k1 {
     type PrivateKey = [u8; 32];
     type PublicKey = [u8; 65];
