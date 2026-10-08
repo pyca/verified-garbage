@@ -34,7 +34,7 @@ theorem projective_mask_or (p q : Prop) [Decidable p] [Decidable q] :
   by_cases hp : p <;> by_cases hq : q <;> simp [mask, hp, hq]
 
 /-- The public-coordinate comparisons leave their combined mask in `x2`. -/
-theorem projectiveMatch_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+theorem projectiveMatch_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveMatch c)) s fun t =>
       t.gpr .x2 = mask (sv c base s W = 0 ∨
         (sv c base s K < sv c base s MN ∧ sv c base s XN = 0)) ∧
@@ -67,7 +67,7 @@ theorem projectiveMatch_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s 
 
 
 /-- The comparisons, nonzero test, return value and ABI restoration. -/
-theorem projectiveChecks_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem projectiveChecks_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     {g : Reg → BitVec 64} (hsv : Spill.Saved base g VG.Impl.Ecdsa.AArch64.Cfg.saved s.mem)
     (A : Prop) [Decidable A] (hf : word s.mem base (c.sl FLAG) = mask A) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveChecks c)) s fun t =>

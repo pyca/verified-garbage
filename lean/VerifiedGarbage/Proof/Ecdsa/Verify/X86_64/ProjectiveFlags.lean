@@ -24,7 +24,7 @@ private theorem saveMask_ok (s : State) (dst src : Reg) :
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   simp only [RegUpd.gpr_setReg, hr, ite_false]
 
-theorem projectiveMatch_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+theorem projectiveMatch_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveMatch c)) s fun t =>
       t.gpr .rdx = mask (sv c base s W = 0 ∨
         (sv c base s K < sv c base s MN ∧ sv c base s XN = 0)) ∧
@@ -57,7 +57,7 @@ theorem projectiveMatch_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s 
     by_cases h3 : sv c base s W = 0 <;> simp [mask,h1,h2,h3]
 
 /-- Combine the projective comparisons with the input checks and reject infinity. -/
-theorem projectiveChecks_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem projectiveChecks_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     {g : Reg → BitVec 64} (saved : Spill.Saved s.mem base g VG.Impl.Ecdsa.X86_64.Cfg.saved)
     (A : Prop) [Decidable A] (flag : word s.mem base (c.sl FLAG) = mask A) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveChecks c)) s fun t =>

@@ -220,20 +220,20 @@ theorem flag_unch_chain {base : Addr} {m m' : Mem} (hu : Unch base (chainWc c) m
   · exact Or.inr h
 
 /-- The moduli, from their slots. -/
-theorem modP_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
+theorem modP_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MP) c.n = c.C.p) :
     ModOkA c.MP' size c.C.p m base :=
   ⟨hc.n0, hc.n10, sl_le c hc.n10 (i := MP) (by decide), sl_le c hc.n10 (i := TMP) (by decide),
     sl_apart c (show MP ≠ TMP by decide), h,
     hc.minv_p, hc.red_p, fun f m' h' => (hc.call_p f m' h').1⟩
 
-theorem modN_of (hc : CfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
+theorem modN_of (hc : BaseCfgOk c) {base : Addr} {m : Mem} (h : wordsVal m base (c.sl MN) c.n = c.C.n) :
     ModOkA c.MN' size c.C.n m base :=
   ⟨hc.n0, hc.n10, sl_le c hc.n10 (i := MN) (by decide), sl_le c hc.n10 (i := TMP) (by decide),
     sl_apart c (show MN ≠ TMP by decide), h,
     hc.minv_n, hc.red_n, fun _ _ h' => nomatch hc.call_n.symm.trans h'⟩
 
 /-- `ACC = RZ^(p - 2)` (in Montgomery form), by divsteps. -/
-theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem pPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p) :
     WP isa c.pPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
       wordsVal s'.mem base (c.sl ACC) c.n < c.C.p ∧
@@ -243,7 +243,7 @@ theorem pPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
   exact hc.sound_p (invLayP hc) (by omega) (unitMod_pow_two hc.p_odd _) hs hM hB hc.inv_p
 
 /-- `ACC = KM^(n - 2)` (in Montgomery form), by divsteps or a chain. -/
-theorem nPow_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem nPow_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkA c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n) :
     WP isa c.nPow s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch base (chainWc c) s.mem s'.mem ∧
       wordsVal s'.mem base (c.sl ACC) c.n < c.C.n ∧

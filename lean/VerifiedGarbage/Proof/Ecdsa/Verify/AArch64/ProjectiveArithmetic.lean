@@ -17,7 +17,7 @@ abbrev projectiveWrites : List Nat := [X, W, XM, X, XN, TMP]
 theorem projectiveOps_rename (sl : Nat → Nat) :
     projectiveOps sl = (projectiveOps id).map (FOp.rename sl) := rfl
 
-theorem projectiveOps_run (hc : CfgOk c) (e : Nat → Fe c.C) :
+theorem projectiveOps_run (hc : BaseCfgOk c) (e : Nat → Fe c.C) :
     runOps (projectiveOps c.sl) e (c.sl W) = e (c.sl RX) - e (c.sl XM) * e (c.sl RZ) ∧
     runOps (projectiveOps c.sl) e (c.sl XN) =
       e (c.sl RX) - (e (c.sl XM) + e (c.sl ACC)) * e (c.sl RZ) := by
@@ -28,7 +28,7 @@ theorem projectiveOps_run (hc : CfgOk c) (e : Nat → Fe c.C) :
   exact ⟨congrFun H W, congrFun H XN⟩
 
 /-- The five field operations compute both projective differences. -/
-theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
+theorem projectiveOps_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hM : ModOkA c.MP' size c.C.p s.mem base)
     (hlt : ∀ i ∈ projectiveReads, sv c base s i < c.C.p) :
     WP isa (fprogB c.MP' (projectiveOps c.sl)) s fun t =>
@@ -81,7 +81,7 @@ theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
 abbrev projectivePrepareW : List Nat := [XM, ACC, MN]
 abbrev projectiveAllW : List Nat := [XM, ACC, MN, X, W, XN, TMP]
 
-theorem projectivePrepare_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+theorem projectivePrepare_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.projectivePrepare c)) s fun t =>
       Scr t base size ∧ Unch base (slW c projectivePrepareW) s.mem t.mem ∧
       sv c base t XM = c.R * c.R % c.C.p ∧ sv c base t ACC = c.mont c.C.n ∧
@@ -107,7 +107,7 @@ theorem projectivePrepare_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr 
     by rw [o O₃ (by decide) (by decide) (by decide), e₂], e₃⟩
 
 /-- Prepare constants, convert `r`, and compute both differences. -/
-theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}
+theorem projectiveArithmetic_ok (hc : BaseCfgOk c) {s : State} {base : Addr}
     (hs : Scr s base size) (hmp : sv c base s MP = c.C.p)
     (hrx : sv c base s RX < c.C.p) (hrz : sv c base s RZ < c.C.p) :
     WP isa (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.projectivePrepare c))

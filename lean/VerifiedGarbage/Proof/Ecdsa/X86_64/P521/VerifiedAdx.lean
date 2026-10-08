@@ -93,6 +93,8 @@ theorem p521x_ok (hI : InvSounds) : CfgOk p521x where
     exact Proof.P521.prime_6864797660130609714981900799081393217269435300143305409394463459185543183397656052122559640661454554977296311391480858037121987999716643812574028291115057151),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ p521x.C.n_ne_zero Proof.P521.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  window_am3 := fun _ => by unfold AM3; decide +kernel
+  comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even h := absurd h (by decide)
 
@@ -117,7 +119,7 @@ theorem sign_x86_adx (hL : Law Spec.P521.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signP521Adx s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (p521x_ok hI) hL (p521x_tbls hT) (pre_of_x hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (c := p521x) (p521x_ok hI).toBaseCfgOk hL (p521x_tbls hT) (pre_of_x hs)
   have hsp : ∀ i ∈ instrs signP521Adx, Taint.clobbers i .rsp = false := by
     have h : signP521Adx.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

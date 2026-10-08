@@ -25,7 +25,7 @@ theorem jointPoints_ok (hc : CfgOk p256) (hC : Law p256.C)
   have hOne : P256Joint.cfg.K.one<p256.C.p := by
     change 2^256%p256.C.p<p256.C.p
     exact Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have hone : toM p256.C.p (2^(64*P256Joint.cfg.K.M.n)) P256Joint.cfg.K.one=1 := toM_cmont hc 1
+  have hone : toM p256.C.p (2^(64*P256Joint.cfg.K.M.n)) P256Joint.cfg.K.one=1 := toM_cmont hc.toBaseCfgOk 1
   rw [P256Joint.points,Joint.points,Joint.window]
   apply WP.assoc
   apply WP.assoc

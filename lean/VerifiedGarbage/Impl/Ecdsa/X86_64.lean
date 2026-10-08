@@ -134,6 +134,9 @@ structure Cfg where
   n : Nat
   C : Spec.Weierstrass.Curve
   comb : Option CombData := none
+  /-- Use the variable-base window formulas for `a = -3`; otherwise use
+  the general complete-addition ladder. -/
+  windows : Bool := true
   /-- Whether `k^(n-2)` is by divsteps (the proofs need `n` prime), else by the power. -/
   fastN : Bool := false
   /-- Whether to multiply modulo `p` and `n` with BMI2 and ADX (`Mod.adx`). -/

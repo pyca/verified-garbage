@@ -58,7 +58,7 @@ theorem combCorrect (hc : CfgOk c) (hC : Law c.C)
     (tcombVals hc hC hT) hc.p_lt hs hm hf
 
 /-- `[k]G` by the comb, then `Z^(p-2)`. -/
-theorem stage₂_with (hc : CfgOk c) (comb : Prog isa) (hcomb : CombCorrect c comb)
+theorem stage₂_with (hc : BaseCfgOk c) (comb : Prog isa) (hcomb : CombCorrect c comb)
     {s₀ : State} {base : Addr} (hTP : TblPre c s₀ (s₀.syms c.tsym) base) {hs : Option Nat} {s : State} (hS : St₁ c hs s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₂ c hs s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq comb (.seq c.pPow rest)) s Q := by
@@ -135,7 +135,7 @@ structure St₃ (c : Cfg) (s₀ : State) (base : Addr) (s : State) : Prop extend
   acc : toM c.C.n (2 ^ (64 * c.n)) (sv c base s ACC) = Fin.ofNat c.C.n (kv c s₀) ^ (c.C.n - 2)
 
 /-- `x`, `r`, `k R mod n` and the checks, then `k^(n-2)`. -/
-theorem stage₃ (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
+theorem stage₃ (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {s : State} (hS : St₂ c (some E) s₀ base s)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', St₃ c s₀ base s' → WP isa rest s' Q) :
     WP isa (.seq c.middle (.seq c.nPow rest)) s Q := by
   have h0 := hc.n0
@@ -200,7 +200,7 @@ def SignPost (c : Cfg) (s₀ s' : State) : Prop :=
       Spec.Ecdsa.bytesAt s'.mem (s₀.gpr .x0) (2 * c.C.len) = List.replicate (2 * c.C.len) 0
 
 /-- `s`, its check, and the result. -/
-theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : Pre c s₀) {base : Addr} (hb : base = s₀.gpr .x4)
+theorem stage₄ (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : SignOutput c s₀) {base : Addr} (hb : base = s₀.gpr .x4)
     {s : State} (hS : St₃ c s₀ base s) :
     WP isa c.scalar s fun s' => (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by
   have h0 := hc.n0
@@ -267,7 +267,7 @@ theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith (some E))) (.seq 
     (.seq (TCombCfg.comb c.combCfg) (.seq c.pPow (.seq c.middle (.seq c.nPow c.scalar))))) :=
   rfl
 
-theorem signWith_ok (hc : CfgOk c) (hC : Law c.C) (comb : Prog isa)
+theorem signWith_ok (hc : BaseCfgOk c) (hC : Law c.C) (comb : Prog isa)
     (hcomb : CombCorrect c comb) {s₀ : State} (hp : Pre c s₀) :
     WP isa (c.signWith comb) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ SignPost c s₀ s' := by

@@ -27,7 +27,7 @@ theorem vfinish_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.finish c =
   simp only [Impl.Ecdsa.Verify.AArch64.Cfg.finish, List.append_assoc]; rfl
 
 /-- The return value and the callee-saved registers. -/
-theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem vfinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (hsv : Spill.Saved base g Cfg.saved s.mem) (b : Bool)
     (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.finish c)) s fun s' =>
@@ -74,7 +74,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.final c =
   simp only [Impl.Ecdsa.Verify.AArch64.Cfg.final, blocks, List.append_assoc]
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
-theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
+theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hP : FinalState c s₀ base g s) :
     WP isa (.seq c.pPow (Impl.Ecdsa.Verify.AArch64.Cfg.final c)) s fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧

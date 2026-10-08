@@ -155,7 +155,7 @@ def tail : Prog isa :=
 hash's `e R mod n` was there) and ECDH's window method from `v`; for more,
 the table of `v`'s bits and ECDH's ladder. -/
 def mulV : Prog isa :=
-  if c.n ≤ 9 then
+  if c.n ≤ 9 ∧ c.windows = true then
     .seq (.block (setConst c.n (c.sl Impl.Ecdh.X86_64.BP) (c.mont c.C.b)))
       (.seq (c.winPrep (c.sl V)) (WinCfg.window (c.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY
         Impl.Ecdh.X86_64.BP)))

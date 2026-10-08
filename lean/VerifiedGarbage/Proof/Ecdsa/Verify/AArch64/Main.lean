@@ -40,7 +40,7 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.verify c =
       (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.points c) (Impl.Ecdsa.Verify.AArch64.Cfg.tail c))))))))) := rfl
 
 /-- What the slot of Montgomery's one stands for. -/
-theorem onep_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
+theorem onep_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
     (F : Fixed c base g s.mem) : tmv c.C c.n base s (c.sl ONEP) = 1 := by
   show toM _ _ (wordsVal s.mem base (c.sl ONEP) c.n) = _
   rw [F.onep]; exact toM_one (unitMod_pow_two hc.p_odd _)

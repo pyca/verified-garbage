@@ -62,8 +62,8 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
     · intro t ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
-  have WC := jacComb_ok (tcombLay hc) (combA hc) hC hc.onG (tcombVals hc hC hT) hc.p_lt hn4
-    (jacComb_sum_ok (tcombLay hc) (combA hc) hC hc.am3 hpR hn4 (hmont 1)) hs₁
+  have WC := jacComb_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk) hC hc.onG (tcombVals hc.toBaseCfgOk hC hT) hc.p_lt hn4
+    (jacComb_sum_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk) hC hc.am3 hpR hn4 (hmont 1)) hs₁
     (modP_of hc F₁.mp) hF
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
@@ -170,7 +170,7 @@ theorem nafPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact tbl_le h7
-      · have := (tcombLay hc).bits; exact this
+      · have := (tcombLay hc.toBaseCfgOk).bits; exact this
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
       have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by simp (disch := decide) only [sl_eq]; unfold WK WT; omega

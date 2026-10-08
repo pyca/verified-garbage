@@ -72,7 +72,7 @@ theorem jointPrepStage_ok (hc : CfgOk p256) (hC : Law p256.C) {base : Addr} {s :
   have one : tmv p256.C p256.n base s₂ (p256.sl ONEP)=1 := by
     change toM _ _ (wordsVal s₂.mem base (p256.sl ONEP) p256.n)=1
     rw [F₂.onep]
-    have hm1 := toM_cmont hc 1
+    have hm1 := toM_cmont hc.toBaseCfgOk 1
     have ho : Fin.ofNat p256.C.p 1 = (1:Fe p256.C) := by rfl
     simpa only [Cfg.mont,Cfg.R,Nat.one_mul,ho] using hm1
   have hp : Rep p256.C (tmv p256.C p256.n base s₂ (p256.sl PX)) (tmv p256.C p256.n base s₂ (p256.sl PY))

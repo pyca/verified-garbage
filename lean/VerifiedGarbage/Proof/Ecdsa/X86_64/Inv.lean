@@ -90,7 +90,7 @@ theorem flag_unch_pwW {base : Addr} {m m' : Mem} (hu : Unch base (pwW c) m m')
   · exact Or.inr h
 
 /-- The inversions' slots and working area, for up to nine words. -/
-theorem invLay_of (hc : CfgOk c) (h6 : c.n ≤ 9) (h4 : 4 ≤ c.n) {M : Mod} (hMn : M.n = c.n) {jm : Nat}
+theorem invLay_of (hc : BaseCfgOk c) (h6 : c.n ≤ 9) (h4 : 4 ≤ c.n) {M : Mod} (hMn : M.n = c.n) {jm : Nat}
     (hmo : M.mo = c.sl jm) (hjm : jm = MP ∨ jm = MN) (htmp : M.tmp = c.sl TMP) {base : Nat}
     (hb : base = RZ ∨ base = KM) (m : Nat) :
     InvLay (InvCfg.ofMod M (c.sl ACC) (c.sl base) (bitsAt c.n 3) m) size := by
@@ -137,7 +137,7 @@ theorem powW_pwW {P : PowCfg} (h : powW P = slW c [ACC, PT, TMP]) :
 
 /-- `[ACC] = [RZ]^(p-2)` in Montgomery form: by divsteps for up to nine words, else by the power
 from the table of the bits of `p - 2`. -/
-theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem pPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hB : wordsVal s.mem base (c.sl RZ) c.n < c.C.p)
     (hO : wordsVal s.mem base (c.sl ONEP) c.n = 2 ^ (64 * c.n) % c.C.p)
     (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 1 + t)) = if (c.C.p - 2).testBit t then 1 else 0) :
@@ -159,7 +159,7 @@ theorem pPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 
 /-- `[ACC] = [KM]^(n-2)` in Montgomery form: by divsteps for up to nine words, else by the power
 from the table of the bits of `n - 2`. -/
-theorem nPow_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem nPow_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkW c.MN' size c.C.n s.mem base) (hB : wordsVal s.mem base (c.sl KM) c.n < c.C.n)
     (hO : wordsVal s.mem base (c.sl ONEN) c.n = 2 ^ (64 * c.n) % c.C.n)
     (hbits : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 2 + t)) = if (c.C.n - 2).testBit t then 1 else 0) :

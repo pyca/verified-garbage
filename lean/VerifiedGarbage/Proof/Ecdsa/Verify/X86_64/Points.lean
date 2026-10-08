@@ -25,7 +25,7 @@ open VG.Impl.Ecdsa.Verify.X86_64 (SM' EM' RM' UM VM U V UX UY UZ)
 variable {c : Cfg}
 
 /-- `[o] = [a]`, on numbered slots. -/
-theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
+theorem copySl_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
     (ho : o < 45) (ha : a < 45) (hoa : o ≠ a) :
     WP isa (.block (copy c.n (c.sl o) (c.sl a))) s fun s' =>
       sv c base s' o = sv c base s a ∧ KeepRegs [.rax] s s' ∧
@@ -34,7 +34,7 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
   exact copy_ok c.n hs (sl_le c hc.n10 ho) (sl_le c hc.n10 ha) (by omega)
 
 /-- `[o] = x`, on numbered slots. -/
-theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
+theorem setSl_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
     (ho : o < 45) (hx : x < 2 ^ (64 * c.n)) :
     WP isa (.block (setConst c.n (c.sl o) x)) s fun s' =>
       sv c base s' o = x ∧ KeepRegs [.rax] s s' ∧ Outside base (c.sl o) (8 * c.n) s.mem s'.mem :=
@@ -49,7 +49,7 @@ theorem save_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.save c =
   simp only [Impl.Ecdsa.Verify.X86_64.Cfg.save, List.append_assoc]
 
 /-- `U = R`, and `R = O`. -/
-theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+theorem save_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.save c)) s fun s' =>
       Scr s' base size ∧ KeepRegs [.rax] s s' ∧ Unch base (slW c saveW) s.mem s'.mem ∧
       sv c base s' UX = sv c base s RX ∧ sv c base s' UY = sv c base s RY ∧
@@ -116,7 +116,7 @@ theorem sum_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.sum c =
   simp only [Impl.Ecdsa.Verify.X86_64.Cfg.sum, List.append_assoc]
 
 /-- `R = U + R`, by the complete addition. -/
-theorem sum_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
+theorem sum_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size)
     (hM : ModOkW c.MP' size c.C.p s.mem base) (hlt : ∀ i ∈ sumR, sv c base s i < c.C.p) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.sum c) s fun s' =>
       Scr s' base size ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ Unch base (slW c sumW) s.mem s'.mem ∧
@@ -221,7 +221,7 @@ abbrev vI : List Nat := BP :: (otherI ++ tblI ++ [TMP])
 /-- What `mulV` writes: for up to nine words, `BP` and the window method's
 areas and slots; for more, the table of bits and the ladder's slots. -/
 def vW (c : Cfg) : List (Nat × Nat) :=
-  if c.n ≤ 9 then winX c ++ slW c vI
+  if c.n ≤ 9 ∧ c.windows = true then winX c ++ slW c vI
   else [(bitsAt c.n 0, 64 * c.n)] ++ slW c [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, T0, T1, T2,
     T3, T4, T5, TX, TY, TZ, TMP]
 
@@ -257,14 +257,14 @@ theorem vW_le (h7 : c.n < 10) : ∀ w ∈ vW c, w.1 + w.2 ≤ size := by
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · show c.sl WK + 16 * c.n ≤ size
-        have := sl_le_win c h9 (i := WK + 1) (by decide)
+        have := sl_le_win c h9.1 (i := WK + 1) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
       · show c.sl WB + 80 * c.n ≤ size
-        have := sl_le_win c h9 (i := WB + 9) (by decide)
+        have := sl_le_win c h9.1 (i := WB + 9) (by decide)
         rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have lt : ∀ i ∈ vI, i < 107 := by decide
-      exact sl_le_win c h9 (lt i hi)
+      exact sl_le_win c h9.1 (lt i hi)
   · intro w hw
     rcases List.mem_append.mp hw with hw | hw
     · rw [List.mem_singleton.mp hw]; have := bitsAt_le c h7 (j := 0) (by decide); exact this
@@ -282,7 +282,7 @@ structure VMulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Sta
 
 /-- `[v]P`, for `v` at `V`, `P` at `PX`, `PY` and `R = O`: by windows for up
 to nine words, else by the ladder. -/
-theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+theorem mulV_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
@@ -311,13 +311,13 @@ theorem mulV_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Sc
       show Rep _ (toM _ _ (sv c base s₁ PX)) (toM _ _ (sv c base s₁ PY)) (toM _ _ (sv c base s₁ ONEP)) P
       rw [v₁ (by decide) (by decide), v₁ (by decide) (by decide), v₁ (by decide) (by decide)]
       exact hrep
-    refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
+    refine WP.seq_iff.mp (winMul_ok hc (hc.window_am3 h9.2) h9.1 hC hs₁ F₁ e₁ hP (by rw [v₁ (by decide) (by decide)]; exact hpx)
       (by rw [v₁ (by decide) (by decide)]; exact hpy) hrep₁ (ks := V) (by decide)
       (by rw [v₁ (by decide) (by decide)]; exact hv8) fun s₂ W => h s₂ ?_)
     rw [v₁ (by decide) (by decide)] at W
     refine ⟨W.scr, (k₁.mono fun r hr => ?_).trans W.keep, ?_, W.mod, W.lt, W.q⟩
     · rw [List.mem_singleton.mp hr]; simp [powClob, clob]
-    · simp only [vW, h9, ↓reduceIte]
+    · rw [vW, ite_eq_left h9]
       refine (O₁.unch.trans W.unch).mono fun w hw => ?_
       rcases List.mem_append.mp hw with hw | hw
       · rw [List.mem_singleton.mp hw]; exact List.mem_append_right _ (List.mem_cons_self ..)
@@ -405,7 +405,7 @@ abbrev ptsW : List Nat :=
   [RX, RY, RZ, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TX, TY, TZ, PT, TMP, UX, UY, UZ, EM]
 
 /-- `[u]G + [v]Q`, into `R`. -/
-theorem points_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} {base : Addr}
+theorem points_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hM : Mid c s₀ base g s) (htb : TblsHeld c s₀ s₀.wr)
     (hsc : (⟨base, size⟩ : Region) ∈ s₀.wr)
     (hrdT : ∀ r ∈ Abi.constRegions (fun n => s₀.syms n) c.combConsts, r ∈ s₀.rd)

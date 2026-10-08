@@ -43,7 +43,7 @@ theorem prep_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base 8192)
       exact hh x hx)
   have hv (x : Nat) (hx : x∈ro) : tmv C 4 base t x=tmv C 4 base s x := by
     unfold tmv; rw [hw x hx]
-  refine ⟨frame,⟨⟨frame.scr regs_x0 hs,VG.Proof.Ecdsa.AArch64.modP_of hc ft.mp,
+  refine ⟨frame,⟨⟨frame.scr regs_x0 hs,VG.Proof.Ecdsa.AArch64.modP_of hc.toBaseCfgOk ft.mp,
     (by decide),?_,fun _ _=>rfl⟩,ft.zero,?_,?_,?_⟩,(k₁.mono (by decide)).trans (k₂.mono (by decide))⟩
   · intro x hx
     change x∈[c.sl VG.Impl.Ecdsa.AArch64.AP,c.sl VG.Impl.Ecdsa.AArch64.BM,

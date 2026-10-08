@@ -24,7 +24,7 @@ theorem sv_flag {base : Addr} {m m' : Mem} (h : Outside base (c.sl FLAG) 8 m m')
   exact h.wordsVal (by omega) (by omega)
 
 /-- The checks of `d`, `k` and `r`. -/
-theorem checks_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem checks_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : sv c base s MN = c.C.n) :
     WP isa (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR))) s
       fun s' => word s'.mem base (c.sl FLAG) = word s.mem base (c.sl FLAG) &&&
@@ -74,7 +74,7 @@ structure ScPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
     (Fin.ofNat c.C.n (sv c base s E) + Fin.ofNat c.C.n (sv c base s RR) * Fin.ofNat c.C.n (sv c base s D))
 
 /-- The first three multiplications by `R² mod n`. -/
-theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem scalarIn_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkW c.MN' size c.C.n s.mem base)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop}
@@ -128,7 +128,7 @@ theorem scalarIn_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
       exact hw
 
 /-- The rest of the field operations: `s`, left Montgomery's form. -/
-theorem scalarOut_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem scalarOut_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkW c.MN' size c.C.n s.mem base) (hone : sv c base s ONE = 1)
     (hdm : sv c base s DM < c.C.n) (hem : sv c base s EM < c.C.n)
     {rest : Prog isa} {Q : State → Prop}

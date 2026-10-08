@@ -68,7 +68,7 @@ theorem setupOut_ok (s : State) :
 
 /-- The `len` bytes at `p` (readable, outside the working space, and so
 unchanged since `s`) to slot `i`. -/
-theorem setupLoad_ok {c : Cfg} (hc : CfgOk c) {s t : State} {base p : Addr} {src : Reg} {i : Nat}
+theorem setupLoad_ok {c : Cfg} (hc : BaseCfgOk c) {s t : State} {base p : Addr} {src : Reg} {i : Nat}
     (hs : Scr t base size) (hsrc : src ≠ .rax) (hi : i < 45) (hp : t.gpr src = p)
     (hin : ∀ e, e + 8 ≤ c.C.len → InRegions (t.rd ++ t.wr) (p + BitVec.ofNat 64 e) 8)
     (hd : Region.Disjoint ⟨p, c.C.len⟩ ⟨base, size⟩) (ho : Outside base 0 size s.mem t.mem) :
@@ -91,7 +91,7 @@ def ShiftOk (hs : Option Nat) : Prop := hs = none ∨ hs = some D ∨ hs = some 
 
 /-- The shift of slot `hs`, if any, by the bits of a hash that are not
 `e`'s: only the slots of `d` and the hash change. -/
-theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {t : State}
+theorem setupShift_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {t : State}
     {base : Addr} (hs' : Scr t base size) :
     WP isa (.block (c.shiftCode hs)) t fun t' =>
       wordsVal t'.mem base (c.sl D) c.n = wordsVal t.mem base (c.sl D) c.n >>> shAt c hs D ∧
@@ -130,7 +130,7 @@ theorem setupShift_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk 
 
 /-- The constants of `l`, apart slots below `17`, each in its slot; only their
 slots change. -/
-theorem setupConsts_ok {c : Cfg} (hc : CfgOk c) {base : Addr} : ∀ (l : List (Nat × Nat)) {t : State},
+theorem setupConsts_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} : ∀ (l : List (Nat × Nat)) {t : State},
     Scr t base size → (∀ ix ∈ l, ix.1 < 17 ∧ ix.2 < 2 ^ (64 * c.n)) → (l.map Prod.fst).Nodup →
     WP isa (.block (l.flatMap (fun (i, x) => setConst c.n (c.sl i) x))) t fun t' =>
       (∀ ix ∈ l, wordsVal t'.mem base (c.sl ix.1) c.n = ix.2) ∧ KeepRegs [.rax] t t' ∧
@@ -161,7 +161,7 @@ theorem consts_fst (c : Cfg) :
 theorem consts_nodup (c : Cfg) : (c.consts.map Prod.fst).Nodup := by
   rw [consts_fst]; decide
 
-theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
+theorem consts_bounds {c : Cfg} (hc : BaseCfgOk c) :
     ∀ ix ∈ c.consts, ix.1 < 17 ∧ ix.2 < 2 ^ (64 * c.n) := by
   intro ix h
   refine ⟨?_, ?_⟩
@@ -199,7 +199,7 @@ theorem consts_bounds {c : Cfg} (hc : CfgOk c) :
 
 /-! ## The flag -/
 
-theorem setupFlag_ok {c : Cfg} (hc : CfgOk c) {t : State} {base : Addr} (hs : Scr t base size) :
+theorem setupFlag_ok {c : Cfg} (hc : BaseCfgOk c) {t : State} {base : Addr} (hs : Scr t base size) :
     WP isa (.block (setConst 1 (c.sl FLAG) (2 ^ 64 - 1))) t fun t' =>
       word t'.mem base (c.sl FLAG) = BitVec.allOnes 64 ∧ KeepRegs [.rax] t t' ∧
       Outside base (c.sl FLAG) (8 * 1) t.mem t'.mem := by
@@ -221,7 +221,7 @@ theorem setup_eq (c : Cfg) (hs : Option Nat) : c.setupWith hs = Spill.saveCode .
     (setConst 1 (c.sl FLAG) (2 ^ 64 - 1) ++ ([.mov .rsi (.reg .r14)] : List Instr)))))))) := by
   simp only [Cfg.setupWith, List.append_assoc]; rfl
 
-theorem setup_ok {c : Cfg} (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s : State}
+theorem setup_ok {c : Cfg} (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s : State}
     (hp : SetupPre c s) : WP isa (.block (c.setupWith hs)) s (SetupPost c hs s (s.gpr .r8)) := by
   have h7 := hc.n10
   have h0 := hc.n0

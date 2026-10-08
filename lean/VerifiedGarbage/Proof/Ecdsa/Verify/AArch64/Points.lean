@@ -34,7 +34,7 @@ theorem sl_lt4096 (h0 : 0 < c.n) (h7 : c.n < 10) {i : Nat} (hi : i < 45) : c.sl 
   have := sl_below_bits c hi 0 0 hT; have := bitsAt0_le c h7; omega
 
 /-- `[o] = [a]`, on numbered slots. -/
-theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
+theorem copySl_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o a : Nat}
     (ho : o < 45) (ha : a < 45) (hoa : o ≠ a) :
     WP isa (.block (copy c.n (c.sl o) (c.sl a))) s fun s' =>
       sv c base s' o = sv c base s a ∧ KeepRegs [.x1] s s' ∧
@@ -43,7 +43,7 @@ theorem copySl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size
   exact copy_ok c.n hs (sl_le c hc.n10 ho) (sl_le c hc.n10 ha) (sl_mod8 c o) (sl_mod8 c a) (by omega)
 
 /-- `[o] = x`, on numbered slots. -/
-theorem setSl_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
+theorem setSl_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) {o x : Nat}
     (ho : o < 45) (hx : x < 2 ^ (64 * c.n)) :
     WP isa (.block (setConst c.n (c.sl o) x)) s fun s' =>
       sv c base s' o = x ∧ KeepRegs [.x1] s s' ∧ Outside base (c.sl o) (8 * c.n) s.mem s'.mem :=
@@ -58,7 +58,7 @@ theorem save_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.save c =
   simp only [Impl.Ecdsa.Verify.AArch64.Cfg.save, List.append_assoc]
 
 /-- `U = R`, and `R = O`. -/
-theorem save_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
+theorem save_ok (hc : BaseCfgOk c) {s : State} {base : Addr} (hs : Scr s base size) :
     WP isa (.block (Impl.Ecdsa.Verify.AArch64.Cfg.save c)) s fun s' =>
       Scr s' base size ∧ KeepRegs [.x1] s s' ∧ Unch base (slW c saveW) s.mem s'.mem ∧
       sv c base s' UX = sv c base s RX ∧ sv c base s' UY = sv c base s RY ∧
@@ -408,7 +408,7 @@ theorem points_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVe
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact tbl_le h7
-      · have := (tcombLay hc).bits; exact this
+      · have := (tcombLay hc.toBaseCfgOk).bits; exact this
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
       have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by simp (disch := decide) only [sl_eq]; unfold WK WT; omega

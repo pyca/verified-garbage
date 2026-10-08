@@ -38,6 +38,21 @@ structure VPre (c : Cfg) (s : State) : Prop where
   sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
   tbl : TblPre c s (s.syms c.tsym) (s.gpr .x3)
 
+/-- The verification frontend only needs the argument regions; the point
+multiplier decides whether constant tables are required. -/
+structure FrontPre (c : Cfg) (s : State) : Prop where
+  rd : ∃ extra, s.rd = [⟨s.gpr .x0, 1 + 2 * c.C.len⟩,
+    ⟨s.gpr .x1, c.C.len⟩, ⟨s.gpr .x2, 2 * c.C.len⟩] ++ extra
+  wr : s.wr = [⟨s.gpr .x3, size⟩]
+  pk_sc : Region.Disjoint ⟨s.gpr .x0, 1 + 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
+  dg_sc : Region.Disjoint ⟨s.gpr .x1, c.C.len⟩ ⟨s.gpr .x3, size⟩
+  sig_sc : Region.Disjoint ⟨s.gpr .x2, 2 * c.C.len⟩ ⟨s.gpr .x3, size⟩
+  sc_fit : (s.gpr .x3).toNat + size ≤ 2 ^ 64
+
+instance {c : Cfg} {s : State} : Coe (VPre c s) (FrontPre c s) :=
+  ⟨fun h => ⟨⟨[⟨s.syms c.tsym, 8 * c.combWords.length⟩], h.rd⟩,
+    h.wr, h.pk_sc, h.dg_sc, h.sig_sc, h.sc_fit⟩⟩
+
 /-- The key's `x` and `y`, the hash, and the signature's `r` and `s`. -/
 abbrev keyX (c : Cfg) (s₀ : State) : Nat :=
   ofBytes (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .x0 + BitVec.ofNat 64 1) c.C.len)
@@ -114,7 +129,7 @@ theorem flag_le (h0 : 0 < c.n) (h7 : c.n < 10) : ∀ w ∈ [(c.sl FLAG, 8)], w.1
   dsimp only; omega
 
 /-- `args`, the signature's setup and tables, `s`, and the checks of the key. -/
-theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog isa}
+theorem front_ok (hc : BaseCfgOk c) {s₀ : State} (hp : FrontPre c s₀) {rest : Prog isa}
     {Q : State → Prop}
     (h : ∀ g s, (∀ r ∈ Cfg.saved.map Prod.fst, g r = s₀.gpr r) → Front c s₀ (s₀.gpr .x3) g s →
       WP isa rest s Q) :
@@ -122,6 +137,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.block [])))
       (.seq (.block (Impl.Ecdsa.Verify.AArch64.Cfg.loadS c)) (.seq (.block (Impl.Ecdh.AArch64.Cfg.peer c))
       (.seq (Impl.Ecdh.AArch64.Cfg.validate c) rest))))) s₀ Q := by
+  obtain ⟨extra, hrd⟩ := hp.rd
   have h0 := hc.n0
   have h7 := hc.n10
   have hsz : size = 8192 := rfl
@@ -134,11 +150,11 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   have hsp : SetupPre c s₁ := by
     refine ⟨by rw [k₁.wr, hp.wr, x4₁]; simp, fun e he => ?_, fun e he => ?_, fun e he => ?_, ?_, ?_, ?_,
       by rw [x4₁]; exact hp.sc_fit⟩
-    · rw [x3₁, hrd₁, hp.rd]
+    · rw [x3₁, hrd₁, hrd]
       exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
-    · rw [x1₁, hrd₁, hp.rd]
+    · rw [x1₁, hrd₁, hrd]
       exact ⟨_, by simp, Offset.contains_base _ he (by omega)⟩
-    · rw [x2₁, hrd₁, hp.rd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+    · rw [x2₁, hrd₁, hrd, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .x0, 1 + 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩
     · rw [x1₁, x4₁]; exact hp.dg_sc
     · rw [x2₁, x4₁]; exact hp.pk_sc.sub_left (Offset.sub_base _ (by omega))
@@ -156,7 +172,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.loadS]
   refine WP.seq (WP.mono_syms (loadBytes_ok S₂.scr (src := .x8) (by decide) (by decide) hPT (sl_mod8 c PT)
     hl8 hlo hhi (by omega) (fun d hd => by
-      rw [hrw₂, hp.rd, hx8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
+      rw [hrw₂, hrd, hx8, BitVec.add_assoc, BitVec.ofNat_add_ofNat]
       exact ⟨⟨s₀.gpr .x2, 2 * c.C.len⟩, by simp, Offset.contains_base _ (by omega) (by omega)⟩)
     (by
       rw [hx8]
@@ -173,7 +189,7 @@ theorem front_ok (hc : CfgOk c) {s₀ : State} (hp : VPre c s₀) {rest : Prog i
   -- The key.
   have hq₃ : s₃.gpr .x6 = s₀.gpr .x0 := by rw [k₃.gpr _ (by decide), S₂.gpr _ (by decide), x6₁]
   have hrw₃ : s₃.rd ++ s₃.wr = s₀.rd ++ s₀.wr := by rw [k₃.rd, k₃.wr, hrw₂]
-  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hp.rd]; simp) hp.pk_sc F₃.mp)
+  refine WP.seq (WP.mono_syms (peer_ok hc hs₃ hq₃ (by rw [hrw₃, hrd]; simp) hp.pk_sc F₃.mp)
     fun s₄ ⟨hs₄, k₄, U₄, r2₄, bp₄, y₄, f₄⟩ sy₄ => ?_)
   have F₄ := F₃.unch h7 hn ((fixedOk_slW (l := [R2P, BP, QY]) (by decide)).append fixedOk_flag) U₄
   have e₄ : ∀ {i}, i < 45 → i ∉ [R2P, BP, QY] → i ≠ FLAG →

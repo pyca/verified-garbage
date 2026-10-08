@@ -45,7 +45,7 @@ theorem map_sl_nodup (hn : 0 < c.n) {l : List Nat} (h : l.Nodup) (hl : Away l :=
   exact h.imp_of_mem fun ha hb hab e => hab (sl_inj c hn e (.inr (hl _ hb)) (.inr (hl _ ha)))
 
 /-- Numbered slots, apart from the modulus's and the temporary area. -/
-theorem lay_map (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
+theorem lay_map (hc : BaseCfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
     (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∧ i ≠ MP ∧ i ≠ TMP) :
     Lay M size (· ∈ l.map c.sl) := by
   have hn := hc.n0
@@ -98,7 +98,7 @@ theorem ct_tmp (c : Cfg) : c.sl CT + 9 * (8 * c.n) ≤ c.sl TMP ∨ c.sl TMP + 8
 
 /-- A power by a chain with its result in `ACC`, its base in slot `b` and its
 table at `CT`. -/
-theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.acc = c.sl ACC)
+theorem chainLay_of (hc : BaseCfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.acc = c.sl ACC)
     (htbl : P.tbl = c.sl CT) {b jm : Nat} (hb : P.base = c.sl b) (hmo : P.M.mo = c.sl jm)
     (htmp : P.M.tmp = c.sl TMP) (hA : ModA P.M) (hb45 : b < 45) (hbs : b ∉ [ACC, TMP, jm])
     (hjm : jm < 45 ∧ jm ∉ [ACC, TMP]) : ChainLay P size := by
@@ -128,19 +128,19 @@ theorem chainLay_of (hc : CfgOk c) {P : ChainCfg} (hn : P.M.n = c.n) (hacc : P.a
     · exact sl_apart c hjm.2.2
   · exact sl_apart c hbs.2.2
 
-theorem invLayP (hc : CfgOk c) : InvLay c.invP size :=
+theorem invLayP (hc : BaseCfgOk c) : InvLay c.invP size :=
   InvLay.of_chain (chainLay_of hc (P := c.invP.toChain) rfl rfl rfl (b := RZ) (jm := MP) rfl rfl rfl (MP'_A c)
     (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
-theorem invLayN (hc : CfgOk c) : InvLay c.invN size :=
+theorem invLayN (hc : BaseCfgOk c) : InvLay c.invN size :=
   InvLay.of_chain (chainLay_of hc (P := c.invN.toChain) rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c)
     (by decide) (by decide) (by decide)) hc.n4 hc.n10
 
-theorem chainLayN (hc : CfgOk c) : ChainLay c.powN size :=
+theorem chainLayN (hc : BaseCfgOk c) : ChainLay c.powN size :=
   chainLay_of hc rfl rfl rfl (b := KM) (jm := MN) rfl rfl rfl (MN'_A c) (by decide) (by decide)
     (by decide)
 
-theorem chainOkN (hc : CfgOk c) (h : c.fastN = false) : ChainOk c.powN (c.C.n - 2) :=
+theorem chainOkN (hc : BaseCfgOk c) (h : c.fastN = false) : ChainOk c.powN (c.C.n - 2) :=
   ChainOk.of_check (hc.chain_n h)
 
 end VG.Proof.Ecdsa.AArch64

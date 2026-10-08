@@ -17,7 +17,7 @@ theorem jointFinish_relCT (hc : CfgOk p256) (hC : Law p256.C)
   intro s t ts tt s' t' ⟨⟨E,hp⟩,cs,ct,_,_⟩ es et
   have hm : UnitMod p256.C.p (2^(64*cfg.K.M.n)) := unitMod_pow_two hc.p_odd _
   have one : cfg.K.one<p256.C.p := Nat.mod_lt _ (by have := hc.p_ge; omega)
-  have hone : toM p256.C.p (2^(64*cfg.K.M.n)) cfg.K.one=1 := toM_cmont hc 1
+  have hone : toM p256.C.p (2^(64*cfg.K.M.n)) cfg.K.one=1 := toM_cmont hc.toBaseCfgOk 1
   obtain ⟨_,_,xs,ks,us,ms,ls,rs⟩ := jointFinish_ok (jacLay hc rfl) rfl (jacAligned p256 rfl)
     hm hC one hone (by decide) cs
   obtain ⟨_,_,xt,kt,ut,mt,lt,rt⟩ := jointFinish_ok (jacLay hc rfl) rfl (jacAligned p256 rfl)

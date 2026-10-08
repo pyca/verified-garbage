@@ -70,6 +70,8 @@ theorem p384_ok (hI : InvSounds) : CfgOk p384 where
     exact Proof.P384.prime_39402006196394479212279040100143613805079739270465446667948293404245721771496870329047266088258938001861606973112319),
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   inv_n _ _ := ⟨@hI _ p384.C.n_ne_zero Proof.P384.n_prime, InvOk.ofMod (by decide +kernel) (by decide)⟩
+  window_am3 := fun _ => by unfold AM3; decide +kernel
+  comb_am3 := fun _ _ => by unfold AM3; decide +kernel
   am3 := by unfold AM3; decide +kernel
   even _ := by decide
 

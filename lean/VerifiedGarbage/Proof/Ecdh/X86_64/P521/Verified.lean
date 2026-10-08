@@ -55,7 +55,7 @@ theorem ecdh_mxcsr : exchangeP521.allInstrs (fun i => !loadsMxcsr i) = true := b
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
     (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p521_ok hI) hL
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (c := p521) (p521_ok hI).toBaseCfgOk hL
     (mulQJ4_ok (p521_ok hI) (by decide) hL hO (by decide +kernel)) (mulQJ4_w (p521_ok hI)) (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp

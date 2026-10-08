@@ -29,7 +29,7 @@ theorem finish_eq (c : Cfg) : Impl.Ecdh.X86_64.Cfg.finish c =
   simp only [Impl.Ecdh.X86_64.Cfg.finish, List.append_assoc]; rfl
 
 /-- `x` or zeros, the return value and the callee-saved registers. -/
-theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, c.C.len⟩ ⟨base, size⟩) (hfit : out.toNat + c.C.len ≤ 2 ^ 64)
     {g : Reg → BitVec 64} (hsv : Spill.Saved s.mem base g Cfg.saved) (b : Bool)
@@ -92,7 +92,7 @@ abbrev ok (c : Cfg) (base : Addr) (s : State) (V : Prop) [Decidable V] : Bool :=
   decide ((V ∧ 0 < sv c base s D ∧ sv c base s D < c.C.n) ∧ sv c base s RZ ≠ 0)
 
 /-- `x`, the checks of `d` and `Z`, and the result. -/
-theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hacc : sv c base s ACC < c.C.p)
     {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG) = mask V) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
@@ -229,7 +229,7 @@ code checks it, else `G`. -/
 def peerPt (c : Cfg) (b4 : Prop) [Decidable b4] (x y : Nat) : Point c.C :=
   if h : ((b4 ∧ x < c.C.p) ∧ y < c.C.p) ∧ OnCurve c (Fin.ofNat c.C.p x) (Fin.ofNat c.C.p y) then .affine ⟨x, h.1.1.2⟩ ⟨y, h.1.2⟩ else G c.C
 
-theorem peerPt_onCurve (hc : CfgOk c) (b4 : Prop) [Decidable b4] (x y : Nat) :
+theorem peerPt_onCurve (hc : BaseCfgOk c) (b4 : Prop) [Decidable b4] (x y : Nat) :
     onCurve c.C (peerPt c b4 x y) = true := by
   unfold peerPt
   split
@@ -285,7 +285,7 @@ theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchan
 /-- `vg_ecdh_<curve>`, with a scalar multiplication `mq` computing `[d]P`
 (`MulOk`) and writing only `W` (`MulW`), computes the specification's shared
 secret and restores the callee-saved registers. -/
-theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq : Prog isa} {W : List (Nat × Nat)}
+theorem exchangeWith_ok (hc : BaseCfgOk c) (hC : Law c.C) {mq : Prog isa} {W : List (Nat × Nat)}
     (hmq : MulOk c mq W) (hW : MulW c W) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
@@ -435,7 +435,7 @@ theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq : Prog isa} {W : List 
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
 
 /-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`). -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+theorem exchange_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
     WP isa (Impl.Ecdh.X86_64.Cfg.exchange c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
   exchangeWith_ok hc hC (mulQ_ok hc hC) (mulQ_w hc) hp

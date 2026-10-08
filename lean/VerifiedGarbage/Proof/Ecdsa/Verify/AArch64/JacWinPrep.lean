@@ -99,7 +99,7 @@ theorem jacWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   have one : tmv c.C c.n base s₂ (c.sl ONEP)=1 := by
     change toM _ _ (wordsVal s₂.mem base (c.sl ONEP) c.n)=1
     rw [F₂.onep]
-    have hm1 := toM_cmont hc 1
+    have hm1 := toM_cmont hc.toBaseCfgOk 1
     have ho : Fin.ofNat c.C.p 1 = (1:Fe c.C) := by rfl
     simpa only [Cfg.mont,Cfg.R,Nat.one_mul,ho] using hm1
   have hp : Rep c.C (tmv c.C c.n base s₂ (c.sl PX)) (tmv c.C c.n base s₂ (c.sl PY))

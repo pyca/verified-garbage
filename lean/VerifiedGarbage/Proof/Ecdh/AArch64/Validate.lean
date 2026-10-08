@@ -62,7 +62,7 @@ structure MontPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   y_lt : sv c base s' QYM < c.C.p
   y : toM c.C.p (2 ^ (64 * c.n)) (sv c base s' QYM) = Fin.ofNat c.C.p (sv c base s QY)
 
-theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem mont_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hr2 : sv c base s R2P = c.R * c.R % c.C.p) :
     WP isa (.block (Impl.Mont.AArch64.mul c.MP' (c.sl QXM) (c.sl E) (c.sl R2P) ++
       Impl.Mont.AArch64.mul c.MP' (c.sl QYM) (c.sl QY) (c.sl R2P))) s (MontPost c base s) := by
@@ -96,7 +96,7 @@ theorem mont_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
 abbrev OnCurve (c : Cfg) (x y : Fe c.C) : Prop :=
   y * y - ((x * x * x + Fin.ofNat c.C.p c.C.a * x) + Fin.ofNat c.C.p c.C.b) = 0
 
-theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem curve_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hM : ModOkA c.MP' size c.C.p s.mem base) (hx : sv c base s QXM < c.C.p) (hy : sv c base s QYM < c.C.p)
     (hap : sv c base s AP = c.mont c.C.a) (hbp : sv c base s BP = c.mont c.C.b) {P₀ : Prop} [Decidable P₀]
     (hf : word s.mem base (c.sl FLAG) = mask P₀) :
@@ -178,7 +178,7 @@ theorem select_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.select c =
     (sel c.n (c.sl PX) (c.sl GX) (c.sl QXM) ++ sel c.n (c.sl PY) (c.sl GY) (c.sl QYM)) := by
   simp only [Impl.Ecdh.AArch64.Cfg.select, List.append_assoc]
 
-theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {P : Prop} [Decidable P]
+theorem select_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {P : Prop} [Decidable P]
     (hf : word s.mem base (c.sl FLAG) = mask P) :
     WP isa (.block (Impl.Ecdh.AArch64.Cfg.select c)) s fun s' =>
       Scr s' base size ∧ KeepRegs [.x1, .x2, .x3] s s' ∧ Unch base (slW c [PX, PY]) s.mem s'.mem ∧
@@ -236,7 +236,7 @@ and the range of its coordinates) and the curve's equation. -/
 abbrev PeerOk (c : Cfg) (base : Addr) (s : State) (P₀ : Prop) : Prop :=
   P₀ ∧ OnCurve c (Fin.ofNat c.C.p (sv c base s E)) (Fin.ofNat c.C.p (sv c base s QY))
 
-theorem validate_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem validate_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hr2 : sv c base s R2P = c.R * c.R % c.C.p)
     (hbp : sv c base s BP = c.mont c.C.b) {P₀ : Prop} [Decidable P₀]
     (hf : word s.mem base (c.sl FLAG) = mask P₀) :

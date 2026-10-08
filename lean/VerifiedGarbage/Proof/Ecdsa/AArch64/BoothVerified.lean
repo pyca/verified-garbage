@@ -13,9 +13,9 @@ theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     CombCorrect p256 Impl.P256.Booth.comb := by
   intro base k T s hs hm hf
   have hc := p256_ok hI
-  exact tcombJWith_ok (tcombLay hc) (combA hc)
+  exact tcombJWith_ok (tcombLay hc.toBaseCfgOk) (combA hc.toBaseCfgOk)
     (Forward.CombArithmetic.compiler_correct (by decide)) (by decide) hL hc.am3 hc.onG
-    (tcombVals hc hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf
+    (tcombVals hc.toBaseCfgOk hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf
 
 theorem booth_sign_verified (hL : Law Spec.P256.curve) (hI : InvSounds)
     (hT : CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start) :

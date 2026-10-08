@@ -28,7 +28,7 @@ theorem finish_eq (c : Cfg) : Impl.Ecdh.AArch64.Cfg.finish c =
   simp only [Impl.Ecdh.AArch64.Cfg.finish, List.append_assoc]; rfl
 
 /-- `x` or zeros, the return value and the callee-saved registers. -/
-theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+theorem ecFinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hx20 : s.gpr .x20 = out) (hfit : out.toNat + c.C.len ≤ 2 ^ 64) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, c.C.len⟩ ⟨base, size⟩)
     {g : Reg → BitVec 64} (hsv : Spill.Saved base g Cfg.saved s.mem) (b : Bool)
@@ -93,7 +93,7 @@ abbrev ok (c : Cfg) (base : Addr) (s : State) (V : Prop) [Decidable V] : Bool :=
   decide ((V ∧ 0 < sv c base s D ∧ sv c base s D < c.C.n) ∧ sv c base s RZ ≠ 0)
 
 /-- `x`, the checks of `d` and `Z`, and the result. -/
-theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hacc : sv c base s ACC < c.C.p)
     {V : Prop} [Decidable V] (hflag : word s.mem base (c.sl FLAG) = mask V) {out : Addr}
     (hx20 : s.gpr .x20 = out) (hfit : out.toNat + c.C.len ≤ 2 ^ 64) (hw : (⟨out, c.C.len⟩ : Region) ∈ s.wr)
@@ -229,7 +229,7 @@ code checks it, else `G`. -/
 def peerPt (c : Cfg) (b4 : Prop) [Decidable b4] (x y : Nat) : Point c.C :=
   if h : ((b4 ∧ x < c.C.p) ∧ y < c.C.p) ∧ OnCurve c (Fin.ofNat c.C.p x) (Fin.ofNat c.C.p y) then .affine ⟨x, h.1.1.2⟩ ⟨y, h.1.2⟩ else G c.C
 
-theorem peerPt_onCurve (hc : CfgOk c) (b4 : Prop) [Decidable b4] (x y : Nat) :
+theorem peerPt_onCurve (hc : BaseCfgOk c) (b4 : Prop) [Decidable b4] (x y : Nat) :
     onCurve c.C (peerPt c b4 x y) = true := by
   unfold peerPt
   split

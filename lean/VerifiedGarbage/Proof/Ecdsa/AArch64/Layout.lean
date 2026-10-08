@@ -40,11 +40,11 @@ than `8 len` bits) are fewer than 64, `n ≥ 4` words, the inversion
 modulo `p` sound (`InvSound`, which `p` prime gives) with its batches and
 constants right (`InvOk`), and modulo `n` too or the chain of `n - 2` right
 (`fastN`), `n` even or nine (the comb's
-selection moves an entry's words in pairs, or by thirds), `a = -3` (the complete formulas are those for it),
+selection moves an entry's words in pairs, or by thirds),
 and the products modulo `p` are by a function that computes them if they are calls. The group law needs
 more (`Weierstrass.Law`, which a prime field and no point of order 2 give:
 `Weierstrass.Good.law`), which only the proofs of the results take. -/
-structure CfgOk (c : Cfg) : Prop where
+structure BaseCfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
   n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
@@ -69,12 +69,17 @@ structure CfgOk (c : Cfg) : Prop where
   inv_p : InvOk c.invP c.C.p
   inv_n : c.fastN = true → InvSound c.C.n ∧ InvOk c.invN c.C.n
   chain_n : c.fastN = false → chainCheck (slide (c.C.n - 2)).1 (slide (c.C.n - 2)).2 (c.C.n - 2) = true
-  am3 : AM3 c.C
   /-- If the products modulo `p` are calls of a function (`Mont.callOf`), it
   computes them modulo `p`; those modulo `n` are inline. -/
   call_p : ∀ f m', Mont.callOf c.MP' = some (f, m') → m' = c.C.p ∧
     VG.Proof.Weierstrass.AArch64.Mont.ModOk c.n m'
   call_n : Mont.callOf c.MN' = none
+
+/-- The optimized comb and window formulas additionally require `a = -3`. -/
+structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where
+  am3 : AM3 c.C
+
+instance {c : Cfg} : Coe (CfgOk c) (BaseCfgOk c) := ⟨CfgOk.toBaseCfgOk⟩
 
 /-- The comb's tables (`Cfg.combWords`) at `T`: readable, held, not
 wrapping around, and apart from the working space at `base`. -/
@@ -103,6 +108,15 @@ structure Pre (c : Cfg) (s : State) : Prop where
   sc_fit : (s.gpr .x4).toNat + size ≤ 2 ^ 64
   tbl : TblPre c s (s.syms c.tsym) (s.gpr .x4)
 
+/-- The output facts used after scalar multiplication. -/
+structure SignOutput (c : Cfg) (s : State) : Prop where
+  wr : s.wr = [⟨s.gpr .x0, 2 * c.C.len⟩, ⟨s.gpr .x4, size⟩]
+  out_sc : Region.Disjoint ⟨s.gpr .x0, 2 * c.C.len⟩ ⟨s.gpr .x4, size⟩
+  out_fit : (s.gpr .x0).toNat + 2 * c.C.len ≤ 2 ^ 64
+
+instance {c : Cfg} {s : State} : Coe (Pre c s) (SignOutput c s) :=
+  ⟨fun h => ⟨h.wr, h.out_sc, h.out_fit⟩⟩
+
 /-- What `setupWith` needs of its arguments (`Pre` gives it, and so can the
 arguments of other functions that run it): the working space `scratch = x4`
 writable, and `k = x3`, `d = x1` and `digest = x2` (`len` bytes each)
@@ -117,7 +131,7 @@ structure SetupPre (c : Cfg) (s : State) : Prop where
   k_sc : Region.Disjoint ⟨s.gpr .x3, c.C.len⟩ ⟨s.gpr .x4, size⟩
   sc_fit : (s.gpr .x4).toNat + size ≤ 2 ^ 64
 
-theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (hc : CfgOk c) : SetupPre c s where
+theorem Pre.setup {c : Cfg} {s : State} (hp : Pre c s) (hc : BaseCfgOk c) : SetupPre c s where
   wr := by rw [hp.wr]; simp
   k_in := inRegions_words (by rw [hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega)
   d_in := inRegions_words (by rw [hp.rd]; simp) (by have := hc.len_hi; have := hc.n10; omega)

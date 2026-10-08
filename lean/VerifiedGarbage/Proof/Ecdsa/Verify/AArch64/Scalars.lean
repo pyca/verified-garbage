@@ -67,7 +67,7 @@ theorem uv_eq (c : Cfg) : Impl.Ecdsa.Verify.AArch64.Cfg.uv c =
 
 /-- One multiplication modulo `n`, on numbered slots: it keeps the modulus and
 every other slot but the temporary area's. -/
-theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem mulN_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMN : ModOkA c.MN' size c.C.n s.mem base) {o a b : Nat} (ho : o < 45) (ha : a < 45) (hb : b < 45)
     (hB : sv c base s b < c.C.n) (hoN : o ≠ MN) :
     WP isa (.block (Impl.Mont.AArch64.mul c.MN' (c.sl o) (c.sl a) (c.sl b))) s fun s' =>
@@ -85,7 +85,7 @@ theorem mulN_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
       fun hi h₁ h₂ => sv_keep (MN'_n c) rfl h7 hn k hi h₁ h₂, lt, e⟩
 
 /-- The checks of `r` and `s`, `w = s^(n-2)`, `u` and `v`. -/
-theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
+theorem mid_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64} {s : State}
     (hF : Front c s₀ base g s) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Mid c s₀ base g s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.AArch64.Cfg.scalars c) (.seq c.nPow

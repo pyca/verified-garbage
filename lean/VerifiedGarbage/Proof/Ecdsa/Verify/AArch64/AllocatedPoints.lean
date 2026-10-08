@@ -35,7 +35,7 @@ theorem body_ok (raw : RawCorrect) (hc : CfgOk p256) (hC : Law p256.C)
   have hOne : K.one<C.p := by
     change 2^256%C.p<C.p
     exact Nat.mod_lt _ (by decide)
-  have hone : toM C.p (2^(64*K.M.n)) K.one=1 := toM_cmont hc 1
+  have hone : toM C.p (2^(64*K.M.n)) K.one=1 := toM_cmont hc.toBaseCfgOk 1
   rw [Joint.points,Joint.window]
   apply WP.assoc
   apply WP.assoc

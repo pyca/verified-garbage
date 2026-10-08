@@ -64,7 +64,7 @@ theorem flag_unch_gW {base : Addr} {m m' : Mem} (hu : Unch base (gW c) m m')
 /-- `R = [k]G` by a comb `P` (`d`'s, with its tables where it reads them),
 after `b R mod p` is put in `EM`: what `P` gives from `TCombFixed`, `gMul`'s
 postcondition. -/
-theorem gMulComb_ok' (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d) {base : Addr}
+theorem gMulComb_ok' (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d) {base : Addr}
     {g : Reg → BitVec 64} {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat}
     (hkl : k < 2 ^ (64 * c.n))
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -140,7 +140,7 @@ theorem gMulComb_ok' (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d) {base
 /-- `R = [k]G`, by the comb or the ladder, from the table of `k`'s bits, with
 `R = O` (for the ladder) and the comb's tables (`hTb`) where the comb reads
 them. -/
-theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {g : Reg → BitVec 64}
+theorem gMul_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat} (hkl : k < 2 ^ (64 * c.n))
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -202,11 +202,11 @@ theorem gMul_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {
   | some d =>
     obtain ⟨hTM, hout⟩ := hTb d hcd
     exact gMulComb_ok' hc hcd hs F hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
-      tcomb_ok (tcombLay hc (hc.comb d hcd)) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt hs₁
+      tcomb_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt hs₁
         hM₁ hF publicLookup
 
 /-- `R = [k]G`, by the comb or the ladder, after the setup and the tables. -/
-theorem gMul_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
+theorem gMul_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
     {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s) :
     WP isa c.gMul s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧
@@ -218,7 +218,7 @@ theorem gMul_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat
 
 /-- `R = [k]G` for a secret `k` (`gMulK`): by the comb with Booth's digits for
 a curve whose comb has them, else as `gMul`. -/
-theorem gMulK_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {g : Reg → BitVec 64}
+theorem gMulK_ok' (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hs : Scr s base size) (F : Fixed c base g s.mem) {k : Nat} (hkl : k < 2 ^ (64 * c.n))
     (hrx : sv c base s RX = 0) (hry : sv c base s RY = c.mont 1) (hrz : sv c base s RZ = 0)
     (ht₀ : ∀ t < 64 * c.n, s.mem (off base (bitsAt c.n 0 + t)) = if k.testBit t then 1 else 0)
@@ -240,11 +240,11 @@ theorem gMulK_ok' (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {base : Addr} 
     · simp only [hj, ↓reduceIte]
       obtain ⟨hTM, hout⟩ := hTb d hcd
       exact gMulComb_ok' hc hcd hs F hkl ht₀ hTM hout fun s₁ hs₁ hM₁ hF =>
-        tcombJ_ok (tcombLay hc (hc.comb d hcd)) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt
+        tcombJ_ok (tcombLay hc (hc.comb d hcd)) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1) hc.p_lt
           (by show 1 ≤ bitsAt c.n 0; rw [bitsAt_eq]; omega) ((hT d hcd).2 hj) hkl hs₁ hM₁ hF
 
 /-- `R = [k]G` for a secret `k`, after the setup and the tables. -/
-theorem gMulK_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
+theorem gMulK_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {hs : Option Nat} {s₀ : State} (hp : Pre c s₀)
     {s : State} (hS : St₁ c hs s₀ (s₀.gpr .r8) s) :
     WP isa c.gMulK s fun s' => KeepRegs (powClob c.n) s s' ∧ Unch (s₀.gpr .r8) (gW c) s.mem s'.mem ∧
       ModOkW c.MP' size c.C.p s'.mem (s₀.gpr .r8) ∧

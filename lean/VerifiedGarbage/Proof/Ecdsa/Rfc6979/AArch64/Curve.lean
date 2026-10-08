@@ -48,7 +48,7 @@ def coreK (E : Impl.Ecdsa.AArch64.Cfg) : Contract AArch64.isa where
     let digest : Region := ⟨s.gpr .x2, E.C.len⟩
     let k : Region := ⟨s.gpr .x3, E.C.len⟩
     let scratch : Region := ⟨s.gpr .x4, 8192⟩
-    s.rd = [d, digest, k, ⟨s.syms E.tsym, 8 * E.combWords.length⟩] ∧ s.wr = [out, scratch] ∧
+    s.rd = [d, digest, k] ++ tableRegions E (tableAddr E s.syms) ∧ s.wr = [out, scratch] ∧
       out.Disjoint scratch ∧ out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
       (s.gpr .x0).toNat + 2 * E.C.len ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8192 ≤ 2 ^ 64 ∧ TblOk E s [out, scratch]
@@ -58,7 +58,7 @@ def coreK (E : Impl.Ecdsa.AArch64.Cfg) : Contract AArch64.isa where
     | none => (s'.gpr .x0).setWidth 32 = 0 ∧ bytesAt s'.mem (s.gpr .x0) (2 * E.C.len) =
         List.replicate (2 * E.C.len) 0
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp ∧ s₁.syms E.tsym = s₂.syms E.tsym
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp ∧ tableAddr E s₁.syms = tableAddr E s₂.syms
 
 /-- The code's blocks that depend on neither the hash function nor the
 compression function, for scalars of `E`. -/
