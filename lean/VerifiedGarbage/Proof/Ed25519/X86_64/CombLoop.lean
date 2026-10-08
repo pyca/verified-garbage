@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ed25519.X86_64.CombSelect
+import VerifiedGarbage.Proof.Ed25519.X86_64.CombNeg
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointSelect
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointMul
 import VerifiedGarbage.Proof.Ed25519.X86_64.WindowEntry
@@ -355,39 +356,59 @@ theorem signMask_eq (n : Nat) : signMask n = Proof.X25519.X86_64.mask (decide (n
 
 theorem combNeg_ok {s : State} {base : Addr} (hs : Scratch s base) {n : Nat}
     (hm : s.mem.readW (off base combSignMask) 64 = signMask n) :
-    WP isa (.block (combNeg fld)) s fun t =>
+    WP isa (.block combNeg) s fun t =>
       point (env t.mem base) 4 5 6 7 = (if n < 16 then negCached (point (env s.mem base) 4 5 6 7)
         else point (env s.mem base) 4 5 6 7) ∧ Keep base s t ∧
       (∀ i : Slot, (i.val < 4 ∨ 10 ≤ i.val) → env t.mem base i = env s.mem base i) := by
   rw [combNeg, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (fieldCodeWide_ok hs _) fun a ⟨ka, va⟩ => ?_
-  have hsa := hs.of_keep ka
+  refine WP.mono (loadSignMask_ok hs (m := signMask n) hm) fun b ⟨bc, kb⟩ => ?_
+  have hsb := hs.of_keeps kb (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (loadSignMask_ok hsa (m := signMask n) (by
-    rw [← hm]; exact ka.mem.word (Or.inr (by simp only [combSignMask]; omega))
-      (by simp only [combSignMask]; omega))) fun b ⟨bc, kb⟩ => ?_
-  have hsb := hsa.of_keeps kb (by decide)
-  refine WP.mono (swapFieldsWide_ok hsb [(4, 5), (6, 8)]
-    (fun ab h => by simp only [List.mem_cons, List.not_mem_nil, or_false] at h; rcases h with rfl | rfl <;> decide)
-    (sw := decide (n < 16))
-    (by rw [bc, signMask_eq])) fun t ⟨kt, _, vt⟩ => ?_
-  have kbk : Keep base a b := ⟨fun r hr => kb.1 r (fun h => hr (by
+  refine WP.mono (swapFieldX_ok hsb 4 5 (by decide) (by decide) (sw := decide (n < 16))
+    (by rw [bc, signMask_eq])) fun u ⟨ku, uc, uv⟩ => ?_
+  have hsu := hsb.of_keep ku
+  refine WP.mono (negFieldWide_ok hsu (x := offset 6) (by decide) (sw := decide (n < 16))
+    (by rw [uc, bc, signMask_eq])) fun t ⟨tOp, _, tF⟩ => ?_
+  have kbk : Keep base s b := ⟨fun r hr => kb.1 r (fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h; subst h; decide)),
     kb.2.2.1, kb.2.2.2, by rw [kb.2.1]; exact Outside.refl _ _ _ _⟩
-  have ev : env t.mem base = swapEnvs [(4, 5), (6, 8)] (decide (n < 16))
-      (evalOps [.const 9 0, .sub 8 9 6] (env s.mem base)) := by rw [vt, kb.2.1, va]
-  refine ⟨?_, (ka.trans kbk).trans kt, fun i hi => ?_⟩
-  · rw [ev]
+  have ktOp : Keep base u t :=
+    ⟨tOp.gpr, tOp.rd, tOp.wr, fun x hx => tOp.mem x (by simp only [offset] at *; omega)⟩
+  have henv : ∀ i : Slot, i ≠ 6 → env t.mem base i = env u.mem base i := fun i hi =>
+    congrArg VG.Proof.X25519.toFe (tOp.mem.fe (by
+      have := i.isLt
+      simp only [offset] at *
+      rcases Nat.lt_trichotomy i.val 6 with h | h | h
+      · left; omega
+      · exact absurd (Fin.ext h) hi
+      · right; omega) (by simp only [offset]; have := i.isLt; omega))
+  have hbs : env b.mem base = env s.mem base := by rw [kb.2.1]
+  have hu : env u.mem base = swapEnv 4 5 (decide (n < 16)) (env s.mem base) := by rw [uv, hbs]
+  have h6 : env u.mem base 6 = env s.mem base 6 := by rw [hu]; simp [swapEnv]
+  have e4 : env t.mem base 4 = (if n < 16 then env s.mem base 5 else env s.mem base 4) := by
+    rw [henv 4 (by decide), hu]; by_cases h : n < 16 <;> simp [swapEnv, h]
+  have e5 : env t.mem base 5 = (if n < 16 then env s.mem base 4 else env s.mem base 5) := by
+    rw [henv 5 (by decide), hu]; by_cases h : n < 16 <;> simp [swapEnv, h]
+  have e7 : env t.mem base 7 = env s.mem base 7 := by
+    rw [henv 7 (by decide), hu]; simp [swapEnv]
+  have e6 : env t.mem base 6 = (if n < 16 then 0 - env s.mem base 6 else env s.mem base 6) := by
+    show VG.Proof.X25519.X86_64.F t.mem base (offset 6) = _
+    rw [tF]
     by_cases h : n < 16
-    · simp [h, swapEnvs, swapEnv, evalOps, evalOp, point, negCached]
-    · simp [h, swapEnvs, swapEnv, evalOps, evalOp, point]
-  · rw [ev]
-    have h4 : i ≠ 4 := fun h => by subst h; simp at hi
-    have h5 : i ≠ 5 := fun h => by subst h; simp at hi
-    have h6 : i ≠ 6 := fun h => by subst h; simp at hi
-    have h8 : i ≠ 8 := fun h => by subst h; simp at hi
-    have h9 : i ≠ 9 := fun h => by subst h; simp at hi
-    simp [swapEnvs, swapEnv, evalOps, evalOp, h4, h5, h6, h8, h9]
+    · simp only [h, decide_true, ↓reduceIte]
+      rw [show VG.Proof.X25519.X86_64.F u.mem base (offset 6) = env u.mem base 6 from rfl, h6,
+        zero_sub]
+    · simp only [h, decide_false, Bool.false_eq_true, ↓reduceIte]
+      rw [show VG.Proof.X25519.X86_64.F u.mem base (offset 6) = env u.mem base 6 from rfl, h6]
+  refine ⟨?_, (kbk.trans ku).trans ktOp, fun i hi => ?_⟩
+  · by_cases h : n < 16
+    · simp only [point, e4, e5, e6, e7, h, ↓reduceIte, negCached]
+    · simp only [point, e4, e5, e6, e7, h, ↓reduceIte]
+  · have hi6 : i ≠ 6 := fun h => by subst h; simp at hi
+    have hi4 : i ≠ 4 := fun h => by subst h; simp at hi
+    have hi5 : i ≠ 5 := fun h => by subst h; simp at hi
+    rw [henv i hi6, hu]
+    simp [swapEnv, hi4, hi5]
 
 end VG.Proof.Ed25519.X86_64
 end
@@ -669,7 +690,7 @@ theorem combStep_ok {sel : List Instr} (hsel : SelOk sel) {s₀ s : State} {base
   have tu : CombTbl u T := tg.keep hfar (PowersKeep.of_keep ku) usy
   -- Negated for a negative digit.
   rw [WP.block_append_iff]
-  refine WP.mono_syms (combNeg_ok (fld := fld) hsu usm) fun u' ⟨u'q, ku', ue'⟩ u'sy => ?_
+  refine WP.mono_syms (combNeg_ok hsu usm) fun u' ⟨u'q, ku', ue'⟩ u'sy => ?_
   have hsu' : Scratch u' base := hsu.of_keep ku'
   have eu : ∀ x : Slot, (x.val < 4 ∨ 16 ≤ x.val) → env u'.mem base x = env b.mem base x := fun x hx => by
     have hux : env u.mem base x = env g.mem base x := by
