@@ -32,8 +32,9 @@
 //!
 //! [`ChaCha20Poly1305::encrypt`] encrypts out of place, from a plaintext in
 //! pieces (a list of slices, such as a record's payload and TLS 1.3's
-//! content type, or a single one) into one output buffer: one call of
-//! `vg_chacha20_poly1305_seal_gather`
+//! content type, or a single one) into one output buffer. Below 64 KiB it
+//! copies the pieces to the output itself and encrypts them there in place;
+//! from 64 KiB, it makes one call of `vg_chacha20_poly1305_seal_gather`
 //! (`VG.Spec.ChaCha20Poly1305.sealGatherContract`), which copies the pieces
 //! to the output and encrypts them there with the same implementation's
 //! `vg_chacha20_poly1305_seal`.
@@ -164,6 +165,11 @@ impl ChaCha20Poly1305 {
     ) -> Result<[u8; 16], Error> {
         // Check the length before encrypting anything.
         check_len(data.len())?;
+        Ok(self.seal(nonce, aad, data))
+    }
+
+    /// Encrypts `data` in place, at most `P_MAX` bytes, and returns the tag.
+    fn seal(&self, nonce: &[u8; 12], aad: &[u8], data: &mut [u8]) -> [u8; 16] {
         let seal = match self.backend {
             Backend::Scalar => vg_chacha20_poly1305_seal,
             #[cfg(target_arch = "aarch64")]
@@ -199,11 +205,19 @@ impl ChaCha20Poly1305 {
                 &mut tag,
             )
         };
-        Ok(tag)
+        tag
     }
 
     /// The most pieces [`encrypt`](Self::encrypt) takes a plaintext in.
     pub const MAX_PIECES: usize = 64;
+
+    /// Below this many bytes, [`encrypt`](Self::encrypt) copies the pieces
+    /// into the output and encrypts it in place: every implementation of
+    /// `vg_chacha20_poly1305_seal_gather` copies them before encrypting, and
+    /// a `memcpy` costs less than its copy and its call. The limit, above
+    /// the largest TLS record, keeps it in use (and tested) for longer
+    /// texts, where the difference is negligible.
+    const COPY_BELOW: usize = 65536;
 
     /// Encrypts the plaintext made of the pieces `plaintext`, in order, with
     /// the nonce `nonce` and the additional data `aad`, into `out`, which
@@ -227,6 +241,14 @@ impl ChaCha20Poly1305 {
         if len != out.len() as u64 {
             return Err(Error::InvalidOutputLength);
         }
+        if out.len() < Self::COPY_BELOW {
+            let mut at = 0;
+            for p in plaintext {
+                out[at..at + p.len()].copy_from_slice(p);
+                at += p.len();
+            }
+            return Ok(self.seal(nonce, aad, out));
+        }
         // The descriptors of the pieces, as `vg_chacha20_poly1305_seal_gather`
         // takes them: each its address and its length. Only the first
         // `plaintext.len()` are written, and the function reads only those.
@@ -248,7 +270,7 @@ impl ChaCha20Poly1305 {
             Backend::Ssse3 => vg_chacha20_poly1305_seal_gather_ssse3,
         };
         let mut tag = [0; 16];
-        // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
+        // SAFETY: as in `seal`, with `out` valid for reads and
         // writes of `out.len()` bytes; `descs` holds `plaintext.len()`
         // initialized descriptors (a local), each the address and the length
         // of a piece valid for reads, which are `out.len()` bytes in all, at
@@ -295,7 +317,7 @@ impl ChaCha20Poly1305 {
             #[cfg(target_arch = "x86")]
             Backend::Ssse3 => vg_chacha20_poly1305_open_ssse3,
         };
-        // SAFETY: as in `encrypt_in_place`, with `tag` valid for reads of 16
+        // SAFETY: as in `seal`, with `tag` valid for reads of 16
         // bytes: `data` is the only buffer written, a unique borrow, which
         // overlaps none of the shared borrows `self.key`, `nonce`, `aad` and
         // `tag`.
@@ -445,6 +467,32 @@ mod tests {
             best.encrypt(&nonce, &[], &[&msg[..1], &msg[1..3]], &mut out),
             Err(Error::InvalidOutputLength)
         );
+    }
+
+    /// On each side of `COPY_BELOW`, where `encrypt` stops copying the
+    /// pieces itself and calls `seal_gather`: the same as in place, with
+    /// every implementation.
+    #[test]
+    fn encrypt_long_pieces() {
+        let key = core::array::from_fn(|i| (i * 3) as u8);
+        let mut scalar = ChaCha20Poly1305::new(&key);
+        scalar.backend = Backend::Scalar;
+        let best = ChaCha20Poly1305::new(&key);
+        let nonce = [6; 12];
+        let n = ChaCha20Poly1305::COPY_BELOW;
+        let msg: alloc::vec::Vec<u8> = (0..n + 17).map(|i| (i * 7 + 1) as u8).collect();
+        for aead in [&scalar, &best] {
+            for len in [n - 1, n, n + 17] {
+                let mut want = msg[..len].to_vec();
+                let want_tag = aead.encrypt_in_place(&nonce, &[1; 13], &mut want).unwrap();
+                let m = &msg[..len];
+                for pieces in [&[m][..], &[&m[..len - 1], &m[len - 1..]]] {
+                    let mut out = alloc::vec![0u8; len];
+                    let tag = aead.encrypt(&nonce, &[1; 13], pieces, &mut out);
+                    assert_eq!((&out, tag), (&want, Ok(want_tag)));
+                }
+            }
+        }
     }
 
     /// Every implementation gives the same ciphertext and tag as the scalar
