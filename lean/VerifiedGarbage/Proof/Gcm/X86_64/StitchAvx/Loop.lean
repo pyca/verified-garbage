@@ -23,7 +23,7 @@ stores), from the state the setup leaves (`Ready`):
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (aregs batch gq group ordE ordD first body dbody ghLoad lastG)
 open VG.Impl.Gcm.X86_64.Stitch (storeCtr storeY)
@@ -124,7 +124,7 @@ theorem zero_ok (s : State) :
 /-- What the products of a group, in the order `ord`, add up to, for the
 powers `P`. -/
 def FinOk (ord : Nat → Nat) (H : Block) (P : Nat → Block) : Prop :=
-  ∀ X y, reduce (accN ord X P y 16) = ghashFrom H y ((List.range 16).map X)
+  ∀ X y, reduceB (accN ord X P y 16) = ghashFrom H y ((List.range 16).map X)
 
 /-- What the setup leaves: nothing encrypted, the powers `P` in the working
 space, `Y` in `xmm2`, `rdx` pointing to the data. -/
