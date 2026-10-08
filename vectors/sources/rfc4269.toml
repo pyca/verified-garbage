@@ -1,0 +1,5 @@
+name = "RFC 4269, The SEED Encryption Algorithm (test vectors and intermediate values in Appendix B, S-boxes in Appendix A)"
+directories = ["rfc4269"]
+url = "https://www.rfc-editor.org/rfc/rfc4269.txt"
+sha256 = "a1132bf03be7ff05ae9be59189632f849a200c2f1c86ce9ecc2f94f51b668f54"
+retrieved = 2026-10-08

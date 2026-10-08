@@ -1,0 +1,5 @@
+name = "pyca/cryptography SEED-CFB128 vectors (from the AESVS MMT data, verified against Botan)"
+directories = ["cryptography-seed-cfb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/SEED/seed-cfb.txt"
+sha256 = "ff4b50f95daeff5a7bd2980603fdf40cc30f0243b9e79f7a5b4077d578484c75"
+retrieved = 2026-10-08
