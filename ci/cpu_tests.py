@@ -42,6 +42,10 @@ import sys
 BINARIES = ("lib", "tests")
 
 GROUPS = {
+    "aes_cbc": {
+        "lib": ["aes_cbc"],
+        "tests": ["cavp::aes_cbc", "wycheproof::aes_cbc"],
+    },
     "aes_ccm": {
         "lib": ["aes_ccm"],
         "tests": ["cavp::aes_ccm", "wycheproof::aes_ccm"],
