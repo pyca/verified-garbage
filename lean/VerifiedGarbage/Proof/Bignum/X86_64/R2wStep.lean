@@ -53,33 +53,38 @@ theorem top_half (m : Mem) (B : Addr) (e w : Nat) :
   · intro h
     exact Nat.le_trans (Nat.mul_le_mul_left P h) (Nat.le_add_left _ _)
 
-/-- `step`'s loads: the bases of `x`, `m` and the accumulator, and `w`. -/
+/-- `step`'s loads: the bases of `x`, `m`, the accumulator and the temporary,
+and `w`. -/
 theorem stepBases_ok {L : Lay} {t : State} (hg : GoodL L t) :
     WP isa (.block R2Words.bases) t fun t' =>
       t'.gpr .rbx = off L.B (slot L.w aR2) ∧ t'.gpr .r10 = off L.B (slot L.w aN) ∧
-      t'.gpr .r8 = off L.B (slot L.w aAcc) ∧ t'.gpr .r12 = BitVec.ofNat 64 L.w ∧ t'.mem = t.mem ∧
-      Keep [.rbx, .r10, .r8, .r12] t t' := by
+      t'.gpr .r8 = off L.B (slot L.w aAcc) ∧ t'.gpr .r12 = BitVec.ofNat 64 L.w ∧
+      t'.gpr .rbp = off L.B (slot L.w aTmp) ∧ t'.mem = t.mem ∧ Keep [.rbx, .r10, .r8, .r12, .rbp] t t' := by
   have hl : ∀ i < 32, InRegions (t.rd ++ t.wr) (off L.B (8 * i)) 8 := fun i hi =>
     hg.1.scr.ld (by have := hdr_lt_slot L.w 8 hi; have := hg.2; omega)
-  refine WP.mono (WP.keep [.rbx, .r10, .r8, .r12] (Q := fun t' =>
+  refine WP.mono (WP.keep [.rbx, .r10, .r8, .r12, .rbp] (Q := fun t' =>
       t'.gpr .rbx = off L.B (slot L.w aR2) ∧ t'.gpr .r10 = off L.B (slot L.w aN) ∧
-      t'.gpr .r8 = off L.B (slot L.w aAcc) ∧ t'.gpr .r12 = BitVec.ofNat 64 L.w ∧ t'.mem = t.mem) ?_ rfl)
-    fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, k⟩
+      t'.gpr .r8 = off L.B (slot L.w aAcc) ∧ t'.gpr .r12 = BitVec.ofNat 64 L.w ∧
+      t'.gpr .rbp = off L.B (slot L.w aTmp) ∧ t'.mem = t.mem) ?_ rfl)
+    fun t' ⟨h, k⟩ => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2, k⟩
   unfold R2Words.bases
   xrun [State.ea, hdr, hg.1.rdi, hdrOff, hl (sArr aR2) (by decide), hl (sArr aN) (by decide),
-    hl (sArr aAcc) (by decide), hl sW (by decide), hg.1.hdr.harr aR2 (by decide), hg.1.hdr.harr aN (by decide),
-    hg.1.hdr.harr aAcc (by decide), hg.1.hdr.hw]
+    hl (sArr aAcc) (by decide), hl sW (by decide), hl (sArr aTmp) (by decide), hg.1.hdr.harr aR2 (by decide),
+    hg.1.hdr.harr aN (by decide), hg.1.hdr.harr aAcc (by decide), hg.1.hdr.hw, hg.1.hdr.harr aTmp (by decide)]
 
 /-- `x := x 2^64 mod m`, for `x < m` in `aR2` and `m` in `aN`, `m`'s top word
-at least `2^63`; it changes only the accumulator and `x`. -/
+`d` at least `2^63`, and `v = ⌊(2^128 - 1) / d⌋ - 2^64` the first word of the
+temporary; it changes only the accumulator and `x`. -/
 theorem step_ok {L : Lay} {t : State} (hg : GoodL L t) (hw : 2 ≤ L.w) (hw' : L.w < 2 ^ 30)
     (hd : 2 ^ 63 ≤ (word t.mem L.B (slot L.w aN + 8 * (L.w - 1))).toNat)
+    (hv : (word t.mem L.B (slot L.w aTmp)).toNat =
+      (2 ^ 128 - 1) / (word t.mem L.B (slot L.w aN + 8 * (L.w - 1))).toNat - 2 ^ 64)
     (hx : wv t.mem L.B (slot L.w aR2) L.w < wv t.mem L.B (slot L.w aN) L.w) :
     WP isa step t fun t' => GoodL L t' ∧
       wv t'.mem L.B (slot L.w aR2) L.w = wv t.mem L.B (slot L.w aR2) L.w * 2 ^ 64 % wv t.mem L.B (slot L.w aN) L.w ∧
       Arrays L.B L.w [aAcc, aR2] t.mem t'.mem ∧ Keep mmRegs t t' := by
   obtain ⟨B, Z, w, minv⟩ := L
-  dsimp only at hw hw' hd hx ⊢
+  dsimp only at hw hw' hd hv hx ⊢
   have hs : Scr t B Z := hg.1.scr
   have hZ : slot w 8 ≤ Z := hg.2
   have hn : B.toNat + Z ≤ 2 ^ 64 := hs.nowrap
@@ -88,24 +93,26 @@ theorem step_ok {L : Lay} {t : State} (hg : GoodL L t) (hw : 2 ≤ L.w) (hw' : L
   have hst := slot_le (w := w) (show aAcc < 8 by decide)
   have sXT := slot_sep (w := w) (show aR2 ≠ aAcc by decide)
   have sMT := slot_sep (w := w) (show aN ≠ aAcc by decide)
-  rw [show step = .seq (.block R2Words.bases) (.seq quot (.seq mulSub (.seq addBack (.seq addBack copyBack))))
-    from rfl]
-  refine WP.seq (WP.mono (stepBases_ok (L := ⟨B, Z, w, minv⟩) hg) fun t₁ ⟨h1bx, h110, h18, h112, hm₁, k₁⟩ => ?_)
-  dsimp only at h1bx h110 h18 h112
+  have hsv := slot_le (w := w) (show aTmp < 8 by decide)
+  rw [show step = .seq (.block R2Words.bases) (.seq (.block quot) (.seq mulSub (.seq addBack (.seq addBack
+    copyBack)))) from rfl]
+  refine WP.seq (WP.mono (stepBases_ok (L := ⟨B, Z, w, minv⟩) hg)
+    fun t₁ ⟨h1bx, h110, h18, h112, h1bp, hm₁, k₁⟩ => ?_)
+  dsimp only at h1bx h110 h18 h112 h1bp
   have hs₁ := hs.congr k₁.2.2
   -- The values.
   generalize hX : wv t.mem B (slot w aR2) w = X at hx
   generalize hM : wv t.mem B (slot w aN) w = M at hx
   have hu := top_le (by omega) (hX ▸ hM ▸ hx)
-  rw [← hm₁] at hu hd
+  rw [← hm₁] at hu hd hv
   have e1 : slot w aR2 + 8 * w ≤ Z := by omega
   have e2 : slot w aN + 8 * w ≤ Z := by omega
-  have e3 : 0 < (word t₁.mem B (slot w aN + 8 * (w - 1))).toNat := by omega
+  have e3 : slot w aTmp + 8 ≤ Z := by omega
   have eT : slot w aAcc + 8 * (w + 1) ≤ Z := by omega
   have sX : slot w aAcc + 8 * (w + 1) ≤ slot w aR2 ∨ slot w aR2 + 8 * w ≤ slot w aAcc := by omega
   have sM : slot w aAcc + 8 * (w + 1) ≤ slot w aN ∨ slot w aN + 8 * w ≤ slot w aAcc := by omega
   have hw31 : w < 2 ^ 31 := by omega
-  have hq := quot_ok hs₁ h1bx h110 h112 hw e1 e2 hu e3
+  have hq := quot_ok hs₁ h1bx h110 h112 h1bp hw e1 e2 e3 hu hd hv
   refine WP.seq (WP.mono hq fun t₂ ⟨h2cx, hm₂, k₂⟩ => ?_)
   generalize hqh : min (((word t₁.mem B (slot w aR2 + 8 * (w - 1))).toNat * 2 ^ 64 +
     (word t₁.mem B (slot w aR2 + 8 * (w - 2))).toNat) / (word t₁.mem B (slot w aN + 8 * (w - 1))).toNat)

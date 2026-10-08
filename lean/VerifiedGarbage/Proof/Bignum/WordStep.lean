@@ -10,6 +10,8 @@ TAOCP vol. 2, §4.3.1, Algorithm D), for `R² mod m` by word steps
 * the estimate `q̂ = min(⌊N / d⌋, 2^64 - 1)` of `q = ⌊y / m⌋` from the top two
   words `N` of `y` and the top word `d ≥ 2^63` of `m` is `q ≤ q̂ ≤ q + 2`
   (`qhat_ge`, `qhat_le`, Knuth's Theorem 4.3.1B);
+* the quotient `⌊N / d⌋` for `N < d 2^64` by Möller and Granlund's division
+  by the reciprocal of `d` (`mg_quot`);
 * a bit of restoring division (`divBit_inv`);
 * `y - q̂ m`, in two's complement modulo `W > 4 m`, with `m` added twice
   while it is negative, is `y mod m` (`addBack_two`).
@@ -70,6 +72,181 @@ theorem qhat_le {N yl ml B d : Nat} (hml : ml < B) (hd : 2 ^ 63 ≤ d)
     (hq : (N * B + yl) / (d * B + ml) < 2 ^ 64) :
     min (N / d) (2 ^ 64 - 1) ≤ (N * B + yl) / (d * B + ml) + 2 :=
   Nat.le_trans (Nat.min_le_left _ _) (div_le_quot hml hd hq)
+
+/-! ## Division by the reciprocal -/
+
+/-- The bounds of Möller and Granlund's candidate remainder `T - (q₁ + 1) d`. -/
+theorem mg_bounds {B d q0 u a K T q1 : Nat} (hd : d < B) (hq0B : q0 < B)
+    (hu : u + 1 ≤ d) (hK : K ≤ d) (ha : a < B) (h1 : 0 < d) (h2 : 0 < B)
+    (hid : (B : Int) * T + ((B : Int) - q0) * d = u * K + a * ((B : Int) - d) + B * (q1 + 1) * d) :
+    q0 + (q1 + 1) * d < T + B ∧ (q1 + 1) * d ≤ T + d ∧
+      (T < (q1 + 1) * d + (B - d) ∨ T < (q1 + 1) * d + q0) := by
+  have e : ((q1 + 1) * d : Nat) = ((q1 : Int) + 1) * d := by
+    rw [Int.natCast_mul, Int.natCast_add]; rfl
+  have p0 : (0 : Int) ≤ u * K := Int.mul_nonneg (by omega) (by omega)
+  have p0' : (0 : Int) ≤ a * ((B : Int) - d) := Int.mul_nonneg (by omega) (by omega)
+  have pB : ((B : Int) - q0) * d < ((B : Int) - q0) * B := Int.mul_lt_mul_of_pos_left (by omega) (by omega)
+  have pB' : ((B : Int) - q0) * d ≤ (B : Int) * d := Int.mul_le_mul_of_nonneg_right (by omega) (by omega)
+  refine ⟨?_, ?_, ?_⟩
+  · have : (B : Int) * ((q0 : Int) + ((q1 : Int) + 1) * d) < B * (T + B) := by grind
+    have := Int.lt_of_mul_lt_mul_left this (by omega)
+    omega
+  · have : (B : Int) * (((q1 : Int) + 1) * d) ≤ B * (T + d) := by grind
+    have := Int.le_of_mul_le_mul_left this (by omega)
+    omega
+  · rcases Nat.lt_or_ge T ((q1 + 1) * d + (B - d)) with h | hc1
+    · exact Or.inl h
+    rcases Nat.lt_or_ge T ((q1 + 1) * d + q0) with h | hc2
+    · exact Or.inr h
+    exfalso
+    replace hc1 : (B : Int) - d + ((q1 : Int) + 1) * d ≤ T := by omega
+    replace hc2 : (q0 : Int) + ((q1 : Int) + 1) * d ≤ T := by omega
+    generalize hρ : (T : Int) - ((q1 : Int) + 1) * d = ρ at *
+    have p1 : (u : Int) * K ≤ ((d : Int) - 1) * d := Int.mul_le_mul (by omega) (by omega) (by omega) (by omega)
+    have p2 : (a : Int) * ((B : Int) - d) ≤ ((B : Int) - 1) * ((B : Int) - d) :=
+      Int.mul_le_mul_of_nonneg_right (by omega) (by omega)
+    have p3 : ((B : Int) - d) * ((B : Int) - d) ≤ ρ * ((B : Int) - d) :=
+      Int.mul_le_mul_of_nonneg_right (by omega) (by omega)
+    have p4 : (q0 : Int) * d ≤ ρ * d := Int.mul_le_mul_of_nonneg_right (by omega) (by omega)
+    have hT : (T : Int) = ρ + ((q1 : Int) + 1) * d := by omega
+    rw [hT] at hid
+    grind
+
+/-- Möller and Granlund's division of `u 2^64 + a` by `d ≥ 2^63`, for `u < d`,
+by the reciprocal `V - 2^64` for `V = ⌊(2^128 - 1) / d⌋` ("Improved division
+by invariant integers", IEEE Trans. Computers 60(2), 2011, Algorithm 4):
+`(q₁, q₀) = V u + a`, the candidate `Q = q₁ + 1` and its remainder
+`r = a - Q d` modulo `2^64`; then `Q - 1` and `r + d` if `r > q₀`, and one
+more if then `r ≥ d`. -/
+theorem mg_quot {d u a V P Q r Q1 r1 : Nat}
+    (hd : d < 2 ^ 64) (hn : 2 ^ 63 ≤ d) (hu : u < d) (ha : a < 2 ^ 64)
+    (hV : V = (2 ^ 128 - 1) / d) (hP : P = V * u + a)
+    (hQ : Q = (P / 2 ^ 64 + 1) % 2 ^ 64)
+    (hr : r = (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64)
+    (hQ1 : Q1 = (Q + if P % 2 ^ 64 < r then 2 ^ 64 - 1 else 0) % 2 ^ 64)
+    (hr1 : r1 = (r + if P % 2 ^ 64 < r then d else 0) % 2 ^ 64) :
+    (Q1 + if d - 1 < r1 then 1 else 0) % 2 ^ 64 = (u * 2 ^ 64 + a) / d := by
+  have hd0 : 0 < d := by omega
+  -- `V d + k = 2^128`, `1 ≤ k ≤ d`.
+  have hVd : V * d ≤ 2 ^ 128 - 1 := hV ▸ Nat.div_mul_le_self _ _
+  have hVd' : 2 ^ 128 - 1 < V * d + d := by
+    have := Nat.lt_mul_div_succ (2 ^ 128 - 1) hd0
+    rw [← hV, Nat.mul_add, Nat.mul_one, Nat.mul_comm d V] at this; exact this
+  -- `V ≥ 2^64`, so `P < 2^128`.
+  have hVB : 2 ^ 64 ≤ V := by
+    rw [hV, Nat.le_div_iff_mul_le hd0]
+    have := Nat.mul_le_mul_left (2 ^ 64) (show d ≤ 2 ^ 64 - 1 by omega)
+    omega
+  have hVu : V * u + V ≤ V * d := by
+    rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hu
+  have hPB : P < 2 ^ 128 := by omega
+  generalize hq1 : P / 2 ^ 64 = q1 at hQ
+  generalize hq0 : P % 2 ^ 64 = q0 at hQ1 hr1
+  have hP2 : P = q1 * 2 ^ 64 + q0 := by
+    have := Nat.div_add_mod P (2 ^ 64); rw [hq1, hq0] at this; omega
+  have hq0B : q0 < 2 ^ 64 := hq0 ▸ Nat.mod_lt _ (by decide)
+  have hq1B : q1 < 2 ^ 64 := by rw [← hq1, Nat.div_lt_iff_lt_mul (by decide)]; omega
+  -- The quotient and remainder.
+  generalize hT : u * 2 ^ 64 + a = T
+  generalize hq : T / d = q
+  generalize hρ : T % d = ρ
+  have hTq : T = q * d + ρ := by
+    have := Nat.div_add_mod T d; rw [hq, hρ, Nat.mul_comm] at this; omega
+  have hρd : ρ < d := hρ ▸ Nat.mod_lt _ hd0
+  have hqB : q < 2 ^ 64 := by
+    rw [← hq, Nat.div_lt_iff_lt_mul hd0]
+    have := Nat.mul_le_mul_right (2 ^ 64) (show u + 1 ≤ d by omega)
+    rw [Nat.add_mul, Nat.one_mul] at this
+    rw [Nat.mul_comm]; omega
+  -- `2^64 (T - (q₁ + 1) d) = u k + a (2^64 - d) - (2^64 - q₀) d`.
+  have hid : (2 ^ 64 : Int) * T + ((2 ^ 64 - q0 : Nat) : Int) * d =
+      u * ((2 ^ 128 - V * d : Nat) : Int) + a * ((2 ^ 64 - d : Nat) : Int) + 2 ^ 64 * (q1 + 1) * d := by
+    have e1 : (P : Int) = V * u + a := by rw [hP, Int.natCast_add, Int.natCast_mul]
+    have e2 : (P : Int) = q1 * 2 ^ 64 + q0 := by
+      rw [hP2, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]; rfl
+    have e3 : (T : Int) = u * 2 ^ 64 + a := by
+      rw [← hT, Int.natCast_add, Int.natCast_mul, Int.natCast_pow]; rfl
+    have e4 : ((2 ^ 128 - V * d : Nat) : Int) = 2 ^ 128 - V * d := by
+      rw [Int.natCast_sub (by omega), Int.natCast_mul, Int.natCast_pow]; rfl
+    have e5 : ((2 ^ 64 - q0 : Nat) : Int) = 2 ^ 64 - q0 := by
+      rw [Int.natCast_sub (by omega), Int.natCast_pow]; rfl
+    have e6 : ((2 ^ 64 - d : Nat) : Int) = 2 ^ 64 - d := by
+      rw [Int.natCast_sub (by omega), Int.natCast_pow]; rfl
+    grind
+  generalize hK : 2 ^ 128 - V * d = K at hid
+  have hK1 : 1 ≤ K := by omega
+  have hKd : K ≤ d := by omega
+  -- The bounds: `q₀ - 2^64 < T - (q₁ + 1) d`, `-d ≤ T - (q₁ + 1) d` and
+  -- `T - (q₁ + 1) d < max(2^64 - d, q₀)`.
+  have hb := mg_bounds (B := 2 ^ 64) (d := d) (q0 := q0) (u := u) (a := a) (K := K) (T := T) (q1 := q1)
+    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+    (by
+      have e64 : ((2 ^ 64 : Nat) : Int) = 2 ^ 64 := by rw [Int.natCast_pow]; rfl
+      rw [Int.natCast_sub (by omega), Int.natCast_sub (by omega)] at hid
+      simp only [e64] at hid ⊢; exact hid)
+  generalize hD : (q1 + 1) * d = D at hb
+  have hDe : D = q1 * d + d := by rw [← hD, Nat.succ_mul]
+  obtain ⟨hL, hL2, hU⟩ := hb
+  -- `q` is `q₁`, `q₁ + 1` or `q₁ + 2`.
+  have hcase : (q = q1 ∧ D = q * d + d) ∨ (q = q1 + 1 ∧ D = q * d) ∨ (q = q1 + 2 ∧ q * d = D + d) := by
+    rcases Nat.lt_or_ge q q1 with h | h
+    · exfalso
+      have := Nat.mul_le_mul_right d (show q + 1 ≤ q1 by omega)
+      rw [Nat.succ_mul] at this; omega
+    rcases Nat.lt_or_ge q (q1 + 3) with h' | h'
+    · rcases (show q = q1 ∨ q = q1 + 1 ∨ q = q1 + 2 by omega) with rfl | rfl | rfl
+      · exact Or.inl ⟨rfl, by omega⟩
+      · exact Or.inr (Or.inl ⟨rfl, by rw [← hD]⟩)
+      · exact Or.inr (Or.inr ⟨rfl, by rw [← hD, ← Nat.succ_mul]⟩)
+    · exfalso
+      have := Nat.mul_le_mul_right d h'
+      rw [show q1 + 3 = (q1 + 1) + 2 by omega, Nat.add_mul, hD] at this
+      omega
+  -- `Q d`.
+  have hQd : Q * d = if q1 + 1 < 2 ^ 64 then D else 0 := by
+    rw [hQ]
+    by_cases h : q1 + 1 < 2 ^ 64
+    · simp only [Nat.mod_eq_of_lt h, h, ite_true, hD]
+    · simp only [h, ite_false]
+      rw [show q1 + 1 = 2 ^ 64 by omega, Nat.mod_self, Nat.zero_mul]
+  have hQv : Q = (q1 + 1) % 2 ^ 64 := hQ
+  clear hV hP hVd hVd' hVB hVu hPB hq1 hq0 hP2 hK hK1 hKd hρ hq hid hD
+  subst hQ1 hr1 hr
+  rcases hcase with ⟨rfl, hDq⟩ | ⟨rfl, hDq⟩ | ⟨rfl, hDq⟩
+  · -- `T - (q₁ + 1) d < 0`: both corrections.
+    have hwrap : ¬ q + 1 < 2 ^ 64 → D = 2 ^ 64 * d := fun h => by
+      have := Nat.succ_mul q d
+      rw [show q.succ = 2 ^ 64 by omega] at this; omega
+    have hm : q0 < (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 := by
+      rw [hQd]; split
+      · omega
+      · have := hwrap ‹_›; omega
+    rw [ite_eq_left hm, ite_eq_left hm]
+    have hm' : ¬ d - 1 < ((a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 + d) % 2 ^ 64 := by
+      rw [hQd]; split
+      · omega
+      · have := hwrap ‹_›; omega
+    rw [ite_eq_right hm']
+    omega
+  · -- `0 ≤ T - (q₁ + 1) d < d`: none, or both.
+    have hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ := by
+      rw [hQd, ite_eq_left (by omega)]; omega
+    rw [hr]
+    by_cases hm : q0 < ρ
+    · have hm' : d - 1 < (ρ + d) % 2 ^ 64 := by omega
+      rw [ite_eq_left hm, ite_eq_left hm, ite_eq_left hm']
+      omega
+    · have hm' : ¬ d - 1 < ρ % 2 ^ 64 := by omega
+      rw [ite_eq_right hm, ite_eq_right hm, Nat.add_zero, Nat.add_zero, ite_eq_right hm']
+      omega
+  · -- `d ≤ T - (q₁ + 1) d`: the second.
+    have hr : (a + (2 ^ 64 - Q * d % 2 ^ 64)) % 2 ^ 64 = ρ + d := by
+      rw [hQd, ite_eq_left (by omega)]; omega
+    rw [hr]
+    have hm : ¬ q0 < ρ + d := by omega
+    have hm' : d - 1 < (ρ + d) % 2 ^ 64 := by omega
+    rw [ite_eq_right hm, ite_eq_right hm, Nat.add_zero, Nat.add_zero, ite_eq_left hm']
+    omega
 
 /-! ## A bit of restoring division -/
 

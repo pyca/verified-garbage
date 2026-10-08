@@ -12,8 +12,11 @@ word, as a step of long division (Knuth, TAOCP vol. 2, §4.3.1, Algorithm D):
 
 * the quotient `q = ⌊x 2^64 / m⌋` is estimated as
   `q̂ = min(⌊(u₂ 2^64 + u₁) / d⌋, 2^64 - 1)` from the top words `u₂`, `u₁` of
-  `x` and `d` of `m`, by restoring division, a bit at a time (`quot`), which
-  for `d ≥ 2^63` gives `q ≤ q̂ ≤ q + 2`;
+  `x` and `d` of `m`, which for `d ≥ 2^63` gives `q ≤ q̂ ≤ q + 2`, by
+  division by the reciprocal `v = ⌊(2^128 - 1) / d⌋ - 2^64` (Möller and
+  Granlund, "Improved division by invariant integers", IEEE Trans. Computers
+  60(2), 2011, Algorithm 4), with its two corrections by masks (`quot`); `v`
+  is computed once, by restoring division, a bit at a time (`recip`);
 * `t = x 2^64 - q̂ m` into the accumulator, over `w + 1` words in two's
   complement (`mulSub`);
 * `m` added to `t` while it is negative, twice, by a mask (`addBack`);
@@ -30,21 +33,35 @@ open VG.X86_64 VG.Impl.Bignum.X86_64 VG.Impl.Bignum.X86_64.Public
 
 /-! ## A step -/
 
-/-- The bases of `x` (`aR2`), `m` and the accumulator, in `rbx`, `r10` and
-`r8`, and `w` in `r12`. -/
+/-- The bases of `x` (`aR2`), `m`, the accumulator and the temporary (whose
+first word is `v`), in `rbx`, `r10`, `r8` and `rbp`, and `w` in `r12`. -/
 def bases : List Instr :=
   [.mov .rbx (.mem (hdr (sArr aR2))), .mov .r10 (.mem (hdr (sArr aN))), .mov .r8 (.mem (hdr (sArr aAcc))),
-    .mov .r12 (.mem (hdr sW))]
+    .mov .r12 (.mem (hdr sW)), .mov .rbp (.mem (hdr (sArr aTmp)))]
 
 /-- The divisor `d = m[w - 1]` into `rsi`, the dividend's top word
 `u₂ = x[w - 1]` into `rdx` and the next `u₁ = x[w - 2]` into `rax`; `r9` all
 ones if `u₂ = d` (as `x < m` has `u₂ ≤ d`, if `d - u₂ < 1`), and then `rdx`
-zero; the quotient `rcx := 0` and the count `r13 := 64`. -/
-def divHead : List Instr :=
+zero. -/
+def quotHead : List Instr :=
   [.mov .rsi (.mem (ix .r10 .r12 (-8))), .mov .rdx (.mem (ix .rbx .r12 (-8))), .mov .rax (.mem (ix .rbx .r12 (-16))),
     .mov .r9 (.reg .rsi), .alu .sub .r9 (.reg .rdx), .alu .cmp .r9 (.imm 1), .alu .sbb .r9 (.reg .r9),
-    .mov .r11 (.reg .r9), .alu .xor .r11 (.imm (-1)), .alu .and .rdx (.reg .r11),
-    .mov32 .rcx (.imm 0), .mov32 .r13 (.imm 64)]
+    .mov .r11 (.reg .r9), .alu .xor .r11 (.imm (-1)), .alu .and .rdx (.reg .r11)]
+
+/-- `⌊(u₂ 2^64 + u₁) / d⌋` into `rcx`, for `u₂ < d` in `rdx`, `u₁` in `rax`,
+`d ≥ 2^63` in `rsi` and `v` at `rbp`: `(q₁, q₀) = v u₂ + (u₂, u₁)`, the
+candidate `q₁ + 1` and its remainder `r = u₁ - (q₁ + 1) d mod 2^64`; one less
+and `r + d` if `r > q₀`, and one more if then `r ≥ d`. -/
+def quotMG : List Instr :=
+  [.mov .r14 (.reg .rax), .mov .r13 (.reg .rdx), .mov .rax (.mem (at0 .rbp)), .mul .r13,
+    .alu .add .rax (.reg .r14), .alu .adc .rdx (.reg .r13),
+    .mov .rcx (.reg .rdx), .alu .add .rcx (.imm 1), .mov .r13 (.reg .rax), .mov .rax (.reg .rcx), .mul .rsi,
+    .alu .sub .r14 (.reg .rax), .alu .cmp .r13 (.reg .r14), .alu .sbb .r15 (.reg .r15),
+    .alu .add .rcx (.reg .r15), .alu .and .r15 (.reg .rsi), .alu .add .r14 (.reg .r15),
+    .mov .r15 (.reg .rsi), .alu .sub .r15 (.imm 1), .alu .cmp .r15 (.reg .r14), .alu .adc .rcx (.imm 0)]
+
+/-- `q̂` into `rcx`: the quotient, all ones if `u₂ = d`. -/
+def quot : List Instr := quotHead ++ quotMG ++ [.alu .or .rcx (.reg .r9)]
 
 /-- A bit of restoring division by `d` (`rsi`) of the remainder `r < d`
 (`rdx`) and the next bit of `u₁` (the top of `rax`): `r := 2 r + bit`, with
@@ -58,9 +75,13 @@ def divBit : List Instr :=
     .cmov .ne .rdx (.reg .r14), .alu .add .rcx (.reg .rcx), .alu .sub .rcx (.reg .r15),
     .alu .sub .r13 (.imm 1)]
 
-/-- `q̂` into `rcx`: 64 bits of the division, all ones if `u₂ = d`. -/
-def quot : Prog isa :=
-  .seq (.block divHead) (.seq (.loop (.block divBit) .ne) (.block [.alu .or .rcx (.reg .r9)]))
+/-- `v = ⌊(2^128 - 1) / d⌋ - 2^64 = ⌊((2^64 - 1 - d) 2^64 + 2^64 - 1) / d⌋`
+for `d = m[w - 1]`, by 64 bits of restoring division, into the first word of
+the temporary (at `r8`). -/
+def recip : Prog isa :=
+  .seq (.block [.mov .rsi (.mem (ix .r10 .r12 (-8))), .mov .rdx (.reg .rsi), .alu .xor .rdx (.imm (-1)),
+      .mov .rax (.imm (-1)), .mov32 .rcx (.imm 0), .mov32 .r13 (.imm 64)])
+    (.seq (.loop (.block divBit) .ne) (.block [.store (at0 .r8) .rcx]))
 
 /-- Word 0 of `t = x 2^64 - q̂ m`: `0 - lo(q̂ m₀)`, its borrow into `rbp`
 (a mask) and `hi(q̂ m₀)` into `r9`. -/
@@ -105,7 +126,7 @@ def copyBack : Prog isa :=
   .seq (.block [.mov .rsi (.reg .r8)]) (wordLoop 0 [.mov .rax (.mem (ix .rsi .r14)), .store (ix .rbx .r14) .rax])
 
 /-- `x := x 2^64 mod m`. -/
-def step : Prog isa := seqs [.block bases, quot, mulSub, addBack, addBack, copyBack]
+def step : Prog isa := seqs [.block bases, .block quot, mulSub, addBack, addBack, copyBack]
 
 /-- `step` `rcx` times (a public count, at least 1), counted in `sCnt`. -/
 def steps : Prog isa :=
@@ -120,11 +141,12 @@ def negBody : List Instr :=
 
 variable (mul : Nat → Nat → Nat → Prog isa)
 
-/-- `x := R - m`, `w / 4` steps, and two squarings. -/
+/-- `x := R - m`, `v`, `w / 4` steps, and two squarings. -/
 def fast : Prog isa := seqs [
   .block [.mov .rbx (.mem (hdr (sArr aR2))), .mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)),
-    .mov32 .rbp (.imm 0)],
+    .mov .r8 (.mem (hdr (sArr aTmp))), .mov32 .rbp (.imm 0)],
   wordLoop 0 negBody,
+  recip,
   .block [.mov .rcx (.mem (hdr sW)), .shift .shr .rcx 2],
   steps,
   mul aR2 aR2 aR2, mul aR2 aR2 aR2]
