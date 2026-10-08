@@ -4,7 +4,7 @@ import VerifiedGarbage.TCB.X86_64.Print
 # Semantics tests for the x86-64 SSE instructions
 
 Each expected value was computed on an x86-64 CPU, by the same instruction
-through its intrinsic (`_mm_add_epi32`, `_mm_shuffle_epi32`,
+(`movq r64, xmm` in inline assembly) or through its intrinsic (`_mm_add_epi32`, `_mm_shuffle_epi32`,
 `_mm_sha256rnds2_epu32`, `_mm_sha1rnds4_epu32`, `_mm_aesenc_si128`, `_mm_clmulepi64_si128`, …; the
 shifts by a count in a register, whose semantics are those of the immediate
 form), and is compared with the model's result on the same inputs. This
@@ -171,6 +171,11 @@ def clmulSel (sel : BitVec 8) : BitVec 128 := ((XOp.pclmulqdq .xmm0 .xmm1 sel).e
 -- `movq xmm0, rdi` zeroes the upper quadword.
 #guard ((XOp.movq .xmm0 .rdi).exec s).xmm .xmm0 == 0x100#128
 
+-- `movq r11, xmm0` writes the low quadword of `xmm0` to all of `r11`, and
+-- keeps the flags.
+#guard ((exec (.movqR .r11 .xmm0) { s with gpr := fun _ => -1, zf := some true }).map
+  fun t => (t.gpr .r11, t.zf)) == some (0xfedcba9876543210#64, some true)
+
 /-- `xmm0` after `op xmm0, n`. -/
 def shift (op : XShiftOp) (n : BitVec 8) : BitVec 128 := ((XOp.shift op .xmm0 n).exec s).xmm .xmm0
 
@@ -293,6 +298,7 @@ def stored (v : BitVec 32) : State :=
 #guard printer.instr (.xop (.bin .sha1nexte .xmm5 .xmm6)) == ["sha1nexte xmm5, xmm6"]
 #guard printer.instr (.xop (.sha1rnds4 .xmm7 .xmm8 3)) == ["sha1rnds4 xmm7, xmm8, 3"]
 #guard printer.instr (.xop (.movq .xmm15 .r9)) == ["movq xmm15, r9"]
+#guard printer.instr (.movqR .r9 .xmm15) == ["movq r9, xmm15"]
 #guard printer.instr (.xop (.bin .pand .xmm0 .xmm1)) == ["pand xmm0, xmm1"]
 #guard printer.instr (.xop (.bin .pandn .xmm2 .xmm3)) == ["pandn xmm2, xmm3"]
 #guard printer.instr (.xop (.bin .paddq .xmm4 .xmm5)) == ["paddq xmm4, xmm5"]
@@ -331,6 +337,8 @@ def stored (v : BitVec 32) : State :=
 -- SSE2 is in the x86-64 baseline.
 #guard isa.requires (.xop (.pshufd .xmm3 .xmm4 0x93)) == []
 #guard isa.requires (.xop (.movq .xmm1 .rax)) == []
+#guard isa.requires (.movqR .rax .xmm1) == []
+#guard !isa.writesSp (.movqR .rax .xmm1)
 #guard isa.requires (.movdquLoad .xmm0 { base := .rdi }) == []
 #guard isa.requires (.xop (.bin .pshufb .xmm1 .xmm2)) == ["ssse3"]
 #guard isa.requires (.xop (.palignr .xmm1 .xmm2 4)) == ["ssse3"]

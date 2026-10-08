@@ -460,7 +460,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     cases hs
     rw [ite_t (hw.memPubM hm)]
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
-  | vpmovmskb _ d _ | leaSym d _ =>
+  | vpmovmskb _ d _ | movqR d _ | leaSym d _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
