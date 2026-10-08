@@ -104,7 +104,7 @@ pub fn bench(c: &mut Criterion) {
                 k.encrypt(
                     black_box(&nonce),
                     black_box(&aad),
-                    black_box(&data),
+                    &[black_box(&data[..])],
                     black_box(&mut out),
                 )
                 .unwrap()

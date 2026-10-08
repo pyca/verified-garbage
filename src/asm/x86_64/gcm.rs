@@ -5475,6 +5475,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni(ctx: *co
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aesni` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_aesni`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_aesni}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_aesni}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_aesni}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_aesni}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_aesni}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_aesni = sym super::gcm::vg_aes_gcm_stream_init_aesni,
+        vg_aes_gcm_stream_aad_aesni = sym super::gcm::vg_aes_gcm_stream_aad_aesni,
+        vg_aes_gcm_stream_encrypt_to_aesni = sym super::gcm::vg_aes_gcm_stream_encrypt_to_aesni,
+        vg_aes_gcm_stream_finish_aesni = sym super::gcm::vg_aes_gcm_stream_finish_aesni,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
 
@@ -9280,6 +9442,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul(c
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to_aesni_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_aesni_pclmul,
         vg_aes_gcm_stream_encrypt_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_aesni_pclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_aesni_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_aesni_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_aesni_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_aesni_pclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_aesni_pclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_aesni_pclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_init_aesni_pclmul,
+        vg_aes_gcm_stream_aad_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_aad_aesni_pclmul,
+        vg_aes_gcm_stream_encrypt_to_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_aesni_pclmul,
+        vg_aes_gcm_stream_finish_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_aesni_pclmul,
     )
 }
 
@@ -15769,6 +16093,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_pclmul_a
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul_avx` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_AVX_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3", "avx"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_pclmul_avx(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_aesni_pclmul_avx}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_aesni_pclmul_avx}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_aesni_pclmul_avx}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_aesni_pclmul_avx}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_stream_init_aesni_pclmul_avx,
+        vg_aes_gcm_stream_aad_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_stream_aad_aesni_pclmul_avx,
+        vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
+        vg_aes_gcm_stream_finish_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_stream_finish_aesni_pclmul_avx,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_encrypt_blocks_aesni_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
@@ -19577,6 +20063,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_aesni_vpclmul(
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aesni_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_aesni_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_aesni_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_aesni_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_aesni_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_aesni_vpclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_aesni_vpclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_aesni_vpclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_aesni_vpclmul = sym super::gcm::vg_aes_gcm_stream_init_aesni_vpclmul,
+        vg_aes_gcm_stream_aad_aesni_vpclmul = sym super::gcm::vg_aes_gcm_stream_aad_aesni_vpclmul,
+        vg_aes_gcm_stream_encrypt_to_aesni_vpclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_aesni_vpclmul,
+        vg_aes_gcm_stream_finish_aesni_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_aesni_vpclmul,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_encrypt_blocks_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
 
@@ -23381,6 +24029,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_pclmul(ctx: *c
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_pclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_pclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_pclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_pclmul = sym super::gcm::vg_aes_gcm_stream_init_pclmul,
+        vg_aes_gcm_stream_aad_pclmul = sym super::gcm::vg_aes_gcm_stream_aad_pclmul,
+        vg_aes_gcm_stream_encrypt_to_pclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_pclmul,
+        vg_aes_gcm_stream_finish_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_pclmul,
+    )
+}
+
 /// AES-GCM's encryption of whole blocks (NIST SP 800-38D §7.1 steps 3 and 5, on whole blocks), in place: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, XORs `CIPH_K(CB₁) … CIPH_K(CBₙ)` into the `n` 16-byte blocks at `data`, where `CB₁` is the counter block `*counter` and `CBᵢ₊₁ = inc₃₂(CBᵢ)`, leaves `inc₃₂ⁿ(CB₁)` in `*counter`, and replaces the block `Y` at `*y` with GHASH (§6.4) continued from `Y` over the ciphertext written, with the hash subkey of `*ctx`: as `vg_aes_ctr32` and then `vg_ghash`.
 ///
 /// Contract: `VG.Spec.Gcm.encryptBlocksContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key context, the counter block, `Y` or the data.
@@ -27134,6 +27944,164 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to(ctx: *const [u
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to = sym super::gcm::vg_aes_gcm_encrypt_blocks_to,
         vg_aes_gcm_stream_encrypt = sym super::gcm::vg_aes_gcm_stream_encrypt,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init = sym super::gcm::vg_aes_gcm_stream_init,
+        vg_aes_gcm_stream_aad = sym super::gcm::vg_aes_gcm_stream_aad,
+        vg_aes_gcm_stream_encrypt_to = sym super::gcm::vg_aes_gcm_stream_encrypt_to,
+        vg_aes_gcm_stream_finish = sym super::gcm::vg_aes_gcm_stream_finish,
     )
 }
 
@@ -30934,6 +31902,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes(ctx: *con
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to_vaes = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_vaes,
         vg_aes_gcm_stream_encrypt_vaes = sym super::gcm::vg_aes_gcm_stream_encrypt_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_vaes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "ssse3", "vaes"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_vaes`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vaes}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vaes}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vaes}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_vaes}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vaes}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vaes = sym super::gcm::vg_aes_gcm_stream_init_vaes,
+        vg_aes_gcm_stream_aad_vaes = sym super::gcm::vg_aes_gcm_stream_aad_vaes,
+        vg_aes_gcm_stream_encrypt_to_vaes = sym super::gcm::vg_aes_gcm_stream_encrypt_to_vaes,
+        vg_aes_gcm_stream_finish_vaes = sym super::gcm::vg_aes_gcm_stream_finish_vaes,
     )
 }
 
@@ -34742,6 +35872,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_pclmul(ct
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to_vaes_pclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_vaes_pclmul,
         vg_aes_gcm_stream_encrypt_vaes_pclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_vaes_pclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_vaes_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "avx", "avx2", "vaes", "pclmulqdq", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_vaes_pclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vaes_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vaes_pclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vaes_pclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_vaes_pclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vaes_pclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vaes_pclmul = sym super::gcm::vg_aes_gcm_stream_init_vaes_pclmul,
+        vg_aes_gcm_stream_aad_vaes_pclmul = sym super::gcm::vg_aes_gcm_stream_aad_vaes_pclmul,
+        vg_aes_gcm_stream_encrypt_to_vaes_pclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_vaes_pclmul,
+        vg_aes_gcm_stream_finish_vaes_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_pclmul,
     )
 }
 
@@ -40290,6 +41582,168 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vaes_vpclmul(c
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_vaes_vpclmul,
         vg_aes_gcm_stream_encrypt_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vaes_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vaes_vpclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_init_vaes_vpclmul,
+        vg_aes_gcm_stream_aad_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_aad_vaes_vpclmul,
+        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul,
+        vg_aes_gcm_stream_finish_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul,
     )
 }
 
@@ -58360,6 +59814,329 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_precomputed_va
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vaes_vpclmul_avx512(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vaes_vpclmul_avx512}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul_avx512}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul_avx512}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vaes_vpclmul_avx512}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_init_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_aad_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_aad_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_finish_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_PRECOMPUTED_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f", "avx512bw"]);
+
+/// `vg_aes_gcm_seal_gather` with a key context of `vg_aes_gcm_init_precomputed`: with the key context `*ctx` that `vg_aes_gcm_init_precomputed` wrote for `rounds` rounds, does exactly what `vg_aes_gcm_seal_gather` does with its first 256 bytes (see `vg_aes_gcm_seal_gather`), and may read the powers of the hash subkey that it holds instead of computing them. Its constant-time guarantee is `vg_aes_gcm_seal_gather`'s, the powers being as secret as the rest of the key context.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherPrecomputedContract`.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*ctx` must hold the powers of its hash subkey, as `vg_aes_gcm_init_precomputed` writes them.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_precomputed_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vaes_vpclmul_avx512}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul_avx512}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vaes_vpclmul_avx512}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vaes_vpclmul_avx512}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_init_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_aad_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_aad_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_encrypt_to_precomputed_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_finish_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul_avx512,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_encrypt_blocks_vpclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_ENCRYPT_BLOCKS_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
 
@@ -62161,5 +63938,167 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_to_vpclmul(ctx: *
         ".p2align 6",
         vg_aes_gcm_encrypt_blocks_to_vpclmul = sym super::gcm::vg_aes_gcm_encrypt_blocks_to_vpclmul,
         vg_aes_gcm_stream_encrypt_vpclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_vpclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation runs the streaming functions on a state of its own: it absorbs the additional data, padded with zeros to a whole block if there is any text (as GHASH pads it), and encrypts each slice from where it is to the output with `vg_aes_gcm_stream_encrypt_to_vpclmul`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_vpclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea rsp, [rsp-240]",
+        "mov rax, QWORD PTR [rsp+248]",
+        "mov QWORD PTR [rsp+8], rax",
+        "mov rax, QWORD PTR [rsp+256]",
+        "mov QWORD PTR [rsp+16], rax",
+        "mov rax, QWORD PTR [rsp+264]",
+        "mov QWORD PTR [rsp+24], rax",
+        "mov rax, QWORD PTR [rsp+272]",
+        "mov QWORD PTR [rsp+32], rax",
+        "mov rax, QWORD PTR [rsp+280]",
+        "mov QWORD PTR [rsp+40], rax",
+        "mov rax, rsp",
+        "add rax, 56",
+        "mov QWORD PTR [rsp+48], rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [rsp+8]",
+        "mov rax, QWORD PTR [rsp+16]",
+        "mov QWORD PTR [r11], rdi",
+        "mov QWORD PTR [r11+8], rsi",
+        "mov QWORD PTR [r11+16], r8",
+        "mov QWORD PTR [r11+24], r9",
+        "mov QWORD PTR [r11+80], r9",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "mov rax, QWORD PTR [rsp+24]",
+        "mov r10, QWORD PTR [rsp+32]",
+        "mov r8, QWORD PTR [rsp+40]",
+        "mov QWORD PTR [r11+32], rax",
+        "mov QWORD PTR [r11+40], r10",
+        "mov QWORD PTR [r11+48], r8",
+        "mov eax, 0",
+        "mov QWORD PTR [r11+72], rax",
+        "mov QWORD PTR [r11+88], rax",
+        "mov QWORD PTR [r11+96], rax",
+        "mov rsi, rdx",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 104",
+        "call {vg_aes_gcm_stream_init_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov edx, 0",
+        "mov rcx, QWORD PTR [r11+16]",
+        "mov r8, QWORD PTR [r11+24]",
+        "call {vg_aes_gcm_stream_aad_vpclmul}",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+40]",
+        "test rax, rax",
+        "je 20f",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, rcx",
+        "and r8, 15",
+        "test r8, r8",
+        "je 22f",
+        "mov eax, 16",
+        "sub rax, r8",
+        "mov r8, rax",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rax, rcx",
+        "add rax, r8",
+        "mov QWORD PTR [r11+80], rax",
+        "mov rsi, r11",
+        "add rsi, 104",
+        "mov rdx, rcx",
+        "mov rcx, r11",
+        "add rcx, 88",
+        "call {vg_aes_gcm_stream_aad_vpclmul}",
+        "jmp 23f",
+        "22:",
+        "23:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rax, QWORD PTR [r11+64]",
+        "test rax, rax",
+        "je 24f",
+        "26:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov r9, QWORD PTR [r10]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov r10, QWORD PTR [r11+32]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add r10, rcx",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+80]",
+        "mov r8, QWORD PTR [r11+72]",
+        "push rax",
+        "push r10",
+        "push rax",
+        "call {vg_aes_gcm_stream_encrypt_to_vpclmul}",
+        "pop rax",
+        "pop rax",
+        "pop rax",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov r10, QWORD PTR [r11+56]",
+        "mov rax, QWORD PTR [r10+8]",
+        "mov rcx, QWORD PTR [r11+72]",
+        "add rcx, rax",
+        "add r10, 16",
+        "mov rax, QWORD PTR [r11+64]",
+        "sub rax, 1",
+        "mov QWORD PTR [r11+72], rcx",
+        "mov QWORD PTR [r11+56], r10",
+        "mov QWORD PTR [r11+64], rax",
+        "test rax, rax",
+        "jne 26b",
+        "jmp 25f",
+        "24:",
+        "25:",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "mov r11, QWORD PTR [rsp+48]",
+        "mov rdi, QWORD PTR [r11]",
+        "mov rsi, QWORD PTR [r11+8]",
+        "mov rdx, r11",
+        "add rdx, 104",
+        "mov rcx, QWORD PTR [r11+24]",
+        "mov r8, QWORD PTR [r11+40]",
+        "mov r9, QWORD PTR [r11+48]",
+        "call {vg_aes_gcm_stream_finish_vpclmul}",
+        "lea rsp, [rsp+240]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_stream_init_vpclmul = sym super::gcm::vg_aes_gcm_stream_init_vpclmul,
+        vg_aes_gcm_stream_aad_vpclmul = sym super::gcm::vg_aes_gcm_stream_aad_vpclmul,
+        vg_aes_gcm_stream_encrypt_to_vpclmul = sym super::gcm::vg_aes_gcm_stream_encrypt_to_vpclmul,
+        vg_aes_gcm_stream_finish_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vpclmul,
     )
 }
