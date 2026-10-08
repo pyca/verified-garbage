@@ -1455,7 +1455,7 @@ theorem agree₀ {P : Params w} (hw : w = 64 ∨ w = 32) {s₁ s₂ : State}
     · simp only [τ₀, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hwr]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
-    fun r hr => ?_⟩
+    fun r hr => ?_, X86_64.Taint.noXr⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p6]
