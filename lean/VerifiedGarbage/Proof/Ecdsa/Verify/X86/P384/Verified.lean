@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.NativeTaint
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P384.Lit
@@ -105,7 +106,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : verifyX86.pre s₁) (h₂ : verifyX
 
 theorem verify_ct : ConstantTime isa verifyX86.pre verifyX86.pub verifyP384 :=
   VG.Taint.constantTime (A := taint) τ₀ (fun _ _ h₁ h₂ hp => agree₀ h₁ h₂ hp)
-    (by taint_decide_weak weak)
+    (by native_taint_decide_weak weak)
 
 /-- The contract with the regions the shared one gives: the arguments'
 slots writable rather than readable. -/
