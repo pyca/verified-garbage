@@ -41,5 +41,7 @@ mod rfc8439;
 mod rfc9106;
 #[path = "rsa_guidance/main.rs"]
 mod rsa_guidance;
+#[path = "schneier_blowfish/main.rs"]
+mod schneier_blowfish;
 #[path = "wycheproof/main.rs"]
 mod wycheproof;

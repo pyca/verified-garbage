@@ -92,6 +92,7 @@ pub mod aes_ofb;
 pub mod aes_siv;
 pub mod aes_xts;
 pub mod argon2;
+pub mod blowfish_ecb;
 pub mod chacha20;
 pub mod chacha20poly1305;
 pub mod cmac;
