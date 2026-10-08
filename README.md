@@ -1587,6 +1587,27 @@ implementation, but in some algorithms it does part of the cryptography:
 * **HMAC** with a key longer than a block hashes it first, in Rust (with the
   verified hash).
 
+### Unsupported platform features
+
+* **Stack unwinding.** The verified functions carry no unwind information
+  on any platform: no DWARF CFI on ELF, no ARM EHABI tables, no Apple
+  compact unwind, and no `.pdata`/`.xdata` on Windows. The proofs establish
+  the calling convention on entry and return, not the state of the stack
+  between them, and many functions save callee-saved registers and the
+  return address in caller-provided scratch buffers, where Windows' unwind
+  codes cannot describe them. Nothing inside them panics or calls back into
+  Rust, so a Rust unwind never needs to pass through them. But a stack walk
+  that starts inside one (a debugger, a sampling profiler, a crash
+  reporter, Windows' `RtlVirtualUnwind`) may be truncated or recover the
+  wrong caller, stack pointer or callee-saved registers.
+* **Branch target enforcement.** The functions do not begin with landing
+  pads (`bti c` on AArch64, `endbr64` on x86-64), and the Rust code calls
+  some of them through function pointers. Do not build this library with
+  `-Zbranch-protection=bti` or `-Zcf-protection=branch`, or link it with
+  `-z force-bti` or `-z force-ibt`: on a CPU that enforces BTI or IBT, those
+  calls fault. (`-Zbranch-protection=pac-ret` does not break them, but the
+  return addresses they save are not signed.)
+
 ## Development
 
 ```sh
