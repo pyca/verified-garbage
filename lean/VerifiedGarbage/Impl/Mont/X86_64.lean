@@ -518,11 +518,15 @@ def sqrS (M : Mod) (o a : Nat) : List Instr :=
     loads [.r13, .r14, .r15] M.tmp ++ redsShortX 6 ++ [.mov32 .r8 (.imm 0)] ++
     chain .add .adc sqWin6 o ++ [.alu .adc .r8 (.imm 0)] ++ csub M sqWin6 .r8 ++ stores sqWin6 o
 
-/-- Row 0 of P-384's multiplication with BMI2 and ADX: `r8 … r14 = a₀ [b]`
-in one carry chain (`r15 = 0`), with no accumulator to clear or add to. -/
-def mulRowS0 (a b : Nat) : List Instr :=
-  [.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc b))] ++
+/-- `r8 … r14 = rdx · [b]` in one carry chain (`r15 = 0`), with no
+accumulator to clear or add to. -/
+def rowS0 (b : Nat) : List Instr :=
+  [Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc b))] ++
     accRow [.r9, .r10, .r11, .r12, .r13, .r14] (b + 8) ++ [.adcx .r14 (.reg .rbp), .mov32 .r15 (.imm 0)]
+
+/-- Row 0 of P-384's multiplication with BMI2 and ADX: `r8 … r14 = a₀ [b]`
+by `rowS0`. -/
+def mulRowS0 (a b : Nat) : List Instr := .mov .rdx (.mem (sc a)) :: rowS0 b
 
 /-- The rounds of `mul o a b` with the accumulator in registers: the
 accumulator cleared and the rounds `0 … n-1`; for P-384's `p` with BMI2 and
