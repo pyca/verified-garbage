@@ -152,7 +152,7 @@ pub(crate) const VG_RSA_MONT_MUL_ADX_FEATURES: crate::cpu::Features = crate::cpu
 ///
 /// Contract: `VG.Spec.Rsa.Mont.mulContract`. Constant time but for `w`: timing may depend on the pointer, `ws_len`, the indices and `w`, not on the numbers.
 ///
-/// For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by 8-by-8 tiles of `mulx` with two carry chains (`adcx`, `adox`), or, when `a = b`, the square by triangular tiles computing each cross product once; then a word-by-word reduction and the selected subtraction of `m`. Other sizes take `vg_rsa_mont_mul`'s code. The tiles read their operands' addresses from header words 16–18, which the function sets from `o`, `a` and `b` and, with words 19–21, restores before it returns. It uses no stack: it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2`.
+/// For `w` a multiple of 8 (below 2^30 + 8), BMI2 and ADX: the product by 8-by-8 tiles of `mulx` with two carry chains (`adcx`, `adox`), or, when `a = b`, the square by triangular tiles computing each cross product once; then a word-by-word reduction and the selected subtraction of `m`, eight words per iteration, with the borrow and the mask moved between `rbp` and the carry flag once per eight words and the selection by `cmovb`. Other sizes take `vg_rsa_mont_mul`'s code. The tiles read their operands' addresses from header words 16–18, which the function sets from `o`, `a` and `b` and, with words 19–21, restores before it returns. It uses no stack: it keeps `rbx`, `rbp` and `r12`–`r15` in `xmm0`–`xmm2`.
 ///
 /// # Safety
 ///
