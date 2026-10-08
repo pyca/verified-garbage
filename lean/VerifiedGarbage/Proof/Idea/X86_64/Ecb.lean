@@ -21,28 +21,6 @@ open VG VG.X86_64 VG.Impl.Idea.X86_64
 
 /-! ## Memory -/
 
-theorem scheduleAt_congr {m m' : Mem} {p : Addr}
-    (h : ∀ i < 104, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Idea.scheduleAt m' p = Spec.Idea.scheduleAt m p := by
-  simp only [Spec.Idea.scheduleAt]
-  congr 1
-  funext i
-  rw [h _ (by omega), h _ (by omega)]
-
-theorem blockAt_congr {m m' : Mem} {p : Addr}
-    (h : ∀ i < 8, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
-    Spec.Idea.blockAt m' p = Spec.Idea.blockAt m p := by
-  simp only [Spec.Idea.blockAt]
-  congr 1
-  funext i
-  exact h _ i.isLt
-
-/-- The bytes of a region disjoint from a frame's regions are unchanged. -/
-theorem frame_bytes {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
-    (hd : ∀ r ∈ rs, (⟨p, n⟩ : Region).Disjoint r) (hn : n ≤ 2 ^ 64) :
-    ∀ i < n, m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i) :=
-  fun _ hi => hf.bytes (R := ⟨p, n⟩) hd hn hi
-
 /-- `KeyOk` of the schedule in a readable region at `rdi`. -/
 theorem keyOk_of (s : State) (hr : ⟨s.gpr .rdi, 104⟩ ∈ s.rd ++ s.wr) :
     KeyOk (Spec.Idea.scheduleAt s.mem (s.gpr .rdi)) s := by
@@ -55,9 +33,6 @@ theorem keyOk_of (s : State) (hr : ⟨s.gpr .rdi, 104⟩ ∈ s.rd ++ s.wr) :
   · rw [ea_at]; exact subkey_read96 _ _ hj
 
 /-! ## The loop -/
-
-theorem toNat_one : (1 : BitVec 64).toNat = 1 := rfl
-theorem toNat_zero : (0 : BitVec 64).toNat = 0 := rfl
 
 theorem signExtend_eight : BitVec.signExtend 64 (8 : BitVec 32) = 8 := by decide
 
@@ -107,17 +82,6 @@ structure LoopPost (z : Spec.Idea.Schedule) (a : Addr) (n : Nat) (m₀ : Mem) (o
   frame : Frame [⟨a, 8 * n⟩] o.mem t.mem
   done : ∀ j < n, Spec.Idea.blockAt t.mem (a + BitVec.ofNat 64 (8 * j)) =
     Spec.Idea.cryptBlock z (Spec.Idea.blockAt m₀ (a + BitVec.ofNat 64 (8 * j)))
-
-theorem block_contains {a : Addr} {n j i k : Nat} (hj : j < n) (hi : i + k ≤ 8) (hk : 0 < k)
-    (hb : 8 * n ≤ 2 ^ 64) :
-    (⟨a, 8 * n⟩ : Region).Contains (a + BitVec.ofNat 64 (8 * j) + BitVec.ofNat 64 i) k := by
-  rw [Offset.add_ofNat_add_ofNat]
-  exact Offset.contains_base a (by omega) (by omega)
-
-theorem blocks_disjoint {a : Addr} {n j j' : Nat} (hj : j < n) (hj' : j' < n) (h : j ≠ j')
-    (hb : 8 * n ≤ 2 ^ 64) :
-    (⟨a + BitVec.ofNat 64 (8 * j'), 8⟩ : Region).Disjoint ⟨a + BitVec.ofNat 64 (8 * j), 8⟩ :=
-  Offset.disjoint a (by omega) (by omega) (by omega)
 
 theorem step_ok {z : Spec.Idea.Schedule} {a : Addr} {n : Nat} {m₀ : Mem} {o : State}
     (hc : LoopCtx z a n o) (r : Nat) (t : State) (hi : LoopInv z a n m₀ o r t) :
@@ -259,20 +223,6 @@ theorem epilogue_run (t : State) (h0 : InRegions (t.rd ++ t.wr) (t.gpr .rcx + Bi
   refine keep_reg_of (fun q hq => ?_) rfl rfl rfl
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
   simp only [RegUpd.gpr_setReg, hq.1, hq.2, ite_false]
-
-theorem beq_zero (x : BitVec 64) : (x == 0) = decide (x.toNat = 0) := by
-  rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff]
-  exact ⟨fun h => by rw [h]; rfl, fun h => BitVec.eq_of_toNat_eq h⟩
-
-theorem ofNat_toNat64 (x : BitVec 64) : BitVec.ofNat 64 x.toNat = x := by
-  apply BitVec.eq_of_toNat_eq; simp
-
-theorem blocksAt_eq (m m₀ : Mem) (z : Spec.Idea.Schedule) (a : Addr) (n : Nat)
-    (h : ∀ j < n, Spec.Idea.blockAt m (a + BitVec.ofNat 64 (8 * j)) =
-      Spec.Idea.cryptBlock z (Spec.Idea.blockAt m₀ (a + BitVec.ofNat 64 (8 * j)))) :
-    Spec.Idea.blocksAt m a n = Spec.Idea.ecb z (Spec.Idea.blocksAt m₀ a n) := by
-  simp only [Spec.Idea.blocksAt, Spec.Idea.ecb, List.map_map]
-  exact List.map_congr_left fun j hj => h j (List.mem_range.mp hj)
 
 theorem ecb_wp (s : State) (hs : contract.pre s) :
     WP isa ecb s (fun s' => gprPreserved s s' ∧ contract.post s s') := by

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Idea.Inverse
 # IDEA decryption subkeys on x86-64
 
 Each decryption subkey is a copy, the negation or the inverse of an
-encryption subkey (`invertKey_getD`, `Impl.Idea.X86_64.invOp`), computed into
+encryption subkey (`invertKey_getD`, `Impl.Idea.invOp`), computed into
 `rdx` (`invWord_ok`; the inverse by a loop of fifteen steps of
 `t := (t ⊙ t) ⊙ a`, `invLoop_ok`), placed in its 16 bits of `r10`
 (`invPlace`), and stored a quadword at a time (`invQuad_ok`).
@@ -14,26 +14,6 @@ encryption subkey (`invertKey_getD`, `Impl.Idea.X86_64.invOp`), computed into
 namespace VG.Proof.Idea.X86_64
 
 open VG VG.X86_64 VG.Impl.Idea.X86_64 VG.Impl.Idea
-
-/-- What `invOp` says decryption subkey `n` is. -/
-def applyOp (z : Spec.Idea.Schedule) : Op × Nat → Spec.Idea.Word
-  | (.copy, k) => z.getD k 0
-  | (.neg, k) => -z.getD k 0
-  | (.inv, k) => Spec.Idea.inv (z.getD k 0)
-
-theorem invertKey_getD (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) :
-    (Spec.Idea.invertKey z).getD n 0 = applyOp z (invOp n) := by
-  rw [getD_lt _ _ hn]
-  simp only [Spec.Idea.invertKey, Vector.getElem_ofFn, invOp]
-  obtain h | h | h | h | h | h : n % 6 = 0 ∨ n % 6 = 1 ∨ n % 6 = 2 ∨ n % 6 = 3 ∨ n % 6 = 4 ∨
-    n % 6 = 5 := by omega
-  all_goals simp only [h, applyOp]
-
-theorem invOp_lt {n : Nat} (hn : n < 52) : (invOp n).2 < 52 := by
-  simp only [invOp]
-  obtain h | h | h | h | h | h : n % 6 = 0 ∨ n % 6 = 1 ∨ n % 6 = 2 ∨ n % 6 = 3 ∨ n % 6 = 4 ∨
-    n % 6 = 5 := by omega
-  all_goals simp only [h]; first | omega | (split <;> omega)
 
 /-- The registers computing a decryption subkey writes. -/
 abbrev invWrites : List Reg := [.rax, .rcx, .rdx, .r8, .r9, .r11]
@@ -67,18 +47,6 @@ theorem loadKey_run (z : Spec.Idea.Schedule) (r : Reg) {k : Nat} (hk : k < 52) (
     refine keep_reg_of (fun q hq => ?_) rfl rfl rfl
     simp only [List.mem_singleton] at hq
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hq, ite_false]
-
-theorem mask_setWidth (x : BitVec 64) : x &&& 65535 = (x.setWidth 16).setWidth 64 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [mask_toNat _ _ rfl]
-  simp only [BitVec.toNat_setWidth]
-  omega
-
-theorem neg_mask (x : BitVec 64) : (0 - x) &&& 65535 = (-(x.setWidth 16)).setWidth 64 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [mask_toNat _ _ rfl]
-  simp only [BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_neg, show (0 : BitVec 64).toNat = 0 from rfl]
-  omega
 
 theorem invStep_run (t : State) :
     ∃ t', runBlock isa invStep t = some t' ∧
