@@ -55,6 +55,7 @@ mod hmac_sha384;
 mod hmac_sha512;
 mod hmac_sha512_224;
 mod hmac_sha512_256;
+mod idea_ecb;
 mod md5;
 mod mldsa44;
 mod mldsa65;
@@ -345,6 +346,7 @@ const BENCHES: &[Bench] = &[
     (hmac_sha512::USES, hmac_sha512::bench),
     (hmac_sha512_224::USES, hmac_sha512_224::bench),
     (hmac_sha512_256::USES, hmac_sha512_256::bench),
+    (idea_ecb::USES, idea_ecb::bench),
     (md5::USES, md5::bench),
     (mldsa44::USES, mldsa44::bench),
     (mldsa65::USES, mldsa65::bench),

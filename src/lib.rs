@@ -104,6 +104,7 @@ pub mod ed25519;
 pub mod ed448;
 pub mod hashes;
 pub mod hmac;
+pub mod idea_ecb;
 pub mod mldsa44;
 pub mod mldsa65;
 pub mod mldsa87;
