@@ -19,7 +19,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.WriteBytes
-open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (copyBytes next advance gatherLoop gather)
+open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width copyBytes next advance gatherLoop gather)
 open VG.Proof.AesGcm.X86_64 (ofNat_add_ofNat ofNat_sub sub_beq length_bytesAt bytesAt_frame imm_eq offset_nat)
 open VG.Proof.AesGcm.X86_64.Short (CopyPre)
 open VG.Spec.Aes (bytesAt)
@@ -156,7 +156,7 @@ theorem advance_ok (u : State) {D : Addr} {n k : Nat} (hdi : u.gpr .rdi = D) (hc
   rw [ofNat_beq_zero (by omega)]
 
 section
-variable {t u : State} {Src Dst : Addr} {cnt L i : Nat} (h : GatherPre t Src Dst cnt L)
+variable {t u : State} {Src Dst : Addr} {cnt L i : Nat} (w : Width) (h : GatherPre t Src Dst cnt L)
 include h
 
 omit h in
@@ -210,7 +210,7 @@ theorem copyPre_of (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
     by rw [hu.keep.wr]; exact Proof.AesGcm.X86_64.covers_off h.dw' hgl (by omega), (h.lsd _ hmem).sub_right hsub⟩
 
 theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
-    WP isa (.seq copyBytes (.block advance)) u fun u' =>
+    WP isa (.seq (copyBytes w) (.block advance)) u fun u' =>
       GInv t u' Src Dst cnt (i + 1) ∧ u'.zf = some (decide (i + 1 = cnt)) := by
   have hc := h.hcnt
   have hL := h.lt
@@ -220,7 +220,7 @@ theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
   have hfr := frame_of (t := t) hu.mem (len_le h (Nat.le_of_lt hi))
   have hsd : (⟨sb t.mem Src i, sl t.mem Src i⟩ : Region).Disjoint ⟨Dst, L⟩ := h.lsd _ (slice_mem t.mem Src hi)
   have hcp := copyPre_of h hi hu
-  refine WP.seq (WP.mono (copyBytes_ok u hcp) fun u₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyBytes_ok hcp w) fun u₂ ⟨m₂, g₂, rd₂, wr₂⟩ => ?_)
   refine WP.mono (advance_ok u₂ (D := Dst + BitVec.ofNat 64 (gatheredLen 64 t.mem Src i))
     (n := sl t.mem Src i) (k := cnt - i)
     (by rw [g₂ _ (by decide) (by decide) (by decide), hu.rdi])
@@ -245,22 +245,22 @@ theorem rest_wp (hi : i < cnt) (hu : NInv t u Src Dst cnt i) :
 
 /-- One iteration of the loop. -/
 theorem body_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
-    WP isa (.seq (.block next) (.seq copyBytes (.block advance))) u fun u' =>
+    WP isa (.seq (.block next) (.seq (copyBytes w) (.block advance))) u fun u' =>
       GInv t u' Src Dst cnt (i + 1) ∧ u'.zf = some (decide (i + 1 = cnt)) :=
-  WP.seq (WP.mono (next_wp h hi hu) fun _ h₁ => rest_wp h hi h₁)
+  WP.seq (WP.mono (next_wp h hi hu) fun _ h₁ => rest_wp w h hi h₁)
 
 end
 
 /-- `gatherLoop`: the `cnt ≥ 1` slices copied to `Dst`. -/
-theorem gatherLoop_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
+theorem gatherLoop_wp (w : Width) (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L)
     (hpos : 1 ≤ cnt) :
-    WP isa gatherLoop t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
+    WP isa (gatherLoop w) t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
   have hc := h.hcnt
   refine WP.loop (M := isa) (c := .ne)
     (fun (w : Nat) (u : State) => ∃ i, w = cnt - i ∧ i < cnt ∧ GInv t u Src Dst cnt i) ?_ (cnt - 0) _
     ⟨0, rfl, hpos, GInv.init h⟩
   rintro w u ⟨i, rfl, hi, hu⟩
-  refine WP.mono (body_wp h hi hu) fun u₃ ⟨h₃, z₃⟩ => ?_
+  refine WP.mono (body_wp w h hi hu) fun u₃ ⟨h₃, z₃⟩ => ?_
   have ev : isa.eval .ne u₃ = some !decide (i + 1 = cnt) := by show u₃.zf.map (!·) = _; rw [z₃]; rfl
   by_cases he : i + 1 = cnt
   · left
@@ -281,8 +281,8 @@ theorem cmp_ok (t : State) {cnt : Nat} (h9 : t.gpr .r9 = BitVec.ofNat 64 cnt) (h
   rw [Offset.ofNat_sub_ofNat_beq hc (by decide)]
 
 /-- `gather`: the `cnt` slices copied to `Dst`. -/
-theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
-    WP isa gather t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
+theorem gather_wp (w : Width) (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Src Dst cnt L) :
+    WP isa (gather w) t fun t' => t'.mem = writeBytes t.mem Dst (gathered 64 t.mem Src cnt) ∧ GKeeps t t' := by
   refine WP.seq (WP.mono (cmp_ok t h.r9 h.hcnt) fun t₁ ⟨z₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
   have h' : GatherPre t₁ Src Dst cnt L := h.of_eq g₁ m₁ rd₁ wr₁
   have kp : GKeeps t t₁ := ⟨fun r _ => by rw [g₁], rd₁, wr₁⟩
@@ -291,7 +291,7 @@ theorem gather_wp (t : State) {Src Dst : Addr} {cnt L : Nat} (h : GatherPre t Sr
     subst h0
     exact WP.block_nil ⟨by rw [m₁]; simp [gathered, Sig.listed, writeBytes_nil], kp⟩
   · have h0 : cnt ≠ 0 := by simpa using hf
-    refine WP.mono (gatherLoop_wp t₁ h' (by omega)) fun t' ⟨m', k'⟩ => ⟨?_, kp.trans k'⟩
+    refine WP.mono (gatherLoop_wp w t₁ h' (by omega)) fun t' ⟨m', k'⟩ => ⟨?_, kp.trans k'⟩
     rw [m', m₁]
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

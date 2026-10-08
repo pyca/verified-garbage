@@ -40,9 +40,14 @@ def xorNote (v : Proof.ChaCha20.X86_64.XorImpl) : String :=
   "This implementation encrypts with `" ++ v.callee.name ++ "` and authenticates with `" ++
     v.poly.name ++ "`."
 
-/-- What `vg_chacha20_poly1305_seal_gather` does: it calls `vg_chacha20_poly1305_seal`. -/
-def gatherNote (fn : String) : String :=
-  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
+/-- What `vg_chacha20_poly1305_seal_gather` does: it copies the slices, as
+many bytes at a time as `w` says, and calls `vg_chacha20_poly1305_seal`. -/
+def gatherNote (w : Impl.ChaCha20Poly1305.X86_64.SealGather.Width) (fn : String) : String :=
+  let how := match w with
+    | .x16 => "16 bytes at a time"
+    | .y32 => "32 bytes at a time with AVX"
+    | .z64 => "64 bytes at a time with AVX-512"
+  "This implementation copies the slices, " ++ how ++ ", one after the other to `dst`, and \
     encrypts them there in place with `" ++ fn ++ "`."
 
 /-- The CPU features an instance requires: those of both implementations. -/
@@ -75,11 +80,13 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   { Spec.ChaCha20Poly1305.sealGatherApi with
     name := Spec.ChaCha20Poly1305.sealGatherApi.name ++ v.suffix
     target := X86_64.target
-    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc (notes := [gatherNote (Gather.sealFn v).name])
-    code := Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
+    doc := Spec.ChaCha20Poly1305.sealGatherApi.doc
+      (notes := [gatherNote (Gather.width v) (Gather.sealFn v).name])
+    code := Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather (Gather.width v) (Gather.sealFn v).name
+      (Gather.sealFn v).code
     contract := Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808
     stack := 1808
-    verified := Gather.sealGather_verified (Gather.sealFn v)
+    verified := Gather.sealGather_verified (Gather.width v) (Gather.sealFn v)
     spSafe := Gather.sealGather_spSafe v
     features := features v }]
 

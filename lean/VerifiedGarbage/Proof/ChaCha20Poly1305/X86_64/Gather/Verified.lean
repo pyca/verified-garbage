@@ -20,9 +20,9 @@ namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.SealGather
 
-theorem sealGather_correct (F : SealFn) (s : State) (hs : gatherX86_64.pre s) :
-    ∃ t s', Exec isa (sealGather F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86_64.post s s' := by
-  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp F hs
+theorem sealGather_correct (w : Width) (F : SealFn) (s : State) (hs : gatherX86_64.pre s) :
+    ∃ t s', Exec isa (sealGather w F.name F.code) s t s' ∧ abiPreserved s s' ∧ gatherX86_64.post s s' := by
+  obtain ⟨t, s', he, ha, hp⟩ := sealGather_wp w F hs
   exact ⟨t, s', he, ha, hp⟩
 
 theorem filter_true' (l : List Region) : l.filter (fun _ => true) = l := List.filter_eq_self.mpr (by simp)
@@ -105,10 +105,10 @@ theorem gatherSat_pre : ∃ s, (Spec.ChaCha20Poly1305.sealGatherContract X86_64.
 theorem gather_implies : gatherX86_64.Implies (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
-theorem sealGather_verified (F : SealFn) :
-    Verified X86_64.target (sealGather F.name F.code)
+theorem sealGather_verified (w : Width) (F : SealFn) :
+    Verified X86_64.target (sealGather w F.name F.code)
       (Spec.ChaCha20Poly1305.sealGatherContract X86_64.abi 1808) :=
-  Verified.of_correct (k := gatherX86_64) (sealGather_correct F) (sealGather_ct F) gather_implies
+  Verified.of_correct (k := gatherX86_64) (sealGather_correct w F) (sealGather_ct w F) gather_implies
 
 open VG.Proof.ChaCha20.X86_64 VG.Impl.StackScratch.X86_64 in
 /-- The instance of `vg_chacha20_poly1305_seal` calling the implementation
@@ -125,13 +125,18 @@ def sealFn (v : XorImpl) : SealFn where
     omega
 
 open VG.Proof.ChaCha20.X86_64 in
+/-- How many bytes at a time the instance for `v` copies: as many as the
+CPUs of the instance of `vg_chacha20_poly1305_seal` it calls can. -/
+def width (v : XorImpl) : Width := .ofBlocks v.poly
+
+open VG.Proof.ChaCha20.X86_64 in
 /-- No instruction of the code, or of the instance it calls, writes `rsp`
 but its frames' pushes and pops. -/
 theorem sealGather_spSafe (v : XorImpl) :
-    (sealGather (sealFn v).name (sealFn v).code).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (sealGather (width v) (sealFn v).name (sealFn v).code).all (fun i => !X86_64.isa.writesSp i) = true := by
   have hc : (sealFn v).code.all (fun i => !X86_64.isa.writesSp i) = true :=
     X86_64.withStackArgScratchWiped_spSafe (Proof.ChaCha20Poly1305.X86_64.seal_spSafe v)
   simp only [sealGather, Code.all, hc, Bool.and_true, Bool.true_and]
-  decide +kernel
+  cases width v <;> decide +kernel
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

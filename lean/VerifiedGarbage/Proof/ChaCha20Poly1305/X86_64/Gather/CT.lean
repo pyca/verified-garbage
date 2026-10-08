@@ -18,7 +18,7 @@ set_option linter.unusedSimpArgs false
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Gather
 
 open VG VG.X86_64
-open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (entry gather callArgs sealGather)
+open VG.Impl.ChaCha20Poly1305.X86_64.SealGather (Width entry gather callArgs sealGather)
 
 /-- A frame, from two runs of its body from the states its push leaves. -/
 theorem rel_frame {rs : List Reg} {r : Reg} {k : Nat} {body : Prog isa} {σ₁ σ₂ : State}
@@ -60,7 +60,8 @@ theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁)
       hc₂.qsp, hB]
   · rw [hc₁.xtag h₁, t₂, ht]
 
-theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealGather F.name F.code) := by
+theorem sealGather_ct (w : Width) (F : SealFn) :
+    ConstantTime isa gatherPre gatherPub (sealGather w F.name F.code) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁
   have h₂ := lay p₂
@@ -90,7 +91,8 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       simp only [dsR, Src, Cnt, ← q8, ← q9]; exact hx
     rw [he₁.mem, he₂.mem, h₁.keepE bds₁.symm hx, h₂.keepE bds₂.symm hx₂]
     exact hdesc j hj
-  refine rel_seq (gather_rel hd gp₁ gp₂) (gathered_wp h₁ he₁) (gathered_wp h₂ he₂) fun g₁ g₂ hg₁ hg₂ => ?_
+  refine rel_seq (gather_rel w hd gp₁ gp₂) (gathered_wp w h₁ he₁) (gathered_wp w h₂ he₂)
+    fun g₁ g₂ hg₁ hg₂ => ?_
   -- The call's arguments.
   refine rel_seq (rel_regs [.rsp] (by simp [hg₁.rsp, hg₂.rsp, hB]) ⟨_, by taint_decide⟩)
     (ready_wp h₁ hg₁) (ready_wp h₂ hg₂) fun c₁ c₂ hc₁ hc₂ => ?_
