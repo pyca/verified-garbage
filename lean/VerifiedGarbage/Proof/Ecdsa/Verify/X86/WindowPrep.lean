@@ -15,10 +15,10 @@ variable {c : Impl.Ecdsa.X86.Cfg}
 theorem windowPrepAt_ok (h4 : c.n = 4) {i : Nat} (hi : i < 45) {s : State} {base : Addr}
     (hs : Scr s base size) :
     WP isa (Impl.Ecdh.X86.Cfg.windowPrep c (c.sl i)) s fun u =>
-      (∀ t < 260, u.mem (off base (3700 + t)) =
+      (∀ t < 260, u.mem (off base (Impl.Ecdh.X86.Cfg.windowBits + t)) =
         if (sv c base s i + WinCfg.offset 65).testBit t then 1 else 0) ∧
       Keeps [.eax, .ebx, .edx, .esi] s u ∧
-      Outside base 3520 500 s.mem u.mem := by
+      Unch base [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] s.mem u.mem := by
   have hn := hs.nowrap
   have hv : c.sl i + 32 ≤ 3520 := by rw [sl_eq, h4]; omega
   have hvsize : c.sl i + 32 ≤ size := by change _ ≤ 8192; omega
@@ -44,7 +44,7 @@ theorem windowPrepAt_ok (h4 : c.n = 4) {i : Nat} (hi : i < 45) {s : State} {base
   have va : wordsVal s₄.mem base 3520 5 = sv c base s i :=
     (O₃.wordsVal (by omega) (by decide)).trans padded
   have k₄ := (k₁.trans k₂).trans k₃
-  have O₄ : Outside base 3520 500 s.mem s₄.mem :=
+  have O₄ : Outside base 3520 120 s.mem s₄.mem :=
     ((O₁.mono (by decide) (by decide)).trans (O₂.mono (by decide) (by decide))).trans
       (O₃.mono (by decide) (by decide))
   have hs₄ := hs.of_keeps k₄ (by decide)
@@ -75,18 +75,18 @@ theorem windowPrepAt_ok (h4 : c.n = 4) {i : Nat} (hi : i < 45) {s : State} {base
       rw [← v₅] at hsum
       exact False.elim (Nat.not_lt_of_ge (Nat.le_add_left _ _) hsum)
   have hs₅ := hs₄.of_keeps k₅ (by decide)
-  refine WP.mono (bits_ok hs₅ (n := 5) (src := 3600) (dst := 3700)
+  refine WP.mono (bits_ok hs₅ (n := 5) (src := 3600) (dst := Impl.Ecdh.X86.Cfg.windowBits)
     (by decide) (by decide) (by decide) (by decide)) fun u ⟨bits, ku, Ou⟩ => ?_
   refine ⟨fun t ht => ?_, (k₄.trans k₅).mono (by decide) |>.trans ku,
-    ((O₄.mono (by decide) (by decide)).trans (O₅.mono (by decide) (by decide))).trans
-      (Ou.mono (by decide) (by decide))⟩
+    ((O₄.trans (O₅.mono (by decide) (by decide))).unch).trans (Ou.unch)⟩
   rw [bits t (by omega), value]
 theorem windowPrep_ok (h4 : c.n = 4) {s : State} {base : Addr}
     (hs : Scr s base size) :
     WP isa (Impl.Ecdsa.Verify.X86.Cfg.windowPrep c) s fun u =>
-      (∀ t < 260, u.mem (off base (3700 + t)) =
+      (∀ t < 260, u.mem (off base (Impl.Ecdh.X86.Cfg.windowBits + t)) =
         if (sv c base s V + WinCfg.offset 65).testBit t then 1 else 0) ∧
-      Keeps [.eax, .ebx, .edx, .esi] s u ∧ Outside base 3520 500 s.mem u.mem :=
+      Keeps [.eax, .ebx, .edx, .esi] s u ∧
+      Unch base [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] s.mem u.mem :=
   windowPrepAt_ok h4 (by decide) hs
 
 end VG.Proof.Ecdsa.Verify.X86

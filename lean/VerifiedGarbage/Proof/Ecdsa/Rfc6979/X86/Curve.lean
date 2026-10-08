@@ -18,7 +18,8 @@ order `n` of its base point has exactly `64 n` bits and `2^(64 n) < 2 n` (so
 that `bits2octets` is one conditional subtraction), and what is proven of the
 code: that it meets the contract the proof of each curve is written against
 (`coreK`, including any comb tables), in constant time, that it never
-writes `esp` and uses at most four stack bytes, and the taint check of
+writes `esp` and uses at most 20 stack bytes (its calls of the field
+arithmetic's functions), and the taint check of
 the block computing `bits2octets`, which holds `n`'s words as immediates.
 Each curve's file builds one, so that the heavy algebra of its proof stays
 out of the modules generic over the curve and the hash function.
@@ -35,8 +36,9 @@ abbrev coreSigOf (E : Impl.Ecdsa.X86.Cfg) (m : Mem) (d digest k : Addr) : Option
     (ofBytes (bytesAt m k E.C.len))
 
 /-- The contract of `vg_ecdsa_<curve>_sign` on the curve `E`, as each
-curve's proof states it, including immutable comb tables and the four
-bytes reserved for their position-independent address setup. -/
+curve's proof states it, including immutable comb tables and the 20 bytes
+of stack below the return address that its calls (and the comb's four-byte
+position-independent address setup) use. -/
 def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
   pre s :=
     let out : Region := ⟨(arg s 0).setWidth 64, 2 * E.C.len⟩
@@ -46,6 +48,7 @@ def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
     let scratch : Region := ⟨(arg s 4).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 20⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 20, 20⟩
     s.rd = [d, digest, k, args] ++ Abi.constRegions (fun n => (s.syms n).setWidth 64) E.combConsts ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint k ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧ k.Disjoint scratch ∧
@@ -53,9 +56,10 @@ def coreK (E : Impl.Ecdsa.X86.Cfg) : Contract X86.isa where
       (arg s 0).toNat + 2 * E.C.len ≤ 2 ^ 32 ∧ (arg s 1).toNat + E.C.len ≤ 2 ^ 32 ∧
       (arg s 2).toNat + E.C.len ≤ 2 ^ 32 ∧ (arg s 3).toNat + E.C.len ≤ 2 ^ 32 ∧
       (arg s 4).toNat + 8192 ≤ 2 ^ 32 ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32 ∧
-      4 ≤ (s.gpr .esp).toNat ∧ d.Disjoint (below (s.gpr .esp) 4) ∧
+      20 ≤ (s.gpr .esp).toNat ∧ stack.Disjoint out ∧ stack.Disjoint scratch ∧
+      d.Disjoint (below (s.gpr .esp) 4) ∧
       digest.Disjoint (below (s.gpr .esp) 4) ∧ k.Disjoint (below (s.gpr .esp) 4) ∧
-      TblsOk E.combConsts s (below (s.gpr .esp) 4 :: s.wr)
+      TblsOk E.combConsts s (below (s.gpr .esp) 20 :: s.wr)
   post s s' :=
     match coreSigOf E s.mem ((arg s 1).setWidth 64) ((arg s 2).setWidth 64) ((arg s 3).setWidth 64) with
     | some rs => BitVec.setWidth 32 (s'.gpr .edx ++ s'.gpr .eax) = 1 ∧
@@ -100,9 +104,9 @@ structure RfcCurve where
   coreC : Prog isa
   coreX : ∀ s, (coreK E).pre s → ∃ t s', Exec isa coreC s t s' ∧ abiPreserved s s' ∧ (coreK E).post s s'
   coreCT : ConstantTime isa (coreK E).pre (coreK E).pub coreC
-  /-- It never writes `esp`, and uses at most four stack bytes. -/
+  /-- It never writes `esp`, and uses at most 20 stack bytes (its calls'). -/
   coreNs : NoSp coreC
-  coreStack : stackUse coreC ≤ 4
+  coreStack : stackUse coreC ≤ 20
   /-- Unless `wide`, `bits2octets` and the initial `K` and `V` address
   memory only from `esp` and `esi` (the taint analysis, of the block for
   `n`'s words). -/

@@ -53,8 +53,8 @@ def bsignMask : List Instr :=
 
 /-- `[y] = -[y]` (through `[neg]`, with zero at `zero`) if Booth's digit
 `esi` is negative. -/
-def bnegY : List Instr :=
-  Mont.X86.sub K.M K.wk K.neg K.zero K.E.y ++ K.bsignMask ++ sel (2 * K.M.n) K.E.y K.E.y K.neg
+def bnegY : Prog isa :=
+  .seq (Mont.subCall K.F K.neg K.zero K.E.y) (.block (K.bsignMask ++ sel (2 * K.M.n) K.E.y K.E.y K.neg))
 
 /-- The bytes of the table of bits past the scalar cleared (to `w J`, in
 words). -/
@@ -65,14 +65,14 @@ def clearBits : List Instr :=
 `esi = 1`. -/
 def first : Prog isa :=
   .seq (.block (K.clearBits ++ [.mov .esi (.imm 0)] ++ K.bdigit false ++ K.select)) <|
-  .seq (.block K.bnegY) <|
+  .seq K.bnegY <|
   .block (copyPt K.M.n K.A K.E ++ [.mov .esi (.imm 1)])
 
 /-- Window `j = esi` (`1 ≤ j < J`), then `esi = j + 1` and `ZF` for `j + 1 = J`. -/
 def stepJ : Prog isa :=
   .seq (.block (K.bdigit true ++ K.select)) <|
-  .seq (.block K.bnegY) <|
-  .seq (fprog K.M K.wk (maddJ K.S K.A K.E K.D)) <|
+  .seq K.bnegY <|
+  .seq (fprog K.F (maddJ K.S K.A K.E K.D)) <|
   .seq (.block (nzMask K.M.n K.A.z ++ selPt K.M.n K.D K.E K.D)) <|
   .block (K.bdigit true ++ eqMask 0 ++ selPt K.M.n K.A K.D K.A ++
     [.alu .add .esi (.imm 1), .alu .cmp .esi (.imm (BitVec.ofNat 32 K.J))])
@@ -90,7 +90,7 @@ def outOps : List FOp := [.mul K.A.x K.A.x K.A.z, .mul K.S.t0 K.A.z K.A.z, .mul 
 
 /-- `[k]G` into `A`, in projective coordinates. -/
 def combJ : Prog isa :=
-  .seq K.first <| .seq (.loop K.stepJ .ne) <| .seq (.block K.outFix) (fprog K.M K.wk K.outOps)
+  .seq K.first <| .seq (.loop K.stepJ .ne) <| .seq (.block K.outFix) (fprog K.F K.outOps)
 
 end TCombCfg
 

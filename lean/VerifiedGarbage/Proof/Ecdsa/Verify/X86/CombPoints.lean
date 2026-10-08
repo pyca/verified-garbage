@@ -17,10 +17,13 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (hCo : ∀ d, c.comb = some d → CombOk c d) (ham3 : AM3 c.C) {s₀ : State} {base : Addr} {s : State}
     (hM : Mid c s₀ base s) {Q₂ : Nat → Fe c.C → Fe c.C → Fe c.C → Prop}
     (hTb : ∀ d, c.comb = some d → TblMem s ((s₀.gpr .eax).setWidth 64) (c.combWords d) ∧
-      ∀ i < (c.combWords d).length, ∀ b < 8,
-        size ≤ ofs base ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b))
+      (∀ i < (c.combWords d).length, ∀ b < 8,
+        size ≤ ofs base ((s₀.gpr .eax).setWidth 64 + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)) ∧
+      ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) c.stk],
+        Region.Disjoint ⟨(s₀.gpr .eax).setWidth 64, 8 * (c.combWords d).length⟩ r)
     (hstep₂ : Step (Impl.Ecdh.X86.Cfg.ladderQ c) c.C base s (sv c base s V) Q₂)
-    (hO₂ : Q₂ (64 * c.n) 0 1 0) {rest : Prog isa} {Q : State → Prop}
+    (hO₂ : Q₂ (64 * c.n) 0 1 0) (hspG : SpOk c.gMul 20)
+    (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) c.stk) {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s', Pts c s₀ base (fun j X Y Z => Rep c.C X Y Z (mul (sv c base s U >>> j) (G c.C))) Q₂ s' → WP isa rest s' Q) :
     WP isa (.seq (Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder c) rest) s Q := by
   have h0 := hc.n0
@@ -32,8 +35,8 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
     fun hi => apart_tbl hi 0
+  refine WP.seq (hM.keep.withSp hsp ?_)
   unfold Impl.Ecdsa.Verify.X86.Cfg.pointsCombLadder
-  refine WP.seq ?_
   -- The table of `u`.
   refine WP.seq (WP.mono (bits_ok hM.scr h0 (sl_le c h7 (i := U) (by decide)) (tbl_le h7)
     (Or.inl (by have := sl_below_bits c (i := U) (by decide) 0 0; omega)))
@@ -47,9 +50,11 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     (wordsVal_lt s.mem base (c.sl U) c.n)
     (by rw [v₁ (by decide), hM.rx]) (by rw [v₁ (by decide), hM.ry])
     (by rw [v₁ (by decide), hM.rz]) b₁ (fun d hd => by
-      obtain ⟨ht, ho⟩ := hTb d hd
-      exact ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
-        (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho⟩))
+      obtain ⟨ht, ho, hap⟩ := hTb d hd
+      refine ⟨ht.of_unch (by rw [k₁.rd, k₁.wr]) U₁
+        (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) ho, ho, ?_⟩
+      rw [k₁.wr, k₁.1 _ (by decide), hM.wr, hM.esp]; exact hap)
+    (by rw [k₁.1 _ (by decide), hM.esp]; exact hM.sp_lo) hspG)
     fun s₂ ⟨K₂, U₂, M₂, L₂, q₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have F₂ := F₁.unch h7 hn fixedOk_gW U₂
@@ -105,7 +110,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
         rw [b₄ t ht, show wordsVal s₃.mem base (c.sl V) c.n = sv c base s V from
           W₃ (by decide) (by decide)]))
     fun s₅ ⟨K₅, U₅, M₅, L₅, q₅⟩ => ?_)
-  rw [ladWxQ_eq, accLen_MP'] at U₅
+  rw [ladWxQ_eq] at U₅
   have hs₅ := hs₄.of_keeps K₅ (by decide)
   have F₅ := F₄.unch h7 hn (fixedOk_slWk (by decide)) U₅
   have v₅ : ∀ {i}, i < 45 → i ∉ combPtsW → sv c base s₅ i = sv c base s₄ i := fun hi hl =>
@@ -115,7 +120,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sv_unch U₅ h7 hn (by decide) (apart_slWk (by decide) (by decide))).trans (v₄ (by decide))
-  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ => h s₆ ?_
+  refine WP.mono (sum_ok hc hs₅ M₅ (fun i hi => ?_)) fun s₆ ⟨hs₆, g₆, rd₆, wr₆, U₆, M₆, rz₆, t₆, rx₆⟩ f₆ => h s₆ ?_
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact lt_of_eq_of_lt F₅.ap (hmont _)
@@ -129,12 +134,6 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     · exact L₅ _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   have F₆ := F₅.unch h7 hn (fixedOk_slWk (by decide)) U₆
   have sub₆ : ∀ i ∈ sumW, i ∈ combPtsW := by decide
-  have whole : Unch base [(0, size)] s₀.mem s₆.mem :=
-    whole_of (whole_of (whole_of (whole_of (whole_of
-      (whole_of hM.unch U₁ (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7))
-      U₂ (gW_le h7)) U₃ (slW_le h7 (by decide)))
-      U₄ (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7))
-      U₅ (slWk_le h7 (by decide))) U₆ (slWk_le h7 (by decide))
   have tu : ∀ {i j}, i ∈ [UX, UY, UZ] → j ∈ [RX, RY, RZ] → sv c base s₃ i = sv c base s₂ j →
       tmv c.C c.n base s₅ (c.sl i) = tmv c.C c.n base s₂ (c.sl j) := fun hi _ e => by
     show toM _ _ (sv c base s₅ _) = toM _ _ (sv c base s₂ _)
@@ -155,10 +154,10 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans (W₃ (by decide) (by decide))))
   have flag₆ : flagW c base s₆ = flagW c base s := by
     rw [flagW, flag_unch U₆ h7 h0 hn (by decide), flag_unch U₅ h7 h0 hn (by decide),
-      Unch.readW32 U₄ (fun w hw => (apart_tbl (c := c) (i := FLAG) (by decide) 0 w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
+      Unch.readW32 U₄ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
       Unch.readW32 U₃ (fun w hw => (apart_slW (c := c) (i := FLAG) (by decide) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega),
       flag_unch_gW U₂ h7 h0 hn,
-      Unch.readW32 U₁ (fun w hw => (apart_tbl (c := c) (i := FLAG) (by decide) 0 w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
+      Unch.readW32 U₁ (fun w hw => ((apart_tbl (c := c) (i := FLAG) (by decide) 0) w hw).imp (fun h => by omega) id) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
   refine ⟨hs₆, by rw [wr₆, K₅.2.2, k₄.2.2, k₃.2.2, K₂.2.2, k₁.2.2, hM.wr],
     by rw [rd₆, K₅.2.1, k₄.2.1, k₃.2.1, K₂.2.1, k₁.2.1, hM.rd],
     by rw [g₆ _ (by decide), K₅.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide), K₂.1 _ (by decide),
@@ -168,7 +167,7 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
     ⟨_, _, _, _, _, _, by simpa only [Nat.shiftRight_zero] using q₂, q₅, by
       rw [t₆, tR₅ (by decide), tR₅ (by decide), ha, hb, tu (by decide) (by decide) ux₃,
         tu (by decide) (by decide) uy₃, tu (by decide) (by decide) uz₃]
-      rfl⟩, ?_, rx₆, ?_⟩
+      rfl⟩, f₆, hM.sp_lo, rx₆, ?_⟩
   · rw [tbl_unch U₆ h7 (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
       tbl_unch U₅ h7 (by decide) ht (tbl_apart_slWk (by decide) (by decide) ht),
       tbl_unch U₄ h7 (by decide) ht (tbl_apart_tbl (by decide) ht),
@@ -176,8 +175,6 @@ theorem pointsCombLadder_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       tbl_unch U₂ h7 (by decide) ht (tbl_apart_gW (Or.inl rfl) ht),
       tbl_unch U₁ h7 (by decide) ht (tbl_apart_tbl (by decide) ht)]
     exact hM.t₁ t ht
-  · exact whole
-
   · exact (sv_unch U₆ h7 hn (i := K) (by decide) (apart_slWk (by decide) (by decide))).trans
       ((v₅ (by decide) (by decide)).trans ((v₄ (by decide)).trans
         ((W₃ (by decide) (by decide)).trans hM.k)))

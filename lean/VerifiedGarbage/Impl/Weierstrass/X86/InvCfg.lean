@@ -18,7 +18,7 @@ def one8 (dst : Nat) : List Instr := zeros dst 8 ++ setWord dst 1
 
 structure InvCfg where
   M : Mod
-  wk : Nat
+  F : Spec.Weierstrass.Mont.Modulus
   out : Nat
   base : Nat
   tbl : Nat
@@ -65,13 +65,13 @@ def batch : Prog isa :=
 
 def finish : Prog isa :=
   .seq (.block (setConst 4 P.sNF P.C ++ setConst 4 P.sNG P.Cn ++ maskOf P.sF ++ sel 8 P.sNF P.sNF P.sNG))
-    (Mont.X86.mul P.M P.wk P.out P.sA P.sNF)
+    (Mont.mulCall P.F P.out P.sA P.sNF)
 
 def inv : Prog isa := .seq (.block P.init) (.seq (.loop P.batch .ne) P.finish)
 
-def ofMod (M : Mod) (wk out base tbl modulus : Nat) : InvCfg :=
+def ofMod (M : Mod) (F : Spec.Weierstrass.Mont.Modulus) (out base tbl modulus : Nat) : InvCfg :=
   let C := 2 ^ 40 * (2 ^ 256) ^ 3 % modulus
-  { M, wk, out, base, tbl, C, Cn := modulus - C }
+  { M, F, out, base, tbl, C, Cn := modulus - C }
 
 end InvCfg
 end VG.Impl.Weierstrass.X86

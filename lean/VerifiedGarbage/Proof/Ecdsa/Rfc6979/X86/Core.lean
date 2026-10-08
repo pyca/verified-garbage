@@ -186,6 +186,14 @@ theorem core_below (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {rd wr : List R
   show (⟨(((pushed core5 t).callEntry.gpr .esp) - BitVec.ofNat 32 4).setWidth 64, 4⟩ : Region) = _
   rw [core_esp hc, BitVec.sub_sub, BitVec.ofNat_add_ofNat, F_sub hL (by decide)]
 
+/-- The 20 bytes below the return address, which the call's own calls use,
+are within the reserved call area. -/
+theorem core_below20 (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
+    below (((pushed core5 t).callEntry.withRegions rd wr).gpr .esp) 20 =
+      ⟨L.B + BitVec.ofNat 64 32, 20⟩ := by
+  show (⟨(((pushed core5 t).callEntry.gpr .esp) - BitVec.ofNat 32 20).setWidth 64, 20⟩ : Region) = _
+  rw [core_esp hc, BitVec.sub_sub, BitVec.ofNat_add_ofNat, F_sub hL (by decide)]
+
 theorem core_held (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t) {rd wr : List Region} :
     Abi.constsHeld ((pushed core5 t).callEntry.withRegions rd wr).mem
       (fun n => (((pushed core5 t).callEntry.withRegions rd wr).syms n).setWidth 64) P.R.E.combConsts := by
@@ -230,11 +238,13 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   simp only [eD, eO]
   refine ⟨trivial, trivial, hL.oc, hL.od, gO.symm, kO.symm, hL.dc, gS, kS, hL.stk_OUT (by omega),
     hL.stk_SCR (by omega), hL.stk_OUT (by omega), hL.stk_SCR (by omega), by have := hL.no; rw [hq] at this; omega,
-    by have := hL.nd; rw [hq] at this; omega, gN, kN, hL.nc, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    by have := hL.nd; rw [hq] at this; omega, gN, kN, hL.nc, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [core_esp hc, Lay.F, BitVec.sub_sub, BitVec.ofNat_add_ofNat, sub_toNat (by have := hL.e272; omega)]
     have := hL.e20; omega
   · rw [core_esp hc, Lay.F, BitVec.sub_sub, BitVec.ofNat_add_ofNat, sub_toNat (by have := hL.e272; omega)]
     have := hL.e272; omega
+  · rw [Offset.add_ofNat_sub _ (by decide)]; exact hL.stk_OUT (by omega)
+  · rw [Offset.add_ofNat_sub _ (by decide)]; exact hL.stk_SCR (by omega)
   · change L.D.Disjoint (below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4)
     rw [core_below hL hc]
     exact hL.kd.symm.sub_right (Offset.sub_base _ (by omega))
@@ -250,8 +260,8 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
     have ht := hL.tbl T hT
     refine ⟨ht.1, ?_⟩
     intro r hr
-    change r ∈ below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 4 :: coreWr P L at hr
-    rw [core_below hL hc] at hr
+    change r ∈ below (((pushed core5 t).callEntry.withRegions (coreRd P L) (coreWr P L)).gpr .esp) 20 :: coreWr P L at hr
+    rw [core_below20 hL hc] at hr
     simp only [coreWr, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ht.2.2.2.sub_right (Offset.sub_base _ (by omega))

@@ -484,7 +484,9 @@ theorem loop_ct :
 
 /-! ## The frame's body -/
 
-theorem initCnt_blk : TaintOk [.esp] (cfgC { n := 4, C := Spec.P256.curve }).initCnt := ⟨_, by taint_decide⟩
+theorem initCnt_blk : TaintOk [.esp] (cfgC
+    { n := 4, C := Spec.P256.curve, SP := Spec.Weierstrass.Mont.p256p, SN := Spec.Weierstrass.Mont.p256n }).initCnt :=
+  ⟨_, by taint_decide⟩
 
 /-- `digest` in `esi`, and, if two `V`s make a candidate, `scratch` in `edi`. -/
 def DgIn (P : RfcHash) {dn : Nat} (L : Lay dn) (_ : Reg → BitVec 32) (_ : Mem) (u : State) : Prop :=

@@ -36,11 +36,37 @@ def VPost (c : Cfg) (s₀ s' : State) : Prop :=
       (Spec.Ecdsa.bytesAt s₀.mem (ptr s₀ 2) (2 * c.C.len)) then 1 else 0
 
 /-- What the function keeps: the callee-saved registers, `esp`, and memory
-but the working space. -/
-structure VKeep (s₀ s' : State) : Prop where
+but the working space and the stack below `esp` the calls use. -/
+structure VKeep (c : Cfg) (s₀ s' : State) : Prop where
   saved : ∀ rd ∈ Cfg.saved, s'.gpr rd.1 = s₀.gpr rd.1
   esp : s'.gpr .esp = s₀.gpr .esp
-  frame : Unch (ptr s₀ 3) [(0, size)] s₀.mem s'.mem
+  frame : Frame (s₀.wr ++ [below (s₀.gpr .esp) c.stk]) s₀.mem s'.mem
+
+/-- The return address is kept. -/
+theorem VKeep.ret {s₀ s' : State} {extra : List Region} (hp : VPre c s₀ extra) (K : VKeep c s₀ s') :
+    s'.mem.readW ((s₀.gpr .esp).setWidth 64) 32 = s₀.mem.readW ((s₀.gpr .esp).setWidth 64) 32 := by
+  refine K.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  rw [hp.wr] at hr
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hp.ret_sc
+  · exact (below_disjoint_ret hp.sp_lo).symm
+
+/-- The stack the parts of `verify` use. -/
+structure VSp (c : Cfg) : Prop where
+  validate : SpOk (Impl.Ecdh.X86.Cfg.validate c) c.stk
+  scalars : SpOk (Impl.Ecdsa.Verify.X86.Cfg.scalars c) c.stk
+  nPow : SpOk c.nPow c.stk
+  uv : SpOk (Impl.Ecdsa.Verify.X86.Cfg.uv c) c.stk
+  points : SpOk (Impl.Ecdsa.Verify.X86.Cfg.points c) c.stk
+  pPow : SpOk c.pPow c.stk
+  final : SpOk (Impl.Ecdsa.Verify.X86.Cfg.final c) c.stk
+
+theorem VSp.of (h : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verify c) c.stk) : VSp c := by
+  have h₁ := h.right.right.right
+  have h₂ := h₁.right
+  exact ⟨h₁.left, h₂.left, h₂.right.left, h₂.right.right.left, h₂.right.right.right.left,
+    h₂.right.right.right.right.left, h₂.right.right.right.right.right⟩
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
 theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : State}
@@ -58,10 +84,12 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 32} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀) :
-    WP isa (Impl.Ecdsa.Verify.X86.Cfg.verify c) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
+theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hsp : SpOk (Impl.Ecdsa.Verify.X86.Cfg.verify c) c.stk)
+    {s₀ : State} (hp : VPre c s₀) :
+    WP isa (Impl.Ecdsa.Verify.X86.Cfg.verify c) s₀ fun s' => VKeep c s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
-  refine front_ok hc hp fun s₁ hF => mid_ok hc hF fun s₂ hM => ?_
+  have H := VSp.of hsp
+  refine front_ok hc hp H.validate fun s₁ hF => mid_ok hc hF H.scalars H.nPow H.uv fun s₂ hM => ?_
   have F₂ := hM.fixed
   obtain ⟨ha, hb, h1⟩ := consts_tmv hc F₂
   -- The point the second ladder multiplies.
@@ -86,9 +114,9 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : VPre c s₀
     (step_rep hC hc.onG ha hb hG)
     (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
     (step_rep hC hPc ha hb hQ)
-    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
+    (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC) H.points
     fun s₃ hP => ?_
-  refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
+  refine WP.mono (vtail_ok hc hP H.pPow H.final) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, esp, frame⟩, ?_⟩
   obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
   have q1' : Rep c.C X1 Y1 Z1 (mul (sv c (ptr s₀ 3) s₂ U) (G c.C)) := by

@@ -37,16 +37,18 @@ theorem windowMulAt_ok (hc : CfgOk c) (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hi
     fun hi he => sv_unch U₁ hc.n10 hn hi (apart_slW (by simpa only [List.mem_singleton] using he))
   refine WP.seq (WP.mono (windowPrepAt_ok h4 hi hs₁) fun s₂ ⟨bits, k₂, O₂⟩ => ?_)
   have hs₂ := hs₁.of_keeps k₂ (by decide)
-  have U₂ := O₂.unch
-  have ap₂ : ∀ {i}, i < 45 → ∀ w ∈ [(3520, 500)],
+  have U₂ := O₂
+  have ap₂ : ∀ {i}, i < 45 → ∀ w ∈ [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)],
       c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
     intro i hi w hw
-    rw [List.mem_singleton.mp hw]
-    left; rw [sl_eq, h4]; omega
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    left; rw [sl_eq, h4]
+    rcases hw with rfl | rfl <;> dsimp only [Impl.Ecdh.X86.Cfg.windowBits] <;> omega
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s₁ i :=
     fun hi => sv_unch U₂ hc.n10 hn hi (ap₂ hi)
-  have F₂ := F₁.unch hc.n10 hn (show FixedOk c [(3520, 500)] from by
-    intro w hw; rw [List.mem_singleton.mp hw]; right; rw [sl_eq, h4]; decide) U₂
+  have F₂ := F₁.unch hc.n10 hn (show FixedOk c [(3520, 120), (Impl.Ecdh.X86.Cfg.windowBits, 320)] from by
+    intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    right; rw [sl_eq, h4]; rcases hw with rfl | rfl <;> decide) U₂
   have tv : ∀ {i}, i < 45 → i ≠ EM → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := by
     intro i hi he
     change toM _ _ (sv c base s₂ i) = toM _ _ (sv c base s i)
@@ -78,7 +80,7 @@ theorem windowMulAt_ok (hc : CfgOk c) (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hi
       rw [tv (by decide) (by decide), tv (by decide) (by decide), tv (by decide) (by decide)]
       exact hQ
     · intro t ht
-      change s₂.mem (off base (3700 + t)) = _
+      change s₂.mem (off base (Impl.Ecdh.X86.Cfg.windowBits + t)) = _
       rw [bits t ht, e₁ hi hine]
   have hoff : WinCfg.offset 65 = 8 * geom 65 := by decide +kernel
   have hklt : sv c base s i + WinCfg.offset 65 < 16 ^ 65 := by
@@ -86,7 +88,7 @@ theorem windowMulAt_ok (hc : CfgOk c) (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hi
       change wordsVal s.mem base (c.sl i) c.n < _
       rw [h4]; exact wordsVal_lt _ _ _ 4
     exact Nat.lt_of_lt_of_le (Nat.add_lt_add_right hv _) (by decide +kernel)
-  refine WP.mono (window_ok (windowLay h4) (windowWk h4)
+  refine WP.mono (window_ok (windowLay h4) (windowWk hc h4)
     (unitMod_pow_two hc.p_odd _) hC hM3 hP hc.p_lt (hmont 1)
     (by change toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1; rw [toM_cmont hc]; rfl)
     hs₂ (modP_of hc F₂.mp) hF hklt (by change 8 * geom 65 ≤ _; rw [← hoff]; omega))
@@ -95,8 +97,11 @@ theorem windowMulAt_ok (hc : CfgOk c) (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hi
     intro w hw; obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     exact List.mem_append_left _ (List.mem_map.mpr ⟨i, by rw [List.mem_singleton.mp hi]; decide, rfl⟩))
   have UW₂ : Unch base (windowW c) s₁.mem s₂.mem := U₂.cover (by
-    intro w hw; rw [List.mem_singleton.mp hw]
-    exact ⟨(2640, 1500), List.mem_append_right _ (List.mem_singleton_self _), by decide, by decide⟩)
+    intro w hw; simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl
+    · exact ⟨(2640, 1456), List.mem_append_right _ (by simp), by decide, by decide⟩
+    · exact ⟨(Impl.Ecdh.X86.Cfg.windowBits, 320), List.mem_append_right _ (by simp), Nat.le_refl _,
+        Nat.le_refl _⟩)
   refine ⟨((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans ku,
     fun x hx => (Uu.cover (windowW_cover h4) x hx).trans ((UW₂ x hx).trans (UW₁ x hx)), Mu, Lu, ?_⟩
   change Rep _ _ _ _ (mul (sv c base s i + WinCfg.offset 65 - 8 * geom 65) P) at qu

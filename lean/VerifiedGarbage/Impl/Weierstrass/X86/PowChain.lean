@@ -12,21 +12,21 @@ inductive PowerOp where
   deriving Repr
 
 /-- Repeat squaring with a public counter, retaining the saved power. -/
-def squareRun (P : PowCfg) (wk : Nat) : Nat → Prog isa
+def squareRun (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : Nat → Prog isa
   | 0 => .block []
   | n + 1 => .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 (n + 1)))])
       (.loop (.seq (.block [decCounter])
-        (.seq (VG.Impl.Mont.X86.mul P.M wk P.acc P.acc P.acc) (.block [testCounter]))) .ne)
+        (.seq (Mont.mulCall F P.acc P.acc P.acc) (.block [testCounter]))) .ne)
 
-def powerOp (P : PowCfg) (wk : Nat) : PowerOp → Prog isa
+def powerOp (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : PowerOp → Prog isa
   | .save => .block (copy (2 * P.M.n) P.tmp P.acc)
-  | .squares n => squareRun P wk n
-  | .mulBase => VG.Impl.Mont.X86.mul P.M wk P.acc P.acc P.base
-  | .mulSaved => VG.Impl.Mont.X86.mul P.M wk P.acc P.acc P.tmp
+  | .squares n => squareRun P F n
+  | .mulBase => Mont.mulCall F P.acc P.acc P.base
+  | .mulSaved => Mont.mulCall F P.acc P.acc P.tmp
 
-def powerChain (P : PowCfg) (wk : Nat) : List PowerOp → Prog isa
+def powerChain (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : List PowerOp → Prog isa
   | [] => .block []
-  | op :: ops => .seq (powerOp P wk op) (powerChain P wk ops)
+  | op :: ops => .seq (powerOp P F op) (powerChain P F ops)
 
 /-- Build `x^(2^30-1)` in the saved slot, then append the runs of bits in
 `p-2`. This uses 255 squares and 18 other multiplications. -/
@@ -41,12 +41,12 @@ def p256PowerOps : List PowerOp :=
    .squares 1, .mulBase, .squares 1, .mulBase, .squares 1, .mulBase, .squares 1, .mulBase,
    .squares 2, .mulBase]
 
-def p256Power (P : PowCfg) (wk : Nat) : Prog isa :=
+def p256Power (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) : Prog isa :=
   .seq (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base))
-    (powerChain P wk p256PowerOps)
+    (powerChain P F p256PowerOps)
 
 /-- Fixed field exponent for P-256, with the generic exponentiation fallback. -/
-def powField (P : PowCfg) (wk m : Nat) : Prog isa :=
-  if m = p256Prime then p256Power P wk else pow P wk
+def powField (P : PowCfg) (F : Spec.Weierstrass.Mont.Modulus) (m : Nat) : Prog isa :=
+  if m = p256Prime then p256Power P F else pow P F
 
 end VG.Impl.Weierstrass.X86

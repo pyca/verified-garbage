@@ -6,8 +6,8 @@ import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
 The slots of `c.ladderCfg`, `c.powP` and `c.powN` are numbered slots `c.sl i`
 for distinct `i`, so they are apart as `ladder_ok` and `pow_ok` need
 (`ladLay`, `powLayP`, `powLayN`): each fact is one about the numbers `i`,
-which `decide` checks. The accumulator `c.wk` is above them all (`ladWk`,
-`powWkP`, `powWkN`).
+which `decide` checks. The functions' own working space `c.wk` is above them
+all, and below the tables of bits (`ladWk`, `powWkP`, `powWkN`).
 -/
 
 namespace VG.Proof.Ecdsa.X86
@@ -87,8 +87,12 @@ theorem ladLay (hc : CfgOk c) : LadLay c.ladderCfg size := by
       exact Or.inr (sl_below_bits c (hl i hi) 0 0)
     · exact Or.inr (sl_below_bits c (i := TMP) (by decide) 0 0)
 
-theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
-  le := wk_le c hc.n10 rfl
+theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg c.SP c.C.p size c.wk where
+  fn := hc.fp.2.2
+  k := hc.fp.1
+  fm := hc.fp.2.1
+  size := rfl
+  own := rfl
   sl := by
     rw [ladSlots_eq]
     intro x hx
@@ -98,7 +102,24 @@ theorem ladWk (hc : CfgOk c) : LadWk c.ladderCfg size c.wk where
     exact sl_below_wk c (this i hi)
   mo := sl_below_wk c (i := MP) (by decide)
   tmp := sl_below_wk c (i := TMP) (by decide)
-  bits := bitsAt_below_wk c (j := 0) (by decide)
+  bits := wk_below_bits c 0
+  bits_top := by have := bitsAt_le c hc.n10 (j := 0) (by decide); exact this
+
+/-- The functions' own working space is above the slots of `l`. -/
+theorem wkOk_map (hc : CfgOk c) {F : Spec.Weierstrass.Mont.Modulus} {m : Nat}
+    (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) {M : Mod} (hMn : M.n = c.n) {jm : Nat} (hjm : jm < 45)
+    (hmo : M.mo = c.sl jm) (htmp : M.tmp = c.sl TMP) {l : List Nat} (hl : ∀ i ∈ l, i < 45) :
+    WkOk F M m size c.wk (· ∈ l.map c.sl) where
+  fn := hF.2.2
+  k := hF.1.trans hMn.symm
+  fm := hF.2.1
+  size := rfl
+  own := by rw [hMn]
+  sl := fun x hx => by
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [hMn]; exact sl_below_wk c (hl i hi)
+  mo := by rw [hMn, hmo]; exact sl_below_wk c hjm
+  tmp := by rw [hMn, htmp]; exact sl_below_wk c (by decide)
 
 theorem powLay_of (hc : CfgOk c) {jm : Nat} (hjm : jm ∉ [ACC, PT, TMP])
     (minv : BitVec 64) {red : Red}
@@ -135,18 +156,30 @@ theorem powLayN (hc : CfgOk c) : PowLay c.powN size :=
   powLay_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide) (by decide)
     (one := ONEN) (by decide) (by decide)
 
-theorem powWk_of (hc : CfgOk c) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
+theorem powWk_of (hc : CfgOk c) {F : Spec.Weierstrass.Mont.Modulus} {m : Nat}
+    (hF : F.k = c.n ∧ F.m = m ∧ Mont.FnOk F) {jm : Nat} (hjm : jm < 45) (minv : BitVec 64) {red : Red}
     {base one j : Nat}
     (hj : j < 3) (hb45 : base < 45) :
     PowWk ⟨⟨c.n, c.sl jm, c.sl TMP, minv, red, false, false, false⟩, c.sl ACC, c.sl PT, c.sl base, c.sl one, bitsAt c.n j,
-      64 * c.n⟩ size c.wk :=
-  ⟨wk_le c hc.n10 rfl, sl_below_wk c (by decide), sl_below_wk c (by decide), sl_below_wk c hb45,
-    sl_below_wk c hjm, sl_below_wk c (by decide), bitsAt_below_wk c hj, sl_apart c (by decide)⟩
+      64 * c.n⟩ F m size c.wk where
+  fn := hF.2.2
+  k := hF.1
+  fm := hF.2.1
+  size := rfl
+  own := rfl
+  acc := sl_below_wk c (by decide)
+  tmp := sl_below_wk c (by decide)
+  base := sl_below_wk c hb45
+  mo := sl_below_wk c hjm
+  mtmp := sl_below_wk c (by decide)
+  bits := wk_below_bits c j
+  bits_top := by have := bitsAt_le c hc.n10 hj; exact this
+  tmp_mtmp := sl_apart c (by decide)
 
-theorem powWkP (hc : CfgOk c) : PowWk c.powP size c.wk :=
-  powWk_of hc (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide)
+theorem powWkP (hc : CfgOk c) : PowWk c.powP c.SP c.C.p size c.wk :=
+  powWk_of hc hc.fp (jm := MP) (by decide) _ (j := 1) (by decide) (base := RZ) (by decide)
 
-theorem powWkN (hc : CfgOk c) : PowWk c.powN size c.wk :=
-  powWk_of hc (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide)
+theorem powWkN (hc : CfgOk c) : PowWk c.powN c.SN c.C.n size c.wk :=
+  powWk_of hc hc.fn (jm := MN) (by decide) _ (j := 2) (by decide) (base := KM) (by decide)
 
 end VG.Proof.Ecdsa.X86

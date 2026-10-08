@@ -33,14 +33,22 @@ theorem frame_of_outside {base : Addr} {d n : Nat} {m m' : Mem} (h : Outside bas
   simp only [ofs]
   omega)
 
-theorem scr_of (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .edi = L.a3) : Scr t L.scr 8192 :=
-  ⟨by rw [hdi], by rw [hc.wr]; simp, by
+theorem scr_of (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) (hdi : t.gpr .edi = L.a3) : Scr t L.scr 8192 := by
+  have hn : L.scr.toNat + 8192 ≤ 2 ^ 32 := by
     have := hL.nc; have := L.a3.isLt
-    simp only [Lay.scr, BitVec.toNat_setWidth]; omega⟩
+    simp only [Lay.scr, BitVec.toNat_setWidth]; omega
+  have hF : 20 ≤ L.F.toNat := by have := hL.FN; have := hL.e272; omega
+  -- The calls' 20 bytes below `F` are in the stack the contract gives.
+  have hd : Region.Disjoint ⟨L.F.setWidth 64 - BitVec.ofNat 64 20, 20⟩ ⟨L.scr, 8192⟩ := by
+    rw [hL.F64, Offset.add_ofNat_sub _ (by decide)]
+    exact hL.stk_scr0 (by omega) (Nat.le_refl _)
+  refine ⟨by rw [hdi], by rw [hc.wr]; simp, hn, ?_⟩
+  rw [hc.esp]
+  exact VG.Proof.Weierstrass.X86.stkOk_of (Nat.le_refl _) hF hn (by decide) hd
 
 theorem scr_keep {s s' : State} {base : Addr} {size : Nat} (h : Scr s base size) (hdi : s'.gpr .edi = s.gpr .edi)
-    (hwr : s'.wr = s.wr) : Scr s' base size :=
-  ⟨hdi ▸ h.edi, hwr ▸ h.wr, h.nowrap⟩
+    (hsp : s'.gpr .esp = s.gpr .esp) (hwr : s'.wr = s.wr) : Scr s' base size :=
+  h.of_eq hdi hsp hwr
 
 /-- In the wide case, the frame has 36 words at its top. -/
 theorem e36 (hw : L.wide = P.R.wide) (hW : P.R.wide = true) : L.e = 36 := by
@@ -66,21 +74,23 @@ theorem conv_ok (hL : L.Ok) (hw : L.wide = P.R.wide) (hW : P.R.wide = true) {t :
   refine WP.of_syms ?_
   rw [Cfg.conv, hw2, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (fr_ok hL hc (d := .esi) (by decide) o) fun u₁ h₁ => ?_
-  have hS₁ : Scr u₁ L.scr 8192 := scr_keep (scr_of hL hc hdi) (h₁.keep _ (by decide)) (by rw [h₁.ctx.wr, hc.wr])
+  have hS₁ : Scr u₁ L.scr 8192 := scr_keep (scr_of hL hc hdi) (h₁.keep _ (by decide))
+    (h₁.keep _ (by decide)) (by rw [h₁.ctx.wr, hc.wr])
   have hsi₁ : u₁.gpr .esi = L.F + BitVec.ofNat 32 o := h₁.val
   have ha₁ : (L.F + BitVec.ofNat 32 o).setWidth 64 = L.B + BitVec.ofNat 64 (76 + o) := hL.addrF (by omega)
   refine WP.mono (loadBytes_ok hS₁ (len := P.Q) (n := P.w) (o := 2560) (src := .esi) (by decide) (by omega)
     (by rw [hsi₁, hL.frN (by omega)]; omega) (by omega) (by omega)
     (fun d hd => by rw [hsi₁, ha₁, Offset.add_add]; exact h₁.ctx.inFr (by omega) (by omega) hL)
     (by rw [hsi₁, ha₁]; exact hL.stk_scr (by omega) (by omega))) fun u₂ ⟨hv₂, k₂, O₂⟩ => ?_
-  refine WP.mono (shrWords_ok (scr_keep hS₁ (k₂.1 _ (by decide)) k₂.2.2) (n := P.w) (o := 2560) (sh := s)
+  refine WP.mono (shrWords_ok (scr_keep hS₁ (k₂.1 _ (by decide)) (k₂.1 _ (by decide)) k₂.2.2) (n := P.w) (o := 2560) (sh := s)
     (by omega) hs₁ hs₂) fun u₃ ⟨hv₃, k₃, O₃⟩ => ?_
   refine wp_movi fun u₄ v₄ => WP.block_nil ?_
   have hsp₄ : u₄.gpr .esp = L.F := by
     rw [v₄.other _ (by decide), k₃.1 _ (by decide), k₂.1 _ (by decide), h₁.keep _ (by decide), hc.esp]
   have hwr₄ : u₄.wr = t.wr := by rw [v₄.wr, k₃.2.2, k₂.2.2, h₁.ctx.wr, hc.wr]
   have hS₄ : Scr u₄ L.scr 8192 := scr_keep hS₁ (by rw [v₄.other _ (by decide), k₃.1 _ (by decide),
-    k₂.1 _ (by decide)]) (by rw [v₄.wr, k₃.2.2, k₂.2.2])
+    k₂.1 _ (by decide)]) (by rw [v₄.other _ (by decide), k₃.1 _ (by decide), k₂.1 _ (by decide)])
+    (by rw [v₄.wr, k₃.2.2, k₂.2.2])
   have hdst : (u₄.gpr .esp).setWidth 64 + BitVec.ofNat 64 o = L.B + BitVec.ofNat 64 (76 + o) := by
     rw [hsp₄, hL.F64, Offset.add_add]
   refine WP.mono (storeBytes_ok hS₄ (len := P.Q) (n := P.w) (d := o) (a := 2560) (dst := .esp) (by decide)

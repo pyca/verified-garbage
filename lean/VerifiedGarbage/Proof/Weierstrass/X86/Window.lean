@@ -22,6 +22,8 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
 open Spec.Weierstrass
 
+variable {F : Spec.Weierstrass.Mont.Modulus} {pm : Nat}
+
 /-! ## The complete addition into `R` -/
 
 /-- After a sum into `D` copied to `R`: `R` holds `v`, the sum's value. -/
@@ -37,7 +39,7 @@ theorem winOther_mem {K : WinCfg} {x : Nat} (h : x ∈ winOther K) : x ∈ winSl
   simp only [winSlots, List.mem_append]; exact Or.inl (Or.inr h)
 
 /-- `R` and `D`, written and apart. -/
-theorem winRD {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (_hAcc : WinWk K size wk) :
+theorem winRD {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (_hAcc : WinWk K F pm size wk) :
     (∀ x ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z], x + 8 * K.M.n ≤ size) ∧
     (∀ x ∈ [K.R.x, K.R.y, K.R.z], ∀ y ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z], x ≠ y →
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x) ∧
@@ -59,13 +61,13 @@ theorem winRD {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (_hAcc : WinWk K
 
 /-- A sum into `D` (the field program `ops`, writing `rcbW K.S K.D` and computing `v`),
 then copied to `R`. -/
-theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {ops : List FOp} {V : List Nat} {E' : Nat → Fe C} {v : Fe C × Fe C × Fe C}
     {s : State} (hs : Scr s base size)
-    (W : WP isa (fprog K.M wk ops) s fun s' => ProgKeep K.M base wk (rcbW K.S K.D) s s' ∧
+    (W : WP isa (fprog F ops) s fun s' => ProgKeep K.M base wk (rcbW K.S K.D) s s' ∧
       Inv K.M base size C.p (· ∈ winSlots K) ([K.D.x, K.D.y, K.D.z] ++ V) E' s' ∧
       (E' K.D.x, E' K.D.y, E' K.D.z) = v) :
-    WP isa (.seq (fprog K.M wk ops) (.block (copyPt K.M.n K.R K.D))) s (SumPostW K wk C base size v s) := by
+    WP isa (.seq (fprog F ops) (.block (copyPt K.M.n K.R K.D))) s (SumPostW K wk C base size v s) := by
   refine WP.seq ((WP.mono W fun s₁ h₁ => ?_))
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   obtain ⟨hle, hap, hne, ho⟩ := winRD hL hAcc
@@ -92,11 +94,11 @@ theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : 
     rw [wx, wy, wz, I₁.val _ hDx, I₁.val _ hDy, I₁.val _ hDz]
 
 /-- `R = R + E` by Algorithm 4 into `D`, then copied. -/
-theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base)
     (hlt : ∀ x ∈ rcbR K.S K.R K.E, wordsVal s.mem base x K.M.n < C.p) :
-    WP isa (.seq (fprog K.M wk (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s
+    WP isa (.seq (fprog F (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))) s
       (SumPostW K wk C base size (VG.Proof.Weierstrass.rcbAdd3 (tmv C K.M.n base s K.S.b3)
         (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
         (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z)) s) := by
@@ -124,26 +126,27 @@ structure WinFixed (K : WinCfg) (C : Curve) (base : Addr) (s₀ : State) (P : Po
   bits : ∀ t < 4 * K.J, s₀.mem (off base (K.bits + t)) = if k.testBit t then 1 else 0
 
 /-- A slot read only keeps its number. -/
-theorem winRo_val {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk) {base : Addr}
+theorem winRo_val {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F pm size wk) {base : Addr}
     {m m' : Mem} (hU : Unch base (winWX K wk) m m') (hn : base.toNat + size ≤ 2 ^ 32) {x : Nat}
     (hx : x ∈ winRo K) : wordsVal m' base x K.M.n = wordsVal m base x K.M.n :=
   hU.wordsVal (winRo_apart hL hAcc hx) (by have := hL.lay.le x (winRo_slots K x hx); omega)
 
-theorem winRo_tmv {K : WinCfg} {C : Curve} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem winRo_tmv {K : WinCfg} {C : Curve} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     {base : Addr} {s s' : State} (hU : Unch base (winWX K wk) s.mem s'.mem) (hn : base.toNat + size ≤ 2 ^ 32)
     {x : Nat} (hx : x ∈ winRo K) : tmv C K.M.n base s' x = tmv C K.M.n base s x := by
   show toM _ _ _ = toM _ _ _; rw [winRo_val hL hAcc hU hn hx]
 
 /-- What the window method writes misses the modulus. -/
-theorem winW_mo {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk) {m : Nat} {mem : Mem} {base : Addr}
+theorem winW_mo {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F pm size wk) {m : Nat} {mem : Mem} {base : Addr}
     (hM : ModOkW K.M size m mem base) :
     ∀ w ∈ winWX K wk, K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := by
   intro w hw
   simp only [winWX, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
   · have := hL.lay.mo y (winWs_slots K y hy); dsimp only; omega
   · have := hM.sep; dsimp only; omega
   · exact Or.inl hAcc.acc.mo
+  · have := hAcc.acc.mo; have := hAcc.wk_le; exact Or.inl (by dsimp only [Mont.outW]; omega)
 
 /-- Entries `[1 … m]P` of the table. -/
 def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : State) : Prop :=
@@ -171,7 +174,7 @@ theorem tblPt_slots (K : WinCfg) {m : Nat} (h1 : 1 ≤ m) (h8 : m ≤ 8) :
 
 /-- The slots of entry `j` are apart from what the addition into entry
 `m + 1 ≠ j` writes. -/
-theorem tbl_apart_add {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk) {j m : Nat} (hj1 : 1 ≤ j)
+theorem tbl_apart_add {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : WinWk K F pm size wk) {j m : Nat} (hj1 : 1 ≤ j)
     (hj8 : j ≤ 8) (hm1 : 1 ≤ m + 1) (hm8 : m + 1 ≤ 8) (hjm : j ≠ m + 1) :
     ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
       ∀ w ∈ progW K.M wk (rcbW K.S (K.tblPt (m + 1))),
@@ -179,7 +182,7 @@ theorem tbl_apart_add {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : 
   intro x hx w hw
   obtain ⟨i, hi, rfl, hi₁, hi₂⟩ := tblPt_mem K hj1 hj8 x hx
   simp only [progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+  rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
   · have ets : rcbW K.S (K.tblPt (m + 1)) = [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5] ++
         [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y, (K.tblPt (m + 1)).z] := rfl
     rw [ets, List.mem_append] at hy
@@ -191,13 +194,15 @@ theorem tbl_apart_add {K : WinCfg} {size wk : Nat} (hL : WinLay K size) (hAcc : 
   · exact hL.lay.tmp _ (by
       simp only [winSlots, List.mem_append]; exact Or.inr (winTbl_mem K hi))
   · exact Or.inl (hAcc.acc.sl _ (List.mem_append_right _ (winTbl_mem K hi)))
+  · have := hAcc.acc.sl _ (List.mem_append_right _ (winTbl_mem K hi)); have := hAcc.wk_le
+    exact Or.inl (by dsimp only [Mont.outW]; omega)
 
 /-- `[m + 1]P = [m]P + P`. -/
-theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ : State} (hF : WinFixed K C base s₀ P k) {m : Nat} (h1 : 1 ≤ m)
     (h7 : m ≤ 7) {s : State} (hI : BuildInv K wk C base size P s₀ m s) :
-    WP isa (fprog K.M wk (rcb3 K.S (K.tblPt m) (K.tblPt 1) (K.tblPt (m + 1)))) s
+    WP isa (fprog F (rcb3 K.S (K.tblPt m) (K.tblPt 1) (K.tblPt (m + 1)))) s
       (BuildInv K wk C base size P s₀ (m + 1)) := by
   have hn := hI.scr.nowrap
   have tb : tmv C K.M.n base s K.S.b3 = Fin.ofNat C.p C.b := by
@@ -247,7 +252,7 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
       w ∈ winWX K wk := by
     intro w hw
     simp only [winWX, progW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-    rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl
+    rcases hw with ⟨y, hy, rfl⟩ | rfl | rfl | rfl
     · refine Or.inl ⟨y, ?_, rfl⟩
       have ets : rcbW K.S (K.tblPt (m + 1)) = [K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5] ++
           [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y, (K.tblPt (m + 1)).z] := rfl
@@ -258,7 +263,8 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
           rcases hy with rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem)
       · exact (so y hy).2
     · exact Or.inr (Or.inl rfl)
-    · exact Or.inr (Or.inr rfl)
+    · exact Or.inr (Or.inr (Or.inl rfl))
+    · exact Or.inr (Or.inr (Or.inr rfl))
   have U₁ := k₁.unch
   have hox : (K.tblPt (m + 1)).x ∈ [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y, (K.tblPt (m + 1)).z] ++
       rcbR K.S (K.tblPt m) (K.tblPt 1) := by simp
@@ -307,11 +313,11 @@ theorem addT_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
       exact hR
 
 /-- `[m + 1]P = [m]P + P` for `m = 1 … i`. -/
-theorem adds_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem adds_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s₀ : State} (hF : WinFixed K C base s₀ P k) :
     ∀ i ≤ 7, ∀ s, BuildInv K wk C base size P s₀ 1 s →
-      WP isa (WinCfg.adds K wk i) s (BuildInv K wk C base size P s₀ (i + 1))
+      WP isa (WinCfg.adds K F i) s (BuildInv K wk C base size P s₀ (i + 1))
   | 0, _, _, h => WP.block_nil h
   | i + 1, hi, s, h => by
     rw [WinCfg.adds]
@@ -319,11 +325,11 @@ theorem adds_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
       addT_ok hL hAcc hp hC hM3 hP hF (m := i + 1) (by omega) (by omega) h₁)
 
 /-- The table `[1 … 8]P`. -/
-theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) {s : State} (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
     (hF : WinFixed K C base s P k) :
-    WP isa (WinCfg.build K wk) s (BuildInv K wk C base size P s 8) := by
+    WP isa (WinCfg.build K F) s (BuildInv K wk C base size P s 8) := by
   have hn := hs.nowrap
   rw [WinCfg.build]
   refine WP.seq (WP.mono (?_ : WP isa (.block (copyPt K.M.n (K.tblPt 1) K.P)) s

@@ -11,7 +11,7 @@ P-256 as the proof's curve (`p256`): scalars of 4 64-bit words, the order
 correct (given the group law) and constant time against its contract
 (`coreK` at P-256's sizes). Its seven-bit comb reads the same immutable
 table as public-key generation and verification, using four bytes of stack
-for position-independent addressing.
+for position-independent addressing, within the 20 its calls use.
 -/
 
 namespace VG.Proof.Ecdsa.Rfc6979.X86
@@ -27,8 +27,9 @@ theorem p256_nBits : Spec.Ecdsa.nBits Spec.P256.curve = 256 := by
 open VG.Impl.Ecdsa.X86 VG.Proof.Ecdsa.X86
 
 private theorem core_pre_256 {s : State} (h : (coreK p256Comb).pre s) : CombSignPre p256Comb s := by
-  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, ds, gs, ks, ht⟩ := h
-  exact ⟨⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp⟩, ht, lo, ds, gs, ks⟩
+  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, ds, gs, ks,
+    ht⟩ := h
+  exact ⟨⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩, ht, ds, gs, ks⟩
 
 private theorem core_pub_256 {s t : State} (h : (coreK p256Comb).pub s t) : CombSignPub s t := by
   obtain ⟨he, a0, a1, a2, a3, a4, sy⟩ := h
@@ -59,7 +60,8 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
       intro d hd
       have he : p256d = d := Option.some.inj hd
       rw [← he]; exact p256Comb_shape
-    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl (core_pre_256 h)
+    obtain ⟨tr, t, he, ha, hp⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl signComb_spG
+      signComb_spTail (core_pre_256 h)
     refine ⟨tr, t, he, ha, ?_⟩
     simp only [coreK, coreSigOf, SignPost, ptr, BitVec.setWidth_append_eq_right] at hp ⊢
     generalize Spec.Ecdsa.signWith p256Comb.C
@@ -69,7 +71,7 @@ def p256 (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSou
     cases r <;> exact hp
   coreCT := by
     intro s t tr₁ tr₂ s' t' hs ht hp
-    exact signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3
+    exact signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3 signComb_spMul
       s t tr₁ tr₂ s' t' (core_pre_256 hs) (core_pre_256 ht) (core_pub_256 hp)
   coreNs := NoSp.of_all (by lit_decide)
   coreStack := by lit_decide

@@ -17,6 +17,9 @@ structure TCombFixed (K : TCombCfg) (C : Curve) (base : Addr) (size : Nat) (s₀
   tsym : (s₀.mem.readW (off base K.ptr) 32).setWidth 64 = T
   tbl : TblMem s₀ T ws
   out : ∀ i < ws.length, ∀ b < 8, size ≤ ofs base (T + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 b)
+  /-- The tables are apart from the writable regions and the stack the calls use. -/
+  apart : ∀ r ∈ s₀.wr ++ [below (s₀.gpr .esp) 20], Region.Disjoint ⟨T, 8 * ws.length⟩ r
+  sp_lo : 20 ≤ (s₀.gpr .esp).toNat
 
 /-- The loop's invariant at `esi = j`: `A` represents `[combEW w k J j]G`, and
 the table of bits (all `w J` bytes) and the tables are where the digits and
@@ -35,27 +38,25 @@ structure TCombInv (K : TCombCfg) (C : Curve) (base : Addr) (size k : Nat) (T : 
   tbl : TblMem s T ws
   tsym : (s.mem.readW (off base K.ptr) 32).setWidth 64 = T
 
-/-- What the comb writes is in the working space. -/
-theorem tcombW_size {K : TCombCfg} {C : Curve} {size : Nat} {mem : Mem} {base : Addr}
-    (hL : TCombLay K size) (hM : ModOkW K.M size C.p mem base) : ∀ w ∈ tcombW K, w.1 + w.2 ≤ size := by
-  intro w hw
-  simp only [tcombW, combWx, combW, List.mem_append, List.mem_map, List.mem_cons,
-    List.not_mem_nil, or_false] at hw
-  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | rfl
-  · exact hL.comb.lay.le y (combWs_slots _ y hy)
-  · exact hM.tmp
-  · exact hL.wk.le
-  · exact hL.bits
+/-- The tables survive code from a state that keeps the regions and `esp` of
+`s₀` and uses 20 bytes of stack. -/
+theorem TCombFixed.tblAt {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat} {s₀ : State} {k : Nat}
+    {T : Addr} {ws : List (BitVec 64)} (hF : TCombFixed K C base size s₀ k T ws) {s s' : State}
+    (hwr : s.wr = s₀.wr) (hsp : s.gpr .esp = s₀.gpr .esp) (h : TblMem s T ws)
+    (hrd : s'.rd ++ s'.wr = s.rd ++ s.wr) (hf : Frame (s.wr ++ [below (s.gpr .esp) 20]) s.mem s'.mem) :
+    TblMem s' T ws :=
+  h.of_frame hrd hf (by rw [hwr, hsp]; exact hF.apart)
 
 theorem tcombW_mo {K : TCombCfg} {size m : Nat} {mem : Mem} {base : Addr} (hL : TCombLay K size)
     (hM : ModOkW K.M size m mem base) : ∀ w ∈ tcombW K, K.M.mo + 8 * K.M.n ≤ w.1 ∨ w.1 + w.2 ≤ K.M.mo := by
   intro w hw
   simp only [tcombW, combWx, combW, List.mem_append, List.mem_map, List.mem_cons,
     List.not_mem_nil, or_false] at hw
-  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl) | rfl
+  rcases hw with ((⟨y, hy, rfl⟩ | rfl) | rfl | rfl) | rfl
   · have := hL.comb.lay.mo y (combWs_slots _ y hy); dsimp only [TCombCfg.toComb] at this ⊢; omega
   · have := hM.sep; dsimp only [TCombCfg.toComb] at this ⊢; omega
-  · exact .inl hL.wk.mo
+  · exact .inl hL.wmo
+  · have := hM.mo; have := hL.sz; exact .inl (by dsimp only [Mont.outW]; omega)
   · have := hL.bits_sl K.M.mo (List.mem_cons_self ..); dsimp only; omega
 
 theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
@@ -63,9 +64,11 @@ theorem tcombW_ro {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {x : Nat}
   intro w hw
   have hxs := combRo_slots x hx
   simp only [tcombW, combWx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with (hw | rfl) | rfl
+  rcases hw with (hw | rfl | rfl) | rfl
   · exact combW_ro hL.comb hx w hw
-  · exact .inl (hL.wk.sl x hxs)
+  · exact .inl (hL.wsl x hxs)
+  · have h1 := hL.comb.lay.le x hxs; have := hL.sz; dsimp only [TCombCfg.toComb] at h1
+    exact .inl (by dsimp only [Mont.outW]; omega)
   · have := hL.bits_sl x (List.mem_cons_of_mem _ hxs); dsimp only; omega
 
 theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} (ht : t < K.w * K.J) :
@@ -74,17 +77,23 @@ theorem combW_bits {K : TCombCfg} {size : Nat} (hL : TCombLay K size) {t : Nat} 
   intro w hw
   rcases List.mem_append.mp hw with hw | hw
   · have := hL.bits_w w hw; omega
-  · simp only [List.mem_singleton] at hw; subst hw
-    have := hL.wk_bits; exact .inl (by omega)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl
+    · rcases hL.wk_bits with h | h
+      · exact .inl (by omega)
+      · exact .inr (by omega)
+    · have := hL.bits; have := hL.sz; exact .inl (by dsimp only [Mont.outW]; omega)
 
 theorem combW_ptr {K : TCombCfg} {size : Nat} (hL : TCombLay K size) :
     ∀ w ∈ combWx K, K.ptr + 4 ≤ w.1 ∨ w.1 + w.2 ≤ K.ptr := by
   intro w hw
-  simp only [combWx, combW, List.mem_append, List.mem_map, List.mem_singleton] at hw
-  rcases hw with (⟨x, hx, rfl⟩ | rfl) | rfl
+  simp only [combWx, combW, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil,
+    or_false] at hw
+  rcases hw with (⟨x, hx, rfl⟩ | rfl) | rfl | rfl
   · exact hL.ptr_sl x (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (combWs_slots _ x hx)))
   · exact hL.ptr_sl K.M.tmp (by simp)
   · exact .inl hL.ptr_wk
+  · have := hL.ptr_le; have := hL.sz; exact .inl (by dsimp only [Mont.outW]; omega)
 
 theorem unch_read32 {base : Addr} {W : List (Nat × Nat)} {m m' : Mem} (h : Unch base W m m')
     {d : Nat} (hd : d + 4 ≤ 2 ^ 64) (hW : ∀ w ∈ W, d + 4 ≤ w.1 ∨ w.1 + w.2 ≤ d) :

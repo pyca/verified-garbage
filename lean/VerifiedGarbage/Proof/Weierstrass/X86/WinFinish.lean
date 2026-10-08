@@ -5,8 +5,10 @@ open VG VG.X86 VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Wei
 open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open Spec.Weierstrass
 
+variable {F : Spec.Weierstrass.Mont.Modulus}
+
 /-- `R = 16 R`: `[e]P` to `[16 e]P`. -/
-theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ s : State} (hF : WinFixed K C base s₀ P k)
@@ -14,7 +16,7 @@ theorem quad_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : W
     (hlt : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s.mem base x K.M.n < C.p)
     (hR : Rep C (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
       (mul e P)) :
-    WP isa (WinCfg.quad K wk) s fun s' =>
+    WP isa (WinCfg.quad K F) s fun s' =>
       WinSt K wk C base size P s₀ s' ∧ s'.gpr .esi = s.gpr .esi ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)

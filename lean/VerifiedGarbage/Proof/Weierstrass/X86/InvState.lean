@@ -1,6 +1,7 @@
 import VerifiedGarbage.Impl.Weierstrass.X86.InvCfg
 import VerifiedGarbage.Proof.Divstep.Alg32Def
 import VerifiedGarbage.Proof.Mont.X86.Ops
+import VerifiedGarbage.Proof.Weierstrass.X86.MontCall
 
 /-! # Memory layout and state of the 256-bit divstep inversion -/
 namespace VG.Proof.Weierstrass.X86.Inv
@@ -20,11 +21,9 @@ structure InvLay (P : InvCfg) (size : Nat) : Prop extends WorkLay P size where
   base_tbl : P.base + 32 ≤ P.tbl ∨ P.tbl + 320 ≤ P.base
   out_bound : P.out + 32 ≤ size
   out_tmp : P.out + 32 ≤ P.M.tmp ∨ P.M.tmp + 32 ≤ P.out
-  wk_bound : P.wk + 68 ≤ size
-  wk_tbl : P.wk + 68 ≤ P.tbl ∨ P.tbl + 320 ≤ P.wk
-  wk_out : P.wk + 68 ≤ P.out ∨ P.out + 32 ≤ P.wk
-  wk_mod : P.wk + 68 ≤ P.M.mo ∨ P.M.mo + 32 ≤ P.wk
-  wk_tmp : P.wk + 68 ≤ P.M.tmp ∨ P.M.tmp + 32 ≤ P.wk
+  size_eq : size = 8192
+  tbl_own : P.tbl + 320 ≤ Mont.own 4
+  out_own : P.out + 32 ≤ Mont.own 4
 
 structure StateAt (P : InvCfg) (base : Addr) (I : Divstep.W32.IState) (s : State) : Prop where
   d : s.mem.readW (off base P.sW) 32 = BitVec.ofInt 32 I.d

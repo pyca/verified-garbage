@@ -8,7 +8,11 @@ namespace VG.Impl.Ecdsa.X86
 open VG.X86
 
 /-- P-256 as the code has it. -/
-def p256 : Cfg := { n := 4, C := Spec.P256.curve }
+def p256 : Cfg where
+  n := 4
+  C := Spec.P256.curve
+  SP := Spec.Weierstrass.Mont.p256p
+  SN := Spec.Weierstrass.Mont.p256n
 
 /-- `vg_ecdsa_p256_sign`. -/
 def signP256 : Prog isa := p256.sign

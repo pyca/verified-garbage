@@ -17,25 +17,32 @@ structure PowerState (P : PowCfg) (base : Addr) (size m : Nat) [NeZero m]
   tmp_lt : wordsVal s.mem base P.tmp P.M.n < m
   tmp_val : toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.tmp P.M.n) = B ^ t
 
-theorem powWx_mo {P : PowCfg} {size wk : Nat} (hL : PowLay P size) (hW : PowWk P size wk) :
+theorem powWx_mo {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
+    (hW : PowWk P F m size wk) :
     ∀ w ∈ powWx P wk, P.M.mo + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.M.mo := by
   intro w hw
-  simp only [powWx, List.mem_append, List.mem_singleton] at hw
-  rcases hw with hw | rfl
+  simp only [powWx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with hw | rfl | rfl
   · exact hL.mo_w w hw
   · exact .inl hW.mo
+  · have := hW.mo; have := hW.toCallCfg.own_le
+    exact .inl (by simp only; omega)
 
-theorem powWx_base {P : PowCfg} {size wk : Nat} (hL : PowLay P size) (hW : PowWk P size wk) :
+theorem powWx_base {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {m size wk : Nat} (hL : PowLay P size)
+    (hW : PowWk P F m size wk) :
     ∀ w ∈ powWx P wk, P.base + 8 * P.M.n ≤ w.1 ∨ w.1 + w.2 ≤ P.base := by
   intro w hw
-  simp only [powWx, List.mem_append, List.mem_singleton] at hw
-  rcases hw with hw | rfl
+  simp only [powWx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with hw | rfl | rfl
   · exact hL.base_w w hw
   · exact .inl hW.base
+  · have := hW.base; have := hW.toCallCfg.own_le
+    exact .inl (by simp only; omega)
 
-theorem PowerState.rebuild {P : PowCfg} {base : Addr} {size wk m a t a' t' : Nat} [NeZero m]
+theorem PowerState.rebuild {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr}
+    {size wk m a t a' t' : Nat} [NeZero m]
     {B : Fin m} {s u : State} (I : PowerState P base size m B a t s)
-    (hL : PowLay P size) (hW : PowWk P size wk)
+    (hL : PowLay P size) (hW : PowWk P F m size wk)
     (hs : Scr u base size) (U : Unch base (powWx P wk) s.mem u.mem)
     (ha : wordsVal u.mem base P.acc P.M.n < m)
     (va : toM m (2 ^ (64 * P.M.n)) (wordsVal u.mem base P.acc P.M.n) = B ^ a')
@@ -52,9 +59,10 @@ theorem PowerState.rebuild {P : PowCfg} {base : Addr} {size wk m a t a' t' : Nat
 
 theorem PowerState.regs {P : PowCfg} {base : Addr} {size m a t : Nat} [NeZero m]
     {B : Fin m} {s u : State} (I : PowerState P base size m B a t s)
-    {rs : List Reg} (K : Keeps rs s u) (he : Reg.edi ∉ rs) (hm : u.mem = s.mem) :
+    {rs : List Reg} (K : Keeps rs s u) (he : Reg.edi ∉ rs) (hm : u.mem = s.mem)
+    (hsp : Reg.esp ∉ rs := by decide) :
     PowerState P base size m B a t u := by
-  refine ⟨I.scr.of_keeps K he, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hm]
+  refine ⟨I.scr.of_keeps K he hsp, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [hm]
   · exact I.mod
   · exact I.base_lt
   · exact I.base_val

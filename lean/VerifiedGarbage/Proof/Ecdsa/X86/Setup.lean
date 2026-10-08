@@ -36,6 +36,17 @@ theorem argLoad_ok {s₀ t : State} {q : Addr} {i : Nat} (hin : InRegions (s₀.
   show t.load32 (addr (t.gpr .esp) (4 + 4 * i)) = _
   rw [hesp, ← argAddr_eq, State.load32, hrw, ite_eq_left_iff.mpr fun h => absurd hin h, arg_keep ho hd]
 
+/-- `r = ` argument `i`, read in memory that changed only in regions `L`
+apart from it. -/
+theorem argLoad_frame {s₀ t : State} {L : List Region} {i : Nat}
+    (hin : InRegions (s₀.rd ++ s₀.wr) (argAddr s₀ i) 4)
+    (hd : ∀ r ∈ L, Region.Disjoint ⟨argAddr s₀ i, 4⟩ r) (hesp : t.gpr .esp = s₀.gpr .esp)
+    (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr) (hf : Frame L s₀.mem t.mem) :
+    readSrc t (.mem (Cfg.argOp i)) = some (arg s₀ i) := by
+  show t.load32 (addr (t.gpr .esp) (4 + 4 * i)) = _
+  rw [hesp, ← argAddr_eq, State.load32, hrw, ite_eq_left_iff.mpr fun h => absurd hin h, arg,
+    hf.readW (Region.contains_self _ _) hd (by decide)]
+
 /-- `argLoad_ok` for an argument the setup reads. -/
 theorem SetupPre.argLoad {c : Cfg} {A : Args} {s₀ t : State} (hp : SetupPre c A s₀)
     (hesp : t.gpr .esp = s₀.gpr .esp) (hrw : t.rd ++ t.wr = s₀.rd ++ s₀.wr)
@@ -284,11 +295,11 @@ theorem setup_ok {c : Cfg} (hc : CfgOk c) {A : Args} {s : State} (hp : SetupPre 
   refine WP.block_append (WP.mono (setupSaves_ok (base := ptr s A.sc) (by rw [u₁.gpr]) (by rw [u₁.gpr]; omega)
     (by rw [u₁.wr, kP.2.2]; exact hw)) fun s₂ ⟨g₂, rd₂, wr₂, O₂, sv₂⟩ => ?_)
   refine wp_movS rfl fun s₃ u₃ _ => ?_
-  have hs₃ : Scr s₃ (ptr s A.sc) size := ⟨by rw [u₃.gpr, g₂, u₁.gpr], by rw [u₃.wr, wr₂, u₁.wr, kP.2.2]; exact hw,
-    by rw [hbn]; exact hfit⟩
-  have RW₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, rd₂, wr₂, u₁.rd, u₁.wr, kP.2.1, kP.2.2]
   have esp₃ : s₃.gpr .esp = s.gpr .esp := by
     rw [u₃.other _ (by decide), g₂, u₁.other _ (by decide), kP.1 _ (by decide)]
+  have hs₃ : Scr s₃ (ptr s A.sc) size := ⟨by rw [u₃.gpr, g₂, u₁.gpr], by rw [u₃.wr, wr₂, u₁.wr, kP.2.2]; exact hw,
+    by rw [hbn]; exact hfit, by rw [esp₃]; exact hp.stk⟩
+  have RW₃ : s₃.rd ++ s₃.wr = s.rd ++ s.wr := by rw [u₃.rd, u₃.wr, rd₂, wr₂, u₁.rd, u₁.wr, kP.2.1, kP.2.2]
   have O₃ : Outside (ptr s A.sc) 0 size s.mem s₃.mem := by
     rw [u₃.mem]
     exact OPfull.trans (by rw [← u₁.mem]; exact O₂.mono (Nat.le_refl _) (by omega))

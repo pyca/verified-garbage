@@ -13,7 +13,7 @@ structure TEntryPostJ (K : TCombCfg) (C : Curve) (base : Addr) (size k i : Nat) 
   scr : Scr s' base size
   keep : KeepRegs (clob) s s'
   unch : Unch base [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n),
-    (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (K.wk, accLen K.M)] s.mem s'.mem
+    (K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n), (K.wk, 64 * K.M.n), Mont.outW] s.mem s'.mem
   lt : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s'.mem base x K.M.n < C.p
   rep : Rep C (tmv C K.M.n base s' K.E.x) (tmv C K.M.n base s' K.E.y) (tmv C K.M.n base s' K.E.z)
     (bentry C K.w k i)
@@ -32,8 +32,9 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     (hz : wordsVal s.mem base K.zero K.M.n = 0) (hT : (s.mem.readW (off base K.ptr) 32).setWidth 64 = T)
     (hTM : TblMem s T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
     WP isa (.block (K.bdigit c ++ K.select)) s fun s₂ =>
-      WP isa (.block K.bnegY) s₂ (TEntryPostJ K C base size k i s) := by
+      WP isa K.bnegY s₂ (TEntryPostJ K C base size k i s) := by
   have hn := hs.nowrap
+  have hsz := hL.sz
   have hJ := hL.comb.J
   rw [TCombCfg.toComb_J] at hJ
   have hw := hL.w
@@ -149,16 +150,15 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     rw [ey₂]; split
     · rw [(hent ‹_›).2]; exact Nat.mod_lt _ hp0
     · exact hV.one_lt
-  rw [TCombCfg.bnegY, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (sub_ok hs₂ hM₂
-    (opLay hL.comb.lay hL.wk (o := K.neg) (a := K.zero) (b := K.E.y)
-      (by tcomb_mem) (by tcomb_mem) (by tcomb_mem))
-    (by rw [hz₂]; exact hp0) hEy₂) fun s₃ ⟨k₃, e₃⟩ => ?_
+  rw [TCombCfg.bnegY]
+  refine WP.seq (WP.mono (subC_ok (hL.wkOk hV.fn).toCallCfg hs₂ (o := K.neg) (a := K.zero) (b := K.E.y)
+    (hL.wsl _ (by tcomb_mem)) (hL.wsl _ (by tcomb_mem)) (hL.wsl _ (by tcomb_mem))
+    (by rw [hz₂]; exact hp0) hEy₂) fun s₃ ⟨k₃, e₃⟩ => ?_)
   have hs₃ : Scr s₃ base size := k₃.scr hs₂
   have U₃ := k₃.unch
-  have hwkx := hL.wk.sl K.E.x (by tcomb_mem)
-  have hwky := hL.wk.sl K.E.y (by tcomb_mem)
-  have hwkz := hL.wk.sl K.E.z (by tcomb_mem)
+  have hwkx := hL.wsl K.E.x (by tcomb_mem)
+  have hwky := hL.wsl K.E.y (by tcomb_mem)
+  have hwkz := hL.wsl K.E.z (by tcomb_mem)
   have hwkbits := hL.wk_bits
   have hx₃ : s₃.gpr .esi = BitVec.ofNat 32 i := by
     rw [k₃.gpr _ esi_not_clob, k₂.gpr _ (by decide), hx₁]
@@ -167,12 +167,13 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     have hbw := hL.bits_w
     rw [U₃.byte (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl | rfl
+        rcases hw with rfl | rfl | rfl | rfl
         · have := hbw (K.neg, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb]); dsimp only at this ⊢
           omega
         · have := hbw (K.M.tmp, 8 * K.M.n) (by simp [combW, TCombCfg.toComb]); dsimp only at this ⊢
           omega
-        · dsimp only; omega) (by omega),
+        · dsimp only; omega
+        · dsimp only [Mont.outW]; omega) (by omega),
       U₂.byte (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl
@@ -194,24 +195,27 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
     rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl
+      rcases hw with rfl | rfl | rfl | rfl
       · dsimp only; omega
       · have := htmp K.E.x (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega) (by omega)]
+      · dsimp only; omega
+      · dsimp only [Mont.outW]; omega) (by omega)]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
     rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl
+      rcases hw with rfl | rfl | rfl | rfl
       · dsimp only; omega
       · have := htmp K.E.z (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega) (by omega)]
+      · dsimp only; omega
+      · dsimp only [Mont.outW]; omega) (by omega)]
   have vy₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl
+      rcases hw with rfl | rfl | rfl | rfl
       · dsimp only; omega
       · have := htmp K.E.y (by tcomb_mem); dsimp only; omega
-      · dsimp only; omega) (by omega)
+      · dsimp only; omega
+      · dsimp only [Mont.outW]; omega) (by omega)
   have vy : wordsVal s₅.mem base K.E.y K.M.n = if decide (bcar K.w k (i + 1) = 1) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [e₅, m₄, e₃, hz₂, vy₃]

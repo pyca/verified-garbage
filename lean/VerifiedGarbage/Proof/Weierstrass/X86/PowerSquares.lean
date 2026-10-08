@@ -5,10 +5,10 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
-theorem squareRun_ok {P : PowCfg} {base : Addr} {size wk m a t : Nat} [NeZero m]
+theorem squareRun_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m a t : Nat} [NeZero m]
     {B : Fin m} {s : State} (I : PowerState P base size m B a t s)
-    (hL : PowLay P size) (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) :
-    ∀ n, n < 2 ^ 32 → WP isa (squareRun P wk n) s fun u =>
+    (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n))) :
+    ∀ n, n < 2 ^ 32 → WP isa (squareRun P F n) s fun u =>
       PowerState P base size m B (a * 2 ^ n) t u ∧ Keeps powClob s u ∧
       Unch base (powWx P wk) s.mem u.mem
   | 0, _ => by
@@ -24,7 +24,7 @@ theorem squareRun_ok {P : PowCfg} {base : Addr} {size wk m a t : Nat} [NeZero m]
       obtain ⟨Iv, ev, Kv, Uv⟩ := hI
       refine WP.seq (wp_decCounter hj ev fun v₁ e₁ K₁ mem₁ => WP.block_nil ?_)
       have I₁ := Iv.regs K₁ (by decide) mem₁
-      refine WP.seq (WP.mono (powerMul_ok I₁ hL hW hm hL.acc hW.acc I₁.acc_lt I₁.acc_val)
+      refine WP.seq (WP.mono (powerMul_ok I₁ hL hW hm hW.acc I₁.acc_lt I₁.acc_val)
         fun v₂ ⟨I₂, K₂, U₂⟩ => ?_)
       have ee : a * 2 ^ (n + 1 - j) + a * 2 ^ (n + 1 - j) = a * 2 ^ (n + 1 - (j - 1)) := by
         rw [show n + 1 - (j - 1) = (n + 1 - j) + 1 by omega, Nat.pow_succ, ← Nat.mul_assoc]

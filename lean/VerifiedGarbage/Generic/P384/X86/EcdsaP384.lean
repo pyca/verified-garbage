@@ -21,14 +21,16 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
     doc := Spec.Ecdsa.P384.signApi.doc (notes := ["The function saves the callee-saved registers \
       `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are twelve 32-bit \
       words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
-      with `mul` and the accumulator in `scratch`) with a final conditional subtraction. `[k]G` \
+      with `mul` and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other \
+      functions of `p384_mont`) with a final conditional subtraction. `[k]G` \
       is a double-and-add ladder over all 384 bits of `k`, with the complete addition formulas \
       of Renes, Costello and Batina for every addition and doubling and a masked selection for \
       each bit; the inversions modulo `p` and `n` are Fermat's, by square-and-always-multiply \
       over the bits of `p - 2` and `n - 2`. The signature (or zeros) is selected by a mask, so \
       the time depends only on the pointers."])
     code := Impl.Ecdsa.X86.signP384
-    contract := Spec.Ecdsa.P384.inst.signContract X86.abi
+    contract := Spec.Ecdsa.P384.inst.signContract X86.abi 20
+    stack := 20
     verified := Proof.Ecdsa.X86.P384.sign_verified h.law
     spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Ecdsa.P384.verifyApi with
@@ -37,7 +39,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       field arithmetic, ladder and inversions, with `vg_ecdh_p384`'s checks of the public key: it \
       saves the callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements \
       and scalars are twelve 32-bit words in Montgomery form, multiplied by word-by-word Montgomery \
-      multiplication (CIOS, with `mul` and the accumulator in `scratch`) with a final conditional \
+      multiplication (CIOS, with `mul` and the accumulator in `scratch`, in calls of `vg_p384_mul_mod_p` and the other \
+      functions of `p384_mont`) with a final conditional \
       subtraction. The key is checked without branches (its first byte, both coordinates below \
       `p`, and the curve's equation), and the second ladder multiplies the key's point if it is \
       valid, else `G`, so it always runs on a point of the curve. `s⁻¹` modulo `n` and `Z⁻¹` are \
@@ -48,7 +51,8 @@ def artifacts (h : Proof.Weierstrass.HasLaw Spec.P384.curve) : List Artifact := 
       mask, so the time depends only on the pointers, although the contract would let every \
       input affect it."])
     code := Impl.Ecdsa.Verify.X86.verifyP384
-    contract := Spec.Ecdsa.P384.inst.verifyContract X86.abi
+    contract := Spec.Ecdsa.P384.inst.verifyContract X86.abi 20
+    stack := 20
     verified := Proof.Ecdsa.Verify.X86.P384.verify_verified h.law
     spSafe := Code.all_of_allInstrs (by lit_decide) }]
 

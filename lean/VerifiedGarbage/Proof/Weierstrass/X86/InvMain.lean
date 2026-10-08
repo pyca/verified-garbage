@@ -87,7 +87,7 @@ theorem invPow_ok {P : InvCfg} {base : Addr} {size p : Nat} [NeZero p]
   have hs₂ := hs₁.of_keeps K₂ (by decide)
   have U : Unch base [(P.tbl, 320), (P.M.tmp, 32)] s.mem s₂.mem :=
     fun q hq => (U₂ q hq).trans (U₁ q hq)
-  refine WP.mono (finish_ok hs₂ L (modU U) hp256 hCm hCnm)
+  refine WP.mono (finish_ok hs₂ L hC hp256 hCm hCnm)
     fun z ⟨V₃, E₃, K₃, U₃⟩ => ⟨?_, ?_, V₃, ?_⟩
   · exact ((K₁.mono (by decide)).trans K₂).trans (K₃.mono (by decide))
   · intro q hq

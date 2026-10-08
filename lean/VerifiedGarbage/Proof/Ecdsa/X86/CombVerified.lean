@@ -27,9 +27,10 @@ theorem signComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstra
     rw [← e]; exact p256Comb_shape
   have hv : Verified X86.target signP256Comb combSignLocal := Verified.of_correct (k := combSignLocal)
     (fun s h => by
-      obtain ⟨tr, t, e, a, p⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl h
+      obtain ⟨tr, t, e, a, p⟩ := signComb_ok (p256Comb_ok hI) hL (p256Comb_tables hL) co p256Comb_am3 rfl signComb_spG
+        signComb_spTail h
       exact ⟨tr, t, e, a, p⟩)
-    (signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3) (.refl sl)
+    (signComb_ct (p256Comb_ok hI) hL (p256Comb_tables hL) p256Comb_shape p256Comb_am3 signComb_spMul) (.refl sl)
   refine Verified.narrowTo hv combSignRd combSignWr (fun _ h => combSign_pre h) ?_ ?_ ?_ ?_ hs
   · intro s h a n ⟨r, hr, hc⟩
     obtain ⟨rd, wr⟩ := combSign_regions h

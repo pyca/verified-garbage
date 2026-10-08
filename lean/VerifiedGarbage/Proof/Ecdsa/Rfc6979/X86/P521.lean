@@ -20,8 +20,8 @@ open VG VG.X86
 
 private theorem core_pre_521 {s : State} (h : (coreK Impl.Ecdsa.X86.p521).pre s) :
     Proof.Ecdsa.X86.P521.signX86.pre s := by
-  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, _⟩ := h
-  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp⟩
+  obtain ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss, _⟩ := h
+  exact ⟨rd, wr, oc, od, og, ok, dc, gc, kc, ao, ac, ro, rc, no, nd, ng, nk, nc, sp, lo, so, ss⟩
 
 /-- P-521, with the group law `hL`. -/
 def p521 (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where

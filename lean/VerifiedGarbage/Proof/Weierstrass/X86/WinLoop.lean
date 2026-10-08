@@ -19,6 +19,8 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 open VG.X86.Wp
 open Spec.Weierstrass
 
+variable {F : Spec.Weierstrass.Mont.Modulus}
+
 /-- Public window counter instructions. -/
 theorem winDec_ok (s : State) {j : Nat} (hj : 1 ≤ j) (hb : s.gpr .esi = BitVec.ofNat 32 j) :
     WP isa (.block [.alu .sub .esi (.imm 1)]) s fun t =>
@@ -36,13 +38,13 @@ theorem winCount_ok (s : State) (j : Nat) :
   wp_movS rfl fun _ u _ => WP.block_nil ⟨u.gpr, u.keeps.1, u.mem, u.rd, u.wr⟩
 
 /-- An iteration. -/
-theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} {s : State} (hj : 1 ≤ j) (hjn : j ≤ K.J)
     (hI : WinInv K wk C base size k P s₀ s j) :
-    WP isa (WinCfg.step K wk) s fun s' =>
+    WP isa (WinCfg.step K F) s fun s' =>
       WinInv K wk C base size k P s₀ s' (j - 1) ∧ s'.zf = some (decide (j - 1 = 0)) := by
   have hJ := hL.J
   rw [WinCfg.step]
@@ -70,17 +72,18 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
     (i := j - 1) (by omega) hx₅ hbits₅ hz₅ S₅.tbl) fun s₆ h₆ => WP.seq (WP.mono h₆ fun s₇ E₇ => ?_))
   have hn := S₅.scr.nowrap
   have hEW : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n), (K.neg, 8 * K.M.n),
-      (K.M.tmp, 8 * K.M.n), (wk, accLen K.M)], w ∈ loopWX K wk := by
+      (K.M.tmp, 8 * K.M.n), (wk, 64 * K.M.n), Mont.outW], w ∈ loopWX K wk := by
     intro w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [loopWX, List.mem_append, List.mem_map, List.mem_cons, List.not_mem_nil, or_false]
-    rcases hw with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact Or.inl ⟨_, winE_mem _ (by simp), rfl⟩
     · exact Or.inl ⟨_, winE_mem _ (by simp), rfl⟩
     · exact Or.inl ⟨_, winE_mem _ (by simp), rfl⟩
     · exact Or.inl ⟨_, winE_mem _ (by simp), rfl⟩
     · exact Or.inr (Or.inl rfl)
-    · exact Or.inr (Or.inr rfl)
+    · exact Or.inr (Or.inr (Or.inl rfl))
+    · exact Or.inr (Or.inr (Or.inr rfl))
   have S₇ := S₅.next hL hAcc E₇.scr (E₇.keep.mono clob_powClob) (E₇.unch.mono hEW)
   -- `R` is apart from what the entry writes.
   obtain ⟨-, -, -, hRo, -⟩ := hL.other_ne
@@ -95,13 +98,15 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
     have hne : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.neg], x ≠ y := fun y hy e => hRo x hx (by
       rw [e]; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
       rcases hy with rfl | rfl | rfl | rfl <;> simp)
-    rcases hw with rfl | rfl | rfl | rfl | rfl | rfl
+    rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact hL.apart₂ hxw (winOther_ws K _ (winE_mem _ (by simp))) (hne _ (by simp))
     · exact hL.apart₂ hxw (winOther_ws K _ (winE_mem _ (by simp))) (hne _ (by simp))
     · exact hL.apart₂ hxw (winOther_ws K _ (winE_mem _ (by simp))) (hne _ (by simp))
     · exact hL.apart₂ hxw (winOther_ws K _ (winE_mem _ (by simp))) (hne _ (by simp))
     · exact hL.lay.tmp x (winWs_slots K x hxw)
     · exact Or.inl (hAcc.acc.sl x (winWs_slots K x hxw))
+    · have := hAcc.acc.sl x (winWs_slots K x hxw); have := hAcc.wk_le
+      exact Or.inl (by dsimp only [Mont.outW]; omega)
   have lt₇ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₇.mem base x K.M.n < C.p := fun x hx => by
     rw [eR x hx]; exact l₅ x hx
   have rep₇ : Rep C (tmv C K.M.n base s₇ K.R.x) (tmv C K.M.n base s₇ K.R.y)
@@ -126,13 +131,13 @@ theorem winStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL 
 
 /-- `[k - 8 Σ_{i<J} 16^i]P` into `R`, for `8 Σ_{i<J} 16^i ≤ k < 16^J` whose bits
 are the table at `K.bits`; only `powClob` and `winW` change. -/
-theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K size wk)
+theorem window_ok {K : WinCfg} {C : Curve} {base : Addr} {size wk k : Nat} (hL : WinLay K size) (hAcc : WinWk K F C.p size wk)
     (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C) {P : Point C}
     (hP : onCurve C P = true) (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)
     (hk8 : 8 * geom K.J ≤ k) :
-    WP isa (WinCfg.window K wk) s fun s' => KeepRegs (powClob) s s' ∧
+    WP isa (WinCfg.window K F) s fun s' => KeepRegs (powClob) s s' ∧
       Unch base (winWX K wk) s.mem s'.mem ∧ ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s'.mem base x K.M.n < C.p) ∧
       Rep C (tmv C K.M.n base s' K.R.x) (tmv C K.M.n base s' K.R.y) (tmv C K.M.n base s' K.R.z)

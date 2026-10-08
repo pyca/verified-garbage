@@ -19,10 +19,10 @@ open VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass.X86 VG.Proof.Weierstra
 
 variable {c : Cfg}
 
-theorem middle_eq (c : Cfg) : c.middle = .seq (mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC))
-    (.seq (mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE))
-    (.seq (.block (add c.MN' c.wk (c.sl RR) (c.sl X) (c.sl ZERO)))
-    (.seq (mul c.MN' c.wk (c.sl KM) (c.sl K) (c.sl R2N))
+theorem middle_eq (c : Cfg) : c.middle = .seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
+    (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+    (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
+    (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N))
     (.block (c.checkRange (c.sl D) ++ c.checkRange (c.sl K) ++ c.checkNonzero (c.sl RR)))))) := rfl
 
 /-- What `middle`'s field operations leave. -/
@@ -31,7 +31,7 @@ structure MidPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   gpr : ∀ r, r ∉ clob → s'.gpr r = s.gpr r
   rd : s'.rd = s.rd
   wr : s'.wr = s.wr
-  unch : Unch base (slW c [XM, X, RR, KM, TMP] ++ [(c.wk, 16 * c.n + 4)]) s.mem s'.mem
+  unch : Unch base (slW c [XM, X, RR, KM, TMP] ++ wkW c) s.mem s'.mem
   modP : ModOkW c.MP' size c.C.p s'.mem base
   modN : ModOkW c.MN' size c.C.n s'.mem base
   x_lt : sv c base s' X < c.C.p
@@ -42,14 +42,16 @@ structure MidPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
   km : toM c.C.n (2 ^ (64 * c.n)) (sv c base s' KM) = Fin.ofNat c.C.n (sv c base s K)
 
 theorem unch_slots {base : Addr} {m₁ m₂ : Mem} {o : Nat} {l : List Nat} {M : Mod} (hMn : M.n = c.n)
-    (hMt : M.tmp = c.sl TMP) (h : Unch base [(c.sl o, 8 * M.n), (M.tmp, 8 * M.n), (c.wk, accLen M)] m₁ m₂)
-    (ho : o ∈ l) (ht : TMP ∈ l) : Unch base (slW c l ++ [(c.wk, 16 * c.n + 4)]) m₁ m₂ :=
+    (hMt : M.tmp = c.sl TMP)
+    (h : Unch base [(c.sl o, 8 * M.n), (M.tmp, 8 * M.n), (c.wk, 64 * M.n), Mont.outW] m₁ m₂)
+    (ho : o ∈ l) (ht : TMP ∈ l) : Unch base (slW c l ++ wkW c) m₁ m₂ :=
   h.mono fun w hw => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, hMn, hMt, accLen_eq] at hw
-    rcases hw with rfl | rfl | rfl
+    simp only [List.mem_cons, List.not_mem_nil, or_false, hMn, hMt] at hw
+    rcases hw with rfl | rfl | rfl | rfl
     · exact List.mem_append_left _ (List.mem_map_of_mem ho)
     · exact List.mem_append_left _ (List.mem_map_of_mem ht)
-    · exact List.mem_append_right _ (List.mem_singleton_self _)
+    · exact List.mem_append_right _ (by simp [wkW])
+    · exact List.mem_append_right _ (by simp [wkW])
 
 /-- The four field operations of `middle`. -/
 theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
@@ -57,10 +59,10 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
     {Q : State → Prop} (h : ∀ s', MidPost c base s s' → WP isa rest s' Q) :
-    WP isa (.seq ((mul c.MP' c.wk (c.sl XM) (c.sl RX) (c.sl ACC)))
-      (.seq ((mul c.MP' c.wk (c.sl X) (c.sl XM) (c.sl ONE)))
-      (.seq (.block (add c.MN' c.wk (c.sl RR) (c.sl X) (c.sl ZERO)))
-      (.seq ((mul c.MN' c.wk (c.sl KM) (c.sl K) (c.sl R2N))) rest)))) s Q := by
+    WP isa (.seq (Mont.mulCall c.SP (c.sl XM) (c.sl RX) (c.sl ACC))
+      (.seq (Mont.mulCall c.SP (c.sl X) (c.sl XM) (c.sl ONE))
+      (.seq (Mont.addCall c.SN (c.sl RR) (c.sl X) (c.sl ZERO))
+      (.seq (Mont.mulCall c.SN (c.sl KM) (c.sl K) (c.sl R2N)) rest)))) s Q := by
   have h7 := hc.n10
   have hn := hs.nowrap
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
@@ -68,14 +70,14 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have hp3 := hc.p_ge
   have hpn := hc.p_lt_2n
   -- `XM = X · ACC`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs hMP (o := XM) (a := RX) (b := ACC) (by decide) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs (o := XM) (a := RX) (b := ACC) (by decide) (by decide) (by decide) hacc) fun s₁ ⟨k₁, _, e₁⟩ => ?_)
   have hs₁ := k₁.scr hs
   have kP₁ := hMP.keepX86 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have kN₁ := hMN.keepX86 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₁ (by decide) (by decide)
   have one₁ : sv c base s₁ ONE = 1 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hone
   -- `X = XM · 1`.
-  refine WP.seq (WP.mono (slMul_ok (MP'_n c) (.inl rfl) rfl h7 hs₁ kP₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (slMul_ok (MP'_n c) hc.fp h7 hs₁ (o := X) (a := XM) (b := ONE) (by decide) (by decide) (by decide) (by omega)) fun s₂ ⟨k₂, lt₂, e₂⟩ => ?_)
   have hs₂ := k₂.scr hs₁
   have kP₂ := kP₁.keepX86 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
   have kN₂ := kN₁.keepX86 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₂ (by decide) (by decide)
@@ -86,7 +88,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       toM c.C.p (2 ^ (64 * c.n)) (sv c base s RX) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC) := by
     rw [toM_one_mul hpR (by rw [e₂, one₁]), toM_mul hpR e₁]
   -- `RR = X mod n`.
-  refine WP.seq (WP.mono (slAdd_ok (MN'_n c) (.inr rfl) rfl h7 hs₂ kN₂ (o := RR) (a := X) (b := ZERO) (by decide) (by decide) (by decide) (by decide) (by omega)) fun s₃ ⟨k₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (slAdd_ok (MN'_n c) hc.fn h7 hs₂ (o := RR) (a := X) (b := ZERO) (by decide) (by decide) (by decide) (by omega)) fun s₃ ⟨k₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr hs₂
   have kP₃ := kP₂.keepX86 (j := MP) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
   have kN₃ := kN₂.keepX86 (j := MN) (by decide) rfl rfl rfl rfl h7 hn k₃ (by decide) (by decide)
@@ -99,7 +101,7 @@ theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
       sv_keep (MP'_n c) rfl h7 hn k₂ (by decide) (by decide) (by decide),
       sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)]
   -- `KM = K · R² mod n`.
-  refine WP.seq (WP.mono (slMul_ok (MN'_n c) (.inr rfl) rfl h7 hs₃ kN₃ (o := KM) (a := K) (b := R2N) (by decide) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
+  refine WP.seq (WP.mono (slMul_ok (MN'_n c) hc.fn h7 hs₃ (o := KM) (a := K) (b := R2N) (by decide) (by decide) (by decide) (by rw [r2₃]; exact Nat.mod_lt _ (by omega))) fun s₄ ⟨k₄, lt₄, e₄⟩ => h s₄ ?_)
   have X₄ : sv c base s₄ X = sv c base s₂ X := by
     rw [sv_keep (MN'_n c) rfl h7 hn k₄ (by decide) (by decide) (by decide),
       sv_keep (MN'_n c) rfl h7 hn k₃ (by decide) (by decide) (by decide)]

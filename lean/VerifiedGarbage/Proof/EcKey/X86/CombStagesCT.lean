@@ -26,15 +26,26 @@ theorem pkKeep_arg {c : Cfg} {s₀ s : State} {extra : List Region}
   have he : argAddr s j = argAddr s₀ j := by simp only [argAddr, h.esp]
   change s.mem.readW (argAddr s j) 32 = _
   rw [he]
-  apply arg_keep (h.whole.outside (fun w hw => by
-    rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩))
-  exact hp.args_sc.sub_left (arg_subN (k := 3) (by have := hp.sp_fit; omega) hj)
+  have h3 : (s₀.gpr .esp).toNat + 4 + 4 * 3 ≤ 2 ^ 32 := by have := hp.sp_fit; omega
+  refine h.whole.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
+  rw [hp.wr] at hr
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact hp.args_out.sub_left (arg_subN h3 hj)
+  · exact hp.args_sc.sub_left (arg_subN h3 hj)
+  · exact (below_disjoint_args hp.sp_lo (k := 12) (by omega) (by decide)).symm.sub_left (arg_subN h3 hj)
 
 /-- The public argument area is disjoint from every writable buffer. -/
 theorem pkArgWf {c : Cfg} {s₀ s : State} {extra : List Region} (rs : List Reg)
     (hp : PkPre c s₀ extra) (he : s.gpr .esp = s₀.gpr .esp) (hw : s.wr = s₀.wr) :
     VG.X86.Taint.Wf (argτ rs 3) s := by
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨by rw [he]; exact hp.sp_lo, ?_⟩
+  rotate_right
+  · rw [he, hw, hp.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
   · intro h; cases h rfl
   · intro p h; cases h
   · intro p h; cases h
@@ -68,7 +79,14 @@ theorem pkKeepArgAgree {c : Cfg} {s₀ t₀ s t : State} {extra₁ extra₂ : Li
 /-- The static-table scan's scratch region is the second writable argument. -/
 theorem pkKeepCombWf {s₀ s : State} {extra : List Region} (hp : PkPre p256Comb s₀ extra)
     (ks : Keep p256Comb s₀ (ptr s₀ 2) s) : VG.X86.Taint.Wf combτ s := by
-  refine VG.X86.Taint.Wf.entry rfl rfl ⟨?_, ?_, ?_, ?_, ?_⟩
+  refine VG.X86.Taint.Wf.entryRoom rfl ⟨?_, ?_, ?_, ?_, ?_⟩ fun _ => ⟨?_, ?_⟩
+  rotate_right 2
+  · rw [ks.esp]; exact hp.sp_lo
+  · rw [ks.esp, ks.wr, hp.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    rintro r (rfl | rfl)
+    · exact hp.stk_out
+    · exact hp.stk_sc
   · intro _
     rw [ks.wr, hp.wr]
     refine ⟨by simp [combτ, combτAt, size], ?_, ?_⟩

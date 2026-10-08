@@ -14,7 +14,8 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
     (hG : onCurve C (G C) = true) (hV : TCombVals K C tbl) (hpn : C.p < 2 ^ (64 * K.M.n))
     (hb1 : 1 ≤ K.bits) {kmax : Nat} (hB : BoothOk C K.w K.J kmax) (hk : k < kmax) {s : State}
     (hs : Scr s base size) (hM : ModOkW K.M size C.p s.mem base)
-    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl)) :
+    (hF : TCombFixed K C base size s k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl))
+    (hsp : SpOk K.combJ 20) :
     WP isa K.combJ s fun s' => KeepRegs (powClob) s s' ∧ Unch base (tcombW K) s.mem s'.mem ∧
       ModOkW K.M size C.p s'.mem base ∧
       (∀ x ∈ [K.A.x, K.A.y, K.A.z], wordsVal s'.mem base x K.M.n < C.p) ∧
@@ -33,14 +34,15 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
   have hle : ∀ x, x ∈ combSlots K.toComb → x + 8 * K.M.n ≤ size := fun x hx => hL.comb.lay.le x hx
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) hV.one_lt
   have hNZ : NeZero C.p := ⟨by omega⟩
+  have hspS : SpOk K.stepJ 20 := ⟨NoSp.loop hsp.right.left.1, hsp.right.left.2⟩
   unfold TCombCfg.combJ
-  refine WP.seq (WP.mono (firstJ_ok hL hC hG hV hpn hb1 hs hM hF) fun s₁ I₁ => ?_)
+  refine WP.seq (WP.mono (firstJ_ok hL hC hG hV hpn hb1 hs hM hF hsp.left) fun s₁ I₁ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun s' =>
       TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s' K.J)
     (Inv := fun r s' => TCombJInv K C base size k T (tcombWords K.M.n (2 ^ (64 * K.M.n)) C.p tbl) s s'
       (K.J - r)) (n := K.J - 1)
     (fun r s' h1 h2 hi => WP.mono (stepJ_ok hL hC hM3 hG hV hpn hb1 hB hk hF (j := K.J - r) (by omega)
-      (by omega) hi) fun s'' ⟨h, z⟩ => ⟨by rw [show K.J - (r - 1) = K.J - r + 1 by omega]; exact h, by
+      (by omega) hi hspS) fun s'' ⟨h, z⟩ => ⟨by rw [show K.J - (r - 1) = K.J - r + 1 by omega]; exact h, by
         rw [z]; congr 1; exact decide_eq_decide.mpr (by omega)⟩)
     (fun s' hi => by rw [Nat.sub_zero] at hi; exact hi) (by omega)
     (by rw [show K.J - (K.J - 1) = 1 by omega]; exact I₁)) fun s₂ I₂ => ?_)
@@ -94,7 +96,7 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
       rcases hx with rfl | rfl | rfl <;> tcomb_mem
   have hR : readsOk K.outOps [K.A.x, K.A.y, K.A.z] = true := by
     simp [readsOk, TCombCfg.outOps, FOp.ins, FOp.out]
-  refine WP.mono (fprog_ok hL.comb.lay hL.wk hV.unit K.outOps I₃ hS hR)
+  refine WP.mono (fprog_ok hL.comb.lay (hL.wkOk hV.fn) hV.unit K.outOps I₃ hS hR)
     fun s₄ ⟨P₄, I₄⟩ => ?_
   have hval : ∀ x ∈ [K.A.x, K.A.y, K.A.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
       runOps K.outOps (tmv C K.M.n base s₃) x ∧ wordsVal s₄.mem base x K.M.n < C.p := fun x hx => by
@@ -110,7 +112,7 @@ theorem tcombJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k : Nat} {T : A
         or_false, TCombCfg.toComb]
       rcases hy with rfl | rfl | rfl <;> simp
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with rfl | rfl <;> exact List.mem_append_left _ (by simp [combWx, combW, TCombCfg.toComb])
+      rcases h with rfl | rfl | rfl <;> exact List.mem_append_left _ (by simp [combWx, combW, TCombCfg.toComb])
   refine ⟨?_, U₃.trans U₄ |>.mono fun w hw => by rcases List.mem_append.mp hw with h | h <;> exact h,
     hM.unch (U₃.trans U₄ |>.mono fun w hw => by rcases List.mem_append.mp hw with h | h <;> exact h)
       hmoW (by omega), fun x hx => (hval x hx).2, ?_⟩

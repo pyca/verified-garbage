@@ -5,8 +5,8 @@ namespace VG.Proof.Weierstrass.X86
 open VG VG.X86 VG.X86.Wp VG.Impl.Mont.X86 VG.Impl.Mont VG.Impl.Weierstrass.X86 VG.Impl.Weierstrass
   VG.Proof.Mont.X86 VG.Proof.Mont VG.Proof.Weierstrass
 
-theorem powerInit_ok {P : PowCfg} {base : Addr} {size wk m : Nat} [NeZero m]
-    (hL : PowLay P size) (hW : PowWk P size wk) {s : State} (hs : Scr s base size)
+theorem powerInit_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+    (hL : PowLay P size) (hW : PowWk P F m size wk) {s : State} (hs : Scr s base size)
     (hM : ModOkW P.M size m s.mem base) (hB : wordsVal s.mem base P.base P.M.n < m) :
     WP isa (.block (copy (2 * P.M.n) P.acc P.base ++ copy (2 * P.M.n) P.tmp P.base)) s fun u =>
       PowerState P base size m
@@ -51,11 +51,11 @@ theorem p256Power_bound : ∀ op ∈ p256PowerOps, powerOpBound op := by
     powerOpBound]
   decide +kernel
 
-theorem p256Power_ok {P : PowCfg} {base : Addr} {size wk m : Nat} [NeZero m]
-    (hL : PowLay P size) (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+theorem p256Power_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+    (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
     (hB : wordsVal s.mem base P.base P.M.n < m) :
-    WP isa (p256Power P wk) s fun u => Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem ∧
+    WP isa (p256Power P F) s fun u => Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem ∧
       wordsVal u.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal u.mem base P.acc P.M.n) =
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (p256Prime - 2) := by
@@ -64,14 +64,14 @@ theorem p256Power_ok {P : PowCfg} {base : Addr} {size wk m : Nat} [NeZero m]
   rw [p256Power_exponent] at Iu
   exact ⟨(K₁.mono (by decide)).trans Ku, fun x hx => (Uu x hx).trans (U₁ x hx), Iu.acc_lt, Iu.acc_val⟩
 
-theorem powField_ok {P : PowCfg} {base : Addr} {size wk m : Nat} [NeZero m]
-    (hL : PowLay P size) (hW : PowWk P size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
+theorem powField_ok {P : PowCfg} {F : Spec.Weierstrass.Mont.Modulus} {base : Addr} {size wk m : Nat} [NeZero m]
+    (hL : PowLay P size) (hW : PowWk P F m size wk) (hm : UnitMod m (2 ^ (64 * P.M.n)))
     {s : State} (hs : Scr s base size) (hM : ModOkW P.M size m s.mem base)
     (hB : wordsVal s.mem base P.base P.M.n < m)
     (hO : wordsVal s.mem base P.one P.M.n = 2 ^ (64 * P.M.n) % m)
     (hbits : ∀ t < P.nbits, s.mem (off base (P.bits + t)) = if (m - 2).testBit t then 1 else 0)
     (he : m - 2 < 2 ^ P.nbits) :
-    WP isa (powField P wk m) s fun u => Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem ∧
+    WP isa (powField P F m) s fun u => Keeps powClob s u ∧ Unch base (powWx P wk) s.mem u.mem ∧
       wordsVal u.mem base P.acc P.M.n < m ∧
       toM m (2 ^ (64 * P.M.n)) (wordsVal u.mem base P.acc P.M.n) =
         toM m (2 ^ (64 * P.M.n)) (wordsVal s.mem base P.base P.M.n) ^ (m - 2) := by
@@ -80,6 +80,6 @@ theorem powField_ok {P : PowCfg} {base : Addr} {size wk m : Nat} [NeZero m]
   next hp =>
     exact WP.mono (p256Power_ok hL hW hm hs hM hB) fun u ⟨K, U, L, V⟩ =>
       ⟨K, U, L, by rw [← hp] at V; exact V⟩
-  next _ => exact pow_ok hL hW hm hs hM hB hO hbits he
+  next _ => exact pow_ok hL hW hm hs hB hO hbits he
 
 end VG.Proof.Weierstrass.X86
