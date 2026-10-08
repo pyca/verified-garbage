@@ -45,7 +45,7 @@ def fnK (l : List (Reg × Nat × Nat)) : Bool :=
 def leS (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && (τ.lens == σ.lens || (τ.lens.isEmpty && τ.slots.isEmpty)) &&
     KList.all τ.bases (memB · σ.bases) && KList.all τ.slots (mem3 · σ.slots) && τ.lo.subset σ.lo &&
-    fnK σ.bases
+    τ.xregs.subset σ.xregs && fnK σ.bases
 
 /-- `leS`, but for `Fn`. -/
 structure LeW (τ σ : T) : Prop where
@@ -55,6 +55,7 @@ structure LeW (τ σ : T) : Prop where
   bases : ∀ p ∈ τ.bases, p ∈ σ.bases
   slots : ∀ p ∈ τ.slots, p ∈ σ.slots
   lo : τ.lo.subset σ.lo = true
+  xregs : τ.xregs.subset σ.xregs = true
 
 /-- `leS`, as a proposition. -/
 structure Le (τ σ : T) : Prop extends LeW τ σ where
@@ -77,10 +78,10 @@ theorem leS_iff {τ σ : T} : leS τ σ = true ↔ Le τ σ := by
   simp only [leS, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, List.isEmpty_iff,
     KList.all_eq, List.all_eq_true, memB_eq, mem3_eq, List.contains_iff_mem, fnK_iff]
   constructor
-  · rintro ⟨⟨⟨⟨⟨⟨hr, hf⟩, hl⟩, hb⟩, hs⟩, hlo⟩, hfn⟩
-    exact ⟨⟨hr, fun h => hf.elim (fun e => by rw [e] at h; cases h) id, hl, hb, hs, hlo⟩, hfn⟩
-  · rintro ⟨⟨hr, hf, hl, hb, hs, hlo⟩, hfn⟩
-    refine ⟨⟨⟨⟨⟨⟨hr, ?_⟩, hl⟩, hb⟩, hs⟩, hlo⟩, hfn⟩
+  · rintro ⟨⟨⟨⟨⟨⟨⟨hr, hf⟩, hl⟩, hb⟩, hs⟩, hlo⟩, hx⟩, hfn⟩
+    exact ⟨⟨hr, fun h => hf.elim (fun e => by rw [e] at h; cases h) id, hl, hb, hs, hlo, hx⟩, hfn⟩
+  · rintro ⟨⟨hr, hf, hl, hb, hs, hlo, hx⟩, hfn⟩
+    refine ⟨⟨⟨⟨⟨⟨⟨hr, ?_⟩, hl⟩, hb⟩, hs⟩, hlo⟩, hx⟩, hfn⟩
     cases e : τ.flags
     · exact .inl rfl
     · exact .inr (hf e)
@@ -90,7 +91,7 @@ theorem leS_iff {τ σ : T} : leS τ σ = true ↔ Le τ σ := by
 theorem le_of_lens {τ σ : T} (h : LeW τ σ) (hl : τ.lens = σ.lens) : le τ σ = true := by
   simp only [le, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq, List.all_eq_true,
     List.contains_iff_mem]
-  refine ⟨⟨⟨⟨⟨h.regs, ?_⟩, hl⟩, h.bases⟩, h.slots⟩, h.lo⟩
+  refine ⟨⟨⟨⟨⟨⟨h.regs, ?_⟩, hl⟩, h.bases⟩, h.slots⟩, h.lo⟩, h.xregs⟩
   cases e : τ.flags
   · exact .inl rfl
   · exact .inr (h.flags e)
@@ -101,7 +102,7 @@ theorem leS_sound {τ σ : T} {s₁ s₂ : State} (hle : Le τ σ) (h : Agree σ
   · refine ⟨⟨fun r h' => h.rf.1 r (RegSet.mem_of_subset hle.regs h'), fun hf => h.rf.2 (hle.flags hf)⟩,
       fun hne => absurd hl hne, ⟨fun hne => absurd hl hne, fun p hp => h.wf₁.2 p (hle.bases p hp)⟩,
       ⟨fun hne => absurd hl hne, fun p hp => h.wf₂.2 p (hle.bases p hp)⟩, ?_, ?_,
-      fun r hr' => h.lo r (RegSet.mem_of_subset hle.lo hr')⟩
+      fun r hr' => h.lo r (RegSet.mem_of_subset hle.lo hr'), fun r hr' => h.xr r (RegSet.mem_of_subset hle.xregs hr')⟩
     · intro sl hsl; rw [hs] at hsl; cases hsl
     · intro sl hsl; rw [hs] at hsl; cases hsl
 
@@ -114,7 +115,7 @@ theorem Fn.filter {l : List (Reg × Nat × Nat)} (h : Fn l) (P : Reg × Nat × N
     Fn (l.filter P) := h.sub fun _ hp => (List.mem_filter.mp hp).1
 
 theorem LeW.refl (τ : T) : LeW τ τ :=
-  ⟨RegSet.subset_refl _, id, .inl rfl, fun _ h => h, fun _ h => h, RegSet.subset_refl _⟩
+  ⟨RegSet.subset_refl _, id, .inl rfl, fun _ h => h, fun _ h => h, RegSet.subset_refl _, RegSet.subset_refl _⟩
 
 theorem Le.right {τ σ : T} (h : Le τ σ) : Le σ σ := ⟨LeW.refl σ, h.fn⟩
 
@@ -137,6 +138,7 @@ theorem LeW.trans {a b c : T} (h₁ : LeW a b) (h₂ : LeW b c) : LeW a c where
   bases p hp := h₂.bases p (h₁.bases p hp)
   slots p hp := h₂.slots p (h₁.slots p hp)
   lo := RegSet.subset_trans h₁.lo h₂.lo
+  xregs := RegSet.subset_trans h₁.xregs h₂.xregs
 
 theorem Le.trans {a b c : T} (h₁ : Le a b) (h₂ : Le b c) : Le a c := ⟨h₁.toLeW.trans h₂.toLeW, h₂.fn⟩
 
@@ -369,7 +371,7 @@ theorem Le.upd (h : Le τ σ) {r₁ r₂ : RegSet Reg} (hr : r₁.subset r₂ = 
     {l₁ l₂ : RegSet Reg} (hl : l₁.subset l₂ = true) :
     Le { τ with regs := r₁, flags := f₁, bases := b₁, lo := l₁ }
       { σ with regs := r₂, flags := f₂, bases := b₂, lo := l₂ } :=
-  ⟨⟨hr, hf, h.lens, hb.1, h.slots, hl⟩, hb.2⟩
+  ⟨⟨hr, hf, h.lens, hb.1, h.slots, hl, h.xregs⟩, hb.2⟩
 
 theorem empty_subset' : (RegSet.empty : RegSet Reg).subset RegSet.empty = true := RegSet.subset_refl _
 
@@ -379,7 +381,7 @@ theorem Le.store (h : Le τ σ) (m : MemOp) {w : Nat} (hw : 0 < w) {p q : Bool} 
   split at hs <;> [rename_i hm; cases hs]
   cases hs
   rw [ite_t (h.toLeW.memPubM hm)]
-  refine ⟨_, rfl, ⟨⟨h.regs, h.flags, ?_, h.bases, ?_, h.lo⟩, h.fn⟩⟩
+  refine ⟨_, rfl, ⟨⟨h.regs, h.flags, ?_, h.bases, ?_, h.lo, h.xregs⟩, h.fn⟩⟩
   · rcases h.lens with hl | ⟨hl, hsl⟩
     · exact .inl hl
     · exact .inr ⟨hl, storeSlots_bot hl hsl m hw p⟩
@@ -393,6 +395,27 @@ theorem Le.memSome (h : Le τ σ) {m : MemOp} {τ' : T}
   split at hs <;> [rename_i hm; cases hs]
   cases hs
   exact ⟨σ, by rw [ite_t (h.toLeW.memPubM hm)], h⟩
+
+theorem Le.clearX (h : Le τ σ) : Le (noX τ) (noX σ) := by
+  rw [noX_eq, noX_eq]
+  exact ⟨⟨h.regs, h.flags, h.lens, h.bases, h.slots, h.lo, RegSet.subset_refl _⟩, h.fn⟩
+
+theorem Le.memSomeX (h : Le τ σ) {m : MemOp} {τ' : T}
+    (hs : (if memPub τ m = true then some (noX τ) else none) = some τ') :
+    ∃ σ', (if memPub σ m = true then some (noX σ) else none) = some σ' ∧ Le τ' σ' := by
+  split at hs <;> [rename_i hm; cases hs]
+  cases hs
+  exact ⟨noX σ, by rw [ite_t (h.toLeW.memPubM hm)], h.clearX⟩
+
+theorem setX_mono (h : LeW τ σ) (d : XReg) {p q : Bool} (hpq : p = true → q = true) :
+    (setX τ d p).subset (setX σ d q) = true := by
+  unfold setX
+  cases p <;> cases q <;> simp only [Bool.false_eq_true, ite_true, ite_false]
+  · exact RegSet.erase_mono h.xregs d
+  · exact RegSet.subset_trans (RegSet.erase_subset τ.xregs d)
+      (RegSet.subset_trans h.xregs (RegSet.subset_insert σ.xregs d))
+  · exact absurd (hpq rfl) Bool.false_ne_true
+  · exact RegSet.insert_mono h.xregs d
 
 theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ') :
     ∃ σ', step σ i = some σ' ∧ Le τ' σ' := by
@@ -460,20 +483,39 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     cases hs
     rw [ite_t (hw.memPubM hm)]
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
-  | vpmovmskb _ d _ | movqR d _ | leaSym d _ =>
+  | vpmovmskb _ d _ | leaSym d _ =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
+  | movqR d r =>
+    simp only [step, Option.some.injEq] at hs ⊢
+    cases hs
+    exact ⟨_, rfl, h.upd (set_mono hw d (RegSet.mem_of_subset hw.xregs)) h.flags (h.killM d) empty_subset'⟩
   | movdquLoad _ m | vmovdquLoad _ _ m | vbroadcasti128 _ m | vbinLoad _ _ _ _ m | vmovdqu32Load _ m
-  | vbroadcasti32x4 _ m | vbroadcasti32x4H _ m | zbcst _ _ _ m | vpmadd52Load _ _ _ m | ldmxcsr m | evLoad _ m
+  | vbroadcasti32x4 _ m | vbroadcasti32x4H _ m | zbcst _ _ _ m | vpmadd52Load _ _ _ m | evLoad _ m
   | evMadd52Load _ _ _ m =>
-    exact h.memSome hs
+    exact h.memSomeX hs
+  | ldmxcsr m => exact h.memSome hs
   | evStore m _ => exact h.store m (by decide) id hs
   | movdquStore m _ => exact h.store m (by decide) id hs
   | vmovdquStore l m _ => cases l <;> exact h.store m (by decide) id hs
   | vmovdqu32Store m _ => exact h.store m (by decide) id hs
   | stmxcsr m => exact h.store m (by decide) id hs
-  | xop _ | vop _ | zop _ | eop _ | lfence =>
+  | xop op =>
+    cases op
+    case movq d r =>
+      simp only [step, Option.some.injEq] at hs ⊢
+      cases hs
+      exact ⟨_, rfl, ⟨⟨h.regs, h.flags, h.lens, h.bases, h.slots, h.lo, setX_mono hw d hw.pubM⟩, h.fn⟩⟩
+    all_goals
+      simp only [step, Option.some.injEq] at hs ⊢
+      cases hs
+      exact ⟨_, rfl, h.clearX⟩
+  | vop _ | zop _ | eop _ =>
+    simp only [step, Option.some.injEq] at hs ⊢
+    cases hs
+    exact ⟨_, rfl, h.clearX⟩
+  | lfence =>
     simp only [step, Option.some.injEq] at hs ⊢
     cases hs
     exact ⟨_, rfl, h⟩
@@ -597,13 +639,14 @@ theorem LeW.meetM (h₁ : LeW τ₁ σ₁) (h₂ : LeW τ₂ σ₂) : LeW (meet 
       · rw [s₂] at x₂; cases x₂
     · rw [s₁] at x₁; cases x₁
   lo := RegSet.inter_mono h₁.lo h₂.lo
+  xregs := RegSet.inter_mono h₁.xregs h₂.xregs
 
 theorem Le.meetM (h₁ : Le τ₁ σ₁) (h₂ : LeW τ₂ σ₂) : Le (meet τ₁ τ₂) (meet σ₁ σ₂) :=
   ⟨h₁.toLeW.meetM h₂, h₁.fn.sub fun _ hx => (mem_meet_bases.mp hx).1⟩
 
 theorem meet_le_left' (ha : Le a a) (b : T) : Le (meet a b) a := by
   refine ⟨⟨RegSet.inter_subset_left _ _, fun h => ?_, ?_, fun x hx => (mem_meet_bases.mp hx).1,
-    fun x hx => (mem_meet_slots.mp hx).2.1, RegSet.inter_subset_left _ _⟩, ha.fn⟩
+    fun x hx => (mem_meet_slots.mp hx).2.1, RegSet.inter_subset_left _ _, RegSet.inter_subset_left _ _⟩, ha.fn⟩
   · simp only [meet, Bool.and_eq_true] at h; exact h.1
   · by_cases e : a.lens = b.lens
     · left; rw [meet_lens, ite_t e]
@@ -611,7 +654,8 @@ theorem meet_le_left' (ha : Le a a) (b : T) : Le (meet a b) a := by
 
 theorem meet_le_right' (a : T) (hb : Le b b) : Le (meet a b) b := by
   refine ⟨⟨RegSet.inter_subset_right _ _, fun h => ?_, ?_, fun x hx => (mem_meet_bases.mp hx).2,
-    fun x hx => (mem_meet_slots.mp hx).2.2, RegSet.inter_subset_right _ _⟩, hb.fn⟩
+    fun x hx => (mem_meet_slots.mp hx).2.2, RegSet.inter_subset_right _ _, RegSet.inter_subset_right _ _⟩,
+    hb.fn⟩
   · simp only [meet, Bool.and_eq_true] at h; exact h.2
   · by_cases e : a.lens = b.lens
     · left; rw [meet_lens, ite_t e, e]
@@ -620,7 +664,7 @@ theorem meet_le_right' (a : T) (hb : Le b b) : Le (meet a b) b := by
 theorem le_meet' (hb : Le a b) (hc : Le a c) : Le a (meet b c) := by
   refine ⟨⟨RegSet.subset_inter hb.regs hc.regs, fun h => ?_, ?_,
     fun x hx => mem_meet_bases.mpr ⟨hb.bases x hx, hc.bases x hx⟩, fun x hx => ?_,
-    RegSet.subset_inter hb.lo hc.lo⟩, hb.fn.sub fun _ hx => (mem_meet_bases.mp hx).1⟩
+    RegSet.subset_inter hb.lo hc.lo, RegSet.subset_inter hb.xregs hc.xregs⟩, hb.fn.sub fun _ hx => (mem_meet_bases.mp hx).1⟩
   · simp only [meet, Bool.and_eq_true]; exact ⟨hb.flags h, hc.flags h⟩
   · rcases hb.lens with e₁ | bot
     · rcases hc.lens with e₂ | bot
@@ -643,6 +687,7 @@ def join (a b : T) : T where
   bases := a.bases ++ b.bases
   slots := a.slots ++ b.slots
   lo := a.lo.union b.lo
+  xregs := a.xregs.union b.xregs
 
 theorem join_lub (ha : Le a c) (hb : Le b c) : Le a (join a b) ∧ Le b (join a b) ∧ Le (join a b) c := by
   have fnJ : Fn (join a b).bases := ha.fn.sub fun x hx => by
@@ -655,12 +700,12 @@ theorem join_lub (ha : Le a c) (hb : Le b c) : Le a (join a b) ∧ Le b (join a 
     have es : (join a b).slots = b.slots := by simp only [join, hbot, List.nil_append]
     refine ⟨⟨⟨RegSet.subset_union_left _ _, fun h => by simp only [join, h, Bool.true_or], .inr hbot,
         fun x hx => List.mem_append.mpr (.inl hx), fun x hx => List.mem_append.mpr (.inl hx),
-        RegSet.subset_union_left _ _⟩, fnJ⟩,
+        RegSet.subset_union_left _ _, RegSet.subset_union_left _ _⟩, fnJ⟩,
       ⟨⟨RegSet.subset_union_right _ _, fun h => by simp only [join, h, Bool.or_true], .inl e.symm,
         fun x hx => List.mem_append.mpr (.inr hx), fun x hx => List.mem_append.mpr (.inr hx),
-        RegSet.subset_union_right _ _⟩, fnJ⟩,
+        RegSet.subset_union_right _ _, RegSet.subset_union_right _ _⟩, fnJ⟩,
       ⟨⟨RegSet.union_subset ha.regs hb.regs, fun h => ?_, ?_, fun x hx => ?_, fun x hx => ?_,
-        RegSet.union_subset ha.lo hb.lo⟩, hb.fn⟩⟩
+        RegSet.union_subset ha.lo hb.lo, RegSet.union_subset ha.xregs hb.xregs⟩, hb.fn⟩⟩
     · simp only [join, Bool.or_eq_true] at h; exact h.elim ha.flags hb.flags
     · rw [e, es]; exact hb.lens
     · rcases List.mem_append.mp hx with hx | hx
@@ -675,12 +720,12 @@ theorem join_lub (ha : Le a c) (hb : Le b c) : Le a (join a b) ∧ Le b (join a 
     have eac : a.lens = c.lens := ha.lens.resolve_right hbot
     refine ⟨⟨⟨RegSet.subset_union_left _ _, fun h => by simp only [join, h, Bool.true_or], .inl e.symm,
         fun x hx => List.mem_append.mpr (.inl hx), fun x hx => List.mem_append.mpr (.inl hx),
-        RegSet.subset_union_left _ _⟩, fnJ⟩,
+        RegSet.subset_union_left _ _, RegSet.subset_union_left _ _⟩, fnJ⟩,
       ⟨⟨RegSet.subset_union_right _ _, fun h => by simp only [join, h, Bool.or_true], ?_,
         fun x hx => List.mem_append.mpr (.inr hx), fun x hx => List.mem_append.mpr (.inr hx),
-        RegSet.subset_union_right _ _⟩, fnJ⟩,
+        RegSet.subset_union_right _ _, RegSet.subset_union_right _ _⟩, fnJ⟩,
       ⟨⟨RegSet.union_subset ha.regs hb.regs, fun h => ?_, .inl (e.trans eac), fun x hx => ?_,
-        fun x hx => ?_, RegSet.union_subset ha.lo hb.lo⟩, hb.fn⟩⟩
+        fun x hx => ?_, RegSet.union_subset ha.lo hb.lo, RegSet.union_subset ha.xregs hb.xregs⟩, hb.fn⟩⟩
     · rcases hb.lens with e' | bot
       · exact .inl (by rw [e, eac, e'])
       · exact .inr bot
@@ -697,7 +742,7 @@ def bot : T := { regs := .empty, flags := false }
 
 theorem bot_le' (ha : Le a a) : Le bot a :=
   ⟨⟨RegSet.empty_subset _, (fun h => by cases h), .inr ⟨rfl, rfl⟩, (fun _ h => by cases h),
-    (fun _ h => by cases h), RegSet.empty_subset _⟩, ha.fn⟩
+    (fun _ h => by cases h), RegSet.empty_subset _, RegSet.empty_subset _⟩, ha.fn⟩
 
 theorem bot_valid' : Le bot bot := bot_le' ⟨LeW.refl _, fun _ h => by cases h⟩
 
@@ -713,7 +758,8 @@ theorem mem_allRegs (r : Reg) : r ∈ allRegs := by cases r <;> decide
 
 /-- `F` says only that registers are public. -/
 def regOnly (F : T) : Bool :=
-  !F.flags && F.lens.isEmpty && F.bases.isEmpty && F.slots.isEmpty && Nat.beq F.lo.bits 0
+  !F.flags && F.lens.isEmpty && F.bases.isEmpty && F.slots.isEmpty && Nat.beq F.lo.bits 0 &&
+    Nat.beq F.xregs.bits 0
 
 /-- `i` writes no register of `F`, which says only that registers are public. -/
 def keepsI (F : T) (i : Instr) : Bool :=
@@ -763,6 +809,10 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
     rw [storeStep_regs hs]; exact hr
   case vmovdquStore l _ _ => cases l <;> (rw [storeStep_regs hs]; exact hr)
   case push | pop | alloc | free => simp only [step, reduceCtorEq] at hs
+  case xop op =>
+    cases op <;> (simp only [step, Option.some.injEq] at hs; subst hs; first | exact hr | rw [noX_regs]; exact hr)
+  case movqR d r =>
+    simp only [step, Option.some.injEq] at hs; subst hs; exact bit_set (ne_of_dst rfl hc) hr _
   case mul q =>
     simp only [step, Option.some.injEq, mulStep] at hs
     subst hs
@@ -805,10 +855,11 @@ theorem step_bits {σ σ' : T} {i : Instr} (hs : step σ i = some σ') {j : Nat}
   all_goals
     simp only [step] at hs
     first
-    | (simp only [Option.some.injEq] at hs; subst hs; first | exact hr | exact bit_set (ne_of_dst rfl hc) hr _)
+    | (simp only [Option.some.injEq] at hs; subst hs
+       first | exact hr | (rw [noX_regs]; exact hr) | exact bit_set (ne_of_dst rfl hc) hr _)
     | (split at hs <;> [skip; cases hs]
        simp only [Option.some.injEq] at hs; subst hs
-       first | exact hr | exact bit_set (ne_of_dst rfl hc) hr _)
+       first | exact hr | (rw [noX_regs]; exact hr) | exact bit_set (ne_of_dst rfl hc) hr _)
 
 section
 variable {F Φ σ σ' : T}
@@ -818,7 +869,7 @@ theorem le_of_frame (hk : regOnly F = true) (hΦF : Le Φ F) (hr : Φ.regs.subse
     (hfn : Fn σ.bases) : Le Φ σ := by
   simp only [regOnly, Bool.and_eq_true, Bool.not_eq_true', List.isEmpty_iff, KList.beq_eq,
     beq_iff_eq] at hk
-  obtain ⟨⟨⟨⟨hf, hl⟩, hb⟩, hs⟩, hlo⟩ := hk
+  obtain ⟨⟨⟨⟨⟨hf, hl⟩, hb⟩, hs⟩, hlo⟩, hx⟩ := hk
   have hs' : Φ.slots = [] := by
     cases e : Φ.slots with
     | nil => rfl
@@ -826,8 +877,11 @@ theorem le_of_frame (hk : regOnly F = true) (hΦF : Le Φ F) (hr : Φ.regs.subse
   have hlo' : Φ.lo.bits = 0 := by
     have h := hΦF.lo
     rw [RegSet.subset_eq, hlo, Nat.and_zero, beq_iff_eq] at h; exact h.symm
+  have hx' : Φ.xregs.bits = 0 := by
+    have h := hΦF.xregs
+    rw [RegSet.subset_eq, hx, Nat.and_zero, beq_iff_eq] at h; exact h.symm
   refine ⟨⟨hr, (fun h => by have := hΦF.flags h; rw [hf] at this; cases this), ?_, fun x hx => ?_, ?_,
-    RegSet.subset_of_bits_zero hlo' _⟩, hfn⟩
+    RegSet.subset_of_bits_zero hlo' _, RegSet.subset_of_bits_zero hx' _⟩, hfn⟩
   · rcases hΦF.lens with e | bot
     · exact .inr ⟨e.trans hl, hs'⟩
     · exact .inr bot
@@ -859,7 +913,8 @@ theorem Sim.slots_nil {a b : T} (h : Sim a b) (hb : b.slots = []) : a.slots = []
 theorem Le.sim {a a' b b' : T} (ha : Sim a' a) (hb : Sim b' b) (h : Le a b) : Le a' b' := by
   refine ⟨⟨by rw [ha.regs, hb.regs]; exact h.regs, fun e => by rw [hb.flags]; exact h.flags (ha.flags ▸ e),
     ?_, fun x hx => by rw [hb.bases]; exact h.bases x (ha.bases ▸ hx),
-    fun x hx => (hb.slots x).mpr (h.slots x ((ha.slots x).mp hx)), by rw [ha.lo, hb.lo]; exact h.lo⟩,
+    fun x hx => (hb.slots x).mpr (h.slots x ((ha.slots x).mp hx)), by rw [ha.lo, hb.lo]; exact h.lo,
+    by rw [ha.xregs, hb.xregs]; exact h.xregs⟩,
     by rw [hb.bases]; exact h.fn⟩
   rcases h.lens with e | ⟨e, es⟩
   · exact .inl (by rw [ha.lens, hb.lens, e])
@@ -875,7 +930,7 @@ theorem callStep_mono (h : Le τ σ) (hs : callStep τ = some τ') : ∃ σ', ca
   split at hs <;> [rename_i hp; cases hs]
   cases hs
   rw [ite_t (h.toLeW.pubM hp)]
-  refine ⟨_, rfl, ⟨⟨h.regs, h.flags, ?_, (h.killM .rsp).1, (fun _ hx => by cases hx), empty_subset'⟩,
+  refine ⟨_, rfl, ⟨⟨h.regs, h.flags, ?_, (h.killM .rsp).1, (fun _ hx => by cases hx), empty_subset', h.xregs⟩,
     (h.killM .rsp).2⟩⟩
   rcases h.lens with e | ⟨e, -⟩
   · exact .inl e

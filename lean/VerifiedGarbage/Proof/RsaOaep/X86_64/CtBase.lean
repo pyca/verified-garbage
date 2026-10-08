@@ -76,7 +76,7 @@ theorem frT_agree {n : Nat} {F : Addr} {ws : List Region} {rs : List Reg} {ks : 
       simp only [X86_64.Taint.region, h.wr, List.getD_cons_zero]
       rw [h.rsp, BitVec.add_zero]
   refine ⟨⟨fun r hr' => ?_, fun hf => by cases hf⟩, fun _ => by rw [h₁.wr, h₂.wr], wf h₁, wf h₂,
-    fun sl hsl => ?_, fun sl hsl j hj₁ hj₂ => ?_, X86_64.Taint.noLo⟩
+    fun sl hsl => ?_, fun sl hsl j hj₁ hj₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr') with hr' | hr'
     · exact hr r hr'
     · rw [List.mem_singleton.mp hr', h₁.rsp, h₂.rsp]

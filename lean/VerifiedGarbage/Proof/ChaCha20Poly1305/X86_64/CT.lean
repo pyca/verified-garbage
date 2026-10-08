@@ -2847,7 +2847,7 @@ theorem agree₀ {s₁ s₂ : State} (h₁ : APre e s₁) (h₂ : APre e s₂) (
   have g : ∀ s r, (entryS s).gpr r = if r = .r11 then tp s else if r = .rax then cx s else s.gpr r := by
     intro s r; simp [entryS, State.setReg]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf₀ h₁, wf₀ h₂, ?_, ?_,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [g, g]
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -3023,7 +3023,7 @@ theorem agree₁ {s₁ s₂ : State} (h₁ : After s₀ s₁) (h₂ : After s₀
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τ₁, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [h₁.rsi, h₂.rsi, cx, cx, p9]
@@ -3107,7 +3107,7 @@ theorem agreeA {fold : Nat} {s₁ s₂ : State} (h₁ : AfterF fold s₀ s₁) (
   have hq' := hq
   obtain ⟨-, -, p3, p4, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τA, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [h₁.rsi, h₂.rsi, cx, cx, p9]
@@ -3136,7 +3136,7 @@ theorem agreeS {fold : Nat} {s₁ s₂ : State} (h₁ : AtIte fold s₀ s₁) (h
   have hq' := hq
   obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τS, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
     · rw [h₁.inv.r15, h₂.inv.r15, cx, cx, p9]

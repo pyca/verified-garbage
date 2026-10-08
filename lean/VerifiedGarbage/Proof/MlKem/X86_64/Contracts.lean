@@ -114,6 +114,7 @@ theorem agree_regsLo {rs los : List Reg} {s₁ s₂ : State} (h : ∀ r ∈ rs, 
   ok _ h := by cases h
   slots _ h := by cases h
   lo r hr := hl r (RegSet.mem_ofList.mp hr)
+  xr := X86_64.Taint.noXr
 
 /-! ## Satisfiability -/
 

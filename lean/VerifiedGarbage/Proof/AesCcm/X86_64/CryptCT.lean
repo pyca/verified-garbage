@@ -30,7 +30,7 @@ theorem both_agree_k {K W SP : Addr} {R : Nat} {N A D : Addr} {nl al n tl : Nat}
     (hk₁ : s₁.mem.readW (W + BitVec.ofNat 64 216) 64 = v) (hk₂ : s₂.mem.readW (W + BitVec.ofNat 64 216) 64 = v) :
     X86_64.Taint.Agree (ccmTk rs) s₁ s₂ := by
   have a := both_agree hDW hn h
-  refine ⟨a.rf, a.wr, a.wf₁, a.wf₂, fun sl hsl => ?_, fun sl hsl k hk₁' hk₂' => ?_, a.lo⟩
+  refine ⟨a.rf, a.wr, a.wf₁, a.wf₂, fun sl hsl => ?_, fun sl hsl k hk₁' hk₂' => ?_, a.lo, a.xr⟩
   · simp only [ccmTk, ccmT, List.mem_cons, List.not_mem_nil, or_false] at hsl
     rcases hsl with rfl | rfl | rfl <;> simp [ccmTk, ccmT]
   · simp only [ccmTk, List.mem_cons, List.not_mem_nil, or_false] at hsl

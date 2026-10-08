@@ -287,7 +287,7 @@ theorem scalarMulAdd_agree {s₁ s₂ : State} (h₁ : scalarMulAddLocal.pre s�
     simp only [scalarMulAddτ, List.mem_cons, List.not_mem_nil, or_false] at hp
     subst hp; simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [scalarMulAddτ, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p5]
