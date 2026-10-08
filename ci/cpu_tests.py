@@ -82,6 +82,10 @@ GROUPS = {
         "lib": ["aes_ctr"],
         "tests": ["rfc3686"],
     },
+    "aes_xts": {
+        "lib": ["aes_xts"],
+        "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
+    },
     "aes_siv": {
         "lib": ["aes_siv"],
         "tests": ["wycheproof::aes_siv"],

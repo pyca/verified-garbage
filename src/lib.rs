@@ -90,6 +90,7 @@ pub mod aes_gcm_siv;
 pub mod aes_ocb;
 pub mod aes_ofb;
 pub mod aes_siv;
+pub mod aes_xts;
 pub mod argon2;
 pub mod chacha20;
 pub mod chacha20poly1305;

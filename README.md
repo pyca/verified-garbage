@@ -570,17 +570,17 @@ yours to keep:
 
 <tr>
 
-<td>XTS-AES (256- and 512-bit keys)</td>
+<td>XTS-AES (256-, 384- and 512-bit keys)</td>
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
