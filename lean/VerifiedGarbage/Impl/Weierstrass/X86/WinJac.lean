@@ -86,9 +86,6 @@ def storePart (cache : Bool) : List Instr :=
 
 def storeEntry : List Instr := K.storePart false ++ K.storePart true
 
-def cacheOps : List FOp := [.mul K.z2 K.E.z K.E.z,.mul K.z3 K.z2 K.E.z]
-def maddOps : List FOp := jacMixedHead K.S K.E K.P ++ jacMixedTail K.S K.E K.P K.E
-
 /-- Cached-power Jacobian header: six products rather than nine. -/
 def addHead : List FOp := CachedJac.head 4 K.S K.R K.E K.z2
 
@@ -125,15 +122,15 @@ def zadduOps : List FOp :=
    .mul K.z2 K.z2 K.S.t1, .mul K.z3 K.z2 K.E.z]
 
 def buildStep : Prog isa :=
-  .seq (.block ([.alu .add .esi (.imm 1)] ++ copy 8 K.S.t2 K.E.x ++ copy 8 K.S.t4 K.E.y)) <|
-  .seq (fprog K.F (K.maddOps++K.cacheOps)) <|
+  .seq (.block [.alu .add .esi (.imm 1)]) <|
+  .seq (fprog K.F K.zadduOps) <|
   .block (K.storeEntry++[.alu .cmp .esi (.imm 16)])
 
 def build : Prog isa :=
   .seq (.block (copyPt 4 K.E K.P ++ copy 8 K.z2 K.P.z ++ copy 8 K.z3 K.P.z ++
     [.mov .esi (.imm 1)] ++ K.storeEntry)) <|
-  .seq (K.dbl K.E) <|
-  .seq (fprog K.F K.cacheOps) <|
+  .seq (fprog K.F K.dbluOps) <|
+  .seq (.block (copy 8 K.D.x K.S.t3 ++ copy 8 K.D.y K.S.t2)) <|
   .seq (.block ([.mov .esi (.imm 2)]++K.storeEntry)) <|
   .loop K.buildStep .ne
 

@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacDouble
 import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuild
 
 /-! The accumulator keeps canonical fields even for scalars later rejected by ECDH. -/

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Weierstrass.X86.WinJacBuildPoint
+import VerifiedGarbage.Proof.Weierstrass.X86.WinJacFrame
 
 /-! Invariants shared by the finite-point table construction steps. -/
 namespace VG.Proof.Weierstrass.X86.JWin

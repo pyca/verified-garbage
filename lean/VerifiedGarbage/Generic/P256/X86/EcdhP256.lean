@@ -27,7 +27,8 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
       the curve's equation), and the window method multiplies the peer's point if it is valid, else \
       `G`, so it always runs on a point of the curve. `[d]P` uses 52 signed five-bit windows, \
       with Jacobian doublings, cached Jacobian additions, and constant-time scans of sixteen \
-      points with cached powers of their Z coordinates; `Z⁻¹` uses 20 batches of 30 constant-time divsteps. The \
+      points with cached powers of their Z coordinates. Shared-Z doubling and additions build \
+      the table; `Z⁻¹` uses 20 batches of 30 constant-time divsteps. The \
       result (or zeros) is selected by a mask of the checks, `d` in `[1, n-1]` and `Z ≠ 0`, so \
       the time depends only on the pointers."])
     code := Impl.Ecdh.X86.exchangeP256
