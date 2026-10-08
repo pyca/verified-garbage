@@ -76,6 +76,13 @@ theorem goodV_of_mid {d : CallData} {s : State} (h : AdxMid d s) (hZ : slot d.w 
   obtain ⟨⟨hs, hdi, ⟨mi, hH⟩, -⟩, hv⟩ := h
   exact ⟨⟨mi, hs, hdi, hH⟩, hv⟩
 
+/-- The public data of a call the tiles take. -/
+abbrev TiledData := {d : CallData // slot d.w 8 ≤ d.Z ∧ AlignOk d.w}
+
+/-- Between the tiles and the reduction: the layout and the operands' slots. -/
+def TiledMid (x : TiledData) (s : State) : Prop :=
+  AdxTiledProduct.GoodV (adxOps x.1.o x.1.a x.1.b) (adxLayout x.1 x.2.1 x.2.2) s
+
 /-- The tiles. -/
 theorem tiled_ct : RelCT isa (Two fun d s => (AdxMid d s ∧ s.zf = some (decide (AlignOk d.w))) ∧
     isa.eval .e s = some true) tiled fun _ _ => True := by
@@ -92,20 +99,33 @@ theorem tiled_ct : RelCT isa (Two fun d s => (AdxMid d s ∧ s.zf = some (decide
     have h8 := hm.1.2.2.2.2.2.2.2
     exact WP.mono (cmpIdx_ok ha hb hcx h8) fun t ⟨hz', hm', hc', k⟩ =>
       ⟨⟨⟨AdxIn.of_keep hm.1 hm' k hc' (by decide), hm' ▸ hm.2⟩, hA⟩, hz'⟩
-  refine two_ite (fun d s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_
+  refine RelCT.seq (R := Two TiledMid)
+    (two_ite (fun d s₁ s₂ h₁ h₂ => by simp only [eval, h₁.2, h₂.2]) ?_ ?_)
+    (AdxTiledProduct.redcFinish_ct (P := fun x : TiledData => adxOps x.1.o x.1.a x.1.b)
+      (L := fun x => adxLayout x.1 x.2.1 x.2.2) (O := fun x => x.1.o) (fun x => mem_adxOps_o _ _ _)
+      (by taint_decide))
   · rintro s₁ s₂ t₁ t₂ s₁' s₂' ⟨d, ⟨⟨⟨h₁, hA⟩, z₁⟩, e₁⟩, ⟨⟨h₂, -⟩, -⟩, -⟩ e₁' e₂'
     have hab : d.a = d.b := by simpa only [eval, z₁, Option.some.injEq, decide_eq_true_eq] using e₁
     have hZ := h₁.1.2.2.2.1
     obtain ⟨-, ha, -, -, -, ha1, ha2, -⟩ := h₁.1.2.2.2.2.1
-    exact AdxTiledSquare.montSquare_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_o _ _ _) (mem_adxOps_a _ _ _) ha
-      ha1 ha2 (by taint_decide) (by taint_decide) (by taint_decide) (by taint_decide) _ _ _ _ _ _
-      ⟨adxLayout d hZ hA, goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
+    obtain ⟨ht, -, u₁, u₂⟩ := two_post (α := Unit)
+      (two_map (fun _ => adxLayout d hZ hA) (fun _ _ h => h)
+        (AdxTiledSquare.raw_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) ha ha1 ha2
+          (by taint_decide) (by taint_decide) (by taint_decide)))
+      (fun _ s h => AdxTiledSquare.raw_fw (mem_adxOps_a _ _ _) ha ha1 ha2 (adxLayout d hZ hA) s h)
+      _ _ _ _ _ _ ⟨(), goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
+    exact ⟨ht, ⟨d, hZ, hA⟩, u₁, u₂⟩
   · rintro s₁ s₂ t₁ t₂ s₁' s₂' ⟨d, ⟨⟨⟨h₁, hA⟩, -⟩, -⟩, ⟨⟨h₂, -⟩, -⟩, -⟩ e₁' e₂'
     have hZ := h₁.1.2.2.2.1
     obtain ⟨-, ha, hb, -, -, ha1, ha2, hb1, hb2⟩ := h₁.1.2.2.2.2.1
-    exact AdxTiledProduct.montMul_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_o _ _ _) (mem_adxOps_a _ _ _)
-      (mem_adxOps_b _ _ _) ha hb ha1 ha2 hb1 hb2 (by taint_decide) (by taint_decide) (by taint_decide)
-      _ _ _ _ _ _ ⟨adxLayout d hZ hA, goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
+    obtain ⟨ht, -, u₁, u₂⟩ := two_post (α := Unit)
+      (two_map (fun _ => adxLayout d hZ hA) (fun _ _ h => h)
+        (AdxTiledProduct.raw_ct (ps := adxOps d.o d.a d.b) (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb
+          ha1 ha2 hb1 hb2 (by taint_decide) (by taint_decide)))
+      (fun _ s h => AdxTiledProduct.raw_fw (mem_adxOps_a _ _ _) (mem_adxOps_b _ _ _) ha hb ha1 ha2 hb1 hb2
+        (adxLayout d hZ hA) s h)
+      _ _ _ _ _ _ ⟨(), goodV_of_mid h₁ hZ hA, goodV_of_mid h₂ hZ hA⟩ e₁' e₂'
+    exact ⟨ht, ⟨d, hZ, hA⟩, u₁, u₂⟩
 
 /-- `montMul`, from the bases `basesR` loads. -/
 theorem fallback_ct : RelCT isa (Two fun d s => (AdxMid d s ∧ s.zf = some (decide (AlignOk d.w))) ∧

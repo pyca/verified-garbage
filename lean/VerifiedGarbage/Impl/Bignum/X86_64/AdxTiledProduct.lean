@@ -36,9 +36,12 @@ def rawProduct (a b : Nat) : Prog isa :=
   .seq (.block (Adx.setup b)) (.seq Adx.zeroWin8
     (.seq AdxHeader.save (.seq (rows a b) AdxHeader.restore)))
 
-def montMul (o a b : Nat) : Prog isa :=
-  .seq (rawProduct a b) (.seq AdxRotate8.redc
-    (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o)))
+/-- The reduction of the raw product in the accumulator into `o`: shared by
+products and squares. -/
+def redcFinish (o : Nat) : Prog isa :=
+  .seq AdxRotate8.redc (.seq (.block [.mov .r10 (.mem (hdr (sArr Public.aN)))]) (Adx.finish8 o))
+
+def montMul (o a b : Nat) : Prog isa := .seq (rawProduct a b) (redcFinish o)
 
 def alignedChoice (o a b : Nat) : Prog isa :=
   .seq (.block AdxSquare.redcTest) (.ite .e (montMul o a b) (Adx.montMulAdx o a b))
