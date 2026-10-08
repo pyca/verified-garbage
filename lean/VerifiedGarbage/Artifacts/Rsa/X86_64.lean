@@ -31,7 +31,8 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.publicPrecomputeApi.doc
       (notes := ["Baseline x86-64: for n whose top bit is set and whose number of words is a multiple \
         of 4, R² mod n from R - n by steps of long division, a word at a time (Knuth's Algorithm D, \
-        the quotient digit by branch-free restoring division), then two squarings; for any other n, \
+        each quotient digit by Möller and Granlund's division by a reciprocal of n's top word, with \
+        its corrections by masks), then two squarings; for any other n, \
         as `vg_rsa_public_checked` computes it. Montgomery multiplication by calls of \
         `vg_rsa_mont_mul`."])
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm

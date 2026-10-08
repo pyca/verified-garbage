@@ -5,7 +5,8 @@ import VerifiedGarbage.Proof.Bignum.X86_64.PubR2
 # `R² mod m` by word steps on x86-64
 
 `steps`: `c` word steps, `x := x 2^(64 c) mod m` (`steps_ok`); `fast`:
-`R - m`, `w / 4` steps and two squarings, `R² mod m` (`fast_ok`); and
+`R - m`, the reciprocal `v` of `m`'s top word, `w / 4` steps and two
+squarings, `R² mod m` (`fast_ok`); and
 `choice`, which takes `fast` for `m`'s top bit set and `w` a multiple of 4,
 `vg_rsa_public`'s computation otherwise (`choice_ok`, with `r2_ok`'s
 result).
@@ -19,7 +20,7 @@ open VG.Proof.MlKem.X86_64 VG.Proof.Bignum.WordStep
 /-! ## The steps -/
 
 /-- After `j` of `c` steps from `s`, from `x = X`, modulo `m = M` whose top
-word is `T`. -/
+word is `T`, with `v = ⌊(2^128 - 1) / T⌋ - 2^64` the temporary's first word. -/
 structure StepsInv (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (c X M T j : Nat) (t : State) :
     Prop where
   scr : Scr t B Z
@@ -29,6 +30,7 @@ structure StepsInv (s : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (c X M 
   xv : wv t.mem B (slot w aR2) w = X * 2 ^ (64 * j) % M
   nv : wv t.mem B (slot w aN) w = M
   top : (word t.mem B (slot w aN + 8 * (w - 1))).toNat = T
+  rcp : (word t.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / T - 2 ^ 64
   frm : Frm B (r2Ranges w) s.mem t.mem
   keep : Keep mmRegs s t
 
@@ -43,7 +45,8 @@ theorem stepIter_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {c X M
   have hZ0 := slot_le (w := w) (show 0 < 8 by decide)
   have hc0 : 8 * sCnt + 8 ≤ Z := by have := hhs 0; omega
   have hlt : wv t.mem B (slot w aR2) w < wv t.mem B (slot w aN) w := by rw [hI.xv, hI.nv]; exact Nat.mod_lt _ hM
-  have hst := step_ok (L := ⟨B, Z, w, minv⟩) ⟨⟨hI.scr, hI.rdi, hI.hdr⟩, hZ⟩ hw hw' (by rw [hI.top]; exact hT) hlt
+  have hst := step_ok (L := ⟨B, Z, w, minv⟩) ⟨⟨hI.scr, hI.rdi, hI.hdr⟩, hZ⟩ hw hw' (by rw [hI.top]; exact hT)
+    (by rw [hI.rcp, hI.top]) hlt
   refine WP.seq (WP.mono hst fun t₁ ⟨hg₁, hv₁, ha₁, k₁⟩ => ?_)
   dsimp only at hg₁ hv₁ ha₁
   have hst₁ : Scr t₁ B Z := hg₁.1.scr
@@ -73,13 +76,21 @@ theorem stepIter_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} {c X M
       rcases hj' with rfl | rfl
       · have := slot_sep (w := w) (show aN ≠ aAcc by decide); omega
       · have := slot_sep (w := w) (show aN ≠ aR2 by decide); omega) (by omega), hI.top]
+  have hsv := slot_le (w := w) (show aTmp < 8 by decide)
+  have hV₁ : (word t₁.mem B (slot w aTmp)).toNat = (2 ^ 128 - 1) / T - 2 ^ 64 := by
+    rw [ha₁.word_eq (fun j' hj' => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hj'
+      rcases hj' with rfl | rfl
+      · have := slot_sep (w := w) (show aTmp ≠ aAcc by decide); omega
+      · have := slot_sep (w := w) (show aTmp ≠ aR2 by decide); omega) (by omega), hI.rcp]
   have hH' : Hdr t'.mem B w minv := by rw [hm']; exact Hdr.store hH₁ (by decide) (by decide) _
   refine ⟨hst₁.congr k'.2.2, (k'.gpr (by decide)).trans hdi₁, hH', by rw [hm', word_writeW_self], ?_, ?_, ?_, ?_,
-    ((hI.keep.trans k₁).trans k').mono (by decide)⟩
+    ?_, ((hI.keep.trans k₁).trans k').mono (by decide)⟩
   · rw [o'.wv (by have := hhs aR2; omega) (by have := slot_le (w := w) (show aR2 < 8 by decide); omega), hv₁,
       hI.xv, hI.nv, Nat.mod_mul_mod, Nat.mul_assoc, ← Nat.pow_add, show 64 * j + 64 = 64 * (j + 1) by omega]
   · rw [o'.wv (by have := hhs aN; omega) (by omega), hN₁]
   · rw [o'.word (by have := hhs aN; omega) (by omega), hT₁]
+  · rw [o'.word (by have := hhs aTmp; omega) (by omega), hV₁]
   · exact (hI.frm.trans (Frm.of_arrays ha₁ (by simp [r2Ranges]))).trans (Frm.of_outside o' (by simp [r2Ranges]))
 
 theorem steps_eq : steps =
@@ -88,12 +99,15 @@ theorem steps_eq : steps =
 /-- `steps`' start: the count `c` into `sCnt`. -/
 theorem stepsStart_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr s B Z)
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) {c : Nat}
-    (hcx : s.gpr .rcx = BitVec.ofNat 64 c) (hO : wv s.mem B (slot w aR2) w < wv s.mem B (slot w aN) w) :
+    (hcx : s.gpr .rcx = BitVec.ofNat 64 c) (hO : wv s.mem B (slot w aR2) w < wv s.mem B (slot w aN) w)
+    (hv : (word s.mem B (slot w aTmp)).toNat =
+      (2 ^ 128 - 1) / (word s.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64) :
     WP isa (.block [.store (hdr sCnt) .rcx]) s (StepsInv s B Z w minv c (wv s.mem B (slot w aR2) w)
       (wv s.mem B (slot w aN) w) (word s.mem B (slot w aN + 8 * (w - 1))).toNat 0) := by
   have hn := hs.nowrap
   have hsl8 := slot_le (w := w) (show aN < 8 by decide)
   have hsr8 := slot_le (w := w) (show aR2 < 8 by decide)
+  have hsv := slot_le (w := w) (show aTmp < 8 by decide)
   have hhs : ∀ j, 8 * sCnt + 8 ≤ slot w j := fun j => hdr_lt_slot w j (show sCnt < 32 by decide)
   have hZ0 := slot_le (w := w) (show 0 < 8 by decide)
   have hc0 : 8 * sCnt + 8 ≤ Z := by have := hhs 0; omega
@@ -106,6 +120,7 @@ theorem stepsStart_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs 
         Nat.mod_eq_of_lt hO],
       o₁.wv (by have := hhs aN; omega) (by omega),
       by rw [o₁.word (by have := hhs aN; omega) (by omega)],
+      by rw [o₁.word (by have := hhs aTmp; omega) (by omega)]; exact hv,
       Frm.of_outside o₁ (by simp [r2Ranges]), k₁.mono (by decide)⟩
 
 /-- What `steps` leaves, from `StepsInv`. -/
@@ -126,6 +141,8 @@ theorem steps_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
     (hdi : s.gpr .rdi = B) (hH : Hdr s.mem B w minv) (hZ : slot w 8 ≤ Z) (hw : 2 ≤ w) (hw' : w < 2 ^ 30)
     {c : Nat} (hc : 1 ≤ c) (hc' : c < 2 ^ 31) (hcx : s.gpr .rcx = BitVec.ofNat 64 c)
     (hT : 2 ^ 63 ≤ (word s.mem B (slot w aN + 8 * (w - 1))).toNat)
+    (hv : (word s.mem B (slot w aTmp)).toNat =
+      (2 ^ 128 - 1) / (word s.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64)
     (hO : wv s.mem B (slot w aR2) w < wv s.mem B (slot w aN) w) :
     WP isa steps s fun t =>
       wv t.mem B (slot w aR2) w = wv s.mem B (slot w aR2) w * 2 ^ (64 * c) % wv s.mem B (slot w aN) w ∧
@@ -134,7 +151,7 @@ theorem steps_ok {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64} (hs : Scr
       Frm B (r2Ranges w) s.mem t.mem ∧ Good t B Z w minv ∧ Keep mmRegs s t := by
   have hM : 0 < wv s.mem B (slot w aN) w := Nat.lt_of_le_of_lt (Nat.zero_le _) hO
   rw [steps_eq]
-  refine WP.seq (WP.mono (stepsStart_ok hs hdi hH hZ hcx hO) fun s₁ h0 => ?_)
+  refine WP.seq (WP.mono (stepsStart_ok hs hdi hH hZ hcx hO hv) fun s₁ h0 => ?_)
   exact wp_upto (a := 0) (N := c) (by omega) _ (fun j _ hj t hI => stepIter_ok hZ hw hw' hc' hM hT hj hI)
     (fun t hI => hI.post hZ) h0
 
@@ -221,10 +238,11 @@ theorem sub_mul_mod {R N k : Nat} (h : N ≤ R) : (R - N) * k % N = R * k % N :=
   obtain ⟨D, rfl⟩ : ∃ D, R = D + N := ⟨R - N, by omega⟩
   rw [Nat.add_sub_cancel, Nat.add_mul, Nat.add_mul_mod_self_left]
 
-theorem fast_eq (mul : Nat → Nat → Nat → Prog isa) : fast mul = .seq (.block [.mov .rbx (.mem (hdr (sArr aR2))), .mov .r10 (.mem (hdr (sArr aN))),
-      .mov .r12 (.mem (hdr sW)), .mov32 .rbp (.imm 0)])
-    (.seq (wordLoop 0 negBody) (.seq (.block [.mov .rcx (.mem (hdr sW)), .shift .shr .rcx 2])
-      (.seq steps (.seq (mul aR2 aR2 aR2) (mul aR2 aR2 aR2))))) := rfl
+theorem fast_eq (mul : Nat → Nat → Nat → Prog isa) : fast mul = .seq (.block [.mov .rbx (.mem (hdr (sArr aR2))),
+      .mov .r10 (.mem (hdr (sArr aN))), .mov .r12 (.mem (hdr sW)), .mov .r8 (.mem (hdr (sArr aTmp))),
+      .mov32 .rbp (.imm 0)])
+    (.seq (wordLoop 0 negBody) (.seq recip (.seq (.block [.mov .rcx (.mem (hdr sW)), .shift .shr .rcx 2])
+      (.seq steps (.seq (mul aR2 aR2 aR2) (mul aR2 aR2 aR2)))))) := rfl
 
 /-- `fast`: `R² mod m`, for the odd `m` of `w` words (a multiple of 4), its
 top word at least `2^63`; with `r2_ok`'s result. -/
@@ -244,7 +262,10 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   have hNR : N < 2 ^ (64 * w) := hn ▸ wv_lt _ _ _ _
   have hsx := slot_le (w := w) (show aR2 < 8 by decide)
   have hsm := slot_le (w := w) (show aN < 8 by decide)
+  have hsv := slot_le (w := w) (show aTmp < 8 by decide)
   have sXM := slot_sep (w := w) (show aR2 ≠ aN by decide)
+  have sXV := slot_sep (w := w) (show aR2 ≠ aTmp by decide)
+  have sMV := slot_sep (w := w) (show aN ≠ aTmp by decide)
   have hl : ∀ i < 32, InRegions (s.rd ++ s.wr) (off B (8 * i)) 8 := fun i hi =>
     hs.ld (by have := hdr_lt_slot w 8 hi; omega)
   -- `m > R / 2`: its top bit is set, and it is odd.
@@ -259,11 +280,13 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
       rw [Nat.mul_mod, show 2 ^ 63 % 2 = 0 by decide, Nat.mul_zero, Nat.zero_mod]
     omega
   rw [fast_eq M.mm]
-  refine WP.seq (WP.mono (WP.keep [.rbx, .r10, .r12, .rbp] (Q := fun t =>
+  refine WP.seq (WP.mono (WP.keep [.rbx, .r10, .r12, .r8, .rbp] (Q := fun t =>
       t.gpr .rbx = off B (slot w aR2) ∧ t.gpr .r10 = off B (slot w aN) ∧ t.gpr .r12 = BitVec.ofNat 64 w ∧
-      t.gpr .rbp = mask false ∧ t.mem = s.mem) (by
+      t.gpr .r8 = off B (slot w aTmp) ∧ t.gpr .rbp = mask false ∧ t.mem = s.mem) (by
     xrun [State.ea, hdr, hg.rdi, hdrOff, hl (sArr aR2) (by decide), hl (sArr aN) (by decide), hl sW (by decide),
-      hg.hdr.harr aR2 (by decide), hg.hdr.harr aN (by decide), hg.hdr.hw]) rfl) fun t₁ ⟨⟨h1bx, h110, h112, h1bp, hm₁⟩, k₁⟩ => ?_)
+      hl (sArr aTmp) (by decide), hg.hdr.harr aR2 (by decide), hg.hdr.harr aN (by decide), hg.hdr.hw,
+      hg.hdr.harr aTmp (by decide)]) rfl)
+    fun t₁ ⟨⟨h1bx, h110, h112, h18, h1bp, hm₁⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.2.2
   have hM0 : 0 < wv t₁.mem B (slot w aN) w := by rw [hm₁, hn]; exact hN0
   have e1 : slot w aR2 + 8 * w ≤ Z := by omega
@@ -273,27 +296,49 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   refine WP.seq (WP.mono hng fun t₂ ⟨hx₂, ho₂, k₂⟩ => ?_)
   rw [hm₁, hn] at hx₂
   have hs₂ := hs₁.congr k₂.2.2
-  have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi)
-  have hH₂ : Hdr t₂.mem B w minv :=
-    (Arrays.of_outside (j := aR2) (List.mem_singleton_self _) ho₂ (Nat.le_refl _) (by omega)).hdr (hm₁ ▸ hg.hdr)
-  have hl₂ : ∀ i < 32, InRegions (t₂.rd ++ t₂.wr) (off B (8 * i)) 8 := fun i hi =>
-    hs₂.ld (by have := hdr_lt_slot w 8 hi; omega)
-  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 (w / 4) ∧ t.mem = t₂.mem)
+  -- `v`.
+  have h210 : t₂.gpr .r10 = off B (slot w aN) := (k₂.gpr (by decide)).trans h110
+  have h212 : t₂.gpr .r12 = BitVec.ofNat 64 w := (k₂.gpr (by decide)).trans h112
+  have h28 : t₂.gpr .r8 = off B (slot w aTmp) := (k₂.gpr (by decide)).trans h18
+  have eV : slot w aTmp + 8 ≤ Z := by omega
+  have hT₂ : 2 ^ 63 ≤ (word t₂.mem B (slot w aN + 8 * (w - 1))).toNat := by
+    rw [ho₂.word (by omega) (by omega), hm₁]; exact hT
+  refine WP.seq (WP.mono (recip_ok hs₂ h210 h212 h28 (by omega) e2 eV hT₂) fun t₂' ⟨hm₂', k₂'⟩ => ?_)
+  have hvlt : (2 ^ 128 - 1) / (word t₂.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64 < 2 ^ 64 := by
+    have : (2 ^ 128 - 1) / (word t₂.mem B (slot w aN + 8 * (w - 1))).toNat < 2 ^ 65 := by
+      rw [Nat.div_lt_iff_lt_mul (by omega)]; omega
+    omega
+  have o₂' : Outside B (slot w aTmp) 8 t₂.mem t₂'.mem := by rw [hm₂']; exact writeW_outside _ _ _ (by omega)
+  have hs₂' := hs₂.congr k₂'.2.2
+  have hdi₂ : t₂'.gpr .rdi = B :=
+    (k₂'.gpr (by decide)).trans ((k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hg.rdi))
+  have hH₂ : Hdr t₂'.mem B w minv :=
+    (Arrays.of_outside (j := aTmp) (List.mem_singleton_self _) o₂' (Nat.le_refl _) (by omega)).hdr
+      ((Arrays.of_outside (j := aR2) (List.mem_singleton_self _) ho₂ (Nat.le_refl _) (by omega)).hdr
+        (hm₁ ▸ hg.hdr))
+  have hl₂ : ∀ i < 32, InRegions (t₂'.rd ++ t₂'.wr) (off B (8 * i)) 8 := fun i hi =>
+    hs₂'.ld (by have := hdr_lt_slot w 8 hi; omega)
+  refine WP.seq (WP.mono (WP.keep [.rcx] (Q := fun t => t.gpr .rcx = BitVec.ofNat 64 (w / 4) ∧ t.mem = t₂'.mem)
     (by xrun [State.ea, hdr, hdi₂, hdrOff, hl₂ sW (by decide), hH₂.hw, shr2_ofNat (show w < 2 ^ 64 by omega)])
     rfl) fun t₃ ⟨⟨h3cx, hm₃⟩, k₃⟩ => ?_)
   have hN₃ : wv t₃.mem B (slot w aN) w = N := by
-    rw [hm₃, ho₂.wv (by omega) (by omega), hm₁, hn]
+    rw [hm₃, o₂'.wv (by omega) (by omega), ho₂.wv (by omega) (by omega), hm₁, hn]
   have hT₃ : 2 ^ 63 ≤ (word t₃.mem B (slot w aN + 8 * (w - 1))).toNat := by
-    rw [hm₃, ho₂.word (by omega) (by omega), hm₁]; exact hT
+    rw [hm₃, o₂'.word (by omega) (by omega)]; exact hT₂
+  have hV₃ : (word t₃.mem B (slot w aTmp)).toNat =
+      (2 ^ 128 - 1) / (word t₃.mem B (slot w aN + 8 * (w - 1))).toNat - 2 ^ 64 := by
+    rw [hm₃, o₂'.word (d := slot w aN + 8 * (w - 1)) (by omega) (by omega), hm₂', word_writeW_self,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt hvlt]
   have hO₃ : wv t₃.mem B (slot w aR2) w < wv t₃.mem B (slot w aN) w := by
-    rw [hN₃, hm₃, hx₂]; omega
-  have hsp := steps_ok (hs₂.congr k₃.2.2) ((k₃.gpr (by decide)).trans hdi₂) (hm₃ ▸ hH₂) hZ hw hw30
-    (c := w / 4) (by omega) (by omega) h3cx hT₃ hO₃
+    rw [hN₃, hm₃, o₂'.wv (by omega) (by omega), hx₂]; omega
+  have hsp := steps_ok (hs₂'.congr k₃.2.2) ((k₃.gpr (by decide)).trans hdi₂) (hm₃ ▸ hH₂) hZ hw hw30
+    (c := w / 4) (by omega) (by omega) h3cx hT₃ hV₃ hO₃
   refine WP.seq (WP.mono hsp fun t₄ ⟨hx₄, hn₄, hw₄, hf₄, hg₄, k₄⟩ => ?_)
-  rw [hN₃, hm₃, hx₂, sub_mul_mod (Nat.le_of_lt hNR), show 64 * (w / 4) = 16 * w by omega] at hx₄
+  rw [hN₃, hm₃, o₂'.wv (by omega) (by omega), hx₂, sub_mul_mod (Nat.le_of_lt hNR),
+    show 64 * (w / 4) = 16 * w by omega] at hx₄
   rw [hN₃] at hn₄
   have hinv₄ : ((word t₄.mem B (slot w aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
-    rw [hw₄, hm₃, ho₂.word (by omega) (by omega), hm₁]; exact hinv
+    rw [hw₄, hm₃, o₂'.word (by omega) (by omega), ho₂.word (by omega) (by omega), hm₁]; exact hinv
   have hsq := sqs_ok M 1 hg₄ hZ hw hw' hR (E := 16 * w) hn₄ hinv₄ (by rw [hx₄]; exact Nat.mod_lt _ hN0)
     (by rw [hx₄, Nat.mod_mod, Nat.mul_comm])
   refine WP.mono hsq fun t ⟨h1, h2, h3, h4', h5⟩ => ⟨h1, h2, ?_, ?_, ?_⟩
@@ -301,8 +346,12 @@ theorem fast_ok (M : Mont) {s : State} {B : Addr} {Z w : Nat} {minv : BitVec 64}
   · have f₂ : Frm B (r2Ranges w) s.mem t₂.mem := by
       rw [← hm₁]; exact Frm.of_arrays (Arrays.of_outside (j := aR2) (List.mem_singleton_self _) ho₂
         (Nat.le_refl _) (by omega)) (by simp [r2Ranges])
-    exact ((f₂.trans (by rw [hm₃]; exact Frm.refl _ _ _)).trans hf₄).trans (Frm.of_arrays h4' (by simp [r2Ranges]))
-  · exact ((((k₁.trans k₂).trans k₃).trans k₄).trans h5).mono (by decide)
+    have f₂' : Frm B (r2Ranges w) t₂.mem t₂'.mem :=
+      Frm.of_arrays1 (Arrays.of_outside (j := aTmp) (List.mem_singleton_self _) o₂' (Nat.le_refl _) (by omega))
+        (by simp [r2Ranges])
+    exact (((f₂.trans f₂').trans (by rw [hm₃]; exact Frm.refl _ _ _)).trans hf₄).trans
+      (Frm.of_arrays h4' (by simp [r2Ranges]))
+  · exact (((((k₁.trans k₂).trans k₂').trans k₃).trans k₄).trans h5).mono (by decide)
 
 /-! ## The choice -/
 
