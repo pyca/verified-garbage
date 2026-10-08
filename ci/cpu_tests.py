@@ -70,6 +70,10 @@ GROUPS = {
         "lib": ["aes_ofb"],
         "tests": ["cavp::aes_ofb"],
     },
+    "aes_cfb": {
+        "lib": ["aes_cfb"],
+        "tests": ["cavp::aes_cfb"],
+    },
     "aes_siv": {
         "lib": ["aes_siv"],
         "tests": ["wycheproof::aes_siv"],

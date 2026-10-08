@@ -15,6 +15,7 @@
 
 mod aes_cbc;
 mod aes_ccm;
+mod aes_cfb;
 mod aes_ecb;
 mod aes_gcm;
 mod aes_ofb;
