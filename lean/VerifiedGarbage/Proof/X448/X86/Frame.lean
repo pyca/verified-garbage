@@ -27,16 +27,23 @@ theorem Outside2.whole {base : Addr} {x nx y ny : Nat} {m m' : Mem}
     (h : Outside2 base x nx y ny m m') (hx : x + nx ≤ 8192) (hy : y + ny ≤ 8192) :
     Outside base 0 8192 m m' := fun p hp => h p (by omega) (by omega)
 
+/-- What the code writes outside the working space: the result and the stack
+its calls use. -/
+abbrev XFrame (s₀ : State) (m : Mem) : Prop := Frame [scR (arg s₀ 3), outR s₀, stkR s₀] s₀.mem m
+
+theorem XFrame.of_outside {s₀ : State} {m : Mem} (hm : Outside ((arg s₀ 3).setWidth 64) 0 8192 s₀.mem m) :
+    XFrame s₀ m := hm.frame.mono (by simp)
+
 theorem loadArg_ok {s₀ s : State} (hp : Pre s₀)
     (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd) (hw : s.wr = s₀.wr)
-    (hm : Outside ((arg s₀ 3).setWidth 64) 0 8192 s₀.mem s.mem)
+    (hm : XFrame s₀ s.mem)
     {i : Nat} (hi : i < 4) {d : Reg} {is : List Instr} {Q : State → Prop}
     (k : ∀ t, Upd s t d (arg s₀ i) → WP isa (.block is) t Q) :
     WP isa (.block (.mov d (.mem (at_ .esp (4 + 4 * i))) :: is)) s Q := by
   refine wp_load (a := addr (s₀.gpr .esp) (4 + 4 * i))
     (by change addr (s.gpr .esp) (4 + 4 * i) = _; rw [hsp])
     (by rw [hr, hw]; exact hp.argIn hi) fun t ht => ?_
-  rw [hp.arg_same hm.frame hi] at ht
+  rw [hp.arg_same hm hi] at ht
   exact k t ht
 
 end VG.Proof.X448.X86

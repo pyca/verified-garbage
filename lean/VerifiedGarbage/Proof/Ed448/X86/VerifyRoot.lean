@@ -97,9 +97,9 @@ theorem rootEnv_keep (e : Env) (i : Index) (hi : i.val < 14) : rootEnv e i = e i
     Function.update_of_ne h16, Function.update_of_ne h17, Function.update_of_ne h18,
     Function.update_of_ne h19, Function.update_of_ne h20]
 
-theorem root_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
+theorem root_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base) :
     WP isa root s fun t =>
       IKeep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = rootEnv (E s.mem base) :=
-  root_spec base s hs hb
+  root_spec base s hs hc hb
 
 end VG.Proof.Ed448.X86

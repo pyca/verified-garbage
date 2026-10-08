@@ -168,7 +168,8 @@ theorem b_pre (hu : GCtx s g m u) (hs : BSlots s u) :
     out2_addr h]
   exact ⟨trivial, trivial, out1_scr h, out2_scr h, Kit.args_disj (by decide) (out1_lo h),
     Kit.args_disj (by decide) hk.lo_scr, hk.ret_disj (out1_lo h), hk.ret_disj hk.lo_scr,
-    by have := h.out; omega, out2_fit h, h.scratch, by omega⟩
+    by have := h.out; omega, out2_fit h, h.scratch, by omega, hk.callee_room, (hk.callee_stk _ (out_in s)).sub_right (out1_within s).sub,
+    hk.callee_stk _ (scr_in s)⟩
 
 omit h in
 theorem b_covers (s : State) :

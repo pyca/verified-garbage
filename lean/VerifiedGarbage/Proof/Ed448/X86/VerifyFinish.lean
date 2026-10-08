@@ -42,14 +42,15 @@ theorem double2_eval (e : Env) :
       (doubleAt_keep062 e 9 (by decide)) (doubleAt_keep062 e 10 (by decide))]
 
 /-- `[2]Q` and `[2]R`, a step of `vdouble` with `k + 1` left. -/
-theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) {k : Nat}
+theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base) {k : Nat}
     (hk : k < 2 ^ 16) (he : s.gpr .esi = BitVec.ofNat 32 (k + 1)) :
     WP isa (.seq (field (doubleAt 0 6 2 ++ doubleAt 8 9 10)) (.block [.alu .sub .esi (.imm 1)])) s fun t =>
       t.gpr .esi = BitVec.ofNat 32 k ∧ t.zf = some (decide (k = 0)) ∧ Keeps (.esi :: workRegs) s t ∧
-      Outside2 base 64 2816 ACC 512 s.mem t.mem ∧ BoundedEnv t.mem base ∧
+      WsOut2 base 64 2816 ACC 512 s.mem t.mem ∧ BoundedEnv t.mem base ∧
       pt (E t.mem base) 0 6 2 = double (pt (E s.mem base) 0 6 2) ∧
       pt (E t.mem base) 8 9 10 = double (pt (E s.mem base) 8 9 10) := by
-  refine field_seq _ (by decide) hs hb fun u ku bu eu => ?_
+  refine field_seq _ (by decide) hs hc hb fun u ku bu eu => ?_
   refine WP.mono (decCounter_ok hk (by rw [ku.regs.1 _ (by decide), he])) fun t ⟨et, gt, mt, rt, wt, zt⟩ => ?_
   obtain ⟨d1, d2⟩ := double2_eval (E s.mem base)
   refine ⟨et, zt, ⟨fun r hr => ?_, rt.trans ku.regs.2.1, wt.trans ku.regs.2.2⟩, by rw [mt]; exact ku.mem,
@@ -57,8 +58,9 @@ theorem vdoubleStep_ok {s : State} {base : Addr} (hs : Scr s base) (hb : Bounded
   rw [gt r (fun h => hr (by simp [h])), ku.regs.1 r (fun h => hr (List.mem_cons_of_mem _ h))]
 
 /-- `[4]Q` and `[4]R`. -/
-theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) :
-    WP isa vdouble s fun t => Keeps (.esi :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧
+theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base) :
+    WP isa vdouble s fun t => Keeps (.esi :: workRegs) s t ∧ WsOut2 base 64 2816 ACC 512 s.mem t.mem ∧
       BoundedEnv t.mem base ∧ pt (E t.mem base) 0 6 2 = double (double (pt (E s.mem base) 0 6 2)) ∧
       pt (E t.mem base) 8 9 10 = double (double (pt (E s.mem base) 8 9 10)) := by
   unfold vdouble
@@ -66,14 +68,15 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   have k₁ : Keeps (.esi :: workRegs) s s₁ := ⟨fun r hr => g₁ r (fun h => hr (by simp [h])), r₁, w₁⟩
   have hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.loop (M := isa) (fun m (t : State) => 1 ≤ m ∧ m ≤ 2 ∧ t.gpr .esi = BitVec.ofNat 32 m ∧
-      Keeps (.esi :: workRegs) s t ∧ Outside2 base 64 2816 ACC 512 s.mem t.mem ∧ BoundedEnv t.mem base ∧
+      Keeps (.esi :: workRegs) s t ∧ WsOut2 base 64 2816 ACC 512 s.mem t.mem ∧ BoundedEnv t.mem base ∧
       pt (E t.mem base) 0 6 2 = (if m = 2 then id else double) (pt (E s.mem base) 0 6 2) ∧
       pt (E t.mem base) 8 9 10 = (if m = 2 then id else double) (pt (E s.mem base) 8 9 10)) ?_ 2 s₁
-    ⟨by decide, by decide, e₁, k₁, by rw [m₁]; exact Outside2.refl _ _ _ _ _ _, m₁ ▸ hb, by rw [m₁]; rfl,
+    ⟨by decide, by decide, e₁, k₁, by rw [m₁]; exact WsOut2.refl _ _ _ _ _ _, m₁ ▸ hb, by rw [m₁]; rfl,
       by rw [m₁]; rfl⟩
   intro m t ⟨h1, h2, et, kt, ot, bt, qt, rt⟩
   obtain ⟨k, rfl⟩ : ∃ k, m = k + 1 := ⟨m - 1, by omega⟩
-  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) bt (by omega) et) fun u ⟨eu, zu, ku, ou, bu, qu, ru⟩ => ?_
+  refine WP.mono (vdoubleStep_ok (hs.of_keeps kt (by decide)) (hc.keep (kt.1 _ (by decide))) bt (by omega) et)
+    fun u ⟨eu, zu, ku, ou, bu, qu, ru⟩ => ?_
   have ku' : Keeps (.esi :: workRegs) s u := kt.trans ku
   have ou' := ot.trans ou
   simp only [eval, zu, Option.map_some]
@@ -100,19 +103,21 @@ theorem isZeroBad_ok {s : State} {base : Addr} (hs : Scr s base) (h : (word s.me
   · exact (hu.rest (by simp)).trans ((hv.rest (by simp)).trans (ht.rest (by simp)))
 
 /-- The comparison and the result. -/
-theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
+theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base)
     {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (word s.mem base BAD).toNat < 65536) :
     WP isa vfinish s fun t =>
       t.gpr .eax = (if word s.mem base BAD = 0 ∧
         Spec.Ed448.pointEqual (double (double (pt (E s.mem base) 0 6 2)))
           (double (double (pt (E s.mem base) 8 9 10))) = true then 1 else 0) ∧
-      (∀ p ∈ savedSlots, t.gpr p.1 = g p.1) ∧ t.gpr .esp = s.gpr .esp ∧
-      Outside base 0 8192 s.mem t.mem := by
+      (∀ p ∈ savedSlots, t.gpr p.1 = g p.1) ∧ t.gpr .esp = s.gpr .esp := by
   unfold vfinish
-  refine WP.seq (WP.mono (vdouble_ok hs hb) fun s0 ⟨k0, o0, b0, q0, r0⟩ => ?_)
+  refine WP.seq (WP.mono (vdouble_ok hs hc hb) fun s0 ⟨k0, o0, b0, q0, r0⟩ => ?_)
   have hs0 := hs.of_keeps k0 (by decide)
-  refine field_seq [.mul 12 0 10, .mul 13 8 2] (by decide) hs0 b0 fun s1 k1 b1 e1 => ?_
+  have hc0 := hc.keep (k0.1 _ (by decide))
+  refine field_seq [.mul 12 0 10, .mul 13 8 2] (by decide) hs0 hc0 b0 fun s1 k1 b1 e1 => ?_
   have hs1 := k1.scr hs0
+  have hc1 := k1.ctx hc0
   have hk : ∀ i : Index, i.val < 11 → E s1.mem base i = E s0.mem base i := fun i hi => by
     rw [e1]
     exact evalOps_keep _ _ _ fun op hop => by
@@ -130,7 +135,7 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   refine WP.mono (eqSlots_ok hs1 b1 12 13 (by decide) (by decide) (by decide))
     fun s2 ⟨k2, b2, e2, c2⟩ => ?_
   have hs2 := k2.scr hs1
-  refine field_seq [.mul 12 6 10, .mul 13 9 2] (by decide) hs2 b2 fun s3 k3 b3 e3 => ?_
+  refine field_seq [.mul 12 6 10, .mul 13 9 2] (by decide) hs2 (k2.ctx hc1) b2 fun s3 k3 b3 e3 => ?_
   have hs3 := k3.scr hs2
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
@@ -151,11 +156,11 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
   have hs5 := hs4.of_keeps k5 (by decide)
   have sv5 : Saved base g s5.mem := by
     rw [m5]
-    exact ((((hsv.outside2 o0 (by decide) (by decide)).outside2 k1.mem (by decide) (by decide)).outside2 k2.mem.widen (by decide)
-      (by decide)).outside2 k3.mem (by decide) (by decide)).outside2 k4.mem.widen (by decide) (by decide)
+    exact ((((hsv.wsout2 o0 (by decide) (by decide)).wsout2 k1.mem (by decide) (by decide)).wsout2 k2.mem.widen (by decide)
+      (by decide)).wsout2 k3.mem (by decide) (by decide)).wsout2 k4.mem.widen (by decide) (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (restore_ok hs5 sv5) fun s6 ⟨r6, m6, k6⟩ => ?_
-  refine wp_mov rfl fun t ht => WP.block_nil ⟨?_, fun p hp => ?_, ?_, ?_⟩
+  refine wp_mov rfl fun t ht => WP.block_nil ⟨?_, fun p hp => ?_, ?_⟩
   · rw [ht.gpr]; change s6.gpr .ecx = _
     rw [k6.1 _ (by decide), v5, hbad]
     refine if_congr ?_ rfl rfl
@@ -178,8 +183,5 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     rw [ht.other _ hne]; exact r6 p hp
   · rw [ht.other _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide), k4.regs.1 _ (by decide),
       k3.regs.1 _ (by decide), k2.regs.1 _ (by decide), k1.regs.1 _ (by decide), k0.1 _ (by decide)]
-  · rw [ht.mem, m6, m5]
-    exact ((((o0.whole (by decide) (by decide)).trans (k1.mem.whole (by decide) (by decide))).trans (k2.mem.widen.whole (by decide) (by decide))).trans
-      (k3.mem.whole (by decide) (by decide))).trans (k4.mem.widen.whole (by decide) (by decide))
 
 end VG.Proof.Ed448.X86

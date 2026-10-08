@@ -60,10 +60,11 @@ theorem counter_zero {s : State} {n : Nat} (hn : n < 2 ^ 32)
 /-- The complete loop invariant, including its memory frame. -/
 structure LInv (base : Addr) (k : Nat) (u : Spec.X448.Fe) (s₀ s : State) (n : Nat) : Prop where
   scr : Scr s base
+  ctx : CallCtx s base
   bounded : BoundedEnv s.mem base
   regs : Keeps (.esi :: workRegs) s₀ s
   esi : s.gpr .esi = BitVec.ofNat 32 n
-  mem : Outside2 base 32 2848 ACC 512 s₀.mem s.mem
+  mem : WsOut2 base 32 2848 ACC 512 s₀.mem s.mem
   x1 : E s.mem base 0 = u
   x2 : E s.mem base 1 = (ladderAfter k u n).x2
   z2 : E s.mem base 2 = (ladderAfter k u n).z2
@@ -81,6 +82,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
   have hs := hi.scr
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 (bit k n) := by
     rw [hi.mem _ (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
+      (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS]; omega)
       (by rw [ofs_off' base (by simp only [BITS]; omega)]; simp only [BITS, ACC]; omega)]
     exact hbits n hn
   rw [stepBody, WP.seq_iff,
@@ -103,7 +105,8 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
     intro i j hj; rw [l₁ i j hj]; exact hi.bounded i j hj
   refine WP.mono (swaps_ok hs₁ bb₁ c₁) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_
   rw [← stepFields_impl]
-  refine WP.mono (ops_ok (k₂.scr hs₁) bb₂ stepFields) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_
+  have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
+  refine WP.mono (ops_ok (k₂.scr hs₁) (k₂.ctx hc₁) bb₂ stepFields) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_
   have core := k₂.trans k₃
   have b₃ : s₃.gpr .esi = BitVec.ofNat 32 n := (core.regs.1 _ (by decide)).trans b₁
   have vals := stepEnv_eval (E s.mem base) (ladderAfter k u (n + 1)) k u n
@@ -111,7 +114,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
   have e₄ : E s₃.mem base = stepEnv (decide ((ladderAfter k u (n + 1)).swap ^^^ bit k n = 1))
       (E s.mem base) := by rw [e₃, e₂, e₁]; rfl
   rw [← ladderAfter_step k u hn, ← e₄] at vals
-  refine ⟨⟨core.scr hs₁, bb₃, ?_, b₃, ?_, vals.1, vals.2.1, vals.2.2.1,
+  refine ⟨⟨core.scr hs₁, core.ctx hc₁, bb₃, ?_, b₃, ?_, vals.1, vals.2.1, vals.2.2.1,
     vals.2.2.2.1, vals.2.2.2.2, ?_⟩, counter_zero (by omega) b₃⟩
   · refine hi.regs.trans ⟨?_, core.regs.2.1.trans rd₁, core.regs.2.2.trans wr₁⟩
     intro r hr
@@ -123,8 +126,8 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
         fun h => hr (by subst r; decide)⟩
     rw [core.regs.1 r hwork, g₁ r hpre]
   · refine hi.mem.trans ?_
-    intro p hp hq
-    rw [core.mem p (by omega) hq, out₁ p (by simp only [SWAP]; omega)]
+    intro p h8 hp hq
+    rw [core.mem p h8 (by omega) hq, out₁ p (by simp only [SWAP]; omega)]
   · rw [core.mem.word (by simp only [SWAP]; omega) (by simp only [SWAP, ACC]; omega) (by decide),
       m₁, ladderAfter_step k u hn]
     exact Mem.readW_writeW_self32 _ _ _
@@ -132,7 +135,7 @@ theorem stepBody_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X448.Fe} 
 /-- Comparing the public counter changes only flags. -/
 theorem LInv.of_flags {base : Addr} {k n : Nat} {u : Spec.X448.Fe} {s0 s t : State}
     (h : LInv base k u s0 s n) (ht : Fupd s t) : LInv base k u s0 t n := by
-  refine ⟨?_, ht.mem ▸ h.bounded, ?_, ?_, ht.mem ▸ h.mem,
+  refine ⟨?_, h.ctx.keep (by rw [ht.gpr]), ht.mem ▸ h.bounded, ?_, ?_, ht.mem ▸ h.mem,
     ht.mem ▸ h.x1, ht.mem ▸ h.x2, ht.mem ▸ h.z2, ht.mem ▸ h.x3, ht.mem ▸ h.z3, ht.mem ▸ h.swap⟩
   · exact ⟨by rw [ht.gpr]; exact h.scr.edi,
       ht.wr ▸ h.scr.wr, by rw [ht.gpr]; exact h.scr.nowrap⟩

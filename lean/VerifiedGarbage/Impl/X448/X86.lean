@@ -1,15 +1,21 @@
 import VerifiedGarbage.TCB.X86.Isa
+import VerifiedGarbage.Spec.X448.Field16
 
 /-!
 # X448: x86 (32-bit) implementation
 
-Field elements are twenty-eight 16-bit limbs in 32-bit words. A row of
-products propagates its carry before the next row, keeping each sum below
-2^32. Reduction uses `2^448 = 2^224 + 1` modulo the field prime.
+Field elements are twenty-eight 16-bit limbs in 32-bit words. The field
+arithmetic is the functions `vg_gf448_r16_mul`, `vg_gf448_r16_add`,
+`vg_gf448_r16_sub` and `vg_gf448_r16_mul_a24` (`Spec/X448/Field16.lean`),
+which X448 and Ed448 call rather than inlining it: a row of products
+propagates its carry before the next row, keeping each sum below 2^32, and
+reduction uses `2^448 = 2^224 + 1` modulo the field prime.
 
 Arguments use cdecl: output, scalar, point, and working space are at
-`[esp + 4]` through `[esp + 16]`. The stack pointer does not move. `edi`
-holds the working space and `esi` the ladder or squaring counter.
+`[esp + 4]` through `[esp + 16]`. The stack pointer moves only for the calls
+of the field functions, whose arguments take the 20 bytes below the return
+address. `edi` holds the working space and `esi` the ladder or squaring
+counter.
 -/
 
 namespace VG.Impl.X448.X86
@@ -69,17 +75,21 @@ def pass (o a : Nat) : List Instr :=
 def fold : List Instr :=
   [0, 14].flatMap fun i => [ld .eax (TMP + 4 * i), .alu .add .eax (.reg .ebx), st .eax (TMP + 4 * i)]
 
-def normalize (o : Nat) : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ pass o TMP
+/-- One product of a multiplication row, `a_i b_j` with `b_j` at `mb j`, added
+to the previous rows. -/
+def rowSrcWith (mb : Nat → MemOp) (j : Nat) : List Instr :=
+  [.mov .eax (.mem (mb j)), .mul .ecx, .alu .add .eax (.mem (at_ .ebp (ACC + 4 * j)))]
 
-/-- One product of a multiplication row, added to the previous rows. -/
-def rowStep (b j : Nat) : List Instr :=
-  [ld .eax (b + 4 * j), .mul .ecx, .alu .add .eax (.mem (at_ .ebp (ACC + 4 * j)))] ++
-    carryStep .ebp (ACC + 4 * j)
-
-def row (a b : Nat) : List Instr :=
-  [.mov .ecx (.mem (at_ .ebp a)), .mov .ebx (.imm 0)] ++ (List.range 28).flatMap (rowStep b) ++
+/-- A row's last carry, the row pointer advanced, and its comparison with the end. -/
+def rowEnd : List Instr :=
   [.store (at_ .ebp (ACC + 112)) .ebx, .alu .add .ebp (.imm 4),
     .mov .edx (.reg .edi), .alu .add .edx (.imm 112), .alu .cmp .ebp (.reg .edx)]
+
+/-- A multiplication row: `ldA` loads `a_i` into `ecx`, `mb j` addresses `b_j`. -/
+def rowWith (ldA : List Instr) (mb : Nat → MemOp) : List Instr :=
+  ldA ++ [.mov .ebx (.imm 0)] ++ carryPass .ebp ACC (rowSrcWith mb) ++ rowEnd
+
+def row (a b : Nat) : List Instr := rowWith [.mov .ecx (.mem (at_ .ebp a))] (fun j => sc (b + 4 * j))
 
 def reduceCol (k : Nat) : List Instr :=
   [ld .eax (ACC + 4 * k), .alu .add .eax (.mem (sc (ACC + 4 * (k + 28))))] ++
@@ -92,26 +102,103 @@ def zeroAcc : List Instr :=
 
 def mulPre : List Instr := zeroAcc ++ [.mov .ebp (.reg .edi)]
 
-def mul (o a b : Nat) : Prog isa :=
-  .seq (.block mulPre) <|
-  .seq (.loop (.block (row a b)) .ne) <|
-    .block ((List.range 28).flatMap reduceCol ++ normalize o)
-
 /-- A coefficient of twice the prime. -/
 def subK (i : Nat) : BitVec 32 := if i = 14 then 131068 else 131070
 
-def add (o a b : Nat) : List Instr :=
-  (List.range 28).flatMap (fun i =>
-    [ld .eax (a + 4 * i), .alu .add .eax (.mem (sc (b + 4 * i))), st .eax (TMP + 4 * i)]) ++ normalize o
+/-! ## The field functions
 
-def sub (o a b : Nat) : List Instr :=
-  (List.range 28).flatMap (fun i =>
-    [ld .eax (a + 4 * i), .alu .add .eax (.imm (subK i)),
-      .alu .sub .eax (.mem (sc (b + 4 * i))), st .eax (TMP + 4 * i)]) ++ normalize o
+`vg_gf448_r16_{mul,add,sub,mul_a24}(ws, o, a[, b])` (`Spec/X448/Field16.lean`),
+cdecl: the arguments at `[esp + 4]` to `[esp + 16]`. Each loads `ws` into
+`edi` and saves the callee-saved registers in the last 16 bytes of its own
+working space (`SAVE`), points `esi` (and `ebp`) at its operands, writes the
+coefficients of the result into `TMP` and normalizes them into the element
+at `o` (`normalize`), and restores the registers. The product's rows are as
+X448's (`rowWith`): `a_i` at `ws + a + 4 i`, with the row pointer
+`ebp = ws + 4 i`, and `b_j` at `esi = ws + b`. They use no stack, and every
+address is `ws` plus a constant, an offset or the row pointer. -/
 
-def mulSmall (o a : Nat) : List Instr :=
-  [.mov .ecx (.imm 39081)] ++ (List.range 28).flatMap (fun i =>
-    [ld .eax (a + 4 * i), .mul .ecx, st .eax (TMP + 4 * i)]) ++ normalize o
+/-- Where the field functions save the callee-saved registers. -/
+def SAVE : Nat := 4080
+
+/-- Argument `i` of a field function. -/
+def argOp (i : Nat) : MemOp := at_ .esp (4 + 4 * i)
+
+/-- `edi = ws`, and `ebx`, `esi`, `edi` and `ebp` saved at `SAVE`, through `eax`. -/
+def fnEntry : List Instr :=
+  [.mov .eax (.mem (argOp 0)), .store (at_ .eax SAVE) .ebx, .store (at_ .eax (SAVE + 4)) .esi,
+    .store (at_ .eax (SAVE + 8)) .edi, .store (at_ .eax (SAVE + 12)) .ebp, .mov .edi (.reg .eax)]
+
+/-- The registers restored, `edi` last. -/
+def fnExit : List Instr :=
+  [.mov .ebx (.mem (sc SAVE)), .mov .esi (.mem (sc (SAVE + 4))), .mov .ebp (.mem (sc (SAVE + 12))),
+    .mov .edi (.mem (sc (SAVE + 8)))]
+
+/-- `r = ws + ` argument `i`. -/
+def argPtr (r : Reg) (i : Nat) : List Instr := [.mov r (.mem (argOp i)), .alu .add r (.reg .edi)]
+
+/-- The last carry pass, from `TMP` into the element at `ebp`. -/
+def outPass : List Instr := [.mov .ebx (.imm 0)] ++ carryPass .ebp 0 (fun i => [ld .eax (TMP + 4 * i)])
+
+/-- The coefficients at `TMP` normalized into the element at `o`. -/
+def normalize : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ argPtr .ebp 1 ++ outPass
+
+/-- `a_i b_j`, `b_j` at `esi + 4 j`, added to word `i + j` of the product. -/
+def rowSrcU (i j : Nat) : List Instr :=
+  [.mov .eax (.mem (at_ .esi (4 * j))), .mul .ecx, .alu .add .eax (.mem (sc (ACC + 4 * (i + j))))]
+
+/-- Row `i` of `vg_gf448_r16_mul`'s product, `a_i` at `ebp + 4 i`: the rows are
+unrolled, so the product's words are at constant offsets of `edi`. -/
+def mulRowU (i : Nat) : List Instr :=
+  [.mov .ecx (.mem (at_ .ebp (4 * i))), .mov .ebx (.imm 0)] ++ carryPass .edi (ACC + 4 * i) (rowSrcU i) ++
+    [st .ebx (ACC + 4 * (i + 28))]
+
+/-- `vg_gf448_r16_mul`: `esi = ws + b`, `ebp = ws + a`, the 28 rows, then the
+product folded and normalized. -/
+def mulFn : Prog isa :=
+  .block (fnEntry ++ argPtr .esi 3 ++ argPtr .ebp 2 ++ zeroAcc ++ (List.range 28).flatMap mulRowU ++
+    (List.range 28).flatMap reduceCol ++ normalize ++ fnExit)
+
+def addCols : List Instr :=
+  (List.range 28).flatMap fun i =>
+    [.mov .eax (.mem (at_ .esi (4 * i))), .alu .add .eax (.mem (at_ .ebp (4 * i))), st .eax (TMP + 4 * i)]
+
+def subCols : List Instr :=
+  (List.range 28).flatMap fun i =>
+    [.mov .eax (.mem (at_ .esi (4 * i))), .alu .add .eax (.imm (subK i)),
+      .alu .sub .eax (.mem (at_ .ebp (4 * i))), st .eax (TMP + 4 * i)]
+
+def a24Cols : List Instr :=
+  .mov .ecx (.imm 39081) :: (List.range 28).flatMap fun i =>
+    [.mov .eax (.mem (at_ .esi (4 * i))), .mul .ecx, st .eax (TMP + 4 * i)]
+
+/-- `vg_gf448_r16_add`. -/
+def addFn : Prog isa := .block (fnEntry ++ argPtr .esi 2 ++ argPtr .ebp 3 ++ addCols ++ normalize ++ fnExit)
+
+/-- `vg_gf448_r16_sub`. -/
+def subFn : Prog isa := .block (fnEntry ++ argPtr .esi 2 ++ argPtr .ebp 3 ++ subCols ++ normalize ++ fnExit)
+
+/-- `vg_gf448_r16_mul_a24`. -/
+def mulA24Fn : Prog isa := .block (fnEntry ++ argPtr .esi 2 ++ a24Cols ++ normalize ++ fnExit)
+
+/-! ## Calls of the field functions
+
+The offsets in `eax`, `ecx` and `edx`, and `ws = edi`, pushed as the
+arguments: the call changes `eax`, `ecx`, `edx`, the flags, the result, the
+function's own working space and the 20 bytes below `esp`. -/
+
+def call3 (name : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.imm (BitVec.ofNat 32 o)), .mov .ecx (.imm (BitVec.ofNat 32 a)),
+      .mov .edx (.imm (BitVec.ofNat 32 b))])
+    (.frame (.push [.edx, .ecx, .eax, .edi]) (.call name body) (.pop .eax 4))
+
+def call2 (name : String) (body : Prog isa) (o a : Nat) : Prog isa :=
+  .seq (.block [.mov .eax (.imm (BitVec.ofNat 32 o)), .mov .ecx (.imm (BitVec.ofNat 32 a))])
+    (.frame (.push [.ecx, .eax, .edi]) (.call name body) (.pop .eax 3))
+
+def mulCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.mulApi.name mulFn o a b
+def addCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.addApi.name addFn o a b
+def subCall (o a b : Nat) : Prog isa := call3 Spec.X448.Field16.subApi.name subFn o a b
+def a24Call (o a : Nat) : Prog isa := call2 Spec.X448.Field16.mulA24Api.name mulA24Fn o a
 
 /-- Swap under the mask in `ebx`. -/
 def cswap (x y : Nat) : List Instr :=
@@ -129,10 +216,10 @@ inductive Op
   deriving DecidableEq, Repr
 
 def Op.code : Op → Prog isa
-  | .mul o a b => X86.mul o a b
-  | .mulSmall o a => .block (X86.mulSmall o a)
-  | .add o a b => .block (X86.add o a b)
-  | .sub o a b => .block (X86.sub o a b)
+  | .mul o a b => mulCall o a b
+  | .mulSmall o a => a24Call o a
+  | .add o a b => addCall o a b
+  | .sub o a b => subCall o a b
   | .copy o a => .block (X86.copy o a)
 
 def ops : List Op → Prog isa
@@ -160,7 +247,7 @@ def lastSwap : List Instr :=
 /-- Square `n` times in place, for positive `n`. -/
 def sqn (o n : Nat) : Prog isa :=
   .seq (.block [.mov .esi (.imm (BitVec.ofNat 32 n))])
-    (.loop (.seq (mul o o o) (.block [.alu .sub .esi (.imm 1)])) .ne)
+    (.loop (.seq (mulCall o o o) (.block [.alu .sub .esi (.imm 1)])) .ne)
 
 def invert : Prog isa :=
   .seq (ops [.copy T0 Z2]) <| .seq (sqn T0 1) <| .seq (ops [.mul T0 T0 Z2, .copy T1 T0]) <|
@@ -227,7 +314,7 @@ def restore : List Instr :=
     .mov .ebp (.mem (at_ .eax 12)), .mov .edi (.mem (at_ .eax 8))]
 
 def finish : Prog isa :=
-  .seq (mul X2 X2 T7) (.block (freeze ++ [.mov .esi (.mem (at_ .esp 4))] ++
+  .seq (mulCall X2 X2 T7) (.block (freeze ++ [.mov .esi (.mem (at_ .esp 4))] ++
     (List.range 28).flatMap packLimb ++ restore))
 
 def x448 : Prog isa :=

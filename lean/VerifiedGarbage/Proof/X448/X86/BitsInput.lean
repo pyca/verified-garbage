@@ -25,7 +25,7 @@ theorem bits_ok {s₀ s : State} (pre : Pre s₀)
         BitVec.ofNat 8 (bit (Spec.X448.decodeScalar448
           (Spec.X448.bytesAt s.mem ((arg s₀ 1).setWidth 64) 56)) j) := by
   change WP isa (.block (.mov .esi (.mem (at_ .esp 8)) :: (expandBits ++ clamp))) s _
-  refine loadArg_ok pre hsp hr hw (hbase ▸ hm) (by decide : 1 < 4) fun u hu => ?_
+  refine loadArg_ok pre hsp hr hw (XFrame.of_outside (hbase ▸ hm)) (by decide : 1 < 4) fun u hu => ?_
   refine WP.mono (bitsData_ok (hs.of_upd hu (by decide)) (by rw [hu.gpr])
     (by rw [hu.gpr]; exact pre.scalar_fit)
     (by intro i hi; rw [hu.rd, hu.wr, hr, hw]; exact ⟨scalarR s₀,

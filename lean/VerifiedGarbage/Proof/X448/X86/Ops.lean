@@ -37,17 +37,19 @@ def applyOps : List FieldOp → Env → Env
   | [], e => e
   | op :: rest, e => applyOps rest (op.apply e)
 
-theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (op : FieldOp) :
+theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base) (op : FieldOp) :
     WP isa op.impl.code s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = op.apply (E s.mem base) := by
   cases op with
-  | mul o a b => exact mulE hs hb o a b
-  | add o a b => exact addE hs hb o a b
-  | sub o a b => exact subE hs hb o a b
-  | mulSmall o a => exact a24E hs hb o a
+  | mul o a b => exact mulE hs hc hb o a b
+  | add o a b => exact addE hs hc hb o a b
+  | sub o a b => exact subE hs hc hb o a b
+  | mulSmall o a => exact a24E hs hc hb o a
   | copy o a => exact copyE hs hb o a
 
-theorem ops_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (xs : List FieldOp) :
+theorem ops_ok {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (xs : List FieldOp) :
     WP isa (ops (xs.map FieldOp.impl)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = applyOps xs (E s.mem base) := by
   induction xs generalizing s with
@@ -55,8 +57,8 @@ theorem ops_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
   | cons op rest ih =>
     change WP isa (.seq op.impl.code (ops (rest.map FieldOp.impl))) s _
     rw [WP.seq_iff]
-    refine WP.mono (fieldOp_ok hs hb op) fun t ⟨tk, tb, te⟩ => ?_
-    refine WP.mono (ih (tk.scr hs) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, ?_⟩
+    refine WP.mono (fieldOp_ok hs hc hb op) fun t ⟨tk, tb, te⟩ => ?_
+    refine WP.mono (ih (tk.scr hs) (tk.ctx hc) tb) fun u ⟨uk, ub, ue⟩ => ⟨tk.trans uk, ub, ?_⟩
     rw [ue, te]
     rfl
 

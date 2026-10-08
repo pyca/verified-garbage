@@ -100,7 +100,7 @@ theorem baseSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEn
   rw [WP.block_append_iff]
   refine WP.mono (baseMask_ok hs ht hb hb2 hbit) fun u1 ⟨c1, k1, m1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)
-  have K1 : Keep base s u1 := ⟨k1, by rw [m1]; exact Outside2.refl _ _ _ _ _ _⟩
+  have K1 : Keep base s u1 := ⟨k1, by rw [m1]; exact WsOut2.refl _ _ _ _ _ _⟩
   rw [WP.block_append_iff]
   refine WP.mono (cswapE hs1 (m1 ▸ hbd) 0 3 (by decide) c1) fun u2 ⟨k2, b2, c2, e2⟩ => ?_
   rw [WP.block_append_iff]
@@ -109,7 +109,7 @@ theorem baseSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEn
   refine WP.mono (cswapE (k3.scr (k2.scr hs1)) b3 2 5 (by decide) (c3.trans (c2.trans c1)))
     fun u4 ⟨k4, b4, _, e4⟩ => ?_
   refine wp_cmp rfl fun u5 v5 hz => WP.block_nil ?_
-  have K5 : Keep base u4 u5 := ⟨v5.rest _, by rw [v5.mem]; exact Outside2.refl _ _ _ _ _ _⟩
+  have K5 : Keep base u4 u5 := ⟨v5.rest _, by rw [v5.mem]; exact WsOut2.refl _ _ _ _ _ _⟩
   refine ⟨K1.trans (k2.trans (k3.trans (k4.trans K5))), v5.mem ▸ b4, ?_, by rw [v5.mem, e4, e3, e2, m1]⟩
   have esi : u4.gpr .esi = BitVec.ofNat 32 t := by
     rw [k4.regs.1 _ (by decide), k3.regs.1 _ (by decide), k2.regs.1 _ (by decide),
@@ -120,10 +120,11 @@ theorem baseSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedEn
 /-- The loop's invariant, after the bits above `n` of `k`. -/
 structure BaseInv (base : Addr) (k : Nat) (s₀ s : State) (n : Nat) : Prop where
   scr : Scr s base
+  ctx : CallCtx s base
   bounded : BoundedEnv s.mem base
   regs : Keeps (.esi :: workRegs) s₀ s
   esi : s.gpr .esi = BitVec.ofNat 32 n
-  mem : Outside2 base 64 2816 ACC 512 s₀.mem s.mem
+  mem : WsOut2 base 64 2816 ACC 512 s₀.mem s.mem
   r : pt (E s.mem base) 0 1 2 = ladder k (456 - n)
   q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
   d : E s.mem base 11 = Spec.Ed448.d
@@ -138,33 +139,35 @@ theorem baseStep_ok {s₀ s : State} {base : Addr} {k n : Nat} (hn : n < 456)
   have hB : BITS = 3072 := rfl
   have hA : ACC = 3584 := rfl
   have bitval : s.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
+      (by rw [ofs_off' base (by omega)]; omega)]
     exact hbits n hn
   unfold baseStep
   refine WP.seq (WP.mono (decCounter_ok (by omega) hi.esi) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
   have K₁ : Keeps [.esi] s s₁ := ⟨fun r hr => g₁ r (fun h => hr (by simp [h])), rd₁, wr₁⟩
   have hs₁ := hs.of_keeps K₁ (by decide)
+  have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
   rw [field, doubleFields_impl]
-  refine WP.seq (WP.mono (ops_ok hs₁ (m₁ ▸ hi.bounded) doubleFields) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_)
+  refine WP.seq (WP.mono (ops_ok hs₁ hc₁ (m₁ ▸ hi.bounded) doubleFields) fun s₂ ⟨k₂, bb₂, e₂⟩ => ?_)
   rw [field, addFields_impl]
-  refine WP.seq (WP.mono (ops_ok (k₂.scr hs₁) bb₂ addFields) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_)
+  refine WP.seq (WP.mono (ops_ok (k₂.scr hs₁) (k₂.ctx hc₁) bb₂ addFields) fun s₃ ⟨k₃, bb₃, e₃⟩ => ?_)
   have hs₃ := k₃.scr (k₂.scr hs₁)
   have b₃ : s₃.gpr .esi = BitVec.ofNat 32 n := by
     rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
   have bit₃ : s₃.mem (off base (BITS + n)) = BitVec.ofNat 8 ((k >>> n) &&& 1) := by
     rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
+      (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
   refine WP.mono (baseSwap_ok hs₃ bb₃ (by omega) b₃ (bit_lt k n) bit₃) fun t ⟨k₄, bb₄, z₄, e₄⟩ => ?_
   have core := k₂.trans (k₃.trans k₄)
   have ee : E t.mem base = baseEnv (decide ((k >>> n) &&& 1 = 1)) (E s.mem base) := by
     rw [e₄, e₃, e₂, m₁]; rfl
-  refine ⟨⟨core.scr hs₁, bb₄, ?_, ?_, ?_, ?_, ?_, ?_⟩, z₄⟩
+  refine ⟨⟨core.scr hs₁, core.ctx hc₁, bb₄, ?_, ?_, ?_, ?_, ?_, ?_⟩, z₄⟩
   · refine hi.regs.trans ⟨fun r hr => ?_, core.regs.2.1.trans rd₁, core.regs.2.2.trans wr₁⟩
     rw [core.regs.1 r (fun h => hr (List.mem_cons_of_mem _ h)), g₁ r (fun h => hr (by simp [h]))]
   · rw [core.regs.1 _ (by decide), b₁]
   · refine hi.mem.trans ?_
-    intro p hp hq
-    rw [core.mem p hp hq, m₁]
+    intro p h8 hp hq
+    rw [core.mem p h8 hp hq, m₁]
   · rw [ee, baseEnv_r _ _ hi.q hi.d, hi.r, ladder_bit k hn]; rfl
   · rw [ee, baseEnv_q]; exact hi.q
   · rw [ee, baseEnv_d]; exact hi.d

@@ -39,7 +39,8 @@ theorem decodeLE_56 (m : Mem) (p : Addr) :
 
 /-! ## Decoding -/
 
-theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
+theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base)
+    (hb : BoundedEnv s.mem base)
     {p : BitVec 32} (hp : s.gpr .esi = p) (hfit : p.toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (p.setWidth 64 + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (p.setWidth 64 + BitVec.ofNat 64 j))
@@ -67,24 +68,29 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base : Addr} (hs : Scr s base) (
     fun s1 ⟨k1, b1, sg1, c1, y1, e1⟩ => ?_)
   rw [hq] at sg1 c1 y1
   have hs1 := k1.scr hs
+  have hc1 := k1.ctx hc
   -- `u`, `v`, `t` and `t (uv)²`
   refine field_seq (decodeUV yo.val xo.val)
-    (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hs1 b1 fun s2 k2 b2 e2 => ?_
+    (by rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide) hs1 hc1 b1 fun s2 k2 b2 e2 => ?_
   have hs2 := k2.scr hs1
+  have hc2 := k2.ctx hc1
   -- the root
-  refine WP.seq (WP.mono (root_ok hs2 b2) fun s3 ⟨k3, b3, e3⟩ => ?_)
+  refine WP.seq (WP.mono (root_ok hs2 hc2 b2) fun s3 ⟨k3, b3, e3⟩ => ?_)
   have hs3 := k3.scr hs2
+  have hc3 := k3.ctx hc2
   -- `x` and `v x²`
   refine field_seq [.mul xo.val xo.val 21, .sqr 12 xo.val, .mul 12 3 12]
-    (by rcases hxo with rfl | rfl <;> decide) hs3 b3 fun s4 k4 b4 e4 => ?_
+    (by rcases hxo with rfl | rfl <;> decide) hs3 hc3 b3 fun s4 k4 b4 e4 => ?_
   have hs4 := k4.scr hs3
+  have hc4 := k4.ctx hc3
   -- `v x² = u`
   refine WP.seq (WP.mono (eqSlots_ok hs4 b4 12 13 (by decide) (by decide) (by decide))
     fun s5 ⟨k5, b5, e5, c5⟩ => ?_)
   have hs5 := k5.scr hs4
+  have hc5 := k5.ctx hc4
   -- `-x`
   refine field_seq [.sub 12 xo.val xo.val, .sub 12 12 xo.val]
-    (by rcases hxo with rfl | rfl <;> decide) hs5 b5 fun s6 k6 b6 e6 => ?_
+    (by rcases hxo with rfl | rfl <;> decide) hs5 hc5 b5 fun s6 k6 b6 e6 => ?_
   have hs6 := k6.scr hs5
   -- the sign
   have hb128 : (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 < 2 := by
