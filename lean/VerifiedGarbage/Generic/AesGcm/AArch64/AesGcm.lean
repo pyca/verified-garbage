@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.AesGcm.AArch64.Frame
 import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on AArch64
@@ -132,7 +133,32 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := Code.all_of_forall (fun _ => rfl) _
     features := v.features }]
 
+/-- What `vg_aes_gcm_seal_gather` does: it calls `vg_aes_gcm_seal`. -/
+def gatherNote (fn : String) : String :=
+  "This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and \
+    encrypts them there in place with `" ++ fn ++ "`."
+
+/-- The instance of `vg_aes_gcm_seal` calling the implementations `v`. -/
+def sealFn (v : GcmImpl) : Proof.AesGcm.AArch64.Gather.SealFn where
+  fn := ⟨Spec.Gcm.sealApi.name ++ v.suffix,
+    Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (Impl.AesGcm.AArch64.«seal» v.callees)⟩
+  verified := seal_framed v
+  depth := Proof.AesGcm.AArch64.Gather.seal_depth v
+
+/-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
+def artifactsGather (v : GcmImpl) : List Artifact := [
+  { Spec.Gcm.sealGatherApi with
+    name := Spec.Gcm.sealGatherApi.name ++ v.suffix
+    target := AArch64.target
+    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (sealFn v).fn.name])
+    code := Impl.AesGcm.AArch64.SealGather.sealGather (sealFn v).fn
+    contract := Spec.Gcm.sealGatherContract AArch64.abi 2592
+    stack := 2592
+    verified := Proof.AesGcm.AArch64.Gather.sealGather_verified (sealFn v)
+    spSafe := Code.all_of_forall (fun _ => rfl) _
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
 
 end VG.Generic.AesGcm.AArch64.AesGcm

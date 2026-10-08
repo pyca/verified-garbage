@@ -2704,6 +2704,101 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
     )
 }
 
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2640 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #40",
+        "add r12, sp, #0",
+        "str lr, [r12, #20]",
+        "str r0, [r12, #24]",
+        "str r1, [r12, #28]",
+        "str r2, [r12, #32]",
+        "str r3, [r12, #36]",
+        "ldr lr, [r12, #40]",
+        "str lr, [r12, #0]",
+        "ldr lr, [r12, #44]",
+        "str lr, [r12, #4]",
+        "ldr lr, [r12, #56]",
+        "str lr, [r12, #8]",
+        "ldr lr, [r12, #60]",
+        "str lr, [r12, #12]",
+        "ldr lr, [r12, #64]",
+        "str lr, [r12, #16]",
+        "ldr r0, [r12, #48]",
+        "ldr r2, [r12, #56]",
+        "ldr lr, [r12, #52]",
+        "cmp lr, #0",
+        "beq 20f",
+        "22:",
+        "ldr r1, [r0, #0]",
+        "ldr r3, [r0, #4]",
+        "lsr r3, r3, #2",
+        "cmp r3, #0",
+        "beq 23f",
+        "25:",
+        "ldr r12, [r1, #0]",
+        "str r12, [r2, #0]",
+        "add r1, r1, #4",
+        "add r2, r2, #4",
+        "subs r3, r3, #1",
+        "bne 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "ldr r3, [r0, #4]",
+        "and r3, r3, #3",
+        "cmp r3, #0",
+        "beq 26f",
+        "28:",
+        "ldrb r12, [r1, #0]",
+        "strb r12, [r2, #0]",
+        "add r1, r1, #1",
+        "add r2, r2, #1",
+        "subs r3, r3, #1",
+        "bne 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "add r0, r0, #8",
+        "subs lr, lr, #1",
+        "bne 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "add r12, sp, #0",
+        "ldr r0, [r12, #24]",
+        "ldr r1, [r12, #28]",
+        "ldr r2, [r12, #32]",
+        "ldr r3, [r12, #36]",
+        "bl {vg_aes_gcm_seal}",
+        "add r12, sp, #0",
+        "ldr lr, [r12, #20]",
+        "add sp, sp, #40",
+        "bx lr",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
+    )
+}
+
 /// GHASH (NIST SP 800-38D §6.4) continued over whole blocks: with the hash subkey `H` the block at `h`, replaces the block `Y` at `*y` with `Yₙ`, where `Y₀ = Y` and `Yᵢ = (Yᵢ₋₁ ⊕ Xᵢ) • H` for the `n` 16-byte blocks `X₁ … Xₙ` starting at `data` (blocks big-endian, `•` the multiplication of §6.3).
 ///
 /// Contract: `VG.Spec.Gcm.ghashContract`. Constant time: only the pointers and `n` may affect timing, not `H`, `Y` or the data.

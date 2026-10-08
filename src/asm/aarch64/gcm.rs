@@ -3030,6 +3030,87 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify_aes(ctx: *const [u64; 3
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aes` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aes`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aes(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        ".arch_extension aes",
+        "sub sp, sp, #16",
+        "add x16, sp, #0",
+        "str x30, [x16, #8]",
+        "ldr x17, [sp, #32]",
+        "str x17, [x16, #0]",
+        "ldr x11, [sp, #16]",
+        "cbz x7, 20f",
+        "22:",
+        "ldr x12, [x6, #0]",
+        "ldr x13, [x6, #8]",
+        "add x6, x6, #16",
+        "lsr x14, x13, #4",
+        "cbz x14, 23f",
+        "25:",
+        "ldr q0, [x12, #0]",
+        "str q0, [x11, #0]",
+        "add x12, x12, #16",
+        "add x11, x11, #16",
+        "sub x14, x14, #1",
+        "cbnz x14, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "movz x15, #15, lsl #0",
+        "and x13, x13, x15",
+        "cbz x13, 26f",
+        "28:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "sub x7, x7, #1",
+        "cbnz x7, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "ldr x6, [sp, #16]",
+        "ldr x7, [sp, #24]",
+        "bl {vg_aes_gcm_seal_aes}",
+        "ldr x30, [sp, #8]",
+        "add sp, sp, #16",
+        "ret",
+        ".arch_extension noaes",
+        ".p2align 6",
+        vg_aes_gcm_seal_aes = sym super::gcm::vg_aes_gcm_seal_aes,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -5314,5 +5395,80 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_verify(ctx: *const [u64; 32], 
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, 16 bytes at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the 2592 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #16",
+        "add x16, sp, #0",
+        "str x30, [x16, #8]",
+        "ldr x17, [sp, #32]",
+        "str x17, [x16, #0]",
+        "ldr x11, [sp, #16]",
+        "cbz x7, 20f",
+        "22:",
+        "ldr x12, [x6, #0]",
+        "ldr x13, [x6, #8]",
+        "add x6, x6, #16",
+        "lsr x14, x13, #4",
+        "cbz x14, 23f",
+        "25:",
+        "ldr q0, [x12, #0]",
+        "str q0, [x11, #0]",
+        "add x12, x12, #16",
+        "add x11, x11, #16",
+        "sub x14, x14, #1",
+        "cbnz x14, 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "movz x15, #15, lsl #0",
+        "and x13, x13, x15",
+        "cbz x13, 26f",
+        "28:",
+        "ldrb w14, [x12, #0]",
+        "strb w14, [x11, #0]",
+        "add x12, x12, #1",
+        "add x11, x11, #1",
+        "sub x13, x13, #1",
+        "cbnz x13, 28b",
+        "b 27f",
+        "26:",
+        "27:",
+        "sub x7, x7, #1",
+        "cbnz x7, 22b",
+        "b 21f",
+        "20:",
+        "21:",
+        "ldr x6, [sp, #16]",
+        "ldr x7, [sp, #24]",
+        "bl {vg_aes_gcm_seal}",
+        "ldr x30, [sp, #8]",
+        "add sp, sp, #16",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }

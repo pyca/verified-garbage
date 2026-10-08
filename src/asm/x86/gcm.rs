@@ -4289,6 +4289,108 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni(ctx: *const [u64; 32], rou
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aesni` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aesni`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-48]",
+        "mov DWORD PTR [esp+36], ebx",
+        "mov DWORD PTR [esp+40], esi",
+        "mov DWORD PTR [esp+44], edi",
+        "mov eax, DWORD PTR [esp+52]",
+        "mov DWORD PTR [esp], eax",
+        "mov eax, DWORD PTR [esp+56]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+60]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+64]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+68]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+72]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+84]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov esi, DWORD PTR [esp+76]",
+        "mov ebx, DWORD PTR [esp+80]",
+        "mov edx, DWORD PTR [esp+84]",
+        "cmp ebx, 0",
+        "je 20f",
+        "22:",
+        "mov edi, DWORD PTR [esi]",
+        "mov ecx, DWORD PTR [esi+4]",
+        "shr ecx, 2",
+        "cmp ecx, 0",
+        "je 23f",
+        "25:",
+        "mov eax, DWORD PTR [edi]",
+        "mov DWORD PTR [edx], eax",
+        "add edi, 4",
+        "add edx, 4",
+        "sub ecx, 1",
+        "jne 25b",
+        "jmp 24f",
+        "23:",
+        "24:",
+        "mov ecx, DWORD PTR [esi+4]",
+        "and ecx, 3",
+        "je 26f",
+        "28:",
+        "movzx eax, BYTE PTR [edi]",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 28b",
+        "jmp 27f",
+        "26:",
+        "27:",
+        "add esi, 8",
+        "sub ebx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "call {vg_aes_gcm_seal_aesni}",
+        "mov ebx, DWORD PTR [esp+36]",
+        "mov esi, DWORD PTR [esp+40]",
+        "mov edi, DWORD PTR [esp+44]",
+        "lea esp, [esp+48]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_seal_aesni = sym super::gcm::vg_aes_gcm_seal_aesni,
+    )
+}
+
 /// The CPU features `vg_aes_gcm_init_aesni_pclmul` requires (`Artifact.features`).
 pub(crate) const VG_AES_GCM_INIT_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes"]);
 
@@ -8013,6 +8115,108 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_aesni_pclmul(ctx: *const [u64; 3
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_aesni_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_AESNI_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["aes", "pclmulqdq", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_aesni_pclmul`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_aesni_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-48]",
+        "mov DWORD PTR [esp+36], ebx",
+        "mov DWORD PTR [esp+40], esi",
+        "mov DWORD PTR [esp+44], edi",
+        "mov eax, DWORD PTR [esp+52]",
+        "mov DWORD PTR [esp], eax",
+        "mov eax, DWORD PTR [esp+56]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+60]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+64]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+68]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+72]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+84]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov esi, DWORD PTR [esp+76]",
+        "mov ebx, DWORD PTR [esp+80]",
+        "mov edx, DWORD PTR [esp+84]",
+        "cmp ebx, 0",
+        "je 20f",
+        "22:",
+        "mov edi, DWORD PTR [esi]",
+        "mov ecx, DWORD PTR [esi+4]",
+        "shr ecx, 2",
+        "cmp ecx, 0",
+        "je 23f",
+        "25:",
+        "mov eax, DWORD PTR [edi]",
+        "mov DWORD PTR [edx], eax",
+        "add edi, 4",
+        "add edx, 4",
+        "sub ecx, 1",
+        "jne 25b",
+        "jmp 24f",
+        "23:",
+        "24:",
+        "mov ecx, DWORD PTR [esi+4]",
+        "and ecx, 3",
+        "je 26f",
+        "28:",
+        "movzx eax, BYTE PTR [edi]",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 28b",
+        "jmp 27f",
+        "26:",
+        "27:",
+        "add esi, 8",
+        "sub ebx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "call {vg_aes_gcm_seal_aesni_pclmul}",
+        "mov ebx, DWORD PTR [esp+36]",
+        "mov esi, DWORD PTR [esp+40]",
+        "mov edi, DWORD PTR [esp+44]",
+        "lea esp, [esp+48]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_seal_aesni_pclmul = sym super::gcm::vg_aes_gcm_seal_aesni_pclmul,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -11733,6 +11937,108 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open_pclmul(ctx: *const [u64; 32], ro
     )
 }
 
+/// The CPU features `vg_aes_gcm_seal_gather_pclmul` requires (`Artifact.features`).
+pub(crate) const VG_AES_GCM_SEAL_GATHER_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3"]);
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal_pclmul`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather_pclmul(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-48]",
+        "mov DWORD PTR [esp+36], ebx",
+        "mov DWORD PTR [esp+40], esi",
+        "mov DWORD PTR [esp+44], edi",
+        "mov eax, DWORD PTR [esp+52]",
+        "mov DWORD PTR [esp], eax",
+        "mov eax, DWORD PTR [esp+56]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+60]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+64]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+68]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+72]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+84]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov esi, DWORD PTR [esp+76]",
+        "mov ebx, DWORD PTR [esp+80]",
+        "mov edx, DWORD PTR [esp+84]",
+        "cmp ebx, 0",
+        "je 20f",
+        "22:",
+        "mov edi, DWORD PTR [esi]",
+        "mov ecx, DWORD PTR [esi+4]",
+        "shr ecx, 2",
+        "cmp ecx, 0",
+        "je 23f",
+        "25:",
+        "mov eax, DWORD PTR [edi]",
+        "mov DWORD PTR [edx], eax",
+        "add edi, 4",
+        "add edx, 4",
+        "sub ecx, 1",
+        "jne 25b",
+        "jmp 24f",
+        "23:",
+        "24:",
+        "mov ecx, DWORD PTR [esi+4]",
+        "and ecx, 3",
+        "je 26f",
+        "28:",
+        "movzx eax, BYTE PTR [edi]",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 28b",
+        "jmp 27f",
+        "26:",
+        "27:",
+        "add esi, 8",
+        "sub ebx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "call {vg_aes_gcm_seal_pclmul}",
+        "mov ebx, DWORD PTR [esp+36]",
+        "mov esi, DWORD PTR [esp+40]",
+        "mov edi, DWORD PTR [esp+44]",
+        "lea esp, [esp+48]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_seal_pclmul = sym super::gcm::vg_aes_gcm_seal_pclmul,
+    )
+}
+
 /// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
@@ -15418,5 +15724,103 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_open(ctx: *const [u64; 32], rounds: u
         ".p2align 6",
         vg_ghash = sym super::gcm::vg_ghash,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag), out of place, of a plaintext in pieces: with the key context `*ctx` that `vg_aes_gcm_init` wrote for `rounds` rounds, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), under the IV the `nonce_len` bytes at `nonce`, writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_aes_gcm_seal` with the plaintext gathered from `src`. A shorter tag is the first bytes of this one.
+///
+/// The function checks no length. GCM is secure only for a nonce of 1 to `2^61 - 1` bytes, at most `2^36 - 32` bytes of data and at most `2^61 - 1` bytes of additional data (§5.2.1.1), which the caller must ensure; and a nonce must never be used twice with the same key.
+///
+/// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
+///
+/// This implementation copies the slices, a word at a time, one after the other to `dst`, and encrypts them there in place with `vg_aes_gcm_seal`.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 256 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src` or the slices `src` lists (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 2684 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_gather(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        "lea esp, [esp-48]",
+        "mov DWORD PTR [esp+36], ebx",
+        "mov DWORD PTR [esp+40], esi",
+        "mov DWORD PTR [esp+44], edi",
+        "mov eax, DWORD PTR [esp+52]",
+        "mov DWORD PTR [esp], eax",
+        "mov eax, DWORD PTR [esp+56]",
+        "mov DWORD PTR [esp+4], eax",
+        "mov eax, DWORD PTR [esp+60]",
+        "mov DWORD PTR [esp+8], eax",
+        "mov eax, DWORD PTR [esp+64]",
+        "mov DWORD PTR [esp+12], eax",
+        "mov eax, DWORD PTR [esp+68]",
+        "mov DWORD PTR [esp+16], eax",
+        "mov eax, DWORD PTR [esp+72]",
+        "mov DWORD PTR [esp+20], eax",
+        "mov eax, DWORD PTR [esp+84]",
+        "mov DWORD PTR [esp+24], eax",
+        "mov eax, DWORD PTR [esp+88]",
+        "mov DWORD PTR [esp+28], eax",
+        "mov eax, DWORD PTR [esp+92]",
+        "mov DWORD PTR [esp+32], eax",
+        "mov esi, DWORD PTR [esp+76]",
+        "mov ebx, DWORD PTR [esp+80]",
+        "mov edx, DWORD PTR [esp+84]",
+        "cmp ebx, 0",
+        "je 20f",
+        "22:",
+        "mov edi, DWORD PTR [esi]",
+        "mov ecx, DWORD PTR [esi+4]",
+        "shr ecx, 2",
+        "cmp ecx, 0",
+        "je 23f",
+        "25:",
+        "mov eax, DWORD PTR [edi]",
+        "mov DWORD PTR [edx], eax",
+        "add edi, 4",
+        "add edx, 4",
+        "sub ecx, 1",
+        "jne 25b",
+        "jmp 24f",
+        "23:",
+        "24:",
+        "mov ecx, DWORD PTR [esi+4]",
+        "and ecx, 3",
+        "je 26f",
+        "28:",
+        "movzx eax, BYTE PTR [edi]",
+        "mov BYTE PTR [edx], al",
+        "add edi, 1",
+        "add edx, 1",
+        "sub ecx, 1",
+        "jne 28b",
+        "jmp 27f",
+        "26:",
+        "27:",
+        "add esi, 8",
+        "sub ebx, 1",
+        "jne 22b",
+        "jmp 21f",
+        "20:",
+        "21:",
+        "call {vg_aes_gcm_seal}",
+        "mov ebx, DWORD PTR [esp+36]",
+        "mov esi, DWORD PTR [esp+40]",
+        "mov edi, DWORD PTR [esp+44]",
+        "lea esp, [esp+48]",
+        "ret",
+        ".p2align 6",
+        vg_aes_gcm_seal = sym super::gcm::vg_aes_gcm_seal,
     )
 }

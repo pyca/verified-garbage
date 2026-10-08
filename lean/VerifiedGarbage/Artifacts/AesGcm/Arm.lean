@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.Arm.Target
 import VerifiedGarbage.Proof.AesGcm.Arm.Frame
+import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on ARMv7
@@ -18,7 +19,9 @@ their two stack arguments, so uses 8 bytes of stack (`init` also calls
 `vg_aes_expand_key_scratch`, which takes no stack arguments). Every function also
 keeps its working space in a frame of its own (2560 bytes for `init`, 2576
 for `stream_init` and `stream_aad`, 2592 for the others,
-`Proof/AesGcm/Arm/Frame.lean`).
+`Proof/AesGcm/Arm/Frame.lean`). `seal_gather` copies the slices to `dst` and
+calls `vg_aes_gcm_seal` on them there, from a frame of 40 bytes
+(`Proof/AesGcm/Arm/Gather/`).
 -/
 
 namespace VG.Artifacts.AesGcm.Arm
@@ -34,6 +37,11 @@ def ghashNote : String := "This implementation calls `vg_ghash` for GHASH."
 
 /-- How the other functions are built. -/
 def callNote : String := "This implementation calls `vg_aes_ctr32` for the block cipher and `vg_ghash` for GHASH."
+
+/-- How `seal_gather` is built. -/
+def gatherNote : String :=
+  "This implementation copies the slices, a word at a time, one after the other to `dst`, and \
+    encrypts them there in place with `" ++ Spec.Gcm.sealApi.name ++ "`."
 
 def artifacts : List Artifact := [
   { Spec.Gcm.initApi with
@@ -107,6 +115,14 @@ def artifacts : List Artifact := [
     contract := Spec.Gcm.streamVerifyContract Arm.abi 2600
     stack := 2600
     verified := streamVerify_framed
+    spSafe := Code.all_of_forall (fun _ => rfl) _ },
+  { Spec.Gcm.sealGatherApi with
+    target := Arm.target
+    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote])
+    code := Impl.AesGcm.Arm.SealGather.sealGather Gather.sealFn.name Gather.sealFn.code
+    contract := Spec.Gcm.sealGatherContract Arm.abi 2640
+    stack := 2640
+    verified := Gather.sealGather_verified Gather.sealFn
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Artifacts.AesGcm.Arm

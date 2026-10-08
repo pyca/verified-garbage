@@ -1,6 +1,7 @@
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.AesGcm.X86.Frame
 import VerifiedGarbage.Proof.AesGcm.X86.GhashImpls
+import VerifiedGarbage.Proof.AesGcm.X86.Gather.Verified
 
 /-!
 # AES-GCM (NIST SP 800-38D) on x86
@@ -25,7 +26,8 @@ address (24 for `stream_init` and `stream_aad`, which call only
 copies its arguments passed on the stack: 2580 bytes for `init`, 2584 for
 `stream_init`, 2592 for `stream_aad`, 2600 for `stream_finish`, 2604 for
 `stream_encrypt`, `stream_decrypt`, `stream_verify` and `seal`, and 2608 for
-`open`.
+`open`. `seal_gather` copies the slices to `dst` and calls `seal` on them
+there, from a frame of 48 bytes (`Proof/AesGcm/X86/Gather/`).
 -/
 
 namespace VG.Generic.AesGcm.X86.AesGcm
@@ -131,7 +133,25 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (by decide) (open_spSafe v)
     features := v.features }]
 
+/-- How `seal_gather` is built. -/
+def gatherNote (fn : String) : String :=
+  "This implementation copies the slices, a word at a time, one after the other to `dst`, and \
+    encrypts them there in place with `" ++ fn ++ "`."
+
+/-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
+def artifactsGather (v : GcmImpl) : List Artifact := [
+  { Spec.Gcm.sealGatherApi with
+    name := Spec.Gcm.sealGatherApi.name ++ v.suffix
+    target := X86.target
+    doc := Spec.Gcm.sealGatherApi.doc (notes := [gatherNote (Gather.sealFn v).name])
+    code := Impl.AesGcm.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
+    contract := Spec.Gcm.sealGatherContract X86.abi 2684
+    stack := 2684
+    verified := Gather.sealGather_verified (Gather.sealFn v)
+    spSafe := Gather.sealGather_spSafe v
+    features := v.features }]
+
 /-- The artifacts of a variant, from the implementations it names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl
+def artifacts (v : GcmVariant) : List Artifact := artifactsOf v.impl ++ artifactsGather v.impl
 
 end VG.Generic.AesGcm.X86.AesGcm
