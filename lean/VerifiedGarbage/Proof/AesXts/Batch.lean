@@ -63,4 +63,24 @@ theorem crypt_eq (ciph : Spec.Cbc.Cipher) (t : List Byte) (xs : List (List Byte)
       (tweaks t xs.length) = crypt ciph t xs :=
   zipWith_eq ciph xs _
 
+/-- The blocks after a frame outside them. -/
+theorem blocksAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr} {n : Nat}
+    (hd : ∀ j < n, ∀ r ∈ rs, (⟨p + BitVec.ofNat 64 (16 * j), 16⟩ : Region).Disjoint r) :
+    Spec.Cbc.blocksAt m' p n = Spec.Cbc.blocksAt m p n := by
+  simp only [Spec.Cbc.blocksAt]
+  exact List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame hf (hd j (List.mem_range.mp hj)) (by decide)
+
+/-- The blocks after a call of a block function on all of them. -/
+theorem blocksAt_of_out {m m' : Mem} {D : Addr} {n : Nat} {g : Spec.Aes.State → Spec.Aes.State}
+    {c : List Byte → List Byte} (h : Spec.Aes.statesAt m' D n = (Spec.Aes.statesAt m D n).map g)
+    (hc : ∀ p, (g (Spec.Aes.stateAt m p)).toList = c (Spec.Aes.bytesAt m p 16)) :
+    Spec.Cbc.blocksAt m' D n = (Spec.Cbc.blocksAt m D n).map c := by
+  simp only [Spec.Cbc.blocksAt, List.map_map]
+  refine List.map_congr_left fun j hj => ?_
+  have hs := congrArg (·[j]?) h
+  simp only [Spec.Aes.statesAt, List.getElem?_map, List.getElem?_range (List.mem_range.mp hj),
+    Option.map_some, Option.some.injEq] at hs
+  simp only [Function.comp]
+  rw [Proof.AesCbc.bytesAt_toList, hs, hc]
+
 end VG.Proof.AesXts
