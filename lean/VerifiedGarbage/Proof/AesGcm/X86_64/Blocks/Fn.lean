@@ -37,9 +37,9 @@ theorem decDone_of {q : Nat} {st : State} (M : Mid s q q (blocksAt s.mem (D s) q
 
 end
 
-theorem encrypt_wp (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) {s : State}
+theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
-    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s (EncDone s) := by
+    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned) s (EncDone s) := by
   have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st →
@@ -50,9 +50,9 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) {s :
   | some p => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp p.ok h11 hg hk hf hrd hwr) fun st M =>
       WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
 
-theorem decrypt_wp (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) {s : State}
+theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
-    WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) s (DecDone s) := by
+    WP isa (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned) s (DecDone s) := by
   have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (blocksAt s.mem (D s) q) st →

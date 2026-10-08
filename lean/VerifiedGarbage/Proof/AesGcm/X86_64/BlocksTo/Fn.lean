@@ -14,9 +14,9 @@ namespace VG.Proof.AesGcm.X86_64.BlocksTo
 open VG VG.X86_64 VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode StitchToOkM)
 
-theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (st : Option (Prog isa))
+theorem encrypt_wp {M : CtxMode} (B : BlkFn M) (aligned : Bool) (st : Option (Prog isa))
     (hst : ∀ p, st = some p → StitchToOkM M p) {s : State} (hpre : Proof.AesGcm.blocksToPreM M s) :
-    WP isa (encrypt B.enc st) s (Done s) := by
+    WP isa (encrypt B.enc st aligned) s (Done s) := by
   have hp := BT.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, h10, hg, hk, hf, hrd, hwr⟩ => ?_)
   cases st with

@@ -36,13 +36,20 @@ def entry : List Instr :=
     .store (at_ .r11 argCtr) .rdx, .store (at_ .r11 argY) .rcx, .store (at_ .r11 argData) .r8,
     .store (at_ .r11 argN) .r9]
 
+/-- Leave the saved arguments intact, optionally rounding the working
+space up to a cache-line boundary. The public scratch buffer has room
+for the at most 63 bytes of padding and the 1024-byte interleaved region. -/
+def scratchSetup (aligned : Bool) : List Instr :=
+  if aligned then [.alu .add .r11 (imm 127), .alu .and .r11 (.imm (-64))]
+  else [.alu .add .r11 (imm 64)]
+
 /-- If there are at least 16 blocks, the first `16 ⌊n / 16⌋` by `piece`, with
-`r11` at the powers, `scratch + 64`. -/
-def stitchPart (piece : Prog isa) : Prog isa :=
+`r11` at the powers, `scratch + 64`, rounded up to 64 bytes when `aligned`. -/
+def stitchPart (piece : Prog isa) (aligned : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
     (.ite .b (.block [])
-      (.seq (.block [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax),
-        .alu .add .r11 (imm 64)]) piece))
+      (.seq (.block ([.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)] ++
+        scratchSetup aligned)) piece))
 
 /-- The arguments of the rest: `n mod 16` blocks after the first
 `16 ⌊n / 16⌋`. -/
@@ -75,17 +82,18 @@ def ctrCall : Prog isa := .seq (.block ctrArgs) (.call ctr.name ctr.code)
 def ghCall : Prog isa := .seq (.block ghArgs) (.call gh.name gh.code)
 
 /-- The first blocks by `piece`, if any, then the rest. -/
-def head : Option (Prog isa) → Prog isa
-  | some piece => .seq (stitchPart piece) (.block rest)
+def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
+  match piece with
+  | some piece => .seq (stitchPart piece aligned) (.block rest)
   | none => .block []
 
-def blocks (piece : Option (Prog isa)) (first second : Prog isa) : Prog isa :=
-  .seq (.block entry) (.seq (head piece) (tail first second))
+def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) : Prog isa :=
+  .seq (.block entry) (.seq (head piece aligned) (tail first second))
 
 /-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any. -/
-def encrypt (piece : Option (Prog isa)) : Prog isa := blocks piece (ctrCall ctr) (ghCall gh)
+def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa := blocks piece (ctrCall ctr) (ghCall gh) aligned
 
 /-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any. -/
-def decrypt (piece : Option (Prog isa)) : Prog isa := blocks piece (ghCall gh) (ctrCall ctr)
+def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa := blocks piece (ghCall gh) (ctrCall ctr) aligned
 
 end VG.Impl.AesGcm.X86_64.Blocks

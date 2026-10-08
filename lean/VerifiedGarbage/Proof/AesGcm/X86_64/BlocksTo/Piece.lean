@@ -18,7 +18,7 @@ open VG VG.X86_64 VG.Impl.AesGcm.X86_64
 /-- What `BlocksTo.stitchPart` needs of the loops `code` it runs, besides
 their contract: no write of `mxcsr` or `rsp`, no calls, and constant time,
 from the registers it keeps public (the output in `r10`). -/
-structure PieceTo (code : Prog isa) : Prop where
+structure PieceTo (code : Prog isa) (aligned : Bool := false) : Prop where
   mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
   nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
@@ -26,15 +26,15 @@ structure PieceTo (code : Prog isa) : Prop where
   /-- It uses no stack. -/
   xdepth : code.x86_64Depth = 0
   ct : ∃ hc, ((taint.check (Taint.ofRegs [.r10, .r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
-    (BlocksTo.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
+    (BlocksTo.stitchPart code aligned) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
       (!false || τ'.flags)) = some true
 
 open Gcm.X86_64.Stitch (CtxMode StitchToOkM) in
 /-- Out-of-place interleaved loops for a key context of kind `M`, with their
 proof. -/
-structure StitchToCode (M : CtxMode) where
+structure StitchToCode (M : CtxMode) (aligned : Bool := false) where
   enc : Prog isa
   ok : StitchToOkM M enc
-  P : PieceTo enc
+  P : PieceTo enc aligned
 
 end VG.Proof.AesGcm.X86_64

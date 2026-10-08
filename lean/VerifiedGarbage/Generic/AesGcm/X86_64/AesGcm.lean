@@ -1,3 +1,10 @@
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.InitVerified
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.BlocksTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Gather
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.StreamCallee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherCallee
+import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.Short
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.VerifiedP
@@ -62,7 +69,10 @@ The variants whose interleaved loops can read the powers `H¹ … H⁴⁸` of th
 hash subkey from a key context of `vg_aes_gcm_init_precomputed`
 (`Spec/Gcm/Precomputed.lean`) instead of computing them on every call
 (`StitchPart.pieceP`, so far only `StitchZP`'s, on 512-bit registers) also
-have the `_precomputed` functions (`artifactsP`): `init_precomputed`, which
+have cached-context functions: `_prepared` (`artifactsR`) when their loops
+support prepared pairs (`StitchPart.pieceR`), otherwise `_precomputed`
+(`artifactsP`). Prepared initialization converts the powers once; its loops
+load the encoded pairs directly and align their working tables to 64 bytes. The precomputed functions are: `init_precomputed`, which
 is `init` followed by the powers, computed one at a time with `vg_ghash`
 (`InitP.lean`), and `seal`, `open`, `stream_encrypt`, `stream_decrypt` and
 the whole-blocks functions for that key context, with the same stack and
@@ -136,6 +146,23 @@ def GcmVariant.stitchToP (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_6
 def GcmVariant.impl (v : GcmVariant) : GcmImpl :=
   ⟨v.ctr, v.key, v.gh.impl, v.stitch.map StitchPart.impl, v.stitch.bind StitchPart.implP,
     v.stitch.any (·.name.short)⟩
+
+/-- Prepared-context versions of each named interleaved loop. -/
+theorem StitchName.okR : (n : StitchName) →
+    Proof.Gcm.X86_64.Stitch.StitchOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR n.decR
+  | .vaes => Proof.Gcm.X86_64.Stitch.stitch_ok.toM _
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitch_ok
+  | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
+
+def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
+  v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.okR, q.enc, q.dec⟩
+
+theorem StitchToName.okR : (n : StitchToName) →
+    Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
+  | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchTo_ok
+
+def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
+  (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.okR, q.enc⟩
 
 end VG.Proof.AesGcm.X86_64
 
@@ -436,7 +463,7 @@ def artifactsTo (v : GcmVariant) : List Artifact :=
     verified := StreamTo.streamEncryptTo_framed (blkTo v) (encFn v.impl)
     spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkTo v) (encFn v.impl))
     features := v.impl.features }] ++
-  if v.impl.stitchP.isSome then
+  if v.impl.stitchP.isSome && v.stitchR.isNone then
     [{ Spec.Gcm.encryptBlocksToPrecomputedApi with
       name := Spec.Gcm.encryptBlocksToPrecomputedApi.name ++ v.impl.suffix
       target := X86_64.target
@@ -526,7 +553,7 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
     spSafe := X86_64.withStackArgScratch_spSafe
       (Gather.sealGather_spAll (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
     features := v.impl.features }] ++
-  if v.impl.stitchP.isSome then
+  if v.impl.stitchP.isSome && v.stitchR.isNone then
     [{ Spec.Gcm.sealGatherPrecomputedApi with
       name := Spec.Gcm.sealGatherPrecomputedApi.name ++ v.impl.suffix
       target := X86_64.target
@@ -542,10 +569,153 @@ def artifactsGather (v : GcmVariant) : List Artifact :=
       features := v.impl.features }]
   else []
 
-/-- The artifacts of a variant, from the implementations it names: the
-`_precomputed` ones too if its loops read the powers from the key context. -/
+/-- Prepared whole-block implementations, propagated through all callers. -/
+def blkR (v : GcmVariant) : BlkFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  v.impl.blkM v.stitchR (Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix)
+    (Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix)
+
+def artifactsR (v : GcmVariant) : List Artifact := [
+  { Spec.Gcm.initPreparedApi with
+    name := Spec.Gcm.initPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.initPreparedApi.doc (notes := [initNoteP v.impl])
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.Prepared.init v.impl.callees)
+    contract := Spec.Gcm.initPreparedContract X86_64.abi 2576
+    stack := 2576
+    verified := initPrepared_framed v.impl
+    spSafe := X86_64.withStackScratch_spSafe (by decide) (initPrepared_spSafe v.impl)
+    features := (v.impl.ctr.features ++ v.impl.key.features ++ v.impl.gh.features ++ ["avx2"]).dedup },
+  { Spec.Gcm.encryptBlocksPreparedApi with
+    name := Spec.Gcm.encryptBlocksPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.encryptBlocksPreparedApi.doc (notes := [blocksNoteP v.impl])
+    code := (blkR v).enc.code
+    contract := Spec.Gcm.encryptBlocksPreparedContract X86_64.abi 8
+    stack := 8
+    verified := encryptBlocksPrepared_verified v.impl v.stitchR
+    spSafe := (blkR v).encSp
+    features := v.impl.features },
+  { Spec.Gcm.decryptBlocksPreparedApi with
+    name := Spec.Gcm.decryptBlocksPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.decryptBlocksPreparedApi.doc (notes := [blocksNoteP v.impl])
+    code := (blkR v).dec.code
+    contract := Spec.Gcm.decryptBlocksPreparedContract X86_64.abi 8
+    stack := 8
+    verified := decryptBlocksPrepared_verified v.impl v.stitchR
+    spSafe := (blkR v).decSp
+    features := v.impl.features },
+  { Spec.Gcm.sealPreparedApi with
+    name := Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.sealPreparedApi.doc (notes := note v.impl :: shortNote v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode (v.impl.withBlk (blkR v)))
+    contract := Spec.Gcm.sealPreparedContract X86_64.abi 2624
+    stack := 2624
+    verified := sealSelPrepared_framed v.impl (blkR v) Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl (blkR v))
+    features := v.impl.features },
+  { Spec.Gcm.openPreparedApi with
+    name := Spec.Gcm.openPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.openPreparedApi.doc (notes := note v.impl :: shortNote v.impl)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode (v.impl.withBlk (blkR v)))
+    contract := Spec.Gcm.openPreparedContract X86_64.abi 2632
+    stack := 2632
+    verified := openSelPrepared_framed v.impl (blkR v) Short.shortFacts
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl (blkR v))
+    features := v.impl.features },
+  { Spec.Gcm.streamEncryptPreparedApi with
+    name := Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.streamEncryptPreparedApi.doc (notes := [note v.impl])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))
+    contract := Spec.Gcm.streamEncryptPreparedContract X86_64.abi 2608
+    stack := 2608
+    verified := streamEncryptPrepared_framed v.impl (blkR v)
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v))
+    features := v.impl.features },
+  { Spec.Gcm.streamDecryptPreparedApi with
+    name := Spec.Gcm.streamDecryptPreparedApi.name ++ v.impl.suffix
+    target := X86_64.target
+    doc := Spec.Gcm.streamDecryptPreparedApi.doc (notes := [note v.impl])
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR v)))
+    contract := Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608
+    stack := 2608
+    verified := streamDecryptPrepared_framed v.impl (blkR v)
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v))
+    features := v.impl.features }]
+
+
+def blkToR (v : GcmVariant) : StreamTo.BlkToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofBlocks (Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix) (blkR v) v.stitchToR
+
+
+def encFnR (v : GcmVariant) : StreamTo.EncFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+        (Impl.AesGcm.X86_64.streamEncrypt (v.impl.withBlk (blkR v)))⟩
+    (streamEncryptPrepared_framed v.impl (blkR v)) (X86_64.withStackArgScratch_spSafe (streamEncryptM_spSafe v.impl (blkR v)))
+    (StreamTo.framed_xdepth (streamEncryptM_xdepth v.impl (blkR v))) (StreamTo.framed_mx (streamEncryptM_mx v.impl (blkR v)))
+
+
+def toFnR (v : GcmVariant) : Gather.ToFn Proof.Gcm.X86_64.Stitch.CtxMode.prepared :=
+  .ofPrepared ⟨Spec.Gcm.streamEncryptToPreparedApi.name ++ v.impl.suffix,
+      Impl.StackScratch.X86_64.withStackArgScratch 2232 3
+        (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR v).fn (encFnR v).fn)⟩
+    (StreamTo.streamEncryptToPrepared_framed (blkToR v) (encFnR v))
+    (X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToR v) (encFnR v)))
+    (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToR v) (encFnR v)))
+    (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToR v) (encFnR v)))
+
+
+def artifactsToR (v : GcmVariant) : List Artifact :=
+  [{ Spec.Gcm.encryptBlocksToPreparedApi with
+      name := Spec.Gcm.encryptBlocksToPreparedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
+        (notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name])
+      code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true
+      contract := Spec.Gcm.encryptBlocksToPreparedContract X86_64.abi 24
+      stack := 24
+      verified := encryptBlocksToPrepared_verified (blkR v) v.stitchToR
+      spSafe := encryptTo_spSafe v.stitchToR (blkR v)
+      features := v.impl.features },
+    { Spec.Gcm.streamEncryptToPreparedApi with
+      name := Spec.Gcm.streamEncryptToPreparedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.streamEncryptToPreparedApi.doc
+        (notes := [streamToNote (blkToR v).fn.name (encFnR v).fn.name])
+      code := Impl.StackScratch.X86_64.withStackArgScratch 2232 3
+        (Impl.AesGcm.X86_64.StreamTo.encrypt (blkToR v).fn (encFnR v).fn)
+      contract := Spec.Gcm.streamEncryptToPreparedContract X86_64.abi 4856
+      stack := 4856
+      verified := StreamTo.streamEncryptToPrepared_framed (blkToR v) (encFnR v)
+      spSafe := X86_64.withStackArgScratch_spSafe (StreamTo.encrypt_spAll (blkToR v) (encFnR v))
+      features := v.impl.features }]
+
+def artifactsGatherR (v : GcmVariant) : List Artifact :=
+  [{ Spec.Gcm.sealGatherPreparedApi with
+      name := Spec.Gcm.sealGatherPreparedApi.name ++ v.impl.suffix
+      target := X86_64.target
+      doc := Spec.Gcm.sealGatherPreparedApi.doc (notes := [gatherNote (toFnR v).fn.name])
+      code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
+        (Impl.AesGcm.X86_64.SealGather.sealGather (initFn v.impl).fn (aadFn v.impl).fn (toFnR v).fn
+          (finFn v.impl).fn)
+      contract := Spec.Gcm.sealGatherPreparedContract X86_64.abi 5128
+      stack := 5128
+      verified := Gather.sealGatherPrepared_framed (initFn v.impl) (aadFn v.impl) (toFnR v) (finFn v.impl)
+      spSafe := X86_64.withStackArgScratch_spSafe
+        (Gather.sealGather_spAll (initFn v.impl) (aadFn v.impl) (toFnR v) (finFn v.impl))
+      features := v.impl.features }]
+
+/-- Artifacts propagate the context format supported by each variant: prepared
+powers when available, otherwise raw precomputed powers. -/
 def artifacts (v : GcmVariant) : List Artifact :=
-  artifactsOf v.impl ++ (if v.impl.stitchP.isSome then artifactsP v.impl else []) ++ artifactsTo v ++
-    artifactsGather v
+  artifactsOf v.impl ++ (if v.impl.stitchP.isSome && v.stitchR.isNone then artifactsP v.impl else []) ++ artifactsTo v ++
+    artifactsGather v ++
+    (if v.stitchR.isSome then artifactsR v ++ artifactsToR v ++ artifactsGatherR v else [])
 
 end VG.Generic.AesGcm.X86_64.AesGcm

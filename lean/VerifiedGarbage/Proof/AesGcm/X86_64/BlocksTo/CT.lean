@@ -208,9 +208,9 @@ theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.
     (fun _ _ h => h) (fun s h => by subst h; exact entry_ok hp) (fun s h => by subst h; exact entry_ok hp')
 
 /-- The interleaved part (or nothing) and `rest`, in two runs. -/
-theorem part_rel (st : Option (StitchToCode M)) :
+theorem part_rel {aligned : Bool} (st : Option (StitchToCode M aligned)) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-      (head (st.map (·.enc)))
+      (head (st.map (·.enc)) aligned)
       fun s₁ s₂ => ∃ q, Mid s₀ q q s₁ ∧ Mid s₀' q q s₂ := by
   have me : ∀ (s s₁ : State), BT M s → EntryPost s s₁ → Mid s 0 0 s₁ := fun s s₁ hp h => by
     obtain ⟨_, _, g₁, k₁, f₁, rd₁, wr₁⟩ := h
@@ -299,9 +299,9 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
 
 end
 
-theorem encrypt_ct {M : CtxMode} (B : BlkFn M) (st : Option (StitchToCode M)) :
+theorem encrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.encryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
-      (encrypt B.enc (st.map (·.enc))) := by
+      (encrypt B.enc (st.map (·.enc)) aligned) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BT.ofM h
   have hp' := BT.ofM h'

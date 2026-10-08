@@ -352,7 +352,7 @@ theorem key_rel (k : KeyImpl) {P : State → State → Prop}
 /-- What `Blocks.stitchPart` needs of the loops `code` it runs, besides
 their contract: no write of `mxcsr` or `rsp`, no calls, and constant time,
 from the registers it keeps public. -/
-structure Piece (code : Prog isa) : Prop where
+structure Piece (code : Prog isa) (aligned : Bool := false) : Prop where
   mxcsr : code.allInstrs (fun i => !loadsMxcsr i) = true
   spSafe : code.all (fun i => !X86_64.isa.writesSp i) = true
   nosp : code.allInstrs (fun i => !Taint.clobbers i .rsp) = true
@@ -360,7 +360,7 @@ structure Piece (code : Prog isa) : Prop where
   /-- It uses no stack. -/
   xdepth : code.x86_64Depth = 0
   ct : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
-    (Blocks.stitchPart code) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
+    (Blocks.stitchPart code aligned) hc).map fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs &&
       (!false || τ'.flags)) = some true
 
 /-- Loops that interleave counter mode and GHASH on groups of 16 blocks, for
@@ -381,12 +381,12 @@ structure StitchImpl where
 
 open Gcm.X86_64.Stitch (CtxMode StitchOkM) in
 /-- Loops for a key context of kind `M`, with their proof. -/
-structure StitchCode (M : CtxMode) where
+structure StitchCode (M : CtxMode) (aligned : Bool := false) where
   enc : Prog isa
   dec : Prog isa
   ok : StitchOkM M enc dec
-  encP : Piece enc
-  decP : Piece dec
+  encP : Piece enc aligned
+  decP : Piece dec aligned
 
 open Gcm.X86_64.Stitch (CtxMode) in
 /-- The loops `st`, for a key context of kind `M` (they read only its first
@@ -396,27 +396,27 @@ def StitchImpl.code (st : StitchImpl) (M : CtxMode) : StitchCode M :=
 
 namespace StitchImpl
 
-variable {α : Type} (st : Option α) {f : α → Prog isa} (hf : ∀ i, Piece (f i))
+variable {aligned : Bool} {α : Type} (st : Option α) {f : α → Prog isa} (hf : ∀ i, Piece (f i) aligned)
 include hf
 
-theorem head_mxcsr : (Blocks.head (st.map f)).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases st with _ | i <;>
+theorem head_mxcsr : (Blocks.head (st.map f) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases aligned <;> rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).mxcsr] <;> decide
 
-theorem head_spSafe : (Blocks.head (st.map f)).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases st with _ | i <;>
+theorem head_spSafe : (Blocks.head (st.map f) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
+  cases aligned <;> rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.all, (hf _).spSafe] <;> decide
 
-theorem head_nosp : (Blocks.head (st.map f)).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
-  rcases st with _ | i <;>
+theorem head_nosp : (Blocks.head (st.map f) aligned).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
+  cases aligned <;> rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.allInstrs, (hf _).nosp] <;> decide
 
-theorem head_depth : (Blocks.head (st.map f)).depth = 0 := by
-  rcases st with _ | i <;>
+theorem head_depth : (Blocks.head (st.map f) aligned).depth = 0 := by
+  cases aligned <;> rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.depth, (hf _).depth] <;> decide
 
-theorem head_xdepth : (Blocks.head (st.map f)).x86_64Depth = 0 := by
-  rcases st with _ | i <;>
+theorem head_xdepth : (Blocks.head (st.map f) aligned).x86_64Depth = 0 := by
+  cases aligned <;> rcases st with _ | i <;>
   simp only [Option.map, Blocks.head, Blocks.stitchPart, Code.x86_64Depth, (hf _).xdepth] <;> decide
 
 end StitchImpl

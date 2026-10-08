@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
@@ -59,6 +60,16 @@ def decP : StitchName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZP.dec
   | n => n.dec
 
+/-- Encryption using a prepared context, if supported by the variant. -/
+def encR : StitchName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.enc
+  | n => n.enc
+
+/-- Decryption using a prepared context. -/
+def decR : StitchName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.dec
+  | n => n.dec
+
 /-- Whether `seal` and `open` calling the loops named `n` take the short path
 for short inputs (`GcmImpl.short`): the loops on 512-bit registers, whose
 CPU features it needs. -/
@@ -73,6 +84,11 @@ end StitchName
 structure PieceP (n : StitchName) : Type where
   enc : Piece n.encP
   dec : Piece n.decP
+
+/-- Static and constant-time facts for prepared-context loops. -/
+structure PieceR (n : StitchName) : Type where
+  enc : Piece n.encR true
+  dec : Piece n.decR true
 
 /-- Interleaved loops that encrypt out of place, for
 `vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic
@@ -91,12 +107,20 @@ def enc : StitchToName → Prog isa
 def encP : StitchToName → Prog isa
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.encP
 
+/-- Out-of-place encryption using a prepared context. -/
+def encR : StitchToName → Prog isa
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encP
+
 end StitchToName
 
 /-- The facts `PieceTo` states of the loop named `n` for a key context of
 `vg_aes_gcm_init_precomputed`. -/
 structure PieceToP (n : StitchToName) : Type where
   enc : PieceTo n.encP
+
+/-- Static and constant-time facts for a prepared out-of-place loop. -/
+structure PieceToR (n : StitchToName) : Type where
+  enc : PieceTo n.encR true
 
 /-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
 of those for a key context of `vg_aes_gcm_init_precomputed`, if they read
@@ -105,6 +129,7 @@ structure StitchToPart where
   name : StitchToName
   piece : PieceTo name.enc
   pieceP : Option (PieceToP name) := none
+  pieceR : Option (PieceToR name) := none
 
 /-- A `StitchImpl` with its loops named, and so without their proof of
 `StitchOk` (`StitchName.ok`). -/
@@ -122,6 +147,8 @@ structure StitchPart where
   hash subkey from it (`none`: the `_precomputed` functions are not built
   for this variant). -/
   pieceP : Option (PieceP name) := none
+  /-- Prepared-context loops, with the same CPU features. -/
+  pieceR : Option (PieceR name) := none
   /-- The loops that encrypt out of place for `vg_aes_gcm_encrypt_blocks_to`,
   with the same CPU features (`none`: it copies the blocks to the output and
   encrypts them there). -/
