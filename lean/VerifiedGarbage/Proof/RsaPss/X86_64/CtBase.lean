@@ -93,7 +93,7 @@ theorem two_pub0 {α : Type} {Φ : α → State → Prop} {c : Prog isa} (n : Na
   obtain ⟨sp₂, w₂, r₂⟩ := hΦ a _ h₂
   refine ⟨⟨fun r hr' => ?_, fun hf => by cases hf⟩, fun _ => by rw [w₁, w₂], wf_of sp₁ w₁ (hR a _ h₁) _ _,
     wf_of sp₂ w₂ (hR a _ h₁) _ _, fun sl hsl => by simp [pT] at hsl, fun sl hsl => by simp [pT] at hsl,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   rcases List.mem_append.mp (RegSet.mem_ofList.mp hr') with hr' | hr'
   · rw [← hr a] at hr'
     obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr'
@@ -106,7 +106,7 @@ theorem pub_agree {F S : Addr} {rest : List Region} {ws : List (Nat × BitVec 64
     (h₁ : Pub F S rest ws rs X₁ t₁) (h₂ : Pub F S rest ws rs X₂ t₂) (hr : RestOk n F rest)
     (hks : ∀ p ∈ ws, p.1 < nW) : X86_64.Taint.Agree (pT n (ws.map Prod.fst) (rs.map Prod.fst)) t₁ t₂ := by
   refine ⟨⟨fun r hr' => ?_, fun hf => by cases hf⟩, fun _ => by rw [h₁.wr, h₂.wr], pub_wf h₁ hr _ _,
-    pub_wf h₂ hr _ _, fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo⟩
+    pub_wf h₂ hr _ _, fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr') with hr' | hr'
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr'
       rw [h₁.regs p hp, h₂.regs p hp]

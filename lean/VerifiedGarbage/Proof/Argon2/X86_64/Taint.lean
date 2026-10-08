@@ -78,7 +78,7 @@ theorem initial_agree {s t : State} (hs : compressLocal.pre s) (ht : compressLoc
     · simp only [initialTaint, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ hs, wf _ ht,
-    ?_, ?_, ?_⟩
+    ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · simp only [initialTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   · rw [hs.2.1, ht.2.1, p3, p4]

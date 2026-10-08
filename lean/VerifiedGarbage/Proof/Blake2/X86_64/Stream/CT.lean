@@ -74,7 +74,7 @@ theorem init_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (initX86_64 P).pre s�
     simp only [τInit, List.mem_cons, List.not_mem_nil, or_false] at hp
     subst hp; simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τInit, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1]
@@ -93,7 +93,7 @@ theorem update_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (updateX86_64 P).pr
     simp only [τUpdate, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p5]
@@ -112,7 +112,7 @@ theorem finalize_agree (hP : Ok P) {s₁ s₂ : State} (h₁ : (finalizeX86_64 P
     simp only [τFinalize, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [X86_64.Taint.region, hw]
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_,
-    X86_64.Taint.noLo⟩
+    X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p1, p3, p4]

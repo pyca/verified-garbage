@@ -59,7 +59,7 @@ theorem both_agree {K W SP : Addr} {R : Nat} {N A D : Addr} {al n : Nat} {rs : L
       simp only [X86_64.Taint.region, hw, List.getD_cons_succ, List.getD_cons_zero]
       rw [E.r15, BitVec.add_zero]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h.o₁.wr, h.o₂.wr], wf h.o₁.env h.o₁.wr,
-    wf h.o₂.env h.o₂.wr, fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo⟩
+    wf h.o₂.env h.o₂.wr, fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with hr | hr
     · exact h.agree r hr
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

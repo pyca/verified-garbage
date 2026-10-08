@@ -42,7 +42,7 @@ theorem init_agree {s₁ s₂ : State} (h₁ : initX86_64.pre s₁) (h₂ : init
     refine ⟨fun _ => ⟨by simp [hw, τInit], by simp [hw, d3], by simp [hw]⟩, fun p hp => ?_⟩
     simp only [τInit, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw]
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τInit, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p3, p4]
@@ -58,7 +58,7 @@ theorem update_agree {s₁ s₂ : State} (h₁ : updateX86_64.pre s₁) (h₂ : 
     refine ⟨fun _ => ⟨by simp [hw, τUpdate], by simp [hw, d5], by simp [hw]⟩, fun p hp => ?_⟩
     simp only [τUpdate, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw]
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τUpdate, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p2, p5]
@@ -74,7 +74,7 @@ theorem finalize_agree {s₁ s₂ : State} (h₁ : finalizeX86_64.pre s₁) (h�
     refine ⟨fun _ => ⟨by simp [hw, τFinalize], by simp [hw, d5], by simp [hw]⟩, fun p hp => ?_⟩
     simp only [τFinalize, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl <;> simp [X86_64.Taint.region, hw]
-  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo⟩
+  refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, wf _ h₁, wf _ h₂, ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τFinalize, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
   · rw [h₁.2.1, h₂.2.1, p2, p5]

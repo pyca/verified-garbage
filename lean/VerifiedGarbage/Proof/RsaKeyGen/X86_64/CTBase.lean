@@ -57,7 +57,7 @@ theorem kT_agree {B : Addr} {wr : List Region} {vs : List (Nat × BitVec 64)} {r
   have hb : ∀ {s : State}, HP B wr vs s → ∀ k, VG.X86_64.Taint.byteAddr s 2 k = B + BitVec.ofNat 64 k := fun h k => by
     simp only [VG.X86_64.Taint.byteAddr, VG.X86_64.Taint.region, h.wr, hw, List.getD_cons_succ, List.getD_cons_zero]
   refine ⟨⟨fun r hr => ?_, fun hf => by cases hf⟩, fun _ => by rw [h₁.wr, h₂.wr], wf h₁, wf h₂,
-    fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, VG.X86_64.Taint.noLo⟩
+    fun sl hsl => ?_, fun sl hsl k hk₁ hk₂ => ?_, VG.X86_64.Taint.noLo, VG.X86_64.Taint.noXr⟩
   · rcases List.mem_append.mp (RegSet.mem_ofList.mp hr) with h | h
     · exact hr' r h
     · simp only [List.mem_singleton] at h; subst h; rw [h₁.rdi, h₂.rdi]

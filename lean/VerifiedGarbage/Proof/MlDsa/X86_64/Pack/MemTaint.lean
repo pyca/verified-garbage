@@ -67,7 +67,7 @@ theorem agree_insert {τ : T} {s₁ s₂ : State} (ha : X86_64.Taint.Agree τ s�
   ⟨⟨fun r hr => by
       rcases RegSet.mem_insert.mp hr with rfl | hr
       · exact hd
-      · exact ha.rf.1 r hr, ha.rf.2⟩, ha.wr, ha.wf₁, ha.wf₂, ha.ok, ha.slots, ha.lo⟩
+      · exact ha.rf.1 r hr, ha.rf.2⟩, ha.wr, ha.wf₁, ha.wf₂, ha.ok, ha.slots, ha.lo, ha.xr⟩
 
 theorem memPub_of_step {τ τ' : T} {i : Instr} {d : Reg} {m : MemOp}
     (hi : i = .movzx8 d m ∨ i = .mov32 d (.mem m)) (hs : X86_64.Taint.step τ i = some τ') :
