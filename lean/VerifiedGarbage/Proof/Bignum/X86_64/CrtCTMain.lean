@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTDefs
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtMain
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 
 /-!
 # RSA with the CRT on x86-64: `main` in constant time
@@ -115,7 +116,7 @@ def RB : StageRel := fun p _ _ _ _ _ _ _ t => ∃ minv, Good t p.B p.Z p.w minv
 /-- `n`'s setup leaks the same in runs that agree on `n`. -/
 theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
   rw [nSetup_eq]
-  refine RelCT.seqs_append (by simp [loadSteps]) (by simp [r2Steps]) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
+  refine RelCT.seqs_append (by simp [loadSteps]) (by simp) (RelCT.seq (R := Two (Stage RA)) ?_ ?_)
   · refine stage_step (((RelCT.seqs_append (by simp [loadSteps]) (by simp [restSteps, restStepsWith])
       (RelCT.seq setupLoad_ct (two_map (fun p : SPub => (⟨p.B, p.Z, p.w⟩ : RPub)) (fun _ _ h => h.sr)
         setupRest_ct))).mono (fun _ _ h => two_bind (fun (p : CrtPub) _ _ h₁ h₂ =>
@@ -128,8 +129,8 @@ theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) f
     have hZq := h.z
     exact WP.mono (setup_ok h.scr h.rdi (by unfold offQ at hZq; omega) (by omega) (by omega) h.hK h.hN h.hIn
       h.n h.x h.nl h.xl hodd) fun t ⟨minv, so, _⟩ => ⟨minv, so⟩
-  refine RelCT.seqs_append (by simp [r2Steps]) (by simp) (RelCT.seq (R := Two (Stage RB)) ?_ ?_)
-  · refine stage_step ((r2_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
+  refine RelCT.seqs_append (by simp) (by simp) (RelCT.seq (R := Two (Stage RB)) ?_ ?_)
+  · refine stage_step ((R2w.choice_ct M).mono (fun _ _ h => two_bind (fun p t₁ t₂ h₁ h₂ => ?_) h) fun _ _ h => h) ?_
     · obtain ⟨σ₁, xb₁, _, _, _, _, _, h₁, hv, mi₁, so₁⟩ := h₁
       obtain ⟨σ₂, xb₂, _, _, _, _, _, _, _, mi₂, so₂⟩ := h₂
       obtain ⟨hodd, -, hlo⟩ := valid_facts hv h₁.k1
@@ -148,7 +149,7 @@ theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) f
       have := h.k1
       have := h.k2
       have hZq := h.z
-      exact WP.mono (r2_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega) (by unfold CrtPub.w; omega)
+      exact WP.mono (R2w.choice_ok M so.good (by unfold CrtPub.w; unfold offQ at hZq; omega) (by unfold CrtPub.w; omega)
         (by unfold CrtPub.w; omega) so.n so.inv so.r12 so.r10 hodd hlo) fun t' ⟨hg, _⟩ => ⟨minv, hg⟩
   simp only [seqs]
   exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun p t ⟨_, _, _, _, _, _, _, h, _, minv, hg⟩ => by

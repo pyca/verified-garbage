@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtChk
 import VerifiedGarbage.Proof.Bignum.X86_64.PubMain
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 import VerifiedGarbage.Proof.Bignum.CrtHdr
 
 /-!
@@ -78,7 +79,7 @@ structure CrtReady (s t : State) (B : Addr) (Z w pl ql : Nat) (minv mp mq : BitV
   keep : Keep mmRegs s t
 
 theorem nSetup_eq (M : Mont) : nSetup M.mm =
-    (loadSteps ++ restSteps) ++ (r2Steps M ++ [M.mm Public.aXm Public.aX Public.aR2]) := rfl
+    (loadSteps ++ restSteps) ++ ([R2Words.choice M.mm] ++ [M.mm Public.aXm Public.aX Public.aR2]) := rfl
 
 /-- After `n`'s setup: its values, `c R mod n` and the mask of `c < n`. -/
 structure NReady (s t : State) (B : Addr) (Z w : Nat) (minv : BitVec 64) (N C : Nat) : Prop where
@@ -108,12 +109,12 @@ theorem nPart_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp d
     fun h' r hr => (h' r hr).trans hZ
   rw [nSetup_eq]
   -- The modulus, the input, `-n⁻¹`, 1 and the mask of `c < n`.
-  refine wp_seqs_append (by simp [loadSteps]) (by simp [r2Steps])
+  refine wp_seqs_append (by simp [loadSteps]) (by simp)
     (WP.mono (setup_ok h.scr h.rdi hZ (by omega) (by omega) h.hK h.hN h.hIn h.n h.x h.nl h.xl hodd)
       fun t₁ ⟨minv, so, f₁, k₁⟩ => ?_)
   -- `R² mod n`.
-  refine wp_seqs_append (by simp [r2Steps]) (by simp)
-    (WP.mono (r2_ok M so.good hZ (by omega) (by omega) so.n so.inv so.r12 so.r10 hodd hlo)
+  refine wp_seqs_append (by simp) (by simp)
+    (WP.mono (R2w.choice_ok M so.good hZ (by omega) (by omega) so.n so.inv so.r12 so.r10 hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have hX₂ : wv t₂.mem B (slot ((k + 7) / 8) Public.aX) ((k + 7) / 8) = Spec.Rsa.os2ip xb := by
     rw [f₂.r2_wv hn' (by decide) (by decide) (by decide) (by decide)]; exact so.x
