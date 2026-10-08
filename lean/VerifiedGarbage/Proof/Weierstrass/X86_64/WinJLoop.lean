@@ -322,12 +322,12 @@ theorem stepLast_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : 
 
 /-- `[k - 8 Σ_{i<J} 16^i]P` into `R`, for `8 Σ_{i<J} 16^i ≤ k < 16^J` whose bits
 are the table at `K.bits`, by windows in Jacobian coordinates: for `P ≠ O`
-on a curve whose points all have order `n` (`OrdN`), with
+on a curve of prime order `n` (`PrimeOrder`), with
 `16 winE k J 2 + 8 < n` (so that no addition but the last is of equal or
 opposite points); only `powClob` and `winW` change. -/
 theorem windowJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hX : WinX K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
-    (hO : OrdN C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
+    (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s : State} (hs : Scr s base size)
     (hM : ModOkW K.M size C.p s.mem base) (hF : WinFixed K C base s P k) (hk : k < 16 ^ K.J)

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Ecdsa.X86_64
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
@@ -142,11 +143,9 @@ def maskK : List Instr :=
   else []
 
 /-- `[d]P` into `R`, for `d` at `K` and `P` at `PX`, `PY`, `ONEP`: by windows for
-up to nine words (`d` reduced below `2^nbits` first; in Jacobian coordinates
-for `jacWin`), else by the ladder. -/
+up to nine words (`d` reduced below `2^nbits` first), else by the ladder. -/
 def mulQ : Prog isa :=
-  if c.n ≤ 9 then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K))
-    (if c.jacWin then WinCfg.windowJ (c.winCfg PX PY BP) else WinCfg.window (c.winCfg PX PY BP)))
+  if c.n ≤ 9 then .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.window (c.winCfg PX PY BP)))
   else ladder (ladderQ c)
 
 /-- `x` (or zeros) to `out`, the flag's low bit to `rax`, and the
@@ -163,10 +162,66 @@ def middle : Prog isa :=
     Mont.X86_64.mul c.MP' (c.sl X) (c.sl XM) (c.sl ONE),
     c.checkRange (c.sl D) ++ c.checkNonzero (c.sl RZ) ++ finish c]
 
-/-- `vg_ecdh_<curve>`. -/
-def exchange : Prog isa :=
+/-! ## Windows of 5 bits in Jacobian coordinates, for a curve of prime order -/
+
+/-- The digits of the Jacobian window method, for scalars below `2^nbits`:
+`⌈(nbits + 2) / 5⌉`, enough for the recoding's carry. -/
+def jwinJ : Nat := (c.nbits + 6) / 5
+
+/-- The Jacobian window method's areas: its scalar and bits where the other
+window method's are, its table where that one's starts (16 entries of five
+coordinates), and the selected entry past it. -/
+def jwinCfg : JacWinCfg where
+  M := c.MP'
+  S := c.rcbSlots
+  P := c.pt PX PY ONEP
+  R := c.pt RX RY RZ
+  D := c.pt DX DY DZ
+  T := c.winTbl + 16 * (40 * c.n)
+  neg := c.sl PT
+  zero := c.sl ZERO
+  bits := c.winBits
+  tbl := c.winTbl
+  J := jwinJ c
+  one := c.mont 1
+  avx2 := c.MP'.adx
+
+/-- `d + offset J` and its bits, from the slot of `d`. -/
+def jwinPrep : Prog isa :=
+  .seq (.block (WinCfg.addConst c.n (c.sl K) c.winK (JacWinCfg.offset (jwinJ c))))
+    (bits c.winK c.winBits (8 * (c.n + 1)))
+
+/-- `[d]P` into `R` by the Jacobian window method, `dbl` doubling a point in
+place. -/
+def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
+  .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
+
+/-! ## Windows of 4 bits in Jacobian coordinates, for a curve whose points have order `n`
+
+`mulQ`'s windows, but the accumulator in Jacobian coordinates
+(`WinCfg.windowJ`): for nine words, whose 16-entry table of the 5-bit windows
+would not fit in the working space. -/
+
+/-- `[d]P` into `R` by 4-bit windows with a Jacobian accumulator (`d` reduced
+below `2^nbits` first). -/
+def mulQJ4 : Prog isa :=
+  .seq (.block (maskK c)) (.seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY BP)))
+
+/-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
+def exchangeWith (mq : Prog isa) : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
-  .seq (mulQ c) <| .seq c.pPow (middle c)
+  .seq mq <| .seq c.pPow (middle c)
+
+/-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
+order. -/
+def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
+
+/-- `vg_ecdh_<curve>` by 4-bit windows with a Jacobian accumulator
+(`mulQJ4`). -/
+def exchangeJ4 : Prog isa := exchangeWith c (mulQJ4 c)
+
+/-- `vg_ecdh_<curve>`. -/
+def exchange : Prog isa := exchangeWith c (mulQ c)
 
 end Cfg
 

@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdh.X86_64.Main
+import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
@@ -9,7 +10,9 @@ import VerifiedGarbage.Proof.P521.X86_64.TaintSums
 
 P-521 is a curve the proof supports (`p521_ok`, and `Law` for its group law
 and `InvSounds` for its inversions, which the registration file supplies:
-`Proof.P521.law` and the variant's `inv`), so `exchange_ok`
+`Proof.P521.law` and the variant's `inv`), of prime order (the variant's
+`prime`), so its 4-bit windows with a Jacobian accumulator compute `[d]P`
+(`mulQJ4_ok`) and `exchangeWith_ok`
 gives the contract's postcondition; the callee-saved registers are restored,
 `rsp` is never written, and every store is to `out` or `scratch`, which the
 return address is apart from (`abiPreserved`). Constant time by taint
@@ -49,18 +52,11 @@ theorem ecdh_noCalls : exchangeP521.noCalls = true := by lit_decide
 
 theorem ecdh_mxcsr : exchangeP521.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
-/-- P-521's window method in Jacobian coordinates: its points all have order
-`n` (`hO`), above the multiples for scalars of 521 bits. -/
-theorem jacOk (hO : Weierstrass.OrdN Spec.P521.curve) : JacOk p521 :=
-  fun _ => ⟨hO, by decide +kernel⟩
-
-theorem jacOkX (hO : Weierstrass.OrdN Spec.P521.curve) : JacOk p521x :=
-  fun _ => ⟨hO, by decide +kernel⟩
-
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.OrdN Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521_ok hI) hL (jacOk hO) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p521_ok hI) hL
+    (mulQJ4_ok (p521_ok hI) (by decide) hL hO (by decide +kernel)) (mulQ_w (p521_ok hI)) (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP521, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -99,7 +95,7 @@ theorem ecdh_ct : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP521 :=
   · exact h4
 
 theorem ecdh_verified (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.OrdN Spec.P521.curve) :
+    (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
     Verified X86_64.target exchangeP521 (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi) :=
   Verified.of_correct (ecdh_x86 hL hI hO) ecdh_ct implies
 

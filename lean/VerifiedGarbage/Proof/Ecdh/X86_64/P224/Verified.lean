@@ -42,7 +42,7 @@ theorem post_of {s s' : State} (h : EPost p224 s s') : ecdhX86_64.post s s' := b
 theorem ecdh_x86 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.X86_64.InvSounds)
     (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP224 s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (JacOk.of_false rfl) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p224_ok hI) hL (pre_of hs)
   have hsp : ∀ i ∈ instrs exchangeP224, Taint.clobbers i .rsp = false := by
     have h : exchangeP224.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

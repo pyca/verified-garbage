@@ -151,10 +151,6 @@ structure Cfg where
   the window method (`Impl.Ecdh.X86_64.Cfg.maskK`); a `d` it changes is out
   of range, and its result is discarded. -/
   nbits : Nat := 8 * C.len
-  /-- Whether ECDH's window method keeps `R` in Jacobian coordinates
-  (`WinCfg.windowJ`), which the proofs allow for a curve whose points all
-  have order `n` (prime), with `16 ⌈2^nbits / 256⌉ + 8 < n`. -/
-  jacWin : Bool := false
 
 /-- The bits of `e < 2^k`: the least `j ≤ k` with `e < 2^j`. -/
 def bitLen (e : Nat) : Nat → Nat

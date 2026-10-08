@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Weierstrass.Window
 import VerifiedGarbage.Proof.Weierstrass.Booth
+import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 import VerifiedGarbage.Proof.Weierstrass.JacAdd
 
 /-!
@@ -11,9 +12,9 @@ points. The table's entries are Jacobian triples whose projective
 `(XZ : Y : Z³)` represents the point (`RepJ`), as `toJ` makes them of a
 projective representative of a point other than `O` (`RepJ.of_toJ`).
 
-When every point of the curve has order dividing `n`, a prime (`OrdN`), a
-point `P ≠ O`'s integer multiples agree only for integers congruent modulo
-`n` (`OrdN.zmul_eq`). Iteration `j` adds `[d_j]P` (`|d_j| ≤ 8`) to
+When the curve has prime order `n` (`PrimeOrder`), a point `P ≠ O`'s integer
+multiples agree only for integers congruent modulo `n`
+(`PrimeOrder.zmul_eq`). Iteration `j` adds `[d_j]P` (`|d_j| ≤ 8`) to
 `[16 e]P` with `e = winE k J (j + 1)`, so as long as `16 e + 8 < n` its
 operands are neither equal nor opposite unless `[16 e]P = O` (`win_sep`); the
 multiples `winE` only shrink as `j` grows (`winE_le_of_le`), so one bound
@@ -57,21 +58,14 @@ theorem RepJ.fromJ {X Y Z z X' Y' Z' : Fe C} {Q : Point C} (h : RepJ C X Y Z Q) 
   rw [hz, show Y + 0 = Y by grind]
   exact h
 
-/-! ## Every point of order `n` -/
+/-! ## Multiples of a point of prime order -/
 
-/-- Every point of the curve is killed by `n`, which is prime (as the
-coprimality of the numbers below it). -/
-structure OrdN (C : Curve) : Prop where
-  pos : 0 < C.n
-  cop : ∀ m, 0 < m → m < C.n → Nat.gcd m C.n = 1
-  mul_n : ∀ {P : Point C}, onCurve C P = true → mul C.n P = .infinity
-
-/-- Integer multiples of a point `P ≠ O` less than `n` apart agree only if
-equal. -/
-theorem OrdN.zmul_eq (hO : OrdN C) (hC : Law C) {P : Point C} (hP : onCurve C P = true)
+/-- In a group of prime order (`PrimeOrder`), integer multiples of a point
+`P ≠ O` less than `n` apart agree only if equal. -/
+theorem PrimeOrder.zmul_eq (hO : PrimeOrder C) (hC : Law C) {P : Point C} (hP : onCurve C P = true)
     (hP0 : P ≠ .infinity) {a b : Int} (hab : (a - b).natAbs < C.n) (h : zmul a P = zmul b P) :
     a = b := by
-  have hd := hC.zmul_dvd_of hP hP0 (hO.mul_n hP) hO.pos hO.cop h
+  have hd := Window5.zmul_dvd hC hO hP hP0 h
   rw [← Int.natAbs_dvd_natAbs, Int.natAbs_natCast] at hd
   have := Nat.eq_zero_of_dvd_of_lt hd hab
   omega
@@ -86,7 +80,7 @@ theorem winPt_zmul (P : Point C) (k j : Nat) :
 /-- Iteration `j`'s operands, `[16 e]P` for `e = winE k J (j + 1)` and the
 point of digit `j`, are neither equal nor opposite if `16 e + 8 < n` and
 `[16 e]P ≠ O`. -/
-theorem win_sep (hC : Law C) (hO : OrdN C) {P : Point C} (hP : onCurve C P = true)
+theorem win_sep (hC : Law C) (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true)
     (hP0 : P ≠ .infinity) {k J j : Nat} (hb : 16 * winE k J (j + 1) + 8 < C.n)
     (hR : mul (16 * winE k J (j + 1)) P ≠ .infinity) :
     mul (16 * winE k J (j + 1)) P ≠ winPt C P k j ∧

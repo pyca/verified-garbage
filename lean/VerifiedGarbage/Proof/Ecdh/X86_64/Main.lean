@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.Ecdh.X86_64.Window
+import VerifiedGarbage.Proof.Ecdh.X86_64.MulOk
 import VerifiedGarbage.Proof.Ecdh.Exchange
 import VerifiedGarbage.Proof.Weierstrass.X86_64.Rep
 
@@ -166,14 +166,17 @@ end VG.Proof.Ecdh.X86_64
 /-!
 ## The whole function
 
-`exchange_ok`: `Cfg.exchange` computes the specification's shared secret of
-`d` and the peer's public key, for any curve the ECDSA proof supports
-(`CfgOk`), and restores the callee-saved registers.
+`exchangeWith_ok`: `Cfg.exchangeWith c mq` computes the specification's
+shared secret of `d` and the peer's public key, for any curve the ECDSA proof
+supports (`CfgOk`) and any scalar multiplication `mq` that computes `[d]P`
+(`MulOk`, writing only areas `W` that keep what the rest reads: `MulW`), and
+restores the callee-saved registers; `exchange_ok` is `Cfg.exchange`'s, by
+the window method or the ladder (`mulQ_ok`).
 
 After `args`, the signature's setup and tables (`stage₁`, whose `SetupPre`
 the arguments meet as they are) read `d` and the peer's `x`; then `peer_ok`,
-`validate_ok`, `mulPow_ok` (the window method, or the ladder) and `middle_ok`; `exchange_eq` connects what they
-compute to the specification.
+`validate_ok`, `mq` and the power, and `middle_ok`; `exchange_eq` connects
+what they compute to the specification.
 -/
 
 namespace VG.Proof.Ecdh.X86_64
@@ -258,17 +261,33 @@ theorem peer_bytes (m : Mem) (p : Addr) (len : Nat) :
     BitVec.ofNat_add_ofNat]
   rfl
 
-theorem exchange_eq' (c : Cfg) : Impl.Ecdh.X86_64.Cfg.exchange c =
+/-- `exchange_eq_of_lt`, for `R` that represents `[d]P` only for `d` in `[1, n-1]`. -/
+theorem exchange_eq_of_range {C : Curve} (hC : Law C) {d : Nat} {bs : List Byte}
+    (hlen : bs.length = 2 * C.len + 1) {b0 : Byte} (hb0 : bs.head? = some b0) {x y : Nat}
+    (hxv : ofBytes ((bs.drop 1).take C.len) = x) (hyv : ofBytes (bs.drop (C.len + 1)) = y) {P : Point C}
+    (hP : ∀ h : Ecdh.Valid C b0 x y, P = .affine ⟨x, h.2.1⟩ ⟨y, h.2.2.1⟩)
+    {X Y Z : Fe C} (hR : 1 ≤ d → d < C.n → Rep C X Y Z (mul d P)) {xo : Nat} (hxo : xo < C.p)
+    (hxoX : Fin.ofNat C.p xo = X * Z ^ (C.p - 2)) :
+    Spec.Ecdh.exchange C d bs =
+      if (1 ≤ d ∧ d < C.n) ∧ Ecdh.Valid C b0 x y ∧ Z ≠ 0 then some (toBytes C.len xo) else none := by
+  by_cases hd : 1 ≤ d
+  · exact exchange_eq_of_lt hC hlen hb0 hxv hyv hP (hR hd) hxo hxoX
+  · unfold Spec.Ecdh.exchange
+    simp only [hd, false_and, ite_false]
+
+theorem exchangeWith_eq' (c : Cfg) (mq : Prog isa) : Impl.Ecdh.X86_64.Cfg.exchangeWith c mq =
     .seq (.block Impl.Ecdh.X86_64.Cfg.args) (.seq (.seq (.block (c.setupWith none))
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) (.block [])))))
     (.seq (.block (Impl.Ecdh.X86_64.Cfg.peer c)) (.seq (Impl.Ecdh.X86_64.Cfg.validate c)
-    (.seq (Impl.Ecdh.X86_64.Cfg.mulQ c) (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
+    (.seq mq (.seq c.pPow (Impl.Ecdh.X86_64.Cfg.middle c)))))) := rfl
 
-/-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
-the callee-saved registers. -/
-theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} (hp : EPre c s₀) :
-    WP isa (Impl.Ecdh.X86_64.Cfg.exchange c) s₀ fun s' =>
+/-- `vg_ecdh_<curve>`, with a scalar multiplication `mq` computing `[d]P`
+(`MulOk`) and writing only `W` (`MulW`), computes the specification's shared
+secret and restores the callee-saved registers. -/
+theorem exchangeWith_ok (hc : CfgOk c) (hC : Law c.C) {mq : Prog isa} {W : List (Nat × Nat)}
+    (hmq : MulOk c mq W) (hW : MulW c W) {s₀ : State} (hp : EPre c s₀) :
+    WP isa (Impl.Ecdh.X86_64.Cfg.exchangeWith c mq) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -276,7 +295,7 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} 
   have hsz : size = 8192 := rfl
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
-  rw [exchange_eq']
+  rw [exchangeWith_eq']
   refine WP.seq (WP.mono (args_ok s₀) fun s₁ ⟨r8₁, r9₁, rcx₁, rdx₁, k₁⟩ => ?_)
   have rsi₁ : s₁.gpr .rsi = s₀.gpr .rsi := k₁.1 _ (by decide)
   have rdi₁ : s₁.gpr .rdi = s₀.gpr .rdi := k₁.1 _ (by decide)
@@ -332,8 +351,10 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} 
       rw [tbl_unch U₄ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
         tbl_unch U₃ h7 hn hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
   have hpk : sv c (s₀.gpr .rcx) s₂ K < 2 ^ (64 * c.n) := wordsVal_lt _ _ _ _
+  have hk₄ : sv c (s₀.gpr .rcx) s₄ K = sv c (s₀.gpr .rcx) s₂ K := by
+    rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]
   -- `[d]P`, then `Z^(p-2)`.
-  refine mulPow_ok hc hC hJ hs₄ F₄
+  refine hmq hs₄ F₄
     (by rw [e₄ (by decide) (by decide) (by decide)]; exact bp₃)
     (peerPt_onCurve hc _ _ _) px_lt py_lt
     (peerPt_rep hC _ _ _ px py |> fun h => by
@@ -344,23 +365,18 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} 
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rx)
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.ry)
     (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)]; exact S₂.rz)
-    (k := sv c (s₀.gpr .rcx) s₂ K)
-    (by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide)])
+    hk₄
     (by rw [S₂.k]; exact ofBytes_bytesAt_lt _ _ _)
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, S₂.k])
     (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht]) fun s₅ L => ?_
   have hs₅ := L.scr
-  have F₅ := F₄.unch h7 hn fixedOk_mulW L.unch
-  have e₅ : ∀ {i}, i < 45 → i ∉ mulI → i ∉ [ACC, PT, TMP] → sv c (s₀.gpr .rcx) s₅ i = sv c (s₀.gpr .rcx) s₄ i :=
-    fun hi h₁ h₂ => sv_unch L.unch h7 hn hi (apart_mulW hi h₁ h₂)
+  have F₅ := F₄.unch h7 hn hW.fixed L.unch
+  have d₅ : sv c (s₀.gpr .rcx) s₅ D = sv c (s₀.gpr .rcx) s₄ D := sv_unch L.unch h7 hn (by decide) hW.d
   have hflag₅ := f₄
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  rw [← L.unch.word (fun w hw => by
-    rcases apart_mulW (c := c) (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
-    · exact Or.inl (by omega)
-    · exact Or.inr h) (by omega)] at hflag₅
+  rw [← L.unch.word hW.flag (by omega)] at hflag₅
   have hrsi₅ : s₅.gpr .rsi = s₀.gpr .rdi := by
-    rw [L.gpr _ (rsi_not_invClob _), g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
+    rw [L.rsi, g₄ _ (rsi_not_clob _), k₃.gpr _ (by decide), S₂.rsi, rdi₁]
   have hw₅ : (⟨s₀.gpr .rdi, c.C.len⟩ : Region) ∈ s₅.wr := by
     rw [L.wr, wr₄, k₃.wr, S₂.wr, k₁.2.2.2, hp.wr]; simp
   refine WP.mono (middle_ok hc hs₅ F₅ L.acc_lt hflag₅ hrsi₅ hw₅ hp.out_sc hp.out_fit)
@@ -385,13 +401,13 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} 
         .affine ⟨_, h.2.1⟩ ⟨_, h.2.2.1⟩ := fun h => by
     unfold peerPt; rw [dite_eq_left ⟨⟨⟨h.1, h.2.1⟩, h.2.2.1⟩, h.2.2.2⟩]
   have hk : sv c (s₀.gpr .rcx) s₂ K = dk c s₀ := by rw [S₂.k]; simp only [kv, dk, k₁.2.1, rcx₁]
-  have hR := fun hd : sv c (s₀.gpr .rcx) s₂ K < c.C.n => L.q (Nat.lt_of_lt_of_le hd hc.n_bits)
+  have hR := fun (h1 : 1 ≤ sv c (s₀.gpr .rcx) s₂ K) (hd : sv c (s₀.gpr .rcx) s₂ K < c.C.n) => L.q h1 hd
   rw [hk] at hR
   have hxoX : Fin.ofNat c.C.p xv = tmv c.C c.n (s₀.gpr .rcx) s₅ (c.sl RX) *
       tmv c.C c.n (s₀.gpr .rcx) s₅ (c.sl RZ) ^ (c.C.p - 2) := by rw [hxv, L.acc]
-  have hspec := exchange_eq_of_lt hC hlen hb0 hxs hys hP' hR hxl hxoX
+  have hspec := exchange_eq_of_range hC hlen hb0 hxs hys hP' hR hxl hxoX
   have hD₅ : sv c (s₀.gpr .rcx) s₅ D = dk c s₀ := by
-    rw [e₅ (by decide) (by decide) (by decide), e₄ (by decide) (by decide) (by decide),
+    rw [d₅, e₄ (by decide) (by decide) (by decide),
       e₃ (by decide) (by decide) (by decide), S₂.d, shAt_none, Nat.shiftRight_zero]
     simp only [dv, dk, k₁.2.1, rsi₁]
   have hz : tmv c.C c.n (s₀.gpr .rcx) s₅ (c.sl RZ) ≠ 0 ↔ sv c (s₀.gpr .rcx) s₅ RZ ≠ 0 :=
@@ -417,5 +433,11 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) (hJ : JacOk c) {s₀ : State} 
       · rw [← hD₅]; exact h.1.2.2
     rw [ite_eq_right hcond]
     exact ⟨by rw [rax, hok]; rfl, by rw [bytes, hok]; rfl⟩
+
+/-- `vg_ecdh_<curve>`, by the window method or the ladder (`mulQ_ok`). -/
+theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s₀) :
+    WP isa (Impl.Ecdh.X86_64.Cfg.exchange c) s₀ fun s' =>
+      (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ EPost c s₀ s' :=
+  exchangeWith_ok hc hC (mulQ_ok hc hC) (mulQ_w hc) hp
 
 end VG.Proof.Ecdh.X86_64

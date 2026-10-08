@@ -41,9 +41,10 @@ theorem ecdh_noCalls_adx : exchangeP521Adx.noCalls = true := by lit_decide
 theorem ecdh_mxcsr_adx : exchangeP521Adx.allInstrs (fun i => !loadsMxcsr i) = true := by lit_decide
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.OrdN Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
+    (hO : Weierstrass.PrimeOrder Spec.P521.curve) (s : State) (hs : ecdhX86_64.pre s) :
     ∃ t s', Exec isa exchangeP521Adx s t s' ∧ abiPreserved s s' ∧ ecdhX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p521x_ok hI) hL (jacOkX hO) (pre_of_x hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := exchangeWith_ok (p521x_ok hI) hL
+    (mulQJ4_ok (p521x_ok hI) (by decide) hL hO (by decide +kernel)) (mulQ_w (p521x_ok hI)) (pre_of_x hs)
   have hsp : ∀ i ∈ instrs exchangeP521Adx, Taint.clobbers i .rsp = false := by
     have h := ecdh_rsp_adx
     rw [Code.allInstrs_eq, List.all_eq_true] at h
@@ -82,7 +83,7 @@ theorem ecdh_ct_adx : ConstantTime isa ecdhX86_64.pre ecdhX86_64.pub exchangeP52
   · exact h4
 
 theorem ecdh_verified_adx (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.X86_64.InvSounds)
-    (hO : Weierstrass.OrdN Spec.P521.curve) :
+    (hO : Weierstrass.PrimeOrder Spec.P521.curve) :
     Verified X86_64.target exchangeP521Adx (Spec.Ecdh.Instance.exchangeContract Spec.EcKey.P521.inst X86_64.abi) :=
   Verified.of_correct (ecdh_x86_adx hL hI hO) ecdh_ct_adx implies
 

@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.HasLawOrd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.P521.Comb7
 import VerifiedGarbage.Impl.EcKey.P521.X86_64

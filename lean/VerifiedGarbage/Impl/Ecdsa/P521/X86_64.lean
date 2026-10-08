@@ -16,7 +16,6 @@ def p521 : Cfg where
   fastN := true
   pubVerify := true
   nbits := 521
-  jacWin := true
 
 /-- `vg_ecdsa_p521_sign`. -/
 def signP521 : Prog isa := p521.sign

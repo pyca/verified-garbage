@@ -503,7 +503,7 @@ theorem R_apart_entry {K : WinCfg} {size : Nat} (hL : WinLay K size) {x : Nat}
 /-- An iteration but the last, `rbx = j ≥ 2` to `j - 1`: adds digit `j - 1`. -/
 theorem winStepJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinLay K size)
     (hX : WinX K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (hC : Law C) (hM3 : AM3 C)
-    (hO : OrdN C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
+    (hO : PrimeOrder C) {P : Point C} (hP : onCurve C P = true) (hP0 : P ≠ .infinity)
     (hpn : C.p < 2 ^ (64 * K.M.n)) (hone_lt : K.one < C.p)
     (hone : toM C.p (2 ^ (64 * K.M.n)) K.one = 1) {s₀ : State} (hF : WinFixed K C base s₀ P k)
     (hk8 : 8 * geom K.J ≤ k) {j : Nat} (hj : 2 ≤ j) (hjn : j ≤ K.J)

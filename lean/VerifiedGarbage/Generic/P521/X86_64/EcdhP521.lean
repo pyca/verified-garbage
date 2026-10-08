@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
-import VerifiedGarbage.Proof.Weierstrass.X86_64.HasLawOrd
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdh.P521.X86_64
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Verified
@@ -56,8 +56,8 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
 
 def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) : List Artifact := [
   exchange false Impl.Ecdh.X86_64.exchangeP521
-    (Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv h.ord) (Code.all_of_allInstrs (by lit_decide)),
+    (Proof.Ecdh.X86_64.P521.ecdh_verified h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide)),
   exchange true Impl.Ecdh.X86_64.exchangeP521Adx
-    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx h.law h.inv h.ord) (Code.all_of_allInstrs (by lit_decide))]
+    (Proof.Ecdh.X86_64.P521.ecdh_verified_adx h.law h.inv h.prime) (Code.all_of_allInstrs (by lit_decide))]
 
 end VG.Generic.P521.X86_64.EcdhP521

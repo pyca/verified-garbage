@@ -1,5 +1,6 @@
 import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.P256.Comb7
 import VerifiedGarbage.Impl.EcKey.P256.X86_64
 import VerifiedGarbage.Proof.EcKey.X86_64.Verified
@@ -10,8 +11,8 @@ import VerifiedGarbage.Proof.EcKey.X86_64.LitAdx
 /-!
 # P-256 public keys (FIPS 186-5 §A.2) on x86-64
 
-A generic file (see `TCB/Emit.lean`) over P-256's group law and
-inversions `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
+A generic file (see `TCB/Emit.lean`) over P-256's group law,
+inversions and prime order `h`, the variant `Variants/P256/X86_64/Law.lean`, for each
 multiplication: the baseline's, and BMI2's and ADX's, with the comb's
 selection by AVX2 (`_adx`).
 -/
@@ -42,7 +43,7 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     spSafe := hsp
     features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   publicKey false Impl.EcKey.X86_64.publicKeyP256
     (Proof.EcKey.X86_64.pk_verified h.law (Proof.P256.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
   publicKey true Impl.EcKey.X86_64.publicKeyP256Adx
