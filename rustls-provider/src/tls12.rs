@@ -1,8 +1,8 @@
 use alloc::boxed::Box;
 
 use rustls::crypto::cipher::{
-    AeadKey, EncryptBuffer, InboundOpaque, Iv, KeyBlockShape, NONCE_LEN, Nonce, OutboundPlain,
-    Record, RecordDecrypter, RecordEncrypter, Tls12AeadAlgorithm, UnsupportedOperationError,
+    AeadKey, InboundOpaque, Iv, KeyBlockShape, NONCE_LEN, Nonce, OutboundPlain, Record,
+    RecordDecrypter, RecordEncrypter, Tls12AeadAlgorithm, UnsupportedOperationError,
     make_tls12_aad,
 };
 use rustls::crypto::kx::KeyExchangeAlgorithm;
@@ -273,7 +273,7 @@ impl RecordEncrypter for GcmRecordEncrypter {
         out: &'a mut [u8],
     ) -> Result<Record<&'a [u8]>, Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let mut payload = EncryptBuffer::new(out, total_len)?;
+        let out = aead::record_region(out, total_len)?;
 
         let nonce: [u8; NONCE_LEN] = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls12_aad(
@@ -282,23 +282,21 @@ impl RecordEncrypter for GcmRecordEncrypter {
             record.version.encode(),
             record.payload.len(),
         );
-        payload.extend_from_slice(&nonce[4..]);
-        payload.extend_from_chunks(&record.payload);
-
+        // The explicit nonce, then the ciphertext, encrypted from the
+        // payload where it is, then the tag.
+        let (explicit, rest) = out.split_at_mut(GCM_EXPLICIT_NONCE_LEN);
+        explicit.copy_from_slice(&nonce[4..]);
+        let (ciphertext, tag_out) = rest.split_at_mut(record.payload.len());
         let tag = self
             .key
-            .seal(
-                &nonce,
-                &aad,
-                &mut payload.as_mut()[GCM_EXPLICIT_NONCE_LEN..],
-            )
+            .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
             .map_err(|_| Error::EncryptError)?;
-        payload.extend_from_slice(&tag);
+        tag_out.copy_from_slice(&tag);
 
         Ok(Record {
             typ: record.typ,
             version: record.version,
-            payload: payload.into_written(),
+            payload: &*out,
         })
     }
 
@@ -362,7 +360,7 @@ impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
         out: &'a mut [u8],
     ) -> Result<Record<&'a [u8]>, Error> {
         let total_len = self.encrypted_payload_len(record.payload.len());
-        let mut payload = EncryptBuffer::new(out, total_len)?;
+        let out = aead::record_region(out, total_len)?;
 
         let nonce = Nonce::new(&self.offset, seq).to_array()?;
         let aad = make_tls12_aad(
@@ -371,18 +369,17 @@ impl RecordEncrypter for ChaCha20Poly1305RecordEncrypter {
             record.version.encode(),
             record.payload.len(),
         );
-        payload.extend_from_chunks(&record.payload);
-
+        let (ciphertext, tag_out) = out.split_at_mut(record.payload.len());
         let tag = self
             .key
-            .seal(&nonce, &aad, payload.as_mut())
+            .seal_to(&nonce, &aad, &record.payload, &[], ciphertext)
             .map_err(|_| Error::EncryptError)?;
-        payload.extend_from_slice(&tag);
+        tag_out.copy_from_slice(&tag);
 
         Ok(Record {
             typ: record.typ,
             version: record.version,
-            payload: payload.into_written(),
+            payload: &*out,
         })
     }
 
