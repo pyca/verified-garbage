@@ -14,7 +14,7 @@ namespace VG.Proof.Camellia.X86_64
 
 open VG VG.X86_64 VG.X86_64.Straight VG.Impl.Camellia.X86_64
 open VG.Impl.Aes.X86_64 (q sb t0 t1 movR movS st xorS)
-open VG.Proof.Camellia (HalfRel WordRel pair)
+open VG.Proof.Camellia (HalfRel WordRel pair hiW loW)
 
 /-! ## Moving words between slots -/
 
@@ -128,15 +128,15 @@ section
 variable (KL KR : BitVec 64 × BitVec 64)
 
 /-- The value after each pair: `KA` after the second, `KB` after the third. -/
-def kaD1 : BitVec 64 × BitVec 64 := pair (sigE 0) (sigE 1) (KR.1 ^^^ KL.1, KR.2 ^^^ KL.2)
-def kaD2 : BitVec 64 × BitVec 64 := pair (sigE 2) (sigE 3) (KL.1 ^^^ (kaD1 KL KR).1, KL.2 ^^^ (kaD1 KL KR).2)
-def kaD3 : BitVec 64 × BitVec 64 := pair (sigE 4) (sigE 5) (KR.1 ^^^ (kaD2 KL KR).1, KR.2 ^^^ (kaD2 KL KR).2)
+def kaD1 : BitVec 64 × BitVec 64 := pair (sigE 0) (sigE 1) (KL.1 ^^^ KR.1, KL.2 ^^^ KR.2)
+def kaD2 : BitVec 64 × BitVec 64 := pair (sigE 2) (sigE 3) ((kaD1 KL KR).1 ^^^ KL.1, (kaD1 KL KR).2 ^^^ KL.2)
+def kaD3 : BitVec 64 × BitVec 64 := pair (sigE 4) (sigE 5) ((kaD2 KL KR).1 ^^^ KR.1, (kaD2 KL KR).2 ^^^ KR.2)
 
 /-- The running value before pair `i`, and `KB` after the last. -/
 def kaW : Nat → BitVec 64 × BitVec 64
-  | 0 => (KR.1 ^^^ KL.1, KR.2 ^^^ KL.2)
-  | 1 => (KL.1 ^^^ (kaD1 KL KR).1, KL.2 ^^^ (kaD1 KL KR).2)
-  | 2 => (KR.1 ^^^ (kaD2 KL KR).1, KR.2 ^^^ (kaD2 KL KR).2)
+  | 0 => (KL.1 ^^^ KR.1, KL.2 ^^^ KR.2)
+  | 1 => ((kaD1 KL KR).1 ^^^ KL.1, (kaD1 KL KR).2 ^^^ KL.2)
+  | 2 => ((kaD2 KL KR).1 ^^^ KR.1, (kaD2 KL KR).2 ^^^ KR.2)
   | _ => kaD3 KL KR
 end
 
@@ -201,15 +201,16 @@ theorem xorW_ok {s : State} {x : Nat} (hscr : (⟨s.gpr sb, 8 * slots⟩ : Regio
     (hx : x + 1 < slots) (hxw : x + 1 ≠ wSlot)
     {u v : BitVec 64 × BitVec 64} (hu : WordsAt s wSlot u) (hv : WordsAt s x v) :
     ∃ s', runBlock isa (xorWords wSlot x) s = some s' ∧ MoveOk s s' ∧
-      WordsAt s' wSlot (v.1 ^^^ u.1, v.2 ^^^ u.2) ∧
+      WordsAt s' wSlot (u.1 ^^^ v.1, u.2 ^^^ v.2) ∧
       (∀ k < slots, k ≠ wSlot → k ≠ wSlot + 1 → slotW s' k = slotW s k) := by
   obtain ⟨-, -, hW, -, hB, -, -, hS⟩ := kaKb_slots
   obtain ⟨s', e, hs, g, f, rd, wr⟩ := xorWords_ok rfl hscr (by omega) hx hxw
   have hk : ∀ k < slots, k ≠ wSlot → k ≠ wSlot + 1 → slotW s' k = slotW s k := fun k hk h1 h2 => by
     rw [hs k hk, ite_eq_right h1, ite_eq_right h2]
   refine ⟨s', e, ⟨fun k hkk h => hk k hkk (by omega) (by omega), g, f, rd, wr⟩, ⟨?_, ?_⟩, hk⟩
-  · rw [hs wSlot (by omega), ite_eq_left rfl]; exact hv.1.xor hu.1
-  · rw [hs (wSlot + 1) (by omega), ite_eq_right (by omega), ite_eq_left rfl]; exact hv.2.xor hu.2
+  · rw [hs wSlot (by omega), ite_eq_left rfl, BitVec.xor_comm]; exact hu.1.xor hv.1
+  · rw [hs (wSlot + 1) (by omega), ite_eq_right (by omega), ite_eq_left rfl, BitVec.xor_comm]
+    exact hu.2.xor hv.2
 
 /-! ## The loop -/
 
@@ -401,5 +402,13 @@ theorem kaKb_wp {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KaPre s₀
       exact .inl ⟨by simp [X86_64.eval, hz], h₄⟩
     · exact .inr ⟨by simp [X86_64.eval, hz]; omega, 3 - (i + 1), by omega, i + 1, rfl, by omega,
         by rw [Nat.mul_add, Nat.mul_one]; exact h₄⟩
+
+/-- The values are the specification's `KA` and `KB` (`Spec.Camellia.kakb`). -/
+theorem kaD_eq (kl kr : BitVec 128) :
+    kaD2 (hiW kl, loW kl) (hiW kr, loW kr) = (hiW (Spec.Camellia.kakb kl kr).1, loW (Spec.Camellia.kakb kl kr).1) ∧
+    kaD3 (hiW kl, loW kl) (hiW kr, loW kr) = (hiW (Spec.Camellia.kakb kl kr).2, loW (Spec.Camellia.kakb kl kr).2) := by
+  obtain ⟨h1, h2, h3, h4⟩ := Proof.Camellia.kakb_halves kl kr
+  rw [h1, h2, h3, h4]
+  exact ⟨rfl, rfl⟩
 
 end VG.Proof.Camellia.X86_64
