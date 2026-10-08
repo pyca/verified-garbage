@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Impl.P256.VerifyAllocated
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
@@ -11,7 +12,13 @@ def original := VG.Impl.P256.VerifyAllocated.raw .doubleRR
 def optimized := VG.Impl.P256.VerifyAllocated.code .doubleRR
 materialize_value leftCode := original
 materialize_value rightCode := optimized
-certificate_value nodes := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
+forward_state bundle :=
+  let ns := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
+  (ns, evalData (certDom ns) 8192 original initialEnv,
+       evalData (certDom ns) 8192 optimized initialEnv)
+noncomputable def nodes := bundle.1
+noncomputable def leftData := bundle.2.1
+noncomputable def rightData := bundle.2.2
 theorem original_lit : original=leftCode.lit := leftCode.lit_eq
 theorem optimized_lit : optimized=rightCode.lit := rightCode.lit_eq
 
@@ -23,19 +30,19 @@ theorem inputs : Inputs nodes 8192 := by
   have ho : off=8*(off/8) := by omega
   simpa only [←ho] using h ⟨off/8,by omega⟩
 
-noncomputable def left : Env Nat := (eval (certDom nodes) 8192 leftCode.lit initialEnv).getD initialEnv
-noncomputable def right : Env Nat := (eval (certDom nodes) 8192 rightCode.lit initialEnv).getD initialEnv
+noncomputable def left : Env Nat := fromData initialEnv (leftData.getD (.empty, .empty, none))
+noncomputable def right : Env Nat := fromData initialEnv (rightData.getD (.empty, .empty, none))
 
 private theorem some_getD {α : Type} {o : Option α} (d : α) (h : o.isSome=true) :
     o=some (o.getD d) := by cases o <;> simp_all
 
 theorem evalLeft : eval (certDom nodes) 8192 original initialEnv=some left := by
   rw [original_lit]
-  exact some_getD initialEnv (by decide +kernel)
+  exact eval_of_data (d := leftData.getD (.empty, .empty, none)) (by kernel_rfl)
 
 theorem evalRight : eval (certDom nodes) 8192 optimized initialEnv=some right := by
   rw [optimized_lit]
-  exact some_getD initialEnv (by decide +kernel)
+  exact eval_of_data (d := rightData.getD (.empty, .empty, none)) (by kernel_rfl)
 
 def observe := VG.Proof.P256.VerifyAllocated.observe .doubleRR
 instance (off : Nat) : Decidable (observe off) := by unfold observe; infer_instance

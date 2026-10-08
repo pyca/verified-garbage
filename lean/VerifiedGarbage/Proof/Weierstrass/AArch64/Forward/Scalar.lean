@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Data
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
@@ -5,75 +6,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 below run the existing ISA; no arithmetic operation is redefined. -/
 namespace VG.Proof.Weierstrass.AArch64.Forward
 open VG VG.AArch64
-
-inductive Op where
-  | add | sub | adds | adcs | subs | sbcs | adc | sbc | csel
-  | logic (o : LogicOp)
-  | mul | umulh | madd
-  | lsl (n : Nat) | lsr (n : Nat) | extr (n : Nat)
-  | movz (v : BitVec 16) (n : Nat) | movk (v : BitVec 16) (n : Nat)
-  deriving DecidableEq, Repr
-
-def Op.instr : Op → Reg → Reg → Reg → Reg → Instr
-  | .add,d,a,b,_ => .add .x d a b
-  | .sub,d,a,b,_ => .sub .x d a b
-  | .adds,d,a,b,_ => .adds .x d a b
-  | .adcs,d,a,b,_ => .adcs .x d a b
-  | .subs,d,a,b,_ => .subs .x d a b
-  | .sbcs,d,a,b,_ => .sbcs .x d a b
-  | .adc,d,a,b,_ => .adc .x d a b
-  | .sbc,d,a,b,_ => .sbc .x d a b
-  | .csel,d,a,b,_ => .csel .x d a b
-  | .logic o,d,a,b,_ => .logic o .x d a b
-  | .mul,d,a,b,_ => .mul .x d a b
-  | .umulh,d,a,b,_ => .umulh d a b
-  | .madd,d,a,b,c => .madd .x d a b c
-  | .lsl n,d,a,_,_ => .lsl .x d a n
-  | .lsr n,d,a,_,_ => .lsr .x d a n
-  | .extr n,d,a,b,_ => .extr .x d a b n
-  | .movz v n,d,_,_,_ => .movz .x d v n
-  | .movk v n,d,_,_,_ => .movk .x d v n
-
-def Op.valid : Op → Bool
-  | .lsl n | .lsr n | .extr n => n<64
-  | .movz _ n | .movk _ n => 16*n<64
-  | _ => true
-
-def Op.flags : Op → Bool
-  | .adds | .adcs | .subs | .sbcs => true
-  | _ => false
-
-/-- Canonical registers hold the operands, including the old destination for MOVK. -/
-def scalarState (a b c d : BitVec 64) (carry : Bool) : State :=
-  { gpr := fun r => if r=.x1 then a else if r=.x2 then b else if r=.x3 then c
-      else if r=.x8 then d else 0
-    sp:=0,c:=carry,mem:=fun _ => 0,rd:=[],wr:=[] }
-
-def Op.useA : Op → Bool
-  | .movz .. | .movk .. => false
-  | _ => true
-
-def Op.useB : Op → Bool
-  | .lsl .. | .lsr .. | .movz .. | .movk .. => false
-  | _ => true
-
-def Op.useC : Op → Bool
-  | .madd => true
-  | _ => false
-
-def Op.useD : Op → Bool
-  | .movk .. => true
-  | _ => false
-
-def Op.useCarry : Op → Bool
-  | .adcs | .sbcs | .adc | .sbc | .csel => true
-  | _ => false
-
-def Op.eval (op : Op) (a b c d : BitVec 64) (carry : Bool) : BitVec 64 × Bool :=
-  let s := scalarState (if op.useA then a else 0) (if op.useB then b else 0)
-    (if op.useC then c else 0) (if op.useD then d else 0) (op.useCarry && carry)
-  let t := (exec (op.instr .x8 .x1 .x2 .x3) s).getD s
-  (t.gpr .x8,t.c)
 
 /-- The original ISA computes the same scalar value regardless of operand register names. -/
 theorem scalar_run (op : Op) (hv : op.valid=true) (s : State) (d a b c : Reg) :

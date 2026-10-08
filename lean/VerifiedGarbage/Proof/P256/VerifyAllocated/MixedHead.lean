@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Slots
 import VerifiedGarbage.Impl.P256.VerifyAllocated
 import VerifiedGarbage.Proof.P256.VerifyAllocated.Case
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Literal
@@ -41,11 +42,13 @@ def observe := VG.Proof.P256.VerifyAllocated.observe .mixedHead
 instance (off : Nat) : Decidable (observe off) := by unfold observe; infer_instance
 
 theorem same : ∀ off,observe off → off%8=0 → off+8≤8192 → left.slot off=right.slot off := by
-  have h : ∀ i : Fin 1024,observe (8*i.val) → left.slot (8*i.val)=right.slot (8*i.val) := by decide +kernel
-  intro off hv ha hb
-  have ho : off=8*(off/8) := by omega
-  have hh := h ⟨off/8,by omega⟩
-  simpa only [←ho] using hh (by simpa only [←ho] using hv)
+  intro off ho _ _
+  have hl := evalLeft
+  have hr := evalRight
+  rw [original_lit] at hl
+  rw [optimized_lit] at hr
+  exact slots_eq_of_written_where observe hl hr (by decide +kernel) off ho
+
 
 noncomputable def checked : CheckedObserved 8192 observe original optimized where
   nodes := nodes

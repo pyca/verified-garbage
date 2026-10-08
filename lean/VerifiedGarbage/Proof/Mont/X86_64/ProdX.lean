@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
@@ -28,9 +29,9 @@ open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono val4 sqr4_ok mul4_ok r
 theorem sqrBound {k m : Nat} (hk : 0 < k ∧ k < 64)
     (hm : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1) : m < 2 ^ 256 := by
   have h1 : 2 ^ 1 ≤ 2 ^ k := Nat.pow_le_pow_right (by decide) hk.1
-  have h2 : 2 ^ k ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega)
+  have h2 : 2 ^ k ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega_arith)
   generalize 2 ^ k = K at hm h1 h2
-  omega
+  omega_arith
 
 /-- A round of the reduction (`redRoundX`): the window `t, w₁, w₂, w₃` of value
 `W` becomes `w₁, w₂, w₃, t` of value `(W + t m) / 2⁶⁴`, for any `W`, as
@@ -61,7 +62,7 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
     have hA : (BitVec.ofNat 64 (2 ^ k)).toNat = 2 ^ k := by
       rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hK
     have hC : (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)).toNat = 2 ^ 64 - 2 ^ k + 1 := by
-      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
     have p1 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ k))
     have p2 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1))
     rw [hA] at p1 ⊢
@@ -88,12 +89,12 @@ theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ 
     have key : x * m + x = 2 ^ 64 * (x * K) + 2 ^ 192 * (x * D) := by
       rw [← Nat.mul_add_one, ← hm, Nat.mul_left_comm, Nat.mul_add, Nat.mul_left_comm x (2 ^ 128),
         Nat.mul_add]
-      omega
+      omega_arith
     have hxm := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt hx)
     have := (s.gpr w1).isLt; have := (s.gpr w2).isLt; have := (s.gpr w3).isLt
     have := l₁.isLt; have := h₁.isLt; have := l₂.isLt; have := h₂.isLt
     have := Bool.toNat_le c₁; have := Bool.toNat_le c₂; have := Bool.toNat_le c₃; have := Bool.toNat_le c₄
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨ra, rc, rd, rb, rt, r1, r2, r3⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ra, rc, rd, rb, rt, r1, r2, r3, ite_false]
@@ -127,7 +128,7 @@ theorem addHigh_ok (s : State) :
     have := Bool.toNat_le c₄
     generalize decide (2 ^ 64 ≤ 0 + 0 + c₄.toNat) = c₅ at e5
     have := Bool.toNat_le c₅
-    omega
+    omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨r8, r12, r13, r14, r15⟩ := hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, r8, r12, r13, r14, r15, ite_false]
@@ -158,7 +159,7 @@ theorem fe_wordsVal (m : Mem) (base : Addr) (a : Nat) :
     VG.Proof.X25519.X86_64.fe m base a = wordsVal m base a 4 := by
   simp only [VG.Proof.X25519.X86_64.fe, VG.Proof.X25519.X86_64.word,
     VG.Proof.X25519.X86_64.off, val4, wordsVal, word, off, Nat.add_assoc, Nat.reduceAdd]
-  omega
+  omega_arith
 
 /-- `redRX`: `[o] = t R⁻¹ mod m` for the product `t < 2²⁵⁶ m` in `r8–r15` and
 `m' = 2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1)` (P-256's `p`). -/
@@ -181,15 +182,15 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
   have hW : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1 := by
     have hmw : mwVal [.pow2 k, .zero, .gen (2 ^ 64 - 2 ^ k + 1), .zero] =
         2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1) := by
-      simp only [mwVal, MWord.val]; omega
+      simp only [mwVal, MWord.val]; omega_arith
     rw [← hmw, hmv]
     have := Nat.div_add_mod (m + 1) (2 ^ 64)
-    have : (m + 1) % 2 ^ 64 = 0 := by omega
-    omega
+    have : (m + 1) % 2 ^ 64 = 0 := by omega_arith
+    omega_arith
   have hm256 := sqrBound ⟨hk1, hk2⟩ hW
   have hm0 : 0 < m := by
     rcases Nat.eq_zero_or_pos m with h | h
-    · subst h; omega
+    · subst h; omega_arith
     · exact h
   -- The four rounds, in the window rotating through `r8–r11`.
   rw [redRX_eq, WP.block_append_iff]
@@ -241,7 +242,7 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
     ⟨by decide, by decide⟩ hM.mo hM.tmp hM.sep (Mod.ok_sparse hM.red) (by rw [M₆]; exact hM.val)
     (by rw [hn]; exact hR ▸ hRU.2)) fun s₇ ⟨e₇, k₇, O₇⟩ => ?_
   have hs₇ := hs₆.of_keepRegs k₇ (by decide)
-  refine WP.mono (stores_ok sqLow hs₇ (o := o) (by simp only [sqLow, List.length_cons, List.length_nil]; omega)
+  refine WP.mono (stores_ok sqLow hs₇ (o := o) (by simp only [sqLow, List.length_cons, List.length_nil]; omega_arith)
     (by decide)) fun s₈ ⟨e₈, k₈, O₈⟩ => ?_
   have hlen : sqLow.length = 4 := rfl
   rw [hlen] at e₈ O₈
@@ -275,7 +276,7 @@ theorem sqrRX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       wordsVal s.mem base a 4 * wordsVal s.mem base a 4 := by
     rw [← fe_wordsVal, ← e₁]
     simp only [regsVal, val4]
-    omega
+    omega_arith
   refine WP.mono (redRX_ok (hs.of_keeps k₁ (by decide)) (k₁.2.1 ▸ hM) hn hr hk ho hV₁
     (Nat.mul_lt_mul_of_le_of_lt (Nat.le_of_lt (wordsVal_lt _ _ _ 4)) hA (Nat.two_pow_pos _))) fun s' ⟨kr, hm, hlt, he⟩ =>
       ⟨((Keeps.regs k₁).mono (by decide)).trans kr, fun x hx hx' => (hm x hx hx').trans (by rw [k₁.2.1]),
@@ -299,7 +300,7 @@ theorem mulRX_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
       wordsVal s.mem base a 4 * wordsVal s.mem base b 4 := by
     rw [← fe_wordsVal, ← fe_wordsVal, Nat.mul_comm (VG.Proof.X25519.X86_64.fe s.mem base a), ← e₁]
     simp only [regsVal, val4]
-    omega
+    omega_arith
   refine WP.mono (redRX_ok (hs.of_keeps k₁ (by decide)) (k₁.2.1 ▸ hM) hn hr hk ho hV₁
     (Nat.mul_lt_mul_of_le_of_lt (Nat.le_of_lt (wordsVal_lt _ _ _ 4)) hB (Nat.two_pow_pos _))) fun s' ⟨kr, hm, hlt, he⟩ =>
       ⟨((Keeps.regs k₁).mono (by decide)).trans kr, fun x hx hx' => (hm x hx hx').trans (by rw [k₁.2.1]),
