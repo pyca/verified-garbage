@@ -24,9 +24,10 @@ deriving instance Lean.ToExpr for VVarOp
 deriving instance Lean.ToExpr for VOp
 deriving instance Lean.ToExpr for ZBinOp
 deriving instance Lean.ToExpr for ZShiftOp
+deriving instance Lean.ToExpr for ZKeyOp
+deriving instance Lean.ToExpr for HReg
 deriving instance Lean.ToExpr for ZOp
 deriving instance Lean.ToExpr for ZBcstOp
-deriving instance Lean.ToExpr for HReg
 deriving instance Lean.ToExpr for VReg
 deriving instance Lean.ToExpr for EBinOp
 deriving instance Lean.ToExpr for EOp

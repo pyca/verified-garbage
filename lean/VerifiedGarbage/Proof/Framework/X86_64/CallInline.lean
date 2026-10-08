@@ -223,6 +223,8 @@ theorem exec_patch (hc : Clear H s) (i : Instr) :
   | vmovdqu32Store m r => exact store512_patch hc _ _
   | vbroadcasti32x4 d m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
+  | vbroadcasti32x4H d m =>
+    simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load128_patch hc]; rfl
   | zbcst op d a m =>
     simp only [exec, Option.map_map]; rw [show (s.patch H hv u).ea m = s.ea m from rfl, load64_patch hc]; rfl
   | vpmadd52Load hi d a m =>

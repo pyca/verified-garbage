@@ -86,10 +86,10 @@ Modelling choices:
   destination are zeroed", and each VEX.256 form's pseudocode ends with
   `DEST[MAXVL-1:256] := 0`), and so do the EVEX-encoded ones, of 256 or 512
   bits, unmasked (each EVEX form's pseudocode ends with `DEST[MAXVL-1:VL] :=
-  0`). Of `zmm16`–`zmm31`, which only EVEX-encoded instructions name, bits
-  255:0 (`ymm16`–`ymm31`) are modelled, and only `Evex.lean`'s instructions,
-  all of 256 bits, name them; bits 511:256 are not, as those instructions
-  zero them and no modelled instruction reads them. The opmask registers `k0`–`k7` are not
+  0`). Registers `zmm16`–`zmm31`, which only EVEX-encoded instructions name,
+  are held in `ymmH` (bits 255:0) and `zmmHiH` (bits 511:256). EVEX.256 and
+  EVEX.128 writes zero their upper bits; VZEROUPPER only changes registers
+  0–15 (Intel SDM Vol. 2, "VZEROUPPER"). The opmask registers `k0`–`k7` are not
   modelled: none here is masked.
   No SSE, AVX or AVX-512 instruction has a memory operand except the
   unaligned `movdqu`/`vmovdqu`/`vmovdqu32` loads and stores,
@@ -247,6 +247,11 @@ inductive Instr
   | vmovdqu32Store (dst : MemOp) (src : XReg)
   /-- `vbroadcasti32x4 zmm, XMMWORD PTR [src]` (`EVEX.512.66.0F38.W0 5A /r`) -/
   | vbroadcasti32x4 (dst : XReg) (src : MemOp)
+  /-- The same EVEX.512 broadcast, with its destination in `zmm16`–`zmm31`.
+  Intel SDM Vol. 2, "VBROADCAST": `EVEX.512.66.0F38.W0 5A /r`, AVX512F;
+  `DEST[i+127:i] := SRC[127:0]` for all four lanes, with no write mask.
+  Vol. 2 §2.7.1 describes the five-bit EVEX destination register specifier. -/
+  | vbroadcasti32x4H (dst : HReg) (src : MemOp)
   /-- `op zmm1, zmm2, QWORD PTR [src2]{1to8}`, an AVX-512 instruction whose
   second source is the quadword at `src2` broadcast to every quadword
   (`m64bcst`, `EVEX.b = 1`): `vpmuludq` (`EVEX.512.66.0F.W1 F4 /r`),
@@ -386,6 +391,7 @@ VPSRLDQ (`EVEX.512.66.0F.WIG 73 /7 ib`, `/3 ib`) require AVX512BW.
 AVX and AVX512F requirements also ensure the vector state is enabled,
 following the model's existing feature convention. -/
 def Instr.requires : Instr → List String
+  | .zop (.zbinH .vaesenc ..) | .zop (.zbinH .vaesenclast ..) => ["vaes", "avx512f"]
   | .xop (.bin .pshufb ..) | .xop (.palignr ..) => ["ssse3"]
   | .xop (.bin .sha256msg1 ..) | .xop (.bin .sha256msg2 ..) | .xop (.sha256rnds2 ..) => ["sha"]
   | .xop (.bin .sha1msg1 ..) | .xop (.bin .sha1msg2 ..) | .xop (.bin .sha1nexte ..)
@@ -417,7 +423,7 @@ def Instr.requires : Instr → List String
   | .zop (.vpmadd52 ..) => ["avx512ifma", "avx512f"]
   | .zop (.zbin .vpshufb ..) | .zop (.vpslldq ..) | .zop (.vpsrldq ..) =>
     ["avx512bw"]
-  | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. =>
+  | .zop _ | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. =>
     ["avx512f"]
   | .vop (.vsha512rnds2 ..) | .vop (.vsha512msg1 ..) | .vop (.vsha512msg2 ..) => ["sha512"]
   | .vop (.vpmadd52luq ..) | .vop (.vpmadd52huq ..) | .vpmadd52Load .. =>
@@ -509,6 +515,7 @@ def exec : Instr → State → Option State
   -- write mask): each 128-bit lane of `DEST` is `SRC[127:0]`; no alignment
   -- is required.
   | .vbroadcasti32x4 d m, s => (s.load128 (s.ea m)).map fun v => s.setZ d v v v v
+  | .vbroadcasti32x4H d m, s => (s.load128 (s.ea m)).map fun v => s.setZH d v v v v
   -- See `ZBcstOp.sse`: on each 128-bit lane, the SSE operation of the lane
   -- of `SRC1` and the loaded quadword `SRC2[63:0]` in both quadwords; no
   -- alignment is required.
@@ -587,6 +594,7 @@ def addrs : Instr → State → List Addr
   | .vmovdqu32Load _ m, s => [s.ea m]
   | .vmovdqu32Store m _, s => [s.ea m]
   | .vbroadcasti32x4 _ m, s => [s.ea m]
+  | .vbroadcasti32x4H _ m, s => [s.ea m]
   | .zbcst _ _ _ m, s => [s.ea m]
   | .vpmadd52Load _ _ _ m, s => [s.ea m]
   | .eop _, _ => []
@@ -702,7 +710,7 @@ def Instr.dst : Instr → Option Reg
   | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _
   | .vop _ | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _
-  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load ..
+  | .vmovdqu32Load .. | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load ..
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load ..
   | .stmxcsr _ | .ldmxcsr _ | .lfence | .mul _ | .mulx .. | .push _ | .alloc _ | .free _ => none
 
