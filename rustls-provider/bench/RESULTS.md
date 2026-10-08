@@ -1,12 +1,12 @@
 # rustls benchmarks: verified-garbage vs aws-lc-rs
 
-Measured 2026-10-08 with `bench/run.sh 5`: verified-garbage at 93f54441
-(main) with the provider sealing AES-GCM records out of place, rustls
-91aebe5d, aws-lc-rs 1.18.1. Each benchmark ran on one core (`taskset -c 2`)
-of a 2.1 GHz Intel Xeon with SHA-NI, AVX-512 (IFMA, VAES, VPCLMULQDQ) and
-ADX, the CPU class of the first run (verified-garbage 8532494). Throughput is
-noisy on this VM (±10%), and RSA-3072/4096 signing with verified-garbage more
-so, so treat differences under ~10% as noise.
+This file has two runs: the latest (main at b5b67857, on a CPU without
+IFMA or VAES, on a noisy host) in brief, then the 93f54441 run in detail,
+measured with `bench/run.sh 5` on a 2.1 GHz Intel Xeon with SHA-NI, AVX-512
+(IFMA, VAES, VPCLMULQDQ) and ADX, the CPU class of the first run
+(verified-garbage 8532494). Both used rustls 91aebe5d and aws-lc-rs 1.18.1,
+each benchmark on one core (`taskset -c 2`). Throughput on these VMs moves
+by ±10% at best, so treat differences under ~10% as noise.
 
 Every ratio in this file is verified-garbage's speed relative to aws-lc-rs's:
 below 1 is slower, and 0.5 is half as fast. For throughput it is
@@ -14,7 +14,55 @@ verified-garbage / aws-lc-rs; for times, aws-lc-rs / verified-garbage. Each
 rustls-bench ratio is the geometric mean over the row's cipher suites; a
 range spans TLS 1.2 and 1.3.
 
-## rustls-bench (`--api buffered`, median of 5 runs)
+## Latest run: 2026-10-08, main at b5b67857, Cascade Lake class
+
+`bench/run.sh 5` on a 2.8 GHz Xeon with AVX-512F/BW/VL and ADX but no SHA-NI,
+AVX512-IFMA, VAES or VPCLMULQDQ, after main gained out-of-place
+ChaCha20-Poly1305 (#1324), lazily computed RSA public-key values (#1314),
+faster P-384 ECDH (#1313, #1325, #1329) and AES-ECB, which the provider now
+uses for QUIC's AES header protection. **The host was noisy during this run.**
+One operation's time moved by up to 2x between back-to-back measurements, and
+the same scenario disagrees across cipher suites (P-256 TLS 1.2 handshakes,
+0.65–1.10), so read these as rough; the 93f54441 run below is the clean
+reference.
+
+| rustls-bench | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
+|---|---:|---:|---:|---:|---:|---:|
+| ECDSA P-256 | 0.90–1.27 | 0.80–1.22 | 0.87–1.22 | 0.86–1.21 | 1.02–1.21 | 0.94–1.38 |
+| ECDSA P-384 (TLS 1.2 only) | 1.16 | 1.24 | 1.32 | 1.30 | | 0.91–1.71 |
+| RSA-2048 | 0.84–1.03 | 0.71–0.86 | 0.82–0.86 | 0.78–0.87 | 1.02–1.21 | 1.00–1.61 |
+| Ed25519 | 1.18–1.21 | 1.02–1.10 | 0.99–1.06 | 0.95–1.12 | 1.08–1.18 | 1.01–1.43 |
+
+| Bulk (TLS 1.3) | 16 KiB records | 10000-byte records |
+|---|---:|---:|
+| AES-128/256-GCM | 0.72–1.01 | 0.77–1.05 |
+| ChaCha20-Poly1305 | 1.08–1.09 | 1.06–1.13 |
+
+What held up on this CPU, in measurements robust to the noise (the minimum
+of 41 samples) or consistent with the 36ff93f9 run on the same CPU class:
+
+* **RSA public keys no longer cost anything to build** (`PublicKey::new`,
+  ~50 ns, against 7.5–31 µs), so RSA verification through the provider is
+  0.91–0.99 (from 0.71–0.83).
+* **P-384** is now ahead of aws-lc everywhere: ECDH 1.13–1.24 (from 0.68–0.77),
+  signing 2.39, verification 1.24. P-521 signing is 2.04, verification 1.28.
+* **The out-of-place AEADs lose to copying and encrypting in place on this
+  CPU**, at every length. With the copy included, `AesGcm::encrypt` is about
+  10% slower and `ChaCha20Poly1305::encrypt` 3–7% slower. The provider keeps
+  AES-GCM's out-of-place sealing from 512 bytes, which measured as a win on
+  VAES CPUs, and still copies for ChaCha20-Poly1305.
+* **Without IFMA, RSA private-key operations trail** (signing 0.6–0.86, as
+  on the 36ff93f9 run), and **Ed25519 signing is 0.79** (1.18 with IFMA).
+* **ChaCha20-Poly1305 under 1 KiB is 0.58–0.84** here, against near parity on
+  the IFMA/VAES CPU.
+
+Sub-jobs are working on these in the library: AES-GCM and ChaCha20-Poly1305
+out-of-place speed and short messages, RSA private-key operations without
+IFMA and key loading, and Ed25519 signing without IFMA.
+
+## The 93f54441 run in detail
+
+### rustls-bench (`--api buffered`, median of 5 runs)
 
 | | client, full | server, full | client, mutual | server, mutual | resumed (TLS 1.3) | resumed (TLS 1.2) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -28,7 +76,7 @@ range spans TLS 1.2 and 1.3.
 | AES-128/256-GCM | 0.89–0.94 | 0.87–0.94 |
 | ChaCha20-Poly1305 | 1.24–1.27 | 1.24–1.28 |
 
-## Primitives, through the rustls traits (`provider-primitives`)
+### Primitives, through the rustls traits (`provider-primitives`)
 
 Nanoseconds per operation, median of three runs; speed as above.
 
@@ -59,7 +107,7 @@ Nanoseconds per operation, median of three runs; speed as above.
 | transcript hash, SHA-256 / SHA-384 | 1 690 / 4 770 | 1 780 / 4 230 | 0.95 / 1.13 |
 | ticket encrypt / decrypt (200 B) | 1 110 / 475 | 490 / 184 | 2.28 / 2.58 |
 
-## Library-level (`bench/aws-lc-compare`: each library's own API)
+### Library-level (`bench/aws-lc-compare`: each library's own API)
 
 | | aws-lc-rs | verified-garbage | speed |
 |---|---:|---:|---:|
@@ -77,7 +125,7 @@ The out-of-place rows time verified-garbage's `AesGcm::encrypt` with the
 payload and a content type byte in two pieces, as the provider calls it,
 against aws-lc-rs sealing as many bytes in place.
 
-## AES-GCM records out of place
+### AES-GCM records out of place
 
 The provider seals an AES-GCM record with `AesGcm::encrypt` (#1228). It reads
 the payload's chunks and, for TLS 1.3, the content type byte where they are,
@@ -101,7 +149,7 @@ Measured in one process on this CPU, against copying and `encrypt_in_place`:
   sixth of a 1 KiB record, so a record in one chunk (the usual case) passes
   its two pieces directly.
 
-## Where the gaps are now
+### Where the gaps were
 
 Speeds relative to aws-lc-rs, as above.
 
@@ -132,19 +180,20 @@ X25519 (1.16–1.29), ChaCha20-Poly1305 records (1.28–1.31), and tickets
 ## Changes since the first run
 
 Speed relative to aws-lc-rs, by the verified-garbage commit each run measured.
-The 8532494, 7cdac586 and 93f54441 runs share a CPU class; the 36ff93f9 run's
-CPU lacked SHA-NI, IFMA, VAES and VPCLMULQDQ. The provider sealed every
+The 8532494, 7cdac586 and 93f54441 runs share a CPU class; the 36ff93f9 and
+b5b67857 runs' CPU lacked SHA-NI, IFMA, VAES and VPCLMULQDQ, and the b5b67857
+run's host was noisy. The provider sealed every
 record with a copy before 93f54441.
 
-| | 8532494 (first run) | 36ff93f9 | 7cdac586 | 93f54441 (now) |
-|---|---:|---:|---:|---:|
-| P-256 full handshake, client / server | 0.11–0.15 / 0.16–0.24 | 0.52–0.60 / 0.74–0.91 | 0.71–0.77 / 0.99–1.00 | 1.25–1.27 / 1.20–1.23 |
-| RSA-2048 full handshake, client / server | 0.42–0.47 / 0.93 | 0.48–0.55 / 0.58–0.59 | 0.91–0.96 / 1.02–1.05 | 1.06 / 1.08 |
-| Ed25519 full handshake, client / server | 0.73–0.74 / 0.78–0.83 | 0.64–0.73 / 0.76–0.91 | 1.14–1.22 / 1.01–1.04 | 1.26–1.29 / 1.08–1.13 |
-| Bulk AES-GCM / ChaCha20-Poly1305 (16 KiB) | 0.76–0.83 / 0.98–1.01 | 0.88–0.93 / 1.37–1.39 | 0.85–0.95 / 1.30–1.31 | 0.89–0.94 / 1.24–1.27 |
-| AES-128/256-GCM 16 KiB record seal | 0.72 / 0.78 | 0.88 / 0.86 | 0.85 / 0.86 | 0.97 / 1.02 |
-| ECDSA P-256 sign / verify | 0.05 / 0.08 | 0.56 / 0.44 | 1.03 / 0.67 | 1.27 / 1.24 |
-| ECDSA P-521 sign / verify | 0.03 / 0.04 | 0.04 / 0.05 | 0.57 / 0.31 | 1.77 / 1.05 |
-| RSA-2048 PSS verify | 0.23 | 0.25 | 0.71 | 0.83 |
-| Ed25519 sign / verify | 0.60 / 0.65 | 0.55 / 0.57 | 1.06 / 1.43 | 1.18 / 1.57 |
-| X25519 keygen | 0.33 | 0.54 | 1.21 | 1.29 |
+| | 8532494 (first run) | 36ff93f9 | 7cdac586 | 93f54441 | b5b67857 (noisy) |
+|---|---:|---:|---:|---:|---:|
+| P-256 full handshake, client / server | 0.11–0.15 / 0.16–0.24 | 0.52–0.60 / 0.74–0.91 | 0.71–0.77 / 0.99–1.00 | 1.25–1.27 / 1.20–1.23 | 0.90–1.27 / 0.80–1.22 |
+| RSA-2048 full handshake, client / server | 0.42–0.47 / 0.93 | 0.48–0.55 / 0.58–0.59 | 0.91–0.96 / 1.02–1.05 | 1.06 / 1.08 | 0.84–1.03 / 0.71–0.86 |
+| Ed25519 full handshake, client / server | 0.73–0.74 / 0.78–0.83 | 0.64–0.73 / 0.76–0.91 | 1.14–1.22 / 1.01–1.04 | 1.26–1.29 / 1.08–1.13 | 1.18–1.21 / 1.02–1.10 |
+| Bulk AES-GCM / ChaCha20-Poly1305 (16 KiB) | 0.76–0.83 / 0.98–1.01 | 0.88–0.93 / 1.37–1.39 | 0.85–0.95 / 1.30–1.31 | 0.89–0.94 / 1.24–1.27 | 0.72–1.01 / 1.08–1.09 |
+| AES-128/256-GCM 16 KiB record seal | 0.72 / 0.78 | 0.88 / 0.86 | 0.85 / 0.86 | 0.97 / 1.02 | 0.79 / 0.80 |
+| ECDSA P-256 sign / verify | 0.05 / 0.08 | 0.56 / 0.44 | 1.03 / 0.67 | 1.27 / 1.24 | 1.01 / 1.13 |
+| ECDSA P-521 sign / verify | 0.03 / 0.04 | 0.04 / 0.05 | 0.57 / 0.31 | 1.77 / 1.05 | 2.04 / 1.28 |
+| RSA-2048 PSS verify | 0.23 | 0.25 | 0.71 | 0.83 | 0.94 |
+| Ed25519 sign / verify | 0.60 / 0.65 | 0.55 / 0.57 | 1.06 / 1.43 | 1.18 / 1.57 | 0.79 / 1.28 |
+| X25519 keygen | 0.33 | 0.54 | 1.21 | 1.29 | 0.82 |
