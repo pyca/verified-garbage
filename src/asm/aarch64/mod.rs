@@ -293,6 +293,9 @@ pub(crate) mod rsa_pss_sha512_mgf1_sha512;
 pub(crate) mod scrypt;
 
 #[rustfmt::skip]
+pub(crate) mod seed;
+
+#[rustfmt::skip]
 pub(crate) mod sha1;
 
 #[rustfmt::skip]
