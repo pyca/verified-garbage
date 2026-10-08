@@ -1,7 +1,7 @@
 //! ECDH over secp256k1 (`vg_ecdh_secp256k1`), and public keys
 //! (`vg_ec_secp256k1_public_key`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use super::{Error, PrivateKey, Secp256k1};
 use crate::arch::ec_secp256k1::vg_ec_secp256k1_public_key;
