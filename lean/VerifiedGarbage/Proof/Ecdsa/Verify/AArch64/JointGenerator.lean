@@ -48,8 +48,8 @@ theorem of_table (hc : CfgOk p256) (hC : Law p256.C)
     exact ⟨mont_lt hc _,mont_lt hc _⟩
   · intro a ha ha32
     rw [(coordinates hc hT ht a ha ha32).1,(coordinates hc hT ht a ha ha32).2]
-    have hx := toM_cmont hc (combAt p256.tbl 0 (2*a-2)).1
-    have hy := toM_cmont hc (combAt p256.tbl 0 (2*a-2)).2
+    have hx := toM_cmont hc.toBaseCfgOk (combAt p256.tbl 0 (2*a-2)).1
+    have hy := toM_cmont hc.toBaseCfgOk (combAt p256.tbl 0 (2*a-2)).2
     change toM p256.C.p (2^256) _=_ at hx hy
     rw [hx,hy]
     have hp := hT.entry 0 (by decide) (2*a-2) (by omega)

@@ -68,6 +68,7 @@ abbrev LOW : Region := ⟨L.B, 200⟩
 abbrev HIGH : Region := ⟨L.B + BitVec.ofNat 64 240, L.e⟩
 /-- The comb's tables. -/
 abbrev TBL : Region := ⟨L.T, 8 * E.combWords.length⟩
+abbrev tables : List Region := tableRegions E L.T
 
 /-- What the contract says of where the buffers and the stack are (`d` and
 `digest`, which are only read, may overlap). -/
@@ -213,7 +214,7 @@ end Lay.Ok
 /-- The state between the frames' pushes and pops: `g` are the registers on
 entry, `m₀` the memory. -/
 structure Ctx {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg → BitVec 64) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.D, L.DG, L.TBL]
+  rd : t.rd = [L.D, L.DG] ++ L.tables
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SCR]
   sp : t.sp = L.B + BitVec.ofNat 64 16
   cs : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = g r
@@ -223,7 +224,7 @@ structure Ctx {dn : Nat} {E : Impl.Ecdsa.AArch64.Cfg} (L : Lay dn E) (g : Reg �
   pOut : t.mem.readW (L.B + BitVec.ofNat 64 224) 64 = L.out
   lr : t.mem.readW (L.B + BitVec.ofNat 64 (240 + L.e)) 64 = g .x30
   frame : Frame [L.OUT, L.SCR, L.STK] m₀ t.mem
-  sy : t.syms E.tsym = L.T
+  sy : tableAddr E t.syms = L.T
   held : ∀ i < E.combWords.length,
     m₀.readW (L.T + BitVec.ofNat 64 (8 * i)) 64 = E.combWords.getD i 0
 
@@ -339,7 +340,7 @@ end Ctx
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, and two `V`s making a candidate if `wide`. -/
 def lay (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) : Lay dn E :=
-  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 (256 + extra wide), q, s.syms E.tsym,
+  ⟨s.gpr .x0, s.gpr .x1, s.gpr .x2, s.gpr .x3, s.sp - BitVec.ofNat 64 (256 + extra wide), q, tableAddr E s.syms,
     wide, _, rfl⟩
 
 theorem lay_top (dn q : Nat) (E : Impl.Ecdsa.AArch64.Cfg) (wide : Bool) (s : State) :

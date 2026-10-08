@@ -58,7 +58,7 @@ theorem Saved.unch {base : Addr} {g : Reg → BitVec 64} {m m' : Mem}
   exact (hu.word (d := p.2) (fun w hw => Or.inl (by have := hW w hw; omega)) (by omega)).trans (h p hp)
 
 /-- The result, the return value and the callee-saved registers. -/
-theorem finish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+theorem finish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hx20 : s.gpr .x20 = out) (hfit : out.toNat + 2 * c.C.len ≤ 2 ^ 64)
     (hw : (⟨out, 2 * c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 2 * c.C.len⟩ ⟨base, size⟩)

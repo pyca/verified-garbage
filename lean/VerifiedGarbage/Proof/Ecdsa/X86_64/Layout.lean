@@ -61,7 +61,7 @@ has fewer than `8 len` bits) are fewer than 32, and for up to nine words
 constants right, and modulo `n` if `fastN`. The group law needs more (`Weierstrass.Law`, which a prime field
 and no point of order 2 give: `Weierstrass.Good.law`), which only the proofs
 of the results take. -/
-structure CfgOk (c : Cfg) : Prop where
+structure BaseCfgOk (c : Cfg) : Prop where
   n0 : 0 < c.n
   n10 : c.n < 10
   onG : onCurve c.C (G c.C) = true
@@ -95,8 +95,16 @@ structure CfgOk (c : Cfg) : Prop where
   inv_n : c.fastN = true → c.n ≤ 9 → InvSound c.C.n ∧ InvOk c.invN c.C.n
   /-- `a = -3`, for the window method's formulas, and for up to six words an
   even number of them, for its selection of 16 bytes at a time. -/
-  am3 : AM3 c.C
+  window_am3 : c.windows = true → AM3 c.C
+  comb_am3 : ∀ d, c.comb = some d → AM3 c.C
   even : c.n ≤ 6 → c.n % 2 = 0
+
+/-- Additional hypothesis for the optimized variable-base formulas. The
+general ladder and signing without a comb do not require `a = -3`. -/
+structure CfgOk (c : Cfg) : Prop extends BaseCfgOk c where
+  am3 : AM3 c.C
+
+instance {c : Cfg} : Coe (CfgOk c) (BaseCfgOk c) := ⟨CfgOk.toBaseCfgOk⟩
 
 /-- The comb's tables, if any, at the address of their static: held, not
 wrapping around, and apart from the regions `wr`, as `Abi.withConsts`

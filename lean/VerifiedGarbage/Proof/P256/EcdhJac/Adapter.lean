@@ -44,7 +44,7 @@ theorem mulWithInverse_of_window (hc : CfgOk p256) {ip : Prog isa} {W : List (Na
     · exact unch.wordsVal (by decide) (by decide)
     · exact ht.field.lt K.R.z (by decide)
   exact finishInverse_ok hc hfixed hslots hflag ready
-    (hip ready.scr (modP_of hc ready.fixed.mp) ready.rz_lt) h
+    (hip ready.scr (modP_of hc.toBaseCfgOk ready.fixed.mp) ready.rz_lt) h
 
 theorem mul_of_window (hc : CfgOk p256)
     (hw : ∀ {base : Addr} {P : Point C} {k : Nat} {s : State},onCurve C P=true → k<2^256 →

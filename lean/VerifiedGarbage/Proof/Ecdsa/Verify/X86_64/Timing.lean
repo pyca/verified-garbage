@@ -33,7 +33,7 @@ def CombReady (c : Cfg) (d : CombData) (s₀ s : State) : Prop :=
   Scr s (s₀.gpr .rcx) size ∧ ModOkW (c.combCfg d).M size c.C.p s.mem (s₀.gpr .rcx) ∧
     TCombFixed (c.combCfg d) c.C (s₀.gpr .rcx) size s (publicU c s₀) (s₀.syms d.tsym) (c.combWords d)
 
-theorem bits_combReady (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
+theorem bits_combReady (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d)
     {s₀ s : State} {g : Reg → BitVec 64} (hp : VPre c s₀) (hM : Mid c s₀ (s₀.gpr .rcx) g s) :
     WP isa (.seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n))
       (.block (setConst c.n (c.sl EM) (c.mont c.C.b)))) s (CombReady c d s₀) := by
@@ -109,7 +109,7 @@ def verifySuffix (c : Cfg) : Prog isa :=
     (.seq (Impl.Ecdsa.Verify.X86_64.Cfg.mulV c) (Impl.Ecdsa.Verify.X86_64.Cfg.sum c)))
     (Impl.Ecdsa.Verify.X86_64.Cfg.tail c)
 
-theorem verifyPrefix_ok (hc : CfgOk c) {d : CombData} (hcd : c.comb = some d)
+theorem verifyPrefix_ok (hc : BaseCfgOk c) {d : CombData} (hcd : c.comb = some d)
     {s₀ : State} (hp : VPre c s₀) : WP isa (verifyPrefix c) s₀ (CombReady c d s₀) := by
   refine front_ok hc hp fun g s₁ _ hF => mid_ok hc hF fun s₂ hM => ?_
   have h := bits_combReady hc hcd hp hM
@@ -159,7 +159,7 @@ structure VerifyChecks (c : Cfg) (d : CombData) : Prop where
     (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (verifyPrefix c)
   after : ConstantTime isa (fun _ => True) (X86_64.Taint.Agree (Taint.ofRegs [.rdi])) (verifySuffix c)
 
-theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
+theorem verify_public_ct (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c)
     {d : CombData} (hcd : c.comb = some d) (hLookup : c.pubVerify = true)
     (checks : VerifyChecks c d) :
     ConstantTime isa (VPre c) (VerifyPublic c d) (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) := by
@@ -177,11 +177,11 @@ theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c)
       TCombFixed (c.combCfg d) c.C (s₁.gpr .rcx) size a₂ (publicU c s₁) (s₁.syms d.tsym) (c.combWords d) := by
     rw [base,scalar,sym]; exact ready₂
   have hd := hc.comb d hcd
-  have hh := publicComb_ct (tcombLay hc hd) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd).1)
+  have hh := publicComb_ct (tcombLay hc hd) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
     hc.p_lt checks.comb _ _ _ _ _ _
     ⟨ready₁.1,second.1,ready₁.2.1,second.2.1,ready₁.2.2,second.2.2⟩ ec₁ ec₂
   have wpComb := fun {s₀ a : State} (h : CombReady c d s₀ a) =>
-    tcomb_ok (tcombLay hc hd) hC hc.am3 hc.onG (tcombVals hc hC (hT d hcd).1)
+    tcomb_ok (tcombLay hc hd) hC (hc.comb_am3 d hcd) hc.onG (tcombVals hc hC (hT d hcd).1)
       hc.p_lt h.1 h.2.1 h.2.2 true
   obtain ⟨_,_,wc₁,keep₁,_⟩ := wpComb ready₁
   obtain ⟨_,_,wc₂,keep₂,_⟩ := wpComb ready₂

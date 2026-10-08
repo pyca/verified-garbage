@@ -67,7 +67,7 @@ theorem finish_eq (c : Cfg) : Impl.EcKey.X86_64.Cfg.finish c =
   simp only [Impl.EcKey.X86_64.Cfg.finish, List.append_assoc]; rfl
 
 /-- The result, the return value and the callee-saved registers. -/
-theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
+theorem pkFinish_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
     (hd : Region.Disjoint ⟨out, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hfit : out.toNat + (1 + 2 * c.C.len) ≤ 2 ^ 64)
     {g : Reg → BitVec 64} (hsv : Spill.Saved s.mem base g Cfg.saved) (b : Bool)
@@ -220,7 +220,7 @@ structure OpsPost (c : Cfg) (base : Addr) (s s' : State) : Prop where
     toM c.C.p (2 ^ (64 * c.n)) (sv c base s RY) * toM c.C.p (2 ^ (64 * c.n)) (sv c base s ACC)
 
 /-- The four field operations of `middle`. -/
-theorem pkOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem pkOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMP : ModOkW c.MP' size c.C.p s.mem base) (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1)
     {rest : Prog isa} {Q : State → Prop} (h : ∀ s', OpsPost c base s s' → WP isa rest s' Q) :
     WP isa (.seq (.block (mul c.MP' (c.sl XM) (c.sl RX) (c.sl ACC)))
@@ -287,7 +287,7 @@ abbrev ok (c : Cfg) (base : Addr) (s : State) : Bool :=
   decide ((0 < sv c base s D ∧ sv c base s D < c.C.n) ∧ sv c base s RZ ≠ 0)
 
 /-- `x`, `y`, the checks and the result. -/
-theorem middle_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem middle_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hacc : sv c base s ACC < c.C.p)
     (hflag : word s.mem base (c.sl FLAG) = BitVec.allOnes 64) {out : Addr}
     (hrsi : s.gpr .rsi = out) (hw : (⟨out, 1 + 2 * c.C.len⟩ : Region) ∈ s.wr)
@@ -399,7 +399,7 @@ theorem args_ok (s : State) :
 
 /-- `vg_ec_<curve>_public_key` computes the specification's public key and
 restores the callee-saved registers. -/
-theorem publicKey_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀) :
+theorem publicKey_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State} (hp : PkPre c s₀) :
     WP isa (Impl.EcKey.X86_64.Cfg.publicKey c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ PkPost c s₀ s' := by
   have h0 := hc.n0

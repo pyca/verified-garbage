@@ -235,7 +235,7 @@ theorem sv_out {base : Addr} {m m' : Mem} {j : Nat} (h : Outside base (c.sl j) (
   exact h.wordsVal (sl_apart c hij) (by omega)
 
 /-- The constants, the peer's `y` and the checks of its first byte, `x` and `y`. -/
-theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
+theorem peer_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size) {q : Addr}
     (hq : s.gpr .r9 = q) (hin : (⟨q, 1 + 2 * c.C.len⟩ : Region) ∈ s.rd ++ s.wr)
     (hd : Region.Disjoint ⟨q, 1 + 2 * c.C.len⟩ ⟨base, size⟩) (hmp : sv c base s MP = c.C.p) :
     WP isa (.block (Impl.Ecdh.X86_64.Cfg.peer c)) s fun s' =>

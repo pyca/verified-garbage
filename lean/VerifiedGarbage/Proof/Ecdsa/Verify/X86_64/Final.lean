@@ -36,7 +36,7 @@ theorem vfinish_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.finish c =
       Spill.restoreCode .rdi Cfg.saved := rfl
 
 /-- The return value and the callee-saved registers. -/
-theorem vfinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem vfinish_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (hsv : Spill.Saved s.mem base g Cfg.saved) (b : Bool)
     (hf : word s.mem base (c.sl FLAG) = if b then BitVec.allOnes 64 else 0) :
     WP isa (.block (Impl.Ecdsa.Verify.X86_64.Cfg.finish c)) s fun s' =>
@@ -78,7 +78,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.final c =
   simp only [Impl.Ecdsa.Verify.X86_64.Cfg.final, blocks, List.append_assoc]
 
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
-theorem tail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
+theorem tail_ok (hc : BaseCfgOk c) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
     WP isa (.seq c.pPow (Impl.Ecdsa.Verify.X86_64.Cfg.final c)) s fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧

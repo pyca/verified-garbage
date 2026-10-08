@@ -20,13 +20,20 @@ namespace VG.Proof.Ecdsa.Rfc6979.AArch64
 
 open VG VG.AArch64 Spec.Weierstrass Spec.Ecdsa
 
+/-- An absent table needs neither a symbol nor a readable region. -/
+def tableAddr (E : Impl.Ecdsa.AArch64.Cfg) (syms : String → Addr) : Addr :=
+  if E.tbl.isEmpty then 0 else syms E.tsym
+
+def tableRegions (E : Impl.Ecdsa.AArch64.Cfg) (addr : Addr) : List Region :=
+  if E.tbl.isEmpty then [] else [⟨addr, 8 * E.combWords.length⟩]
+
 /-- The comb's tables of `E` at the static `E.tsym`, held, not wrapping
 around, and apart from the regions `wr`. -/
 def TblOk (E : Impl.Ecdsa.AArch64.Cfg) (s : State) (wr : List Region) : Prop :=
   (∀ i < E.combWords.length,
-    s.mem.readW (s.syms E.tsym + BitVec.ofNat 64 (8 * i)) 64 = E.combWords.getD i 0) ∧
-  (s.syms E.tsym).toNat + 8 * E.combWords.length ≤ 2 ^ 64 ∧
-  ∀ r ∈ wr, Region.Disjoint ⟨s.syms E.tsym, 8 * E.combWords.length⟩ r
+    s.mem.readW (tableAddr E s.syms + BitVec.ofNat 64 (8 * i)) 64 = E.combWords.getD i 0) ∧
+  (tableAddr E s.syms).toNat + 8 * E.combWords.length ≤ 2 ^ 64 ∧
+  ∀ r ∈ wr, Region.Disjoint ⟨tableAddr E s.syms, 8 * E.combWords.length⟩ r
 
 /-- RFC 6979's signature of the arguments, and the number of candidates tried. -/
 abbrev result (I : Spec.Ecdsa.Rfc6979.Instance) (m : Mem) (d digest : Addr) : Option (Nat × Nat) × Nat :=
@@ -39,7 +46,7 @@ def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Spec.Ecdsa.Rfc6979.Instance) (N
     let digest : Region := ⟨s.gpr .x2, I.hashLen⟩
     let scratch : Region := ⟨s.gpr .x3, 8192⟩
     let stk : Region := below s.sp N
-    s.rd = [d, digest, ⟨s.syms E.tsym, 8 * E.combWords.length⟩] ∧ s.wr = [out, scratch] ∧
+    s.rd = [d, digest] ++ tableRegions E (tableAddr E s.syms) ∧ s.wr = [out, scratch] ∧
       out.Disjoint d ∧ out.Disjoint digest ∧ out.Disjoint scratch ∧
       d.Disjoint scratch ∧ digest.Disjoint scratch ∧
       stk.Disjoint out ∧ stk.Disjoint d ∧ stk.Disjoint digest ∧ stk.Disjoint scratch ∧
@@ -56,7 +63,7 @@ def rfcAArch64 (E : Impl.Ecdsa.AArch64.Cfg) (I : Spec.Ecdsa.Rfc6979.Instance) (N
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧
     (result I s₁.mem (s₁.gpr .x1) (s₁.gpr .x2)).2 = (result I s₂.mem (s₂.gpr .x1) (s₂.gpr .x2)).2 ∧
-    s₁.syms E.tsym = s₂.syms E.tsym
+    tableAddr E s₁.syms = tableAddr E s₂.syms
 
 /-- A state satisfying the precondition, for scalars of `Q` bytes and a
 digest of `D` bytes, with the memory `m` holding the comb's tables (of `TB`

@@ -53,7 +53,7 @@ theorem pk_x86 (hL : Weierstrass.Law Spec.P521.curve)
     (hT : Weierstrass.CombOkW Spec.P521.curve 7 83 Impl.P521.p521Comb7 Impl.P521.p521Comb7Start)
     (hI : Weierstrass.X86_64.InvSounds) (s : State) (hs : pkX86_64.pre s) :
     ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkX86_64.post s s' := by
-  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (p521_ok hI) hL (p521_tbls hT) (pre_of hs)
+  obtain ⟨t, s', he, hsv, hpost⟩ := publicKey_ok (c := p521) (p521_ok hI).toBaseCfgOk hL (p521_tbls hT) (pre_of hs)
   have hsp : ∀ i ∈ instrs publicKeyP521, Taint.clobbers i .rsp = false := by
     have h : publicKeyP521.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by lit_decide
     rw [Code.allInstrs_eq, List.all_eq_true] at h

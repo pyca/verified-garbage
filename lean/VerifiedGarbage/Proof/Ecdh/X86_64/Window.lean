@@ -81,7 +81,7 @@ theorem lay_win (h9 : c.n ≤ 9) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp 
 theorem winW_eq (c : Cfg) : winW (winQ c) = slW c (otherI ++ tblI ++ [TMP]) := by
   rw [winW, winWs_eq]; simp only [slW, List.map_append, List.map_map]; rfl
 
-theorem winLayQ (hc : CfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
+theorem winLayQ (hc : BaseCfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
   have hn := hc.n0
   have hJ : (winQ c).J = c.winJ := rfl
   have hJle : c.winJ ≤ 16 * c.n + 1 := by
@@ -119,7 +119,7 @@ theorem winLayQ (hc : CfgOk c) (h9 : c.n ≤ 9) : WinLay (winQ c) size := by
       have : 8 * c.n * 83 = 8 * c.n * 73 + 80 * c.n := by omega
       omega
 
-theorem winXQ (hc : CfgOk c) (h9 : c.n ≤ 9) : WinX (winQ c) size where
+theorem winXQ (hc : BaseCfgOk c) (h9 : c.n ≤ 9) : WinX (winQ c) size where
   n := by show 1 ≤ c.n ∧ c.n ≤ 9; exact ⟨hc.n0, h9⟩
   tbl := by
     show c.sl WT < 2 ^ 31
@@ -235,7 +235,7 @@ theorem mask_arith {L B T m : Nat} (hL : L < B) :
   rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hlt]
 
 /-- ECDH's `d` at `K` reduced below `2^nbits` (`maskK`). -/
-theorem maskK_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem maskK_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hk8 : sv c base s K < 2 ^ (8 * c.C.len)) :
     WP isa (.block (Impl.Ecdh.X86_64.Cfg.maskK c)) s fun s' => Scr s' base size ∧
       KeepRegs [.r8] s s' ∧ sv c base s' K = sv c base s K % 2 ^ c.nbits ∧
@@ -297,7 +297,7 @@ structure WinMulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : S
 
 /-- `k + 8 Σ_{j<J} 16^j` and its bits, from the slot `ks`, then the window
 method on `P`: `[k]P`. -/
-theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {s : State}
+theorem winMul_ok (hc : BaseCfgOk c) (hA : AM3 c.C) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {s : State}
     (hs : Scr s base size) {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hbp : sv c base s BP = c.mont c.C.b)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
@@ -370,7 +370,7 @@ theorem winMul_ok (hc : CfgOk c) (h9 : c.n ≤ 9) (hC : Law c.C) {base : Addr} {
       rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega)
-  refine WP.mono (window_ok (winLayQ hc h9) (winXQ hc h9) hpR hC hc.am3 hP hc.p_lt (hmont 1)
+  refine WP.mono (window_ok (winLayQ hc h9) (winXQ hc h9) hpR hC hA hP hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hs₂ hM₂ hF
     (by rw [hJ]; exact hrec) (Nat.le_add_left _ _)) fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => h s₃ ?_
   rw [winW_eq] at U₃
@@ -423,7 +423,7 @@ structure MulPost (c : Cfg) (base : Addr) (P : Point c.C) (k : Nat) (s s' : Stat
 
 /-- `[k]P`, for `k` at `K` (and its bits in the first table), by windows for
 up to nine words and by the ladder for more, then `Z^(p-2)`. -/
-theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
+theorem mulPow_ok (hc : BaseCfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : Scr s base size)
     {g : Reg → BitVec 64} (F : Fixed c base g s.mem) (hbp : sv c base s BP = c.mont c.C.b)
     {P : Point c.C} (hP : onCurve c.C P = true) (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
@@ -447,7 +447,7 @@ theorem mulPow_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       sv_unch U₁ h7 hn hi (apart_slW (by simpa using hne))
     have tv₁ : ∀ {i}, i < 45 → i ≠ K → tmv c.C c.n base s₁ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
       fun hi hne => by show toM _ _ (sv c base s₁ _) = toM _ _ (sv c base s _); rw [v₁ hi hne]
-    refine WP.seq_iff.mp (winMul_ok hc h9 hC hs₁ F₁ (by rw [v₁ (by decide) (by decide)]; exact hbp) hP
+    refine WP.seq_iff.mp (winMul_ok hc (hc.window_am3 h9.2) h9.1 hC hs₁ F₁ (by rw [v₁ (by decide) (by decide)]; exact hbp) hP
       (by rw [v₁ (by decide) (by decide)]; exact hpx) (by rw [v₁ (by decide) (by decide)]; exact hpy)
       (by rw [tv₁ (by decide) (by decide), tv₁ (by decide) (by decide), tv₁ (by decide) (by decide)]; exact hrep)
       (ks := K) (by decide) (by rw [e₁]; exact Nat.mod_lt _ (Nat.pow_pos (by decide))) fun s₃ W => ?_)

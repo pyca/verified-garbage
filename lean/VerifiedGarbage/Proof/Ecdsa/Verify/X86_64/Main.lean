@@ -42,7 +42,7 @@ theorem verify_eq'' (c : Cfg) : Impl.Ecdsa.Verify.X86_64.Cfg.verify c =
         (Impl.Ecdsa.Verify.X86_64.Cfg.tail c))))))))) := rfl
 
 /-- What the slots of `a`, `3b` and `G` stand for. -/
-theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
+theorem consts_tmv (hc : BaseCfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : State}
     (F : Fixed c base g s.mem) :
     tmv c.C c.n base s (c.sl AP) = Fin.ofNat c.C.p c.C.a ∧
       tmv c.C c.n base s (c.sl B3P) = Fin.ofNat c.C.p (3 * c.C.b) ∧
@@ -57,7 +57,7 @@ theorem consts_tmv (hc : CfgOk c) {base : Addr} {g : Reg → BitVec 64} {s : Sta
 
 /-- `vg_ecdsa_<curve>_verify` returns whether the specification's
 verification holds, and restores the callee-saved registers. -/
-theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
+theorem verify_ok (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombTbls c) {s₀ : State}
     (hp : VPre c s₀) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.verify c) s₀ fun s' =>
       (∀ r ∈ Cfg.saved.map Prod.fst, s'.gpr r = s₀.gpr r) ∧ VPost c s₀ s' := by

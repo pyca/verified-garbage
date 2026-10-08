@@ -35,7 +35,7 @@ theorem zw_le {c : Cfg} (hn : 0 < c.n) : 8 * c.combCfg.zw ≤ 64 * c.n := by
   show 8 * ((7 * ((64 * c.n + 6) / 7) - 64 * c.n + 7) / 8) ≤ 64 * c.n
   omega
 
-theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
+theorem combLay (hc : BaseCfgOk c) : CombLay c.combCfg.toComb size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hJ : c.combCfg.toComb.J = Cfg.combJ c.n := by rw [TCombCfg.toComb_J]; rfl
@@ -57,7 +57,7 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
       decide
     exact sl_bits0 c (hl i hi) (by rw [hJ]; unfold Cfg.combJ; omega)
 
-theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
+theorem tcombLay (hc : BaseCfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hb := bitsAt_le c h7 (j := 1) (by decide)
@@ -102,7 +102,7 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 
-theorem combA (hc : CfgOk c) : CombA c.combCfg.toComb where
+theorem combA (hc : BaseCfgOk c) : CombA c.combCfg.toComb where
   sl := by
     rw [combSlots_eq]
     intro x hx
@@ -119,11 +119,11 @@ theorem combA (hc : CfgOk c) : CombA c.combCfg.toComb where
 
 theorem mont_zero (c : Cfg) : c.mont 0 = 0 := by simp [Cfg.mont]
 
-theorem mont_lt (hc : CfgOk c) (x : Nat) : c.mont x < c.C.p :=
+theorem mont_lt (hc : BaseCfgOk c) (x : Nat) : c.mont x < c.C.p :=
   Nat.mod_lt _ (by have := hc.p_ge; omega)
 
 /-- The comb's constants, from its tables' facts. -/
-theorem tcombVals (hc : CfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
+theorem tcombVals (hc : BaseCfgOk c) (hC : Law c.C) (hT : CombOkW c.C Cfg.combW (Cfg.combJ c.n) c.tbl c.start) :
     TCombVals c.combCfg c.C c.tbl where
   len := hT.len
   lenH := hT.lenH

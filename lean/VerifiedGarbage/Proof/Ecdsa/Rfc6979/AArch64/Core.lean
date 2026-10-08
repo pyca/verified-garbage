@@ -32,7 +32,7 @@ abbrev coreSig (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) (m : Mem) : Option (N
 /-- `core` reads the private key, the digest and `k`, `Q` bytes each, and
 the comb's tables. -/
 abbrev coreRd (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : List Region :=
-  [⟨L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩, L.TBL]
+  [⟨L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩] ++ L.tables
 abbrev coreWr (P : RfcHash) {dn : Nat} (L : Lay dn P.R.E) : List Region := [⟨L.out, 2 * P.Q⟩, L.SCR]
 
 /-- What `core`'s digest and `k` need of the layout: unless two `V`s make a
@@ -90,7 +90,7 @@ theorem core_pre (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀ t)
   have no : L.out.toNat + 2 * P.R.E.C.len ≤ 2 ^ 64 := by have := hL.no; rw [hq'] at this; omega
   obtain ⟨-, gO, gS⟩ := coreArg_ok hL hk (.inl rfl)
   obtain ⟨-, kO, kS⟩ := coreArg_ok hL hk (.inr rfl)
-  have sy : ∀ rd wr, (t.callEntry.withRegions rd wr).syms P.R.E.tsym = L.T := fun _ _ => hc.sy
+  have sy : ∀ rd wr, tableAddr P.R.E (t.callEntry.withRegions rd wr).syms = L.T := fun _ _ => hc.sy
   simp only [coreK, TblOk, coreRd, coreWr, eD, eO, ce_gpr _ _ _ (by decide : Reg.x0 ∉ linkRegs),
     ce_gpr _ _ _ (by decide : Reg.x1 ∉ linkRegs), ce_gpr _ _ _ (by decide : Reg.x2 ∉ linkRegs),
     ce_gpr _ _ _ (by decide : Reg.x3 ∉ linkRegs), ce_gpr _ _ _ (by decide : Reg.x4 ∉ linkRegs), h0, h1, h2, h3,
@@ -106,19 +106,25 @@ theorem core_covers (hL : L.Ok) (hk : CoreOk P L) {t : State} (hc : Ctx L g m₀
     Covers (coreRd P L ++ coreWr P L) (t.rd ++ t.wr) := by
   have hq : L.q = P.Q := hk.1
   have hw : ∀ {x : Addr}, (∃ R ∈ [L.D, L.DG, L.FR], Within ⟨x, P.Q⟩ R) →
-      ∃ R ∈ [L.D, L.DG, L.TBL] ++ [L.FR, L.LR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
+      ∃ R ∈ ([L.D, L.DG] ++ L.tables) ++ [L.FR, L.LR, L.OUT, L.SCR], Within ⟨x, P.Q⟩ R :=
     fun ⟨R, hR, hW⟩ => ⟨R, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hR; rcases hR with rfl | rfl | rfl <;> simp, hW⟩
   refine covers_of fun r hr => ?_
   rw [hc.rd, hc.wr]
-  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨L.D, by simp, within_base _ (by omega)⟩
-  · exact hw (coreArg_ok hL hk (.inl rfl)).1
-  · exact hw (coreArg_ok hL hk (.inr rfl)).1
-  · exact ⟨L.TBL, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
-  · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
+  change r ∈ [⟨L.d, P.Q⟩, ⟨dgAddr L, P.Q⟩, ⟨kAddr L, P.Q⟩] ++ L.tables ++
+    [⟨L.out, 2 * P.Q⟩, L.SCR] at hr
+  rcases List.mem_append.mp hr with hr | hr
+  · rcases List.mem_append.mp hr with hr | hr
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨L.D, by simp, within_base _ (by omega)⟩
+      · exact hw (coreArg_ok hL hk (.inl rfl)).1
+      · exact hw (coreArg_ok hL hk (.inr rfl)).1
+    · exact ⟨r, by simp [hr], within_base _ (Nat.le_refl _)⟩
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨L.OUT, by simp, within_base _ (by omega)⟩
+    · exact ⟨L.SCR, by simp, within_base _ (by omega)⟩
 
 theorem core_coversW (hq : L.q = P.Q) {t : State} (hc : Ctx L g m₀ t) : Covers (coreWr P L) t.wr :=
   hc.coversW fun r hr => by

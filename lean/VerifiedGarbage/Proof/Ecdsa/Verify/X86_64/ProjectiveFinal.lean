@@ -20,7 +20,7 @@ structure ProjectiveInput (c : VG.Impl.Ecdsa.X86_64.Cfg) (s₀ : State) (base : 
   rz_lt : sv c base s RZ < c.C.p
 
 /-- The inversion-free final check has the same result as affine conversion. -/
-theorem projectiveFinal_fields_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
+theorem projectiveFinal_fields_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hP : ProjectiveInput c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
@@ -76,7 +76,7 @@ theorem projectiveFinal_fields_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c
   simpa only [iff] using ret
 
 /-- The inversion-free final check has the same result as affine conversion. -/
-theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
+theorem projectiveFinal_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.projectiveFinal c) s fun s' =>
@@ -87,7 +87,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
           Fin.ofNat c.C.n xo = Fin.ofNat c.C.n (sigR c s₀) then 1 else 0 :=
   projectiveFinal_fields_ok hc hC hnp hpn ⟨hP.scr,hP.fixed,hP.k,hP.flag,hP.rx_lt,hP.rz_lt⟩
 
-theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
+theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {u v : Nat} {P : Point c.C} {s : State} (hP : Pts c s₀ base g u v P s) :
     WP isa (Impl.Ecdsa.Verify.X86_64.Cfg.tail c) s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.X86_64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧

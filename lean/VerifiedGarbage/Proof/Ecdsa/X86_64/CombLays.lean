@@ -35,7 +35,7 @@ theorem zw_le {d : CombData} (hd : CombOk c d) : 8 * (c.combCfg d).zw ≤ 8 := b
   show 8 * ((d.w * c.combJ d.w - 64 * c.n + 7) / 8) ≤ 8
   omega
 
-theorem combJ_bounds {d : CombData} (hc : CfgOk c) (hd : CombOk c d) :
+theorem combJ_bounds {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) :
     1 ≤ c.combJ d.w ∧ c.combJ d.w ≤ 64 * c.n + 8 := by
   have h0 := hc.n0
   have hc' := hd.cover
@@ -44,7 +44,7 @@ theorem combJ_bounds {d : CombData} (hc : CfgOk c) (hd : CombOk c d) :
   refine ⟨Nat.pos_of_ne_zero fun h => ?_, by omega⟩
   rw [h, Nat.mul_zero] at hc'; omega
 
-theorem combLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : CombLay (c.combCfg d).toComb size := by
+theorem combLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : CombLay (c.combCfg d).toComb size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hJ : (c.combCfg d).toComb.J = c.combJ d.w := by rw [TCombCfg.toComb_J]; rfl
@@ -66,7 +66,7 @@ theorem combLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : CombLay (c.com
       decide
     exact Or.inr (sl_below_bits c (hl i hi) 0 0)
 
-theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.combCfg d) size := by
+theorem tcombLay {d : CombData} (hc : BaseCfgOk c) (hd : CombOk c d) : TCombLay (c.combCfg d) size := by
   have hn := hc.n0
   have h7 := hc.n10
   have hb := bitsAt_le_pad c h7 (j := 0) (by decide)
@@ -100,11 +100,11 @@ theorem tcombLay {d : CombData} (hc : CfgOk c) (hd : CombOk c d) : TCombLay (c.c
     have : 16 * c.n * 2 ^ (d.w - 1) ≤ 16 * 9 * 2 ^ 7 := Nat.mul_le_mul (by omega) this
     omega
 
-theorem mont_lt (hc : CfgOk c) (x : Nat) : c.mont x < c.C.p :=
+theorem mont_lt (hc : BaseCfgOk c) (x : Nat) : c.mont x < c.C.p :=
   Nat.mod_lt _ (by have := hc.p_ge; omega)
 
 /-- The comb's constants, from its tables' facts. -/
-theorem tcombVals {d : CombData} (hc : CfgOk c) (hC : Law c.C)
+theorem tcombVals {d : CombData} (hc : BaseCfgOk c) (hC : Law c.C)
     (hd : CombOkW c.C d.w (c.combJ d.w) d.tbl d.start) : TCombVals (c.combCfg d) c.C d.tbl where
   len := hd.len
   lenH := hd.lenH

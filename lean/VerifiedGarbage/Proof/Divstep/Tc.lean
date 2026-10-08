@@ -1,4 +1,8 @@
 import VerifiedGarbage.Proof.Divstep.Alg
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Positivity
 
 /-!
 # Inversion by batches of divsteps: words in two's complement

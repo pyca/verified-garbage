@@ -69,6 +69,6 @@ theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
     (h : ∀ u,MulPost p256 base g P k s u → WP isa rest u R) :
     WP isa (.seq p256.pPow rest) t R :=
   finishInverse_ok hc fixedOk_chainWc (fun _ hi hn => apart_chainWc hi hn)
-    (by decide) hw (pPow_ok hc hw.scr (modP_of hc hw.fixed.mp) hw.rz_lt) h
+    (by decide) hw (pPow_ok hc hw.scr (modP_of hc.toBaseCfgOk hw.fixed.mp) hw.rz_lt) h
 
 end VG.Proof.P256.EcdhJac

@@ -8,7 +8,7 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Ecdh.AArch64
 variable {c : VG.Impl.Ecdsa.AArch64.Cfg}
 
 /-- The inversion-free final check has the same result as affine conversion. -/
-theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
+theorem projectiveFinal_ok (hc : BaseCfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     (hpn : c.C.p ≤ 2 * c.C.n) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hP : FinalState c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.projectiveFinal c) s fun s' =>
@@ -62,7 +62,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
       exact ⟨ha,hz,(Proof.Ecdsa.projective_matches hC hnp hpn (z.mpr hz) ha.2.1.2).mp hm⟩
   simpa only [iff] using ret
 
-theorem tail_dispatch_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
+theorem tail_dispatch_ok (hc : BaseCfgOk c) (hC : Law c.C) {s₀ : State} {base : Addr} {g : Reg → BitVec 64}
     {s : State} (hP : FinalState c s₀ base g s) :
     WP isa (Impl.Ecdsa.Verify.AArch64.Cfg.tail c) s fun s' =>
       (∀ r ∈ VG.Impl.Ecdsa.AArch64.Cfg.saved.map Prod.fst, s'.gpr r = g r) ∧ ∃ xo, xo < c.C.p ∧

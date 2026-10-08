@@ -49,7 +49,7 @@ structure St₁ (c : Cfg) (hs : Option Nat) (s₀ : State) (base : Addr) (s : St
   rd : s.rd = s₀.rd
 
 /-- The setup, then the table. -/
-theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
+theorem stage₁ (hc : BaseCfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : State} (hp : SetupPre c s₀)
     {rest : Prog isa} {Q : State → Prop}
     (h : ∀ s, St₁ c hs s₀ (s₀.gpr .x4) s → WP isa rest s Q) :
     WP isa (.seq (.block (c.setupWith hs)) (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) rest)) s₀ Q := by
@@ -110,7 +110,7 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
     rw [O₂ x (Or.inr (by have := bitsAt0_le c h7; omega)),
       P.unch x fun w hw => by rw [List.mem_singleton.mp hw]; exact Or.inr (by omega)]
 
-theorem toM_cmont (hc : CfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
+theorem toM_cmont (hc : BaseCfgOk c) (x : Nat) : toM c.C.p (2 ^ (64 * c.n)) (c.mont x) = Fin.ofNat c.C.p x :=
   toM_mont (unitMod_pow_two hc.p_odd _)
 
 theorem mul_zero_pt (P : Point c.C) : Spec.Weierstrass.mul 0 P = .infinity := by

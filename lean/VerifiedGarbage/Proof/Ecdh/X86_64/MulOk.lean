@@ -66,13 +66,13 @@ structure MulW (c : Cfg) (W : List (Nat × Nat)) : Prop where
 /-- What `mulQ` (the window method or the ladder) and the power may write. -/
 abbrev mulQW (c : Cfg) : List (Nat × Nat) := winX c ++ slW c mulI ++ pwW c
 
-theorem mulQ_ok (hc : CfgOk c) (hC : Law c.C) : MulOk c (Impl.Ecdh.X86_64.Cfg.mulQ c) (mulQW c) :=
+theorem mulQ_ok (hc : BaseCfgOk c) (hC : Law c.C) : MulOk c (Impl.Ecdh.X86_64.Cfg.mulQ c) (mulQW c) :=
   fun hs _ F hbp _ hP hpx hpy hrep hrx hry hrz _ hk hk8 ht₀ ht₁ _ _ h =>
     mulPow_ok hc hC hs F hbp hP hpx hpy hrep hrx hry hrz hk hk8 ht₀ ht₁ fun s' L =>
       h s' ⟨L.scr, L.gpr _ (rsi_not_invClob _), L.rd, L.wr, L.unch,
         fun _ hn => L.q (Nat.lt_of_lt_of_le hn hc.n_bits), L.acc_lt, L.acc, L.rz_lt⟩
 
-theorem mulQ_w (hc : CfgOk c) : MulW c (mulQW c) where
+theorem mulQ_w (hc : BaseCfgOk c) : MulW c (mulQW c) where
   fixed := fixedOk_mulW
   d := apart_mulW (by decide) (by decide) (by decide)
   flag := fun w hw => by

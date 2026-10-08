@@ -51,7 +51,7 @@ theorem unch_slots {base : Addr} {m₁ m₂ : Mem} {o : Nat} {l : List Nat} {M :
     · exact List.mem_map_of_mem ht
 
 /-- The four field operations of `middle`. -/
-theorem midOps_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
+theorem midOps_ok (hc : BaseCfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (hMP : ModOkA c.MP' size c.C.p s.mem base) (hMN : ModOkA c.MN' size c.C.n s.mem base)
     (hacc : sv c base s ACC < c.C.p) (hone : sv c base s ONE = 1) (hzero : sv c base s ZERO = 0)
     (hr2 : sv c base s R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n) {rest : Prog isa}
