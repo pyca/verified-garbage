@@ -1,12 +1,13 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.PcCode
 import VerifiedGarbage.Proof.Bignum.X86_64.CTMain
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wCT
 
 /-!
 # `vg_rsa_public_precompute` on x86-64: constant time but for `n`
 
 Every piece's addresses and branches depend only on the pointers, the
 lengths and `n`: the load of `m` and `-m⁻¹` (`pcLoad_ct`), `R² mod m`
-(`r2_ct`), the copies to `pre` (`pcOut_ct`), and the whole function
+(`choice_ct`), the copies to `pre` (`pcOut_ct`), and the whole function
 (`pcCode_constantTime`).
 -/
 
@@ -183,16 +184,16 @@ def PcO (q : PcPub × BitVec 64) (s : State) : Prop :=
     (∀ i < 16 * q.1.w, q.1.Z ≤ ofs q.1.B (q.1.op + BitVec.ofNat 64 i))
 
 /-- `R² mod m` leaks the same in runs that agree on `m`. -/
-theorem pcR2_ct (M : Mont) : RelCT isa (Two Pc3) (seqs (r2Steps M)) (Two PcO) := by
+theorem pcR2_ct (M : Mont) : RelCT isa (Two Pc3) (R2Words.choice M.mm) (Two PcO) := by
   have h := two_post (Φ := fun (q : PcPub × BitVec 64) s => PcM q.1 s ∧ R2Pre ⟨PcPub.L q, q.1.N⟩ s)
-    (Ψ := PcO) (two_map (fun q => (⟨PcPub.L q, q.1.N⟩ : R2Pub)) (fun _ _ h => h.2) (r2_ct M)) ?_
+    (Ψ := PcO) (two_map (fun q => (⟨PcPub.L q, q.1.N⟩ : R2Pub)) (fun _ _ h => h.2) (R2w.choice_ct M)) ?_
   · exact h.mono (fun _ _ hp => two_bind (fun p s₁ s₂ ⟨mi₁, m₁, r₁⟩ ⟨mi₂, m₂, r₂⟩ => by
       obtain rfl := pc3_minv r₁ r₂
       exact ⟨(p, mi₁), ⟨m₁, r₁⟩, m₂, r₂⟩) hp) fun _ _ h => h
   rintro ⟨p, mi⟩ s ⟨hm, hr⟩
   obtain ⟨hg, hw, hw', hn, hinv, h12, h10, hodd, hlo⟩ := hr
   dsimp only at hg hw hw' hn hinv h12 h10 hodd hlo
-  refine WP.mono (r2_ok M hg.1 hg.2 hw hw' hn hinv h12 h10 hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
+  refine WP.mono (R2w.choice_ok M hg.1 hg.2 hw hw' hn hinv h12 h10 hodd hlo) fun t ⟨hg', _, _, f, k⟩ =>
     ⟨⟨hg', hg.2⟩, hw, hw', ?_, fun i hi => by rw [k.2.2]; exact hm.2.2.2.2.2.2.2.2.2.2.2.1 i hi,
       hm.2.2.2.2.2.2.2.2.2.2.2.2⟩
   rw [(Fixed.of_frm f (r2Ranges_fixed _)) sOut (by decide)]
@@ -329,8 +330,8 @@ theorem pcOut_ct : RelCT isa (Two PcO) (seqs pcOut) fun _ _ => True := by
 /-- `main` leaks the same in runs that agree on the public data and `n`. -/
 theorem pcMain_ct (M : Mont) : RelCT isa (Two PcM) (Precompute.main M.mm) fun _ _ => True := by
   rw [pcMain_eq M]
-  refine RelCT.seqs_append (by simp [pcLoad]) (by simp [r2Steps]) (RelCT.seq pcLoad_ct ?_)
-  exact RelCT.seqs_append (by simp [r2Steps]) (by simp [pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
+  refine RelCT.seqs_append (by simp [pcLoad]) (by simp) (RelCT.seq pcLoad_ct ?_)
+  exact RelCT.seqs_append (by simp) (by simp [pcOut]) (RelCT.seq (pcR2_ct M) pcOut_ct)
 
 /-! ## The whole function -/
 

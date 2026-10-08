@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.PubFail
 import VerifiedGarbage.Proof.Bignum.X86_64.Copy
+import VerifiedGarbage.Proof.Bignum.X86_64.R2wFast
 import VerifiedGarbage.Spec.Rsa.Contract
 
 /-!
@@ -30,7 +31,7 @@ def pcOut : List (Prog isa) := [
 
 theorem seqs_one (c : Prog isa) : seqs [c] = c := rfl
 
-theorem pcMain_eq (M : Mont) : Precompute.main M.mm = seqs (pcLoad ++ (r2Steps M ++ pcOut)) := rfl
+theorem pcMain_eq (M : Mont) : Precompute.main M.mm = seqs (pcLoad ++ ([R2Words.choice M.mm] ++ pcOut)) := rfl
 
 /-- The load: `w`, the bases, `m`, and `-m⁻¹` for the odd `m`. -/
 theorem pcLoad_ok {s : State} {B : Addr} {Z k : Nat} {np : Addr} {nb : List Byte} (hs : Scr s B Z)
@@ -228,11 +229,11 @@ theorem pcMain_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np : Addr} {
   have hn := hs.nowrap
   have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega
   rw [pcMain_eq M]
-  refine wp_seqs_append (by simp [pcLoad]) (by simp [r2Steps])
+  refine wp_seqs_append (by simp [pcLoad]) (by simp)
     (WP.mono (pcLoad_ok hs hdi hZ (by omega) (by omega) hK hN hnb hnl hodd)
       fun t₁ ⟨minv, hg₁, hn₁, hinv₁, h12₁, h10₁, f₁, k₁⟩ => ?_)
-  refine wp_seqs_append (by simp [r2Steps]) (by simp [pcOut])
-    (WP.mono (r2_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ h12₁ h10₁ hodd hlo)
+  refine wp_seqs_append (by simp) (by simp [pcOut])
+    (WP.mono (R2w.choice_ok M hg₁ hZ (by omega) (by omega) hn₁ hinv₁ h12₁ h10₁ hodd hlo)
       fun t₂ ⟨hg₂, hlt₂, hr₂, f₂, k₂⟩ => ?_)
   have x₁₂ := (Fixed.of_frm f₁ (pcLoadRanges_fixed _)).trans (Fixed.of_frm f₂ (r2Ranges_fixed _))
   have i₁₂ : InScr B Z s.mem t₂.mem := (InScr.of_frm f₁ fun r hr => Nat.le_trans (pcLoadRanges_le _ r hr) hZ).trans
