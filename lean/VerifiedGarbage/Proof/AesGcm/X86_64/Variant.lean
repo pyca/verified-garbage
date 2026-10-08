@@ -4,6 +4,7 @@ import VerifiedGarbage.Impl.Gcm.X86_64.StitchZHTo
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZP
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchAvx8
 import VerifiedGarbage.Impl.Gcm.X86_64.StitchZTo
+import VerifiedGarbage.Impl.Gcm.X86_64.StitchTo
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Piece
 
 /-!
@@ -94,6 +95,8 @@ structure PieceR (n : StitchName) : Type where
 `vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic
 file, gives their proof. -/
 inductive StitchToName where
+  /-- `Impl.Gcm.X86_64.StitchTo`: VAES and VPCLMULQDQ on 256-bit registers. -/
+  | vaes
   /-- `Impl.Gcm.X86_64.StitchZTo`: VAES and VPCLMULQDQ on 512-bit registers. -/
   | vaesAvx512
 
@@ -101,14 +104,17 @@ namespace StitchToName
 
 /-- The loop named `n`. -/
 def enc : StitchToName → Prog isa
+  | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.enc
 
 /-- The loop named `n`, for a key context of `vg_aes_gcm_init_precomputed`. -/
 def encP : StitchToName → Prog isa
+  | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZTo.encP
 
 /-- Out-of-place encryption using a prepared context. -/
 def encR : StitchToName → Prog isa
+  | .vaes => Impl.Gcm.X86_64.StitchTo.enc
   | .vaesAvx512 => Impl.Gcm.X86_64.StitchZHTo.encP
 
 end StitchToName
