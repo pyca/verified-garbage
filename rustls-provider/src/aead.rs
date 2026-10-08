@@ -1,5 +1,7 @@
 //! The AEADs of the cipher suites, with 12-byte nonces and 16-byte tags.
 
+use rustls::crypto::cipher::OutboundPlain;
+use rustls::error::{ApiMisuse, Error};
 use verified_garbage::aes_gcm::AesGcm;
 use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
@@ -43,6 +45,39 @@ impl Algorithm {
 }
 
 impl Key {
+    /// Encrypts the plaintext `plain ‖ extra` into `out`, which is exactly as
+    /// long, returning the tag. AES-GCM reads the pieces where they are and
+    /// writes only `out`; ChaCha20-Poly1305, which has no such function yet,
+    /// copies them into `out` and encrypts it in place.
+    pub(crate) fn seal_to(
+        &self,
+        nonce: &[u8; 12],
+        aad: &[u8],
+        plain: &OutboundPlain<'_>,
+        extra: &[u8],
+        out: &mut [u8],
+    ) -> Result<[u8; TAG_LEN], ()> {
+        debug_assert_eq!(out.len(), plain.len() + extra.len());
+        if let Self::AesGcm(k) = self {
+            // `encrypt` takes at most `MAX_PIECES` pieces; gather more below.
+            if plain.chunks().count() < AesGcm::MAX_PIECES {
+                let mut pieces: [&[u8]; AesGcm::MAX_PIECES] = [&[]; AesGcm::MAX_PIECES];
+                let mut n = 0;
+                for piece in plain.chunks().chain([extra]) {
+                    pieces[n] = piece;
+                    n += 1;
+                }
+                return k.encrypt(nonce, aad, &pieces[..n], out).map_err(|_| ());
+            }
+        }
+        let mut used = 0;
+        for piece in plain.chunks().chain([extra]) {
+            out[used..used + piece.len()].copy_from_slice(piece);
+            used += piece.len();
+        }
+        self.seal(nonce, aad, out)
+    }
+
     /// Encrypts `data` in place, returning the tag.
     pub(crate) fn seal(
         &self,
@@ -72,4 +107,16 @@ impl Key {
         }
         Ok(text_len)
     }
+}
+
+/// The first `len` bytes of `out`, where a record of that length is written.
+pub(crate) fn record_region(out: &mut [u8], len: usize) -> Result<&mut [u8], Error> {
+    let provided = out.len();
+    out.get_mut(..len).ok_or_else(|| {
+        ApiMisuse::EncryptBufferTooSmall {
+            required: len,
+            provided,
+        }
+        .into()
+    })
 }
