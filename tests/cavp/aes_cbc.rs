@@ -16,15 +16,6 @@ use super::unhex;
 
 type Operation = fn(&AesCbc, &mut [u8; 16], &mut [u8]) -> Result<(), Error>;
 
-/// The chaining value after a message whose last ciphertext block ends
-/// `ciphertext`: that block, or `iv` for an empty message.
-fn last_block(iv: &[u8; 16], ciphertext: &[u8]) -> [u8; 16] {
-    match ciphertext.len() {
-        0 => *iv,
-        n => ciphertext[n - 16..].try_into().unwrap(),
-    }
-}
-
 /// Checks a vector in both directions, in one call; with `split`, also in
 /// two calls split at each block boundary and one call per block, each
 /// continuing from the chaining value the last left.
@@ -32,7 +23,9 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
     assert_eq!(plaintext.len(), ciphertext.len());
     let ctx = AesCbc::new(key).unwrap();
     let iv: [u8; 16] = iv.try_into().unwrap();
-    let last = last_block(&iv, ciphertext);
+    // The chaining value after the message: its last ciphertext block (no
+    // vector is empty).
+    let last: [u8; 16] = ciphertext[ciphertext.len() - 16..].try_into().unwrap();
     for (operation, input, expected) in [
         (AesCbc::encrypt as Operation, plaintext, ciphertext),
         (AesCbc::decrypt as Operation, ciphertext, plaintext),
