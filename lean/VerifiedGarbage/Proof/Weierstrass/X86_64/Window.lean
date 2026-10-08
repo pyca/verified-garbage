@@ -143,12 +143,17 @@ theorem winW_mo {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} {mem : 
   · have := hL.lay.mo y (winWs_slots K y hy); dsimp only; omega
   · have := hM.sep; dsimp only; omega
 
-/-- Entries `[1 … m]P` of the table. -/
-def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : State) : Prop :=
+/-- Entries `[1 … m]P` of the table, each a representative by `Rp`. -/
+def TblOkR (K : WinCfg) (C : Curve) (base : Addr) (Rp : Fe C → Fe C → Fe C → Point C → Prop)
+    (P : Point C) (m : Nat) (s : State) : Prop :=
   ∀ j, 1 ≤ j → j ≤ m →
     (∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z], wordsVal s.mem base x K.M.n < C.p) ∧
-    Rep C (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
+    Rp (tmv C K.M.n base s (K.tblPt j).x) (tmv C K.M.n base s (K.tblPt j).y)
       (tmv C K.M.n base s (K.tblPt j).z) (mul j P)
+
+/-- Entries `[1 … m]P` of the table, in projective coordinates. -/
+def TblOk (K : WinCfg) (C : Curve) (base : Addr) (P : Point C) (m : Nat) (s : State) : Prop :=
+  TblOkR K C base (Rep C) P m s
 
 /-- The table's invariant: entries `[1 … m]P` built. -/
 structure BuildInv (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (P : Point C) (s₀ : State)
