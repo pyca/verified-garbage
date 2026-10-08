@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Mont.X86_64.Rounds
 
 `mulRounds M a b` (`Impl/Mont/X86_64.lean`) for P-384's `p` with BMI2 and
 ADX: row 0 is one carry chain into the registers, with no accumulator to
-clear or add to (`mulRow0_ok`), then its reduction (`redSX_ok`) and the
+clear or add to (`rowS0_ok` for any multiplier in `rdx`, `mulRow0_ok`), then its reduction (`redSX_ok`) and the
 rounds `1 … 5` of `roundX` (`roundsX_ok`); with the other moduli, the
 accumulator cleared and `rounds_ok`. Either way `mulRounds_ok` gives
 `rounds_ok`'s postcondition for all `n` rounds.
@@ -15,31 +15,31 @@ accumulator cleared and `rounds_ok`. Either way `mulRounds_ok` gives
 namespace VG.Proof.Mont.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
-open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono carryC_ok mulx_ok)
-
-theorem keeps_row0 {s s₁ s₂ s₃ s₄ s₅ : State} (k₁ : Keeps [.rdx, .rbp] s s₁) (k₂ : Keeps [.r9, .r8] s₁ s₂)
-    (k₃ : Keeps (.rax :: .r9 :: [.r10, .r11, .r12, .r13, .r14]) s₂ s₃) (k₄ : Keeps [.r14] s₃ s₄)
-    (k₅ : Keeps [.r15] s₄ s₅) :
-    Keeps [.rdx, .rbp, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s₅ :=
-  ((((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))).trans
-    (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono carryC_ok mulx_ok clear_ok movRdx_ok)
 
 /-- `2^(64·5)` as a product of `2⁶⁴`, which `omega` evaluates. -/
 theorem pow64x5 : (2 : Nat) ^ (64 * 5) = 2 ^ 64 * (2 ^ 64 * (2 ^ 64 * (2 ^ 64 * 2 ^ 64))) := by
   rw [pow_split 2 64 (64 * 4) (64 * 5) rfl, pow_split 2 64 (64 * 3) (64 * 4) rfl,
     pow_split 2 64 (64 * 2) (64 * 3) rfl, pow_split 2 64 64 (64 * 2) rfl]
 
-/-- Row 0: `r8 … r15 = a₀ [b]`. -/
-theorem mulRow0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a b : Nat}
-    (ha : a + 8 ≤ size) (hb : b + 48 ≤ size) :
-    WP isa (.block (mulRowS0 a b)) s fun s' => regsVal s' (wins 6 0) =
-          (word s.mem base a).toNat * wordsVal s.mem base b 6 ∧
-        Keeps [.rdx, .rbp, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s' := by
-  rw [mulRowS0, show ([.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc b))] :
-    List Instr) = [.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear] ++ [.mulx .r9 .r8 (.mem (sc b))]
-    from rfl, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (rowStart_ok hs (d := a) ha) fun s₁ h₁ => ?_
-  obtain ⟨d₁, z₁, cf₁, of₁, k₁⟩ := h₁
+theorem keeps_rowS0 {s s₁ s₂ s₃ s₄ s₅ : State} (k₁ : Keeps [.rbp] s s₁) (k₂ : Keeps [.r9, .r8] s₁ s₂)
+    (k₃ : Keeps (.rax :: .r9 :: [.r10, .r11, .r12, .r13, .r14]) s₂ s₃) (k₄ : Keeps [.r14] s₃ s₄)
+    (k₅ : Keeps [.r15] s₄ s₅) :
+    Keeps [.rbp, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s₅ :=
+  ((((k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))).trans (k₃.mono (by sub_regs))).trans
+    (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))
+
+/-- `r8 … r15 = rdx · [b]` in one carry chain. -/
+theorem rowS0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {b : Nat}
+    (hb : b + 48 ≤ size) :
+    WP isa (.block (rowS0 b)) s fun s' => regsVal s' (wins 6 0) =
+          (s.gpr .rdx).toNat * wordsVal s.mem base b 6 ∧
+        Keeps [.rbp, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s' := by
+  rw [rowS0, show ([Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc b))] : List Instr) =
+    [Impl.X25519.X86_64.clear] ++ [.mulx .r9 .r8 (.mem (sc b))] from rfl, List.append_assoc,
+    List.append_assoc, WP.block_append_iff]
+  refine WP.mono (clear_ok s) fun s₁ h₁ => ?_
+  obtain ⟨z₁, cf₁, of₁, k₁⟩ := h₁
   have hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (mulx_ok s₁ (readSrc_sc hs₁ (d := b) (by omega)) (fun _ h => nomatch h) (by decide))
@@ -57,12 +57,11 @@ theorem mulRow0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
   obtain ⟨c₄, -, -, e₄, k₄⟩ := h₄
   refine WP.mono (mov32zero_ok s₄ .r15) fun s₅ h₅ => ?_
   obtain ⟨z₅, -, k₅⟩ := h₅
-  refine ⟨?_, keeps_row0 k₁ k₂ k₃ k₄ k₅⟩
+  refine ⟨?_, keeps_rowS0 k₁ k₂ k₃ k₄ k₅⟩
   have r8 : s₅.gpr .r8 = s₂.gpr .r8 := by rw [k₅.1 _ (by decide), k₄.1 _ (by decide), k₃.1 _ (by decide)]
-  have rdx : s₂.gpr .rdx = word s.mem base a := by rw [k₂.1 _ (by decide), d₁]
-  rw [k₁.2.1] at e₂
+  have rdx : s₂.gpr .rdx = s.gpr .rdx := by rw [k₂.1 _ (by decide), k₁.1 _ (by decide)]
+  rw [k₁.2.1, k₁.1 _ (by decide)] at e₂
   rw [k₂.2.1, k₁.2.1, rdx] at e₃
-  rw [d₁] at e₂
   rw [show wordsVal s.mem base b 6 = (word s.mem base b).toNat +
     2 ^ 64 * wordsVal s.mem base (b + 8) 5 from rfl]
   simp only [wins6, regsVal, Bool.toNat_false, Nat.add_zero, Nat.mul_zero] at e₃ ⊢
@@ -72,17 +71,29 @@ theorem mulRow0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
     k₅.1 .r9 (by decide), k₅.1 .r10 (by decide), k₅.1 .r11 (by decide), k₅.1 .r12 (by decide),
     k₅.1 .r13 (by decide), k₅.1 .r14 (by decide), k₄.1 .r9 (by decide), k₄.1 .r10 (by decide),
     k₄.1 .r11 (by decide), k₄.1 .r12 (by decide), k₄.1 .r13 (by decide)]
-  have hv := (word s.mem base a).isLt
+  have hv := (s.gpr .rdx).isLt
   have hW := wordsVal_lt s.mem base (b + 8) 5
   have key := mul_word_le hv hW
   rw [pow64x5] at e₃ hW key
-  generalize (word s.mem base a).toNat = v at *
+  generalize (s.gpr .rdx).toNat = v at *
   generalize wordsVal s.mem base (b + 8) 5 = W at *
   generalize (word s.mem base b).toNat = w at *
   have := (s₄.gpr .r14).isLt
   rw [show v * (w + 2 ^ 64 * W) = v * w + 2 ^ 64 * (v * W) by rw [Nat.mul_add, Nat.mul_left_comm]]
   cases c₄ <;> simp only [Bool.toNat_false, Bool.toNat_true] at e₄ <;>
     simp only [show (0 : BitVec 64).toNat = 0 from rfl] <;> omega
+
+/-- Row 0: `r8 … r15 = a₀ [b]`. -/
+theorem mulRow0_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {a b : Nat}
+    (ha : a + 8 ≤ size) (hb : b + 48 ≤ size) :
+    WP isa (.block (mulRowS0 a b)) s fun s' => regsVal s' (wins 6 0) =
+          (word s.mem base a).toNat * wordsVal s.mem base b 6 ∧
+        Keeps [.rdx, .rbp, .rax, .r8, .r9, .r10, .r11, .r12, .r13, .r14, .r15] s s' := by
+  rw [mulRowS0, ← List.singleton_append, WP.block_append_iff]
+  refine WP.mono (movRdx_ok s (readSrc_sc hs ha)) fun s₁ ⟨d₁, _, _, k₁⟩ => ?_
+  refine WP.mono (rowS0_ok (hs.of_keeps k₁ (by decide)) hb) fun s₂ ⟨e₂, k₂⟩ =>
+    ⟨?_, (k₁.mono (by sub_regs)).trans (k₂.mono (by sub_regs))⟩
+  rw [e₂, d₁, k₁.2.1]
 
 /-- The rounds `1 … k`, from the accumulator of round 1: as `rounds_ok`. -/
 theorem rounds1_ok {M : Mod} (hn : M.n < 7) {a b m size : Nat}
