@@ -12,12 +12,14 @@ target:
 arguments are, the memory each function may access, disjointness, and that
 the pointers and lengths are public (see `TCB/Sig.lean`); the contracts add
 the postconditions and which other arguments are public. `update` and
-`finalize` may overwrite their arguments passed in memory, where the calling
+`finalize` (not `finalize224`) may overwrite their arguments passed in memory, where the calling
 convention allows it (`writeArgs`), to pass arguments to the code they
 inline.
 
 SHA-224 and SHA-256 share `update` and `finalize`, which hold for a state
-hashed from any initial hash value; each has its own `init`.
+hashed from any initial hash value; each has its own `init`. SHA-224's own
+`finalize` (`finalize224Api`) writes its digest, the whole result of
+FIPS 180-4 §6.3.
 
 `update` and `finalize` take the number of bytes of stack below the stack pointer that
 an implementation's calls and frames use (`stack`, see `Sig.contract`), 0 for
@@ -186,6 +188,37 @@ def finalizeApi : Api where
     it; the SHA-224 digest is its first 28 bytes.\n\n\
     Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may \
     affect timing, not the state."
+  safety := ["The contents of `state` on return are unspecified."]
+
+/-- `vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28])`.
+`count` is public; `state` is left unspecified. -/
+def finalize224Sig : Sig where
+  params := [("state", .array true .u8 96), ("count", .int .u64 true),
+    ("out", .array true .u8 28)]
+
+/-- If the streaming state at `state` represents a message `msg` of `count`
+bytes (modulo 2⁶⁴), hashed from SHA-224's initial hash value `H0_224`, writes
+the SHA-224 digest of `msg` (28 bytes; `sha224 msg`) to `out`. -/
+def finalize224Post (pb : Nat) : finalize224Sig.Post pb := fun state count out m m' _ =>
+  ∀ msg, ReprFrom H0_224 m state msg → count = BitVec.ofNat 64 msg.length →
+    bytesAt m' out 28 = sha224 msg
+
+/-- `finalize224Post`. The state is secret. -/
+def finalize224Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  finalize224Sig.contract A (post := finalize224Post A.ptrBits) (stack := stack)
+
+/-- `vg_sha224_finalize` on every target. -/
+def finalize224Api : Api where
+  module := "sha256"
+  name := "vg_sha224_finalize"
+  sig := finalize224Sig
+  contracts := some fun A stack => finalize224Contract A stack
+  summary := "Finishes a SHA-224 computation: if the streaming state `*state` represents a message \
+    of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as \
+    `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, \
+    `VG.Spec.Sha256.sha224`) to `*out`.\n\n\
+    Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` \
+    may affect timing, not the state."
   safety := ["The contents of `state` on return are unspecified."]
 
 /-- `vg_sha256_finalize_scratch(state: *mut [u8; 96], count: u64, out: *mut [u8; 32], scratch: *mut [u64; 76])`:
