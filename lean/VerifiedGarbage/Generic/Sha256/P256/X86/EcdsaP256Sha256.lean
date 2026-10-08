@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Sha256
@@ -24,7 +25,7 @@ namespace VG.Generic.Sha256.P256.X86.EcdsaP256Sha256
 open VG.Proof.Ecdsa.Rfc6979.X86 (cfgOf sign_spSafe signNotes)
 open VG.Proof.Ecdsa.Rfc6979.X86.Sha256 (pack sign_verified)
 
-def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) :
+def artifacts (v : Proof.Sha256.X86.Variants.Backend) (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) :
     List Artifact := [
   { Spec.Ecdsa.Rfc6979.P256Sha256.signApi with
     name := Spec.Ecdsa.Rfc6979.P256Sha256.signApi.name ++ v.suffix

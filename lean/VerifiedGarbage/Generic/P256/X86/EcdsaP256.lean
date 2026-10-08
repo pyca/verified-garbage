@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
 import VerifiedGarbage.TCB.X86.Target
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Impl.Ecdsa.P256.X86
@@ -15,7 +16,7 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.X86.EcdsaP256
 
-def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInv Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : List Artifact := [
   { Spec.Ecdsa.P256.signApi with
     target := X86.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves the callee-saved registers \
