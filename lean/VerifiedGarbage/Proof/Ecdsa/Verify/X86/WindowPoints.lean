@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowMul
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMul
 import VerifiedGarbage.Proof.Ecdsa.X86.GMul
 
 /-! # Comb and signed-window products for x86 P-256 verification -/
