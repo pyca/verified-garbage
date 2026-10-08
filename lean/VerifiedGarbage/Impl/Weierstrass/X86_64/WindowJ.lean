@@ -8,9 +8,8 @@ The window method of `Window.lean` (the same recoding, table selection and
 negation), but keeping `R` in Jacobian coordinates from one window to the
 next, and adding the entries in Jacobian coordinates too, which saves each
 window the conversions into Jacobian coordinates and back and the complete
-addition's 29 field additions, for a Jacobian addition's 7 (`jacHead`,
-`jacTail`, 16 products, as many as the complete addition and its `toJ` and
-`fromJ` save).
+addition's 29 field additions, for a Jacobian addition's 7 (`jacAddS`, 16
+products, as many as the complete addition and its `toJ` and `fromJ` save).
 
 The table's entries are stored in Jacobian coordinates (`buildJ`: each entry
 of the complete additions converted by `toJ` before it is stored, through
@@ -79,7 +78,7 @@ def selSum : List Instr :=
 /-- `R = R + E` in Jacobian coordinates, unless `R` and `E` are equal or
 opposite but not `O`. -/
 def sumJ : Prog isa :=
-  .seq (fprogB K.M (jacHead K.S K.R K.E ++ jacTail K.S K.R K.E K.D)) (.block (selSum K))
+  .seq (fprogB K.M (jacAddS K.S K.R K.E K.D)) (.block (selSum K))
 
 /-- Iteration `j = rbx - 1 ≥ 1` (with `rbx` counting down from `J`):
 `R = 16 R + [d_j]P` in Jacobian coordinates; then `ZF` of `rbx = 1`. -/

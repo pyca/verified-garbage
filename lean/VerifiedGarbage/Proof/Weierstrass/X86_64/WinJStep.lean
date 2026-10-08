@@ -62,23 +62,23 @@ theorem quadJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
   have body : ∀ j st, 1 ≤ j → j ≤ 2 → LI j st →
       WP isa (WinCfg.jacPairOn K K.R K.D) st fun st' => LI (j - 1) st' ∧ st'.cf = some (decide (j - 1 = 0)) := by
     intro j st hj hj' ⟨S, b, E, I, J⟩
-    simp only [WinCfg.jacPairOn, WinCfg.double, dblJChoice_eq]
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n ≤ 6 : Bool)) aRD w2.1 w2.2 I (by
+    simp only [WinCfg.jacPairOn, WinCfg.double, dblJSChoice_eq]
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) aRD w2.1 w2.2 I (by
       intro x hx
       simp only [rcbR, V, List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
       rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
       fun st₁ ⟨k₁', U₁', E₁', I₁', _, v₁'⟩ => ?_)
     have S₁' := S.next hL I₁'.scr (k₁'.mono clob_powClob) U₁'
-    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₁' := InvJ.dbl' hC hM3 (hQ _) J (v₁'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₁'
-    refine WP.seq (WP.mono (winN_ok hL hp (dblJChoiceN_ok (K.M.n ≤ 6 : Bool)) aDR w3.1 w3.2 I₁' (by
+    refine WP.seq (WP.mono (winN_ok hL hp (dblJSChoiceN_ok (K.M.n ≤ 6 : Bool)) aDR w3.1 w3.2 I₁' (by
       intro x hx
       simp only [rcbR, V, List.mem_cons, List.not_mem_nil, or_false, List.cons_append,
         List.nil_append] at hx ⊢
       rcases hx with h | h | h | h | h | h | h | h <;> simp only [h, true_or, or_true]))
       fun st₂ ⟨k₂', U₂', E₂', I₂', _, v₂'⟩ => ?_)
     have S₂' := S₁'.next hL I₂'.scr (k₂'.mono clob_powClob) U₂'
-    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJChoiceN_run (K.M.n ≤ 6 : Bool) _))
+    have J₂' := InvJ.dbl' hC hM3 (hQ _) J₁' (v₂'.trans (dblJSChoiceN_run (K.M.n ≤ 6 : Bool) _))
     rw [hC.double hP] at J₂'
     have ar : 2 * (2 * (4 ^ (2 - j) * e)) = 4 ^ (2 - (j - 1)) * e := by
       have hj12 : j = 1 ∨ j = 2 := by omega
@@ -387,9 +387,8 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
     · exact ⟨winOther_mem (oE _ (by simp)), hltE _ (by simp)⟩
   have I₀ : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hS.scr, hS.mod, fun x hx => (V0 x hx).1, fun x hx => (V0 x hx).2, fun _ _ => rfl⟩
-  rw [WinCfg.sumJ, show jacHead K.S K.R K.E ++ jacTail K.S K.R K.E K.D =
-    ofN (jacHeadN ++ jacTailN) K.S K.R K.E K.D from rfl]
-  refine WP.seq (WP.mono (winN_ok hL hp jacAddN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2 I₀
+  rw [WinCfg.sumJ, jacAddS_eq]
+  refine WP.seq (WP.mono (winN_ok hL hp jacAddSN_ok (hL.rcbApart_D (Or.inr rfl)) w1.1 w1.2 I₀
     (fun x hx => hx)) fun s₁ ⟨k₁, U₁, E₁, I₁, o₁, v₁⟩ => ?_)
   have S₁ := hS.next hL I₁.scr (k₁.mono clob_powClob) U₁
   -- `R` and `E` kept, `D` the sum.
@@ -423,7 +422,7 @@ theorem sumJ_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : WinL
       toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₁.mem base K.D.z K.M.n)) =
       jacAddF (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
         (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z) := by
-    refine Eq.trans ?_ (v₁.trans (jacAddN_run _))
+    refine Eq.trans ?_ (v₁.trans (jacAddSN_run _))
     rw [I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp)), I₁.val _ (inV _ (by simp))]
   have jx := congrArg Prod.fst vD
   have jy := congrArg (fun t => t.2.1) vD

@@ -122,9 +122,9 @@ def ySel : List Instr := zeroMask K ++ (List.range K.M.n).flatMap (ySelWord K)
 
 /-- Up to six limbs, form `2YZ` directly and scale `Y²` by two first, which
 saves four field additions and subtractions for one square that becomes a
-product. -/
+product; for more, `dblJ` ordered for the processor's overlap (`dblJS`). -/
 def double (p o : Pt) : List FOp :=
-  if (K.M.n ≤ 6 : Bool) then dblJMul K.S p o else dblJ K.S p o
+  if (K.M.n ≤ 6 : Bool) then dblJMul K.S p o else dblJS K.S p o
 
 /-- A pair of Jacobian doublings, with a public count in the bits above the
 window index in `rbx`. The window index is less than 4096. -/
