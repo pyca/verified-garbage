@@ -47,5 +47,7 @@ mod rfc9106;
 mod rsa_guidance;
 #[path = "schneier_blowfish/main.rs"]
 mod schneier_blowfish;
+#[path = "secp256k1/main.rs"]
+mod secp256k1;
 #[path = "wycheproof/main.rs"]
 mod wycheproof;
