@@ -15,8 +15,8 @@ and without embedded broadcast or rounding (`EVEX.b = 0`), and so writes all
 §2.7.1 and each instruction's pseudocode, `DEST[MAXVL-1:VL] := 0`); the
 `EVEX.128` form of `VMOVQ xmm1, r64` zeroes bits `MAXVL-1:64` likewise.
 
-Bits 511:256 of `zmm16`–`zmm31` are not modelled: these instructions zero
-them, and no modelled instruction reads them. For `xmm0`–`xmm15` the state's
+Bits 511:256 of `zmm16`–`zmm31` are held in `zmmHiH`: these instructions zero
+them. For `xmm0`–`xmm15` the state's
 `xmm`, `ymmHi` and `zmmHi` hold the register, as for the VEX-encoded
 instructions (`State.setV`), whose results these EVEX forms compute.
 -/
@@ -37,12 +37,14 @@ def vy (s : State) : VReg → BitVec 256
   | .lo r => s.ymm r
   | .hi r => s.ymmH r
 
-/-- Write an `EVEX.256` instruction's result to `r` (zeroing bits
-`MAXVL-1:256`, which for `ymm16`–`ymm31` are not modelled). -/
+/-- Write an `EVEX.256` instruction's result to `r`, zeroing bits
+`MAXVL-1:256` (Intel SDM Vol. 2, EVEX.256 instruction pseudocode). -/
 def setVy (s : State) (r : VReg) (v : BitVec 256) : State :=
   match r with
   | .lo r => s.setV .l256 r (v.extractLsb' 0 128) (v.extractLsb' 128 128)
-  | .hi r => { s with ymmH := fun r' => if r' = r then v else s.ymmH r' }
+  | .hi r => { s with
+      ymmH := fun r' => if r' = r then v else s.ymmH r'
+      zmmHiH := fun r' => if r' = r then 0 else s.zmmHiH r' }
 
 end State
 

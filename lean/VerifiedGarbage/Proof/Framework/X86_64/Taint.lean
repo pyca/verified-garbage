@@ -251,7 +251,7 @@ def step (τ : T) : Instr → Option T
   | .vmovdquStore .l128 m _ => storeStep τ m 16 false
   | .vmovdquStore .l256 m _ => storeStep τ m 32 false
   | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
     if memPub τ m then some τ else none
   | .vmovdqu32Store m _ => storeStep τ m 64 false
   | .eop _ => some τ
@@ -726,7 +726,7 @@ def dstOf : Instr → Option Reg
   | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _ | .cmov _ d _ | .vpmovmskb _ d _ => some d
   | .store .. | .store32 .. | .store8 .. | .movdquLoad .. | .movdquStore .. | .xop _ | .vop _
   | .vmovdquLoad .. | .vmovdquStore .. | .vbroadcasti128 .. | .vbinLoad .. | .zop _ | .vmovdqu32Load ..
-  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
+  | .vmovdqu32Store .. | .vbroadcasti32x4 .. | .vbroadcasti32x4H .. | .zbcst .. | .vpmadd52Load .. | .stmxcsr _ | .ldmxcsr _
   | .eop _ | .evLoad .. | .evStore .. | .evMadd52Load .. | .lfence
   | .mul _ | .mulx .. | .push _ | .pop .. | .alloc _ | .free _ => none
 
@@ -753,7 +753,8 @@ theorem setVy_eq (s : State) (r : VReg) (v : BitVec 256) :
         xmm := (s.setVy r v).xmm
         ymmHi := (s.setVy r v).ymmHi
         zmmHi := (s.setVy r v).zmmHi
-        ymmH := (s.setVy r v).ymmH } := by
+        ymmH := (s.setVy r v).ymmH
+        zmmHiH := (s.setVy r v).zmmHiH } := by
   cases r <;> rfl
 
 /-- An `EVEX.256` instruction on registers changes only the vector registers. -/
@@ -763,7 +764,8 @@ theorem EOp.exec_eq (op : EOp) (s : State) :
         xmm := (op.exec s).xmm
         ymmHi := (op.exec s).ymmHi
         zmmHi := (op.exec s).zmmHi
-        ymmH := (op.exec s).ymmH } := by
+        ymmH := (op.exec s).ymmH
+        zmmHiH := (op.exec s).zmmHiH } := by
   cases op <;> exact setVy_eq _ _ _
 
 /-- Changing only the SSE registers, which the analysis does not track. -/
@@ -790,9 +792,9 @@ theorem Agree.withVec {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) (x�
 
 /-- Changing only the vector registers, `ymm16`–`ymm31` too. -/
 theorem Agree.withVecH {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂)
-    (x₁ x₂ y₁ y₂ : XReg → BitVec 128) (z₁ z₂ : XReg → BitVec 256) (h₁ h₂ : HReg → BitVec 256) :
-    Agree τ { s₁ with xmm := x₁, ymmHi := y₁, zmmHi := z₁, ymmH := h₁ }
-      { s₂ with xmm := x₂, ymmHi := y₂, zmmHi := z₂, ymmH := h₂ } :=
+    (x₁ x₂ y₁ y₂ : XReg → BitVec 128) (z₁ z₂ : XReg → BitVec 256) (h₁ h₂ u₁ u₂ : HReg → BitVec 256) :
+    Agree τ { s₁ with xmm := x₁, ymmHi := y₁, zmmHi := z₁, ymmH := h₁, zmmHiH := u₁ }
+      { s₂ with xmm := x₂, ymmHi := y₂, zmmHi := z₂, ymmH := h₂, zmmHiH := u₂ } :=
   ha.keep ha.rf rfl rfl rfl rfl rfl rfl ha.wf₁.2 ha.wf₂.2 ha.lo
 
 /-- An `EVEX.256` instruction's write to the vector registers. -/
@@ -1241,6 +1243,13 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [exec, Option.map_eq_some_iff] at e₁ e₂
     obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
     exact ⟨by simp [addrs, ha.ea hok], ha.withVec _ _ _ _ _ _⟩
+  | vbroadcasti32x4H d m =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hok; cases hs
+    simp only [exec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨v₁, -, rfl⟩ := e₁; obtain ⟨v₂, -, rfl⟩ := e₂
+    exact ⟨by simp [addrs, ha.ea hok], ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | zbcst op d a m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1261,7 +1270,7 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     simp only [exec, Option.some.injEq] at e₁ e₂
     subst e₁ e₂
     rw [EOp.exec_eq op s₁, EOp.exec_eq op s₂]
-    exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _⟩
+    exact ⟨rfl, ha.withVecH _ _ _ _ _ _ _ _ _ _⟩
   | evLoad d m | evMadd52Load _ d _ m =>
     simp only [step] at hs
     split at hs <;> [skip; cases hs]
@@ -1780,7 +1789,7 @@ def stepK (τ : T) : Instr → Option T
   | .vmovdquStore .l128 m _ => storeStepK τ m 16 false
   | .vmovdquStore .l256 m _ => storeStepK τ m 32 false
   | .zop _ => some τ
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m =>
     bif memPub τ m then some τ else none
   | .vmovdqu32Store m _ => storeStepK τ m 64 false
   | .eop _ => some τ
@@ -2004,7 +2013,7 @@ def stepKDFn : Instr → Step
   | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepK τ m 16 false⟩
   | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepK τ m 32 false⟩
   | .zop _ => ⟨fun τ => some τ⟩
-  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
+  | .vmovdqu32Load _ m | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m => ⟨fun τ =>
     bif memPub τ m then some τ else none⟩
   | .vmovdqu32Store m _ => ⟨fun τ => storeStepK τ m 64 false⟩
   | .eop _ => ⟨fun τ => some τ⟩

@@ -45,6 +45,8 @@ structure State where
   /-- Bits 255:0 of each AVX-512 register `zmm16`–`zmm31` (the `ymm`
   registers `ymm16`–`ymm31`). -/
   ymmH : HReg → BitVec 256 := fun _ => 0
+  /-- Bits 511:256 of `zmm16`–`zmm31`. -/
+  zmmHiH : HReg → BitVec 256 := fun _ => 0
   /-- The SSE control and status register (SDM Vol. 1 §10.2.3). -/
   mxcsr : BitVec 32 := 0x1F80
   mem : Mem
@@ -74,6 +76,17 @@ inductive VLen | l128 | l256
   deriving DecidableEq, Repr
 
 namespace State
+
+/-- A 128-bit lane of `zmm16`–`zmm31`, least significant first. -/
+def zlaneH (s : State) (r : HReg) (i : Nat) : BitVec 128 :=
+  if i < 2 then (s.ymmH r).extractLsb' (128 * i) 128
+  else (s.zmmHiH r).extractLsb' (128 * (i - 2)) 128
+
+/-- Write all four lanes of an unmasked EVEX.512 destination. -/
+def setZH (s : State) (r : HReg) (l0 l1 l2 l3 : BitVec 128) : State :=
+  { s with
+    ymmH := fun r' => if r' = r then l1 ++ l0 else s.ymmH r'
+    zmmHiH := fun r' => if r' = r then l3 ++ l2 else s.zmmHiH r' }
 
 def setReg (s : State) (r : Reg) (v : BitVec 64) : State :=
   { s with gpr := fun r' => if r' = r then v else s.gpr r' }

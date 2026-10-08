@@ -465,7 +465,7 @@ theorem step_mono (h : Le τ σ) (i : Instr) {τ' : T} (hs : step τ i = some τ
     cases hs
     exact ⟨_, rfl, h.upd (set_mono hw d id) h.flags (h.killM d) empty_subset'⟩
   | movdquLoad _ m | vmovdquLoad _ _ m | vbroadcasti128 _ m | vbinLoad _ _ _ _ m | vmovdqu32Load _ m
-  | vbroadcasti32x4 _ m | zbcst _ _ _ m | vpmadd52Load _ _ _ m | ldmxcsr m | evLoad _ m
+  | vbroadcasti32x4 _ m | vbroadcasti32x4H _ m | zbcst _ _ _ m | vpmadd52Load _ _ _ m | ldmxcsr m | evLoad _ m
   | evMadd52Load _ _ _ m =>
     exact h.memSome hs
   | evStore m _ => exact h.store m (by decide) id hs

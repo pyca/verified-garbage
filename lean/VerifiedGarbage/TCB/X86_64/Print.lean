@@ -159,7 +159,19 @@ def ZShiftOp.name : ZShiftOp → String
 def ZBcstOp.name : ZBcstOp → String
   | .vpmuludq => "vpmuludq" | .vpandq => "vpandq" | .vporq => "vporq"
 
+def HReg.name : HReg → String
+  | .xmm16 => "xmm16" | .xmm17 => "xmm17" | .xmm18 => "xmm18" | .xmm19 => "xmm19"
+  | .xmm20 => "xmm20" | .xmm21 => "xmm21" | .xmm22 => "xmm22" | .xmm23 => "xmm23"
+  | .xmm24 => "xmm24" | .xmm25 => "xmm25" | .xmm26 => "xmm26" | .xmm27 => "xmm27"
+  | .xmm28 => "xmm28" | .xmm29 => "xmm29" | .xmm30 => "xmm30" | .xmm31 => "xmm31"
+
+def HReg.zname (r : HReg) : String := "z" ++ (r.name.drop 1).toString
+
+def ZKeyOp.name : ZKeyOp → String
+  | .vpxord => "vpxord" | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast"
+
 def ZOp.asm : ZOp → String
+  | .zbinH op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"
   | .zbin op d a b => s!"{op.name} {d.zname}, {a.zname}, {b.zname}"
   | .vpclmulqdq d a b n => s!"vpclmulqdq {d.zname}, {a.zname}, {b.zname}, {n.toNat}"
   | .vprold d r n => s!"vprold {d.zname}, {r.zname}, {n.toNat}"
@@ -175,12 +187,6 @@ def ZOp.asm : ZOp → String
   | .vpermq d r o => s!"vpermq {d.zname}, {r.zname}, {o.toNat}"
   | .vpmadd52 hi d a b =>
     s!"{if hi then "vpmadd52huq" else "vpmadd52luq"} {d.zname}, {a.zname}, {b.zname}"
-
-def HReg.name : HReg → String
-  | .xmm16 => "xmm16" | .xmm17 => "xmm17" | .xmm18 => "xmm18" | .xmm19 => "xmm19"
-  | .xmm20 => "xmm20" | .xmm21 => "xmm21" | .xmm22 => "xmm22" | .xmm23 => "xmm23"
-  | .xmm24 => "xmm24" | .xmm25 => "xmm25" | .xmm26 => "xmm26" | .xmm27 => "xmm27"
-  | .xmm28 => "xmm28" | .xmm29 => "xmm29" | .xmm30 => "xmm30" | .xmm31 => "xmm31"
 
 /-- The name of the `xmm` register of a `VReg`. -/
 def VReg.name : VReg → String
@@ -263,6 +269,7 @@ def Instr.asm : Instr → List String
   | .zop op => [op.asm]
   | .vmovdqu32Load d m => [s!"vmovdqu32 {d.zname}, {m.str512}"]
   | .vmovdqu32Store m r => [s!"vmovdqu32 {m.str512}, {r.zname}"]
+  | .vbroadcasti32x4H d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .vbroadcasti32x4 d m => [s!"vbroadcasti32x4 {d.zname}, {m.str128}"]
   | .zbcst op d a m => [s!"{op.name} {d.zname}, {a.zname}, {m.str}" ++ "{1to8}"]
   | .vpmadd52Load hi d a m =>
@@ -307,7 +314,7 @@ def Instr.memOps : Instr → List MemOp
   | .cmov _ _ s => s.memOps
   | .store m _ | .store32 m _ | .movzx8 _ m | .store8 m _ | .movdquLoad _ m | .movdquStore m _
   | .vmovdquLoad _ _ m | .vmovdquStore _ m _ | .vbroadcasti128 _ m | .vbinLoad _ _ _ _ m
-  | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
+  | .vmovdqu32Load _ m | .vmovdqu32Store m _ | .vbroadcasti32x4 _ m | .vbroadcasti32x4H _ m | .zbcst _ _ _ m | .vpmadd52Load _ _ _ m
   | .evLoad _ m | .evStore m _ | .evMadd52Load _ _ _ m
   | .stmxcsr m | .ldmxcsr m => [m]
   | .shift32 .. | .bswap32 _ | .rorx32 .. | .andn32 .. | .rorx .. | .andn .. | .bswap _

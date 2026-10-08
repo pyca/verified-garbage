@@ -27,12 +27,26 @@ inductive ZBinOp
 inductive ZShiftOp | vpsllq | vpsrlq
   deriving DecidableEq, Repr
 
+/-- The EVEX.512 operations needed to keep AES round keys in `zmm16`–`zmm31`.
+Intel SDM Vol. 2, "PXOR" (`EVEX.512.66.0F.W0 EF /r`), "AESENC" and
+"AESENCLAST" (`EVEX.512.66.0F38.WIG DC/DD /r`): the register source is
+selected by the five-bit EVEX register specifier (Vol. 2 §2.7.1).
+The unmasked operations apply PXOR, AESENC or AESENCLAST independently to
+each 128-bit lane, exactly as `ZBinOp` does for registers 0–15. -/
+inductive ZKeyOp | vpxord | vaesenc | vaesenclast
+  deriving DecidableEq, Repr
+
+def ZKeyOp.sse : ZKeyOp → XBinOp
+  | .vpxord => .pxor | .vaesenc => .aesenc | .vaesenclast => .aesenclast
+
 /-- AVX-512 instructions with 512-bit operands that write only vector
 registers. None is masked: the opmask is `k0` (`EVEX.aaa = 000`), so every
 element of the destination is written. -/
 inductive ZOp
   /-- `vop zmm1, zmm2, zmm3` -/
   | zbin (op : ZBinOp) (dst src1 src2 : XReg)
+  /-- An unmasked EVEX.512 operation with its second source in `zmm16`–`zmm31`. -/
+  | zbinH (op : ZKeyOp) (dst src1 : XReg) (src2 : HReg)
   /-- `vpclmulqdq zmm1, zmm2, zmm3, imm8` (EVEX.512, unmasked). -/
   | vpclmulqdq (dst src1 src2 : XReg) (sel : BitVec 8)
   /-- `vprold zmm1, zmm2, imm8` (`EVEX.512.66.0F.W0 72 /1 ib`) -/
@@ -196,6 +210,9 @@ SDM Vol. 2 (no flags are affected; with 512-bit operands the whole of
   VPMADD52HUQ) for each of the eight quadwords: `madd52` on each lane, as the
   256-bit forms (`Avx.lean`) on two. -/
 def ZOp.exec : ZOp → State → State
+  | .zbinH op d a b, s =>
+    let f (i : Nat) := op.sse.eval (s.zlane a i) (s.zlaneH b i)
+    s.setZ d (f 0) (f 1) (f 2) (f 3)
   | .zbin op d a b, s =>
     let f (i : Nat) := op.sse.eval (s.zlane a i) (s.zlane b i)
     s.setZ d (f 0) (f 1) (f 2) (f 3)

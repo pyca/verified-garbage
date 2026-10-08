@@ -231,6 +231,7 @@ def vr (s₀ s : State) : State :=
     ymmHi := s.ymmHi
     zmmHi := s.zmmHi
     ymmH := s.ymmH
+    zmmHiH := s.zmmHiH
     gpr := fun r => if r = .rax then s.gpr .rax else s₀.gpr r }
 
 /-- The terms `σ` hold in `s`, which differs from `s₀` only in its vector
