@@ -25,7 +25,8 @@ theorem ladRep_n : (ladRep Spec.P521.curve (Fin.ofNat _ Spec.P521.curve.gx)
 theorem mul_n : mul Spec.P521.curve.n (G Spec.P521.curve) = .infinity :=
   mul_n_of_ladRep law onCurve_G (by decide +kernel) ladRep_n
 
-theorem primeOrder : PrimeOrder Spec.P521.curve :=
-  primeOrder_of good n_prime onCurve_G mul_n (by decide +kernel)
+theorem primeOrder : PrimeOrder Spec.P521.curve := by
+  haveI : Fact Spec.P521.curve.p.Prime := ⟨curve_p_prime⟩
+  exact primeOrder_of good n_prime onCurve_G mul_n (by decide +kernel)
 
 end VG.Proof.P521
