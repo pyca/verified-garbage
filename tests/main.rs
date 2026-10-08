@@ -19,6 +19,8 @@ mod nessie;
 mod pbkdf2;
 #[path = "rfc1321/main.rs"]
 mod rfc1321;
+#[path = "rfc2144/main.rs"]
+mod rfc2144;
 #[path = "rfc2202/main.rs"]
 mod rfc2202;
 #[path = "rfc3686/main.rs"]
