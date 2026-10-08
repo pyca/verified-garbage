@@ -30,6 +30,7 @@ mod ecdh_p521;
 mod ecdsa_p256;
 mod rc2_cbc;
 mod rsa;
+mod seed_ecb;
 mod sha1;
 mod sha224;
 mod sha256;
