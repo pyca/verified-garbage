@@ -61,7 +61,6 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
       WP isa (.block K.tc.negY) s₂ (JEnt K C base size P s₀ (k + JacWinCfg.offset K.J) j s) := by
   have hs := hf.scr
   have hn := hs.nowrap
-  have h4 := hL.n4
   have hbl := hL.bits
   have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
   have hbits := hf.bits hL hF
@@ -81,7 +80,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   have m₁ : s₁.mem = s.mem := k₁.2.1
   rw [m₁] at e₂
   have U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
-    rw [← m₁]; exact (outside_grid5 hL (b := 80) O₂).mono fun w hw => by
+    rw [← m₁]; exact (outside_grid5 (b := 80) O₂).mono fun w hw => by
       obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
   have F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
     (k₂.mono (sub_powClob (by decide)))) U₂ (jwLoopW_sub K)
@@ -156,7 +155,7 @@ theorem jentry_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : St
   have hU : Unch base ((List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
       [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)]) s.mem s₅.mem := by
     rw [← m₁]
-    refine (((outside_grid5 hL (b := 80) O₂).trans k₃.unch).trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
+    refine (((outside_grid5 (b := 80) O₂).trans k₃.unch).trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with (h | h | h) | h
     · exact Or.inl h

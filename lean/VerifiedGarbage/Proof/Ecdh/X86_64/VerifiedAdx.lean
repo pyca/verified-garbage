@@ -18,8 +18,8 @@ theorem mulQJP256x_ok (hI : Weierstrass.X86_64.InvSounds) (hL : Weierstrass.Law 
     (hO : Weierstrass.PrimeOrder Spec.P256.curve) :
     MulOk p256x (Impl.Ecdh.X86_64.Cfg.mulQJ p256x (Impl.P256.X86_64.doubleHalfPublic p256x.MP' p256x.rcbSlots))
       (mulQJW p256x) :=
-  mulQJ_ok (p256x_ok hI) rfl hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
-    (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) Proof.P256.X86_64.n_mod32
+  mulQJ_ok (p256x_ok hI) (Or.inl rfl) hL hO (Proof.P256.X86_64.doubleHalfPublic_dblOk rfl
+    (Weierstrass.unitMod_pow_two (p256x_ok hI).p_odd _) hL (p256x_ok hI).am3) (Nat.le_of_eq Proof.P256.X86_64.n_mod32.symm)
     Proof.P256.X86_64.n_ge64
 
 theorem ecdh_x86_adx (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86_64.InvSounds)

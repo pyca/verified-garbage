@@ -13,7 +13,7 @@ formulas name but do not read, zero and `P`), the others it writes
 from `tbl` (`jg`): the table's 16 entries of five coordinates, entry `m`'s
 coordinate `c` slot `5 (m - 1) + c`, then the selected entry `T`, slots
 `80 … 84`. `JacWinLay` is what the proof needs of them, as `WinLay` for the
-window method of `Window.lean`, for four-word numbers.
+window method of `Window.lean`, for numbers of four or six words.
 -/
 
 namespace VG.Proof.Weierstrass.X86_64
@@ -49,7 +49,7 @@ not written, the others written distinct, the grid apart from them all, `T`
 past the table, at least two digits, the counter's bits below `4096`, and the
 table of bits (`5 J` bytes) apart from what is written. -/
 structure JacWinLay (K : JacWinCfg) (size : Nat) : Prop where
-  n4 : K.M.n = 4
+  n46 : K.M.n = 4 ∨ K.M.n = 6
   lay : Lay K.M size (· ∈ jwSlots K)
   ro : ∀ x ∈ jwRo K, x ∉ jwOther K
   nodup : (jwOther K).Nodup
@@ -110,7 +110,9 @@ theorem JacWinLay.jg_apart (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K 
   · left; omega
   · right; omega
 
-theorem JacWinLay.n0 (hL : JacWinLay K size) : 0 < K.M.n := by rw [hL.n4]; decide
+theorem JacWinLay.n0 (hL : JacWinLay K size) : 0 < K.M.n := by rcases hL.n46 with h | h <;> omega
+
+theorem JacWinLay.n6 (hL : JacWinLay K size) : K.M.n ≤ 6 := by rcases hL.n46 with h | h <;> omega
 
 theorem JacWinLay.jg_ne (hL : JacWinLay K size) {x : Nat} (hx : x ∈ jwRo K ++ jwOther K) {i : Nat}
     (hi : i < 85) : x ≠ jg K i := by

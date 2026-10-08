@@ -4,8 +4,8 @@ import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
 /-!
 # ECDH on x86-64: `[d]P` by 5-bit windows in Jacobian coordinates
 
-For four words and a curve of prime order `n ≡ 17 (mod 32)` (P-256), the
-Jacobian window method (`Cfg.mulQJ`): its slots are numbered slots, its grid
+For four or six words and a curve of prime order `n` with `n mod 32 ≥ 17`
+(P-256, P-384), the Jacobian window method (`Cfg.mulQJ`): its slots are numbered slots, its grid
 of 85 (the table of 16 entries of five coordinates, then the selected entry)
 slots `WT … WT + 84` past the tables of bits (`jwSlots_eq`), so they are apart
 as `winJac_ok` needs (`jwLayQ`). `mulQJ_ok`: `d` reduced below `2^nbits`
@@ -49,16 +49,16 @@ theorem jwW_eq (c : Cfg) : jwW (jwQ c) = slW c (otherJ ++ gridJ ++ [TMP]) := by
 
 theorem jwIdx_lt : ∀ i ∈ roJ ++ otherJ ++ gridJ, i < 168 ∧ i ≠ MP ∧ i ≠ TMP := by decide
 
-/-- Every slot below `168` is in the working space, for four words. -/
-theorem sl_le_jw (c : Cfg) (h4 : c.n = 4) {i : Nat} (hi : i < 168) : c.sl i + 8 * c.n ≤ size := by
-  rw [sl_eq, h4]; show _ ≤ 8192; omega
+/-- Every slot below `168` is in the working space, for four or six words. -/
+theorem sl_le_jw (c : Cfg) (h46 : c.n = 4 ∨ c.n = 6) {i : Nat} (hi : i < 168) : c.sl i + 8 * c.n ≤ size := by
+  rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> show _ ≤ 8192 <;> omega
 
-theorem lay_jw (h4 : c.n = 4) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
+theorem lay_jw (h46 : c.n = 4 ∨ c.n = 6) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
     (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 168 ∧ i ≠ MP ∧ i ≠ TMP) :
     Lay M size (· ∈ l.map c.sl) := by
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn]; exact sl_le_jw c h4 (hl i hi).1
+    rw [hMn]; exact sl_le_jw c h46 (hl i hi).1
   · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
     rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
@@ -67,13 +67,13 @@ theorem lay_jw (h4 : c.n = 4) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
     rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2
 
-theorem jwinJ_le (hc : CfgOk c) (h4 : c.n = 4) : Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 52 := by
+theorem jwinJ_le (hc : CfgOk c) : Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 13 * c.n + 1 := by
   unfold Impl.Ecdh.X86_64.Cfg.jwinJ; have := hc.len_hi; have := hc.nbits_le; omega
 
-theorem jwLayQ (hc : CfgOk c) (h4 : c.n = 4) : JacWinLay (jwQ c) size := by
+theorem jwLayQ (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) : JacWinLay (jwQ c) size := by
   have hn := hc.n0
   have hJ : (jwQ c).J = Impl.Ecdh.X86_64.Cfg.jwinJ c := rfl
-  have hJle := jwinJ_le hc h4
+  have hJle := jwinJ_le hc
   have hJ2 : 2 ≤ Impl.Ecdh.X86_64.Cfg.jwinJ c := by
     unfold Impl.Ecdh.X86_64.Cfg.jwinJ
     have := hc.len8
@@ -83,8 +83,8 @@ theorem jwLayQ (hc : CfgOk c) (h4 : c.n = 4) : JacWinLay (jwQ c) size := by
   have hb : (jwQ c).bits = c.sl WB := rfl
   have hK : (jwQ c).tbl = c.sl WT := rfl
   have hMn : (jwQ c).M.n = c.n := rfl
-  refine ⟨h4, ?_, ?_, ?_, ?_, rfl, ⟨by omega, by omega⟩, ?_, ?_, ?_⟩
-  · rw [jwSlots_eq]; exact lay_jw h4 rfl rfl rfl jwIdx_lt
+  refine ⟨h46, ?_, ?_, ?_, ?_, rfl, ⟨by omega, by omega⟩, ?_, ?_, ?_⟩
+  · rw [jwSlots_eq]; exact lay_jw h46 rfl rfl rfl jwIdx_lt
   · exact map_sl_disj hn (l₁ := roJ) (l₂ := otherJ) (by decide)
   · exact map_sl_nodup hn (l := otherJ) (by decide)
   · intro x hx
@@ -92,8 +92,8 @@ theorem jwLayQ (hc : CfgOk c) (h4 : c.n = 4) : JacWinLay (jwQ c) size := by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
     have key : ∀ i ∈ roJ ++ otherJ, i < WT := by decide
     rw [hK, hMn]; exact Or.inl (sl_lt c (key i hi))
-  · rw [hK, sl_eq, h4]; unfold WT; omega
-  · rw [hb, hJ, sl_eq, h4]; show _ ≤ 8192; unfold WB; omega
+  · rcases h46 with h4 | h4 <;> rw [hK, sl_eq, h4] <;> unfold WT <;> omega
+  · rcases h46 with h4 | h4 <;> rw [hb, hJ, sl_eq, h4] <;> show _ ≤ 8192 <;> unfold WB <;> omega
   · intro w hw
     rw [jwW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
@@ -103,9 +103,8 @@ theorem jwLayQ (hc : CfgOk c) (h4 : c.n = 4) : JacWinLay (jwQ c) size := by
     · exact Or.inr (sl_lt c h)
     · refine Or.inl ?_
       dsimp only
-      rw [sl_eq, sl_eq, h4]
-      unfold WB; unfold WT at h
-      omega
+      unfold WT at h
+      rcases h46 with h4 | h4 <;> rw [sl_eq, sl_eq, h4] <;> unfold WB <;> omega
 
 /-! ## The recoded scalar -/
 
@@ -142,10 +141,10 @@ theorem mulQJ_w (hc : CfgOk c) : MulW c (mulQJW c) where
     · exact Or.inr h
 
 /-- The Jacobian window method computes `[d]P` for `d < n` (`MulOk`), for four
-words and a curve of prime order `n ≡ 17 (mod 32)`, with any doubling `dbl`
-that doubles a Jacobian triple in place. -/
-theorem mulQJ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hO : PrimeOrder c.C)
-    {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl) (hn17 : c.C.n % 32 = 17)
+or six words and a curve of prime order `n` with `n mod 32 ≥ 17`, with any
+doubling `dbl` that doubles a Jacobian triple in place. -/
+theorem mulQJ_ok (hc : CfgOk c) (h46 : c.n = 4 ∨ c.n = 6) (hC : Law c.C) (hO : PrimeOrder c.C)
+    {dbl : Pt → Prog isa} (hD : DblOk c.MP' c.rcbSlots c.C dbl) (hn17 : 17 ≤ c.C.n % 32)
     (hn64 : 64 ≤ c.C.n) : MulOk c (Impl.Ecdh.X86_64.Cfg.mulQJ c dbl) (mulQJW c) := by
   intro base s hs g F hbp P hP hpx hpy hrep _ _ _ k hk hk8 _ ht₁ rest R h
   have h0 := hc.n0
@@ -155,7 +154,7 @@ theorem mulQJ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hO : PrimeOrder c
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have hp3 := hc.p_ge
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
-  have hJle := jwinJ_le hc h4
+  have hJle := jwinJ_le hc
   unfold Impl.Ecdh.X86_64.Cfg.mulQJ
   refine WP.seq (WP.seq (WP.mono (maskK_ok hc hs (hk ▸ hk8)) fun s₁ ⟨hs₁, k₁, e₁, U₁⟩ => ?_))
   have F₁ := F.unch h7 hn (fixedOk_slW (l := [K]) (by decide)) U₁
@@ -168,13 +167,13 @@ theorem mulQJ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hO : PrimeOrder c
   have hJ : (jwQ c).J = Impl.Ecdh.X86_64.Cfg.jwinJ c := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have hWK : c.sl WK + 16 * c.n ≤ size := by rw [sl_eq, h4]; unfold WK; omega
+  have hWK : c.sl WK + 16 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WK <;> omega
   have hKW := sl_lt c (show K < WK by decide)
   have h32 : (32 : Nat) ^ Impl.Ecdh.X86_64.Cfg.jwinJ c ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (32 : Nat) = 2 ^ 5 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
   have e82 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
-  have hBs : c.sl WB + 80 * c.n ≤ size := by rw [sl_eq, h4]; unfold WB; omega
+  have hBs : c.sl WB + 80 * c.n ≤ size := by rcases h46 with h4 | h4 <;> rw [sl_eq, h4] <;> unfold WB <;> omega
   rw [Impl.Ecdh.X86_64.Cfg.jwinPrep]
   refine WP.seq (WP.seq ?_)
   rw [hK]
@@ -212,7 +211,7 @@ theorem mulQJ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hO : PrimeOrder c
       rw [F₃.onep, show 2 ^ (64 * c.n) % c.C.p = c.mont 1 by simp [Cfg.mont, Cfg.R], toM_cmont hc]; rfl
     · rw [hJ] at ht
       exact b₃ t (by omega)
-  refine WP.mono (winJac_ok (jwLayQ hc h4) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
+  refine WP.mono (winJac_ok (jwLayQ hc h46) hpR hC hc.am3 hO hD hc.p_lt (hmont 1)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) hn17 hn64 hP
     (by rw [hJ]; exact hrec) hs₃ hM₃ hF) fun s₄ ⟨K₄, U₄, M₄, L₄, R₄⟩ => ?_
   rw [jwW_eq] at U₄

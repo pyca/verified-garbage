@@ -1,4 +1,5 @@
 import VerifiedGarbage.TCB.X86_64.Target
+import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 import VerifiedGarbage.Proof.Weierstrass.Law
 import VerifiedGarbage.Proof.P384.Comb7
 import VerifiedGarbage.Impl.Ecdsa.P384.X86_64
@@ -95,7 +96,7 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     spSafe := hsp
     features := if adx then ["bmi2", "adx"] else [] }
 
-def artifacts (h : Proof.Weierstrass.X86_64.HasLawInv Spec.P384.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) : List Artifact := [
   sign false Impl.Ecdsa.X86_64.signP384
     (Proof.Ecdsa.X86_64.P384.sign_verified h.law (Proof.P384.combOk7 h.law) h.inv) (Code.all_of_allInstrs (by lit_decide)),
   verify false Impl.Ecdsa.Verify.X86_64.jointVerifyP384

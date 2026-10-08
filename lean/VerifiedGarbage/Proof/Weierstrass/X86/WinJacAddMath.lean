@@ -51,7 +51,7 @@ theorem add_result_ok {C : Curve} (hC : Law C) (ha : AM3 C) (hO : PrimeOrder C)
         apply rz
         apply (hR.z_zero_iff hC).mpr
         rw [he0,Nat.mul_zero,Window5.mul_zero_pt]
-      have noexc := Window5.loop_noexc hC hO hP hP0 hn17 hn64 hk hj he1
+      have noexc := Window5.loop_noexc hC hO hP hP0 (Nat.le_of_eq hn17.symm) hn64 hk hj he1
       have hp := hC.onCurve_mul hP (32*Window5.winE (k+16*Window5.geom J) J (j+1))
       have hq := Window5.onCurve_winPt hC hP (k+16*Window5.geom J) j
       have hh : E.1*(R.2.2*R.2.2)-R.1*(E.2.2*E.2.2)≠0 := by
