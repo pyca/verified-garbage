@@ -22,11 +22,9 @@ whole blocks, keeping `iv` between calls. Padding is the caller's.
 Each takes a `scratch` buffer of working space, room for that of
 `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` (`[u64; 256]`) and 128
 bytes more (eight blocks, e.g. of ciphertext that decryption in place must
-keep until it has decrypted the block after each). They may overwrite their
-arguments passed in memory, where the calling convention allows it
-(`writeArgs`), to pass arguments to the functions they call. `stack` is
-the number of bytes of stack below the stack pointer that an
-implementation's calls and frames use (see `Sig.contract`).
+keep until it has decrypted the block after each). `stack` is the number of
+bytes of stack below the stack pointer that an implementation's calls and
+frames use (see `Sig.contract`).
 -/
 
 namespace VG.Spec.Cbc
@@ -56,7 +54,6 @@ def aesEncryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let ciph := aesWith rounds.toNat (Aes.bytesAt m schedule (16 * (rounds.toNat + 1)))
       let cs := encrypt ciph (Aes.bytesAt m iv 16) (blocksAt m data n.toNat)
       blocksAt m' data n.toNat = cs ∧ Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
-    (writeArgs := true)
     (stack := stack)
 
 /-- For `rounds` of 10, 12 or 14, with the key schedule `w` in the first
@@ -73,7 +70,6 @@ def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       let cs := blocksAt m data n.toNat
       blocksAt m' data n.toNat = decrypt ciphInv (Aes.bytesAt m iv 16) cs ∧
         Aes.bytesAt m' iv 16 = next (Aes.bytesAt m iv 16) cs)
-    (writeArgs := true)
     (stack := stack)
 
 /-- The `# Safety` items the two functions share. -/
@@ -86,7 +82,6 @@ def aesEncryptApi : Api where
   module := "aes_cbc"
   name := "vg_aes_cbc_encrypt"
   sig := aesSig
-  writeArgs := true
   contracts := some fun A stack => aesEncryptContract A stack
   summary := "AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the \
     `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the \
@@ -103,7 +98,6 @@ def aesDecryptApi : Api where
   module := "aes_cbc"
   name := "vg_aes_cbc_decrypt"
   sig := aesSig
-  writeArgs := true
   contracts := some fun A stack => aesDecryptContract A stack
   summary := "AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the \
     `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the \
