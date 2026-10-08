@@ -7,60 +7,137 @@ import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 
 `mulRX M k o a b` and `sqrRX M k o a` (`Impl/Mont/X86_64.lean`): X25519's
 product `a b` (`mul4_ok`) or square `a²` (`sqr4_ok`) into `r8–r15`, then
-`redRX`: four friendly reductions, each adding `t_i m'` to the words above
-`t_i`, which makes `2⁶⁴ V' = V + t_i m` for the value `V` of the words from
-`t_i` up (`sqRound_ok`). The first three cannot carry out of `r15`, as
-`t + 2¹⁹² m < 2⁵¹²` for `t < 2²⁵⁶ m` and P-256's `p` (any `m` of `redRX`'s form,
-`m ≤ 2²⁵⁶ − 2¹⁹² + 2⁶⁵`: `sqrBound`); the last carries into `r8`. They leave
-`(t + U m) / 2²⁵⁶ < 2m`, which `csub` reduces below `m` (`redRX_ok`).
+`redRX`: the low half `L` of the product `t = L + 2²⁵⁶ H` reduced in a window
+of four words rotating through `r8–r11`, by four rounds of `redRoundX`, each of
+which makes the window's value `(W + t_i m) / 2⁶⁴` for its low word `t_i`
+(`redRoundX_ok`: `t_i m' = t_i 2ᵏ + 2¹²⁸ t_i (2⁶⁴ − 2ᵏ + 1)` by two `mulx`,
+added in one carry chain, which cannot carry out as `m < 2²⁵⁶`, `sqrBound`).
+They leave `(L + U m) / 2²⁵⁶ ≤ m`, to which the high half `H < m` is added
+(`addHigh_ok`), the carry into `r8`: `(t + U m) / 2²⁵⁶ < 2m`, which `csub`
+reduces below `m` (`redRX_ok`).
 -/
 
 namespace VG.Proof.Mont.X86_64
 
 open VG VG.X86_64 VG.Impl.Mont.X86_64 VG.Impl.Mont
 open VG.Impl.X25519.X86_64 (sqrA sqrB sqrC sqrD rowX0)
-open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono val4 sqr4_ok mul4_ok rowR' rowX_eq)
+open VG.Proof.X25519.X86_64 (Keeps Keeps.trans Keeps.mono val4 sqr4_ok mul4_ok rowR' rowX_eq se0 add_carry adc_carry
+  mulx_arith)
 
-/-- A round of the reduction: `ts += t₀ m'`, which makes `2⁶⁴ ts' = V + t₀ m`
-for the value `V = t₀ + 2⁶⁴ ts` of the words from `t₀` up. -/
-theorem sqRound_ok (s : State) {t0 : Reg} {k m : Nat} (hk : 0 < k ∧ k < 64)
-    (hm : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1) {ts : List Reg}
-    (hl : 4 ≤ ts.length) (hf : Fresh ts) (ht0 : t0 ∉ ts)
-    (h0 : t0 ≠ .rax ∧ t0 ≠ .rcx ∧ t0 ≠ .rdx ∧ t0 ≠ .rbp)
-    (hb : (s.gpr t0).toNat + 2 ^ 64 * regsVal s ts + (s.gpr t0).toNat * m <
-      2 ^ 64 * 2 ^ (64 * ts.length)) :
-    WP isa (.block (shiftRed true t0 k ts)) s fun s' =>
-      2 ^ 64 * regsVal s' ts = (s.gpr t0).toNat + 2 ^ 64 * regsVal s ts + (s.gpr t0).toNat * m ∧
-        Keeps (.rax :: .rcx :: .rdx :: .rbp :: ts) s s' := by
-  generalize hW : 2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1) = W at hm
-  have key : 2 ^ 64 * ((s.gpr t0).toNat * W) = (s.gpr t0).toNat * m + (s.gpr t0).toNat := by
-    rw [Nat.mul_left_comm, hm, Nat.mul_add, Nat.mul_one]
-  have hb' : regsVal s ts + (s.gpr t0).toNat * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) <
-      2 ^ (64 * ts.length) := by
-    rw [hW]
-    refine Nat.lt_of_mul_lt_mul_left (a := 2 ^ 64) ?_
-    rw [Nat.mul_add, key]
-    omega
-  refine WP.mono (shiftRed_ok true s hk hl hf ht0 h0 hb') fun s' ⟨e, k'⟩ => ⟨?_, k'⟩
-  rw [e, hW, Nat.mul_add, key]
-  omega
-
-/-- `m ≤ 2²⁵⁶ − 2¹⁹² + 2⁶⁵` for `m + 1 = 2⁶⁴ (2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1))`, so
-that `2²⁵⁶ m + 2¹⁹² m < 2⁵¹²`. -/
+/-- `m < 2²⁵⁶` for `m + 1 = 2⁶⁴ (2ᵏ + 2¹²⁸ (2⁶⁴ − 2ᵏ + 1))`. -/
 theorem sqrBound {k m : Nat} (hk : 0 < k ∧ k < 64)
-    (hm : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1) :
-    m < 2 ^ 256 ∧ 2 ^ 256 * m + 2 ^ 192 * m < 2 ^ 512 := by
+    (hm : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1) : m < 2 ^ 256 := by
   have h1 : 2 ^ 1 ≤ 2 ^ k := Nat.pow_le_pow_right (by decide) hk.1
   have h2 : 2 ^ k ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega)
   generalize 2 ^ k = K at hm h1 h2
   omega
 
+/-- A round of the reduction (`redRoundX`): the window `t, w₁, w₂, w₃` of value
+`W` becomes `w₁, w₂, w₃, t` of value `(W + t m) / 2⁶⁴`, for any `W`, as
+`m < 2²⁵⁶`. -/
+theorem redRoundX_ok (s : State) {t w1 w2 w3 : Reg} {k m : Nat} (hk : 0 < k ∧ k < 64)
+    (hm : 2 ^ 64 * (2 ^ k + 2 ^ 128 * (2 ^ 64 - 2 ^ k + 1)) = m + 1) (hf : Fresh [t, w1, w2, w3]) :
+    WP isa (.block (redRoundX k t w1 w2 w3)) s fun s' =>
+      2 ^ 64 * regsVal s' [w1, w2, w3, t] = regsVal s [t, w1, w2, w3] + (s.gpr t).toNat * m ∧
+        Keeps [.rax, .rcx, .rdx, .rbp, t, w1, w2, w3] s s' := by
+  obtain ⟨ht, ta, tc, -, tb, -⟩ := hf.head
+  obtain ⟨h1, a1, c1, d1, b1, -⟩ := hf.tail.head
+  obtain ⟨h2, a2, c2, d2, b2, -⟩ := hf.tail.tail.head
+  obtain ⟨-, a3, c3, d3, b3, -⟩ := hf.tail.tail.tail.head
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at ht h1 h2
+  obtain ⟨t1, t2, t3⟩ := ht
+  obtain ⟨n12, n13⟩ := h1
+  have hm256 := sqrBound hk hm
+  apply WP.of_runBlock
+  simp only [redRoundX, runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, execMulx, readSrc,
+    Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
+    RegUpd.cf_setReg, ↓reduceIte, reduceCtorEq, a1, c1, d1, b1, a2, c2, d2, b2, a3, c3, d3, b3, t1, t2,
+    t3, n12, n13, h2, Ne.symm ta, Ne.symm tc, Ne.symm tb, Ne.symm c1, Ne.symm b1, Ne.symm c2, Ne.symm t1,
+    Ne.symm t2, Ne.symm t3, Ne.symm n12, Ne.symm n13, Ne.symm h2,
+    Option.some.injEq, exists_eq_left', se0, regsVal]
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have hK : 2 ^ k < 2 ^ 64 := Nat.pow_lt_pow_right (by decide) hk.2
+    have hK1 : 2 ^ 1 ≤ 2 ^ k := Nat.pow_le_pow_right (by decide) hk.1
+    have hA : (BitVec.ofNat 64 (2 ^ k)).toNat = 2 ^ k := by
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hK
+    have hC : (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1)).toNat = 2 ^ 64 - 2 ^ k + 1 := by
+      rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega)
+    have p1 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ k))
+    have p2 := mulx_arith (s.gpr t) (BitVec.ofNat 64 (2 ^ 64 - 2 ^ k + 1))
+    rw [hA] at p1 ⊢
+    rw [hC] at p2 ⊢
+    generalize BitVec.ofNat 64 ((s.gpr t).toNat * 2 ^ k) = l₁ at p1 ⊢
+    generalize BitVec.ofNat 64 ((s.gpr t).toNat * 2 ^ k / 2 ^ 64) = h₁ at p1 ⊢
+    generalize BitVec.ofNat 64 ((s.gpr t).toNat * (2 ^ 64 - 2 ^ k + 1)) = l₂ at p2 ⊢
+    generalize BitVec.ofNat 64 ((s.gpr t).toNat * (2 ^ 64 - 2 ^ k + 1) / 2 ^ 64) = h₂ at p2 ⊢
+    have e1 := add_carry (s.gpr w1) l₁
+    generalize decide (2 ^ 64 ≤ (s.gpr w1).toNat + l₁.toNat) = c₁ at e1 ⊢
+    have e2 := adc_carry (s.gpr w2) h₁ c₁
+    generalize decide (2 ^ 64 ≤ (s.gpr w2).toNat + h₁.toNat + c₁.toNat) = c₂ at e2 ⊢
+    have e3 := adc_carry (s.gpr w3) l₂ c₂
+    generalize decide (2 ^ 64 ≤ (s.gpr w3).toNat + l₂.toNat + c₂.toNat) = c₃ at e3 ⊢
+    have e4 := adc_carry h₂ 0 c₃
+    have hz : (0 : BitVec 64).toNat = 0 := rfl
+    rw [hz] at e4
+    generalize decide (2 ^ 64 ≤ h₂.toNat + 0 + c₃.toNat) = c₄ at e4
+    -- `t m + t = 2⁶⁴ (t 2ᵏ) + 2¹⁹² (t (2⁶⁴ − 2ᵏ + 1))`, and `W + t m < 2³²⁰`.
+    have hx := (s.gpr t).isLt
+    generalize (s.gpr t).toNat = x at p1 p2 hx ⊢
+    generalize 2 ^ k = K at hm hK hK1 p1 p2
+    generalize 2 ^ 64 - K + 1 = D at hm p2
+    have key : x * m + x = 2 ^ 64 * (x * K) + 2 ^ 192 * (x * D) := by
+      rw [← Nat.mul_add_one, ← hm, Nat.mul_left_comm, Nat.mul_add, Nat.mul_left_comm x (2 ^ 128),
+        Nat.mul_add]
+      omega
+    have hxm := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt hx)
+    have := (s.gpr w1).isLt; have := (s.gpr w2).isLt; have := (s.gpr w3).isLt
+    have := l₁.isLt; have := h₁.isLt; have := l₂.isLt; have := h₂.isLt
+    have := Bool.toNat_le c₁; have := Bool.toNat_le c₂; have := Bool.toNat_le c₃; have := Bool.toNat_le c₄
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨ra, rc, rd, rb, rt, r1, r2, r3⟩ := hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, ra, rc, rd, rb, rt, r1, r2, r3, ite_false]
+
+/-- The high half added to the reduced low half: `r12–r15` and the carry in
+`r8` are `r12–r15 + r8–r11`. -/
+theorem addHigh_ok (s : State) :
+    WP isa (.block [.alu .add .r12 (.reg .r8), .alu .adc .r13 (.reg .r9), .alu .adc .r14 (.reg .r10),
+      .alu .adc .r15 (.reg .r11), .mov32 .r8 (.imm 0), .alu .adc .r8 (.imm 0)]) s fun s' =>
+      regsVal s' sqLow + 2 ^ 256 * (s'.gpr .r8).toNat = regsVal s sqLow + regsVal s [.r8, .r9, .r10, .r11] ∧
+        Keeps [.r8, .r12, .r13, .r14, .r15] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, readSrc32, State.setReg32,
+    Option.bind_some, Option.map_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags,
+    RegUpd.cf_setReg, ↓reduceIte, reduceCtorEq, Option.some.injEq, exists_eq_left', se0, regsVal, sqLow]
+  refine ⟨?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · have e1 := add_carry (s.gpr .r12) (s.gpr .r8)
+    generalize decide (2 ^ 64 ≤ (s.gpr .r12).toNat + (s.gpr .r8).toNat) = c₁ at e1 ⊢
+    have e2 := adc_carry (s.gpr .r13) (s.gpr .r9) c₁
+    generalize decide (2 ^ 64 ≤ (s.gpr .r13).toNat + (s.gpr .r9).toNat + c₁.toNat) = c₂ at e2 ⊢
+    have e3 := adc_carry (s.gpr .r14) (s.gpr .r10) c₂
+    generalize decide (2 ^ 64 ≤ (s.gpr .r14).toNat + (s.gpr .r10).toNat + c₂.toNat) = c₃ at e3 ⊢
+    have e4 := adc_carry (s.gpr .r15) (s.gpr .r11) c₃
+    generalize decide (2 ^ 64 ≤ (s.gpr .r15).toNat + (s.gpr .r11).toNat + c₃.toNat) = c₄ at e4 ⊢
+    have e5 := adc_carry (BitVec.setWidth 64 (0 : BitVec 32)) 0 c₄
+    have hz : (0 : BitVec 64).toNat = 0 := rfl
+    have hz' : (BitVec.setWidth 64 (0 : BitVec 32)).toNat = 0 := rfl
+    rw [hz, hz'] at e5
+    have := (BitVec.ofNat 64 0).isLt
+    have := Bool.toNat_le c₁; have := Bool.toNat_le c₂; have := Bool.toNat_le c₃
+    have := Bool.toNat_le c₄
+    generalize decide (2 ^ 64 ≤ 0 + 0 + c₄.toNat) = c₅ at e5
+    have := Bool.toNat_le c₅
+    omega
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨r8, r12, r13, r14, r15⟩ := hr
+    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, r8, r12, r13, r14, r15, ite_false]
+
 theorem redRX_eq (M : Mod) (k o : Nat) : redRX M k o =
-    shiftRed true .r8 k ([.r9, .r10, .r11, .r12, .r13, .r14, .r15] : List Reg) ++
-      (shiftRed true .r9 k ([.r10, .r11, .r12, .r13, .r14, .r15] : List Reg) ++
-      (shiftRed true .r10 k ([.r11, .r12, .r13, .r14, .r15] : List Reg) ++
-      (([.mov32 .r8 (.imm 0)] : List Instr) ++
-      (shiftRed true .r11 k (sqLow ++ ([.r8] : List Reg)) ++ (csub M sqLow .r8 ++ stores sqLow o))))) := by
+    redRoundX k .r8 .r9 .r10 .r11 ++ (redRoundX k .r9 .r10 .r11 .r8 ++ (redRoundX k .r10 .r11 .r8 .r9 ++
+      (redRoundX k .r11 .r8 .r9 .r10 ++
+      (([.alu .add .r12 (.reg .r8), .alu .adc .r13 (.reg .r9), .alu .adc .r14 (.reg .r10),
+        .alu .adc .r15 (.reg .r11), .mov32 .r8 (.imm 0), .alu .adc .r8 (.imm 0)] : List Instr) ++
+      (csub M sqLow .r8 ++ stores sqLow o))))) := by
   simp only [redRX, List.append_assoc]
 
 theorem sqrRX_eq (M : Mod) (k o a : Nat) :
@@ -109,63 +186,36 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
     have := Nat.div_add_mod (m + 1) (2 ^ 64)
     have : (m + 1) % 2 ^ 64 = 0 := by omega
     omega
-  obtain ⟨hm256, hmm⟩ := sqrBound ⟨hk1, hk2⟩ hW
+  have hm256 := sqrBound ⟨hk1, hk2⟩ hW
   have hm0 : 0 < m := by
     rcases Nat.eq_zero_or_pos m with h | h
     · subst h; omega
     · exact h
-  -- The four reductions.
-  have hx := fun (t : State) (r : Reg) => (t.gpr r).isLt
+  -- The four rounds, in the window rotating through `r8–r11`.
   rw [redRX_eq, WP.block_append_iff]
-  refine WP.mono (sqRound_ok s₁ ⟨hk1, hk2⟩ hW (t0 := .r8) (by decide) ⟨by decide, by decide⟩ (by decide)
-    ⟨by decide, by decide, by decide, by decide⟩ (by
-      rw [hV₁]
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
-      simp only [List.length_cons, List.length_nil]
-      omega)) fun s₂ ⟨e₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
-  rw [hV₁] at e₂
+  refine WP.mono (redRoundX_ok s₁ ⟨hk1, hk2⟩ hW (t := .r8) (w1 := .r9) (w2 := .r10) (w3 := .r11)
+    ⟨by decide, by decide⟩) fun s₂ ⟨e₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sqRound_ok s₂ ⟨hk1, hk2⟩ hW (t0 := .r9) (by decide) ⟨by decide, by decide⟩ (by decide)
-    ⟨by decide, by decide, by decide, by decide⟩ (by
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
-      simp only [regsVal] at e₂ ⊢
-      simp only [List.length_cons, List.length_nil]
-      omega)) fun s₃ ⟨e₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  refine WP.mono (redRoundX_ok s₂ ⟨hk1, hk2⟩ hW (t := .r9) (w1 := .r10) (w2 := .r11) (w3 := .r8)
+    ⟨by decide, by decide⟩) fun s₃ ⟨e₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (sqRound_ok s₃ ⟨hk1, hk2⟩ hW (t0 := .r10) (by decide) ⟨by decide, by decide⟩ (by decide)
-    ⟨by decide, by decide, by decide, by decide⟩ (by
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₃ .r10))
-      simp only [regsVal] at e₂ e₃ ⊢
-      simp only [List.length_cons, List.length_nil]
-      omega)) fun s₄ ⟨e₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  refine WP.mono (redRoundX_ok s₃ ⟨hk1, hk2⟩ hW (t := .r10) (w1 := .r11) (w2 := .r8) (w3 := .r9)
+    ⟨by decide, by decide⟩) fun s₄ ⟨e₄, k₄⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (mov32zero_ok s₄ .r8) fun s₅ ⟨z₅, _, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
-  have g₅ : ∀ r, r ≠ .r8 → s₅.gpr r = s₄.gpr r := fun r h => k₅.1 r (by simpa using h)
-  have hz : (0 : BitVec 64).toNat = 0 := rfl
+  refine WP.mono (redRoundX_ok s₄ ⟨hk1, hk2⟩ hW (t := .r11) (w1 := .r8) (w2 := .r9) (w3 := .r10)
+    ⟨by decide, by decide⟩) fun s₅ ⟨e₅, k₅⟩ => ?_
+  have k₂₅ : Keeps [.rax, .rcx, .rdx, .rbp, .r8, .r9, .r10, .r11] s₁ s₅ :=
+    ((k₂.trans (k₃.mono (by sub_regs))).trans (k₄.mono (by sub_regs))).trans (k₅.mono (by sub_regs))
+  have hs₅ := hs₁.of_keeps k₂₅ (by decide)
+  -- The high half added.
   rw [WP.block_append_iff]
-  refine WP.mono (sqRound_ok s₅ ⟨hk1, hk2⟩ hW (t0 := .r11) (ts := sqLow ++ [.r8]) (by decide)
-    ⟨by decide, by decide⟩ (by decide) ⟨by decide, by decide, by decide, by decide⟩ (by
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₃ .r10))
-      have := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₄ .r11))
-      simp only [regsVal] at e₂ e₃ e₄
-      simp only [sqLow, List.cons_append, List.nil_append, regsVal, z₅, g₅ _ (by decide : Reg.r11 ≠ .r8),
-        g₅ _ (by decide : Reg.r12 ≠ .r8), g₅ _ (by decide : Reg.r13 ≠ .r8),
-        g₅ _ (by decide : Reg.r14 ≠ .r8), g₅ _ (by decide : Reg.r15 ≠ .r8), List.length_cons,
-        List.length_nil, hz]
-      omega)) fun s₆ ⟨e₆, k₆⟩ => ?_
+  refine WP.mono (addHigh_ok s₅) fun s₆ ⟨e₆, k₆⟩ => ?_
   have hs₆ := hs₅.of_keeps k₆ (by decide)
-  have M₆ : s₆.mem = s₁.mem :=
-    k₆.2.1.trans (k₅.2.1.trans (k₄.2.1.trans (k₃.2.1.trans k₂.2.1)))
-  -- `R = (a² + U m) / 2²⁵⁶ < 2m`, for the four words `U` of the reductions.
+  have M₆ : s₆.mem = s₁.mem := k₆.2.1.trans k₂₅.2.1
+  have hH : regsVal s₅ sqLow = regsVal s₁ sqLow := regsVal_congr fun r hr => k₂₅.1 r (by
+    simp only [sqLow, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> decide)
+  -- `R = (L + U m) / 2²⁵⁶ + H < 2m`, for the four words `U` of the rounds.
   generalize hR : regsVal s₆ sqLow + 2 ^ 256 * (s₆.gpr .r8).toNat = R
   have hU : ((s₁.gpr .r8).toNat + 2 ^ 64 * (s₂.gpr .r9).toNat + 2 ^ 128 * (s₃.gpr .r10).toNat +
       2 ^ 192 * (s₄.gpr .r11).toNat) * m = (s₁.gpr .r8).toNat * m + 2 ^ 64 * ((s₂.gpr .r9).toNat * m) +
@@ -174,18 +224,17 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
   generalize (s₁.gpr .r8).toNat + 2 ^ 64 * (s₂.gpr .r9).toNat + 2 ^ 128 * (s₃.gpr .r10).toNat +
     2 ^ 192 * (s₄.gpr .r11).toNat = U at hU
   have hRU : 2 ^ 256 * R = T + U * m ∧ R < 2 * m := by
+    have hx := fun (t : State) (r : Reg) => (t.gpr r).isLt
     have b₁ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₁ .r8))
     have b₂ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₂ .r9))
     have b₃ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₃ .r10))
     have b₄ := Nat.mul_le_mul_right m (Nat.le_sub_one_of_lt (hx s₄ .r11))
-    simp only [regsVal] at e₂ e₃ e₄
-    simp only [sqLow, List.cons_append, List.nil_append, regsVal, z₅, g₅ _ (by decide : Reg.r11 ≠ .r8),
-      g₅ _ (by decide : Reg.r12 ≠ .r8), g₅ _ (by decide : Reg.r13 ≠ .r8),
-      g₅ _ (by decide : Reg.r14 ≠ .r8), g₅ _ (by decide : Reg.r15 ≠ .r8),
-      hz] at e₆
+    have hL := regsVal_lt s₁ [.r8, .r9, .r10, .r11]
+    have hT : T = regsVal s₁ [.r8, .r9, .r10, .r11] + 2 ^ 256 * regsVal s₁ sqLow := by
+      rw [← hV₁]; simp only [sqLow, regsVal]; omega_arith
+    simp only [List.length_cons, List.length_nil] at hL
     rw [← hR]
-    simp only [sqLow, regsVal]
-    omega_using [b₁, b₂, b₃, b₄, e₂, e₃, e₄, e₆, hU, hTm]
+    omega_using [b₁, b₂, b₃, b₄, e₂, e₃, e₄, e₅, e₆, hH, hU, hTm, hT, hL]
   -- Reduced below `m` and stored.
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₆ (M := M) (m := m) (ts := sqLow) (top := .r8) (by rw [hn]; rfl) hM.n0
@@ -200,9 +249,8 @@ theorem redRX_ok {s₁ : State} {base : Addr} {size : Nat} (hs₁ : Scr s₁ bas
   refine ⟨?_, fun x hx hx' => ?_, ?_, ?_⟩
   · have K : ∀ {rs : List Reg} {t t' : State}, Keeps rs t t' → (∀ r ∈ rs, r ∈ sqrClob) →
         KeepRegs sqrClob t t' := fun k h => (Keeps.regs k).mono h
-    exact ((((((K k₂ (by decide)).trans (K k₃ (by decide))).trans
-      (K k₄ (by decide))).trans (K k₅ (by decide))).trans (K k₆ (by decide))).trans
-      (k₇.mono (by decide))).trans (k₈.mono (by decide))
+    exact (((K k₂₅ (by decide)).trans (K k₆ (by decide))).trans (k₇.mono (by decide))).trans
+      (k₈.mono (by decide))
   · rw [O₈ x hx, O₇ x hx', M₆]
   · rw [e₈, e₇]; exact Nat.mod_lt _ hm0
   · rw [e₈, e₇, Nat.mod_mul_mod,
