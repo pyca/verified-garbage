@@ -57,17 +57,17 @@ theorem initRegs_ok (s : State) {B : Nat} (hB : B < 2 ^ 16) :
 set_option hygiene false in
 /-- The slots' arithmetic, from `slots` and the layout (named `eL` … `eU`, `n4`, `htbl`, `hn`). -/
 local macro "slot_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn]))
 
 set_option hygiene false in
 /-- `slot_omega` with the modulus's place (`hmt`, `hmo`). -/
 local macro "slotm_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn, hmt, hmo])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn, hmt, hmo]))
 
 set_option hygiene false in
 /-- `slot_omega` with a hypothesis `hx` about an address. -/
 local macro "slotx_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn, hx])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU] at hx ⊢); omega_using [n4, htbl, hn, hx]))
 
 theorem zext1' : (1 : BitVec 32).setWidth 64 = 1 := by decide
 
@@ -141,7 +141,7 @@ theorem init₂_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) 
   refine WP.mono (zeroWords_ok hs₅ (k := P.M.n) (t := P.sB) (by slot_omega)) fun s₆ ⟨z₆, k₆, O₆⟩ => ?_
   have hs₆ := hs₅.of_keepRegs k₆ (by decide)
   refine WP.mono (setOne_ok hs₆ (d := P.sB) (by slot_omega)) fun t ⟨mt, kt⟩ => ?_
-  have Ot : Outside base P.sB 8 s₆.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by omega)
+  have Ot : Outside base P.sB 8 s₆.mem t.mem := by rw [mt]; exact writeW_outside _ _ _ (by slot_omega)
   refine ⟨?_, ?_, (k₅.trans k₆).trans kt, fun x hx => by
     rw [Ot x (by slotx_omega), O₆ x (by slotx_omega), O₅ x (by slotx_omega)]⟩
   · rw [Ot.wordsVal (by slot_omega) (by slot_omega), O₆.wordsVal (by slot_omega) (by slot_omega), z₅]
@@ -152,8 +152,8 @@ theorem init₂_ok {P : InvCfg} {base : Addr} {size : Nat} (hL : InvLay P size) 
       rcases Nat.eq_zero_or_pos (wordsVal s₆.mem base (P.sB + 8) k) with h | h
       · exact h
       · have := Nat.mul_le_mul_left (2 ^ 64) h; omega
-    rw [hk, wordsVal, mt, word_writeW_self, (writeW_outside s₆.mem base (d := P.sB) 1 (by omega)).wordsVal
-      (by omega) (by omega), h0]
+    rw [hk, wordsVal, mt, word_writeW_self, (writeW_outside s₆.mem base (d := P.sB) 1 (by slot_omega)).wordsVal
+      (by omega_using [hk]) (by omega_using [hk, eB, n4, htbl, hn]), h0]
     rfl
 
 /-- The start: `d = 1`, the count, and `(f, g, a, b) = (m, x, 0, 1)`. -/

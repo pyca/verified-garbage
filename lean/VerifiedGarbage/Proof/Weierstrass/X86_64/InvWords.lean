@@ -307,6 +307,19 @@ theorem prods_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
 local macro "apart" : tactic => `(tactic| (simp only [List.mem_cons, List.not_mem_nil, or_false,
   forall_eq_or_imp, forall_eq] <;> omega))
 
+set_option hygiene false in
+/-- `omega` on the layout alone of `lin_ok` and `linR_ok`: first without its disjunctions,
+which it would split, then with one. -/
+local macro "lin_omega" : tactic =>
+  `(tactic| first
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hTx]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hTy]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hUT]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hUx]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hn, hUy]
+    | omega_using [hkK, hK, hk', hx, hy, hT, hU, hTx, hTy, hUT, hUx, hUy, hn])
+
 /-- `[T] = w [x] + w' [y] - 2^64 (([x] & mask(w)) + ([y] & mask(w')))` modulo
 `2^(64 K)` (`[x]`, `[y]` of `k` words, `K - 1 ≤ k ≤ K`). -/
 theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}
@@ -329,10 +342,10 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w 
     hkK hk' hx hy hT hTx hTy) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
   rw [WP.block_append_iff]
-  refine WP.mono (subSh_ok hs₁ w (T := T) (x := x) (U := U) hK hT (by omega) hU hUT (by omega))
+  refine WP.mono (subSh_ok hs₁ w (T := T) (x := x) (U := U) hK hT (by lin_omega) hU hUT (by lin_omega))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
-  refine WP.mono (subSh_ok hs₂ w' (T := T) (x := y) (U := U) hK hT (by omega) hU hUT (by omega))
+  refine WP.mono (subSh_ok hs₂ w' (T := T) (x := y) (U := U) hK hT (by lin_omega) hU hUT (by lin_omega))
     fun t ⟨e₃, k₃, O₃⟩ => ⟨?_, ((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans (k₃.mono (by decide)),
       (O₁.unch.trans (O₂.trans O₃)).mono fun v hv => by
         simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hv ⊢
@@ -342,9 +355,9 @@ theorem lin_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w 
     rw [k₂.gpr w' (by simp [hw'.1, hw'.2.2.2.2.1, hw'.2.2.2.2.2.2]),
       k₁.gpr w' (by simp [hw'.1, hw'.2.1, hw'.2.2.1, hw'.2.2.2.1, hw'.2.2.2.2.1])]
   have mx : wordsVal s₁.mem base x (K - 1) = wordsVal s.mem base x (K - 1) :=
-    O₁.wordsVal (by omega) (by omega)
+    O₁.wordsVal (by lin_omega) (by lin_omega)
   have my : wordsVal s₂.mem base y (K - 1) = wordsVal s.mem base y (K - 1) := by
-    rw [O₂.wordsVal (by apart) (by omega)]; exact O₁.wordsVal (by omega) (by omega)
+    rw [O₂.wordsVal (by apart) (by lin_omega)]; exact O₁.wordsVal (by lin_omega) (by lin_omega)
   rw [gw, mx] at e₂
   rw [gw', my] at e₃
   generalize 2 ^ (64 * K) = M at *
@@ -891,10 +904,6 @@ theorem side_cong {w : BitVec 64} {X S Q : Nat} (h0 : smask w = 0 → S = X)
 
 /-! ## The combination -/
 
-set_option hygiene false in
-/-- `omega` on `linR_ok`'s layout alone. -/
-local macro "lin_omega" : tactic =>
-  `(tactic| omega_using [hkK, hK, hk', hx, hy, hT, hU, hTx, hTy, hUT, hUx, hUy, hn])
 
 /-- `[T] = w [x] + w' [y]` modulo `2^(64 K)` (`k ≤ K ≤ k + 1`), for `|w|`, `|w'| ≤ 2^62`. -/
 theorem linR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {w w' : Reg}

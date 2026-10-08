@@ -149,8 +149,10 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
   have hn := hs.nowrap
   have hn0 := hM.n0
   rw [WP.block_append_iff]
-  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (by omega) (by omega) (by omega) hx hy (by omega)
-    (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
+  -- `omega` given the fact it needs: the context has eight disjunctions it would split.
+  refine WP.mono (linCM_ok hs hw hw' (k := M.n) (K := M.n + 1) (Nat.le_succ _) (by omega_using [hn2])
+    (Nat.le_refl _) hx hy (by omega_using [hT]) (by omega_using [hU]) (by omega_using [hTx])
+    (by omega_using [hTy]) (by omega_using [hUT]) (by omega_using [hUx]) (by omega_using [hUy])
     (by rw [hu]; exact coef_natAbs (le_trans (le_add_of_nonneg_right (abs_nonneg _)) huv))
     (by rw [hv]; exact coef_natAbs (le_trans (le_add_of_nonneg_left (abs_nonneg _)) huv))) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_
   have hs₁ := hs.of_keepRegs k₁ (by decide)
@@ -162,8 +164,9 @@ theorem abHalf_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) 
     have hp : (0 : Int) ≤ p := Int.natCast_nonneg _
     nlinarith
   have O₁' : Unch base [(T, 8 * (M.n + 2)), (U, 8 * (M.n + 1))] s.mem s₁.mem := fun z hz => O₁ z (by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hz ⊢; omega)
-  refine WP.mono (mredC_ok hs₁ hM₁ hT hd hU hTm hdT (by omega) hUm hT' e₁) fun t ⟨e, k, O⟩ =>
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hz ⊢
+    omega_using [hz])
+  refine WP.mono (mredC_ok hs₁ hM₁ hT hd hU hTm hdT (by omega_using [hUT]) hUm hT' e₁) fun t ⟨e, k, O⟩ =>
     ⟨e, k₁.trans k, (O₁'.trans O).mono fun w hw => ?_⟩
   simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
   rcases hw with h | h | h | h | h <;> simp [h]
@@ -182,7 +185,7 @@ theorem slots (P : InvCfg) :
 set_option hygiene false in
 /-- The slots' arithmetic, from `slots` and the layout (named `eL` … `eU`, `n4`, `htbl`, `hn`). -/
 local macro "slot_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn]))
 
 /-- What a batch writes: the working area. -/
 def batchW (P : InvCfg) : List (Nat × Nat) := [(P.tbl, invTbl P.M.n)]
@@ -421,7 +424,7 @@ theorem fgUpd_ok {P : InvCfg} {base : Addr} {size p : Nat} (hL : InvLay P size) 
 set_option hygiene false in
 /-- `slot_omega` with the modulus's place (`hmt`, `hmo`). -/
 local macro "slotm_omega" : tactic =>
-  `(tactic| omega_using [eL, eF, eG, eA, eB, eNF, eNG, eT, eU, n4, htbl, hn, hmt, hmo])
+  `(tactic| ((try simp only [eL, eF, eG, eA, eB, eNF, eNG, eT, eU]); omega_using [n4, htbl, hn, hmt, hmo]))
 
 /-- Both halves of the update of `a`, `b`, into `a'` and `b`. -/
 abbrev abHalves (P : InvCfg) : List Instr :=
