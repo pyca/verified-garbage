@@ -7,7 +7,10 @@ pub const USES: &[&str] = &["chacha20poly1305", "chacha20", "poly1305"];
 /// One-shot ChaCha20-Poly1305 encryption and decryption (key setup included),
 /// with a 12-byte nonce and 16 bytes of associated data. This library's and
 /// aws-lc-rs's run in place with a separate tag, OpenSSL's out of place; and
-/// encryption out of place for all three.
+/// encryption out of place for all three, of a plaintext in two pieces as a
+/// TLS 1.3 record's is (its payload and its content type, the last byte),
+/// next to this library's copy of the pieces followed by encryption in
+/// place, which `encrypt` should be no slower than.
 #[cfg(any(
     target_arch = "x86_64",
     target_arch = "aarch64",
@@ -22,7 +25,10 @@ pub fn bench(c: &mut Criterion) {
     use openssl::symm::{Cipher, decrypt_aead, encrypt_aead};
     use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
 
-    use crate::{AWS_LC, OPENSSL, SIZES, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
+    // The shared sizes, and more below 1 KiB and at 4 KiB, where the TLS
+    // records of interactive traffic fall.
+    const SIZES: [usize; 8] = [16, 64, 256, 512, 768, 1024, 4096, 16384];
     let key = [0x42; 32];
     let nonce = [0x24; 12];
     let aad = [0x11; 16];
@@ -126,11 +132,13 @@ pub fn bench(c: &mut Criterion) {
     }
     g.finish();
 
-    // Out of place: from `data` into a separate buffer.
+    // Out of place: from `data` and `content_type`, the last byte, into a
+    // separate buffer.
     let mut g = c.benchmark_group("chacha20poly1305-encrypt-out-of-place");
     for size in SIZES {
         g.throughput(Throughput::Bytes(size as u64));
-        let data = vec![0u8; size];
+        let data = vec![0u8; size - 1];
+        let content_type = [0x17u8];
         let mut out = vec![0u8; size];
         g.bench_function(BenchmarkId::new(VG, size), |b| {
             b.iter(|| {
@@ -138,12 +146,13 @@ pub fn bench(c: &mut Criterion) {
                     .encrypt(
                         black_box(&nonce),
                         black_box(&aad),
-                        &[black_box(&data[..])],
+                        &[black_box(&data[..]), black_box(&content_type[..])],
                         black_box(&mut out),
                     )
                     .unwrap()
             })
         });
+        let whole = vec![0u8; size];
         let mut tag = [0u8; 16];
         g.bench_function(BenchmarkId::new(OPENSSL, size), |b| {
             b.iter(|| {
@@ -152,12 +161,15 @@ pub fn bench(c: &mut Criterion) {
                     black_box(&key),
                     Some(black_box(&nonce)),
                     black_box(&aad),
-                    black_box(&data),
+                    black_box(&whole),
                     &mut tag,
                 )
                 .unwrap()
             })
         });
+        // aws-lc-rs takes the last piece as its `extra_in`, and writes its
+        // encryption, before the tag, to `extra_out_and_tag`.
+        let mut extra_out_and_tag = [0u8; 17];
         g.bench_function(BenchmarkId::new(AWS_LC, size), |b| {
             b.iter(|| {
                 aws_lc_key(black_box(&key))
@@ -165,10 +177,31 @@ pub fn bench(c: &mut Criterion) {
                         Nonce::assume_unique_for_key(*black_box(&nonce)),
                         Aad::from(black_box(&aad)),
                         black_box(&data),
-                        black_box(&mut out),
-                        &[],
-                        &mut tag,
+                        black_box(&mut out[..size - 1]),
+                        black_box(&content_type),
+                        &mut extra_out_and_tag,
                     )
+                    .unwrap()
+            })
+        });
+    }
+    g.finish();
+
+    // The same, by copying the pieces into the output and encrypting it in
+    // place.
+    let mut g = c.benchmark_group("chacha20poly1305-copy-encrypt-in-place");
+    for size in SIZES {
+        g.throughput(Throughput::Bytes(size as u64));
+        let data = vec![0u8; size - 1];
+        let content_type = [0x17u8];
+        let mut out = vec![0u8; size];
+        g.bench_function(BenchmarkId::new(VG, size), |b| {
+            b.iter(|| {
+                let (body, last) = out.split_at_mut(size - 1);
+                body.copy_from_slice(black_box(&data));
+                last.copy_from_slice(black_box(&content_type));
+                ChaCha20Poly1305::new(black_box(&key))
+                    .encrypt_in_place(black_box(&nonce), black_box(&aad), black_box(&mut out))
                     .unwrap()
             })
         });
