@@ -87,8 +87,8 @@ structure PieceP (n : StitchName) : Type where
 
 /-- Static and constant-time facts for prepared-context loops. -/
 structure PieceR (n : StitchName) : Type where
-  enc : Piece n.encR
-  dec : Piece n.decR
+  enc : Piece n.encR true
+  dec : Piece n.decR true
 
 /-- Interleaved loops that encrypt out of place, for
 `vg_aes_gcm_encrypt_blocks_to`, by name. `StitchToName.ok`, in the generic
@@ -120,7 +120,7 @@ structure PieceToP (n : StitchToName) : Type where
 
 /-- Static and constant-time facts for a prepared out-of-place loop. -/
 structure PieceToR (n : StitchToName) : Type where
-  enc : PieceTo n.encR
+  enc : PieceTo n.encR true
 
 /-- Out-of-place loops by name, with the facts `PieceTo` states of them (and
 of those for a key context of `vg_aes_gcm_init_precomputed`, if they read

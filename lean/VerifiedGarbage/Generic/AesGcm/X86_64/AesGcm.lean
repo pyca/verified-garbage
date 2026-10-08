@@ -72,7 +72,7 @@ hash subkey from a key context of `vg_aes_gcm_init_precomputed`
 have cached-context functions: `_prepared` (`artifactsR`) when their loops
 support prepared pairs (`StitchPart.pieceR`), otherwise `_precomputed`
 (`artifactsP`). Prepared initialization converts the powers once; its loops
-load the encoded pairs directly. The precomputed functions are: `init_precomputed`, which
+load the encoded pairs directly and align their working tables to 64 bytes. The precomputed functions are: `init_precomputed`, which
 is `init` followed by the powers, computed one at a time with `vg_ghash`
 (`InitP.lean`), and `seal`, `open`, `stream_encrypt`, `stream_decrypt` and
 the whole-blocks functions for that key context, with the same stack and
@@ -154,14 +154,14 @@ theorem StitchName.okR : (n : StitchName) →
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZH.stitch_ok
   | .aesniAvx => Proof.Gcm.X86_64.StitchAvx8.stitch_ok.toM _
 
-def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   v.stitch.bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.decR, p.name.okR, q.enc, q.dec⟩
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchTo_ok
 
-def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared) :=
+def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceR.map fun q => ⟨p.name.encR, p.name.okR, q.enc⟩
 
 end VG.Proof.AesGcm.X86_64
@@ -677,7 +677,7 @@ def artifactsToR (v : GcmVariant) : List Artifact :=
       target := X86_64.target
       doc := Spec.Gcm.encryptBlocksToPreparedApi.doc
         (notes := [blocksToNote v.stitchToR.isSome (blkR v).enc.name])
-      code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc))
+      code := Impl.AesGcm.X86_64.BlocksTo.encrypt (blkR v).enc (v.stitchToR.map (·.enc)) true
       contract := Spec.Gcm.encryptBlocksToPreparedContract X86_64.abi 24
       stack := 24
       verified := encryptBlocksToPrepared_verified (blkR v) v.stitchToR

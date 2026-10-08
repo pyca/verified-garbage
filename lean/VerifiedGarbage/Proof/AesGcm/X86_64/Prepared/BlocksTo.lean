@@ -60,8 +60,8 @@ theorem blocksToPrepared_implies : (Proof.AesGcm.encryptBlocksToX86_64M Gcm.X86_
               | exact preparedPowersRepr_zero _
               | exact Region.disjoint_of_sep (by decide)⟩ }
 
-theorem encryptBlocksToPrepared_verified (B : BlkFn CtxMode.prepared) (st : Option (StitchToCode CtxMode.prepared)) :
-    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)))
+theorem encryptBlocksToPrepared_verified (B : BlkFn CtxMode.prepared) (st : Option (StitchToCode CtxMode.prepared true)) :
+    Verified X86_64.target (BlocksTo.encrypt B.enc (st.map (·.enc)) true)
       (Spec.Gcm.encryptBlocksToPreparedContract X86_64.abi 24) :=
   Verified.of_correct (k := Proof.AesGcm.encryptBlocksToX86_64M CtxMode.prepared) (encryptToM_correct st B)
     (BlocksTo.encrypt_ct B st) blocksToPrepared_implies

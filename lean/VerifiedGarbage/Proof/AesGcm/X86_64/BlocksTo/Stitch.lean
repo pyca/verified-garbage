@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
+import VerifiedGarbage.Proof.AesGcm.X86_64.AlignedScratch
 import VerifiedGarbage.Proof.AesGcm.X86_64.BlocksTo.Mid
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.SpecTo
 
@@ -27,45 +29,36 @@ theorem contains_prefix (a : Addr) {k L : Nat} (h : k ≤ L) : (⟨a, L⟩ : Reg
   simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact h
 
 section
-variable {M : CtxMode} {s : State} (hp : BT M s)
+variable {aligned : Bool} {M : CtxMode} {s : State} (hp : BT M s)
 include hp
 
-omit hp in
 /-- `r9 := 16 ⌊r9 / 16⌋` and `r11` at the powers. -/
 theorem split_ok {s₁ : State} (h9 : s₁.gpr .r9 = s.gpr .r9) (h11 : s₁.gpr .r11 = S s) :
-    WP isa (.block [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax),
-      .alu .add .r11 (imm 64)]) s₁ fun s₃ =>
-      s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16) ∧ s₃.gpr .r11 = S s + BitVec.ofNat 64 64 ∧
+    WP isa (.block (([.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)] : List Instr) ++
+      Blocks.scratchSetup aligned)) s₁ fun s₃ =>
+      s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16) ∧ s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) ∧
       (∀ r, r ≠ .rax → r ≠ .r9 → r ≠ .r11 → s₃.gpr r = s₁.gpr r) ∧
       s₃.mem = s₁.mem ∧ s₃.rd = s₁.rd ∧ s₃.wr = s₁.wr := by
-  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
-  have e15 := and15 (s.gpr .r9)
-  rw [imm_eq (by decide)] at e15
-  have esub : s.gpr .r9 - BitVec.ofNat 64 (n s % 16) = BitVec.ofNat 64 (n s - n s % 16) := by
-    rw [← ofNat_sub (Nat.mod_le _ _) hn]; simp
-  apply WP.of_runBlock
-  refine ⟨_, by xrun [h9, h11, e15, esub], ?_, ?_, ?_, ?_⟩
-  · simp [gpr_setReg, gpr_arithFlags]
-  · simp [gpr_setReg, gpr_arithFlags, h11]
-  · intro r a b c; simp [gpr_setReg, gpr_arithFlags, a, b, c]
-  all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
+  exact WP.mono (Blocks.split_ok (aligned := aligned) (s := s) h9) fun st ⟨a, b, c, d, e, f⟩ =>
+    ⟨a, by rw [b, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s, c, d, e, f⟩
 
 /-- What the out-of-place loops need, from the arguments in their
 registers, `r9 = 16 ⌊n / 16⌋`, the output in `r10` and the working space in
 `r11`. -/
 theorem spreTo_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16))
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (h10 : s₃.gpr .r10 = Dst s)
-    (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 64) (hrd : s₃.rd = s.rd)
+    (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))) (hrd : s₃.rd = s.rd)
     (hwr : s₃.wr = s.wr) (hf₃ : Frame [kR' s] s.mem s₃.mem) : SPreTo M s₃ := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
   have hq : (s₃.gpr .r9).toNat = n s - n s % 16 := by rw [h9, toNat_ofNat_of_lt (by omega)]
   have hqn : 16 * (n s - n s % 16) ≤ n s * 16 := by omega
   have pd : Region.Sub ⟨Dst s, 16 * (n s - n s % 16)⟩ (dR s) := Region.sub_prefix hqn
   have pr : Region.Sub ⟨Src s, 16 * (n s - n s % 16)⟩ (srcR s) := Region.sub_prefix hqn
-  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 64, 1024⟩ (sR s) := Offset.sub_base _ (by decide)
+  have ps : Region.Sub ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ (sR s) := Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)
   have hws := hp.w_s
-  have ts : (S s + BitVec.ofNat 64 64).toNat = (S s).toNat + 64 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat]; simp only [Nat.reducePow, Nat.reduceMod]; omega
+  have ts : (S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s))).toNat = (S s).toNat + AlignedScratch.offset aligned (S s) := by
+    have ho := AlignedScratch.offset_bounds aligned (S s)
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : AlignedScratch.offset aligned (S s) < 2^64), Nat.mod_eq_of_lt (by omega)]
   have ek : s₃.gpr .rdi = K s := hg _ (by simp [argRegs])
   have er : s₃.gpr .rsi = s.gpr .rsi := hg _ (by simp [argRegs])
   have ec : s₃.gpr .rdx = C s := hg _ (by simp [argRegs])
@@ -82,19 +75,19 @@ theorem spreTo_of {s₃ : State} (h16 : 16 ≤ n s) (h9 : s₃.gpr .r9 = BitVec.
   exacts [hp.rounds, by omega, by omega, ⟨kR M s, by rw [rd]; simp, Region.contains_self _ _⟩,
     ⟨cR s, by rw [wr]; simp, Region.contains_self _ _⟩, ⟨yR s, by rw [wr]; simp, Region.contains_self _ _⟩,
     ⟨srcR s, by rw [rd]; simp, contains_prefix _ hqn⟩, ⟨dR s, by rw [wr]; simp, contains_prefix _ hqn⟩,
-    ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by decide) (by decide)⟩,
+    ⟨sR s, by rw [wr]; simp, Offset.contains_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩,
     hp.k_c, hp.k_y, hp.k_d.sub_right pd, hp.k_s.sub_right ps,
     hp.c_r.symm.sub_left pr, hp.y_r.symm.sub_left pr, (hp.r_d.sub_left pr).sub_right pd,
     (hp.r_s.sub_left pr).sub_right ps, hp.c_d.symm.sub_left pd, hp.y_d.symm.sub_left pd,
     (hp.d_s.sub_left pd).sub_right ps, hp.c_s.symm.sub_left ps, hp.y_s.symm.sub_left ps, hp.c_y,
-    by have := hp.w_r; omega, by have := hp.w_d; omega, hp.w_k, by rw [ts]; omega,
+    by have := hp.w_r; omega, by have := hp.w_d; omega, hp.w_k, by rw [ts]; have := AlignedScratch.offset_bounds aligned (S s); omega,
     M.frame hf₃ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.k_s.sub_right kR'_sub) hp.w_k hp.ok]
 
 /-- `Mid` after the out-of-place loops, from what they leave. -/
 theorem mid_of_postTo {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (n s - n s % 16))
     (hg : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r) (hcs : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r)
-    (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 64)
+    (h10 : s₃.gpr .r10 = Dst s) (h11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)))
     (hrd : s₃.rd = s.rd) (hwr : s₃.wr = s.wr) (hkp : Kept s 0 s₃.mem) (hf₃ : Frame [kR' s] s.mem s₃.mem)
     (P : EPostTo s₃ s₄) : Mid s (n s - n s % 16) 0 s₄ := by
   have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
@@ -137,9 +130,9 @@ theorem mid_of_postTo {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (
   rw [eC] at ctr
   rw [eH, eY, data] at y
   have pd : Region.Sub ⟨Dst s, 16 * q⟩ (dR s) := Region.sub_prefix (by omega)
-  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 64, 1024⟩ :=
-    Offset.base_disjoint _ (by decide) (by have := hp.w_s; omega)
-  have fk : ∀ r ∈ [cR s, yR s, (⟨Dst s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 64, 1024⟩ : Region)],
+  have sk : Region.Disjoint (kR' s) ⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ :=
+    Offset.base_disjoint _ (by have := AlignedScratch.offset_bounds aligned (S s); omega) (by have := hp.w_s; have := AlignedScratch.offset_bounds aligned (S s); omega)
+  have fk : ∀ r ∈ [cR s, yR s, (⟨Dst s, 16 * q⟩ : Region), (⟨S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)), 1024⟩ : Region)],
       (kR' s).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -155,7 +148,7 @@ theorem mid_of_postTo {s₃ s₄ : State} (h9 : s₃.gpr .r9 = BitVec.ofNat 64 (
     · exact ⟨cR s, by simp, fun _ h => h⟩
     · exact ⟨yR s, by simp, fun _ h => h⟩
     · exact ⟨dR s, by simp, pd⟩
-    · exact ⟨sR s, by simp, Offset.sub_base _ (by decide)⟩
+    · exact ⟨sR s, by simp, Offset.sub_base _ (by have := AlignedScratch.offset_bounds aligned (S s); omega)⟩
   refine ⟨hqn, ?_, fun r hr => ?_, P.rd.trans hrd, P.wr.trans hwr, hkp.frame frame fk, fw, data, ctr, y⟩
   · rw [P.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact hg _ (by simp [argRegs])
   · have hr' : r ≠ .rax ∧ r ≠ .rdx ∧ r ≠ .r8 ∧ r ≠ .r9 ∧ r ≠ .r10 := by
@@ -179,7 +172,7 @@ theorem stitch_ok {piece : Prog isa} (hpiece : StitchToOkM M piece)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (h10 : s₁.gpr .r10 = Dst s)
     (hg : ∀ r, r ≠ .r11 → r ≠ .r10 → s₁.gpr r = s.gpr r)
     (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (stitchPart piece) s₁ (Mid s (n s - n s % 16) 0) := by
+    WP isa (stitchPart piece aligned) s₁ (Mid s (n s - n s % 16) 0) := by
   refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide) (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
   · have h0 : n s - n s % 16 = 0 := by simp at h; omega
@@ -188,7 +181,7 @@ theorem stitch_ok {piece : Prog isa} (hpiece : StitchToOkM M piece)
       (fun r hr => by rw [g₂]; exact hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
       (by rw [m₂]; exact hk) (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr))
   · have h16 : 16 ≤ n s := by simp at h; omega
-    refine WP.seq (WP.mono (split_ok (s := s) (s₁ := s₂) (by rw [g₂]; exact hg _ (by decide) (by decide))
+    refine WP.seq (WP.mono (split_ok hp (s := s) (s₁ := s₂) (by rw [g₂]; exact hg _ (by decide) (by decide))
       (by rw [g₂, h11])) fun s₃ ⟨h9, h11₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
     have h10₃ : s₃.gpr .r10 = Dst s := by rw [g₃ _ (by decide) (by decide) (by decide), g₂, h10]
     have keepR : ∀ r, r ≠ .rax → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → s₃.gpr r = s.gpr r := fun r a b c d => by

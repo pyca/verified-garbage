@@ -28,58 +28,58 @@ theorem map_code_dec (st : Option StitchImpl) (M : CtxMode) : (st.map (·.code M
   cases st <;> rfl
 
 section
-variable (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M))
+variable (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned))
 
 theorem encryptBlocks_mx :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).allInstrs (fun i => !loadsMxcsr i) = true := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hh := StitchImpl.head_mxcsr st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
     GcmImpl.callees, hh, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
     ite_true]; decide +kernel
 
 theorem decryptBlocks_mx :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).allInstrs (fun i => !loadsMxcsr i) = true := by
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned).allInstrs (fun i => !loadsMxcsr i) = true := by
   have hh := StitchImpl.head_mxcsr st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.allInstrs,
     GcmImpl.callees, hh, v.ctr.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
     ite_true]; decide +kernel
 
 theorem encryptBlocks_spSafe :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
   have hh := StitchImpl.head_spSafe st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all,
     GcmImpl.callees, hh, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
     ite_true]; decide +kernel
 
 theorem decryptBlocks_spSafe :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).all (fun i => !X86_64.isa.writesSp i) = true := by
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned).all (fun i => !X86_64.isa.writesSp i) = true := by
   have hh := StitchImpl.head_spSafe st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.all,
     GcmImpl.callees, hh, v.ctr.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true, Bool.false_eq_true, ite_false,
     ite_true]; decide +kernel
 
 theorem encryptBlocks_xdepth :
-    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))).x86_64Depth ≤ 8 := by
+    (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned).x86_64Depth ≤ 8 := by
   have hh := StitchImpl.head_xdepth st fun i => i.encP
   simp only [Blocks.encrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth,
     GcmImpl.callees, hh, v.ctr.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
 
 theorem decryptBlocks_xdepth :
-    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))).x86_64Depth ≤ 8 := by
+    (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned).x86_64Depth ≤ 8 := by
   have hh := StitchImpl.head_xdepth st fun i => i.decP
   simp only [Blocks.decrypt, Blocks.blocks, Blocks.tail, Blocks.ctrCall, Blocks.ghCall, Code.x86_64Depth,
     GcmImpl.callees, hh, v.ctr.noStack, v.gh.noStack, Nat.max_le]
   decide +kernel
 
 theorem encryptBlocksM_correct (s : State) (hs : (Proof.AesGcm.encryptBlocksX86_64M M).pre s) :
-    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.encryptBlocksX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := Blocks.encrypt_wp v st hs
   exact ⟨t, s', he, abiPreserved_of_exec (encryptBlocks_mx v st) he hg, hp⟩
 
 theorem decryptBlocksM_correct (s : State) (hs : (Proof.AesGcm.decryptBlocksX86_64M M).pre s) :
-    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) s t s' ∧ abiPreserved s s' ∧
+    ∃ t s', Exec isa (Blocks.decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned) s t s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.decryptBlocksX86_64.post s s' := by
   obtain ⟨t, s', he, hg, hp⟩ := Blocks.decrypt_wp v st hs
   exact ⟨t, s', he, abiPreserved_of_exec (decryptBlocks_mx v st) he hg, hp⟩

@@ -227,14 +227,14 @@ theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.
     (fun _ _ h => h) (fun s h => by subst h; exact entry_ok hp) (fun s h => by subst h; exact entry_ok hp')
 
 /-- The interleaved part (or nothing) and `rest`, in two runs. -/
-theorem part_rel (piece : Option (Prog isa)) {ys : State → Nat → List Block}
+theorem part_rel (aligned : Bool) (piece : Option (Prog isa)) {ys : State → Nat → List Block}
     (hys : ∀ s, ys s 0 = [])
-    (hc : ∀ p, piece = some p → ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p) hc).map
+    (hc : ∀ p, piece = some p → ∃ hc, ((taint.check (Taint.ofRegs (.r11 :: args)) (stitchPart p aligned) hc).map
       fun τ' => (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true)
     (hw : ∀ p, piece = some p → ∀ {s : State}, BP M s → ∀ {s₁ : State}, EntryPost s s₁ →
-      WP isa (stitchPart p) s₁ (Mid s (n s - n s % 16) 0 (ys s (n s - n s % 16)))) :
+      WP isa (stitchPart p aligned) s₁ (Mid s (n s - n s % 16) 0 (ys s (n s - n s % 16)))) :
     RelCT isa (fun s₁ s₂ => (∀ r ∈ .r11 :: args, s₁.gpr r = s₂.gpr r) ∧ EntryPost s₀ s₁ ∧ EntryPost s₀' s₂)
-      (head piece)
+      (head piece aligned)
       fun s₁ s₂ => ∃ q, Mid s₀ q q (ys s₀ q) s₁ ∧ Mid s₀' q q (ys s₀' q) s₂ := by
   cases piece with
   | none =>
@@ -259,14 +259,14 @@ theorem part_rel (piece : Option (Prog isa)) {ys : State → Nat → List Block}
 
 end
 
-theorem encrypt_ct (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) :
+theorem encrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.encryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
-      (encrypt v.callees.ctr v.callees.gh (st.map (·.enc))) := by
+      (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BP.ofM h
   have hp' := BP.ofM h'
   have pb := Pub.of hq
-  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb (st.map (·.enc))
+  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb aligned (st.map (·.enc))
     (ys := fun s q => ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) (fun _ => rfl)
     (fun _ e => by obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.encP.ct)
     fun _ e {_} hp {_} h => by
@@ -276,14 +276,14 @@ theorem encrypt_ct (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) :
   exact tail_rel hp hp' pb (fun q hq => ctrCall_rel hp hp' pb v.ctr hq) (fun q hq => ghCall_rel hp hp' pb v.gh hq)
     _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
 
-theorem decrypt_ct (v : GcmImpl) {M : CtxMode} (st : Option (StitchCode M)) :
+theorem decrypt_ct (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.decryptBlocksX86_64M M).pre Proof.AesGcm.blocksPub
-      (decrypt v.callees.ctr v.callees.gh (st.map (·.dec))) := by
+      (decrypt v.callees.ctr v.callees.gh (st.map (·.dec)) aligned) := by
   refine ct_of_rel fun s₀ s₀' h h' hq => ?_
   have hp := BP.ofM h
   have hp' := BP.ofM h'
   have pb := Pub.of hq
-  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb (st.map (·.dec))
+  refine RelCT.seq (entry_rel hp hp' pb) (RelCT.seq (part_rel hp hp' pb aligned (st.map (·.dec))
     (ys := fun s q => blocksAt s.mem (D s) q) (fun _ => rfl)
     (fun _ e => by obtain ⟨i, -, rfl⟩ := Option.map_eq_some_iff.1 e; exact i.decP.ct)
     fun _ e {_} hp {_} h => by
