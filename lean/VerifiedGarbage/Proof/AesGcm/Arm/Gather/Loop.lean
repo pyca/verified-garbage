@@ -144,11 +144,10 @@ include h
 theorem gl_le (hi : i ≤ cnt) : gatheredLen 32 t.mem (State.addr Src) i ≤ L :=
   h.len ▸ gl_mono t.mem Src h.dw hi (Nat.le_refl _)
 
-/-- One iteration: slice `i` copied, `r0` at the next descriptor and `lr`
-decremented. -/
-theorem body_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
-    WP isa (.seq copySlice (.block next)) u fun u' => GInv t u' Src Dst cnt (i + 1) ∧
-      u'.z = decide (i + 1 = cnt) := by
+/-- What the copy of slice `i` needs, with `i` copied. -/
+theorem slicePre_of (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
+    SlicePre u (Src + BitVec.ofNat 32 (8 * i)) (sb t.mem Src i)
+      (Dst + BitVec.ofNat 32 (gatheredLen 32 t.mem (State.addr Src) i)) (sl t.mem Src i) := by
   have hc := h.hcnt
   have hdw := h.dw
   have hfD := h.fitD
@@ -188,8 +187,7 @@ theorem body_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
     by_cases hp : 0 < sl t.mem Src i
     · rw [aD hp]; exact Offset.sub_base _ hgl
     · intro x hx; simp only [Region.Contains] at hx; omega
-  have hsp : SlicePre u (Src + BitVec.ofNat 32 (8 * i)) (sb t.mem Src i)
-      (Dst + BitVec.ofNat 32 (gatheredLen 32 t.mem (State.addr Src) i)) (sl t.mem Src i) :=
+  exact
     { r0 := hu.r0
       r2 := hu.r2
       d0 := by rw [a0]; exact din _ (by omega)
@@ -210,6 +208,30 @@ theorem body_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
       dd := by
         rw [a4]
         exact (h.dsd.sub_left (dsub _ (by omega))).sub_right hsub }
+
+/-- One iteration: slice `i` copied, `r0` at the next descriptor and `lr`
+decremented. -/
+theorem body_wp (hi : i < cnt) (hu : GInv t u Src Dst cnt i) :
+    WP isa (.seq copySlice (.block next)) u fun u' => GInv t u' Src Dst cnt (i + 1) ∧
+      u'.z = decide (i + 1 = cnt) := by
+  have hc := h.hcnt
+  have hdw := h.dw
+  have hfD := h.fitD
+  have hgl : gatheredLen 32 t.mem (State.addr Src) (i + 1) ≤ L := gl_le h (by omega)
+  have hlen : (gathered 32 t.mem (State.addr Src) i).length = gatheredLen 32 t.mem (State.addr Src) i :=
+    Proof.Gcm.length_gathered _ _ _ _
+  rw [gl_succ hdw hi] at hgl
+  have hfr : Frame [⟨State.addr Dst, L⟩] t.mem u.mem := by
+    rw [hu.mem]
+    refine writeBytes_frame t.mem _ _ ?_
+    simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, hlen]
+    omega
+  have hmem := slice_mem t.mem hdw hi
+  have hsd : (⟨State.addr (sb t.mem Src i), sl t.mem Src i⟩ : Region).Disjoint ⟨State.addr Dst, L⟩ := h.lsd _ hmem
+  have hfit := h.lfit _ hmem
+  have aD (hp : 0 < sl t.mem Src i) : State.addr (Dst + BitVec.ofNat 32 (gatheredLen 32 t.mem (State.addr Src) i)) =
+      State.addr Dst + BitVec.ofNat 64 (gatheredLen 32 t.mem (State.addr Src) i) := addr_add (by omega)
+  have hsp := slicePre_of h hi hu
   refine WP.seq (WP.mono (copySlice_wp u hsp) fun u₂ ⟨m₂, r2₂, kp₂⟩ => ?_)
   obtain ⟨u₃, run₃, r0₃, lr₃, z₃, g₃, m₃, sp₃, rd₃, wr₃⟩ :=
     next_ok u₂ (w := cnt - i) (by rw [kp₂.gpr _ (by decide), hu.r0]) (by rw [kp₂.gpr _ (by decide), hu.lr])

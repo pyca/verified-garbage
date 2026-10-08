@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Loop
 import VerifiedGarbage.Proof.AesGcm.AArch64.Gather.Callee
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
+import VerifiedGarbage.Proof.AesGcm.CtxFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-!
@@ -28,27 +29,6 @@ open VG.Proof.AesGcm.AArch64 (bytesAt_frame blockAt_frame covers_of_mem covers_c
 theorem add_ofNat_sub_ofNat (B : Addr) {a b : Nat} (h : b ≤ a) :
     B + BitVec.ofNat 64 a - BitVec.ofNat 64 b = B + BitVec.ofNat 64 (a - b) := by
   rw [← Offset.ofNat_sub_ofNat h, BitVec.sub_eq_add_neg, BitVec.sub_eq_add_neg, BitVec.add_assoc]
-
-/-- The key context, through a frame of regions apart from it. -/
-theorem ctx_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr}
-    (hd : ∀ r ∈ rs, (⟨K, 256⟩ : Region).Disjoint r) {R : Nat}
-    (hR : R = 10 ∨ R = 12 ∨ R = 14) : ctxCiph m' K R = ctxCiph m K R ∧ ctxH m' K = ctxH m K := by
-  have hRb : 16 * (R + 1) ≤ 256 := by rcases hR with rfl | rfl | rfl <;> decide
-  refine ⟨?_, ?_⟩
-  · simp only [ctxCiph]
-    rw [bytesAt_frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix hRb)) (by omega)]
-  · simp only [ctxH]
-    exact blockAt_frame hf fun r hr => (hd r hr).sub_left (Offset.sub_base K (show 240 + 16 ≤ 256 by decide))
-
-/-- The bytes written at `q` are there. -/
-theorem bytesAt_writeBytes_self (m : Mem) (q : Addr) (xs : List Byte) (h : xs.length < 2 ^ 64) :
-    bytesAt (writeBytes m q xs) q xs.length = xs := by
-  apply List.ext_getElem
-  · simp [bytesAt]
-  · intro i h₁ h₂
-    simp only [bytesAt, List.getElem_map, List.getElem_range, writeBytes, Offset.add_sub_cancel_left,
-      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), h₂, ite_true]
-    simp [List.getD_eq_getElem?_getD, h₂]
 
 /-- The entry, in the frame at `P`: our return address at `P + 8`, the
 stack argument at `P + 32` (`tag`) at `P`, and the one at `P + 16` (`dst`)

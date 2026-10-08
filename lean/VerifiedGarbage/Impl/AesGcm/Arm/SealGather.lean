@@ -13,7 +13,8 @@ len, tag)` (`seal`, its symbol and code).
 It allocates a frame of 40 bytes: the call's five stack arguments at `sp`
 … `sp + 16`, our return address, which the call (`bl`) overwrites in `lr`,
 at `sp + 20`, and `r0`–`r3`, which the copy uses, at `sp + 24` … `sp + 36`;
-our stack arguments are then at `sp + 40` … `sp + 64`. The copy has `r0` at
+our stack arguments are then at `sp + 40` … `sp + 64`. The frame and the
+arguments are reached through `r12`, set to `sp` before each use (`setFp`). The copy has `r0` at
 the next descriptor, `lr` the number of slices left and `r2` where the next
 slice goes; each slice is copied from `r1` a word at a time through `r12`,
 with `r3` its number of words (`copyWords`), then its last `len mod 4` bytes
@@ -26,16 +27,20 @@ namespace VG.Impl.AesGcm.Arm.SealGather
 
 open VG.Arm
 
-/-- `r12` at the frame; our return address and `r0`–`r3` kept in it; the
-call's stack arguments `aad`, `aad_len`, `dst`, `len` and `tag` laid out in
-it; and the copy's registers: `src` in `r0`, `dst` in `r2` and `src_count`
-in `lr`. -/
-def entry : List Instr :=
-  [.addSp .r12 0, .str .lr .r12 20, .str .r0 .r12 24, .str .r1 .r12 28, .str .r2 .r12 32,
-    .str .r3 .r12 36,
-    .ldrSp .lr 40, .str .lr .r12 0, .ldrSp .lr 44, .str .lr .r12 4, .ldrSp .lr 56, .str .lr .r12 8,
-    .ldrSp .lr 60, .str .lr .r12 12, .ldrSp .lr 64, .str .lr .r12 16,
-    .ldrSp .r0 48, .ldrSp .r2 56, .ldrSp .lr 52]
+/-- `r12` at the frame (the stack pointer). The frame's words are read and
+written through it. -/
+def setFp : List Instr := [.addSp .r12 0]
+
+/-- Our return address and `r0`–`r3` kept in the frame; the call's stack
+arguments `aad`, `aad_len`, `dst`, `len` and `tag` laid out in it; and the
+copy's registers: `src` in `r0`, `dst` in `r2` and `src_count` in `lr`. -/
+def entryWords : List Instr :=
+  [.str .lr .r12 20, .str .r0 .r12 24, .str .r1 .r12 28, .str .r2 .r12 32, .str .r3 .r12 36,
+    .ldr .lr .r12 40, .str .lr .r12 0, .ldr .lr .r12 44, .str .lr .r12 4, .ldr .lr .r12 56, .str .lr .r12 8,
+    .ldr .lr .r12 60, .str .lr .r12 12, .ldr .lr .r12 64, .str .lr .r12 16,
+    .ldr .r0 .r12 48, .ldr .r2 .r12 56, .ldr .lr .r12 52]
+
+def entry : Prog isa := .seq (.block setFp) (.block entryWords)
 
 /-- Copies the `r3` (at least 1) words at `r1` to `r2`, through `r12`. -/
 def copyWords : Prog isa :=
@@ -67,16 +72,20 @@ def gatherLoop : Prog isa := .loop (.seq copySlice (.block next)) .ne
 def gather : Prog isa := .seq (.block [.cmp .lr (imm 0)]) (.ite .eq (.block []) gatherLoop)
 
 /-- `r0`–`r3` back from the frame. -/
-def callArgs : List Instr := [.ldrSp .r0 24, .ldrSp .r1 28, .ldrSp .r2 32, .ldrSp .r3 36]
+def argWords : List Instr := [.ldr .r0 .r12 24, .ldr .r1 .r12 28, .ldr .r2 .r12 32, .ldr .r3 .r12 36]
+
+def callArgs : Prog isa := .seq (.block setFp) (.block argWords)
+
+/-- Our return address back from the frame. -/
+def ret : Prog isa := .seq (.block setFp) (.block [.ldr .lr .r12 20])
 
 /-- `vg_aes_gcm_seal_gather`, calling `vg_aes_gcm_seal` (`name`, `code`). -/
 def sealGather (name : String) (code : Prog isa) : Prog isa :=
   .frame (.alloc 40)
-    (.seq (.block entry)
+    (.seq entry
     (.seq gather
-    (.seq (.block callArgs)
-    (.seq (.call name code)
-      (.block [.ldrSp .lr 20])))))
+    (.seq callArgs
+    (.seq (.call name code) ret))))
     (.free 40)
 
 end VG.Impl.AesGcm.Arm.SealGather

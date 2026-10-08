@@ -20,7 +20,7 @@
 //!
 //! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
 //! list of slices, such as a record's header and payload, or a single one)
-//! into one output buffer. On x86-64 and AArch64 that is one call of
+//! into one output buffer. On x86-64, AArch64 and ARMv7 that is one call of
 //! `vg_aes_gcm_seal_gather` (`VG.Spec.Gcm.sealGatherContract`), which reads
 //! each piece where it is; elsewhere it copies the pieces into the output and
 //! encrypts it there.
@@ -77,7 +77,7 @@
     target_arch = "x86"
 ))]
 
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
@@ -169,7 +169,7 @@ use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use alloc::boxed::Box;
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
 use core::mem::MaybeUninit;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
@@ -773,7 +773,7 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm"))]
         {
             // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
             // them: each its address and its length. Only the first
@@ -840,7 +840,7 @@ impl AesGcm {
             };
             Ok(tag)
         }
-        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "arm")))]
         {
             let mut off = 0;
             for p in plaintext {
