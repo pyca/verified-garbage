@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.MontTail
+import VerifiedGarbage.Proof.Weierstrass.X86.MontBody
 import VerifiedGarbage.TCB.X86.Target
 
 /-!
@@ -276,12 +277,12 @@ theorem mulFn_ok {m : Nat} (hM : MulOk k m) (hp : Pre k s)
   have hsv' : saveAt k = own k + 24 * k + 4 := by simp only [saveAt, tmpAt]; omega
   have htmp : tmpAt k = own k + 16 * k + 4 := by simp only [tmpAt]; omega
   simp only [mulFn, csubOut, List.append_assoc]
-  refine WP.block_append (WP.mono (mulEntry_ok hp) fun s₁ ⟨bx₁, pb₁, pa₁, K₁, esp₁, O₁, v₁, v₂, v₃, v₄⟩ => ?_)
+  refine WP.seq (WP.mono (mulEntry_ok hp) fun s₁ ⟨bx₁, pb₁, pa₁, K₁, esp₁, O₁, v₁, v₂, v₃, v₄⟩ => ?_)
   have hn := bx₁.nowrap
   have hB₁ : val32 s₁.mem (wsOf s) (arg s 3).toNat (2 * k) < m := by
     rw [O₁.val32 (by omega) (by omega)]; exact hB
   have hL : MulLayB k 8192 (arg s 2).toNat (arg s 3).toNat (own k) := ⟨by omega, by omega, by omega⟩
-  refine WP.block_append (WP.mono (rowsF_ok bx₁ hM pa₁ pb₁ hL hB₁ (2 * k) (by omega) (Nat.le_refl _))
+  refine WP.seq (WP.mono (mulBody_ok bx₁ hM pa₁ pb₁ hL hB₁)
     fun s₂ ⟨O₂, K₂, T₂, U, hU⟩ => ?_)
   have bx₂ := bx₁.of_keeps K₂ (by decide)
   have W₂ : Outs (wsOf s) (outs k s) s.mem s₂.mem :=

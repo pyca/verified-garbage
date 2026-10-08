@@ -21,7 +21,7 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
     target := X86.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves the callee-saved registers \
       `ebx`, `esi`, `edi` and `ebp` in `scratch`. Field elements and scalars are eight 32-bit \
-      words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
+      words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, \
       with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p`, \
       `vg_p256_mul_mod_n` and the other functions of `p256_mont`) with a final conditional \
       subtraction. `[k]G` \
