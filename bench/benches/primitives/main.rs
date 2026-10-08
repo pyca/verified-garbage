@@ -42,10 +42,12 @@ mod ecdh_p224;
 mod ecdh_p256;
 mod ecdh_p384;
 mod ecdh_p521;
+mod ecdh_secp256k1;
 mod ecdsa_p224;
 mod ecdsa_p256;
 mod ecdsa_p384;
 mod ecdsa_p521;
+mod ecdsa_secp256k1;
 mod ed25519;
 mod ed448;
 mod hmac_md5;
@@ -391,10 +393,12 @@ const BENCHES: &[Bench] = &[
     (ed25519::USES, ed25519::bench),
     (ed448::USES, ed448::bench),
     (ecdsa_p224::USES, ecdsa_p224::bench),
+    (ecdsa_secp256k1::USES, ecdsa_secp256k1::bench),
     (ecdsa_p256::USES, ecdsa_p256::bench),
     (ecdsa_p384::USES, ecdsa_p384::bench),
     (ecdsa_p521::USES, ecdsa_p521::bench),
     (ecdh_p224::USES, ecdh_p224::bench),
+    (ecdh_secp256k1::USES, ecdh_secp256k1::bench),
     (ecdh_p256::USES, ecdh_p256::bench),
     (ecdh_p384::USES, ecdh_p384::bench),
     (ecdh_p521::USES, ecdh_p521::bench),

@@ -1,10 +1,10 @@
 //! ECDSA (FIPS 186-5 §6.4) with deterministic signatures (RFC 6979 §3.2).
 //!
 //! A [`SigningKey<C>`] holds a private key on the curve `C` (so far
-//! [`P256`], [`P384`], `P521` and, on x86-64 and AArch64, `P224`), and signs with a hash
+//! [`P256`], [`P384`], `P521`, on x86-64 and AArch64, `P224`, and on x86-64, `Secp256k1`), and signs with a hash
 //! function `H` that the curve has signatures with ([`SignatureHash<C>`]: for
 //! P-224, SHA-224; for P-256, SHA-256 and SHA-384; for P-384, SHA-384; for
-//! P-521, SHA-512), as in
+//! P-521, SHA-512; for secp256k1, SHA-256), as in
 //! `key.sign::<Sha256>(message)`. Each signature is one call of
 //! verified code, for the curve and the hash function
 //! (`vg_ecdsa_<curve>_<hash>_sign`, contract
@@ -43,6 +43,7 @@ mod p224;
 mod p256;
 mod p384;
 mod p521;
+mod secp256k1;
 
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 pub use crate::ec::P224;
@@ -53,6 +54,8 @@ pub use crate::ec::P224;
     target_arch = "aarch64"
 ))]
 pub use crate::ec::P521;
+#[cfg(target_arch = "x86_64")]
+pub use crate::ec::Secp256k1;
 pub use crate::ec::{Curve, P256, P384};
 
 use crate::zeroize::zeroize;
@@ -75,7 +78,7 @@ mod sealed {
 /// the curve `C`: for P-224, [`Sha224`](crate::hashes::sha224::Sha224); for
 /// P-256, [`Sha256`](crate::hashes::sha256::Sha256) and
 /// [`Sha384`](crate::hashes::sha384::Sha384); for P-384, `Sha384`; for
-/// P-521, [`Sha512`](crate::hashes::sha512::Sha512).
+/// P-521, [`Sha512`](crate::hashes::sha512::Sha512); for secp256k1, `Sha256`.
 pub trait SignatureHash<C: Curve>: sealed::Functions<C> {}
 
 /// Why signing, deriving the public key, or verifying a signature failed.

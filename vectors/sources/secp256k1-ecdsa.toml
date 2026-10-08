@@ -1,0 +1,5 @@
+name = "noble-curves secp256k1 ECDSA and RFC 6979 vectors"
+directories = ["secp256k1-ecdsa"]
+url = "https://raw.githubusercontent.com/paulmillr/noble-curves/e7316eb26d4d052bd6786cd954c1ed33b8484ec0/test/vectors/secp256k1/ecdsa.json"
+sha256 = "0779ac93e8662be798745bb1626254ca4dd38e07fd48e38af62c9c1de266f14a"
+retrieved = 2026-10-08
