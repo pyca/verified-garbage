@@ -14,4 +14,16 @@ def dblJMul (S : RcbSlots) (p o : Pt) : List FOp :=
    .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .mul S.t1 S.t1 S.t1,
    .add S.t1 S.t1 S.t1, .sub o.y o.y S.t1]
 
+/-- `dblJ`'s doubling (dbl-2001-b, for `a = -3`), its operations ordered so
+that each product's operands are ready well before it, the cheap operations
+between dependent ones: the processor overlaps a product's last carry chains
+with the next independent product. -/
+def dblJS (S : RcbSlots) (p o : Pt) : List FOp :=
+  [.mul S.t0 p.z p.z, .mul S.t1 p.y p.y, .add o.z p.y p.z, .sub S.t3 p.x S.t0,
+   .add o.x p.x S.t0, .mul S.t2 p.x S.t1, .mul o.z o.z o.z, .mul S.t3 S.t3 o.x,
+   .sub o.z o.z S.t1, .sub o.z o.z S.t0, .mul S.t1 S.t1 S.t1, .add o.x S.t3 S.t3,
+   .add S.t3 o.x S.t3, .add S.t2 S.t2 S.t2, .add S.t2 S.t2 S.t2, .mul o.x S.t3 S.t3,
+   .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .add S.t1 S.t1 S.t1, .sub o.x o.x S.t2,
+   .sub o.x o.x S.t2, .sub o.y S.t2 o.x, .mul o.y S.t3 o.y, .sub o.y o.y S.t1]
+
 end VG.Impl.Weierstrass

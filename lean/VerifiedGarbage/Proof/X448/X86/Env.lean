@@ -1,6 +1,5 @@
-import VerifiedGarbage.Proof.X448.X86.Mul
-import VerifiedGarbage.Proof.X448.X86.AddSub
-import VerifiedGarbage.Proof.X448.X86.Small
+import VerifiedGarbage.Proof.X448.X86.FieldCall
+import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.Swap
 import Mathlib.Logic.Function.Basic
 
@@ -26,10 +25,10 @@ def workRegs : List Reg := .edx :: clob
 
 structure Keep (base : Addr) (s t : State) : Prop where
   regs : Keeps workRegs s t
-  mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
+  mem : WsOut2 base 64 2816 ACC 512 s.mem t.mem
 
 theorem Keep.refl (base : Addr) (s : State) : Keep base s s :=
-  ⟨Keeps.refl _ _, Outside2.refl _ _ _ _ _ _⟩
+  ⟨Keeps.refl _ _, WsOut2.refl _ _ _ _ _ _⟩
 
 theorem Keep.trans {base : Addr} {s t u : State} (h : Keep base s t) (h' : Keep base t u) :
     Keep base s u := ⟨h.regs.trans h'.regs, h.mem.trans h'.mem⟩
@@ -49,13 +48,24 @@ theorem slot_sep {i j : Index} (h : i ≠ j) : slot i.val + 112 ≤ slot j.val �
 
 theorem Op.keep {base : Addr} {o : Index} {s t : State} (h : Op base (slot o.val) s t) : Keep base s t := by
   refine ⟨h.keeps.mono (fun _ hr => List.mem_cons_of_mem _ hr), ?_⟩
-  intro p hp hq
+  intro p _ hp hq
   apply h.mem p _ hq
   have := o.isLt
   simp only [slot]
   omega
 
-theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot o.val) m m') :
+theorem COp.keep {base : Addr} {o : Index} {s t : State} (h : COp base (slot o.val) s t) : Keep base s t := by
+  refine ⟨h.keeps.mono (by decide), ?_⟩
+  intro p h8 hp hq
+  apply h.mem p h8 _ hq
+  have := o.isLt
+  simp only [slot]
+  omega
+
+theorem Keep.ctx {base : Addr} {s t : State} (h : Keep base s t) (hc : CallCtx s base) : CallCtx t base :=
+  hc.keep (h.regs.1 _ (by decide))
+
+theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : WsField base (slot o.val) m m') :
     E m' base = Function.update (E m base) o (F m' base (slot o.val)) := by
   funext i
   by_cases hi : i = o
@@ -64,7 +74,7 @@ theorem E_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot
     simp only [E, F]
     rw [h.fe (slot_sep hi) (slot_bound i)]
 
-theorem bounded_update {base : Addr} {m m' : Mem} {o : Index} (h : FieldMem base (slot o.val) m m')
+theorem bounded_update {base : Addr} {m m' : Mem} {o : Index} (h : WsField base (slot o.val) m m')
     (hm : BoundedEnv m base) (ho : Bounded m' base (slot o.val)) : BoundedEnv m' base := by
   intro i
   by_cases hi : i = o
@@ -81,28 +91,32 @@ def opCopy (o a : Index) (e : Env) : Env := Function.update e o (e a)
 def opSwap (x y : Index) (sw : Bool) (e : Env) : Env :=
   Function.update (Function.update e x (if sw then e y else e x)) y (if sw then e x else e y)
 
-theorem mulE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (Impl.X448.X86.mul (slot o.val) (slot a.val) (slot b.val)) s fun t =>
+theorem mulE {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (o a b : Index) :
+    WP isa (mulCall (slot o.val) (slot a.val) (slot b.val)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opMul o a b (E s.mem base) :=
-  WP.mono (mul_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (mulCall_ok hs hc (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
-theorem addE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (.block (Impl.X448.X86.add (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+theorem addE {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (o a b : Index) :
+    WP isa (addCall (slot o.val) (slot a.val) (slot b.val)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opAdd o a b (E s.mem base) :=
-  WP.mono (add_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (addCall_ok hs hc (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
-theorem subE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a b : Index) :
-    WP isa (.block (Impl.X448.X86.sub (slot o.val) (slot a.val) (slot b.val))) s fun t =>
+theorem subE {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (o a b : Index) :
+    WP isa (subCall (slot o.val) (slot a.val) (slot b.val)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opSub o a b (E s.mem base) :=
-  WP.mono (sub_ok hs (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (subCall_ok hs hc (slot_bound o) (slot_bound a) (slot_bound b) (hb a) (hb b)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
-theorem a24E {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
-    WP isa (.block (mulSmall (slot o.val) (slot a.val))) s fun t =>
+theorem a24E {s : State} {base : Addr} (hs : Scr s base) (hc : CallCtx s base) (hb : BoundedEnv s.mem base)
+    (o a : Index) :
+    WP isa (a24Call (slot o.val) (slot a.val)) s fun t =>
       Keep base s t ∧ BoundedEnv t.mem base ∧ E t.mem base = opA24 o a (E s.mem base) :=
-  WP.mono (mulSmall_ok hs (slot_bound o) (slot_bound a) (hb a)) fun _ ⟨h, bo, e⟩ =>
+  WP.mono (a24Call_ok hs hc (slot_bound o) (slot_bound a) (hb a)) fun _ ⟨h, bo, e⟩ =>
     ⟨h.keep, bounded_update h.mem hb bo, by rw [E_update h.mem, e]; rfl⟩
 
 theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base) (o a : Index) :
@@ -115,9 +129,9 @@ theorem copyE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem
   refine WP.mono (copy_ok hs (Nat.le_trans (slot_bound o) (by decide))
     (Nat.le_trans (slot_bound a) (by decide)) sep) fun t ⟨tf, tm, tk⟩ => ?_
   have op : Op base (slot o.val) s t := ⟨tk, FieldMem.output tm⟩
-  refine ⟨op.keep, bounded_update op.mem hb (fun i hi => ?_), ?_⟩
+  refine ⟨op.keep, bounded_update (op.mem.ws (by decide)) hb (fun i hi => ?_), ?_⟩
   · rw [tf i hi]; exact hb a i hi
-  · rw [E_update op.mem, show F t.mem base (slot o.val) = F s.mem base (slot a.val) from
+  · rw [E_update (op.mem.ws (by decide)), show F t.mem base (slot o.val) = F s.mem base (slot a.val) from
       congrArg toFe (valN_congr tf)]
     rfl
 
@@ -144,7 +158,7 @@ theorem cswapE {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.me
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide
-  · intro p hp _
+  · intro p _ hp _
     have hx := x.isLt
     have hy := y.isLt
     apply tm p <;> simp only [slot] <;> omega

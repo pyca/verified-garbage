@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Ecdsa.X86_64
 import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJac
+import VerifiedGarbage.Impl.Weierstrass.X86_64.WindowJ
 
 /-!
 # ECDH on x86-64
@@ -195,6 +196,24 @@ place. -/
 def mulQJ (dbl : Pt → Prog isa) : Prog isa :=
   .seq (.block (maskK c)) (.seq (jwinPrep c) ((jwinCfg c).window dbl))
 
+/-! ## Windows of 4 bits in Jacobian coordinates, for a curve of prime order
+
+`mulQ`'s windows, but the accumulator in Jacobian coordinates and the table
+made affine by one inversion (`WinCfg.windowJ`): for nine words, whose
+16-entry table of the 5-bit windows would not fit in the working space. -/
+
+/-- The inversion of `mulQJ4`'s table: `R.z^(p-2)` into the entry's `x`
+(`TX`), its working area over the table of the bits of `n - 2`, which ECDH
+does not read (and which ends below the window's table of bits for three
+words or more). -/
+def invWin : InvCfg := .ofMod c.MP' (c.sl TX) (c.sl RZ) (bitsAt c.n 2) c.C.p
+
+/-- `[d]P` into `R` by 4-bit windows with a Jacobian accumulator and an
+affine table (`d` reduced below `2^nbits` first). -/
+def mulQJ4 : Prog isa :=
+  .seq (.block (maskK c))
+    (.seq (c.winPrep (c.sl K)) (WinCfg.windowJ (c.winCfg PX PY BP) (InvCfg.inv (invWin c))))
+
 /-- `vg_ecdh_<curve>`, with `mq` computing `[d]P` into `R`. -/
 def exchangeWith (mq : Prog isa) : Prog isa :=
   .seq (.block (args)) <| .seq (prefix' c none) <| .seq (.block (peer c)) <| .seq (validate c) <|
@@ -203,6 +222,10 @@ def exchangeWith (mq : Prog isa) : Prog isa :=
 /-- `vg_ecdh_<curve>` by the Jacobian window method, for a curve of prime
 order. -/
 def exchangeJ (dbl : Pt → Prog isa) : Prog isa := exchangeWith c (mulQJ c dbl)
+
+/-- `vg_ecdh_<curve>` by 4-bit windows with a Jacobian accumulator
+(`mulQJ4`). -/
+def exchangeJ4 : Prog isa := exchangeWith c (mulQJ4 c)
 
 /-- `vg_ecdh_<curve>`. -/
 def exchange : Prog isa := exchangeWith c (mulQ c)

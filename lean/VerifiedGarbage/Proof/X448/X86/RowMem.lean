@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.X448.X86.RowPass
+import VerifiedGarbage.Proof.X448.X86.Field
 
 /-!
 # X448 on x86 (32-bit): multiplication-row memory
@@ -28,20 +29,18 @@ structure RowInv (base : Addr) (a b : Nat) (s0 : State) (i : Nat) (s : State) : 
   lt : ∀ k < i + 28, accw s.mem base k < radix
   val : valN (accw s.mem base) (i + 28) = valN (limbs s0.mem base a) i * fe s0.mem base b
 
-def rowSrc (b j : Nat) : List Instr :=
-  [ld .eax (b + 4 * j), .mul .ecx, .alu .add .eax (.mem (at_ .ebp (ACC + 4 * j)))]
-
-theorem rowSrc_ok {s : State} {base : Addr} (hs : Scr s base) {b i j : Nat}
+theorem rowSrcWith_ok {s : State} {base : Addr} (hs : Scr s base) {mb : Nat → MemOp} {b i j : Nat}
     (hb : Slot b) (hi : i < 28) (hj : j < 28)
     (hp : s.gpr .ebp = s.gpr .edi + BitVec.ofNat 32 (4 * i))
+    (hm : s.ea (mb j) = off base (b + 4 * j))
     (hc : (s.gpr .ecx).toNat < radix) (hy : limbs s.mem base b j < radix)
     (hacc : accw s.mem base (i + j) < radix) :
-    WP isa (.block (rowSrc b j)) s fun t =>
+    WP isa (.block (rowSrcWith mb j)) s fun t =>
       (t.gpr .eax).toNat = (s.gpr .ecx).toNat * limbs s.mem base b j + accw s.mem base (i + j) ∧
       Keeps [.eax, .edx] s t ∧ t.mem = s.mem := by
   have hb' : b + 112 ≤ 3584 := hb
-  unfold rowSrc
-  refine load_ok hs (by omega) fun t ht => ?_
+  unfold rowSrcWith
+  refine wp_load hm (hs.read (by omega)) fun t ht => ?_
   refine wp_mul fun u uv um uk => ?_
   have us := (hs.of_upd ht (by decide)).of_keeps uk (by decide)
   have up : u.gpr .ebp = u.gpr .edi + BitVec.ofNat 32 (4 * i) := by

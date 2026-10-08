@@ -124,19 +124,15 @@ theorem pub_view {a s t : State} (S : Sib a s) (h : J1 s t) :
     rw [entryBytes he _ _ hp.dKe hp.des.symm (by have := hp.wE; omega), S.e]
 
 theorem call_ct (v : PublicImpl) : RelCT isa (Two (At J1)) (.call v.name v.code) fun _ _ => True := by
-  refine RelCT.callEx (k := pdChkContract.clear) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
+  refine RelCT.callEx (k := pdChkContract) v.ok v.ct fun t₁ t₂ ⟨a, ⟨s₁, S₁, j₁⟩, ⟨s₂, S₂, j₂⟩⟩ => ?_
   obtain ⟨r₁, a0₁, a1₁, a2₁, a3₁, n₁, e₁⟩ := pub_view S₁ j₁
   obtain ⟨r₂, a0₂, a1₂, a2₂, a3₂, n₂, e₂⟩ := pub_view S₂ j₂
   obtain ⟨c₁, w₁⟩ := call_covers (Pc.pre_of S₁.1) j₁.2.2.2.2.2.2.2.2.2.2.2 j₁.1
   obtain ⟨c₂, w₂⟩ := call_covers (Pc.pre_of S₂.1) j₂.2.2.2.2.2.2.2.2.2.2.2 j₂.1
   obtain ⟨he₁, hw0₁, hw1₁, hw2₁, hw3₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hg₁⟩ := j₁
   obtain ⟨he₂, hw0₂, hw1₂, hw2₂, hw3₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hg₂⟩ := j₂
-  have q₁ := Pc.call_pre (Pc.pre_of S₁.1) hg₁ he₁.rsp hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
-  have q₂ := Pc.call_pre (Pc.pre_of S₂.1) hg₂ he₂.rsp hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
-  have p₁ : pdChkContract.clear.pre (t₁.callEntry.withRegions (callRd s₁) (pubWr s₁)) :=
-    ⟨q₁, call_clear (Pc.pre_of S₁.1) hg₁ he₁.rsp⟩
-  have p₂ : pdChkContract.clear.pre (t₂.callEntry.withRegions (callRd s₂) (pubWr s₂)) :=
-    ⟨q₂, call_clear (Pc.pre_of S₂.1) hg₂ he₂.rsp⟩
+  have p₁ := Pc.call_pre (Pc.pre_of S₁.1) hg₁ he₁.rsp hw0₁ hw1₁ hw2₁ hw3₁ hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁
+  have p₂ := Pc.call_pre (Pc.pre_of S₂.1) hg₂ he₂.rsp hw0₂ hw1₂ hw2₂ hw3₂ hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂
   have hpub : pdChkContract.pub (t₁.callEntry.withRegions (callRd s₁) (pubWr s₁))
       (t₂.callEntry.withRegions (callRd s₂) (pubWr s₂)) :=
     ⟨regs_eq (r₁.trans r₂.symm), a0₁.trans a0₂.symm, a1₁.trans a1₂.symm, a2₁.trans a2₂.symm,

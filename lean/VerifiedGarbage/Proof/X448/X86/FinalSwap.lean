@@ -36,7 +36,7 @@ theorem lastSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv
   have kt : Keep base s t := ⟨tk.mono (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> decide), tm ▸ Outside2.refl _ _ _ _ _ _⟩
+    rcases hr with rfl | rfl <;> decide), tm ▸ WsOut2.refl _ _ _ _ _ _⟩
   refine WP.mono (swaps_ok (kt.scr hs) (tm ▸ hb) tc) fun u ⟨ku, bu, eu⟩ =>
     ⟨kt.trans ku, bu, by rw [eu, tm]⟩
 

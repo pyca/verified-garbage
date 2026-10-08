@@ -48,6 +48,26 @@ theorem arg_same {m : Mem} (hf : Frame [scR (arg s₀ sc)] s₀.mem m) {i : Nat}
   hf.readW (hp.arg_contains hi)
     (by simp only [List.mem_singleton]; rintro r rfl; exact hp.args_sc) (by decide)
 
+/-- An argument, in memory the code has written only in regions apart from
+the arguments. -/
+theorem arg_frame {m : Mem} {rs : List Region} (hf : Frame rs s₀.mem m)
+    (hd : ∀ r ∈ rs, (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r) {i : Nat} (hi : i < n) :
+    m.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = arg s₀ i :=
+  hf.readW (hp.arg_contains hi) hd (by decide)
+
+/-- `load`, with the memory changed only in regions apart from the arguments. -/
+theorem loadF {s : State} (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd)
+    (hw : s.wr = s₀.wr) {rs : List Region} (hf : Frame rs s₀.mem s.mem)
+    (hd : ∀ r ∈ rs, (⟨argAddr s₀ 0, 4 * n⟩ : Region).Disjoint r)
+    {i : Nat} (hi : i < n) {d : Reg} {is : List Instr} {Q : State → Prop}
+    (k : ∀ t, Upd s t d (arg s₀ i) → WP isa (.block is) t Q) :
+    WP isa (.block (.mov d (.mem (Impl.X448.X86.at_ .esp (4 + 4 * i))) :: is)) s Q := by
+  refine wp_load (a := addr (s₀.gpr .esp) (4 + 4 * i))
+    (by change addr (s.gpr .esp) (4 + 4 * i) = _; rw [hsp])
+    (by rw [hr, hw]; exact ⟨_, List.mem_append_left _ hp.in_rd, hp.arg_contains hi⟩) fun t ht => ?_
+  rw [hp.arg_frame hf hd hi] at ht
+  exact k t ht
+
 theorem load {s : State} (hsp : s.gpr .esp = s₀.gpr .esp) (hr : s.rd = s₀.rd)
     (hw : s.wr = s₀.wr) (hm : Outside ((arg s₀ sc).setWidth 64) 0 8192 s₀.mem s.mem)
     {i : Nat} (hi : i < n) {d : Reg} {is : List Instr} {Q : State → Prop}

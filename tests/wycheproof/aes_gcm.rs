@@ -1,10 +1,10 @@
 //! AES-GCM (`AeadTest` vectors, `aes_gcm_test.json`).
 //!
-//! A valid vector must encrypt to exactly its ciphertext and tag, and
-//! decrypt back, both at once and streaming. An invalid vector must be
-//! rejected, at once and streaming: by decryption (a modified tag,
-//! ciphertext or additional data), or already by the nonce check (an empty
-//! nonce).
+//! A valid vector must encrypt to exactly its ciphertext and tag (in place,
+//! and out of place from the plaintext whole and in two pieces), and decrypt
+//! back, both at once and streaming. An invalid vector must be rejected, at
+//! once and streaming: by decryption (a modified tag, ciphertext or
+//! additional data), or already by the nonce check (an empty nonce).
 //!
 //! Every vector has a full 16-byte tag; the CAVP vectors
 //! (`tests/cavp/aes_gcm.rs`) test truncated ones.
@@ -82,6 +82,12 @@ fn aes_gcm() {
                 e.update(&mut buf).unwrap();
                 assert_eq!(buf, c.ct.0, "tcId {id}");
                 assert_eq!(e.finalize(), tag, "tcId {id}");
+                let (a, b) = c.msg.0.split_at(c.msg.0.len() / 3);
+                for pieces in [&[&c.msg.0[..]][..], &[a, b]] {
+                    let mut out = vec![0; c.msg.0.len()];
+                    let sealed = key.encrypt(&c.iv.0, &c.aad.0, pieces, &mut out);
+                    assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
+                }
                 assert_eq!(stream_decrypt(&key, c), Ok(c.msg.0.clone()), "tcId {id}");
                 valid.add();
             }

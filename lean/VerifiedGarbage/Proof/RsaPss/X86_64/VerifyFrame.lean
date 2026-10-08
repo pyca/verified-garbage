@@ -217,7 +217,7 @@ theorem verifyPro_ok {s : State} (hp : VPre G s) :
     exact (R1.wf G' (k := 21) (by decide) (stackArg s 3)).wf G' (k := 22) (by decide) (stackArg s 4)
   have := hp.sp1
   have h392 : frameBytes = 392 := rfl
-  have hvs : verifyStack = 408 := rfl
+  have hvs : verifyStack = 400 := rfl
   refine ⟨k13, ⟨(k13.gpr (by decide)).trans hsp, k13.2.2 ▸ hfr, by omega, by omega, ?_, ?_, G'.dFS, G'.dRS⟩, R3, f3⟩
   · have hsl := hp.hsl
     have hk := hp.k1

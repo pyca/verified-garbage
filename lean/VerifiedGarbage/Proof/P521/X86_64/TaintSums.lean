@@ -22,10 +22,12 @@ summary costs more than its analysis in one more check (the kernel builds
 the code here, while the callers' checks read it from their literals), so it
 is analysed in full.
 
-ECDH runs the window method, whose table of `[1 … 8]P` (seven complete
-additions) and loop are each more than one check can analyse along with the
-rest: they have summaries in `taintS`, with what ECDH has public there (`rdi`
-and `rsi`, and the loop's counter `rbx`, which is set after the table).
+ECDH runs the window method in Jacobian coordinates (`WinCfg.windowJ`), whose
+table of `[1 … 8]P` (seven complete additions), its normalization (an
+inversion, by divsteps), loop and last iteration are each more than one check
+can analyse along with the rest: they have summaries in `taintS`, with what
+ECDH has public there (`rdi` and `rsi`, and the loop's counter `rbx`, which
+is set after the table).
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -53,19 +55,24 @@ taint_summary invPSum : (taintSym ["VG_P521_COMB"]) τI invP
 /-- ECDH's window method. -/
 abbrev winK : WinCfg := p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
 
-/-- The window method's table. -/
-def winBuild : Prog isa := WinCfg.build winK
-
-/-- The window method's loop. -/
-def winLoop : Prog isa := .loop (WinCfg.step winK) .ne
-
-materialize_code winBuild
-materialize_code winLoop
-
 /-- What is public at the table. -/
 def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi]
 
-taint_summary winBuildSum : taintS τB winBuild
-taint_summary winLoopSum : taintS τL winLoop
+/-- ECDH's window method in Jacobian coordinates: the table, its
+normalization, the loop and its last iteration. -/
+def winBuildJ : Prog isa := WinCfg.build winK
+def winNormJ : Prog isa := WinCfg.normTbl winK (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521))
+def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
+def winLastJ : Prog isa := WinCfg.stepLast winK
+
+materialize_code winBuildJ
+materialize_code winNormJ
+materialize_code winLoopJ
+materialize_code winLastJ
+
+taint_summary winBuildJSum : taintS τB winBuildJ
+taint_summary winNormJSum : taintS τB winNormJ
+taint_summary winLoopJSum : taintS τL winLoopJ
+taint_summary winLastJSum : taintS τL winLastJ
 
 end VG.Proof.P521.X86_64

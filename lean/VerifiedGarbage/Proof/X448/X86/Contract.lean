@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.X448.X86.Instr
 import VerifiedGarbage.Proof.X25519.X86.Basic
 import VerifiedGarbage.Spec.X448.Contract
 import VerifiedGarbage.TCB.X86.Target
+import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
 # X448 on x86 (32-bit): the contract the proof is written against
@@ -24,11 +25,12 @@ def x448X86 : Contract X86.isa where
     let scratch : Region := ⟨(arg s 3).setWidth 64, 8192⟩
     let args : Region := ⟨argAddr s 0, 16⟩
     let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stk : Region := ⟨(s.gpr .esp).setWidth 64 - 20#64, 20⟩
     s.rd = [scalar, point, args] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ point.Disjoint scratch ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
       ret.Disjoint out ∧ ret.Disjoint scratch ∧ (arg s 0).toNat + 56 ≤ 2 ^ 32 ∧
       (arg s 1).toNat + 56 ≤ 2 ^ 32 ∧ (arg s 2).toNat + 56 ≤ 2 ^ 32 ∧ (arg s 3).toNat + 8192 ≤ 2 ^ 32 ∧
-      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32
+      (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ stk.Disjoint out ∧ stk.Disjoint scratch
   post s s' := Spec.X448.bytesAt s'.mem ((arg s 0).setWidth 64) 56 =
     Spec.X448.x448 (Spec.X448.bytesAt s.mem ((arg s 1).setWidth 64) 56)
       (Spec.X448.bytesAt s.mem ((arg s 2).setWidth 64) 56)
@@ -50,6 +52,7 @@ abbrev scalarR : Region := ⟨(arg s₀ 1).setWidth 64, 56⟩
 abbrev pointR : Region := ⟨(arg s₀ 2).setWidth 64, 56⟩
 abbrev argsR : Region := ⟨argAddr s₀ 0, 16⟩
 abbrev retR : Region := ⟨(s₀.gpr .esp).setWidth 64, 4⟩
+abbrev stkR : Region := ⟨(s₀.gpr .esp).setWidth 64 - 20#64, 20⟩
 end
 
 /-- The precondition, by name. -/
@@ -68,10 +71,13 @@ structure Pre (s₀ : State) : Prop where
   point_fit : (arg s₀ 2).toNat + 56 ≤ 2 ^ 32
   sc_fit : (arg s₀ 3).toNat + 8192 ≤ 2 ^ 32
   sp_fit : (s₀.gpr .esp).toNat + 20 ≤ 2 ^ 32
+  sp_room : 20 ≤ (s₀.gpr .esp).toNat
+  stk_out : (stkR s₀).Disjoint (outR s₀)
+  stk_sc : (stkR s₀).Disjoint (scR (arg s₀ 3))
 
 theorem Pre.of (s₀ : State) (h : Proof.X448.x448X86.pre s₀) : Pre s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩ := h
-  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17⟩
 
 theorem argAddr_eq (s : State) (i : Nat) : argAddr s i = addr (s.gpr .esp) (4 + 4 * i) := rfl
 
@@ -88,11 +94,29 @@ include hp
 theorem argIn {i : Nat} (hi : i < 4) : InRegions (s₀.rd ++ s₀.wr) (addr (s₀.gpr .esp) (4 + 4 * i)) 4 :=
   ⟨argsR s₀, by rw [hp.rd]; simp, arg_contains hp.sp_fit hi⟩
 
-/-- An argument, in memory the code has written only in the working space. -/
-theorem arg_same {m : Mem} (hf : Frame [scR (arg s₀ 3)] s₀.mem m) {i : Nat} (hi : i < 4) :
-    m.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = arg s₀ i :=
+/-- The stack the calls use lies below the arguments. -/
+theorem stk_args : (stkR s₀).Disjoint (argsR s₀) := by
+  have h1 := hp.sp_room
+  have h2 := hp.sp_fit
+  refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> simp only [argAddr] <;> bv_omega
+
+/-- The stack the calls use lies below the return address. -/
+theorem stk_ret : (stkR s₀).Disjoint (retR s₀) := by
+  have h1 := hp.sp_room
+  have h2 := hp.sp_fit
+  refine Region.disjoint_of_le (Or.inl ?_) ?_ ?_ <;> bv_omega
+
+/-- An argument, in memory the code has written only in the working space,
+the result and the stack its calls use. -/
+theorem arg_same {m : Mem} (hf : Frame [scR (arg s₀ 3), outR s₀, stkR s₀] s₀.mem m) {i : Nat}
+    (hi : i < 4) : m.readW (addr (s₀.gpr .esp) (4 + 4 * i)) 32 = arg s₀ i :=
   hf.readW (arg_contains hp.sp_fit hi)
-    (by simp only [List.mem_singleton]; rintro r rfl; exact hp.args_sc) (by decide)
+    (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false]
+      rintro r (rfl | rfl | rfl)
+      · exact hp.args_sc
+      · exact hp.args_out
+      · exact hp.stk_args.symm) (by decide)
 
 theorem sc_in : scR (arg s₀ 3) ∈ s₀.wr := by rw [hp.wr]; simp
 

@@ -3,7 +3,6 @@ import VerifiedGarbage.Impl.RsaPkcs1Sig.X86_64.Verify
 import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Framework.X86_64.Call
-import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 
 /-!
 # `vg_rsa_pkcs1_verify` on x86-64: the frame
@@ -74,12 +73,12 @@ theorem preV_of {s : State} (h : verContract.pre s) : PreV s := by
 /-- The frame's base: `rsp` in the frame. -/
 abbrev fb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 frameBytes
 
-/-- The return address of a call from the frame. -/
-abbrev kb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 (frameBytes + 8)
+/-- The base of the stack the function uses. -/
+abbrev kb (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 verStack
 
 /-- The stack the function uses and the working space: all the function and
 its call may write. -/
-def stkR (s : State) : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 verStack, verStack⟩
+def stkR (s : State) : Region := ⟨kb s, verStack⟩
 def scrR (s : State) : Region := ⟨stackArg s 3, (stackArg s 4).toNat * 8⟩
 
 theorem fb_eq (s : State) : fb s = off (kb s) 8 :=
@@ -88,56 +87,29 @@ theorem fb_eq (s : State) : fb s = off (kb s) 8 :=
 theorem fb_sub8 (s : State) : fb s - 8 = kb s := by
   rw [fb_eq]; exact BitVec.add_sub_cancel _ _
 
-theorem fb_stk (s : State) : fb s = off (s.gpr .rsp - BitVec.ofNat 64 verStack) 16 :=
-  Offset.sub_ofNat_eq _ (by decide)
-
-theorem kb_toNat {s : State} (hp : PreV s) : (kb s).toNat + (frameBytes + 8) + 48 ≤ 2 ^ 64 ∧
-    (kb s).toNat + (frameBytes + 8) = (s.gpr .rsp).toNat ∧ 8 ≤ (kb s).toNat := by
+theorem kb_toNat {s : State} (hp : PreV s) : (kb s).toNat + verStack + 48 ≤ 2 ^ 64 ∧
+    (kb s).toNat + verStack = (s.gpr .rsp).toNat := by
   have := hp.sp1; have := hp.sp2
-  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack frameBytes at *; omega
+  simp only [kb, BitVec.toNat_sub, BitVec.toNat_ofNat]; unfold verStack at *; omega
 
 theorem toNat_off {p : Addr} {d : Nat} (h : p.toNat + d < 2 ^ 64) : (off p d).toNat = p.toNat + d := by
   simp only [off, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
 
 theorem fb_toNat {s : State} (hp : PreV s) : (fb s).toNat + frameBytes + 8 + 40 ≤ 2 ^ 64 ∧
     (fb s).toNat = (kb s).toNat + 8 := by
-  have ⟨h1, h2, _⟩ := kb_toNat hp
-  rw [fb_eq, toNat_off (by unfold frameBytes at *; omega)]
-  unfold frameBytes at *; omega
+  have ⟨h1, h2⟩ := kb_toNat hp
+  rw [fb_eq, toNat_off (by unfold verStack at *; omega)]
+  unfold frameBytes verStack at *; omega
 
 /-- Bytes of the frame are in the stack the function uses. -/
 theorem frame_sub (s : State) {d n : Nat} (h : d + n ≤ frameBytes) : Region.Sub ⟨off (fb s) d, n⟩ (stkR s) := by
-  rw [fb_stk, off_off]
+  rw [fb_eq, off_off]
   exact Offset.sub_base _ (by unfold frameBytes at h; unfold verStack; omega)
 
 /-- The return address of a call from the frame. -/
 theorem below_sub (s : State) : Region.Sub (below (fb s) 8) (stkR s) := by
   rw [show below (fb s) 8 = ⟨kb s, 8⟩ by simp only [below]; rw [← fb_sub8]; rfl]
-  exact Offset.sub_below _ (by decide) (by decide)
-
-/-- The return address of a call from the frame. -/
-theorem kb_sub (s : State) : Region.Sub ⟨kb s, 8⟩ (stkR s) := by
-  unfold stkR; exact Offset.sub_below _ (by decide) (by decide)
-
-/-- The return addresses of a call from the frame and of its calls. -/
-theorem ret2_sub (s : State) : Region.Sub (below (fb s) 16) (stkR s) := by
-  rw [show below (fb s) 16 = ⟨s.gpr .rsp - BitVec.ofNat 64 verStack, 16⟩ by
-    simp only [below, fb, BitVec.sub_sub]; rfl]
   exact Region.sub_prefix (by decide)
-
-/-- The return address of the calls of a function called from the frame. -/
-theorem hole_sub (s : State) : Region.Sub (hole (kb s)) (stkR s) := by
-  rw [show hole (kb s) = ⟨s.gpr .rsp - BitVec.ofNat 64 verStack, 8⟩ by
-    simp only [hole, kb, BitVec.sub_sub]; rfl]
-  exact Region.sub_prefix (by decide)
-
-/-- Frame bytes at `d` are apart from the return address of the calls of a
-function called from the frame. -/
-theorem frame_hole {s : State} (hp : PreV s) {d n : Nat} (h : d + n ≤ frameBytes) :
-    Region.Disjoint ⟨off (fb s) d, n⟩ (hole (kb s)) := by
-  have ⟨hK1, _, _⟩ := kb_toNat hp
-  rw [fb_eq, off_off]
-  exact Offset.disjoint_below (kb s) (n := 8) (d := 8 + d) (k := n) (by unfold frameBytes at h hK1; omega)
 
 /-- A region of the frame at `d`, apart from the return address of a call. -/
 theorem ret_disjoint (s : State) {d n : Nat} (h : d + n ≤ frameBytes) :

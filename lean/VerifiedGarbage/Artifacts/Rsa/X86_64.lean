@@ -54,16 +54,13 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication as `vg_rsa_public_checked`'s, by calls of `vg_rsa_mont_mul`, with the exponent scanned left to right from its \
+        multiplication as `vg_rsa_public_checked`'s, with the exponent scanned left to right from its \
         first set bit, which starts the result as the input; a square per later bit and a multiplication \
         per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before \
         any arithmetic, so that values of no modulus are safe."])
-    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Rsa.X86_64.CallMont.base.mm
-    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Rsa.X86_64.pd_call_verified (by decide +kernel)
-      (Proof.Rsa.X86_64.precomputedChecked_correct Proof.Bignum.X86_64.Mont.fnBase (by decide +kernel))
-      (Proof.Rsa.X86_64.precomputedChecked_constantTime Proof.Bignum.X86_64.Mont.fnBase)
+    code := Impl.Rsa.X86_64.Checked.precomputedChecked Proof.Bignum.X86_64.Mont.base.mm
+    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
+    verified := Proof.Rsa.X86_64.precomputedChecked_verified _ (by decide +kernel)
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.publicPrecomputedCheckedApi with
     target := X86_64.target
@@ -71,14 +68,13 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["For exponent 65537, sixteen squares and a final multiplication by the ordinary input \
         combine the last exponent bit with conversion out of Montgomery form. Other exponents use \
-        the general scan. Montgomery multiplication is by calls of `vg_rsa_mont_mul_adx`."])
-    code := Impl.Rsa.X86_64.Folded.checked Proof.Rsa.X86_64.CallMont.adx.mm
-    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi 8
-    stack := 8
-    verified := Proof.Rsa.X86_64.pd_call_verified (by decide +kernel)
-      (Proof.Bignum.X86_64.FoldedPublic.checked_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel)
-        (by decide +kernel))
-      (Proof.Bignum.X86_64.FoldedPublic.checked_ct Proof.Bignum.X86_64.Mont.fnAdx Proof.Rsa.X86_64.fnAdx_final_ct)
+        the general scan. Montgomery multiplication for a \
+        number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the \
+        accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and \
+        ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."])
+    code := Impl.Rsa.X86_64.Folded.checked Proof.Bignum.X86_64.Mont.adxSquare.mm
+    contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi
+    verified := Proof.Bignum.X86_64.FoldedPublic.adx_verified
     features := ["bmi2", "adx"]
     spSafe := Code.all_of_allInstrs (by decide +kernel) },
   { Spec.Rsa.privateCrtApi with

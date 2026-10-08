@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.X448.X86.Field
+import VerifiedGarbage.Proof.X448.X86.Carry
 
 /-!
 # X448 on x86 (32-bit): multiplication-row carry propagation

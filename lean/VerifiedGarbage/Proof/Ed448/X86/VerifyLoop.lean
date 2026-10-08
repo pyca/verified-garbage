@@ -166,15 +166,16 @@ theorem vmaskSwap_ok {s : State} {base : Addr} (hs : Scr s base) (hbd : BoundedE
   rw [WP.block_append_iff]
   exact WP.mono (vmask_ok hs ht hb ha hb2 hbit hi) fun u ⟨c, k, m⟩ =>
     WP.mono (swapT_ok (hs.of_keeps k (by decide)) (m ▸ hbd) c) fun v ⟨kv, bv, ev⟩ =>
-      ⟨Keep.trans ⟨k, by rw [m]; exact Outside2.refl _ _ _ _ _ _⟩ kv, bv, by rw [ev, m]⟩
+      ⟨Keep.trans ⟨k, by rw [m]; exact WsOut2.refl _ _ _ _ _ _⟩ kv, bv, by rw [ev, m]⟩
 
 /-- The loop's invariant, after the bits above `n` of `S` and `k`, with `-A` the point `A`. -/
 structure VInv (base : Addr) (S K : Nat) (A : Spec.Ed448.Point) (s₀ s : State) (n : Nat) : Prop where
   scr : Scr s base
+  ctx : CallCtx s base
   bounded : BoundedEnv s.mem base
   regs : Keeps (.esi :: workRegs) s₀ s
   esi : s.gpr .esi = BitVec.ofNat 32 n
-  mem : Outside2 base 64 2816 ACC 512 s₀.mem s.mem
+  mem : WsOut2 base 64 2816 ACC 512 s₀.mem s.mem
   rep : pt (E s.mem base) 0 1 2 = vladder S K A (456 - n)
   q : pt (E s.mem base) 8 9 10 = Spec.Ed448.basePoint
   na : pt (E s.mem base) 6 7 10 = A
@@ -193,30 +194,34 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   have hb2 : (K >>> n) &&& 1 < 2 := bit_lt' K n
   have bitval : s.mem (off base (BITS + n)) =
       BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
-    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)]
+    rw [hi.mem _ (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega)
+      (by rw [ofs_off' base (by omega)]; omega)]
     exact hbits n hn
   unfold vstep
   refine WP.seq (WP.mono (decCounter_ok (by omega) hi.esi) fun s₁ ⟨b₁, g₁, m₁, rd₁, wr₁, _⟩ => ?_)
   have K₁ : Keeps [.esi] s s₁ := ⟨fun r hr => g₁ r (fun h => hr (by simp [h])), rd₁, wr₁⟩
   have hs₁ := hs.of_keeps K₁ (by decide)
-  refine field_seq (doubleAt 0 1 2) Proof.Ed448.doubleAt_valid0 hs₁ (m₁ ▸ hi.bounded)
+  have hc₁ : CallCtx s₁ base := hi.ctx.keep (g₁ _ (by decide))
+  refine field_seq (doubleAt 0 1 2) Proof.Ed448.doubleAt_valid0 hs₁ hc₁ (m₁ ▸ hi.bounded)
     fun s₂ k₂ bb₂ e₂ => ?_
-  refine field_seq (addAt 8 9) Proof.Ed448.addAt_valid8 (k₂.scr hs₁) bb₂ fun s₃ k₃ bb₃ e₃ => ?_
+  refine field_seq (addAt 8 9) Proof.Ed448.addAt_valid8 (k₂.scr hs₁) (k₂.ctx hc₁) bb₂
+    fun s₃ k₃ bb₃ e₃ => ?_
   have hs₃ := k₃.scr (k₂.scr hs₁)
   have b₃ : s₃.gpr .esi = BitVec.ofNat 32 n := by
     rw [k₃.regs.1 _ (by decide), k₂.regs.1 _ (by decide), b₁]
   have bit₃ : s₃.mem (off base (BITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
     rw [(k₂.trans k₃).mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
+      (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
   refine WP.seq (WP.mono (vmaskSwap_ok hs₃ bb₃ hn b₃ ha2 hb2 bit₃ false) fun s₄ ⟨k₄, bb₄, e₄⟩ => ?_)
   have hs₄ := k₄.scr hs₃
-  refine field_seq (addAt 6 7) Proof.Ed448.addAt_valid6 hs₄ bb₄ fun s₅ k₅ bb₅ e₅ => ?_
+  have hc₄ : CallCtx s₄ base := k₄.ctx (k₃.ctx (k₂.ctx hc₁))
+  refine field_seq (addAt 6 7) Proof.Ed448.addAt_valid6 hs₄ hc₄ bb₄ fun s₅ k₅ bb₅ e₅ => ?_
   have hs₅ := k₅.scr hs₄
   have core4 := k₂.trans (k₃.trans (k₄.trans k₅))
   have b₅ : s₅.gpr .esi = BitVec.ofNat 32 n := by rw [core4.regs.1 _ (by decide), b₁]
   have bit₅ : s₅.mem (off base (BITS + n)) = BitVec.ofNat 8 (((S >>> n) &&& 1) + 2 * ((K >>> n) &&& 1)) := by
     rw [core4.mem _ (by rw [ofs_off' base (by omega)]; omega)
-      (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
+      (by rw [ofs_off' base (by omega)]; omega) (by rw [ofs_off' base (by omega)]; omega), m₁, bitval]
   simp only [List.append_assoc]
   rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (vmaskSwap_ok hs₅ bb₅ hn b₅ ha2 hb2 bit₅ true) fun s₆ ⟨k₆, bb₆, e₆⟩ => ?_
@@ -229,15 +234,16 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {S K : Nat} {A : Spec.Ed448.Poin
   have kk : ∀ i : Index, 6 ≤ i.val ∧ i.val < 12 → E t.mem base i = E s.mem base i := fun i h => by
     rw [ee, vstepEnv_keep _ _ _ _ h]
   have K₆ : Keeps (.esi :: workRegs) s₆ t := vt.rest _
-  refine ⟨⟨(core.scr hs₁).of_keeps K₆ (by decide), vt.mem ▸ bb₆, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine ⟨⟨(core.scr hs₁).of_keeps K₆ (by decide), (core.ctx hc₁).keep (K₆.1 _ (by decide)),
+    vt.mem ▸ bb₆, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   · refine hi.regs.trans ⟨fun r hr => ?_, ?_, ?_⟩
     · rw [vt.gpr, core.regs.1 r (fun h => hr (List.mem_cons_of_mem _ h)), g₁ r (fun h => hr (by simp [h]))]
     · rw [vt.rd, core.regs.2.1, rd₁]
     · rw [vt.wr, core.regs.2.2, wr₁]
   · rw [vt.gpr, b₆]
   · refine hi.mem.trans ?_
-    intro p hp hq
-    rw [vt.mem, core.mem p hp hq, m₁]
+    intro p h8 hp hq
+    rw [vt.mem, core.mem p h8 hp hq, m₁]
   · rw [ee]; exact vladder_step hn hi.rep hi.q hi.na hi.d
   · rw [pt_congr' (kk 8 (by decide)) (kk 9 (by decide)) (kk 10 (by decide))]; exact hi.q
   · rw [pt_congr' (kk 6 (by decide)) (kk 7 (by decide)) (kk 10 (by decide))]; exact hi.na

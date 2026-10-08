@@ -258,7 +258,9 @@ theorem eq_pre (h : Facts s) (hu : GCtx s g m u) (hs : EqSlots s u) :
     hk.slot_arg hu (j := 1) (by decide) hs.a1, hk.slot_arg hu (j := 2) (by decide) hs.a2,
     hk.slot_arg hu (j := 3) (by decide) hs.a3, ab, fk]
   exact ⟨trivial, trivial, h.pc, h.sc, hk.fr_scr (by decide), Kit.args_disj (by decide) hk.lo_scr,
-    hk.ret_disj hk.lo_scr, h.pk, h.sig, hk.fr_fit (by decide), h.scratch, by omega⟩
+    hk.ret_disj hk.lo_scr, h.pk, h.sig, hk.fr_fit (by decide), h.scratch, by omega, hk.callee_room,
+    hk.callee_in _ (pk_in s), hk.callee_in _ (sig_in s), (lo_fr _ (by decide) (by decide)).sub_left hk.callee_lo,
+    hk.callee_stk _ (scr_in s)⟩
 
 theorem eq_covers (s : State) :
     Covers ([PK s, SIG s, fr (base s) K 57, ⟨(base s).setWidth 64, 16⟩] ++ [SCR (arg s 6)])

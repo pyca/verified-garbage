@@ -91,7 +91,7 @@ theorem base_pre (h : Facts s) (hu : GCtx s g m u) (hs : BaseSlots s u) :
     hk.slot_arg hu (j := 1) (by decide) hs.a1, hk.slot_arg hu (j := 2) (by decide) hs.a2, ab, fa]
   exact ⟨trivial, trivial, h.oc, hk.fr_scr (by decide), Kit.args_disj (by decide) lout,
     Kit.args_disj (by decide) lscr, hk.ret_disj lout, hk.ret_disj lscr, h.out, hk.fr_fit (by decide),
-    h.scratch, by omega⟩
+    h.scratch, by omega, hk.callee_room, hk.callee_stk _ (out_in s), hk.callee_stk _ (scr_in s)⟩
 
 theorem base_covers (s : State) : Covers ([fr (base s) HASH 57, ⟨(base s).setWidth 64, 12⟩] ++ [OUT s, SCR (arg s 2)])
     (pkRd s ++ Whole.FR (base s) :: pkWr s) := by
