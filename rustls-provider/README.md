@@ -15,6 +15,7 @@ It aims to match rustls' aws-lc-rs provider:
 | Signing keys | RSA (PKCS #1 or PKCS #8, 2048–8192 bits; PKCS #1 v1.5 and PSS with SHA-256/384/512), ECDSA P-256/P-384/P-521 (SEC 1 or PKCS #8), Ed25519 and ML-DSA-44/65/87 (PKCS #8, seed form) |
 | Verification | everything aws-lc-rs' provider verifies: ECDSA on P-256/P-384/P-521 with SHA-256/384/512, Ed25519, RSA PKCS #1 v1.5 and PSS, ML-DSA |
 | Tickets | AES-256-GCM, keys rotated every 6 hours |
+| QUIC | packet protection with each TLS 1.3 suite's AEAD; header protection with AES-ECB or ChaCha20 (RFC 9001 §5.4) |
 | Randomness | the operating system's (`getrandom`), as the library uses |
 
 Keys and signatures are parsed and written with
@@ -22,11 +23,6 @@ Keys and signatures are parsed and written with
 
 Differences from the aws-lc-rs provider:
 
-* **QUIC works only with ChaCha20-Poly1305 packet protection.** QUIC's header
-  protection for the AES suites is AES-ECB of one block (RFC 9001 §5.4.3),
-  which verified-garbage does not expose, so the AES suites have no QUIC
-  support; and QUIC always protects its Initial packets with
-  AES-128-GCM, so in practice QUIC does not work.
 * **No HPKE**, so no Encrypted Client Hello.
 * EC public keys in certificates must be uncompressed (verified-garbage has no
   point decompression); aws-lc-rs also accepts compressed ones.
@@ -48,7 +44,7 @@ bench/setup-rustls.sh target/rustls
 (cd target/rustls && cargo test -p rustls-test --test api tests_with_verified_garbage)
 ```
 
-Every test passes but the five QUIC tests that need AES header protection.
+Every test passes, QUIC's included.
 
 The signature verification algorithms are tested against Wycheproof:
 
