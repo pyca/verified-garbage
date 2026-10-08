@@ -40,7 +40,7 @@ theorem winTblSlots_eq (c : Cfg) : winTblSlots (winQ c) = tblI.map c.sl := by
   simp only [winTblSlots, tblI, List.map_map]
   refine List.map_congr_left fun i _ => ?_
   show c.sl WT + 8 * c.n * i = c.sl (WT + i)
-  rw [sl_eq, sl_eq, Nat.mul_add, Nat.add_assoc]
+  rw [sl_eq c WT, sl_eq c (WT + i) (by simp only [WT, TMP]; omega), Nat.mul_add, Nat.add_assoc]
 
 theorem winSlots_eq (c : Cfg) : winSlots (winQ c) = (roI ++ otherI ++ tblI).map c.sl := by
   rw [winSlots, winTblSlots_eq, List.map_append, List.map_append]; rfl
@@ -49,11 +49,14 @@ theorem winWs_eq (c : Cfg) : winWs (winQ c) = (otherI ++ tblI).map c.sl := by
   rw [winWs, winTblSlots_eq, List.map_append]; rfl
 
 /-- The indices of the window method's slots. -/
-theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 112 ∧ i ≠ MP ∧ i ≠ TMP := by decide
+theorem winIdx_lt : ∀ i ∈ roI ++ otherI ++ tblI, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 82 := by
+  decide
 
 /-- Every slot below `112` is in the working space. -/
 theorem sl_le' (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 112) : c.sl i + 8 * c.n ≤ size := by
-  rw [sl_eq]
+  by_cases hT : i = TMP
+  · subst hT; exact sl_le c hn (by decide)
+  rw [sl_eq c i hT]
   have := Nat.mul_le_mul_left (8 * c.n) hi
   rw [Nat.mul_succ] at this
   have : 8 * c.n * 112 ≤ 8 * 9 * 112 := Nat.mul_le_mul_right _ (by omega)
@@ -61,18 +64,18 @@ theorem sl_le' (c : Cfg) (hn : c.n < 10) {i : Nat} (hi : i < 112) : c.sl i + 8 *
   omega
 
 theorem lay_map' (hc : CfgOk c) {M : Mod} (hmo : M.mo = c.sl MP) (htmp : M.tmp = c.sl TMP)
-    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 112 ∧ i ≠ MP ∧ i ≠ TMP) :
+    (hMn : M.n = c.n) {l : List Nat} (hl : ∀ i ∈ l, i < 112 ∧ i ≠ MP ∧ i ≠ TMP ∧ i ≠ 54 ∧ i ≠ 82) :
     Lay M size (· ∈ l.map c.sl) := by
   refine ⟨fun x hx => ?_, fun x y hx hy hxy => ?_, fun x hx => ?_, fun x hx => ?_⟩
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
     rw [hMn]; exact sl_le' c hc.n10 (hl i hi).1
-  · obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-    obtain ⟨j, -, rfl⟩ := List.mem_map.mp hy
-    rw [hMn]; exact sl_apart c fun h => hxy (h ▸ rfl)
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn, hmo]; exact sl_apart c (hl i hi).2.1
+    obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hy
+    rw [hMn]; exact sl_apart c (fun h => hxy (h ▸ rfl)) (.inl (hl i hi).2.2.1) (.inl (hl j hj).2.2.1)
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-    rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2
+    rw [hMn, hmo]; exact sl_apart c (hl i hi).2.1 (.inl (hl i hi).2.2.1) (.inl (by decide))
+  · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    rw [hMn, htmp]; exact sl_apart c (hl i hi).2.2.1 (.inl (hl i hi).2.2.1) (.inr (hl i hi).2.2.2)
 
 theorem winW_eq (c : Cfg) : winW (winQ c) = slW c (otherI ++ tblI ++ [TMP]) := by
   rw [winW, winWs_eq]; simp only [slW, List.map_append, List.map_map]; rfl
@@ -91,23 +94,23 @@ theorem winLayQ (hc : CfgOk c) : WinLay (winQ c) size := by
   · intro x hx
     have hx' : x ∈ (roI ++ otherI).map c.sl := by rw [List.map_append]; exact hx
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
-    have key : ∀ i ∈ roI ++ otherI, i < WT := by decide
-    have := key i hi
-    rw [hK, hMn]; exact Or.inl (sl_lt c this)
-  · rw [hb, hJ, sl_eq]; show 64 + 8 * c.n * 55 + _ ≤ 8192
+    have key : ∀ i ∈ roI ++ otherI, i < WT ∧ i ≠ TMP := by decide
+    rw [hK, hMn]; exact Or.inl (sl_lt c (key i hi).1 (key i hi).2)
+  · rw [hb, hJ]; simp (disch := decide) only [sl_eq]; show 64 + 8 * c.n * 55 + _ ≤ 8192
     have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
   · intro w hw
     rw [winW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     rw [hb, hJ]
-    have key : ∀ i ∈ otherI ++ tblI ++ [TMP], i < WB ∨ WT ≤ i := by decide
-    rcases key i hi with h | h
-    · exact Or.inr (sl_lt c h)
+    have key : ∀ i ∈ otherI ++ tblI ++ [TMP], i = TMP ∨ (i < WB ∧ i ≠ TMP) ∨ WT ≤ i := by decide
+    rcases key i hi with h | ⟨h, hT⟩ | h
+    · subst h; exact tmp_wb c h7
+    · exact Or.inr (sl_lt c h hT)
     · refine Or.inl ?_
       have := Nat.mul_le_mul_left (8 * c.n) h
       dsimp only
-      rw [sl_eq, sl_eq]
+      rw [sl_eq c WB, sl_eq c i (by simp only [WT, TMP] at h ⊢; omega)]
       show 64 + 8 * c.n * 55 + 4 * (16 * c.n + 1) ≤ 64 + 8 * c.n * i
       have : 8 * c.n * 87 ≤ 8 * c.n * i := this
       have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
@@ -119,10 +122,16 @@ theorem winAQ (hc : CfgOk c) : WinA (winQ c) where
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     exact sl_mod8 c i
   mod := MP'_A c
+  call f m' h := by
+    refine ⟨(hc.call_p f m' h).2, fun x hx => ?_⟩
+    have hx' : x ∈ (roI ++ otherI).map c.sl := by rw [List.map_append]; exact hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx'
+    have key : ∀ i ∈ roI ++ otherI, i < 45 ∧ i ≠ TMP := by decide
+    exact sl_own c hc.n10 (key i hi).1 (key i hi).2
   bits4 := by
     have h7 := hc.n10
     show c.sl WB + 3 < 4096
-    rw [sl_eq]; show 64 + 8 * c.n * 55 + 3 < 4096
+    simp (disch := decide) only [sl_eq]; show 64 + 8 * c.n * 55 + 3 < 4096
     have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
 
@@ -139,40 +148,33 @@ theorem fixedOk_winX : FixedOk c (winX c) := by
   · exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_lt c (show 12 < WB by decide)))
 
 /-- A slot below the tables of bits is apart from them. -/
-theorem apart_winX {i : Nat} (hi : i < 45) :
+theorem apart_winX {i : Nat} (hi : i < 45) (hT : i ≠ TMP := by sl_ne) :
     ∀ w ∈ winX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl
-  · exact Or.inl (sl_lt c (show i < WK by unfold WK; omega))
-  · exact Or.inl (sl_lt c (show i < WB by unfold WB; omega))
+  · exact Or.inl (sl_lt c (show i < WK by unfold WK; omega) hT)
+  · exact Or.inl (sl_lt c (show i < WB by unfold WB; omega) hT)
 
-/-- Slot `i ≥ 69` is past the tables of bits `j < 3`. -/
-theorem bits_le_sl {j t i : Nat} (hj : j < 3) (ht : t < 64 * c.n) (hi : 69 ≤ i) :
-    bitsAt c.n j + t + 1 ≤ c.sl i := by
-  rw [bitsAt_eq, sl_eq]
-  have := Nat.mul_le_mul_left (64 * c.n) (show j ≤ 2 by omega)
-  have := Nat.mul_le_mul_left (8 * c.n) hi
-  omega
-
-theorem tbl_apart_slW' {l : List Nat} (hl : ∀ i ∈ l, i < 45 ∨ 69 ≤ i) {j t : Nat} (hj : j < 3)
-    (ht : t < 64 * c.n) :
-    ∀ w ∈ slW c l, bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+/-- For four words, every slot below `45` is apart from the recoded scalar's areas. -/
+theorem apart_winX4 (hn4 : c.n ≤ 4) {i : Nat} (hi : i < 45) :
+    ∀ w ∈ winX c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-  rcases hl i hi with h | h
-  · exact Or.inr (sl_below_bits c h j t)
-  · exact Or.inl (bits_le_sl hj ht h)
+  simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
+  have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 53 by omega)
+  rw [Nat.mul_succ] at this
+  rcases hw with rfl | rfl <;> refine Or.inl ?_ <;>
+    simp only [Cfg.winK, Cfg.winBits, sl_eq4 c hn4, WK, WB] <;> omega
 
 /-- The flag word survives the window method and the power. -/
 theorem flag_unch_win {base : Addr} {l₁ : List Nat} {m m' : Mem}
     (hu : Unch base (winX c ++ (slW c l₁ ++ chainWc c)) m m') (h7 : c.n < 10) (h0 : 0 < c.n)
-    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) :
+    (hn : base.toNat + size ≤ 2 ^ 64) (hl₁ : FLAG ∉ l₁) (hlA : ∀ j ∈ l₁, j ≠ 54 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
   rcases apart_append (apart_winX (c := c) (i := FLAG) (by decide))
-    (apart_append (apart_slW hl₁) (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide))) w hw
+    (apart_append (apart_slW hl₁ (by decide) hlA) (apart_chainWc (c := c) (i := FLAG) (by decide) (by decide))) w hw
     with h | h
   · exact Or.inl (by omega)
   · exact Or.inr h
@@ -215,7 +217,7 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
     (hrep : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
       (tmv c.C c.n base s (c.sl ONEP)) P) {ks : Nat} (hks : ks < 45)
     {rest : Prog isa} {R : State → Prop}
-    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) :
+    (h : ∀ s', WinMulPost c base P (sv c base s ks) s s' → WP isa rest s' R) (hksT : ks ≠ TMP := by decide) :
     WP isa (.seq (c.winPrep (c.sl ks)) (.seq (WinCfg.window (winQ c)) rest)) s R := by
   have h0 := hc.n0
   have h7 := hc.n10
@@ -228,21 +230,21 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
   have hrec := recode_lt hk
   have hWK : c.sl WK + 16 * c.n ≤ size := by
     have := sl_le' c h7 (i := WK + 1) (by decide)
-    rw [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
-  have hKW := sl_lt c (show ks < WK by unfold WK; omega)
+    simp (disch := decide) only [sl_eq] at this ⊢; rw [Nat.mul_add] at this; omega
+  have hKW := sl_lt c (show ks < WK by unfold WK; omega) hksT
   have h16 : (16 : Nat) ^ (16 * c.n + 1) ≤ 2 ^ (64 * (c.n + 1)) := by
     rw [show (16 : Nat) = 2 ^ 4 by rfl, ← Nat.pow_mul]
     exact Nat.pow_le_pow_right (by decide) (by omega)
   have hJ : (winQ c).J = 16 * c.n + 1 := rfl
   have hK : c.winK = c.sl WK := rfl
   have hB : c.winBits = c.sl WB := rfl
-  have e69 : c.sl WK + 16 * c.n = c.sl WB := by rw [sl_eq, sl_eq]; unfold WK WB; omega
+  have e69 : c.sl WK + 16 * c.n = c.sl WB := by simp (disch := decide) only [sl_eq]; unfold WK WB; omega
   have hB4 : c.sl WB + 8 ≤ 4096 := by
-    rw [sl_eq]; unfold WB
+    simp (disch := decide) only [sl_eq]; unfold WB
     have : 8 * c.n * 55 ≤ 8 * 9 * 55 := Nat.mul_le_mul_right _ (by omega)
     omega
   have hBs : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
-    rw [sl_eq, sl_eq]; unfold WB WT
+    simp (disch := decide) only [sl_eq]; unfold WB WT
     have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
     omega
   have hTs := sl_le' c h7 (i := WT) (by decide)
@@ -263,11 +265,12 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       ((O₂.mono (o' := c.sl WB) (n' := 64 * (c.n + 1)) (Nat.le_refl _) (by omega)).unch)).mono
       (by intro w hw; simpa [winX, hK, hB] using hw)
   have F₂ := F.unch h7 hn fixedOk_winX U₂
-  have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
-    sv_unch U₂ h7 hn hi (apart_winX hi)
+  have e₂ : ∀ {i}, i < 45 → i ≠ TMP → sv c base s₂ i = sv c base s i := fun hi hT =>
+    sv_unch U₂ h7 hn hi (apart_winX hi hT)
   have hM₂ := modP_of hc F₂.mp
-  have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
-    show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
+  have tv : ∀ {i}, i < 45 → i ≠ TMP → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) :=
+    fun hi hT => by
+      show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi hT]
   have hF : WinFixed (winQ c) c.C base s₂ P (wordsVal s.mem base (c.sl ks) c.n + 8 * geom (16 * c.n + 1)) := by
     refine ⟨?_, ?_, fun x hx => ?_, F₂.zero, ?_, fun t ht => ?_⟩
     · show toM _ _ (wordsVal s₂.mem _ (c.sl AP) c.n) = _; rw [F₂.ap]; exact toM_cmont hc _
@@ -277,12 +280,12 @@ theorem winMul_ok (hc : CfgOk c) (hC : Law c.C) {base : Addr} {s : State} (hs : 
       · exact lt_of_eq_of_lt F₂.ap (hmont _)
       · exact lt_of_eq_of_lt F₂.bm (hmont _)
       · exact lt_of_eq_of_lt F₂.zero (by omega)
-      · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide)) hpx
-      · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide)) hpy
+      · exact lt_of_eq_of_lt (e₂ (i := PX) (by decide) (by decide)) hpx
+      · exact lt_of_eq_of_lt (e₂ (i := PY) (by decide) (by decide)) hpy
       · exact lt_of_eq_of_lt F₂.onep (Nat.mod_lt _ (by omega))
     · show Rep _ (tmv c.C c.n base s₂ (c.sl PX)) (tmv c.C c.n base s₂ (c.sl PY))
         (tmv c.C c.n base s₂ (c.sl ONEP)) P
-      rw [tv (by decide), tv (by decide), tv (by decide)]; exact hrep
+      rw [tv (by decide) (by decide), tv (by decide) (by decide), tv (by decide) (by decide)]; exact hrep
     · rw [hJ] at ht
       exact b₂ t (by omega)
   refine WP.seq (WP.mono (window_ok (winLayQ hc) (winAQ hc) hpR hC hc.am3 hP hc.p_lt (hmont 1)

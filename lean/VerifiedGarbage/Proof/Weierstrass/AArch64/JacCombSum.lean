@@ -112,7 +112,7 @@ theorem jacComb_sum_ok {K : TCombCfg} {C : Curve} {base : Addr} {size : Nat}
     rw [hz]
     simpa only [hz,Lean.Grind.Semiring.mul_one] using hRQ
   apply jacComb_sum_copy_ok hL.comb hA hn4 hs
-  exact jacMixedAdd_ok (K := Jacobian.combWinCfg K) hL.comb.lay ⟨hA.sl,hA.mod⟩ hp hC ha
+  exact jacMixedAdd_ok (K := Jacobian.combWinCfg K) hL.comb.lay hA.al (callOf_small (Nat.le_of_eq hn4)) hp hC ha
     hL.comb.add hSl hI (fun _ hx => hx) hone hP hQ hJP hJQ hz
 
 

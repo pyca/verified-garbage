@@ -94,8 +94,7 @@ theorem projectiveChecks_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr s
     exact (O₂.unch.trans O₃.unch).mono (by intro w hw; simpa using hw)
   have saved := Saved.unch hsv (fun w hw => by
     rw [List.mem_singleton.mp hw]
-    show 56 ≤ c.sl FLAG
-    rw [sl_eq]; omega) U
+    exact sl_ge64 c FLAG) U
   have z₂ : wordsVal s₂.mem base (c.sl RZ) c.n = sv c base s RZ := by
     rw [show wordsVal s₂.mem base (c.sl RZ) c.n = sv c base s₁ RZ from
       sv_flag O₂ h0 h7 hs.nowrap (by decide) (by decide)]

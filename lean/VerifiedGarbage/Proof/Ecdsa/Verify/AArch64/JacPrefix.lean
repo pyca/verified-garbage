@@ -23,7 +23,7 @@ theorem bits_mid (hc : CfgOk c) {s₀ s : State} {base : Addr} {g : Reg → BitV
     fun t ⟨_,kt,ot⟩ sy => ?_
   have ut : Unch base [(bitsAt c.n 0,64*c.n)] s.mem t.mem := ot.unch
   have eqv : ∀ {i},i<45 → sv c base t i=sv c base s i := fun hi =>
-    sv_unch ut h7 hn hi (apart_tbl hi 0)
+    sv_unch ut h7 hn hi (apart_tbl hi 0 h7)
   refine ⟨hM.scr.of_keepRegs kt (by decide),kt.wr.trans hM.wr,kt.rd.trans hM.rd,
     hM.fixed.unch h7 hn (fixedOk_tbl 0) ut,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,sy.trans hM.syms,?_⟩
   · rw [eqv (by decide)]; exact hM.rx

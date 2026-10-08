@@ -6,7 +6,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 
 /-- Complete Jacobian addition on public data, including all exceptional cases. -/
 theorem add_ok {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (hC : Law C) (ha : AM3 C)
     (hSlots : ∀ x∈slots,Sl x)
     {V : List Nat} {E : Nat → Fe C} {s : State}
@@ -73,7 +73,7 @@ theorem add_ok {base : Addr} {size : Nat} {C : Curve}
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
           dsimp only [ops]
-          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hnc hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
         · intro e ie ke hrz

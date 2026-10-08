@@ -40,7 +40,7 @@ theorem InvLay.earlyCfg {P : InvCfg} {size : Nat} (hL : InvLay P size) (B m : Na
 private theorem batch_mod {P : InvCfg} {base : Addr} {size m : Nat} {s t : State}
     (hL : InvLay P size) (hs : Scr s base size) (hM : ModOkA P.M size m s.mem base)
     (hU : Unch base (batchW P) s.mem t.mem) : ModOkA P.M size m t.mem base := by
-  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red⟩
+  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red, hM.call⟩
   rw [hU.wordsVal (fun w hw => by
     simp only [batchW,List.mem_cons,List.not_mem_nil,or_false] at hw
     subst hw

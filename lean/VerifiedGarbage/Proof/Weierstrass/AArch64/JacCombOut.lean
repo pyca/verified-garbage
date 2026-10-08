@@ -62,9 +62,9 @@ theorem jacOut_ok {K : CombCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Com
       · exact fun hw => hro K.zero (by simp [combRo]) (hwsub _ hw)
       · exact fun hw => hro K.zero (by simp [combRo]) (hwsub _ hw)
       · exact fun hw => hro K.zero (by simp [combRo]) (hwsub _ hw)
-  have W := ofN_ok hL.lay ⟨hA.sl,hA.mod⟩ hp fromJN_ok hApart hSl hI (fun _ hx => hx)
+  have W := ofN_ok hL.lay hA.al hp fromJN_ok hApart hSl (hA.low hSl) hI (fun _ hx => hx)
   rw [← fromJ_eq] at W
-  refine WP.seq ((fprogB_wp _ _).mpr (WP.mono W fun s₁ h₁ => ?_))
+  refine WP.seq (WP.mono W fun s₁ h₁ => ?_)
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   have vv := v₁.trans (fromJN_run _)
   have vz : tmv C K.M.n base s K.zero = 0 := by

@@ -100,7 +100,7 @@ theorem invAllocated_batch_ok {base : Addr} {size m : Nat} (hsize : 8192≤size)
 theorem invAllocated_mod {base : Addr} {size m : Nat} {s t : State}
     (hs : Scr s base size) (hM : ModOkA invAllocatedCfg.M size m s.mem base)
     (hU : Unch base invAllocatedBatchW s.mem t.mem) : ModOkA invAllocatedCfg.M size m t.mem base := by
-  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red⟩
+  refine ⟨hM.n0,hM.n10,hM.mo,hM.tmp,hM.sep,?_,hM.inv,hM.red, hM.call⟩
   rw [hU.wordsVal (by decide) (by omega_using [hM.mo,hs.nowrap])]
   exact hM.val
 

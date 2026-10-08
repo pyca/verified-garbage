@@ -129,7 +129,8 @@ theorem tcombJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg
       rcases hx with rfl | rfl | rfl <;> tcomb_mem
   have hR : readsOk K.outOps [K.A.x, K.A.y, K.A.z] = true := by
     simp [readsOk, TCombCfg.outOps, FOp.ins, FOp.out]
-  refine WP.mono (hcompiler K.M base C.p (·∈combSlots K.toComb) hL.comb.lay ⟨hA.sl,hA.mod⟩ hV.unit K.outOps _ _ _ I₃ hS hR)
+  refine WP.mono (hcompiler K.M base C.p (·∈combSlots K.toComb) hL.comb.lay hA.al hV.unit K.outOps _ _ _ I₃ hS
+    (fun op hop => hA.low (hS op hop)) hR)
     fun s₄ ⟨P₄, I₄⟩ => ?_
   have hval : ∀ x ∈ [K.A.x, K.A.y, K.A.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₄.mem base x K.M.n) =
       runOps K.outOps (tmv C K.M.n base s₃) x ∧ wordsVal s₄.mem base x K.M.n < C.p := fun x hx => by

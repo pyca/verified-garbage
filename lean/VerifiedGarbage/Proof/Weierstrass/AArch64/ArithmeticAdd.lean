@@ -8,7 +8,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 
 /-- Complete Jacobian addition on public data, including all exceptional cases. -/
 theorem arithmeticAdd_ok (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod C.p (2^(64*K.M.n))) (hsize : 8192≤size) (hC : Law C) (ha : AM3 C)
     {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x ∈ rcbW K.S o ++ rcbR K.S p q, Sl x)
@@ -41,7 +41,7 @@ theorem arithmeticAdd_ok (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base :
     · intro b ib kb hqz
       apply WP.seq
       refine WP.mono (Forward.Arithmetic.contract certs ib.scr hsize
-        ((fprogB_wp _ _).mpr (jacHead_ok hL hAl hm hA hSl ib hV))) fun c ⟨kc,ic,eh,er⟩ => ?_
+        ((fprogB_wp _ _ hnc).mpr (jacHead_ok hL hAl hm hA hSl ib hV))) fun c ⟨kc,ic,eh,er⟩ => ?_
       let EH := runOps (jacHead K.S p q) E
       have hkeep := (ka.mono (W' := rcbW K.S o) (by simp)).trans
         ((kb.mono (by simp)).trans kc)
@@ -69,7 +69,7 @@ theorem arithmeticAdd_ok (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base :
             · exact hSl x (List.mem_append_left _ hx)
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           rw [←hpq]
-          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+          refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hnc hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
           exact (JacPost.sub ⟨_,kt,it,jt⟩ oldV).prefix
             (hkeep.trans ((kd.mono (by simp)).trans (ke.mono (by simp))))
         · intro e ie ke hrz
@@ -85,7 +85,7 @@ theorem arithmeticAdd_ok (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base :
       · intro d id kd hz
         have hh : E q.x*(E p.z*E p.z)-E p.x*(E q.z*E q.z)≠0 := fun he => hz (eh.trans he)
         refine WP.mono (Forward.Arithmetic.contract certs id.scr hsize
-          ((fprogB_wp _ _).mpr (jacTail_ok hL hAl hm hA hSl id hV))) fun t ⟨kt,it,ht⟩ => ?_
+          ((fprogB_wp _ _ hnc).mpr (jacTail_ok hL hAl hm hA hSl id hV))) fun t ⟨kt,it,ht⟩ => ?_
         have jt := hJP.add_ne hC ha hP hQ hJQ hpz hqz hh
         dsimp only at jt
         rw [←ht] at jt

@@ -66,7 +66,7 @@ theorem ecFinish_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base si
   have hx3₂ : s₂.gpr .x3 = if b then BitVec.allOnes 64 else 0 := by
     rw [k₂.gpr _ (by decide), e₁, hf]
   have hsv₂ : Spill.Saved base g Cfg.saved s₂.mem := by
-    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 56 ≤ w.1 := fun w hw => by
+    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; decide
     exact Saved.unch (hm₁ ▸ hsv) h16 U₂
   refine Spill.restore_ok hs₂.x0 (by decide) (by decide) (fun p hp => ?_) hsv₂ fun s₃ R₃ => ?_
@@ -328,11 +328,6 @@ theorem exchange_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} (hp : EPre c s�
   have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, QYM, TMP, W0, W1, W2, W3, PY] → i ≠ FLAG →
       sv c (s₀.gpr .x3) s₄ i = sv c (s₀.gpr .x3) s₃ i := fun hi hl hf =>
     sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_flag h0 hf))
-  have t₄ : ∀ {j}, j < 3 → ∀ t < 64 * c.n,
-      s₄.mem (off (s₀.gpr .x3) (bitsAt c.n j + t)) = s₂.mem (off (s₀.gpr .x3) (bitsAt c.n j + t)) :=
-    fun hj t ht => by
-      rw [tbl_unch U₄ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t)),
-        tbl_unch U₃ h7 hj ht (apart_append (tbl_apart_slW (by decide) _ t) (tbl_apart_flag h0 _ t))]
   -- `[d]P`, then `Z^(p-2)`.
   have hk₄ : sv c (s₀.gpr .x3) s₄ K = dk c s₀ := by
     rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k]

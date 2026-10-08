@@ -5,7 +5,7 @@ namespace VG.Proof.Ecdsa.Verify.AArch64
 open VG VG.AArch64 VG.Impl.Ecdsa.AArch64 VG.Impl.Ecdsa.Verify.AArch64
 open VG.Proof.Ecdsa.AArch64
 
-theorem jointVerify_noCalls : P256Joint.verify.noCalls=true := by lit_decide
+theorem jointVerify_callsKeep : CallsKeep P256Joint.verify := by lit_decide
 
 theorem jointVerify_untouched : KeepsUntouched P256Joint.verify := by lit_decide
 
@@ -17,6 +17,6 @@ theorem jointVerify_a64_of_wp
     (s : State) (hs : verifyAArch64.pre s) :
     ∃ t s',Exec isa P256Joint.verify s t s' ∧ abiPreserved s s' ∧ verifyAArch64.post s s' := by
   obtain ⟨t,s',he,hsv,hpost⟩ := correct s (jacPre_of hs)
-  exact ⟨t,s',he,abiPreserved_of he jointVerify_noCalls jointVerify_untouched jointVerify_keepsV hsv,hpost⟩
+  exact ⟨t,s',he,abiPreserved_of he jointVerify_callsKeep jointVerify_untouched jointVerify_keepsV hsv,hpost⟩
 
 end VG.Proof.Ecdsa.Verify.AArch64

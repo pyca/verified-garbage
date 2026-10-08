@@ -49,7 +49,7 @@ theorem _root_.VG.Proof.Mont.AArch64.ModOkA.keepA64 {M M' : Mod} {m : Nat} {base
   ⟨hM.n0, hM.n10, hM.mo, hM.tmp, hM.sep, by
     have := sv_keep hM'n hM't h7 hn h hj hjo hjt
     simp only [sv] at this
-    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red⟩
+    rw [hmo, hMn, this, ← hMn, ← hmo]; exact hM.val, hM.inv, hM.red, hM.call⟩
 
 /-- `[o] = [a] [b] R⁻¹ mod m`, on slots. -/
 theorem slMul_ok {M : Mod} {m : Nat} (hMn : M.n = c.n) (h7 : c.n < 10) {base : Addr} {s : State}

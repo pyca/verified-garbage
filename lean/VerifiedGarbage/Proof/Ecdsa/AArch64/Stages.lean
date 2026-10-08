@@ -66,26 +66,27 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
       hc' (GX, c.mont c.C.gx) (by simp [Cfg.consts]), hc' (GY, c.mont c.C.gy) (by simp [Cfg.consts]),
       hc' (R2N, c.R * c.R % c.C.n) (by simp [Cfg.consts]), hc' (ONEN, c.R % c.C.n) (by simp [Cfg.consts]),
       P.saved⟩
-  have hsep : ∀ {i : Nat}, i < 45 → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨ bitsAt c.n j + 64 * c.n ≤ c.sl i :=
-    fun hi j => Or.inl (by have := sl_below_bits c hi j 0; omega)
+  have hsep : ∀ {i : Nat}, i < 45 → i ≠ TMP → ∀ j, c.sl i + 8 * c.n ≤ bitsAt c.n j ∨
+      bitsAt c.n j + 64 * c.n ≤ c.sl i :=
+    fun hi hT j => Or.inl (by have := sl_below_bits c hi j 0 hT; omega)
   have hS : size = 8192 := rfl
   have hsz' : bitsAt c.n 0 + 64 * c.n ≤ 4096 := by have := bitsAt0_le c h7; omega
   have hsz : ∀ {j}, j < 3 → bitsAt c.n j + 64 * c.n ≤ size := fun hj => bitsAt_le c h7 hj
-  have h4k : ∀ {i}, i < 45 → c.sl i < 4096 := fun hi => by
-    have := sl_below_bits c hi 0 0; omega
+  have h4k : ∀ {i}, i < 45 → i ≠ TMP → c.sl i < 4096 := fun hi hT => by
+    have := sl_below_bits c hi 0 0 hT; omega
   -- The table of `k`.
   refine WP.seq (WP.mono_syms (bits_ok P.scr h0 (by omega) (sl_le c h7 (i := K) (by decide)) (hsz (j := 0)
-    (by decide)) (h4k (by decide)) (by omega) (hsep (i := K) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
+    (by decide)) (h4k (by decide) (by decide)) (by omega) (hsep (i := K) (by decide) (by decide) 0)) fun s₂ ⟨b₂, k₂, O₂⟩ sy₂ => h s₂ ?_)
   have u₂ := O₂.unch
   have v₂ : ∀ {i}, i < 45 → sv c (s₀.gpr .x4) s₂ i = sv c (s₀.gpr .x4) s₁ i := fun hi =>
-    sv_unch u₂ h7 hn hi (apart_tbl hi 0)
+    sv_unch u₂ h7 hn hi (apart_tbl hi 0 h7)
   have hk : (kv c s₀) = sv c (s₀.gpr .x4) s₁ K := by rw [P.k, shAt_K c hhs, Nat.shiftRight_zero]
   have hs₂ := P.scr.of_keepRegs k₂ (by decide)
   have hF := sl_le c h7 (i := FLAG) (by decide)
-  have ap : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-    fun hi w hw => by
+  have ap : ∀ {i}, i < 45 → i ≠ TMP → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
+    fun hi hT w hw => by
       rw [List.mem_singleton.mp hw]
-      have := sl_below_bits c hi 0 0
+      have := sl_below_bits c hi 0 0 hT
       have : 1 ≤ c.n := h0
       exact Or.inl (by dsimp only; omega)
   refine ⟨⟨hs₂, ?_, by rw [k₂.wr, P.keep.wr], ?_⟩,
@@ -96,7 +97,7 @@ theorem stage₁ (hc : CfgOk c) {hs : Option Nat} (hhs : ShiftOk hs) {s₀ : Sta
     by rw [k₂.rd, P.keep.rd]⟩
   · rw [k₂.gpr _ (by decide), P.x20]
   · exact fx.unch h7 hn (fixedOk_tbl 0) u₂
-  · rw [u₂.word (ap (i := FLAG) (by decide)) (by omega), P.flag]
+  · rw [u₂.word (ap (i := FLAG) (by decide) (by decide)) (by omega), P.flag]
   · intro t ht
     rw [b₂ t ht, hk]
   · rw [sy₂, sy₁]
@@ -121,11 +122,12 @@ theorem x0_not_powClob {n : Nat} (_hn : n < 10) : Reg.x0 ∉ powClob n := fun h 
 
 /-- The flag word apart from numbered slots. -/
 theorem flag_unch {base : Addr} {l : List Nat} {m m' : Mem} (hu : Unch base (slW c l) m m')
-    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l) :
+    (h7 : c.n < 10) (h0 : 0 < c.n) (hn : base.toNat + size ≤ 2 ^ 64) (hl : FLAG ∉ l)
+    (hlA : ∀ j ∈ l, j ≠ 54 ∧ j ≠ 82 := by decide) :
     word m' base (c.sl FLAG) = word m base (c.sl FLAG) := by
   have hF := sl_le c h7 (i := FLAG) (by decide)
   refine hu.word (fun w hw => ?_) (by omega)
-  rcases apart_slW (c := c) hl w hw with h | h
+  rcases apart_slW (c := c) hl (by decide) hlA w hw with h | h
   · exact Or.inl (by omega)
   · exact Or.inr h
 

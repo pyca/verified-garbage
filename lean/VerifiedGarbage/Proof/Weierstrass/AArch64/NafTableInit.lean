@@ -61,7 +61,7 @@ theorem nafTable_init_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat}
     refine ⟨(hL.rcbApart_RP hJ).nodup,?_⟩
     intro x hx hw; exact hL.ro x (dv x hx) (dw x hw)
   apply WP.seq
-  refine WP.mono (jacDouble_ok hL.lay hAl hm hC ha da ds hI dv hP hp) fun a ⟨ka,ia,ja⟩ => ?_
+  refine WP.mono (jacDouble_ok hL.lay hAl hm hC ha da ds (Low.small (Nat.le_of_eq hL.n) _) hI dv hP hp) fun a ⟨ka,ia,ja⟩ => ?_
   have ja : InvJ C (tmv C K.M.n base a K.D.x) (tmv C K.M.n base a K.D.y)
       (tmv C K.M.n base a K.D.z) (mul 2 P) := by
     have h := ia.point_tmv (fun _ hx => List.mem_append_left _ hx) ja

@@ -36,8 +36,8 @@ theorem jacWinMul_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} {
     fun s₂ ⟨hI,⟨hz,hb,hj⟩,_,_,U₂,rd₂,wr₂⟩ => ?_
   refine WP.seq (WP.mono (jacWindow_ok (jacLay hc hn4) rfl (jacAligned c hn4)
     (unitMod_pow_two hc.p_odd (64*c.n)) hC hc.am3
-    (by change c.sl WT<4096; rw [sl_eq,hn4]; decide)
-    (by change c.sl WB+5≤4096; rw [sl_eq,hn4]; decide) (hmont 1)
+    (by change c.sl WT<4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)
+    (by change c.sl WB+5≤4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide) (hmont 1)
     (toM_cmont hc 1) (Nat.le_add_left _ _) hrec hP hI hz hb hj)
     fun s₃ ⟨K₃,U₃,M₃,L₃,R₃⟩ => h s₃ ?_)
   rw [jacWrites_eq c hn4] at U₃

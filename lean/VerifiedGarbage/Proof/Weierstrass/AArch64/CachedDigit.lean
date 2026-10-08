@@ -52,7 +52,7 @@ theorem sum_ok {C : Curve} {base : Addr} {size u v : Nat}
       ProgKeep K.M base (jointWork cfg) s t ∧ JointCore cfg C base size Q u v External (add A B) t := by
   apply WP.of_syms
   apply WP.seq
-  refine WP.mono (add_ok hL.lay hL.aligned hm hsize hC ha (by decide +kernel)
+  refine WP.mono (add_ok hL.lay hL.aligned (callOf_small (Nat.le_of_eq hL.n)) hm hsize hC ha (by decide +kernel)
     hi (by decide +kernel) h2 h3 hOne hA hB h.point hj) fun b ⟨eb,kb,ib,jb⟩ => ?_
   have apart : RcbApart K.S K.D K.D K.R := ⟨by decide +kernel,by decide +kernel⟩
   refine WP.mono (copyPoint_ok hL.lay hL.aligned apart (by decide +kernel) ib

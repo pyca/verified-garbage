@@ -22,7 +22,7 @@ theorem jointCache_fields {C : Curve} {base : Addr} {E : Nat → Fe C}
   apply fieldWP_relCT jointCache_ct
   intro s hi
   refine WP.mono (CachedInit.cache_ok JointLayout.layout.lay JointLayout.layout.aligned hm hi
-    (by decide +kernel) (by decide +kernel)) fun t ⟨hk,it⟩ => ⟨it.sub ?_,hk.sp⟩
+    (by decide +kernel) (fun _ _ => Low.small (by decide) _) (by decide +kernel)) fun t ⟨hk,it⟩ => ⟨it.sub ?_,hk.sp⟩
   intro x hx
   rcases List.mem_append.mp hx with hx | hx
   · exact List.mem_append_right _ hx

@@ -31,8 +31,8 @@ theorem nafWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.nafWinPrep]
   refine WP.mono (nafPrep_ok (jacWinCfg c) hs
     (by simpa only [hn4] using sl_le c h7 (i:=V) (by decide)) (sl_mod8 c _)
-    (by rw [hB,sl_eq,hn4]; decide)
-    (by rw [hB,sl_eq,hn4]; decide)) fun s₂ ⟨p₂,k₂,O₂⟩ => ?_
+    (by rw [hB]; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)
+    (by rw [hB]; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)) fun s₂ ⟨p₂,k₂,O₂⟩ => ?_
   have hs₂ := p₂.scr
   have b₂ := p₂.digits
   rw [←hn4] at b₂
@@ -41,7 +41,7 @@ theorem nafWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
     exact u.mono (by intro w hw; simp only [List.mem_singleton] at hw; subst hw; change _ ∈ [(c.winK,16*c.n),(c.winBits,64*(c.n+1))]; exact List.mem_cons_of_mem _ (List.mem_singleton.mpr rfl))
   have F₂ := F.unch h7 hn fixedOk_winX U₂
   have e₂ : ∀ {i}, i < 45 → sv c base s₂ i = sv c base s i := fun hi =>
-    sv_unch U₂ h7 hn hi (apart_winX hi)
+    sv_unch U₂ h7 hn hi (apart_winX4 (Nat.le_of_eq hn4) hi)
   have hM₂ := modP_of hc F₂.mp
   have tv : ∀ {i}, i < 45 → tmv c.C c.n base s₂ (c.sl i) = tmv c.C c.n base s (c.sl i) := fun hi => by
     show toM _ _ (sv c base s₂ _) = toM _ _ (sv c base s _); rw [e₂ hi]
@@ -74,6 +74,8 @@ theorem nafWinPrep_ok (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C) {base : Addr} 
   refine ⟨hI,⟨F₂.zero,fun i hi => b₂ i hi,hj⟩,?_,k₂.sp,U₂,k₂.rd,k₂.wr⟩
   intro x hx
   simp only [winRo,List.mem_cons,List.not_mem_nil,or_false] at hx
-  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact tv (by decide)
+  rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [tv (i := AP) (by decide), tv (i := BM) (by decide), tv (i := ZERO) (by decide),
+    tv (i := PX) (by decide), tv (i := PY) (by decide), tv (i := ONEP) (by decide)]
 
 end VG.Proof.Ecdsa.Verify.AArch64

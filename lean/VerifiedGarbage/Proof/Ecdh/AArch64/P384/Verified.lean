@@ -40,7 +40,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : exchangeP384.noCalls = true := by lit_decide
+  have hn : CallsKeep exchangeP384 := by lit_decide
   have hu : KeepsUntouched exchangeP384 := by lit_decide
   have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := exchange_ok (p384_ok hI) hL (pre_of hs)

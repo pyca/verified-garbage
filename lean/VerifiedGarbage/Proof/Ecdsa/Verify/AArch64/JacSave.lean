@@ -33,8 +33,8 @@ theorem jacSave_ok {c : Cfg} (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C)
   have hp3 := hc.p_ge
   have hmont : ∀ x,c.mont x<c.C.p := fun _ => Nat.mod_lt _ (by omega)
   have hpR := unitMod_pow_two hc.p_odd (64*c.n)
-  have WC := jacComb_ok (tcombLay hc) (combA c) hC hc.onG (tcombVals hc hC hT) hc.p_lt hn4
-    (jacComb_sum_ok (tcombLay hc) (combA c) hC hc.am3 hpR hn4 (hmont 1)) hr.1 hr.2.1 hr.2.2
+  have WC := jacComb_ok (tcombLay hc) (combA hc) hC hc.onG (tcombVals hc hC hT) hc.p_lt hn4
+    (jacComb_sum_ok (tcombLay hc) (combA hc) hC hc.am3 hpR hn4 (hmont 1)) hr.1 hr.2.1 hr.2.2
   refine WP.seq (WP.mono WC fun b ⟨kb,ub,_,_,_⟩ => ?_)
   have fb := hM.fixed.unch h7 hn fixedOk_tcombW ub
   have sb := hM.scr.of_keepRegs kb (x0_not_tcombClob hc.n10)

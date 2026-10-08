@@ -77,8 +77,8 @@ theorem jacWinMul_relCT {c : Cfg} (hc : CfgOk c) (hn4 : c.n=4) (hC : Law c.C)
       have hmont : ∀ x,c.mont x<c.C.p := fun x => Nat.mod_lt _ (by have := hc.p_ge; omega)
       obtain ⟨hw,_,post⟩ := jacWindow_relCT (jacLay hc hn4) rfl (jacAligned c hn4)
         (unitMod_pow_two hc.p_odd (64*c.n)) hC hc.am3
-        (by change c.sl WT<4096; rw [sl_eq,hn4]; decide)
-        (by change c.sl WB+5≤4096; rw [sl_eq,hn4]; decide) (hmont 1)
+        (by change c.sl WT<4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide)
+        (by change c.sl WB+5≤4096; simp (disch := decide) only [sl_eq]; rw [hn4]; decide) (hmont 1)
         (toM_cmont hc 1) (Nat.le_add_left _ _) hrec hchecks hP
         _ _ _ _ _ _ ⟨pair,bs,bt⟩ ws wt
       exact ⟨by rw [he,hw],post.public⟩

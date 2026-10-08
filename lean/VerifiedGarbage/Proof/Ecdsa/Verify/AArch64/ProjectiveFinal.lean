@@ -33,8 +33,7 @@ theorem projectiveFinal_ok (hc : CfgOk c) (hC : Law c.C) (hnp : c.C.n < c.C.p)
     fun hi hl => sv_unch U h7 hn hi (apart_slW hl)
   have saved := Saved.unch hP.fixed.saved (fun w hw => by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-    show 56 ≤ c.sl i
-    rw [sl_eq]; omega) U
+    exact sl_ge64 c i) U
   have flag : word t.mem base (c.sl FLAG) = mask A := by
     rw [U.word (fun w hw => ?_) (by have := sl_le c h7 (i := FLAG) (by decide); omega)]
     · exact hP.flag

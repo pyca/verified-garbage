@@ -13,7 +13,7 @@ theorem booth_comb_correct (hL : Law Spec.P256.curve) (hI : InvSounds)
     CombCorrect p256 Impl.P256.Booth.comb := by
   intro base k T s hs hm hf
   have hc := p256_ok hI
-  exact tcombJWith_ok (tcombLay hc) (combA p256)
+  exact tcombJWith_ok (tcombLay hc) (combA hc)
     (Forward.CombArithmetic.compiler_correct (by decide)) (by decide) hL hc.am3 hc.onG
     (tcombVals hc hL hT) hc.p_lt (by decide) (Proof.P256.booth hL) hf.k_lt hs hm hf
 

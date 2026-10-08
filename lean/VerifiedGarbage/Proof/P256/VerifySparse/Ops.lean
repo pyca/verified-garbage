@@ -7,7 +7,7 @@ open VG VG.AArch64 VG.Impl.Mont VG.Impl.Mont.AArch64 VG.Proof.Mont VG.Proof.Mont
 open VG.Proof.Ed25519.AArch64 (Keeps)
 
 def sparseMul (M : Mod) (o a b : Nat) : List Instr :=
-  mulSetup M b ++ ((List.range M.n).flatMap (round M a b) ++
+  mulSetup M .x0 b ++ ((List.range M.n).flatMap (round M .x0 .x0 a b) ++
     (Impl.P256.VerifySparse.correct ((List.range M.n).map (win M.n M.n)) (win M.n M.n M.n) ++
       stores ((List.range M.n).map (win M.n M.n)) o))
 
@@ -25,7 +25,7 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
         wordsVal s.mem base a M.n * wordsVal s.mem base b M.n % p := by
   have h7 := h10
   rw [sparseMul, WP.block_append_iff]
-  refine WP.mono (setup_ok hs h7 hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
+  refine WP.mono (setup_ok h7 hs.ptr (ptrOk_x0 h7) hb hb8) fun s₁ ⟨z₁, hBR₁, h6₁, h0, k₁⟩ => ?_
   have hacc := acc_regs_lt _ h7
   have hs₁ := hs.of_keeps k₁ (fun h => by
     simp only [List.mem_cons] at h
@@ -39,7 +39,8 @@ theorem mul_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M 
     · exact (hacc _ h) (by simp))
   have hmem₁ : s₁.mem = s.mem := k₁.mem
   rw [WP.block_append_iff]
-  refine WP.mono (rounds_ok h7 ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁ z₁
+  refine WP.mono (rounds_ok h7 (ptrOk_x0 h7) (ptrOk_x0 h7) ha hb hM.mo ha8 hb8 hA.mo hM.inv hM.red M.n
+    (Nat.le_refl _) hs₁ hs₁.ptr hs₁.ptr z₁
     (by rw [hmem₁]; exact hM.val) hBR₁ h6₁ (by rw [hmem₁]; exact hB) h0)
     fun s₂ ⟨⟨U, eU⟩, hT, k₂, _⟩ => ?_
   have nk : ∀ r ∈ [Reg.x0, .x7], r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := by

@@ -25,7 +25,7 @@ theorem nafTable_step_ok {K : WinCfg} {C : Curve} {base : Addr} {size m : Nat}
       · exact jacTblPt_mem K (by decide) (by decide) x he
   unfold Naf.tableStep
   apply WP.seq
-  refine WP.mono (jacAdd_ok hL.lay hAl hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
+  refine WP.mono (jacAdd_ok hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm hC ha (hL.rcbApart_twice hJ) ds hf hv hOne
     (hC.onCurve_mul hP _) (hC.onCurve_mul hP _) hI.point hI.twice) fun u ⟨eu,ka,iu,ju⟩ => ?_
   have jw : InvJ C (eu K.D.x) (eu K.D.y) (eu K.D.z) (mul (2*(m+1)-1) P) := by
     rw [hC.add_mul_mul hP,show 2*m-1+2=2*(m+1)-1 by omega] at ju

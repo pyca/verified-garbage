@@ -156,11 +156,11 @@ theorem verify_public_ct (hc : CfgOk c) (hC : Law c.C)
   have second : Scr a₂ (s₁.gpr .x3) size ∧ ModOkA c.combCfg.M size c.C.p a₂.mem (s₁.gpr .x3) ∧
       TCombFixed c.combCfg c.C (s₁.gpr .x3) size a₂ (publicU c s₁) (s₁.syms c.tsym) c.combWords := by
     rw [base, scalar, sym]; exact ready₂
-  have hh := publicComb_ct (tcombLay hc) (combA c) hC hc.am3 hc.onG (tcombVals hc hC hT)
+  have hh := publicComb_ct (tcombLay hc) (combA hc) hC hc.am3 hc.onG (tcombVals hc hC hT)
     hc.p_lt checks.comb _ _ _ _ _ _
     ⟨ready₁.1, second.1, sp, ready₁.2.1, second.2.1, ready₁.2.2, second.2.2⟩ ec₁ ec₂
   have wpComb := fun {s₀ a : State} (h : CombReady c s₀ a) =>
-    tcomb_ok (publicLookup := true) (tcombLay hc) (combA c) hC hc.am3 hc.onG
+    tcomb_ok (publicLookup := true) (tcombLay hc) (combA hc) hC hc.am3 hc.onG
       (tcombVals hc hC hT) hc.p_lt h.1 h.2.1 h.2.2
   obtain ⟨_, _, wc₁, keep₁, _⟩ := wpComb ready₁
   obtain ⟨_, _, wc₂, keep₂, _⟩ := wpComb ready₂

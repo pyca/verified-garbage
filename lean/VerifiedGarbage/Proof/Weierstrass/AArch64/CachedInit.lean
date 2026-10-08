@@ -119,12 +119,13 @@ theorem pow_values {F : Type} [Lean.Grind.CommRing F] (E : Nat → F) (i : Nat) 
 theorem cache_ok {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
     (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hm : UnitMod m (2^(64*K.M.n)))
     {V : List Nat} {E : Nat → Fin m} {s : State} (hI : Inv K.M base size m Sl V E s)
-    (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x) (hV : ∀ x∈sources,x∈V) :
+    (hS : ∀ op∈ops,∀ x∈op.out::op.ins,Sl x) (hLo : ∀ op∈ops, Low K.M (op.out::op.ins))
+    (hV : ∀ x∈sources,x∈V) :
     WP isa (CachedJac.cache K) s fun t =>
       ProgKeep K.M base outputs s t ∧
       Inv K.M base size m Sl (outputs++V) (runOps ops E) t := by
-  rw [CachedJac.cache,ops_eq,fprogB_wp]
-  refine WP.mono (fprog_ok hL hAl hm ops hI hS (readsOk_mono reads hV)) fun t ⟨kt,it⟩ => ?_
+  rw [CachedJac.cache,ops_eq]
+  refine WP.mono (fprogB_ok hL hAl hm ops hI hS hLo (readsOk_mono reads hV)) fun t ⟨kt,it⟩ => ?_
   refine ⟨kt.mono (fun x hx => ?_),it.sub (fun x hx => ?_)⟩
   · obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
     exact out_mem op hop

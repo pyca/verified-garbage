@@ -117,11 +117,11 @@ theorem jacComb_sum_relCT {K : TCombCfg} {base : Addr} {size m : Nat} [NeZero m]
     simp only [rcbR,jacCombLive,combRo,TCombCfg.toComb,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
     intros; grind
   have hmix := jacMixedAdd_relCT (K:=Jacobian.combWinCfg K) (base:=base) (E:=E)
-    hL.comb.lay ⟨hA.sl,hA.mod⟩ hm hL.comb.add hSl hv hone hc.mixed
+    hL.comb.lay hA.al (callOf_small (Nat.le_of_eq hn)) hm hL.comb.add hSl hv hone hc.mixed
   unfold Jacobian.jacCombSum
   refine hmix.seq (RelCT.exists_ fun E' => ?_)
   rw [←hn]
-  have hcp := copyPoint_relCT (base:=base) (E:=E') hL.comb.lay ⟨hA.sl,hA.mod⟩
+  have hcp := copyPoint_relCT (base:=base) (E:=E') hL.comb.lay hA.al
     (o:=K.A) (q:=K.D) (V:=[K.D.x,K.D.y,K.D.z]++([K.E.x,K.E.y,K.E.z]++jacCombLive K))
     (by intro x hx; simp only [List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl <;> tcomb_mem)

@@ -40,7 +40,7 @@ theorem head_ok {base : Addr} {size m : Nat} [NeZero m]
       runOps head E K.S.t5=E K.E.y*E K.R.z*(E K.R.z*E K.R.z)-E K.R.y*E K.E.z*(E K.E.z*E K.E.z) := by
   dsimp only [ops]
   refine WP.mono (Forward.Arithmetic.field_ok Forward.Arithmetic.cases (M:=K.M) hL hAl hm hsize head hI
-    (fun op hop x hx => hSl x (slots_head op hop x hx)) (readsOk_mono reads_head hV))
+    (fun op hop x hx => hSl x (slots_head op hop x hx)) (fun _ _ => Low.small (by decide) _) (readsOk_mono reads_head hV))
     fun t ⟨hk,hi⟩ => ⟨hk.mono ?_,hi,head_values E h2 h3⟩
   intro x hx
   obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx
@@ -62,7 +62,7 @@ theorem tail_ok {base : Addr} {size m : Nat} [NeZero m]
   rw [readsOk_append,Bool.and_eq_true] at hr
   dsimp only [ops]
   refine WP.mono (Forward.Arithmetic.field_ok Forward.Arithmetic.cases (M:=K.M) hL hAl hm hsize tail hI
-    (fun op hop x hx => hSl x (slots_tail op hop x hx)) hr.2)
+    (fun op hop x hx => hSl x (slots_tail op hop x hx)) (fun _ _ => Low.small (by decide) _) hr.2)
     fun t ⟨hk,hi⟩ => ⟨hk.mono ?_,?_,full_values E h2 h3⟩
   · intro x hx
     obtain ⟨op,hop,rfl⟩ := List.mem_map.mp hx

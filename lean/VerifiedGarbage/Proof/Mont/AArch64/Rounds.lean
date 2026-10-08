@@ -32,34 +32,31 @@ theorem zeros_ok (s : State) : ∀ ts : List Reg,
     · have : q = t := by simpa [hqt] using hq
       subst this; rw [k₂.gpr _ hqt, z₁]
 
-theorem wins_sub_acc_lt : ∀ n < 10, ∀ i < n + 2, ∀ r ∈ wins n i, r ∈ acc n := by decide
-
-theorem wins_sub_acc {n : Nat} (hn : n < 10) (i : Nat) : ∀ r ∈ wins n i, r ∈ acc n := by
-  rw [wins_mod]; exact wins_sub_acc_lt n hn _ (Nat.mod_lt _ (by omega))
-
 theorem acc_regs_lt : ∀ n < 10, ∀ r ∈ acc n,
     r ∉ [Reg.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x16, .x17, .x24, .x25] := by
   decide
 
 /-- `k` rounds, from a cleared accumulator, with `x7 = 0`, `[b]`'s words in
 `bRegs` and the reduction's constant in `x6`. -/
-theorem rounds_ok {M : Mod} (hn : M.n < 10) {a b m size : Nat}
-    (ha : a + 8 * M.n ≤ size) (hb : b + 8 * M.n ≤ size) (hmo : M.mo + 8 * M.n ≤ size)
+theorem rounds_ok {M : Mod} (hn : M.n < 10) {ra rb : Reg} {pa pb : Addr} {sa sb : Nat}
+    (hra : PtrOk M.n ra) (hrb : PtrOk M.n rb) {a b m size : Nat}
+    (ha : a + 8 * M.n ≤ sa) (hb : b + 8 * M.n ≤ sb) (hmo : M.mo + 8 * M.n ≤ size)
     (ha8 : a % 8 = 0) (hb8 : b % 8 = 0) (hmo8 : M.mo % 8 = 0)
     (hinv : (m * M.minv.toNat + 1) % 2 ^ 64 = 0) (hok : M.ok m = true) :
-    ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size → s.gpr .x7 = 0 →
-      wordsVal s.mem base M.mo M.n = m → BRegs s base b M.n → ConstOk M s →
-      wordsVal s.mem base b M.n < m → regsVal s (wins M.n 0) = 0 →
-      WP isa (.block ((List.range k).flatMap (round M a b))) s fun s' =>
+    ∀ k ≤ M.n, ∀ {s : State} {base : Addr}, Scr s base size → Ptr s ra pa sa → Ptr s rb pb sb →
+      s.gpr .x7 = 0 →
+      wordsVal s.mem base M.mo M.n = m → BRegs s pb b M.n → ConstOk M s →
+      wordsVal s.mem pb b M.n < m → regsVal s (wins M.n 0) = 0 →
+      WP isa (.block ((List.range k).flatMap (round M ra rb a b))) s fun s' =>
         (∃ U, 2 ^ (64 * k) * regsVal s' (wins M.n k) =
-          wordsVal s.mem base a k * wordsVal s.mem base b M.n + U * m) ∧
+          wordsVal s.mem pa a k * wordsVal s.mem pb b M.n + U * m) ∧
         regsVal s' (wins M.n k) < 2 * m ∧
         Keeps (.x1 :: .x2 :: .x3 :: acc M.n) s s' ∧ (k = 0 → regsVal s' (wins M.n 0) = 0)
-  | 0, _, s, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
+  | 0, _, s, _, _, _, _, _, _, _, _, hB, h0 => WP.block_nil ⟨⟨0, by simp [h0, wordsVal]⟩, by rw [h0]; omega,
       ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, fun _ => h0⟩
-  | k + 1, hk, s, base, hs, hz, hm, hBR, h6, hB, h0 => by
+  | k + 1, hk, s, base, hs, hpa, hpb, hz, hm, hBR, h6, hB, h0 => by
     rw [List.range_succ, List.flatMap_append, List.flatMap_singleton, WP.block_append_iff]
-    refine WP.mono (rounds_ok hn ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega) hs hz hm hBR h6 hB h0)
+    refine WP.mono (rounds_ok hn hra hrb ha hb hmo ha8 hb8 hmo8 hinv hok k (by omega) hs hpa hpb hz hm hBR h6 hB h0)
       fun s₁ ⟨⟨U, eU⟩, hT, k₁, hz0⟩ => ?_
     have hmem : s₁.mem = s.mem := k₁.mem
     have hacc := acc_regs_lt _ hn
@@ -74,11 +71,20 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {a b m size : Nat}
       · have := hacc r h
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp at this
     have hs₁ := hs.of_keeps k₁ (nk .x0 (by simp))
+    have pk : ∀ r, PtrOk M.n r → r ∉ Reg.x1 :: Reg.x2 :: Reg.x3 :: acc M.n := fun r hr h => by
+      simp only [List.mem_cons] at h
+      rcases h with h | h | h | h
+      · exact hr.x1 h
+      · exact hr.x2 h
+      · exact hr.x3 h
+      · exact hr.acc h
+    have hpa₁ := hpa.of_keeps k₁ (pk ra hra)
+    have hpb₁ := hpb.of_keeps k₁ (pk rb hrb)
     have hz₁ : s₁.gpr .x7 = 0 := by rw [k₁.gpr .x7 (nk .x7 (by simp)), hz]
-    have hBR₁ : BRegs s₁ base b M.n := hBR.keep hmem fun r hr => k₁.gpr r (nk r (by
+    have hBR₁ : BRegs s₁ pb b M.n := hBR.keep hmem fun r hr => k₁.gpr r (nk r (by
       rcases bRegs_regs r hr with rfl | rfl | rfl | rfl <;> simp))
     have h6₁ : ConstOk M s₁ := h6.keep (k₁.gpr .x6 (nk .x6 (by simp)))
-    refine WP.mono (round_ok hs₁ hn (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
+    refine WP.mono (round_ok hs₁ hn hpa₁ hpb₁ hrb (i := k) (by omega) hb hmo ha8 hb8 hmo8 hz₁ (by rw [hmem, hm])
       hinv hok hBR₁ h6₁ (by rw [hmem]; exact hB) hT (fun hk0 => hz0 hk0)) fun s₂ ⟨⟨u, eu⟩, hT₂, k₂⟩ => ?_
     rw [hmem] at eu
     refine ⟨⟨U + 2 ^ (64 * k) * u, ?_⟩, hT₂, k₁.trans (k₂.mono fun q hq => ?_), fun h => absurd h (by omega)⟩
@@ -86,10 +92,10 @@ theorem rounds_ok {M : Mod} (hn : M.n < 10) {a b m size : Nat}
           = 2 ^ (64 * k) * (2 ^ 64 * regsVal s₂ (wins M.n (k + 1))) := by
             rw [Nat.mul_succ, Nat.pow_add, Nat.mul_assoc]
         _ = 2 ^ (64 * k) * regsVal s₁ (wins M.n k) +
-            2 ^ (64 * k) * (word s.mem base (a + 8 * k)).toNat * wordsVal s.mem base b M.n +
+            2 ^ (64 * k) * (word s.mem pa (a + 8 * k)).toNat * wordsVal s.mem pb b M.n +
             2 ^ (64 * k) * u * m := by rw [eu]; simp only [Nat.mul_add, Nat.mul_assoc]
-        _ = (wordsVal s.mem base a k + 2 ^ (64 * k) * (word s.mem base (a + 8 * k)).toNat) *
-            wordsVal s.mem base b M.n + (U + 2 ^ (64 * k) * u) * m := by
+        _ = (wordsVal s.mem pa a k + 2 ^ (64 * k) * (word s.mem pa (a + 8 * k)).toNat) *
+            wordsVal s.mem pb b M.n + (U + 2 ^ (64 * k) * u) * m := by
             rw [eU, Nat.add_mul, Nat.add_mul]; omega
         _ = _ := by rw [wordsVal_succ_top]
     · simp only [List.mem_cons] at hq ⊢

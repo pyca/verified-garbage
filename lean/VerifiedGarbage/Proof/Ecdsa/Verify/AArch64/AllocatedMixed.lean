@@ -59,7 +59,7 @@ theorem mixedAdd_ok (raw : RawCorrect) (hC : Law C) (ha : AM3 C)
           · exact hSl x (List.mem_append_left _ hx)
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         rw [←hpq]
-        refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
+        refine WP.mono (Forward.double_ok Forward.Production.cases hL hAl (callOf_small (by decide)) hm hC ha hdA hdSl ie hv hP jp) fun t ⟨kt,it,jt⟩ => ?_
         exact (PointPost.sub ⟨_,liftProg kt (by decide +kernel),it,jt⟩ oldV).prefix
           (hkeep.trans ((liftProg kd (by simp)).trans (liftProg ke (by simp))))
       · intro e ie ke hrz

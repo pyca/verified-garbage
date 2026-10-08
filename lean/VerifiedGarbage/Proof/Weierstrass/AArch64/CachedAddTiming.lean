@@ -54,7 +54,7 @@ theorem add_relCT {base : Addr} {size m : Nat} [NeZero m]
           (FieldPair K.M base size m Sl (validAfter head V) (runOps head E)) := by
         dsimp only [ops]
         exact Forward.Arithmetic.field_relCT Forward.Arithmetic.cases hL hAl hm hsize head
-          (fun op hop x hx => hSlots x (slots_head op hop x hx)) (readsOk_mono reads_head hInputs) (by simpa only [ops] using hc.head)
+          (fun op hop x hx => hSlots x (slots_head op hop x hx)) (fun _ _ => Low.small (by decide) _) (readsOk_mono reads_head hInputs) (by simpa only [ops] using hc.head)
       apply RelCT.seq hh
       have oldV : ∀ x∈V, x∈validAfter head V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
@@ -77,7 +77,7 @@ theorem add_relCT {base : Addr} {size m : Nat} [NeZero m]
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hv : ∀ x∈rcbR K.S K.R K.R, x∈validAfter head V :=
             fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps head E) hL hAl hm hdA hdSl hv (by simpa only [ops] using hc.double)
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps head E) hL hAl (callOf_small (by decide)) hm hdA hdSl hv (by simpa only [ops] using hc.double)
           dsimp only [ops]
           exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
@@ -94,7 +94,7 @@ theorem add_relCT {base : Addr} {size m : Nat} [NeZero m]
           dsimp only [ops]
           have ht := Forward.Arithmetic.field_relCT Forward.Arithmetic.cases (base:=base)
             (E:=runOps head E) hL hAl hm hsize tail
-            (fun op hop x hx => hSlots x (slots_tail op hop x hx)) hr.2 (by simpa only [ops] using hc.tail)
+            (fun op hop x hx => hSlots x (slots_tail op hop x hx)) (fun _ _ => Low.small (by decide) _) hr.2 (by simpa only [ops] using hc.tail)
           rw [runOps_append]
           exact ht.mono (fun _ _ h => h) (fun _ _ h => h.sub (by
             intro x hx

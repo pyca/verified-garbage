@@ -119,6 +119,6 @@ theorem points_untouched (hc : CfgOk p256) (hC : Law p256.C)
     have hOne : tmv p256.C 4 (s₀.gpr .x3) s (p256.sl ONEP)=1 := onep_tmv hc hm.fixed
     rw [hOne]
     exact peerPt_rep hC _ _ _ hm.px hm.py
-  exact WP.mono (points_ok hc hC hT hm hp.tbl hP hr) fun _ h => h.2.2
+  exact WP.mono (points_ok hc hC hT hm hp.tbl hP hr) fun _ h r hr => h.2.2 r (by revert hr; revert r; decide)
 
 end VG.Proof.Ecdsa.Verify.AArch64.Allocated

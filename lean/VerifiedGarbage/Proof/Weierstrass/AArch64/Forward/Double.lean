@@ -25,7 +25,7 @@ theorem double_of_refinement {M : Mod} {base : Addr} {size : Nat} {C : Curve}
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
     (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)
     {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
-    (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x)
+    (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x) (hLow : Low M (rcbW S o ++ rcbR S p p))
     {V : List Nat} {E : Nat → Fe C} {s : State} (hI : Inv M base size C.p Sl V E s)
     (hV : ∀ x ∈ rcbR S p p, x ∈ V) {P : Point C}
     (hP : onCurve C P = true) (hJ : InvJ C (E p.x) (E p.y) (E p.z) P)
@@ -37,7 +37,7 @@ theorem double_of_refinement {M : Mod} {base : Addr} {size : Nat} {C : Curve}
       Inv M base size C.p Sl ([o.x,o.y,o.z]++V) (runOps (dblJMul S p o) E) t ∧
       InvJ C (runOps (dblJMul S p o) E o.x) (runOps (dblJMul S p o) E o.y)
         (runOps (dblJMul S p o) E o.z) (Spec.Weierstrass.add P P) := by
-  apply WP.mono (hr _ (jacDouble_ok hL hAl hm hC ha hA hSl hI hV hP hJ))
+  apply WP.mono (hr _ (jacDouble_ok hL hAl hm hC ha hA hSl hLow hI hV hP hJ))
   rintro t ⟨u,⟨hku,hu,hju⟩,hmem,hk⟩
   obtain ⟨kt,it⟩ := transfer_post hmem hk hku hu
   exact ⟨kt,it,hju⟩

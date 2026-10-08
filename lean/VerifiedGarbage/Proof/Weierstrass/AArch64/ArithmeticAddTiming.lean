@@ -17,7 +17,7 @@ structure ArithmeticAddChecks (K : WinCfg) (p q o : Pt) : Prop where
 /-- The complete addition's data-dependent branches inspect only field values
 shared by the two executions. No condition on uninitialized scratch is needed. -/
 theorem arithmeticAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod m (2^(64*K.M.n))) (hsize : 8192≤size) {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q, x∈V)
@@ -50,7 +50,7 @@ theorem arithmeticAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
         apply fieldWP_relCT hc.head
         intro s hi
         exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
-          ((fprogB_wp _ _).mpr (jacHead_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
+          ((fprogB_wp _ _ hnc).mpr (jacHead_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
       apply RelCT.seq hh
       have oldV : ∀ x∈V, x∈validAfter (jacHead K.S p q) V :=
         fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
@@ -73,7 +73,7 @@ theorem arithmeticAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacHead K.S p q) V :=
             fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hm hdA hdSl hv hc.double
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacHead K.S p q) E) hL hAl hnc hm hdA hdSl hv hc.double
           exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
         · intro _
           exact (infinity_relCT hL hAl os hOne hc.infinity).mono
@@ -87,7 +87,7 @@ theorem arithmeticAdd_relCT (certs : Forward.Arithmetic.Cases) {K : WinCfg} {bas
           apply fieldWP_relCT hc.tail
           intro s hi
           exact WP.mono (Forward.Arithmetic.contract certs hi.scr hsize
-            ((fprogB_wp _ _).mpr (jacTail_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
+            ((fprogB_wp _ _ hnc).mpr (jacTail_ok hL hAl hm hA hSl hi hV))) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
         exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
 end VG.Proof.Weierstrass.AArch64

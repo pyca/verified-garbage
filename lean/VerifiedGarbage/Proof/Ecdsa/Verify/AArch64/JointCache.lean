@@ -26,7 +26,8 @@ theorem jointCache_ok {C : Curve} {base : Addr} {size u v : Nat} {Q : Point C} {
       ProgKeep cfg.K.M base CachedInit.outputs s t ∧
       Inv cfg.K.M base size C.p (·∈jointSlots cfg) (jointLive cfg) (tmv C cfg.K.M.n base t) t ∧
       JointStable cfg C base Q u v t := by
-  refine WP.mono (CachedInit.cache_ok hL.lay hL.aligned hm hI cache_slots cache_sources)
+  refine WP.mono (CachedInit.cache_ok hL.lay hL.aligned hm hI cache_slots
+    (fun _ _ => Low.small (Nat.le_of_eq hL.n) _) cache_sources)
     fun t ⟨kt,it⟩ => ?_
   have ni : Inv cfg.K.M base size C.p (·∈jointSlots cfg) (jointLive cfg)
       (runOps CachedInit.ops (tmv C cfg.K.M.n base s)) t := it.sub (by

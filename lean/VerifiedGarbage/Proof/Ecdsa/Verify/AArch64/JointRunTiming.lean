@@ -20,7 +20,7 @@ theorem jointOps_timing {C : Curve} {base T : Addr} {P Q : Point C} {u v : Nat}
     dsimp only [ops]
     have h := Forward.Arithmetic.double_relCT (S:=cfg.K.S) (p:=cfg.K.R) Forward.Arithmetic.cases
       (base:=base) (E:=E) JointLayout.layout.lay JointLayout.layout.aligned hm (by decide)
-      (by decide +kernel) (jointLive_R cfg) Forward.ArithmeticRR.ct
+      (by decide +kernel) (Low.small (by decide) _) (jointLive_R cfg) Forward.ArithmeticRR.ct
     exact h.mono (fun _ _ h => h.1) (fun _ _ h => ⟨_,h⟩)
   peer := by
     intro A j hj E

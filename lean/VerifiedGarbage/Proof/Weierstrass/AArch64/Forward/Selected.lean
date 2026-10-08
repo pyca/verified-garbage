@@ -24,12 +24,12 @@ structure Cases where
 
  theorem Case.refine {p o : Pt} (c : Case p o) {base : Addr} {size : Nat} {s : State}
     (hs : Scr s base size) (hsize : 992≤size) {Q : State → Prop}
-    (hq : WP isa (fprogB M (dblJMul S p o)) s Q) :
+    (hnc : Mont.callOf M = none) (hq : WP isa (fprogB M (dblJMul S p o)) s Q) :
     WP isa (VG.Impl.Weierstrass.AArch64.Forward.double M S p o) s fun t =>
       ∃ u,Q u ∧ t.mem=u.mem ∧ KeepRegs (VG.Proof.Mont.AArch64.clob M.n) s t := by
   have h := c.checked.refine (by decide) (by decide) hs
     (fun i hi => Nat.le_trans (c.leftBound i hi) hsize)
-    (fun i hi => Nat.le_trans (c.rightBound i hi) hsize) ((fprogB_wp _ _).mp hq)
+    (fun i hi => Nat.le_trans (c.rightBound i hi) hsize) ((fprogB_wp _ _ hnc).mp hq)
   exact WP.mono h fun t ⟨u,hu,hm,hk⟩ => ⟨u,hu,hm,hk.mono c.clob⟩
 
 end Fixed
@@ -47,12 +47,12 @@ end Fixed
   have hslot : Sl VG.Impl.P256.VerifyDouble.S.t5 := hSl _ (by simp [rcbW])
   have hsize : 992≤size := hL.le _ hslot
   rcases hpo with ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩ | ⟨rfl,rfl⟩
-  · exact certs.rd.refine hs hsize hq
-  · exact certs.dr.refine hs hsize hq
-  · exact certs.ed.refine hs hsize hq
+  · exact certs.rd.refine hs hsize (callOf_small (by decide)) hq
+  · exact certs.dr.refine hs hsize (callOf_small (by decide)) hq
+  · exact certs.ed.refine hs hsize (callOf_small (by decide)) hq
 
 theorem double_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
     (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)
     {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x)
@@ -65,14 +65,14 @@ theorem double_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size : Nat} {C 
       InvJ C (runOps (dblJMul S p o) E o.x) (runOps (dblJMul S p o) E o.y)
         (runOps (dblJMul S p o) E o.z) (Spec.Weierstrass.add P P) := by
   by_cases sel : VG.Impl.P256.VerifyDouble.selected M S p o
-  · apply double_of_refinement hL hAl hm hC ha hA hSl hI hV hP hJ
+  · apply double_of_refinement hL hAl hm hC ha hA hSl (.inl hnc) hI hV hP hJ
     intro Q hq
     exact selected_refinement certs sel hL hSl hI.scr hq
   · rw [VG.Impl.P256.VerifyDouble.double,ite_eq_right sel]
-    exact jacDouble_ok hL hAl hm hC ha hA hSl hI hV hP hJ
+    exact jacDouble_ok hL hAl hm hC ha hA hSl (.inl hnc) hI hV hP hJ
 
 theorem double_multiple_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size : Nat} {C : Curve}
-    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
+    {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl) (hnc : Mont.callOf M = none)
     (hm : UnitMod C.p (2^(64*M.n))) (hC : Law C) (ha : AM3 C)
     {S : RcbSlots} {p o : Pt} (hA : RcbApart S p p o)
     (hSl : ∀ x ∈ rcbW S o ++ rcbR S p p, Sl x)
@@ -83,7 +83,7 @@ theorem double_multiple_ok (certs : Fixed.Cases) {M : Mod} {base : Addr} {size :
     WP isa (VG.Impl.P256.VerifyDouble.double M S p o) s fun t =>
       ∃ E', ProgKeep M base W s t ∧ Inv M base size C.p Sl V E' t ∧
       InvJ C (E' o.x) (E' o.y) (E' o.z) (mul (2*e) P) := by
-  refine WP.mono (double_ok certs hL hAl hm hC ha hA hSl hI hV (hC.onCurve_mul hP e) hJ)
+  refine WP.mono (double_ok certs hL hAl hnc hm hC ha hA hSl hI hV (hC.onCurve_mul hP e) hJ)
     fun t ⟨hk,hi,hj⟩ => ⟨_,hk.mono hW,hi.sub (fun _ hx => List.mem_append_right _ hx),?_⟩
   rw [hC.add_mul_mul hP,show e+e=2*e by omega] at hj
   exact hj

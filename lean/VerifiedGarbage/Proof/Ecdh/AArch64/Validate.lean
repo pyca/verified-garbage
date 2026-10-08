@@ -114,7 +114,8 @@ theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
   have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega
   have hL : Lay c.MP' size (· ∈ curveSl.map c.sl) := lay_map hc rfl rfl rfl (by decide)
   have hAl : Aligned c.MP' (· ∈ curveSl.map c.sl) := ⟨fun x hx => by
-    obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c⟩
+    obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
+    fun f m' h => (hc.call_p f m' h).2⟩
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have I : Inv c.MP' base size c.C.p (· ∈ curveSl.map c.sl) ([QXM, QYM, AP, BP].map c.sl)
       (fun o => toM c.C.p (2 ^ (64 * c.n)) (wordsVal s.mem base o c.n)) s := by
@@ -141,7 +142,9 @@ theorem curve_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size)
     (mem_validAfter _ _).mpr (Or.inr (by simp [Impl.Ecdh.AArch64.Cfg.curveOps, FOp.out]))
   have v₃ : toM c.C.p (2 ^ (64 * c.n)) (wordsVal s₃.mem base (c.sl W1) c.n) = _ := I₃.val _ hW1
   have lt₃ : wordsVal s₃.mem base (c.sl W1) c.n < c.C.p := I₃.lt _ hW1
-  rw [curveOps_eq, congrFun (runOps_rename c.sl curveN _ fun _ _ y h => sl_inj c h0 h) W1,
+  have hout : ∀ op ∈ curveN, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 82 := by decide
+  rw [curveOps_eq, congrFun (runOps_rename c.sl curveN _ fun op hop y h =>
+      sl_inj c h0 h (.inr (hout op hop).2) (.inl (hout op hop).1)) W1,
     curveN_run] at v₃
   have U₃ : Unch base (slW c [W0, W1, W2, W3, TMP]) s.mem s₃.mem := PK.unch.mono fun w hw => by
     rw [curveOps_eq, List.map_map] at hw
@@ -184,8 +187,9 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   have h0 := hc.n0
   have h7 := hc.n10
   have hn := hs.nowrap
-  have hap : ∀ {i j}, i ≠ j → c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h => by
-    have := sl_apart c h; omega
+  have hap : ∀ {i j}, i ≠ j → (i ≠ TMP ∨ (j ≠ 54 ∧ j ≠ 82)) → (j ≠ TMP ∨ (i ≠ 54 ∧ i ≠ 82)) →
+      c.sl i ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl i := fun h h₁ h₂ => by
+    have := sl_apart c h h₁ h₂; omega
   rw [select_eq, WP.block_append_iff]
   refine WP.mono (ld_ok hs (d := c.sl FLAG) (by have := sl_le c h7 (i := FLAG) (by decide); omega)
     (sl_mod8 c FLAG) .x3) fun s₁ ⟨e₁, k₁, _⟩ => ?_
@@ -194,14 +198,14 @@ theorem select_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size
   rw [WP.block_append_iff]
   refine WP.mono (sel_ok (decide P) c.n hs₁ hc₁ (sl_le c h7 (i := PX) (by decide))
     (sl_le c h7 (i := GX) (by decide)) (sl_le c h7 (i := QXM) (by decide)) (sl_mod8 c _) (sl_mod8 c _)
-    (sl_mod8 c _) (hap (by decide))
-    (hap (by decide))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
+    (sl_mod8 c _) (hap (by decide) (by decide) (by decide))
+    (hap (by decide) (by decide) (by decide))) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have hc₂ : s₂.gpr .x3 = if decide P then BitVec.allOnes 64 else 0 := by rw [k₂.gpr _ (by decide), hc₁]
   refine WP.mono (sel_ok (decide P) c.n hs₂ hc₂ (sl_le c h7 (i := PY) (by decide))
     (sl_le c h7 (i := GY) (by decide)) (sl_le c h7 (i := QYM) (by decide)) (sl_mod8 c _) (sl_mod8 c _)
-    (sl_mod8 c _) (hap (by decide))
-    (hap (by decide))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
+    (sl_mod8 c _) (hap (by decide) (by decide) (by decide))
+    (hap (by decide) (by decide) (by decide))) fun s₃ ⟨e₃, k₃, O₃⟩ => ?_
   have hm₁ : s₁.mem = s.mem := k₁.mem
   refine ⟨hs₂.of_keepRegs k₃ (by decide), ((Keeps.regs k₁).mono (by sub_regs)).trans
     ((k₂.mono (by sub_regs)).trans (k₃.mono (by sub_regs))), ?_, ?_, ?_⟩

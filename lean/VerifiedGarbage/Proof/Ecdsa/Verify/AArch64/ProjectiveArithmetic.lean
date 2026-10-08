@@ -21,7 +21,9 @@ theorem projectiveOps_run (hc : CfgOk c) (e : Nat → Fe c.C) :
     runOps (projectiveOps c.sl) e (c.sl W) = e (c.sl RX) - e (c.sl XM) * e (c.sl RZ) ∧
     runOps (projectiveOps c.sl) e (c.sl XN) =
       e (c.sl RX) - (e (c.sl XM) + e (c.sl ACC)) * e (c.sl RZ) := by
-  have H := runOps_rename c.sl (projectiveOps id) e (fun _ _ _ h => sl_inj c hc.n0 h)
+  have hout : ∀ op ∈ projectiveOps id, op.out ≠ TMP ∧ op.out ≠ 54 ∧ op.out ≠ 82 := by decide
+  have H := runOps_rename c.sl (projectiveOps id) e (fun op hop _ h =>
+    sl_inj c hc.n0 h (.inr (hout op hop).2) (.inl (hout op hop).1))
   rw [← projectiveOps_rename] at H
   exact ⟨congrFun H W, congrFun H XN⟩
 
@@ -39,7 +41,8 @@ theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
           (tmv c.C c.n base s (c.sl XM) + tmv c.C c.n base s (c.sl ACC)) * tmv c.C c.n base s (c.sl RZ) := by
   have hL : Lay c.MP' size (· ∈ projectiveSlots.map c.sl) := lay_map hc rfl rfl rfl (by decide)
   have hAl : Aligned c.MP' (· ∈ projectiveSlots.map c.sl) := ⟨fun x hx => by
-    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c⟩
+    obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx; exact sl_mod8 c i, MP'_A c,
+    fun f m' h => (hc.call_p f m' h).2⟩
   have I : Inv c.MP' base size c.C.p (· ∈ projectiveSlots.map c.sl) (projectiveReads.map c.sl)
       (tmv c.C c.n base s) s := by
     refine ⟨hs, hM, ?_, ?_, fun _ _ => rfl⟩
@@ -53,14 +56,20 @@ theorem projectiveOps_ok (hc : CfgOk c) {s : State} {base : Addr}
   have reads : readsOk (projectiveOps c.sl) (projectiveReads.map c.sl) = true := by
     rw [projectiveOps_rename]
     exact readsOk_rename c.sl (by decide)
-  refine (fprogB_wp _ _).mpr (WP.mono (fprog_ok hL hAl (unitMod_pow_two hc.p_odd _) _ I ?_ reads)
-    fun t ⟨keep, It⟩ => ?_)
-  · intro op hop x hx
+  have hS : ∀ op ∈ projectiveOps c.sl, ∀ x ∈ op.out :: op.ins, x ∈ projectiveSlots.map c.sl := by
+    intro op hop x hx
     simp only [projectiveOps, List.mem_cons, List.not_mem_nil, or_false] at hop
     rcases hop with rfl | rfl | rfl | rfl | rfl
     all_goals
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> exact List.mem_map_of_mem (by decide)
+  have hLo : ∀ op ∈ projectiveOps c.sl, Low c.MP' (op.out :: op.ins) := fun op hop =>
+    Low.of_call fun _ _ _ x hx => by
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp (hS op hop x hx)
+      have key : ∀ i ∈ projectiveSlots, i < 45 ∧ i ≠ TMP := by decide
+      exact sl_own c hc.n10 (key i hi).1 (key i hi).2
+  refine WP.mono (fprogB_ok hL hAl (unitMod_pow_two hc.p_odd _) _ I hS hLo reads)
+    fun t ⟨keep, It⟩ => ?_
   have w : c.sl W ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
     simp [mem_validAfter, projectiveOps, FOp.out]
   have xn : c.sl XN ∈ validAfter (projectiveOps c.sl) (projectiveReads.map c.sl) := by
@@ -92,10 +101,10 @@ theorem projectivePrepare_ok (hc : CfgOk c) {s : State} {base : Addr} (hs : Scr 
   have hs₂ := hs₁.of_keepRegs k₂ (by decide)
   refine WP.mono (setSl_ok hc hs₂ (o := MN) (by decide) sub) fun s₃ ⟨e₃,k₃,O₃⟩ => ?_
   have o : ∀ {s t : State} {j i : Nat}, Outside base (c.sl j) (8 * c.n) s.mem t.mem → i < 45 → i ≠ j →
-      sv c base t i = sv c base s i := fun O hi hij => sv_out O hc.n10 hs.nowrap hi hij
+      j ≠ 54 ∧ j ≠ 82 → sv c base t i = sv c base s i := fun O hi hij hj => sv_out O hc.n10 hs.nowrap hi hij hj
   exact ⟨hs₂.of_keepRegs k₃ (by decide), O₁.unch.trans (O₂.unch.trans O₃.unch),
-    by rw [o O₃ (by decide) (by decide), o O₂ (by decide) (by decide), e₁],
-    by rw [o O₃ (by decide) (by decide), e₂], e₃⟩
+    by rw [o O₃ (by decide) (by decide) (by decide), o O₂ (by decide) (by decide) (by decide), e₁],
+    by rw [o O₃ (by decide) (by decide) (by decide), e₂], e₃⟩
 
 /-- Prepare constants, convert `r`, and compute both differences. -/
 theorem projectiveArithmetic_ok (hc : CfgOk c) {s : State} {base : Addr}

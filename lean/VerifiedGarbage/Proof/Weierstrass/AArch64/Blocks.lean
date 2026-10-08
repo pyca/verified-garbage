@@ -20,8 +20,23 @@ theorem blocks_wp : ∀ (ls : List (List Instr)) {s : State} {Q : State → Prop
     exact ⟨fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mp h',
       fun h => WP.mono h fun _ h' => (blocks_wp (c :: bs)).mpr h'⟩
 
-theorem fprogB_wp (M : Mod) (ops : List FOp) {s : State} {Q : State → Prop} :
+theorem opProg_none {M : Mod} (hc : Mont.callOf M = none) (op : FOp) : opProg M op = .block (opCode M op) := by
+  cases op <;> simp [opProg, hc]
+
+theorem fprogB_none {M : Mod} (hc : Mont.callOf M = none) :
+    ∀ ops : List FOp, fprogB M ops = blocks (ops.map (opCode M))
+  | [] => rfl
+  | [op] => by simp [fprogB, progs, blocks, opProg_none hc]
+  | op :: op' :: ops => by
+    have := fprogB_none hc (op' :: ops)
+    simp only [fprogB, List.map_cons] at this ⊢
+    rw [progs, blocks, opProg_none hc, this]
+    · simp
+    · simp
+
+/-- For a modulus whose products are inline, `fprogB` runs as `fprog`. -/
+theorem fprogB_wp (M : Mod) (ops : List FOp) (hc : Mont.callOf M = none) {s : State} {Q : State → Prop} :
     WP isa (fprogB M ops) s Q ↔ WP isa (.block (fprog M ops)) s Q := by
-  rw [fprogB, blocks_wp, fprog, List.flatMap_def]
+  rw [fprogB_none hc, blocks_wp, fprog, List.flatMap_def]
 
 end VG.Proof.Weierstrass.AArch64

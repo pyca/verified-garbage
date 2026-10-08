@@ -11,18 +11,21 @@ open VG.Proof.Ecdsa.AArch64 VG.Proof.Weierstrass.AArch64
 
 private structure OldSafe (c : Prog isa) : Prop where
   untouched : KeepsUntouched c
-  noCalls : c.noCalls=true
+  callsKeep : CallsKeep c
+
+private theorem callsKeep_seq {a b : Prog isa} : CallsKeep (.seq a b) ↔ CallsKeep a ∧ CallsKeep b := by
+  simp only [CallsKeep, Code.calls, List.all_append, Bool.and_eq_true]
 
 private theorem OldSafe.left {a b : Prog isa} (h : OldSafe (.seq a b)) : OldSafe a :=
-  ⟨(Bool.and_eq_true_iff.mp h.untouched).1,(Bool.and_eq_true_iff.mp h.noCalls).1⟩
+  ⟨(Bool.and_eq_true_iff.mp h.untouched).1,(callsKeep_seq.mp h.callsKeep).1⟩
 
 private theorem OldSafe.right {a b : Prog isa} (h : OldSafe (.seq a b)) : OldSafe b :=
-  ⟨(Bool.and_eq_true_iff.mp h.untouched).2,(Bool.and_eq_true_iff.mp h.noCalls).2⟩
+  ⟨(Bool.and_eq_true_iff.mp h.untouched).2,(callsKeep_seq.mp h.callsKeep).2⟩
 
 private theorem OldSafe.seq {a b : Prog isa} (ha : OldSafe a) (hb : OldSafe b) : OldSafe (.seq a b) :=
-  ⟨Bool.and_eq_true_iff.mpr ⟨ha.untouched,hb.untouched⟩,Bool.and_eq_true_iff.mpr ⟨ha.noCalls,hb.noCalls⟩⟩
+  ⟨Bool.and_eq_true_iff.mpr ⟨ha.untouched,hb.untouched⟩,callsKeep_seq.mpr ⟨ha.callsKeep,hb.callsKeep⟩⟩
 
-private theorem oldSafe : OldSafe P256Joint.verify := ⟨jointVerify_untouched,jointVerify_noCalls⟩
+private theorem oldSafe : OldSafe P256Joint.verify := ⟨jointVerify_untouched,jointVerify_callsKeep⟩
 
 private theorem before_safe : OldSafe (beforeInverse p256) := by
   have h := oldSafe
@@ -35,9 +38,7 @@ private theorem tail_safe : OldSafe (Cfg.tail p256) := oldSafe.right.right.right
 
 private theorem OldSafe.keeps {c : Prog isa} {s t : State} {tr : List Leak} (h : OldSafe c)
     (he : Exec isa c s tr t) : ∀ r∈VG.Proof.Ecdsa.AArch64.untouched,t.gpr r=s.gpr r :=
-  fun r hr => Exec.gpr (fun i hi => keeps_untouched h.untouched i hi r hr) he (.inl h.noCalls)
-
- theorem allocatedVerify_noCalls : P256Allocated.verify.noCalls=true := by lit_decide
+  untouched_keep he h.callsKeep h.untouched
 
  theorem allocatedVerify_keepsV : P256Allocated.verify.allInstrs keepsV=true := by lit_decide
 

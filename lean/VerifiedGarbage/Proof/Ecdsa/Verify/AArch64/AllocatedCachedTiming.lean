@@ -68,7 +68,7 @@ theorem cachedAdd_relCT (raw : RawCorrect) {base : Addr}
             · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
           have hv : ∀ x∈rcbR K.S K.R K.R, x∈validAfter head V :=
             fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps head E) hL hAl hm hdA hdSl hv (by
+          have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps head E) hL hAl (callOf_small (by decide)) hm hdA hdSl hv (by
             change FieldCT (VG.Impl.P256.VerifyDouble.double K.M K.S K.R K.D)
             rw [ke]
             simpa only [CachedField.ops] using hc.double)

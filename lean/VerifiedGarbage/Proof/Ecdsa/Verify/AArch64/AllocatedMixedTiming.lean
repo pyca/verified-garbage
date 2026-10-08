@@ -69,7 +69,7 @@ theorem mixedAdd_relCT (raw : RawCorrect) {base : Addr}
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hv : ∀ x∈rcbR K.S K.R K.R, x∈validAfter (jacMixedHead K.S K.R K.E) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)) hL hAl hm hdA hdSl hv hc.double
+        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S K.R K.E) (jacMixedInit K.S K.R E)) hL hAl (callOf_small (by decide)) hm hdA hdSl hv hc.double
         exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL hAl os hOne hc.infinity).mono

@@ -55,7 +55,7 @@ theorem combLay (hc : CfgOk c) : CombLay c.combCfg.toComb size := by
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
     have hl : ∀ i ∈ [RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ, TMP], i < 45 := by
       decide
-    exact Or.inr (sl_below_bits c (hl i hi) 0 0)
+    exact sl_bits0 c (hl i hi) (by rw [hJ]; unfold Cfg.combJ; omega)
 
 theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   have hn := hc.n0
@@ -82,7 +82,11 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
   · intro w hw
     rw [combW_eq] at hw
     obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-    exact Or.inr (by rw [hbits]; exact sl_below_bits c (hl i hi) 0 0)
+    rw [hbits, hk]
+    have : 8 * c.combCfg.zw ≤ 8 := by
+      show 8 * ((7 * ((64 * c.n + 6) / 7) - 64 * c.n + 7) / 8) ≤ 8; omega
+    exact (sl_bits0 c (hl i hi) (L := 64 * c.n + 8 * c.combCfg.zw) (by omega)).imp
+      (fun h => by omega) id
   · intro x hx
     rw [hbits, hk]
     simp only [List.mem_cons] at hx
@@ -91,20 +95,27 @@ theorem tcombLay (hc : CfgOk c) : TCombLay c.combCfg size := by
     · rw [combSlots_eq] at hx
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
       have : ∀ i ∈ [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
-        i < 45 := by decide
-      exact Or.inr (sl_below_bits c (this i hi) 0 _)
+        i < 45 ∧ i ≠ TMP := by decide
+      exact Or.inr (sl_below_bits c (this i hi).1 0 _ (this i hi).2)
   · show (64 + 8 * c.n * 20) % 16 = 0; omega
   · intro h; have : c.n % 2 = 0 := h; show (64 + 8 * c.n * 21) % 16 = 0; omega
   · show 16 * c.n * 2 ^ (7 - 1) ≤ 32768; omega
   · show 16 * c.n * 2 ^ (7 - 1) < 65536; omega
 
-theorem combA (c : Cfg) : CombA c.combCfg.toComb where
+theorem combA (hc : CfgOk c) : CombA c.combCfg.toComb where
   sl := by
     rw [combSlots_eq]
     intro x hx
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     exact sl_mod8 c i
   mod := MP'_A c
+  call f m' h := by
+    refine ⟨(hc.call_p f m' h).2, fun x hx => ?_⟩
+    rw [combSlots_eq] at hx
+    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
+    have : ∀ i ∈ [AP, BM, ZERO, RX, RY, RZ, TX, TY, TZ, PT, T0, T1, T2, T3, T4, T5, DX, DY, DZ],
+      i < 45 ∧ i ≠ TMP := by decide
+    exact sl_own c hc.n10 (this i hi).1 (this i hi).2
 
 theorem mont_zero (c : Cfg) : c.mont 0 = 0 := by simp [Cfg.mont]
 
@@ -159,13 +170,17 @@ theorem apart_zw {i : Nat} (hi : i < 45) :
     ∀ w ∈ [(bitsAt c.n 0 + 64 * c.n, 8 * c.combCfg.zw)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
   intro w hw
   rw [List.mem_singleton.mp hw]
-  exact Or.inl (sl_below_bits c hi 0 _)
+  have : 8 * c.combCfg.zw ≤ 8 := by
+    show 8 * ((7 * ((64 * c.n + 6) / 7) - 64 * c.n + 7) / 8) ≤ 8; omega
+  rcases sl_bits0 c hi (L := 64 * c.n + 8 * c.combCfg.zw) (by omega) with h | h
+  · exact Or.inr (by dsimp only; omega)
+  · exact Or.inl (by dsimp only; omega)
 
 theorem fixedOk_tcombW : FixedOk c (tcombW c.combCfg) := by
   rw [tcombW_eq]
   refine FixedOk.append (fixedOk_slW (by decide)) fun w hw => ?_
   rw [List.mem_singleton.mp hw]
-  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (by decide) 0 _))
+  exact Or.inr (Nat.le_trans (Nat.le_add_right _ _) (sl_below_bits c (i := 12) (by decide) 0 _))
 
 /-- The flag word apart from what the comb writes. -/
 theorem flag_unch_tcomb {base : Addr} {m m' : Mem} (hu : Unch base (tcombW c.combCfg) m m')

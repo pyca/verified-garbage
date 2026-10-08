@@ -99,7 +99,7 @@ theorem nafEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size j : Nat}
   · intro s t ⟨_,s3,t3⟩
     change some (s.read .x .x3 != 0)=some (t.read .x .x3 != 0)
     rw [VG.Proof.Ed25519.AArch64.read_x,VG.Proof.Ed25519.AArch64.read_x,s3,t3]
-  · have op := fprogB_relCT (base:=base) (V:=jacCoords K.E++nafLive K) (E:=E') hL.lay hAl hm
+  · have op := fprogB_relCT (base:=base) (V:=jacCoords K.E++nafLive K) (E:=E') hL.lay hAl (callOf_small (Nat.le_of_eq hL.n)) hm
       [FOp.sub K.E.y K.zero K.E.y] hc.neg (by
         intro o ho x hx
         rw [List.mem_singleton.mp ho] at hx

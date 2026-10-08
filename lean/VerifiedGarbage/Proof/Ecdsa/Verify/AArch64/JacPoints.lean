@@ -31,7 +31,7 @@ theorem jacPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
   have F := hM.fixed
   have hmont : ∀ x, c.mont x < c.C.p := fun x => Nat.mod_lt _ (by omega)
   have tb : ∀ {i}, i < 45 → ∀ w ∈ [(bitsAt c.n 0, 64 * c.n)], c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i :=
-    fun hi => apart_tbl hi 0
+    fun hi => apart_tbl hi 0 h7
   rw [Impl.Ecdsa.Verify.AArch64.Cfg.jacPoints]
   refine WP.seq ?_
   -- The table of `u`.
@@ -62,8 +62,8 @@ theorem jacPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
     · intro t ht
       show s₁.mem (off base (bitsAt c.n 0 + t)) = _
       rw [b₁ t ht]
-  have WC := jacComb_ok (tcombLay hc) (combA c) hC hc.onG (tcombVals hc hC hT) hc.p_lt hn4
-    (jacComb_sum_ok (tcombLay hc) (combA c) hC hc.am3 hpR hn4 (hmont 1)) hs₁
+  have WC := jacComb_ok (tcombLay hc) (combA hc) hC hc.onG (tcombVals hc hC hT) hc.p_lt hn4
+    (jacComb_sum_ok (tcombLay hc) (combA hc) hC hc.am3 hpR hn4 (hmont 1)) hs₁
     (modP_of hc F₁.mp) hF
   refine WP.seq (WP.mono WC fun s₂ h₂ => ?_)
   obtain ⟨K₂, U₂, M₂, L₂, R₂⟩ := h₂
@@ -173,9 +173,9 @@ theorem jacPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
       · have := (tcombLay hc).bits; exact this
     · simp only [winX, List.mem_cons, List.not_mem_nil, or_false] at hw
       have := sl_le' c h7 (i := WT) (by decide)
-      have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by rw [sl_eq, sl_eq]; unfold WK WT; omega
+      have e1 : c.sl WK + 16 * c.n ≤ c.sl WT := by simp (disch := decide) only [sl_eq]; unfold WK WT; omega
       have e2 : c.sl WB + 64 * (c.n + 1) ≤ c.sl WT := by
-        rw [sl_eq, sl_eq]; unfold WB WT
+        simp (disch := decide) only [sl_eq]; unfold WB WT
         have : 8 * c.n * 87 = 8 * c.n * 55 + 256 * c.n := by omega
         omega
       rcases hw with rfl | rfl
@@ -184,6 +184,6 @@ theorem jacPoints_ok (hc : CfgOk c) (hn4 : c.n=4) {s₀ : State} {base : Addr} {
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
       have hb := (show ∀ i∈ptsW++jacTblI,i<136 by decide) i hi
       change c.sl i+8*c.n≤size
-      rw [sl_eq,hn4]; change 64+32*i+32≤8192; omega
+      rw [sl_eq4 c (Nat.le_of_eq hn4), hn4]; change 64+32*i+32≤8192; omega
 
 end VG.Proof.Ecdsa.Verify.AArch64

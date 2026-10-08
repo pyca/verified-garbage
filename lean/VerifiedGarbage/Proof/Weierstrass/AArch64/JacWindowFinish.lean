@@ -61,7 +61,7 @@ theorem jacFinish_ok {K : WinCfg} {C : Curve} {base : Addr} {size k e : Nat}
     apply hL.old_slots x
     simp only [combSlots,jacFinishCfg,TCombCfg.toComb,winSlots,winRo,winOther,rcbW,
       List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢
-    grind),hAl.mod⟩
+    grind),hAl.mod,fun _ _ h => nomatch (callOf_small (M := K.M) (Nat.le_of_eq hL.n)).symm.trans h⟩
   have pn := wordsVal_lt s.mem base K.M.mo K.M.n
   rw [h.field.mod.val] at pn
   have hl : ∀ x ∈ rcbR K.S K.R ⟨K.zero,K.zero,K.zero⟩, wordsVal s.mem base x K.M.n<C.p := by

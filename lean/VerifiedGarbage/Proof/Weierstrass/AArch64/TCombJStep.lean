@@ -100,7 +100,7 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     rcases List.mem_append.mp hx with hx | hx
     · simp only [combSlots, List.mem_append, TCombCfg.toComb]; exact Or.inr hx
     · exact hSl x hx
-  refine WP.seq (WP.mono (hcompiler.maddJ_values_ok hL.comb.lay ⟨hA.sl,hA.mod⟩ hV.unit hL.comb.add hSl' I₃
+  refine WP.seq (WP.mono (hcompiler.maddJ_values_ok hL.comb.lay hA.al hV.unit hL.comb.add hSl' (hA.low hSl') I₃
     (fun _ h => h)) fun s₄ ⟨P₄,I₄,t₄⟩ => ?_)
   dsimp only [TCombCfg.toComb] at P₄ I₄ t₄
   have hs₄ := I₄.scr

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Impl.Mont.AArch64
 import VerifiedGarbage.Impl.Mont.AArch64.P256Square
+import VerifiedGarbage.Impl.Weierstrass.AArch64.Mont
 import VerifiedGarbage.Impl.Weierstrass.Slots
 
 /-!
@@ -38,6 +39,28 @@ def opCode (M : Mod) : FOp → List Instr
 /-- A straight-line sequence of field operations. -/
 def fprog (M : Mod) (ops : List FOp) : List Instr := ops.flatMap (opCode M)
 
+/-- `[o] = [a] [b] R⁻¹ mod m` by a call of the function `f`, whose code is
+`Mont.mulFn n m`, on the working space at `x0`: `x30`, which the call
+changes, is kept in `v29`, which the function does not write, and the
+offsets are the arguments (below `2¹⁶`). -/
+def mulCall (f : String) (n m o a b : Nat) : Prog isa :=
+  .seq (.block [.vop (.ins .d2 .v29 0 .x30), .movz .x .x1 (BitVec.ofNat 16 o) 0,
+      .movz .x .x2 (BitVec.ofNat 16 a) 0, .movz .x .x3 (BitVec.ofNat 16 b) 0]) <|
+    .seq (.call f (Mont.mulFn n m)) (.block [.umov .x .x30 .v29 0])
+
+/-- The code of a field operation: a call for a product modulo a modulus
+whose products are functions (`Mont.callOf`), else `opCode`. -/
+def opProg (M : Mod) (op : FOp) : Prog isa :=
+  match op, Mont.callOf M with
+  | .mul o a b, some (f, m) => mulCall f M.n m o a b
+  | op, _ => .block (opCode M op)
+
+/-- Programs one after the other. -/
+def progs : List (Prog isa) → Prog isa
+  | [] => .block []
+  | [p] => p
+  | p :: ps => .seq p (progs ps)
+
 /-- Straight-line code as a sequence of blocks (the same instructions as their
 concatenation; the kernel handles many short blocks better than one long one). -/
 def blocks : List (List Instr) → Prog isa
@@ -45,8 +68,8 @@ def blocks : List (List Instr) → Prog isa
   | [b] => .block b
   | b :: bs => .seq (.block b) (blocks bs)
 
-/-- `fprog`, a block per operation. -/
-def fprogB (M : Mod) (ops : List FOp) : Prog isa := blocks (ops.map (opCode M))
+/-- `fprog`, a block per operation, or a call for a product. -/
+def fprogB (M : Mod) (ops : List FOp) : Prog isa := progs (ops.map (opProg M))
 
 /-- `[o] = [a]` if the mask `x3` is zero, `[b]` if it is all ones, `n`
 words, through `x1` and `x2`. -/

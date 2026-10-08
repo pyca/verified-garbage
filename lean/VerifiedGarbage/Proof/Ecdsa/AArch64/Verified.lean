@@ -57,6 +57,8 @@ theorem p256_ok (hI : Weierstrass.AArch64.InvSounds) : CfgOk p256 where
     InvOk.ofMod (by decide +kernel) (by decide)⟩
   chain_n := fun h => absurd h (by decide)
   am3 := by unfold AM3; decide +kernel
+  call_p := fun _ _ h => nomatch (callOf_small (by decide)).symm.trans h
+  call_n := callOf_small (by decide)
 
 theorem pre_of {s : State} (h : signAArch64.pre s) : Pre p256 s := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, held, fit, hdw⟩ := h

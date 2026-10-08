@@ -173,7 +173,7 @@ theorem pkFinish_ok {c : Cfg} (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr
       if b then toBytes c.C.len (sv c base s X) else List.replicate c.C.len 0 := by
     rw [bytesAt_keep O₄ (Offset.disjoint out (by omega) (by omega) (by omega)) (by omega) (by omega), e₃, x₂]
   have hsv₄ : Spill.Saved base g Cfg.saved s₄.mem := by
-    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 56 ≤ w.1 := fun w hw => by
+    have h16 : ∀ w ∈ [(size, 2 ^ 64)], 64 ≤ w.1 := fun w hw => by
       simp only [List.mem_singleton] at hw; subst hw; decide
     have sv₂ : Spill.Saved base g Cfg.saved s₂'.mem := by
       rw [k₂'.mem]; exact Saved.unch (hm₁ ▸ hsv) h16 U₂

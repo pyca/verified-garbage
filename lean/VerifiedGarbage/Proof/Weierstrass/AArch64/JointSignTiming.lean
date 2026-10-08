@@ -46,7 +46,7 @@ theorem jointSign_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j : 
     change some (s.read .x .x3 != 0)=some (t.read .x .x3 != 0)
     rw [VG.Proof.Ed25519.AArch64.read_x,VG.Proof.Ed25519.AArch64.read_x,s3,t3]
   · have op := fprogB_relCT (base:=base) (V:=[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) (E:=E)
-      hL.layout.lay hL.layout.aligned hm [FOp.sub c.K.E.y c.K.zero c.K.E.y] hc.neg (by
+      hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm [FOp.sub c.K.E.y c.K.zero c.K.E.y] hc.neg (by
         intro o ho x hx
         rw [List.mem_singleton.mp ho] at hx
         simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx

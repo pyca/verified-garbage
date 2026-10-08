@@ -18,7 +18,7 @@ structure JacMixedChecks (K : WinCfg) (p q o : Pt) : Prop where
   infinity : FieldCT (.block (Jacobian.infinity K o))
 
 theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
-    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl)
+    {Sl : Nat → Prop} (hL : Lay K.M size Sl) (hAl : Aligned K.M Sl) (hnc : Mont.callOf K.M = none)
     (hm : UnitMod m (2^(64*K.M.n))) {p q o : Pt} (hA : RcbApart K.S p q o)
     (hSl : ∀ x∈rcbW K.S o ++ rcbR K.S p q, Sl x)
     {V : List Nat} {E : Nat → Fin m} (hV : ∀ x∈rcbR K.S p q, x∈V)
@@ -53,7 +53,7 @@ theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
         (FieldPair K.M base size m Sl (validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V)) (runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E))) := by
       apply fieldWP_relCT hc.head
       intro s hi
-      apply (fprogB_wp _ _).mpr
+      apply (fprogB_wp _ _ hnc).mpr
       exact WP.mono (jacMixedHead_ok hL hAl hm hA hSl hi hV) fun _ ⟨hk,it,_,_⟩ => ⟨it,hk.sp⟩
     apply RelCT.seq hh
     have oldV : ∀ x∈V, x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
@@ -77,7 +77,7 @@ theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
           · exact hSl x (List.mem_append_right _ (rcbR_self_mem _ _ _ hx))
         have hv : ∀ x∈rcbR K.S p p, x∈validAfter (jacMixedHead K.S p q) (K.S.t4::K.S.t2::V) :=
           fun x hx => oldV x (hV x (rcbR_self_mem _ _ _ hx))
-        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hm hdA hdSl hv hc.double
+        have hd := Forward.field_outputs_relCT Forward.Production.cases (base:=base) (E:=runOps (jacMixedHead K.S p q) (jacMixedInit K.S p E)) hL hAl hnc hm hdA hdSl hv hc.double
         exact hd.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h.sub subV⟩)
       · intro _
         exact (infinity_relCT hL hAl os hOne hc.infinity).mono
@@ -90,7 +90,7 @@ theorem jacMixedAdd_relCT {K : WinCfg} {base : Addr} {size m : Nat} [NeZero m]
             (runOps (jacMixedHead K.S p q ++ jacMixedTail K.S p q o) (jacMixedInit K.S p E))) := by
         apply fieldWP_relCT hc.tail
         intro s hi
-        apply (fprogB_wp _ _).mpr
+        apply (fprogB_wp _ _ hnc).mpr
         exact WP.mono (jacMixedTail_ok hL hAl hm hA hSl hi hV) fun _ ⟨hk,it,_⟩ => ⟨it,hk.sp⟩
       exact ht.mono (fun _ _ h => h) (fun _ _ h => ⟨_,h⟩)
 
