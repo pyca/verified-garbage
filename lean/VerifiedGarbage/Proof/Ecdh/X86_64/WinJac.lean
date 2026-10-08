@@ -74,7 +74,12 @@ theorem jwLayQ (hc : CfgOk c) (h4 : c.n = 4) : JacWinLay (jwQ c) size := by
   have hn := hc.n0
   have hJ : (jwQ c).J = Impl.Ecdh.X86_64.Cfg.jwinJ c := rfl
   have hJle := jwinJ_le hc h4
-  have hJ1 : 1 ≤ Impl.Ecdh.X86_64.Cfg.jwinJ c := by unfold Impl.Ecdh.X86_64.Cfg.jwinJ; omega
+  have hJ2 : 2 ≤ Impl.Ecdh.X86_64.Cfg.jwinJ c := by
+    unfold Impl.Ecdh.X86_64.Cfg.jwinJ
+    have := hc.len8
+    by_cases h : c.nbits < 8 * c.C.len
+    · have := (hc.mask h).1; omega
+    · omega
   have hb : (jwQ c).bits = c.sl WB := rfl
   have hK : (jwQ c).tbl = c.sl WT := rfl
   have hMn : (jwQ c).M.n = c.n := rfl

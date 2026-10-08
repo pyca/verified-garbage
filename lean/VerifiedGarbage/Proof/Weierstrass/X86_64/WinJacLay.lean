@@ -46,8 +46,8 @@ def jwLoopW (K : JacWinCfg) : List (Nat × Nat) :=
 
 /-- The method's slots are in the working space and apart, those read only
 not written, the others written distinct, the grid apart from them all, `T`
-past the table, the counter's bits below `4096`, and the table of bits
-(`5 J` bytes) apart from what is written. -/
+past the table, at least two digits, the counter's bits below `4096`, and the
+table of bits (`5 J` bytes) apart from what is written. -/
 structure JacWinLay (K : JacWinCfg) (size : Nat) : Prop where
   n4 : K.M.n = 4
   lay : Lay K.M size (· ∈ jwSlots K)
@@ -55,7 +55,7 @@ structure JacWinLay (K : JacWinCfg) (size : Nat) : Prop where
   nodup : (jwOther K).Nodup
   tbl : ∀ x ∈ jwRo K ++ jwOther K, x + 8 * K.M.n ≤ K.tbl ∨ K.tbl + 85 * (8 * K.M.n) ≤ x
   T : K.T = K.tbl + 16 * K.st
-  J : 1 ≤ K.J ∧ K.J < 4096
+  J : 2 ≤ K.J ∧ K.J < 4096
   tbl31 : K.tbl < 2 ^ 31
   bits : K.bits + 5 * K.J ≤ size
   bits_w : ∀ w ∈ jwW K, K.bits + 5 * K.J ≤ w.1 ∨ w.1 + w.2 ≤ K.bits
