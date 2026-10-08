@@ -181,6 +181,39 @@ def stream (v : Compress) : List StreamFn := [
     verified := Proof.Sha512.AArch64.Shared.finalizeScratch_of v.finalize_verified
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
+/-- SHA-384's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
+def stream384 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize384Api
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+      (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params384 v.suffix v.code)
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_384 48 Spec.Sha512.sha384 (16 + 1376)
+    stack := 16 + 1376
+    verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inl rfl)
+      (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape384 v.digest384) (fun _ => rfl)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+
+/-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
+def stream512_256 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize512_256Api
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+      (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params512_256 v.suffix v.code)
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_256 32 Spec.Sha512.sha512_256 (16 + 1376)
+    stack := 16 + 1376
+    verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inl rfl))
+      (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_256 v.digest512_256) (fun _ => rfl)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+
+/-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigestWith`). -/
+def stream512_224 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize512_224Api
+    code := Impl.StackScratch.AArch64.withStackScratch 1376 .x3
+      (Impl.Sha512.AArch64.Stream.finalizeDigestWith Impl.Sha512.AArch64.Stream.params512_224 v.suffix v.code)
+    contract := Spec.Sha512.finalizeDigestContract AArch64.abi H0_512_224 28 Spec.Sha512.sha512_224 (16 + 1376)
+    stack := 16 + 1376
+    verified := Proof.Sha512.AArch64.Shared.finalizeDigest_of (.inr (.inr rfl))
+      (v.finalizeDigest_verified Proof.Sha512.AArch64.Stream.shape512_224 v.digest512_224) (fun _ => rfl)
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+
 /-! ## SHA-384 -/
 
 theorem sha384_satI : ∃ s, (Spec.Hmac.sha384I.initScratchContract AArch64.abi 16).pre s := by
@@ -227,7 +260,7 @@ def sha384 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha384_satPF
-    v.suffix v.features with
+    v.suffix v.features (stream384 v) with
     sha384 := some v }
 
 /-! ## SHA-512 -/
@@ -323,7 +356,7 @@ def sha512_224 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_224_satPF
-    v.suffix v.features
+    v.suffix v.features (stream512_224 v)
 
 /-! ## SHA-512/256 -/
 
@@ -370,6 +403,6 @@ def sha512_256 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_256_satPF
-    v.suffix v.features
+    v.suffix v.features (stream512_256 v)
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha512

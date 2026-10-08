@@ -22,7 +22,9 @@ on `v`, are checked once for each member (`coreOK`).
 `stream v` are the streaming `update` and `finalize` made with `v`, which
 the four share: SHA-512's variant (`sha512 v`) carries them, and
 `Generic/MdHash/X86_64/Stream.lean` emits them from their `Api`s, named
-with its suffix.
+with its suffix. SHA-384's, SHA-512/256's and SHA-512/224's own `finalize`,
+which writes their digest (`stream384 v`, …), is carried by their
+variants.
 -/
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Sha512
@@ -192,6 +194,42 @@ def stream (v : Compress) : List StreamFn := [
     stack := 8
     verified := Proof.Sha512.X86_64.Shared.finalizeScratch v.ok v.mxcsr
     spSafe := Proof.Sha512.X86_64.Shared.finalize_spSafe v.spSafe }]
+
+/-- SHA-384's `finalize` made with `v`, which writes its digest (`finalizeDigest`). -/
+def stream384 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize384Api
+    code := Impl.StackScratch.X86_64.withStackScratch 1384 .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest Impl.Sha512.X86_64.Stream.params384 v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_384 48 Spec.Sha512.sha384 (8 + 1384)
+    stack := 8 + 1384
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStack Proof.Sha512.X86_64.Shared.digest384
+      (fun _ => rfl) v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha512.X86_64.Shared.digest384.spSafe v.callee v.spSafe) }]
+
+/-- SHA-512/256's `finalize` made with `v`, which writes its digest (`finalizeDigest`). -/
+def stream512_256 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize512_256Api
+    code := Impl.StackScratch.X86_64.withStackScratch 1384 .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest Impl.Sha512.X86_64.Stream.params512_256 v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_512_256 32 Spec.Sha512.sha512_256 (8 + 1384)
+    stack := 8 + 1384
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStack Proof.Sha512.X86_64.Shared.digest512_256
+      (fun _ => rfl) v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha512.X86_64.Shared.digest512_256.spSafe v.callee v.spSafe) }]
+
+/-- SHA-512/224's `finalize` made with `v`, which writes its digest (`finalizeDigest`). -/
+def stream512_224 (v : Compress) : List StreamFn := [
+  { api := Spec.Sha512.finalize512_224Api
+    code := Impl.StackScratch.X86_64.withStackScratch 1384 .rcx
+      (Impl.Sha512.X86_64.Stream.finalizeDigest Impl.Sha512.X86_64.Stream.params512_224 v.callee)
+    contract := Spec.Sha512.finalizeDigestContract X86_64.abi H0_512_224 28 Spec.Sha512.sha512_224 (8 + 1384)
+    stack := 8 + 1384
+    verified := Proof.Sha512.X86_64.Shared.finalizeDigestStack Proof.Sha512.X86_64.Shared.digest512_224
+      (fun _ => rfl) v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha512.X86_64.Shared.digest512_224.spSafe v.callee v.spSafe) }]
 
 /-! ## SHA-384 -/
 

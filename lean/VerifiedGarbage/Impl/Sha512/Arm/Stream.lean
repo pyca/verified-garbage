@@ -53,4 +53,21 @@ def update : Prog isa := MdStream.Arm.update params "vg_sha512_compress" compres
 
 def finalize : Prog isa := MdStream.Arm.finalize params "vg_sha512_compress" compress
 
+/-! ## The truncated digests
+
+SHA-384, SHA-512/256 and SHA-512/224 output the first 48, 32 and 28 bytes of
+the final hash value: `params` with a digest of 6 or 4 words, or of 3 words
+and the high half of the fourth (`outHi`). -/
+
+/-- The high half of word `k` of the final hash value, big-endian. -/
+def outHi (k : Nat) : List Instr :=
+  [.ldr .r10 .r0 (8 * k + 4), .rev .r10 .r10, .str .r10 .r6 (8 * k)]
+
+def params384 : Params := { params with out := (List.range 6).flatMap outW }
+def params512_256 : Params := { params with out := (List.range 4).flatMap outW }
+def params512_224 : Params := { params with out := (List.range 3).flatMap outW ++ outHi 3 }
+
+/-- `finalize`, writing the digest `P.out` writes (`params384`, …). -/
+def finalizeDigest (P : Params) : Prog isa := MdStream.Arm.finalize P "vg_sha512_compress" compress
+
 end VG.Impl.Sha512.Arm.Stream

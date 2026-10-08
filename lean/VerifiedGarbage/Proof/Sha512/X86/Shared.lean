@@ -4,6 +4,7 @@ import VerifiedGarbage.Proof.Sha512.X86.Compress
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Init
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Update
 import VerifiedGarbage.Proof.Sha512.X86.Stream.Finalize
+import VerifiedGarbage.Proof.Sha512.X86.Stream.Digest
 import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Sha512.X86.Lit
 import VerifiedGarbage.Proof.Sha512.Scratch
@@ -228,5 +229,173 @@ theorem finalize : Verified X86.target
         X86.argVal, X86.argBytes]
       [finalizeFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
         X86.argAddr, Mem.readW, Mem.read] using finalizeFrameSat)
+
+/-! ## The truncated digests
+
+`finalizeDigest` (SHA-384's, SHA-512/256's and SHA-512/224's `finalize`) is
+verified against `finKD`; widened to the shared scratch, for the algorithm's
+initial hash value, and with its working space in a frame of its own, it is
+`Spec.Sha512.finalizeDigestContract`. -/
+
+/-- `finalizeWide` for the `D`-byte `digest` of the messages hashed from `iv`. -/
+def finalizeDigestWide (iv : Spec.Sha512.HashValue) (D : Nat) (digest : List Byte → List Byte) :
+    Contract X86.isa where
+  pre s :=
+    let state : Region := ⟨(arg s 0).setWidth 64, 192⟩
+    let out : Region := ⟨(arg s 3).setWidth 64, D⟩
+    let scratch : Region := ⟨(arg s 4).setWidth 64, 1376⟩
+    let args : Region := ⟨argAddr s 0, 20⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 20, 20⟩
+    s.rd = [args] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    args.Disjoint state ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch ∧
+    (arg s 0).toNat + 192 ≤ 2 ^ 32 ∧ (arg s 3).toNat + D ≤ 2 ^ 32 ∧
+    (arg s 4).toNat + 1376 ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+  post s s' := ∀ m, Spec.Sha512.Repr iv s.mem ((arg s 0).setWidth 64) m → m.length < 2 ^ 64 →
+    Proof.Sha512.countX86 s = BitVec.ofNat 64 m.length →
+    Spec.Sha512.bytesAt s'.mem ((arg s 3).setWidth 64) D = digest m
+  pub s₁ s₂ :=
+    s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
+
+/-- Rewrites `finKD` and `finalizeDigestWide` at a narrowed state. -/
+macro "narrowD" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| simp only [MdStream.X86.finKD, Proof.Sha512.countX86, finalizeDigestWide, MdStream.X86.count,
+    VG.X86.arg_withRegions, VG.X86.argAddr_withRegions, State.withRegions_gpr, State.withRegions_mem,
+    State.withRegions_rd, State.withRegions_wr] $(loc)?)
+
+theorem finalizeDigestWide_verified {code : Prog X86.isa} {o : List Instr} {D : Nat}
+    {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte}
+    (hv : Verified X86.target code
+      (MdStream.X86.finKD (P := { Impl.Sha512.X86.Stream.params with out := o }) md 272 D))
+    (hdg : ∀ m, (md.hash iv m).take D = digest m) (hsat : ∃ s, (finalizeDigestWide iv D digest).pre s) :
+    Verified X86.target code (finalizeDigestWide iv D digest) :=
+  Verified.widen hv
+    (fun s => [⟨(arg s 0).setWidth 64, 192⟩, ⟨(arg s 3).setWidth 64, D⟩,
+      ⟨(arg s 4).setWidth 64, 272⟩])
+    (fun _ h => by
+      obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₁₈, h₁₉⟩ := h
+      narrowD
+      exact ⟨h₁, rfl, h₃, h₄.sub_right (sub272 _), h₅.sub_right (sub272 _), h₆, h₇,
+        h₈.sub_right (sub272 _), h₉, h₁₀, h₁₁.sub_right (sub272 _), h₁₂, h₁₃, h₁₄.sub_right (sub272 _),
+        h₁₅, h₁₆, le272 h₁₇, h₁₈, h₁₉⟩)
+    (fun _ h => by
+      obtain ⟨_, h₂, _⟩ := h
+      rw [h₂]; exact .cons (pfx rfl) (.cons ⟨rfl, Nat.le_refl _⟩ (.cons (pfx rfl) .nil)))
+    (fun _ _ _ h => by
+      narrowD at h ⊢
+      intro m hr hl hc
+      exact (h iv m hr hl hc).trans (hdg m))
+    (fun _ _ _ _ h => by narrowD; exact h) hsat
+
+/-- A state satisfying `finalizeDigestWide.pre`. -/
+def finalizeDigestSat (D : Nat) : State :=
+  { MdStream.X86.Finalize.satRD Impl.Sha512.X86.Stream.params 272 D with
+    wr := [⟨0x1000, 192⟩, ⟨0x2000, D⟩, ⟨0x3000, 1376⟩] }
+
+theorem finalizeDigestWide_implies48 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 48 digest).Implies (finalizeDigestScratchContract X86.abi iv 48 digest 20) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, Proof.Sha512.countX86, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes]
+    [finalizeDigestSat, MdStream.X86.Finalize.satRD, MdStream.X86.Finalize.sat₀,
+      MdStream.X86.Finalize.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeDigestSat 48
+
+theorem finalizeDigestWide_implies32 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 32 digest).Implies (finalizeDigestScratchContract X86.abi iv 32 digest 20) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, Proof.Sha512.countX86, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes]
+    [finalizeDigestSat, MdStream.X86.Finalize.satRD, MdStream.X86.Finalize.sat₀,
+      MdStream.X86.Finalize.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeDigestSat 32
+
+theorem finalizeDigestWide_implies28 (iv : Spec.Sha512.HashValue) (digest : List Byte → List Byte) :
+    (finalizeDigestWide iv 28 digest).Implies (finalizeDigestScratchContract X86.abi iv 28 digest 20) := by
+  contract_implies [Proof.Sha512.finalizeDigestScratchContract, Proof.Sha512.finalizeDigestScratchSig,
+    Spec.Sha512.finalizeDigestPost, finalizeDigestWide, Proof.Sha512.countX86, X86.abi, X86.argSlots,
+    X86.argVal, X86.argBytes]
+    [finalizeDigestSat, MdStream.X86.Finalize.satRD, MdStream.X86.Finalize.sat₀,
+      MdStream.X86.Finalize.satMem, X86.arg, X86.argAddr, Mem.readW, Mem.read] using finalizeDigestSat 28
+
+theorem finalizeDigestScratch {code : Prog X86.isa} {o : List Instr} {D : Nat}
+    {iv : Spec.Sha512.HashValue} {digest : List Byte → List Byte} (hD : D = 48 ∨ D = 32 ∨ D = 28)
+    (hv : Verified X86.target code
+      (MdStream.X86.finKD (P := { Impl.Sha512.X86.Stream.params with out := o }) md 272 D))
+    (hdg : ∀ m, (md.hash iv m).take D = digest m) :
+    Verified X86.target code (finalizeDigestScratchContract X86.abi iv D digest 20) := by
+  have hi : (finalizeDigestWide iv D digest).Implies (finalizeDigestScratchContract X86.abi iv D digest 20) := by
+    rcases hD with rfl | rfl | rfl
+    exacts [finalizeDigestWide_implies48 iv digest, finalizeDigestWide_implies32 iv digest,
+      finalizeDigestWide_implies28 iv digest]
+  exact (finalizeDigestWide_verified hv hdg hi.sat_left).of_implies hi
+
+/-- A state satisfying `Spec.Sha512.finalizeDigestContract`'s precondition. -/
+def finalizeDigestFrameSat (D : Nat) : State :=
+  { MdStream.X86.Finalize.sat₀ with rd := [⟨0x5004, 16⟩], wr := [⟨0x1000, 192⟩, ⟨0x2000, D⟩] }
+
+theorem finalizeDigestStack48 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
+    {digest : List Byte → List Byte}
+    (hv : Verified X86.target code (finalizeDigestScratchContract X86.abi iv 48 digest 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 1400 4 code)
+      (Spec.Sha512.finalizeDigestContract X86.abi iv 48 digest (20 + 1400)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
+    hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
+        X86.argVal, X86.argBytes]
+      [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
+        X86.argAddr, Mem.readW, Mem.read] using finalizeDigestFrameSat 48)
+
+theorem finalizeDigestStack32 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
+    {digest : List Byte → List Byte}
+    (hv : Verified X86.target code (finalizeDigestScratchContract X86.abi iv 32 digest 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 1400 4 code)
+      (Spec.Sha512.finalizeDigestContract X86.abi iv 32 digest (20 + 1400)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
+    hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
+        X86.argVal, X86.argBytes]
+      [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
+        X86.argAddr, Mem.readW, Mem.read] using finalizeDigestFrameSat 32)
+
+theorem finalizeDigestStack28 {code : Prog X86.isa} {iv : Spec.Sha512.HashValue}
+    {digest : List Byte → List Byte}
+    (hv : Verified X86.target code (finalizeDigestScratchContract X86.abi iv 28 digest 20))
+    (hsp : code.allInstrs (fun i => !Taint.clobbers i .esp) = true) (hd : stackUse code ≤ 20) :
+    Verified X86.target (Impl.StackScratch.X86.withStackScratch 1400 4 code)
+      (Spec.Sha512.finalizeDigestContract X86.abi iv 28 digest (20 + 1400)) :=
+  X86.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 172) (stack := 20) (bytes := 1400)
+    hv (by decide) hsp hd (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial)
+    (Proof.Sha512.finalizeDigestPost_local _ _ _ _)
+    (by implies_sat [Spec.Sha512.finalizeDigestContract, Spec.Sha512.finalizeDigestSig, X86.abi, X86.argSlots,
+        X86.argVal, X86.argBytes]
+      [finalizeDigestFrameSat, MdStream.X86.Finalize.sat₀, MdStream.X86.Finalize.satMem, X86.arg,
+        X86.argAddr, Mem.readW, Mem.read] using finalizeDigestFrameSat 28)
+
+theorem finalize384 : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 1400 4
+      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params384))
+    (Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_384 48 Spec.Sha512.sha384 (20 + 1400)) :=
+  finalizeDigestStack48 (finalizeDigestScratch (.inl rfl) Proof.Sha512.X86.Stream.Finalize.finalize384_verified
+    (fun _ => rfl)) (by lit_decide) (by lit_decide)
+
+theorem finalize512_256 : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 1400 4
+      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_256))
+    (Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_512_256 32 Spec.Sha512.sha512_256 (20 + 1400)) :=
+  finalizeDigestStack32 (finalizeDigestScratch (.inr (.inl rfl))
+    Proof.Sha512.X86.Stream.Finalize.finalize512_256_verified (fun _ => rfl)) (by lit_decide) (by lit_decide)
+
+theorem finalize512_224 : Verified X86.target
+    (Impl.StackScratch.X86.withStackScratch 1400 4
+      (Impl.Sha512.X86.Stream.finalizeDigest Impl.Sha512.X86.Stream.params512_224))
+    (Spec.Sha512.finalizeDigestContract X86.abi Spec.Sha512.H0_512_224 28 Spec.Sha512.sha512_224 (20 + 1400)) :=
+  finalizeDigestStack28 (finalizeDigestScratch (.inr (.inr rfl))
+    Proof.Sha512.X86.Stream.Finalize.finalize512_224_verified (fun _ => rfl)) (by lit_decide) (by lit_decide)
 
 end VG.Proof.Sha512.X86.Shared

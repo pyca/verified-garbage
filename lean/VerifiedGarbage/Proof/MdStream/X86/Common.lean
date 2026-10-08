@@ -447,6 +447,29 @@ def finK : Contract isa where
   pub s₁ s₂ :=
     s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
 
+/-- The contract of a `finalize` writing the first `D` bytes of the final
+hash value (a truncated digest, such as SHA-384's): `finK`, with `D` bytes
+at `out`. -/
+def finKD (D : Nat) : Contract isa where
+  pre s :=
+    let state : Region := ⟨(arg s 0).setWidth 64, P.N + P.B⟩
+    let out : Region := ⟨(arg s 3).setWidth 64, D⟩
+    let scratch : Region := ⟨(arg s 4).setWidth 64, S⟩
+    let args : Region := ⟨argAddr s 0, 20⟩
+    let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
+    let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 20, 20⟩
+    s.rd = [args] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    args.Disjoint state ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+    ret.Disjoint state ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
+    stack.Disjoint state ∧ stack.Disjoint out ∧ stack.Disjoint scratch ∧
+    (arg s 0).toNat + (P.N + P.B) ≤ 2 ^ 32 ∧ (arg s 3).toNat + D ≤ 2 ^ 32 ∧
+    (arg s 4).toNat + S ≤ 2 ^ 32 ∧ 20 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 24 ≤ 2 ^ 32
+  post s s' := ∀ iv m, H.Repr iv s.mem ((arg s 0).setWidth 64) m → H.lenOk m.length →
+    count s = BitVec.ofNat 64 m.length → bytesAt s'.mem ((arg s 3).setWidth 64) D = (H.hash iv m).take D
+  pub s₁ s₂ :=
+    s₁.gpr .esp = s₂.gpr .esp ∧ ∀ i < 5, arg s₁ i = arg s₂ i
+
 /-- `finK`, but letting `finalize` write its arguments (as the contracts of the
 hash functions whose `finalize` is only verified against this say). -/
 def finKw : Contract isa :=
@@ -491,6 +514,32 @@ structure Shape {P : Params} (H : Md P.B P.N P.L) : Prop where
       (∀ r, r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       s'.mem = writeBytes s.mem ((s.gpr .eax).setWidth 64) (H.digest (H.stateAt s.mem ((s.gpr .ebx).setWidth 64)))
 
+/-- `Shape` for a `P.out` that writes only the first `D` bytes of the digest
+(a truncated digest, such as SHA-384's). -/
+structure ShapeD {P : Params} (H : Md P.B P.N P.L) (D : Nat) : Prop where
+  le : D ≤ P.N
+  len : ∀ s : State, (s.gpr .ebx).toNat + (P.N + P.B) ≤ 2 ^ 32 →
+    InRegions (s.rd ++ s.wr) (addr (s.gpr .ebp) (P.so + 16)) 4 →
+    InRegions (s.rd ++ s.wr) (addr (s.gpr .ebp) (P.so + 20)) 4 →
+    (∀ d, P.N + P.B - P.L ≤ d → d + 4 ≤ P.N + P.B → InRegions s.wr (addr (s.gpr .ebx) d) 4) →
+    WP isa (.block P.len) s fun s' =>
+      (∀ r, r ≠ .eax → r ≠ .ecx → r ≠ .edx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = writeBytes s.mem ((s.gpr .ebx).setWidth 64 + BitVec.ofNat 64 (P.N + P.B - P.L))
+        (H.lenOf (s.mem.readW (addr (s.gpr .ebp) (P.so + 20)) 32 ++
+          s.mem.readW (addr (s.gpr .ebp) (P.so + 16)) 32))
+  out : ∀ s : State, (s.gpr .ebx).toNat + P.N ≤ 2 ^ 32 → (s.gpr .eax).toNat + D ≤ 2 ^ 32 →
+    InRegions (s.rd ++ s.wr) ((s.gpr .ebx).setWidth 64) P.N → InRegions s.wr ((s.gpr .eax).setWidth 64) D →
+    Region.Disjoint ⟨(s.gpr .ebx).setWidth 64, P.N⟩ ⟨(s.gpr .eax).setWidth 64, D⟩ →
+    WP isa (.block P.out) s fun s' =>
+      (∀ r, r ≠ .ecx → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      s'.mem = writeBytes s.mem ((s.gpr .eax).setWidth 64)
+        ((H.digest (H.stateAt s.mem ((s.gpr .ebx).setWidth 64))).take D)
+
+/-- The whole digest is its first `N` bytes. -/
+theorem Shape.toD {P : Params} {H : Md P.B P.N P.L} (hs : Shape H) : ShapeD H P.N :=
+  ⟨Nat.le_refl _, hs.len, fun s hb ha hin hout hd => (hs.out s hb ha hin hout hd).mono fun _ ⟨g, rd, wr, m⟩ =>
+    ⟨g, rd, wr, by rw [m, List.take_of_length_le (by rw [H.digest_length])]⟩⟩
+
 /-! ## The compression function -/
 
 /-- What `compressAt` needs of the compression function it calls: that it is
@@ -501,6 +550,11 @@ structure CalleeOk {P : Params} (H : Md P.B P.N P.L) (code : Prog isa) : Prop wh
     ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (compressK H).post s s'
   nosp : NoSp code
   stack : stackUse code = 0
+
+/-- `CalleeOk` does not depend on the length field or the digest. -/
+theorem CalleeOk.withOut {P : Params} {H : Md P.B P.N P.L} {code : Prog isa} (hf : CalleeOk H code)
+    (o : List Instr) : CalleeOk (P := { P with out := o }) H code :=
+  ⟨hf.verified, hf.nosp, hf.stack⟩
 
 /-- The 20 bytes of stack below `E`, as the contracts write them. -/
 theorem stk_eq {E : BitVec 32} (h : 20 ≤ E.toNat) : below E 20 = ⟨E.setWidth 64 - 20, 20⟩ := by

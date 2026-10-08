@@ -105,11 +105,12 @@ theorem len_ok (s : State) (hfit : (s.gpr .r0).toNat + (64 + 128) ≤ 2 ^ 32)
 
 /-! ## The digest -/
 
-/-- The first `n` words of the final hash value at `p0` (`r0`), big-endian, to `p6` (`r6`). -/
-theorem out_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.toNat + 64 ≤ 2 ^ 32)
-    (hd : Region.Disjoint ⟨State.addr p0, 64⟩ ⟨State.addr p6, 64⟩) :
-    ∀ n ≤ 8, ∀ (rest : List Instr) (s : State) (Q : State → Prop), s.gpr .r0 = p0 → s.gpr .r6 = p6 →
-    InRegions (s.rd ++ s.wr) (State.addr p0) 64 → InRegions s.wr (State.addr p6) 64 →
+/-- The first `n` words of the final hash value at `p0` (`r0`), big-endian, to `p6` (`r6`), where
+`W` bytes may be written. -/
+theorem out_ok {p0 p6 : BitVec 32} {W : Nat} (hW : W ≤ 64) (f0 : p0.toNat + 64 ≤ 2 ^ 32)
+    (f6 : p6.toNat + W ≤ 2 ^ 32) (hd : Region.Disjoint ⟨State.addr p0, 64⟩ ⟨State.addr p6, W⟩) :
+    ∀ n, 8 * n ≤ W → ∀ (rest : List Instr) (s : State) (Q : State → Prop), s.gpr .r0 = p0 → s.gpr .r6 = p6 →
+    InRegions (s.rd ++ s.wr) (State.addr p0) 64 → InRegions s.wr (State.addr p6) W →
     (∀ s', (∀ r, r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) → s'.rd = s.rd → s'.wr = s.wr → s'.sp = s.sp →
       s'.mem = writeBytes s.mem (State.addr p6) (((stateAt s.mem (State.addr p0)).toList.take n).flatMap wordBytes) →
       WP isa (.block rest) s' Q) →
@@ -153,10 +154,10 @@ theorem out_ok {p0 p6 : BitVec 32} (f0 : p0.toNat + 64 ≤ 2 ^ 32) (f6 : p6.toNa
         s.mem.readW (State.addr p0 + BitVec.ofNat 64 (8 * n + o)) 32 := by
       intro o ho
       rw [m₁]
-      refine (writeBytes_frame s.mem (State.addr p6) _ (R := ⟨State.addr p6, 64⟩) ?_).readW
+      refine (writeBytes_frame s.mem (State.addr p6) _ (R := ⟨State.addr p6, W⟩) ?_).readW
         (r := ⟨State.addr p0 + BitVec.ofNat 64 (8 * n + o), 4⟩) (Region.contains_self _ _) ?_ (by decide)
-      · rw [hP]; simpa using Offset.contains_base (State.addr p6) (d := 0) (n := 8 * n) (k := 64) (by omega)
-          (by decide)
+      · rw [hP]; simpa using Offset.contains_base (State.addr p6) (d := 0) (n := 8 * n) (k := W) (by omega)
+          (by omega)
       · intro r' hr'
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
         subst hr'
@@ -190,7 +191,7 @@ theorem shape : Shape (P := params) Proof.Sha512.md where
   len s hfit hout := len_ok s hfit hout
   out s f₀ f₆ hin hout hd := by
     rw [← List.append_nil params.out]
-    refine out_ok f₀ f₆ hd 8 (Nat.le_refl _) [] s _ rfl rfl hin hout fun s' g rd wr sp m => WP.block_nil
+    refine out_ok (Nat.le_refl _) f₀ f₆ hd 8 (Nat.le_refl _) [] s _ rfl rfl hin hout fun s' g rd wr sp m => WP.block_nil
       ⟨g, rd, wr, sp, ?_⟩
     rw [m, List.take_of_length_le (by simp)]
     rfl

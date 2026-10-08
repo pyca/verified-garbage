@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.MdStream.Arm.Common
+import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Omega
 
 /-!
@@ -34,7 +35,7 @@ abbrev stA : Addr := State.addr (st s₀)
 abbrev outA : Addr := State.addr (out s₀)
 abbrev scA : Addr := State.addr (scr s₀)
 abbrev stR : Region := ⟨stA s₀, P.N + P.B⟩
-abbrev outR : Region := ⟨outA s₀, P.N⟩
+abbrev outR (D : Nat) : Region := ⟨outA s₀, D⟩
 abbrev scR : Region := ⟨scA s₀, P.so + 48⟩
 abbrev argR : Region := ⟨stackArgAddr s₀ 0, 8⟩
 /-- The buffer. -/
@@ -67,19 +68,27 @@ def Fin0 (mem : Mem) (n : Nat) (m : List Byte) : H.HV :=
 
 end
 
-structure Pre (P : Params) (s₀ : State) : Prop where
+structure PreD (P : Params) (D : Nat) (s₀ : State) : Prop where
   rd : s₀.rd = [argR s₀]
-  wr : s₀.wr = [stR P s₀, outR P s₀, scR P s₀]
-  st_out : (stR P s₀).Disjoint (outR P s₀)
+  wr : s₀.wr = [stR P s₀, outR s₀ D, scR P s₀]
+  st_out : (stR P s₀).Disjoint (outR s₀ D)
   st_scr : (stR P s₀).Disjoint (scR P s₀)
-  out_scr : (outR P s₀).Disjoint (scR P s₀)
+  out_scr : (outR s₀ D).Disjoint (scR P s₀)
   a_st : (argR s₀).Disjoint (stR P s₀)
-  a_out : (argR s₀).Disjoint (outR P s₀)
+  a_out : (argR s₀).Disjoint (outR s₀ D)
   a_scr : (argR s₀).Disjoint (scR P s₀)
   st_fit : (st s₀).toNat + (P.N + P.B) ≤ 2 ^ 32
-  out_fit : (out s₀).toNat + P.N ≤ 2 ^ 32
+  out_fit : (out s₀).toNat + D ≤ 2 ^ 32
   scr_fit : (scr s₀).toNat + (P.so + 48) ≤ 2 ^ 32
   sp_fit : s₀.sp.toNat + 8 ≤ 2 ^ 32
+
+/-- The precondition for the whole final hash value (`finK`). -/
+abbrev Pre (P : Params) (s₀ : State) : Prop := PreD P P.N s₀
+
+theorem pre_ofD {P : Params} {H : Md P.B P.N P.L} {D : Nat} {s₀ : State} (h : (finKD H D).pre s₀) :
+    PreD P D s₀ := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
+  exact ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩
 
 theorem pre_of {P : Params} {H : Md P.B P.N P.L} {s₀ : State} (h : (finK H).pre s₀) : Pre P s₀ := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := h
@@ -128,7 +137,7 @@ def Done {P : Params} (H : Md P.B P.N P.L) (s₀ : State) (s : State) : Prop :=
 def keepRegs : List Reg := [.r0, .r3, .r6, .r4, .r5, .lr]
 
 section
-variable {P : Params} {H : Md P.B P.N P.L}
+variable {P : Params} {H : Md P.B P.N P.L} {D : Nat}
 
 theorem cnt_mod (hd : Dims P) (s₀ : State) : cnt s₀ % P.B = (s₀.gpr .r2).toNat % P.B := by
   simp only [cnt, count]
@@ -172,7 +181,7 @@ theorem saved_sub (hd : Dims P) {s₀ : State} {p : Reg × Nat} (hp : p ∈ save
   exact sub_offset (by omega) (by omega)
 
 /-- Writing buffer bytes `[n, n + |xs|)` keeps `Common`'s memory facts. -/
-theorem Common.writeBuf (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {s : State} (h : Common P s₀ s) {n : Nat}
+theorem Common.writeBuf (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {s : State} (h : Common P s₀ s) {n : Nat}
     {xs : List Byte} (hn : n + xs.length ≤ P.B) :
     Frame [stR P s₀] s.mem (writeBytes s.mem (buf P s₀ + BitVec.ofNat 64 n) xs) ∧
       Frame [stR P s₀, scR P s₀] s₀.mem (writeBytes s.mem (buf P s₀ + BitVec.ofNat 64 n) xs) ∧
@@ -192,7 +201,7 @@ theorem Common.writeBuf (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {s : Stat
   exact hp.st_scr.symm.sub_left (saved_sub hd hp')
 
 /-- Byte `k` of the buffer, addressed as `[r0 + k, #N]`. -/
-theorem buf_addr {s₀ : State} (hp : Pre P s₀) {k : Nat} (hk : k < P.B) :
+theorem buf_addr {s₀ : State} (hp : PreD P D s₀) {k : Nat} (hk : k < P.B) :
     State.addr (st s₀ + BitVec.ofNat 32 k + BitVec.ofNat 32 P.N) = buf P s₀ + BitVec.ofNat 64 k := by
   have hp_st_fit := hp.st_fit
   rw [BitVec.add_assoc, ← BitVec.ofNat_add, addr_off (by omega), add_ofNat, Nat.add_comm]
@@ -218,9 +227,9 @@ def zeroBody (P : Params) : List Instr :=
   [.dp .add .r1 .r0 (.reg .r7), .strb .r12 .r1 P.N, .dp .add .r7 .r7 (.imm 1), .subs .r9 .r9 (.imm 1)]
 
 section
-variable {P : Params} {H : Md P.B P.N P.L}
+variable {P : Params} {H : Md P.B P.N P.L} {D : Nat}
 
-theorem zero_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sI : State} (hC : Common P s₀ sI)
+theorem zero_step (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI)
     {n lim j : Nat} (hlim : lim ≤ P.B) (hj : j < lim - n) {s : State} (h : Zero P s₀ sI n lim j s) :
     WP isa (.block (zeroBody P)) s fun s' =>
       Zero P s₀ sI n lim (j + 1) s' ∧ s'.z = (BitVec.ofNat 32 (lim - n - (j + 1)) == 0) := by
@@ -255,7 +264,7 @@ theorem zero_step (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sI : State} (h
   · rw [z₄, u₃.other _ (by decide), g₂.gpr, u₁.other _ (by decide), h.r9,
       show (1 : BitVec 32) = BitVec.ofNat 32 1 from rfl, sub_ofNat (by omega), Nat.sub_sub, Nat.sub_sub]
 
-theorem zero_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sI : State} (hC : Common P s₀ sI) {n lim : Nat}
+theorem zero_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) {sI : State} (hC : Common P s₀ sI) {n lim : Nat}
     (hlim : lim ≤ P.B) (hn : n ≤ lim) {s : State} (h : Zero P s₀ sI n lim 0 s)
     (hz : s.z = decide (lim - n = 0)) :
     WP isa (.ite .eq (.block []) (.loop (.block (zeroBody P)) .ne)) s (Zero P s₀ sI n lim (lim - n)) := by
@@ -282,7 +291,7 @@ theorem zero_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sI : State} (hC 
 
 /-- The compression of the buffer. -/
 theorem compress_buf (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code) {s₀ : State}
-    (hp : Pre P s₀) {s : State} (hC : Common P s₀ s)
+    (hp : PreD P D s₀) {s : State} (hC : Common P s₀ s)
     (hr1 : s.gpr .r1 = st s₀ + BitVec.ofNat 32 P.N) {Q : State → Prop}
     (hQ : ∀ s', Common P s₀ s' → (∀ r ∈ preserved, r ≠ .lr → s'.gpr r = s.gpr r) →
       H.stateAt s'.mem (stA s₀) = H.compress (H.stateAt s.mem (stA s₀)) (H.blockAt s.mem (buf P s₀)) → Q s') :
@@ -346,8 +355,8 @@ theorem body_eq (name : String) (code : Prog isa) : finalizeBody P name code =
     (.seq (.block [.dp .add .r1 .r0 (.imm (BitVec.ofNat 32 P.N))])
     (.seq (compressAt name code) (.block [.mov .r7 (.imm 0), .subs .r8 .r8 (.imm 1)])))))))) := rfl
 
-theorem body_ok (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    {s₀ : State} (hp : Pre P s₀) {k n : Nat} {s : State} (h : LInv H s₀ k n s) :
+theorem body_ok (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa} (hf : CalleeOk H code)
+    {s₀ : State} (hp : PreD P D s₀) {k n : Nat} {s : State} (h : LInv H s₀ k n s) :
     WP isa (finalizeBody P name code) s (Step H s₀ k) := by
   have hk := h.k_le; have hn := h.n_le; have hst := hp.st_fit; have hd_N := hd.N; have hd_le := hd.le; have hd_L := hd.L
   have hlim := lim_le P k
@@ -508,28 +517,28 @@ def prologue (P : Params) : List Instr :=
     .dp .add .r8 .r7 (.imm (BitVec.ofNat 32 (P.L - 1))), .mov .r8 (.shifted .r8 .lsr (Nat.log2 P.B))]
 
 section
-variable {P : Params} {H : Md P.B P.N P.L}
+variable {P : Params} {H : Md P.B P.N P.L} {D : Nat}
 
 theorem finalize_eq (name : String) (code : Prog isa) : finalize P name code =
     .seq (.block (([.ldrSp .r12 4] : List Instr) ++ save P .r12 ++ prologue P))
     (.seq (.loop (finalizeBody P name code) .eq) (.block (P.out ++ restore P))) := rfl
 
-theorem argAddr_eq {s₀ : State} (hp : Pre P s₀) {k : Nat} (hk : k < 2) :
+theorem argAddr_eq {s₀ : State} (hp : PreD P D s₀) {k : Nat} (hk : k < 2) :
     stackArgAddr s₀ k = stackArgAddr s₀ 0 + BitVec.ofNat 64 (4 * k) := by
   have hp_sp_fit := hp.sp_fit
   simp only [stackArgAddr]
   rw [addr_off (by omega)]
   simp
 
-theorem arg_in {s₀ : State} (hp : Pre P s₀) {k : Nat} (hk : k < 2) :
+theorem arg_in {s₀ : State} (hp : PreD P D s₀) {k : Nat} (hk : k < 2) :
     InRegions (s₀.rd ++ s₀.wr) (stackArgAddr s₀ k) 4 :=
   ⟨argR s₀, by simp [hp.rd], by rw [argAddr_eq hp hk]; exact contains_offset (by omega) (by omega)⟩
 
-theorem arg_sub {s₀ : State} (hp : Pre P s₀) {k : Nat} (hk : k < 2) :
+theorem arg_sub {s₀ : State} (hp : PreD P D s₀) {k : Nat} (hk : k < 2) :
     Region.Sub ⟨stackArgAddr s₀ k, 4⟩ (argR s₀) := by
   rw [argAddr_eq hp hk]; exact sub_offset (by omega) (by omega)
 
-theorem prologue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) :
+theorem prologue_ok (hd : Dims P) {s₀ : State} (hp : PreD P D s₀) :
     WP isa (.block (([.ldrSp .r12 4] : List Instr) ++ save P .r12 ++ prologue P)) s₀
       fun s => ∃ k, LInv H s₀ k (cnt s₀ % P.B + 1) s := by
   have hr : cnt s₀ % P.B < P.B := Nat.mod_lt _ hd.pos
@@ -643,16 +652,21 @@ theorem prologue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) :
 /-! ## Output and epilogue -/
 
 /-- The epilogue's postcondition. -/
-def Post (P : Params) (H : Md P.B P.N P.L) (s₀ s' : State) : Prop := abiPreserved s₀ s' ∧ (finK H).post s₀ s'
+def Post (P : Params) (H : Md P.B P.N P.L) (D : Nat) (s₀ s' : State) : Prop :=
+  abiPreserved s₀ s' ∧ (finKD H D).post s₀ s'
 
-theorem epilogue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sD : State} (hD : Done H s₀ sD) {s : State}
+theorem epilogue_ok (hd : Dims P) (hDN : D ≤ P.N) {s₀ : State} (hp : PreD P D s₀) {sD : State}
+    (hD : Done H s₀ sD) {s : State}
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hkeep : ∀ r, r ≠ .r9 → r ≠ .r10 → s.gpr r = sD.gpr r)
-    (hsp : s.sp = sD.sp) (hm : s.mem = writeBytes sD.mem (outA s₀) (H.digest (H.stateAt sD.mem (stA s₀)))) :
-    WP isa (.block (restore P)) s (Post P H s₀) := by
+    (hsp : s.sp = sD.sp)
+    (hm : s.mem = writeBytes sD.mem (outA s₀) ((H.digest (H.stateAt sD.mem (stA s₀))).take D)) :
+    WP isa (.block (restore P)) s (Post P H D s₀) := by
   have hd_N := hd.N; have hd_so := hd.so
   have hC := hD.1
-  have hdl := H.digest_length (H.stateAt sD.mem (stA s₀))
-  have hfo : Frame [outR P s₀] sD.mem (writeBytes sD.mem (outA s₀) (H.digest (H.stateAt sD.mem (stA s₀)))) :=
+  have hdl : ((H.digest (H.stateAt sD.mem (stA s₀))).take D).length = D := by
+    rw [List.length_take, H.digest_length]; exact Nat.min_eq_left hDN
+  have hfo : Frame [outR s₀ D] sD.mem
+      (writeBytes sD.mem (outA s₀) ((H.digest (H.stateAt sD.mem (stA s₀))).take D)) :=
     writeBytes_frame _ _ _ (by
       rw [show outA s₀ = outA s₀ + BitVec.ofNat 64 0 by simp]
       exact contains_offset (by omega) (by omega))
@@ -666,15 +680,14 @@ theorem epilogue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {sD : State} 
     subst hr'
     exact hp.out_scr.symm.sub_left (saved_sub hd hp')
   · intro iv m hr hok hc
-    have e := bytesAt_writeBytes sD.mem (outA s₀) 0 (H.digest (H.stateAt sD.mem (stA s₀))) (by omega)
+    have e := bytesAt_writeBytes sD.mem (outA s₀) 0 ((H.digest (H.stateAt sD.mem (stA s₀))).take D) (by omega)
     rw [hdl, show outA s₀ + BitVec.ofNat 64 0 = outA s₀ by simp, Nat.zero_add,
       show bytesAt sD.mem (outA s₀) 0 = [] from rfl, List.nil_append] at e
-    rw [hmem, hm, e]
-    exact (hD.2 iv m ⟨hr, hc⟩ hok).symm
+    rw [hmem, hm, e, (hD.2 iv m ⟨hr, hc⟩ hok)]
 
-theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    {s₀ : State} (hp : Pre P s₀) : WP isa (finalize P name code) s₀ (Post P H s₀) := by
-  have hd_N := hd.N
+theorem correctD (hd : Dims P) (hs : ShapeD H D) {name : String} {code : Prog isa} (hf : CalleeOk H code)
+    {s₀ : State} (hp : PreD P D s₀) : WP isa (finalize P name code) s₀ (Post P H D s₀) := by
+  have hd_N := hd.N; have hDN := hs.le
   rw [finalize_eq]
   refine WP.seq (WP.mono (prologue_ok (H := H) hd hp) fun s₁ ⟨k, hL⟩ => ?_)
   refine WP.seq (WP.mono (Q := Done H s₀) ?_ fun sD hD => ?_)
@@ -689,15 +702,21 @@ theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (
     rw [WP.block_append_iff]
     refine WP.mono (hs.out sD (by rw [hC.r0]; omega) (by rw [hC.r6]; omega) ?_ ?_ ?_)
       fun s ⟨g, rd, wr, sp, m⟩ =>
-        epilogue_ok hd hp hD (rd.trans hC.rd) (wr.trans hC.wr) g sp (by rw [m, hC.r6, hC.r0])
+        epilogue_ok hd hDN hp hD (rd.trans hC.rd) (wr.trans hC.wr) g sp (by rw [m, hC.r6, hC.r0])
     · refine ⟨stR P s₀, by simp [hC.rd, hC.wr, hp.wr, hp.rd], ?_⟩
       rw [hC.r0]; simpa using contains_offset (base := stA s₀) (off := 0) (n := P.N) (len := P.N + P.B)
         (by omega) (by omega)
-    · refine ⟨outR P s₀, by simp [hC.wr, hp.wr], ?_⟩
-      rw [hC.r6]; simpa using contains_offset (base := outA s₀) (off := 0) (n := P.N) (len := P.N)
+    · refine ⟨outR s₀ D, by simp [hC.wr, hp.wr], ?_⟩
+      rw [hC.r6]; simpa using contains_offset (base := outA s₀) (off := 0) (n := D) (len := D)
         (by omega) (by omega)
     · rw [hC.r0, hC.r6]
       exact hp.st_out.sub_left (Region.sub_prefix (by omega))
+
+theorem correct (hd : Dims P) (hs : Shape H) {name : String} {code : Prog isa} (hf : CalleeOk H code)
+    {s₀ : State} (hp : Pre P s₀) :
+    WP isa (finalize P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (finK H).post s₀ s' :=
+  (correctD hd hs.toD hf hp).mono fun _ ⟨ha, h⟩ => ⟨ha, fun iv m hr hl hc =>
+    (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length]))⟩
 
 end
 
@@ -710,29 +729,54 @@ def τ₀ (P : Params) : VG.Arm.Taint.T :=
   { regs := .ofList [.r0, .r2, .r3], flags := false, lens := [P.N + P.B, P.N, P.so + 48], bases := [(.r0, 0)],
     argLen := 8, argBases := [(4, 2)] }
 
-section
-variable {P : Params} {H : Md P.B P.N P.L}
+/-- `τ₀`, for a `finalize` writing a `D`-byte digest. -/
+def τ₀D (P : Params) (D : Nat) : VG.Arm.Taint.T :=
+  { regs := .ofList [.r0, .r2, .r3], flags := false, lens := [P.N + P.B, D, P.so + 48], bases := [(.r0, 0)],
+    argLen := 8, argBases := [(4, 2)] }
 
-theorem wf₀ {s : State} (h : (finK H).pre s) : VG.Arm.Taint.Wf (τ₀ P) s := by
-  have hp := pre_of h
+section
+variable {P : Params} {H : Md P.B P.N P.L} {D : Nat}
+
+theorem wf₀D {s : State} (h : (finKD H D).pre s) : VG.Arm.Taint.Wf (τ₀D P D) s := by
+  have hp := pre_ofD h
   have hst := hp.st_fit; have ho := hp.out_fit; have hsc := hp.scr_fit; have hs := hp.sp_fit
-  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀], ?_, ?_⟩, ?_, fun _ => ⟨hs, ?_⟩, ?_⟩
+  refine ⟨fun _ => ⟨by simp [hp.wr, τ₀D], ?_, ?_⟩, ?_, fun _ => ⟨hs, ?_⟩, ?_⟩
   · simp only [hp.wr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq, List.Pairwise.nil, and_true]
     exact ⟨⟨hp.st_out, hp.st_scr⟩, hp.out_scr, fun _ h => h.elim⟩
   · simp only [hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl) <;> simp only [addr_toNat] <;> omega
-  · intro p hp'; simp only [τ₀, List.mem_singleton] at hp'; subst hp'; simp [VG.Arm.Taint.region, hp.wr]
+  · intro p hp'; simp only [τ₀D, List.mem_singleton] at hp'; subst hp'; simp [VG.Arm.Taint.region, hp.wr]
   · have e : (⟨State.addr s.sp, 8⟩ : Region) = argR s := by simp [stackArgAddr]
-    simp only [τ₀, e, hp.wr, List.mem_cons, List.not_mem_nil, or_false]
+    simp only [τ₀D, e, hp.wr, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact hp.a_st
     · exact hp.a_out
     · exact hp.a_scr
-  · intro p hp'; simp only [τ₀, List.mem_singleton] at hp'; subst hp'
+  · intro p hp'; simp only [τ₀D, List.mem_singleton] at hp'; subst hp'
     refine ⟨Nat.le_refl 8, ?_⟩
     simp only [VG.Arm.Taint.region, hp.wr]
     rfl
+
+theorem wf₀ {s : State} (h : (finK H).pre s) : VG.Arm.Taint.Wf (τ₀ P) s := wf₀D (H := H) h
+
+theorem agree₀D {s₁ s₂ : State} (h₁ : (finKD H D).pre s₁) (h₂ : (finKD H D).pre s₂)
+    (hpub : (finKD H D).pub s₁ s₂) : VG.Arm.Taint.Agree (τ₀D P D) s₁ s₂ := by
+  obtain ⟨psp, p0, p2, p3, a0, a1⟩ := hpub
+  have hp₁ := pre_ofD h₁; have hp₂ := pre_ofD h₂
+  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀D h₁, wf₀D h₂,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, fun _ => psp, fun k hk => ?_⟩
+  · simp only [τ₀D, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+  · rw [hp₁.wr, hp₂.wr]; simp only [stR, outR, scR, stA, outA, scA, st, out, scr, p0, a0, a1]
+  · simp only [τ₀D] at hk
+    rw [argByte_eq hp₁.sp_fit hk, argByte_eq hp₂.sp_fit hk, Mem.readW_byte s₁.mem _ (Nat.mod_lt _ (by omega)),
+      Mem.readW_byte s₂.mem _ (Nat.mod_lt _ (by omega))]
+    have : k / 4 = 0 ∨ k / 4 = 1 := by omega
+    rcases this with h | h <;> rw [h]
+    · exact congrArg _ a0
+    · exact congrArg _ a1
+
 
 theorem agree₀ {s₁ s₂ : State} (h₁ : (finK H).pre s₁) (h₂ : (finK H).pre s₂)
     (hpub : (finK H).pub s₁ s₂) : VG.Arm.Taint.Agree (τ₀ P) s₁ s₂ := by
@@ -767,29 +811,44 @@ def satBase : State where
   rd := [⟨0x5000, 8⟩]
   wr := []
 
+/-- A state satisfying the precondition of `finKD`. -/
+def satD (P : Params) (D : Nat) : State :=
+  { satBase with wr := [⟨0x1000, P.N + P.B⟩, ⟨0x2000, D⟩, ⟨0x3000, P.so + 48⟩] }
+
 /-- A state satisfying the precondition. -/
 def sat (P : Params) : State :=
   { satBase with wr := [⟨0x1000, P.N + P.B⟩, ⟨0x2000, P.N⟩, ⟨0x3000, P.so + 48⟩] }
 
 /-- `finalize` is verified, given that it is constant time (which the taint
 analysis proves of each hash function's code). -/
-theorem verified {P : Params} {H : Md P.B P.N P.L} (hd : Dims P) (hs : Shape H) {name : String}
+theorem verifiedD {P : Params} {H : Md P.B P.N P.L} {D : Nat} (hd : Dims P) (hs : ShapeD H D) {name : String}
     {code : Prog isa} (hf : CalleeOk H code)
-    (hct : ConstantTime isa (finK H).pre (finK H).pub (finalize P name code)) :
-    Verified Arm.target (finalize P name code) (finK H) := by
-  have hBle := hd.le
+    (hct : ConstantTime isa (finKD H D).pre (finKD H D).pub (finalize P name code)) :
+    Verified Arm.target (finalize P name code) (finKD H D) := by
+  have hBle := hd.le; have := hs.le
   have hd_N := hd.N; have hd_so := hd.so
   refine ⟨fun s hs' => ?_, hct, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct hd hs hf (pre_of hs')
+  · obtain ⟨t, s', he, h⟩ := correctD hd hs hf (pre_ofD hs')
     exact ⟨t, s', he, h⟩
-  · have e0 : stackArg (sat P) 0 = 0x2000 := by show stackArg satBase 0 = _; decide
-    have e1 : stackArg (sat P) 1 = 0x3000 := by show stackArg satBase 1 = _; decide
-    refine ⟨sat P, ?_⟩
-    simp only [finK, e0, e1]
-    refine ⟨by simp [sat, satBase, stackArgAddr, State.addr], rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    all_goals try simp only [sat, satBase, stackArgAddr, State.addr]
+  · have e0 : stackArg (satD P D) 0 = 0x2000 := by show stackArg satBase 0 = _; decide
+    have e1 : stackArg (satD P D) 1 = 0x3000 := by show stackArg satBase 1 = _; decide
+    refine ⟨satD P D, ?_⟩
+    simp only [finKD, e0, e1]
+    refine ⟨by simp [satD, satBase, stackArgAddr, State.addr], rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    all_goals try simp only [satD, satBase, stackArgAddr, State.addr]
     iterate 3 exact Offset.disjoint_of_le (by simp <;> omega) (by simp <;> omega)
     iterate 3 exact (Offset.disjoint_of_le (by simp <;> omega) (by simp)).symm
     all_goals simp <;> omega
+
+/-- `finalize` is verified, given that it is constant time (which the taint
+analysis proves of each hash function's code). -/
+theorem verified {P : Params} {H : Md P.B P.N P.L} (hd : Dims P) (hs : Shape H) {name : String}
+    {code : Prog isa} (hf : CalleeOk H code)
+    (hct : ConstantTime isa (finK H).pre (finK H).pub (finalize P name code)) :
+    Verified Arm.target (finalize P name code) (finK H) :=
+  have h := verifiedD hd hs.toD hf hct
+  h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hl hc =>
+    (h iv m hr hl hc).trans (List.take_of_length_le (by rw [Md.hash, H.digest_length])),
+    fun _ _ _ _ h => h, h.2.2⟩
 
 end VG.Proof.MdStream.Arm.Finalize
