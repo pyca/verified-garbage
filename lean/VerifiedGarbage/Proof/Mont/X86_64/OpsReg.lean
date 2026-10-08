@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Mont.X86_64.ProdX
 import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.SqrS
+import VerifiedGarbage.Proof.Mont.X86_64.MulS
 
 /-!
 # Montgomery arithmetic on x86-64: the operations with the accumulator in registers
@@ -97,14 +97,9 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     refine WP.mono (sqrS_ok hs hM hsp ho ha hoT haT hoM hB) fun s' ⟨kr, hmem, hlt, he⟩ =>
       ⟨⟨fun r hr => kr.gpr r (not_mem_of hr (by rw [h6]; decide)), kr.rd, kr.wr,
         fun x hx hx' => hmem x (by rw [h6] at hx; exact hx) (by rw [h6] at hx'; exact hx')⟩, hlt, he⟩
-  rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (zeros_ok s (acc M.n)) fun s₁ ⟨z₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (fun h => (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
-  have h0 : regsVal s₁ (wins M.n 0) = 0 := regsVal_zero fun r hr => z₁ r (wins_sub_acc hM.n7 0 r hr)
-  rw [WP.block_append_iff]
-  refine WP.mono (rounds_ok hM.n7 ha hb hM.mo hM.inv hM.red M.n (Nat.le_refl _) hs₁
-    (by rw [k₁.2.1]; exact hM.val) (by rw [k₁.2.1]; exact hB) h0) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keeps k₂ (by
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (mulRounds_ok hs hM ha hb hB) fun s₂ ⟨⟨U, eU⟩, hT, k₂⟩ => ?_
+  have hs₂ := hs.of_keeps k₂ (by
     intro h
     simp only [List.mem_cons] at h
     rcases h with h | h | h | h | h
@@ -113,8 +108,7 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
     · exact absurd h (by decide)
     · exact absurd h (by decide)
     · exact (acc_regs_lt _ hM.n7 _ h).2.2.2.2 rfl)
-  have hmem₂ : s₂.mem = s.mem := by rw [k₂.2.1, k₁.2.1]
-  rw [k₁.2.1] at eU
+  have hmem₂ : s₂.mem = s.mem := k₂.2.1
   -- The accumulator's value as `csub` sees it: its top word is zero.
   have hsplit := wins_split M.n M.n
   have hmX : m < 2 ^ (64 * M.n) := hM.val ▸ wordsVal_lt _ _ _ _
@@ -163,10 +157,9 @@ theorem mulR_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M
           rw [hsplit]; simp only [List.mem_append, List.mem_cons]; exact Or.inr (Or.inl h))))))
       · exact Or.inr (Or.inr (Or.inr (Or.inr (wins_sub_acc hM.n7 M.n r (by
           rw [hsplit]; simp only [List.mem_append]; exact Or.inl h))))))),
-      k₂.1 r (fun h => hr (mem_clob (by simpa using h))), k₁.1 r (fun h => hr (mem_clob (by
-        simp only [List.mem_cons]; exact Or.inr (Or.inr (Or.inr (Or.inr h))))))]
-  · rw [k₄.rd, k₃.rd, k₂.2.2.1, k₁.2.2.1]
-  · rw [k₄.wr, k₃.wr, k₂.2.2.2, k₁.2.2.2]
+      k₂.1 r (fun h => hr (mem_clob (by simpa using h)))]
+  · rw [k₄.rd, k₃.rd, k₂.2.2.1]
+  · rw [k₄.wr, k₃.wr, k₂.2.2.2]
   · rw [O₄ x hx, O₃ x hx', hmem₂]
   · rw [e₄, e₃, hV]; exact Nat.mod_lt _ (m_pos hB)
   · rw [e₄, e₃, hV, Nat.mod_mul_mod, Nat.mul_comm, eU, ← hmem₂]
