@@ -308,7 +308,7 @@ def freeze (a : Nat) : List Instr :=
 `[T1] = [Z2]^(p-2)`, the inverse of `[Z2]` (zero for zero), by Bernstein–Yang
 divsteps (`Proof/Divstep/`) in ten batches of 59: from `(d, f, g) = (1, p, x)`
 for the fully reduced `x` and coefficients `(a, b) = (0, 1)`, a batch runs 59
-divsteps on the low words of `f` and `g` (`dstep`), giving the matrix
+divsteps on the low words of `f` and `g` (`dsteps`), giving the matrix
 `(u, v, q, r)`, then `(f, g) := (u f + v g, q f + r g) / 2⁵⁹` exactly (`fRow`)
 and `(a, b) := (u a + v b, q a + r b)` modulo `p` (`aRow`). Then `f = ±1` and
 `± a ≡ x⁻¹ 2⁵⁹⁰`, so the result is `a` times `2⁻⁵⁹⁰` or `p - 2⁻⁵⁹⁰` by the
@@ -316,16 +316,22 @@ sign of `f`, one multiplication of `F`.
 
 `f` and `g` are four words in two's complement, `a` and `b` four words below
 `2²⁵⁶`. The working area is `[512, 768)`: `b`, `a` (the result's slot),
-`f`, `g`, then `f'` (the constant at the end), `a'`, and the words `d` and the matrix.
-The count of batches is in `rbp` (times 256) but during the divsteps, when it is
-above the count of steps in `r8`: both are public, as the branches on them are.
+`f`, `g`, then `f'` (the constant at the end), `a'`, the words `d` and the
+matrix, and the divsteps' low words of `f` and `g` and a temporary (`dsT`).
+The count of batches is in `rbp` (times 256), and in `r14` during the
+divsteps; it is public, as the branch on it is.
 
-A divstep keeps `d`, `f`, `g`, `u`, `v`, `q`, `r` in `rbx`, `rcx`, `rbp`,
-`r9`–`r12` and `d > 0` (0 or 1) in `r13`: with `rax` and `rdx`, the
-candidates `g + f` and `g - f` are selected by `cmov` on the flags of
-`g & (d > 0)` (the swap) and `g & 1` (`g` odd), and so on for the matrix
-with `g` and the old `d > 0` kept in `r14` and `r15`; the steps are counted
-in `r8`.
+A batch's 59 divsteps run in packed chunks of `15, 15, 15, 14`, as the
+short Weierstrass curves' (`Impl/Weierstrass/X86_64/Inv.lean`, whose code
+this repeats under the names `pk…`, since that module imports this one): with
+`P = [t] mod 2^15 + 2^31` and `Q = [t + 8] mod 2^15 + 2^47` (`pkSet`), the
+rows `u P + v Q` and `q P + r Q` of the chunk's matrix, modulo `2^64`, in
+`r8` and the `g` row's register, are updated as `(f, g)` would be, doubled
+rather than halved (`pkStep`), so that step `j`'s parity is bit `j` of the
+`g` row; their bits from 31 and 47 are `u` and `v` (`q` and `r`) plus
+`2^14` once `2^30 + 2^45 + 2^61` is added (`pkExt`). `~d` is in `rbx`. Each
+chunk's matrix updates the low words by `mul` (`pkLow`) and multiplies the
+batch's so far in `r9`–`r12` (`pkComp`).
 
 A product `m · X` of a signed word by four words is the unsigned product
 `|m| · (X ^ s)` for the mask `s` of `m`'s sign: for `f` and `g`, plus
@@ -347,37 +353,94 @@ def dsV : Nat := 720
 def dsQ : Nat := 728
 def dsR : Nat := 736
 
-/-- One divstep on words. -/
-def dstep : List Instr :=
-  [.mov32 .rax (.imm 2), .alu .sub .rax (.reg .rbx), .alu .add .rbx (.imm 2),
-    .alu .test .rbp (.reg .r13), .cmov .ne .rbx (.reg .rax),
-    .mov .rax (.reg .rbp), .alu .add .rax (.reg .rcx), .mov .rdx (.reg .rbp), .alu .sub .rdx (.reg .rcx),
-    .alu .test .rbp (.reg .r13), .cmov .ne .rax (.reg .rdx), .cmov .ne .rcx (.reg .rbp),
-    .alu .test .rbp (.imm 1), .mov .r14 (.reg .rbp), .cmov .ne .rbp (.reg .rax), .shift .shr .rbp 1,
-    .mov .r15 (.reg .r13), .mov .r13 (.reg .rbx), .shift .shr .r13 63, .alu .xor .r13 (.imm 1),
-    .mov .rax (.reg .r11), .alu .add .rax (.reg .r9), .mov .rdx (.reg .r11), .alu .sub .rdx (.reg .r9),
-    .alu .test .r14 (.reg .r15), .cmov .ne .rax (.reg .rdx), .cmov .ne .r9 (.reg .r11),
-    .alu .test .r14 (.imm 1), .cmov .ne .r11 (.reg .rax),
-    .mov .rax (.reg .r12), .alu .add .rax (.reg .r10), .mov .rdx (.reg .r12), .alu .sub .rdx (.reg .r10),
-    .alu .test .r14 (.reg .r15), .cmov .ne .rax (.reg .rdx), .cmov .ne .r10 (.reg .r12),
-    .alu .test .r14 (.imm 1), .cmov .ne .r12 (.reg .rax),
-    .alu .add .r9 (.reg .r9), .alu .add .r10 (.reg .r10)]
+/-- The divsteps' low words of `f` and `g`, and a temporary. -/
+def dsT : Nat := 744
 
-/-- A batch's start: the count of steps `59` in the low byte of `r8`, above it the
-count of batches from `rbp`; `d`, the low words of `f` and `g`, the identity,
-and `d ≥ 0`. -/
+/-- Divstep `j` of a chunk: `~d` in `rbx`, the rows in `r8` and `g`, the next
+`g` row into `t`. `g << (63 - j)` is `2^63` if `g` is odd and `0` if not (its
+zero flag), and adding `~d` carries if `g` is odd and `d ≥ 0` (the swap):
+`t` is `g`, `g + f`, or on a swap `g - f`, `f` becomes `g` on a swap and is
+doubled, and `~d` becomes `~(2 - d)` on a swap and `~(d + 2)` if not. -/
+def pkStep (j : Nat) (g t : Reg) : List Instr :=
+  [.mov t (.reg g), .alu .add t (.reg .r8), .mov .rdx (.reg g), .alu .sub .rdx (.reg .r8),
+    .mov .rcx (.imm (-2)), .alu .sub .rcx (.reg .rbx), .mov .rbp (.reg g), .shift .shl .rbp (63 - j),
+    .cmov .e t (.reg g), .alu .add .rbp (.reg .rbx), .cmov .b t (.reg .rdx), .cmov .b .r8 (.reg g),
+    .cmov .b .rbx (.reg .rcx), .alu .add .r8 (.reg .r8), .alu .sub .rbx (.imm 2)]
+
+/-- The `g` row's register before step `j`: `r13` and `rax` in turn. -/
+def pkReg (j : Nat) : Reg := if j % 2 = 0 then .r13 else .rax
+
+/-- Steps `0 … n - 1`, the `g` row then moved back to `r13`. -/
+def pkSteps (n : Nat) : List Instr :=
+  (List.range n).flatMap (fun j => pkStep j (pkReg j) (pkReg (j + 1))) ++
+    (if n % 2 = 1 then [.mov .r13 (.reg .rax)] else [])
+
+/-- A row's start: `r = [t] mod 2^15 + c`, through `rax`. -/
+def pkSetRow (r : Reg) (t : Nat) (c : BitVec 64) : List Instr :=
+  [.mov r (.mem (sc t)), .alu .and r (.imm 0x7fff), .movImm64 .rax c, .alu .add r (.reg .rax)]
+
+/-- The rows' start: `r8 = [t] mod 2^15 + 2^31`, `r13 = [t + 8] mod 2^15 + 2^47`. -/
+def pkSet (t : Nat) : List Instr := pkSetRow .r8 t (2 ^ 31) ++ pkSetRow .r13 (t + 8) (2 ^ 47)
+
+/-- What makes the rows' fields nonnegative: `2^30` below bit 31, `2^14` at bits 31 and 47. -/
+def pkExtC : BitVec 64 := 2 ^ 30 + 2 ^ 45 + 2 ^ 61
+
+/-- The matrix `u, v, q, r` into `r8`, `rcx`, `r13`, `rbp`, from the rows in `r8`, `r13`. -/
+def pkExt : List Instr :=
+  [.movImm64 .rcx pkExtC, .alu .add .r8 (.reg .rcx), .alu .add .r13 (.reg .rcx),
+    .mov .rcx (.reg .r8), .shift .shr .rcx 47, .alu .sub .rcx (.imm 16384),
+    .shift .shl .r8 17, .shift .shr .r8 48, .alu .sub .r8 (.imm 16384),
+    .mov .rbp (.reg .r13), .shift .shr .rbp 47, .alu .sub .rbp (.imm 16384),
+    .shift .shl .r13 17, .shift .shr .r13 48, .alu .sub .r13 (.imm 16384)]
+
+/-- `rax = [d] r` (the low word of the product), through `rdx`. -/
+def pkLdMul (d : Nat) (r : Reg) : List Instr := [.mov .rax (.mem (sc d)), .mul r]
+
+/-- `[e] = (rax + [d]) >> n`. -/
+def pkAddShr (d n e : Nat) : List Instr :=
+  [.alu .add .rax (.mem (sc d)), .shift .shr .rax n] ++ [.store (sc e) .rax]
+
+/-- `[t] = (u [t] + v [t + 8]) >> n`, `[t + 8] = (q [t] + r [t + 8]) >> n`
+(modulo `2^64`), through `rax`, `rdx` and `[t + 16]`. -/
+def pkLow (n t : Nat) : List Instr :=
+  pkLdMul t .r8 ++ [.store (sc (t + 16)) .rax] ++ pkLdMul (t + 8) .rcx ++ pkAddShr (t + 16) n (t + 16) ++
+    pkLdMul t .r13 ++ [.store (sc t) .rax] ++ pkLdMul (t + 8) .rbp ++ pkAddShr t n (t + 8) ++
+    [.mov .rax (.mem (sc (t + 16))), .store (sc t) .rax]
+
+/-- The first chunk's matrix is the batch's so far. -/
+def pkFirst : List Instr :=
+  [.mov .r9 (.reg .r8), .mov .r10 (.reg .rcx), .mov .r11 (.reg .r13), .mov .r12 (.reg .rbp)]
+
+/-- A column `(x, y)` of the batch's matrix, times the chunk's: `x = u x + v y`
+and `y = q x + r y`, through `rax`, `rdx` and `[t]`. -/
+def pkCol (x y : Reg) (t : Nat) : List Instr :=
+  [.mov .rax (.reg .r13), .mul x, .store (sc t) .rax] ++
+    [.mov .rax (.reg .r8), .mul x, .mov x (.reg .rax), .mov .rax (.reg .rcx), .mul y, .alu .add x (.reg .rax),
+      .mov .rax (.reg .rbp), .mul y] ++
+    [.alu .add .rax (.mem (sc t)), .mov y (.reg .rax)]
+
+/-- The batch's matrix times the chunk's. -/
+def pkComp (t : Nat) : List Instr := pkCol .r9 .r11 t ++ pkCol .r10 .r12 t
+
+/-- A chunk of `n` steps, from the low words at `[t]`, `[t + 8]`: the low
+words updated unless it is the last, and the matrix the batch's if it is
+the first. -/
+def pkChunk (t n : Nat) (first last : Bool) : List Instr :=
+  pkSet t ++ pkSteps n ++ pkExt ++ (if last then [] else pkLow n t) ++ (if first then pkFirst else pkComp (t + 16))
+
+/-- A batch's start: the count of batches into `r14`, the low words of `f`
+and `g` into `[dsT]`, `[dsT + 8]`, and `~d` into `rbx`. -/
 def dstart : List Instr :=
-  [.mov .r8 (.reg .rbp), .alu .add .r8 (.imm 59), .mov .rbx (.mem (sc dsD)), .mov .rcx (.mem (sc dsF)),
-    .mov .rbp (.mem (sc dsG)), .mov32 .r9 (.imm 1), .mov32 .r10 (.imm 0), .mov32 .r11 (.imm 0),
-    .mov32 .r12 (.imm 1), .mov .r13 (.reg .rbx), .shift .shr .r13 63, .alu .xor .r13 (.imm 1)]
+  [.mov .r14 (.reg .rbp), .mov .rax (.mem (sc dsF)), .store (sc dsT) .rax, .mov .rax (.mem (sc dsG)),
+    .store (sc (dsT + 8)) .rax, .mov .rbx (.mem (sc dsD)), .alu .xor .rbx (.imm (-1))]
 
-/-- 59 divsteps, counted down in the low byte of `r8`; then `d` and the matrix
+/-- 59 divsteps in chunks of `15, 15, 15, 14`; then `d` and the matrix
 stored, and the count of batches back in `rbp`. -/
 def dsteps : Prog isa :=
-  .seq (.block dstart) <|
-    .seq (.loop (.block (dstep ++ [.alu .sub .r8 (.imm 1), .alu .test .r8 (.imm 255)])) .ne)
-    (.block [.store (sc dsD) .rbx, .store (sc dsU) .r9, .store (sc dsV) .r10, .store (sc dsQ) .r11,
-      .store (sc dsR) .r12, .mov .rbp (.reg .r8)])
+  .block (dstart ++ pkChunk dsT 15 true false ++ pkChunk dsT 15 false false ++ pkChunk dsT 15 false false ++
+    pkChunk dsT 14 false true ++
+    [.alu .xor .rbx (.imm (-1)), .store (sc dsD) .rbx, .store (sc dsU) .r9, .store (sc dsV) .r10,
+      .store (sc dsQ) .r11, .store (sc dsR) .r12, .mov .rbp (.reg .r14)])
 
 /-- `r15` = the mask of `[m]`'s sign, `r14 = |[m]|`, through `rax` and `rcx`. -/
 def absM (m : Nat) : List Instr :=

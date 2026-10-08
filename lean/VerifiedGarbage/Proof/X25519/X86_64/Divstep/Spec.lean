@@ -1,15 +1,17 @@
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.PowLit
-import VerifiedGarbage.Proof.Divstep.WordDef
+import VerifiedGarbage.Proof.Divstep.PackedDef
 import VerifiedGarbage.Impl.X25519.X86_64
 
 /-!
 # X25519 on x86-64, inversion by divsteps: what the code computes
 
 The numbers `Impl/X25519/X86_64.lean`'s `invertDS` computes, exactly as it
-computes them, for any words (`byAlg`): a batch (`dbatchV`) runs 59 word
-divsteps (`Divstep.wsteps`) on the low words of `f` and `g`, then the rows
-`fRowV` and `aRowV`. Every operation is on natural numbers or integers; the
+computes them, for any words (`byAlg`): a batch (`dbatchV`) runs 59 packed
+divsteps in four chunks (`pkBatchV`, each chunk `pkChunkV`: `Divstep.psteps`
+on the rows, the matrix from them, the low words updated and the batch's
+matrix multiplied) on the low words of `f` and `g`, then the rows `fRowV`
+and `aRowV`. Every operation is on natural numbers or integers; the
 proofs of the code show it computes these, and need no bounds.
 
 That `byAlg x` is `x^(p-2)` is the theory of divsteps (bounds on the matrix,
@@ -66,10 +68,42 @@ structure DSt where
   a : Nat
   b : Nat
 
+/-- The words of a batch's packed divsteps between chunks: `~d`, the low
+words of `f` and `g`, and the batch's matrix so far. -/
+structure PkSt where
+  E : BitVec 64
+  F : BitVec 64
+  G : BitVec 64
+  U : BitVec 64
+  V : BitVec 64
+  Q : BitVec 64
+  R : BitVec 64
+
+/-- A chunk of `n` packed steps (`pkChunk`): the rows from the low 15 bits of
+`F` and `G`, their steps, the chunk's matrix from them, the low words by it
+(but after the last chunk), and the batch's matrix times it (or it, for the
+first). -/
+def pkChunkV (n : Nat) (first last : Bool) (w : PkSt) : PkSt :=
+  let r := Divstep.psteps n (w.E, (w.F &&& 0x7fff) + 2 ^ 31, (w.G &&& 0x7fff) + 2 ^ 47)
+  let u := Divstep.pextLo r.2.1
+  let v := Divstep.pextHi r.2.1
+  let q := Divstep.pextLo r.2.2
+  let rr := Divstep.pextHi r.2.2
+  let F := if last then w.F else (w.G * v + w.F * u) >>> n
+  let G := if last then w.G else (w.G * rr + w.F * q) >>> n
+  if first then ⟨r.1, F, G, u, v, q, rr⟩
+  else ⟨r.1, F, G, u * w.U + v * w.Q, u * w.V + v * w.R, rr * w.Q + q * w.U, rr * w.R + q * w.V⟩
+
+/-- A batch's 59 packed divsteps from `d` and the low words `F`, `G`: chunks
+of `15, 15, 15, 14`. -/
+def pkBatchV (D F G : BitVec 64) : PkSt :=
+  pkChunkV 14 false true <| pkChunkV 15 false false <| pkChunkV 15 false false <|
+    pkChunkV 15 true false ⟨~~~D, F, G, 0, 0, 0, 0⟩
+
 /-- A batch: 59 divsteps on the low words, then the rows. -/
 def dbatchV (t : DSt) : DSt :=
-  let w := Divstep.wsteps 59 ⟨t.D, BitVec.ofNat 64 t.f, BitVec.ofNat 64 t.g, 1, 0, 0, 1⟩
-  ⟨w.D, fRowV w.U w.V t.f t.g, fRowV w.Q w.R t.f t.g, aRowV w.U w.V t.a t.b, aRowV w.Q w.R t.a t.b⟩
+  let w := pkBatchV t.D (BitVec.ofNat 64 t.f) (BitVec.ofNat 64 t.g)
+  ⟨~~~w.E, fRowV w.U w.V t.f t.g, fRowV w.Q w.R t.f t.g, aRowV w.U w.V t.a t.b, aRowV w.Q w.R t.a t.b⟩
 
 /-- `n` batches from `(d, f, g, a, b) = (1, p, x, 0, 1)`. -/
 def drun (x : Nat) : Nat → DSt

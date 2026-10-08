@@ -1,6 +1,7 @@
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
 import VerifiedGarbage.Proof.Divstep.Iter
 import VerifiedGarbage.Proof.Divstep.Tc
+import VerifiedGarbage.Proof.Divstep.Packed
 import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 /-!
@@ -192,11 +193,149 @@ theorem negN_ofInt_le {u : Int} (h : |u| ≤ 2 ^ 59) : (negN (BitVec.ofInt 64 u)
   have := negN_le (BitVec.ofInt 64 u)
   rw [← absN_ofInt h]; exact_mod_cast this
 
-theorem ofNat_rel {X : Nat} {f : Int} (hX : (X : Int) = f % 2 ^ 256) :
-    ((BitVec.ofNat 64 X).toNat : Int) % 2 ^ 59 = f % 2 ^ 59 := by
+theorem ofNat_rel64 {X : Nat} {f : Int} (hX : (X : Int) = f % 2 ^ 256) :
+    ((BitVec.ofNat 64 X).toNat : Int) % 2 ^ 64 = f % 2 ^ 64 := by
   rw [BitVec.toNat_ofNat]
   push_cast
   rw [Int.emod_emod_of_dvd _ (by norm_num), hX, Int.emod_emod_of_dvd _ (by norm_num)]
+
+/-! ## The packed divsteps
+
+`pkBatchV`'s chunks are `msteps` (`pkChunkV_rel`, as `pchunk_ok` in
+`Proof/Weierstrass/X86_64/InvPacked.lean` for the same code), so the batch's
+words are those of 59 divsteps (`pkBatchV_rel`). -/
+
+/-- A chunk's words for the batch's state `T` so far: `~d`, the low words of
+`f` and `g` modulo `2^K`, and (but for the first chunk, whose `T` has the
+identity) the matrix. -/
+structure PkAt (K : Nat) (first : Bool) (T : MSt) (w : PkSt) : Prop where
+  E : w.E = ~~~BitVec.ofInt 64 T.d
+  F : (w.F.toNat : Int) % 2 ^ K = T.f % 2 ^ K
+  G : (w.G.toNat : Int) % 2 ^ K = T.g % 2 ^ K
+  id : first = true → T.u = 1 ∧ T.v = 0 ∧ T.q = 0 ∧ T.r = 1
+  mat : first = false → w.U = BitVec.ofInt 64 T.u ∧ w.V = BitVec.ofInt 64 T.v ∧
+    w.Q = BitVec.ofInt 64 T.q ∧ w.R = BitVec.ofInt 64 T.r
+
+theorem pk_c31 : (2 ^ 31 : BitVec 64) = BitVec.ofInt 64 (2 ^ 31) := by decide
+theorem pk_c47 : (2 ^ 47 : BitVec 64) = BitVec.ofInt 64 (2 ^ 47) := by decide
+
+/-- A row's start as an integer: the low 15 bits, plus a constant. -/
+theorem pk_set_int (w c : BitVec 64) {C : Int} (hc : c = BitVec.ofInt 64 C) :
+    (w &&& 0x7fff) + c = BitVec.ofInt 64 (((w.toNat % 2 ^ 15 : Nat) : Int) + C) := by
+  have h : (w &&& 0x7fff) = BitVec.ofNat 64 (w.toNat % 2 ^ 15) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_and, BitVec.toNat_ofNat, show (0x7fff : BitVec 64).toNat = 2 ^ 15 - 1 from rfl,
+      Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt (lt_trans (Nat.mod_lt _ (by decide)) (by decide))]
+  rw [h, hc, BitVec.ofInt_add, BitVec.ofInt_natCast]
+
+/-- A row's start is congruent to the low word modulo `2^n`, `n ≤ 15`. -/
+theorem pk_row_mod {w : BitVec 64} {F : Int} {K n k : Nat} (hn : n ≤ 15) (hK : n ≤ K) (hk : 15 ≤ k)
+    (h : (w.toNat : Int) % 2 ^ K = F % 2 ^ K) :
+    (((w.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ k) % 2 ^ n = F % 2 ^ n := by
+  have d1 : (2 : Int) ^ n ∣ 2 ^ 15 := pow_dvd_pow 2 hn
+  have d2 : (2 : Int) ^ n ∣ 2 ^ k := pow_dvd_pow 2 (by omega)
+  have d3 : (2 : Int) ^ n ∣ 2 ^ K := pow_dvd_pow 2 hK
+  rw [Int.natCast_mod, Nat.cast_pow, Nat.cast_ofNat, Int.add_emod, Int.emod_eq_zero_of_dvd d2, add_zero,
+    Int.emod_emod_of_dvd _ d1, Int.emod_emod, ← Int.emod_emod_of_dvd _ d3, h, Int.emod_emod_of_dvd _ d3]
+
+/-- A chunk of `n` steps from the batch's state `T` so far: `T`'s `n` steps. -/
+theorem pkChunkV_rel {n K : Nat} {first last : Bool} (hn : 1 ≤ n ∧ n ≤ 15) (hK : n ≤ K ∧ K ≤ 64)
+    {T : MSt} {w : PkSt} (hf : T.f % 2 = 1) (hd : |T.d| + 2 * n < 2 ^ 62) (hI : PkAt K first T w) :
+    (pkChunkV n first last w).E = ~~~BitVec.ofInt 64 (msteps n T).d ∧
+    (pkChunkV n first last w).U = BitVec.ofInt 64 (msteps n T).u ∧
+    (pkChunkV n first last w).V = BitVec.ofInt 64 (msteps n T).v ∧
+    (pkChunkV n first last w).Q = BitVec.ofInt 64 (msteps n T).q ∧
+    (pkChunkV n first last w).R = BitVec.ofInt 64 (msteps n T).r ∧
+    (last = false → (((pkChunkV n first last w).F.toNat : Int) % 2 ^ (K - n) = (msteps n T).f % 2 ^ (K - n) ∧
+      ((pkChunkV n first last w).G.toNat : Int) % 2 ^ (K - n) = (msteps n T).g % 2 ^ (K - n))) := by
+  have hmat := msteps_mat (d := T.d) (g := T.g) hf n
+  have bnd := msteps_bnd T.d T.f T.g n
+  have lo := msteps_lo T.d T.f T.g n
+  have hrel := psteps_rel (d := T.d) (f := T.f) (g := T.g)
+    (P := ((w.F.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31)
+    (Q := ((w.G.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47) (n := n) (by omega) hf hd
+    (pk_row_mod hn.2 hK.1 (by norm_num) hI.F) (pk_row_mod hn.2 hK.1 (by norm_num) hI.G) n le_rfl
+  rw [msteps_gen n T]
+  simp only
+  set m := msteps n (MSt.init T.d T.f T.g) with hm
+  have p15 : (2 : Int) ^ n ≤ 2 ^ 15 := pow_le_pow_right₀ (by norm_num) hn.2
+  have ha : w.F.toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
+  have hb : w.G.toNat % 2 ^ 15 < 2 ^ 15 := Nat.mod_lt _ (by norm_num)
+  obtain ⟨eu, ev⟩ := pext_rel ha hb (u := m.u) (v := m.v) (by linarith [lo.1]) (by linarith [lo.2.1])
+    (by linarith [bnd.1])
+  obtain ⟨eq, er⟩ := pext_rel ha hb (u := m.q) (v := m.r) (by linarith [lo.2.2.1])
+    (by linarith [lo.2.2.2.1]) (by linarith [bnd.2])
+  have hps : Divstep.psteps n (w.E, (w.F &&& 0x7fff) + 2 ^ 31, (w.G &&& 0x7fff) + 2 ^ 47) =
+      (~~~BitVec.ofInt 64 m.d,
+        BitVec.ofInt 64 (m.u * (((w.F.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31) +
+          m.v * (((w.G.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47)),
+        BitVec.ofInt 64 (m.q * (((w.F.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 31) +
+          m.r * (((w.G.toNat % 2 ^ 15 : Nat) : Int) + 2 ^ 47))) := by
+    rw [pk_set_int _ _ pk_c31, pk_set_int _ _ pk_c47, hI.E]; exact hrel
+  unfold pkChunkV
+  rw [hps]
+  simp only [eu, ev, eq, er]
+  have lowF : last = false → (((if last = true then w.F else
+      (w.G * BitVec.ofInt 64 m.v + w.F * BitVec.ofInt 64 m.u) >>> n).toNat : Int) % 2 ^ (K - n) =
+        m.f % 2 ^ (K - n)) := fun h => by
+    rw [h]; simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.1
+  have lowG : last = false → (((if last = true then w.G else
+      (w.G * BitVec.ofInt 64 m.r + w.F * BitVec.ofInt 64 m.q) >>> n).toNat : Int) % 2 ^ (K - n) =
+        m.g % 2 ^ (K - n)) := fun h => by
+    rw [h]; simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [add_comm]; exact low_upd hK.2 hK.1 hI.F hI.G hmat.2
+  cases first
+  · obtain ⟨m9, m10, m11, m12⟩ := hI.mat rfl
+    simp only [Bool.false_eq_true, ↓reduceIte, m9, m10, m11, m12]
+    refine ⟨trivial, ?_, ?_, ?_, ?_, fun h => ⟨lowF h, lowG h⟩⟩
+    · rw [← BitVec.ofInt_mul, ← BitVec.ofInt_mul, ← BitVec.ofInt_add]
+    · rw [← BitVec.ofInt_mul, ← BitVec.ofInt_mul, ← BitVec.ofInt_add]
+    · rw [← BitVec.ofInt_mul, ← BitVec.ofInt_mul, ← BitVec.ofInt_add, add_comm]
+    · rw [← BitVec.ofInt_mul, ← BitVec.ofInt_mul, ← BitVec.ofInt_add, add_comm]
+  · obtain ⟨i1, i2, i3, i4⟩ := hI.id rfl
+    simp only [↓reduceIte, i1, i2, i3, i4, mul_one, mul_zero, add_zero, zero_add]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, fun h => ⟨lowF h, lowG h⟩⟩
+
+/-- A batch's packed divsteps are 59 divsteps, from `d` small, `f` odd and the
+low words of `f` and `g`. -/
+theorem pkBatchV_rel {d f g : Int} {D F G : BitVec 64} (hD : D = BitVec.ofInt 64 d)
+    (hF : (F.toNat : Int) % 2 ^ 64 = f % 2 ^ 64) (hG : (G.toNat : Int) % 2 ^ 64 = g % 2 ^ 64)
+    (hf : f % 2 = 1) (hd : |d| ≤ 2 ^ 30) :
+    ~~~(pkBatchV D F G).E = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).d ∧
+    (pkBatchV D F G).U = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).u ∧
+    (pkBatchV D F G).V = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).v ∧
+    (pkBatchV D F G).Q = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).q ∧
+    (pkBatchV D F G).R = BitVec.ofInt 64 (msteps 59 (MSt.init d f g)).r := by
+  set T0 := MSt.init d f g with hT0
+  have f0 : T0.f % 2 = 1 := hf
+  have odd : ∀ k, (msteps k T0).f % 2 = 1 := msteps_f_odd f0
+  have dd : ∀ k, |(msteps k T0).d| ≤ 2 ^ 30 + 2 * k := fun k => by
+    have := msteps_d T0 k
+    rw [show T0.d = d from rfl] at this
+    linarith
+  unfold pkBatchV
+  obtain ⟨d₂, u₂, v₂, q₂, r₂, w₂⟩ := pkChunkV_rel (n := 15) (K := 64) (first := true) (last := false)
+    (T := T0) (w := ⟨~~~D, F, G, 0, 0, 0, 0⟩) ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ f0
+    (by rw [show T0.d = d from rfl]; push_cast; linarith)
+    ⟨show ~~~D = ~~~BitVec.ofInt 64 d by rw [hD], hF, hG, fun _ => ⟨rfl, rfl, rfl, rfl⟩,
+      fun h => absurd h (by decide)⟩
+  obtain ⟨f₂, g₂⟩ := w₂ rfl
+  obtain ⟨d₃, u₃, v₃, q₃, r₃, w₃⟩ := pkChunkV_rel (n := 15) (K := 49) (first := false) (last := false)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (odd 15) (by have := dd 15; norm_num at this ⊢; linarith)
+    ⟨d₂, f₂, g₂, fun h => absurd h (by decide), fun _ => ⟨u₂, v₂, q₂, r₂⟩⟩
+  obtain ⟨f₃, g₃⟩ := w₃ rfl
+  rw [← msteps_add] at d₃ u₃ v₃ q₃ r₃ f₃ g₃
+  obtain ⟨d₄, u₄, v₄, q₄, r₄, w₄⟩ := pkChunkV_rel (n := 15) (K := 34) (first := false) (last := false)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (odd 30) (by have := dd 30; norm_num at this ⊢; linarith)
+    ⟨d₃, f₃, g₃, fun h => absurd h (by decide), fun _ => ⟨u₃, v₃, q₃, r₃⟩⟩
+  obtain ⟨f₄, g₄⟩ := w₄ rfl
+  rw [← msteps_add] at d₄ u₄ v₄ q₄ r₄ f₄ g₄
+  obtain ⟨d₅, u₅, v₅, q₅, r₅, -⟩ := pkChunkV_rel (n := 14) (K := 19) (first := false) (last := true)
+    ⟨by decide, by decide⟩ ⟨by decide, by decide⟩ (odd 45) (by have := dd 45; norm_num at this ⊢; linarith)
+    ⟨d₄, f₄, g₄, fun h => absurd h (by decide), fun _ => ⟨u₄, v₄, q₄, r₄⟩⟩
+  rw [← msteps_add] at d₅ u₅ v₅ q₅ r₅
+  exact ⟨by rw [d₅, BitVec.not_not], u₅, v₅, q₅, r₅⟩
 
 /-- A batch keeps the invariant. -/
 theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i t) :
@@ -211,11 +350,12 @@ theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i 
   generalize dsI x i = st at hod hof hlf hlg hd hs1 hD hF hG hca hcb hzero
   obtain ⟨d, f, g⟩ := st
   simp only at hod hof hlf hlg hd hD hF hG hca hcb hzero
-  -- The word divsteps are those of the matrix.
-  have h0 : Divstep.WSt.rel ⟨t.D, BitVec.ofNat 64 t.f, BitVec.ofNat 64 t.g, 1, 0, 0, 1⟩ (MSt.init d f g) 59 :=
-    ⟨hD, by simp only [MSt.init]; decide, by simp only [MSt.init]; decide, by simp only [MSt.init]; decide,
-      by simp only [MSt.init]; decide, ofNat_rel hF, ofNat_rel hG⟩
-  have hW := wsteps_rel (by norm_num) h0 (by simp only [MSt.init]; omega) hof 59 le_rfl
+  -- The packed divsteps are those of the matrix.
+  have hd30 : |d| ≤ 2 ^ 30 := by
+    have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega : 59 * i ≤ 59 * 9)
+    linarith
+  have hW := pkBatchV_rel (D := t.D) (F := BitVec.ofNat 64 t.f) (G := BitVec.ofNat 64 t.g) hD (ofNat_rel64 hF)
+    (ofNat_rel64 hG) hof hd30
   have hm := msteps_mat (d := d) (g := g) hof 59
   have hb := msteps_bnd d f g 59
   have hdfg := msteps_dfg 59 (MSt.init d f g)
@@ -223,11 +363,11 @@ theorem run_step {x i : Nat} (hx : x < P) (hi : i < 10) {t : DSt} (h : RInv x i 
     subst hg; rw [MSt.init, msteps_g0]; simp
   generalize msteps 59 (MSt.init d f g) = tN at hW hm hb hdfg hg0
   simp only [MSt.init] at hdfg
-  obtain ⟨wD, wU, wV, wQ, wR, -, -⟩ := hW
+  obtain ⟨wD, wU, wV, wQ, wR⟩ := hW
   obtain ⟨m1, m2⟩ := hm
   obtain ⟨b1, b2⟩ := hb
   unfold dbatchV
-  generalize Divstep.wsteps 59 _ = W at wD wU wV wQ wR
+  generalize pkBatchV t.D (BitVec.ofNat 64 t.f) (BitVec.ofNat 64 t.g) = W at wD wU wV wQ wR
   dsimp only
   have hfX : sv t.f = f := sv_rep hlf hF
   have hgX : sv t.g = g := sv_rep hlg hG
