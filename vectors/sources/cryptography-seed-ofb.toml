@@ -1,0 +1,5 @@
+name = "pyca/cryptography SEED-OFB vectors (from the AESVS MMT data, verified against Botan)"
+directories = ["cryptography-seed-ofb"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/SEED/seed-ofb.txt"
+sha256 = "19b02208f766abc2a0c925e7d4e8abd52d3f6bb944c8aa9d93d11270fbd58cd5"
+retrieved = 2026-10-08

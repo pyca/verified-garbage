@@ -632,6 +632,22 @@ yours to keep:
 
 </tr>
 
+<tr>
+
+<td>SEED-ECB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
 </table>
 
 ### AEADs

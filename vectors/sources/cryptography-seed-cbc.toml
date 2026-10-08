@@ -1,0 +1,5 @@
+name = "pyca/cryptography SEED-CBC vectors (RFC 4196's, reformatted)"
+directories = ["cryptography-seed-cbc"]
+url = "https://raw.githubusercontent.com/pyca/cryptography/55cfeb23a8f9e0b7edb87bccb98a6ca7447aa436/vectors/cryptography_vectors/ciphers/SEED/rfc-4196.txt"
+sha256 = "c47c66b3b859822f7e6c1681a3bd5f76127c87b1a78ee8cda08335c0f512a39a"
+retrieved = 2026-10-08
