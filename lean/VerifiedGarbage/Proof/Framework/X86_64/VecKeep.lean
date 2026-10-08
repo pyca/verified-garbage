@@ -20,55 +20,55 @@ def scalarI : Instr → Bool
   | _ => false
 
 theorem execAlu32_vec {op : AluOp} {d : Reg} {src : Src} {s t : State} (h : execAlu32 op d src s = some t) :
-    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
+    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   unfold execAlu32 at h
   obtain ⟨_, -, h⟩ := Option.bind_eq_some_iff.mp h
   split at h <;> first
-    | (cases h; exact ⟨rfl, rfl⟩)
-    | (obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl⟩)
+    | (cases h; exact ⟨rfl, rfl, rfl⟩)
+    | (obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl, rfl⟩)
 
 theorem execMulx_vec {hi lo : Reg} {src : Src} {s t : State} (h : execMulx hi lo src s = some t) :
-    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
+    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   unfold execMulx at h
   split at h
   · cases h
-  · obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl⟩
+  · obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl, rfl⟩
 
 theorem execAdcx_vec {d : Reg} {src : Src} {s t : State} (h : execAdcx d src s = some t) :
-    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
+    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   unfold execAdcx at h
   split at h
   · cases h
   · obtain ⟨_, -, h⟩ := Option.bind_eq_some_iff.mp h
-    obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl⟩
+    obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl, rfl⟩
 
 theorem execAdox_vec {d : Reg} {src : Src} {s t : State} (h : execAdox d src s = some t) :
-    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
+    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   unfold execAdox at h
   split at h
   · cases h
   · obtain ⟨_, -, h⟩ := Option.bind_eq_some_iff.mp h
-    obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl⟩
+    obtain ⟨_, -, rfl⟩ := Option.map_eq_some_iff.mp h; exact ⟨rfl, rfl, rfl⟩
 
 theorem execCmov_vec {cc : Cond} {d : Reg} {src : Src} {s t : State} (h : execCmov cc d src s = some t) :
-    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
+    t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi ∧ t.zmmHi = s.zmmHi := by
   unfold execCmov at h
   split at h
   · cases h
   · obtain ⟨_, -, h⟩ := Option.bind_eq_some_iff.mp h
     obtain ⟨c, -, rfl⟩ := Option.map_eq_some_iff.mp h
-    cases c <;> exact ⟨rfl, rfl⟩
+    cases c <;> exact ⟨rfl, rfl, rfl⟩
 
 theorem exec_vec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i s = some t) :
     t.xmm = s.xmm ∧ t.ymmHi = s.ymmHi := by
   cases i <;> simp only [scalarI, Bool.false_eq_true] at hi
   all_goals simp only [exec, Option.map_eq_some_iff] at h
   all_goals first
-    | exact execAlu32_vec h
-    | exact execMulx_vec h
-    | exact execAdcx_vec h
-    | exact execAdox_vec h
-    | exact execCmov_vec h
+    | exact ⟨(execAlu32_vec h).1, (execAlu32_vec h).2.1⟩
+    | exact ⟨(execMulx_vec h).1, (execMulx_vec h).2.1⟩
+    | exact ⟨(execAdcx_vec h).1, (execAdcx_vec h).2.1⟩
+    | exact ⟨(execAdox_vec h).1, (execAdox_vec h).2.1⟩
+    | exact ⟨(execCmov_vec h).1, (execCmov_vec h).2.1⟩
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl⟩)
     | (simp only [State.store64, State.store8] at h; split at h <;> [(cases h; exact ⟨rfl, rfl⟩); cases h])
     | (unfold execAlu at h

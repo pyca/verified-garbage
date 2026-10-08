@@ -191,6 +191,9 @@ pub(crate) mod rsa;
 pub(crate) mod rsa_keygen;
 
 #[rustfmt::skip]
+pub(crate) mod rsa_mont;
+
+#[rustfmt::skip]
 pub(crate) mod rsa_oaep_sha1_mgf1_sha1;
 
 #[rustfmt::skip]

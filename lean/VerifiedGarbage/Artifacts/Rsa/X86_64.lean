@@ -54,7 +54,7 @@ def artifacts : List Artifact := [
     target := X86_64.target
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["Baseline x86-64: `e` is checked as `vg_rsa_public_checked` checks it; then Montgomery \
-        multiplication as `vg_rsa_public_checked`'s, with the exponent scanned left to right from its \
+        multiplication as `vg_rsa_public_checked`'s, by calls of `vg_rsa_mont_mul`, with the exponent scanned left to right from its \
         first set bit, which starts the result as the input; a square per later bit and a multiplication \
         per later set bit. `pre` is checked (`n` odd, its top word not zero, `R² mod n` below it) before \
         any arithmetic, so that values of no modulus are safe."])
@@ -71,10 +71,7 @@ def artifacts : List Artifact := [
     doc := Spec.Rsa.publicPrecomputedCheckedApi.doc
       (notes := ["For exponent 65537, sixteen squares and a final multiplication by the ordinary input \
         combine the last exponent bit with conversion out of Montgomery form. Other exponents use \
-        the general scan. Montgomery multiplication for a \
-        number of words that is a multiple of 4 (from 4 to 2^30) adds `a_i b + u m` to the \
-        accumulator in one pass per word of `a`, four words at a time, with BMI2's `mulx` and \
-        ADX's `adcx` and `adox` (two carry chains at once), and is the baseline's otherwise."])
+        the general scan. Montgomery multiplication is by calls of `vg_rsa_mont_mul_adx`."])
     code := Impl.Rsa.X86_64.Folded.checked Proof.Rsa.X86_64.CallMont.adx.mm
     contract := Spec.Rsa.publicPrecomputedCheckedContract X86_64.abi 8
     stack := 8
@@ -91,7 +88,7 @@ def artifacts : List Artifact := [
         below `n`, `p q = n` by a product of the two, `qInv < p`) give a mask; the primes are \
         replaced by 3 under a clear mask, so that the arithmetic is the same whatever the key, and \
         the result is stored masked. Each prime has its own working space, with its own \
-        Montgomery multiplication (`vg_rsa_public_checked`'s); the input is reduced modulo it by \
+        Montgomery multiplication (`vg_rsa_public_checked`'s, by calls of `vg_rsa_mont_mul`); the input is reduced modulo it by \
         Montgomery reduction of chunks of its size, and the exponents are scanned left to right \
         over all their bits by a fixed window of 4 bits: four squares and a multiplication by the \
         window's power of the input, from a table of all 16 after the prime's working space, read \
@@ -157,7 +154,7 @@ def artifacts : List Artifact := [
       (notes := ["Baseline x86-64: `n` is checked as `vg_rsa_public_precompute` checks it; `d e` and \
         the halvings of `d e - 1` (`r` odd and `t` its twos) run over `64 Bw` steps for `Bw` words \
         of `d e`, whatever their values. Each candidate `g` computes `g^r mod n` by `vg_rsa_public`'s \
-        Montgomery multiplication over all the bits of `r`, a square and a multiplication by `g` or \
+        Montgomery multiplication (by calls of `vg_rsa_mont_mul`) over all the bits of `r`, a square and a multiplication by `g` or \
         1 (a masked selection) per bit, then `64 Bw` squarings, each kept or not under masks; the \
         candidates stop at the first that finds the factors, which is the only branch on the key. \
         `gcd(y - 1, n)` is `128 w` steps of the binary extended Euclidean algorithm, and `n / p` \

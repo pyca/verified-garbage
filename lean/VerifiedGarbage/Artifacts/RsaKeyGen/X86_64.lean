@@ -14,7 +14,8 @@ def artifacts : List Artifact := [
       (notes := ["Baseline x86-64: `|c − p|` by a subtraction and a masked negation; trial division \
         by Montgomery reduction of `c`'s 32-bit halves modulo each small prime, the masks of all \
         primes or'ed; `gcd(c − 1, e)` by `(c − 1) mod e` bit by bit and 128 steps of a binary gcd \
-        with masks; and Miller–Rabin with `vg_rsa_public`'s Montgomery multiplication, a \
+        with masks; and Miller–Rabin with `vg_rsa_public`'s Montgomery multiplication (by calls of \
+        `vg_rsa_mont_mul`), a \
         witness outside `[2, c − 2]` given bit 1 and cleared its top bit by masks, and each \
         exponentiated over all the bits of `c − 1` but the lowest, a square per bit and the \
         factor chosen by the bit's mask, with the flag of a passing witness kept by masks. The \

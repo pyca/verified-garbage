@@ -14,6 +14,11 @@ theorem exec_zvec {i : Instr} (hi : scalarI i = true) {s t : State} (h : exec i 
   cases i <;> simp only [scalarI, Bool.false_eq_true] at hi
   all_goals simp only [exec, Option.map_eq_some_iff] at h
   all_goals first
+    | exact execAlu32_vec h
+    | exact execMulx_vec h
+    | exact execAdcx_vec h
+    | exact execAdox_vec h
+    | exact execCmov_vec h
     | (obtain ⟨v, -, rfl⟩ := h; exact ⟨rfl, rfl, rfl⟩)
     | (simp only [State.store64, State.store8] at h; split at h <;> [(cases h; exact ⟨rfl, rfl, rfl⟩); cases h])
     | (unfold execAlu at h
