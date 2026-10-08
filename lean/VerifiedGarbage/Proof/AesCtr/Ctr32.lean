@@ -144,4 +144,16 @@ theorem add_words64 (m : Mem) (P : Addr) (hi lo : BitVec 64) (d : Nat)
   · exact ofNat_congr (by rw [hhi]; simp only [Nat.reducePow]; omega)
   · exact ofNat_congr (by rw [hlo]; simp only [Nat.reducePow]; omega)
 
+theorem blocksAt_add (m : Mem) (p : Addr) (a b : Nat) :
+    Spec.Cbc.blocksAt m p (a + b) = Spec.Cbc.blocksAt m p a ++ Spec.Cbc.blocksAt m (p + BitVec.ofNat 64 (16 * a)) b := by
+  simp only [Spec.Cbc.blocksAt, List.range_add, List.map_append, List.map_map]
+  congr 1
+  refine List.map_congr_left fun i _ => ?_
+  simp only [Function.comp_apply, BitVec.add_assoc, Nat.mul_add, BitVec.ofNat_add]
+
+/-- The last 32 bits of the counter block after `k` increments. -/
+theorem lo32_next {t : List Byte} (ht : t.length = 16) (k : Nat) : lo32 (next t k) = (toNat t + k) % 2 ^ 32 := by
+  rw [lo32, next_eq ht, toNat_ofNat]
+  omega
+
 end VG.Proof.AesCtr

@@ -127,4 +127,53 @@ theorem args_ok (s : State) :
   simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
 
+theorem store_ok (s : State) {S : Addr} (hs : s.gpr .r15 = S) (ws : InRegions s.wr (S + BitVec.ofNat 64 2048) 8) :
+    ∃ s', runBlock isa [.store (at_ .r15 cOff) .rcx] s = some s' ∧ s'.gpr = s.gpr ∧
+      s'.mem = s.mem.writeW (S + BitVec.ofNat 64 2048) (s.gpr .rcx) ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec, State.store64, State.ea, offset_nat, hs, ws,
+      ite_true]
+    exact rfl, ?_, ?_, ?_, ?_⟩
+  all_goals rfl
+
+theorem advA_ok (s : State) {S P : Addr} {left m : Nat} (hs : s.gpr .r15 = S) (h13 : s.gpr .r13 = P)
+    (h14 : s.gpr .r14 = BitVec.ofNat 64 left) (hm : s.mem.readW (S + BitVec.ofNat 64 2048) 64 = BitVec.ofNat 64 m)
+    (hml : m ≤ left) (h16 : 16 * m < 2 ^ 64)
+    (rs : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 2048) 8) :
+    ∃ s', runBlock isa [.mov .rax (.mem (at_ .r15 cOff)), .alu .sub .r14 (.reg .rax), .shift .shl .rax 4,
+        .alu .add .r13 (.reg .rax)] s = some s' ∧
+      s'.gpr .r14 = BitVec.ofNat 64 (left - m) ∧ s'.gpr .r13 = P + BitVec.ofNat 64 (16 * m) ∧
+      (∀ r, r ≠ .rax → r ≠ .r13 → r ≠ .r14 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
+      s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [cOff, runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc, State.load64, State.ea, offset_nat,
+      execAlu, execShift, hs, rs, Option.bind_some, Option.map_some, gpr_setReg, gpr_arithFlags,
+      gpr_setFlags, reduceCtorEq, ↓reduceIte, Nat.reduceLeDiff, and_self]
+    exact rfl, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, reduceCtorEq, ↓reduceIte, h14, hm]
+    rw [Offset.ofNat_sub_ofNat hml]
+  · simp only [gpr_setReg, ↓reduceIte, h13, hm]
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    have hm' : m < 2 ^ 64 := by omega
+    rw [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hm', Nat.shiftLeft_eq]
+    omega
+  · intro r h₁ h₂ h₃
+    simp [gpr_setReg, gpr_setFlags, h₁, h₂, h₃]
+  all_goals rfl
+
+theorem advB_ok (s : State) {Q : Addr} (hq : s.gpr .r12 = Q)
+    (rq : InRegions (s.rd ++ s.wr) (Q + BitVec.ofNat 64 12) 4) :
+    ∃ s', runBlock isa [.mov32 .rax (.mem (at_ .r12 12)), .alu32 .test .rax (.reg .rax)] s = some s' ∧
+      s'.zf = some (s.mem.readW (Q + BitVec.ofNat 64 12) 32 == 0) ∧
+      (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  refine ⟨_, by
+    simp only [runBlock_cons, runStep_some, runBlock_nil, at_, exec, readSrc32, State.load32, State.ea, offset_nat,
+      State.setReg32, execAlu32, hq, rq, ite_true, Option.bind_some, Option.map_some]
+    exact rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · simp only [zf_arithFlags, gpr_setReg, ite_true, BitVec.and_self]
+    rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
+  · intro r hr; simp [gpr_setReg, hr]
+  all_goals rfl
+
 end VG.Proof.AesCtr.X86_64
