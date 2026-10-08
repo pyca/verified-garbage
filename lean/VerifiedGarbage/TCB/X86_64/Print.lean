@@ -110,7 +110,8 @@ def VBinOp.name : VBinOp → String
   | .vpaddw => "vpaddw" | .vpsubw => "vpsubw" | .vpsubd => "vpsubd" | .vpmullw => "vpmullw"
   | .vpmulhw => "vpmulhw" | .vpackssdw => "vpackssdw" | .vpunpcklwd => "vpunpcklwd"
   | .vpunpckhwd => "vpunpckhwd" | .vpsubq => "vpsubq"
-  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vpcmpeqd => "vpcmpeqd"
+  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vaesdec => "vaesdec"
+  | .vaesdeclast => "vaesdeclast" | .vpcmpeqd => "vpcmpeqd"
 
 def VVarOp.name : VVarOp → String
   | .vpsllvd => "vpsllvd" | .vpsrlvd => "vpsrlvd" | .vpsllvq => "vpsllvq" | .vpsrlvq => "vpsrlvq"
@@ -148,7 +149,8 @@ def ZBinOp.name : ZBinOp → String
   | .vpunpcklqdq => "vpunpcklqdq" | .vpunpckhqdq => "vpunpckhqdq"
   | .vpaddq => "vpaddq" | .vpmuludq => "vpmuludq" | .vpandq => "vpandq" | .vporq => "vporq"
   | .vpandnq => "vpandnq"
-  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vpshufb => "vpshufb"
+  | .vaesenc => "vaesenc" | .vaesenclast => "vaesenclast" | .vaesdec => "vaesdec"
+  | .vaesdeclast => "vaesdeclast" | .vpshufb => "vpshufb"
   | .vpsubq => "vpsubq"
 
 def ZShiftOp.name : ZShiftOp → String
