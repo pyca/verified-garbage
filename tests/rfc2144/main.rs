@@ -3,7 +3,7 @@
 //! pyca/cryptography's CAST5-CBC vectors (chained here through ECB), each
 //! vendored under `vectors/` (see `vectors/sources/`).
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use verified_garbage::cast5_ecb::{Cast5Ecb, Error};
 

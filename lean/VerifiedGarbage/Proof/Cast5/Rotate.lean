@@ -100,4 +100,26 @@ theorem steps_eq (a k : BitVec 32) :
   simp only [Nat.shiftRight_eq_div_pow]
   omega
 
+/-- Step `b` as a selection: the rotation by `2 ^ b` if bit 0 of `kb` is set. -/
+def selStep (a kb : BitVec 32) (b : Nat) : BitVec 32 :=
+  if (kb &&& 1) = 0 then a else a.rotateRight (32 - 2 ^ b)
+
+theorem selStep_eq_step (a kb : BitVec 32) {b : Nat} (hb : b < 5) : selStep a kb b = step a kb b := by
+  have hr : a.rotateRight (32 - 2 ^ b) = a.rotateLeft (2 ^ b) :=
+    rotateRight_eq_rotateLeft a (Nat.pow_pos (by decide)) (by
+      rcases (show b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 ∨ b = 4 by omega) with h | h | h | h | h <;>
+        subst h <;> decide)
+  rw [step_eq _ _ hb, selStep]
+  rcases Nat.mod_two_eq_zero_or_one kb.toNat with h | h
+  · rw [ite_eq_left (BitVec.eq_of_toNat_eq (by rw [and_one_toNat, h]; rfl)), h, Nat.mul_zero]
+    apply BitVec.eq_of_getLsbD_eq
+    intro i hi
+    rw [getLsbD_rotateLeft_lt _ (by decide) hi]
+    simp
+  · have hne : ¬(kb &&& 1) = 0 := fun e => by
+      have := congrArg BitVec.toNat e
+      rw [and_one_toNat, h] at this
+      exact absurd this (by decide)
+    rw [ite_eq_right hne, h, Nat.mul_one, hr]
+
 end VG.Proof.Cast5

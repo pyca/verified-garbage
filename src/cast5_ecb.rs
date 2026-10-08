@@ -4,10 +4,11 @@
 //! Keys contain 5 to 16 bytes (40 to 128 bits, RFC 2144 §2.5); a key of up
 //! to 10 bytes is used with 12 rounds, a longer one with 16. Each operation
 //! accepts complete eight-byte blocks, including empty input. The S-box
-//! lookups scan whole tables in SSE2 registers, so their timing depends on
-//! neither the key nor the data; one block at a time.
+//! lookups scan whole tables in vector registers (SSE2 on x86-64, AdvSIMD on
+//! AArch64), so their timing depends on neither the key nor the data; one
+//! block at a time.
 
-#![cfg(target_arch = "x86_64")]
+#![cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 
 use crate::arch::cast5::{vg_cast5_ecb_decrypt, vg_cast5_ecb_encrypt, vg_cast5_expand_key};
 use crate::zeroize::zeroize;
@@ -87,7 +88,11 @@ impl Cast5Ecb {
 }
 
 /// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
+#[cfg(target_arch = "x86_64")]
 type Ecb = unsafe extern "sysv64" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
+/// The signature of `vg_cast5_ecb_encrypt` and `vg_cast5_ecb_decrypt`.
+#[cfg(target_arch = "aarch64")]
+type Ecb = unsafe extern "C" fn(*const [u8; 128], usize, *mut [u8; 8], usize, *mut [u64; 32]);
 
 impl Drop for Cast5Ecb {
     fn drop(&mut self) {
