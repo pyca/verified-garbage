@@ -1,24 +1,44 @@
 //! QUIC packet and header protection (RFC 9001 §5).
-//!
-//! Only ChaCha20-Poly1305 supports QUIC: AES's header protection is
-//! AES-ECB of one block (§5.4.3), which verified-garbage does not expose.
 
 use alloc::boxed::Box;
 
 use rustls::crypto::cipher::{AeadKey, Iv, Nonce};
 use rustls::error::{ApiMisuse, Error};
 use rustls::quic;
+use verified_garbage::aes_ecb::AesEcb;
 use verified_garbage::chacha20::ChaCha20;
 use zeroize::Zeroizing;
 
 use crate::aead::{self, TAG_LEN};
 
-/// ChaCha20 header protection (RFC 9001 §5.4.4).
-struct ChaCha20HeaderProtectionKey(Zeroizing<[u8; 32]>);
+/// A header protection key: AES (RFC 9001 §5.4.3) or ChaCha20 (§5.4.4). It
+/// lives boxed, so its size does not matter.
+#[allow(clippy::large_enum_variant)]
+enum HeaderProtectionKey {
+    Aes(AesEcb),
+    ChaCha20(Zeroizing<[u8; 32]>),
+}
 
 const SAMPLE_LEN: usize = 16;
 
-impl ChaCha20HeaderProtectionKey {
+impl HeaderProtectionKey {
+    /// The first five bytes of the mask of `sample`.
+    fn mask(&self, sample: &[u8; SAMPLE_LEN]) -> Zeroizing<[u8; 5]> {
+        let mut mask = Zeroizing::new([0u8; 5]);
+        match self {
+            // AES-ECB of the sample.
+            Self::Aes(key) => {
+                let mut block = Zeroizing::new(*sample);
+                key.encrypt(&mut *block).unwrap();
+                mask.copy_from_slice(&block[..5]);
+            }
+            // The sample is the block counter (little-endian) and the
+            // nonce, which is what `ChaCha20` takes as its 16-byte nonce.
+            Self::ChaCha20(key) => ChaCha20::new(key, sample).apply_keystream(&mut *mask),
+        }
+        mask
+    }
+
     fn xor_in_place(
         &self,
         sample: &[u8],
@@ -32,10 +52,7 @@ impl ChaCha20HeaderProtectionKey {
             .try_into()
             .map_err(|_| ApiMisuse::InvalidQuicHeaderProtectionSampleLength)?;
 
-        // The sample is the block counter (little-endian) and the nonce,
-        // which is what `ChaCha20` takes as its 16-byte nonce.
-        let mut mask = [0u8; 5];
-        ChaCha20::new(&self.0, sample).apply_keystream(&mut mask);
+        let mask = self.mask(sample);
         let (first_mask, pn_mask) = mask.split_first().unwrap();
 
         // It is OK for the `mask` to be longer than `packet_number`,
@@ -70,7 +87,7 @@ impl ChaCha20HeaderProtectionKey {
     }
 }
 
-impl quic::HeaderProtectionKey for ChaCha20HeaderProtectionKey {
+impl quic::HeaderProtectionKey for HeaderProtectionKey {
     fn encrypt_in_place(
         &self,
         sample: &[u8],
@@ -166,13 +183,15 @@ impl quic::Algorithm for KeyBuilder {
     }
 
     fn header_protection_key(&self, key: AeadKey) -> Box<dyn quic::HeaderProtectionKey> {
-        match self.packet_alg {
-            aead::Algorithm::ChaCha20Poly1305 => Box::new(ChaCha20HeaderProtectionKey(
-                Zeroizing::new(key.as_ref().try_into().unwrap()),
-            )),
-            // `tls13` gives only ChaCha20-Poly1305 a `KeyBuilder`.
-            _ => unreachable!(),
-        }
+        Box::new(match self.packet_alg {
+            // The header protection key is as long as the packet key.
+            aead::Algorithm::Aes128Gcm | aead::Algorithm::Aes256Gcm => {
+                HeaderProtectionKey::Aes(AesEcb::new(key.as_ref()).unwrap())
+            }
+            aead::Algorithm::ChaCha20Poly1305 => {
+                HeaderProtectionKey::ChaCha20(Zeroizing::new(key.as_ref().try_into().unwrap()))
+            }
+        })
     }
 
     fn aead_key_len(&self) -> usize {
