@@ -1894,11 +1894,7 @@ mod tests {
                             let pieces = [&plain[..], suffix];
                             let actual_tag =
                                 cipher.encrypt(&nonce, aad, &pieces, &mut actual).unwrap();
-                            assert_eq!(
-                                (&actual, actual_tag),
-                                (&expected, tag),
-                                "{backend:?} {key_len} {len} {aad_len} {suffix_len}"
-                            );
+                            assert_eq!((&actual, actual_tag), (&expected, tag));
                         }
                     }
                 }
