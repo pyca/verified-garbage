@@ -6,22 +6,22 @@ import VerifiedGarbage.Impl.Weierstrass.JacAdd
 
 The window method of `Window.lean` (the same recoding, table selection and
 negation), but keeping `R` in Jacobian coordinates from one window to the
-next, and adding the entries in Jacobian coordinates too, which saves each
-window the conversions into Jacobian coordinates and back and the complete
-addition's 29 field additions, for a Jacobian addition's 7 (`jacAddS`, 16
-products, as many as the complete addition and its `toJ` and `fromJ` save).
+next, and adding the entries by the mixed addition (`maddJ`, 11 products),
+which saves each window the conversions into Jacobian coordinates and back
+and the complete addition's 29 field additions and 3 of its products.
 
-The table's entries are stored in Jacobian coordinates (`buildJ`: each entry
-of the complete additions converted by `toJ` before it is stored, through
-`R`). For a curve whose points all have order `n` (prime), an iteration's
-addition `[16 e]P + [d]P` for `|d| ≤ 8` has operands that are neither equal
-nor opposite, unless one of them is `O`, as long as `16 e + 8 < n`: which
-holds of every digit but the last. So each iteration but the last (`stepJ`)
-adds the entry by the Jacobian addition (into `D`), then keeps it, or `E`
-where `R` is `O`, or `R` where `E` is `O` (`selSum`, by masks of their `Z`
-being zero). The last digit's iteration (`stepLast`) adds by the complete
-formulas, `R` and `E` into projective coordinates first (`toProjR`,
-`toProjE`), so `R` ends in projective coordinates as in `window`.
+The table of `Window.lean` (`build`, projective) is brought into affine
+coordinates by one inversion (`normTbl`, Montgomery's trick: the prefix
+products of the entries' `Z`, the inversion `inv` of the last, then back
+from entry `8`). For a curve whose points all have order `n` (prime), an
+iteration's addition `[16 e]P + [d]P` for `|d| ≤ 8` has operands that are
+neither equal nor opposite, unless one of them is `O`, as long as
+`16 e + 8 < n`: which holds of every digit but the last. So each iteration
+but the last (`stepJ`) adds the entry by the mixed addition (into `D`), then
+keeps it, or `E` where `R` is `O`, or `R` where `E` is `O` (`selSum`, by
+masks of their `Z` being zero). The last digit's iteration (`stepLast`) adds
+by the complete formulas, `R` into projective coordinates first
+(`toProjR`), so `R` ends in projective coordinates as in `window`.
 -/
 
 namespace VG.Impl.Weierstrass.X86_64
@@ -32,26 +32,40 @@ namespace WinCfg
 
 variable (K : WinCfg)
 
-/-- `src` into entry `8 - rbx` of the table, for `rbx ≤ j`: as `storeEntry`,
-from any point. -/
-def storeEntryOf (src : Pt) : Nat → Prog isa
-  | 0 => .block (copyPt K.M.n (K.tblPt 8) src)
-  | j + 1 => .seq (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 (j + 1)))])
-      (.ite .e (.block (copyPt K.M.n (K.tblPt (7 - j)) src)) (storeEntryOf src j))
+/-- The prefix products of the table's `Z`, `c_m = Z_1 ⋯ Z_m`: `c_1` is
+`Z_1`, `c_2 … c_7` in the addition's temporaries, `c_8` in `R.z`. -/
+def prodSl : Nat → Nat
+  | 2 => K.S.t0
+  | 3 => K.S.t1
+  | 4 => K.S.t2
+  | 5 => K.S.t3
+  | 6 => K.S.t4
+  | 7 => K.S.t5
+  | 8 => K.R.z
+  | _ => (K.tblPt 1).z
 
-/-- An entry of the table, with `E = [m]P` and `rbx = 8 - m`: `D = E + P`
-(`[m + 1]P`), `E = D`, and `D` in Jacobian coordinates (into `R`) into
-entry `m + 1`. -/
-def buildStepJ : Prog isa :=
-  .seq (.block [.alu .sub .rbx (.imm 1)]) <| .seq (fprogB K.M (rcb3 K.S K.E K.P K.D)) <|
-  .seq (.block (copyPt K.M.n K.E K.D)) <| .seq (fprogB K.M (toJ K.S K.D (zeroPt K) K.R)) <|
-  .seq (storeEntryOf K K.R 6) (.block [.alu .test .rbx (.reg .rbx)])
+/-- `c_2 … c_8`. -/
+def prodOps : List FOp :=
+  (List.range 7).map fun i => .mul (prodSl K (i + 2)) (prodSl K (i + 1)) (K.tblPt (i + 2)).z
 
-/-- The table in Jacobian coordinates: `E = P`, `[1]P` (`P` in Jacobian
-coordinates, through `R`), then a loop of seven additions (`buildStepJ`). -/
-def buildJ : Prog isa :=
-  .seq (.block (copyPt K.M.n K.E K.P)) <| .seq (fprogB K.M (toJ K.S K.E (zeroPt K) K.R)) <|
-  .seq (.block (copyPt K.M.n (K.tblPt 1) K.R ++ [.mov32 .rbx (.imm 7)])) (.loop (buildStepJ K) .ne)
+/-- Entry `m ≥ 2` into affine coordinates, from `c_m^(p-2)` in `E.x`:
+`D.x = c_m^(p-2) c_{m-1} = Z_m^(p-2)`, `E.x = c_m^(p-2) Z_m = c_{m-1}^(p-2)`,
+and `X`, `Y` times `D.x`. -/
+def backOps (m : Nat) : List FOp :=
+  [.mul K.D.x K.E.x (prodSl K (m - 1)), .mul K.E.x K.E.x (K.tblPt m).z,
+    .mul (K.tblPt m).x (K.tblPt m).x K.D.x, .mul (K.tblPt m).y (K.tblPt m).y K.D.x]
+
+/-- Entries `8` down to `2`, then entry `1` (by `E.x = Z_1^(p-2)`). -/
+def normOps : List FOp :=
+  (List.range 7).flatMap (fun i => backOps K (8 - i)) ++
+    [.mul (K.tblPt 1).x (K.tblPt 1).x K.E.x, .mul (K.tblPt 1).y (K.tblPt 1).y K.E.x]
+
+/-- The table into affine coordinates, by one inversion (Montgomery's
+trick): the prefix products, `inv` (`E.x = R.z^(p-2)`), the entries' `X` and
+`Y` by their `Z^(p-2)`, and every `Z` one. -/
+def normTbl (inv : Prog isa) : Prog isa :=
+  .seq (fprogB K.M (prodOps K)) <| .seq inv <| .seq (fprogB K.M (normOps K)) <|
+  .block ((List.range 8).flatMap fun i => setConst K.M.n (K.tblPt (i + 1)).z K.one)
 
 /-- A pair of Jacobian doublings, `a` into `b` and back, with the public
 count in the bits above the window index in `rbx`, as `jacPair`. -/
@@ -75,10 +89,10 @@ def selSum : List Instr :=
   zmask K K.E.z ++ [.mov .rcx (.reg .rdx)] ++ selPt K.M.n K.D K.D K.R ++
     zmask K K.R.z ++ [.mov .rcx (.reg .rdx)] ++ selPt K.M.n K.R K.D K.E
 
-/-- `R = R + E` in Jacobian coordinates, unless `R` and `E` are equal or
-opposite but not `O`. -/
+/-- `R = R + E` for an affine `E`, by the mixed addition, unless `R` and `E`
+are equal but not `O`. -/
 def sumJ : Prog isa :=
-  .seq (fprogB K.M (jacAddS K.S K.R K.E K.D)) (.block (selSum K))
+  .seq (fprogB K.M (maddJ K.S K.R K.E K.D)) (.block (selSum K))
 
 /-- Iteration `j = rbx - 1 ≥ 1` (with `rbx` counting down from `J`):
 `R = 16 R + [d_j]P` in Jacobian coordinates; then `ZF` of `rbx = 1`. -/
@@ -96,26 +110,21 @@ def toProjR : Prog isa :=
   .seq (fprogB K.M (fromJ K.S K.R (zeroPt K) K.D)) <|
   .block (copyPt K.M.n K.R K.D ++ zmask K K.R.z ++ (List.range K.M.n).flatMap (ySelWord K))
 
-/-- `E` from Jacobian into projective coordinates (through `D`). -/
-def toProjE : Prog isa :=
-  .seq (fprogB K.M (fromJ K.S K.E (zeroPt K) K.D)) (.block (copyPt K.M.n K.E K.D))
-
 /-- The last iteration, `j = 0` (with `rbx = 1`): `R = 16 R` in Jacobian
-coordinates, `R` and the entry into projective coordinates, and their sum by
-the complete formulas. -/
+coordinates, `R` into projective coordinates, and its sum with the entry
+(affine, so projective too) by the complete formulas. -/
 def stepLast : Prog isa :=
   .seq (.block [.alu .sub .rbx (.imm 1)]) <|
   .seq (quadJ K) <|
   .seq (toProjR K) <|
   .seq (.block ((tc K).digit ++ select K)) <|
   .seq (.block (tc K).negY) <|
-  .seq (toProjE K) <|
   .seq (fprogB K.M (rcb3 K.S K.R K.E K.D)) (.block (copyPt K.M.n K.R K.D))
 
 /-- `[k]P` into `R`, for the table of the bits of `k + offset J` at `K.bits`
-(`J ≥ 2`). -/
-def windowJ : Prog isa :=
-  .seq (buildJ K) <| .seq (.block (init K)) <| .seq (.loop (stepJ K) .ne) (stepLast K)
+(`J ≥ 2`), with `inv` leaving `R.z^(p-2)` in `E.x`. -/
+def windowJ (inv : Prog isa) : Prog isa :=
+  .seq (build K) <| .seq (normTbl K inv) <| .seq (.block (init K)) <| .seq (.loop (stepJ K) .ne) (stepLast K)
 
 end WinCfg
 

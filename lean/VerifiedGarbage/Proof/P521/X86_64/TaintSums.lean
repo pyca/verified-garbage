@@ -23,11 +23,11 @@ the code here, while the callers' checks read it from their literals), so it
 is analysed in full.
 
 ECDH runs the window method in Jacobian coordinates (`WinCfg.windowJ`), whose
-table of `[1 … 8]P` (seven complete additions, converted to Jacobian
-coordinates), loop and last iteration are each more than one check can
-analyse along with the rest: they have summaries in `taintS`, with what ECDH
-has public there (`rdi` and `rsi`, and the loop's counter `rbx`, which is set
-after the table).
+table of `[1 … 8]P` (seven complete additions), its normalization (an
+inversion, by divsteps), loop and last iteration are each more than one check
+can analyse along with the rest: they have summaries in `taintS`, with what
+ECDH has public there (`rdi` and `rsi`, and the loop's counter `rbx`, which
+is set after the table).
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -58,17 +58,20 @@ abbrev winK : WinCfg := p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl
 /-- What is public at the table. -/
 def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi]
 
-/-- ECDH's window method in Jacobian coordinates: the table, the loop and its
-last iteration. -/
-def winBuildJ : Prog isa := WinCfg.buildJ winK
+/-- ECDH's window method in Jacobian coordinates: the table, its
+normalization, the loop and its last iteration. -/
+def winBuildJ : Prog isa := WinCfg.build winK
+def winNormJ : Prog isa := WinCfg.normTbl winK (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521))
 def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
 def winLastJ : Prog isa := WinCfg.stepLast winK
 
 materialize_code winBuildJ
+materialize_code winNormJ
 materialize_code winLoopJ
 materialize_code winLastJ
 
 taint_summary winBuildJSum : taintS τB winBuildJ
+taint_summary winNormJSum : taintS τB winNormJ
 taint_summary winLoopJSum : taintS τL winLoopJ
 taint_summary winLastJSum : taintS τL winLastJ
 

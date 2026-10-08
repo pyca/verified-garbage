@@ -31,15 +31,4 @@ def jacMixedHead (S : RcbSlots) (p q : Pt) : List FOp :=
 def jacMixedTail (S : RcbSlots) (p q o : Pt) : List FOp :=
   (jacTail S p q o).take 11 ++ [.mul o.z p.z S.t3]
 
-/-- `jacHead` then `jacTail`, ordered so that each product's operands are
-ready well before it (the processor overlaps a product's last carry chains
-with the next independent product), the same values into `o`. -/
-def jacAddS (S : RcbSlots) (p q o : Pt) : List FOp :=
-  [.mul S.t0 p.z p.z, .mul S.t1 q.z q.z, .mul S.t5 q.y p.z, .mul S.t4 p.y q.z,
-   .mul S.t3 q.x S.t0, .mul S.t2 p.x S.t1, .mul S.t5 S.t5 S.t0, .mul S.t4 S.t4 S.t1,
-   .mul o.z p.z q.z, .sub S.t3 S.t3 S.t2, .sub S.t5 S.t5 S.t4,
-   .mul S.t0 S.t3 S.t3, .mul o.x S.t5 S.t5, .mul o.z o.z S.t3, .mul S.t1 S.t0 S.t3,
-   .mul S.t2 S.t2 S.t0, .mul S.t4 S.t4 S.t1, .sub o.x o.x S.t1, .sub o.x o.x S.t2,
-   .sub o.x o.x S.t2, .sub o.y S.t2 o.x, .mul o.y S.t5 o.y, .sub o.y o.y S.t4]
-
 end VG.Impl.Weierstrass
