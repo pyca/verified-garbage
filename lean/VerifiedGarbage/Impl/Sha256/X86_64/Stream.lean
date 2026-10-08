@@ -15,7 +15,8 @@ The streaming state (96 bytes at `state`) is the hash value followed by a
   empty and a whole block remains, otherwise by copying bytes into the buffer,
   compressing it once it is full.
 * `finalize(state = rdi, count = rsi, out = rdx, scratch = rcx)` pads the
-  buffered bytes (one or two blocks), compresses them and writes the digest.
+  buffered bytes (one or two blocks), compresses them and writes the digest;
+  `finalize224` writes only its first 28 bytes, SHA-224's digest.
 
 `update` and `finalize` are the generic streaming code of
 `Impl/MdStream/X86_64.lean`. They take the compression function they call (a
@@ -83,5 +84,11 @@ def params : MdStream.X86_64.Params where
 def update (f : Callee) : Prog isa := MdStream.X86_64.update params f.name f.code
 
 def finalize (f : Callee) : Prog isa := MdStream.X86_64.finalize params f.name f.code
+
+/-- SHA-224 outputs the first 28 bytes of the final hash value: `params`
+with a digest of 7 words. -/
+def params224 : MdStream.X86_64.Params := { params with out := MdStream.X86_64.out32 7 true }
+
+def finalize224 (f : Callee) : Prog isa := MdStream.X86_64.finalize params224 f.name f.code
 
 end VG.Impl.Sha256.X86_64.Stream

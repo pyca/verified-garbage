@@ -24,7 +24,6 @@ super::streaming_hash!(
         state: 80,
         block: 64,
         output: 16,
-        final_hash: 16,
         init: vg_md5_init,
         backends: Md5Backend {
             Scalar => (vg_md5_update, vg_md5_finalize),

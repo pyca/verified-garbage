@@ -17,9 +17,9 @@ from SHA-224's initial hash value (`vg_sha224_init`), its specification
 value. The facts about the code HMAC and PBKDF2 add, which do not depend on
 `v`, are checked once (`coreOK`).
 
-Its streaming `update` and `finalize` are SHA-256's, which SHA-256's
-variants carry (`Proof/Pbkdf2/Md/X86_64/Hashes/Sha256.lean`): SHA-224's
-carry none.
+Its streaming `update` is SHA-256's, which SHA-256's variants carry
+(`Proof/Pbkdf2/Md/X86_64/Hashes/Sha256.lean`); SHA-224's carry its own
+`finalize`, which writes its digest (`stream v`).
 -/
 
 namespace VG.Proof.Pbkdf2.Md.X86_64.Sha224
@@ -175,10 +175,20 @@ theorem pss_sha224 : Proof.RsaPss.X86_64.PssChecks Impl.Sha256.X86_64.Stream.par
   taint_decide_all
 
 
+/-- SHA-224's `finalize` made with `v`, which writes its digest (`finalize224`). -/
+def stream : List StreamFn := [
+  { api := Spec.Sha256.finalize224Api
+    code := Impl.StackScratch.X86_64.withStackScratch 616 .rcx (Impl.Sha256.X86_64.Stream.finalize224 v.callee)
+    contract := Spec.Sha256.finalize224Contract X86_64.abi (8 + 616)
+    stack := 8 + 616
+    verified := Proof.Sha256.X86_64.Shared.finalize224Stack v.ok v.mxcsr v.spSafe v.noStack
+    spSafe := X86_64.withStackScratch_spSafe (by decide)
+      (Proof.Sha256.X86_64.Shared.finalize224_spSafe v.spSafe) }]
+
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
-Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
-with `v` carries; `v` itself, for the functions built on SHA-224 alone
-(`MdHash.sha224`). -/
+Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
+carries, and its `finalize` its own (`stream v`); `v` itself, for the
+functions built on SHA-224 alone (`MdHash.sha224`). -/
 def variant : MdHash :=
   { MdHash.of (ok v) coreOK (callees v) ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
     (by
@@ -188,7 +198,7 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features [] with
+    v.suffix v.features (stream v) with
     sha224 := some v }
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha224

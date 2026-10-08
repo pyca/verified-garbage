@@ -18,9 +18,9 @@ first 28 bytes of the final hash value. The facts about the code HMAC and
 PBKDF2 add, which do not depend on the functions they call, are checked once
 (`coreOK`).
 
-Its streaming `update` and `finalize` are SHA-256's, which SHA-256's
-variants carry (`Proof/Pbkdf2/Md/AArch64/Hashes/Sha256.lean`): SHA-224's
-carry none.
+Its streaming `update` is SHA-256's, which SHA-256's variants carry
+(`Proof/Pbkdf2/Md/AArch64/Hashes/Sha256.lean`); SHA-224's carry its own
+`finalize`, which writes its digest (`stream v`).
 -/
 
 namespace VG.Proof.Pbkdf2.Md.AArch64.Sha224
@@ -183,10 +183,20 @@ theorem pss_sha224 : Proof.RsaPss.AArch64.PssChecks coreH.P 28 := by
   refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
   taint_decide_all
 
+/-- SHA-224's `finalize` made with `v`, which writes its digest
+(`Compress.finalize224`). -/
+def stream : List StreamFn := [
+  { api := Spec.Sha256.finalize224Api
+    code := Impl.StackScratch.AArch64.withStackScratch 608 .x3 v.finalize224
+    contract := Spec.Sha256.finalize224Contract AArch64.abi (16 + 608)
+    stack := 16 + 608
+    verified := Proof.Sha256.AArch64.Shared.finalize224_of v.finalize224_verified
+    spSafe := Code.all_of_forall (fun _ => rfl) _ }]
+
 /-- SHA-224 with the implementation `v` of SHA-256's compression function.
-Its streaming `update` and `finalize` are SHA-256's, which SHA-256's variant
-with `v` carries; it carries `v` for deterministic ECDSA's functions
-(`MdHash.sha224`). -/
+Its streaming `update` is SHA-256's, which SHA-256's variant with `v`
+carries, and its `finalize` its own (`stream v`); it carries `v` for
+deterministic ECDSA's functions (`MdHash.sha224`). -/
 def variant : MdHash :=
   { MdHash.of (ok v) coreOK ⟨Spec.Mgf1.sha224, by simp [mdHashes], fun _ => rfl, rfl⟩ pss_sha224 rfl rfl satI satF satT satP (by decide)
     (by
@@ -196,7 +206,7 @@ def variant : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) satPF
-    v.suffix v.features with
+    v.suffix v.features (stream v) with
     sha224 := some v }
 
 end VG.Proof.Pbkdf2.Md.AArch64.Sha224

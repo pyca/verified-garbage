@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Sha512.Word64
 import VerifiedGarbage.Spec.Sha512.Contract
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.MdStream.Prefix
 
 /-!
 # The truncated digests of the SHA-512 family, from the hash value in memory
@@ -17,13 +18,7 @@ and the high half of the fourth (`digest_take28`). Every target's
 
 namespace VG.Proof.Sha512
 
-open VG.Proof.MdStream (bytes32 bytes64)
-
-/-- A region holding `n` bytes at `a` holds the first `m` of them. -/
-theorem inRegions_prefix {rs : List Region} {a : Addr} {n m : Nat} (h : InRegions rs a n) (hm : m ≤ n) :
-    InRegions rs a m := by
-  obtain ⟨R, hR, hc⟩ := h
-  exact ⟨R, hR, by unfold Region.Contains at *; omega⟩
+open VG.Proof.MdStream (bytes32 bytes64 length_flatMap_range take_flatMap_range)
 
 /-- The output of the hash value at `p`: its words, big-endian. -/
 theorem digest_words (mem : Mem) (p : Addr) :
@@ -31,19 +26,6 @@ theorem digest_words (mem : Mem) (p : Addr) :
       bytes64 true (mem.readW (p + BitVec.ofNat 64 (8 * k)) 64) := by
   simp [md, Spec.Sha512.stateAt, Vector.toList_ofFn, List.range_succ, List.ofFn_succ, bytes64,
     Spec.Sha512.wordBytes]
-
-theorem length_flatMap_range {α : Type} (f : Nat → List α) {w : Nat} (hf : ∀ k, (f k).length = w) (n : Nat) :
-    ((List.range n).flatMap f).length = w * n := by
-  rw [List.length_flatMap, List.map_congr_left (fun x _ => hf x), List.map_const', List.sum_replicate_nat,
-    List.length_range, Nat.mul_comm]
-
-/-- The first `w · n` elements of the lists `f k`, each of `w` elements, for
-`k < m`, are those for `k < n`. -/
-theorem take_flatMap_range {α : Type} (f : Nat → List α) {w : Nat} (hf : ∀ k, (f k).length = w) {n m : Nat}
-    (h : n ≤ m) : ((List.range m).flatMap f).take (w * n) = (List.range n).flatMap f := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [List.range_add, List.flatMap_append, List.take_append_of_le_length (by rw [length_flatMap_range f hf]),
-    List.take_of_length_le (by rw [length_flatMap_range f hf])]
 
 /-- The first `n` words of the hash value at `p`, big-endian. -/
 theorem digest_take (mem : Mem) (p : Addr) {n : Nat} (hn : n ≤ 8) :

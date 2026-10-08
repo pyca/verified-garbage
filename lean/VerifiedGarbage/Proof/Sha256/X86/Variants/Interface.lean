@@ -70,8 +70,8 @@ structure Backend where
   /-- The CPU features its compression function requires, which the
   functions built on it require too. -/
   features : List String
-  /-- Its own functions: the compression function and the streaming
-  functions made with it. -/
+  /-- Its own functions: the compression function, and the streaming
+  functions made with it (SHA-224's `finalize` among them). -/
   functions : List StreamFn
   /-- No instruction of the functions built on it writes `esp` (the
   artifacts' `spSafe`). -/

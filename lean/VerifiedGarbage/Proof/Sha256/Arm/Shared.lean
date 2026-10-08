@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Inline
 import VerifiedGarbage.Proof.Sha256.Arm.Compress
 import VerifiedGarbage.Proof.Sha256.Arm.Stream.Init
 import VerifiedGarbage.Proof.Sha256.Arm.Stream.Md
+import VerifiedGarbage.Proof.Sha256.Arm.Stream.Digest
 import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Sha256.Scratch
 import VerifiedGarbage.Proof.Framework.Arm.StackScratch
@@ -219,5 +220,87 @@ theorem finalize : Verified Arm.target
         Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
       [finalizeFrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
         Mem.read] using finalizeFrameSat)
+
+/-! ## SHA-224's digest
+
+`finalize224` is verified against `finKD`; widened to the shared scratch, for
+SHA-224's initial hash value, and with its working space in a frame of its
+own, it is `Spec.Sha256.finalize224Contract`. -/
+
+/-- `finalizeWide` for SHA-224's digest of the messages hashed from its
+initial hash value. -/
+def finalize224Wide : Contract Arm.isa where
+  pre s :=
+    let state : Region := ⟨State.addr (s.gpr .r0), 96⟩
+    let out : Region := ⟨State.addr (stackArg s 0), 28⟩
+    let scratch : Region := ⟨State.addr (stackArg s 1), 608⟩
+    let args : Region := ⟨stackArgAddr s 0, 8⟩
+    s.rd = [args] ∧ s.wr = [state, out, scratch] ∧
+    state.Disjoint out ∧ state.Disjoint scratch ∧ out.Disjoint scratch ∧
+    args.Disjoint state ∧ args.Disjoint out ∧ args.Disjoint scratch ∧
+    (s.gpr .r0).toNat + 96 ≤ 2 ^ 32 ∧ (stackArg s 0).toNat + 28 ≤ 2 ^ 32 ∧
+    (stackArg s 1).toNat + 608 ≤ 2 ^ 32 ∧ s.sp.toNat + 8 ≤ 2 ^ 32
+  post s s' := ∀ m, Spec.Sha256.ReprFrom Spec.Sha256.H0_224 s.mem (State.addr (s.gpr .r0)) m →
+    Proof.Sha256.countArm s = BitVec.ofNat 64 m.length →
+    Spec.Sha256.bytesAt s'.mem (State.addr (stackArg s 0)) 28 = Spec.Sha256.sha224 m
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3 ∧
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
+
+/-- Rewrites `finKD` and `finalize224Wide` at a narrowed state. -/
+macro "narrow224" loc:(Lean.Parser.Tactic.location)? : tactic =>
+  `(tactic| simp only [MdStream.Arm.finKD, Proof.Sha256.countArm, finalize224Wide, MdStream.Arm.count,
+    VG.Arm.stackArg_withRegions, VG.Arm.stackArgAddr_withRegions, State.withRegions_gpr, State.withRegions_sp,
+    State.withRegions_mem, State.withRegions_rd, State.withRegions_wr] $(loc)?)
+
+theorem finalize224Wide_verified (hsat : ∃ s, finalize224Wide.pre s) :
+    Verified Arm.target Impl.Sha256.Arm.Stream.finalize224 finalize224Wide :=
+  Verified.widen Proof.Sha256.Arm.Stream.Finalize.finalize224_verified
+    (fun s => [⟨State.addr (s.gpr .r0), 96⟩, ⟨State.addr (stackArg s 0), 28⟩,
+      ⟨State.addr (stackArg s 1), 160⟩])
+    (fun _ h => by
+      obtain ⟨h₁, _, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂⟩ := h
+      narrow224
+      exact ⟨h₁, rfl, h₃, h₄.sub_right (sub160 _), h₅.sub_right (sub160 _), h₆, h₇,
+        h₈.sub_right (sub160 _), h₉, h₁₀, le160 h₁₁, h₁₂⟩)
+    (fun _ h => by
+      obtain ⟨_, h₂, _⟩ := h
+      rw [h₂]; exact .cons (pfx rfl) (.cons ⟨rfl, Nat.le_refl _⟩ (.cons (pfx rfl) .nil)))
+    (fun _ _ _ h => by
+      narrow224 at h ⊢
+      intro m hr hc
+      exact (h _ m hr trivial hc).trans (Proof.Sha256.sha224_eq m))
+    (fun _ _ _ _ h => by narrow224; exact h) hsat
+
+/-- A state satisfying `finalize224Wide.pre`. -/
+def finalize224Sat : State :=
+  { Proof.Sha256.Arm.Stream.Finalize.sat224 with wr := [⟨0x1000, 96⟩, ⟨0x2000, 28⟩, ⟨0x3000, 608⟩] }
+
+theorem finalize224Wide_implies : finalize224Wide.Implies (Proof.Sha256.finalize224ScratchContract Arm.abi) := by
+  contract_implies [Proof.Sha256.finalize224ScratchContract, Proof.Sha256.finalize224ScratchSig,
+    Spec.Sha256.finalize224Post, finalize224Wide, Proof.Sha256.countArm, Arm.abi, Arm.argRegs,
+    Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+    [finalize224Sat, Proof.Sha256.Arm.Stream.Finalize.sat224, MdStream.Arm.Finalize.satD,
+      MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read]
+    using finalize224Sat
+
+theorem finalize224Scratch :
+    Verified Arm.target Impl.Sha256.Arm.Stream.finalize224 (Proof.Sha256.finalize224ScratchContract Arm.abi) :=
+  (finalize224Wide_verified finalize224Wide_implies.sat_left).of_implies finalize224Wide_implies
+
+/-- A state satisfying `Spec.Sha256.finalize224Contract`'s precondition. -/
+def finalize224FrameSat : State :=
+  { MdStream.Arm.Finalize.satBase with rd := [⟨0x5000, 4⟩], wr := [⟨0x1000, 96⟩, ⟨0x2000, 28⟩] }
+
+theorem finalize224 : Verified Arm.target
+    (Impl.StackScratch.Arm.withStackScratch 624 1 Impl.Sha256.Arm.Stream.finalize224)
+    (Spec.Sha256.finalize224Contract Arm.abi 624) :=
+  Arm.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 0) (bytes := 624) (m := 1)
+    finalize224Scratch (by decide) (by decide) (by decide) (by decide)
+    (fun _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (Proof.Sha256.finalize224Post_local _)
+    (by implies_sat [Spec.Sha256.finalize224Contract, Spec.Sha256.finalize224Sig, Arm.abi, Arm.argRegs,
+        Arm.reduceClassify, Arm.Loc.val, Arm.State.addr]
+      [finalize224FrameSat, MdStream.Arm.Finalize.satBase, Arm.stackArg, Arm.stackArgAddr, Mem.readW,
+        Mem.read] using finalize224FrameSat)
 
 end VG.Proof.Sha256.Arm.Shared

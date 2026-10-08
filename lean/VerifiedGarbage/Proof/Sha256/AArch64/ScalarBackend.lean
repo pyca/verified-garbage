@@ -21,5 +21,9 @@ def backend : Compress where
   finalizeKeeps := instrs_keeps (by lit_decide)
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
+  finalize224CT := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
+    (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide)
+  finalize224Keeps := instrs_keeps (by lit_decide)
+  finalize224Depth := by lit_decide
 
 end VG.Proof.Sha256.AArch64.Scalar

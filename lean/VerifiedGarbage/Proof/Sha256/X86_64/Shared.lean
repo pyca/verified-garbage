@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.ShaNi.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Avx2.Compress
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Digest
 import VerifiedGarbage.Spec.Sha256.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 import VerifiedGarbage.Proof.Sha256.X86_64.Stream.Common
@@ -245,6 +246,56 @@ theorem finalize {f : Callee} (hf : f.Ok)
       (Spec.Sha256.finalizeContract X86_64.abi (8 + 616)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
     (finalizeScratch hf hm) (by decide) (by decide) (by decide) (finalize_spSafe hs) (finalize_depth hd)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## SHA-224's digest
+
+`finalize224` writes SHA-224's digest, the first 28 bytes of the final hash
+value: `finalize224Scratch` with its working space in a frame of its own. -/
+
+open VG.Impl.Sha256.X86_64.Stream (Callee finalize224) in
+theorem finalize224_mxcsr {f : Callee} (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
+    (finalize224 f).allInstrs (fun i => !X86_64.loadsMxcsr i) = true := by
+  simp only [finalize224, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
+    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.allInstrs, hm, Bool.true_and]
+  decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee finalize224) in
+theorem finalize224_spSafe {f : Callee} (h : f.code.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (finalize224 f).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [finalize224, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
+    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.all, h, Bool.true_and]
+  decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee finalize224) in
+theorem finalize224_depth {f : Callee} (h : f.code.x86_64Depth = 0) : (finalize224 f).x86_64Depth ≤ 8 := by
+  simp only [finalize224, Impl.MdStream.X86_64.finalize, Impl.MdStream.X86_64.finalizeBody,
+    Impl.MdStream.X86_64.compressAt, Impl.MdStream.X86_64.compressWith, Code.x86_64Depth, h]
+  decide +kernel
+
+open VG.Impl.Sha256.X86_64.Stream (Callee finalize224) in
+/-- `finalize224` with its working space in `scratch`, for any compression
+function `f`. -/
+theorem finalize224Scratch {f : Callee} (hf : f.Ok)
+    (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true) :
+    Verified X86_64.target (finalize224 f) (Proof.Sha256.finalize224ScratchContract X86_64.abi 8) :=
+  (Proof.Sha256.X86_64.Stream.Finalize.verified224_of hf (finalize224_mxcsr hm)).of_implies (by
+    contract_implies [Proof.Sha256.finalize224ScratchContract, Proof.Sha256.finalize224ScratchSig,
+      Spec.Sha256.finalize224Post, Proof.Sha256.X86_64.Stream.finalize224X86_64, X86_64.abi, X86_64.argRegs]
+      [Proof.Sha256.X86_64.Stream.Finalize.sat224,
+        MdStream.X86_64.Finalize.satD, Impl.Sha256.X86_64.Stream.params]
+      using Proof.Sha256.X86_64.Stream.Finalize.sat224)
+
+open VG.Impl.Sha256.X86_64.Stream (Callee finalize224) in
+/-- `finalize224`: `finalize224Scratch` with its working space in a frame of its own. -/
+theorem finalize224Stack {f : Callee} (hf : f.Ok)
+    (hm : f.code.allInstrs (fun i => !X86_64.loadsMxcsr i) = true)
+    (hs : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (hd : f.code.x86_64Depth = 0) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackScratch 616 .rcx (finalize224 f))
+      (Spec.Sha256.finalize224Contract X86_64.abi (8 + 616)) :=
+  X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 76) (stack := 8) (bytes := 616)
+    (finalize224Scratch hf hm) (by decide) (by decide) (by decide) (finalize224_spSafe hs) (finalize224_depth hd)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sha256.X86_64.Shared

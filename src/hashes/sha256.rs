@@ -45,7 +45,6 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 32,
-        final_hash: 32,
         init: vg_sha256_init,
         backends: Sha256Backend {
             Scalar => (vg_sha256_update, vg_sha256_finalize),
