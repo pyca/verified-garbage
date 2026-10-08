@@ -22,11 +22,12 @@ them, which a masked exchange of neighbouring planes makes.
 
 The scratch buffer at `r9` holds, in 8-byte slots: all ones (slot 0, for the
 S-box), the S-box's spills (1–47, also the masks of the transposes), the
-masks of the layers (48–52), the address of the last round key's entry (53),
-the callee-saved registers (54–59), the data pointer while the last blocks
-are processed in the tail buffer (60), the planes of `D1` (64–71) and `D2`
-(72–79), the tail buffer (80–95, eight blocks), and the bitsliced subkeys,
-eight planes each, in the order the rounds use them (from slot 96).
+masks of the layers (48–52), the planes of `D1` (64–71) and `D2` (72–79):
+the rounds' working space, below slot 96; then the bitsliced subkeys, eight
+planes each, in the order the rounds use them (from slot 96), the address
+of the postwhitening's entry (368), the data pointer while the last blocks
+are processed in the tail buffer (369), the callee-saved registers
+(370–375), and the tail buffer (376–391, eight blocks).
 -/
 
 namespace VG.Impl.Camellia.X86_64
@@ -43,15 +44,17 @@ def m4Slot : Nat := 50
 def m2Slot : Nat := 51
 /-- The bytes of `SBOX3` (positions `t3`, `t6`). -/
 def m3Slot : Nat := 52
-def endSlot : Nat := 53
-def dataSlot : Nat := 60
 def d1Slot : Nat := 64
 def d2Slot : Nat := 72
-def tailSlot : Nat := 80
 def keySlot : Nat := 96
+/-- After the table of 34 subkeys. -/
+def endSlot : Nat := keySlot + 8 * 34
+def dataSlot : Nat := endSlot + 1
+def savedSlot : Nat := endSlot + 2
+def tailSlot : Nat := endSlot + 8
 
-/-- The number of slots: 34 subkeys after `keySlot`. -/
-def slots : Nat := keySlot + 8 * 34
+/-- The number of slots: the tail buffer is the last 16. -/
+def slots : Nat := tailSlot + 16
 
 def layerMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00),
@@ -59,7 +62,8 @@ def layerMasks : List (Nat × BitVec 64) :=
 
 /-- The callee-saved registers, and their slots. -/
 def savedRegs : List (Reg × Nat) :=
-  [(.rbx, 54), (.rbp, 55), (.r12, 56), (.r13, 57), (.r14, 58), (.r15, 59)]
+  [(.rbx, savedSlot), (.rbp, savedSlot + 1), (.r12, savedSlot + 2), (.r13, savedSlot + 3),
+   (.r14, savedSlot + 4), (.r15, savedSlot + 5)]
 
 def saveRegs : List Instr := savedRegs.map fun (r, k) => st k r
 def restoreRegs : List Instr := savedRegs.map fun (r, k) => movS r k

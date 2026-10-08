@@ -62,7 +62,8 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
         s'.mem.readW (wordAddr (s.gpr c.base) j) 64 = s.mem.readW (wordAddr (s.gpr c.base) j) 64) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ r, (is.all fun i => i.dst != some r) = true → s'.gpr r = s.gpr r) ∧
-      Frame [slotRegion c s] s.mem s'.mem := by
+      Frame [slotRegion c s] s.mem s'.mem ∧ s'.gpr c.base = s.gpr c.base ∧
+      s'.gpr c.ext = s.gpr c.ext := by
   obtain ⟨e', he, hpost⟩ := of_check _ _ _ hchk
   have hrel : Rel (LaneRel k (assign W (2 ^ k))) c (linExt xb) (linEnvG ins sins cs) s := by
     refine ⟨fun r a h => ?_, fun j a hj h => ?_, fun j a hj h => ?_⟩
@@ -92,7 +93,7 @@ theorem linG_ok {k xb : Nat} {c : Cfg} {is : List Instr} {ins : List (Reg × Nat
   simp only [linPostG, Bool.and_eq_true] at hpost
   obtain ⟨⟨hpost, hspost⟩, hkeep⟩ := hpost
   refine ⟨s', hs', fun r g hrg q hq => ?_, fun j g hjg hj q hq => ?_, fun j hj hjs => ?_, p.rd, p.wr,
-    fun r hr => p.other r (by simp [hr]), p.frame⟩
+    fun r hr => p.other r (by simp [hr]), p.frame, p.base, p.ext⟩
   · have h := List.all_eq_true.mp hpost (r, g) hrg
     simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
     exact outWord_rel (fun p hp a ha => h.2 p hp a ha) (p.rel.reg r _ h.1) q hq
@@ -120,13 +121,6 @@ def qIns : List (Reg × Nat) := (List.range 8).map fun k => (q k, k)
 def qOuts (g : Nat → Nat → List Nat) : List (Reg × (Nat → List Nat)) :=
   (List.range 8).map fun j => (q j, g j)
 
-theorem toBs_check :
-    check (lanes 64 9) layerCfg (linExt 8) toBs (linEnvG qIns [] []) (linPostG 9 (qOuts toBsG) [] [] (linEnvG qIns [] [])) = true := by
-  decide +kernel
-
-theorem fromBs_check :
-    check (lanes 64 9) layerCfg (linExt 8) fromBs (linEnvG qIns [] []) (linPostG 9 (qOuts fromBsG) [] [] (linEnvG qIns [] [])) = true := by
-  decide +kernel
 
 /-- The masks' slots. -/
 def maskSlots : List Nat := layerMasks.map (·.1)
@@ -170,6 +164,16 @@ theorem feistel2_check :
     check (lanes 64 12) layerCfg (linExt 24) (feistel d2Slot) bothEnv
       (linPostG 12 (qOuts (feistelG d2Slot)) ((List.range 8).map fun j => (d2Slot + j, feistelG d2Slot j))
         (feistelKeep d2Slot) bothEnv) = true := by
+  decide +kernel
+
+theorem toBs_check :
+    check (lanes 64 12) layerCfg (linExt 24) toBs bothEnv
+      (linPostG 12 (qOuts toBsG) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
+  decide +kernel
+
+theorem fromBs_check :
+    check (lanes 64 12) layerCfg (linExt 24) fromBs bothEnv
+      (linPostG 12 (qOuts fromBsG) [] (maskSlots ++ bothIns.map (·.1)) bothEnv) = true := by
   decide +kernel
 
 theorem outP_check :

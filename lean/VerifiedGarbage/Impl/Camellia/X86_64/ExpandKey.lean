@@ -12,8 +12,8 @@ import VerifiedGarbage.Spec.Camellia
 `Sigma1 … Sigma6` as subkeys, which the bitsliced rounds of ECB run, on
 eight copies of the 128-bit value (the two halves as one block); the XORs
 between the pairs are on the plain words. The words are kept as ECB loads
-them, little-endian words of the big-endian bytes, in slots: `KL` (80, 81),
-`KR` (82, 83), the running value (84, 85), `KA` (86, 87), `KB` (88, 89).
+them, little-endian words of the big-endian bytes, in the tail buffer's
+slots: `KL`, `KR`, the running value, `KA`, `KB`, two words each.
 The subkeys are then halves of rotations of `KL`, `KR`, `KA` and `KB` as
 128-bit numbers, computed on their byte-swapped words, and stored
 byte-swapped, in the order of `Spec.Camellia.scheduleWords`.
@@ -27,11 +27,11 @@ namespace VG.Impl.Camellia.X86_64
 
 open VG.X86_64 VG.Impl.Aes.X86_64
 
-def klSlot : Nat := 80
-def krSlot : Nat := 82
-def wSlot : Nat := 84
-def kaSlot : Nat := 86
-def kbSlot : Nat := 88
+def klSlot : Nat := tailSlot
+def krSlot : Nat := tailSlot + 2
+def wSlot : Nat := tailSlot + 4
+def kaSlot : Nat := tailSlot + 6
+def kbSlot : Nat := tailSlot + 8
 
 /-- The 64-bit word with the bytes of `v` in the reverse order: how a
 little-endian load reads the big-endian bytes of `v`. -/

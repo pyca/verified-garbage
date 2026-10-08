@@ -72,13 +72,17 @@ def loadWords (h : Nat) : List Instr := (List.range 8).map fun b => .mov (q b) (
 /-- Store the eight words to half `h` of the blocks at `rdx`. -/
 def storeWords (h : Nat) : List Instr := (List.range 8).map fun b => .store (at_ .rdx (16 * b + 8 * h)) (q b)
 
+/-- The prewhitening, after `D1` is bitsliced into the state: `D1 ^= kw1`
+into the state and its slots, `D2 ^= kw2` in its slots. -/
+def whiten : List Instr :=
+  keyXor 0 ++ storeHalf d1Slot ++
+  ((List.range 8).flatMap fun j => [movS t0 (d2Slot + j), .alu .xor t0 (.mem (keyAt (8 + j))), st (d2Slot + j) t0])
+
 /-- Bitslice both halves, `D2` to its slots and `D1` into the state, and
 whiten them with the first two entries; `kp` is left at the first round's. -/
 def head : List Instr :=
   loadWords 1 ++ toBs ++ storeHalf d2Slot ++ loadWords 0 ++ toBs ++
-  [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++
-  keyXor 0 ++ storeHalf d1Slot ++
-  ((List.range 8).flatMap fun j => [movS t0 (d2Slot + j), .alu .xor t0 (.mem (keyAt (8 + j))), st (d2Slot + j) t0]) ++
+  [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++ whiten ++
   [.alu .add kp (.imm 128)]
 
 /-- Two rounds: `D2 ^= F(D1, k)`, `D1 ^= F(D2, k')`, with the state holding

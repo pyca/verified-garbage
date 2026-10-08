@@ -84,7 +84,7 @@ theorem round_ok {off d : Nat}
   -- The subkey XOR and input selection.
   let W₁ : Nat → BitVec 64 := fun i =>
     if i < 8 then Qs s i else if i < 24 then keyW s (i - 8) else slotW s (d1Slot + (i - 24))
-  obtain ⟨s₁, h₁, x₁, -, k₁, rd₁, wr₁, o₁, f₁⟩ := linG_ok hkc hok W₁
+  obtain ⟨s₁, h₁, x₁, -, k₁, rd₁, wr₁, o₁, f₁, -, -⟩ := linG_ok hkc hok W₁
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
@@ -156,7 +156,7 @@ theorem round_ok {off d : Nat}
       s'.mem.readW (wordAddr (s'.gpr layerCfg.base) kv.1) 64 = kv.2 := fun s' hm' kv hkv =>
     ⟨by simp [layerMasks] at hkv; rcases hkv with h | h | h | h | h <;> subst h <;>
       simp [layerCfg, keySlot, evenSlot, oddSlot, m4Slot, m2Slot, m3Slot], hm' kv hkv⟩
-  obtain ⟨s₃, h₃, y₃, -, k₃, rd₃, wr₃, o₃, f₃⟩ := linG_ok outP_check hok₂ W₃
+  obtain ⟨s₃, h₃, y₃, -, k₃, rd₃, wr₃, o₃, f₃, -, -⟩ := linG_ok outP_check hok₂ W₃
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
@@ -188,7 +188,7 @@ theorem round_ok {off d : Nat}
   -- The Feistel XOR.
   let W₄ : Nat → BitVec 64 := fun i =>
     if i < 8 then Qs s₃ i else if i < 24 then slotW s₃ (d1Slot + (i - 8)) else keyW s₃ (i - 24)
-  obtain ⟨s₄, h₄, r₄, sl₄, k₄, rd₄, wr₄, o₄, f₄⟩ := linG_ok hfc hok₃ W₄
+  obtain ⟨s₄, h₄, r₄, sl₄, k₄, rd₄, wr₄, o₄, f₄, -, -⟩ := linG_ok hfc hok₃ W₄
     (fun r i hri => by
       simp only [qIns, List.mem_map, List.mem_range, Prod.mk.injEq] at hri
       obtain ⟨i, hi, rfl, rfl⟩ := hri
