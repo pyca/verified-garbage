@@ -16,10 +16,9 @@
 //! The caller chooses the initial counter block, and must never use a
 //! counter block twice with the same key (Appendix B.2).
 //!
-//! On x86-64 and x86, CPUs with AES-NI run the `_aesni` function
-//! (`crate::aes::Backend`; there is no VAES implementation of whole blocks
-//! yet, so its CPUs run it too); on AArch64, CPUs with the AES instructions
-//! run the `_aes` one. Elsewhere, and on other CPUs, the constant-time
+//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` function, and other
+//! CPUs with AES-NI the `_aesni` one (`crate::aes::Backend`), as on x86; on
+//! AArch64, CPUs with the AES instructions run the `_aes` one. Elsewhere, and on other CPUs, the constant-time
 //! bitsliced implementation runs.
 
 #![cfg(any(
@@ -40,18 +39,21 @@ use crate::arch::aes_ctr::vg_aes_ctr;
 use crate::arch::aes_ctr::{VG_AES_CTR_AES_FEATURES, vg_aes_ctr_aes};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::aes_ctr::{VG_AES_CTR_AESNI_FEATURES, vg_aes_ctr_aesni};
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_ctr::{VG_AES_CTR_VAES_FEATURES, vg_aes_ctr_vaes};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
 /// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, or AArch64's for the AES instructions.
+/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $aes:ident) => {
+    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {
             Backend::Scalar => $scalar,
-            // No VAES implementation of CTR yet.
             #[cfg(target_arch = "x86_64")]
-            Backend::AesNi | Backend::Vaes => $aesni,
+            Backend::AesNi => $aesni,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => $vaes,
             #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "aarch64")]
@@ -64,7 +66,7 @@ macro_rules! instance {
 /// its CTR function.
 #[cfg(target_arch = "x86_64")]
 fn select(f: Features) -> Backend {
-    Backend::select_for(f, VG_AES_CTR_AESNI_FEATURES, VG_AES_CTR_AESNI_FEATURES)
+    Backend::select_for(f, VG_AES_CTR_VAES_FEATURES, VG_AES_CTR_AESNI_FEATURES)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
@@ -113,6 +115,7 @@ impl AesCtr {
             backend,
             vg_aes_expand_key,
             vg_aes_expand_key_aesni,
+            vg_aes_expand_key_aesni,
             vg_aes_expand_key_aes
         );
         let mut schedule = [0; 240];
@@ -152,7 +155,13 @@ impl AesCtr {
 
     /// CTR of whole blocks.
     fn crypt(&self, ctr: &mut [u8; 16], blocks: &mut [u8]) {
-        let f = instance!(self.backend, vg_aes_ctr, vg_aes_ctr_aesni, vg_aes_ctr_aes);
+        let f = instance!(
+            self.backend,
+            vg_aes_ctr,
+            vg_aes_ctr_aesni,
+            vg_aes_ctr_vaes,
+            vg_aes_ctr_aes
+        );
         let mut scratch = [0; 272];
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; `blocks` holds `len / 16` whole blocks (its length is a

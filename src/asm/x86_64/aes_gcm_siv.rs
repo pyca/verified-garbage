@@ -5749,7 +5749,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 2
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "ssse3", "vaes", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["ssse3", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -5757,7 +5757,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// # Safety
 ///
@@ -5769,7 +5769,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: crate::cpu::Features = crate
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
+/// * The CPU must support the `ssse3`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -6130,7 +6130,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -6201,12 +6201,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash = sym super::gcm::vg_ghash,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "ssse3", "vaes", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["ssse3", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -6214,7 +6214,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -6228,7 +6228,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: crate::cpu::Features = crate
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
+/// * The CPU must support the `ssse3`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -6370,7 +6370,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -6702,13 +6702,13 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_ghash = sym super::gcm::vg_ghash,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "vaes", "pclmulqdq", "ssse3", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -6716,7 +6716,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// # Safety
 ///
@@ -6728,7 +6728,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `vaes`, `pclmulqdq`, `ssse3` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -7089,7 +7089,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -7160,12 +7160,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["avx", "avx2", "vaes", "pclmulqdq", "ssse3", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -7173,7 +7173,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_pclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -7187,7 +7187,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: crate::cpu::Features 
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `vaes`, `pclmulqdq`, `ssse3` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -7329,7 +7329,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -7661,13 +7661,13 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_pclmul = sym super::gcm::vg_ghash_pclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "vpclmulqdq", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -7675,7 +7675,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -7687,7 +7687,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -8048,7 +8048,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: 
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -8119,12 +8119,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: 
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "vpclmulqdq", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -8132,7 +8132,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -8146,7 +8146,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: crate::cpu::Features
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -8288,7 +8288,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: 
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -8620,13 +8620,13 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: 
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "vpclmulqdq", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -8634,7 +8634,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// # Safety
 ///
@@ -8646,7 +8646,7 @@ pub(crate) const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -9007,7 +9007,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(sch
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -9078,12 +9078,12 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(sch
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
 /// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["vaes", "avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "aes"]);
+pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::Features = crate::cpu::Features::of(&["pclmulqdq", "ssse3", "vpclmulqdq", "aes", "avx", "avx2", "vaes"]);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -9091,7 +9091,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
-/// This implementation encrypts with `vg_aes_encrypt_blocks_aesni` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
+/// This implementation encrypts with `vg_aes_encrypt_blocks_vaes` and `vg_aes_ctr32_vaes` (and expands keys with `vg_aes_expand_key_scratch_aesni`) and computes POLYVAL with `vg_ghash_vpclmul`.
 ///
 /// It compares the tags and overwrites the data with zeros without a branch on the result.
 ///
@@ -9105,7 +9105,7 @@ pub(crate) const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: crate::cpu::F
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx`, `avx2` and `vaes` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
@@ -9247,7 +9247,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(sch
         "mov rcx, r14",
         "mov r8, r15",
         "add r8, 1768",
-        "call {vg_aes_encrypt_blocks_aesni}",
+        "call {vg_aes_encrypt_blocks_vaes}",
         "mov rcx, r14",
         "mov rsi, r15",
         "add rsi, 488",
@@ -9579,7 +9579,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(sch
         ".p2align 6",
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_vpclmul = sym super::gcm::vg_ghash_vpclmul,
     )
 }

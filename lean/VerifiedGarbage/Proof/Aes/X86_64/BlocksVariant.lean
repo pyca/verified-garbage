@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Aes.X86_64.Variant
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.Blocks
+import VerifiedGarbage.Proof.Aes.X86_64.VaesBlocks.Blocks
 
 /-!
 # Implementations of `vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` on x86-64
@@ -119,6 +120,37 @@ def aesni : BlocksImpl where
   decNoStack := by decide +kernel
   suffix := "_aesni"
   features := ["aes"]
+  expand := .aesni
+  expandDepth := by lit_decide
+  expandOk := Ctr32Impl.aesni_expandKey_ok
+  expandCt := Ctr32Impl.aesni_expandKey_ct
+  expandNosp := Ctr32Impl.aesni_expandKey_nosp
+  expandMxcsr := by lit_decide
+  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandNoStack := by lit_decide
+
+/-- The VAES implementation, `vg_aes_encrypt_blocks_vaes` and
+`vg_aes_decrypt_blocks_vaes` (sixteen blocks at a time, then AES-NI's
+loops), with `vg_aes_expand_key_aesni`. -/
+def vaes : BlocksImpl where
+  enc := .encVaes
+  encDepth := by decide +kernel
+  encOk := VaesBlocks.encryptBlocks_correct
+  encCt := VaesBlocks.encryptBlocks_ct
+  encNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  encMxcsr := by decide +kernel
+  encSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  encNoStack := by decide +kernel
+  dec := .decVaes
+  decDepth := by decide +kernel
+  decOk := VaesBlocks.decryptBlocks_correct
+  decCt := VaesBlocks.decryptBlocks_ct
+  decNosp := nosp_of (by rw [← Code.allInstrs_eq]; decide +kernel)
+  decMxcsr := by decide +kernel
+  decSpSafe := Code.all_of_allInstrs (by decide +kernel)
+  decNoStack := by decide +kernel
+  suffix := "_vaes"
+  features := ["aes", "avx", "avx2", "vaes"]
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := Ctr32Impl.aesni_expandKey_ok

@@ -515,9 +515,9 @@ jobs:
             # no runner or chip has without the other; AES-NI's and
             # PCLMULQDQ's together, without AVX and with it (and AES-CMAC's,
             # AES-CCM's and AES-SIV's AES-NI functions, those chaining CMAC's
-            # blocks in registers among them), which a runner with VAES and
-            # VPCLMULQDQ never chooses (AES-OCB and AES-ECB, with no VAES
-            # instance, take their AES-NI ones there too); and VAES's and
+            # blocks in registers among them, and the AES-NI instances of
+            # AES-OCB and of the modes over whole blocks, ECB to XTS), which a
+            # runner with VAES and VPCLMULQDQ never chooses; and VAES's and
             # VPCLMULQDQ's 256-bit ones, which a runner with AVX512BW too
             # never chooses; and RSAES-PKCS1-v1_5 and RSAES-OAEP decryption and
             # RSASSA-PSS with the hash functions' SHA extensions and RSA's
@@ -525,7 +525,7 @@ jobs:
             # AVX.
             runs: |
               - | sha1 sha224 sha256 sha384 sha512 blake2 aes_gcm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac chacha20 triple_des_ecb poly1305 mlkem mldsa scrypt argon2 rfc9106 x25519 x448 ed25519 rsa message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs zeroize cpu
-              aes,ssse3 | aes_gcm cmac aes_ccm aes_siv zeroize cpu
+              aes,ssse3 | aes_gcm cmac aes_ccm aes_siv aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts zeroize cpu
               pclmulqdq,ssse3 | aes_gcm cpu
               aes,pclmulqdq,ssse3 | aes_gcm cpu
               aes,avx,pclmulqdq,ssse3 | aes_gcm cpu

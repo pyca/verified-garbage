@@ -10,10 +10,9 @@
 //! `vg_aes_decrypt_blocks` on one block at a time. This module checks the
 //! lengths, which the assembly does not, and holds the key schedule.
 //!
-//! On x86-64 and x86, CPUs with AES-NI run the `_aesni` functions
-//! (`crate::aes::Backend`; there is no VAES implementation of whole blocks
-//! yet, so its CPUs run them too); on AArch64, CPUs with the AES
-//! instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
+//! On x86-64, CPUs with VAES and AVX2 run the `_vaes` functions, and other
+//! CPUs with AES-NI the `_aesni` ones (`crate::aes::Backend`), as on x86; on
+//! AArch64, CPUs with the AES instructions run the `_aes` ones. Elsewhere, and on other CPUs, the
 //! constant-time bitsliced implementation runs.
 
 #![cfg(any(
@@ -39,19 +38,25 @@ use crate::arch::aes_cbc::{
     VG_AES_CBC_DECRYPT_AESNI_FEATURES, VG_AES_CBC_ENCRYPT_AESNI_FEATURES, vg_aes_cbc_decrypt_aesni,
     vg_aes_cbc_encrypt_aesni,
 };
+#[cfg(target_arch = "x86_64")]
+use crate::arch::aes_cbc::{
+    VG_AES_CBC_DECRYPT_VAES_FEATURES, VG_AES_CBC_ENCRYPT_VAES_FEATURES, vg_aes_cbc_decrypt_vaes,
+    vg_aes_cbc_encrypt_vaes,
+};
 use crate::arch::aes_cbc::{vg_aes_cbc_decrypt, vg_aes_cbc_encrypt};
 use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 
 /// The instance of a function for `backend`: the scalar one, x86-64's or
-/// x86's for AES-NI, or AArch64's for the AES instructions.
+/// x86's for AES-NI, x86-64's for VAES, or AArch64's for the AES instructions.
 macro_rules! instance {
-    ($backend:expr, $scalar:ident, $aesni:ident, $aes:ident) => {
+    ($backend:expr, $scalar:ident, $aesni:ident, $vaes:ident, $aes:ident) => {
         match $backend {
             Backend::Scalar => $scalar,
-            // No VAES implementation of CBC yet.
             #[cfg(target_arch = "x86_64")]
-            Backend::AesNi | Backend::Vaes => $aesni,
+            Backend::AesNi => $aesni,
+            #[cfg(target_arch = "x86_64")]
+            Backend::Vaes => $vaes,
             #[cfg(target_arch = "x86")]
             Backend::AesNi => $aesni,
             #[cfg(target_arch = "aarch64")]
@@ -68,7 +73,11 @@ fn select(f: Features) -> Backend {
         VG_AES_CBC_ENCRYPT_AESNI_FEATURES,
         VG_AES_CBC_DECRYPT_AESNI_FEATURES,
     ]);
-    Backend::select_for(f, AESNI, AESNI)
+    const VAES: Features = Features::all(&[
+        VG_AES_CBC_ENCRYPT_VAES_FEATURES,
+        VG_AES_CBC_DECRYPT_VAES_FEATURES,
+    ]);
+    Backend::select_for(f, VAES, AESNI)
 }
 
 /// The best implementation of AES a CPU with the features `f` can run, with
@@ -133,6 +142,7 @@ impl AesCbc {
             backend,
             vg_aes_expand_key,
             vg_aes_expand_key_aesni,
+            vg_aes_expand_key_aesni,
             vg_aes_expand_key_aes
         );
         let mut schedule = [0; 240];
@@ -158,6 +168,7 @@ impl AesCbc {
             self.backend,
             vg_aes_cbc_encrypt,
             vg_aes_cbc_encrypt_aesni,
+            vg_aes_cbc_encrypt_vaes,
             vg_aes_cbc_encrypt_aes
         );
         self.crypt(iv, buffer, f)
@@ -173,6 +184,7 @@ impl AesCbc {
             self.backend,
             vg_aes_cbc_decrypt,
             vg_aes_cbc_decrypt_aesni,
+            vg_aes_cbc_decrypt_vaes,
             vg_aes_cbc_decrypt_aes
         );
         self.crypt(iv, buffer, f)

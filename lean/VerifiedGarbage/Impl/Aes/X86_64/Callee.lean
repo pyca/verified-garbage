@@ -4,6 +4,7 @@ import VerifiedGarbage.Impl.Aes.X86_64.Vaes
 import VerifiedGarbage.Impl.Aes.X86_64.ExpandKey
 import VerifiedGarbage.Impl.Aes.X86_64.Blocks
 import VerifiedGarbage.Impl.Aes.X86_64.AesNiBlocks
+import VerifiedGarbage.Impl.Aes.X86_64.VaesBlocks
 
 /-!
 # The implementations of `vg_aes_ctr32` on x86-64
@@ -48,5 +49,7 @@ def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocks⟩
 def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocks⟩
 def Blocks.encAesni : Blocks := ⟨"vg_aes_encrypt_blocks_aesni", AesNi.encryptBlocks⟩
 def Blocks.decAesni : Blocks := ⟨"vg_aes_decrypt_blocks_aesni", AesNi.decryptBlocks⟩
+def Blocks.encVaes : Blocks := ⟨"vg_aes_encrypt_blocks_vaes", VaesBlocks.encryptBlocks⟩
+def Blocks.decVaes : Blocks := ⟨"vg_aes_decrypt_blocks_vaes", VaesBlocks.decryptBlocks⟩
 
 end VG.Impl.Aes.X86_64
