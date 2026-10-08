@@ -107,7 +107,7 @@ theorem blockTaint_wf (d : Direction) (s : State) (hs : (blockContract d).pre s)
 theorem blockTaint_agree (d : Direction) (s t : State)
     (hs : (blockContract d).pre s) (ht : (blockContract d).pre t)
     (hp : (blockContract d).pub s t) : X86_64.Taint.Agree blockTaint s t := by
-  refine ⟨?_, ?_, blockTaint_wf d s hs, blockTaint_wf d t ht, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, blockTaint_wf d s hs, blockTaint_wf d t ht, ?_, ?_, ?_, X86_64.Taint.noXr⟩
   · constructor
     · intro r hr
       exact hp r (by simpa only [blockTaint, RegSet.mem_ofList] using hr)
