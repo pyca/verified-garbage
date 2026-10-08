@@ -107,9 +107,10 @@ structure Pre (s₀ : State) (k : Nat) (s s₁ : State) : Prop where
   wr : s₁.wr = s.wr
 
 omit hp in
-theorem count_eq : count ++ args = [.mov32 .rax (.mem (at_ .r12 12)), .bswap32 .rax] ++
-    ([.movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .rax)] ++ ([.alu .cmp .r14 (.reg .rcx),
-      .cmov .b .rcx (.reg .r14)] ++ ([.store (at_ .r15 cOff) .rcx] ++ args))) := rfl
+theorem count_eq : count ++ args = ([.mov32 .rax (.mem (at_ .r12 12)), .bswap32 .rax] : List Instr) ++
+    (([.movImm64 .rcx 0x100000000, .alu .sub .rcx (.reg .rax)] : List Instr) ++
+      (([.alu .cmp .r14 (.reg .rcx), .cmov .b .rcx (.reg .r14)] : List Instr) ++
+        (([.store (at_ .r15 cOff) .rcx] : List Instr) ++ args))) := rfl
 
 theorem pre_wp {k : Nat} (hk : k < N s₀) {s : State} (h : LInv AesCtr.ctrMode s₀ k s) :
     WP isa (.block (count ++ args)) s (Pre s₀ k s) := by

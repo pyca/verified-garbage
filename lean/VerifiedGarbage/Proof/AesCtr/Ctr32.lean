@@ -221,4 +221,26 @@ theorem rv32_eq_zero {a : BitVec 32} : rv32 a = 0 ↔ a = 0 := by
   · rintro rfl
     decide
 
+theorem toNat_eq_of_map {a b : List Byte} (h : a.map (·.toNat) = b.map (·.toNat)) : toNat a = toNat b := by
+  have e : ∀ l : List Byte, toNat l = (l.map (·.toNat)).foldl (fun acc x => 256 * acc + x) 0 := fun l => by
+    simp only [toNat, List.foldl_map]
+  rw [e, e, h]
+
+/-- Counter blocks whose last four bytes (`Spec.Ctr.ctrLeak`) agree agree in
+their last 32 bits. -/
+theorem lo32_of_leak {t t' : List Byte} (ht : t.length = 16) (ht' : t'.length = 16)
+    (h : (t.drop 12).map (·.toNat) = (t'.drop 12).map (·.toNat)) : lo32 t = lo32 t' := by
+  have split : ∀ u : List Byte, u.length = 16 → lo32 u = toNat (u.drop 12) := fun u hu => by
+    have hb : toNat (u.drop 12) < 2 ^ 32 := by
+      have := Proof.AesCcm.beVal_lt (u.drop 12)
+      rw [List.length_drop, hu] at this
+      show Proof.AesCcm.beVal (u.drop 12) < 2 ^ 32
+      simpa using this
+    rw [lo32]
+    conv => lhs; rw [← List.take_append_drop 12 u]
+    rw [toNat_append, List.length_drop, hu]
+    simp only [Nat.reduceSub, Nat.reducePow] at hb ⊢
+    omega
+  rw [split t ht, split t' ht', toNat_eq_of_map h]
+
 end VG.Proof.AesCtr

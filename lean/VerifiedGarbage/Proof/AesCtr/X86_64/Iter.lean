@@ -197,8 +197,9 @@ theorem finish {k m : Nat} (hkm : k + m ≤ N s₀) {s s' : State} (h : Mid s₀
   iv := by rw [hiv, chainK_ctr s₀ hkm]
 
 omit hp in
-theorem adv_eq : adv = [.mov .rax (.mem (at_ .r15 cOff)), .alu .sub .r14 (.reg .rax), .shift .shl .rax 4,
-    .alu .add .r13 (.reg .rax)] ++ [.mov32 .rax (.mem (at_ .r12 12)), .alu32 .test .rax (.reg .rax)] := rfl
+theorem adv_eq : adv = ([.mov .rax (.mem (at_ .r15 cOff)), .alu .sub .r14 (.reg .rax), .shift .shl .rax 4,
+    .alu .add .r13 (.reg .rax)] : List Instr) ++
+      ([.mov32 .rax (.mem (at_ .r12 12)), .alu32 .test .rax (.reg .rax)] : List Instr) := rfl
 
 /-- What `adv` leaves. -/
 structure After (s₀ : State) (k : Nat) (s s₂ : State) : Prop where
