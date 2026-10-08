@@ -8,8 +8,7 @@ open VG VG.X86_64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64
 namespace DoubleHalf
 
 def before (S : RcbSlots) (p : Pt) : List FOp :=
-  [.add S.t1 p.y p.y, .mul S.t0 p.z p.z, .mul S.t1 S.t1 S.t1,
-   .mul p.z p.y p.z, .add p.z p.z p.z,
+  [.add S.t1 p.y p.y, .mul S.t0 p.z p.z, .mul p.z S.t1 p.z, .mul S.t1 S.t1 S.t1,
    .sub S.t3 p.x S.t0, .add S.t4 p.x S.t0, .mul S.t3 S.t3 S.t4,
    .add S.t4 S.t3 S.t3, .add S.t3 S.t4 S.t3,
    .mul S.t2 p.x S.t1, .mul S.t1 S.t1 S.t1]
