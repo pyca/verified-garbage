@@ -17,6 +17,9 @@ pub(crate) mod aes_cfb;
 pub(crate) mod aes_cfb8;
 
 #[rustfmt::skip]
+pub(crate) mod aes_ctr;
+
+#[rustfmt::skip]
 pub(crate) mod aes_gcm_siv;
 
 #[rustfmt::skip]
@@ -27,6 +30,9 @@ pub(crate) mod aes_ofb;
 
 #[rustfmt::skip]
 pub(crate) mod aes_siv;
+
+#[rustfmt::skip]
+pub(crate) mod aes_xts;
 
 #[rustfmt::skip]
 pub(crate) mod argon2;

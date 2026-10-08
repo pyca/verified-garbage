@@ -526,13 +526,13 @@ yours to keep:
 
 <td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
-<td>❌</td>
+<td>✅ AES, PMULL</td>
 
-<td>❌</td>
+<td>✅</td>
 
-<td>❌</td>
+<td>✅ AES-NI</td>
 
 </tr>
 
@@ -555,6 +555,22 @@ yours to keep:
 <tr>
 
 <td>AES-OFB (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>✅ AES-NI</td>
+
+<td>✅ AES, PMULL</td>
+
+<td>✅</td>
+
+<td>✅ AES-NI</td>
+
+</tr>
+
+<tr>
+
+<td>XTS-AES (256-, 384- and 512-bit keys)</td>
 
 <td>✅</td>
 

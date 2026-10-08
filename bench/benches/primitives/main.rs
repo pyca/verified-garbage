@@ -21,12 +21,14 @@ mod aes_cbc;
 mod aes_ccm;
 mod aes_cfb;
 mod aes_cfb8;
+mod aes_ctr;
 mod aes_ecb;
 mod aes_gcm;
 mod aes_gcm_siv;
 mod aes_ocb;
 mod aes_ofb;
 mod aes_siv;
+mod aes_xts;
 mod argon2;
 mod blake2b;
 mod blake2s;
@@ -319,12 +321,14 @@ const BENCHES: &[Bench] = &[
     (aes_ccm::USES, aes_ccm::bench),
     (aes_cfb::USES, aes_cfb::bench),
     (aes_cfb8::USES, aes_cfb8::bench),
+    (aes_ctr::USES, aes_ctr::bench),
     (aes_ecb::USES, aes_ecb::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
     (aes_ocb::USES, aes_ocb::bench),
     (aes_ofb::USES, aes_ofb::bench),
     (aes_siv::USES, aes_siv::bench),
+    (aes_xts::USES, aes_xts::bench),
     (blake2b::USES, blake2b::bench),
     (blake2s::USES, blake2s::bench),
     (chacha20::USES, chacha20::bench),

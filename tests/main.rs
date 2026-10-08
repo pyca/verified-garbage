@@ -19,6 +19,8 @@ mod pbkdf2;
 mod rfc1321;
 #[path = "rfc2202/main.rs"]
 mod rfc2202;
+#[path = "rfc3686/main.rs"]
+mod rfc3686;
 #[path = "rfc6229/main.rs"]
 mod rfc6229;
 #[path = "rfc6979/main.rs"]

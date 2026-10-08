@@ -78,6 +78,14 @@ GROUPS = {
         "lib": ["aes_cfb8"],
         "tests": ["cavp::aes_cfb8"],
     },
+    "aes_ctr": {
+        "lib": ["aes_ctr"],
+        "tests": ["rfc3686"],
+    },
+    "aes_xts": {
+        "lib": ["aes_xts"],
+        "tests": ["cavp::aes_xts", "wycheproof::aes_xts"],
+    },
     "aes_siv": {
         "lib": ["aes_siv"],
         "tests": ["wycheproof::aes_siv"],

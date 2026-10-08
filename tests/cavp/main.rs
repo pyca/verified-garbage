@@ -20,6 +20,7 @@ mod aes_cfb8;
 mod aes_ecb;
 mod aes_gcm;
 mod aes_ofb;
+mod aes_xts;
 mod cmac_aes;
 mod cmac_triple_des;
 mod ecdh_p224;
