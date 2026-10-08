@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
 import VerifiedGarbage.Impl.Ecdh.X86_64
+import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 
 /-!
 # P-521 on x86-64: summaries of the shared loops, for constant time
@@ -28,12 +29,17 @@ table of `[1 … 8]P` (seven complete additions), its normalization (an
 inversion, by divsteps), loop and last iteration are each more than one check
 can analyse along with the rest: they have summaries in `taintS`, with what
 ECDH has public there (`rdi`, `rsi` and `rsp`, and the loop's counter `rbx`,
-which is set after the table).
+which is set after the table). The normalization, the loop and the last
+iteration are analysed without their displacements (`taint_summary_map`),
+their field products of slots past the functions' as one template each
+(`FieldTmpl`), which the kernel neither builds nor analyses again per
+product; the table's products are calls, whose code is shared already.
 -/
 
 namespace VG.Proof.P521.X86_64
 
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
+open VG.Proof.Weierstrass.X86_64
 
 /-- P-521's comb. -/
 abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
@@ -67,13 +73,18 @@ def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
 def winLastJ : Prog isa := WinCfg.stepLast winK
 
 materialize_code winBuildJ
-materialize_code winNormJ
-materialize_code winLoopJ
-materialize_code winLastJ
+
+theorem winK_ok : p521T.Ok winK.M := p521T_ok
 
 taint_summary winBuildJSum : taintS τB winBuildJ
-taint_summary winNormJSum : taintS τB winNormJ
-taint_summary winLoopJSum : taintS τL winLoopJ
-taint_summary winLastJSum : taintS τL winLastJ
+taint_summary_map winNormJSum : taintS τB winNormJ via taintS_eraseInv
+  (by simp only [winNormJ, WinCfg.normTbl, Code.mapBlocks, winK_ok.fprogB]; rfl :
+    Code.mapBlocks Instr.erase winNormJ = _)
+taint_summary_map winLoopJSum : taintS τL winLoopJ via taintS_eraseInv
+  (by simp only [winLoopJ, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,
+    winK_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLoopJ = _)
+taint_summary_map winLastJSum : taintS τL winLastJ via taintS_eraseInv
+  (by simp only [winLastJ, WinCfg.stepLast, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.toProjR, Code.mapBlocks,
+    winK_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLastJ = _)
 
 end VG.Proof.P521.X86_64

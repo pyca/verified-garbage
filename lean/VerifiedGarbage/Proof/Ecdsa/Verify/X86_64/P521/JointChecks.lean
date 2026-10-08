@@ -5,8 +5,12 @@ import VerifiedGarbage.Proof.P521.X86_64.JointTiming
 import VerifiedGarbage.Proof.P521.X86_64.NafTableTiming
 import VerifiedGarbage.Proof.P521.X86_64.JointLayout
 import VerifiedGarbage.Proof.P521.X86_64.JointFrame
+import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
 
-/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification. -/
+/-! Concrete timing checks and the doubler of P-521's baseline and ADX joint verification.
+
+The prefix's products modulo `n` are checked without their displacements, as
+one template (`p521NMul`), analysed once. -/
 namespace VG.Proof.Ecdsa.Verify.X86_64.P521
 open VG VG.X86_64 VG.Impl.Ecdsa.X86_64 VG.Impl.P521.X86_64 VG.Impl.Weierstrass.X86_64
 open VG.Proof.P521.X86_64 VG.Proof.Weierstrass.X86_64 VG.Proof.Ecdsa.X86_64 VG.Proof.Mont
@@ -29,15 +33,25 @@ theorem joint_adx_doubler (hc : CfgOk p521x) (hC : Weierstrass.Law p521x.C) :
   jacDouble_doubler joint_adx_add_layout (Weierstrass.unitMod_pow_two hc.p_odd _) hC hc.am3
     jointDouble_adx_ct joint_adx_cached_checks.copy
 
+open Impl.Ecdsa.Verify.X86_64 in
 theorem joint_before_ct : ConstantTime isa (fun _ => True)
-    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p521) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p521) := by
+  refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
+    (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
+  case h =>
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
+      p521NMul_ok]
+    taint_decide
 
+open Impl.Ecdsa.Verify.X86_64 in
 theorem joint_adx_before_ct : ConstantTime isa (fun _ => True)
-    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p521x) :=
-  VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])
-    (fun _ _ _ _ h => h) (by taint_decide)
+    (X86_64.Taint.Agree (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx])) (jointPrefix p521x) := by
+  refine VG.Taint.constantTime_mapBlocks taint_eraseInv (Taint.ofRegs [.rdi,.rsi,.rdx,.rcx]) rfl
+    (fun _ _ _ _ h => h) rfl (hc := ?hc) ?h
+  case h =>
+    simp only [jointPrefix, Cfg.uv, Cfg.scalars, Impl.Weierstrass.X86_64.blocks, Code.mapBlocks,
+      p521XNMul_ok]
+    taint_decide
 
 theorem joint_after_ct : ScratchCT (Impl.Ecdsa.Verify.X86_64.Cfg.jointTail p521).inline :=
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs [.rdi])
