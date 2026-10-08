@@ -480,17 +480,12 @@ theorem text_rel (A : AadFn) (T : ToFn M) :
 
 end
 
-/-- `vg_aes_gcm_seal_gather` is constant time. -/
-theorem sealGather_ct {M : CtxMode} (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
-    ConstantTime isa (Proof.AesGcm.sealGatherX86_64M M).pre Proof.AesGcm.sealGatherPub
-      (sealGather I.fn A.fn T.fn F.fn) := by
-  refine ct_of_rel (k := Proof.AesGcm.sealGatherX86_64M M) fun s₀ s₀' h h' hq => ?_
-  have hp := SG.ofM h
-  have hp' := SG.ofM h'
-  have pb := Pub.of hq
-  unfold sealGather
-  exact RelCT.seq (entry1_rel hp hp' pb) (RelCT.seq (entry2_rel hp hp' pb) (RelCT.seq (init_rel hp hp' pb I)
-    (RelCT.seq (aadArgs_rel hp hp' pb) (RelCT.seq (aad_rel hp hp' pb A) (RelCT.seq (text_rel hp hp' pb A T)
-      (RelCT.seq (finArgs_rel hp hp' pb) (fin_rel hp hp' pb F)))))))
+/-- The streaming path, in two runs. -/
+theorem stream_rel {M : CtxMode} {s₀ s₀' : State} (hp : SG M s₀) (hp' : SG M s₀') (pb : Pub s₀ s₀') (I : InitFn)
+    (A : AadFn) (T : ToFn M) (F : FinFn) :
+    RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (stream I.fn A.fn T.fn F.fn) fun _ _ => True := by
+  unfold stream
+  exact RelCT.seq (init_rel hp hp' pb I) (RelCT.seq (aadArgs_rel hp hp' pb) (RelCT.seq (aad_rel hp hp' pb A)
+    (RelCT.seq (text_rel hp hp' pb A T) (RelCT.seq (finArgs_rel hp hp' pb) (fin_rel hp hp' pb F)))))
 
 end VG.Proof.AesGcm.X86_64.Gather

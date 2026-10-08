@@ -1818,7 +1818,7 @@ mod tests {
     /// and streaming.
     #[test]
     fn backends_agree() {
-        let msg: [u8; 1300] = core::array::from_fn(|i| (i * 13 + 1) as u8);
+        let msg: [u8; 3100] = core::array::from_fn(|i| (i * 13 + 1) as u8);
         let aad = [9u8; 7];
         let nonce = [2u8; 12];
         for key_len in [16, 24, 32] {
@@ -1829,7 +1829,10 @@ mod tests {
                     continue;
                 }
                 let k = k.with_backend(b);
-                for len in [256, 300, 512, 1024, 1300] {
+                // `encrypt` copies texts shorter than 768 bytes and seals
+                // them in place, and streams longer ones, on the backends
+                // with out-of-place interleaved loops.
+                for len in [256, 300, 512, 767, 768, 769, 1024, 1300, 3072] {
                     let mut want = msg;
                     let want_tag = base
                         .encrypt_in_place(&nonce, &aad, &mut want[..len])
@@ -1846,8 +1849,9 @@ mod tests {
                         .unwrap();
                     assert_eq!(&ct[..len], &msg[..len], "{b:?}");
                     let (a, c) = msg[..len].split_at(len / 3);
-                    for pieces in [&[&msg[..len]][..], &[a, c]] {
-                        let mut out = [0u8; 1300];
+                    let (p, t) = msg[..len].split_at(len - 1);
+                    for pieces in [&[&msg[..len]][..], &[a, c], &[p, t]] {
+                        let mut out = [0u8; 3100];
                         let tag = k.encrypt(&nonce, &aad, pieces, &mut out[..len]);
                         assert_eq!((&out[..len], tag), (&want[..len], Ok(want_tag)), "{b:?}");
                     }
@@ -1920,7 +1924,8 @@ mod tests {
                 warm.encrypt_in_place(&[0; 12], &[], &mut [0; 256]).unwrap();
             }
             for len in [
-                255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 4097, 10000,
+                255, 256, 257, 511, 512, 513, 767, 768, 769, 1024, 1536, 3071, 3072, 3073, 4097,
+                10000,
             ] {
                 let plain: alloc::vec::Vec<u8> = (0..len).map(|i| (i * 29 + 7) as u8).collect();
                 for nonce_len in [12, 13] {

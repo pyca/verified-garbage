@@ -1,4 +1,4 @@
-import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CT
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CopyCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchGather
 import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
@@ -43,31 +43,47 @@ theorem framedS_xdepth {bytes d : Nat} {r : Reg} {c : Prog isa} (h : c.x86_64Dep
 
 /-! ## The code -/
 
+/-- The test of the length, whatever the threshold. -/
+theorem shortTest_mx (t : Nat) : (Code.block (shortTest t) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true :=
+  rfl
+theorem shortTest_spAll (t : Nat) : (Code.block (shortTest t) : Prog isa).all (fun i => !X86_64.isa.writesSp i) = true :=
+  rfl
+theorem shortTest_xdepth (t : Nat) : (Code.block (shortTest t) : Prog isa).x86_64Depth = 0 := rfl
+
 section
-variable {M : CtxMode} (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
+variable {M : CtxMode} (S : SealFn M) (t : Nat) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn)
 
-theorem sealGather_mx : (sealGather I.fn A.fn T.fn F.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
-  simp only [sealGather, text, slices, Code.allInstrs, I.mx, A.mx, T.mx, F.mx, Bool.true_and, Bool.and_true]
+theorem sealGather_mx : (sealGather S.fn t I.fn A.fn T.fn F.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have h := shortTest_mx t
+  simp only [sealGather, Code.allInstrs] at h ⊢
+  simp only [h, stream, copySeal, gatherCopy, copy, text, slices, Code.allInstrs, S.mx, I.mx, A.mx, T.mx, F.mx,
+    Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem sealGather_spAll : (sealGather I.fn A.fn T.fn F.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
-  simp only [sealGather, text, slices, Code.all, I.spAll, A.spAll, T.spAll, F.spAll, Bool.true_and, Bool.and_true]
+theorem sealGather_spAll : (sealGather S.fn t I.fn A.fn T.fn F.fn).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have h := shortTest_spAll t
+  simp only [sealGather, Code.all] at h ⊢
+  simp only [h, stream, copySeal, gatherCopy, copy, text, slices, Code.all, S.spAll, I.spAll, A.spAll, T.spAll,
+    F.spAll, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem sealGather_xdepth : (sealGather I.fn A.fn T.fn F.fn).x86_64Depth ≤ 4888 := by
+theorem sealGather_xdepth : (sealGather S.fn t I.fn A.fn T.fn F.fn).x86_64Depth ≤ 4888 := by
+  have s₀ := S.xd
   have i := I.xd
   have a := A.xd
-  have t := T.xd
+  have tt := T.xd
   have f := F.xd
-  simp only [sealGather, text, slices, Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons,
-    List.length_nil, Nat.max_le]
+  have h := shortTest_xdepth t
+  simp only [sealGather, Code.x86_64Depth] at h ⊢
+  simp only [h, stream, copySeal, gatherCopy, copy, text, slices, Code.x86_64Depth, X86_64.Instr.frameBytes,
+    List.length_cons, List.length_nil, Nat.max_le]
   omega
 
-theorem sealGather_correct (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
-    ∃ t s', Exec isa (sealGather I.fn A.fn T.fn F.fn) s t s' ∧ abiPreserved s s' ∧
+theorem sealGather_correct {ht : t < 2 ^ 31} (s : State) (hs : (Proof.AesGcm.sealGatherX86_64M M).pre s) :
+    ∃ tr s', Exec isa (sealGather S.fn t I.fn A.fn T.fn F.fn) s tr s' ∧ abiPreserved s s' ∧
       Proof.AesGcm.sealGatherPostG s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := sealGather_wp (SG.ofM hs) I A T F
-  exact ⟨t, s', he, abiPreserved_of_exec (sealGather_mx I A T F) he hg, hp⟩
+  obtain ⟨tr, s', he, hg, hp⟩ := sealGather_wp (SG.ofM hs) S ht I A T F
+  exact ⟨tr, s', he, abiPreserved_of_exec (sealGather_mx S t I A T F) he hg, hp⟩
 
 end
 
@@ -203,17 +219,19 @@ theorem gatherP_implies : (Proof.AesGcm.sealGatherX86_64M CtxMode.powers).Implie
     (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888) :=
   ⟨fun _ h => gatherPreP_of h, fun _ _ _ h => gatherPostP_of h, fun _ _ _ _ h => gatherPubP_of h, gatherSatP_pre⟩
 
-theorem sealGather_core (I : InitFn) (A : AadFn) (T : ToFn CtxMode.base) (F : FinFn) :
-    Verified X86_64.target (sealGather I.fn A.fn T.fn F.fn)
+theorem sealGather_core (S : SealFn CtxMode.base) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn)
+    (T : ToFn CtxMode.base) (F : FinFn) :
+    Verified X86_64.target (sealGather S.fn t I.fn A.fn T.fn F.fn)
       (Proof.AesGcm.sealGatherScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.base) (sealGather_correct I A T F)
-    (sealGather_ct I A T F) gather_implies
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.base) (sealGather_correct S t I A T F (ht := ht))
+    (sealGather_ct S ht I A T F) gather_implies
 
-theorem sealGatherP_core (I : InitFn) (A : AadFn) (T : ToFn CtxMode.powers) (F : FinFn) :
-    Verified X86_64.target (sealGather I.fn A.fn T.fn F.fn)
+theorem sealGatherP_core (S : SealFn CtxMode.powers) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn)
+    (T : ToFn CtxMode.powers) (F : FinFn) :
+    Verified X86_64.target (sealGather S.fn t I.fn A.fn T.fn F.fn)
       (Proof.AesGcm.sealGatherPrecomputedScratchContract X86_64.abi 4888) :=
-  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.powers) (sealGather_correct I A T F)
-    (sealGather_ct I A T F) gatherP_implies
+  Verified.of_correct (k := Proof.AesGcm.sealGatherX86_64M CtxMode.powers) (sealGather_correct S t I A T F (ht := ht))
+    (sealGather_ct S ht I A T F) gatherP_implies
 
 /-! ## In its frame -/
 
@@ -231,13 +249,15 @@ theorem gatherFrameSat_pre : ∃ s, (Spec.Gcm.sealGatherContract X86_64.abi 5128
     X86_64.abi, X86_64.argRegs, stackArgs_five, List.append_eq]
     [gatherFrameSat, gatherSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using gatherFrameSat
 
-theorem sealGather_framed (I : InitFn) (A : AadFn) (T : ToFn CtxMode.base) (F : FinFn) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather I.fn A.fn T.fn F.fn))
+theorem sealGather_framed (S : SealFn CtxMode.base) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn)
+    (T : ToFn CtxMode.base) (F : FinFn) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather S.fn t I.fn A.fn T.fn F.fn))
       (Spec.Gcm.sealGatherContract X86_64.abi 5128) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherSig) (nm := "scratch") (e := .u64) (n := 23)
     (pre := Spec.Gcm.sealGatherPre X86_64.abi.ptrBits) (post := Spec.Gcm.sealGatherPost X86_64.abi.ptrBits)
-    (wa := true) (stack := 4888) (bytes := 240) (sealGather_core I A T F) (by decide) (by decide) (by decide)
-    (sealGather_spAll I A T F) (sealGather_xdepth I A T F) (Proof.AesGcm.sealGatherPre_local _)
+    (wa := true) (stack := 4888) (bytes := 240) (sealGather_core S ht I A T F) (by decide) (by decide) (by decide)
+    (sealGather_spAll S t I A T F) (sealGather_xdepth S t I A T F) (Proof.AesGcm.sealGatherPre_local _)
     (Proof.AesGcm.sealGatherPost_local _) gatherFrameSat_pre
 
 /-- `gatherFrameSat`, with a key context of 1024 bytes. -/
@@ -256,14 +276,16 @@ theorem gatherFrameSatP_pre : ∃ s, (Spec.Gcm.sealGatherPrecomputedContract X86
     | exact Region.disjoint_of_sep (by decide)
     | exact powersRepr_of_zero fun _ hi => by simp only [ctx_low hi, ite_false]
 
-theorem sealGatherP_framed (I : InitFn) (A : AadFn) (T : ToFn CtxMode.powers) (F : FinFn) :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather I.fn A.fn T.fn F.fn))
+theorem sealGatherP_framed (S : SealFn CtxMode.powers) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn)
+    (T : ToFn CtxMode.powers) (F : FinFn) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 240 5 (sealGather S.fn t I.fn A.fn T.fn F.fn))
       (Spec.Gcm.sealGatherPrecomputedContract X86_64.abi 5128) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Gcm.sealGatherPrecomputedSig) (nm := "scratch") (e := .u64)
     (n := 23) (pre := Spec.Gcm.sealGatherPrecomputedPre X86_64.abi.ptrBits)
     (post := Spec.Gcm.sealGatherPost X86_64.abi.ptrBits) (wa := true) (stack := 4888) (bytes := 240)
-    (sealGatherP_core I A T F) (by decide) (by decide) (by decide) (sealGather_spAll I A T F)
-    (sealGather_xdepth I A T F) (Proof.AesGcm.sealGatherPrecomputedPre_local _)
+    (sealGatherP_core S ht I A T F) (by decide) (by decide) (by decide) (sealGather_spAll S t I A T F)
+    (sealGather_xdepth S t I A T F) (Proof.AesGcm.sealGatherPrecomputedPre_local _)
     (Proof.AesGcm.sealGatherPrecomputedPost_local _) gatherFrameSatP_pre
 
 end VG.Proof.AesGcm.X86_64.Gather

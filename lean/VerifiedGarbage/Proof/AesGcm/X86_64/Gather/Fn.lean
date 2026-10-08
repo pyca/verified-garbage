@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.CallTo
+import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCall
 import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Steps
 import VerifiedGarbage.Proof.AesGcm.X86_64.Run
 
@@ -22,9 +23,6 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block StreamRepr ctxCiph ctxH gctr inc32 j0 fullTag)
 open VG.Proof.Gcm (padA)
-
-/-- What the function returns with. -/
-def Done (s s' : State) : Prop := gprPreserved s s' ∧ Proof.AesGcm.sealGatherPostG s s'
 
 /-! ## What holds between the pieces -/
 
@@ -311,14 +309,37 @@ theorem w_fin (F : FinFn) {st : State} (h : P7 s st) : WP isa (.call F.fn.name F
     (bytesAt s₈.mem (Dst s) (L s), bytesAt s₈.mem (Tg s) 16)
   rw [Proof.Gcm.encryptWith_eq, hdst, tag]
 
-/-- `vg_aes_gcm_seal_gather`, calling `I`, `A`, `T` and `F`. -/
-theorem sealGather_wp (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) :
-    WP isa (sealGather I.fn A.fn T.fn F.fn) s (Done s) := by
+/-- The streaming path, from the call of `vg_aes_gcm_stream_init` on. -/
+theorem stream_wp (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State} (h₂ : E2 s st) :
+    WP isa (stream I.fn A.fn T.fn F.fn) st (Done s) := by
+  unfold stream
+  exact WP.seq (WP.mono (w_init hp I h₂) fun _ h₃ => WP.seq (WP.mono (w_aadArgs hp h₃) fun _ h₄ =>
+    WP.seq (WP.mono (w_aad hp A h₄) fun _ h₅ => WP.seq (WP.mono (text_ok hp A T h₅) fun _ h₆ =>
+      WP.seq (WP.mono (w_finArgs hp h₆) fun _ h₇ => w_fin hp F h₇)))))
+
+/-- After the test of the length. -/
+def E3 (s : State) (t : Nat) (st : State) : Prop :=
+  E2 s st ∧ st.gpr .r11 = W s ∧ st.cf = some (decide (L s < t))
+
+theorem w_shortTest {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : E2 s st) :
+    WP isa (.block (shortTest t)) st (E3 s t) := by
+  obtain ⟨B, di, si, dx, cx⟩ := h
+  refine WP.mono (shortTest_ok hp ht B) fun st' ⟨r11, cf, g, m, rd, wr⟩ => ?_
+  have cs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r := fun r hr => g r
+    (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
+  exact ⟨⟨B.regs m cs rd wr, by rw [g _ (by decide) (by decide), di], by rw [g _ (by decide) (by decide), si],
+    by rw [g _ (by decide) (by decide), dx], by rw [g _ (by decide) (by decide), cx]⟩, r11, cf⟩
+
+/-- `vg_aes_gcm_seal_gather`, calling `S` for a text shorter than `t` bytes,
+and otherwise `I`, `A`, `T` and `F`. -/
+theorem sealGather_wp (S : SealFn M) {t : Nat} (ht : t < 2 ^ 31) (I : InitFn) (A : AadFn) (T : ToFn M)
+    (F : FinFn) : WP isa (sealGather S.fn t I.fn A.fn T.fn F.fn) s (Done s) := by
   unfold sealGather
-  exact WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
-    WP.seq (WP.mono (w_init hp I h₂) fun _ h₃ => WP.seq (WP.mono (w_aadArgs hp h₃) fun _ h₄ =>
-      WP.seq (WP.mono (w_aad hp A h₄) fun _ h₅ => WP.seq (WP.mono (text_ok hp A T h₅) fun _ h₆ =>
-        WP.seq (WP.mono (w_finArgs hp h₆) fun _ h₇ => w_fin hp F h₇)))))))
+  refine WP.seq (WP.mono (entry1_ok hp) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
+    WP.seq (WP.mono (w_shortTest hp ht h₂) fun st ⟨E, r11, cf⟩ => ?_)))
+  refine WP.ite (decide (L s < t)) (by simp only [eval, cf]) (fun e => ?_) (fun _ => stream_wp hp I A T F E)
+  have hL : L s < t := by simpa using e
+  exact copySeal_wp hp S (by omega) E.1 r11 E.2.2.1 E.2.2.2.1
 
 end
 
