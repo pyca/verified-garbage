@@ -4,13 +4,14 @@
 //! first 28 bytes of the final hash value. `vg_sha224_init` (contract
 //! `VG.Spec.Sha256.init224Contract`) makes a SHA-256 streaming state
 //! represent the empty message, hashed from SHA-224's initial hash value
-//! (`VG.Spec.Sha256.ReprFrom`); SHA-256's `vg_sha256_update` and
-//! `vg_sha256_finalize` (`updateContract` and `finalizeContract`, which hold
-//! for any initial hash value) then absorb the message and output the final
-//! hash value.
+//! (`VG.Spec.Sha256.ReprFrom`); SHA-256's `vg_sha256_update`
+//! (`updateContract`, which holds for any initial hash value) then absorbs
+//! the message, and `vg_sha224_finalize` (`finalize224Contract`) outputs its
+//! digest.
 //!
-//! The implementations of `update` and `finalize` are SHA-256's, chosen the
-//! same way (see `super::sha256`).
+//! The implementations are SHA-256's, chosen the same way (see
+//! `super::sha256`): `vg_sha224_finalize` is made with each of SHA-256's
+//! compression functions.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -19,20 +20,19 @@
     target_arch = "x86"
 ))]
 
-use crate::arch::sha256::vg_sha224_init;
 #[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{VG_SHA256_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX2_FEATURES};
+use crate::arch::sha256::{VG_SHA224_FINALIZE_AVX2_FEATURES, VG_SHA256_UPDATE_AVX2_FEATURES};
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{VG_SHA256_FINALIZE_SHA2_FEATURES, VG_SHA256_UPDATE_SHA2_FEATURES};
+use crate::arch::sha256::{VG_SHA224_FINALIZE_SHA2_FEATURES, VG_SHA256_UPDATE_SHA2_FEATURES};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::{VG_SHA256_FINALIZE_SHANI_FEATURES, VG_SHA256_UPDATE_SHANI_FEATURES};
-use crate::arch::sha256::{vg_sha256_finalize, vg_sha256_update};
+use crate::arch::sha256::{VG_SHA224_FINALIZE_SHANI_FEATURES, VG_SHA256_UPDATE_SHANI_FEATURES};
+use crate::arch::sha256::{vg_sha224_finalize, vg_sha224_init, vg_sha256_update};
 #[cfg(target_arch = "x86_64")]
-use crate::arch::sha256::{vg_sha256_finalize_avx2, vg_sha256_update_avx2};
+use crate::arch::sha256::{vg_sha224_finalize_avx2, vg_sha256_update_avx2};
 #[cfg(target_arch = "aarch64")]
-use crate::arch::sha256::{vg_sha256_finalize_sha2, vg_sha256_update_sha2};
+use crate::arch::sha256::{vg_sha224_finalize_sha2, vg_sha256_update_sha2};
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-use crate::arch::sha256::{vg_sha256_finalize_shani, vg_sha256_update_shani};
+use crate::arch::sha256::{vg_sha224_finalize_shani, vg_sha256_update_shani};
 
 super::streaming_hash!(
     /// An incremental SHA-224 computation (FIPS 180-4 §6.3).
@@ -40,19 +40,18 @@ super::streaming_hash!(
         state: 96,
         block: 64,
         output: 28,
-        final_hash: 32,
         init: vg_sha224_init,
         backends: Sha224Backend {
-            Scalar => (vg_sha256_update, vg_sha256_finalize),
+            Scalar => (vg_sha256_update, vg_sha224_finalize),
             #[cfg(target_arch = "aarch64")]
-            Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA256_FINALIZE_SHA2_FEATURES] =>
-                (vg_sha256_update_sha2, vg_sha256_finalize_sha2),
+            Sha2 if [VG_SHA256_UPDATE_SHA2_FEATURES, VG_SHA224_FINALIZE_SHA2_FEATURES] =>
+                (vg_sha256_update_sha2, vg_sha224_finalize_sha2),
             #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-            ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA256_FINALIZE_SHANI_FEATURES] =>
-                (vg_sha256_update_shani, vg_sha256_finalize_shani),
+            ShaNi if [VG_SHA256_UPDATE_SHANI_FEATURES, VG_SHA224_FINALIZE_SHANI_FEATURES] =>
+                (vg_sha256_update_shani, vg_sha224_finalize_shani),
             #[cfg(target_arch = "x86_64")]
-            Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA256_FINALIZE_AVX2_FEATURES] =>
-                (vg_sha256_update_avx2, vg_sha256_finalize_avx2),
+            Avx2 if [VG_SHA256_UPDATE_AVX2_FEATURES, VG_SHA224_FINALIZE_AVX2_FEATURES] =>
+                (vg_sha256_update_avx2, vg_sha224_finalize_avx2),
         },
     }
 );

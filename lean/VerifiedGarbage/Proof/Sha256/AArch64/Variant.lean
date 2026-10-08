@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Md
+import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
 
 /-!
 # SHA-256 compression backends on AArch64
@@ -33,6 +34,14 @@ structure Compress where
     untouched.all fun r => dstOf i != some r) = true
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
+  /-- SHA-224's `finalize`, writing its 28-byte digest: as `finalizeCT`,
+  `finalizeKeeps` and `finalizeDepth`. -/
+  finalize224CT : ConstantTime isa (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28).pre
+    (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28).pub
+    (finalize Impl.Sha256.AArch64.Stream.params224 name code)
+  finalize224Keeps : ((instrs (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code)).all fun i =>
+    untouched.all fun r => dstOf i != some r) = true
+  finalize224Depth : (finalizeMain Impl.Sha256.AArch64.Stream.params224 name code).aarch64Depth = 0
 
 namespace Compress
 
@@ -40,6 +49,7 @@ variable (v : Compress)
 
 def update : Prog isa := Impl.MdStream.AArch64.update Stream.params v.name v.code
 def finalize : Prog isa := Impl.MdStream.AArch64.finalize Stream.params v.name v.code
+def finalize224 : Prog isa := Impl.MdStream.AArch64.finalize Impl.Sha256.AArch64.Stream.params224 v.name v.code
 
 theorem callee : CalleeOk (P := Stream.params) md v.code := ⟨v.verified.1, v.noFrames, v.keepsV⟩
 
@@ -54,6 +64,12 @@ theorem finalize_verified : Verified AArch64.target v.finalize Proof.Sha256.fina
     v.finalizeKeeps (by rw [v.finalizeDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h iv m hr hc => h iv m hr trivial hc,
     fun _ _ _ _ h => h, h.2.2⟩
+
+theorem finalize224_verified :
+    Verified AArch64.target v.finalize224 (finKD (P := Impl.Sha256.AArch64.Stream.params224) md 28) :=
+  MdStream.AArch64.Finalize.verifiedD (P := Impl.Sha256.AArch64.Stream.params224)
+    ⟨Stream.dims.1, Stream.dims.2, Stream.dims.3, Stream.dims.4⟩ Stream.shape224
+    (v.callee.withOut _) v.finalize224CT v.finalize224Keeps (by rw [v.finalize224Depth]; decide)
 
 end Compress
 end VG.Proof.Sha256.AArch64

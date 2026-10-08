@@ -46,7 +46,6 @@ super::streaming_hash!(
         state: 192,
         block: 128,
         output: 64,
-        final_hash: 64,
         init: vg_sha512_init,
         backends: Sha512Backend {
             Scalar => (vg_sha512_update, vg_sha512_finalize),

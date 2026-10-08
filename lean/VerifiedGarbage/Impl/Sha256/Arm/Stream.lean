@@ -69,4 +69,11 @@ def update : Prog isa := MdStream.Arm.update params "vg_sha256_compress" compres
 
 def finalize : Prog isa := MdStream.Arm.finalize params "vg_sha256_compress" compress
 
+/-- SHA-224 outputs the first 28 bytes of the final hash value: `params`
+with a digest of 7 words. -/
+def params224 : MdStream.Arm.Params := { params with out := MdStream.Arm.out32 7 true }
+
+/-- SHA-224's `finalize`, writing its digest. -/
+def finalize224 : Prog isa := MdStream.Arm.finalize params224 "vg_sha256_compress" compress
+
 end VG.Impl.Sha256.Arm.Stream

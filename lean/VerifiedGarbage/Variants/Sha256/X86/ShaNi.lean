@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+import VerifiedGarbage.Proof.Sha256.X86.Stream.Digest
 import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
 
 /-!
@@ -7,7 +8,7 @@ import VerifiedGarbage.Proof.Sha256.X86.ShaNi.Verified
 A variant of `Sha256` on x86 (see `TCB/Emit.lean`): `vg_sha256_compress_shani`,
 which needs the SHA extensions and SSSE3, and the streaming `update` and
 `finalize` made with it, which HMAC's and PBKDF2's functions call
-(`Generic/Sha256/X86/`).
+(`Generic/Sha256/X86/`), and SHA-224's `finalize`.
 -/
 namespace VG.Variants.Sha256.X86.ShaNi
 open VG VG.X86
@@ -78,6 +79,16 @@ materialize_code sha224HFinalize := (sha224M stream cmpN cmpC).hmacFin
 materialize_code sha224HIterate := (sha224M stream cmpN cmpC).iterate
 materialize_code sha224HPbkdf2 := (pbkdf2Fns224 stream cmpN cmpC).pbkdf2
 
+abbrev sha224Finalize := Impl.Sha256.X86.Stream.finalize224 cmpN cmpC
+materialize_code sha224Finalize
+
+theorem finalize224_ct : ConstantTime isa
+    (Proof.MdStream.X86.finKD (P := Impl.Sha256.X86.Stream.params224) Proof.Sha256.md 160 28).pre
+    (Proof.MdStream.X86.finKD (P := Impl.Sha256.X86.Stream.params224) Proof.Sha256.md 160 28).pub sha224Finalize :=
+  VG.Taint.constantTime (A := sseTaint) (Proof.MdStream.X86.Finalize.τ₀D Impl.Sha256.X86.Stream.params224 160 28)
+    (fun _ _ h₁ h₂ hp => Proof.MdStream.X86.Finalize.agree₀D Proof.Sha256.X86.Stream.dims224 (by decide) h₁ h₂ hp)
+    (by taint_decide)
+
 def variant : Proof.Sha256.X86.Variants.Backend where
   cmpN := cmpN
   cmpC := cmpC
@@ -109,6 +120,16 @@ def variant : Proof.Sha256.X86.Variants.Backend where
       stack := 20 + 632
       verified := Proof.Sha256.X86.Shared.finalize_frame finalizeScratch_shared (by lit_decide)
         (by lit_decide)
+      ofSig := ⟨_, _, _, rfl⟩
+      ofApi := rfl
+      spSafe := Code.all_of_allInstrs (by lit_decide) },
+    { api := Spec.Sha256.finalize224Api
+      code := Impl.StackScratch.X86.withStackScratch 632 4 sha224Finalize
+      contract := Spec.Sha256.finalize224Contract X86.abi (20 + 632)
+      stack := 20 + 632
+      verified := Proof.Sha256.X86.Shared.finalize224_frame
+        (Proof.Sha256.X86.Shared.finalize224Scratch (Proof.Sha256.X86.Stream.finalize224_of callee finalize224_ct))
+        (by lit_decide) (by lit_decide)
       ofSig := ⟨_, _, _, rfl⟩
       ofApi := rfl
       spSafe := Code.all_of_allInstrs (by lit_decide) },

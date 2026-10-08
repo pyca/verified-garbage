@@ -62,9 +62,7 @@ pub trait HashFunction: Clone {
 ///   absorbs `len` bytes into a state representing a message of `count`
 ///   bytes;
 /// * `finalize(state, count: u64, out: *mut [u8; OUTPUT])` writes the
-///   digest; or, with `final_hash: FINAL`, `out: *mut [u8; FINAL]` and the
-///   final hash value, whose first `OUTPUT` bytes are the digest (SHA-224,
-///   which takes SHA-256's).
+///   digest.
 ///
 /// `backends` names the enum of the implementations of `update` and
 /// `finalize` to choose from, each a variant: first the one for the
@@ -77,29 +75,12 @@ pub trait HashFunction: Clone {
 /// length is kept exactly (`update` panics rather than let it reach 2⁶⁴
 /// bytes).
 macro_rules! streaming_hash {
-    // The size of what `finalize` writes: the digest, or the final hash value.
-    (@final $output:literal) => {
-        $output
-    };
-    (@final $output:literal, $final:literal) => {
-        $final
-    };
-    // The digest, from what `finalize` wrote to `$out`.
-    (@digest $out:ident $output:literal) => {
-        $out
-    };
-    (@digest $out:ident $output:literal, $final:literal) => {{
-        let mut digest = [0; $output];
-        digest.copy_from_slice(&$out[..$output]);
-        digest
-    }};
     (
         $(#[$doc:meta])*
         $name:ident {
             state: $state:literal,
             block: $block:literal,
             output: $output:literal,
-            $(final_hash: $final:literal,)?
             init: $init:path,
             backends: $backend:ident {
                 $base:ident => ($update:path, $finalize:path)
@@ -165,7 +146,7 @@ macro_rules! streaming_hash {
                 self,
                 state: &mut [u8; $state],
                 count: u64,
-                out: &mut [u8; $crate::hashes::streaming_hash!(@final $output $(, $final)?)],
+                out: &mut [u8; $output],
             ) {
                 // SAFETY: the caller's obligations.
                 unsafe {
@@ -253,7 +234,7 @@ macro_rules! streaming_hash {
 
             /// Pads the message and returns its digest.
             pub fn finalize(mut self) -> [u8; $output] {
-                let mut out = [0; $crate::hashes::streaming_hash!(@final $output $(, $final)?)];
+                let mut out = [0; $output];
                 // SAFETY: `self.state` is valid for reads and writes of its
                 // size and `out` for writes of its size; they are distinct
                 // objects, so they
@@ -267,7 +248,7 @@ macro_rules! streaming_hash {
                     self.backend
                         .finalize(&mut self.state, self.length, &mut out)
                 };
-                $crate::hashes::streaming_hash!(@digest out $output $(, $final)?)
+                out
             }
 
             /// The digest of `data`.
@@ -324,4 +305,4 @@ macro_rules! streaming_hash {
     };
 }
 
-pub(crate) use streaming_hash;
+use streaming_hash;

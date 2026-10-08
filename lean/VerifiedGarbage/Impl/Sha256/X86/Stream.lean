@@ -76,6 +76,14 @@ def params : MdStream.X86.Params where
 
 def update : Prog isa := MdStream.X86.update params "vg_sha256_compress" compress
 
+/-- SHA-224 outputs the first 28 bytes of the final hash value: `params`
+with a digest of 7 words. -/
+def params224 : MdStream.X86.Params := { params with out := MdStream.X86.out32 7 true }
+
+/-- SHA-224's `finalize`, writing its digest, with the compression function
+`name`/`code`. -/
+def finalize224 (name : String) (code : Prog isa) : Prog isa := MdStream.X86.finalize params224 name code
+
 /-! ## `finalize`
 
 Registers: `ebx` = `state`, `ebp` = `scratch`, `edi` = bytes in the buffer,

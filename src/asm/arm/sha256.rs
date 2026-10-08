@@ -41,6 +41,123 @@ pub(crate) unsafe extern "C" fn vg_sha224_init(state: *mut [u8; 96]) {
     )
 }
 
+/// Finishes a SHA-224 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from the initial hash value of SHA-224 (as `vg_sha224_init` starts it), writes the SHA-224 digest of that message (28 bytes, `VG.Spec.Sha256.sha224`) to `*out`.
+///
+/// Contract: `VG.Spec.Sha256.finalize224Contract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha224_finalize(state: *mut [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        "sub sp, sp, #624",
+        "add r12, sp, #0",
+        "str lr, [r12, #8]",
+        "ldr lr, [sp, #624]",
+        "str lr, [r12, #0]",
+        "add lr, sp, #12",
+        "str lr, [r12, #4]",
+        "ldr lr, [sp, #8]",
+        "ldr r12, [sp, #4]",
+        "str r4, [r12, #112]",
+        "str r5, [r12, #116]",
+        "str r6, [r12, #120]",
+        "str r7, [r12, #124]",
+        "str r8, [r12, #128]",
+        "str r9, [r12, #132]",
+        "str r10, [r12, #136]",
+        "str r11, [r12, #140]",
+        "str lr, [r12, #144]",
+        "mov r4, r2",
+        "mov r5, r3",
+        "mov r3, r12",
+        "ldr r6, [sp, #0]",
+        "and r7, r4, #63",
+        "mov r12, #128",
+        "add r1, r0, r7",
+        "strb r12, [r1, #32]",
+        "add r7, r7, #1",
+        "add r8, r7, #7",
+        "lsr r8, r8, #6",
+        "20:",
+        "mov r9, #64",
+        "cmp r8, #0",
+        "beq 21f",
+        "b 22f",
+        "21:",
+        "mov r9, #56",
+        "22:",
+        "mov r12, #0",
+        "subs r9, r9, r7",
+        "beq 23f",
+        "25:",
+        "add r1, r0, r7",
+        "strb r12, [r1, #32]",
+        "add r7, r7, #1",
+        "subs r9, r9, #1",
+        "bne 25b",
+        "b 24f",
+        "23:",
+        "24:",
+        "cmp r8, #0",
+        "beq 26f",
+        "b 27f",
+        "26:",
+        "lsl r9, r5, #3",
+        "orr r9, r9, r4, lsr #29",
+        "rev r9, r9",
+        "str r9, [r0, #88]",
+        "lsl r9, r4, #3",
+        "rev r9, r9",
+        "str r9, [r0, #92]",
+        "27:",
+        "add r1, r0, #32",
+        "mov r2, #1",
+        "bl {vg_sha256_compress}",
+        "mov r7, #0",
+        "subs r8, r8, #1",
+        "beq 20b",
+        "ldr r9, [r0, #0]",
+        "rev r9, r9",
+        "str r9, [r6, #0]",
+        "ldr r9, [r0, #4]",
+        "rev r9, r9",
+        "str r9, [r6, #4]",
+        "ldr r9, [r0, #8]",
+        "rev r9, r9",
+        "str r9, [r6, #8]",
+        "ldr r9, [r0, #12]",
+        "rev r9, r9",
+        "str r9, [r6, #12]",
+        "ldr r9, [r0, #16]",
+        "rev r9, r9",
+        "str r9, [r6, #16]",
+        "ldr r9, [r0, #20]",
+        "rev r9, r9",
+        "str r9, [r6, #20]",
+        "ldr r9, [r0, #24]",
+        "rev r9, r9",
+        "str r9, [r6, #24]",
+        "ldr r4, [r3, #112]",
+        "ldr r5, [r3, #116]",
+        "ldr r6, [r3, #120]",
+        "ldr r7, [r3, #124]",
+        "ldr r8, [r3, #128]",
+        "ldr r9, [r3, #132]",
+        "ldr r10, [r3, #136]",
+        "ldr r11, [r3, #140]",
+        "ldr lr, [r3, #144]",
+        "add sp, sp, #624",
+        "bx lr",
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress,
+    )
+}
+
 /// The SHA-256 compression function (FIPS 180-4 §6.2.2): updates the hash value `*state` with the `n` 64-byte blocks starting at `blocks`, in order.
 ///
 /// Contract: `VG.Spec.Sha256.compressContract`. Constant time: only the pointers and `n` may affect timing, not the hash value or the blocks.

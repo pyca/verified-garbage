@@ -4,9 +4,11 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Shared
 /-!
 # SHA-224 (FIPS 180-4) on x86-64
 
-SHA-224 is SHA-256 from another initial hash value: only its `init` is its
-own, and it continues with SHA-256's `update` and `finalize`
-(`Artifacts/Sha256/`).
+SHA-224 is SHA-256 from another initial hash value, and its digest the first
+28 bytes of the final hash value: its `init` is registered here, its
+`update` is SHA-256's (`Artifacts/Sha256/`), and its `finalize`, which
+writes its digest, is emitted with each compression function
+(`Proof/Pbkdf2/Md/X86_64/Hashes/Sha224.lean`).
 -/
 
 namespace VG.Artifacts.Sha224.X86_64
