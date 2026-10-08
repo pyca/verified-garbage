@@ -22,7 +22,7 @@ The only module of `Proof/Gcm/X86_64/StitchAvx/` that computes in the field
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64 VG.Proof.Gcm.Poly
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod φ_reduce mul_ok const_ok ldrev_ok hInv_ok Only rev_eq)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod φ_reduceB mul_ok const_ok ldrev_ok hInv_ok Only rev_eq)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (preg setupG lows highs setupC setup ordE ordD enc dec)
 open VG.Proof.Gcm.X86_64.Stitch (SPre EPost DPost StitchOk kp nr cp yp dp nb pp kR cR yR dR pR hk y₀ bAddr blk
@@ -342,7 +342,7 @@ theorem finE {H : Block} {P : Nat → Block} (hP : ∀ k < 16, x * φ (P k) = φ
   rw [ghash16]
   simp only [accN, ordE, inp, List.range_succ, List.range_zero, List.nil_append, List.foldl_append,
     List.foldl_cons, List.foldl_nil, Nat.reduceAdd, Nat.reduceMod, Nat.reduceEqDiff, ↓reduceIte, zero_xor']
-  simp only [φ_xor, φ_reduce, Prod.val_acc, Prod.val_zero, φ_mul]
+  simp only [φ_xor, φ_reduceB, Prod.val_acc, Prod.val_zero, φ_mul]
   have h0 := hP 0 (by decide)
   have h1 := hP 1 (by decide)
   have h2 := hP 2 (by decide)
@@ -368,7 +368,7 @@ theorem finD {H : Block} {P : Nat → Block} (hP : ∀ k < 16, x * φ (P k) = φ
   rw [ghash16]
   simp only [accN, ordD, inp, List.range_succ, List.range_zero, List.nil_append, List.foldl_append,
     List.foldl_cons, List.foldl_nil, Nat.reduceAdd, Nat.reduceLT, Nat.reduceEqDiff, ↓reduceIte, zero_xor']
-  simp only [φ_xor, φ_reduce, Prod.val_acc, Prod.val_zero, φ_mul]
+  simp only [φ_xor, φ_reduceB, Prod.val_acc, Prod.val_zero, φ_mul]
   have h0 := hP 0 (by decide)
   have h1 := hP 1 (by decide)
   have h2 := hP 2 (by decide)

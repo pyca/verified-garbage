@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Aes
 import VerifiedGarbage.Proof.Framework.X86_64.Lane0
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx.Reduction
 
 /-!
 # Interleaved counter mode and GHASH in AVX: the GHASH work
@@ -20,7 +21,7 @@ Nothing here computes in the field: what the products add up to is
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod Only ldrev_ok pxor72_ok acc_ok reduce_ok)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod Only ldrev_ok pxor72_ok acc_ok reduce_ok)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (ghLoad aregs gq)
 open VG.Proof.Gcm.X86_64.Stitch (SPre pp dp nb pR bAddr in_sub in_sub_int in_rdwr addr_eq)
@@ -128,7 +129,7 @@ theorem accN_succ (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Block) (y
 
 /-- `Y` after the sixteen blocks of a group. -/
 abbrev yNew (ord : Nat → Nat) (X : Nat → Block) (P : Nat → Block) (y : Block) : Block :=
-  reduce (accN ord X P y 16)
+  reduceB (accN ord X P y 16)
 
 /-- What the loads of a group need: its blocks at `rdx` (those from `lo` on,
 which the loads to come read), the powers in the working space, and the
@@ -177,21 +178,11 @@ theorem ghStep {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat
 /-- The reduction into `xmm2`. -/
 theorem ghFin {s₀ : State} {lo : Nat} {a : Addr} {X : Nat → Block} {P : Nat → Block} {s : State}
     (hE : GEnv s₀ lo a X P s) (h1 : s.lane .xmm1 0 = poly) :
-    WP isa (.block (Impl.Gcm.X86_64.StitchAvx.reduce .xmm2)) s fun s' =>
-      GEnv s₀ lo a X P s' ∧ s'.lane .xmm2 0 = reduce (prod (s.proj 0)) ∧
+    WP isa (.block Impl.Gcm.X86_64.StitchAvx.reduceHash) s fun s' =>
+      GEnv s₀ lo a X P s' ∧ s'.lane .xmm2 0 = reduceB (prod (s.proj 0)) ∧
       YFrame [.xmm8, .xmm9, .xmm10, .xmm11, .xmm2] s s' := by
-  refine WP.mono (WP.lane0 (ss := Impl.Gcm.X86_64.Pclmul.reduce .xmm2) rfl
-    (reduce_ok .xmm2 (s.proj 0) (by decide) (by decide) (by decide) (by decide) (by simpa using h1)))
-    fun s' ⟨⟨r, o⟩, hi, hg⟩ => ?_
-  have f : YFrame [.xmm8, .xmm9, .xmm10, .xmm11, .xmm2] s s' :=
-    ⟨hg rfl, by simpa using o.mem, by simpa using o.rd, by simpa using o.wr, fun r hr l hl => by
-      rcases (by omega : l = 0 ∨ l = 1) with rfl | rfl
-      · simpa using o.xmm r hr
-      · refine hi r ?_
-        simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-        obtain ⟨h8, h9, h10, h11, h2⟩ := hr
-        simp [Impl.Gcm.X86_64.StitchAvx.reduce, Impl.Gcm.X86_64.StitchAvx.fold, vdst, h8, h9, h10, h11, h2]⟩
-  exact ⟨hE.yframe f (by decide), by simpa using r, f⟩
+  refine WP.mono (reduceHash_ok s h1) fun t ⟨hv, hf⟩ =>
+    ⟨hE.yframe hf (by decide), hv, hf⟩
 
 theorem ite_t {c : Prop} [Decidable c] {α : Type} {a b : α} (h : c) : ite c a b = a := by
   simp [h]

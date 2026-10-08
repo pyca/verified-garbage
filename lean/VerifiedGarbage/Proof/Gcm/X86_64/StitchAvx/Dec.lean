@@ -12,7 +12,7 @@ reading its own four blocks during its rounds, before it overwrites them.
 namespace VG.Proof.Gcm.X86_64.StitchAvx
 
 open VG VG.X86_64
-open VG.Proof.Gcm.X86_64.Pclmul (Prod reduce prod)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod reduceB prod)
 open VG.Impl.Gcm.X86_64.Pclmul (at_ poly)
 open VG.Impl.Gcm.X86_64.StitchAvx (aregs group ordD dbody dec)
 open VG.Impl.Gcm.X86_64.Stitch (storeCtr storeY)

@@ -62,6 +62,18 @@ def reduce (d : XReg) : List Instr :=
    .vop (.vshift .pslldq .l128 .xmm9 .xmm9 8), .vop (.vbin .vpxor .l128 .xmm8 .xmm8 .xmm9)] ++
   fold ++ fold ++ [.vop (.vbin .vpxor .l128 d .xmm10 .xmm8)]
 
+/-- Fold `lo` into `mid`, then `mid` into `hi`, for the running hash.
+This needs two carry-less multiplies and avoids packing the middle word. -/
+def reduceHash : List Instr :=
+  [.vop (.vpclmulqdq .l128 .xmm11 .xmm8 .xmm1 0x10),
+   .vop (.vpshufd .l128 .xmm8 .xmm8 0x4e),
+   .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm8),
+   .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11),
+   .vop (.vpclmulqdq .l128 .xmm11 .xmm9 .xmm1 0x10),
+   .vop (.vpshufd .l128 .xmm9 .xmm9 0x4e),
+   .vop (.vbin .vpxor .l128 .xmm2 .xmm10 .xmm9),
+   .vop (.vbin .vpxor .l128 .xmm2 .xmm2 .xmm11)]
+
 /-- `d ← mul(a, b)`. -/
 def mul (d a b : XReg) : List Instr := zero ++ acc a b ++ reduce d
 
@@ -159,7 +171,7 @@ the order `ord` after rounds 1–4, and, if `fin`, the reduction into `Y`
 after round 5. -/
 def gq (ord : Nat → Nat) (base : Nat) (fin : Bool) (j : Nat) : List Instr :=
   if 1 ≤ j ∧ j ≤ 4 then ghLoad (ord (base + j - 1))
-  else if fin ∧ j = 5 then reduce .xmm2 else []
+  else if fin ∧ j = 5 then reduceHash else []
 
 /-- Four batches, the GHASH work of the order `ord` between their rounds,
 encrypting the blocks `j`… at `rdx + 16 j`. -/
@@ -180,7 +192,7 @@ def body : Prog isa :=
 
 /-- The last group hashed, at `rdx`. -/
 def lastG : List Instr :=
-  zero ++ (List.range 16).flatMap (fun i => ghLoad (ordE i)) ++ reduce .xmm2
+  zero ++ (List.range 16).flatMap (fun i => ghLoad (ordE i)) ++ reduceHash
 
 /-- `n` (a multiple of 16, at least 16) blocks. -/
 def enc : Prog isa :=
