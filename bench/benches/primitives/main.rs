@@ -18,6 +18,7 @@ use openssl::pkey::PKey;
 use openssl::sign::Signer;
 
 mod aes_ccm;
+mod aes_ecb;
 mod aes_gcm;
 mod aes_gcm_siv;
 mod aes_ocb;
@@ -311,6 +312,7 @@ type Bench = (&'static [&'static str], fn(&mut Criterion));
 
 const BENCHES: &[Bench] = &[
     (aes_ccm::USES, aes_ccm::bench),
+    (aes_ecb::USES, aes_ecb::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
     (aes_ocb::USES, aes_ocb::bench),
