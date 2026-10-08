@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Rsa.X86_64.KeyVerified
 import VerifiedGarbage.Proof.Rsa.X86_64.CrtKeyVerified
 import VerifiedGarbage.Proof.Bignum.X86_64.PcFn
 import VerifiedGarbage.Proof.Rsa.X86_64.Calls
+import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
 
 /-! # RSA (RFC 8017) on x86-64 -/
 
@@ -130,12 +131,12 @@ def artifacts : List Artifact := [
     code := Impl.Rsa.X86_64.CrtIfma.code Proof.Rsa.X86_64.CallMont.adx.mm
     contract := Spec.Rsa.privateCrtContract X86_64.abi 8
     stack := 8
-    verified := Proof.Rsa.X86_64.crt_call_verified (by decide +kernel)
+    verified := Proof.Rsa.X86_64.crt_call_verified (by lit_decide)
       (Proof.Bignum.X86_64.Ifma.code_correct Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel) (by decide +kernel)
         (by decide +kernel) (by decide +kernel))
       (Proof.Bignum.X86_64.Ifma.code_constantTime Proof.Bignum.X86_64.Mont.fnAdx (by decide +kernel))
     features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
-    spSafe := Code.all_of_allInstrs (by decide +kernel) },
+    spSafe := Code.all_of_allInstrs (by lit_decide) },
   { Spec.Rsa.crtValuesApi with
     target := X86_64.target
     doc := Spec.Rsa.crtValuesApi.doc
