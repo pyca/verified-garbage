@@ -9,11 +9,13 @@ and public pointers/lengths. Key bytes, the expanded key and data are
 secret: in particular the S-box indices, which are secret bytes of the
 data and of the key schedule's intermediate blocks.
 
-The schedule is 4168 bytes: 1042 little-endian 32-bit words, the P-array
-P₁…P₁₈ and then the S-boxes S₁…S₄ (`Spec/Blowfish.lean`). Key expansion
-and ECB keep their working space on the stack; `stack` accounts for their
-frames and calls. ECB permits writes to ABI argument areas, to call
-primitives of its own.
+The schedule is 4168 bytes (`scheduleAt`): the S-boxes S₁…S₄ in byte
+planes (byte `b` of S_{j+1}[x] at `1024 j + 256 b + x`), then the P-array
+P₁…P₁₈ as little-endian 32-bit words at 4096. The planes are the layout
+vector table lookups read; no target-specific layout is exposed. Key
+expansion and ECB keep their working space on the stack; `stack` accounts
+for their frames and calls. ECB permits writes to ABI argument areas, to
+call primitives of its own.
 
 The Rust wrapper buffers partial blocks, rejects invalid key lengths
 before key expansion, and rejects incomplete input at finalization. It
@@ -23,9 +25,9 @@ does not add or remove padding. Empty ECB input is supported.
 namespace VG.Spec.Blowfish
 
 /-- `vg_blowfish_expand_key(key: *const u8, key_len: usize,
-schedule: *mut [u32; 1042])`. -/
+schedule: *mut [u8; 4168])`. -/
 def expandKeySig : Sig where
-  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u32 1042)]
+  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 4168)]
 
 def expandKeyPre (pb : Nat) : Curry (expandKeySig.words pb) (Mem → Prop) :=
   fun _key keyLen _schedule _ => validKey keyLen.toNat
@@ -44,16 +46,18 @@ def expandKeyApi : Api where
   contracts := some fun A stack => expandKeyContract A stack
   summary := "Blowfish key expansion (Schneier, FSE 1994): initializes the P-array and \
     S-boxes with the digits of π, XORs the `key_len` bytes at `key` into the P-array, \
-    and replaces the P-array and S-boxes with 521 successive encryptions, writing the \
-    1042 words (P₁…P₁₈, then S₁…S₄) to `*schedule`. Weak keys are accepted.\n\n\
+    and replaces the P-array and S-boxes with 521 successive encryptions, writing them \
+    to `*schedule`: the S-boxes in byte planes (byte `b` of S_{j+1}[x] at \
+    `1024 j + 256 b + x`), then P₁…P₁₈ as little-endian words at 4096. Weak keys \
+    are accepted.\n\n\
     Contract: `VG.Spec.Blowfish.expandKeyContract`. Constant time: only pointers and \
     `key_len` may affect timing, not the key, including the S-box indices of the \
     key schedule's encryptions."
   safety := ["`key_len` must be in 4..=56."]
 
-/-- `(schedule: *const [u32; 1042], data: *mut [[u8; 8]], n: usize)`. -/
+/-- `(schedule: *const [u8; 4168], data: *mut [[u8; 8]], n: usize)`. -/
 def ecbSig : Sig where
-  params := [("schedule", .array false .u32 1042), ("data", .slice true (.array .u8 8) "n")]
+  params := [("schedule", .array false .u8 4168), ("data", .slice true (.array .u8 8) "n")]
 
 def ecbPost (direction : Direction) (pb : Nat) : ecbSig.Post pb := fun schedule data n m m' _ =>
   blocksAt m' data n.toNat = ecb (scheduleAt m schedule) direction (blocksAt m data n.toNat)

@@ -340,11 +340,23 @@ def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
 def blockAt (m : Mem) (p : Addr) : Block :=
   Vector.ofFn fun i => m (p + BitVec.ofNat 64 i.val)
 
-/-- 4168 bytes: the schedule's 1042 words, each little-endian. -/
+/-- The memory layout of a schedule, 4168 bytes. The S-boxes come first, in
+byte planes: byte `b` (the `b`-th least significant) of S_{j+1}[x] is at
+`1024 j + 256 b + x`, so that a vector table lookup (AArch64's `tbl`,
+x86's `pshufb` or `vpermb`) reads sixteen or more consecutive entries of a
+plane at once. The P-array follows at 4096: Pᵢ₊₁ little-endian at
+`4096 + 4 i`. -/
 def scheduleAt (m : Mem) (p : Addr) : Schedule :=
+  let byte (off : Nat) : Word := (m (p + BitVec.ofNat 64 off)).zeroExtend 32
   Vector.ofFn fun i =>
-    (List.range 4).foldl (fun out j =>
-      out ||| ((m (p + BitVec.ofNat 64 (4 * i.val + j))).zeroExtend 32 <<< (8 * j))) 0
+    if i.val < 18 then
+      byte (4096 + 4 * i.val) ||| byte (4096 + 4 * i.val + 1) <<< 8 |||
+        byte (4096 + 4 * i.val + 2) <<< 16 ||| byte (4096 + 4 * i.val + 3) <<< 24
+    else
+      let j := (i.val - 18) / 256
+      let x := (i.val - 18) % 256
+      byte (1024 * j + x) ||| byte (1024 * j + 256 + x) <<< 8 |||
+        byte (1024 * j + 512 + x) <<< 16 ||| byte (1024 * j + 768 + x) <<< 24
 
 def blocksAt (m : Mem) (p : Addr) (n : Nat) : List Block :=
   (List.range n).map fun i => blockAt m (p + BitVec.ofNat 64 (8 * i))
