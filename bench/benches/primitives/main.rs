@@ -20,6 +20,7 @@ use openssl::sign::Signer;
 mod aes_cbc;
 mod aes_ccm;
 mod aes_cfb;
+mod aes_cfb8;
 mod aes_ecb;
 mod aes_gcm;
 mod aes_gcm_siv;
@@ -317,6 +318,7 @@ const BENCHES: &[Bench] = &[
     (aes_cbc::USES, aes_cbc::bench),
     (aes_ccm::USES, aes_ccm::bench),
     (aes_cfb::USES, aes_cfb::bench),
+    (aes_cfb8::USES, aes_cfb8::bench),
     (aes_ecb::USES, aes_ecb::bench),
     (aes_gcm::USES, aes_gcm::bench),
     (aes_gcm_siv::USES, aes_gcm_siv::bench),
