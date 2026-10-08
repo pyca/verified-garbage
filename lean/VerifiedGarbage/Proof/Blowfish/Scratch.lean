@@ -3,18 +3,19 @@ import VerifiedGarbage.Proof.Blowfish.Schedule
 import VerifiedGarbage.Proof.Framework.Offset
 
 /-!
-# Blowfish ECB with its working space as an argument
+# Blowfish with its working space as an argument
 
-The ECB functions keep their working space in a frame of their own
-(`Verified.stackScratchWiped`), around code proved with the working space as
-an argument: `ecbScratchContract` is the shared contract with the `scratch`
+The ECB functions, and key expansion where it needs one, keep their working
+space in a frame of their own (`Verified.stackScratchWiped`), around code
+proved with the working space as an argument: `ecbScratchContract` and
+`expandKeyScratchContract` are the shared contracts with the `scratch`
 buffer appended, whatever it holds.
 
 The frames zero the working space before returning, which needs the
 postcondition to read the memory on return only within the function's
-buffers (`ecbPostOut_local`); on x86, whose frame also holds a copy of the
-arguments passed on the stack, to read the memory on entry only within them
-too (`ecbPost_local`).
+buffers (`ecbPostOut_local`, `expandKeyPostOut_local`); on x86, whose frame
+also holds a copy of the arguments passed on the stack, to read the memory
+on entry only within them too (`ecbPost_local`).
 -/
 
 namespace VG.Proof.Blowfish
@@ -38,6 +39,18 @@ def ecbEncryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contrac
 
 def ecbDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   ecbScratchContract A .decrypt stack
+
+/-- `vg_blowfish_expand_key` with `scratch: *mut [u64; 4]`. -/
+def expandKeyScratchSig : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("schedule", .array true .u8 4168),
+    ("scratch", .array true .u64 4)]
+
+/-- `expandKeyContract`, whatever `scratch` is. -/
+def expandKeyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  expandKeyScratchSig.contract A
+    (pre := fun key keyLen schedule _scratch => expandKeyPre A.ptrBits key keyLen schedule)
+    (post := fun key keyLen schedule _scratch => expandKeyPost A.ptrBits key keyLen schedule)
+    (stack := stack)
 
 /-! ## Locality -/
 
@@ -124,6 +137,20 @@ theorem ecbPostOut_local (direction : Direction) : ∀ vs m m₁ m₂ r,
     have := Nat.mod_le n.toNat (2 ^ pb)
     rw [blocksAt_congr (n := (n.setWidth pb).toNat) fun i hi => hd i (by
       rw [BitVec.toNat_setWidth] at hi; have := Nat.mul_le_mul_right 8 this; omega)]
+    exact h
+
+theorem expandKeyPostOut_local : ∀ vs m m₁ m₂ r, vs.length = (expandKeySig.words pb).length →
+    (∀ b ∈ Sig.bufs expandKeySig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m m₁ r →
+      Curry.apply (expandKeySig.words pb) (expandKeyPost pb) vs m m₂ r
+  | [_, _, sch], m, m₁, m₂, r, _, hb, h => by
+    simp only [expandKeySig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+      forall_eq, Elem.size, Nat.mul_one] at hb
+    have hs := agree_of hb.2
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₁ r at h
+    change Curry.apply [ArgWord.addr, ArgWord.int pb, ArgWord.addr] (expandKeyPost pb) _ m m₂ r
+    dsimp only [Curry.apply, expandKeyPost, ArgWord.ofRaw] at h ⊢
+    rw [scheduleAt_congr hs]
     exact h
 
 end VG.Proof.Blowfish

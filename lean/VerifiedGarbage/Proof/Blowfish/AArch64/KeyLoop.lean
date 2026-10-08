@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Blowfish.AArch64.Ecb
-import VerifiedGarbage.Proof.Blowfish.KeySched
+import VerifiedGarbage.Proof.Blowfish.KeyTable
 
 /-!
 # Key expansion: the 521 encryptions
@@ -29,16 +29,6 @@ theorem exec_umov_w0 (s : State) (d : Reg) (n : VReg) :
 
 theorem read_write_w (s : State) (r : Reg) (v : BitVec 32) : (s.write .w r v).read .w r = v := by
   simp [State.read, State.write, Size.bits]
-
-theorem shr_byte (x : BitVec 32) (k : Nat) : (x >>> k).setWidth 8 = x.extractLsb' k 8 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_extractLsb', hi,
-    decide_true, Bool.true_and]
-
-theorem set!_eq_set {α : Type} {n : Nat} (xs : Vector α n) {i : Nat} (h : i < n) (x : α) :
-    xs.set! i x = xs.set i x h := by
-  apply Vector.toArray_inj.mp
-  simp [Vector.toArray_set!, Array.set!_eq_setIfInBounds, Array.setIfInBounds, h]
 
 /-- The bytes of the word in `w` at offsets `e`, `256 + e`, `512 + e` and
 `768 + e` of `x14`. -/
@@ -84,9 +74,6 @@ theorem storeEntry_run {t : State} {w : Reg} (hw : w ≠ .x13) {e : Nat} (he : e
   · simp only [wb, t₇, t₆, t₅, t₄, t₃, t₂, t₁, gpr_write_of_ne _ .w _ hr]
 
 /-! ## Replacing two entries -/
-
-/-- The S-box entries written after `j` encryptions. -/
-def sDone (j : Nat) : Nat := 2 * (j - 9)
 
 /-- The stores of `replace`. -/
 def storeOut : Prog isa :=
@@ -179,11 +166,6 @@ theorem storeP_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : j 
     · exact Offset.contains_base S (by simp only [Size.bits]; omega) (by omega)
   · simp only [t₄, t₃, gpr_write_of_ne _ .x _ hr.1, gpr_write_of_ne _ .x _ hr.2.2.1]
     rfl
-
-/-- Entry `2 j` is byte `sDone j` of the S-boxes, at its offset in `x14`. -/
-theorem entryOff_sbox {j b : Nat} (hj : 9 ≤ j) (hj' : j < 521) (k : Nat) (hk : k < 2) :
-    1024 * (sDone j / 256) + sDone j % 256 + (256 * b + k) = entryOff (2 * j + k) b := by
-  unfold entryOff sDone; simp only [show ¬ 2 * j + k < 18 by omega, ite_false]; omega
 
 /-- The other 512 outputs go to the S-boxes, a byte per plane. -/
 theorem storeS_run {S : Addr} {j : Nat} {t : State} (I : StoreIn S j t) (hj : 9 ≤ j) :
@@ -420,8 +402,6 @@ theorem exec_movi0 (s : State) (d : VReg) : exec (.vop (.movi0 d)) s = some (s.s
 
 theorem exec_movz_x0 (s : State) (d : Reg) (imm : BitVec 16) :
     exec (.movz .x d imm 0) s = some (s.write .x d (imm.setWidth 64 <<< (16 * 0))) := rfl
-
-theorem ksIter_zero (key : List Byte) : ksIter key 0 = (keyed key, 0, 0) := rfl
 
 /-- The 521 encryptions, from the keyed schedule at `x2`. -/
 theorem encryptions_run {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s₀)

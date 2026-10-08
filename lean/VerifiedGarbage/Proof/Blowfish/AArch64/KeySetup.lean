@@ -1,6 +1,6 @@
 import VerifiedGarbage.Proof.Blowfish.AArch64.EcbMain
 import VerifiedGarbage.Proof.Blowfish.Table
-import VerifiedGarbage.Proof.Blowfish.KeySched
+import VerifiedGarbage.Proof.Blowfish.KeyTable
 
 /-!
 # Key expansion: the initial S-boxes and the keyed P-array
@@ -301,19 +301,6 @@ theorem keyByte_run {s : State} {K : Addr} {L c : Nat} (hc : c < L) (hL : L < 2 
     have hL' : c + 1 ≠ L := by simpa using h
     exact WP.block_nil ⟨x8₆, by rw [x10₆, Nat.mod_eq_of_lt (by omega)], g₆, st₆⟩
 
-theorem bytesAt_getD (m : Mem) (K : Addr) {L c : Nat} (hc : c < L) :
-    (bytesAt m K L).getD c 0 = m (K + BitVec.ofNat 64 c) := by
-  simp [bytesAt, List.getD_eq_getElem?_getD, hc]
-
-theorem keyWord_eq (key : List Byte) (i : Nat) :
-    keyWord key i = ((((0 : Word) <<< 8 ||| (key.getD ((4 * i + 0) % key.length) 0).zeroExtend 32) <<< 8 |||
-      (key.getD ((4 * i + 1) % key.length) 0).zeroExtend 32) <<< 8 |||
-      (key.getD ((4 * i + 2) % key.length) 0).zeroExtend 32) <<< 8 |||
-      (key.getD ((4 * i + 3) % key.length) 0).zeroExtend 32 := rfl
-
-theorem mod_succ (a L : Nat) (_hL : 0 < L) : (a % L + 1) % L = (a + 1) % L := by
-  rw [Nat.add_mod, Nat.mod_mod, ← Nat.add_mod]
-
 /-- What a P-array entry's code needs. -/
 structure KeyWordEnv (T S K : Addr) (L : Nat) (i : Nat) (s : State) : Prop where
   lt : i < 18
@@ -453,11 +440,6 @@ structure KeyPInv (T S K : Addr) (L : Nat) (s₀ : State) (i : Nat) (u : State) 
   frame : Frame [⟨S + BitVec.ofNat 64 4096, 4 * i⟩] s₀.mem u.mem
   gpr : ∀ r, KeyWordRegs r → u.gpr r = s₀.gpr r
   eq : u = { s₀ with gpr := u.gpr, mem := u.mem }
-
-theorem bytesAt_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {K : Addr} {L : Nat}
-    (h : ∀ c < L, ∀ r ∈ rs, ¬ r.Contains (K + BitVec.ofNat 64 c) 1) : bytesAt m' K L = bytesAt m K L := by
-  simp only [bytesAt]
-  exact List.map_congr_left fun c hc => hf _ fun r hr => h c (List.mem_range.mp hc) r hr
 
 theorem keyP_step {T S K : Addr} {L : Nat} {s₀ : State} (E : KeyPEnv T S K L s₀) {i : Nat} (hi : i < 18)
     {u : State} (I : KeyPInv T S K L s₀ i u) :
