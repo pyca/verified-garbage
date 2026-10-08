@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.PublicValues
 
 namespace VG.Proof.Ecdsa.Verify.X86
 open VG VG.X86 VG.Impl.Ecdsa.X86 VG.Proof.Mont.X86 VG.Proof.Mont
@@ -14,6 +15,7 @@ structure VCombInput (c : Impl.Ecdsa.X86.Cfg) (s₀ : State) (base : Addr) (s : 
   rx : sv c base s RX = 0
   ry : sv c base s RY = c.mont 1
   rz : sv c base s RZ = 0
+  values : VPublicValues c s₀ base s
 
 theorem vBits_ok (hc : CfgOk c) {s₀ s : State} {base : Addr} (h : Mid c s₀ base s) :
     WP isa (Impl.Weierstrass.X86.bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) s
@@ -31,7 +33,10 @@ theorem vBits_ok (hc : CfgOk c) {s₀ s : State} {base : Addr} (h : Mid c s₀ b
     h.whole.trans (frame_of_unch unch (fun w hw => by rw [List.mem_singleton.mp hw]; exact tbl_le h7) hsc),
     h.sp_lo⟩,
     ⟨sv c base s U, wordsVal_lt _ _ _ _, b⟩,
-    (v (by decide)).trans h.rx, (v (by decide)).trans h.ry, (v (by decide)).trans h.rz⟩
+    (v (by decide)).trans h.rx, (v (by decide)).trans h.ry, (v (by decide)).trans h.rz,h.publicValues.transfer (by
+      intro i hi
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
+      rcases hi with rfl|rfl|rfl <;> exact v (by decide))⟩
 
 /-- Read-only comb tables outside the working space. -/
 def VCombTables (s : State) : Prop :=

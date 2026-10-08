@@ -95,7 +95,9 @@ theorem vComb_ok (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
     simpa only [VPost, ptr, harg 0 (by decide), harg 1 (by decide), harg 2 (by decide), hpk, hdg, hsig] using post
 
 def VCombPub (s t : State) : Prop :=
-  s.gpr .esp = t.gpr .esp ∧ (∀ j < 4, arg s j = arg t j) ∧ s.syms p256d.tsym = t.syms p256d.tsym
+  s.gpr .esp = t.gpr .esp ∧ (∀ j < 4, arg s j = arg t j) ∧ s.syms p256d.tsym = t.syms p256d.tsym ∧
+    Spec.Ecdsa.bytesAt s.mem (ptr s 0) (1+2*p256Comb.C.len)=Spec.Ecdsa.bytesAt t.mem (ptr t 0) (1+2*p256Comb.C.len) ∧
+    Spec.Ecdsa.bytesAt s.mem (ptr s 2) (2*p256Comb.C.len)=Spec.Ecdsa.bytesAt t.mem (ptr t 2) (2*p256Comb.C.len)
 
 theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.Inv.InvSounds) : ConstantTime isa (VCombPre p256Comb) VCombPub vCombCode := by
   apply RelCT.constantTime (Q := fun _ _ => True)
@@ -111,14 +113,24 @@ theorem vComb_ct (hC : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.X86.In
     exact ⟨symFrame_ok p256d.tsym s h.1.sp4, symFrame_ok p256d.tsym t h.2.1.sp4⟩)
   refine pre.seq ?_
   intro s t tr₁ tr₂ s' t' h e₁ e₂
-  obtain ⟨_, a, b, ⟨hp, hq, he, ha, hg⟩, P, Q⟩ := h
+  obtain ⟨_, a, b, ⟨hp, hq, he, ha, hg, pk, sig⟩, P, Q⟩ := h
   have he' : s.gpr .esp = t.gpr .esp := by rw [P.gpr .esp (by decide), Q.gpr .esp (by decide), he]
   have ha' : ∀ j < 4, arg s j = arg t j := by
     intro j hj
     rw [P.arg hp.sp4 (by have := hp.sp_fit; omega), Q.arg hq.sp4 (by have := hq.sp_fit; omega), ha j hj]
+  have hpub : VInputEq p256Comb s t := by
+    apply VInputEq.of_bytes
+    · have ps := prefix_bytesAt P hp.pk_stack (by change 65≤2^64; decide)
+      have pt := prefix_bytesAt Q hq.pk_stack (by change 65≤2^64; decide)
+      simpa only [ptr,P.arg (j:=0) hp.sp4 (by have:=hp.sp_fit; omega),
+        Q.arg (j:=0) hq.sp4 (by have:=hq.sp_fit; omega),ps,pt] using pk
+    · have ps := prefix_bytesAt P hp.sig_stack (by change 64≤2^64; decide)
+      have pt := prefix_bytesAt Q hq.sig_stack (by change 64≤2^64; decide)
+      simpa only [ptr,P.arg (j:=2) hp.sp4 (by have:=hp.sp_fit; omega),
+        Q.arg (j:=2) hq.sp4 (by have:=hq.sp_fit; omega),ps,pt] using sig
   exact vCombBody_rel (p256Comb_ok hI) hC (p256Comb_tables hC) p256Comb_shape p256Comb_am3
     (hp.toVPre.symAddr P hp.sp4) (hq.toVPre.symAddr Q hq.sp4)
-    (vPrefixTables hp P) (vPrefixTables hq Q) he' ha' (by rw [P.addr, Q.addr, hg]) signComb_spG vCombBody_sp
+    (vPrefixTables hp P) (vPrefixTables hq Q) he' ha' hpub (by rw [P.addr, Q.addr, hg]) signComb_spG vCombBody_sp
     _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
 
 end VG.Proof.Ecdsa.Verify.X86

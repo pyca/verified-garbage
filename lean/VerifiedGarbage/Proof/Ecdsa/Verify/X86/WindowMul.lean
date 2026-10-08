@@ -107,19 +107,5 @@ theorem windowMulAt_ok (hc : CfgOk c) (h4 : c.n = 4) {i : Nat} (hi : i < 45) (hi
   change Rep _ _ _ _ (mul (sv c base s i + WinCfg.offset 65 - 8 * geom 65) P) at qu
   rw [hoff, Nat.add_sub_cancel] at qu
   exact qu
-/-- Multiply the validated peer by `v`, preserving the fixed-base result. -/
-theorem windowMulQ_ok (hc : CfgOk c) (h4 : c.n = 4) (hC : Law c.C) (hM3 : AM3 c.C)
-    {s : State} {base : Addr} {g : Reg → BitVec 32} (hs : Scr s base size) (F : Fixed c base g s.mem)
-    {P : Point c.C} (hP : onCurve c.C P = true)
-    (hpx : sv c base s PX < c.C.p) (hpy : sv c base s PY < c.C.p)
-    (hQ : Rep c.C (tmv c.C c.n base s (c.sl PX)) (tmv c.C c.n base s (c.sl PY))
-      (tmv c.C c.n base s (c.sl ONEP)) P) :
-    WP isa (Impl.Ecdsa.Verify.X86.Cfg.windowMulQ c) s fun u =>
-      Keeps powClob s u ∧ Unch base (windowW c) s.mem u.mem ∧
-      ModOkW c.MP' size c.C.p u.mem base ∧
-      (∀ x ∈ [c.sl RX, c.sl RY, c.sl RZ], wordsVal u.mem base x c.n < c.C.p) ∧
-      Rep c.C (tmv c.C c.n base u (c.sl RX)) (tmv c.C c.n base u (c.sl RY))
-        (tmv c.C c.n base u (c.sl RZ)) (mul (sv c base s V) P) :=
-  windowMulAt_ok hc h4 (by decide) (by decide) hC hM3 hs F hP hpx hpy hQ
 
 end VG.Proof.Ecdsa.Verify.X86

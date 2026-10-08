@@ -35,7 +35,15 @@ theorem vMid_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vMidCod
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 theorem vBits_rel : RelCT isa (VG.X86.Taint.Agree (argτ [.esp, .edi] 4)) vBitsCode (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
-theorem vPointTail_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vPointTailCode
+def vSaveCode : Prog isa := .block (Impl.Ecdsa.Verify.X86.Cfg.save p256Comb)
+def vSumCode : Prog isa := Impl.Ecdsa.Verify.X86.Cfg.sum p256Comb
+materialize_code vSaveCode
+materialize_code vSumCode
+
+theorem vSave_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSaveCode
+    (fun _ _ => True) :=
+  RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
+theorem vSum_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vSumCode
     (fun _ _ => True) :=
   RelCT.taint (A := taint) _ (fun _ _ h => h) (by taint_decide)
 theorem vFinal_rel : RelCT isa (VG.X86.Taint.Agree (scratchArgτ 4 false)) vFinalCode (fun _ _ => True) :=

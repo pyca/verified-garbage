@@ -70,14 +70,21 @@ theorem vComb_verified (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.
     sig_pub [vCombSpec, Spec.Ecdsa.P256.inst, Spec.Ecdsa.Instance.verifyContract,
       Spec.Ecdsa.Instance.verifySig, Spec.P256.curve, Spec.Ecdsa.scratchWords, X86.abi,
       X86.argSlots, X86.argVal, X86.argBytes, p256Comb_consts, Abi.withConsts] at h
-    obtain ⟨he, hy, _leak, a0, a1, a2, a3⟩ := h
-    refine ⟨he, ?_, hy⟩
-    intro j hj
-    have hj' : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
-    rcases hj' with rfl | rfl | rfl | rfl
-    · exact a0
-    · exact a1
-    · exact a2
-    · exact a3
+    obtain ⟨he, hy, inputs, a0, a1, a2, a3⟩ := h
+    have eqBytes := (List.map_inj_right (fun (a b : BitVec 8) h => BitVec.eq_of_toNat_eq h)).mp inputs
+    have parts := List.append_inj eqBytes (by simp only [List.length_append,Weierstrass.length_bytesAt])
+    have key := (List.append_inj parts.1 (by simp only [Weierstrass.length_bytesAt])).1
+    refine ⟨he,?_,hy,?_,?_⟩
+    · intro j hj
+      have hj' : j=0 ∨ j=1 ∨ j=2 ∨ j=3 := by omega
+      rcases hj' with rfl|rfl|rfl|rfl
+      · exact a0
+      · exact a1
+      · exact a2
+      · exact a3
+    · simpa only [State.withRegions_mem,ptr,arg_withRegions,
+        show 1+2*p256Comb.C.len=65 from rfl,show 2*p256Comb.C.len=64 from rfl] using key
+    · simpa only [State.withRegions_mem,ptr,arg_withRegions,
+        show 1+2*p256Comb.C.len=65 from rfl,show 2*p256Comb.C.len=64 from rfl] using parts.2
 
 end VG.Proof.Ecdsa.Verify.X86
