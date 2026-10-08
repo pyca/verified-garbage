@@ -49,16 +49,26 @@ theorem nafSub5_value (a b c d e x mask : BitVec 64) :
   dsimp only [nafSub5,nafVal5] at hb ⊢
   omega
 
+/-- One more word below a bound: `a + 2⁶⁴ y < 2⁶⁴ B` for `y < B`. -/
+theorem horner_lt {a y B : Nat} (ha : a<2^64) (hy : y<B) : a+2^64*y<2^64*B := by omega
+
+/-- One word of a borrow chain below the words above it: `o = i - s - c`
+with borrow `c'`, and the words above with borrow-in `c'`. -/
+theorem sbb_chain {o s c i c' vo vs vi top : Nat} (h : o+s+c=i+2^64*c') (ih : vo+vs+c'=vi+top) :
+    (o+2^64*vo)+(s+2^64*vs)+c=(i+2^64*vi)+2^64*top := by omega
+
+theorem mod_of_chain {A S I T M c : Nat} (h : A+S+0=I+T) (hI : I<M) (hT : T=M*c) :
+    (A+S)%M=I := by
+  rw [show A+S=I+M*c by omega,Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hI]
+
 /-- Seven words: a scalar of six words and its top word (with no numeral
 exponent above 256, which Lean would not evaluate). -/
 abbrev nafVal7 (a b c d e f g : BitVec 64) : Nat :=
   a.toNat+2^64*(b.toNat+2^64*(c.toNat+2^64*(d.toNat+2^64*(e.toNat+2^64*(f.toNat+2^64*g.toNat)))))
 
-theorem nafVal7_lt (a b c d e f g : BitVec 64) : nafVal7 a b c d e f g<2^256*2^192 := by
-  have := a.isLt; have := b.isLt; have := c.isLt; have := d.isLt; have := e.isLt
-  have := f.isLt; have := g.isLt
-  dsimp only [nafVal7]
-  omega
+theorem nafVal7_lt (a b c d e f g : BitVec 64) : nafVal7 a b c d e f g<2^256*2^192 :=
+  Nat.lt_of_lt_of_eq (horner_lt a.isLt <| horner_lt b.isLt <| horner_lt c.isLt <| horner_lt d.isLt <|
+    horner_lt e.isLt <| horner_lt f.isLt g.isLt) (by decide)
 
 /-- `nafSub5` for seven words. -/
 def nafSub7 (a b c d e f g x mask : BitVec 64) :
@@ -77,19 +87,26 @@ theorem nafSub7_value (a b c d e f g x mask : BitVec 64) :
     let out := nafSub7 a b c d e f g x mask
     (nafVal7 out.1 out.2.1 out.2.2.1 out.2.2.2.1 out.2.2.2.2.1 out.2.2.2.2.2.1 out.2.2.2.2.2.2 +
       nafVal7 x mask mask mask mask mask mask)%(2^256*2^192) = nafVal7 a b c d e f g := by
-  have h0 := sub_borrow a x
-  have h1 := sbb_borrow b mask (decide (a.toNat < x.toNat))
-  have h2 := sbb_borrow c mask (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat))
-  have h3 := sbb_borrow d mask (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat))
-  have h4 := sbb_borrow e mask (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat))
-  have h5 := sbb_borrow f mask (decide (e.toNat < mask.toNat + (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat)).toNat))
-  have h6 := sbb_borrow g mask (decide (f.toNat < mask.toNat + (decide (e.toNat < mask.toNat + (decide (d.toNat < mask.toNat + (decide (c.toNat < mask.toNat + (decide (b.toNat < mask.toNat + (decide (a.toNat < x.toNat)).toNat)).toNat)).toNat)).toNat)).toNat))
   have hb := nafVal7_lt a b c d e f g
   dsimp only [nafSub7,nafVal7] at hb ⊢
-  omega
-
-/-- One more word below a bound: `a + 2⁶⁴ y < 2⁶⁴ B` for `y < B`. -/
-theorem horner_lt {a y B : Nat} (ha : a<2^64) (hy : y<B) : a+2^64*y<2^64*B := by omega
+  have h0 := sub_borrow a x
+  generalize decide (a.toNat < x.toNat) = c0 at h0 ⊢
+  have h1 := sbb_borrow b mask c0
+  generalize decide (b.toNat < mask.toNat + c0.toNat) = c1 at h1 ⊢
+  have h2 := sbb_borrow c mask c1
+  generalize decide (c.toNat < mask.toNat + c1.toNat) = c2 at h2 ⊢
+  have h3 := sbb_borrow d mask c2
+  generalize decide (d.toNat < mask.toNat + c2.toNat) = c3 at h3 ⊢
+  have h4 := sbb_borrow e mask c3
+  generalize decide (e.toNat < mask.toNat + c3.toNat) = c4 at h4 ⊢
+  have h5 := sbb_borrow f mask c4
+  generalize decide (f.toNat < mask.toNat + c4.toNat) = c5 at h5 ⊢
+  have h6 := sbb_borrow g mask c5
+  generalize decide (g.toNat < mask.toNat + c5.toNat) = c6 at h6 ⊢
+  have h0' : (a-x).toNat+x.toNat+0=a.toNat+2^64*c0.toNat := by rw [Nat.add_zero]; exact h0
+  refine mod_of_chain (c:=c6.toNat) (sbb_chain h0' <| sbb_chain h1 <| sbb_chain h2 <| sbb_chain h3 <|
+    sbb_chain h4 <| sbb_chain h5 h6) hb ?_
+  cases c6 <;> decide
 
 /-- Ten words: a scalar of nine words and its top word (as `nafVal7`, in
 Horner form; a definition, so that `omega` takes it as one atom rather than
@@ -104,15 +121,6 @@ theorem nafVal10_lt (a b c d e f g h i l : BitVec 64) :
   Nat.lt_of_lt_of_eq (horner_lt a.isLt <| horner_lt b.isLt <| horner_lt c.isLt <| horner_lt d.isLt <|
     horner_lt e.isLt <| horner_lt f.isLt <| horner_lt g.isLt <| horner_lt h.isLt <|
     horner_lt i.isLt l.isLt) (by decide)
-
-/-- One word of a borrow chain below the words above it: `o = i - s - c`
-with borrow `c'`, and the words above with borrow-in `c'`. -/
-theorem sbb_chain {o s c i c' vo vs vi top : Nat} (h : o+s+c=i+2^64*c') (ih : vo+vs+c'=vi+top) :
-    (o+2^64*vo)+(s+2^64*vs)+c=(i+2^64*vi)+2^64*top := by omega
-
-theorem mod_of_chain {A S I T M c : Nat} (h : A+S+0=I+T) (hI : I<M) (hT : T=M*c) :
-    (A+S)%M=I := by
-  rw [show A+S=I+M*c by omega,Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt hI]
 
 /-- `nafSub5` for ten words. -/
 def nafSub10 (a b c d e f g h i l x mask : BitVec 64) :
@@ -187,8 +195,9 @@ theorem nafValN_six (s : State) :
 theorem nafValN_nine (s : State) :
     nafValN 9 s=nafVal10 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .r12)
       (s.gpr .r13) (s.gpr .r14) (s.gpr .r15) (s.gpr .rbp) (s.gpr .rsi) := by
-  simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,nafVal10]
-  omega
+  -- Not `simp [nafVal10]`: generating `nafVal10`'s equation lemma takes seconds.
+  simp only [nafValN,Naf.sregs,List.take,VG.Proof.Mont.X86_64.regsVal,Nat.mul_zero,Nat.add_zero]
+  rfl
 
 /-- The low word of the scalar's registers. -/
 theorem nafValN_r8 (n : Nat) (s : State) :

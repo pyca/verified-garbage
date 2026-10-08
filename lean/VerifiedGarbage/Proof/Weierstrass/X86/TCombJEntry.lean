@@ -53,13 +53,10 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
   dsimp only [TCombCfg.toComb] at hnd
   simp only [combWs, rcbW, List.cons_append, List.nil_append, List.nodup_cons,
     List.mem_cons, List.not_mem_nil, or_false, not_or] at hnd
-  have xy := hL.comb.apart₂ (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have xz := hL.comb.apart₂ (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have yz := hL.comb.apart₂ (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have yneg := hL.comb.apart₂ (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have xneg := hL.comb.apart₂ (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  have zneg := hL.comb.apart₂ (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by grind)
-  dsimp only [TCombCfg.toComb] at xy xz yz yneg xneg zneg
+  -- Apart slots as a function, not as facts in the context: `omega` would split every
+  -- disjunction in the context at each of its calls.
+  have ap : ∀ {x y : Nat}, x ∈ combWs K.toComb → y ∈ combWs K.toComb → x ≠ y →
+      x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := fun hx hy h => hL.comb.apart₂ hx hy h
   have hexy := hL.exy
   have hEx := hle K.E.x (by tcomb_mem)
   have hEy := hle K.E.y (by tcomb_mem)
@@ -115,7 +112,9 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
   have h0z := combW_ro hL.comb (x := K.zero) (by simp [combRo, TCombCfg.toComb])
     (K.E.z, 8 * K.M.n) (by simp [combW, combWs, TCombCfg.toComb])
   refine WP.mono (select_ok K hs₁ hnn (by omega) (by have := hL.tbl; omega) hL.ptr_le hexy hEy hEz
-    (by omega) hzl (by dsimp only [TCombCfg.toComb] at h0x h0y; omega) h0z (Nat.lt_trans hV.one_lt hpn)
+    (by
+      have := ap (x := K.E.x) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)
+      have := ap (x := K.E.y) (y := K.E.z) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega) hzl (by dsimp only [TCombCfg.toComb] at h0x h0y; omega) h0z (Nat.lt_trans hV.one_lt hpn)
     (by rw [k₁.2.1]; exact hz) hx₁ m₁ hmag (T := s.mem.readW (off base K.ptr) 32)
     (by rw [k₁.2.1]) (by rw [haddr]; exact hreg) (by rw [haddr, haddrNat]; exact hbound)) fun s₂ S₂ => ?_
   rw [haddr] at S₂
@@ -189,22 +188,23 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     hx₃ hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
   have hs₄ := hs₃.of_keeps k₄.keeps (by decide)
   refine WP.mono (selWords_ok hs₄ (decide (bcar K.w k (i + 1) = 1)) x₄ (o := K.E.y)
-    (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _)) (by omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
+    (a := K.E.y) (b := K.neg) hEy hEy hneg (Or.inl (Nat.le_refl _))
+      (by have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); omega)) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   -- The values.
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
   have vx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.E.x K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (ap (x := K.E.x) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · dsimp only; omega
+      · have := ap (x := K.E.x) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
       · have := htmp K.E.x (by tcomb_mem); dsimp only; omega
       · dsimp only; omega
       · dsimp only [Mont.outW]; omega) (by omega)]
   have vz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.E.z K.M.n := by
-    rw [O₅.wordsVal (by omega) (by omega), m₄, U₃.wordsVal (fun w hw => by
+    rw [O₅.wordsVal (ap (x := K.E.z) (y := K.E.y) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd)) (by omega), m₄, U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · dsimp only; omega
+      · have := ap (x := K.E.z) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
       · have := htmp K.E.z (by tcomb_mem); dsimp only; omega
       · dsimp only; omega
       · dsimp only [Mont.outW]; omega) (by omega)]
@@ -212,7 +212,7 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
     U₃.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl
-      · dsimp only; omega
+      · have := ap (x := K.E.y) (y := K.neg) (by tcomb_mem) (by tcomb_mem) (by nd_ne hnd); dsimp only; omega
       · have := htmp K.E.y (by tcomb_mem); dsimp only; omega
       · dsimp only; omega
       · dsimp only [Mont.outW]; omega) (by omega)
@@ -250,8 +250,8 @@ theorem tentryJ_ok {K : TCombCfg} {C : Curve} {base : Addr} {size k i : Nat} {T 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]))
   · refine ((U₂.trans (U₃.trans (m₄ ▸ O₅.unch))).mono ?_)
     intro w hw
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
-    grind
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hw ⊢
+    (repeat' (obtain rfl | hw := hw)) <;> simp only [true_or, or_true]
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
