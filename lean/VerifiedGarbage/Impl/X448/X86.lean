@@ -142,17 +142,21 @@ def outPass : List Instr := [.mov .ebx (.imm 0)] ++ carryPass .ebp 0 (fun i => [
 /-- The coefficients at `TMP` normalized into the element at `o`. -/
 def normalize : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ argPtr .ebp 1 ++ outPass
 
-/-- `a_i`, at `ws + a + 4 i = ebp + a`, into `ecx`. -/
-def mulA : List Instr :=
-  [.mov .ecx (.mem (argOp 2)), .alu .add .ecx (.reg .ebp), .mov .ecx (.mem (at_ .ecx 0))]
+/-- `a_i b_j`, `b_j` at `esi + 4 j`, added to word `i + j` of the product. -/
+def rowSrcU (i j : Nat) : List Instr :=
+  [.mov .eax (.mem (at_ .esi (4 * j))), .mul .ecx, .alu .add .eax (.mem (sc (ACC + 4 * (i + j))))]
 
-def mulRow : List Instr := rowWith mulA fun j => at_ .esi (4 * j)
+/-- Row `i` of `vg_gf448_r16_mul`'s product, `a_i` at `ebp + 4 i`: the rows are
+unrolled, so the product's words are at constant offsets of `edi`. -/
+def mulRowU (i : Nat) : List Instr :=
+  [.mov .ecx (.mem (at_ .ebp (4 * i))), .mov .ebx (.imm 0)] ++ carryPass .edi (ACC + 4 * i) (rowSrcU i) ++
+    [st .ebx (ACC + 4 * (i + 28))]
 
-/-- `vg_gf448_r16_mul`. -/
+/-- `vg_gf448_r16_mul`: `esi = ws + b`, `ebp = ws + a`, the 28 rows, then the
+product folded and normalized. -/
 def mulFn : Prog isa :=
-  .seq (.block (fnEntry ++ argPtr .esi 3 ++ mulPre)) <|
-  .seq (.loop (.block mulRow) .ne) <|
-    .block ((List.range 28).flatMap reduceCol ++ normalize ++ fnExit)
+  .block (fnEntry ++ argPtr .esi 3 ++ argPtr .ebp 2 ++ zeroAcc ++ (List.range 28).flatMap mulRowU ++
+    (List.range 28).flatMap reduceCol ++ normalize ++ fnExit)
 
 def addCols : List Instr :=
   (List.range 28).flatMap fun i =>

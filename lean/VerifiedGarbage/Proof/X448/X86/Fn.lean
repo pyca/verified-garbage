@@ -215,16 +215,18 @@ theorem mulFn_ok {s : State} {base : Addr} {o a b : Nat} (h : FnEntry s base 4 o
     (bb : Bounded s.mem base b) :
     WP isa mulFn s fun t => FnOut base o s t ∧ F t.mem base o = F s.mem base a * F s.mem base b := by
   unfold mulFn
-  rw [List.append_assoc, WP.seq_iff, WP.block_append_iff]
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
   refine WP.mono (fnEntry_ok h) fun t ⟨tc, tv, tm, tk⟩ => ?_
   obtain ⟨ea, ba⟩ := entry_operand h.slotA tm
   obtain ⟨eb, bb'⟩ := entry_operand hb tm
-  refine WP.mono (mulSetup_ok tc (argB_keep h hvb tk tm)) fun u ⟨s0, hu, hp, k0, m0⟩ => ?_
+  rw [← List.append_assoc, ← List.append_assoc, WP.block_append_iff]
+  refine WP.mono (mulSetup_ok tc (argB_keep h hvb tk tm)) fun u ⟨s0, hu, hp, hpa, k0, m0⟩ => ?_
   have c0 := tc.keep k0 (by decide) (by decide) (by rw [m0]; exact Outside.refl _ _ _ _)
-  rw [WP.seq_iff]
-  refine WP.mono (mulRows_ok c0 hb hp (by rw [m0]; exact ba ab) (by rw [m0]; exact bb' bb) hu)
-    fun v hv => ?_
   rw [WP.block_append_iff]
+  refine WP.mono (mulRows_ok h.slotA hb hpa hp (by rw [m0]; exact ba ab) (by rw [m0]; exact bb' bb) hu)
+    fun v hv => ?_
+  rw [← List.append_assoc, WP.block_append_iff]
   refine WP.mono (mulTail_ok c0 hv) fun w ⟨wm, wb, wv, wk⟩ => ?_
   have kw : Keeps (.esi :: clob) t w :=
     ((k0.mono (by decide)).trans (hv.regs.mono (by decide))).trans (wk.mono (by decide))
