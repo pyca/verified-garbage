@@ -490,6 +490,22 @@ yours to keep:
 
 <tr>
 
+<td>AES-CFB128 (128-, 192- and 256-bit keys)</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>AES-ECB (128-, 192- and 256-bit keys)</td>
 
 <td>✅</td>
