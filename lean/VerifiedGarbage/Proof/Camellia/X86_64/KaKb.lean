@@ -305,8 +305,8 @@ theorem KaInv.pair_ok {s₀ s : State} {KL KR : BitVec 64 × BitVec 64} {i c : N
 
 /-- `KL ^ KR` to the running value's slots, `r8 := 3`, `rdi` at them. -/
 theorem kaPrefix_ok {s₀ : State} {KL KR : BitVec 64 × BitVec 64} (hp : KaPre s₀ KL KR) :
-    ∃ s', runBlock isa (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ [.movImm64 .r8 3, movR .rdi sb,
-      .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * wSlot)))]) s₀ = some s' ∧
+    ∃ s', runBlock isa (copyWords wSlot klSlot ++ xorWords wSlot krSlot ++ ([.movImm64 .r8 3, movR .rdi sb,
+      .alu .add .rdi (.imm (BitVec.ofNat 32 (8 * wSlot)))] : List Instr)) s₀ = some s' ∧
       KaInv s₀ KL KR 0 0 3 (kaW KL KR 0) s' := by
   obtain ⟨hl, hr, hW, hA, hB, hE, hK, hS⟩ := kaKb_slots
   obtain ⟨s₁, e₁, mv₁, w₁, -⟩ := copyW_ok (w := wSlot) (x := klSlot) hp.ctx.scr (by omega) (by omega)

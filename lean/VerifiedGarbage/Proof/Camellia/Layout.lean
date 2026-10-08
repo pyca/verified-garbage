@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Camellia.Bitsliced
 
 /-!

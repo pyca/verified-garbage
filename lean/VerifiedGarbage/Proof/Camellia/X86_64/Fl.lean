@@ -24,7 +24,7 @@ open VG.Proof.Camellia (RotStep OrStep oddAt rotPos)
 theorem runBlock_append' (a b : List Instr) (s : State) :
     runBlock isa (a ++ b) s = (runBlock isa a s).bind (runBlock isa b) := by
   induction a generalizing s with
-  | nil => simp [runBlock]
+  | nil => rfl
   | cons i is ih =>
     show (isa.exec i s).bind _ = ((isa.exec i s).bind _).bind _
     cases isa.exec i s with

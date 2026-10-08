@@ -104,8 +104,8 @@ theorem sreg_ne (i : Nat) : sreg i ≠ .r9 ∧ sreg i ≠ .r8 := by
   unfold sreg; split <;> decide
 
 theorem prologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .r8 = b) (hw : (⟨b, 8 * slots⟩ : Region) ∈ s₀.wr) :
-    ∃ s, runBlock isa ([movR .r9 .r8, movR .r8 .rcx] ++ saveRegs ++ setMasks layerMasks ++
-        [.alu .cmp .rsi (.imm 18)]) s₀ = some s ∧
+    ∃ s, runBlock isa (([movR .r9 .r8, movR .r8 .rcx] : List Instr) ++ saveRegs ++ setMasks layerMasks ++
+        ([.alu .cmp .rsi (.imm 18)] : List Instr)) s₀ = some s ∧
       s.gpr sb = b ∧ s.gpr .r8 = s₀.gpr .rcx ∧ (∀ r, r ≠ .r9 → r ≠ .r8 → r ≠ t0 → s.gpr r = s₀.gpr r) ∧
       Saved s₀ b s.mem ∧ MasksOk s ∧ s.zf = some (s₀.gpr .rsi - (18 : BitVec 32).signExtend 64 == 0) ∧
       Frame [⟨b, 8 * tailSlot⟩] s₀.mem s.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr := by

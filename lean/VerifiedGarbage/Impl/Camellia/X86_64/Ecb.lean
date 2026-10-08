@@ -15,10 +15,10 @@ artifact allocates on the stack.
   order RFC 3713 §2.3.3 swaps them into, `kw3, kw4`, then the subkeys
   between `kw2` and `kw3` from the last back to the first, then `kw1,
   kw2`. Decryption then runs the same rounds as encryption.
-* Each group of eight blocks (or the last one to seven, copied to the tail
-  buffer and back): both halves bitsliced, the prewhitening, groups of six
-  rounds with FL and FLINV between them, the postwhitening, and the halves
-  stored back swapped.
+* Each group of up to eight blocks, copied to the tail buffer and back:
+  both halves bitsliced, the prewhitening, groups of six rounds with FL and
+  FLINV between them, the postwhitening, and the halves stored back
+  swapped.
 
 Only `rdi` and `rsi` (pointers into the schedule and the table, and the
 round key's entry), `rdx` (the data), `r8` (the blocks left), `r9` and
@@ -111,8 +111,8 @@ def crypt8 : Prog isa := .seq (.block head) (.seq (.loop groupBody .ne) (.block 
 
 /-! ## The groups
 
-Each group of eight blocks, or the last one to seven, is copied to the tail
-buffer, transformed there and copied back. The data pointer, the blocks left
+Each group of up to eight blocks is copied to the tail buffer, transformed
+there and copied back. The data pointer, the blocks left
 and the postwhitening's address stay in slots while `crypt8` runs: its
 stores are all at known offsets of the scratch buffer, so the taint analysis
 keeps them public; the copies' are not, so they run with those values in

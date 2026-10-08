@@ -25,7 +25,7 @@ def keyLoad (d : Nat) : List Instr :=
 
 def keyStore : List Instr := (List.range 8).map fun j => .store (slotAt .rsi j) (q j)
 
-theorem keyOne_eq (d : Nat) : keyOne d = keyLoad d ++ keyStore ++ [.alu .add .rsi (.imm 64)] := by
+theorem keyOne_eq (d : Nat) : keyOne d = keyLoad d ++ keyStore ++ ([.alu .add .rsi (.imm 64)] : List Instr) := by
   simp only [keyOne, keyLoad, keyStore, List.append_assoc]
 
 def keyEnv : Env (Nat × Nat) := linEnvG [] [] layerMasks

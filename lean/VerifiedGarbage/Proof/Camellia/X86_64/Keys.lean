@@ -250,7 +250,7 @@ theorem keyLoop_wp {s₀ s : State} {b sched : Addr} {e₀ N : Nat} {wk : Nat �
     (hstep : ∀ k < N, f (sched + BitVec.ofNat 64 (8 * wk k)) = sched + BitVec.ofNat 64 (8 * wk (k + 1)))
     (hF : ∀ k < N, F (e₀ + k) = Spec.Camellia.wordAt s₀.mem (sched + BitVec.ofNat 64 (8 * wk k)))
     {k : Nat} (hk : k < N) (hs : KeyInv s₀ b sched e₀ N wk F k s) :
-    WP isa (.loop (.block (keyOne 0 ++ [.alu op .rdi (.imm 8), .alu .sub t1 (.imm 1)])) .ne) s
+    WP isa (.loop (.block (keyOne 0 ++ ([.alu op .rdi (.imm 8), .alu .sub t1 (.imm 1)] : List Instr))) .ne) s
       (KeyInv s₀ b sched e₀ N wk F N) := by
   refine WP.loop (M := isa) (fun n s => ∃ k, n = N - k ∧ k < N ∧ KeyInv s₀ b sched e₀ N wk F k s)
     (fun n s hs => ?_) (N - k) s ⟨k, rfl, hk, hs⟩

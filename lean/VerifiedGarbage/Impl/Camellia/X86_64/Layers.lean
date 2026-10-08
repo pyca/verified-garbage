@@ -24,10 +24,13 @@ The scratch buffer at `r9` holds, in 8-byte slots: all ones (slot 0, for the
 S-box), the S-box's spills (1–47, also the masks of the transposes), the
 masks of the layers (48–52), the planes of `D1` (64–71) and `D2` (72–79):
 the rounds' working space, below slot 96; then the bitsliced subkeys, eight
-planes each, in the order the rounds use them (from slot 96), the address
-of the postwhitening's entry (368), the data pointer while the last blocks
-are processed in the tail buffer (369), the callee-saved registers
-(370–375), and the tail buffer (376–391, eight blocks).
+planes each, in the order the rounds use them (from slot 96); then, while
+`crypt8` runs on a group, the address of the postwhitening's entry (368),
+the data pointer (369) and the number of blocks left (370), which it does
+not keep in registers; the callee-saved registers (371–376); and the tail
+buffer (377–392, eight blocks), through which every group is copied. The
+key schedule (`ExpandKey.lean`) uses the same layout, with the key's length
+in slot 369 and its 128-bit values in the tail buffer.
 -/
 
 namespace VG.Impl.Camellia.X86_64
