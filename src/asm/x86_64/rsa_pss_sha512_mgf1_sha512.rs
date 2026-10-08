@@ -5283,7 +5283,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_RSA_ADX_FEATUR
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -6305,7 +6305,7 @@ pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precom
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -7329,7 +7329,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_RS
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -8354,7 +8354,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_AVX2_FE
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `bmi1` and `bmi2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_avx2(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -9379,7 +9379,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_R
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `sha512`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani_rsa_adx(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
@@ -10404,7 +10404,7 @@ pub(crate) const VG_RSA_PSS_SHA512_MGF1_SHA512_VERIFY_PRECOMPUTED_SHA512_SHANI_F
 /// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
 /// * For the result to be signature verification's, `pre` must hold what `vg_rsa_public_precompute` wrote for `n` (returning 1).
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 408 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `n`, `e`, `digest`, `sig`, `scratch` and `pre` may overlap the return address on the stack or the 400 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2` and `sha512` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_pss_sha512_mgf1_sha512_verify_precomputed_sha512_shani(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const [u8; 64], sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize) -> u32 {
