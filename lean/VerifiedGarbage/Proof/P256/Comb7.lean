@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.Weierstrass.CombCheckW
+import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Impl.P256.CombTable7
 
 /-!
@@ -8,8 +8,8 @@ import VerifiedGarbage.Impl.P256.CombTable7
 `combChecksW` (`Proof/Weierstrass/CombCheckW.lean`) checks every entry of
 `p256Comb7` against the specification's group law, without inverses, and the
 start `p256Comb7Start` through the partial sums below; the kernel evaluates
-it once (`combChecks7_p256`), which gives the facts the comb's proof needs
-(`combOk7`).
+it once (`combChecks7_p256`, by walking the lists: `combChecksF`), which gives
+the facts the comb's proof needs (`combOk7`).
 -/
 
 namespace VG.Proof.P256
@@ -58,8 +58,9 @@ def p256Comb7Sums : List (Nat × Nat) := [
 
 theorem combChecks7_p256 : combChecksW Spec.P256.curve.p Spec.P256.curve.a
     (Spec.P256.curve.gx, Spec.P256.curve.gy) (2 ^ (7 - 1)) 37 Impl.P256.p256Comb7 p256Comb7Sums
-    Impl.P256.p256Comb7Start = true := by
-  decide +kernel
+    Impl.P256.p256Comb7Start = true :=
+  -- By walking the tables (`combChecksF`) rather than indexing them.
+  combChecksW_of_fast (by decide +kernel)
 
 theorem combOk7 (hL : Law Spec.P256.curve) :
     CombOkW Spec.P256.curve 7 37 Impl.P256.p256Comb7 Impl.P256.p256Comb7Start :=
