@@ -29,7 +29,7 @@ theorem montSquare_ct {ps : List (Nat × Nat)} {co ca o a : Nat} (po : (co, o) �
         (by have := hdr_lt_slot L.w 8 (show sArr aN<32 by decide); omega),hg.hdr.harr aN (by decide)]
     exact WP.mono (movMem_ok s (dst := .r10) hsrc) fun _ ⟨p,_,_,k⟩ =>
       ⟨⟨⟨mi,hg.scr.congr k.keep.2.2,(k.keep.gpr (by decide)).trans hg.rdi,k.2.1 ▸ hg.hdr⟩,k.2.1 ▸ hv⟩,p⟩
-  unfold Adx.finish
+  unfold Adx.finish8
   refine RelCT.seq (two_piece (Ψ := fun L : Layout => FF o ⟨L.B,L.Z,L.w⟩) [.rdi]
     (fun L s t hs ht => pins_goodV ps L s t hs.1 ht.1) hF ?_)
     (two_taint _ (fun L => pins_ff o ⟨L.B,L.Z,L.w⟩) (by taint_decide))

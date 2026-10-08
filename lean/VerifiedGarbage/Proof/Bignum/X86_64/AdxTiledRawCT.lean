@@ -31,11 +31,11 @@ theorem setup_fw {ps : List (Nat × Nat)} {cb b : Nat} (pb : (cb, b) ∈ ps) (L 
     ⟨⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,m ▸ hg.hdr⟩,m ▸ hv⟩,p,w⟩
 
 theorem zero_fw {ps : List (Nat × Nat)} (L : Layout) (s : State) (h : Ready ps L s) :
-    WP isa Adx.zeroWin s (GoodV ps L) := by
+    WP isa Adx.zeroWin8 s (GoodV ps L) := by
   obtain ⟨⟨⟨mi,hg⟩,hv⟩,p,w⟩ := h
   have pads := AdxHeader.pads_bound L.hZ
   have hw := L.hw
-  refine WP.mono (zeroWin_ok hg.scr p w (by omega)
+  refine WP.mono (zeroWin8_ok hg.scr p w L.hwN L.hn (by omega)
     (by unfold AdxHeader.highPad at pads; omega)) fun t ⟨_,o,k⟩ => ?_
   exact ⟨⟨mi,hg.scr.congr k.2.2,(k.gpr (by decide)).trans hg.rdi,hg.hdr.of_outside o (by unfold slot; omega)⟩,
     hv.of_outside o (by unfold slot sFn hdrBytes; omega)⟩

@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxTiledRows
 import VerifiedGarbage.Proof.Bignum.X86_64.AdxHeaderFrame
+import VerifiedGarbage.Proof.Bignum.X86_64.AdxFinish8
 
 /-! Full raw product with every borrowed header byte restored. -/
 namespace VG.Proof.Bignum.X86_64.AdxTiledProduct
@@ -34,7 +35,7 @@ theorem rawProduct_ok {s : State} {B : Addr} {Z w a b n : Nat} {mi : BitVec 64}
   have Z64 : slot w 8 ≤ (2 : Nat)^64 := by omega
   unfold AdxTiledProduct.rawProduct
   refine WP.seq (WP.mono (adxSetupV_ok hs hd hh hZ (hvs.at pb) (hvs.lt pb)) fun u ⟨_,_,pu,wu,mu,ku⟩ => ?_)
-  refine WP.seq (WP.mono (zeroWin_ok (hs.congr ku.2.2) pu wu (by omega) rawZ)
+  refine WP.seq (WP.mono (zeroWin8_ok (hs.congr ku.2.2) pu wu hwN hn (by omega) rawZ)
     fun v ⟨zv,ov,kv⟩ => ?_)
   rw [mu] at ov
   have ov' : Outside B (slot w aAcc) (16*w+32) s.mem v.mem := ov.mono (by omega) (by omega)
