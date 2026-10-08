@@ -1,0 +1,5 @@
+name = "AES-OFB (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Aes", "Ofb"]
+modules = ["src/aes_ofb.rs"]
+asm = ["aes_ofb"]
