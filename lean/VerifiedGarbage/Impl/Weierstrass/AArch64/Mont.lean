@@ -15,17 +15,18 @@ register:
    callee-saved registers the function writes are saved in lanes of
    `v16`–`v20` (`saveCode`), the pointers `ro = ws + o` and `ra = ws + a`
    computed, and all of `[b]` loaded into registers (`bRegsF`);
-2. for a general modulus (P-384's `p`), its words are built in registers
-   (`mLoadCode`), where each round's reduction reads them; a friendly one
-   (P-521's) is reduced by shifts and needs no words;
-3. each round loads one word of `[a]` through `ra` (`roundF`); then the
-   result is reduced below `m` against the modulus's words in registers
-   (`csubM`, built there first for a friendly modulus), stored through `ro`,
-   and the saved registers restored.
+2. each round loads one word of `[a]` through `ra` (`roundF`), and its
+   reduction needs none of the modulus's words: P-384's `p` is sparse
+   (`redSparse`: `u p = u (2^384 + 2^32) - u (2^128 + 2^96 + 1)`, by shifts, an
+   addition and a subtraction), and P-521's friendly (by shifts);
+3. the result is reduced below `m` against the modulus's words, built in
+   registers (`mLoadCode`, `csubM`), stored through `ro`, and the saved
+   registers restored.
 
 The inline products (`Impl/Mont/AArch64.lean`) keep only four words of `[b]`
-in registers and load the rest, and the modulus, for every row: the function
-has the callee-saved registers to spare, which more than pays for its call.
+in registers and load the rest, and multiply by P-384's modulus word by word:
+the function has the callee-saved registers to spare, and one multiplication
+per round of P-384's reduction instead of thirteen, which pays for its call.
 The function writes neither `x19` nor `x20`, which callers keep public across
 a call (loop counters and pointers), leaves `x0 = ws`, and writes only `[o]`
 of `ws`. Every address is `ws` plus a constant or one of the offsets (plus a
@@ -65,8 +66,8 @@ def bRegsF (n : Nat) : List Reg :=
   (if n ≤ 6 then [.x4, .x5, .x16, .x17, .x21, .x22]
     else [.x4, .x5, .x16, .x17, .x6, .x24, .x25, .x26, .x27]).take n
 
-/-- The registers for the modulus's distinct words: free during the rounds
-for six words, and once `[b]` is no longer needed for nine. -/
+/-- The registers for the modulus's distinct words, free once the rounds are
+done. -/
 def mPool (n : Nat) : List Reg := if n ≤ 6 then [.x23, .x24, .x25, .x26] else [.x26, .x27, .x28]
 
 /-- The pointer to `[a]`. -/
@@ -92,20 +93,36 @@ def mLoads (n m : Nat) : List (Reg × BitVec 64) := (mPool n).zip (mDistinct n m
 /-- The modulus's words into their registers. -/
 def mLoadCode (n m : Nat) : List Instr := (mLoads n m).flatMap fun p => const64 p.1 p.2
 
-/-- Whether the modulus's reduction reads its words (a general modulus). -/
-def general (n m : Nat) : Bool := (mod n m).red == .general
-
 /-- Words in registers, as a row multiplies by them. -/
 def regWords (rs : List Reg) : List RWord := rs.map fun r => .gen (.reg r)
 
-/-- Round `i`: `T += a_i [b]`, `[a]` through `ra` and `[b]` in `bRegsF`,
-then the reduction: `T += u m` against the words of `m` in registers for a
-general modulus, or as the inline product for a friendly one. -/
+/-- `u (2^384 + 2^32)`'s multiplicand: `2^32`, then `2^384`. -/
+def sparseWords : List RWord := [.pow2 32, .zero, .zero, .zero, .zero, .zero, .one]
+
+/-- `ts -= rs`, word by word in place, with `subs` on the first word and
+`sbcs` on the others. -/
+def subsIn (first : Bool) : List Reg → List Reg → List Instr
+  | t :: ts, r :: rs => (if first then .subs .x t t r else .sbcs .x t t r) :: subsIn false ts rs
+  | _, _ => []
+
+/-- A round's reduction for P-384's `p = 2^384 - 2^128 - 2^96 + 2^32 - 1`:
+`u = t₀ m'` (`x1`), `T += u (2^384 + 2^32)` (shifts), and `T -= u (2^128 + 2^96 + 1)`,
+whose words `u`, `u 2^32 mod 2^64` (`x2`) and `⌊u / 2^32⌋ + u` (`x3`, and its
+carry in `x23`) the subtraction takes. -/
+def redSparse (n i : Nat) : List Instr :=
+  .mul .x .x1 (win n i 0) .x6 :: (row .x0 .x1 (wins n i) sparseWords ++
+    (([.lsl .x .x2 .x1 32, .lsr .x .x3 .x1 32, .adds .x .x3 .x3 .x1, .adcs .x .x23 .x7 .x7] : List Instr) ++
+      subsIn true (wins n i) ([.x1, .x2, .x3, .x23] ++ List.replicate (n - 2) .x7)))
+
+/-- Round `i`: `T += a_i [b]`, `[a]` through `ra` and `[b]` in `bRegsF`, then
+`T += u m`: sparse for P-384 (`redSparse`), by shifts for a friendly modulus
+(as the inline product), the only moduli the function takes. -/
 def roundF (n m i : Nat) : List Instr :=
   let M := mod n m
   [.ldr .x .x1 (raF n) (8 * i)] ++ row .x0 .x1 (prodWins M i) (regWords (bRegsF n)) ++
+    if sparseOk n m then redSparse n i else
     match M.red with
-    | .general => .mul .x .x1 (win n i 0) .x6 :: row .x0 .x1 (wins n i) (regWords (mRegs n m))
+    | .general => []
     | .friendly ws =>
       row .x0 (win n i 0) (wins n i).tail (ws.map (fWord (firstGen ws))) ++ [.movz .x (win n i 0) 0 0]
 
@@ -142,14 +159,12 @@ def restoreCode (n : Nat) : List Instr :=
 def zextCode : List Instr := [.addImm .w .x1 .x1 0, .addImm .w .x2 .x2 0, .addImm .w .x3 .x3 0]
 
 /-- After the offsets are zero-extended: the registers saved, the pointers
-`ro = ws + o`, `ra = ws + a` and `x3 = ws + b`, `[b]` into `bRegsF`, a general
-modulus's words into their registers, the reduction's constant into `x6`, `x7`
-and the accumulator cleared. -/
+`ro = ws + o`, `ra = ws + a` and `x3 = ws + b`, `[b]` into `bRegsF`, the
+reduction's constant into `x6`, `x7` and the accumulator cleared. -/
 def entryRest (n m : Nat) : List Instr :=
   saveCode n ++
     [.add .x (roF n) .x0 .x1, .add .x (raF n) .x0 .x2, .add .x .x3 .x0 .x3] ++
-    loadsR .x3 (bRegsF n) 0 ++ (if general n m then mLoadCode n m else []) ++
-    mulConst (mod n m) ++ zero7 :: zeros (acc n)
+    loadsR .x3 (bRegsF n) 0 ++ mulConst (mod n m) ++ zero7 :: zeros (acc n)
 
 /-- The entry. -/
 def entry (n m : Nat) : List Instr := zextCode ++ entryRest n m
@@ -157,10 +172,10 @@ def entry (n m : Nat) : List Instr := zextCode ++ entryRest n m
 /-- The low words of the accumulator after the rounds. -/
 def lowF (n : Nat) : List Reg := (List.range n).map (win n n)
 
-/-- After the rounds: a friendly modulus's words into their registers, the
-result reduced and stored through `ro`, the registers restored. -/
+/-- After the rounds: the modulus's words into their registers, the result
+reduced and stored through `ro`, the registers restored. -/
 def exitCode (n m : Nat) : List Instr :=
-  (if general n m then [] else mLoadCode n m) ++ csubM n (lowF n) (win n n n) (mRegs n m) ++
+  mLoadCode n m ++ csubM n (lowF n) (win n n n) (mRegs n m) ++
     storesR (roF n) (lowF n) 0 ++ restoreCode n
 
 /-- `vg_<curve>_mul_mod_<p|n>`: the entry, the rounds, the exit. -/
