@@ -25,8 +25,8 @@ The code runs in one at a time, its base in `rdi`; the headers of `p`'s and
    and the result is masked at the end.
 3. For `X = q`, then `X = p`: `c R_X mod X` (`R_X = 2^(64 w_X)`) without
    `R_X² mod X`, as `X` divides `n`: `G = 2^E mod n` for
-   `E = 64 w_X (K + 1)` and `K = ⌈w / w_X⌉` (by squarings and doublings
-   mod `n`), then `x G mod n` reduced by `K` Montgomery steps mod `X`
+   `E = 64 w_X (K + 1)` and `K = ⌈w / w_X⌉` (by one multiplication mod `n`
+   when `2^(E - 64 w) < n`, and otherwise by squarings and doublings), then `x G mod n` reduced by `K` Montgomery steps mod `X`
    (`redc`): `x R_X mod X`.
 4. `m_X = c^d_X mod X` by a fixed window of 4 bits, with a table of the 16
    powers after the prime's arrays, read by masked selections (`expLoop`); `h = (m_p - m_q) qInv mod p`
@@ -251,17 +251,11 @@ def redc (mul : Nat → Nat → Nat → Prog isa) (j : Nat) : List (Prog isa) :=
     addMod aXc aXc aT,
     .block [.mov .rax (.mem (hdr sRem)), .alu .test .rax (.reg .rax)]]) .ne]
 
-/-- In `n`'s workspace: `[aY] := G = 2^E mod n` for `E = 64 w_X (K + 1)`,
-`K = ⌈w / w_X⌉`, the prime workspace's base in slot `slotWs`: `D = E - 64 w`,
-then `Y = R mod n` and for each bit of `D` from the top, `Y := Y² R⁻¹`
-and doubled if the bit is set: `Y = 2^D R`. -/
-def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog isa) := [
-  .block [.mov .rax (.mem (hdr slotWs)), .mov .rax (.mem (ws .rax sW)), .mov .r12 (.mem (hdr sW)),
-    .mov32 .rcx (.imm 0)],
-  .loop (.block [.alu .add .rcx (.reg .rax), .alu .cmp .rcx (.reg .r12)]) .b,
-  .block [.alu .add .rcx (.reg .rax), .alu .sub .rcx (.reg .r12), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
-    .store (hdr sD) .rcx, .mov .rax (.reg .rcx)],
+/-- `G` the long way, `D` in slot `sD`: its top bit into `sCnt`, `Y = R mod n`,
+and for each bit of `D` from the top, `Y := Y² R⁻¹`, doubled if the bit is
+set: `Y = 2^D R`. -/
+def gSlow (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
+  .block [.mov .rax (.mem (hdr sD))],
   topBit,
   .block [.store (hdr sCnt) .rdx],
   mul aY aR2 aOne,
@@ -270,6 +264,31 @@ def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog is
     .block [.mov .rax (.mem (hdr sD)), .alu .and .rax (.mem (hdr sCnt))],
     .ite .ne (double aN aAcc aTmp aY) (.block []),
     .block [.mov .rax (.mem (hdr sCnt)), .shift .shr .rax 1, .store (hdr sCnt) .rax, .alu .test .rax (.reg .rax)]]) .ne]
+
+/-- `G` in one multiplication, `D = 64 c` with `c` in `rcx` and `w` in `r12`:
+`Y := 2^D`, then `Y := R² Y R⁻¹ = 2^D R`. -/
+def gFast (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  seqs [.block [.mov32 .rdx (.imm 1)], setWord aY .rcx, mul aY aR2 aY]
+
+/-- In `n`'s workspace: `[aY] := G = 2^E mod n` for `E = 64 w_X (K + 1)`,
+`K = ⌈w / w_X⌉`, the prime workspace's base in slot `slotWs`: `D = E - 64 w`
+(a multiple of 64), then `Y = 2^D R`: by `gFast` when `2^D < n`, which
+holds when `n`'s top word is not 0 and `D < 64 (w - 1)` (as it is for
+primes of half `n`'s length), and by `gSlow` otherwise. -/
+def gPow (mul : Nat → Nat → Nat → Prog isa) (slotWs : Nat) : List (Prog isa) := [
+  .block [.mov .rax (.mem (hdr slotWs)), .mov .rax (.mem (ws .rax sW)), .mov .r12 (.mem (hdr sW)),
+    .mov32 .rcx (.imm 0)],
+  .loop (.block [.alu .add .rcx (.reg .rax), .alu .cmp .rcx (.reg .r12)]) .b,
+  .block [.alu .add .rcx (.reg .rax), .alu .sub .rcx (.reg .r12), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+    .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx), .alu .add .rcx (.reg .rcx),
+    .store (hdr sD) .rcx, .mov .rax (.reg .rcx)],
+  .block [.mov .r12 (.mem (hdr sW)), .mov .r10 (.mem (hdr (sArr aN)))],
+  .block [.mov .rax (.mem (ix .r10 .r12 (-8))), .alu .test .rax (.reg .rax)],
+  .ite .ne
+    (.seq (.block [.mov .rcx (.mem (hdr sD)), .shift .shr .rcx 6, .mov .rdx (.reg .r12), .alu .sub .rdx (.imm 1),
+        .alu .cmp .rcx (.reg .rdx)])
+      (.ite .b (gFast mul) (gSlow mul)))
+    (gSlow mul)]
 
 /-! ## The exponentiation
 
