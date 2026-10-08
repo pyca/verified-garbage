@@ -101,12 +101,47 @@ def combSelOne : List Instr :=
 /-- Entry `r8` of table `rdx` (`combCached`, without its `2Z`) to slots 4–6. -/
 def combSelect : List Instr := combSelSetup ++ combSelPass ++ combSelOne
 
+/-- Sixteen bytes at `d` and at `e` exchanged if the mask in both quadwords of
+`xmm15` is all ones: the `x ⊕ ((x ⊕ y) ∧ m)` of `cswap`, in `xmm0`–`xmm2`, so
+that two loads and two stores exchange what eight and five instructions per
+word did. Only SSE2, which every target of this code has. -/
+def swapPieceX (d e : Nat) : List Instr :=
+  [.movdquLoad .xmm0 (sc d), .movdquLoad .xmm1 (sc e), .xop (.bin .movdqa .xmm2 .xmm0),
+    .xop (.bin .pxor .xmm2 .xmm1), .xop (.bin .pand .xmm2 .xmm15),
+    .xop (.bin .pxor .xmm0 .xmm2), .xop (.bin .pxor .xmm1 .xmm2),
+    .movdquStore (sc d) .xmm0, .movdquStore (sc e) .xmm1]
+
+/-- The slots at `o` and `o + 32` exchanged if the mask `rcx` is all ones. -/
+def swapFieldX (o : Nat) : List Instr :=
+  [.xop (.movq .xmm15 .rcx), .xop (.bin .punpcklqdq .xmm15 .xmm15)] ++
+    swapPieceX o (o + 32) ++ swapPieceX (o + 16) (o + 48)
+
+/-- `2p - [x]` into `r8`–`r11` (`≡ -[x]`, for any four words): a borrow of
+`2²⁵⁶ - 38 - [x]` is `2²⁵⁶ ≡ 38` too many, subtracted once, which cannot
+borrow again, since the difference is then above `2²⁵⁶ - 76`. (`0 - [x]`, as
+`sub` computes it, has to correct a second time: the borrow leaves a
+difference below 38.) -/
+def negWords (x : Nat) : List Instr :=
+  [.movImm64 .r8 (BitVec.ofNat 64 (2 ^ 64 - 38)), .alu .sub .r8 (.mem (sc x)),
+    .movImm64 .r9 (BitVec.allOnes 64), .alu .sbb .r9 (.mem (sc (x + 8))),
+    .movImm64 .r10 (BitVec.allOnes 64), .alu .sbb .r10 (.mem (sc (x + 16))),
+    .movImm64 .r11 (BitVec.allOnes 64), .alu .sbb .r11 (.mem (sc (x + 24))),
+    .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38)] ++
+    [.alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
+      .alu .sbb .r11 (.imm 0), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38)]
+
+/-- `[x]` negated if the mask `rcx` is all ones: `2p - [x]`, or `[x]` itself,
+which `cmove` keeps (`test` sets `ZF` exactly for a zero mask). -/
+def negField (x : Nat) : List Instr :=
+  negWords x ++ [.alu .test .rcx (.reg .rcx), .cmov .e .r8 (.mem (sc x)),
+    .cmov .e .r9 (.mem (sc (x + 8))), .cmov .e .r10 (.mem (sc (x + 16))),
+    .cmov .e .r11 (.mem (sc (x + 24)))] ++ store4 x
+
 /-- The cached point in slots 4–6 negated if the sign's mask is all ones:
 `[Y - X, Y + X, 2dT]` becomes `[Y + X, Y - X, -2dT]`, by exchanging slots 4
-and 5, and slots 6 and 8 (`-2dT`), under the mask in `rcx`. -/
-def combNeg (fld : Arith) : List Instr :=
-  fieldCode fld [.const 9 0, .sub 8 9 6] ++ [.mov .rcx (.mem (sc combSignMask))] ++
-    swapFields [(4, 5), (6, 8)]
+and 5 and negating slot 6 under the mask in `rcx`. -/
+def combNeg : List Instr :=
+  [.mov .rcx (.mem (sc combSignMask))] ++ swapFieldX (offset 4) ++ negField (offset 6)
 
 /-- `rcx` = the bit index of chunk `2 rbx + 1` (odd chunks, `rbx < 26`) or `2 (rbx - 26)`,
 and `r9` = its table, `rbx` or `rbx - 26`. -/
@@ -140,7 +175,7 @@ def combStep (fld : Arith) (sel : List Instr := combSelect) : Prog isa :=
   .seq combIndex <|
   .seq combChunk <|
   .seq (.block (combSign ++ [.mov .r8 (.reg .rax), .mov .rdx (.reg .r9)] ++ sel)) <|
-  .block (combNeg fld ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
+  .block (combNeg ++ pointAddAffine fld ++ [.alu .add .rbx (.imm 1), .alu .cmp .rbx (.imm 52)])
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward, the entries
 selected by `sel`. -/
