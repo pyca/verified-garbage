@@ -34,11 +34,8 @@ fn check(key: &[u8], iv: &[u8], plaintext: &[u8], ciphertext: &[u8], split: bool
     let ctx = AesOfb::new(key).unwrap();
     let iv: [u8; 16] = iv.try_into().unwrap();
     let n = plaintext.len() / 16;
-    let last = if n == 0 {
-        iv
-    } else {
-        output_block(plaintext, ciphertext, n)
-    };
+    // The block to continue from after the message (no vector is empty).
+    let last = output_block(plaintext, ciphertext, n);
     for (input, expected) in [(plaintext, ciphertext), (ciphertext, plaintext)] {
         let mut output = input.to_vec();
         let mut chain = iv;
