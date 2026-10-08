@@ -1,0 +1,5 @@
+name = "IDEA-ECB"
+family = "Ciphers"
+specs = ["Idea"]
+modules = ["src/idea_ecb.rs"]
+asm = ["idea"]

@@ -618,6 +618,22 @@ yours to keep:
 
 <tr>
 
+<td>IDEA-ECB</td>
+
+<td>✅</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+<td>❌</td>
+
+</tr>
+
+<tr>
+
 <td>RC2-CBC</td>
 
 <td>✅</td>
