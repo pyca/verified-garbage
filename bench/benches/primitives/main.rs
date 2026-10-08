@@ -82,6 +82,7 @@ mod rsa_pkcs1_sig;
 mod rsa_pss;
 mod rsa_public;
 mod scrypt;
+mod seed_ecb;
 mod sha1;
 mod sha224;
 mod sha256;
@@ -372,6 +373,7 @@ const BENCHES: &[Bench] = &[
     (rsa_pss::USES, rsa_pss::bench),
     (rsa_public::USES, rsa_public::bench),
     (triple_des_ecb::USES, triple_des_ecb::bench),
+    (seed_ecb::USES, seed_ecb::bench),
     (argon2::USES, argon2::bench),
     (scrypt::USES, scrypt::bench),
     (sha1::USES, sha1::bench),
