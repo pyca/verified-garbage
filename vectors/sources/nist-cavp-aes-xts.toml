@@ -1,0 +1,5 @@
+name = "NIST CAVP XTS-AES test vectors (XTSGenAES128.rsp and XTSGenAES256.rsp from the \"format tweak value input - 128 hex str\" directory only)"
+directories = ["nist-cavp-aes-xts"]
+url = "https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/aes/XTSTestVectors.zip"
+sha256 = "67bb04b018182f65530596786e7783f817d2e56509bf3b1f066609b8e3e29c36"
+retrieved = 2026-10-08

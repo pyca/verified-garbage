@@ -1,0 +1,5 @@
+name = "XTS-AES (256- and 512-bit keys)"
+family = "Ciphers"
+specs = ["Aes", "Xts"]
+modules = ["src/aes_xts.rs"]
+asm = ["aes_xts"]
