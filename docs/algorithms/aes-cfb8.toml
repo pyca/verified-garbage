@@ -1,0 +1,5 @@
+name = "AES-CFB8 (128-, 192- and 256-bit keys)"
+family = "Ciphers"
+specs = ["Aes", "Cfb8"]
+modules = ["src/aes_cfb8.rs"]
+asm = ["aes_cfb8"]
