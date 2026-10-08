@@ -20,7 +20,7 @@
 //!
 //! [`AesGcm::encrypt`] encrypts out of place, from a plaintext in pieces (a
 //! list of slices, such as a record's header and payload, or a single one)
-//! into one output buffer. On x86-64 that is one call of
+//! into one output buffer. On x86-64 and AArch64 that is one call of
 //! `vg_aes_gcm_seal_gather` (`VG.Spec.Gcm.sealGatherContract`), which reads
 //! each piece where it is; elsewhere it copies the pieces into the output and
 //! encrypts it there.
@@ -80,8 +80,9 @@
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::{
     VG_AES_GCM_SEAL_AES_FEATURES, vg_aes_gcm_init_aes, vg_aes_gcm_open_aes, vg_aes_gcm_seal_aes,
-    vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_decrypt_aes, vg_aes_gcm_stream_encrypt_aes,
-    vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_init_aes, vg_aes_gcm_stream_verify_aes,
+    vg_aes_gcm_seal_gather_aes, vg_aes_gcm_stream_aad_aes, vg_aes_gcm_stream_decrypt_aes,
+    vg_aes_gcm_stream_encrypt_aes, vg_aes_gcm_stream_finish_aes, vg_aes_gcm_stream_init_aes,
+    vg_aes_gcm_stream_verify_aes,
 };
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 use crate::arch::gcm::{
@@ -154,9 +155,11 @@ use crate::arch::gcm::{
     vg_aes_gcm_stream_decrypt_precomputed_vaes_vpclmul_avx512,
     vg_aes_gcm_stream_encrypt_precomputed_vaes_vpclmul_avx512,
 };
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+use crate::arch::gcm::vg_aes_gcm_seal_gather;
 #[cfg(target_arch = "x86_64")]
 use crate::arch::gcm::{
-    vg_aes_gcm_seal_gather, vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_aesni_pclmul,
+    vg_aes_gcm_seal_gather_aesni, vg_aes_gcm_seal_gather_aesni_pclmul,
     vg_aes_gcm_seal_gather_aesni_pclmul_avx, vg_aes_gcm_seal_gather_aesni_vpclmul,
     vg_aes_gcm_seal_gather_pclmul, vg_aes_gcm_seal_gather_vaes, vg_aes_gcm_seal_gather_vaes_pclmul,
     vg_aes_gcm_seal_gather_vaes_vpclmul, vg_aes_gcm_seal_gather_vaes_vpclmul_avx512,
@@ -166,7 +169,7 @@ use crate::cpu::{Features, detected};
 use crate::zeroize::zeroize;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use alloc::boxed::Box;
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 use core::mem::MaybeUninit;
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 use core::sync::atomic::{AtomicPtr, AtomicU32, Ordering};
@@ -770,7 +773,7 @@ impl AesGcm {
             return Err(Error::InvalidOutputLength);
         }
         add_len(0, aad.len(), MAX_AAD).map_err(|()| Error::InvalidAadLength)?;
-        #[cfg(target_arch = "x86_64")]
+        #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
         {
             // The descriptors of the pieces, as `vg_aes_gcm_seal_gather` takes
             // them: each its address and its length. Only the first
@@ -780,7 +783,7 @@ impl AesGcm {
                 d.write([p.as_ptr() as usize, p.len()]);
             }
             let src: *const [usize; 2] = descs.as_ptr().cast();
-            #[cfg(feature = "alloc")]
+            #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
             if out.len() >= POWERS_MIN_LEN
                 && let Some(tag) =
                     self.seal_gather_precomputed(nonce, aad, src, plaintext.len(), out)
@@ -789,16 +792,28 @@ impl AesGcm {
             }
             let f = match self.backend {
                 Backend::Scalar => vg_aes_gcm_seal_gather,
+                #[cfg(target_arch = "x86_64")]
                 Backend::AesNi => vg_aes_gcm_seal_gather_aesni,
+                #[cfg(target_arch = "x86_64")]
                 Backend::Pclmul => vg_aes_gcm_seal_gather_pclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::AesNiPclmul => vg_aes_gcm_seal_gather_aesni_pclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::Vaes => vg_aes_gcm_seal_gather_vaes,
+                #[cfg(target_arch = "x86_64")]
                 Backend::Vpclmul => vg_aes_gcm_seal_gather_vpclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::VaesPclmul => vg_aes_gcm_seal_gather_vaes_pclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::AesNiVpclmul => vg_aes_gcm_seal_gather_aesni_vpclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::VaesVpclmul => vg_aes_gcm_seal_gather_vaes_vpclmul,
+                #[cfg(target_arch = "x86_64")]
                 Backend::VaesVpclmulAvx512 => vg_aes_gcm_seal_gather_vaes_vpclmul_avx512,
+                #[cfg(target_arch = "x86_64")]
                 Backend::AesNiPclmulAvx => vg_aes_gcm_seal_gather_aesni_pclmul_avx,
+                #[cfg(target_arch = "aarch64")]
+                Backend::Aes => vg_aes_gcm_seal_gather_aes,
             };
             let mut tag: Block = [0; 16];
             // SAFETY: as in `encrypt_in_place`, with `out` valid for reads and
@@ -825,7 +840,7 @@ impl AesGcm {
             };
             Ok(tag)
         }
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
         {
             let mut off = 0;
             for p in plaintext {
@@ -1586,6 +1601,7 @@ mod tests {
                 VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES,
                 VG_AES_GCM_STREAM_FINISH_AES_FEATURES,
                 VG_AES_GCM_STREAM_VERIFY_AES_FEATURES,
+                VG_AES_GCM_SEAL_GATHER_AES_FEATURES,
             ] {
                 assert!(VG_AES_GCM_SEAL_AES_FEATURES.contains(other));
             }
