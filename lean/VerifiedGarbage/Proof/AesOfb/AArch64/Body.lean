@@ -74,7 +74,7 @@ structure IvA (s₀ : State) (s s₁ : State) : Prop where
   rd : s₁.rd = s.rd
   wr : s₁.wr = s.wr
 
-theorem ivA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv ofbMode s₀ k s) :
+theorem ivA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
     WP isa (.block ivArgs) s (IvA s₀ s) := by
   obtain ⟨s₁, run₁, x0₁, x1₁, x2₁, x3₁, x4₁, cs₁, sp₁, mem₁, rd₁, wr₁⟩ := ivArgs_ok s
   refine WP.of_runBlock ⟨s₁, run₁, ?_⟩

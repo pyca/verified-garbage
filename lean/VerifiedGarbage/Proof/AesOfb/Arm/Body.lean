@@ -59,7 +59,7 @@ structure IvA (s₀ : State) (s s₁ : State) : Prop where
 theorem ivArgs_eq : ivArgs = [.mov .r0 (.reg .r4), .mov .r1 (.reg .r5), .mov .r2 (.reg .r6),
     .mov .r3 (.imm 1), .mov .r12 (.reg .r10)] := rfl
 
-theorem ivA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv ofbMode s₀ k s) :
+theorem ivA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
     WP isa (.block ivArgs) s (IvA s₀ s) := by
   rw [ivArgs_eq]
   refine wp_mov (op2_reg _ _) fun s₁ u₁ => wp_mov (op2_reg _ _) fun s₂ u₂ => wp_mov (op2_reg _ _) fun s₃ u₃ =>
@@ -175,7 +175,7 @@ theorem post_taint : ∃ h, (taint.check (Taint.ofRegs postVars) (.block post) h
   ⟨_, by taint_decide⟩
 
 /-- What the code before the call leaves, as `Mid`. -/
-theorem mid_of {s₀ : State} {k : Nat} {s s₁ : State} (h : LInv ofbMode s₀ k s) (a : IvA s₀ s s₁) :
+theorem mid_of {M : Mode} {s₀ : State} {k : Nat} {s s₁ : State} (h : LInv M s₀ k s) (a : IvA s₀ s s₁) :
     Mid s₀ k (Iv s₀) s₁ :=
   ⟨a.pre, ⟨by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r6],
     by rw [a.keep _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.r7],

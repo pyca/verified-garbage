@@ -60,7 +60,7 @@ structure IvA (s₀ : State) (s s₁ : State) : Prop where
 theorem ivArgs_eq : ivArgs = [.mov .eax (argOp 0), .mov .ecx (argOp 1), .mov .ebx (argOp 2),
     .mov .edi (.imm 1), .mov .ebp (argOp 5)] := rfl
 
-theorem ivA_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv ofbMode s₀ k s) :
+theorem ivA_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} {s : State} (h : LInv M s₀ k s) :
     WP isa (.block ivArgs) s (IvA s₀ s) := by
   have hrw : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have hargs := hp.args_of (UPre.big_of h.frame)
@@ -188,7 +188,7 @@ theorem post_taint : ∃ h, (taint.check (argTaint [.esi] (4 + 4 * 6)) (.block p
 
 /-- What the code before the call leaves, as `Mid`. -/
 theorem mid_of {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k < N s₀) {s s₁ : State}
-    (h : LInv ofbMode s₀ k s) (a : IvA s₀ s s₁) : Mid s₀ k (Iv s₀) s₁ :=
+    {M : Mode} (h : LInv M s₀ k s) (a : IvA s₀ s s₁) : Mid s₀ k (Iv s₀) s₁ :=
   ⟨hk, a.pre, ⟨ivR s₀, by simp, fun _ h => h⟩, by rw [a.esi, h.esi],
     ⟨by rw [a.esp, h.esp], by rw [a.wr, h.wr], fun _ hi => by rw [a.mem]; exact hp.arg_keep (UPre.big_of h.frame) hi⟩,
     by rw [a.mem]; exact UPre.big_of h.frame⟩
