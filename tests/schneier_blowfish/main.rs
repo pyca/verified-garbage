@@ -52,9 +52,7 @@ fn ecb_records() {
     let mut count = 0;
     for line in section("key bytes", "set_key test data") {
         let fields: Vec<&str> = line.split_whitespace().collect();
-        let [key, clear, cipher] = fields[..] else {
-            panic!("{line}")
-        };
+        let [key, clear, cipher]: [&str; 3] = fields.try_into().unwrap();
         let (key, clear, cipher) = (unhex(key), unhex(clear), unhex(cipher));
         assert_eq!(encrypt(&key, &clear), cipher);
         assert_eq!(decrypt(&key, &cipher), clear);
