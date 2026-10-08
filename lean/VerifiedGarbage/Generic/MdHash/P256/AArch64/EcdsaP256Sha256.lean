@@ -25,7 +25,7 @@ namespace VG.Generic.MdHash.P256.AArch64.EcdsaP256Sha256
 open VG.Proof.Ecdsa.Rfc6979.AArch64 (cfgOf signNotes)
 open VG.Proof.Ecdsa.Rfc6979.AArch64.Sha256 (pack sign_verified)
 
-def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvToM Spec.P256.curve) :
+def artifacts (v : Proof.Pbkdf2.Md.AArch64.MdHash) (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) :
     List Artifact :=
   match v.sha256 with
   | none => []

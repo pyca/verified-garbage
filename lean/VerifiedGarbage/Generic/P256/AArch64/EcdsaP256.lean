@@ -15,7 +15,7 @@ A generic file (see `TCB/Emit.lean`) over P-256's group law `h`, the variant
 
 namespace VG.Generic.P256.AArch64.EcdsaP256
 
-def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToM Spec.P256.curve) : List Artifact := [
+def artifacts (h : Proof.Weierstrass.AArch64.HasLawInvToMOrd Spec.P256.curve) : List Artifact := [
   { Spec.Ecdsa.P256.signApi with
     target := AArch64.target
     doc := Spec.Ecdsa.P256.signApi.doc (notes := ["The function saves `x19`–`x25` in its 8 KB \
