@@ -49,13 +49,6 @@ theorem KS.update {m0 : Mem} {c K : Addr} {s u : State} {st st' : XZ} {ws ws' : 
   held := by rw [hsy]; exact h.held
   dT := by rw [hsy]; exact h.dT
 
-/-- The extra lookups of a group, from the bytes at `a`, `b`, `c`, `d`. -/
-def exVal (st : XZ) (a b c d : Pos) : Nat → Spec.Cast5.Word
-  | 0 => Spec.Cast5.S8 (st.get d)
-  | 1 => Spec.Cast5.S7 (st.get c)
-  | 2 => Spec.Cast5.S6 (st.get b)
-  | _ => Spec.Cast5.S5 (st.get a)
-
 /-- A store of `xmm1` to the working space. -/
 theorem store16_ok (v : State) (d : Nat) (h : InRegions v.wr (v.gpr .rcx + BitVec.ofNat 64 d) 16) :
     WP isa (.block [.movdquStore (at_ .rcx d) .xmm1]) v fun w =>
@@ -203,37 +196,6 @@ theorem lines4_ok {ls : List Impl.Cast5.Line} {stk : Nat → List Instr} {s : St
   refine WP.seq (WP.mono (hk 3 (by decide) v3 hv3) fun u4 hu4 => WP.seq (WP.mono hu4 fun v4 hv4 => ?_))
   exact WP.block_nil hv4
 
-theorem exVal_sbox (st : XZ) (ls : List Impl.Cast5.Line) {e : Nat} (h5 : 5 ≤ e) (h8 : e ≤ 8) :
-    exVal st (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8) (8 - e) =
-      sbox e (st.get (extraOf ls e)) := by
-  rcases (show e = 5 ∨ e = 6 ∨ e = 7 ∨ e = 8 by omega) with rfl | rfl | rfl | rfl <;> rfl
-
-/-- The first `k` lines of a group storing into `a`. -/
-def runQ (a : Arr) (ls : List Impl.Cast5.Line) (k : Nat) (st : XZ) : XZ :=
-  (List.range k).foldl (fun s j => s.put a j (lineVal s (ls.getD j default))) st
-
-theorem runQ_succ (a : Arr) (ls : List Impl.Cast5.Line) (k : Nat) (st : XZ) :
-    runQ a ls (k + 1) st = (runQ a ls k st).put a k (lineVal (runQ a ls k st) (ls.getD k default)) := by
-  simp only [runQ, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
-
-theorem get_put (st : XZ) (a : Arr) (q : Nat) (w : Spec.Cast5.Word) {p : Pos} (hp : p.1 ≠ a) :
-    (st.put a q w).get p = st.get p := by
-  obtain ⟨a', i⟩ := p
-  cases a <;> cases a' <;> first | exact absurd rfl hp | rfl
-
-theorem get_runQ (a : Arr) (ls : List Impl.Cast5.Line) (k : Nat) (st : XZ) {p : Pos} (hp : p.1 ≠ a) :
-    (runQ a ls k st).get p = st.get p := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [runQ_succ, get_put _ _ _ _ hp, ih]
-
-/-- What a group needs of its lines. -/
-def GroupOk (a : Option Arr) (ls : List Impl.Cast5.Line) : Prop :=
-  (∀ k < 4, lineOk (ls.getD k default) = true ∧
-    extraOf ls (ls.getD k default).extra.1 = (ls.getD k default).extra.2 ∧
-    a ≠ some (ls.getD k default).extra.2.1) ∧
-  ∀ e < 4, (extraOf ls (5 + e)).2 < 16
-
 /-- A group of lines storing into `a`. -/
 theorem groupQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}
     (h : KS m0 c K s st ws) (a : Arr) {ls : List Impl.Cast5.Line} (hg : GroupOk (some a) ls) :
@@ -250,10 +212,6 @@ theorem groupQ_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.
   · rw [exVal_sbox _ _ he.1 he.2, hex, get_runQ _ _ _ _ fun e => hna (by rw [e])]
   · rw [runQ_succ]
     exact ⟨hw, wE, by rw [wsy, usy], keep_same uk wk⟩
-
-theorem take_keys4 (ls : List Impl.Cast5.Line) (st : XZ) {k : Nat} (hk : k < 4) :
-    (keys4 ls st).take (k + 1) = (keys4 ls st).take k ++ [lineVal st (ls.getD k default)] := by
-  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl <;> rfl
 
 /-- A group of lines storing subkeys `b … b + 3` from `rdx`, `K + 64 h`. -/
 theorem groupK_ok {m0 : Mem} {c K : Addr} {s : State} {st : XZ} {ws : List Spec.Cast5.Word}

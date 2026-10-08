@@ -12,6 +12,7 @@ or decryption there.
 namespace VG.Proof.Cast5.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5.X86_64
+open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (Keep sx_ofNat WP.keep writesOnly wp_countdown)
 
 /-- `fT` of the type of round `i` is the spec's `f`. -/

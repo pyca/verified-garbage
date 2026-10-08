@@ -19,9 +19,6 @@ theorem gB : GroupOk none bLines := by unfold GroupOk; decide
 theorem gC : GroupOk none cLines := by unfold GroupOk; decide
 theorem gD : GroupOk none dLines := by unfold GroupOk; decide
 
-theorem runQ_z (st : XZ) : runQ .z zLines 4 st = runZ zLines st := rfl
-theorem runQ_x (st : XZ) : runQ .x xLines 4 st = runX xLines st := rfl
-
 theorem storeKey_zero : (fun k => storeKey (0 + k)) = storeKey := funext fun k => by rw [Nat.zero_add]
 
 /-- The registers key expansion writes. -/

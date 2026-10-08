@@ -13,6 +13,7 @@ import VerifiedGarbage.TCB.X86_64.Target
 namespace VG.Proof.Cast5.X86_64
 
 open VG VG.X86_64 VG.Impl.Cast5.X86_64
+open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (gprPreserved_of)
 
 /-- The contract the proof of key expansion is written against. -/

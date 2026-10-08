@@ -100,35 +100,6 @@ structure KPre (s : State) : Prop where
   fS : (s.gpr .rcx).toNat + 256 ≤ 2 ^ 64
   len : 5 ≤ (s.gpr .rsi).toNat ∧ (s.gpr .rsi).toNat ≤ 16
 
-/-- The halves done from `st`: the arrays and the subkeys so far. -/
-def halves (st : XZ) : Nat → XZ × List Spec.Cast5.Word
-  | 0 => (st, [])
-  | h + 1 => ((halfImpl (halves st h).1).2, (halves st h).2 ++ (halfImpl (halves st h).1).1)
-
-theorem halves_length (st : XZ) (h : Nat) : (halves st h).2.length = 16 * h := by
-  induction h with
-  | zero => rfl
-  | succ h ih =>
-    simp only [halves, List.length_append, ih, halfImpl, keys4, List.length_cons, List.length_nil]
-    omega
-
-theorem bytesAt_getD (m : Mem) (p : Addr) (n i : Nat) :
-    (Spec.Cast5.bytesAt m p n).getD i 0 = if i < n then m (p + BitVec.ofNat 64 i) else 0 := by
-  simp only [Spec.Cast5.bytesAt, List.getD_eq_getElem?_getD, List.getElem?_map]
-  split
-  next hi => rw [List.getElem?_range hi]; rfl
-  next hi => rw [List.getElem?_eq_none (by rw [List.length_range]; omega)]; rfl
-
-theorem vector_getElem_getD {α : Type} {n : Nat} (v : Vector α n) {i : Nat} (hi : i < n) (d : α) :
-    v[i] = v.getD i d := by
-  simp [Vector.getD, Array.getD, hi]
-
-theorem scheduleAt_keys {m : Mem} {K : Addr} {ws : List Spec.Cast5.Word} (h : Keys m K ws)
-    (hl : ws.length = 32) : Spec.Cast5.scheduleAt m K = Vector.ofFn fun i => ws.getD i.val 0 := by
-  apply Vector.ext
-  intro i hi
-  rw [vector_getElem_getD _ hi 0, Proof.Cast5.scheduleAt_getD _ _ hi, h i (by omega), Vector.getElem_ofFn]
-
 /-- The registers key expansion writes. -/
 def keyAll : List Reg := [.rax, .r9, .r10, .r11, .rdx, .rsi, .rdi]
 

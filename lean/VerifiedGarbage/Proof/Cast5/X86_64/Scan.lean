@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Cast5.X86_64
+import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Framework.X86_64.Sse
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -17,6 +18,7 @@ dword `k` of the entry whose number is in lane `k` of `xmm0`
 namespace VG.Proof.Cast5.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5.X86_64
+open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (Keep wp_countdown)
 
 /-! ## Dword lanes -/
@@ -66,10 +68,6 @@ theorem readW128_L (m : Mem) (a : Addr) :
   exact L_congr fun k hk => dword_readW m a hk
 
 /-! ## One entry -/
-
-/-- Dword `k` of entry `i` of the table at `T`. -/
-def ent (m : Mem) (T : Addr) (i k : Nat) : BitVec 32 :=
-  m.readW (T + BitVec.ofNat 64 (16 * i + 4 * k)) 32
 
 /-- Lane `k` of the result once entries `0 … j - 1` are visited. -/
 def acc (m : Mem) (T : Addr) (idx : Nat → BitVec 32) (j k : Nat) : BitVec 32 :=
@@ -167,10 +165,6 @@ theorem entry_ok {s₀ s : State} {T : Addr} {idx : Nat → BitVec 32} {j : Nat}
       by simp only [rd_setXmm], by simp only [wr_setXmm]⟩
     simp only [xmm_setXmm_of_ne _ _ a, xmm_setXmm_of_ne _ _ b, xmm_setXmm_of_ne _ _ d,
       xmm_setXmm_of_ne _ _ e]
-
-theorem flatMap_range_succ {α : Type} (f : Nat → List α) (n : Nat) :
-    (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
-  rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
 /-- The table at `T` is readable. -/
 def Readable (s : State) (T : Addr) : Prop := InRegions (s.rd ++ s.wr) T 4096

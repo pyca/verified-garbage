@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Cast5.X86_64.Block
+import VerifiedGarbage.Proof.Cast5.KeyMem
 import VerifiedGarbage.Proof.Cast5.KeyLines
 
 /-!
@@ -74,14 +75,6 @@ theorem line_eq (l : Impl.Cast5.Line) :
     line l = .seq (.block (gather l.main.1 l.main.2.1 l.main.2.2.1 l.main.2.2.2))
       (.seq (scan s5678Sym) (.block (tail l.extra.1 l.word))) := rfl
 
-/-- `[p + e, p + e + k)` and `[p, p + n)` are separate if `n ≤ e`. -/
-theorem sep_base' (p : Addr) {n e k : Nat} (h : n ≤ e) (he : e + k ≤ 2 ^ 64) :
-    Mem.Sep (p + BitVec.ofNat 64 e) k p n :=
-  fun x h₁ h₂ => Offset.sep_base p h he x h₂ h₁
-
-theorem off_lt (a : Arr) : off a + 16 ≤ 48 := by cases a <;> decide
-theorem off_ge (a : Arr) : 16 ≤ off a := by cases a <;> decide
-
 theorem tail_ok (s : State) {e : Nat} (he : 5 ≤ e) {wd : Option (Arr × Nat)}
     (hq : ∀ a q, wd = some (a, q) → q < 4) {v : Nat → Spec.Cast5.Word} (h1 : s.xmm .xmm1 = L v)
     (hw : InRegions s.wr (s.gpr .rcx) 64) :
@@ -129,31 +122,6 @@ theorem tail_writes (e : Nat) (wd : Option (Arr × Nat)) :
   cases wd with
   | none => rfl
   | some aq => obtain ⟨a, q⟩ := aq; rfl
-
-/-- The working space at `p` holds the arrays of `st`, a byte each. -/
-def HoldsXZ (m : Mem) (p : Addr) (st : XZ) : Prop :=
-  ∀ a i, i < 16 → m (p + BitVec.ofNat 64 (off a + i)) = st.arr a i
-
-theorem HoldsXZ.pos {m : Mem} {p : Addr} {st : XZ} (h : HoldsXZ m p st) {q : Pos} (hq : q.2 < 16) :
-    m (p + BitVec.ofNat 64 (srcOff q)) = st.get q := by
-  obtain ⟨a, i⟩ := q
-  cases a <;> exact h _ i hq
-
-theorem HoldsXZ.quad {m : Mem} {p : Addr} {st : XZ} (h : HoldsXZ m p st) (a : Arr) {q : Nat} (hq : q < 4) :
-    byteRev32 (m.readW (p + BitVec.ofNat 64 (off a + 4 * q)) 32) = quadOf (st.arr a) q := by
-  have e1 : (1 : Addr) = BitVec.ofNat 64 1 := rfl
-  rw [byteRev32_readW, e1, Proof.Cast5.add_ofNat_add, Proof.Cast5.add_ofNat_add,
-    Proof.Cast5.add_ofNat_add, quadOf, show off a + 4 * q + 1 + 1 + 1 = off a + (4 * q + 3) by omega,
-    show off a + 4 * q + 1 + 1 = off a + (4 * q + 2) by omega,
-    show off a + 4 * q + 1 = off a + (4 * q + 1) by omega, h a _ (by omega), h a _ (by omega),
-    h a _ (by omega), h a _ (by omega)]
-
-/-- What `line_ok` needs of a line: its bytes are in `x` and `z`, its extra
-S-box one of S5–S8, its quadruple one of four. -/
-def lineOk (l : Impl.Cast5.Line) : Bool :=
-  l.main.1.2 < 16 && l.main.2.1.2 < 16 && l.main.2.2.1.2 < 16 && l.main.2.2.2.2 < 16 &&
-    5 ≤ l.extra.1 && l.extra.1 ≤ 8 &&
-    (match l.word with | some (_, q) => q < 4 | none => true)
 
 theorem ofNat_setWidth8 (x : BitVec 8) : BitVec.ofNat 8 (x.setWidth 32).toNat = x := by
   apply BitVec.eq_of_toNat_eq

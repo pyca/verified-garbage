@@ -1,4 +1,4 @@
-import VerifiedGarbage.Spec.Cast5
+import VerifiedGarbage.Impl.Cast5.Tables
 import VerifiedGarbage.TCB.X86_64.Isa
 import VerifiedGarbage.Impl.Cast5.Lines
 
@@ -31,30 +31,6 @@ def at_ (base : Reg) (offset : Nat) : MemOp := { base, disp := Int.ofNat offset 
 
 /-- An immediate. -/
 def imm (n : Nat) : Src := .imm (BitVec.ofNat 32 n)
-
-/-! ## The tables -/
-
-/-- The 512 quadwords of a table whose entry `i` holds the dwords `a i, b i,
-c i, d i`, in that order. -/
-def table (a b c d : Byte → Spec.Cast5.Word) : List (BitVec 64) :=
-  (List.range 256).flatMap fun i =>
-    let x := BitVec.ofNat 8 i
-    [b x ++ a x, d x ++ c x]
-
-/-- Entry `i`: `S4[i], S3[i], S2[i], S1[i]`. -/
-def s1234 : List (BitVec 64) := table Spec.Cast5.S4 Spec.Cast5.S3 Spec.Cast5.S2 Spec.Cast5.S1
-
-/-- Entry `i`: `S8[i], S7[i], S6[i], S5[i]`. -/
-def s5678 : List (BitVec 64) := table Spec.Cast5.S8 Spec.Cast5.S7 Spec.Cast5.S6 Spec.Cast5.S5
-
-def s1234Sym : String := "VG_CAST5_S1234"
-def s5678Sym : String := "VG_CAST5_S5678"
-
-/-- The tables the ECB functions read. -/
-def ecbConsts : List (String × List (BitVec 64)) := [(s1234Sym, s1234)]
-
-/-- The tables key expansion reads. -/
-def keyConsts : List (String × List (BitVec 64)) := [(s5678Sym, s5678)]
 
 /-! ## The scan -/
 
@@ -197,19 +173,8 @@ def ecbDecrypt : Prog isa := ecb decryptBlock
 `rcx + 32`, a byte each, in order; the subkeys are written to `rdx`, which
 moves on 64 bytes after each half. Only caller-saved registers are used. -/
 
-/-- Where `x` and `z` are. -/
-def xOff : Nat := 16
-def zOff : Nat := 32
 /-- Where the four extra lookups of a group of lines are kept. -/
 def extraOff : Nat := 48
-
-/-- The offset of an array in the working space. -/
-def off : Arr → Nat
-  | .x => xOff
-  | .z => zOff
-
-/-- The address offset of a byte of `x` or `z`. -/
-def srcOff (s : Pos) : Nat := off s.1 + s.2
 
 /-- The lanes `S8[d], S7[c], S6[b], S5[a]` of a scan of `VG_CAST5_S5678`, for
 the bytes `a, b, c, d`. Clobbers `rax`, `r9`, `r10`, `xmm4`. -/

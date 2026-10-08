@@ -27,9 +27,9 @@ def artifacts : List Artifact := [
   { Spec.Cast5.expandKeyApi with
     target := X86_64.target
     doc := Spec.Cast5.expandKeyApi.doc (notes := [keyNote])
-    consts := Impl.Cast5.X86_64.keyConsts
+    consts := Impl.Cast5.keyConsts
     code := Impl.Cast5.X86_64.expandKey
-    contract := Spec.Cast5.expandKeyContract (X86_64.abi.withConsts Impl.Cast5.X86_64.keyConsts)
+    contract := Spec.Cast5.expandKeyContract (X86_64.abi.withConsts Impl.Cast5.keyConsts)
     stack := 0
     ofSig := ⟨_, _, _, by unfold Spec.Cast5.expandKeyContract; rfl⟩
     verified := Proof.Cast5.X86_64.expandKey_verified
@@ -37,9 +37,9 @@ def artifacts : List Artifact := [
   { Spec.Cast5.ecbEncryptApi with
     target := X86_64.target
     doc := Spec.Cast5.ecbEncryptApi.doc (notes := [scanNote])
-    consts := Impl.Cast5.X86_64.ecbConsts
+    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86_64.ecbEncrypt
-    contract := Spec.Cast5.ecbEncryptContract (X86_64.abi.withConsts Impl.Cast5.X86_64.ecbConsts)
+    contract := Spec.Cast5.ecbEncryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
     ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbEncryptContract Spec.Cast5.ecbContract; rfl⟩
     verified := Proof.Cast5.X86_64.ecbEncrypt_verified
@@ -47,9 +47,9 @@ def artifacts : List Artifact := [
   { Spec.Cast5.ecbDecryptApi with
     target := X86_64.target
     doc := Spec.Cast5.ecbDecryptApi.doc (notes := [scanNote])
-    consts := Impl.Cast5.X86_64.ecbConsts
+    consts := Impl.Cast5.ecbConsts
     code := Impl.Cast5.X86_64.ecbDecrypt
-    contract := Spec.Cast5.ecbDecryptContract (X86_64.abi.withConsts Impl.Cast5.X86_64.ecbConsts)
+    contract := Spec.Cast5.ecbDecryptContract (X86_64.abi.withConsts Impl.Cast5.ecbConsts)
     stack := 0
     ofSig := ⟨_, _, _, by unfold Spec.Cast5.ecbDecryptContract Spec.Cast5.ecbContract; rfl⟩
     verified := Proof.Cast5.X86_64.ecbDecrypt_verified

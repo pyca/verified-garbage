@@ -1,16 +1,25 @@
-import VerifiedGarbage.Proof.Cast5.X86_64.Scan
+import VerifiedGarbage.Impl.Cast5.Tables
 import VerifiedGarbage.Proof.Framework.ReadHalves
 
 /-!
-# CAST5 on x86-64: the tables' entries
+# CAST5: the tables' entries
 
 Entry `e` of `table a b c d`, read as four dwords (`ent`) from memory holding
 the table's quadwords (`Held`), is `a e, b e, c e, d e`.
 -/
 
-namespace VG.Proof.Cast5.X86_64
+namespace VG.Proof.Cast5
 
-open VG VG.X86_64 VG.Impl.Cast5.X86_64
+open VG VG.Impl.Cast5
+
+/-- Dword `k` of entry `i` of the table at `T`. -/
+def ent (m : Mem) (T : Addr) (i k : Nat) : BitVec 32 :=
+  m.readW (T + BitVec.ofNat 64 (16 * i + 4 * k)) 32
+
+theorem flatMap_range_succ {α : Type} (f : Nat → List α) (n : Nat) :
+    (List.range (n + 1)).flatMap f = (List.range n).flatMap f ++ f n := by
+  rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
 
 theorem getD_append' {α : Type} (l l' : List α) (n : Nat) (d : α) :
     (l ++ l').getD n d = if n < l.length then l.getD n d else l'.getD (n - l.length) d := by
@@ -76,7 +85,7 @@ theorem ent_table {m : Mem} {T : Addr} {a b c d : Byte → Spec.Cast5.Word}
   rw [hp.1] at h0
   rw [hp.2] at h1
   unfold ent tableEnt
-  rcases cases4 hk with rfl | rfl | rfl | rfl
+  rcases (show k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 by omega) with rfl | rfl | rfl | rfl
   · rw [show 16 * e + 4 * 0 = 8 * (2 * e) by omega, Mem.readW_lo32 h0, setWidth_append32]
     rfl
   · rw [show 16 * e + 4 * 1 = 8 * (2 * e) + 4 by omega, ← Offset.add_add, Mem.readW_hi32 h0,
@@ -88,4 +97,4 @@ theorem ent_table {m : Mem} {T : Addr} {a b c d : Byte → Spec.Cast5.Word}
       extract_append32]
     rfl
 
-end VG.Proof.Cast5.X86_64
+end VG.Proof.Cast5

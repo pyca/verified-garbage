@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Cast5.X86_64.Scan
 import VerifiedGarbage.Proof.Cast5.Rotate
 import VerifiedGarbage.Proof.Cast5.Round
-import VerifiedGarbage.Proof.Cast5.X86_64.Table
+import VerifiedGarbage.Proof.Cast5.Table
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 
 /-!
@@ -15,6 +15,7 @@ values into `f` (`combine`), then makes the Feistel step (`feistel`).
 namespace VG.Proof.Cast5.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5.X86_64
+open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (Keep sx_ofNat WP.keep writesOnly)
 
 /-! ## The rotation -/

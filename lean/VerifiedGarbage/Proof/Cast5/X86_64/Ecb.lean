@@ -11,6 +11,7 @@ block function `blk` once for each block, and restores them (`ecb_ok`).
 namespace VG.Proof.Cast5.X86_64
 
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Cast5.X86_64
+open VG.Impl.Cast5 (table s1234 s5678 s1234Sym s5678Sym ecbConsts keyConsts)
 open VG.Proof.MlKem.X86_64 (Keep sx_ofNat WP.keep writesOnly wp_countdown)
 
 /-- The facts of the ECB functions' precondition on this target (the shared

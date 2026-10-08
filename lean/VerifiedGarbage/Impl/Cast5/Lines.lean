@@ -70,6 +70,18 @@ def dLines : List Line := [
   ⟨(x 0xC, x 0xD, x 0x3, x 0x2), (7, x 0x8), none⟩,
   ⟨(x 0xE, x 0xF, x 0x1, x 0x0), (8, x 0xD), none⟩]
 
+/-- Where the implementations keep `x` and `z` in their working space. -/
+def xOff : Nat := 16
+def zOff : Nat := 32
+
+/-- The offset of an array in the working space. -/
+def off : Arr → Nat
+  | .x => xOff
+  | .z => zOff
+
+/-- The address offset of a byte of `x` or `z`. -/
+def srcOff (s : Pos) : Nat := off s.1 + s.2
+
 /-- The extra byte of the group's line whose extra S-box is `e`. -/
 def extraOf (ls : List Line) (e : Nat) : Pos :=
   ((ls.find? (·.extra.1 = e)).map (·.extra.2)).getD (.x, 0)
