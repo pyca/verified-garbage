@@ -1,7 +1,8 @@
 //! The RSA private-key operation (RSADP with the CRT, checked against the
 //! public exponent), without padding, the loading of a private key from
-//! `(n, e, d, p, q)` and from `(n, e, d)`, and the check of a private key
-//! (the public-key operation is `rsa_public`).
+//! `(n, e, d, p, q, dP, dQ, qInv)`, from `(n, e, d, p, q)` and from
+//! `(n, e, d)`, and the check of a private key (the public-key operation is
+//! `rsa_public`).
 
 use criterion::Criterion;
 
@@ -58,19 +59,21 @@ pub fn bench(c: &mut Criterion) {
     keys(c);
 }
 
-/// The loading of a private key from `(n, e, d, p, q)` and from `(n, e, d)`,
-/// and the check of a private key.
+/// The loading of a private key from `(n, e, d, p, q, dP, dQ, qInv)`, from
+/// `(n, e, d, p, q)` and from `(n, e, d)`, and the check of a private key.
 #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
 fn keys(c: &mut Criterion) {
     use std::hint::black_box;
 
+    use aws_lc_rs::rsa::KeyPairComponents;
+    use aws_lc_rs::signature::{RsaKeyPair, RsaPublicKeyComponents};
     use criterion::BenchmarkId;
     use openssl::bn::{BigNum, BigNumContext, BigNumRef};
     use openssl::pkey::Private;
     use openssl::rsa::Rsa;
     use verified_garbage::rsa::PrivateKey;
 
-    use crate::{OPENSSL, VG};
+    use crate::{AWS_LC, OPENSSL, VG};
 
     // OpenSSL has no function that brings `(n, e, d, p, q)` to the CRT form,
     // or that recovers `p` and `q` from `(n, e, d)`: its nearest is the same
@@ -157,6 +160,62 @@ fn keys(c: &mut Criterion) {
     fn openssl_recover(n: &BigNumRef, e: &BigNumRef, d: &BigNumRef) -> Rsa<Private> {
         openssl_recover_with(n, e, d).0
     }
+
+    let mut g = c.benchmark_group("rsa_from_crt");
+    // The same sizes: the loading of a key from all its values,
+    // `(n, e, d, p, q, dP, dQ, qInv)`, as from a PKCS #1 `RSAPrivateKey`.
+    // aws-lc-rs checks the key as it loads it; OpenSSL's
+    // `Rsa::from_private_components` checks nothing.
+    for bits in [2048, 3072, 4096] {
+        let key = Rsa::generate(bits).unwrap();
+        let v = [
+            key.n(),
+            key.e(),
+            key.d(),
+            key.p().unwrap(),
+            key.q().unwrap(),
+            key.dmp1().unwrap(),
+            key.dmq1().unwrap(),
+            key.iqmp().unwrap(),
+        ]
+        .map(|x| x.to_vec());
+        let k = v[0].len();
+        g.bench_function(BenchmarkId::new(VG, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                PrivateKey::from_crt(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7])
+                    .unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(OPENSSL, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v)
+                    .clone()
+                    .map(|x| BigNum::from_slice(&x).unwrap());
+                let [n, e, d, p, q, dp, dq, qinv] = v;
+                Rsa::from_private_components(n, e, d, p, q, dp, dq, qinv).unwrap()
+            })
+        });
+        g.bench_function(BenchmarkId::new(AWS_LC, k), |b| {
+            b.iter(|| {
+                let v = black_box(&v);
+                RsaKeyPair::from_components(&KeyPairComponents {
+                    public_key: RsaPublicKeyComponents {
+                        n: &v[0][..],
+                        e: &v[1][..],
+                    },
+                    d: &v[2][..],
+                    p: &v[3][..],
+                    q: &v[4][..],
+                    dP: &v[5][..],
+                    dQ: &v[6][..],
+                    qInv: &v[7][..],
+                })
+                .unwrap()
+            })
+        });
+    }
+    g.finish();
 
     let mut g = c.benchmark_group("rsa_from_primes");
     // The same sizes: the CRT values of `(n, e, d, p, q)` and the key.
