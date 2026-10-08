@@ -42,4 +42,14 @@ macro "tcomb_mem" : tactic => `(tactic| (simp only [List.mem_cons, List.mem_appe
   List.mem_singleton, true_or, or_true, combSlots, combWs, combRo, rcbW, rcbR, List.cons_append,
   List.nil_append, TCombCfg.toComb]))
 
+/-- `a ≠ b` (or a conjunction of such, or `a ∉ [b, …]`) from `h`, the conjunction of `¬ x = y`
+that a `Nodup` of the slots simplifies to, in either orientation: not `grind`, which takes a tenth
+of a second for each. -/
+macro "nd_ne " h:ident : tactic => `(tactic| (
+  try simp only [ne_eq, List.mem_cons, List.not_mem_nil, or_false, not_or]
+  repeat' apply And.intro
+  all_goals first
+    | simp only [ne_eq, $h:ident, not_false_eq_true]
+    | exact Ne.symm (by simp only [ne_eq, $h:ident, not_false_eq_true])))
+
 end VG.Proof.Weierstrass.X86
