@@ -61,12 +61,8 @@ fn chacha20_poly1305() {
             for pieces in [&[&c.msg.0[..]][..], &[a, b]] {
                 let mut out = vec![0; c.msg.0.len()];
                 let sealed = aead.encrypt(&nonce, &c.aad.0, pieces, &mut out);
-                assert_eq!(
-                    (out, sealed),
-                    (c.ct.0.clone(), Ok(tag)),
-                    "tcId {}",
-                    test.tc_id
-                );
+                let id = test.tc_id;
+                assert_eq!((out, sealed), (c.ct.0.clone(), Ok(tag)), "tcId {id}");
             }
         } else {
             // There are no acceptable vectors.
