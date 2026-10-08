@@ -62,22 +62,6 @@ def mulCode : List Instr := [
 
 /-! ## Key expansion -/
 
-/-- The source (quadword, bit) of bit `p` of schedule quadword `q`. -/
-def expandSrc (q p : Nat) : Nat × Nat := keyLoc (keyBit (4 * q + p / 16) (p % 16))
-
-/-- The rotation right that moves source bit `t` to `p`. -/
-def rot (t p : Nat) : Nat := (t + 64 - p) % 64
-
-/-- The groups of bits of quadword `q` with the same source quadword and
-rotation: `(j, rotation, mask)`, in order of first bit. -/
-def expandGroups (q : Nat) : List (Nat × Nat × Nat) :=
-  (List.range 64).foldl (fun gs p =>
-    let (j, t) := expandSrc q p
-    let r := rot t p
-    if gs.any (fun g => g.1 = j ∧ g.2.1 = r) then
-      gs.map fun g => if g.1 = j ∧ g.2.1 = r then (g.1, g.2.1, g.2.2 ||| 2 ^ p) else g
-    else gs ++ [(j, r, 2 ^ p)]) []
-
 /-- One group into `rdx`, masked, then into `rax` (the first by `mov`). -/
 def groupCode (first : Bool) (g : Nat × Nat × Nat) : List Instr :=
   [.mov .rdx (.mem (at_ .rdi (8 * g.1)))] ++
@@ -93,23 +77,6 @@ def expandKey : Prog isa :=
   .block ((List.range 13).flatMap fun q => expandWord q ++ [.store (at_ .rsi (8 * q)) .rax])
 
 /-! ## Inversion -/
-
-inductive Op | copy | neg | inv
-  deriving DecidableEq, Repr
-
-/-- Decryption subkey `n`: the operation, and the encryption subkey it
-applies to (`Spec.Idea.invertKey`). -/
-def invOp (n : Nat) : Op × Nat :=
-  let r := n / 6
-  let e := 6 * (8 - r)
-  let ends := r = 0 ∨ r = 8
-  match n % 6 with
-  | 0 => (.inv, e)
-  | 1 => (.neg, if ends then e + 1 else e + 2)
-  | 2 => (.neg, if ends then e + 2 else e + 1)
-  | 3 => (.inv, e + 3)
-  | 4 => (.copy, 6 * (7 - r) + 4)
-  | _ => (.copy, 6 * (7 - r) + 5)
 
 /-- Encryption subkey `k` into the low 16 bits of `r` (above them, other
 bits): a load at its offset, or, for the last three, at 96 and a shift. -/

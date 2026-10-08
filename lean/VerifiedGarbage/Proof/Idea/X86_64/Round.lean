@@ -39,24 +39,6 @@ theorem KeyOk.keep {z : Spec.Idea.Schedule} {rs : List Reg} {s s' : State} (h : 
   · rw [he, hk.mem]
     exact h.last j hj
 
-theorem setWidth_setWidth16 (x : BitVec 16) : (x.setWidth 64).setWidth 16 = x := by
-  rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
-
-/-- `add r, y; and r, 0xffff` on a zero-extended word. -/
-theorem add_mask (x : BitVec 16) (y : BitVec 64) :
-    (x.setWidth 64 + y) &&& 65535 = (x + y.setWidth 16).setWidth 64 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [mask_toNat _ _ rfl]
-  simp only [BitVec.toNat_add, BitVec.toNat_setWidth]
-  omega
-
-theorem add_setWidth (x y : BitVec 16) :
-    (x.setWidth 64 + y.setWidth 64).setWidth 16 = x + y := by
-  rw [BitVec.setWidth_add _ _ (by decide), setWidth_setWidth16, setWidth_setWidth16]
-
-theorem xor_setWidth (x y : BitVec 16) : x.setWidth 64 ^^^ y.setWidth 64 = (x ^^^ y).setWidth 64 := by
-  rw [BitVec.setWidth_xor]
-
 macro "run_simp" : tactic => `(tactic| simp only [runBlock_cons, runStep_some, runBlock_nil, exec,
   execAlu, execShift, readSrc, State.load64, isa, Option.map_some, Option.bind_some,
   signExtend_one, signExtend_mask])

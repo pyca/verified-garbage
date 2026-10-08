@@ -22,18 +22,6 @@ theorem ea_at (s : State) (b : Reg) (d : Nat) :
     s.ea (at_ b d) = s.gpr b + BitVec.ofNat 64 d := by
   simp only [State.ea, at_, ofInt_natCast]
 
-/-- Two bytes, big-endian, as the code assembles them. -/
-theorem bytes16 (x y : BitVec 8) :
-    (x.setWidth 64 <<< 8 ||| y.setWidth 64) = (x ++ y).setWidth 64 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_or, BitVec.toNat_shiftLeft, BitVec.toNat_setWidth, BitVec.toNat_append,
-    Nat.shiftLeft_eq]
-  have hx := x.isLt
-  have hy := y.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64), Nat.mod_eq_of_lt (by omega : y.toNat < 2 ^ 64),
-    Nat.mod_eq_of_lt (by omega : x.toNat * 2 ^ 8 < 2 ^ 64)]
-  exact (Nat.mod_eq_of_lt (Nat.or_lt_two_pow (by omega) (by omega))).symm
-
 /-! ## Loading -/
 
 theorem loadWord_run {r : Reg} (hr : r ≠ .rax) (hs : r ≠ .rsi) (k : Nat) (s : State) {a : Addr}
@@ -84,12 +72,6 @@ theorem load_run (s : State) {a : Addr} (ha : s.gpr .rsi = a) (hb : BlockRead s 
       (e₄.mono (by decide))))
 
 /-! ## The rounds -/
-
-/-- The state after `n` rounds (`Spec.Idea.crypt` before the output transformation). -/
-def roundsSpec (z : Spec.Idea.Schedule) (n : Nat) (x : Spec.Idea.State) : Spec.Idea.State :=
-  (List.range n).foldl (fun x r =>
-    Spec.Idea.round (z.getD (6 * r) 0) (z.getD (6 * r + 1) 0) (z.getD (6 * r + 2) 0)
-      (z.getD (6 * r + 3) 0) (z.getD (6 * r + 4) 0) (z.getD (6 * r + 5) 0) x) x
 
 theorem rounds_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
     ∀ n ≤ 8, ∀ s : State, Holds x s → KeyOk z s →
@@ -151,15 +133,6 @@ theorem out2_run (s : State) (hk : InRegions (s.rd ++ s.wr) (s.ea (at_ .rdi 96))
   simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hq.1, hq.2.1, hq.2.2.1,
     hq.2.2.2, ite_false]
 
-theorem output_getD0 (a b c d : Spec.Idea.Word) (x : Spec.Idea.State) :
-    (Spec.Idea.output a b c d x).getD 0 0 = Spec.Idea.mul (x.getD 0 0) a := rfl
-theorem output_getD1 (a b c d : Spec.Idea.Word) (x : Spec.Idea.State) :
-    (Spec.Idea.output a b c d x).getD 1 0 = x.getD 2 0 + b := rfl
-theorem output_getD2 (a b c d : Spec.Idea.Word) (x : Spec.Idea.State) :
-    (Spec.Idea.output a b c d x).getD 2 0 = x.getD 1 0 + c := rfl
-theorem output_getD3 (a b c d : Spec.Idea.Word) (x : Spec.Idea.State) :
-    (Spec.Idea.output a b c d x).getD 3 0 = Spec.Idea.mul (x.getD 3 0) d := rfl
-
 theorem output_run (z : Spec.Idea.Schedule) (x : Spec.Idea.State) (s : State) (hx : Holds x s)
     (hk : KeyOk z s) :
     ∃ s', runBlock isa output s = some s' ∧
@@ -211,15 +184,6 @@ theorem storeWord_run (r : Reg) (k : Nat) (s : State) {a : Addr}
     RegUpd.wr_setFlags, Option.some.injEq, exists_eq_left', true_and]
   exact ⟨fun q hq => by simp only [hq, ite_false], trivial⟩
 
-theorem lo8 (x : BitVec 16) : (x.setWidth 64).setWidth 8 = x.setWidth 8 :=
-  BitVec.setWidth_setWidth_of_le _ (by decide)
-
-theorem hi8 (x : BitVec 16) : ((x.setWidth 64) >>> 8).setWidth 8 = (x >>> 8).setWidth 8 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have := x.isLt
-  rw [Nat.mod_eq_of_lt (by omega : x.toNat < 2 ^ 64)]
-
 /-- The bytes of the block at `a` can be written. -/
 def BlockWrite (s : State) (a : Addr) : Prop :=
   ∀ i < 8, InRegions s.wr (a + BitVec.ofNat 64 i) 1
@@ -269,11 +233,6 @@ theorem store_run (y : Spec.Idea.State) (s : State) {a : Addr} (ha : s.gpr .rsi 
     exact Frame.refl _ _
 
 /-! ## A block -/
-
-theorem crypt_eq (z : Spec.Idea.Schedule) (x : Spec.Idea.State) :
-    Spec.Idea.crypt z x =
-      Spec.Idea.output (z.getD 48 0) (z.getD 49 0) (z.getD 50 0) (z.getD 51 0) (roundsSpec z 8 x) :=
-  rfl
 
 theorem cryptBlock_run (z : Spec.Idea.Schedule) (s : State) {a : Addr} (ha : s.gpr .rsi = a)
     (hb : BlockRead s a) (hw : BlockWrite s a) (hk : KeyOk z s) :

@@ -1,4 +1,4 @@
-import VerifiedGarbage.Spec.Idea
+import VerifiedGarbage.Proof.Idea.Arith
 import VerifiedGarbage.Impl.Idea.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -50,84 +50,6 @@ theorem run_append {a b : List Instr} {s s₁ s₂ : State}
 
 theorem signExtend_one : BitVec.signExtend 64 (1 : BitVec 32) = 1 := by decide
 theorem signExtend_mask : BitVec.signExtend 64 (65535 : BitVec 32) = 65535 := by decide
-
-theorem mask_toNat (x m : BitVec 64) (hm : m.toNat = 65535) :
-    (x &&& m).toNat = x.toNat % 65536 := by
-  rw [BitVec.toNat_and, hm, show 65535 = 2 ^ 16 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
-
-theorem setWidth16_toNat (x : BitVec 64) : (x.setWidth 16).toNat = x.toNat % 65536 := by
-  simp [BitVec.toNat_setWidth]
-
-/-- `((x - 1) & 0xffff) + 1` is the residue of `x`'s low word. -/
-theorem prep_toNat (a m : BitVec 64) (hm : m.toNat = 65535) :
-    (((a - 1) &&& m) + 1 : BitVec 64).toNat = Spec.Idea.residue (a.setWidth 16) := by
-  have h1 : (1 : BitVec 64).toNat = 1 := rfl
-  rw [BitVec.toNat_add, mask_toNat _ _ hm, BitVec.toNat_sub, h1]
-  unfold Spec.Idea.residue
-  have hs := setWidth16_toNat a
-  split
-  · rename_i h
-    have h' : a.toNat % 65536 = 0 := by rw [← hs, h]; rfl
-    omega
-  · rename_i h
-    have h' : a.toNat % 65536 ≠ 0 := by
-      intro h''; apply h; apply BitVec.eq_of_toNat_eq; rw [hs, h'']; rfl
-    rw [hs]; omega
-
-theorem residue_le (a : Spec.Idea.Word) : Spec.Idea.residue a ≤ 2 ^ 16 := by
-  unfold Spec.Idea.residue
-  split
-  · exact Nat.le_refl _
-  · exact Nat.le_of_lt a.isLt
-
-theorem residue_pos (a : Spec.Idea.Word) : 0 < Spec.Idea.residue a := by
-  unfold Spec.Idea.residue
-  split
-  · decide
-  · rename_i h
-    exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq h')
-
-/-- The product modulo 2¹⁶ + 1 from its halves, as `mulCode` computes it. -/
-theorem reduce (p : Nat) (hp : p ≤ 2 ^ 32) (m : BitVec 64) (hm : m.toNat = 65535) :
-    (((BitVec.ofNat 64 p &&& m) - BitVec.ofNat 64 p >>> 16) +
-      ((BitVec.ofNat 64 p &&& m) - BitVec.ofNat 64 p >>> 16) >>> 63 +
-      (((BitVec.ofNat 64 p &&& m) - BitVec.ofNat 64 p >>> 16) >>> 63) <<< 16) &&& m =
-      BitVec.ofNat 64 (p % 65537 % 65536) := by
-  have hlo : (BitVec.ofNat 64 p &&& m).toNat = p % 65536 := by
-    rw [mask_toNat _ _ hm, BitVec.toNat_ofNat]; omega
-  have hhi : (BitVec.ofNat 64 p >>> 16).toNat = p / 65536 := by
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]; omega
-  generalize hr : (BitVec.ofNat 64 p &&& m) - BitVec.ofNat 64 p >>> 16 = r
-  have hrn : r.toNat = (2 ^ 64 - p / 65536 + p % 65536) % 2 ^ 64 := by
-    rw [← hr, BitVec.toNat_sub, hlo, hhi]
-  apply BitVec.eq_of_toNat_eq
-  rw [mask_toNat _ _ hm, BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_shiftLeft,
-    Nat.shiftLeft_eq, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, hrn, BitVec.toNat_ofNat]
-  generalize hH : p / 65536 = H
-  generalize hL : p % 65536 = L
-  have hdec : p = 65536 * H + L := by omega
-  have hL' : L < 65536 := by omega
-  have hH' : H ≤ 65536 := by omega
-  subst hdec
-  clear hrn hr hlo hhi hH hL hp
-  have e1 : (65536 * H + L) % 65537 = (L + 65537 - H) % 65537 := by omega
-  rw [e1]
-  by_cases hc : L < H
-  · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = 2 ^ 64 - (H - L) := by
-      rw [Nat.mod_eq_of_lt (by omega)]; omega
-    have ht : (2 ^ 64 - (H - L)) / 2 ^ 63 = 1 := by omega
-    rw [hR, ht]
-    omega
-  · have hR : (2 ^ 64 - H + L) % 2 ^ 64 = L - H := by omega
-    have ht : (L - H) / 2 ^ 63 = 0 := by omega
-    rw [hR, ht]
-    omega
-
-theorem mul_toNat (a b : Spec.Idea.Word) :
-    (Spec.Idea.mul a b).setWidth 64 =
-      BitVec.ofNat 64 (Spec.Idea.residue a * Spec.Idea.residue b % 65537 % 65536) := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [Spec.Idea.mul, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
 
 /-- `mulCode` on the machine. -/
 theorem mul_run (s : State) : ∃ s', runBlock isa mulCode s = some s' ∧
