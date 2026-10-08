@@ -83,6 +83,7 @@ pub mod aes_cbc;
 pub mod aes_ccm;
 pub mod aes_cfb;
 pub mod aes_cfb8;
+pub mod aes_ctr;
 pub mod aes_ecb;
 pub mod aes_gcm;
 pub mod aes_gcm_siv;
