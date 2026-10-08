@@ -19,7 +19,7 @@ def scratchAt : Nat := 0x8000
 def initial (sched data : List Byte) (rounds n : Nat) : State where
   gpr r := if r = .rdi then BitVec.ofNat 64 schedAt else if r = .rsi then BitVec.ofNat 64 rounds
     else if r = .rdx then BitVec.ofNat 64 dataAt else if r = .rcx then BitVec.ofNat 64 n
-    else if r = .r9 then BitVec.ofNat 64 scratchAt else if r = .rsp then 0xF000 else 0
+    else if r = .r8 then BitVec.ofNat 64 scratchAt else if r = .rsp then 0xF000 else 0
   cf := none
   zf := none
   sf := none
@@ -36,7 +36,7 @@ def checkKey (key : List Byte) : Except String Unit := do
   let s : State :=
     { initial key [] 0 0 with
       gpr := fun r => if r = .rdi then BitVec.ofNat 64 schedAt else if r = .rsi then BitVec.ofNat 64 key.length
-        else if r = .rdx then BitVec.ofNat 64 dataAt else if r = .r9 then BitVec.ofNat 64 scratchAt
+        else if r = .rdx then BitVec.ofNat 64 dataAt else if r = .rcx then BitVec.ofNat 64 scratchAt
         else if r = .rsp then 0xF000 else 0
       rd := [⟨BitVec.ofNat 64 schedAt, key.length⟩]
       wr := [⟨BitVec.ofNat 64 dataAt, 272⟩, ⟨BitVec.ofNat 64 scratchAt, 8 * Impl.Camellia.X86_64.slots⟩] }

@@ -4,9 +4,9 @@ import VerifiedGarbage.Spec.Camellia
 /-!
 # The Camellia key schedule on x86-64
 
-`expandKey(key = rdi, key_len = rsi, schedule = rdx, scratch = r9)`:
+`expandKey(key = rdi, key_len = rsi, schedule = rdx, scratch = rcx)`:
 `vg_camellia_expand_key` with its working space in the scratch buffer
-(`Layers.lean`), which the artifact allocates on the stack.
+(`Layers.lean`, moved to `r9`), which the artifact allocates on the stack.
 
 `KA` and `KB` (RFC 3713 §2.2) take three pairs of rounds with the constants
 `Sigma1 … Sigma6` as subkeys, which the bitsliced rounds of ECB run, on
@@ -140,7 +140,7 @@ def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
   ks.zipIdx.flatMap fun ((v, r, hi), i) => subkey i v r hi
 
 def expandKey : Prog isa :=
-  .seq (.block (saveRegs ++ setMasks layerMasks ++ [st dataSlot .rsi] ++
+  .seq (.block ([movR .r9 .rcx] ++ saveRegs ++ setMasks layerMasks ++ [st dataSlot .rsi] ++
       [movR .rsi sb, .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++
       sigmaWords.flatMap sigmaOne ++ [movS .rsi dataSlot]))
     (.seq loadKey

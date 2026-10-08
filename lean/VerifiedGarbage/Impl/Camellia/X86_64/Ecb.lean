@@ -4,12 +4,12 @@ import VerifiedGarbage.Impl.Aes.X86_64.Ctr32
 /-!
 # Camellia ECB, bitsliced, on x86-64
 
-`ecb dir(schedule = rdi, rounds = rsi, data = rdx, n = rcx, scratch = r9)`:
+`ecb dir(schedule = rdi, rounds = rsi, data = rdx, n = rcx, scratch = r8)`:
 `vg_camellia_ecb_encrypt` and `vg_camellia_ecb_decrypt` with their working
 space in the scratch buffer (`Layers.lean` has its layout), which the
 artifact allocates on the stack.
 
-* `n` moves to `r8`, the callee-saved registers are saved, the masks set.
+* The scratch buffer moves to `r9` and `n` to `r8`, the callee-saved registers are saved, the masks set.
 * The subkeys are bitsliced into the table at slot 96, in the order the
   rounds use them: the stored order for encryption; for decryption the
   order RFC 3713 §2.3.3 swaps them into, `kw3, kw4`, then the subkeys
@@ -135,7 +135,7 @@ def group : Prog isa :=
 
 /-- The whole function: the table for 18 or 24 rounds, then the groups. -/
 def ecb (dir : Dir) : Prog isa :=
-  .seq (.block ([movR .r8 .rcx] ++ saveRegs ++ setMasks layerMasks ++ [.alu .cmp .rsi (.imm 18)]))
+  .seq (.block ([movR .r9 .r8, movR .r8 .rcx] ++ saveRegs ++ setMasks layerMasks ++ [.alu .cmp .rsi (.imm 18)]))
     (.seq (.ite .e (keys dir 3) (keys dir 4))
       (.seq (.block [.alu .test .r8 (.reg .r8)])
         (.seq (.ite .e (.block []) (.loop group .ne)) (.block restoreRegs))))

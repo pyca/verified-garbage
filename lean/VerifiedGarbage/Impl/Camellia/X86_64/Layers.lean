@@ -53,9 +53,6 @@ def keySlot : Nat := 96
 /-- The number of slots: 34 subkeys after `keySlot`. -/
 def slots : Nat := keySlot + 8 * 34
 
-/-- The byte of the half held in byte `c` of a plane. -/
-def pos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
-
 def layerMasks : List (Nat × BitVec 64) :=
   [(evenSlot, 0x00FF00FF00FF00FF), (oddSlot, 0xFF00FF00FF00FF00),
    (m4Slot, 0x00FFFF0000000000), (m2Slot, 0x0000000000FFFF00), (m3Slot, 0x000000FFFF000000)]
@@ -140,14 +137,20 @@ def round (off d : Nat) : List Instr :=
 def orK (d : Reg) (k : Nat) : Instr := .alu .or d (.mem (keyAt k))
 def andK (d : Reg) (k : Nat) : Instr := .alu .and d (.mem (keyAt k))
 
+/-- One plane of `flRot`: `q j ^= ((x & k) ⋙ s) & odd`, `x` in `src`,
+`k` word `kw` at `kp`. -/
+def flRotStep (j : Nat) (src : Reg) (kw s : Nat) : List Instr :=
+  [movR t0 src, andK t0 kw, rorI t0 s, andS t0 oddSlot, xorR (q j) t0]
+
 /-- `x2 ^= (x1 & k1) <<< 1`, with the subkey's planes at word `off` of
 `kp`: plane `j` of the right half (odd bytes) takes plane `j - 1` of the
 left (even bytes) one byte up, and plane 0 takes plane 7 one byte down,
-which rotates the left half's bytes by one. -/
+which rotates the left half's bytes by one. Plane 7 is saved first, and the
+planes are updated from 7 down, so that each step reads planes as they were. -/
 def flRot (off : Nat) : List Instr :=
-  (List.range 8).flatMap fun j =>
-    [movR t0 (q ((j + 7) % 8)), andK t0 (off + (j + 7) % 8),
-      rorI t0 (if j = 0 then 8 else 56), andS t0 oddSlot, xorR (q j) t0]
+  [movR t1 (q 7)] ++
+  ((List.range 7).reverse.flatMap fun i => flRotStep (i + 1) (q i) (off + i) 56) ++
+  flRotStep 0 t1 (off + 7) 8
 
 /-- `x1 ^= x2 | k2`, with the subkey's planes at word `off` of `kp`. -/
 def flOr (off : Nat) : List Instr :=
