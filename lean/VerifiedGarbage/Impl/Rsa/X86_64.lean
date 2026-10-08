@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Bignum.X86_64
+import VerifiedGarbage.Impl.Bignum.X86_64.R2Words
 
 /-!
 # RSA with a precomputed modulus on x86-64
@@ -56,22 +57,15 @@ def fail : Prog isa :=
       (.block exit))
 
 /-- The computation, once `m` is known valid: `m` into its array, `-m⁻¹`,
-`R² mod m` as `vg_rsa_public` computes it, then `m` and `R² mod m` to
-`pre`, and 1 returned. -/
+`R² mod m` (`R2Words.choice`), then `m` and `R² mod m` to `pre`, and 1
+returned. -/
 def main : Prog isa := seqs [
   .block head,
   loadBE,
   .block ([.mov .r10 (.reg .rbx), .mov .r12 (.mem (hdr sW)), .mov .rbx (.mem (at0 .rbx))] ++
     minv ++ [.store (hdr sMinv) .r15]),
-  -- `2^(b - 1)` for the bit length `b` of `m`, into the array of `R² mod m`.
-  .block [.mov .rax (.mem (ix .r10 .r12 (-8)))],
-  topBit,
-  .block [.store (hdr sCnt) .rcx, .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 1)],
-  setWord aR2 .rcx,
-  -- `2^w R mod m`, then six squarings: `R² mod m`.
-  .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
-  doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2,
+  -- `R² mod m`, by word steps when `m`'s top bit is set and `w` a multiple of 4.
+  R2Words.choice mul,
   -- `m`, then `R² mod m`, to `pre`.
   .block [.mov .r12 (.mem (hdr sW)), .mov .rsi (.mem (hdr (sArr aN))), .mov .rbx (.mem (hdr sOut))],
   copyWords,
