@@ -2,8 +2,8 @@ use alloc::boxed::Box;
 
 use rustls::crypto::CipherSuite;
 use rustls::crypto::cipher::{
-    AeadKey, EncryptBuffer, InboundOpaque, Iv, Nonce, OutboundPlain, Record, RecordDecrypter,
-    RecordEncrypter, Tls13AeadAlgorithm, UnsupportedOperationError, make_tls13_aad,
+    AeadKey, InboundOpaque, Iv, Nonce, OutboundPlain, Record, RecordDecrypter, RecordEncrypter,
+    Tls13AeadAlgorithm, UnsupportedOperationError, make_tls13_aad,
 };
 use rustls::crypto::tls13::HkdfUsingHmac;
 use rustls::enums::ContentType;
@@ -122,25 +122,24 @@ impl RecordEncrypter for Tls13RecordEncrypter {
         out: &'a mut [u8],
     ) -> Result<Record<&'a [u8]>, Error> {
         let total_len = self.encrypted_payload_len(msg.payload.len());
-        let mut payload = EncryptBuffer::new(out, total_len)?;
+        let record = aead::record_region(out, total_len)?;
 
         let typ = ContentType::ApplicationData;
         let nonce = Nonce::new(&self.iv, seq).to_array()?;
         let aad = make_tls13_aad(typ, msg.version.encode(), total_len);
-        // The plaintext is gathered into `out`, then encrypted there.
-        payload.extend_from_chunks(&msg.payload);
-        payload.extend_from_slice(&msg.typ.to_array());
-
+        // The plaintext is the payload followed by its content type, each
+        // encrypted from where it is into `record`.
+        let (ciphertext, tag_out) = record.split_at_mut(total_len - TAG_LEN);
         let tag = self
             .key
-            .seal(&nonce, &aad, payload.as_mut())
+            .seal_to(&nonce, &aad, &msg.payload, &msg.typ.to_array(), ciphertext)
             .map_err(|_| Error::EncryptError)?;
-        payload.extend_from_slice(&tag);
+        tag_out.copy_from_slice(&tag);
 
         Ok(Record {
             typ,
             version: msg.version,
-            payload: payload.into_written(),
+            payload: &*record,
         })
     }
 

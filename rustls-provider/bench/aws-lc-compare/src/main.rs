@@ -118,7 +118,7 @@ fn main() {
         dst.copy_from_slice(black_box(&src));
         black_box(&dst);
     });
-    row("memcpy 16384 B (the provider's gather into `out`)", c, c);
+    row("memcpy 16384 B (the ChaCha20 copy into `out`)", c, c);
 
     if only_aead {
         return;
