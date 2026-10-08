@@ -12,5 +12,7 @@ structure HasLawInvToM (C : Spec.Weierstrass.Curve) extends HasLawInv C where
 /-- Curves whose secret window additions use the prime-order separation theorem. -/
 structure HasLawInvToMOrd (C : Spec.Weierstrass.Curve) extends HasLawInvToM C where
   prime : PrimeOrder C
+  /-- Arithmetic correctness used by the packed field inversion. -/
+  invToMP : InvToM C.p
 
 end VG.Proof.Weierstrass.AArch64

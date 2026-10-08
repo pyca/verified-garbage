@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.P256.EcdhJac.Lit
-import VerifiedGarbage.Proof.Ecdh.AArch64.Prefix
+import VerifiedGarbage.Proof.P256.EcdhJac.Prefix
 import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
@@ -33,8 +33,8 @@ theorem before_relCT (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AA
     RelCT isa (fun s t => ecdhAArch64.pre s ∧ ecdhAArch64.pre t ∧ ecdhAArch64.pub s t)
       before Ready := by
   intro s t ts tt s' t' ⟨ps,pt,h0,h1,h2,h3,hsp⟩ es et
-  obtain ⟨_,_,es',hs,xs,os⟩ := beforeMul_ok (p256_ok hI) hL (pre_of ps)
-  obtain ⟨_,_,et',ht,xt,ot⟩ := beforeMul_ok (p256_ok hI) hL (pre_of pt)
+  obtain ⟨_,_,es',hs,xs,os⟩ := Frontend.beforeMul_ok (p256_ok hI) hL (pre_of ps)
+  obtain ⟨_,_,et',ht,xt,ot⟩ := Frontend.beforeMul_ok (p256_ok hI) hL (pre_of pt)
   obtain ⟨_,rfl⟩ := es.det es'
   obtain ⟨_,rfl⟩ := et.det et'
   have pub : AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3]) s t := by
@@ -55,7 +55,7 @@ theorem before_relCT (hL : Weierstrass.Law Spec.P256.curve) (hI : Weierstrass.AA
   · exact os.trans (h0.trans ot.symm)
 
 /-- Recover the public output pointer after its round trip through private scratch. -/
-theorem multiply_relCT (hm : MulOk p256 mq) : RelCT isa Ready multiply Public := by
+theorem multiply_relCT (hm : MulWithInverseOk p256 mq Impl.P256.EcdhInverse.inverse) : RelCT isa Ready multiply Public := by
   intro s t ts tt s' t' ⟨⟨bs,gs,ps,hss,fs,hps,lxs,lys,reps⟩,
     ⟨bt,gt,pt,hst,ft,hpt,lxt,lyt,rept⟩,hp⟩ es et
   have ws := hm hss fs hps lxs lys reps (rest:=.block [])
@@ -88,13 +88,13 @@ private theorem regroup {s t : State} {tr}
           | seq p h => cases h with
             | seq w h => cases h with
               | seq i f =>
-                simpa only [before, multiply, mq, finish, Impl.Ecdh.AArch64.Cfg.beforeMul,
+                simpa only [before, multiply, mq, finish, Impl.P256.EcdhJac.Frontend.before,
                   Impl.P256.EcdhJac.c, List.append_assoc] using
                   (Exec.seq (Exec.seq a (Exec.seq b (Exec.seq c d)))
                     (Exec.seq (Exec.seq (Exec.seq p w) i) f))
 
 theorem constantTime (hL : Weierstrass.Law Spec.P256.curve)
-    (hI : Weierstrass.AArch64.InvSounds) (hm : MulOk p256 mq) :
+    (hI : Weierstrass.AArch64.InvSounds) (hm : MulWithInverseOk p256 mq Impl.P256.EcdhInverse.inverse) :
     ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub Impl.P256.EcdhJac.exchange := by
   have hf : RelCT isa Public finish (fun _ _ => True) := by
     intro s t ts tt s' t' hp es et

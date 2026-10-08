@@ -1,7 +1,5 @@
+import VerifiedGarbage.Proof.Divstep.WordBasic
 import VerifiedGarbage.Proof.Divstep.BatchBasic
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 import VerifiedGarbage.Proof.Divstep.WordDef
 import Mathlib.Data.BitVec
 
@@ -24,9 +22,6 @@ def WSt.rel (w : WSt) (t : MSt) (k : Nat) : Prop :=
   w.D = BitVec.ofInt 64 t.d ∧ w.U = BitVec.ofInt 64 t.u ∧ w.V = BitVec.ofInt 64 t.v ∧
     w.Q = BitVec.ofInt 64 t.q ∧ w.R = BitVec.ofInt 64 t.r ∧
     (w.F.toNat : Int) % 2 ^ k = t.f % 2 ^ k ∧ (w.G.toNat : Int) % 2 ^ k = t.g % 2 ^ k
-
-theorem ofInt_sub' (a b : Int) : BitVec.ofInt 64 (a - b) = BitVec.ofInt 64 a - BitVec.ofInt 64 b := by
-  rw [sub_eq_add_neg, BitVec.ofInt_add, BitVec.ofInt_neg, BitVec.sub_eq_add_neg]
 
 theorem shl1 (x : BitVec 64) : x <<< 1 = x + x := by
   apply BitVec.eq_of_toNat_eq
@@ -54,12 +49,12 @@ theorem toNat_sub_cong (x y : BitVec 64) :
   rw [BitVec.toNat_sub]
   have := y.isLt
   push_cast
-  rw [Int.emod_emod_of_dvd _ (by norm_num)]
+  rw [Int.emod_emod_of_dvd _ (by decide)]
   omega
 
 theorem toNat_add_cong (x y : BitVec 64) :
     ((x + y).toNat : Int) % 2 ^ 64 = ((x.toNat : Int) + y.toNat) % 2 ^ 64 := by
-  rw [BitVec.toNat_add]; push_cast; rw [Int.emod_emod_of_dvd _ (by norm_num)]
+  rw [BitVec.toNat_add]; push_cast; rw [Int.emod_emod_of_dvd _ (by decide)]
 
 /-- Halving a word whose value is congruent to an even integer. -/
 theorem half_word {x : BitVec 64} {a : Int} {k : Nat} (hk : k + 1 ≤ 64)
@@ -97,8 +92,13 @@ theorem neg_sel (X : BitVec 64) : (X ^^^ BitVec.allOnes 64) - BitVec.allOnes 64 
 theorem wstep_swap (w : WSt) (hB : w.G &&& 1 = 1) (hS : w.D >>> 63 = 0) :
     wstep w = ⟨-w.D + 2, w.G, (w.G - w.F) >>> 1, w.Q <<< 1, w.R <<< 1, w.Q - w.U, w.R - w.V⟩ := by
   simp only [wstep, hB, hS, c_allOnes, BitVec.and_allOnes, neg_sel, WSt.mk.injEq]
-  refine ⟨trivial, by ring, by rw [show w.G + -w.F = w.G - w.F by ring], by rw [show w.U + (w.Q + -w.U) = w.Q by ring],
-    by rw [show w.V + (w.R + -w.V) = w.R by ring], by ring, by ring⟩
+  refine ⟨trivial, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [add_left_comm, add_neg_cancel, add_zero]
+  · rw [sub_eq_add_neg]
+  · rw [add_left_comm, add_neg_cancel, add_zero]
+  · rw [add_left_comm, add_neg_cancel, add_zero]
+  · rw [sub_eq_add_neg]
+  · rw [sub_eq_add_neg]
 
 /-- `g` odd and `d < 0`: `g + f`. -/
 theorem wstep_odd (w : WSt) (hB : w.G &&& 1 = 1) (hS : w.D >>> 63 = 1) :
@@ -109,12 +109,6 @@ theorem wstep_odd (w : WSt) (hB : w.G &&& 1 = 1) (hS : w.D >>> 63 = 1) :
 theorem wstep_even (w : WSt) (hB : w.G &&& 1 = 0) :
     wstep w = ⟨w.D + 2, w.F, w.G >>> 1, w.U <<< 1, w.V <<< 1, w.Q, w.R⟩ := by
   simp only [wstep, hB, and0, xor0, sub0, add0]
-
-/-- `G & 1` is `G`'s low bit. -/
-theorem and_one_word (x : BitVec 64) : x &&& 1 = if x.toNat % 2 = 1 then 1 else 0 := by
-  apply BitVec.eq_of_toNat_eq
-  rw [BitVec.toNat_and, show (1 : BitVec 64).toNat = 1 from rfl, Nat.and_one_is_mod]
-  split <;> simp_all
 
 /-- `D >>> 63` is `D`'s sign, for `|d| < 2^63`. -/
 theorem sign_word {d : Int} (hd : |d| < 2 ^ 62) : BitVec.ofInt 64 d >>> 63 = if d < 0 then 1 else 0 := by
@@ -144,7 +138,7 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
     · rw [ite_f (show ¬ t.d < 0 by omega)] at hS
       rw [wstep_swap w hB hS, ite_t ⟨hd0, hg⟩]
       refine ⟨?_, ?_, ?_, ?_, ?_, lowered hG, half_word hk ?_ (by omega)⟩
-      · simp only; rw [hD, ofInt_sub', ofInt_two]; ring
+      · simp only; rw [hD, ofInt_sub', ofInt_two]; simp only [sub_eq_add_neg, add_comm]
       · simp only; rw [hQ, ofInt_two_mul]
       · simp only; rw [hR, ofInt_two_mul]
       · simp only; rw [hQ, hU, ofInt_sub']
@@ -154,7 +148,7 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
     · rw [ite_t (show t.d < 0 by omega)] at hS
       rw [wstep_odd w hB hS, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
       refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
-      · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64]; ring
+      · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64, add_comm]
       · simp only; rw [hU, ofInt_two_mul]
       · simp only; rw [hV, ofInt_two_mul]
       · simp only; rw [hQ, hU, hg, one_mul, BitVec.ofInt_add]
@@ -167,7 +161,7 @@ theorem wstep_rel {w : WSt} {t : MSt} {k : Nat} (hk : k + 1 ≤ 64) (h : w.rel t
     rw [ite_f (show ¬ w.G.toNat % 2 = 1 by omega)] at hB
     rw [wstep_even w hB, ite_f (show ¬ (0 ≤ t.d ∧ t.g % 2 = 1) by omega)]
     refine ⟨?_, ?_, ?_, ?_, ?_, lowered hF, ?_⟩
-    · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64]; ring
+    · simp only; rw [hD, BitVec.ofInt_add, BitVec.ofInt_ofNat, two64, add_comm]
     · simp only; rw [hU, ofInt_two_mul]
     · simp only; rw [hV, ofInt_two_mul]
     · simp only; rw [hQ, hg0, zero_mul, add_zero]
@@ -185,6 +179,6 @@ theorem wsteps_rel {w : WSt} {t : MSt} {K : Nat} (hK : K ≤ 64) (h : w.rel t K)
     refine wstep_rel (by omega) ih ?_ (msteps_f_odd hf n)
     have := msteps_d t n
     have : (2 * n : Int) ≤ 2 * K := by exact_mod_cast (by omega : 2 * n ≤ 2 * K)
-    linarith
+    omega
 
 end VG.Proof.Divstep

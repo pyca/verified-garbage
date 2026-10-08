@@ -1,3 +1,8 @@
+import VerifiedGarbage.Proof.Divstep.State
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Positivity
 import VerifiedGarbage.Proof.Divstep.Batch
 import VerifiedGarbage.Proof.Divstep.Word
 
@@ -25,14 +30,6 @@ def mredRaw (p m t : Int) : Int := (t + (t * m) % 2 ^ 64 * p) / 2 ^ 64
 def norm (p t : Int) : Int := if t < 0 then t + p else if p ≤ t then t - p else t
 
 def mred (p m t : Int) : Int := norm p (mredRaw p m t)
-
-/-- The state of the inversion. -/
-structure IState where
-  d : Int
-  f : Int
-  g : Int
-  a : Int
-  b : Int
 
 /-- A batch of `N` divsteps. -/
 def batch (N : Nat) (p m : Int) (s : IState) : IState :=

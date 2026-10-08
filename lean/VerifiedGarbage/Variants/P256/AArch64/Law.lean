@@ -23,6 +23,6 @@ open Proof.Weierstrass Proof.Weierstrass.AArch64
 
 def variant : HasLawInvToMOrd Spec.P256.curve :=
   ⟨⟨⟨Proof.P256.law, fun hp => invSound_of_toM hp (invToM_of_prime hp)⟩,
-    invToM_of_prime Proof.P256.n_prime⟩, Proof.P256.primeOrder⟩
+    invToM_of_prime Proof.P256.n_prime⟩, Proof.P256.primeOrder, invToM_of_prime Proof.P256.p_prime⟩
 
 end VG.Variants.P256.AArch64.Law

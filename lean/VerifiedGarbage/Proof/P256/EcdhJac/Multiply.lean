@@ -23,24 +23,32 @@ structure MulReady (base : Addr) (g : Reg → BitVec 64) (P : Point C) (k : Nat)
     (tmv C 4 base t K.R.y) (tmv C 4 base t K.R.z) (mul k P)
   rz_lt : sv p256 base t RZ<C.p
 
-theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
+theorem finishInverse_ok (hc : CfgOk p256) {ip : Prog isa} {W : List (Nat × Nat)}
+    (hfixed : FixedOk p256 W)
+    (hslots : ∀ i,i<45 → i∉[ACC,TMP] → ∀w∈W,
+      p256.sl i+8*p256.n≤w.1 ∨ w.1+w.2≤p256.sl i)
+    (hflag : ∀w∈W,p256.sl FLAG+8≤w.1 ∨ w.1+w.2≤p256.sl FLAG) {base : Addr} {g : Reg → BitVec 64}
     {P : Point C} {k : Nat} {s t : State} (hw : MulReady base g P k s t)
+    (hip : WP isa ip t fun u => KeepRegs (powClob p256.n) t u ∧
+      Unch base W t.mem u.mem ∧ wordsVal u.mem base (p256.sl ACC) p256.n<C.p ∧
+      toM C.p (2^(64*p256.n)) (wordsVal u.mem base (p256.sl ACC) p256.n)=
+        toM C.p (2^(64*p256.n)) (wordsVal t.mem base (p256.sl RZ) p256.n)^(C.p-2))
     {rest : Prog isa} {R : State → Prop}
     (h : ∀ u,MulPost p256 base g P k s u → WP isa rest u R) :
-    WP isa (.seq p256.pPow rest) t R := by
-  refine WP.seq (WP.mono (pPow_ok hc hw.scr (modP_of hc hw.fixed.mp) hw.rz_lt)
+    WP isa (.seq ip rest) t R := by
+  refine WP.seq (WP.mono hip
     fun u ⟨ku,hu,lu,vu⟩=>h u ?_)
   have keep : ∀ {i},i<45 → i∉[ACC,TMP] → sv p256 base u i=sv p256 base t i :=
-    fun hi hn=>sv_unch hu hc.n10 hw.scr.nowrap hi (apart_chainWc hi hn)
+    fun hi hn=>sv_unch hu hc.n10 hw.scr.nowrap hi (hslots _ hi hn)
   refine ⟨hw.scr.of_keepRegs ku (x0_not_powClob hc.n10),
-    hw.fixed.unch hc.n10 hw.scr.nowrap fixedOk_chainWc hu,?_,?_,
+    hw.fixed.unch hc.n10 hw.scr.nowrap hfixed hu,?_,?_,
     ku.rd.trans hw.rd,ku.wr.trans hw.wr,?_,?_,?_,lu,?_,?_⟩
   · intro r hr
     rw [ku.gpr r (by
       have hh : ∀ r∈[Reg.x26,.x27,.x28],r∉powClob 4 := by decide
       exact hh r hr),hw.extra r hr]
   · rw [ku.gpr .x20 (x20_not_powClob hc.n10),hw.x20]
-  · exact (hu.word (by decide) (by decide)).trans hw.flag
+  · exact (hu.word hflag (by decide)).trans hw.flag
   · exact (keep (by decide) (by decide)).trans hw.d
   · intro hk hn
     change Rep C (toM _ _ (sv p256 base u RX)) (toM _ _ (sv p256 base u RY))
@@ -53,5 +61,14 @@ theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
     exact vu
   · rw [keep (i:=RZ) (by decide) (by decide)]
     exact hw.rz_lt
+
+/-- Compatibility wrapper for the original fixed-count inversion. -/
+theorem finishPow_ok (hc : CfgOk p256) {base : Addr} {g : Reg → BitVec 64}
+    {P : Point C} {k : Nat} {s t : State} (hw : MulReady base g P k s t)
+    {rest : Prog isa} {R : State → Prop}
+    (h : ∀ u,MulPost p256 base g P k s u → WP isa rest u R) :
+    WP isa (.seq p256.pPow rest) t R :=
+  finishInverse_ok hc fixedOk_chainWc (fun _ hi hn => apart_chainWc hi hn)
+    (by decide) hw (pPow_ok hc hw.scr (modP_of hc hw.fixed.mp) hw.rz_lt) h
 
 end VG.Proof.P256.EcdhJac
