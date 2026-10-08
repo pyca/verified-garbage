@@ -48,13 +48,36 @@ theorem mulPre_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = ma
   refine WP.append (zeroAcc_ok hc) fun s1 ⟨hz, hf, hr⟩ => ?_
   have hc1 := hc.of_rest hr (by decide)
   refine wp_mov (op2_reg _ _) fun s2 h2 => wp_mov (op2_imm (by decide)) fun s3 h3 => WP.block_nil ?_
-  have hr3 : Rest clob s s3 :=
+  have hr3 : Rest rowClob s s3 :=
     (hr.mono (by decide)).trans ((h2.rest (by decide)).trans (h3.rest (by decide)))
   have hm3 : s3.mem = s1.mem := by rw [h3.mem, h2.mem]
   refine ⟨hc.of_rest hr3 (by decide), hr3, (hr3.gpr _ (by decide)).trans h6,
     ?_, h3.gpr, ?_, fun k hk => ?_, ?_⟩
   · rw [h3.other .r7 (by decide), h2.gpr, hc1.r0]
     exact (BitVec.add_zero b).symm
+  · rw [hm3]
+    exact hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩
+  · rw [hm3, hz k hk]; decide
+  · rw [hm3, Radix16.valN_congr (g := fun _ => 0) (fun k hk => hz k hk), Radix16.valN_zero]
+    exact (Nat.zero_mul _).symm
+
+theorem mulPreF_ok {x y : Nat} {s : State} (hc : RowCtx b s) (h6 : s.gpr .r6 = mask16)
+    (hlr : s.gpr .lr = b + BitVec.ofNat 32 x) (h12 : s.gpr .r12 = b + BitVec.ofNat 32 y) :
+    WP isa (.block mulPreF) s (RowInvF b x y s 0 0) := by
+  unfold mulPreF
+  refine WP.append (zeroAcc_ok hc) fun s1 ⟨hz, hf, hr⟩ => ?_
+  have hc1 := hc.of_rest hr (by decide)
+  refine wp_mov (op2_reg _ _) fun s2 h2 => wp_mov (op2_imm (by decide)) fun s3 h3 => WP.block_nil ?_
+  have hr3 : Rest (.lr :: fclob) s s3 :=
+    (hr.mono (by decide)).trans ((h2.rest (by decide)).trans (h3.rest (by decide)))
+  have hm3 : s3.mem = s1.mem := by rw [h3.mem, h2.mem]
+  refine ⟨Nat.le_refl _, hc.of_rest hr3 (by decide), hr3, (hr3.gpr _ (by decide)).trans h6,
+    ?_, ?_, h3.gpr, ?_, ?_, fun k hk => ?_, ?_⟩
+  · rw [h3.other _ (by decide), h2.gpr, hc1.r0]
+    exact (BitVec.add_zero b).symm
+  · rw [h3.other _ (by decide), h2.other _ (by decide), hr.gpr _ (by decide), hlr]; rfl
+  · rw [hr3.gpr _ (by decide), h12]
   · rw [hm3]
     exact hf.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by decide)⟩

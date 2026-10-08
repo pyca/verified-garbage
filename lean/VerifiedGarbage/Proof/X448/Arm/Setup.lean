@@ -13,21 +13,22 @@ namespace VG.Proof.X448.Arm
 
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 
-def setupRegs : List Reg := [.r3, .r4, .r12, .r0, .r6]
+def setupRegs : List Reg := [.r3, .r4, .r8, .r10, .r0, .r6]
 
 theorem setup_ok {s : State} {base p : Addr} (hc : State.addr (s.gpr .r3) = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) (hp : State.addr (s.gpr .r2) = p) (hfit : (s.gpr .r2).toNat + 56 ≤ 2 ^ 32)
     (hr : ∀ j < 56, InRegions (s.rd ++ s.wr) (off p j) 1)
     (hd : ∀ j < 56, 8192 ≤ ofs base (off p j)) :
     WP isa (.block setup) s fun t =>
-      Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r12 = s.gpr .r0 ∧ Keeps setupRegs s t ∧
+      Scr t base ∧ BoundedEnv t.mem base ∧ t.gpr .r8 = s.gpr .r0 ∧ t.gpr .r10 = s.gpr .lr ∧
+      Keeps setupRegs s t ∧
       Outside base 0 8192 s.mem t.mem ∧ Saved base s.gpr t.mem ∧
       E t.mem base 0 = toFe (Spec.X448.decodeUCoordinate (Spec.X448.bytesAt s.mem p 56)) ∧
       E t.mem base 1 = 1 ∧ E t.mem base 2 = 0 ∧
       E t.mem base 3 = E t.mem base 0 ∧ E t.mem base 4 = 1 ∧ word t.mem base SWAP = 0 := by
   change WP isa (.block (setupHead ++ ((List.range 28).flatMap decodeLimb ++ initSlots))) s _
   rw [WP.block_append_iff]
-  refine WP.mono (setupHead_ok hc hw hn) fun t ⟨ts, tp, tv, tm, tk⟩ => ?_
+  refine WP.mono (setupHead_ok hc hw hn) fun t ⟨ts, tp, tl, tv, tm, tk⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (decodeAll_ok ts (by rw [tk.1 _ (by decide)]; exact hp)
     (by rw [tk.1 _ (by decide)]; exact hfit)
@@ -47,12 +48,13 @@ theorem setup_ok {s : State} {base p : Addr} (hc : State.addr (s.gpr .r3) = base
     fun v ⟨vb, v0, v1, v2, v3, v4, vw, vm, vk⟩ => ?_
   refine ⟨(ts.of_keeps uk (by decide)).of_keeps vk (by decide), vb,
     (vk.1 _ (by decide)).trans ((uk.1 _ (by decide)).trans tp),
+    (vk.1 _ (by decide)).trans ((uk.1 _ (by decide)).trans tl),
     (tk.mono ?_).trans ((uk.mono ?_).trans (vk.mono ?_)),
     (tm.mono (by decide) (by decide)).trans ?_,
     (tv.outside2 um (by decide) (by decide)).outside vm (by decide),
     ?_, v1, v2, v3.trans (uv3.trans v0.symm), v4, vw⟩
   · intro r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl <;> decide
+    rcases h with rfl | rfl | rfl | rfl <;> decide
   · intro r h; simp only [List.mem_cons, List.not_mem_nil, or_false] at h
     rcases h with rfl | rfl <;> decide
   · intro r h; simp only [List.mem_singleton] at h; subst r; decide

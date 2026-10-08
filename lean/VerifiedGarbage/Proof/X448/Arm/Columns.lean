@@ -40,17 +40,20 @@ theorem input_limb {s t : State} {base : Addr} {a i : Nat} (h : Outside base TMP
     (ha : Slot a) (hi : i < 28) : limbs t.mem base a i = limbs s.mem base a i :=
   h.limbs (Or.inl (Nat.le_trans ha (by decide))) (Nat.le_trans ha (by decide)) hi
 
-/-- Carry propagation after a pointwise operation, with the common frame. -/
+/-- Carry propagation after a pointwise operation, into the element at `r9`,
+with the common frame. -/
 theorem columns_normalize {s : State} {base : Addr} (hs : Scr s base) {code : List Instr}
-    {o : Nat} (ho : Slot o) {f : Nat → Nat} (hb : ∀ i < 28, f i ≤ 2 ^ 32 - radix)
+    {o : Nat} (hp : Ptr s .r9 o) (ho : Slot o) {f : Nat → Nat} (hb : ∀ i < 28, f i ≤ 2 ^ 32 - radix)
     (hcode : WP isa (.block code) s fun t =>
-      (∀ i < 28, limbs t.mem base TMP i = f i) ∧ Outside base TMP 112 s.mem t.mem ∧ Keeps clob s t) :
-    WP isa (.block (code ++ normalize o)) s fun t =>
-      Op base o s t ∧ Bounded t.mem base o ∧ fe t.mem base o % Spec.X448.P = valN f 28 % Spec.X448.P := by
+      (∀ i < 28, limbs t.mem base TMP i = f i) ∧ Outside base TMP 112 s.mem t.mem ∧ Keeps fclob s t) :
+    WP isa (.block (code ++ normalize)) s fun t =>
+      Keeps fclob s t ∧ OpMem base o s.mem t.mem ∧ Bounded t.mem base o ∧
+        fe t.mem base o % Spec.X448.P = valN f 28 % Spec.X448.P := by
   rw [WP.block_append_iff]
   refine WP.mono hcode fun t ⟨tf, tm, tk⟩ => ?_
-  refine WP.mono (normalize_ok (hs.of_keeps tk (by decide)) ho tf hb) fun u ⟨uf, um, uk⟩ => ?_
-  refine ⟨⟨tk.trans (uk.mono ?_), (FieldMem.work tm (by decide) (by decide)).trans um⟩, ?_, ?_⟩
+  refine WP.mono (normalize_ok (hs.of_keeps tk (by decide)) (hp.of_keeps tk (by decide) (by decide))
+    ho tf hb) fun u ⟨uf, um, uk⟩ => ?_
+  refine ⟨tk.trans (uk.mono ?_), (OpMem.work tm (by decide) (by decide)).trans um, ?_, ?_⟩
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> decide

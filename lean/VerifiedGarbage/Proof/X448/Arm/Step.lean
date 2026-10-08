@@ -10,17 +10,22 @@ namespace VG.Proof.X448.Arm
 open VG VG.Arm VG.Impl.X448.Arm VG.Proof.X448.Radix16
 open VG.Proof.X25519.Arm (wp_ldr)
 
-/-- Load a coefficient and propagate its carry. -/
-def carryBlock (o a i : Nat) : List Instr :=
-  [ld .r3 (a + 4 * i)] ++ VG.Impl.X448.Arm.carryStep .r0 (o + 4 * i)
+/-- Load a coefficient and propagate its carry, storing through `rb`. -/
+def carryBlock (rb : Reg) (o a i : Nat) : List Instr :=
+  [ld .r3 (a + 4 * i)] ++ VG.Impl.X448.Arm.carryStep rb (o + 4 * i)
 
-theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
-    (ho : o + 4 * i + 4 ≤ 4096) (ha : a + 4 * i + 4 ≤ 4096)
+/-- The step of a pass storing through `rb` at `o + 4 i`, byte `q + 4 i` of
+the working space. -/
+theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {rb : Reg}
+    (hrb : rb ≠ .r3 ∧ rb ≠ .r4) {o q a i : Nat}
+    (ho : o + 4 * i < 4096) (hq : q + 4 * i + 4 ≤ 4096)
+    (hea : State.addr (s.gpr rb + BitVec.ofNat 32 (o + 4 * i)) = off base (q + 4 * i))
+    (ha : a + 4 * i + 4 ≤ 4096)
     (hb : (word s.mem base (a + 4 * i)).toNat + (s.gpr .r5).toNat < 2 ^ 32) :
     let v := (word s.mem base (a + 4 * i)).toNat + (s.gpr .r5).toNat
-    WP isa (.block (carryBlock o a i)) s fun s' =>
+    WP isa (.block (carryBlock rb o a i)) s fun s' =>
       (s'.gpr .r5).toNat = v / radix ∧
-      s'.mem = s.mem.writeW (off base (o + 4 * i)) (BitVec.ofNat 32 (v % radix)) ∧
+      s'.mem = s.mem.writeW (off base (q + 4 * i)) (BitVec.ofNat 32 (v % radix)) ∧
       Keeps [.r3, .r5, .r4] s s' := by
   intro v
   unfold carryBlock ld
@@ -29,8 +34,8 @@ theorem carryStep_ok {s : State} {base : Addr} (hs : Scr s base) {o a i : Nat}
   have h5 : t.gpr .r5 = s.gpr .r5 := ht.other _ (by decide)
   have h3 : (t.gpr .r3).toNat = (word s.mem base (a + 4 * i)).toNat := by rw [ht.gpr]
   refine WP.mono (VG.Proof.X25519.Arm.carryStep_ok
-    (a := off base (o + 4 * i)) (by decide) (by omega)
-    (by rw [ht.other .r0 (by decide)]; exact hs.ea (by omega))
+    (a := off base (q + 4 * i)) hrb ho
+    (by rw [ht.other rb hrb.1]; exact hea)
     (by rw [ht.wr]; exact hs.write (by omega))
     (by rw [ht.other .r6 (by decide)]; exact hs.mask)
     (by rw [h3, h5]; exact hb)) fun u ⟨hc, ⟨w, hw, hm⟩, hk⟩ => ?_

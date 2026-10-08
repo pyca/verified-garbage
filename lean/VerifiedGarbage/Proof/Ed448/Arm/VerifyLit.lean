@@ -1,5 +1,6 @@
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 import VerifiedGarbage.Proof.Framework.Arm.TaintErase
+import VerifiedGarbage.Proof.X448.Arm.FnLit
 import VerifiedGarbage.Impl.Ed448.Arm.VerifyEquation
 
 /-!

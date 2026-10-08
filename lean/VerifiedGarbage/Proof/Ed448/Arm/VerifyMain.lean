@@ -55,49 +55,47 @@ theorem outA {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m') 
 /-! ## The entry and the start -/
 
 theorem ventry_eq : ventry = setupHead ++
-    ([.mov .r8 (.reg .r12), .mov .r10 (.reg .r1), .str .lr .r0 LR] : List Instr) := rfl
+    ([.mov .r12 (.reg .r1), .str .lr .r0 LR] : List Instr) := rfl
 
 theorem ventry_ok {s : State} {base : Addr} (hc : State.addr (s.gpr .r3) = base)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) (hn : (s.gpr .r3).toNat + 8192 ≤ 2 ^ 32) :
     WP isa (.block ventry) s fun t =>
-      Scr t base ∧ t.gpr .r8 = s.gpr .r0 ∧ t.gpr .r10 = s.gpr .r1 ∧ t.gpr .r2 = s.gpr .r2 ∧
+      Scr t base ∧ t.gpr .r8 = s.gpr .r0 ∧ t.gpr .r12 = s.gpr .r1 ∧ t.gpr .r2 = s.gpr .r2 ∧
       Saved base s.gpr t.mem ∧ Outside base 0 (LR + 4) s.mem t.mem ∧ word t.mem base LR = s.gpr .lr ∧
-      Keeps [.r12, .r0, .r6, .r8, .r10] s t := by
+      Keeps [.r10, .r0, .r6, .r8, .r12] s t := by
   rw [ventry_eq]
-  refine VG.Proof.X25519.Arm.WP.append (setupHead_ok hc hw hn) fun v ⟨hsv, rv, svv, ov, kv⟩ => ?_
-  refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun u hu => ?_
+  refine VG.Proof.X25519.Arm.WP.append (setupHead_ok hc hw hn) fun v ⟨hsv, rv, _, svv, ov, kv⟩ => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_reg _ _) fun w hw' => ?_
-  have k : Keeps [.r8, .r10] v w := rest_keeps ((hu.rest (by decide)).trans (hw'.rest (by decide)))
+  have k : Keeps [.r12] v w := rest_keeps (hw'.rest (by decide))
   have hsw := hsv.of_keeps k (by decide)
   refine VG.Proof.X25519.Arm.wp_str (a := off base LR) (by decide) (hsw.ea (by decide))
     (hsw.write (by decide)) fun t ht => WP.block_nil ?_
-  have wv : w.mem = v.mem := by rw [hw'.mem, hu.mem]
+  have wv : w.mem = v.mem := hw'.mem
   have ot : Outside base LR 4 v.mem t.mem := by rw [ht.mem, wv]; exact writeW_outside _ _ _ (by decide)
   have kt : Keeps [] w t := ⟨fun r _ => by rw [ht.gpr], ht.rd, ht.wr⟩
   refine ⟨hsw.of_keeps kt (by decide), ?_, ?_, ?_, ?_, ?_, ?_,
     (kv.mono (by decide)).trans ((k.mono (by decide)).trans (kt.mono (by decide)))⟩
-  · rw [ht.gpr, hw'.other _ (by decide), hu.gpr, rv]
-  · rw [ht.gpr, hw'.gpr, hu.other _ (by decide), kv.1 _ (by decide)]
-  · rw [ht.gpr, hw'.other _ (by decide), hu.other _ (by decide), kv.1 _ (by decide)]
+  · rw [ht.gpr, hw'.other _ (by decide), rv]
+  · rw [ht.gpr, hw'.gpr, kv.1 _ (by decide)]
+  · rw [ht.gpr, hw'.other _ (by decide), kv.1 _ (by decide)]
   · exact svv.outside ot (by decide)
   · exact (ov.mono (by decide) (by decide)).trans (ot.mono (by decide) (by decide))
   · show t.mem.readW (off base LR) 32 = _
-    rw [ht.mem, Mem.readW_writeW_self32, hw'.other _ (by decide), hu.other _ (by decide),
-      kv.1 _ (by decide)]
+    rw [ht.mem, Mem.readW_writeW_self32, hw'.other _ (by decide), kv.1 _ (by decide)]
 
-theorem vstart_eq : vstart = .mov .r12 (.imm 0) :: (sCheck ++ (initSlots ++
+theorem vstart_eq : vstart = .mov .r10 (.imm 0) :: (sCheck ++ (initSlots ++
     copy (slot (21 : Index).val) (slot (1 : Index).val))) := by
   simp only [vstart, List.append_assoc]; rfl
 
 /-- `BAD = 0`, the check of `S` (at `sq`), and the slots initialized: `Q` the
 neutral point, `B`, `1` in slot 10 and `d`. -/
 theorem vstart_ok {s : State} {base sq : Addr} (hs : Scr s base)
-    (hq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq) (hfit : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32)
+    (hq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq) (hfit : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (sq + BitVec.ofNat 64 j)) :
     WP isa (.block vstart) s fun t =>
-      CKeep base s t ∧ BoundedEnv t.mem base ∧
-      BadUpd (decodeLE (bytesAt s.mem sq 57) < Spec.Ed448.L) 0 (t.gpr .r12) ∧
+      CKeep base s t ∧ t.gpr .r12 = s.gpr .r12 ∧ BoundedEnv t.mem base ∧
+      BadUpd (decodeLE (bytesAt s.mem sq 57) < Spec.Ed448.L) 0 (t.gpr .r10) ∧
       pt (E t.mem base) 0 21 2 = Spec.Ed448.identity ∧ pt (E t.mem base) 8 9 10 = Spec.Ed448.basePoint ∧
       E t.mem base 10 = 1 ∧ E t.mem base 11 = Spec.Ed448.d := by
   rw [vstart_eq]
@@ -109,18 +107,19 @@ theorem vstart_ok {s : State} {base sq : Addr} (hs : Scr s base)
   have hsv := hsu.of_keeps kv (by decide)
   refine VG.Proof.X25519.Arm.WP.append (initSlots_ok hsv) fun w ⟨lw, ow, kw⟩ => ?_
   have hsw := hsv.of_keeps kw (by decide)
-  refine WP.mono (copyE hsw (initSlots_bounded lw) 21 1) fun t ⟨kt, bt, et⟩ => ?_
+  refine WP.mono (copyE3 hsw (initSlots_bounded lw) 21 1) fun t ⟨kt, k3, bt, et⟩ => ?_
   have ev : ∀ i : Index, i ≠ 21 → E t.mem base i = Proof.X448.toFe (initVal i.val) := fun i hi => by
     rw [et, opCopy, Function.update_of_ne hi, initSlots_E lw i]
   have e21 : E t.mem base 21 = Proof.X448.toFe (initVal 1) := by
     rw [et, opCopy, Function.update_self, initSlots_E lw 1]; rfl
-  refine ⟨⟨?_, ?_⟩, bt, ?_, ?_, ?_, ?_, ?_⟩
-  · refine (rest_keeps (hu.rest (ws := .r12 :: .r11 :: workRegs) (by decide))).trans
+  refine ⟨⟨?_, ?_⟩, ?_, bt, ?_, ?_, ?_, ?_, ?_⟩
+  · refine (rest_keeps (hu.rest (ws := .r10 :: .r11 :: workRegs) (by decide))).trans
       ((kv.mono ?_).trans ((kw.mono ?_).trans (kt.regs.mono ?_))) <;> decide
   · rw [← hu.mem]
     exact ((outA ov (by decide) (by decide)).trans (outC ow (by decide) (by decide))).trans kt.mem
+  · rw [k3.1 _ (by decide), kw.1 _ (by decide), kv.1 _ (by decide), hu.other _ (by decide)]
   · rw [hu.gpr] at bv
-    rw [kt.regs.1 .r12 (by decide), kw.1 .r12 (by decide), ← hu.mem]
+    rw [kt.regs.1 .r10 (by decide), kw.1 .r10 (by decide), ← hu.mem]
     exact bv
   · show (⟨E t.mem base 0, E t.mem base 21, E t.mem base 2⟩ : Spec.Ed448.Point) = _
     rw [ev 0 (by decide), e21, ev 2 (by decide), show ((0 : Index) : Nat) = 0 from rfl,
@@ -198,31 +197,31 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
   obtain ⟨K, hK⟩ : ∃ K, decodeLE (bytesAt s.mem ch 57) = K := ⟨_, rfl⟩
   unfold verifyEquation
   -- The entry.
-  refine WP.seq (WP.mono (ventry_ok hbase hw₀ h.f3) fun s1 ⟨hs1, r81, r101, r21, sv1, o1, lr1, k1⟩ => ?_)
+  refine WP.seq (WP.mono (ventry_ok hbase hw₀ h.f3) fun s1 ⟨hs1, r81, r121, r21, sv1, o1, lr1, k1⟩ => ?_)
   have rr1 : s1.rd ++ s1.wr = s.rd ++ s.wr := by rw [k1.2.1, k1.2.2]
   have O1 : Outside base 0 8192 s.mem s1.mem := o1.mono (by decide) (by decide)
   -- The bits of `S` and `k`.
   refine WP.seq (WP.mono (vbits_ok hs1 (sq := sig + BitVec.ofNat 64 57) (kq := ch)
-    (by rw [r101, hsig]) (by rw [r21, hch]) (by rw [r101]; exact h.f1) (by rw [r21]; exact h.f2)
+    (by rw [r121, hsig]) (by rw [r21, hch]) (by rw [r121]; exact h.f1) (by rw [r21]; exact h.f2)
     (by rw [rr1]; exact rS) (by rw [rr1]; exact rch) fS fch) fun s2 ⟨g2, rd2, wr2, o2, bits2⟩ => ?_)
   rw [far_bytes O1 fS, hS, far_bytes O1 fch, hK] at bits2
   have hs2 : Scr s2 base := hs1.of_keeps ⟨g2, rd2, wr2⟩ (by decide)
   have rr2 : s2.rd ++ s2.wr = s.rd ++ s.wr := by rw [rd2, wr2, rr1]
   have O2 : Outside base 0 8192 s.mem s2.mem := O1.trans (o2.mono (by decide) (by decide))
-  have r102 : s2.gpr .r10 = s.gpr .r1 := by rw [g2 _ (by decide), r101]
+  have r122 : s2.gpr .r12 = s.gpr .r1 := by rw [g2 _ (by decide), r121]
   have r82 : s2.gpr .r8 = s.gpr .r0 := by rw [g2 _ (by decide), r81]
   -- `BAD = 0`, the check of `S`, and the slots.
-  refine WP.seq (WP.mono (vstart_ok hs2 (sq := sig + BitVec.ofNat 64 57) (by rw [r102, hsig])
-    (by rw [r102]; exact h.f1) (by rw [rr2]; exact rS) fS) fun s3 ⟨k3, b3, c3, q3, p3, h103, h113⟩ => ?_)
+  refine WP.seq (WP.mono (vstart_ok hs2 (sq := sig + BitVec.ofNat 64 57) (by rw [r122, hsig])
+    (by rw [r122]; exact h.f1) (by rw [rr2]; exact rS) fS) fun s3 ⟨k3, r12s3, b3, c3, q3, p3, h103, h113⟩ => ?_)
   rw [far_bytes O2 fS, hS] at c3
   have hs3 := k3.scr hs2
   have rr3 : s3.rd ++ s3.wr = s.rd ++ s.wr := by rw [k3.regs.2.1, k3.regs.2.2, rr2]
   have O3 : Outside base 0 8192 s.mem s3.mem := O2.trans (k3.mem.whole (by decide) (by decide))
   have r83 : s3.gpr .r8 = s.gpr .r0 := by rw [k3.regs.1 _ (by decide), r82]
-  have r103 : s3.gpr .r10 = s.gpr .r1 := by rw [k3.regs.1 _ (by decide), r102]
+  have r123 : s3.gpr .r12 = s.gpr .r1 := by rw [r12s3, r122]
   -- `R` and `A`.
-  have inR : DecIn s3 base sig .r10 :=
-    ⟨by rw [r103, hsig], by rw [r103]; have := h.f1; omega, by rw [rr3]; exact rsg, fsg⟩
+  have inR : DecIn s3 base sig .r12 :=
+    ⟨by rw [r123, hsig], by rw [r123]; have := h.f1; omega, by rw [rr3]; exact rsg, fsg⟩
   have inA : DecIn s3 base pk .r8 := ⟨by rw [r83, hpk], by rw [r83]; exact h.f0, by rw [rr3]; exact rpk, fpk⟩
   refine WP.seq (WP.mono (vdecode_ok hR hs3 b3 inR inA h103 h113)
     fun s4 ⟨k4, f4, b4, c4, v4, w4, bx4, by4, e4⟩ => ?_)
@@ -272,8 +271,8 @@ theorem verifyEquation_main (hR : RecoverOk) (hE : VerifyEqOk) {s : State} (h : 
   have hs7 := k7.scr hs6
   -- `BAD`.
   have c4' : BadUpd ((Spec.Ed448.decodePoint (bytesAt s.mem sig 57)).isSome = true ∧
-      (Spec.Ed448.decodePoint (bytesAt s.mem pk 57)).isSome = true) (s3.gpr .r12) (s7.gpr .r12) := by
-    rw [k7.regs.1 .r12 (by decide), I6.regs.1 .r12 (by decide), k5.regs.1 .r12 (by decide)]; exact c4
+      (Spec.Ed448.decodePoint (bytesAt s.mem pk 57)).isSome = true) (s3.gpr .r10) (s7.gpr .r10) := by
+    rw [k7.regs.1 .r10 (by decide), I6.regs.1 .r10 (by decide), k5.regs.1 .r10 (by decide)]; exact c4
   have c6 := c3.trans c4'
   -- The comparison.
   have sv7 : Saved base s.gpr s7.mem :=

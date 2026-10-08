@@ -78,14 +78,14 @@ theorem signByte_ok {s : State} {base q : Addr} (hs : Scr s base) {p : Reg}
 
 /-- `decodeY p yo`. -/
 theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {p : Reg} (hp : p = .r8 ∨ p = .r10) (hq : State.addr (s.gpr p) = q) (hfit : (s.gpr p).toNat + 57 ≤ 2 ^ 32)
+    {p : Reg} (hp : p = .r8 ∨ p = .r12) (hq : State.addr (s.gpr p) = q) (hfit : (s.gpr p).toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (q + BitVec.ofNat 64 j)) (yo : Index) (hyo : yo ≠ 1) :
     WP isa (.block (decodeY p yo.val)) s fun t =>
       VKeep base s t ∧ BoundedEnv t.mem base ∧
       word t.mem base SIGN = BitVec.ofNat 32 ((s.mem (q + BitVec.ofNat 64 56)).toNat / 128) ∧
       BadUpd ((s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧ valN (decoded s.mem q) 28 < Spec.X448.P)
-        (s.gpr .r12) (t.gpr .r12) ∧
+        (s.gpr .r10) (t.gpr .r10) ∧
       E t.mem base yo = Proof.X448.toFe (valN (decoded s.mem q) 28) ∧
       (∀ i : Index, i ≠ 1 → i ≠ yo → E t.mem base i = E s.mem base i) := by
   have sy := slot_range yo
@@ -140,8 +140,8 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
     have syi := slot_sep hiy
     rw [tm, m5.limbs s1i (by omega) hj, m4.limbs (by omega) (by omega) hj, m3,
       o2.limbs (Or.inr (by simp only [SIGN]; omega)) (by omega) hj, m1.limbs (by omega) (by omega) hj]
-  have r12 : s5.gpr .r12 = s3.gpr .r12 := by rw [k5.1 _ (by decide), k4.1 _ (by decide)]
-  have r12' : s2.gpr .r12 = s.gpr .r12 := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
+  have r10 : s5.gpr .r10 = s3.gpr .r10 := by rw [k5.1 _ (by decide), k4.1 _ (by decide)]
+  have r10' : s2.gpr .r10 = s.gpr .r10 := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
   refine ⟨⟨?_, ?_⟩, fun i j hj => ?_, ?_, ?_, ?_, fun i h1 hy => ?_⟩
   · refine (((k1.mono ?_).trans ((k2.mono ?_).trans ((k3.mono ?_).trans ((k4.mono ?_).trans
       (k5.mono ?_))))).trans (tk.mono ?_)) <;> intro r hr <;> revert r <;> decide
@@ -157,9 +157,9 @@ theorem decodeY_ok {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEn
   · rw [tm, m5.word (Or.inl (by simp only [SIGN]; omega)) (by decide),
       m4.word (Or.inl (by simp only [SIGN]; omega)) (by decide), m3, m2]
     exact Mem.readW_writeW_self32 _ _ _
-  · rw [r12] at tb
+  · rw [r10] at tb
     have h := b3.trans tb
-    rw [r12'] at h
+    rw [r10'] at h
     refine h.congr (and_congr_right fun _ => ?_)
     rw [limbs_eq_iff b5 by5, fe5, fy5]
     exact Nat.mod_eq_iff_lt (NeZero.ne Spec.X448.P)

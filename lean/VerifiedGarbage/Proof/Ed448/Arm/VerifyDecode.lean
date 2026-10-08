@@ -77,14 +77,14 @@ theorem decodeLE_56 (m : Mem) (p : Addr) :
 /-! ## Decoding -/
 
 theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {p : Reg} (hp : p = .r8 ∨ p = .r10) (hq : State.addr (s.gpr p) = q) (hfit : (s.gpr p).toNat + 57 ≤ 2 ^ 32)
+    {p : Reg} (hp : p = .r8 ∨ p = .r12) (hq : State.addr (s.gpr p) = q) (hfit : (s.gpr p).toNat + 57 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (q + BitVec.ofNat 64 j))
     (xo yo : Index) (hxy : xo = 6 ∧ yo = 7 ∨ xo = 8 ∧ yo = 9)
     (h10 : E s.mem base 10 = 1) (h11 : E s.mem base 11 = Spec.Ed448.d) :
     WP isa (decode p xo.val yo.val) s fun t =>
       VKeep base s t ∧ BoundedEnv t.mem base ∧
-      BadUpd ((Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem q 57)).isSome) (s.gpr .r12) (t.gpr .r12) ∧
+      BadUpd ((Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem q 57)).isSome) (s.gpr .r10) (t.gpr .r10) ∧
       (∀ a, Spec.Ed448.decodePoint (Spec.Ed448.bytesAt s.mem q 57) = some a →
         E t.mem base xo = a.X ∧ E t.mem base yo = a.Y ∧ a.Z = 1) ∧
       (∀ i : Index, i ≠ xo → i ≠ yo → (i.val = 0 ∨ i.val = 2 ∨ (6 ≤ i.val ∧ i.val ≤ 11) ∨ i.val = 21) →
@@ -161,8 +161,8 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
     (valN (decoded s.mem q) 28) ((s.mem (q + BitVec.ofNat 64 56)).toNat)
     (by rw [bytesAt57_take, decodeLE_56]) (by rw [bytesAt57_getD]) Y u v tt x hY hu hv ht hx
   -- what is kept
-  have r12 : ∀ {a b : State}, Keep base a b → b.gpr .r12 = a.gpr .r12 := fun h => h.regs.1 _ (by decide)
-  have r12i : s3.gpr .r12 = s2.gpr .r12 := k3.regs.1 _ (by decide)
+  have r10 : ∀ {a b : State}, Keep base a b → b.gpr .r10 = a.gpr .r10 := fun h => h.regs.1 _ (by decide)
+  have r10i : s3.gpr .r10 = s2.gpr .r10 := k3.regs.1 _ (by decide)
   have kY : E t.mem base yo = Y := by
     rw [et yo hy1 (by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide) hyx,
       e6, negX_keep _ xo hxo yo (by rcases hxy with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> decide), e5 yo hy1, e4,
@@ -172,11 +172,11 @@ theorem decode_ok (hR : RecoverOk) {s : State} {base q : Addr} (hs : Scr s base)
   refine ⟨k1.trans ((Keep.toV k2).trans ((IKeep.toV k3).trans ((Keep.toV k4).trans
     ((CKeep.toV k5).trans ((Keep.toV k6).trans (CKeep.toV kt)))))), bt, ?_, fun a ha => ?_,
     fun i hix hiy hi => ?_⟩
-  · have c5' : BadUpd (v * (x * x) = u) (s1.gpr .r12) (s5.gpr .r12) := by
-      rw [← r12 k2, ← r12i, ← r12 k4]; exact c5
-    have ct' : BadUpd (¬(x = 0 ∧ (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 = 1)) (s5.gpr .r12)
-        (t.gpr .r12) := by
-      rw [← r12 k6]; exact ct
+  · have c5' : BadUpd (v * (x * x) = u) (s1.gpr .r10) (s5.gpr .r10) := by
+      rw [← r10 k2, ← r10i, ← r10 k4]; exact c5
+    have ct' : BadUpd (¬(x = 0 ∧ (s.mem (q + BitVec.ofNat 64 56)).toNat / 128 = 1)) (s5.gpr .r10)
+        (t.gpr .r10) := by
+      rw [← r10 k6]; exact ct
     refine ((c1.trans c5').trans ct').congr ?_
     rw [hD]
     by_cases hall : ((s.mem (q + BitVec.ofNat 64 56)).toNat % 128 = 0 ∧

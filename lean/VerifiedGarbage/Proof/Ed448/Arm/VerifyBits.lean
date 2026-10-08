@@ -97,14 +97,14 @@ theorem vbyteBits_ok {s : State} {base : Addr} (hs : Scr s base) {i : Nat} (hi :
     ⟨fun _ hj => by omega, Outside.refl _ _ _ _, Keeps.refl _ _⟩
 
 def vbitHead : List Instr :=
-  [.dp .add .r7 .r10 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
+  [.dp .add .r7 .r12 (.reg .r11), .ldrb .r3 .r7 57, .dp .add .r7 .r2 (.reg .r11), .ldrb .r9 .r7 0,
     .dp .add .r7 .r0 (.shifted .r11 .lsl 3)]
 
 def vbitRegs : List Reg := [.r3, .r1, .r4, .r9, .r11, .r7]
 
-theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq)
+theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq)
     (hkq : State.addr (s.gpr .r2) = kq)
-    (hfs : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
     (hb : s.gpr .r11 = BitVec.ofNat 32 i) (hsr : InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 i) 1)
     (hkr : InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 i) 1) :
     WP isa (.block vbitHead) s fun t =>
@@ -115,7 +115,7 @@ theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r10) + 
   unfold vbitHead
   refine wp_dp (op2_reg _ _) fun t1 v1 => ?_
   have ea1 : State.addr (t1.gpr .r7 + BitVec.ofNat 32 57) = sq + BitVec.ofNat 64 i := by
-    rw [v1.gpr]; change State.addr (s.gpr .r10 + s.gpr .r11 + BitVec.ofNat 32 57) = _
+    rw [v1.gpr]; change State.addr (s.gpr .r12 + s.gpr .r11 + BitVec.ofNat 32 57) = _
     rw [hb, Offset.add_add, addr_add (by omega), ← hsq, Offset.add_add, Nat.add_comm]
   refine wp_ldrb (by decide) ea1 (by rw [v1.rd, v1.wr]; exact hsr) fun t2 v2 => ?_
   refine wp_dp (op2_reg _ _) fun t3 v3 => ?_
@@ -141,8 +141,8 @@ theorem vbitHead_ok {s : State} {sq kq : Addr} (hsq : State.addr (s.gpr .r10) + 
       ((v4.rest (by decide)).trans (v5.rest (by decide))))))
 
 theorem vbitsBody_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
-    (hsq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
-    (hfs : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
+    (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32) {i : Nat} (hi : i < 57)
     (hb : s.gpr .r11 = BitVec.ofNat 32 i) (hsr : InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 i) 1)
     (hkr : InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 i) 1) :
     WP isa (.block vbitsBody) s fun t =>
@@ -165,9 +165,9 @@ theorem vbitsBody_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
 /-- The bits loop's invariant, after `i` bytes. -/
 structure VBitsInv (base sq kq : Addr) (s₀ s : State) (i : Nat) : Prop where
   scr : Scr s base
-  esq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq
+  esq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq
   ekq : State.addr (s.gpr .r2) = kq
-  fs : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32
+  fs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32
   fk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32
   r11 : s.gpr .r11 = BitVec.ofNat 32 i
   gpr : ∀ r, r ∉ vbitRegs → s.gpr r = s₀.gpr r
@@ -220,8 +220,8 @@ theorem vbitsLoop_ok {s₀ : State} {base sq kq : Addr}
 
 /-- `vbits`: byte `t` of `VBITS` is bit `t` of `S` plus twice bit `t` of `k`, for `t < 456`. -/
 theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
-    (hsq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
-    (hfs : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32)
+    (hsq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = sq) (hkq : State.addr (s.gpr .r2) = kq)
+    (hfs : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32) (hfk : (s.gpr .r2).toNat + 57 ≤ 2 ^ 32)
     (hsr : ∀ q < 57, InRegions (s.rd ++ s.wr) (sq + BitVec.ofNat 64 q) 1)
     (hkr : ∀ q < 57, InRegions (s.rd ++ s.wr) (kq + BitVec.ofNat 64 q) 1)
     (hsd : ∀ q < 57, 8192 ≤ ofs base (sq + BitVec.ofNat 64 q))
@@ -236,8 +236,8 @@ theorem vbits_ok {s : State} {base sq kq : Addr} (hs : Scr s base)
       (fun s' => VBitsInv base sq kq s s' 0) by
     refine wp_mov (op2_imm (by decide)) fun t ht => WP.block_nil ?_
     have keep : Keeps vbitRegs s t := rest_keeps (ht.rest (by decide))
-    exact ⟨hs.of_keeps keep (by decide), by rw [ht.other .r10 (by decide)]; exact hsq,
-      by rw [ht.other .r2 (by decide)]; exact hkq, by rw [ht.other .r10 (by decide)]; exact hfs,
+    exact ⟨hs.of_keeps keep (by decide), by rw [ht.other .r12 (by decide)]; exact hsq,
+      by rw [ht.other .r2 (by decide)]; exact hkq, by rw [ht.other .r12 (by decide)]; exact hfs,
       by rw [ht.other .r2 (by decide)]; exact hfk, ht.gpr, keep.1, keep.2.1, keep.2.2,
       ht.mem ▸ Outside.refl _ _ _ _, fun _ hi => by omega⟩) fun s₁ h₁ => ?_)
   refine WP.mono (vbitsLoop_ok hsr hkr hsd hkd 0 s₁ (by omega) h₁) fun s₂ h₂ => ?_

@@ -8,9 +8,12 @@ multiplication row propagates carries so that every multiply and addition
 fits in a word. Reduction uses `2^448 = 2^224 + 1` modulo the field prime.
 Only baseline instructions are used, including the low-word `mul`.
 
-`r0` holds the working space, `r12` the output pointer, `r11` the ladder
-or squaring counter, and `r6` the limb mask. Registers `r4` through `r11`
-are saved in the working space and restored before returning.
+`r0` holds the working space, `r8` the output pointer, `r10` the link
+register, `r11` the ladder or squaring counter, and `r6` the limb mask.
+Registers `r4` through `r11` are saved in the working space and restored
+before returning. Multiplications, additions, subtractions and the
+multiplication by `a24` are calls of the functions `vg_gf448_r16_*` below,
+which keep `r0`, `r8`, `r10` and `r11`.
 -/
 
 namespace VG.Impl.X448.Arm
@@ -54,22 +57,31 @@ def copy (o a : Nat) : List Instr :=
   (List.range 28).flatMap fun i => [ld .r3 (a + 4 * i), st .r3 (o + 4 * i)]
 
 /-- Carry the sum in `r3` and the incoming carry in `r5`. -/
-def carryStep (rb : Reg) (o : Nat) : List Instr :=
-  [.dp .add .r3 .r3 (.reg .r5), .dp .and .r4 .r3 (.reg .r6), .str .r4 rb o,
+def carryStepT (t rb : Reg) (o : Nat) : List Instr :=
+  [.dp .add .r3 .r3 (.reg .r5), .dp .and t .r3 (.reg .r6), .str t rb o,
     .mov .r5 (.shifted .r3 .lsr 16)]
 
-/-- Carry twenty-eight sums supplied by `src`. -/
-def carryPass (rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr :=
-  (List.range 28).flatMap fun i => src i ++ carryStep rb (o + 4 * i)
+abbrev carryStep (rb : Reg) (o : Nat) : List Instr := carryStepT .r4 rb o
 
-def pass (o a : Nat) : List Instr :=
-  [.mov .r5 (.imm 0)] ++ carryPass .r0 o (fun i => [ld .r3 (a + 4 * i)])
+/-- Carry twenty-eight sums supplied by `src`, through `t`. -/
+def carryPassT (t rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr :=
+  (List.range 28).flatMap fun i => src i ++ carryStepT t rb (o + 4 * i)
+
+/-- Carry twenty-eight sums supplied by `src`. -/
+abbrev carryPass (rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr := carryPassT .r4 rb o src
+
+/-- Carry the twenty-eight limbs at `a` into those at `o` from `rb`. -/
+def passR (rb : Reg) (o a : Nat) : List Instr :=
+  [.mov .r5 (.imm 0)] ++ carryPass rb o (fun i => [ld .r3 (a + 4 * i)])
+
+def pass (o a : Nat) : List Instr := passR .r0 o a
 
 /-- Fold the carry into limbs 0 and 14. -/
 def fold : List Instr :=
   [0, 14].flatMap fun i => [ld .r3 (TMP + 4 * i), .dp .add .r3 .r3 (.reg .r5), st .r3 (TMP + 4 * i)]
 
-def normalize (o : Nat) : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ pass o TMP
+/-- The coefficients at `TMP` normalized into the result, at `r9`. -/
+def normalize : List Instr := pass TMP TMP ++ fold ++ pass TMP TMP ++ fold ++ passR .r9 0 TMP
 
 /-- One word of a multiplication row. -/
 def rowStep (b j : Nat) : List Instr :=
@@ -79,6 +91,25 @@ def rowStep (b j : Nat) : List Instr :=
 def row (a b : Nat) : List Instr :=
   [.ldr .r1 .r7 a, .mov .r5 (.imm 0)] ++ (List.range 28).flatMap (rowStep b) ++
   [.str .r5 .r7 (ACC + 112), .dp .add .r7 .r7 (.imm 4), .subs .r9 .r9 (.imm 1)]
+
+/-- One word of a multiplication row of the field functions, for the second
+operand at `r12`, in the row `q` (0 or 1) words above `r7`; the carry goes
+through `r2`, so that `r4` can count. -/
+def rowStepF (q j : Nat) : List Instr :=
+  [.ldr .r2 .r12 (4 * j), .mul .r2 .r1 .r2, .ldr .r3 .r7 (ACC + 4 * q + 4 * j),
+    .dp .add .r3 .r3 (.reg .r2)] ++ carryStepT .r2 .r7 (ACC + 4 * q + 4 * j)
+
+/-- The row of the limb of the first operand `q` words above `lr`, into the
+accumulator `q` words above `r7`. -/
+def rowHalfF (q : Nat) : List Instr :=
+  [.ldr .r1 .lr (4 * q), .mov .r5 (.imm 0)] ++ (List.range 28).flatMap (rowStepF q) ++
+    [.str .r5 .r7 (ACC + 4 * q + 112)]
+
+/-- Two rows; then `r7` and `lr` move up two words, and `r4` counts the pairs
+of rows down. -/
+def rowF : List Instr :=
+  rowHalfF 0 ++ rowHalfF 1 ++
+    [.dp .add .r7 .r7 (.imm 8), .dp .add .lr .lr (.imm 8), .subs .r4 .r4 (.imm 1)]
 
 def reduceCol (k : Nat) : List Instr :=
   [ld .r3 (ACC + 4 * k), ld .r2 (ACC + 4 * (k + 28)), .dp .add .r3 .r3 (.reg .r2)] ++
@@ -92,28 +123,77 @@ def zeroAcc : List Instr :=
 
 def mulPre : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r9 (.imm 28)]
 
-def mul (o a b : Nat) : Prog isa :=
-  .seq (.block mulPre) <|
-  .seq (.loop (.block (row a b)) .ne) <|
-    .block ((List.range 28).flatMap reduceCol ++ normalize o)
+def mulPreF : List Instr := zeroAcc ++ [.mov .r7 (.reg .r0), .mov .r4 (.imm 14)]
+
+/-- `[r9] = [lr] [r12]` (`lr` moves past the first operand). -/
+def mul : Prog isa :=
+  .seq (.block mulPreF) <|
+  .seq (.loop (.block rowF) .ne) <|
+    .block ((List.range 28).flatMap reduceCol ++ normalize)
 
 /-- The low word of limb `i` of twice the prime; its high bit is added separately. -/
 def subK (i : Nat) : BitVec 16 := if i = 14 then 0xfffc else 0xfffe
 
-def add (o a b : Nat) : List Instr :=
+/-- `[r9] = [lr] + [r12]`. -/
+def add : List Instr :=
   (List.range 28).flatMap (fun i =>
-    [ld .r3 (a + 4 * i), ld .r2 (b + 4 * i), .dp .add .r3 .r3 (.reg .r2),
-      st .r3 (TMP + 4 * i)]) ++ normalize o
+    [.ldr .r3 .lr (4 * i), .ldr .r2 .r12 (4 * i), .dp .add .r3 .r3 (.reg .r2),
+      st .r3 (TMP + 4 * i)]) ++ normalize
 
-def sub (o a b : Nat) : List Instr :=
+/-- `[r9] = [lr] - [r12]`, as `[lr] + 2p - [r12]`. -/
+def sub : List Instr :=
   (List.range 28).flatMap (fun i =>
-    [ld .r3 (a + 4 * i), .movw .r2 (subK i), .dp .add .r2 .r2 (.imm 65536),
-      .dp .add .r3 .r3 (.reg .r2), ld .r2 (b + 4 * i), .dp .sub .r3 .r3 (.reg .r2),
-      st .r3 (TMP + 4 * i)]) ++ normalize o
+    [.ldr .r3 .lr (4 * i), .movw .r2 (subK i), .dp .add .r2 .r2 (.imm 65536),
+      .dp .add .r3 .r3 (.reg .r2), .ldr .r2 .r12 (4 * i), .dp .sub .r3 .r3 (.reg .r2),
+      st .r3 (TMP + 4 * i)]) ++ normalize
 
-def mulSmall (o a : Nat) : List Instr :=
+/-- `[r9] = 39081 [lr]`. -/
+def mulSmall : List Instr :=
   [.movw .r5 39081] ++ (List.range 28).flatMap (fun i =>
-    [ld .r3 (a + 4 * i), .mul .r3 .r3 .r5, st .r3 (TMP + 4 * i)]) ++ normalize o
+    [.ldr .r3 .lr (4 * i), .mul .r3 .r3 .r5, st .r3 (TMP + 4 * i)]) ++ normalize
+
+/-! ## The field functions
+
+`vg_gf448_r16_{mul,add,sub,mul_a24}(ws = r0, o = r1, a = r2, b = r3)`
+(`Spec/X448/Field16.lean`): the registers they change and must restore are
+saved at `SAVE` (in their own working space, from `ACC`), `r6` takes the
+limb mask, and `r9`, `lr` and `r12` point to `[o]`, `[a]` and `[b]`. They
+never write `r0`, `r8`, `r10` or `r11`, so that a caller keeps its working
+space and the values a constant-time analysis must know to be public there
+across a call; a call changes `r1`–`r3`, `r12` and `lr`, and the registers
+it restores. -/
+
+/-- Where the functions save the registers they restore. -/
+def SAVE : Nat := 3968
+
+def fnSaved : List Reg := [.r4, .r5, .r6, .r7, .r9, .lr]
+
+def saveFn : List Instr := (List.range 6).map fun i => st (fnSaved[i]!) (SAVE + 4 * i)
+
+def restoreFn : List Instr := (List.range 6).map fun i => ld (fnSaved[i]!) (SAVE + 4 * i)
+
+/-- The registers saved, the mask, and the pointers to `[o]`, `[a]` and (if
+`hasB`) `[b]`. -/
+def entryFn (hasB : Bool) : List Instr :=
+  saveFn ++ [.movw .r6 65535, .dp .add .r9 .r0 (.reg .r1), .dp .add .lr .r0 (.reg .r2)] ++
+    (if hasB then [.dp .add .r12 .r0 (.reg .r3)] else [])
+
+def fn (hasB : Bool) (op : Prog isa) : Prog isa :=
+  .seq (.block (entryFn hasB)) <| .seq op (.block restoreFn)
+
+def mulFn : Prog isa := fn true mul
+def addFn : Prog isa := fn true (.block add)
+def subFn : Prog isa := fn true (.block sub)
+def mulA24Fn : Prog isa := fn false (.block mulSmall)
+
+/-- A call of the function `f`, whose code is `body`, with the offsets as arguments. -/
+def callFn (f : String) (body : Prog isa) (o a b : Nat) : Prog isa :=
+  .seq (.block [.movw .r1 (BitVec.ofNat 16 o), .movw .r2 (BitVec.ofNat 16 a),
+    .movw .r3 (BitVec.ofNat 16 b)]) (.call f body)
+
+def mulA24Call (o a : Nat) : Prog isa :=
+  .seq (.block [.movw .r1 (BitVec.ofNat 16 o), .movw .r2 (BitVec.ofNat 16 a)])
+    (.call "vg_gf448_r16_mul_a24" mulA24Fn)
 
 /-- Swap under the mask in `r5`. -/
 def cswap (x y : Nat) : List Instr :=
@@ -131,10 +211,10 @@ inductive Op
   deriving DecidableEq, Repr
 
 def Op.code : Op → Prog isa
-  | .mul o a b => Arm.mul o a b
-  | .mulSmall o a => .block (Arm.mulSmall o a)
-  | .add o a b => .block (Arm.add o a b)
-  | .sub o a b => .block (Arm.sub o a b)
+  | .mul o a b => callFn "vg_gf448_r16_mul" mulFn o a b
+  | .mulSmall o a => mulA24Call o a
+  | .add o a b => callFn "vg_gf448_r16_add" addFn o a b
+  | .sub o a b => callFn "vg_gf448_r16_sub" subFn o a b
   | .copy o a => .block (Arm.copy o a)
 
 def ops : List Op → Prog isa
@@ -164,7 +244,7 @@ def lastSwap : List Instr :=
 /-- Square `n` times in place, for positive `n`. -/
 def sqn (o n : Nat) : Prog isa :=
   .seq (.block [.movw .r11 (BitVec.ofNat 16 n)])
-    (.loop (.seq (mul o o o) (.block [.subs .r11 .r11 (.imm 1)])) .ne)
+    (.loop (.seq (Op.code (.mul o o o)) (.block [.subs .r11 .r11 (.imm 1)])) .ne)
 
 def invert : Prog isa :=
   .seq (ops [.copy T0 Z2]) <| .seq (sqn T0 1) <| .seq (ops [.mul T0 T0 Z2, .copy T1 T0]) <|
@@ -213,7 +293,7 @@ def saved : List Reg := [.r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11]
 
 def setup : List Instr :=
   (List.range 8).map (fun i => .str (saved[i]!) .r3 (4 * i)) ++
-  [.mov .r12 (.reg .r0), .mov .r0 (.reg .r3), .movw .r6 65535] ++
+  [.mov .r8 (.reg .r0), .mov .r10 (.reg .lr), .mov .r0 (.reg .r3), .movw .r6 65535] ++
   (List.range 28).flatMap decodeLimb ++ initSlots
 
 /-- Add `1 + 2^224`, then select the carried result when the carry is one. -/
@@ -226,12 +306,12 @@ def freeze : List Instr :=
       .dp .and .r2 .r2 (.reg .r4), .dp .eor .r3 .r3 (.reg .r2), st .r3 (X2 + 4 * i)]
 
 def packLimb (i : Nat) : List Instr :=
-  [ld .r3 (X2 + 4 * i), .strb .r3 .r12 (2 * i), .mov .r3 (.shifted .r3 .lsr 8),
-    .strb .r3 .r12 (2 * i + 1)]
+  [ld .r3 (X2 + 4 * i), .strb .r3 .r8 (2 * i), .mov .r3 (.shifted .r3 .lsr 8),
+    .strb .r3 .r8 (2 * i + 1)]
 
 def finish : Prog isa :=
-  .seq (mul X2 X2 T7) (.block (freeze ++ (List.range 28).flatMap packLimb ++
-    (List.range 8).map fun i => ld (saved[i]!) (4 * i)))
+  .seq (Op.code (.mul X2 X2 T7)) (.block (freeze ++ (List.range 28).flatMap packLimb ++
+    .mov .lr (.reg .r10) :: (List.range 8).map fun i => ld (saved[i]!) (4 * i)))
 
 def x448 : Prog isa :=
   .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert finish

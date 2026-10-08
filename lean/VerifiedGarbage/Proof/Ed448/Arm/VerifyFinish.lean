@@ -19,10 +19,10 @@ open VG VG.Arm VG.Impl.Ed448.Arm VG.Proof.X448.Arm
 open VG.Proof.Ed448 (double)
 open VG.Impl.X448.Arm (slot ACC saved ld ops Op)
 
-/-- `r1 = (r12 == 0)`. -/
-theorem isZeroR1_ok {s : State} (h12 : (s.gpr .r12).toNat < 65536) :
-    WP isa (.block [.dp .sub .r1 .r12 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)]) s fun t =>
-      t.gpr .r1 = (if s.gpr .r12 = 0 then 1 else 0) ∧ t.mem = s.mem ∧ Keeps [.r1] s t := by
+/-- `r1 = (r10 == 0)`. -/
+theorem isZeroR1_ok {s : State} (h12 : (s.gpr .r10).toNat < 65536) :
+    WP isa (.block [.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)]) s fun t =>
+      t.gpr .r1 = (if s.gpr .r10 = 0 then 1 else 0) ∧ t.mem = s.mem ∧ Keeps [.r1] s t := by
   refine VG.Proof.X25519.Arm.wp_dp (VG.Proof.X25519.Arm.op2_imm (by decide)) fun u hu => ?_
   refine VG.Proof.X25519.Arm.wp_mov (VG.Proof.X25519.Arm.op2_lsr (by decide)) fun t ht =>
     WP.block_nil ⟨?_, by rw [ht.mem, hu.mem], rest_keeps ((hu.rest (by decide)).trans (ht.rest (by decide)))⟩
@@ -112,19 +112,19 @@ theorem vdouble_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
       by rw [ru, rt]; rfl⟩
 
 theorem vtail_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r12).toNat < 65536) :
+    {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r10).toNat < 65536) :
     WP isa (.block (eqSlots (slot 12) (slot 13) ++
-      ([.dp .sub .r1 .r12 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] : List Instr) ++
+      ([.dp .sub .r1 .r10 (.imm 1), .mov .r1 (.shifted .r1 .lsr 31)] : List Instr) ++
       (List.range 8).map (fun i => ld (saved[i]!) (4 * i)) ++
       ([ld .lr LR, .mov .r0 (.reg .r1)] : List Instr))) s fun t =>
-      t.gpr .r0 = (if s.gpr .r12 = 0 ∧ E s.mem base 12 = E s.mem base 13 then 1 else 0) ∧
+      t.gpr .r0 = (if s.gpr .r10 = 0 ∧ E s.mem base 12 = E s.mem base 13 then 1 else 0) ∧
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = word s.mem base LR ∧
-      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
+      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
   simp only [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (eqSlots_ok hs hb 12 13 (by decide) (by decide) (by decide))
     fun s1 ⟨k1, _, _, ⟨c, hc, hcz, he⟩⟩ => ?_
   have hs1 := k1.scr hs
-  have h12' : (s1.gpr .r12).toNat < 65536 := by
+  have h12' : (s1.gpr .r10).toNat < 65536 := by
     rw [he, BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 16) h12 hc
   refine VG.Proof.X25519.Arm.WP.append (isZeroR1_ok h12') fun s2 ⟨r2, m2, k2⟩ => ?_
   have hs2 := hs1.of_keeps k2 (by decide)
@@ -143,23 +143,23 @@ theorem vtail_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.
   · rw [ht.other _ (by decide), h4.gpr, m3, m2]
     exact k1.mem.word (by decide) (by decide) (by decide)
   · intro r hr
-    have a0 : ∀ x ∈ [Reg.lr], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a1 : ∀ x ∈ [Reg.r0], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a2 : ∀ x ∈ saved, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a3 : ∀ x ∈ [Reg.r1], x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a4 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs,
-        x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a0 : ∀ x ∈ [Reg.lr], x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
+    have a1 : ∀ x ∈ [Reg.r0], x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
+    have a2 : ∀ x ∈ saved, x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
+    have a3 : ∀ x ∈ [Reg.r1], x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
+    have a4 : ∀ x ∈ Reg.r10 :: .r11 :: workRegs,
+        x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
     rw [ht.other r (fun h => hr (a1 r (h ▸ List.mem_singleton_self _))),
       h4.other r (fun h => hr (a0 r (h ▸ List.mem_singleton_self _))), k3.1 r (fun h => hr (a2 r h)),
       k2.1 r (fun h => hr (a3 r h)), k1.regs.1 r (fun h => hr (a4 r h))]
 
 theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv s.mem base)
-    {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r12).toNat < 65536) :
+    {g : Reg → BitVec 32} (hsv : Saved base g s.mem) (h12 : (s.gpr .r10).toNat < 65536) :
     WP isa vfinish s fun t =>
-      t.gpr .r0 = (if s.gpr .r12 = 0 ∧ Spec.Ed448.pointEqual (double (double (pt (E s.mem base) 0 21 2)))
+      t.gpr .r0 = (if s.gpr .r10 = 0 ∧ Spec.Ed448.pointEqual (double (double (pt (E s.mem base) 0 21 2)))
         (double (double (pt (E s.mem base) 8 9 10))) = true then 1 else 0) ∧
       (∀ i < 8, t.gpr (saved[i]!) = g (saved[i]!)) ∧ t.gpr .lr = word s.mem base LR ∧
-      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
+      (∀ r, r ∉ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved → t.gpr r = s.gpr r) := by
   unfold vfinish
   refine WP.seq (WP.mono (vdouble_ok hs hb) fun sd ⟨kd, od, bd, qd, rd⟩ => ?_)
   have hsd := hs.of_keeps kd (by decide)
@@ -178,13 +178,13 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
     (((hsv.outside2 od (by decide) (by decide)).outside2 k1.mem (by decide)
       (by decide)).outside2 k2.mem (by decide) (by decide)).outside2 k3.mem (by decide) (by decide)
   obtain ⟨c, hc, hcz, he⟩ := c2
-  have r12 : s3.gpr .r12 = s1.gpr .r12 ||| c := by
+  have r10 : s3.gpr .r10 = s1.gpr .r10 ||| c := by
     rw [k3.regs.1 _ (by decide)]; exact he
-  have r12' : s1.gpr .r12 = s.gpr .r12 := by
+  have r10' : s1.gpr .r10 = s.gpr .r10 := by
     rw [k1.regs.1 _ (by decide), kd.1 _ (by decide)]
-  rw [r12'] at r12
-  have h12' : (s3.gpr .r12).toNat < 65536 := by
-    rw [r12, BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 16) h12 hc
+  rw [r10'] at r10
+  have h12' : (s3.gpr .r10).toNat < 65536 := by
+    rw [r10, BitVec.toNat_or]; exact Nat.or_lt_two_pow (n := 16) h12 hc
   refine WP.mono (vtail_ok hs3 b3 sv3 h12') fun t ⟨rt, st, lt, gt⟩ => ⟨?_, st, ?_, fun r hr => ?_⟩
   · rw [rt]
     refine if_congr ?_ rfl rfl
@@ -199,19 +199,19 @@ theorem vfinish_ok {s : State} {base : Addr} (hs : Scr s base) (hb : BoundedEnv 
         e2 9 (by decide), e2 2 (by decide), e1]; rfl
     have y12 : E s1.mem base 12 = E sd.mem base 0 * E sd.mem base 10 := by rw [e1]; rfl
     have y13 : E s1.mem base 13 = E sd.mem base 8 * E sd.mem base 2 := by rw [e1]; rfl
-    rw [r12]
+    rw [r10]
     refine (and_congr_left fun _ => BitVec.or_eq_zero_iff).trans ?_
-    change (s.gpr .r12 = 0 ∧ c = 0) ∧ E s3.mem base 12 = E s3.mem base 13 ↔ _
+    change (s.gpr .r10 = 0 ∧ c = 0) ∧ E s3.mem base 12 = E s3.mem base 13 ↔ _
     rw [hcz, x12, x13, y12, y13, ← q4, ← r4]
     simp only [Spec.Ed448.pointEqual, pt, Bool.and_eq_true, beq_iff_eq, and_assoc]
   · rw [lt, (Outside2.widen k3.mem).word (by decide) (by decide) (by decide),
       k2.mem.word (by decide) (by decide) (by decide), (Outside2.widen k1.mem).word (by decide) (by decide)
         (by decide), od.word (by decide) (by decide) (by decide)]
-  · have a1 : ∀ x ∈ workRegs, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
-    have a3 : ∀ x ∈ Reg.r11 :: workRegs, x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by
+  · have a1 : ∀ x ∈ workRegs, x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
+    have a3 : ∀ x ∈ Reg.r11 :: workRegs, x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by
       decide
-    have a2 : ∀ x ∈ Reg.r12 :: .r11 :: workRegs,
-        x ∈ .lr :: .r0 :: .r1 :: .r12 :: .r11 :: workRegs ++ saved := by decide
+    have a2 : ∀ x ∈ Reg.r10 :: .r11 :: workRegs,
+        x ∈ .lr :: .r0 :: .r1 :: .r10 :: .r11 :: workRegs ++ saved := by decide
     rw [gt r hr, k3.regs.1 r (fun h => hr (a1 r h)), k2.regs.1 r (fun h => hr (a2 r h)),
       k1.regs.1 r (fun h => hr (a1 r h)), kd.1 r (fun h => hr (a3 r h))]
 

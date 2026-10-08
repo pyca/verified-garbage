@@ -57,7 +57,7 @@ theorem byteLimb_ok {s : State} {p : Reg} {src : Nat} {q : Addr}
   · exact rest_keeps ((h1.rest (by decide)).trans ((h2.rest (by decide)).trans (h3.rest (by decide))))
 
 theorem sLimb_ok {s : State} {base q : Addr} (hs : Scr s base)
-    (hq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32)
+    (hq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32)
     {i : Nat} (hi : i < 28) (hr : ∀ j < 56, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1) :
     WP isa (.block (sLimb i)) s fun t =>
       t.mem = s.mem.writeW (off base (TMP + 4 * i)) (BitVec.ofNat 32 (decoded s.mem q i + kLimb i)) ∧
@@ -84,7 +84,7 @@ theorem sLimb_ok {s : State} {base q : Addr} (hs : Scr s base)
       ((hu.rest (by decide)).trans ((hv.rest (by decide)).trans (hw.rest _))))
 
 theorem sLimbs_ok {s : State} {base q : Addr} (hs : Scr s base)
-    (hq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32)
+    (hq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32)
     (hr : ∀ j < 56, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 56, 8192 ≤ ofs base (q + BitVec.ofNat 64 j)) :
     WP isa (.block ((List.range 28).flatMap sLimb)) s fun t =>
@@ -118,12 +118,12 @@ theorem valN_kLimb : valN kLimb 28 = 2 ^ 448 - Spec.Ed448.L := by decide +kernel
 theorem radix_28 : radix ^ 28 = 2 ^ 448 := by decide +kernel
 
 theorem sCheck_ok {s : State} {base q : Addr} (hs : Scr s base)
-    (hq : State.addr (s.gpr .r10) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r10).toNat + 114 ≤ 2 ^ 32)
+    (hq : State.addr (s.gpr .r12) + BitVec.ofNat 64 57 = q) (hfit : (s.gpr .r12).toNat + 114 ≤ 2 ^ 32)
     (hr : ∀ j < 57, InRegions (s.rd ++ s.wr) (q + BitVec.ofNat 64 j) 1)
     (hd : ∀ j < 57, 8192 ≤ ofs base (q + BitVec.ofNat 64 j)) :
     WP isa (.block sCheck) s fun t =>
-      BadUpd (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem q 57) < Spec.Ed448.L) (s.gpr .r12) (t.gpr .r12) ∧
-        Outside base TMP 112 s.mem t.mem ∧ Keeps [.r3, .r4, .r2, .r5, .r12] s t := by
+      BadUpd (Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem q 57) < Spec.Ed448.L) (s.gpr .r10) (t.gpr .r10) ∧
+        Outside base TMP 112 s.mem t.mem ∧ Keeps [.r3, .r4, .r2, .r5, .r10] s t := by
   unfold sCheck
   simp only [List.append_assoc]
   refine VG.Proof.X25519.Arm.WP.append (sLimbs_ok hs hq hfit (fun j hj => hr j (by omega))
@@ -134,12 +134,12 @@ theorem sCheck_ok {s : State} {base q : Addr} (hs : Scr s base)
   refine VG.Proof.X25519.Arm.WP.append (pass_ok ht (o := TMP) (a := TMP) (by decide) (by decide)
     (Or.inl rfl) tf hf) fun u ⟨_, uc, um, uk⟩ => ?_
   have hu := ht.of_keeps uk (by decide)
-  have r10 : u.gpr .r10 = s.gpr .r10 := by rw [uk.1 _ (by decide), tk.1 _ (by decide)]
+  have r12 : u.gpr .r12 = s.gpr .r12 := by rw [uk.1 _ (by decide), tk.1 _ (by decide)]
   have b56 : u.mem (q + BitVec.ofNat 64 56) = s.mem (q + BitVec.ofNat 64 56) := by
     have := hd 56 (by decide)
     rw [um _ (Or.inr (by simp only [TMP]; omega)), tm _ (Or.inr (by simp only [TMP]; omega))]
   refine wp_ldrb (a := q + BitVec.ofNat 64 56) (by decide)
-    (by rw [r10, addr_add (by omega), ← hq, Offset.add_add])
+    (by rw [r12, addr_add (by omega), ← hq, Offset.add_add])
     (by rw [uk.2.1, uk.2.2, tk.2.1, tk.2.2]; exact hr 56 (by decide)) fun v hv => ?_
   refine wp_dp (op2_reg _ _) fun w hw => ?_
   -- the carry and the check
@@ -186,13 +186,13 @@ theorem sCheck_ok {s : State} {base q : Addr} (hs : Scr s base)
       refine ⟨BitVec.eq_of_toNat_eq ?_, ?_⟩
       · rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by omega)]; exact h2
       · rw [h1]
-  · have r12w : w.gpr .r12 = s.gpr .r12 := by
-      rw [hw.other .r12 (by decide), hv.other .r12 (by decide), uk.1 .r12 (by decide),
-        tk.1 .r12 (by decide)]
-    rw [r12w] at xb
+  · have r10w : w.gpr .r10 = s.gpr .r10 := by
+      rw [hw.other .r10 (by decide), hv.other .r10 (by decide), uk.1 .r10 (by decide),
+        tk.1 .r10 (by decide)]
+    rw [r10w] at xb
     exact xb
   · rw [xm, hw.mem, hv.mem]; exact tm.trans um
-  · refine (tk.mono ?_).trans ((uk.mono ?_).trans ((rest_keeps ((hv.rest (ws := [.r3, .r4, .r2, .r5, .r12])
+  · refine (tk.mono ?_).trans ((uk.mono ?_).trans ((rest_keeps ((hv.rest (ws := [.r3, .r4, .r2, .r5, .r10])
       (by decide)).trans (hw.rest (by decide)))).trans (xk.mono ?_))) <;> decide
 
 end VG.Proof.Ed448.Arm

@@ -63,6 +63,17 @@ theorem Scr.read {s : State} {base : Addr} (hs : Scr s base) {d n : Nat} (hd : d
 theorem Scr.write {s : State} {base : Addr} (hs : Scr s base) {d n : Nat} (hd : d + n ≤ 8192) :
     InRegions s.wr (off base d) n := ⟨_, hs.wr, contains_sc hd⟩
 
+/-- `p` points to byte `o` of the working space. -/
+abbrev Ptr (s : State) (p : Reg) (o : Nat) : Prop := s.gpr p = s.gpr .r0 + BitVec.ofNat 32 o
+
+theorem Ptr.of_keeps {rs : List Reg} {s t : State} {p : Reg} {o : Nat} (h : Ptr s p o)
+    (k : Keeps rs s t) (hp : p ∉ rs) (h0 : .r0 ∉ rs) : Ptr t p o := by
+  rw [Ptr, k.1 _ hp, k.1 _ h0]; exact h
+
+theorem Scr.eaP {s : State} {base : Addr} (hs : Scr s base) {p : Reg} {o d : Nat} (hp : Ptr s p o)
+    (hd : o + d < 8192) : State.addr (s.gpr p + BitVec.ofNat 32 d) = off base (o + d) := by
+  rw [hp, BitVec.add_assoc, ← BitVec.ofNat_add]; exact hs.ea hd
+
 abbrev ofs (base x : Addr) : Nat := (x - base).toNat
 
 def Outside (base : Addr) (o n : Nat) (m m' : Mem) : Prop :=
@@ -145,6 +156,27 @@ theorem FieldMem.limbs {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o
 theorem FieldMem.fe {base : Addr} {o : Nat} {m m' : Mem} (h : FieldMem base o m m') {d : Nat}
     (hd : d + 112 ≤ o ∨ o + 112 ≤ d) (hw : d + 112 ≤ ACC) : fe m' base d = fe m base d :=
   valN_congr fun _ hi => h.limbs hd hw hi
+
+/-- What an operation of the field functions writes: its result and its
+temporary coefficients, below the registers the functions save (`SAVE`). -/
+def OpMem (base : Addr) (o : Nat) (m m' : Mem) : Prop :=
+  ∀ x, (ofs base x < o ∨ o + 112 ≤ ofs base x) →
+    (ofs base x < ACC ∨ SAVE ≤ ofs base x) → m' x = m x
+
+theorem OpMem.trans {base : Addr} {o : Nat} {m₁ m₂ m₃ : Mem} (h₁ : OpMem base o m₁ m₂)
+    (h₂ : OpMem base o m₂ m₃) : OpMem base o m₁ m₃ :=
+  fun x hx hw => (h₂ x hx hw).trans (h₁ x hx hw)
+
+theorem OpMem.output {base : Addr} {o : Nat} {m m' : Mem} (h : Outside base o 112 m m') :
+    OpMem base o m m' := fun x hx _ => h x hx
+
+theorem OpMem.work {base : Addr} {o d n : Nat} {m m' : Mem} (h : Outside base d n m m')
+    (hl : ACC ≤ d) (hr : d + n ≤ SAVE) : OpMem base o m m' :=
+  fun x _ hx => h x (by simp only [ACC, SAVE] at hl hr hx ⊢; omega)
+
+theorem OpMem.field {base : Addr} {o : Nat} {m m' : Mem} (h : OpMem base o m m') :
+    FieldMem base o m m' :=
+  fun x hx hw => h x hx (by simp only [ACC, SAVE] at hw ⊢; omega)
 
 /-- Memory outside two ranges, used by the conditional swap. -/
 def Outside2 (base : Addr) (x nx y ny : Nat) (m m' : Mem) : Prop :=

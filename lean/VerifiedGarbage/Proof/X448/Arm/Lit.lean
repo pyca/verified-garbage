@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Framework.Arm.Lit
+import VerifiedGarbage.Proof.X448.Arm.FnLit
 import VerifiedGarbage.Impl.X448.Arm
 
 /-!

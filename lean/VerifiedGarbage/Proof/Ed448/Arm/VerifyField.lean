@@ -10,7 +10,7 @@ VerifyEquation.lean`) as X448's slot operations (`FieldOp`), evaluated on the
 slots: the doubling and the addition at the slots they are used with (RFC 8032
 §5.2.4's formulas, as for base-point multiplication), and the steps of
 decoding. `VKeep` is what the checks and decoding may change: the field
-operations' registers, the counter `r11` and `BAD` (`r12`), and the working
+operations' registers, the counter `r11` and `BAD` (`r10`), and the working
 space from `SIGN` to the slots' end and from X448's `ACC`.
 -/
 
@@ -22,7 +22,7 @@ open VG.Impl.X448.Arm (slot X2 ACC)
 /-! ## The frame -/
 
 structure VKeep (base : Addr) (s t : State) : Prop where
-  regs : Keeps (.r12 :: .r11 :: workRegs) s t
+  regs : Keeps (.r10 :: .r11 :: workRegs) s t
   mem : Outside2 base 32 2848 ACC 512 s.mem t.mem
 
 theorem VKeep.trans {base : Addr} {s t u : State} (h : VKeep base s t) (h' : VKeep base t u) :
@@ -42,7 +42,7 @@ theorem Keep.toV {base : Addr} {s t : State} (h : Keep base s t) : VKeep base s 
 
 /-- What the comparisons may change: `VKeep`'s registers, and the slots and `ACC`. -/
 structure CKeep (base : Addr) (s t : State) : Prop where
-  regs : Keeps (.r12 :: .r11 :: workRegs) s t
+  regs : Keeps (.r10 :: .r11 :: workRegs) s t
   mem : Outside2 base 64 2816 ACC 512 s.mem t.mem
 
 theorem CKeep.toV {base : Addr} {s t : State} (h : CKeep base s t) : VKeep base s t :=
