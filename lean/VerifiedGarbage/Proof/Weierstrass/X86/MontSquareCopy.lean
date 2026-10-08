@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.MontBase
-import VerifiedGarbage.Impl.Weierstrass.X86.MontSquare
+import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 
 /-! # Copying a square's operand into the existing Montgomery temporary area -/
 namespace VG.Proof.Weierstrass.X86.Mont

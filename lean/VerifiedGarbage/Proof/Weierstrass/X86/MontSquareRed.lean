@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Impl.Weierstrass.X86.MontSquare
+import VerifiedGarbage.Impl.Weierstrass.X86.Mont
 
 /-! # Sparse Montgomery reduction of a full-width x86 square -/
 namespace VG.Proof.Weierstrass.X86.Mont

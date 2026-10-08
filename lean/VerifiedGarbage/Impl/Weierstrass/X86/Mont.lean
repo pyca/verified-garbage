@@ -1,4 +1,5 @@
 import VerifiedGarbage.Impl.Mont.X86
+import VerifiedGarbage.Impl.X25519.X86
 import VerifiedGarbage.Spec.Weierstrass.Mont
 
 /-!
@@ -22,7 +23,9 @@ modulus is in the code (immediates), so it is not stored.
   zero. The accumulator's words from `N` are then below `2m`, reduced by a
   conditional subtraction (`diffsI`, `maskTop`, `selectsP`) into `[o]`,
   through `ecx`. `esi` and `edi` are restored before the result is stored,
-  `ebx` and `ebp` after.
+  `ebx` and `ebp` after. For P-256 field squaring, equal public operand
+  pointers select a full-width Comba square (36 word products) followed by
+  eight sparse REDC rounds; the common final subtraction is unchanged.
 * `addFn`, `subFn`: `[a] ± [b]` into the accumulator through pointers in
   `ecx` and `edx` (`chainP`), then a conditional subtraction (the sum) or
   addition of `m` under the mask of the borrow (the difference) into
@@ -195,10 +198,57 @@ def mulRestoreSI (k : Nat) : List Instr :=
 def restoreBP (k : Nat) : List Instr :=
   [.mov .ebx (.mem (bp (saveAt k))), .mov .ebp (.mem (bp (saveAt k + 12)))]
 
+/-- Sparse reduction of an already populated product. Unlike CIOS, carry
+and borrow propagate through every remaining high word. -/
+def squareRed (acc extra : Nat) : List Instr :=
+  [.mov .eax (.imm 0), .store (bp acc) .eax] ++
+  multiChain (acc + 12) positiveMask (7 + extra) ++
+  sparseChain (acc + 28) .sub .sbb (3 + extra)
+
+/-- One full-product REDC round, including its reduction digit. -/
+def squareRound (i : Nat) : List Instr :=
+  [.mov .ecx (.mem (bp (own 4 + 4 * i)))] ++ squareRed (own 4 + 4 * i) (7 - i)
+
+/-- The first `r` reduction rounds. -/
+def squareRounds : Nat → List Instr
+  | 0 => []
+  | r + 1 => squareRounds r ++ squareRound r
+
+/-- Copy the operand through `esi` into the temporary words before Comba
+uses the general-purpose registers for its accumulator. -/
+def squareCopy : Nat → List Instr
+  | 0 => []
+  | j + 1 => squareCopy j ++
+    [.mov .eax (.mem (at_ .esi (4 * j))), .store (bp (tmpAt 4 + 4 * j)) .eax]
+
+/-- The sixteen Comba columns, before modular reduction. -/
+def squareProduct : List Instr :=
+  VG.Impl.X25519.X86.zeroAcc ++
+    VG.Impl.X25519.X86.cols (own 4) 16 (VG.Impl.X25519.X86.sqrTerms (tmpAt 4))
+
+/-- Restore the Montgomery base after the Comba accumulator used `ebp`. -/
+def squareProductBase : List Instr := squareProduct ++ [.mov .ebp (.reg .edi)]
+
+/-- Copy, square, and initialize the extra high word for REDC. -/
+def squareInit : List Instr :=
+  squareCopy 8 ++ [.mov .edi (.reg .ebp)] ++ squareProductBase ++
+    [.store (bp (own 4 + 64)) .ebx]
+
+/-- The square before the common final conditional subtraction. -/
+def squareBody : List Instr := squareInit ++ squareRounds 8
+
+
+/-- Public operand-pointer equality selects the dedicated P-256 square. -/
+def mulBody (k m : Nat) : Prog isa :=
+  if k = 4 ∧ m = p256Prime then
+    .seq (.block [.alu .cmp .edi (.reg .esi)])
+      (.ite .e (.block squareBody) (.block (rowsF k m (2 * k))))
+  else .block (rowsF k m (2 * k))
+
 /-- `vg_<curve>_mul_mod_<p|n>`. -/
 def mulFn (k m : Nat) : Prog isa :=
-  .block (mulEntry k ++ rowsF k m (2 * k) ++
-    csubOut k m (own k + 4 * (2 * k)) (mulRestoreSI k) ++ restoreBP k)
+  .seq (.block (mulEntry k)) <| .seq (mulBody k m) <|
+    .block (csubOut k m (own k + 4 * (2 * k)) (mulRestoreSI k) ++ restoreBP k)
 
 /-- The entry of `add` and `sub`: `ebp` saved, `ebp = ws`, `ecx = ws + a`,
 `edx = ws + b`. -/

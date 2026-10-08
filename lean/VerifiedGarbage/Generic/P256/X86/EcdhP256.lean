@@ -20,7 +20,7 @@ def artifacts (h : Proof.Weierstrass.X86.Inv.HasLawInvOrd Spec.P256.curve) : Lis
     doc := Spec.Ecdh.P256.exchangeApi.doc (notes := ["The function is `vg_ecdsa_p256_sign`'s setup, \
       field arithmetic and inversion, with the peer's point in place of `G`: it saves the \
       callee-saved registers `ebx`, `esi`, `edi` and `ebp` in `scratch`; field elements are eight \
-      32-bit words in Montgomery form, multiplied by word-by-word Montgomery multiplication (CIOS, \
+      32-bit words in Montgomery form, with dedicated Comba field squaring and word-by-word Montgomery multiplication (CIOS, \
       with `mul` and the accumulator in `scratch`, in calls of `vg_p256_mul_mod_p` and the other \
       functions of `p256_mont`) with a final conditional subtraction. The \
       peer's key is checked without branches (its first byte, both coordinates below `p`, and \
