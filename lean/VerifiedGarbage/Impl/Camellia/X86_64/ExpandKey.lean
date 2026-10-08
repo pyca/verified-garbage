@@ -9,9 +9,9 @@ import VerifiedGarbage.Spec.Camellia
 (`Layers.lean`, moved to `r9`), which the artifact allocates on the stack.
 
 `KA` and `KB` (RFC 3713 §2.2) take three pairs of rounds with the constants
-`Sigma1 … Sigma6` as subkeys, which the bitsliced rounds of ECB run, on
-eight copies of the 128-bit value (the two halves as one block); the XORs
-between the pairs are on the plain words. The words are kept as ECB loads
+`Sigma1 … Sigma6` as subkeys (their planes immediates in the code), which
+the bitsliced rounds of ECB run, on eight copies of the 128-bit value (the
+two halves as one block); the XORs between the pairs are on the plain words. The words are kept as ECB loads
 them, little-endian words of the big-endian bytes, in the tail buffer's
 slots: `KL`, `KR`, the running value, `KA`, `KB`, two words each.
 The subkeys are then halves of rotations of `KL`, `KR`, `KA` and `KB` as
@@ -33,20 +33,23 @@ def wSlot : Nat := tailSlot + 4
 def kaSlot : Nat := tailSlot + 6
 def kbSlot : Nat := tailSlot + 8
 
-/-- The 64-bit word with the bytes of `v` in the reverse order: how a
-little-endian load reads the big-endian bytes of `v`. -/
-def swapBytes (v : BitVec 64) : BitVec 64 :=
-  (List.range 8).foldl (fun acc i => acc ||| (((v >>> (8 * i)).setWidth 64 &&& 0xFF) <<< (56 - 8 * i))) 0
+/-- The byte of a half that position `c` of a plane holds (as `toBs` lays out a half). -/
+def bytePos (c : Nat) : Nat := c / 2 + 4 * (c % 2)
 
-/-- The subkeys of the pairs, as ECB loads subkeys. -/
-def sigmaWords : List (BitVec 64) :=
+/-- Plane `j` of the subkey `x` in every lane, as the table holds it: bit
+`8 c + b` is bit `j` of byte `bytePos c` of `x`, the most significant first. -/
+def keyPlane (x : BitVec 64) (j : Nat) : BitVec 64 :=
+  BitVec.ofNat 64 ((List.range 64).foldl
+    (fun acc p => acc + if x.getLsbD (56 - 8 * bytePos (p / 8) + j) then 2 ^ p else 0) 0)
+
+/-- The subkeys of the pairs. -/
+def sigmas : List (BitVec 64) :=
   [Spec.Camellia.sigma1, Spec.Camellia.sigma2, Spec.Camellia.sigma3, Spec.Camellia.sigma4,
-    Spec.Camellia.sigma5, Spec.Camellia.sigma6].map swapBytes
+    Spec.Camellia.sigma5, Spec.Camellia.sigma6]
 
-/-- Bitslice the word `v` into the entry at `rsi`, and on to the next. -/
-def sigmaOne (v : BitVec 64) : List Instr :=
-  [.movImm64 (q 0) v] ++ ((List.range 7).map fun i => movR (q (i + 1)) (q 0)) ++
-  toBs ++ (List.range 8).map (fun j => .store (slotAt .rsi j) (q j)) ++
+/-- The planes of the constant `x` to the entry at `rsi`, and on to the next. -/
+def sigmaOne (x : BitVec 64) : List Instr :=
+  (List.range 8).flatMap (fun j => [.movImm64 .rax (keyPlane x j), .store (slotAt .rsi j) .rax]) ++
   [.alu .add .rsi (.imm 64)]
 
 /-- Load the key: `KL`, and `KR` by the key's length (in `rsi`). -/
@@ -142,7 +145,7 @@ def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
 def expandKey : Prog isa :=
   .seq (.block ([movR .r9 .rcx] ++ saveRegs ++ setMasks layerMasks ++ [st dataSlot .rsi] ++
       [movR .rsi sb, .alu .add .rsi (.imm (BitVec.ofNat 32 (8 * keySlot)))] ++
-      sigmaWords.flatMap sigmaOne ++ [movS .rsi dataSlot]))
+      sigmas.flatMap sigmaOne ++ [movS .rsi dataSlot]))
     (.seq loadKey
       (.seq (.block [movR kp sb, .alu .add kp (.imm (BitVec.ofNat 32 (8 * keySlot)))])
         (.seq kaKb
