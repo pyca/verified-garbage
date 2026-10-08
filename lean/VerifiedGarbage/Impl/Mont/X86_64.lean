@@ -25,7 +25,10 @@ working space too, at `M.mo`; `M.minv` is `-m⁻¹ mod 2⁶⁴`. With
   (`M.sparse`), `u = t₀ (2³² + 1) mod 2⁶⁴` by a shift and an addition, and
   `t + u m = t - u c + 2³⁸⁴ u` for `c = 2³⁸⁴ - m` of three words: two
   products of `u` by `c`'s words, the result less `t₀` subtracted from the
-  words above `t₀`, and `u` added at `2³⁸⁴` (`redSparse`). With BMI2 and ADX (`M.adx`), a row
+  words above `t₀`, and `u` added at `2³⁸⁴` (`redSparse`; with BMI2,
+  `redSparseX`, `u` and both products by `mulx`, which keeps the shift and
+  the multiplications off the ports the carry chains need, and the first row
+  of the product one carry chain, `mulRowS0`). With BMI2 and ADX (`M.adx`), a row
   is `mulx` for each word, its low half added through OF (`adox`) and its
   high half through CF (`adcx`), two carry chains that do not wait for each
   other (`roundX`). The accumulator stays below `2m`, and the result is
@@ -194,6 +197,47 @@ def redSparse : List Reg → List Instr
     uSparse t0 ++ prodSparse t0 ++ subSparse t0 t1 t2 t3 t4 t5 t6 t7 ++ [.mov32 t0 (.imm 0)]
   | _ => []
 
+/-! ### P-384's reduction with BMI2 -/
+
+/-- `2³² + 1`, the factor of `u = t₀ (2³² + 1) mod 2⁶⁴`. -/
+def sparseK : BitVec 64 := BitVec.ofNat 64 0x100000001
+
+/-- `rdx = u = t₀ (2³² + 1) mod 2⁶⁴` by `mulx` (its high half to `rax`):
+the multiplier's ports, rather than a shift and an addition on the ports
+that the carry chains need. -/
+def uSparseX (t0 : Reg) : List Instr :=
+  [.movImm64 .rax sparseK, .mov .rdx (.reg t0), .mulx .rax .rdx (.reg .rax)]
+
+/-- `rax + 2⁶⁴ rcx + 2¹²⁸ rbp = ⌊u c / 2⁶⁴⌋` for `u` in `rdx` (kept), by
+`mulx`, through `t₀`: the two products' halves added in one carry chain. -/
+def prodSparseX (t0 : Reg) : List Instr :=
+  [.movImm64 .rax sparseC0, .mulx .rax .rcx (.reg .rax), .mov32 .rcx (.imm sparseC1), .mulx .rcx t0 (.reg .rcx),
+    .alu .add .rax (.reg t0), .alu .adc .rcx (.reg .rdx), .mov32 .rbp (.imm 0), .alu .adc .rbp (.reg .rbp)]
+
+/-- `t₁ … t₇ += 2³²⁰ u - C` for `C = rax + 2⁶⁴ rcx + 2¹²⁸ rbp` and `u` in
+`rdx`: the subtraction from `t₁ … t₅`, its borrow taken from `u`, which is
+added at `t₆`. -/
+def subSparseX (t1 t2 t3 t4 t5 t6 t7 : Reg) : List Instr :=
+  [.alu .sub t1 (.reg .rax), .alu .sbb t2 (.reg .rcx), .alu .sbb t3 (.reg .rbp), .alu .sbb t4 (.imm 0),
+    .alu .sbb t5 (.imm 0), .alu .sbb .rdx (.imm 0), .alu .add t6 (.reg .rdx), .alu .adc t7 (.imm 0)]
+
+/-- `redSparse` with BMI2: `u` and its products by `mulx` (`uSparseX`,
+`prodSparseX`). -/
+def redSparseX : List Reg → List Instr
+  | [t0, t1, t2, t3, t4, t5, t6, t7] =>
+    uSparseX t0 ++ prodSparseX t0 ++ subSparseX t1 t2 t3 t4 t5 t6 t7 ++ [.mov32 t0 (.imm 0)]
+  | _ => []
+
+/-- A round of P-384's reduction on six words `d₀ … d₅` holding `T < 2³⁸⁴`,
+with BMI2: `d₁ … d₅, d₀` become `(T + u p) / 2⁶⁴`, which is below `2³⁸⁴`, so
+its top word is `u` less the borrow of the subtraction (no seventh word). -/
+def redShortX : List Reg → List Instr
+  | [d0, d1, d2, d3, d4, d5] =>
+    uSparseX d0 ++ prodSparseX d0 ++
+    [.alu .sub d1 (.reg .rax), .alu .sbb d2 (.reg .rcx), .alu .sbb d3 (.reg .rbp), .alu .sbb d4 (.imm 0),
+      .alu .sbb d5 (.imm 0), .mov d0 (.reg .rdx), .alu .sbb d0 (.imm 0)]
+  | _ => []
+
 /-- The reduction of round `i`: `t += u m` with `u = t₀ m' mod 2⁶⁴`, after
 which `t₀ = 0`; or, for a friendly modulus, the words above `t₀` get `t₀ m'`
 and `t₀ = 0`; or, for P-384's `p`, `redSparse`. -/
@@ -238,11 +282,11 @@ def rowX (n : Nat) (ts : List Reg) (d : Nat) : List Instr :=
 
 /-- Round `i` of `mul o a b` with BMI2 and ADX: `t += a_i [b]` (`rowX`), then
 the reduction: `t += u m` by `rowX`, `u = t₀ m' mod 2⁶⁴` in `rdx`, or as
-`redRound` for a friendly modulus or P-384's `p`. -/
+`redRound` for a friendly modulus, or by `redSparseX` for P-384's `p`. -/
 def roundX (M : Mod) (a b i : Nat) : List Instr :=
   let t := win M.n i
   [.mov .rdx (.mem (sc (a + 8 * i)))] ++ rowX M.n (wins M.n i) b ++
-  if M.sparse then redSparse (wins M.n i) else
+  if M.sparse then redSparseX (wins M.n i) else
   match M.red with
   | .general => [.mov .rax (.reg (t 0)), .movImm64 .rcx M.minv, .mul .rcx, .mov .rdx (.reg .rax)] ++
       rowX M.n (wins M.n i) M.mo
@@ -388,9 +432,9 @@ to 4 through OF and CF, `maddRow`, each row's top word fresh), then those
 words doubled through CF and the squares `a_i²` added through OF
 (`sqrDiag`), words 0 to 2 of the square into `[tmp]`. Then the high half goes
 to `[o]` (the input is read by then), and six reductions of the low half by
-`redSparse`, in the window of `r8–r15` from round 7 (where words 3 to 5 already
-are), leave `(L + U p) / 2³⁸⁴ ≤ p`, to which the high half is added (`< 2p`)
-and `csub` applied. -/
+`redShortX` in six words (`sqWin6`, where words 3 to 5 already are, rotating),
+leave `(L + U p) / 2³⁸⁴ ≤ p`, to which the high half is added (`< 2p`) and
+`csub` applied. -/
 
 /-- `x :: rs = x + rdx · [d …]` through CF: each word's product, its low half
 added to a register (with the carry), its high half into the next. -/
@@ -447,23 +491,46 @@ def sqrDbl (t a : Nat) : List Instr :=
     Impl.X25519.X86_64.dblAdd .r9 .rax ++
     [.mov32 .rdx (.imm 0), .adcx .rcx (.reg .rdx), .adox .rcx (.reg .rdx)]
 
-/-- The words of `sqrS`'s result: the window of round 13 (`wins 6 5`). -/
-def sqLow6 : List Reg := [.r13, .r14, .r15, .r8, .r9, .r10]
-
 /-- The registers of the square's high half, words 6 to 11. -/
 def sqHigh6 : List Reg := [.r13, .r14, .r15, .r8, .r9, .rcx]
 
-/-- Six rounds of P-384's reduction in the window of `r8–r15`, from round 7. -/
-def redsS (k : Nat) : List Instr := (List.range k).flatMap fun i => redSparse (wins 6 (7 + i))
+/-- The window of `sqrS`'s reductions: the square's words 0 to 2 (from
+`[tmp]`) and 3 to 5. -/
+def sqWin6 : List Reg := [.r13, .r14, .r15, .r10, .r11, .r12]
+
+/-- Word `j` of the window of round `i`: `sqWin6` rotated by one word each
+round (six bring it back). -/
+def sqW (i j : Nat) : Reg := sqWin6.getD ((i + j) % 6) .r13
+
+/-- The window of round `i`. -/
+def sqWins (i : Nat) : List Reg := (List.range 6).map (sqW i)
+
+/-- `k` rounds of `redShortX` from the window `sqWin6`. -/
+def redsShortX (k : Nat) : List Instr := (List.range k).flatMap fun i => redShortX (sqWins i)
 
 /-- `[o] = [a]² R⁻¹ mod p` for P-384's `p`, with BMI2 and ADX: the square's
 words 0 to 2 at `[tmp]` and 3 to 11 in `r10–r15`, `r8`, `r9`, `rcx`; its high
-half stored at `[o]`, the low half into the window of round 7 (`r15`, `r8–r12`)
-and reduced by six rounds of `redSparse`, the high half added, and `csub`. -/
+half stored at `[o]`, the low half into the six words `sqWin6` and reduced by
+six rounds of `redShortX`, the high half added (its carry into `r8`), and
+`csub`. -/
 def sqrS (M : Mod) (o a : Nat) : List Instr :=
   sqrRow0 a ++ stores [.r8, .r9] (M.tmp + 8) ++ sqrRows a ++ sqrDbl M.tmp a ++ stores sqHigh6 o ++
-    loads [.r15, .r8, .r9] M.tmp ++ zeros [.r13, .r14] ++ redsS 6 ++
-    chain .add .adc sqLow6 o ++ [.alu .adc .r11 (.imm 0)] ++ csub M sqLow6 .r11 ++ stores sqLow6 o
+    loads [.r13, .r14, .r15] M.tmp ++ redsShortX 6 ++ [.mov32 .r8 (.imm 0)] ++
+    chain .add .adc sqWin6 o ++ [.alu .adc .r8 (.imm 0)] ++ csub M sqWin6 .r8 ++ stores sqWin6 o
+
+/-- Row 0 of P-384's multiplication with BMI2 and ADX: `r8 … r14 = a₀ [b]`
+in one carry chain (`r15 = 0`), with no accumulator to clear or add to. -/
+def mulRowS0 (a b : Nat) : List Instr :=
+  [.mov .rdx (.mem (sc a)), Impl.X25519.X86_64.clear, .mulx .r9 .r8 (.mem (sc b))] ++
+    accRow [.r9, .r10, .r11, .r12, .r13, .r14] (b + 8) ++ [.adcx .r14 (.reg .rbp), .mov32 .r15 (.imm 0)]
+
+/-- The rounds of `mul o a b` with the accumulator in registers: the
+accumulator cleared and the rounds `0 … n-1`; for P-384's `p` with BMI2 and
+ADX, row 0 by `mulRowS0` and its reduction, then the rounds `1 … 5`. -/
+def mulRounds (M : Mod) (a b : Nat) : List Instr :=
+  if M.adx ∧ M.sparse ∧ M.n = 6 then
+    mulRowS0 a b ++ redSparseX (wins 6 0) ++ (List.range 5).flatMap (fun i => round M a b (i + 1))
+  else zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b)
 
 /-- `[o] = [a] [b] R⁻¹ mod m` (`o` may be `a` or `b`), the accumulator in
 registers; by `sqrRX`, `mulRX` or `sqrS` if they apply. -/
@@ -473,8 +540,7 @@ def mulR (M : Mod) (o a b : Nat) : List Instr :=
   | none =>
     if M.adx ∧ M.sparse ∧ M.n = 6 ∧ a = b then sqrS M o a else
     let low := (List.range M.n).map (win M.n M.n)
-    zeros (acc M.n) ++ (List.range M.n).flatMap (round M a b) ++
-      csub M low (win M.n M.n M.n) ++ stores low o
+    mulRounds M a b ++ csub M low (win M.n M.n M.n) ++ stores low o
 
 
 /-- The low words and the top word of the sums and differences. -/
