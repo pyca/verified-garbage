@@ -1,13 +1,57 @@
-//! One exclusively owned, wiped verification buffer retained per public key.
+//! The working space of the RSA functions: one exclusively owned, wiped
+//! verification buffer retained per public key, and the cache-line-aligned
+//! working space of each private-key operation.
 
 use crate::zeroize::zeroize;
 use alloc::{boxed::Box, vec, vec::Vec};
 use core::{
     fmt,
     ops::{Deref, DerefMut},
-    ptr,
+    ptr, slice,
     sync::atomic::{AtomicPtr, Ordering},
 };
+
+/// A cache line of a [`Scratch`].
+#[derive(Clone, Copy)]
+#[repr(C, align(64))]
+struct Line([u64; 8]);
+
+/// Zeroed working space of a private-key operation, starting at a 64-byte
+/// boundary. The AVX512_IFMA functions (`vg_rsa_private_crt_ifma` and its
+/// callers) read their numbers as 32-byte vectors at offsets from the start
+/// of the working space that are multiples of 32: a `Vec<u64>`, aligned to
+/// 8 bytes only, splits half of them across cache lines, which made 3072-
+/// and 4096-bit private-key operations a sixth slower.
+pub(crate) struct Scratch {
+    lines: Vec<Line>,
+    words: usize,
+}
+
+impl Scratch {
+    /// `words` zero words.
+    pub(crate) fn new(words: usize) -> Self {
+        Self {
+            lines: vec![Line([0; 8]); words.div_ceil(8)],
+            words,
+        }
+    }
+}
+
+impl Deref for Scratch {
+    type Target = [u64];
+    fn deref(&self) -> &[u64] {
+        // SAFETY: `Line` is `repr(C)` of 8 `u64`s with no padding, so the
+        // lines are `8 * lines.len() >= words` initialized, contiguous words.
+        unsafe { slice::from_raw_parts(self.lines.as_ptr().cast(), self.words) }
+    }
+}
+
+impl DerefMut for Scratch {
+    fn deref_mut(&mut self) -> &mut [u64] {
+        // SAFETY: as in `deref`, and `&mut self` borrows the lines exclusively.
+        unsafe { slice::from_raw_parts_mut(self.lines.as_mut_ptr().cast(), self.words) }
+    }
+}
 
 pub(crate) struct VerifyScratch(AtomicPtr<Vec<u64>>);
 
@@ -112,6 +156,18 @@ impl Drop for ScratchLease<'_> {
 mod tests {
     extern crate std;
     use super::*;
+
+    #[test]
+    fn scratch_is_aligned_and_zeroed() {
+        for words in [0, 1, 8, 9, 4096] {
+            let mut s = Scratch::new(words);
+            assert_eq!(s.len(), words);
+            assert_eq!(s.as_ptr() as usize % 64, 0);
+            assert!(s.iter().all(|&x| x == 0));
+            s.fill(u64::MAX);
+            assert!(s.iter().all(|&x| x == u64::MAX));
+        }
+    }
 
     #[test]
     fn wiped_reuse_and_resize() {
