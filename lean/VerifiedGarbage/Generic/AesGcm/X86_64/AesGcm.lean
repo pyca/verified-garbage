@@ -127,12 +127,14 @@ def StitchPart.implP (p : StitchPart) : Option (StitchCode Proof.Gcm.X86_64.Stit
 correctly. -/
 theorem StitchToName.ok : (n : StitchToName) → (M : Proof.Gcm.X86_64.Stitch.CtxMode) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM M n.enc
+  | .vaes, M => Proof.Gcm.X86_64.StitchTo.stitchTo_ok M
   | .vaesAvx512, M => Proof.Gcm.X86_64.StitchZTo.stitchTo_ok M
 
 /-- The out-of-place loops named `n` for a key context of
 `vg_aes_gcm_init_precomputed` interleave counter mode and GHASH correctly. -/
 theorem StitchToName.okP : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.powers n.encP
+  | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZTo.stitchToP_ok
 
 /-- The out-of-place loops a variant names, with their proof. -/
@@ -161,6 +163,7 @@ def GcmVariant.stitchR (v : GcmVariant) : Option (StitchCode Proof.Gcm.X86_64.St
 
 theorem StitchToName.okR : (n : StitchToName) →
     Proof.Gcm.X86_64.Stitch.StitchToOkM Proof.Gcm.X86_64.Stitch.CtxMode.prepared n.encR
+  | .vaes => Proof.Gcm.X86_64.StitchTo.stitchTo_ok _
   | .vaesAvx512 => Proof.Gcm.X86_64.StitchZHTo.stitchTo_ok
 
 def GcmVariant.stitchToR (v : GcmVariant) : Option (StitchToCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true) :=
@@ -501,13 +504,20 @@ def gatherNote (t : Nat) (sealName enc : String) : String :=
     (as GHASH pads it), and encrypts each slice from where it is to the output with `" ++ enc ++ "`."
 
 /-- Below how many bytes `vg_aes_gcm_seal_gather` copies the text to the
-output and calls `vg_aes_gcm_seal`, rather than the streaming functions:
-with out-of-place interleaved loops (`GcmVariant.stitchTo`), below 48
-blocks, where the streaming functions' calls cost more than the copy saves
-(measured on a VAES and AVX-512 Xeon); without them, the streaming path
-copies the blocks too, so all texts but those of 2 GiB or more (where the
-cost of its calls is negligible) take the copy. -/
-def copyBelow (v : GcmVariant) : Nat := if v.stitchTo.isSome then 768 else 2 ^ 31 - 1
+output and calls `vg_aes_gcm_seal`, rather than the streaming functions,
+by the out-of-place interleaved loops a variant has (`GcmVariant.stitchTo`),
+as measured on a VAES and AVX-512 Xeon: on 512-bit registers, below 48
+blocks, where the streaming functions' calls cost more than the copy saves;
+on 256-bit registers, below 16 KiB, where a slice ending within a block,
+which the streaming functions buffer, costs more than the copy saves.
+Without them, the streaming path copies the blocks too, so all texts but
+those of 2 GiB or more (where the cost of its calls is negligible) take the
+copy. -/
+def copyBelow (v : GcmVariant) : Nat :=
+  match ((v.stitch.bind (·.toPart)).map (·.name) : Option StitchToName) with
+  | some .vaesAvx512 => 768
+  | some .vaes => 16384
+  | none => 2 ^ 31 - 1
 
 theorem copyBelow_lt (v : GcmVariant) : copyBelow v < 2 ^ 31 := by
   unfold copyBelow; split <;> decide

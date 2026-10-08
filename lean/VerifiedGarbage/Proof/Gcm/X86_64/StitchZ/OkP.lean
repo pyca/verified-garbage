@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
 import VerifiedGarbage.Proof.Gcm.Powers
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZTo.LoopP
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchTo.Loop
 
 /-!
 # The AVX-512 loops with the powers in the key context: both meet their contracts
@@ -288,3 +289,36 @@ theorem stitchTo_ok : StitchToOkM CtxMode.prepared Impl.Gcm.X86_64.StitchZHTo.en
       (fun _ h256 hI hC => bigPTo_ok hp (finZ (finP hpw)) hpw (fin48P (hk s₀)) h256 hI hC) hR hK)
 
 end VG.Proof.Gcm.X86_64.StitchZHTo
+
+/-! ## The out-of-place loop on 256-bit registers (`Impl.Gcm.X86_64.StitchTo`)
+
+The setup computes the
+powers `H'`–`H'¹⁶` as `Stitch.setupG_ok` does (`StitchZTo.setupGTo_ok`) and
+stores them (`StitchZTo.setupTTo_ok`); the loop then hashes with them
+(`Stitch.finE`). The loop reads only the hash subkey from the key context,
+so it meets the contract for a key context of any kind.
+-/
+
+namespace VG.Proof.Gcm.X86_64.StitchTo
+
+open VG VG.X86_64 VG.Proof.Gcm.Poly
+open VG.Proof.Gcm.X86_64.Stitch (SPreTo StitchToOkM CtxMode hk finE)
+open VG.Proof.Gcm.X86_64.StitchZTo (setupGTo_ok setupTTo_ok)
+open VG.Impl.Gcm.X86_64.StitchTo (setup)
+open VG.Spec.Gcm (Block)
+
+/-- The setup: the state the loop starts from, with the powers
+`x · Pₖₗ = H¹⁶⁻²ᵏ⁻ˡ` in the working space. -/
+theorem setupTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) :
+    WP isa (.block setup) s₀ fun s => ∃ P, ReadyTo s₀ P s ∧
+      ∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l) := by
+  rw [setup, List.append_assoc, WP.block_append_iff]
+  refine WP.mono (setupGTo_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ => ?_
+  exact WP.mono (setupTTo_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => ⟨_, ReadyTo.ofReady2 hR, pw⟩
+
+/-- The out-of-place loop meets its contract, for a key context of any
+kind. -/
+theorem stitchTo_ok (M : CtxMode) : StitchToOkM M Impl.Gcm.X86_64.StitchTo.enc := fun _ hp =>
+  WP.seq (WP.mono (setupTo_ok hp) fun _ ⟨_, hR, hpw⟩ => encTailTo_ok hp (finE hpw) hR)
+
+end VG.Proof.Gcm.X86_64.StitchTo
