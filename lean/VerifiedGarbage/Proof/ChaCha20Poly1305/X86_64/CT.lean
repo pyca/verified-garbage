@@ -905,14 +905,16 @@ theorem stQ_ok {c kp np : Addr} {o j : Nat} (ho : o + 64 ≤ 1696) (hj : j < 8) 
   split_ifs with h₁ h₂ h₃ h₄
   · subst h₁
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      State.store64, State.setReg, hr15, o, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-    exact ⟨by rw [qOf_c0], fun r hr => by simp [hr], trivial⟩
+    simp only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
+      State.store64, State.setReg, show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
+      ite_false, Option.some.injEq, exists_eq_left']
+    exact ⟨by rw [qOf_c0], fun r hr => by simp [hr], trivial, trivial⟩
   · subst h₂
     apply WP.of_runBlock
-    simp (config := {decide := true}) only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
-      State.store64, State.setReg, hr15, o, ite_true, ite_false, Option.some.injEq, exists_eq_left']
-    exact ⟨by rw [qOf_c1], fun r hr => by simp [hr], trivial⟩
+    simp only [List.cons_append, List.nil_append, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at,
+      State.store64, State.setReg, show (Reg.r15 = Reg.rax) = False from by decide, hr15, o, ite_true,
+      ite_false, Option.some.injEq, exists_eq_left']
+    exact ⟨by rw [qOf_c1], fun r hr => by simp [hr], trivial, trivial⟩
   · have i := hc.2.1 (8 * (j - 2)) 8 (by lit_omega)
     simp only [off] at i
     apply WP.of_runBlock
