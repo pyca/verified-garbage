@@ -409,7 +409,9 @@ theorem ptr_ok (d r : Reg) (k : Nat) (s : State) :
       s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
   simp only [and_self, ptr, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
-    execAlu, arithFlags, State.setReg, State.setFlags, Option.map_some, Option.bind_some,
+    execAlu, RegUpd.gpr_arithFlags, RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, Option.map_some,
+    Option.bind_some,
     Option.some.injEq, exists_eq_left', ite_true]
   exact ⟨trivial, fun q hq => by simp [hq], trivial⟩
 
@@ -1635,7 +1637,8 @@ theorem stW_ok {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) {s : St
   split_ifs with h₁ h₂ h₃
   · apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, State.ea,
-      at_, readSrc, State.store32, State.setReg, hedi, eo, o, ite_true, ite_false, Option.map_some,
+      at_, readSrc, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      RegUpd.cf_setReg, RegUpd.zf_setReg, hedi, eo, o, ite_true, ite_false, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
   · have i : InRegions (s.rd ++ s.wr) (kp s₀ + BitVec.ofNat 64 (4 * (k - 4))) 4 :=
@@ -1644,12 +1647,14 @@ theorem stW_ok {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) {s : St
       add_setWidth (by have := hp.fit_k; lit_omega)
     apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, State.ea,
-      at_, readSrc, State.load32, State.store32, State.setReg, hedi, hecx, eo, ei, o, i, ite_true, ite_false,
+      at_, readSrc, State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, hedi, hecx, eo, ei, o, i, ite_true, ite_false,
       Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
   · apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, State.ea,
-      at_, readSrc, State.store32, State.setReg, hedi, eo, o, ite_true, ite_false, Option.map_some,
+      at_, readSrc, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+      RegUpd.cf_setReg, RegUpd.zf_setReg, hedi, eo, o, ite_true, ite_false, Option.map_some,
       Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
   · have i : InRegions (s.rd ++ s.wr) (np s₀ + BitVec.ofNat 64 (4 * (k - 13))) 4 :=
@@ -1658,7 +1663,8 @@ theorem stW_ok {s₀ : State} (hp : APre e s₀) {k : Nat} (hk : k < 16) {s : St
       add_setWidth (by have := hp.fit_n; lit_omega)
     apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, State.ea,
-      at_, readSrc, State.load32, State.store32, State.setReg, hedi, hedx, eo, ei, o, i, ite_true, ite_false,
+      at_, readSrc, State.load32, State.store32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg,
+      RegUpd.wr_setReg, RegUpd.cf_setReg, RegUpd.zf_setReg, hedi, hedx, eo, ei, o, i, ite_true, ite_false,
       Option.map_some, Option.some.injEq, exists_eq_left']
     exact ⟨trivial, fun r hr => by simp [hr], trivial⟩
 
@@ -2288,8 +2294,10 @@ theorem compare_ok {s₀ : State} (hp : APre false s₀) {s₁ : State} (h : Fin
   apply WP.of_runBlock
   simp (config := {decide := true}) only [Impl.ChaCha20Poly1305.X86.compare, diff, List.cons_append,
     List.nil_append,
-    runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, at_, readSrc, execAlu, arithFlags,
-    State.load32, State.setReg, State.setFlags, hedi, hedx, e 16 (by lit_omega), e 20 (by lit_omega),
+    runBlock_cons, runStep_some, runBlock_nil, exec, State.ea, at_, readSrc, execAlu, RegUpd.gpr_arithFlags,
+    RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, RegUpd.cf_arithFlags,
+    State.load32, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    RegUpd.cf_setReg, hedi, hedx, e 16 (by lit_omega), e 20 (by lit_omega),
     e 24 (by lit_omega), e 28 (by lit_omega), et 0 (by lit_omega), et 4 (by lit_omega), et 8 (by lit_omega),
     et 12 (by lit_omega), i 16 (by lit_omega), i 20 (by lit_omega), i 24 (by lit_omega), i 28 (by lit_omega),
     it 0 (by lit_omega), it 4 (by lit_omega), it 8 (by lit_omega), it 12 (by lit_omega), ite_true, ite_false,
