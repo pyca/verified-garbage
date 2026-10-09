@@ -68,7 +68,9 @@ def entry : List Instr :=
 /-! ## `n`'s workspace -/
 
 /-- `n`, the input `c`, the mask of `c < n`, `-n⁻¹`, the number 1, `R² mod n`
-(as `vg_rsa_public_precompute` computes it) and `c R mod n`. -/
+(as `vg_rsa_public_precompute` computes it, `R2Words.choice`: by word steps
+for the moduli whose top bit is set and whose length is a multiple of 4
+words) and `c R mod n`. -/
 def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block head,
   loadBE,
@@ -81,13 +83,7 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) := [
   .block ([.store (hdr sMask) .rbp, .mov .rbx (.mem (at0 .r10))] ++ minv ++
     [.store (hdr sMinv) .r15, .mov32 .rdx (.imm 1), .mov32 .rcx (.imm 0)]),
   setWord aOne .rcx,
-  .block [.mov .rax (.mem (ix .r10 .r12 (-8)))],
-  topBit,
-  .block [.store (hdr sCnt) .rcx, .mov .rcx (.reg .r12), .alu .sub .rcx (.imm 1)],
-  setWord aR2 .rcx,
-  .block [.mov .rcx (.mem (hdr sCnt)), .alu .add .rcx (.mem (hdr sW))],
-  doubles aN aAcc aTmp aR2 sCnt,
-  mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2, mul aR2 aR2 aR2,
+  R2Words.choice mul,
   mul aXm aX aR2]
 
 /-! ## The prime workspaces -/
