@@ -783,7 +783,7 @@ theorem ptrs2_ok {a b : Nat} (ha : a < 4096) (hb : b < 4096) (s : State) :
     wp_addImm ha fun s₁ u₁ => wp_addImm hb fun s₂ u₂ => WP.block_nil
       ⟨by rw [u₂.other _ (by decide), u₁.gpr], by rw [u₂.gpr, u₁.other _ (by decide)],
         by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr], by rw [u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved])) fun s' ⟨⟨h0, h1, hrd, hwr, hm⟩, hg, hsp⟩ =>
+  exact WP.mono (WP.kept h rfl) fun s' ⟨⟨h0, h1, hrd, hwr, hm⟩, hg, hsp⟩ =>
     ⟨h0, h1, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 /-- After the first block: the registers saved and moved, the ChaCha20
@@ -990,7 +990,7 @@ theorem macA_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
         by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ hp.1],
         by rw [u₃.gpr, u₂.other _ hn.2.1, u₁.other _ hn.1],
         by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [mov, dstOf, preserved])) fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
+  exact WP.mono (WP.kept h rfl) fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
     ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 /-- `(x << 60) >> 60` is `x mod 16`. -/
@@ -1009,7 +1009,7 @@ theorem macC_ok (n : Reg) (s : State) :
     wp_lsl (by decide) fun s₁ u₁ => wp_lsr (by decide) fun s₂ u₂ => WP.block_nil
       ⟨by rw [u₂.gpr, u₁.gpr, shl_shr60], by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr],
         by rw [u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved])) fun s' ⟨⟨h10, hrd, hwr, hm⟩, hg, hsp⟩ =>
+  exact WP.mono (WP.kept h rfl) fun s' ⟨⟨h10, hrd, hwr, hm⟩, hg, hsp⟩ =>
     ⟨h10, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
@@ -1024,7 +1024,7 @@ theorem macD_ok {p n : Reg} (hr : MacRegs p n) (s : State) :
       ⟨by rw [u₂.gpr, u₁.other _ hp.2.2.2.1, u₁.gpr],
         fun r h₁ h₂ => by rw [u₂.other _ h₂, u₁.other _ h₁],
         by rw [u₂.rd, u₁.rd], by rw [u₂.wr, u₁.wr], by rw [u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved])) fun s' ⟨⟨h1, hg', hrd, hwr, hm⟩, hg, hsp⟩ =>
+  exact WP.mono (WP.kept h rfl) fun s' ⟨⟨h1, hg', hrd, hwr, hm⟩, hg, hsp⟩ =>
     ⟨h1, hg', Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 /-- `x0 = x21 + a`, `x1 = x21 + b` and `x2 = v`. -/
@@ -1039,7 +1039,7 @@ theorem ptrs3_ok {a b : Nat} (ha : a < 4096) (hb : b < 4096) (v : BitVec 16) (s 
       ⟨by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr],
         by rw [u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide)], u₃.gpr,
         by rw [u₃.rd, u₂.rd, u₁.rd], by rw [u₃.wr, u₂.wr, u₁.wr], by rw [u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved])) fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
+  exact WP.mono (WP.kept h rfl) fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
     ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
 /-! ## Zeroing the padded block -/
@@ -1140,7 +1140,7 @@ theorem copy_step {s₀ : State} (hp : APre e s₀) {s₂ : State} {Q : Addr} {t
     · rw [u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd]
     · rw [u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr]
     · rw [u₅.mem, u₄.mem, u₃.mem, g₂.mem, u₁.gpr, u₁.mem, byte_rt]
-  refine WP.mono (WP.kept core (by simp [copyBody, dstOf, preserved]))
+  refine WP.mono (WP.kept core rfl)
     fun s' ⟨⟨h1, h9, h10, hrd, hwr', hm⟩, hg, hsp⟩ => ⟨h1, h9, h10, fun r hr => by rw [hg r hr, h.keep r hr],
       by rw [hsp, h.sp], by rw [hrd, h.rd], by rw [hwr', h.wr], ?_, fun k hk => ?_⟩
   · rw [hm]
@@ -1408,7 +1408,7 @@ theorem lengths_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s
     wp_str (a := off (cx s₀) 0) (by decide) (by rw [h.x21]) o0 fun s₁ g₁ =>
       wp_str (a := off (cx s₀) 8) (by decide) (by rw [g₁.gpr, h.x21]) (by rw [g₁.wr]; exact o1)
         fun s₂ g₂ => WP.block_nil ⟨by rw [g₂.rd, g₁.rd], by rw [g₂.wr, g₁.wr], by rw [g₂.mem, g₁.gpr, g₁.mem]⟩
-  refine WP.mono (WP.kept core (by simp [lengths, dstOf, preserved])) fun s' ⟨⟨hrd, hwr, hm⟩, hg, hsp⟩ => ?_
+  refine WP.mono (WP.kept core rfl) fun s' ⟨⟨hrd, hwr, hm⟩, hg, hsp⟩ => ?_
   have hk : Kept [sub s₀ 0 16] s s' := Kept.of hg hsp hrd hwr (by
     rw [hm]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega))
@@ -1459,7 +1459,7 @@ theorem cryptA_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : Inv s₀ s)
         u₁.other _ (by decide), h.x21]
     · rw [u₆.rd, u₅.rd, u₄.rd, u₃.rd, g₂.rd, u₁.rd]
     · rw [u₆.wr, u₅.wr, u₄.wr, u₃.wr, g₂.wr, u₁.wr]
-  refine WP.mono (WP.kept core (by simp [mov, dstOf, preserved]))
+  refine WP.mono (WP.kept core rfl)
     fun s' ⟨⟨hm, h0, h1, h2, h3, hrd, hwr⟩, hg, hsp⟩ => ⟨hm, h0, h1, h2, h3, Kept.of hg hsp hrd hwr ?_⟩
   rw [hm]
   exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega))
@@ -1554,7 +1554,7 @@ theorem fptrs_ok {out : Nat} (ho : out < 4096) (s : State) :
         by rw [u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide)],
         by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd], by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr],
         by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]⟩
-  exact WP.mono (WP.kept h (by simp [dstOf, preserved]))
+  exact WP.mono (WP.kept h rfl)
     fun s' ⟨⟨h0, h1, h2, hrd, hwr, hm⟩, hg, hsp⟩ =>
       ⟨h0, h1, h2, Kept.of hg hsp hrd hwr (by rw [hm]; exact Frame.refl _ _)⟩
 
@@ -1700,7 +1700,7 @@ theorem compare_ok {s₀ : State} (hp : APre false s₀) {s : State} (hx21 : s.g
         u₁.mem]
     · rw [u₁₃.rd, u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
     · rw [u₁₃.wr, u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
-  refine WP.mono (WP.kept core (by simp [Impl.ChaCha20Poly1305.AArch64.compare, dstOf, preserved]))
+  refine WP.mono (WP.kept core rfl)
     fun s' ⟨⟨h0, hm, hrd', hwr'⟩, hg, hsp⟩ => ⟨?_, hg, hsp, hm, hrd', hwr'⟩
   have ht := tag_eq s.mem (off (cx s₀) 48) (tp s₀)
   simp only [off_off, Nat.reduceAdd] at ht
