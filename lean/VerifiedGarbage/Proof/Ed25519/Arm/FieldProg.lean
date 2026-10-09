@@ -22,7 +22,7 @@ def evalOp (op : FieldOp) (e : Env) : Env :=
 def evalOps (ops : List FieldOp) (e : Env) : Env := ops.foldl (fun e op => evalOp op e) e
 
 structure Keep (b : BitVec 32) (s s' : State) : Prop where
-  rest : Rest clob s s'
+  rest : Rest fclob s s'
   frame : Frame [FA b] s.mem s'.mem
 
 theorem Keep.refl (b : BitVec 32) (s : State) : Keep b s s :=
@@ -36,7 +36,7 @@ theorem Keep.ctx {b : BitVec 32} {s t : State} (h : Keep b s t) (hs : Ctx b s) :
 
 theorem limb_slot_frame {b : BitVec 32} {m m' : Mem} {o i : Slot} (hne : i ≠ o)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
-      ⟨State.addr b + BitVec.ofNat 64 ACC, 128⟩] m m') :
+      ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m') :
     ∀ k < 16, limb m' (State.addr b) (offset i) k = limb m (State.addr b) (offset i) k := by
   have hi := slot_range i
   have ho := slot_range o
@@ -53,7 +53,7 @@ theorem limb_slot_frame {b : BitVec 32} {m m' : Mem} {o i : Slot} (hne : i ≠ o
 
 theorem field_update {b : BitVec 32} {m m' : Mem} (o : Slot) (hl : AllLim m b)
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
-      ⟨State.addr b + BitVec.ofNat 64 ACC, 128⟩] m m')
+      ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m')
     (ho : Lim m' (State.addr b) (offset o)) :
     AllLim m' b ∧ env m' b = Function.update (env m b) o (FS m' (State.addr b) (offset o)) := by
   constructor
@@ -69,16 +69,35 @@ theorem field_update {b : BitVec 32} {m m' : Mem} (o : Slot) (hl : AllLim m b)
     · rw [Function.update_of_ne hi]
       exact congrArg VG.Proof.X25519.toFe (val16_congr (limb_slot_frame hi hf))
 
-theorem field_finish {b : BitVec 32} {s t : State} (o : Slot) (hl : AllLim s.mem b)
-    (hr : Rest clob s t)
+/-- An operation's frame at `o` and in the product's own working space is
+within the field area. -/
+theorem frame_FA16 {b : BitVec 32} {o : Slot} {m m' : Mem}
     (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
-      ⟨State.addr b + BitVec.ofNat 64 ACC, 128⟩] s.mem t.mem)
+      ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m') : Frame [FA b] m m' := by
+  have ho := slot_range o
+  have hA := ACC_eq
+  refine hf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact Offset.sub _ (by omega) (by omega)
+  · exact Offset.sub _ (by omega) (by omega)
+
+/-- A frame at `o` alone, as an operation's. -/
+theorem frame_o16 {b : BitVec 32} {o : Nat} {m m' : Mem}
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩] m m') :
+    Frame [⟨State.addr b + BitVec.ofNat 64 o, 64⟩, ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] m m' :=
+  hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
+
+theorem field_finish {b : BitVec 32} {s t : State} (o : Slot) (hl : AllLim s.mem b)
+    (hr : Rest fclob s t)
+    (hf : Frame [⟨State.addr b + BitVec.ofNat 64 (offset o), 64⟩,
+      ⟨State.addr b + BitVec.ofNat 64 ACC, 160⟩] s.mem t.mem)
     (ho : Lim t.mem (State.addr b) (offset o)) {v : Spec.X25519.Fe}
     (hv : FS t.mem (State.addr b) (offset o) = v) :
     Keep b s t ∧ AllLim t.mem b ∧ env t.mem b = Function.update (env s.mem b) o v := by
   obtain ⟨hlim, he⟩ := field_update o hl hf ho
   rw [hv] at he
-  exact ⟨⟨hr, frame_FA (by decide) (slot_range o) hf⟩, hlim, he⟩
+  exact ⟨⟨hr, frame_FA16 hf⟩, hlim, he⟩
 
 theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
     (op : FieldOp) :
@@ -87,14 +106,14 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
   cases op with
   | copy o a =>
     refine WP.mono (copyField_op hc o a (hl a)) fun t ⟨hr, hf, ho, hv⟩ => ?_
-    exact field_finish o hl (hr.mono (by decide)) (frame_o hf) ho hv
+    exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
   | const o v =>
     refine WP.mono (constField_op hc o v) fun t ⟨hr, hf, ho, hv⟩ => ?_
-    exact field_finish o hl (hr.mono (by decide)) (frame_o hf) ho hv
+    exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
   | mul o a c =>
-    refine WP.mono (mul_ok (by decide) (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
+    refine WP.mono (Field16.mulCall_ok (slot_range o).2 (slot_range a).2 (slot_range c).2 hc (hl a) (hl c))
       fun t ⟨hr, hf, ho, hv⟩ => ?_
-    exact field_finish o hl hr hf ho (VG.Proof.X25519.toFe_mul hv)
+    exact field_finish o hl (hr.mono (by decide)) hf ho (VG.Proof.X25519.toFe_mul hv)
   | add o a c =>
     have ho := slot_range o
     have ha := slot_range a
@@ -102,7 +121,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     rw [ACC_eq] at ho ha hb
     refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
-    exact field_finish o hl hr (frame_o hf) ho (VG.Proof.X25519.toFe_add hv)
+    exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
@@ -110,7 +129,7 @@ theorem fieldOp_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem
     rw [ACC_eq] at ho ha hb
     refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
       hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
-    exact field_finish o hl hr (frame_o hf) ho (VG.Proof.X25519.toFe_sub hv)
+    exact field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_sub hv)
 
 theorem fieldCode_ok (ops : List FieldOp) {s : State} {b : BitVec 32} (hc : Ctx b s)
     (hl : AllLim s.mem b) :
@@ -123,6 +142,60 @@ theorem fieldCode_ok (ops : List FieldOp) {s : State} {b : BitVec 32} (hc : Ctx 
     refine WP.mono (fieldOp_ok hc hl op) fun t ⟨ht, hlt, et⟩ => ?_
     refine WP.mono (ih (ht.ctx hc) hlt) fun u ⟨hu, hlu, eu⟩ => ?_
     exact ⟨ht.trans hu, hlu, by rw [eu, et]; rfl⟩
+
+/-- An operation that is not a product: it calls nothing. -/
+def callFree : FieldOp → Bool
+  | .mul .. => false
+  | _ => true
+
+/-- `fieldOp_ok` for an operation that calls nothing, which also changes no
+register but X25519's `clob`. -/
+theorem fieldOpFree_ok {b : BitVec 32} {s : State} (hc : Ctx b s) (hl : AllLim s.mem b)
+    (op : FieldOp) (hop : callFree op = true) :
+    WP isa op.code s fun t => Keep b s t ∧ Rest clob s t ∧ AllLim t.mem b ∧
+      env t.mem b = evalOp op (env s.mem b) := by
+  cases op with
+  | copy o a =>
+    refine WP.mono (copyField_op hc o a (hl a)) fun t ⟨hr, hf, ho, hv⟩ => ?_
+    obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
+    exact ⟨k, hr.mono (by decide), l, e⟩
+  | const o v =>
+    refine WP.mono (constField_op hc o v) fun t ⟨hr, hf, ho, hv⟩ => ?_
+    obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho hv
+    exact ⟨k, hr.mono (by decide), l, e⟩
+  | mul => exact absurd hop (by simp [callFree])
+  | add o a c =>
+    have ho := slot_range o
+    have ha := slot_range a
+    have hb := slot_range c
+    rw [ACC_eq] at ho ha hb
+    refine WP.mono (add_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+      hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
+    obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_add hv)
+    exact ⟨k, hr, l, e⟩
+  | sub o a c =>
+    have ho := slot_range o
+    have ha := slot_range a
+    have hb := slot_range c
+    rw [ACC_eq] at ho ha hb
+    refine WP.mono (sub_ok (by omega) (by omega) (by omega) (slot_sep o a) (slot_sep o c)
+      hc (hl a) (hl c)) fun t ⟨hr, hf, ho, hv⟩ => ?_
+    obtain ⟨k, l, e⟩ := field_finish o hl (hr.mono (by decide)) (frame_o16 hf) ho (VG.Proof.X25519.toFe_sub hv)
+    exact ⟨k, hr, l, e⟩
+
+/-- `fieldCode_ok` for operations that call nothing. -/
+theorem fieldCodeFree_ok (ops : List FieldOp) (hops : ops.all callFree = true) {s : State}
+    {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b) :
+    WP isa (fieldCode ops) s fun t => Keep b s t ∧ Rest clob s t ∧ AllLim t.mem b ∧
+      env t.mem b = evalOps ops (env s.mem b) := by
+  induction ops generalizing s with
+  | nil => exact WP.block_nil ⟨Keep.refl _ _, Rest.refl _ _, hl, rfl⟩
+  | cons op ops ih =>
+    rw [List.all_cons, Bool.and_eq_true] at hops
+    rw [fieldCode, WP.seq_iff]
+    refine WP.mono (fieldOpFree_ok hc hl op hops.1) fun t ⟨ht, hrt, hlt, et⟩ => ?_
+    refine WP.mono (ih hops.2 (ht.ctx hc) hlt) fun u ⟨hu, hru, hlu, eu⟩ => ?_
+    exact ⟨ht.trans hu, hrt.trans hru, hlu, by rw [eu, et]; rfl⟩
 
 theorem constField_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (o : Slot) (v : Spec.X25519.Fe) :

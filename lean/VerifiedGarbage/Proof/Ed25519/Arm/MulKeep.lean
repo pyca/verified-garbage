@@ -23,7 +23,7 @@ structure PowersInv (s₀ : State) (b : BitVec 32) (o count n : Nat) (batch : Bo
   keep : PowersKeep b o (128 * count) s₀ s
 
 theorem powersLoop_ok (batch : Bool) {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀)
-    (hl : AllLim s₀.mem b) (o count : Nat) (hlo : 1600 ≤ o) (hbound : o + 128 * count ≤ 8192)
+    (hl : AllLim s₀.mem b) (o count : Nat) (hlo : 1632 ≤ o) (hbound : o + 128 * count ≤ 8192)
     (hn0 : 0 < count) (hn : count ≤ 32) (h11 : s₀.gpr .r11 = 0)
     (hd : env s₀.mem b 16 = Spec.Ed25519.d) :
     WP isa (.loop (powersBody o count batch) .ne) s₀ fun t => AllLim t.mem b ∧
@@ -68,7 +68,7 @@ theorem powersLoop_ok (batch : Bool) {s₀ : State} {b : BitVec 32} (hc : Ctx b 
     · intro j hj; omega
 
 theorem pointPowers_ok (batch : Bool) {s : State} {b : BitVec 32} (hc : Ctx b s)
-    (hl : AllLim s.mem b) (o count : Nat) (hlo : 1600 ≤ o) (hbound : o + 128 * count ≤ 8192)
+    (hl : AllLim s.mem b) (o count : Nat) (hlo : 1632 ≤ o) (hbound : o + 128 * count ≤ 8192)
     (hn0 : 0 < count) (hn : count ≤ 32) (hd : env s.mem b 16 = Spec.Ed25519.d) :
     WP isa (pointPowers o count batch) s fun t => AllLim t.mem b ∧
       (∀ j < count, tablePoint t.mem b (o + 128 * j) =
@@ -106,7 +106,7 @@ structure AccumulateInv (s₀ : State) (b : BitVec 32) (start scalar : Nat)
   value : point (env s.mem b) 0 1 2 3 = after scalar p (start + n)
   bits : ∀ i < 16, s.mem (State.addr b + BitVec.ofNat 64 (32 + i)) =
     BitVec.ofNat 8 (scalarBit scalar (start + i)).toNat
-  table : ∀ i < 16, tablePoint s.mem b (5696 + 128 * i) = powerPoint p (start + i)
+  table : ∀ i < 16, tablePoint s.mem b (5728 + 128 * i) = powerPoint p (start + i)
   keep : LoopKeep b s₀ s
 
 theorem accumulateLoop_ok {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀) (hl : AllLim s₀.mem b)
@@ -115,7 +115,7 @@ theorem accumulateLoop_ok {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀) (hl :
       BitVec.ofNat 8 (scalarBit scalar (start + i)).toNat)
     (hd : env s₀.mem b 16 = Spec.Ed25519.d)
     (hp : point (env s₀.mem b) 0 1 2 3 = after scalar p (start + 16))
-    (ht : ∀ i < 16, tablePoint s₀.mem b (5696 + 128 * i) = powerPoint p (start + i)) :
+    (ht : ∀ i < 16, tablePoint s₀.mem b (5728 + 128 * i) = powerPoint p (start + i)) :
     WP isa (.loop accumulateBody .ne) s₀ fun t => AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 = after scalar p start ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       LoopKeep b s₀ t := by
@@ -129,7 +129,7 @@ theorem accumulateLoop_ok {s₀ : State} {b : BitVec 32} (hc : Ctx b s₀) (hl :
     have hb' : ∀ i < 16, t.mem (State.addr b + BitVec.ofNat 64 (32 + i)) =
         BitVec.ofNat 8 (scalarBit scalar (start + i)).toNat :=
       fun i hi => (tk.bit i hi).trans (h.bits i hi)
-    have ht' : ∀ i < 16, tablePoint t.mem b (5696 + 128 * i) = powerPoint p (start + i) := by
+    have ht' : ∀ i < 16, tablePoint t.mem b (5728 + 128 * i) = powerPoint p (start + i) := by
       intro i hi
       exact (workspace_tablePoint tk.frame (by omega) (by omega)).trans (h.table i hi)
     by_cases hk0 : k = 0
@@ -145,7 +145,7 @@ theorem accumulate16_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim 
       BitVec.ofNat 8 (scalarBit scalar (start + i)).toNat)
     (hd : env s.mem b 16 = Spec.Ed25519.d)
     (hp : point (env s.mem b) 0 1 2 3 = after scalar p (start + 16))
-    (ht : ∀ i < 16, tablePoint s.mem b (5696 + 128 * i) = powerPoint p (start + i)) :
+    (ht : ∀ i < 16, tablePoint s.mem b (5728 + 128 * i) = powerPoint p (start + i)) :
     WP isa accumulate16 s fun t => AllLim t.mem b ∧
       point (env t.mem b) 0 1 2 3 = after scalar p start ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       LoopKeep b s t := by
@@ -171,12 +171,12 @@ theorem PowersKeep.of_keep {b : BitVec 32} {o n : Nat} {s t : State} (h : Keep b
 theorem loadCheckpoint_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
     (j : Nat) (hj : j < 32) (h11 : s.gpr .r11 = BitVec.ofNat 32 j) :
     WP isa loadCheckpoint s fun t => AccKeep b s t ∧ AllLim t.mem b ∧
-      point (env t.mem b) 0 1 2 3 = tablePoint s.mem b (1600 + 128 * j) ∧
+      point (env t.mem b) 0 1 2 3 = tablePoint s.mem b (1632 + 128 * j) ∧
       point (env t.mem b) 17 18 19 20 = point (env s.mem b) 0 1 2 3 ∧
       env t.mem b 16 = env s.mem b 16 := by
   refine WP.seq (WP.mono (fieldCode_ok savePointOps hc hl) fun a ⟨ka, la, ea⟩ => ?_)
   rw [WP.block_append_iff]
-  refine WP.mono (tableAddr_ok (ka.ctx hc) 1600 j (by omega) hj
+  refine WP.mono (tableAddr_ok (ka.ctx hc) 1632 j (by omega) hj
     ((ka.rest.gpr _ (by decide)).trans h11)) fun a' ⟨hptr, hr, hm⟩ => ?_
   have ka' : AccKeep b a a' := AccKeep.of_rest hr (by decide) hm
   refine WP.mono (pointFromTable_ok (ka'.ctx (ka.ctx hc)) (by rw [hm]; exact la)
@@ -192,12 +192,12 @@ theorem loadCheckpoint_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLi
 theorem prepareBatch_ok {s : State} {base : BitVec 32} (hc : Ctx base s) (hl : AllLim s.mem base)
     (j : Nat) (hj : j < 32) (h11 : s.gpr .r11 = BitVec.ofNat 32 j)
     (hd : env s.mem base 16 = Spec.Ed25519.d) :
-    WP isa prepareBatch s fun t => PowersKeep base 5696 2048 s t ∧ AllLim t.mem base ∧
+    WP isa prepareBatch s fun t => PowersKeep base 5728 2048 s t ∧ AllLim t.mem base ∧
       point (env t.mem base) 0 1 2 3 = point (env s.mem base) 0 1 2 3 ∧
-      (∀ i < 16, tablePoint t.mem base (5696 + 128 * i) =
-        powerPoint (tablePoint s.mem base (1600 + 128 * j)) i) ∧ env t.mem base 16 = Spec.Ed25519.d := by
+      (∀ i < 16, tablePoint t.mem base (5728 + 128 * i) =
+        powerPoint (tablePoint s.mem base (1632 + 128 * j)) i) ∧ env t.mem base 16 = Spec.Ed25519.d := by
   refine WP.seq (WP.mono (loadCheckpoint_ok hc hl j hj h11) fun a ⟨ka, la, ap, av, ad⟩ => ?_)
-  refine WP.seq (WP.mono (pointPowers_ok false (ka.ctx hc) la 5696 16 (by decide)
+  refine WP.seq (WP.mono (pointPowers_ok false (ka.ctx hc) la 5728 16 (by decide)
     (by decide) (by decide) (by decide) (ad.trans hd)) fun b ⟨lb, bt, _, bh, kb⟩ => ?_)
   refine WP.mono (fieldCode_ok restorePointOps (kb.ctx (ka.ctx hc)) lb) fun t ⟨kt, lt, et⟩ => ?_
   refine ⟨((PowersKeep.of_acc ka).trans kb).trans (PowersKeep.of_keep kt), lt, ?_, ?_, ?_⟩
@@ -260,7 +260,7 @@ theorem MulKeep.of_rest {b : BitVec 32} {o n : Nat} {s t : State} {ws : List Reg
   ⟨hr.mono hw, by rw [hm]; exact Frame.refl _ _⟩
 
 theorem MulKeep.word {b : BitVec 32} {o n : Nat} {s t : State}
-    (h : MulKeep b o n s t) (ho : 1600 ≤ o) (hn : o + n ≤ 8192)
+    (h : MulKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192)
     (d : Nat) (hd : d = 48 ∨ d = 52) :
     t.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 =
       s.mem.readW (State.addr b + BitVec.ofNat 64 d) 32 := by
@@ -271,7 +271,7 @@ theorem MulKeep.word {b : BitVec 32} {o n : Nat} {s t : State}
       exact Offset.disjoint _ (by omega) (by omega) (by omega)
 
 theorem MulKeep.table {b : BitVec 32} {o n : Nat} {s t : State}
-    (h : MulKeep b o n s t) {d : Nat} (hd : 1600 ≤ d) (hb : d + 128 ≤ 8192)
+    (h : MulKeep b o n s t) {d : Nat} (hd : 1632 ≤ d) (hb : d + 128 ≤ 8192)
     (hn : o + n ≤ 8192) (hs : d + 128 ≤ o ∨ o + n ≤ d) :
     tablePoint t.mem b d = tablePoint s.mem b d := by
   refine tablePoint_frame h.frame fun r hr => ?_

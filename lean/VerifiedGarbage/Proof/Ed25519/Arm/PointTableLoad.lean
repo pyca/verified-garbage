@@ -44,14 +44,14 @@ theorem TableKeep.slot {b : BitVec 32} {s t : State} {o n : Nat}
   exact Offset.disjoint _ (by omega) (by omega) (by omega)
 
 theorem TableKeep.env {b : BitVec 32} {s t : State} {o n : Nat}
-    (h : TableKeep b o n s t) (ho : 1600 ≤ o) (hn : o + n ≤ 8192) : env t.mem b = env s.mem b := by
+    (h : TableKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192) : env t.mem b = env s.mem b := by
   funext i
   have hi := slot_range i
   rw [ACC_eq] at hi
   exact congrArg VG.Proof.X25519.toFe (val16_congr (h.slot hn i (.inl (by omega))))
 
 theorem TableKeep.lim {b : BitVec 32} {s t : State} {o n : Nat}
-    (h : TableKeep b o n s t) (ho : 1600 ≤ o) (hn : o + n ≤ 8192)
+    (h : TableKeep b o n s t) (ho : 1632 ≤ o) (hn : o + n ≤ 8192)
     (hl : AllLim s.mem b) : AllLim t.mem b := by
   intro i k hk
   have hi := slot_range i
@@ -70,7 +70,7 @@ theorem TableKeep.tableF {b : BitVec 32} {s t : State} {o n d : Nat}
   exact Offset.disjoint _ hsep (by omega) (by omega)
 
 theorem toTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (j : Nat) (hj : j < 4) :
     WP isa (.block (packField (64 + 64 * j) (32 * j))) s fun t =>
       tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega⟩ ∧
@@ -85,7 +85,7 @@ theorem toTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLi
   exact ⟨congrArg VG.Proof.X25519.toFe hv, ⟨hr.mono (by decide), hf⟩⟩
 
 theorem toTablePrefix_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j => packField (64 + 64 * j) (32 * j))) s fun t =>
       (∀ j (hj : j < n), tableF t.mem b (o + 32 * j) = env s.mem b ⟨j, by omega⟩) ∧
@@ -109,7 +109,7 @@ def tablePoint (m : Mem) (b : BitVec 32) (o : Nat) : Spec.Ed25519.Point :=
   ⟨tableF m b o, tableF m b (o + 32), tableF m b (o + 64), tableF m b (o + 96)⟩
 
 theorem pointToTable_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) :
     WP isa (.block pointToTable) s fun t => tablePoint t.mem b o = point (env s.mem b) 0 1 2 3 ∧
       TableKeep b o 128 s t := by
@@ -131,7 +131,7 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 theorem fromTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (j : Nat) (hj : j < 4) :
     WP isa (.block (unpackField (64 + 64 * j) (32 * j))) s fun t =>
       env t.mem b ⟨j, by omega⟩ = tableF s.mem b (o + 32 * j) ∧ AllLim t.mem b ∧
@@ -145,11 +145,11 @@ theorem fromTableQuarter_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : All
     (by rw [ea, Offset.add_add]; exact Offset.disjoint _ (.inr (by omega)) (by omega) (by omega)))
     fun t ⟨hr, hf, hlt, hv⟩ => ?_
   rw [ea, Offset.add_add] at hv
-  have hu := field_update ⟨j, by omega⟩ hl (frame_o hf) hlt
+  have hu := field_update ⟨j, by omega⟩ hl (frame_o16 hf) hlt
   exact ⟨congrArg VG.Proof.X25519.toFe hv, hu.1, ⟨hr, hf⟩⟩
 
 theorem fromTablePrefix_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) (n : Nat) (hn : n ≤ 4) :
     WP isa (.block ((List.range n).flatMap fun j => unpackField (64 + 64 * j) (32 * j))) s fun t =>
       (∀ j (hj : j < n), env t.mem b ⟨j, by omega⟩ = tableF s.mem b (o + 32 * j)) ∧
@@ -174,7 +174,7 @@ theorem fromTablePrefix_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllL
       rw [hu, hk.tableF (by omega) (by omega) (.inr (by omega))]
 
 theorem pointFromTable_ok {s : State} {b : BitVec 32} (hc : Ctx b s) (hl : AllLim s.mem b)
-    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1600 ≤ o)
+    {o : Nat} (hp : s.gpr .r12 = b + BitVec.ofNat 32 o) (hlo : 1632 ≤ o)
     (ho : o + 128 ≤ 8192) :
     WP isa (.block pointFromTable) s fun t => point (env t.mem b) 0 1 2 3 = tablePoint s.mem b o ∧
       AllLim t.mem b ∧ TableKeep b 64 256 s t := by

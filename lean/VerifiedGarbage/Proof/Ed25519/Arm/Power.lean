@@ -14,7 +14,7 @@ def opMul (o a b : Slot) (e : Env) : Env := Function.update e o (e a * e b)
 
 /-- Field work and its fixed-count squaring counter. -/
 structure IKeep (b : BitVec 32) (s t : State) : Prop where
-  rest : Rest (.r10 :: clob) s t
+  rest : Rest (.r10 :: fclob) s t
   frame : Frame [FA b] s.mem t.mem
 
 theorem IKeep.trans {b : BitVec 32} {s t u : State} (h : IKeep b s t) (k : IKeep b t u) :

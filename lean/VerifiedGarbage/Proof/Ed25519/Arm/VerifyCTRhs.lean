@@ -82,14 +82,15 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 theorem fromCTPre_keep {b ptr : BitVec 32} {count : Nat} {s t : State}
-    (h : FromCTPre b ptr count s) (hk : Keep b s t) (hl : AllLim t.mem b) : FromCTPre b ptr count t :=
-  ⟨hk.ctx h.1, hl, (hk.rest.gpr _ (by decide)).trans h.2.2.1, h.2.2.2.1,
+    (h : FromCTPre b ptr count s) (hk : Keep b s t) (hr : Rest clob s t) (hl : AllLim t.mem b) :
+    FromCTPre b ptr count t :=
+  ⟨hk.ctx h.1, hl, (hr.gpr _ (by decide)).trans h.2.2.1, h.2.2.2.1,
     fun i hi => by rw [hk.rest.rd, hk.rest.wr]; exact h.2.2.2.2.1 i hi, h.2.2.2.2.2⟩
 
 theorem verifyLoadScalar_ct (b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b) ∧
       (VerifyContext b pk sig challenge t ∧ AllLim t.mem b))
-      (.block (loadHeader 8132 ++ ([.dp .add .r12 .r12 (.imm 32)] : List Instr)))
+      (.block (loadHeader 8164 ++ ([.dp .add .r12 .r12 (.imm 32)] : List Instr)))
       (fun s t => FromCTPre b (sig + 32) 16 s ∧ FromCTPre b (sig + 32) 16 t) := by
   apply ctBoth
   · apply ctRegs [.r0] _ (by taint_decide)
@@ -99,7 +100,7 @@ theorem verifyLoadScalar_ct (b pk sig challenge : BitVec 32) :
     exact h.1.1.ctx.r0.trans h.2.1.ctx.r0.symm
   · intro s ⟨hc, hl⟩
     rw [WP.block_append_iff]
-    refine WP.mono (loadHeader_ok hc.ctx 8132 (by decide)) fun u ⟨ur, um, up⟩ => ?_
+    refine WP.mono (loadHeader_ok hc.ctx 8164 (by decide)) fun u ⟨ur, um, up⟩ => ?_
     refine WP.mono (addInput32_ok u) fun t ⟨tr, tm, tp⟩ => ?_
     have kt : VerifyKeep b s t := (VerifyKeep.of_rest ur (by decide) um).trans
       (VerifyKeep.of_rest tr (by decide) tm)
@@ -117,8 +118,9 @@ theorem verifyConstBase_ct (b ptr : BitVec 32) :
     subst r
     exact h.1.1.r0.trans h.2.1.r0.symm
   · intro s hs
-    refine WP.mono (fieldCode_ok (constPointOps Spec.Ed25519.basePoint) hs.1 hs.2.1) fun t ⟨tk, tl, _⟩ => ?_
-    exact fromCTPre_keep hs tk tl
+    refine WP.mono (fieldCodeFree_ok (constPointOps Spec.Ed25519.basePoint) (by decide) hs.1 hs.2.1)
+      fun t ⟨tk, tr, tl, _⟩ => ?_
+    exact fromCTPre_keep hs tk tr tl
 
 theorem verifyLhs_ct (b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b) ∧
@@ -144,12 +146,12 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 def verifyRhsMul : Prog isa :=
-  .seq (.block (pointTableRead 7744 ++ loadHeader 8136)) (pointFromScalar 32)
+  .seq (.block (pointTableRead 7776 ++ loadHeader 8168)) (pointFromScalar 32)
 
 theorem verifyLoadChallenge_ct (b pk sig challenge : BitVec 32) :
     CT (fun s t => (VerifyContext b pk sig challenge s ∧ AllLim s.mem b) ∧
       (VerifyContext b pk sig challenge t ∧ AllLim t.mem b))
-      (.block (pointTableRead 7744 ++ loadHeader 8136))
+      (.block (pointTableRead 7776 ++ loadHeader 8168))
       (fun s t => FromCTPre b challenge 32 s ∧ FromCTPre b challenge 32 t) := by
   apply ctBoth
   · apply ctRegs [.r0] _ (by taint_decide)
@@ -159,8 +161,8 @@ theorem verifyLoadChallenge_ct (b pk sig challenge : BitVec 32) :
     exact h.1.1.ctx.r0.trans h.2.1.ctx.r0.symm
   · intro s ⟨hc, hl⟩
     rw [WP.block_append_iff]
-    refine WP.mono (pointTableRead_ok hc.ctx hl 7744 (by decide) (by decide)) fun u ⟨uk, ul, _, _⟩ => ?_
-    refine WP.mono (loadHeader_ok (uk.ctx hc.ctx) 8136 (by decide)) fun t ⟨tr, tm, tp⟩ => ?_
+    refine WP.mono (pointTableRead_ok hc.ctx hl 7776 (by decide) (by decide)) fun u ⟨uk, ul, _, _⟩ => ?_
+    refine WP.mono (loadHeader_ok (uk.ctx hc.ctx) 8168 (by decide)) fun t ⟨tr, tm, tp⟩ => ?_
     have ku := VerifyKeep.of_acc uk
     have kt := ku.trans (VerifyKeep.of_rest tr (by decide) tm)
     have hi := (hc.keep kt).challengeInput
@@ -175,16 +177,16 @@ theorem verifyRhsMul_ok {b pk sig challenge : BitVec 32} {s : State}
     (hc : VerifyContext b pk sig challenge s) (hl : AllLim s.mem b) :
     WP isa verifyRhsMul s fun t => PointKeep b s t ∧ AllLim t.mem b ∧ env t.mem b 16 = Spec.Ed25519.d ∧
       point (env t.mem b) 0 1 2 3 = Spec.Ed25519.pointMul
-        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64)) (tablePoint s.mem b 7744) := by
+        (Spec.Ed25519.decodeLE (Spec.Ed25519.bytesAt s.mem (State.addr challenge) 64)) (tablePoint s.mem b 7776) := by
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (pointTableRead_ok hc.ctx hl 7744 (by decide) (by decide)) fun a ⟨ak, al, ap, _⟩ => ?_
-  refine WP.mono (loadHeader_ok (ak.ctx hc.ctx) 8136 (by decide)) fun c ⟨cr, cm, cp⟩ => ?_
+  refine WP.mono (pointTableRead_ok hc.ctx hl 7776 (by decide) (by decide)) fun a ⟨ak, al, ap, _⟩ => ?_
+  refine WP.mono (loadHeader_ok (ak.ctx hc.ctx) 8168 (by decide)) fun c ⟨cr, cm, cp⟩ => ?_
   have kc := ak.trans (AccKeep.of_rest cr (by decide) cm)
   have cpk := PointKeep.of_mul (MulKeep.of_powers (PowersKeep.of_acc kc))
   have cc := hc.keep (VerifyKeep.of_acc kc)
   have cp' : c.gpr .r12 = challenge := cp.trans (hc.keep (VerifyKeep.of_acc ak)).challengeHeader
-  have capp : point (env c.mem b) 0 1 2 3 = tablePoint s.mem b 7744 :=
+  have capp : point (env c.mem b) 0 1 2 3 = tablePoint s.mem b 7776 :=
     (congrArg (fun m => point (env m b) 0 1 2 3) cm).trans ap
   refine WP.mono (pointFromScalar_ok cc.ctx (cm ▸ al) cp' 32 (by decide) (by decide)
     cc.challengeInput.fit cc.challengeInput.readable cc.challengeInput.separate) fun t ⟨tk, tl, td, tp⟩ => ?_
@@ -200,12 +202,12 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 def RhsCTPre (m : Mem) (b pk sig challenge : BitVec 32) (a r lhs : Spec.Ed25519.Point) (s : State) : Prop :=
-  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7744 = a ∧
-    tablePoint s.mem b 7872 = r ∧ tablePoint s.mem b 8000 = lhs
+  VerifyPublic m b pk sig challenge s ∧ AllLim s.mem b ∧ tablePoint s.mem b 7776 = a ∧
+    tablePoint s.mem b 7904 = r ∧ tablePoint s.mem b 8032 = lhs
 
 def CombineCTPre (b : BitVec 32) (ka r lhs : Spec.Ed25519.Point) (s : State) : Prop :=
   Ctx b s ∧ AllLim s.mem b ∧ env s.mem b 16 = Spec.Ed25519.d ∧
-    point (env s.mem b) 0 1 2 3 = ka ∧ tablePoint s.mem b 7872 = r ∧ tablePoint s.mem b 8000 = lhs
+    point (env s.mem b) 0 1 2 3 = ka ∧ tablePoint s.mem b 7904 = r ∧ tablePoint s.mem b 8032 = lhs
 
 theorem verifyMul_public_ct (m : Mem) (b pk sig challenge : BitVec 32) (a r lhs : Spec.Ed25519.Point) :
     CT (fun s t => RhsCTPre m b pk sig challenge a r lhs s ∧ RhsCTPre m b pk sig challenge a r lhs t)

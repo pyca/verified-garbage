@@ -287,7 +287,7 @@ theorem freezeRaw_ok {s : State} (hc : Ctx b s) (hl : AllLim s.mem b) (a : Slot)
     refine limb_frame hframe (fun r hm j hj => ?_) k hk
     rw [List.mem_singleton.mp hm]
     exact Offset.disjoint _ (.inl (by omega)) (by rw [ACC_eq] at hi; omega) (by decide)
-  refine ⟨⟨(hr.mono (by decide)).trans hr', ?_⟩,
+  refine ⟨⟨(hr.mono (by decide)).trans (hr'.mono (by decide)), ?_⟩,
     fun i k hk => by rw [hs i k hk]; exact hl i k hk,
     funext fun i => congrArg VG.Proof.X25519.toFe (val16_congr (hs i)), hl', ?_, hs⟩
   · exact hframe.sub fun r hm => ⟨_, List.mem_singleton_self _, by

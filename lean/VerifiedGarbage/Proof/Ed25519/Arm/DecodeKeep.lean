@@ -6,7 +6,7 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 structure DecodeKeep (b : BitVec 32) (s t : State) : Prop where
-  rest : Rest (.r10 :: clob) s t
+  rest : Rest (.r10 :: fclob) s t
   frame : Frame [⟨State.addr b + BitVec.ofNat 64 60, 4⟩, FA b] s.mem t.mem
 
 theorem DecodeKeep.ctx {b : BitVec 32} {s t : State} (h : DecodeKeep b s t) (hc : Ctx b s) : Ctx b t :=
