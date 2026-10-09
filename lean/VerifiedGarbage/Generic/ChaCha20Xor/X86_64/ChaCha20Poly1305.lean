@@ -61,11 +61,11 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
     target := X86_64.target
     doc := Spec.ChaCha20Poly1305.sealApi.doc (notes := [xorNote v])
     code := Impl.StackScratch.X86_64.withStackArgScratchWipedX 1720 1 42
-      (Impl.ChaCha20Poly1305.X86_64.«seal» v.callee v.poly)
+      (Impl.ChaCha20Poly1305.X86_64.Stitch.sealFor v.callee v.poly)
     contract := Spec.ChaCha20Poly1305.sealContract X86_64.abi 1744
     stack := 1744
-    verified := seal_framed v
-    spSafe := X86_64.withStackArgScratchWipedX_spSafe (seal_spSafe v)
+    verified := Stitch.sealFor_framed v
+    spSafe := X86_64.withStackArgScratchWipedX_spSafe (Stitch.sealFor_spSafe v)
     features := features v },
   { Spec.ChaCha20Poly1305.openApi with
     name := Spec.ChaCha20Poly1305.openApi.name ++ v.suffix
