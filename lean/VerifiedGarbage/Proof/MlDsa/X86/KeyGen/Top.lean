@@ -30,7 +30,7 @@ structure KFin (p : Params) (s₀ s : State) : Prop where
 
 theorem trHash_piece {p : Params} (hF : PFacts p) : KP p (KRx p (p.ℓ + p.k) p.ℓ p.k) (KFin p) (trHash p) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  refine hash1_piece (Y := YK p) 0 200 136 0x1f ⟨1, 0, p.pkLen⟩ ⟨2, 64, 64⟩ Proof.MlKem.rate136 (by layp hF)
+  refine hash1_piece (Y := YK p) 0 200 136 0x1f ⟨1, 0, p.pkLen⟩ ⟨2, 64, 64⟩ Proof.MlKem.rate136 (by layd)
     (by rw [YK_stk]; omega) (by show p.pkLen < 2 ^ 32; rw [hF.pk]; omega) (by decide) (by taint_decide) (h₁ := .block [])
     (by kernel_rfl) (h₃ := .block []) (by kernel_rfl) (h₄ := .block []) (by kernel_rfl)
     (fun _ _ _ ⟨_, _, h⟩ => h.ctx) fun s₀ s s' hp ⟨A, S, h⟩ h' fr out => ⟨A, S, ?_, ?_⟩
@@ -41,8 +41,8 @@ theorem trHash_piece {p : Params} (hF : PFacts p) : KP p (KRx p (p.ℓ + p.k) p.
         (by simp only [scrLen, hF.sw]; omega)).append (bs₁ := [_])
       (SafeR.sk hF (Nat.le_refl _) (Nat.le_refl _) (by decide) (by decide) (.inl (by decide))
         (.inl (by simp only [oT0]; omega)) (by rw [hF.sk, oT0]; omega)))
-    exact h.keep hp (N := 40) (by omega) hs (fun _ _ => by layp hF) fr h'
-  · rw [out, sponge_H, keepBytes hp (N := 40) (stkN (by omega)) (b := ⟨1, 0, p.pkLen⟩) (by layp hF) fr]
+    exact h.keep hp (N := 40) (by omega) hs (fun _ _ => by layd) fr h'
+  · rw [out, sponge_H, keepBytes hp (N := 40) (stkN (by omega)) (b := ⟨1, 0, p.pkLen⟩) (by layd) fr]
 
 /-- The body's end: the keys, and `eax` the AND of the samplers' results. -/
 structure Done (p : Params) (s₀ s : State) : Prop extends KFin p s₀ s where
@@ -50,10 +50,10 @@ structure Done (p : Params) (s₀ s : State) : Prop extends KFin p s₀ s where
 
 theorem ret_piece {p : Params} (hF : PFacts p) :
     KP p (KFin p) (fun s₀ s => Ctx (YK p) s₀ s ∧ Done p s₀ s) (.block [.mov .eax (.mem (at_ .esi oACC))]) := by
-  refine ld32_piece (Y := YK p) oACC (by layp hF) (ht := .block []) (by kernel_rfl)
+  refine ld32_piece (Y := YK p) oACC (by layd) (ht := .block []) (by kernel_rfl)
     (fun _ _ _ h => by obtain ⟨_, _, h, _⟩ := h.ex; exact h.ctx) fun s₀ s s' hp h h' m' e => ⟨h', ?_, ?_⟩
   · obtain ⟨A, S, hk, htr⟩ := h.ex
-    exact ⟨A, S, hk.keep hp (bs := []) (N := 0) (by omega) (by safeR hF) (fun _ _ => by layp hF) (by rw [m']; exact Frame.refl _ _)
+    exact ⟨A, S, hk.keep hp (bs := []) (N := 0) (by omega) (by safeR hF) (fun _ _ => by layd) (by rw [m']; exact Frame.refl _ _)
       h', by rw [m']; exact htr⟩
   · rw [e, accV, m']; rfl
 
@@ -123,25 +123,25 @@ theorem addr_arg {a o l : Nat} (h : (YK p).ok ⟨a, o, l⟩ = true) :
 theorem pk_bytes {A : Nat → Poly} {S : Nat → IPoly} {np nj : Nat} (h : KR p A S np nj p.k s₀ s) :
     bytesAt s.mem (Buf.addr s₀ ⟨1, 0, p.pkLen⟩) p.pkLen = pkK p A S (rhoOf p s₀) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have e0 := addr_arg hp (a := 1) (o := 0) (l := p.pkLen) (by layp hF)
-  have e1 := addr_arg hp (a := 1) (o := 0) (l := 32) (by layp hF)
+  have e0 := addr_arg hp (a := 1) (o := 0) (l := p.pkLen) (by layd)
+  have e1 := addr_arg hp (a := 1) (o := 0) (l := 32) (by layd)
   rw [BitVec.add_zero] at e0 e1
   rw [hF.pk] at e0 ⊢
   rw [e0, Proof.MlKem.bytesAt_add, ← e1, h.pk0, e1, Proof.MlDsa.KeyGen.bytesAt_pieces s.mem _ 32 320 p.k, pkK,
     t1Max_eq]
   refine congrArg _ (flatMap_congr_mem fun i hi => ?_)
   have hi := List.mem_range.mp hi
-  rw [← addr_arg hp (a := 1) (o := 32 + 320 * i) (l := 320) (by layp hF)]
+  rw [← addr_arg hp (a := 1) (o := 32 + 320 * i) (l := 320) (by layd)]
   exact (h.rows i hi).1
 
 theorem sk_bytes {A : Nat → Poly} {S : Nat → IPoly} {nj : Nat} (h : KR p A S (p.ℓ + p.k) nj p.k s₀ s)
     (htr : bytesAt s.mem (Buf.addr s₀ ⟨2, 64, 64⟩) 64 = Spec.MlDsa.H (pkK p A S (rhoOf p s₀)) 64) :
     bytesAt s.mem (Buf.addr s₀ ⟨2, 0, p.skLen⟩) p.skLen = skK p A S (rhoOf p s₀) (kOf p s₀) := by
   have hk := hF.k; have hl := hF.l; have hkl := hF.kl
-  have a0 := addr_arg hp (a := 2) (o := 0) (l := p.skLen) (by layp hF)
-  have a1 := addr_arg hp (a := 2) (o := 0) (l := 32) (by layp hF)
-  have a2 := addr_arg hp (a := 2) (o := 32) (l := 32) (by layp hF)
-  have a3 := addr_arg hp (a := 2) (o := 64) (l := 64) (by layp hF)
+  have a0 := addr_arg hp (a := 2) (o := 0) (l := p.skLen) (by layd)
+  have a1 := addr_arg hp (a := 2) (o := 0) (l := 32) (by layd)
+  have a2 := addr_arg hp (a := 2) (o := 32) (l := 32) (by layd)
+  have a3 := addr_arg hp (a := 2) (o := 64) (l := 64) (by layd)
   rw [BitVec.add_zero] at a0 a1
   have h0 : bytesAt s.mem ((arg s₀ 2).setWidth 64) 32 = rhoOf p s₀ := by rw [← a1]; exact h.sk0
   have h1 : bytesAt s.mem ((arg s₀ 2).setWidth 64 + BitVec.ofNat 64 32) 32 = kOf p s₀ := by rw [← a2]; exact h.sk1
@@ -155,13 +155,13 @@ theorem sk_bytes {A : Nat → Poly} {S : Nat → IPoly} {nj : Nat} (h : KR p A S
   have q1 : (List.range (p.ℓ + p.k)).flatMap (fun i => bytesAt s.mem ((arg s₀ 2).setWidth 64 +
       BitVec.ofNat 64 (32 + 32 + 64 + lenS p * i)) (lenS p)) =
       (List.range (p.ℓ + p.k)).flatMap fun r => bitPack (S r) p.η p.η := flatMap_congr_mem fun r hr => by
-    rw [← addr_arg hp (a := 2) (o := 32 + 32 + 64 + lenS p * r) (l := lenS p) (by have := List.mem_range.mp hr; layp hF)]
+    rw [← addr_arg hp (a := 2) (o := 32 + 32 + 64 + lenS p * r) (l := lenS p) (by have := List.mem_range.mp hr; layd)]
     exact h.packs r (List.mem_range.mp hr)
   have q2 : (List.range p.k).flatMap (fun i => bytesAt s.mem ((arg s₀ 2).setWidth 64 +
       BitVec.ofNat 64 (128 + lenS p * (p.ℓ + p.k) + 416 * i)) 416) =
       (List.range p.k).flatMap fun i => bitPack (t0K p A S i) 4095 4096 := flatMap_congr_mem fun i hi => by
     rw [show 128 + lenS p * (p.ℓ + p.k) = oT0 p from rfl,
-      ← addr_arg hp (a := 2) (o := oT0 p + 416 * i) (l := 416) (by have := List.mem_range.mp hi; layp hF)]
+      ← addr_arg hp (a := 2) (o := oT0 p + 416 * i) (l := 416) (by have := List.mem_range.mp hi; layd)]
     exact (h.rows i (List.mem_range.mp hi)).2
   rw [p1, p2, q1, q2, skK]
   rfl
