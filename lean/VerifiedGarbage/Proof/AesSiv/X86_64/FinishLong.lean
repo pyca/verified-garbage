@@ -261,9 +261,9 @@ theorem longTail_wp (h : Env s₀ C D P W R L) {s : State} (hr : Regs s₀ C D P
       by rw [rd₆, rd₅, h₄.rd, rd₃'], by rw [wr₆, wr₅, h₄.wr, wr₃']⟩, ?_, ?_, ?_⟩
   · have e₂ : s₂.mem = s.mem := by rw [m₂, m₁]
     rw [← e₂]
-    exact ((f₃.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩).trans
-      (f₄.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩)).trans
-      (by rw [← m₅]; exact f₆.sub fun r hr => ⟨r, by simp_all, fun _ h => h⟩)
+    exact ((f₃.sub fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; simp, fun _ h => h⟩).trans
+      (f₄.sub fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; simp, fun _ h => h⟩)).trans
+      (by rw [← m₅]; exact f₆.sub fun r hr => ⟨r, by rw [List.mem_singleton.mp hr]; simp, fun _ h => h⟩)
   · rw [f₆.readW (Region.contains_self _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact Offset.disjoint W (by omega) (by omega) (by omega))
         (by decide), m₅, a₄]
