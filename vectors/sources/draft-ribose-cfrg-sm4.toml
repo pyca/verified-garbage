@@ -1,0 +1,5 @@
+name = "SM4 Blockcipher Algorithm, draft-ribose-cfrg-sm4-10 (GB/T 32907-2016 transcription and Appendix A examples)"
+directories = ["draft-ribose-cfrg-sm4"]
+url = "https://www.ietf.org/archive/id/draft-ribose-cfrg-sm4-10.txt"
+sha256 = "1bb196406ea727e32e57ef65137735f217f8effbece84c08d262b0db9fcfa20b"
+retrieved = 2026-10-08
