@@ -63,8 +63,15 @@ def decP : StitchName → Prog isa
 
 /-- Encryption using a prepared context, if supported by the variant. -/
 def encR : StitchName → Prog isa
-  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.enc
+  | .vaesAvx512 => Impl.Gcm.X86_64.StitchZH.encR
   | n => n.enc
+
+/-- Whether the encryption loop named `n` for a prepared context takes all
+the blocks, from 16 on (`Blocks.stitchPart`'s `full`), and not only the
+first `16 ⌊n / 16⌋`. -/
+def fullR : StitchName → Bool
+  | .vaesAvx512 => true
+  | _ => false
 
 /-- Decryption using a prepared context. -/
 def decR : StitchName → Prog isa
@@ -88,7 +95,7 @@ structure PieceP (n : StitchName) : Type where
 
 /-- Static and constant-time facts for prepared-context loops. -/
 structure PieceR (n : StitchName) : Type where
-  enc : Piece n.encR true
+  enc : Piece n.encR true n.fullR
   dec : Piece n.decR true
 
 /-- Interleaved loops that encrypt out of place, for

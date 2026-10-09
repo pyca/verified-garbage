@@ -16,7 +16,7 @@ theorem preparedPowersRepr_zero (p : Addr) : Spec.Gcm.PreparedPowersRepr (fun _ 
   constructor <;> decide
 
 theorem encryptBlocksPrepared_verified (v : GcmImpl) (st : Option (StitchCode CtxMode.prepared true)) :
-    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) true)
+    Verified X86_64.target (Blocks.encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) true (encFull st))
       (Spec.Gcm.encryptBlocksPreparedContract X86_64.abi 8) :=
   Verified.of_correct (encryptBlocksM_correct v st) (Blocks.encrypt_ct v st)
     { pre := by

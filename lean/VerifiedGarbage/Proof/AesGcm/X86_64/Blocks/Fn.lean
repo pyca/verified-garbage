@@ -1,5 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Fin
-import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Stitch
+import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks.Full
 
 /-!
 # AES-GCM on whole blocks, x86-64: correctness
@@ -39,7 +39,7 @@ end
 
 theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :
-    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned) s (EncDone s) := by
+    WP isa (encrypt v.callees.ctr v.callees.gh (st.map (·.enc)) aligned (encFull st)) s (EncDone s) := by
   have hp := BP.ofM hpre
   refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
   have tl : ∀ q st, Mid s q q (ctr32 (ciph s) (cb s) (blocksAt s.mem (D s) q)) st →
@@ -47,8 +47,13 @@ theorem encrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (St
     tail_calls hp _ _ M (fun _ M' h0 => encDone_of hp M' h0) fun _ M' hlt => encCalls_ok hp v M' hlt
   cases st with
   | none => exact WP.seq (WP.block_nil (tl 0 s₁ (mid_entry hp hg hk hf hrd hwr)))
-  | some p => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp p.ok h11 hg hk hf hrd hwr) fun st M =>
-      WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
+  | some p =>
+    rcases p with ⟨enc, dec, full, ok, encP, decP⟩
+    cases full with
+    | false => exact WP.seq (WP.seq (WP.mono (stitchE_ok hp ok h11 hg hk hf hrd hwr) fun st M =>
+        WP.mono (rest_ok hp rfl M) fun st' M' => tl _ st' M'))
+    | true => exact WP.seq (WP.seq (WP.mono (stitchEFull_ok hp ok h11 hg hk hf hrd hwr) fun st M =>
+        WP.mono (restFull_ok hp M) fun st' M' => tl _ st' M'))
 
 theorem decrypt_wp (v : GcmImpl) {M : CtxMode} {aligned : Bool} (st : Option (StitchCode M aligned)) {s : State}
     (hpre : Proof.AesGcm.blocksPreM M s) :

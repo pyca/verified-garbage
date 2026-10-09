@@ -13,7 +13,8 @@ The entry keeps the arguments in `scratch` (`ctx`, `rounds`, `counter`, `y`,
 interleave counter mode and GHASH, such as `Gcm.X86_64.Stitch`), the first
 `16 ⌊n / 16⌋` blocks, if any, are encrypted and hashed in one pass by it
 (with `scratch + 64` for its working space), and the arguments kept become
-those of the rest. The rest (all the blocks, without a `piece`) is then encrypted with `vg_aes_ctr32` and hashed with
+those of the rest; a `piece` that also takes the blocks after the last 16
+(`full`) is given them all, the arguments kept first made those of no rest. The rest (all the blocks, without a `piece`) is then encrypted with `vg_aes_ctr32` and hashed with
 `vg_ghash` (hashed first when decrypting), each called with `scratch + 64`,
 reloading the arguments from `scratch` after each call.
 -/
@@ -43,12 +44,22 @@ def scratchSetup (aligned : Bool) : List Instr :=
   if aligned then [.alu .add .r11 (imm 127), .alu .and .r11 (.imm (-64))]
   else [.alu .add .r11 (imm 64)]
 
+/-- All the blocks taken: the arguments kept become those of no rest
+(`data + 16 n`, and 0 blocks). -/
+def takeAll : List Instr :=
+  [.mov .rax (.reg .r9), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax), .alu .add .rax (.reg .rax),
+    .alu .add .rax (.reg .rax), .alu .add .rax (.reg .r8), .store (at_ .r11 argData) .rax,
+    .mov32 .rax (imm 0), .store (at_ .r11 argN) .rax]
+
 /-- If there are at least 16 blocks, the first `16 ⌊n / 16⌋` by `piece`, with
-`r11` at the powers, `scratch + 64`, rounded up to 64 bytes when `aligned`. -/
-def stitchPart (piece : Prog isa) (aligned : Bool := false) : Prog isa :=
+`r11` at the powers, `scratch + 64`, rounded up to 64 bytes when `aligned`;
+all of them if `full` (a `piece` that also takes the blocks after the last
+16), with the arguments kept those of no rest. -/
+def stitchPart (piece : Prog isa) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
   .seq (.block [.alu .cmp .r9 (imm 16)])
     (.ite .b (.block [])
-      (.seq (.block ([.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)] ++
+      (.seq (.block ((if full then takeAll else
+        [.mov .rax (.reg .r9), .alu .and .rax (imm 15), .alu .sub .r9 (.reg .rax)]) ++
         scratchSetup aligned)) piece))
 
 /-- The arguments of the rest: `n mod 16` blocks after the first
@@ -82,18 +93,23 @@ def ctrCall : Prog isa := .seq (.block ctrArgs) (.call ctr.name ctr.code)
 def ghCall : Prog isa := .seq (.block ghArgs) (.call gh.name gh.code)
 
 /-- The first blocks by `piece`, if any, then the rest. -/
-def head (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa :=
+def head (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
   match piece with
-  | some piece => .seq (stitchPart piece aligned) (.block rest)
+  | some piece => .seq (stitchPart piece aligned full) (.block rest)
   | none => .block []
 
-def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) : Prog isa :=
-  .seq (.block entry) (.seq (head piece aligned) (tail first second))
+def blocks (piece : Option (Prog isa)) (first second : Prog isa) (aligned : Bool := false) (full : Bool := false) :
+    Prog isa :=
+  .seq (.block entry) (.seq (head piece aligned full) (tail first second))
 
-/-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any. -/
-def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa := blocks piece (ctrCall ctr) (ghCall gh) aligned
+/-- `vg_aes_gcm_encrypt_blocks`, with the encrypting `piece`, if any (taking
+all the blocks if `full`). -/
+def encrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
+  blocks piece (ctrCall ctr) (ghCall gh) aligned full
 
-/-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any. -/
-def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) : Prog isa := blocks piece (ghCall gh) (ctrCall ctr) aligned
+/-- `vg_aes_gcm_decrypt_blocks`, with the decrypting `piece`, if any (taking
+all the blocks if `full`). -/
+def decrypt (piece : Option (Prog isa)) (aligned : Bool := false) (full : Bool := false) : Prog isa :=
+  blocks piece (ghCall gh) (ctrCall ctr) aligned full
 
 end VG.Impl.AesGcm.X86_64.Blocks
