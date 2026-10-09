@@ -17,14 +17,12 @@ open VG.Proof.Ecdsa.X86_64 VG.Proof.Ecdsa.X86_64.P384
 
 theorem pre_of_x {s : State} (h : pkX86_64.pre s) : PkPre p384x s := by
   obtain ⟨h1, h2, h3, h4, h5, -, -, h8, h9, held, fit, hdw⟩ := h
-  refine ⟨by rw [h1, p384x_combConsts, p384x_C, show p384.C.len = 48 from rfl]; simp only [Abi.constRegions,
-    List.map_cons, List.map_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h8, h9, ?_⟩
-  rw [TblsHeld, p384x_combConsts]
-  refine ⟨fun c hc => ?_, fun t ht => ?_⟩
+  refine ⟨by rw [h1, p384x_combConsts, p384x_C, show p384.C.len = 48 from rfl]; simp only [Abi.constRegions_cons,
+    Abi.constRegions_nil, List.cons_append, List.nil_append], h2, h3, h4, h5, h8, h9, ?_⟩
+  rw [TblsHeld, p384x_combConsts, Abi.constRegions_cons, Abi.constRegions_nil, Sig.forall_mem_const_single]
+  refine ⟨fun c hc => ?_, fit, fun r hr => hdw r ?_⟩
   · simp only [List.mem_singleton] at hc; subst hc; exact held
-  · simp only [Abi.constRegions, List.map_cons, List.map_nil, List.mem_singleton] at ht; subst ht
-    refine ⟨fit, fun r hr => hdw r ?_⟩
-    rw [h2] at hr
+  · rw [h2] at hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with h | h <;> simp [h]
 

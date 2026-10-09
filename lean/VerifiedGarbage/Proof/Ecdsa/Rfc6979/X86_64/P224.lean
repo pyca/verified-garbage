@@ -18,8 +18,9 @@ open VG VG.X86_64
 /-- `coreK` at P-224's sizes is `Proof.Ecdsa.X86_64.P224.signX86_64` (by rewriting, as
 deciding it would evaluate the tables' length). -/
 theorem coreK_p224 : coreK Impl.Ecdsa.X86_64.p224 = Proof.Ecdsa.X86_64.P224.signX86_64 := by
-  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P224.p224_combConsts, Abi.constRegions, Abi.constsHeld,
-    List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
+  simp only [coreK, TblsOk, Proof.Ecdsa.X86_64.P224.p224_combConsts, Abi.constRegions_cons,
+    Abi.constRegions_nil, Sig.forall_mem_const_single]
+  simp only [Abi.constsHeld, List.cons_append, List.nil_append, List.forall_mem_cons, List.not_mem_nil,
     false_implies, implies_true, and_true, Proof.Ecdsa.X86_64.P224.signX86_64, Proof.Ecdsa.X86_64.P224.TblHeld]
   rfl
 
