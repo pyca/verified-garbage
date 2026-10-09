@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.AesGcm.X86_64.Variant
+import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Lit
 
 /-!
 # The functions AES-GCM calls on x86-64: VaesVpclmulAvx512
@@ -15,21 +16,21 @@ def stitch : Proof.AesGcm.X86_64.StitchPart where
   name := .vaesAvx512
   suffix := "_avx512"
   features := ["avx512f", "avx512bw"]
-  encP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc)
-  decP := (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec)
+  encP := (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.enc)
+  decP := (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZ.dec)
   pieceP := some
-    ⟨(⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.enc),
-     (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)⟩
+    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.enc),
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZP.dec)⟩
   pieceR := some
-    ⟨(⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
-     (⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.dec true)⟩
+    ⟨(⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.encR true true),
+     (⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide, ⟨_, by taint_decide⟩⟩ : Proof.AesGcm.X86_64.Piece Impl.Gcm.X86_64.StitchZH.dec true)⟩
   toPart := some
     { name := .vaesAvx512
-      piece := ⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+      piece := ⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
         ⟨_, by taint_decide⟩⟩
-      pieceP := some ⟨⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+      pieceP := some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
         ⟨_, by taint_decide⟩⟩⟩
-      pieceR := some ⟨⟨by decide +kernel, by decide +kernel, by decide +kernel, by decide, by decide +kernel,
+      pieceR := some ⟨⟨by lit_decide, by lit_decide, by lit_decide, by decide, by lit_decide,
         ⟨_, by taint_decide⟩⟩⟩ }
 
 def variant : Proof.AesGcm.X86_64.GcmVariant := ⟨.vaes, .aesni, .vpclmul, some stitch⟩
