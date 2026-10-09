@@ -137,7 +137,7 @@ theorem call_ok {P : Prims} (hP : PrimsOk P) {p : Params} (hF : PFacts p) {σ : 
   · dsimp only
     by_cases hlt : e' < 4 * g
     · rw [ifp hlt]
-      exact polyIs_frame' L hP₁₃ (by layd) (hA e' hlt)
+      exact polyIs_frame' L hP₁₃ (by layk) (hA e' hlt)
     · rw [ifn hlt]
       refine ⟨?_, rfl⟩
       obtain ⟨k, rfl⟩ : ∃ k, e' = 4 * g + k := ⟨e' - 4 * g, by omega⟩

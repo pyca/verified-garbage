@@ -1,6 +1,8 @@
 import Lean.Elab.Tactic.Basic
 import Lean.Meta.AppBuilder
 import Lean.Meta.Tactic.Assert
+import Lean.Meta.Offset
+import Lean.Meta.Reduce
 
 /-!
 # Deciding a check for each parameter set
@@ -148,6 +150,29 @@ private def bounded (p : Expr) (e : Expr) (sources : Array FVarId) (closed : Boo
     pending := after
   return out
 
+/-- About how many cases `vars` (as `bounded` returns them) range over for `p := v`: the
+product of their first bounds, each bound that mentions other variables taken as the largest
+before it. -/
+private def cases (p v : Expr) (vars : Array Expr) : MetaM Nat := do
+  let mut count := 1
+  let mut most := 0
+  for i in [0:vars.size] do
+    unless (← inferType vars[i]!).isConstOf ``Nat do continue
+    let some h := vars[i + 1]? | continue
+    let ht ← instantiateMVars (← inferType h)
+    let some (_, c) := ineq? ht | continue
+    let c := c.replaceFVar p v
+    let n ← if c.hasFVar then pure most else
+      pure ((← (evalNat (← reduce c)).run).getD most)
+    let n := if ht.isAppOfArity ``LE.le 4 then n + 1 else n
+    count := count * n
+    most := max most n
+  return count
+
+/-- The most cases `decide_at` tries: beyond, unfolding the check into arithmetic for `omega`
+is cheaper. -/
+private def maxCases : Nat := 500
+
 /-- `decide_at hm`, for `hm : p = a ∨ p = b ∨ p = c`: decides the goal for each of `a`,
 `b`, `c` and all values of the goal's other variables, each bounded by a hypothesis
 `x < c` or `x ≤ c` whose `c` mentions only `p` and other such variables, as
@@ -166,6 +191,13 @@ elab "decide_at" hm:ident : tactic => withMainContext do
   -- First with bounds on `p` alone, fewer cases when the goal needs no more.
   let attempt (closed : Bool) : TacticM Unit := g.withContext do
     let vars ← bounded p (← instantiateMVars (← g.getType)) sources closed
+    if closed then
+      -- Only worth trying if it leaves out a variable.
+      let all ← bounded p (← instantiateMVars (← g.getType)) sources false
+      let nVars (vs : Array Expr) : MetaM Nat := vs.foldlM (init := 0) fun n x => do
+        return if (← inferType x).isConstOf ``Nat then n + 1 else n
+      unless (← nVars vars) < (← nVars all) do throwError "decide_at: no variable to leave out"
+    if (← cases p vals[2]! vars) > maxCases then throwError "decide_at: too many cases"
     -- Explicit binders, which the instances of `Decidable` for bounded `∀` match.
     let rec explicit : Nat → Expr → Expr
       | n + 1, .forallE x t b _ => .forallE x t (explicit n b) .default
