@@ -15,8 +15,9 @@ new variables and constraints, which every call pays for and the kernel
 checks. Two ways to run them on less:
 
 * `omega_arith` selects (in)equations between natural numbers, integers or
-  bit vectors, and propositional combinations of them. `bv_omega_arith`
-  clears other hypotheses before preprocessing;
+  bit vectors, and propositional combinations of them, that are connected to
+  the goal (see `relevantFacts`). `bv_omega_arith` clears other hypotheses
+  before preprocessing;
 * `omega_using [h₁, …, hₙ]` and `bv_omega_using [h₁, …, hₙ]` use only the
   facts `h₁, …, hₙ` (any terms). `omega_using` passes them directly to
   the solver; `bv_omega_using` clears other hypotheses before preprocessing.
@@ -117,17 +118,78 @@ def omegaWith (hs : Array Term) : TacticM Unit := do
       instantiateMVars e
   omegaFromFacts facts
 
+/-- Adds the atoms of the arithmetic term or fact `e` to `acc`: its maximal
+subterms that are not arithmetic operations, casts or numerals. -/
+partial def atoms (e : Expr) (acc : Std.HashSet Expr) : MetaM (Std.HashSet Expr) := do
+  let e := (← instantiateMVars e).consumeMData
+  match e.getAppFn.constName?, e.getAppNumArgs with
+  | some ``HAdd.hAdd, 6 | some ``HSub.hSub, 6 | some ``HMul.hMul, 6 | some ``HDiv.hDiv, 6
+  | some ``HMod.hMod, 6 | some ``HPow.hPow, 6 | some ``Min.min, 4 | some ``Max.max, 4
+  | some ``Eq, 3 | some ``Ne, 3 | some ``LE.le, 4 | some ``LT.lt, 4 | some ``GE.ge, 4
+  | some ``GT.gt, 4 | some ``Dvd.dvd, 4 | some ``And, 2 | some ``Or, 2 | some ``Iff, 2 =>
+    atoms e.appArg! (← atoms e.appFn!.appArg! acc)
+  | some ``Not, 1 | some ``Nat.succ, 1 | some ``Nat.cast, 3 | some ``Int.ofNat, 1
+  | some ``BitVec.toNat, 2 | some ``BitVec.ofNat, 2 | some ``Int.toNat, 1 | some ``Int.natAbs, 1
+  | some ``Neg.neg, 3 => atoms e.appArg! acc
+  | some ``OfNat.ofNat, 3 => return acc
+  | _, _ =>
+    if e.isRawNatLit || e.isConstOf ``False || e.isConstOf ``True then return acc
+    if e.isArrow then return ← atoms e.bindingBody! (← atoms e.bindingDomain! acc)
+    return acc.insert e
+
+/-- The atom `x` of a fact `x = t`, if `x` is an atom. -/
+def definedAtom? (ty : Expr) : MetaM (Option Expr) := do
+  let ty := (← instantiateMVars ty).consumeMData
+  let_expr Eq _ x _ := ty | return none
+  let x := x.consumeMData
+  let s ← atoms x {}
+  return if s.size == 1 && s.contains x then some x else none
+
+/-- The facts among `hs` connected to the goal: starting from the goal's
+atoms, a fact is taken when it shares an atom with those taken so far (an
+equation `x = t` of an atom `x`, only when `x` is among them), and adds its
+atoms. Every fact `omega` adds to its problem makes its proof term larger,
+which the kernel checks; equations such as a layout's offsets (`l.oE = …`),
+in the context of every goal about one, made each proof several times
+larger. -/
+def relevantFacts (hs : Array Expr) (goal : Expr) : MetaM (Array Expr) := do
+  let mut seen ← atoms goal {}
+  if seen.isEmpty then return hs
+  let mut infos : Array (Std.HashSet Expr × Option Expr) := #[]
+  for h in hs do
+    let ty ← inferType h
+    infos := infos.push (← atoms ty {}, ← definedAtom? ty)
+  let mut taken := Array.replicate hs.size false
+  let mut changed := true
+  while changed do
+    changed := false
+    for i in [:infos.size] do
+      if taken[i]! then continue
+      let (as, d) := infos[i]!
+      if match d with | some x => seen.contains x | none => as.any seen.contains then
+        taken := taken.set! i true
+        seen := as.fold (·.insert ·) seen
+        changed := true
+  return (hs.zip taken).filterMap fun (h, t) => if t then some h else none
+
 /-- Select arithmetic hypotheses without repeatedly clearing the context. -/
 def omegaArith : TacticM Unit := do
-  let facts ← withMainContext do
-    (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+  let (facts, all) ← withMainContext do
+    let all ← (← getLocalHyps).filterM fun h => do isArithProp (← inferType h)
+    pure (← relevantFacts all (← getMainTarget), all)
   -- Most arithmetic goals need the solver, so avoid unifying every fact first.
-  -- Retry the original path for goals that need a definitionally equal fact.
+  -- Retry the original path for goals that need a definitionally equal fact,
+  -- then with every arithmetic fact.
   let saved ← saveState
   try omegaFromFacts facts (exactTypeOnly := true)
   catch _ =>
     saved.restore
-    omegaFromFacts facts
+    if facts.size == all.size then omegaFromFacts facts
+    else
+      try omegaFromFacts facts
+      catch _ =>
+        saved.restore
+        omegaFromFacts all
 
 /-- Clears every hypothesis `omega` cannot use. -/
 elab "clear_non_arith" : tactic => clearNonArith
