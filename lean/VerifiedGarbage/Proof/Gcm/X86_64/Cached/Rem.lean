@@ -448,4 +448,67 @@ theorem rem_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf :
   · show s₆.wr = _
     rw [wr₆, f₅.wr, hI₄.wr]; exact hwr₃
 
+/-- `cmp r9, 16`: whether blocks are left after the last group. -/
+theorem cmp16_ok (s : State) :
+    WP isa (.block [.alu .cmp .r9 (.imm 16)]) s fun s' =>
+      s'.zf = some (s.gpr .r9 - 16 == 0) ∧ s'.gpr = s.gpr ∧
+        (∀ r l, s'.zlane r l = s.zlane r l) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have e16 : BitVec.signExtend 64 (16 : BitVec 32) = 16 := by decide
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, execAlu, readSrc, arithFlags, State.setFlags, isa,
+    e16, Option.bind_some, Option.some.injEq, exists_eq_left']
+  exact ⟨trivial, trivial, fun _ _ => rfl, trivial, trivial, trivial⟩
+
+/-- The end of `encR`: the last group, and the blocks after it if any. -/
+theorem tailR_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hr : RemOk (hk s₀) P) {e : Nat} {s : State} (hI : EInv s₀ P e s) (hex : nb s₀ - 16 * (e - 1) < 32)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (Impl.Gcm.X86_64.StitchZH.tailR rem) s (EPost s₀) := by
+  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  have h1e := hI.one
+  have hle := hI.a.le
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (cmp16_ok s)) fun s₁ ⟨⟨zf, g, l, m, rd, wr⟩, hh⟩ => ?_)
+  have hI₁ := hI.of_eq g l m rd wr
+  have hz : (s.gpr .r9 - 16 == 0) = decide (nb s₀ = 16 * e) := by
+    rw [hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
+      VG.Proof.Gcm.X86_64.Pclmul.ofNat_sub_ofNat (by omega) (by omega)]
+    by_cases h : nb s₀ = 16 * e
+    · rw [show nb s₀ - 16 * (e - 1) - 16 = 0 by omega, decide_eq_true h]; rfl
+    · have : BitVec.ofNat 64 (nb s₀ - 16 * (e - 1) - 16) ≠ 0 := fun e' => by
+        have := congrArg BitVec.toNat e'
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at this
+        have h0 : BitVec.toNat (0 : BitVec 64) = 0 := rfl
+        omega
+      rw [beq_false_of_ne this, decide_eq_false h]
+  refine WP.ite (decide (nb s₀ = 16 * e)) (by simp only [eval, zf, hz]) (fun h => ?_) (fun h => ?_)
+  · exact Gcm.X86_64.StitchZ.final_ok hp hf (by simpa using h) hI₁
+  · exact rem_ok hp hf hr hI₁ hex (by simpa using h) (hCache.keep hh (hI₁.a.keys hp))
+
+/-- `encR` after the setup, for any number of blocks from 16 on. -/
+theorem encTailRG_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk (hk s₀) P)
+    (hr : RemOk (hk s₀) P)
+    {bigC : Prog isa} (hbig : ∀ s, 256 ≤ nb s₀ → EInv s₀ P 1 s → VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s →
+      WP isa bigC s fun s' => ∃ e, EInv s₀ P e s' ∧ VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s')
+    {s : State} (hR : Gcm.X86_64.StitchZ.Ready s₀ P s)
+    (hCache : VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s) :
+    WP isa (.seq Impl.Gcm.X86_64.StitchZH.first (.seq (.block [.alu .cmp .r9 (.imm 256)])
+      (.seq (.ite .b (.block []) bigC) (.seq (.block [.alu .cmp .r9 (.imm 32)])
+        (.seq (.ite .b (.block []) (.loop Impl.Gcm.X86_64.StitchZH.body .ae))
+          (Impl.Gcm.X86_64.StitchZH.tailR rem)))))) s (EPost s₀) := by
+  have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
+  refine WP.seq (WP.mono (first_ok hp hR hCache) fun s₂ ⟨hI₂, hCache₂⟩ => ?_)
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (Gcm.X86_64.StitchZ.cmp_ok s₂ 256 256 (by decide)))
+    fun s₃ ⟨⟨hcf, g, l, m, rd, wr⟩, hh⟩ => ?_)
+  have hI₃ := hI₂.of_eq g l m rd wr
+  have hCache₃ := hCache₂.keep hh (hI₃.a.keys hp)
+  rw [hI₂.r9, VG.Proof.Gcm.X86_64.Pclmul.toNat_ofNat_lt (by omega),
+    VG.Proof.Gcm.X86_64.Pclmul.toNat_ofNat_lt (by decide)] at hcf
+  refine WP.seq (WP.mono (WP.ite (Q := fun s' => ∃ e, EInv s₀ P e s' ∧
+      VG.Proof.Aes.X86_64.VaesZH.Keys (nr s₀) (sch s₀) s') (decide (nb s₀ - 16 * (1 - 1) < 256))
+    (by simp only [eval, hcf]) (fun _ => WP.block_nil ⟨1, hI₃, hCache₃⟩)
+    (fun h => hbig _ (by simp at h; omega) hI₃ hCache₃)) fun s₄ ⟨e, hI₄, hCache₄⟩ => ?_)
+  refine WP.seq (WP.mono (WP.hkeep (by decide) (Gcm.X86_64.StitchZ.cmpE_ok hI₄)) fun s₅ ⟨⟨hI₅, hcf₅⟩, hh₅⟩ => ?_)
+  exact WP.seq (WP.mono (loopER_ok hp hf hI₅ hcf₅ (hCache₄.keep hh₅ (hI₅.a.keys hp)))
+    fun s₆ ⟨e, hex, hI₆, hC₆⟩ => tailR_ok hp hf hr hI₆ hex hC₆)
+
 end VG.Proof.Gcm.X86_64.StitchZH
