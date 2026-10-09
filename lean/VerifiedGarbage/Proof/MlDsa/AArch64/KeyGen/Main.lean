@@ -173,7 +173,8 @@ theorem keyGen_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)
     (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
     (hsat : ∃ s, (Spec.MlDsa.keyGenContract p AArch64.abi S).pre s) :
     Verified AArch64.target ((keyGenWith keccak.callee) P p) (Spec.MlDsa.keyGenContract p AArch64.abi S) :=
-  ⟨fun σ hσ => (keyGen_piece hP (pfacts hp)).ok σ σ hσ rfl,
-    relStart (Q := fun _ _ => True) (keyGen_piece hP (pfacts hp)).tr, hsat⟩
+  ⟨fun σ hσ => (keyGen_piece hP (pfacts hp)).ok σ σ (kgPre_of_shared hσ) rfl,
+    fun s t l m u v hs ht pub es et => relStart (Q := fun _ _ => True)
+      (keyGen_piece hP (pfacts hp)).tr s t l m u v (kgPre_of_shared hs) (kgPre_of_shared ht) pub es et, hsat⟩
 
 end VG.Proof.MlDsa.AArch64.KeyGen

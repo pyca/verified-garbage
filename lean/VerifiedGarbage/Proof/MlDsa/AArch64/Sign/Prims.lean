@@ -1,3 +1,5 @@
+import VerifiedGarbage.Spec.MlDsa.HighPack
+import VerifiedGarbage.Spec.MlDsa.ResidentMask
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Inv
 
 /-!
@@ -41,8 +43,10 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
     (s'.gpr .x0).setWidth 32 = 1 → ∀ k < 4,(rejNTTPoly maxBounds.rejNTT (seed4 s.mem (s.gpr .x0) k)).isSome
   rejNTT : CalleeOk S P.rejNTT (rejNTTContract AArch64.abi S)
   expandMask : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S)
+  expandMaskPair : CalleeOk S P.expandMaskPair (expandMaskPairContract AArch64.abi S)
   ball : CalleeOk S P.ball (sampleInBallContract AArch64.abi S)
   highBits : CalleeOk S P.highBits (highBitsContract AArch64.abi S)
+  highPack : ∀ g, g ∈ gamma2s → CalleeOk S (P.highPack g) (highPackContract g AArch64.abi S)
   lowBits : CalleeOk S P.lowBits (lowBitsContract AArch64.abi S)
   normLt : CalleeOk S P.normLt (normLtContract AArch64.abi S)
   makeHint : CalleeOk S P.makeHint (makeHintContract AArch64.abi S)
@@ -159,7 +163,7 @@ abbrev rejChkS (rbs wbs : List (Reg × Nat)) (a : Ptr) : Bool := rejNttChk rbs w
 
 /-- The call of `vg_mldsa_rej_ntt_poly`: its outcome, and that it succeeds
 only if `RejNTTPoly` finishes within `maxBounds`. -/
-theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a : Ptr}
+theorem rejCallRaw_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a : Ptr}
     (hc : rejChkS rbs wbs a = true) :
     WP isa (callAt ("vg_mldsa_rej_ntt_poly" ++ P.suffix) P.rejNTT [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))]) s
       fun s' => PPostB D s s' [(a, 1024), (sc oPS, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
@@ -179,12 +183,60 @@ theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs
     State.callEntry_gpr _ (by decide : Reg.x0 ∉ linkRegs), Args.r0 h1, Args.mem h1, Arg.val] at hx
   exact ⟨hq.1, hq.2, hx⟩
 
-theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChkS rbs wbs a = true) :
+theorem rejCallRaw_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChkS rbs wbs a = true) :
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34)
       (callAt ("vg_mldsa_rej_ntt_poly" ++ P.suffix) P.rejNTT [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))])
       fun x y => (x.gpr .x0).setWidth 32 = (y.gpr .x0).setWidth 32 :=
   fun x y t₁ t₂ x' y' hp e₁ e₂ => rejNttAtK_trRet (Q := fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34) hP.rejNTT hP.rejRet hp.1.ok hc
     (fun _ _ ⟨R, hb⟩ => ⟨R.lx, R.ly, hb, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
+
+theorem rejCallInline_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a : Ptr}
+    (hc : rejChkS rbs wbs a = true) :
+    WP isa (.seq (.block (glue [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))])) P.rejNTT) s
+      fun s' => PPostB D s s' [(a, 1024), (sc oPS, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
+      ((s'.gpr .x0).setWidth 32 = 1 → Reduced s'.mem (pa s a)) ∧
+      Outcome (fun b => rejNTTPoly b.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)) ((s'.gpr .x0).setWidth 32)
+        (polyAt s'.mem (pa s a)) ∧
+      ((s'.gpr .x0).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)).isSome) := by
+  have hc' := hc
+  simp only [rejNttChk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  refine WP.mono (inlineAt_ok L.s64 (hP.rejNTT.withPost hP.rejMax) (rejNtt_args L.ok c4 c5 c6)
+    (by simp only [List.map_cons, List.map_nil]; decide) (fun s1 h1 => rejNttInline_pre L hc h1) (rejNtt_cov L hc).1
+    (rejNtt_cov L hc).2) fun s' ⟨hP', s1, h1, hq, hx⟩ => ⟨hP'.b, hP'.cs .x24 (by decide) (by decide), ?_⟩
+  sig_post [rejNTTContract, rejNTTSig, AArch64.abi, VG.AArch64.argRegs] at hq
+  rw [Args.r0 h1, Args.r1 h1, Args.mem h1] at hq
+  simp only [State.withRegions_gpr, State.withRegions_mem, Args.r0 h1, Args.mem h1, Arg.val] at hx
+  exact ⟨hq.1, hq.2, hx⟩
+
+theorem rejCallInline_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChkS rbs wbs a = true) :
+    RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34)
+      (.seq (.block (glue [(.x0, .ptr (sc oRS)), (.x1, .ptr a), (.x2, .ptr (sc oPS))])) P.rejNTT)
+      fun x y => (x.gpr .x0).setWidth 32 = (y.gpr .x0).setWidth 32 :=
+  fun x y t₁ t₂ x' y' hp e₁ e₂ => rejNttInlineK_trRet (Q := fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34) hP.rejNTT hP.rejRet hp.1.ok hc
+    (fun _ _ ⟨R, hb⟩ => ⟨R.lx, R.ly, hb, R.same⟩) x y t₁ t₂ x' y' hp e₁ e₂
+
+theorem rejCall_ok {P : Prims} (hP : PrimsOk P D) {s : State} (L : Lay D rbs wbs s) {a : Ptr}
+    (hc : rejChkS rbs wbs a = true) :
+    WP isa (rejCallAt P a) s
+      fun s' => PPostB D s s' [(a, 1024), (sc oPS, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
+      ((s'.gpr .x0).setWidth 32 = 1 → Reduced s'.mem (pa s a)) ∧
+      Outcome (fun b => rejNTTPoly b.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)) ((s'.gpr .x0).setWidth 32)
+        (polyAt s'.mem (pa s a)) ∧
+      ((s'.gpr .x0).setWidth 32 = 1 → (rejNTTPoly maxBounds.rejNTT (bytesAt s.mem (pa s (sc oRS)) 34)).isSome) := by
+  unfold rejCallAt
+  split
+  · exact rejCallRaw_ok hP L hc
+  · exact rejCallInline_ok hP L hc
+
+theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChkS rbs wbs a = true) :
+    RelCT isa (fun x y => LRel D rbs wbs x y ∧ bytesAt x.mem (pa x (sc oRS)) 34 = bytesAt y.mem (pa y (sc oRS)) 34)
+      (rejCallAt P a)
+      fun x y => (x.gpr .x0).setWidth 32 = (y.gpr .x0).setWidth 32 := by
+  unfold rejCallAt
+  split
+  · exact rejCallRaw_tr hP hc
+  · exact rejCallInline_tr hP hc
 
 /-! ## `ExpandMask` -/
 

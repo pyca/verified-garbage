@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
@@ -17,10 +18,11 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     features := v.features
     target := AArch64.target
     doc := Spec.MlDsa.rejNTT4Api.doc (notes := ["Four SHAKE128 streams in two pairs of NEON lanes, \
-      using ARM SHA3 instructions when available. Each stream squeezes 1008 bytes (6 blocks)."])
-    code := Impl.MlDsa.AArch64.Sample.Rej4.rejNTT4With v.callee.pairedSha3
+      using ARM SHA3 instructions when available. The SHA3 path keeps five blocks resident and \
+      squeezes a sixth block only if needed; the portable path always squeezes six."])
+    code := Impl.MlDsa.AArch64.Optimized.ResidentRej.selected v.callee.pairedSha3
     contract := Spec.MlDsa.rejNTT4Contract AArch64.abi
-    verified := Proof.MlDsa.AArch64.Sample.Rej4.verified v.callee.pairedSha3
+    verified := Proof.MlDsa.AArch64.Optimized.ResidentRej.selected_verified v.callee.pairedSha3
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.rejNTTApi with
     name := Spec.MlDsa.rejNTTApi.name ++ v.callee.suffix
@@ -61,12 +63,12 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     name := Spec.MlDsa.sampleInBallApi.name ++ v.callee.suffix
     features := v.features
     target := AArch64.target
-    doc := Spec.MlDsa.sampleInBallApi.doc (notes := ["It squeezes 272 bytes of SHAKE256 output (2 blocks) and \
-      runs the loop of `SampleInBall` over the 264 after the sign bits."])
-    code := Impl.MlDsa.AArch64.Sample.sampleInBallWith v.callee
+    doc := Spec.MlDsa.sampleInBallApi.doc (notes := ["SHA3 sampling stops once all coefficients are assigned and squeezes the second block \
+      only when needed. Both paths retain the same 272-byte limit and exact failure result."])
+    code := Impl.MlDsa.AArch64.Optimized.Ball.selected v.callee
     contract := Spec.MlDsa.sampleInBallContract AArch64.abi 16
     stack := 16
-    verified := Proof.MlDsa.AArch64.Sample.sampleInBall_verifiedWith v
+    verified := Proof.MlDsa.AArch64.Optimized.Ball.selected_verified v
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.Keccak.AArch64.MlDsaSample

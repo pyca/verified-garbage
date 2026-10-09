@@ -62,7 +62,21 @@ theorem VFacts.small {p : Params} (hF : VFacts p) : scrLen p < 2 ^ 32 ∧ p.pkLe
 /-! ## The contract -/
 
 /-- The precondition of the shared contract. -/
-abbrev vPre (p : Params) (S : Nat) (σ : State) : Prop := (Spec.MlDsa.verifyContract p AArch64.abi S).pre σ
+def vInputs (p : Params) (σ : State) : List Region :=
+  [⟨σ.gpr .x0,p.pkLen⟩,⟨σ.gpr .x1,64⟩,⟨σ.gpr .x2,p.sigLen⟩]
+
+def vPre (p : Params) (S : Nat) (σ : State) : Prop :=
+  (Spec.MlDsa.verifyContract p AArch64.abi S).pre {σ with rd:=vInputs p σ} ∧
+  ∀r∈vInputs p σ,r∈σ.rd
+
+theorem vPre_of_shared {p : Params} {S : Nat} {σ : State}
+    (h : (Spec.MlDsa.verifyContract p AArch64.abi S).pre σ) : vPre p S σ := by
+  have hr : σ.rd=vInputs p σ := by
+    sig_pre [Spec.MlDsa.verifyContract,Spec.MlDsa.verifySig,AArch64.abi,VG.AArch64.argRegs] at h
+    exact h.2.1
+  refine ⟨?_,by intro r hm;rw [hr];exact hm⟩
+  have he : ({σ with rd:=vInputs p σ} : State)=σ := by rw [←hr]
+  simpa only [he] using h
 /-- Its public data. -/
 abbrev vPub (p : Params) (S : Nat) (σ₁ σ₂ : State) : Prop := (Spec.MlDsa.verifyContract p AArch64.abi S).pub σ₁ σ₂
 
@@ -93,9 +107,9 @@ abbrev vW (p : Params) : List (Reg × Nat) := [(.x28, scrLen p)]
 
 theorem vLay {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre p S σ) (h : Top σ s) :
     Lay S (vR p) (vW p) s := by
-  unfold vPre at hp
-  sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs] at hp
-  obtain ⟨hwf, hrd, hwr, d03, d13, d23, hres, n0, n1, n2, n3⟩ := hp
+  obtain ⟨hp, hread⟩ := hp
+  sig_pre [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs,vInputs] at hp
+  obtain ⟨hwf, hwr, d03, d13, d23, hres, n0, n1, n2, n3⟩ := hp
   obtain ⟨k0, k1, k2, k3⟩ := below_of_resv hres
   have hS : S ≤ σ.sp.toNat := le_of_wfP hwf
   have hsm := hF.small
@@ -123,9 +137,9 @@ theorem vLay {p : Params} (hF : VFacts p) {S : Nat} {σ s : State} (hp : vPre p 
     exacts [n0, n1, n2, n3]
   · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro b (rfl | rfl | rfl | rfl) <;> simp only [e25, e26, e27, e28]
-    · exact mrd ⟨σ.gpr .x0, p.pkLen⟩ (by rw [hrd]; simp)
-    · exact mrd ⟨σ.gpr .x1, 64⟩ (by rw [hrd]; simp)
-    · exact mrd ⟨σ.gpr .x2, p.sigLen⟩ (by rw [hrd]; simp)
+    · exact mrd ⟨σ.gpr .x0, p.pkLen⟩ (List.mem_append_left _ (hread _ (by simp [vInputs])))
+    · exact mrd ⟨σ.gpr .x1, 64⟩ (List.mem_append_left _ (hread _ (by simp [vInputs])))
+    · exact mrd ⟨σ.gpr .x2, p.sigLen⟩ (List.mem_append_left _ (hread _ (by simp [vInputs])))
     · exact mrd ⟨σ.gpr .x3, scrLen p⟩ (by rw [hwr]; simp)
   · simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro b rfl

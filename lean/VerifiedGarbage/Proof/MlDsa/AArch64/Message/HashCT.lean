@@ -79,11 +79,12 @@ theorem absA_of {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {v : VReg → BitV
 
 /-- Two runs of a call of `vg_keccak_absorb` whose arguments are the same
 functions of the layout in both. -/
-theorem kabs_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
+theorem kabs_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
     (hok : argsOk (absArgs src len pos) = true) (dp : Lay → Addr) (n q : Lay → Nat)
     (hv : ∀ (L : Lay) g vv m (t : State), L.Ok → Ctx L g vv m t → Φ L m t →
       src.val t = dp L ∧ len.val t = BitVec.ofNat 64 (n L) ∧ pos.val t = BitVec.ofNat 64 (q L))
-    (hs : ∀ L : Lay, L.Ok → q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.wr, Within ⟨dp L, n L⟩ R) ∧
+    (hs : ∀ (L : Lay) g vv m (t : State), L.Ok → Ctx L g vv m t → Φ L m t →
+      q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.wr, Within ⟨dp L, n L⟩ R) ∧
       Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨dp L, n L⟩) :
     RelCT isa (Two I Φ) (kabs v.callee src len pos) fun _ _ => True := by
@@ -91,12 +92,12 @@ theorem kabs_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State
       Moved (absArgs src len pos) t t1 → AbsA t1 L.ST (dp L) L.KS (q L) (n L) :=
     fun L g vv m₀ t t1 hL hc hφ hm => by
       obtain ⟨h1, h2, h3⟩ := hv L g vv m₀ t hL hc hφ
-      obtain ⟨s1, s2, _, s4, s5, s6⟩ := hs L hL
+      obtain ⟨s1, s2, _, s4, s5, s6⟩ := hs L g vv m₀ t hL hc hφ
       exact absA_of hL hc hm h1 h2 h3 s1 s2 s4 s5 s6
   refine call_tr hok (Proof.Sha3.AArch64.Stream.Absorb.absorb_correct v)
     (Proof.Sha3.AArch64.Stream.Absorb.absorb_ct v) (fun L => [⟨dp L, n L⟩]) (fun L => [⟨L.ST, 200⟩, ⟨L.KS, 640⟩])
     (fun L g vv m₀ t t1 hL hc hφ hm => (args L g vv m₀ t t1 hL hc hφ hm).pre)
-    (fun L g₁ g₂ v₁ v₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L _ _ _ _ hL _ _ => ?_
+    (fun L g₁ g₂ v₁ v₂ m₁ m₂ a b a1 b1 hL _ c₁ c₂ φ₁ φ₂ f₁ f₂ => ?_) fun L g vv m₀ t hL hc hφ => ?_
   · have x := args L g₁ v₁ m₁ a a1 hL c₁ φ₁ f₁
     have y := args L g₂ v₂ m₂ b b1 hL c₂ φ₂ f₂
     simp only [Proof.Sha3.absorbAArch64, State.withRegions_sp, State.callEntry_sp,
@@ -106,13 +107,23 @@ theorem kabs_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State
       x.h0, x.h3, x.h5, y.h0, y.h3, y.h5, true_and]
     exact ⟨BitVec.eq_of_toNat_eq (x.h1.trans y.h1.symm), BitVec.eq_of_toNat_eq (x.h2.trans y.h2.symm),
       BitVec.eq_of_toNat_eq (x.h4.trans y.h4.symm), by rw [f₁.2.sp, f₂.2.sp, c₁.sp, c₂.sp]⟩
-  · obtain ⟨_, _, hin, _, _, _⟩ := hs L hL
+  · obtain ⟨_, _, hin, _, _, _⟩ := hs L g vv m₀ t hL hc hφ
     refine ⟨fun r hr => ?_, fun r hr => ?_⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact hin
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · have := cov_xw hL (e := 0) (k := 200) (by omega); rwa [x0] at this
       · exact cov_xw hL (e := 200) (by omega)
+
+theorem kabs_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {src len pos : Arg}
+    (hok : argsOk (absArgs src len pos) = true) (dp : Lay → Addr) (n q : Lay → Nat)
+    (hv : ∀ (L : Lay) g vv m (t : State), L.Ok → Ctx L g vv m t → Φ L m t →
+      src.val t = dp L ∧ len.val t = BitVec.ofNat 64 (n L) ∧ pos.val t = BitVec.ofNat 64 (q L))
+    (hs : ∀ L : Lay, L.Ok → q L < 136 ∧ n L < 2 ^ 64 ∧ (∃ R ∈ L.rd ++ L.wr, Within ⟨dp L, n L⟩ R) ∧
+      Region.Disjoint ⟨dp L, n L⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨dp L, n L⟩ ⟨L.KS, 640⟩ ∧
+      L.STK.Disjoint ⟨dp L, n L⟩) :
+    RelCT isa (Two I Φ) (kabs v.callee src len pos) fun _ _ => True :=
+  kabs_tr_of v hok dp n q hv (fun L _ _ _ _ hL _ _ => hs L hL)
 
 /-- The arguments of a call of `vg_keccak_pad`, in its registers. -/
 structure PadA (s : State) (st sc : Addr) (pos : Nat) : Prop where
@@ -237,23 +248,24 @@ abbrev qCtx (L : Lay) : Nat := (66 + L.ctxLen.toNat) % 136
 /-- The position after the message. -/
 abbrev qMsg (L : Lay) : Nat := (qCtx L + L.len.toNat) % 136
 
-theorem muHash_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {tr : Arg}
+/-- Hash with additional layout facts for an external cached digest. -/
+theorem muHash_tr_of (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {G : Lay → Prop} {tr : Arg}
     (hok : tr.ok = true) (hret : tr.isRet = false) (trp : Lay → Addr)
     (htr : ∀ (L : Lay) g vv m (t : State), Ctx L g vv m t → tr.val t = trp L)
-    (hs : ∀ L : Lay, L.Ok → (∃ R ∈ L.rd ++ L.wr, Within ⟨trp L, 64⟩ R) ∧
+    (hs : ∀ L : Lay, L.Ok → G L → (∃ R ∈ L.rd ++ L.wr, Within ⟨trp L, 64⟩ R) ∧
       Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
       L.STK.Disjoint ⟨trp L, 64⟩) :
-    RelCT isa (Two I Φ) (muHash v.callee tr) fun _ _ => True := by
+    RelCT isa (Two I (fun L m t => G L ∧ Φ L m t)) (muHash v.callee tr) fun _ _ => True := by
   -- The relation keeps only the position in `x0`.
   let Ψ : (Lay → Nat) → Lay → Mem → State → Prop := fun q L _ t => (t.gpr .x0).toNat = q L
-  have z := two_wp (I := I) (Φ := Φ) (Ψ := fun _ _ _ => True) zeroSt_tr
-    fun L g vv m₀ t hL hc _ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
+  have z := two_wp (I := I) (Φ := fun L m t => G L ∧ Φ L m t) (Ψ := fun L _ _ => G L) zeroSt_tr
+    fun L g vv m₀ t hL hc hφ => WP.mono (zeroSt_ok hL hc) fun t' ⟨hc', _⟩ => ⟨hc', hφ.1⟩
   have a1 := two_wp (I := I) (Ψ := Ψ fun _ => 64)
-    (kabs_tr v (Φ := fun _ _ _ => True) (absOk hok rfl rfl hret rfl) trp (fun _ => 64)
+    (kabs_tr_of v (Φ := fun L _ _ => G L) (absOk hok rfl rfl hret rfl) trp (fun _ => 64)
       (fun _ => 0) (fun L g vv m t _ hc _ => ⟨htr L g vv m t hc, rfl, rfl⟩)
-      fun L hL => ⟨by decide, by decide, (hs L hL).1, (hs L hL).2.1, (hs L hL).2.2.1, (hs L hL).2.2.2⟩)
-    fun L g vv m₀ t hL hc _ => by
-      obtain ⟨a, b, c, d⟩ := hs L hL
+      fun L _ _ _ _ hL _ hG => ⟨by decide, by decide, (hs L hL hG).1, (hs L hL hG).2.1, (hs L hL hG).2.2.1, (hs L hL hG).2.2.2⟩)
+    fun L g vv m₀ t hL hc hG => by
+      obtain ⟨a, b, c, d⟩ := hs L hL hG
       exact WP.mono (kabs_ok v hL hc (src := tr) (len := .imm 64) (pos := .imm 0) (n := 64) (q := 0)
         (absOk hok rfl rfl hret rfl) (htr L g vv m₀ t hc) rfl rfl (by decide)
         (by decide) a b c d) fun t' ⟨hc', _, _, hx⟩ => ⟨hc', hx⟩
@@ -318,6 +330,20 @@ theorem muHash_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → Sta
     fun L g vv m₀ t hL hc hφ => WP.mono (kpad_ok v hL hc (pos := .ret) (padOk rfl) (ofNat_toNat_eq hφ)
       (Nat.mod_lt _ (by decide))) fun t' ⟨hc', _⟩ => ⟨hc', trivial⟩
   exact RelCT.seq z (a1.seq (a2.seq (a3.seq (a4.seq (pd'.seq (ksqz_tr v))))))
+
+theorem muHash_tr (v : Proof.Sha3.AArch64.Permutation) {Φ : Lay → Mem → State → Prop} {tr : Arg}
+    (hok : tr.ok = true) (hret : tr.isRet = false) (trp : Lay → Addr)
+    (htr : ∀ (L : Lay) g vv m (t : State), Ctx L g vv m t → tr.val t = trp L)
+    (hs : ∀ L : Lay, L.Ok → (∃ R ∈ L.rd ++ L.wr, Within ⟨trp L, 64⟩ R) ∧
+      Region.Disjoint ⟨trp L, 64⟩ ⟨L.ST, 200⟩ ∧ Region.Disjoint ⟨trp L, 64⟩ ⟨L.KS, 640⟩ ∧
+      L.STK.Disjoint ⟨trp L, 64⟩) :
+    RelCT isa (Two I Φ) (muHash v.callee tr) fun _ _ => True := by
+  apply RelCT.mono (muHash_tr_of v (I := I) (Φ := Φ) (G := fun _ => True) hok hret trp htr
+    (fun L hL _ => hs L hL))
+  · intro a b h
+    obtain ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, φ₁, φ₂⟩ := h
+    exact ⟨L, g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, ⟨trivial, φ₁⟩, ⟨trivial, φ₂⟩⟩
+  · intro _ _ _; trivial
 
 theorem trHash_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hk : p.pkLen < 2 ^ 16)
     {Φ : Lay → Mem → State → Prop} (hΦ : ∀ L m t, Φ L m t → L.keyLen = p.pkLen) :

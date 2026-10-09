@@ -35,10 +35,9 @@ theorem pro_piece {p : Params} (hF : PFacts p) {S : Nat} :
   refine ⟨fun σ s hp hs => ?_, taintRel [.x0, .x1, .x2, .x3] (fun x y ⟨σ₁, σ₂, _, _, pub, h₁, h₂⟩ => ?_)
     (by taint_decide)⟩
   · subst hs
-    have hp' := hp
-    unfold kgPre at hp'
+    have hp' := hp.1
     sig_pre [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs] at hp'
-    obtain ⟨_, _, hwr, _, _, d03, _⟩ := hp'
+    obtain ⟨_, hwr, _, _, d03, _⟩ := hp'
     have hsc : 1024 * 32 ≤ Spec.MlDsa.scratchWords p * 8 := scr_ge hF
     have hin : ∀ k < 6, InRegions s.wr (s.gpr .x3 + BitVec.ofNat 64 (SV + 8 * k)) 8 := fun k hk =>
       ⟨⟨s.gpr .x3, Spec.MlDsa.scratchWords p * 8⟩, by rw [hwr]; simp, Offset.contains_base _ (by simp only [SV]; omega) (by simp only [SV]; omega)⟩

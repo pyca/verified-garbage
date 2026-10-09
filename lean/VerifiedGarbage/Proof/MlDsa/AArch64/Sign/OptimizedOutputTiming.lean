@@ -1,0 +1,62 @@
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputCorrect
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedOutputPackTiming
+
+namespace VG.Proof.MlDsa.AArch64.Sign
+open VG VG.AArch64 VG.Spec.MlDsa
+open VG.Impl.MlDsa.AArch64.Sign
+open VG.Impl.MlDsa.AArch64.Call (seqR)
+open VG.Proof.MlDsa.AArch64.Optimized
+
+def ConversionI (p : Params) (S : Nat) (lo hi : Int) (r : Nat) (σ s : State) : Prop :=
+  ∃κ,AcceptedConversion p S σ κ lo hi r s ∧ PassV p σ κ
+
+theorem conversionReady {p : Params} {S : Nat} {σ s : State} {κ r : Nat} {lo hi : Int}
+    (hp : Ok3 p) (hr : r<p.ℓ) (hl : -(q:Int)<lo) (hh : hi<(q:Int))
+    (h : AcceptedConversion p S σ κ lo hi r s) : Response.CanonicalizeCallReady (yP p r) s := by
+  have hc := canonicalizeZChk_ok hp r hr
+  simp only [canonicalizeZChk,Bool.and_eq_true] at hc
+  exact ⟨h.z.rooted.1.lay.nwp hc.1.1,centered_of_signed (h.z.pending r (by omega) hr) hl hh,
+    h.z.rooted.1.lay.cR hc.1.1,h.z.rooted.1.lay.cW hc.1.2⟩
+
+theorem conversionStep_tr {p : Params} {S r : Nat} {lo hi : Int} {E : State → State → Prop}
+    (hp : Ok3 p) (hr : r<p.ℓ) (hl : -(q:Int)<lo) (hh : hi<(q:Int)) :
+    RelCT isa (fun x y => RS p S E (ConversionI p S lo hi r) x y ∧ HJ p x y)
+      (Impl.MlDsa.AArch64.Sign.Optimized.canonicalizeZ p r)
+      (fun x y => RS p S E (ConversionI p S lo hi (r+1)) x y ∧ HJ p x y) := by
+  refine liftQ (J := ConversionI p S lo hi (r+1)) (Q₀ := fun _ _ => True) (F := fun s t => ∀f,HFam s 5 p.k f → HFam t 5 p.k f) ?_ ?_ ?_
+  · intro σ s _ ⟨κ,h,hpass⟩
+    have hc := conversionOutputChk_ok hp
+    simp only [conversionOutputChk,List.all_eq_true,List.mem_range,Bool.and_eq_true] at hc
+    refine WP.mono (canonicalizeZ_step_post hr (canonicalizeZChk_ok hp r hr)
+      (canonicalizeZKeepChk_ok hp) hl hh h.z) fun t ⟨hz,hpost⟩ => ?_
+    have keepHints : ∀f,HFam s 5 p.k f → HFam t 5 p.k f :=
+      fun _ hf => HFam.keep h.z.rooted.1.lay hpost (hc r hr).2 hf
+    exact ⟨⟨κ,⟨hz,(h.z.rooted.1.lay.keepBytes hpost (hc r hr).1).trans h.ct,
+      keepHints _ h.hints⟩,hpass⟩,fun _ hf => keepHints _ hf⟩
+  · apply Response.canonicalizeAt_tr (S := S) (ptr_ok (by change Reg.x28∈keptRegs; decide))
+    intro x y hxy
+    have L := hxy.1.lrel (fun _ _ ⟨_,h,_⟩ => h.z.rooted.1)
+    obtain ⟨_,_,_,_,_,_,⟨_,hx,_⟩,⟨_,hy,_⟩⟩ := hxy.1
+    exact ⟨conversionReady hp hr hl hh hx,conversionReady hp hr hl hh hy,
+      L.pa (by change Reg.x28∈bases; decide),L.sp⟩
+  · intro σ₁ σ₂ x y x' y' p₁ p₂ hpub he _ _ hHints j₁ j₂ g₁ g₂ _
+    obtain ⟨f,hx,hy⟩ := hHints
+    exact ⟨⟨σ₁,σ₂,p₁,p₂,hpub,he,j₁,j₂⟩,f,g₁ f hx,g₂ f hy⟩
+
+theorem optimizedOutput_tr {P : Prims} {p : Params} {S : Nat} {lo hi : Int}
+    {E : State → State → Prop} (hP : PrimsOk P S) (hp : Ok3 p)
+    (hl : -(q:Int)<lo) (hh : hi<(q:Int)) :
+    RelCT isa (fun x y => RS p S E (ConversionI p S lo hi 0) x y ∧ HJ p x y)
+      (Impl.MlDsa.AArch64.Sign.Optimized.output P p) fun _ _ => True := by
+  unfold Impl.MlDsa.AArch64.Sign.Optimized.output
+  refine RelCT.seq (R := fun x y => RS p S E (ConversionI p S lo hi p.ℓ) x y ∧ HJ p x y) ?_ ?_
+  · simpa only [Nat.zero_add] using seqR_tr
+      (Q := fun r x y => RS p S E (ConversionI p S lo hi r) x y ∧ HJ p x y)
+      p.ℓ 0 (fun r _ hr => conversionStep_tr hp (by omega) hl hh)
+  · refine RelCT.mono (Output.output_tr hP (Output.oChk_ok hp) (E := E)) ?_ (fun _ _ h => h)
+    intro x y ⟨h,hj⟩
+    refine ⟨h.mono (fun _ _ he => he) ?_,hj⟩
+    intro σ s ⟨κ,hs,hpass⟩
+    exact ⟨κ,hs.z.rooted.1,hs.ct,hs.z.converted,hs.hints,hpass,hs.z.flag⟩
+
+end VG.Proof.MlDsa.AArch64.Sign

@@ -21,9 +21,10 @@ open VG VG.AArch64
 def vreg (i : Nat) : VReg :=
   [VReg.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18, .v19, .v20, .v21, .v22, .v23, .v24, .v25, .v26, .v27, .v28, .v29, .v30, .v31].getD i .v0
 
-/-- The five vector operations used by the register-resident round. -/
+/-- The vector operations used by the register-resident round. -/
 inductive Op where
   | xor (d n m : VReg)
+  | bic (d n m : VReg)
   | eor3 (d n m a : VReg)
   | rax1 (d n m : VReg)
   | xar (d n m : VReg) (imm : Fin 64)
@@ -31,6 +32,7 @@ inductive Op where
 
 def Op.instr : Op → Instr
   | .xor d n m => .vop (.logic .eor d n m)
+  | .bic d n m => .vop (.logic .bic d n m)
   | .eor3 d n m a => .vop (.eor3 d n m a)
   | .rax1 d n m => .vop (.rax1 d n m)
   | .xar d n m k => .vop (.xar d n m k.val)

@@ -1,4 +1,5 @@
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Depth
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Main
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
@@ -47,10 +48,10 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
   add := CalleeOk.of_verified (by decide) Arith.add_verified (by decide) (by dsimp only [primsWith]; decide)
   sub := CalleeOk.of_verified (by decide) Arith.sub_verified (by decide) (by dsimp only [primsWith]; decide)
   rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak])
-  rej4 := CalleeOk.of_verified (by decide) (Sample.Rej4.verified keccak.callee.pairedSha3) (by decide)
-    (by simp only [primsWith,Sample.Rej4.depth,Nat.mul_zero]; decide)
+  rej4 := CalleeOk.of_verified (by decide) (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
+    (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide)
   rejBounded := CalleeOk.of_verified (by decide) (Sample.rejBounded_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejBounded_depth keccak])
-  ball := CalleeOk.of_verified (by decide) (Sample.sampleInBall_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.ball_depth keccak])
+  ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak])
   power2Round := CalleeOk.of_verified (by decide) Round.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
   useHint := CalleeOk.of_verified (by decide) Round.useHint_verified (by decide) (by dsimp only [primsWith]; decide)
   normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide)

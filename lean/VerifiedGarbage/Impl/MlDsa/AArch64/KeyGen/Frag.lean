@@ -73,15 +73,14 @@ def addAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_add" P.add [(.x0, .ptr f), 
 def subAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_sub" P.sub [(.x0, .ptr f), (.x1, .ptr g)]
 
 def rejNttAt (seed a : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_rej_ntt_poly" ++ P.suffix) P.rejNtt [(.x0, .ptr seed), (.x1, .ptr a), (.x2, .ptr ss)]
+  .seq (.block (glue [(.x0, .ptr seed), (.x1, .ptr a), (.x2, .ptr ss)])) P.rejNtt
 
 /-- Four `RejNTTPoly` outputs, with 136 bytes of seeds and 8192 bytes of scratch. -/
 def rej4At (seed a : Ptr) : Prog isa :=
   callAt ("vg_mldsa_rej_ntt_poly4" ++ P.suffix) P.rej4 [(.x0,.ptr seed),(.x1,.ptr a),(.x2,.ptr ss)]
 
 def rejBoundedAt (seed : Ptr) (eta : Nat) (a : Ptr) : Prog isa :=
-  callAt ("vg_mldsa_rej_bounded_poly" ++ P.suffix) P.rejBounded
-    [(.x0, .ptr seed), (.x1, .imm eta), (.x2, .ptr a), (.x3, .ptr ss)]
+  .seq (.block (glue [(.x0, .ptr seed), (.x1, .imm eta), (.x2, .ptr a), (.x3, .ptr ss)])) P.rejBounded
 
 def ballAt (ct : Ptr) (len tau : Nat) (c : Ptr) : Prog isa :=
   callAt ("vg_mldsa_sample_in_ball" ++ P.suffix) P.ball

@@ -81,7 +81,7 @@ theorem expA_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
   have L₁ := h₁.k1.kc.lay hF hp
   have hseed : bytesAt s₁.mem (pa s₁ (sc oSA)) 34 = seedA (rhoOf p σ) (e / p.ℓ) (e % p.ℓ) := by
     rw [bytes34, h₁.k1.sa, sc_add, sc_pa hP₁, hb₁, Proof.MlDsa.KeyGen.seedA_eq]
-  refine WP.seq (WP.mono (rejNttAt_ok hP.s64 hP.rejNtt L₁ (seed := sc oSA) (a := aP e) (ss := sc oSS)
+  refine WP.seq (WP.mono (rejNttInline_ok hP.s64 hP.rejNtt L₁ (seed := sc oSA) (a := aP e) (ss := sc oSS)
     (by unfold rejNttChk; lay)) fun s₂ ⟨hP₂, x₂, hred, hout⟩ => ?_)
   rw [hseed] at hout
   have L₂ := L₁.post hP₂
@@ -179,9 +179,9 @@ theorem expA_tr {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFac
     (Q := fun x y => Two p S x y ∧ bytesAt x.mem (pa x (sc oSA)) 34 = bytesAt y.mem (pa y (sc oSA)) 34)
     fun x y x' y' ⟨T, e32⟩ ⟨⟨_, hx⟩, bx⟩ ⟨⟨_, hy⟩, by'⟩ => ⟨T.post hx hy, by rw [bx, by', e32]⟩) ?_
   have hc : rejNttChk kgR (kgW p) (sc oSA) (aP e) (sc oSS) = true := by unfold rejNttChk; lay
-  have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rejNttAt_ok (nm := "vg_mldsa_rej_ntt_poly" ++ P.suffix) hP.s64 hP.rejNtt L hc)
+  have ok := fun x (L : Lay S kgR (kgW p) x) => WP.mono (rejNttInline_ok hP.s64 hP.rejNtt L hc)
     fun _ h => (⟨_, h.1⟩ : ∃ W, PostB S x _ W)
-  exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rejNttAt_tr hP.rejNtt (kgOk p) hc fun x y h =>
+  exact RelCT.seq (RelCT.two (fun _ _ h => h.1) (rejNttInline_tr hP.rejNtt (kgOk p) hc fun x y h =>
       ⟨h.1.lx, h.1.ly, h.2, h.1.same⟩)
       fun x y h => ⟨ok x h.1.lx, ok y h.1.ly⟩)
     (tail_tr (j := e) (by omega))

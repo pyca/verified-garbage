@@ -1,0 +1,47 @@
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedScaleRun
+import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalSlice
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.Paired
+open VG VG.AArch64
+open VG.Proof.MlKem.AArch64 (VChg)
+open VG.Impl.MlDsa.AArch64.Optimized.PairedBase
+
+def finalArithmetic : List Instr :=
+  stageRunCode (fun i => 32*i.val) (List.finRange 7)++rootPair 224++scaleRunCode (List.finRange 4)
+
+theorem finalArithmetic_eq : finalArithmetic=
+    ([1,2,4].flatMap fun dist => (List.range (4/dist)).flatMap fun b =>
+      rootPair (32*(8-(8/dist)+b)) ++
+      (List.range dist).flatMap (fun j => batchPair (2*b*dist+j) (2*b*dist+j+dist))) ++
+    rootPair 224 ++
+    ((List.range 4).flatMap fun j =>
+      [.vop (.sqdmulh .v24 (vr j) .v29),.vop (.sqdmulh .v25 (vr (8+j)) .v29),
+       .vop (.mul (vr j) (vr j) .v28),.vop (.mul (vr (8+j)) (vr (8+j)) .v28),
+       .vop (.mls (vr j) .v24 .v31),.vop (.mls (vr (8+j)) .v25 .v31)]) := by
+  decide +kernel
+
+theorem finalArithmetic_ok {s : State} {rest : List Instr} {Q : State → Prop} {v : Values}
+    (hv : Banks s v) (hr : ∀i:Fin 7,RootReady s (32*i.val) (Inverse.finalZ i.val))
+    (hs : RootReady s 224 (fun _ => 16382))
+    (hq : ∀e<4,vword (s.v .v31) e=8380417#32)
+    (k : ∀t,VChg stageRunRegs s t → Banks t (fun p => Inverse.rawFinalValues (v p)) →
+      WP isa (.block rest) t Q) :
+    WP isa (.block (finalArithmetic++rest)) s Q := by
+  simp only [finalArithmetic,List.append_assoc]
+  refine stageRun_ok _ _ _ hv hr hq fun a ha va => ?_
+  have hsa := hs.chg ha
+  refine rootLoads_ok 224 hsa.align hsa.limit hsa.rootRead hsa.recipRead fun b hb hz hbar => ?_
+  refine scaleRun_ok _ (va.roots hb) ?_ ?_ ?_ fun t ht vt => ?_
+  · rw [hz]; exact hsa.root
+  · rw [hbar]; exact hsa.recip
+  · rw [hb.get .v31 (by decide),ha.get .v31 (by decide)]; exact hq
+  · refine k t (((ha.trans hb).trans ht).mono ?_) ?_
+    · intro r hr
+      simp only [List.mem_append] at hr
+      rcases hr with (hr | hr) | hr
+      · exact hr
+      · exact List.mem_append_left _ hr
+      · exact List.mem_append_right _ hr
+    · simpa only [scaleRunValues_all,stageRunValues_all,Inverse.rawFinalValues] using vt
+
+end VG.Proof.MlDsa.AArch64.Optimized.Paired

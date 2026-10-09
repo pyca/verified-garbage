@@ -1,0 +1,61 @@
+import VerifiedGarbage.Proof.Framework.PowLit
+import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Ntt
+
+namespace VG.Proof.MlDsa.AArch64.Optimized.TableConstants
+open VG.Impl.MlDsa.AArch64.Optimized.Ntt
+
+/-- Symbolic table layout: root index and whether the word is its reciprocal.
+Checking this small layout never evaluates modular exponentiation. -/
+def layout : List (Nat × Bool) :=
+ let first := (List.range 8).flatMap fun block =>
+  ([16,8,4,2,1] : List Nat).flatMap fun len =>
+   (List.range (if len<4 then 4 else 16/len)).flatMap fun g =>
+    let idx := 128/len+32*block/(2*len)+(if len=2 then 2*g else if len=1 then 4*g else g)
+    let zs := if len=1 then (List.range 4).map (fun j => idx+j)
+     else if len=2 then [idx,idx,idx+1,idx+1]
+     else List.replicate 4 idx
+    zs.map (fun z => (z,false)) ++ zs.map (fun z => (z,true))
+ first ++ (List.range 8).flatMap (fun i => [(i+1,false),(i+1,true)])
+
+def value (p : Nat × Bool) : Nat :=
+ if p.2 then zetaTab p.1 * 2^31 / 8380417 else zetaTab p.1
+
+private theorem map_if {α β : Type} (f : α → β) (p : Prop) [Decidable p] (a b : List α) :
+    (if p then a else b).map f = if p then a.map f else b.map f := by
+  split <;> rfl
+
+theorem expandedVals_layout : expandedVals = layout.map value := by
+  simp only [expandedVals,layout,List.map_append,List.map_flatMap,List.map_map,
+    map_if,List.map_replicate,List.map_cons,List.map_nil,Function.comp_def,value,
+    Bool.false_eq_true,ite_false,ite_true]
+
+theorem layout_length : layout.length = 976 := by decide +kernel
+
+theorem expandedVals_length : expandedVals.length = 976 := by
+  rw [expandedVals_layout,List.length_map,layout_length]
+
+theorem inner4_layout : ∀ u : Fin 8, ∀ e : Fin 4,
+    layout[120*u.val+e.val]! = (8+u.val,false) ∧
+    layout[120*u.val+e.val+4]! = (8+u.val,true) := by decide +kernel
+
+theorem inner2_layout : ∀ u : Fin 8, ∀ g : Fin 2, ∀ e : Fin 4,
+    layout[120*u.val+8+8*g.val+e.val]! = (16+2*u.val+g.val,false) ∧
+    layout[120*u.val+8+8*g.val+e.val+4]! = (16+2*u.val+g.val,true) := by decide +kernel
+
+theorem inner1_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
+    layout[120*u.val+24+8*g.val+e.val]! = (32+4*u.val+g.val,false) ∧
+    layout[120*u.val+24+8*g.val+e.val+4]! = (32+4*u.val+g.val,true) := by decide +kernel
+
+theorem tail2_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
+    layout[120*u.val+56+8*g.val+e.val]! = (64+8*u.val+2*g.val+e.val/2,false) ∧
+    layout[120*u.val+56+8*g.val+e.val+4]! = (64+8*u.val+2*g.val+e.val/2,true) := by decide +kernel
+
+theorem tail1_layout : ∀ u : Fin 8, ∀ g : Fin 4, ∀ e : Fin 4,
+    layout[120*u.val+88+8*g.val+e.val]! = (128+16*u.val+4*g.val+e.val,false) ∧
+    layout[120*u.val+88+8*g.val+e.val+4]! = (128+16*u.val+4*g.val+e.val,true) := by decide +kernel
+
+theorem hoisted_layout : ∀ i : Fin 8,
+    layout[960+2*i.val]! = (i.val+1,false) ∧
+    layout[960+2*i.val+1]! = (i.val+1,true) := by decide +kernel
+
+end VG.Proof.MlDsa.AArch64.Optimized.TableConstants

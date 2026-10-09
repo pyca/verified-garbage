@@ -1,3 +1,4 @@
+import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Inline
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Base
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Pack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Sample
@@ -102,6 +103,46 @@ theorem callAt_trRet {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (C
           by rw [h2.2.rd, h2.2.wr]; exact c₂, by rw [h2.2.wr]; exact w₂⟩)
       fun _ _ h => h)
 
+/-- A genuine inline body retains the public sampler result. -/
+theorem inlineBody_trRet {c : Prog isa} {k : Contract isa}
+    (hv : ∀s,k.pre s → ∃t s',Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
+    (hr : RetPub k c) {P : State → State → Prop} (rd wr : List Region)
+    (hP : ∀x y,P x y → k.pre (x.withRegions rd wr) ∧ k.pre (y.withRegions rd wr) ∧
+      k.pub (x.withRegions rd wr) (y.withRegions rd wr) ∧
+      Covers (rd++wr) (x.rd++x.wr) ∧ Covers wr x.wr ∧
+      Covers (rd++wr) (y.rd++y.wr) ∧ Covers wr y.wr) :
+    RelCT isa P c fun x y=>(x.gpr .x0).setWidth 32=(y.gpr .x0).setWidth 32 := by
+  intro x y tx ty u v hp ex ey
+  obtain ⟨px,py,pub,cx,wx,cy,wy⟩:=hP x y hp
+  obtain ⟨u',eu,gu⟩:=run_narrow hv px cx wx ex
+  obtain ⟨v',ev,gv⟩:=run_narrow hv py cy wy ey
+  obtain ⟨et,er⟩:=hr _ _ _ _ _ _ ⟨px,py,pub⟩ eu ev
+  exact ⟨et,by simpa only [gu,gv] using er⟩
+
+theorem inlineAt_trRet {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk S c k)
+    (hr : RetPub k c) {as : List (Reg × Arg)} (hok : ∀ a ∈ as, a.2.Ok ∧ a.1 ∈ argRegs) (hnd : (as.map (·.1)).Nodup)
+    {P : State → State → Prop}
+    (hP : ∀ x y x1 y1, P x y → Args as x x1 → Args as y y1 → ∃ rd wr : List Region,
+      k.pre (x1.withRegions rd wr) ∧ k.pre (y1.withRegions rd wr) ∧
+      k.pub (x1.withRegions rd wr) (y1.withRegions rd wr) ∧
+      Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
+      Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
+    RelCT isa P (.seq (.block (glue as)) c) fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 :=
+  RelCT.seq (RelCT.postDep (Q := fun x1 y1 => ∃ x y, P x y ∧ Args as x x1 ∧ Args as y y1)
+      (block_nomem_tr (glue_nomem as)) (fun x y _ => ⟨glue_ok hok hnd x, glue_ok hok hnd y⟩)
+      fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
+    (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
+        k.pre (x1.withRegions a.1 a.2) ∧ k.pre (y1.withRegions a.1 a.2) ∧
+        k.pub (x1.withRegions a.1 a.2) (y1.withRegions a.1 a.2) ∧
+        Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
+        Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
+      fun a => inlineBody_trRet C.correct hr a.1 a.2 fun _ _ h => h)
+      (fun x1 y1 ⟨x, y, hp, h1, h2⟩ => by
+        obtain ⟨rd, wr, p₁, p₂, pub, c₁, w₁, c₂, w₂⟩ := hP x y x1 y1 hp h1 h2
+        exact ⟨(rd, wr), p₁, p₂, pub, by rw [h1.2.rd, h1.2.wr]; exact c₁, by rw [h1.2.wr]; exact w₁,
+          by rw [h2.2.rd, h2.2.wr]; exact c₂, by rw [h2.2.wr]; exact w₂⟩)
+      fun _ _ h => h)
+
 /-- A sampler's call leaves the result `w0` public in two runs whose seeds agree. -/
 theorem rejNttAtK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.rejNTT (rejNTTContract AArch64.abi S))
     (hr : RetPub (rejNTTContract AArch64.abi S) P.rejNTT)
@@ -120,6 +161,31 @@ theorem rejNttAtK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.rejNTT (rejNTTCo
   obtain ⟨Lx, Ly, hsd, e⟩ := hQ x y hp
   refine ⟨_, _, rejNtt_pre Lx hc h1, ?_, ?_, (rejNtt_cov Lx hc).1, (rejNtt_cov Lx hc).2, ?_, ?_⟩
   · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact rejNtt_pre Ly hc h2
+  · sig_pub [rejNTTContract, rejNTTSig, AArch64.abi, VG.AArch64.argRegs]
+    rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2, Args.sp h1, Args.sp h2,
+      Args.mem h1, Args.mem h2]
+    simp only [Arg.val]
+    exact ⟨e.2, by rw [hsd], e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (rejNtt_cov Ly hc).1
+  · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (rejNtt_cov Ly hc).2
+
+theorem rejNttInlineK_trRet {S : Nat} {P : Prims} (C : CalleeOk S P.rejNTT (rejNTTContract AArch64.abi S))
+    (hr : RetPub (rejNTTContract AArch64.abi S) P.rejNTT)
+    {rbs wbs : List (Reg × Nat)} (hB : LayOk (rbs ++ wbs)) {seed a ss : Ptr} (hc : rejNttChk rbs wbs seed a ss = true)
+    {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧
+      bytesAt x.mem (pa x seed) 34 = bytesAt y.mem (pa y seed) 34 ∧ SameB x y) :
+    RelCT isa Q (.seq (.block (glue (rejNttArgs seed a ss))) P.rejNTT)
+      fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 := by
+  have hc' := hc
+  simp only [rejNttChk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  have hb : seed.1 ∈ bases ∧ a.1 ∈ bases ∧ ss.1 ∈ bases := ⟨ptr_bs hB c4, ptr_bs hB c5, ptr_bs hB c6⟩
+  refine inlineAt_trRet C hr (rejNtt_args hB c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+    fun x y x1 y1 hp h1 h2 => ?_
+  obtain ⟨Lx, Ly, hsd, e⟩ := hQ x y hp
+  refine ⟨_, _, rejNttInline_pre Lx hc h1, ?_, ?_, (rejNtt_cov Lx hc).1, (rejNtt_cov Lx hc).2, ?_, ?_⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact rejNttInline_pre Ly hc h2
   · sig_pub [rejNTTContract, rejNTTSig, AArch64.abi, VG.AArch64.argRegs]
     rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2, Args.sp h1, Args.sp h2,
       Args.mem h1, Args.mem h2]
@@ -189,6 +255,18 @@ theorem mask_pre {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {s1 : State} (h1
   cpre L
   exact hγ
 
+theorem mask_inline_pre {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {s1 : State} (h1 : Args (maskArgs seed γ a ss) s s1) :
+    (expandMaskContract AArch64.abi S).pre
+      (s1.withRegions [⟨pa s seed, 66⟩] [⟨pa s a, 1024⟩, ⟨pa s ss, 2048⟩]) := by
+  simp only [maskChk, Bool.and_eq_true, and_assoc] at hc
+  obtain ⟨c1, c2, c3, c4, c5, c6, _, _⟩ := hc
+  sig_pre [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs]
+  rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.sp h1]
+  simp only [Arg.val]
+  rw [imm32 (by omega)]
+  cpre L
+  exact hγ
+
 end
 
 theorem mask_args {B : List Reg} {bs : List (Reg × Nat)} (L : LayIn B bs) {seed a ss : Ptr} (γ : Nat) (c4 : inB bs seed 66 = true)
@@ -198,7 +276,7 @@ theorem mask_args {B : List Reg} {bs : List (Reg × Nat)} (L : LayIn B bs) {seed
   exact ⟨⟨ptr_ok (ptr_kept L c4), by decide⟩, ⟨trivial, by decide⟩, ⟨ptr_ok (ptr_kept L c5), by decide⟩,
     ⟨ptr_ok (ptr_kept L c6), by decide⟩⟩
 
-theorem maskAtK_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
+theorem maskAtCall_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
     (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
     {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
     (hc : maskChk rbs wbs seed a ss = true) {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) :
@@ -218,7 +296,7 @@ theorem maskAtK_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
   rw [imm32 (by omega)] at hq
   exact hq
 
-theorem maskAtK_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
+theorem maskAtCall_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
     {rbs wbs : List (Reg × Nat)} (hB : LayOk (rbs ++ wbs)) {seed a ss : Ptr} (hc : maskChk rbs wbs seed a ss = true)
     {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {Q : State → State → Prop}
     (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧ SameB x y) :
@@ -239,6 +317,71 @@ theorem maskAtK_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMas
     exact ⟨e.2, e.pa hb.1, trivial, e.pa hb.2.1, e.pa hb.2.2⟩
   · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (mask_cov Ly hc).1
   · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (mask_cov Ly hc).2
+
+theorem maskAtInline_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
+    (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
+    {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
+    (hc : maskChk rbs wbs seed a ss = true) {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) :
+    WP isa (.seq (.block (glue (maskArgs seed γ a ss))) P.expandMask) s fun s' =>
+      PPostB S s s' [(a, 1024), (ss, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
+      PolyIs s'.mem (pa s a) (toRq (bitUnpack (H (bytesAt s.mem (pa s seed) 66) (32 * (1 + bitlen (γ - 1))))
+        (γ - 1) γ)) := by
+  have hc' := hc
+  simp only [maskChk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  refine WP.mono (inlineAt_ok hS C (mask_args L.ok γ c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+    (fun s1 h1 => mask_inline_pre L hc hγ h1) (mask_cov L hc).1 (mask_cov L hc).2)
+    fun s' ⟨hP, s1, h1, hq⟩ => ⟨hP.b, hP.cs .x24 (by decide) (by decide), ?_⟩
+  sig_post [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs] at hq
+  rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.mem h1] at hq
+  simp only [Arg.val] at hq
+  rw [imm32 (by omega)] at hq
+  exact hq
+
+theorem maskAtInline_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
+    {rbs wbs : List (Reg × Nat)} (hB : LayOk (rbs ++ wbs)) {seed a ss : Ptr} (hc : maskChk rbs wbs seed a ss = true)
+    {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧ SameB x y) :
+    RelCT isa Q (.seq (.block (glue (maskArgs seed γ a ss))) P.expandMask) fun _ _ => True := by
+  have hc' := hc
+  simp only [maskChk, Bool.and_eq_true, and_assoc] at hc'
+  obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
+  have hb : seed.1 ∈ bases ∧ a.1 ∈ bases ∧ ss.1 ∈ bases := ⟨ptr_bs hB c4, ptr_bs hB c5, ptr_bs hB c6⟩
+  refine inlineAt_tr C (mask_args hB γ c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+    fun x y x1 y1 hp h1 h2 => ?_
+  obtain ⟨Lx, Ly, e⟩ := hQ x y hp
+  refine ⟨_, _, mask_inline_pre Lx hc hγ h1, ?_, ?_, (mask_cov Lx hc).1, (mask_cov Lx hc).2, ?_, ?_⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact mask_inline_pre Ly hc hγ h2
+  · sig_pub [expandMaskContract, expandMaskSig, AArch64.abi, VG.AArch64.argRegs]
+    rw [Args.r0 h1, Args.r1 h1, Args.r2 h1, Args.r3 h1, Args.r0 h2, Args.r1 h2, Args.r2 h2, Args.r3 h2,
+      Args.sp h1, Args.sp h2]
+    simp only [Arg.val]
+    exact ⟨e.2, e.pa hb.1, trivial, e.pa hb.2.1, e.pa hb.2.2⟩
+  · rw [e.pa hb.1, e.pa hb.2.1, e.pa hb.2.2]; exact (mask_cov Ly hc).1
+  · rw [e.pa hb.2.1, e.pa hb.2.2]; exact (mask_cov Ly hc).2
+
+theorem maskAtK_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
+    (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
+    {rbs wbs : List (Reg × Nat)} {s : State} (L : Lay S rbs wbs s) {seed a ss : Ptr}
+    (hc : maskChk rbs wbs seed a ss = true) {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) :
+    WP isa (maskCallAt P seed γ a ss) s fun s' =>
+      PPostB S s s' [(a, 1024), (ss, 2048)] ∧ s'.gpr .x24 = s.gpr .x24 ∧
+      PolyIs s'.mem (pa s a) (toRq (bitUnpack (H (bytesAt s.mem (pa s seed) 66) (32 * (1 + bitlen (γ - 1))))
+        (γ - 1) γ)) := by
+  unfold maskCallAt
+  split
+  · exact maskAtCall_ok hS C L hc hγ
+  · exact maskAtInline_ok hS C L hc hγ
+
+theorem maskAtK_tr {S : Nat} {P : Prims} (C : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S))
+    {rbs wbs : List (Reg × Nat)} (hB : LayOk (rbs ++ wbs)) {seed a ss : Ptr} (hc : maskChk rbs wbs seed a ss = true)
+    {γ : Nat} (hγ : γ = 2 ^ 17 ∨ γ = 2 ^ 19) {Q : State → State → Prop}
+    (hQ : ∀ x y, Q x y → Lay S rbs wbs x ∧ Lay S rbs wbs y ∧ SameB x y) :
+    RelCT isa Q (maskCallAt P seed γ a ss) fun _ _ => True := by
+  unfold maskCallAt
+  split
+  · exact maskAtCall_tr C hB hc hγ hQ
+  · exact maskAtInline_tr C hB hc hγ hQ
 
 /-! ## `HighBits` and `LowBits` -/
 

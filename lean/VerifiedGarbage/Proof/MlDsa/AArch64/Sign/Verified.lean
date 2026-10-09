@@ -43,7 +43,9 @@ def signSat (p : Params) : State where
 
 theorem signK_implies_of {p : Params} (hsat : ∃ s, (signContractT p AArch64.abi signStack).pre s) :
     (signK p signStack).Implies (signContractT p AArch64.abi signStack) where
-  pre := by sig_implies_pre [signContractT, signSig, signK, AArch64.abi, AArch64.argRegs]
+  pre := by
+    sig_implies_pre [signContractT, signSig, signK, AArch64.abi, AArch64.argRegs]
+    exact List.Subset.refl _
   post := by sig_implies_post [signContractT, signSig, signK, AArch64.abi, AArch64.argRegs]
   pub := by
     intro s₁ s₂ _ _ h

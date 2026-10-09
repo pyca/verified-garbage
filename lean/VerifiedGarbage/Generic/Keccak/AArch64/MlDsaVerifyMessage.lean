@@ -1,5 +1,5 @@
 import VerifiedGarbage.TCB.AArch64.Target
-import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Verified
+import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-!
 # ML-DSA (FIPS 204) on AArch64: verifying messages
@@ -20,7 +20,7 @@ against the contract.
 namespace VG.Generic.Keccak.AArch64.MlDsaVerifyMessage
 
 open VG
-open VG.Proof.MlDsa.AArch64.Message (verifyFn verifyMessage_verified)
+open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
 /-- Notes on the implementation, the same for every parameter set. -/
 def notes : List String :=
@@ -34,35 +34,38 @@ def artifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   { Spec.MlDsa.verifyMessage44Api with
     name := Spec.MlDsa.verifyMessage44Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verifyMessage44Api.doc (notes := notes)
     code := Impl.MlDsa.AArch64.Message.verifyMessage v.callee (Spec.MlDsa.verify44Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Verify.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa44 AArch64.abi 16
+      (selectedCode v Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44
+    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa44 (selectedAbi v) 16
     stack := 16
-    verified := verifyMessage_verified v (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
+    verified := selected_message_verified v (.inl rfl) (Spec.MlDsa.verify44Api.name ++ v.callee.suffix)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.verifyMessage65Api with
     name := Spec.MlDsa.verifyMessage65Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verifyMessage65Api.doc (notes := notes)
     code := Impl.MlDsa.AArch64.Message.verifyMessage v.callee (Spec.MlDsa.verify65Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Verify.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa65 AArch64.abi 16
+      (selectedCode v Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65
+    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa65 (selectedAbi v) 16
     stack := 16
-    verified := verifyMessage_verified v (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+    verified := selected_message_verified v (.inr (.inl rfl)) (Spec.MlDsa.verify65Api.name ++ v.callee.suffix)
     spSafe := Code.all_of_forall (fun _ => rfl) _ },
   { Spec.MlDsa.verifyMessage87Api with
     name := Spec.MlDsa.verifyMessage87Api.name ++ v.callee.suffix
     features := v.features
+    consts := selectedConsts v
     target := AArch64.target
     doc := Spec.MlDsa.verifyMessage87Api.doc (notes := notes)
     code := Impl.MlDsa.AArch64.Message.verifyMessage v.callee (Spec.MlDsa.verify87Api.name ++ v.callee.suffix)
-      (Impl.MlDsa.AArch64.Verify.verifyWith v.callee (Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
-    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa87 AArch64.abi 16
+      (selectedCode v Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87
+    contract := Spec.MlDsa.verifyMessageContract Spec.MlDsa.mlDsa87 (selectedAbi v) 16
     stack := 16
-    verified := verifyMessage_verified v (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
+    verified := selected_message_verified v (.inr (.inr rfl)) (Spec.MlDsa.verify87Api.name ++ v.callee.suffix)
     spSafe := Code.all_of_forall (fun _ => rfl) _ }]
 
 end VG.Generic.Keccak.AArch64.MlDsaVerifyMessage

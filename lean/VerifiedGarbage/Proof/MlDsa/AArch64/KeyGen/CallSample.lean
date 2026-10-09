@@ -38,7 +38,7 @@ theorem rejB_cov : Covers ([⟨pa s seed, 66⟩] ++ [⟨pa s a, 1024⟩, ⟨pa s
 
 theorem rejB_pre {eta : Nat} (he : eta = 2 ∨ eta = 4) {s1 : State} (h1 : Args (rejBArgs seed eta a ss) s s1) :
     (rejBoundedContract AArch64.abi S).pre
-      (s1.callEntry.withRegions [⟨pa s seed, 66⟩] [⟨pa s a, 1024⟩, ⟨pa s ss, 2048⟩]) := by
+      (s1.withRegions [⟨pa s seed, 66⟩] [⟨pa s a, 1024⟩, ⟨pa s ss, 2048⟩]) := by
   simp only [rejBChk, Bool.and_eq_true, and_assoc] at hc
   obtain ⟨c1, c2, c3, c4, c5, c6, _, _⟩ := hc
   sig_pre [rejBoundedContract, rejBoundedSig, AArch64.abi, VG.AArch64.argRegs]
@@ -69,7 +69,7 @@ theorem rejBAt_ok {S : Nat} (hS : S < 2 ^ 64) {P : Prims}
   have hc' := hc
   simp only [rejBChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
-  refine WP.mono (callAt_ok hS C (rejB_args L.ok eta c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+  refine WP.mono (inlineAt_ok hS C (rejB_args L.ok eta c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
     (fun s1 h1 => rejB_pre L hc he h1) (rejB_cov L hc).1 (rejB_cov L hc).2)
     fun s' ⟨hP, s1, h1, hq⟩ => ⟨hP.b, hP.cs .x24 (by decide) (by decide), ?_⟩
   sig_post [rejBoundedContract, rejBoundedSig, AArch64.abi, VG.AArch64.argRegs] at hq
@@ -89,7 +89,7 @@ theorem rejBAt_tr {S : Nat} {P : Prims} (C : CalleeOk S P.rejBounded (rejBounded
   simp only [rejBChk, Bool.and_eq_true, and_assoc] at hc'
   obtain ⟨_, _, _, c4, c5, c6, _, _⟩ := hc'
   have hb : seed.1 ∈ bases ∧ a.1 ∈ bases ∧ ss.1 ∈ bases := ⟨ptr_bs hB c4, ptr_bs hB c5, ptr_bs hB c6⟩
-  refine callAt_tr C (rejB_args hB eta c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
+  refine inlineAt_tr C (rejB_args hB eta c4 c5 c6) (by simp only [List.map_cons, List.map_nil]; decide)
     fun x y x1 y1 hp h1 h2 => ?_
   obtain ⟨Lx, Ly, hsd, e⟩ := hQ x y hp
   refine ⟨_, _, rejB_pre Lx hc he h1, ?_, ?_, (rejB_cov Lx hc).1, (rejB_cov Lx hc).2, ?_, ?_⟩

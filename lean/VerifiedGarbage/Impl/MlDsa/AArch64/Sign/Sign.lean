@@ -147,6 +147,41 @@ def setKappa (r : Nat) : List Instr :=
 def maskR (r : Nat) : Prog isa :=
   .seq (.block (setKappa r)) (.seq (maskAt P p.γ₁ (yP p r)) (.seq (copy (yhP p r) (yP p r) 1024) (nttAt P (yhP p r))))
 
+/-- Paired-mask seed staging in the unused prefix gap. -/
+def oMP : Nat := 1632
+
+def maskSeedHalf (src dst : Nat) : List Instr :=
+  lea .x10 .x28 dst ++ Impl.MlKem.AArch64.copy32 .x28 src .x10 0
+
+def maskPairNonce (r j : Nat) : List Instr :=
+  [.ldr .x .x9 .x28 oKAP,.addImm .x .x9 .x9 (r+j),
+    .strb .x9 .x28 (oMP+66*j+64),.lsr .x .x9 .x9 8,.strb .x9 .x28 (oMP+66*j+65)]
+
+def maskPairSeed (r j : Nat) : Prog isa :=
+  .seq (.block (maskSeedHalf oMS (oMP+66*j)))
+    (.seq (.block (maskSeedHalf (oMS+32) (oMP+66*j+32))) (.block (maskPairNonce r j)))
+
+/-- Finish a mask whose canonical coefficients have already been sampled. -/
+def maskFinish (r : Nat) : Prog isa :=
+  .seq (copy (yhP p r) (yP p r) 1024) (nttAt P (yhP p r))
+
+/-- Two independent standard mask samples share the paired SHAKE engine.
+The old matrix-sampler workspace is dead throughout this phase. -/
+def maskPairR (nm : String) (cd : Prog isa) (r : Nat) : Prog isa :=
+  .seq (maskPairSeed r 0) (.seq (maskPairSeed r 1)
+    (.seq (callAt nm cd [(.x0,.ptr (sc oMP)),(.x1,.imm p.γ₁),
+      (.x2,.ptr (yP p r)),(.x3,.ptr (yP p (r+1))),(.x4,.ptr (sc (oR4 p)))])
+      (.seq (maskFinish P p r) (maskFinish P p (r+1)))))
+
+def masksPaired (nm : String) (cd : Prog isa) : Prog isa :=
+  .seq (seqR (fun j => maskPairR P p nm cd (2*j)) 0 (p.ℓ/2))
+    (seqR (maskR P p) (2*(p.ℓ/2)) (p.ℓ%2))
+
+/-- Paired SHA3 path, with the original single-stream fallback. -/
+def masks : Prog isa :=
+  if P.pairedMask then masksPaired P p "vg_mldsa_expand_mask_pair_sha3" P.expandMaskPair
+  else seqR (maskR P p) 0 p.ℓ
+
 /-- `w[i] = NTT⁻¹(∑_j Â[i, j] ŷ[j])`. -/
 def rowW (i : Nat) : Prog isa :=
   .seq (mulAt P (wP p i) (aP p i 0) (yhP p 0))
@@ -154,11 +189,12 @@ def rowW (i : Nat) : Prog isa :=
 
 /-- `w1Encode(HighBits(w[i]))` to `W1 + i · w1Len`. -/
 def w1R (i : Nat) : Prog isa :=
-  .seq (highBitsAt P (wP p i) p.γ₂ t1P) (simpleBitPackAt P t1P (w1Max p) (sc (oW1 + w1Len p * i)) (w1Len p))
+  callAt (if p.γ₂ = 261888 then "vg_mldsa_high_pack4" else "vg_mldsa_high_pack6")
+    (P.highPack p.γ₂) [(.x0,.ptr (wP p i)),(.x1,.ptr (sc (oW1+w1Len p*i)))]
 
 /-- `y`, `ŷ`, `w`, `w₁` and `c̃ = H(μ ‖ w1Encode(w₁), λ/4)` to `CT`. -/
 def commitWith : Prog isa :=
-  .seq (seqR (maskR P p) 0 p.ℓ) (.seq (seqR (rowW P p) 0 p.k) (.seq (seqR (w1R P p) 0 p.k)
+  .seq (masks P p) (.seq (seqR (rowW P p) 0 p.k) (.seq (seqR (w1R P p) 0 p.k)
     ((shakeAtWith c) [⟨.x26, 0, 64⟩, ⟨.x28, oW1, p.k * w1Len p⟩] ⟨.x28, oCT, cLen p⟩)))
 
 /-- `z[r] = y[r] + NTT⁻¹(ĉ ŝ₁[r])` (in `y[r]`), and its norm. -/
