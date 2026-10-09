@@ -1,8 +1,4 @@
-import VerifiedGarbage.Proof.Framework.X86_64.TaintSym
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Impl.Ecdsa.P521.X86_64
-import VerifiedGarbage.Impl.Ecdh.X86_64
-import VerifiedGarbage.Proof.P521.X86_64.FieldTmpl
+import VerifiedGarbage.Proof.P521.X86_64.TaintSumsBase
 
 /-!
 # P-521 on x86-64: summaries of the shared loops, for constant time
@@ -34,6 +30,9 @@ iteration are analysed without their displacements (`taint_summary_map`),
 their field products of slots past the functions' as one template each
 (`FieldTmpl`), which the kernel neither builds nor analyses again per
 product; the table's products are calls, whose code is shared already.
+
+The summaries of the comb and the inversion are here; those of ECDH's window
+method in `TaintSumsWin`, checked in parallel.
 -/
 
 namespace VG.Proof.P521.X86_64
@@ -41,50 +40,13 @@ namespace VG.Proof.P521.X86_64
 open VG VG.X86_64 VG.Impl.Weierstrass VG.Impl.Weierstrass.X86_64 VG.Impl.Ecdsa.X86_64
 open VG.Proof.Weierstrass.X86_64
 
-/-- P-521's comb. -/
-abbrev p521d : CombData := ⟨7, Impl.P521.p521Comb7, Impl.P521.p521Comb7Start, "VG_P521_COMB", false⟩
-
 /-- The comb's loop. -/
 def combG : Prog isa := .loop (p521.combCfg p521d).step .ne
 
 /-- The inversion's batches mod `p`. -/
 def invP : Prog isa := .loop p521.invP.batch .ne
 
-/-- What is public at the comb's loop. -/
-def τL : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rbx, .rsi, .rsp]
-
-/-- What is public at the batches' loop. -/
-def τI : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .r14, .rsi, .rsp]
-
 taint_summary combGSum : (taintSym ["VG_P521_COMB"]) τL combG
 taint_summary invPSum : (taintSym ["VG_P521_COMB"]) τI invP
-
-/-- ECDH's window method. -/
-abbrev winK : WinCfg := p521.winCfg Impl.Ecdh.X86_64.PX Impl.Ecdh.X86_64.PY Impl.Ecdh.X86_64.BP
-
-/-- What is public at the table. -/
-def τB : VG.X86_64.Taint.T := Taint.ofRegs [.rdi, .rsi, .rsp]
-
-/-- ECDH's window method in Jacobian coordinates: the table, its
-normalization, the loop and its last iteration. -/
-def winBuildJ : Prog isa := WinCfg.build winK
-def winNormJ : Prog isa := WinCfg.normTbl winK (InvCfg.inv (Impl.Ecdh.X86_64.Cfg.invWin p521))
-def winLoopJ : Prog isa := .loop (WinCfg.stepJ winK) .ne
-def winLastJ : Prog isa := WinCfg.stepLast winK
-
-materialize_code winBuildJ
-
-theorem winK_ok : p521T.Ok winK.M := p521T_ok
-
-taint_summary winBuildJSum : taintS τB winBuildJ
-taint_summary_map winNormJSum : taintS τB winNormJ via taintS_eraseInv
-  (by simp only [winNormJ, WinCfg.normTbl, Code.mapBlocks, winK_ok.fprogB]; rfl :
-    Code.mapBlocks Instr.erase winNormJ = _)
-taint_summary_map winLoopJSum : taintS τL winLoopJ via taintS_eraseInv
-  (by simp only [winLoopJ, WinCfg.stepJ, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.sumJ, Code.mapBlocks,
-    winK_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLoopJ = _)
-taint_summary_map winLastJSum : taintS τL winLastJ via taintS_eraseInv
-  (by simp only [winLastJ, WinCfg.stepLast, WinCfg.quadJ, WinCfg.jacPairOn, WinCfg.toProjR, Code.mapBlocks,
-    winK_ok.fprogB]; rfl : Code.mapBlocks Instr.erase winLastJ = _)
 
 end VG.Proof.P521.X86_64

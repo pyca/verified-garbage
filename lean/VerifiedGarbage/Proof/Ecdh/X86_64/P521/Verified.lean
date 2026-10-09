@@ -3,7 +3,7 @@ import VerifiedGarbage.Proof.Ecdh.X86_64.MulJ4
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Contract
 import VerifiedGarbage.Proof.Ecdh.X86_64.P521.Lit
 import VerifiedGarbage.Proof.Ecdsa.X86_64.P521.Verified
-import VerifiedGarbage.Proof.P521.X86_64.TaintSums
+import VerifiedGarbage.Proof.P521.X86_64.TaintSumsWin
 import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 
 /-!
