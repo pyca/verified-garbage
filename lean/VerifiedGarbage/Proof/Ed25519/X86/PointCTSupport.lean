@@ -29,11 +29,14 @@ structure PointCTCtx (x : BitVec 32) (s : State) : Prop where
   separate : s.wr.Pairwise Region.Disjoint
   fits : ∀ r ∈ s.wr, r.base.toNat + r.len ≤ 2 ^ 32
   region : VG.X86.Taint.region s 1 = scR 8192 x
+  /-- The 8 bytes below `esp` that a call uses lie apart from every writable region. -/
+  stk : ∀ r ∈ s.wr, (callStk s).Disjoint r
 
 theorem PointCTCtx.keep {x : BitVec 32} {s t : State} (h : PointCTCtx x s)
-    (he : t.gpr .edi = s.gpr .edi) (hw : t.wr = s.wr) : PointCTCtx x t :=
-  ⟨h.ctx.keep he hw, hw ▸ h.lengths, hw ▸ h.separate, hw ▸ h.fits,
-    (congrArg (fun wr => wr.getD 1 ⟨0, 0⟩) hw).trans h.region⟩
+    (he : t.gpr .edi = s.gpr .edi) (hw : t.wr = s.wr) (hsp : t.gpr .esp = s.gpr .esp) : PointCTCtx x t :=
+  ⟨h.ctx.keep he hw hsp, hw ▸ h.lengths, hw ▸ h.separate, hw ▸ h.fits,
+    (congrArg (fun wr => wr.getD 1 ⟨0, 0⟩) hw).trans h.region,
+    by rw [hw, callStk, hsp]; exact h.stk⟩
 
 theorem pointTaint_wf {x : BitVec 32} {s : State} (h : PointCTCtx x s) (o : Nat) :
     VG.X86.Taint.Wf (pointTaint o) s := by
@@ -69,6 +72,77 @@ theorem pointTaint_agree {x : BitVec 32} {s t : State} {o : Nat}
       addr_offset (x := x) (o := o) (d := j) (by omega),
       Mem.readW_byte s.mem _ hj, Mem.readW_byte t.mem _ hj]
     exact congrArg (BitVec.extractLsb' (8 * j) 8) hv
+
+/-- What is public at code that calls a function of the workspace: what `pointTaint` says,
+and `esp`, with the 8 bytes below it that a call uses as room. -/
+def callTaint (o : Nat) : VG.X86.Taint.T := { pointTaint o with regs := .ofList [.esp, .edi], room := 8 }
+
+theorem callTaint_wf {x : BitVec 32} {s : State} (h : PointCTCtx x s) (o : Nat) :
+    VG.X86.Taint.Wf (callTaint o) s := by
+  have h8 := (h.ctx.stk rfl (Nat.le_refl _)).1
+  apply VG.X86.Taint.Wf.entryRoom rfl ?_ fun _ => ⟨h8, fun r hr => by
+    have e := h.stk r hr
+    simp only [callStk, VG.X86.Taint.sub_setWidth h8] at e
+    exact e⟩
+  refine ⟨fun _ => ⟨h.lengths, h.separate, h.fits⟩, ?_, fun _ hh => (by cases hh),
+    fun hh => (by cases hh), fun _ hh => (by cases hh)⟩
+  intro p hp
+  simp only [callTaint, pointTaint, List.mem_singleton] at hp
+  subst p
+  rw [h.ctx.edi, addr_zero, h.region]
+
+theorem callTaint_agree {x : BitVec 32} {s t : State} {o : Nat}
+    (hs : PointCTCtx x s) (ht : PointCTCtx x t) (hw : s.wr = t.wr) (hsp : s.gpr .esp = t.gpr .esp)
+    (ho : o + 4 ≤ 8192) (hv : wd s.mem x o = wd t.mem x o) :
+    VG.X86.Taint.Agree (callTaint o) s t := by
+  have a := pointTaint_agree hs ht hw ho hv
+  refine ⟨⟨?_, a.rf.2⟩, a.wr, callTaint_wf hs o, callTaint_wf ht o, a.ok, a.slots,
+    a.sp, a.argMem⟩
+  intro r hr
+  simp only [callTaint, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact hsp
+  · exact hs.ctx.edi.trans ht.ctx.edi.symm
+
+/-- `callTaint` with no public word of the workspace, and the registers `rs` public too. -/
+def callTaintR (rs : List Reg) : VG.X86.Taint.T :=
+  { callTaint 0 with regs := .ofList (.esp :: .edi :: rs), slots := [] }
+
+/-- `callTaint` with no public word of the workspace. -/
+abbrev callTaint₀ : VG.X86.Taint.T := callTaintR []
+
+/-- Two runs at code that calls a function of the workspace: each with the workspace at `x`,
+apart from the stack a call uses, and the same writable regions and `esp`. -/
+def CallCTPre (x : BitVec 32) (s t : State) : Prop :=
+  PointCTCtx x s ∧ PointCTCtx x t ∧ s.wr = t.wr ∧ s.gpr .esp = t.gpr .esp
+
+theorem callTaintR_agree {x : BitVec 32} {s t : State} {rs : List Reg} (h : CallCTPre x s t)
+    (hr : ∀ r ∈ rs, s.gpr r = t.gpr r) : VG.X86.Taint.Agree (callTaintR rs) s t := by
+  obtain ⟨hs, ht, hw, hsp⟩ := h
+  have wf : ∀ {u : State}, PointCTCtx x u → VG.X86.Taint.Wf (callTaintR rs) u := fun {u} hu => by
+    have h8 := (hu.ctx.stk rfl (Nat.le_refl _)).1
+    apply VG.X86.Taint.Wf.entryRoom rfl ?_ fun _ => ⟨h8, fun r hr => by
+      have e := hu.stk r hr
+      simp only [callStk, VG.X86.Taint.sub_setWidth h8] at e
+      exact e⟩
+    refine ⟨fun _ => ⟨hu.lengths, hu.separate, hu.fits⟩, ?_, fun _ hh => (by cases hh),
+      fun hh => (by cases hh), fun _ hh => (by cases hh)⟩
+    intro p hp
+    simp only [callTaintR, callTaint, pointTaint, List.mem_singleton] at hp
+    subst p
+    rw [hu.ctx.edi, addr_zero, hu.region]
+  refine ⟨⟨fun r hq => ?_, fun h => (by cases h)⟩, fun _ => hw, wf hs, wf ht,
+    fun _ h => (by cases h), fun _ h => (by cases h), fun h => (by cases h),
+    fun n _ h => (Nat.not_lt_zero n h).elim⟩
+  simp only [callTaintR, RegSet.mem_ofList, List.mem_cons] at hq
+  rcases hq with rfl | rfl | hq
+  · exact hsp
+  · exact hs.ctx.edi.trans ht.ctx.edi.symm
+  · exact hr r hq
+
+theorem callTaint₀_agree {x : BitVec 32} {s t : State} (h : CallCTPre x s t) :
+    VG.X86.Taint.Agree callTaint₀ s t :=
+  callTaintR_agree h fun _ h => (by cases h)
 
 theorem ctWithRuns {P Q F₁ F₂ : State → State → Prop} {c : Prog isa}
     (h : RelCT isa P c Q) (hw : ∀ s t, P s t → WP isa c s (F₁ s) ∧ WP isa c t (F₂ t)) :

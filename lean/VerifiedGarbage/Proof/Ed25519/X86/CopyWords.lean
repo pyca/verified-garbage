@@ -17,7 +17,7 @@ structure CopyKeep (x : BitVec 32) (o n : Nat) (s t : State) : Prop where
 
 theorem CopyKeep.ctx {x : BitVec 32} {o n : Nat} {s t : State}
     (h : CopyKeep x o n s t) (hc : Ctx x s) : Ctx x t :=
-  hc.keep (h.gpr _ (by decide)) h.wr
+  hc.keep (h.gpr _ (by decide)) h.wr (h.gpr _ (by decide))
 
 theorem CopyKeep.refl (x : BitVec 32) (o n : Nat) (s : State) : CopyKeep x o n s s :=
   ⟨fun _ _ => rfl, rfl, rfl, Frame.refl _ _⟩

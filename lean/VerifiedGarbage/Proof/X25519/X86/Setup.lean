@@ -485,7 +485,7 @@ theorem setup_ok {s₀ : State} (hp : Pre s₀) :
   refine WP.block_append (WP.mono (loadPoint_ok hp h₁) fun s₂ ⟨h₂, w₂⟩ => ?_)
   refine WP.block_append (WP.mono (loadScalar_ok hp h₂) fun s₃ ⟨h₃, f₃, b₃⟩ => ?_)
   have B₃ : Base (arg s₀ 3) (kOf s₀) s₀ s₃ :=
-    ⟨⟨h₃.edi, hfit, by rw [h₃.wr]; exact hp.sc_in, by decide⟩, h₃.esp, h₃.rd, h₃.wr, h₃.frame, h₃.saved, b₃⟩
+    ⟨⟨h₃.edi, hfit, by rw [h₃.wr]; exact hp.sc_in, by decide, fun _ hW => absurd hW (by decide)⟩, h₃.esp, h₃.rd, h₃.wr, h₃.frame, h₃.saved, b₃⟩
   have x1₃ : F s₃.mem (arg s₀ 3) X1 = uOf s₀ := by
     simp only [F, uOf]
     rw [← fe_X1 hp w₂]

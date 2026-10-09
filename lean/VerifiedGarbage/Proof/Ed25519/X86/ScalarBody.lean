@@ -101,7 +101,7 @@ theorem ScalarKeep.refl (s : State) : ScalarKeep s s := ⟨rfl, rfl, rfl, rfl⟩
 theorem ScalarKeep.trans {s t u : State} (h : ScalarKeep s t) (k : ScalarKeep t u) : ScalarKeep s u :=
   ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd, k.wr.trans h.wr⟩
 theorem ScalarKeep.ctx {x : BitVec 32} {s t : State} (h : ScalarKeep s t) (hc : Ctx x s) : Ctx x t :=
-  hc.keep h.edi h.wr
+  hc.keep h.edi h.wr h.esp
 
 theorem Keep.scalar {s t : State} (h : Keep s t) : ScalarKeep s t := ⟨h.edi, h.esp, h.rd, h.wr⟩
 theorem scalarUpd {s t : State} {r : Reg} {v : BitVec 32} (h : Wp.Upd s t r v)

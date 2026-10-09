@@ -13,7 +13,7 @@ Every piece's trace depends only on the pointers: the static's address, its
 frame below `esp` and its store to the workspace (`combAddr_ct`), the expansion
 and clamping of the scalar store to fixed offsets of the workspace, the comb and
 the inversion use only the workspace pointer and the static's address
-(`combMultiply_ct`, the summaries of `PointCTBlocks.lean`), and the output
+(`combMultiply_ct`, `uEncode_ct`), and the output
 reloads its pointer from the stack.
 -/
 
@@ -22,12 +22,8 @@ namespace VG.Proof.X25519.X86.Base
 open VG VG.X86 VG.Impl.Ed25519.X86 VG.Impl.X25519.X86.Base
 open VG.Proof.Ed25519.X86
 
-theorem uEncode_ct : RelCT isa (fun s t => s.gpr .edi = t.gpr .edi) uEncode (fun _ _ => True) := by
-  obtain ⟨_, hc⟩ : ∃ h, (taint.check (regsTaint [.edi]) uEncode h).isSome = true := by
-    taint_decide_sum [power250Sum, sqT1]
-  apply VG.RelCT.taint (A := taint) (regsTaint [.edi]) _ hc
-  intro s t h
-  exact regsTaint_agree (fun r hr => (List.mem_singleton.mp hr) ▸ h)
+theorem uEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) uEncode (fun _ _ => True) := by
+  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) (by taint_decide)
 
 theorem start_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ x25519BaseLocal.pub s t)
@@ -80,19 +76,24 @@ theorem tail_ct (s₀ t₀ : State) (hs : BaseRegions s₀) (ht : BaseRegions t�
     (fun s t h => by
       have ht' := pointCTCtx_saved ht h.2.saved
       rw [← hp.2.2.2.1] at ht'
-      refine ⟨pointCTCtx_saved hs h.1.saved, ht', ?_, ?_⟩
+      refine ⟨pointCTCtx_saved hs h.1.saved, ht', ?_, ?_, ?_⟩
       · rw [h.1.saved.wr, h.2.saved.wr, hs.2.1, ht.2.1, hp.2.1, hp.2.2.2.1]
+      · rw [h.1.saved.esp, h.2.saved.esp, hp.1]
       · rw [h.1.ptr, hp.2.2.2.1, h.2.ptr, hp.2.2.2.2]) (fun _ _ h => h)
   have mw (u s : State) (hu : BaseRegions u) (h : Ready u s) :
       WP isa combMultiply s (Saved u (arg u 2)) :=
     WP.mono (comb_ok hu h) fun _ ⟨_, kt⟩ => kt
   have mul := ctWithRuns mulct (fun s t h => ⟨mw s₀ s hs h.1, mw t₀ t ht h.2⟩)
-  have encct := uEncode_ct.mono (P' := BaseSaved s₀ t₀)
-    (fun _ _ h => h.1.edi.trans (hp.2.2.2.1.trans h.2.edi.symm)) (fun _ _ h => h)
+  have encct := (uEncode_ct (x := arg s₀ 2)).mono (P' := BaseSaved s₀ t₀)
+    (fun _ _ h => by
+      have ct := pointCTCtx_saved ht h.2
+      rw [← hp.2.2.2.1] at ct
+      exact ⟨pointCTCtx_saved hs h.1, ct, by rw [h.1.wr, h.2.wr, hs.2.1, ht.2.1, hp.2.1, hp.2.2.2.1],
+        by rw [h.1.esp, h.2.esp, hp.1]⟩) (fun _ _ h => h)
   have ew (u s : State) (hu : BaseRegions u) (h : Saved u (arg u 2) s) :
       WP isa uEncode s (Saved u (arg u 2)) := by
     have pu := (scalarBase_pre hu).1
-    refine WP.mono (uEncode_ok (h.ctx pu.fit pu.wr)) fun t ⟨kt, _⟩ => ?_
+    refine WP.mono (uEncode_ok (h.ctx pu.fit pu.wr pu.stk)) fun t ⟨kt, _⟩ => ?_
     exact h.ikeep pu.fit kt
   have enc := ctWithRuns encct (fun s t h => ⟨ew s₀ s hs h.1, ew t₀ t ht h.2⟩)
   refine VG.RelCT.seq (mul.mono (fun _ _ h => h) (fun _ _ ⟨_, _, _, _, ha, hb⟩ => ⟨ha, hb⟩))
@@ -147,7 +148,7 @@ theorem sat_arg (j : Nat) (hj : j < 3) : arg satState j = satArgs.readW (argAddr
   exact this j hj b (by omega)
 
 theorem x25519Base_sat :
-    (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 4).pre satState := by
+    (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 8).pre satState := by
   have hl := combWords_length
   have a0 : arg satState 0 = 0x1000 := (sat_arg 0 (by decide)).trans (by decide)
   have a1 : arg satState 1 = 0x2000 := (sat_arg 1 (by decide)).trans (by decide)
@@ -172,16 +173,16 @@ theorem x25519Base_sat :
     all_goals first | exact Region.disjoint_of_sep (by decide) | decide
 
 theorem x25519Base_implies :
-    x25519BaseLocal.Implies (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 4) where
+    x25519BaseLocal.Implies (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 8) where
   pre s h := by
     sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, ht, hw, -, o2, o3, i2, s3, r0, -, r2, -,
       b0, b1, b2, -, f0, f1, f2⟩ := h
-    have be := below_eq (sp := s.gpr .esp) h4
-    refine ⟨⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega⟩, h4, by rw [be]; exact b0,
-      by rw [be]; exact b1, by rw [be]; exact b2, held, hfit, ?_⟩
+    have be : callStk s = ⟨(s.gpr .esp).setWidth 64 - BitVec.ofNat 64 8, 8⟩ := below_eq (sp := s.gpr .esp) h4
+    refine ⟨⟨?_, hw, o2, i2, o3.symm, s3.symm, r0, r2, f0, f1, f2, by omega, h4, by rw [be]; exact b1,
+      by rw [be]; exact b2, by rw [be]; exact b0⟩, by rw [be]; exact b0, held, hfit, ?_⟩
     · rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -202,7 +203,7 @@ theorem x25519Base_implies :
   sat := ⟨satState, x25519Base_sat⟩
 
 theorem x25519Base_verified :
-    Verified X86.target x25519Base (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 4) :=
+    Verified X86.target x25519Base (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 8) :=
   Verified.of_correct x25519Base_ok x25519Base_ct x25519Base_implies
 
 end VG.Proof.X25519.X86.Base

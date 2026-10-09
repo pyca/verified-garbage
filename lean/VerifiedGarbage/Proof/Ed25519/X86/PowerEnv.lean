@@ -16,20 +16,23 @@ structure IKeep (x : BitVec 32) (s t : State) : Prop where
   esp : t.gpr .esp = s.gpr .esp
   rd : t.rd = s.rd
   wr : t.wr = s.wr
-  frame : Frame [sub x 64 864] s.mem t.mem
+  frame : Frame [sub x 64 960, callStk s] s.mem t.mem
 
 theorem IKeep.refl (x : BitVec 32) (s : State) : IKeep x s s :=
   ⟨rfl, rfl, rfl, rfl, Frame.refl _ _⟩
 
 theorem IKeep.trans {x : BitVec 32} {s t u : State} (h : IKeep x s t) (k : IKeep x t u) :
     IKeep x s u := ⟨k.edi.trans h.edi, k.esp.trans h.esp, k.rd.trans h.rd,
-      k.wr.trans h.wr, h.frame.trans k.frame⟩
+      k.wr.trans h.wr, h.frame.trans (by rw [callStk, ← h.esp]; exact k.frame)⟩
 
 theorem IKeep.ctx {x : BitVec 32} {s t : State} (h : IKeep x s t) (hc : Ctx x s) : Ctx x t :=
-  hc.keep h.edi h.wr
+  hc.keep h.edi h.wr h.esp
+
+theorem IKeep.of_call {x : BitVec 32} {s t : State} (h : CallKeep x s t) : IKeep x s t :=
+  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame⟩
 
 theorem IKeep.of_field {x : BitVec 32} {s t : State} (h : FieldKeep x s t) : IKeep x s t :=
-  ⟨h.keep.edi, h.keep.esp, h.keep.rd, h.keep.wr, h.frame⟩
+  IKeep.of_call h.call
 
 theorem IKeep.of_counter {x : BitVec 32} {s t : State} {v : BitVec 32}
     (h : Wp.Upd s t .esi v) : IKeep x s t :=

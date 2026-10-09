@@ -40,7 +40,7 @@ theorem Saved.scalarEngine {s₀ s t : State} {x : BitVec 32} (h : Saved s₀ x 
   apply h.of_frame hk hf
   · intro r hr
     simp only [scalarBodyFrame, scalarFrame, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> rw [scR_eq] <;>
+    rcases hr with rfl | rfl | rfl <;> refine .inl ?_ <;> rw [scR_eq] <;>
       exact sub_sub hx (by decide) (by decide) (by decide)
   · have hR : scalarR = 64 := rfl
     have hT : T = 864 := rfl
