@@ -645,9 +645,9 @@ theorem rcons_ok (st : State) : WP isa (.block rcons) st fun st' => XFrame rcReg
   refine ⟨⟨rfl, rfl, rfl, rfl, fun r hr => ?_⟩, fun j hj => ?_⟩
   · simp only [rcRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr, ite_false]
-  · rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [rcReg, reduceCtorEq, ↓reduceIte, pcmpeqd_self] <;> decide
+  · match j, hj with
+    | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
+      simp only [rcReg, reduceCtorEq, ↓reduceIte, pcmpeqd_self] <;> decide
 
 theorem rcons128_ok {st : State} (h : RC 8 st) :
     WP isa (.block rcons128) st fun st' => XFrame [.xmm13, .xmm14] st st' ∧ RC 10 st' := by
