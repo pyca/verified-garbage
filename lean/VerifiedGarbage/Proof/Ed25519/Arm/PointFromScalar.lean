@@ -47,7 +47,7 @@ theorem pointFromScalar_ok {s : State} {base ptr : BitVec 32} (hc : Ctx base s) 
         (packedDigits_decode _ _ count)
   refine WP.seq (WP.mono (fieldCode_ok [.const 16 Spec.Ed25519.d] (uk.ctx hc)
     (smallFrame_lim uf (by decide) hl)) fun v ⟨vk, vl, ve⟩ => ?_)
-  have vm : MulKeep base 1600 6144 u v := MulKeep.of_powers (PowersKeep.of_keep vk)
+  have vm : MulKeep base 1632 6144 u v := MulKeep.of_powers (PowersKeep.of_keep vk)
   have vd : env v.mem base 16 = Spec.Ed25519.d := by rw [ve]; rfl
   have vp : point (env v.mem base) 0 1 2 3 = point (env s.mem base) 0 1 2 3 := by
     rw [ve]

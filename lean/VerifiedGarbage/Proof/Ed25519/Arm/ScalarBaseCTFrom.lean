@@ -35,7 +35,7 @@ theorem pointFromPrepareCT_ok {s : State} {base ptr : BitVec 32}
         (packedDigits_decode _ _ count)
   refine WP.mono (fieldCode_ok [.const 16 Spec.Ed25519.d] (uk.ctx hc)
     (smallFrame_lim uf (by decide) hl)) fun v ⟨vk, vl, ve⟩ => ?_
-  have vm : MulKeep base 1600 6144 u v := MulKeep.of_powers (PowersKeep.of_keep vk)
+  have vm : MulKeep base 1632 6144 u v := MulKeep.of_powers (PowersKeep.of_keep vk)
   have vd : env v.mem base 16 = Spec.Ed25519.d := by rw [ve]; rfl
   exact ⟨vk.ctx (uk.ctx hc), vl, ui.keep vm (by decide) (by decide), vd⟩
 

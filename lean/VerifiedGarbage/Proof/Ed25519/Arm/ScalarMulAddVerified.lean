@@ -273,9 +273,9 @@ namespace VG.Proof.Ed25519.Arm
 open VG VG.Arm VG.Impl.Ed25519.Arm VG.Proof.X25519.Arm
 
 abbrev scalarEngineClob : List Reg := [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
-def scalarWork (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 64, 1536⟩
+def scalarWork (b : BitVec 32) : Region := ⟨State.addr b + BitVec.ofNat 64 64, 1568⟩
 
-theorem scalarWork_sub {b : BitVec 32} {o n : Nat} (ho : 64 ≤ o) (hn : o + n ≤ 1600) :
+theorem scalarWork_sub {b : BitVec 32} {o n : Nat} (ho : 64 ≤ o) (hn : o + n ≤ 1632) :
     (⟨State.addr b + BitVec.ofNat 64 o, n⟩ : Region).Sub (scalarWork b) :=
   Offset.sub _ ho (by omega)
 

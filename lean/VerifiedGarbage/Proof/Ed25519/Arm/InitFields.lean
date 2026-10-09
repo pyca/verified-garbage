@@ -28,8 +28,9 @@ theorem stores_ok {r : Reg} {o n : Nat} (ho : o + 4 * n ≤ 4096) {s : State} (h
       rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
       (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
 
-theorem initFields_ok {s : State} (hc : Ctx b s) :
-    WP isa (.block initFields) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+/-- `initFields_ok`, which also changes no register but X25519's `clob`. -/
+theorem initFields_rest {s : State} (hc : Ctx b s) :
+    WP isa (.block initFields) s fun t => Keep b s t ∧ Rest clob s t ∧ AllLim t.mem b ∧
       ∀ i : Slot, env t.mem b i = 0 := by
   rw [initFields, WP.block_append_iff]
   refine wp_mov (op2_imm (by decide)) fun u hu => WP.block_nil ?_
@@ -46,12 +47,17 @@ theorem initFields_ok {s : State} (hc : Ctx b s) :
     rw [hd] at h
     exact h
   refine ⟨⟨(hu.rest (by decide)).trans (hr.mono (by decide)), ?_⟩,
-    fun i k hk => by rw [he i k hk]; decide, fun i => ?_⟩
+    (hu.rest (by decide)).trans (hr.mono (by decide)), fun i k hk => by rw [he i k hk]; decide, fun i => ?_⟩
   · rw [← hu.mem]
     exact hf.sub fun r hmem => ⟨_, List.mem_singleton_self _, by
       rw [List.mem_singleton.mp hmem]; exact Region.sub_prefix (by decide)⟩
   · change VG.Proof.X25519.toFe (val16 (limb t.mem (State.addr b) (offset i)) 16) = 0
     rw [val16_congr (he i), val16_zero_fn]
     rfl
+
+theorem initFields_ok {s : State} (hc : Ctx b s) :
+    WP isa (.block initFields) s fun t => Keep b s t ∧ AllLim t.mem b ∧
+      ∀ i : Slot, env t.mem b i = 0 :=
+  WP.mono (initFields_rest hc) fun _ ⟨k, _, l, e⟩ => ⟨k, l, e⟩
 
 end VG.Proof.Ed25519.Arm
