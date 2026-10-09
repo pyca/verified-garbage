@@ -232,7 +232,8 @@ theorem gBases_ok {t : State} {P : Addr} {wx p : Nat} (hcx : t.gpr .rcx = off P 
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, rfl⟩ <;> exact congrArg (off P) (by rw [slot_add_mul wx (8 + 8 * p)]; omega)) rfl)
     fun t' ⟨⟨h0, h1, h2, h3, h4, h5, h6, h7, h14, hm, hx⟩, k⟩ => ⟨fun k hk => ?_, h14, hm, hx, k⟩
   have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
-  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  exacts [h0, h1, h2, h3, h4, h5, h6, h7]
 
 /-- The pass's end: `sEnt` past its entries, `sJ := 8 (p + 1)`, `ZF` after the second. -/
 theorem gEnd_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc p : Nat}
