@@ -41,7 +41,7 @@ theorem foldSChunk_ok {s : State} {d : Nat} (hd : d < 7) {a b : Nat → Int} (ha
   have n1 : V 28 ≠ V d := V_ne _ (by omega) _ (by omega) (by omega)
   have n2 : V 28 ≠ V (d + 8) := V_ne _ (by omega) _ (by omega) (by omega)
   have n3 : V (d + 8) ≠ V d := V_ne _ (by omega) _ (by omega) (by omega)
-  have n4 : V 31 ≠ V 28 := V_ne _ (by omega) _ (by omega) (by omega)
+  have n4 : V 31 ≠ V 28 := by decide
   have n5 : V 31 ≠ V (d + 8) := V_ne _ (by omega) _ (by omega) (by omega)
   have n6 : V d ≠ V 28 := n1.symm
   have n7 : V d ≠ V (d + 8) := n3.symm
