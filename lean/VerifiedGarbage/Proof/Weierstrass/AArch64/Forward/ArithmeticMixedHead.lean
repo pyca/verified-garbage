@@ -9,7 +9,8 @@ open VG.Proof.Weierstrass.AArch64.Forward
 def original := Arithmetic.original .mixedHead
 def optimized := Arithmetic.optimized .mixedHead
 materialize_value leftCode := original
-materialize_value rightCode := optimized
+forward_state rightCode.lit := optimized
+theorem rightCode.lit_eq : optimized=rightCode.lit := optimize_of_lit leftCode.lit_eq (by kernel_rfl)
 forward_state bundle :=
   let ns := (buildPair 8192 original optimized).getD ⟨.empty,.empty⟩
   (ns,(evalData (certDom ns) 8192 original initialEnv).getD (.empty,.empty,none),

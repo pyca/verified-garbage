@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Checked
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
 import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Proof.Framework.AllBelow
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.OptimizeK
 
 /-! Kernel-evaluated twins of the certificate checks. The kernel reduces a
 recursor (`Tree.rec`, `List.rec`, `Nat.rec`) directly, several times faster
