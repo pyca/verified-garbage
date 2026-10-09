@@ -134,12 +134,13 @@ theorem done_of {st : State} (h : Mid s (L s) st) : Done s st :=
   ⟨⟨h.saved, h.frame.readW (Region.contains_self _ _) (ret_disj hp) (by decide)⟩,
     fun iv a p hr hal hpl => h.sem iv a p hr hal hpl⟩
 
-/-- `Mid` through the copy, which writes only the output past the `o` bytes done. -/
-theorem Mid.copy {o : Nat} {st st' : State} (h : Mid s o st) (hlt : o < L s)
-    (hf : Frame [dqR s o] st.mem st'.mem) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r)
+/-- `Mid` through the copy, which writes only `n` bytes of the output past
+the `o` bytes done. -/
+theorem Mid.copy {o n : Nat} {st st' : State} (h : Mid s o st) (hn : o + n ≤ L s)
+    (hf : Frame [dqR s o n] st.mem st'.mem) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r)
     (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Mid s o st' := by
-  have ds := dq_sub (s := s) (Nat.le_of_lt hlt)
-  have one : ∀ {r : Region}, r.Disjoint (dqR s o) → ∀ r' ∈ [dqR s o], r.Disjoint r' := fun hd r' hr => by
+  have ds := dq_sub (s := s) hn
+  have one : ∀ {r : Region}, r.Disjoint (dqR s o n) → ∀ r' ∈ [dqR s o n], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   refine ⟨h.o_le, h.tl, by rw [hcs _ (by decide), h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr],
     hrd.trans h.rd, hwr.trans h.wr, h.kept.frame hf (one ((hp.d_w.symm.sub_left kR'_sub).sub_right ds)),
@@ -167,7 +168,7 @@ theorem rest_ok (E : EncFn M) {o : Nat} {st : State} (h : Mid s o st) : WP isa (
   refine WP.seq (WP.mono (restPtrs_ok hp M₁ r11₁ ax₁) fun s₂ ⟨si₂, di₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
   have M₂ : Mid s o s₂ := M₁.regs m₂ (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr)
     (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂
-  have ds := dq_sub (s := s) (Nat.le_of_lt hlt)
+  have ds := dq_sub (s := s) (o := o) (n := L s - o) (by omega)
   have ss : Region.Sub ⟨Src s + BitVec.ofNat 64 o, L s - o⟩ (srcR s) := Offset.sub_base _ (by omega)
   have cp : CopyPre s₂ (Src s + BitVec.ofNat 64 o) (Dst s + BitVec.ofNat 64 o) (L s - o) :=
     ⟨si₂, di₂, by rw [g₂ _ (by decide) (by decide), cx₁], by omega, by omega,
@@ -175,9 +176,9 @@ theorem rest_ok (E : EncFn M) {o : Nat} {st : State} (h : Mid s o st) : WP isa (
       covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.wr, hp.wr]; simp) (by omega) (by omega),
       (hp.r_d.sub_left ss).sub_right ds⟩
   refine WP.seq (WP.mono (copyLoopL_ok s₂ cp) fun s₃ ⟨m₃, g₃, rd₃, wr₃⟩ => ?_)
-  have f₃ : Frame [dqR s o] s₂.mem s₃.mem := by
+  have f₃ : Frame [dqR s o (L s - o)] s₂.mem s₃.mem := by
     rw [m₃]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-  have M₃ : Mid s o s₃ := M₂.copy hp hlt f₃ (fun r hr => g₃ r (by rintro rfl; simp [calleeSaved] at hr)
+  have M₃ : Mid s o s₃ := M₂.copy hp (by omega) f₃ (fun r hr => g₃ r (by rintro rfl; simp [calleeSaved] at hr)
     (by rintro rfl; simp [calleeSaved] at hr)) rd₃ wr₃
   have hX₃ : bytesAt s₃.mem (Dst s + BitVec.ofNat 64 o) (L s - o) = bytesAt s.mem (Src s + BitVec.ofNat 64 o) (L s - o) := by
     have e := bytesAt_writeBytes_self s₂.mem (Dst s + BitVec.ofNat 64 o)
@@ -187,7 +188,7 @@ theorem rest_ok (E : EncFn M) {o : Nat} {st : State} (h : Mid s o st) : WP isa (
     exact bytesAt_frame M₂.frame (fun r hr => (r_disj hp r hr).sub_left ss) (by omega)
   refine WP.seq (WP.mono (restArgs_ok hp M₃) fun s₄ ⟨di, si, dx, cx, r8, r9, r10, cs₄, m₄, rd₄, wr₄⟩ => ?_)
   have M₄ : Mid s o s₄ := M₃.regs m₄ cs₄ rd₄ wr₄
-  refine WP.mono (encCall_ok hp E hlt M₄.rsp M₄.rd M₄.wr M₄.frame di si dx cx r8 r9 r10)
+  refine WP.mono (encCall_ok hp E (n := L s - o) (by omega) M₄.rsp M₄.rd M₄.wr M₄.frame di si dx cx r8 r9 r10)
     fun s₅ ⟨cs₅, rd₅, wr₅, f₅, post⟩ => ?_
   have f₅' : Frame (wR s ++ [tR s]) s.mem s₅.mem := M₄.frame.trans (f₅.sub fun r hr => by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
