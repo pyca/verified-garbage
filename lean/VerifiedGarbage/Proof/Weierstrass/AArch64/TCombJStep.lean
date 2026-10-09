@@ -143,9 +143,9 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
        hA.sl x (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hx; rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> tcomb_mem)⟩
   refine WP.mono (selPtKeep_ok hs₅ (decide (wordsVal s₄.mem base K.A.z K.M.n ≠ 0)) (by rw [c₅]; simp only [mask,decide_eq_true_eq])
     (n := K.M.n) (o := K.D) (a := K.E) hsel
-    ⟨hL.comb.apart₂ (x := K.D.x) (y := K.D.y) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind),
-      hL.comb.apart₂ (x := K.D.x) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind),
-      hL.comb.apart₂ (x := K.D.y) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)⟩
+    ⟨hL.comb.apart₂ (x := K.D.x) (y := K.D.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
+      hL.comb.apart₂ (x := K.D.x) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
+      hL.comb.apart₂ (x := K.D.y) (y := K.D.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)⟩
     (fun x hx y hy => hL.comb.apart₂ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> tcomb_mem) (by
@@ -214,9 +214,9 @@ theorem stepJWith_ok {arithmetic : Mod → List FOp → Prog isa} {K : TCombCfg}
     (fun x hx => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨hle _ (by tcomb_mem),hA.sl _ (by tcomb_mem)⟩)
-    ⟨hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind),
-      hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind),
-      hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by clear * - hnd; grind)⟩
+    ⟨hL.comb.apart₂ (x := K.A.x) (y := K.A.y) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
+      hL.comb.apart₂ (x := K.A.x) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd),
+      hL.comb.apart₂ (x := K.A.y) (y := K.A.z) (by tcomb_mem) (by tcomb_mem) (by nd_find hnd)⟩
     (fun x hx y hy => hL.comb.apart₂ (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> tcomb_mem) (by

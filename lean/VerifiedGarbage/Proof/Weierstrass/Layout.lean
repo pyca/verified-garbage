@@ -11,6 +11,50 @@ apart from what is written. The same for powers (`PowLay`). These are facts
 about offsets, the same on every target.
 -/
 
+/-- `x ∈ l` for an `x` among the elements of the list `l`, up to unfolding definitions (the
+list's and its elements', as `toComb`'s projections): the proof built directly, element by
+element (not `simp`, which proves the membership as a disjunction, many times slower). -/
+elab "list_mem" : tactic => Lean.Elab.Tactic.liftMetaFinishingTactic fun g => do
+  let t ← Lean.instantiateMVars (← g.getType)
+  let (``Membership.mem, #[_, _, _, l, a]) := t.getAppFnArgs
+    | throwError "list_mem: not a membership"
+  let rec go (l : Lean.Expr) (fuel : Nat) : Lean.MetaM Lean.Expr := do
+    match fuel, (← Lean.Meta.whnfD l).getAppFnArgs with
+    | fuel + 1, (``List.cons, #[_, x, xs]) =>
+      if ← Lean.Meta.isDefEq x a then
+        Lean.Meta.mkAppOptM ``List.mem_cons_self #[none, some a, some xs]
+      else
+        Lean.Meta.mkAppOptM ``List.mem_cons_of_mem #[none, some x, some a, some xs,
+          some (← go xs fuel)]
+    | _, _ => throwError "list_mem: not found"
+  g.assign (← go l 1000)
+
+/-- `a ≠ b` (or `¬ a = b`) from `h`, a conjunction (nested any way) with a conjunct `¬ a = b` or
+`¬ b = a`, up to unfolding: the conjunct picked directly (not `simp` with every conjunct as a
+rewrite rule, nor `grind`). -/
+elab "nd_find " h:term : tactic => Lean.Elab.Tactic.withMainContext do
+  let g ← Lean.Elab.Tactic.getMainGoal
+  let hp ← Lean.Elab.Tactic.elabTerm h none
+  let t ← Lean.instantiateMVars (← g.getType)
+  let some (_, a, b) := t.ne? <|> (t.not?.bind Lean.Expr.eq?)
+    | throwError "nd_find: not a disequality"
+  let rec go (pf ty : Lean.Expr) (fuel : Nat) : Lean.MetaM (Option Lean.Expr) := do
+    match fuel with
+    | 0 => return none
+    | fuel + 1 =>
+      if let some (l, r) := ty.and? then
+        if let some e ← go (Lean.mkProj ``And 0 pf) l fuel then return some e
+        return ← go (Lean.mkProj ``And 1 pf) r fuel
+      let some (_, x, y) := ty.ne? <|> (ty.not?.bind Lean.Expr.eq?) | return none
+      if (← Lean.Meta.isDefEq x a) && (← Lean.Meta.isDefEq y b) then return some pf
+      if (← Lean.Meta.isDefEq x b) && (← Lean.Meta.isDefEq y a) then
+        return some (← Lean.Meta.mkAppM ``Ne.symm #[pf])
+      return none
+  let some e ← go hp (← Lean.instantiateMVars (← Lean.Meta.inferType hp)) 1000
+    | throwError "nd_find: not found"
+  g.assign e
+  Lean.Elab.Tactic.replaceMainGoal []
+
 namespace VG.Proof.Weierstrass
 
 open VG VG.Impl.Mont VG.Impl.Weierstrass VG.Proof.Mont
