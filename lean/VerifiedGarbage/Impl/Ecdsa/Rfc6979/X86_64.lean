@@ -242,6 +242,7 @@ of the first four, zero-extended. Neither changes the flags, which carry
 the borrow from one word to the next. -/
 def loadWord (j : Nat) : List Instr :=
   if 8 * (j + 1) ≤ c.len then [.mov .rax (.mem (at_ .rsi (c.len - 8 * (j + 1)))), .bswap .rax]
+  else if c.len ≤ 8 * j then [.mov .rax (.imm 0)]
   else [.mov32 .rax (.mem (at_ .rsi 0)), .bswap32 .rax]
 
 /-- Word `j` of the number at `digest` (in `rsi`), least significant first,

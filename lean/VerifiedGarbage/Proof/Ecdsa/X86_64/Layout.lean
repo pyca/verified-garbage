@@ -78,7 +78,7 @@ structure BaseCfgOk (c : Cfg) : Prop where
   red_p : c.MP'.ok c.C.p = true
   minv_n : (c.C.n * (BitVec.ofNat 64 (minv c.C.n)).toNat + 1) % 2 ^ 64 = 0
   len8 : 8 ≤ c.C.len
-  len_lo : 8 * c.n < c.C.len + 8
+  len_lo : 8 * c.n ≤ c.C.len + 8
   len_hi : c.C.len ≤ 8 * c.n
   n_len : c.C.n ≤ 2 ^ (8 * c.C.len)
   /-- The window method's scalars' bits (`Cfg.nbits`): enough for `n`, at

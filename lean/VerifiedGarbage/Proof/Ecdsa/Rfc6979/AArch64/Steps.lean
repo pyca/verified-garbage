@@ -93,7 +93,7 @@ theorem msgAny_ok (hL : L.Ok) (hq : L.q = P.Q) (hdn : dn = P.H.D) {t : State} (h
   · refine WP.mono (msg_ok hL hc h9 h10 h15 b full (D := P.H.D) (w := P.w) (Q := P.Q) (by anums) (by anums)
       fun hf => ?_) fun t' ⟨hc', hf', hb'⟩ => ⟨hc', hf'.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩, ?_⟩
     · have := P.sizesA (hA hf rfl)
-      exact ⟨by anums, by omega, fun _ => by omega, by omega⟩
+      exact ⟨by anums, by omega, by omega⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact Region.sub_prefix (by anums)
     · cases full

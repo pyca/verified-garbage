@@ -44,7 +44,7 @@ theorem sign_keepsV : (cfgOf P).sign.allInstrs keepsV = true := by
       hU, hF, P.R.coreKeepsV, Bool.and_true, Bool.true_and] at hR ⊢
     have hQD : P.R.E.C.len ≤ P.H.D := (P.sizesA hw).2.2
     simp only [hR, hw', hl', Bool.true_and]
-    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases (P.R.sizesA hw).2.1 with hl | ⟨hn', hl⟩ <;>
+    rcases (P.R.sizesA hw).1 with hn | hn <;> rcases (P.R.sizesA hw).2.1 with hl | ⟨hn', hl | hl⟩ <;>
       rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;>
       first
       | (exfalso; omega)

@@ -54,6 +54,7 @@ theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero
 word of four bytes is zero-extended. -/
 def xw (P : RfcHash) (L : Lay dn) (m : Mem) (j : Nat) : BitVec 64 :=
   if 8 * (j + 1) ≤ P.Q then bswap64 (m.readW (L.dg + BitVec.ofNat 64 (P.Q - 8 * (j + 1))) 64)
+  else if P.Q ≤ 8 * j then 0
   else (bswap32 (m.readW L.dg 32)).setWidth 64
 
 theorem cat8_shr (b0 b1 b2 b3 b4 b5 b6 b7 : BitVec 8) :
@@ -76,13 +77,15 @@ theorem bswap32_readW (m : Mem) (a : Addr) :
     cat8_shr]
 
 /-- The words, as `loadBytes` reads them (`Proof.Weierstrass.X86_64.ldWord`). -/
-theorem xw_eq (P : RfcHash) (L : Lay dn) (m : Mem) {j : Nat} (h : 8 * (j + 1) ≤ P.Q ∨ 8 * (j + 1) = P.Q + 4) :
+theorem xw_eq (P : RfcHash) (L : Lay dn) (m : Mem) {j : Nat} (h : 8 * (j + 1) ≤ P.Q ∨ 8 * (j + 1) = P.Q + 4 ∨ 8 * (j + 1) = P.Q + 8) :
     xw P L m j = if 8 * (j + 1) ≤ P.Q then byteRev64 (m.readW (L.dg + BitVec.ofNat 64 (P.Q - 8 * (j + 1))) 64)
       else byteRev64 (m.readW L.dg 64) >>> (8 * (8 * (j + 1) - P.Q)) := by
   unfold xw
   split
   · rfl
-  · rw [bswap32_readW, show 8 * (8 * (j + 1) - P.Q) = 32 by omega]
+  · split
+    · rw [BitVec.ushiftRight_eq_zero (by omega)]; rfl
+    · rw [bswap32_readW, show 8 * (8 * (j + 1) - P.Q) = 32 by omega]
 
 /-- Only `rax`, `rcx` and `rdx` (and the flags and memory) changed since `t`. -/
 structure RK (t u : State) : Prop where
@@ -116,17 +119,26 @@ theorem loadWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (h
     refine ⟨⟨by triv, by triv, fun r h₁ _ _ => ?_⟩, by triv, by triv, ?_⟩
     · simp only [RegUpd.gpr_setReg, h₁, ite_false]
     · simp only [xw, h, ite_true]
-  · have hr : InRegions (u.rd ++ u.wr) (L.dg + BitVec.ofNat 64 0) 4 := by
-      rw [hk.rd, hk.wr]; exact hc.inDg (by omega) (by omega)
-    have h' : ¬ 8 * (j + 1) ≤ (cfgOf P).len := h
-    rw [Cfg.loadWord, ite_eq_right_of_eq_false _ _ (eq_false h')]
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
-      State.load32, State.setReg32, ea_at, hrsi, hr, ite_true, Option.map_some, RegUpd.gpr_setReg,
-      RegUpd.mem_setReg, RegUpd.cf_setReg, Option.some.injEq, exists_eq_left']
-    refine ⟨⟨by triv, by triv, fun r h₁ _ _ => ?_⟩, by triv, by triv, ?_⟩
-    · simp only [RegUpd.gpr_setReg, h₁, ite_false]
-    · simp only [xw, h, ite_false, add_ofNat_zero, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),
-        BitVec.setWidth_eq]
+  · by_cases hz : P.Q ≤ 8 * j
+    · rw [Cfg.loadWord, ite_eq_right_of_eq_false _ _ (eq_false (show ¬ 8 * (j + 1) ≤ (cfgOf P).len from h)),
+        ite_eq_left_of_eq_true _ _ (eq_true (show (cfgOf P).len ≤ 8 * j from hz))]
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, Option.map_some,
+        RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.cf_setReg, Option.some.injEq, exists_eq_left']
+      refine ⟨⟨rfl, rfl, fun r hr _ _ => ?_⟩, trivial, trivial, ?_⟩
+      · simp only [RegUpd.gpr_setReg, hr, ite_false]
+      · simp [xw, h, hz]
+    · have hr : InRegions (u.rd ++ u.wr) (L.dg + BitVec.ofNat 64 0) 4 := by
+        rw [hk.rd, hk.wr]; exact hc.inDg (by omega) (by omega)
+      have h' : ¬ 8 * (j + 1) ≤ (cfgOf P).len := h
+      rw [Cfg.loadWord, ite_eq_right_of_eq_false _ _ (eq_false h'),
+        ite_eq_right_of_eq_false _ _ (eq_false (show ¬ (cfgOf P).len ≤ 8 * j from hz))]
+      simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc32,
+        State.load32, State.setReg32, ea_at, hrsi, hr, ite_true, Option.map_some, RegUpd.gpr_setReg,
+        RegUpd.mem_setReg, RegUpd.cf_setReg, Option.some.injEq, exists_eq_left']
+      refine ⟨⟨by triv, by triv, fun r h₁ _ _ => ?_⟩, by triv, by triv, ?_⟩
+      · simp only [RegUpd.gpr_setReg, h₁, ite_false]
+      · simp only [xw, h, hz, ite_false, add_ofNat_zero, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64),
+          BitVec.setWidth_eq]
 
 /-- Word `j`: of the number to `V`'s place, of the difference to `K`'s. -/
 theorem subWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) (hsi : t.gpr .rsi = L.dg)
@@ -190,10 +202,12 @@ theorem xw_kept (hL : L.Ok) {m m' : Mem} {n : Nat} (h : Outside L.B 24 n m m') (
   unfold xw
   split
   · rw [dg_kept hL h hn (by omega)]
-  · refine congrArg (fun x => (bswap32 x).setWidth 64) (Mem.readW_congr fun i hi => ?_)
-    have e := Proof.Weierstrass.keep_of_disjoint (k := dn) h ((hL.kg.symm).sub_right (Offset.sub_base _ (by omega)))
-      (by omega) (i := i) (by omega) (by have := hL.ng; omega)
-    exact e
+  · split
+    · rfl
+    · refine congrArg (fun x => (bswap32 x).setWidth 64) (Mem.readW_congr fun i hi => ?_)
+      have e := Proof.Weierstrass.keep_of_disjoint (k := dn) h ((hL.kg.symm).sub_right (Offset.sub_base _ (by omega)))
+        (by omega) (i := i) (by omega) (by have := hL.ng; omega)
+      exact e
 
 /-- After `k` words: the number's in `V`'s place, and the difference in
 `K`'s with the borrow. -/
@@ -283,7 +297,7 @@ theorem selWord_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) {u 
 theorem sels_ok (hA : P.R.wide = false) {t : State} (hc : Ctx L g m₀ t) {u : State} (hk : RK t u) {c : Bool} {y : BitVec 64}
     (hm : u.gpr .rdx = y - y - (BitVec.ofBool c).setWidth 64) :
     ∀ k ≤ P.w, WP isa (.block ((List.range k).flatMap (cfgOf P).selWord)) u fun u' =>
-      RK u u' ∧ u'.gpr .rdx = u.gpr .rdx ∧ Outside L.B 148 52 u.mem u'.mem ∧
+      RK u u' ∧ u'.gpr .rdx = u.gpr .rdx ∧ Outside L.B 144 56 u.mem u'.mem ∧
       ∀ j < k, word u'.mem L.B (152 + P.Q - 8 * (j + 1)) = bswap64 (word u.mem L.B ((if c then 88 else 24) + 8 * j))
   | 0, _ => WP.block_nil ⟨RK.refl _, rfl, Outside.refl _ _ _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | k + 1, hk' => by

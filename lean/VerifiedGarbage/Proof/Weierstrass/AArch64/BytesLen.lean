@@ -75,13 +75,18 @@ theorem extr_eq (hi lo : BitVec 64) {sh : Nat} (h0 : 0 < sh) (h64 : sh < 64) :
       BitVec.getLsbD_of_ge lo (sh + i) (by omega)]
     simp only [Bool.and_true, Bool.false_or]
 
-/-! ## Loads -/
+/-! ## Loads
+
+A top word beyond the encoding is zero, allowing P-192’s 24-byte values
+to use four-word arithmetic.
+-/
 
 /-- One word of `loadBytes`. -/
 def ldStepL (len o : Nat) (src : Reg) (j : Nat) : List Instr :=
   if 8 * (j + 1) ≤ len then
     if len % 8 = 0 then [.ldr .x .x5 src (len - 8 * (j + 1)), .rev .x5 .x5, st .x5 (o + 8 * j)]
     else [.addImm .x .x17 src (len - 8 * (j + 1)), .ldr .x .x5 .x17 0, .rev .x5 .x5, st .x5 (o + 8 * j)]
+  else if len ≤ 8 * j then const64 .x5 0 ++ [st .x5 (o + 8 * j)]
   else [.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (j + 1) - len)), st .x5 (o + 8 * j)]
 
 theorem loadBytes_eq (len n o : Nat) (src : Reg) :
@@ -95,7 +100,7 @@ def ldWord (m : Mem) (p : Addr) (len j : Nat) : BitVec 64 :=
 /-- Word `k` of `loadBytes`. -/
 theorem ldStepL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len o k : Nat}
     {src : Reg} (ho : o + 8 * k + 8 ≤ size) (ho8 : o % 8 = 0) (h8 : 8 ≤ len)
-    (hk : 8 * k < len) (hl : len ≤ 4096)
+    (hk : 8 * k ≤ len) (hl : len ≤ 4096)
     (hr : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 d) 8) :
     WP isa (.block (ldStepL len o src k)) s fun s' =>
       s'.mem = s.mem.writeW (off base (o + 8 * k)) (ldWord s.mem (s.gpr src) len k) ∧
@@ -128,25 +133,37 @@ theorem ldStepL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size)
       · rw [m₂, v₁, hp, k₁.mem, k₀.mem, ldWord, ite_eq_left_of_eq_true _ _ (eq_true hc)]
       · exact (((Keeps.regs k₀).mono (by simp)).trans ((Keeps.regs k₁).mono (by simp))).trans
           (k₂.mono (by simp))
-  · rw [ldStepL, ite_eq_right_of_eq_false _ _ (eq_false hc),
-      show ([.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (k + 1) - len)), st .x5 (o + 8 * k)] :
-        List Instr) = [.ldr .x .x5 src 0, .rev .x5 .x5] ++
-          ([.lsr .x .x5 .x5 (8 * (8 * (k + 1) - len))] ++ [st .x5 (o + 8 * k)]) from rfl,
-      WP.block_append_iff]
-    refine WP.mono (ldRev_ok s (t := .x5) (e := 0) ⟨by decide, by decide⟩ (hr _ (by omega)))
-      fun s₁ ⟨v₁, k₁⟩ => ?_
-    rw [WP.block_append_iff]
-    refine WP.mono (lsr_ok s₁ (d := .x5) (n := .x5) (show 8 * (8 * (k + 1) - len) < 64 by omega))
-      fun s₂ ⟨v₂, k₂⟩ => ?_
-    have hs₂ := (hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)
-    refine WP.mono (st_out hs₂ (o := o + 8 * k) (by omega) (by omega) .x5) fun s₃ ⟨m₃, k₃, _⟩ => ⟨?_, ?_⟩
-    · rw [m₃, v₂, v₁, k₂.mem, k₁.mem, BitVec.add_zero, ldWord, ite_eq_right_of_eq_false _ _ (eq_false hc)]
-    · exact (((Keeps.regs k₁).mono (by simp)).trans ((Keeps.regs k₂).mono (by simp))).trans
-        (k₃.mono (by simp))
+  · by_cases hz : len ≤ 8 * k
+    · have hshift : 8 * (8 * (k + 1) - len) = 64 := by omega
+      rw [ldStepL, ite_eq_right_of_eq_false _ _ (eq_false hc), ite_eq_left_of_eq_true _ _ (eq_true hz)]
+      change WP isa (.block (const64 .x5 0 ++ [st .x5 (o + 8 * k)])) s _
+      rw [WP.block_append_iff]
+      refine WP.mono (const64_ok s .x5 0) fun s₁ ⟨v₁, k₁⟩ => ?_
+      have hs₁ := hs.of_keeps k₁ (by decide)
+      refine WP.mono (st_out hs₁ (o := o + 8 * k) (by omega) (by omega) .x5)
+        fun s₂ ⟨m₂, k₂, _⟩ => ⟨?_, ?_⟩
+      · simp [m₂, v₁, k₁.mem, ldWord, hc, hshift, BitVec.ushiftRight_eq_zero (Nat.le_refl 64)]
+      · exact ((Keeps.regs k₁).mono (by simp)).trans (k₂.mono (by simp))
+    · rw [ldStepL, ite_eq_right_of_eq_false _ _ (eq_false hc),
+        ite_eq_right_of_eq_false _ _ (eq_false hz),
+        show ([.ldr .x .x5 src 0, .rev .x5 .x5, .lsr .x .x5 .x5 (8 * (8 * (k + 1) - len)), st .x5 (o + 8 * k)] :
+          List Instr) = [.ldr .x .x5 src 0, .rev .x5 .x5] ++
+            ([.lsr .x .x5 .x5 (8 * (8 * (k + 1) - len))] ++ [st .x5 (o + 8 * k)]) from rfl,
+        WP.block_append_iff]
+      refine WP.mono (ldRev_ok s (t := .x5) (e := 0) ⟨by decide, by decide⟩ (hr _ (by omega)))
+        fun s₁ ⟨v₁, k₁⟩ => ?_
+      rw [WP.block_append_iff]
+      refine WP.mono (lsr_ok s₁ (d := .x5) (n := .x5) (show 8 * (8 * (k + 1) - len) < 64 by omega))
+        fun s₂ ⟨v₂, k₂⟩ => ?_
+      have hs₂ := (hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)
+      refine WP.mono (st_out hs₂ (o := o + 8 * k) (by omega) (by omega) .x5) fun s₃ ⟨m₃, k₃, _⟩ => ⟨?_, ?_⟩
+      · rw [m₃, v₂, v₁, k₂.mem, k₁.mem, BitVec.add_zero, ldWord, ite_eq_right_of_eq_false _ _ (eq_false hc)]
+      · exact (((Keeps.regs k₁).mono (by simp)).trans ((Keeps.regs k₂).mono (by simp))).trans
+          (k₃.mono (by simp))
 
 theorem ldStepsL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n o : Nat}
     {src : Reg} (hsrc : src ≠ .x5) (hsrc' : src ≠ .x17) (ho : o + 8 * n ≤ size) (ho8 : o % 8 = 0)
-    (h8 : 8 ≤ len) (hlo : 8 * n < len + 8) (hhi : len ≤ 8 * n) (hl : len ≤ 4096)
+    (h8 : 8 ≤ len) (hlo : 8 * n ≤ len + 8) (hhi : len ≤ 8 * n) (hl : len ≤ 4096)
     (hr : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 d) 8)
     (hd : Region.Disjoint ⟨s.gpr src, len⟩ ⟨off base o, 8 * n⟩) : ∀ k, k ≤ n →
     WP isa (.block ((List.range k).flatMap (ldStepL len o src))) s fun s' =>
@@ -179,11 +196,11 @@ theorem ldStepsL_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size
       · rw [show s.gpr src = s.gpr src + BitVec.ofNat 64 0 from (BitVec.add_zero _).symm,
           hkeep _ (by omega)]
 
-/-- `[o] = ` the `len` bytes at `src`, big-endian (`8 (n - 1) < len ≤ 8 n`,
+/-- `[o] = ` the `len` bytes at `src`, big-endian (`8 (n - 1) ≤ len ≤ 8 n`,
 `8 ≤ len`). -/
 theorem loadBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n o : Nat}
     {src : Reg} (hsrc : src ≠ .x5) (hsrc' : src ≠ .x17) (ho : o + 8 * n ≤ size) (ho8 : o % 8 = 0)
-    (h8 : 8 ≤ len) (hlo : 8 * n < len + 8) (hhi : len ≤ 8 * n) (hl : len ≤ 4096)
+    (h8 : 8 ≤ len) (hlo : 8 * n ≤ len + 8) (hhi : len ≤ 8 * n) (hl : len ≤ 4096)
     (hr : ∀ d, d + 8 ≤ len → InRegions (s.rd ++ s.wr) (s.gpr src + BitVec.ofNat 64 d) 8)
     (hd : Region.Disjoint ⟨s.gpr src, len⟩ ⟨off base o, 8 * n⟩) :
     WP isa (.block (loadBytes len n o src)) s fun s' =>
@@ -465,12 +482,12 @@ theorem flatMap_range_congr {α : Type} {f g : Nat → List α} : ∀ (k : Nat),
     rw [List.range_succ, List.flatMap_append, List.flatMap_append, flatMap_range_congr k fun j hj => h j (by omega),
       List.flatMap_singleton, List.flatMap_singleton, h k (by omega)]
 
-/-- The `len` bytes at `dst + d` (`8 (n - 1) < len ≤ 8 n`) are `[a]`
+/-- The `len` bytes at `dst + d` (`8 (n - 1) ≤ len ≤ 8 n`) are `[a]`
 big-endian if the mask `x3` is all ones (`c`), zeros if it is zero. -/
 theorem storeBytes_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {len n d a : Nat}
     {dst : Reg} (hdst : dst ≠ .x1) (hdst' : dst ≠ .x2) (hdst'' : dst ≠ .x17) (c : Bool)
     (hc : s.gpr .x3 = (if c then BitVec.allOnes 64 else 0)) (ha : a + 8 * n ≤ size) (ha8 : a % 8 = 0)
-    (hpos : 0 < len) (hlo : 8 * n < len + 8) (hhi : len ≤ 8 * n) (hdl : d + len < 4096)
+    (hpos : 0 < len) (hlo : 8 * n ≤ len + 8) (hhi : len ≤ 8 * n) (hdl : d + len < 4096)
     (hq : (s.gpr dst + BitVec.ofNat 64 d).toNat + len ≤ 2 ^ 64)
     (hw : ∀ e m, e + m ≤ len → InRegions s.wr (s.gpr dst + BitVec.ofNat 64 d + BitVec.ofNat 64 e) m)
     (hd : Region.Disjoint ⟨off base a, 8 * n⟩ ⟨s.gpr dst + BitVec.ofNat 64 d, len⟩) :

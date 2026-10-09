@@ -1,3 +1,5 @@
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Taint
 import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
 import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedFrame
 import VerifiedGarbage.Proof.Framework.AArch64.Spill
@@ -63,5 +65,16 @@ theorem allocatedRestore_frame {s a b t : State} {rs : List Reg}
   · exact hv r he
   · have hnot : r∉rs := by simpa only [List.mem_filter,decide_eq_true_eq,he,not_false_eq_true,and_true] using hr
     rw [ht.gpr r he,hb.gpr r hnot,hs.gpr r (by simp)]
+
+ theorem invAllocated_save_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block saveExtra) := by
+  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
+ theorem invAllocated_restore_ct : ConstantTime isa (fun _ => True)
+    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block restoreExtra) := by
+  exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0])
+    (fun _ _ _ _ h => h) (by taint_decide)
+
 
 end VG.Proof.Weierstrass.AArch64

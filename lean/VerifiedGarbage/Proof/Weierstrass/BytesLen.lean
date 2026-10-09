@@ -53,10 +53,10 @@ theorem top_bytes (m : Mem) (p : Addr) {t : Nat} (ht : t ≤ 8) :
   rw [byteRev64_ofBytes, e, ofBytes_append, length_bytesAt, Nat.shiftRight_eq_div_pow, ← pow256,
     Nat.mul_comm, Nat.mul_add_div (Nat.pos_of_ne_zero (by simp)), Nat.div_eq_of_lt hb, Nat.add_zero]
 
-/-- The words of a number of `len` bytes at `p`, `8 k < len ≤ 8 (k + 1)`: word
+/-- The words of a number of `len` bytes at `p`, `8 k ≤ len ≤ 8 (k + 1)`: word
 `j` the byte reversal of the word at `p + len - 8 (j + 1)`, or, for a top word
 of fewer than eight bytes, the reversal of the first eight shifted right. -/
-theorem wordsVal_eq_ofBytes_len (m m' : Mem) (base p : Addr) (o k len : Nat) (hlo : 8 * k < len)
+theorem wordsVal_eq_ofBytes_len (m m' : Mem) (base p : Addr) (o k len : Nat) (hlo : 8 * k ≤ len)
     (hhi : len ≤ 8 * (k + 1))
     (h : ∀ j < k + 1, word m base (o + 8 * j) =
       if 8 * (j + 1) ≤ len then byteRev64 (m'.readW (p + BitVec.ofNat 64 (len - 8 * (j + 1))) 64)
@@ -133,11 +133,11 @@ theorem wordsVal_shiftRight_top (m : Mem) (base : Addr) (a k : Nat) :
   rw [wordsVal_succ_top, Nat.shiftRight_eq_div_pow, Nat.add_comm, Nat.mul_add_div (Nat.two_pow_pos _),
     Nat.div_eq_of_lt (wordsVal_lt m base a k), Nat.add_zero]
 
-/-- The `len` bytes at `q`, `8 k < len ≤ 8 (k + 1)`: words `j` (whole) the
+/-- The `len` bytes at `q`, `8 k ≤ len ≤ 8 (k + 1)`: words `j` (whole) the
 byte reversal of the masked word `j` of a number of `k + 1` words, at
 `q + len - 8 (j + 1)`, and the bytes of a top word of fewer than eight bytes
 the masked word shifted right; they are the number big-endian, or zeros. -/
-theorem bytesAt_eq_toBytes_len (m m₀ : Mem) (base q : Addr) {a k len : Nat} (c : Bool) (hlo : 8 * k < len)
+theorem bytesAt_eq_toBytes_len (m m₀ : Mem) (base q : Addr) {a k len : Nat} (c : Bool) (hlo : 8 * k ≤ len)
     (hhi : len ≤ 8 * (k + 1))
     (hw : ∀ j < k + 1, 8 * (j + 1) ≤ len → m.readW (q + BitVec.ofNat 64 (len - 8 * (j + 1))) 64 =
       byteRev64 (word m₀ base (a + 8 * j) &&& (if c then BitVec.allOnes 64 else 0)))

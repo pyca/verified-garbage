@@ -1,4 +1,5 @@
 import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
 
 namespace VG.Proof.Weierstrass.AArch64
 open VG VG.AArch64 VG.Impl.Mont.AArch64 VG.Impl.Mont VG.Impl.Weierstrass.AArch64

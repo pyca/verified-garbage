@@ -1,7 +1,7 @@
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedRunTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointPointsTiming
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPointsFrame
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyWrapped
+import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyExtra
 
 namespace VG.Proof.Ecdsa.Verify.AArch64.Allocated
 open VG VG.AArch64 VG.Impl.Mont VG.Impl.Weierstrass VG.Impl.Weierstrass.AArch64

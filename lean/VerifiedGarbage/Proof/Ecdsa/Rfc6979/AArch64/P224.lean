@@ -22,7 +22,7 @@ def p224 (hL : Weierstrass.Law Spec.P224.curve) (hI : Weierstrass.AArch64.InvSou
   inst := Spec.Ecdsa.P224.inst
   curve := rfl
   wide := false
-  sizes := ⟨.inl rfl, .inr ⟨rfl, rfl⟩, Proof.Ecdsa.AArch64.P224.p224_nBits, by decide +kernel⟩
+  sizes := ⟨.inl rfl, .inr ⟨rfl, .inl rfl⟩, Proof.Ecdsa.AArch64.P224.p224_nBits, by decide +kernel⟩
   n_lt := by decide +kernel
   sh := 0
   sh_eq := Proof.Ecdsa.AArch64.P224.p224_sh

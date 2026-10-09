@@ -97,7 +97,7 @@ structure Blks (Q D B : Nat) (wide : Bool) : Prop where
 theorem blks (P : RfcHash) : Blks P.Q P.H.D P.H.P.B P.R.wide := by
   cases hw : P.R.wide
   · obtain ⟨-, -, hQD⟩ := P.sizesA hw
-    rcases P.sizesQ hw with hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [hq, h, h'] <;>
+    rcases P.sizesQ hw with hq | hq | hq | hq <;> rcases P.hDB with ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [hq, h, h'] <;>
     first
     | (exfalso; rw [hq, h] at hQD; omega)
     | exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,

@@ -53,12 +53,6 @@ theorem invAllocated_inverse_ok {base : Addr} {size : Nat} [NeZero invAllocatedM
   · rw [kt.mem]; exact lb
   · rw [kt.mem,eb,va]
 
- theorem invAllocated_save_ct : ConstantTime isa (fun _ => True)
-    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block saveExtra) := by inv_fixed_ct
-
- theorem invAllocated_restore_ct : ConstantTime isa (fun _ => True)
-    (AArch64.Taint.Agree (Taint.ofRegs [.x0])) (.block restoreExtra) := by inv_fixed_ct
-
 /-- Relational timing for the complete production inverse, including extra-register saves. -/
 theorem invAllocated_inverse_relCT {base : Addr} {size X : Nat} [NeZero invAllocatedModulus]
     (hsize : 8192≤size) (hpr : invAllocatedModulus.Prime) (hT : InvToM invAllocatedModulus)
