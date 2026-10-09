@@ -39,7 +39,8 @@ use crate::arch::ed25519::{
 };
 use crate::cpu::{Features, detected};
 use crate::hashes::sha512::Sha512Backend;
-use crate::zeroize::zeroize;
+use crate::zeroize::{zeroize, zeroize_raw};
+use core::mem::{MaybeUninit, size_of};
 
 /// The field multiplications of the complete operations.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -214,14 +215,17 @@ fn public_key(seed: &[u8; 32]) -> [u8; 32] {
         (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_public_key_sha3,
     };
     let mut public = [0u8; 32];
-    let mut scratch = [0u64; 1024];
+    // Uninitialized: each function's contract holds whatever the scratch
+    // holds, so filling it with zeros first would only cost time.
+    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     // SAFETY: the output, seed, and scratch are distinct objects valid for
     // 32, 32, and 8192 bytes, respectively, so they overlap neither each
     // other nor the call's stack, and none wraps the address space. The
     // seed is the caller's. The CPU has the features of both backends
     // chosen (SHA-512's and the field's).
-    unsafe { derive(&mut public, seed, &mut scratch) };
-    zeroize(&mut scratch);
+    unsafe { derive(&mut public, seed, scratch.as_mut_ptr()) };
+    // SAFETY: `scratch` is writable for its whole length.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     public
 }
 
@@ -248,13 +252,24 @@ fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
         #[cfg(target_arch = "aarch64")]
         (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_verify_sha3,
     };
-    let mut scratch = [0u64; 1024];
+    // Uninitialized: each function's contract holds whatever the scratch
+    // holds, so filling it with zeros first would only cost time.
+    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     // SAFETY: input references are valid for their declared lengths and scratch
     // is a distinct writable object. No object overlaps the call stack. The
     // CPU has the features of both backends chosen (SHA-512's and the
     // field's).
-    let valid = unsafe { verify(pk, message.as_ptr(), message.len(), signature, &mut scratch) };
-    zeroize(&mut scratch);
+    let valid = unsafe {
+        verify(
+            pk,
+            message.as_ptr(),
+            message.len(),
+            signature,
+            scratch.as_mut_ptr(),
+        )
+    };
+    // SAFETY: `scratch` is writable for its whole length.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     valid
 }
 
@@ -282,7 +297,9 @@ fn sign_message(seed: &[u8; 32], pk: &[u8; 32], message: &[u8]) -> [u8; 64] {
         (Sha512Backend::Sha3, Field::Baseline) => vg_ed25519_sign_cached_sha3,
     };
     let mut signature = [0u8; 64];
-    let mut scratch = [0u64; 1024];
+    // Uninitialized: each function's contract holds whatever the scratch
+    // holds, so filling it with zeros first would only cost time.
+    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. pk is seed's
@@ -296,10 +313,11 @@ fn sign_message(seed: &[u8; 32], pk: &[u8; 32], message: &[u8]) -> [u8; 64] {
             pk,
             message.as_ptr(),
             message.len(),
-            &mut scratch,
+            scratch.as_mut_ptr(),
         )
     };
-    zeroize(&mut scratch);
+    // SAFETY: `scratch` is writable for its whole length.
+    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     signature
 }
 
