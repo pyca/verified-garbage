@@ -353,7 +353,8 @@ theorem encFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
   apply prefixContinue
   refine WP.mono (firstEnc_ok hp hR) fun t hI => ?_
   refine WP.seq (WP.mono hI.compare fun u ⟨hu, hcf⟩ => ?_)
-  refine WP.seq (WP.mono (loopMaybe_ok hp hm hlaw hu hcf) fun v ⟨g, hg, hv⟩ => ?_)
+  have hl := loopMaybe_ok hp hm hlaw hu hcf
+  refine WP.seq (WP.mono hl fun v ⟨g, hg, hv⟩ => ?_)
   exact finalEnc_ok hp hlaw hv hg
 
 theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
@@ -362,7 +363,8 @@ theorem decFor_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
   refine WP.mono (setup_ok hp) fun s ⟨P, hR, hP⟩ => ?_
   have hlaw : HashLaw s₀ P := fun X y => finishHash X P (hk s₀) y hP
   refine WP.mono (firstDec_ok hp hR) fun t hI => ?_
-  refine WP.seq (WP.mono (loopRun_ok hp hm hlaw hI hp.nb16) fun u ⟨g, hg, hu⟩ => ?_)
+  have hl := loopRun_ok hp hm hlaw hI hp.nb16
+  refine WP.seq (WP.mono hl fun u ⟨g, hg, hu⟩ => ?_)
   exact WP.seq (WP.block_nil (finalDec_ok hp hlaw hu hg))
 
 end VG.Proof.Gcm.X86_64.StitchAvx8
