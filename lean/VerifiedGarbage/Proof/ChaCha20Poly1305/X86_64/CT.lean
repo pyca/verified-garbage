@@ -2718,12 +2718,11 @@ theorem shrA_ok {m : Nat} (hm : m < 2 ^ 64) {s : State} (hrdx : s.gpr .rdx = Bit
       s'.gpr .rax = BitVec.ofNat 64 (m / 64) ∧ (∀ q, q ≠ .rax → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧
         s'.wr = s.wr ∧ s'.mem = s.mem := by
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc,
     execShift, State.setReg, State.setFlags, Option.map_some, Option.some.injEq, exists_eq_left',
-    ite_true, ite_false]
+    ↓reduceIte, Nat.reduceLeDiff, and_self]
   exact ⟨by rw [hrdx, shr6_ofNat hm], fun q hq => by simp [hq], trivial⟩
 
-set_option simprocs false in
 /-- `cryptArgsM` after the shift. -/
 theorem cryptB_ok {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : m ≤ L s₀) (hm9 : m ≤ 960)
     (hrax : s.gpr .rax = BitVec.ofNat 64 (m / 64))
@@ -2741,14 +2740,14 @@ theorem cryptB_ok {s₀ : State} (hp : APre e s₀) {s : State} {m : Nat} (hm : 
   simp only [off] at o
   have hL9 := (s₀.gpr .r9).isLt
   apply WP.of_runBlock
-  simp (config := {decide := true}) only [ptr, List.cons_append, List.nil_append, runBlock_cons,
+  simp only [ptr, List.cons_append, List.nil_append, runBlock_cons,
     runStep_some, runBlock_nil, exec, ea_at, readSrc, execAlu, RegUpd.gpr_arithFlags,
     RegUpd.mem_arithFlags, RegUpd.rd_arithFlags, RegUpd.wr_arithFlags, State.store32, RegUpd.gpr_setReg,
-    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hr15, hr14, hr13, hrdx, hrax, o, ite_true,
-    ite_false, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, hr15, hr14, hr13, hrdx, hrax, o, reduceCtorEq,
+    ↓reduceIte, Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left',
     se_ofNat (show 64 < 2 ^ 31 by omega_using []), se_ofNat (show 128 < 2 ^ 31 by omega_using []),
     ctrWord hm9]
-  refine ⟨trivial, by rw [off_eq], by rw [off_eq], ?_, by rw [off_eq], fun r hr => ?_, trivial⟩
+  refine ⟨trivial, by rw [off_eq], by rw [off_eq], ?_, by rw [off_eq], fun r hr => ?_, trivial, trivial⟩
   · rw [hL s₀]; exact Offset.ofNat_sub_ofNat hm
   · have := calleeSaved_ne hr
     simp [this.1, this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2]
