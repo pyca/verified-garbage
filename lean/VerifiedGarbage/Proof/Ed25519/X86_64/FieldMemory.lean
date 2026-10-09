@@ -29,7 +29,7 @@ theorem constWords_ok (s : State) (v : Spec.X25519.Fe) :
 
 theorem constField_op {s : State} {base : Addr} (hs : Scr s base) (o : Slot) (v : Spec.X25519.Fe) :
     WP isa (.block (constField o v)) s fun t =>
-      Op base (offset o) s t ∧ F t.mem base (offset o) = v := by
+      Op base (offset o) s t ∧ F t.mem base (offset o) = v ∧ fe t.mem base (offset o) = v.val := by
   rw [constField, WP.block_append_iff]
   refine WP.mono (constWords_ok s v) fun t ⟨hv, hk⟩ => ?_
   refine WP.mono (store4_ok (hs.of_keeps hk (by decide)) (o := offset o)
@@ -37,7 +37,7 @@ theorem constField_op {s : State} {base : Addr} (hs : Scr s base) (o : Slot) (v 
   have op : Op base (offset o) s u :=
     ⟨fun r hr => (hg r).trans ((hk.mono (by decide)).1 r hr), hrd.trans hk.2.2.1,
       hwr.trans hk.2.2.2, by rw [hm, hk.2.1]; exact st4_outside _ _ (by simp only [offset]; omega) _ _ _ _⟩
-  refine ⟨op, ?_⟩
+  refine ⟨op, ?_, by rw [hm, fe_st4 _ _ (by simp only [offset]; omega), hv]⟩
   rw [F, hm, fe_st4 _ _ (by simp only [offset]; omega), hv, Proof.X25519.toFe_self]
 
 theorem loadsField_ok {s : State} {base : Addr} (hs : Scr s base) (a : Slot) :

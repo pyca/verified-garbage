@@ -189,4 +189,160 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : S
     simp only [VG.Spec.X25519.P]
     omega_arith
 
+/-! ## Sums and differences with one fold
+
+`addL` and `subL` fold the carry or borrow out once. That is enough when one
+operand of a sum, or the subtrahend of a difference, is at most `2p`, as every
+product is (`mulBnd_ok`): the sum is then below `2²⁵⁷ - 38`, and the
+difference above `-2p`. -/
+
+theorem fe_lt4 (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 := by
+  simp only [X86_64.fe, val4]
+  have := (word m base a).isLt; have := (word m base (a + 8)).isLt
+  have := (word m base (a + 16)).isLt; have := (word m base (a + 24)).isLt
+  omega
+
+/-- `r8–r11 + rax`, and its carry out. -/
+theorem carryAdd_ok (s : State) :
+    WP isa (.block [.alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+      .alu .adc .r11 (.imm 0)]) s fun s' =>
+      ∃ c : Nat, c ≤ 1 ∧
+        val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + 2 ^ 256 * c =
+          val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + (s.gpr .rax).toNat ∧
+        Keeps [.r8, .r9, .r10, .r11] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true,
+    ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
+    exists_eq_left', se0]
+  have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .rax) 0 0 0
+  have hz : (0 : BitVec 64).toNat = 0 := rfl
+  simp only [val4, hz, Nat.mul_zero, Nat.add_zero] at e ⊢
+  refine ⟨_, Bool.toNat_le _, e, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2,
+    ite_false]
+
+/-- `r8–r11 - rax`, and its borrow out. -/
+theorem borrowSub_ok (s : State) :
+    WP isa (.block [.alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
+      .alu .sbb .r11 (.imm 0)]) s fun s' =>
+      ∃ c : Nat, c ≤ 1 ∧
+        val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + (s.gpr .rax).toNat =
+          val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 2 ^ 256 * c ∧
+        Keeps [.r8, .r9, .r10, .r11] s s' := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
+    RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true,
+    ite_false, reduceCtorEq, Option.map_some, Option.bind_some, Option.some.injEq,
+    exists_eq_left', se0]
+  have e := chain_sub (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) (s.gpr .rax) 0 0 0
+  have hz : (0 : BitVec 64).toNat = 0 := rfl
+  simp only [val4, hz, Nat.mul_zero, Nat.add_zero] at e ⊢
+  refine ⟨_, Bool.toNat_le _, e, fun r hr => ?_, rfl, rfl, rfl⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2,
+    ite_false]
+
+/-- `A ≡ B` if they differ by a multiple of `p`. -/
+theorem mod_of_add_mul {A B k : Nat} (h : A + VG.Spec.X25519.P * k = B) :
+    A % VG.Spec.X25519.P = B % VG.Spec.X25519.P := by
+  rw [← h, Nat.add_mul_mod_self_left]
+
+/-- `[o] = [a] + [b]`, folded once, if `[a]` or `[b]` is at most `2p`. -/
+theorem addL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b)
+    (hab : fe s.mem base a ≤ 2 * VG.Spec.X25519.P ∨ fe s.mem base b ≤ 2 * VG.Spec.X25519.P) :
+    WP isa (.block (addL o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a + F s.mem base b := by
+  rw [show addL o a b = [.mov .r8 (.mem (sc a)), .alu .add .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .adc .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .adc .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .adc .r11 (.mem (sc (b + 24))),
+      .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38)] ++
+      (([.alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+      .alu .adc .r11 (.imm 0)] : List Instr) ++ store4 o) from rfl, WP.block_append_iff]
+  refine WP.mono (addPre_ok hs ha hb) fun s₁ ⟨c, hc, e1, x1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (carryAdd_ok s₁) fun s₂ ⟨c', hc', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ ⟨m3, g3, rd3, wr3⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g3, k2.1 r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1]), k1.1 r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1])]
+  · rw [rd3, k2.2.2.1, k1.2.2.1]
+  · rw [wr3, k2.2.2.2, k1.2.2.2]
+  · rw [m3, k2.2.1, k1.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_add
+    rw [m3, fe_st4 _ _ (by omega)]
+    have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
+    have l1 := fe_lt4 s₃.mem base o
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
+      have := (s₂.gpr .r11).isLt
+      omega
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
+      have := (s₁.gpr .r11).isLt
+      omega
+    rw [x1] at e2
+    generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
+    generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
+    refine mod_of_add_mul (k := 2 * c) ?_
+    simp only [VG.Spec.X25519.P] at hab ⊢
+    omega
+
+/-- `[o] = [a] - [b]`, folded once, if `[b]` is at most `2p`. -/
+theorem subL_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat} (ho : Slot o)
+    (ha : Slot a) (hb : Slot b) (hb2 : fe s.mem base b ≤ 2 * VG.Spec.X25519.P) :
+    WP isa (.block (subL o a b)) s fun s' =>
+      Op base o s s' ∧ F s'.mem base o = F s.mem base a - F s.mem base b := by
+  rw [show subL o a b = [.mov .r8 (.mem (sc a)), .alu .sub .r8 (.mem (sc b)),
+      .mov .r9 (.mem (sc (a + 8))), .alu .sbb .r9 (.mem (sc (b + 8))),
+      .mov .r10 (.mem (sc (a + 16))), .alu .sbb .r10 (.mem (sc (b + 16))),
+      .mov .r11 (.mem (sc (a + 24))), .alu .sbb .r11 (.mem (sc (b + 24))),
+      .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38)] ++
+      (([.alu .sub .r8 (.reg .rax), .alu .sbb .r9 (.imm 0), .alu .sbb .r10 (.imm 0),
+      .alu .sbb .r11 (.imm 0)] : List Instr) ++ store4 o) from rfl, WP.block_append_iff]
+  refine WP.mono (subPre_ok hs ha hb) fun s₁ ⟨c, hc, e1, x1, k1⟩ => ?_
+  have hs₁ := hs.of_keeps k1 (by decide)
+  rw [WP.block_append_iff]
+  refine WP.mono (borrowSub_ok s₁) fun s₂ ⟨c', hc', e2, k2⟩ => ?_
+  have hs₂ := hs₁.of_keeps k2 (by decide)
+  refine WP.mono (store4_ok hs₂ ho) fun s₃ ⟨m3, g3, rd3, wr3⟩ => ?_
+  refine ⟨⟨fun r hr => ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [clob, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    rw [g3, k2.1 r (by simp [hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1]), k1.1 r (by simp [hr.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2.1,
+      hr.2.2.2.2.2.2.2.1])]
+  · rw [rd3, k2.2.2.1, k1.2.2.1]
+  · rw [wr3, k2.2.2.2, k1.2.2.2]
+  · rw [m3, k2.2.1, k1.2.1]; exact st4_outside _ _ (by omega) _ _ _ _
+  · simp only [F]
+    apply toFe_sub
+    rw [m3, fe_st4 _ _ (by omega)]
+    have la := fe_lt4 s.mem base a; have lb := fe_lt4 s.mem base b
+    have hv : val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₂.gpr .r8).isLt; have := (s₂.gpr .r9).isLt; have := (s₂.gpr .r10).isLt
+      have := (s₂.gpr .r11).isLt
+      omega
+    have hv1 : val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) < 2 ^ 256 := by
+      simp only [val4]
+      have := (s₁.gpr .r8).isLt; have := (s₁.gpr .r9).isLt; have := (s₁.gpr .r10).isLt
+      have := (s₁.gpr .r11).isLt
+      omega
+    rw [x1] at e2
+    generalize val4 (s₂.gpr .r8) (s₂.gpr .r9) (s₂.gpr .r10) (s₂.gpr .r11) = V at *
+    generalize val4 (s₁.gpr .r8) (s₁.gpr .r9) (s₁.gpr .r10) (s₁.gpr .r11) = U at *
+    refine (mod_of_add_mul (k := 2 * c) ?_).symm
+    simp only [VG.Spec.X25519.P] at hb2 ⊢
+    omega
+
 end VG.Proof.X25519.X86_64

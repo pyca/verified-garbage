@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Ed25519.BaseTable
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointPowers
 import VerifiedGarbage.Proof.Ed25519.X86_64.FieldMemory
 import VerifiedGarbage.Proof.Ed25519.X86_64.PointAccumulateLoop
+import VerifiedGarbage.Proof.Ed25519.X86_64.FieldLazy
 
 /-!
 # Cached points
@@ -79,16 +80,26 @@ theorem pointAddAffine_high (e : Env) (i : Slot) (hi : 16 ≤ i.val) :
     evalOps pointAddAffineOps e i = e i :=
   point_ops_high _ (by decide) e i hi
 
+/-- The accumulator's bounds hold through the addition: each sum and difference has
+an operand bounded, and the accumulator is products again. -/
+theorem pointAddAffine_bnd :
+    bndOk true pointAddAffineOps (fun i => decide (i.val < 3)) = true ∧
+      ∀ i : Slot, i.val < 3 → bndOut pointAddAffineOps (fun i => decide (i.val < 3)) i = true := by
+  decide
+
 theorem pointAddAffineWide_ok {s : State} {base : Addr} (hs : Scratch s base)
     (q : Spec.Ed25519.Point)
-    (hq : (⟨env s.mem base 4, env s.mem base 5, env s.mem base 6, 2⟩ : Spec.Ed25519.Point) = cache q) :
+    (hq : (⟨env s.mem base 4, env s.mem base 5, env s.mem base 6, 2⟩ : Spec.Ed25519.Point) = cache q)
+    (hb : AccBnd s.mem base) :
     WP isa (.block (pointAddAffine fld)) s fun t =>
       Keep base s t ∧ point (env t.mem base) 0 1 2 3 =
         Spec.Ed25519.pointAdd (point (env s.mem base) 0 1 2 3) q ∧
-      ∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i := by
-  refine WP.mono (fieldCodeWide_ok hs pointAddAffineOps) fun t ⟨hk, hv⟩ => ?_
+      (∀ i : Slot, 16 ≤ i.val → env t.mem base i = env s.mem base i) ∧ AccBnd t.mem base := by
+  refine WP.mono (fieldCodeBWide_ok true pointAddAffineOps hs pointAddAffine_bnd.1
+    fun i hi => hb i (of_decide_eq_true hi)) fun t ⟨hk, hv, hb'⟩ => ?_
   rw [hv]
-  exact ⟨hk, pointAddAffine_eval _ q hq, pointAddAffine_high _⟩
+  exact ⟨hk, pointAddAffine_eval _ q hq, pointAddAffine_high _,
+    fun i hi => hb' i (pointAddAffine_bnd.2 i hi)⟩
 
 theorem cachedFieldStore_ok {s : State} {base : Addr} (hs : Scratch s base) {o : Nat}
     (hp : s.gpr .rax = off base o) (v : Spec.X25519.Fe) (dst : Nat) (ho : o + dst + 32 ≤ 8192) :

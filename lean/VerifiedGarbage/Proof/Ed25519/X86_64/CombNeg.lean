@@ -225,7 +225,8 @@ theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
     (hab : b.val = a.val + 1) (ha : offset a + 64 ≤ 768) {sw : Bool}
     (hm : s.gpr .rcx = VG.Proof.X25519.X86_64.mask sw) :
     WP isa (.block (swapFieldX (offset a))) s fun t =>
-      Keep base s t ∧ t.gpr .rcx = s.gpr .rcx ∧ env t.mem base = swapEnv a b sw (env s.mem base) := by
+      Keep base s t ∧ t.gpr .rcx = s.gpr .rcx ∧ env t.mem base = swapEnv a b sw (env s.mem base) ∧
+      Outside base (offset a) 64 s.mem t.mem := by
   have hb : offset b = offset a + 32 := by simp only [offset, hab]; omega
   have hne : a ≠ b := fun h => by rw [h] at hab; omega
   rw [swapFieldX, List.append_assoc, WP.block_append_iff]
@@ -249,7 +250,7 @@ theorem swapFieldX_ok {s : State} {base : Addr} (hs : Scratch s base) (a b : Slo
     · rw [tg, vg, uk.gpr r (by simp)]
     · rw [trd, vrd, uk.rd]
     · rw [twr, vwr, uk.wr]
-  refine ⟨keep, ?_, ?_⟩
+  refine ⟨keep, ?_, ?_, hmem⟩
   · rw [tg, vg, uk.gpr _ (by simp)]
   · -- the four halves, and the slots elsewhere
     have ha0 : t.mem.readW (off base (offset a)) 128 =

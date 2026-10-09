@@ -97,7 +97,7 @@ theorem fieldOp_ok {s : State} {base : Addr} (hs : Scr s base) (op : FieldOp) :
     refine WP.mono (copyField_op hs o a) fun t ⟨h, e⟩ => ?_
     exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
   | const o v =>
-    refine WP.mono (constField_op hs o v) fun t ⟨h, e⟩ => ?_
+    refine WP.mono (constField_op hs o v) fun t ⟨h, e, _⟩ => ?_
     exact ⟨op_keep h, by rw [env_update o h.mem, e]; rfl⟩
   | mul o a b =>
     refine WP.mono ((EdArith.ok (fld := fld)).mul hs

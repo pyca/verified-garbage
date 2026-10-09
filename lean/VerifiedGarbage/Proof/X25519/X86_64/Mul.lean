@@ -181,13 +181,14 @@ theorem reduceSteps_ok (s : State) :
     omega_arith
   · rw [g k5 .rcx (by decide), g k4 .rcx (by decide), g k3 .rcx (by decide), g k2 .rcx (by decide), c1]
 
-/-- `fold`: `r8–r11 + 38 rbp`, with `rcx = 38` and `rbp < 2⁵²`. -/
+/-- `fold`: `r8–r11 + 38 rbp`, with `rcx = 38` and `rbp < 2⁵²`, at most `2p`. -/
 theorem fold_ok (s : State) (hc : s.gpr .rcx = 38) (hb : (s.gpr .rbp).toNat < 2 ^ 52) :
     WP isa (.block fold) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % VG.Spec.X25519.P =
         (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 38 * (s.gpr .rbp).toNat) %
           VG.Spec.X25519.P ∧
-      Keeps [.r8, .r9, .r10, .r11, .rax, .rdx] s s' := by
+      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * VG.Spec.X25519.P ∧
+      Keeps [.r8, .r9, .r10, .r11, .rax, .rdx, .rbp] s s' := by
   rw [fold, WP.block_append_iff]
   refine WP.mono (show WP isa (.block [.mov .rax (.reg .rbp), .mul .rcx]) s (fun s' =>
       (s'.gpr .rax).toNat = 38 * (s.gpr .rbp).toNat ∧ Keeps [.rax, .rdx] s s') by
@@ -200,8 +201,9 @@ theorem fold_ok (s : State) (hc : s.gpr .rcx = 38) (hb : (s.gpr .rbp).toNat < 2 
       exact Nat.mod_eq_of_lt (by omega_arith)
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ite_false]) fun s₁ ⟨e1, k1⟩ => ?_
-  refine WP.mono (carry38_ok s₁ (by omega_arith)) fun s₂ ⟨e2, k2⟩ => ?_
-  refine ⟨?_, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
+  refine WP.mono (carry19_ok s₁ (m := .rbp) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by omega_arith)) fun s₂ ⟨e2, b2, k2⟩ => ?_
+  refine ⟨?_, b2, (k1.mono (by decide)).trans (k2.mono (by decide))⟩
   rw [e2, e1, k1.1 .r8 (by decide), k1.1 .r9 (by decide), k1.1 .r10 (by decide),
     k1.1 .r11 (by decide)]
 
