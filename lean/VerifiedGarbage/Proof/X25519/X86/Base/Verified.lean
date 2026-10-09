@@ -23,7 +23,9 @@ open VG VG.X86 VG.Impl.Ed25519.X86 VG.Impl.X25519.X86.Base
 open VG.Proof.Ed25519.X86
 
 theorem uEncode_ct {x : BitVec 32} : RelCT isa (CallCTPre x) uEncode (fun _ _ => True) := by
-  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ uEncode h).isSome = true := by
+    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 theorem start_ct : RelCT isa
     (fun s t => BodyPre s ∧ BodyPre t ∧ x25519BaseLocal.pub s t)

@@ -3,6 +3,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTBytes
 import VerifiedGarbage.Proof.Ed25519.X86.VerifyCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Ed25519.X86.Point32.AddSum
 
 /-!
 # Verification's windows: what their traces depend on
@@ -165,12 +166,14 @@ theorem addDigit_ct (o : Nat) (ho : o = 1024 ∨ o = 3072) {v : Nat} (hv : v < 1
     VG.RelCT.taint (A := taint) (regsTaint []) (fun _ _ _ => agree_none) (by taint_decide)
   have body : RelCT isa (fun x y => CallCTPre B x y ∧ x.gpr .eax = y.gpr .eax)
       (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) (fun _ _ => True) := by
-    rcases ho with rfl | rfl
-    all_goals
-      exact VG.RelCT.taint (A := taint) (callTaintR [.eax])
-        (fun _ _ hh => callTaintR_agree hh.1 fun r hr => by
-          rw [List.mem_singleton.mp hr]; exact hh.2)
-        (by taint_decide)
+    obtain ⟨_, hc⟩ : ∃ h, (taint.check (callTaintR [.eax])
+        (.seq (.block (entryAddr o ++ pointFromTableQ)) Point32.addCall) h).isSome = true := by
+      rcases ho with rfl | rfl
+      · taint_decide_sum [addSum]
+      · taint_decide_sum [addSum]
+    exact VG.RelCT.taint (A := taint) (callTaintR [.eax])
+      (fun _ _ hh => callTaintR_agree hh.1 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact hh.2) hc
   rw [addDigit]
   refine VG.RelCT.seq (ctWithRuns test fun x y hh => ⟨digitTest_call hv hh.2.1, digitTest_call hv hh.2.2⟩)
     (VG.RelCT.ite (M := isa) ?_ ?_ ?_)
@@ -434,8 +437,9 @@ theorem windowMultiply_ct {s₀ t₀ : State} (h : VerifyCTFacts s₀ t₀) {a r
       (fun _ _ => True) := by
   have prep : RelCT isa (fun x y => EquationCTPre s₀ a r x ∧ EquationCTPre t₀ a r y) windowPrep
       (fun _ _ => True) :=
-    VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ hh => callTaint₀_agree (h.callPre hh.1.1 hh.2.1))
-      (by taint_decide)
+    have ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ windowPrep h).isSome = true := by
+      taint_decide_sum [addSum]
+    VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ hh => callTaint₀_agree (h.callPre hh.1.1 hh.2.1)) hc
   have pw (u x : State) (hu : VerifyPre u) (hx : EquationCTPre u a r x) :
       WP isa windowPrep x (SkipAt u Aa r 32) :=
     WP.mono (windowPrep_ok hu hx.1 hA hx.2.1 hx.2.2) fun _ ⟨w, e, rp⟩ =>

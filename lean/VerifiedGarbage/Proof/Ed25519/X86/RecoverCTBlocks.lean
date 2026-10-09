@@ -2,6 +2,7 @@ import VerifiedGarbage.Proof.Ed25519.X86.RecoverCTLit
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTSupport
 import VerifiedGarbage.Proof.Ed25519.X86.RecoverPoint
 import VerifiedGarbage.Proof.Ed25519.X86.PointCTBlocks
+import VerifiedGarbage.Proof.X25519.X86.Field32.Pow250Sum
 
 /-! Fixed-trace arithmetic blocks used in point recovery. -/
 
@@ -17,7 +18,9 @@ theorem edi_agree {base : BitVec 32} {s t : State} (hs : s.gpr .edi = base) (ht 
 
 theorem recoverCandidate_ct (base : BitVec 32) :
     RelCT isa (CallCTPre base) recoverCandidate (fun _ _ => True) := by
-  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) (by taint_decide)
+  obtain ⟨_, hc⟩ : ∃ h, (taint.check callTaint₀ recoverCandidate h).isSome = true := by
+    taint_decide_sum [VG.Proof.X25519.X86.pow250Sum]
+  exact VG.RelCT.taint (A := taint) callTaint₀ (fun _ _ h => callTaint₀_agree h) hc
 
 theorem parityBlock_ct (base : BitVec 32) :
     RelCT isa (fun s t => s.gpr .edi = base ∧ t.gpr .edi = base)
