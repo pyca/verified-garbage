@@ -33,35 +33,35 @@ taint_summary VSums.absorb23 : VectorTaint.taint
   (.call ("vg_keccak_absorb_scratch" ++ callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith callee))
   using VectorSlots.VSums.perm28s VectorSlots.VSums.perm27s VectorSlots.VSums.perm26s
     VectorSlots.VSums.permS VectorSlots.VSums.perm28 VectorSlots.VSums.perm27
-    VectorSlots.VSums.perm26 VectorSlots.VSums.perm
+    VectorSlots.VSums.perm26 VectorSlots.VSums.perm VectorSlots.VSums.rounds
 
 taint_summary VSums.absorb24 : VectorTaint.taint
   (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x24, .x25, .x26, .x27, .x28])
   (.call ("vg_keccak_absorb_scratch" ++ callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith callee))
   using VectorSlots.VSums.perm28s VectorSlots.VSums.perm27s VectorSlots.VSums.perm26s
     VectorSlots.VSums.permS VectorSlots.VSums.perm28 VectorSlots.VSums.perm27
-    VectorSlots.VSums.perm26 VectorSlots.VSums.perm
+    VectorSlots.VSums.perm26 VectorSlots.VSums.perm VectorSlots.VSums.rounds
 
 taint_summary VSums.absorb28 : VectorTaint.taint
   (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27, .x28])
   (.call ("vg_keccak_absorb_scratch" ++ callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith callee))
   using VectorSlots.VSums.perm28s VectorSlots.VSums.perm27s VectorSlots.VSums.perm26s
     VectorSlots.VSums.permS VectorSlots.VSums.perm28 VectorSlots.VSums.perm27
-    VectorSlots.VSums.perm26 VectorSlots.VSums.perm
+    VectorSlots.VSums.perm26 VectorSlots.VSums.perm VectorSlots.VSums.rounds
 
 taint_summary VSums.absorb27 : VectorTaint.taint
   (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x25, .x26, .x27])
   (.call ("vg_keccak_absorb_scratch" ++ callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith callee))
   using VectorSlots.VSums.perm28s VectorSlots.VSums.perm27s VectorSlots.VSums.perm26s
     VectorSlots.VSums.permS VectorSlots.VSums.perm28 VectorSlots.VSums.perm27
-    VectorSlots.VSums.perm26 VectorSlots.VSums.perm
+    VectorSlots.VSums.perm26 VectorSlots.VSums.perm VectorSlots.VSums.rounds
 
 taint_summary VSums.absorb24_26 : VectorTaint.taint
   (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5, .x24, .x25, .x26])
   (.call ("vg_keccak_absorb_scratch" ++ callee.suffix) (Impl.Sha3.AArch64.Stream.absorbWith callee))
   using VectorSlots.VSums.perm28s VectorSlots.VSums.perm27s VectorSlots.VSums.perm26s
     VectorSlots.VSums.permS VectorSlots.VSums.perm28 VectorSlots.VSums.perm27
-    VectorSlots.VSums.perm26 VectorSlots.VSums.perm
+    VectorSlots.VSums.perm26 VectorSlots.VSums.perm VectorSlots.VSums.rounds
 
 /-- `sponge_taint_decide VSums`, with the summaries of the absorb above and
 `VectorSlots.VSums`'s others, in the same order. -/
@@ -72,7 +72,7 @@ local macro "sponge_taint_decide_resident" : tactic => `(tactic|
     VectorSlots.VSums.squeeze28, VectorSlots.VSums.squeeze27, VectorSlots.VSums.squeeze26,
     VectorSlots.VSums.perm28s, VectorSlots.VSums.perm27s, VectorSlots.VSums.perm26s,
     VectorSlots.VSums.permS, VectorSlots.VSums.perm28, VectorSlots.VSums.perm27,
-    VectorSlots.VSums.perm26, VectorSlots.VSums.perm, MlKemSums.ntt, MlKemSums.nttInv,
+    VectorSlots.VSums.perm26, VectorSlots.VSums.perm, VectorSlots.VSums.rounds, MlKemSums.ntt, MlKemSums.nttInv,
     MlKemSums.mul, MlKemSums.add, MlKemSums.sub, MlKemSums.cbd2, MlKemSums.encode12,
     MlKemSums.decode12, MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024, MlKemSums.dd1024])
 
