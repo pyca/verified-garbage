@@ -2,14 +2,18 @@ import VerifiedGarbage.Spec.X25519
 import VerifiedGarbage.TCB.Artifact
 
 /-!
-# Multiplication in curve25519's field, in radix `2^16`, as a function
+# Multiplication and powers in curve25519's field, in radix `2^16`, as functions
 
-**Trusted** (as every file in `Spec/`). The contract of a function on
+**Trusted** (as every file in `Spec/`). The contracts of functions on
 elements of `GF(p)`, `p = 2^255 - 19`, each sixteen 16-bit limbs, so that
 the code of Ed25519 that keeps elements this way (the ARMv7 code) can call
 one copy of the product instead of repeating it at every use:
 
-* `vg_gf25519_r16_mul`: the product `a b`.
+* `vg_gf25519_r16_mul`: the product `a b`;
+* `vg_gf25519_r16_pow250`: the powers `a^(2^250 - 1)` and `a^11`, the
+  addition chain that inversion (`a^(p-2) = (a^(2^250-1))^(2^5) a^11`) and
+  decoding's square root (`a^((p-5)/8) = (a^(2^250-1))^(2^2) a`) share, so
+  that each finishes it with a few squarings and a product.
 
 It is not an algorithm of a standard but the arithmetic Ed25519 is built
 from, in the representation that code keeps elements in: what it computes is
@@ -21,16 +25,21 @@ any number below `2^256` (so not necessarily below `p`). The elements live
 in a working space `ws` of 4096 bytes (`[u64; 512]`, the start of Ed25519's
 working space), each at a byte offset: `o` for the result, `a` and `b` for
 the operands. The offsets are arguments, so that the result may be an
-operand and the caller keeps its elements where it likes. Bytes 1472 to 1631
-of `ws` are the function's own working space (`ownAt` to `ownEnd`): the 32
-limbs of the product, and room to save the registers it uses, so that it
-needs no stack. The elements lie below them (`Fits`). On return the
-function's own bytes are unspecified and may hold intermediate values; every
-other byte of `ws` keeps its value but the result's (`Keeps`).
+operand and the caller keeps its elements where it likes. `pow250`'s
+elements are at fixed offsets instead, of the whole of Ed25519's working
+space of 8192 bytes (`[u64; 1024]`, `powWsBytes`), where the ARMv7 Ed25519
+code keeps them: `a` at byte 192 (`aAt`), `a^11` at byte 960 (`eAt`) and
+`a^(2^250 - 1)` at byte 1024 (`oAt`), with two elements of its own after
+them, to byte 1215 (`tmpEnd`). Bytes 1472 to 1631 of `ws` are the functions'
+own working space (`ownAt` to `ownEnd`): the 32 limbs of the product, and
+room to save the registers they use, so that they need no stack. `mul`'s
+elements lie below them (`Fits`). On return a function's own bytes are
+unspecified and may hold intermediate values; every other byte of `ws` keeps
+its value but the results' (`Keeps`, `Keeps₂`).
 
-The result's limbs are below `2^16` again, so that it can be an operand.
-Everything is secret but the pointer and the offsets, which are public, and
-the function is constant time.
+The results' limbs are below `2^16` again, so that they can be operands.
+Everything is secret but the pointer and `mul`'s offsets, which are public,
+and the functions are constant time.
 -/
 
 namespace VG.Spec.X25519.Field16
@@ -108,5 +117,68 @@ def mulApi : Api where
       "Each limb of the operands must be below `2^16`.",
       "Bytes 1472 to 1631 of `ws` are unspecified on return and may hold intermediate values, \
         which the caller must destroy if they are secret."]
+
+/-! ## `pow250` -/
+
+/-- Where `pow250` reads `a`. -/
+def aAt : Nat := 192
+
+/-- Where `pow250` writes `a^11`. -/
+def eAt : Nat := 960
+
+/-- Where `pow250` writes `a^(2^250 - 1)`. -/
+def oAt : Nat := 1024
+
+/-- Where `pow250`'s two elements of its own, after `a^(2^250 - 1)`, end. -/
+def tmpEnd : Nat := 1216
+
+/-- The bytes of `pow250`'s working space: Ed25519's. -/
+def powWsBytes : Nat := 8192
+
+/-- Every byte of `ws` but those of `pow250`'s results and its own elements
+(bytes 960 to 1215) and of its own working space (bytes 1472 to 1631) keeps
+its value. -/
+def Keeps₂ (ws : Addr) (m m' : Mem) : Prop :=
+  ∀ i < powWsBytes, (i < eAt ∨ tmpEnd ≤ i) → (i < ownAt ∨ ownEnd ≤ i) →
+    m' (ws + BitVec.ofNat 64 i) = m (ws + BitVec.ofNat 64 i)
+
+/-- `ws: *mut [u64; 1024]`, the pointer public. -/
+def pow250Sig : Sig where
+  params := [("ws", .array true .u64 1024)]
+
+/-- `pow250`: for `a` at `aAt` with limbs below `2^16`, the elements at `oAt`
+and `eAt` have limbs below `2^16` and are congruent to `a^(2^250 - 1)` and
+`a^11` modulo `P`. -/
+def pow250Contract {I : ISA} (A : Abi I) (stack : Nat := 0) : Contract I :=
+  pow250Sig.contract A
+    (pre := fun ws m => Limbs m ws (BitVec.ofNat 32 aAt))
+    (post := fun ws m m' _ =>
+      Limbs m' ws (BitVec.ofNat 32 oAt) ∧ Limbs m' ws (BitVec.ofNat 32 eAt) ∧
+        valAt m' ws (BitVec.ofNat 32 oAt) % P = valAt m ws (BitVec.ofNat 32 aAt) ^ (2 ^ 250 - 1) % P ∧
+        valAt m' ws (BitVec.ofNat 32 eAt) % P = valAt m ws (BitVec.ofNat 32 aAt) ^ 11 % P ∧
+        Keeps₂ ws m m')
+    (stack := stack)
+
+/-- `vg_gf25519_r16_pow250` on every target. -/
+def pow250Api : Api where
+  module := "gf25519_r16"
+  name := "vg_gf25519_r16_pow250"
+  sig := pow250Sig
+  contracts := some fun A stack => pow250Contract A stack
+  summary := "Powers in curve25519's field: for `a` the element at byte 192 of the working \
+    space `ws`, writes an element congruent to `a^(2^250 - 1)` modulo `p = 2^255 - 19` to byte \
+    1024, and one congruent to `a^11` to byte 960: the addition chain that inversion \
+    (`a^(p-2)`, five squarings of the first and a product with the second) and decoding's \
+    square root (`a^((p-5)/8)`, two squarings of the first and a product with `a`) share. An \
+    element is sixteen 32-bit little-endian words, least significant first, each a limb below \
+    `2^16`: the number `Σ l_i 2^(16 i)`, not necessarily below `p`. The results' limbs are \
+    below `2^16`. Every byte of `ws` but the results', bytes 1088 to 1215 and the function's \
+    own working space (bytes 1472 to 1631) keeps its value.\n\n\
+    Contract: `pow250Contract` of `VG.Spec.X25519.Field16`. Constant time: only the pointer \
+    may affect timing."
+  safety :=
+    ["Each limb of the element at byte 192 of `ws` must be below `2^16`.",
+      "Bytes 1088 to 1215 and 1472 to 1631 of `ws` are unspecified on return and may hold \
+        intermediate values, which the caller must destroy if they are secret."]
 
 end VG.Spec.X25519.Field16
